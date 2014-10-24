@@ -1,8 +1,4 @@
 //
-// Copyright (C) 2014 Jack Pearkes.
-// Copyright (C) 2014 Project comitters.
-// All rights reserved.
-//
 // The software in this package is published under the terms of the Mozilla
 // Public License, version 2.0 a copy of which has been included with this
 // distribution in the LICENSE file.

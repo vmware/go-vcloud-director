@@ -1,8 +1,5 @@
 /*
-* @Author: frapposelli
-* @Date:   2014-10-21 17:47:49
-* @Last Modified by:   frapposelli
-* @Last Modified time: 2014-10-23 14:11:01
+ * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcloudair
@@ -10,87 +7,50 @@ package govcloudair
 import (
 	"fmt"
 	"net/url"
-	"strings"
+
+	types "github.com/vmware/govcloudair/types/v56"
 )
 
-type OrgRelLinks struct {
-	Rel  string `xml:"rel,attr"`
-	Type string `xml:"type,attr"`
-	Name string `xml:"name,attr"`
-	HREF string `xml:"href,attr"`
-}
-
 type Org struct {
-	Link        []OrgRelLinks
-	Description string `xml:"Description"`
-	FullName    string `xml:"FullName"`
+	Org *types.Org
+	c   *Client
 }
 
-func (c *Client) RetrieveOrg(orgid string) (Org, error) {
-
-	req, err := c.NewRequest(map[string]string{}, "GET", fmt.Sprintf("/org/%s", orgid), "")
-	if err != nil {
-		return Org{}, err
+func NewOrg(c *Client) *Org {
+	return &Org{
+		Org: new(types.Org),
+		c:   c,
 	}
-
-	resp, err := checkResp(c.Http.Do(req))
-	if err != nil {
-		return Org{}, fmt.Errorf("Error retreiving org: %s", err)
-	}
-
-	org := new(Org)
-
-	err = decodeBody(resp, org)
-
-	if err != nil {
-		return Org{}, fmt.Errorf("Error decoding org response: %s", err)
-	}
-
-	// The request was successful
-	return *org, nil
 }
 
-func (o *Org) FindOrgCatalogId(catalog string) string {
+func (o *Org) FindCatalog(catalog string) (Catalog, error) {
 
-	for _, av := range o.Link {
+	for _, av := range o.Org.Link {
 		if av.Rel == "down" && av.Type == "application/vnd.vmware.vcloud.catalog+xml" && av.Name == catalog {
-			// Build the backend url
-			u, _ := url.Parse(av.HREF)
-			// Get the orgguid from the url path
-			urlPath := strings.SplitAfter(u.Path, "/")
-			return urlPath[len(urlPath)-1]
+			u, err := url.ParseRequestURI(av.HREF)
+
+			if err != nil {
+				return Catalog{}, fmt.Errorf("error decoding org response: %s", err)
+			}
+
+			req := o.c.NewRequest(map[string]string{}, "GET", *u, nil)
+
+			resp, err := checkResp(o.c.Http.Do(req))
+			if err != nil {
+				return Catalog{}, fmt.Errorf("error retreiving catalog: %s", err)
+			}
+
+			cat := NewCatalog(o.c)
+
+			if err = decodeBody(resp, cat.Catalog); err != nil {
+				return Catalog{}, fmt.Errorf("error decoding catalog response: %s", err)
+			}
+
+			// The request was successful
+			return *cat, nil
+
 		}
 	}
 
-	return ""
-}
-
-func (o *Org) FindOrgVDCId(vdc string) string {
-
-	for _, av := range o.Link {
-		if av.Rel == "down" && av.Type == "application/vnd.vmware.vcloud.vdc+xml" && av.Name == vdc {
-			// Build the backend url
-			u, _ := url.Parse(av.HREF)
-			// Get the orgguid from the url path
-			urlPath := strings.SplitAfter(u.Path, "/")
-			return urlPath[len(urlPath)-1]
-		}
-	}
-
-	return ""
-}
-
-func (o *Org) FindOrgNetworkId(network string) string {
-
-	for _, av := range o.Link {
-		if av.Rel == "down" && av.Type == "application/vnd.vmware.vcloud.orgNetwork+xml" && av.Name == network {
-			// Build the backend url
-			u, _ := url.Parse(av.HREF)
-			// Get the orgguid from the url path
-			urlPath := strings.SplitAfter(u.Path, "/")
-			return urlPath[len(urlPath)-1]
-		}
-	}
-
-	return ""
+	return Catalog{}, fmt.Errorf("can't find catalog: %s", catalog)
 }

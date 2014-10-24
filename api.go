@@ -1,380 +1,308 @@
 /*
-* @Author: frapposelli
-* @Date:   2014-10-10 17:29:37
-* @Last Modified by:   frapposelli
-* @Last Modified time: 2014-10-23 14:10:59
+ * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
+// Package govcloudair provides a simple binding for vCloud Air REST APIs.
 package govcloudair
 
 import (
 	"encoding/xml"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
+	"time"
+
+	types "github.com/vmware/govcloudair/types/v56"
 )
 
-// Client provides a client to vCloud Director API with vCloud Air Extensions
+// Client provides a client to vCloud Air, values can be populated automatically using the Authenticate method.
 type Client struct {
-	VAToken       string       // vCloud Air authorization token
-	Region        string       // Region where the compute resource lives.
-	ComputeHREF   string       // Compute HREF link.
-	VDCHREF       string       // VDC HREF Link.
-	VCDToken      string       // Access Token (authorization header)
-	VCDAuthHeader string       // Authorization header
-	URL           string       // URL to the backend vCloud to use
-	VDC           string       // Name of the VDC you're using (also, Organization Name as Org == VDC in vCloud Air)
-	Http          *http.Client // HttpClient is the client to use. Default will be used if not provided.
+	VAToken       string      // vCloud Air authorization token
+	VAEndpoint    url.URL     // vCloud Air API endpoint
+	Region        string      // Region where the compute resource lives.
+	VCDToken      string      // Access Token (authorization header)
+	VCDAuthHeader string      // Authorization header
+	VCDVDCHREF    url.URL     // HREF of the backend VDC you're using
+	Http          http.Client // HttpClient is the client to use. Default will be used if not provided.
 }
 
-type Service struct {
-	Region      string `xml:"region,attr"`
-	ServiceID   string `xml:"serviceId,attr"`
-	ServiceType string `xml:"serviceType,attr"`
-	Type        string `xml:"type,attr"`
-	HREF        string `xml:"href,attr"`
+// VCHS API
+
+type services struct {
+	Service []struct {
+		Region      string `xml:"region,attr"`
+		ServiceID   string `xml:"serviceId,attr"`
+		ServiceType string `xml:"serviceType,attr"`
+		Type        string `xml:"type,attr"`
+		HREF        string `xml:"href,attr"`
+	} `xml:"Service"`
 }
 
-type Services struct {
-	Service []Service
+type session struct {
+	Link []*types.Link `xml:"Link"`
 }
 
-type VdcLinks struct {
-	Rel  string `xml:"rel,attr"`
-	Name string `xml:"name,attr"`
-	Type string `xml:"type,attr"`
-	HREF string `xml:"href,attr"`
+type computeResources struct {
+	VdcRef []struct {
+		Status string        `xml:"status,attr"`
+		Name   string        `xml:"name,attr"`
+		Type   string        `xml:"type,attr"`
+		HREF   string        `xml:"href,attr"`
+		Link   []*types.Link `xml:"Link"`
+	} `xml:"VdcRef"`
 }
 
-type VdcRef struct {
-	Status string `xml:"status,attr"`
-	Name   string `xml:"name,attr"`
-	Type   string `xml:"type,attr"`
-	HREF   string `xml:"href,attr"`
-	Link   []VdcLinks
+type vCloudSession struct {
+	VdcLink []struct {
+		AuthorizationToken  string `xml:"authorizationToken,attr"`
+		AuthorizationHeader string `xml:"authorizationHeader,attr"`
+		Name                string `xml:"name,attr"`
+		HREF                string `xml:"href,attr"`
+	} `xml:"VdcLink"`
 }
 
-type ComputeResources struct {
-	VdcRef []VdcRef
-}
+//
 
-type VdcLink struct {
-	AuthorizationToken  string `xml:"authorizationToken,attr"`
-	AuthorizationHeader string `xml:"authorizationHeader,attr"`
-	Name                string `xml:"name,attr"`
-	HREF                string `xml:"href,attr"`
-}
+func (c *Client) vaauthorize(user, pass string) (u url.URL, err error) {
 
-type VCloudSession struct {
-	VdcLink []VdcLink
-}
-
-// VCDError is the error format that vCloud Director returns in case of an error
-type VCDError struct {
-	Message                 string `xml:"message,attr"`
-	MajorErrorCode          int    `xml:"majorErrorCode,attr"`
-	MinorErrorCode          string `xml:"minorErrorCode,attr"`
-	VendorSpecificErrorCode string `xml:"vendorSpecificErrorCode,attr"`
-	StackTrace              string `xml:"stackTrace,attr"`
-}
-
-func (c *Client) vaauthorize(vaendpoint, username, password string) error {
-
-	if vaendpoint == "" {
-		vaendpoint = os.Getenv("VCLOUDAIR_ENDPOINT")
+	if user == "" {
+		user = os.Getenv("VCLOUDAIR_USERNAME")
 	}
 
-	if username == "" {
-		username = os.Getenv("VCLOUDAIR_USERNAME")
+	if pass == "" {
+		pass = os.Getenv("VCLOUDAIR_PASSWORD")
 	}
 
-	if password == "" {
-		password = os.Getenv("VCLOUDAIR_PASSWORD")
-	}
+	s := c.VAEndpoint
+	s.Path += "/vchs/sessions"
 
-	u, err := url.Parse(vaendpoint + "/vchs/sessions")
-	if err != nil {
-		return err
-	}
+	// No point in checking for errors here
+	req := c.NewRequest(map[string]string{}, "POST", s, nil)
 
-	// Build the POST request for authentication
-	req, err := http.NewRequest("POST", u.String(), nil)
-	if err != nil {
-		return err
-	}
-
-	// Add the Accept header
-	req.Header.Add("Accept", "application/xml;version=5.6")
 	// Set Basic Authentication Header
-	req.SetBasicAuth(username, password)
+	req.SetBasicAuth(user, pass)
 
-	client := &http.Client{}
+	// Add the Accept header for vCA
+	req.Header.Add("Accept", "application/xml;version=5.6")
 
-	// TODO: wrap into checkresp to parse error.
-	resp, err := checkResp(client.Do(req))
+	resp, err := checkResp(c.Http.Do(req))
 	if err != nil {
-		return err
+		return url.URL{}, err
 	}
 	defer resp.Body.Close()
 
 	// Store the authentication header
 	c.VAToken = resp.Header.Get("X-Vchs-Authorization")
-	return nil
 
+	session := new(session)
+
+	if err = decodeBody(resp, session); err != nil {
+		return url.URL{}, fmt.Errorf("error decoding session response: %s", err)
+	}
+
+	// Loop in the session struct to find right service and compute resource.
+	for _, s := range session.Link {
+		if s.Type == "application/xml;class=vnd.vmware.vchs.servicelist" && s.Rel == "down" {
+			u, err := url.ParseRequestURI(s.HREF)
+			return *u, err
+		}
+	}
+	return url.URL{}, fmt.Errorf("couldn't find a Service List in current session")
 }
 
-func (c *Client) vaacquireservice(vaendpoint, computeid string) error {
+func (c *Client) vaacquireservice(s url.URL, cid string) (u url.URL, err error) {
 
-	if vaendpoint == "" {
-		vaendpoint = os.Getenv("VCLOUDAIR_ENDPOINT")
+	if cid == "" {
+		cid = os.Getenv("VCLOUDAIR_COMPUTEID")
 	}
 
-	if computeid == "" {
-		computeid = os.Getenv("VCLOUDAIR_COMPUTEID")
-	}
+	req := c.NewRequest(map[string]string{}, "GET", s, nil)
 
-	u, err := url.Parse(vaendpoint + "/vchs/services")
-	if err != nil {
-		return fmt.Errorf("Error parsing base URL: %s", err)
-	}
-
-	// Build the GET request
-	req, err := http.NewRequest("GET", u.String(), nil)
-
-	if err != nil {
-		return fmt.Errorf("Error creating request: %s", err)
-	}
-
-	// Add the Accept header
+	// Add the Accept header for vCA
 	req.Header.Add("Accept", "application/xml;version=5.6")
-	// Set Authorization Header
+
+	// Set Authorization Header for vCA
 	req.Header.Add("x-vchs-authorization", c.VAToken)
 
-	client := &http.Client{}
-
-	// TODO: wrap into checkresp to parse error.
-	resp, err := checkResp(client.Do(req))
+	resp, err := checkResp(c.Http.Do(req))
 	if err != nil {
-		return fmt.Errorf("Error processing compute action: %s", err)
+		return url.URL{}, fmt.Errorf("error processing compute action: %s", err)
 	}
 
-	// Read response Body
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("Error parsing response Body: %s", err)
-	}
-	defer resp.Body.Close()
+	services := new(services)
 
-	// Initialize a new Services struct
-	services := Services{}
-
-	// Unmarshal XML response in the Services struct
-	err = xml.Unmarshal([]byte(data), &services)
-	if err != nil {
-		return fmt.Errorf("Error parsing base URL: %s", err)
+	if err = decodeBody(resp, services); err != nil {
+		return url.URL{}, fmt.Errorf("error decoding services response: %s", err)
 	}
 
 	// Loop in the Services struct to find right service and compute resource.
 	for _, s := range services.Service {
-		if s.ServiceID == computeid {
-			c.ComputeHREF = s.HREF
+		if s.ServiceID == cid {
 			c.Region = s.Region
+			u, err := url.ParseRequestURI(s.HREF)
+			return *u, err
 		}
 	}
-
-	// If the right compute resource cannot be found, exit gracefully
-	if c.ComputeHREF == "" {
-		return fmt.Errorf("Error finding the right compute resource")
-	}
-
-	return nil
-
+	return url.URL{}, fmt.Errorf("couldn't find a Compute Resource in current service list")
 }
 
-func (c *Client) vaacquirecompute(vdcid string) error {
+func (c *Client) vaacquirecompute(s url.URL, vid string) (u url.URL, err error) {
 
-	if vdcid == "" {
-		vdcid = os.Getenv("VCLOUDAIR_VDCID")
+	if vid == "" {
+		vid = os.Getenv("VCLOUDAIR_VDCID")
 	}
 
-	u, err := url.Parse(c.ComputeHREF)
-	if err != nil {
-		return fmt.Errorf("Error parsing base URL: %s", err)
-	}
+	req := c.NewRequest(map[string]string{}, "GET", s, nil)
 
-	// Build the GET request for backend server identification
-	req, err := http.NewRequest("GET", u.String(), nil)
-
-	if err != nil {
-		return fmt.Errorf("Error creating request: %s", err)
-	}
-
-	// Add the Accept header
+	// Add the Accept header for vCA
 	req.Header.Add("Accept", "application/xml;version=5.6")
+
 	// Set Authorization Header
 	req.Header.Add("x-vchs-authorization", c.VAToken)
 
-	client := &http.Client{}
-
 	// TODO: wrap into checkresp to parse error
-	resp, err := checkResp(client.Do(req))
+	resp, err := checkResp(c.Http.Do(req))
 	if err != nil {
-		return fmt.Errorf("Error processing compute action: %s", err)
+		return url.URL{}, fmt.Errorf("error processing compute action: %s", err)
 	}
 
-	// Read response Body
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("Error parsing response Body: %s", err)
-	}
-	defer resp.Body.Close()
+	computeresources := new(computeResources)
 
-	// Initialize a new ComputeResources struct
-	computeresources := ComputeResources{}
-
-	// Unmarshal XML response in the ComputeResources struct
-	err = xml.Unmarshal([]byte(data), &computeresources)
-	if err != nil {
-		return fmt.Errorf("Error parsing base URL: %s", err)
+	if err = decodeBody(resp, computeresources); err != nil {
+		return url.URL{}, fmt.Errorf("error decoding computeresources response: %s", err)
 	}
 
 	// Iterate through the ComputeResources struct searching for the right
 	// backend server
 	for _, s := range computeresources.VdcRef {
-		if s.Name == vdcid {
+		if s.Name == vid {
 			for _, t := range s.Link {
-				if t.Name == vdcid {
-					c.VDCHREF = t.HREF
+				if t.Name == vid {
+					u, err := url.ParseRequestURI(t.HREF)
+					return *u, err
 				}
 			}
 		}
 	}
-
-	// If the right backend resource cannot be found, exit gracefully
-	if c.VDCHREF == "" {
-		return fmt.Errorf("Error finding the right backend resource")
-	}
-
-	return nil
+	return url.URL{}, fmt.Errorf("couldn't find a VDC Resource in current Compute list")
 }
 
-func (c *Client) vagetbackendauth(vdcid string) error {
+func (c *Client) vagetbackendauth(s url.URL, cid string) error {
 
-	if vdcid == "" {
-		vdcid = os.Getenv("VCLOUDAIR_VDCID")
+	if cid == "" {
+		cid = os.Getenv("VCLOUDAIR_COMPUTEID")
 	}
 
-	u, err := url.Parse(c.VDCHREF)
-	if err != nil {
-		return fmt.Errorf("Error parsing base URL: %s", err)
-	}
+	req := c.NewRequest(map[string]string{}, "POST", s, nil)
 
-	// Build the POST request for authentication
-	req, err := http.NewRequest("POST", u.String(), nil)
-
-	if err != nil {
-		return fmt.Errorf("Error creating request: %s", err)
-	}
-
-	// Add the Accept header
+	// Add the Accept header for vCA
 	req.Header.Add("Accept", "application/xml;version=5.6")
+
 	// Set Authorization Header
 	req.Header.Add("x-vchs-authorization", c.VAToken)
 
-	client := &http.Client{}
-
 	// TODO: wrap into checkresp to parse error
-	resp, err := checkResp(client.Do(req))
+	resp, err := checkResp(c.Http.Do(req))
 	if err != nil {
-		return fmt.Errorf("Error processing backend url action: %s", err)
+		return fmt.Errorf("error processing backend url action: %s", err)
 	}
 	defer resp.Body.Close()
 
-	// Read response Body
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("Error parsing response Body: %s", err)
-	}
+	vcloudsession := new(vCloudSession)
 
-	// Initialize a new VCloudSession struct
-	vcloudsession := VCloudSession{}
-
-	// Unmarshal XML response in the VCloudSession struct
-	err = xml.Unmarshal([]byte(data), &vcloudsession)
-	if err != nil {
-		return fmt.Errorf("Error parsing base URL: %s", err)
+	if err = decodeBody(resp, vcloudsession); err != nil {
+		return fmt.Errorf("error decoding vcloudsession response: %s", err)
 	}
 
 	// Get the backend session information
 	for _, s := range vcloudsession.VdcLink {
-		if s.Name == vdcid {
+		if s.Name == cid {
 			// Fetch the authorization token
 			c.VCDToken = s.AuthorizationToken
 
 			// Fetch the authorization header
 			c.VCDAuthHeader = s.AuthorizationHeader
 
-			// Build the backend url
-			u, _ := url.Parse(s.HREF)
-			c.URL = u.Scheme + "://" + u.Host + "/api"
-
-			// Get the vdcguid from the url path
-			urlPath := strings.SplitAfter(u.Path, "/")
-			c.VDC = urlPath[len(urlPath)-1]
+			u, err := url.ParseRequestURI(s.HREF)
+			if err != nil {
+				return fmt.Errorf("error decoding href: %s", err)
+			}
+			c.VCDVDCHREF = *u
+			return nil
 		}
 	}
-
-	if c.VCDToken == "" || c.VCDAuthHeader == "" || c.URL == "" || c.VDC == "" {
-		return fmt.Errorf("Error finding the right backend resource")
-	}
-
-	return nil
+	return fmt.Errorf("error finding the right backend resource")
 }
 
-// Helper function that performs a complete login in vCloud Air and in the backend vCloud Director instance and returns a complete new client.
-func NewClient(vaendpoint, username, password, computeid, vdcid string) (*Client, error) {
+// NewClient returns a new empty client to authenticate against the vCloud Air
+// service, the vCloud Air endpoint can be overridden by setting the
+// VCLOUDAIR_ENDPOINT environment variable.
+func NewClient() (*Client, error) {
 
-	Client := Client{Http: http.DefaultClient}
+	var u *url.URL
+	var err error
 
+	if os.Getenv("VCLOUDAIR_ENDPOINT") != "" {
+		u, err = url.ParseRequestURI(os.Getenv("VCLOUDAIR_ENDPOINT"))
+		if err != nil {
+			return &Client{}, fmt.Errorf("cannot parse endpoint coming from VCLOUDAIR_ENDPOINT")
+		}
+	} else {
+		// Implicitly trust this URL parse.
+		u, _ = url.ParseRequestURI("https://vchs.vmware.com/api")
+	}
+
+	Client := Client{
+		VAEndpoint: *u,
+		// Patching things up as we're hitting several TLS timeouts.
+		Http: http.Client{Transport: &http.Transport{TLSHandshakeTimeout: 120 * time.Second}},
+	}
+	return &Client, nil
+}
+
+// Authenticate is an helper function that performs a complete login in vCloud
+// Air and in the backend vCloud Director instance.
+func (c *Client) Authenticate(username, password, computeid, vdcid string) (Vdc, error) {
 	// Authorize
-	err := Client.vaauthorize(vaendpoint, username, password)
+	vaservicehref, err := c.vaauthorize(username, password)
 	if err != nil {
-		return nil, fmt.Errorf("Error Authorizing: %s", err)
+		return Vdc{}, fmt.Errorf("error Authorizing: %s", err)
 	}
 
 	// Get Service
-	err = Client.vaacquireservice(vaendpoint, computeid)
+	vacomputehref, err := c.vaacquireservice(vaservicehref, computeid)
 	if err != nil {
-		return nil, fmt.Errorf("Error Acquiring Service: %s", err)
+		return Vdc{}, fmt.Errorf("error Acquiring Service: %s", err)
 	}
 
 	// Get Compute
-	err = Client.vaacquirecompute(vdcid)
+	vavdchref, err := c.vaacquirecompute(vacomputehref, vdcid)
 	if err != nil {
-		return nil, fmt.Errorf("Error Acquiring Compute: %s", err)
+		return Vdc{}, fmt.Errorf("error Acquiring Compute: %s", err)
 	}
 
 	// Get Backend Authorization
-	err = Client.vagetbackendauth(vdcid)
-	if err != nil {
-		return nil, fmt.Errorf("Error Acquiring Backend Authorization: %s", err)
+	if err = c.vagetbackendauth(vavdchref, computeid); err != nil {
+		return Vdc{}, fmt.Errorf("error Acquiring Backend Authorization: %s", err)
 	}
 
-	return &Client, nil
+	v, err := c.retrieveVDC()
+	if err != nil {
+		return Vdc{}, fmt.Errorf("error Acquiring VDC: %s", err)
+	}
+
+	return v, nil
 
 }
 
-// Creates a new request with the params
-func (c *Client) NewRequest(params map[string]string, method string, endpoint string, contenttype string) (*http.Request, error) {
-	p := url.Values{}
-	u, err := url.Parse(c.URL + endpoint)
+// NewRequest creates a new HTTP request and applies necessary auth headers if
+// set.
+func (c *Client) NewRequest(params map[string]string, method string, u url.URL, body io.Reader) *http.Request {
 
-	if err != nil {
-		return nil, fmt.Errorf("Error parsing base URL: %s", err)
-	}
+	p := url.Values{}
 
 	// Build up our request parameters
 	for k, v := range params {
@@ -384,49 +312,68 @@ func (c *Client) NewRequest(params map[string]string, method string, endpoint st
 	// Add the params to our URL
 	u.RawQuery = p.Encode()
 
-	// Build the request
-	req, err := http.NewRequest(method, u.String(), nil)
+	// Build the request, no point in checking for errors here as we're just
+	// passing a string version of an url.URL struct and http.NewRequest returns
+	// error only if can't process an url.ParseRequestURI().
+	req, _ := http.NewRequest(method, u.String(), body)
 
-	if err != nil {
-		return nil, fmt.Errorf("Error creating request: %s", err)
+	if c.VCDAuthHeader != "" && c.VCDToken != "" {
+		// Add the authorization header
+		req.Header.Add(c.VCDAuthHeader, c.VCDToken)
+		// Add the Accept header for VCD
+		req.Header.Add("Accept", "application/*+xml;version=5.6")
 	}
 
-	// Add the authorization header
-	req.Header.Add(c.VCDAuthHeader, c.VCDToken)
-	// Add the Accept header
-	req.Header.Add("Accept", "application/*+xml;version=5.6")
-	// If not empty, add Content-Type header
-	if contenttype != "" {
-		req.Header.Add("Content-Type", contenttype)
-	}
-
-	return req, nil
+	return req
 
 }
 
-// parseErr is used to take an error json resp
-// and return a single string for use in error messages
-func parseErr(resp *http.Response) error {
-	errBody := VCDError{}
+// Disconnect performs a disconnection from the vCloud Air API endpoint.
+func (c *Client) Disconnect() error {
+	if c.VCDToken == "" && c.VCDAuthHeader == "" && c.VAToken == "" {
+		return fmt.Errorf("cannot disconnect, client is not authenticated")
+	}
 
-	err := decodeBody(resp, &errBody)
+	s := c.VAEndpoint
+	s.Path += "/vchs/session"
+
+	req := c.NewRequest(map[string]string{}, "DELETE", s, nil)
+
+	// Add the Accept header for vCA
+	req.Header.Add("Accept", "application/xml;version=5.6")
+
+	// Set Authorization Header
+	req.Header.Add("x-vchs-authorization", c.VAToken)
+
+	if _, err := checkResp(c.Http.Do(req)); err != nil {
+		return fmt.Errorf("error processing session delete for vchs: %s", err)
+	}
+
+	return nil
+}
+
+// parseErr takes an error XML resp and returns a single string for use in error messages.
+func parseErr(resp *http.Response) error {
+
+	errBody := new(types.Error)
 
 	// if there was an error decoding the body, just return that
-	if err != nil {
-		return fmt.Errorf("Error parsing error body for non-200 request: %s", err)
+	if err := decodeBody(resp, errBody); err != nil {
+		return fmt.Errorf("error parsing error body for non-200 request: %s", err)
 	}
 
 	return fmt.Errorf("API Error: %d: %s", errBody.MajorErrorCode, errBody.Message)
 }
 
-// decodeBody is used to XML decode a body
+// decodeBody is used to XML decode a response body
 func decodeBody(resp *http.Response, out interface{}) error {
-	body, err := ioutil.ReadAll(resp.Body)
 
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
 
+	// Unmarshal the XML.
 	if err = xml.Unmarshal(body, &out); err != nil {
 		return err
 	}
@@ -434,28 +381,24 @@ func decodeBody(resp *http.Response, out interface{}) error {
 	return nil
 }
 
-// checkResp wraps http.Client.Do() and verifies that the
-// request was successful. A non-200 request returns an error
-// formatted to included any validation problems or otherwise
+// checkResp wraps http.Client.Do() and verifies the request, if status code
+// is 2XX it passes back the response, if it's a known invalid status code it
+// parses the resultant XML error and returns a descriptive error, if the
+// status code is not handled it returns a generic error with the status code.
 func checkResp(resp *http.Response, err error) (*http.Response, error) {
-	// If the err is already there, there was an error higher
-	// up the chain, so just return that
 	if err != nil {
 		return resp, err
 	}
 
 	switch i := resp.StatusCode; {
-	case i == 200:
+	// Valid request, return the response.
+	case i == 200 || i == 201 || i == 202 || i == 204:
 		return resp, nil
-	case i == 201:
-		return resp, nil
-	case i == 202:
-		return resp, nil
-	case i == 204:
-		return resp, nil
-	case i == 404:
-		return nil, fmt.Errorf("API Error: %s", resp.Status)
-	default:
+	// Invalid request, parse the XML error returned and return it.
+	case i == 400 || i == 401 || i == 403 || i == 404 || i == 405 || i == 406 || i == 409 || i == 415 || i == 500 || i == 503 || i == 504:
 		return nil, parseErr(resp)
+	// Unhandled response.
+	default:
+		return nil, fmt.Errorf("unhandled API response, please report this issue, status code: %s", resp.Status)
 	}
 }

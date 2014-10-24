@@ -1,62 +1,78 @@
 /*
-* @Author: frapposelli
-* @Date:   2014-10-20 15:19:23
-* @Last Modified by:   frapposelli
-* @Last Modified time: 2014-10-23 14:10:50
+ * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcloudair
 
 import (
-	"testing"
+	"github.com/vmware/govcloudair/testutil"
 
 	. "gopkg.in/check.v1"
 )
 
-func TestVDC(t *testing.T) {
-	TestingT(t)
-}
+func (s *S) Test_FindVDCNetwork(c *C) {
 
-func (s *S) Test_RetrieveVDC(c *C) {
-	testServer.Response(200, nil, vdcExample)
+	testServer.Response(200, nil, orgvdcnetExample)
 
-	vdc, err := s.client.RetrieveVDC()
+	net, err := s.vdc.FindVDCNetwork("networkName")
 
 	_ = testServer.WaitRequest()
 
 	c.Assert(err, IsNil)
-	for _, v := range vdc.Link {
-		c.Assert(v.Rel, Equals, "up")
-		c.Assert(v.Type, Equals, "application/vnd.vmware.vcloud.org+xml")
-		c.Assert(v.HREF, Equals, "http://localhost:4444/api/org/11111111-1111-1111-1111-111111111111")
-	}
+	c.Assert(net, NotNil)
+	c.Assert(net.OrgVDCNetwork.HREF, Equals, "http://localhost:4444/api/network/cb0f4c9e-1a46-49d4-9fcb-d228000a6bc1")
 
-	c.Assert(vdc.AllocationModel, Equals, "AllocationPool")
+	// find Invalid Network
+	net, err = s.vdc.FindVDCNetwork("INVALID")
+	c.Assert(err, NotNil)
+}
 
-	for _, v := range vdc.ComputeCapacity {
-		c.Assert(v.Cpu.Units, Equals, "MHz")
-		c.Assert(v.Cpu.Allocated, Equals, 30000)
-		c.Assert(v.Cpu.Limit, Equals, 30000)
-		c.Assert(v.Cpu.Reserved, Equals, 15000)
-		c.Assert(v.Cpu.Used, Equals, 0)
-		c.Assert(v.Cpu.Overhead, Equals, 0)
+func (s *S) Test_GetVDCOrg(c *C) {
+
+	testServer.Response(200, nil, orgExample)
+
+	org, err := s.vdc.GetVDCOrg()
+
+	_ = testServer.WaitRequest()
+
+	c.Assert(err, IsNil)
+	c.Assert(org, NotNil)
+	c.Assert(org.Org.HREF, Equals, "http://localhost:4444/api/org/23bd2339-c55f-403c-baf3-13109e8c8d57")
+}
+
+func (s *S) Test_NewVdc(c *C) {
+
+	testServer.Response(200, nil, vdcExample)
+	err := s.vdc.Refresh()
+	_ = testServer.WaitRequest()
+	c.Assert(err, IsNil)
+
+	c.Assert(s.vdc.Vdc.Link[0].Rel, Equals, "up")
+	c.Assert(s.vdc.Vdc.Link[0].Type, Equals, "application/vnd.vmware.vcloud.org+xml")
+	c.Assert(s.vdc.Vdc.Link[0].HREF, Equals, "http://localhost:4444/api/org/11111111-1111-1111-1111-111111111111")
+
+	c.Assert(s.vdc.Vdc.AllocationModel, Equals, "AllocationPool")
+
+	for _, v := range s.vdc.Vdc.ComputeCapacity {
+		c.Assert(v.CPU.Units, Equals, "MHz")
+		c.Assert(v.CPU.Allocated, Equals, int64(30000))
+		c.Assert(v.CPU.Limit, Equals, int64(30000))
+		c.Assert(v.CPU.Reserved, Equals, int64(15000))
+		c.Assert(v.CPU.Used, Equals, int64(0))
+		c.Assert(v.CPU.Overhead, Equals, int64(0))
 		c.Assert(v.Memory.Units, Equals, "MB")
-		c.Assert(v.Memory.Allocated, Equals, 61440)
-		c.Assert(v.Memory.Limit, Equals, 61440)
-		c.Assert(v.Memory.Reserved, Equals, 61440)
-		c.Assert(v.Memory.Used, Equals, 6144)
-		c.Assert(v.Memory.Overhead, Equals, 95)
+		c.Assert(v.Memory.Allocated, Equals, int64(61440))
+		c.Assert(v.Memory.Limit, Equals, int64(61440))
+		c.Assert(v.Memory.Reserved, Equals, int64(61440))
+		c.Assert(v.Memory.Used, Equals, int64(6144))
+		c.Assert(v.Memory.Overhead, Equals, int64(95))
 	}
 
-	for _, v := range vdc.ResourceEntities {
-		for _, v2 := range v.ResourceEntity {
-			c.Assert(v2.Name, Equals, "vAppTemplate")
-			c.Assert(v2.Type, Equals, "application/vnd.vmware.vcloud.vAppTemplate+xml")
-			c.Assert(v2.HREF, Equals, "http://localhost:4444/api/vAppTemplate/vappTemplate-22222222-2222-2222-2222-222222222222")
-		}
-	}
+	c.Assert(s.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].Name, Equals, "vAppTemplate")
+	c.Assert(s.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].Type, Equals, "application/vnd.vmware.vcloud.vAppTemplate+xml")
+	c.Assert(s.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].HREF, Equals, "http://localhost:4444/api/vAppTemplate/vappTemplate-22222222-2222-2222-2222-222222222222")
 
-	for _, v := range vdc.AvailableNetworks {
+	for _, v := range s.vdc.Vdc.AvailableNetworks {
 		for _, v2 := range v.Network {
 			c.Assert(v2.Name, Equals, "networkName")
 			c.Assert(v2.Type, Equals, "application/vnd.vmware.vcloud.network+xml")
@@ -64,19 +80,13 @@ func (s *S) Test_RetrieveVDC(c *C) {
 		}
 	}
 
-	for _, v := range vdc.Capabilities {
-		for _, v2 := range v.SupportedHardwareVersions {
-			c.Assert(v2, Equals, "vmx-10")
-		}
-	}
+	c.Assert(s.vdc.Vdc.NicQuota, Equals, 0)
+	c.Assert(s.vdc.Vdc.NetworkQuota, Equals, 20)
+	c.Assert(s.vdc.Vdc.UsedNetworkCount, Equals, 0)
+	c.Assert(s.vdc.Vdc.VMQuota, Equals, 0)
+	c.Assert(s.vdc.Vdc.IsEnabled, Equals, true)
 
-	c.Assert(vdc.NicQuota, Equals, 0)
-	c.Assert(vdc.NetworkQuota, Equals, 20)
-	c.Assert(vdc.UsedNetworkCount, Equals, 0)
-	c.Assert(vdc.VmQuota, Equals, 0)
-	c.Assert(vdc.IsEnabled, Equals, true)
-
-	for _, v := range vdc.VdcStorageProfiles {
+	for _, v := range s.vdc.Vdc.VdcStorageProfiles {
 		for _, v2 := range v.VdcStorageProfile {
 			c.Assert(v2.Name, Equals, "storageProfile")
 			c.Assert(v2.Type, Equals, "application/vnd.vmware.vcloud.vdcStorageProfile+xml")
@@ -86,39 +96,37 @@ func (s *S) Test_RetrieveVDC(c *C) {
 
 }
 
-func (s *S) Test_FindVDCNetworkId(c *C) {
-	testServer.Response(200, nil, vdcExample)
+func (s *S) Test_FindVApp(c *C) {
 
-	vdc, _ := s.client.RetrieveVDC()
-	net := vdc.FindVDCNetworkId("networkName")
+	// testServer.Response(200, nil, vappExample)
 
-	_ = testServer.WaitRequest()
+	// vapp, err := s.vdc.FindVAppByID("")
 
-	c.Assert(net, Equals, "44444444-4444-4444-4444-4444444444444")
+	// _ = testServer.WaitRequest()
+	// testServer.Flush()
+	// c.Assert(err, IsNil)
 
-}
+	testServer.ResponseMap(2, testutil.ResponseMap{
+		"/api/vdc/00000000-0000-0000-0000-000000000000":       testutil.Response{200, nil, vdcExample},
+		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, vappExample},
+	})
 
-func (s *S) Test_FindVDCStorageProfileId(c *C) {
-	testServer.Response(200, nil, vdcExample)
+	_, err := s.vdc.FindVAppByName("myVApp")
 
-	vdc, _ := s.client.RetrieveVDC()
-	net := vdc.FindVDCStorageProfileId("storageProfile")
+	_ = testServer.WaitRequests(2)
 
-	_ = testServer.WaitRequest()
+	c.Assert(err, IsNil)
 
-	c.Assert(net, Equals, "88888888-8888-8888-8888-888888888888")
+	testServer.ResponseMap(2, testutil.ResponseMap{
+		"/api/vdc/00000000-0000-0000-0000-000000000000":       testutil.Response{200, nil, vdcExample},
+		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, vappExample},
+	})
 
-}
+	_, err = s.vdc.FindVAppByID("urn:vcloud:vapp:00000000-0000-0000-0000-000000000000")
 
-func (s *S) Test_FindVDCOrgId(c *C) {
-	testServer.Response(200, nil, vdcExample)
+	_ = testServer.WaitRequests(2)
 
-	vdc, _ := s.client.RetrieveVDC()
-	net := vdc.FindVDCOrgId()
-
-	_ = testServer.WaitRequest()
-
-	c.Assert(net, Equals, "11111111-1111-1111-1111-111111111111")
+	c.Assert(err, IsNil)
 
 }
 
@@ -126,6 +134,7 @@ var vdcExample = `
 	<?xml version="1.0" ?>
 	<Vdc href="http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000000" id="urn:vcloud:vdc:00000000-0000-0000-0000-000000000000" name="M916272752-5793" status="1" type="application/vnd.vmware.vcloud.vdc+xml" xmlns="http://www.vmware.com/vcloud/v1.5" xmlns:xsi="http://www.w3.org/2001/XMLSchema-in stance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.6.32.3/api/v1.5/schema/master.xsd">
 	  <Link href="http://localhost:4444/api/org/11111111-1111-1111-1111-111111111111" rel="up" type="application/vnd.vmware.vcloud.org+xml"/>
+	  <Link href="http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000000/edgeGateways" rel="edgeGateways" type="application/vnd.vmware.vcloud.query.records+xml"/>
 	  <AllocationModel>AllocationPool</AllocationModel>
 	  <ComputeCapacity>
 	    <Cpu>
@@ -147,6 +156,7 @@ var vdcExample = `
 	  </ComputeCapacity>
 	  <ResourceEntities>
 	    <ResourceEntity href="http://localhost:4444/api/vAppTemplate/vappTemplate-22222222-2222-2222-2222-222222222222" name="vAppTemplate" type="application/vnd.vmware.vcloud.vAppTemplate+xml"/>
+      <ResourceEntity href="http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000" name="myVApp" type="application/vnd.vmware.vcloud.vApp+xml"/>
 	  </ResourceEntities>
 	  <AvailableNetworks>
 	    <Network href="http://localhost:4444/api/network/44444444-4444-4444-4444-4444444444444" name="networkName" type="application/vnd.vmware.vcloud.network+xml"/>

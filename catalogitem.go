@@ -1,8 +1,5 @@
 /*
-* @Author: frapposelli
-* @Date:   2014-10-22 13:45:20
-* @Last Modified by:   frapposelli
-* @Last Modified time: 2014-10-23 14:11:01
+ * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcloudair
@@ -10,57 +7,43 @@ package govcloudair
 import (
 	"fmt"
 	"net/url"
-	"strings"
+
+	types "github.com/vmware/govcloudair/types/v56"
 )
 
-type CatalogItemRelLinks struct {
-	Rel  string `xml:"rel,attr"`
-	Type string `xml:"type,attr"`
-	Name string `xml:"name,attr"`
-	HREF string `xml:"href,attr"`
-}
-
-type Entities struct {
-	Type string `xml:"type,attr"`
-	Name string `xml:"name,attr"`
-	HREF string `xml:"href,attr"`
-}
-
 type CatalogItem struct {
-	Link          []CatalogItemRelLinks
-	Description   string `xml:"Description"`
-	Entity        Entities
-	IsPublished   bool   `xml:"IsPublished"`
-	DateCreated   string `xml:"DateCreated"`
-	VersionNumber int    `xml:"VersionNumber"`
+	CatalogItem *types.CatalogItem
+	c           *Client
 }
 
-func (c *Client) RetrieveCatalogItem(catalogitemid string) (CatalogItem, error) {
+func NewCatalogItem(c *Client) *CatalogItem {
+	return &CatalogItem{
+		CatalogItem: new(types.CatalogItem),
+		c:           c,
+	}
+}
 
-	req, err := c.NewRequest(map[string]string{}, "GET", fmt.Sprintf("/catalogItem/%s", catalogitemid), "")
+func (ci *CatalogItem) GetVAppTemplate() (VAppTemplate, error) {
+	url, err := url.ParseRequestURI(ci.CatalogItem.Entity.HREF)
+
 	if err != nil {
-		return CatalogItem{}, err
+		return VAppTemplate{}, fmt.Errorf("error decoding catalogitem response: %s", err)
 	}
 
-	resp, err := checkResp(c.Http.Do(req))
+	req := ci.c.NewRequest(map[string]string{}, "GET", *url, nil)
+
+	resp, err := checkResp(ci.c.Http.Do(req))
 	if err != nil {
-		return CatalogItem{}, fmt.Errorf("Error retreiving catalogitem: %s", err)
+		return VAppTemplate{}, fmt.Errorf("error retreiving vapptemplate: %s", err)
 	}
 
-	catalogitem := new(CatalogItem)
+	cat := NewVAppTemplate(ci.c)
 
-	err = decodeBody(resp, catalogitem)
-
-	if err != nil {
-		return CatalogItem{}, fmt.Errorf("Error decoding catalogitem response: %s", err)
+	if err = decodeBody(resp, cat.VAppTemplate); err != nil {
+		return VAppTemplate{}, fmt.Errorf("error decoding vapptemplate response: %s", err)
 	}
 
 	// The request was successful
-	return *catalogitem, nil
-}
+	return *cat, nil
 
-func (ci *CatalogItem) FindVappTemplateId() string {
-	u, _ := url.Parse(ci.Entity.HREF)
-	urlPath := strings.SplitAfter(u.Path, "/")
-	return urlPath[len(urlPath)-1]
 }

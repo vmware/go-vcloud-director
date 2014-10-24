@@ -1,76 +1,57 @@
 /*
-* @Author: frapposelli
-* @Date:   2014-10-22 12:18:21
-* @Last Modified by:   frapposelli
-* @Last Modified time: 2014-10-23 14:11:00
+ * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcloudair
 
 import (
 	"fmt"
+	"net/url"
+
+	types "github.com/vmware/govcloudair/types/v56"
 )
 
-type CatalogRelLinks struct {
-	Rel  string `xml:"rel,attr"`
-	Type string `xml:"type,attr"`
-	Name string `xml:"name,attr"`
-	HREF string `xml:"href,attr"`
-}
-
-type CatalogItemLinks struct {
-	Id   string `xml:"id,attr"`
-	Type string `xml:"type,attr"`
-	Name string `xml:"name,attr"`
-	HREF string `xml:"href,attr"`
-}
-
-type CatalogItems struct {
-	CatalogItem []CatalogItemLinks
-}
-
 type Catalog struct {
-	Link          []CatalogRelLinks
-	Description   string `xml:"Description"`
-	CatalogItems  []CatalogItems
-	IsPublished   bool   `xml:"IsPublished"`
-	DateCreated   string `xml:"DateCreated"`
-	VersionNumber int    `xml:"VersionNumber"`
+	Catalog *types.Catalog
+	c       *Client
 }
 
-func (c *Client) RetrieveCatalog(catalogid string) (Catalog, error) {
-
-	req, err := c.NewRequest(map[string]string{}, "GET", fmt.Sprintf("/catalog/%s", catalogid), "")
-	if err != nil {
-		return Catalog{}, err
+func NewCatalog(c *Client) *Catalog {
+	return &Catalog{
+		Catalog: new(types.Catalog),
+		c:       c,
 	}
-
-	resp, err := checkResp(c.Http.Do(req))
-	if err != nil {
-		return Catalog{}, fmt.Errorf("Error retreiving catalog: %s", err)
-	}
-
-	catalog := new(Catalog)
-
-	err = decodeBody(resp, catalog)
-
-	if err != nil {
-		return Catalog{}, fmt.Errorf("Error decoding catalog response: %s", err)
-	}
-
-	// The request was successful
-	return *catalog, nil
 }
 
-func (c *Catalog) FindCatalogItemId(catalogitem string) string {
+func (c *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
 
-	for _, cis := range c.CatalogItems {
+	for _, cis := range c.Catalog.CatalogItems {
 		for _, ci := range cis.CatalogItem {
 			if ci.Name == catalogitem && ci.Type == "application/vnd.vmware.vcloud.catalogItem+xml" {
-				return ci.Id
+				u, err := url.ParseRequestURI(ci.HREF)
+
+				if err != nil {
+					return CatalogItem{}, fmt.Errorf("error decoding catalog response: %s", err)
+				}
+
+				req := c.c.NewRequest(map[string]string{}, "GET", *u, nil)
+
+				resp, err := checkResp(c.c.Http.Do(req))
+				if err != nil {
+					return CatalogItem{}, fmt.Errorf("error retreiving catalog: %s", err)
+				}
+
+				cat := NewCatalogItem(c.c)
+
+				if err = decodeBody(resp, cat.CatalogItem); err != nil {
+					return CatalogItem{}, fmt.Errorf("error decoding catalog response: %s", err)
+				}
+
+				// The request was successful
+				return *cat, nil
 			}
 		}
 	}
 
-	return ""
+	return CatalogItem{}, fmt.Errorf("can't find catalog item: %s", catalogitem)
 }
