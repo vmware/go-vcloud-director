@@ -251,6 +251,7 @@ func NewVAClient() (*VAClient, error) {
 	VAClient := VAClient{
 		VAEndpoint: *u,
 		Client: Client{
+			APIVersion: "5.6",
 			// Patching things up as we're hitting several TLS timeouts.
 			Http: http.Client{Transport: &http.Transport{TLSHandshakeTimeout: 120 * time.Second}},
 		},

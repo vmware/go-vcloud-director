@@ -477,7 +477,7 @@ func TestClient_Disconnect(t *testing.T) {
 
 }
 
-func TestClient_Authenticate(t *testing.T) {
+func TestVAClient_Authenticate(t *testing.T) {
 
 	testServer.Start()
 	var err error
