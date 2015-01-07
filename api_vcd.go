@@ -20,15 +20,6 @@ type supportedVersions struct {
 	} `xml:"VersionInfo"`
 }
 
-type vCloudOrg struct {
-	Link []struct {
-		Rel  string `xml:"rel,attr"`
-		Type string `xml:"type,attr"`
-		Name string `xml:"name,attr"`
-		HREF string `xml:"href,attr"`
-	} `xml:"Link"`
-}
-
 func (c *VCDClient) vcdloginurl() (u *url.URL, err error) {
 
 	s := c.Client.VCDVDCHREF
@@ -110,41 +101,39 @@ func (c *VCDClient) vcdauthorize(user, pass, org string, sessionRef *url.URL) er
 	return fmt.Errorf("couldn't find a Organization in current session")
 }
 
-func (c *VCDClient) retrieveVDCHREF() error {
+func (c *VCDClient) retrieveOrg() (Org, error) {
 
 	req := c.Client.NewRequest(map[string]string{}, "GET", c.OrgRef, nil)
-
-	// Add the Accept header for vCD
-	//req.Header.Add("Accept", "application/*+xml;version=5.5")
+	req.Header.Add("Accept", "vnd.vmware.vcloud.org+xml;version=5.5")
 
 	// TODO: wrap into checkresp to parse error
 	resp, err := checkResp(c.Client.Http.Do(req))
 	if err != nil {
-		return fmt.Errorf("error processing org: %s", err)
+		return Org{}, fmt.Errorf("error retreiving org: %s", err)
 	}
-	defer resp.Body.Close()
 
-	vcloudorg := new(vCloudOrg)
+	org := NewOrg(&c.Client)
 
-	err = decodeBody(resp, vcloudorg)
-
-	if err != nil {
-		return fmt.Errorf("error decoding vcloudorg response: %s", err)
+	if err = decodeBody(resp, org.Org); err != nil {
+		return Org{}, fmt.Errorf("error decoding org response: %s", err)
 	}
 
 	// Get the VDC ref from the Org
-	for _, s := range vcloudorg.Link {
+	for _, s := range org.Org.Link {
 		if s.Type == "application/vnd.vmware.vcloud.vdc+xml" && s.Rel == "down" {
 			u, err := url.Parse(s.HREF)
 			if err != nil {
-				return err
+				return Org{}, err
 			}
 			c.Client.VCDVDCHREF = *u
-			return nil
 		}
 	}
 
-	return fmt.Errorf("error finding the organization VDC")
+	if &c.Client.VCDVDCHREF == nil {
+		return Org{}, fmt.Errorf("error finding the organization VDC")
+	}
+
+	return *org, nil
 }
 
 func NewVCDClient(vcdEndpoint url.URL) *VCDClient {
@@ -159,29 +148,23 @@ func NewVCDClient(vcdEndpoint url.URL) *VCDClient {
 }
 
 // Authenticate is an helper function that performs a login in vCloud Director.
-func (c *VCDClient) Authenticate(username, password, org string) (Vdc, error) {
+func (c *VCDClient) Authenticate(username, password, org string) (Org, error) {
 
 	// LoginUrl
 	sessionRef, err := c.vcdloginurl()
 	if err != nil {
-		return Vdc{}, fmt.Errorf("error finding LoginUrl: %s", err)
+		return Org{}, fmt.Errorf("error finding LoginUrl: %s", err)
 	}
 	// Authorize
 	err = c.vcdauthorize(username, password, org, sessionRef)
 	if err != nil {
-		return Vdc{}, fmt.Errorf("error Authorizing: %s", err)
+		return Org{}, fmt.Errorf("error Authorizing: %s", err)
 	}
 
-	// Get Org VDC
-	err = c.retrieveVDCHREF()
+	// Get Org
+	o, err := c.retrieveOrg()
 	if err != nil {
-		return Vdc{}, fmt.Errorf("error Acquiring VDC url: %s", err)
+		return Org{}, fmt.Errorf("error Acquiring Org: %s", err)
 	}
-
-	v, err := c.Client.retrieveVDC()
-	if err != nil {
-		return Vdc{}, fmt.Errorf("error Acquiring VDC: %s", err)
-	}
-
-	return v, nil
+	return o, nil
 }
