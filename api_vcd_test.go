@@ -11,6 +11,7 @@ import (
 type K struct {
 	client *VCDClient
 	org    Org
+	vdc    Vdc
 }
 
 var vcdu_api, _ = url.Parse("http://localhost:4444/api")
@@ -33,7 +34,7 @@ func (s *K) SetUpSuite(c *C) {
 		"/api/versions": testutil.Response{200, map[string]string{}, vcdversions},
 	})
 
-	s.org, err = s.client.Authenticate("username", "password", "organization")
+	s.org, s.vdc, err = s.client.Authenticate("username", "password", "organization")
 	if err != nil {
 		panic(err)
 	}
@@ -58,17 +59,16 @@ func TestClient_getloginurl(t *testing.T) {
 		"/api/versions": testutil.Response{200, nil, vcdversions},
 	})
 
-	u, err := client.vcdloginurl()
+	err = client.vcdloginurl()
 	testServer.Flush()
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
 	// Test if token is correctly set on client.
-	if u.Path != "/api/sessions" {
-		t.Fatalf("Getting LoginUrl failed, url: %s", u.Path)
+	if client.sessionHREF.Path != "/api/sessions" {
+		t.Fatalf("Getting LoginUrl failed, url: %s", client.sessionHREF.Path)
 	}
-
 }
 
 func TestVCDClient_Authenticate(t *testing.T) {
@@ -86,9 +86,10 @@ func TestVCDClient_Authenticate(t *testing.T) {
 		"/api/versions":                                 testutil.Response{200, nil, vcdversions},
 		"/api/sessions":                                 testutil.Response{201, vcdauthheader, vcdsessions},
 		"/api/org/00000000-0000-0000-0000-000000000000": testutil.Response{201, vcdauthheader, vcdorg},
+		"/api/vdc/00000000-0000-0000-0000-000000000000": testutil.Response{201, vcdauthheader, vcdorg},
 	})
 
-	org, err := client.Authenticate("username", "password", "organization")
+	org, _, err := client.Authenticate("username", "password", "organization")
 	testServer.Flush()
 	if err != nil {
 		t.Fatalf("Error authenticating: %v", err)
@@ -141,4 +142,67 @@ var vcdorg = `
     <Description/>
     <FullName>Organization (full)</FullName>
 </Org>
+`
+
+var vcdvdc = `
+<?xml version="1.0" encoding="UTF-8"?>
+<Vdc xmlns="http://www.vmware.com/vcloud/v1.5" status="1" name="organization vDC" id="urn:vcloud:vdc:00000000-0000-0000-0000-000000000001" type="application/vnd.vmware.vcloud.vdc+xml" href="http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000001" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://localhost:4444/api/v1.5/schema/master.xsd">
+    <Link rel="down" type="application/vnd.vmware.vcloud.metadata+xml" href="http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000001/metadata"/>
+    <Link rel="add" type="application/vnd.vmware.vcloud.uploadVAppTemplateParams+xml" href="http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000001/action/uploadVAppTemplate"/>
+    <Link rel="add" type="application/vnd.vmware.vcloud.media+xml" href="http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000001/media"/>
+    <Link rel="add" type="application/vnd.vmware.vcloud.instantiateVAppTemplateParams+xml" href="http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000001/action/instantiateVAppTemplate"/>
+    <Link rel="add" type="application/vnd.vmware.vcloud.cloneVAppParams+xml" href="http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000001/action/cloneVApp"/>
+    <Link rel="add" type="application/vnd.vmware.vcloud.cloneVAppTemplateParams+xml" href="http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000001/action/cloneVAppTemplate"/>
+    <Link rel="add" type="application/vnd.vmware.vcloud.cloneMediaParams+xml" href="http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000001/action/cloneMedia"/>
+    <Link rel="add" type="application/vnd.vmware.vcloud.captureVAppParams+xml" href="http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000001/action/captureVApp"/>
+    <Link rel="add" type="application/vnd.vmware.vcloud.composeVAppParams+xml" href="http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000001/action/composeVApp"/>
+    <Link rel="add" type="application/vnd.vmware.vcloud.diskCreateParams+xml" href="http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000001/disk"/>
+    <Description>organization vDC</Description>
+    <AllocationModel>AllocationVApp</AllocationModel>
+    <ComputeCapacity>
+        <Cpu>
+            <Units>MHz</Units>
+            <Allocated>0</Allocated>
+            <Limit>0</Limit>
+            <Reserved>0</Reserved>
+            <Used>0</Used>
+            <Overhead>0</Overhead>
+        </Cpu>
+        <Memory>
+            <Units>MB</Units>
+            <Allocated>0</Allocated>
+            <Limit>0</Limit>
+            <Reserved>0</Reserved>
+            <Used>0</Used>
+            <Overhead>0</Overhead>
+        </Memory>
+    </ComputeCapacity>
+    <ResourceEntities>
+        <ResourceEntity type="application/vnd.vmware.vcloud.vAppTemplate+xml" name="vApp_CentOS-6.6_1" href="http://localhost:4444/api/vAppTemplate/vappTemplate-00000000-0000-0000-0000-000000000001"/>
+        <ResourceEntity type="application/vnd.vmware.vcloud.media+xml" name="CentOS-7.0-1406-x86_64-DVD.iso" href="http://localhost:4444/api/media/00000000-0000-0000-0000-000000000001"/>
+        <ResourceEntity type="application/vnd.vmware.vcloud.media+xml" name="CentOS-6.6-x86_64-minimal.iso" href="http://localhost:4444/api/media/00000000-0000-0000-0000-000000000001"/>
+    </ResourceEntities>
+    <AvailableNetworks>
+        <Network type="application/vnd.vmware.vcloud.network+xml" name="Internal Network" href="http://localhost:4444/api/network/00000000-0000-0000-0000-000000000001"/>
+    </AvailableNetworks>
+    <Capabilities>
+        <SupportedHardwareVersions>
+            <SupportedHardwareVersion>vmx-04</SupportedHardwareVersion>
+            <SupportedHardwareVersion>vmx-07</SupportedHardwareVersion>
+            <SupportedHardwareVersion>vmx-08</SupportedHardwareVersion>
+            <SupportedHardwareVersion>vmx-09</SupportedHardwareVersion>
+            <SupportedHardwareVersion>vmx-10</SupportedHardwareVersion>
+        </SupportedHardwareVersions>
+    </Capabilities>
+    <NicQuota>0</NicQuota>
+    <NetworkQuota>100</NetworkQuota>
+    <UsedNetworkCount>0</UsedNetworkCount>
+    <VmQuota>0</VmQuota>
+    <IsEnabled>true</IsEnabled>
+    <VdcStorageProfiles>
+        <VdcStorageProfile type="application/vnd.vmware.vcloud.vdcStorageProfile+xml" name="Gold-Datastore" href="http://localhost:4444/api/vdcStorageProfile/00000000-0000-0000-0000-000000000001"/>
+        <VdcStorageProfile type="application/vnd.vmware.vcloud.vdcStorageProfile+xml" name="Bronze-Datastore" href="http://localhost:4444/api/vdcStorageProfile/00000000-0000-0000-0000-000000000001"/>
+        <VdcStorageProfile type="application/vnd.vmware.vcloud.vdcStorageProfile+xml" name="Silver-Datastore" href="http://localhost:4444/api/vdcStorageProfile/00000000-0000-0000-0000-000000000001"/>
+    </VdcStorageProfiles>
+</Vdc>
 `
