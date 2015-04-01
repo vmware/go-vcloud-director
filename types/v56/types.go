@@ -342,7 +342,7 @@ type Vdc struct {
 	NetworkQuota       int                   `xml:"NetworkQuota"`
 	NicQuota           int                   `xml:"NicQuota"`
 	ResourceEntities   []*ResourceEntities   `xml:"ResourceEntities,omitempty"`
-	Tasks              *TasksInProgress      `xml:"Taks,omitempty"`
+	Tasks              *TasksInProgress      `xml:"Tasks,omitempty"`
 	UsedNetworkCount   int                   `xml:"UsedNetworkCount,omitempty"`
 	VdcStorageProfiles []*VdcStorageProfiles `xml:"VdcStorageProfiles"`
 	VMQuota            int                   `xml:"VmQuota"`
