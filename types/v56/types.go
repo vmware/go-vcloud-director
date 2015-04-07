@@ -296,20 +296,12 @@ type OrgVDCNetwork struct {
 	Tasks         TasksInProgress       `xml:"Tasks,omitempty"`
 }
 
-// Type: SupportedHardwareVersionType
-// Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents a supported virtual hardware version.
-// Since: 1.5
-type SupportedHardwareVersion struct {
-	SupportedHardwareVersion string `xml:"SupportedHardwareVersion"`
-}
-
 // Type: SupportedHardwareVersionsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Contains a list of VMware virtual hardware versions supported in this vDC.
 // Since: 1.5
 type SupportedHardwareVersions struct {
-	SupportedHardwareVersion []*SupportedHardwareVersion `xml:"SupportedHardwareVersion,omitempty"` // A virtual hardware version supported in this vDC.
+	SupportedHardwareVersion []string `xml:"SupportedHardwareVersion,omitempty"` // A virtual hardware version supported in this vDC.
 }
 
 // Type: CapabilitiesType
