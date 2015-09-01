@@ -38,7 +38,7 @@ func (o *Org) FindCatalog(catalog string) (Catalog, error) {
 
 			req := o.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-			resp, err := checkResp(o.c.Http.Do(req))
+			resp, err := checkResp(o.c.HTTP.Do(req))
 			if err != nil {
 				return Catalog{}, fmt.Errorf("error retreiving catalog: %s", err)
 			}

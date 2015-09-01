@@ -37,7 +37,7 @@ func (t *Task) Refresh() error {
 
 	req := t.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-	resp, err := checkResp(t.c.Http.Do(req))
+	resp, err := checkResp(t.c.HTTP.Do(req))
 	if err != nil {
 		return fmt.Errorf("error retrieving task: %s", err)
 	}

@@ -27,7 +27,7 @@ type Client struct {
 	VCDToken      string      // Access Token (authorization header)
 	VCDAuthHeader string      // Authorization header
 	VCDVDCHREF    url.URL     // HREF of the backend VDC you're using
-	Http          http.Client // HttpClient is the client to use. Default will be used if not provided.
+	HTTP          http.Client // HttpClient is the client to use. Default will be used if not provided.
 }
 
 // VCHS API
@@ -89,7 +89,7 @@ func (c *Client) vaauthorize(user, pass string) (u url.URL, err error) {
 	// Add the Accept header for vCA
 	req.Header.Add("Accept", "application/xml;version=5.6")
 
-	resp, err := checkResp(c.Http.Do(req))
+	resp, err := checkResp(c.HTTP.Do(req))
 	if err != nil {
 		return url.URL{}, err
 	}
@@ -128,7 +128,7 @@ func (c *Client) vaacquireservice(s url.URL, cid string) (u url.URL, err error) 
 	// Set Authorization Header for vCA
 	req.Header.Add("x-vchs-authorization", c.VAToken)
 
-	resp, err := checkResp(c.Http.Do(req))
+	resp, err := checkResp(c.HTTP.Do(req))
 	if err != nil {
 		return url.URL{}, fmt.Errorf("error processing compute action: %s", err)
 	}
@@ -164,7 +164,7 @@ func (c *Client) vaacquirecompute(s url.URL, vid string) (u url.URL, err error) 
 	// Set Authorization Header
 	req.Header.Add("x-vchs-authorization", c.VAToken)
 
-	resp, err := checkResp(c.Http.Do(req))
+	resp, err := checkResp(c.HTTP.Do(req))
 	if err != nil {
 		return url.URL{}, fmt.Errorf("error processing compute action: %s", err)
 	}
@@ -214,7 +214,7 @@ func (c *Client) vagetbackendauth(s url.URL, cid string) error {
 	var resp *http.Response
 
 	for t := range ticker.C {
-		resp, err = checkResp(c.Http.Do(req))
+		resp, err = checkResp(c.HTTP.Do(req))
 		if err != nil {
 			fmt.Println(err, "retrying...", t)
 			continue
@@ -277,7 +277,7 @@ func NewClient() (*Client, error) {
 	Client := Client{
 		VAEndpoint: *u,
 		// Patching things up as we're hitting several TLS timeouts.
-		Http: http.Client{Transport: &http.Transport{TLSHandshakeTimeout: 120 * time.Second}},
+		HTTP: http.Client{Transport: &http.Transport{TLSHandshakeTimeout: 120 * time.Second}},
 	}
 	return &Client, nil
 }
@@ -364,7 +364,7 @@ func (c *Client) Disconnect() error {
 	// Set Authorization Header
 	req.Header.Add("x-vchs-authorization", c.VAToken)
 
-	if _, err := checkResp(c.Http.Do(req)); err != nil {
+	if _, err := checkResp(c.HTTP.Do(req)); err != nil {
 		return fmt.Errorf("error processing session delete for vchs: %s", err)
 	}
 

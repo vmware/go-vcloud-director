@@ -39,7 +39,7 @@ func (e *EdgeGateway) Refresh() error {
 
 	req := e.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-	resp, err := checkResp(e.c.Http.Do(req))
+	resp, err := checkResp(e.c.HTTP.Do(req))
 	if err != nil {
 		return fmt.Errorf("error retreiving Edge Gateway: %s", err)
 	}
@@ -179,7 +179,7 @@ func (e *EdgeGateway) Remove1to1Mapping(internal, external string) (Task, error)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml")
 
-	resp, err := checkResp(e.c.Http.Do(req))
+	resp, err := checkResp(e.c.HTTP.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
 	}
@@ -299,7 +299,7 @@ func (e *EdgeGateway) Create1to1Mapping(internal, external, description string) 
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml")
 
-	resp, err := checkResp(e.c.Http.Do(req))
+	resp, err := checkResp(e.c.HTTP.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
 	}
