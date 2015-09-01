@@ -11,11 +11,13 @@ import (
 	types "github.com/vmware/govcloudair/types/v56"
 )
 
+// Catalog a client catalog of machines
 type Catalog struct {
 	Catalog *types.Catalog
 	c       *Client
 }
 
+// NewCatalog creates a new client catalog
 func NewCatalog(c *Client) *Catalog {
 	return &Catalog{
 		Catalog: new(types.Catalog),
@@ -23,6 +25,7 @@ func NewCatalog(c *Client) *Catalog {
 	}
 }
 
+// FindCatalogItem finds a catalog item
 func (c *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
 
 	for _, cis := range c.Catalog.CatalogItems {

@@ -15,11 +15,13 @@ import (
 	types "github.com/vmware/govcloudair/types/v56"
 )
 
+// VApp a vApp client
 type VApp struct {
 	VApp *types.VApp
 	c    *Client
 }
 
+// NewVApp creates a new vApp client
 func NewVApp(c *Client) *VApp {
 	return &VApp{
 		VApp: new(types.VApp),
@@ -27,6 +29,7 @@ func NewVApp(c *Client) *VApp {
 	}
 }
 
+// Refresh refreshes this vApp
 func (v *VApp) Refresh() error {
 
 	if v.VApp.HREF == "" {
@@ -54,6 +57,7 @@ func (v *VApp) Refresh() error {
 	return nil
 }
 
+// ComposeVApp composes a new vapp
 func (v *VApp) ComposeVApp(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplate, name string, description string) (Task, error) {
 
 	if vapptemplate.VAppTemplate.Children == nil || orgvdcnetwork.OrgVDCNetwork == nil {
@@ -148,6 +152,7 @@ func (v *VApp) ComposeVApp(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplat
 
 }
 
+// PowerOn powers this vApp on
 func (v *VApp) PowerOn() (Task, error) {
 
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
@@ -171,6 +176,7 @@ func (v *VApp) PowerOn() (Task, error) {
 
 }
 
+// PowerOff powers this vApp off
 func (v *VApp) PowerOff() (Task, error) {
 
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
@@ -194,6 +200,7 @@ func (v *VApp) PowerOff() (Task, error) {
 
 }
 
+// Reboot reboots this vApp
 func (v *VApp) Reboot() (Task, error) {
 
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
@@ -217,6 +224,7 @@ func (v *VApp) Reboot() (Task, error) {
 
 }
 
+// Reset resets this vApp
 func (v *VApp) Reset() (Task, error) {
 
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
@@ -240,6 +248,7 @@ func (v *VApp) Reset() (Task, error) {
 
 }
 
+// Suspend suspends this vApp
 func (v *VApp) Suspend() (Task, error) {
 
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
@@ -263,6 +272,7 @@ func (v *VApp) Suspend() (Task, error) {
 
 }
 
+// Shutdown shuts this vApp down
 func (v *VApp) Shutdown() (Task, error) {
 
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
@@ -286,6 +296,7 @@ func (v *VApp) Shutdown() (Task, error) {
 
 }
 
+// Undeploy removes the deployment for this vApp
 func (v *VApp) Undeploy() (Task, error) {
 
 	vu := &types.UndeployVAppParams{
@@ -329,6 +340,7 @@ func (v *VApp) Undeploy() (Task, error) {
 
 }
 
+// Deploy this vApp
 func (v *VApp) Deploy() (Task, error) {
 
 	vu := &types.DeployVAppParams{
@@ -372,6 +384,7 @@ func (v *VApp) Deploy() (Task, error) {
 
 }
 
+// Delete this vApp
 func (v *VApp) Delete() (Task, error) {
 
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
@@ -394,6 +407,7 @@ func (v *VApp) Delete() (Task, error) {
 
 }
 
+// RunCustomizationScript runs a customization script on the vApp
 func (v *VApp) RunCustomizationScript(computername, script string) (Task, error) {
 
 	err := v.Refresh()
@@ -455,6 +469,7 @@ func (v *VApp) RunCustomizationScript(computername, script string) (Task, error)
 
 }
 
+// GetStatus gets the status for this vApp
 func (v *VApp) GetStatus() (string, error) {
 	err := v.Refresh()
 	if err != nil {
@@ -463,6 +478,7 @@ func (v *VApp) GetStatus() (string, error) {
 	return types.VAppStatuses[v.VApp.Status], nil
 }
 
+// ChangeCPUcount change the cpu count for this vApp
 func (v *VApp) ChangeCPUcount(size int) (Task, error) {
 
 	err := v.Refresh()
@@ -532,6 +548,7 @@ func (v *VApp) ChangeCPUcount(size int) (Task, error) {
 
 }
 
+// ChangeMemorySize change the memory for this vApp
 func (v *VApp) ChangeMemorySize(size int) (Task, error) {
 
 	err := v.Refresh()

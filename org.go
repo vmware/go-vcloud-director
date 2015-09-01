@@ -11,11 +11,13 @@ import (
 	types "github.com/vmware/govcloudair/types/v56"
 )
 
+// Org a vcloud org client
 type Org struct {
 	Org *types.Org
 	c   *Client
 }
 
+// NewOrg creates a new org client
 func NewOrg(c *Client) *Org {
 	return &Org{
 		Org: new(types.Org),
@@ -23,6 +25,7 @@ func NewOrg(c *Client) *Org {
 	}
 }
 
+// FindCatalog finds a catalog in the org
 func (o *Org) FindCatalog(catalog string) (Catalog, error) {
 
 	for _, av := range o.Org.Link {

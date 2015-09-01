@@ -12,11 +12,13 @@ import (
 	types "github.com/vmware/govcloudair/types/v56"
 )
 
+// Vdc client
 type Vdc struct {
 	Vdc *types.Vdc
 	c   *Client
 }
 
+// NewVdc create a new vdc client
 func NewVdc(c *Client) *Vdc {
 	return &Vdc{
 		Vdc: new(types.Vdc),
@@ -43,6 +45,7 @@ func (c *Client) retrieveVDC() (Vdc, error) {
 	return *vdc, nil
 }
 
+// Refresh refresh this vdc client
 func (v *Vdc) Refresh() error {
 
 	if v.Vdc.HREF == "" {
@@ -70,6 +73,7 @@ func (v *Vdc) Refresh() error {
 	return nil
 }
 
+// FindVDCNetwork find the vdc network
 func (v *Vdc) FindVDCNetwork(network string) (OrgVDCNetwork, error) {
 
 	for _, an := range v.Vdc.AvailableNetworks {
@@ -103,6 +107,7 @@ func (v *Vdc) FindVDCNetwork(network string) (OrgVDCNetwork, error) {
 	return OrgVDCNetwork{}, fmt.Errorf("can't find VDC Network: %s", network)
 }
 
+// GetVDCOrg gets the org for this vdc
 func (v *Vdc) GetVDCOrg() (Org, error) {
 
 	for _, av := range v.Vdc.Link {
@@ -134,6 +139,7 @@ func (v *Vdc) GetVDCOrg() (Org, error) {
 	return Org{}, fmt.Errorf("can't find VDC Org")
 }
 
+// FindEdgeGateway finds the edgegateway in this vdc
 func (v *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 
 	for _, av := range v.Vdc.Link {
@@ -185,6 +191,7 @@ func (v *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 
 }
 
+// FindVAppByName finds a vApp by name in this vdc
 func (v *Vdc) FindVAppByName(vapp string) (VApp, error) {
 
 	err := v.Refresh()
@@ -225,6 +232,7 @@ func (v *Vdc) FindVAppByName(vapp string) (VApp, error) {
 	return VApp{}, fmt.Errorf("can't find vApp: %s", vapp)
 }
 
+// FindVAppByID finds a vApp by ID in this VDC
 func (v *Vdc) FindVAppByID(vappid string) (VApp, error) {
 
 	// Horrible hack to fetch a vapp with its id.
