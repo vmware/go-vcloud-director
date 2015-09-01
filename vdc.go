@@ -30,7 +30,7 @@ func (c *Client) retrieveVDC() (Vdc, error) {
 
 	req := c.NewRequest(map[string]string{}, "GET", c.VCDVDCHREF, nil)
 
-	resp, err := checkResp(c.Http.Do(req))
+	resp, err := checkResp(c.HTTP.Do(req))
 	if err != nil {
 		return Vdc{}, fmt.Errorf("error retreiving vdc: %s", err)
 	}
@@ -56,7 +56,7 @@ func (v *Vdc) Refresh() error {
 
 	req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(v.c.HTTP.Do(req))
 	if err != nil {
 		return fmt.Errorf("error retreiving Edge Gateway: %s", err)
 	}
@@ -86,7 +86,7 @@ func (v *Vdc) FindVDCNetwork(network string) (OrgVDCNetwork, error) {
 
 				req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-				resp, err := checkResp(v.c.Http.Do(req))
+				resp, err := checkResp(v.c.HTTP.Do(req))
 				if err != nil {
 					return OrgVDCNetwork{}, fmt.Errorf("error retreiving orgvdcnetwork: %s", err)
 				}
@@ -120,7 +120,7 @@ func (v *Vdc) GetVDCOrg() (Org, error) {
 
 			req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-			resp, err := checkResp(v.c.Http.Do(req))
+			resp, err := checkResp(v.c.HTTP.Do(req))
 			if err != nil {
 				return Org{}, fmt.Errorf("error retreiving org: %s", err)
 			}
@@ -153,7 +153,7 @@ func (v *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 			// Querying the Result list
 			req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-			resp, err := checkResp(v.c.Http.Do(req))
+			resp, err := checkResp(v.c.HTTP.Do(req))
 			if err != nil {
 				return EdgeGateway{}, fmt.Errorf("error retrieving edge gateway records: %s", err)
 			}
@@ -172,7 +172,7 @@ func (v *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 			// Querying the Result list
 			req = v.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-			resp, err = checkResp(v.c.Http.Do(req))
+			resp, err = checkResp(v.c.HTTP.Do(req))
 			if err != nil {
 				return EdgeGateway{}, fmt.Errorf("error retrieving edge gateway: %s", err)
 			}
@@ -213,7 +213,7 @@ func (v *Vdc) FindVAppByName(vapp string) (VApp, error) {
 				// Querying the VApp
 				req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-				resp, err := checkResp(v.c.Http.Do(req))
+				resp, err := checkResp(v.c.HTTP.Do(req))
 				if err != nil {
 					return VApp{}, fmt.Errorf("error retrieving vApp: %s", err)
 				}
@@ -264,7 +264,7 @@ func (v *Vdc) FindVAppByID(vappid string) (VApp, error) {
 				// Querying the VApp
 				req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-				resp, err := checkResp(v.c.Http.Do(req))
+				resp, err := checkResp(v.c.HTTP.Do(req))
 				if err != nil {
 					return VApp{}, fmt.Errorf("error retrieving vApp: %s", err)
 				}

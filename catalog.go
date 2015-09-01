@@ -39,7 +39,7 @@ func (c *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
 
 				req := c.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-				resp, err := checkResp(c.c.Http.Do(req))
+				resp, err := checkResp(c.c.HTTP.Do(req))
 				if err != nil {
 					return CatalogItem{}, fmt.Errorf("error retreiving catalog: %s", err)
 				}

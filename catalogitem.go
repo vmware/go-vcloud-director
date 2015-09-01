@@ -35,7 +35,7 @@ func (ci *CatalogItem) GetVAppTemplate() (VAppTemplate, error) {
 
 	req := ci.c.NewRequest(map[string]string{}, "GET", *url, nil)
 
-	resp, err := checkResp(ci.c.Http.Do(req))
+	resp, err := checkResp(ci.c.HTTP.Do(req))
 	if err != nil {
 		return VAppTemplate{}, fmt.Errorf("error retreiving vapptemplate: %s", err)
 	}

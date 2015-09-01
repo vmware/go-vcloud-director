@@ -1074,7 +1074,7 @@ type StaticRoutingService struct {
 type StaticRoute struct {
 	Name             string     `xml:"Name"`                       // Name for the static route.
 	Network          string     `xml:"Network"`                    // Network specification in CIDR.
-	NextHopIp        string     `xml:"NextHopIp"`                  // IP Address of Next Hop router/gateway.
+	NextHopIP        string     `xml:"NextHopIp"`                  // IP Address of Next Hop router/gateway.
 	Interface        string     `xml:"Interface,omitempty"`        // Interface to use for static routing. Internal and External are the supported values.
 	GatewayInterface *Reference `xml:"GatewayInterface,omitempty"` // Gateway interface to which static route is bound.
 }
@@ -1126,7 +1126,7 @@ type LBPoolServicePort struct {
 // Since: 5.1
 type LBPoolHealthCheck struct {
 	Mode              string `xml:"Mode"`                        // Load balancer service port health check mode. One of: TCP, HTTP, SSL.
-	Uri               string `xml:"Uri,omitempty"`               // Load balancer service port health check URI.
+	URI               string `xml:"Uri,omitempty"`               // Load balancer service port health check URI.
 	HealthThreshold   string `xml:"HealthThreshold,omitempty"`   // Health threshold for this service port.
 	UnhealthThreshold string `xml:"UnhealthThreshold,omitempty"` // Unhealth check port for this profile.
 	Interval          string `xml:"Interval,omitempty"`          // Interval between health checks.
@@ -1297,10 +1297,10 @@ type VMSelection struct {
 // Description:
 // Since:
 type FirewallRuleProtocols struct {
-	Icmp bool `xml:"Icmp,omitempty"` // True if the rule applies to the ICMP protocol.
+	ICMP bool `xml:"Icmp,omitempty"` // True if the rule applies to the ICMP protocol.
 	Any  bool `xml:"Any,omitempty"`  // True if the rule applies to any protocol.
-	Tcp  bool `xml:"Tcp,omitempty"`  // True if the rule applies to the TCP protocol.
-	Udp  bool `xml:"Udp,omitempty"`  // True if the rule applies to the UDP protocol.
+	TCP  bool `xml:"Tcp,omitempty"`  // True if the rule applies to the TCP protocol.
+	UDP  bool `xml:"Udp,omitempty"`  // True if the rule applies to the UDP protocol.
 	// FIXME: this is supposed to extend protocol support to all the VSM supported protocols
 	// Other string `xml:"Other,omitempty"` //	Any other protocol supported by vShield Manager
 }
