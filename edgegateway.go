@@ -14,11 +14,13 @@ import (
 	types "github.com/vmware/govcloudair/types/v56"
 )
 
+// EdgeGateway an edgegateway client
 type EdgeGateway struct {
 	EdgeGateway *types.EdgeGateway
 	c           *Client
 }
 
+// NewEdgeGateway creates a new edge gateway client
 func NewEdgeGateway(c *Client) *EdgeGateway {
 	return &EdgeGateway{
 		EdgeGateway: new(types.EdgeGateway),
@@ -26,6 +28,7 @@ func NewEdgeGateway(c *Client) *EdgeGateway {
 	}
 }
 
+// Refresh refreshes the edge gateway
 func (e *EdgeGateway) Refresh() error {
 
 	if e.EdgeGateway == nil {
@@ -53,6 +56,7 @@ func (e *EdgeGateway) Refresh() error {
 	return nil
 }
 
+// Remove1to1Mapping removes a 1 to 1 mapping on the gateway
 func (e *EdgeGateway) Remove1to1Mapping(internal, external string) (Task, error) {
 
 	// Refresh EdgeGateway rules
@@ -191,6 +195,7 @@ func (e *EdgeGateway) Remove1to1Mapping(internal, external string) (Task, error)
 
 }
 
+// Create1to1Mapping creates a 1-to-1 mapping in the gateway
 func (e *EdgeGateway) Create1to1Mapping(internal, external, description string) (Task, error) {
 
 	// Refresh EdgeGateway rules

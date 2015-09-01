@@ -12,11 +12,13 @@ import (
 	types "github.com/vmware/govcloudair/types/v56"
 )
 
+// Task a task client
 type Task struct {
 	Task *types.Task
 	c    *Client
 }
 
+// NewTask create a new task client
 func NewTask(c *Client) *Task {
 	return &Task{
 		Task: new(types.Task),
@@ -24,6 +26,7 @@ func NewTask(c *Client) *Task {
 	}
 }
 
+// Refresh this task
 func (t *Task) Refresh() error {
 
 	if t.Task == nil {
@@ -51,6 +54,7 @@ func (t *Task) Refresh() error {
 	return nil
 }
 
+// WaitTaskCompletion wait for this task to complete
 func (t *Task) WaitTaskCompletion() error {
 
 	if t.Task == nil {

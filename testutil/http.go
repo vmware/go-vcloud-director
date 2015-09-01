@@ -17,6 +17,7 @@ import (
 	"time"
 )
 
+// HTTPServer a test http server
 type HTTPServer struct {
 	URL      string
 	Timeout  time.Duration
@@ -25,24 +26,29 @@ type HTTPServer struct {
 	response chan ResponseFunc
 }
 
+// Response a response from the test http server
 type Response struct {
 	Status  int
 	Headers map[string]string
 	Body    string
 }
 
+// DefaultClient the default http client for use in tests
 var DefaultClient = &http.Client{
 	Transport: &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 	},
 }
 
+// NewHTTPServer a new http server
 func NewHTTPServer() *HTTPServer {
 	return &HTTPServer{URL: "http://localhost:4444", Timeout: 5 * time.Second}
 }
 
+// ResponseFunc a response factory function
 type ResponseFunc func(path string) Response
 
+// Start starts the test http server
 func (s *HTTPServer) Start() {
 	if s.started {
 		return
