@@ -342,7 +342,6 @@ func (c *Client) NewRequest(params map[string]string, method string, u url.URL, 
 		// Add the Accept header for VCD
 		req.Header.Add("Accept", "application/*+xml;version=5.6")
 	}
-
 	return req
 
 }

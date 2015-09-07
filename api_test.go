@@ -1,416 +1,448 @@
 /*
- * @Author: frapposelli
+ * @Author: frapposelli, casualjim
  * @Project: govcloudair
  * @Filename: api_test.go
- * @Last Modified by: frapposelli
+ * @Last Modified by: casualjim
  */
 
 package govcloudair
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 
-	"github.com/vmware/govcloudair/testutil"
-	. "gopkg.in/check.v1"
+	"github.com/stretchr/testify/assert"
 )
-
-var au, _ = url.ParseRequestURI("http://localhost:4444/api")
-var aus, _ = url.ParseRequestURI("http://localhost:4444/api/vchs/services")
-var auc, _ = url.ParseRequestURI("http://localhost:4444/api/vchs/compute/00000000-0000-0000-0000-000000000000")
-var aucs, _ = url.ParseRequestURI("http://localhost:4444/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession")
-
-func Test(t *testing.T) { TestingT(t) }
-
-type S struct {
-	client *Client
-	vdc    Vdc
-	vapp   *VApp
-}
-
-var _ = Suite(&S{})
-
-var testServer = testutil.NewHTTPServer()
 
 var authheader = map[string]string{"x-vchs-authorization": "012345678901234567890123456789"}
 
-func (s *S) SetUpSuite(c *C) {
-	testServer.Start()
-	var err error
+type testContext struct {
+	Server *httptest.Server
+	Client *Client
+	VDC    Vdc
+	VApp   *VApp
+}
 
-	os.Setenv("VCLOUDAIR_ENDPOINT", "http://localhost:4444/api")
+type testResponse struct {
+	Code    int
+	Headers map[string]string
+	Body    string
+}
 
-	s.client, err = NewClient()
-	if err != nil {
-		panic(err)
-	}
+type callCounter struct {
+	current int32
+}
 
-	testServer.ResponseMap(5, testutil.ResponseMap{
-		"/api/vchs/sessions":                                                                                            testutil.Response{201, authheader, vaauthorization},
-		"/api/vchs/services":                                                                                            testutil.Response{200, nil, vaservices},
-		"/api/vchs/compute/00000000-0000-0000-0000-000000000000":                                                        testutil.Response{200, nil, vacompute},
-		"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession": testutil.Response{201, nil, vabackend},
-		"/api/vdc/00000000-0000-0000-0000-000000000000":                                                                 testutil.Response{200, nil, vdcExample},
+func (cc *callCounter) Inc() {
+	cc.current++
+}
+
+func (cc *callCounter) Pop() int {
+	defer func() { cc.current = 0 }()
+	return int(cc.current)
+}
+
+func testHandler(responses map[string]testResponse, callCount *callCounter) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		if resp, ok := responses[r.URL.Path]; ok {
+			callCount.Inc()
+			for k, v := range resp.Headers {
+				rw.Header().Add(k, v)
+			}
+			rw.WriteHeader(resp.Code)
+			rw.Write([]byte(strings.Replace(resp.Body, "localhost:4444", r.Host, -1)))
+			return
+		}
+
+		rw.WriteHeader(http.StatusNotFound)
 	})
-
-	s.vdc, err = s.client.Authenticate("username", "password", "CI123456-789", "VDC12345-6789")
-	s.vapp = NewVApp(s.client)
-	_ = testServer.WaitRequests(5)
-	testServer.Flush()
-	if err != nil {
-		panic(err)
-	}
 }
 
-func (s *S) TearDownTest(c *C) {
-	testServer.Flush()
+var authRequests = map[string]testResponse{
+	"/api/vchs/sessions":                                                                                            {201, authheader, vaauthorization},
+	"/api/vchs/services":                                                                                            {200, nil, vaservices},
+	"/api/vchs/compute/00000000-0000-0000-0000-000000000000":                                                        {200, nil, vacompute},
+	"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession": {201, nil, vabackend},
+	"/api/vdc/00000000-0000-0000-0000-000000000000":                                                                 {200, nil, vdcExample},
 }
 
-func TestClient_vaauthorize(t *testing.T) {
-	testServer.Start()
-	var err error
+func authHandler(handler http.Handler) http.Handler {
+	cnt := 0
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		// the login story is 5 requests, after that we're definitely doing actual test requests
+		if resp, ok := authRequests[r.URL.Path]; ok && cnt < 5 {
+			cnt++
+			for k, v := range resp.Headers {
+				rw.Header().Add(k, v)
+			}
+			rw.WriteHeader(resp.Code)
+			resp := strings.Replace(resp.Body, "localhost:4444", r.Host, -1) + "\n"
+			rw.Write([]byte(resp))
+			return
+		}
 
-	// Set up a working client
-	os.Setenv("VCLOUDAIR_ENDPOINT", "http://localhost:4444/api")
+		handler.ServeHTTP(rw, r)
+	})
+}
+
+func setupTestContext(handler http.Handler) (testContext, error) {
+	serv := httptest.NewServer(handler)
+
+	os.Setenv("VCLOUDAIR_ENDPOINT", serv.URL+"/api")
 
 	client, err := NewClient()
 	if err != nil {
-		t.Fatalf("err: %v", err)
+		return testContext{}, err
+	}
+
+	vdc, err := client.Authenticate("username", "password", "CI123456-789", "VDC12345-6789")
+	if err != nil {
+		return testContext{}, err
+	}
+
+	vapp := NewVApp(client)
+
+	return testContext{
+		Server: serv,
+		Client: client,
+		VDC:    vdc,
+		VApp:   vapp,
+	}, nil
+}
+
+func TestClient_vaauthorize(t *testing.T) {
+	cc := new(callCounter)
+	serv := httptest.NewServer(testHandler(map[string]testResponse{
+		"/api/vchs/sessions": {201, authheader, vaauthorization},
+	}, cc))
+	// Set up a working client
+	os.Setenv("VCLOUDAIR_ENDPOINT", serv.URL+"/api")
+
+	client, err := NewClient()
+	if !assert.NoError(t, err) {
+		return
 	}
 
 	// Set up a correct conversation
-	testServer.Response(201, authheader, vaauthorization)
 	_, err = client.vaauthorize("username", "password")
-	_ = testServer.WaitRequest()
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
+	assert.Equal(t, 1, cc.Pop())
 
 	// Test if token is correctly set on client.
-	if client.VAToken != "012345678901234567890123456789" {
-		t.Fatalf("VAtoken not set on client: %s", client.VAToken)
-	}
+	assert.Equal(t, "012345678901234567890123456789", client.VAToken)
+	serv.Close()
 
 	// Test client errors
+	testError := func(resp testResponse) bool {
+		serv = httptest.NewServer(testHandler(map[string]testResponse{
+			"/api/vchs/sessions": resp,
+		}, cc))
+		os.Setenv("VCLOUDAIR_ENDPOINT", serv.URL+"/api")
+		client, err := NewClient()
+		if !assert.NoError(t, err) {
+			return false
+		}
+		_, err = client.vaauthorize("username", "password")
+		return assert.Error(t, err)
+	}
 
 	// Test a correct response with a wrong status code
-	testServer.Response(404, authheader, notfoundErr)
-	_, err = client.vaauthorize("username", "password")
-	_ = testServer.WaitRequest()
-	if err == nil {
-		t.Fatalf("Request error not caught: %v", err)
+	if !testError(testResponse{404, authheader, notfoundErr}) {
+		return
 	}
-
 	// Test an API error
-	testServer.Response(500, authheader, vcdError)
-	_, err = client.vaauthorize("username", "password")
-	_ = testServer.WaitRequest()
-	if err == nil {
-		t.Fatalf("Request error not caught: %v", err)
+	if !testError(testResponse{500, authheader, vcdError}) {
+		return
 	}
-
 	// Test an API response that doesn't contain the param we're looking for.
-	testServer.Response(200, authheader, vaauthorizationErr)
-	_, err = client.vaauthorize("username", "password")
-	_ = testServer.WaitRequest()
-	if err == nil {
-		t.Fatalf("Request error not caught: %v", err)
+	if !testError(testResponse{200, authheader, vaauthorizationErr}) {
+		return
 	}
-
 	// Test an un-parsable response.
-	testServer.Response(200, authheader, notfoundErr)
-	_, err = client.vaauthorize("username", "password")
-	_ = testServer.WaitRequest()
-	if err == nil {
-		t.Fatalf("Request error not caught: %v", err)
+	if !testError(testResponse{200, authheader, notfoundErr}) {
+		return
 	}
 
 }
 
 func TestClient_vaacquireservice(t *testing.T) {
-	testServer.Start()
-	var err error
-
+	cc := new(callCounter)
+	serv := httptest.NewServer(testHandler(map[string]testResponse{
+		"/api/vchs/services": {200, nil, vaservices},
+	}, cc))
 	// Set up a working client
-	os.Setenv("VCLOUDAIR_ENDPOINT", "http://localhost:4444/api")
+	os.Setenv("VCLOUDAIR_ENDPOINT", serv.URL+"/api")
+
 	client, err := NewClient()
-	if err != nil {
-		t.Fatalf("err: %v", err)
+	if !assert.NoError(t, err) {
+		return
 	}
 	client.VAToken = "012345678901234567890123456789"
 
 	// Test a correct conversation
-	testServer.Response(200, nil, vaservices)
+	aus, _ := url.ParseRequestURI(serv.URL + "/api/vchs/services")
 	vacomputehref, err := client.vaacquireservice(*aus, "CI123456-789")
-	_ = testServer.WaitRequest()
-	if err != nil {
-		t.Fatalf("err: %v", err)
+	if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+		assert.Equal(t, serv.URL+"/api/vchs/compute/00000000-0000-0000-0000-000000000000", vacomputehref.String())
+		assert.Equal(t, "US - Anywhere", client.Region)
 	}
 
-	if vacomputehref.String() != "http://localhost:4444/api/vchs/compute/00000000-0000-0000-0000-000000000000" {
-		t.Fatalf("VAComputeHREF not set on client: %s", vacomputehref)
-	}
-
-	if client.Region != "US - Anywhere" {
-		t.Fatalf("Region not set on client: %s", client.Region)
-	}
+	serv.Close()
 
 	// Test client errors
+	testError := func(param string, resp testResponse) bool {
+		serv = httptest.NewServer(testHandler(map[string]testResponse{
+			"/api/vchs/services": resp,
+		}, cc))
+		os.Setenv("VCLOUDAIR_ENDPOINT", serv.URL+"/api")
+		client, err := NewClient()
+		if !assert.NoError(t, err) {
+			return false
+		}
+		client.VAToken = "012345678901234567890123456789"
+		aus, _ := url.ParseRequestURI(serv.URL + "/api/vchs/services")
+		_, err = client.vaacquireservice(*aus, param)
+		return assert.Error(t, err)
+	}
 
 	// Test a 404
-	testServer.Response(404, nil, notfoundErr)
-	_, err = client.vaacquireservice(*aus, "CI123456-789")
-	_ = testServer.WaitRequest()
-	if err == nil {
-		t.Fatalf("Request error not caught: %v", err)
+	if !testError("CI123456-789", testResponse{404, nil, notfoundErr}) {
+		return
 	}
 
 	// Test an API error
-	testServer.Response(500, nil, vcdError)
-	_, err = client.vaacquireservice(*aus, "CI123456-789")
-	_ = testServer.WaitRequest()
-	if err == nil {
-		t.Fatalf("Request error not caught: %v", err)
+	if !testError("CI123456-789", testResponse{500, nil, vcdError}) {
+		return
 	}
 
 	// Test an unknown Compute ID
-	testServer.Response(200, nil, vaservices)
-	_, err = client.vaacquireservice(*aus, "NOTVALID-789")
-	_ = testServer.WaitRequest()
-	if err == nil {
-		t.Fatalf("Request error not caught: %v", err)
+	if !testError("NOTVALID-789", testResponse{200, nil, vaservices}) {
+		return
 	}
 
 	// Test an un-parsable response
-	testServer.Response(200, nil, notfoundErr)
-	_, err = client.vaacquireservice(*aus, "CI123456-789")
-	_ = testServer.WaitRequest()
-	if err == nil {
-		t.Fatalf("Request error not caught: %v", err)
+	if !testError("CI123456-789", testResponse{200, nil, notfoundErr}) {
+		return
 	}
 
 }
 
 func TestClient_vaacquirecompute(t *testing.T) {
-	testServer.Start()
-	var err error
+	cc := new(callCounter)
+	serv := httptest.NewServer(testHandler(map[string]testResponse{
+		"/api/vchs/compute/00000000-0000-0000-0000-000000000000": {200, nil, vacompute},
+	}, cc))
+	// Set up a working client
+	os.Setenv("VCLOUDAIR_ENDPOINT", serv.URL+"/api")
 
-	os.Setenv("VCLOUDAIR_ENDPOINT", "http://localhost:4444/api")
 	client, err := NewClient()
-	if err != nil {
-		t.Fatalf("err: %v", err)
+	if !assert.NoError(t, err) {
+		return
 	}
 	client.VAToken = "012345678901234567890123456789"
 	client.Region = "US - Anywhere"
 
-	testServer.Response(200, nil, vacompute)
+	auc, _ := url.ParseRequestURI(serv.URL + "/api/vchs/compute/00000000-0000-0000-0000-000000000000")
 	vavdchref, err := client.vaacquirecompute(*auc, "VDC12345-6789")
-	_ = testServer.WaitRequest()
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-
-	if vavdchref.String() != "http://localhost:4444/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession" {
-		t.Fatalf("VAVDCHREF not set on client: %s", vavdchref)
+	if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+		assert.Equal(t, serv.URL+"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession", vavdchref.String())
 	}
 
 	// Test client errors
+	testError := func(param string, resp testResponse) bool {
+		serv = httptest.NewServer(testHandler(map[string]testResponse{
+			"/api/vchs/compute/00000000-0000-0000-0000-000000000000": resp,
+		}, cc))
+		os.Setenv("VCLOUDAIR_ENDPOINT", serv.URL+"/api")
+		client, err := NewClient()
+		if !assert.NoError(t, err) {
+			return false
+		}
+		client.VAToken = "012345678901234567890123456789"
+		client.Region = "US - Anywhere"
+		auc, _ := url.ParseRequestURI(serv.URL + "/api/vchs/compute/00000000-0000-0000-0000-000000000000")
+		_, err = client.vaacquirecompute(*auc, param)
+		return assert.Error(t, err)
+	}
 
 	// Test a 404
-	testServer.Response(404, nil, notfoundErr)
-	_, err = client.vaacquirecompute(*auc, "VDC12345-6789")
-	_ = testServer.WaitRequest()
-	if err == nil {
-		t.Fatalf("Request error not caught: %v", err)
+	if !testError("VDC12345-6789", testResponse{404, nil, notfoundErr}) {
+		return
 	}
+
 	// Test an API error
-	testServer.Response(500, nil, vcdError)
-	_, err = client.vaacquirecompute(*auc, "VDC12345-6789")
-	_ = testServer.WaitRequest()
-	if err == nil {
-		t.Fatalf("Request error not caught: %v", err)
+	if !testError("VDC12345-6789", testResponse{500, nil, vcdError}) {
+		return
 	}
 
 	// Test an unknown VDC ID
-	testServer.Response(200, nil, vacompute)
-	_, err = client.vaacquirecompute(*auc, "INVALID-6789")
-	_ = testServer.WaitRequest()
-	if err == nil {
-		t.Fatalf("Request error not caught: %v", err)
+	if !testError("INVALID-6789", testResponse{200, nil, vacompute}) {
+		return
 	}
 
 	// Test an un-parsable response
-	testServer.Response(200, nil, notfoundErr)
-	_, err = client.vaacquirecompute(*auc, "VDC12345-6789")
-	_ = testServer.WaitRequest()
-	if err == nil {
-		t.Fatalf("Request error not caught: %v", err)
+	if !testError("VDC12345-6789", testResponse{200, nil, notfoundErr}) {
+		return
 	}
 
 }
 
 func TestClient_vagetbackendauth(t *testing.T) {
-	testServer.Start()
-	var err error
+	cc := new(callCounter)
+	serv := httptest.NewServer(testHandler(map[string]testResponse{
+		"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession": {201, nil, vabackend},
+	}, cc))
+	// Set up a working client
+	os.Setenv("VCLOUDAIR_ENDPOINT", serv.URL+"/api")
 
-	os.Setenv("VCLOUDAIR_ENDPOINT", "http://localhost:4444/api")
 	client, err := NewClient()
-	if err != nil {
-		t.Fatalf("err: %v", err)
+	if !assert.NoError(t, err) {
+		return
 	}
 	client.VAToken = "012345678901234567890123456789"
 	client.Region = "US - Anywhere"
 
-	testServer.Response(201, nil, vabackend)
+	aucs, _ := url.ParseRequestURI(serv.URL + "/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession")
 	err = client.vagetbackendauth(*aucs, "CI123456-789")
-	_ = testServer.WaitRequest()
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-
-	if client.VCDToken != "01234567890123456789012345678901" {
-		t.Fatalf("VCDToken not set on client: %s", client.VCDToken)
-	}
-	if client.VCDAuthHeader != "x-vcloud-authorization" {
-		t.Fatalf("VCDAuthHeader not set on client: %s", client.VCDAuthHeader)
-	}
-	if client.VCDVDCHREF.String() != "http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000000" {
-		t.Fatalf("VDC not set on client: %s", client.VCDVDCHREF)
+	if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+		assert.Equal(t, "01234567890123456789012345678901", client.VCDToken)
+		assert.Equal(t, "x-vcloud-authorization", client.VCDAuthHeader)
+		assert.Equal(t, serv.URL+"/api/vdc/00000000-0000-0000-0000-000000000000", client.VCDVDCHREF.String())
 	}
 
 	// Test client errors
+	testError := func(param string, resp testResponse) bool {
+		serv = httptest.NewServer(testHandler(map[string]testResponse{
+			"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession": resp,
+		}, cc))
+		os.Setenv("VCLOUDAIR_ENDPOINT", serv.URL+"/api")
+		client, err := NewClient()
+		if !assert.NoError(t, err) {
+			return false
+		}
+		client.VAToken = "012345678901234567890123456789"
+		client.Region = "US - Anywhere"
+		aucs, _ := url.ParseRequestURI(serv.URL + "/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession")
+		err = client.vagetbackendauth(*aucs, param)
+		return assert.Error(t, err)
+	}
 
 	// Test a 404
-	testServer.Response(404, nil, notfoundErr)
-	err = client.vagetbackendauth(*aucs, "VDC12345-6789")
-	_ = testServer.WaitRequest()
-	if err == nil {
-		t.Fatalf("Request error not caught: %v", err)
+	if !testError("VDC12345-6789", testResponse{404, nil, notfoundErr}) {
+		return
 	}
+
 	// Test an API error
-	testServer.Response(500, nil, vcdError)
-	err = client.vagetbackendauth(*aucs, "VDC12345-6789")
-	_ = testServer.WaitRequest()
-	if err == nil {
-		t.Fatalf("Request error not caught: %v", err)
+	if !testError("VDC12345-6789", testResponse{500, nil, vcdError}) {
+		return
 	}
+
 	// Test an unknown backend VDC IC
-	testServer.Response(201, nil, vabackend)
-	err = client.vagetbackendauth(*aucs, "INVALID-6789")
-	_ = testServer.WaitRequest()
-	if err == nil {
-		t.Fatalf("Request error not caught: %v", err)
+	if !testError("INVALID-6789", testResponse{200, nil, vabackend}) {
+		return
 	}
+
 	// Test an un-parsable response
-	testServer.Response(201, nil, notfoundErr)
-	err = client.vagetbackendauth(*aucs, "VDC12345-6789")
-	_ = testServer.WaitRequest()
-	if err == nil {
-		t.Fatalf("Request error not caught: %v", err)
+	if !testError("VDC12345-6789", testResponse{201, nil, notfoundErr}) {
+		return
 	}
 	// Test a botched backend VDC IC
-	testServer.Response(201, nil, vabackendErr)
-	err = client.vagetbackendauth(*aucs, "VDC12345-6789")
-	_ = testServer.WaitRequest()
-	if err == nil {
-		t.Fatalf("Request error not caught: %v", err)
+	if !testError("VDC12345-6789", testResponse{201, nil, vabackendErr}) {
+		return
 	}
 
 }
 
-// Env variable tests
+//// Env variable tests
 
 func TestClient_vaauthorize_env(t *testing.T) {
-
+	cc := new(callCounter)
 	os.Setenv("VCLOUDAIR_USERNAME", "username")
 	os.Setenv("VCLOUDAIR_PASSWORD", "password")
 
-	testServer.Start()
-	var err error
-	os.Setenv("VCLOUDAIR_ENDPOINT", "http://localhost:4444/api")
+	serv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		cc.Inc()
+		rw.Header().Add("x-vchs-authorization", "012345678901234567890123456789")
+		rw.WriteHeader(http.StatusCreated)
+		rw.Write([]byte(strings.Replace(vaauthorization, "localhost:4444", r.Host, -1)))
+	}))
+
+	os.Setenv("VCLOUDAIR_ENDPOINT", serv.URL+"/api")
+
 	client, err := NewClient()
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-
-	testServer.Response(201, authheader, vaauthorization)
-	_, err = client.vaauthorize("", "")
-	_ = testServer.WaitRequest()
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-
-	if client.VAToken != "012345678901234567890123456789" {
-		t.Fatalf("VAtoken not set on client: %s", client.VAToken)
+	if assert.NoError(t, err) {
+		_, err = client.vaauthorize("", "")
+		if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+			assert.Equal(t, "012345678901234567890123456789", client.VAToken)
+		}
 	}
 
 }
 
 func TestClient_vaacquireservice_env(t *testing.T) {
-
+	cc := new(callCounter)
 	os.Setenv("VCLOUDAIR_COMPUTEID", "CI123456-789")
 
-	testServer.Start()
-	var err error
-	os.Setenv("VCLOUDAIR_ENDPOINT", "http://localhost:4444/api")
+	serv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		cc.Inc()
+		rw.WriteHeader(http.StatusOK)
+		rw.Write([]byte(strings.Replace(vaservices, "localhost:4444", r.Host, -1)))
+	}))
+
+	os.Setenv("VCLOUDAIR_ENDPOINT", serv.URL+"/api")
 	client, err := NewClient()
-	if err != nil {
-		t.Fatalf("err: %v", err)
+	if !assert.NoError(t, err) {
+		return
 	}
 	client.VAToken = "012345678901234567890123456789"
 
-	testServer.Response(200, nil, vaservices)
+	aus, _ := url.ParseRequestURI(serv.URL + "/api/vchs/services")
 	vacomputehref, err := client.vaacquireservice(*aus, "")
-	_ = testServer.WaitRequest()
-	if err != nil {
-		t.Fatalf("err: %v", err)
+	if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+		assert.Equal(t, serv.URL+"/api/vchs/compute/00000000-0000-0000-0000-000000000000", vacomputehref.String())
+		assert.Equal(t, "US - Anywhere", client.Region)
 	}
-
-	if vacomputehref.String() != "http://localhost:4444/api/vchs/compute/00000000-0000-0000-0000-000000000000" {
-		t.Fatalf("VAComputeHREF not set on client: %s", vacomputehref)
-	}
-
-	if client.Region != "US - Anywhere" {
-		t.Fatalf("Region not set on client: %s", client.Region)
-	}
-
 }
 
 func TestClient_vaacquirecompute_env(t *testing.T) {
-
+	cc := new(callCounter)
 	os.Setenv("VCLOUDAIR_VDCID", "VDC12345-6789")
 
-	testServer.Start()
-	var err error
-	os.Setenv("VCLOUDAIR_ENDPOINT", "http://localhost:4444/api")
+	serv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		cc.Inc()
+		rw.WriteHeader(http.StatusOK)
+		rw.Write([]byte(strings.Replace(vacompute, "localhost:4444", r.Host, -1)))
+	}))
+
+	os.Setenv("VCLOUDAIR_ENDPOINT", serv.URL+"/api")
 	client, err := NewClient()
-	if err != nil {
-		t.Fatalf("err: %v", err)
+	if !assert.NoError(t, err) {
+		return
 	}
 	client.VAToken = "012345678901234567890123456789"
 	client.Region = "US - Anywhere"
 
-	testServer.Response(200, nil, vacompute)
+	auc, _ := url.ParseRequestURI(serv.URL + "/api/vchs/compute/00000000-0000-0000-0000-000000000000")
 	vavdchref, err := client.vaacquirecompute(*auc, "")
-	_ = testServer.WaitRequest()
-	if err != nil {
-		t.Fatalf("err: %v", err)
+	if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+		assert.Equal(t, serv.URL+"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession", vavdchref.String())
 	}
-
-	if vavdchref.String() != "http://localhost:4444/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession" {
-		t.Fatalf("VAVDCHREF not set on client: %s", vavdchref)
-	}
-
 }
 
 func TestClient_vagetbackendauth_env(t *testing.T) {
+	cc := new(callCounter)
+	os.Setenv("VCLOUDAIR_COMPUTEID", "CI123456-789")
 
-	os.Setenv("VCLOUDAIR_VDCID", "VDC12345-6789")
+	serv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		cc.Inc()
+		rw.WriteHeader(http.StatusCreated)
+		rw.Write([]byte(strings.Replace(vabackend, "localhost:4444", r.Host, -1)))
+	}))
 
-	testServer.Start()
-	var err error
-	os.Setenv("VCLOUDAIR_ENDPOINT", "http://localhost:4444/api")
+	os.Setenv("VCLOUDAIR_ENDPOINT", serv.URL+"/api")
 	client, err := NewClient()
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -418,23 +450,13 @@ func TestClient_vagetbackendauth_env(t *testing.T) {
 	client.VAToken = "012345678901234567890123456789"
 	client.Region = "US - Anywhere"
 
-	testServer.Response(201, nil, vabackend)
+	aucs, _ := url.ParseRequestURI(serv.URL + "/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession")
 	err = client.vagetbackendauth(*aucs, "")
-	_ = testServer.WaitRequest()
-	if err != nil {
-		t.Fatalf("err: %v", err)
+	if assert.NoError(t, err) && assert.Equal(t, 1, cc.Pop()) {
+		assert.Equal(t, "01234567890123456789012345678901", client.VCDToken)
+		assert.Equal(t, "x-vcloud-authorization", client.VCDAuthHeader)
+		assert.Equal(t, serv.URL+"/api/vdc/00000000-0000-0000-0000-000000000000", client.VCDVDCHREF.String())
 	}
-
-	if client.VCDToken != "01234567890123456789012345678901" {
-		t.Fatalf("VCDToken not set on client: %s", client.VCDToken)
-	}
-	if client.VCDAuthHeader != "x-vcloud-authorization" {
-		t.Fatalf("VCDAuthHeader not set on client: %s", client.VCDAuthHeader)
-	}
-	if client.VCDVDCHREF.String() != "http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000000" {
-		t.Fatalf("VDC not set on client: %s", client.VCDVDCHREF)
-	}
-
 }
 
 func TestClient_NewClient(t *testing.T) {
@@ -453,232 +475,174 @@ func TestClient_NewClient(t *testing.T) {
 }
 
 func TestClient_Disconnect(t *testing.T) {
-
-	testServer.Start()
-	var err error
-
-	// Test an authenticated client
-	c := makeClient(t)
-	testServer.Response(201, nil, "")
-	err = c.Disconnect()
-	if err != nil {
-		t.Fatalf("err: %v", err)
+	cc := new(callCounter)
+	ctx, ok := makeClient(t, testHandler(map[string]testResponse{"/api/vchs/session": {201, nil, ""}}, cc))
+	if assert.True(t, ok) {
+		err := ctx.Client.Disconnect()
+		assert.NoError(t, err)
+		assert.Equal(t, 1, cc.Pop())
 	}
-
-	// Test an empty client
-	client, err := NewClient()
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	err = client.Disconnect()
-	if err == nil {
-		t.Fatalf("err: %v", err)
-	}
-
 }
 
 func TestClient_Authenticate(t *testing.T) {
 
-	testServer.Start()
-	var err error
-	os.Setenv("VCLOUDAIR_ENDPOINT", "http://localhost:4444/api")
+	cc := new(callCounter)
+	responses := map[string]testResponse{
+		"/api/vchs/sessions":                                                                                            {401, nil, vcdError},
+		"/api/vchs/services":                                                                                            {200, nil, vaservices},
+		"/api/vchs/compute/00000000-0000-0000-0000-000000000000":                                                        {200, nil, vacompute},
+		"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession": {201, nil, vabackend},
+		"/api/vdc/00000000-0000-0000-0000-000000000000":                                                                 {200, nil, vdcExample},
+	}
+	serv := httptest.NewServer(testHandler(responses, cc))
+	os.Setenv("VCLOUDAIR_ENDPOINT", serv.URL+"/api")
+
 	client, err := NewClient()
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
 	// Botched auth
-	testServer.ResponseMap(5, testutil.ResponseMap{
-		"/api/vchs/sessions":                                                                                            testutil.Response{401, nil, vcdError},
-		"/api/vchs/services":                                                                                            testutil.Response{200, nil, vaservices},
-		"/api/vchs/compute/00000000-0000-0000-0000-000000000000":                                                        testutil.Response{200, nil, vacompute},
-		"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession": testutil.Response{201, nil, vabackend},
-		"/api/vdc/00000000-0000-0000-0000-000000000000":                                                                 testutil.Response{200, nil, vdcExample},
-	})
-
 	_, err = client.Authenticate("username", "password", "CI123456-789", "VDC12345-6789")
-	_ = testServer.WaitRequests(1)
-	testServer.Flush()
-	if err == nil {
-		t.Fatalf("Uncatched error: %v", err)
-	}
+	assert.Error(t, err)
+	assert.Equal(t, 1, cc.Pop())
 
 	// Botched services
-	testServer.ResponseMap(5, testutil.ResponseMap{
-		"/api/vchs/sessions":                                                                                            testutil.Response{201, authheader, vaauthorization},
-		"/api/vchs/services":                                                                                            testutil.Response{500, nil, vcdError},
-		"/api/vchs/compute/00000000-0000-0000-0000-000000000000":                                                        testutil.Response{200, nil, vacompute},
-		"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession": testutil.Response{201, nil, vabackend},
-		"/api/vdc/00000000-0000-0000-0000-000000000000":                                                                 testutil.Response{200, nil, vdcExample},
-	})
-
-	_, err = client.Authenticate("username", "password", "CI123456-789", "VDC12345-6789")
-	_ = testServer.WaitRequests(2)
-	testServer.Flush()
-	if err == nil {
-		t.Fatalf("Uncatched error: %v", err)
+	responses = map[string]testResponse{
+		"/api/vchs/sessions":                                                                                            {201, authheader, vaauthorization},
+		"/api/vchs/services":                                                                                            {500, nil, vcdError},
+		"/api/vchs/compute/00000000-0000-0000-0000-000000000000":                                                        {200, nil, vacompute},
+		"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession": {201, nil, vabackend},
+		"/api/vdc/00000000-0000-0000-0000-000000000000":                                                                 {200, nil, vdcExample},
 	}
+	serv = httptest.NewServer(testHandler(responses, cc))
+	os.Setenv("VCLOUDAIR_ENDPOINT", serv.URL+"/api")
+
+	client, err = NewClient()
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	_, err = client.Authenticate("username", "password", "CI123456-789", "VDC12345-6789")
+	assert.Error(t, err)
+	assert.Equal(t, 2, cc.Pop())
 
 	// Botched compute
-	testServer.ResponseMap(5, testutil.ResponseMap{
-		"/api/vchs/sessions":                                                                                            testutil.Response{201, authheader, vaauthorization},
-		"/api/vchs/services":                                                                                            testutil.Response{200, nil, vaservices},
-		"/api/vchs/compute/00000000-0000-0000-0000-000000000000":                                                        testutil.Response{500, nil, vcdError},
-		"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession": testutil.Response{201, nil, vabackend},
-		"/api/vdc/00000000-0000-0000-0000-000000000000":                                                                 testutil.Response{200, nil, vdcExample},
-	})
-
-	_, err = client.Authenticate("username", "password", "CI123456-789", "VDC12345-6789")
-	_ = testServer.WaitRequests(3)
-	testServer.Flush()
-	if err == nil {
-		t.Fatalf("Uncatched error: %v", err)
+	responses = map[string]testResponse{
+		"/api/vchs/sessions":                                                                                            {201, authheader, vaauthorization},
+		"/api/vchs/services":                                                                                            {200, nil, vaservices},
+		"/api/vchs/compute/00000000-0000-0000-0000-000000000000":                                                        {500, nil, vcdError},
+		"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession": {201, nil, vabackend},
+		"/api/vdc/00000000-0000-0000-0000-000000000000":                                                                 {200, nil, vdcExample},
 	}
+
+	serv = httptest.NewServer(testHandler(responses, cc))
+	os.Setenv("VCLOUDAIR_ENDPOINT", serv.URL+"/api")
+
+	client, err = NewClient()
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	_, err = client.Authenticate("username", "password", "CI123456-789", "VDC12345-6789")
+	assert.Error(t, err)
+	assert.Equal(t, 3, cc.Pop())
 
 	// Botched backend
-	testServer.ResponseMap(5, testutil.ResponseMap{
-		"/api/vchs/sessions":                                                                                            testutil.Response{201, authheader, vaauthorization},
-		"/api/vchs/services":                                                                                            testutil.Response{200, nil, vaservices},
-		"/api/vchs/compute/00000000-0000-0000-0000-000000000000":                                                        testutil.Response{200, nil, vacompute},
-		"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession": testutil.Response{500, nil, vcdError},
-		"/api/vdc/00000000-0000-0000-0000-000000000000":                                                                 testutil.Response{200, nil, vdcExample},
-	})
+	responses = map[string]testResponse{
+		"/api/vchs/sessions":                                                                                            {201, authheader, vaauthorization},
+		"/api/vchs/services":                                                                                            {200, nil, vaservices},
+		"/api/vchs/compute/00000000-0000-0000-0000-000000000000":                                                        {200, nil, vacompute},
+		"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession": {500, nil, vcdError},
+		"/api/vdc/00000000-0000-0000-0000-000000000000":                                                                 {200, nil, vdcExample},
+	}
+	serv = httptest.NewServer(testHandler(responses, cc))
+	os.Setenv("VCLOUDAIR_ENDPOINT", serv.URL+"/api")
+
+	client, err = NewClient()
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
 
 	_, err = client.Authenticate("username", "password", "CI123456-789", "VDC12345-6789")
-	_ = testServer.WaitRequests(4)
-	testServer.Flush()
-	if err == nil {
-		t.Fatalf("Uncatched error: %v", err)
-	}
+	assert.Error(t, err)
+	assert.Equal(t, 13, cc.Pop())
 
 	// Botched vdc
-	testServer.ResponseMap(5, testutil.ResponseMap{
-		"/api/vchs/sessions":                                                                                            testutil.Response{201, authheader, vaauthorization},
-		"/api/vchs/services":                                                                                            testutil.Response{200, nil, vaservices},
-		"/api/vchs/compute/00000000-0000-0000-0000-000000000000":                                                        testutil.Response{200, nil, vacompute},
-		"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession": testutil.Response{201, nil, vabackend},
-		"/api/vdc/00000000-0000-0000-0000-000000000000":                                                                 testutil.Response{500, nil, vcdError},
-	})
+	responses = map[string]testResponse{
+		"/api/vchs/sessions":                                                                                            {201, authheader, vaauthorization},
+		"/api/vchs/services":                                                                                            {200, nil, vaservices},
+		"/api/vchs/compute/00000000-0000-0000-0000-000000000000":                                                        {200, nil, vacompute},
+		"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession": {201, nil, vabackend},
+		"/api/vdc/00000000-0000-0000-0000-000000000000":                                                                 {500, nil, vcdError},
+	}
+	serv = httptest.NewServer(testHandler(responses, cc))
+	os.Setenv("VCLOUDAIR_ENDPOINT", serv.URL+"/api")
+
+	client, err = NewClient()
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
 
 	_, err = client.Authenticate("username", "password", "CI123456-789", "VDC12345-6789")
-	_ = testServer.WaitRequests(5)
-	testServer.Flush()
-	if err == nil {
-		t.Fatalf("Uncatched error: %v", err)
-	}
+	assert.Error(t, err)
+	assert.Equal(t, 5, cc.Pop())
 
 }
 
-func makeClient(t *testing.T) Client {
-
-	testServer.Start()
-	var err error
-	os.Setenv("VCLOUDAIR_ENDPOINT", "http://localhost:4444/api")
-	client, err := NewClient()
-	if err != nil {
-		t.Fatalf("err: %v", err)
+func makeClient(t testing.TB, handler http.Handler) (testContext, bool) {
+	ctx, err := setupTestContext(authHandler(handler))
+	if !assert.NoError(t, err) {
+		return testContext{}, false
+	}
+	if !assert.Equal(t, "012345678901234567890123456789", ctx.Client.VAToken) {
+		return testContext{}, false
+	}
+	if !assert.Equal(t, "US - Anywhere", ctx.Client.Region) {
+		return testContext{}, false
+	}
+	if !assert.Equal(t, "01234567890123456789012345678901", ctx.Client.VCDToken) {
+		return testContext{}, false
+	}
+	if !assert.Equal(t, "x-vcloud-authorization", ctx.Client.VCDAuthHeader) {
+		return testContext{}, false
+	}
+	if !assert.Equal(t, ctx.Server.URL+"/api/vdc/00000000-0000-0000-0000-000000000000", ctx.Client.VCDVDCHREF.String()) {
+		return testContext{}, false
 	}
 
-	testServer.ResponseMap(5, testutil.ResponseMap{
-		"/api/vchs/sessions":                                                                                            testutil.Response{201, authheader, vaauthorization},
-		"/api/vchs/services":                                                                                            testutil.Response{200, nil, vaservices},
-		"/api/vchs/compute/00000000-0000-0000-0000-000000000000":                                                        testutil.Response{200, nil, vacompute},
-		"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession": testutil.Response{201, nil, vabackend},
-		"/api/vdc/00000000-0000-0000-0000-000000000000":                                                                 testutil.Response{200, nil, vdcExample},
-	})
-
-	_, err = client.Authenticate("username", "password", "CI123456-789", "VDC12345-6789")
-
-	_ = testServer.WaitRequests(5)
-	testServer.Flush()
-
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-
-	if client.VAToken != "012345678901234567890123456789" {
-		t.Fatalf("VAtoken not set on client: %s", client.VAToken)
-	}
-
-	if client.Region != "US - Anywhere" {
-		t.Fatalf("Region not set on client: %s", client.Region)
-	}
-
-	if client.VCDToken != "01234567890123456789012345678901" {
-		t.Fatalf("VCDToken not set on client: %s", client.VCDToken)
-	}
-	if client.VCDAuthHeader != "x-vcloud-authorization" {
-		t.Fatalf("VCDAuthHeader not set on client: %s", client.VCDAuthHeader)
-	}
-	if client.VCDVDCHREF.String() != "http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000000" {
-		t.Fatalf("VDC not set on client: %s", client.VCDVDCHREF)
-	}
-
-	return *client
+	return ctx, true
 }
 
 func TestClient_parseErr(t *testing.T) {
-	testServer.Start()
-	var err error
-	os.Setenv("VCLOUDAIR_ENDPOINT", "http://localhost:4444/api")
-	client, err := NewClient()
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-
 	// I'M A TEAPOT!
-	testServer.ResponseMap(5, testutil.ResponseMap{
-		"/api/vchs/sessions":                                                                                            testutil.Response{201, authheader, vaauthorization},
-		"/api/vchs/services":                                                                                            testutil.Response{200, nil, vaservices},
-		"/api/vchs/compute/00000000-0000-0000-0000-000000000000":                                                        testutil.Response{200, nil, vacompute},
-		"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession": testutil.Response{418, nil, notfoundErr},
-		"/api/vdc/00000000-0000-0000-0000-000000000000":                                                                 testutil.Response{200, nil, vdcExample},
-	})
-
-	_, err = client.Authenticate("username", "password", "CI123456-789", "VDC12345-6789")
-
-	_ = testServer.WaitRequests(4)
-	testServer.Flush()
-
-	if err == nil {
-		t.Fatalf("Uncatched error: %v", err)
+	responses := map[string]testResponse{
+		"/api/vchs/sessions":                                                                                            {201, authheader, vaauthorization},
+		"/api/vchs/services":                                                                                            {200, nil, vaservices},
+		"/api/vchs/compute/00000000-0000-0000-0000-000000000000":                                                        {200, nil, vacompute},
+		"/api/vchs/compute/00000000-0000-0000-0000-000000000000/vdc/00000000-0000-0000-0000-000000000000/vcloudsession": {418, nil, notfoundErr},
 	}
-
+	cc := new(callCounter)
+	_, err := setupTestContext(testHandler(responses, cc))
+	assert.Error(t, err)
+	assert.Equal(t, 13, cc.Pop())
 }
 
 func TestClient_NewRequest(t *testing.T) {
-	c := makeClient(t)
+	c, _ := makeClient(t, http.NotFoundHandler())
 
 	params := map[string]string{
 		"foo": "bar",
 		"baz": "bar",
 	}
 
-	uri, _ := url.ParseRequestURI("http://localhost:4444/api/bar")
-
-	req := c.NewRequest(params, "POST", *uri, nil)
-
+	uri, _ := url.ParseRequestURI(c.Server.URL + "/api/bar")
+	req := c.Client.NewRequest(params, "POST", *uri, nil)
 	encoded := req.URL.Query()
-	if encoded.Get("foo") != "bar" {
-		t.Fatalf("bad: %v", encoded)
-	}
 
-	if encoded.Get("baz") != "bar" {
-		t.Fatalf("bad: %v", encoded)
-	}
-
-	if req.URL.String() != "http://localhost:4444/api/bar?baz=bar&foo=bar" {
-		t.Fatalf("bad base url: %v", req.URL.String())
-	}
-
-	if req.Header.Get("x-vcloud-authorization") != "01234567890123456789012345678901" {
-		t.Fatalf("bad auth header: %v", req.Header)
-	}
-
-	if req.Method != "POST" {
-		t.Fatalf("bad method: %v", req.Method)
-	}
-
+	assert.Equal(t, "bar", encoded.Get("foo"))
+	assert.Equal(t, "bar", encoded.Get("baz"))
+	assert.Equal(t, c.Server.URL+"/api/bar?baz=bar&foo=bar", req.URL.String())
+	assert.Equal(t, "01234567890123456789012345678901", req.Header.Get("x-vcloud-authorization"))
+	assert.Equal(t, "POST", req.Method)
 }
 
 // status: 404
