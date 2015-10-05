@@ -107,7 +107,8 @@ func (v *Vdc) FindVDCNetwork(network string) (OrgVDCNetwork, error) {
 	return OrgVDCNetwork{}, fmt.Errorf("can't find VDC Network: %s", network)
 }
 
-// GetVDCOrg gets the org for this vdc
+
+// Doesn't work with vCloud API 5.5, only vCloud Air
 func (v *Vdc) GetVDCOrg() (Org, error) {
 
 	for _, av := range v.Vdc.Link {
