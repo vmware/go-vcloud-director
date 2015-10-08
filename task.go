@@ -2,23 +2,21 @@
  * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
-package govcloudair
+package govcd
 
 import (
 	"fmt"
 	"net/url"
 	"time"
 
-	types "github.com/vmware/govcloudair/types/v56"
+	types "github.com/opencredo/vmware-govcd/types/v56"
 )
 
-// Task a task client
 type Task struct {
 	Task *types.Task
 	c    *Client
 }
 
-// NewTask create a new task client
 func NewTask(c *Client) *Task {
 	return &Task{
 		Task: new(types.Task),
@@ -26,7 +24,6 @@ func NewTask(c *Client) *Task {
 	}
 }
 
-// Refresh this task
 func (t *Task) Refresh() error {
 
 	if t.Task == nil {
@@ -37,7 +34,7 @@ func (t *Task) Refresh() error {
 
 	req := t.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-	resp, err := checkResp(t.c.HTTP.Do(req))
+	resp, err := checkResp(t.c.Http.Do(req))
 	if err != nil {
 		return fmt.Errorf("error retrieving task: %s", err)
 	}
@@ -54,7 +51,6 @@ func (t *Task) Refresh() error {
 	return nil
 }
 
-// WaitTaskCompletion wait for this task to complete
 func (t *Task) WaitTaskCompletion() error {
 
 	if t.Task == nil {

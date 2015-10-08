@@ -1,10 +1,10 @@
-package govcloudair
+package govcd
 
 import (
 	"net/url"
 	"testing"
 
-	"github.com/vmware/govcloudair/testutil"
+	"github.com/opencredo/vmware-govcd/testutil"
 	. "gopkg.in/check.v1"
 )
 
@@ -34,7 +34,7 @@ func (s *K) SetUpSuite(c *C) {
 		"/api/versions": testutil.Response{200, map[string]string{}, vcdversions},
 	})
 
-	s.org, s.vdc, err = s.client.Authenticate("username", "password", "organization")
+	s.org, s.vdc, err = s.client.Authenticate("username", "password", "organization", "VDC")
 	if err != nil {
 		panic(err)
 	}
@@ -89,7 +89,7 @@ func TestVCDClient_Authenticate(t *testing.T) {
 		"/api/vdc/00000000-0000-0000-0000-000000000000": testutil.Response{201, vcdauthheader, vcdorg},
 	})
 
-	org, _, err := client.Authenticate("username", "password", "organization")
+	org, _, err := client.Authenticate("username", "password", "organization", "organization vDC")
 	testServer.Flush()
 	if err != nil {
 		t.Fatalf("Error authenticating: %v", err)

@@ -1,18 +1,21 @@
-package govcloudair
+package govcd
 
 import (
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
+	"sync"
 	"time"
 )
 
 type VCDClient struct {
 	OrgHREF     url.URL // vCloud Director OrgRef
+	Org         Org     // Org
 	OrgVdc      Vdc     // Org vDC
 	Client      Client  // Client for the underlying VCD instance
 	sessionHREF url.URL // HREF for the session API
+	Mutex       sync.Mutex
 }
 
 type supportedVersions struct {
@@ -126,7 +129,7 @@ func (c *VCDClient) vcdauthorize(user, pass, org string) error {
 	return nil
 }
 
-func (c *VCDClient) retrieveOrg() (Org, error) {
+func (c *VCDClient) RetrieveOrg(vcdname string) (Org, error) {
 
 	req := c.Client.NewRequest(map[string]string{}, "GET", c.OrgHREF, nil)
 	req.Header.Add("Accept", "vnd.vmware.vcloud.org+xml;version=5.5")
@@ -146,6 +149,9 @@ func (c *VCDClient) retrieveOrg() (Org, error) {
 	// Get the VDC ref from the Org
 	for _, s := range org.Org.Link {
 		if s.Type == "application/vnd.vmware.vcloud.vdc+xml" && s.Rel == "down" {
+			if vcdname != "" && s.Name != vcdname {
+				continue
+			}
 			u, err := url.Parse(s.HREF)
 			if err != nil {
 				return Org{}, err
@@ -173,7 +179,7 @@ func NewVCDClient(vcdEndpoint url.URL) *VCDClient {
 }
 
 // Authenticate is an helper function that performs a login in vCloud Director.
-func (c *VCDClient) Authenticate(username, password, org string) (Org, Vdc, error) {
+func (c *VCDClient) Authenticate(username, password, org, vdcname string) (Org, Vdc, error) {
 
 	// LoginUrl
 	err := c.vcdloginurl()
@@ -187,7 +193,7 @@ func (c *VCDClient) Authenticate(username, password, org string) (Org, Vdc, erro
 	}
 
 	// Get Org
-	o, err := c.retrieveOrg()
+	o, err := c.RetrieveOrg(vdcname)
 	if err != nil {
 		return Org{}, Vdc{}, fmt.Errorf("error acquiring Org: %s", err)
 	}

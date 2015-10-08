@@ -2,22 +2,20 @@
  * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
-package govcloudair
+package govcd
 
 import (
 	"fmt"
 	"net/url"
 
-	types "github.com/vmware/govcloudair/types/v56"
+	types "github.com/opencredo/vmware-govcd/types/v56"
 )
 
-// Catalog a client catalog of machines
 type Catalog struct {
 	Catalog *types.Catalog
 	c       *Client
 }
 
-// NewCatalog creates a new client catalog
 func NewCatalog(c *Client) *Catalog {
 	return &Catalog{
 		Catalog: new(types.Catalog),
@@ -25,7 +23,6 @@ func NewCatalog(c *Client) *Catalog {
 	}
 }
 
-// FindCatalogItem finds a catalog item
 func (c *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
 
 	for _, cis := range c.Catalog.CatalogItems {
@@ -39,7 +36,7 @@ func (c *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
 
 				req := c.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-				resp, err := checkResp(c.c.HTTP.Do(req))
+				resp, err := checkResp(c.c.Http.Do(req))
 				if err != nil {
 					return CatalogItem{}, fmt.Errorf("error retreiving catalog: %s", err)
 				}

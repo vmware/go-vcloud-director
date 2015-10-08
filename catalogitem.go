@@ -2,22 +2,20 @@
  * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
-package govcloudair
+package govcd
 
 import (
 	"fmt"
 	"net/url"
 
-	types "github.com/vmware/govcloudair/types/v56"
+	types "github.com/opencredo/vmware-govcd/types/v56"
 )
 
-// CatalogItem a client catalog item
 type CatalogItem struct {
 	CatalogItem *types.CatalogItem
 	c           *Client
 }
 
-// NewCatalogItem creates a new client catalog item
 func NewCatalogItem(c *Client) *CatalogItem {
 	return &CatalogItem{
 		CatalogItem: new(types.CatalogItem),
@@ -25,7 +23,6 @@ func NewCatalogItem(c *Client) *CatalogItem {
 	}
 }
 
-// GetVAppTemplate gets a vApp template
 func (ci *CatalogItem) GetVAppTemplate() (VAppTemplate, error) {
 	url, err := url.ParseRequestURI(ci.CatalogItem.Entity.HREF)
 
@@ -35,7 +32,7 @@ func (ci *CatalogItem) GetVAppTemplate() (VAppTemplate, error) {
 
 	req := ci.c.NewRequest(map[string]string{}, "GET", *url, nil)
 
-	resp, err := checkResp(ci.c.HTTP.Do(req))
+	resp, err := checkResp(ci.c.Http.Do(req))
 	if err != nil {
 		return VAppTemplate{}, fmt.Errorf("error retreiving vapptemplate: %s", err)
 	}

@@ -2,25 +2,27 @@
  * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
-package govcloudair
+package govcd
 
 import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
+	"log"
+	"net/http"
 	"net/url"
 	"os"
+	"regexp"
+	"time"
 
-	types "github.com/vmware/govcloudair/types/v56"
+	types "github.com/opencredo/vmware-govcd/types/v56"
 )
 
-// EdgeGateway an edgegateway client
 type EdgeGateway struct {
 	EdgeGateway *types.EdgeGateway
 	c           *Client
 }
 
-// NewEdgeGateway creates a new edge gateway client
 func NewEdgeGateway(c *Client) *EdgeGateway {
 	return &EdgeGateway{
 		EdgeGateway: new(types.EdgeGateway),
@@ -28,7 +30,315 @@ func NewEdgeGateway(c *Client) *EdgeGateway {
 	}
 }
 
-// Refresh refreshes the edge gateway
+func (e *EdgeGateway) AddDhcpPool(network *types.OrgVDCNetwork, dhcppool []interface{}) (Task, error) {
+	newedgeconfig := e.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration
+	log.Printf("[DEBUG] EDGE GATEWAY: %#v", newedgeconfig)
+	log.Printf("[DEBUG] EDGE GATEWAY SERVICE: %#v", newedgeconfig.GatewayDhcpService)
+	newdchpservice := &types.GatewayDhcpService{}
+	if newedgeconfig.GatewayDhcpService == nil {
+		newdchpservice.IsEnabled = true
+	} else {
+		newdchpservice.IsEnabled = newedgeconfig.GatewayDhcpService.IsEnabled
+
+		for _, v := range newedgeconfig.GatewayDhcpService.Pool {
+
+			// Kludgy IF to avoid deleting DNAT rules not created by us.
+			// If matches, let's skip it and continue the loop
+			if v.Network.HREF == network.HREF {
+				continue
+			}
+
+			newdchpservice.Pool = append(newdchpservice.Pool, v)
+		}
+	}
+
+	for _, v := range dhcppool {
+		data := v.(map[string]interface{})
+
+		dhcprule := &types.DhcpPoolService{
+			IsEnabled: true,
+			Network: &types.Reference{
+				HREF: network.HREF,
+				Name: network.Name,
+			},
+			DefaultLeaseTime: 3600,
+			MaxLeaseTime:     7200,
+			LowIPAddress:     data["start_address"].(string),
+			HighIPAddress:    data["end_address"].(string),
+		}
+		newdchpservice.Pool = append(newdchpservice.Pool, dhcprule)
+	}
+
+	newRules := &types.EdgeGatewayServiceConfiguration{
+		Xmlns:              "http://www.vmware.com/vcloud/v1.5",
+		GatewayDhcpService: newdchpservice,
+	}
+
+	output, err := xml.MarshalIndent(newRules, "  ", "    ")
+	if err != nil {
+		return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
+	}
+
+	var resp *http.Response
+	for {
+		b := bytes.NewBufferString(xml.Header + string(output))
+
+		s, _ := url.ParseRequestURI(e.EdgeGateway.HREF)
+		s.Path += "/action/configureServices"
+
+		req := e.c.NewRequest(map[string]string{}, "POST", *s, b)
+		log.Printf("[DEBUG] POSTING TO URL: %s", s.Path)
+		log.Printf("[DEBUG] XML TO SEND:\n%s", b)
+
+		req.Header.Add("Content-Type", "application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml")
+
+		resp, err = checkResp(e.c.Http.Do(req))
+		if err != nil {
+			if v, _ := regexp.MatchString("is busy completing an operation.$", err.Error()); v {
+				time.Sleep(3 * time.Second)
+				continue
+			}
+			return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
+		}
+		break
+	}
+
+	task := NewTask(e.c)
+
+	if err = decodeBody(resp, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
+	}
+
+	// The request was successful
+	return *task, nil
+
+}
+
+func (e *EdgeGateway) RemoveNATMapping(nattype, externalIP, internalIP, port string) (Task, error) {
+	// Find uplink interface
+	var uplink types.Reference
+	for _, gi := range e.EdgeGateway.Configuration.GatewayInterfaces.GatewayInterface {
+		if gi.InterfaceType != "uplink" {
+			continue
+		}
+		uplink = *gi.Network
+	}
+
+	newedgeconfig := e.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration
+
+	// Take care of the NAT service
+	newnatservice := &types.NatService{}
+
+	newnatservice.IsEnabled = newedgeconfig.NatService.IsEnabled
+	newnatservice.NatType = newedgeconfig.NatService.NatType
+	newnatservice.Policy = newedgeconfig.NatService.Policy
+	newnatservice.ExternalIP = newedgeconfig.NatService.ExternalIP
+
+	for _, v := range newedgeconfig.NatService.NatRule {
+
+		// Kludgy IF to avoid deleting DNAT rules not created by us.
+		// If matches, let's skip it and continue the loop
+		if v.RuleType == nattype &&
+			v.GatewayNatRule.OriginalIP == externalIP &&
+			v.GatewayNatRule.OriginalPort == port &&
+			v.GatewayNatRule.Interface.HREF == uplink.HREF {
+			log.Printf("[DEBUG] REMOVING %s Rule: %#v", v.RuleType, v.GatewayNatRule)
+			continue
+		}
+		log.Printf("[DEBUG] KEEPING %s Rule: %#v", v.RuleType, v.GatewayNatRule)
+		newnatservice.NatRule = append(newnatservice.NatRule, v)
+	}
+
+	newedgeconfig.NatService = newnatservice
+
+	newRules := &types.EdgeGatewayServiceConfiguration{
+		Xmlns:      "http://www.vmware.com/vcloud/v1.5",
+		NatService: newnatservice,
+	}
+
+	output, err := xml.MarshalIndent(newRules, "  ", "    ")
+	if err != nil {
+		return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
+	}
+
+	b := bytes.NewBufferString(xml.Header + string(output))
+
+	s, _ := url.ParseRequestURI(e.EdgeGateway.HREF)
+	s.Path += "/action/configureServices"
+
+	req := e.c.NewRequest(map[string]string{}, "POST", *s, b)
+	log.Printf("[DEBUG] POSTING TO URL: %s", s.Path)
+	log.Printf("[DEBUG] XML TO SEND:\n%s", b)
+
+	req.Header.Add("Content-Type", "application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml")
+
+	resp, err := checkResp(e.c.Http.Do(req))
+	if err != nil {
+		log.Printf("[DEBUG] Error is: %#v", err)
+		return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
+	}
+
+	task := NewTask(e.c)
+
+	if err = decodeBody(resp, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
+	}
+
+	// The request was successful
+	return *task, nil
+
+}
+
+func (e *EdgeGateway) AddNATMapping(nattype, externalIP, internalIP, port string) (Task, error) {
+	// Find uplink interface
+	var uplink types.Reference
+	for _, gi := range e.EdgeGateway.Configuration.GatewayInterfaces.GatewayInterface {
+		if gi.InterfaceType != "uplink" {
+			continue
+		}
+		uplink = *gi.Network
+	}
+
+	newedgeconfig := e.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration
+
+	// Take care of the NAT service
+	newnatservice := &types.NatService{}
+
+	if newedgeconfig.NatService == nil {
+		newnatservice.IsEnabled = true
+	} else {
+		newnatservice.IsEnabled = newedgeconfig.NatService.IsEnabled
+		newnatservice.NatType = newedgeconfig.NatService.NatType
+		newnatservice.Policy = newedgeconfig.NatService.Policy
+		newnatservice.ExternalIP = newedgeconfig.NatService.ExternalIP
+
+		for _, v := range newedgeconfig.NatService.NatRule {
+
+			// Kludgy IF to avoid deleting DNAT rules not created by us.
+			// If matches, let's skip it and continue the loop
+			if v.RuleType == nattype &&
+				v.GatewayNatRule.OriginalIP == externalIP &&
+				v.GatewayNatRule.OriginalPort == port &&
+				v.GatewayNatRule.Interface.HREF == uplink.HREF {
+				continue
+			}
+
+			newnatservice.NatRule = append(newnatservice.NatRule, v)
+		}
+	}
+
+	//add rule
+	natRule := &types.NatRule{
+		RuleType:  nattype,
+		IsEnabled: true,
+		GatewayNatRule: &types.GatewayNatRule{
+			Interface: &types.Reference{
+				HREF: uplink.HREF,
+			},
+			OriginalIP:     externalIP,
+			OriginalPort:   port,
+			TranslatedIP:   internalIP,
+			TranslatedPort: port,
+			Protocol:       "tcp",
+		},
+	}
+	newnatservice.NatRule = append(newnatservice.NatRule, natRule)
+
+	newedgeconfig.NatService = newnatservice
+
+	newRules := &types.EdgeGatewayServiceConfiguration{
+		Xmlns:      "http://www.vmware.com/vcloud/v1.5",
+		NatService: newnatservice,
+	}
+
+	output, err := xml.MarshalIndent(newRules, "  ", "    ")
+	if err != nil {
+		return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
+	}
+
+	b := bytes.NewBufferString(xml.Header + string(output))
+
+	s, _ := url.ParseRequestURI(e.EdgeGateway.HREF)
+	s.Path += "/action/configureServices"
+
+	req := e.c.NewRequest(map[string]string{}, "POST", *s, b)
+	log.Printf("[DEBUG] POSTING TO URL: %s", s.Path)
+	log.Printf("[DEBUG] XML TO SEND:\n%s", b)
+
+	req.Header.Add("Content-Type", "application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml")
+
+	resp, err := checkResp(e.c.Http.Do(req))
+	if err != nil {
+		log.Printf("[DEBUG] Error is: %#v", err)
+		return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
+	}
+
+	task := NewTask(e.c)
+
+	if err = decodeBody(resp, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
+	}
+
+	// The request was successful
+	return *task, nil
+
+}
+
+func (e *EdgeGateway) CreateFirewallRules(defaultAction string, rules []*types.FirewallRule) (Task, error) {
+	err := e.Refresh()
+	if err != nil {
+		return Task{}, fmt.Errorf("error: %v\n", err)
+	}
+
+	newRules := &types.EdgeGatewayServiceConfiguration{
+		Xmlns: "http://www.vmware.com/vcloud/v1.5",
+		FirewallService: &types.FirewallService{
+			IsEnabled:        true,
+			DefaultAction:    defaultAction,
+			LogDefaultAction: true,
+			FirewallRule:     rules,
+		},
+	}
+
+	output, err := xml.MarshalIndent(newRules, "  ", "    ")
+	if err != nil {
+		return Task{}, fmt.Errorf("error: %v\n", err)
+	}
+
+	var resp *http.Response
+	for {
+		b := bytes.NewBufferString(xml.Header + string(output))
+
+		s, _ := url.ParseRequestURI(e.EdgeGateway.HREF)
+		s.Path += "/action/configureServices"
+
+		req := e.c.NewRequest(map[string]string{}, "POST", *s, b)
+		log.Printf("[DEBUG] POSTING TO URL: %s", s.Path)
+		log.Printf("[DEBUG] XML TO SEND:\n%s", b)
+
+		req.Header.Add("Content-Type", "application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml")
+
+		resp, err = checkResp(e.c.Http.Do(req))
+		if err != nil {
+			if v, _ := regexp.MatchString("is busy completing an operation.$", err.Error()); v {
+				time.Sleep(3 * time.Second)
+				continue
+			}
+			return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
+		}
+		break
+	}
+
+	task := NewTask(e.c)
+
+	if err = decodeBody(resp, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
+	}
+
+	// The request was successful
+	return *task, nil
+}
+
 func (e *EdgeGateway) Refresh() error {
 
 	if e.EdgeGateway == nil {
@@ -39,7 +349,7 @@ func (e *EdgeGateway) Refresh() error {
 
 	req := e.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-	resp, err := checkResp(e.c.HTTP.Do(req))
+	resp, err := checkResp(e.c.Http.Do(req))
 	if err != nil {
 		return fmt.Errorf("error retreiving Edge Gateway: %s", err)
 	}
@@ -56,7 +366,6 @@ func (e *EdgeGateway) Refresh() error {
 	return nil
 }
 
-// Remove1to1Mapping removes a 1 to 1 mapping on the gateway
 func (e *EdgeGateway) Remove1to1Mapping(internal, external string) (Task, error) {
 
 	// Refresh EdgeGateway rules
@@ -179,7 +488,7 @@ func (e *EdgeGateway) Remove1to1Mapping(internal, external string) (Task, error)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml")
 
-	resp, err := checkResp(e.c.HTTP.Do(req))
+	resp, err := checkResp(e.c.Http.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
 	}
@@ -195,7 +504,6 @@ func (e *EdgeGateway) Remove1to1Mapping(internal, external string) (Task, error)
 
 }
 
-// Create1to1Mapping creates a 1-to-1 mapping in the gateway
 func (e *EdgeGateway) Create1to1Mapping(internal, external, description string) (Task, error) {
 
 	// Refresh EdgeGateway rules
@@ -299,7 +607,7 @@ func (e *EdgeGateway) Create1to1Mapping(internal, external, description string) 
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml")
 
-	resp, err := checkResp(e.c.HTTP.Do(req))
+	resp, err := checkResp(e.c.Http.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
 	}

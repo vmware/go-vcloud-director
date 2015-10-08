@@ -5,14 +5,14 @@
  * @Last Modified by: frapposelli
  */
 
-package govcloudair
+package govcd
 
 import (
 	"net/url"
 	"os"
 	"testing"
 
-	"github.com/vmware/govcloudair/testutil"
+	"github.com/opencredo/vmware-govcd/testutil"
 	. "gopkg.in/check.v1"
 )
 

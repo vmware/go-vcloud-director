@@ -2,23 +2,21 @@
  * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
-package govcloudair
+package govcd
 
 import (
 	"fmt"
 	"net/url"
 	"strings"
 
-	types "github.com/vmware/govcloudair/types/v56"
+	types "github.com/opencredo/vmware-govcd/types/v56"
 )
 
-// Vdc client
 type Vdc struct {
 	Vdc *types.Vdc
 	c   *Client
 }
 
-// NewVdc create a new vdc client
 func NewVdc(c *Client) *Vdc {
 	return &Vdc{
 		Vdc: new(types.Vdc),
@@ -30,7 +28,7 @@ func (c *Client) retrieveVDC() (Vdc, error) {
 
 	req := c.NewRequest(map[string]string{}, "GET", c.VCDVDCHREF, nil)
 
-	resp, err := checkResp(c.HTTP.Do(req))
+	resp, err := checkResp(c.Http.Do(req))
 	if err != nil {
 		return Vdc{}, fmt.Errorf("error retreiving vdc: %s", err)
 	}
@@ -45,7 +43,6 @@ func (c *Client) retrieveVDC() (Vdc, error) {
 	return *vdc, nil
 }
 
-// Refresh refresh this vdc client
 func (v *Vdc) Refresh() error {
 
 	if v.Vdc.HREF == "" {
@@ -56,7 +53,7 @@ func (v *Vdc) Refresh() error {
 
 	req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-	resp, err := checkResp(v.c.HTTP.Do(req))
+	resp, err := checkResp(v.c.Http.Do(req))
 	if err != nil {
 		return fmt.Errorf("error retreiving Edge Gateway: %s", err)
 	}
@@ -73,7 +70,6 @@ func (v *Vdc) Refresh() error {
 	return nil
 }
 
-// FindVDCNetwork find the vdc network
 func (v *Vdc) FindVDCNetwork(network string) (OrgVDCNetwork, error) {
 
 	for _, an := range v.Vdc.AvailableNetworks {
@@ -86,7 +82,7 @@ func (v *Vdc) FindVDCNetwork(network string) (OrgVDCNetwork, error) {
 
 				req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-				resp, err := checkResp(v.c.HTTP.Do(req))
+				resp, err := checkResp(v.c.Http.Do(req))
 				if err != nil {
 					return OrgVDCNetwork{}, fmt.Errorf("error retreiving orgvdcnetwork: %s", err)
 				}
@@ -107,7 +103,6 @@ func (v *Vdc) FindVDCNetwork(network string) (OrgVDCNetwork, error) {
 	return OrgVDCNetwork{}, fmt.Errorf("can't find VDC Network: %s", network)
 }
 
-
 // Doesn't work with vCloud API 5.5, only vCloud Air
 func (v *Vdc) GetVDCOrg() (Org, error) {
 
@@ -121,7 +116,7 @@ func (v *Vdc) GetVDCOrg() (Org, error) {
 
 			req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-			resp, err := checkResp(v.c.HTTP.Do(req))
+			resp, err := checkResp(v.c.Http.Do(req))
 			if err != nil {
 				return Org{}, fmt.Errorf("error retreiving org: %s", err)
 			}
@@ -140,7 +135,6 @@ func (v *Vdc) GetVDCOrg() (Org, error) {
 	return Org{}, fmt.Errorf("can't find VDC Org")
 }
 
-// FindEdgeGateway finds the edgegateway in this vdc
 func (v *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 
 	for _, av := range v.Vdc.Link {
@@ -154,7 +148,7 @@ func (v *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 			// Querying the Result list
 			req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-			resp, err := checkResp(v.c.HTTP.Do(req))
+			resp, err := checkResp(v.c.Http.Do(req))
 			if err != nil {
 				return EdgeGateway{}, fmt.Errorf("error retrieving edge gateway records: %s", err)
 			}
@@ -173,7 +167,7 @@ func (v *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 			// Querying the Result list
 			req = v.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-			resp, err = checkResp(v.c.HTTP.Do(req))
+			resp, err = checkResp(v.c.Http.Do(req))
 			if err != nil {
 				return EdgeGateway{}, fmt.Errorf("error retrieving edge gateway: %s", err)
 			}
@@ -192,7 +186,6 @@ func (v *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 
 }
 
-// FindVAppByName finds a vApp by name in this vdc
 func (v *Vdc) FindVAppByName(vapp string) (VApp, error) {
 
 	err := v.Refresh()
@@ -214,7 +207,7 @@ func (v *Vdc) FindVAppByName(vapp string) (VApp, error) {
 				// Querying the VApp
 				req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-				resp, err := checkResp(v.c.HTTP.Do(req))
+				resp, err := checkResp(v.c.Http.Do(req))
 				if err != nil {
 					return VApp{}, fmt.Errorf("error retrieving vApp: %s", err)
 				}
@@ -233,7 +226,6 @@ func (v *Vdc) FindVAppByName(vapp string) (VApp, error) {
 	return VApp{}, fmt.Errorf("can't find vApp: %s", vapp)
 }
 
-// FindVAppByID finds a vApp by ID in this VDC
 func (v *Vdc) FindVAppByID(vappid string) (VApp, error) {
 
 	// Horrible hack to fetch a vapp with its id.
@@ -265,7 +257,7 @@ func (v *Vdc) FindVAppByID(vappid string) (VApp, error) {
 				// Querying the VApp
 				req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
 
-				resp, err := checkResp(v.c.HTTP.Do(req))
+				resp, err := checkResp(v.c.Http.Do(req))
 				if err != nil {
 					return VApp{}, fmt.Errorf("error retrieving vApp: %s", err)
 				}
