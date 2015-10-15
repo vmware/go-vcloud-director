@@ -11,11 +11,11 @@ import (
 // VAppTemplate client
 type VAppTemplate struct {
 	VAppTemplate *types.VAppTemplate
-	c            *Client
+	c            Client
 }
 
 // NewVAppTemplate create a new VAppTemplate client
-func NewVAppTemplate(c *Client) *VAppTemplate {
+func NewVAppTemplate(c Client) *VAppTemplate {
 	return &VAppTemplate{
 		VAppTemplate: new(types.VAppTemplate),
 		c:            c,

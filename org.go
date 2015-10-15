@@ -14,11 +14,11 @@ import (
 // Org a vcloud org client
 type Org struct {
 	Org *types.Org
-	c   *Client
+	c   Client
 }
 
 // NewOrg creates a new org client
-func NewOrg(c *Client) *Org {
+func NewOrg(c Client) *Org {
 	return &Org{
 		Org: new(types.Org),
 		c:   c,
@@ -36,9 +36,9 @@ func (o *Org) FindCatalog(catalog string) (Catalog, error) {
 				return Catalog{}, fmt.Errorf("error decoding org response: %s", err)
 			}
 
-			req := o.c.NewRequest(map[string]string{}, "GET", *u, nil)
+			req := o.c.NewRequest(map[string]string{}, "GET", u, nil)
 
-			resp, err := checkResp(o.c.HTTP.Do(req))
+			resp, err := checkResp(o.c.DoHTTP(req))
 			if err != nil {
 				return Catalog{}, fmt.Errorf("error retreiving catalog: %s", err)
 			}

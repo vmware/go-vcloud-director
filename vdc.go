@@ -15,34 +15,36 @@ import (
 // Vdc client
 type Vdc struct {
 	Vdc *types.Vdc
-	c   *Client
+	c   Client
 }
 
 // NewVdc create a new vdc client
-func NewVdc(c *Client) *Vdc {
+func NewVdc(c Client) *Vdc {
 	return &Vdc{
 		Vdc: new(types.Vdc),
 		c:   c,
 	}
 }
 
-func (c *Client) retrieveVDC() (Vdc, error) {
+// RetrieveVDC retrieves the vdc for the 5.6 client
+func RetrieveVDC(c Client) (*Vdc, error) {
 
-	req := c.NewRequest(map[string]string{}, "GET", c.VCDVDCHREF, nil)
+	bu := c.BaseURL()
+	req := c.NewRequest(map[string]string{}, "GET", &bu, nil)
 
-	resp, err := checkResp(c.HTTP.Do(req))
+	resp, err := checkResp(c.DoHTTP(req))
 	if err != nil {
-		return Vdc{}, fmt.Errorf("error retreiving vdc: %s", err)
+		return nil, fmt.Errorf("error retreiving vdc: %s", err)
 	}
 
 	vdc := NewVdc(c)
 
 	if err = decodeBody(resp, vdc.Vdc); err != nil {
-		return Vdc{}, fmt.Errorf("error decoding vdc response: %s", err)
+		return nil, fmt.Errorf("error decoding vdc response: %s", err)
 	}
 
 	// The request was successful
-	return *vdc, nil
+	return vdc, nil
 }
 
 // Refresh refresh this vdc client
@@ -54,9 +56,9 @@ func (v *Vdc) Refresh() error {
 
 	u, _ := url.ParseRequestURI(v.Vdc.HREF)
 
-	req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
+	req := v.c.NewRequest(map[string]string{}, "GET", u, nil)
 
-	resp, err := checkResp(v.c.HTTP.Do(req))
+	resp, err := checkResp(v.c.DoHTTP(req))
 	if err != nil {
 		return fmt.Errorf("error retreiving Edge Gateway: %s", err)
 	}
@@ -84,9 +86,9 @@ func (v *Vdc) FindVDCNetwork(network string) (OrgVDCNetwork, error) {
 					return OrgVDCNetwork{}, fmt.Errorf("error decoding vdc response: %s", err)
 				}
 
-				req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
+				req := v.c.NewRequest(map[string]string{}, "GET", u, nil)
 
-				resp, err := checkResp(v.c.HTTP.Do(req))
+				resp, err := checkResp(v.c.DoHTTP(req))
 				if err != nil {
 					return OrgVDCNetwork{}, fmt.Errorf("error retreiving orgvdcnetwork: %s", err)
 				}
@@ -118,9 +120,9 @@ func (v *Vdc) GetVDCOrg() (Org, error) {
 				return Org{}, fmt.Errorf("error decoding vdc response: %s", err)
 			}
 
-			req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
+			req := v.c.NewRequest(map[string]string{}, "GET", u, nil)
 
-			resp, err := checkResp(v.c.HTTP.Do(req))
+			resp, err := checkResp(v.c.DoHTTP(req))
 			if err != nil {
 				return Org{}, fmt.Errorf("error retreiving org: %s", err)
 			}
@@ -151,9 +153,9 @@ func (v *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 			}
 
 			// Querying the Result list
-			req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
+			req := v.c.NewRequest(map[string]string{}, "GET", u, nil)
 
-			resp, err := checkResp(v.c.HTTP.Do(req))
+			resp, err := checkResp(v.c.DoHTTP(req))
 			if err != nil {
 				return EdgeGateway{}, fmt.Errorf("error retrieving edge gateway records: %s", err)
 			}
@@ -170,9 +172,9 @@ func (v *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 			}
 
 			// Querying the Result list
-			req = v.c.NewRequest(map[string]string{}, "GET", *u, nil)
+			req = v.c.NewRequest(map[string]string{}, "GET", u, nil)
 
-			resp, err = checkResp(v.c.HTTP.Do(req))
+			resp, err = checkResp(v.c.DoHTTP(req))
 			if err != nil {
 				return EdgeGateway{}, fmt.Errorf("error retrieving edge gateway: %s", err)
 			}
@@ -211,9 +213,9 @@ func (v *Vdc) FindVAppByName(vapp string) (VApp, error) {
 				}
 
 				// Querying the VApp
-				req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
+				req := v.c.NewRequest(map[string]string{}, "GET", u, nil)
 
-				resp, err := checkResp(v.c.HTTP.Do(req))
+				resp, err := checkResp(v.c.DoHTTP(req))
 				if err != nil {
 					return VApp{}, fmt.Errorf("error retrieving vApp: %s", err)
 				}
@@ -262,9 +264,9 @@ func (v *Vdc) FindVAppByID(vappid string) (VApp, error) {
 				}
 
 				// Querying the VApp
-				req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
+				req := v.c.NewRequest(map[string]string{}, "GET", u, nil)
 
-				resp, err := checkResp(v.c.HTTP.Do(req))
+				resp, err := checkResp(v.c.DoHTTP(req))
 				if err != nil {
 					return VApp{}, fmt.Errorf("error retrieving vApp: %s", err)
 				}

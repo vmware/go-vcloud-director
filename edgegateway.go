@@ -17,11 +17,11 @@ import (
 // EdgeGateway an edgegateway client
 type EdgeGateway struct {
 	EdgeGateway *types.EdgeGateway
-	c           *Client
+	c           Client
 }
 
 // NewEdgeGateway creates a new edge gateway client
-func NewEdgeGateway(c *Client) *EdgeGateway {
+func NewEdgeGateway(c Client) *EdgeGateway {
 	return &EdgeGateway{
 		EdgeGateway: new(types.EdgeGateway),
 		c:           c,
@@ -37,9 +37,9 @@ func (e *EdgeGateway) Refresh() error {
 
 	u, _ := url.ParseRequestURI(e.EdgeGateway.HREF)
 
-	req := e.c.NewRequest(map[string]string{}, "GET", *u, nil)
+	req := e.c.NewRequest(map[string]string{}, "GET", u, nil)
 
-	resp, err := checkResp(e.c.HTTP.Do(req))
+	resp, err := checkResp(e.c.DoHTTP(req))
 	if err != nil {
 		return fmt.Errorf("error retreiving Edge Gateway: %s", err)
 	}
@@ -175,11 +175,11 @@ func (e *EdgeGateway) Remove1to1Mapping(internal, external string) (Task, error)
 	s, _ := url.ParseRequestURI(e.EdgeGateway.HREF)
 	s.Path += "/action/configureServices"
 
-	req := e.c.NewRequest(map[string]string{}, "POST", *s, b)
+	req := e.c.NewRequest(map[string]string{}, "POST", s, b)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml")
 
-	resp, err := checkResp(e.c.HTTP.Do(req))
+	resp, err := checkResp(e.c.DoHTTP(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
 	}
@@ -295,11 +295,11 @@ func (e *EdgeGateway) Create1to1Mapping(internal, external, description string) 
 	s, _ := url.ParseRequestURI(e.EdgeGateway.HREF)
 	s.Path += "/action/configureServices"
 
-	req := e.c.NewRequest(map[string]string{}, "POST", *s, b)
+	req := e.c.NewRequest(map[string]string{}, "POST", s, b)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml")
 
-	resp, err := checkResp(e.c.HTTP.Do(req))
+	resp, err := checkResp(e.c.DoHTTP(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
 	}

@@ -15,11 +15,11 @@ import (
 // Task a task client
 type Task struct {
 	Task *types.Task
-	c    *Client
+	c    Client
 }
 
 // NewTask create a new task client
-func NewTask(c *Client) *Task {
+func NewTask(c Client) *Task {
 	return &Task{
 		Task: new(types.Task),
 		c:    c,
@@ -35,9 +35,9 @@ func (t *Task) Refresh() error {
 
 	u, _ := url.ParseRequestURI(t.Task.HREF)
 
-	req := t.c.NewRequest(map[string]string{}, "GET", *u, nil)
+	req := t.c.NewRequest(map[string]string{}, "GET", u, nil)
 
-	resp, err := checkResp(t.c.HTTP.Do(req))
+	resp, err := checkResp(t.c.DoHTTP(req))
 	if err != nil {
 		return fmt.Errorf("error retrieving task: %s", err)
 	}

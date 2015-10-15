@@ -14,11 +14,11 @@ import (
 // CatalogItem a client catalog item
 type CatalogItem struct {
 	CatalogItem *types.CatalogItem
-	c           *Client
+	c           Client
 }
 
 // NewCatalogItem creates a new client catalog item
-func NewCatalogItem(c *Client) *CatalogItem {
+func NewCatalogItem(c Client) *CatalogItem {
 	return &CatalogItem{
 		CatalogItem: new(types.CatalogItem),
 		c:           c,
@@ -33,9 +33,9 @@ func (ci *CatalogItem) GetVAppTemplate() (VAppTemplate, error) {
 		return VAppTemplate{}, fmt.Errorf("error decoding catalogitem response: %s", err)
 	}
 
-	req := ci.c.NewRequest(map[string]string{}, "GET", *url, nil)
+	req := ci.c.NewRequest(map[string]string{}, "GET", url, nil)
 
-	resp, err := checkResp(ci.c.HTTP.Do(req))
+	resp, err := checkResp(ci.c.DoHTTP(req))
 	if err != nil {
 		return VAppTemplate{}, fmt.Errorf("error retreiving vapptemplate: %s", err)
 	}
