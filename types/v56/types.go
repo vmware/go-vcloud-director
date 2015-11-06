@@ -90,8 +90,8 @@ type LeaseSettingsSection struct {
 // Description: Represents a range of IP addresses, start and end inclusive.
 // Since: 0.9
 type IPRange struct {
-	EndAddress   string `xml:"EndAddress"`   // End address of the IP range.
 	StartAddress string `xml:"StartAddress"` // Start address of the IP range.
+	EndAddress   string `xml:"EndAddress"`   // End address of the IP range.
 }
 
 // DhcpService represents a DHCP network service.
@@ -204,8 +204,8 @@ type NetworkConfiguration struct {
 	BackwardCompatibilityMode      bool             `xml:"BackwardCompatibilityMode"`
 	Features                       *NetworkFeatures `xml:"Features,omitempty"`
 	ParentNetwork                  *Reference       `xml:"ParentNetwork,omitempty"`
-	FenceMode                      string           `xml:"FenceMode"`
 	IPScopes                       *IPScopes        `xml:"IpScopes,omitempty"`
+	FenceMode                      string           `xml:"FenceMode"`
 	RetainNetInfoAcrossDeployments bool             `xml:"RetainNetInfoAcrossDeployments"`
 	// TODO: Not Implemented
 	// RouterInfo                     RouterInfo           `xml:"RouterInfo,omitempty"`
@@ -252,10 +252,10 @@ type NetworkConfigSection struct {
 type NetworkConnection struct {
 	Network                 string `xml:"network,attr"`                      // Name of the network to which this NIC is connected.
 	NetworkConnectionIndex  int    `xml:"NetworkConnectionIndex"`            // Virtual slot number associated with this NIC. First slot number is 0.
-	IsConnected             bool   `xml:"IsConnected"`                       // If the virtual machine is undeployed, this value specifies whether the NIC should be connected upon deployment. If the virtual machine is deployed, this value reports the current status of this NIC's connection, and can be updated to change that connection status.
 	NeedsCustomization      bool   `xml:"needsCustomization,attr,omitempty"` // True if this NIC needs customization.
 	ExternalIPAddress       string `xml:"ExternalIpAddress,omitempty"`       // If the network to which this NIC connects provides NAT services, the external address assigned to this NIC appears here.
 	IPAddress               string `xml:"IpAddress,omitempty"`               // IP address assigned to this NIC.
+	IsConnected             bool   `xml:"IsConnected"`                       // If the virtual machine is undeployed, this value specifies whether the NIC should be connected upon deployment. If the virtual machine is deployed, this value reports the current status of this NIC's connection, and can be updated to change that connection status.
 	IPAddressAllocationMode string `xml:"IpAddressAllocationMode"`           // IP address allocation mode for this connection. One of: POOL (A static IP address is allocated automatically from a pool of addresses.) DHCP (The IP address is obtained from a DHCP service.) MANUAL (The IP address is assigned manually in the IpAddress element.) NONE (No IP addressing mode specified.)
 	MACAddress              string `xml:"MACAddress,omitempty"`              // MAC address associated with the NIC.
 }
@@ -268,6 +268,10 @@ type NetworkConnection struct {
 type NetworkConnectionSection struct {
 	// Extends OVF Section_Type
 	// FIXME: Fix the OVF section
+	XMLName       xml.Name              `xml:"NetworkConnectionSection"`
+	Xmlns         string                `xml:"xmlns,attr,omitempty"`
+	Ovf     			string   							`xml:"xmlns:ovf,attr,omitempty"`
+
 	Info string `xml:"ovf:Info"`
 	//
 	HREF                          string             `xml:"href,attr,omitempty"`
@@ -300,6 +304,7 @@ type InstantiationParams struct {
 // Since: 5.1
 type OrgVDCNetwork struct {
 	XMLName       xml.Name              `xml:"OrgVdcNetwork"`
+	Xmlns         string                `xml:"xmlns,attr,imitempty"`
 	HREF          string                `xml:"href,attr,omitempty"`
 	Type          string                `xml:"type,attr,omitempty"`
 	ID            string                `xml:"id,attr,omitempty"`
@@ -310,9 +315,9 @@ type OrgVDCNetwork struct {
 	Description   string                `xml:"Description,omitempty"`
 	EdgeGateway   *Reference            `xml:"EdgeGateway,omitempty"`
 	IsShared      bool                  `xml:"IsShared"`
-	Link          []Link                `xml:"Link"`
+	Link          []Link                `xml:"Link,omitempty"`
 	ServiceConfig *GatewayFeatures      `xml:"ServiceConfig,omitempty"` // Specifies the service configuration for an isolated Org vDC networks
-	Tasks         TasksInProgress       `xml:"Tasks,omitempty"`
+	Tasks         *TasksInProgress       `xml:"Tasks,omitempty"`
 }
 
 // SupportedHardwareVersions contains a list of VMware virtual hardware versions supported in this vDC.
@@ -761,6 +766,18 @@ type VApp struct {
 	Children          *VAppChildren `xml:"Children,omitempty"`          // Container for virtual machines included in this vApp.
 }
 
+type MetadataValue struct {
+	XMLName xml.Name `xml:"MetadataValue"`
+	Xsi     string   `xml:"xmlns:xsi,attr"`
+	Xmlns   string   `xml:"xmlns,attr"`
+	TypedValue *TypedValue	`xml:"TypedValue"`
+}
+
+type TypedValue struct {
+	XsiType		string		`xml:"xsi:type,attr"`
+	Value 		string 		`xml:"Value"`
+}
+
 // VAppChildren is a container for virtual machines included in this vApp.
 // Type: VAppChildrenType
 // Namespace: http://www.vmware.com/vcloud/v1.5
@@ -789,6 +806,8 @@ type VAppTemplateChildren struct {
 	// Elements
 	VM []*VAppTemplate `xml:"Vm"` // Represents a virtual machine in this vApp template.
 }
+
+
 
 // VAppTemplate represents a vApp template.
 // Type: VAppTemplateType
@@ -834,6 +853,7 @@ type VAppTemplate struct {
 // Since: 0.9
 type VM struct {
 	// Attributes
+	XMLName         xml.Name `xml:"Vm"`
 	Ovf   string `xml:"xmlns:ovf,attr,omitempty"`
 	Xsi   string `xml:"xmlns:xsi,attr,omitempty"`
 	Xmlns string `xml:"xmlns,attr,omitempty"`
@@ -855,7 +875,7 @@ type VM struct {
 	VAppParent  *Reference       `xml:"VAppParent,omitempty"`  // Reserved. Unimplemented.
 	// TODO: OVF Sections to be implemented
 	// Section OVF_Section `xml:"Section,omitempty"
-	DateCreated string `xml:"DateCreated"` // Creation date/time of the vApp.
+	DateCreated string `xml:"DateCreated,omitempty"` // Creation date/time of the vApp.
 
 	// FIXME: Upstream bug? Missing NetworkConnectionSection
 	NetworkConnectionSection *NetworkConnectionSection `xml:"NetworkConnectionSection,omitempty"`
@@ -947,7 +967,7 @@ type GuestCustomizationSection struct {
 type InstantiateVAppTemplateParams struct {
 	XMLName xml.Name `xml:"InstantiateVAppTemplateParams"`
 	Ovf     string   `xml:"xmlns:ovf,attr"`
-	Xsi     string   `xml:"xmlns:xsi,attr"`
+	Xsi     string   `xml:"xmlns:xsi,attr,omitempty"`
 	Xmlns   string   `xml:"xmlns,attr"`
 	// Attributes
 	Name        string `xml:"name,attr,omitempty"`        // Typically used to name or identify the subject of the request. For example, the name of the object being created or modified.
@@ -1037,6 +1057,14 @@ type SubnetParticipation struct {
 	IPAddress string    `xml:"IpAddress,omitempty"` // Ip Address to be assigned. Keep empty or ommit element for auto assignment
 	IPRanges  *IPRanges `xml:"IpRanges,omitempty"`  // Range of IP addresses available for external interfaces.
 	Netmask   string    `xml:"Netmask"`             // Nestmask for the subnet
+}
+
+type EdgeGatewayServiceConfiguration struct {
+	XMLName                xml.Name 					   `xml:"EdgeGatewayServiceConfiguration"`
+	Xmlns                  string                `xml:"xmlns,attr,omitempty"`
+	GatewayDhcpService     *GatewayDhcpService   `xml:"GatewayDhcpService,omitempty"`
+	FirewallService        *FirewallService      `xml:"FirewallService,omitempty"`
+	NatService 						 *NatService				   `xml:"NatService,omitempty"`
 }
 
 // GatewayFeatures represents edge gateway services.
@@ -1262,8 +1290,8 @@ type IpsecVpnSubnet struct {
 // Description: Represents Gateway DHCP service.
 // Since: 5.1
 type GatewayDhcpService struct {
-	IsEnabled bool             `xml:"IsEnabled,omitempty"` // Enable or disable the service using this flag
-	Pool      *DhcpPoolService `xml:"Pool,omitempty"`      // A DHCP pool.
+	IsEnabled bool               `xml:"IsEnabled,omitempty"` // Enable or disable the service using this flag
+	Pool      []*DhcpPoolService `xml:"Pool,omitempty"`      // A DHCP pool.
 }
 
 // DhcpPoolService represents DHCP pool service.
