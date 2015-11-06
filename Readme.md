@@ -1,4 +1,4 @@
-## vmware-govcd [![Build Status](https://travis-ci.org/vmware/govcloudair.svg?branch=master)](https://travis-ci.org/frapposelli/govcloudair) [![Coverage Status](https://img.shields.io/coveralls/vmware/govcloudair.svg)](https://coveralls.io/r/vmware/govcloudair) [![GoDoc](https://godoc.org/github.com/vmware/govcloudair?status.svg)](http://godoc.org/github.com/vmware/govcloudair)
+## vmware-govcd
 
 This package was originally forked from [github.com/vmware/govcloudair](https://github.com/vmware/govcloudair) before pulling in [rickard-von-essen's](https://github.com/rickard-von-essen)
 great changes to allow using a [vCloud Director API](https://github.com/rickard-von-essen/govcloudair/tree/vcd-5.5). On top of this I have added features as needed for a terraform provider for vCloud Director
