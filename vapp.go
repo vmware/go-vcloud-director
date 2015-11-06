@@ -13,7 +13,7 @@ import (
 	"os"
 	"strconv"
 
-	types "github.com/opencredo/vmware-govcd/types/v56"
+	types "github.com/hmrc/vmware-govcd/types/v56"
 )
 
 type VApp struct {

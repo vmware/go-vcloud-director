@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/opencredo/vmware-govcd/testutil"
+	"github.com/hmrc/vmware-govcd/testutil"
 	. "gopkg.in/check.v1"
 )
 

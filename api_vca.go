@@ -11,7 +11,7 @@ import (
 	"os"
 	"time"
 
-	types "github.com/opencredo/vmware-govcd/types/v56"
+	types "github.com/hmrc/vmware-govcd/types/v56"
 )
 
 // Client provides a client to vCloud Air, values can be populated automatically using the Authenticate method.
