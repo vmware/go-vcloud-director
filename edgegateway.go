@@ -219,6 +219,7 @@ func (e *EdgeGateway) AddNATMapping(nattype, externalIP, internalIP, port string
 			if v.RuleType == nattype &&
 				v.GatewayNatRule.OriginalIP == externalIP &&
 				v.GatewayNatRule.OriginalPort == port &&
+				v.GatewayNatRule.TranslatedIP == internalIP &&
 				v.GatewayNatRule.Interface.HREF == uplink.HREF {
 				continue
 			}
