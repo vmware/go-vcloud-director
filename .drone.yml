@@ -1,0 +1,15 @@
+build:
+  image: golang
+  commands:
+    - go get -t ./...
+    - go get golang.org/x/tools/cmd/cover
+    - go get github.com/mattn/goveralls
+    - hack/coverage
+    - goveralls -coverprofile=.cover/cover.out -service drone.io
+  environment:
+    - COVERALLS_TOKEN=$$COVERALLS_TOKEN
+notify:
+  slack:
+    webhook_url: $$SLACK_WEBHOOK
+    channel: govcloudair
+    username: drone
