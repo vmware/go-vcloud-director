@@ -672,17 +672,30 @@ func (v *VApp) ChangeNetworkConfig(network, ip string) (Task, error) {
 		return Task{}, fmt.Errorf("vApp doesn't contain any children, aborting customization")
 	}
 
+	// Determine what type of address is requested for the vApp
+	ipAllocationMode := "NONE"
+	ipAddress := "Any"
+
+	// TODO: Review current behaviour of using DHCP when left blank
+	if ip == "" || ip == "dhcp" {
+		ipAllocationMode = "DHCP"
+	} else if ip == "allocated" {
+		ipAllocationMode = "POOL"
+	} else if ip == "none" {
+		ipAllocationMode = "NONE"
+	} else if ip != "" {
+		ipAllocationMode = "MANUAL"
+		// TODO: Check a valid IP has been given
+		ipAddress = ip
+	}
+
 	networkConnection := &types.NetworkConnection{
 		Network:                 network,
 		NeedsCustomization:      true,
 		NetworkConnectionIndex:  0,
-		IPAddress:               ip,
+		IPAddress:               ipAddress,
 		IsConnected:             true,
-		IPAddressAllocationMode: "MANUAL",
-	}
-
-	if ip == "" {
-		networkConnection.IPAddressAllocationMode = "DHCP"
+		IPAddressAllocationMode: ipAllocationMode,
 	}
 
 	newnetwork := &types.NetworkConnectionSection{
