@@ -11,6 +11,7 @@ package main
 import (
 	"fmt"
 	"net/url"
+    "os"
 
 	"github.com/hmrc/vmware-govcd"
 )
@@ -48,7 +49,11 @@ func main() {
 		VDC:      "vcd virtual datacenter name",
 	}
 
-  client, _ := config.Client() // We now have a client
-  fmt.Printf("Session URL: %s", client.sessionHREF)
+  client, err := config.Client() // We now have a client
+  if err != nil {
+      fmt.Println(err)
+      os.Exit(1)
+  }
+  fmt.Printf("Org URL: %s\n", client.OrgHREF.String())
 }
 ```
