@@ -253,7 +253,12 @@ func NewVAClient() (*VAClient, error) {
 		Client: Client{
 			APIVersion: "5.6",
 			// Patching things up as we're hitting several TLS timeouts.
-			Http: http.Client{Transport: &http.Transport{TLSHandshakeTimeout: 120 * time.Second}},
+			Http: http.Client{
+				Transport: &http.Transport{
+					Proxy:               http.ProxyFromEnvironment,
+					TLSHandshakeTimeout: 120 * time.Second,
+				},
+			},
 		},
 	}
 	return &VAClient, nil
