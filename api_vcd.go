@@ -1,6 +1,7 @@
 package govcd
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -167,7 +168,7 @@ func (c *VCDClient) RetrieveOrg(vcdname string) (Org, error) {
 	return *org, nil
 }
 
-func NewVCDClient(vcdEndpoint url.URL) *VCDClient {
+func NewVCDClient(vcdEndpoint url.URL, insecure bool) *VCDClient {
 
 	return &VCDClient{
 		Client: Client{
@@ -175,6 +176,9 @@ func NewVCDClient(vcdEndpoint url.URL) *VCDClient {
 			VCDVDCHREF: vcdEndpoint,
 			Http: http.Client{
 				Transport: &http.Transport{
+					TLSClientConfig: &tls.Config{
+						InsecureSkipVerify: insecure,
+					},
 					Proxy:               http.ProxyFromEnvironment,
 					TLSHandshakeTimeout: 120 * time.Second,
 				},
