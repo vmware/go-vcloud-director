@@ -2,13 +2,17 @@ package v57
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"os"
 	"strings"
 	"time"
+
+	types "github.com/vmware/govcloudair/types/v56"
 )
 
 const (
@@ -46,6 +50,7 @@ func NewClient() (*Client, error) {
 	}
 	return &Client{
 		VAEndpoint:    *u,
+		Region:        os.Getenv("VCLOUDAIR_REGION"),
 		VCDAuthHeader: "X-Vcloud-Authorization",
 		http:          http.Client{Transport: &http.Transport{TLSHandshakeTimeout: 120 * time.Second}},
 	}, nil
@@ -53,11 +58,12 @@ func NewClient() (*Client, error) {
 
 // Client provides a client to vCloud Air, values can be populated automatically using the Authenticate method.
 type Client struct {
-	VAToken       string      // vCloud Air authorization token
-	VAEndpoint    url.URL     // vCloud Air API endpoint
-	Region        string      // Region where the compute resource lives.
-	VCDToken      string      // Access Token (authorization header)
-	VCDAuthHeader string      // Authorization header
+	VAToken       string  // vCloud Air authorization token
+	VAEndpoint    url.URL // vCloud Air API endpoint
+	Region        string  // Region where the compute resource lives.
+	VCDToken      string  // Access Token (authorization header)
+	VCDAuthHeader string  // Authorization header
+	Links         types.LinkList
 	vcdHREF       *url.URL    // HREF of the backend VDC you're using
 	http          http.Client // HttpClient is the client to use. Default will be used if not provided.
 }
@@ -103,7 +109,7 @@ func (c *Client) Authenticate(username, password string) error {
 	var attrs *accountInstanceAttrs
 	for _, inst := range instances {
 		attrs = inst.Attrs()
-		if attrs != nil {
+		if attrs != nil && (c.Region == "" || strings.HasPrefix(inst.Region, c.Region)) {
 			c.Region = inst.Region
 			break
 		}
@@ -115,6 +121,31 @@ func (c *Client) Authenticate(username, password string) error {
 	attrs.client = c
 
 	return attrs.Authenticate(username, password)
+}
+
+// BaseURL the base uril for the vcloud director instance
+func (c *Client) BaseURL() url.URL {
+	if c.vcdHREF == nil {
+		return url.URL{}
+	}
+	return *c.vcdHREF
+}
+
+// DoHTTP performs a http request
+func (c *Client) DoHTTP(req *http.Request) (*http.Response, error) {
+	if os.Getenv("VCLOUDAIR_DEBUG") != "" {
+		dr, _ := httputil.DumpRequestOut(req, true)
+		fmt.Println(string(dr))
+	}
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if os.Getenv("VCLOUDAIR_DEBUG") != "" {
+		dr, _ := httputil.DumpResponse(resp, true)
+		fmt.Println(string(dr))
+	}
+	return resp, nil
 }
 
 // Disconnect performs a disconnection from the vCloud Air API endpoint.
@@ -254,7 +285,29 @@ func (a *accountInstanceAttrs) Authenticate(user, password string) error {
 	if resp.StatusCode/100 != 2 {
 		return fmt.Errorf("Could not complete authenticating with vCloud, because (status %d) %s\n", resp.StatusCode, resp.Status)
 	}
+
+	var ses session
+	dec := xml.NewDecoder(resp.Body)
+	if err := dec.Decode(&ses); err != nil {
+		return err
+	}
+
 	a.client.VCDToken = resp.Header.Get("x-vcloud-authorization")
+	a.client.Links = ses.Links
 
 	return nil
+}
+
+// Session represents an authenticated session for the vCloud Air API
+type session struct {
+	// ResourceType
+	HREF  string         `xml:"href,attr,omitempty"`
+	Type  string         `xml:"type,attr,omitempty"`
+	Links types.LinkList `xml:"Link,omitempty"`
+
+	// SessionType
+	Org    string `xml:"org,attr,omitempty"`
+	Roles  string `xml:"roles,attr,omitempty"`
+	User   string `xml:"user,attr,omitempty"`
+	UserID string `xml:"userId,attr,omitempty"`
 }
