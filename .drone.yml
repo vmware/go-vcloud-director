@@ -14,3 +14,9 @@ notify:
       - https://webhooks.gitter.im/e/ec455a4f33bad0f3c06b
     on_success: true
     on_failure: true
+publish:
+  coverage:
+    server: https://coverage.vmware.run
+    token: $$COVERAGE_TOKEN
+    when:
+      branch: master
