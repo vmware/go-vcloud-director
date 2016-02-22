@@ -1505,6 +1505,8 @@ type QueryResultRecordsType struct {
 	Link              []*Link                           `xml:"Link,omitempty"`    // A reference to an entity or operation associated with this object.
 	EdgeGatewayRecord *QueryResultEdgeGatewayRecordType `xml:"EdgeGatewayRecord"` // A record representing a query result.
 	VMRecord          []*QueryResultVMRecordType        `xml:"VMRecord"`          // A record representing a VM result.
+	VAppRecord        []*QueryResultVAppRecordType      `xml:"VAppRecord"`        // A record representing a VApp result.
+	OrgVdcStorageProfileRecord []*QueryResultOrgVdcStorageProfileRecordType `xml:"OrgVdcStorageProfileRecord"` // A record representing storage profiles
 }
 
 
@@ -1550,4 +1552,55 @@ type QueryResultVMRecordType struct {
 	TaskStatusName      string `xml:"taskStatusName,attr,omitempty"`
 	TaskDetails         string `xml:"taskDetails,attr,omitempty"`
 	TaskStatus          string `xml:"TaskStatus,attr,omitempty"`
+}
+
+// QueryResultVAppRecordType represents a VM record as query result.
+type QueryResultVAppRecordType struct {
+	// Attributes
+	HREF                  string `xml:"href,attr,omitempty"`                  // The URI of the entity.
+	Name                  string `xml:"name,attr"`                            // The name of the entity.
+	CreationDate          string `xml:"creationDate,attr,omitempty"`          // Creation date/time of the vApp.
+	Busy                  bool   `xml:"isBusy,attr,omitempty"`
+	Deployed              bool   `xml:"isDeployed,attr,omitempty"`            // True if the vApp is deployed.
+	Enabled               bool   `xml:"isEnabled,attr,omitempty"`
+	Expired               bool   `xml:"isExpired,attr,omitempty"`
+	MaintenanceMode       bool   `xml:"isInMaintenanceMode,attr,omitempty"`
+	Public                bool   `xml:"isPublic,attr,omitempty"`
+	OwnerName             string `xml:"ownerName,attr,omitempty"`
+	Status                string `xml:"status,attr,omitempty"`
+	VdcHREF               string `xml:"vdc,attr,omitempty"`
+	VdcName               string `xml:"vdcName,attr,omitempty"`
+	NumberOfVMs           int    `xml:"numberOfVMs,attr,omitempty"`
+	NumberOfCPUs          int    `xml:"numberOfCpus,attr,omitempty"`
+	CpuAllocationMhz      int    `xml:"cpuAllocationMhz,attr,omitempty"`
+	CpuAllocationInMhz    int    `xml:"cpuAllocationInMhz,attr,omitempty"`
+	StorageKB             int    `xml:"storageKB,attr,omitempty"`
+	MemoryAllocationMB    int    `xml:"memoryAllocationMB,attr,omitempty"`
+	AutoDeleteNotified    bool   `xml:"isAutoDeleteNotified,attr,omitempty"`
+	AutoUndeployNotified  bool   `xml:"isAutoUndeployNotified,attr,omitempty"`
+	VdcEnabled            bool   `xml:"isVdcEnabled, attr,omitempty"`
+	HonorBootOrder        bool   `xml:"honorBookOrder,attr,omitempty"`
+	HighestSupportedVersion int `xml:"pvdcHighestSupportedHardwareVersion,attr,omitempty"`
+	LowestHardwareVersion int    `xml:"lowestHardwareVersionInVApp,attr,omitempty"`
+	TaskHREF              string `xml:"task,attr,omitempty"`
+	TaskStatusName        string `xml:"taskStatusName,attr,omitempty"`
+	TaskStatus            string `xml:"TaskStatus,attr,omitempty"`
+	TaskDetails           string `xml:"taskDetails,attr,omitempty"`
+}
+
+
+// QueryResultOrgVdcStorageProfileRecordType represents a storage
+// profile as query result.
+type QueryResultOrgVdcStorageProfileRecordType struct {
+	// Attributes
+	HREF                string `xml:"href,attr,omitempty"`                // The URI of the entity.
+	Name                string `xml:"name,attr,omitempty"`                // Storage Profile name.
+	VdcHREF             string `xml:"vdc,attr,omitempty"`
+	VdcName             string `xml:"vdcName,attr,omitempty"`
+	IsDefaultStorageProfile bool `xml:"isDefaultStorageProfile,attr,omitempty"`
+	IsEnabled           bool   `xml:"isEnabled,attr,omitempty"`
+	IsVdcBusy           bool   `xml:"isVdcBusy,attr,omitempty"`
+	NumberOfConditions  int    `xml:"numberOfConditions,attr,omitempty"`
+	StorageUsedMB       int    `xml:"storageUsedMB,attr,omitempty"`
+	StorageLimitMB      int    `xml:"storageLimitMB,attr,omitempty"`
 }
