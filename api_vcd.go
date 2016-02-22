@@ -16,6 +16,7 @@ type VCDClient struct {
 	OrgVdc      Vdc     // Org vDC
 	Client      Client  // Client for the underlying VCD instance
 	sessionHREF url.URL // HREF for the session API
+	QueryHREF   url.URL // HREF for the query API
 	Mutex       sync.Mutex
 }
 
@@ -168,7 +169,10 @@ func (c *VCDClient) RetrieveOrg(vcdname string) (Org, error) {
 	return *org, nil
 }
 
+
 func NewVCDClient(vcdEndpoint url.URL, insecure bool) *VCDClient {
+    QueryHREF := vcdEndpoint
+    QueryHREF.Path += "/query"
 
 	return &VCDClient{
 		Client: Client{
@@ -184,6 +188,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool) *VCDClient {
 				},
 			},
 		},
+		QueryHREF: QueryHREF,
 	}
 }
 

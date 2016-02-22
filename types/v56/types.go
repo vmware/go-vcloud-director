@@ -1493,6 +1493,21 @@ type QueryResultEdgeGatewayRecordsType struct {
 	EdgeGatewayRecord *QueryResultEdgeGatewayRecordType `xml:"EdgeGatewayRecord"` // A record representing a query result.
 }
 
+type QueryResultRecordsType struct {
+	// Attributes
+	HREF     string  `xml:"href,attr,omitempty"`     // The URI of the entity.
+	Type     string  `xml:"type,attr,omitempty"`     // The MIME type of the entity.
+	Name     string  `xml:"name,attr,omitempty"`     // The name of the entity.
+	Page     int     `xml:"page,attr,omitempty"`     // Page of the result set that this container holds. The first page is page number 1.
+	PageSize int     `xml:"pageSize,attr,omitempty"` // Page size, as a number of records or references.
+	Total    float64 `xml:"total,attr,omitempty"`    // Total number of records or references in the container.
+	// Elements
+	Link              []*Link                           `xml:"Link,omitempty"`    // A reference to an entity or operation associated with this object.
+	EdgeGatewayRecord *QueryResultEdgeGatewayRecordType `xml:"EdgeGatewayRecord"` // A record representing a query result.
+	VMRecord          []*QueryResultVMRecordType        `xml:"VMRecord"`          // A record representing a VM result.
+}
+
+
 // QueryResultEdgeGatewayRecordType represents an edge gateway record as query result.
 type QueryResultEdgeGatewayRecordType struct {
 	// Attributes
@@ -1505,4 +1520,34 @@ type QueryResultEdgeGatewayRecordType struct {
 	IsBusy              bool   `xml:"isBusy,attr"`                        // True if this Edge Gateway is busy.	Yes	Yes
 	GatewayStatus       string `xml:"gatewayStatus,attr,omitempty"`       //
 	HaStatus            string `xml:"haStatus,attr,omitempty"`            // High Availability Status of the edgeGateway	Yes	Yes
+}
+
+// QueryResultVMRecordType represents a VM record as query result.
+type QueryResultVMRecordType struct {
+	// Attributes
+	HREF                string `xml:"href,attr,omitempty"`                // The URI of the entity.
+	Name                string `xml:"name,attr,omitempty"`                // VM name.
+	Deployed            bool   `xml:"isDeployed,attr,omitempty"`          // True if the virtual machine is deployed.
+	Status              string `xml:"status,attr,omitempty"`
+	Busy                bool   `xml:"isBusy,attr,omitempty"`
+	Deleted             bool   `xml:"isDeleted,attr,omitempty"`
+	MaintenanceMode     bool   `xml:"isInMaintenanceMode,attr,omitempty"`
+	Published           bool   `xml:"isPublished,attr,omitempty"`
+	VAppTemplate        bool   `xml:"isVAppTemplate,attr,omitempty"`
+	VdcEnabled          bool   `xml:"isVdcEnabled,attr,omitempty"`
+	VdcHREF             string `xml:"vdc,attr,omitempty"`
+	VAppParentHREF      string `xml:"container,attr,omitempty"`
+	VAppParentName      string `xml:"containerName,attr,omitempty"`
+	HardwareVersion     int    `xml:"hardwareVersion,attr,omitempty"`
+	HighestSupportedVersion int `xml:"pvdcHighestSupportedHardwareVersion,attr,omitempty"`
+	VmToolsVersion      string `xml:"vmToolsVersion,attr,omitempty"`
+	GuestOS             string `xml:"guestOs,attr,omitempty"`
+	MemoryMB            int    `xml:"memoryMB,attr,omitempty"`
+	Cpus                int    `xml:"numberOfCpus,attr,omitempty"`
+	StorageProfileName  string `xml:"storageProfileName,attr,omitempty"`
+	NetworkName         string `xml:"networkName,attr,omitempty"`
+	TaskHREF            string `xml:"task,attr,omitempty"`
+	TaskStatusName      string `xml:"taskStatusName,attr,omitempty"`
+	TaskDetails         string `xml:"taskDetails,attr,omitempty"`
+	TaskStatus          string `xml:"TaskStatus,attr,omitempty"`
 }
