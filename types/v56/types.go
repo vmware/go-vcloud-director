@@ -877,16 +877,88 @@ type VM struct {
 	// Section OVF_Section `xml:"Section,omitempty"
 	DateCreated string `xml:"DateCreated,omitempty"` // Creation date/time of the vApp.
 
+	// Section ovf:VirtualHardwareSection
+	VirtualHardwareSection    *VirtualHardwareSection    `xml:"VirtualHardwareSection,omitempty"`
+
 	// FIXME: Upstream bug? Missing NetworkConnectionSection
 	NetworkConnectionSection *NetworkConnectionSection `xml:"NetworkConnectionSection,omitempty"`
 
 	VAppScopedLocalID string `xml:"VAppScopedLocalId,omitempty"` // A unique identifier for the virtual machine in the scope of the vApp.
+
+	Snapshots      *SnapshotSection `xml:"SnapshotSection,omitempty"`
 
 	// TODO: OVF Sections to be implemented
 	// Environment OVF_Environment `xml:"Environment,omitempty"
 
 	VMCapabilities *VMCapabilities `xml:"VmCapabilities,omitempty"` // Allows you to specify certain capabilities of this virtual machine.
 	StorageProfile *Reference      `xml:"StorageProfile,omitempty"` // A reference to a storage profile to be used for this object. The specified storage profile must exist in the organization vDC that contains the object. If not specified, the default storage profile for the vDC is used.
+}
+
+// ovf:VirtualHardwareSection from VM struct
+type VirtualHardwareSection struct {
+	// Extends OVF Section_Type
+	XMLName                  xml.Name              `xml:"VirtualHardwareSection"`
+	Xmlns                    string                `xml:"vcloud,attr,omitempty"`
+
+	Info                     string                `xml:"Info"`
+	HREF                     string                `xml:"href,attr,omitempty"`
+	Type                     string                `xml:"type,attr,omitempty"`
+	Item                   []*VirtualHardwareItem  `xml:"Item,omitempty"`
+}
+
+// Each ovf:Item parsed from the ovf:VirtualHardwareSection
+type VirtualHardwareItem struct {
+	XMLName             xml.Name                     `xml:"Item"`
+	ResourceType        int                          `xml:"ResourceType,omitempty"`
+	ResourceSubType     string                       `xml:"ResourceSubType,omitempty"`
+	ElementName         string                       `xml:"ElementName,omitempty"`
+	Description         string                       `xml:"Description,omitempty"`
+	InstanceID          int                          `xml:"InstanceID,omitempty"`
+	AutomaticAllocation bool                         `xml:"AutomaticAllocation,omitempty"`
+	Address             string                       `xml:"Address,omitempty"`
+	AddressOnParent     int                          `xml:"AddressOnParent,omitempty"`
+	AllocationUnits     string                       `xml:"AllocationUnits,omitempty"`
+	Reservation         int                          `xml:"Reservation,omitempty"`
+	VirtualQuantity     int                          `xml:"VirtualQuantity,omitempty"`
+	Weight              int                          `xml:"Weight,omitempty"`
+	CoresPerSocket      int                          `xml:"CoresPerSocket,omitempty"`
+	Connection       []*VirtualHardwareConnection    `xml:"Connection,omitempty"`
+	HostResource     []*VirtualHardwareHostResource  `xml:"HostResource,omitempty"`
+	Link             []*Link                         `xml:"Link,omitempty"`
+}
+
+// Connection info from ResourceType=10 (Network Interface)
+type VirtualHardwareConnection struct {
+	IPAddress           string   `xml:"ipAddress,attr,omitempty"`
+	PrimaryConnection   bool     `xml:"primaryNetworkConnection,attr,omitempty"`
+	IpAddressingMode    string   `xml:"ipAddressingMode,attr,omitempty"`
+	NetworkName         string   `xml:",chardata"`
+}
+
+// HostResource info from ResourceType=17 (Hard Disk) 
+type VirtualHardwareHostResource struct {
+	BusType             int      `xml:"busType,attr,omitempty"`
+	BusSubType          string   `xml:"busSubType,attr,omitempty"`
+	Capacity            int      `xml:"capacity,attr,omitempty"`
+	StorageProfile      string   `xml:"storageProfileHref,attr,omitempty"`
+	OverrideVmDefault   bool     `xml:"storageProfileOverrideVmDefault,attr,omitempty"`
+}
+
+// SnapshotSection from VM struct
+type SnapshotSection struct {
+	// Extends OVF Section_Type
+	XMLName                  xml.Name              `xml:"SnapshotSection"`
+	Info                     string                `xml:"Info"`
+	HREF                     string                `xml:"href,attr,omitempty"`
+	Type                     string                `xml:"type,attr,omitempty"`
+	Snapshot              []*SnapshotItem          `xml:"Snapshot,omitempty"`
+}
+
+// Each snapshot listed in the SnapshotSection
+type SnapshotItem struct {
+	Created         string   `xml:"created,attr,omitempty"`
+	PoweredOn       bool     `xml:"poweredOn,attr,omitempty"`
+	Size            int      `xml:"size,attr,omitempty"`
 }
 
 // OVFItem is a horrible kludge to process OVF, needs to be fixed with proper types.
