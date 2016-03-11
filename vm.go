@@ -18,13 +18,13 @@ import (
 
 type VM struct {
 	VM *types.VM
-	c    *Client
+	c  *Client
 }
 
 func NewVM(c *Client) *VM {
 	return &VM{
 		VM: new(types.VM),
-		c:    c,
+		c:  c,
 	}
 }
 
@@ -53,4 +53,3 @@ func (c *VCDClient) FindVMByHREF(vmhref string) (VM, error) {
 	return *newvm, nil
 
 }
-

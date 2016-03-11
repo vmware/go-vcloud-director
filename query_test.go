@@ -5,9 +5,9 @@
 package govcd
 
 import (
- 	// "fmt"
-	. "gopkg.in/check.v1"
+	// "fmt"
 	"github.com/hmrc/vmware-govcd/testutil"
+	. "gopkg.in/check.v1"
 )
 
 func (s *K) Test_Query(c *C) {
@@ -17,14 +17,14 @@ func (s *K) Test_Query(c *C) {
 		"/api/query?type=vm": testutil.Response{200, nil, queryVmExample},
 	})
 
-	results, err := s.client.Query( map[string]string{"type": "vm"} )
+	results, err := s.client.Query(map[string]string{"type": "vm"})
 	_ = testServer.WaitRequest()
 	testServer.Flush()
 
 	c.Assert(err, IsNil)
 	c.Assert(results.Results.Total, Equals, 4)
-	c.Assert(len(results.Results.VMRecord), Equals, 4 )
-} 
+	c.Assert(len(results.Results.VMRecord), Equals, 4)
+}
 
 var queryVmExample = `<?xml version="1.0" encoding="UTF-8"?>
 <QueryResultRecords xmlns="http://www.vmware.com/vcloud/v1.5" name="vm" page="1" pageSize="25" total="4" href="http://localhost:4444/api/query?type=vm&amp;page=1&amp;pageSize=25&amp;format=records" type="application/vnd.vmware.vcloud.query.records+xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.10.6.15/api/v1.5/schema/master.xsd">

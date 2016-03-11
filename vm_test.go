@@ -5,9 +5,9 @@
 package govcd
 
 import (
- 	// "fmt"
-	. "gopkg.in/check.v1"
+	// "fmt"
 	"github.com/hmrc/vmware-govcd/testutil"
+	. "gopkg.in/check.v1"
 )
 
 func (s *K) Test_FindVMByHREF(c *C) {
@@ -24,7 +24,7 @@ func (s *K) Test_FindVMByHREF(c *C) {
 
 	c.Assert(err, IsNil)
 	c.Assert(vm.VM.Name, Equals, "testvmxnet")
-	c.Assert(vm.VM.VirtualHardwareSection.Item, NotNil )
+	c.Assert(vm.VM.VirtualHardwareSection.Item, NotNil)
 }
 
 var vmExample = `<?xml version="1.0" encoding="UTF-8"?>

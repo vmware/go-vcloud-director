@@ -114,7 +114,7 @@ func (c *VCDClient) vcdauthorize(user, pass, org string) error {
 				return fmt.Errorf("couldn't find a Query API in current session, %v", err)
 			}
 			c.QueryHREF = *u
-		}		
+		}
 	}
 	if !org_found {
 		return fmt.Errorf("couldn't find a Organization in current session")
@@ -175,7 +175,6 @@ func (c *VCDClient) RetrieveOrg(vcdname string) (Org, error) {
 
 	return *org, nil
 }
-
 
 func NewVCDClient(vcdEndpoint url.URL, insecure bool) *VCDClient {
 

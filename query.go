@@ -12,7 +12,7 @@ import (
 
 type Results struct {
 	Results *types.QueryResultRecordsType
-	c       *Client	
+	c       *Client
 }
 
 func NewResults(c *Client) *Results {
