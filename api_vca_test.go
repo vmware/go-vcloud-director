@@ -5,7 +5,7 @@
  * @Last Modified by: frapposelli
  */
 
-package govcd
+package govcloudair
 
 import (
 	"net/url"

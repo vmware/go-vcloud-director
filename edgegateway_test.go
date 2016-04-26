@@ -2,7 +2,7 @@
  * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
-package govcd
+package govcloudair
 
 import (
 	"github.com/vmware/govcloudair/testutil"

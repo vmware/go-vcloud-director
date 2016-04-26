@@ -3,7 +3,7 @@
  */
 
 // Package govcloudair provides a simple binding for vCloud Air / vCloud Director REST APIs.
-package govcd
+package govcloudair
 
 import (
 	"encoding/xml"
