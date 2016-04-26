@@ -2,7 +2,37 @@
  * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
-package govcloudair
+package govcd
+
+import (
+	"github.com/vmware/govcloudair/testutil"
+
+	. "gopkg.in/check.v1"
+)
+
+func (s *S) Test_NetRefresh(c *C) {
+
+	// Get the Org populated
+	testServer.ResponseMap(1, testutil.ResponseMap{
+		"/api/network/44444444-4444-4444-4444-4444444444444": testutil.Response{200, nil, orgvdcnetExample},
+	})
+
+	network, err := s.vdc.FindVDCNetwork("networkName")
+	_ = testServer.WaitRequest()
+	testServer.Flush()
+
+	c.Assert(err, IsNil)
+	c.Assert(network.OrgVDCNetwork.Name, Equals, "networkName")
+
+	testServer.Response(200, nil, orgvdcnetExample)
+	err = network.Refresh()
+	_ = testServer.WaitRequest()
+	testServer.Flush()
+
+	c.Assert(err, IsNil)
+	c.Assert(network.OrgVDCNetwork.Name, Equals, "networkName")
+
+}
 
 var orgvdcnetExample = `
 <?xml version="1.0" encoding="UTF-8"?>

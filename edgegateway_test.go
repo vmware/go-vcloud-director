@@ -2,58 +2,107 @@
  * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
-package govcloudair
+package govcd
 
 import (
-	"testing"
+	"github.com/vmware/govcloudair/testutil"
 
-	"github.com/stretchr/testify/assert"
+	. "gopkg.in/check.v1"
 )
 
-func Test_Refresh(t *testing.T) {
-	cc := new(callCounter)
-	responses := map[string]testResponse{
-		"/api/vdc/00000000-0000-0000-0000-000000000000/edgeGateways":  {200, nil, edgegatewayqueryresultsExample},
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000": {200, nil, edgegatewayExample},
-	}
+func (s *S) Test_Refresh(c *C) {
 
-	ctx, err := setupTestContext(authHandler(testHandler(responses, cc)))
-	if assert.NoError(t, err) {
-		// Get the Org populated
-		edge, err := ctx.VDC.FindEdgeGateway("M916272752-5793")
-		if assert.NoError(t, err) && assert.Equal(t, 2, cc.Pop()) {
-			assert.Equal(t, "M916272752-5793", edge.EdgeGateway.Name)
-			if assert.NoError(t, edge.Refresh()) && assert.Equal(t, 1, cc.Pop()) {
-				assert.Equal(t, "M916272752-5793", edge.EdgeGateway.Name)
-			}
-		}
-	}
+	// Get the Org populated
+	testServer.ResponseMap(2, testutil.ResponseMap{
+		"/api/vdc/00000000-0000-0000-0000-000000000000/edgeGateways":  testutil.Response{200, nil, edgegatewayqueryresultsExample},
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, edgegatewayExample},
+	})
+
+	edge, err := s.vdc.FindEdgeGateway("M916272752-5793")
+	_ = testServer.WaitRequests(2)
+	testServer.Flush()
+
+	c.Assert(err, IsNil)
+	c.Assert(edge.EdgeGateway.Name, Equals, "M916272752-5793")
+
+	testServer.Response(200, nil, edgegatewayExample)
+	err = edge.Refresh()
+	_ = testServer.WaitRequest()
+	testServer.Flush()
+
+	c.Assert(err, IsNil)
+	c.Assert(edge.EdgeGateway.Name, Equals, "M916272752-5793")
+
 }
 
-func Test_1to1Mappings(t *testing.T) {
-	cc := new(callCounter)
-	responses := map[string]testResponse{
-		"/api/vdc/00000000-0000-0000-0000-000000000000/edgeGateways":                           {200, nil, edgegatewayqueryresultsExample},
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000":                          {200, nil, edgegatewayExample},
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/configureServices": {200, nil, taskExample},
-	}
+func (s *S) Test_NATMapping(c *C) {
+	testServer.ResponseMap(2, testutil.ResponseMap{
+		"/api/vdc/00000000-0000-0000-0000-000000000000/edgeGateways":  testutil.Response{200, nil, edgegatewayqueryresultsExample},
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, edgegatewayExample},
+	})
 
-	ctx, err := setupTestContext(authHandler(testHandler(responses, cc)))
-	if assert.NoError(t, err) {
+	edge, err := s.vdc.FindEdgeGateway("M916272752-5793")
+	_ = testServer.WaitRequests(2)
+	testServer.Flush()
 
-		edge, err := ctx.VDC.FindEdgeGateway("M916272752-5793")
-		if assert.NoError(t, err) && assert.Equal(t, 2, cc.Pop()) {
-			assert.Equal(t, "M916272752-5793", edge.EdgeGateway.Name)
+	c.Assert(err, IsNil)
+	c.Assert(edge.EdgeGateway.Name, Equals, "M916272752-5793")
 
-			_, err = edge.Create1to1Mapping("10.0.0.1", "20.0.0.2", "description")
-			if assert.NoError(t, err) && assert.Equal(t, 2, cc.Pop()) {
+	testServer.ResponseMap(2, testutil.ResponseMap{
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000":                          testutil.Response{200, nil, edgegatewayExample},
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/configureServices": testutil.Response{200, nil, taskExample},
+	})
 
-				_, err = edge.Remove1to1Mapping("10.0.0.1", "20.0.0.2")
-				assert.NoError(t, err)
-				assert.Equal(t, 2, cc.Pop())
-			}
-		}
-	}
+	_, err = edge.AddNATMapping("DNAT", "10.0.0.1", "20.0.0.2", "77")
+	_ = testServer.WaitRequest()
+
+	c.Assert(err, IsNil)
+
+	testServer.ResponseMap(2, testutil.ResponseMap{
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000":                          testutil.Response{200, nil, edgegatewayExample},
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/configureServices": testutil.Response{200, nil, taskExample},
+	})
+
+	_, err = edge.RemoveNATMapping("DNAT", "10.0.0.1", "20.0.0.2", "77")
+	_ = testServer.WaitRequest()
+
+	c.Assert(err, IsNil)
+
+}
+
+func (s *S) Test_1to1Mappings(c *C) {
+
+	testServer.ResponseMap(2, testutil.ResponseMap{
+		"/api/vdc/00000000-0000-0000-0000-000000000000/edgeGateways":  testutil.Response{200, nil, edgegatewayqueryresultsExample},
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, edgegatewayExample},
+	})
+
+	edge, err := s.vdc.FindEdgeGateway("M916272752-5793")
+	_ = testServer.WaitRequests(2)
+	testServer.Flush()
+
+	c.Assert(err, IsNil)
+	c.Assert(edge.EdgeGateway.Name, Equals, "M916272752-5793")
+
+	testServer.ResponseMap(2, testutil.ResponseMap{
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000":                          testutil.Response{200, nil, edgegatewayExample},
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/configureServices": testutil.Response{200, nil, taskExample},
+	})
+
+	_, err = edge.Create1to1Mapping("10.0.0.1", "20.0.0.2", "description")
+	_ = testServer.WaitRequests(2)
+
+	c.Assert(err, IsNil)
+
+	testServer.ResponseMap(2, testutil.ResponseMap{
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000":                          testutil.Response{200, nil, edgegatewayExample},
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/configureServices": testutil.Response{200, nil, taskExample},
+	})
+
+	_, err = edge.Remove1to1Mapping("10.0.0.1", "20.0.0.2")
+	_ = testServer.WaitRequests(2)
+
+	c.Assert(err, IsNil)
 
 }
 

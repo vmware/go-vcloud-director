@@ -2,8 +2,8 @@
  * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
-// Package govcloudair provides a simple binding for vCloud Air REST APIs.
-package govcloudair
+// Package govcloudair provides a simple binding for vCloud Air / vCloud Director REST APIs.
+package govcd
 
 import (
 	"encoding/xml"
@@ -17,11 +17,42 @@ import (
 )
 
 // Client provides a client to vCloud Air, values can be populated automatically using the Authenticate method.
-type Client interface {
-	BaseURL() url.URL // HREF of the backend VDC you're using
-	NewRequest(map[string]string, string, *url.URL, io.Reader) *http.Request
-	DoHTTP(*http.Request) (*http.Response, error)
-	Disconnect() error
+type Client struct {
+	APIVersion    string      // The API version required
+	VCDToken      string      // Access Token (authorization header)
+	VCDAuthHeader string      // Authorization header
+	VCDVDCHREF    url.URL     // HREF of the backend VDC you're using
+	Http          http.Client // HttpClient is the client to use. Default will be used if not provided.
+}
+
+// NewRequest creates a new HTTP request and applies necessary auth headers if
+// set.
+func (c *Client) NewRequest(params map[string]string, method string, u url.URL, body io.Reader) *http.Request {
+
+	p := url.Values{}
+
+	// Build up our request parameters
+	for k, v := range params {
+		p.Add(k, v)
+	}
+
+	// Add the params to our URL
+	u.RawQuery = p.Encode()
+
+	// Build the request, no point in checking for errors here as we're just
+	// passing a string version of an url.URL struct and http.NewRequest returns
+	// error only if can't process an url.ParseRequestURI().
+	req, _ := http.NewRequest(method, u.String(), body)
+
+	if c.VCDAuthHeader != "" && c.VCDToken != "" {
+		// Add the authorization header
+		req.Header.Add(c.VCDAuthHeader, c.VCDToken)
+		// Add the Accept header for VCD
+		req.Header.Add("Accept", "application/*+xml;version="+c.APIVersion)
+	}
+
+	return req
+
 }
 
 // parseErr takes an error XML resp and returns a single string for use in error messages.
