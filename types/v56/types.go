@@ -90,8 +90,8 @@ type LeaseSettingsSection struct {
 // Description: Represents a range of IP addresses, start and end inclusive.
 // Since: 0.9
 type IPRange struct {
-	EndAddress   string `xml:"EndAddress"`   // End address of the IP range.
 	StartAddress string `xml:"StartAddress"` // Start address of the IP range.
+	EndAddress   string `xml:"EndAddress"`   // End address of the IP range.
 }
 
 // DhcpService represents a DHCP network service.
@@ -204,8 +204,8 @@ type NetworkConfiguration struct {
 	BackwardCompatibilityMode      bool             `xml:"BackwardCompatibilityMode"`
 	Features                       *NetworkFeatures `xml:"Features,omitempty"`
 	ParentNetwork                  *Reference       `xml:"ParentNetwork,omitempty"`
-	FenceMode                      string           `xml:"FenceMode"`
 	IPScopes                       *IPScopes        `xml:"IpScopes,omitempty"`
+	FenceMode                      string           `xml:"FenceMode"`
 	RetainNetInfoAcrossDeployments bool             `xml:"RetainNetInfoAcrossDeployments"`
 	// TODO: Not Implemented
 	// RouterInfo                     RouterInfo           `xml:"RouterInfo,omitempty"`
@@ -252,10 +252,10 @@ type NetworkConfigSection struct {
 type NetworkConnection struct {
 	Network                 string `xml:"network,attr"`                      // Name of the network to which this NIC is connected.
 	NetworkConnectionIndex  int    `xml:"NetworkConnectionIndex"`            // Virtual slot number associated with this NIC. First slot number is 0.
-	IsConnected             bool   `xml:"IsConnected"`                       // If the virtual machine is undeployed, this value specifies whether the NIC should be connected upon deployment. If the virtual machine is deployed, this value reports the current status of this NIC's connection, and can be updated to change that connection status.
 	NeedsCustomization      bool   `xml:"needsCustomization,attr,omitempty"` // True if this NIC needs customization.
 	ExternalIPAddress       string `xml:"ExternalIpAddress,omitempty"`       // If the network to which this NIC connects provides NAT services, the external address assigned to this NIC appears here.
 	IPAddress               string `xml:"IpAddress,omitempty"`               // IP address assigned to this NIC.
+	IsConnected             bool   `xml:"IsConnected"`                       // If the virtual machine is undeployed, this value specifies whether the NIC should be connected upon deployment. If the virtual machine is deployed, this value reports the current status of this NIC's connection, and can be updated to change that connection status.
 	IPAddressAllocationMode string `xml:"IpAddressAllocationMode"`           // IP address allocation mode for this connection. One of: POOL (A static IP address is allocated automatically from a pool of addresses.) DHCP (The IP address is obtained from a DHCP service.) MANUAL (The IP address is assigned manually in the IpAddress element.) NONE (No IP addressing mode specified.)
 	MACAddress              string `xml:"MACAddress,omitempty"`              // MAC address associated with the NIC.
 }
@@ -268,6 +268,10 @@ type NetworkConnection struct {
 type NetworkConnectionSection struct {
 	// Extends OVF Section_Type
 	// FIXME: Fix the OVF section
+	XMLName xml.Name `xml:"NetworkConnectionSection"`
+	Xmlns   string   `xml:"xmlns,attr,omitempty"`
+	Ovf     string   `xml:"xmlns:ovf,attr,omitempty"`
+
 	Info string `xml:"ovf:Info"`
 	//
 	HREF                          string             `xml:"href,attr,omitempty"`
@@ -300,6 +304,7 @@ type InstantiationParams struct {
 // Since: 5.1
 type OrgVDCNetwork struct {
 	XMLName       xml.Name              `xml:"OrgVdcNetwork"`
+	Xmlns         string                `xml:"xmlns,attr,imitempty"`
 	HREF          string                `xml:"href,attr,omitempty"`
 	Type          string                `xml:"type,attr,omitempty"`
 	ID            string                `xml:"id,attr,omitempty"`
@@ -310,9 +315,9 @@ type OrgVDCNetwork struct {
 	Description   string                `xml:"Description,omitempty"`
 	EdgeGateway   *Reference            `xml:"EdgeGateway,omitempty"`
 	IsShared      bool                  `xml:"IsShared"`
-	Link          []Link                `xml:"Link"`
+	Link          []Link                `xml:"Link,omitempty"`
 	ServiceConfig *GatewayFeatures      `xml:"ServiceConfig,omitempty"` // Specifies the service configuration for an isolated Org vDC networks
-	Tasks         TasksInProgress       `xml:"Tasks,omitempty"`
+	Tasks         *TasksInProgress      `xml:"Tasks,omitempty"`
 }
 
 // SupportedHardwareVersions contains a list of VMware virtual hardware versions supported in this vDC.
@@ -761,6 +766,18 @@ type VApp struct {
 	Children          *VAppChildren `xml:"Children,omitempty"`          // Container for virtual machines included in this vApp.
 }
 
+type MetadataValue struct {
+	XMLName    xml.Name    `xml:"MetadataValue"`
+	Xsi        string      `xml:"xmlns:xsi,attr"`
+	Xmlns      string      `xml:"xmlns,attr"`
+	TypedValue *TypedValue `xml:"TypedValue"`
+}
+
+type TypedValue struct {
+	XsiType string `xml:"xsi:type,attr"`
+	Value   string `xml:"Value"`
+}
+
 // VAppChildren is a container for virtual machines included in this vApp.
 // Type: VAppChildrenType
 // Namespace: http://www.vmware.com/vcloud/v1.5
@@ -834,9 +851,10 @@ type VAppTemplate struct {
 // Since: 0.9
 type VM struct {
 	// Attributes
-	Ovf   string `xml:"xmlns:ovf,attr,omitempty"`
-	Xsi   string `xml:"xmlns:xsi,attr,omitempty"`
-	Xmlns string `xml:"xmlns,attr,omitempty"`
+	XMLName xml.Name `xml:"Vm"`
+	Ovf     string   `xml:"xmlns:ovf,attr,omitempty"`
+	Xsi     string   `xml:"xmlns:xsi,attr,omitempty"`
+	Xmlns   string   `xml:"xmlns,attr,omitempty"`
 
 	HREF                    string `xml:"href,attr,omitempty"`                    // The URI of the entity.
 	Type                    string `xml:"type,attr,omitempty"`                    // The MIME type of the entity.
@@ -855,18 +873,90 @@ type VM struct {
 	VAppParent  *Reference       `xml:"VAppParent,omitempty"`  // Reserved. Unimplemented.
 	// TODO: OVF Sections to be implemented
 	// Section OVF_Section `xml:"Section,omitempty"
-	DateCreated string `xml:"DateCreated"` // Creation date/time of the vApp.
+	DateCreated string `xml:"DateCreated,omitempty"` // Creation date/time of the vApp.
+
+	// Section ovf:VirtualHardwareSection
+	VirtualHardwareSection *VirtualHardwareSection `xml:"VirtualHardwareSection,omitempty"`
 
 	// FIXME: Upstream bug? Missing NetworkConnectionSection
 	NetworkConnectionSection *NetworkConnectionSection `xml:"NetworkConnectionSection,omitempty"`
 
 	VAppScopedLocalID string `xml:"VAppScopedLocalId,omitempty"` // A unique identifier for the virtual machine in the scope of the vApp.
 
+	Snapshots *SnapshotSection `xml:"SnapshotSection,omitempty"`
+
 	// TODO: OVF Sections to be implemented
 	// Environment OVF_Environment `xml:"Environment,omitempty"
 
 	VMCapabilities *VMCapabilities `xml:"VmCapabilities,omitempty"` // Allows you to specify certain capabilities of this virtual machine.
 	StorageProfile *Reference      `xml:"StorageProfile,omitempty"` // A reference to a storage profile to be used for this object. The specified storage profile must exist in the organization vDC that contains the object. If not specified, the default storage profile for the vDC is used.
+}
+
+// ovf:VirtualHardwareSection from VM struct
+type VirtualHardwareSection struct {
+	// Extends OVF Section_Type
+	XMLName xml.Name `xml:"VirtualHardwareSection"`
+	Xmlns   string   `xml:"vcloud,attr,omitempty"`
+
+	Info string                 `xml:"Info"`
+	HREF string                 `xml:"href,attr,omitempty"`
+	Type string                 `xml:"type,attr,omitempty"`
+	Item []*VirtualHardwareItem `xml:"Item,omitempty"`
+}
+
+// Each ovf:Item parsed from the ovf:VirtualHardwareSection
+type VirtualHardwareItem struct {
+	XMLName             xml.Name                       `xml:"Item"`
+	ResourceType        int                            `xml:"ResourceType,omitempty"`
+	ResourceSubType     string                         `xml:"ResourceSubType,omitempty"`
+	ElementName         string                         `xml:"ElementName,omitempty"`
+	Description         string                         `xml:"Description,omitempty"`
+	InstanceID          int                            `xml:"InstanceID,omitempty"`
+	AutomaticAllocation bool                           `xml:"AutomaticAllocation,omitempty"`
+	Address             string                         `xml:"Address,omitempty"`
+	AddressOnParent     int                            `xml:"AddressOnParent,omitempty"`
+	AllocationUnits     string                         `xml:"AllocationUnits,omitempty"`
+	Reservation         int                            `xml:"Reservation,omitempty"`
+	VirtualQuantity     int                            `xml:"VirtualQuantity,omitempty"`
+	Weight              int                            `xml:"Weight,omitempty"`
+	CoresPerSocket      int                            `xml:"CoresPerSocket,omitempty"`
+	Connection          []*VirtualHardwareConnection   `xml:"Connection,omitempty"`
+	HostResource        []*VirtualHardwareHostResource `xml:"HostResource,omitempty"`
+	Link                []*Link                        `xml:"Link,omitempty"`
+}
+
+// Connection info from ResourceType=10 (Network Interface)
+type VirtualHardwareConnection struct {
+	IPAddress         string `xml:"ipAddress,attr,omitempty"`
+	PrimaryConnection bool   `xml:"primaryNetworkConnection,attr,omitempty"`
+	IpAddressingMode  string `xml:"ipAddressingMode,attr,omitempty"`
+	NetworkName       string `xml:",chardata"`
+}
+
+// HostResource info from ResourceType=17 (Hard Disk)
+type VirtualHardwareHostResource struct {
+	BusType           int    `xml:"busType,attr,omitempty"`
+	BusSubType        string `xml:"busSubType,attr,omitempty"`
+	Capacity          int    `xml:"capacity,attr,omitempty"`
+	StorageProfile    string `xml:"storageProfileHref,attr,omitempty"`
+	OverrideVmDefault bool   `xml:"storageProfileOverrideVmDefault,attr,omitempty"`
+}
+
+// SnapshotSection from VM struct
+type SnapshotSection struct {
+	// Extends OVF Section_Type
+	XMLName  xml.Name        `xml:"SnapshotSection"`
+	Info     string          `xml:"Info"`
+	HREF     string          `xml:"href,attr,omitempty"`
+	Type     string          `xml:"type,attr,omitempty"`
+	Snapshot []*SnapshotItem `xml:"Snapshot,omitempty"`
+}
+
+// Each snapshot listed in the SnapshotSection
+type SnapshotItem struct {
+	Created   string `xml:"created,attr,omitempty"`
+	PoweredOn bool   `xml:"poweredOn,attr,omitempty"`
+	Size      int    `xml:"size,attr,omitempty"`
 }
 
 // OVFItem is a horrible kludge to process OVF, needs to be fixed with proper types.
@@ -947,7 +1037,7 @@ type GuestCustomizationSection struct {
 type InstantiateVAppTemplateParams struct {
 	XMLName xml.Name `xml:"InstantiateVAppTemplateParams"`
 	Ovf     string   `xml:"xmlns:ovf,attr"`
-	Xsi     string   `xml:"xmlns:xsi,attr"`
+	Xsi     string   `xml:"xmlns:xsi,attr,omitempty"`
 	Xmlns   string   `xml:"xmlns,attr"`
 	// Attributes
 	Name        string `xml:"name,attr,omitempty"`        // Typically used to name or identify the subject of the request. For example, the name of the object being created or modified.
@@ -1037,6 +1127,14 @@ type SubnetParticipation struct {
 	IPAddress string    `xml:"IpAddress,omitempty"` // Ip Address to be assigned. Keep empty or ommit element for auto assignment
 	IPRanges  *IPRanges `xml:"IpRanges,omitempty"`  // Range of IP addresses available for external interfaces.
 	Netmask   string    `xml:"Netmask"`             // Nestmask for the subnet
+}
+
+type EdgeGatewayServiceConfiguration struct {
+	XMLName            xml.Name            `xml:"EdgeGatewayServiceConfiguration"`
+	Xmlns              string              `xml:"xmlns,attr,omitempty"`
+	GatewayDhcpService *GatewayDhcpService `xml:"GatewayDhcpService,omitempty"`
+	FirewallService    *FirewallService    `xml:"FirewallService,omitempty"`
+	NatService         *NatService         `xml:"NatService,omitempty"`
 }
 
 // GatewayFeatures represents edge gateway services.
@@ -1262,8 +1360,8 @@ type IpsecVpnSubnet struct {
 // Description: Represents Gateway DHCP service.
 // Since: 5.1
 type GatewayDhcpService struct {
-	IsEnabled bool             `xml:"IsEnabled,omitempty"` // Enable or disable the service using this flag
-	Pool      *DhcpPoolService `xml:"Pool,omitempty"`      // A DHCP pool.
+	IsEnabled bool               `xml:"IsEnabled,omitempty"` // Enable or disable the service using this flag
+	Pool      []*DhcpPoolService `xml:"Pool,omitempty"`      // A DHCP pool.
 }
 
 // DhcpPoolService represents DHCP pool service.
@@ -1465,6 +1563,22 @@ type QueryResultEdgeGatewayRecordsType struct {
 	EdgeGatewayRecord *QueryResultEdgeGatewayRecordType `xml:"EdgeGatewayRecord"` // A record representing a query result.
 }
 
+type QueryResultRecordsType struct {
+	// Attributes
+	HREF     string  `xml:"href,attr,omitempty"`     // The URI of the entity.
+	Type     string  `xml:"type,attr,omitempty"`     // The MIME type of the entity.
+	Name     string  `xml:"name,attr,omitempty"`     // The name of the entity.
+	Page     int     `xml:"page,attr,omitempty"`     // Page of the result set that this container holds. The first page is page number 1.
+	PageSize int     `xml:"pageSize,attr,omitempty"` // Page size, as a number of records or references.
+	Total    float64 `xml:"total,attr,omitempty"`    // Total number of records or references in the container.
+	// Elements
+	Link                       []*Link                                      `xml:"Link,omitempty"`             // A reference to an entity or operation associated with this object.
+	EdgeGatewayRecord          *QueryResultEdgeGatewayRecordType            `xml:"EdgeGatewayRecord"`          // A record representing a query result.
+	VMRecord                   []*QueryResultVMRecordType                   `xml:"VMRecord"`                   // A record representing a VM result.
+	VAppRecord                 []*QueryResultVAppRecordType                 `xml:"VAppRecord"`                 // A record representing a VApp result.
+	OrgVdcStorageProfileRecord []*QueryResultOrgVdcStorageProfileRecordType `xml:"OrgVdcStorageProfileRecord"` // A record representing storage profiles
+}
+
 // QueryResultEdgeGatewayRecordType represents an edge gateway record as query result.
 type QueryResultEdgeGatewayRecordType struct {
 	// Attributes
@@ -1477,4 +1591,84 @@ type QueryResultEdgeGatewayRecordType struct {
 	IsBusy              bool   `xml:"isBusy,attr"`                        // True if this Edge Gateway is busy.	Yes	Yes
 	GatewayStatus       string `xml:"gatewayStatus,attr,omitempty"`       //
 	HaStatus            string `xml:"haStatus,attr,omitempty"`            // High Availability Status of the edgeGateway	Yes	Yes
+}
+
+// QueryResultVMRecordType represents a VM record as query result.
+type QueryResultVMRecordType struct {
+	// Attributes
+	HREF                    string `xml:"href,attr,omitempty"`       // The URI of the entity.
+	Name                    string `xml:"name,attr,omitempty"`       // VM name.
+	Deployed                bool   `xml:"isDeployed,attr,omitempty"` // True if the virtual machine is deployed.
+	Status                  string `xml:"status,attr,omitempty"`
+	Busy                    bool   `xml:"isBusy,attr,omitempty"`
+	Deleted                 bool   `xml:"isDeleted,attr,omitempty"`
+	MaintenanceMode         bool   `xml:"isInMaintenanceMode,attr,omitempty"`
+	Published               bool   `xml:"isPublished,attr,omitempty"`
+	VAppTemplate            bool   `xml:"isVAppTemplate,attr,omitempty"`
+	VdcEnabled              bool   `xml:"isVdcEnabled,attr,omitempty"`
+	VdcHREF                 string `xml:"vdc,attr,omitempty"`
+	VAppParentHREF          string `xml:"container,attr,omitempty"`
+	VAppParentName          string `xml:"containerName,attr,omitempty"`
+	HardwareVersion         int    `xml:"hardwareVersion,attr,omitempty"`
+	HighestSupportedVersion int    `xml:"pvdcHighestSupportedHardwareVersion,attr,omitempty"`
+	VmToolsVersion          string `xml:"vmToolsVersion,attr,omitempty"`
+	GuestOS                 string `xml:"guestOs,attr,omitempty"`
+	MemoryMB                int    `xml:"memoryMB,attr,omitempty"`
+	Cpus                    int    `xml:"numberOfCpus,attr,omitempty"`
+	StorageProfileName      string `xml:"storageProfileName,attr,omitempty"`
+	NetworkName             string `xml:"networkName,attr,omitempty"`
+	TaskHREF                string `xml:"task,attr,omitempty"`
+	TaskStatusName          string `xml:"taskStatusName,attr,omitempty"`
+	TaskDetails             string `xml:"taskDetails,attr,omitempty"`
+	TaskStatus              string `xml:"TaskStatus,attr,omitempty"`
+}
+
+// QueryResultVAppRecordType represents a VM record as query result.
+type QueryResultVAppRecordType struct {
+	// Attributes
+	HREF                    string `xml:"href,attr,omitempty"`         // The URI of the entity.
+	Name                    string `xml:"name,attr"`                   // The name of the entity.
+	CreationDate            string `xml:"creationDate,attr,omitempty"` // Creation date/time of the vApp.
+	Busy                    bool   `xml:"isBusy,attr,omitempty"`
+	Deployed                bool   `xml:"isDeployed,attr,omitempty"` // True if the vApp is deployed.
+	Enabled                 bool   `xml:"isEnabled,attr,omitempty"`
+	Expired                 bool   `xml:"isExpired,attr,omitempty"`
+	MaintenanceMode         bool   `xml:"isInMaintenanceMode,attr,omitempty"`
+	Public                  bool   `xml:"isPublic,attr,omitempty"`
+	OwnerName               string `xml:"ownerName,attr,omitempty"`
+	Status                  string `xml:"status,attr,omitempty"`
+	VdcHREF                 string `xml:"vdc,attr,omitempty"`
+	VdcName                 string `xml:"vdcName,attr,omitempty"`
+	NumberOfVMs             int    `xml:"numberOfVMs,attr,omitempty"`
+	NumberOfCPUs            int    `xml:"numberOfCpus,attr,omitempty"`
+	CpuAllocationMhz        int    `xml:"cpuAllocationMhz,attr,omitempty"`
+	CpuAllocationInMhz      int    `xml:"cpuAllocationInMhz,attr,omitempty"`
+	StorageKB               int    `xml:"storageKB,attr,omitempty"`
+	MemoryAllocationMB      int    `xml:"memoryAllocationMB,attr,omitempty"`
+	AutoDeleteNotified      bool   `xml:"isAutoDeleteNotified,attr,omitempty"`
+	AutoUndeployNotified    bool   `xml:"isAutoUndeployNotified,attr,omitempty"`
+	VdcEnabled              bool   `xml:"isVdcEnabled, attr,omitempty"`
+	HonorBootOrder          bool   `xml:"honorBookOrder,attr,omitempty"`
+	HighestSupportedVersion int    `xml:"pvdcHighestSupportedHardwareVersion,attr,omitempty"`
+	LowestHardwareVersion   int    `xml:"lowestHardwareVersionInVApp,attr,omitempty"`
+	TaskHREF                string `xml:"task,attr,omitempty"`
+	TaskStatusName          string `xml:"taskStatusName,attr,omitempty"`
+	TaskStatus              string `xml:"TaskStatus,attr,omitempty"`
+	TaskDetails             string `xml:"taskDetails,attr,omitempty"`
+}
+
+// QueryResultOrgVdcStorageProfileRecordType represents a storage
+// profile as query result.
+type QueryResultOrgVdcStorageProfileRecordType struct {
+	// Attributes
+	HREF                    string `xml:"href,attr,omitempty"` // The URI of the entity.
+	Name                    string `xml:"name,attr,omitempty"` // Storage Profile name.
+	VdcHREF                 string `xml:"vdc,attr,omitempty"`
+	VdcName                 string `xml:"vdcName,attr,omitempty"`
+	IsDefaultStorageProfile bool   `xml:"isDefaultStorageProfile,attr,omitempty"`
+	IsEnabled               bool   `xml:"isEnabled,attr,omitempty"`
+	IsVdcBusy               bool   `xml:"isVdcBusy,attr,omitempty"`
+	NumberOfConditions      int    `xml:"numberOfConditions,attr,omitempty"`
+	StorageUsedMB           int    `xml:"storageUsedMB,attr,omitempty"`
+	StorageLimitMB          int    `xml:"storageLimitMB,attr,omitempty"`
 }

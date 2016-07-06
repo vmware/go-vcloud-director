@@ -14,3 +14,8 @@ notifications:
     urls:
       - secure: "IVp6dIdLTZS28zQVhrTn88U2W75cM1KNrbJw/U+wx7odg5JWDaqnwnI7c1zXPhyXh2rISG+HXuAxVlGVvcpwY73FlYPMQ97B5YbBhOX+Dv8w20sI18FHsCJUQ7SQYETK5vNaYcup2n8v5G7J2XbCQ7bZl125xwVEGCN8lPnLcIY="
     on_start: true
+after_success:
+- figlet "Build Successful!" | /usr/games/cowsay -n -e "^^"
+after_failure:
+- figlet "Build Failed!" | /usr/games/cowsay -n -s
+

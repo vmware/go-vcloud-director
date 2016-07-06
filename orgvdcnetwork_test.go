@@ -4,6 +4,36 @@
 
 package govcloudair
 
+import (
+	"github.com/vmware/govcloudair/testutil"
+
+	. "gopkg.in/check.v1"
+)
+
+func (s *S) Test_NetRefresh(c *C) {
+
+	// Get the Org populated
+	testServer.ResponseMap(1, testutil.ResponseMap{
+		"/api/network/44444444-4444-4444-4444-4444444444444": testutil.Response{200, nil, orgvdcnetExample},
+	})
+
+	network, err := s.vdc.FindVDCNetwork("networkName")
+	_ = testServer.WaitRequest()
+	testServer.Flush()
+
+	c.Assert(err, IsNil)
+	c.Assert(network.OrgVDCNetwork.Name, Equals, "networkName")
+
+	testServer.Response(200, nil, orgvdcnetExample)
+	err = network.Refresh()
+	_ = testServer.WaitRequest()
+	testServer.Flush()
+
+	c.Assert(err, IsNil)
+	c.Assert(network.OrgVDCNetwork.Name, Equals, "networkName")
+
+}
+
 var orgvdcnetExample = `
 <?xml version="1.0" encoding="UTF-8"?>
 <OrgVdcNetwork xmlns="http://www.vmware.com/vcloud/v1.5" status="1" name="networkName" id="urn:vcloud:network:cb0f4c9e-1a46-49d4-9fcb-d228000a6bc1" href="http://localhost:4444/api/network/cb0f4c9e-1a46-49d4-9fcb-d228000a6bc1" type="application/vnd.vmware.vcloud.orgVdcNetwork+xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.6.32.3/api/v1.5/schema/master.xsd">
