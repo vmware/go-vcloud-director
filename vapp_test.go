@@ -90,6 +90,56 @@ func (s *S) Test_Reboot(c *C) {
 
 }
 
+func (s *S) Test_SetOvf(c *C) {
+	testServer.ResponseMap(8, testutil.ResponseMap{
+		"/api/org/11111111-1111-1111-1111-111111111111":                       testutil.Response{200, nil, orgExample},
+		"/api/network/44444444-4444-4444-4444-4444444444444":                  testutil.Response{200, nil, orgvdcnetExample},
+		"/api/catalog/e8a20fdf-8a78-440c-ac71-0420db59f854":                   testutil.Response{200, nil, catalogExample},
+		"/api/catalogItem/1176e485-8858-4e15-94e5-ae4face605ae":               testutil.Response{200, nil, catalogitemExample},
+		"/api/vAppTemplate/vappTemplate-40cb9721-5f1a-44f9-b5c3-98c5f518c4f5": testutil.Response{200, nil, vapptemplateExample},
+		"/api/vdc/00000000-0000-0000-0000-000000000000/action/composeVApp":    testutil.Response{200, nil, instantiatedvappExample},
+		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000":                 testutil.Response{200, nil, vappExample},
+		"/api/vApp/vm-00000000-0000-0000-0000-000000000000/productSections":   testutil.Response{200, nil, taskExample},
+	})
+
+	// Get the Org populated
+	org, err := s.vdc.GetVDCOrg()
+	c.Assert(err, IsNil)
+
+	// Populate OrgVDCNetwork
+	net, err := s.vdc.FindVDCNetwork("networkName")
+	c.Assert(err, IsNil)
+
+	// Populate Catalog
+	cat, err := org.FindCatalog("Public Catalog")
+	c.Assert(err, IsNil)
+
+	// Populate Catalog Item
+	catitem, err := cat.FindCatalogItem("CentOS64-32bit")
+	c.Assert(err, IsNil)
+
+	// Get VAppTemplate
+	vapptemplate, err := catitem.GetVAppTemplate()
+	c.Assert(err, IsNil)
+
+	// Compose VApp
+	task, err := s.vapp.ComposeVApp(net, vapptemplate, "name", "description")
+	c.Assert(err, IsNil)
+	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
+	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
+
+	var test map[string]string
+	test = make(map[string]string)
+	test["guestinfo.hostname"] = "testhostname"
+	task, err = s.vapp.SetOvf(test)
+
+	c.Assert(err, IsNil)
+	c.Assert(task.Task.Status, Equals, "success")
+
+	_ = testServer.WaitRequests(8)
+
+}
+
 func (s *S) Test_AddMetadata(c *C) {
 	testServer.ResponseMap(8, testutil.ResponseMap{
 		"/api/org/11111111-1111-1111-1111-111111111111":                       testutil.Response{200, nil, orgExample},
@@ -672,6 +722,13 @@ var vappExample = `
 	        <ComputerName>cts-6.4-32bit</ComputerName>
 	        <Link href="http://localhost:4444/api/vApp/vm-00000000-0000-0000-0000-000000000000/guestCustomizationSection/" rel="edit" type="application/vnd.vmware.vcloud.guestCustomizationSection+xml"/>
 	      </GuestCustomizationSection>
+	      <ovf:ProductSection ovf:class="" ovf:instance="" ovf:required="true">
+	        <ovf:Property ovf:key="guestinfo.hostname" ovf:password="false" ovf:type="string" ovf:userConfigurable="true" ovf:value="">
+	          <ovf:Label>Hostname</ovf:Label>
+	          <ovf:Description>Hostname</ovf:Description>
+	          <ovf:Value ovf:value="coreos01"/>
+	        </ovf:Property>
+	      </ovf:ProductSection>
 	      <RuntimeInfoSection vcloud:href="http://localhost:4444/api/vApp/vm-00000000-0000-0000-0000-000000000000/runtimeInfoSection" vcloud:type="application/vnd.vmware.vcloud.virtualHardwareSection+xml" xmlns:vcloud="http://www.vmware.com/vcloud/v1.5">
 	        <ovf:Info>Specifies Runtime info</ovf:Info>
 	        <VMWareTools version="9283"/>

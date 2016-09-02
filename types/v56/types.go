@@ -293,6 +293,7 @@ type InstantiationParams struct {
 	LeaseSettingsSection         *LeaseSettingsSection         `xml:"LeaseSettingsSection,omitempty"`
 	NetworkConfigSection         *NetworkConfigSection         `xml:"NetworkConfigSection,omitempty"`
 	NetworkConnectionSection     *NetworkConnectionSection     `xml:"NetworkConnectionSection,omitempty"`
+	ProductSection               *ProductSection               `xml:"ProductSection,omitempty"`
 	// TODO: Not Implemented
 	// SnapshotSection              SnapshotSection              `xml:"SnapshotSection,omitempty"`
 }
@@ -760,10 +761,37 @@ type VApp struct {
 	VAppParent  *Reference       `xml:"VAppParent,omitempty"`  // Reserved. Unimplemented.
 	// TODO: OVF Sections to be implemented
 	// Section OVF_Section `xml:"Section"`
-	DateCreated       string        `xml:"DateCreated,omitempty"`       // Creation date/time of the vApp.
-	Owner             *Owner        `xml:"Owner,omitempty"`             // vApp owner.
-	InMaintenanceMode bool          `xml:"InMaintenanceMode,omitempty"` // True if this vApp is in maintenance mode. Prevents users from changing vApp metadata.
-	Children          *VAppChildren `xml:"Children,omitempty"`          // Container for virtual machines included in this vApp.
+	DateCreated       string          `xml:"DateCreated,omitempty"`       // Creation date/time of the vApp.
+	Owner             *Owner          `xml:"Owner,omitempty"`             // vApp owner.
+	InMaintenanceMode bool            `xml:"InMaintenanceMode,omitempty"` // True if this vApp is in maintenance mode. Prevents users from changing vApp metadata.
+	Children          *VAppChildren   `xml:"Children,omitempty"`          // Container for virtual machines included in this vApp.
+	ProductSection    *ProductSection `xml:"ProductSection,omitempty"`
+}
+
+type ProductSectionList struct {
+	XMLName        xml.Name        `xml:"ProductSectionList"`
+	Ovf            string          `xml:"xmlns:ovf,attr,omitempty"`
+	Xmlns          string          `xml:"xmlns,attr"`
+	ProductSection *ProductSection `xml:"http://schemas.dmtf.org/ovf/envelope/1 ProductSection,omitempty"`
+}
+
+type ProductSection struct {
+	Info     string      `xml:"Info,omitempty"`
+	Property []*Property `xml:"http://schemas.dmtf.org/ovf/envelope/1 Property,omitempty"`
+}
+
+type Property struct {
+	Key              string `xml:"http://schemas.dmtf.org/ovf/envelope/1 key,attr,omitempty"`
+	Label            string `xml:"http://schemas.dmtf.org/ovf/envelope/1 Label,omitempty"`
+	Description      string `xml:"http://schemas.dmtf.org/ovf/envelope/1 Description,omitempty"`
+	DefaultValue     string `xml:"http://schemas.dmtf.org/ovf/envelope/1 value,attr"`
+	Value            *Value `xml:"http://schemas.dmtf.org/ovf/envelope/1 Value,omitempty"`
+	Type             string `xml:"http://schemas.dmtf.org/ovf/envelope/1 type,attr,omitempty"`
+	UserConfigurable bool   `xml:"http://schemas.dmtf.org/ovf/envelope/1 userConfigurable,attr"`
+}
+
+type Value struct {
+	Value string `xml:"http://schemas.dmtf.org/ovf/envelope/1 value,attr,omitempty"`
 }
 
 type MetadataValue struct {
@@ -890,6 +918,7 @@ type VM struct {
 
 	VMCapabilities *VMCapabilities `xml:"VmCapabilities,omitempty"` // Allows you to specify certain capabilities of this virtual machine.
 	StorageProfile *Reference      `xml:"StorageProfile,omitempty"` // A reference to a storage profile to be used for this object. The specified storage profile must exist in the organization vDC that contains the object. If not specified, the default storage profile for the vDC is used.
+	ProductSection *ProductSection `xml:"ProductSection,omitempty"`
 }
 
 // ovf:VirtualHardwareSection from VM struct
