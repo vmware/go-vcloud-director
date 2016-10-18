@@ -17,7 +17,7 @@ import (
         "net/url"
         "os"
 
-        "github.com/vmware/govcloudair"
+        govcd "github.com/vmware/govcloudair"
 )
 
 type Config struct {
