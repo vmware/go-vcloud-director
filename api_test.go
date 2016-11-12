@@ -1,3 +1,3 @@
-package govcd
+package govcloudair
 
 import ()

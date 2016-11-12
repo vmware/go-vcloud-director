@@ -1,7 +1,11 @@
-## vmware-govcd
+# govcloudair [![Build Status](https://ci.vmware.run/api/badges/vmware/govcloudair/status.svg)](https://ci.vmware.run/vmware/govcloudair) [![Build Status](https://travis-ci.org/vmware/govcloudair.svg?branch=master)](https://travis-ci.org/vmware/govcloudair) [![Coverage Status](https://coveralls.io/repos/vmware/govcloudair/badge.svg?branch=master&service=github)](https://coveralls.io/github/vmware/govcloudair?branch=master) [![GoDoc](https://godoc.org/github.com/vmware/govcloudair?status.svg)](http://godoc.org/github.com/vmware/govcloudair) [![Join the chat at https://gitter.im/vmware/govcloudair](https://badges.gitter.im/vmware/govcloudair.svg)](https://gitter.im/vmware/govcloudair?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+This repo provides the `govcloudair` package which offers an interface to the vCloud Air 5.6 and 5.7 API and vCloud Director 5.5 API.
 
-This package was originally forked from [github.com/vmware/govcloudair](https://github.com/vmware/govcloudair) before pulling in [rickard-von-essen's](https://github.com/rickard-von-essen)
-great changes to allow using a [vCloud Director API](https://github.com/rickard-von-essen/govcloudair/tree/vcd-5.5). On top of this I have added features as needed for a terraform provider for vCloud Director
+It serves as a foundation for a project currently in development, there are plans to make it a general purpose API in the future. The `govcloudair` package is used by the Terraform provider for vCloud Director.
+
+The API is currently under heavy development, its coverage is extremely limited at the moment.
+
+The bindings now support both Subscription and On-demand accounts and vCloud Director 5.5
 
 ### Example ###
 
@@ -9,46 +13,46 @@ great changes to allow using a [vCloud Director API](https://github.com/rickard-
 package main
 
 import (
-	"fmt"
-	"net/url"
-    "os"
+        "fmt"
+        "net/url"
+        "os"
 
-	"github.com/hmrc/vmware-govcd"
+        govcd "github.com/vmware/govcloudair"
 )
 
 type Config struct {
-	User     string
-	Password string
-	Org      string
-	Href     string
-	VDC      string
-	Insecure bool
+        User     string
+        Password string
+        Org      string
+        Href     string
+        VDC      string
+        Insecure bool
 }
 
 func (c *Config) Client() (*govcd.VCDClient, error) {
-	u, err := url.ParseRequestURI(c.Href)
-	if err != nil {
-		return nil, fmt.Errorf("Unable to pass url: %s", err)
-	}
+        u, err := url.ParseRequestURI(c.Href)
+        if err != nil {
+                return nil, fmt.Errorf("Unable to pass url: %s", err)
+        }
 
-	vcdclient := govcd.NewVCDClient(*u, c.Insecure)
-	org, vcd, err := vcdclient.Authenticate(c.User, c.Password, c.Org, c.VDC)
-	if err != nil {
-		return nil, fmt.Errorf("Unable to authenticate: %s", err)
-	}
-	vcdclient.Org = org
-	vcdclient.OrgVdc = vcd
-	return vcdclient, nil
+        vcdclient := govcd.NewVCDClient(*u, c.Insecure)
+        org, vcd, err := vcdclient.Authenticate(c.User, c.Password, c.Org, c.VDC)
+        if err != nil {
+                return nil, fmt.Errorf("Unable to authenticate: %s", err)
+        }
+        vcdclient.Org = org
+        vcdclient.OrgVdc = vcd
+        return vcdclient, nil
 }
 
 func main() {
   config := Config{
-		User:     "Username",
-		Password: "password",
-		Org:      "vcd org",
-		Href:     "vcd api url",
-		VDC:      "vcd virtual datacenter name",
-	}
+                User:     "Username",
+                Password: "password",
+                Org:      "vcd org",
+                Href:     "vcd api url",
+                VDC:      "vcd virtual datacenter name",
+        }
 
   client, err := config.Client() // We now have a client
   if err != nil {
@@ -58,3 +62,4 @@ func main() {
   fmt.Printf("Org URL: %s\n", client.OrgHREF.String())
 }
 ```
+
