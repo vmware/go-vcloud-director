@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
-	types "github.com/vmware/govcloudair/types/v56"
+	types "github.com/ukcloud/govcloudair/types/v56"
 )
 
 type VAppTemplate struct {

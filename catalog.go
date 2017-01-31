@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"net/url"
 
-	types "github.com/vmware/govcloudair/types/v56"
+	types "github.com/ukcloud/govcloudair/types/v56"
 )
 
 type Catalog struct {
