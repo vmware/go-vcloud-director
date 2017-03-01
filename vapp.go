@@ -396,7 +396,10 @@ func (v *VApp) Delete() (Task, error) {
 }
 
 func (v *VApp) RunCustomizationScript(computername, script string) (Task, error) {
+	return v.Customize(computername, script, false)
+}
 
+func (v *VApp) Customize(computername, script string, changeSid bool) (Task, error) {
 	err := v.Refresh()
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing vapp before running customization: %v", err)
@@ -418,6 +421,7 @@ func (v *VApp) RunCustomizationScript(computername, script string) (Task, error)
 		Enabled:             true,
 		ComputerName:        computername,
 		CustomizationScript: script,
+		ChangeSid:           false,
 	}
 
 	output, err := xml.MarshalIndent(vu, "  ", "    ")
