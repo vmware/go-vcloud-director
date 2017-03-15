@@ -1159,11 +1159,12 @@ type SubnetParticipation struct {
 }
 
 type EdgeGatewayServiceConfiguration struct {
-	XMLName            xml.Name            `xml:"EdgeGatewayServiceConfiguration"`
-	Xmlns              string              `xml:"xmlns,attr,omitempty"`
-	GatewayDhcpService *GatewayDhcpService `xml:"GatewayDhcpService,omitempty"`
-	FirewallService    *FirewallService    `xml:"FirewallService,omitempty"`
-	NatService         *NatService         `xml:"NatService,omitempty"`
+	XMLName                xml.Name                `xml:"EdgeGatewayServiceConfiguration"`
+	Xmlns                  string                  `xml:"xmlns,attr,omitempty"`
+	GatewayDhcpService     *GatewayDhcpService     `xml:"GatewayDhcpService,omitempty"`
+	FirewallService        *FirewallService        `xml:"FirewallService,omitempty"`
+	NatService             *NatService             `xml:"NatService,omitempty"`
+	GatewayIpsecVpnService *GatewayIpsecVpnService `xml:"GatewayIpsecVpnService,omitempty"` // Substitute for NetworkService. Gateway Ipsec VPN service settings
 }
 
 // GatewayFeatures represents edge gateway services.
@@ -1352,12 +1353,13 @@ type GatewayIpsecVpnTunnel struct {
 	Description string `xml:"Description,omitempty"` // A description of the tunnel.
 	// TODO: Fix this in a better way
 	IpsecVpnThirdPartyPeer *IpsecVpnThirdPartyPeer `xml:"IpsecVpnThirdPartyPeer,omitempty"` // Details about the peer network.
+	IpsecVpnLocalPeer      *IpsecVpnLocalPeer      `xml:"IpsecVpnLocalPeer"`                // Details about the local peer network.
 	PeerIPAddress          string                  `xml:"PeerIpAddress"`                    // IP address of the peer endpoint.
 	PeerID                 string                  `xml:"PeerId"`                           // Id for the peer end point
 	LocalIPAddress         string                  `xml:"LocalIpAddress"`                   // Address of the local network.
 	LocalID                string                  `xml:"LocalId"`                          // Id for local end point
-	LocalSubnet            *IpsecVpnSubnet         `xml:"LocalSubnet"`                      // List of local subnets in the tunnel.
-	PeerSubnet             *IpsecVpnSubnet         `xml:"PeerSubnet"`                       // List of peer subnets in the tunnel.
+	LocalSubnet            []*IpsecVpnSubnet       `xml:"LocalSubnet"`                      // List of local subnets in the tunnel.
+	PeerSubnet             []*IpsecVpnSubnet       `xml:"PeerSubnet"`                       // List of peer subnets in the tunnel.
 	SharedSecret           string                  `xml:"SharedSecret"`                     // Shared secret used for authentication.
 	SharedSecretEncrypted  bool                    `xml:"SharedSecretEncrypted,omitempty"`  // True if shared secret is encrypted.
 	EncryptionProtocol     string                  `xml:"EncryptionProtocol"`               // Encryption protocol to be used. One of: AES, AES256, TRIPLEDES
@@ -1370,6 +1372,12 @@ type GatewayIpsecVpnTunnel struct {
 // IpsecVpnThirdPartyPeer represents details about a peer network
 type IpsecVpnThirdPartyPeer struct {
 	PeerID string `xml:"PeerId,omitempty"` // Id for the peer end point
+}
+
+// IpsecVpnThirdPartyPeer represents details about a peer network
+type IpsecVpnLocalPeer struct {
+	ID   string `xml:"Id"`   // Id for the peer end point
+	Name string `xml:"Name"` // Name for the peer
 }
 
 // IpsecVpnSubnet represents subnet details.
