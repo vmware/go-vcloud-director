@@ -623,3 +623,44 @@ func (e *EdgeGateway) Create1to1Mapping(internal, external, description string) 
 	return *task, nil
 
 }
+
+func (e *EdgeGateway) AddIpsecVPN(ipsecVPNConfig *types.EdgeGatewayServiceConfiguration) (Task, error) {
+
+	output, err := xml.MarshalIndent(ipsecVPNConfig, "  ", "    ")
+	if err != nil {
+		fmt.Errorf("error marshaling ipsecVPNConfig compose: %s", err)
+	}
+
+	debug := os.Getenv("GOVCLOUDAIR_DEBUG")
+
+	if debug == "true" {
+		fmt.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+	}
+
+	b := bytes.NewBufferString(xml.Header + string(output))
+	log.Printf("[DEBUG] ipsecVPN configuration: %s", b)
+
+	s, _ := url.ParseRequestURI(e.EdgeGateway.HREF)
+	s.Path += "/action/configureServices"
+
+	fmt.Println(s)
+
+	req := e.c.NewRequest(map[string]string{}, "POST", *s, b)
+
+	req.Header.Add("Content-Type", "application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml")
+
+	resp, err := checkResp(e.c.Http.Do(req))
+	if err != nil {
+		return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
+	}
+
+	task := NewTask(e.c)
+
+	if err = decodeBody(resp, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
+	}
+
+	// The request was successful
+	return *task, nil
+
+}
