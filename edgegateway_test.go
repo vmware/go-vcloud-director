@@ -70,6 +70,41 @@ func (s *S) Test_NATMapping(c *C) {
 
 }
 
+func (s *S) Test_NATPortMapping(c *C) {
+	testServer.ResponseMap(2, testutil.ResponseMap{
+		"/api/vdc/00000000-0000-0000-0000-000000000000/edgeGateways":  testutil.Response{200, nil, edgegatewayqueryresultsExample},
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, edgegatewayExample},
+	})
+
+	edge, err := s.vdc.FindEdgeGateway("M916272752-5793")
+	_ = testServer.WaitRequests(2)
+	testServer.Flush()
+
+	c.Assert(err, IsNil)
+	c.Assert(edge.EdgeGateway.Name, Equals, "M916272752-5793")
+
+	testServer.ResponseMap(2, testutil.ResponseMap{
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000":                          testutil.Response{200, nil, edgegatewayExample},
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/configureServices": testutil.Response{200, nil, taskExample},
+	})
+
+	_, err = edge.AddNATPortMapping("DNAT", "10.0.0.1", "1177", "20.0.0.2", "77")
+	_ = testServer.WaitRequest()
+
+	c.Assert(err, IsNil)
+
+	testServer.ResponseMap(2, testutil.ResponseMap{
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000":                          testutil.Response{200, nil, edgegatewayExample},
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/configureServices": testutil.Response{200, nil, taskExample},
+	})
+
+	_, err = edge.RemoveNATPortMapping("DNAT", "10.0.0.1", "1177", "20.0.0.2", "77")
+	_ = testServer.WaitRequest()
+
+	c.Assert(err, IsNil)
+
+}
+
 func (s *S) Test_1to1Mappings(c *C) {
 
 	testServer.ResponseMap(2, testutil.ResponseMap{
