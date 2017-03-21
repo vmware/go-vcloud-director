@@ -687,6 +687,29 @@ type ComposeVAppParams struct {
 	AllEULAsAccepted    bool                         `xml:"AllEULAsAccepted,omitempty"`    // True confirms acceptance of all EULAs in a vApp template. Instantiation fails if this element is missing, empty, or set to false and one or more EulaSection elements are present.
 }
 
+type ReComposeVAppParams struct {
+	XMLName xml.Name `xml:"RecomposeVAppParams"`
+	Ovf     string   `xml:"xmlns:ovf,attr"`
+	Xsi     string   `xml:"xmlns:xsi,attr"`
+	Xmlns   string   `xml:"xmlns,attr"`
+	// Attributes
+	Name        string `xml:"name,attr,omitempty"`        // Typically used to name or identify the subject of the request. For example, the name of the object being created or modified.
+	Deploy      bool   `xml:"deploy,attr"`                // True if the vApp should be deployed at instantiation. Defaults to true.
+	PowerOn     bool   `xml:"powerOn,attr"`               // True if the vApp should be powered-on at instantiation. Defaults to true.
+	LinkedClone bool   `xml:"linkedClone,attr,omitempty"` // Reserved. Unimplemented.
+	// Elements
+	Description         string                       `xml:"Description,omitempty"`         // Optional description.
+	VAppParent          *Reference                   `xml:"VAppParent,omitempty"`          // Reserved. Unimplemented.
+	InstantiationParams *InstantiationParams         `xml:"InstantiationParams,omitempty"` // Instantiation parameters for the composed vApp.
+	SourcedItem         *SourcedCompositionItemParam `xml:"SourcedItem,omitempty"`         // Composition item. One of: vApp vAppTemplate Vm.
+	AllEULAsAccepted    bool                         `xml:"AllEULAsAccepted,omitempty"`
+	DeleteItem          *DeleteItem                  `xml:"DeleteItem,omitempty"`
+}
+
+type DeleteItem struct {
+	HREF string `xml:"href,attr,omitempty"`
+}
+
 // SourcedCompositionItemParam represents a vApp, vApp template or Vm to include in a composed vApp.
 // Type: SourcedCompositionItemParamType
 // Namespace: http://www.vmware.com/vcloud/v1.5
