@@ -6,7 +6,7 @@ package govcloudair
 
 import (
 	"github.com/ukcloud/govcloudair/testutil"
-
+	types "github.com/ukcloud/govcloudair/types/v56"
 	. "gopkg.in/check.v1"
 )
 
@@ -139,6 +139,59 @@ func (s *S) Test_1to1Mappings(c *C) {
 
 	c.Assert(err, IsNil)
 
+}
+
+func (s *S) Test_AddIpsecVPN(c *C) {
+	testServer.ResponseMap(2, testutil.ResponseMap{
+		"/api/vdc/00000000-0000-0000-0000-000000000000/edgeGateways":  testutil.Response{200, nil, edgegatewayqueryresultsExample},
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, edgegatewayExample},
+	})
+
+	edge, err := s.vdc.FindEdgeGateway("M916272752-5793")
+	_ = testServer.WaitRequests(2)
+	testServer.Flush()
+
+	c.Assert(err, IsNil)
+	c.Assert(edge.EdgeGateway.Name, Equals, "M916272752-5793")
+
+	testServer.ResponseMap(2, testutil.ResponseMap{
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000":                          testutil.Response{200, nil, edgegatewayExample},
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/configureServices": testutil.Response{200, nil, taskExample},
+	})
+
+	tunnel := &types.GatewayIpsecVpnTunnel{
+		Name:        "Test VPN",
+		Description: "Testing VPN Creation",
+		IpsecVpnLocalPeer: &types.IpsecVpnLocalPeer{
+			ID:   "",
+			Name: "",
+		},
+		EncryptionProtocol: "SHA256",
+		LocalIPAddress:     "111.111.111.111",
+		LocalID:            "111.111.111.111",
+		IsEnabled:          true,
+	}
+
+	tunnels := make([]*types.GatewayIpsecVpnTunnel, 1)
+	tunnels[0] = tunnel
+
+	ipsecVPNConfig := &types.EdgeGatewayServiceConfiguration{
+		Xmlns: "http://www.vmware.com/vcloud/v1.5",
+		GatewayIpsecVpnService: &types.GatewayIpsecVpnService{
+			IsEnabled: true,
+			Tunnel:    tunnels,
+		},
+	}
+
+	_, err = edge.AddIpsecVPN(ipsecVPNConfig)
+	_ = testServer.WaitRequests(2)
+
+	c.Assert(err, IsNil)
+
+	testServer.ResponseMap(2, testutil.ResponseMap{
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000":                          testutil.Response{200, nil, edgegatewayExample},
+		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/configureServices": testutil.Response{200, nil, taskExample},
+	})
 }
 
 var edgegatewayqueryresultsExample = `

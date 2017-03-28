@@ -635,6 +635,11 @@ func (e *EdgeGateway) Create1to1Mapping(internal, external, description string) 
 
 func (e *EdgeGateway) AddIpsecVPN(ipsecVPNConfig *types.EdgeGatewayServiceConfiguration) (Task, error) {
 
+	err := e.Refresh()
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+
 	output, err := xml.MarshalIndent(ipsecVPNConfig, "  ", "    ")
 	if err != nil {
 		fmt.Errorf("error marshaling ipsecVPNConfig compose: %s", err)
