@@ -6,6 +6,7 @@ package govcloudair
 
 import (
 	"github.com/ukcloud/govcloudair/testutil"
+	"github.com/ukcloud/govcloudair/types/v56"
 
 	. "gopkg.in/check.v1"
 )
@@ -42,8 +43,14 @@ func (s *S) Test_ComposeVApp(c *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	c.Assert(err, IsNil)
 
+	// TODO: Add checks which use find methodes for storage_profile
+	storage_profile_reference := &types.Reference{
+		HREF: "http://localhost:4444/api/vdcStorageProfile/816409e1-6207-4a1f-bd45-947cd03d6452",
+		Name: "SSD-Accelerated",
+	}
+
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(net, vapptemplate, "name", "description")
+	task, err := s.vapp.ComposeVApp(net, vapptemplate, storage_profile_reference, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -122,8 +129,14 @@ func (s *S) Test_SetOvf(c *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	c.Assert(err, IsNil)
 
+	// TODO: Add checks which use find methodes for storage_profile
+	storage_profile_reference := &types.Reference{
+		HREF: "http://localhost:4444/api/vdcStorageProfile/816409e1-6207-4a1f-bd45-947cd03d6452",
+		Name: "SSD-Accelerated",
+	}
+
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(net, vapptemplate, "name", "description")
+	task, err := s.vapp.ComposeVApp(net, vapptemplate, storage_profile_reference, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -172,8 +185,14 @@ func (s *S) Test_AddMetadata(c *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	c.Assert(err, IsNil)
 
+	// TODO: Add checks which use find methodes for storage_profile
+	storage_profile_reference := &types.Reference{
+		HREF: "http://localhost:4444/api/vdcStorageProfile/816409e1-6207-4a1f-bd45-947cd03d6452",
+		Name: "SSD-Accelerated",
+	}
+
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(net, vapptemplate, "name", "description")
+	task, err := s.vapp.ComposeVApp(net, vapptemplate, storage_profile_reference, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -220,8 +239,14 @@ func (s *S) Test_ChangeVMName(c *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	c.Assert(err, IsNil)
 
+	// TODO: Add checks which use find methodes for storage_profile
+	storage_profile_reference := &types.Reference{
+		HREF: "http://localhost:4444/api/vdcStorageProfile/816409e1-6207-4a1f-bd45-947cd03d6452",
+		Name: "SSD-Accelerated",
+	}
+
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(net, vapptemplate, "name", "description")
+	task, err := s.vapp.ComposeVApp(net, vapptemplate, storage_profile_reference, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -334,8 +359,14 @@ func (s *S) Test_RunCustomizationScript(c *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	c.Assert(err, IsNil)
 
+	// TODO: Add checks which use find methodes for storage_profile
+	storage_profile_reference := &types.Reference{
+		HREF: "http://localhost:4444/api/vdcStorageProfile/816409e1-6207-4a1f-bd45-947cd03d6452",
+		Name: "SSD-Accelerated",
+	}
+
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(net, vapptemplate, "name", "description")
+	task, err := s.vapp.ComposeVApp(net, vapptemplate, storage_profile_reference, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -382,8 +413,14 @@ func (s *S) Test_ChangeCPUcount(c *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	c.Assert(err, IsNil)
 
+	// TODO: Add checks which use find methodes for storage_profile
+	storage_profile_reference := &types.Reference{
+		HREF: "http://localhost:4444/api/vdcStorageProfile/816409e1-6207-4a1f-bd45-947cd03d6452",
+		Name: "SSD-Accelerated",
+	}
+
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(net, vapptemplate, "name", "description")
+	task, err := s.vapp.ComposeVApp(net, vapptemplate, storage_profile_reference, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -430,8 +467,14 @@ func (s *S) Test_ChangeMemorySize(c *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	c.Assert(err, IsNil)
 
+	// TODO: Add checks which use find methodes for storage_profile
+	storage_profile_reference := &types.Reference{
+		HREF: "http://localhost:4444/api/vdcStorageProfile/816409e1-6207-4a1f-bd45-947cd03d6452",
+		Name: "SSD-Accelerated",
+	}
+
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(net, vapptemplate, "name", "description")
+	task, err := s.vapp.ComposeVApp(net, vapptemplate, storage_profile_reference, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
