@@ -249,7 +249,7 @@ func (v *VApp) RemoveVM(vm VM) error {
 	return nil
 }
 
-func (v *VApp) ComposeVApp(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplate, storage_profile_reference *types.Reference, name string, description string) (Task, error) {
+func (v *VApp) ComposeVApp(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplate, storageprofileref types.Reference, name string, description string) (Task, error) {
 
 	if vapptemplate.VAppTemplate.Children == nil || orgvdcnetwork.OrgVDCNetwork == nil {
 		return Task{}, fmt.Errorf("can't compose a new vApp, objects passed are not valid")
@@ -303,7 +303,7 @@ func (v *VApp) ComposeVApp(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplat
 				InnerNetwork:     orgvdcnetwork.OrgVDCNetwork.Name,
 				ContainerNetwork: orgvdcnetwork.OrgVDCNetwork.Name,
 			},
-			StorageProfile: storage_profile_reference,
+			StorageProfile: &storageprofileref,
 		},
 	}
 
