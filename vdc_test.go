@@ -8,6 +8,7 @@ import (
 	"github.com/ukcloud/govcloudair/testutil"
 
 	. "gopkg.in/check.v1"
+	"strconv"
 )
 
 func (s *S) Test_FindVDCNetwork(c *C) {
@@ -87,10 +88,10 @@ func (s *S) Test_NewVdc(c *C) {
 	c.Assert(s.vdc.Vdc.IsEnabled, Equals, true)
 
 	for _, v := range s.vdc.Vdc.VdcStorageProfiles {
-		for _, v2 := range v.VdcStorageProfile {
-			c.Assert(v2.Name, Equals, "storageProfile")
+		for i, v2 := range v.VdcStorageProfile {
+			c.Assert(v2.Name, Equals, "storageProfile"+strconv.Itoa(i+1))
 			c.Assert(v2.Type, Equals, "application/vnd.vmware.vcloud.vdcStorageProfile+xml")
-			c.Assert(v2.HREF, Equals, "http://localhost:4444/api/vdcStorageProfile/88888888-8888-8888-8888-888888888888")
+			c.Assert(v2.HREF, Equals, "http://localhost:4444/api/vdcStorageProfile/88888888-8888-8888-8888-88888888888"+strconv.Itoa(i+8))
 		}
 	}
 
@@ -172,7 +173,8 @@ var vdcExample = `
 	  <VmQuota>0</VmQuota>
 	  <IsEnabled>true</IsEnabled>
 	  <VdcStorageProfiles>
-	    <VdcStorageProfile href="http://localhost:4444/api/vdcStorageProfile/88888888-8888-8888-8888-888888888888" name="storageProfile" type="application/vnd.vmware.vcloud.vdcStorageProfile+xml"/>
+	    <VdcStorageProfile href="http://localhost:4444/api/vdcStorageProfile/88888888-8888-8888-8888-888888888888" name="storageProfile1" type="application/vnd.vmware.vcloud.vdcStorageProfile+xml"/>
+	    <VdcStorageProfile href="http://localhost:4444/api/vdcStorageProfile/88888888-8888-8888-8888-888888888889" name="storageProfile2" type="application/vnd.vmware.vcloud.vdcStorageProfile+xml"/>
 	  </VdcStorageProfiles>
 	</Vdc>
 	`
