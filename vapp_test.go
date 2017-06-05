@@ -6,7 +6,6 @@ package govcloudair
 
 import (
 	"github.com/ukcloud/govcloudair/testutil"
-	"github.com/ukcloud/govcloudair/types/v56"
 
 	. "gopkg.in/check.v1"
 )
@@ -43,14 +42,12 @@ func (s *S) Test_ComposeVApp(c *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	c.Assert(err, IsNil)
 
-	// TODO: Add checks which use find methodes for storage_profile
-	storage_profile_reference := &types.Reference{
-		HREF: "http://localhost:4444/api/vdcStorageProfile/816409e1-6207-4a1f-bd45-947cd03d6452",
-		Name: "SSD-Accelerated",
-	}
+	// Get StorageProfileReference
+	storageprofileref, err := s.vdc.FindStorageProfileReference("storageProfile1")
+	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(net, vapptemplate, storage_profile_reference, "name", "description")
+	task, err := s.vapp.ComposeVApp(net, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -129,14 +126,12 @@ func (s *S) Test_SetOvf(c *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	c.Assert(err, IsNil)
 
-	// TODO: Add checks which use find methodes for storage_profile
-	storage_profile_reference := &types.Reference{
-		HREF: "http://localhost:4444/api/vdcStorageProfile/816409e1-6207-4a1f-bd45-947cd03d6452",
-		Name: "SSD-Accelerated",
-	}
+	// Get StorageProfileReference
+	storageprofileref, err := s.vdc.FindStorageProfileReference("storageProfile1")
+	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(net, vapptemplate, storage_profile_reference, "name", "description")
+	task, err := s.vapp.ComposeVApp(net, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -185,14 +180,12 @@ func (s *S) Test_AddMetadata(c *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	c.Assert(err, IsNil)
 
-	// TODO: Add checks which use find methodes for storage_profile
-	storage_profile_reference := &types.Reference{
-		HREF: "http://localhost:4444/api/vdcStorageProfile/816409e1-6207-4a1f-bd45-947cd03d6452",
-		Name: "SSD-Accelerated",
-	}
+	// Get StorageProfileReference
+	storageprofileref, err := s.vdc.FindStorageProfileReference("storageProfile1")
+	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(net, vapptemplate, storage_profile_reference, "name", "description")
+	task, err := s.vapp.ComposeVApp(net, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -203,6 +196,59 @@ func (s *S) Test_AddMetadata(c *C) {
 	c.Assert(task.Task.Status, Equals, "success")
 
 	_ = testServer.WaitRequests(8)
+
+}
+
+func (s *S) Test_ChangeStorageProfile(c *C) {
+
+	testServer.ResponseMap(9, testutil.ResponseMap{
+		"/api/org/11111111-1111-1111-1111-111111111111":                       testutil.Response{200, nil, orgExample},
+		"/api/network/44444444-4444-4444-4444-4444444444444":                  testutil.Response{200, nil, orgvdcnetExample},
+		"/api/catalog/e8a20fdf-8a78-440c-ac71-0420db59f854":                   testutil.Response{200, nil, catalogExample},
+		"/api/catalogItem/1176e485-8858-4e15-94e5-ae4face605ae":               testutil.Response{200, nil, catalogitemExample},
+		"/api/vAppTemplate/vappTemplate-40cb9721-5f1a-44f9-b5c3-98c5f518c4f5": testutil.Response{200, nil, vapptemplateExample},
+		"/api/vdc/00000000-0000-0000-0000-000000000000/action/composeVApp":    testutil.Response{200, nil, instantiatedvappExample},
+		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000":                 testutil.Response{200, nil, vappExample},
+		"/api/vApp/vm-00000000-0000-0000-0000-000000000000":                   testutil.Response{200, nil, taskExample},
+		"/api/vdc/00000000-0000-0000-0000-000000000000":                       testutil.Response{200, nil, vdcExample},
+	})
+
+	// Get the Org populated
+	org, err := s.vdc.GetVDCOrg()
+	c.Assert(err, IsNil)
+
+	// Populate OrgVDCNetwork
+	net, err := s.vdc.FindVDCNetwork("networkName")
+	c.Assert(err, IsNil)
+
+	// Populate Catalog
+	cat, err := org.FindCatalog("Public Catalog")
+	c.Assert(err, IsNil)
+
+	// Populate Catalog Item
+	catitem, err := cat.FindCatalogItem("CentOS64-32bit")
+	c.Assert(err, IsNil)
+
+	// Get VAppTemplate
+	vapptemplate, err := catitem.GetVAppTemplate()
+	c.Assert(err, IsNil)
+
+	// Get StorageProfileReference
+	storageprofileref, err := s.vdc.FindStorageProfileReference("storageProfile1")
+	c.Assert(err, IsNil)
+
+	// Compose VApp
+	task, err := s.vapp.ComposeVApp(net, vapptemplate, storageprofileref, "name", "description")
+	c.Assert(err, IsNil)
+	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
+	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
+
+	task, err = s.vapp.ChangeStorageProfile("storageProfile2")
+
+	c.Assert(err, IsNil)
+	c.Assert(task.Task.Status, Equals, "success")
+
+	_ = testServer.WaitRequests(9)
 
 }
 
@@ -239,14 +285,12 @@ func (s *S) Test_ChangeVMName(c *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	c.Assert(err, IsNil)
 
-	// TODO: Add checks which use find methodes for storage_profile
-	storage_profile_reference := &types.Reference{
-		HREF: "http://localhost:4444/api/vdcStorageProfile/816409e1-6207-4a1f-bd45-947cd03d6452",
-		Name: "SSD-Accelerated",
-	}
+	// Get StorageProfileReference
+	storageprofileref, err := s.vdc.FindStorageProfileReference("storageProfile1")
+	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(net, vapptemplate, storage_profile_reference, "name", "description")
+	task, err := s.vapp.ComposeVApp(net, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -359,14 +403,12 @@ func (s *S) Test_RunCustomizationScript(c *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	c.Assert(err, IsNil)
 
-	// TODO: Add checks which use find methodes for storage_profile
-	storage_profile_reference := &types.Reference{
-		HREF: "http://localhost:4444/api/vdcStorageProfile/816409e1-6207-4a1f-bd45-947cd03d6452",
-		Name: "SSD-Accelerated",
-	}
+	// Get StorageProfileReference
+	storageprofileref, err := s.vdc.FindStorageProfileReference("storageProfile1")
+	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(net, vapptemplate, storage_profile_reference, "name", "description")
+	task, err := s.vapp.ComposeVApp(net, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -413,14 +455,12 @@ func (s *S) Test_ChangeCPUcount(c *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	c.Assert(err, IsNil)
 
-	// TODO: Add checks which use find methodes for storage_profile
-	storage_profile_reference := &types.Reference{
-		HREF: "http://localhost:4444/api/vdcStorageProfile/816409e1-6207-4a1f-bd45-947cd03d6452",
-		Name: "SSD-Accelerated",
-	}
+	// Get StorageProfileReference
+	storageprofileref, err := s.vdc.FindStorageProfileReference("storageProfile1")
+	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(net, vapptemplate, storage_profile_reference, "name", "description")
+	task, err := s.vapp.ComposeVApp(net, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -467,14 +507,12 @@ func (s *S) Test_ChangeMemorySize(c *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	c.Assert(err, IsNil)
 
-	// TODO: Add checks which use find methodes for storage_profile
-	storage_profile_reference := &types.Reference{
-		HREF: "http://localhost:4444/api/vdcStorageProfile/816409e1-6207-4a1f-bd45-947cd03d6452",
-		Name: "SSD-Accelerated",
-	}
+	// Get StorageProfileReference
+	storageprofileref, err := s.vdc.FindStorageProfileReference("storageProfile1")
+	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(net, vapptemplate, storage_profile_reference, "name", "description")
+	task, err := s.vapp.ComposeVApp(net, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -493,7 +531,7 @@ var instantiatedvappExample = `
 	<VApp deployed="false" href="http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000" id="urn:vcloud:vapp:00000000-0000-0000-0000-000000000000" name="myVApp" ovfDescriptorUploaded="true" status="0" type="application/vnd.vmware.vcloud.vApp+xml" xmlns="http://www.vmware.com/vcloud/v1.5" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.6.32.3/api/v1.5/schema/master.xsd">
 	  <Link href="http://localhost:4444/api/network/f869430c-7490-4d32-bf34-4208b6059c21" name="M916272752-5793-default-routed" rel="down" type="application/vnd.vmware.vcloud.vAppNetwork+xml"/>
 	  <Link href="http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000/controlAccess/" rel="down" type="application/vnd.vmware.vcloud.controlAccess+xml"/>
-	  <Link href="http://localhost:4444/api/vdc/214cd6b2-3f7a-4ee5-9b0a-52b4001a4a84" rel="up" type="application/vnd.vmware.vcloud.vdc+xml"/>
+	  <Link href="http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000000" rel="up" type="application/vnd.vmware.vcloud.vdc+xml"/>
 	  <Link href="http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000/owner" rel="down" type="application/vnd.vmware.vcloud.owner+xml"/>
 	  <Link href="http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000/metadata" rel="down" type="application/vnd.vmware.vcloud.metadata+xml"/>
 	  <Link href="http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000/ovf" rel="ovf" type="text/xml"/>
@@ -529,7 +567,7 @@ var vappExample = `
 	  <Link href="http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000/controlAccess/" rel="down" type="application/vnd.vmware.vcloud.controlAccess+xml"/>
 	  <Link href="http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000/action/controlAccess" rel="controlAccess" type="application/vnd.vmware.vcloud.controlAccess+xml"/>
 	  <Link href="http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000/action/recomposeVApp" rel="recompose" type="application/vnd.vmware.vcloud.recomposeVAppParams+xml"/>
-	  <Link href="http://localhost:4444/api/vdc/214cd6b2-3f7a-4ee5-9b0a-52b4001a4a84" rel="up" type="application/vnd.vmware.vcloud.vdc+xml"/>
+	  <Link href="http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000000" rel="up" type="application/vnd.vmware.vcloud.vdc+xml"/>
 	  <Link href="http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000" rel="edit" type="application/vnd.vmware.vcloud.vApp+xml"/>
 	  <Link href="http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000" rel="remove"/>
 	  <Link href="http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000/action/enableDownload" rel="enable"/>
@@ -785,7 +823,7 @@ var vappExample = `
 	        <MemoryHotAddEnabled>false</MemoryHotAddEnabled>
 	        <CpuHotAddEnabled>false</CpuHotAddEnabled>
 	      </VmCapabilities>
-	      <StorageProfile href="http://localhost:4444/api/vdcStorageProfile/816409e1-6207-4a1f-bd45-947cd03d6452" name="SSD-Accelerated" type="application/vnd.vmware.vcloud.vdcStorageProfile+xml"/>
+	      <StorageProfile href="http://localhost:4444/api/vdcStorageProfile/88888888-8888-8888-8888-888888888888" name="storageProfile1" type="application/vnd.vmware.vcloud.vdcStorageProfile+xml"/>
 	    </Vm>
 	  </Children>
 	</VApp>
