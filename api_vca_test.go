@@ -27,6 +27,7 @@ type S struct {
 	client *VAClient
 	vdc    Vdc
 	vapp   *VApp
+	vm     *VM
 }
 
 var _ = Suite(&S{})

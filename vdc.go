@@ -305,13 +305,13 @@ func (v *Vdc) FindVAppByID(vappid string) (VApp, error) {
 	}
 
 	urnslice := strings.SplitAfter(vappid, ":")
-	urnid := urnslice[len(urnslice) - 1]
+	urnid := urnslice[len(urnslice)-1]
 
 	for _, resents := range v.Vdc.ResourceEntities {
 		for _, resent := range resents.ResourceEntity {
 
 			hrefslice := strings.SplitAfter(resent.HREF, "/")
-			hrefslice = strings.SplitAfter(hrefslice[len(hrefslice) - 1], "-")
+			hrefslice = strings.SplitAfter(hrefslice[len(hrefslice)-1], "-")
 			res := strings.Join(hrefslice[1:], "")
 
 			if res == urnid && resent.Type == "application/vnd.vmware.vcloud.vApp+xml" {
