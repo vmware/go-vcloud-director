@@ -744,13 +744,13 @@ func (v *VApp) ChangeStorageProfile(name string) (Task, error) {
 		return Task{}, fmt.Errorf("vApp doesn't contain any children, aborting customization")
 	}
 
-  vdc, err := v.c.retrieveVDC()
+	vdc, err := v.c.retrieveVDC()
 	storageprofileref, err := vdc.FindStorageProfileReference(name)
 
 	newprofile := &types.VM{
-		Name: v.VApp.Children.VM[0].Name,
+		Name:           v.VApp.Children.VM[0].Name,
 		StorageProfile: &storageprofileref,
-		Xmlns: "http://www.vmware.com/vcloud/v1.5",
+		Xmlns:          "http://www.vmware.com/vcloud/v1.5",
 	}
 
 	output, err := xml.MarshalIndent(newprofile, "  ", "    ")

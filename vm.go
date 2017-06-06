@@ -28,6 +28,14 @@ func NewVM(c *Client) *VM {
 	}
 }
 
+func (v *VM) GetStatus() (string, error) {
+	err := v.Refresh()
+	if err != nil {
+		return "", fmt.Errorf("error refreshing VM: %v", err)
+	}
+	return types.VAppStatuses[v.VM.Status], nil
+}
+
 func (v *VM) Refresh() error {
 
 	if v.VM.HREF == "" {
