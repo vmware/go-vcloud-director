@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
-	//"log"
+	"log"
 	"net/url"
 	"os"
 	"strconv"
@@ -261,4 +261,136 @@ func (v *VM) ChangeMemorySize(size int) (Task, error) {
 	// The request was successful
 	return *task, nil
 
+}
+
+func (v *VM) ChangeNetworkConfig(network, ip string) (Task, error) {
+	err := v.Refresh()
+	if err != nil {
+		return Task{}, fmt.Errorf("error refreshing VM before running customization: %v", err)
+	}
+
+	// Determine what type of address is requested for the vApp
+	ipAllocationMode := "NONE"
+	ipAddress := "Any"
+
+	// TODO: Review current behaviour of using DHCP when left blank
+	if ip == "" || ip == "dhcp" {
+		ipAllocationMode = "DHCP"
+	} else if ip == "allocated" {
+		ipAllocationMode = "POOL"
+	} else if ip == "none" {
+		ipAllocationMode = "NONE"
+	} else if ip != "" {
+		ipAllocationMode = "MANUAL"
+		// TODO: Check a valid IP has been given
+		ipAddress = ip
+	}
+
+	networkConnection := &types.NetworkConnection{
+		Network:                 network,
+		NeedsCustomization:      true,
+		NetworkConnectionIndex:  0,
+		IPAddress:               ipAddress,
+		IsConnected:             true,
+		IPAddressAllocationMode: ipAllocationMode,
+	}
+
+	newnetwork := &types.NetworkConnectionSection{
+		Xmlns: "http://www.vmware.com/vcloud/v1.5",
+		Ovf:   "http://schemas.dmtf.org/ovf/envelope/1",
+		Info:  "Specifies the available VM network connections",
+		PrimaryNetworkConnectionIndex: 0,
+		NetworkConnection:             networkConnection,
+	}
+
+	output, err := xml.MarshalIndent(newnetwork, "  ", "    ")
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+
+	log.Printf("[DEBUG] NetworkXML: %s", output)
+
+	b := bytes.NewBufferString(xml.Header + string(output))
+
+	s, _ := url.ParseRequestURI(v.VM.HREF)
+	s.Path += "/networkConnectionSection/"
+
+	req := v.c.NewRequest(map[string]string{}, "PUT", *s, b)
+
+	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.networkConnectionSection+xml")
+
+	resp, err := checkResp(v.c.Http.Do(req))
+	if err != nil {
+		return Task{}, fmt.Errorf("error customizing VM Network: %s", err)
+	}
+
+	task := NewTask(v.c)
+
+	if err = decodeBody(resp, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
+	}
+
+	// The request was successful
+	return *task, nil
+}
+
+func (v *VM) RunCustomizationScript(computername, script string) (Task, error) {
+	return v.Customize(computername, script, false)
+}
+
+func (v *VM) Customize(computername, script string, changeSid bool) (Task, error) {
+	err := v.Refresh()
+	if err != nil {
+		return Task{}, fmt.Errorf("error refreshing VM before running customization: %v", err)
+	}
+
+	vu := &types.GuestCustomizationSection{
+		Ovf:   "http://schemas.dmtf.org/ovf/envelope/1",
+		Xsi:   "http://www.w3.org/2001/XMLSchema-instance",
+		Xmlns: "http://www.vmware.com/vcloud/v1.5",
+
+		HREF:                v.VM.HREF,
+		Type:                "application/vnd.vmware.vcloud.guestCustomizationSection+xml",
+		Info:                "Specifies Guest OS Customization Settings",
+		Enabled:             true,
+		ComputerName:        computername,
+		CustomizationScript: script,
+		ChangeSid:           false,
+	}
+
+	output, err := xml.MarshalIndent(vu, "  ", "    ")
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+
+	log.Printf("[DEBUG] VCD Client configuration: %s", output)
+
+	debug := os.Getenv("GOVCLOUDAIR_DEBUG")
+
+	if debug == "true" {
+		fmt.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+	}
+
+	b := bytes.NewBufferString(xml.Header + string(output))
+
+	s, _ := url.ParseRequestURI(v.VM.HREF)
+	s.Path += "/guestCustomizationSection/"
+
+	req := v.c.NewRequest(map[string]string{}, "PUT", *s, b)
+
+	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.guestCustomizationSection+xml")
+
+	resp, err := checkResp(v.c.Http.Do(req))
+	if err != nil {
+		return Task{}, fmt.Errorf("error customizing VM: %s", err)
+	}
+
+	task := NewTask(v.c)
+
+	if err = decodeBody(resp, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
+	}
+
+	// The request was successful
+	return *task, nil
 }
