@@ -171,6 +171,11 @@ func (v *VApp) AddVM(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplate, nam
 			log.Printf("[TRACE] Awaiting Task to Finish: %s", task.Task.Description)
 			log.Printf("[TRACE] Awaiting Task to Finish: %s", task.Task.StartTime)
 			log.Printf("[TRACE] Awaiting Task to Finish: %s", task.Task.Status)
+			if task.Task.Status == "error" {
+				log.Printf("[WARN] Errored Idle Task: %s", task.Task.Error.Message)
+				log.Printf("[INFO] Moving onto next Task")
+				continue
+			}
 			err := task.WaitTaskCompletion()
 			if err != nil {
 				return fmt.Errorf("Error performing task: %#v", err)
