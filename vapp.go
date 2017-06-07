@@ -153,8 +153,7 @@ func (v *VApp) AddVM(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplate, nam
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
 	s.Path += "/action/recomposeVApp"
 
-	fmt.Println(s)
-	fmt.Println(string(output))
+	log.Printf("[TRACE] Recompose XML: %s", string(output))
 
 	b := bytes.NewBufferString(xml.Header + string(output))
 
@@ -165,9 +164,13 @@ func (v *VApp) AddVM(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplate, nam
 	task := NewTask(v.c)
 	v.Refresh()
 	if v.VApp.Tasks != nil {
-		fmt.Println("AYE")
+		log.Printf("[TRACE] Beginning Task of Adding VM: %s", name)
 		for _, t := range v.VApp.Tasks.Task {
 			task.Task = t
+			log.Printf("[TRACE] Awaiting Task to Finish: %s", task.Task.Name)
+			log.Printf("[TRACE] Awaiting Task to Finish: %s", task.Task.Description)
+			log.Printf("[TRACE] Awaiting Task to Finish: %s", task.Task.StartTime)
+			log.Printf("[TRACE] Awaiting Task to Finish: %s", task.Task.Status)
 			err := task.WaitTaskCompletion()
 			if err != nil {
 				return fmt.Errorf("Error performing task: %#v", err)
