@@ -199,11 +199,13 @@ func (v *VApp) AddVM(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplate, nam
 func (v *VApp) RemoveVM(vm VM) error {
 
 	task := NewTask(v.c)
-	for _, t := range v.VApp.Tasks.Task {
-		task.Task = t
-		err := task.WaitTaskCompletion()
-		if err != nil {
-			return fmt.Errorf("Error performing task: %#v", err)
+	if v.VApp.Tasks != nil {
+		for _, t := range v.VApp.Tasks.Task {
+			task.Task = t
+			err := task.WaitTaskCompletion()
+			if err != nil {
+				return fmt.Errorf("Error performing task: %#v", err)
+			}
 		}
 	}
 
@@ -654,7 +656,6 @@ func (v *VApp) Customize(computername, script string, changeSid bool) (Task, err
 
 	// The request was successful
 	return *task, nil
-
 }
 
 func (v *VApp) GetStatus() (string, error) {
