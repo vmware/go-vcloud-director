@@ -6,10 +6,10 @@ package govcloudair
 
 import (
 	"fmt"
+	types "github.com/ukcloud/govcloudair/types/v56"
+	"log"
 	"net/url"
 	"strings"
-
-	types "github.com/ukcloud/govcloudair/types/v56"
 )
 
 type Vdc struct {
@@ -258,8 +258,15 @@ func (v *Vdc) FindVMByName(vapp VApp, vm string) (VM, error) {
 		return VM{}, fmt.Errorf("error refreshing vdc: %s", err)
 	}
 
+	err = vapp.Refresh()
+	if err != nil {
+		return VM{}, fmt.Errorf("error refreshing vapp: %s", err)
+	}
+
+	log.Printf("[TRACE] Looking for VM: %s", vm)
 	for _, child := range vapp.VApp.Children.VM {
 
+		log.Printf("[TRACE] Found: %s", child.Name)
 		if child.Name == vm {
 
 			u, err := url.ParseRequestURI(child.HREF)
@@ -290,6 +297,7 @@ func (v *Vdc) FindVMByName(vapp VApp, vm string) (VM, error) {
 		}
 
 	}
+	log.Printf("[TRACE] Couldn't find VM: %s", vm)
 	return VM{}, fmt.Errorf("can't find vm: %s", vm)
 }
 
