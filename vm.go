@@ -394,3 +394,46 @@ func (v *VM) Customize(computername, script string, changeSid bool) (Task, error
 	// The request was successful
 	return *task, nil
 }
+
+func (v *VM) Undeploy() (Task, error) {
+
+	vu := &types.UndeployVAppParams{
+		Xmlns:               "http://www.vmware.com/vcloud/v1.5",
+		UndeployPowerAction: "powerOff",
+	}
+
+	output, err := xml.MarshalIndent(vu, "  ", "    ")
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+
+	debug := os.Getenv("GOVCLOUDAIR_DEBUG")
+
+	if debug == "true" {
+		fmt.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+	}
+
+	b := bytes.NewBufferString(xml.Header + string(output))
+
+	s, _ := url.ParseRequestURI(v.VM.HREF)
+	s.Path += "/action/undeploy"
+
+	req := v.c.NewRequest(map[string]string{}, "POST", *s, b)
+
+	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.undeployVAppParams+xml")
+
+	resp, err := checkResp(v.c.Http.Do(req))
+	if err != nil {
+		return Task{}, fmt.Errorf("error undeploy vApp: %s", err)
+	}
+
+	task := NewTask(v.c)
+
+	if err = decodeBody(resp, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
+	}
+
+	// The request was successful
+	return *task, nil
+
+}
