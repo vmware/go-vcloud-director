@@ -181,8 +181,6 @@ func (v *VApp) AddVM(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplate, nam
 				return fmt.Errorf("Error performing task: %#v", err)
 			}
 		}
-	} else {
-		fmt.Println("NO")
 	}
 
 	resp, err := checkResp(v.c.Http.Do(req))
@@ -206,6 +204,7 @@ func (v *VApp) AddVM(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplate, nam
 
 func (v *VApp) RemoveVM(vm VM) error {
 
+	v.Refresh()
 	task := NewTask(v.c)
 	if v.VApp.Tasks != nil {
 		for _, t := range v.VApp.Tasks.Task {
