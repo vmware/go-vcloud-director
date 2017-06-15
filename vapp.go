@@ -230,9 +230,6 @@ func (v *VApp) RemoveVM(vm VM) error {
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
 	s.Path += "/action/recomposeVApp"
 
-	fmt.Println(s)
-	fmt.Println(string(output))
-
 	b := bytes.NewBufferString(xml.Header + string(output))
 
 	req := v.c.NewRequest(map[string]string{}, "POST", *s, b)
