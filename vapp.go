@@ -60,7 +60,7 @@ func (v *VApp) Refresh() error {
 	return nil
 }
 
-func (v *VApp) AddVM(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplate, name string) error {
+func (v *VApp) AddVM(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplate, name string) (Task, error) {
 
 	vcomp := &types.ReComposeVAppParams{
 		Ovf:         "http://schemas.dmtf.org/ovf/envelope/1",
@@ -111,21 +111,16 @@ func (v *VApp) AddVM(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplate, nam
 
 	resp, err := checkResp(v.c.Http.Do(req))
 	if err != nil {
-		return fmt.Errorf("error instantiating a new VM: %s", err)
+		return Task{}, fmt.Errorf("error instantiating a new VM: %s", err)
 	}
 
 	task := NewTask(v.c)
 
 	if err = decodeBody(resp, task.Task); err != nil {
-		return fmt.Errorf("error decoding task response: %s", err)
+		return Task{}, fmt.Errorf("error decoding task response: %s", err)
 	}
 
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return fmt.Errorf("Error performing task: %#v", err)
-	}
-
-	return nil
+	return *task, nil
 }
 
 func (v *VApp) RemoveVM(vm VM) error {
