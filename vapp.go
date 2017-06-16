@@ -109,31 +109,9 @@ func (v *VApp) AddVM(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplate, nam
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.recomposeVAppParams+xml")
 
-	task := NewTask(v.c)
-	v.Refresh()
-	if v.VApp.Tasks != nil {
-		log.Printf("[TRACE] Beginning Task of Adding VM: %s", name)
-		for _, t := range v.VApp.Tasks.Task {
-			task.Task = t
-			log.Printf("[TRACE] Awaiting Task to Finish: %s", task.Task.Name)
-			log.Printf("[TRACE] Awaiting Task to Finish: %s", task.Task.Description)
-			log.Printf("[TRACE] Awaiting Task to Finish: %s", task.Task.StartTime)
-			log.Printf("[TRACE] Awaiting Task to Finish: %s", task.Task.Status)
-			if task.Task.Status == "error" {
-				log.Printf("[WARN] Errored Idle Task: %s", task.Task.Error.Message)
-				log.Printf("[INFO] Moving onto next Task")
-				continue
-			}
-			err := task.WaitTaskCompletion()
-			if err != nil {
-				return fmt.Errorf("Error performing task: %#v", err)
-			}
-		}
-	}
-
 	resp, err := checkResp(v.c.Http.Do(req))
 	if err != nil {
-		return fmt.Errorf("error instantiating a new vApp: %s", err)
+		return fmt.Errorf("error instantiating a new VM: %s", err)
 	}
 
 	task = NewTask(v.c)
