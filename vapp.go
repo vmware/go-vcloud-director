@@ -114,7 +114,7 @@ func (v *VApp) AddVM(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplate, nam
 		return fmt.Errorf("error instantiating a new VM: %s", err)
 	}
 
-	task = NewTask(v.c)
+	task := NewTask(v.c)
 
 	if err = decodeBody(resp, task.Task); err != nil {
 		return fmt.Errorf("error decoding task response: %s", err)
