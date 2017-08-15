@@ -245,6 +245,8 @@ func (v *VApp) ComposeVApp(orgvdcnetwork OrgVDCNetwork, vapptemplate VAppTemplat
 		fmt.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 	}
 
+	log.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+
 	b := bytes.NewBufferString(xml.Header + string(output))
 
 	s := v.c.VCDVDCHREF
