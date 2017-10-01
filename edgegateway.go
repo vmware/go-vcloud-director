@@ -198,13 +198,28 @@ func (e *EdgeGateway) AddNATMapping(nattype, externalIP, internalIP, port string
 }
 
 func (e *EdgeGateway) AddNATPortMapping(nattype, externalIP, externalPort string, internalIP, internalPort string) (Task, error) {
-	// Find uplink interface
+	return e.AddNATPortMappingWithUplink(nil, nattype, externalIP, externalPort, internalIP, internalPort)
+}
+
+func (e *EdgeGateway) getFirstUplink() types.Reference {
 	var uplink types.Reference
 	for _, gi := range e.EdgeGateway.Configuration.GatewayInterfaces.GatewayInterface {
 		if gi.InterfaceType != "uplink" {
 			continue
 		}
 		uplink = *gi.Network
+	}
+	return uplink;
+}
+
+func (e *EdgeGateway) AddNATPortMappingWithUplink(network *types.OrgVDCNetwork, nattype, externalIP, externalPort string, internalIP, internalPort string) (Task, error) {
+	// Find uplink interface
+	var uplinkRef string
+
+	if network != nil {
+		uplinkRef = network.HREF
+	} else {
+		uplinkRef = e.getFirstUplink().HREF
 	}
 
 	newedgeconfig := e.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration
@@ -229,7 +244,7 @@ func (e *EdgeGateway) AddNATPortMapping(nattype, externalIP, externalPort string
 				v.GatewayNatRule.OriginalPort == externalPort &&
 				v.GatewayNatRule.TranslatedIP == internalIP &&
 				v.GatewayNatRule.TranslatedPort == internalPort &&
-				v.GatewayNatRule.Interface.HREF == uplink.HREF {
+				v.GatewayNatRule.Interface.HREF == uplinkRef {
 				continue
 			}
 
@@ -243,7 +258,7 @@ func (e *EdgeGateway) AddNATPortMapping(nattype, externalIP, externalPort string
 		IsEnabled: true,
 		GatewayNatRule: &types.GatewayNatRule{
 			Interface: &types.Reference{
-				HREF: uplink.HREF,
+				HREF: uplinkRef,
 			},
 			OriginalIP:     externalIP,
 			OriginalPort:   externalPort,
@@ -656,8 +671,6 @@ func (e *EdgeGateway) AddIpsecVPN(ipsecVPNConfig *types.EdgeGatewayServiceConfig
 
 	s, _ := url.ParseRequestURI(e.EdgeGateway.HREF)
 	s.Path += "/action/configureServices"
-
-	fmt.Println(s)
 
 	req := e.c.NewRequest(map[string]string{}, "POST", *s, b)
 
