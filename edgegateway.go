@@ -209,7 +209,7 @@ func (e *EdgeGateway) getFirstUplink() types.Reference {
 		}
 		uplink = *gi.Network
 	}
-	return uplink;
+	return uplink
 }
 
 func (e *EdgeGateway) AddNATPortMappingWithUplink(network *types.OrgVDCNetwork, nattype, externalIP, externalPort string, internalIP, internalPort string) (Task, error) {
