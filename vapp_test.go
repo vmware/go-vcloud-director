@@ -6,6 +6,7 @@ package govcloudair
 
 import (
 	"github.com/ukcloud/govcloudair/testutil"
+	"github.com/ukcloud/govcloudair/types/v56"
 
 	. "gopkg.in/check.v1"
 )
@@ -27,9 +28,9 @@ func (s *S) Test_ComposeVApp(c *C) {
 	c.Assert(err, IsNil)
 
 	// Populate OrgVDCNetwork
-	networks := []*OrgVDCNetwork{}
+	networks := []*types.OrgVDCNetwork{}
 	net, err := s.vdc.FindVDCNetwork("networkName")
-	networks = append(networks, &net)
+	networks = append(networks, net.OrgVDCNetwork)
 	c.Assert(err, IsNil)
 
 	// Populate Catalog
@@ -113,9 +114,9 @@ func (s *S) Test_SetOvf(c *C) {
 	c.Assert(err, IsNil)
 
 	// Populate OrgVDCNetwork
-	networks := []*OrgVDCNetwork{}
+	networks := []*types.OrgVDCNetwork{}
 	net, err := s.vdc.FindVDCNetwork("networkName")
-	networks = append(networks, &net)
+	networks = append(networks, net.OrgVDCNetwork)
 	c.Assert(err, IsNil)
 
 	// Populate Catalog
@@ -169,9 +170,9 @@ func (s *S) Test_AddMetadata(c *C) {
 	c.Assert(err, IsNil)
 
 	// Populate OrgVDCNetwork
-	networks := []*OrgVDCNetwork{}
+	networks := []*types.OrgVDCNetwork{}
 	net, err := s.vdc.FindVDCNetwork("networkName")
-	networks = append(networks, &net)
+	networks = append(networks, net.OrgVDCNetwork)
 	c.Assert(err, IsNil)
 
 	// Populate Catalog
@@ -224,9 +225,9 @@ func (s *S) Test_ChangeStorageProfile(c *C) {
 	c.Assert(err, IsNil)
 
 	// Populate OrgVDCNetwork
-	networks := []*OrgVDCNetwork{}
+	networks := []*types.OrgVDCNetwork{}
 	net, err := s.vdc.FindVDCNetwork("networkName")
-	networks = append(networks, &net)
+	networks = append(networks, net.OrgVDCNetwork)
 	c.Assert(err, IsNil)
 
 	// Populate Catalog
@@ -278,9 +279,9 @@ func (s *S) Test_ChangeVMName(c *C) {
 	c.Assert(err, IsNil)
 
 	// Populate OrgVDCNetwork
-	networks := []*OrgVDCNetwork{}
+	networks := []*types.OrgVDCNetwork{}
 	net, err := s.vdc.FindVDCNetwork("networkName")
-	networks = append(networks, &net)
+	networks = append(networks, net.OrgVDCNetwork)
 	c.Assert(err, IsNil)
 
 	// Populate Catalog
@@ -398,9 +399,9 @@ func (s *S) Test_RunCustomizationScript(c *C) {
 	c.Assert(err, IsNil)
 
 	// Populate OrgVDCNetwork
-	networks := []*OrgVDCNetwork{}
+	networks := []*types.OrgVDCNetwork{}
 	net, err := s.vdc.FindVDCNetwork("networkName")
-	networks = append(networks, &net)
+	networks = append(networks, net.OrgVDCNetwork)
 	c.Assert(err, IsNil)
 
 	// Populate Catalog
@@ -452,9 +453,9 @@ func (s *S) Test_ChangeCPUcount(c *C) {
 	c.Assert(err, IsNil)
 
 	// Populate OrgVDCNetwork
-	networks := []*OrgVDCNetwork{}
+	networks := []*types.OrgVDCNetwork{}
 	net, err := s.vdc.FindVDCNetwork("networkName")
-	networks = append(networks, &net)
+	networks = append(networks, net.OrgVDCNetwork)
 	c.Assert(err, IsNil)
 
 	// Populate Catalog
@@ -506,9 +507,9 @@ func (s *S) Test_ChangeMemorySize(c *C) {
 	c.Assert(err, IsNil)
 
 	// Populate OrgVDCNetwork
-	networks := []*OrgVDCNetwork{}
+	networks := []*types.OrgVDCNetwork{}
 	net, err := s.vdc.FindVDCNetwork("networkName")
-	networks = append(networks, &net)
+	networks = append(networks, net.OrgVDCNetwork)
 	c.Assert(err, IsNil)
 
 	// Populate Catalog
