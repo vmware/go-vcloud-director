@@ -184,7 +184,7 @@ func (v *VApp) RemoveVM(vm VM) error {
 	return nil
 }
 
-func (v *VApp) ComposeVApp(orgvdcnetworks []*OrgVDCNetwork, vapptemplate VAppTemplate, storageprofileref types.Reference, name string, description string) (Task, error) {
+func (v *VApp) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate VAppTemplate, storageprofileref types.Reference, name string, description string) (Task, error) {
 
 	if vapptemplate.VAppTemplate.Children == nil || orgvdcnetworks == nil {
 		return Task{}, fmt.Errorf("can't compose a new vApp, objects passed are not valid")
@@ -223,28 +223,28 @@ func (v *VApp) ComposeVApp(orgvdcnetworks []*OrgVDCNetwork, vapptemplate VAppTem
 	for _, orgvdcnetwork := range orgvdcnetworks {
 		vcomp.InstantiationParams.NetworkConfigSection.NetworkConfig = append(vcomp.InstantiationParams.NetworkConfigSection.NetworkConfig,
 			types.VAppNetworkConfiguration{
-				NetworkName: orgvdcnetwork.OrgVDCNetwork.Name,
+				NetworkName: orgvdcnetwork.Name,
 				Configuration: &types.NetworkConfiguration{
 					FenceMode: "bridged",
 					ParentNetwork: &types.Reference{
-						HREF: orgvdcnetwork.OrgVDCNetwork.HREF,
-						Name: orgvdcnetwork.OrgVDCNetwork.Name,
-						Type: orgvdcnetwork.OrgVDCNetwork.Type,
+						HREF: orgvdcnetwork.HREF,
+						Name: orgvdcnetwork.Name,
+						Type: orgvdcnetwork.Type,
 					},
 				},
 			},
 		)
 		vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection = append(vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection,
 			&types.NetworkConnection{
-				Network:                 orgvdcnetwork.OrgVDCNetwork.Name,
+				Network:                 orgvdcnetwork.Name,
 				IsConnected:             true,
 				IPAddressAllocationMode: "POOL",
 			},
 		)
 		vcomp.SourcedItem.NetworkAssignment = append(vcomp.SourcedItem.NetworkAssignment,
 			&types.NetworkAssignment{
-				InnerNetwork:     orgvdcnetwork.OrgVDCNetwork.Name,
-				ContainerNetwork: orgvdcnetwork.OrgVDCNetwork.Name,
+				InnerNetwork:     orgvdcnetwork.Name,
+				ContainerNetwork: orgvdcnetwork.Name,
 			},
 		)
 	}
