@@ -258,6 +258,8 @@ func (v *VM) ChangeNetworkConfig(networks []map[string]interface{}, ip string) (
 			ipAllocationMode = "DHCP"
 		}
 
+		log.Printf("[DEBUG] Function ChangeNetworkConfig() for %s invoked", network["orgnetwork"])
+
 		networksection.Xmlns = "http://www.vmware.com/vcloud/v1.5"
 		networksection.Ovf = "http://schemas.dmtf.org/ovf/envelope/1"
 		networksection.Info = "Specifies the available VM network connections"
@@ -271,7 +273,7 @@ func (v *VM) ChangeNetworkConfig(networks []map[string]interface{}, ip string) (
 			networksection.PrimaryNetworkConnectionIndex = index
 		}
 
-		log.Printf("[DEBUG] Function ChangeNetworkConfig() for %s invoked", network["orgnetwork"])
+		log.Printf("Networksection: %s", networksection)
 	}
 
 	output, err := xml.MarshalIndent(networksection, "  ", "    ")

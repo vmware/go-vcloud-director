@@ -220,7 +220,7 @@ func (v *VApp) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate V
 		},
 	}
 
-	for _, orgvdcnetwork := range orgvdcnetworks {
+	for index, orgvdcnetwork := range orgvdcnetworks {
 		vcomp.InstantiationParams.NetworkConfigSection.NetworkConfig = append(vcomp.InstantiationParams.NetworkConfigSection.NetworkConfig,
 			types.VAppNetworkConfiguration{
 				NetworkName: orgvdcnetwork.Name,
@@ -237,6 +237,7 @@ func (v *VApp) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate V
 		vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection = append(vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection,
 			&types.NetworkConnection{
 				Network:                 orgvdcnetwork.Name,
+				NetworkConnectionIndex:  index,
 				IsConnected:             true,
 				IPAddressAllocationMode: "POOL",
 			},
@@ -975,18 +976,23 @@ func (v *VApp) ChangeNetworkConfig(networks []map[string]interface{}, ip string)
 			// TODO: Check a valid IP has been given
 			ipAddress = ip
 		}
-		// TODO: check why networksection is empty!!!
-		log.Printf("Networksection: %s", networksection)
+
+		log.Printf("[DEBUG] Function ChangeNetworkConfig() for %s invoked", network["orgnetwork"])
+
+		networksection.Xmlns = "http://www.vmware.com/vcloud/v1.5"
+		networksection.Ovf = "http://schemas.dmtf.org/ovf/envelope/1"
+		networksection.Info = "Specifies the available VM network connections"
 
 		networksection.NetworkConnection[index].NeedsCustomization = true
 		networksection.NetworkConnection[index].IPAddress = ipAddress
 		networksection.NetworkConnection[index].IPAddressAllocationMode = ipAllocationMode
+		networksection.NetworkConnection[index].MACAddress = ""
 
 		if network["is_primary"] == true {
 			networksection.PrimaryNetworkConnectionIndex = index
 		}
 
-		log.Printf("[DEBUG] Function ChangeNetworkConfig() for %s invoked", network["orgnetwork"])
+		log.Printf("Networksection: %s", networksection)
 	}
 
 	output, err := xml.MarshalIndent(networksection, "  ", "    ")
