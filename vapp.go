@@ -254,13 +254,6 @@ func (v *VApp) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate V
 		vcomp.SourcedItem.StorageProfile = &storageprofileref
 	}
 
-	// ensure network connection index is valid, if not use primary index
-	if vapptemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.NetworkConnection != nil {
-		vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection[0].NetworkConnectionIndex = vapptemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.NetworkConnection[0].NetworkConnectionIndex
-	} else {
-		vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection[0].NetworkConnectionIndex = vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.PrimaryNetworkConnectionIndex
-	}
-
 	output, err := xml.MarshalIndent(vcomp, "  ", "    ")
 	if err != nil {
 		return Task{}, fmt.Errorf("error marshaling vapp compose: %s", err)
