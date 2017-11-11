@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"net/url"
 
-	types "github.com/ukcloud/govcloudair/types/v56"
+	types "github.com/UKCloud/govcloudair/types/v56"
 )
 
 // Client provides a client to vCloud Air, values can be populated automatically using the Authenticate method.

@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
-	types "github.com/ukcloud/govcloudair/types/v56"
+	types "github.com/UKCloud/govcloudair/types/v56"
 	"log"
 	"net/url"
 	"os"
