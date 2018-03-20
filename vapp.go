@@ -12,7 +12,7 @@ import (
 	"net/url"
 	"os"
 
-	types "github.com/ukcloud/govcloudair/types/v56"
+	types "github.com/UKCloud/govcloudair/types/v56"
 	"strconv"
 )
 

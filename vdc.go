@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
-	types "github.com/ukcloud/govcloudair/types/v56"
+	types "github.com/UKCloud/govcloudair/types/v56"
 	"log"
 	"net/url"
 	"os"
@@ -188,7 +188,19 @@ func (v *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 				return EdgeGateway{}, fmt.Errorf("error decoding edge gateway query response: %s", err)
 			}
 
-			u, err = url.ParseRequestURI(query.EdgeGatewayRecord.HREF)
+			var href string
+
+			for _, edge := range query.EdgeGatewayRecord {
+				if edge.Name == edgegateway {
+					href = edge.HREF
+				}
+			}
+
+			if href == "" {
+				return EdgeGateway{}, fmt.Errorf("can't find edge gateway with name: %s", edgegateway)
+			}
+
+			u, err = url.ParseRequestURI(href)
 			if err != nil {
 				return EdgeGateway{}, fmt.Errorf("error decoding edge gateway query response: %s", err)
 			}
