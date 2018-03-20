@@ -7,7 +7,7 @@ package govcloudair
 import (
 	"fmt"
 
-	types "github.com/UKCloud/govcloudair/types/v56"
+	types "github.com/ukcloud/govcloudair/types/v56"
 )
 
 type Results struct {
