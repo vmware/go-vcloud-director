@@ -2,13 +2,14 @@
  * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
-package govcloudair
+package govcd
 
 import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
-	types "github.com/ukcloud/govcloudair/types/v56"
+	types "github.com/vmware/go-vcloud-director/types/v56"
+	"net/url"
 )
 
 type VAppTemplate struct {
@@ -30,10 +31,13 @@ func (v *Vdc) InstantiateVAppTemplate(template *types.InstantiateVAppTemplatePar
 	}
 	b := bytes.NewBufferString(xml.Header + string(output))
 
-	s := v.c.VCDVDCHREF
+	s, err := url.ParseRequestURI(v.Vdc.HREF)
+	if err != nil {
+		return fmt.Errorf("Error parsing vdc href : %s", err)
+	}
 	s.Path += "/action/instantiateVAppTemplate"
 
-	req := v.c.NewRequest(map[string]string{}, "POST", s, b)
+	req := v.c.NewRequest(map[string]string{}, "POST", *s, b)
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.instantiateVAppTemplateParams+xml")
 
 	resp, err := checkResp(v.c.Http.Do(req))
