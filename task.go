@@ -2,14 +2,14 @@
  * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
-package govcloudair
+package govcd
 
 import (
 	"fmt"
 	"net/url"
 	"time"
 
-	types "github.com/ukcloud/govcloudair/types/v56"
+	types "github.com/vmware/go-vcloud-director/types/v56"
 )
 
 type Task struct {
@@ -65,7 +65,7 @@ func (t *Task) WaitTaskCompletion() error {
 
 		// If task is not in a waiting status we're done, check if there's an error and return it.
 		if t.Task.Status != "queued" && t.Task.Status != "preRunning" && t.Task.Status != "running" {
-			if t.Task.Status == "error" {
+			if t.Task.Status == "error" && t.Task.Description != "" {
 				return fmt.Errorf("task did not complete succesfully: %s", t.Task.Description)
 			}
 			return nil
