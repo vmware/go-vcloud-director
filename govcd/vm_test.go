@@ -2,11 +2,10 @@
  * Copyright 2016 Skyscape Cloud Services.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
-package govcloudair
+package govcd
 
 import (
-	// "fmt"
-	"github.com/ukcloud/govcloudair/testutil"
+	"github.com/vmware/go-vcloud-director/testutil"
 	. "gopkg.in/check.v1"
 )
 

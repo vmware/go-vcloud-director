@@ -2,7 +2,7 @@
  * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
-package govcloudair
+package govcd
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 	"net/url"
 	"os"
 
-	types "github.com/ukcloud/govcloudair/types/v56"
+	types "github.com/vmware/go-vcloud-director/types/v56"
 	"strconv"
 )
 

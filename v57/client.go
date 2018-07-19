@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	types "github.com/ukcloud/govcloudair/types/v56"
+	types "github.com/vmware/go-vcloud-director/types/v56"
 )
 
 const (
