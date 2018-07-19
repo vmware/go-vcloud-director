@@ -1,10 +1,10 @@
-package govcloudair
+package govcd
 
 import (
 	"net/url"
 	"testing"
 
-	"github.com/ukcloud/govcloudair/testutil"
+	"github.com/vmware/go-vcloud-director/testutil"
 	. "gopkg.in/check.v1"
 )
 

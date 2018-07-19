@@ -2,11 +2,11 @@
  * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
-package govcloudair
+package govcd
 
 import (
-	"github.com/ukcloud/govcloudair/testutil"
-	types "github.com/ukcloud/govcloudair/types/v56"
+	"github.com/vmware/go-vcloud-director/testutil"
+	types "github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
 )
 

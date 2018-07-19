@@ -1,4 +1,4 @@
-package govcloudair
+package govcd
 
 import (
 	"crypto/tls"
