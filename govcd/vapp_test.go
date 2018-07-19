@@ -11,7 +11,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (s *S) Test_ComposeVApp(c *C) {
+func (s *TestVCD) Test_ComposeVApp(c *C) {
 
 	testServer.ResponseMap(7, testutil.ResponseMap{
 		"/api/org/11111111-1111-1111-1111-111111111111":                       testutil.Response{200, nil, orgExample},

@@ -8,7 +8,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (s *S) Test_FindCatalogItem(c *C) {
+func (s *TestVCD) Test_FindCatalogItem(c *C) {
 
 	// Get the Org populated
 	testServer.Response(200, nil, orgExample)

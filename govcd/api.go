@@ -2,7 +2,7 @@
  * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
-// Package govcloudair provides a simple binding for vCloud Air / vCloud Director REST APIs.
+// Package govcd provides a simple binding for vCloud Director REST APIs.
 package govcd
 
 import (
@@ -16,7 +16,7 @@ import (
 	types "github.com/vmware/go-vcloud-director/types/v56"
 )
 
-// Client provides a client to vCloud Air, values can be populated automatically using the Authenticate method.
+// Client provides a client to vCloud Director, values can be populated automatically using the Authenticate method.
 type Client struct {
 	APIVersion    string      // The API version required
 	VCDToken      string      // Access Token (authorization header)

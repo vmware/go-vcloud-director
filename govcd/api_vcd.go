@@ -3,6 +3,7 @@ package govcd
 import (
 	"crypto/tls"
 	"fmt"
+	types "github.com/vmware/go-vcloud-director/types/v56"
 	"net/http"
 	"net/url"
 	"os"
@@ -18,6 +19,11 @@ type VCDClient struct {
 	sessionHREF url.URL // HREF for the session API
 	QueryHREF   url.URL // HREF for the query API
 	Mutex       sync.Mutex
+}
+
+// Session object for session response
+type session struct {
+	Link []*types.Link `xml:"Link"`
 }
 
 type supportedVersions struct {

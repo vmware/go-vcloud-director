@@ -273,7 +273,6 @@ func (v *VM) ChangeNetworkConfig(networks []map[string]interface{}, ip string) (
 			networksection.PrimaryNetworkConnectionIndex = index
 		}
 
-		log.Printf("Networksection: %s", networksection)
 	}
 
 	output, err := xml.MarshalIndent(networksection, "  ", "    ")

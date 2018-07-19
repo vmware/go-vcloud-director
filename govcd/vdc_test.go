@@ -11,7 +11,7 @@ import (
 	"strconv"
 )
 
-func (s *S) Test_FindVDCNetwork(c *C) {
+func (s *TestVCD) Test_FindVDCNetwork(c *C) {
 
 	testServer.Response(200, nil, orgvdcnetExample)
 
@@ -28,7 +28,7 @@ func (s *S) Test_FindVDCNetwork(c *C) {
 	c.Assert(err, NotNil)
 }
 
-func (s *S) Test_GetVDCOrg(c *C) {
+func (s *TestVCD) Test_GetVDCOrg(c *C) {
 
 	testServer.Response(200, nil, orgExample)
 
@@ -41,7 +41,7 @@ func (s *S) Test_GetVDCOrg(c *C) {
 	c.Assert(org.Org.HREF, Equals, "http://localhost:4444/api/org/23bd2339-c55f-403c-baf3-13109e8c8d57")
 }
 
-func (s *S) Test_NewVdc(c *C) {
+func (s *TestVCD) Test_NewVdc(c *C) {
 
 	testServer.Response(200, nil, vdcExample)
 	err := s.vdc.Refresh()
@@ -97,7 +97,7 @@ func (s *S) Test_NewVdc(c *C) {
 
 }
 
-func (s *S) Test_FindVApp(c *C) {
+func (s *TestVCD) Test_FindVApp(c *C) {
 
 	// testServer.Response(200, nil, vappExample)
 

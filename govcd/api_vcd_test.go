@@ -8,11 +8,16 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-type K struct {
+// This is the test struct for vcloud-director. 
+// Test functions use the struct to get
+// the test vdc and access to a test client
+type TestVCD struct {
 	client *VCDClient
 	org    Org
 	vdc    Vdc
 }
+
+var testServer = testutil.NewHTTPServer()
 
 var vcdu_api, _ = url.Parse("http://localhost:4444/api")
 var vcdu_v, _ = url.Parse("http://localhost:4444/api/versions")
@@ -22,7 +27,7 @@ var _ = Suite(&S{})
 
 var vcdauthheader = map[string]string{"x-vcloud-authorization": "012345678901234567890123456789"}
 
-func (s *K) SetUpSuite(c *C) {
+func (s *TestVCD) SetUpSuite(c *C) {
 	testServer.Start()
 	var err error
 	s.client = NewVCDClient(*vcdu_api, false)
@@ -40,7 +45,7 @@ func (s *K) SetUpSuite(c *C) {
 	}
 }
 
-func (s *K) TearDownTest(c *C) {
+func (s *TestVCD) TearDownTest(c *C) {
 	testServer.Flush()
 }
 
