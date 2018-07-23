@@ -21,7 +21,7 @@ type Client struct {
 	APIVersion    string      // The API version required
 	VCDToken      string      // Access Token (authorization header)
 	VCDAuthHeader string      // Authorization header
-	VCDVDCHREF    url.URL     // HREF of the backend VDC you're using
+	HREF    	  url.URL    		 // HREF of the VCD Endpoint you're using
 	Http          http.Client // HttpClient is the client to use. Default will be used if not provided.
 }
 

@@ -28,25 +28,6 @@ func NewVdc(c *Client) *Vdc {
 	}
 }
 
-func (c *Client) retrieveVDC() (Vdc, error) {
-
-	req := c.NewRequest(map[string]string{}, "GET", c.VCDVDCHREF, nil)
-
-	resp, err := checkResp(c.Http.Do(req))
-	if err != nil {
-		return Vdc{}, fmt.Errorf("error retreiving vdc: %s", err)
-	}
-
-	vdc := NewVdc(c)
-
-	if err = decodeBody(resp, vdc.Vdc); err != nil {
-		return Vdc{}, fmt.Errorf("error decoding vdc response: %s", err)
-	}
-
-	// The request was successful
-	return *vdc, nil
-}
-
 func (v *Vdc) Refresh() error {
 
 	if v.Vdc.HREF == "" {
@@ -195,6 +176,8 @@ func (v *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 
 }
 
+// Given a name and a description, ComposeRawVApp creates a vapp and returns a 
+// Task and an error. 
 func (v *Vdc) ComposeRawVApp(name string) error {
 	vcomp := &types.ComposeVAppParams{
 		Ovf:     "http://schemas.dmtf.org/ovf/envelope/1",
@@ -218,10 +201,13 @@ func (v *Vdc) ComposeRawVApp(name string) error {
 
 	b := bytes.NewBufferString(xml.Header + string(output))
 
-	s := v.c.VCDVDCHREF
+	s, err := url.ParseRequestURI(v.Vdc.HREF)
+	if err != nil {
+		return fmt.Errorf("error parsing vdc HREF: %v", err)
+	}
 	s.Path += "/action/composeVApp"
 
-	req := v.c.NewRequest(map[string]string{}, "POST", s, b)
+	req := v.c.NewRequest(map[string]string{}, "POST", *s, b)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.composeVAppParams+xml")
 
@@ -242,6 +228,114 @@ func (v *Vdc) ComposeRawVApp(name string) error {
 	}
 
 	return nil
+}
+
+// Given an array of org networks, a vapp template, a storage profile, a name
+// and a description, ComposeVApp creates a vapp and returns a Task and an 
+// error. 
+func (v *Vdc) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate VAppTemplate, storageprofileref types.Reference, name string, description string) (Task, error) {
+
+	if vapptemplate.VAppTemplate.Children == nil || orgvdcnetworks == nil {
+		return Task{}, fmt.Errorf("can't compose a new vApp, objects passed are not valid")
+	}
+
+	// Build request XML
+	vcomp := &types.ComposeVAppParams{
+		Ovf:         "http://schemas.dmtf.org/ovf/envelope/1",
+		Xsi:         "http://www.w3.org/2001/XMLSchema-instance",
+		Xmlns:       "http://www.vmware.com/vcloud/v1.5",
+		Deploy:      false,
+		Name:        name,
+		PowerOn:     false,
+		Description: description,
+		InstantiationParams: &types.InstantiationParams{
+			NetworkConfigSection: &types.NetworkConfigSection{
+				Info: "Configuration parameters for logical networks",
+			},
+		},
+		SourcedItem: &types.SourcedCompositionItemParam{
+			Source: &types.Reference{
+				HREF: vapptemplate.VAppTemplate.Children.VM[0].HREF,
+				Name: vapptemplate.VAppTemplate.Children.VM[0].Name,
+			},
+			InstantiationParams: &types.InstantiationParams{
+				NetworkConnectionSection: &types.NetworkConnectionSection{
+					Type: vapptemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.Type,
+					HREF: vapptemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.HREF,
+					Info: "Network config for sourced item",
+					PrimaryNetworkConnectionIndex: vapptemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.PrimaryNetworkConnectionIndex,
+				},
+			},
+		},
+	}
+
+	for index, orgvdcnetwork := range orgvdcnetworks {
+		vcomp.InstantiationParams.NetworkConfigSection.NetworkConfig = append(vcomp.InstantiationParams.NetworkConfigSection.NetworkConfig,
+			types.VAppNetworkConfiguration{
+				NetworkName: orgvdcnetwork.Name,
+				Configuration: &types.NetworkConfiguration{
+					FenceMode: "bridged",
+					ParentNetwork: &types.Reference{
+						HREF: orgvdcnetwork.HREF,
+						Name: orgvdcnetwork.Name,
+						Type: orgvdcnetwork.Type,
+					},
+				},
+			},
+		)
+		vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection = append(vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection,
+			&types.NetworkConnection{
+				Network:                 orgvdcnetwork.Name,
+				NetworkConnectionIndex:  index,
+				IsConnected:             true,
+				IPAddressAllocationMode: "POOL",
+			},
+		)
+		vcomp.SourcedItem.NetworkAssignment = append(vcomp.SourcedItem.NetworkAssignment,
+			&types.NetworkAssignment{
+				InnerNetwork:     orgvdcnetwork.Name,
+				ContainerNetwork: orgvdcnetwork.Name,
+			},
+		)
+	}
+
+	if storageprofileref.HREF != "" {
+		vcomp.SourcedItem.StorageProfile = &storageprofileref
+	}
+
+	output, err := xml.MarshalIndent(vcomp, "  ", "    ")
+	if err != nil {
+		return Task{}, fmt.Errorf("error marshaling vapp compose: %s", err)
+	}
+
+	log.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+
+	b := bytes.NewBufferString(xml.Header + string(output))
+
+	s, err := url.ParseRequestURI(v.Vdc.HREF)
+	if err != nil {
+		return Task{}, fmt.Errorf("Error parsing vdc href : %s", err)
+	}
+	s.Path += "/action/composeVApp"
+
+	req := v.c.NewRequest(map[string]string{}, "POST", *s, b)
+
+	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.composeVAppParams+xml")
+
+	resp, err := checkResp(v.c.Http.Do(req))
+	if err != nil {
+		return Task{}, fmt.Errorf("error instantiating a new vApp: %s", err)
+	}
+
+	if err = decodeBody(resp, v.VApp); err != nil {
+		return Task{}, fmt.Errorf("error decoding vApp response: %s", err)
+	}
+
+	task := NewTask(v.c)
+	task.Task = v.VApp.Tasks.Task[0]
+
+	// The request was successful
+	return *task, nil
 }
 
 func (v *Vdc) FindVAppByName(vapp string) (VApp, error) {

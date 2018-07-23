@@ -7,6 +7,7 @@ package govcd
 import (
 	"bytes"
 	"encoding/xml"
+	"net/url"
 	"fmt"
 	types "github.com/vmware/go-vcloud-director/types/v56"
 )
@@ -30,10 +31,15 @@ func (v *Vdc) InstantiateVAppTemplate(template *types.InstantiateVAppTemplatePar
 	}
 	b := bytes.NewBufferString(xml.Header + string(output))
 
-	s := v.c.VCDVDCHREF
+	s, err := url.ParseRequestURI(v.Vdc.HREF)
+
+	if err != nil {
+		return fmt.Errorf("error parsing vdc HREF: %v", err)
+	}
+
 	s.Path += "/action/instantiateVAppTemplate"
 
-	req := v.c.NewRequest(map[string]string{}, "POST", s, b)
+	req := v.c.NewRequest(map[string]string{}, "POST", *s, b)
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.instantiateVAppTemplateParams+xml")
 
 	resp, err := checkResp(v.c.Http.Do(req))
