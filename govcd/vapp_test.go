@@ -11,7 +11,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (s *TestVCD) Test_ComposeVApp(c *C) {
+func (vcd *TestVCD) Test_ComposeVApp(c *C) {
 
 	testServer.ResponseMap(7, testutil.ResponseMap{
 		"/api/org/11111111-1111-1111-1111-111111111111":                       testutil.Response{200, nil, orgExample},
@@ -23,18 +23,14 @@ func (s *TestVCD) Test_ComposeVApp(c *C) {
 		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000":                 testutil.Response{200, nil, vappExample},
 	})
 
-	// Get the Org populated
-	org, err := s.vdc.GetVDCOrg()
-	c.Assert(err, IsNil)
-
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
-	net, err := s.vdc.FindVDCNetwork("networkName")
+	net, err := vcd.vdc.FindVDCNetwork("networkName")
 	networks = append(networks, net.OrgVDCNetwork)
 	c.Assert(err, IsNil)
 
 	// Populate Catalog
-	cat, err := org.FindCatalog("Public Catalog")
+	cat, err := vcd.org.FindCatalog("Public Catalog")
 	c.Assert(err, IsNil)
 
 	// Populate Catalog Item
@@ -46,16 +42,16 @@ func (s *TestVCD) Test_ComposeVApp(c *C) {
 	c.Assert(err, IsNil)
 
 	// Get StorageProfileReference
-	storageprofileref, err := s.vdc.FindStorageProfileReference("storageProfile1")
+	storageprofileref, err := vcd.vdc.FindStorageProfileReference("storageProfile1")
 	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
+	task, err := vcd.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
-	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
+	c.Assert(vcd.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
 
-	status, err := s.vapp.GetStatus()
+	status, err := vcd.vapp.GetStatus()
 
 	c.Assert(err, IsNil)
 	c.Assert(status, Equals, "POWERED_OFF")
@@ -64,10 +60,10 @@ func (s *TestVCD) Test_ComposeVApp(c *C) {
 
 }
 
-func (s *S) Test_PowerOn(c *C) {
+func (vcd *TestVCD) Test_PowerOn(c *C) {
 
 	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.PowerOn()
+	task, err := vcd.vapp.PowerOn()
 	_ = testServer.WaitRequest()
 
 	c.Assert(err, IsNil)
@@ -75,10 +71,10 @@ func (s *S) Test_PowerOn(c *C) {
 
 }
 
-func (s *S) Test_PowerOff(c *C) {
+func (vcd *TestVCD) Test_PowerOff(c *C) {
 
 	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.PowerOff()
+	task, err := vcd.vapp.PowerOff()
 	_ = testServer.WaitRequest()
 
 	c.Assert(err, IsNil)
@@ -86,10 +82,10 @@ func (s *S) Test_PowerOff(c *C) {
 
 }
 
-func (s *S) Test_Reboot(c *C) {
+func (vcd *TestVCD) Test_Reboot(c *C) {
 
 	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.Reboot()
+	task, err := vcd.vapp.Reboot()
 	_ = testServer.WaitRequest()
 
 	c.Assert(err, IsNil)
@@ -97,7 +93,7 @@ func (s *S) Test_Reboot(c *C) {
 
 }
 
-func (s *S) Test_SetOvf(c *C) {
+func (vcd *TestVCD) Test_SetOvf(c *C) {
 	testServer.ResponseMap(8, testutil.ResponseMap{
 		"/api/org/11111111-1111-1111-1111-111111111111":                       testutil.Response{200, nil, orgExample},
 		"/api/network/44444444-4444-4444-4444-4444444444444":                  testutil.Response{200, nil, orgvdcnetExample},
@@ -110,12 +106,11 @@ func (s *S) Test_SetOvf(c *C) {
 	})
 
 	// Get the Org populated
-	org, err := s.vdc.GetVDCOrg()
-	c.Assert(err, IsNil)
+	org := vcd.org
 
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
-	net, err := s.vdc.FindVDCNetwork("networkName")
+	net, err := vcd.vdc.FindVDCNetwork("networkName")
 	networks = append(networks, net.OrgVDCNetwork)
 	c.Assert(err, IsNil)
 
@@ -132,19 +127,19 @@ func (s *S) Test_SetOvf(c *C) {
 	c.Assert(err, IsNil)
 
 	// Get StorageProfileReference
-	storageprofileref, err := s.vdc.FindStorageProfileReference("storageProfile1")
+	storageprofileref, err := vcd.vdc.FindStorageProfileReference("storageProfile1")
 	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
+	task, err := vcd.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
-	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
+	c.Assert(vcd.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
 
 	var test map[string]string
 	test = make(map[string]string)
 	test["guestinfo.hostname"] = "testhostname"
-	task, err = s.vapp.SetOvf(test)
+	task, err = vcd.vapp.SetOvf(test)
 
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.Status, Equals, "success")
@@ -153,7 +148,7 @@ func (s *S) Test_SetOvf(c *C) {
 
 }
 
-func (s *S) Test_AddMetadata(c *C) {
+func (vcd *TestVCD) Test_AddMetadata(c *C) {
 	testServer.ResponseMap(8, testutil.ResponseMap{
 		"/api/org/11111111-1111-1111-1111-111111111111":                       testutil.Response{200, nil, orgExample},
 		"/api/network/44444444-4444-4444-4444-4444444444444":                  testutil.Response{200, nil, orgvdcnetExample},
@@ -165,18 +160,14 @@ func (s *S) Test_AddMetadata(c *C) {
 		"/api/vApp/vm-00000000-0000-0000-0000-000000000000/metadata/key":      testutil.Response{200, nil, taskExample},
 	})
 
-	// Get the Org populated
-	org, err := s.vdc.GetVDCOrg()
-	c.Assert(err, IsNil)
-
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
-	net, err := s.vdc.FindVDCNetwork("networkName")
+	net, err := vcd.vdc.FindVDCNetwork("networkName")
 	networks = append(networks, net.OrgVDCNetwork)
 	c.Assert(err, IsNil)
 
 	// Populate Catalog
-	cat, err := org.FindCatalog("Public Catalog")
+	cat, err := vcd.org.FindCatalog("Public Catalog")
 	c.Assert(err, IsNil)
 
 	// Populate Catalog Item
@@ -188,16 +179,16 @@ func (s *S) Test_AddMetadata(c *C) {
 	c.Assert(err, IsNil)
 
 	// Get StorageProfileReference
-	storageprofileref, err := s.vdc.FindStorageProfileReference("storageProfile1")
+	storageprofileref, err := vcd.vdc.FindStorageProfileReference("storageProfile1")
 	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
+	task, err := vcd.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
-	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
+	c.Assert(vcd.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
 
-	task, err = s.vapp.AddMetadata("key", "value")
+	task, err = vcd.vapp.AddMetadata("key", "value")
 
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.Status, Equals, "success")
@@ -206,7 +197,7 @@ func (s *S) Test_AddMetadata(c *C) {
 
 }
 
-func (s *S) Test_ChangeStorageProfile(c *C) {
+func (vcd *TestVCD) Test_ChangeStorageProfile(c *C) {
 
 	testServer.ResponseMap(9, testutil.ResponseMap{
 		"/api/org/11111111-1111-1111-1111-111111111111":                       testutil.Response{200, nil, orgExample},
@@ -220,18 +211,14 @@ func (s *S) Test_ChangeStorageProfile(c *C) {
 		"/api/vdc/00000000-0000-0000-0000-000000000000":                       testutil.Response{200, nil, vdcExample},
 	})
 
-	// Get the Org populated
-	org, err := s.vdc.GetVDCOrg()
-	c.Assert(err, IsNil)
-
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
-	net, err := s.vdc.FindVDCNetwork("networkName")
+	net, err := vcd.vdc.FindVDCNetwork("networkName")
 	networks = append(networks, net.OrgVDCNetwork)
 	c.Assert(err, IsNil)
 
 	// Populate Catalog
-	cat, err := org.FindCatalog("Public Catalog")
+	cat, err := vcd.org.FindCatalog("Public Catalog")
 	c.Assert(err, IsNil)
 
 	// Populate Catalog Item
@@ -243,16 +230,16 @@ func (s *S) Test_ChangeStorageProfile(c *C) {
 	c.Assert(err, IsNil)
 
 	// Get StorageProfileReference
-	storageprofileref, err := s.vdc.FindStorageProfileReference("storageProfile1")
+	storageprofileref, err := vcd.vdc.FindStorageProfileReference("storageProfile1")
 	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
+	task, err := vcd.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
-	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
+	c.Assert(vcd.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
 
-	task, err = s.vapp.ChangeStorageProfile("storageProfile2")
+	task, err = vcd.vapp.ChangeStorageProfile("storageProfile2")
 
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.Status, Equals, "success")
@@ -261,7 +248,7 @@ func (s *S) Test_ChangeStorageProfile(c *C) {
 
 }
 
-func (s *S) Test_ChangeVMName(c *C) {
+func (vcd *TestVCD) Test_ChangeVMName(c *C) {
 
 	testServer.ResponseMap(8, testutil.ResponseMap{
 		"/api/org/11111111-1111-1111-1111-111111111111":                       testutil.Response{200, nil, orgExample},
@@ -274,18 +261,14 @@ func (s *S) Test_ChangeVMName(c *C) {
 		"/api/vApp/vm-00000000-0000-0000-0000-000000000000":                   testutil.Response{200, nil, taskExample},
 	})
 
-	// Get the Org populated
-	org, err := s.vdc.GetVDCOrg()
-	c.Assert(err, IsNil)
-
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
-	net, err := s.vdc.FindVDCNetwork("networkName")
+	net, err := vcd.vdc.FindVDCNetwork("networkName")
 	networks = append(networks, net.OrgVDCNetwork)
 	c.Assert(err, IsNil)
 
 	// Populate Catalog
-	cat, err := org.FindCatalog("Public Catalog")
+	cat, err := vcd.org.FindCatalog("Public Catalog")
 	c.Assert(err, IsNil)
 
 	// Populate Catalog Item
@@ -297,16 +280,16 @@ func (s *S) Test_ChangeVMName(c *C) {
 	c.Assert(err, IsNil)
 
 	// Get StorageProfileReference
-	storageprofileref, err := s.vdc.FindStorageProfileReference("storageProfile1")
+	storageprofileref, err := vcd.vdc.FindStorageProfileReference("storageProfile1")
 	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
+	task, err := vcd.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
-	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
+	c.Assert(vcd.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
 
-	task, err = s.vapp.ChangeVMName("My-vm")
+	task, err = vcd.vapp.ChangeVMName("My-vm")
 
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.Status, Equals, "success")
@@ -315,10 +298,10 @@ func (s *S) Test_ChangeVMName(c *C) {
 
 }
 
-func (s *S) Test_Reset(c *C) {
+func (vcd *TestVCD) Test_Reset(c *C) {
 
 	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.Reset()
+	task, err := vcd.vapp.Reset()
 	_ = testServer.WaitRequest()
 
 	c.Assert(err, IsNil)
@@ -326,10 +309,10 @@ func (s *S) Test_Reset(c *C) {
 
 }
 
-func (s *S) Test_Suspend(c *C) {
+func (vcd *TestVCD) Test_Suspend(c *C) {
 
 	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.Suspend()
+	task, err := vcd.vapp.Suspend()
 	_ = testServer.WaitRequest()
 
 	c.Assert(err, IsNil)
@@ -337,10 +320,10 @@ func (s *S) Test_Suspend(c *C) {
 
 }
 
-func (s *S) Test_Shutdown(c *C) {
+func (vcd *TestVCD) Test_Shutdown(c *C) {
 
 	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.Shutdown()
+	task, err := vcd.vapp.Shutdown()
 	_ = testServer.WaitRequest()
 
 	c.Assert(err, IsNil)
@@ -348,10 +331,10 @@ func (s *S) Test_Shutdown(c *C) {
 
 }
 
-func (s *S) Test_Undeploy(c *C) {
+func (vcd *TestVCD) Test_Undeploy(c *C) {
 
 	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.Undeploy()
+	task, err := vcd.vapp.Undeploy()
 	_ = testServer.WaitRequest()
 
 	c.Assert(err, IsNil)
@@ -359,10 +342,10 @@ func (s *S) Test_Undeploy(c *C) {
 
 }
 
-func (s *S) Test_Deploy(c *C) {
+func (vcd *TestVCD) Test_Deploy(c *C) {
 
 	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.Deploy()
+	task, err := vcd.vapp.Deploy()
 	_ = testServer.WaitRequest()
 
 	c.Assert(err, IsNil)
@@ -370,10 +353,10 @@ func (s *S) Test_Deploy(c *C) {
 
 }
 
-func (s *S) Test_Delete(c *C) {
+func (vcd *TestVCD) Test_Delete(c *C) {
 
 	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.Delete()
+	task, err := vcd.vapp.Delete()
 	_ = testServer.WaitRequest()
 
 	c.Assert(err, IsNil)
@@ -381,7 +364,7 @@ func (s *S) Test_Delete(c *C) {
 
 }
 
-func (s *S) Test_RunCustomizationScript(c *C) {
+func (vcd *TestVCD) Test_RunCustomizationScript(c *C) {
 
 	testServer.ResponseMap(8, testutil.ResponseMap{
 		"/api/org/11111111-1111-1111-1111-111111111111":                                testutil.Response{200, nil, orgExample},
@@ -394,18 +377,14 @@ func (s *S) Test_RunCustomizationScript(c *C) {
 		"/api/vApp/vm-00000000-0000-0000-0000-000000000000/guestCustomizationSection/": testutil.Response{200, nil, taskExample},
 	})
 
-	// Get the Org populated
-	org, err := s.vdc.GetVDCOrg()
-	c.Assert(err, IsNil)
-
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
-	net, err := s.vdc.FindVDCNetwork("networkName")
+	net, err := vcd.vdc.FindVDCNetwork("networkName")
 	networks = append(networks, net.OrgVDCNetwork)
 	c.Assert(err, IsNil)
 
 	// Populate Catalog
-	cat, err := org.FindCatalog("Public Catalog")
+	cat, err := vcd.org.FindCatalog("Public Catalog")
 	c.Assert(err, IsNil)
 
 	// Populate Catalog Item
@@ -417,16 +396,16 @@ func (s *S) Test_RunCustomizationScript(c *C) {
 	c.Assert(err, IsNil)
 
 	// Get StorageProfileReference
-	storageprofileref, err := s.vdc.FindStorageProfileReference("storageProfile1")
+	storageprofileref, err := vcd.vdc.FindStorageProfileReference("storageProfile1")
 	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
+	task, err := vcd.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
-	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
+	c.Assert(vcd.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
 
-	task, err = s.vapp.RunCustomizationScript("computername", "this is my script")
+	task, err = vcd.vapp.RunCustomizationScript("computername", "this is my script")
 
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.Status, Equals, "success")
@@ -435,7 +414,7 @@ func (s *S) Test_RunCustomizationScript(c *C) {
 
 }
 
-func (s *S) Test_ChangeCPUcount(c *C) {
+func (vcd *TestVCD) Test_ChangeCPUcount(c *C) {
 
 	testServer.ResponseMap(8, testutil.ResponseMap{
 		"/api/org/11111111-1111-1111-1111-111111111111":                                testutil.Response{200, nil, orgExample},
@@ -448,18 +427,14 @@ func (s *S) Test_ChangeCPUcount(c *C) {
 		"/api/vApp/vm-00000000-0000-0000-0000-000000000000/virtualHardwareSection/cpu": testutil.Response{200, nil, taskExample},
 	})
 
-	// Get the Org populated
-	org, err := s.vdc.GetVDCOrg()
-	c.Assert(err, IsNil)
-
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
-	net, err := s.vdc.FindVDCNetwork("networkName")
+	net, err := vcd.vdc.FindVDCNetwork("networkName")
 	networks = append(networks, net.OrgVDCNetwork)
 	c.Assert(err, IsNil)
 
 	// Populate Catalog
-	cat, err := org.FindCatalog("Public Catalog")
+	cat, err := vcd.org.FindCatalog("Public Catalog")
 	c.Assert(err, IsNil)
 
 	// Populate Catalog Item
@@ -471,16 +446,16 @@ func (s *S) Test_ChangeCPUcount(c *C) {
 	c.Assert(err, IsNil)
 
 	// Get StorageProfileReference
-	storageprofileref, err := s.vdc.FindStorageProfileReference("storageProfile1")
+	storageprofileref, err := vcd.vdc.FindStorageProfileReference("storageProfile1")
 	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
+	task, err := vcd.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
-	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
+	c.Assert(vcd.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
 
-	task, err = s.vapp.ChangeCPUcount(2)
+	task, err = vcd.vapp.ChangeCPUcount(2)
 
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.Status, Equals, "success")
@@ -489,7 +464,7 @@ func (s *S) Test_ChangeCPUcount(c *C) {
 
 }
 
-func (s *S) Test_ChangeMemorySize(c *C) {
+func (vcd *TestVCD) Test_ChangeMemorySize(c *C) {
 
 	testServer.ResponseMap(8, testutil.ResponseMap{
 		"/api/org/11111111-1111-1111-1111-111111111111":                                   testutil.Response{200, nil, orgExample},
@@ -502,18 +477,14 @@ func (s *S) Test_ChangeMemorySize(c *C) {
 		"/api/vApp/vm-00000000-0000-0000-0000-000000000000/virtualHardwareSection/memory": testutil.Response{200, nil, taskExample},
 	})
 
-	// Get the Org populated
-	org, err := s.vdc.GetVDCOrg()
-	c.Assert(err, IsNil)
-
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
-	net, err := s.vdc.FindVDCNetwork("networkName")
+	net, err := vcd.vdc.FindVDCNetwork("networkName")
 	networks = append(networks, net.OrgVDCNetwork)
 	c.Assert(err, IsNil)
 
 	// Populate Catalog
-	cat, err := org.FindCatalog("Public Catalog")
+	cat, err := vcd.org.FindCatalog("Public Catalog")
 	c.Assert(err, IsNil)
 
 	// Populate Catalog Item
@@ -525,16 +496,16 @@ func (s *S) Test_ChangeMemorySize(c *C) {
 	c.Assert(err, IsNil)
 
 	// Get StorageProfileReference
-	storageprofileref, err := s.vdc.FindStorageProfileReference("storageProfile1")
+	storageprofileref, err := vcd.vdc.FindStorageProfileReference("storageProfile1")
 	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := s.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
+	task, err := vcd.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
-	c.Assert(s.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
+	c.Assert(vcd.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
 
-	task, err = s.vapp.ChangeMemorySize(4096)
+	task, err = vcd.vapp.ChangeMemorySize(4096)
 
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.Status, Equals, "success")

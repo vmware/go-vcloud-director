@@ -9,7 +9,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (s *TestVCD) Test_FindVMByHREF(c *C) {
+func (vcd *TestVCD) Test_FindVMByHREF(c *C) {
 
 	// Get the Org populated
 	testServer.ResponseMap(1, testutil.ResponseMap{
@@ -17,7 +17,7 @@ func (s *TestVCD) Test_FindVMByHREF(c *C) {
 	})
 
 	vm_href := vcdu_api.String() + "/vApp/vm-11111111-1111-1111-1111-111111111111"
-	vm, err := s.client.FindVMByHREF(vm_href)
+	vm, err := vcd.client.FindVMByHREF(vm_href)
 	_ = testServer.WaitRequest()
 	testServer.Flush()
 

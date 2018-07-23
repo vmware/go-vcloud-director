@@ -8,18 +8,11 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (s *TestVCD) Test_GetVAppTemplate(c *C) {
-
-	// Get the Org populated
-	testServer.Response(200, nil, orgExample)
-	org, err := s.vdc.GetVDCOrg()
-	_ = testServer.WaitRequest()
-	testServer.Flush()
-	c.Assert(err, IsNil)
+func (vcd *TestVCD) Test_GetVAppTemplate(c *C) {
 
 	// Populate Catalog
 	testServer.Response(200, nil, catalogExample)
-	cat, err := org.FindCatalog("Public Catalog")
+	cat, err := vcd.org.FindCatalog("Public Catalog")
 	_ = testServer.WaitRequest()
 	testServer.Flush()
 

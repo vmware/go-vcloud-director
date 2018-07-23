@@ -8,13 +8,14 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// This is the test struct for vcloud-director. 
+// This is the test struct for vcloud-director.
 // Test functions use the struct to get
 // the test vdc and access to a test client
 type TestVCD struct {
 	client *VCDClient
 	org    Org
 	vdc    Vdc
+	vapp   VApp
 }
 
 var testServer = testutil.NewHTTPServer()
@@ -23,29 +24,35 @@ var vcdu_api, _ = url.Parse("http://localhost:4444/api")
 var vcdu_v, _ = url.Parse("http://localhost:4444/api/versions")
 var vcdu_s, _ = url.Parse("http://localhost:4444/api/vchs/services")
 
-var _ = Suite(&S{})
-
 var vcdauthheader = map[string]string{"x-vcloud-authorization": "012345678901234567890123456789"}
 
-func (s *TestVCD) SetUpSuite(c *C) {
+var _ = Suite(&TestVCD{})
+
+func Test(t *testing.T) { TestingT(t) }
+
+func (vcd *TestVCD) SetUpSuite(c *C) {
 	testServer.Start()
 	var err error
-	s.client = NewVCDClient(*vcdu_api, false)
+	vcd.client = NewVCDClient(*vcdu_api, false)
 	if err != nil {
 		panic(err)
 	}
 
 	testServer.ResponseMap(5, testutil.ResponseMap{
-		"/api/versions": testutil.Response{200, map[string]string{}, vcdversions},
+		"/api/versions":                                 testutil.Response{200, map[string]string{}, vcdversions},
+		"/api/sessions":                                 testutil.Response{201, vcdauthheader, vcdsessions},
+		"/api/org/00000000-0000-0000-0000-000000000000": testutil.Response{201, vcdauthheader, vcdorg},
+		"/api/vdc/00000000-0000-0000-0000-000000000000": testutil.Response{201, vcdauthheader, vcdvdc},
 	})
 
-	s.org, s.vdc, err = s.client.Authenticate("username", "password", "organization", "VDC")
+	vcd.org, vcd.vdc, err = vcd.client.Authenticate("username", "password", "organization", "organization vDC")
+	vcd.vapp = *NewVApp(&vcd.client.Client)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (s *TestVCD) TearDownTest(c *C) {
+func (vcd *TestVCD) TearDownTest(c *C) {
 	testServer.Flush()
 }
 
@@ -144,6 +151,23 @@ var vcdorg = `
     <Link rel="down" type="application/vnd.vmware.vcloud.vdc+xml" name="organization vDC" href="http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000000"/>
     <Link rel="down" type="application/vnd.vmware.vcloud.catalog+xml" name="catalog-a" href="http://localhost:4444/api/catalog/00000000-0000-0000-0000-000000000000"/>
     <Link rel="down" type="application/vnd.vmware.vcloud.catalog+xml" name="catalog-b" href="http://localhost:4444/api/catalog/00000000-0000-0000-0000-000000000001"/>
+    <Link href="http://localhost:4444/api/catalog/e8a20fdf-8a78-440c-ac71-0420db59f854" name="Public Catalog" rel="down" type="application/vnd.vmware.vcloud.catalog+xml"/>
+    <Link href="http://localhost:4444/api/org/00000000-0000-0000-0000-000000000000/catalog/e8a20fdf-8a78-440c-ac71-0420db59f854/controlAccess/" rel="down" type="application/vnd.vmware.vcloud.controlAccess+xml"/>
+    <Link href="http://localhost:4444/api/catalog/5cb6451b-8091-4c89-930d-1ff9653cb12d" name="PSE" rel="down" type="application/vnd.vmware.vcloud.catalog+xml"/>
+    <Link href="http://localhost:4444/api/org/00000000-0000-0000-0000-000000000000/catalog/5cb6451b-8091-4c89-930d-1ff9653cb12d/controlAccess/" rel="down" type="application/vnd.vmware.vcloud.controlAccess+xml"/>
+    <Link href="http://localhost:4444/api/org/00000000-0000-0000-0000-000000000000/catalog/5cb6451b-8091-4c89-930d-1ff9653cb12d/action/controlAccess" rel="controlAccess" type="application/vnd.vmware.vcloud.controlAccess+xml"/>
+    <Link href="http://localhost:4444/api/catalog/8715ed97-348a-4bdd-aea3-e13e84213e6f" name="GCoE" rel="down" type="application/vnd.vmware.vcloud.catalog+xml"/>
+    <Link href="http://localhost:4444/api/org/00000000-0000-0000-0000-000000000000/catalog/8715ed97-348a-4bdd-aea3-e13e84213e6f/controlAccess/" rel="down" type="application/vnd.vmware.vcloud.controlAccess+xml"/>
+    <Link href="http://localhost:4444/api/org/00000000-0000-0000-0000-000000000000/catalog/8715ed97-348a-4bdd-aea3-e13e84213e6f/action/controlAccess" rel="controlAccess" type="application/vnd.vmware.vcloud.controlAccess+xml"/>
+    <Link href="http://localhost:4444/api/catalog/92d4ad5a-217e-4bd1-8bcf-be9cc70dcfa6" name="Vagrant" rel="down" type="application/vnd.vmware.vcloud.catalog+xml"/>
+    <Link href="http://localhost:4444/api/org/00000000-0000-0000-0000-000000000000/catalog/92d4ad5a-217e-4bd1-8bcf-be9cc70dcfa6/controlAccess/" rel="down" type="application/vnd.vmware.vcloud.controlAccess+xml"/>
+    <Link href="http://localhost:4444/api/org/00000000-0000-0000-0000-000000000000/catalog/92d4ad5a-217e-4bd1-8bcf-be9cc70dcfa6/action/controlAccess" rel="controlAccess" type="application/vnd.vmware.vcloud.controlAccess+xml"/>
+    <Link href="http://localhost:4444/api/admin/org/00000000-0000-0000-0000-000000000000/catalogs" rel="add" type="application/vnd.vmware.admin.catalog+xml"/>
+    <Link href="http://localhost:4444/api/network/8d0cbfe2-25b3-4a1f-b608-5ffeabc7a53d" name="M916272752-5793-default-isolated" rel="down" type="application/vnd.vmware.vcloud.orgNetwork+xml"/>
+    <Link href="http://localhost:4444/api/network/cb0f4c9e-1a46-49d4-9fcb-d228000a6bc1" name="networkName" rel="down" type="application/vnd.vmware.vcloud.orgNetwork+xml"/>
+    <Link href="http://localhost:4444/api/supportedSystemsInfo/" rel="down" type="application/vnd.vmware.vcloud.supportedSystemsInfo+xml"/>
+    <Link href="http://localhost:4444/api/org/00000000-0000-0000-0000-000000000000/metadata" rel="down" type="application/vnd.vmware.vcloud.metadata+xml"/>
+    <Link href="http://localhost:4444/api/org/00000000-0000-0000-0000-000000000000/hybrid" rel="down" type="application/vnd.vmware.vcloud.hybridOrg+xml"/>
     <Description/>
     <FullName>Organization (full)</FullName>
 </Org>
