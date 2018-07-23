@@ -10,7 +10,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (s *S) Test_Refresh(c *C) {
+func (s *TestVCD) Test_Refresh(c *C) {
 
 	// Get the Org populated
 	testServer.ResponseMap(2, testutil.ResponseMap{

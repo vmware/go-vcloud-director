@@ -8,7 +8,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (s *S) Test_GetVAppTemplate(c *C) {
+func (s *TestVCD) Test_GetVAppTemplate(c *C) {
 
 	// Get the Org populated
 	testServer.Response(200, nil, orgExample)

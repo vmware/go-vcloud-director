@@ -8,7 +8,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (s *S) Test_WaitTaskCompletion(c *C) {
+func (s *TestVCD) Test_WaitTaskCompletion(c *C) {
 
 	testServer.Response(200, nil, taskExample)
 	task, err := s.vapp.Deploy()

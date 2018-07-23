@@ -132,38 +132,6 @@ func (v *Vdc) GetDefaultStorageProfileReference(storageprofiles *types.QueryResu
 	return types.Reference{}, fmt.Errorf("can't find Default VDC Storage_profile")
 }
 
-// Doesn't work with vCloud API 5.5, only vCloud Air
-func (v *Vdc) GetVDCOrg() (Org, error) {
-
-	for _, av := range v.Vdc.Link {
-		if av.Rel == "up" && av.Type == "application/vnd.vmware.vcloud.org+xml" {
-			u, err := url.ParseRequestURI(av.HREF)
-
-			if err != nil {
-				return Org{}, fmt.Errorf("error decoding vdc response: %s", err)
-			}
-
-			req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
-
-			resp, err := checkResp(v.c.Http.Do(req))
-			if err != nil {
-				return Org{}, fmt.Errorf("error retreiving org: %s", err)
-			}
-
-			org := NewOrg(v.c)
-
-			if err = decodeBody(resp, org.Org); err != nil {
-				return Org{}, fmt.Errorf("error decoding org response: %s", err)
-			}
-
-			// The request was successful
-			return *org, nil
-
-		}
-	}
-	return Org{}, fmt.Errorf("can't find VDC Org")
-}
-
 func (v *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 
 	for _, av := range v.Vdc.Link {

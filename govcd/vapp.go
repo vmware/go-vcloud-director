@@ -102,7 +102,6 @@ func (v *VApp) AddVM(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate VAppTem
 			},
 		)
 	}
-	log.Printf("%s", vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection)
 
 	output, _ := xml.MarshalIndent(vcomp, "  ", "    ")
 
@@ -985,7 +984,6 @@ func (v *VApp) ChangeNetworkConfig(networks []map[string]interface{}, ip string)
 			networksection.PrimaryNetworkConnectionIndex = index
 		}
 
-		log.Printf("Networksection: %s", networksection)
 	}
 
 	output, err := xml.MarshalIndent(networksection, "  ", "    ")
