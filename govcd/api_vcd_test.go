@@ -45,7 +45,7 @@ func (vcd *TestVCD) SetUpSuite(c *C) {
 		"/api/vdc/00000000-0000-0000-0000-000000000000": testutil.Response{201, vcdauthheader, vcdvdc},
 	})
 
-	vcd.org, vcd.vdc, err = vcd.client.Authenticate("username", "password", "organization", "organization vDC")
+	err = vcd.client.Authenticate("username", "password", "organization")
 	vcd.vapp = *NewVApp(&vcd.client.Client)
 	if err != nil {
 		panic(err)
@@ -101,15 +101,12 @@ func TestVCDClient_Authenticate(t *testing.T) {
 		"/api/vdc/00000000-0000-0000-0000-000000000000": testutil.Response{201, vcdauthheader, vcdorg},
 	})
 
-	org, _, err := client.Authenticate("username", "password", "organization", "organization vDC")
+	err = client.Authenticate("username", "password", "organization")
 	testServer.Flush()
 	if err != nil {
 		t.Fatalf("Error authenticating: %v", err)
 	}
 
-	if org.Org.FullName != "Organization (full)" {
-		t.Fatalf("Orgname not parsed, got: %s", org.Org.FullName)
-	}
 }
 
 // status: 200
