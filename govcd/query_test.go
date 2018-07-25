@@ -10,14 +10,14 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (s *TestVCD) Test_Query(c *C) {
+func (vcd *TestVCD) Test_Query(c *C) {
 
 	// Get the Org populated
 	testServer.ResponseMap(1, testutil.ResponseMap{
 		"/api/query?type=vm": testutil.Response{200, nil, queryVmExample},
 	})
 
-	results, err := s.client.Query(map[string]string{"type": "vm"})
+	results, err := vcd.client.Query(map[string]string{"type": "vm"})
 	_ = testServer.WaitRequest()
 	testServer.Flush()
 

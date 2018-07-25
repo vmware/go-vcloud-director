@@ -11,11 +11,11 @@ import (
 	"strconv"
 )
 
-func (s *TestVCD) Test_FindVDCNetwork(c *C) {
+func (vcd *TestVCD) Test_FindVDCNetwork(c *C) {
 
 	testServer.Response(200, nil, orgvdcnetExample)
 
-	net, err := s.vdc.FindVDCNetwork("networkName")
+	net, err := vcd.vdc.FindVDCNetwork("networkName")
 
 	_ = testServer.WaitRequest()
 
@@ -24,37 +24,24 @@ func (s *TestVCD) Test_FindVDCNetwork(c *C) {
 	c.Assert(net.OrgVDCNetwork.HREF, Equals, "http://localhost:4444/api/network/cb0f4c9e-1a46-49d4-9fcb-d228000a6bc1")
 
 	// find Invalid Network
-	net, err = s.vdc.FindVDCNetwork("INVALID")
+	net, err = vcd.vdc.FindVDCNetwork("INVALID")
 	c.Assert(err, NotNil)
 }
 
-func (s *TestVCD) Test_GetVDCOrg(c *C) {
-
-	testServer.Response(200, nil, orgExample)
-
-	org, err := s.vdc.GetVDCOrg()
-
-	_ = testServer.WaitRequest()
-
-	c.Assert(err, IsNil)
-	c.Assert(org, NotNil)
-	c.Assert(org.Org.HREF, Equals, "http://localhost:4444/api/org/23bd2339-c55f-403c-baf3-13109e8c8d57")
-}
-
-func (s *TestVCD) Test_NewVdc(c *C) {
+func (vcd *TestVCD) Test_NewVdc(c *C) {
 
 	testServer.Response(200, nil, vdcExample)
-	err := s.vdc.Refresh()
+	err := vcd.vdc.Refresh()
 	_ = testServer.WaitRequest()
 	c.Assert(err, IsNil)
 
-	c.Assert(s.vdc.Vdc.Link[0].Rel, Equals, "up")
-	c.Assert(s.vdc.Vdc.Link[0].Type, Equals, "application/vnd.vmware.vcloud.org+xml")
-	c.Assert(s.vdc.Vdc.Link[0].HREF, Equals, "http://localhost:4444/api/org/11111111-1111-1111-1111-111111111111")
+	c.Assert(vcd.vdc.Vdc.Link[0].Rel, Equals, "up")
+	c.Assert(vcd.vdc.Vdc.Link[0].Type, Equals, "application/vnd.vmware.vcloud.org+xml")
+	c.Assert(vcd.vdc.Vdc.Link[0].HREF, Equals, "http://localhost:4444/api/org/11111111-1111-1111-1111-111111111111")
 
-	c.Assert(s.vdc.Vdc.AllocationModel, Equals, "AllocationPool")
+	c.Assert(vcd.vdc.Vdc.AllocationModel, Equals, "AllocationPool")
 
-	for _, v := range s.vdc.Vdc.ComputeCapacity {
+	for _, v := range vcd.vdc.Vdc.ComputeCapacity {
 		c.Assert(v.CPU.Units, Equals, "MHz")
 		c.Assert(v.CPU.Allocated, Equals, int64(30000))
 		c.Assert(v.CPU.Limit, Equals, int64(30000))
@@ -69,11 +56,11 @@ func (s *TestVCD) Test_NewVdc(c *C) {
 		c.Assert(v.Memory.Overhead, Equals, int64(95))
 	}
 
-	c.Assert(s.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].Name, Equals, "vAppTemplate")
-	c.Assert(s.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].Type, Equals, "application/vnd.vmware.vcloud.vAppTemplate+xml")
-	c.Assert(s.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].HREF, Equals, "http://localhost:4444/api/vAppTemplate/vappTemplate-22222222-2222-2222-2222-222222222222")
+	c.Assert(vcd.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].Name, Equals, "vAppTemplate")
+	c.Assert(vcd.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].Type, Equals, "application/vnd.vmware.vcloud.vAppTemplate+xml")
+	c.Assert(vcd.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].HREF, Equals, "http://localhost:4444/api/vAppTemplate/vappTemplate-22222222-2222-2222-2222-222222222222")
 
-	for _, v := range s.vdc.Vdc.AvailableNetworks {
+	for _, v := range vcd.vdc.Vdc.AvailableNetworks {
 		for _, v2 := range v.Network {
 			c.Assert(v2.Name, Equals, "networkName")
 			c.Assert(v2.Type, Equals, "application/vnd.vmware.vcloud.network+xml")
@@ -81,13 +68,13 @@ func (s *TestVCD) Test_NewVdc(c *C) {
 		}
 	}
 
-	c.Assert(s.vdc.Vdc.NicQuota, Equals, 0)
-	c.Assert(s.vdc.Vdc.NetworkQuota, Equals, 20)
-	c.Assert(s.vdc.Vdc.UsedNetworkCount, Equals, 0)
-	c.Assert(s.vdc.Vdc.VMQuota, Equals, 0)
-	c.Assert(s.vdc.Vdc.IsEnabled, Equals, true)
+	c.Assert(vcd.vdc.Vdc.NicQuota, Equals, 0)
+	c.Assert(vcd.vdc.Vdc.NetworkQuota, Equals, 20)
+	c.Assert(vcd.vdc.Vdc.UsedNetworkCount, Equals, 0)
+	c.Assert(vcd.vdc.Vdc.VMQuota, Equals, 0)
+	c.Assert(vcd.vdc.Vdc.IsEnabled, Equals, true)
 
-	for _, v := range s.vdc.Vdc.VdcStorageProfiles {
+	for _, v := range vcd.vdc.Vdc.VdcStorageProfiles {
 		for i, v2 := range v.VdcStorageProfile {
 			c.Assert(v2.Name, Equals, "storageProfile"+strconv.Itoa(i+1))
 			c.Assert(v2.Type, Equals, "application/vnd.vmware.vcloud.vdcStorageProfile+xml")
@@ -97,7 +84,7 @@ func (s *TestVCD) Test_NewVdc(c *C) {
 
 }
 
-func (s *TestVCD) Test_FindVApp(c *C) {
+func (vcd *TestVCD) Test_FindVApp(c *C) {
 
 	// testServer.Response(200, nil, vappExample)
 
@@ -112,7 +99,7 @@ func (s *TestVCD) Test_FindVApp(c *C) {
 		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, vappExample},
 	})
 
-	_, err := s.vdc.FindVAppByName("myVApp")
+	_, err := vcd.vdc.FindVAppByName("myVApp")
 
 	_ = testServer.WaitRequests(2)
 
@@ -123,7 +110,7 @@ func (s *TestVCD) Test_FindVApp(c *C) {
 		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, vappExample},
 	})
 
-	_, err = s.vdc.FindVAppByID("urn:vcloud:vapp:00000000-0000-0000-0000-000000000000")
+	_, err = vcd.vdc.FindVAppByID("urn:vcloud:vapp:00000000-0000-0000-0000-000000000000")
 
 	_ = testServer.WaitRequests(2)
 

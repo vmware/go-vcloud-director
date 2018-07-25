@@ -10,14 +10,13 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (s *TestVCD) Test_NetRefresh(c *C) {
+func (vcd *TestVCD) Test_NetRefresh(c *C) {
 
-	// Get the Org populated
 	testServer.ResponseMap(1, testutil.ResponseMap{
 		"/api/network/44444444-4444-4444-4444-4444444444444": testutil.Response{200, nil, orgvdcnetExample},
 	})
 
-	network, err := s.vdc.FindVDCNetwork("networkName")
+	network, err := vcd.vdc.FindVDCNetwork("networkName")
 	_ = testServer.WaitRequest()
 	testServer.Flush()
 

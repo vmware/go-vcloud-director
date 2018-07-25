@@ -8,10 +8,10 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (s *TestVCD) Test_WaitTaskCompletion(c *C) {
+func (vcd *TestVCD) Test_WaitTaskCompletion(c *C) {
 
 	testServer.Response(200, nil, taskExample)
-	task, err := s.vapp.Deploy()
+	task, err := vcd.vapp.Deploy()
 	_ = testServer.WaitRequest()
 	testServer.Flush()
 	c.Assert(err, IsNil)

@@ -10,15 +10,14 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (s *TestVCD) Test_Refresh(c *C) {
+func (vcd *TestVCD) Test_Refresh(c *C) {
 
-	// Get the Org populated
 	testServer.ResponseMap(2, testutil.ResponseMap{
 		"/api/vdc/00000000-0000-0000-0000-000000000000/edgeGateways":  testutil.Response{200, nil, edgegatewayqueryresultsExample},
 		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, edgegatewayExample},
 	})
 
-	edge, err := s.vdc.FindEdgeGateway("M916272752-5793")
+	edge, err := vcd.vdc.FindEdgeGateway("M916272752-5793")
 	_ = testServer.WaitRequests(2)
 	testServer.Flush()
 
@@ -35,13 +34,13 @@ func (s *TestVCD) Test_Refresh(c *C) {
 
 }
 
-func (s *S) Test_NATMapping(c *C) {
+func (vcd *TestVCD) Test_NATMapping(c *C) {
 	testServer.ResponseMap(2, testutil.ResponseMap{
 		"/api/vdc/00000000-0000-0000-0000-000000000000/edgeGateways":  testutil.Response{200, nil, edgegatewayqueryresultsExample},
 		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, edgegatewayExample},
 	})
 
-	edge, err := s.vdc.FindEdgeGateway("M916272752-5793")
+	edge, err := vcd.vdc.FindEdgeGateway("M916272752-5793")
 	_ = testServer.WaitRequests(2)
 	testServer.Flush()
 
@@ -70,13 +69,13 @@ func (s *S) Test_NATMapping(c *C) {
 
 }
 
-func (s *S) Test_NATPortMapping(c *C) {
+func (vcd *TestVCD) Test_NATPortMapping(c *C) {
 	testServer.ResponseMap(2, testutil.ResponseMap{
 		"/api/vdc/00000000-0000-0000-0000-000000000000/edgeGateways":  testutil.Response{200, nil, edgegatewayqueryresultsExample},
 		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, edgegatewayExample},
 	})
 
-	edge, err := s.vdc.FindEdgeGateway("M916272752-5793")
+	edge, err := vcd.vdc.FindEdgeGateway("M916272752-5793")
 	_ = testServer.WaitRequests(2)
 	testServer.Flush()
 
@@ -105,14 +104,14 @@ func (s *S) Test_NATPortMapping(c *C) {
 
 }
 
-func (s *S) Test_1to1Mappings(c *C) {
+func (vcd *TestVCD) Test_1to1Mappings(c *C) {
 
 	testServer.ResponseMap(2, testutil.ResponseMap{
 		"/api/vdc/00000000-0000-0000-0000-000000000000/edgeGateways":  testutil.Response{200, nil, edgegatewayqueryresultsExample},
 		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, edgegatewayExample},
 	})
 
-	edge, err := s.vdc.FindEdgeGateway("M916272752-5793")
+	edge, err := vcd.vdc.FindEdgeGateway("M916272752-5793")
 	_ = testServer.WaitRequests(2)
 	testServer.Flush()
 
@@ -141,13 +140,13 @@ func (s *S) Test_1to1Mappings(c *C) {
 
 }
 
-func (s *S) Test_AddIpsecVPN(c *C) {
+func (vcd *TestVCD) Test_AddIpsecVPN(c *C) {
 	testServer.ResponseMap(2, testutil.ResponseMap{
 		"/api/vdc/00000000-0000-0000-0000-000000000000/edgeGateways":  testutil.Response{200, nil, edgegatewayqueryresultsExample},
 		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, edgegatewayExample},
 	})
 
-	edge, err := s.vdc.FindEdgeGateway("M916272752-5793")
+	edge, err := vcd.vdc.FindEdgeGateway("M916272752-5793")
 	_ = testServer.WaitRequests(2)
 	testServer.Flush()
 
@@ -196,15 +195,15 @@ func (s *S) Test_AddIpsecVPN(c *C) {
 
 var edgegatewayqueryresultsExample = `
 <QueryResultRecords xmlns="http://www.vmware.com/vcloud/v1.5" name="edgeGateway" page="1" pageSize="25" total="1" href="http://localhost:4444/api/admin/vdc/00000000-0000-0000-0000-000000000000/edgeGateways?page=1&amp;pageSize=25&amp;format=records" type="application/vnd.vmware.vcloud.query.records+xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.6.32.3/api/v1.5/schema/master.xsd">
-    <Link rel="alternate" href="http://localhost:4444/api/admin/vdc/00000000-0000-0000-0000-000000000000/edgeGateways?page=1&amp;pageSize=25&amp;format=references" type="application/vnd.vmware.vcloud.query.references+xml"/>
-    <Link rel="alternate" href="http://localhost:4444/api/admin/vdc/00000000-0000-0000-0000-000000000000/edgeGateways?page=1&amp;pageSize=25&amp;format=idrecords" type="application/vnd.vmware.vcloud.query.idrecords+xml"/>
+    <Link rel="alternate" href="http://localhost:4444/api/admin/vdc/00000000-0000-0000-0000-000000000001/edgeGateways?page=1&amp;pageSize=25&amp;format=references" type="application/vnd.vmware.vcloud.query.references+xml"/>
+    <Link rel="alternate" href="http://localhost:4444/api/admin/vdc/00000000-0000-0000-0000-000000000001/edgeGateways?page=1&amp;pageSize=25&amp;format=idrecords" type="application/vnd.vmware.vcloud.query.idrecords+xml"/>
     <EdgeGatewayRecord gatewayStatus="READY" haStatus="UP" isBusy="false" name="M916272752-5793" numberOfExtNetworks="1" numberOfOrgNetworks="2" vdc="http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000000" href="http://localhost:4444/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000" isSyslogServerSettingInSync="true" taskStatus="success" taskOperation="networkConfigureEdgeGatewayServices" task="http://localhost:4444/api/task/eca0d70f-36e0-428a-93c2-311b792f3326" taskDetails=" "/>
 </QueryResultRecords>
 `
 
 var edgegatewayExample = `
 <EdgeGateway xmlns="http://www.vmware.com/vcloud/v1.5" status="1" name="M916272752-5793" id="urn:vcloud:gateway:00000000-0000-0000-0000-000000000000" href="http://localhost:4444/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000" type="application/vnd.vmware.admin.edgeGateway+xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.6.32.3/api/v1.5/schema/master.xsd">
-    <Link rel="up" href="http://localhost:4444/api/vdc/214cd6b2-3f7a-4ee5-9b0a-52b4001a4a84" type="application/vnd.vmware.vcloud.vdc+xml"/>
+    <Link rel="up" href="http://localhost:4444/api/vdc/00000000-0000-0000-0000-000000000001" type="application/vnd.vmware.vcloud.vdc+xml"/>
     <Link rel="edgeGateway:redeploy" href="http://localhost:4444/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/redeploy"/>
     <Link rel="edgeGateway:configureServices" href="http://localhost:4444/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/configureServices" type="application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml"/>
     <Link rel="edgeGateway:reapplyServices" href="http://localhost:4444/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/reapplyServices"/>
