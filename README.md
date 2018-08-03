@@ -1,7 +1,7 @@
-# govcloudair [![Build Status](https://ci.vmware.run/api/badges/ukcloud/govcloudair/status.svg)](https://ci.vmware.run/ukcloud/govcloudair) [![Build Status](https://travis-ci.org/UKCloud/govcloudair.svg?branch=master)](https://travis-ci.org/UKCloud/govcloudair) [![Coverage Status](https://coveralls.io/repos/ukcloud/govcloudair/badge.svg?branch=master&service=github)](https://coveralls.io/github/ukcloud/govcloudair?branch=master) [![GoDoc](https://godoc.org/github.com/UKCloud/govcloudair?status.svg)](http://godoc.org/github.com/UKCloud/govcloudair) [![Join the chat at https://gitter.im/ukcloud/govcloudair](https://badges.gitter.im/ukcloud/govcloudair.svg)](https://gitter.im/ukcloud/govcloudair?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-This repo provides the `govcloudair` package which offers an interface to the vCloud Air 5.6 and 5.7 API and vCloud Director 5.5 API.
+# go-vcloud-director [![Build Status](https://travis-ci.org/vmware/go-vcloud-director.svg?branch=master)](https://travis-ci.org/vmware/go-vcloud-director) [![Coverage Status](https://coveralls.io/repos/vmware/go-vcloud-director/badge.svg?branch=master&service=github)](https://coveralls.io/github/vmware/go-vcloud-director?branch=master) [![GoDoc](https://godoc.org/github.com/vmware/go-vcloud-director?status.svg)](http://godoc.org/github.com/vmware/go-vcloud-director) [![Chat](https://img.shields.io/badge/chat-on%20slack-brightgreen.svg)](https://vmwarecode.slack.com/messages/CBBBXVB16)
+This repo provides the `go-vcloud-director` package which offers an interface to the vCloud Director 5.5 API.
 
-It serves as a foundation for a project currently in development, there are plans to make it a general purpose API in the future. The `govcloudair` package is used by the Terraform provider for vCloud Director.
+It serves as a foundation for a project currently in development, there are plans to make it a general purpose API in the future. The `go-vcloud-director` package is used by the Terraform provider for vCloud Director.
 
 The API is currently under heavy development, its coverage is extremely limited at the moment.
 
@@ -17,7 +17,7 @@ import (
         "net/url"
         "os"
 
-        govcd "github.com/UKCloud/govcloudair"
+        govcd "github.com/vmware/go-vcloud-director"
 )
 
 type Config struct {
