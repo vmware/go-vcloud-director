@@ -8,15 +8,19 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_FindCatalog(c *C) {
+// Tests FindCatalog with Catalog in config file
+func (vcd *TestVCD) Test_FindCatalog(test *C) {
 
 	// Find Catalog
-	testServer.Response(200, nil, catalogExample)
-	cat, err := vcd.org.FindCatalog("Public Catalog")
-	_ = testServer.WaitRequest()
-	testServer.Flush()
-	c.Assert(err, IsNil)
-	c.Assert(cat.Catalog.Description, Equals, "vCHS service catalog")
+	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+
+	test.Assert(err, IsNil)
+	test.Assert(cat.Catalog.Name, Equals, vcd.config.VCD.Catalog.Name)
+
+	// checks if user gave a catalog description in config file
+	if vcd.config.VCD.Catalog.Description != "" {
+		test.Assert(cat.Catalog.Description, Equals, vcd.config.VCD.Catalog.Description)
+	}
 
 }
 

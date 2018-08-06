@@ -20,14 +20,18 @@ type TestConfig struct {
 		Url      string `yaml:"url"`
 	}
 	VCD struct {
-		Org string `yaml:"org"`
-		Vdc string `yaml:"vdc"`
+		Org     string `yaml:"org"`
+		Vdc     string `yaml:"vdc"`
+		Catalog struct {
+			Name        string `yaml:"name,omitempty"`
+			Description string `yaml:"description,omitempty"`
+		}
 	}
 }
 
 // Test struct for vcloud-director.
 // Test functions use the struct to get
-// an org, vdc, vapp, and client to run 
+// an org, vdc, vapp, and client to run
 // tests on
 type TestVCD struct {
 	client *VCDClient
@@ -109,7 +113,7 @@ func (vcd *TestVCD) SetUpSuite(c *C) {
 
 	// org and vdc are the test org and vdc that is used in all other test cases
 	vcd.org, vcd.vdc, err = vcd.client.Authenticate(config.Provider.User, config.Provider.Password, config.VCD.Org, config.VCD.Vdc)
-	
+
 	if err != nil {
 		panic(err)
 	}
