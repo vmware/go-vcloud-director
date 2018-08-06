@@ -11,6 +11,27 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+// Creates a Vapp, fetches it, gets its vdc, then deletes the vapp
+// Tests the helper function getParentVDC
+func (vcd *TestVCD) TestGetParentVDC(test *C) {
+
+	err := vcd.vdc.ComposeRawVApp("t")
+	test.Assert(err, IsNil)
+
+	v, err := vcd.vdc.FindVAppByName("t")
+	test.Assert(err, IsNil)
+
+	vdc, err := v.getParentVDC()
+
+	test.Assert(err, IsNil)
+	test.Assert(vdc.Vdc.Name, Equals, vcd.vdc.Vdc.Name)
+
+	task, err := v.Delete()
+	task.WaitTaskCompletion()
+	test.Assert(err, IsNil)
+
+}
+
 func (vcd *TestVCD) Test_ComposeVApp(c *C) {
 
 	testServer.ResponseMap(7, testutil.ResponseMap{

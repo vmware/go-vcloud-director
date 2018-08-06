@@ -8,20 +8,23 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+// Tests org function GetVDCByName
+func (vcd *TestVCD) TestGetVdcByName(test *C) {
+	vdc, err := vcd.org.GetVdcByName(vcd.config.VCD.Vdc)
+	test.Assert(err, IsNil)
+	test.Assert(vdc.Vdc.Name, Equals, vcd.config.VCD.Vdc)
+}
+
 // Tests FindCatalog with Catalog in config file
 func (vcd *TestVCD) Test_FindCatalog(test *C) {
-
 	// Find Catalog
 	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
-
 	test.Assert(err, IsNil)
 	test.Assert(cat.Catalog.Name, Equals, vcd.config.VCD.Catalog.Name)
-
 	// checks if user gave a catalog description in config file
 	if vcd.config.VCD.Catalog.Description != "" {
 		test.Assert(cat.Catalog.Description, Equals, vcd.config.VCD.Catalog.Description)
 	}
-
 }
 
 var orgExample = `

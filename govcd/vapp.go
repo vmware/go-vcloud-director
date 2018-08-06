@@ -33,6 +33,27 @@ func (v *VCDClient) NewVApp(c *Client) VApp {
 	return *newvapp
 }
 
+// Returns the vdc where the vapp resides in.
+func (v *VApp) getParentVDC() (Vdc, error) {
+	for _, a := range v.VApp.Link {
+		if a.Type == "application/vnd.vmware.vcloud.vdc+xml" {
+			u, err := url.ParseRequestURI(a.HREF)
+			if err != nil {
+				return Vdc{}, fmt.Errorf("Cannot parse HREF : %v", err)
+			}
+			req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
+			resp, err := checkResp(v.c.Http.Do(req))
+
+			vdc := NewVdc(v.c)
+			if err = decodeBody(resp, vdc.Vdc); err != nil {
+				return Vdc{}, fmt.Errorf("error decoding task response: %s", err)
+			}
+			return *vdc, nil
+		}
+	}
+	return Vdc{}, fmt.Errorf("Could not find a parent Vdc")
+}
+
 func (v *VApp) Refresh() error {
 
 	if v.VApp.HREF == "" {

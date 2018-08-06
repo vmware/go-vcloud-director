@@ -492,6 +492,16 @@ type Link struct {
 	Rel  string `xml:"rel,attr"`
 }
 
+// OrgList represents a lists of Organizations
+// Type: OrgType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents a list of vCloud Director organizations.
+// Since: 0.9
+type OrgList struct {
+	Link LinkList `xml:"Link,omitempty"`
+	Org  []*Org   `xml:"Org,omitempty"`
+}
+
 // Org represents the user view of a vCloud Director organization.
 // Type: OrgType
 // Namespace: http://www.vmware.com/vcloud/v1.5

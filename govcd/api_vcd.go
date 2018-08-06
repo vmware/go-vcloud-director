@@ -35,7 +35,7 @@ type supportedVersions struct {
 
 func (c *VCDClient) vcdloginurl() error {
 
-	s := c.Client.VCDVDCHREF
+	s := c.Client.VCDHREF
 	s.Path += "/versions"
 
 	// No point in checking for errors here
@@ -187,7 +187,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool) *VCDClient {
 	return &VCDClient{
 		Client: Client{
 			APIVersion: "5.5",
-			VCDVDCHREF: vcdEndpoint,
+			VCDHREF:    vcdEndpoint,
 			Http: http.Client{
 				Transport: &http.Transport{
 					TLSClientConfig: &tls.Config{
