@@ -1,14 +1,40 @@
 # go-vcloud-director [![Build Status](https://travis-ci.org/vmware/go-vcloud-director.svg?branch=master)](https://travis-ci.org/vmware/go-vcloud-director) [![Coverage Status](https://coveralls.io/repos/vmware/go-vcloud-director/badge.svg?branch=master&service=github)](https://coveralls.io/github/vmware/go-vcloud-director?branch=master) [![GoDoc](https://godoc.org/github.com/vmware/go-vcloud-director?status.svg)](http://godoc.org/github.com/vmware/go-vcloud-director) [![Chat](https://img.shields.io/badge/chat-on%20slack-brightgreen.svg)](https://vmwarecode.slack.com/messages/CBBBXVB16)
-This repo provides the `go-vcloud-director` package which offers an interface to the vCloud Director 5.5 API.
 
-It serves as a foundation for a project currently in development, there are plans to make it a general purpose API in the future. The `go-vcloud-director` package is used by the Terraform provider for vCloud Director.
+This repo contains the `go-vcloud-director` package which implements
+an SDK for vCloud Director. The project serves the needs of Golang
+developers who need to integrate with vCloud Director. It is also the
+basis of the [vCD Terraform
+Provider](https://github.com/terraform-providers/terraform-provider-vcd).
 
-The API is currently under heavy development, its coverage is extremely limited at the moment.
+## Contributions ##
 
-The bindings now support both Subscription and On-demand accounts and vCloud Director 5.5
+Contributions to `go-vcloud-director` are gladly welcome and range
+from participating in community discussions to submitting pull
+requests.  Please see the [contributing guide](CONTRIBUTING.md) for
+details on joining the community.
+
+### Install and Build ###
+
+Create a standard Golang development tree with bin, pkg, and src directories. 
+Set GOPATH to the root directory. Then:
+```
+go get github.com/vmware/go-vcloud-director
+cd $GOPATH/src/github.com/vmware/go-vcloud-director/govcd
+go build
+```
+This command only builds a library. There is no executable.
 
 ### Example ###
 
+To show the SDK in action run the example shown below.  
+```
+mkdir $GOPATH/src/example
+cd $GOPATH/src/example
+vi example.go    <-- Copy contents into file and fix config information.
+go build
+./example
+```
+Here's the code:
 ```go
 package main
 
@@ -17,7 +43,7 @@ import (
         "net/url"
         "os"
 
-        govcd "github.com/vmware/go-vcloud-director"
+        "github.com/vmware/go-vcloud-director/govcd"
 )
 
 type Config struct {
@@ -47,11 +73,11 @@ func (c *Config) Client() (*govcd.VCDClient, error) {
 
 func main() {
   config := Config{
-                User:     "Username",
+                User:     "myuser",
                 Password: "password",
-                Org:      "vcd org",
-                Href:     "vcd api url",
-                VDC:      "vcd virtual datacenter name",
+                Org:      "MyOrg",
+                Href:     "https://vcd-host/api",
+                VDC:      "My-VDC",
         }
 
   client, err := config.Client() // We now have a client
