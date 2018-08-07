@@ -11,10 +11,11 @@ Twitter, and so on) must be constructive and never resort to personal
 attacks, trolling, public or private harassment, insults, or other
 unprofessional conduct.
 
-We promise to extend courtesy and respect to everyone involved in this
-project, regardless of gender, gender identity, sexual orientation,
-disability, age, race, ethnicity, religion, or level of experience. We
-expect anyone contributing to this project to do the same.
+We promise to extend courtesy and respect to everyone involved in
+this project, regardless of gender, gender identity, sexual
+orientation, disability, age, race, ethnicity, religious beliefs,
+or level of experience. We expect anyone contributing to this project
+to do the same.
 
 If any member of the community violates this code of conduct, the
 maintainers of this project may take action, including removing issues,

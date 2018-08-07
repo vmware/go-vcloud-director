@@ -156,7 +156,7 @@ Meanwhile a committer will look the request over and do one of three things:
 
 - accept it
 - send back comments about things you need to fix
-- or, or close the request without merging if we don't think it's a good addition.
+- or close the request without merging if we don't think it's a good addition.
 
 ### Updating Pull Requests with New Changes
 
