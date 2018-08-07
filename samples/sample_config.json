@@ -1,0 +1,8 @@
+{
+  "user":     "",
+  "password": "",
+  "org":      "",
+  "href":     "https://YOUR_VCD_IP/api",
+  "vdc":      "",
+  "insecure": true
+}
