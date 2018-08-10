@@ -14,71 +14,13 @@ import (
 // Creates a Vapp, fetches it, gets its vdc, then deletes the vapp
 // Tests the helper function getParentVDC
 func (vcd *TestVCD) TestGetParentVDC(test *C) {
-
-	err := vcd.vdc.ComposeRawVApp("t")
-	test.Assert(err, IsNil)
-
-	v, err := vcd.vdc.FindVAppByName("t")
+	v, err := vcd.vdc.FindVAppByName(vcd.config.VCD.VApp)
 	test.Assert(err, IsNil)
 
 	vdc, err := v.getParentVDC()
 
 	test.Assert(err, IsNil)
 	test.Assert(vdc.Vdc.Name, Equals, vcd.vdc.Vdc.Name)
-
-	task, err := v.Delete()
-	task.WaitTaskCompletion()
-	test.Assert(err, IsNil)
-
-}
-
-func (vcd *TestVCD) Test_ComposeVApp(c *C) {
-
-	testServer.ResponseMap(7, testutil.ResponseMap{
-		"/api/org/11111111-1111-1111-1111-111111111111":                       testutil.Response{200, nil, orgExample},
-		"/api/network/44444444-4444-4444-4444-4444444444444":                  testutil.Response{200, nil, orgvdcnetExample},
-		"/api/catalog/e8a20fdf-8a78-440c-ac71-0420db59f854":                   testutil.Response{200, nil, catalogExample},
-		"/api/catalogItem/1176e485-8858-4e15-94e5-ae4face605ae":               testutil.Response{200, nil, catalogitemExample},
-		"/api/vAppTemplate/vappTemplate-40cb9721-5f1a-44f9-b5c3-98c5f518c4f5": testutil.Response{200, nil, vapptemplateExample},
-		"/api/vdc/00000000-0000-0000-0000-000000000000/action/composeVApp":    testutil.Response{200, nil, instantiatedvappExample},
-		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000":                 testutil.Response{200, nil, vappExample},
-	})
-
-	// Populate OrgVDCNetwork
-	networks := []*types.OrgVDCNetwork{}
-	net, err := vcd.vdc.FindVDCNetwork("networkName")
-	networks = append(networks, net.OrgVDCNetwork)
-	c.Assert(err, IsNil)
-
-	// Populate Catalog
-	cat, err := vcd.org.FindCatalog("Public Catalog")
-	c.Assert(err, IsNil)
-
-	// Populate Catalog Item
-	catitem, err := cat.FindCatalogItem("CentOS64-32bit")
-	c.Assert(err, IsNil)
-
-	// Get VAppTemplate
-	vapptemplate, err := catitem.GetVAppTemplate()
-	c.Assert(err, IsNil)
-
-	// Get StorageProfileReference
-	storageprofileref, err := vcd.vdc.FindStorageProfileReference("storageProfile1")
-	c.Assert(err, IsNil)
-
-	// Compose VApp
-	task, err := vcd.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
-	c.Assert(vcd.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
-
-	status, err := vcd.vapp.GetStatus()
-
-	c.Assert(err, IsNil)
-	c.Assert(status, Equals, "POWERED_OFF")
-
-	_ = testServer.WaitRequests(7)
-
 }
 
 func (vcd *TestVCD) Test_PowerOn(c *C) {
@@ -152,7 +94,7 @@ func (vcd *TestVCD) Test_SetOvf(c *C) {
 	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := vcd.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
+	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(vcd.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -204,7 +146,7 @@ func (vcd *TestVCD) Test_AddMetadata(c *C) {
 	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := vcd.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
+	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(vcd.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -255,7 +197,7 @@ func (vcd *TestVCD) Test_ChangeStorageProfile(c *C) {
 	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := vcd.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
+	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(vcd.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -305,7 +247,7 @@ func (vcd *TestVCD) Test_ChangeVMName(c *C) {
 	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := vcd.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
+	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(vcd.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -421,7 +363,7 @@ func (vcd *TestVCD) Test_RunCustomizationScript(c *C) {
 	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := vcd.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
+	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(vcd.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -471,7 +413,7 @@ func (vcd *TestVCD) Test_ChangeCPUcount(c *C) {
 	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := vcd.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
+	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(vcd.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
@@ -521,7 +463,7 @@ func (vcd *TestVCD) Test_ChangeMemorySize(c *C) {
 	c.Assert(err, IsNil)
 
 	// Compose VApp
-	task, err := vcd.vapp.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
+	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
 	c.Assert(err, IsNil)
 	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
 	c.Assert(vcd.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
