@@ -6,7 +6,7 @@ package govcd
 
 import (
 	"github.com/vmware/go-vcloud-director/testutil"
-
+	types "github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
 	"strconv"
 )
@@ -82,6 +82,42 @@ func (vcd *TestVCD) Test_NewVdc(c *C) {
 		}
 	}
 
+}
+
+func (vcd *TestVCD) Test_ComposeVApp(test *C) {
+	// Populate OrgVDCNetwork
+	networks := []*types.OrgVDCNetwork{}
+	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network)
+	networks = append(networks, net.OrgVDCNetwork)
+	test.Assert(err, IsNil)
+	// Populate Catalog
+	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	test.Assert(err, IsNil)
+	// Populate Catalog Item
+	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.Catalogitem)
+	test.Assert(err, IsNil)
+	// Get VAppTemplate
+	vapptemplate, err := catitem.GetVAppTemplate()
+	test.Assert(err, IsNil)
+	// Get StorageProfileReference
+	storageprofileref, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.Storageprofile)
+	test.Assert(err, IsNil)
+	// Compose VApp
+	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, "go-vcloud-director-vapp-test", "description")
+	test.Assert(err, IsNil)
+	test.Assert(task.Task.OperationName, Equals, "vdcComposeVapp")
+	// Get VApp
+	vapp, err := vcd.vdc.FindVAppByName("go-vcloud-director-vapp-test")
+	test.Assert(err, IsNil)
+
+	_, err = vapp.GetStatus()
+	test.Assert(err, IsNil)
+	// Let the VApp creation complete
+	task.WaitTaskCompletion()
+	// Deleting VApp
+	task, err = vapp.Delete()
+	task.WaitTaskCompletion()
+	test.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_FindVApp(c *C) {
