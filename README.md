@@ -62,12 +62,10 @@ func (c *Config) Client() (*govcd.VCDClient, error) {
         }
 
         vcdclient := govcd.NewVCDClient(*u, c.Insecure)
-        org, vcd, err := vcdclient.Authenticate(c.User, c.Password, c.Org, c.VDC)
+        err = vcdclient.Authenticate(c.User, c.Password, c.Org)
         if err != nil {
                 return nil, fmt.Errorf("Unable to authenticate: %s", err)
         }
-        vcdclient.Org = org
-        vcdclient.OrgVdc = vcd
         return vcdclient, nil
 }
 
@@ -85,6 +83,8 @@ func main() {
       fmt.Println(err)
       os.Exit(1)
   }
-  fmt.Printf("Org URL: %s\n", client.OrgHREF.String())
+  org := govcd.GetOrgByName(vcdclient, config.Org)
+  vdc := vcdclient.Org.GetVdcByName(config.Vdc)
+  fmt.Printf("Org URL: %s\n", org.Org.HREF)
 }
 ```
