@@ -28,25 +28,6 @@ func NewVdc(c *Client) *Vdc {
 	}
 }
 
-func (c *Client) retrieveVDC() (Vdc, error) {
-
-	req := c.NewRequest(map[string]string{}, "GET", c.VCDVDCHREF, nil)
-
-	resp, err := checkResp(c.Http.Do(req))
-	if err != nil {
-		return Vdc{}, fmt.Errorf("error retreiving vdc: %s", err)
-	}
-
-	vdc := NewVdc(c)
-
-	if err = decodeBody(resp, vdc.Vdc); err != nil {
-		return Vdc{}, fmt.Errorf("error decoding vdc response: %s", err)
-	}
-
-	// The request was successful
-	return *vdc, nil
-}
-
 func (v *Vdc) Refresh() error {
 
 	if v.Vdc.HREF == "" {

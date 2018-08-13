@@ -118,12 +118,10 @@ func (c *Config) Client() (*govcd.VCDClient, error) {
 	}
 
 	vcdclient := govcd.NewVCDClient(*u, c.Insecure)
-	org, vcd, err := vcdclient.Authenticate(c.User, c.Password, c.Org, c.VDC)
+	err = vcdclient.Authenticate(c.User, c.Password, c.Org)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to authenticate: %s", err)
 	}
-	vcdclient.Org = org
-	vcdclient.OrgVdc = vcd
 	return vcdclient, nil
 }
 
@@ -145,11 +143,22 @@ func main() {
 		os.Exit(1)
 	}
 
+	org, err := govcd.GetOrgByName(client, config.Org)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	vdc, err := org.GetVdcByName(config.VDC)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	fmt.Printf("Organization items\n")
-	fmt.Printf("Organization '%s' URL: %s\n", config.Org, client.OrgHREF.String())
+	fmt.Printf("Organization '%s' URL: %s\n", config.Org, org.Org.HREF)
 
 	catalog_name := ""
-	for N, item := range client.Org.Org.Link {
+	for N, item := range org.Org.Link {
 		fmt.Printf("%3d %-40s %s\n", N, item.Name, item.Type)
 		// Retrieve the first catalog name for further usage
 		if item.Type == "application/vnd.vmware.vcloud.catalog+xml" && catalog_name == "" {
@@ -159,7 +168,7 @@ func main() {
 	fmt.Println("")
 
 	fmt.Printf("\nvdc items\n")
-	for _, res := range client.OrgVdc.Vdc.ResourceEntities {
+	for _, res := range vdc.Vdc.ResourceEntities {
 		for N, item := range res.ResourceEntity {
 			fmt.Printf("%3d %-40s %s\n", N, item.Name, item.Type)
 		}
@@ -168,7 +177,7 @@ func main() {
 
 	if catalog_name != "" {
 		fmt.Printf("\ncatalog items\n")
-		cat, err := client.Org.FindCatalog(catalog_name)
+		cat, err := org.FindCatalog(catalog_name)
 		if err != nil {
 			fmt.Printf("Error retrieving catalog %s\n%s\n", catalog_name, err)
 			os.Exit(1)
