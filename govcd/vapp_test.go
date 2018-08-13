@@ -160,55 +160,42 @@ func (vcd *TestVCD) Test_AddMetadata(c *C) {
 
 }
 
-func (vcd *TestVCD) Test_ChangeStorageProfile(c *C) {
-
-	testServer.ResponseMap(9, testutil.ResponseMap{
-		"/api/org/11111111-1111-1111-1111-111111111111":                       testutil.Response{200, nil, orgExample},
-		"/api/network/44444444-4444-4444-4444-4444444444444":                  testutil.Response{200, nil, orgvdcnetExample},
-		"/api/catalog/e8a20fdf-8a78-440c-ac71-0420db59f854":                   testutil.Response{200, nil, catalogExample},
-		"/api/catalogItem/1176e485-8858-4e15-94e5-ae4face605ae":               testutil.Response{200, nil, catalogitemExample},
-		"/api/vAppTemplate/vappTemplate-40cb9721-5f1a-44f9-b5c3-98c5f518c4f5": testutil.Response{200, nil, vapptemplateExample},
-		"/api/vdc/00000000-0000-0000-0000-000000000000/action/composeVApp":    testutil.Response{200, nil, instantiatedvappExample},
-		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000":                 testutil.Response{200, nil, vappExample},
-		"/api/vApp/vm-00000000-0000-0000-0000-000000000000":                   testutil.Response{200, nil, taskExample},
-		"/api/vdc/00000000-0000-0000-0000-000000000000":                       testutil.Response{200, nil, vdcExample},
-	})
-
+func (vcd *TestVCD) Test_ChangeStorageProfile(test *C) {
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
-	net, err := vcd.vdc.FindVDCNetwork("networkName")
+	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network)
 	networks = append(networks, net.OrgVDCNetwork)
-	c.Assert(err, IsNil)
-
+	test.Assert(err, IsNil)
 	// Populate Catalog
-	cat, err := vcd.org.FindCatalog("Public Catalog")
-	c.Assert(err, IsNil)
-
+	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	test.Assert(err, IsNil)
 	// Populate Catalog Item
-	catitem, err := cat.FindCatalogItem("CentOS64-32bit")
-	c.Assert(err, IsNil)
-
+	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.Catalogitem)
+	test.Assert(err, IsNil)
 	// Get VAppTemplate
 	vapptemplate, err := catitem.GetVAppTemplate()
-	c.Assert(err, IsNil)
-
+	test.Assert(err, IsNil)
 	// Get StorageProfileReference
-	storageprofileref, err := vcd.vdc.FindStorageProfileReference("storageProfile1")
-	c.Assert(err, IsNil)
-
+	storageprofileref, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
+	test.Assert(err, IsNil)
 	// Compose VApp
-	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, "name", "description")
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.OperationName, Equals, "vdcInstantiateVapp")
-	c.Assert(vcd.vapp.VApp.HREF, Equals, "http://localhost:4444/api/vApp/vapp-00000000-0000-0000-0000-000000000000")
+	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, "go-vcloud-director-vapp-test", "description")
+	test.Assert(err, IsNil)
+	test.Assert(task.Task.OperationName, Equals, "vdcComposeVapp")
+	// Let the VApp creation complete
+	task.WaitTaskCompletion()
+	// Get VApp
+	vapp, err := vcd.vdc.FindVAppByName("go-vcloud-director-vapp-test")
+	test.Assert(err, IsNil)
 
-	task, err = vcd.vapp.ChangeStorageProfile("storageProfile2")
-
-	c.Assert(err, IsNil)
-	c.Assert(task.Task.Status, Equals, "success")
-
-	_ = testServer.WaitRequests(9)
-
+	task, err = vapp.ChangeStorageProfile(vcd.config.VCD.StorageProfile.SP2)
+	test.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	test.Assert(err, IsNil)
+	// Deleting VApp
+	task, err = vapp.Delete()
+	task.WaitTaskCompletion()
+	test.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_ChangeVMName(c *C) {
