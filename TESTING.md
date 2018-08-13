@@ -24,7 +24,9 @@ vcd:
     description: test catalog
     catalogitem: ubuntu
   vapp: vapp
-  storageprofile: Development
+  storageprofile: 
+    storageprofile1: Development
+    storageprofile2: "*"
   network: net
 
 ```

@@ -103,7 +103,7 @@ func (vcd *TestVCD) Test_ComposeVApp(test *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	test.Assert(err, IsNil)
 	// Get StorageProfileReference
-	storageprofileref, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.Storageprofile)
+	storageprofileref, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
 	test.Assert(err, IsNil)
 	// Compose VApp
 	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, "go-vcloud-director-vapp-test", "description")
