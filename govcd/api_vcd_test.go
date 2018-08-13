@@ -25,7 +25,11 @@ type TestConfig struct {
 		Catalog struct {
 			Name        string `yaml:"name,omitempty"`
 			Description string `yaml:"description,omitempty"`
+			Catalogitem string `yaml:"catalogitem,omitempty"`
 		}
+		Network        string `yaml:"network,omitempty"`
+		Storageprofile string `yaml:"storageprofile,omitempty"`
+		VApp           string `yaml:"vapp,omitempty"`
 	}
 }
 
