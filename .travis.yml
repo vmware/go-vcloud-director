@@ -7,8 +7,7 @@ before_install:
 - go get github.com/mattn/goveralls
 
 script:
-- PATH="$HOME/gopath/bin:$PATH"
-- hack/coverage
+- go build .
 
 after_success:
 - echo "Build Successful!" 
