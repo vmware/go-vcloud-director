@@ -7,7 +7,7 @@ before_install:
 - go get github.com/mattn/goveralls
 
 script:
-- go build .
+- make
 
 after_success:
 - echo "Build Successful!" 
