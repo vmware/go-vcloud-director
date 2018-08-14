@@ -1,7 +1,8 @@
 language: go
 sudo: false
-install:
-- go get -t 
+install: true
+
+before_install:
 - go get golang.org/x/tools/cmd/cover
 - go get github.com/mattn/goveralls
 
