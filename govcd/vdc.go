@@ -28,6 +28,73 @@ func NewVdc(c *Client) *Vdc {
 	}
 }
 
+// Gets a vapp with a url u
+func (v *Vdc) getVdcVAppbyHREF(u *url.URL) (*VApp, error) {
+	req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
+	resp, err := checkResp(v.c.Http.Do(req))
+	if err != nil {
+		return &VApp{}, fmt.Errorf("error retreiving VApp: %s", err)
+	}
+
+	vapp := NewVApp(v.c)
+
+	if err = decodeBody(resp, vapp.VApp); err != nil {
+		return &VApp{}, fmt.Errorf("error decoding VApp response: %s", err)
+	}
+	return vapp, nil
+}
+
+// Undeploys all vapps part of the vdc
+func (v *Vdc) undeployAllVdcVApps() error {
+	for _, resents := range v.Vdc.ResourceEntities {
+		for _, resent := range resents.ResourceEntity {
+			if resent.Type == "application/vnd.vmware.vcloud.vApp+xml" {
+				vappHREF, err := url.Parse(resent.HREF)
+				if err != nil {
+					return err
+				}
+				vapp, err := v.getVdcVAppbyHREF(vappHREF)
+				if err != nil {
+					return fmt.Errorf("Error retrieving vapp with url: %s and with error %s", vappHREF.Path, err)
+				}
+				task, err := vapp.Undeploy()
+				if task == (Task{}) {
+					continue
+				}
+				err = task.WaitTaskCompletion()
+			}
+		}
+	}
+	return nil
+}
+
+// Removes all vapps within the vdc
+func (v *Vdc) removeAllVdcVApps() error {
+	for _, resents := range v.Vdc.ResourceEntities {
+		for _, resent := range resents.ResourceEntity {
+			if resent.Type == "application/vnd.vmware.vcloud.vApp+xml" {
+				vappHREF, err := url.Parse(resent.HREF)
+				if err != nil {
+					return err
+				}
+				vapp, err := v.getVdcVAppbyHREF(vappHREF)
+				if err != nil {
+					return fmt.Errorf("Error retrieving vapp with url: %s and with error %s", vappHREF.Path, err)
+				}
+				task, err := vapp.Delete()
+				if err != nil {
+					return fmt.Errorf("Error deleting vapp: %s", err)
+				}
+				err = task.WaitTaskCompletion()
+				if err != nil {
+					return fmt.Errorf("Couldn't finish removing vapp %#v", err)
+				}
+			}
+		}
+	}
+	return nil
+}
+
 func (v *Vdc) Refresh() error {
 
 	if v.Vdc.HREF == "" {
