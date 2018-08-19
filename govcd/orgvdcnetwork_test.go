@@ -5,31 +5,30 @@
 package govcd
 
 import (
-	"github.com/vmware/go-vcloud-director/testutil"
-
+	"fmt"
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_NetRefresh(c *C) {
+func (vcd *TestVCD) Test_NetRefresh(check *C) {
 
-	testServer.ResponseMap(1, testutil.ResponseMap{
-		"/api/network/44444444-4444-4444-4444-4444444444444": testutil.Response{200, nil, orgvdcnetExample},
-	})
+	fmt.Printf("Running: %s\n", check.TestName())
 
-	network, err := vcd.vdc.FindVDCNetwork("networkName")
-	_ = testServer.WaitRequest()
-	testServer.Flush()
+	network, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network)
 
-	c.Assert(err, IsNil)
-	c.Assert(network.OrgVDCNetwork.Name, Equals, "networkName")
+	check.Assert(err, IsNil)
+	check.Assert(network.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network)
+	save_network := network
 
-	testServer.Response(200, nil, orgvdcnetExample)
 	err = network.Refresh()
-	_ = testServer.WaitRequest()
-	testServer.Flush()
 
-	c.Assert(err, IsNil)
-	c.Assert(network.OrgVDCNetwork.Name, Equals, "networkName")
+	check.Assert(err, IsNil)
+	check.Assert(network.OrgVDCNetwork.Name, Equals, save_network.OrgVDCNetwork.Name)
+	check.Assert(network.OrgVDCNetwork.HREF, Equals, save_network.OrgVDCNetwork.HREF)
+	check.Assert(network.OrgVDCNetwork.Type, Equals, save_network.OrgVDCNetwork.Type)
+	check.Assert(network.OrgVDCNetwork.ID, Equals, save_network.OrgVDCNetwork.ID)
+	check.Assert(network.OrgVDCNetwork.Description, Equals, save_network.OrgVDCNetwork.Description)
+	check.Assert(network.OrgVDCNetwork.EdgeGateway, DeepEquals, save_network.OrgVDCNetwork.EdgeGateway)
+	check.Assert(network.OrgVDCNetwork.Status, Equals, save_network.OrgVDCNetwork.Status)
 
 }
 
