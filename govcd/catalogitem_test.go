@@ -5,34 +5,29 @@
 package govcd
 
 import (
+	"fmt"
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_GetVAppTemplate(c *C) {
+func (vcd *TestVCD) Test_GetVAppTemplate(check *C) {
 
-	// Populate Catalog
-	testServer.Response(200, nil, catalogExample)
-	cat, err := vcd.org.FindCatalog("Public Catalog")
-	_ = testServer.WaitRequest()
-	testServer.Flush()
+	fmt.Printf("Running: %s\n", check.TestName())
+	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	if err != nil {
+		check.Skip("Catalog not found. Test can't proceed")
+	}
 
-	// Populate Catalog Item
-	testServer.Response(200, nil, catalogitemExample)
-	catitem, err := cat.FindCatalogItem("CentOS64-32bit")
-	_ = testServer.WaitRequest()
-	testServer.Flush()
+	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.Catalogitem)
+	check.Assert(err, IsNil)
 
 	// Get VAppTemplate
-	testServer.Response(200, nil, vapptemplateExample)
 	vapptemplate, err := catitem.GetVAppTemplate()
-	_ = testServer.WaitRequest()
-	testServer.Flush()
 
-	c.Assert(err, IsNil)
-	c.Assert(vapptemplate.VAppTemplate.HREF, Equals, "http://localhost:4444/api/vAppTemplate/vappTemplate-40cb9721-5f1a-44f9-b5c3-98c5f518c4f5")
-	c.Assert(vapptemplate.VAppTemplate.Name, Equals, "CentOS64-32bit")
-	c.Assert(vapptemplate.VAppTemplate.Description, Equals, "id: cts-6.4-32bit")
-
+	check.Assert(err, IsNil)
+	check.Assert(vapptemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.Catalogitem)
+	if vcd.config.VCD.Catalog.Description != "" {
+		check.Assert(vapptemplate.VAppTemplate.Description, Equals, vcd.config.VCD.Catalog.CatalogItemDescription)
+	}
 }
 
 var catalogitemExample = `
