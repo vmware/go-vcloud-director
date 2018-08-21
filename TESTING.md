@@ -23,11 +23,15 @@ vcd:
     name: test
     description: test catalog
     catalogitem: ubuntu
+    catalogitemdescription: description
   vapp: vapp
   storageprofile: 
     storageprofile1: Development
     storageprofile2: "*"
   network: net
+  edgegateway: au-edge
+  externalip: 10.150.10.10
+  internalip: 10.0.0.10
 
 ```
 
