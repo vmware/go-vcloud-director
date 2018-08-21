@@ -134,11 +134,23 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		panic(err)
 	}
 	// creates a new VApp for vapp tests
-	vapp, err := vcd.createTestVapp("go-vapp-tests")
-	if err != nil {
-		panic(err)
+	if config.VCD.Network != "" && config.VCD.StorageProfile.SP1 != "" &&
+		config.VCD.Catalog.Name != "" && config.VCD.Catalog.Catalogitem != "" {
+		vcd.vapp, err = vcd.createTestVapp("go-vapp-tests")
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		err = vcd.vdc.ComposeRawVApp("go-vapp-tests")
+		if err != nil {
+			panic(err)
+		}
+		vcd.vapp, err = vcd.vdc.FindVAppByName("go-vapp-tests")
+		if err != nil {
+			panic(err)
+		}
 	}
-	vcd.vapp = vapp
+
 }
 
 func (vcd *TestVCD) TearDownSuite(check *C) {
