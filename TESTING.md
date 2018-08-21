@@ -24,7 +24,6 @@ vcd:
     description: test catalog
     catalogitem: ubuntu
     catalogitemdescription: description
-  vapp: vapp
   storageprofile: 
     storageprofile1: Development
     storageprofile2: "*"
@@ -35,7 +34,7 @@ vcd:
 
 ```
 
-Users must specify their username, password, api_endpoint, vcd and org for any tests to run. Otherwise all tests get aborted. For more comprehensive testing the catalog, vapp, storageprofile, and network field can be set using the format above. For comprehensive testing just replace each field with your vcd information. 
+Users must specify their username, password, api_endpoint, vcd and org for any tests to run. Otherwise all tests get aborted. For more comprehensive testing the catalog, catalogitem, storageprofile, network, edgegateway, ip field can be set using the format above. For comprehensive testing just replace each field with your vcd information. 
 
 # Running Tests
 Once you have a config file setup, you can run tests with either the makefile or with go itself.
@@ -51,5 +50,12 @@ To run tests with the makefile:
 make test
 ```
 
+To run a specific test:
+```
+cd govcd
+go test -check.f Test_SetOvf
+```
+
 # Final Words
+Be careful about using our tests as these tests run on a real vcd. If you don't have 1 gb of ram and 2 vcpus available then you should not be running tests that deploy your vm/change memory and cpu. However everything created will be removed at the end of testing.
 Have fun using our SDK!! 
