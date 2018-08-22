@@ -1,7 +1,8 @@
 TEST?=./...
 GOFMT_FILES?=$$(find . -name '*.go' | grep -v vendor)
 
-default: fmt test testrace vet
+#default: fmt test testrace vet
+default: fmt vet
 
 # test runs the test suite and vets the code
 test: get-deps fmtcheck
