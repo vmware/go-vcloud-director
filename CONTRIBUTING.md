@@ -25,8 +25,8 @@ contributors.  Typical contribution flow steps are:
 
 - Fork the go-vcloud-director repo into a new repo on GitHub
 - Clone the forked repo locally and set the original go-vcloud-director repo as the upstream repo
-- Open an Issue in go-vcloud-director describing what you propose to do (unless the change is so trivial that an issue is not needed.)
-- Wait for discussion and possible direction hints in the issue thread.
+- Open an Issue in go-vcloud-director describing what you propose to do (unless the change is so trivial that an issue is not needed)
+- Wait for discussion and possible direction hints in the issue thread
 - Once you know  which steps to take in your intended contribution, make changes in a topic branch and commit
 - Fetch changes from upstream and resolve any merge conflicts so that your topic branch is up-to-date
 - Push all commits to the topic branch in your forked repo
