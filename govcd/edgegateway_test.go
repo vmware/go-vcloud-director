@@ -5,29 +5,31 @@
 package govcd
 
 import (
-	"fmt"
 	types "github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
 )
 
 func (vcd *TestVCD) Test_Refresh(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
-		check.Skip(fmt.Sprintf("skipping %s because no edgegatway given", check.TestName()))
+		check.Skip("Skipping test because no edgegatway given")
 	}
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
+	copyEdge := edge
 	err = edge.Refresh()
 	check.Assert(err, IsNil)
-	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
+	check.Assert(copyEdge.EdgeGateway.Name, Equals, edge.EdgeGateway.Name)
+	check.Assert(copyEdge.EdgeGateway.HREF, Equals, edge.EdgeGateway.HREF)
 }
 
+// TODO: Add a check for the final state of the mapping
 func (vcd *TestVCD) Test_NATMapping(check *C) {
 	if vcd.config.VCD.Externalip == "" || vcd.config.VCD.Internalip == "" {
-		check.Skip(fmt.Sprintf("skipping %s because no valid ip given", check.TestName()))
+		check.Skip("Skipping test because no valid ip given")
 	}
 	if vcd.config.VCD.EdgeGateway == "" {
-		check.Skip(fmt.Sprintf("skipping %s because no edgegatway given", check.TestName()))
+		check.Skip("Skipping test because no edgegatway given")
 	}
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
@@ -43,12 +45,13 @@ func (vcd *TestVCD) Test_NATMapping(check *C) {
 	check.Assert(err, IsNil)
 }
 
+// TODO: Add a check for the final state of the mapping
 func (vcd *TestVCD) Test_NATPortMapping(check *C) {
 	if vcd.config.VCD.Externalip == "" || vcd.config.VCD.Internalip == "" {
-		check.Skip(fmt.Sprintf("skipping %s because no valid ip given", check.TestName()))
+		check.Skip("Skipping test because no valid ip given")
 	}
 	if vcd.config.VCD.EdgeGateway == "" {
-		check.Skip(fmt.Sprintf("skipping %s because no edgegatway given", check.TestName()))
+		check.Skip("Skipping test because no edgegatway given")
 	}
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
@@ -63,12 +66,13 @@ func (vcd *TestVCD) Test_NATPortMapping(check *C) {
 	check.Assert(err, IsNil)
 }
 
+// TODO: Add a check for the final state of the mapping
 func (vcd *TestVCD) Test_1to1Mappings(check *C) {
 	if vcd.config.VCD.Externalip == "" || vcd.config.VCD.Internalip == "" {
-		check.Skip(fmt.Sprintf("skipping %s because no valid ip given", check.TestName()))
+		check.Skip("Skipping test because no valid ip given")
 	}
 	if vcd.config.VCD.EdgeGateway == "" {
-		check.Skip(fmt.Sprintf("skipping %s because no edgegatway given", check.TestName()))
+		check.Skip("Skipping test because no edgegatway given")
 	}
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
@@ -83,12 +87,13 @@ func (vcd *TestVCD) Test_1to1Mappings(check *C) {
 	check.Assert(err, IsNil)
 }
 
+// TODO: Add a check checking whether the IPsec VPN was added
 func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
 	if vcd.config.VCD.Externalip == "" {
-		check.Skip(fmt.Sprintf("skipping %s because no valid ip given", check.TestName()))
+		check.Skip("Skipping test because no valid ip given")
 	}
 	if vcd.config.VCD.EdgeGateway == "" {
-		check.Skip(fmt.Sprintf("skipping %s because no edgegatway given", check.TestName()))
+		check.Skip("Skipping test because no edgegatway given")
 	}
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)

@@ -44,11 +44,12 @@ type TestConfig struct {
 // an org, vdc, vapp, and client to run
 // tests on
 type TestVCD struct {
-	client *VCDClient
-	org    Org
-	vdc    Vdc
-	vapp   VApp
-	config TestConfig
+	client        *VCDClient
+	org           Org
+	vdc           Vdc
+	vapp          VApp
+	config        TestConfig
+	skipVappTests bool
 }
 
 var testServer = testutil.NewHTTPServer()
@@ -138,29 +139,25 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		config.VCD.Catalog.Name != "" && config.VCD.Catalog.Catalogitem != "" {
 		vcd.vapp, err = vcd.createTestVapp("go-vapp-tests")
 		if err != nil {
-			panic(err)
+			fmt.Printf("%v", err)
+			vcd.skipVappTests = true
 		}
 	} else {
-		err = vcd.vdc.ComposeRawVApp("go-vapp-tests")
-		if err != nil {
-			panic(err)
-		}
-		vcd.vapp, err = vcd.vdc.FindVAppByName("go-vapp-tests")
-		if err != nil {
-			panic(err)
-		}
+		vcd.skipVappTests = true
+		fmt.Printf("Skipping all vapp tests because one of the following wasn't given: Network, StorageProfile, Catalog, Catalogitem")
 	}
 
 }
 
 func (vcd *TestVCD) TearDownSuite(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Vapp tests skipped, no vapp to be deleted")
+	}
 	err := vcd.vapp.Refresh()
 	if err != nil {
 		panic(err)
 	}
-	task, _ := vcd.vapp.PowerOn()
-	_ = task.WaitTaskCompletion()
-	task, _ = vcd.vapp.Undeploy()
+	task, _ := vcd.vapp.Undeploy()
 	_ = task.WaitTaskCompletion()
 	task, err = vcd.vapp.Delete()
 	if err != nil {

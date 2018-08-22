@@ -10,8 +10,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// Right now it just checks if their is an error while querying
-// Test does not check the contents of the query
+// TODO: Need to add a check to check the contents of the query
 func (vcd *TestVCD) Test_Query(check *C) {
 	// Get the Org populated
 	_, err := vcd.client.Query(map[string]string{"type": "vm"})
