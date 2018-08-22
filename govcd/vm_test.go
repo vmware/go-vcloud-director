@@ -32,7 +32,7 @@ func (vcd *TestVCD) find_first_vapp() VApp {
 		fmt.Println(err)
 		return VApp{}
 	}
-	wanted_vapp := vcd.config.VCD.VApp
+	wanted_vapp := vcd.vapp.VApp.Name
 	vapp_name := ""
 	for _, res := range vdc.Vdc.ResourceEntities {
 		for _, item := range res.ResourceEntity {
@@ -59,6 +59,9 @@ func (vcd *TestVCD) find_first_vapp() VApp {
 }
 
 func (vcd *TestVCD) Test_FindVMByHREF(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp wasn't properly created")
+	}
 
 	fmt.Printf("Running: %s\n", check.TestName())
 	vapp := vcd.find_first_vapp()
