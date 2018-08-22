@@ -2,7 +2,6 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/testutil"
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -52,7 +51,6 @@ type TestVCD struct {
 	skipVappTests bool
 }
 
-var testServer = testutil.NewHTTPServer()
 
 var vcdu_api, _ = url.Parse("http://localhost:4444/api")
 var vcdu_v, _ = url.Parse("http://localhost:4444/api/versions")
@@ -104,9 +102,6 @@ func Test(t *testing.T) { TestingT(t) }
 // when creating a new vapp. If this method panics, no test
 // case that uses the TestVCD struct is run.
 func (vcd *TestVCD) SetUpSuite(check *C) {
-	// this will be removed once all tests are converted to
-	// a real vcd
-	testServer.Start()
 
 	config, err := GetConfigStruct()
 	if err != nil {
