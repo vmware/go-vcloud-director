@@ -23,9 +23,10 @@ type TestConfig struct {
 		Org     string `yaml:"org"`
 		Vdc     string `yaml:"vdc"`
 		Catalog struct {
-			Name        string `yaml:"name,omitempty"`
-			Description string `yaml:"description,omitempty"`
-			Catalogitem string `yaml:"catalogitem,omitempty"`
+			Name                   string `yaml:"name,omitempty"`
+			Description            string `yaml:"description,omitempty"`
+			Catalogitem            string `yaml:"catalogitem,omitempty"`
+			CatalogItemDescription string `yaml:"catalogitemdescription,omitempty"`
 		}
 		Network        string `yaml:"network,omitempty"`
 		StorageProfile struct {
