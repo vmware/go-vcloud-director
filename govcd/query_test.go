@@ -6,24 +6,15 @@ package govcd
 
 import (
 	// "fmt"
-	"github.com/vmware/go-vcloud-director/testutil"
+	//"github.com/vmware/go-vcloud-director/testutil"
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_Query(c *C) {
-
+// TODO: Need to add a check to check the contents of the query
+func (vcd *TestVCD) Test_Query(check *C) {
 	// Get the Org populated
-	testServer.ResponseMap(1, testutil.ResponseMap{
-		"/api/query?type=vm": testutil.Response{200, nil, queryVmExample},
-	})
-
-	results, err := vcd.client.Query(map[string]string{"type": "vm"})
-	_ = testServer.WaitRequest()
-	testServer.Flush()
-
-	c.Assert(err, IsNil)
-	c.Assert(results.Results.Total, Equals, 4)
-	c.Assert(len(results.Results.VMRecord), Equals, 4)
+	_, err := vcd.client.Query(map[string]string{"type": "vm"})
+	check.Assert(err, IsNil)
 }
 
 var queryVmExample = `<?xml version="1.0" encoding="UTF-8"?>

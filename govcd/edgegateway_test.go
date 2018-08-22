@@ -5,159 +5,99 @@
 package govcd
 
 import (
-	"github.com/vmware/go-vcloud-director/testutil"
 	types "github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_Refresh(c *C) {
-
-	testServer.ResponseMap(2, testutil.ResponseMap{
-		"/api/vdc/00000000-0000-0000-0000-000000000000/edgeGateways":  testutil.Response{200, nil, edgegatewayqueryresultsExample},
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, edgegatewayExample},
-	})
-
-	edge, err := vcd.vdc.FindEdgeGateway("M916272752-5793")
-	_ = testServer.WaitRequests(2)
-	testServer.Flush()
-
-	c.Assert(err, IsNil)
-	c.Assert(edge.EdgeGateway.Name, Equals, "M916272752-5793")
-
-	testServer.Response(200, nil, edgegatewayExample)
+func (vcd *TestVCD) Test_Refresh(check *C) {
+	if vcd.config.VCD.EdgeGateway == "" {
+		check.Skip("Skipping test because no edgegatway given")
+	}
+	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	check.Assert(err, IsNil)
+	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
+	copyEdge := edge
 	err = edge.Refresh()
-	_ = testServer.WaitRequest()
-	testServer.Flush()
-
-	c.Assert(err, IsNil)
-	c.Assert(edge.EdgeGateway.Name, Equals, "M916272752-5793")
-
+	check.Assert(err, IsNil)
+	check.Assert(copyEdge.EdgeGateway.Name, Equals, edge.EdgeGateway.Name)
+	check.Assert(copyEdge.EdgeGateway.HREF, Equals, edge.EdgeGateway.HREF)
 }
 
-func (vcd *TestVCD) Test_NATMapping(c *C) {
-	testServer.ResponseMap(2, testutil.ResponseMap{
-		"/api/vdc/00000000-0000-0000-0000-000000000000/edgeGateways":  testutil.Response{200, nil, edgegatewayqueryresultsExample},
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, edgegatewayExample},
-	})
+// TODO: Add a check for the final state of the mapping
+func (vcd *TestVCD) Test_NATMapping(check *C) {
+	if vcd.config.VCD.Externalip == "" || vcd.config.VCD.Internalip == "" {
+		check.Skip("Skipping test because no valid ip given")
+	}
+	if vcd.config.VCD.EdgeGateway == "" {
+		check.Skip("Skipping test because no edgegatway given")
+	}
+	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	check.Assert(err, IsNil)
+	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	edge, err := vcd.vdc.FindEdgeGateway("M916272752-5793")
-	_ = testServer.WaitRequests(2)
-	testServer.Flush()
-
-	c.Assert(err, IsNil)
-	c.Assert(edge.EdgeGateway.Name, Equals, "M916272752-5793")
-
-	testServer.ResponseMap(2, testutil.ResponseMap{
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000":                          testutil.Response{200, nil, edgegatewayExample},
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/configureServices": testutil.Response{200, nil, taskExample},
-	})
-
-	_, err = edge.AddNATMapping("DNAT", "10.0.0.1", "20.0.0.2", "77")
-	_ = testServer.WaitRequest()
-
-	c.Assert(err, IsNil)
-
-	testServer.ResponseMap(2, testutil.ResponseMap{
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000":                          testutil.Response{200, nil, edgegatewayExample},
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/configureServices": testutil.Response{200, nil, taskExample},
-	})
-
-	_, err = edge.RemoveNATMapping("DNAT", "10.0.0.1", "20.0.0.2", "77")
-	_ = testServer.WaitRequest()
-
-	c.Assert(err, IsNil)
-
+	task, err := edge.AddNATMapping("DNAT", vcd.config.VCD.Externalip, vcd.config.VCD.Internalip, "77")
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	task, err = edge.RemoveNATMapping("DNAT", vcd.config.VCD.Externalip, vcd.config.VCD.Internalip, "77")
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
-func (vcd *TestVCD) Test_NATPortMapping(c *C) {
-	testServer.ResponseMap(2, testutil.ResponseMap{
-		"/api/vdc/00000000-0000-0000-0000-000000000000/edgeGateways":  testutil.Response{200, nil, edgegatewayqueryresultsExample},
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, edgegatewayExample},
-	})
-
-	edge, err := vcd.vdc.FindEdgeGateway("M916272752-5793")
-	_ = testServer.WaitRequests(2)
-	testServer.Flush()
-
-	c.Assert(err, IsNil)
-	c.Assert(edge.EdgeGateway.Name, Equals, "M916272752-5793")
-
-	testServer.ResponseMap(2, testutil.ResponseMap{
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000":                          testutil.Response{200, nil, edgegatewayExample},
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/configureServices": testutil.Response{200, nil, taskExample},
-	})
-
-	_, err = edge.AddNATPortMapping("DNAT", "10.0.0.1", "1177", "20.0.0.2", "77")
-	_ = testServer.WaitRequest()
-
-	c.Assert(err, IsNil)
-
-	testServer.ResponseMap(2, testutil.ResponseMap{
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000":                          testutil.Response{200, nil, edgegatewayExample},
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/configureServices": testutil.Response{200, nil, taskExample},
-	})
-
-	_, err = edge.RemoveNATPortMapping("DNAT", "10.0.0.1", "1177", "20.0.0.2", "77")
-	_ = testServer.WaitRequest()
-
-	c.Assert(err, IsNil)
-
+// TODO: Add a check for the final state of the mapping
+func (vcd *TestVCD) Test_NATPortMapping(check *C) {
+	if vcd.config.VCD.Externalip == "" || vcd.config.VCD.Internalip == "" {
+		check.Skip("Skipping test because no valid ip given")
+	}
+	if vcd.config.VCD.EdgeGateway == "" {
+		check.Skip("Skipping test because no edgegatway given")
+	}
+	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	check.Assert(err, IsNil)
+	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
+	task, err := edge.AddNATPortMapping("DNAT", vcd.config.VCD.Externalip, "1177", vcd.config.VCD.Internalip, "77")
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	task, err = edge.RemoveNATPortMapping("DNAT", vcd.config.VCD.Externalip, "1177", vcd.config.VCD.Internalip, "77")
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
-func (vcd *TestVCD) Test_1to1Mappings(c *C) {
-
-	testServer.ResponseMap(2, testutil.ResponseMap{
-		"/api/vdc/00000000-0000-0000-0000-000000000000/edgeGateways":  testutil.Response{200, nil, edgegatewayqueryresultsExample},
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, edgegatewayExample},
-	})
-
-	edge, err := vcd.vdc.FindEdgeGateway("M916272752-5793")
-	_ = testServer.WaitRequests(2)
-	testServer.Flush()
-
-	c.Assert(err, IsNil)
-	c.Assert(edge.EdgeGateway.Name, Equals, "M916272752-5793")
-
-	testServer.ResponseMap(2, testutil.ResponseMap{
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000":                          testutil.Response{200, nil, edgegatewayExample},
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/configureServices": testutil.Response{200, nil, taskExample},
-	})
-
-	_, err = edge.Create1to1Mapping("10.0.0.1", "20.0.0.2", "description")
-	_ = testServer.WaitRequests(2)
-
-	c.Assert(err, IsNil)
-
-	testServer.ResponseMap(2, testutil.ResponseMap{
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000":                          testutil.Response{200, nil, edgegatewayExample},
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/configureServices": testutil.Response{200, nil, taskExample},
-	})
-
-	_, err = edge.Remove1to1Mapping("10.0.0.1", "20.0.0.2")
-	_ = testServer.WaitRequests(2)
-
-	c.Assert(err, IsNil)
-
+// TODO: Add a check for the final state of the mapping
+func (vcd *TestVCD) Test_1to1Mappings(check *C) {
+	if vcd.config.VCD.Externalip == "" || vcd.config.VCD.Internalip == "" {
+		check.Skip("Skipping test because no valid ip given")
+	}
+	if vcd.config.VCD.EdgeGateway == "" {
+		check.Skip("Skipping test because no edgegatway given")
+	}
+	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	check.Assert(err, IsNil)
+	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
+	task, err := edge.Create1to1Mapping(vcd.config.VCD.Internalip, vcd.config.VCD.Externalip, "description")
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	task, err = edge.Remove1to1Mapping(vcd.config.VCD.Internalip, vcd.config.VCD.Externalip)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
-func (vcd *TestVCD) Test_AddIpsecVPN(c *C) {
-	testServer.ResponseMap(2, testutil.ResponseMap{
-		"/api/vdc/00000000-0000-0000-0000-000000000000/edgeGateways":  testutil.Response{200, nil, edgegatewayqueryresultsExample},
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, edgegatewayExample},
-	})
-
-	edge, err := vcd.vdc.FindEdgeGateway("M916272752-5793")
-	_ = testServer.WaitRequests(2)
-	testServer.Flush()
-
-	c.Assert(err, IsNil)
-	c.Assert(edge.EdgeGateway.Name, Equals, "M916272752-5793")
-
-	testServer.ResponseMap(2, testutil.ResponseMap{
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000":                          testutil.Response{200, nil, edgegatewayExample},
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/configureServices": testutil.Response{200, nil, taskExample},
-	})
-
+// TODO: Add a check checking whether the IPsec VPN was added
+func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
+	if vcd.config.VCD.Externalip == "" {
+		check.Skip("Skipping test because no valid ip given")
+	}
+	if vcd.config.VCD.EdgeGateway == "" {
+		check.Skip("Skipping test because no edgegatway given")
+	}
+	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	check.Assert(err, IsNil)
+	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 	tunnel := &types.GatewayIpsecVpnTunnel{
 		Name:        "Test VPN",
 		Description: "Testing VPN Creation",
@@ -165,15 +105,13 @@ func (vcd *TestVCD) Test_AddIpsecVPN(c *C) {
 			ID:   "",
 			Name: "",
 		},
-		EncryptionProtocol: "SHA256",
-		LocalIPAddress:     "111.111.111.111",
-		LocalID:            "111.111.111.111",
+		EncryptionProtocol: "AES",
+		LocalIPAddress:     vcd.config.VCD.Externalip,
+		LocalID:            vcd.config.VCD.Externalip,
 		IsEnabled:          true,
 	}
-
 	tunnels := make([]*types.GatewayIpsecVpnTunnel, 1)
 	tunnels[0] = tunnel
-
 	ipsecVPNConfig := &types.EdgeGatewayServiceConfiguration{
 		Xmlns: "http://www.vmware.com/vcloud/v1.5",
 		GatewayIpsecVpnService: &types.GatewayIpsecVpnService{
@@ -181,16 +119,8 @@ func (vcd *TestVCD) Test_AddIpsecVPN(c *C) {
 			Tunnel:    tunnels,
 		},
 	}
-
 	_, err = edge.AddIpsecVPN(ipsecVPNConfig)
-	_ = testServer.WaitRequests(2)
-
-	c.Assert(err, IsNil)
-
-	testServer.ResponseMap(2, testutil.ResponseMap{
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000":                          testutil.Response{200, nil, edgegatewayExample},
-		"/api/admin/edgeGateway/00000000-0000-0000-0000-000000000000/action/configureServices": testutil.Response{200, nil, taskExample},
-	})
+	check.Assert(err, IsNil)
 }
 
 var edgegatewayqueryresultsExample = `
