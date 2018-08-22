@@ -4,25 +4,25 @@
 
 package govcd
 
+/*
+TO BE REMOVED (or reintroduced with different scope) : task completion is tested as part of vdc_test.go
 import (
+	"fmt"
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_WaitTaskCompletion(c *C) {
+func (vcd *TestVCD) Test_WaitTaskCompletion(check *C) {
 
-	testServer.Response(200, nil, taskExample)
+	fmt.Printf("Running: %s\n", check.TestName())
+	check.Skip("Disabled: need a reliable way of triggering a task")
+	fmt.Printf("%#v\n", vcd.vapp.VApp)
 	task, err := vcd.vapp.Deploy()
-	_ = testServer.WaitRequest()
-	testServer.Flush()
-	c.Assert(err, IsNil)
 
-	testServer.Response(200, nil, taskExample)
 	err = task.WaitTaskCompletion()
-	_ = testServer.WaitRequest()
-	testServer.Flush()
-	c.Assert(err, IsNil)
+	check.Assert(err, IsNil)
 
 }
+*/
 
 var taskExample = `
 <Task cancelRequested="false" endTime="2014-11-10T09:09:31.483Z" expiryTime="2015-02-08T09:09:16.627Z" href="http://localhost:4444/api/task/1b8f926c-eff5-4bea-9b13-4e49bdd50c05" id="urn:vcloud:task:1b8f926c-eff5-4bea-9b13-4e49bdd50c05" name="task" operation="Composed Virtual Application Test API GO4(fdb86157-2e1f-4889-9942-0463836d10e1)" operationName="vdcComposeVapp" serviceNamespace="com.vmware.vcloud" startTime="2014-11-10T09:09:16.627Z" status="success" type="application/vnd.vmware.vcloud.task+xml" xmlns="http://www.vmware.com/vcloud/v1.5" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.6.32.3/api/v1.5/schema/master.xsd">

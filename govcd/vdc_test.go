@@ -5,80 +5,96 @@
 package govcd
 
 import (
-	"github.com/vmware/go-vcloud-director/testutil"
-	types "github.com/vmware/go-vcloud-director/types/v56"
+	"fmt"
+	"github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
-	"strconv"
 )
 
-func (vcd *TestVCD) Test_FindVDCNetwork(c *C) {
+func (vcd *TestVCD) Test_FindVDCNetwork(check *C) {
 
-	testServer.Response(200, nil, orgvdcnetExample)
+	fmt.Printf("Running: %s\n", check.TestName())
 
-	net, err := vcd.vdc.FindVDCNetwork("networkName")
+	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network)
 
-	_ = testServer.WaitRequest()
-
-	c.Assert(err, IsNil)
-	c.Assert(net, NotNil)
-	c.Assert(net.OrgVDCNetwork.HREF, Equals, "http://localhost:4444/api/network/cb0f4c9e-1a46-49d4-9fcb-d228000a6bc1")
+	check.Assert(err, IsNil)
+	check.Assert(net, NotNil)
+	check.Assert(net.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network)
+	check.Assert(net.OrgVDCNetwork.HREF, Not(Equals), "")
 
 	// find Invalid Network
 	net, err = vcd.vdc.FindVDCNetwork("INVALID")
-	c.Assert(err, NotNil)
+	check.Assert(err, NotNil)
 }
 
-func (vcd *TestVCD) Test_NewVdc(c *C) {
+func (vcd *TestVCD) Test_NewVdc(check *C) {
 
-	testServer.Response(200, nil, vdcExample)
+	fmt.Printf("Running: %s\n", check.TestName())
 	err := vcd.vdc.Refresh()
-	_ = testServer.WaitRequest()
-	c.Assert(err, IsNil)
+	check.Assert(err, IsNil)
 
-	c.Assert(vcd.vdc.Vdc.Link[0].Rel, Equals, "up")
-	c.Assert(vcd.vdc.Vdc.Link[0].Type, Equals, "application/vnd.vmware.vcloud.org+xml")
-	c.Assert(vcd.vdc.Vdc.Link[0].HREF, Equals, "http://localhost:4444/api/org/11111111-1111-1111-1111-111111111111")
+	check.Assert(vcd.vdc.Vdc.Link[0].Rel, Equals, "up")
+	check.Assert(vcd.vdc.Vdc.Link[0].Type, Equals, "application/vnd.vmware.vcloud.org+xml")
 
-	c.Assert(vcd.vdc.Vdc.AllocationModel, Equals, "AllocationPool")
+	// fmt.Printf("allocation mem %#v\n\n",vcd.vdc.Vdc.AllocationModel)
+	for _, resource := range vcd.vdc.Vdc.ResourceEntities[0].ResourceEntity {
 
-	for _, v := range vcd.vdc.Vdc.ComputeCapacity {
-		c.Assert(v.CPU.Units, Equals, "MHz")
-		c.Assert(v.CPU.Allocated, Equals, int64(30000))
-		c.Assert(v.CPU.Limit, Equals, int64(30000))
-		c.Assert(v.CPU.Reserved, Equals, int64(15000))
-		c.Assert(v.CPU.Used, Equals, int64(0))
-		c.Assert(v.CPU.Overhead, Equals, int64(0))
-		c.Assert(v.Memory.Units, Equals, "MB")
-		c.Assert(v.Memory.Allocated, Equals, int64(61440))
-		c.Assert(v.Memory.Limit, Equals, int64(61440))
-		c.Assert(v.Memory.Reserved, Equals, int64(61440))
-		c.Assert(v.Memory.Used, Equals, int64(6144))
-		c.Assert(v.Memory.Overhead, Equals, int64(95))
+		// fmt.Printf("res %#v\n",resource)
+		check.Assert(resource.Name, Not(Equals), "")
+		check.Assert(resource.Type, Not(Equals), "")
+		check.Assert(resource.HREF, Not(Equals), "")
 	}
 
-	c.Assert(vcd.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].Name, Equals, "vAppTemplate")
-	c.Assert(vcd.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].Type, Equals, "application/vnd.vmware.vcloud.vAppTemplate+xml")
-	c.Assert(vcd.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].HREF, Equals, "http://localhost:4444/api/vAppTemplate/vappTemplate-22222222-2222-2222-2222-222222222222")
+	// TODO: find which values are acceptable for AllocationModel
+	// check.Assert(vcd.vdc.Vdc.AllocationModel, Equals, "AllocationPool")
+
+	/*
+		// TODO: Find the conditions that define valid ComputeCapacity
+		for _, v := range vcd.vdc.Vdc.ComputeCapacity {
+			check.Assert(v.CPU.Units, Equals, "MHz")
+			check.Assert(v.CPU.Allocated, Equals, int64(30000))
+			check.Assert(v.CPU.Limit, Equals, int64(30000))
+			check.Assert(v.CPU.Reserved, Equals, int64(15000))
+			check.Assert(v.CPU.Used, Equals, int64(0))
+			check.Assert(v.CPU.Overhead, Equals, int64(0))
+			check.Assert(v.Memory.Units, Equals, "MB")
+			check.Assert(v.Memory.Allocated, Equals, int64(61440))
+			check.Assert(v.Memory.Limit, Equals, int64(61440))
+			check.Assert(v.Memory.Reserved, Equals, int64(61440))
+			check.Assert(v.Memory.Used, Equals, int64(6144))
+			check.Assert(v.Memory.Overhead, Equals, int64(95))
+		}
+	*/
+
+	// Skipping this check, as we can't define the existence of a given vApp template beforehand
+	/*
+		check.Assert(vcd.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].Name, Equals, "vAppTemplate")
+		check.Assert(vcd.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].Type, Equals, "application/vnd.vmware.vcloud.vAppTemplate+xml")
+		check.Assert(vcd.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].HREF, Equals, "http://localhost:4444/api/vAppTemplate/vappTemplate-22222222-2222-2222-2222-222222222222")
+	*/
 
 	for _, v := range vcd.vdc.Vdc.AvailableNetworks {
 		for _, v2 := range v.Network {
-			c.Assert(v2.Name, Equals, "networkName")
-			c.Assert(v2.Type, Equals, "application/vnd.vmware.vcloud.network+xml")
-			c.Assert(v2.HREF, Equals, "http://localhost:4444/api/network/44444444-4444-4444-4444-4444444444444")
+			check.Assert(v2.Name, Not(Equals), "")
+			check.Assert(v2.Type, Equals, "application/vnd.vmware.vcloud.network+xml")
+			check.Assert(v2.HREF, Not(Equals), "")
 		}
 	}
 
-	c.Assert(vcd.vdc.Vdc.NicQuota, Equals, 0)
-	c.Assert(vcd.vdc.Vdc.NetworkQuota, Equals, 20)
-	c.Assert(vcd.vdc.Vdc.UsedNetworkCount, Equals, 0)
-	c.Assert(vcd.vdc.Vdc.VMQuota, Equals, 0)
-	c.Assert(vcd.vdc.Vdc.IsEnabled, Equals, true)
+	/*
+
+		// Skipping this check, as we don't have precise terms of comparison for this entity
+		check.Assert(vcd.vdc.Vdc.NicQuota, Equals, 0)
+		check.Assert(vcd.vdc.Vdc.NetworkQuota, Equals, 20)
+		check.Assert(vcd.vdc.Vdc.UsedNetworkCount, Equals, 0)
+		check.Assert(vcd.vdc.Vdc.VMQuota, Equals, 0)
+		check.Assert(vcd.vdc.Vdc.IsEnabled, Equals, true)
+	*/
 
 	for _, v := range vcd.vdc.Vdc.VdcStorageProfiles {
-		for i, v2 := range v.VdcStorageProfile {
-			c.Assert(v2.Name, Equals, "storageProfile"+strconv.Itoa(i+1))
-			c.Assert(v2.Type, Equals, "application/vnd.vmware.vcloud.vdcStorageProfile+xml")
-			c.Assert(v2.HREF, Equals, "http://localhost:4444/api/vdcStorageProfile/88888888-8888-8888-8888-88888888888"+strconv.Itoa(i+8))
+		for _, v2 := range v.VdcStorageProfile {
+			check.Assert(v2.Name, Equals, vcd.config.VCD.StorageProfile.SP1)
+			check.Assert(v2.Type, Equals, "application/vnd.vmware.vcloud.vdcStorageProfile+xml")
+			check.Assert(v2.HREF, Not(Equals), "")
 		}
 	}
 
@@ -87,73 +103,71 @@ func (vcd *TestVCD) Test_NewVdc(c *C) {
 // Tests ComposeVApp with given parameters in the config file.
 // Throws an error if networks, catalog, catalog item, and
 // storage preference are omitted from the config file.
-func (vcd *TestVCD) Test_ComposeVApp(test *C) {
+func (vcd *TestVCD) Test_ComposeVApp(check *C) {
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
 	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network)
 	networks = append(networks, net.OrgVDCNetwork)
-	test.Assert(err, IsNil)
+	check.Assert(err, IsNil)
 	// Populate Catalog
 	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
-	test.Assert(err, IsNil)
+	check.Assert(err, IsNil)
 	// Populate Catalog Item
 	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.Catalogitem)
-	test.Assert(err, IsNil)
+	check.Assert(err, IsNil)
 	// Get VAppTemplate
 	vapptemplate, err := catitem.GetVAppTemplate()
-	test.Assert(err, IsNil)
+	check.Assert(err, IsNil)
 	// Get StorageProfileReference
 	storageprofileref, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
-	test.Assert(err, IsNil)
+	check.Assert(err, IsNil)
 	// Compose VApp
-	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, "go-vcloud-director-vapp-test", "description")
-	test.Assert(err, IsNil)
-	test.Assert(task.Task.OperationName, Equals, "vdcComposeVapp")
+	temp_vapp_name := "go-vcloud-director-vapp-check"
+	temp_vapp_description := "vapp created by tests"
+	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, temp_vapp_name, temp_vapp_description)
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.OperationName, Equals, "vdcComposeVapp")
 	// Get VApp
-	vapp, err := vcd.vdc.FindVAppByName("go-vcloud-director-vapp-test")
-	test.Assert(err, IsNil)
+	vapp, err := vcd.vdc.FindVAppByName(temp_vapp_name)
+	check.Assert(err, IsNil)
+	// Once the operation is successful, we won't trigger a failure
+	// until after the vApp deletion
+	check.Check(vapp.VApp.Name, Equals, temp_vapp_name)
+	check.Check(vapp.VApp.Description, Equals, temp_vapp_description)
 
-	_, err = vapp.GetStatus()
-	test.Assert(err, IsNil)
+	vapp_status, err := vapp.GetStatus()
+	check.Check(err, IsNil)
+	check.Check(vapp_status, Equals, "UNRESOLVED")
 	// Let the VApp creation complete
 	task.WaitTaskCompletion()
+	vapp_status, err = vapp.GetStatus()
+	check.Check(err, IsNil)
+	check.Check(vapp_status, Equals, "POWERED_OFF")
 	// Deleting VApp
 	task, err = vapp.Delete()
 	task.WaitTaskCompletion()
-	test.Assert(err, IsNil)
+	check.Assert(err, IsNil)
+	no_such_vapp, err := vcd.vdc.FindVAppByName(temp_vapp_name)
+	check.Assert(err, NotNil)
+	check.Assert(no_such_vapp.VApp, IsNil)
+
 }
 
-func (vcd *TestVCD) Test_FindVApp(c *C) {
+func (vcd *TestVCD) Test_FindVApp(check *C) {
 
-	// testServer.Response(200, nil, vappExample)
+	first_vapp, err := vcd.vdc.FindVAppByName(vcd.config.VCD.VApp)
 
-	// vapp, err := s.vdc.FindVAppByID("")
+	check.Assert(err, IsNil)
 
-	// _ = testServer.WaitRequest()
-	// testServer.Flush()
-	// c.Assert(err, IsNil)
+	second_vapp, err := vcd.vdc.FindVAppByID(first_vapp.VApp.ID)
 
-	testServer.ResponseMap(2, testutil.ResponseMap{
-		"/api/vdc/00000000-0000-0000-0000-000000000000":       testutil.Response{200, nil, vdcExample},
-		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, vappExample},
-	})
+	check.Assert(err, IsNil)
 
-	_, err := vcd.vdc.FindVAppByName("myVApp")
-
-	_ = testServer.WaitRequests(2)
-
-	c.Assert(err, IsNil)
-
-	testServer.ResponseMap(2, testutil.ResponseMap{
-		"/api/vdc/00000000-0000-0000-0000-000000000000":       testutil.Response{200, nil, vdcExample},
-		"/api/vApp/vapp-00000000-0000-0000-0000-000000000000": testutil.Response{200, nil, vappExample},
-	})
-
-	_, err = vcd.vdc.FindVAppByID("urn:vcloud:vapp:00000000-0000-0000-0000-000000000000")
-
-	_ = testServer.WaitRequests(2)
-
-	c.Assert(err, IsNil)
+	check.Assert(second_vapp.VApp.Name, Equals, first_vapp.VApp.Name)
+	check.Assert(second_vapp.VApp.HREF, Equals, first_vapp.VApp.HREF)
 
 }
 

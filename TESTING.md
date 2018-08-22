@@ -1,5 +1,5 @@
 # Testing in go-vcloud-director
-To run tests in go-vcloud-director, users must use a yaml file specifying information about the users vcd. Users can set the VCLOUD_CONFIG environmental variable with the path.
+To run tests in go-vcloud-director, users must use a yaml file specifying information about the users vcd. Users can set the `VCLOUD_CONFIG` environmental variable with the path.
 
 ```
 export VCLOUD_CONFIG = $HOME/test.yaml
@@ -42,7 +42,7 @@ Once you have a config file setup, you can run tests with either the makefile or
 To run tests with go use these commands:
 ```
 cd govcd
-go test -v 
+go test -check.v .
 ```
 
 To run tests with the makefile:
