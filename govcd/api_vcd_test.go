@@ -51,13 +51,6 @@ type TestVCD struct {
 	skipVappTests bool
 }
 
-
-var vcdu_api, _ = url.Parse("http://localhost:4444/api")
-var vcdu_v, _ = url.Parse("http://localhost:4444/api/versions")
-var vcdu_s, _ = url.Parse("http://localhost:4444/api/vchs/services")
-
-var vcdauthheader = map[string]string{"x-vcloud-authorization": "012345678901234567890123456789"}
-
 var _ = Suite(&TestVCD{})
 
 // Users use the environmental variable VCLOUD_CONFIG as
