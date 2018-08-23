@@ -8,28 +8,21 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_FindCatalogItem(c *C) {
-
-	// Populate Catalog
-	testServer.Response(200, nil, catalogExample)
-	cat, err := vcd.org.FindCatalog("Public Catalog")
-	_ = testServer.WaitRequest()
-	testServer.Flush()
-
+func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
+	// Fetch Catalog
+	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
 	// Find Catalog Item
-	testServer.Response(200, nil, catalogitemExample)
-	catitem, err := cat.FindCatalogItem("CentOS64-32bit")
-	_ = testServer.WaitRequest()
-	testServer.Flush()
-
-	c.Assert(err, IsNil)
-	c.Assert(catitem.CatalogItem.HREF, Equals, "http://localhost:4444/api/catalogItem/1176e485-8858-4e15-94e5-ae4face605ae")
-	c.Assert(catitem.CatalogItem.Description, Equals, "id: cts-6.4-32bit")
-
+	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.Catalogitem)
+	check.Assert(err, IsNil)
+	check.Assert(catitem.CatalogItem.Name, Equals, vcd.config.VCD.Catalog.Catalogitem)
+	// If given a description in config file then it checks if the descriptions match
+	// Otherwise it skips the assert
+	if vcd.config.VCD.Catalog.CatalogItemDescription != "" {
+		check.Assert(catitem.CatalogItem.Description, Equals, vcd.config.VCD.Catalog.CatalogItemDescription)
+	}
 	// Test non-existant catalog item
 	catitem, err = cat.FindCatalogItem("INVALID")
-	c.Assert(err, NotNil)
-
+	check.Assert(err, NotNil)
 }
 
 var catalogExample = `

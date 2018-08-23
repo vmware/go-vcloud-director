@@ -1,21 +1,18 @@
 language: go
 sudo: false
-install:
-- go get -t 
+install: false
+
+before_install:
 - go get golang.org/x/tools/cmd/cover
 - go get github.com/mattn/goveralls
+- go get gopkg.in/check.v1
+- go get gopkg.in/yaml.v2
+
 script:
-- PATH="$HOME/gopath/bin:$PATH"
-- hack/coverage
-notifications:
-  slack:
-    secure: IdWZxF2eNtPPjJ9NFD7ebTxjyFpjNeCUEa87RXLhvM7Ne1g/VUltsRvCX9a7Mnw4K468/iUmO+jS9y5CFBuOlO2lOzFzaTJZlKNDxw5V2RaSbDYsrgDmhg0TsrajFwDbgNHCP8LPbBejGjsPBi80oRvc/00czLF3vKO28rAfbpE=
-  webhooks:
-    urls:
-      - secure: "IVp6dIdLTZS28zQVhrTn88U2W75cM1KNrbJw/U+wx7odg5JWDaqnwnI7c1zXPhyXh2rISG+HXuAxVlGVvcpwY73FlYPMQ97B5YbBhOX+Dv8w20sI18FHsCJUQ7SQYETK5vNaYcup2n8v5G7J2XbCQ7bZl125xwVEGCN8lPnLcIY="
-    on_start: true
+- make
+
 after_success:
-- figlet "Build Successful!" | /usr/games/cowsay -n -e "^^"
+- echo "Build Successful!" 
 after_failure:
-- figlet "Build Failed!" | /usr/games/cowsay -n -s
+- echo "Build Failed!" 
 

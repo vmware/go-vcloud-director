@@ -5,10 +5,9 @@
 package govcd
 
 import (
+	"fmt"
 	"github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
-	// "strconv"
-	"fmt"
 )
 
 func (vcd *TestVCD) Test_FindVDCNetwork(check *C) {
@@ -93,7 +92,6 @@ func (vcd *TestVCD) Test_NewVdc(check *C) {
 
 	for _, v := range vcd.vdc.Vdc.VdcStorageProfiles {
 		for _, v2 := range v.VdcStorageProfile {
-			check.Assert(v2.Name, Equals, vcd.config.VCD.StorageProfile.SP1)
 			check.Assert(v2.Type, Equals, "application/vnd.vmware.vcloud.vdcStorageProfile+xml")
 			check.Assert(v2.HREF, Not(Equals), "")
 		}
@@ -105,7 +103,9 @@ func (vcd *TestVCD) Test_NewVdc(check *C) {
 // Throws an error if networks, catalog, catalog item, and
 // storage preference are omitted from the config file.
 func (vcd *TestVCD) Test_ComposeVApp(check *C) {
-
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp wasn't properly created")
+	}
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	// Populate OrgVDCNetwork
@@ -159,7 +159,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 
 func (vcd *TestVCD) Test_FindVApp(check *C) {
 
-	first_vapp, err := vcd.vdc.FindVAppByName(vcd.config.VCD.VApp)
+	first_vapp, err := vcd.vdc.FindVAppByName(vcd.vapp.VApp.Name)
 
 	check.Assert(err, IsNil)
 

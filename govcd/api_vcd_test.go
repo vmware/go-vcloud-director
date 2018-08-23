@@ -33,7 +33,9 @@ type TestConfig struct {
 			SP1 string `yaml:"storageprofile1,omitempty"`
 			SP2 string `yaml:"storageprofile2,omitempty"`
 		}
-		VApp string `yaml:"vapp,omitempty"`
+		Externalip  string `yaml:"externalip,omitempty"`
+		Internalip  string `yaml:"internalip,omitempty"`
+		EdgeGateway string `yaml:"edgegateway,omitempty"`
 	}
 }
 
@@ -42,11 +44,12 @@ type TestConfig struct {
 // an org, vdc, vapp, and client to run
 // tests on
 type TestVCD struct {
-	client *VCDClient
-	org    Org
-	vdc    Vdc
-	vapp   VApp
-	config TestConfig
+	client        *VCDClient
+	org           Org
+	vdc           Vdc
+	vapp          VApp
+	config        TestConfig
+	skipVappTests bool
 }
 
 var testServer = testutil.NewHTTPServer()
@@ -100,14 +103,12 @@ func Test(t *testing.T) { TestingT(t) }
 // getting config file, creating vcd, during authentication, or
 // when creating a new vapp. If this method panics, no test
 // case that uses the TestVCD struct is run.
-func (vcd *TestVCD) SetUpSuite(c *C) {
-
+func (vcd *TestVCD) SetUpSuite(check *C) {
 	// this will be removed once all tests are converted to
 	// a real vcd
 	testServer.Start()
 
 	config, err := GetConfigStruct()
-
 	if err != nil {
 		panic(err)
 	}
@@ -118,22 +119,59 @@ func (vcd *TestVCD) SetUpSuite(c *C) {
 		panic(err)
 	}
 	vcd.client = vcdClient
-
 	// org and vdc are the test org and vdc that is used in all other test cases
-	vcd.org, vcd.vdc, err = vcd.client.Authenticate(config.Provider.User, config.Provider.Password, config.VCD.Org, config.VCD.Vdc)
-
+	err = vcd.client.Authenticate(config.Provider.User, config.Provider.Password, config.VCD.Org)
 	if err != nil {
 		panic(err)
 	}
-
+	// set org
+	vcd.org, err = GetOrgByName(vcd.client, config.VCD.Org)
+	if err != nil {
+		panic(err)
+	}
+	// set vdc
+	vcd.vdc, err = vcd.org.GetVdcByName(config.VCD.Vdc)
+	if err != nil {
+		panic(err)
+	}
 	// creates a new VApp for vapp tests
-	vcd.vapp = *NewVApp(&vcd.client.Client)
+	if config.VCD.Network != "" && config.VCD.StorageProfile.SP1 != "" &&
+		config.VCD.Catalog.Name != "" && config.VCD.Catalog.Catalogitem != "" {
+		vcd.vapp, err = vcd.createTestVapp("go-vapp-tests")
+		if err != nil {
+			fmt.Printf("%v", err)
+			vcd.skipVappTests = true
+		}
+	} else {
+		vcd.skipVappTests = true
+		fmt.Printf("Skipping all vapp tests because one of the following wasn't given: Network, StorageProfile, Catalog, Catalogitem")
+	}
+
+}
+
+func (vcd *TestVCD) TearDownSuite(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Vapp tests skipped, no vapp to be deleted")
+	}
+	err := vcd.vapp.Refresh()
+	if err != nil {
+		panic(err)
+	}
+	task, _ := vcd.vapp.Undeploy()
+	_ = task.WaitTaskCompletion()
+	task, err = vcd.vapp.Delete()
+	if err != nil {
+		panic(err)
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Tests getloginurl with the endpoint given
 // in the config file.
 func TestClient_getloginurl(t *testing.T) {
-
 	config, err := GetConfigStruct()
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -155,7 +193,6 @@ func TestClient_getloginurl(t *testing.T) {
 
 // Tests Authenticate with the vcd credentials given in the config file
 func TestVCDClient_Authenticate(t *testing.T) {
-
 	config, err := GetConfigStruct()
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -164,13 +201,8 @@ func TestVCDClient_Authenticate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
-
-	org, _, err := client.Authenticate(config.Provider.User, config.Provider.Password, config.VCD.Org, config.VCD.Vdc)
+	err = client.Authenticate(config.Provider.User, config.Provider.Password, config.VCD.Org)
 	if err != nil {
 		t.Fatalf("Error authenticating: %v", err)
-	}
-
-	if org.Org.Name != config.VCD.Org {
-		t.Fatalf("org names do not match: %s", org.Org.Name)
 	}
 }

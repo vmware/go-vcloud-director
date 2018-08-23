@@ -630,7 +630,7 @@ func (v *VApp) ChangeStorageProfile(name string) (Task, error) {
 		return Task{}, fmt.Errorf("vApp doesn't contain any children, aborting customization")
 	}
 
-	vdc, err := v.c.retrieveVDC()
+	vdc, err := v.getParentVDC()
 	storageprofileref, err := vdc.FindStorageProfileReference(name)
 
 	newprofile := &types.VM{
