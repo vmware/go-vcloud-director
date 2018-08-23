@@ -95,7 +95,6 @@ func Test(t *testing.T) { TestingT(t) }
 // when creating a new vapp. If this method panics, no test
 // case that uses the TestVCD struct is run.
 func (vcd *TestVCD) SetUpSuite(check *C) {
-
 	config, err := GetConfigStruct()
 	if err != nil {
 		panic(err)
