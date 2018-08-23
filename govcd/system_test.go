@@ -19,7 +19,25 @@ func (vcd *TestVCD) Test_GetAdminOrgByName(check *C) {
 }
 
 func (vcd *TestVCD) Test_CreateOrg(check *C) {
-	_, err := CreateOrg(vcd.client, "CREATEORG", "CREATEORG", true, &types.OrgSettings{})
+	settings := &types.OrgSettings{
+		OrgGeneralSettings: &types.OrgGeneralSettings{
+			CanPublishCatalogs:       true,
+			DeployedVMQuota:          10,
+			StoredVMQuota:            10,
+			UseServerBootSequence:    true,
+			DelayAfterPowerOnSeconds: 3,
+		},
+		OrgVAppTemplateSettings: &types.VAppTemplateLeaseSettings{
+			DeleteOnStorageLeaseExpiration: true,
+			StorageLeaseSeconds:            10,
+		},
+		OrgLdapSettings: &types.OrgLdapSettingsType{
+			OrgLdapMode: "NONE",
+		},
+	}
+	task, err := CreateOrg(vcd.client, "CREATEORG", "CREATEORG", true, settings)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	// fetch newly created org
 	org, err := GetAdminOrgByName(vcd.client, "CREATEORG")

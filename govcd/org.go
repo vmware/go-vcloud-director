@@ -29,7 +29,7 @@ func NewOrg(client *Client) *Org {
 // AdminOrg gives an admin representation of an org
 // Users can delete, update orgs with an admin org object
 // AdminOrg users have to get an org representation to use find Catalogs
-// TODO: Discuss whether we want to fill up the org variable as well 
+// TODO: Discuss whether we want to fill up the org variable as well
 // in the admin org. It will take an extra rest api call to get but it
 // will enable users to be able to make calls to org functions as well.
 // This is probably the closest we can get to pure inheritance.

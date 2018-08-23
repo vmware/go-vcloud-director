@@ -33,7 +33,7 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	org, err := GetAdminOrgByName(vcd.client, "UPDATEORG")
 	check.Assert(err, IsNil)
 	check.Assert(org.AdminOrg.Name, Equals, "UPDATEORG")
-	org.AdminOrg.OrgSettings.General.DeployedVMQuota = 100
+	org.AdminOrg.OrgSettings.OrgGeneralSettings.DeployedVMQuota = 100
 	task, err := org.Update()
 	check.Assert(err, IsNil)
 	// Wait until update is complete
@@ -41,7 +41,7 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	check.Assert(err, IsNil)
 	// Refresh
 	org, err = GetAdminOrgByName(vcd.client, "UPDATEORG")
-	check.Assert(org.AdminOrg.OrgSettings.General.DeployedVMQuota, Equals, 100)
+	check.Assert(org.AdminOrg.OrgSettings.OrgGeneralSettings.DeployedVMQuota, Equals, 100)
 	// Delete, with force and recursive true
 	err = org.Delete(true, true)
 	check.Assert(err, IsNil)

@@ -555,10 +555,10 @@ type OrgSettings struct {
 	HREF    string   `xml:"href,attr,omitempty"` // The URI of the entity.
 	Type    string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
 	//elements
-	Link            LinkList                   `xml:"Link,omitempty"`                      // A reference to an entity or operation associated with this object.
-	General         *OrgGeneralSettings        `xml:"OrgGeneralSettings,omitempty"`        // General Settings for the org, not-required
-	VAppTemplate    *VAppTemplateLeaseSettings `xml:"VAppTemplateLeaseSettings,omitempty"` // Vapp template lease settings, not required
-	OrgLdapSettings *OrgLdapSettingsType       `xml:"OrgLdapSettings,omitempty"`           //LDAP settings, not-requried, defaults to none
+	Link                    LinkList                   `xml:"Link,omitempty"`                      // A reference to an entity or operation associated with this object.
+	OrgGeneralSettings      *OrgGeneralSettings        `xml:"OrgGeneralSettings,omitempty"`        // General Settings for the org, not-required
+	OrgVAppTemplateSettings *VAppTemplateLeaseSettings `xml:"VAppTemplateLeaseSettings,omitempty"` // Vapp template lease settings, not required
+	OrgLdapSettings         *OrgLdapSettingsType       `xml:"OrgLdapSettings,omitempty"`           //LDAP settings, not-requried, defaults to none
 }
 
 // OrgGeneralSettingsType represents the general settings for a vCloud Director organization.
