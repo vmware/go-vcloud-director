@@ -2,39 +2,39 @@
 To run tests in go-vcloud-director, users must use a yaml file specifying information about the users vcd. Users can set the `VCLOUD_CONFIG` environmental variable with the path.
 
 ```
-export VCLOUD_CONFIG = $HOME/test.yaml
+export VCLOUD_CONFIG=$HOME/test.yaml
 ```
 
 If no environmental variable is set it will default to $HOME/config.yaml.
-
 
 ## Example Config file
 
 ```yaml
 provider:
-  user: root
-  password: root
-  url:  https://api.vcd.api/api
+    user: orgadmin_name
+    password: orgadmin_pwd
+    url:  https://api.vcd.api/api
 
 vcd:
-  org: org
-  vdc: org-vdc
-  catalog:
-    name: test
-    description: test catalog
-    catalogitem: ubuntu
-    catalogitemdescription: description
-  storageprofile: 
-    storageprofile1: Development
-    storageprofile2: "*"
-  network: net
-  edgegateway: au-edge
-  externalip: 10.150.10.10
-  internalip: 10.0.0.10
-
+    org: org
+    vdc: org-vdc
+    catalog:
+        name: test
+        description: test catalog
+        catalogitem: ubuntu
+        catalogitemdescription: description
+    storageprofile:
+        storageprofile1: Development
+        storageprofile2: "*"
+    vapp: myvapp
+    network: net
+    edgegateway: au-edge
+    externalip: 10.150.10.10
+    internalip: 10.0.0.10
 ```
 
 Users must specify their username, password, api_endpoint, vcd and org for any tests to run. Otherwise all tests get aborted. For more comprehensive testing the catalog, catalogitem, storageprofile, network, edgegateway, ip field can be set using the format above. For comprehensive testing just replace each field with your vcd information. 
+Note that all the entities included in the configuration file must exist already and will not be removed or left altered during the tests. Leaving a field blank will skip one or more corresponding tests.
 
 ## Running Tests
 Once you have a config file setup, you can run tests with either the makefile or with go itself.
@@ -46,10 +46,19 @@ cd govcd
 go test -check.v .
 ```
 
+If you want to see more details during the test run, use `-check.vv` instead of `-check.v`.
+
 To run tests with the makefile:
 
 ```bash
 make test
+```
+
+To run a specific test:
+
+```bash
+cd govcd
+go test -check.f Test_SetOvf
 ```
 
 ## How to write a test
@@ -101,7 +110,7 @@ Within the testing function, you should perform four actions:
 1. Run all operations that are needed for the test, such as finding a particular organization, or vDC, or vApp, deploying a VM, etc.
 2. Run the operation being tested (such as deploy a VM, retrieve a VM or vApp, etc.)
 3. Run the tests, which usually means using `check.Assert` or `check.Check` to compare known data with what was found during the test execution
-4. Optionally clean up all entities and data that may affect other test runs (e.g. delete something just deployed)
+4. Clean up all entities and data that was created or altered during the test. For example: delete a vApp that was deployed, or remove a setting that was added to a network.
 
 An example:
 
@@ -126,7 +135,7 @@ func (vcd *TestVCD) Test_GetVAppTemplate(check *checks.C) {
     // #2: Run the operation being tested
 	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.Catalogitem)
 	check.Assert(err, checks.IsNil)
-     
+
 	vapptemplate, err := catitem.GetVAppTemplate()
 
     // #3: Tests the object contents
@@ -184,15 +193,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *checks.C) {
 }
 ```
 
-## Final Words
-=======
-To run a specific test:
-```
-cd govcd
-go test -check.f Test_SetOvf
-```
-
 # Final Words
 Be careful about using our tests as these tests run on a real vcd. If you don't have 1 gb of ram and 2 vcpus available then you should not be running tests that deploy your vm/change memory and cpu. However everything created will be removed at the end of testing.
 
-Have fun using our SDK!! 
+Have fun using our SDK!!
