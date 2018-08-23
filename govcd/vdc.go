@@ -316,6 +316,7 @@ func (v *Vdc) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate VA
 				Info: "Configuration parameters for logical networks",
 			},
 		},
+		AllEULAsAccepted: true,
 		SourcedItem: &types.SourcedCompositionItemParam{
 			Source: &types.Reference{
 				HREF: vapptemplate.VAppTemplate.Children.VM[0].HREF,

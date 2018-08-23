@@ -25,7 +25,9 @@ contributors.  Typical contribution flow steps are:
 
 - Fork the go-vcloud-director repo into a new repo on GitHub
 - Clone the forked repo locally and set the original go-vcloud-director repo as the upstream repo
-- Make changes in a topic branch and commit
+- Open an Issue in go-vcloud-director describing what you propose to do (unless the change is so trivial that an issue is not needed)
+- Wait for discussion and possible direction hints in the issue thread
+- Once you know  which steps to take in your intended contribution, make changes in a topic branch and commit (don't forget to add or modify tests too)
 - Fetch changes from upstream and resolve any merge conflicts so that your topic branch is up-to-date
 - Push all commits to the topic branch in your forked repo
 - Submit a pull request to merge topic branch commits to upstream master
@@ -43,7 +45,7 @@ Go package library](https://golang.org/pkg).
 - All public interfaces, functions, and structs must have complete, grammatically correct Godoc comments that explain their purpose and proper usage.
 - Use self-explanatory names for all variables, functions, and interfaces.
 - Add comments for non-obvious features of internal implementations but otherwise let the code explain itself.
-- Include unit tests for new features and update tests for old ones.
+- Include unit tests for new features and update tests for old ones. Refer to the [testing guide](TESTING.md) for more details.
 
 Go is pretty readable so if you follow these rules most functions
 will not need additional comments.
@@ -137,6 +139,13 @@ bubble"?](https://stackoverflow.com/questions/26239379/what-is-a-merge-bubble)
 for why this is important.  
 - --tags ensures that object tags are also pulled
 - Depending on your git configuration push --force-with-lease is required to make git update your fork with commits from the upstream repo.
+
+
+### Test Changes Locally
+
+The last step before creating a Pull Request is to run the tests locally and
+making sure they pass. Please see the [testing guide](TESTING.md) for more
+details.
 
 ### Create a Pull Request
 
