@@ -29,14 +29,14 @@ func NewVdc(c *Client) *Vdc {
 }
 
 // Gets a vapp with a url u
-func (v *Vdc) getVdcVAppbyHREF(u *url.URL) (*VApp, error) {
-	req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
-	resp, err := checkResp(v.c.Http.Do(req))
+func (vdc *Vdc) getVdcVAppbyHREF(u *url.URL) (*VApp, error) {
+	req := vdc.c.NewRequest(map[string]string{}, "GET", *u, nil)
+	resp, err := checkResp(vdc.c.Http.Do(req))
 	if err != nil {
 		return &VApp{}, fmt.Errorf("error retreiving VApp: %s", err)
 	}
 
-	vapp := NewVApp(v.c)
+	vapp := NewVApp(vdc.c)
 
 	if err = decodeBody(resp, vapp.VApp); err != nil {
 		return &VApp{}, fmt.Errorf("error decoding VApp response: %s", err)
@@ -45,15 +45,15 @@ func (v *Vdc) getVdcVAppbyHREF(u *url.URL) (*VApp, error) {
 }
 
 // Undeploys all vapps part of the vdc
-func (v *Vdc) undeployAllVdcVApps() error {
-	for _, resents := range v.Vdc.ResourceEntities {
+func (vdc *Vdc) undeployAllVdcVApps() error {
+	for _, resents := range vdc.Vdc.ResourceEntities {
 		for _, resent := range resents.ResourceEntity {
 			if resent.Type == "application/vnd.vmware.vcloud.vApp+xml" {
 				vappHREF, err := url.Parse(resent.HREF)
 				if err != nil {
 					return err
 				}
-				vapp, err := v.getVdcVAppbyHREF(vappHREF)
+				vapp, err := vdc.getVdcVAppbyHREF(vappHREF)
 				if err != nil {
 					return fmt.Errorf("Error retrieving vapp with url: %s and with error %s", vappHREF.Path, err)
 				}
@@ -69,15 +69,15 @@ func (v *Vdc) undeployAllVdcVApps() error {
 }
 
 // Removes all vapps within the vdc
-func (v *Vdc) removeAllVdcVApps() error {
-	for _, resents := range v.Vdc.ResourceEntities {
+func (vdc *Vdc) removeAllVdcVApps() error {
+	for _, resents := range vdc.Vdc.ResourceEntities {
 		for _, resent := range resents.ResourceEntity {
 			if resent.Type == "application/vnd.vmware.vcloud.vApp+xml" {
 				vappHREF, err := url.Parse(resent.HREF)
 				if err != nil {
 					return err
 				}
-				vapp, err := v.getVdcVAppbyHREF(vappHREF)
+				vapp, err := vdc.getVdcVAppbyHREF(vappHREF)
 				if err != nil {
 					return fmt.Errorf("Error retrieving vapp with url: %s and with error %s", vappHREF.Path, err)
 				}

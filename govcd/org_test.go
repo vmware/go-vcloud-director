@@ -9,47 +9,49 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) TestDeleteOrg(test *C) {
+func (vcd *TestVCD) Test_DeleteOrg(check *C) {
 	_, err := CreateOrg(vcd.client, "DELETEORG", "DELETEORG", true, &types.OrgSettings{})
-	test.Assert(err, IsNil)
+	check.Assert(err, IsNil)
 	// fetch newly created org
 	org, err := GetAdminOrgByName(vcd.client, "DELETEORG")
-	test.Assert(err, IsNil)
-	test.Assert(org.AdminOrg.Name, Equals, "DELETEORG")
+	check.Assert(err, IsNil)
+	check.Assert(org.AdminOrg.Name, Equals, "DELETEORG")
 	// Delete, with force and recursive true
 	err = org.Delete(true, true)
-	test.Assert(err, IsNil)
+	check.Assert(err, IsNil)
 	// Check if org still exists
 	org, err = GetAdminOrgByName(vcd.client, "DELETEORG")
-	test.Assert(err, NotNil)
+	check.Assert(err, NotNil)
 }
 
-func (vcd *TestVCD) TestUpdateOrg(test *C) {
-	_, err := CreateOrg(vcd.client, "UPDATEORG", "UPDATEORG", true, &types.OrgSettings{OrgLdapSettings: &types.OrgLdapSettingsType{OrgLdapMode: "NONE"}})
-	test.Assert(err, IsNil)
+func (vcd *TestVCD) Test_UpdateOrg(check *C) {
+	_, err := CreateOrg(vcd.client, "UPDATEORG", "UPDATEORG", true, &types.OrgSettings{
+		OrgLdapSettings: &types.OrgLdapSettingsType{OrgLdapMode: "NONE"},
+	})
+	check.Assert(err, IsNil)
 	// fetch newly created org
 	org, err := GetAdminOrgByName(vcd.client, "UPDATEORG")
-	test.Assert(err, IsNil)
-	test.Assert(org.AdminOrg.Name, Equals, "UPDATEORG")
+	check.Assert(err, IsNil)
+	check.Assert(org.AdminOrg.Name, Equals, "UPDATEORG")
 	org.AdminOrg.OrgSettings.General.DeployedVMQuota = 100
 	task, err := org.Update()
-	test.Assert(err, IsNil)
+	check.Assert(err, IsNil)
 	// Wait until update is complete
 	err = task.WaitTaskCompletion()
-	test.Assert(err, IsNil)
+	check.Assert(err, IsNil)
 	// Refresh
 	org, err = GetAdminOrgByName(vcd.client, "UPDATEORG")
-	test.Assert(org.AdminOrg.OrgSettings.General.DeployedVMQuota, Equals, 100)
+	check.Assert(org.AdminOrg.OrgSettings.General.DeployedVMQuota, Equals, 100)
 	// Delete, with force and recursive true
 	err = org.Delete(true, true)
-	test.Assert(err, IsNil)
+	check.Assert(err, IsNil)
 	// Check if org still exists
 	org, err = GetAdminOrgByName(vcd.client, "UPDATEORG")
-	test.Assert(err, NotNil)
+	check.Assert(err, NotNil)
 }
 
 // Tests org function GetVDCByName
-func (vcd *TestVCD) TestGetVdcByName(check *C) {
+func (vcd *TestVCD) Test_GetVdcByName(check *C) {
 	vdc, err := vcd.org.GetVdcByName(vcd.config.VCD.Vdc)
 	check.Assert(err, IsNil)
 	check.Assert(vdc.Vdc.Name, Equals, vcd.config.VCD.Vdc)
