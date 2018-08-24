@@ -759,6 +759,28 @@ type Catalog struct {
 	VersionNumber int64            `xml:"VersionNumber"`
 }
 
+// AdminCatalog represents the Admin view of a Catalog object.
+// Type: AdminCatalogType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents the Admin view of a Catalog object.
+// Since: 0.9
+type AdminCatalog struct {
+	XMLName       xml.Name         `xml:"AdminCatalog"`
+	Xmlns         string           `xml:"xmlns,attr"`
+	HREF          string           `xml:"href,attr,omitempty"`
+	Type          string           `xml:"type,attr,omitempty"`
+	ID            string           `xml:"id,attr,omitempty"`
+	OperationKey  string           `xml:"operationKey,attr,omitempty"`
+	Name          string           `xml:"name,attr"`
+	CatalogItems  []*CatalogItems  `xml:"CatalogItems"`
+	Description   string           `xml:"Description"`
+	IsPublished   bool             `xml:"IsPublished"`
+	Link          LinkList         `xml:"Link"`
+	Owner         *Owner           `xml:"Owner,omitempty"`
+	Tasks         *TasksInProgress `xml:"Tasks,omitempty"`
+	VersionNumber int64            `xml:"VersionNumber"`
+}
+
 // Owner represents the owner of this entity.
 // Type: OwnerType
 // Namespace: http://www.vmware.com/vcloud/v1.5
