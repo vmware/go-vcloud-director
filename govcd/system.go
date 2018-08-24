@@ -22,11 +22,11 @@ func CreateOrg(vcdClient *VCDClient, name string, fullName string, isEnabled boo
 		OrgSettings: settings,
 	}
 	output, _ := xml.MarshalIndent(vcomp, "  ", "    ")
-	b := bytes.NewBufferString(xml.Header + string(output))
+	xmlData := bytes.NewBufferString(xml.Header + string(output))
 	// Make Request
-	u := vcdClient.Client.VCDHREF
-	u.Path += "/admin/orgs"
-	req := vcdClient.Client.NewRequest(map[string]string{}, "POST", u, b)
+	orgCreateHREF := vcdClient.Client.VCDHREF
+	orgCreateHREF.Path += "/admin/orgs"
+	req := vcdClient.Client.NewRequest(map[string]string{}, "POST", orgCreateHREF, xmlData)
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.organization+xml")
 	resp, err := checkResp(vcdClient.Client.Http.Do(req))
 	if err != nil {

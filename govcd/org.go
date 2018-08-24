@@ -153,13 +153,13 @@ func (adminOrg *AdminOrg) Update() (Task, error) {
 		OrgSettings: adminOrg.AdminOrg.OrgSettings,
 	}
 	output, _ := xml.MarshalIndent(vcomp, "  ", "    ")
-	b := bytes.NewBufferString(xml.Header + string(output))
+	xmlData := bytes.NewBufferString(xml.Header + string(output))
 	// Update org
 	orgHREF, err := url.ParseRequestURI(adminOrg.AdminOrg.HREF)
 	if err != nil {
 		return Task{}, fmt.Errorf("error getting AdminOrg HREF %s : %v", adminOrg.AdminOrg.HREF, err)
 	}
-	req := adminOrg.c.NewRequest(map[string]string{}, "PUT", *orgHREF, b)
+	req := adminOrg.c.NewRequest(map[string]string{}, "PUT", *orgHREF, xmlData)
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.organization+xml")
 	resp, err := checkResp(adminOrg.c.Http.Do(req))
 	if err != nil {
