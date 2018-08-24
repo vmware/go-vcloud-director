@@ -24,3 +24,35 @@ func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
 	catitem, err = cat.FindCatalogItem("INVALID")
 	check.Assert(err, NotNil)
 }
+
+// Testing UpdateCatalog
+func (vcd *TestVCD) Test_UpdateCatalog(check *C) {
+	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	adminCatalog, err := org.CreateCatalog("UpdateCatalogTest", "UpdateCatalogTest", true)
+	check.Assert(err, IsNil)
+	check.Assert(adminCatalog.AdminCatalog.Name, Equals, "UpdateCatalogTest")
+
+	adminCatalog.AdminCatalog.Description = "Test123"
+	task, err := adminCatalog.Update()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(adminCatalog.AdminCatalog.Description, Equals, "Test123")
+
+	err = adminCatalog.Delete(true, true)
+	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
+	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	adminCatalog, err := org.CreateCatalog("DeleteCatalogTest", "DeleteCatalogTest", true)
+	check.Assert(err, IsNil)
+	check.Assert(adminCatalog.AdminCatalog.Name, Equals, "DeleteCatalogTest")
+	err = adminCatalog.Delete(true, true)
+	check.Assert(err, IsNil)
+	_, err = org.GetCatalog("DeleteCatalogTest")
+	check.Assert(err, NotNil)
+
+}

@@ -60,38 +60,30 @@ func (adminCatalog *AdminCatalog) Delete(force, recursive bool) error {
 }
 
 func (adminCatalog *AdminCatalog) Update() (Task, error) {
-
 	vcomp := &types.AdminCatalog{
 		Xmlns:       "http://www.vmware.com/vcloud/v1.5",
 		Name:        adminCatalog.AdminCatalog.Name,
 		Description: adminCatalog.AdminCatalog.Description,
 		IsPublished: adminCatalog.AdminCatalog.IsPublished,
 	}
-
 	adminCatalogHREF, err := url.ParseRequestURI(adminCatalog.AdminCatalog.HREF)
 	if err != nil {
 		return Task{}, fmt.Errorf("error parsing admin catalog's href: %v", err)
 	}
-
 	output, _ := xml.MarshalIndent(vcomp, "  ", "    ")
-	b := bytes.NewBufferString(xml.Header + string(output))
-
-	req := adminCatalog.client.NewRequest(map[string]string{}, "PUT", *adminCatalogHREF, b)
-
+	xmlData := bytes.NewBufferString(xml.Header + string(output))
+	req := adminCatalog.client.NewRequest(map[string]string{}, "PUT", *adminCatalogHREF, xmlData)
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.catalog+xml")
-
 	resp, err := checkResp(adminCatalog.client.Http.Do(req))
 	if err != nil {
-		return Task{}, fmt.Errorf("error updating catalog: %s : %s", err, s.Path)
+		return Task{}, fmt.Errorf("error updating catalog: %s : %s", err, adminCatalogHREF.Path)
 	}
 
 	catalog := NewAdminCatalog(adminCatalog.client)
 	if err = decodeBody(resp, catalog.AdminCatalog); err != nil {
 		return Task{}, fmt.Errorf("error decoding task response: %s", err)
 	}
-
 	adminCatalog.AdminCatalog = catalog.AdminCatalog
-
 	return Task{
 		Task: catalog.AdminCatalog.Tasks.Task[0],
 		c:    adminCatalog.client,

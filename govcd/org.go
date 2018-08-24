@@ -50,7 +50,7 @@ func NewAdminOrg(c *Client) *AdminOrg {
 // CreateCatalog creates a catalog with given name and description under the
 // the given organization. Returns an AdminCatalog that contains a creation
 // task.
-func (o *AdminOrg) CreateCatalog(Name, Description string, isPublished bool) (AdminCatalog, error) {
+func (adminOrg *AdminOrg) CreateCatalog(Name, Description string, isPublished bool) (AdminCatalog, error) {
 
 	vcomp := &types.AdminCatalog{
 		Xmlns:       "http://www.vmware.com/vcloud/v1.5",
@@ -59,7 +59,7 @@ func (o *AdminOrg) CreateCatalog(Name, Description string, isPublished bool) (Ad
 		IsPublished: isPublished,
 	}
 
-	s, err := url.ParseRequestURI(o.AdminOrg.HREF)
+	s, err := url.ParseRequestURI(adminOrg.AdminOrg.HREF)
 	if err != nil {
 		return AdminCatalog{}, fmt.Errorf("error parsing admin org's href: %v", err)
 	}
@@ -68,16 +68,16 @@ func (o *AdminOrg) CreateCatalog(Name, Description string, isPublished bool) (Ad
 	output, _ := xml.MarshalIndent(vcomp, "  ", "    ")
 	b := bytes.NewBufferString(xml.Header + string(output))
 
-	req := o.c.NewRequest(map[string]string{}, "POST", *s, b)
+	req := adminOrg.c.NewRequest(map[string]string{}, "POST", *s, b)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.catalog+xml")
 
-	resp, err := checkResp(o.c.Http.Do(req))
+	resp, err := checkResp(adminOrg.c.Http.Do(req))
 	if err != nil {
 		return AdminCatalog{}, fmt.Errorf("error creating catalog: %s : %s", err, s.Path)
 	}
 
-	catalog := NewAdminCatalog(o.c)
+	catalog := NewAdminCatalog(adminOrg.c)
 	if err = decodeBody(resp, catalog.AdminCatalog); err != nil {
 		return AdminCatalog{}, fmt.Errorf("error decoding task response: %s", err)
 	}
@@ -352,6 +352,32 @@ func (adminOrg *AdminOrg) removeCatalogs() error {
 
 }
 
+func (adminOrg *AdminOrg) GetAdminCatalog(catalog string) (AdminCatalog, error) {
+	for _, a := range adminOrg.AdminOrg.Catalogs.Catalog {
+		// Get Catalog HREF
+		if a.Name == catalog {
+			catalogURL, err := url.ParseRequestURI(a.HREF)
+			if err != nil {
+				return AdminCatalog{}, fmt.Errorf("error decoding catalog url: %s", err)
+			}
+			req := adminOrg.c.NewRequest(map[string]string{}, "GET", *catalogURL, nil)
+			resp, err := checkResp(adminOrg.c.Http.Do(req))
+			if err != nil {
+				return AdminCatalog{}, fmt.Errorf("error retreiving catalog: %s", err)
+			}
+			adminCatalog := NewAdminCatalog(adminOrg.c)
+
+			if err = decodeBody(resp, adminCatalog.AdminCatalog); err != nil {
+				return AdminCatalog{}, fmt.Errorf("error decoding catalog response: %s", err)
+			}
+
+			// The request was successful
+			return *adminCatalog, nil
+		}
+	}
+	return AdminCatalog{}, fmt.Errorf("can't find catalog: %s", catalog)
+}
+
 func (adminOrg *AdminOrg) GetCatalog(catalog string) (Catalog, error) {
 	for _, a := range adminOrg.AdminOrg.Catalogs.Catalog {
 		// Get Catalog HREF
@@ -411,5 +437,3 @@ func (org *Org) GetCatalog(catalog string) (Catalog, error) {
 
 	return Catalog{}, fmt.Errorf("can't find catalog: %s", catalog)
 }
-
-
