@@ -90,8 +90,6 @@ func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize
 		return err
 	}
 
-	fmt.Println("AAA:", ovfUploadHref)
-
 	filesAbsPaths, err := Unpack(ovaFileName)
 	if err != nil {
 		return err
@@ -124,7 +122,7 @@ func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize
 		return err
 	}
 
-	log.Printf("[TRACE] End ^^..^^ \n")
+	log.Printf("[TRACE] Upload finished \n")
 	return nil
 }
 
@@ -287,7 +285,7 @@ func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName st
 
 // Creates a new file upload http request with optional extra params
 func newFileUploadRequest(requestUrl, paramName string, file io.Reader, fileSize int64) (*http.Request, error) {
-	log.Printf("[TRACE] Creating file part upload: %s, %s, %s \n", requestUrl, paramName, file)
+	log.Printf("[TRACE] Creating file upload request: %s, %s, %#v \n", requestUrl, paramName, file)
 
 	uploadReq, err := http.NewRequest("PUT", requestUrl, file)
 	if err != nil {
