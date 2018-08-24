@@ -551,9 +551,8 @@ type AdminOrg struct {
 // Since: 0.9
 type OrgSettings struct {
 	//attributes
-	XMLName xml.Name `xml:OrgSettings"`
-	HREF    string   `xml:"href,attr,omitempty"` // The URI of the entity.
-	Type    string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
+	HREF string `xml:"href,attr,omitempty"` // The URI of the entity.
+	Type string `xml:"type,attr,omitempty"` // The MIME type of the entity.
 	//elements
 	Link                    LinkList                   `xml:"Link,omitempty"`                      // A reference to an entity or operation associated with this object.
 	OrgGeneralSettings      *OrgGeneralSettings        `xml:"OrgGeneralSettings,omitempty"`        // General Settings for the org, not-required

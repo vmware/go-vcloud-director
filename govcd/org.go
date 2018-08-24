@@ -17,6 +17,7 @@ import (
 // Interface for methods in common for Org and AdminOrg
 type OrgOperations interface {
 	GetCatalog(catalog string) (Catalog, error)
+	GetVdcByName(vdcname string) (Vdc, error)
 }
 
 type Org struct {
@@ -89,33 +90,58 @@ func (adminOrg *AdminOrg) CreateCatalog(Name, Description string, isPublished bo
 // If user specifies valid vdc name then this returns a vdc object.
 // Otherwise it returns an empty vdc and an error.
 func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
-	HREF := ""
 	for _, a := range org.Org.Link {
-		if a.Type == "application/vnd.vmware.vcloud.vdc+xml" && a.Name == vdcname {
-			HREF = a.HREF
-			break
+		if a.Name == vdcname {
+			vdcHREF, err := url.ParseRequestURI(a.HREF)
+			if err != nil {
+				return Vdc{}, fmt.Errorf("Error parsing url: %v", err)
+			}
+			req := org.c.NewRequest(map[string]string{}, "GET", *vdcHREF, nil)
+			resp, err := checkResp(org.c.Http.Do(req))
+			if err != nil {
+				return Vdc{}, fmt.Errorf("error getting vdc: %s", err)
+			}
+
+			vdc := NewVdc(org.c)
+			if err = decodeBody(resp, vdc.Vdc); err != nil {
+				return Vdc{}, fmt.Errorf("error decoding vdc response: %s", err)
+			}
+			// The request was successful
+			return *vdc, nil
 		}
 	}
-	if HREF == "" {
-		return Vdc{}, fmt.Errorf("Error finding VDC from VDCName")
-	}
+	// The request was successful
+	return Vdc{}, fmt.Errorf("error could not find vdc: %s", vdcname)
+}
 
-	u, err := url.ParseRequestURI(HREF)
-	if err != nil {
-		return Vdc{}, fmt.Errorf("Error parsing url: %v", err)
-	}
-	req := org.c.NewRequest(map[string]string{}, "GET", *u, nil)
-	resp, err := checkResp(org.c.Http.Do(req))
-	if err != nil {
-		return Vdc{}, fmt.Errorf("error getting vdc: %s", err)
-	}
+// If user specifies valid vdc name then this returns a vdc object.
+// Otherwise it returns an empty vdc and an error. This function is
+// admin org version of the function but still returns a normal vdc
+func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
+	for _, a := range adminOrg.AdminOrg.Vdcs.Vdcs {
+		if a.Name == vdcname {
+			splitbyAdminHREF := strings.Split(a.HREF, "/admin")
+			vdcHREF := splitbyAdminHREF[0] + splitbyAdminHREF[1]
+			vdcURL, err := url.ParseRequestURI(vdcHREF)
+			if err != nil {
+				return Vdc{}, fmt.Errorf("Error parsing url: %v", err)
+			}
+			req := adminOrg.c.NewRequest(map[string]string{}, "GET", *vdcURL, nil)
+			resp, err := checkResp(adminOrg.c.Http.Do(req))
+			if err != nil {
+				return Vdc{}, fmt.Errorf("error getting vdc: %s", err)
+			}
 
-	vdc := NewVdc(org.c)
-	if err = decodeBody(resp, vdc.Vdc); err != nil {
-		return Vdc{}, fmt.Errorf("error decoding vdc response: %s", err)
+			vdc := NewVdc(adminOrg.c)
+			if err = decodeBody(resp, vdc.Vdc); err != nil {
+				return Vdc{}, fmt.Errorf("error decoding vdc response: %s", err)
+			}
+			// The request was successful
+			return *vdc, nil
+		}
 	}
 	// The request was successful
-	return *vdc, nil
+	return Vdc{}, fmt.Errorf("error could not find vdc: %s", vdcname)
 }
 
 //   Deletes the org, returning an error if the vCD call fails.
@@ -124,27 +150,27 @@ func (adminOrg *AdminOrg) Delete(force bool, recursive bool) error {
 		//undeploys vapps
 		err := adminOrg.undeployAllVApps()
 		if err != nil {
-			return fmt.Errorf("Could not undeploy with error %#v", err)
+			return fmt.Errorf("error could not undeploy: %#v", err)
 		}
 		//removes vapps
 		err = adminOrg.removeAllVApps()
 		if err != nil {
-			return fmt.Errorf("Could not remove vapp with error %#v", err)
+			return fmt.Errorf("error could not remove vapp: %#v", err)
 		}
 		//removes catalogs
 		err = adminOrg.removeCatalogs()
 		if err != nil {
-			return fmt.Errorf("Could not remove all catalogs %#v", err)
+			return fmt.Errorf("error could not remove all catalogs: %#v", err)
 		}
 		//removes networks
 		err = adminOrg.removeAllOrgNetworks()
 		if err != nil {
-			return fmt.Errorf("Could not remove all networks %#v", err)
+			return fmt.Errorf("error could not remove all networks: %#v", err)
 		}
 		//removes org vdcs
 		err = adminOrg.removeAllOrgVDCs()
 		if err != nil {
-			return fmt.Errorf("Could not remove all vdcs %#v", err)
+			return fmt.Errorf("error could not remove all vdcs: %#v", err)
 		}
 	}
 	// Disable org
@@ -192,13 +218,13 @@ func (adminOrg *AdminOrg) Update() (Task, error) {
 		OrgSettings: adminOrg.AdminOrg.OrgSettings,
 	}
 	output, _ := xml.MarshalIndent(vcomp, "  ", "    ")
-	b := bytes.NewBufferString(xml.Header + string(output))
+	xmlData := bytes.NewBufferString(xml.Header + string(output))
 	// Update org
 	orgHREF, err := url.ParseRequestURI(adminOrg.AdminOrg.HREF)
 	if err != nil {
 		return Task{}, fmt.Errorf("error getting AdminOrg HREF %s : %v", adminOrg.AdminOrg.HREF, err)
 	}
-	req := adminOrg.c.NewRequest(map[string]string{}, "PUT", *orgHREF, b)
+	req := adminOrg.c.NewRequest(map[string]string{}, "PUT", *orgHREF, xmlData)
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.organization+xml")
 	resp, err := checkResp(adminOrg.c.Http.Do(req))
 	if err != nil {
