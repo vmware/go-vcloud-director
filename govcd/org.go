@@ -339,10 +339,13 @@ func (adminOrg *AdminOrg) removeCatalogs() error {
 
 }
 
-func (adminOrg *AdminOrg) FindCatalog(catalog string) (Catalog, error) {
+// Given a valid catalog name, FindCatalog returns a Catalog object. Otherwise
+// it returns an error. This is the adminOrg version of FindCatalog, but it does 
+// NOT return an admin version of a Catalog.
+func (adminOrg *AdminOrg) FindCatalog(catalogName string) (Catalog, error) {
 	for _, a := range adminOrg.AdminOrg.Catalogs.Catalog {
 		// Get Catalog HREF
-		if a.Name == catalog {
+		if a.Name == catalogName {
 			splitbyAdminHREF := strings.Split(a.HREF, "/admin")
 			catalogHREF := splitbyAdminHREF[0] + splitbyAdminHREF[1]
 			catalogURL, err := url.ParseRequestURI(catalogHREF)
@@ -367,10 +370,12 @@ func (adminOrg *AdminOrg) FindCatalog(catalog string) (Catalog, error) {
 	return Catalog{}, fmt.Errorf("can't find catalog: %s", catalog)
 }
 
-func (org *Org) FindCatalog(catalog string) (Catalog, error) {
+// Given a valid catalog name, FindCatalog returns a Catalog object. Otherwise
+// it returns an error.
+func (org *Org) FindCatalog(catalogName string) (Catalog, error) {
 
 	for _, av := range org.Org.Link {
-		if av.Rel == "down" && av.Type == "application/vnd.vmware.vcloud.catalog+xml" && av.Name == catalog {
+		if av.Rel == "down" && av.Type == "application/vnd.vmware.vcloud.catalog+xml" && av.Name == catalogName {
 			u, err := url.ParseRequestURI(av.HREF)
 
 			if err != nil {
