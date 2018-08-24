@@ -114,7 +114,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	networks = append(networks, net.OrgVDCNetwork)
 	check.Assert(err, IsNil)
 	// Populate Catalog
-	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	cat, err := vcd.org.GetCatalog(vcd.config.VCD.Catalog.Name)
 	check.Assert(err, IsNil)
 	// Populate Catalog Item
 	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.Catalogitem)

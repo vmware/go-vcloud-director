@@ -16,7 +16,7 @@ import (
 
 // Interface for methods in common for Org and AdminOrg
 type OrgOperations interface {
-	FindCatalog(catalog string) (Catalog, error)
+	GetCatalog(catalog string) (Catalog, error)
 }
 
 type Org struct {
@@ -45,6 +45,45 @@ func NewAdminOrg(c *Client) *AdminOrg {
 		AdminOrg: new(types.AdminOrg),
 		c:        c,
 	}
+}
+
+// CreateCatalog creates a catalog with given name and description under the
+// the given organization. Returns an AdminCatalog that contains a creation
+// task.
+func (o *AdminOrg) CreateCatalog(Name, Description string, isPublished bool) (AdminCatalog, error) {
+
+	vcomp := &types.AdminCatalog{
+		Xmlns:       "http://www.vmware.com/vcloud/v1.5",
+		Name:        Name,
+		Description: Description,
+		IsPublished: isPublished,
+	}
+
+	s, err := url.ParseRequestURI(o.AdminOrg.HREF)
+	if err != nil {
+		return AdminCatalog{}, fmt.Errorf("error parsing admin org's href: %v", err)
+	}
+	s.Path += "/catalogs"
+
+	output, _ := xml.MarshalIndent(vcomp, "  ", "    ")
+	b := bytes.NewBufferString(xml.Header + string(output))
+
+	req := o.c.NewRequest(map[string]string{}, "POST", *s, b)
+
+	req.Header.Add("Content-Type", "application/vnd.vmware.admin.catalog+xml")
+
+	resp, err := checkResp(o.c.Http.Do(req))
+	if err != nil {
+		return AdminCatalog{}, fmt.Errorf("error creating catalog: %s : %s", err, s.Path)
+	}
+
+	catalog := NewAdminCatalog(o.c)
+	if err = decodeBody(resp, catalog.AdminCatalog); err != nil {
+		return AdminCatalog{}, fmt.Errorf("error decoding task response: %s", err)
+	}
+	// Task is within the catalog
+	return *catalog, nil
+
 }
 
 // If user specifies valid vdc name then this returns a vdc object.
@@ -313,7 +352,7 @@ func (adminOrg *AdminOrg) removeCatalogs() error {
 
 }
 
-func (adminOrg *AdminOrg) FindCatalog(catalog string) (Catalog, error) {
+func (adminOrg *AdminOrg) GetCatalog(catalog string) (Catalog, error) {
 	for _, a := range adminOrg.AdminOrg.Catalogs.Catalog {
 		// Get Catalog HREF
 		if a.Name == catalog {
@@ -341,7 +380,7 @@ func (adminOrg *AdminOrg) FindCatalog(catalog string) (Catalog, error) {
 	return Catalog{}, fmt.Errorf("can't find catalog: %s", catalog)
 }
 
-func (org *Org) FindCatalog(catalog string) (Catalog, error) {
+func (org *Org) GetCatalog(catalog string) (Catalog, error) {
 
 	for _, av := range org.Org.Link {
 		if av.Rel == "down" && av.Type == "application/vnd.vmware.vcloud.catalog+xml" && av.Name == catalog {
@@ -372,3 +411,5 @@ func (org *Org) FindCatalog(catalog string) (Catalog, error) {
 
 	return Catalog{}, fmt.Errorf("can't find catalog: %s", catalog)
 }
+
+

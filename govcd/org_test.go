@@ -60,7 +60,7 @@ func (vcd *TestVCD) Test_GetVdcByName(check *C) {
 // Tests FindCatalog with Catalog in config file
 func (vcd *TestVCD) Test_FindCatalog(check *C) {
 	// Find Catalog
-	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	cat, err := vcd.org.GetCatalog(vcd.config.VCD.Catalog.Name)
 	check.Assert(err, IsNil)
 	check.Assert(cat.Catalog.Name, Equals, vcd.config.VCD.Catalog.Name)
 	// checks if user gave a catalog description in config file
@@ -69,13 +69,23 @@ func (vcd *TestVCD) Test_FindCatalog(check *C) {
 	}
 }
 
+func (vcd *TestVCD) Test_CreateCatalog(check *C) {
+	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	catalog, err := org.CreateCatalog("Test", "Test123", true)
+	check.Assert(err, IsNil)
+	check.Assert(catalog.AdminCatalog.Name, Equals, "Test")
+	check.Assert(catalog.AdminCatalog.Description, Equals, "Test123")
+	err = catalog.Delete(true, true)
+	check.Assert(err, IsNil)
+}
 // Test for AdminOrg version of FindCatalog
 func (vcd *TestVCD) Test_AdminFindCatalog(check *C) {
 	// Fetch admin org version of current test org
 	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	// Find Catalog
-	cat, err := adminOrg.FindCatalog(vcd.config.VCD.Catalog.Name)
+	cat, err := adminOrg.GetCatalog(vcd.config.VCD.Catalog.Name)
 	check.Assert(err, IsNil)
 	check.Assert(cat.Catalog.Name, Equals, vcd.config.VCD.Catalog.Name)
 	// checks if user gave a catalog description in config file

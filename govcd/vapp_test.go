@@ -35,7 +35,7 @@ func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 	}
 	networks = append(networks, net.OrgVDCNetwork)
 	// Populate Catalog
-	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	cat, err := vcd.org.GetCatalog(vcd.config.VCD.Catalog.Name)
 	if err != nil {
 		return VApp{}, fmt.Errorf("error finding catalog : %v", err)
 	}

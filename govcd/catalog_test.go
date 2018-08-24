@@ -10,7 +10,7 @@ import (
 
 func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
 	// Fetch Catalog
-	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	cat, err := vcd.org.GetCatalog(vcd.config.VCD.Catalog.Name)
 	// Find Catalog Item
 	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.Catalogitem)
 	check.Assert(err, IsNil)
