@@ -57,6 +57,15 @@ func (vcd *TestVCD) Test_GetVdcByName(check *C) {
 	check.Assert(vdc.Vdc.Name, Equals, vcd.config.VCD.Vdc)
 }
 
+// Tests org function Admin version of GetVDCByName
+func (vcd *TestVCD) Test_Admin_GetVdcByName(check *C) {
+	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	vdc, err := adminOrg.GetVdcByName(vcd.config.VCD.Vdc)
+	check.Assert(err, IsNil)
+	check.Assert(vdc.Vdc.Name, Equals, vcd.config.VCD.Vdc)
+}
+
 // Tests FindCatalog with Catalog in config file
 func (vcd *TestVCD) Test_FindCatalog(check *C) {
 	// Find Catalog
@@ -70,7 +79,7 @@ func (vcd *TestVCD) Test_FindCatalog(check *C) {
 }
 
 // Test for AdminOrg version of FindCatalog
-func (vcd *TestVCD) Test_AdminFindCatalog(check *C) {
+func (vcd *TestVCD) Test_Admin_FindCatalog(check *C) {
 	// Fetch admin org version of current test org
 	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
