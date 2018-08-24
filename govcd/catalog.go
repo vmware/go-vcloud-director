@@ -17,6 +17,10 @@ type CatalogOperations interface {
 	FindCatalogItem(catalogitem string) (CatalogItem, error)
 }
 
+// AdminCatalog is a admin view of a vCloud Director Catalog
+// To be able to get an AdminCatalog representation, users have
+// admin credentials to the System org. AdminCatalog is used
+// for creating, updating, and deleting a Catalog.
 type AdminCatalog struct {
 	AdminCatalog *types.AdminCatalog
 	client       *Client
@@ -41,6 +45,7 @@ func NewAdminCatalog(client *Client) *AdminCatalog {
 	}
 }
 
+// Deletes the Catalog, returning an error if the vCD call fails.
 func (adminCatalog *AdminCatalog) Delete(force, recursive bool) error {
 	adminCatalogHREF := adminCatalog.client.VCDHREF
 	adminCatalogHREF.Path += "/admin/catalog/" + adminCatalog.AdminCatalog.ID[19:]
@@ -59,6 +64,9 @@ func (adminCatalog *AdminCatalog) Delete(force, recursive bool) error {
 	return nil
 }
 
+//   Updates the Org definition from current Catalog struct contents.
+//   Any differences that may be legally applied will be updated.
+//   Returns an error if the call to vCD fails.
 func (adminCatalog *AdminCatalog) Update() (Task, error) {
 	vcomp := &types.AdminCatalog{
 		Xmlns:       "http://www.vmware.com/vcloud/v1.5",
