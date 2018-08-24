@@ -14,6 +14,11 @@ import (
 	"strings"
 )
 
+// Interface for methods in common for Org and AdminOrg
+type OrgOperations interface {
+	FindCatalog(catalog string) (Catalog, error)
+}
+
 type Org struct {
 	Org *types.Org
 	c   *Client
@@ -26,24 +31,19 @@ func NewOrg(client *Client) *Org {
 	}
 }
 
-// AdminOrg gives an admin representation of an org
-// Users can delete, update orgs with an admin org object
-// AdminOrg users have to get an org representation to use find Catalogs
-// TODO: Discuss whether we want to fill up the org variable as well
-// in the admin org. It will take an extra rest api call to get but it
-// will enable users to be able to make calls to org functions as well.
-// This is probably the closest we can get to pure inheritance.
+// AdminOrg gives an admin representation of an org.
+// Administrators can delete and update orgs with an admin org object.
+// AdminOrg includes all members of the Org element, and adds several
+// elements that can be viewed and modified only by system administrators.
 type AdminOrg struct {
 	AdminOrg *types.AdminOrg
-	Org
+	c        *Client
 }
 
 func NewAdminOrg(c *Client) *AdminOrg {
 	return &AdminOrg{
 		AdminOrg: new(types.AdminOrg),
-		Org: Org{
-			c: c,
-		},
+		c:        c,
 	}
 }
 
@@ -311,6 +311,34 @@ func (adminOrg *AdminOrg) removeCatalogs() error {
 	}
 	return nil
 
+}
+
+func (adminOrg *AdminOrg) FindCatalog(catalog string) (Catalog, error) {
+	for _, a := range adminOrg.AdminOrg.Catalogs.Catalog {
+		// Get Catalog HREF
+		if a.Name == catalog {
+			splitbyAdminHREF := strings.Split(a.HREF, "/admin")
+			catalogHREF := splitbyAdminHREF[0] + splitbyAdminHREF[1]
+			catalogURL, err := url.ParseRequestURI(catalogHREF)
+			if err != nil {
+				return Catalog{}, fmt.Errorf("error decoding catalog url: %s", err)
+			}
+			req := adminOrg.c.NewRequest(map[string]string{}, "GET", *catalogURL, nil)
+			resp, err := checkResp(adminOrg.c.Http.Do(req))
+			if err != nil {
+				return Catalog{}, fmt.Errorf("error retreiving catalog: %s", err)
+			}
+			cat := NewCatalog(adminOrg.c)
+
+			if err = decodeBody(resp, cat.Catalog); err != nil {
+				return Catalog{}, fmt.Errorf("error decoding catalog response: %s", err)
+			}
+
+			// The request was successful
+			return *cat, nil
+		}
+	}
+	return Catalog{}, fmt.Errorf("can't find catalog: %s", catalog)
 }
 
 func (org *Org) FindCatalog(catalog string) (Catalog, error) {
