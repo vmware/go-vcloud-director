@@ -60,6 +60,7 @@ func parseErr(resp *http.Response) error {
 
 	errBody := new(types.Error)
 
+	
 	// if there was an error decoding the body, just return that
 	if err := decodeBody(resp, errBody); err != nil {
 		return fmt.Errorf("error parsing error body for non-200 request: %s", err)

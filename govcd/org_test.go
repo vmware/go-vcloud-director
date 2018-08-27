@@ -9,6 +9,8 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+// Creates a org DELETEORG and then deletes it to test functionality of
+// delete org. Fails if org still exists
 func (vcd *TestVCD) Test_DeleteOrg(check *C) {
 	_, err := CreateOrg(vcd.client, "DELETEORG", "DELETEORG", true, &types.OrgSettings{})
 	check.Assert(err, IsNil)
@@ -24,6 +26,10 @@ func (vcd *TestVCD) Test_DeleteOrg(check *C) {
 	check.Assert(err, NotNil)
 }
 
+// Creates a org UPDATEORG, changes the deployed vm quota on the org,
+// and tests the update functionality of the org. Then it deletes the org.
+// Fails if the deployedvmquota variable is not changed when the org is 
+// refetched.
 func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	_, err := CreateOrg(vcd.client, "UPDATEORG", "UPDATEORG", true, &types.OrgSettings{
 		OrgLdapSettings: &types.OrgLdapSettingsType{OrgLdapMode: "NONE"},
@@ -50,14 +56,18 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	check.Assert(err, NotNil)
 }
 
-// Tests org function GetVDCByName
+// Tests org function GetVDCByName with the vdc specified
+// in the config file. Fails if the names don't match
+// or the function returns an error.
 func (vcd *TestVCD) Test_GetVdcByName(check *C) {
 	vdc, err := vcd.org.GetVdcByName(vcd.config.VCD.Vdc)
 	check.Assert(err, IsNil)
 	check.Assert(vdc.Vdc.Name, Equals, vcd.config.VCD.Vdc)
 }
 
-// Tests org function Admin version of GetVDCByName
+// Tests org function Admin version of GetVDCByName with the vdc
+// specified in the config file. Fails if the names don't match
+// or the function returns an error.
 func (vcd *TestVCD) Test_Admin_GetVdcByName(check *C) {
 	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
@@ -66,7 +76,9 @@ func (vcd *TestVCD) Test_Admin_GetVdcByName(check *C) {
 	check.Assert(vdc.Vdc.Name, Equals, vcd.config.VCD.Vdc)
 }
 
-// Tests FindCatalog with Catalog in config file
+// Tests FindCatalog with Catalog in config file. Fails if the name and
+// description don't match the catalog elements in the config file or if
+// function returns an error.
 func (vcd *TestVCD) Test_FindCatalog(check *C) {
 	// Find Catalog
 	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
@@ -78,7 +90,9 @@ func (vcd *TestVCD) Test_FindCatalog(check *C) {
 	}
 }
 
-// Test for AdminOrg version of FindCatalog
+// Tests Admin version of FindCatalog with Catalog in config file. Fails if
+// the name and description don't match the catalog elements in the config file
+// or if function returns an error.
 func (vcd *TestVCD) Test_Admin_FindCatalog(check *C) {
 	// Fetch admin org version of current test org
 	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)

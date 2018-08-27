@@ -11,8 +11,8 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// Creates a Vapp, fetches it, gets its vdc, then deletes the vapp
-// Tests the helper function getParentVDC
+// Tests the helper function getParentVDC with the vapp
+// created at the start of testing
 func (vcd *TestVCD) TestGetParentVDC(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")

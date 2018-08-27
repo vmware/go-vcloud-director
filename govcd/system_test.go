@@ -5,19 +5,28 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// Tests System function GetOrgByName
+// Tests System function GetOrgByName by checking if the org object
+// return has the same name as the one provided in the config file.
+// Asserts an error if the names don't match or if the function returned
+// an error.
 func (vcd *TestVCD) Test_GetOrgByName(check *C) {
 	org, err := GetOrgByName(vcd.client, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org.Org.Name, Equals, vcd.config.VCD.Org)
 }
 
+// Tests System function GetAdminOrgByName by checking if the AdminOrg object
+// return has the same name as the one provided in the config file. Asserts
+// an error if the names don't match or if the function returned an error.
 func (vcd *TestVCD) Test_GetAdminOrgByName(check *C) {
 	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org.AdminOrg.Name, Equals, vcd.config.VCD.Org)
 }
 
+// Tests the creation of a an org with general settings,
+// org vapp template settings, and orgldapsettings. Asserts an
+// error if the task, fetching the org, or deleting the org fails
 func (vcd *TestVCD) Test_CreateOrg(check *C) {
 	settings := &types.OrgSettings{
 		OrgGeneralSettings: &types.OrgGeneralSettings{
