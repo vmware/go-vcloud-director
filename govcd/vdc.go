@@ -28,6 +28,73 @@ func NewVdc(c *Client) *Vdc {
 	}
 }
 
+// Gets a vapp with a specific url vappHREF
+func (vdc *Vdc) getVdcVAppbyHREF(vappHREF *url.URL) (*VApp, error) {
+	req := vdc.c.NewRequest(map[string]string{}, "GET", *vappHREF, nil)
+	resp, err := checkResp(vdc.c.Http.Do(req))
+	if err != nil {
+		return &VApp{}, fmt.Errorf("error retreiving VApp: %s", err)
+	}
+
+	vapp := NewVApp(vdc.c)
+
+	if err = decodeBody(resp, vapp.VApp); err != nil {
+		return &VApp{}, fmt.Errorf("error decoding VApp response: %s", err)
+	}
+	return vapp, nil
+}
+
+// Undeploys every vapp in the vdc
+func (vdc *Vdc) undeployAllVdcVApps() error {
+	for _, resents := range vdc.Vdc.ResourceEntities {
+		for _, resent := range resents.ResourceEntity {
+			if resent.Type == "application/vnd.vmware.vcloud.vApp+xml" {
+				vappHREF, err := url.Parse(resent.HREF)
+				if err != nil {
+					return err
+				}
+				vapp, err := vdc.getVdcVAppbyHREF(vappHREF)
+				if err != nil {
+					return fmt.Errorf("Error retrieving vapp with url: %s and with error %s", vappHREF.Path, err)
+				}
+				task, err := vapp.Undeploy()
+				if task == (Task{}) {
+					continue
+				}
+				err = task.WaitTaskCompletion()
+			}
+		}
+	}
+	return nil
+}
+
+// Removes all vapps in the vdc
+func (vdc *Vdc) removeAllVdcVApps() error {
+	for _, resents := range vdc.Vdc.ResourceEntities {
+		for _, resent := range resents.ResourceEntity {
+			if resent.Type == "application/vnd.vmware.vcloud.vApp+xml" {
+				vappHREF, err := url.Parse(resent.HREF)
+				if err != nil {
+					return err
+				}
+				vapp, err := vdc.getVdcVAppbyHREF(vappHREF)
+				if err != nil {
+					return fmt.Errorf("Error retrieving vapp with url: %s and with error %s", vappHREF.Path, err)
+				}
+				task, err := vapp.Delete()
+				if err != nil {
+					return fmt.Errorf("Error deleting vapp: %s", err)
+				}
+				err = task.WaitTaskCompletion()
+				if err != nil {
+					return fmt.Errorf("Couldn't finish removing vapp %#v", err)
+				}
+			}
+		}
+	}
+	return nil
+}
+
 func (v *Vdc) Refresh() error {
 
 	if v.Vdc.HREF == "" {

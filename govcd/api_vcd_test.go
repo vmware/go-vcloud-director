@@ -17,6 +17,7 @@ type TestConfig struct {
 		User     string `yaml:"user"`
 		Password string `yaml:"password"`
 		Url      string `yaml:"url"`
+		Org      string `yaml:"org"`
 	}
 	VCD struct {
 		Org     string `yaml:"org"`
@@ -107,7 +108,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	}
 	vcd.client = vcdClient
 	// org and vdc are the test org and vdc that is used in all other test cases
-	err = vcd.client.Authenticate(config.Provider.User, config.Provider.Password, config.VCD.Org)
+	err = vcd.client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.Org)
 	if err != nil {
 		panic(err)
 	}
@@ -188,7 +189,7 @@ func TestVCDClient_Authenticate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
-	err = client.Authenticate(config.Provider.User, config.Provider.Password, config.VCD.Org)
+	err = client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.Org)
 	if err != nil {
 		t.Fatalf("Error authenticating: %v", err)
 	}

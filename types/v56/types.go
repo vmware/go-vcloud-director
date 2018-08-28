@@ -520,6 +520,178 @@ type Org struct {
 	Tasks        *TasksInProgress `xml:"Tasks,omitempty"`
 }
 
+// AdminOrg represents the admin view of a vCloud Director organization.
+// Type: AdminOrgType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents the admin view of a vCloud Director organization.
+// Since: 0.9
+type AdminOrg struct {
+	XMLName      xml.Name         `xml:"AdminOrg"`
+	Xmlns        string           `xml:"xmlns,attr"`
+	HREF         string           `xml:"href,attr,omitempty"`
+	Type         string           `xml:"type,attr,omitempty"`
+	ID           string           `xml:"id,attr,omitempty"`
+	OperationKey string           `xml:"operationKey,attr,omitempty"`
+	Name         string           `xml:"name,attr"`
+	Description  string           `xml:"Description,omitempty"`
+	FullName     string           `xml:"FullName"`
+	IsEnabled    bool             `xml:"IsEnabled,omitempty"`
+	Link         LinkList         `xml:"Link,omitempty"`
+	Tasks        *TasksInProgress `xml:"Tasks,omitempty"`
+	OrgSettings  *OrgSettings     `xml:"Settings,omitempty"`
+	Vdcs         *VDCList         `xml:"Vdcs,omitempty"`
+	Networks     *NetworksList    `xml:"Networks,omitempty"`
+	Catalogs     *CatalogsList    `xml:"Catalogs,omitemtpy"`
+}
+
+// OrgSettingsType represents the settings for a vCloud Director organization.
+// Type: OrgSettingsType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents the settings of a vCloud Director organization.
+// Since: 0.9
+type OrgSettings struct {
+	//attributes
+	HREF string `xml:"href,attr,omitempty"` // The URI of the entity.
+	Type string `xml:"type,attr,omitempty"` // The MIME type of the entity.
+	//elements
+	Link                    LinkList                   `xml:"Link,omitempty"`                      // A reference to an entity or operation associated with this object.
+	OrgGeneralSettings      *OrgGeneralSettings        `xml:"OrgGeneralSettings,omitempty"`        // General Settings for the org, not-required
+	OrgVAppTemplateSettings *VAppTemplateLeaseSettings `xml:"VAppTemplateLeaseSettings,omitempty"` // Vapp template lease settings, not required
+	OrgLdapSettings         *OrgLdapSettingsType       `xml:"OrgLdapSettings,omitempty"`           //LDAP settings, not-requried, defaults to none
+}
+
+// OrgGeneralSettingsType represents the general settings for a vCloud Director organization.
+// Type: OrgGeneralSettingsType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents the user view of a vCloud Director organization.
+// Since: 0.9
+type OrgGeneralSettings struct {
+	HREF string   `xml:"href,attr,omitempty"` // The URI of the entity.
+	Type string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
+	Link LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
+
+	CanPublishCatalogs       bool `xml:"CanPublishCatalogs,omitempty"`
+	DeployedVMQuota          int  `xml:"DeployedVMQuota,omitempty"`
+	StoredVMQuota            int  `xml:"StoredVmQuota,omitempty"`
+	UseServerBootSequence    bool `xml:"UseServerBootSequence,omitempty"`
+	DelayAfterPowerOnSeconds int  `xml:"DelayAfterPowerOnSeconds,omitempty"`
+}
+
+// VAppTemplateLeaseSettings represents the vapp template lease settings for a vCloud Director organization.
+// Type: VAppTemplateLeaseSettingsType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents the vapp template lease settings of a vCloud Director organization.
+// Since: 0.9
+type VAppTemplateLeaseSettings struct {
+	HREF string   `xml:"href,attr,omitempty"` // The URI of the entity.
+	Type string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
+	Link LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
+
+	DeleteOnStorageLeaseExpiration bool `xml:"DeleteOnStorageLeaseExpiration,omitempty"`
+	StorageLeaseSeconds            int  `xml:"StorageLeaseSeconds,omitempty"`
+}
+
+// OrgLdapSettingsType represents the ldap settings for a vCloud Director organization.
+// Type: VAppLeaseSettingsType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents the ldap settings of a vCloud Director organization.
+// Since: 0.9
+type OrgLdapSettingsType struct {
+	HREF string   `xml:"href,attr,omitempty"` // The URI of the entity.
+	Type string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
+	Link LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
+
+	CustomUsersOu         string                 `xml:"CustomUsersOu,omitempty"`         // If OrgLdapMode is SYSTEM, specifies an LDAP attribute=value pair to use for OU (organizational unit).
+	OrgLdapMode           string                 `xml:"OrgLdapMode,omitempty"`           // LDAP mode you want
+	CustomOrgLdapSettings *CustomOrgLdapSettings `xml:"CustomOrgLdapSettings,omitempty"` // Needs to be set if user chooses custom mode
+}
+
+// CustomOrgLdapSettings represents the custom ldap settings for a vCloud Director organization.
+// Type: CustomOrgLdapSettingsType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents the custom ldap settings of a vCloud Director organization.
+// Since: 0.9
+type CustomOrgLdapSettings struct {
+	HREF string   `xml:"href,attr,omitempty"` // The URI of the entity.
+	Type string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
+	Link LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
+
+	AuthenticationMechanism  string                  `xml:"AuthenticationMechanism"`
+	ConnectorType            string                  `xml:"ConnectorType"`   // Defines LDAP service implementation type
+	GroupAttributes          *OrgLdapGroupAttributes `xml:"GroupAttributes"` // Defines how LDAP attributes are used when importing a group.
+	GroupSearchBase          string                  `xml:"GroupSearchBase,omitempty"`
+	HostName                 string                  `xml:"HostName,omitempty"`
+	IsGroupSearchBaseEnabled bool                    `xml:"IsGroupSearchBaseEnabled"`
+	IsSsl                    bool                    `xml:"IsSsl,omitempty"`
+	IsSslAcceptAll           bool                    `xml:"IsSslAcceptAll,omitempty"`
+	Password                 string                  `xml:"Password,omitempty"`
+	Port                     int                     `xml:"Port"`
+	Realm                    string                  `xml:"Realm,omitempty"`
+	SearchBase               string                  `xml:"SearchBase,omitempty"`
+	UseExternalKerberos      bool                    `xml:"UseExternalKerberos"`
+	UserAttributes           *OrgLdapUserAttributes  `xml:"UserAttributes"` // Defines how LDAP attributes are used when importing a user.
+	Username                 string                  `xml:"UserName,omitempty"`
+}
+
+// OrgLdapGroupAttributesType represents the ldap group attribute settings for a vCloud Director organization.
+// Type: OrgLdapGroupAttributesType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents the ldap group attribute settings of a vCloud Director organization.
+// Since: 0.9
+type OrgLdapGroupAttributes struct {
+	Membership           string `xml:"Membership"`
+	GroupName            string `xml:"GroupName"`
+	BackLinkIdentifier   string `xml:"BackLinkIdentifier,omitempty"`
+	MempershipIdentifier string `xml:"MempershipIdentifier"`
+	ObjectClass          string `xml:"ObjectClass"`
+	ObjectIdentifier     string `xml:"ObjectIdentifier"`
+}
+
+// OrgLdapUserAttributesType represents the ldap user attribute settings for a vCloud Director organization.
+// Type: OrgLdapUserAttributesType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents the ldap user attribute settings of a vCloud Director organization.
+// Since: 0.9
+type OrgLdapUserAttributes struct {
+	Email                     string `xml:"Email"`
+	FullName                  string `xml:"FullName"`
+	GivenName                 string `xml:"GivenName"`
+	GroupBackLinkIdentifier   string `xml:"GroupBackLinkIdentifier,omitempty"`
+	GroupMempershipIdentifier string `xml:"GroupMempershipIdentifier"`
+	ObjectClass               string `xml:"ObjectClass"`
+	ObjectIdentifier          string `xml:"ObjectIdentifier"`
+	Surname                   string `xml:"Surname"`
+	Telephone                 string `xml:"Telephone"`
+	Username                  string `xml:"UserName,omitempty"`
+}
+
+// VDCList contains a list of references to Org VDCs
+// Type: VdcListType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents a list of organization vDCs.
+// Since: 0.9
+type VDCList struct {
+	Vdcs []*Reference `xml:"Vdc,omitempty"`
+}
+
+// NetworksListType contains a list of references to Org Networks
+// Type: NetworksListType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents a list of organization Networks.
+// Since: 0.9
+type NetworksList struct {
+	Networks []*Reference `xml:"Network,omitempty"`
+}
+
+// CatalogsList contains a list of references to Org Catalogs
+// Type: CatalogsListType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents a list of organization Catalogs.
+// Since: 0.9
+type CatalogsList struct {
+	Catalog []*Reference `xml:"CatalogReference,omitempty"`
+}
+
 // CatalogItem contains a reference to a VappTemplate or Media object and related metadata.
 // Type: CatalogItemType
 // Namespace: http://www.vmware.com/vcloud/v1.5
