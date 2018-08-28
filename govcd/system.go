@@ -41,7 +41,8 @@ func CreateOrg(vcdClient *VCDClient, name string, fullName string, isEnabled boo
 }
 
 // If user specifies a valid organization name, then this returns a
-// organization object. Otherwise it returns an error and an empty
+// organization object. If no valid org is found, it returns an empty
+// org and no error. Otherwise it returns an error and an empty
 // Org object
 func GetOrgByName(vcdClient *VCDClient, orgname string) (Org, error) {
 	orgUrl, err := getOrgHREF(vcdClient, orgname)
@@ -65,8 +66,11 @@ func GetOrgByName(vcdClient *VCDClient, orgname string) (Org, error) {
 	return *org, nil
 }
 
-// If user specifies valid organization name, then this returns an admin organization object
-// Otherwise returns an empty AdminOrg and an error.
+// If user specifies valid organization name,
+// then this returns an admin organization object.
+// If no valid org is found, it returns an empty
+// org and no error. Otherwise returns an empty AdminOrg
+// and an error.
 func GetAdminOrgByName(vcdClient *VCDClient, orgname string) (AdminOrg, error) {
 	orgUrl, err := getOrgHREF(vcdClient, orgname)
 	if err != nil {

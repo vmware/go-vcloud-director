@@ -24,7 +24,6 @@ func (vcd *TestVCD) Test_DeleteOrg(check *C) {
 	// Check if org still exists
 	org, err = GetAdminOrgByName(vcd.client, "DELETEORG")
 	check.Assert(org, Equals, AdminOrg{})
-
 	check.Assert(err, IsNil)
 }
 
