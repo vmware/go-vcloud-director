@@ -49,6 +49,7 @@ func GetOrgByName(vcdClient *VCDClient, orgname string) (Org, error) {
 	if err != nil {
 		return Org{}, nil
 	}
+	// Get OrgHREF
 	orgHREF, err := url.ParseRequestURI(orgUrl)
 	if err != nil {
 		return Org{}, fmt.Errorf("Error parsing org href: %v", err)
