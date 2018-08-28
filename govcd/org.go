@@ -71,8 +71,7 @@ func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
 			return *vdc, nil
 		}
 	}
-	// The request was successful
-	return Vdc{}, fmt.Errorf("error could not find vdc: %s", vdcname)
+	return Vdc{}, nil
 }
 
 // If user specifies valid vdc name then this returns a vdc object.
@@ -101,8 +100,7 @@ func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
 			return *vdc, nil
 		}
 	}
-	// The request was successful
-	return Vdc{}, fmt.Errorf("error could not find vdc: %s", vdcname)
+	return Vdc{}, nil
 }
 
 //   Deletes the org, returning an error if the vCD call fails.
@@ -366,7 +364,7 @@ func (adminOrg *AdminOrg) FindCatalog(catalogName string) (Catalog, error) {
 			return *cat, nil
 		}
 	}
-	return Catalog{}, fmt.Errorf("can't find catalog: %s", catalog)
+	return Catalog{}, nil
 }
 
 // Given a valid catalog name, FindCatalog returns a Catalog object. Otherwise
@@ -400,5 +398,5 @@ func (org *Org) FindCatalog(catalogName string) (Catalog, error) {
 		}
 	}
 
-	return Catalog{}, fmt.Errorf("can't find catalog: %s", catalog)
+	return Catalog{}, nil
 }
