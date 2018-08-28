@@ -15,8 +15,10 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -32,6 +34,15 @@ func NewCatalog(c *Client) *Catalog {
 		Catalog: new(types.Catalog),
 		c:       c,
 	}
+}
+
+type Envelope struct {
+	File []struct {
+		HREF      string `xml:"href,attr"`
+		ID        string `xml:"id,attr"`
+		Size      int    `xml:"size,attr"`
+		ChunkSize int    `xml:"chunkSize,attr"`
+	} `xml:"References>File"`
 }
 
 func (c *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
@@ -67,7 +78,6 @@ func (c *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
 	return CatalogItem{}, fmt.Errorf("can't find catalog item: %s", catalogitem)
 }
 
-//add callback or channel
 func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize int) error {
 
 	catalogItemUploadURL, err := findCatalogItemUploadLink(c)
@@ -85,7 +95,7 @@ func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize
 		return err
 	}
 
-	ovfUploadHref, err := getOvfUploadlink(vAppTemplate)
+	ovfUploadHref, err := getOvfUploadLink(vAppTemplate)
 	if err != nil {
 		return err
 	}
@@ -95,38 +105,78 @@ func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize
 		return err
 	}
 
-	for _, path := range filesAbsPaths {
-		if filepath.Ext(path) == ".ovf" {
-			err := uploadOvfDescription(c.c, path, ovfUploadHref)
+	var ovfFileDesc Envelope
+	var tempPath string
+
+	for _, filePath := range filesAbsPaths {
+		if filepath.Ext(filePath) == ".ovf" {
+			ovfFileDesc, err = uploadOvfDescription(c.c, filePath, ovfUploadHref)
+			tempPath, _ = filepath.Split(filePath)
 			if err != nil {
 				return err
 			}
-		}
-	}
-
-	for {
-		log.Printf("[TRACE] Sleep... for 5 seconds.\n")
-		time.Sleep(time.Second * 5)
-		vAppTemplate, err = queryVappTemplate(c.c, vappTemplateUrl)
-		if err != nil {
-			return err
-		}
-		if len(vAppTemplate.Files.File) > 1 {
-			log.Printf("[TRACE] upload link prepared.\n")
 			break
 		}
 	}
 
-	err = uploadFiles(c.c, filesAbsPaths, *vAppTemplate)
-	if err != nil {
-		return err
+	vAppTemplate, err = waitForTempUploadLinks(c.c, vappTemplateUrl)
+
+	for _, item := range vAppTemplate.Files.File {
+		if item.BytesTransferred == 0 {
+			if ovfFileDesc.File[0].ChunkSize != 0 {
+				chunkFilePaths := getChunkedFilePaths(tempPath, ovfFileDesc.File[0].HREF, ovfFileDesc.File[0].Size, ovfFileDesc.File[0].ChunkSize)
+				err = uploadMultiPartFile(c.c, chunkFilePaths, item.Link[0].HREF, int64(ovfFileDesc.File[0].Size))
+				if err != nil {
+					return err
+				}
+			} else {
+				_, err = uploadFile(c.c, item.Link[0].HREF, findFilePath(filesAbsPaths, item.Name), 0, item.Size)
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
 
 	log.Printf("[TRACE] Upload finished \n")
 	return nil
 }
 
-func getOvfUploadlink(vappTemplate *types.VAppTemplate) (*url.URL, error) {
+func uploadMultiPartFile(client *Client, filePaths []string, uploadHREF string, totalBytesToUpload int64) error {
+	log.Printf("[TRACE] Upload multi part file: %v\n, href: %s, size: %v", filePaths, uploadHREF, totalBytesToUpload)
+
+	var uploadedBytes int64
+
+	for i, filePath := range filePaths {
+		log.Printf("[TRACE] Uploading file: %v\n", i+1)
+		tempVar, err := uploadFile(client, uploadHREF, filePath, uploadedBytes, totalBytesToUpload)
+		if err != nil {
+			return err
+		}
+		uploadedBytes += tempVar
+	}
+	return nil
+}
+
+func waitForTempUploadLinks(client *Client, vappTemplateUrl *url.URL) (*types.VAppTemplate, error) {
+	var vAppTemplate *types.VAppTemplate
+	var err error
+	for {
+		log.Printf("[TRACE] Sleep... for 5 seconds.\n")
+		time.Sleep(time.Second * 5)
+		vAppTemplate, err = queryVappTemplate(client, vappTemplateUrl)
+		if err != nil {
+			return nil, err
+		}
+		if len(vAppTemplate.Files.File) > 1 {
+			log.Printf("[TRACE] upload link prepared.\n")
+			break
+		}
+	}
+	return vAppTemplate, nil
+}
+
+func getOvfUploadLink(vappTemplate *types.VAppTemplate) (*url.URL, error) {
 	log.Printf("[TRACE] Parsing ofv upload link: %#v\n", vappTemplate)
 
 	ovfUploadHref, err := url.ParseRequestURI(vappTemplate.Files.File[0].Link[0].HREF)
@@ -144,44 +194,64 @@ func queryVappTemplate(client *Client, vappTemplateUrl *url.URL) (*types.VAppTem
 	if err != nil {
 		return nil, err
 	}
+	defer response.Body.Close()
 
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	vAppTemplateParsed := &types.VAppTemplate{}
+	vappTemplateParsed := &types.VAppTemplate{}
 
-	err = xml.Unmarshal(body, &vAppTemplateParsed)
+	err = xml.Unmarshal(body, &vappTemplateParsed)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Printf("[TRACE] Response: %#v\n", response)
+	log.Printf("[TRACE] Response: %v\n", response)
 	log.Printf("[TRACE] Response body: %s\n", string(body[:]))
-	log.Printf("[TRACE] Response body: %#v\n", vAppTemplateParsed)
-	return vAppTemplateParsed, nil
+	log.Printf("[TRACE] Response body: %v\n", vappTemplateParsed)
+	return vappTemplateParsed, nil
 }
 
-func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL) error {
+func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL) (Envelope, error) {
 	log.Printf("[TRACE] Uploding ovf description with file: %s and url: %s\n", ovfFile, ovfUploadUrl)
-	ovfReader, err := os.Open(ovfFile)
+	openedFile, err := os.Open(ovfFile)
 	if err != nil {
-		return err
+		return Envelope{}, err
 	}
+
+	var buf bytes.Buffer
+	ovfReader := io.TeeReader(openedFile, &buf)
 
 	request := client.NewRequest(map[string]string{}, "PUT", *ovfUploadUrl, ovfReader)
 	request.Header.Add("Content-Type", "text/xml")
 
 	response, err := client.Http.Do(request)
 	if err != nil {
-		return err
+		return Envelope{}, err
 	}
+
+	var ovfFileDesc Envelope
+	ovfXml, err := ioutil.ReadAll(&buf)
+	if err != nil {
+		return Envelope{}, err
+	}
+
+	err = xml.Unmarshal(ovfXml, &ovfFileDesc)
+	if err != nil {
+		return Envelope{}, err
+	}
+
+	openedFile.Close()
+	defer response.Body.Close()
 
 	body, err := ioutil.ReadAll(response.Body)
 	log.Printf("[TRACE] Response: %#v\n", response)
 	log.Printf("[TRACE] Response body: %s\n", string(body[:]))
-	return nil
+	log.Printf("[TRACE] Ovf file description file: %#v\n", ovfFileDesc)
+
+	return ovfFileDesc, nil
 }
 
 func findCatalogItemUploadLink(catalog *Catalog) (*url.URL, error) {
@@ -200,45 +270,43 @@ func findCatalogItemUploadLink(catalog *Catalog) (*url.URL, error) {
 	return nil, errors.New("catalog upload url isn't found")
 }
 
-func uploadFiles(client *Client, filesAbsPaths []string, parsedVAppTemplate types.VAppTemplate) error {
-	for _, item := range parsedVAppTemplate.Files.File {
-		if item.BytesTransferred == 0 {
-			log.Printf("[TRACE] Found file. Starting uploading: %s\n", item.Name)
+func uploadFile(client *Client, uploadLink, filePath string, offset, fileSizeToUpload int64) (int64, error) {
+	log.Printf("[TRACE] Starting uploading: %s, offset: %v, fileze: %v, toLink: %s \n", filePath, offset, fileSizeToUpload, uploadLink)
 
-			file, err := os.Open(findFilePath(filesAbsPaths, item.Name))
-			if err != nil {
-				return err
-			}
-			fileInfo, err := file.Stat()
-			if err != nil {
-				return err
-			}
-			fileSize := fileInfo.Size()
-			defer file.Close()
-
-			request, err := newFileUploadRequest(item.Link[0].HREF, item.Name, file, fileSize)
-			if err != nil {
-				return err
-			}
-
-			response, err := client.Http.Do(request)
-			if err != nil {
-				return err
-			}
-
-			body, err := ioutil.ReadAll(response.Body)
-			if err != nil {
-				return err
-			}
-			log.Printf("[TRACE] Response: %#v\n", response)
-			log.Printf("[TRACE] Response body: %s\n", string(body[:]))
-
-			if response.StatusCode != http.StatusOK {
-				return errors.New("File " + item.Name + " upload failed. Err: " + fmt.Sprintf("%#v", response) + " :: " + string(body[:]) + "\n")
-			}
-		}
+	file, err := os.Open(filePath)
+	if err != nil {
+		return 0, err
 	}
-	return nil
+
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return 0, err
+	}
+
+	defer file.Close()
+
+	request, err := newFileUploadRequest(uploadLink, file, offset, fileInfo.Size(), fileSizeToUpload)
+	if err != nil {
+		return 0, err
+	}
+
+	response, err := client.Http.Do(request)
+	if err != nil {
+		return 0, err
+	}
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return 0, err
+	}
+	log.Printf("[TRACE] Response: %#v\n", response)
+	log.Printf("[TRACE] Response body: %s\n", string(body[:]))
+
+	if response.StatusCode != http.StatusOK {
+		return 0, errors.New("File " + filePath + " upload failed. Err: " + fmt.Sprintf("%#v", response) + " :: " + string(body[:]) + "\n")
+	}
+	return fileInfo.Size(), nil
 }
 
 func findFilePath(filesAbsPaths []string, fileName string) string {
@@ -262,7 +330,15 @@ func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName st
 	request.Header.Add("Content-Type", "application/vnd.vmware.vcloud.uploadVAppTemplateParams+xml")
 
 	response, err := client.Http.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
 	resBody, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
 
 	// Unmarshal the XML.
 	catalogItemParsed := &types.CatalogItem{}
@@ -284,8 +360,8 @@ func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName st
 }
 
 // Creates a new file upload http request with optional extra params
-func newFileUploadRequest(requestUrl, paramName string, file io.Reader, fileSize int64) (*http.Request, error) {
-	log.Printf("[TRACE] Creating file upload request: %s, %s, %#v \n", requestUrl, paramName, file)
+func newFileUploadRequest(requestUrl string, file io.Reader, offset, fileSize, fileSizeToUpload int64) (*http.Request, error) {
+	log.Printf("[TRACE] Creating file upload request: %s, %v, %v, %v \n", requestUrl, offset, fileSize, fileSizeToUpload)
 
 	uploadReq, err := http.NewRequest("PUT", requestUrl, file)
 	if err != nil {
@@ -295,7 +371,7 @@ func newFileUploadRequest(requestUrl, paramName string, file io.Reader, fileSize
 	uploadReq.ContentLength = int64(fileSize)
 	uploadReq.Header.Set("Content-Length", strconv.FormatInt(uploadReq.ContentLength, 10))
 
-	rangeExpression := "bytes 0-" + strconv.FormatInt(int64(fileSize-1), 10) + "/" + strconv.FormatInt(int64(fileSize), 10)
+	rangeExpression := "bytes " + strconv.FormatInt(int64(offset), 10) + "-" + strconv.FormatInt(int64(offset+fileSize-1), 10) + "/" + strconv.FormatInt(int64(fileSizeToUpload), 10)
 	uploadReq.Header.Set("Content-Range", rangeExpression)
 
 	for key, value := range uploadReq.Header {
@@ -303,4 +379,18 @@ func newFileUploadRequest(requestUrl, paramName string, file io.Reader, fileSize
 	}
 
 	return uploadReq, nil
+}
+
+func getChunkedFilePaths(baseDir, baseFileName string, totalFileSize, partSize int) []string {
+	var filePaths []string
+	numbParts := math.Ceil(float64(totalFileSize) / float64(partSize))
+	for i := 0; i < int(numbParts); i++ {
+		temp := "000000000" + strconv.Itoa(i)
+		postfix := temp[len(temp)-9:]
+		filePath := path.Join(baseDir, baseFileName+"."+postfix)
+		filePaths = append(filePaths, filePath)
+	}
+
+	log.Printf("[TRACE] Chunked files file paths: %s \n", filePaths)
+	return filePaths
 }
