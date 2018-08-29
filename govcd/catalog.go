@@ -83,7 +83,7 @@ func (c *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
 
 // uploads an ova file to a catalog. This method only uploads bits to vCD spool area.
 // Returns errors if any occur during upload from vCD or upload process.
-func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize int) error {
+func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize int) (Task, error) {
 
 	//	On a very high level the flow is as follows
 	//	1. Makes a POST call to vCD to create the catalog item (also creates a transfer folder in the spool area and as result will give a sparse catalog item resource XML).
@@ -93,27 +93,27 @@ func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize
 
 	catalogItemUploadURL, err := findCatalogItemUploadLink(c)
 	if err != nil {
-		return err
+		return Task{}, err
 	}
 
 	vappTemplateUrl, err := createItemForUpload(c.c, catalogItemUploadURL, itemName, description)
 	if err != nil {
-		return err
+		return Task{}, err
 	}
 
 	vappTemplate, err := queryVappTemplate(c.c, vappTemplateUrl)
 	if err != nil {
-		return err
+		return Task{}, err
 	}
 
 	ovfUploadHref, err := getOvfUploadLink(vappTemplate)
 	if err != nil {
-		return err
+		return Task{}, err
 	}
 
 	filesAbsPaths, err := util.Unpack(ovaFileName)
 	if err != nil {
-		return err
+		return Task{}, err
 	}
 
 	var ovfFileDesc Envelope
@@ -124,7 +124,7 @@ func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize
 			ovfFileDesc, err = uploadOvfDescription(c.c, filePath, ovfUploadHref)
 			tempPath, _ = filepath.Split(filePath)
 			if err != nil {
-				return err
+				return Task{}, err
 			}
 			break
 		}
@@ -134,15 +134,16 @@ func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize
 
 	err = uploadFiles(c.c, vappTemplate, &ovfFileDesc, tempPath, filesAbsPaths)
 	if err != nil {
-		return err
+		return Task{}, err
 	}
 
+	var task Task
 	for _, item := range vappTemplate.Tasks.Task {
-		waitForVcdTaskFinishes(c.c, item.HREF)
+		task, err = createTaskForVcdImport(c.c, item.HREF)
 	}
 
-	log.Printf("[TRACE] Upload finished \n")
-	return nil
+	log.Printf("[TRACE] Upload finished and task for vcd import created. \n")
+	return task, nil
 }
 
 func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *Envelope, tempPath string, filesAbsPaths []string) error {
@@ -200,41 +201,28 @@ func waitForTempUploadLinks(client *Client, vappTemplateUrl *url.URL) (*types.VA
 	return vAppTemplate, nil
 }
 
-// Function waits until vCD finishes import of ova
-func waitForVcdTaskFinishes(client *Client, taskHREF string) (*types.Task, error) {
-	log.Printf("[TRACE] Waiting for vcd task with HREF: %s\n", taskHREF)
+func createTaskForVcdImport(client *Client, taskHREF string) (Task, error) {
+	log.Printf("[TRACE] Create task for vcd with HREF: %s\n", taskHREF)
 
-	var task *types.Task
 	taskURL, err := url.ParseRequestURI(taskHREF)
 	if err != nil {
-		return nil, err
+		return Task{}, err
 	}
 
-	for {
-		log.Printf("[TRACE] Waiting for vcd task to finish. Sleep... for 10 seconds.\n")
-		time.Sleep(time.Second * 10)
-		request := client.NewRequest(map[string]string{}, "GET", *taskURL, nil)
-		response, err := checkResp(client.Http.Do(request))
-		if err != nil {
-			return nil, err
-		}
-
-		task := &types.Task{}
-		if err = decodeBody(response, task); err != nil {
-			return nil, err
-		}
-
-		log.Printf("[TRACE] Response: %v\n", response)
-		log.Printf("[TRACE] Parsed Task: %v\n", task)
-
-		if task.Status == "success" {
-			log.Printf("[TRACE] Task finished: %s.\n", task.Operation)
-			break
-		}
-
-		response.Body.Close()
+	request := client.NewRequest(map[string]string{}, "GET", *taskURL, nil)
+	response, err := checkResp(client.Http.Do(request))
+	if err != nil {
+		return Task{}, err
 	}
-	return task, nil
+
+	task := NewTask(client)
+
+	if err = decodeBody(response, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
+	}
+
+	// The request was successful
+	return *task, nil
 }
 
 func getOvfUploadLink(vappTemplate *types.VAppTemplate) (*url.URL, error) {
