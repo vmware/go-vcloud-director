@@ -81,15 +81,15 @@ func (c *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
 	return CatalogItem{}, fmt.Errorf("can't find catalog item: %s", catalogitem)
 }
 
-//
-// Uploads an ova file to a catalog.
-// This method only uploads bits to vCD spool area.
-//	On a very high level the flow is as follows
-//	1. Makes a POST call to vCD to create the catalog item (also creates a transfer folder in the spool area and as result will give a sparse catalog item resource XML).
-//	2. Wait for the links to the transfer folder to appear in the resource representation of the catalog item.
-//	3. Start uploading bits to the transfer folder
-//	4. Wait on the import task to finish on vCD side -> task success = upload complete
+// uploads an ova file to a catalog. This method only uploads bits to vCD spool area.
+// Returns errors if any occur during upload from vCD or upload process.
 func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize int) error {
+
+	//	On a very high level the flow is as follows
+	//	1. Makes a POST call to vCD to create the catalog item (also creates a transfer folder in the spool area and as result will give a sparse catalog item resource XML).
+	//	2. Wait for the links to the transfer folder to appear in the resource representation of the catalog item.
+	//	3. Start uploading bits to the transfer folder
+	//	4. Wait on the import task to finish on vCD side -> task success = upload complete
 
 	catalogItemUploadURL, err := findCatalogItemUploadLink(c)
 	if err != nil {
@@ -366,7 +366,6 @@ func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName st
 }
 
 // Create Request with right headers and range settings. Support multi part file upload.
-// TODO Creates a new file upload http request with optional extra params
 func newFileUploadRequest(requestUrl string, file io.Reader, offset, fileSize, fileSizeToUpload int64) (*http.Request, error) {
 	log.Printf("[TRACE] Creating file upload request: %s, %v, %v, %v \n", requestUrl, offset, fileSize, fileSizeToUpload)
 
