@@ -14,7 +14,8 @@ provider:
     user: orgadmin_name
     password: orgadmin_pwd
     url:  https://api.vcd.api/api
-
+    # org user chooses to authenticate with
+    org:  System
 vcd:
     org: org
     vdc: org-vdc
