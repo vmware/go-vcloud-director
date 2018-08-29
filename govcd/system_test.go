@@ -72,7 +72,7 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 	// Check if org still exists
 	org, err = GetAdminOrgByName(vcd.client, "CREATEORG")
 	check.Assert(org, Equals, AdminOrg{})
-	check.Assert(err, NotNil)
+	check.Assert(err, IsNil)
 
 }
 
