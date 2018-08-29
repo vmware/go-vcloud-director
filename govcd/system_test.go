@@ -37,7 +37,7 @@ func (vcd *TestVCD) Test_GetAdminOrgByName(check *C) {
 	check.Assert(err, IsNil)
 }
 
-// Tests the creation of a an org with general settings,
+// Tests the creation of an org with general settings,
 // org vapp template settings, and orgldapsettings. Asserts an
 // error if the task, fetching the org, or deleting the org fails
 func (vcd *TestVCD) Test_CreateOrg(check *C) {

@@ -49,11 +49,11 @@ func NewAdminOrg(c *Client) *AdminOrg {
 }
 
 // If user specifies valid vdc name then this returns a vdc object.
-// If no vdc is found, then it returns an empty vdc an no error.
+// If no vdc is found, then it returns an empty vdc and no error.
 // Otherwise it returns an empty vdc and an error.
 func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
-	for _, a := range org.Org.Link {
-		if a.Name == vdcname {
+	for _, link := range org.Org.Link {
+		if link.Name == vdcname {
 			vdcHREF, err := url.ParseRequestURI(a.HREF)
 			if err != nil {
 				return Vdc{}, fmt.Errorf("Error parsing url: %v", err)
@@ -76,9 +76,9 @@ func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
 }
 
 // If user specifies valid vdc name then this returns a vdc object.
-// If no vdc is found, then it returns an empty vdc an no error.
-// Otherwise it returns an empty vdc and an error. This function is
-// admin org version of the function but still returns a normal vdc
+// If no vdc is found, then it returns an empty vdc and no error.
+// Otherwise it returns an empty vdc and an error. This function
+// allows users to use an AdminOrg to fetch a vdc as well.
 func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
 	for _, vdcs := range adminOrg.AdminOrg.Vdcs.Vdcs {
 		if vdcs.Name == vdcname {
@@ -341,8 +341,8 @@ func (adminOrg *AdminOrg) removeCatalogs() error {
 
 // Given a valid catalog name, FindCatalog returns a Catalog object.
 // If no catalog is found, then returns an empty catalog and no error.
-// Otherwise it returns an error. This is the adminOrg version of
-// FindCatalog.
+// Otherwise it returns an error. Function allows user to use an AdminOrg
+// to also fetch a Catalog.
 func (adminOrg *AdminOrg) FindCatalog(catalogName string) (Catalog, error) {
 	for _, catalogs := range adminOrg.AdminOrg.Catalogs.Catalog {
 		// Get Catalog HREF
