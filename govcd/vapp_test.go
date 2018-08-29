@@ -55,7 +55,7 @@ func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 		return VApp{}, fmt.Errorf("error finding storage profile: %v", err)
 	}
 	// Compose VApp
-	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, name, "description")
+	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, name, "description", true)
 	if err != nil {
 		return VApp{}, fmt.Errorf("error composing vapp: %v", err)
 	}
