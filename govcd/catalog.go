@@ -209,26 +209,20 @@ func getOvfUploadLink(vappTemplate *types.VAppTemplate) (*url.URL, error) {
 func queryVappTemplate(client *Client, vappTemplateUrl *url.URL) (*types.VAppTemplate, error) {
 	log.Printf("[TRACE] Qeurying vapp template: %s\n", vappTemplateUrl)
 	request := client.NewRequest(map[string]string{}, "GET", *vappTemplateUrl, nil)
-	response, err := client.Http.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	body, err := ioutil.ReadAll(response.Body)
+	response, err := checkResp(client.Http.Do(request))
 	if err != nil {
 		return nil, err
 	}
 
 	vappTemplateParsed := &types.VAppTemplate{}
 
-	err = xml.Unmarshal(body, &vappTemplateParsed)
-	if err != nil {
+	if err = decodeBody(response, vappTemplateParsed); err != nil {
 		return nil, err
 	}
 
+	defer response.Body.Close()
+
 	log.Printf("[TRACE] Response: %v\n", response)
-	log.Printf("[TRACE] Response body: %s\n", string(body[:]))
 	log.Printf("[TRACE] Response body: %v\n", vappTemplateParsed)
 	return vappTemplateParsed, nil
 }
@@ -248,7 +242,7 @@ func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL)
 	request := client.NewRequest(map[string]string{}, "PUT", *ovfUploadUrl, ovfReader)
 	request.Header.Add("Content-Type", "text/xml")
 
-	response, err := client.Http.Do(request)
+	response, err := checkResp(client.Http.Do(request))
 	if err != nil {
 		return Envelope{}, err
 	}
@@ -311,9 +305,9 @@ func uploadFile(client *Client, uploadLink, filePath string, offset, fileSizeToU
 		return 0, err
 	}
 
-	response, err := client.Http.Do(request)
+	response, err := checkResp(client.Http.Do(request))
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("File "+filePath+" upload failed. Err: %s \n", err)
 	}
 	defer response.Body.Close()
 
@@ -324,9 +318,6 @@ func uploadFile(client *Client, uploadLink, filePath string, offset, fileSizeToU
 	log.Printf("[TRACE] Response: %#v\n", response)
 	log.Printf("[TRACE] Response body: %s\n", string(body[:]))
 
-	if response.StatusCode != http.StatusOK {
-		return 0, errors.New("File " + filePath + " upload failed. Err: " + fmt.Sprintf("%#v", response) + " :: " + string(body[:]) + "\n")
-	}
 	return fileInfo.Size(), nil
 }
 
@@ -351,27 +342,19 @@ func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName st
 	request := client.NewRequest(map[string]string{}, "POST", *createHREF, reqBody)
 	request.Header.Add("Content-Type", "application/vnd.vmware.vcloud.uploadVAppTemplateParams+xml")
 
-	response, err := client.Http.Do(request)
+	response, err := checkResp(client.Http.Do(request))
 	if err != nil {
 		return nil, err
 	}
 	defer response.Body.Close()
 
-	resBody, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	// Unmarshal the XML.
 	catalogItemParsed := &types.CatalogItem{}
-	err = xml.Unmarshal(resBody, &catalogItemParsed)
-	if err != nil {
+	if err = decodeBody(response, catalogItemParsed); err != nil {
 		return nil, err
 	}
 
 	log.Printf("[TRACE] Response: %#v \n", response)
-	log.Printf("[TRACE] Response body: %s\n", string(resBody[:]))
-	log.Printf("[TRACE] Catalog item href to query vaapTemplate: %s\n", catalogItemParsed.Entity.HREF)
+	log.Printf("[TRACE] Catalog item parsed: %#v\n", catalogItemParsed)
 
 	ovfUploadUrl, err := url.ParseRequestURI(catalogItemParsed.Entity.HREF)
 	if err != nil {
