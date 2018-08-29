@@ -54,7 +54,7 @@ func NewAdminOrg(c *Client) *AdminOrg {
 func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
 	for _, link := range org.Org.Link {
 		if link.Name == vdcname {
-			vdcHREF, err := url.ParseRequestURI(a.HREF)
+			vdcHREF, err := url.ParseRequestURI(link.HREF)
 			if err != nil {
 				return Vdc{}, fmt.Errorf("Error parsing url: %v", err)
 			}
