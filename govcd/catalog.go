@@ -9,6 +9,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/vmware/go-vcloud-director/govcd/util"
 	"github.com/vmware/go-vcloud-director/types/v56"
 	"io"
 	"io/ioutil"
@@ -110,7 +111,7 @@ func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize
 		return err
 	}
 
-	filesAbsPaths, err := Unpack(ovaFileName)
+	filesAbsPaths, err := util.Unpack(ovaFileName)
 	if err != nil {
 		return err
 	}

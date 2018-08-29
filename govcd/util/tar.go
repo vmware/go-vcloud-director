@@ -1,4 +1,4 @@
-package govcd
+package util
 
 import (
 	"archive/tar"
