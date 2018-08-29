@@ -137,6 +137,10 @@ func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize
 		return err
 	}
 
+	for _, item := range vappTemplate.Tasks.Task {
+		waitForVcdTaskFinishes(c.c, item.HREF)
+	}
+
 	log.Printf("[TRACE] Upload finished \n")
 	return nil
 }
@@ -196,6 +200,43 @@ func waitForTempUploadLinks(client *Client, vappTemplateUrl *url.URL) (*types.VA
 	return vAppTemplate, nil
 }
 
+// Function waits until vCD finishes import of ova
+func waitForVcdTaskFinishes(client *Client, taskHREF string) (*types.Task, error) {
+	log.Printf("[TRACE] Waiting for vcd task with HREF: %s\n", taskHREF)
+
+	var task *types.Task
+	taskURL, err := url.ParseRequestURI(taskHREF)
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		log.Printf("[TRACE] Waiting for vcd task to finish. Sleep... for 10 seconds.\n")
+		time.Sleep(time.Second * 10)
+		request := client.NewRequest(map[string]string{}, "GET", *taskURL, nil)
+		response, err := checkResp(client.Http.Do(request))
+		if err != nil {
+			return nil, err
+		}
+
+		task := &types.Task{}
+		if err = decodeBody(response, task); err != nil {
+			return nil, err
+		}
+
+		log.Printf("[TRACE] Response: %v\n", response)
+		log.Printf("[TRACE] Parsed Task: %v\n", task)
+
+		if task.Status == "success" {
+			log.Printf("[TRACE] Task finished: %s.\n", task.Operation)
+			break
+		}
+
+		response.Body.Close()
+	}
+	return task, nil
+}
+
 func getOvfUploadLink(vappTemplate *types.VAppTemplate) (*url.URL, error) {
 	log.Printf("[TRACE] Parsing ofv upload link: %#v\n", vappTemplate)
 
@@ -216,7 +257,6 @@ func queryVappTemplate(client *Client, vappTemplateUrl *url.URL) (*types.VAppTem
 	}
 
 	vappTemplateParsed := &types.VAppTemplate{}
-
 	if err = decodeBody(response, vappTemplateParsed); err != nil {
 		return nil, err
 	}
@@ -260,12 +300,13 @@ func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL)
 	}
 
 	openedFile.Close()
-	defer response.Body.Close()
 
 	body, err := ioutil.ReadAll(response.Body)
 	log.Printf("[TRACE] Response: %#v\n", response)
 	log.Printf("[TRACE] Response body: %s\n", string(body[:]))
 	log.Printf("[TRACE] Ovf file description file: %#v\n", ovfFileDesc)
+
+	response.Body.Close()
 
 	return ovfFileDesc, nil
 }
