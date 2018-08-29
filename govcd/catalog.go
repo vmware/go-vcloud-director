@@ -35,6 +35,9 @@ func NewCatalog(c *Client) *Catalog {
 	}
 }
 
+// Envelope is a ovf description root element. File contains information for vmdk files.
+// Namespace: http://schemas.dmtf.org/ovf/envelope/1
+// Description: Envelope is a ovf description root element. File contains information for vmdk files..
 type Envelope struct {
 	File []struct {
 		HREF      string `xml:"href,attr"`
@@ -77,16 +80,14 @@ func (c *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
 	return CatalogItem{}, fmt.Errorf("can't find catalog item: %s", catalogitem)
 }
 
-/**
- Uploads an ova file to a catalog.
- This method only uploads bits to vCD spool area.
-
-	On a very high level the flow is as follows
-	1. Makes a POST call to vCD to create the catalog item (also creates a transfer folder in the spool area and as result will give a sparse catalog item resource XML).
-	2. Wait for the links to the transfer folder to appear in the resource representation of the catalog item.
-	3. Start uploading bits to the transfer folder
-	4. Wait on the import task to finish on vCD side -> task success = upload complete
-*/
+//
+// Uploads an ova file to a catalog.
+// This method only uploads bits to vCD spool area.
+//	On a very high level the flow is as follows
+//	1. Makes a POST call to vCD to create the catalog item (also creates a transfer folder in the spool area and as result will give a sparse catalog item resource XML).
+//	2. Wait for the links to the transfer folder to appear in the resource representation of the catalog item.
+//	3. Start uploading bits to the transfer folder
+//	4. Wait on the import task to finish on vCD side -> task success = upload complete
 func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize int) error {
 
 	catalogItemUploadURL, err := findCatalogItemUploadLink(c)
@@ -175,7 +176,7 @@ func uploadMultiPartFile(client *Client, filePaths []string, uploadHREF string, 
 	return nil
 }
 
-/** Function waits until vCD provides temporary file upload links. */
+// Function waits until vCD provides temporary file upload links.
 func waitForTempUploadLinks(client *Client, vappTemplateUrl *url.URL) (*types.VAppTemplate, error) {
 	var vAppTemplate *types.VAppTemplate
 	var err error
@@ -232,8 +233,8 @@ func queryVappTemplate(client *Client, vappTemplateUrl *url.URL) (*types.VAppTem
 	return vappTemplateParsed, nil
 }
 
-/** Uploads ovf description file from unarchived provided ova file. As result vCD will generate temporary upload links which has to be queried later.
-Function will return parsed part for upload files from description xml.*/
+// Uploads ovf description file from unarchived provided ova file. As result vCD will generate temporary upload links which has to be queried later.
+// Function will return parsed part for upload files from description xml.
 func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL) (Envelope, error) {
 	log.Printf("[TRACE] Uploding ovf description with file: %s and url: %s\n", ovfFile, ovfUploadUrl)
 	openedFile, err := os.Open(ovfFile)
@@ -339,7 +340,7 @@ func findFilePath(filesAbsPaths []string, fileName string) string {
 	return ""
 }
 
-/** Initiates creation of item and returns ovf upload url for created item. */
+// Initiates creation of item and returns ovf upload url for created item.
 func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName string, itemDescription string) (*url.URL, error) {
 
 	reqBody := bytes.NewBufferString(
@@ -380,7 +381,7 @@ func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName st
 	return ovfUploadUrl, nil
 }
 
-/** Create Request with right headers and range settings. Support multi part file upload. */
+// Create Request with right headers and range settings. Support multi part file upload.
 // TODO Creates a new file upload http request with optional extra params
 func newFileUploadRequest(requestUrl string, file io.Reader, offset, fileSize, fileSizeToUpload int64) (*http.Request, error) {
 	log.Printf("[TRACE] Creating file upload request: %s, %v, %v, %v \n", requestUrl, offset, fileSize, fileSizeToUpload)
@@ -403,15 +404,14 @@ func newFileUploadRequest(requestUrl string, file io.Reader, offset, fileSize, f
 	return uploadReq, nil
 }
 
-/** Helper method to get path to multi-part files.
-For example a file called test.vmdk with total_file_size = 100 bytes and part_size = 40 bytes, implies the file is made of *3* part files.
-		- test.vmdk.000000000 = 40 bytes
-		- test.vmdk.000000001 = 40 bytes
-		- test.vmdk.000000002 = 20 bytes
-Say base_dir = /dummy_path/, and base_file_name = test.vmdk then
-the output of this function will be [/dummy_path/test.vmdk.000000000,
-/dummy_path/test.vmdk.000000001, /dummy_path/test.vmdk.000000002]
-*/
+// Helper method to get path to multi-part files.
+//For example a file called test.vmdk with total_file_size = 100 bytes and part_size = 40 bytes, implies the file is made of *3* part files.
+//		- test.vmdk.000000000 = 40 bytes
+//		- test.vmdk.000000001 = 40 bytes
+//		- test.vmdk.000000002 = 20 bytes
+//Say base_dir = /dummy_path/, and base_file_name = test.vmdk then
+//the output of this function will be [/dummy_path/test.vmdk.000000000,
+// /dummy_path/test.vmdk.000000001, /dummy_path/test.vmdk.000000002]
 func getChunkedFilePaths(baseDir, baseFileName string, totalFileSize, partSize int) []string {
 	var filePaths []string
 	numbParts := math.Ceil(float64(totalFileSize) / float64(partSize))
