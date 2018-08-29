@@ -1893,7 +1893,7 @@ type QueryResultVAppRecordType struct {
 	MemoryAllocationMB      int    `xml:"memoryAllocationMB,attr,omitempty"`
 	AutoDeleteNotified      bool   `xml:"isAutoDeleteNotified,attr,omitempty"`
 	AutoUndeployNotified    bool   `xml:"isAutoUndeployNotified,attr,omitempty"`
-	VdcEnabled              bool   `xml:"isVdcEnabled, attr,omitempty"`
+	VdcEnabled              bool   `xml:"isVdcEnabled,attr,omitempty"`
 	HonorBootOrder          bool   `xml:"honorBookOrder,attr,omitempty"`
 	HighestSupportedVersion int    `xml:"pvdcHighestSupportedHardwareVersion,attr,omitempty"`
 	LowestHardwareVersion   int    `xml:"lowestHardwareVersionInVApp,attr,omitempty"`
