@@ -114,7 +114,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	networks = append(networks, net.OrgVDCNetwork)
 	check.Assert(err, IsNil)
 	// Populate Catalog
-	cat, err := vcd.org.GetCatalog(vcd.config.VCD.Catalog.Name)
+	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
 	check.Assert(err, IsNil)
 	// Populate Catalog Item
 	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.Catalogitem)
@@ -128,7 +128,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	// Compose VApp
 	temp_vapp_name := "go-vcloud-director-vapp-check"
 	temp_vapp_description := "vapp created by tests"
-	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, temp_vapp_name, temp_vapp_description)
+	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, temp_vapp_name, temp_vapp_description, true)
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.OperationName, Equals, "vdcComposeVapp")
 	// Get VApp

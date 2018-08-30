@@ -10,7 +10,7 @@ import (
 
 func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
 	// Fetch Catalog
-	cat, err := vcd.org.GetCatalog(vcd.config.VCD.Catalog.Name)
+	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
 	// Find Catalog Item
 	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.Catalogitem)
 	check.Assert(err, IsNil)
@@ -22,7 +22,8 @@ func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
 	}
 	// Test non-existant catalog item
 	catitem, err = cat.FindCatalogItem("INVALID")
-	check.Assert(err, NotNil)
+	check.Assert(catitem, Equals, CatalogItem{})
+	check.Assert(err, IsNil)
 }
 
 // Testing UpdateCatalog
@@ -52,7 +53,8 @@ func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, "DeleteCatalogTest")
 	err = adminCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
-	_, err = org.GetCatalog("DeleteCatalogTest")
-	check.Assert(err, NotNil)
+	catalog, err := org.FindCatalog("DeleteCatalogTest")
+	check.Assert(err, IsNil)
+	check.Assert(catalog, Equals, Catalog{})
 
 }

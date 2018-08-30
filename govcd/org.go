@@ -16,7 +16,7 @@ import (
 
 // Interface for methods in common for Org and AdminOrg
 type OrgOperations interface {
-	GetCatalog(catalog string) (Catalog, error)
+	FindCatalog(catalog string) (Catalog, error)
 	GetVdcByName(vdcname string) (Vdc, error)
 }
 
@@ -88,11 +88,12 @@ func (adminOrg *AdminOrg) CreateCatalog(Name, Description string, isPublished bo
 }
 
 // If user specifies valid vdc name then this returns a vdc object.
+// If no vdc is found, then it returns an empty vdc and no error.
 // Otherwise it returns an empty vdc and an error.
 func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
-	for _, a := range org.Org.Link {
-		if a.Name == vdcname {
-			vdcHREF, err := url.ParseRequestURI(a.HREF)
+	for _, link := range org.Org.Link {
+		if link.Name == vdcname {
+			vdcHREF, err := url.ParseRequestURI(link.HREF)
 			if err != nil {
 				return Vdc{}, fmt.Errorf("Error parsing url: %v", err)
 			}
@@ -110,17 +111,17 @@ func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
 			return *vdc, nil
 		}
 	}
-	// The request was successful
-	return Vdc{}, fmt.Errorf("error could not find vdc: %s", vdcname)
+	return Vdc{}, nil
 }
 
 // If user specifies valid vdc name then this returns a vdc object.
-// Otherwise it returns an empty vdc and an error. This function is
-// admin org version of the function but still returns a normal vdc
+// If no vdc is found, then it returns an empty vdc and no error.
+// Otherwise it returns an empty vdc and an error. This function
+// allows users to use an AdminOrg to fetch a vdc as well.
 func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
-	for _, a := range adminOrg.AdminOrg.Vdcs.Vdcs {
-		if a.Name == vdcname {
-			splitbyAdminHREF := strings.Split(a.HREF, "/admin")
+	for _, vdcs := range adminOrg.AdminOrg.Vdcs.Vdcs {
+		if vdcs.Name == vdcname {
+			splitbyAdminHREF := strings.Split(vdcs.HREF, "/admin")
 			vdcHREF := splitbyAdminHREF[0] + splitbyAdminHREF[1]
 			vdcURL, err := url.ParseRequestURI(vdcHREF)
 			if err != nil {
@@ -140,8 +141,7 @@ func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
 			return *vdc, nil
 		}
 	}
-	// The request was successful
-	return Vdc{}, fmt.Errorf("error could not find vdc: %s", vdcname)
+	return Vdc{}, nil
 }
 
 //   Deletes the org, returning an error if the vCD call fails.
@@ -240,8 +240,8 @@ func (adminOrg *AdminOrg) Update() (Task, error) {
 
 // Undeploys every vapp within an organization
 func (adminOrg *AdminOrg) undeployAllVApps() error {
-	for _, a := range adminOrg.AdminOrg.Vdcs.Vdcs {
-		adminVdcHREF, err := url.Parse(a.HREF)
+	for _, vdcs := range adminOrg.AdminOrg.Vdcs.Vdcs {
+		adminVdcHREF, err := url.Parse(vdcs.HREF)
 		if err != nil {
 			return err
 		}
@@ -259,8 +259,8 @@ func (adminOrg *AdminOrg) undeployAllVApps() error {
 
 // Deletes every vapp within an organization
 func (adminOrg *AdminOrg) removeAllVApps() error {
-	for _, a := range adminOrg.AdminOrg.Vdcs.Vdcs {
-		adminVdcHREF, err := url.Parse(a.HREF)
+	for _, vdcs := range adminOrg.AdminOrg.Vdcs.Vdcs {
+		adminVdcHREF, err := url.Parse(vdcs.HREF)
 		if err != nil {
 			return err
 		}
@@ -276,12 +276,12 @@ func (adminOrg *AdminOrg) removeAllVApps() error {
 	return nil
 }
 
-// Gets a vdc within org associated with an admin vdc url u
-func (adminOrg *AdminOrg) getVdcByAdminHREF(url *url.URL) (*Vdc, error) {
+// Gets a vdc within org associated with an admin vdc url
+func (adminOrg *AdminOrg) getVdcByAdminHREF(adminVdcUrl *url.URL) (*Vdc, error) {
 	// get non admin vdc path
-	non_admin := strings.Split(url.Path, "/admin")
-	url.Path = non_admin[0] + non_admin[1]
-	req := adminOrg.c.NewRequest(map[string]string{}, "GET", *url, nil)
+	non_admin := strings.Split(adminVdcUrl.Path, "/admin")
+	adminVdcUrl.Path = non_admin[0] + non_admin[1]
+	req := adminOrg.c.NewRequest(map[string]string{}, "GET", *adminVdcUrl, nil)
 	resp, err := checkResp(adminOrg.c.Http.Do(req))
 	if err != nil {
 		return &Vdc{}, fmt.Errorf("error retreiving vdc: %s", err)
@@ -296,10 +296,10 @@ func (adminOrg *AdminOrg) getVdcByAdminHREF(url *url.URL) (*Vdc, error) {
 
 // Removes all vdcs in a org
 func (adminOrg *AdminOrg) removeAllOrgVDCs() error {
-	for _, a := range adminOrg.AdminOrg.Vdcs.Vdcs {
+	for _, vdcs := range adminOrg.AdminOrg.Vdcs.Vdcs {
 		// Get admin Vdc HREF
 		adminVdcUrl := adminOrg.c.VCDHREF
-		adminVdcUrl.Path += "/admin/vdc/" + strings.Split(a.HREF, "/vdc/")[1] + "/action/disable"
+		adminVdcUrl.Path += "/admin/vdc/" + strings.Split(vdcs.HREF, "/vdc/")[1] + "/action/disable"
 		req := adminOrg.c.NewRequest(map[string]string{}, "POST", adminVdcUrl, nil)
 		_, err := checkResp(adminOrg.c.Http.Do(req))
 		if err != nil {
@@ -334,10 +334,10 @@ func (adminOrg *AdminOrg) removeAllOrgVDCs() error {
 
 // Removes All networks in the org
 func (adminOrg *AdminOrg) removeAllOrgNetworks() error {
-	for _, a := range adminOrg.AdminOrg.Networks.Networks {
+	for _, networks := range adminOrg.AdminOrg.Networks.Networks {
 		// Get Network HREF
 		networkHREF := adminOrg.c.VCDHREF
-		networkHREF.Path += "/admin/network/" + strings.Split(a.HREF, "/network/")[1] //gets id
+		networkHREF.Path += "/admin/network/" + strings.Split(networks.HREF, "/network/")[1] //gets id
 		req := adminOrg.c.NewRequest(map[string]string{}, "DELETE", networkHREF, nil)
 		resp, err := checkResp(adminOrg.c.Http.Do(req))
 		if err != nil {
@@ -361,10 +361,10 @@ func (adminOrg *AdminOrg) removeAllOrgNetworks() error {
 
 // Forced removal of all organization catalogs
 func (adminOrg *AdminOrg) removeCatalogs() error {
-	for _, a := range adminOrg.AdminOrg.Catalogs.Catalog {
+	for _, catalogs := range adminOrg.AdminOrg.Catalogs.Catalog {
 		// Get Catalog HREF
 		catalogHREF := adminOrg.c.VCDHREF
-		catalogHREF.Path += "/admin/catalog/" + strings.Split(a.HREF, "/catalog/")[1] //gets id
+		catalogHREF.Path += "/admin/catalog/" + strings.Split(catalogs.HREF, "/catalog/")[1] //gets id
 		req := adminOrg.c.NewRequest(map[string]string{
 			"force":     "true",
 			"recursive": "true",
@@ -378,7 +378,7 @@ func (adminOrg *AdminOrg) removeCatalogs() error {
 
 }
 
-func (adminOrg *AdminOrg) GetAdminCatalog(catalog string) (AdminCatalog, error) {
+func (adminOrg *AdminOrg) FindAdminCatalog(catalog string) (AdminCatalog, error) {
 	for _, a := range adminOrg.AdminOrg.Catalogs.Catalog {
 		// Get Catalog HREF
 		if a.Name == catalog {
@@ -401,14 +401,18 @@ func (adminOrg *AdminOrg) GetAdminCatalog(catalog string) (AdminCatalog, error) 
 			return *adminCatalog, nil
 		}
 	}
-	return AdminCatalog{}, fmt.Errorf("can't find catalog: %s", catalog)
+	return AdminCatalog{}, nil
 }
 
-func (adminOrg *AdminOrg) GetCatalog(catalog string) (Catalog, error) {
-	for _, a := range adminOrg.AdminOrg.Catalogs.Catalog {
+// Given a valid catalog name, FindCatalog returns a Catalog object.
+// If no catalog is found, then returns an empty catalog and no error.
+// Otherwise it returns an error. Function allows user to use an AdminOrg
+// to also fetch a Catalog.
+func (adminOrg *AdminOrg) FindCatalog(catalogName string) (Catalog, error) {
+	for _, catalogs := range adminOrg.AdminOrg.Catalogs.Catalog {
 		// Get Catalog HREF
-		if a.Name == catalog {
-			splitbyAdminHREF := strings.Split(a.HREF, "/admin")
+		if catalogs.Name == catalogName {
+			splitbyAdminHREF := strings.Split(catalogs.HREF, "/admin")
 			catalogHREF := splitbyAdminHREF[0] + splitbyAdminHREF[1]
 			catalogURL, err := url.ParseRequestURI(catalogHREF)
 			if err != nil {
@@ -429,13 +433,16 @@ func (adminOrg *AdminOrg) GetCatalog(catalog string) (Catalog, error) {
 			return *cat, nil
 		}
 	}
-	return Catalog{}, fmt.Errorf("can't find catalog: %s", catalog)
+	return Catalog{}, nil
 }
 
-func (org *Org) GetCatalog(catalog string) (Catalog, error) {
+// Given a valid catalog name, FindCatalog returns a Catalog object.
+// If no catalog is found, then returns an empty catalog and no error.
+// Otherwise it returns an error.
+func (org *Org) FindCatalog(catalogName string) (Catalog, error) {
 
 	for _, av := range org.Org.Link {
-		if av.Rel == "down" && av.Type == "application/vnd.vmware.vcloud.catalog+xml" && av.Name == catalog {
+		if av.Rel == "down" && av.Type == "application/vnd.vmware.vcloud.catalog+xml" && av.Name == catalogName {
 			u, err := url.ParseRequestURI(av.HREF)
 
 			if err != nil {
@@ -461,5 +468,5 @@ func (org *Org) GetCatalog(catalog string) (Catalog, error) {
 		}
 	}
 
-	return Catalog{}, fmt.Errorf("can't find catalog: %s", catalog)
+	return Catalog{}, nil
 }
