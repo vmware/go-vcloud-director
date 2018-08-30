@@ -8,11 +8,11 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 
 	types "github.com/vmware/go-vcloud-director/types/v56"
+	"github.com/vmware/go-vcloud-director/util"
 	"strconv"
 )
 
@@ -129,7 +129,7 @@ func (v *VApp) AddVM(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate VAppTem
 	s, _ := url.ParseRequestURI(v.VApp.HREF)
 	s.Path += "/action/recomposeVApp"
 
-	log.Printf("[TRACE] Recompose XML: %s", string(output))
+	util.GovcdLogger.Printf("[TRACE] Recompose XML: %s", string(output))
 
 	b := bytes.NewBufferString(xml.Header + string(output))
 
@@ -354,11 +354,7 @@ func (v *VApp) Undeploy() (Task, error) {
 		fmt.Printf("error: %v\n", err)
 	}
 
-	debug := os.Getenv("GOVCLOUDAIR_DEBUG")
-
-	if debug == "true" {
-		fmt.Printf("\n\nXML DEBUG: %s\n\n", string(output))
-	}
+	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	b := bytes.NewBufferString(xml.Header + string(output))
 
@@ -397,11 +393,7 @@ func (v *VApp) Deploy() (Task, error) {
 		fmt.Printf("error: %v\n", err)
 	}
 
-	debug := os.Getenv("GOVCLOUDAIR_DEBUG")
-
-	if debug == "true" {
-		fmt.Printf("\n\nXML DEBUG: %s\n\n", string(output))
-	}
+	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	b := bytes.NewBufferString(xml.Header + string(output))
 
@@ -484,13 +476,9 @@ func (v *VApp) Customize(computername, script string, changeSid bool) (Task, err
 		fmt.Printf("error: %v\n", err)
 	}
 
-	log.Printf("[DEBUG] VCD Client configuration: %s", output)
+	util.GovcdLogger.Printf("[DEBUG] VCD Client configuration: %s", output)
 
-	debug := os.Getenv("GOVCLOUDAIR_DEBUG")
-
-	if debug == "true" {
-		fmt.Printf("\n\nXML DEBUG: %s\n\n", string(output))
-	}
+	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	b := bytes.NewBufferString(xml.Header + string(output))
 
@@ -589,11 +577,7 @@ func (v *VApp) ChangeCPUcount(size int) (Task, error) {
 		fmt.Printf("error: %v\n", err)
 	}
 
-	debug := os.Getenv("GOVCLOUDAIR_DEBUG")
-
-	if debug == "true" {
-		fmt.Printf("\n\nXML DEBUG: %s\n\n", string(output))
-	}
+	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	b := bytes.NewBufferString(xml.Header + string(output))
 
@@ -644,7 +628,7 @@ func (v *VApp) ChangeStorageProfile(name string) (Task, error) {
 		fmt.Printf("error: %v\n", err)
 	}
 
-	log.Printf("[DEBUG] VCD Client configuration: %s", output)
+	util.GovcdLogger.Printf("[DEBUG] VCD Client configuration: %s", output)
 
 	b := bytes.NewBufferString(xml.Header + string(output))
 
@@ -690,7 +674,7 @@ func (v *VApp) ChangeVMName(name string) (Task, error) {
 		fmt.Printf("error: %v\n", err)
 	}
 
-	log.Printf("[DEBUG] VCD Client configuration: %s", output)
+	util.GovcdLogger.Printf("[DEBUG] VCD Client configuration: %s", output)
 
 	b := bytes.NewBufferString(xml.Header + string(output))
 
@@ -770,7 +754,7 @@ func (v *VApp) AddMetadata(key, value string) (Task, error) {
 		fmt.Printf("error: %v\n", err)
 	}
 
-	log.Printf("[DEBUG] NetworkXML: %s", output)
+	util.GovcdLogger.Printf("[DEBUG] NetworkXML: %s", output)
 
 	b := bytes.NewBufferString(xml.Header + string(output))
 
@@ -831,7 +815,7 @@ func (v *VApp) SetOvf(parameters map[string]string) (Task, error) {
 		fmt.Printf("error: %v\n", err)
 	}
 
-	log.Printf("[DEBUG] NetworkXML: %s", output)
+	util.GovcdLogger.Printf("[DEBUG] NetworkXML: %s", output)
 
 	b := bytes.NewBufferString(xml.Header + string(output))
 
@@ -888,7 +872,7 @@ func (v *VApp) ChangeNetworkConfig(networks []map[string]interface{}, ip string)
 			ipAddress = ip
 		}
 
-		log.Printf("[DEBUG] Function ChangeNetworkConfig() for %s invoked", network["orgnetwork"])
+		util.GovcdLogger.Printf("[DEBUG] Function ChangeNetworkConfig() for %s invoked", network["orgnetwork"])
 
 		networksection.Xmlns = "http://www.vmware.com/vcloud/v1.5"
 		networksection.Ovf = "http://schemas.dmtf.org/ovf/envelope/1"
@@ -910,7 +894,7 @@ func (v *VApp) ChangeNetworkConfig(networks []map[string]interface{}, ip string)
 		fmt.Printf("error: %v\n", err)
 	}
 
-	log.Printf("[DEBUG] NetworkXML: %s", output)
+	util.GovcdLogger.Printf("[DEBUG] NetworkXML: %s", output)
 
 	b := bytes.NewBufferString(xml.Header + string(output))
 
@@ -971,14 +955,10 @@ func (v *VApp) ChangeMemorySize(size int) (Task, error) {
 
 	output, err := xml.MarshalIndent(newmem, "  ", "    ")
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
+		return Task{}, fmt.Errorf("error: %v\n", err)
 	}
 
-	debug := os.Getenv("GOVCLOUDAIR_DEBUG")
-
-	if debug == "true" {
-		fmt.Printf("\n\nXML DEBUG: %s\n\n", string(output))
-	}
+	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	b := bytes.NewBufferString(xml.Header + string(output))
 
@@ -1060,7 +1040,7 @@ func (v *VApp) AddRAWNetworkConfig(orgvdcnetworks []*types.OrgVDCNetwork) (Task,
 		fmt.Printf("error: %v\n", err)
 	}
 
-	log.Printf("[DEBUG] RAWNETWORK Config NetworkXML: %s", output)
+	util.GovcdLogger.Printf("[DEBUG] RAWNETWORK Config NetworkXML: %s", output)
 
 	b := bytes.NewBufferString(xml.Header + string(output))
 

@@ -9,7 +9,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	types "github.com/vmware/go-vcloud-director/types/v56"
-	"log"
+	"github.com/vmware/go-vcloud-director/util"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -110,7 +110,7 @@ func (v *Vdc) CreateOrgVDCNetwork(networkConfig *types.OrgVDCNetwork) error {
 			var resp *http.Response
 			for {
 				b := bytes.NewBufferString(xml.Header + string(output))
-				log.Printf("[DEBUG] VCD Client configuration: %s", b)
+				util.GovcdLogger.Printf("[DEBUG] VCD Client configuration: %s", b)
 				req := v.c.NewRequest(map[string]string{}, "POST", *u, b)
 				req.Header.Add("Content-Type", av.Type)
 				resp, err = checkResp(v.c.Http.Do(req))

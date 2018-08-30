@@ -36,15 +36,15 @@ const (
 
 	// Name of the environment variable that enables logging of HTTP responses
 	envLogSkipHttpResp = "GOVCD_LOG_SKIP_HTTP_RESP"
-
-	// Name of the environment variable that limits the payload size
-	envLogMaxPayloadSize = "GOVCD_MAX_PAYLOAD_SIZE"
-
-	// Name of the environment variable that limits the result size
-	envLogMaxMaxResultSize = "GOVCD_MAX_RESULT_SIZE"
 )
 
 var (
+	// All go-vcloud director logging goes through this logger
+	GovcdLogger *log.Logger
+
+	// It's true if we're using an user provided logger
+	customLogging bool = false
+
 	// Name of the log file
 	// activated by GOVCD_LOG_FILE
 	ApiLogFileName string = "go-vcloud-director.log"
@@ -71,7 +71,7 @@ var (
 	LogOnScreen string = ""
 
 	// Flag indicating that a log file is open
-	logOpen bool = false
+	// logOpen bool = false
 
 	// The log file handle
 	apiLog *os.File
@@ -82,36 +82,42 @@ var (
 	hashLine   string = strings.Repeat("#", lineLength)
 )
 
+func newLogger(logpath string) *log.Logger {
+	// println("LogFile: " + logpath)
+	file, err := os.Create(logpath)
+	if err != nil {
+		fmt.Printf("error opening log file %s : %v", logpath, err)
+		os.Exit(1)
+	}
+	return log.New(file, "", log.Ldate|log.Ltime)
+}
+
+func SetCustomLogger(customLogger *log.Logger) {
+	GovcdLogger = customLogger
+	EnableLogging = true
+	customLogging = true
+}
+
 // initializes logging with known parameters
 func SetLog() {
-	if !EnableLogging {
-		log.SetOutput(ioutil.Discard)
+	if customLogging {
 		return
 	}
-	var err error
+	if !EnableLogging {
+		GovcdLogger = log.New(ioutil.Discard, "", log.Ldate|log.Ltime)
+		return
+	}
 
 	// If no file name was set, logging goes to the screen
 	if ApiLogFileName == "" {
 		if LogOnScreen == "stderr" || LogOnScreen == "err" {
 			log.SetOutput(os.Stderr)
+			GovcdLogger = log.New(os.Stderr, "", log.Ldate|log.Ltime)
 		} else {
-			log.SetOutput(os.Stdout)
+			GovcdLogger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 		}
 	} else {
-		apiLog, err = os.OpenFile(ApiLogFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
-		if err != nil {
-			fmt.Printf("error opening log file %s : %v", ApiLogFileName, err)
-			os.Exit(1)
-		}
-		log.SetOutput(apiLog)
-		logOpen = true
-	}
-}
-
-// Closes a log
-func CloseLog() {
-	if logOpen {
-		apiLog.Close()
+		GovcdLogger = newLogger(ApiLogFileName)
 	}
 }
 
@@ -145,13 +151,15 @@ func isBinary(data string, req *http.Request) bool {
 	return false
 }
 
+// Scand the header for known keys that contain authentication tokens
+// and hide the contents
 func logSanitizedHeader(input_header http.Header) {
 	for key, value := range input_header {
 		if (key == "Config-Secret" || key == "authorization" || key == "Authorization" || key == "X-Vcloud-Authorization") &&
 			!LogPasswords {
 			value = []string{"********"}
 		}
-		log.Printf("\t%s: %s\n", key, value)
+		GovcdLogger.Printf("\t%s: %s\n", key, value)
 	}
 }
 
@@ -160,18 +168,18 @@ func ProcessRequestOutput(caller, operation, url, payload string, req *http.Requ
 	if !LogHttpRequest {
 		return
 	}
-	log.Printf("%s\n", dashLine)
-	log.Printf("Request caller: %s\n", caller)
-	log.Printf("%s %s\n", operation, url)
-	log.Printf("%s\n", dashLine)
+	GovcdLogger.Printf("%s\n", dashLine)
+	GovcdLogger.Printf("Request caller: %s\n", caller)
+	GovcdLogger.Printf("%s %s\n", operation, url)
+	GovcdLogger.Printf("%s\n", dashLine)
 	data_size := len(payload)
 	if isBinary(payload, req) {
 		payload = "[binary data]"
 	}
 	if data_size > 0 {
-		log.Printf("Request data: [%d] %s\n", data_size, hidePasswords(payload, false))
+		GovcdLogger.Printf("Request data: [%d] %s\n", data_size, hidePasswords(payload, false))
 	}
-	log.Printf("Req header:\n")
+	GovcdLogger.Printf("Req header:\n")
 	logSanitizedHeader(req.Header)
 }
 
@@ -180,14 +188,14 @@ func ProcessResponseOutput(caller string, resp *http.Response, result string) {
 	if !LogHttpResponse {
 		return
 	}
-	log.Printf("%s\n", hashLine)
-	log.Printf("Response caller %s\n", caller)
-	log.Printf("Response status %s\n", resp.Status)
-	log.Printf("%s\n", hashLine)
-	log.Printf("Response header:\n")
+	GovcdLogger.Printf("%s\n", hashLine)
+	GovcdLogger.Printf("Response caller %s\n", caller)
+	GovcdLogger.Printf("Response status %s\n", resp.Status)
+	GovcdLogger.Printf("%s\n", hashLine)
+	GovcdLogger.Printf("Response header:\n")
 	logSanitizedHeader(resp.Header)
 	data_size := len(result)
-	log.Printf("Response text: [%d] %s\n", data_size, result)
+	GovcdLogger.Printf("Response text: [%d] %s\n", data_size, result)
 }
 
 // Initializes default logging values
