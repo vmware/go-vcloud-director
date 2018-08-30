@@ -141,19 +141,33 @@ func (vcd *TestVCD) Test_Admin_FindCatalog(check *C) {
 	check.Assert(err, IsNil)
 }
 
-
+// Tests CreateCatalog by creating a catalog named CatalogCreationTest and 
+// asserts that the catalog returned contains the right contents or if it fails.
+// Then Deletes the catalog. 
 func (vcd *TestVCD) Test_CreateCatalog(check *C) {
-	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
+	org, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
-	catalog, err := org.CreateCatalog("Test", "Test123", true)
+	catalog, err := org.CreateCatalog("CatalogCreationTest", "Test123", true)
 	check.Assert(err, IsNil)
-	check.Assert(catalog.AdminCatalog.Name, Equals, "Test")
+	check.Assert(catalog.AdminCatalog.Name, Equals, "CatalogCreationTest")
 	check.Assert(catalog.AdminCatalog.Description, Equals, "Test123")
+	task := NewTask(&vcd.client.Client)
+	task.Task = catalog.AdminCatalog.Tasks.Task[0]
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	org, err = GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	copyCatalog, err := org.FindAdminCatalog("CatalogCreationTest")
+	check.Assert(copyCatalog, Not(Equals), AdminCatalog{})
+	check.Assert(err, IsNil)
+	check.Assert(catalog.AdminCatalog.Name, Equals, copyCatalog.AdminCatalog.Name)
+	check.Assert(catalog.AdminCatalog.Description, Equals, copyCatalog.AdminCatalog.Description)
 	err = catalog.Delete(true, true)
 	check.Assert(err, IsNil)
 }
 
-// Test for GetAdminCatalog. Gets admin version of Catalog
+// Test for GetAdminCatalog. Gets admin version of Catalog, and asserts that
+// the names and description match, and that no error is returned
 func (vcd *TestVCD) Test_GetAdminCatalog(check *C) {
 	// Fetch admin org version of current test org
 	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)

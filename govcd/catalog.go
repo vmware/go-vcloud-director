@@ -76,7 +76,7 @@ func (adminCatalog *AdminCatalog) Delete(force, recursive bool) error {
 	return nil
 }
 
-//   Updates the Org definition from current Catalog struct contents.
+//   Updates the Catalog definition from current Catalog struct contents.
 //   Any differences that may be legally applied will be updated.
 //   Returns an error if the call to vCD fails.
 func (adminCatalog *AdminCatalog) Update() (Task, error) {
@@ -122,11 +122,15 @@ type Envelope struct {
 	} `xml:"References>File"`
 }
 
+// If catalogitem is a valid CatalogItem and the call succeds,
+// then the function returns a CatalogItem. If the item does not 
+// exist, then it returns an empty CatalogItem. If The call fails 
+// at any point, it returns an error.
 func (catalog *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
-	for _, cis := range catalog.Catalog.CatalogItems {
-		for _, ci := range cis.CatalogItem {
-			if ci.Name == catalogitem && ci.Type == "application/vnd.vmware.vcloud.catalogItem+xml" {
-				u, err := url.ParseRequestURI(ci.HREF)
+	for _, catalogItems := range catalog.Catalog.CatalogItems {
+		for _, catalogItem := range catalogItems.CatalogItem {
+			if catalogItem.Name == catalogitem && catalogItem.Type == "application/vnd.vmware.vcloud.catalogItem+xml" {
+				u, err := url.ParseRequestURI(catalogItem.HREF)
 
 				if err != nil {
 					return CatalogItem{}, fmt.Errorf("error decoding catalog response: %s", err)

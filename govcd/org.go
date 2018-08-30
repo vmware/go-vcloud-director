@@ -378,11 +378,11 @@ func (adminOrg *AdminOrg) removeCatalogs() error {
 
 }
 
-func (adminOrg *AdminOrg) FindAdminCatalog(catalog string) (AdminCatalog, error) {
-	for _, a := range adminOrg.AdminOrg.Catalogs.Catalog {
+func (adminOrg *AdminOrg) FindAdminCatalog(catalogName string) (AdminCatalog, error) {
+	for _, adminCatalog := range adminOrg.AdminOrg.Catalogs.Catalog {
 		// Get Catalog HREF
-		if a.Name == catalog {
-			catalogURL, err := url.ParseRequestURI(a.HREF)
+		if adminCatalog.Name == catalogName {
+			catalogURL, err := url.ParseRequestURI(adminCatalog.HREF)
 			if err != nil {
 				return AdminCatalog{}, fmt.Errorf("error decoding catalog url: %s", err)
 			}
