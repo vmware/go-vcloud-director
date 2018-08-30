@@ -13,7 +13,9 @@ import (
 	"net/http"
 	"net/url"
 
+	"bytes"
 	types "github.com/vmware/go-vcloud-director/types/v56"
+	"github.com/vmware/go-vcloud-director/util"
 )
 
 // Client provides a client to vCloud Director, values can be populated automatically using the Authenticate method.
@@ -51,6 +53,18 @@ func (c *Client) NewRequest(params map[string]string, method string, u url.URL, 
 		req.Header.Add("Accept", "application/*+xml;version="+c.APIVersion)
 	}
 
+	// Avoids passing data if the logging of requests is disabled
+	if util.LogHttpRequest {
+		// Makes a safe copy of the request body, and passes it
+		// to the processing function.
+		payload := ""
+		if req.ContentLength > 0 {
+			buf := new(bytes.Buffer)
+			buf.ReadFrom(body)
+			payload = buf.String()
+		}
+		util.ProcessRequestOutput(util.CallFuncName(), method, u.String(), payload, req)
+	}
 	return req
 
 }
@@ -72,6 +86,8 @@ func parseErr(resp *http.Response) error {
 func decodeBody(resp *http.Response, out interface{}) error {
 
 	body, err := ioutil.ReadAll(resp.Body)
+
+	util.ProcessResponseOutput(util.CallFuncName(), resp, fmt.Sprintf("%s", body))
 	if err != nil {
 		return err
 	}
