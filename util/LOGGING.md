@@ -3,9 +3,11 @@
 
 ## Defaults for logging
 
-Use of the standard Go `log` package is regulated through `logging.go` in the `util` package.
+Use of the standard Go `log` package is cwdeprecated and should be avoided. 
+The recommended way of logging is through the logger `util.GovcdLogger`, which supports [all the functions normally available to `log`](https://golang.org/pkg/log/#Logger).
 
-By default, **logging is disabled**. Any `log.Printf` statement will simply be discarded.
+
+By default, **logging is disabled**. Any `GovcdLogger.Printf` statement will simply be discarded.
 
 To enable logging, you should use
 
@@ -25,16 +27,14 @@ util.ApiLogFileName = "my_file_name.log"
 If you want logging on the screen, use
 
 ```go
-util.LogOnScreen = "stdout"
+util.GovcdLogger.SetOutput(os.Stdout)
 ```
 
 or
 
-```go
-util.LogOnScreen = "stderr"
 ```
-
-Don't forget to call `util.SetLog()` after changing any parameter.
+util.GovcdLogger.SetOutput(os.Stderr)
+```
 
 ## Automatic logging of HTTP requests and responses.
 
@@ -48,14 +48,20 @@ The output of these functions can be quite large. If you want to mute the HTTP p
 ```go
 util.LogHttpRequest = false
 util.LogHttpResponse = false
-util.SetLog()
 ```
 
 During the request and response processing, any password or authentication token found through pattern matching will be automatically hidden. To show passwords in your logs, use
 
 ```go
 util.LogPasswords = true
-util.SetLog()
+```
+
+## Custom logger
+
+If the configuration options are not enough for your needs, you can supply your own logger.
+
+```go
+util.SetCustomLogger(mylogger)
 ```
 
 ## Environment variables
