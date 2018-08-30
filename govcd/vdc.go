@@ -296,9 +296,10 @@ func (v *Vdc) ComposeRawVApp(name string) error {
 }
 
 // ComposeVApp creates a vapp with the given template, name, and description
-// that uses the storageprofile and networks given. Returns a successful task
+// that uses the storageprofile and networks given. If you want all eulas
+// to be accepted set acceptalleulas to true. Returns a successful task
 // if completed successfully, otherwise returns an error and an empty task.
-func (v *Vdc) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate VAppTemplate, storageprofileref types.Reference, name string, description string) (Task, error) {
+func (v *Vdc) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate VAppTemplate, storageprofileref types.Reference, name string, description string, acceptalleulas bool) (Task, error) {
 	if vapptemplate.VAppTemplate.Children == nil || orgvdcnetworks == nil {
 		return Task{}, fmt.Errorf("can't compose a new vApp, objects passed are not valid")
 	}
@@ -316,7 +317,7 @@ func (v *Vdc) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate VA
 				Info: "Configuration parameters for logical networks",
 			},
 		},
-		AllEULAsAccepted: true,
+		AllEULAsAccepted: acceptalleulas,
 		SourcedItem: &types.SourcedCompositionItemParam{
 			Source: &types.Reference{
 				HREF: vapptemplate.VAppTemplate.Children.VM[0].HREF,
