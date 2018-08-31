@@ -9,7 +9,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/url"
-	"os"
 	"strconv"
 
 	types "github.com/vmware/go-vcloud-director/types/v56"

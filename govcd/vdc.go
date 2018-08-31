@@ -11,7 +11,6 @@ import (
 	types "github.com/vmware/go-vcloud-director/types/v56"
 	"github.com/vmware/go-vcloud-director/util"
 	"net/url"
-	"os"
 	"strings"
 )
 
