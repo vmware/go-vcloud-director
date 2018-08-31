@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"sync"
 	"time"
 )
@@ -49,14 +48,18 @@ func (c *VCDClient) vcdloginurl() error {
 }
 
 func (c *VCDClient) vcdauthorize(user, pass, org string) error {
+	var missing_items []string
 	if user == "" {
-		user = os.Getenv("VCLOUD_USERNAME")
+		missing_items = append(missing_items, "user")
 	}
 	if pass == "" {
-		pass = os.Getenv("VCLOUD_PASSWORD")
+		missing_items = append(missing_items, "password")
 	}
 	if org == "" {
-		org = os.Getenv("VCLOUD_ORG")
+		missing_items = append(missing_items, "org")
+	}
+	if len(missing_items) > 0 {
+		return fmt.Errorf("Authorization is not possible because of these missing items: %v", missing_items)
 	}
 	// No point in checking for errors here
 	req := c.Client.NewRequest(map[string]string{}, "POST", c.sessionHREF, nil)
