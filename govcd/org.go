@@ -18,6 +18,7 @@ import (
 type OrgOperations interface {
 	FindCatalog(catalog string) (Catalog, error)
 	GetVdcByName(vdcname string) (Vdc, error)
+	Refresh() error
 }
 
 type Org struct {
@@ -46,6 +47,54 @@ func NewAdminOrg(c *Client) *AdminOrg {
 		AdminOrg: new(types.AdminOrg),
 		c:        c,
 	}
+}
+
+// Given an org with a valid HREF, the function refetches the org
+// and updates the users org data. Otherwise if the function fails,
+// it returns an error
+func (org *Org) Refresh() error {
+	if *org == (Org{}) || org.Org.HREF == "" {
+		return fmt.Errorf("cannot refresh, Object is empty")
+	}
+	orgHREF, _ := url.ParseRequestURI(org.Org.HREF)
+	req := org.c.NewRequest(map[string]string{}, "GET", *orgHREF, nil)
+	resp, err := checkResp(org.c.Http.Do(req))
+	if err != nil {
+		return fmt.Errorf("error performing request: %s", err)
+	}
+	// Empty struct before a new unmarshal, otherwise we end up with duplicate
+	// elements in slices.
+	unmarshalledOrg := &types.Org{}
+	if err = decodeBody(resp, unmarshalledOrg); err != nil {
+		return fmt.Errorf("error decoding org response: %s", err)
+	}
+	org.Org = unmarshalledOrg
+	// The request was successful
+	return nil
+}
+
+// Given an adminorg with a valid HREF, the function refetches the adminorg
+// and updates the users adminorg data. Otherwise if the function fails,
+// it returns an error
+func (adminOrg *AdminOrg) Refresh() error {
+	if *adminOrg == (AdminOrg{}) || adminOrg.AdminOrg.HREF == "" {
+		return fmt.Errorf("cannot refresh, Object is empty")
+	}
+	adminOrgHREF, _ := url.ParseRequestURI(adminOrg.AdminOrg.HREF)
+	req := adminOrg.c.NewRequest(map[string]string{}, "GET", *adminOrgHREF, nil)
+	resp, err := checkResp(adminOrg.c.Http.Do(req))
+	if err != nil {
+		return fmt.Errorf("error performing request: %s", err)
+	}
+	// Empty struct before a new unmarshal, otherwise we end up with duplicate
+	// elements in slices.
+	unmarshalledAdminOrg := &types.AdminOrg{}
+	if err = decodeBody(resp, unmarshalledAdminOrg); err != nil {
+		return fmt.Errorf("error decoding org response: %s", err)
+	}
+	adminOrg.AdminOrg = unmarshalledAdminOrg
+	// The request was successful
+	return nil
 }
 
 // If user specifies valid vdc name then this returns a vdc object.
