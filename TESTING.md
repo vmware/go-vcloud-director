@@ -2,40 +2,94 @@
 To run tests in go-vcloud-director, users must use a yaml file specifying information about the users vcd. Users can set the `VCLOUD_CONFIG` environmental variable with the path.
 
 ```
-export VCLOUD_CONFIG=$HOME/test.yaml
+export GOVCD_CONFIG=your/path/to/test-configuration.yaml
 ```
 
-If no environmental variable is set it will default to $HOME/config.yaml.
+If no environmental variable is set it will default to `govcd_test_config.yaml` in the same path where the test files are (`./govcd`.)
 
 ## Example Config file
 
+See also `./govcd/sample_govcd_test_config.yaml`.
+
 ```yaml
+# All items in this file must exist already
+# (They will not be removed or left altered)
+# The test will create a vApp and remove it at the end
+#
 provider:
-    user: orgadmin_name
-    password: orgadmin_pwd
-    url:  https://api.vcd.api/api
-    # org user chooses to authenticate with
-    org:  System
+    # vCD administrator credentials
+    # (Providing org credentials will skip some tests)
+    user: someuser
+    password: somepassword
+    #
+    # The vCD address, in the format https://vCD_IP/api
+    # or https://vCD_host_name/api
+    url: https://11.111.1.111/api
+    #
+    # The organization you are authenticating with
+    sysOrg: System
 vcd:
-    org: org
-    vdc: org-vdc
+    # Name of the organization (mandatory)
+    org: myorg
+    #
+    # The virtual data center (mandatory)
+    # The tests will create a vApp here
+    #
+    vdc: myvdc
+    # An Org catalog, possibly containing at least one item
     catalog:
-        name: test
-        description: test catalog
-        catalogitem: ubuntu
-        catalogitemdescription: description
-    storageprofile:
-        storageprofile1: Development
-        storageprofile2: "*"
-    vapp: myvapp
-    network: net
-    edgegateway: au-edge
-    externalip: 10.150.10.10
-    internalip: 10.0.0.10
+        name: mycat
+        #
+        # One item in the catalog. It will be used to compose test vApps
+        catalogItem: myitem
+        #
+        # An optional description for the catalog. Its test will be skipped if omitted.
+        # If provided, it must be the current description of the catalog
+        description: mycat for loading
+        #
+        # An optional description for the catalog item
+        catalogItemDescription: myitem to create vapps
+    #
+    network: mynet
+    #
+    # Storage profiles used in the vDC
+    # One or two can be listed
+    storageProfile:
+        # First storage profile (mandatory)
+        storageProfile1: Development
+        # Second storage profile. If omitted, some tests will be skipped.
+        storageProfile2: "*"
+    # An edge gateway
+    # (see https://pubs.vmware.com/vca/topic/com.vmware.vcloud.api.doc_56/GUID-18B0FB8B-385C-4B6D-982C-4B24D271C646.html)
+    edgeGateway: myedgegw
+    #
+    # The IP of the gateway (must exist)
+    externalIp: 10.150.10.10
+    #
+    # An existing IP in the vdc
+    internalIp: 192.168.1.10
+logging:
+    # All items in this section are optional
+    # Logging is disabled by default.
+    # See ./util/LOGGING.md for more info
+    #
+    # Enables or disables logs
+    enabled: true
+    #
+    # changes the log name
+    logFileName: "go-vcloud-director.log"
+    #
+    # Defines whether we log the requests in HTTP operations
+    logHttpRequests: true
+    #
+    # Defines whether we log the responses in HTTP operations
+    logHttpResponses: true
 ```
 
 Users must specify their username, password, api_endpoint, vcd and org for any tests to run. Otherwise all tests get aborted. For more comprehensive testing the catalog, catalogitem, storageprofile, network, edgegateway, ip field can be set using the format above. For comprehensive testing just replace each field with your vcd information. 
 Note that all the entities included in the configuration file must exist already and will not be removed or left altered during the tests. Leaving a field blank will skip one or more corresponding tests.
+
+If you are more comfortable with JSON, you can supply the configuration in that format. The field names are the same. See `./govcd/sample_govcd_test_config.json`.
 
 ## Running Tests
 Once you have a config file setup, you can run tests with either the makefile or with go itself.
@@ -59,12 +113,12 @@ To run a specific test:
 
 ```bash
 cd govcd
-go test -check.f Test_SetOvf
+go test -check.f Test_SetOvf -check.vv .
 ```
 
 ## How to write a test
 
-go-vcloud-director tests are written using [check.v1](https://labix.org/gocheck), an auxiliary libarry for tests that provides several methods to help developers write comprehensive tests.
+go-vcloud-director tests are written using [check.v1](https://labix.org/gocheck), an auxiliary library for tests that provides several methods to help developers write comprehensive tests.
 
 
 ### Imports
@@ -126,6 +180,11 @@ import (
 func (vcd *TestVCD) Test_GetVAppTemplate(check *checks.C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
+
+    // #0 Check that the data needed for this test is in the configuration
+    if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("Catalog name not provided. Test can't proceed")
+    }
 
     // #1: preliminary data
 	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
