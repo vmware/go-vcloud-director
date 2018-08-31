@@ -9,6 +9,72 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+// Tests Refresh for adminOrg by updating the org and then asserting if
+// the variable updated.
+func (vcd *TestVCD) Test_AdminOrg_Refresh(check *C) {
+	_, err := CreateOrg(vcd.client, "REFRESHTEST", "REFRESHTEST", true, &types.OrgSettings{
+		OrgLdapSettings: &types.OrgLdapSettingsType{OrgLdapMode: "NONE"},
+	})
+	check.Assert(err, IsNil)
+	// fetch newly created org
+	org, err := GetAdminOrgByName(vcd.client, "REFRESHTEST")
+	check.Assert(err, IsNil)
+	check.Assert(org.AdminOrg.Name, Equals, "REFRESHTEST")
+	org.AdminOrg.OrgSettings.OrgGeneralSettings.DeployedVMQuota = 100
+	task, err := org.Update()
+	check.Assert(err, IsNil)
+	// Wait until update is complete
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	// Refresh
+	err = org.Refresh()
+	check.Assert(err, IsNil)
+	check.Assert(org.AdminOrg.OrgSettings.OrgGeneralSettings.DeployedVMQuota, Equals, 100)
+	// Delete, with force and recursive true
+	err = org.Delete(true, true)
+	check.Assert(err, IsNil)
+
+	// Check with emtpy adminOrg struct
+	adminOrg := AdminOrg{}
+	err = adminOrg.Refresh()
+	check.Assert(err, NotNil)
+}
+
+// Tests Refresh for Org by updating the org and then asserting if the
+// variable is updated.
+func (vcd *TestVCD) Test_Org_Refresh(check *C) {
+	_, err := CreateOrg(vcd.client, "REFRESHTEST", "REFRESHTEST", true, &types.OrgSettings{
+		OrgLdapSettings: &types.OrgLdapSettingsType{OrgLdapMode: "NONE"},
+	})
+	check.Assert(err, IsNil)
+	// fetch newly created org
+	org, err := GetOrgByName(vcd.client, "REFRESHTEST")
+	check.Assert(err, IsNil)
+	check.Assert(org.Org.Name, Equals, "REFRESHTEST")
+	// fetch admin version of org for updating
+	adminOrg, err := GetAdminOrgByName(vcd.client, "REFRESHTEST")
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg.AdminOrg.Name, Equals, "REFRESHTEST")
+	adminOrg.AdminOrg.FullName = "govcd"
+	task, err := adminOrg.Update()
+	check.Assert(err, IsNil)
+	// Wait until update is complete
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	// Test Refresh
+	err = org.Refresh()
+	check.Assert(err, IsNil)
+	check.Assert(org.Org.FullName, Equals, "govcd")
+	// Delete, with force and recursive true
+	err = adminOrg.Delete(true, true)
+	check.Assert(err, IsNil)
+
+	// Check with empty org struct
+	org = Org{}
+	err = adminOrg.Refresh()
+	check.Assert(err, NotNil)
+}
+
 // Creates a org DELETEORG and then deletes it to test functionality of
 // delete org. Fails if org still exists
 func (vcd *TestVCD) Test_DeleteOrg(check *C) {
@@ -47,8 +113,8 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	// Refresh
-	org, err = GetAdminOrgByName(vcd.client, "UPDATEORG")
-	check.Assert(org, Not(Equals), AdminOrg{})
+	err = org.Refresh()
+	check.Assert(err, IsNil)
 	check.Assert(org.AdminOrg.OrgSettings.OrgGeneralSettings.DeployedVMQuota, Equals, 100)
 	// Delete, with force and recursive true
 	err = org.Delete(true, true)
