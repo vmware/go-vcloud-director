@@ -14,7 +14,11 @@ func (vcd *TestVCD) Test_GetVAppTemplate(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
 	if err != nil {
-		check.Skip("Catalog not found. Test can't proceed")
+		check.Skip("Test_GetVAppTemplate: Catalog not found. Test can't proceed")
+	}
+
+	if vcd.config.VCD.Catalog.Catalogitem == "" {
+		check.Skip("Test_GetVAppTemplate: Catalog Item not given. Test can't proceed")
 	}
 
 	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.Catalogitem)

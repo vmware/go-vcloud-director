@@ -2,11 +2,14 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/vmware/go-vcloud-director/util"
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/url"
 	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -17,7 +20,7 @@ type TestConfig struct {
 		User     string `yaml:"user"`
 		Password string `yaml:"password"`
 		Url      string `yaml:"url"`
-		Org      string `yaml:"org"`
+		SysOrg   string `yaml:"sysOrg"`
 	}
 	VCD struct {
 		Org     string `yaml:"org"`
@@ -25,18 +28,24 @@ type TestConfig struct {
 		Catalog struct {
 			Name                   string `yaml:"name,omitempty"`
 			Description            string `yaml:"description,omitempty"`
-			Catalogitem            string `yaml:"catalogitem,omitempty"`
-			CatalogItemDescription string `yaml:"catalogitemdescription,omitempty"`
-		}
+			Catalogitem            string `yaml:"catalogItem,omitempty"`
+			CatalogItemDescription string `yaml:"catalogItemDescription,omitempty"`
+		} `yaml:"catalog"`
 		Network        string `yaml:"network,omitempty"`
 		StorageProfile struct {
-			SP1 string `yaml:"storageprofile1,omitempty"`
-			SP2 string `yaml:"storageprofile2,omitempty"`
-		}
-		Externalip  string `yaml:"externalip,omitempty"`
-		Internalip  string `yaml:"internalip,omitempty"`
-		EdgeGateway string `yaml:"edgegateway,omitempty"`
-	}
+			SP1 string `yaml:"storageProfile1"`
+			SP2 string `yaml:"storageProfile2,omitempty"`
+		} `yaml:"storageProfile"`
+		ExternalIp  string `yaml:"externalIp,omitempty"`
+		InternalIp  string `yaml:"internalIp,omitempty"`
+		EdgeGateway string `yaml:"edgeGateway,omitempty"`
+	} `yaml:"vcd"`
+	Logging struct {
+		Enabled         bool   `yaml:"enabled,omitempty"`
+		LogFileName     string `yaml:"logFileName,omitempty"`
+		LogHttpRequest  bool   `yaml:"logHttpRequest,omitempty"`
+		LogHttpResponse bool   `yaml:"logHttpResponse,omitempty"`
+	} `yaml:"logging"`
 }
 
 // Test struct for vcloud-director.
@@ -54,15 +63,23 @@ type TestVCD struct {
 
 var _ = Suite(&TestVCD{})
 
-// Users use the environmental variable VCLOUD_CONFIG as
-// a config file for testing. Otherwise the default is config.yaml
-// in the home directory. Throws an error if it cannot find your
+// Users use the environmental variable GOVCD_CONFIG as
+// a config file for testing. Otherwise the default is govcd_test_config.yaml
+// in the current directory. Throws an error if it cannot find your
 // yaml file or if it cannot read it.
 func GetConfigStruct() (TestConfig, error) {
-	config := os.Getenv("VCLOUD_CONFIG")
+	config := os.Getenv("GOVCD_CONFIG")
 	config_struct := TestConfig{}
 	if config == "" {
-		config = os.Getenv("HOME") + "/config.yaml"
+		// Finds the current directory, through the path of this running test
+		_, current_filename, _, _ := runtime.Caller(0)
+		current_directory := filepath.Dir(current_filename)
+		config = current_directory + "/govcd_test_config.yaml"
+	}
+	// Looks if the configuration file exists before attempting to read it
+	_, err := os.Stat(config)
+	if os.IsNotExist(err) {
+		return TestConfig{}, fmt.Errorf("Configuration file %s not found: %s", config, err)
 	}
 	yamlFile, err := ioutil.ReadFile(config)
 	if err != nil {
@@ -87,7 +104,7 @@ func GetTestVCDFromYaml(g TestConfig) (*VCDClient, error) {
 	return vcdClient, nil
 }
 
-// Neccessary to enable the suite tests with TestVCD
+// Necessary to enable the suite tests with TestVCD
 func Test(t *testing.T) { TestingT(t) }
 
 // Sets the org, vdc, vapp, and vcdClient for a
@@ -102,13 +119,28 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	}
 	vcd.config = config
 
+	if vcd.config.Logging.Enabled {
+		util.EnableLogging = true
+		if vcd.config.Logging.LogFileName != "" {
+			util.ApiLogFileName = vcd.config.Logging.LogFileName
+		}
+		if vcd.config.Logging.LogHttpRequest {
+			util.LogHttpRequest = true
+		}
+		if vcd.config.Logging.LogHttpResponse {
+			util.LogHttpResponse = true
+		}
+	} else {
+		util.EnableLogging = false
+	}
+	util.SetLog()
 	vcdClient, err := GetTestVCDFromYaml(config)
 	if err != nil {
 		panic(err)
 	}
 	vcd.client = vcdClient
 	// org and vdc are the test org and vdc that is used in all other test cases
-	err = vcd.client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.Org)
+	err = vcd.client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
 	if err != nil {
 		panic(err)
 	}
@@ -189,7 +221,7 @@ func TestVCDClient_Authenticate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
-	err = client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.Org)
+	err = client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
 	if err != nil {
 		t.Fatalf("Error authenticating: %v", err)
 	}
