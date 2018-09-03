@@ -10,6 +10,12 @@
 			"tree": true
 		},
 		{
+			"checksumSHA1": "x9dJv+jQhUFN6R6h4fzPjGLvQLg=",
+			"path": "github.com/kr/text",
+			"revision": "e2ffdb16a802fe2bb95e2e35ff34f0e53aeef34f",
+			"revisionTime": "2018-05-06T08:24:08Z"
+		},
+		{
 			"checksumSHA1": "9gypWnVZJEaH3jMK9KqOp4xgQD4=",
 			"path": "gopkg.in/check.v1",
 			"revision": "788fd78401277ebd861206a03c884797c6ec5541",

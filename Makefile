@@ -2,7 +2,7 @@ TEST?=./...
 GOFMT_FILES?=$$(find . -name '*.go' | grep -v vendor)
 
 #default: fmt test testrace vet
-default: fmt vet
+default: fmtcheck vet build
 
 # test runs the test suite and vets the code
 test: get-deps fmtcheck
@@ -36,3 +36,6 @@ fmt:
 
 fmtcheck:
 	@sh -c "'$(CURDIR)/scripts/gofmtcheck.sh'"
+
+build:
+	cd govcd && go build .
