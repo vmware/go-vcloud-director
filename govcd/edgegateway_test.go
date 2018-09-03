@@ -25,7 +25,7 @@ func (vcd *TestVCD) Test_Refresh(check *C) {
 
 // TODO: Add a check for the final state of the mapping
 func (vcd *TestVCD) Test_NATMapping(check *C) {
-	if vcd.config.VCD.Externalip == "" || vcd.config.VCD.Internalip == "" {
+	if vcd.config.VCD.ExternalIp == "" || vcd.config.VCD.InternalIp == "" {
 		check.Skip("Skipping test because no valid ip given")
 	}
 	if vcd.config.VCD.EdgeGateway == "" {
@@ -35,11 +35,11 @@ func (vcd *TestVCD) Test_NATMapping(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	task, err := edge.AddNATMapping("DNAT", vcd.config.VCD.Externalip, vcd.config.VCD.Internalip, "77")
+	task, err := edge.AddNATMapping("DNAT", vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp, "77")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
-	task, err = edge.RemoveNATMapping("DNAT", vcd.config.VCD.Externalip, vcd.config.VCD.Internalip, "77")
+	task, err = edge.RemoveNATMapping("DNAT", vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp, "77")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
@@ -47,7 +47,7 @@ func (vcd *TestVCD) Test_NATMapping(check *C) {
 
 // TODO: Add a check for the final state of the mapping
 func (vcd *TestVCD) Test_NATPortMapping(check *C) {
-	if vcd.config.VCD.Externalip == "" || vcd.config.VCD.Internalip == "" {
+	if vcd.config.VCD.ExternalIp == "" || vcd.config.VCD.InternalIp == "" {
 		check.Skip("Skipping test because no valid ip given")
 	}
 	if vcd.config.VCD.EdgeGateway == "" {
@@ -56,11 +56,11 @@ func (vcd *TestVCD) Test_NATPortMapping(check *C) {
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
-	task, err := edge.AddNATPortMapping("DNAT", vcd.config.VCD.Externalip, "1177", vcd.config.VCD.Internalip, "77")
+	task, err := edge.AddNATPortMapping("DNAT", vcd.config.VCD.ExternalIp, "1177", vcd.config.VCD.InternalIp, "77")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
-	task, err = edge.RemoveNATPortMapping("DNAT", vcd.config.VCD.Externalip, "1177", vcd.config.VCD.Internalip, "77")
+	task, err = edge.RemoveNATPortMapping("DNAT", vcd.config.VCD.ExternalIp, "1177", vcd.config.VCD.InternalIp, "77")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
@@ -68,7 +68,7 @@ func (vcd *TestVCD) Test_NATPortMapping(check *C) {
 
 // TODO: Add a check for the final state of the mapping
 func (vcd *TestVCD) Test_1to1Mappings(check *C) {
-	if vcd.config.VCD.Externalip == "" || vcd.config.VCD.Internalip == "" {
+	if vcd.config.VCD.ExternalIp == "" || vcd.config.VCD.InternalIp == "" {
 		check.Skip("Skipping test because no valid ip given")
 	}
 	if vcd.config.VCD.EdgeGateway == "" {
@@ -77,11 +77,11 @@ func (vcd *TestVCD) Test_1to1Mappings(check *C) {
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
-	task, err := edge.Create1to1Mapping(vcd.config.VCD.Internalip, vcd.config.VCD.Externalip, "description")
+	task, err := edge.Create1to1Mapping(vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp, "description")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
-	task, err = edge.Remove1to1Mapping(vcd.config.VCD.Internalip, vcd.config.VCD.Externalip)
+	task, err = edge.Remove1to1Mapping(vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
@@ -89,7 +89,7 @@ func (vcd *TestVCD) Test_1to1Mappings(check *C) {
 
 // TODO: Add a check checking whether the IPsec VPN was added
 func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
-	if vcd.config.VCD.Externalip == "" {
+	if vcd.config.VCD.ExternalIp == "" {
 		check.Skip("Skipping test because no valid ip given")
 	}
 	if vcd.config.VCD.EdgeGateway == "" {
@@ -106,8 +106,8 @@ func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
 			Name: "",
 		},
 		EncryptionProtocol: "AES",
-		LocalIPAddress:     vcd.config.VCD.Externalip,
-		LocalID:            vcd.config.VCD.Externalip,
+		LocalIPAddress:     vcd.config.VCD.ExternalIp,
+		LocalID:            vcd.config.VCD.ExternalIp,
 		IsEnabled:          true,
 	}
 	tunnels := make([]*types.GatewayIpsecVpnTunnel, 1)
