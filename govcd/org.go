@@ -73,7 +73,7 @@ func (org *Org) getClient() *Client {
 // interface so a pointer to an AdminOrg or Org and refreshes it by
 // getting the current state from the vcd rest api. Users should use
 // this function after creating, updating, deleting resources under this org.
-// Since the we use org links to get elements within the org, users must
+// Since we use org links to get elements within the org, users must
 // refresh after performing an operation that can change the links. Otherwise
 // users might get stale metadata, and for users trying to delete an org
 // may run into issues deleting everything.
