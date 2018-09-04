@@ -764,8 +764,8 @@ type Catalog struct {
 // Description: Represents the Admin view of a Catalog object.
 // Since: 0.9
 type AdminCatalog struct {
-	XMLName      xml.Name         `xml:"AdminCatalog"`
-	Xmlns        string           `xml:"xmlns,attr"`
+	XMLName       xml.Name         `xml:"AdminCatalog"`
+	Xmlns         string           `xml:"xmlns,attr"`
 	HREF          string           `xml:"href,attr,omitempty"`
 	Type          string           `xml:"type,attr,omitempty"`
 	ID            string           `xml:"id,attr,omitempty"`

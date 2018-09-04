@@ -76,7 +76,6 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 
 }
 
-
 // longer than the 128 characters so nothing can be named this
 var INVALID_NAME = `*******************************************INVALID
 					****************************************************

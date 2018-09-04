@@ -35,25 +35,25 @@ type CatalogOperations interface {
 // for creating, updating, and deleting a Catalog.
 type AdminCatalog struct {
 	AdminCatalog *types.AdminCatalog
-	c       *Client
+	c            *Client
 }
 
 type Catalog struct {
 	Catalog *types.Catalog
-	c  *Client
+	c       *Client
 }
 
 func NewCatalog(client *Client) *Catalog {
 	return &Catalog{
 		Catalog: new(types.Catalog),
-		c:  client,
+		c:       client,
 	}
 }
 
 func NewAdminCatalog(client *Client) *AdminCatalog {
 	return &AdminCatalog{
 		AdminCatalog: new(types.AdminCatalog),
-		c:       client,
+		c:            client,
 	}
 }
 
@@ -123,8 +123,8 @@ type Envelope struct {
 }
 
 // If catalogitem is a valid CatalogItem and the call succeds,
-// then the function returns a CatalogItem. If the item does not 
-// exist, then it returns an empty CatalogItem. If The call fails 
+// then the function returns a CatalogItem. If the item does not
+// exist, then it returns an empty CatalogItem. If The call fails
 // at any point, it returns an error.
 func (catalog *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
 	for _, catalogItems := range catalog.Catalog.CatalogItems {

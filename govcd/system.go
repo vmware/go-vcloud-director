@@ -66,7 +66,6 @@ func GetOrgByName(vcdClient *VCDClient, orgname string) (Org, error) {
 	return *org, nil
 }
 
-
 // If user specifies valid organization name,
 // then this returns an admin organization object.
 // If no valid org is found, it returns an empty

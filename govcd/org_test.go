@@ -141,9 +141,9 @@ func (vcd *TestVCD) Test_Admin_FindCatalog(check *C) {
 	check.Assert(err, IsNil)
 }
 
-// Tests CreateCatalog by creating a catalog named CatalogCreationTest and 
+// Tests CreateCatalog by creating a catalog named CatalogCreationTest and
 // asserts that the catalog returned contains the right contents or if it fails.
-// Then Deletes the catalog. 
+// Then Deletes the catalog.
 func (vcd *TestVCD) Test_CreateCatalog(check *C) {
 	org, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(err, IsNil)

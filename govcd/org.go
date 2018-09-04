@@ -60,22 +60,22 @@ func (adminOrg *AdminOrg) CreateCatalog(Name, Description string, isPublished bo
 		IsPublished: isPublished,
 	}
 
-	s, err := url.ParseRequestURI(adminOrg.AdminOrg.HREF)
+	catalogHREF, err := url.ParseRequestURI(adminOrg.AdminOrg.HREF)
 	if err != nil {
 		return AdminCatalog{}, fmt.Errorf("error parsing admin org's href: %v", err)
 	}
-	s.Path += "/catalogs"
+	catalogHREF.Path += "/catalogs"
 
 	output, _ := xml.MarshalIndent(vcomp, "  ", "    ")
-	b := bytes.NewBufferString(xml.Header + string(output))
+	xmlData := bytes.NewBufferString(xml.Header + string(output))
 
-	req := adminOrg.c.NewRequest(map[string]string{}, "POST", *s, b)
+	req := adminOrg.c.NewRequest(map[string]string{}, "POST", *catalogHREF, xmlData)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.catalog+xml")
 
 	resp, err := checkResp(adminOrg.c.Http.Do(req))
 	if err != nil {
-		return AdminCatalog{}, fmt.Errorf("error creating catalog: %s : %s", err, s.Path)
+		return AdminCatalog{}, fmt.Errorf("error creating catalog: %s : %s", err, catalogHREF.Path)
 	}
 
 	catalog := NewAdminCatalog(adminOrg.c)
@@ -378,6 +378,11 @@ func (adminOrg *AdminOrg) removeCatalogs() error {
 
 }
 
+// Given a valid catalog name, FindCatalog returns an AdminCatalog object.
+// If no catalog is found, then returns an empty AdminCatalog and no error.
+// Otherwise it returns an error. Function allows user to use an AdminOrg
+// to also fetch a Catalog. If user does not have proper credentials to
+// perform administrator tasks then function returns an error.
 func (adminOrg *AdminOrg) FindAdminCatalog(catalogName string) (AdminCatalog, error) {
 	for _, adminCatalog := range adminOrg.AdminOrg.Catalogs.Catalog {
 		// Get Catalog HREF
@@ -392,11 +397,9 @@ func (adminOrg *AdminOrg) FindAdminCatalog(catalogName string) (AdminCatalog, er
 				return AdminCatalog{}, fmt.Errorf("error retreiving catalog: %s", err)
 			}
 			adminCatalog := NewAdminCatalog(adminOrg.c)
-
 			if err = decodeBody(resp, adminCatalog.AdminCatalog); err != nil {
 				return AdminCatalog{}, fmt.Errorf("error decoding catalog response: %s", err)
 			}
-
 			// The request was successful
 			return *adminCatalog, nil
 		}
@@ -440,28 +443,21 @@ func (adminOrg *AdminOrg) FindCatalog(catalogName string) (Catalog, error) {
 // If no catalog is found, then returns an empty catalog and no error.
 // Otherwise it returns an error.
 func (org *Org) FindCatalog(catalogName string) (Catalog, error) {
-
-	for _, av := range org.Org.Link {
-		if av.Rel == "down" && av.Type == "application/vnd.vmware.vcloud.catalog+xml" && av.Name == catalogName {
-			u, err := url.ParseRequestURI(av.HREF)
-
+	for _, link := range org.Org.Link {
+		if link.Rel == "down" && link.Type == "application/vnd.vmware.vcloud.catalog+xml" && link.Name == catalogName {
+			catalogURL, err := url.ParseRequestURI(link.HREF)
 			if err != nil {
 				return Catalog{}, fmt.Errorf("error decoding org response: %s", err)
 			}
-
-			req := org.c.NewRequest(map[string]string{}, "GET", *u, nil)
-
+			req := org.c.NewRequest(map[string]string{}, "GET", *catalogURL, nil)
 			resp, err := checkResp(org.c.Http.Do(req))
 			if err != nil {
 				return Catalog{}, fmt.Errorf("error retreiving catalog: %s", err)
 			}
-
 			cat := NewCatalog(org.c)
-
 			if err = decodeBody(resp, cat.Catalog); err != nil {
 				return Catalog{}, fmt.Errorf("error decoding catalog response: %s", err)
 			}
-
 			// The request was successful
 			return *cat, nil
 
