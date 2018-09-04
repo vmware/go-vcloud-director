@@ -10,6 +10,7 @@ import (
 	"fmt"
 	types "github.com/vmware/go-vcloud-director/types/v56"
 	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -18,6 +19,8 @@ import (
 type OrgOperations interface {
 	FindCatalog(catalog string) (Catalog, error)
 	GetVdcByName(vdcname string) (Vdc, error)
+	getHREF() string
+	getClient() *Client
 }
 
 type Org struct {
@@ -48,57 +51,61 @@ func NewAdminOrg(c *Client) *AdminOrg {
 	}
 }
 
-// Generic function that takes in a pointer to a Org or Admin org as an
-// entity and refreshes it by getting the current state from the
-// vcd rest api. Users should use this function after creating,
-// updating, deleting resources under this org. Since the we use
-// org links to get elements within the org, users must refresh
-// after performing an operation that can change the links. Otherwise
+// Getter functions for polymorphism between adminOrg and Orgs
+func (adminOrg *AdminOrg) getHREF() string {
+	return adminOrg.AdminOrg.HREF
+}
+
+func (org *Org) getHREF() string {
+	return org.Org.HREF
+}
+
+func (adminOrg *AdminOrg) getClient() *Client {
+	return adminOrg.c
+}
+
+func (org *Org) getClient() *Client {
+	return org.c
+}
+
+// Usage Examlple: err := RefreshOrg(&org) where org is the type Org/AdminOrg
+// Generic function that takes in an object that implements OrgOperations
+// interface so a pointer to an AdminOrg or Org and refreshes it by
+// getting the current state from the vcd rest api. Users should use
+// this function after creating, updating, deleting resources under this org.
+// Since the we use org links to get elements within the org, users must
+// refresh after performing an operation that can change the links. Otherwise
 // users might get stale metadata, and for users trying to delete an org
 // may run into issues deleting everything.
-func RefreshOrgEntity(orgEntity interface{}) error {
-	org, isOrg := orgEntity.(*Org)
-	var entityURL *url.URL
-	var client *Client
-	if isOrg {
-		if *org == (Org{}) {
-			return fmt.Errorf("cannot refresh, Object is empty")
-		}
-		entityURL, _ = url.ParseRequestURI(org.Org.HREF)
-		client = org.c
-	} else {
-		adminOrg, isAdminOrg := orgEntity.(*AdminOrg)
-		if !isAdminOrg {
-			return fmt.Errorf("cannot refresh, object isn't an org or an adminOrg")
-		}
-		if *adminOrg == (AdminOrg{}) {
-			return fmt.Errorf("cannot refresh, Object is empty")
-		}
-		entityURL, _ = url.ParseRequestURI(adminOrg.AdminOrg.HREF)
-		client = adminOrg.c
-	}
-	req := client.NewRequest(map[string]string{}, "GET", *entityURL, nil)
-	resp, err := checkResp(client.Http.Do(req))
+func RefreshOrg(org OrgOperations) error {
+	orgURL, _ := url.ParseRequestURI(org.getHREF())
+	req := org.getClient().NewRequest(map[string]string{}, "GET", *orgURL, nil)
+	resp, err := checkResp(org.getClient().Http.Do(req))
 	if err != nil {
 		return fmt.Errorf("error performing request: %s", err)
 	}
 	// Empty struct before a new unmarshal, otherwise we end up with duplicate
 	// elements in slices.
-	var unmarshalledEntity interface{}
-	if isOrg {
-		unmarshalledEntity = &types.Org{}
+	var unmarshalledOrg interface{}
+	orgType := reflect.TypeOf(org)
+	isAdminOrg := false
+	if orgType == reflect.TypeOf(&AdminOrg{}) {
+		// unmarshall an adminOrg if the interface is an adminorg
+		unmarshalledOrg = &types.AdminOrg{}
+		isAdminOrg = true
 	} else {
-		unmarshalledEntity = &types.AdminOrg{}
+		// unmarshall an org if the interface is an org
+		unmarshalledOrg = &types.Org{}
 	}
 	// Decode into the unmarshalledEntity interface
-	if err = decodeBody(resp, unmarshalledEntity); err != nil {
+	if err = decodeBody(resp, unmarshalledOrg); err != nil {
 		return fmt.Errorf("error decoding response: %s", err)
 	}
-	if isOrg {
-		org.Org = unmarshalledEntity.(*types.Org)
+
+	if isAdminOrg {
+		org.(*AdminOrg).AdminOrg = unmarshalledOrg.(*types.AdminOrg)
 	} else {
-		adminOrg, _ := orgEntity.(*AdminOrg)
-		adminOrg.AdminOrg = unmarshalledEntity.(*types.AdminOrg)
+		org.(*Org).Org = unmarshalledOrg.(*types.Org)
 	}
 	// The request was successful
 	return nil

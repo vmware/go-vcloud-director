@@ -11,7 +11,7 @@ import (
 
 // Tests Refresh for Org by updating the org and then asserting if the
 // variable is updated.
-func (vcd *TestVCD) Test_RefreshOrgEntity(check *C) {
+func (vcd *TestVCD) Test_RefreshOrg(check *C) {
 	_, err := CreateOrg(vcd.client, "REFRESHTEST", "REFRESHTEST", true, &types.OrgSettings{
 		OrgLdapSettings: &types.OrgLdapSettingsType{OrgLdapMode: "NONE"},
 	})
@@ -31,11 +31,11 @@ func (vcd *TestVCD) Test_RefreshOrgEntity(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	// Test Refresh on normal org
-	err = RefreshOrgEntity(&org)
+	err = RefreshOrg(&org)
 	check.Assert(err, IsNil)
 	check.Assert(org.Org.FullName, Equals, "govcd")
 	// Test Refresh on admin org
-	err = RefreshOrgEntity(&adminOrg)
+	err = RefreshOrg(&adminOrg)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg.AdminOrg.FullName, Equals, "govcd")
 	// Delete, with force and recursive true
@@ -81,7 +81,7 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	// Refresh
-	err = RefreshOrgEntity(&org)
+	err = RefreshOrg(&org)
 	check.Assert(err, IsNil)
 	check.Assert(org.AdminOrg.OrgSettings.OrgGeneralSettings.DeployedVMQuota, Equals, 100)
 	// Delete, with force and recursive true
