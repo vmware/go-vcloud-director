@@ -72,11 +72,11 @@ func (vcd *TestVCD) Test_NewVdc(check *C) {
 		check.Assert(vcd.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].HREF, Equals, "http://localhost:4444/api/vAppTemplate/vappTemplate-22222222-2222-2222-2222-222222222222")
 	*/
 
-	for _, v := range vcd.vdc.Vdc.AvailableNetworks {
-		for _, v2 := range v.Network {
-			check.Assert(v2.Name, Not(Equals), "")
-			check.Assert(v2.Type, Equals, "application/vnd.vmware.vcloud.network+xml")
-			check.Assert(v2.HREF, Not(Equals), "")
+	for _, networks := range vcd.vdc.Vdc.AvailableNetworks {
+		for _, reference := range networks.Network {
+			check.Assert(reference.Name, Not(Equals), "")
+			check.Assert(reference.Type, Equals, "application/vnd.vmware.vcloud.network+xml")
+			check.Assert(reference.HREF, Not(Equals), "")
 		}
 	}
 
@@ -90,10 +90,10 @@ func (vcd *TestVCD) Test_NewVdc(check *C) {
 		check.Assert(vcd.vdc.Vdc.IsEnabled, Equals, true)
 	*/
 
-	for _, v := range vcd.vdc.Vdc.VdcStorageProfiles {
-		for _, v2 := range v.VdcStorageProfile {
-			check.Assert(v2.Type, Equals, "application/vnd.vmware.vcloud.vdcStorageProfile+xml")
-			check.Assert(v2.HREF, Not(Equals), "")
+	for _, storageProfiles := range vcd.vdc.Vdc.VdcStorageProfiles {
+		for _, reference := range storageProfiles.VdcStorageProfile {
+			check.Assert(reference.Type, Equals, "application/vnd.vmware.vcloud.vdcStorageProfile+xml")
+			check.Assert(reference.HREF, Not(Equals), "")
 		}
 	}
 

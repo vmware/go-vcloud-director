@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
-	"net/url"
+	neturl "net/url"
 	"strconv"
 
 	types "github.com/vmware/go-vcloud-director/types/v56"
@@ -16,45 +16,45 @@ import (
 )
 
 type VM struct {
-	VM *types.VM
-	c  *Client
+	VM     *types.VM
+	client *Client
 }
 
-func NewVM(c *Client) *VM {
+func NewVM(client *Client) *VM {
 	return &VM{
-		VM: new(types.VM),
-		c:  c,
+		VM:     new(types.VM),
+		client: client,
 	}
 }
 
-func (v *VM) GetStatus() (string, error) {
-	err := v.Refresh()
+func (vm *VM) GetStatus() (string, error) {
+	err := vm.Refresh()
 	if err != nil {
 		return "", fmt.Errorf("error refreshing VM: %v", err)
 	}
-	return types.VAppStatuses[v.VM.Status], nil
+	return types.VAppStatuses[vm.VM.Status], nil
 }
 
-func (v *VM) Refresh() error {
+func (vm *VM) Refresh() error {
 
-	if v.VM.HREF == "" {
+	if vm.VM.HREF == "" {
 		return fmt.Errorf("cannot refresh VM, Object is empty")
 	}
 
-	u, _ := url.ParseRequestURI(v.VM.HREF)
+	url, _ := neturl.ParseRequestURI(vm.VM.HREF)
 
-	req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
+	req := vm.client.NewRequest(map[string]string{}, "GET", *url, nil)
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(vm.client.Http.Do(req))
 	if err != nil {
 		return fmt.Errorf("error retrieving task: %s", err)
 	}
 
 	// Empty struct before a new unmarshal, otherwise we end up with duplicate
 	// elements in slices.
-	v.VM = &types.VM{}
+	vm.VM = &types.VM{}
 
-	if err = decodeBody(resp, v.VM); err != nil {
+	if err = decodeBody(resp, vm.VM); err != nil {
 		return fmt.Errorf("error decoding task response VM: %s", err)
 	}
 
@@ -62,21 +62,21 @@ func (v *VM) Refresh() error {
 	return nil
 }
 
-func (v *VM) GetNetworkConnectionSection() (*types.NetworkConnectionSection, error) {
+func (vm *VM) GetNetworkConnectionSection() (*types.NetworkConnectionSection, error) {
 
 	networkConnectionSection := &types.NetworkConnectionSection{}
 
-	if v.VM.HREF == "" {
+	if vm.VM.HREF == "" {
 		return networkConnectionSection, fmt.Errorf("cannot refresh, Object is empty")
 	}
 
-	u, _ := url.ParseRequestURI(v.VM.HREF + "/networkConnectionSection/")
+	url, _ := neturl.ParseRequestURI(vm.VM.HREF + "/networkConnectionSection/")
 
-	req := v.c.NewRequest(map[string]string{}, "GET", *u, nil)
+	req := vm.client.NewRequest(map[string]string{}, "GET", *url, nil)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.networkConnectionSection+xml")
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(vm.client.Http.Do(req))
 	if err != nil {
 		return networkConnectionSection, fmt.Errorf("error retrieving task: %s", err)
 	}
@@ -89,23 +89,23 @@ func (v *VM) GetNetworkConnectionSection() (*types.NetworkConnectionSection, err
 	return networkConnectionSection, nil
 }
 
-func (c *VCDClient) FindVMByHREF(vmhref string) (VM, error) {
+func (cli *VCDClient) FindVMByHREF(vmhref string) (VM, error) {
 
-	u, err := url.ParseRequestURI(vmhref)
+	url, err := neturl.ParseRequestURI(vmhref)
 
 	if err != nil {
 		return VM{}, fmt.Errorf("error decoding vm HREF: %s", err)
 	}
 
 	// Querying the VApp
-	req := c.Client.NewRequest(map[string]string{}, "GET", *u, nil)
+	req := cli.Client.NewRequest(map[string]string{}, "GET", *url, nil)
 
-	resp, err := checkResp(c.Client.Http.Do(req))
+	resp, err := checkResp(cli.Client.Http.Do(req))
 	if err != nil {
 		return VM{}, fmt.Errorf("error retrieving VM: %s", err)
 	}
 
-	newvm := NewVM(&c.Client)
+	newvm := NewVM(&cli.Client)
 
 	if err = decodeBody(resp, newvm.VM); err != nil {
 		return VM{}, fmt.Errorf("error decoding VM response: %s", err)
@@ -115,19 +115,19 @@ func (c *VCDClient) FindVMByHREF(vmhref string) (VM, error) {
 
 }
 
-func (v *VM) PowerOn() (Task, error) {
+func (vm *VM) PowerOn() (Task, error) {
 
-	s, _ := url.ParseRequestURI(v.VM.HREF)
-	s.Path += "/power/action/powerOn"
+	apiEndpoint, _ := neturl.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint.Path += "/power/action/powerOn"
 
-	req := v.c.NewRequest(map[string]string{}, "POST", *s, nil)
+	req := vm.client.NewRequest(map[string]string{}, "POST", *apiEndpoint, nil)
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(vm.client.Http.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error powering on VM: %s", err)
 	}
 
-	task := NewTask(v.c)
+	task := NewTask(vm.client)
 
 	if err = decodeBody(resp, task.Task); err != nil {
 		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
@@ -138,19 +138,19 @@ func (v *VM) PowerOn() (Task, error) {
 
 }
 
-func (v *VM) PowerOff() (Task, error) {
+func (vm *VM) PowerOff() (Task, error) {
 
-	s, _ := url.ParseRequestURI(v.VM.HREF)
-	s.Path += "/power/action/powerOff"
+	apiEndpoint, _ := neturl.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint.Path += "/power/action/powerOff"
 
-	req := v.c.NewRequest(map[string]string{}, "POST", *s, nil)
+	req := vm.client.NewRequest(map[string]string{}, "POST", *apiEndpoint, nil)
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(vm.client.Http.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error powering off VM: %s", err)
 	}
 
-	task := NewTask(v.c)
+	task := NewTask(vm.client)
 
 	if err = decodeBody(resp, task.Task); err != nil {
 		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
@@ -161,9 +161,9 @@ func (v *VM) PowerOff() (Task, error) {
 
 }
 
-func (v *VM) ChangeCPUcount(size int) (Task, error) {
+func (vm *VM) ChangeCPUcount(size int) (Task, error) {
 
-	err := v.Refresh()
+	err := vm.Refresh()
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %v", err)
 	}
@@ -172,7 +172,7 @@ func (v *VM) ChangeCPUcount(size int) (Task, error) {
 		XmlnsRasd:       "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData",
 		XmlnsVCloud:     "http://www.vmware.com/vcloud/v1.5",
 		XmlnsXsi:        "http://www.w3.org/2001/XMLSchema-instance",
-		VCloudHREF:      v.VM.HREF + "/virtualHardwareSection/cpu",
+		VCloudHREF:      vm.VM.HREF + "/virtualHardwareSection/cpu",
 		VCloudType:      "application/vnd.vmware.vcloud.rasdItem+xml",
 		AllocationUnits: "hertz * 10^6",
 		Description:     "Number of Virtual CPUs",
@@ -183,7 +183,7 @@ func (v *VM) ChangeCPUcount(size int) (Task, error) {
 		VirtualQuantity: size,
 		Weight:          0,
 		Link: &types.Link{
-			HREF: v.VM.HREF + "/virtualHardwareSection/cpu",
+			HREF: vm.VM.HREF + "/virtualHardwareSection/cpu",
 			Rel:  "edit",
 			Type: "application/vnd.vmware.vcloud.rasdItem+xml",
 		},
@@ -196,21 +196,21 @@ func (v *VM) ChangeCPUcount(size int) (Task, error) {
 
 	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
-	b := bytes.NewBufferString(xml.Header + string(output))
+	buffer := bytes.NewBufferString(xml.Header + string(output))
 
-	s, _ := url.ParseRequestURI(v.VM.HREF)
-	s.Path += "/virtualHardwareSection/cpu"
+	apiEndpoint, _ := neturl.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint.Path += "/virtualHardwareSection/cpu"
 
-	req := v.c.NewRequest(map[string]string{}, "PUT", *s, b)
+	req := vm.client.NewRequest(map[string]string{}, "PUT", *apiEndpoint, buffer)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.rasdItem+xml")
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(vm.client.Http.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error customizing VM: %s", err)
 	}
 
-	task := NewTask(v.c)
+	task := NewTask(vm.client)
 
 	if err = decodeBody(resp, task.Task); err != nil {
 		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
@@ -221,13 +221,13 @@ func (v *VM) ChangeCPUcount(size int) (Task, error) {
 
 }
 
-func (v *VM) ChangeNetworkConfig(networks []map[string]interface{}, ip string) (Task, error) {
-	err := v.Refresh()
+func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}, ip string) (Task, error) {
+	err := vm.Refresh()
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %v", err)
 	}
 
-	networksection, err := v.GetNetworkConnectionSection()
+	networksection, err := vm.GetNetworkConnectionSection()
 
 	for index, network := range networks {
 		// Determine what type of address is requested for the vApp
@@ -277,21 +277,21 @@ func (v *VM) ChangeNetworkConfig(networks []map[string]interface{}, ip string) (
 
 	util.GovcdLogger.Printf("[DEBUG] NetworkXML: %s", output)
 
-	b := bytes.NewBufferString(xml.Header + string(output))
+	buffer := bytes.NewBufferString(xml.Header + string(output))
 
-	s, _ := url.ParseRequestURI(v.VM.HREF)
-	s.Path += "/networkConnectionSection/"
+	apiEndpoint, _ := neturl.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint.Path += "/networkConnectionSection/"
 
-	req := v.c.NewRequest(map[string]string{}, "PUT", *s, b)
+	req := vm.client.NewRequest(map[string]string{}, "PUT", *apiEndpoint, buffer)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.networkConnectionSection+xml")
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(vm.client.Http.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error customizing VM Network: %s", err)
 	}
 
-	task := NewTask(v.c)
+	task := NewTask(vm.client)
 
 	if err = decodeBody(resp, task.Task); err != nil {
 		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
@@ -301,9 +301,9 @@ func (v *VM) ChangeNetworkConfig(networks []map[string]interface{}, ip string) (
 	return *task, nil
 }
 
-func (v *VM) ChangeMemorySize(size int) (Task, error) {
+func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 
-	err := v.Refresh()
+	err := vm.Refresh()
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %v", err)
 	}
@@ -312,7 +312,7 @@ func (v *VM) ChangeMemorySize(size int) (Task, error) {
 		XmlnsRasd:       "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData",
 		XmlnsVCloud:     "http://www.vmware.com/vcloud/v1.5",
 		XmlnsXsi:        "http://www.w3.org/2001/XMLSchema-instance",
-		VCloudHREF:      v.VM.HREF + "/virtualHardwareSection/memory",
+		VCloudHREF:      vm.VM.HREF + "/virtualHardwareSection/memory",
 		VCloudType:      "application/vnd.vmware.vcloud.rasdItem+xml",
 		AllocationUnits: "byte * 2^20",
 		Description:     "Memory Size",
@@ -323,7 +323,7 @@ func (v *VM) ChangeMemorySize(size int) (Task, error) {
 		VirtualQuantity: size,
 		Weight:          0,
 		Link: &types.Link{
-			HREF: v.VM.HREF + "/virtualHardwareSection/memory",
+			HREF: vm.VM.HREF + "/virtualHardwareSection/memory",
 			Rel:  "edit",
 			Type: "application/vnd.vmware.vcloud.rasdItem+xml",
 		},
@@ -336,21 +336,21 @@ func (v *VM) ChangeMemorySize(size int) (Task, error) {
 
 	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
-	b := bytes.NewBufferString(xml.Header + string(output))
+	buffer := bytes.NewBufferString(xml.Header + string(output))
 
-	s, _ := url.ParseRequestURI(v.VM.HREF)
-	s.Path += "/virtualHardwareSection/memory"
+	apiEndpoint, _ := neturl.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint.Path += "/virtualHardwareSection/memory"
 
-	req := v.c.NewRequest(map[string]string{}, "PUT", *s, b)
+	req := vm.client.NewRequest(map[string]string{}, "PUT", *apiEndpoint, buffer)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.rasdItem+xml")
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(vm.client.Http.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error customizing VM: %s", err)
 	}
 
-	task := NewTask(v.c)
+	task := NewTask(vm.client)
 
 	if err = decodeBody(resp, task.Task); err != nil {
 		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
@@ -361,12 +361,12 @@ func (v *VM) ChangeMemorySize(size int) (Task, error) {
 
 }
 
-func (v *VM) RunCustomizationScript(computername, script string) (Task, error) {
-	return v.Customize(computername, script, false)
+func (vm *VM) RunCustomizationScript(computername, script string) (Task, error) {
+	return vm.Customize(computername, script, false)
 }
 
-func (v *VM) Customize(computername, script string, changeSid bool) (Task, error) {
-	err := v.Refresh()
+func (vm *VM) Customize(computername, script string, changeSid bool) (Task, error) {
+	err := vm.Refresh()
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %v", err)
 	}
@@ -376,7 +376,7 @@ func (v *VM) Customize(computername, script string, changeSid bool) (Task, error
 		Xsi:   "http://www.w3.org/2001/XMLSchema-instance",
 		Xmlns: "http://www.vmware.com/vcloud/v1.5",
 
-		HREF:                v.VM.HREF,
+		HREF:                vm.VM.HREF,
 		Type:                "application/vnd.vmware.vcloud.guestCustomizationSection+xml",
 		Info:                "Specifies Guest OS Customization Settings",
 		Enabled:             true,
@@ -394,21 +394,21 @@ func (v *VM) Customize(computername, script string, changeSid bool) (Task, error
 
 	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
-	b := bytes.NewBufferString(xml.Header + string(output))
+	buffer := bytes.NewBufferString(xml.Header + string(output))
 
-	s, _ := url.ParseRequestURI(v.VM.HREF)
-	s.Path += "/guestCustomizationSection/"
+	apiEndpoint, _ := neturl.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint.Path += "/guestCustomizationSection/"
 
-	req := v.c.NewRequest(map[string]string{}, "PUT", *s, b)
+	req := vm.client.NewRequest(map[string]string{}, "PUT", *apiEndpoint, buffer)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.guestCustomizationSection+xml")
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(vm.client.Http.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error customizing VM: %s", err)
 	}
 
-	task := NewTask(v.c)
+	task := NewTask(vm.client)
 
 	if err = decodeBody(resp, task.Task); err != nil {
 		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
@@ -418,7 +418,7 @@ func (v *VM) Customize(computername, script string, changeSid bool) (Task, error
 	return *task, nil
 }
 
-func (v *VM) Undeploy() (Task, error) {
+func (vm *VM) Undeploy() (Task, error) {
 
 	vu := &types.UndeployVAppParams{
 		Xmlns:               "http://www.vmware.com/vcloud/v1.5",
@@ -432,21 +432,21 @@ func (v *VM) Undeploy() (Task, error) {
 
 	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
-	b := bytes.NewBufferString(xml.Header + string(output))
+	buffer := bytes.NewBufferString(xml.Header + string(output))
 
-	s, _ := url.ParseRequestURI(v.VM.HREF)
-	s.Path += "/action/undeploy"
+	apiEndpoint, _ := neturl.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint.Path += "/action/undeploy"
 
-	req := v.c.NewRequest(map[string]string{}, "POST", *s, b)
+	req := vm.client.NewRequest(map[string]string{}, "POST", *apiEndpoint, buffer)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.undeployVAppParams+xml")
 
-	resp, err := checkResp(v.c.Http.Do(req))
+	resp, err := checkResp(vm.client.Http.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error undeploy vApp: %s", err)
 	}
 
-	task := NewTask(v.c)
+	task := NewTask(vm.client)
 
 	if err = decodeBody(resp, task.Task); err != nil {
 		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
