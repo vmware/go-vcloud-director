@@ -104,9 +104,9 @@ func getOrgHREF(vcdClient *VCDClient, orgname string) (string, error) {
 		return "", fmt.Errorf("error decoding response: %s", err)
 	}
 	// Look for orgname within OrgList
-	for _, a := range orgList.Org {
-		if a.Name == orgname {
-			return a.HREF, nil
+	for _, org := range orgList.Org {
+		if org.Name == orgname {
+			return org.HREF, nil
 		}
 	}
 	return "", fmt.Errorf("Couldn't find org with name: %s", orgname)

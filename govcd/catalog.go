@@ -16,7 +16,7 @@ import (
 	"log"
 	"math"
 	"net/http"
-	"net/url"
+	neturl "net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -26,13 +26,13 @@ import (
 
 type Catalog struct {
 	Catalog *types.Catalog
-	c       *Client
+	client  *Client
 }
 
-func NewCatalog(c *Client) *Catalog {
+func NewCatalog(cli *Client) *Catalog {
 	return &Catalog{
 		Catalog: new(types.Catalog),
-		c:       c,
+		client:  cli,
 	}
 }
 
@@ -48,25 +48,25 @@ type Envelope struct {
 	} `xml:"References>File"`
 }
 
-func (c *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
+func (cat *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
 
-	for _, cis := range c.Catalog.CatalogItems {
+	for _, cis := range cat.Catalog.CatalogItems {
 		for _, ci := range cis.CatalogItem {
 			if ci.Name == catalogitem && ci.Type == "application/vnd.vmware.vcloud.catalogItem+xml" {
-				u, err := url.ParseRequestURI(ci.HREF)
+				url, err := neturl.ParseRequestURI(ci.HREF)
 
 				if err != nil {
 					return CatalogItem{}, fmt.Errorf("error decoding catalog response: %s", err)
 				}
 
-				req := c.c.NewRequest(map[string]string{}, "GET", *u, nil)
+				req := cat.client.NewRequest(map[string]string{}, "GET", *url, nil)
 
-				resp, err := checkResp(c.c.Http.Do(req))
+				resp, err := checkResp(cat.client.Http.Do(req))
 				if err != nil {
 					return CatalogItem{}, fmt.Errorf("error retreiving catalog: %s", err)
 				}
 
-				cat := NewCatalogItem(c.c)
+				cat := NewCatalogItem(cat.client)
 
 				if err = decodeBody(resp, cat.CatalogItem); err != nil {
 					return CatalogItem{}, fmt.Errorf("error decoding catalog response: %s", err)
@@ -83,7 +83,7 @@ func (c *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
 
 // uploads an ova file to a catalog. This method only uploads bits to vCD spool area.
 // Returns errors if any occur during upload from vCD or upload process.
-func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize int) (Task, error) {
+func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize int) (Task, error) {
 
 	//	On a very high level the flow is as follows
 	//	1. Makes a POST call to vCD to create the catalog item (also creates a transfer folder in the spool area and as result will give a sparse catalog item resource XML).
@@ -91,17 +91,17 @@ func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize
 	//	3. Start uploading bits to the transfer folder
 	//	4. Wait on the import task to finish on vCD side -> task success = upload complete
 
-	catalogItemUploadURL, err := findCatalogItemUploadLink(c)
+	catalogItemUploadURL, err := findCatalogItemUploadLink(cat)
 	if err != nil {
 		return Task{}, err
 	}
 
-	vappTemplateUrl, err := createItemForUpload(c.c, catalogItemUploadURL, itemName, description)
+	vappTemplateUrl, err := createItemForUpload(cat.client, catalogItemUploadURL, itemName, description)
 	if err != nil {
 		return Task{}, err
 	}
 
-	vappTemplate, err := queryVappTemplate(c.c, vappTemplateUrl)
+	vappTemplate, err := queryVappTemplate(cat.client, vappTemplateUrl)
 	if err != nil {
 		return Task{}, err
 	}
@@ -121,7 +121,7 @@ func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize
 
 	for _, filePath := range filesAbsPaths {
 		if filepath.Ext(filePath) == ".ovf" {
-			ovfFileDesc, err = uploadOvfDescription(c.c, filePath, ovfUploadHref)
+			ovfFileDesc, err = uploadOvfDescription(cat.client, filePath, ovfUploadHref)
 			tempPath, _ = filepath.Split(filePath)
 			if err != nil {
 				return Task{}, err
@@ -130,16 +130,16 @@ func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize
 		}
 	}
 
-	vappTemplate, err = waitForTempUploadLinks(c.c, vappTemplateUrl)
+	vappTemplate, err = waitForTempUploadLinks(cat.client, vappTemplateUrl)
 
-	err = uploadFiles(c.c, vappTemplate, &ovfFileDesc, tempPath, filesAbsPaths)
+	err = uploadFiles(cat.client, vappTemplate, &ovfFileDesc, tempPath, filesAbsPaths)
 	if err != nil {
 		return Task{}, err
 	}
 
 	var task Task
 	for _, item := range vappTemplate.Tasks.Task {
-		task, err = createTaskForVcdImport(c.c, item.HREF)
+		task, err = createTaskForVcdImport(cat.client, item.HREF)
 	}
 
 	log.Printf("[TRACE] Upload finished and task for vcd import created. \n")
@@ -183,7 +183,7 @@ func uploadMultiPartFile(client *Client, filePaths []string, uploadHREF string, 
 }
 
 // Function waits until vCD provides temporary file upload links.
-func waitForTempUploadLinks(client *Client, vappTemplateUrl *url.URL) (*types.VAppTemplate, error) {
+func waitForTempUploadLinks(client *Client, vappTemplateUrl *neturl.URL) (*types.VAppTemplate, error) {
 	var vAppTemplate *types.VAppTemplate
 	var err error
 	for {
@@ -204,7 +204,7 @@ func waitForTempUploadLinks(client *Client, vappTemplateUrl *url.URL) (*types.VA
 func createTaskForVcdImport(client *Client, taskHREF string) (Task, error) {
 	log.Printf("[TRACE] Create task for vcd with HREF: %s\n", taskHREF)
 
-	taskURL, err := url.ParseRequestURI(taskHREF)
+	taskURL, err := neturl.ParseRequestURI(taskHREF)
 	if err != nil {
 		return Task{}, err
 	}
@@ -225,10 +225,10 @@ func createTaskForVcdImport(client *Client, taskHREF string) (Task, error) {
 	return *task, nil
 }
 
-func getOvfUploadLink(vappTemplate *types.VAppTemplate) (*url.URL, error) {
+func getOvfUploadLink(vappTemplate *types.VAppTemplate) (*neturl.URL, error) {
 	log.Printf("[TRACE] Parsing ofv upload link: %#v\n", vappTemplate)
 
-	ovfUploadHref, err := url.ParseRequestURI(vappTemplate.Files.File[0].Link[0].HREF)
+	ovfUploadHref, err := neturl.ParseRequestURI(vappTemplate.Files.File[0].Link[0].HREF)
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +236,7 @@ func getOvfUploadLink(vappTemplate *types.VAppTemplate) (*url.URL, error) {
 	return ovfUploadHref, nil
 }
 
-func queryVappTemplate(client *Client, vappTemplateUrl *url.URL) (*types.VAppTemplate, error) {
+func queryVappTemplate(client *Client, vappTemplateUrl *neturl.URL) (*types.VAppTemplate, error) {
 	log.Printf("[TRACE] Qeurying vapp template: %s\n", vappTemplateUrl)
 	request := client.NewRequest(map[string]string{}, "GET", *vappTemplateUrl, nil)
 	response, err := checkResp(client.Http.Do(request))
@@ -258,7 +258,7 @@ func queryVappTemplate(client *Client, vappTemplateUrl *url.URL) (*types.VAppTem
 
 // Uploads ovf description file from unarchived provided ova file. As result vCD will generate temporary upload links which has to be queried later.
 // Function will return parsed part for upload files from description xml.
-func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL) (Envelope, error) {
+func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *neturl.URL) (Envelope, error) {
 	log.Printf("[TRACE] Uploding ovf description with file: %s and url: %s\n", ovfFile, ovfUploadUrl)
 	openedFile, err := os.Open(ovfFile)
 	if err != nil {
@@ -299,12 +299,12 @@ func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL)
 	return ovfFileDesc, nil
 }
 
-func findCatalogItemUploadLink(catalog *Catalog) (*url.URL, error) {
+func findCatalogItemUploadLink(catalog *Catalog) (*neturl.URL, error) {
 	for _, item := range catalog.Catalog.Link {
 		if item.Type == "application/vnd.vmware.vcloud.uploadVAppTemplateParams+xml" && item.Rel == "add" {
 			log.Printf("[TRACE] Found Catalong link for uplaod: %s\n", item.HREF)
 
-			uploadURL, err := url.ParseRequestURI(item.HREF)
+			uploadURL, err := neturl.ParseRequestURI(item.HREF)
 			if err != nil {
 				return nil, err
 			}
@@ -362,7 +362,7 @@ func findFilePath(filesAbsPaths []string, fileName string) string {
 }
 
 // Initiates creation of item and returns ovf upload url for created item.
-func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName string, itemDescription string) (*url.URL, error) {
+func createItemForUpload(client *Client, createHREF *neturl.URL, catalogItemName string, itemDescription string) (*neturl.URL, error) {
 
 	reqBody := bytes.NewBufferString(
 		"<UploadVAppTemplateParams xmlns=\"http://www.vmware.com/vcloud/v1.5\" name=\"" + catalogItemName + "\" >" +
@@ -386,7 +386,7 @@ func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName st
 	log.Printf("[TRACE] Response: %#v \n", response)
 	log.Printf("[TRACE] Catalog item parsed: %#v\n", catalogItemParsed)
 
-	ovfUploadUrl, err := url.ParseRequestURI(catalogItemParsed.Entity.HREF)
+	ovfUploadUrl, err := neturl.ParseRequestURI(catalogItemParsed.Entity.HREF)
 	if err != nil {
 		return nil, err
 	}

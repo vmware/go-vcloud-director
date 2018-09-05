@@ -6,7 +6,7 @@ import (
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"net/url"
+	neturl "net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -96,11 +96,11 @@ func GetConfigStruct() (TestConfig, error) {
 // TestConfig struct can be obtained by calling GetConfigStruct. Throws an error
 // if endpoint given is not a valid url.
 func GetTestVCDFromYaml(g TestConfig) (*VCDClient, error) {
-	u, err := url.ParseRequestURI(g.Provider.Url)
+	url, err := neturl.ParseRequestURI(g.Provider.Url)
 	if err != nil {
 		return &VCDClient{}, fmt.Errorf("could not parse Url: %s", err)
 	}
-	vcdClient := NewVCDClient(*u, true)
+	vcdClient := NewVCDClient(*url, true)
 	return vcdClient, nil
 }
 

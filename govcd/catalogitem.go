@@ -13,13 +13,13 @@ import (
 
 type CatalogItem struct {
 	CatalogItem *types.CatalogItem
-	c           *Client
+	client      *Client
 }
 
-func NewCatalogItem(c *Client) *CatalogItem {
+func NewCatalogItem(cli *Client) *CatalogItem {
 	return &CatalogItem{
 		CatalogItem: new(types.CatalogItem),
-		c:           c,
+		client:      cli,
 	}
 }
 
@@ -30,14 +30,14 @@ func (ci *CatalogItem) GetVAppTemplate() (VAppTemplate, error) {
 		return VAppTemplate{}, fmt.Errorf("error decoding catalogitem response: %s", err)
 	}
 
-	req := ci.c.NewRequest(map[string]string{}, "GET", *url, nil)
+	req := ci.client.NewRequest(map[string]string{}, "GET", *url, nil)
 
-	resp, err := checkResp(ci.c.Http.Do(req))
+	resp, err := checkResp(ci.client.Http.Do(req))
 	if err != nil {
 		return VAppTemplate{}, fmt.Errorf("error retreiving vapptemplate: %s", err)
 	}
 
-	cat := NewVAppTemplate(ci.c)
+	cat := NewVAppTemplate(ci.client)
 
 	if err = decodeBody(resp, cat.VAppTemplate); err != nil {
 		return VAppTemplate{}, fmt.Errorf("error decoding vapptemplate response: %s", err)
