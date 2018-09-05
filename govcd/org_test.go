@@ -31,11 +31,11 @@ func (vcd *TestVCD) Test_RefreshOrg(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	// Test Refresh on normal org
-	err = RefreshOrg(&org)
+	err = org.Refresh()
 	check.Assert(err, IsNil)
 	check.Assert(org.Org.FullName, Equals, "govcd")
 	// Test Refresh on admin org
-	err = RefreshOrg(&adminOrg)
+	err = adminOrg.Refresh()
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg.AdminOrg.FullName, Equals, "govcd")
 	// Delete, with force and recursive true
@@ -43,7 +43,7 @@ func (vcd *TestVCD) Test_RefreshOrg(check *C) {
 	check.Assert(err, IsNil)
 }
 
-// Creates a org DELETEORG and then deletes it to test functionality of
+// Creates an org DELETEORG and then deletes it to test functionality of
 // delete org. Fails if org still exists
 func (vcd *TestVCD) Test_DeleteOrg(check *C) {
 	_, err := CreateOrg(vcd.client, "DELETEORG", "DELETEORG", true, &types.OrgSettings{})
@@ -81,7 +81,7 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	// Refresh
-	err = RefreshOrg(&org)
+	err = org.Refresh()
 	check.Assert(err, IsNil)
 	check.Assert(org.AdminOrg.OrgSettings.OrgGeneralSettings.DeployedVMQuota, Equals, 100)
 	// Delete, with force and recursive true
