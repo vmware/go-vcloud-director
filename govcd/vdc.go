@@ -9,9 +9,8 @@ import (
 	"encoding/xml"
 	"fmt"
 	types "github.com/vmware/go-vcloud-director/types/v56"
-	"log"
+	"github.com/vmware/go-vcloud-director/util"
 	"net/url"
-	"os"
 	"strings"
 )
 
@@ -258,11 +257,7 @@ func (v *Vdc) ComposeRawVApp(name string) error {
 		return fmt.Errorf("error marshaling vapp compose: %s", err)
 	}
 
-	debug := os.Getenv("GOVCLOUDAIR_DEBUG")
-
-	if debug == "true" {
-		fmt.Printf("\n\nXML DEBUG: %s\n\n", string(output))
-	}
+	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	requestData := bytes.NewBufferString(xml.Header + string(output))
 
@@ -370,7 +365,7 @@ func (v *Vdc) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate VA
 	if err != nil {
 		return Task{}, fmt.Errorf("error marshaling vapp compose: %s", err)
 	}
-	log.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 	requestData := bytes.NewBufferString(xml.Header + string(output))
 
 	vdcHref, err := url.ParseRequestURI(v.Vdc.HREF)
@@ -455,10 +450,10 @@ func (v *Vdc) FindVMByName(vapp VApp, vm string) (VM, error) {
 		return VM{}, fmt.Errorf("VApp Has No VMs")
 	}
 
-	log.Printf("[TRACE] Looking for VM: %s", vm)
+	util.GovcdLogger.Printf("[TRACE] Looking for VM: %s", vm)
 	for _, child := range vapp.VApp.Children.VM {
 
-		log.Printf("[TRACE] Found: %s", child.Name)
+		util.GovcdLogger.Printf("[TRACE] Found: %s", child.Name)
 		if child.Name == vm {
 
 			u, err := url.ParseRequestURI(child.HREF)
@@ -489,7 +484,7 @@ func (v *Vdc) FindVMByName(vapp VApp, vm string) (VM, error) {
 		}
 
 	}
-	log.Printf("[TRACE] Couldn't find VM: %s", vm)
+	util.GovcdLogger.Printf("[TRACE] Couldn't find VM: %s", vm)
 	return VM{}, fmt.Errorf("can't find vm: %s", vm)
 }
 

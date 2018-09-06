@@ -11,7 +11,14 @@ import (
 func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
 	// Fetch Catalog
 	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	if err != nil {
+		check.Skip("Test_FindCatalogItem: Catalog not found. Test can't proceed")
+	}
+
 	// Find Catalog Item
+	if vcd.config.VCD.Catalog.Catalogitem == "" {
+		check.Skip("Test_FindCatalogItem: Catalog Item not given. Test can't proceed")
+	}
 	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.Catalogitem)
 	check.Assert(err, IsNil)
 	check.Assert(catitem.CatalogItem.Name, Equals, vcd.config.VCD.Catalog.Catalogitem)

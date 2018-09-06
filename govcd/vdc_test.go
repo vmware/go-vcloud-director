@@ -115,6 +115,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	check.Assert(err, IsNil)
 	// Populate Catalog
 	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	check.Assert(cat, Not(Equals), (Catalog{}))
 	check.Assert(err, IsNil)
 	// Populate Catalog Item
 	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.Catalogitem)
@@ -159,6 +160,9 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 
 func (vcd *TestVCD) Test_FindVApp(check *C) {
 
+	if vcd.vapp.VApp == nil {
+		check.Skip("No Vapp provided")
+	}
 	first_vapp, err := vcd.vdc.FindVAppByName(vcd.vapp.VApp.Name)
 
 	check.Assert(err, IsNil)

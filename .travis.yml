@@ -1,18 +1,16 @@
 language: go
+
+go:
+    - "1.10.x"
+
 sudo: false
 install: false
 
-before_install:
-- go get golang.org/x/tools/cmd/cover
-- go get github.com/mattn/goveralls
-- go get gopkg.in/check.v1
-- go get gopkg.in/yaml.v2
-
 script:
-- make
+    - make
 
 after_success:
-- echo "Build Successful!" 
+    - echo "Build Successful!" 
 after_failure:
-- echo "Build Failed!" 
+    - echo "Build Failed!" 
 

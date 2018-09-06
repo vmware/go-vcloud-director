@@ -2,40 +2,19 @@
 To run tests in go-vcloud-director, users must use a yaml file specifying information about the users vcd. Users can set the `VCLOUD_CONFIG` environmental variable with the path.
 
 ```
-export VCLOUD_CONFIG=$HOME/test.yaml
+export GOVCD_CONFIG=your/path/to/test-configuration.yaml
 ```
 
-If no environmental variable is set it will default to $HOME/config.yaml.
+If no environmental variable is set it will default to `govcd_test_config.yaml` in the same path where the test files are (`./govcd`.)
 
 ## Example Config file
 
-```yaml
-provider:
-    user: orgadmin_name
-    password: orgadmin_pwd
-    url:  https://api.vcd.api/api
-    # org user chooses to authenticate with
-    org:  System
-vcd:
-    org: org
-    vdc: org-vdc
-    catalog:
-        name: test
-        description: test catalog
-        catalogitem: ubuntu
-        catalogitemdescription: description
-    storageprofile:
-        storageprofile1: Development
-        storageprofile2: "*"
-    vapp: myvapp
-    network: net
-    edgegateway: au-edge
-    externalip: 10.150.10.10
-    internalip: 10.0.0.10
-```
+See `./govcd/sample_govcd_test_config.yaml`.
 
-Users must specify their username, password, api_endpoint, vcd and org for any tests to run. Otherwise all tests get aborted. For more comprehensive testing the catalog, catalogitem, storageprofile, network, edgegateway, ip field can be set using the format above. For comprehensive testing just replace each field with your vcd information. 
+Users must specify their username, password, API endpoint, vcd and org for any tests to run. Otherwise all tests get aborted. For more comprehensive testing the catalog, catalog item, storage profile, network, edge gateway, IP fields can be set using the format in the sample.
 Note that all the entities included in the configuration file must exist already and will not be removed or left altered during the tests. Leaving a field blank will skip one or more corresponding tests.
+
+If you are more comfortable with JSON, you can supply the configuration in that format. The field names are the same. See `./govcd/sample_govcd_test_config.json`.
 
 ## Running Tests
 Once you have a config file setup, you can run tests with either the makefile or with go itself.
@@ -59,12 +38,12 @@ To run a specific test:
 
 ```bash
 cd govcd
-go test -check.f Test_SetOvf
+go test -check.f Test_SetOvf -check.vv .
 ```
 
 ## How to write a test
 
-go-vcloud-director tests are written using [check.v1](https://labix.org/gocheck), an auxiliary libarry for tests that provides several methods to help developers write comprehensive tests.
+go-vcloud-director tests are written using [check.v1](https://labix.org/gocheck), an auxiliary library for tests that provides several methods to help developers write comprehensive tests.
 
 
 ### Imports
@@ -126,6 +105,11 @@ import (
 func (vcd *TestVCD) Test_GetVAppTemplate(check *checks.C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
+
+    // #0 Check that the data needed for this test is in the configuration
+    if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("Catalog name not provided. Test can't proceed")
+    }
 
     // #1: preliminary data
 	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
