@@ -33,6 +33,32 @@ func NewOrg(client *Client) *Org {
 	}
 }
 
+// Given an org with a valid HREF, the function refetches the org
+// and updates the user's org data. Otherwise if the function fails,
+// it returns an error. Users should use refresh whenever they have
+// a stale org due to the creation/update/deletion of a resource
+// within the org or the org itself.
+func (org *Org) Refresh() error {
+	if *org == (Org{}) {
+		return fmt.Errorf("cannot refresh, Object is empty")
+	}
+	orgHREF, _ := url.ParseRequestURI(org.Org.HREF)
+	req := org.c.NewRequest(map[string]string{}, "GET", *orgHREF, nil)
+	resp, err := checkResp(org.c.Http.Do(req))
+	if err != nil {
+		return fmt.Errorf("error performing request: %s", err)
+	}
+	// Empty struct before a new unmarshal, otherwise we end up with duplicate
+	// elements in slices.
+	unmarshalledOrg := &types.Org{}
+	if err = decodeBody(resp, unmarshalledOrg); err != nil {
+		return fmt.Errorf("error decoding org response: %s", err)
+	}
+	org.Org = unmarshalledOrg
+	// The request was successful
+	return nil
+}
+
 // Given a valid catalog name, FindCatalog returns a Catalog object.
 // If no catalog is found, then returns an empty catalog and no error.
 // Otherwise it returns an error.
@@ -99,6 +125,7 @@ func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
 // Administrators can delete and update orgs with an admin org object.
 // AdminOrg includes all members of the Org element, and adds several
 // elements that can be viewed and modified only by system administrators.
+// Definition: https://code.vmware.com/apis/220/vcloud#/doc/doc/types/AdminOrgType.html
 type AdminOrg struct {
 	AdminOrg *types.AdminOrg
 	c        *Client
@@ -109,32 +136,6 @@ func NewAdminOrg(c *Client) *AdminOrg {
 		AdminOrg: new(types.AdminOrg),
 		c:        c,
 	}
-}
-
-// Given an org with a valid HREF, the function refetches the org
-// and updates the user's org data. Otherwise if the function fails,
-// it returns an error. Users should use refresh whenever they have
-// a stale org due to the creation/update/deletion of a resource
-// within the org or the org itself.
-func (org *Org) Refresh() error {
-	if *org == (Org{}) {
-		return fmt.Errorf("cannot refresh, Object is empty")
-	}
-	orgHREF, _ := url.ParseRequestURI(org.Org.HREF)
-	req := org.c.NewRequest(map[string]string{}, "GET", *orgHREF, nil)
-	resp, err := checkResp(org.c.Http.Do(req))
-	if err != nil {
-		return fmt.Errorf("error performing request: %s", err)
-	}
-	// Empty struct before a new unmarshal, otherwise we end up with duplicate
-	// elements in slices.
-	unmarshalledOrg := &types.Org{}
-	if err = decodeBody(resp, unmarshalledOrg); err != nil {
-		return fmt.Errorf("error decoding org response: %s", err)
-	}
-	org.Org = unmarshalledOrg
-	// The request was successful
-	return nil
 }
 
 // Given an adminorg with a valid HREF, the function refetches the adminorg
@@ -161,6 +162,46 @@ func (adminOrg *AdminOrg) Refresh() error {
 	adminOrg.AdminOrg = unmarshalledAdminOrg
 	// The request was successful
 	return nil
+}
+
+// CreateCatalog creates a catalog with given name and description under the
+// the given organization. Returns an AdminCatalog that contains a creation
+// task.
+// API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-CreateCatalog.html
+func (adminOrg *AdminOrg) CreateCatalog(Name, Description string, isPublished bool) (AdminCatalog, error) {
+
+	vcomp := &types.AdminCatalog{
+		Xmlns:       "http://www.vmware.com/vcloud/v1.5",
+		Name:        Name,
+		Description: Description,
+		IsPublished: isPublished,
+	}
+
+	catalogHREF, err := url.ParseRequestURI(adminOrg.AdminOrg.HREF)
+	if err != nil {
+		return AdminCatalog{}, fmt.Errorf("error parsing admin org's href: %v", err)
+	}
+	catalogHREF.Path += "/catalogs"
+
+	output, _ := xml.MarshalIndent(vcomp, "  ", "    ")
+	xmlData := bytes.NewBufferString(xml.Header + string(output))
+
+	req := adminOrg.c.NewRequest(map[string]string{}, "POST", *catalogHREF, xmlData)
+
+	req.Header.Add("Content-Type", "application/vnd.vmware.admin.catalog+xml")
+
+	resp, err := checkResp(adminOrg.c.Http.Do(req))
+	if err != nil {
+		return AdminCatalog{}, fmt.Errorf("error creating catalog: %s : %s", err, catalogHREF.Path)
+	}
+
+	catalog := NewAdminCatalog(adminOrg.c)
+	if err = decodeBody(resp, catalog.AdminCatalog); err != nil {
+		return AdminCatalog{}, fmt.Errorf("error decoding task response: %s", err)
+	}
+	// Task is within the catalog
+	return *catalog, nil
+
 }
 
 // If user specifies valid vdc name then this returns a vdc object.
@@ -194,6 +235,7 @@ func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
 }
 
 //   Deletes the org, returning an error if the vCD call fails.
+//   API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Organization.html
 func (adminOrg *AdminOrg) Delete(force bool, recursive bool) error {
 	if force && recursive {
 		//undeploys vapps
@@ -244,6 +286,7 @@ func (adminOrg *AdminOrg) Delete(force bool, recursive bool) error {
 }
 
 // Disables the org. Returns an error if the call to vCD fails.
+// API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-DisableOrg.html
 func (adminOrg *AdminOrg) Disable() error {
 	orgHREF, err := url.ParseRequestURI(adminOrg.AdminOrg.HREF)
 	if err != nil {
@@ -258,6 +301,7 @@ func (adminOrg *AdminOrg) Disable() error {
 //   Updates the Org definition from current org struct contents.
 //   Any differences that may be legally applied will be updated.
 //   Returns an error if the call to vCD fails.
+//   API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/PUT-Organization.html
 func (adminOrg *AdminOrg) Update() (Task, error) {
 	vcomp := &types.AdminOrg{
 		Xmlns:       "http://www.vmware.com/vcloud/v1.5",
@@ -425,6 +469,36 @@ func (adminOrg *AdminOrg) removeCatalogs() error {
 	}
 	return nil
 
+}
+
+// Given a valid catalog name, FindCatalog returns an AdminCatalog object.
+// If no catalog is found, then returns an empty AdminCatalog and no error.
+// Otherwise it returns an error. Function allows user to use an AdminOrg
+// to also fetch a Catalog. If user does not have proper credentials to
+// perform administrator tasks then function returns an error.
+// API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/GET-Catalog-AdminView.html
+func (adminOrg *AdminOrg) FindAdminCatalog(catalogName string) (AdminCatalog, error) {
+	for _, adminCatalog := range adminOrg.AdminOrg.Catalogs.Catalog {
+		// Get Catalog HREF
+		if adminCatalog.Name == catalogName {
+			catalogURL, err := url.ParseRequestURI(adminCatalog.HREF)
+			if err != nil {
+				return AdminCatalog{}, fmt.Errorf("error decoding catalog url: %s", err)
+			}
+			req := adminOrg.c.NewRequest(map[string]string{}, "GET", *catalogURL, nil)
+			resp, err := checkResp(adminOrg.c.Http.Do(req))
+			if err != nil {
+				return AdminCatalog{}, fmt.Errorf("error retreiving catalog: %s", err)
+			}
+			adminCatalog := NewAdminCatalog(adminOrg.c)
+			if err = decodeBody(resp, adminCatalog.AdminCatalog); err != nil {
+				return AdminCatalog{}, fmt.Errorf("error decoding catalog response: %s", err)
+			}
+			// The request was successful
+			return *adminCatalog, nil
+		}
+	}
+	return AdminCatalog{}, nil
 }
 
 // Given a valid catalog name, FindCatalog returns a Catalog object.

@@ -127,18 +127,16 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	storageprofileref, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
 	check.Assert(err, IsNil)
 	// Compose VApp
-	temp_vapp_name := "go-vcloud-director-vapp-check"
-	temp_vapp_description := "vapp created by tests"
-	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, temp_vapp_name, temp_vapp_description, true)
+	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, compose_vapp_name, compose_vapp_description, true)
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.OperationName, Equals, "vdcComposeVapp")
 	// Get VApp
-	vapp, err := vcd.vdc.FindVAppByName(temp_vapp_name)
+	vapp, err := vcd.vdc.FindVAppByName(compose_vapp_name)
 	check.Assert(err, IsNil)
 	// Once the operation is successful, we won't trigger a failure
 	// until after the vApp deletion
-	check.Check(vapp.VApp.Name, Equals, temp_vapp_name)
-	check.Check(vapp.VApp.Description, Equals, temp_vapp_description)
+	check.Check(vapp.VApp.Name, Equals, compose_vapp_name)
+	check.Check(vapp.VApp.Description, Equals, compose_vapp_description)
 
 	vapp_status, err := vapp.GetStatus()
 	check.Check(err, IsNil)
@@ -152,7 +150,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	task, err = vapp.Delete()
 	task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
-	no_such_vapp, err := vcd.vdc.FindVAppByName(temp_vapp_name)
+	no_such_vapp, err := vcd.vdc.FindVAppByName(compose_vapp_name)
 	check.Assert(err, NotNil)
 	check.Assert(no_such_vapp.VApp, IsNil)
 

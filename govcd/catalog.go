@@ -9,7 +9,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/vmware/go-vcloud-director/types/v56"
+	types "github.com/vmware/go-vcloud-director/types/v56"
 	"github.com/vmware/go-vcloud-director/util"
 	"io"
 	"io/ioutil"
@@ -24,16 +24,93 @@ import (
 	"time"
 )
 
+type CatalogOperations interface {
+	FindCatalogItem(catalogitem string) (CatalogItem, error)
+}
+
+// AdminCatalog is a admin view of a vCloud Director Catalog
+// To be able to get an AdminCatalog representation, users must have
+// admin credentials to the System org. AdminCatalog is used
+// for creating, updating, and deleting a Catalog.
+// Definition: https://code.vmware.com/apis/220/vcloud#/doc/doc/types/AdminCatalogType.html
+type AdminCatalog struct {
+	AdminCatalog *types.AdminCatalog
+	c            *Client
+}
+
 type Catalog struct {
 	Catalog *types.Catalog
 	c       *Client
 }
 
-func NewCatalog(c *Client) *Catalog {
+func NewCatalog(client *Client) *Catalog {
 	return &Catalog{
 		Catalog: new(types.Catalog),
-		c:       c,
+		c:       client,
 	}
+}
+
+func NewAdminCatalog(client *Client) *AdminCatalog {
+	return &AdminCatalog{
+		AdminCatalog: new(types.AdminCatalog),
+		c:            client,
+	}
+}
+
+// Deletes the Catalog, returning an error if the vCD call fails.
+// Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Catalog.html
+func (adminCatalog *AdminCatalog) Delete(force, recursive bool) error {
+	adminCatalogHREF := adminCatalog.c.VCDHREF
+	adminCatalogHREF.Path += "/admin/catalog/" + adminCatalog.AdminCatalog.ID[19:]
+
+	req := adminCatalog.c.NewRequest(map[string]string{
+		"force":     strconv.FormatBool(force),
+		"recursive": strconv.FormatBool(recursive),
+	}, "DELETE", adminCatalogHREF, nil)
+
+	_, err := checkResp(adminCatalog.c.Http.Do(req))
+
+	if err != nil {
+		return fmt.Errorf("error deleting Catalog %s: %s", adminCatalog.AdminCatalog.ID, err)
+	}
+
+	return nil
+}
+
+//   Updates the Catalog definition from current Catalog struct contents.
+//   Any differences that may be legally applied will be updated.
+//   Returns an error if the call to vCD fails. Update automatically performs
+//   a refresh with the admin catalog it gets back from the rest api
+//   Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/PUT-Catalog.html
+func (adminCatalog *AdminCatalog) Update() error {
+	vcomp := &types.AdminCatalog{
+		Xmlns:       "http://www.vmware.com/vcloud/v1.5",
+		Name:        adminCatalog.AdminCatalog.Name,
+		Description: adminCatalog.AdminCatalog.Description,
+		IsPublished: adminCatalog.AdminCatalog.IsPublished,
+	}
+	adminCatalogHREF, err := url.ParseRequestURI(adminCatalog.AdminCatalog.HREF)
+	if err != nil {
+		return fmt.Errorf("error parsing admin catalog's href: %v", err)
+	}
+	output, err := xml.MarshalIndent(vcomp, "  ", "    ")
+	if err != nil {
+		return fmt.Errorf("error marshalling xml data for update %v", err)
+	}
+	xmlData := bytes.NewBufferString(xml.Header + string(output))
+	req := adminCatalog.c.NewRequest(map[string]string{}, "PUT", *adminCatalogHREF, xmlData)
+	req.Header.Add("Content-Type", "application/vnd.vmware.admin.catalog+xml")
+	resp, err := checkResp(adminCatalog.c.Http.Do(req))
+	if err != nil {
+		return fmt.Errorf("error updating catalog: %s : %s", err, adminCatalogHREF.Path)
+	}
+
+	catalog := &types.AdminCatalog{}
+	if err = decodeBody(resp, catalog); err != nil {
+		return fmt.Errorf("error decoding update response: %s", err)
+	}
+	adminCatalog.AdminCatalog = catalog
+	return nil
 }
 
 // Envelope is a ovf description root element. File contains information for vmdk files.
@@ -48,25 +125,28 @@ type Envelope struct {
 	} `xml:"References>File"`
 }
 
-func (c *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
-
-	for _, cis := range c.Catalog.CatalogItems {
-		for _, ci := range cis.CatalogItem {
-			if ci.Name == catalogitem && ci.Type == "application/vnd.vmware.vcloud.catalogItem+xml" {
-				u, err := url.ParseRequestURI(ci.HREF)
+// If catalogitem is a valid CatalogItem and the call succeds,
+// then the function returns a CatalogItem. If the item does not
+// exist, then it returns an empty CatalogItem. If The call fails
+// at any point, it returns an error.
+func (catalog *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
+	for _, catalogItems := range catalog.Catalog.CatalogItems {
+		for _, catalogItem := range catalogItems.CatalogItem {
+			if catalogItem.Name == catalogitem && catalogItem.Type == "application/vnd.vmware.vcloud.catalogItem+xml" {
+				catalogItemHREF, err := url.ParseRequestURI(catalogItem.HREF)
 
 				if err != nil {
 					return CatalogItem{}, fmt.Errorf("error decoding catalog response: %s", err)
 				}
 
-				req := c.c.NewRequest(map[string]string{}, "GET", *u, nil)
+				req := catalog.c.NewRequest(map[string]string{}, "GET", *catalogItemHREF, nil)
 
-				resp, err := checkResp(c.c.Http.Do(req))
+				resp, err := checkResp(catalog.c.Http.Do(req))
 				if err != nil {
 					return CatalogItem{}, fmt.Errorf("error retreiving catalog: %s", err)
 				}
 
-				cat := NewCatalogItem(c.c)
+				cat := NewCatalogItem(catalog.c)
 
 				if err = decodeBody(resp, cat.CatalogItem); err != nil {
 					return CatalogItem{}, fmt.Errorf("error decoding catalog response: %s", err)
@@ -78,7 +158,7 @@ func (c *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
 		}
 	}
 
-	return CatalogItem{}, fmt.Errorf("can't find catalog item: %s", catalogitem)
+	return CatalogItem{}, nil
 }
 
 // uploads an ova file to a catalog. This method only uploads bits to vCD spool area.

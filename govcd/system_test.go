@@ -41,6 +41,11 @@ func (vcd *TestVCD) Test_GetAdminOrgByName(check *C) {
 // org vapp template settings, and orgldapsettings. Asserts an
 // error if the task, fetching the org, or deleting the org fails
 func (vcd *TestVCD) Test_CreateOrg(check *C) {
+	org, err := GetAdminOrgByName(vcd.client, OrgCreateTest)
+	if org != (AdminOrg{}) {
+		err = org.Delete(true, true)
+		check.Assert(err, IsNil)
+	}
 	settings := &types.OrgSettings{
 		OrgGeneralSettings: &types.OrgGeneralSettings{
 			CanPublishCatalogs:       true,
@@ -57,20 +62,20 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 			OrgLdapMode: "NONE",
 		},
 	}
-	task, err := CreateOrg(vcd.client, "CREATEORG", "CREATEORG", true, settings)
+	task, err := CreateOrg(vcd.client, OrgCreateTest, OrgCreateTest, true, settings)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	// fetch newly created org
-	org, err := GetAdminOrgByName(vcd.client, "CREATEORG")
+	org, err = GetAdminOrgByName(vcd.client, OrgCreateTest)
 	check.Assert(org, Not(Equals), AdminOrg{})
 	check.Assert(err, IsNil)
-	check.Assert(org.AdminOrg.Name, Equals, "CREATEORG")
+	check.Assert(org.AdminOrg.Name, Equals, OrgCreateTest)
 	// Delete, with force and recursive true
 	err = org.Delete(true, true)
 	check.Assert(err, IsNil)
 	// Check if org still exists
-	org, err = GetAdminOrgByName(vcd.client, "CREATEORG")
+	org, err = GetAdminOrgByName(vcd.client, OrgCreateTest)
 	check.Assert(org, Equals, AdminOrg{})
 	check.Assert(err, IsNil)
 

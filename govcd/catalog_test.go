@@ -29,5 +29,52 @@ func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
 	}
 	// Test non-existant catalog item
 	catitem, err = cat.FindCatalogItem("INVALID")
-	check.Assert(err, NotNil)
+	check.Assert(catitem, Equals, CatalogItem{})
+	check.Assert(err, IsNil)
+}
+
+// Creates a Catalog, updates the description, and checks the changes against the
+// newly updated catalog. Then deletes the catalog
+func (vcd *TestVCD) Test_UpdateCatalog(check *C) {
+	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
+	check.Assert(org, Not(Equals), AdminOrg{})
+	check.Assert(err, IsNil)
+	catalog, err := org.FindAdminCatalog(CatalogUpdateTest)
+	if catalog != (AdminCatalog{}) {
+		err = catalog.Delete(true, true)
+		check.Assert(err, IsNil)
+	}
+	adminCatalog, err := org.CreateCatalog(CatalogUpdateTest, CatalogUpdateTest, true)
+	check.Assert(err, IsNil)
+	check.Assert(adminCatalog.AdminCatalog.Name, Equals, CatalogUpdateTest)
+
+	adminCatalog.AdminCatalog.Description = CatalogCreateDescription
+	err = adminCatalog.Update()
+	check.Assert(err, IsNil)
+	check.Assert(adminCatalog.AdminCatalog.Description, Equals, CatalogCreateDescription)
+
+	err = adminCatalog.Delete(true, true)
+	check.Assert(err, IsNil)
+}
+
+// Creates a Catalog, and then deletes the catalog, and checks if
+// the catalog still exists. If it does the assertion fails.
+func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
+	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
+	check.Assert(org, Not(Equals), AdminOrg{})
+	check.Assert(err, IsNil)
+	adminCatalog, err := org.FindAdminCatalog(CatalogDeleteTest)
+	if adminCatalog != (AdminCatalog{}) {
+		err = adminCatalog.Delete(true, true)
+		check.Assert(err, IsNil)
+	}
+	adminCatalog, err = org.CreateCatalog(CatalogDeleteTest, CatalogDeleteTest, true)
+	check.Assert(err, IsNil)
+	check.Assert(adminCatalog.AdminCatalog.Name, Equals, CatalogDeleteTest)
+	err = adminCatalog.Delete(true, true)
+	check.Assert(err, IsNil)
+	catalog, err := org.FindCatalog(CatalogDeleteTest)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, Equals, Catalog{})
+
 }
