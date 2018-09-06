@@ -77,7 +77,8 @@ func (adminCatalog *AdminCatalog) Delete(force, recursive bool) error {
 
 //   Updates the Catalog definition from current Catalog struct contents.
 //   Any differences that may be legally applied will be updated.
-//   Returns an error if the call to vCD fails.
+//   Returns an error if the call to vCD fails. Update automatically performs
+//   a refresh with the admin catalog it gets back.
 func (adminCatalog *AdminCatalog) Update() (Task, error) {
 	vcomp := &types.AdminCatalog{
 		Xmlns:       "http://www.vmware.com/vcloud/v1.5",
@@ -91,7 +92,7 @@ func (adminCatalog *AdminCatalog) Update() (Task, error) {
 	}
 	output, err := xml.MarshalIndent(vcomp, "  ", "    ")
 	if err != nil {
-		return Task{}, fmt.Errorf("error marshalling xml data for update", err)
+		return Task{}, fmt.Errorf("error marshalling xml data for update %v", err)
 	}
 	xmlData := bytes.NewBufferString(xml.Header + string(output))
 	req := adminCatalog.c.NewRequest(map[string]string{}, "PUT", *adminCatalogHREF, xmlData)
