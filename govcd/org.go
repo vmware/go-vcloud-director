@@ -163,7 +163,6 @@ func (adminOrg *AdminOrg) Refresh() error {
 	return nil
 }
 
-
 // CreateCatalog creates a catalog with given name and description under the
 // the given organization. Returns an AdminCatalog that contains a creation
 // task.
