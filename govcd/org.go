@@ -18,6 +18,7 @@ import (
 type OrgOperations interface {
 	FindCatalog(catalog string) (Catalog, error)
 	GetVdcByName(vdcname string) (Vdc, error)
+	Refresh() error
 }
 
 type Org struct {
@@ -32,20 +33,39 @@ func NewOrg(client *Client) *Org {
 	}
 }
 
-// AdminOrg gives an admin representation of an org.
-// Administrators can delete and update orgs with an admin org object.
-// AdminOrg includes all members of the Org element, and adds several
-// elements that can be viewed and modified only by system administrators.
-type AdminOrg struct {
-	AdminOrg *types.AdminOrg
-	c        *Client
-}
+// Given a valid catalog name, FindCatalog returns a Catalog object.
+// If no catalog is found, then returns an empty catalog and no error.
+// Otherwise it returns an error.
+func (org *Org) FindCatalog(catalogName string) (Catalog, error) {
 
-func NewAdminOrg(c *Client) *AdminOrg {
-	return &AdminOrg{
-		AdminOrg: new(types.AdminOrg),
-		c:        c,
+	for _, link := range org.Org.Link {
+		if link.Rel == "down" && link.Type == "application/vnd.vmware.vcloud.catalog+xml" && link.Name == catalogName {
+			orgHREF, err := url.ParseRequestURI(link.HREF)
+
+			if err != nil {
+				return Catalog{}, fmt.Errorf("error decoding org response: %s", err)
+			}
+
+			req := org.c.NewRequest(map[string]string{}, "GET", *orgHREF, nil)
+
+			resp, err := checkResp(org.c.Http.Do(req))
+			if err != nil {
+				return Catalog{}, fmt.Errorf("error retreiving catalog: %s", err)
+			}
+
+			cat := NewCatalog(org.c)
+
+			if err = decodeBody(resp, cat.Catalog); err != nil {
+				return Catalog{}, fmt.Errorf("error decoding catalog response: %s", err)
+			}
+
+			// The request was successful
+			return *cat, nil
+
+		}
 	}
+
+	return Catalog{}, nil
 }
 
 // If user specifies valid vdc name then this returns a vdc object.
@@ -73,6 +93,74 @@ func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
 		}
 	}
 	return Vdc{}, nil
+}
+
+// AdminOrg gives an admin representation of an org.
+// Administrators can delete and update orgs with an admin org object.
+// AdminOrg includes all members of the Org element, and adds several
+// elements that can be viewed and modified only by system administrators.
+type AdminOrg struct {
+	AdminOrg *types.AdminOrg
+	c        *Client
+}
+
+func NewAdminOrg(c *Client) *AdminOrg {
+	return &AdminOrg{
+		AdminOrg: new(types.AdminOrg),
+		c:        c,
+	}
+}
+
+// Given an org with a valid HREF, the function refetches the org
+// and updates the user's org data. Otherwise if the function fails,
+// it returns an error. Users should use refresh whenever they have
+// a stale org due to the creation/update/deletion of a resource
+// within the org or the org itself.
+func (org *Org) Refresh() error {
+	if *org == (Org{}) {
+		return fmt.Errorf("cannot refresh, Object is empty")
+	}
+	orgHREF, _ := url.ParseRequestURI(org.Org.HREF)
+	req := org.c.NewRequest(map[string]string{}, "GET", *orgHREF, nil)
+	resp, err := checkResp(org.c.Http.Do(req))
+	if err != nil {
+		return fmt.Errorf("error performing request: %s", err)
+	}
+	// Empty struct before a new unmarshal, otherwise we end up with duplicate
+	// elements in slices.
+	unmarshalledOrg := &types.Org{}
+	if err = decodeBody(resp, unmarshalledOrg); err != nil {
+		return fmt.Errorf("error decoding org response: %s", err)
+	}
+	org.Org = unmarshalledOrg
+	// The request was successful
+	return nil
+}
+
+// Given an adminorg with a valid HREF, the function refetches the adminorg
+// and updates the user's adminorg data. Otherwise if the function fails,
+// it returns an error.  Users should use refresh whenever they have
+// a stale org due to the creation/update/deletion of a resource
+// within the org or the org itself.
+func (adminOrg *AdminOrg) Refresh() error {
+	if *adminOrg == (AdminOrg{}) {
+		return fmt.Errorf("cannot refresh, Object is empty")
+	}
+	adminOrgHREF, _ := url.ParseRequestURI(adminOrg.AdminOrg.HREF)
+	req := adminOrg.c.NewRequest(map[string]string{}, "GET", *adminOrgHREF, nil)
+	resp, err := checkResp(adminOrg.c.Http.Do(req))
+	if err != nil {
+		return fmt.Errorf("error performing request: %s", err)
+	}
+	// Empty struct before a new unmarshal, otherwise we end up with duplicate
+	// elements in slices.
+	unmarshalledAdminOrg := &types.AdminOrg{}
+	if err = decodeBody(resp, unmarshalledAdminOrg); err != nil {
+		return fmt.Errorf("error decoding org response: %s", err)
+	}
+	adminOrg.AdminOrg = unmarshalledAdminOrg
+	// The request was successful
+	return nil
 }
 
 // If user specifies valid vdc name then this returns a vdc object.
@@ -368,40 +456,5 @@ func (adminOrg *AdminOrg) FindCatalog(catalogName string) (Catalog, error) {
 			return *cat, nil
 		}
 	}
-	return Catalog{}, nil
-}
-
-// Given a valid catalog name, FindCatalog returns a Catalog object.
-// If no catalog is found, then returns an empty catalog and no error.
-// Otherwise it returns an error.
-func (org *Org) FindCatalog(catalogName string) (Catalog, error) {
-
-	for _, av := range org.Org.Link {
-		if av.Rel == "down" && av.Type == "application/vnd.vmware.vcloud.catalog+xml" && av.Name == catalogName {
-			u, err := url.ParseRequestURI(av.HREF)
-
-			if err != nil {
-				return Catalog{}, fmt.Errorf("error decoding org response: %s", err)
-			}
-
-			req := org.c.NewRequest(map[string]string{}, "GET", *u, nil)
-
-			resp, err := checkResp(org.c.Http.Do(req))
-			if err != nil {
-				return Catalog{}, fmt.Errorf("error retreiving catalog: %s", err)
-			}
-
-			cat := NewCatalog(org.c)
-
-			if err = decodeBody(resp, cat.Catalog); err != nil {
-				return Catalog{}, fmt.Errorf("error decoding catalog response: %s", err)
-			}
-
-			// The request was successful
-			return *cat, nil
-
-		}
-	}
-
 	return Catalog{}, nil
 }

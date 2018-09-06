@@ -115,6 +115,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	check.Assert(err, IsNil)
 	// Populate Catalog
 	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	check.Assert(cat, Not(Equals), (Catalog{}))
 	check.Assert(err, IsNil)
 	// Populate Catalog Item
 	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.Catalogitem)
