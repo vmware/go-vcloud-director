@@ -18,6 +18,17 @@ import (
 	"strings"
 )
 
+// Used by GovcdHttpStack to store operations
+type OperationRec struct {
+	Caller    string
+	Operation string
+	Url       string
+	Data      string
+	OpType    string
+	Req       *http.Request
+	Resp      *http.Response
+}
+
 const (
 	// Name of the environment variable that enables logging
 	envUseLog = "GOVCD_LOG"
@@ -41,6 +52,22 @@ const (
 var (
 	// All go-vcloud director logging goes through this logger
 	GovcdLogger *log.Logger
+
+	// HTTP operation stack
+	// When logging is **disabled**, the stack keeps in memory
+	// several (GovcdHttpStackSize) HTTP operations, to be used
+	// in case of failure.
+	// When there is a failure, main HTTP processing functions in api.go
+	// will call util.LogHttpOperations() to empty the stack into the
+	// default log, which is enabled on-the-fly.
+	GovcdHttpStack FixedSizeStack
+
+	// HTTP operation stack size
+	// 4 operations == two requests and two responses
+	GovcdHttpStackSize int = 4
+
+	// Enable storing HTTP operations
+	EnableHttpStack bool = true
 
 	// It's true if we're using an user provided logger
 	customLogging bool = false
@@ -151,7 +178,7 @@ func isBinary(data string, req *http.Request) bool {
 	return false
 }
 
-// Scand the header for known keys that contain authentication tokens
+// Scans the header for known keys that contain authentication tokens
 // and hide the contents
 func logSanitizedHeader(input_header http.Header) {
 	for key, value := range input_header {
@@ -165,6 +192,9 @@ func logSanitizedHeader(input_header http.Header) {
 
 // Logs the essentials of a HTTP request
 func ProcessRequestOutput(caller, operation, url, payload string, req *http.Request) {
+	if EnableHttpStack {
+		GovcdHttpStack.Push(OperationRec{OpType: "request", Caller: caller, Req: req, Data: payload, Url: url, Operation: operation})
+	}
 	if !LogHttpRequest {
 		return
 	}
@@ -185,6 +215,9 @@ func ProcessRequestOutput(caller, operation, url, payload string, req *http.Requ
 
 // Logs the essentials of a HTTP response
 func ProcessResponseOutput(caller string, resp *http.Response, result string) {
+	if EnableHttpStack {
+		GovcdHttpStack.Push(OperationRec{OpType: "response", Caller: caller, Resp: resp, Data: result})
+	}
 	if !LogHttpResponse {
 		return
 	}
@@ -196,6 +229,38 @@ func ProcessResponseOutput(caller string, resp *http.Response, result string) {
 	logSanitizedHeader(resp.Header)
 	data_size := len(result)
 	GovcdLogger.Printf("Response text: [%d] %s\n", data_size, result)
+}
+
+func LogHttpOperations() {
+	if !EnableHttpStack {
+		return
+	}
+	if GovcdHttpStack.Len() == 0 {
+		return
+	}
+	EnableLogging = true
+	EnableHttpStack = false
+	InitLogging()
+	GovcdLogger.Printf("%s\n", hashLine)
+	GovcdLogger.Printf("THERE ARE %d STORED HTTP OPERATIONS (Lower numbers are most recent) \n", GovcdHttpStack.Len())
+	GovcdLogger.Printf("%s\n", hashLine)
+	stackSize := GovcdHttpStack.Len()
+	for N := 0; N < GovcdHttpStackSize; N++ {
+		var opRec OperationRec
+		latest := GovcdHttpStack.Pop()
+		if latest == nil {
+			return
+		}
+		opRec = latest.(OperationRec)
+		GovcdLogger.Printf("%s\n", dashLine)
+		GovcdLogger.Printf("STORED OPERATION (%s) # %d\n", opRec.OpType, stackSize-N)
+		GovcdLogger.Printf("%s\n", dashLine)
+		if opRec.OpType == "request" {
+			ProcessRequestOutput(opRec.Caller, opRec.Operation, opRec.Url, opRec.Data, opRec.Req)
+		} else {
+			ProcessResponseOutput(opRec.Caller, opRec.Resp, opRec.Data)
+		}
+	}
 }
 
 // Initializes default logging values
@@ -227,6 +292,10 @@ func InitLogging() {
 		EnableLogging = true
 	}
 	SetLog()
+	if !EnableLogging {
+		GovcdHttpStack = NewFixedSizeStack(GovcdHttpStackSize)
+		EnableHttpStack = true
+	}
 }
 
 func init() {

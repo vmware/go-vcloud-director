@@ -79,6 +79,7 @@ func parseErr(resp *http.Response) error {
 		return fmt.Errorf("error parsing error body for non-200 request: %s", err)
 	}
 
+	util.LogHttpOperations()
 	return fmt.Errorf("API Error: %d: %s", errBody.MajorErrorCode, errBody.Message)
 }
 
@@ -89,11 +90,13 @@ func decodeBody(resp *http.Response, out interface{}) error {
 
 	util.ProcessResponseOutput(util.CallFuncName(), resp, fmt.Sprintf("%s", body))
 	if err != nil {
+		util.LogHttpOperations()
 		return err
 	}
 
 	// Unmarshal the XML.
 	if err = xml.Unmarshal(body, &out); err != nil {
+		util.LogHttpOperations()
 		return err
 	}
 
@@ -115,9 +118,11 @@ func checkResp(resp *http.Response, err error) (*http.Response, error) {
 		return resp, nil
 	// Invalid request, parse the XML error returned and return it.
 	case i == 400 || i == 401 || i == 403 || i == 404 || i == 405 || i == 406 || i == 409 || i == 415 || i == 500 || i == 503 || i == 504:
+		util.LogHttpOperations()
 		return nil, parseErr(resp)
 	// Unhandled response.
 	default:
+		util.LogHttpOperations()
 		return nil, fmt.Errorf("unhandled API response, please report this issue, status code: %s", resp.Status)
 	}
 }

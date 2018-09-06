@@ -13,7 +13,7 @@ To enable logging, you should use
 
 ```go
 util.EnableLogging = true
-util.SetLog()
+util.InitLogging()
 ```
 
 When enabled, the default output for logging is a file named `go-vcloud-director.log`.
@@ -54,6 +54,17 @@ During the request and response processing, any password or authentication token
 
 ```go
 util.LogPasswords = true
+```
+
+## Emergency logging of HTTP operations
+
+When logging is **disabled**, there is an emergency stack that keeps in memory the latest N HTTP operations (4 by default). When a failure occurs, this stack is written to the log, which gets updated on-the-fly.
+
+If you want also this emergency system to be disabled, you can add this code to your client:
+
+```go
+util. EnableHttpStack = false
+util.InitLogging()
 ```
 
 ## Custom logger
