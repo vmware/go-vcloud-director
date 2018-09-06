@@ -7,7 +7,6 @@ package govcd
 import (
 	"bytes"
 	"encoding/xml"
-
 	"errors"
 	"fmt"
 	types "github.com/vmware/go-vcloud-director/types/v56"
@@ -30,7 +29,7 @@ type CatalogOperations interface {
 }
 
 // AdminCatalog is a admin view of a vCloud Director Catalog
-// To be able to get an AdminCatalog representation, users have
+// To be able to get an AdminCatalog representation, users must have
 // admin credentials to the System org. AdminCatalog is used
 // for creating, updating, and deleting a Catalog.
 type AdminCatalog struct {
@@ -90,7 +89,10 @@ func (adminCatalog *AdminCatalog) Update() (Task, error) {
 	if err != nil {
 		return Task{}, fmt.Errorf("error parsing admin catalog's href: %v", err)
 	}
-	output, _ := xml.MarshalIndent(vcomp, "  ", "    ")
+	output, err := xml.MarshalIndent(vcomp, "  ", "    ")
+	if err != nil {
+		return Task{}, fmt.Errorf("error marshalling xml data for update", err)
+	}
 	xmlData := bytes.NewBufferString(xml.Header + string(output))
 	req := adminCatalog.c.NewRequest(map[string]string{}, "PUT", *adminCatalogHREF, xmlData)
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.catalog+xml")
@@ -130,13 +132,13 @@ func (catalog *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error)
 	for _, catalogItems := range catalog.Catalog.CatalogItems {
 		for _, catalogItem := range catalogItems.CatalogItem {
 			if catalogItem.Name == catalogitem && catalogItem.Type == "application/vnd.vmware.vcloud.catalogItem+xml" {
-				u, err := url.ParseRequestURI(catalogItem.HREF)
+				catalogItemHREF, err := url.ParseRequestURI(catalogItem.HREF)
 
 				if err != nil {
 					return CatalogItem{}, fmt.Errorf("error decoding catalog response: %s", err)
 				}
 
-				req := catalog.c.NewRequest(map[string]string{}, "GET", *u, nil)
+				req := catalog.c.NewRequest(map[string]string{}, "GET", *catalogItemHREF, nil)
 
 				resp, err := checkResp(catalog.c.Http.Do(req))
 				if err != nil {

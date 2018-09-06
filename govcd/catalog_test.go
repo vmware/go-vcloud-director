@@ -33,9 +33,11 @@ func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
 	check.Assert(err, IsNil)
 }
 
-// Testing UpdateCatalog
+// Creates a Catalog, updates the description, and checks the changes against the
+// newly updated catalog. Then deletes the catalog
 func (vcd *TestVCD) Test_UpdateCatalog(check *C) {
 	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
+	check.Assert(org, Not(Equals), AdminOrg{})
 	check.Assert(err, IsNil)
 	adminCatalog, err := org.CreateCatalog("UpdateCatalogTest", "UpdateCatalogTest", true)
 	check.Assert(err, IsNil)
@@ -52,8 +54,11 @@ func (vcd *TestVCD) Test_UpdateCatalog(check *C) {
 	check.Assert(err, IsNil)
 }
 
+// Creates a Catalog, and then deletes the catalog, and checks if
+// the catalog still exists. If it does the assertion fails.
 func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
 	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
+	check.Assert(org, Not(Equals), AdminOrg{})
 	check.Assert(err, IsNil)
 	adminCatalog, err := org.CreateCatalog("DeleteCatalogTest", "DeleteCatalogTest", true)
 	check.Assert(err, IsNil)
