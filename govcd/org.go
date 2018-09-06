@@ -125,6 +125,7 @@ func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
 // Administrators can delete and update orgs with an admin org object.
 // AdminOrg includes all members of the Org element, and adds several
 // elements that can be viewed and modified only by system administrators.
+// Definition: https://code.vmware.com/apis/220/vcloud#/doc/doc/types/AdminOrgType.html
 type AdminOrg struct {
 	AdminOrg *types.AdminOrg
 	c        *Client
@@ -166,6 +167,7 @@ func (adminOrg *AdminOrg) Refresh() error {
 // CreateCatalog creates a catalog with given name and description under the
 // the given organization. Returns an AdminCatalog that contains a creation
 // task.
+// API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-CreateCatalog.html
 func (adminOrg *AdminOrg) CreateCatalog(Name, Description string, isPublished bool) (AdminCatalog, error) {
 
 	vcomp := &types.AdminCatalog{
@@ -233,6 +235,7 @@ func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
 }
 
 //   Deletes the org, returning an error if the vCD call fails.
+//   API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Organization.html
 func (adminOrg *AdminOrg) Delete(force bool, recursive bool) error {
 	if force && recursive {
 		//undeploys vapps
@@ -283,6 +286,7 @@ func (adminOrg *AdminOrg) Delete(force bool, recursive bool) error {
 }
 
 // Disables the org. Returns an error if the call to vCD fails.
+// API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-DisableOrg.html
 func (adminOrg *AdminOrg) Disable() error {
 	orgHREF, err := url.ParseRequestURI(adminOrg.AdminOrg.HREF)
 	if err != nil {
@@ -297,6 +301,7 @@ func (adminOrg *AdminOrg) Disable() error {
 //   Updates the Org definition from current org struct contents.
 //   Any differences that may be legally applied will be updated.
 //   Returns an error if the call to vCD fails.
+//   API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/PUT-Organization.html
 func (adminOrg *AdminOrg) Update() (Task, error) {
 	vcomp := &types.AdminOrg{
 		Xmlns:       "http://www.vmware.com/vcloud/v1.5",
@@ -471,6 +476,7 @@ func (adminOrg *AdminOrg) removeCatalogs() error {
 // Otherwise it returns an error. Function allows user to use an AdminOrg
 // to also fetch a Catalog. If user does not have proper credentials to
 // perform administrator tasks then function returns an error.
+// API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/GET-Catalog-AdminView.html
 func (adminOrg *AdminOrg) FindAdminCatalog(catalogName string) (AdminCatalog, error) {
 	for _, adminCatalog := range adminOrg.AdminOrg.Catalogs.Catalog {
 		// Get Catalog HREF

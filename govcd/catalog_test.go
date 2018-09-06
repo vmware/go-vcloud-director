@@ -39,16 +39,19 @@ func (vcd *TestVCD) Test_UpdateCatalog(check *C) {
 	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
 	check.Assert(org, Not(Equals), AdminOrg{})
 	check.Assert(err, IsNil)
-	adminCatalog, err := org.CreateCatalog("UpdateCatalogTest", "UpdateCatalogTest", true)
+	catalog, err := org.FindAdminCatalog(CatalogUpdateTest)
+	if catalog != (AdminCatalog{}) {
+		err = catalog.Delete(true, true)
+		check.Assert(err, IsNil)
+	}
+	adminCatalog, err := org.CreateCatalog(CatalogUpdateTest, CatalogUpdateTest, true)
 	check.Assert(err, IsNil)
-	check.Assert(adminCatalog.AdminCatalog.Name, Equals, "UpdateCatalogTest")
+	check.Assert(adminCatalog.AdminCatalog.Name, Equals, CatalogUpdateTest)
 
-	adminCatalog.AdminCatalog.Description = "Test123"
-	task, err := adminCatalog.Update()
+	adminCatalog.AdminCatalog.Description = CatalogCreateDescription
+	err = adminCatalog.Update()
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(adminCatalog.AdminCatalog.Description, Equals, "Test123")
+	check.Assert(adminCatalog.AdminCatalog.Description, Equals, CatalogCreateDescription)
 
 	err = adminCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
@@ -60,12 +63,17 @@ func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
 	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
 	check.Assert(org, Not(Equals), AdminOrg{})
 	check.Assert(err, IsNil)
-	adminCatalog, err := org.CreateCatalog("DeleteCatalogTest", "DeleteCatalogTest", true)
+	adminCatalog, err := org.FindAdminCatalog(CatalogDeleteTest)
+	if adminCatalog != (AdminCatalog{}) {
+		err = adminCatalog.Delete(true, true)
+		check.Assert(err, IsNil)
+	}
+	adminCatalog, err = org.CreateCatalog(CatalogDeleteTest, CatalogDeleteTest, true)
 	check.Assert(err, IsNil)
-	check.Assert(adminCatalog.AdminCatalog.Name, Equals, "DeleteCatalogTest")
+	check.Assert(adminCatalog.AdminCatalog.Name, Equals, CatalogDeleteTest)
 	err = adminCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
-	catalog, err := org.FindCatalog("DeleteCatalogTest")
+	catalog, err := org.FindCatalog(CatalogDeleteTest)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, Equals, Catalog{})
 

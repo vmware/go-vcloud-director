@@ -32,6 +32,7 @@ type CatalogOperations interface {
 // To be able to get an AdminCatalog representation, users must have
 // admin credentials to the System org. AdminCatalog is used
 // for creating, updating, and deleting a Catalog.
+// Definition: https://code.vmware.com/apis/220/vcloud#/doc/doc/types/AdminCatalogType.html
 type AdminCatalog struct {
 	AdminCatalog *types.AdminCatalog
 	c            *Client
@@ -57,6 +58,7 @@ func NewAdminCatalog(client *Client) *AdminCatalog {
 }
 
 // Deletes the Catalog, returning an error if the vCD call fails.
+// Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Catalog.html
 func (adminCatalog *AdminCatalog) Delete(force, recursive bool) error {
 	adminCatalogHREF := adminCatalog.c.VCDHREF
 	adminCatalogHREF.Path += "/admin/catalog/" + adminCatalog.AdminCatalog.ID[19:]
@@ -78,8 +80,9 @@ func (adminCatalog *AdminCatalog) Delete(force, recursive bool) error {
 //   Updates the Catalog definition from current Catalog struct contents.
 //   Any differences that may be legally applied will be updated.
 //   Returns an error if the call to vCD fails. Update automatically performs
-//   a refresh with the admin catalog it gets back.
-func (adminCatalog *AdminCatalog) Update() (Task, error) {
+//   a refresh with the admin catalog it gets back from the rest api
+//   Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/PUT-Catalog.html
+func (adminCatalog *AdminCatalog) Update() error {
 	vcomp := &types.AdminCatalog{
 		Xmlns:       "http://www.vmware.com/vcloud/v1.5",
 		Name:        adminCatalog.AdminCatalog.Name,
@@ -88,29 +91,26 @@ func (adminCatalog *AdminCatalog) Update() (Task, error) {
 	}
 	adminCatalogHREF, err := url.ParseRequestURI(adminCatalog.AdminCatalog.HREF)
 	if err != nil {
-		return Task{}, fmt.Errorf("error parsing admin catalog's href: %v", err)
+		return fmt.Errorf("error parsing admin catalog's href: %v", err)
 	}
 	output, err := xml.MarshalIndent(vcomp, "  ", "    ")
 	if err != nil {
-		return Task{}, fmt.Errorf("error marshalling xml data for update %v", err)
+		return fmt.Errorf("error marshalling xml data for update %v", err)
 	}
 	xmlData := bytes.NewBufferString(xml.Header + string(output))
 	req := adminCatalog.c.NewRequest(map[string]string{}, "PUT", *adminCatalogHREF, xmlData)
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.catalog+xml")
 	resp, err := checkResp(adminCatalog.c.Http.Do(req))
 	if err != nil {
-		return Task{}, fmt.Errorf("error updating catalog: %s : %s", err, adminCatalogHREF.Path)
+		return fmt.Errorf("error updating catalog: %s : %s", err, adminCatalogHREF.Path)
 	}
 
-	catalog := NewAdminCatalog(adminCatalog.c)
-	if err = decodeBody(resp, catalog.AdminCatalog); err != nil {
-		return Task{}, fmt.Errorf("error decoding task response: %s", err)
+	catalog := &types.AdminCatalog{}
+	if err = decodeBody(resp, catalog); err != nil {
+		return fmt.Errorf("error decoding update response: %s", err)
 	}
-	adminCatalog.AdminCatalog = catalog.AdminCatalog
-	return Task{
-		Task: catalog.AdminCatalog.Tasks.Task[0],
-		c:    adminCatalog.c,
-	}, nil
+	adminCatalog.AdminCatalog = catalog
+	return nil
 }
 
 // Envelope is a ovf description root element. File contains information for vmdk files.

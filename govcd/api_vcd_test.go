@@ -63,6 +63,21 @@ type TestVCD struct {
 
 var _ = Suite(&TestVCD{})
 
+const (
+	OrgCreateTest            = "CREATEORG"
+	OrgDeleteTest            = "DELETEORG"
+	OrgUpdateTest            = "UPDATEORG"
+	CatalogCreateTest        = "CatalogCreationTest"
+	CatalogCreateDescription = "Test123"
+	RefreshOrgFullName       = "govcd"
+	CatalogUpdateTest        = "UpdateCatalogTest"
+	CatalogDeleteTest        = "DeleteCatalogTest"
+	OrgRefreshTest           = "REFRESHTEST"
+	compose_vapp_name        = "go-vcloud-director-vapp-check"
+	compose_vapp_description = "vapp created by tests"
+	testVappName             = "go-vapp-tests"
+)
+
 // Users use the environmental variable GOVCD_CONFIG as
 // a config file for testing. Otherwise the default is govcd_test_config.yaml
 // in the current directory. Throws an error if it cannot find your
@@ -157,7 +172,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	// creates a new VApp for vapp tests
 	if config.VCD.Network != "" && config.VCD.StorageProfile.SP1 != "" &&
 		config.VCD.Catalog.Name != "" && config.VCD.Catalog.Catalogitem != "" {
-		vcd.vapp, err = vcd.createTestVapp("go-vapp-tests")
+		vcd.vapp, err = vcd.createTestVapp(testVappName)
 		if err != nil {
 			fmt.Printf("%v", err)
 			vcd.skipVappTests = true
