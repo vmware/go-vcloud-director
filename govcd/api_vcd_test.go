@@ -110,12 +110,12 @@ func GetConfigStruct() (TestConfig, error) {
 // Creates a VCDClient based on the endpoint given in the TestConfig argument.
 // TestConfig struct can be obtained by calling GetConfigStruct. Throws an error
 // if endpoint given is not a valid url.
-func GetTestVCDFromYaml(g TestConfig) (*VCDClient, error) {
-	u, err := url.ParseRequestURI(g.Provider.Url)
+func GetTestVCDFromYaml(testConfig TestConfig) (*VCDClient, error) {
+	configUrl, err := url.ParseRequestURI(testConfig.Provider.Url)
 	if err != nil {
 		return &VCDClient{}, fmt.Errorf("could not parse Url: %s", err)
 	}
-	vcdClient := NewVCDClient(*u, true)
+	vcdClient := NewVCDClient(*configUrl, true)
 	return vcdClient, nil
 }
 

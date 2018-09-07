@@ -35,40 +35,40 @@ type CatalogOperations interface {
 // Definition: https://code.vmware.com/apis/220/vcloud#/doc/doc/types/AdminCatalogType.html
 type AdminCatalog struct {
 	AdminCatalog *types.AdminCatalog
-	c            *Client
+	client       *Client
 }
 
 type Catalog struct {
 	Catalog *types.Catalog
-	c       *Client
+	client  *Client
 }
 
 func NewCatalog(client *Client) *Catalog {
 	return &Catalog{
 		Catalog: new(types.Catalog),
-		c:       client,
+		client:  client,
 	}
 }
 
 func NewAdminCatalog(client *Client) *AdminCatalog {
 	return &AdminCatalog{
 		AdminCatalog: new(types.AdminCatalog),
-		c:            client,
+		client:       client,
 	}
 }
 
 // Deletes the Catalog, returning an error if the vCD call fails.
 // Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Catalog.html
 func (adminCatalog *AdminCatalog) Delete(force, recursive bool) error {
-	adminCatalogHREF := adminCatalog.c.VCDHREF
+	adminCatalogHREF := adminCatalog.client.VCDHREF
 	adminCatalogHREF.Path += "/admin/catalog/" + adminCatalog.AdminCatalog.ID[19:]
 
-	req := adminCatalog.c.NewRequest(map[string]string{
+	req := adminCatalog.client.NewRequest(map[string]string{
 		"force":     strconv.FormatBool(force),
 		"recursive": strconv.FormatBool(recursive),
 	}, "DELETE", adminCatalogHREF, nil)
 
-	_, err := checkResp(adminCatalog.c.Http.Do(req))
+	_, err := checkResp(adminCatalog.client.Http.Do(req))
 
 	if err != nil {
 		return fmt.Errorf("error deleting Catalog %s: %s", adminCatalog.AdminCatalog.ID, err)
@@ -98,9 +98,9 @@ func (adminCatalog *AdminCatalog) Update() error {
 		return fmt.Errorf("error marshalling xml data for update %v", err)
 	}
 	xmlData := bytes.NewBufferString(xml.Header + string(output))
-	req := adminCatalog.c.NewRequest(map[string]string{}, "PUT", *adminCatalogHREF, xmlData)
+	req := adminCatalog.client.NewRequest(map[string]string{}, "PUT", *adminCatalogHREF, xmlData)
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.catalog+xml")
-	resp, err := checkResp(adminCatalog.c.Http.Do(req))
+	resp, err := checkResp(adminCatalog.client.Http.Do(req))
 	if err != nil {
 		return fmt.Errorf("error updating catalog: %s : %s", err, adminCatalogHREF.Path)
 	}
@@ -129,8 +129,8 @@ type Envelope struct {
 // then the function returns a CatalogItem. If the item does not
 // exist, then it returns an empty CatalogItem. If The call fails
 // at any point, it returns an error.
-func (catalog *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
-	for _, catalogItems := range catalog.Catalog.CatalogItems {
+func (cat *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
+	for _, catalogItems := range cat.Catalog.CatalogItems {
 		for _, catalogItem := range catalogItems.CatalogItem {
 			if catalogItem.Name == catalogitem && catalogItem.Type == "application/vnd.vmware.vcloud.catalogItem+xml" {
 				catalogItemHREF, err := url.ParseRequestURI(catalogItem.HREF)
@@ -139,14 +139,14 @@ func (catalog *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error)
 					return CatalogItem{}, fmt.Errorf("error decoding catalog response: %s", err)
 				}
 
-				req := catalog.c.NewRequest(map[string]string{}, "GET", *catalogItemHREF, nil)
+				req := cat.client.NewRequest(map[string]string{}, "GET", *catalogItemHREF, nil)
 
-				resp, err := checkResp(catalog.c.Http.Do(req))
+				resp, err := checkResp(cat.client.Http.Do(req))
 				if err != nil {
 					return CatalogItem{}, fmt.Errorf("error retreiving catalog: %s", err)
 				}
 
-				cat := NewCatalogItem(catalog.c)
+				cat := NewCatalogItem(cat.client)
 
 				if err = decodeBody(resp, cat.CatalogItem); err != nil {
 					return CatalogItem{}, fmt.Errorf("error decoding catalog response: %s", err)
@@ -163,7 +163,7 @@ func (catalog *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error)
 
 // uploads an ova file to a catalog. This method only uploads bits to vCD spool area.
 // Returns errors if any occur during upload from vCD or upload process.
-func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize int) (Task, error) {
+func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize int) (Task, error) {
 
 	//	On a very high level the flow is as follows
 	//	1. Makes a POST call to vCD to create the catalog item (also creates a transfer folder in the spool area and as result will give a sparse catalog item resource XML).
@@ -171,17 +171,17 @@ func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize
 	//	3. Start uploading bits to the transfer folder
 	//	4. Wait on the import task to finish on vCD side -> task success = upload complete
 
-	catalogItemUploadURL, err := findCatalogItemUploadLink(c)
+	catalogItemUploadURL, err := findCatalogItemUploadLink(cat)
 	if err != nil {
 		return Task{}, err
 	}
 
-	vappTemplateUrl, err := createItemForUpload(c.c, catalogItemUploadURL, itemName, description)
+	vappTemplateUrl, err := createItemForUpload(cat.client, catalogItemUploadURL, itemName, description)
 	if err != nil {
 		return Task{}, err
 	}
 
-	vappTemplate, err := queryVappTemplate(c.c, vappTemplateUrl)
+	vappTemplate, err := queryVappTemplate(cat.client, vappTemplateUrl)
 	if err != nil {
 		return Task{}, err
 	}
@@ -201,7 +201,7 @@ func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize
 
 	for _, filePath := range filesAbsPaths {
 		if filepath.Ext(filePath) == ".ovf" {
-			ovfFileDesc, err = uploadOvfDescription(c.c, filePath, ovfUploadHref)
+			ovfFileDesc, err = uploadOvfDescription(cat.client, filePath, ovfUploadHref)
 			tempPath, _ = filepath.Split(filePath)
 			if err != nil {
 				return Task{}, err
@@ -210,16 +210,16 @@ func (c *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize
 		}
 	}
 
-	vappTemplate, err = waitForTempUploadLinks(c.c, vappTemplateUrl)
+	vappTemplate, err = waitForTempUploadLinks(cat.client, vappTemplateUrl)
 
-	err = uploadFiles(c.c, vappTemplate, &ovfFileDesc, tempPath, filesAbsPaths)
+	err = uploadFiles(cat.client, vappTemplate, &ovfFileDesc, tempPath, filesAbsPaths)
 	if err != nil {
 		return Task{}, err
 	}
 
 	var task Task
 	for _, item := range vappTemplate.Tasks.Task {
-		task, err = createTaskForVcdImport(c.c, item.HREF)
+		task, err = createTaskForVcdImport(cat.client, item.HREF)
 	}
 
 	log.Printf("[TRACE] Upload finished and task for vcd import created. \n")

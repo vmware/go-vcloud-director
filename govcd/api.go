@@ -29,28 +29,28 @@ type Client struct {
 
 // NewRequest creates a new HTTP request and applies necessary auth headers if
 // set.
-func (c *Client) NewRequest(params map[string]string, method string, u url.URL, body io.Reader) *http.Request {
+func (cli *Client) NewRequest(params map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
 
-	p := url.Values{}
+	reqValues := url.Values{}
 
 	// Build up our request parameters
-	for k, v := range params {
-		p.Add(k, v)
+	for key, value := range params {
+		reqValues.Add(key, value)
 	}
 
 	// Add the params to our URL
-	u.RawQuery = p.Encode()
+	reqUrl.RawQuery = reqValues.Encode()
 
 	// Build the request, no point in checking for errors here as we're just
 	// passing a string version of an url.URL struct and http.NewRequest returns
 	// error only if can't process an url.ParseRequestURI().
-	req, _ := http.NewRequest(method, u.String(), body)
+	req, _ := http.NewRequest(method, reqUrl.String(), body)
 
-	if c.VCDAuthHeader != "" && c.VCDToken != "" {
+	if cli.VCDAuthHeader != "" && cli.VCDToken != "" {
 		// Add the authorization header
-		req.Header.Add(c.VCDAuthHeader, c.VCDToken)
+		req.Header.Add(cli.VCDAuthHeader, cli.VCDToken)
 		// Add the Accept header for VCD
-		req.Header.Add("Accept", "application/*+xml;version="+c.APIVersion)
+		req.Header.Add("Accept", "application/*+xml;version="+cli.APIVersion)
 	}
 
 	// Avoids passing data if the logging of requests is disabled
@@ -63,7 +63,7 @@ func (c *Client) NewRequest(params map[string]string, method string, u url.URL, 
 			buf.ReadFrom(body)
 			payload = buf.String()
 		}
-		util.ProcessRequestOutput(util.CallFuncName(), method, u.String(), payload, req)
+		util.ProcessRequestOutput(util.CallFuncName(), method, reqUrl.String(), payload, req)
 	}
 	return req
 
