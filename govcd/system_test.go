@@ -27,6 +27,9 @@ func (vcd *TestVCD) Test_GetOrgByName(check *C) {
 // Also tests an org that doesn't exist. Asserts an error
 // if the function finds it or if the error is not nil.
 func (vcd *TestVCD) Test_GetAdminOrgByName(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip("Configuration org != 'Sysyem'")
+	}
 	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
 	check.Assert(org, Not(Equals), AdminOrg{})
 	check.Assert(err, IsNil)
@@ -41,7 +44,10 @@ func (vcd *TestVCD) Test_GetAdminOrgByName(check *C) {
 // org vapp template settings, and orgldapsettings. Asserts an
 // error if the task, fetching the org, or deleting the org fails
 func (vcd *TestVCD) Test_CreateOrg(check *C) {
-	org, err := GetAdminOrgByName(vcd.client, OrgCreateTest)
+	if vcd.skipAdminTests {
+		check.Skip("Configuration org != 'Sysyem'")
+	}
+	org, err := GetAdminOrgByName(vcd.client, TestCreateOrg)
 	if org != (AdminOrg{}) {
 		err = org.Delete(true, true)
 		check.Assert(err, IsNil)
@@ -62,20 +68,23 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 			OrgLdapMode: "NONE",
 		},
 	}
-	task, err := CreateOrg(vcd.client, OrgCreateTest, OrgCreateTest, true, settings)
+	task, err := CreateOrg(vcd.client, TestCreateOrg, TestCreateOrg, true, settings)
 	check.Assert(err, IsNil)
+	// After a successful creation, the entity is added to the cleanup list.
+	// If something fails after this point, the entity will be removed
+	AddToCleanupList(TestCreateOrg, "org", "", "TestCreateOrg")
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	// fetch newly created org
-	org, err = GetAdminOrgByName(vcd.client, OrgCreateTest)
+	org, err = GetAdminOrgByName(vcd.client, TestCreateOrg)
 	check.Assert(org, Not(Equals), AdminOrg{})
 	check.Assert(err, IsNil)
-	check.Assert(org.AdminOrg.Name, Equals, OrgCreateTest)
+	check.Assert(org.AdminOrg.Name, Equals, TestCreateOrg)
 	// Delete, with force and recursive true
 	err = org.Delete(true, true)
 	check.Assert(err, IsNil)
 	// Check if org still exists
-	org, err = GetAdminOrgByName(vcd.client, OrgCreateTest)
+	org, err = GetAdminOrgByName(vcd.client, TestCreateOrg)
 	check.Assert(org, Equals, AdminOrg{})
 	check.Assert(err, IsNil)
 

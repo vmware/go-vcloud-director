@@ -39,19 +39,22 @@ func (vcd *TestVCD) Test_UpdateCatalog(check *C) {
 	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
 	check.Assert(org, Not(Equals), AdminOrg{})
 	check.Assert(err, IsNil)
-	catalog, err := org.FindAdminCatalog(CatalogUpdateTest)
+	catalog, err := org.FindAdminCatalog(TestUpdateCatalog)
 	if catalog != (AdminCatalog{}) {
 		err = catalog.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
-	adminCatalog, err := org.CreateCatalog(CatalogUpdateTest, CatalogUpdateTest, true)
+	adminCatalog, err := org.CreateCatalog(TestUpdateCatalog, TestUpdateCatalog, true)
 	check.Assert(err, IsNil)
-	check.Assert(adminCatalog.AdminCatalog.Name, Equals, CatalogUpdateTest)
+	// After a successful creation, the entity is added to the cleanup list.
+	// If something fails after this point, the entity will be removed
+	AddToCleanupList(TestUpdateCatalog, "catalog", vcd.config.VCD.Org, "Test_UpdateCatalog")
+	check.Assert(adminCatalog.AdminCatalog.Name, Equals, TestUpdateCatalog)
 
-	adminCatalog.AdminCatalog.Description = CatalogCreateDescription
+	adminCatalog.AdminCatalog.Description = TestCreateCatalogDesc
 	err = adminCatalog.Update()
 	check.Assert(err, IsNil)
-	check.Assert(adminCatalog.AdminCatalog.Description, Equals, CatalogCreateDescription)
+	check.Assert(adminCatalog.AdminCatalog.Description, Equals, TestCreateCatalogDesc)
 
 	err = adminCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
@@ -63,17 +66,20 @@ func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
 	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
 	check.Assert(org, Not(Equals), AdminOrg{})
 	check.Assert(err, IsNil)
-	adminCatalog, err := org.FindAdminCatalog(CatalogDeleteTest)
+	adminCatalog, err := org.FindAdminCatalog(TestDeleteCatalog)
 	if adminCatalog != (AdminCatalog{}) {
 		err = adminCatalog.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
-	adminCatalog, err = org.CreateCatalog(CatalogDeleteTest, CatalogDeleteTest, true)
+	adminCatalog, err = org.CreateCatalog(TestDeleteCatalog, TestDeleteCatalog, true)
 	check.Assert(err, IsNil)
-	check.Assert(adminCatalog.AdminCatalog.Name, Equals, CatalogDeleteTest)
+	// After a successful creation, the entity is added to the cleanup list.
+	// If something fails after this point, the entity will be removed
+	AddToCleanupList(TestDeleteCatalog, "catalog", vcd.config.VCD.Org, "Test_DeleteCatalog")
+	check.Assert(adminCatalog.AdminCatalog.Name, Equals, TestDeleteCatalog)
 	err = adminCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
-	catalog, err := org.FindCatalog(CatalogDeleteTest)
+	catalog, err := org.FindCatalog(TestDeleteCatalog)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, Equals, Catalog{})
 

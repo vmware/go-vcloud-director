@@ -150,10 +150,14 @@ func (vcd *TestVCD) Test_ComposeVApp(check *checks.C) {
 
 	// These tests can fail: we need to make sure that the new entity was created
 	check.Assert(err, checks.IsNil)
-	check.Assert(task.Task.OperationName, checks.Equals, "vdcComposeVapp")
+	check.Assert(task.Task.OperationName, checks.Equals, composeVappName)
 	// Get VApp
 	vapp, err := vcd.vdc.FindVAppByName(temp_vapp_name)
 	check.Assert(err, checks.IsNil)
+
+	// After a successful creation, the entity is added to the cleanup list.
+	// If something fails after this point, the entity will be removed
+    AddToCleanupList(composeVappName, "vapp", "", "Test_ComposeVApp")
 
 	// Once the operation is successful, we won't trigger a failure
 	// until after the vApp deletion
@@ -175,6 +179,8 @@ func (vcd *TestVCD) Test_ComposeVApp(check *checks.C) {
 	no_such_vapp, err := vcd.vdc.FindVAppByName(temp_vapp_name)
 	check.Assert(err, checks.NotNil)
 	check.Assert(no_such_vapp.VApp, checks.IsNil)
+    // If this deletion fails, a further attempt will be made 
+    // by the cleanup function at the end of all tests
 }
 ```
 

@@ -59,6 +59,9 @@ func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 	if err != nil {
 		return VApp{}, fmt.Errorf("error composing vapp: %v", err)
 	}
+	// After a successful creation, the entity is added to the cleanup list.
+	// If something fails after this point, the entity will be removed
+	AddToCleanupList(name, "vapp", "", "createTestVapp")
 	err = task.WaitTaskCompletion()
 	if err != nil {
 		return VApp{}, fmt.Errorf("error composing vapp: %v", err)
