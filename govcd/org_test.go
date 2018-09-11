@@ -12,24 +12,31 @@ import (
 // Tests Refresh for Org by updating the org and then asserting if the
 // variable is updated.
 func (vcd *TestVCD) Test_RefreshOrg(check *C) {
-	adminOrg, err := GetAdminOrgByName(vcd.client, OrgRefreshTest)
+
+	if vcd.skipAdminTests {
+		check.Skip("Configuration org != 'Sysyem'")
+	}
+	adminOrg, err := GetAdminOrgByName(vcd.client, TestRefreshOrg)
 	if adminOrg != (AdminOrg{}) {
 		err = adminOrg.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
-	_, err = CreateOrg(vcd.client, OrgRefreshTest, OrgRefreshTest, true, &types.OrgSettings{
+	_, err = CreateOrg(vcd.client, TestRefreshOrg, TestRefreshOrg, true, &types.OrgSettings{
 		OrgLdapSettings: &types.OrgLdapSettingsType{OrgLdapMode: "NONE"},
 	})
 	check.Assert(err, IsNil)
+	// After a successful creation, the entity is added to the cleanup list.
+	// If something fails after this point, the entity will be removed
+	AddToCleanupList(TestRefreshOrg, "org", "", "Test_RefreshOrg")
 	// fetch newly created org
-	org, err := GetOrgByName(vcd.client, OrgRefreshTest)
+	org, err := GetOrgByName(vcd.client, TestRefreshOrg)
 	check.Assert(err, IsNil)
-	check.Assert(org.Org.Name, Equals, OrgRefreshTest)
+	check.Assert(org.Org.Name, Equals, TestRefreshOrg)
 	// fetch admin version of org for updating
-	adminOrg, err = GetAdminOrgByName(vcd.client, OrgRefreshTest)
+	adminOrg, err = GetAdminOrgByName(vcd.client, TestRefreshOrg)
 	check.Assert(err, IsNil)
-	check.Assert(adminOrg.AdminOrg.Name, Equals, OrgRefreshTest)
-	adminOrg.AdminOrg.FullName = RefreshOrgFullName
+	check.Assert(adminOrg.AdminOrg.Name, Equals, TestRefreshOrg)
+	adminOrg.AdminOrg.FullName = TestRefreshOrgFullName
 	task, err := adminOrg.Update()
 	check.Assert(err, IsNil)
 	// Wait until update is complete
@@ -38,11 +45,11 @@ func (vcd *TestVCD) Test_RefreshOrg(check *C) {
 	// Test Refresh on normal org
 	err = org.Refresh()
 	check.Assert(err, IsNil)
-	check.Assert(org.Org.FullName, Equals, RefreshOrgFullName)
+	check.Assert(org.Org.FullName, Equals, TestRefreshOrgFullName)
 	// Test Refresh on admin org
 	err = adminOrg.Refresh()
 	check.Assert(err, IsNil)
-	check.Assert(adminOrg.AdminOrg.FullName, Equals, RefreshOrgFullName)
+	check.Assert(adminOrg.AdminOrg.FullName, Equals, TestRefreshOrgFullName)
 	// Delete, with force and recursive true
 	err = adminOrg.Delete(true, true)
 	check.Assert(err, IsNil)
@@ -51,22 +58,28 @@ func (vcd *TestVCD) Test_RefreshOrg(check *C) {
 // Creates an org DELETEORG and then deletes it to test functionality of
 // delete org. Fails if org still exists
 func (vcd *TestVCD) Test_DeleteOrg(check *C) {
-	org, err := GetAdminOrgByName(vcd.client, OrgDeleteTest)
+	if vcd.skipAdminTests {
+		check.Skip("Configuration org != 'Sysyem'")
+	}
+	org, err := GetAdminOrgByName(vcd.client, TestDeleteOrg)
 	if org != (AdminOrg{}) {
 		err = org.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
-	_, err = CreateOrg(vcd.client, OrgDeleteTest, OrgDeleteTest, true, &types.OrgSettings{})
+	_, err = CreateOrg(vcd.client, TestDeleteOrg, TestDeleteOrg, true, &types.OrgSettings{})
 	check.Assert(err, IsNil)
+	// After a successful creation, the entity is added to the cleanup list.
+	// If something fails after this point, the entity will be removed
+	AddToCleanupList(TestDeleteOrg, "org", "", "Test_DeleteOrg")
 	// fetch newly created org
-	org, err = GetAdminOrgByName(vcd.client, OrgDeleteTest)
+	org, err = GetAdminOrgByName(vcd.client, TestDeleteOrg)
 	check.Assert(err, IsNil)
-	check.Assert(org.AdminOrg.Name, Equals, OrgDeleteTest)
+	check.Assert(org.AdminOrg.Name, Equals, TestDeleteOrg)
 	// Delete, with force and recursive true
 	err = org.Delete(true, true)
 	check.Assert(err, IsNil)
 	// Check if org still exists
-	org, err = GetAdminOrgByName(vcd.client, OrgDeleteTest)
+	org, err = GetAdminOrgByName(vcd.client, TestDeleteOrg)
 	check.Assert(org, Equals, AdminOrg{})
 	check.Assert(err, IsNil)
 }
@@ -76,19 +89,23 @@ func (vcd *TestVCD) Test_DeleteOrg(check *C) {
 // Fails if the deployedvmquota variable is not changed when the org is
 // refetched.
 func (vcd *TestVCD) Test_UpdateOrg(check *C) {
-	org, err := GetAdminOrgByName(vcd.client, OrgUpdateTest)
+	if vcd.skipAdminTests {
+		check.Skip("Configuration org != 'Sysyem'")
+	}
+	org, err := GetAdminOrgByName(vcd.client, TestUpdateOrg)
 	if org != (AdminOrg{}) {
 		err = org.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
-	_, err = CreateOrg(vcd.client, OrgUpdateTest, OrgUpdateTest, true, &types.OrgSettings{
+	_, err = CreateOrg(vcd.client, TestUpdateOrg, TestUpdateOrg, true, &types.OrgSettings{
 		OrgLdapSettings: &types.OrgLdapSettingsType{OrgLdapMode: "NONE"},
 	})
 	check.Assert(err, IsNil)
+	AddToCleanupList(TestUpdateOrg, "org", "", "TestUpdateOrg")
 	// fetch newly created org
-	org, err = GetAdminOrgByName(vcd.client, OrgUpdateTest)
+	org, err = GetAdminOrgByName(vcd.client, TestUpdateOrg)
 	check.Assert(err, IsNil)
-	check.Assert(org.AdminOrg.Name, Equals, OrgUpdateTest)
+	check.Assert(org.AdminOrg.Name, Equals, TestUpdateOrg)
 	org.AdminOrg.OrgSettings.OrgGeneralSettings.DeployedVMQuota = 100
 	task, err := org.Update()
 	check.Assert(err, IsNil)
@@ -103,7 +120,7 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	err = org.Delete(true, true)
 	check.Assert(err, IsNil)
 	// Check if org still exists
-	org, err = GetAdminOrgByName(vcd.client, OrgUpdateTest)
+	org, err = GetAdminOrgByName(vcd.client, TestUpdateOrg)
 	check.Assert(org, Equals, AdminOrg{})
 	check.Assert(err, IsNil)
 }
@@ -131,6 +148,9 @@ func (vcd *TestVCD) Test_GetVdcByName(check *C) {
 // that doesn't exist. Asserts an error if the function finds it or
 // if the error is not nil.
 func (vcd *TestVCD) Test_Admin_GetVdcByName(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip("Configuration org != 'Sysyem'")
+	}
 	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, Not(Equals), AdminOrg{})
@@ -171,6 +191,9 @@ func (vcd *TestVCD) Test_FindCatalog(check *C) {
 // that doesn't exist. Asserts an error if the function finds it or
 // if the error is not nil.
 func (vcd *TestVCD) Test_Admin_FindCatalog(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip("Configuration org != 'Sysyem'")
+	}
 	// Fetch admin org version of current test org
 	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(adminOrg, Not(Equals), AdminOrg{})
@@ -194,25 +217,29 @@ func (vcd *TestVCD) Test_Admin_FindCatalog(check *C) {
 // asserts that the catalog returned contains the right contents or if it fails.
 // Then Deletes the catalog.
 func (vcd *TestVCD) Test_CreateCatalog(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip("Configuration org != 'Sysyem'")
+	}
 	org, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(org, Not(Equals), AdminOrg{})
 	check.Assert(err, IsNil)
-	catalog, err := org.FindAdminCatalog(CatalogCreateTest)
+	catalog, err := org.FindAdminCatalog(TestCreateCatalog)
 	if catalog != (AdminCatalog{}) {
 		err = catalog.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
-	catalog, err = org.CreateCatalog(CatalogCreateTest, CatalogCreateDescription, true)
+	catalog, err = org.CreateCatalog(TestCreateCatalog, TestCreateCatalogDesc, true)
 	check.Assert(err, IsNil)
-	check.Assert(catalog.AdminCatalog.Name, Equals, CatalogCreateTest)
-	check.Assert(catalog.AdminCatalog.Description, Equals, CatalogCreateDescription)
+	AddToCleanupList(TestCreateCatalog, "catalog", vcd.org.Org.Name, "Test_CreateCatalog")
+	check.Assert(catalog.AdminCatalog.Name, Equals, TestCreateCatalog)
+	check.Assert(catalog.AdminCatalog.Description, Equals, TestCreateCatalogDesc)
 	task := NewTask(&vcd.client.Client)
 	task.Task = catalog.AdminCatalog.Tasks.Task[0]
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	org, err = GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
-	copyCatalog, err := org.FindAdminCatalog(CatalogCreateTest)
+	copyCatalog, err := org.FindAdminCatalog(TestCreateCatalog)
 	check.Assert(copyCatalog, Not(Equals), AdminCatalog{})
 	check.Assert(err, IsNil)
 	check.Assert(catalog.AdminCatalog.Name, Equals, copyCatalog.AdminCatalog.Name)
@@ -224,6 +251,9 @@ func (vcd *TestVCD) Test_CreateCatalog(check *C) {
 // Test for GetAdminCatalog. Gets admin version of Catalog, and asserts that
 // the names and description match, and that no error is returned
 func (vcd *TestVCD) Test_GetAdminCatalog(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip("Configuration org != 'Sysyem'")
+	}
 	// Fetch admin org version of current test org
 	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(err, IsNil)

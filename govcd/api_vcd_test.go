@@ -13,6 +13,22 @@ import (
 	"testing"
 )
 
+const (
+	// Names for entities created by the tests
+	TestCreateOrg          = "TestCreateOrg"
+	TestDeleteOrg          = "TestDeleteOrg"
+	TestUpdateOrg          = "TestUpdateOrg"
+	TestCreateCatalog      = "TestCreateCatalog"
+	TestCreateCatalogDesc  = "Catalog created by tests"
+	TestRefreshOrgFullName = "TestRefreshOrgFullName"
+	TestUpdateCatalog      = "TestUpdateCatalog"
+	TestDeleteCatalog      = "TestDeleteCatalog"
+	TestRefreshOrg         = "TestRefreshOrg"
+	TestComposeVapp        = "TestComposeVapp"
+	TestComposeVappDesc    = "vApp created by tests"
+	TestSetUpSuite         = "TestSetUpSuite"
+)
+
 // Struct to get info from a config yaml file that the user
 // specifies
 type TestConfig struct {
@@ -45,6 +61,7 @@ type TestConfig struct {
 		LogFileName     string `yaml:"logFileName,omitempty"`
 		LogHttpRequest  bool   `yaml:"logHttpRequest,omitempty"`
 		LogHttpResponse bool   `yaml:"logHttpResponse,omitempty"`
+		VerboseCleanup  bool   `yaml:"verboseCleanup,omitempty"`
 	} `yaml:"logging"`
 }
 
@@ -53,30 +70,44 @@ type TestConfig struct {
 // an org, vdc, vapp, and client to run
 // tests on
 type TestVCD struct {
-	client        *VCDClient
-	org           Org
-	vdc           Vdc
-	vapp          VApp
-	config        TestConfig
-	skipVappTests bool
+	client         *VCDClient
+	org            Org
+	vdc            Vdc
+	vapp           VApp
+	config         TestConfig
+	skipVappTests  bool
+	skipAdminTests bool
 }
 
+// Cleanup entity structure used by the tear-down procedure
+// at the end of the tests to remove leftover entities
+type CleanupEntity struct {
+	Name       string
+	EntityType string
+	Parent     string
+	CreatedBy  string
+}
+
+// Internally used by the test suite to run tests based on TestVCD structures
 var _ = Suite(&TestVCD{})
 
-const (
-	OrgCreateTest            = "CREATEORG"
-	OrgDeleteTest            = "DELETEORG"
-	OrgUpdateTest            = "UPDATEORG"
-	CatalogCreateTest        = "CatalogCreationTest"
-	CatalogCreateDescription = "Test123"
-	RefreshOrgFullName       = "govcd"
-	CatalogUpdateTest        = "UpdateCatalogTest"
-	CatalogDeleteTest        = "DeleteCatalogTest"
-	OrgRefreshTest           = "REFRESHTEST"
-	compose_vapp_name        = "go-vcloud-director-vapp-check"
-	compose_vapp_description = "vapp created by tests"
-	testVappName             = "go-vapp-tests"
-)
+// The list holding the entities to be examined and eventually removed
+// at the end of the tests
+var cleanupEntityList []CleanupEntity
+
+// Adds an entity to the cleanup list.
+// To be called by all tests when a new entity has been created, before
+// running any other operation.
+// Items in the list will be deleted at the end of the tests if they still exist.
+func AddToCleanupList(name, entityType, parent, createdBy string) {
+	for _, item := range cleanupEntityList {
+		// avoid adding the same item twice
+		if item.Name == name && item.EntityType == entityType {
+			return
+		}
+	}
+	cleanupEntityList = append(cleanupEntityList, CleanupEntity{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy})
+}
 
 // Users use the environmental variable GOVCD_CONFIG as
 // a config file for testing. Otherwise the default is govcd_test_config.yaml
@@ -123,13 +154,13 @@ func GetTestVCDFromYaml(testConfig TestConfig) (*VCDClient, error) {
 func Test(t *testing.T) { TestingT(t) }
 
 // Sets the org, vdc, vapp, and vcdClient for a
-// TestVCD struct. An error is thrown during if something goes wrong
+// TestVCD struct. An error is thrown if something goes wrong
 // getting config file, creating vcd, during authentication, or
 // when creating a new vapp. If this method panics, no test
 // case that uses the TestVCD struct is run.
 func (vcd *TestVCD) SetUpSuite(check *C) {
 	config, err := GetConfigStruct()
-	if err != nil {
+	if config == (TestConfig{}) || err != nil {
 		panic(err)
 	}
 	vcd.config = config
@@ -150,10 +181,14 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	}
 	util.SetLog()
 	vcdClient, err := GetTestVCDFromYaml(config)
-	if err != nil {
+	if vcdClient == nil || err != nil {
 		panic(err)
 	}
 	vcd.client = vcdClient
+	if config.Provider.SysOrg != "System" {
+		fmt.Printf("Skipping OrgAdmin tests\n")
+		vcd.skipAdminTests = true
+	}
 	// org and vdc are the test org and vdc that is used in all other test cases
 	err = vcd.client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
 	if err != nil {
@@ -161,46 +196,129 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	}
 	// set org
 	vcd.org, err = GetOrgByName(vcd.client, config.VCD.Org)
-	if err != nil {
+	if err != nil || vcd.org == (Org{}) {
 		panic(err)
 	}
 	// set vdc
 	vcd.vdc, err = vcd.org.GetVdcByName(config.VCD.Vdc)
-	if err != nil {
+	if err != nil || vcd.vdc == (Vdc{}) {
 		panic(err)
 	}
 	// creates a new VApp for vapp tests
 	if config.VCD.Network != "" && config.VCD.StorageProfile.SP1 != "" &&
 		config.VCD.Catalog.Name != "" && config.VCD.Catalog.Catalogitem != "" {
-		vcd.vapp, err = vcd.createTestVapp(testVappName)
-		if err != nil {
+		vcd.vapp, err = vcd.createTestVapp(TestSetUpSuite)
+		// If no vApp is created, we skip all vApp tests
+		if vcd.vapp == (VApp{}) || err != nil {
 			fmt.Printf("%v", err)
 			vcd.skipVappTests = true
 		}
+		// After a successful creation, the vAPp is added to the cleanup list
+		AddToCleanupList(TestSetUpSuite, "vapp", "", "SetUpSuite")
 	} else {
 		vcd.skipVappTests = true
 		fmt.Printf("Skipping all vapp tests because one of the following wasn't given: Network, StorageProfile, Catalog, Catalogitem")
 	}
+}
 
+// Shows the detail of cleanup operations only if the relevant verbosity
+// has been enabled
+func (vcd *TestVCD) infoCleanup(format string, args ...interface{}) {
+	if vcd.config.Logging.VerboseCleanup {
+		fmt.Printf(format, args...)
+	}
+}
+
+// Removes leftover entities that may still exist after failed tests
+// or the ones that were explicitly created for several tests and
+// were relying on this procedure to clean up at the end.
+func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
+	var introMsg string = "removeLeftoverEntries: [INFO] Attempting cleanup of %s '%s' instantiated by %s\n"
+	var notFoundMsg string = "removeLeftoverEntries: [INFO] No action for %s '%s'\n"
+	var removedMsg string = "removeLeftoverEntries: [INFO] Removed %s '%s' created by %s\n"
+	var notDeletedMsg string = "removeLeftoverEntries: [ERROR] Error deleting %s '%s': %s\n"
+	// NOTE: this is a cleanup function that should continue even if errors are found.
+	// For this reason, the [ERROR] messages won't be followed by a program termination
+	vcd.infoCleanup(introMsg, entity.Name, entity.EntityType, entity.CreatedBy)
+	switch entity.EntityType {
+	case "vapp":
+		vapp, err := vcd.vdc.FindVAppByName(entity.Name)
+		if vapp == (VApp{}) || err != nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		task, _ := vapp.Undeploy()
+		_ = task.WaitTaskCompletion()
+		task, err = vapp.Delete()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+
+	case "catalog":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No Org provided for catalog '%s'\n", entity.Name)
+			return
+		}
+		org, err := GetAdminOrgByName(vcd.client, entity.Parent)
+		if org == (AdminOrg{}) || err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [INFO] organization '%s' not found\n", entity.Parent)
+			return
+		}
+		catalog, err := org.FindAdminCatalog(entity.Name)
+		if catalog == (AdminCatalog{}) || err != nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		err = catalog.Delete(true, true)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+
+	case "org":
+		org, err := GetAdminOrgByName(vcd.client, entity.Name)
+		if org == (AdminOrg{}) || err != nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		err = org.Delete(true, true)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+
+	case "edgegateway":
+		//TODO: find an easy way of undoing edge GW customization
+		return
+	case "network":
+		// nothing so far
+		return
+	case "vdc":
+		// nothing so far
+		return
+	case "vm":
+		// nothing so far
+		return
+	default:
+		// If we reach this point, we are trying to clean up an entity that
+		// we aren't prepared for yet.
+		fmt.Printf("removeLeftoverEntries: [ERROR] Unrecognized type %s for entity '%s'\n", entity.EntityType, entity.Name)
+	}
 }
 
 func (vcd *TestVCD) TearDownSuite(check *C) {
-	if vcd.skipVappTests {
-		check.Skip("Vapp tests skipped, no vapp to be deleted")
-	}
-	err := vcd.vapp.Refresh()
-	if err != nil {
-		panic(err)
-	}
-	task, _ := vcd.vapp.Undeploy()
-	_ = task.WaitTaskCompletion()
-	task, err = vcd.vapp.Delete()
-	if err != nil {
-		panic(err)
-	}
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		panic(err)
+	// We will try to remove every entity that has been registered into
+	// CleanupEntityList. Entities that have already been cleaned up by their
+	// functions will be ignored.
+	for _, cleanupEntity := range cleanupEntityList {
+		vcd.removeLeftoverEntities(cleanupEntity)
 	}
 }
 

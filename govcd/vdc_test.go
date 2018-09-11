@@ -127,16 +127,19 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	storageprofileref, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
 	check.Assert(err, IsNil)
 	// Compose VApp
-	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, compose_vapp_name, compose_vapp_description, true)
+	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, TestComposeVapp, TestComposeVappDesc, true)
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.OperationName, Equals, "vdcComposeVapp")
 	// Get VApp
-	vapp, err := vcd.vdc.FindVAppByName(compose_vapp_name)
+	vapp, err := vcd.vdc.FindVAppByName(TestComposeVapp)
 	check.Assert(err, IsNil)
+	// After a successful creation, the entity is added to the cleanup list.
+	// If something fails after this point, the entity will be removed
+	AddToCleanupList(TestComposeVapp, "vapp", "", "Test_ComposeVApp")
 	// Once the operation is successful, we won't trigger a failure
 	// until after the vApp deletion
-	check.Check(vapp.VApp.Name, Equals, compose_vapp_name)
-	check.Check(vapp.VApp.Description, Equals, compose_vapp_description)
+	check.Check(vapp.VApp.Name, Equals, TestComposeVapp)
+	check.Check(vapp.VApp.Description, Equals, TestComposeVappDesc)
 
 	vapp_status, err := vapp.GetStatus()
 	check.Check(err, IsNil)
@@ -150,7 +153,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	task, err = vapp.Delete()
 	task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
-	no_such_vapp, err := vcd.vdc.FindVAppByName(compose_vapp_name)
+	no_such_vapp, err := vcd.vdc.FindVAppByName(TestComposeVapp)
 	check.Assert(err, NotNil)
 	check.Assert(no_such_vapp.VApp, IsNil)
 
