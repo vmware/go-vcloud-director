@@ -192,4 +192,13 @@ func main() {
 			}
 		}
 	}
+
+	catalog, err := org.FindCatalog("vaido_pirma")
+	task , err := catalog.UploadOvf("/home/vbauzys/Downloads/bandymas/photon-custom-hw11-2.0-304b817.ova", "new2", "upload from go-vcd", 100)
+	err = task.WaitTaskCompletion()
+	fmt.Printf("finished waiting!!! ")
+	//err = catalog.UploadOvf("/home/vbauzys/Downloads/bandymas/template_with_custom_chunk_size.ova", "newMultipart", "upload from go-vcd", 100)
+	if err!= nil {
+		fmt.Printf("!!!!!!!!!!!!! %#v \n", err)
+	}
 }
