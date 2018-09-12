@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"errors"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -51,7 +50,7 @@ func Unpack(tarFile string) ([]string, error) {
 
 		// the target location where the dir/file should be created
 		target := filepath.Join(dst, header.Name)
-		log.Printf("[TRACE] extracting file: %s \n", target)
+		GovcdLogger.Printf("[TRACE] extracting file: %s \n", target)
 
 		// check the file type
 		switch header.Typeflag {
