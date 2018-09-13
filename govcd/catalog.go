@@ -13,6 +13,7 @@ import (
 	"github.com/vmware/go-vcloud-director/util"
 	"io"
 	"io/ioutil"
+	"log"
 	"math"
 	"net/http"
 	"net/url"
@@ -21,6 +22,10 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
+)
+
+const (
+	defaultChunkSize int = 1024 * 1024
 )
 
 type CatalogOperations interface {
@@ -394,8 +399,12 @@ func findCatalogItemUploadLink(catalog *Catalog) (*url.URL, error) {
 	return nil, errors.New("catalog upload url isn't found")
 }
 
-func uploadFile(client *Client, uploadLink, filePath string, offset, fileSizeToUpload int64) (int64, error) {
-	util.GovcdLogger.Printf("[TRACE] Starting uploading: %s, offset: %v, fileze: %v, toLink: %s \n", filePath, offset, fileSizeToUpload, uploadLink)
+func uploadFile(client *Client, uploadLink, filePath string, uploadedBytes, fileSizeToUpload int64) (int64, error) {
+	util.GovcdLogger.Printf("[TRACE] Starting uploading: %s, offset: %v, fileze: %v, toLink: %s \n", filePath, uploadedBytes, fileSizeToUpload, uploadLink)
+
+	var part []byte
+	var count int
+	var offset int64
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -409,25 +418,44 @@ func uploadFile(client *Client, uploadLink, filePath string, offset, fileSizeToU
 
 	defer file.Close()
 
-	request, err := newFileUploadRequest(uploadLink, file, offset, fileInfo.Size(), fileSizeToUpload)
+	part = make([]byte, defaultChunkSize)
+
+	for {
+		if count, err = io.ReadFull(file, part); err != nil {
+			break
+		}
+		err = uploadPartFile(client, uploadLink, part, uploadedBytes+offset, int64(count), fileSizeToUpload)
+		offset += int64(count)
+
+		if err != nil {
+			return 0, err
+		}
+	}
+	if err != io.ErrUnexpectedEOF {
+		log.Fatal("Error Reading ", filePath, ": ", err)
+	} else {
+		err = uploadPartFile(client, uploadLink, part[:count], uploadedBytes+offset, int64(count), fileSizeToUpload)
+		if err != nil {
+			return 0, err
+		}
+		err = nil
+	}
+
+	return fileInfo.Size(), nil
+}
+
+func uploadPartFile(client *Client, uploadLink string, part []byte, offset, partDataSize, fileSizeToUpload int64) error {
+	request, err := newFileUploadRequest(uploadLink, part, offset, partDataSize, fileSizeToUpload)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	response, err := checkResp(client.Http.Do(request))
 	if err != nil {
-		return 0, fmt.Errorf("File "+filePath+" upload failed. Err: %s \n", err)
+		return fmt.Errorf("File upload failed. Err: %s \n", err)
 	}
-	defer response.Body.Close()
-
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return 0, err
-	}
-	util.GovcdLogger.Printf("[TRACE] Response: %#v\n", response)
-	util.GovcdLogger.Printf("[TRACE] Response body: %s\n", string(body[:]))
-
-	return fileInfo.Size(), nil
+	response.Body.Close()
+	return nil
 }
 
 func findFilePath(filesAbsPaths []string, fileName string) string {
@@ -474,18 +502,18 @@ func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName st
 }
 
 // Create Request with right headers and range settings. Support multi part file upload.
-func newFileUploadRequest(requestUrl string, file io.Reader, offset, fileSize, fileSizeToUpload int64) (*http.Request, error) {
-	util.GovcdLogger.Printf("[TRACE] Creating file upload request: %s, %v, %v, %v \n", requestUrl, offset, fileSize, fileSizeToUpload)
+func newFileUploadRequest(requestUrl string, filePart []byte, offset, filePartSize, fileSizeToUpload int64) (*http.Request, error) {
+	util.GovcdLogger.Printf("[TRACE] Creating file upload request: %s, %v, %v, %v \n", requestUrl, offset, filePartSize, fileSizeToUpload)
 
-	uploadReq, err := http.NewRequest("PUT", requestUrl, file)
+	uploadReq, err := http.NewRequest("PUT", requestUrl, bytes.NewReader(filePart))
 	if err != nil {
 		return nil, err
 	}
 
-	uploadReq.ContentLength = int64(fileSize)
+	uploadReq.ContentLength = filePartSize
 	uploadReq.Header.Set("Content-Length", strconv.FormatInt(uploadReq.ContentLength, 10))
 
-	rangeExpression := "bytes " + strconv.FormatInt(int64(offset), 10) + "-" + strconv.FormatInt(int64(offset+fileSize-1), 10) + "/" + strconv.FormatInt(int64(fileSizeToUpload), 10)
+	rangeExpression := "bytes " + strconv.FormatInt(int64(offset), 10) + "-" + strconv.FormatInt(int64(offset+filePartSize-1), 10) + "/" + strconv.FormatInt(int64(fileSizeToUpload), 10)
 	uploadReq.Header.Set("Content-Range", rangeExpression)
 
 	for key, value := range uploadReq.Header {
