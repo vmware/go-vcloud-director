@@ -167,7 +167,7 @@ func (cat *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
 
 // uploads an ova file to a catalog. This method only uploads bits to vCD spool area.
 // Returns errors if any occur during upload from vCD or upload process.
-func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize int, callBack func(bytesUpload, totalSize int64)) (Task, error) {
+func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSize int) (UploadTask, error) {
 
 	//	On a very high level the flow is as follows
 	//	1. Makes a POST call to vCD to create the catalog item (also creates a transfer folder in the spool area and as result will give a sparse catalog item resource XML).
@@ -177,27 +177,27 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSi
 
 	catalogItemUploadURL, err := findCatalogItemUploadLink(cat)
 	if err != nil {
-		return Task{}, err
+		return UploadTask{}, err
 	}
 
 	vappTemplateUrl, err := createItemForUpload(cat.client, catalogItemUploadURL, itemName, description)
 	if err != nil {
-		return Task{}, err
+		return UploadTask{}, err
 	}
 
 	vappTemplate, err := queryVappTemplate(cat.client, vappTemplateUrl)
 	if err != nil {
-		return Task{}, err
+		return UploadTask{}, err
 	}
 
 	ovfUploadHref, err := getOvfUploadLink(vappTemplate)
 	if err != nil {
-		return Task{}, err
+		return UploadTask{}, err
 	}
 
 	filesAbsPaths, err := util.Unpack(ovaFileName)
 	if err != nil {
-		return Task{}, err
+		return UploadTask{}, err
 	}
 
 	var ovfFileDesc Envelope
@@ -208,7 +208,7 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSi
 			ovfFileDesc, err = uploadOvfDescription(cat.client, filePath, ovfUploadHref)
 			tempPath, _ = filepath.Split(filePath)
 			if err != nil {
-				return Task{}, err
+				return UploadTask{}, err
 			}
 			break
 		}
@@ -216,18 +216,22 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, chunkSi
 
 	vappTemplate, err = waitForTempUploadLinks(cat.client, vappTemplateUrl)
 
-	err = uploadFiles(cat.client, vappTemplate, &ovfFileDesc, tempPath, filesAbsPaths, callBack)
-	if err != nil {
-		return Task{}, err
+	var uploadProgress float64
+	callBack := func(bytesUploaded, totalSize int64) {
+		uploadProgress = (float64(bytesUploaded) / float64(totalSize)) * 100
 	}
+
+	go uploadFiles(cat.client, vappTemplate, &ovfFileDesc, tempPath, filesAbsPaths, callBack)
 
 	var task Task
 	for _, item := range vappTemplate.Tasks.Task {
 		task, err = createTaskForVcdImport(cat.client, item.HREF)
 	}
 
+	uploadTask := NewUploadTask(&task, &uploadProgress)
+
 	util.GovcdLogger.Printf("[TRACE] Upload finished and task for vcd import created. \n")
-	return task, nil
+	return *uploadTask, nil
 }
 
 func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *Envelope, tempPath string, filesAbsPaths []string, callBack func(bytesUpload, totalSize int64)) error {
