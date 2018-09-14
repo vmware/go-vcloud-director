@@ -40,7 +40,7 @@ const (
 
 var (
 	// All go-vcloud director logging goes through this logger
-	GovcdLogger *log.Logger
+	Logger *log.Logger
 
 	// It's true if we're using an user provided logger
 	customLogging bool = false
@@ -93,7 +93,7 @@ func newLogger(logpath string) *log.Logger {
 }
 
 func SetCustomLogger(customLogger *log.Logger) {
-	GovcdLogger = customLogger
+	Logger = customLogger
 	EnableLogging = true
 	customLogging = true
 }
@@ -104,7 +104,7 @@ func SetLog() {
 		return
 	}
 	if !EnableLogging {
-		GovcdLogger = log.New(ioutil.Discard, "", log.Ldate|log.Ltime)
+		Logger = log.New(ioutil.Discard, "", log.Ldate|log.Ltime)
 		return
 	}
 
@@ -112,12 +112,12 @@ func SetLog() {
 	if ApiLogFileName == "" {
 		if LogOnScreen == "stderr" || LogOnScreen == "err" {
 			log.SetOutput(os.Stderr)
-			GovcdLogger = log.New(os.Stderr, "", log.Ldate|log.Ltime)
+			Logger = log.New(os.Stderr, "", log.Ldate|log.Ltime)
 		} else {
-			GovcdLogger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
+			Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 		}
 	} else {
-		GovcdLogger = newLogger(ApiLogFileName)
+		Logger = newLogger(ApiLogFileName)
 	}
 }
 
@@ -159,7 +159,7 @@ func logSanitizedHeader(input_header http.Header) {
 			!LogPasswords {
 			value = []string{"********"}
 		}
-		GovcdLogger.Printf("\t%s: %s\n", key, value)
+		Logger.Printf("\t%s: %s\n", key, value)
 	}
 }
 
@@ -168,18 +168,18 @@ func ProcessRequestOutput(caller, operation, url, payload string, req *http.Requ
 	if !LogHttpRequest {
 		return
 	}
-	GovcdLogger.Printf("%s\n", dashLine)
-	GovcdLogger.Printf("Request caller: %s\n", caller)
-	GovcdLogger.Printf("%s %s\n", operation, url)
-	GovcdLogger.Printf("%s\n", dashLine)
+	Logger.Printf("%s\n", dashLine)
+	Logger.Printf("Request caller: %s\n", caller)
+	Logger.Printf("%s %s\n", operation, url)
+	Logger.Printf("%s\n", dashLine)
 	data_size := len(payload)
 	if isBinary(payload, req) {
 		payload = "[binary data]"
 	}
 	if data_size > 0 {
-		GovcdLogger.Printf("Request data: [%d] %s\n", data_size, hidePasswords(payload, false))
+		Logger.Printf("Request data: [%d] %s\n", data_size, hidePasswords(payload, false))
 	}
-	GovcdLogger.Printf("Req header:\n")
+	Logger.Printf("Req header:\n")
 	logSanitizedHeader(req.Header)
 }
 
@@ -188,14 +188,14 @@ func ProcessResponseOutput(caller string, resp *http.Response, result string) {
 	if !LogHttpResponse {
 		return
 	}
-	GovcdLogger.Printf("%s\n", hashLine)
-	GovcdLogger.Printf("Response caller %s\n", caller)
-	GovcdLogger.Printf("Response status %s\n", resp.Status)
-	GovcdLogger.Printf("%s\n", hashLine)
-	GovcdLogger.Printf("Response header:\n")
+	Logger.Printf("%s\n", hashLine)
+	Logger.Printf("Response caller %s\n", caller)
+	Logger.Printf("Response status %s\n", resp.Status)
+	Logger.Printf("%s\n", hashLine)
+	Logger.Printf("Response header:\n")
 	logSanitizedHeader(resp.Header)
 	data_size := len(result)
-	GovcdLogger.Printf("Response text: [%d] %s\n", data_size, result)
+	Logger.Printf("Response text: [%d] %s\n", data_size, result)
 }
 
 // Initializes default logging values

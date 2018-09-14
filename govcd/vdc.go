@@ -257,7 +257,7 @@ func (vdc *Vdc) ComposeRawVApp(name string) error {
 		return fmt.Errorf("error marshaling vapp compose: %s", err)
 	}
 
-	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	requestData := bytes.NewBufferString(xml.Header + string(output))
 
@@ -365,7 +365,7 @@ func (vdc *Vdc) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate 
 	if err != nil {
 		return Task{}, fmt.Errorf("error marshaling vapp compose: %s", err)
 	}
-	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 	requestData := bytes.NewBufferString(xml.Header + string(output))
 
 	vdcHref, err := url.ParseRequestURI(vdc.Vdc.HREF)
@@ -450,10 +450,10 @@ func (vdc *Vdc) FindVMByName(vapp VApp, vm string) (VM, error) {
 		return VM{}, fmt.Errorf("VApp Has No VMs")
 	}
 
-	util.GovcdLogger.Printf("[TRACE] Looking for VM: %s", vm)
+	util.Logger.Printf("[TRACE] Looking for VM: %s", vm)
 	for _, child := range vapp.VApp.Children.VM {
 
-		util.GovcdLogger.Printf("[TRACE] Found: %s", child.Name)
+		util.Logger.Printf("[TRACE] Found: %s", child.Name)
 		if child.Name == vm {
 
 			findUrl, err := url.ParseRequestURI(child.HREF)
@@ -484,7 +484,7 @@ func (vdc *Vdc) FindVMByName(vapp VApp, vm string) (VM, error) {
 		}
 
 	}
-	util.GovcdLogger.Printf("[TRACE] Couldn't find VM: %s", vm)
+	util.Logger.Printf("[TRACE] Couldn't find VM: %s", vm)
 	return VM{}, fmt.Errorf("can't find vm: %s", vm)
 }
 
