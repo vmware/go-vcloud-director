@@ -281,7 +281,7 @@ func waitForTempUploadLinks(client *Client, vappTemplateUrl *url.URL) (*types.VA
 		if err != nil {
 			return nil, err
 		}
-		if len(vAppTemplate.Files.File) > 1 {
+		if vAppTemplate.Files != nil && len(vAppTemplate.Files.File) > 1 {
 			util.GovcdLogger.Printf("[TRACE] upload link prepared.\n")
 			break
 		}
