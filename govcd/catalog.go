@@ -175,6 +175,10 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 	//	3. Start uploading bits to the transfer folder
 	//	4. Wait on the import task to finish on vCD side -> task success = upload complete
 
+	if *cat == (Catalog{}) {
+		return UploadTask{}, errors.New("catalog can not be empty or nil")
+	}
+
 	catalogItemUploadURL, err := findCatalogItemUploadLink(cat)
 	if err != nil {
 		return UploadTask{}, err
