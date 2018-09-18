@@ -30,6 +30,8 @@ func Unpack(tarFile string) ([]string, error) {
 		}
 	}
 
+	var expectedFileSize int64 = -1
+
 	for {
 		header, err := tarReader.Next()
 
@@ -46,13 +48,16 @@ func Unpack(tarFile string) ([]string, error) {
 			// if the header is nil, just skip it (not sure how this happens)
 		case header == nil:
 			continue
+
+		case header != nil:
+			expectedFileSize = header.Size
 		}
 
-		// the target location where the dir/file should be created
+		// the target location where the dir/newFile should be created
 		target := filepath.Join(dst, header.Name)
-		GovcdLogger.Printf("[TRACE] extracting file: %s \n", target)
+		GovcdLogger.Printf("[TRACE] extracting newFile: %s \n", target)
 
-		// check the file type
+		// check the newFile type
 		switch header.Typeflag {
 
 		// if its a dir and it doesn't exist create it
@@ -73,26 +78,40 @@ func Unpack(tarFile string) ([]string, error) {
 				return filePaths, errors.New("File %s is a symlink, but no link information was provided\n")
 			}
 
-			// if it's a file create it
+			// if it's a newFile create it
 		case tar.TypeReg:
-			f, err := os.OpenFile(sanitizedName(target), os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			newFile, err := os.OpenFile(sanitizedName(target), os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
 			if err != nil {
 				return filePaths, err
 			}
 
 			// copy over contents
-			if _, err := io.Copy(f, tarReader); err != nil {
+			if _, err := io.Copy(newFile, tarReader); err != nil {
 				return filePaths, err
 			}
 
-			filePaths = append(filePaths, f.Name())
+			filePaths = append(filePaths, newFile.Name())
 
-			// manually close here after each file operation; defering would cause each file close
+			if err := isExtractedFileValid(newFile, expectedFileSize); err != nil {
+				newFile.Close()
+				return filePaths, err
+			}
+
+			// manually close here after each newFile operation; defering would cause each newFile close
 			// to wait until all operations have completed.
-			f.Close()
-
+			newFile.Close()
 		}
 	}
+}
+
+func isExtractedFileValid(file *os.File, expectedFileSize int64) error {
+	if fInfo, err := file.Stat(); err == nil {
+		GovcdLogger.Printf("[TRACE] isExtractedFileValid: created file size %#v, size from header %#v.\n", fInfo.Size(), expectedFileSize)
+		if fInfo.Size() != expectedFileSize && expectedFileSize != -1 {
+			return errors.New("extracted file didn't match defined file size")
+		}
+	}
+	return nil
 }
 
 func sanitizedName(filename string) string {
