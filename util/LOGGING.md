@@ -4,10 +4,10 @@
 ## Defaults for logging
 
 Use of the standard Go `log` package is cwdeprecated and should be avoided. 
-The recommended way of logging is through the logger `util.GovcdLogger`, which supports [all the functions normally available to `log`](https://golang.org/pkg/log/#Logger).
+The recommended way of logging is through the logger `util.Logger`, which supports [all the functions normally available to `log`](https://golang.org/pkg/log/#Logger).
 
 
-By default, **logging is disabled**. Any `GovcdLogger.Printf` statement will simply be discarded.
+By default, **logging is disabled**. Any `Logger.Printf` statement will simply be discarded.
 
 To enable logging, you should use
 
@@ -27,13 +27,13 @@ util.ApiLogFileName = "my_file_name.log"
 If you want logging on the screen, use
 
 ```go
-util.GovcdLogger.SetOutput(os.Stdout)
+util.Logger.SetOutput(os.Stdout)
 ```
 
 or
 
 ```
-util.GovcdLogger.SetOutput(os.Stderr)
+util.Logger.SetOutput(os.Stderr)
 ```
 
 ## Automatic logging of HTTP requests and responses.

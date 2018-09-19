@@ -31,8 +31,8 @@ func NewEdgeGateway(cli *Client) *EdgeGateway {
 
 func (eGW *EdgeGateway) AddDhcpPool(network *types.OrgVDCNetwork, dhcppool []interface{}) (Task, error) {
 	newedgeconfig := eGW.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration
-	util.GovcdLogger.Printf("[DEBUG] EDGE GATEWAY: %#v", newedgeconfig)
-	util.GovcdLogger.Printf("[DEBUG] EDGE GATEWAY SERVICE: %#v", newedgeconfig.GatewayDhcpService)
+	util.Logger.Printf("[DEBUG] EDGE GATEWAY: %#v", newedgeconfig)
+	util.Logger.Printf("[DEBUG] EDGE GATEWAY SERVICE: %#v", newedgeconfig.GatewayDhcpService)
 	newdchpservice := &types.GatewayDhcpService{}
 	if newedgeconfig.GatewayDhcpService == nil {
 		newdchpservice.IsEnabled = true
@@ -94,8 +94,8 @@ func (eGW *EdgeGateway) AddDhcpPool(network *types.OrgVDCNetwork, dhcppool []int
 		apiEndpoint.Path += "/action/configureServices"
 
 		req := eGW.client.NewRequest(map[string]string{}, "POST", *apiEndpoint, buffer)
-		util.GovcdLogger.Printf("[DEBUG] POSTING TO URL: %s", apiEndpoint.Path)
-		util.GovcdLogger.Printf("[DEBUG] XML TO SEND:\n%s", buffer)
+		util.Logger.Printf("[DEBUG] POSTING TO URL: %s", apiEndpoint.Path)
+		util.Logger.Printf("[DEBUG] XML TO SEND:\n%s", buffer)
 
 		req.Header.Add("Content-Type", "application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml")
 
@@ -153,10 +153,10 @@ func (eGW *EdgeGateway) RemoveNATPortMapping(nattype, externalIP, externalPort s
 			natRule.GatewayNatRule.OriginalIP == externalIP &&
 			natRule.GatewayNatRule.OriginalPort == externalPort &&
 			natRule.GatewayNatRule.Interface.HREF == uplink.HREF {
-			util.GovcdLogger.Printf("[DEBUG] REMOVING %s Rule: %#v", natRule.RuleType, natRule.GatewayNatRule)
+			util.Logger.Printf("[DEBUG] REMOVING %s Rule: %#v", natRule.RuleType, natRule.GatewayNatRule)
 			continue
 		}
-		util.GovcdLogger.Printf("[DEBUG] KEEPING %s Rule: %#v", natRule.RuleType, natRule.GatewayNatRule)
+		util.Logger.Printf("[DEBUG] KEEPING %s Rule: %#v", natRule.RuleType, natRule.GatewayNatRule)
 		newnatservice.NatRule = append(newnatservice.NatRule, natRule)
 	}
 
@@ -178,14 +178,14 @@ func (eGW *EdgeGateway) RemoveNATPortMapping(nattype, externalIP, externalPort s
 	apiEndpoint.Path += "/action/configureServices"
 
 	req := eGW.client.NewRequest(map[string]string{}, "POST", *apiEndpoint, buffer)
-	util.GovcdLogger.Printf("[DEBUG] POSTING TO URL: %s", apiEndpoint.Path)
-	util.GovcdLogger.Printf("[DEBUG] XML TO SEND:\n%s", buffer)
+	util.Logger.Printf("[DEBUG] POSTING TO URL: %s", apiEndpoint.Path)
+	util.Logger.Printf("[DEBUG] XML TO SEND:\n%s", buffer)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml")
 
 	resp, err := checkResp(eGW.client.Http.Do(req))
 	if err != nil {
-		util.GovcdLogger.Printf("[DEBUG] Error is: %#v", err)
+		util.Logger.Printf("[DEBUG] Error is: %#v", err)
 		return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
 	}
 
@@ -294,14 +294,14 @@ func (eGW *EdgeGateway) AddNATPortMappingWithUplink(network *types.OrgVDCNetwork
 	apiEndpoint.Path += "/action/configureServices"
 
 	req := eGW.client.NewRequest(map[string]string{}, "POST", *apiEndpoint, buffer)
-	util.GovcdLogger.Printf("[DEBUG] POSTING TO URL: %s", apiEndpoint.Path)
-	util.GovcdLogger.Printf("[DEBUG] XML TO SEND:\n%s", buffer)
+	util.Logger.Printf("[DEBUG] POSTING TO URL: %s", apiEndpoint.Path)
+	util.Logger.Printf("[DEBUG] XML TO SEND:\n%s", buffer)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml")
 
 	resp, err := checkResp(eGW.client.Http.Do(req))
 	if err != nil {
-		util.GovcdLogger.Printf("[DEBUG] Error is: %#v", err)
+		util.Logger.Printf("[DEBUG] Error is: %#v", err)
 		return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
 	}
 
@@ -345,8 +345,8 @@ func (eGW *EdgeGateway) CreateFirewallRules(defaultAction string, rules []*types
 		apiEndpoint.Path += "/action/configureServices"
 
 		req := eGW.client.NewRequest(map[string]string{}, "POST", *apiEndpoint, buffer)
-		util.GovcdLogger.Printf("[DEBUG] POSTING TO URL: %s", apiEndpoint.Path)
-		util.GovcdLogger.Printf("[DEBUG] XML TO SEND:\n%s", buffer)
+		util.Logger.Printf("[DEBUG] POSTING TO URL: %s", apiEndpoint.Path)
+		util.Logger.Printf("[DEBUG] XML TO SEND:\n%s", buffer)
 
 		req.Header.Add("Content-Type", "application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml")
 
@@ -505,7 +505,7 @@ func (eGW *EdgeGateway) Remove1to1Mapping(internal, external string) (Task, erro
 		fmt.Printf("error: %v\n", err)
 	}
 
-	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
@@ -620,7 +620,7 @@ func (eGW *EdgeGateway) Create1to1Mapping(internal, external, description string
 		fmt.Printf("error: %v\n", err)
 	}
 
-	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
@@ -659,10 +659,10 @@ func (eGW *EdgeGateway) AddIpsecVPN(ipsecVPNConfig *types.EdgeGatewayServiceConf
 		return Task{}, fmt.Errorf("error marshaling ipsecVPNConfig compose: %s", err)
 	}
 
-	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
-	util.GovcdLogger.Printf("[DEBUG] ipsecVPN configuration: %s", buffer)
+	util.Logger.Printf("[DEBUG] ipsecVPN configuration: %s", buffer)
 
 	apiEndpoint, _ := url.ParseRequestURI(eGW.EdgeGateway.HREF)
 	apiEndpoint.Path += "/action/configureServices"

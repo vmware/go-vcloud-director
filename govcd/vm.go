@@ -194,7 +194,7 @@ func (vm *VM) ChangeCPUcount(size int) (Task, error) {
 		fmt.Printf("error: %v\n", err)
 	}
 
-	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
@@ -253,7 +253,7 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}, ip string) 
 			ipAllocationMode = "DHCP"
 		}
 
-		util.GovcdLogger.Printf("[DEBUG] Function ChangeNetworkConfig() for %s invoked", network["orgnetwork"])
+		util.Logger.Printf("[DEBUG] Function ChangeNetworkConfig() for %s invoked", network["orgnetwork"])
 
 		networksection.Xmlns = "http://www.vmware.com/vcloud/v1.5"
 		networksection.Ovf = "http://schemas.dmtf.org/ovf/envelope/1"
@@ -275,7 +275,7 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}, ip string) 
 		fmt.Printf("error: %v\n", err)
 	}
 
-	util.GovcdLogger.Printf("[DEBUG] NetworkXML: %s", output)
+	util.Logger.Printf("[DEBUG] NetworkXML: %s", output)
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
@@ -334,7 +334,7 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 		fmt.Printf("error: %v\n", err)
 	}
 
-	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
@@ -390,9 +390,9 @@ func (vm *VM) Customize(computername, script string, changeSid bool) (Task, erro
 		fmt.Printf("error: %v\n", err)
 	}
 
-	util.GovcdLogger.Printf("[DEBUG] VCD Client configuration: %s", output)
+	util.Logger.Printf("[DEBUG] VCD Client configuration: %s", output)
 
-	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
@@ -430,7 +430,7 @@ func (vm *VM) Undeploy() (Task, error) {
 		fmt.Printf("error: %v\n", err)
 	}
 
-	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 

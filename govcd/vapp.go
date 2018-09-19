@@ -129,7 +129,7 @@ func (vapp *VApp) AddVM(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate VApp
 	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/action/recomposeVApp"
 
-	util.GovcdLogger.Printf("[TRACE] Recompose XML: %s", string(output))
+	util.Logger.Printf("[TRACE] Recompose XML: %s", string(output))
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
@@ -354,7 +354,7 @@ func (vapp *VApp) Undeploy() (Task, error) {
 		fmt.Printf("error: %v\n", err)
 	}
 
-	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
@@ -393,7 +393,7 @@ func (vapp *VApp) Deploy() (Task, error) {
 		fmt.Printf("error: %v\n", err)
 	}
 
-	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
@@ -476,9 +476,9 @@ func (vapp *VApp) Customize(computername, script string, changeSid bool) (Task, 
 		fmt.Printf("error: %v\n", err)
 	}
 
-	util.GovcdLogger.Printf("[DEBUG] VCD Client configuration: %s", output)
+	util.Logger.Printf("[DEBUG] VCD Client configuration: %s", output)
 
-	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
@@ -577,7 +577,7 @@ func (vapp *VApp) ChangeCPUcount(size int) (Task, error) {
 		fmt.Printf("error: %v\n", err)
 	}
 
-	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
@@ -628,7 +628,7 @@ func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
 		fmt.Printf("error: %v\n", err)
 	}
 
-	util.GovcdLogger.Printf("[DEBUG] VCD Client configuration: %s", output)
+	util.Logger.Printf("[DEBUG] VCD Client configuration: %s", output)
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
@@ -674,7 +674,7 @@ func (vapp *VApp) ChangeVMName(name string) (Task, error) {
 		fmt.Printf("error: %v\n", err)
 	}
 
-	util.GovcdLogger.Printf("[DEBUG] VCD Client configuration: %s", output)
+	util.Logger.Printf("[DEBUG] VCD Client configuration: %s", output)
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
@@ -754,7 +754,7 @@ func (vapp *VApp) AddMetadata(key, value string) (Task, error) {
 		fmt.Printf("error: %v\n", err)
 	}
 
-	util.GovcdLogger.Printf("[DEBUG] NetworkXML: %s", output)
+	util.Logger.Printf("[DEBUG] NetworkXML: %s", output)
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
@@ -815,7 +815,7 @@ func (vapp *VApp) SetOvf(parameters map[string]string) (Task, error) {
 		fmt.Printf("error: %v\n", err)
 	}
 
-	util.GovcdLogger.Printf("[DEBUG] NetworkXML: %s", output)
+	util.Logger.Printf("[DEBUG] NetworkXML: %s", output)
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
@@ -872,7 +872,7 @@ func (vapp *VApp) ChangeNetworkConfig(networks []map[string]interface{}, ip stri
 			ipAddress = ip
 		}
 
-		util.GovcdLogger.Printf("[DEBUG] Function ChangeNetworkConfig() for %s invoked", network["orgnetwork"])
+		util.Logger.Printf("[DEBUG] Function ChangeNetworkConfig() for %s invoked", network["orgnetwork"])
 
 		networksection.Xmlns = "http://www.vmware.com/vcloud/v1.5"
 		networksection.Ovf = "http://schemas.dmtf.org/ovf/envelope/1"
@@ -894,7 +894,7 @@ func (vapp *VApp) ChangeNetworkConfig(networks []map[string]interface{}, ip stri
 		fmt.Printf("error: %v\n", err)
 	}
 
-	util.GovcdLogger.Printf("[DEBUG] NetworkXML: %s", output)
+	util.Logger.Printf("[DEBUG] NetworkXML: %s", output)
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
@@ -958,7 +958,7 @@ func (vapp *VApp) ChangeMemorySize(size int) (Task, error) {
 		return Task{}, fmt.Errorf("error: %v\n", err)
 	}
 
-	util.GovcdLogger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
+	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
@@ -1040,7 +1040,7 @@ func (vapp *VApp) AddRAWNetworkConfig(orgvdcnetworks []*types.OrgVDCNetwork) (Ta
 		fmt.Printf("error: %v\n", err)
 	}
 
-	util.GovcdLogger.Printf("[DEBUG] RAWNETWORK Config NetworkXML: %s", output)
+	util.Logger.Printf("[DEBUG] RAWNETWORK Config NetworkXML: %s", output)
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 

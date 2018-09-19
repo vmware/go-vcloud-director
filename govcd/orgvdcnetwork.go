@@ -110,7 +110,7 @@ func (vdc *Vdc) CreateOrgVDCNetwork(networkConfig *types.OrgVDCNetwork) error {
 			var resp *http.Response
 			for {
 				b := bytes.NewBufferString(xml.Header + string(output))
-				util.GovcdLogger.Printf("[DEBUG] VCD Client configuration: %s", b)
+				util.Logger.Printf("[DEBUG] VCD Client configuration: %s", b)
 				req := vdc.client.NewRequest(map[string]string{}, "POST", *createUrl, b)
 				req.Header.Add("Content-Type", av.Type)
 				resp, err = checkResp(vdc.client.Http.Do(req))

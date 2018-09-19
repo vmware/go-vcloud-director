@@ -14,7 +14,7 @@ func fileExists(filename string) bool {
 }
 
 func testLog(logn int, t *testing.T, filename string, want_enabled bool, success_msg, failure_msg string) {
-	GovcdLogger.Printf("test %d\n", logn)
+	Logger.Printf("test %d\n", logn)
 	if want_enabled {
 		if fileExists(filename) {
 			t.Logf("ok - [%d] %s", logn, success_msg)
