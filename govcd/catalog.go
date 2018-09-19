@@ -199,7 +199,7 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		return UploadTask{}, err
 	}
 
-	filesAbsPaths, err := util.Unpack(ovaFileName)
+	filesAbsPaths, tmpDir, err := util.Unpack(ovaFileName)
 	if err != nil {
 		return UploadTask{}, err
 	}
@@ -235,6 +235,10 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 	uploadTask := NewUploadTask(&task, &uploadProgress)
 
 	util.GovcdLogger.Printf("[TRACE] Upload finished and task for vcd import created. \n")
+
+	//remove extracted files with temp dir
+	os.RemoveAll(tmpDir)
+
 	return *uploadTask, nil
 }
 
