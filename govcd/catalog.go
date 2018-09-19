@@ -179,6 +179,12 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		return UploadTask{}, errors.New("catalog can not be empty or nil")
 	}
 
+	for _, catalogItemName := range getExistingCatalogItems(cat) {
+		if catalogItemName == itemName {
+			return UploadTask{}, fmt.Errorf("catalog item by name: '%s' already exist. Upload with different name", itemName)
+		}
+	}
+
 	catalogItemUploadURL, err := findCatalogItemUploadLink(cat)
 	if err != nil {
 		return UploadTask{}, err
@@ -409,6 +415,16 @@ func findCatalogItemUploadLink(catalog *Catalog) (*url.URL, error) {
 		}
 	}
 	return nil, errors.New("catalog upload url isn't found")
+}
+
+func getExistingCatalogItems(catalog *Catalog) (catalogItemNames []string) {
+	for _, catalogItems := range catalog.Catalog.CatalogItems {
+		for _, catalogItem := range catalogItems.CatalogItem {
+			catalogItemNames = append(catalogItemNames, catalogItem.Name)
+		}
+	}
+	fmt.Printf("aaaa: %#v /n", catalogItemNames)
+	return
 }
 
 func uploadFile(client *Client, uploadLink, filePath string, uploadedBytes, fileSizeToUpload int64, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64)) (int64, error) {
