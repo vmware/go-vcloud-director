@@ -195,7 +195,7 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		return UploadTask{}, err
 	}
 
-	vappTemplate, err := queryVappTemplate(cat.client, vappTemplateUrl)
+	vappTemplate, err := queryVappTemplate(cat.client, vappTemplateUrl, itemName)
 	if err != nil {
 		return UploadTask{}, err
 	}
@@ -224,7 +224,10 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		}
 	}
 
-	vappTemplate, err = waitForTempUploadLinks(cat.client, vappTemplateUrl)
+	vappTemplate, err = waitForTempUploadLinks(cat.client, vappTemplateUrl, itemName)
+	if err != nil {
+		return UploadTask{}, err
+	}
 
 	var uploadProgress float64
 	callBack := func(bytesUploaded, totalSize int64) {
@@ -285,13 +288,13 @@ func uploadMultiPartFile(client *Client, filePaths []string, uploadHREF string, 
 }
 
 // Function waits until vCD provides temporary file upload links.
-func waitForTempUploadLinks(client *Client, vappTemplateUrl *url.URL) (*types.VAppTemplate, error) {
+func waitForTempUploadLinks(client *Client, vappTemplateUrl *url.URL, newItemName string) (*types.VAppTemplate, error) {
 	var vAppTemplate *types.VAppTemplate
 	var err error
 	for {
 		util.GovcdLogger.Printf("[TRACE] Sleep... for 5 seconds.\n")
 		time.Sleep(time.Second * 5)
-		vAppTemplate, err = queryVappTemplate(client, vappTemplateUrl)
+		vAppTemplate, err = queryVappTemplate(client, vappTemplateUrl, newItemName)
 		if err != nil {
 			return nil, err
 		}
@@ -338,7 +341,7 @@ func getOvfUploadLink(vappTemplate *types.VAppTemplate) (*url.URL, error) {
 	return ovfUploadHref, nil
 }
 
-func queryVappTemplate(client *Client, vappTemplateUrl *url.URL) (*types.VAppTemplate, error) {
+func queryVappTemplate(client *Client, vappTemplateUrl *url.URL, newItemName string) (*types.VAppTemplate, error) {
 	util.GovcdLogger.Printf("[TRACE] Qeurying vapp template: %s\n", vappTemplateUrl)
 	request := client.NewRequest(map[string]string{}, "GET", *vappTemplateUrl, nil)
 	response, err := checkResp(client.Http.Do(request))
@@ -355,6 +358,14 @@ func queryVappTemplate(client *Client, vappTemplateUrl *url.URL) (*types.VAppTem
 
 	util.GovcdLogger.Printf("[TRACE] Response: %v\n", response)
 	util.GovcdLogger.Printf("[TRACE] Response body: %v\n", vappTemplateParsed)
+
+	for _, task := range vappTemplateParsed.Tasks.Task {
+		if "error" == task.Status && newItemName == task.Owner.Name {
+			util.GovcdLogger.Printf("[Error] %#v", task.Error)
+			return vappTemplateParsed, fmt.Errorf("Error in vcd returned error code: %d, error: %s and message: %s ", task.Error.MajorErrorCode, task.Error.MinorErrorCode, task.Error.Message)
+		}
+	}
+
 	return vappTemplateParsed, nil
 }
 
