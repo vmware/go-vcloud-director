@@ -243,7 +243,7 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 
 	uploadTask := NewUploadTask(&task, &uploadProgress)
 
-	util.GovcdLogger.Printf("[TRACE] Upload finished and task for vcd import created. \n")
+	util.Logger.Printf("[TRACE] Upload finished and task for vcd import created. \n")
 
 	//remove extracted files with temp dir
 	os.RemoveAll(tmpDir)
@@ -272,12 +272,12 @@ func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *
 }
 
 func uploadMultiPartFile(client *Client, filePaths []string, uploadHREF string, totalBytesToUpload int64, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64)) error {
-	util.GovcdLogger.Printf("[TRACE] Upload multi part file: %v\n, href: %s, size: %v", filePaths, uploadHREF, totalBytesToUpload)
+	util.Logger.Printf("[TRACE] Upload multi part file: %v\n, href: %s, size: %v", filePaths, uploadHREF, totalBytesToUpload)
 
 	var uploadedBytes int64
 
 	for i, filePath := range filePaths {
-		util.GovcdLogger.Printf("[TRACE] Uploading file: %v\n", i+1)
+		util.Logger.Printf("[TRACE] Uploading file: %v\n", i+1)
 		tempVar, err := uploadFile(client, uploadHREF, filePath, uploadedBytes, totalBytesToUpload, uploadPieceSize, callBack)
 		if err != nil {
 			return err
@@ -292,14 +292,14 @@ func waitForTempUploadLinks(client *Client, vappTemplateUrl *url.URL, newItemNam
 	var vAppTemplate *types.VAppTemplate
 	var err error
 	for {
-		util.GovcdLogger.Printf("[TRACE] Sleep... for 5 seconds.\n")
+		util.Logger.Printf("[TRACE] Sleep... for 5 seconds.\n")
 		time.Sleep(time.Second * 5)
 		vAppTemplate, err = queryVappTemplate(client, vappTemplateUrl, newItemName)
 		if err != nil {
 			return nil, err
 		}
 		if vAppTemplate.Files != nil && len(vAppTemplate.Files.File) > 1 {
-			util.GovcdLogger.Printf("[TRACE] upload link prepared.\n")
+			util.Logger.Printf("[TRACE] upload link prepared.\n")
 			break
 		}
 	}
@@ -307,7 +307,7 @@ func waitForTempUploadLinks(client *Client, vappTemplateUrl *url.URL, newItemNam
 }
 
 func createTaskForVcdImport(client *Client, taskHREF string) (Task, error) {
-	util.GovcdLogger.Printf("[TRACE] Create task for vcd with HREF: %s\n", taskHREF)
+	util.Logger.Printf("[TRACE] Create task for vcd with HREF: %s\n", taskHREF)
 
 	taskURL, err := url.ParseRequestURI(taskHREF)
 	if err != nil {
@@ -331,7 +331,7 @@ func createTaskForVcdImport(client *Client, taskHREF string) (Task, error) {
 }
 
 func getOvfUploadLink(vappTemplate *types.VAppTemplate) (*url.URL, error) {
-	util.GovcdLogger.Printf("[TRACE] Parsing ofv upload link: %#v\n", vappTemplate)
+	util.Logger.Printf("[TRACE] Parsing ofv upload link: %#v\n", vappTemplate)
 
 	ovfUploadHref, err := url.ParseRequestURI(vappTemplate.Files.File[0].Link[0].HREF)
 	if err != nil {
@@ -342,7 +342,7 @@ func getOvfUploadLink(vappTemplate *types.VAppTemplate) (*url.URL, error) {
 }
 
 func queryVappTemplate(client *Client, vappTemplateUrl *url.URL, newItemName string) (*types.VAppTemplate, error) {
-	util.GovcdLogger.Printf("[TRACE] Qeurying vapp template: %s\n", vappTemplateUrl)
+	util.Logger.Printf("[TRACE] Qeurying vapp template: %s\n", vappTemplateUrl)
 	request := client.NewRequest(map[string]string{}, "GET", *vappTemplateUrl, nil)
 	response, err := checkResp(client.Http.Do(request))
 	if err != nil {
@@ -356,12 +356,12 @@ func queryVappTemplate(client *Client, vappTemplateUrl *url.URL, newItemName str
 
 	defer response.Body.Close()
 
-	util.GovcdLogger.Printf("[TRACE] Response: %v\n", response)
-	util.GovcdLogger.Printf("[TRACE] Response body: %v\n", vappTemplateParsed)
+	util.Logger.Printf("[TRACE] Response: %v\n", response)
+	util.Logger.Printf("[TRACE] Response body: %v\n", vappTemplateParsed)
 
 	for _, task := range vappTemplateParsed.Tasks.Task {
 		if "error" == task.Status && newItemName == task.Owner.Name {
-			util.GovcdLogger.Printf("[Error] %#v", task.Error)
+			util.Logger.Printf("[Error] %#v", task.Error)
 			return vappTemplateParsed, fmt.Errorf("Error in vcd returned error code: %d, error: %s and message: %s ", task.Error.MajorErrorCode, task.Error.MinorErrorCode, task.Error.Message)
 		}
 	}
@@ -372,7 +372,7 @@ func queryVappTemplate(client *Client, vappTemplateUrl *url.URL, newItemName str
 // Uploads ovf description file from unarchived provided ova file. As result vCD will generate temporary upload links which has to be queried later.
 // Function will return parsed part for upload files from description xml.
 func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL) (Envelope, error) {
-	util.GovcdLogger.Printf("[TRACE] Uploding ovf description with file: %s and url: %s\n", ovfFile, ovfUploadUrl)
+	util.Logger.Printf("[TRACE] Uploding ovf description with file: %s and url: %s\n", ovfFile, ovfUploadUrl)
 	openedFile, err := os.Open(ovfFile)
 	if err != nil {
 		return Envelope{}, err
@@ -403,9 +403,9 @@ func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL)
 	openedFile.Close()
 
 	body, err := ioutil.ReadAll(response.Body)
-	util.GovcdLogger.Printf("[TRACE] Response: %#v\n", response)
-	util.GovcdLogger.Printf("[TRACE] Response body: %s\n", string(body[:]))
-	util.GovcdLogger.Printf("[TRACE] Ovf file description file: %#v\n", ovfFileDesc)
+	util.Logger.Printf("[TRACE] Response: %#v\n", response)
+	util.Logger.Printf("[TRACE] Response body: %s\n", string(body[:]))
+	util.Logger.Printf("[TRACE] Ovf file description file: %#v\n", ovfFileDesc)
 
 	response.Body.Close()
 
@@ -415,7 +415,7 @@ func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL)
 func findCatalogItemUploadLink(catalog *Catalog) (*url.URL, error) {
 	for _, item := range catalog.Catalog.Link {
 		if item.Type == "application/vnd.vmware.vcloud.uploadVAppTemplateParams+xml" && item.Rel == "add" {
-			util.GovcdLogger.Printf("[TRACE] Found Catalong link for uplaod: %s\n", item.HREF)
+			util.Logger.Printf("[TRACE] Found Catalong link for uplaod: %s\n", item.HREF)
 
 			uploadURL, err := url.ParseRequestURI(item.HREF)
 			if err != nil {
@@ -439,7 +439,7 @@ func getExistingCatalogItems(catalog *Catalog) (catalogItemNames []string) {
 }
 
 func uploadFile(client *Client, uploadLink, filePath string, uploadedBytes, fileSizeToUpload int64, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64)) (int64, error) {
-	util.GovcdLogger.Printf("[TRACE] Starting uploading: %s, offset: %v, fileze: %v, toLink: %s \n", filePath, uploadedBytes, fileSizeToUpload, uploadLink)
+	util.Logger.Printf("[TRACE] Starting uploading: %s, offset: %v, fileze: %v, toLink: %s \n", filePath, uploadedBytes, fileSizeToUpload, uploadLink)
 
 	var part []byte
 	var count int
@@ -453,7 +453,7 @@ func uploadFile(client *Client, uploadLink, filePath string, uploadedBytes, file
 		pieceSize = defaultPieceSize
 	}
 
-	util.GovcdLogger.Printf("[TRACE] Uploading will use piece size: %#v \n", pieceSize)
+	util.Logger.Printf("[TRACE] Uploading will use piece size: %#v \n", pieceSize)
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -542,8 +542,8 @@ func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName st
 		return nil, err
 	}
 
-	util.GovcdLogger.Printf("[TRACE] Response: %#v \n", response)
-	util.GovcdLogger.Printf("[TRACE] Catalog item parsed: %#v\n", catalogItemParsed)
+	util.Logger.Printf("[TRACE] Response: %#v \n", response)
+	util.Logger.Printf("[TRACE] Catalog item parsed: %#v\n", catalogItemParsed)
 
 	ovfUploadUrl, err := url.ParseRequestURI(catalogItemParsed.Entity.HREF)
 	if err != nil {
@@ -555,7 +555,7 @@ func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName st
 
 // Create Request with right headers and range settings. Support multi part file upload.
 func newFileUploadRequest(requestUrl string, filePart []byte, offset, filePartSize, fileSizeToUpload int64) (*http.Request, error) {
-	util.GovcdLogger.Printf("[TRACE] Creating file upload request: %s, %v, %v, %v \n", requestUrl, offset, filePartSize, fileSizeToUpload)
+	util.Logger.Printf("[TRACE] Creating file upload request: %s, %v, %v, %v \n", requestUrl, offset, filePartSize, fileSizeToUpload)
 
 	uploadReq, err := http.NewRequest("PUT", requestUrl, bytes.NewReader(filePart))
 	if err != nil {
@@ -569,7 +569,7 @@ func newFileUploadRequest(requestUrl string, filePart []byte, offset, filePartSi
 	uploadReq.Header.Set("Content-Range", rangeExpression)
 
 	for key, value := range uploadReq.Header {
-		util.GovcdLogger.Printf("[TRACE] Header: %s :%s \n", key, value)
+		util.Logger.Printf("[TRACE] Header: %s :%s \n", key, value)
 	}
 
 	return uploadReq, nil
@@ -593,6 +593,6 @@ func getChunkedFilePaths(baseDir, baseFileName string, totalFileSize, partSize i
 		filePaths = append(filePaths, filePath)
 	}
 
-	util.GovcdLogger.Printf("[TRACE] Chunked files file paths: %s \n", filePaths)
+	util.Logger.Printf("[TRACE] Chunked files file paths: %s \n", filePaths)
 	return filePaths
 }

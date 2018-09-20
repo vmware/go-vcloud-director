@@ -54,7 +54,7 @@ func Unpack(tarFile string) ([]string, string, error) {
 
 		// the target location where the dir/newFile should be created
 		target := filepath.Join(dst, header.Name)
-		GovcdLogger.Printf("[TRACE] extracting newFile: %s \n", target)
+		Logger.Printf("[TRACE] extracting newFile: %s \n", target)
 
 		// check the newFile type
 		switch header.Typeflag {
@@ -105,7 +105,7 @@ func Unpack(tarFile string) ([]string, string, error) {
 
 func isExtractedFileValid(file *os.File, expectedFileSize int64) error {
 	if fInfo, err := file.Stat(); err == nil {
-		GovcdLogger.Printf("[TRACE] isExtractedFileValid: created file size %#v, size from header %#v.\n", fInfo.Size(), expectedFileSize)
+		Logger.Printf("[TRACE] isExtractedFileValid: created file size %#v, size from header %#v.\n", fInfo.Size(), expectedFileSize)
 		if fInfo.Size() != expectedFileSize && expectedFileSize != -1 {
 			return errors.New("extracted file didn't match defined file size")
 		}
