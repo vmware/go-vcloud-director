@@ -216,10 +216,10 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 	for _, filePath := range filesAbsPaths {
 		if filepath.Ext(filePath) == ".ovf" {
 			ovfFileDesc, err = uploadOvfDescription(cat.client, filePath, ovfUploadHref)
-			tempPath, _ = filepath.Split(filePath)
 			if err != nil {
 				return UploadTask{}, err
 			}
+			tempPath, _ = filepath.Split(filePath)
 			break
 		}
 	}
@@ -234,41 +234,61 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		uploadProgress = (float64(bytesUploaded) / float64(totalSize)) * 100
 	}
 
-	go uploadFiles(cat.client, vappTemplate, &ovfFileDesc, tempPath, filesAbsPaths, uploadPieceSize, callBack)
+	go uploadFiles(cat.client, vappTemplate, &ovfFileDesc, tempPath, filesAbsPaths, uploadPieceSize, callBack, tmpDir)
 
 	var task Task
 	for _, item := range vappTemplate.Tasks.Task {
 		task, err = createTaskForVcdImport(cat.client, item.HREF)
+		if err != nil {
+			return UploadTask{}, err
+		}
 	}
 
 	uploadTask := NewUploadTask(&task, &uploadProgress)
 
 	util.Logger.Printf("[TRACE] Upload finished and task for vcd import created. \n")
 
-	//remove extracted files with temp dir
-	os.RemoveAll(tmpDir)
-
 	return *uploadTask, nil
 }
 
-func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *Envelope, tempPath string, filesAbsPaths []string, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64)) error {
+func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *Envelope, tempPath string, filesAbsPaths []string, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64), folderToDelete string) error {
 	for _, item := range vappTemplate.Files.File {
 		if item.BytesTransferred == 0 {
-			if ovfFileDesc.File[0].ChunkSize != 0 {
-				chunkFilePaths := getChunkedFilePaths(tempPath, ovfFileDesc.File[0].HREF, ovfFileDesc.File[0].Size, ovfFileDesc.File[0].ChunkSize)
-				err := uploadMultiPartFile(client, chunkFilePaths, item.Link[0].HREF, int64(ovfFileDesc.File[0].Size), uploadPieceSize, callBack)
+			number, err := getFileFromDescription(item.Name, ovfFileDesc)
+			if err != nil {
+				util.Logger.Printf("[Error] Error uploading files: %#v", err)
+				return err
+			}
+			if ovfFileDesc.File[number].ChunkSize != 0 {
+				chunkFilePaths := getChunkedFilePaths(tempPath, ovfFileDesc.File[number].HREF, ovfFileDesc.File[number].Size, ovfFileDesc.File[number].ChunkSize)
+				err := uploadMultiPartFile(client, chunkFilePaths, item.Link[0].HREF, int64(ovfFileDesc.File[number].Size), uploadPieceSize, callBack)
 				if err != nil {
+					util.Logger.Printf("[Error] Error uploading files: %#v", err)
 					return err
 				}
 			} else {
 				_, err := uploadFile(client, item.Link[0].HREF, findFilePath(filesAbsPaths, item.Name), 0, item.Size, uploadPieceSize, callBack)
 				if err != nil {
+					util.Logger.Printf("[Error] Error uploading files: %#v", err)
 					return err
 				}
 			}
 		}
 	}
+
+	//remove extracted files with temp dir
+	os.RemoveAll(folderToDelete)
+
 	return nil
+}
+
+func getFileFromDescription(fileToFind string, ovfFileDesc *Envelope) (int, error) {
+	for fileInArray, item := range ovfFileDesc.File {
+		if item.HREF == fileToFind {
+			return fileInArray, nil
+		}
+	}
+	return -1, errors.New("File expected from vcd didn't match any description file")
 }
 
 func uploadMultiPartFile(client *Client, filePaths []string, uploadHREF string, totalBytesToUpload int64, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64)) error {
@@ -332,6 +352,10 @@ func createTaskForVcdImport(client *Client, taskHREF string) (Task, error) {
 
 func getOvfUploadLink(vappTemplate *types.VAppTemplate) (*url.URL, error) {
 	util.Logger.Printf("[TRACE] Parsing ofv upload link: %#v\n", vappTemplate)
+
+	if len(vappTemplate.Files.File) > 1 {
+		return nil, errors.New("unexpected response from vCD: found more than one link for upload")
+	}
 
 	ovfUploadHref, err := url.ParseRequestURI(vappTemplate.Files.File[0].Link[0].HREF)
 	if err != nil {
@@ -434,7 +458,6 @@ func getExistingCatalogItems(catalog *Catalog) (catalogItemNames []string) {
 			catalogItemNames = append(catalogItemNames, catalogItem.Name)
 		}
 	}
-	fmt.Printf("aaaa: %#v /n", catalogItemNames)
 	return
 }
 
@@ -475,11 +498,11 @@ func uploadFile(client *Client, uploadLink, filePath string, uploadedBytes, file
 		}
 		err = uploadPartFile(client, uploadLink, part, uploadedBytes+offset, int64(count), fileSizeToUpload, callBack)
 		offset += int64(count)
-
 		if err != nil {
 			return 0, err
 		}
 	}
+
 	if err != io.ErrUnexpectedEOF {
 		log.Fatal("Error Reading ", filePath, ": ", err)
 	} else {
@@ -487,7 +510,6 @@ func uploadFile(client *Client, uploadLink, filePath string, uploadedBytes, file
 		if err != nil {
 			return 0, err
 		}
-		err = nil
 	}
 
 	return fileInfo.Size(), nil
