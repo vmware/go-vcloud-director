@@ -117,7 +117,8 @@ func sanitizedName(filename string) string {
 	if len(filename) > 1 && filename[1] == ':' {
 		filename = filename[2:]
 	}
-	filename = strings.Replace(filename, "\\/.", "\\/", -1)
-	filename = strings.Replace(filename, "../", "", -1)
+	filename = strings.TrimLeft(filename, "\\/.")
+	filename = strings.TrimLeft(filename, "../")
+	filename = strings.Replace(filename, "../../", "../", -1)
 	return strings.Replace(filename, "..\\", "", -1)
 }
