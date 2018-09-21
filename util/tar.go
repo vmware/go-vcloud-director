@@ -53,7 +53,7 @@ func Unpack(tarFile string) ([]string, string, error) {
 		}
 
 		// the target location where the dir/newFile should be created
-		target := filepath.Join(dst, header.Name)
+		target := filepath.Join(dst, sanitizedName(header.Name))
 		Logger.Printf("[TRACE] extracting newFile: %s \n", target)
 
 		// check the newFile type
@@ -79,7 +79,7 @@ func Unpack(tarFile string) ([]string, string, error) {
 
 			// if it's a newFile create it
 		case tar.TypeReg:
-			newFile, err := os.OpenFile(sanitizedName(target), os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			newFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
 			if err != nil {
 				return filePaths, dst, err
 			}
