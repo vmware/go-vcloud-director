@@ -285,10 +285,11 @@ func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *
 func getFileFromDescription(fileToFind string, ovfFileDesc *Envelope) (int, error) {
 	for fileInArray, item := range ovfFileDesc.File {
 		if item.HREF == fileToFind {
+			util.Logger.Printf("[TRACE] getFileFromDescription - found matching file: %s in array: %d\n", fileToFind, fileInArray)
 			return fileInArray, nil
 		}
 	}
-	return -1, errors.New("File expected from vcd didn't match any description file")
+	return -1, errors.New("file expected from vcd didn't match any description file")
 }
 
 func uploadMultiPartFile(client *Client, filePaths []string, uploadHREF string, totalBytesToUpload int64, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64)) error {
@@ -351,7 +352,7 @@ func createTaskForVcdImport(client *Client, taskHREF string) (Task, error) {
 }
 
 func getOvfUploadLink(vappTemplate *types.VAppTemplate) (*url.URL, error) {
-	util.Logger.Printf("[TRACE] Parsing ofv upload link: %#v\n", vappTemplate)
+	util.Logger.Printf("[TRACE] getOvfUploadLink - Parsing ovf upload link: %#v\n", vappTemplate)
 
 	if len(vappTemplate.Files.File) > 1 {
 		return nil, errors.New("unexpected response from vCD: found more than one link for upload")
@@ -362,6 +363,7 @@ func getOvfUploadLink(vappTemplate *types.VAppTemplate) (*url.URL, error) {
 		return nil, err
 	}
 
+	util.Logger.Printf("[TRACE] getOvfUploadLink- Ovf upload link found: %#v\n", ovfUploadHref)
 	return ovfUploadHref, nil
 }
 
@@ -379,9 +381,6 @@ func queryVappTemplate(client *Client, vappTemplateUrl *url.URL, newItemName str
 	}
 
 	defer response.Body.Close()
-
-	util.Logger.Printf("[TRACE] Response: %v\n", response)
-	util.Logger.Printf("[TRACE] Response body: %v\n", vappTemplateParsed)
 
 	for _, task := range vappTemplateParsed.Tasks.Task {
 		if "error" == task.Status && newItemName == task.Owner.Name {
@@ -408,7 +407,7 @@ func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL)
 	request := client.NewRequest(map[string]string{}, "PUT", *ovfUploadUrl, ovfReader)
 	request.Header.Add("Content-Type", "text/xml")
 
-	response, err := checkResp(client.Http.Do(request))
+	_, err = checkResp(client.Http.Do(request))
 	if err != nil {
 		return Envelope{}, err
 	}
@@ -426,26 +425,20 @@ func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL)
 
 	openedFile.Close()
 
-	body, err := ioutil.ReadAll(response.Body)
-	util.Logger.Printf("[TRACE] Response: %#v\n", response)
-	util.Logger.Printf("[TRACE] Response body: %s\n", string(body[:]))
-	util.Logger.Printf("[TRACE] Ovf file description file: %#v\n", ovfFileDesc)
-
-	response.Body.Close()
-
 	return ovfFileDesc, nil
 }
 
 func findCatalogItemUploadLink(catalog *Catalog) (*url.URL, error) {
 	for _, item := range catalog.Catalog.Link {
 		if item.Type == "application/vnd.vmware.vcloud.uploadVAppTemplateParams+xml" && item.Rel == "add" {
-			util.Logger.Printf("[TRACE] Found Catalong link for uplaod: %s\n", item.HREF)
+			util.Logger.Printf("[TRACE] Found Catalong link for upload: %s\n", item.HREF)
 
 			uploadURL, err := url.ParseRequestURI(item.HREF)
 			if err != nil {
 				return nil, err
 			}
 
+			util.Logger.Printf("[TRACE] findCatalogItemUploadLink - upload url found: %s \n", uploadURL)
 			return uploadURL, nil
 		}
 	}
@@ -544,7 +537,7 @@ func findFilePath(filesAbsPaths []string, fileName string) string {
 
 // Initiates creation of item and returns ovf upload url for created item.
 func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName string, itemDescription string) (*url.URL, error) {
-
+	util.Logger.Printf("[TRACE] createItemForUpload: %s, item name: %v, description: %v \n", createHREF, catalogItemName, itemDescription)
 	reqBody := bytes.NewBufferString(
 		"<UploadVAppTemplateParams xmlns=\"http://www.vmware.com/vcloud/v1.5\" name=\"" + catalogItemName + "\" >" +
 			"<Description>" + itemDescription + "</Description>" +
@@ -564,7 +557,6 @@ func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName st
 		return nil, err
 	}
 
-	util.Logger.Printf("[TRACE] Response: %#v \n", response)
 	util.Logger.Printf("[TRACE] Catalog item parsed: %#v\n", catalogItemParsed)
 
 	ovfUploadUrl, err := url.ParseRequestURI(catalogItemParsed.Entity.HREF)
