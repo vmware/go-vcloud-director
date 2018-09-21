@@ -13,7 +13,6 @@ import (
 	"github.com/vmware/go-vcloud-director/util"
 	"io"
 	"io/ioutil"
-	"log"
 	"math"
 	"net/http"
 	"net/url"
@@ -413,12 +412,7 @@ func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL)
 	}
 
 	var ovfFileDesc Envelope
-	ovfXml, err := ioutil.ReadAll(&buf)
-	if err != nil {
-		return Envelope{}, err
-	}
-
-	err = xml.Unmarshal(ovfXml, &ovfFileDesc)
+	err = parseOvfFileDesc(&buf, &ovfFileDesc)
 	if err != nil {
 		return Envelope{}, err
 	}
@@ -426,6 +420,19 @@ func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL)
 	openedFile.Close()
 
 	return ovfFileDesc, nil
+}
+
+func parseOvfFileDesc(buf *bytes.Buffer, ovfFileDesc *Envelope) error {
+	ovfXml, err := ioutil.ReadAll(buf)
+	if err != nil {
+		return err
+	}
+
+	err = xml.Unmarshal(ovfXml, &ovfFileDesc)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func findCatalogItemUploadLink(catalog *Catalog) (*url.URL, error) {
@@ -496,13 +503,15 @@ func uploadFile(client *Client, uploadLink, filePath string, uploadedBytes, file
 		}
 	}
 
-	if err != io.ErrUnexpectedEOF {
-		log.Fatal("Error Reading ", filePath, ": ", err)
-	} else {
+	// upload last part as ReadFull returns io.ErrUnexpectedEOF when reaches end of file.
+	if err == io.ErrUnexpectedEOF {
 		err = uploadPartFile(client, uploadLink, part[:count], uploadedBytes+offset, int64(count), fileSizeToUpload, callBack)
 		if err != nil {
 			return 0, err
 		}
+	} else {
+		util.Logger.Printf("Error Uploading: %s, error %#v ", filePath, err)
+		return 0, err
 	}
 
 	return fileInfo.Size(), nil
