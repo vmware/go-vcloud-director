@@ -5,7 +5,10 @@
 package govcd
 
 import (
+	"github.com/vmware/go-vcloud-director/util"
 	. "gopkg.in/check.v1"
+	"path"
+	"runtime"
 )
 
 func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
@@ -83,4 +86,46 @@ func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(catalog, Equals, Catalog{})
 
+}
+
+func (vcd *TestVCD) Test_UploadOvf(check *C) {
+	// Fetching organization
+	org, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
+	check.Assert(org, Not(Equals), AdminOrg{})
+	check.Assert(err, IsNil)
+
+	// creating catalog
+	adminCatalog, err := org.CreateCatalog(TestCreateCatalog, TestCreateCatalogDesc, true)
+	check.Assert(err, IsNil)
+	AddToCleanupList(TestCreateCatalog, "catalog", vcd.org.Org.Name, "Test_UploadOvf")
+	check.Assert(adminCatalog.AdminCatalog.Name, Equals, TestCreateCatalog)
+	check.Assert(adminCatalog.AdminCatalog.Description, Equals, TestCreateCatalogDesc)
+	task := NewTask(&vcd.client.Client)
+	task.Task = adminCatalog.AdminCatalog.Tasks.Task[0]
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	//find catalog
+	org, err = GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
+	check.Assert(org, Not(Equals), AdminOrg{})
+	check.Assert(err, IsNil)
+	catalog, err := org.FindCatalog(TestCreateCatalog)
+	check.Assert(err, IsNil)
+	util.Logger.Printf("Catalog found#: %#v", catalog)
+	itemName := "myTest"
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name, "Test_UploadOvf")
+	uploadTask, err := catalog.UploadOvf(getCurrentPath()+"/template_with_custom_chunk_size.ova", itemName, "upload from test", 1024)
+	check.Assert(err, IsNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	//verify
+	catalog, err = org.FindCatalog(TestCreateCatalog)
+	check.Assert(catalog.Catalog.CatalogItems[0].CatalogItem[0].Name, Equals, itemName)
+}
+
+//helper function to get current runing dir.
+func getCurrentPath() string {
+	_, filename, _, _ := runtime.Caller(1)
+	return path.Dir(filename)
 }
