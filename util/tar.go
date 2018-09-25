@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+const TmpDirPrefix = "govcd"
+
 //extract files to system tmp dir with name govcd+random number. Created folder with files isn't deleted.
 func Unpack(tarFile string) ([]string, string, error) {
 
@@ -24,7 +26,7 @@ func Unpack(tarFile string) ([]string, string, error) {
 
 	tarReader := tar.NewReader(reader)
 
-	dst, err = ioutil.TempDir("", "govcd")
+	dst, err = ioutil.TempDir("", TmpDirPrefix)
 	if err != nil {
 		return filePaths, dst, err
 	}
