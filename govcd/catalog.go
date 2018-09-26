@@ -130,7 +130,7 @@ type Envelope struct {
 
 // If catalog item is a valid CatalogItem and the call succeeds,
 // then the function returns a CatalogItem. If the item does not
-// exist, then it returns an empty CatalogItem. If The call fails
+// exist, then it returns an empty CatalogItem. If the call fails
 // at any point, it returns an error.
 func (cat *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
 	for _, catalogItems := range cat.Catalog.CatalogItems {
@@ -164,8 +164,10 @@ func (cat *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
 	return CatalogItem{}, nil
 }
 
-// uploads an ova file to a catalog. This method only uploads bits to vCD spool area.
-// Returns errors if any occur during upload from vCD or upload process.
+// Uploads an ova file to a catalog. This method only uploads bits to vCD spool area.
+// Returns errors if any occur during upload from vCD or upload process. On upload fail client may need to
+// remove vCD catalog item which waits for files to be uploaded. Files from ova are extracted to system
+// temp folder "govcd+random number" and left for inspection on error.
 func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadPieceSize int64) (UploadTask, error) {
 
 	//	On a very high level the flow is as follows
@@ -180,7 +182,7 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 
 	for _, catalogItemName := range getExistingCatalogItems(cat) {
 		if catalogItemName == itemName {
-			return UploadTask{}, fmt.Errorf("catalog item by name: '%s' already exist. Upload with different name", itemName)
+			return UploadTask{}, fmt.Errorf("catalog item '%s' already exists. Upload with different name", itemName)
 		}
 	}
 
@@ -233,6 +235,7 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		uploadProgress = (float64(bytesUploaded) / float64(totalSize)) * 100
 	}
 
+	//sending upload process to background, this allows no to lock and return task to client
 	go uploadFiles(cat.client, vappTemplate, &ovfFileDesc, tempPath, filesAbsPaths, uploadPieceSize, callBack, tmpDir)
 
 	var task Task
@@ -250,6 +253,9 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 	return *uploadTask, nil
 }
 
+// Upload files for vCD created upload links. Different approach then vmdk file are
+// chunked (e.g. test.vmdk.000000000, test.vmdk.000000001 or test.vmdk). vmdk files are chunked if
+// in description file attribute Chunksize is not zero.
 func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *Envelope, tempPath string, filesAbsPaths []string, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64), folderToDelete string) error {
 	for _, item := range vappTemplate.Files.File {
 		if item.BytesTransferred == 0 {
@@ -391,7 +397,7 @@ func queryVappTemplate(client *Client, vappTemplateUrl *url.URL, newItemName str
 	return vappTemplateParsed, nil
 }
 
-// Uploads ovf description file from unarchived provided ova file. As result vCD will generate temporary upload links which has to be queried later.
+// Uploads ovf description file from unarchived provided ova file. As a result vCD will generate temporary upload links which has to be queried later.
 // Function will return parsed part for upload files from description xml.
 func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL) (Envelope, error) {
 	util.Logger.Printf("[TRACE] Uploding ovf description with file: %s and url: %s\n", ovfFile, ovfUploadUrl)
@@ -445,11 +451,11 @@ func findCatalogItemUploadLink(catalog *Catalog) (*url.URL, error) {
 				return nil, err
 			}
 
-			util.Logger.Printf("[TRACE] findCatalogItemUploadLink - upload url found: %s \n", uploadURL)
+			util.Logger.Printf("[TRACE] findCatalogItemUploadLink - catalog item upload url found: %s \n", uploadURL)
 			return uploadURL, nil
 		}
 	}
-	return nil, errors.New("catalog upload url isn't found")
+	return nil, errors.New("catalog upload URL not found")
 }
 
 func getExistingCatalogItems(catalog *Catalog) (catalogItemNames []string) {
@@ -461,6 +467,8 @@ func getExistingCatalogItems(catalog *Catalog) (catalogItemNames []string) {
 	return
 }
 
+// upload file by parts which size is defined by user provided variable uploadPieceSize and
+// provides how much bytes uploaded to callback. Callback allows to monitor upload progress.
 func uploadFile(client *Client, uploadLink, filePath string, uploadedBytes, fileSizeToUpload int64, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64)) (int64, error) {
 	util.Logger.Printf("[TRACE] Starting uploading: %s, offset: %v, fileze: %v, toLink: %s \n", filePath, uploadedBytes, fileSizeToUpload, uploadLink)
 

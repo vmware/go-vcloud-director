@@ -1,3 +1,7 @@
+/*
+ * Copyright 2018 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ */
+
 package govcd
 
 import (
@@ -10,6 +14,8 @@ type UploadTask struct {
 	*Task
 }
 
+// Creates wrapped Task which is dedicated for upload functionality and
+// provides additional functionality to monitor upload progress.
 func NewUploadTask(task *Task, uploadProgress *float64) *UploadTask {
 	return &UploadTask{
 		uploadProgress,

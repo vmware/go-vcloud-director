@@ -4,6 +4,8 @@ import (
 	"testing"
 )
 
+// Tests function sanitizedName providing bad paths and expects them be cleaned.
+// Possible security issue https://github.com/vmware/pyvcloud/pull/268
 func TestSanitizedName(t *testing.T) {
 	tables := []struct {
 		badPath  string

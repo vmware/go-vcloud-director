@@ -1,3 +1,7 @@
+/*
+ * Copyright 2018 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ */
+
 package util
 
 import (
@@ -12,7 +16,8 @@ import (
 
 const TmpDirPrefix = "govcd"
 
-//extract files to system tmp dir with name govcd+random number. Created folder with files isn't deleted.
+// Extract files to system tmp dir with name govcd+random number. Created folder with files isn't deleted.
+// Returns extracted files paths in array and path where folder with files created.
 func Unpack(tarFile string) ([]string, string, error) {
 
 	var filePaths []string

@@ -97,14 +97,20 @@ func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
 
 }
 
+// Tests System function UploadOvf by creating catalog and
+// checking if provided standard ova file uploaded.
 func (vcd *TestVCD) Test_UploadOvf(check *C) {
 	checkUploadOvf(vcd, check, getCurrentPath()+OvaPath, TestCreateCatalog, "item1")
 }
 
+// Tests System function UploadOvf by creating catalog and
+// checking if provided chunked ova file uploaded.
 func (vcd *TestVCD) Test_UploadOvf_chuncked(check *C) {
 	checkUploadOvf(vcd, check, getCurrentPath()+OvaChunkedPath, TestCreateCatalog+"2", "item2")
 }
 
+// Tests System function UploadOvf by creating catalog and
+// checking UploadTask.GetUploadProgress returns values of progress.
 func (vcd *TestVCD) Test_UploadOvf_progress_works(check *C) {
 	catalogName := TestCreateCatalog + "3"
 	itemName := "item3"
@@ -113,7 +119,6 @@ func (vcd *TestVCD) Test_UploadOvf_progress_works(check *C) {
 	catalog, org := findCatalog(vcd, check, catalogName)
 	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name, "Test_UploadOvf")
 
-	//execute
 	uploadTask, err := catalog.UploadOvf(getCurrentPath()+OvaPath, itemName, "upload from test", 1024)
 	check.Assert(err, IsNil)
 	for {
@@ -126,12 +131,13 @@ func (vcd *TestVCD) Test_UploadOvf_progress_works(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	//verify
 	catalog, err = org.FindCatalog(catalogName)
 	check.Assert(catalog.Catalog.CatalogItems[0].CatalogItem[0].Name, Equals, itemName)
 }
 
-func (vcd *TestVCD) Test_UploadOvf_ShowProgress_works(check *C) {
+// Tests System function UploadOvf by creating catalog and
+// checking UploadTask.ShowUploadProgress writes values of progress to stdin.
+func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
 	catalogName := TestCreateCatalog + "4"
 	itemName := "item4"
 	setupCatalog(vcd, check, catalogName)
@@ -160,11 +166,12 @@ func (vcd *TestVCD) Test_UploadOvf_ShowProgress_works(check *C) {
 
 	check.Assert(string(result), Matches, ".*Upload progress 100.00%")
 
-	//verify
 	catalog, err = org.FindCatalog(catalogName)
 	check.Assert(catalog.Catalog.CatalogItems[0].CatalogItem[0].Name, Equals, itemName)
 }
 
+// Tests System function UploadOvf by creating catalog, creating catalog item
+// and expexting specific error then trying to create same catalog item. As vCD returns cryptic error for such case.
 func (vcd *TestVCD) Test_UploadOvf_error_withSameItem(check *C) {
 	catalogName := TestCreateCatalog + "5"
 	itemName := "item5"
@@ -179,11 +186,12 @@ func (vcd *TestVCD) Test_UploadOvf_error_withSameItem(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	//execute
 	_, err = catalog.UploadOvf(getCurrentPath()+OvaPath, itemName, "upload from test", 1024)
 	check.Assert(err.Error(), Matches, ".*API Error: 500.*Catalog Item name is not unique within the catalog.*")
 }
 
+// Tests System function UploadOvf by creating catalog, uploading file and verifying
+// that extracted files were deleted.s
 func (vcd *TestVCD) Test_UploadOvf_cleaned_extracted_files(check *C) {
 	catalogName := TestCreateCatalog + "6"
 	itemName := "item6"
@@ -195,13 +203,11 @@ func (vcd *TestVCD) Test_UploadOvf_cleaned_extracted_files(check *C) {
 	catalog, _ := findCatalog(vcd, check, catalogName)
 	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name, "Test_UploadOvf")
 
-	//execute
 	uploadTask, err := catalog.UploadOvf(getCurrentPath()+OvaPath, itemName, "upload from test", 1024)
 	check.Assert(err, IsNil)
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	//verify
 	check.Assert(oldFolderCount, Equals, countFolders())
 
 }
@@ -226,13 +232,11 @@ func checkUploadOvf(vcd *TestVCD, check *C, ovaFileName, testCreateCatalog, item
 	catalog, org := findCatalog(vcd, check, testCreateCatalog)
 	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name, "Test_UploadOvf")
 
-	//execute
 	uploadTask, err := catalog.UploadOvf(ovaFileName, itemName, "upload from test", 1024)
 	check.Assert(err, IsNil)
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	//verify
 	catalog, err = org.FindCatalog(testCreateCatalog)
 	check.Assert(catalog.Catalog.CatalogItems[0].CatalogItem[0].Name, Equals, itemName)
 }
