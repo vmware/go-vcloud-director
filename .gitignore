@@ -28,3 +28,12 @@ secrets.yml
 
 # Pycharm IDE
 .idea
+
+# test configuration file
+govcd/govcd_test_config.yaml
+
+# vim bak files
+*~
+
+# test suite log file
+govcd/go-vcloud-director.log
