@@ -6,16 +6,16 @@
 package govcd
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
+	"github.com/vmware/go-vcloud-director/types/v56"
+	"github.com/vmware/go-vcloud-director/util"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-
-	"bytes"
-	types "github.com/vmware/go-vcloud-director/types/v56"
-	"github.com/vmware/go-vcloud-director/util"
+	"reflect"
 )
 
 // Client provides a client to vCloud Director, values can be populated automatically using the Authenticate method.
@@ -59,9 +59,19 @@ func (cli *Client) NewRequest(params map[string]string, method string, reqUrl ur
 		// to the processing function.
 		payload := ""
 		if req.ContentLength > 0 {
-			buf := new(bytes.Buffer)
-			buf.ReadFrom(body)
-			payload = buf.String()
+			// We try to convert body to a *bytes.Buffer
+			var ibody interface{}
+			ibody = body
+			bbody, ok := ibody.(*bytes.Buffer)
+			// If the inner object is a bytes.Buffer, we get a safe copy of the data.
+			// If it is really just an io.Reader, we don't, as the copy would empty the reader
+			if ok {
+				payload = bbody.String()
+			} else {
+				// With this content, we'll know that the payload is not really empty, but
+				// it was unavailable due to the body type.
+				payload = fmt.Sprintf("<Not retrieved from type %s>", reflect.TypeOf(body))
+			}
 		}
 		util.ProcessRequestOutput(util.CallFuncName(), method, reqUrl.String(), payload, req)
 	}
