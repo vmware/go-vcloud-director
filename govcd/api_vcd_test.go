@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -31,6 +32,8 @@ const (
 	TestComposeVapp        = "TestComposeVapp"
 	TestComposeVappDesc    = "vApp created by tests"
 	TestSetUpSuite         = "TestSetUpSuite"
+	TestUploadOvf          = "TestUploadOvf"
+	TestDeleteCatalogItem  = "TestDeleteCatalogItem"
 )
 
 // Struct to get info from a config yaml file that the user
@@ -67,6 +70,10 @@ type TestConfig struct {
 		LogHttpResponse bool   `yaml:"logHttpResponse,omitempty"`
 		VerboseCleanup  bool   `yaml:"verboseCleanup,omitempty"`
 	} `yaml:"logging"`
+	OVA struct {
+		OVAPath        string `yaml:"ovaPath,omitempty"`
+		OVAChunkedPath string `yaml:"ovaChunkedPath,omitempty"`
+	} `yaml:"ova"`
 }
 
 // Test struct for vcloud-director.
@@ -297,7 +304,38 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
-
+	case "catalogItem":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No Org provided for catalogItem '%s'\n", strings.Split(entity.Parent, "|")[0])
+			return
+		}
+		org, err := GetAdminOrgByName(vcd.client, strings.Split(entity.Parent, "|")[0])
+		if org == (AdminOrg{}) || err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [INFO] organization '%s' not found\n", entity.Parent)
+			return
+		}
+		catalog, err := org.FindCatalog(strings.Split(entity.Parent, "|")[1])
+		if catalog == (Catalog{}) || err != nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		for _, catalogItems := range catalog.Catalog.CatalogItems {
+			for _, catalogItem := range catalogItems.CatalogItem {
+				if catalogItem.Name == entity.Name {
+					catalogItemApi, err := catalog.FindCatalogItem(catalogItem.Name)
+					if catalogItemApi == (CatalogItem{}) || err != nil {
+						vcd.infoCleanup("removeLeftoverEntries: [INFO] catalogItem '%s' not found\n", entity.Name)
+						return
+					}
+					err = catalogItemApi.Delete()
+					if err != nil {
+						vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+					}
+				}
+			}
+		}
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
 	case "edgegateway":
 		//TODO: find an easy way of undoing edge GW customization
 		return
