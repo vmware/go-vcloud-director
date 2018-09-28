@@ -31,7 +31,7 @@
 		"logHttpResponses": true
 	},
   "ova": {
-    "ovaPath": "/../test-resources/test_vapp_template.ova",
-    "ovaChunkedPath": "/../test-resources/template_with_custom_chunk_size.ova"
+    "ovaPath": "../test-resources/test_vapp_template.ova",
+    "ovaChunkedPath": "../test-resources/template_with_custom_chunk_size.ova"
   }
 }
