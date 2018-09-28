@@ -19,6 +19,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"time"
 )
@@ -178,6 +179,11 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 
 	if *cat == (Catalog{}) {
 		return UploadTask{}, errors.New("catalog can not be empty or nil")
+	}
+
+	ovaFileName, err := validateAndFixFilePath(ovaFileName)
+	if err != nil {
+		return UploadTask{}, err
 	}
 
 	for _, catalogItemName := range getExistingCatalogItems(cat) {
@@ -626,4 +632,25 @@ func getChunkedFilePaths(baseDir, baseFileName string, totalFileSize, partSize i
 
 	util.Logger.Printf("[TRACE] Chunked files file paths: %s \n", filePaths)
 	return filePaths
+}
+
+func validateAndFixFilePath(file string) (string, error) {
+	absolutePath, err := filepath.Abs(file)
+	if err != nil {
+		return "", err
+	}
+	fileInfo, err := os.Stat(absolutePath)
+	if os.IsNotExist(err) {
+		return "", err
+	}
+	if fileInfo.Size() == 0 {
+		return "", errors.New("file is empty")
+	}
+	return absolutePath, nil
+}
+
+//helper function to get current runing dir.
+func getCurrentPath() string {
+	_, filename, _, _ := runtime.Caller(1)
+	return path.Dir(filename)
 }
