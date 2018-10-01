@@ -192,6 +192,16 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		}
 	}
 
+	filesAbsPaths, tmpDir, err := util.Unpack(ovaFileName)
+	if err != nil {
+		return UploadTask{}, fmt.Errorf("%v. Unpacked files for checking are accessible in: "+tmpDir, err)
+	}
+
+	ovfFilePath, err := getOvfPath(filesAbsPaths)
+	if err != nil {
+		return UploadTask{}, fmt.Errorf("%v. Unpacked files for checking are accessible in: "+tmpDir, err)
+	}
+
 	catalogItemUploadURL, err := findCatalogItemUploadLink(cat)
 	if err != nil {
 		return UploadTask{}, err
@@ -212,23 +222,9 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		return UploadTask{}, err
 	}
 
-	filesAbsPaths, tmpDir, err := util.Unpack(ovaFileName)
+	ovfFileDesc, err := uploadOvfDescription(cat.client, ovfFilePath, ovfUploadHref)
 	if err != nil {
 		return UploadTask{}, err
-	}
-
-	var ovfFileDesc Envelope
-	var tempPath string
-
-	for _, filePath := range filesAbsPaths {
-		if filepath.Ext(filePath) == ".ovf" {
-			ovfFileDesc, err = uploadOvfDescription(cat.client, filePath, ovfUploadHref)
-			if err != nil {
-				return UploadTask{}, err
-			}
-			tempPath, _ = filepath.Split(filePath)
-			break
-		}
 	}
 
 	vappTemplate, err = waitForTempUploadLinks(cat.client, vappTemplateUrl, itemName)
@@ -242,7 +238,7 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 	}
 
 	//sending upload process to background, this allows no to lock and return task to client
-	go uploadFiles(cat.client, vappTemplate, &ovfFileDesc, tempPath, filesAbsPaths, uploadPieceSize, callBack, tmpDir)
+	go uploadFiles(cat.client, vappTemplate, &ovfFileDesc, tmpDir, filesAbsPaths, uploadPieceSize, callBack)
 
 	var task Task
 	for _, item := range vappTemplate.Tasks.Task {
@@ -261,8 +257,8 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 
 // Upload files for vCD created upload links. Different approach then vmdk file are
 // chunked (e.g. test.vmdk.000000000, test.vmdk.000000001 or test.vmdk). vmdk files are chunked if
-// in description file attribute Chunksize is not zero.
-func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *Envelope, tempPath string, filesAbsPaths []string, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64), folderToDelete string) error {
+// in description file attribute ChunkSize is not zero.
+func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *Envelope, tempPath string, filesAbsPaths []string, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64)) error {
 	for _, item := range vappTemplate.Files.File {
 		if item.BytesTransferred == 0 {
 			number, err := getFileFromDescription(item.Name, ovfFileDesc)
@@ -288,7 +284,7 @@ func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *
 	}
 
 	//remove extracted files with temp dir
-	os.RemoveAll(folderToDelete)
+	os.RemoveAll(tempPath)
 
 	return nil
 }
@@ -649,8 +645,17 @@ func validateAndFixFilePath(file string) (string, error) {
 	return absolutePath, nil
 }
 
-//helper function to get current runing dir.
+//helper function to get current running dir.
 func getCurrentPath() string {
 	_, filename, _, _ := runtime.Caller(1)
 	return path.Dir(filename)
+}
+
+func getOvfPath(filesAbsPaths []string) (string, error) {
+	for _, filePath := range filesAbsPaths {
+		if filepath.Ext(filePath) == ".ovf" {
+			return filePath, nil
+		}
+	}
+	return "", errors.New("ova is not correct - missing ovf file")
 }

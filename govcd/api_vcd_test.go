@@ -328,13 +328,13 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 						return
 					}
 					err = catalogItemApi.Delete()
+					vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 					if err != nil {
 						vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 					}
 				}
 			}
 		}
-		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
 	case "edgegateway":
 		//TODO: find an easy way of undoing edge GW customization

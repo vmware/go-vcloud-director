@@ -93,25 +93,24 @@ func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
 // Tests System function UploadOvf by creating catalog and
 // checking if provided standard ova file uploaded.
 func (vcd *TestVCD) Test_UploadOvf(check *C) {
-	skipThenOvaPathMissing(vcd, check)
+	skipWhenOvaPathMissing(vcd, check)
 	checkUploadOvf(vcd, check, vcd.config.OVA.OVAPath, vcd.config.VCD.Catalog.Name, TestUploadOvf)
 }
 
 // Tests System function UploadOvf by creating catalog and
 // checking if provided chunked ova file uploaded.
-func (vcd *TestVCD) Test_UploadOvf_chuncked(check *C) {
-	skipThenOvaPathMissing(vcd, check)
+func (vcd *TestVCD) Test_UploadOvf_chunked(check *C) {
+	skipWhenOvaPathMissing(vcd, check)
 	checkUploadOvf(vcd, check, vcd.config.OVA.OVAChunkedPath, vcd.config.VCD.Catalog.Name, TestUploadOvf+"2")
 }
 
 // Tests System function UploadOvf by creating catalog and
 // checking UploadTask.GetUploadProgress returns values of progress.
 func (vcd *TestVCD) Test_UploadOvf_progress_works(check *C) {
-	skipThenOvaPathMissing(vcd, check)
+	skipWhenOvaPathMissing(vcd, check)
 	itemName := TestUploadOvf + "3"
 
 	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
-	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
 	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OVAPath, itemName, "upload from test", 1024)
 	check.Assert(err, IsNil)
@@ -125,6 +124,8 @@ func (vcd *TestVCD) Test_UploadOvf_progress_works(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
+
 	catalog, err = org.FindCatalog(vcd.config.VCD.Catalog.Name)
 	verifyCatalogItemUploaded(check, catalog, itemName)
 }
@@ -132,11 +133,10 @@ func (vcd *TestVCD) Test_UploadOvf_progress_works(check *C) {
 // Tests System function UploadOvf by creating catalog and
 // checking UploadTask.ShowUploadProgress writes values of progress to stdin.
 func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
-	skipThenOvaPathMissing(vcd, check)
+	skipWhenOvaPathMissing(vcd, check)
 	itemName := TestUploadOvf + "4"
 
 	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
-	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
 	//execute
 	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OVAPath, itemName, "upload from test", 1024)
@@ -156,6 +156,7 @@ func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
 
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
 	check.Assert(string(result), Matches, ".*Upload progress 100.00%")
 
@@ -164,20 +165,21 @@ func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
 }
 
 // Tests System function UploadOvf by creating catalog, creating catalog item
-// and expexting specific error then trying to create same catalog item. As vCD returns cryptic error for such case.
+// and expecting specific error then trying to create same catalog item. As vCD returns cryptic error for such case.
 func (vcd *TestVCD) Test_UploadOvf_error_withSameItem(check *C) {
-	skipThenOvaPathMissing(vcd, check)
+	skipWhenOvaPathMissing(vcd, check)
 
 	itemName := TestUploadOvf + "5"
 
 	catalog, _ := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
-	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
 	//add item
 	uploadTask, err2 := catalog.UploadOvf(vcd.config.OVA.OVAPath, itemName, "upload from test", 1024)
 	check.Assert(err2, IsNil)
 	err2 = uploadTask.WaitTaskCompletion()
 	check.Assert(err2, IsNil)
+
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
 	catalog, _ = findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
 	_, err3 := catalog.UploadOvf(vcd.config.OVA.OVAPath, itemName, "upload from test", 1024)
@@ -187,7 +189,7 @@ func (vcd *TestVCD) Test_UploadOvf_error_withSameItem(check *C) {
 // Tests System function UploadOvf by creating catalog, uploading file and verifying
 // that extracted files were deleted.s
 func (vcd *TestVCD) Test_UploadOvf_cleaned_extracted_files(check *C) {
-	skipThenOvaPathMissing(vcd, check)
+	skipWhenOvaPathMissing(vcd, check)
 
 	itemName := TestUploadOvf + "6"
 
@@ -195,12 +197,13 @@ func (vcd *TestVCD) Test_UploadOvf_cleaned_extracted_files(check *C) {
 	oldFolderCount := countFolders()
 
 	catalog, _ := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
-	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
 	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OVAPath, itemName, "upload from test", 1024)
 	check.Assert(err, IsNil)
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
 	check.Assert(oldFolderCount, Equals, countFolders())
 
@@ -262,7 +265,7 @@ func getOrg(vcd *TestVCD, check *C) AdminOrg {
 	return org
 }
 
-func skipThenOvaPathMissing(vcd *TestVCD, check *C) {
+func skipWhenOvaPathMissing(vcd *TestVCD, check *C) {
 	if vcd.config.OVA.OVAPath == "" || vcd.config.OVA.OVAChunkedPath == "" {
 		check.Skip("Skipping test because no ova path given")
 	}

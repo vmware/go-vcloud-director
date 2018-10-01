@@ -37,7 +37,7 @@ func (vcd *TestVCD) Test_GetVAppTemplate(check *C) {
 // Tests System function Delete by creating catalog item and
 // deleting it after.
 func (vcd *TestVCD) Test_Delete(check *C) {
-	skipThenOvaPathMissing(vcd, check)
+	skipWhenOvaPathMissing(vcd, check)
 	AddToCleanupList(TestDeleteCatalogItem, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_Delete")
 
 	// Fetching organization
