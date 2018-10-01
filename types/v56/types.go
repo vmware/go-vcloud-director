@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2018 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package types
@@ -794,7 +794,7 @@ type PublishExternalCatalogParams struct {
 	IsPublishedExternally    bool   `xml:"IsPublishedExternally,omitempty"`
 	Password                 string `xml:"Password,omitempty"`
 	PreserveIdentityInfoFlag bool   `xml:"PreserveIdentityInfoFlag,omitempty"`
-	catalogPublishedUrl      string `xml:"catalogPublishedUrl,omitempty"`
+	CatalogPublishedUrl      string `xml:"catalogPublishedUrl,omitempty"`
 }
 
 // ExternalCatalogSubscription represents the configuration parameters for a catalog that has an external subscription
