@@ -5,7 +5,12 @@
 package govcd
 
 import (
+	"github.com/vmware/go-vcloud-director/util"
 	. "gopkg.in/check.v1"
+	"io/ioutil"
+	"log"
+	"os"
+	"strings"
 )
 
 func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
@@ -83,4 +88,186 @@ func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(catalog, Equals, Catalog{})
 
+}
+
+// Tests System function UploadOvf by creating catalog and
+// checking if provided standard ova file uploaded.
+func (vcd *TestVCD) Test_UploadOvf(check *C) {
+	skipWhenOvaPathMissing(vcd, check)
+	checkUploadOvf(vcd, check, vcd.config.OVA.OVAPath, vcd.config.VCD.Catalog.Name, TestUploadOvf)
+}
+
+// Tests System function UploadOvf by creating catalog and
+// checking if provided chunked ova file uploaded.
+func (vcd *TestVCD) Test_UploadOvf_chunked(check *C) {
+	skipWhenOvaPathMissing(vcd, check)
+	checkUploadOvf(vcd, check, vcd.config.OVA.OVAChunkedPath, vcd.config.VCD.Catalog.Name, TestUploadOvf+"2")
+}
+
+// Tests System function UploadOvf by creating catalog and
+// checking UploadTask.GetUploadProgress returns values of progress.
+func (vcd *TestVCD) Test_UploadOvf_progress_works(check *C) {
+	skipWhenOvaPathMissing(vcd, check)
+	itemName := TestUploadOvf + "3"
+
+	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+
+	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OVAPath, itemName, "upload from test", 1024)
+	check.Assert(err, IsNil)
+	for {
+		if value := uploadTask.GetUploadProgress(); value == "100.00" {
+			break
+		} else {
+			check.Assert(value, Not(Equals), "")
+		}
+	}
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
+
+	catalog, err = org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	verifyCatalogItemUploaded(check, catalog, itemName)
+}
+
+// Tests System function UploadOvf by creating catalog and
+// checking UploadTask.ShowUploadProgress writes values of progress to stdin.
+func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
+	skipWhenOvaPathMissing(vcd, check)
+	itemName := TestUploadOvf + "4"
+
+	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+
+	//execute
+	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OVAPath, itemName, "upload from test", 1024)
+	check.Assert(err, IsNil)
+
+	//take control of stdout
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	uploadTask.ShowUploadProgress()
+
+	w.Close()
+	//read stdin
+	result, _ := ioutil.ReadAll(r)
+	os.Stdout = oldStdout
+
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
+
+	check.Assert(string(result), Matches, ".*Upload progress 100.00%")
+
+	catalog, err = org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	verifyCatalogItemUploaded(check, catalog, itemName)
+}
+
+// Tests System function UploadOvf by creating catalog, creating catalog item
+// and expecting specific error then trying to create same catalog item. As vCD returns cryptic error for such case.
+func (vcd *TestVCD) Test_UploadOvf_error_withSameItem(check *C) {
+	skipWhenOvaPathMissing(vcd, check)
+
+	itemName := TestUploadOvf + "5"
+
+	catalog, _ := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+
+	//add item
+	uploadTask, err2 := catalog.UploadOvf(vcd.config.OVA.OVAPath, itemName, "upload from test", 1024)
+	check.Assert(err2, IsNil)
+	err2 = uploadTask.WaitTaskCompletion()
+	check.Assert(err2, IsNil)
+
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
+
+	catalog, _ = findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+	_, err3 := catalog.UploadOvf(vcd.config.OVA.OVAPath, itemName, "upload from test", 1024)
+	check.Assert(err3.Error(), Matches, ".*already exists. Upload with different name.*")
+}
+
+// Tests System function UploadOvf by creating catalog, uploading file and verifying
+// that extracted files were deleted.s
+func (vcd *TestVCD) Test_UploadOvf_cleaned_extracted_files(check *C) {
+	skipWhenOvaPathMissing(vcd, check)
+
+	itemName := TestUploadOvf + "6"
+
+	//check existing count of folders
+	oldFolderCount := countFolders()
+
+	catalog, _ := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+
+	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OVAPath, itemName, "upload from test", 1024)
+	check.Assert(err, IsNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
+
+	check.Assert(oldFolderCount, Equals, countFolders())
+
+}
+
+func countFolders() int {
+	files, err := ioutil.ReadDir(os.TempDir())
+	if err != nil {
+		log.Fatal(err)
+	}
+	count := 0
+	for _, f := range files {
+		if strings.Contains(f.Name(), util.TmpDirPrefix+".*") {
+			count++
+		}
+	}
+	return count
+}
+
+func checkUploadOvf(vcd *TestVCD, check *C, ovaFileName, catalogName, itemName string) {
+	//setupCatalog(vcd, check, testCreateCatalog)
+
+	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+
+	uploadTask, err := catalog.UploadOvf(ovaFileName, itemName, "upload from test", 1024)
+	check.Assert(err, IsNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
+
+	catalog, err = org.FindCatalog(catalogName)
+	verifyCatalogItemUploaded(check, catalog, itemName)
+}
+
+func verifyCatalogItemUploaded(check *C, catalog Catalog, itemName string) {
+	entityFound := false
+	for _, catalogItems := range catalog.Catalog.CatalogItems {
+		for _, catalogItem := range catalogItems.CatalogItem {
+			if catalogItem.Name == itemName {
+				entityFound = true
+			}
+		}
+	}
+	check.Assert(entityFound, Equals, true)
+}
+
+func findCatalog(vcd *TestVCD, check *C, catalogName string) (Catalog, AdminOrg) {
+	org := getOrg(vcd, check)
+	catalog, err := org.FindCatalog(catalogName)
+	check.Assert(err, IsNil)
+	return catalog, org
+}
+
+func getOrg(vcd *TestVCD, check *C) AdminOrg {
+	// Fetching organization
+	org, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
+	check.Assert(org, Not(Equals), AdminOrg{})
+	check.Assert(err, IsNil)
+	return org
+}
+
+func skipWhenOvaPathMissing(vcd *TestVCD, check *C) {
+	if vcd.config.OVA.OVAPath == "" || vcd.config.OVA.OVAChunkedPath == "" {
+		check.Skip("Skipping test because no ova path given")
+	}
 }

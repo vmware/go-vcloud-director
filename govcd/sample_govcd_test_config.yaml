@@ -74,4 +74,12 @@ logging:
     #
     # Defines whether we log the responses in HTTP operations
     logHttpResponses: true
-
+ova:
+  # The ova for uploading catalog item for tests.
+  # Default paths are simple ova provided by project
+  # Empty values skips the tests
+  # Absolute or relative path
+  ovaPath: ../test-resources/test_vapp_template.ova
+  #
+  # The chunked ova (vmdk inside are split) for tests
+  ovaChunkedPath: ../test-resources/template_with_custom_chunk_size.ova
