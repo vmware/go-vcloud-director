@@ -227,12 +227,13 @@ func checkUploadOvf(vcd *TestVCD, check *C, ovaFileName, catalogName, itemName s
 	//setupCatalog(vcd, check, testCreateCatalog)
 
 	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
-	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
 	uploadTask, err := catalog.UploadOvf(ovaFileName, itemName, "upload from test", 1024)
 	check.Assert(err, IsNil)
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
 	catalog, err = org.FindCatalog(catalogName)
 	verifyCatalogItemUploaded(check, catalog, itemName)
