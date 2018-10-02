@@ -216,7 +216,7 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		return UploadTask{}, err
 	}
 
-	vappTemplateUrl, deleteCatalogItemHref, err := createItemForUpload(cat.client, catalogItemUploadURL, itemName, description)
+	vappTemplateUrl, err := createItemForUpload(cat.client, catalogItemUploadURL, itemName, description)
 	if err != nil {
 		return UploadTask{}, err
 	}
@@ -233,13 +233,13 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 
 	err = uploadOvfDescription(cat.client, ovfFilePath, ovfUploadHref)
 	if err != nil {
-		removeCatalogItemOnError(cat.client, deleteCatalogItemHref, vappTemplateUrl, itemName)
+		removeCatalogItemOnError(cat.client, vappTemplateUrl, itemName)
 		return UploadTask{}, err
 	}
 
 	vappTemplate, err = waitForTempUploadLinks(cat.client, vappTemplateUrl, itemName)
 	if err != nil {
-		removeCatalogItemOnError(cat.client, deleteCatalogItemHref, vappTemplateUrl, itemName)
+		removeCatalogItemOnError(cat.client, vappTemplateUrl, itemName)
 		return UploadTask{}, err
 	}
 
@@ -255,7 +255,7 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 	for _, item := range vappTemplate.Tasks.Task {
 		task, err = createTaskForVcdImport(cat.client, item.HREF)
 		if err != nil {
-			removeCatalogItemOnError(cat.client, deleteCatalogItemHref, vappTemplateUrl, itemName)
+			removeCatalogItemOnError(cat.client, vappTemplateUrl, itemName)
 			return UploadTask{}, err
 		}
 	}
@@ -270,6 +270,14 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 // Upload files for vCD created upload links. Different approach then vmdk file are
 // chunked (e.g. test.vmdk.000000000, test.vmdk.000000001 or test.vmdk). vmdk files are chunked if
 // in description file attribute ChunkSize is not zero.
+// params:
+// client - client for requests
+// vappTemplate - parsed from response vApp template
+// ovfFileDesc - parsed from xml part containing ova files definition
+// tempPath - path where extracted files are
+// filesAbsPaths - array of extracted files
+// uploadPieceSize - size of chunks in which the file will be uploaded to the catalog.
+// callBack a function with signature //function(bytesUpload, totalSize) to let the caller monitor progress of the upload operation.
 func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *Envelope, tempPath string, filesAbsPaths []string, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64)) error {
 	for _, item := range vappTemplate.Files.File {
 		if item.BytesTransferred == 0 {
@@ -311,6 +319,15 @@ func getFileFromDescription(fileToFind string, ovfFileDesc *Envelope) (int, erro
 	return -1, errors.New("file expected from vcd didn't match any description file")
 }
 
+// Uploads chunked ova file for vCD created upload link.
+// params:
+// client - client for requests
+// vappTemplate - parsed from response vApp template
+// filePaths - all chunked vmdk file paths
+// uploadHREF - vCD generated temporary upload href
+// totalBytesToUpload - how much bytes will be uploaded
+// uploadPieceSize - size of chunks in which the file will be uploaded to the catalog.
+// callBack a function with signature //function(bytesUpload, totalSize) to let the caller monitor progress of the upload operation.
 func uploadMultiPartFile(client *Client, filePaths []string, uploadHREF string, totalBytesToUpload int64, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64)) error {
 	util.Logger.Printf("[TRACE] Upload multi part file: %v\n, href: %s, size: %v", filePaths, uploadHREF, totalBytesToUpload)
 
@@ -477,6 +494,14 @@ func getExistingCatalogItems(catalog *Catalog) (catalogItemNames []string) {
 
 // upload file by parts which size is defined by user provided variable uploadPieceSize and
 // provides how much bytes uploaded to callback. Callback allows to monitor upload progress.
+// params:
+// client - client for requests
+// uploadLink - vCD created temporary upload link
+// filePath - file path to file which will be uploaded
+// uploadedBytes - how much of file already uploaded
+// fileSizeToUpload - how much bytes will be uploaded
+// uploadPieceSize - size of chunks in which the file will be uploaded to the catalog.
+// callBack a function with signature //function(bytesUpload, totalSize) to let the caller monitor progress of the upload operation.
 func uploadFile(client *Client, uploadLink, filePath string, uploadedBytes, fileSizeToUpload int64, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64)) (int64, error) {
 	util.Logger.Printf("[TRACE] Starting uploading: %s, offset: %v, fileze: %v, toLink: %s \n", filePath, uploadedBytes, fileSizeToUpload, uploadLink)
 
@@ -533,6 +558,15 @@ func uploadFile(client *Client, uploadLink, filePath string, uploadedBytes, file
 	return fileInfo.Size(), nil
 }
 
+// Initiates file part upload by creating request and running it.
+// params:
+// client - client for requests
+// uploadLink - vCD created temporary upload link
+// part - bytes of file part
+// offset - how much of file already uploaded
+// partDataSize - how much bytes will be uploaded
+// fileSizeToUpload - final file size
+// callBack a function with signature //function(bytesUpload, totalSize) to let the caller monitor progress of the upload operation.
 func uploadPartFile(client *Client, uploadLink string, part []byte, offset, partDataSize, fileSizeToUpload int64, callBack func(bytesUpload, totalSize int64)) error {
 	request, err := newFileUploadRequest(uploadLink, part, offset, partDataSize, fileSizeToUpload)
 	if err != nil {
@@ -561,7 +595,7 @@ func findFilePath(filesAbsPaths []string, fileName string) string {
 }
 
 // Initiates creation of item and returns ovf upload url for created item.
-func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName string, itemDescription string) (*url.URL, *url.URL, error) {
+func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName string, itemDescription string) (*url.URL, error) {
 	util.Logger.Printf("[TRACE] createItemForUpload: %s, item name: %v, description: %v \n", createHREF, catalogItemName, itemDescription)
 	reqBody := bytes.NewBufferString(
 		"<UploadVAppTemplateParams xmlns=\"http://www.vmware.com/vcloud/v1.5\" name=\"" + catalogItemName + "\" >" +
@@ -573,28 +607,31 @@ func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName st
 
 	response, err := checkResp(client.Http.Do(request))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer response.Body.Close()
 
 	catalogItemParsed := &types.CatalogItem{}
 	if err = decodeBody(response, catalogItemParsed); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	util.Logger.Printf("[TRACE] Catalog item parsed: %#v\n", catalogItemParsed)
 
 	ovfUploadUrl, err := url.ParseRequestURI(catalogItemParsed.Entity.HREF)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	deleteCatalogItemHref, err := url.ParseRequestURI(findCatalogItemDeleteHref(catalogItemParsed))
-
-	return ovfUploadUrl, deleteCatalogItemHref, nil
+	return ovfUploadUrl, nil
 }
 
 // Create Request with right headers and range settings. Support multi part file upload.
+// requestUrl - upload url
+// filePart - bytes to upload
+// offset - how much is uploaded
+// filePartSize - how much bytes will be uploaded
+// fileSizeToUpload - final file size
 func newFileUploadRequest(requestUrl string, filePart []byte, offset, filePartSize, fileSizeToUpload int64) (*http.Request, error) {
 	util.Logger.Printf("[TRACE] Creating file upload request: %s, %v, %v, %v \n", requestUrl, offset, filePartSize, fileSizeToUpload)
 
@@ -740,9 +777,9 @@ func findCatalogItemDeleteHref(catalogItem *types.CatalogItem) string {
 	return ""
 }
 
-func removeCatalogItemOnError(client *Client, catalogItemlink, vappTemplateLink *url.URL, itemName string) {
-	if catalogItemlink != nil && vappTemplateLink != nil {
-		util.Logger.Printf("[TRACE] Deleting Catalog item %v", catalogItemlink)
+func removeCatalogItemOnError(client *Client, vappTemplateLink *url.URL, itemName string) {
+	if vappTemplateLink != nil {
+		util.Logger.Printf("[TRACE] Deleting Catalog item %v", vappTemplateLink)
 
 		// wait for task, cancel it and catalog item will be removed.
 		var vAppTemplate *types.VAppTemplate
@@ -752,7 +789,7 @@ func removeCatalogItemOnError(client *Client, catalogItemlink, vappTemplateLink 
 			time.Sleep(time.Second * 5)
 			vAppTemplate, err = queryVappTemplate(client, vappTemplateLink, itemName)
 			if err != nil {
-				util.Logger.Printf("[Error] Error deleting Catalog item %v: %s", catalogItemlink, err)
+				util.Logger.Printf("[Error] Error deleting Catalog item %v: %s", vappTemplateLink, err)
 			}
 			if len(vAppTemplate.Tasks.Task) > 0 {
 				util.Logger.Printf("[TRACE] Task found. Will try to cancel.\n")
@@ -764,17 +801,17 @@ func removeCatalogItemOnError(client *Client, catalogItemlink, vappTemplateLink 
 			if itemName == task.Owner.Name {
 				cancelTaskURL, err := url.ParseRequestURI(task.HREF + "/action/cancel")
 				if err != nil {
-					util.Logger.Printf("[Error] Error deleting Catalog item %v: %s", catalogItemlink, err)
+					util.Logger.Printf("[Error] Error deleting Catalog item %v: %s", vappTemplateLink, err)
 				}
 
 				request := client.NewRequest(map[string]string{}, "POST", *cancelTaskURL, nil)
 				_, err = checkResp(client.Http.Do(request))
 				if err != nil {
-					util.Logger.Printf("[Error] Error deleting Catalog item %v: %s", catalogItemlink, err)
+					util.Logger.Printf("[Error] Error deleting Catalog item %v: %s", vappTemplateLink, err)
 				}
 			}
 		}
 	} else {
-		util.Logger.Printf("[Error] Failed to delete catalog item created with error: %v", catalogItemlink)
+		util.Logger.Printf("[Error] Failed to delete catalog item created with error: %v", vappTemplateLink)
 	}
 }
