@@ -1,6 +1,11 @@
 #!/bin/bash
+# This script will find code files that don't have a copyright notice
+
+# This check will find files with a copyright but not for the current year
 vmware_any_copyright='Copyright \d\d\d\d VMware'
-vmware_latest_copyright='Copyright 2018 VMware'
+
+# This check will find files with a copyright for the current year
+vmware_latest_copyright="Copyright $(date +%Y) VMware"
 exit_code=0
 for F in $(find . -name '*.go' | grep -v '/vendor/' )
 do
@@ -27,7 +32,7 @@ do
     done
     if [ -z "$copyright_found" ]
     then
-        echo "File $F has no copyright"
+        echo "File $F has no valid copyright"
         exit_code=1
     fi
 done
