@@ -324,7 +324,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 				if catalogItem.Name == entity.Name {
 					catalogItemApi, err := catalog.FindCatalogItem(catalogItem.Name)
 					if catalogItemApi == (CatalogItem{}) || err != nil {
-						vcd.infoCleanup("removeLeftoverEntries: [INFO] catalogItem '%s' not found\n", entity.Name)
+						vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 						return
 					}
 					err = catalogItemApi.Delete()
