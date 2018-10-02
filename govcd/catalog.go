@@ -201,7 +201,7 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		return UploadTask{}, fmt.Errorf("%v. Unpacked files for checking are accessible in: "+tmpDir, err)
 	}
 
-	ovfFileDesc, err := getOvf(filesAbsPaths, ovfFilePath)
+	ovfFileDesc, err := getOvf(ovfFilePath)
 	if err != nil {
 		return UploadTask{}, fmt.Errorf("%v. Unpacked files for checking are accessible in: "+tmpDir, err)
 	}
@@ -699,7 +699,7 @@ func getOvfPath(filesAbsPaths []string) (string, error) {
 	return "", errors.New("ova is not correct - missing ovf file")
 }
 
-func getOvf(filesAbsPaths []string, ovfFilePath string) (Envelope, error) {
+func getOvf(ovfFilePath string) (Envelope, error) {
 	openedFile, err := os.Open(ovfFilePath)
 	if err != nil {
 		return Envelope{}, err
@@ -756,7 +756,7 @@ func checkIfFileMatchesDescription(filesAbsPaths []string, fileDescription struc
 }) error {
 	filePath := findFilePath(filesAbsPaths, fileDescription.HREF)
 	if filePath == "" {
-		return fmt.Errorf("file '%s' described in ovf isnt found in ova", fileDescription.HREF)
+		return fmt.Errorf("file '%s' described in ovf was not found in ova", fileDescription.HREF)
 	}
 	if fileInfo, err := os.Stat(filePath); err == nil {
 		if fileInfo.Size() != int64(fileDescription.Size) {
@@ -766,15 +766,6 @@ func checkIfFileMatchesDescription(filesAbsPaths []string, fileDescription struc
 		return err
 	}
 	return nil
-}
-
-func findCatalogItemDeleteHref(catalogItem *types.CatalogItem) string {
-	for _, item := range catalogItem.Link {
-		if item.Rel == "remove" {
-			return item.HREF
-		}
-	}
-	return ""
 }
 
 func removeCatalogItemOnError(client *Client, vappTemplateLink *url.URL, itemName string) {
