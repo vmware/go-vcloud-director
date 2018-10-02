@@ -216,7 +216,7 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		return UploadTask{}, err
 	}
 
-	vappTemplateUrl, err := createItemForUpload(cat.client, catalogItemUploadURL, itemName, description)
+	vappTemplateUrl, deleteCatalogItemHref, err := createItemForUpload(cat.client, catalogItemUploadURL, itemName, description)
 	if err != nil {
 		return UploadTask{}, err
 	}
@@ -233,11 +233,13 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 
 	err = uploadOvfDescription(cat.client, ovfFilePath, ovfUploadHref)
 	if err != nil {
+		removeCatalogItemOnError(cat.client, deleteCatalogItemHref, vappTemplateUrl, itemName)
 		return UploadTask{}, err
 	}
 
 	vappTemplate, err = waitForTempUploadLinks(cat.client, vappTemplateUrl, itemName)
 	if err != nil {
+		removeCatalogItemOnError(cat.client, deleteCatalogItemHref, vappTemplateUrl, itemName)
 		return UploadTask{}, err
 	}
 
@@ -253,6 +255,7 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 	for _, item := range vappTemplate.Tasks.Task {
 		task, err = createTaskForVcdImport(cat.client, item.HREF)
 		if err != nil {
+			removeCatalogItemOnError(cat.client, deleteCatalogItemHref, vappTemplateUrl, itemName)
 			return UploadTask{}, err
 		}
 	}
@@ -558,7 +561,7 @@ func findFilePath(filesAbsPaths []string, fileName string) string {
 }
 
 // Initiates creation of item and returns ovf upload url for created item.
-func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName string, itemDescription string) (*url.URL, error) {
+func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName string, itemDescription string) (*url.URL, *url.URL, error) {
 	util.Logger.Printf("[TRACE] createItemForUpload: %s, item name: %v, description: %v \n", createHREF, catalogItemName, itemDescription)
 	reqBody := bytes.NewBufferString(
 		"<UploadVAppTemplateParams xmlns=\"http://www.vmware.com/vcloud/v1.5\" name=\"" + catalogItemName + "\" >" +
@@ -570,23 +573,25 @@ func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName st
 
 	response, err := checkResp(client.Http.Do(request))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer response.Body.Close()
 
 	catalogItemParsed := &types.CatalogItem{}
 	if err = decodeBody(response, catalogItemParsed); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	util.Logger.Printf("[TRACE] Catalog item parsed: %#v\n", catalogItemParsed)
 
 	ovfUploadUrl, err := url.ParseRequestURI(catalogItemParsed.Entity.HREF)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return ovfUploadUrl, nil
+	deleteCatalogItemHref, err := url.ParseRequestURI(findCatalogItemDeleteHref(catalogItemParsed))
+
+	return ovfUploadUrl, deleteCatalogItemHref, nil
 }
 
 // Create Request with right headers and range settings. Support multi part file upload.
@@ -724,4 +729,52 @@ func checkIfFileMatchesDescription(filesAbsPaths []string, fileDescription struc
 		return err
 	}
 	return nil
+}
+
+func findCatalogItemDeleteHref(catalogItem *types.CatalogItem) string {
+	for _, item := range catalogItem.Link {
+		if item.Rel == "remove" {
+			return item.HREF
+		}
+	}
+	return ""
+}
+
+func removeCatalogItemOnError(client *Client, catalogItemlink, vappTemplateLink *url.URL, itemName string) {
+	if catalogItemlink != nil && vappTemplateLink != nil {
+		util.Logger.Printf("[TRACE] Deleting Catalog item %v", catalogItemlink)
+
+		// wait for task, cancel it and catalog item will be removed.
+		var vAppTemplate *types.VAppTemplate
+		var err error
+		for {
+			util.Logger.Printf("[TRACE] Sleep... for 5 seconds.\n")
+			time.Sleep(time.Second * 5)
+			vAppTemplate, err = queryVappTemplate(client, vappTemplateLink, itemName)
+			if err != nil {
+				util.Logger.Printf("[Error] Error deleting Catalog item %v: %s", catalogItemlink, err)
+			}
+			if len(vAppTemplate.Tasks.Task) > 0 {
+				util.Logger.Printf("[TRACE] Task found. Will try to cancel.\n")
+				break
+			}
+		}
+
+		for _, task := range vAppTemplate.Tasks.Task {
+			if itemName == task.Owner.Name {
+				cancelTaskURL, err := url.ParseRequestURI(task.HREF + "/action/cancel")
+				if err != nil {
+					util.Logger.Printf("[Error] Error deleting Catalog item %v: %s", catalogItemlink, err)
+				}
+
+				request := client.NewRequest(map[string]string{}, "POST", *cancelTaskURL, nil)
+				_, err = checkResp(client.Http.Do(request))
+				if err != nil {
+					util.Logger.Printf("[Error] Error deleting Catalog item %v: %s", catalogItemlink, err)
+				}
+			}
+		}
+	} else {
+		util.Logger.Printf("[Error] Failed to delete catalog item created with error: %v", catalogItemlink)
+	}
 }
