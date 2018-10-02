@@ -19,7 +19,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"time"
 )
@@ -202,6 +201,16 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		return UploadTask{}, fmt.Errorf("%v. Unpacked files for checking are accessible in: "+tmpDir, err)
 	}
 
+	ovfFileDesc, err := getOvf(filesAbsPaths, ovfFilePath)
+	if err != nil {
+		return UploadTask{}, fmt.Errorf("%v. Unpacked files for checking are accessible in: "+tmpDir, err)
+	}
+
+	err = validateOvaContent(filesAbsPaths, &ovfFileDesc, tmpDir)
+	if err != nil {
+		return UploadTask{}, fmt.Errorf("%v. Unpacked files for checking are accessible in: "+tmpDir, err)
+	}
+
 	catalogItemUploadURL, err := findCatalogItemUploadLink(cat)
 	if err != nil {
 		return UploadTask{}, err
@@ -222,7 +231,7 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		return UploadTask{}, err
 	}
 
-	ovfFileDesc, err := uploadOvfDescription(cat.client, ovfFilePath, ovfUploadHref)
+	err = uploadOvfDescription(cat.client, ovfFilePath, ovfUploadHref)
 	if err != nil {
 		return UploadTask{}, err
 	}
@@ -401,11 +410,11 @@ func queryVappTemplate(client *Client, vappTemplateUrl *url.URL, newItemName str
 
 // Uploads ovf description file from unarchived provided ova file. As a result vCD will generate temporary upload links which has to be queried later.
 // Function will return parsed part for upload files from description xml.
-func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL) (Envelope, error) {
+func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL) error {
 	util.Logger.Printf("[TRACE] Uploding ovf description with file: %s and url: %s\n", ovfFile, ovfUploadUrl)
 	openedFile, err := os.Open(ovfFile)
 	if err != nil {
-		return Envelope{}, err
+		return err
 	}
 
 	var buf bytes.Buffer
@@ -416,22 +425,16 @@ func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL)
 
 	_, err = checkResp(client.Http.Do(request))
 	if err != nil {
-		return Envelope{}, err
-	}
-
-	var ovfFileDesc Envelope
-	err = parseOvfFileDesc(&buf, &ovfFileDesc)
-	if err != nil {
-		return Envelope{}, err
+		return err
 	}
 
 	openedFile.Close()
 
-	return ovfFileDesc, nil
+	return nil
 }
 
-func parseOvfFileDesc(buf *bytes.Buffer, ovfFileDesc *Envelope) error {
-	ovfXml, err := ioutil.ReadAll(buf)
+func parseOvfFileDesc(file *os.File, ovfFileDesc *Envelope) error {
+	ovfXml, err := ioutil.ReadAll(file)
 	if err != nil {
 		return err
 	}
@@ -645,12 +648,6 @@ func validateAndFixFilePath(file string) (string, error) {
 	return absolutePath, nil
 }
 
-//helper function to get current running dir.
-func getCurrentPath() string {
-	_, filename, _, _ := runtime.Caller(1)
-	return path.Dir(filename)
-}
-
 func getOvfPath(filesAbsPaths []string) (string, error) {
 	for _, filePath := range filesAbsPaths {
 		if filepath.Ext(filePath) == ".ovf" {
@@ -658,4 +655,73 @@ func getOvfPath(filesAbsPaths []string) (string, error) {
 		}
 	}
 	return "", errors.New("ova is not correct - missing ovf file")
+}
+
+func getOvf(filesAbsPaths []string, ovfFilePath string) (Envelope, error) {
+	openedFile, err := os.Open(ovfFilePath)
+	if err != nil {
+		return Envelope{}, err
+	}
+
+	var ovfFileDesc Envelope
+	err = parseOvfFileDesc(openedFile, &ovfFileDesc)
+	if err != nil {
+		return Envelope{}, err
+	}
+
+	openedFile.Close()
+
+	return ovfFileDesc, nil
+}
+
+func validateOvaContent(filesAbsPaths []string, ovfFileDesc *Envelope, tempPath string) error {
+	for _, fileDescription := range ovfFileDesc.File {
+		if fileDescription.ChunkSize == 0 {
+			err := checkIfFileMatchesDescription(filesAbsPaths, fileDescription)
+			if err != nil {
+				return err
+			}
+			// check chunked ova content
+		} else {
+			chunkFilePaths := getChunkedFilePaths(tempPath, fileDescription.HREF, fileDescription.Size, fileDescription.ChunkSize)
+			for part, chunkedFilePath := range chunkFilePaths {
+				_, fileName := filepath.Split(chunkedFilePath)
+				chunkedFileSize := fileDescription.Size - part*fileDescription.ChunkSize
+				if chunkedFileSize > fileDescription.ChunkSize {
+					chunkedFileSize = fileDescription.ChunkSize
+				}
+				chunkedFileDescription := struct {
+					HREF      string `xml:"href,attr"`
+					ID        string `xml:"id,attr"`
+					Size      int    `xml:"size,attr"`
+					ChunkSize int    `xml:"chunkSize,attr"`
+				}{fileName, "", chunkedFileSize, fileDescription.ChunkSize}
+				err := checkIfFileMatchesDescription(filesAbsPaths, chunkedFileDescription)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func checkIfFileMatchesDescription(filesAbsPaths []string, fileDescription struct {
+	HREF      string `xml:"href,attr"`
+	ID        string `xml:"id,attr"`
+	Size      int    `xml:"size,attr"`
+	ChunkSize int    `xml:"chunkSize,attr"`
+}) error {
+	filePath := findFilePath(filesAbsPaths, fileDescription.HREF)
+	if filePath == "" {
+		return fmt.Errorf("file '%s' described in ovf isnt found in ova", fileDescription.HREF)
+	}
+	if fileInfo, err := os.Stat(filePath); err == nil {
+		if fileInfo.Size() != int64(fileDescription.Size) {
+			return fmt.Errorf("file size didn't match described in ovf: %s", filePath)
+		}
+	} else {
+		return err
+	}
+	return nil
 }

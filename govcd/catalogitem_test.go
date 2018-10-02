@@ -48,7 +48,7 @@ func (vcd *TestVCD) Test_Delete(check *C) {
 	catalog, err := org.FindCatalog(vcd.config.VCD.Catalog.Name)
 
 	// add catalogItem
-	uploadTask, err := catalog.UploadOvf(getCurrentPath()+vcd.config.OVA.OVAPath, TestDeleteCatalogItem, "upload from delete catalog item test", 1024)
+	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OVAPath, TestDeleteCatalogItem, "upload from delete catalog item test", 1024)
 	check.Assert(err, IsNil)
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
