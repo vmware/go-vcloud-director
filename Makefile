@@ -2,7 +2,7 @@ TEST?=./...
 GOFMT_FILES?=$$(find . -name '*.go' | grep -v vendor)
 
 #default: fmt test testrace vet
-default: fmtcheck vet build
+default: fmtcheck vet build copyright
 
 # test runs the test suite and vets the code
 test: get-deps fmtcheck
@@ -37,5 +37,10 @@ fmt:
 fmtcheck:
 	@sh -c "'$(CURDIR)/scripts/gofmtcheck.sh'"
 
+copyright:
+	@echo "==> Checking copyright headers in source files"
+	@sh -c "'$(CURDIR)/scripts/copyright_check.sh'"
+
 build:
+	@echo "==> Building govcd library"
 	cd govcd && go build .
