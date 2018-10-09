@@ -473,7 +473,7 @@ func (vm *VM) attachOrDetachDisk(disk *Disk, rel string) (Task, error) {
 		Xmlns: types.NsVCloud,
 		Disk: &types.DiskAttachOrDetachParamsDisk{
 			Type: disk.Disk.Type,
-			Href: disk.Disk.Href,
+			HREF: disk.Disk.HREF,
 		},
 	}
 
@@ -482,8 +482,7 @@ func (vm *VM) attachOrDetachDisk(disk *Disk, rel string) (Task, error) {
 		return Task{}, fmt.Errorf("error marshal xml: %s", err)
 	}
 
-	fmt.Println(string(xmlPayload))
-	req := vm.client.NewRequest(map[string]string{}, http.MethodPost, *reqUrl, bytes.NewBufferString(xml.Header+string(xmlPayload)))
+	req := vm.client.NewRequest(nil, http.MethodPost, *reqUrl, bytes.NewBufferString(xml.Header+string(xmlPayload)))
 
 	req.Header.Add("Content-Type", execLink.Type)
 
@@ -506,6 +505,6 @@ func (vm *VM) AttachDisk(disk *Disk) (Task, error) {
 	return vm.attachOrDetachDisk(disk, types.RelDiskAttach)
 }
 
-func (vm *VM) DetachDisk(disk *Disk, rel string) (Task, error) {
+func (vm *VM) DetachDisk(disk *Disk) (Task, error) {
 	return vm.attachOrDetachDisk(disk, types.RelDiskDetach)
 }

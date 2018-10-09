@@ -1982,10 +1982,10 @@ type QueryResultOrgVdcStorageProfileRecordType struct {
 
 // Independent disk create parms Type
 type DiskCreateParamsType struct {
-	XMLName xml.Name             `xml:"DiskCreateParams"`
-	Xmlns   string               `xml:"xmlns,attr"`
-	Disk    DiskCreateParamsDisk `xml:"Disk"`
-	Iops    int                  `xml:"iops,attr,omitempty"`
+	XMLName xml.Name              `xml:"DiskCreateParams"`
+	Xmlns   string                `xml:"xmlns,attr"`
+	Disk    *DiskCreateParamsDisk `xml:"Disk"`
+	Iops    int                   `xml:"iops,attr,omitempty"`
 }
 
 type DiskCreateParamsDisk struct {
@@ -2000,11 +2000,12 @@ type DiskCreateParamsDisk struct {
 type DiskType struct {
 	XMLName        xml.Name        `xml:"Disk"`
 	Xmlns          string          `xml:"xmlns,attr"`
+	Size           int             `xml:"size,attr"`
 	Status         int             `xml:"status,attr,omitempty"`
 	Name           string          `xml:"name,attr,omitempty"`
 	Id             string          `xml:"id,attr,omitempty"`
 	Type           string          `xml:"type,attr,omitempty"`
-	Href           string          `xml:"href,attr,omitempty"`
+	HREF           string          `xml:"href,attr,omitempty"`
 	Link           []*Link         `xml:"Link,omitempty"`
 	Description    string          `xml:"Description,omitempty"`
 	Tasks          []*Task         `xml:"Tasks>Task,omitempty"`
@@ -2015,7 +2016,7 @@ type DiskType struct {
 type StorageProfile struct {
 	Type string `xml:"type,attr"`
 	Name string `xml:"name,attr"`
-	Href string `xml:"href,attr"`
+	HREF string `xml:"href,attr"`
 }
 
 type DiskAttachOrDetachParamsType struct {
@@ -2026,5 +2027,13 @@ type DiskAttachOrDetachParamsType struct {
 
 type DiskAttachOrDetachParamsDisk struct {
 	Type string `xml:"type,attr,omitempty"`
-	Href string `xml:"href,attr,omitempty"`
+	HREF string `xml:"href,attr,omitempty"`
+}
+
+type VmsType struct {
+	XMLName     xml.Name     `xml:"Vms"`
+	Xmlns       string       `xml:"xmlns,attr"`
+	Type        string       `xml:"type,attr"`
+	HREF        string       `xml:"href,attr"`
+	VmReference []*Reference `xml:"VmReference"`
 }
