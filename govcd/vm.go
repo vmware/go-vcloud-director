@@ -500,6 +500,7 @@ func (vm *VM) attachOrDetachDisk(disk *Disk, rel string) (Task, error) {
 	return *task, nil
 }
 
+
 func (vm *VM) AttachDisk(disk *Disk) (Task, error) {
 	return vm.attachOrDetachDisk(disk, types.RelDiskAttach)
 }

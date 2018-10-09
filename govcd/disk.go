@@ -3,12 +3,12 @@
 package govcd
 
 import (
+	"github.com/vmware/go-vcloud-director/types/v56"
+	"fmt"
+	"net/url"
 	"bytes"
 	"encoding/xml"
-	"fmt"
-	"github.com/vmware/go-vcloud-director/types/v56"
 	"net/http"
-	"net/url"
 )
 
 type Disk struct {
