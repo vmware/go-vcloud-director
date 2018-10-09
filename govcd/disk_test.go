@@ -56,12 +56,12 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 	err = detachDiskTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
+	// Update Disk
 	newDiskInfo := &types.DiskType{
 		Name:        "HelloDisk",
 		Description: "Hello Disk Description",
 	}
 
-	// Update Disk
 	updateTask, err := disk.Update(newDiskInfo)
 	err = updateTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
