@@ -1979,3 +1979,52 @@ type QueryResultOrgVdcStorageProfileRecordType struct {
 	StorageUsedMB           int    `xml:"storageUsedMB,attr,omitempty"`
 	StorageLimitMB          int    `xml:"storageLimitMB,attr,omitempty"`
 }
+
+// Independent disk create parms Type
+type DiskCreateParamsType struct {
+	XMLName xml.Name             `xml:"DiskCreateParams"`
+	Xmlns   string               `xml:"xmlns,attr"`
+	Disk    DiskCreateParamsDisk `xml:"Disk"`
+	Iops    int                  `xml:"iops,attr,omitempty"`
+}
+
+type DiskCreateParamsDisk struct {
+	Name               string `xml:"name,attr"`
+	Size               int    `xml:"size,attr"`
+	BusType            string `xml:"bus_type,attr,omitempty"`
+	BusSubType         string `xml:"bus_sub_type,attr,omitempty"`
+	StorageProfileName string `xml:"storage_profile_name,attr,omitempty"`
+	Description        string `xml:"Description,omitempty"`
+}
+
+type DiskType struct {
+	XMLName        xml.Name        `xml:"Disk"`
+	Xmlns          string          `xml:"xmlns,attr"`
+	Status         int             `xml:"status,attr,omitempty"`
+	Name           string          `xml:"name,attr,omitempty"`
+	Id             string          `xml:"id,attr,omitempty"`
+	Type           string          `xml:"type,attr,omitempty"`
+	Href           string          `xml:"href,attr,omitempty"`
+	Link           []*Link         `xml:"Link,omitempty"`
+	Description    string          `xml:"Description,omitempty"`
+	Tasks          []*Task         `xml:"Tasks>Task,omitempty"`
+	StorageProfile *StorageProfile `xml:"StorageProfile,omitempty"`
+	Owner          *Owner          `xml:"Owner,omitempty"`
+}
+
+type StorageProfile struct {
+	Type string `xml:"type,attr"`
+	Name string `xml:"name,attr"`
+	Href string `xml:"href,attr"`
+}
+
+type DiskAttachOrDetachParamsType struct {
+	XMLName xml.Name                      `xml:"DiskAttachOrDetachParams"`
+	Xmlns   string                        `xml:"xmlns,attr"`
+	Disk    *DiskAttachOrDetachParamsDisk `xml:"Disk"`
+}
+
+type DiskAttachOrDetachParamsDisk struct {
+	Type string `xml:"type,attr,omitempty"`
+	Href string `xml:"href,attr,omitempty"`
+}

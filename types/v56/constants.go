@@ -63,6 +63,12 @@ const (
 	MimeError = "application/vnd.vmware.vcloud.error+xml"
 	// MimeNetwork mime for a network
 	MimeNetwork = "application/vnd.vmware.vcloud.network+xml"
+	//MimeDiskCreateParams mime for create independent disk
+	MimeDiskCreateParams = "application/vnd.vmware.vcloud.diskCreateParams+xml"
+	// Mime for VMs
+	MimeVMs = "application/vnd.vmware.vcloud.vms+xml"
+	// Mime for attach or detach independent disk
+	MimeDiskAttachOrDetachParams = "application/vnd.vmware.vcloud.diskAttachOrDetachParams+xml"
 )
 
 const (

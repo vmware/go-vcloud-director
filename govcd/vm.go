@@ -13,6 +13,7 @@ import (
 
 	types "github.com/vmware/go-vcloud-director/types/v56"
 	"github.com/vmware/go-vcloud-director/util"
+	"net/http"
 )
 
 type VM struct {
@@ -455,4 +456,56 @@ func (vm *VM) Undeploy() (Task, error) {
 	// The request was successful
 	return *task, nil
 
+}
+
+func (vm *VM) attachOrDetachDisk(disk *Disk, rel string) (Task, error) {
+	var err error
+	var execLink *types.Link
+	for _, link := range vm.VM.Link {
+		if link.Rel == rel && link.Type == types.MimeDiskAttachOrDetachParams {
+			execLink = link
+		}
+	}
+
+	reqUrl, err := url.ParseRequestURI(execLink.HREF)
+
+	diskAttachOrDetachParamsType := types.DiskAttachOrDetachParamsType{
+		Xmlns: types.NsVCloud,
+		Disk: &types.DiskAttachOrDetachParamsDisk{
+			Type: disk.Disk.Type,
+			Href: disk.Disk.Href,
+		},
+	}
+
+	xmlPayload, err := xml.Marshal(diskAttachOrDetachParamsType)
+	if err != nil {
+		return Task{}, fmt.Errorf("error marshal xml: %s", err)
+	}
+
+	fmt.Println(string(xmlPayload))
+	req := vm.client.NewRequest(map[string]string{}, http.MethodPost, *reqUrl, bytes.NewBufferString(xml.Header+string(xmlPayload)))
+
+	req.Header.Add("Content-Type", execLink.Type)
+
+	resp, err := checkResp(vm.client.Http.Do(req))
+	if err != nil {
+		return Task{}, fmt.Errorf("error attach or detach disk: %s", err)
+	}
+
+	task := NewTask(vm.client)
+	if err = decodeBody(resp, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
+	}
+
+	// The request was successful
+	return *task, nil
+}
+
+
+func (vm *VM) AttachDisk(disk *Disk) (Task, error) {
+	return vm.attachOrDetachDisk(disk, types.RelDiskAttach)
+}
+
+func (vm *VM) DetachDisk(disk *Disk, rel string) (Task, error) {
+	return vm.attachOrDetachDisk(disk, types.RelDiskDetach)
 }
