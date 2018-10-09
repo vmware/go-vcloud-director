@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+* Copyright 2018 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package main
@@ -15,14 +15,14 @@ JSON is a subset of YAML. The YAML interpreter will take care of either configur
 (http://ghodss.com/2014/the-right-way-to-handle-yaml-in-golang/)
 
 (1) On the command line
-  cd samples
-	go run discover.go ./config_file.json
+ cd samples
+go run discover.go ./config_file.json
 Or
-	go run discover.go ./config_file.yaml
+go run discover.go ./config_file.yaml
 
 (2) In GoLand
-	* In the menu "Run" / "edit configurations", add the full path to your JSON or YAML file into "Program arguments"
-  * From the menu "Run", choose "Run 'go build discover.go'"
+* In the menu "Run" / "edit configurations", add the full path to your JSON or YAML file into "Program arguments"
+ * From the menu "Run", choose "Run 'go build discover.go'"
 
 ================
 Troubleshooting.
@@ -32,11 +32,11 @@ what was read from the file and how it was interpreted.
 
 On the command line:
 
-   SAMPLES_DEBUG=1 go run discover.go ./config_file.json
+  SAMPLES_DEBUG=1 go run discover.go ./config_file.json
 
 In Goland:
 
-	* In the menu "Run" / "edit configurations", clock on "Environment", then add a variable with the "+" button: write
+* In the menu "Run" / "edit configurations", clock on "Environment", then add a variable with the "+" button: write
 "SAMPLES_DEBUG" under "name" and "1" under "value."
 
 */
@@ -47,6 +47,7 @@ import (
 	"os"
 
 	"github.com/vmware/go-vcloud-director/govcd"
+	"github.com/vmware/go-vcloud-director/types/v56"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 )
@@ -170,11 +171,10 @@ func main() {
 		}
 	}
 	fmt.Println("")
-
 	fmt.Printf("\nvdc items\n")
 	for _, res := range vdc.Vdc.ResourceEntities {
 		for N, item := range res.ResourceEntity {
-			fmt.Printf("%3d %-40s %s\n", N, item.Name, item.Type)
+			fmt.Printf("%3d %-40s %s %s\n", N, item.Name, item.Type, item.HREF)
 		}
 	}
 	fmt.Println("")
@@ -192,4 +192,74 @@ func main() {
 			}
 		}
 	}
+
+	vapp, err := vdc.FindVAppByID("4da11dd6-d8c7-496b-89cb-0c9d5d15b6d2")
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(vapp.VApp.Children.VM[0])
+	fmt.Println(vapp.GetStatus())
+	disk, err := vdc.FindDiskByHREF("https://vcloud.supereffort.com/api/disk/a8eb60b3-305d-485c-a903-9dc38ab9ded0")
+	if err != nil {
+		//panic(err)
+	}
+
+	//fmt.Println(disk.AttachedVM())
+	//
+	//vm := govcd.NewVM(&client.Client)
+	//vm.VM = vapp.VApp.Children.VM[0]
+	//task, err := vm.AttachDisk(disk)
+	//err = task.WaitTaskCompletion()
+	//if err != nil {
+	//	panic(err)
+	//}
+
+	disk, err = vdc.CreateDisk(&types.DiskCreateParamsDisk{
+		Name:        "HelloDisk",
+		Size:        1024,
+		Description: "123",
+	})
+
+	task := govcd.NewTask(&client.Client)
+	for _, taskItem := range disk.Disk.Tasks {
+		task.Task = taskItem
+		err = task.WaitTaskCompletion()
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	updateTask, err := disk.Update(&types.DiskType{
+		Description: "Hello",
+		Size:        102400,
+		Name:        "DyName",
+	})
+
+	err = updateTask.WaitTaskCompletion()
+	fmt.Println(updateTask)
+	fmt.Println(err)
+	err = disk.Refresh()
+	fmt.Println(err)
+	fmt.Println(disk.Disk.Name, disk.Disk.Size, disk.Disk.Description)
+	fmt.Println(disk.AttachedVM())
+	return
+
+	if err != nil {
+		panic(err)
+	}
+
+	//vm := govcd.NewVM(&client.Client)
+	//vm.VM = vapp.VApp.Children.VM[0]
+	//task, err := vm.AttachDisk(disk)
+	//if err != nil {
+	//	panic(err)
+	//}
+	//
+	//err = task.WaitTaskCompletion()
+	//if err != nil {
+	//	fmt.Errorf("error performing task: %#v", err)
+	//}
+
 }
