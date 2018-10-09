@@ -320,9 +320,9 @@ func (vdc *Vdc) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate 
 			},
 			InstantiationParams: &types.InstantiationParams{
 				NetworkConnectionSection: &types.NetworkConnectionSection{
-					Type:                          vapptemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.Type,
-					HREF:                          vapptemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.HREF,
-					Info:                          "Network config for sourced item",
+					Type: vapptemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.Type,
+					HREF: vapptemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.HREF,
+					Info: "Network config for sourced item",
 					PrimaryNetworkConnectionIndex: vapptemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.PrimaryNetworkConnectionIndex,
 				},
 			},
@@ -538,4 +538,3 @@ func (vdc *Vdc) FindVAppByID(vappid string) (VApp, error) {
 	return VApp{}, fmt.Errorf("can't find vApp")
 
 }
-

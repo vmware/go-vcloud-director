@@ -57,7 +57,7 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 	check.Assert(err, IsNil)
 
 	newDiskInfo := &types.DiskType{
-		Name: "HelloDisk",
+		Name:        "HelloDisk",
 		Description: "Hello Disk Description",
 	}
 
