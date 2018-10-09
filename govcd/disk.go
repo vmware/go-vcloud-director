@@ -88,6 +88,57 @@ func (d *Disk) Delete() (Task, error) {
 	return *task, nil
 }
 
+func (d *Disk) Refresh() error {
+	disk, err := FindDiskByHREF(d.client, d.Disk.HREF)
+	if err != nil {
+		return err
+	}
+
+	d.Disk = disk.Disk
+
+	return nil
+}
+
+func (d *Disk) Update(newDiskInfo *types.DiskType) (Task, error) {
+	var err error
+	var execLink *types.Link
+
+	for _, diskLink := range d.Disk.Link {
+		if diskLink.Rel == types.RelEdit && diskLink.Type == types.MimeDisk {
+			execLink = diskLink
+		}
+	}
+
+	reqUrl, err := url.ParseRequestURI(execLink.HREF)
+	if err != nil {
+		return Task{}, fmt.Errorf("error parse uri: %s", err)
+	}
+
+	xmlPayload, err := xml.Marshal(&types.DiskType{
+		Xmlns:          types.NsVCloud,
+		Description:    newDiskInfo.Description,
+		Size:           newDiskInfo.Size,
+		Name:           newDiskInfo.Name,
+		StorageProfile: newDiskInfo.StorageProfile,
+		Owner:          newDiskInfo.Owner,
+	})
+
+	req := d.client.NewRequest(nil, http.MethodPut, *reqUrl, bytes.NewBufferString(xml.Header+string(xmlPayload)))
+	req.Header.Add("Content-Type", execLink.Type)
+	resp, err := checkResp(d.client.Http.Do(req))
+
+	if err != nil {
+		return Task{}, fmt.Errorf("error find disk: %s", err)
+	}
+
+	task := NewTask(d.client)
+	if err = decodeBody(resp, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding find disk response: %s", err)
+	}
+
+	return *task, nil
+}
+
 func (vdc *Vdc) CreateDisk(diskInfo *types.DiskCreateParamsDisk) (*Disk, error) {
 	var err error
 	var execLink *types.Link
@@ -127,19 +178,23 @@ func (vdc *Vdc) CreateDisk(diskInfo *types.DiskCreateParamsDisk) (*Disk, error) 
 }
 
 func (vdc *Vdc) FindDiskByHREF(href string) (*Disk, error) {
+	return FindDiskByHREF(vdc.client, href)
+}
+
+func FindDiskByHREF(client *Client, href string) (*Disk, error) {
 	reqUrl, err := url.ParseRequestURI(href)
 	if err != nil {
 		return nil, fmt.Errorf("error parse uri: %s", err)
 	}
 
-	req := vdc.client.NewRequest(nil, http.MethodGet, *reqUrl, nil)
-	resp, err := checkResp(vdc.client.Http.Do(req))
+	req := client.NewRequest(nil, http.MethodGet, *reqUrl, nil)
+	resp, err := checkResp(client.Http.Do(req))
 
 	if err != nil {
 		return nil, fmt.Errorf("error find disk: %s", err)
 	}
 
-	disk := NewDisk(vdc.client)
+	disk := NewDisk(client)
 	if err = decodeBody(resp, disk.Disk); err != nil {
 		return nil, fmt.Errorf("error decoding find disk response: %s", err)
 	}

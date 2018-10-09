@@ -69,6 +69,8 @@ const (
 	MimeVMs = "application/vnd.vmware.vcloud.vms+xml"
 	// Mime for attach or detach independent disk
 	MimeDiskAttachOrDetachParams = "application/vnd.vmware.vcloud.diskAttachOrDetachParams+xml"
+	// Mime for Disk
+	MimeDisk = "application/vnd.vmware.vcloud.disk+xml"
 )
 
 const (
