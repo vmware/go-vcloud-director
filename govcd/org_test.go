@@ -228,7 +228,7 @@ func (vcd *TestVCD) Test_CreateCatalog(check *C) {
 		err = catalog.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
-	catalog, err = org.CreateCatalog(TestCreateCatalog, TestCreateCatalogDesc, true)
+	catalog, err = org.CreateCatalog(TestCreateCatalog, TestCreateCatalogDesc)
 	check.Assert(err, IsNil)
 	AddToCleanupList(TestCreateCatalog, "catalog", vcd.org.Org.Name, "Test_CreateCatalog")
 	check.Assert(catalog.AdminCatalog.Name, Equals, TestCreateCatalog)
@@ -244,6 +244,7 @@ func (vcd *TestVCD) Test_CreateCatalog(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(catalog.AdminCatalog.Name, Equals, copyCatalog.AdminCatalog.Name)
 	check.Assert(catalog.AdminCatalog.Description, Equals, copyCatalog.AdminCatalog.Description)
+	check.Assert(catalog.AdminCatalog.IsPublished, Equals, false)
 	err = catalog.Delete(true, true)
 	check.Assert(err, IsNil)
 }

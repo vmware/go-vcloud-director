@@ -49,7 +49,7 @@ func (vcd *TestVCD) Test_UpdateCatalog(check *C) {
 		err = catalog.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
-	adminCatalog, err := org.CreateCatalog(TestUpdateCatalog, TestUpdateCatalog, true)
+	adminCatalog, err := org.CreateCatalog(TestUpdateCatalog, TestUpdateCatalog)
 	check.Assert(err, IsNil)
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
@@ -76,7 +76,7 @@ func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
 		err = adminCatalog.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
-	adminCatalog, err = org.CreateCatalog(TestDeleteCatalog, TestDeleteCatalog, true)
+	adminCatalog, err = org.CreateCatalog(TestDeleteCatalog, TestDeleteCatalog)
 	check.Assert(err, IsNil)
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
