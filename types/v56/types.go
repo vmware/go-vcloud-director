@@ -1979,3 +1979,20 @@ type QueryResultOrgVdcStorageProfileRecordType struct {
 	StorageUsedMB           int    `xml:"storageUsedMB,attr,omitempty"`
 	StorageLimitMB          int    `xml:"storageLimitMB,attr,omitempty"`
 }
+
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Retrieve a list of extension objects and operations.
+// Since: 1.0
+type Extension struct {
+	Link LinkList `xml:"Link,omitempty"` // A reference to an entity or operation associated with this object.
+}
+
+type ExternalNetworkReferences struct {
+	ExternalNetworkReference []*ExternalNetworkReference `xml:"ExternalNetworkReference,omitempty"` // A reference to an entity or operation associated with this object.
+}
+
+type ExternalNetworkReference struct {
+	HREF string `xml:"href,attr"`
+	Type string `xml:"type,attr,omitempty"`
+	Name string `xml:"name,attr,omitempty"`
+}
