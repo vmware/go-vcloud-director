@@ -1,4 +1,7 @@
-// Created by terry on 9/10/2018.
+/*
+ * Copyright 2018 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2016 Skyscape Cloud Services.  All rights reserved.  Licensed under the Apache v2 License.
+ */
 
 package govcd
 
