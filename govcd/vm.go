@@ -458,17 +458,29 @@ func (vm *VM) Undeploy() (Task, error) {
 
 }
 
+// Attach or detach an independent disk
+// Use the disk/action/attach or disk/action/detach links in a Vm to attach or detach an independent disk.
+// Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 164 - 165,
+// https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
+// 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (vm *VM) attachOrDetachDisk(disk *Disk, rel string) (Task, error) {
 	var err error
 	var execLink *types.Link
+
+	// Find the proper link for request
 	for _, link := range vm.VM.Link {
 		if link.Rel == rel && link.Type == types.MimeDiskAttachOrDetachParams {
 			execLink = link
 		}
 	}
 
+	// Parse request URI
 	reqUrl, err := url.ParseRequestURI(execLink.HREF)
+	if err != nil {
+		return Task{}, fmt.Errorf("error parse URI: %s", err)
+	}
 
+	// Prepare the request payload
 	diskAttachOrDetachParamsType := types.DiskAttachOrDetachParamsType{
 		Xmlns: types.NsVCloud,
 		Disk: &types.DiskAttachOrDetachParamsDisk{
@@ -476,21 +488,20 @@ func (vm *VM) attachOrDetachDisk(disk *Disk, rel string) (Task, error) {
 			HREF: disk.Disk.HREF,
 		},
 	}
-
 	xmlPayload, err := xml.Marshal(diskAttachOrDetachParamsType)
 	if err != nil {
 		return Task{}, fmt.Errorf("error marshal xml: %s", err)
 	}
 
+	// Send request
 	req := vm.client.NewRequest(nil, http.MethodPost, *reqUrl, bytes.NewBufferString(xml.Header+string(xmlPayload)))
-
 	req.Header.Add("Content-Type", execLink.Type)
-
 	resp, err := checkResp(vm.client.Http.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error attach or detach disk: %s", err)
 	}
 
+	// Decode response
 	task := NewTask(vm.client)
 	if err = decodeBody(resp, task.Task); err != nil {
 		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
@@ -500,10 +511,24 @@ func (vm *VM) attachOrDetachDisk(disk *Disk, rel string) (Task, error) {
 	return *task, nil
 }
 
+// Detach an independent disk
+// Call attachOrDetachDisk with disk and types.RelDiskAttach for attach independent disk.
+// Please verify the independent disk is not connected to any VM before call this function.
+// If the independent disk is connected to a VM, the task will be failed.
+// Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 164 - 165,
+// https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
+// 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (vm *VM) AttachDisk(disk *Disk) (Task, error) {
 	return vm.attachOrDetachDisk(disk, types.RelDiskAttach)
 }
 
+// Detach an independent disk
+// Call attachOrDetachDisk with disk and types.RelDiskAttach for detach independent disk.
+// Please verify the independent disk is connected the VM before call this function.
+// If the independent disk is not connected to the VM, the task will be failed.
+// Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 164 - 165,
+// https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
+// 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (vm *VM) DetachDisk(disk *Disk) (Task, error) {
 	return vm.attachOrDetachDisk(disk, types.RelDiskDetach)
 }
