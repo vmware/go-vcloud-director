@@ -168,13 +168,12 @@ func (adminOrg *AdminOrg) Refresh() error {
 // the given organization. Returns an AdminCatalog that contains a creation
 // task.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-CreateCatalog.html
-func (adminOrg *AdminOrg) CreateCatalog(Name, Description string, isPublished bool) (AdminCatalog, error) {
+func (adminOrg *AdminOrg) CreateCatalog(Name, Description string) (AdminCatalog, error) {
 
 	vcomp := &types.AdminCatalog{
 		Xmlns:       "http://www.vmware.com/vcloud/v1.5",
 		Name:        Name,
 		Description: Description,
-		IsPublished: isPublished,
 	}
 
 	catalogHREF, err := url.ParseRequestURI(adminOrg.AdminOrg.HREF)
