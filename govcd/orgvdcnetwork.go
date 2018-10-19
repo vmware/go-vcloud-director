@@ -12,6 +12,7 @@ import (
 	"github.com/vmware/go-vcloud-director/util"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -164,6 +165,21 @@ func (vdc *Vdc) CreateOrgVDCNetWorkBasic(networkConfig *types.OrgVDCNetwork) (Ta
 			orgVDCNetwork := NewOrgVDCNetwork(vdc.client)
 			if err = decodeBody(resp, orgVDCNetwork.OrgVDCNetwork); err != nil {
 				return Task{}, fmt.Errorf("error decoding orgvdcnetwork response: %s", err)
+			}
+			activeTasks := 0
+			// Makes sure that there is only one active task for this network.
+			for _, taskItem := range orgVDCNetwork.OrgVDCNetwork.Tasks.Task {
+				if taskItem.HREF != "" {
+					activeTasks += 1
+					if os.Getenv("GOVCD_DEBUG") != "" {
+						fmt.Printf("task %s (%s) is active\n", taskItem.HREF, taskItem.Status)
+					}
+				}
+			}
+			if activeTasks > 1 {
+				// By my understanding of the implementation, there should not be more than one task for this operation.
+				// If there is, we will need to change the logic of this function, as we can only return one task. (GM)
+				return Task{}, fmt.Errorf("found %d active tasks instead of one", activeTasks)
 			}
 			for _, taskItem := range orgVDCNetwork.OrgVDCNetwork.Tasks.Task {
 				return Task{taskItem, vdc.client}, nil
