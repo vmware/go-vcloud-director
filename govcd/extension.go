@@ -28,12 +28,12 @@ func GetExternalNetworkByName(vcdClient *VCDClient, networkName string) (*types.
 	req := vcdClient.Client.NewRequest(map[string]string{}, "GET", *extNetworkURL, nil)
 	resp, err := checkResp(vcdClient.Client.Http.Do(req))
 	if err != nil {
-		util.Logger.Printf("[TRACE] error retreiving external networks: %s", err)
-		return &types.ExternalNetworkReference{}, fmt.Errorf("error retreiving external networks: %s", err)
+		util.Logger.Printf("[TRACE] error retrieving external networks: %s", err)
+		return &types.ExternalNetworkReference{}, fmt.Errorf("error retrieving external networks: %s", err)
 	}
 
 	if err = decodeBody(resp, extNetworkRefs); err != nil {
-		util.Logger.Printf("[TRACE] error retreiving  external networks: %s", err)
+		util.Logger.Printf("[TRACE] error retrieving  external networks: %s", err)
 		return &types.ExternalNetworkReference{}, fmt.Errorf("error decoding extension  external networks: %s", err)
 	}
 
@@ -69,12 +69,12 @@ func getExtension(vcdClient *VCDClient) (*types.Extension, error) {
 	req := vcdClient.Client.NewRequest(map[string]string{}, "GET", extensionHREF, nil)
 	resp, err := checkResp(vcdClient.Client.Http.Do(req))
 	if err != nil {
-		util.Logger.Printf("[TRACE] error retreiving extension: %s", err)
-		return extensions, fmt.Errorf("error retreiving extension: %s", err)
+		util.Logger.Printf("[TRACE] error retrieving extension: %s", err)
+		return extensions, fmt.Errorf("error retrieving extension: %s", err)
 	}
 
 	if err = decodeBody(resp, extensions); err != nil {
-		util.Logger.Printf("[TRACE] error retreiving extension list: %s", err)
+		util.Logger.Printf("[TRACE] error retrieving extension list: %s", err)
 		return extensions, fmt.Errorf("error decoding extension list response: %s", err)
 	}
 
