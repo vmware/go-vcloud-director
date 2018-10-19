@@ -20,20 +20,23 @@ import (
 
 const (
 	// Names for entities created by the tests
-	TestCreateOrg          = "TestCreateOrg"
-	TestDeleteOrg          = "TestDeleteOrg"
-	TestUpdateOrg          = "TestUpdateOrg"
-	TestCreateCatalog      = "TestCreateCatalog"
-	TestCreateCatalogDesc  = "Catalog created by tests"
-	TestRefreshOrgFullName = "TestRefreshOrgFullName"
-	TestUpdateCatalog      = "TestUpdateCatalog"
-	TestDeleteCatalog      = "TestDeleteCatalog"
-	TestRefreshOrg         = "TestRefreshOrg"
-	TestComposeVapp        = "TestComposeVapp"
-	TestComposeVappDesc    = "vApp created by tests"
-	TestSetUpSuite         = "TestSetUpSuite"
-	TestUploadOvf          = "TestUploadOvf"
-	TestDeleteCatalogItem  = "TestDeleteCatalogItem"
+	TestCreateOrg                 = "TestCreateOrg"
+	TestDeleteOrg                 = "TestDeleteOrg"
+	TestUpdateOrg                 = "TestUpdateOrg"
+	TestCreateCatalog             = "TestCreateCatalog"
+	TestCreateCatalogDesc         = "Catalog created by tests"
+	TestRefreshOrgFullName        = "TestRefreshOrgFullName"
+	TestUpdateCatalog             = "TestUpdateCatalog"
+	TestDeleteCatalog             = "TestDeleteCatalog"
+	TestRefreshOrg                = "TestRefreshOrg"
+	TestComposeVapp               = "TestComposeVapp"
+	TestComposeVappDesc           = "vApp created by tests"
+	TestSetUpSuite                = "TestSetUpSuite"
+	TestUploadOvf                 = "TestUploadOvf"
+	TestDeleteCatalogItem         = "TestDeleteCatalogItem"
+	TestCreateOrgVdcNetworkEGW    = "TestCreateOrgVdcNetworkEGW"
+	TestCreateOrgVdcNetworkIso    = "TestCreateOrgVdcNetworkIso"
+	TestCreateOrgVdcNetworkDirect = "TestCreateOrgVdcNetworkDirect"
 )
 
 // Struct to get info from a config yaml file that the user
@@ -59,9 +62,10 @@ type TestConfig struct {
 			SP1 string `yaml:"storageProfile1"`
 			SP2 string `yaml:"storageProfile2,omitempty"`
 		} `yaml:"storageProfile"`
-		ExternalIp  string `yaml:"externalIp,omitempty"`
-		InternalIp  string `yaml:"internalIp,omitempty"`
-		EdgeGateway string `yaml:"edgeGateway,omitempty"`
+		ExternalIp      string `yaml:"externalIp,omitempty"`
+		InternalIp      string `yaml:"internalIp,omitempty"`
+		EdgeGateway     string `yaml:"edgeGateway,omitempty"`
+		ExternalNetwork string `yaml:"externalNetwork,omitempty"`
 	} `yaml:"vcd"`
 	Logging struct {
 		Enabled         bool   `yaml:"enabled,omitempty"`
@@ -105,6 +109,9 @@ var _ = Suite(&TestVCD{})
 // The list holding the entities to be examined and eventually removed
 // at the end of the tests
 var cleanupEntityList []CleanupEntity
+
+// Use this value to run a specific test that does not need a pre-created vApp.
+var skipVappCreation bool = os.Getenv("GOVCD_SKIP_VAPP_CREATION") != ""
 
 // Adds an entity to the cleanup list.
 // To be called by all tests when a new entity has been created, before
@@ -216,7 +223,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		panic(err)
 	}
 	// creates a new VApp for vapp tests
-	if config.VCD.Network != "" && config.VCD.StorageProfile.SP1 != "" &&
+	if !skipVappCreation && config.VCD.Network != "" && config.VCD.StorageProfile.SP1 != "" &&
 		config.VCD.Catalog.Name != "" && config.VCD.Catalog.Catalogitem != "" {
 		vcd.vapp, err = vcd.createTestVapp(TestSetUpSuite)
 		// If no vApp is created, we skip all vApp tests
@@ -240,6 +247,17 @@ func (vcd *TestVCD) infoCleanup(format string, args ...interface{}) {
 	}
 }
 
+// Gets the two components of a "parent" string, as passed to AddToCleanupList
+func splitParent(parent string, separator string) (first, second string) {
+	strList := strings.Split(parent, separator)
+	if len(strList) != 2 {
+		return "", ""
+	}
+	first = strList[0]
+	second = strList[1]
+	return
+}
+
 // Removes leftover entities that may still exist after failed tests
 // or the ones that were explicitly created for several tests and
 // were relying on this procedure to clean up at the end.
@@ -248,9 +266,10 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 	var notFoundMsg string = "removeLeftoverEntries: [INFO] No action for %s '%s'\n"
 	var removedMsg string = "removeLeftoverEntries: [INFO] Removed %s '%s' created by %s\n"
 	var notDeletedMsg string = "removeLeftoverEntries: [ERROR] Error deleting %s '%s': %s\n"
+	var splitParentNotFound string = "removeLeftopverEntries: [ERROR] missing parent info (%s). The parent fields must be defined with a separator '|'\n"
 	// NOTE: this is a cleanup function that should continue even if errors are found.
 	// For this reason, the [ERROR] messages won't be followed by a program termination
-	vcd.infoCleanup(introMsg, entity.Name, entity.EntityType, entity.CreatedBy)
+	vcd.infoCleanup(introMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 	switch entity.EntityType {
 	case "vapp":
 		vapp, err := vcd.vdc.FindVAppByName(entity.Name)
@@ -340,7 +359,27 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		//TODO: find an easy way of undoing edge GW customization
 		return
 	case "network":
-		// nothing so far
+		orgName, vdcName := splitParent(entity.Parent, "|")
+		if orgName == "" || vdcName == "" {
+			vcd.infoCleanup(splitParentNotFound, entity.Parent)
+			return
+		}
+		org, err := GetAdminOrgByName(vcd.client, orgName)
+		if org == (AdminOrg{}) || err != nil {
+			vcd.infoCleanup(notFoundMsg, "org", orgName)
+			return
+		}
+		vdc, err := org.GetVdcByName(vdcName)
+		if vdc == (Vdc{}) || err != nil {
+			vcd.infoCleanup(notFoundMsg, "vdc", vdcName)
+			return
+		}
+		err = RemoveOrgVdcNetworkIfExists(vdc, entity.Name)
+		if err == nil {
+			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		} else {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
 		return
 	case "vdc":
 		// nothing so far

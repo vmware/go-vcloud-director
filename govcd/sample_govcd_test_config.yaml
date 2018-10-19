@@ -58,6 +58,8 @@ vcd:
     #
     # A free IP in the Org vDC network
     internalIp: 192.168.1.10
+    # An external Network name
+    externalNetwork: myexternalnet
 logging:
     # All items in this section are optional
     # Logging is disabled by default.
@@ -74,6 +76,8 @@ logging:
     #
     # Defines whether we log the responses in HTTP operations
     logHttpResponses: true
+    # Shows details of cleanup operations after tests
+    verboseCleanup: true
 ova:
   # The ova for uploading catalog item for tests.
   # Default paths are simple ova provided by project

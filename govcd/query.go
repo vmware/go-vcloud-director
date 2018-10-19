@@ -30,7 +30,7 @@ func (vdcCli *VCDClient) Query(params map[string]string) (Results, error) {
 
 	resp, err := checkResp(vdcCli.Client.Http.Do(req))
 	if err != nil {
-		return Results{}, fmt.Errorf("error retreiving query: %s", err)
+		return Results{}, fmt.Errorf("error retrieving query: %s", err)
 	}
 
 	results := NewResults(&vdcCli.Client)
