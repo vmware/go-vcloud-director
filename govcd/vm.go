@@ -501,9 +501,9 @@ func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel
 	return *task, nil
 }
 
-// Detach an independent disk
-// Call attachOrDetachDisk with disk and types.RelDiskAttach for attach independent disk.
-// Please verify the independent disk is not connected to any VM before call this function.
+// Attach an independent disk
+// Call attachOrDetachDisk with disk and types.RelDiskAttach to attach an independent disk.
+// Please verify the independent disk is not connected to any VM before calling this function.
 // If the independent disk is connected to a VM, the task will be failed.
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 164 - 165,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
@@ -513,8 +513,8 @@ func (vm *VM) AttachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, erro
 }
 
 // Detach an independent disk
-// Call attachOrDetachDisk with disk and types.RelDiskAttach for detach independent disk.
-// Please verify the independent disk is connected the VM before call this function.
+// Call attachOrDetachDisk with disk and types.RelDiskDetach to detach an independent disk.
+// Please verify the independent disk is connected the VM before calling this function.
 // If the independent disk is not connected to the VM, the task will be failed.
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 164 - 165,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/

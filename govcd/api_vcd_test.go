@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/vmware/go-vcloud-director/types/v56"
 	"github.com/vmware/go-vcloud-director/util"
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v2"
@@ -62,6 +63,14 @@ type TestConfig struct {
 		ExternalIp  string `yaml:"externalIp,omitempty"`
 		InternalIp  string `yaml:"internalIp,omitempty"`
 		EdgeGateway string `yaml:"edgeGateway,omitempty"`
+		Disk        struct {
+			Name                 string `yaml:"name,omitempty"`
+			Size                 int    `yaml:"size,omitempty"`
+			Description          string `yaml:"description,omitempty"`
+			NameForUpdate        string `yaml:"nameForUpdate,omitempty"`
+			SizeForUpdate        int    `yaml:"sizeForUpdate,omitempty"`
+			DescriptionForUpdate string `yaml:"descriptionForUpdate,omitempty"`
+		}
 	} `yaml:"vcd"`
 	Logging struct {
 		Enabled         bool   `yaml:"enabled,omitempty"`
@@ -347,6 +356,56 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		return
 	case "vm":
 		// nothing so far
+		return
+	case "disk":
+		// Find disk
+		// [0] = disk name, [1] = disk href
+		disk, err := vcd.vdc.FindDiskByHREF(strings.Split(entity.Name, "|")[1])
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		// See if disk is attached to VM
+		vmRef, err := disk.AttachedVM()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+		// if it is attached to VM, detach disk from VM
+		if vmRef != nil {
+			vm, err := vcd.client.FindVMByHREF(vmRef.HREF)
+			if err != nil {
+				vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+				return
+			}
+
+			// Detach disk from VM
+			task, err := vm.DetachDisk(&types.DiskAttachOrDetachParams{
+				Disk: &types.Reference{
+					HREF: disk.Disk.HREF,
+				},
+			})
+			err = task.WaitTaskCompletion()
+			if err != nil {
+				vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+				return
+			}
+		}
+
+		// Delete disk
+		deleteDiskTask, err := disk.Delete()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+		err = deleteDiskTask.WaitTaskCompletion()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
 	default:
 		// If we reach this point, we are trying to clean up an entity that

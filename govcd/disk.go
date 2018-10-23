@@ -1,6 +1,5 @@
 /*
  * Copyright 2018 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- * Copyright 2016 Skyscape Cloud Services.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -84,7 +83,7 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (*Disk, err
 // 1 Verify that the disk is not attached to a virtual machine.
 // 2 Use newDiskInfo to change update the independent disk.
 // 3 Return task of independent disk update
-// Please verify the independent disk is not connected to any VM before call this function.
+// Please verify the independent disk is not connected to any VM before calling this function.
 // If the independent disk is connected to a VM, the task will be failed.
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 104 - 106,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
@@ -145,7 +144,7 @@ func (d *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 // Remove an independent disk
 // 1 Delete the independent disk. Make a DELETE request to the URL in the rel="remove" link in the Disk.
 // 2 Return task of independent disk deletion.
-// Please verify the independent disk is not connected to any VM before call this function.
+// Please verify the independent disk is not connected to any VM before calling this function.
 // If the independent disk is connected to a VM, the task will be failed.
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 106 - 107,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
@@ -201,9 +200,9 @@ func (d *Disk) Refresh() error {
 	return nil
 }
 
-// Get a VM that attached the disk
+// Get a VM that is attached the disk
 // An independent disk can be attached to at most one virtual machine.
-// If the disk doesn't attached to any VM, return empty VM reference and no error.
+// If the disk isn't attached to any VM, return empty VM reference and no error.
 // Otherwise return the first VM reference and no error.
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 107,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
@@ -244,7 +243,7 @@ func (d *Disk) AttachedVM() (*types.Reference, error) {
 		return nil, fmt.Errorf("error decoding find disk response: %s", err)
 	}
 
-	// If disk is not is attached to any VM
+	// If disk is not attached to any VM
 	if vms.VmReference == nil {
 		return nil, nil
 	}

@@ -22,7 +22,15 @@
 		},
 		"edgeGateway": "myedgegw",
 		"externalIp": "10.150.10.10",
-		"internalIp": "192.168.1.10"
+		"internalIp": "192.168.1.10",
+    "disk": {
+      "name": "iamnewtestdisk",
+      "size": 1024,
+      "description": "new test disk",
+      "nameForUpdate": "iheardyoulikeupdates",
+      "sizeForUpdate": 10240,
+      "descriptionForUpdate": "very new test disk",
+    }
 	},
 	"logging": {
 		"enabled": true,
