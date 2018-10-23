@@ -63,11 +63,23 @@ vcd:
     #
     # Independent disk parameters for testing
     disk:
+      #
+      # Disk name for create disk
       name: iamnewtestdisk
+      #
+      # Disk size for create disk
       size: 1024
+      #
+      # Disk description for create disk
       description: new test disk
+      #
+      # Disk description for update disk
       nameForUpdate: iheardyoulikeupdates
+      #
+      # Disk size for update disk
       sizeForUpdate: 10240
+      #
+      # Disk description for update disk
       descriptionForUpdate: very new test disk
 logging:
     # All items in this section are optional
