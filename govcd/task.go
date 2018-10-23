@@ -7,6 +7,7 @@ package govcd
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/vmware/go-vcloud-director/types/v56"
@@ -107,4 +108,21 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 // task is either completed or failed
 func (task *Task) WaitTaskCompletion() error {
 	return task.WaitInspectTaskCompletion(nil, 3*time.Second)
+}
+
+func (task *Task) GetTaskProgress() (string, error) {
+	if task.Task == nil {
+		return "", fmt.Errorf("cannot refresh, Object is empty")
+	}
+
+	err := task.Refresh()
+	if err != nil {
+		return "", fmt.Errorf("error retreiving task: %s", err)
+	}
+
+	if task.Task.Status == "error" {
+		return "", fmt.Errorf("task did not complete succesfully: %s", task.Task.Description)
+	}
+
+	return strconv.Itoa(task.Task.Progress), nil
 }
