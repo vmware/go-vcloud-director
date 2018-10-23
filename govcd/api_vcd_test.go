@@ -67,7 +67,7 @@ type TestConfig struct {
 		InternalIp      string `yaml:"internalIp,omitempty"`
 		EdgeGateway     string `yaml:"edgeGateway,omitempty"`
 		ExternalNetwork string `yaml:"externalNetwork,omitempty"`
-		Disk        struct {
+		Disk            struct {
 			Name                 string `yaml:"name,omitempty"`
 			Size                 int    `yaml:"size,omitempty"`
 			Description          string `yaml:"description,omitempty"`
