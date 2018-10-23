@@ -84,7 +84,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkEGW(check *C) {
 	}
 
 	LogNetwork(networkConfig)
-	err = vcd.vdc.CreateOrgVDCNetwork(&networkConfig)
+	err = vcd.vdc.CreateOrgVDCNetworkWait(&networkConfig)
 	if err != nil {
 		fmt.Printf("error creating Network <%s>: %s\n", networkName, err)
 	}
@@ -139,7 +139,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkIso(check *C) {
 		IsShared: false,
 	}
 	LogNetwork(networkConfig)
-	err = vcd.vdc.CreateOrgVDCNetwork(&networkConfig)
+	err = vcd.vdc.CreateOrgVDCNetworkWait(&networkConfig)
 	if err != nil {
 		fmt.Printf("error creating Network <%s>: %s\n", networkName, err)
 	}
@@ -184,7 +184,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkDirect(check *C) {
 	}
 	LogNetwork(networkConfig)
 
-	task, err := vcd.vdc.CreateOrgVDCNetWorkBasic(&networkConfig)
+	task, err := vcd.vdc.CreateOrgVDCNetWork(&networkConfig)
 	if err != nil {
 		fmt.Printf("error creating the network: %s", err)
 	}
