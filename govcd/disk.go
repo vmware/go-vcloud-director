@@ -16,14 +16,14 @@ import (
 
 // Independent disk
 type Disk struct {
-	Disk   *types.DiskType
+	Disk   *types.Disk
 	client *Client
 }
 
 // Init independent disk struct
 func NewDisk(cli *Client) *Disk {
 	return &Disk{
-		Disk:   new(types.DiskType),
+		Disk:   new(types.Disk),
 		client: cli,
 	}
 }
@@ -32,7 +32,7 @@ func NewDisk(cli *Client) *Disk {
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 102 - 103,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
-func (vdc *Vdc) CreateDisk(diskInfo *types.DiskCreateParamsDisk) (*Disk, error) {
+func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (*Disk, error) {
 	var err error
 	var execLink *types.Link
 
@@ -40,7 +40,12 @@ func (vdc *Vdc) CreateDisk(diskInfo *types.DiskCreateParamsDisk) (*Disk, error) 
 	for _, vdcLink := range vdc.Vdc.Link {
 		if vdcLink.Rel == types.RelAdd && vdcLink.Type == types.MimeDiskCreateParams {
 			execLink = vdcLink
+			break
 		}
+	}
+
+	if execLink == nil {
+		return nil, fmt.Errorf("exec link not found")
 	}
 
 	// Parse request URI
@@ -50,11 +55,9 @@ func (vdc *Vdc) CreateDisk(diskInfo *types.DiskCreateParamsDisk) (*Disk, error) 
 	}
 
 	// Prepare the request payload
-	diskCreateParamsType := types.DiskCreateParamsType{
-		Xmlns: types.NsVCloud,
-		Disk:  diskInfo,
-	}
-	xmlPayload, err := xml.Marshal(diskCreateParamsType)
+	diskCreateParams.Xmlns = types.NsVCloud
+
+	xmlPayload, err := xml.Marshal(diskCreateParams)
 	if err != nil {
 		return nil, fmt.Errorf("error xml.Marshal: %s", err)
 	}
@@ -86,7 +89,7 @@ func (vdc *Vdc) CreateDisk(diskInfo *types.DiskCreateParamsDisk) (*Disk, error) 
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 104 - 106,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
-func (d *Disk) Update(newDiskInfo *types.DiskType) (Task, error) {
+func (d *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 	var err error
 	var execLink *types.Link
 
@@ -94,7 +97,12 @@ func (d *Disk) Update(newDiskInfo *types.DiskType) (Task, error) {
 	for _, diskLink := range d.Disk.Link {
 		if diskLink.Rel == types.RelEdit && diskLink.Type == types.MimeDisk {
 			execLink = diskLink
+			break
 		}
+	}
+
+	if execLink == nil {
+		return Task{}, fmt.Errorf("exec link not found")
 	}
 
 	// Parse request URI
@@ -104,7 +112,7 @@ func (d *Disk) Update(newDiskInfo *types.DiskType) (Task, error) {
 	}
 
 	// Prepare the request payload
-	xmlPayload, err := xml.Marshal(&types.DiskType{
+	xmlPayload, err := xml.Marshal(&types.Disk{
 		Xmlns:          types.NsVCloud,
 		Description:    newDiskInfo.Description,
 		Size:           newDiskInfo.Size,
@@ -150,7 +158,12 @@ func (d *Disk) Delete() (Task, error) {
 	for _, diskLink := range d.Disk.Link {
 		if diskLink.Rel == types.RelRemove {
 			execLink = diskLink
+			break
 		}
+	}
+
+	if execLink == nil {
+		return Task{}, fmt.Errorf("exec link not found")
 	}
 
 	// Parse request URI
@@ -203,7 +216,12 @@ func (d *Disk) AttachedVM() (*types.Reference, error) {
 	for _, diskLink := range d.Disk.Link {
 		if diskLink.Type == types.MimeVMs {
 			execLink = diskLink
+			break
 		}
+	}
+
+	if execLink == nil {
+		return nil, fmt.Errorf("exec link not found")
 	}
 
 	// Parse request URI
@@ -221,18 +239,18 @@ func (d *Disk) AttachedVM() (*types.Reference, error) {
 	}
 
 	// Decode request
-	var vmsType = new(types.VmsType)
-	if err = decodeBody(resp, vmsType); err != nil {
+	var vms = new(types.Vms)
+	if err = decodeBody(resp, vms); err != nil {
 		return nil, fmt.Errorf("error decoding find disk response: %s", err)
 	}
 
 	// If disk is not is attached to any VM
-	if len(vmsType.VmReference) <= 0 {
+	if vms.VmReference == nil {
 		return nil, nil
 	}
 
 	// An independent disk can be attached to at most one virtual machine so return the first result of VM reference
-	return vmsType.VmReference[0], nil
+	return vms.VmReference, nil
 }
 
 // Find an independent disk by disk href in VDC

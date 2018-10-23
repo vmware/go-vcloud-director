@@ -463,7 +463,7 @@ func (vm *VM) Undeploy() (Task, error) {
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 164 - 165,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
-func (vm *VM) attachOrDetachDisk(disk *Disk, rel string, busNumber int, unitNumber int) (Task, error) {
+func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel string) (Task, error) {
 	var err error
 	var execLink *types.Link
 	for _, link := range vm.VM.Link {
@@ -474,25 +474,9 @@ func (vm *VM) attachOrDetachDisk(disk *Disk, rel string, busNumber int, unitNumb
 
 	reqUrl, err := url.ParseRequestURI(execLink.HREF)
 
-	diskAttachOrDetachParamsType := types.DiskAttachOrDetachParamsType{
-		Xmlns: types.NsVCloud,
-		Disk: &types.DiskAttachOrDetachParamsDisk{
-			Type: disk.Disk.Type,
-			HREF: disk.Disk.HREF,
-		},
-	}
+	diskParams.Xmlns = types.NsVCloud
 
-	// if bus number is valid, set bus number
-	if busNumber >= 0 {
-		diskAttachOrDetachParamsType.BusNumber = &busNumber
-	}
-
-	// if unit number is valid, set unit number
-	if unitNumber >= 0 {
-		diskAttachOrDetachParamsType.UnitNumber = &unitNumber
-	}
-
-	xmlPayload, err := xml.Marshal(diskAttachOrDetachParamsType)
+	xmlPayload, err := xml.Marshal(diskParams)
 	if err != nil {
 		return Task{}, fmt.Errorf("error marshal xml: %s", err)
 	}
@@ -524,8 +508,8 @@ func (vm *VM) attachOrDetachDisk(disk *Disk, rel string, busNumber int, unitNumb
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 164 - 165,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
-func (vm *VM) AttachDisk(disk *Disk, busNumber int, unitNumber int) (Task, error) {
-	return vm.attachOrDetachDisk(disk, types.RelDiskAttach, busNumber, unitNumber)
+func (vm *VM) AttachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, error) {
+	return vm.attachOrDetachDisk(diskParams, types.RelDiskAttach)
 }
 
 // Detach an independent disk
@@ -535,6 +519,6 @@ func (vm *VM) AttachDisk(disk *Disk, busNumber int, unitNumber int) (Task, error
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 164 - 165,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
-func (vm *VM) DetachDisk(disk *Disk) (Task, error) {
-	return vm.attachOrDetachDisk(disk, types.RelDiskDetach, -1, -1)
+func (vm *VM) DetachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, error) {
+	return vm.attachOrDetachDisk(diskParams, types.RelDiskDetach)
 }

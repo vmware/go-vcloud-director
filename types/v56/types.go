@@ -1998,67 +1998,68 @@ type ExternalNetworkReference struct {
 }
 
 // DiskCreateParams element for create independent disk
-// Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 102,
-// https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
-// 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
-type DiskCreateParamsType struct {
-	XMLName xml.Name              `xml:"DiskCreateParams"`
-	Xmlns   string                `xml:"xmlns,attr"`
-	Disk    *DiskCreateParamsDisk `xml:"Disk"`
-	Iops    int                   `xml:"iops,attr,omitempty"`
-}
-type DiskCreateParamsDisk struct {
-	Name               string `xml:"name,attr"`
-	Size               int    `xml:"size,attr"`
-	BusType            string `xml:"bus_type,attr,omitempty"`
-	BusSubType         string `xml:"bus_sub_type,attr,omitempty"`
-	StorageProfileName string `xml:"storage_profile_name,attr,omitempty"`
-	Description        string `xml:"Description,omitempty"`
+// Reference: vCloud API 30.0 - DiskCreateParamsType
+// https://code.vmware.com/apis/287/vcloud?h=Director#/doc/doc/types/DiskCreateParamsType.html
+type DiskCreateParams struct {
+	XMLName         xml.Name         `xml:"DiskCreateParams"`
+	Xmlns           string           `xml:"xmlns,attr,omitempty"`
+	Disk            *Disk            `xml:"Disk"`
+	Locality        *Reference       `xml:"Locality,omitempty"`
+	VCloudExtension *VCloudExtension `xml:"VCloudExtension,omitempty"`
 }
 
-// Disk element that include independent disk information
-type DiskType struct {
-	XMLName        xml.Name        `xml:"Disk"`
-	Xmlns          string          `xml:"xmlns,attr"`
-	Size           int             `xml:"size,attr"`
-	Status         int             `xml:"status,attr,omitempty"`
-	Name           string          `xml:"name,attr,omitempty"`
-	Id             string          `xml:"id,attr,omitempty"`
-	Type           string          `xml:"type,attr,omitempty"`
-	HREF           string          `xml:"href,attr,omitempty"`
-	Link           []*Link         `xml:"Link,omitempty"`
-	Description    string          `xml:"Description,omitempty"`
-	Tasks          []*Task         `xml:"Tasks>Task,omitempty"`
-	StorageProfile *StorageProfile `xml:"StorageProfile,omitempty"`
-	Owner          *Owner          `xml:"Owner,omitempty"`
-}
-type StorageProfile struct {
-	Type string `xml:"type,attr"`
-	Name string `xml:"name,attr"`
-	HREF string `xml:"href,attr"`
-}
-
-// DiskAttachOrDetachParams element for attach and detach an independent disk
-// Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 165,
-// https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
-// 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
-type DiskAttachOrDetachParamsType struct {
-	XMLName    xml.Name                      `xml:"DiskAttachOrDetachParams"`
-	Xmlns      string                        `xml:"xmlns,attr"`
-	Disk       *DiskAttachOrDetachParamsDisk `xml:"Disk"`
-	BusNumber  *int                          `xml:"BusNumber,omitempty"`
-	UnitNumber *int                          `xml:"UnitNumber,omitempty"`
-}
-type DiskAttachOrDetachParamsDisk struct {
-	Type string `xml:"type,attr,omitempty"`
-	HREF string `xml:"href,attr,omitempty"`
+// Represents an independent disk
+// Reference: vCloud API 30.0 - DiskType
+// https://code.vmware.com/apis/287/vcloud?h=Director#/doc/doc/types/DiskType.html
+type Disk struct {
+	XMLName         xml.Name         `xml:"Disk"`
+	Xmlns           string           `xml:"xmlns,attr,omitempty"`
+	HREF            string           `xml:"href,attr,omitempty"`
+	Type            string           `xml:"type,attr,omitempty"`
+	Id              string           `xml:"id,attr,omitempty"`
+	OperationKey    string           `xml:"operationKey,attr,omitempty"`
+	Name            string           `xml:"name,attr"`
+	Status          int              `xml:"status,attr,omitempty"`
+	Size            int              `xml:"size,attr"`
+	Iops            *int             `xml:"iops,attr,omitempty"`
+	BusType         string           `xml:"busType,attr,omitempty"`
+	BusSubType      string           `xml:"busSubType,attr,omitempty"`
+	Description     string           `xml:"Description,omitempty"`
+	Files           *FilesList       `xml:"Files,omitempty"`
+	Link            []*Link          `xml:"Link,omitempty"`
+	Owner           *Owner           `xml:"Owner,omitempty"`
+	StorageProfile  *Reference       `xml:"StorageProfile,omitempty"`
+	Tasks           *TasksInProgress `xml:"Tasks,omitempty"`
+	VCloudExtension *VCloudExtension `xml:"VCloudExtension,omitempty"`
 }
 
-// VMs reference element of independent disk
-type VmsType struct {
-	XMLName     xml.Name     `xml:"Vms"`
-	Xmlns       string       `xml:"xmlns,attr"`
-	Type        string       `xml:"type,attr"`
-	HREF        string       `xml:"href,attr"`
-	VmReference []*Reference `xml:"VmReference"`
+// General purpose extension element
+// Not related to extension services
+// Reference: vCloud API 30.0 - DiskAttachOrDetachParamsType
+// https://code.vmware.com/apis/287/vcloud?h=Director#/doc/doc/types/VCloudExtensionType.html
+type VCloudExtension struct {
+	Required bool `xml:"required,attr,omitempty"`
+}
+
+// Parameters for attaching or detaching an independent disk
+// Reference: vCloud API 30.0 - DiskAttachOrDetachParamsType
+// https://code.vmware.com/apis/287/vcloud?h=Director#/doc/doc/types/DiskAttachOrDetachParamsType.html
+type DiskAttachOrDetachParams struct {
+	XMLName         xml.Name         `xml:"DiskAttachOrDetachParams"`
+	Xmlns           string           `xml:"xmlns,attr,omitempty"`
+	BusNumber       *int             `xml:"BusNumber,omitempty"`
+	Disk            *Reference       `xml:"Disk"`
+	UnitNumber      *int             `xml:"UnitNumber,omitempty"`
+	VCloudExtension *VCloudExtension `xml:"VCloudExtension,omitempty"`
+}
+
+// Represents a list of virtual machines
+// Reference: vCloud API 30.0 - VmsType
+// https://code.vmware.com/apis/287/vcloud?h=Director#/doc/doc/types/FilesListType.html
+type Vms struct {
+	XMLName     xml.Name   `xml:"Vms"`
+	Xmlns       string     `xml:"xmlns,attr,omitempty"`
+	Type        string     `xml:"type,attr"`
+	HREF        string     `xml:"href,attr"`
+	VmReference *Reference `xml:"VmReference,omitempty"`
 }
