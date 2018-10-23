@@ -2043,9 +2043,11 @@ type StorageProfile struct {
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 type DiskAttachOrDetachParamsType struct {
-	XMLName xml.Name                      `xml:"DiskAttachOrDetachParams"`
-	Xmlns   string                        `xml:"xmlns,attr"`
-	Disk    *DiskAttachOrDetachParamsDisk `xml:"Disk"`
+	XMLName    xml.Name                      `xml:"DiskAttachOrDetachParams"`
+	Xmlns      string                        `xml:"xmlns,attr"`
+	Disk       *DiskAttachOrDetachParamsDisk `xml:"Disk"`
+	BusNumber  *int                          `xml:"BusNumber,omitempty"`
+	UnitNumber *int                          `xml:"UnitNumber,omitempty"`
 }
 type DiskAttachOrDetachParamsDisk struct {
 	Type string `xml:"type,attr,omitempty"`
