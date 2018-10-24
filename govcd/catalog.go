@@ -46,6 +46,19 @@ type Catalog struct {
 	client  *Client
 }
 
+// uploadLink - vCD created temporary upload link
+// uploadedBytes - how much of file already uploaded
+// fileSizeToUpload - how much bytes will be uploaded
+// uploadPieceSize - size of chunks in which the file will be uploaded to the catalog.
+// uploadedBytesForCallback all uploaded bytes if multi disk in ova
+// allFilesSize overall sum of size if multi disk in ova
+// callBack a function with signature //function(bytesUpload, totalSize) to let the caller monitor progress of the upload operation.
+type uploadDetails struct {
+	uploadLink                                                                               string
+	uploadedBytes, fileSizeToUpload, uploadPieceSize, uploadedBytesForCallback, allFilesSize int64
+	callBack                                                                                 func(bytesUpload, totalSize int64)
+}
+
 func NewCatalog(client *Client) *Catalog {
 	return &Catalog{
 		Catalog: new(types.Catalog),
@@ -300,7 +313,8 @@ func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *
 				}
 				uploadedBytes += tempVar
 			} else {
-				tempVar, err := uploadFile(client, item.Link[0].HREF, findFilePath(filesAbsPaths, item.Name), 0, item.Size, uploadPieceSize, uploadedBytes, getAllFileSizeSum(ovfFileDesc), callBack)
+				tempVar, err := uploadFile(client, findFilePath(filesAbsPaths, item.Name), uploadDetails{item.Link[0].HREF, 0,
+					item.Size, uploadPieceSize, uploadedBytes, getAllFileSizeSum(ovfFileDesc), callBack})
 				if err != nil {
 					util.Logger.Printf("[Error] Error uploading files: %#v", err)
 					return err
@@ -352,7 +366,8 @@ func uploadMultiPartFile(client *Client, filePaths []string, uploadHREF string, 
 
 	for i, filePath := range filePaths {
 		util.Logger.Printf("[TRACE] Uploading file: %v\n", i+1)
-		tempVar, err := uploadFile(client, uploadHREF, filePath, uploadedBytes, totalBytesToUpload, uploadPieceSize, uploadedBytesForCallback+uploadedBytes, allFilesSize, callBack)
+		tempVar, err := uploadFile(client, filePath, uploadDetails{uploadHREF, uploadedBytes, totalBytesToUpload,
+			uploadPieceSize, uploadedBytesForCallback + uploadedBytes, allFilesSize, callBack})
 		if err != nil {
 			return uploadedBytes, err
 		}
@@ -513,16 +528,10 @@ func getExistingCatalogItems(catalog *Catalog) (catalogItemNames []string) {
 // provides how much bytes uploaded to callback. Callback allows to monitor upload progress.
 // params:
 // client - client for requests
-// uploadLink - vCD created temporary upload link
 // filePath - file path to file which will be uploaded
-// uploadedBytes - how much of file already uploaded
-// fileSizeToUpload - how much bytes will be uploaded
-// uploadPieceSize - size of chunks in which the file will be uploaded to the catalog.
-// uploadedBytesForCallback all uploaded bytes if multi disk in ova
-// allFilesSize overall sum of size if multi disk in ova
-// callBack a function with signature //function(bytesUpload, totalSize) to let the caller monitor progress of the upload operation.
-func uploadFile(client *Client, uploadLink, filePath string, uploadedBytes, fileSizeToUpload int64, uploadPieceSize int64, uploadedBytesForCallback, allFilesSize int64, callBack func(bytesUpload, totalSize int64)) (int64, error) {
-	util.Logger.Printf("[TRACE] Starting uploading: %s, offset: %v, fileze: %v, toLink: %s \n", filePath, uploadedBytes, fileSizeToUpload, uploadLink)
+// uploadDetails - file upload settings and data
+func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64, error) {
+	util.Logger.Printf("[TRACE] Starting uploading: %s, offset: %v, fileze: %v, toLink: %s \n", filePath, uDetails.uploadedBytes, uDetails.fileSizeToUpload, uDetails.uploadLink)
 
 	var part []byte
 	var count int
@@ -530,8 +539,8 @@ func uploadFile(client *Client, uploadLink, filePath string, uploadedBytes, file
 	var pieceSize int64
 
 	// do not allow smaller than 1kb
-	if uploadPieceSize > 1024 && uploadPieceSize < fileSizeToUpload {
-		pieceSize = uploadPieceSize
+	if uDetails.uploadPieceSize > 1024 && uDetails.uploadPieceSize < uDetails.fileSizeToUpload {
+		pieceSize = uDetails.uploadPieceSize
 	} else {
 		pieceSize = defaultPieceSize
 	}
@@ -556,7 +565,9 @@ func uploadFile(client *Client, uploadLink, filePath string, uploadedBytes, file
 		if count, err = io.ReadFull(file, part); err != nil {
 			break
 		}
-		err = uploadPartFile(client, uploadLink, part, uploadedBytes+offset, int64(count), fileSizeToUpload, uploadedBytesForCallback+offset, allFilesSize, callBack)
+		uDetails.uploadedBytes = +offset
+		uDetails.uploadedBytesForCallback = +offset
+		err = uploadPartFile(client, part, int64(count), uDetails)
 		offset += int64(count)
 		if err != nil {
 			return 0, err
@@ -565,7 +576,9 @@ func uploadFile(client *Client, uploadLink, filePath string, uploadedBytes, file
 
 	// upload last part as ReadFull returns io.ErrUnexpectedEOF when reaches end of file.
 	if err == io.ErrUnexpectedEOF {
-		err = uploadPartFile(client, uploadLink, part[:count], uploadedBytes+offset, int64(count), fileSizeToUpload, uploadedBytesForCallback+offset, allFilesSize, callBack)
+		uDetails.uploadedBytes = +offset
+		uDetails.uploadedBytesForCallback = +offset
+		err = uploadPartFile(client, part[:count], int64(count), uDetails)
 		if err != nil {
 			return 0, err
 		}
@@ -580,16 +593,11 @@ func uploadFile(client *Client, uploadLink, filePath string, uploadedBytes, file
 // Initiates file part upload by creating request and running it.
 // params:
 // client - client for requests
-// uploadLink - vCD created temporary upload link
 // part - bytes of file part
-// offset - how much of file already uploaded
 // partDataSize - how much bytes will be uploaded
-// fileSizeToUpload - final file size
-// uploadedBytesForCallback all uploaded bytes if multi disk in ova
-// allFilesSize overall sum of size if multi disk in ova
-// callBack a function with signature //function(bytesUpload, totalSize) to let the caller monitor progress of the upload operation.
-func uploadPartFile(client *Client, uploadLink string, part []byte, offset, partDataSize, fileSizeToUpload int64, uploadedBytesForCallback, allFilesSize int64, callBack func(bytesUpload, totalSize int64)) error {
-	request, err := newFileUploadRequest(uploadLink, part, offset, partDataSize, fileSizeToUpload)
+// uploadDetails - file upload settings and data
+func uploadPartFile(client *Client, part []byte, partDataSize int64, uDetails uploadDetails) error {
+	request, err := newFileUploadRequest(uDetails.uploadLink, part, uDetails.uploadedBytes, partDataSize, uDetails.fileSizeToUpload)
 	if err != nil {
 		return err
 	}
@@ -600,7 +608,7 @@ func uploadPartFile(client *Client, uploadLink string, part []byte, offset, part
 	}
 	response.Body.Close()
 
-	callBack(uploadedBytesForCallback+partDataSize, allFilesSize)
+	uDetails.callBack(uDetails.uploadedBytesForCallback+partDataSize, uDetails.allFilesSize)
 
 	return nil
 }
