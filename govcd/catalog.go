@@ -254,9 +254,13 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 	var task Task
 	for _, item := range vappTemplate.Tasks.Task {
 		task, err = createTaskForVcdImport(cat.client, item.HREF)
-		if err != nil || task.Task.Status == "error" {
+		if err != nil {
 			removeCatalogItemOnError(cat.client, vappTemplateUrl, itemName)
 			return UploadTask{}, err
+		}
+		if task.Task.Status == "error" {
+			removeCatalogItemOnError(cat.client, vappTemplateUrl, itemName)
+			return UploadTask{}, fmt.Errorf("task did not complete succesfully: %s", task.Task.Description)
 		}
 	}
 
