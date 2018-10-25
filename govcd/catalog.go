@@ -379,6 +379,7 @@ func uploadMultiPartFile(client *Client, filePaths []string, uDetails uploadDeta
 	for i, filePath := range filePaths {
 		util.Logger.Printf("[TRACE] Uploading file: %v\n", i+1)
 		uDetails.uploadedBytesForCallback += uploadedBytes // previous files uploaded size plus current upload size
+		uDetails.uploadedBytes = uploadedBytes
 		tempVar, err := uploadFile(client, filePath, uDetails)
 		if err != nil {
 			return uploadedBytes, err
@@ -577,8 +578,8 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 		if count, err = io.ReadFull(file, part); err != nil {
 			break
 		}
-		uDetails.uploadedBytes = +offset
-		uDetails.uploadedBytesForCallback = +offset
+		uDetails.uploadedBytes += offset
+		uDetails.uploadedBytesForCallback += offset
 		err = uploadPartFile(client, part, int64(count), uDetails)
 		offset += int64(count)
 		if err != nil {
@@ -588,8 +589,8 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 
 	// upload last part as ReadFull returns io.ErrUnexpectedEOF when reaches end of file.
 	if err == io.ErrUnexpectedEOF {
-		uDetails.uploadedBytes = +offset
-		uDetails.uploadedBytesForCallback = +offset
+		uDetails.uploadedBytes += offset
+		uDetails.uploadedBytesForCallback += offset
 		err = uploadPartFile(client, part[:count], int64(count), uDetails)
 		if err != nil {
 			return 0, err
