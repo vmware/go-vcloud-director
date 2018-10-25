@@ -80,7 +80,7 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 		}
 
 		// If an inspection function is provided, we pass information about the task processing:
-		// * The task itself
+		// * the task itself
 		// * the number of iterations
 		// * how much time we have spent querying the task so far
 		// * whether this is the first iteration

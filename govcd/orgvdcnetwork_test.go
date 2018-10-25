@@ -184,7 +184,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkDirect(check *C) {
 	}
 	LogNetwork(networkConfig)
 
-	task, err := vcd.vdc.CreateOrgVDCNetWork(&networkConfig)
+	task, err := vcd.vdc.CreateOrgVDCNetwork(&networkConfig)
 	if err != nil {
 		fmt.Printf("error creating the network: %s", err)
 	}

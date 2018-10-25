@@ -6,6 +6,7 @@ package util
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -69,4 +70,34 @@ func TestEnableLogging(t *testing.T) {
 	SetCustomLogger(customLogger)
 	testLog(5, t, custom_log_file, true, "log was enabled via custom logger", "log was not enabled via custom logger")
 	os.Remove(custom_log_file)
+}
+
+func TestCaller(t *testing.T) {
+	type callData struct {
+		fun      func() string
+		label    string
+		expected string
+	}
+	var data = []callData{
+		{
+			label:    "current function name",
+			fun:      CurrentFuncName,
+			expected: "util.TestCaller",
+		},
+		{
+			label:    "function caller",
+			fun:      CallFuncName,
+			expected: "testing.tRunner",
+		},
+	}
+
+	for _, d := range data {
+		value := filepath.Base(d.fun())
+		if value == d.expected {
+			t.Logf("ok - %s as expected: '%s' \n", d.label, value)
+		} else {
+			t.Logf("not ok - %s doesn't match. Expected: '%s' - Found: '%s'\n", d.label, d.expected, value)
+			t.Fail()
+		}
+	}
 }

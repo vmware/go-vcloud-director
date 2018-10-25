@@ -109,11 +109,11 @@ func RemoveOrgVdcNetworkIfExists(vdc Vdc, networkName string) error {
 	return nil
 }
 
-// A wrapper call around CreateOrgVDCNetWork.
+// A wrapper call around CreateOrgVDCNetwork.
 // Creates a network and then uses the associated task to monitor its configuration
 func (vdc *Vdc) CreateOrgVDCNetworkWait(networkConfig *types.OrgVDCNetwork) error {
 
-	task, err := vdc.CreateOrgVDCNetWork(networkConfig)
+	task, err := vdc.CreateOrgVDCNetwork(networkConfig)
 	if err != nil {
 		return fmt.Errorf("error creating the network: %s", err)
 	}
@@ -134,7 +134,7 @@ func (vdc *Vdc) CreateOrgVDCNetworkWait(networkConfig *types.OrgVDCNetwork) erro
 // the network configuration)
 // This function can create any type of Org Vdc network. The exact type is determined by
 // the combination of properties given with the network configuration structure.
-func (vdc *Vdc) CreateOrgVDCNetWork(networkConfig *types.OrgVDCNetwork) (Task, error) {
+func (vdc *Vdc) CreateOrgVDCNetwork(networkConfig *types.OrgVDCNetwork) (Task, error) {
 	for _, av := range vdc.Vdc.Link {
 		if av.Rel == "add" && av.Type == "application/vnd.vmware.vcloud.orgVdcNetwork+xml" {
 			createUrl, err := url.ParseRequestURI(av.HREF)
@@ -186,7 +186,7 @@ func (vdc *Vdc) CreateOrgVDCNetWork(networkConfig *types.OrgVDCNetwork) (Task, e
 			for _, taskItem := range orgVDCNetwork.OrgVDCNetwork.Tasks.Task {
 				return Task{taskItem, vdc.client}, nil
 			}
-			return Task{}, fmt.Errorf("[CreateOrgVDCNetWork] No suitable task found")
+			return Task{}, fmt.Errorf("[%s] no suitable task found", util.CurrentFuncName())
 		}
 	}
 	return Task{}, fmt.Errorf("network creation failed: no operational link found")
