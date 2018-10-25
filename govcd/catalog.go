@@ -159,7 +159,7 @@ func (cat *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
 
 				resp, err := checkResp(cat.client.Http.Do(req))
 				if err != nil {
-					return CatalogItem{}, fmt.Errorf("error retreiving catalog: %s", err)
+					return CatalogItem{}, fmt.Errorf("error retrieving catalog: %s", err)
 				}
 
 				cat := NewCatalogItem(cat.client)
