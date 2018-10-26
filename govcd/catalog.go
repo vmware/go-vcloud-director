@@ -548,7 +548,6 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 
 	var part []byte
 	var count int
-	var offset int64
 	var pieceSize int64
 
 	// do not allow smaller than 1kb
@@ -578,10 +577,9 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 		if count, err = io.ReadFull(file, part); err != nil {
 			break
 		}
-		uDetails.uploadedBytes += offset
-		uDetails.uploadedBytesForCallback += offset
 		err = uploadPartFile(client, part, int64(count), uDetails)
-		offset += int64(count)
+		uDetails.uploadedBytes += int64(count)
+		uDetails.uploadedBytesForCallback += int64(count)
 		if err != nil {
 			return 0, err
 		}
@@ -589,8 +587,6 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 
 	// upload last part as ReadFull returns io.ErrUnexpectedEOF when reaches end of file.
 	if err == io.ErrUnexpectedEOF {
-		uDetails.uploadedBytes += offset
-		uDetails.uploadedBytesForCallback += offset
 		err = uploadPartFile(client, part[:count], int64(count), uDetails)
 		if err != nil {
 			return 0, err
