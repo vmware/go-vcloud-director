@@ -64,23 +64,11 @@ vcd:
     # Independent disk parameters for testing
     disk:
       #
-      # Disk name for create disk
-      name: iamnewtestdisk
-      #
-      # Disk size for create disk
+      # Disk size (bytes) for create disk, skip disk tests if it is less than 0
       size: 1024
       #
-      # Disk description for create disk
-      description: new test disk
-      #
-      # Disk description for update disk
-      nameForUpdate: iheardyoulikeupdates
-      #
-      # Disk size for update disk
+      # Disk size (bytes) for update disk, skip some disk tests if it is less than 0
       sizeForUpdate: 10240
-      #
-      # Disk description for update disk
-      descriptionForUpdate: very new test disk
 logging:
     # All items in this section are optional
     # Logging is disabled by default.

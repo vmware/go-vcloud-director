@@ -17,12 +17,16 @@ func (vcd *TestVCD) Test_NewDisk(check *C) {
 }
 
 // Test create independent disk
-func (vcd *TestVCD) Test_DiskCreate(check *C) {
+func (vcd *TestVCD) Test_CreateDisk(check *C) {
+	if vcd.config.VCD.Disk.Size == 0 {
+		check.Skip("Skipping test because disk size is <= 0")
+	}
+
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
-		Name:        vcd.config.VCD.Disk.Name,
+		Name:        TestCreateDisk,
 		Size:        vcd.config.VCD.Disk.Size,
-		Description: vcd.config.VCD.Disk.Description,
+		Description: TestCreateDisk,
 	}
 
 	diskCreateParams := &types.DiskCreateParams{
@@ -44,16 +48,24 @@ func (vcd *TestVCD) Test_DiskCreate(check *C) {
 	}
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", "Test_DiskCreate")
+	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_CreateDisk")
 }
 
 // Test update independent disk
-func (vcd *TestVCD) Test_DiskUpdate(check *C) {
+func (vcd *TestVCD) Test_UpdateDisk(check *C) {
+	if vcd.config.VCD.Disk.Size == 0 {
+		check.Skip("skipping test because disk size is <= 0")
+	}
+
+	if vcd.config.VCD.Disk.SizeForUpdate <= 0 {
+		check.Skip("skipping test because disk update size is <= 0")
+	}
+
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
-		Name:        vcd.config.VCD.Disk.Name,
+		Name:        TestUpdateDisk,
 		Size:        vcd.config.VCD.Disk.Size,
-		Description: vcd.config.VCD.Disk.Description,
+		Description: TestUpdateDisk,
 	}
 
 	diskCreateParams := &types.DiskCreateParams{
@@ -76,9 +88,9 @@ func (vcd *TestVCD) Test_DiskUpdate(check *C) {
 
 	// Update disk
 	newDiskInfo := &types.Disk{
-		Name:        vcd.config.VCD.Disk.NameForUpdate,
+		Name:        TestUpdateDisk,
 		Size:        vcd.config.VCD.Disk.SizeForUpdate,
-		Description: vcd.config.VCD.Disk.DescriptionForUpdate,
+		Description: TestUpdateDisk + "_Update",
 	}
 
 	updateTask, err := disk.Update(newDiskInfo)
@@ -93,16 +105,20 @@ func (vcd *TestVCD) Test_DiskUpdate(check *C) {
 	check.Assert(disk.Disk.Description, Equals, newDiskInfo.Description)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", "Test_DiskUpdate")
+	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_UpdateDisk")
 }
 
 // Test delete independent disk
-func (vcd *TestVCD) Test_DiskDelete(check *C) {
+func (vcd *TestVCD) Test_DeleteDisk(check *C) {
+	if vcd.config.VCD.Disk.Size == 0 {
+		check.Skip("skipping test because disk size is <= 0")
+	}
+
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
-		Name:        vcd.config.VCD.Disk.Name,
+		Name:        TestDeleteDisk,
 		Size:        vcd.config.VCD.Disk.Size,
-		Description: vcd.config.VCD.Disk.Description,
+		Description: TestDeleteDisk,
 	}
 
 	diskCreateParams := &types.DiskCreateParams{
@@ -132,13 +148,20 @@ func (vcd *TestVCD) Test_DiskDelete(check *C) {
 }
 
 // Test refresh independent disk info
-func (vcd *TestVCD) Test_DiskRefresh(check *C) {
+func (vcd *TestVCD) Test_RefreshDisk(check *C) {
+	if vcd.config.VCD.Disk.Size <= 0 {
+		check.Skip("skipping test because disk size is <= 0")
+	}
+
+	if vcd.config.VCD.Disk.SizeForUpdate <= 0 {
+		check.Skip("skipping test because disk update size is <= 0")
+	}
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
-		Name:        vcd.config.VCD.Disk.Name,
+		Name:        TestRefreshDisk,
 		Size:        vcd.config.VCD.Disk.Size,
-		Description: vcd.config.VCD.Disk.Description,
+		Description: TestRefreshDisk,
 	}
 
 	diskCreateParams := &types.DiskCreateParams{
@@ -160,9 +183,9 @@ func (vcd *TestVCD) Test_DiskRefresh(check *C) {
 
 	// Update disk
 	newDiskInfo := &types.Disk{
-		Name:        vcd.config.VCD.Disk.NameForUpdate,
+		Name:        TestRefreshDisk,
 		Size:        vcd.config.VCD.Disk.SizeForUpdate,
-		Description: vcd.config.VCD.Disk.DescriptionForUpdate,
+		Description: TestRefreshDisk + "_Update",
 	}
 
 	updateTask, err := disk.Update(newDiskInfo)
@@ -177,17 +200,32 @@ func (vcd *TestVCD) Test_DiskRefresh(check *C) {
 	check.Assert(disk.Disk.Description, Equals, newDiskInfo.Description)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", "Test_DiskRefresh")
+	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_DeleteDisk")
 }
 
 // Test find disk attached VM
-func (vcd *TestVCD) Test_DiskAttachedVM(check *C) {
+func (vcd *TestVCD) Test_AttachedVMDisk(check *C) {
+	if vcd.config.VCD.Disk.Size <= 0 {
+		check.Skip("skipping test because disk size is <= 0")
+	}
+
+	if vcd.skipVappTests {
+		check.Skip("skipping test because vApp wasn't properly created")
+	}
+
+	// Find VM
+	vmType, vmName := vcd.find_first_vm(vcd.find_first_vapp())
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+	vm := NewVM(&vcd.client.Client)
+	vm.VM = &vmType
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
-		Name:        vcd.config.VCD.Disk.Name,
+		Name:        TestAttachedVMDisk,
 		Size:        vcd.config.VCD.Disk.Size,
-		Description: vcd.config.VCD.Disk.Description,
+		Description: TestAttachedVMDisk,
 	}
 
 	diskCreateParams := &types.DiskCreateParams{
@@ -208,11 +246,6 @@ func (vcd *TestVCD) Test_DiskAttachedVM(check *C) {
 		check.Assert(err, IsNil)
 	}
 
-	// Find VM
-	vmType, _ := vcd.find_first_vm(vcd.find_first_vapp())
-	vm := NewVM(&vcd.client.Client)
-	vm.VM = &vmType
-
 	// Attach disk
 	attachDiskTask, err := vm.AttachDisk(&types.DiskAttachOrDetachParams{
 		Disk: &types.Reference{
@@ -231,17 +264,20 @@ func (vcd *TestVCD) Test_DiskAttachedVM(check *C) {
 	check.Assert(vmRef.Name, Equals, vm.VM.Name)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", "Test_DiskAttachedVM")
+	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_AttachedVMDisk")
 }
 
 // Test find Disk by Href in VDC struct
 func (vcd *TestVCD) Test_VdcFindDiskByHREF(check *C) {
+	if vcd.config.VCD.Disk.Size <= 0 {
+		check.Skip("skipping test because disk size is <= 0")
+	}
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
-		Name:        vcd.config.VCD.Disk.Name,
+		Name:        TestVdcFindDiskByHREF,
 		Size:        vcd.config.VCD.Disk.Size,
-		Description: vcd.config.VCD.Disk.Description,
+		Description: TestVdcFindDiskByHREF,
 	}
 
 	diskCreateParams := &types.DiskCreateParams{
@@ -269,16 +305,20 @@ func (vcd *TestVCD) Test_VdcFindDiskByHREF(check *C) {
 	check.Assert(disk.Disk.Name, Equals, foundDisk.Disk.Name)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", "Test_VdcFindDiskByHREF")
+	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_VdcFindDiskByHREF")
 }
 
 // Test find disk by href and vdc client
 func (vcd *TestVCD) Test_FindDiskByHREF(check *C) {
+	if vcd.config.VCD.Disk.Size <= 0 {
+		check.Skip("Skipping test because disk size is <= 0")
+	}
+
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
-		Name:        vcd.config.VCD.Disk.Name,
+		Name:        TestFindDiskByHREF,
 		Size:        vcd.config.VCD.Disk.Size,
-		Description: vcd.config.VCD.Disk.Description,
+		Description: TestFindDiskByHREF,
 	}
 
 	diskCreateParams := &types.DiskCreateParams{
@@ -306,16 +346,36 @@ func (vcd *TestVCD) Test_FindDiskByHREF(check *C) {
 	check.Assert(disk.Disk.Name, Equals, foundDisk.Disk.Name)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", "Test_FindDiskByHREF")
+	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_FindDiskByHREF")
 }
 
 // Independent disk integration test
 func (vcd *TestVCD) Test_Disk(check *C) {
+	if vcd.config.VCD.Disk.Size <= 0 {
+		check.Skip("skipping test because disk size is <= 0")
+	}
+
+	if vcd.config.VCD.Disk.SizeForUpdate <= 0 {
+		check.Skip("skipping test because disk update size is <= 0")
+	}
+
+	if vcd.skipVappTests {
+		check.Skip("skipping test because vApp wasn't properly created")
+	}
+
+	// Find VM
+	vmType, vmName := vcd.find_first_vm(vcd.find_first_vapp())
+	vm := NewVM(&vcd.client.Client)
+	vm.VM = &vmType
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
-		Name:        vcd.config.VCD.Disk.Name,
+		Name:        TestDisk,
 		Size:        vcd.config.VCD.Disk.Size,
-		Description: vcd.config.VCD.Disk.Description,
+		Description: TestDisk,
 	}
 
 	diskCreateParams := &types.DiskCreateParams{
@@ -335,11 +395,6 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 		err = task.WaitTaskCompletion()
 		check.Assert(err, IsNil)
 	}
-
-	// Find VM
-	vmType, _ := vcd.find_first_vm(vcd.find_first_vapp())
-	vm := NewVM(&vcd.client.Client)
-	vm.VM = &vmType
 
 	// Attach disk
 	attachDiskTask, err := vm.AttachDisk(&types.DiskAttachOrDetachParams{
@@ -371,9 +426,9 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 
 	// Update disk
 	newDiskInfo := &types.Disk{
-		Name:        vcd.config.VCD.Disk.NameForUpdate,
+		Name:        TestDisk,
 		Size:        vcd.config.VCD.Disk.SizeForUpdate,
-		Description: vcd.config.VCD.Disk.DescriptionForUpdate,
+		Description: TestDisk + "_Update",
 	}
 
 	updateTask, err := disk.Update(newDiskInfo)
@@ -387,5 +442,5 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 	check.Assert(disk.Disk.Description, Equals, newDiskInfo.Description)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", "Test_Disk")
+	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_Disk")
 }

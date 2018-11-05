@@ -38,6 +38,17 @@ const (
 	TestCreateOrgVdcNetworkEGW    = "TestCreateOrgVdcNetworkEGW"
 	TestCreateOrgVdcNetworkIso    = "TestCreateOrgVdcNetworkIso"
 	TestCreateOrgVdcNetworkDirect = "TestCreateOrgVdcNetworkDirect"
+	TestCreateDisk                = "TestCreateDisk"
+	TestUpdateDisk                = "TestUpdateDisk"
+	TestDeleteDisk                = "TestDeleteDisk"
+	TestRefreshDisk               = "TestRefreshDisk"
+	TestAttachedVMDisk            = "TestAttachedVMDisk"
+	TestVdcFindDiskByHREF         = "TestVdcFindDiskByHREF"
+	TestFindDiskByHREF            = "TestFindDiskByHREF"
+	TestDisk                      = "TestDisk"
+	TestVMAttachOrDetachDisk      = "TestVMAttachOrDetachDisk"
+	TestVMAttachDisk              = "TestVMAttachDisk"
+	TestVMDetachDisk              = "TestVMDetachDisk"
 )
 
 // Struct to get info from a config yaml file that the user
@@ -68,12 +79,8 @@ type TestConfig struct {
 		EdgeGateway     string `yaml:"edgeGateway,omitempty"`
 		ExternalNetwork string `yaml:"externalNetwork,omitempty"`
 		Disk            struct {
-			Name                 string `yaml:"name,omitempty"`
-			Size                 int    `yaml:"size,omitempty"`
-			Description          string `yaml:"description,omitempty"`
-			NameForUpdate        string `yaml:"nameForUpdate,omitempty"`
-			SizeForUpdate        int    `yaml:"sizeForUpdate,omitempty"`
-			DescriptionForUpdate string `yaml:"descriptionForUpdate,omitempty"`
+			Size          int `yaml:"size,omitempty"`
+			SizeForUpdate int `yaml:"sizeForUpdate,omitempty"`
 		}
 	} `yaml:"vcd"`
 	Logging struct {
@@ -397,8 +404,9 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		// nothing so far
 		return
 	case "disk":
-		// Find disk
-		// [0] = disk name, [1] = disk href
+		// Find disk by href rather than find disk by name, because disk name can be duplicated in VDC,
+		// so the unique href is required for finding the disk.
+		// [0] = disk's entity name, [1] = disk href
 		disk, err := vcd.vdc.FindDiskByHREF(strings.Split(entity.Name, "|")[1])
 		if err != nil {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
