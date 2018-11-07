@@ -233,6 +233,31 @@ func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
 	return Vdc{}, nil
 }
 
+// CreateVdc creates a vDC with the given params under the given organization.
+// Returns a creation task.
+// API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-CreateVdcParams.html
+func (org *AdminOrg) CreateVdc(vdc *types.CreateVdcParams) (Task, error) {
+	output, _ := xml.MarshalIndent(vdc, "  ", "    ")
+	xmlData := bytes.NewBufferString(xml.Header + string(output))
+	vdcCreateHREF, err := url.ParseRequestURI(org.AdminOrg.HREF)
+	if err != nil {
+		return Task{}, fmt.Errorf("error parsing admin org url: %s", err)
+	}
+	vdcCreateHREF.Path += "/vdcsparams"
+	req := org.client.NewRequest(map[string]string{}, "POST", *vdcCreateHREF, xmlData)
+	req.Header.Add("Content-Type", "application/vnd.vmware.admin.createVdcParams+xml")
+	resp, err := checkResp(org.client.Http.Do(req))
+	if err != nil {
+		return Task{}, fmt.Errorf("error instantiating a new VDC: %s", err)
+	}
+
+	task := NewTask(org.client)
+	if err = decodeBody(resp, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding task response: %s", err)
+	}
+	return *task, nil
+}
+
 //   Deletes the org, returning an error if the vCD call fails.
 //   API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Organization.html
 func (adminOrg *AdminOrg) Delete(force bool, recursive bool) error {

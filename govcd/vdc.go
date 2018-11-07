@@ -11,6 +11,7 @@ import (
 	types "github.com/vmware/go-vcloud-director/types/v56"
 	"github.com/vmware/go-vcloud-director/util"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -128,6 +129,38 @@ func (vdc *Vdc) Refresh() error {
 	vdc.Vdc = unmarshalledVdc
 
 	// The request was successful
+	return nil
+}
+
+// Deletes the vdc, returning an error of the vCD call fails.
+// API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Vdc.html
+func (vdc *Vdc) Delete(force bool, recursive bool) error {
+
+	if vdc.Vdc.HREF == "" {
+		return fmt.Errorf("cannot refresh, Object is empty")
+	}
+
+	vdcUrl, _ := url.ParseRequestURI(vdc.Vdc.HREF)
+
+	req := vdc.client.NewRequest(map[string]string{
+		"force":     strconv.FormatBool(force),
+		"recursive": strconv.FormatBool(recursive),
+	}, "DELETE", *vdcUrl, nil)
+	resp, err := checkResp(vdc.client.Http.Do(req))
+	if err != nil {
+		return fmt.Errorf("error deleting vdc: %s", err)
+	}
+	task := NewTask(vdc.client)
+	if err = decodeBody(resp, task.Task); err != nil {
+		return fmt.Errorf("error decoding task response: %s", err)
+	}
+	if task.Task.Status == "error" {
+		return fmt.Errorf("vdc not properly destroyed")
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("Couldn't finish removing vdc %#v", err)
+	}
 	return nil
 }
 

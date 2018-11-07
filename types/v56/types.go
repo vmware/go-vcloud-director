@@ -373,6 +373,49 @@ type Vdc struct {
 	VMQuota            int                   `xml:"VmQuota"`
 }
 
+// VdcStorageProfile represents the parameters to create a storage profile in an organization vDC.
+// Type: VdcStorageProfileParamsType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents the parameters to create a storage profile in an organization vDC.
+// Since: 5.1
+// https://code.vmware.com/apis/220/vcloud#/doc/doc/types/VdcStorageProfileParamsType.html
+type VdcStorageProfile struct {
+	Enabled                   bool       `xml:"Enabled,omitempty"`
+	Units                     string     `xml:"Units"`
+	Limit                     int64      `xml:"Limit"`
+	Default                   bool       `xml:"Default"`
+	ProviderVdcStorageProfile *Reference `xml:"ProviderVdcStorageProfile"`
+}
+
+// CreateVdcParams models the payload for creating a VDC.
+// Type: CreateVdcParamsType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Parameters for creating an organization vDC
+// Since: 5.1
+// https://code.vmware.com/apis/220/vcloud#/doc/doc/types/CreateVdcParamsType.html
+type CreateVdcParams struct {
+	XMLName                  xml.Name           `xml:"CreateVdcParams"`
+	Xmlns                    string             `xml:"xmlns,attr"`
+	Name                     string             `xml:"name,attr"`
+	Description              string             `xml:"Description,omitempty"`
+	AllocationModel          string             `xml:"AllocationModel"`
+	ComputeCapacity          []*ComputeCapacity `xml:"ComputeCapacity"`
+	NicQuota                 int                `xml:"NicQuota,omitempty"`
+	NetworkQuota             int                `xml:"NetworkQuota,omitempty"`
+	VmQuota                  int                `xml:"VmQuota,omitempty"`
+	IsEnabled                int                `xml:"IsEnabled,omitempty"`
+	VdcStorageProfile        *VdcStorageProfile `xml:"VdcStorageProfile"`
+	ResourceGuaranteedMemory float64            `xml:"ResourceGuaranteedMemory,omitempty"`
+	ResourceGuaranteedCpu    float64            `xml:"ResourceGuaranteedCpu,omitempty"`
+	VCpuInMhz                int64              `xml:"VCpuInMhz,omitempty"`
+	IsThinProvision          bool               `xml:"IsThinProvision,omitempty"`
+	NetworkPoolReference     *Reference         `xml:"NetworkPoolReference,omitempty"`
+	ProviderVdcReference     *Reference         `xml:"ProviderVdcReference"`
+	UsesFastProvioning       bool               `xml:"UsesFastProvioning,omitempty"`
+	OverCommitAllowed        bool               `xml:"OverCommitAllowed,omitempty"`
+	VmDiscoveryEnabled       bool               `xml:"VmDiscoveryEnabled,omitempty"`
+}
+
 // Task represents an asynchronous operation in vCloud Director.
 // Type: TaskType
 // Namespace: http://www.vmware.com/vcloud/v1.5
@@ -409,12 +452,12 @@ type Task struct {
 // Description: Represents a capacity and usage of a given resource.
 // Since: 0.9
 type CapacityWithUsage struct {
+	Units     string `xml:"Units"`
 	Allocated int64  `xml:"Allocated,omitempty"`
 	Limit     int64  `xml:"Limit,omitempty"`
-	Overhead  int64  `xml:"Overhead,omitempty"`
 	Reserved  int64  `xml:"Reserved,omitempty"`
-	Units     string `xml:"Units"`
 	Used      int64  `xml:"Used,omitempty"`
+	Overhead  int64  `xml:"Overhead,omitempty"`
 }
 
 // ComputeCapacity represents vDC compute capacity.
