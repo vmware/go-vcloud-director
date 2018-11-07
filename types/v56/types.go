@@ -403,7 +403,7 @@ type CreateVdcParams struct {
 	NicQuota                 int                `xml:"NicQuota,omitempty"`
 	NetworkQuota             int                `xml:"NetworkQuota,omitempty"`
 	VmQuota                  int                `xml:"VmQuota,omitempty"`
-	IsEnabled                int                `xml:"IsEnabled,omitempty"`
+	IsEnabled                bool               `xml:"IsEnabled,omitempty"`
 	VdcStorageProfile        *VdcStorageProfile `xml:"VdcStorageProfile"`
 	ResourceGuaranteedMemory float64            `xml:"ResourceGuaranteedMemory,omitempty"`
 	ResourceGuaranteedCpu    float64            `xml:"ResourceGuaranteedCpu,omitempty"`
