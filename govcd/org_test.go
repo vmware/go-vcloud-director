@@ -7,6 +7,7 @@ package govcd
 import (
 	types "github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
+	"time"
 )
 
 // Tests Refresh for Org by updating the org and then asserting if the
@@ -79,6 +80,7 @@ func (vcd *TestVCD) Test_DeleteOrg(check *C) {
 	err = org.Delete(true, true)
 	check.Assert(err, IsNil)
 	// Check if org still exists
+	time.Sleep(3 * time.Second)
 	org, err = GetAdminOrgByName(vcd.client, TestDeleteOrg)
 	check.Assert(org, Equals, AdminOrg{})
 	check.Assert(err, IsNil)
@@ -120,6 +122,7 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	err = org.Delete(true, true)
 	check.Assert(err, IsNil)
 	// Check if org still exists
+	time.Sleep(3 * time.Second)
 	org, err = GetAdminOrgByName(vcd.client, TestUpdateOrg)
 	check.Assert(org, Equals, AdminOrg{})
 	check.Assert(err, IsNil)

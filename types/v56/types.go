@@ -555,10 +555,12 @@ type OrgSettings struct {
 	HREF string `xml:"href,attr,omitempty"` // The URI of the entity.
 	Type string `xml:"type,attr,omitempty"` // The MIME type of the entity.
 	//elements
-	Link                    LinkList                   `xml:"Link,omitempty"`                      // A reference to an entity or operation associated with this object.
-	OrgGeneralSettings      *OrgGeneralSettings        `xml:"OrgGeneralSettings,omitempty"`        // General Settings for the org, not-required
+	Link                    LinkList                   `xml:"Link,omitempty"`               // A reference to an entity or operation associated with this object.
+	OrgGeneralSettings      *OrgGeneralSettings        `xml:"OrgGeneralSettings,omitempty"` // General Settings for the org, not-required
+	OrgVAppLeaseSettings    *VAppLeaseSettings         `xml:"VAppLeaseSettings,omitempty"`
 	OrgVAppTemplateSettings *VAppTemplateLeaseSettings `xml:"VAppTemplateLeaseSettings,omitempty"` // Vapp template lease settings, not required
 	OrgLdapSettings         *OrgLdapSettingsType       `xml:"OrgLdapSettings,omitempty"`           //LDAP settings, not-requried, defaults to none
+
 }
 
 // OrgGeneralSettingsType represents the general settings for a vCloud Director organization.
@@ -592,8 +594,27 @@ type VAppTemplateLeaseSettings struct {
 	StorageLeaseSeconds            int  `xml:"StorageLeaseSeconds,omitempty"`
 }
 
+type VAppLeaseSettings struct {
+	HREF string   `xml:"href,attr,omitempty"` // The URI of the entity.
+	Type string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
+	Link LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
+
+	DeleteOnStorageLeaseExpiration   bool `xml:"DeleteOnStorageLeaseExpiration,allowempty"`
+	DeploymentLeaseSeconds           int  `xml:"DeploymentLeaseSeconds,allowempty"`
+	StorageLeaseSeconds              int  `xml:"StorageLeaseSeconds,allowempty"`
+	PowerOffOnRuntimeLeaseExpiration bool `xml:"PowerOffOnRuntimeLeaseExpiration,allowempty"`
+}
+
+type OrgFederationSettings struct {
+	HREF string   `xml:"href,attr,omitempty"` // The URI of the entity.
+	Type string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
+	Link LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
+
+	Enabled bool `xml:"Enabled,allowempty"`
+}
+
 // OrgLdapSettingsType represents the ldap settings for a vCloud Director organization.
-// Type: VAppLeaseSettingsType
+// Type: OrgLdapSettingsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Represents the ldap settings of a vCloud Director organization.
 // Since: 0.9
