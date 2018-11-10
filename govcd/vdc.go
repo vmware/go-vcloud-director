@@ -28,6 +28,19 @@ func NewVdc(cli *Client) *Vdc {
 	}
 }
 
+type AdminVdc struct {
+	AdminVdc *types.AdminVdc
+	client   *Client
+	VApp     *types.VApp
+}
+
+func NewAdminVdc(cli *Client) *AdminVdc {
+	return &AdminVdc{
+		AdminVdc: new(types.AdminVdc),
+		client:   cli,
+	}
+}
+
 // Gets a vapp with a specific url vappHREF
 func (vdc *Vdc) getVdcVAppbyHREF(vappHREF *url.URL) (*VApp, error) {
 	req := vdc.client.NewRequest(map[string]string{}, "GET", *vappHREF, nil)
@@ -134,13 +147,17 @@ func (vdc *Vdc) Refresh() error {
 
 // Deletes the vdc, returning an error of the vCD call fails.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Vdc.html
-func (vdc *Vdc) Delete(force bool, recursive bool) error {
+func (vdc *Vdc) Delete(force bool, recursive bool) (Task, error) {
+	util.Logger.Printf("[TRACE] Vdc.Delete - deleting VDC with force: %t, recursive: %t", force, recursive)
 
 	if vdc.Vdc.HREF == "" {
-		return fmt.Errorf("cannot refresh, Object is empty")
+		return Task{}, fmt.Errorf("cannot delete, Object is empty")
 	}
 
-	vdcUrl, _ := url.ParseRequestURI(vdc.Vdc.HREF)
+	vdcUrl, err := url.ParseRequestURI(vdc.Vdc.HREF)
+	if err != nil {
+		return Task{}, fmt.Errorf("error parsing vdc url: %s", err)
+	}
 
 	req := vdc.client.NewRequest(map[string]string{
 		"force":     strconv.FormatBool(force),
@@ -148,18 +165,27 @@ func (vdc *Vdc) Delete(force bool, recursive bool) error {
 	}, "DELETE", *vdcUrl, nil)
 	resp, err := checkResp(vdc.client.Http.Do(req))
 	if err != nil {
-		return fmt.Errorf("error deleting vdc: %s", err)
+		return Task{}, fmt.Errorf("error deleting vdc: %s", err)
 	}
 	task := NewTask(vdc.client)
 	if err = decodeBody(resp, task.Task); err != nil {
-		return fmt.Errorf("error decoding task response: %s", err)
+		return Task{}, fmt.Errorf("error decoding task response: %s", err)
 	}
 	if task.Task.Status == "error" {
-		return fmt.Errorf("vdc not properly destroyed")
+		return Task{}, fmt.Errorf("vdc not properly destroyed")
+	}
+	return *task, nil
+}
+
+// Deletes the vdc and waits for the asynchronous task to complete.
+func (vdc *Vdc) DeleteWait(force bool, recursive bool) error {
+	task, err := vdc.Delete(force, recursive)
+	if err != nil {
+		return err
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
-		return fmt.Errorf("Couldn't finish removing vdc %#v", err)
+		return fmt.Errorf("couldn't finish removing vdc %#v", err)
 	}
 	return nil
 }

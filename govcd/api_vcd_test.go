@@ -34,6 +34,7 @@ const (
 	TestSetUpSuite                = "TestSetUpSuite"
 	TestUploadOvf                 = "TestUploadOvf"
 	TestDeleteCatalogItem         = "TestDeleteCatalogItem"
+	TestCreateOrgVdc              = "TestCreateOrgVdc"
 	TestCreateOrgVdcNetworkEGW    = "TestCreateOrgVdcNetworkEGW"
 	TestCreateOrgVdcNetworkIso    = "TestCreateOrgVdcNetworkIso"
 	TestCreateOrgVdcNetworkDirect = "TestCreateOrgVdcNetworkDirect"
@@ -49,8 +50,12 @@ type TestConfig struct {
 		SysOrg   string `yaml:"sysOrg"`
 	}
 	VCD struct {
-		Org     string `yaml:"org"`
-		Vdc     string `yaml:"vdc"`
+		Org         string `yaml:"org"`
+		Vdc         string `yaml:"vdc"`
+		ProviderVdc struct {
+			Id               string `yaml:"id"`
+			StorageProfileId string `yaml:"storage_profile_id"`
+		} `yaml:"provider_vdc"`
 		Catalog struct {
 			Name                   string `yaml:"name,omitempty"`
 			Description            string `yaml:"description,omitempty"`

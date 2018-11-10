@@ -373,6 +373,25 @@ type Vdc struct {
 	VMQuota            int                   `xml:"VmQuota"`
 }
 
+// AdminVdc represents the admin view of an organization vDC.
+// Type: AdminVdcType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents the admin view of an organization vDC.
+// Since: 0.9
+type AdminVdc struct {
+	Vdc
+
+	ResourceGuaranteedMemory float64    `xml:"ResourceGuaranteedMemory,omitempty"`
+	ResourceGuaranteedCpu    float64    `xml:"ResourceGuaranteedCpu,omitempty"`
+	VCpuInMhz                int64      `xml:"VCpuInMhz,omitempty"`
+	IsThinProvision          bool       `xml:"IsThinProvision,omitempty"`
+	NetworkPoolReference     *Reference `xml:"NetworkPoolReference,omitempty"`
+	ProviderVdcReference     *Reference `xml:"ProviderVdcReference"`
+	UsesFastProvioning       bool       `xml:"UsesFastProvioning,omitempty"`
+	OverCommitAllowed        bool       `xml:"OverCommitAllowed,omitempty"`
+	VmDiscoveryEnabled       bool       `xml:"VmDiscoveryEnabled,omitempty"`
+}
+
 // VdcStorageProfile represents the parameters to create a storage profile in an organization vDC.
 // Type: VdcStorageProfileParamsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
@@ -387,13 +406,13 @@ type VdcStorageProfile struct {
 	ProviderVdcStorageProfile *Reference `xml:"ProviderVdcStorageProfile"`
 }
 
-// CreateVdcParams models the payload for creating a VDC.
+// VdcConfiguration models the payload for creating a VDC.
 // Type: CreateVdcParamsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Parameters for creating an organization vDC
 // Since: 5.1
 // https://code.vmware.com/apis/220/vcloud#/doc/doc/types/CreateVdcParamsType.html
-type CreateVdcParams struct {
+type VdcConfiguration struct {
 	XMLName                  xml.Name           `xml:"CreateVdcParams"`
 	Xmlns                    string             `xml:"xmlns,attr"`
 	Name                     string             `xml:"name,attr"`
