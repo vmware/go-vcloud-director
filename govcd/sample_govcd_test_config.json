@@ -9,6 +9,10 @@
 	"vcd": {
 		"org": "myorg",
 		"vdc": "myvdc",
+		"provider_vdc": {
+			"id": "uuid",
+			"storage_profile_id": "uuid"
+		},
 		"catalog": {
 			"name": "mycat",
 			"catalogItem": "myitem",
