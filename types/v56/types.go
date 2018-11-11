@@ -1246,8 +1246,8 @@ type VirtualHardwareHostResource struct {
 	StorageProfile    string `xml:"storageProfileHref,attr,omitempty"`
 	OverrideVmDefault bool   `xml:"storageProfileOverrideVmDefault,attr,omitempty"`
 	Disk              string `xml:"disk,attr,omitempty"`
-	Iops              int    `xml:"iops,attr,omitempty"`
-	OsType            string `xml:"osType,attr,omitempty"`
+	//Iops              int    `xml:"iops,attr,omitempty"`
+	//OsType            string `xml:"osType,attr,omitempty"`
 }
 
 // SnapshotSection from VM struct
