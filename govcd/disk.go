@@ -9,6 +9,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/types/v56"
+	"github.com/vmware/go-vcloud-director/util"
 	"net/http"
 	"net/url"
 )
@@ -33,22 +34,22 @@ func NewDisk(cli *Client) *Disk {
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (*Disk, error) {
 	var err error
-	var execLink *types.Link
+	var createDiskLink *types.Link
 
 	// Find the proper link for request
 	for _, vdcLink := range vdc.Vdc.Link {
 		if vdcLink.Rel == types.RelAdd && vdcLink.Type == types.MimeDiskCreateParams {
-			execLink = vdcLink
+			createDiskLink = vdcLink
 			break
 		}
 	}
 
-	if execLink == nil {
-		return nil, fmt.Errorf("exec link not found")
+	if createDiskLink == nil {
+		return nil, fmt.Errorf("cannot not found request URL for create disk in vdc Link")
 	}
 
 	// Parse request URI
-	reqUrl, err := url.ParseRequestURI(execLink.HREF)
+	reqUrl, err := url.ParseRequestURI(createDiskLink.HREF)
 	if err != nil {
 		return nil, fmt.Errorf("error parse URI: %s", err)
 	}
@@ -62,8 +63,12 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (*Disk, err
 	}
 
 	// Send Request
-	req := vdc.client.NewRequest(nil, http.MethodPost, *reqUrl, bytes.NewBufferString(xml.Header+string(xmlPayload)))
-	req.Header.Add("Content-Type", execLink.Type)
+	reqPayload := bytes.NewBufferString(xml.Header + string(xmlPayload))
+	req := vdc.client.NewRequest(nil, http.MethodPost, *reqUrl, reqPayload)
+	req.Header.Add("Content-Type", createDiskLink.Type)
+	util.Logger.Printf("[DEBUG] POSTING TO URL: %s", reqUrl)
+	util.Logger.Printf("[DEBUG] XML TO SEND:\n%s", reqPayload)
+	util.Logger.Printf("[DEBUG] Content-Type:\n%s", createDiskLink.Type)
 	resp, err := checkResp(vdc.client.Http.Do(req))
 	if err != nil {
 		return nil, fmt.Errorf("error create disk: %s", err)
@@ -80,9 +85,8 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (*Disk, err
 }
 
 // Update an independent disk
-// 1 Verify that the disk is not attached to a virtual machine.
-// 2 Use newDiskInfo to change update the independent disk.
-// 3 Return task of independent disk update
+// 1 Use newDiskInfo to change update the independent disk.
+// 2 Return task of independent disk update
 // Please verify the independent disk is not connected to any VM before calling this function.
 // If the independent disk is connected to a VM, the task will be failed.
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 104 - 106,
@@ -90,22 +94,22 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (*Disk, err
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (d *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 	var err error
-	var execLink *types.Link
+	var updateDiskLink *types.Link
 
 	// Find the proper link for request
 	for _, diskLink := range d.Disk.Link {
 		if diskLink.Rel == types.RelEdit && diskLink.Type == types.MimeDisk {
-			execLink = diskLink
+			updateDiskLink = diskLink
 			break
 		}
 	}
 
-	if execLink == nil {
-		return Task{}, fmt.Errorf("exec link not found")
+	if updateDiskLink == nil {
+		return Task{}, fmt.Errorf("cannot not found request URL for update disk in disk Link")
 	}
 
 	// Parse request URI
-	reqUrl, err := url.ParseRequestURI(execLink.HREF)
+	reqUrl, err := url.ParseRequestURI(updateDiskLink.HREF)
 	if err != nil {
 		return Task{}, fmt.Errorf("error parse URI: %s", err)
 	}
@@ -124,8 +128,12 @@ func (d *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 	}
 
 	// Send request
-	req := d.client.NewRequest(nil, http.MethodPut, *reqUrl, bytes.NewBufferString(xml.Header+string(xmlPayload)))
-	req.Header.Add("Content-Type", execLink.Type)
+	reqPayload := bytes.NewBufferString(xml.Header + string(xmlPayload))
+	req := d.client.NewRequest(nil, http.MethodPut, *reqUrl, reqPayload)
+	req.Header.Add("Content-Type", updateDiskLink.Type)
+	util.Logger.Printf("[DEBUG] POSTING TO URL: %s", reqUrl)
+	util.Logger.Printf("[DEBUG] XML TO SEND:\n%s", reqPayload)
+	util.Logger.Printf("[DEBUG] Content-Type:\n%s", updateDiskLink.Type)
 	resp, err := checkResp(d.client.Http.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error find disk: %s", err)
@@ -151,22 +159,22 @@ func (d *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (d *Disk) Delete() (Task, error) {
 	var err error
-	var execLink *types.Link
+	var deleteDiskLink *types.Link
 
 	// Find the proper link for request
 	for _, diskLink := range d.Disk.Link {
 		if diskLink.Rel == types.RelRemove {
-			execLink = diskLink
+			deleteDiskLink = diskLink
 			break
 		}
 	}
 
-	if execLink == nil {
-		return Task{}, fmt.Errorf("exec link not found")
+	if deleteDiskLink == nil {
+		return Task{}, fmt.Errorf("cannot not found request URL for delete disk in disk Link")
 	}
 
 	// Parse request URI
-	reqUrl, err := url.ParseRequestURI(execLink.HREF)
+	reqUrl, err := url.ParseRequestURI(deleteDiskLink.HREF)
 	if err != nil {
 		return Task{}, fmt.Errorf("error parse uri: %s", err)
 	}
@@ -208,30 +216,30 @@ func (d *Disk) Refresh() error {
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (d *Disk) AttachedVM() (*types.Reference, error) {
-	var execLink *types.Link
+	var attachedVMLink *types.Link
 	var err error
 
 	// Find the proper link for request
 	for _, diskLink := range d.Disk.Link {
 		if diskLink.Type == types.MimeVMs {
-			execLink = diskLink
+			attachedVMLink = diskLink
 			break
 		}
 	}
 
-	if execLink == nil {
-		return nil, fmt.Errorf("exec link not found")
+	if attachedVMLink == nil {
+		return nil, fmt.Errorf("cannot not found request URL for attached vm in disk Link")
 	}
 
 	// Parse request URI
-	reqUrl, err := url.ParseRequestURI(execLink.HREF)
+	reqUrl, err := url.ParseRequestURI(attachedVMLink.HREF)
 	if err != nil {
 		return nil, fmt.Errorf("error parse uri: %s", err)
 	}
 
 	// Send request
 	req := d.client.NewRequest(nil, http.MethodGet, *reqUrl, nil)
-	req.Header.Add("Content-Type", execLink.Type)
+	req.Header.Add("Content-Type", attachedVMLink.Type)
 	resp, err := checkResp(d.client.Http.Do(req))
 	if err != nil {
 		return nil, fmt.Errorf("error attached vms: %s", err)

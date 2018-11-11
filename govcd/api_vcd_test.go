@@ -409,21 +409,25 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		// [0] = disk's entity name, [1] = disk href
 		disk, err := vcd.vdc.FindDiskByHREF(strings.Split(entity.Name, "|")[1])
 		if err != nil {
-			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] deleting %s '%s', cannot found disk: %s\n",
+				entity.EntityType, entity.Name, err)
 			return
 		}
 
 		// See if disk is attached to VM
 		vmRef, err := disk.AttachedVM()
 		if err != nil {
-			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] deleting %s '%s', cannot found attached VM: %s\n",
+				entity.EntityType, entity.Name, err)
 			return
 		}
 		// if it is attached to VM, detach disk from VM
 		if vmRef != nil {
 			vm, err := vcd.client.FindVMByHREF(vmRef.HREF)
 			if err != nil {
-				vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+				vcd.infoCleanup(
+					"removeLeftoverEntries: [ERROR] deleting %s %s, cannot not found attached VM details'%s' '%s': %s\n",
+					entity.EntityType, entity.Name, vmRef.Name, vmRef.HREF, err)
 				return
 			}
 
@@ -435,7 +439,9 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			})
 			err = task.WaitTaskCompletion()
 			if err != nil {
-				vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+				vcd.infoCleanup(
+					"removeLeftoverEntries: [ERROR] deleting %s %s, cannot detach disk: %s\n",
+					entity.EntityType, entity.Name, err)
 				return
 			}
 		}
@@ -443,12 +449,14 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		// Delete disk
 		deleteDiskTask, err := disk.Delete()
 		if err != nil {
-			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] deleting %s %s, cannot delete disk: %s\n",
+				entity.EntityType, entity.Name, err)
 			return
 		}
 		err = deleteDiskTask.WaitTaskCompletion()
 		if err != nil {
-			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] deleting %s %s, delete disk task fail: %s\n",
+				entity.EntityType, entity.Name, err)
 			return
 		}
 
@@ -457,7 +465,8 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 	default:
 		// If we reach this point, we are trying to clean up an entity that
 		// we aren't prepared for yet.
-		fmt.Printf("removeLeftoverEntries: [ERROR] Unrecognized type %s for entity '%s'\n", entity.EntityType, entity.Name)
+		fmt.Printf("removeLeftoverEntries: [ERROR] Unrecognized type %s for entity '%s'\n",
+			entity.EntityType, entity.Name)
 	}
 }
 

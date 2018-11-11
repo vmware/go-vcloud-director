@@ -465,14 +465,18 @@ func (vm *VM) Undeploy() (Task, error) {
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel string) (Task, error) {
 	var err error
-	var execLink *types.Link
+	var attachOrDetachDiskLink *types.Link
 	for _, link := range vm.VM.Link {
 		if link.Rel == rel && link.Type == types.MimeDiskAttachOrDetachParams {
-			execLink = link
+			attachOrDetachDiskLink = link
 		}
 	}
 
-	reqUrl, err := url.ParseRequestURI(execLink.HREF)
+	if attachOrDetachDiskLink == nil {
+		return Task{}, fmt.Errorf("could not found request URL for attach or detach disk in disk Link")
+	}
+
+	reqUrl, err := url.ParseRequestURI(attachOrDetachDiskLink.HREF)
 
 	diskParams.Xmlns = types.NsVCloud
 
@@ -482,10 +486,12 @@ func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel
 	}
 
 	// Send request
-	req := vm.client.NewRequest(nil, http.MethodPost, *reqUrl, bytes.NewBufferString(xml.Header+string(xmlPayload)))
-
-	req.Header.Add("Content-Type", execLink.Type)
-
+	reqPayload := bytes.NewBufferString(xml.Header + string(xmlPayload))
+	req := vm.client.NewRequest(nil, http.MethodPost, *reqUrl, reqPayload)
+	req.Header.Add("Content-Type", attachOrDetachDiskLink.Type)
+	util.Logger.Printf("[DEBUG] POSTING TO URL: %s", reqUrl)
+	util.Logger.Printf("[DEBUG] XML TO SEND:\n%s", reqPayload)
+	util.Logger.Printf("[DEBUG] Content-Type:\n%s", attachOrDetachDiskLink.Type)
 	resp, err := checkResp(vm.client.Http.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error attach or detach disk: %s", err)
