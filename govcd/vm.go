@@ -489,9 +489,6 @@ func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel
 	reqPayload := bytes.NewBufferString(xml.Header + string(xmlPayload))
 	req := vm.client.NewRequest(nil, http.MethodPost, *reqUrl, reqPayload)
 	req.Header.Add("Content-Type", attachOrDetachDiskLink.Type)
-	util.Logger.Printf("[DEBUG] POSTING TO URL: %s", reqUrl)
-	util.Logger.Printf("[DEBUG] XML TO SEND:\n%s", reqPayload)
-	util.Logger.Printf("[DEBUG] Content-Type:\n%s", attachOrDetachDiskLink.Type)
 	resp, err := checkResp(vm.client.Http.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error attach or detach disk: %s", err)

@@ -9,7 +9,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/types/v56"
-	"github.com/vmware/go-vcloud-director/util"
 	"net/http"
 	"net/url"
 )
@@ -66,9 +65,6 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (*Disk, err
 	reqPayload := bytes.NewBufferString(xml.Header + string(xmlPayload))
 	req := vdc.client.NewRequest(nil, http.MethodPost, *reqUrl, reqPayload)
 	req.Header.Add("Content-Type", createDiskLink.Type)
-	util.Logger.Printf("[DEBUG] POSTING TO URL: %s", reqUrl)
-	util.Logger.Printf("[DEBUG] XML TO SEND:\n%s", reqPayload)
-	util.Logger.Printf("[DEBUG] Content-Type:\n%s", createDiskLink.Type)
 	resp, err := checkResp(vdc.client.Http.Do(req))
 	if err != nil {
 		return nil, fmt.Errorf("error create disk: %s", err)
@@ -131,9 +127,6 @@ func (d *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 	reqPayload := bytes.NewBufferString(xml.Header + string(xmlPayload))
 	req := d.client.NewRequest(nil, http.MethodPut, *reqUrl, reqPayload)
 	req.Header.Add("Content-Type", updateDiskLink.Type)
-	util.Logger.Printf("[DEBUG] POSTING TO URL: %s", reqUrl)
-	util.Logger.Printf("[DEBUG] XML TO SEND:\n%s", reqPayload)
-	util.Logger.Printf("[DEBUG] Content-Type:\n%s", updateDiskLink.Type)
 	resp, err := checkResp(d.client.Http.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error find disk: %s", err)
