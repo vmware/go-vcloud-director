@@ -512,6 +512,10 @@ func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (vm *VM) AttachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, error) {
+	if diskParams.Disk == nil {
+		return Task{}, fmt.Errorf("could not found disk info for attach")
+	}
+
 	return vm.attachOrDetachDisk(diskParams, types.RelDiskAttach)
 }
 
@@ -523,5 +527,9 @@ func (vm *VM) AttachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, erro
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (vm *VM) DetachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, error) {
+	if diskParams.Disk == nil {
+		return Task{}, fmt.Errorf("could not found disk info for detech")
+	}
+
 	return vm.attachOrDetachDisk(diskParams, types.RelDiskDetach)
 }

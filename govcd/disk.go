@@ -110,6 +110,10 @@ func (d *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 		return Task{}, fmt.Errorf("error parse URI: %s", err)
 	}
 
+	if newDiskInfo.Size <= 0 {
+		return Task{}, fmt.Errorf("new disk size should be greater than or equal to 1KB")
+	}
+
 	// Prepare the request payload
 	xmlPayload, err := xml.Marshal(&types.Disk{
 		Xmlns:          types.NsVCloud,
