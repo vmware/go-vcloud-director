@@ -80,8 +80,14 @@ func (vcd *TestVCD) Test_DeleteOrg(check *C) {
 	err = org.Delete(true, true)
 	check.Assert(err, IsNil)
 	// Check if org still exists
-	time.Sleep(3 * time.Second)
-	org, err = GetAdminOrgByName(vcd.client, TestDeleteOrg)
+	for i := 0; i < 30; i++ {
+		org, err = GetAdminOrgByName(vcd.client, TestDeleteOrg)
+		if org == (AdminOrg{}) {
+			break
+		} else {
+			time.Sleep(1 * time.Second)
+		}
+	}
 	check.Assert(org, Equals, AdminOrg{})
 	check.Assert(err, IsNil)
 }
@@ -122,8 +128,14 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	err = org.Delete(true, true)
 	check.Assert(err, IsNil)
 	// Check if org still exists
-	time.Sleep(3 * time.Second)
-	org, err = GetAdminOrgByName(vcd.client, TestUpdateOrg)
+	for i := 0; i < 30; i++ {
+		org, err = GetAdminOrgByName(vcd.client, TestUpdateOrg)
+		if org == (AdminOrg{}) {
+			break
+		} else {
+			time.Sleep(1 * time.Second)
+		}
+	}
 	check.Assert(org, Equals, AdminOrg{})
 	check.Assert(err, IsNil)
 }

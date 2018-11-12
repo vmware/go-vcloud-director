@@ -5,7 +5,7 @@
 package govcd
 
 import (
-	types "github.com/vmware/go-vcloud-director/types/v56"
+	"github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
 	"time"
 )
@@ -95,8 +95,14 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 	err = org.Delete(true, true)
 	check.Assert(err, IsNil)
 	// Check if org still exists
-	time.Sleep(10 * time.Second)
-	org, err = GetAdminOrgByName(vcd.client, TestCreateOrg)
+	for i := 0; i < 30; i++ {
+		org, err = GetAdminOrgByName(vcd.client, TestCreateOrg)
+		if org == (AdminOrg{}) {
+			break
+		} else {
+			time.Sleep(1 * time.Second)
+		}
+	}
 	check.Assert(org, Equals, AdminOrg{})
 	check.Assert(err, IsNil)
 
