@@ -32,6 +32,10 @@ func NewDisk(cli *Client) *Disk {
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) ([]*types.Task, error) {
+	if diskCreateParams.Disk.Size <= 0 {
+		return nil, fmt.Errorf("disk size should be greater than or equal to 1KB")
+	}
+
 	var err error
 	var createDiskLink *types.Link
 
@@ -89,6 +93,10 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) ([]*types.T
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (d *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
+	if newDiskInfo.Size <= 0 {
+		return Task{}, fmt.Errorf("disk size should be greater than or equal to 1KB")
+	}
+
 	var err error
 	var updateDiskLink *types.Link
 
@@ -108,10 +116,6 @@ func (d *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 	reqUrl, err := url.ParseRequestURI(updateDiskLink.HREF)
 	if err != nil {
 		return Task{}, fmt.Errorf("error parse URI: %s", err)
-	}
-
-	if newDiskInfo.Size <= 0 {
-		return Task{}, fmt.Errorf("new disk size should be greater than or equal to 1KB")
 	}
 
 	// Prepare the request payload
