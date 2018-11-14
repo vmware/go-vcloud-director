@@ -528,7 +528,7 @@ func (vm *VM) AttachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, erro
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (vm *VM) DetachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, error) {
 	if diskParams.Disk == nil {
-		return Task{}, fmt.Errorf("could not found disk info for detech")
+		return Task{}, fmt.Errorf("could not found disk info for detach")
 	}
 
 	return vm.attachOrDetachDisk(diskParams, types.RelDiskDetach)
