@@ -464,10 +464,18 @@ func (vm *VM) Undeploy() (Task, error) {
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel string) (Task, error) {
+	util.Logger.Printf("[TRACE] Attach or detach disk, href: %s, rel: %s \n", diskParams.Disk.HREF, rel)
+
 	var err error
 	var attachOrDetachDiskLink *types.Link
 	for _, link := range vm.VM.Link {
 		if link.Rel == rel && link.Type == types.MimeDiskAttachOrDetachParams {
+			util.Logger.Printf("[TRACE] Attach or detach disk - found the proper link for request, HREF: %s, name: %s, type: %s, id: %s, rel: %s \n",
+				link.HREF,
+				link.Name,
+				link.Type,
+				link.ID,
+				link.Rel)
 			attachOrDetachDiskLink = link
 		}
 	}
@@ -512,6 +520,8 @@ func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (vm *VM) AttachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, error) {
+	util.Logger.Printf("[TRACE] Attach disk, HREF: %s\n", diskParams.Disk.HREF)
+
 	if diskParams.Disk == nil {
 		return Task{}, fmt.Errorf("could not found disk info for attach")
 	}
@@ -527,6 +537,8 @@ func (vm *VM) AttachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, erro
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (vm *VM) DetachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, error) {
+	util.Logger.Printf("[TRACE] Detach disk, HREF: %s\n", diskParams.Disk.HREF)
+
 	if diskParams.Disk == nil {
 		return Task{}, fmt.Errorf("could not found disk info for detach")
 	}

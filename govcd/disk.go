@@ -9,6 +9,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/types/v56"
+	"github.com/vmware/go-vcloud-director/util"
 	"net/http"
 	"net/url"
 )
@@ -32,6 +33,11 @@ func NewDisk(cli *Client) *Disk {
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) ([]*types.Task, error) {
+	util.Logger.Printf("[TRACE] Create disk, name: %s, size: %d \n",
+		diskCreateParams.Disk.Name,
+		diskCreateParams.Disk.Size,
+	)
+
 	if diskCreateParams.Disk.Size <= 0 {
 		return nil, fmt.Errorf("disk size should be greater than or equal to 1KB")
 	}
@@ -42,6 +48,12 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) ([]*types.T
 	// Find the proper link for request
 	for _, vdcLink := range vdc.Vdc.Link {
 		if vdcLink.Rel == types.RelAdd && vdcLink.Type == types.MimeDiskCreateParams {
+			util.Logger.Printf("[TRACE] Create disk - found the proper link for request, HREF: %s, name: %s, type: %s, id: %s, rel: %s \n",
+				vdcLink.HREF,
+				vdcLink.Name,
+				vdcLink.Type,
+				vdcLink.ID,
+				vdcLink.Rel)
 			createDiskLink = vdcLink
 			break
 		}
@@ -93,6 +105,12 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) ([]*types.T
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (d *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
+	util.Logger.Printf("[TRACE] Update disk, name: %s, size: %d, HREF: %s \n",
+		newDiskInfo.Name,
+		newDiskInfo.Size,
+		d.Disk.HREF,
+	)
+
 	if newDiskInfo.Size <= 0 {
 		return Task{}, fmt.Errorf("disk size should be greater than or equal to 1KB")
 	}
@@ -103,6 +121,12 @@ func (d *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 	// Find the proper link for request
 	for _, diskLink := range d.Disk.Link {
 		if diskLink.Rel == types.RelEdit && diskLink.Type == types.MimeDisk {
+			util.Logger.Printf("[TRACE] Update disk - found the proper link for request, HREF: %s, name: %s, type: %s,id: %s, rel: %s \n",
+				diskLink.HREF,
+				diskLink.Name,
+				diskLink.Type,
+				diskLink.ID,
+				diskLink.Rel)
 			updateDiskLink = diskLink
 			break
 		}
@@ -159,12 +183,20 @@ func (d *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (d *Disk) Delete() (Task, error) {
+	util.Logger.Printf("[TRACE] Delete disk, HREF: %s \n", d.Disk.HREF)
+
 	var err error
 	var deleteDiskLink *types.Link
 
 	// Find the proper link for request
 	for _, diskLink := range d.Disk.Link {
 		if diskLink.Rel == types.RelRemove {
+			util.Logger.Printf("[TRACE] Delete disk - found the proper link for request, HREF: %s, name: %s, type: %s,id: %s, rel: %s \n",
+				diskLink.HREF,
+				diskLink.Name,
+				diskLink.Type,
+				diskLink.ID,
+				diskLink.Rel)
 			deleteDiskLink = diskLink
 			break
 		}
@@ -199,6 +231,8 @@ func (d *Disk) Delete() (Task, error) {
 
 // Refresh the disk information by disk href
 func (d *Disk) Refresh() error {
+	util.Logger.Printf("[TRACE] Disk refersh, HREF: %s\n", d.Disk.HREF)
+
 	disk, err := FindDiskByHREF(d.client, d.Disk.HREF)
 	if err != nil {
 		return err
@@ -217,12 +251,21 @@ func (d *Disk) Refresh() error {
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (d *Disk) AttachedVM() (*types.Reference, error) {
+	util.Logger.Printf("[TRACE] Disk attached VM, HREF: %s\n", d.Disk.HREF)
+
 	var attachedVMLink *types.Link
 	var err error
 
 	// Find the proper link for request
 	for _, diskLink := range d.Disk.Link {
 		if diskLink.Type == types.MimeVMs {
+			util.Logger.Printf("[TRACE] Disk attached VM - found the proper link for request, HREF: %s, name: %s, type: %s,id: %s, rel: %s \n",
+				diskLink.HREF,
+				diskLink.Name,
+				diskLink.Type,
+				diskLink.ID,
+				diskLink.Rel)
+
 			attachedVMLink = diskLink
 			break
 		}
@@ -263,11 +306,15 @@ func (d *Disk) AttachedVM() (*types.Reference, error) {
 
 // Find an independent disk by disk href in VDC
 func (vdc *Vdc) FindDiskByHREF(href string) (*Disk, error) {
+	util.Logger.Printf("[TRACE] VDC find disk By HREF: %s\n", href)
+
 	return FindDiskByHREF(vdc.client, href)
 }
 
 // Find an independent disk by VDC client and disk href
 func FindDiskByHREF(client *Client, href string) (*Disk, error) {
+	util.Logger.Printf("[TRACE] Find disk By HREF: %s\n", href)
+
 	// Parse request URI
 	reqUrl, err := url.ParseRequestURI(href)
 	if err != nil {
