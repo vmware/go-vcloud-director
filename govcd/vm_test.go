@@ -110,18 +110,29 @@ func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 		Disk: diskCreateParamsDisk,
 	}
 
-	disk, err := vcd.vdc.CreateDisk(diskCreateParams)
+	tasks, err := vcd.vdc.CreateDisk(diskCreateParams)
+	check.Assert(err, IsNil)
+
+	// Wait for disk creation complete
+	task := NewTask(vcd.vdc.client)
+	diskHREF := ""
+	for _, taskItem := range tasks {
+		task.Task = taskItem
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+
+		if task.Task.Owner.Type == types.MimeDisk {
+			diskHREF = task.Task.Owner.HREF
+		}
+	}
+
+	// Verify created disk
+	check.Assert(diskHREF, Not(Equals), "")
+	disk, err := vcd.vdc.FindDiskByHREF(diskHREF)
 	check.Assert(err, IsNil)
 	check.Assert(disk.Disk.Name, Equals, diskCreateParamsDisk.Name)
 	check.Assert(disk.Disk.Size, Equals, diskCreateParamsDisk.Size)
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
-
-	task := NewTask(vcd.vdc.client)
-	for _, taskItem := range disk.Disk.Tasks.Task {
-		task.Task = taskItem
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
-	}
 
 	// Attach disk
 	attachDiskTask, err := vm.attachOrDetachDisk(&types.DiskAttachOrDetachParams{
@@ -184,19 +195,29 @@ func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 		Disk: diskCreateParamsDisk,
 	}
 
-	disk, err := vcd.vdc.CreateDisk(diskCreateParams)
+	tasks, err := vcd.vdc.CreateDisk(diskCreateParams)
+	check.Assert(err, IsNil)
+
+	// Wait for disk creation complete
+	task := NewTask(vcd.vdc.client)
+	diskHREF := ""
+	for _, taskItem := range tasks {
+		task.Task = taskItem
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+
+		if task.Task.Owner.Type == types.MimeDisk {
+			diskHREF = task.Task.Owner.HREF
+		}
+	}
+
+	// Verify created disk
+	check.Assert(diskHREF, Not(Equals), "")
+	disk, err := vcd.vdc.FindDiskByHREF(diskHREF)
 	check.Assert(err, IsNil)
 	check.Assert(disk.Disk.Name, Equals, diskCreateParamsDisk.Name)
 	check.Assert(disk.Disk.Size, Equals, diskCreateParamsDisk.Size)
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
-
-	// Wait for disk creation complete
-	task := NewTask(vcd.vdc.client)
-	for _, taskItem := range disk.Disk.Tasks.Task {
-		task.Task = taskItem
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
-	}
 
 	// Attach disk
 	attachDiskTask, err := vm.AttachDisk(&types.DiskAttachOrDetachParams{
@@ -248,19 +269,29 @@ func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
 		Disk: diskCreateParamsDisk,
 	}
 
-	disk, err := vcd.vdc.CreateDisk(diskCreateParams)
+	tasks, err := vcd.vdc.CreateDisk(diskCreateParams)
+	check.Assert(err, IsNil)
+
+	// Wait for disk creation complete
+	task := NewTask(vcd.vdc.client)
+	diskHREF := ""
+	for _, taskItem := range tasks {
+		task.Task = taskItem
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+
+		if task.Task.Owner.Type == types.MimeDisk {
+			diskHREF = task.Task.Owner.HREF
+		}
+	}
+
+	// Verify created disk
+	check.Assert(diskHREF, Not(Equals), "")
+	disk, err := vcd.vdc.FindDiskByHREF(diskHREF)
 	check.Assert(err, IsNil)
 	check.Assert(disk.Disk.Name, Equals, diskCreateParamsDisk.Name)
 	check.Assert(disk.Disk.Size, Equals, diskCreateParamsDisk.Size)
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
-
-	// Wait for disk creation complete
-	task := NewTask(vcd.vdc.client)
-	for _, taskItem := range disk.Disk.Tasks.Task {
-		task.Task = taskItem
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
-	}
 
 	// Attach disk
 	attachDiskTask, err := vm.AttachDisk(&types.DiskAttachOrDetachParams{

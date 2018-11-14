@@ -31,7 +31,7 @@ func NewDisk(cli *Client) *Disk {
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 102 - 103,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
-func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (*Disk, error) {
+func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) ([]*types.Task, error) {
 	var err error
 	var createDiskLink *types.Link
 
@@ -77,7 +77,7 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (*Disk, err
 	}
 
 	// Return the disk
-	return disk, nil
+	return disk.Disk.Tasks.Task, nil
 }
 
 // Update an independent disk
