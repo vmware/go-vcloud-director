@@ -5,8 +5,9 @@
 package govcd
 
 import (
-	types "github.com/vmware/go-vcloud-director/types/v56"
+	"github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
+	"time"
 )
 
 // Tests System function GetOrgByName by checking if the org object
@@ -68,6 +69,12 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 			DeleteOnStorageLeaseExpiration: true,
 			StorageLeaseSeconds:            10,
 		},
+		OrgVAppLeaseSettings: &types.VAppLeaseSettings{
+			PowerOffOnRuntimeLeaseExpiration: true,
+			DeploymentLeaseSeconds:           1000000,
+			DeleteOnStorageLeaseExpiration:   true,
+			StorageLeaseSeconds:              1000000,
+		},
 		OrgLdapSettings: &types.OrgLdapSettingsType{
 			OrgLdapMode: "NONE",
 		},
@@ -88,7 +95,14 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 	err = org.Delete(true, true)
 	check.Assert(err, IsNil)
 	// Check if org still exists
-	org, err = GetAdminOrgByName(vcd.client, TestCreateOrg)
+	for i := 0; i < 30; i++ {
+		org, err = GetAdminOrgByName(vcd.client, TestCreateOrg)
+		if org == (AdminOrg{}) {
+			break
+		} else {
+			time.Sleep(1 * time.Second)
+		}
+	}
 	check.Assert(org, Equals, AdminOrg{})
 	check.Assert(err, IsNil)
 
