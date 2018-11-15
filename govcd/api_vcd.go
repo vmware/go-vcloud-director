@@ -89,7 +89,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool) *VCDClient {
 
 	return &VCDClient{
 		Client: Client{
-			APIVersion: "27.0",
+			APIVersion: "27.0", // supported by vCD 8.20, 9.0, 9.1, 9.5
 			VCDHREF:    vcdEndpoint,
 			Http: http.Client{
 				Transport: &http.Transport{
