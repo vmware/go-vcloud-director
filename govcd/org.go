@@ -284,49 +284,50 @@ func validateVdcConfiguration(vdcDefinition *types.VdcConfiguration) error {
 // CreateVdc creates a VDC with the given params under the given organization.
 // Returns an AdminVdc.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-VdcConfiguration.html
-func (org *AdminOrg) CreateVdc(vdcConfiguration *types.VdcConfiguration) (AdminVdc, error) {
+func (org *AdminOrg) CreateVdc(vdcConfiguration *types.VdcConfiguration) (Task, error) {
 	err := validateVdcConfiguration(vdcConfiguration)
 	if err != nil {
-		return AdminVdc{}, err
+		return Task{}, err
 	}
 	output, err := xml.MarshalIndent(vdcConfiguration, "  ", "    ")
 	if err != nil {
-		return AdminVdc{}, fmt.Errorf("error marshalling xml: %s", err)
+		return Task{}, fmt.Errorf("error marshalling xml: %s", err)
 	}
 	xmlData := bytes.NewBufferString(xml.Header + string(output))
 	util.Logger.Printf("[TRACE] AdminOrg.CreateVdc - xml payload: %s\n", xmlData)
 	vdcCreateHREF, err := url.ParseRequestURI(org.AdminOrg.HREF)
 	if err != nil {
-		return AdminVdc{}, fmt.Errorf("error parsing admin org url: %s", err)
+		return Task{}, fmt.Errorf("error parsing admin org url: %s", err)
 	}
 	vdcCreateHREF.Path += "/vdcsparams"
 	req := org.client.NewRequest(map[string]string{}, "POST", *vdcCreateHREF, xmlData)
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.createVdcParams+xml")
 	resp, err := checkResp(org.client.Http.Do(req))
 	if err != nil {
-		return AdminVdc{}, fmt.Errorf("error instantiating a new VDC: %s", err)
+		return Task{}, fmt.Errorf("error instantiating a new VDC: %s", err)
 	}
 
 	adminVdc := NewAdminVdc(org.client)
 	if err = decodeBody(resp, adminVdc.AdminVdc); err != nil {
-		return AdminVdc{}, fmt.Errorf("error decoding admin VDC response: %s", err)
+		return Task{}, fmt.Errorf("error decoding admin VDC response: %s", err)
 	}
-	return *adminVdc, nil
+
+	task := NewTask(org.client)
+	task.Task = adminVdc.AdminVdc.Tasks.Task[0]
+	return *task, nil
 }
 
 // Creates the vdc and waits for the asynchronous task to complete.
-func (org *AdminOrg) CreateVdcWait(vdcDefinition *types.VdcConfiguration) (AdminVdc, error) {
-	adminVdc, err := org.CreateVdc(vdcDefinition)
+func (org *AdminOrg) CreateVdcWait(vdcDefinition *types.VdcConfiguration) error {
+	task, err := org.CreateVdc(vdcDefinition)
 	if err != nil {
-		return AdminVdc{}, err
+		return err
 	}
-	task := NewTask(org.client)
-	task.Task = adminVdc.AdminVdc.Tasks.Task[0]
 	err = task.WaitTaskCompletion()
 	if err != nil {
-		return AdminVdc{}, fmt.Errorf("couldn't finish removing vdc %#v", err)
+		return fmt.Errorf("couldn't finish creating vdc %#v", err)
 	}
-	return adminVdc, nil
+	return nil
 }
 
 //   Deletes the org, returning an error if the vCD call fails.

@@ -208,22 +208,20 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 			HREF: fmt.Sprintf("%s/admin/providervdc/%s", vcd.client.Client.VCDHREF.String(), vcd.config.VCD.ProviderVdc.Id),
 		},
 	}
-	adminVdc, err := adminOrg.CreateVdcWait(vdcConfiguration)
-	check.Assert(adminVdc, Equals, AdminVdc{})
+	task, err := adminOrg.CreateVdc(vdcConfiguration)
+	check.Assert(task, Equals, Task{})
 	check.Assert(err, Not(IsNil))
 	check.Assert(err.Error(), Equals, "VdcConfiguration missing required field: ComputeCapacity[0].Memory.Units")
 	vdcConfiguration.ComputeCapacity[0].Memory.Units = "MB"
 
-	adminVdc, err = adminOrg.CreateVdcWait(vdcConfiguration)
+	err = adminOrg.CreateVdcWait(vdcConfiguration)
 	check.Assert(err, IsNil)
-	check.Assert(adminVdc, Not(Equals), AdminVdc{})
-	check.Assert(adminVdc.AdminVdc.Name, Equals, vdcConfiguration.Name)
 
 	// Refresh so the new VDC shows up in the org's list
 	err = adminOrg.Refresh()
 	check.Assert(err, IsNil)
 
-	vdc, err := adminOrg.GetVdcByName(adminVdc.AdminVdc.Name)
+	vdc, err := adminOrg.GetVdcByName(vdcConfiguration.Name)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, Not(Equals), Vdc{})
 	check.Assert(vdc.Vdc.Name, Equals, vdcConfiguration.Name)
