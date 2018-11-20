@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strings"
 	"time"
 
 	types "github.com/vmware/go-vcloud-director/types/v56"
@@ -200,12 +201,12 @@ func (eGW *EdgeGateway) RemoveNATPortMapping(nattype, externalIP, externalPort s
 
 }
 
-func (eGW *EdgeGateway) AddNATMapping(nattype, externalIP, internalIP, port string) (Task, error) {
-	return eGW.AddNATPortMapping(nattype, externalIP, port, internalIP, port)
+func (eGW *EdgeGateway) AddNATMapping(nattype, externalIP, internalIP, port, protocol string) (Task, error) {
+	return eGW.AddNATPortMapping(nattype, externalIP, port, internalIP, port, protocol)
 }
 
-func (eGW *EdgeGateway) AddNATPortMapping(nattype, externalIP, externalPort string, internalIP, internalPort string) (Task, error) {
-	return eGW.AddNATPortMappingWithUplink(nil, nattype, externalIP, externalPort, internalIP, internalPort)
+func (eGW *EdgeGateway) AddNATPortMapping(nattype, externalIP, externalPort, internalIP, internalPort, protocol string) (Task, error) {
+	return eGW.AddNATPortMappingWithUplink(nil, nattype, externalIP, externalPort, internalIP, internalPort, protocol)
 }
 
 func (eGW *EdgeGateway) getFirstUplink() types.Reference {
@@ -219,7 +220,20 @@ func (eGW *EdgeGateway) getFirstUplink() types.Reference {
 	return uplink
 }
 
-func (eGW *EdgeGateway) AddNATPortMappingWithUplink(network *types.OrgVDCNetwork, nattype, externalIP, externalPort string, internalIP, internalPort string) (Task, error) {
+func isValidProtocol(protocol string) bool {
+	switch strings.ToUpper(protocol) {
+	case
+		"TCP",
+		"UDP",
+		"TCP_UDP",
+		"ICPM",
+		"ANY":
+		return true
+	}
+	return false
+}
+
+func (eGW *EdgeGateway) AddNATPortMappingWithUplink(network *types.OrgVDCNetwork, nattype, externalIP, externalPort, internalIP, internalPort, protocol string) (Task, error) {
 	// if a network is provided take it, otherwise find first uplink on the edgegateway
 	var uplinkRef string
 
@@ -227,6 +241,10 @@ func (eGW *EdgeGateway) AddNATPortMappingWithUplink(network *types.OrgVDCNetwork
 		uplinkRef = network.HREF
 	} else {
 		uplinkRef = eGW.getFirstUplink().HREF
+	}
+
+	if !isValidProtocol(protocol) {
+		return Task{}, fmt.Errorf("provided protocol is not one of TCP, UDP, TCP_UDP, ICPM, ANY")
 	}
 
 	newedgeconfig := eGW.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration
@@ -271,7 +289,7 @@ func (eGW *EdgeGateway) AddNATPortMappingWithUplink(network *types.OrgVDCNetwork
 			OriginalPort:   externalPort,
 			TranslatedIP:   internalIP,
 			TranslatedPort: internalPort,
-			Protocol:       "tcp",
+			Protocol:       protocol,
 		},
 	}
 	newnatservice.NatRule = append(newnatservice.NatRule, natRule)

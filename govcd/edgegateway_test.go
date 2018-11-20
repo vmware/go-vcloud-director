@@ -35,7 +35,7 @@ func (vcd *TestVCD) Test_NATMapping(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	task, err := edge.AddNATMapping("DNAT", vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp, "77")
+	task, err := edge.AddNATMapping("DNAT", vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp, "77", "icpm")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
@@ -56,7 +56,7 @@ func (vcd *TestVCD) Test_NATPortMapping(check *C) {
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
-	task, err := edge.AddNATPortMapping("DNAT", vcd.config.VCD.ExternalIp, "1177", vcd.config.VCD.InternalIp, "77")
+	task, err := edge.AddNATPortMapping("DNAT", vcd.config.VCD.ExternalIp, "1177", vcd.config.VCD.InternalIp, "77", "TCP")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
