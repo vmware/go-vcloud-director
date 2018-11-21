@@ -226,7 +226,7 @@ func isValidProtocol(protocol string) bool {
 	case
 		"TCP",
 		"UDP",
-		"TCP_UDP",
+		"TCPUDP",
 		"ICMP",
 		"ANY":
 		return true
@@ -269,7 +269,7 @@ func (eGW *EdgeGateway) AddNATPortMappingWithUplink(network *types.OrgVDCNetwork
 	}
 
 	if !isValidProtocol(protocol) {
-		return Task{}, fmt.Errorf("provided protocol is not one of TCP, UDP, TCP_UDP, ICPM, ANY")
+		return Task{}, fmt.Errorf("provided protocol is not one of TCP, UDP, TCPUDP, ICPM, ANY")
 	}
 
 	if strings.ToUpper(protocol) == "ICMP" && !isValidIcmpSubType(icmpSubType) {
