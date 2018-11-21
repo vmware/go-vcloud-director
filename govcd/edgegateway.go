@@ -220,6 +220,7 @@ func (eGW *EdgeGateway) getFirstUplink() types.Reference {
 	return uplink
 }
 
+// Values are matched with VCD UI when creating DNAT for edge gateway.
 func isValidProtocol(protocol string) bool {
 	switch strings.ToUpper(protocol) {
 	case
@@ -233,6 +234,8 @@ func isValidProtocol(protocol string) bool {
 	return false
 }
 
+// Used values are named here https://code.vmware.com/apis/287/vcloud#/doc/doc/types/GatewayNatRuleType.html
+// Also can be matched in VCD UI when creating DNAT for edge gateway.
 func isValidIcmpSubType(protocol string) bool {
 	switch strings.ToLower(protocol) {
 	case
