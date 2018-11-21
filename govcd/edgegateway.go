@@ -233,8 +233,30 @@ func isValidProtocol(protocol string) bool {
 	return false
 }
 
-func (eGW *EdgeGateway) AddNATPortMappingWithUplink(network *types.OrgVDCNetwork, nattype, externalIP, externalPort, internalIP, internalPort, protocol string) (Task, error) {
-	// if a network is provided take it, otherwise find first uplink on the edgegateway
+func isValidIcmpSubType(protocol string) bool {
+	switch strings.ToLower(protocol) {
+	case
+		"address-mask-request",
+		"address-mask-reply",
+		"destination-unreachable",
+		"echo-request",
+		"echo-reply",
+		"parameter-problem",
+		"redirect",
+		"router-advertisement",
+		"router-solicitation",
+		"source-quench",
+		"time-exceeded",
+		"timestamp-request",
+		"timestamp-reply",
+		"any":
+		return true
+	}
+	return false
+}
+
+func (eGW *EdgeGateway) AddNATPortMappingWithUplink(network *types.OrgVDCNetwork, natType, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType string) (Task, error) {
+	// if a network is provided take it, otherwise find first uplink on the edge gateway
 	var uplinkRef string
 
 	if network != nil {
@@ -247,7 +269,11 @@ func (eGW *EdgeGateway) AddNATPortMappingWithUplink(network *types.OrgVDCNetwork
 		return Task{}, fmt.Errorf("provided protocol is not one of TCP, UDP, TCP_UDP, ICPM, ANY")
 	}
 
-	newedgeconfig := eGW.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration
+	if protocol == "ICMP" && !isValidIcmpSubType(icmpSubType) {
+		return Task{}, fmt.Errorf("provided icmp sub type is not correct")
+	}
+
+	newEdgeConfig := eGW.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration
 
 	// Take care of the NAT service
 	newNatService := &types.NatService{}
@@ -290,6 +316,7 @@ func (eGW *EdgeGateway) AddNATPortMappingWithUplink(network *types.OrgVDCNetwork
 			TranslatedIP:   internalIP,
 			TranslatedPort: internalPort,
 			Protocol:       protocol,
+			IcmpSubType:    icmpSubType,
 		},
 	}
 	newNatService.NatRule = append(newNatService.NatRule, natRule)
