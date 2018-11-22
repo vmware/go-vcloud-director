@@ -269,7 +269,7 @@ func (eGW *EdgeGateway) AddNATPortMappingWithUplink(network *types.OrgVDCNetwork
 	}
 
 	if !isValidProtocol(protocol) {
-		return Task{}, fmt.Errorf("provided protocol is not one of TCP, UDP, TCPUDP, ICPM, ANY")
+		return Task{}, fmt.Errorf("provided protocol is not one of TCP, UDP, TCPUDP, ICMP, ANY")
 	}
 
 	if strings.ToUpper(protocol) == "ICMP" && !isValidIcmpSubType(icmpSubType) {
