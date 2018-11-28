@@ -27,10 +27,7 @@ type Client struct {
 	Http          http.Client // HttpClient is the client to use. Default will be used if not provided.
 }
 
-// NewRequest creates a new HTTP request and applies necessary auth headers if
-// set.
-func (cli *Client) NewRequest(params map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
-
+func (cli *Client) NewRequestWitNotEncodedParams(params map[string]string, notEncodeParams map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
 	reqValues := url.Values{}
 
 	// Build up our request parameters
@@ -40,6 +37,10 @@ func (cli *Client) NewRequest(params map[string]string, method string, reqUrl ur
 
 	// Add the params to our URL
 	reqUrl.RawQuery = reqValues.Encode()
+
+	for key, value := range notEncodeParams {
+		reqUrl.RawQuery += "&" + key + "=" + value
+	}
 
 	// Build the request, no point in checking for errors here as we're just
 	// passing a string version of an url.URL struct and http.NewRequest returns
@@ -77,6 +78,12 @@ func (cli *Client) NewRequest(params map[string]string, method string, reqUrl ur
 	}
 	return req
 
+}
+
+// NewRequest creates a new HTTP request and applies necessary auth headers if
+// set.
+func (cli *Client) NewRequest(params map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
+	return cli.NewRequestWitNotEncodedParams(params, nil, method, reqUrl, body)
 }
 
 // parseErr takes an error XML resp and returns a single string for use in error messages.

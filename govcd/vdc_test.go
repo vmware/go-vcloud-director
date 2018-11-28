@@ -174,5 +174,21 @@ func (vcd *TestVCD) Test_FindVApp(check *C) {
 
 	check.Assert(second_vapp.VApp.Name, Equals, first_vapp.VApp.Name)
 	check.Assert(second_vapp.VApp.HREF, Equals, first_vapp.VApp.HREF)
+}
 
+func (vcd *TestVCD) Test_FindMediaImage(check *C) {
+
+	if vcd.config.Media.Media == "" {
+		check.Skip("Skipping test because no media name given")
+	}
+	mediaImage, err := vcd.vdc.FindMediaImage(vcd.config.Media.Media)
+	check.Assert(err, IsNil)
+
+	check.Assert(mediaImage.MediaItem.Name, Equals, vcd.config.Media.Media)
+	check.Assert(mediaImage.MediaItem.HREF, Not(Equals), "")
+
+	// find Invalid Network
+	mediaImage, err = vcd.vdc.FindMediaImage("INVALID")
+	check.Assert(err, IsNil)
+	check.Assert(mediaImage, Equals, MediaItem{})
 }

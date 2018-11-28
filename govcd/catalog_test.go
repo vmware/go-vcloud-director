@@ -224,8 +224,6 @@ func countFolders() int {
 }
 
 func checkUploadOvf(vcd *TestVCD, check *C, ovaFileName, catalogName, itemName string) {
-	//setupCatalog(vcd, check, testCreateCatalog)
-
 	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
 
 	uploadTask, err := catalog.UploadOvf(ovaFileName, itemName, "upload from test", 1024)

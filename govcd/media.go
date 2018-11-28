@@ -1,0 +1,324 @@
+package govcd
+
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"github.com/vmware/go-vcloud-director/types/v56"
+	"github.com/vmware/go-vcloud-director/util"
+	"io"
+	"net/url"
+	"os"
+	"strconv"
+	"time"
+)
+
+type MediaItem struct {
+	MediaItem *types.MediaRecordType
+	client    *Client
+}
+
+func NewMediaItem(cli *Client) *MediaItem {
+	return &MediaItem{
+		MediaItem: new(types.MediaRecordType),
+		client:    cli,
+	}
+}
+
+// Uploads an iso file as media. This method only uploads bits to vCD spool area.
+// Returns errors if any occur during upload from vCD or upload process. On upload fail client may need to
+// remove vCD catalog item which waits for files to be uploaded.
+func (vdc *Vdc) UploadMediaImage(mediaName, mediaDescription, filePath string, uploadPieceSize int64) (UploadTask, error) {
+	util.Logger.Printf("[TRACE] UploadImage: %s, image name: %v \n", mediaName, mediaDescription)
+
+	//	On a very high level the flow is as follows
+	//	1. Makes a POST call to vCD to create media item(also creates a transfer folder in the spool area and as result will give a media item resource XML).
+	//	2. Start uploading bits to the transfer folder
+	//	3. Wait on the import task to finish on vCD side -> task success = upload complete
+
+	if *vdc == (Vdc{}) {
+		return UploadTask{}, errors.New("vdc can not be empty or nil")
+	}
+
+	mediaFilePath, err := validateAndFixFilePath(filePath)
+	if err != nil {
+		return UploadTask{}, err
+	}
+
+	isoIsGood, err := verifyIso(mediaFilePath)
+	if err != nil || !isoIsGood {
+		return UploadTask{}, fmt.Errorf("[ERROR] File %s isn't correct iso file: %#v", mediaFilePath, err)
+	}
+
+	mediaList, err := getExistingMediaItems(vdc.client, vdc.Vdc.HREF)
+	if err != nil {
+		return UploadTask{}, fmt.Errorf("[ERROR] Checking existing media files failed: %#v", err)
+	}
+
+	for _, media := range mediaList {
+		if media.Name == mediaName {
+			return UploadTask{}, fmt.Errorf("media item '%s' already exists. Upload with different name", mediaName)
+		}
+	}
+
+	file, e := os.Stat(mediaFilePath)
+	if e != nil {
+		return UploadTask{}, fmt.Errorf("[ERROR] Issue finding file: %#v", e)
+	}
+	fileSize := file.Size()
+
+	mediaItem, err := createMedia(vdc.client, vdc.Vdc.HREF, mediaName, mediaDescription, fileSize)
+	if err != nil {
+		return UploadTask{}, fmt.Errorf("[ERROR] Issue creating media: %#v", err)
+	}
+
+	uploadLink, err := getUploadLink(mediaItem.Files)
+	if err != nil {
+		return UploadTask{}, fmt.Errorf("[ERROR] Issue getting upload link: %#v", err)
+	}
+
+	callBack, uploadProgress := getCallBackFunction()
+
+	details := uploadDetails{
+		uploadLink:               uploadLink.String(), // just take string
+		uploadedBytes:            0,
+		fileSizeToUpload:         fileSize,
+		uploadPieceSize:          uploadPieceSize,
+		uploadedBytesForCallback: 0,
+		allFilesSize:             fileSize,
+		callBack:                 callBack,
+	}
+
+	go uploadFile(vdc.client, mediaFilePath, details)
+
+	var task Task
+	for _, item := range mediaItem.Tasks.Task {
+		task, err = createTaskForVcdImport(vdc.client, item.HREF)
+		if err != nil {
+			removeImageOnError(vdc.client, mediaItem, mediaName)
+			return UploadTask{}, err
+		}
+		if task.Task.Status == "error" {
+			removeImageOnError(vdc.client, mediaItem, mediaName)
+			return UploadTask{}, fmt.Errorf("task did not complete succesfully: %s", task.Task.Description)
+		}
+	}
+
+	uploadTask := NewUploadTask(&task, uploadProgress)
+
+	util.Logger.Printf("[TRACE] Upload media function finished and task for vcd import created. \n")
+
+	return *uploadTask, nil
+}
+
+// Initiates creation of media item and returns temporary upload url.
+func createMedia(client *Client, vdcHREF, mediaName, mediaDescription string, fileSize int64) (*types.Media, error) {
+	vdcHref, err := url.ParseRequestURI(vdcHREF)
+	if err != nil {
+		return nil, fmt.Errorf("error getting vdc href: %v", err)
+	}
+	vdcHref.Path += "/media"
+
+	reqBody := bytes.NewBufferString(
+		"<Media xmlns=\"http://www.vmware.com/vcloud/v1.5\" name=\"" + mediaName + "\" imageType=\"" + "iso" + "\" size=\"" + strconv.FormatInt(fileSize, 10) + "\" >" +
+			"<Description>" + mediaDescription + "</Description>" +
+			"</Media>")
+
+	request := client.NewRequest(map[string]string{}, "POST", *vdcHref, reqBody)
+	request.Header.Add("Content-Type", "application/vnd.vmware.vcloud.media+xml")
+
+	response, err := checkResp(client.Http.Do(request))
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	mediaForUpload := &types.Media{}
+	if err = decodeBody(response, mediaForUpload); err != nil {
+		return nil, err
+	}
+
+	util.Logger.Printf("[TRACE] Media item parsed: %#v\n", mediaForUpload)
+
+	for _, task := range mediaForUpload.Tasks.Task {
+		if "error" == task.Status && mediaName == mediaForUpload.Name {
+			util.Logger.Printf("[Error] issue with creating media %#v", task.Error)
+			return nil, fmt.Errorf("Error in vcd returned error code: %d, error: %s and message: %s ", task.Error.MajorErrorCode, task.Error.MinorErrorCode, task.Error.Message)
+		}
+	}
+
+	return mediaForUpload, nil
+}
+
+func removeImageOnError(client *Client, media *types.Media, itemName string) {
+	if media != nil {
+		util.Logger.Printf("[TRACE] Deleting media item %#v", media)
+
+		// wait for task, cancel it and media item will be removed.
+		var err error
+		for {
+			util.Logger.Printf("[TRACE] Sleep... for 5 seconds.\n")
+			time.Sleep(time.Second * 5)
+			media, err = queryMedia(client, media.HREF, itemName)
+			if err != nil {
+				util.Logger.Printf("[Error] Error deleting media item %v: %s", media, err)
+			}
+			if len(media.Tasks.Task) > 0 {
+				util.Logger.Printf("[TRACE] Task found. Will try to cancel.\n")
+				break
+			}
+		}
+
+		for _, task := range media.Tasks.Task {
+			if itemName == task.Owner.Name {
+				err = cancelTask(client, task.HREF)
+				if err != nil {
+					util.Logger.Printf("[ERROR] Error canceling task for media upload %#v.\n", err)
+				}
+			}
+		}
+	} else {
+		util.Logger.Printf("[Error] Failed to delete media item created with error: %v", media)
+	}
+}
+
+func queryMedia(client *Client, mediaUrl string, newItemName string) (*types.Media, error) {
+	util.Logger.Printf("[TRACE] Qeurying media: %s\n", mediaUrl)
+
+	parsedUrl, err := url.ParseRequestURI(mediaUrl)
+	if err != nil {
+		util.Logger.Printf("[Error] Error parsing url %v: %s", parsedUrl, err)
+	}
+
+	request := client.NewRequest(map[string]string{}, "GET", *parsedUrl, nil)
+	response, err := checkResp(client.Http.Do(request))
+	if err != nil {
+		return nil, err
+	}
+
+	mediaParsed := &types.Media{}
+	if err = decodeBody(response, mediaParsed); err != nil {
+		return nil, err
+	}
+
+	defer response.Body.Close()
+
+	for _, task := range mediaParsed.Tasks.Task {
+		if "error" == task.Status && newItemName == task.Owner.Name {
+			util.Logger.Printf("[Error] %#v", task.Error)
+			return mediaParsed, fmt.Errorf("Error in vcd returned error code: %d, error: %s and message: %s ", task.Error.MajorErrorCode, task.Error.MinorErrorCode, task.Error.Message)
+		}
+	}
+
+	return mediaParsed, nil
+}
+
+// verifies provided file header matches standard
+func verifyIso(filePath string) (bool, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return false, err
+	}
+	defer file.Close()
+
+	return readHeader(file)
+}
+
+func readHeader(reader io.Reader) (bool, error) {
+	buffer := make([]byte, 37000)
+
+	_, err := reader.Read(buffer)
+	if err != nil && err != io.EOF {
+		return false, err
+	}
+
+	headerOk := verifyHeader(buffer)
+
+	if headerOk {
+		return true, nil
+	} else {
+		return false, errors.New("file header didn't match ISO standard")
+	}
+}
+
+// verify file header info: https://www.garykessler.net/library/file_sigs.html
+func verifyHeader(buf []byte) bool {
+	return (buf[32769] == 0x43 && buf[32770] == 0x44 &&
+		buf[32771] == 0x30 && buf[32772] == 0x30 && buf[32773] == 0x31) ||
+		(buf[34817] == 0x43 && buf[34818] == 0x44 &&
+			buf[34819] == 0x30 && buf[34820] == 0x30 && buf[34821] == 0x31) ||
+		(buf[36865] == 0x43 && buf[36866] == 0x44 &&
+			buf[36867] == 0x30 && buf[36868] == 0x30 && buf[36869] == 0x31)
+}
+
+// Reference for api usage http://pubs.vmware.com/vcloud-api-1-5/wwhelp/wwhimpl/js/html/wwhelp.htm#href=api_prog/GUID-9356B99B-E414-474A-853C-1411692AF84C.html
+// http://pubs.vmware.com/vcloud-api-1-5/wwhelp/wwhimpl/js/html/wwhelp.htm#href=api_prog/GUID-43DFF30E-391F-42DC-87B3-5923ABCEB366.html
+func getExistingMediaItems(client *Client, vdcHREF string) ([]*types.MediaRecordType, error) {
+	util.Logger.Printf("[TRACE] Qeurying medias \n")
+
+	vdcHref := client.VCDHREF
+	vdcHref.Path += "/mediaList/query"
+
+	request := client.NewRequestWitNotEncodedParams(nil, map[string]string{"filter": "vdc==" + url.QueryEscape(vdcHREF)}, "GET", vdcHref, nil)
+
+	response, err := checkResp(client.Http.Do(request))
+	if err != nil {
+		return nil, err
+	}
+
+	defer response.Body.Close()
+
+	mediaParsed := &types.QueryResultRecordsType{}
+	if err = decodeBody(response, mediaParsed); err != nil {
+		return nil, err
+	}
+
+	util.Logger.Printf("[TRACE] Found media records: %d \n", len(mediaParsed.MediaRecord))
+	return mediaParsed.MediaRecord, nil
+}
+
+// Looks for an Org Vdc network and, if found, will delete it.
+func RemoveMediaImageIfExists(vdc Vdc, mediaName string) error {
+	mediaItem, err := vdc.FindMediaImage(mediaName)
+	if err == nil && mediaItem != (MediaItem{}) {
+		task, err := mediaItem.Delete()
+		if err != nil {
+			return fmt.Errorf("error deleting media [phase 1] %s", mediaName)
+		}
+		err = task.WaitTaskCompletion()
+		if err != nil {
+			return fmt.Errorf("error deleting media [task] %s", mediaName)
+		}
+	} else {
+		util.Logger.Printf("[TRACE] Media not foun or error: %v - %#v \n", err, mediaItem)
+	}
+	return nil
+}
+
+// Deletes the Media Item, returning an error if the vCD call fails.
+// Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Media.html
+func (mediaItem *MediaItem) Delete() (Task, error) {
+	util.Logger.Printf("[TRACE] Deleting media item: %#v", mediaItem.MediaItem.Name)
+
+	parsedUrl, err := url.ParseRequestURI(mediaItem.MediaItem.HREF)
+	if err != nil {
+		util.Logger.Printf("[Error] Error parsing url %v: %s", parsedUrl, err)
+	}
+	util.Logger.Printf("[TRACE] Url for deleting media item: %#v and name: %s", parsedUrl, mediaItem.MediaItem.Name)
+
+	req := mediaItem.client.NewRequest(map[string]string{}, "DELETE", *parsedUrl, nil)
+
+	resp, err := checkResp(mediaItem.client.Http.Do(req))
+	if err != nil {
+		return Task{}, fmt.Errorf("error deleting Media item %s: %s", mediaItem.MediaItem.ID, err)
+	}
+
+	task := NewTask(mediaItem.client)
+
+	if err = decodeBody(resp, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
+	}
+
+	// The request was successful
+	return *task, nil
+}

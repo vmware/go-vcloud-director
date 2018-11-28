@@ -7,8 +7,9 @@ package govcd
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"fmt"
-	types "github.com/vmware/go-vcloud-director/types/v56"
+	"github.com/vmware/go-vcloud-director/types/v56"
 	"github.com/vmware/go-vcloud-director/util"
 	"net/url"
 	"strings"
@@ -561,4 +562,41 @@ func (vdc *Vdc) FindVAppByID(vappid string) (VApp, error) {
 	}
 	return VApp{}, fmt.Errorf("can't find vApp")
 
+}
+
+func (vdc *Vdc) FindMediaImage(mediaName string) (MediaItem, error) {
+	util.Logger.Printf("[TRACE] Qeurying medias by name\n")
+
+	vdcHref := vdc.client.VCDHREF
+	vdcHref.Path += "/mediaList/query"
+
+	request := vdc.client.NewRequestWitNotEncodedParams(nil, map[string]string{"filter": "name==" + url.QueryEscape(mediaName)}, "GET", vdcHref, nil)
+
+	response, err := checkResp(vdc.client.Http.Do(request))
+	if err != nil {
+		return MediaItem{}, err
+	}
+
+	defer response.Body.Close()
+
+	queryResult := &types.QueryResultRecordsType{}
+	newMediaItem := NewMediaItem(vdc.client)
+	if err = decodeBody(response, queryResult); err != nil {
+		return MediaItem{}, err
+	}
+
+	if len(queryResult.MediaRecord) == 1 {
+		newMediaItem.MediaItem = queryResult.MediaRecord[0]
+	}
+
+	if len(queryResult.MediaRecord) == 0 {
+		return MediaItem{}, nil
+	}
+
+	if len(queryResult.MediaRecord) == 0 {
+		return MediaItem{}, errors.New("found more than result")
+	}
+
+	util.Logger.Printf("[TRACE] Found media record by name: %#v \n", newMediaItem.MediaItem)
+	return *newMediaItem, nil
 }
