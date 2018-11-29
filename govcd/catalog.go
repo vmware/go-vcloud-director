@@ -27,7 +27,7 @@ const (
 )
 
 type CatalogOperations interface {
-	FindCatalogItem(catalogitem string) (CatalogItem, error)
+	FindCatalogItem(catalogItem string) (CatalogItem, error)
 }
 
 // AdminCatalog is a admin view of a vCloud Director Catalog
@@ -131,10 +131,10 @@ type Envelope struct {
 // then the function returns a CatalogItem. If the item does not
 // exist, then it returns an empty CatalogItem. If the call fails
 // at any point, it returns an error.
-func (cat *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
+func (cat *Catalog) FindCatalogItem(catalogItemName string) (CatalogItem, error) {
 	for _, catalogItems := range cat.Catalog.CatalogItems {
 		for _, catalogItem := range catalogItems.CatalogItem {
-			if catalogItem.Name == catalogitem && catalogItem.Type == "application/vnd.vmware.vcloud.catalogItem+xml" {
+			if catalogItem.Name == catalogItemName && catalogItem.Type == "application/vnd.vmware.vcloud.catalogItem+xml" {
 				catalogItemHREF, err := url.ParseRequestURI(catalogItem.HREF)
 
 				if err != nil {
@@ -325,7 +325,11 @@ func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *
 	}
 
 	//remove extracted files with temp dir
-	os.RemoveAll(tempPath)
+	err := os.RemoveAll(tempPath)
+	if err != nil {
+		util.Logger.Printf("[Error] Error removing temporary files: %#v", err)
+		return err
+	}
 
 	return nil
 }
@@ -436,7 +440,11 @@ func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL)
 		return err
 	}
 
-	openedFile.Close()
+	err = openedFile.Close()
+	if err != nil {
+		util.Logger.Printf("[Error] Error closing file: %#v", err)
+		return err
+	}
 
 	return nil
 }
@@ -565,7 +573,11 @@ func getOvf(ovfFilePath string) (Envelope, error) {
 		return Envelope{}, err
 	}
 
-	openedFile.Close()
+	err = openedFile.Close()
+	if err != nil {
+		util.Logger.Printf("[Error] Error closing file: %#v", err)
+		return Envelope{}, err
+	}
 
 	return ovfFileDesc, nil
 }
