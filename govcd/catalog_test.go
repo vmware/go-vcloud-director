@@ -281,7 +281,7 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(TestUploadMedia, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadCatalogMediaImage")
+	AddToCleanupList(TestCatalogUploadMedia, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadCatalogMediaImage")
 
 	//verifyMediaImageUploaded(vcd.vdc.client, check, TestUploadMedia)
 	catalog, err = org.FindCatalog(vcd.config.VCD.Catalog.Name)
