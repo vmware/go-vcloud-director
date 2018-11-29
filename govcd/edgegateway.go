@@ -201,8 +201,8 @@ func (eGW *EdgeGateway) RemoveNATPortMapping(natType, externalIP, externalPort s
 
 }
 
-func (eGW *EdgeGateway) AddNATMapping(natType, externalIP, internalIP, port string) (Task, error) {
-	return eGW.AddNATPortMapping(natType, externalIP, port, internalIP, port, "any", "")
+func (eGW *EdgeGateway) AddNATMapping(natType, externalIP, internalIP string) (Task, error) {
+	return eGW.AddNATPortMapping(natType, externalIP, "any", internalIP, "any", "any", "")
 }
 
 func (eGW *EdgeGateway) AddNATPortMapping(natType, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType string) (Task, error) {
