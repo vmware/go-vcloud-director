@@ -269,3 +269,139 @@ func skipWhenOvaPathMissing(vcd *TestVCD, check *C) {
 		check.Skip("Skipping test because no ova path given")
 	}
 }
+
+// Tests System function UploadMediaImage by checking if provided standard iso file uploaded.
+func (vcd *TestVCD) Test_CatalogUploadMediaImage(check *C) {
+	skipWhenIsoPathMissing(vcd, check)
+
+	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+
+	uploadTask, err := catalog.UploadMediaImage(TestCatalogUploadMedia, "upload from test", vcd.config.Media.ISOPath, 1024)
+	check.Assert(err, IsNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(TestUploadMedia, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadCatalogMediaImage")
+
+	//verifyMediaImageUploaded(vcd.vdc.client, check, TestUploadMedia)
+	catalog, err = org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	verifyCatalogItemUploaded(check, catalog, TestCatalogUploadMedia)
+}
+
+// Tests System function UploadMediaImage by checking UploadTask.GetUploadProgress returns values of progress.
+func (vcd *TestVCD) Test_CatalogUploadMediaImage_progress_works(check *C) {
+	skipWhenIsoPathMissing(vcd, check)
+	itemName := TestCatalogUploadMedia + "2"
+
+	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+
+	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.ISOPath, 1024)
+	check.Assert(err, IsNil)
+	for {
+		if value := uploadTask.GetUploadProgress(); value == "100.00" {
+			break
+		} else {
+			check.Assert(value, Not(Equals), "")
+		}
+	}
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadCatalogMediaImage")
+
+	catalog, err = org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	verifyCatalogItemUploaded(check, catalog, itemName)
+}
+
+// Tests System function UploadMediaImage by checking UploadTask.ShowUploadProgress writes values of progress to stdin.
+func (vcd *TestVCD) Test_CatalogUploadMediaImage_ShowUploadProgress_works(check *C) {
+	skipWhenIsoPathMissing(vcd, check)
+	itemName := TestCatalogUploadMedia + "3"
+
+	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+
+	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.ISOPath, 1024)
+	check.Assert(err, IsNil)
+
+	//take control of stdout
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	uploadTask.ShowUploadProgress()
+
+	w.Close()
+	//read stdin
+	result, _ := ioutil.ReadAll(r)
+	os.Stdout = oldStdout
+
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadCatalogMediaImage")
+
+	check.Assert(string(result), Matches, ".*Upload progress 100.00%")
+	catalog, err = org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	verifyCatalogItemUploaded(check, catalog, itemName)
+}
+
+// Tests System function UploadMediaImage by creating media item and expecting specific error
+// then trying to create same media item. As vCD returns cryptic error for such case.
+func (vcd *TestVCD) Test_CatalogUploadMediaImage_error_withSameItem(check *C) {
+	skipWhenIsoPathMissing(vcd, check)
+	itemName := TestCatalogUploadMedia + "4"
+
+	catalog, _ := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+
+	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.ISOPath, 1024)
+	check.Assert(err, IsNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadCatalogMediaImage")
+
+	_, err2 := vcd.vdc.UploadMediaImage(itemName, "upload from test", vcd.config.Media.ISOPath, 1024)
+	check.Assert(err2.Error(), Matches, ".*already exists. Upload with different name.*")
+}
+
+// Tests System function Delete by creating media item and
+// deleting it after.
+func (vcd *TestVCD) Test_CatalogDeleteMediaImage(check *C) {
+	skipWhenIsoPathMissing(vcd, check)
+	itemName := TestCatalogUploadMedia + "5"
+
+	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+
+	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.ISOPath, 1024)
+	check.Assert(err, IsNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadCatalogMediaImage")
+
+	mediaItem, err := vcd.vdc.FindMediaImage(itemName)
+	check.Assert(err, IsNil)
+	check.Assert(mediaItem, Not(Equals), MediaItem{})
+
+	task, err := mediaItem.Delete()
+	check.Assert(err, IsNil)
+	task.WaitTaskCompletion()
+
+	mediaItem, err = vcd.vdc.FindMediaImage(itemName)
+	check.Assert(err, IsNil)
+	check.Assert(mediaItem, Equals, MediaItem{})
+
+	//addition check
+	// check through existing catalogItems
+	catalog, err = org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	check.Assert(err, IsNil)
+	entityFound := false
+	for _, catalogItems := range catalog.Catalog.CatalogItems {
+		for _, catalogItem := range catalogItems.CatalogItem {
+			if catalogItem.Name == TestDeleteCatalogItem {
+				entityFound = true
+			}
+		}
+	}
+	check.Assert(entityFound, Equals, false)
+}

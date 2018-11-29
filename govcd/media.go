@@ -45,8 +45,8 @@ func (vdc *Vdc) UploadMediaImage(mediaName, mediaDescription, filePath string, u
 		return UploadTask{}, err
 	}
 
-	isoIsGood, err := verifyIso(mediaFilePath)
-	if err != nil || !isoIsGood {
+	isISOGood, err := verifyIso(mediaFilePath)
+	if err != nil || !isISOGood {
 		return UploadTask{}, fmt.Errorf("[ERROR] File %s isn't correct iso file: %#v", mediaFilePath, err)
 	}
 
@@ -67,11 +67,15 @@ func (vdc *Vdc) UploadMediaImage(mediaName, mediaDescription, filePath string, u
 	}
 	fileSize := file.Size()
 
-	mediaItem, err := createMedia(vdc.client, vdc.Vdc.HREF, mediaName, mediaDescription, fileSize)
+	mediaItem, err := createMedia(vdc.client, vdc.Vdc.HREF+"/media", mediaName, mediaDescription, fileSize)
 	if err != nil {
 		return UploadTask{}, fmt.Errorf("[ERROR] Issue creating media: %#v", err)
 	}
 
+	return executeUpload(vdc.client, mediaItem, mediaFilePath, mediaName, fileSize, uploadPieceSize)
+}
+
+func executeUpload(client *Client, mediaItem *types.Media, mediaFilePath, mediaName string, fileSize, uploadPieceSize int64) (UploadTask, error) {
 	uploadLink, err := getUploadLink(mediaItem.Files)
 	if err != nil {
 		return UploadTask{}, fmt.Errorf("[ERROR] Issue getting upload link: %#v", err)
@@ -89,17 +93,17 @@ func (vdc *Vdc) UploadMediaImage(mediaName, mediaDescription, filePath string, u
 		callBack:                 callBack,
 	}
 
-	go uploadFile(vdc.client, mediaFilePath, details)
+	go uploadFile(client, mediaFilePath, details)
 
 	var task Task
 	for _, item := range mediaItem.Tasks.Task {
-		task, err = createTaskForVcdImport(vdc.client, item.HREF)
+		task, err = createTaskForVcdImport(client, item.HREF)
 		if err != nil {
-			removeImageOnError(vdc.client, mediaItem, mediaName)
+			removeImageOnError(client, mediaItem, mediaName)
 			return UploadTask{}, err
 		}
 		if task.Task.Status == "error" {
-			removeImageOnError(vdc.client, mediaItem, mediaName)
+			removeImageOnError(client, mediaItem, mediaName)
 			return UploadTask{}, fmt.Errorf("task did not complete succesfully: %s", task.Task.Description)
 		}
 	}
@@ -112,19 +116,18 @@ func (vdc *Vdc) UploadMediaImage(mediaName, mediaDescription, filePath string, u
 }
 
 // Initiates creation of media item and returns temporary upload url.
-func createMedia(client *Client, vdcHREF, mediaName, mediaDescription string, fileSize int64) (*types.Media, error) {
-	vdcHref, err := url.ParseRequestURI(vdcHREF)
+func createMedia(client *Client, link, mediaName, mediaDescription string, fileSize int64) (*types.Media, error) {
+	uploadUrl, err := url.ParseRequestURI(link)
 	if err != nil {
 		return nil, fmt.Errorf("error getting vdc href: %v", err)
 	}
-	vdcHref.Path += "/media"
 
 	reqBody := bytes.NewBufferString(
 		"<Media xmlns=\"http://www.vmware.com/vcloud/v1.5\" name=\"" + mediaName + "\" imageType=\"" + "iso" + "\" size=\"" + strconv.FormatInt(fileSize, 10) + "\" >" +
 			"<Description>" + mediaDescription + "</Description>" +
 			"</Media>")
 
-	request := client.NewRequest(map[string]string{}, "POST", *vdcHref, reqBody)
+	request := client.NewRequest(map[string]string{}, "POST", *uploadUrl, reqBody)
 	request.Header.Add("Content-Type", "application/vnd.vmware.vcloud.media+xml")
 
 	response, err := checkResp(client.Http.Do(request))
@@ -140,10 +143,12 @@ func createMedia(client *Client, vdcHREF, mediaName, mediaDescription string, fi
 
 	util.Logger.Printf("[TRACE] Media item parsed: %#v\n", mediaForUpload)
 
-	for _, task := range mediaForUpload.Tasks.Task {
-		if "error" == task.Status && mediaName == mediaForUpload.Name {
-			util.Logger.Printf("[Error] issue with creating media %#v", task.Error)
-			return nil, fmt.Errorf("Error in vcd returned error code: %d, error: %s and message: %s ", task.Error.MajorErrorCode, task.Error.MinorErrorCode, task.Error.Message)
+	if mediaForUpload.Tasks != nil {
+		for _, task := range mediaForUpload.Tasks.Task {
+			if "error" == task.Status && mediaName == mediaForUpload.Name {
+				util.Logger.Printf("[Error] issue with creating media %#v", task.Error)
+				return nil, fmt.Errorf("Error in vcd returned error code: %d, error: %s and message: %s ", task.Error.MajorErrorCode, task.Error.MinorErrorCode, task.Error.Message)
+			}
 		}
 	}
 

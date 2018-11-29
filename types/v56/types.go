@@ -2039,6 +2039,7 @@ type Media struct {
 	Link         LinkList         `xml:"Link,omitempty"`
 	Tasks        *TasksInProgress `xml:"Tasks,omitempty"`
 	Owner        *Reference       `xml:"Owner,omitempty"`
+	Entity       *Entity          `xml:"Entity"`
 }
 
 // Type: MediaRecord

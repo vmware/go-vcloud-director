@@ -144,7 +144,7 @@ func uploadPartFile(client *Client, part []byte, partDataSize int64, uDetails up
 }
 
 func getUploadLink(files *types.FilesList) (*url.URL, error) {
-	util.Logger.Printf("[TRACE] getUploadLink - Parsing ovf upload link: %#v\n", files)
+	util.Logger.Printf("[TRACE] getUploadLink - Parsing upload link: %#v\n", files)
 
 	if len(files.File) > 1 {
 		return nil, errors.New("unexpected response from vCD: found more than one link for upload")

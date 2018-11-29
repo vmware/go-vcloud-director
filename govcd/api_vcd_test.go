@@ -38,6 +38,7 @@ const (
 	TestCreateOrgVdcNetworkIso    = "TestCreateOrgVdcNetworkIso"
 	TestCreateOrgVdcNetworkDirect = "TestCreateOrgVdcNetworkDirect"
 	TestUploadMedia               = "TestUploadMedia"
+	TestCatalogUploadMedia        = "TestCatalogUploadMedia"
 )
 
 // Struct to get info from a config yaml file that the user

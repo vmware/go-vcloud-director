@@ -48,7 +48,7 @@ func verifyMediaImageUploaded(client *Client, check *C, itemName string) {
 // Tests System function UploadMediaImage by checking UploadTask.GetUploadProgress returns values of progress.
 func (vcd *TestVCD) Test_UploadMediaImage_progress_works(check *C) {
 	skipWhenIsoPathMissing(vcd, check)
-	itemName := TestUploadOvf + "2"
+	itemName := TestUploadMedia + "2"
 
 	uploadTask, err := vcd.vdc.UploadMediaImage(itemName, "upload from test", vcd.config.Media.ISOPath, 1024)
 	check.Assert(err, IsNil)
@@ -70,7 +70,7 @@ func (vcd *TestVCD) Test_UploadMediaImage_progress_works(check *C) {
 // Tests System function UploadMediaImage by checking UploadTask.ShowUploadProgress writes values of progress to stdin.
 func (vcd *TestVCD) Test_UploadMediaImage_ShowUploadProgress_works(check *C) {
 	skipWhenIsoPathMissing(vcd, check)
-	itemName := TestUploadOvf + "3"
+	itemName := TestUploadMedia + "3"
 
 	uploadTask, err := vcd.vdc.UploadMediaImage(itemName, "upload from test", vcd.config.Media.ISOPath, 1024)
 	check.Assert(err, IsNil)
@@ -100,7 +100,7 @@ func (vcd *TestVCD) Test_UploadMediaImage_ShowUploadProgress_works(check *C) {
 // then trying to create same media item. As vCD returns cryptic error for such case.
 func (vcd *TestVCD) Test_UploadMediaImage_error_withSameItem(check *C) {
 	skipWhenIsoPathMissing(vcd, check)
-	itemName := TestUploadOvf + "4"
+	itemName := TestUploadMedia + "4"
 
 	uploadTask, err := vcd.vdc.UploadMediaImage(itemName, "upload from test", vcd.config.Media.ISOPath, 1024)
 	check.Assert(err, IsNil)
@@ -117,7 +117,7 @@ func (vcd *TestVCD) Test_UploadMediaImage_error_withSameItem(check *C) {
 // deleting it after.
 func (vcd *TestVCD) Test_DeleteMediaImage(check *C) {
 	skipWhenIsoPathMissing(vcd, check)
-	itemName := TestUploadOvf + "4"
+	itemName := TestUploadMedia + "5"
 
 	uploadTask, err := vcd.vdc.UploadMediaImage(itemName, "upload from test", vcd.config.Media.ISOPath, 1024)
 	check.Assert(err, IsNil)
