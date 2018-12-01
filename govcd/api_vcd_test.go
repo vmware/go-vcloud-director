@@ -143,6 +143,21 @@ func AddToCleanupList(name, entityType, parent, createdBy string) {
 	cleanupEntityList = append(cleanupEntityList, CleanupEntity{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy})
 }
 
+// Adds an entity to the cleanup list.
+// To be called by all tests when a new entity has been created, before
+// running any other operation.
+// Items in the list will be deleted at the end of the tests if they still exist.
+func PrependToCleanupList(name, entityType, parent, createdBy string) {
+	for _, item := range cleanupEntityList {
+		// avoid adding the same item twice
+		if item.Name == name && item.EntityType == entityType {
+			return
+		}
+	}
+	cleanupEntityList = append(cleanupEntityList, CleanupEntity{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy})
+	//cleanupEntityList = append([]CleanupEntity{{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy}}, cleanupEntityList...)
+}
+
 // Users use the environmental variable GOVCD_CONFIG as
 // a config file for testing. Otherwise the default is govcd_test_config.yaml
 // in the current directory. Throws an error if it cannot find your
@@ -295,11 +310,18 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		task, _ := vapp.Undeploy()
 		_ = task.WaitTaskCompletion()
+
 		task, err = vapp.Delete()
 		if err != nil {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 			return
 		}
+		err = task.WaitTaskCompletion()
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Error deleting %s '%s', WaitTaskCompletion of delete vapp is failed: %s\n", entity.EntityType, entity.Name, err)
+			return
+		}
+
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
 
@@ -409,29 +431,32 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		// [0] = disk's entity name, [1] = disk href
 		disk, err := vcd.vdc.FindDiskByHREF(strings.Split(entity.Name, "|")[1])
 		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] deleting %s '%s', cannot found disk: %s\n",
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting %s '%s', cannot find disk: %s\n",
 				entity.EntityType, entity.Name, err)
 			return
 		}
 
-		// See if disk is attached to VM
+		// see if the disk is attached to VM
 		vmRef, err := disk.AttachedVM()
 		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] deleting %s '%s', cannot found attached VM: %s\n",
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting %s '%s', cannot find attached VM: %s\n",
 				entity.EntityType, entity.Name, err)
 			return
 		}
-		// if it is attached to VM, detach disk from VM
+		// if the disk is attached to VM, detach disk from VM
 		if vmRef != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [INFO] Deleting %s '%s', VM: '%s|%s', disk is attached to VM, detaching disk from VM\n",
+				entity.EntityType, entity.Name, vmRef.Name, vmRef.HREF)
+
 			vm, err := vcd.client.FindVMByHREF(vmRef.HREF)
 			if err != nil {
 				vcd.infoCleanup(
-					"removeLeftoverEntries: [ERROR] deleting %s %s, cannot not found attached VM details'%s' '%s': %s\n",
+					"removeLeftoverEntries: [ERROR] Deleting %s '%s', VM: '%s|%s', cannot not find VM details: %s\n",
 					entity.EntityType, entity.Name, vmRef.Name, vmRef.HREF, err)
 				return
 			}
 
-			// Detach disk from VM
+			// detach the disk from VM
 			task, err := vm.DetachDisk(&types.DiskAttachOrDetachParams{
 				Disk: &types.Reference{
 					HREF: disk.Disk.HREF,
@@ -440,7 +465,17 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			err = task.WaitTaskCompletion()
 			if err != nil {
 				vcd.infoCleanup(
-					"removeLeftoverEntries: [ERROR] deleting %s %s, cannot detach disk: %s\n",
+					"removeLeftoverEntries: [ERROR] Deleting %s '%s', VM: '%s|%s', WaitTaskCompletion of detach disk is failed: %s\n",
+					entity.EntityType, entity.Name, vmRef.Name, vmRef.HREF, err)
+				return
+			}
+
+			// we need to refresh the disk info to obtain remove href for delete disk
+			// due to attached disk is not showing remove disk href in disk.Disk.Link
+			err = disk.Refresh()
+			if err != nil {
+				vcd.infoCleanup(
+					"removeLeftoverEntries: [ERROR] Deleting %s '%s', cannot refresh disk: %s\n",
 					entity.EntityType, entity.Name, err)
 				return
 			}
@@ -449,13 +484,13 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		// Delete disk
 		deleteDiskTask, err := disk.Delete()
 		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] deleting %s %s, cannot delete disk: %s\n",
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting %s '%s', cannot delete disk: %s\n",
 				entity.EntityType, entity.Name, err)
 			return
 		}
 		err = deleteDiskTask.WaitTaskCompletion()
 		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] deleting %s %s, delete disk task fail: %s\n",
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting %s '%s', WaitTaskCompletion of delete disk is failed: %s\n",
 				entity.EntityType, entity.Name, err)
 			return
 		}

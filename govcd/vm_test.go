@@ -92,6 +92,9 @@ func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 	if vcd.vapp.VApp == nil {
 		check.Skip("skipping test because no vApp is found")
 	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	vmType, vmName := vcd.find_first_vm(vcd.find_first_vapp())
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
@@ -163,7 +166,7 @@ func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 	check.Assert(err, IsNil)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", "Test_VMAttachOrDetachDisk")
+	PrependToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", "Test_VMAttachOrDetachDisk")
 }
 
 // Test attach disk to VM
@@ -181,6 +184,9 @@ func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
 
@@ -237,11 +243,12 @@ func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 	check.Assert(vmRef.Name, Equals, vm.VM.Name)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", "Test_VMAttachDisk")
+	PrependToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", "Test_VMAttachDisk")
 }
 
 // Test detach disk from VM
 func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
+
 	if vcd.config.VCD.Disk.Size <= 0 {
 		check.Skip("skipping test because disk size is <= 0")
 	}
@@ -255,6 +262,9 @@ func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
 
@@ -322,5 +332,5 @@ func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
 	check.Assert(err, IsNil)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_VMDetachDisk")
+	PrependToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_VMDetachDisk")
 }

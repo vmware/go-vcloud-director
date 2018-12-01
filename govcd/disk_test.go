@@ -12,6 +12,8 @@ import (
 
 // Test init independent disk struct
 func (vcd *TestVCD) Test_NewDisk(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	disk := NewDisk(&vcd.client.Client)
 	check.Assert(disk, NotNil)
 }
@@ -21,6 +23,8 @@ func (vcd *TestVCD) Test_CreateDisk(check *C) {
 	if vcd.config.VCD.Disk.Size == 0 {
 		check.Skip("Skipping test because disk size is <= 0")
 	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
@@ -70,6 +74,8 @@ func (vcd *TestVCD) Test_UpdateDisk(check *C) {
 	if vcd.config.VCD.Disk.SizeForUpdate <= 0 {
 		check.Skip("skipping test because disk update size is <= 0")
 	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
@@ -134,6 +140,8 @@ func (vcd *TestVCD) Test_DeleteDisk(check *C) {
 		check.Skip("skipping test because disk size is <= 0")
 	}
 
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestDeleteDisk,
@@ -186,6 +194,8 @@ func (vcd *TestVCD) Test_RefreshDisk(check *C) {
 	if vcd.config.VCD.Disk.SizeForUpdate <= 0 {
 		check.Skip("skipping test because disk update size is <= 0")
 	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
@@ -259,6 +269,9 @@ func (vcd *TestVCD) Test_AttachedVMDisk(check *C) {
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
 
@@ -324,6 +337,8 @@ func (vcd *TestVCD) Test_VdcFindDiskByHREF(check *C) {
 		check.Skip("skipping test because disk size is <= 0")
 	}
 
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestVdcFindDiskByHREF,
@@ -368,6 +383,8 @@ func (vcd *TestVCD) Test_FindDiskByHREF(check *C) {
 	if vcd.config.VCD.Disk.Size <= 0 {
 		check.Skip("Skipping test because disk size is <= 0")
 	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
@@ -435,6 +452,8 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
