@@ -61,7 +61,7 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (Task, erro
 	}
 
 	if createDiskLink == nil {
-		return Task{}, fmt.Errorf("cannot not found request URL for create disk in vdc Link")
+		return Task{}, fmt.Errorf("could not find request URL for create disk in vdc Link")
 	}
 
 	// Parse request URI
@@ -141,7 +141,7 @@ func (d *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 	}
 
 	if updateDiskLink == nil {
-		return Task{}, fmt.Errorf("cannot not found request URL for update disk in disk Link")
+		return Task{}, fmt.Errorf("could not find request URL for update disk in disk Link")
 	}
 
 	// Parse request URI
@@ -211,7 +211,7 @@ func (d *Disk) Delete() (Task, error) {
 	}
 
 	if deleteDiskLink == nil {
-		return Task{}, fmt.Errorf("cannot not found request URL for delete disk in disk Link")
+		return Task{}, fmt.Errorf("could not find request URL for delete disk in disk Link")
 	}
 
 	// Parse request URI
@@ -280,7 +280,7 @@ func (d *Disk) AttachedVM() (*types.Reference, error) {
 	}
 
 	if attachedVMLink == nil {
-		return nil, fmt.Errorf("cannot not found request URL for attached vm in disk Link")
+		return nil, fmt.Errorf("could not find request URL for attached vm in disk Link")
 	}
 
 	// Parse request URI

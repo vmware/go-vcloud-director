@@ -104,9 +104,9 @@ func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
-		Name:        TestCreateDisk,
+		Name:        TestVMAttachOrDetachDisk,
 		Size:        vcd.config.VCD.Disk.Size,
-		Description: TestCreateDisk,
+		Description: TestVMAttachOrDetachDisk,
 	}
 
 	diskCreateParams := &types.DiskCreateParams{
@@ -160,7 +160,7 @@ func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 	check.Assert(err, IsNil)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", "Test_VMAttachOrDetachDisk")
+	AddToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", check.TestName())
 }
 
 // Test attach disk to VM
@@ -186,9 +186,9 @@ func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
-		Name:        TestCreateDisk,
+		Name:        TestVMAttachDisk,
 		Size:        vcd.config.VCD.Disk.Size,
-		Description: TestCreateDisk,
+		Description: TestVMAttachDisk,
 	}
 
 	diskCreateParams := &types.DiskCreateParams{
@@ -231,7 +231,7 @@ func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 	check.Assert(vmRef.Name, Equals, vm.VM.Name)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", "Test_VMAttachDisk")
+	AddToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", check.TestName())
 }
 
 // Test detach disk from VM
@@ -258,9 +258,9 @@ func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
-		Name:        TestCreateDisk,
+		Name:        TestVMDetachDisk,
 		Size:        vcd.config.VCD.Disk.Size,
-		Description: TestCreateDisk,
+		Description: TestVMDetachDisk,
 	}
 
 	diskCreateParams := &types.DiskCreateParams{
@@ -314,5 +314,5 @@ func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
 	check.Assert(err, IsNil)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_VMDetachDisk")
+	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
 }

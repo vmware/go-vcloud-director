@@ -56,7 +56,7 @@ func (vcd *TestVCD) Test_CreateDisk(check *C) {
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_CreateDisk")
+	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
 }
 
 // Test update independent disk
@@ -73,9 +73,9 @@ func (vcd *TestVCD) Test_UpdateDisk(check *C) {
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
-		Name:        TestCreateDisk,
+		Name:        TestUpdateDisk,
 		Size:        vcd.config.VCD.Disk.Size,
-		Description: TestCreateDisk,
+		Description: TestUpdateDisk,
 	}
 
 	diskCreateParams := &types.DiskCreateParams{
@@ -102,7 +102,6 @@ func (vcd *TestVCD) Test_UpdateDisk(check *C) {
 
 	// Update disk
 	newDiskInfo := &types.Disk{
-		Name:        TestUpdateDisk,
 		Size:        vcd.config.VCD.Disk.SizeForUpdate,
 		Description: TestUpdateDisk + "_Update",
 	}
@@ -114,12 +113,13 @@ func (vcd *TestVCD) Test_UpdateDisk(check *C) {
 	// Refresh disk info, getting updated info
 	err = disk.Refresh()
 	check.Assert(err, IsNil)
+	// check disk name is not modified and not a empty string
 	check.Assert(disk.Disk.Name, Equals, newDiskInfo.Name)
 	check.Assert(disk.Disk.Size, Equals, newDiskInfo.Size)
 	check.Assert(disk.Disk.Description, Equals, newDiskInfo.Description)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_UpdateDisk")
+	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
 }
 
 // Test delete independent disk
@@ -132,9 +132,9 @@ func (vcd *TestVCD) Test_DeleteDisk(check *C) {
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
-		Name:        TestCreateDisk,
+		Name:        TestDeleteDisk,
 		Size:        vcd.config.VCD.Disk.Size,
-		Description: TestCreateDisk,
+		Description: TestDeleteDisk,
 	}
 
 	diskCreateParams := &types.DiskCreateParams{
@@ -181,9 +181,9 @@ func (vcd *TestVCD) Test_RefreshDisk(check *C) {
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
-		Name:        TestCreateDisk,
+		Name:        TestRefreshDisk,
 		Size:        vcd.config.VCD.Disk.Size,
-		Description: TestCreateDisk,
+		Description: TestRefreshDisk,
 	}
 
 	diskCreateParams := &types.DiskCreateParams{
@@ -227,7 +227,7 @@ func (vcd *TestVCD) Test_RefreshDisk(check *C) {
 	check.Assert(disk.Disk.Description, Equals, newDiskInfo.Description)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_DeleteDisk")
+	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
 }
 
 // Test find disk attached VM
@@ -253,9 +253,9 @@ func (vcd *TestVCD) Test_AttachedVMDisk(check *C) {
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
-		Name:        TestCreateDisk,
+		Name:        TestAttachedVMDisk,
 		Size:        vcd.config.VCD.Disk.Size,
-		Description: TestCreateDisk,
+		Description: TestAttachedVMDisk,
 	}
 
 	diskCreateParams := &types.DiskCreateParams{
@@ -298,7 +298,7 @@ func (vcd *TestVCD) Test_AttachedVMDisk(check *C) {
 	check.Assert(vmRef.Name, Equals, vm.VM.Name)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_AttachedVMDisk")
+	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
 }
 
 // Test find Disk by Href in VDC struct
@@ -311,9 +311,9 @@ func (vcd *TestVCD) Test_VdcFindDiskByHREF(check *C) {
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
-		Name:        TestCreateDisk,
+		Name:        TestVdcFindDiskByHREF,
 		Size:        vcd.config.VCD.Disk.Size,
-		Description: TestCreateDisk,
+		Description: TestVdcFindDiskByHREF,
 	}
 
 	diskCreateParams := &types.DiskCreateParams{
@@ -339,7 +339,7 @@ func (vcd *TestVCD) Test_VdcFindDiskByHREF(check *C) {
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_VdcFindDiskByHREF")
+	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
 }
 
 // Test find disk by href and vdc client
@@ -352,9 +352,9 @@ func (vcd *TestVCD) Test_FindDiskByHREF(check *C) {
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
-		Name:        TestCreateDisk,
+		Name:        TestFindDiskByHREF,
 		Size:        vcd.config.VCD.Disk.Size,
-		Description: TestCreateDisk,
+		Description: TestFindDiskByHREF,
 	}
 
 	diskCreateParams := &types.DiskCreateParams{
@@ -386,7 +386,7 @@ func (vcd *TestVCD) Test_FindDiskByHREF(check *C) {
 	check.Assert(disk.Disk.Name, Equals, foundDisk.Disk.Name)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_FindDiskByHREF")
+	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
 }
 
 // Independent disk integration test
@@ -415,9 +415,9 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
-		Name:        TestCreateDisk,
+		Name:        TestDisk,
 		Size:        vcd.config.VCD.Disk.Size,
-		Description: TestCreateDisk,
+		Description: TestDisk,
 	}
 
 	diskCreateParams := &types.DiskCreateParams{
@@ -488,5 +488,5 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 	check.Assert(disk.Disk.Description, Equals, newDiskInfo.Description)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_Disk")
+	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
 }

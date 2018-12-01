@@ -481,7 +481,7 @@ func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel
 	}
 
 	if attachOrDetachDiskLink == nil {
-		return Task{}, fmt.Errorf("could not found request URL for attach or detach disk in disk Link")
+		return Task{}, fmt.Errorf("could not find request URL for attach or detach disk in disk Link")
 	}
 
 	reqUrl, err := url.ParseRequestURI(attachOrDetachDiskLink.HREF)
@@ -523,7 +523,7 @@ func (vm *VM) AttachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, erro
 	util.Logger.Printf("[TRACE] Attach disk, HREF: %s\n", diskParams.Disk.HREF)
 
 	if diskParams.Disk == nil {
-		return Task{}, fmt.Errorf("could not found disk info for attach")
+		return Task{}, fmt.Errorf("could not find disk info for attach")
 	}
 
 	return vm.attachOrDetachDisk(diskParams, types.RelDiskAttach)
@@ -540,7 +540,7 @@ func (vm *VM) DetachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, erro
 	util.Logger.Printf("[TRACE] Detach disk, HREF: %s\n", diskParams.Disk.HREF)
 
 	if diskParams.Disk == nil {
-		return Task{}, fmt.Errorf("could not found disk info for detach")
+		return Task{}, fmt.Errorf("could not find disk info for detach")
 	}
 
 	return vm.attachOrDetachDisk(diskParams, types.RelDiskDetach)
