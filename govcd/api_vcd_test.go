@@ -143,21 +143,6 @@ func AddToCleanupList(name, entityType, parent, createdBy string) {
 	cleanupEntityList = append(cleanupEntityList, CleanupEntity{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy})
 }
 
-// Adds an entity to the cleanup list.
-// To be called by all tests when a new entity has been created, before
-// running any other operation.
-// Items in the list will be deleted at the end of the tests if they still exist.
-func PrependToCleanupList(name, entityType, parent, createdBy string) {
-	for _, item := range cleanupEntityList {
-		// avoid adding the same item twice
-		if item.Name == name && item.EntityType == entityType {
-			return
-		}
-	}
-	cleanupEntityList = append(cleanupEntityList, CleanupEntity{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy})
-	//cleanupEntityList = append([]CleanupEntity{{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy}}, cleanupEntityList...)
-}
-
 // Users use the environmental variable GOVCD_CONFIG as
 // a config file for testing. Otherwise the default is govcd_test_config.yaml
 // in the current directory. Throws an error if it cannot find your
@@ -436,14 +421,14 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			return
 		}
 
-		// see if the disk is attached to VM
+		// See if the disk is attached to VM
 		vmRef, err := disk.AttachedVM()
 		if err != nil {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting %s '%s', cannot find attached VM: %s\n",
 				entity.EntityType, entity.Name, err)
 			return
 		}
-		// if the disk is attached to VM, detach disk from VM
+		// If the disk is attached to VM, detach disk from VM
 		if vmRef != nil {
 			vcd.infoCleanup("removeLeftoverEntries: [INFO] Deleting %s '%s', VM: '%s|%s', disk is attached to VM, detaching disk from VM\n",
 				entity.EntityType, entity.Name, vmRef.Name, vmRef.HREF)
@@ -456,7 +441,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 				return
 			}
 
-			// detach the disk from VM
+			// Detach the disk from VM
 			task, err := vm.DetachDisk(&types.DiskAttachOrDetachParams{
 				Disk: &types.Reference{
 					HREF: disk.Disk.HREF,
@@ -470,8 +455,8 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 				return
 			}
 
-			// we need to refresh the disk info to obtain remove href for delete disk
-			// due to attached disk is not showing remove disk href in disk.Disk.Link
+			// We need to refresh the disk info to obtain remove href for delete disk
+			// because attached disk is not showing remove disk href in disk.Disk.Link
 			err = disk.Refresh()
 			if err != nil {
 				vcd.infoCleanup(

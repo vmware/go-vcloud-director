@@ -160,7 +160,7 @@ func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 	check.Assert(err, IsNil)
 
 	// Clean up
-	PrependToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", "Test_VMAttachOrDetachDisk")
+	AddToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", "Test_VMAttachOrDetachDisk")
 }
 
 // Test attach disk to VM
@@ -231,7 +231,7 @@ func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 	check.Assert(vmRef.Name, Equals, vm.VM.Name)
 
 	// Clean up
-	PrependToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", "Test_VMAttachDisk")
+	AddToCleanupList(fmt.Sprintf("%s|%s", disk.Disk.Name, disk.Disk.HREF), "disk", "", "Test_VMAttachDisk")
 }
 
 // Test detach disk from VM
@@ -314,5 +314,5 @@ func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
 	check.Assert(err, IsNil)
 
 	// Clean up
-	PrependToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_VMDetachDisk")
+	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", "Test_VMDetachDisk")
 }
