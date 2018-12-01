@@ -7,6 +7,7 @@ package govcd
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/types/v56"
 	"github.com/vmware/go-vcloud-director/util"
@@ -32,14 +33,14 @@ func NewDisk(cli *Client) *Disk {
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 102 - 103,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
-func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) ([]*types.Task, error) {
+func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (Task, error) {
 	util.Logger.Printf("[TRACE] Create disk, name: %s, size: %d \n",
 		diskCreateParams.Disk.Name,
 		diskCreateParams.Disk.Size,
 	)
 
 	if diskCreateParams.Disk.Size <= 0 {
-		return nil, fmt.Errorf("disk size should be greater than or equal to 1KB")
+		return Task{}, fmt.Errorf("disk size should be greater than or equal to 1KB")
 	}
 
 	var err error
@@ -60,13 +61,13 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) ([]*types.T
 	}
 
 	if createDiskLink == nil {
-		return nil, fmt.Errorf("cannot not found request URL for create disk in vdc Link")
+		return Task{}, fmt.Errorf("cannot not found request URL for create disk in vdc Link")
 	}
 
 	// Parse request URI
 	reqUrl, err := url.ParseRequestURI(createDiskLink.HREF)
 	if err != nil {
-		return nil, fmt.Errorf("error parse URI: %s", err)
+		return Task{}, fmt.Errorf("error parse URI: %s", err)
 	}
 
 	// Prepare the request payload
@@ -74,7 +75,7 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) ([]*types.T
 
 	xmlPayload, err := xml.Marshal(diskCreateParams)
 	if err != nil {
-		return nil, fmt.Errorf("error xml.Marshal: %s", err)
+		return Task{}, fmt.Errorf("error xml.Marshal: %s", err)
 	}
 
 	// Send Request
@@ -83,17 +84,24 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) ([]*types.T
 	req.Header.Add("Content-Type", createDiskLink.Type)
 	resp, err := checkResp(vdc.client.Http.Do(req))
 	if err != nil {
-		return nil, fmt.Errorf("error create disk: %s", err)
+		return Task{}, fmt.Errorf("error create disk: %s", err)
 	}
 
 	// Decode response
 	disk := NewDisk(vdc.client)
 	if err = decodeBody(resp, disk.Disk); err != nil {
-		return nil, fmt.Errorf("error decoding create disk params response: %s", err)
+		return Task{}, fmt.Errorf("error decoding create disk params response: %s", err)
 	}
 
+	// Obtain disk task
+	if disk.Disk.Tasks.Task == nil || len(disk.Disk.Tasks.Task) <= 0 {
+		return Task{}, errors.New("error cannot find disk creation task in API response")
+	}
+	task := NewTask(vdc.client)
+	task.Task = disk.Disk.Tasks.Task[0]
+
 	// Return the disk
-	return disk.Disk.Tasks.Task, nil
+	return *task, nil
 }
 
 // Update an independent disk
