@@ -309,18 +309,11 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		task, _ := vapp.Undeploy()
 		_ = task.WaitTaskCompletion()
-
 		task, err = vapp.Delete()
 		if err != nil {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 			return
 		}
-		err = task.WaitTaskCompletion()
-		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Error deleting %s '%s', waitTaskCompletion of delete vapp is failed: %s\n", entity.EntityType, entity.Name, err)
-			return
-		}
-
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
 
