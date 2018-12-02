@@ -143,6 +143,20 @@ func AddToCleanupList(name, entityType, parent, createdBy string) {
 	cleanupEntityList = append(cleanupEntityList, CleanupEntity{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy})
 }
 
+// Prepend an entity to the cleanup list.
+// To be called by all tests when a new entity has been created, before
+// running any other operation.
+// Items in the list will be deleted at the end of the tests if they still exist.
+func PrependToCleanupList(name, entityType, parent, createdBy string) {
+	for _, item := range cleanupEntityList {
+		// avoid adding the same item twice
+		if item.Name == name && item.EntityType == entityType {
+			return
+		}
+	}
+	cleanupEntityList = append([]CleanupEntity{{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy}}, cleanupEntityList...)
+}
+
 // Users use the environmental variable GOVCD_CONFIG as
 // a config file for testing. Otherwise the default is govcd_test_config.yaml
 // in the current directory. Throws an error if it cannot find your
@@ -303,7 +317,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		err = task.WaitTaskCompletion()
 		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Error deleting %s '%s', WaitTaskCompletion of delete vapp is failed: %s\n", entity.EntityType, entity.Name, err)
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Error deleting %s '%s', waitTaskCompletion of delete vapp is failed: %s\n", entity.EntityType, entity.Name, err)
 			return
 		}
 
@@ -421,22 +435,22 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			return
 		}
 
-		// See if the disk is attached to VM
+		// See if the disk is attached to the VM
 		vmRef, err := disk.AttachedVM()
 		if err != nil {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting %s '%s', cannot find attached VM: %s\n",
 				entity.EntityType, entity.Name, err)
 			return
 		}
-		// If the disk is attached to VM, detach disk from VM
+		// If the disk is attached to the VM, detach disk from the VM
 		if vmRef != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [INFO] Deleting %s '%s', VM: '%s|%s', disk is attached to VM, detaching disk from VM\n",
+			vcd.infoCleanup("removeLeftoverEntries: [INFO] Deleting %s '%s', VM: '%s|%s', disk is attached, detaching disk\n",
 				entity.EntityType, entity.Name, vmRef.Name, vmRef.HREF)
 
 			vm, err := vcd.client.FindVMByHREF(vmRef.HREF)
 			if err != nil {
 				vcd.infoCleanup(
-					"removeLeftoverEntries: [ERROR] Deleting %s '%s', VM: '%s|%s', cannot not find VM details: %s\n",
+					"removeLeftoverEntries: [ERROR] Deleting %s '%s', VM: '%s|%s', cannot not find the VM details: %s\n",
 					entity.EntityType, entity.Name, vmRef.Name, vmRef.HREF, err)
 				return
 			}

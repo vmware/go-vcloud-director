@@ -56,7 +56,7 @@ func (vcd *TestVCD) Test_CreateDisk(check *C) {
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
+	PrependToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
 }
 
 // Test update independent disk
@@ -119,7 +119,7 @@ func (vcd *TestVCD) Test_UpdateDisk(check *C) {
 	check.Assert(disk.Disk.Description, Equals, newDiskInfo.Description)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
+	PrependToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
 }
 
 // Test delete independent disk
@@ -227,7 +227,7 @@ func (vcd *TestVCD) Test_RefreshDisk(check *C) {
 	check.Assert(disk.Disk.Description, Equals, newDiskInfo.Description)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
+	PrependToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
 }
 
 // Test find disk attached VM
@@ -298,7 +298,7 @@ func (vcd *TestVCD) Test_AttachedVMDisk(check *C) {
 	check.Assert(vmRef.Name, Equals, vm.VM.Name)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
+	PrependToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
 }
 
 // Test find Disk by Href in VDC struct
@@ -339,7 +339,7 @@ func (vcd *TestVCD) Test_VdcFindDiskByHREF(check *C) {
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
+	PrependToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
 }
 
 // Test find disk by href and vdc client
@@ -386,7 +386,7 @@ func (vcd *TestVCD) Test_FindDiskByHREF(check *C) {
 	check.Assert(disk.Disk.Name, Equals, foundDisk.Disk.Name)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
+	PrependToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
 }
 
 // Independent disk integration test
@@ -488,5 +488,5 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 	check.Assert(disk.Disk.Description, Equals, newDiskInfo.Description)
 
 	// Clean up
-	AddToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
+	PrependToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, disk.Disk.HREF), "disk", "", check.TestName())
 }
