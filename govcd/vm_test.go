@@ -317,5 +317,4 @@ func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
 	err = detachDiskTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-
 }

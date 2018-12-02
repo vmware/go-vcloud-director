@@ -151,7 +151,6 @@ func (vcd *TestVCD) Test_DeleteDisk(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
 
-
 	// Defer prepend the disk info to cleanup list until the function returns
 	defer func() {
 		if err != nil {
