@@ -39,6 +39,10 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (Task, erro
 		diskCreateParams.Disk.Size,
 	)
 
+	if diskCreateParams.Disk.Name == "" {
+		return Task{}, fmt.Errorf("disk name is required")
+	}
+
 	if diskCreateParams.Disk.Size <= 0 {
 		return Task{}, fmt.Errorf("disk size should be greater than or equal to 1KB")
 	}

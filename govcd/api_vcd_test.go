@@ -457,7 +457,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			err = task.WaitTaskCompletion()
 			if err != nil {
 				vcd.infoCleanup(
-					"removeLeftoverEntries: [ERROR] Deleting %s '%s', VM: '%s|%s', WaitTaskCompletion of detach disk is failed: %s\n",
+					"removeLeftoverEntries: [ERROR] Deleting %s '%s', VM: '%s|%s', waitTaskCompletion of detach disk is failed: %s\n",
 					entity.EntityType, entity.Name, vmRef.Name, vmRef.HREF, err)
 				return
 			}
@@ -482,7 +482,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		err = deleteDiskTask.WaitTaskCompletion()
 		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting %s '%s', WaitTaskCompletion of delete disk is failed: %s\n",
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting %s '%s', waitTaskCompletion of delete disk is failed: %s\n",
 				entity.EntityType, entity.Name, err)
 			return
 		}
