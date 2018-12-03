@@ -210,7 +210,7 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		return UploadTask{}, fmt.Errorf("%v. Unpacked files for checking are accessible in: "+tmpDir, err)
 	}
 
-	catalogItemUploadURL, err := findCatalogItemUploadLink(cat)
+	catalogItemUploadURL, err := findCatalogItemUploadLink(cat, "application/vnd.vmware.vcloud.uploadVAppTemplateParams+xml")
 	if err != nil {
 		return UploadTask{}, err
 	}
@@ -462,9 +462,9 @@ func parseOvfFileDesc(file *os.File, ovfFileDesc *Envelope) error {
 	return nil
 }
 
-func findCatalogItemUploadLink(catalog *Catalog) (*url.URL, error) {
+func findCatalogItemUploadLink(catalog *Catalog, applicationType string) (*url.URL, error) {
 	for _, item := range catalog.Catalog.Link {
-		if item.Type == "application/vnd.vmware.vcloud.uploadVAppTemplateParams+xml" && item.Rel == "add" {
+		if item.Type == applicationType && item.Rel == "add" {
 			util.Logger.Printf("[TRACE] Found Catalong link for upload: %s\n", item.HREF)
 
 			uploadURL, err := url.ParseRequestURI(item.HREF)
@@ -665,4 +665,50 @@ func removeCatalogItemOnError(client *Client, vappTemplateLink *url.URL, itemNam
 	} else {
 		util.Logger.Printf("[Error] Failed to delete catalog item created with error: %v", vappTemplateLink)
 	}
+}
+
+func (cat *Catalog) UploadMediaImage(mediaName, mediaDescription, filePath string, uploadPieceSize int64) (UploadTask, error) {
+
+	if *cat == (Catalog{}) {
+		return UploadTask{}, errors.New("catalog can not be empty or nil")
+	}
+
+	mediaFilePath, err := validateAndFixFilePath(filePath)
+	if err != nil {
+		return UploadTask{}, err
+	}
+
+	isISOGood, err := verifyIso(mediaFilePath)
+	if err != nil || !isISOGood {
+		return UploadTask{}, fmt.Errorf("[ERROR] File %s isn't correct iso file: %#v", mediaFilePath, err)
+	}
+
+	file, e := os.Stat(mediaFilePath)
+	if e != nil {
+		return UploadTask{}, fmt.Errorf("[ERROR] Issue finding file: %#v", e)
+	}
+	fileSize := file.Size()
+
+	for _, catalogItemName := range getExistingCatalogItems(cat) {
+		if catalogItemName == mediaName {
+			return UploadTask{}, fmt.Errorf("media item '%s' already exists. Upload with different name", mediaName)
+		}
+	}
+
+	catalogItemUploadURL, err := findCatalogItemUploadLink(cat, "application/vnd.vmware.vcloud.media+xml")
+	if err != nil {
+		return UploadTask{}, err
+	}
+
+	mediaItem, err := createMedia(cat.client, catalogItemUploadURL.String(), mediaName, mediaDescription, fileSize)
+	if err != nil {
+		return UploadTask{}, fmt.Errorf("[ERROR] Issue creating media: %#v", err)
+	}
+
+	createdMedia, err := queryMedia(cat.client, mediaItem.Entity.HREF, mediaName)
+	if err != nil {
+		return UploadTask{}, err
+	}
+
+	return executeUpload(cat.client, createdMedia, mediaFilePath, mediaName, fileSize, uploadPieceSize)
 }
