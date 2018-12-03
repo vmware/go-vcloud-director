@@ -109,9 +109,9 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (Task, erro
 }
 
 // Update an independent disk
-// 1 Use newDiskInfo to change update the independent disk.
-// 2 Return task of independent disk update
-// Please verify the independent disk is not connected to any VM before calling this function.
+// 1 Verify the independent disk is not connected to any VM
+// 2 Use newDiskInfo to change update the independent disk
+// 3 Return task of independent disk update
 // If the independent disk is connected to a VM, the task will be failed.
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 104 - 106,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
@@ -123,11 +123,25 @@ func (d *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 		d.Disk.HREF,
 	)
 
+	var err error
+
+	if newDiskInfo.Name == "" {
+		return Task{}, fmt.Errorf("disk name is required")
+	}
+
 	if newDiskInfo.Size <= 0 {
 		return Task{}, fmt.Errorf("disk size should be greater than or equal to 1KB")
 	}
 
-	var err error
+	// Verify the independent disk is not connected to any VM
+	vmRef, err := d.AttachedVM()
+	if err != nil {
+		return Task{}, fmt.Errorf("error find attached VM: %s", err)
+	}
+	if vmRef != nil {
+		return Task{}, errors.New("error disk is attached")
+	}
+
 	var updateDiskLink *types.Link
 
 	// Find the proper link for request
@@ -187,9 +201,9 @@ func (d *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 }
 
 // Remove an independent disk
-// 1 Delete the independent disk. Make a DELETE request to the URL in the rel="remove" link in the Disk.
-// 2 Return task of independent disk deletion.
-// Please verify the independent disk is not connected to any VM before calling this function.
+// 1 Verify the independent disk is not connected to any VM
+// 2 Delete the independent disk. Make a DELETE request to the URL in the rel="remove" link in the Disk
+// 3 Return task of independent disk deletion
 // If the independent disk is connected to a VM, the task will be failed.
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 106 - 107,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
@@ -198,6 +212,16 @@ func (d *Disk) Delete() (Task, error) {
 	util.Logger.Printf("[TRACE] Delete disk, HREF: %s \n", d.Disk.HREF)
 
 	var err error
+
+	// Verify the independent disk is not connected to any VM
+	vmRef, err := d.AttachedVM()
+	if err != nil {
+		return Task{}, fmt.Errorf("error find attached VM: %s", err)
+	}
+	if vmRef != nil {
+		return Task{}, errors.New("error disk is attached")
+	}
+
 	var deleteDiskLink *types.Link
 
 	// Find the proper link for request
