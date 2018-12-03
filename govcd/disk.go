@@ -173,7 +173,7 @@ func (d *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 	req.Header.Add("Content-Type", updateDiskLink.Type)
 	resp, err := checkResp(d.client.Http.Do(req))
 	if err != nil {
-		return Task{}, fmt.Errorf("error find disk: %s", err)
+		return Task{}, fmt.Errorf("error update disk: %s", err)
 	}
 
 	// Decode response
