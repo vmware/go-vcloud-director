@@ -79,6 +79,10 @@ func (vdcCli *VCDClient) vcdauthorize(user, pass, org string) error {
 	// Store the authentication header
 	vdcCli.Client.VCDToken = resp.Header.Get("x-vcloud-authorization")
 	vdcCli.Client.VCDAuthHeader = "x-vcloud-authorization"
+	vdcCli.Client.SysAdmin = false
+	if "System" == org {
+		vdcCli.Client.SysAdmin = true
+	}
 	// Get query href
 	vdcCli.QueryHREF = vdcCli.Client.VCDHREF
 	vdcCli.QueryHREF.Path += "/query"

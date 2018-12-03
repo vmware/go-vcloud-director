@@ -1907,6 +1907,7 @@ type QueryResultRecordsType struct {
 	VAppRecord                 []*QueryResultVAppRecordType                 `xml:"VAppRecord"`                 // A record representing a VApp result.
 	OrgVdcStorageProfileRecord []*QueryResultOrgVdcStorageProfileRecordType `xml:"OrgVdcStorageProfileRecord"` // A record representing storage profiles
 	MediaRecord                []*MediaRecordType                           `xml:"MediaRecord"`                // A record representing media
+	AdminMediaRecord           []*MediaRecordType                           `xml:"AdminMediaRecord"`           // A record representing Admin media
 }
 
 // QueryResultEdgeGatewayRecordType represents an edge gateway record as query result.

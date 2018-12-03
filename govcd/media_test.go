@@ -5,7 +5,6 @@
 package govcd
 
 import (
-	"github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
 	"io/ioutil"
 	"os"
@@ -22,7 +21,7 @@ func (vcd *TestVCD) Test_UploadMediaImage(check *C) {
 
 	AddToCleanupList(TestUploadMedia, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadMediaImage")
 
-	verifyMediaImageUploaded(vcd.vdc.client, check, TestUploadMedia)
+	verifyMediaImageUploaded(&vcd.vdc, check, TestUploadMedia)
 }
 
 func skipWhenIsoPathMissing(vcd *TestVCD, check *C) {
@@ -31,22 +30,13 @@ func skipWhenIsoPathMissing(vcd *TestVCD, check *C) {
 	}
 }
 
-func verifyMediaImageUploaded(client *Client, check *C, itemName string) {
-	vdcHref := client.VCDHREF
-	vdcHref.Path += "/mediaList/query"
+func verifyMediaImageUploaded(vdc *Vdc, check *C, itemName string) {
 
-	request := client.NewRequestWitNotEncodedParams(nil, map[string]string{"filter": "name==" + itemName}, "GET", vdcHref, nil)
+	results, err := queryMediaItemsWithFilter(vdc, "name=="+itemName)
 
-	response, err := checkResp(client.Http.Do(request))
 	check.Assert(err, Equals, nil)
+	check.Assert(len(results), Equals, 1)
 
-	defer response.Body.Close()
-
-	mediaParsed := &types.QueryResultRecordsType{}
-	err = decodeBody(response, mediaParsed)
-	check.Assert(err, Equals, nil)
-
-	check.Assert(len(mediaParsed.MediaRecord), Equals, 1)
 }
 
 // Tests System function UploadMediaImage by checking UploadTask.GetUploadProgress returns values of progress.
@@ -68,7 +58,7 @@ func (vcd *TestVCD) Test_UploadMediaImage_progress_works(check *C) {
 
 	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadMediaImage")
 
-	verifyMediaImageUploaded(vcd.vdc.client, check, itemName)
+	verifyMediaImageUploaded(&vcd.vdc, check, itemName)
 }
 
 // Tests System function UploadMediaImage by checking UploadTask.ShowUploadProgress writes values of progress to stdin.
@@ -97,7 +87,7 @@ func (vcd *TestVCD) Test_UploadMediaImage_ShowUploadProgress_works(check *C) {
 	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadMediaImage")
 
 	check.Assert(string(result), Matches, ".*Upload progress 100.00%")
-	verifyMediaImageUploaded(vcd.vdc.client, check, itemName)
+	verifyMediaImageUploaded(&vcd.vdc, check, itemName)
 }
 
 // Tests System function UploadMediaImage by creating media item and expecting specific error

@@ -54,7 +54,7 @@ func (vdc *Vdc) UploadMediaImage(mediaName, mediaDescription, filePath string, u
 		return UploadTask{}, fmt.Errorf("[ERROR] File %s isn't correct iso file: %#v", mediaFilePath, err)
 	}
 
-	mediaList, err := getExistingMediaItems(vdc.client, vdc.Vdc.HREF)
+	mediaList, err := getExistingMediaItems(vdc)
 	if err != nil {
 		return UploadTask{}, fmt.Errorf("[ERROR] Checking existing media files failed: %#v", err)
 	}
@@ -262,28 +262,31 @@ func verifyHeader(buf []byte) bool {
 
 // Reference for api usage http://pubs.vmware.com/vcloud-api-1-5/wwhelp/wwhimpl/js/html/wwhelp.htm#href=api_prog/GUID-9356B99B-E414-474A-853C-1411692AF84C.html
 // http://pubs.vmware.com/vcloud-api-1-5/wwhelp/wwhimpl/js/html/wwhelp.htm#href=api_prog/GUID-43DFF30E-391F-42DC-87B3-5923ABCEB366.html
-func getExistingMediaItems(client *Client, vdcHREF string) ([]*types.MediaRecordType, error) {
+func getExistingMediaItems(vdc *Vdc) ([]*types.MediaRecordType, error) {
 	util.Logger.Printf("[TRACE] Qeurying medias \n")
 
-	vdcHref := client.VCDHREF
-	vdcHref.Path += "/mediaList/query"
+	mediaResults, err := queryMediaItemsWithFilter(vdc, "vdc=="+url.QueryEscape(vdc.Vdc.HREF))
 
-	request := client.NewRequestWitNotEncodedParams(nil, map[string]string{"filter": "vdc==" + url.QueryEscape(vdcHREF)}, "GET", vdcHref, nil)
+	util.Logger.Printf("[TRACE] Found media records: %d \n", len(mediaResults))
+	return mediaResults, err
+}
 
-	response, err := checkResp(client.Http.Do(request))
+func queryMediaItemsWithFilter(vdc *Vdc, filter string) ([]*types.MediaRecordType, error) {
+	typeMedia := "media"
+	if vdc.client.SysAdmin {
+		typeMedia = "adminMedia"
+	}
+
+	results, err := vdc.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia, "filter": filter})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error querying medias %#v", err)
 	}
 
-	defer response.Body.Close()
-
-	mediaParsed := &types.QueryResultRecordsType{}
-	if err = decodeBody(response, mediaParsed); err != nil {
-		return nil, err
+	mediaResults := results.Results.MediaRecord
+	if vdc.client.SysAdmin {
+		mediaResults = results.Results.AdminMediaRecord
 	}
-
-	util.Logger.Printf("[TRACE] Found media records: %d \n", len(mediaParsed.MediaRecord))
-	return mediaParsed.MediaRecord, nil
+	return mediaResults, nil
 }
 
 // Looks for an Org Vdc network and, if found, will delete it.

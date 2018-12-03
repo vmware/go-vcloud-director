@@ -567,36 +567,25 @@ func (vdc *Vdc) FindVAppByID(vappid string) (VApp, error) {
 func (vdc *Vdc) FindMediaImage(mediaName string) (MediaItem, error) {
 	util.Logger.Printf("[TRACE] Qeurying medias by name\n")
 
-	vdcHref := vdc.client.VCDHREF
-	vdcHref.Path += "/mediaList/query"
-
-	request := vdc.client.NewRequestWitNotEncodedParams(nil, map[string]string{"filter": "name==" + url.QueryEscape(mediaName)}, "GET", vdcHref, nil)
-
-	response, err := checkResp(vdc.client.Http.Do(request))
+	mediaResults, err := queryMediaItemsWithFilter(vdc, "name=="+url.QueryEscape(mediaName))
 	if err != nil {
 		return MediaItem{}, err
 	}
 
-	defer response.Body.Close()
-
-	queryResult := &types.QueryResultRecordsType{}
 	newMediaItem := NewMediaItem(vdc.client)
-	if err = decodeBody(response, queryResult); err != nil {
-		return MediaItem{}, err
+
+	if len(mediaResults) == 1 {
+		newMediaItem.MediaItem = mediaResults[0]
 	}
 
-	if len(queryResult.MediaRecord) == 1 {
-		newMediaItem.MediaItem = queryResult.MediaRecord[0]
-	}
-
-	if len(queryResult.MediaRecord) == 0 {
+	if len(mediaResults) == 0 {
 		return MediaItem{}, nil
 	}
 
-	if len(queryResult.MediaRecord) == 0 {
+	if len(mediaResults) > 1 {
 		return MediaItem{}, errors.New("found more than result")
 	}
 
-	util.Logger.Printf("[TRACE] Found media record by name: %#v \n", newMediaItem.MediaItem)
+	util.Logger.Printf("[TRACE] Found media record by name: %#v \n", mediaResults)
 	return *newMediaItem, nil
 }

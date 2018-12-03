@@ -25,6 +25,7 @@ type Client struct {
 	VCDAuthHeader string      // Authorization header
 	VCDHREF       url.URL     // VCD API ENDPOINT
 	Http          http.Client // HttpClient is the client to use. Default will be used if not provided.
+	SysAdmin      bool        // flag if client is connected as system administrator
 }
 
 func (cli *Client) NewRequestWitNotEncodedParams(params map[string]string, notEncodeParams map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
