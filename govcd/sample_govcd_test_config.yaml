@@ -64,10 +64,10 @@ vcd:
     # Independent disk parameters for testing
     disk:
       #
-      # Disk size (bytes) for create disk, skip disk tests if it is less than 0
+      # Disk size (bytes) for create disk, skip disk tests if it is less than or equal to 0
       size: 1024
       #
-      # Disk size (bytes) for update disk, skip some disk tests if it is less than 0
+      # Disk size (bytes) for update disk, skip some disk tests if it is less than or equal to 0
       sizeForUpdate: 10240
 logging:
     # All items in this section are optional
