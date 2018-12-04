@@ -12,9 +12,9 @@ import (
 
 // Tests System function UploadMediaImage by checking if provided standard iso file uploaded.
 func (vcd *TestVCD) Test_UploadMediaImage(check *C) {
-	skipWhenIsoPathMissing(vcd, check)
+	skipWhenMediaPathMissing(vcd, check)
 
-	uploadTask, err := vcd.vdc.UploadMediaImage(TestUploadMedia, "upload from test", vcd.config.Media.ISOPath, 1024)
+	uploadTask, err := vcd.vdc.UploadMediaImage(TestUploadMedia, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
@@ -24,8 +24,8 @@ func (vcd *TestVCD) Test_UploadMediaImage(check *C) {
 	verifyMediaImageUploaded(&vcd.vdc, check, TestUploadMedia)
 }
 
-func skipWhenIsoPathMissing(vcd *TestVCD, check *C) {
-	if vcd.config.Media.ISOPath == "" {
+func skipWhenMediaPathMissing(vcd *TestVCD, check *C) {
+	if vcd.config.Media.MediaPath == "" {
 		check.Skip("Skipping test because no iso path given")
 	}
 }
@@ -41,10 +41,10 @@ func verifyMediaImageUploaded(vdc *Vdc, check *C, itemName string) {
 
 // Tests System function UploadMediaImage by checking UploadTask.GetUploadProgress returns values of progress.
 func (vcd *TestVCD) Test_UploadMediaImage_progress_works(check *C) {
-	skipWhenIsoPathMissing(vcd, check)
+	skipWhenMediaPathMissing(vcd, check)
 	itemName := TestUploadMedia + "2"
 
-	uploadTask, err := vcd.vdc.UploadMediaImage(itemName, "upload from test", vcd.config.Media.ISOPath, 1024)
+	uploadTask, err := vcd.vdc.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
 	for {
 		if value := uploadTask.GetUploadProgress(); value == "100.00" {
@@ -63,10 +63,10 @@ func (vcd *TestVCD) Test_UploadMediaImage_progress_works(check *C) {
 
 // Tests System function UploadMediaImage by checking UploadTask.ShowUploadProgress writes values of progress to stdin.
 func (vcd *TestVCD) Test_UploadMediaImage_ShowUploadProgress_works(check *C) {
-	skipWhenIsoPathMissing(vcd, check)
+	skipWhenMediaPathMissing(vcd, check)
 	itemName := TestUploadMedia + "3"
 
-	uploadTask, err := vcd.vdc.UploadMediaImage(itemName, "upload from test", vcd.config.Media.ISOPath, 1024)
+	uploadTask, err := vcd.vdc.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
 
 	//take control of stdout
@@ -93,27 +93,27 @@ func (vcd *TestVCD) Test_UploadMediaImage_ShowUploadProgress_works(check *C) {
 // Tests System function UploadMediaImage by creating media item and expecting specific error
 // then trying to create same media item. As vCD returns cryptic error for such case.
 func (vcd *TestVCD) Test_UploadMediaImage_error_withSameItem(check *C) {
-	skipWhenIsoPathMissing(vcd, check)
+	skipWhenMediaPathMissing(vcd, check)
 	itemName := TestUploadMedia + "4"
 
-	uploadTask, err := vcd.vdc.UploadMediaImage(itemName, "upload from test", vcd.config.Media.ISOPath, 1024)
+	uploadTask, err := vcd.vdc.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
 	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadMediaImage")
 
-	_, err2 := vcd.vdc.UploadMediaImage(itemName, "upload from test", vcd.config.Media.ISOPath, 1024)
+	_, err2 := vcd.vdc.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err2.Error(), Matches, ".*already exists. Upload with different name.*")
 }
 
 // Tests System function Delete by creating media item and
 // deleting it after.
 func (vcd *TestVCD) Test_DeleteMediaImage(check *C) {
-	skipWhenIsoPathMissing(vcd, check)
+	skipWhenMediaPathMissing(vcd, check)
 	itemName := TestUploadMedia + "5"
 
-	uploadTask, err := vcd.vdc.UploadMediaImage(itemName, "upload from test", vcd.config.Media.ISOPath, 1024)
+	uploadTask, err := vcd.vdc.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)

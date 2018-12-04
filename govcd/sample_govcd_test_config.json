@@ -35,7 +35,7 @@
     "ovaChunkedPath": "../test-resources/template_with_custom_chunk_size.ova"
   },
   "media": {
-    "isoPath": "../test-resources/test.iso",
+    "mediaPath": "../test-resources/test.iso",
     "mediaName": "uploadedMediaName"
   }
 }

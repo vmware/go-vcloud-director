@@ -81,8 +81,8 @@ type TestConfig struct {
 		OVAChunkedPath string `yaml:"ovaChunkedPath,omitempty"`
 	} `yaml:"ova"`
 	Media struct {
-		ISOPath string `yaml:"isoPath,omitempty"`
-		Media   string `yaml:"mediaName,omitempty"`
+		MediaPath string `yaml:"mediaPath,omitempty"`
+		Media     string `yaml:"mediaName,omitempty"`
 	} `yaml:"media"`
 }
 

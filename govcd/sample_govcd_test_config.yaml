@@ -92,7 +92,7 @@ media:
   # Default paths are simple iso provided by project
   # Empty values skips the tests
   # Absolute or relative path
-  isoPath: ../test-resources/test.iso
+  mediaPath: ../test-resources/test.iso
   # Existing media in test system
   mediaName: uploadedMediaName
 
