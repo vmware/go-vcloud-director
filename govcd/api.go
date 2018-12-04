@@ -28,7 +28,8 @@ type Client struct {
 	SysAdmin      bool        // flag if client is connected as system administrator
 }
 
-func (cli *Client) NewRequestWitNotEncodedParams(params map[string]string, notEncodeParams map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
+// function allow to pass complex values params which shouldn't be encoded like for queries. e.g. /query?filter=(name=foo)
+func (cli *Client) NewRequestWitNotEncodedParams(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
 	reqValues := url.Values{}
 
 	// Build up our request parameters
@@ -39,8 +40,10 @@ func (cli *Client) NewRequestWitNotEncodedParams(params map[string]string, notEn
 	// Add the params to our URL
 	reqUrl.RawQuery = reqValues.Encode()
 
-	for key, value := range notEncodeParams {
-		reqUrl.RawQuery += "&" + key + "=" + value
+	for key, value := range notEncodedParams {
+		if key != "" && value != "" {
+			reqUrl.RawQuery += "&" + key + "=" + value
+		}
 	}
 
 	// Build the request, no point in checking for errors here as we're just
