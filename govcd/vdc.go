@@ -565,7 +565,7 @@ func (vdc *Vdc) FindVAppByID(vappid string) (VApp, error) {
 }
 
 func (vdc *Vdc) FindMediaImage(mediaName string) (MediaItem, error) {
-	util.Logger.Printf("[TRACE] Qeurying medias by name\n")
+	util.Logger.Printf("[TRACE] Querying medias by name\n")
 
 	mediaResults, err := queryMediaItemsWithFilter(vdc, "name=="+url.QueryEscape(mediaName))
 	if err != nil {

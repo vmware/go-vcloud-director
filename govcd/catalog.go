@@ -396,7 +396,7 @@ func waitForTempUploadLinks(client *Client, vappTemplateUrl *url.URL, newItemNam
 }
 
 func queryVappTemplate(client *Client, vappTemplateUrl *url.URL, newItemName string) (*types.VAppTemplate, error) {
-	util.Logger.Printf("[TRACE] Qeurying vapp template: %s\n", vappTemplateUrl)
+	util.Logger.Printf("[TRACE] Querying vapp template: %s\n", vappTemplateUrl)
 	request := client.NewRequest(map[string]string{}, "GET", *vappTemplateUrl, nil)
 	response, err := checkResp(client.Http.Do(request))
 	if err != nil {

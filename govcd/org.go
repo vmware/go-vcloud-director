@@ -222,7 +222,7 @@ func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
 
 			vdcURL, err := url.ParseRequestURI(vdcHREF)
 			if err != nil {
-				return Vdc{}, fmt.Errorf("eror parsing url: %v", err)
+				return Vdc{}, fmt.Errorf("error parsing url: %v", err)
 			}
 			req := adminOrg.client.NewRequest(map[string]string{}, "GET", *vdcURL, nil)
 			resp, err := checkResp(adminOrg.client.Http.Do(req))

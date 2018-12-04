@@ -192,7 +192,7 @@ func removeImageOnError(client *Client, media *types.Media, itemName string) {
 }
 
 func queryMedia(client *Client, mediaUrl string, newItemName string) (*types.Media, error) {
-	util.Logger.Printf("[TRACE] Qeurying media: %s\n", mediaUrl)
+	util.Logger.Printf("[TRACE] Querying media: %s\n", mediaUrl)
 
 	parsedUrl, err := url.ParseRequestURI(mediaUrl)
 	if err != nil {
@@ -263,7 +263,7 @@ func verifyHeader(buf []byte) bool {
 // Reference for api usage http://pubs.vmware.com/vcloud-api-1-5/wwhelp/wwhimpl/js/html/wwhelp.htm#href=api_prog/GUID-9356B99B-E414-474A-853C-1411692AF84C.html
 // http://pubs.vmware.com/vcloud-api-1-5/wwhelp/wwhimpl/js/html/wwhelp.htm#href=api_prog/GUID-43DFF30E-391F-42DC-87B3-5923ABCEB366.html
 func getExistingMediaItems(vdc *Vdc) ([]*types.MediaRecordType, error) {
-	util.Logger.Printf("[TRACE] Qeurying medias \n")
+	util.Logger.Printf("[TRACE] Querying medias \n")
 
 	mediaResults, err := queryMediaItemsWithFilter(vdc, "vdc=="+url.QueryEscape(vdc.Vdc.HREF))
 
