@@ -183,6 +183,10 @@ func (vcd *TestVCD) Test_FindMediaImage(check *C) {
 	}
 	mediaImage, err := vcd.vdc.FindMediaImage(vcd.config.Media.Media)
 	check.Assert(err, IsNil)
+	if mediaImage == (MediaItem{}) {
+		fmt.Printf("Media not found: %s\n", vcd.config.Media.Media)
+	}
+	check.Assert(mediaImage, Not(Equals), MediaItem{})
 
 	check.Assert(mediaImage.MediaItem.Name, Equals, vcd.config.Media.Media)
 	check.Assert(mediaImage.MediaItem.HREF, Not(Equals), "")
