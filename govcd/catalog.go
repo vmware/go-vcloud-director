@@ -244,8 +244,10 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 
 	callBack, uploadProgress := getCallBackFunction()
 
+	uploadError := *new(error)
+
 	//sending upload process to background, this allows no to lock and return task to client
-	go uploadFiles(cat.client, vappTemplate, &ovfFileDesc, tmpDir, filesAbsPaths, uploadPieceSize, callBack)
+	go uploadFiles(cat.client, vappTemplate, &ovfFileDesc, tmpDir, filesAbsPaths, uploadPieceSize, callBack, &uploadError)
 
 	var task Task
 	for _, item := range vappTemplate.Tasks.Task {
@@ -260,7 +262,7 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		}
 	}
 
-	uploadTask := NewUploadTask(&task, uploadProgress)
+	uploadTask := NewUploadTask(&task, uploadProgress, &uploadError)
 
 	util.Logger.Printf("[TRACE] Upload finished and task for vcd import created. \n")
 
@@ -278,13 +280,15 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 // filesAbsPaths - array of extracted files
 // uploadPieceSize - size of chunks in which the file will be uploaded to the catalog.
 // callBack a function with signature //function(bytesUpload, totalSize) to let the caller monitor progress of the upload operation.
-func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *Envelope, tempPath string, filesAbsPaths []string, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64)) error {
+// uploadError - error to be ready be task
+func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *Envelope, tempPath string, filesAbsPaths []string, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64), uploadError *error) error {
 	var uploadedBytes int64
 	for _, item := range vappTemplate.Files.File {
 		if item.BytesTransferred == 0 {
 			number, err := getFileFromDescription(item.Name, ovfFileDesc)
 			if err != nil {
 				util.Logger.Printf("[Error] Error uploading files: %#v", err)
+				uploadError = &err
 				return err
 			}
 			if ovfFileDesc.File[number].ChunkSize != 0 {
@@ -297,10 +301,12 @@ func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *
 					uploadedBytesForCallback: uploadedBytes,
 					allFilesSize:             getAllFileSizeSum(ovfFileDesc),
 					callBack:                 callBack,
+					uploadError:              uploadError,
 				}
 				tempVar, err := uploadMultiPartFile(client, chunkFilePaths, details)
 				if err != nil {
 					util.Logger.Printf("[Error] Error uploading files: %#v", err)
+					uploadError = &err
 					return err
 				}
 				uploadedBytes += tempVar
@@ -313,10 +319,12 @@ func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *
 					uploadedBytesForCallback: uploadedBytes,
 					allFilesSize:             getAllFileSizeSum(ovfFileDesc),
 					callBack:                 callBack,
+					uploadError:              uploadError,
 				}
 				tempVar, err := uploadFile(client, findFilePath(filesAbsPaths, item.Name), details)
 				if err != nil {
 					util.Logger.Printf("[Error] Error uploading files: %#v", err)
+					uploadError = &err
 					return err
 				}
 				uploadedBytes += tempVar
@@ -328,6 +336,7 @@ func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *
 	err := os.RemoveAll(tempPath)
 	if err != nil {
 		util.Logger.Printf("[Error] Error removing temporary files: %#v", err)
+		uploadError = &err
 		return err
 	}
 

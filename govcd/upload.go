@@ -29,6 +29,7 @@ type uploadDetails struct {
 	uploadLink                                                                               string
 	uploadedBytes, fileSizeToUpload, uploadPieceSize, uploadedBytesForCallback, allFilesSize int64
 	callBack                                                                                 func(bytesUpload, totalSize int64)
+	uploadError                                                                              *error
 }
 
 // upload file by parts which size is defined by user provided variable uploadPieceSize and
@@ -56,12 +57,14 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 	file, err := os.Open(filePath)
 	if err != nil {
 		util.Logger.Printf("[ERROR] during upload process - file open issue : %s, error %#v ", filePath, err)
+		*uDetails.uploadError = err
 		return 0, err
 	}
 
 	fileInfo, err := file.Stat()
 	if err != nil {
 		util.Logger.Printf("[ERROR] during upload process - file issue : %s, error %#v ", filePath, err)
+		*uDetails.uploadError = err
 		return 0, err
 	}
 
@@ -78,6 +81,7 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 		uDetails.uploadedBytesForCallback += int64(count)
 		if err != nil {
 			util.Logger.Printf("[ERROR] during upload process: %s, error %#v ", filePath, err)
+			*uDetails.uploadError = err
 			return 0, err
 		}
 	}
@@ -87,10 +91,12 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 		err = uploadPartFile(client, part[:count], int64(count), uDetails)
 		if err != nil {
 			util.Logger.Printf("[ERROR] during upload process: %s, error %#v ", filePath, err)
+			*uDetails.uploadError = err
 			return 0, err
 		}
 	} else {
 		util.Logger.Printf("Error Uploading: %s, error %#v ", filePath, err)
+		*uDetails.uploadError = err
 		return 0, err
 	}
 

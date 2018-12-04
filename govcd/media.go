@@ -87,6 +87,8 @@ func executeUpload(client *Client, mediaItem *types.Media, mediaFilePath, mediaN
 
 	callBack, uploadProgress := getCallBackFunction()
 
+	uploadError := *new(error)
+
 	details := uploadDetails{
 		uploadLink:               uploadLink.String(), // just take string
 		uploadedBytes:            0,
@@ -95,6 +97,7 @@ func executeUpload(client *Client, mediaItem *types.Media, mediaFilePath, mediaN
 		uploadedBytesForCallback: 0,
 		allFilesSize:             fileSize,
 		callBack:                 callBack,
+		uploadError:              &uploadError,
 	}
 
 	go uploadFile(client, mediaFilePath, details)
@@ -112,7 +115,7 @@ func executeUpload(client *Client, mediaItem *types.Media, mediaFilePath, mediaN
 		}
 	}
 
-	uploadTask := NewUploadTask(&task, uploadProgress)
+	uploadTask := NewUploadTask(&task, uploadProgress, &uploadError)
 
 	util.Logger.Printf("[TRACE] Upload media function finished and task for vcd import created. \n")
 
