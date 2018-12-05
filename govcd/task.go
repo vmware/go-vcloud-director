@@ -7,6 +7,7 @@ package govcd
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/vmware/go-vcloud-director/types/v56"
@@ -79,14 +80,23 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 			return fmt.Errorf("error retrieving task: %s", err)
 		}
 
+		// If an inspection function is provided, we pass information about the task processing:
+		// * the task itself
+		// * the number of iterations
+		// * how much time we have spent querying the task so far
+		// * whether this is the first iteration
+		// * whether this is the last iteration
+		// It's up to the inspection function to render this information fittingly.
+
 		// If task is not in a waiting status we're done, check if there's an error and return it.
 		if task.Task.Status != "queued" && task.Task.Status != "preRunning" && task.Task.Status != "running" {
 			if inspectionFunc != nil {
-				inspectionFunc(task.Task, howManyTimesRefreshed, elapsed,
-					// first
-					howManyTimesRefreshed == 1,
-					// last
-					task.Task.Status == "error" || task.Task.Status == "success")
+				inspectionFunc(task.Task,
+					howManyTimesRefreshed,
+					elapsed,
+					howManyTimesRefreshed == 1,                                   // first
+					task.Task.Status == "error" || task.Task.Status == "success", // last
+				)
 			}
 			if task.Task.Status == "error" {
 				return fmt.Errorf("task did not complete succesfully: %s", task.Task.Description)
@@ -95,7 +105,12 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 		}
 
 		if inspectionFunc != nil {
-			inspectionFunc(task.Task, howManyTimesRefreshed, elapsed, howManyTimesRefreshed == 1, false)
+			inspectionFunc(task.Task,
+				howManyTimesRefreshed,
+				elapsed,
+				howManyTimesRefreshed == 1, // first
+				false, // last
+			)
 		}
 
 		// Sleep for a given period and try again.
@@ -107,4 +122,21 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 // task is either completed or failed
 func (task *Task) WaitTaskCompletion() error {
 	return task.WaitInspectTaskCompletion(nil, 3*time.Second)
+}
+
+func (task *Task) GetTaskProgress() (string, error) {
+	if task.Task == nil {
+		return "", fmt.Errorf("cannot refresh, Object is empty")
+	}
+
+	err := task.Refresh()
+	if err != nil {
+		return "", fmt.Errorf("error retreiving task: %s", err)
+	}
+
+	if task.Task.Status == "error" {
+		return "", fmt.Errorf("task did not complete succesfully: %s", task.Task.Description)
+	}
+
+	return strconv.Itoa(task.Task.Progress), nil
 }

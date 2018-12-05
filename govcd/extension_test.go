@@ -9,6 +9,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+// Retrieves an external network and checks that its contents are filled as expected
 func (vcd *TestVCD) Test_GetExternalNetwork(check *C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())

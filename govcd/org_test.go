@@ -7,6 +7,7 @@ package govcd
 import (
 	types "github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
+	"time"
 )
 
 // Tests Refresh for Org by updating the org and then asserting if the
@@ -78,10 +79,7 @@ func (vcd *TestVCD) Test_DeleteOrg(check *C) {
 	// Delete, with force and recursive true
 	err = org.Delete(true, true)
 	check.Assert(err, IsNil)
-	// Check if org still exists
-	org, err = GetAdminOrgByName(vcd.client, TestDeleteOrg)
-	check.Assert(org, Equals, AdminOrg{})
-	check.Assert(err, IsNil)
+	doesOrgExist(check, vcd)
 }
 
 // Creates a org UPDATEORG, changes the deployed vm quota on the org,
@@ -119,8 +117,20 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	// Delete, with force and recursive true
 	err = org.Delete(true, true)
 	check.Assert(err, IsNil)
-	// Check if org still exists
-	org, err = GetAdminOrgByName(vcd.client, TestUpdateOrg)
+	doesOrgExist(check, vcd)
+}
+
+func doesOrgExist(check *C, vcd *TestVCD) {
+	var org AdminOrg
+	var err error
+	for i := 0; i < 30; i++ {
+		org, err = GetAdminOrgByName(vcd.client, TestDeleteOrg)
+		if org == (AdminOrg{}) {
+			break
+		} else {
+			time.Sleep(1 * time.Second)
+		}
+	}
 	check.Assert(org, Equals, AdminOrg{})
 	check.Assert(err, IsNil)
 }

@@ -14,7 +14,6 @@ import (
 	"io"
 	"io/ioutil"
 	"math"
-	"net/http"
 	"net/url"
 	"os"
 	"path"
@@ -28,7 +27,7 @@ const (
 )
 
 type CatalogOperations interface {
-	FindCatalogItem(catalogitem string) (CatalogItem, error)
+	FindCatalogItem(catalogItem string) (CatalogItem, error)
 }
 
 // AdminCatalog is a admin view of a vCloud Director Catalog
@@ -132,10 +131,10 @@ type Envelope struct {
 // then the function returns a CatalogItem. If the item does not
 // exist, then it returns an empty CatalogItem. If the call fails
 // at any point, it returns an error.
-func (cat *Catalog) FindCatalogItem(catalogitem string) (CatalogItem, error) {
+func (cat *Catalog) FindCatalogItem(catalogItemName string) (CatalogItem, error) {
 	for _, catalogItems := range cat.Catalog.CatalogItems {
 		for _, catalogItem := range catalogItems.CatalogItem {
-			if catalogItem.Name == catalogitem && catalogItem.Type == "application/vnd.vmware.vcloud.catalogItem+xml" {
+			if catalogItem.Name == catalogItemName && catalogItem.Type == "application/vnd.vmware.vcloud.catalogItem+xml" {
 				catalogItemHREF, err := url.ParseRequestURI(catalogItem.HREF)
 
 				if err != nil {
@@ -211,7 +210,7 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		return UploadTask{}, fmt.Errorf("%v. Unpacked files for checking are accessible in: "+tmpDir, err)
 	}
 
-	catalogItemUploadURL, err := findCatalogItemUploadLink(cat)
+	catalogItemUploadURL, err := findCatalogItemUploadLink(cat, "application/vnd.vmware.vcloud.uploadVAppTemplateParams+xml")
 	if err != nil {
 		return UploadTask{}, err
 	}
@@ -226,7 +225,7 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		return UploadTask{}, err
 	}
 
-	ovfUploadHref, err := getOvfUploadLink(vappTemplate)
+	ovfUploadHref, err := getUploadLink(vappTemplate.Files)
 	if err != nil {
 		return UploadTask{}, err
 	}
@@ -243,13 +242,12 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		return UploadTask{}, err
 	}
 
-	var uploadProgress float64
-	callBack := func(bytesUploaded, totalSize int64) {
-		uploadProgress = (float64(bytesUploaded) / float64(totalSize)) * 100
-	}
+	callBack, uploadProgress := getCallBackFunction()
+
+	uploadError := *new(error)
 
 	//sending upload process to background, this allows no to lock and return task to client
-	go uploadFiles(cat.client, vappTemplate, &ovfFileDesc, tmpDir, filesAbsPaths, uploadPieceSize, callBack)
+	go uploadFiles(cat.client, vappTemplate, &ovfFileDesc, tmpDir, filesAbsPaths, uploadPieceSize, callBack, &uploadError)
 
 	var task Task
 	for _, item := range vappTemplate.Tasks.Task {
@@ -258,9 +256,13 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 			removeCatalogItemOnError(cat.client, vappTemplateUrl, itemName)
 			return UploadTask{}, err
 		}
+		if task.Task.Status == "error" {
+			removeCatalogItemOnError(cat.client, vappTemplateUrl, itemName)
+			return UploadTask{}, fmt.Errorf("task did not complete succesfully: %s", task.Task.Description)
+		}
 	}
 
-	uploadTask := NewUploadTask(&task, &uploadProgress)
+	uploadTask := NewUploadTask(&task, uploadProgress, &uploadError)
 
 	util.Logger.Printf("[TRACE] Upload finished and task for vcd import created. \n")
 
@@ -278,33 +280,65 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 // filesAbsPaths - array of extracted files
 // uploadPieceSize - size of chunks in which the file will be uploaded to the catalog.
 // callBack a function with signature //function(bytesUpload, totalSize) to let the caller monitor progress of the upload operation.
-func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *Envelope, tempPath string, filesAbsPaths []string, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64)) error {
+// uploadError - error to be ready be task
+func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *Envelope, tempPath string, filesAbsPaths []string, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64), uploadError *error) error {
+	var uploadedBytes int64
 	for _, item := range vappTemplate.Files.File {
 		if item.BytesTransferred == 0 {
 			number, err := getFileFromDescription(item.Name, ovfFileDesc)
 			if err != nil {
 				util.Logger.Printf("[Error] Error uploading files: %#v", err)
+				uploadError = &err
 				return err
 			}
 			if ovfFileDesc.File[number].ChunkSize != 0 {
 				chunkFilePaths := getChunkedFilePaths(tempPath, ovfFileDesc.File[number].HREF, ovfFileDesc.File[number].Size, ovfFileDesc.File[number].ChunkSize)
-				err := uploadMultiPartFile(client, chunkFilePaths, item.Link[0].HREF, int64(ovfFileDesc.File[number].Size), uploadPieceSize, callBack)
+				details := uploadDetails{
+					uploadLink:               item.Link[0].HREF,
+					uploadedBytes:            uploadedBytes,
+					fileSizeToUpload:         int64(ovfFileDesc.File[number].Size),
+					uploadPieceSize:          uploadPieceSize,
+					uploadedBytesForCallback: uploadedBytes,
+					allFilesSize:             getAllFileSizeSum(ovfFileDesc),
+					callBack:                 callBack,
+					uploadError:              uploadError,
+				}
+				tempVar, err := uploadMultiPartFile(client, chunkFilePaths, details)
 				if err != nil {
 					util.Logger.Printf("[Error] Error uploading files: %#v", err)
+					uploadError = &err
 					return err
 				}
+				uploadedBytes += tempVar
 			} else {
-				_, err := uploadFile(client, item.Link[0].HREF, findFilePath(filesAbsPaths, item.Name), 0, item.Size, uploadPieceSize, callBack)
+				details := uploadDetails{
+					uploadLink:               item.Link[0].HREF,
+					uploadedBytes:            0,
+					fileSizeToUpload:         item.Size,
+					uploadPieceSize:          uploadPieceSize,
+					uploadedBytesForCallback: uploadedBytes,
+					allFilesSize:             getAllFileSizeSum(ovfFileDesc),
+					callBack:                 callBack,
+					uploadError:              uploadError,
+				}
+				tempVar, err := uploadFile(client, findFilePath(filesAbsPaths, item.Name), details)
 				if err != nil {
 					util.Logger.Printf("[Error] Error uploading files: %#v", err)
+					uploadError = &err
 					return err
 				}
+				uploadedBytes += tempVar
 			}
 		}
 	}
 
 	//remove extracted files with temp dir
-	os.RemoveAll(tempPath)
+	err := os.RemoveAll(tempPath)
+	if err != nil {
+		util.Logger.Printf("[Error] Error removing temporary files: %#v", err)
+		uploadError = &err
+		return err
+	}
 
 	return nil
 }
@@ -319,29 +353,36 @@ func getFileFromDescription(fileToFind string, ovfFileDesc *Envelope) (int, erro
 	return -1, errors.New("file expected from vcd didn't match any description file")
 }
 
+func getAllFileSizeSum(ovfFileDesc *Envelope) (sizeSum int64) {
+	sizeSum = 0
+	for _, item := range ovfFileDesc.File {
+		sizeSum += int64(item.Size)
+	}
+	return
+}
+
 // Uploads chunked ova file for vCD created upload link.
 // params:
 // client - client for requests
 // vappTemplate - parsed from response vApp template
 // filePaths - all chunked vmdk file paths
-// uploadHREF - vCD generated temporary upload href
-// totalBytesToUpload - how much bytes will be uploaded
-// uploadPieceSize - size of chunks in which the file will be uploaded to the catalog.
-// callBack a function with signature //function(bytesUpload, totalSize) to let the caller monitor progress of the upload operation.
-func uploadMultiPartFile(client *Client, filePaths []string, uploadHREF string, totalBytesToUpload int64, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64)) error {
-	util.Logger.Printf("[TRACE] Upload multi part file: %v\n, href: %s, size: %v", filePaths, uploadHREF, totalBytesToUpload)
+// uploadDetails - file upload settings and data
+func uploadMultiPartFile(client *Client, filePaths []string, uDetails uploadDetails) (int64, error) {
+	util.Logger.Printf("[TRACE] Upload multi part file: %v\n, href: %s, size: %v", filePaths, uDetails.uploadLink, uDetails.fileSizeToUpload)
 
 	var uploadedBytes int64
 
 	for i, filePath := range filePaths {
 		util.Logger.Printf("[TRACE] Uploading file: %v\n", i+1)
-		tempVar, err := uploadFile(client, uploadHREF, filePath, uploadedBytes, totalBytesToUpload, uploadPieceSize, callBack)
+		uDetails.uploadedBytesForCallback += uploadedBytes // previous files uploaded size plus current upload size
+		uDetails.uploadedBytes = uploadedBytes
+		tempVar, err := uploadFile(client, filePath, uDetails)
 		if err != nil {
-			return err
+			return uploadedBytes, err
 		}
 		uploadedBytes += tempVar
 	}
-	return nil
+	return uploadedBytes, nil
 }
 
 // Function waits until vCD provides temporary file upload links.
@@ -363,48 +404,8 @@ func waitForTempUploadLinks(client *Client, vappTemplateUrl *url.URL, newItemNam
 	return vAppTemplate, nil
 }
 
-func createTaskForVcdImport(client *Client, taskHREF string) (Task, error) {
-	util.Logger.Printf("[TRACE] Create task for vcd with HREF: %s\n", taskHREF)
-
-	taskURL, err := url.ParseRequestURI(taskHREF)
-	if err != nil {
-		return Task{}, err
-	}
-
-	request := client.NewRequest(map[string]string{}, "GET", *taskURL, nil)
-	response, err := checkResp(client.Http.Do(request))
-	if err != nil {
-		return Task{}, err
-	}
-
-	task := NewTask(client)
-
-	if err = decodeBody(response, task.Task); err != nil {
-		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
-	}
-
-	// The request was successful
-	return *task, nil
-}
-
-func getOvfUploadLink(vappTemplate *types.VAppTemplate) (*url.URL, error) {
-	util.Logger.Printf("[TRACE] getOvfUploadLink - Parsing ovf upload link: %#v\n", vappTemplate)
-
-	if len(vappTemplate.Files.File) > 1 {
-		return nil, errors.New("unexpected response from vCD: found more than one link for upload")
-	}
-
-	ovfUploadHref, err := url.ParseRequestURI(vappTemplate.Files.File[0].Link[0].HREF)
-	if err != nil {
-		return nil, err
-	}
-
-	util.Logger.Printf("[TRACE] getOvfUploadLink- Ovf upload link found: %#v\n", ovfUploadHref)
-	return ovfUploadHref, nil
-}
-
 func queryVappTemplate(client *Client, vappTemplateUrl *url.URL, newItemName string) (*types.VAppTemplate, error) {
-	util.Logger.Printf("[TRACE] Qeurying vapp template: %s\n", vappTemplateUrl)
+	util.Logger.Printf("[TRACE] Querying vapp template: %s\n", vappTemplateUrl)
 	request := client.NewRequest(map[string]string{}, "GET", *vappTemplateUrl, nil)
 	response, err := checkResp(client.Http.Do(request))
 	if err != nil {
@@ -448,7 +449,11 @@ func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL)
 		return err
 	}
 
-	openedFile.Close()
+	err = openedFile.Close()
+	if err != nil {
+		util.Logger.Printf("[Error] Error closing file: %#v", err)
+		return err
+	}
 
 	return nil
 }
@@ -466,9 +471,9 @@ func parseOvfFileDesc(file *os.File, ovfFileDesc *Envelope) error {
 	return nil
 }
 
-func findCatalogItemUploadLink(catalog *Catalog) (*url.URL, error) {
+func findCatalogItemUploadLink(catalog *Catalog, applicationType string) (*url.URL, error) {
 	for _, item := range catalog.Catalog.Link {
-		if item.Type == "application/vnd.vmware.vcloud.uploadVAppTemplateParams+xml" && item.Rel == "add" {
+		if item.Type == applicationType && item.Rel == "add" {
 			util.Logger.Printf("[TRACE] Found Catalong link for upload: %s\n", item.HREF)
 
 			uploadURL, err := url.ParseRequestURI(item.HREF)
@@ -490,98 +495,6 @@ func getExistingCatalogItems(catalog *Catalog) (catalogItemNames []string) {
 		}
 	}
 	return
-}
-
-// upload file by parts which size is defined by user provided variable uploadPieceSize and
-// provides how much bytes uploaded to callback. Callback allows to monitor upload progress.
-// params:
-// client - client for requests
-// uploadLink - vCD created temporary upload link
-// filePath - file path to file which will be uploaded
-// uploadedBytes - how much of file already uploaded
-// fileSizeToUpload - how much bytes will be uploaded
-// uploadPieceSize - size of chunks in which the file will be uploaded to the catalog.
-// callBack a function with signature //function(bytesUpload, totalSize) to let the caller monitor progress of the upload operation.
-func uploadFile(client *Client, uploadLink, filePath string, uploadedBytes, fileSizeToUpload int64, uploadPieceSize int64, callBack func(bytesUpload, totalSize int64)) (int64, error) {
-	util.Logger.Printf("[TRACE] Starting uploading: %s, offset: %v, fileze: %v, toLink: %s \n", filePath, uploadedBytes, fileSizeToUpload, uploadLink)
-
-	var part []byte
-	var count int
-	var offset int64
-	var pieceSize int64
-
-	// do not allow smaller than 1kb
-	if uploadPieceSize > 1024 && uploadPieceSize < fileSizeToUpload {
-		pieceSize = uploadPieceSize
-	} else {
-		pieceSize = defaultPieceSize
-	}
-
-	util.Logger.Printf("[TRACE] Uploading will use piece size: %#v \n", pieceSize)
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		return 0, err
-	}
-
-	fileInfo, err := file.Stat()
-	if err != nil {
-		return 0, err
-	}
-
-	defer file.Close()
-
-	part = make([]byte, pieceSize)
-
-	for {
-		if count, err = io.ReadFull(file, part); err != nil {
-			break
-		}
-		err = uploadPartFile(client, uploadLink, part, uploadedBytes+offset, int64(count), fileSizeToUpload, callBack)
-		offset += int64(count)
-		if err != nil {
-			return 0, err
-		}
-	}
-
-	// upload last part as ReadFull returns io.ErrUnexpectedEOF when reaches end of file.
-	if err == io.ErrUnexpectedEOF {
-		err = uploadPartFile(client, uploadLink, part[:count], uploadedBytes+offset, int64(count), fileSizeToUpload, callBack)
-		if err != nil {
-			return 0, err
-		}
-	} else {
-		util.Logger.Printf("Error Uploading: %s, error %#v ", filePath, err)
-		return 0, err
-	}
-
-	return fileInfo.Size(), nil
-}
-
-// Initiates file part upload by creating request and running it.
-// params:
-// client - client for requests
-// uploadLink - vCD created temporary upload link
-// part - bytes of file part
-// offset - how much of file already uploaded
-// partDataSize - how much bytes will be uploaded
-// fileSizeToUpload - final file size
-// callBack a function with signature //function(bytesUpload, totalSize) to let the caller monitor progress of the upload operation.
-func uploadPartFile(client *Client, uploadLink string, part []byte, offset, partDataSize, fileSizeToUpload int64, callBack func(bytesUpload, totalSize int64)) error {
-	request, err := newFileUploadRequest(uploadLink, part, offset, partDataSize, fileSizeToUpload)
-	if err != nil {
-		return err
-	}
-
-	response, err := checkResp(client.Http.Do(request))
-	if err != nil {
-		return fmt.Errorf("File upload failed. Err: %s \n", err)
-	}
-	response.Body.Close()
-
-	callBack(offset+partDataSize, fileSizeToUpload)
-
-	return nil
 }
 
 func findFilePath(filesAbsPaths []string, fileName string) string {
@@ -626,33 +539,6 @@ func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName st
 	return ovfUploadUrl, nil
 }
 
-// Create Request with right headers and range settings. Support multi part file upload.
-// requestUrl - upload url
-// filePart - bytes to upload
-// offset - how much is uploaded
-// filePartSize - how much bytes will be uploaded
-// fileSizeToUpload - final file size
-func newFileUploadRequest(requestUrl string, filePart []byte, offset, filePartSize, fileSizeToUpload int64) (*http.Request, error) {
-	util.Logger.Printf("[TRACE] Creating file upload request: %s, %v, %v, %v \n", requestUrl, offset, filePartSize, fileSizeToUpload)
-
-	uploadReq, err := http.NewRequest("PUT", requestUrl, bytes.NewReader(filePart))
-	if err != nil {
-		return nil, err
-	}
-
-	uploadReq.ContentLength = filePartSize
-	uploadReq.Header.Set("Content-Length", strconv.FormatInt(uploadReq.ContentLength, 10))
-
-	rangeExpression := "bytes " + strconv.FormatInt(int64(offset), 10) + "-" + strconv.FormatInt(int64(offset+filePartSize-1), 10) + "/" + strconv.FormatInt(int64(fileSizeToUpload), 10)
-	uploadReq.Header.Set("Content-Range", rangeExpression)
-
-	for key, value := range uploadReq.Header {
-		util.Logger.Printf("[TRACE] Header: %s :%s \n", key, value)
-	}
-
-	return uploadReq, nil
-}
-
 // Helper method to get path to multi-part files.
 //For example a file called test.vmdk with total_file_size = 100 bytes and part_size = 40 bytes, implies the file is made of *3* part files.
 //		- test.vmdk.000000000 = 40 bytes
@@ -673,21 +559,6 @@ func getChunkedFilePaths(baseDir, baseFileName string, totalFileSize, partSize i
 
 	util.Logger.Printf("[TRACE] Chunked files file paths: %s \n", filePaths)
 	return filePaths
-}
-
-func validateAndFixFilePath(file string) (string, error) {
-	absolutePath, err := filepath.Abs(file)
-	if err != nil {
-		return "", err
-	}
-	fileInfo, err := os.Stat(absolutePath)
-	if os.IsNotExist(err) {
-		return "", err
-	}
-	if fileInfo.Size() == 0 {
-		return "", errors.New("file is empty")
-	}
-	return absolutePath, nil
 }
 
 func getOvfPath(filesAbsPaths []string) (string, error) {
@@ -711,7 +582,11 @@ func getOvf(ovfFilePath string) (Envelope, error) {
 		return Envelope{}, err
 	}
 
-	openedFile.Close()
+	err = openedFile.Close()
+	if err != nil {
+		util.Logger.Printf("[Error] Error closing file: %#v", err)
+		return Envelope{}, err
+	}
 
 	return ovfFileDesc, nil
 }
@@ -790,19 +665,59 @@ func removeCatalogItemOnError(client *Client, vappTemplateLink *url.URL, itemNam
 
 		for _, task := range vAppTemplate.Tasks.Task {
 			if itemName == task.Owner.Name {
-				cancelTaskURL, err := url.ParseRequestURI(task.HREF + "/action/cancel")
+				err = cancelTask(client, task.HREF)
 				if err != nil {
-					util.Logger.Printf("[Error] Error deleting Catalog item %v: %s", vappTemplateLink, err)
-				}
-
-				request := client.NewRequest(map[string]string{}, "POST", *cancelTaskURL, nil)
-				_, err = checkResp(client.Http.Do(request))
-				if err != nil {
-					util.Logger.Printf("[Error] Error deleting Catalog item %v: %s", vappTemplateLink, err)
+					util.Logger.Printf("[ERROR] Error canceling task for catalog item upload %#v.\n", err)
 				}
 			}
 		}
 	} else {
 		util.Logger.Printf("[Error] Failed to delete catalog item created with error: %v", vappTemplateLink)
 	}
+}
+
+func (cat *Catalog) UploadMediaImage(mediaName, mediaDescription, filePath string, uploadPieceSize int64) (UploadTask, error) {
+
+	if *cat == (Catalog{}) {
+		return UploadTask{}, errors.New("catalog can not be empty or nil")
+	}
+
+	mediaFilePath, err := validateAndFixFilePath(filePath)
+	if err != nil {
+		return UploadTask{}, err
+	}
+
+	isISOGood, err := verifyIso(mediaFilePath)
+	if err != nil || !isISOGood {
+		return UploadTask{}, fmt.Errorf("[ERROR] File %s isn't correct iso file: %#v", mediaFilePath, err)
+	}
+
+	file, e := os.Stat(mediaFilePath)
+	if e != nil {
+		return UploadTask{}, fmt.Errorf("[ERROR] Issue finding file: %#v", e)
+	}
+	fileSize := file.Size()
+
+	for _, catalogItemName := range getExistingCatalogItems(cat) {
+		if catalogItemName == mediaName {
+			return UploadTask{}, fmt.Errorf("media item '%s' already exists. Upload with different name", mediaName)
+		}
+	}
+
+	catalogItemUploadURL, err := findCatalogItemUploadLink(cat, "application/vnd.vmware.vcloud.media+xml")
+	if err != nil {
+		return UploadTask{}, err
+	}
+
+	mediaItem, err := createMedia(cat.client, catalogItemUploadURL.String(), mediaName, mediaDescription, fileSize)
+	if err != nil {
+		return UploadTask{}, fmt.Errorf("[ERROR] Issue creating media: %#v", err)
+	}
+
+	createdMedia, err := queryMedia(cat.client, mediaItem.Entity.HREF, mediaName)
+	if err != nil {
+		return UploadTask{}, err
+	}
+
+	return executeUpload(cat.client, createdMedia, mediaFilePath, mediaName, fileSize, uploadPieceSize)
 }

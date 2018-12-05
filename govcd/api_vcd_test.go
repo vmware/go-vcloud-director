@@ -38,6 +38,8 @@ const (
 	TestCreateOrgVdcNetworkEGW    = "TestCreateOrgVdcNetworkEGW"
 	TestCreateOrgVdcNetworkIso    = "TestCreateOrgVdcNetworkIso"
 	TestCreateOrgVdcNetworkDirect = "TestCreateOrgVdcNetworkDirect"
+	TestUploadMedia               = "TestUploadMedia"
+	TestCatalogUploadMedia        = "TestCatalogUploadMedia"
 	TestCreateDisk                = "TestCreateDisk"
 	TestUpdateDisk                = "TestUpdateDisk"
 	TestDeleteDisk                = "TestDeleteDisk"
@@ -94,6 +96,10 @@ type TestConfig struct {
 		OVAPath        string `yaml:"ovaPath,omitempty"`
 		OVAChunkedPath string `yaml:"ovaChunkedPath,omitempty"`
 	} `yaml:"ova"`
+	Media struct {
+		MediaPath string `yaml:"mediaPath,omitempty"`
+		Media     string `yaml:"mediaName,omitempty"`
+	} `yaml:"media"`
 }
 
 // Test struct for vcloud-director.
@@ -405,6 +411,33 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			return
 		}
 		err = RemoveOrgVdcNetworkIfExists(vdc, entity.Name)
+		if err == nil {
+			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		} else {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+		return
+	case "mediaImage":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No VDC and ORG provided for media '%s'\n", entity.Name)
+			return
+		}
+		orgName, vdcName := splitParent(entity.Parent, "|")
+		if orgName == "" || vdcName == "" {
+			vcd.infoCleanup(splitParentNotFound, entity.Parent)
+			return
+		}
+		org, err := GetAdminOrgByName(vcd.client, orgName)
+		if org == (AdminOrg{}) || err != nil {
+			vcd.infoCleanup(notFoundMsg, "org", orgName)
+			return
+		}
+		vdc, err := org.GetVdcByName(vdcName)
+		if vdc == (Vdc{}) || err != nil {
+			vcd.infoCleanup(notFoundMsg, "vdc", vdcName)
+			return
+		}
+		err = RemoveMediaImageIfExists(vdc, entity.Name)
 		if err == nil {
 			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		} else {
