@@ -244,6 +244,7 @@ func (vcd *TestVCD) Test_RefreshDisk(check *C) {
 
 // Test find disk attached VM
 func (vcd *TestVCD) Test_AttachedVMDisk(check *C) {
+
 	if vcd.config.VCD.Disk.Size <= 0 {
 		check.Skip("skipping test because disk size is <= 0")
 	}
@@ -253,15 +254,18 @@ func (vcd *TestVCD) Test_AttachedVMDisk(check *C) {
 	}
 
 	// Find VM
-	vmType, vmName := vcd.find_first_vm(vcd.find_first_vapp())
+	vapp := vcd.find_first_vapp()
+	vmType, vmName := vcd.find_first_vm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
-
-	fmt.Printf("Running: %s\n", check.TestName())
-
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
+
+	// Discard vApp suspension
+	// Disk attach and detach operations are not working if vApp is suspended
+	err := vcd.discardVappSuspensionForVMTest(vapp)
+	check.Assert(err, IsNil)
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
@@ -421,14 +425,18 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 	}
 
 	// Find VM
-	vmType, vmName := vcd.find_first_vm(vcd.find_first_vapp())
-	vm := NewVM(&vcd.client.Client)
-	vm.VM = &vmType
+	vapp := vcd.find_first_vapp()
+	vmType, vmName := vcd.find_first_vm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
+	vm := NewVM(&vcd.client.Client)
+	vm.VM = &vmType
 
-	fmt.Printf("Running: %s\n", check.TestName())
+	// Discard vApp suspension
+	// Disk attach and detach operations are not working if vApp is suspended
+	err := vcd.discardVappSuspensionForVMTest(vapp)
+	check.Assert(err, IsNil)
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{

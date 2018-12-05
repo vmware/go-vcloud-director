@@ -59,6 +59,28 @@ func (vcd *TestVCD) find_first_vapp() VApp {
 	return vapp
 }
 
+// TODO investigation, it it true? I saw a moon icon at the test VM bottom right corner in vCD web ui
+// Discard vApp suspension for VM test
+// some VM tests may not working if vApp is suspended, so VM tests can call this function to discard the suspension before run the test
+func (vcd *TestVCD) discardVappSuspensionForVMTest(vapp VApp) error {
+	state, err := vapp.GetStatus()
+
+	if err != nil {
+		return err
+	}
+
+	// if vApp is suspend (state code = 3), discard the suspend state
+	if state == types.VAppStatuses[3] {
+		task, err := vapp.PowerOn()
+		err = task.WaitTaskCompletion()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (vcd *TestVCD) Test_FindVMByHREF(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp wasn't properly created")
@@ -95,12 +117,18 @@ func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	vmType, vmName := vcd.find_first_vm(vcd.find_first_vapp())
+	vapp := vcd.find_first_vapp()
+	vmType, vmName := vcd.find_first_vm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
+
+	// Discard vApp suspension
+	// Disk attach and detach operations are not working if vApp is suspended
+	err := vcd.discardVappSuspensionForVMTest(vapp)
+	check.Assert(err, IsNil)
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
@@ -175,15 +203,18 @@ func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 	}
 
 	// Find VM
-	vmType, vmName := vcd.find_first_vm(vcd.find_first_vapp())
+	vapp := vcd.find_first_vapp()
+	vmType, vmName := vcd.find_first_vm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
-
-	fmt.Printf("Running: %s\n", check.TestName())
-
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
+
+	// Discard vApp suspension
+	// Disk attach and detach operations are not working if vApp is suspended
+	err := vcd.discardVappSuspensionForVMTest(vapp)
+	check.Assert(err, IsNil)
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
@@ -245,15 +276,18 @@ func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
 	}
 
 	// Find VM
-	vmType, vmName := vcd.find_first_vm(vcd.find_first_vapp())
+	vapp := vcd.find_first_vapp()
+	vmType, vmName := vcd.find_first_vm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
-
-	fmt.Printf("Running: %s\n", check.TestName())
-
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
+
+	// Discard vApp suspension
+	// Disk attach and detach operations are not working if vApp is suspended
+	err := vcd.discardVappSuspensionForVMTest(vapp)
+	check.Assert(err, IsNil)
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
