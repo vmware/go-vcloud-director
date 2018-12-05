@@ -25,10 +25,10 @@ type Client struct {
 	VCDAuthHeader string      // Authorization header
 	VCDHREF       url.URL     // VCD API ENDPOINT
 	Http          http.Client // HttpClient is the client to use. Default will be used if not provided.
-	SysAdmin      bool        // flag if client is connected as system administrator
+	IsSysAdmin    bool        // flag if client is connected as system administrator
 }
 
-// function allow to pass complex values params which shouldn't be encoded like for queries. e.g. /query?filter=(name=foo)
+// Function allow to pass complex values params which shouldn't be encoded like for queries. e.g. /query?filter=(name=foo)
 func (cli *Client) NewRequestWitNotEncodedParams(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
 	reqValues := url.Values{}
 

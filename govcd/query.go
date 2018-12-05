@@ -32,7 +32,6 @@ func (vdcCli *VCDClient) Query(params map[string]string) (Results, error) {
 }
 
 func (vdcCli *VCDClient) QueryWithNotEncodedParams(params map[string]string, notEncodedParams map[string]string) (Results, error) {
-
 	req := vdcCli.Client.NewRequestWitNotEncodedParams(params, notEncodedParams, "GET", vdcCli.QueryHREF, nil)
 	req.Header.Add("Accept", "vnd.vmware.vcloud.org+xml;version="+vdcCli.Client.APIVersion)
 

@@ -29,7 +29,7 @@ func NewMediaItem(cli *Client) *MediaItem {
 	}
 }
 
-// Uploads an iso file as media. This method only uploads bits to vCD spool area.
+// Uploads an ISO file as media. This method only uploads bits to vCD spool area.
 // Returns errors if any occur during upload from vCD or upload process. On upload fail client may need to
 // remove vCD catalog item which waits for files to be uploaded.
 func (vdc *Vdc) UploadMediaImage(mediaName, mediaDescription, filePath string, uploadPieceSize int64) (UploadTask, error) {
@@ -122,7 +122,7 @@ func executeUpload(client *Client, mediaItem *types.Media, mediaFilePath, mediaN
 	return *uploadTask, nil
 }
 
-// Initiates creation of media item and returns temporary upload url.
+// Initiates creation of media item and returns temporary upload URL.
 func createMedia(client *Client, link, mediaName, mediaDescription string, fileSize int64) (*types.Media, error) {
 	uploadUrl, err := url.ParseRequestURI(link)
 	if err != nil {
@@ -225,7 +225,7 @@ func queryMedia(client *Client, mediaUrl string, newItemName string) (*types.Med
 	return mediaParsed, nil
 }
 
-// verifies provided file header matches standard
+// Verifies provided file header matches standard
 func verifyIso(filePath string) (bool, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -253,7 +253,7 @@ func readHeader(reader io.Reader) (bool, error) {
 	}
 }
 
-// verify file header info: https://www.garykessler.net/library/file_sigs.html
+// Verify file header info: https://www.garykessler.net/library/file_sigs.html
 func verifyHeader(buf []byte) bool {
 	// search for for CD001(43 44 30 30 31) in specific file places.
 	//This signature usually occurs at byte offset 32769 (0x8001),
@@ -266,7 +266,7 @@ func verifyHeader(buf []byte) bool {
 			buf[36867] == 0x30 && buf[36868] == 0x30 && buf[36869] == 0x31)
 }
 
-// Reference for api usage http://pubs.vmware.com/vcloud-api-1-5/wwhelp/wwhimpl/js/html/wwhelp.htm#href=api_prog/GUID-9356B99B-E414-474A-853C-1411692AF84C.html
+// Reference for API usage http://pubs.vmware.com/vcloud-api-1-5/wwhelp/wwhimpl/js/html/wwhelp.htm#href=api_prog/GUID-9356B99B-E414-474A-853C-1411692AF84C.html
 // http://pubs.vmware.com/vcloud-api-1-5/wwhelp/wwhimpl/js/html/wwhelp.htm#href=api_prog/GUID-43DFF30E-391F-42DC-87B3-5923ABCEB366.html
 func getExistingMediaItems(vdc *Vdc) ([]*types.MediaRecordType, error) {
 	util.Logger.Printf("[TRACE] Querying medias \n")
@@ -279,7 +279,7 @@ func getExistingMediaItems(vdc *Vdc) ([]*types.MediaRecordType, error) {
 
 func queryMediaItemsWithFilter(vdc *Vdc, filter string) ([]*types.MediaRecordType, error) {
 	typeMedia := "media"
-	if vdc.client.SysAdmin {
+	if vdc.client.IsSysAdmin {
 		typeMedia = "adminMedia"
 	}
 
@@ -289,7 +289,7 @@ func queryMediaItemsWithFilter(vdc *Vdc, filter string) ([]*types.MediaRecordTyp
 	}
 
 	mediaResults := results.Results.MediaRecord
-	if vdc.client.SysAdmin {
+	if vdc.client.IsSysAdmin {
 		mediaResults = results.Results.AdminMediaRecord
 	}
 	return mediaResults, nil

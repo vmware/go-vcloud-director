@@ -31,12 +31,10 @@ func skipWhenMediaPathMissing(vcd *TestVCD, check *C) {
 }
 
 func verifyMediaImageUploaded(vdc *Vdc, check *C, itemName string) {
-
 	results, err := queryMediaItemsWithFilter(vdc, "name=="+itemName)
 
 	check.Assert(err, Equals, nil)
 	check.Assert(len(results), Equals, 1)
-
 }
 
 // Tests System function UploadMediaImage by checking UploadTask.GetUploadProgress returns values of progress.

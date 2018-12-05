@@ -32,7 +32,7 @@ type uploadDetails struct {
 	uploadError                                                                              *error
 }
 
-// upload file by parts which size is defined by user provided variable uploadPieceSize and
+// Upload file by parts which size is defined by user provided variable uploadPieceSize and
 // provides how much bytes uploaded to callback. Callback allows to monitor upload progress.
 // params:
 // client - client for requests
