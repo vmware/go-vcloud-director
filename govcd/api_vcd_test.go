@@ -443,7 +443,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vm, err := vcd.client.FindVMByHREF(vmRef.HREF)
 			if err != nil {
 				vcd.infoCleanup(
-					"removeLeftoverEntries: [ERROR] Deleting %s '%s', VM: '%s|%s', cannot not find the VM details: %s\n",
+					"removeLeftoverEntries: [ERROR] Deleting %s '%s', VM: '%s|%s', cannot find the VM details: %s\n",
 					entity.EntityType, entity.Name, vmRef.Name, vmRef.HREF, err)
 				return
 			}

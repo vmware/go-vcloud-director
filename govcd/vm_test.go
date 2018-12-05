@@ -6,9 +6,11 @@
 package govcd
 
 import (
+	"errors"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
+	"time"
 )
 
 func (vcd *TestVCD) find_first_vm(vapp VApp) (types.VM, string) {
@@ -59,23 +61,71 @@ func (vcd *TestVCD) find_first_vapp() VApp {
 	return vapp
 }
 
-// TODO investigation, it it true? I saw a moon icon at the test VM bottom right corner in vCD web ui
-// Discard vApp suspension for VM test
-// some VM tests may not working if vApp is suspended, so VM tests can call this function to discard the suspension before run the test
-func (vcd *TestVCD) discardVappSuspensionForVMTest(vapp VApp) error {
-	state, err := vapp.GetStatus()
+// Ensure vApp is suitable for VM test
+// Some VM tests may fail if vApp is not powered on, so VM tests can call this function to ensure the vApp is suitable for VM tests
+func (vcd *TestVCD) ensureVappIsSuitableForVMTest(vapp VApp) error {
+	status, err := vapp.GetStatus()
 
 	if err != nil {
 		return err
 	}
 
-	// if vApp is suspend (state code = 3), discard the suspend state
-	if state == types.VAppStatuses[3] {
+	// If vApp is not powered on (status = 4), power on vApp
+	if status != types.VAppStatuses[4] {
 		task, err := vapp.PowerOn()
+		if err != nil {
+			return err
+		}
 		err = task.WaitTaskCompletion()
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+// Ensure VM is suitable for VM test
+// Please call ensureVappAvailableForVMTest first to power on the vApp because this function cannot handle VM in suspension state due to lack of VM APIs (e.g. discard VM suspend API)
+// Some VM tests may fail if VM is not powered on or powered off, so VM tests can call this function to ensure the VM is suitable for VM tests
+func (vcd *TestVCD) ensureVMIsSuitableForVMTest(vm *VM) error {
+	// if the VM is not powered on (status = 4) or not powered off, wait for the VM power on
+	// wait for around 1 min
+	valid := false
+	for i := 0; i < 6; i++ {
+		status, err := vm.GetStatus()
+		if err != nil {
+			return err
+		}
+
+		// If the VM is powered on (status = 4)
+		if status == types.VAppStatuses[4] {
+			// Prevent affect Test_ChangeMemorySize
+			// because TestVCD.Test_AttachedVMDisk is run before Test_ChangeMemorySize and Test_ChangeMemorySize will fail the test if the VM is powered on,
+			task, err := vm.PowerOff()
+			if err != nil {
+				return err
+			}
+			err = task.WaitTaskCompletion()
+			if err != nil {
+				return err
+			}
+		}
+
+		// If the VM is powered on (status = 4) or powered off (status = 8)
+		if status == types.VAppStatuses[4] || status == types.VAppStatuses[8] {
+			valid = true
+		}
+
+		// Wait after 1st-5th attempt completed
+		// The last attempt will this for loop immediately
+		if i < 5 {
+			time.Sleep(time.Second * 10)
+		}
+	}
+
+	if !valid {
+		return errors.New("the VM is not powered on or powered off")
 	}
 
 	return nil
@@ -115,19 +165,22 @@ func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 		check.Skip("skipping test because no vApp is found")
 	}
 
-	fmt.Printf("Running: %s\n", check.TestName())
-
 	vapp := vcd.find_first_vapp()
 	vmType, vmName := vcd.find_first_vm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
 
-	// Discard vApp suspension
-	// Disk attach and detach operations are not working if vApp is suspended
-	err := vcd.discardVappSuspensionForVMTest(vapp)
+	// Ensure vApp and VM are suitable for this test
+	// Disk attach and detach operations are not working if VM is suspended
+	err := vcd.ensureVappIsSuitableForVMTest(vapp)
+	check.Assert(err, IsNil)
+	err = vcd.ensureVMIsSuitableForVMTest(vm)
 	check.Assert(err, IsNil)
 
 	// Create disk
@@ -208,12 +261,17 @@ func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
 
 	// Discard vApp suspension
 	// Disk attach and detach operations are not working if vApp is suspended
-	err := vcd.discardVappSuspensionForVMTest(vapp)
+	err := vcd.ensureVappIsSuitableForVMTest(vapp)
+	check.Assert(err, IsNil)
+	err = vcd.ensureVMIsSuitableForVMTest(vm)
 	check.Assert(err, IsNil)
 
 	// Create disk
@@ -232,6 +290,9 @@ func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
+
+	// Defer prepend the disk info to cleanup list until the function returns
+	defer PrependToCleanupList(fmt.Sprintf("%s|%s", diskCreateParamsDisk.Name, diskHREF), "disk", "", check.TestName())
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -281,12 +342,17 @@ func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
 
-	// Discard vApp suspension
-	// Disk attach and detach operations are not working if vApp is suspended
-	err := vcd.discardVappSuspensionForVMTest(vapp)
+	// Ensure vApp and VM are suitable for this test
+	// Disk attach and detach operations are not working if VM is suspended
+	err := vcd.ensureVappIsSuitableForVMTest(vapp)
+	check.Assert(err, IsNil)
+	err = vcd.ensureVMIsSuitableForVMTest(vm)
 	check.Assert(err, IsNil)
 
 	// Create disk

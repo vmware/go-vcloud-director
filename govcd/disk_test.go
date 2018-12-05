@@ -259,12 +259,17 @@ func (vcd *TestVCD) Test_AttachedVMDisk(check *C) {
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
 
-	// Discard vApp suspension
-	// Disk attach and detach operations are not working if vApp is suspended
-	err := vcd.discardVappSuspensionForVMTest(vapp)
+	// Ensure vApp and VM are suitable for this test
+	// Disk attach and detach operations are not working if VM is suspended
+	err := vcd.ensureVappIsSuitableForVMTest(vapp)
+	check.Assert(err, IsNil)
+	err = vcd.ensureVMIsSuitableForVMTest(vm)
 	check.Assert(err, IsNil)
 
 	// Create disk
@@ -430,12 +435,17 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
 
-	// Discard vApp suspension
-	// Disk attach and detach operations are not working if vApp is suspended
-	err := vcd.discardVappSuspensionForVMTest(vapp)
+	// Ensure vApp and VM are suitable for this test
+	// Disk attach and detach operations are not working if VM is suspended
+	err := vcd.ensureVappIsSuitableForVMTest(vapp)
+	check.Assert(err, IsNil)
+	err = vcd.ensureVMIsSuitableForVMTest(vm)
 	check.Assert(err, IsNil)
 
 	// Create disk
