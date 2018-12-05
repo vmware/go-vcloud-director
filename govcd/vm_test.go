@@ -117,8 +117,8 @@ func (vcd *TestVCD) ensureVMIsSuitableForVMTest(vm *VM) error {
 			valid = true
 		}
 
-		// Wait after 1st-5th attempt completed
-		// The last attempt will this for loop immediately
+		// If 1st to 5th attempt is completed, sleep 10 seconds and try again
+		// The last attempt will exit this for loop immediately, so no need to sleep
 		if i < 5 {
 			time.Sleep(time.Second * 10)
 		}
