@@ -187,7 +187,7 @@ func removeImageOnError(client *Client, media *types.Media, itemName string) {
 				task.Task = taskItem
 				err = task.CancelTask()
 				if err != nil {
-					util.Logger.Printf("[ERROR] Error canceling task for media upload %#v.\n", err)
+					util.Logger.Printf("[ERROR] Error canceling task for media upload %#v", err)
 				}
 			}
 		}
