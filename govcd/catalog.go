@@ -669,7 +669,7 @@ func removeCatalogItemOnError(client *Client, vappTemplateLink *url.URL, itemNam
 				task.Task = taskItem
 				err = task.CancelTask()
 				if err != nil {
-					util.Logger.Printf("[ERROR] Error canceling task for catalog item upload %#v.\n", err)
+					util.Logger.Printf("[ERROR] Error canceling task for catalog item upload %#v", err)
 				}
 			}
 		}
