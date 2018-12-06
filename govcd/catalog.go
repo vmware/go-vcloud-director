@@ -288,7 +288,7 @@ func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *
 			number, err := getFileFromDescription(item.Name, ovfFileDesc)
 			if err != nil {
 				util.Logger.Printf("[Error] Error uploading files: %#v", err)
-				uploadError = &err
+				*uploadError = err
 				return err
 			}
 			if ovfFileDesc.File[number].ChunkSize != 0 {
@@ -306,7 +306,7 @@ func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *
 				tempVar, err := uploadMultiPartFile(client, chunkFilePaths, details)
 				if err != nil {
 					util.Logger.Printf("[Error] Error uploading files: %#v", err)
-					uploadError = &err
+					*uploadError = err
 					return err
 				}
 				uploadedBytes += tempVar
@@ -324,7 +324,7 @@ func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *
 				tempVar, err := uploadFile(client, findFilePath(filesAbsPaths, item.Name), details)
 				if err != nil {
 					util.Logger.Printf("[Error] Error uploading files: %#v", err)
-					uploadError = &err
+					*uploadError = err
 					return err
 				}
 				uploadedBytes += tempVar
@@ -336,7 +336,7 @@ func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *
 	err := os.RemoveAll(tempPath)
 	if err != nil {
 		util.Logger.Printf("[Error] Error removing temporary files: %#v", err)
-		uploadError = &err
+		*uploadError = err
 		return err
 	}
 
