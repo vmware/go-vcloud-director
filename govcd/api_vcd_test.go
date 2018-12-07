@@ -67,8 +67,8 @@ type TestConfig struct {
 		Org         string `yaml:"org"`
 		Vdc         string `yaml:"vdc"`
 		ProviderVdc struct {
-			Id               string `yaml:"id"`
-			StorageProfileId string `yaml:"storage_profile_id"`
+			Name           string `yaml:"name"`
+			StorageProfile string `yaml:"storage_profile"`
 		} `yaml:"provider_vdc"`
 		Catalog struct {
 			Name                   string `yaml:"name,omitempty"`

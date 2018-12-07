@@ -28,8 +28,8 @@ vcd:
     vdc: myvdc
     # Provider VDC; if omitted, some tests will be skipped
     provider_vdc:
-      id: uuid
-      storage_profile_id: uuid
+      name: myprovidervdc
+      storage_profile: mystorageprofile
     # An Org catalog, possibly containing at least one item
     catalog:
         name: mycat

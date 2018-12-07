@@ -185,6 +185,21 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip("Configuration org != 'Sysyem'")
 	}
+
+	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "providerVdc",
+		"filter": fmt.Sprintf("(name==%s)", vcd.config.VCD.ProviderVdc.Name),
+	})
+	check.Assert(err, IsNil)
+	providerVdcHref := results.Results.VMWProviderVdcRecord[0].HREF
+
+	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "providerVdcStorageProfile",
+		"filter": fmt.Sprintf("(name==%s)", vcd.config.VCD.ProviderVdc.StorageProfile),
+	})
+	check.Assert(err, IsNil)
+	providerVdcStorageProfileHref := results.Results.ProviderVdcStorageProfileRecord[0].HREF
+
 	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, Not(Equals), AdminOrg{})
@@ -211,11 +226,11 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 			Limit:   1024,
 			Default: true,
 			ProviderVdcStorageProfile: &types.Reference{
-				HREF: fmt.Sprintf("%s/admin/pvdcStorageProfile/%s", vcd.client.Client.VCDHREF.String(), vcd.config.VCD.ProviderVdc.StorageProfileId),
+				HREF: providerVdcStorageProfileHref,
 			},
 		},
 		ProviderVdcReference: &types.Reference{
-			HREF: fmt.Sprintf("%s/admin/providervdc/%s", vcd.client.Client.VCDHREF.String(), vcd.config.VCD.ProviderVdc.Id),
+			HREF: providerVdcHref,
 		},
 	}
 	task, err := adminOrg.CreateVdc(vdcConfiguration)
