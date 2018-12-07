@@ -26,7 +26,11 @@
 		},
 		"edgeGateway": "myedgegw",
 		"externalIp": "10.150.10.10",
-		"internalIp": "192.168.1.10"
+		"internalIp": "192.168.1.10",
+    "disk": {
+      "size": 1024,
+      "sizeForUpdate": 10240
+    }
 	},
 	"logging": {
 		"enabled": true,
@@ -37,5 +41,9 @@
   "ova": {
     "ovaPath": "../test-resources/test_vapp_template.ova",
     "ovaChunkedPath": "../test-resources/template_with_custom_chunk_size.ova"
+  },
+  "media": {
+    "mediaPath": "../test-resources/test.iso",
+    "mediaName": "uploadedMediaName"
   }
 }

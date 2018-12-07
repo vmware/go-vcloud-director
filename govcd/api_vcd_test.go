@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/vmware/go-vcloud-director/types/v56"
 	"github.com/vmware/go-vcloud-director/util"
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v2"
@@ -38,6 +39,19 @@ const (
 	TestCreateOrgVdcNetworkEGW    = "TestCreateOrgVdcNetworkEGW"
 	TestCreateOrgVdcNetworkIso    = "TestCreateOrgVdcNetworkIso"
 	TestCreateOrgVdcNetworkDirect = "TestCreateOrgVdcNetworkDirect"
+	TestUploadMedia               = "TestUploadMedia"
+	TestCatalogUploadMedia        = "TestCatalogUploadMedia"
+	TestCreateDisk                = "TestCreateDisk"
+	TestUpdateDisk                = "TestUpdateDisk"
+	TestDeleteDisk                = "TestDeleteDisk"
+	TestRefreshDisk               = "TestRefreshDisk"
+	TestAttachedVMDisk            = "TestAttachedVMDisk"
+	TestVdcFindDiskByHREF         = "TestVdcFindDiskByHREF"
+	TestFindDiskByHREF            = "TestFindDiskByHREF"
+	TestDisk                      = "TestDisk"
+	TestVMAttachOrDetachDisk      = "TestVMAttachOrDetachDisk"
+	TestVMAttachDisk              = "TestVMAttachDisk"
+	TestVMDetachDisk              = "TestVMDetachDisk"
 )
 
 // Struct to get info from a config yaml file that the user
@@ -71,6 +85,10 @@ type TestConfig struct {
 		InternalIp      string `yaml:"internalIp,omitempty"`
 		EdgeGateway     string `yaml:"edgeGateway,omitempty"`
 		ExternalNetwork string `yaml:"externalNetwork,omitempty"`
+		Disk            struct {
+			Size          int `yaml:"size,omitempty"`
+			SizeForUpdate int `yaml:"sizeForUpdate,omitempty"`
+		}
 	} `yaml:"vcd"`
 	Logging struct {
 		Enabled         bool   `yaml:"enabled,omitempty"`
@@ -83,6 +101,10 @@ type TestConfig struct {
 		OVAPath        string `yaml:"ovaPath,omitempty"`
 		OVAChunkedPath string `yaml:"ovaChunkedPath,omitempty"`
 	} `yaml:"ova"`
+	Media struct {
+		MediaPath string `yaml:"mediaPath,omitempty"`
+		Media     string `yaml:"mediaName,omitempty"`
+	} `yaml:"media"`
 }
 
 // Test struct for vcloud-director.
@@ -130,6 +152,20 @@ func AddToCleanupList(name, entityType, parent, createdBy string) {
 		}
 	}
 	cleanupEntityList = append(cleanupEntityList, CleanupEntity{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy})
+}
+
+// Prepend an entity to the cleanup list.
+// To be called by all tests when a new entity has been created, before
+// running any other operation.
+// Items in the list will be deleted at the end of the tests if they still exist.
+func PrependToCleanupList(name, entityType, parent, createdBy string) {
+	for _, item := range cleanupEntityList {
+		// avoid adding the same item twice
+		if item.Name == name && item.EntityType == entityType {
+			return
+		}
+	}
+	cleanupEntityList = append([]CleanupEntity{{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy}}, cleanupEntityList...)
 }
 
 // Users use the environmental variable GOVCD_CONFIG as
@@ -386,16 +422,116 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 		return
+	case "mediaImage":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No VDC and ORG provided for media '%s'\n", entity.Name)
+			return
+		}
+		orgName, vdcName := splitParent(entity.Parent, "|")
+		if orgName == "" || vdcName == "" {
+			vcd.infoCleanup(splitParentNotFound, entity.Parent)
+			return
+		}
+		org, err := GetAdminOrgByName(vcd.client, orgName)
+		if org == (AdminOrg{}) || err != nil {
+			vcd.infoCleanup(notFoundMsg, "org", orgName)
+			return
+		}
+		vdc, err := org.GetVdcByName(vdcName)
+		if vdc == (Vdc{}) || err != nil {
+			vcd.infoCleanup(notFoundMsg, "vdc", vdcName)
+			return
+		}
+		err = RemoveMediaImageIfExists(vdc, entity.Name)
+		if err == nil {
+			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		} else {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+		return
 	case "vdc":
 		// nothing so far
 		return
 	case "vm":
 		// nothing so far
 		return
+	case "disk":
+		// Find disk by href rather than find disk by name, because disk name can be duplicated in VDC,
+		// so the unique href is required for finding the disk.
+		// [0] = disk's entity name, [1] = disk href
+		disk, err := vcd.vdc.FindDiskByHREF(strings.Split(entity.Name, "|")[1])
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting %s '%s', cannot find disk: %s\n",
+				entity.EntityType, entity.Name, err)
+			return
+		}
+
+		// See if the disk is attached to the VM
+		vmRef, err := disk.AttachedVM()
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting %s '%s', cannot find attached VM: %s\n",
+				entity.EntityType, entity.Name, err)
+			return
+		}
+		// If the disk is attached to the VM, detach disk from the VM
+		if vmRef != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [INFO] Deleting %s '%s', VM: '%s|%s', disk is attached, detaching disk\n",
+				entity.EntityType, entity.Name, vmRef.Name, vmRef.HREF)
+
+			vm, err := vcd.client.FindVMByHREF(vmRef.HREF)
+			if err != nil {
+				vcd.infoCleanup(
+					"removeLeftoverEntries: [ERROR] Deleting %s '%s', VM: '%s|%s', cannot find the VM details: %s\n",
+					entity.EntityType, entity.Name, vmRef.Name, vmRef.HREF, err)
+				return
+			}
+
+			// Detach the disk from VM
+			task, err := vm.DetachDisk(&types.DiskAttachOrDetachParams{
+				Disk: &types.Reference{
+					HREF: disk.Disk.HREF,
+				},
+			})
+			err = task.WaitTaskCompletion()
+			if err != nil {
+				vcd.infoCleanup(
+					"removeLeftoverEntries: [ERROR] Deleting %s '%s', VM: '%s|%s', waitTaskCompletion of detach disk is failed: %s\n",
+					entity.EntityType, entity.Name, vmRef.Name, vmRef.HREF, err)
+				return
+			}
+
+			// We need to refresh the disk info to obtain remove href for delete disk
+			// because attached disk is not showing remove disk href in disk.Disk.Link
+			err = disk.Refresh()
+			if err != nil {
+				vcd.infoCleanup(
+					"removeLeftoverEntries: [ERROR] Deleting %s '%s', cannot refresh disk: %s\n",
+					entity.EntityType, entity.Name, err)
+				return
+			}
+		}
+
+		// Delete disk
+		deleteDiskTask, err := disk.Delete()
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting %s '%s', cannot delete disk: %s\n",
+				entity.EntityType, entity.Name, err)
+			return
+		}
+		err = deleteDiskTask.WaitTaskCompletion()
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting %s '%s', waitTaskCompletion of delete disk is failed: %s\n",
+				entity.EntityType, entity.Name, err)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
 	default:
 		// If we reach this point, we are trying to clean up an entity that
 		// we aren't prepared for yet.
-		fmt.Printf("removeLeftoverEntries: [ERROR] Unrecognized type %s for entity '%s'\n", entity.EntityType, entity.Name)
+		fmt.Printf("removeLeftoverEntries: [ERROR] Unrecognized type %s for entity '%s'\n",
+			entity.EntityType, entity.Name)
 	}
 }
 

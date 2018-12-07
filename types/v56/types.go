@@ -617,10 +617,12 @@ type OrgSettings struct {
 	HREF string `xml:"href,attr,omitempty"` // The URI of the entity.
 	Type string `xml:"type,attr,omitempty"` // The MIME type of the entity.
 	//elements
-	Link                    LinkList                   `xml:"Link,omitempty"`                      // A reference to an entity or operation associated with this object.
-	OrgGeneralSettings      *OrgGeneralSettings        `xml:"OrgGeneralSettings,omitempty"`        // General Settings for the org, not-required
+	Link                    LinkList                   `xml:"Link,omitempty"`               // A reference to an entity or operation associated with this object.
+	OrgGeneralSettings      *OrgGeneralSettings        `xml:"OrgGeneralSettings,omitempty"` // General Settings for the org, not-required
+	OrgVAppLeaseSettings    *VAppLeaseSettings         `xml:"VAppLeaseSettings,omitempty"`
 	OrgVAppTemplateSettings *VAppTemplateLeaseSettings `xml:"VAppTemplateLeaseSettings,omitempty"` // Vapp template lease settings, not required
 	OrgLdapSettings         *OrgLdapSettingsType       `xml:"OrgLdapSettings,omitempty"`           //LDAP settings, not-requried, defaults to none
+
 }
 
 // OrgGeneralSettingsType represents the general settings for a vCloud Director organization.
@@ -654,8 +656,27 @@ type VAppTemplateLeaseSettings struct {
 	StorageLeaseSeconds            int  `xml:"StorageLeaseSeconds,omitempty"`
 }
 
+type VAppLeaseSettings struct {
+	HREF string   `xml:"href,attr,omitempty"` // The URI of the entity.
+	Type string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
+	Link LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
+
+	DeleteOnStorageLeaseExpiration   bool `xml:"DeleteOnStorageLeaseExpiration,allowempty"`
+	DeploymentLeaseSeconds           int  `xml:"DeploymentLeaseSeconds,allowempty"`
+	StorageLeaseSeconds              int  `xml:"StorageLeaseSeconds,allowempty"`
+	PowerOffOnRuntimeLeaseExpiration bool `xml:"PowerOffOnRuntimeLeaseExpiration,allowempty"`
+}
+
+type OrgFederationSettings struct {
+	HREF string   `xml:"href,attr,omitempty"` // The URI of the entity.
+	Type string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
+	Link LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
+
+	Enabled bool `xml:"Enabled,allowempty"`
+}
+
 // OrgLdapSettingsType represents the ldap settings for a vCloud Director organization.
-// Type: VAppLeaseSettingsType
+// Type: OrgLdapSettingsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Represents the ldap settings of a vCloud Director organization.
 // Since: 0.9
@@ -1947,6 +1968,8 @@ type QueryResultRecordsType struct {
 	VMRecord                   []*QueryResultVMRecordType                   `xml:"VMRecord"`                   // A record representing a VM result.
 	VAppRecord                 []*QueryResultVAppRecordType                 `xml:"VAppRecord"`                 // A record representing a VApp result.
 	OrgVdcStorageProfileRecord []*QueryResultOrgVdcStorageProfileRecordType `xml:"OrgVdcStorageProfileRecord"` // A record representing storage profiles
+	MediaRecord                []*MediaRecordType                           `xml:"MediaRecord"`                // A record representing media
+	AdminMediaRecord           []*MediaRecordType                           `xml:"AdminMediaRecord"`           // A record representing Admin media
 }
 
 // QueryResultEdgeGatewayRecordType represents an edge gateway record as query result.
@@ -2058,4 +2081,129 @@ type ExternalNetworkReference struct {
 	HREF string `xml:"href,attr"`
 	Type string `xml:"type,attr,omitempty"`
 	Name string `xml:"name,attr,omitempty"`
+}
+
+// Type: MediaType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/ca48e1bb-282b-4fdc-b827-649b819249ed/55142cf1-5bb8-4ab1-8d09-b84f717af5ec/doc/doc/types/MediaType.html
+// Description: Represents Media image
+// Since: 0.9
+type Media struct {
+	HREF         string           `xml:"href,attr,omitempty"`
+	Type         string           `xml:"type,attr,omitempty"`
+	ID           string           `xml:"id,attr,omitempty"`
+	OperationKey string           `xml:"operationKey,attr,omitempty"`
+	Name         string           `xml:"name,attr"`
+	Status       int64            `xml:"status,attr,omitempty"`
+	ImageType    string           `xml:"imageType,attr,omitempty"`
+	Size         int64            `xml:"size,attr,omitempty"`
+	Description  string           `xml:"Description,omitempty"`
+	Files        *FilesList       `xml:"Files,omitempty"`
+	Link         LinkList         `xml:"Link,omitempty"`
+	Tasks        *TasksInProgress `xml:"Tasks,omitempty"`
+	Owner        *Reference       `xml:"Owner,omitempty"`
+	Entity       *Entity          `xml:"Entity"`
+}
+
+// Type: MediaRecord
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/GET-MediasFromQuery.html
+// Issue that description partly matches with what is returned
+// Description: Represents Media record
+// Since: 1.5
+type MediaRecordType struct {
+	HREF               string `xml:"href,attr,omitempty"`
+	ID                 string `xml:"id,attr,omitempty"`
+	Type               string `xml:"type,attr,omitempty"`
+	OwnerName          string `xml:"ownerName,attr,omitempty"`
+	CatalogName        string `xml:"catalogName,attr,omitempty"`
+	IsPublished        bool   `xml:"isPublished,attr,omitempty"`
+	Name               string `xml:"name,attr"`
+	Vdc                string `xml:"vdc,attr,omitempty"`
+	VdcName            string `xml:"vdcName,attr,omitempty"`
+	Org                string `xml:"org,attr,omitempty"`
+	CreationDate       string `xml:"creationDate,attr,omitempty"`
+	IsBusy             bool   `xml:"isBusy,attr,omitempty"`
+	StorageB           int64  `xml:"storageB,attr,omitempty"`
+	Owner              string `xml:"owner,attr,omitempty"`
+	Catalog            string `xml:"catalog,attr,omitempty"`
+	CatalogItem        string `xml:"catalogItem,attr,omitempty"`
+	Status             string `xml:"status,attr,omitempty"`
+	StorageProfileName string `xml:"storageProfileName,attr,omitempty"`
+	Version            int64  `xml:"version,attr,omitempty"`
+	LastSuccessfulSync string `xml:"lastSuccessfulSync,attr,omitempty"`
+	TaskStatusName     string `xml:"taskStatusName,attr,omitempty"`
+	IsInCatalog        bool   `xml:"isInCatalog,attr,omitempty"`
+	Task               string `xml:"task,attr,omitempty"`
+	IsIso              bool   `xml:"isIso,attr,omitempty"`
+	IsVdcEnabled       bool   `xml:"isVdcEnabled,attr,omitempty"`
+	TaskStatus         string `xml:"taskStatus,attr,omitempty"`
+	TaskDetails        string `xml:"taskDetails,attr,omitempty"`
+}
+
+// DiskCreateParams element for create independent disk
+// Reference: vCloud API 30.0 - DiskCreateParamsType
+// https://code.vmware.com/apis/287/vcloud?h=Director#/doc/doc/types/DiskCreateParamsType.html
+type DiskCreateParams struct {
+	XMLName         xml.Name         `xml:"DiskCreateParams"`
+	Xmlns           string           `xml:"xmlns,attr,omitempty"`
+	Disk            *Disk            `xml:"Disk"`
+	Locality        *Reference       `xml:"Locality,omitempty"`
+	VCloudExtension *VCloudExtension `xml:"VCloudExtension,omitempty"`
+}
+
+// Represents an independent disk
+// Reference: vCloud API 30.0 - DiskType
+// https://code.vmware.com/apis/287/vcloud?h=Director#/doc/doc/types/DiskType.html
+type Disk struct {
+	XMLName         xml.Name         `xml:"Disk"`
+	Xmlns           string           `xml:"xmlns,attr,omitempty"`
+	HREF            string           `xml:"href,attr,omitempty"`
+	Type            string           `xml:"type,attr,omitempty"`
+	Id              string           `xml:"id,attr,omitempty"`
+	OperationKey    string           `xml:"operationKey,attr,omitempty"`
+	Name            string           `xml:"name,attr"`
+	Status          int              `xml:"status,attr,omitempty"`
+	Size            int              `xml:"size,attr"`
+	Iops            *int             `xml:"iops,attr,omitempty"`
+	BusType         string           `xml:"busType,attr,omitempty"`
+	BusSubType      string           `xml:"busSubType,attr,omitempty"`
+	Description     string           `xml:"Description,omitempty"`
+	Files           *FilesList       `xml:"Files,omitempty"`
+	Link            []*Link          `xml:"Link,omitempty"`
+	Owner           *Owner           `xml:"Owner,omitempty"`
+	StorageProfile  *Reference       `xml:"StorageProfile,omitempty"`
+	Tasks           *TasksInProgress `xml:"Tasks,omitempty"`
+	VCloudExtension *VCloudExtension `xml:"VCloudExtension,omitempty"`
+}
+
+// General purpose extension element
+// Not related to extension services
+// Reference: vCloud API 30.0 - DiskAttachOrDetachParamsType
+// https://code.vmware.com/apis/287/vcloud?h=Director#/doc/doc/types/VCloudExtensionType.html
+type VCloudExtension struct {
+	Required bool `xml:"required,attr,omitempty"`
+}
+
+// Parameters for attaching or detaching an independent disk
+// Reference: vCloud API 30.0 - DiskAttachOrDetachParamsType
+// https://code.vmware.com/apis/287/vcloud?h=Director#/doc/doc/types/DiskAttachOrDetachParamsType.html
+type DiskAttachOrDetachParams struct {
+	XMLName         xml.Name         `xml:"DiskAttachOrDetachParams"`
+	Xmlns           string           `xml:"xmlns,attr,omitempty"`
+	BusNumber       *int             `xml:"BusNumber,omitempty"`
+	Disk            *Reference       `xml:"Disk"`
+	UnitNumber      *int             `xml:"UnitNumber,omitempty"`
+	VCloudExtension *VCloudExtension `xml:"VCloudExtension,omitempty"`
+}
+
+// Represents a list of virtual machines
+// Reference: vCloud API 30.0 - VmsType
+// https://code.vmware.com/apis/287/vcloud?h=Director#/doc/doc/types/FilesListType.html
+type Vms struct {
+	XMLName     xml.Name   `xml:"Vms"`
+	Xmlns       string     `xml:"xmlns,attr,omitempty"`
+	Type        string     `xml:"type,attr"`
+	HREF        string     `xml:"href,attr"`
+	VmReference *Reference `xml:"VmReference,omitempty"`
 }
