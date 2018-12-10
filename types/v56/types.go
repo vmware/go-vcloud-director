@@ -387,7 +387,7 @@ type AdminVdc struct {
 	IsThinProvision          bool       `xml:"IsThinProvision,omitempty"`
 	NetworkPoolReference     *Reference `xml:"NetworkPoolReference,omitempty"`
 	ProviderVdcReference     *Reference `xml:"ProviderVdcReference"`
-	UsesFastProvioning       bool       `xml:"UsesFastProvioning,omitempty"`
+	UsesFastProvisioning     bool       `xml:"UsesFastProvisioning,omitempty"`
 	OverCommitAllowed        bool       `xml:"OverCommitAllowed,omitempty"`
 	VmDiscoveryEnabled       bool       `xml:"VmDiscoveryEnabled,omitempty"`
 }
@@ -430,7 +430,7 @@ type VdcConfiguration struct {
 	IsThinProvision          bool               `xml:"IsThinProvision,omitempty"`
 	NetworkPoolReference     *Reference         `xml:"NetworkPoolReference,omitempty"`
 	ProviderVdcReference     *Reference         `xml:"ProviderVdcReference"`
-	UsesFastProvioning       bool               `xml:"UsesFastProvioning,omitempty"`
+	UsesFastProvisioning     bool               `xml:"UsesFastProvisioning,omitempty"`
 	OverCommitAllowed        bool               `xml:"OverCommitAllowed,omitempty"`
 	VmDiscoveryEnabled       bool               `xml:"VmDiscoveryEnabled,omitempty"`
 }
@@ -1972,6 +1972,7 @@ type QueryResultRecordsType struct {
 	AdminMediaRecord                []*MediaRecordType                                `xml:"AdminMediaRecord"`                // A record representing Admin media
 	VMWProviderVdcRecord            []*QueryResultVMWProviderVdcRecordType            `xml:"VMWProviderVdcRecord"`            // A record representing a Provider VDC result.
 	ProviderVdcStorageProfileRecord []*QueryResultProviderVdcStorageProfileRecordType `xml:"ProviderVdcStorageProfileRecord"` // A record representing a Provider VDC storage profile result
+	NetworkPoolRecord               []*QueryResultNetworkPoolRecordType               `xml:"NetworkPoolRecord"`               // A record representing a network pool
 }
 
 // QueryResultEdgeGatewayRecordType represents an edge gateway record as query result.
@@ -2108,6 +2109,15 @@ type QueryResultProviderVdcStorageProfileRecordType struct {
 	StorageTotalMB       int64  `xml:"storageTotalMB,attr,omitempty"`
 	StorageUsedMB        int64  `xml:"storageUsedMB,attr,omitempty"`
 	NumberOfConditions   int    `xml:"numberOfConditions,attr,omitempty"`
+}
+
+// QueryResultNetworkPoolRecordType represents a network pool as query result.
+type QueryResultNetworkPoolRecordType struct {
+	// Attributes
+	HREF            string `xml:"href,attr,omitempty"` // The URI of the entity.
+	Name            string `xml:"name,attr,omitempty"` // Network pool name.
+	IsBusy          bool   `xml:"isBusy,attr,omitempty"`
+	NetworkPoolType int    `xml:"networkPoolType,attr,omitempty"`
 }
 
 // Namespace: http://www.vmware.com/vcloud/v1.5

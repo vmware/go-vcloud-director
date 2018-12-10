@@ -30,6 +30,7 @@ vcd:
     provider_vdc:
       name: myprovidervdc
       storage_profile: mystorageprofile
+      network_pool: mynetworkpool
     # An Org catalog, possibly containing at least one item
     catalog:
         name: mycat

@@ -11,7 +11,8 @@
 		"vdc": "myvdc",
 		"provider_vdc": {
 			"name": "myprovidervdc",
-			"storage_profile": "mystorageprofile"
+			"storage_profile": "mystorageprofile",
+			"network_pool": "mynetworkpool"
 		},
 		"catalog": {
 			"name": "mycat",

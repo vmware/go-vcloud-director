@@ -69,6 +69,7 @@ type TestConfig struct {
 		ProviderVdc struct {
 			Name           string `yaml:"name"`
 			StorageProfile string `yaml:"storage_profile"`
+			NetworkPool    string `yaml:"network_pool"`
 		} `yaml:"provider_vdc"`
 		Catalog struct {
 			Name                   string `yaml:"name,omitempty"`
@@ -450,7 +451,26 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		return
 	case "vdc":
-		// nothing so far
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for VDC '%s'\n", entity.Name)
+			return
+		}
+		org, err := GetAdminOrgByName(vcd.client, entity.Parent)
+		if org == (AdminOrg{}) || err != nil {
+			vcd.infoCleanup(notFoundMsg, "org", entity.Parent)
+			return
+		}
+		vdc, err := org.GetVdcByName(entity.Name)
+		if vdc == (Vdc{}) || err != nil {
+			vcd.infoCleanup(notFoundMsg, "vdc", entity.Name)
+			return
+		}
+		err = vdc.DeleteWait(true, true)
+		if err == nil {
+			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		} else {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
 		return
 	case "vm":
 		// nothing so far
