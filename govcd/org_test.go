@@ -226,63 +226,66 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 	}
 	networkPoolHref := results.Results.NetworkPoolRecord[0].HREF
 
-	vdcConfiguration := &types.VdcConfiguration{
-		Name:            TestCreateOrgVdc,
-		Xmlns:           "http://www.vmware.com/vcloud/v1.5",
-		AllocationModel: "ReservationPool",
-		ComputeCapacity: []*types.ComputeCapacity{
-			&types.ComputeCapacity{
-				CPU: &types.CapacityWithUsage{
-					Units:     "MHz",
-					Allocated: 1024,
-					Limit:     1024,
-				},
-				Memory: &types.CapacityWithUsage{
-					Allocated: 1024,
-					Limit:     1024,
+	allocationModels := []string{"AllocationVApp", "AllocationPool", "ReservationPool"}
+	for i, allocationModel := range allocationModels {
+		vdcConfiguration := &types.VdcConfiguration{
+			Name:            fmt.Sprintf("%s%d", TestCreateOrgVdc, i),
+			Xmlns:           "http://www.vmware.com/vcloud/v1.5",
+			AllocationModel: allocationModel,
+			ComputeCapacity: []*types.ComputeCapacity{
+				&types.ComputeCapacity{
+					CPU: &types.CapacityWithUsage{
+						Units:     "MHz",
+						Allocated: 1024,
+						Limit:     1024,
+					},
+					Memory: &types.CapacityWithUsage{
+						Allocated: 1024,
+						Limit:     1024,
+					},
 				},
 			},
-		},
-		VdcStorageProfile: &types.VdcStorageProfile{
-			Enabled: true,
-			Units:   "MB",
-			Limit:   1024,
-			Default: true,
-			ProviderVdcStorageProfile: &types.Reference{
-				HREF: providerVdcStorageProfileHref,
+			VdcStorageProfile: &types.VdcStorageProfile{
+				Enabled: true,
+				Units:   "MB",
+				Limit:   1024,
+				Default: true,
+				ProviderVdcStorageProfile: &types.Reference{
+					HREF: providerVdcStorageProfileHref,
+				},
 			},
-		},
-		NetworkPoolReference: &types.Reference{
-			HREF: networkPoolHref,
-		},
-		ProviderVdcReference: &types.Reference{
-			HREF: providerVdcHref,
-		},
-		IsEnabled:            true,
-		IsThinProvision:      true,
-		UsesFastProvisioning: true,
+			NetworkPoolReference: &types.Reference{
+				HREF: networkPoolHref,
+			},
+			ProviderVdcReference: &types.Reference{
+				HREF: providerVdcHref,
+			},
+			IsEnabled:            true,
+			IsThinProvision:      true,
+			UsesFastProvisioning: true,
+		}
+		task, err := adminOrg.CreateVdc(vdcConfiguration)
+		check.Assert(task, Equals, Task{})
+		check.Assert(err, Not(IsNil))
+		check.Assert(err.Error(), Equals, "VdcConfiguration missing required field: ComputeCapacity[0].Memory.Units")
+		vdcConfiguration.ComputeCapacity[0].Memory.Units = "MB"
+
+		err = adminOrg.CreateVdcWait(vdcConfiguration)
+		check.Assert(err, IsNil)
+
+		AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, "Test_CreateVdc")
+
+		// Refresh so the new VDC shows up in the org's list
+		err = adminOrg.Refresh()
+		check.Assert(err, IsNil)
+
+		vdc, err = adminOrg.GetVdcByName(vdcConfiguration.Name)
+		check.Assert(err, IsNil)
+		check.Assert(vdc, Not(Equals), Vdc{})
+		check.Assert(vdc.Vdc.Name, Equals, vdcConfiguration.Name)
+		check.Assert(vdc.Vdc.IsEnabled, Equals, vdcConfiguration.IsEnabled)
+		check.Assert(vdc.Vdc.AllocationModel, Equals, vdcConfiguration.AllocationModel)
 	}
-	task, err := adminOrg.CreateVdc(vdcConfiguration)
-	check.Assert(task, Equals, Task{})
-	check.Assert(err, Not(IsNil))
-	check.Assert(err.Error(), Equals, "VdcConfiguration missing required field: ComputeCapacity[0].Memory.Units")
-	vdcConfiguration.ComputeCapacity[0].Memory.Units = "MB"
-
-	err = adminOrg.CreateVdcWait(vdcConfiguration)
-	check.Assert(err, IsNil)
-
-	AddToCleanupList(TestCreateOrgVdc, "vdc", vcd.org.Org.Name, "Test_CreateVdc")
-
-	// Refresh so the new VDC shows up in the org's list
-	err = adminOrg.Refresh()
-	check.Assert(err, IsNil)
-
-	vdc, err = adminOrg.GetVdcByName(vdcConfiguration.Name)
-	check.Assert(err, IsNil)
-	check.Assert(vdc, Not(Equals), Vdc{})
-	check.Assert(vdc.Vdc.Name, Equals, vdcConfiguration.Name)
-	check.Assert(vdc.Vdc.IsEnabled, Equals, vdcConfiguration.IsEnabled)
-	check.Assert(vdc.Vdc.AllocationModel, Equals, vdcConfiguration.AllocationModel)
 }
 
 // Tests FindCatalog with Catalog in config file. Fails if the name and
