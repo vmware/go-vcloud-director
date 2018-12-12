@@ -190,12 +190,6 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, Not(Equals), AdminOrg{})
 
-	vdc, err := adminOrg.GetVdcByName(TestCreateOrgVdc)
-	check.Assert(err, IsNil)
-	if vdc != (Vdc{}) {
-		check.Skip(fmt.Sprintf("VDC '%s' already exists", TestCreateOrgVdc))
-	}
-
 	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":   "providerVdc",
 		"filter": fmt.Sprintf("(name==%s)", vcd.config.VCD.ProviderVdc.Name),
@@ -264,6 +258,14 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 			IsThinProvision:      true,
 			UsesFastProvisioning: true,
 		}
+
+		vdc, err := adminOrg.GetVdcByName(vdcConfiguration.Name)
+		check.Assert(err, IsNil)
+		if vdc != (Vdc{}) {
+			err = vdc.DeleteWait(true, true)
+			check.Assert(err, IsNil)
+		}
+
 		task, err := adminOrg.CreateVdc(vdcConfiguration)
 		check.Assert(task, Equals, Task{})
 		check.Assert(err, Not(IsNil))
@@ -285,6 +287,9 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 		check.Assert(vdc.Vdc.Name, Equals, vdcConfiguration.Name)
 		check.Assert(vdc.Vdc.IsEnabled, Equals, vdcConfiguration.IsEnabled)
 		check.Assert(vdc.Vdc.AllocationModel, Equals, vdcConfiguration.AllocationModel)
+
+		err = vdc.DeleteWait(true, true)
+		check.Assert(err, IsNil)
 	}
 }
 
