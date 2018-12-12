@@ -43,4 +43,4 @@ copyright:
 
 build:
 	@echo "==> Building govcd library"
-	cd govcd && go build .
+	cd govcd && go build . && go test -c .
