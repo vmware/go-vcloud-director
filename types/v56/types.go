@@ -1244,6 +1244,8 @@ type VirtualHardwareItem struct {
 	Connection          []*VirtualHardwareConnection   `xml:"Connection,omitempty"`
 	HostResource        []*VirtualHardwareHostResource `xml:"HostResource,omitempty"`
 	Link                []*Link                        `xml:"Link,omitempty"`
+	// Reference: https://code.vmware.com/apis/287/vcloud?h=Director#/doc/doc/operations/GET-DisksRasdItemsList-vApp.html
+	Parent int `xml:"Parent,omitempty"`
 }
 
 // Connection info from ResourceType=10 (Network Interface)
@@ -1255,12 +1257,18 @@ type VirtualHardwareConnection struct {
 }
 
 // HostResource info from ResourceType=17 (Hard Disk)
+// Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0, Page 188 - 189
+// https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
+// def8435d-a54a-4923-b26a-e2d1915b09c3/vcloud_sp_api_guide_30_0.pdf
 type VirtualHardwareHostResource struct {
 	BusType           int    `xml:"busType,attr,omitempty"`
 	BusSubType        string `xml:"busSubType,attr,omitempty"`
 	Capacity          int    `xml:"capacity,attr,omitempty"`
 	StorageProfile    string `xml:"storageProfileHref,attr,omitempty"`
 	OverrideVmDefault bool   `xml:"storageProfileOverrideVmDefault,attr,omitempty"`
+	Disk              string `xml:"disk,attr,omitempty"`
+	//Iops              int    `xml:"iops,attr,omitempty"`
+	//OsType            string `xml:"osType,attr,omitempty"`
 }
 
 // SnapshotSection from VM struct
