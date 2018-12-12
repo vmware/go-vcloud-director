@@ -290,6 +290,12 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 
 		err = vdc.DeleteWait(true, true)
 		check.Assert(err, IsNil)
+
+		err = adminOrg.Refresh()
+		check.Assert(err, IsNil)
+		vdc, err = adminOrg.GetVdcByName(vdcConfiguration.Name)
+		check.Assert(err, IsNil)
+		check.Assert(vdc, Equals, Vdc{})
 	}
 }
 
