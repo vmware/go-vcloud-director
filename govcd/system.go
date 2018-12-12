@@ -24,12 +24,13 @@ import (
 // should be set when providing generalOrgSettings.
 // If either VAppLeaseSettings or VAppTemplateLeaseSettings is provided then all elements need to have values, otherwise don't provide them at all.
 // Overall elements must be in the correct order.
-func CreateOrg(vcdClient *VCDClient, name string, fullName string, isEnabled bool, settings *types.OrgSettings) (Task, error) {
+func CreateOrg(vcdClient *VCDClient, name string, fullName string, description string, settings *types.OrgSettings, isEnabled bool) (Task, error) {
 	vcomp := &types.AdminOrg{
 		Xmlns:       "http://www.vmware.com/vcloud/v1.5",
 		Name:        name,
 		IsEnabled:   isEnabled,
 		FullName:    fullName,
+		Description: description,
 		OrgSettings: settings,
 	}
 	output, _ := xml.MarshalIndent(vcomp, "  ", "    ")
