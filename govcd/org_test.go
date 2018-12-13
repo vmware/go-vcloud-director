@@ -5,7 +5,7 @@
 package govcd
 
 import (
-	types "github.com/vmware/go-vcloud-director/types/v56"
+	"github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
 	"time"
 )
@@ -22,13 +22,17 @@ func (vcd *TestVCD) Test_RefreshOrg(check *C) {
 		err = adminOrg.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
-	_, err = CreateOrg(vcd.client, TestRefreshOrg, TestRefreshOrg, true, &types.OrgSettings{
+	task, err := CreateOrg(vcd.client, TestRefreshOrg, TestRefreshOrg, TestRefreshOrg, &types.OrgSettings{
 		OrgLdapSettings: &types.OrgLdapSettingsType{OrgLdapMode: "NONE"},
-	})
+	}, true)
 	check.Assert(err, IsNil)
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
 	AddToCleanupList(TestRefreshOrg, "org", "", "Test_RefreshOrg")
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
 	// fetch newly created org
 	org, err := GetOrgByName(vcd.client, TestRefreshOrg)
 	check.Assert(err, IsNil)
@@ -38,7 +42,7 @@ func (vcd *TestVCD) Test_RefreshOrg(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg.AdminOrg.Name, Equals, TestRefreshOrg)
 	adminOrg.AdminOrg.FullName = TestRefreshOrgFullName
-	task, err := adminOrg.Update()
+	task, err = adminOrg.Update()
 	check.Assert(err, IsNil)
 	// Wait until update is complete
 	err = task.WaitTaskCompletion()
@@ -67,12 +71,15 @@ func (vcd *TestVCD) Test_DeleteOrg(check *C) {
 		err = org.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
-	_, err = CreateOrg(vcd.client, TestDeleteOrg, TestDeleteOrg, true, &types.OrgSettings{})
+	task, err := CreateOrg(vcd.client, TestDeleteOrg, TestDeleteOrg, TestDeleteOrg, &types.OrgSettings{}, true)
 	check.Assert(err, IsNil)
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
 	AddToCleanupList(TestDeleteOrg, "org", "", "Test_DeleteOrg")
 	// fetch newly created org
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
 	org, err = GetAdminOrgByName(vcd.client, TestDeleteOrg)
 	check.Assert(err, IsNil)
 	check.Assert(org.AdminOrg.Name, Equals, TestDeleteOrg)
@@ -95,17 +102,20 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 		err = org.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
-	_, err = CreateOrg(vcd.client, TestUpdateOrg, TestUpdateOrg, true, &types.OrgSettings{
+	task, err := CreateOrg(vcd.client, TestUpdateOrg, TestUpdateOrg, TestUpdateOrg, &types.OrgSettings{
 		OrgLdapSettings: &types.OrgLdapSettingsType{OrgLdapMode: "NONE"},
-	})
+	}, true)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	AddToCleanupList(TestUpdateOrg, "org", "", "TestUpdateOrg")
 	// fetch newly created org
 	org, err = GetAdminOrgByName(vcd.client, TestUpdateOrg)
 	check.Assert(err, IsNil)
 	check.Assert(org.AdminOrg.Name, Equals, TestUpdateOrg)
+	check.Assert(org.AdminOrg.Description, Equals, TestUpdateOrg)
 	org.AdminOrg.OrgSettings.OrgGeneralSettings.DeployedVMQuota = 100
-	task, err := org.Update()
+	task, err = org.Update()
 	check.Assert(err, IsNil)
 	// Wait until update is complete
 	err = task.WaitTaskCompletion()
@@ -122,9 +132,8 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 
 func doesOrgExist(check *C, vcd *TestVCD) {
 	var org AdminOrg
-	var err error
 	for i := 0; i < 30; i++ {
-		org, err = GetAdminOrgByName(vcd.client, TestDeleteOrg)
+		org, _ = GetAdminOrgByName(vcd.client, TestDeleteOrg)
 		if org == (AdminOrg{}) {
 			break
 		} else {
@@ -132,7 +141,6 @@ func doesOrgExist(check *C, vcd *TestVCD) {
 		}
 	}
 	check.Assert(org, Equals, AdminOrg{})
-	check.Assert(err, IsNil)
 }
 
 // Tests org function GetVDCByName with the vdc specified

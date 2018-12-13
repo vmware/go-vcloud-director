@@ -7,7 +7,6 @@ package govcd
 import (
 	"github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
-	"time"
 )
 
 // Tests System function GetOrgByName by checking if the org object
@@ -79,7 +78,7 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 			OrgLdapMode: "NONE",
 		},
 	}
-	task, err := CreateOrg(vcd.client, TestCreateOrg, TestCreateOrg, true, settings)
+	task, err := CreateOrg(vcd.client, TestCreateOrg, TestCreateOrg, TestCreateOrg, settings, true)
 	check.Assert(err, IsNil)
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
@@ -91,21 +90,11 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 	check.Assert(org, Not(Equals), AdminOrg{})
 	check.Assert(err, IsNil)
 	check.Assert(org.AdminOrg.Name, Equals, TestCreateOrg)
+	check.Assert(org.AdminOrg.Description, Equals, TestCreateOrg)
 	// Delete, with force and recursive true
 	err = org.Delete(true, true)
 	check.Assert(err, IsNil)
-	// Check if org still exists
-	for i := 0; i < 30; i++ {
-		org, err = GetAdminOrgByName(vcd.client, TestCreateOrg)
-		if org == (AdminOrg{}) {
-			break
-		} else {
-			time.Sleep(1 * time.Second)
-		}
-	}
-	check.Assert(org, Equals, AdminOrg{})
-	check.Assert(err, IsNil)
-
+	doesOrgExist(check, vcd)
 }
 
 // longer than the 128 characters so nothing can be named this
