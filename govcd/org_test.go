@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"fmt"
 	"github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
 	"time"
@@ -180,6 +181,130 @@ func (vcd *TestVCD) Test_Admin_GetVdcByName(check *C) {
 	vdc, err = adminOrg.GetVdcByName(INVALID_NAME)
 	check.Assert(vdc, Equals, Vdc{})
 	check.Assert(err, IsNil)
+}
+
+// Tests org function GetVDCByName with the vdc specified
+// in the config file. Then tests with a vdc that doesn't exist.
+// Fails if the config file name doesn't match with the found vdc, or
+// if the invalid vdc is found by the function.  Also tests an vdc
+// that doesn't exist. Asserts an error if the function finds it or
+// if the error is not nil.
+func (vcd *TestVCD) Test_CreateVdc(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip("Configuration org != 'Sysyem'")
+	}
+
+	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, Not(Equals), AdminOrg{})
+
+	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "providerVdc",
+		"filter": fmt.Sprintf("(name==%s)", vcd.config.VCD.ProviderVdc.Name),
+	})
+	check.Assert(err, IsNil)
+	if len(results.Results.VMWProviderVdcRecord) == 0 {
+		check.Skip(fmt.Sprintf("No Provider VDC found with name '%s'", vcd.config.VCD.ProviderVdc.Name))
+	}
+	providerVdcHref := results.Results.VMWProviderVdcRecord[0].HREF
+
+	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "providerVdcStorageProfile",
+		"filter": fmt.Sprintf("(name==%s)", vcd.config.VCD.ProviderVdc.StorageProfile),
+	})
+	check.Assert(err, IsNil)
+	if len(results.Results.ProviderVdcStorageProfileRecord) == 0 {
+		check.Skip(fmt.Sprintf("No storage profile found with name '%s'", vcd.config.VCD.ProviderVdc.StorageProfile))
+	}
+	providerVdcStorageProfileHref := results.Results.ProviderVdcStorageProfileRecord[0].HREF
+
+	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "networkPool",
+		"filter": fmt.Sprintf("(name==%s)", vcd.config.VCD.ProviderVdc.NetworkPool),
+	})
+	check.Assert(err, IsNil)
+	if len(results.Results.NetworkPoolRecord) == 0 {
+		check.Skip(fmt.Sprintf("No network pool found with name '%s'", vcd.config.VCD.ProviderVdc.NetworkPool))
+	}
+	networkPoolHref := results.Results.NetworkPoolRecord[0].HREF
+
+	allocationModels := []string{"AllocationVApp", "AllocationPool", "ReservationPool"}
+	for i, allocationModel := range allocationModels {
+		vdcConfiguration := &types.VdcConfiguration{
+			Name:            fmt.Sprintf("%s%d", TestCreateOrgVdc, i),
+			Xmlns:           "http://www.vmware.com/vcloud/v1.5",
+			AllocationModel: allocationModel,
+			ComputeCapacity: []*types.ComputeCapacity{
+				&types.ComputeCapacity{
+					CPU: &types.CapacityWithUsage{
+						Units:     "MHz",
+						Allocated: 1024,
+						Limit:     1024,
+					},
+					Memory: &types.CapacityWithUsage{
+						Allocated: 1024,
+						Limit:     1024,
+					},
+				},
+			},
+			VdcStorageProfile: &types.VdcStorageProfile{
+				Enabled: true,
+				Units:   "MB",
+				Limit:   1024,
+				Default: true,
+				ProviderVdcStorageProfile: &types.Reference{
+					HREF: providerVdcStorageProfileHref,
+				},
+			},
+			NetworkPoolReference: &types.Reference{
+				HREF: networkPoolHref,
+			},
+			ProviderVdcReference: &types.Reference{
+				HREF: providerVdcHref,
+			},
+			IsEnabled:            true,
+			IsThinProvision:      true,
+			UsesFastProvisioning: true,
+		}
+
+		vdc, err := adminOrg.GetVdcByName(vdcConfiguration.Name)
+		check.Assert(err, IsNil)
+		if vdc != (Vdc{}) {
+			err = vdc.DeleteWait(true, true)
+			check.Assert(err, IsNil)
+		}
+
+		task, err := adminOrg.CreateVdc(vdcConfiguration)
+		check.Assert(task, Equals, Task{})
+		check.Assert(err, Not(IsNil))
+		check.Assert(err.Error(), Equals, "VdcConfiguration missing required field: ComputeCapacity[0].Memory.Units")
+		vdcConfiguration.ComputeCapacity[0].Memory.Units = "MB"
+
+		err = adminOrg.CreateVdcWait(vdcConfiguration)
+		check.Assert(err, IsNil)
+
+		AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, "Test_CreateVdc")
+
+		// Refresh so the new VDC shows up in the org's list
+		err = adminOrg.Refresh()
+		check.Assert(err, IsNil)
+
+		vdc, err = adminOrg.GetVdcByName(vdcConfiguration.Name)
+		check.Assert(err, IsNil)
+		check.Assert(vdc, Not(Equals), Vdc{})
+		check.Assert(vdc.Vdc.Name, Equals, vdcConfiguration.Name)
+		check.Assert(vdc.Vdc.IsEnabled, Equals, vdcConfiguration.IsEnabled)
+		check.Assert(vdc.Vdc.AllocationModel, Equals, vdcConfiguration.AllocationModel)
+
+		err = vdc.DeleteWait(true, true)
+		check.Assert(err, IsNil)
+
+		err = adminOrg.Refresh()
+		check.Assert(err, IsNil)
+		vdc, err = adminOrg.GetVdcByName(vdcConfiguration.Name)
+		check.Assert(err, IsNil)
+		check.Assert(vdc, Equals, Vdc{})
+	}
 }
 
 // Tests FindCatalog with Catalog in config file. Fails if the name and
