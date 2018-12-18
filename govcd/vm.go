@@ -558,7 +558,7 @@ func (vm *VM) DetachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, erro
 	return vm.attachOrDetachDisk(diskParams, types.RelDiskDetach)
 }
 
-// Helper function which finds media ant calls InsertMedia
+// Helper function which finds media and calls InsertMedia
 func (vm *VM) HandleInsertMedia(org *Org, catalogName, mediaName string) (Task, error) {
 
 	media, err := FindMediaAsCatalogItem(org, catalogName, mediaName)
@@ -578,7 +578,7 @@ func (vm *VM) HandleInsertMedia(org *Org, catalogName, mediaName string) (Task, 
 	return task, err
 }
 
-// Helper function which finds media ant calls EjectMedia
+// Helper function which finds media and calls EjectMedia
 func (vm *VM) HandleEjectMedia(org *Org, catalogName, mediaName string) (Task, error) {
 	media, err := FindMediaAsCatalogItem(org, catalogName, mediaName)
 	if err != nil || media == (CatalogItem{}) {
@@ -630,6 +630,7 @@ func (vm *VM) EjectMedia(mediaParams *types.MediaInsertOrEjectParams) (Task, err
 	return vm.insertOrEjectMedia(mediaParams, types.RelMediaEjectMedia)
 }
 
+// validates that media and media.href isn't empty
 func validateMediaParams(mediaParams *types.MediaInsertOrEjectParams) error {
 	if mediaParams.Media == nil {
 		return fmt.Errorf("could not find media info for eject")

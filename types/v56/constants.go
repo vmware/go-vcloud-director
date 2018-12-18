@@ -87,3 +87,7 @@ const (
 	// HTTPDelete the http DELETE method
 	HTTPDelete = "DELETE"
 )
+
+const (
+	VMsCDResourceSubType = "vmware.cdrom.iso"
+)
