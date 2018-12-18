@@ -196,3 +196,21 @@ func (vcd *TestVCD) Test_FindMediaImage(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(mediaImage, Equals, MediaItem{})
 }
+
+func (vcd *TestVCD) Test_QueryVM(check *C) {
+
+	if vcd.vapp.VApp == nil {
+		check.Skip("No Vapp provided")
+	}
+
+	// Find VM
+	vapp := vcd.find_first_vapp()
+	_, vmName := vcd.find_first_vm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+	vm, err := vcd.vdc.QueryVM(vcd.vapp.VApp.Name, vmName)
+	check.Assert(err, IsNil)
+
+	check.Assert(vm.VM.Name, Equals, vmName)
+}

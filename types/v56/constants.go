@@ -71,6 +71,8 @@ const (
 	MimeDiskAttachOrDetachParams = "application/vnd.vmware.vcloud.diskAttachOrDetachParams+xml"
 	// Mime for Disk
 	MimeDisk = "application/vnd.vmware.vcloud.disk+xml"
+	// Mime for insert or eject media
+	MimeMediaInsertOrEjectParams = "application/vnd.vmware.vcloud.mediaInsertOrEjectParams+xml"
 )
 
 const (
