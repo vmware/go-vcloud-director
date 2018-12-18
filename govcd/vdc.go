@@ -572,6 +572,7 @@ func (vdc *Vdc) FindVMByName(vapp VApp, vm string) (VM, error) {
 	return VM{}, fmt.Errorf("can't find vm: %s", vm)
 }
 
+// Find vm using vapp name and vm name. Returns VMRecord query return type
 func (vdc *Vdc) QueryVM(vappName, vmName string) (VMRecord, error) {
 
 	if vmName == "" {
