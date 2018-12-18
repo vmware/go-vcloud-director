@@ -132,7 +132,8 @@ func (vcd *TestVCD) Test_DeleteMediaImage(check *C) {
 
 }
 
-// Tests System function FindMediaAsCatalogItem
+// Tests System function FindMediaAsCatalogItem by creating media item and
+// and finding it as catalog item after.
 func (vcd *TestVCD) Test_FindMediaAsCatalogItem(check *C) {
 	skipWhenMediaPathMissing(vcd, check)
 	itemName := TestUploadMedia + "6"

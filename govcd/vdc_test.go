@@ -197,6 +197,8 @@ func (vcd *TestVCD) Test_FindMediaImage(check *C) {
 	check.Assert(mediaImage, Equals, MediaItem{})
 }
 
+// Tests function QueryVM by searching vm created
+// by test suite
 func (vcd *TestVCD) Test_QueryVM(check *C) {
 
 	if vcd.vapp.VApp == nil {

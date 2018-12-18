@@ -549,10 +549,11 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
 }
 
+// check resource subtype for specific value which means media is injected
 func isMediaInjected(items []*types.VirtualHardwareItem) bool {
 	isFound := false
 	for _, hardwareItem := range items {
-		if hardwareItem.ResourceSubType == "vmware.cdrom.iso" {
+		if hardwareItem.ResourceSubType == types.VMsCDResourceSubType {
 			isFound = true
 			break
 		}
