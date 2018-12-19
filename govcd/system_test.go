@@ -22,7 +22,8 @@ func (vcd *TestVCD) Test_GetOrgByName(check *C) {
 	// Tests Org That doesn't exist
 	org, err = GetOrgByName(vcd.client, INVALID_NAME)
 	check.Assert(org, Equals, Org{})
-	check.Assert(err, IsNil)
+	// When we explicitly search for a non existing item, we expect the error to be not nil
+	check.Assert(err, NotNil)
 }
 
 // Tests System function GetAdminOrgByName by checking if the AdminOrg object
@@ -32,7 +33,7 @@ func (vcd *TestVCD) Test_GetOrgByName(check *C) {
 // if the function finds it or if the error is not nil.
 func (vcd *TestVCD) Test_GetAdminOrgByName(check *C) {
 	if vcd.skipAdminTests {
-		check.Skip("Configuration org != 'Sysyem'")
+		check.Skip("Configuration org != 'System'")
 	}
 	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
 	check.Assert(org, Not(Equals), AdminOrg{})
@@ -41,7 +42,7 @@ func (vcd *TestVCD) Test_GetAdminOrgByName(check *C) {
 	// Tests Org That doesn't exist
 	org, err = GetAdminOrgByName(vcd.client, INVALID_NAME)
 	check.Assert(org, Equals, AdminOrg{})
-	check.Assert(err, IsNil)
+	check.Assert(err, NotNil)
 }
 
 // Tests the creation of an org with general settings,
@@ -49,7 +50,7 @@ func (vcd *TestVCD) Test_GetAdminOrgByName(check *C) {
 // error if the task, fetching the org, or deleting the org fails
 func (vcd *TestVCD) Test_CreateOrg(check *C) {
 	if vcd.skipAdminTests {
-		check.Skip("Configuration org != 'Sysyem'")
+		check.Skip("Configuration org != 'System'")
 	}
 	org, err := GetAdminOrgByName(vcd.client, TestCreateOrg)
 	if org != (AdminOrg{}) {

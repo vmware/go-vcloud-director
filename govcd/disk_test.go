@@ -254,8 +254,8 @@ func (vcd *TestVCD) Test_AttachedVMDisk(check *C) {
 	}
 
 	// Find VM
-	vapp := vcd.find_first_vapp()
-	vmType, vmName := vcd.find_first_vm(vapp)
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
@@ -321,6 +321,42 @@ func (vcd *TestVCD) Test_AttachedVMDisk(check *C) {
 	check.Assert(vmRef, NotNil)
 	check.Assert(vmRef.Name, Equals, vm.VM.Name)
 
+	// Detach disk
+	err = vcd.detachIndependentDisk(Disk{disk.Disk, &vcd.client.Client})
+	check.Assert(err, IsNil)
+}
+
+// Checks whether an independent disk is attached to a VM, and detaches it
+func (vcd *TestVCD) detachIndependentDisk(disk Disk) error {
+
+	// See if the disk is attached to the VM
+	vmRef, err := disk.AttachedVM()
+	if err != nil {
+		return err
+	}
+	// If the disk is attached to the VM, detach disk from the VM
+	if vmRef != nil {
+
+		vm, err := vcd.client.FindVMByHREF(vmRef.HREF)
+		if err != nil {
+			return err
+		}
+
+		// Detach the disk from VM
+		task, err := vm.DetachDisk(&types.DiskAttachOrDetachParams{
+			Disk: &types.Reference{
+				HREF: disk.Disk.HREF,
+			},
+		})
+		if err != nil {
+			return err
+		}
+		err = task.WaitTaskCompletion()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Test find Disk by Href in VDC struct
@@ -430,8 +466,8 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 	}
 
 	// Find VM
-	vapp := vcd.find_first_vapp()
-	vmType, vmName := vcd.find_first_vm(vapp)
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}

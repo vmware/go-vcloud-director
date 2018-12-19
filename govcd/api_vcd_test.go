@@ -512,6 +512,12 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 					HREF: disk.Disk.HREF,
 				},
 			})
+			if err != nil {
+				vcd.infoCleanup(
+					"removeLeftoverEntries: [ERROR] Detaching %s '%s', VM: '%s|%s': %s\n",
+					entity.EntityType, entity.Name, vmRef.Name, vmRef.HREF, err)
+				return
+			}
 			err = task.WaitTaskCompletion()
 			if err != nil {
 				vcd.infoCleanup(

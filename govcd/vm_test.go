@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func (vcd *TestVCD) find_first_vm(vapp VApp) (types.VM, string) {
+func (vcd *TestVCD) findFirstVm(vapp VApp) (types.VM, string) {
 	for _, vm := range vapp.VApp.Children.VM {
 		if vm.Name != "" {
 			return *vm, vm.Name
@@ -22,7 +22,7 @@ func (vcd *TestVCD) find_first_vm(vapp VApp) (types.VM, string) {
 	return types.VM{}, ""
 }
 
-func (vcd *TestVCD) find_first_vapp() VApp {
+func (vcd *TestVCD) findFirstVapp() VApp {
 	client := vcd.client
 	config := vcd.config
 	org, err := GetOrgByName(client, config.VCD.Org)
@@ -35,29 +35,29 @@ func (vcd *TestVCD) find_first_vapp() VApp {
 		fmt.Println(err)
 		return VApp{}
 	}
-	wanted_vapp := vcd.vapp.VApp.Name
-	vapp_name := ""
+	wantedVapp := vcd.vapp.VApp.Name
+	vappName := ""
 	for _, res := range vdc.Vdc.ResourceEntities {
 		for _, item := range res.ResourceEntity {
 			// Finding a named vApp, if it was defined in config
-			if wanted_vapp != "" {
-				if item.Name == wanted_vapp {
-					vapp_name = item.Name
+			if wantedVapp != "" {
+				if item.Name == wantedVapp {
+					vappName = item.Name
 					break
 				}
 			} else {
 				// Otherwise, we get the first vApp from the vDC list
 				if item.Type == "application/vnd.vmware.vcloud.vApp+xml" {
-					vapp_name = item.Name
+					vappName = item.Name
 					break
 				}
 			}
 		}
 	}
-	if wanted_vapp == "" {
+	if wantedVapp == "" {
 		return VApp{}
 	}
-	vapp, _ := vdc.FindVAppByName(vapp_name)
+	vapp, _ := vdc.FindVAppByName(vappName)
 	return vapp
 }
 
@@ -137,11 +137,11 @@ func (vcd *TestVCD) Test_FindVMByHREF(check *C) {
 	}
 
 	fmt.Printf("Running: %s\n", check.TestName())
-	vapp := vcd.find_first_vapp()
+	vapp := vcd.findFirstVapp()
 	if vapp.VApp.Name == "" {
 		check.Skip("Disabled: No suitable vApp found in vDC")
 	}
-	vm, vm_name := vcd.find_first_vm(vapp)
+	vm, vm_name := vcd.findFirstVm(vapp)
 	if vm.Name == "" {
 		check.Skip("Disabled: No suitable VM found in vDC")
 	}
@@ -165,8 +165,8 @@ func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 		check.Skip("skipping test because no vApp is found")
 	}
 
-	vapp := vcd.find_first_vapp()
-	vmType, vmName := vcd.find_first_vm(vapp)
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
@@ -256,8 +256,8 @@ func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 	}
 
 	// Find VM
-	vapp := vcd.find_first_vapp()
-	vmType, vmName := vcd.find_first_vm(vapp)
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
@@ -337,8 +337,8 @@ func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
 	}
 
 	// Find VM
-	vapp := vcd.find_first_vapp()
-	vmType, vmName := vcd.find_first_vm(vapp)
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
