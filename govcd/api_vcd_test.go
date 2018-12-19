@@ -54,6 +54,10 @@ const (
 	TestVMDetachDisk              = "TestVMDetachDisk"
 )
 
+const (
+	TestRequiresSysAdminPrivileges = "Test %s requires system administrator privileges"
+)
+
 // Struct to get info from a config yaml file that the user
 // specifies
 type TestConfig struct {
@@ -481,8 +485,9 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		// [0] = disk's entity name, [1] = disk href
 		disk, err := vcd.vdc.FindDiskByHREF(strings.Split(entity.Name, "|")[1])
 		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting %s '%s', cannot find disk: %s\n",
-				entity.EntityType, entity.Name, err)
+			// If the disk is not found, we just need to show that it was not found, as
+			// it was likely deleted during the regular tests
+			vcd.infoCleanup(notFoundMsg, entity.Name, err)
 			return
 		}
 

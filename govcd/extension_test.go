@@ -13,6 +13,9 @@ import (
 func (vcd *TestVCD) Test_GetExternalNetwork(check *C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
+	if !vcd.client.Client.IsSysAdmin {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
 	networkName := vcd.config.VCD.ExternalNetwork
 	if networkName == "" {
 		check.Skip("No external network provided")

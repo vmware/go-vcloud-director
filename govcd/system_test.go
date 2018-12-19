@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"fmt"
 	"github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -33,7 +34,7 @@ func (vcd *TestVCD) Test_GetOrgByName(check *C) {
 // if the function finds it or if the error is not nil.
 func (vcd *TestVCD) Test_GetAdminOrgByName(check *C) {
 	if vcd.skipAdminTests {
-		check.Skip("Configuration org != 'System'")
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
 	check.Assert(org, Not(Equals), AdminOrg{})
@@ -50,7 +51,7 @@ func (vcd *TestVCD) Test_GetAdminOrgByName(check *C) {
 // error if the task, fetching the org, or deleting the org fails
 func (vcd *TestVCD) Test_CreateOrg(check *C) {
 	if vcd.skipAdminTests {
-		check.Skip("Configuration org != 'System'")
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 	org, err := GetAdminOrgByName(vcd.client, TestCreateOrg)
 	if org != (AdminOrg{}) {
