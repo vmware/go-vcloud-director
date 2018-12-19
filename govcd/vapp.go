@@ -449,7 +449,7 @@ func (vapp *VApp) RunCustomizationScript(computername, script string) (Task, err
 func (vapp *VApp) Customize(computername, script string, changeSid bool) (Task, error) {
 	err := vapp.Refresh()
 	if err != nil {
-		return Task{}, fmt.Errorf("error refreshing vapp before running customization: %v", err)
+		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %v", err)
 	}
 
 	// Check if VApp Children is populated
@@ -507,7 +507,7 @@ func (vapp *VApp) Customize(computername, script string, changeSid bool) (Task, 
 func (vapp *VApp) GetStatus() (string, error) {
 	err := vapp.Refresh()
 	if err != nil {
-		return "", fmt.Errorf("error refreshing vapp: %v", err)
+		return "", fmt.Errorf("error refreshing vApp: %v", err)
 	}
 	return types.VAppStatuses[vapp.VApp.Status], nil
 }
@@ -543,7 +543,7 @@ func (vapp *VApp) ChangeCPUcount(size int) (Task, error) {
 
 	err := vapp.Refresh()
 	if err != nil {
-		return Task{}, fmt.Errorf("error refreshing vapp before running customization: %v", err)
+		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %v", err)
 	}
 
 	// Check if VApp Children is populated
@@ -607,7 +607,7 @@ func (vapp *VApp) ChangeCPUcount(size int) (Task, error) {
 func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
 	err := vapp.Refresh()
 	if err != nil {
-		return Task{}, fmt.Errorf("error refreshing vapp before running customization: %v", err)
+		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %v", err)
 	}
 
 	if vapp.VApp.Children == nil || len(vapp.VApp.Children.VM) == 0 {
@@ -616,11 +616,11 @@ func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
 
 	vdc, err := vapp.getParentVDC()
 	if err != nil {
-		return Task{}, fmt.Errorf("error retrieving parent VDC for vapp %s", vapp.VApp.Name)
+		return Task{}, fmt.Errorf("error retrieving parent VDC for vApp %s", vapp.VApp.Name)
 	}
 	storageProfileRef, err := vdc.FindStorageProfileReference(name)
 	if err != nil {
-		return Task{}, fmt.Errorf("error retrieving storage profile %s for vapp %s", name, vapp.VApp.Name)
+		return Task{}, fmt.Errorf("error retrieving storage profile %s for vApp %s", name, vapp.VApp.Name)
 	}
 
 	newProfile := &types.VM{
@@ -631,7 +631,7 @@ func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
 
 	output, err := xml.MarshalIndent(newProfile, "  ", "    ")
 	if err != nil {
-		return Task{}, fmt.Errorf("error encoding storage profile change metadata for vapp %s", vapp.VApp.Name)
+		return Task{}, fmt.Errorf("error encoding storage profile change metadata for vApp %s", vapp.VApp.Name)
 	}
 
 	util.Logger.Printf("[DEBUG] VCD Client configuration: %s", output)
@@ -663,7 +663,7 @@ func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
 func (vapp *VApp) ChangeVMName(name string) (Task, error) {
 	err := vapp.Refresh()
 	if err != nil {
-		return Task{}, fmt.Errorf("error refreshing vapp before running customization: %v", err)
+		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %v", err)
 	}
 
 	if vapp.VApp.Children == nil {
@@ -709,7 +709,7 @@ func (vapp *VApp) ChangeVMName(name string) (Task, error) {
 func (vapp *VApp) DeleteMetadata(key string) (Task, error) {
 	err := vapp.Refresh()
 	if err != nil {
-		return Task{}, fmt.Errorf("error refreshing vapp before running customization: %v", err)
+		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %v", err)
 	}
 
 	if vapp.VApp.Children == nil {
@@ -739,7 +739,7 @@ func (vapp *VApp) DeleteMetadata(key string) (Task, error) {
 func (vapp *VApp) AddMetadata(key, value string) (Task, error) {
 	err := vapp.Refresh()
 	if err != nil {
-		return Task{}, fmt.Errorf("error refreshing vapp before running customization: %v", err)
+		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %v", err)
 	}
 
 	if vapp.VApp.Children == nil {
@@ -790,7 +790,7 @@ func (vapp *VApp) AddMetadata(key, value string) (Task, error) {
 func (vapp *VApp) SetOvf(parameters map[string]string) (Task, error) {
 	err := vapp.Refresh()
 	if err != nil {
-		return Task{}, fmt.Errorf("error refreshing vapp before running customization: %v", err)
+		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %v", err)
 	}
 
 	if vapp.VApp.Children == nil {
@@ -930,7 +930,7 @@ func (vapp *VApp) ChangeMemorySize(size int) (Task, error) {
 
 	err := vapp.Refresh()
 	if err != nil {
-		return Task{}, fmt.Errorf("error refreshing vapp before running customization: %v", err)
+		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %v", err)
 	}
 
 	// Check if VApp Children is populated
