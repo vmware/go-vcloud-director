@@ -33,6 +33,7 @@ func NewVM(cli *Client) *VM {
 	}
 }
 
+// create instance with reference to types.QueryResultVMRecordType
 func NewVMRecord(cli *Client) *VMRecord {
 	return &VMRecord{
 		VM:     new(types.QueryResultVMRecordType),
@@ -595,7 +596,7 @@ func (vm *VM) HandleEjectMedia(org *Org, catalogName, mediaName string) (Task, e
 }
 
 // Insert media for VM
-// Call insertOrEjectMedia with media and types.RelMediaEjectMedia to insert media from vm.
+// Call insertOrEjectMedia with media and types.RelMediaInsertMedia to insert media from VM.
 func (vm *VM) InsertMedia(mediaParams *types.MediaInsertOrEjectParams) (Task, error) {
 	util.Logger.Printf("[TRACE] Insert media, HREF: %s\n", mediaParams.Media.HREF)
 
@@ -608,7 +609,7 @@ func (vm *VM) InsertMedia(mediaParams *types.MediaInsertOrEjectParams) (Task, er
 }
 
 // Eject media from VM
-// Call insertOrEjectMedia with media and types.RelMediaEjectMedia to eject media from vm.
+// Call insertOrEjectMedia with media and types.RelMediaEjectMedia to eject media from VM.
 // If media isn't inserted then task still will be successful.
 func (vm *VM) EjectMedia(mediaParams *types.MediaInsertOrEjectParams) (Task, error) {
 	util.Logger.Printf("[TRACE] Detach disk, HREF: %s\n", mediaParams.Media.HREF)
@@ -624,7 +625,7 @@ func (vm *VM) EjectMedia(mediaParams *types.MediaInsertOrEjectParams) (Task, err
 	}
 
 	if vmStatus != types.VAppStatuses[8] {
-		return Task{}, fmt.Errorf("to eject media, vm has to be power off state")
+		return Task{}, fmt.Errorf("to eject media, vm has to be in power off state")
 	}
 
 	return vm.insertOrEjectMedia(mediaParams, types.RelMediaEjectMedia)

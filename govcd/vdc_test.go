@@ -162,7 +162,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 func (vcd *TestVCD) Test_FindVApp(check *C) {
 
 	if vcd.vapp.VApp == nil {
-		check.Skip("No Vapp provided")
+		check.Skip("No vApp provided")
 	}
 	first_vapp, err := vcd.vdc.FindVAppByName(vcd.vapp.VApp.Name)
 

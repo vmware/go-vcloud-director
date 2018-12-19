@@ -343,6 +343,7 @@ func (mediaItem *MediaItem) Delete() (Task, error) {
 	return *task, nil
 }
 
+// Finds media in catalog and returns catalog item
 func FindMediaAsCatalogItem(org *Org, catalogName, mediaName string) (CatalogItem, error) {
 	if catalogName == "" {
 		return CatalogItem{}, errors.New("catalog name is empty")
