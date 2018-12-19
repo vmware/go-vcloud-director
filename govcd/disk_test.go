@@ -348,6 +348,9 @@ func (vcd *TestVCD) detachIndependentDisk(disk Disk) error {
 				HREF: disk.Disk.HREF,
 			},
 		})
+		if err != nil {
+			return err
+		}
 		err = task.WaitTaskCompletion()
 		if err != nil {
 			return err
