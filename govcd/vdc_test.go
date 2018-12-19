@@ -206,8 +206,8 @@ func (vcd *TestVCD) Test_QueryVM(check *C) {
 	}
 
 	// Find VM
-	vapp := vcd.find_first_vapp()
-	_, vmName := vcd.find_first_vm(vapp)
+	vapp := vcd.findFirstVapp()
+	_, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}

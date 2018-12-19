@@ -427,8 +427,8 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 		check.Skip("skipping test because no vApp is found")
 	}
 
-	vapp := vcd.find_first_vapp()
-	vmType, vmName := vcd.find_first_vm(vapp)
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
@@ -486,8 +486,8 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 		check.Skip("skipping test because no vApp is found")
 	}
 
-	vapp := vcd.find_first_vapp()
-	vmType, vmName := vcd.find_first_vm(vapp)
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
