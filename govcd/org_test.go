@@ -191,9 +191,18 @@ func (vcd *TestVCD) Test_Admin_GetVdcByName(check *C) {
 // if the error is not nil.
 func (vcd *TestVCD) Test_CreateVdc(check *C) {
 	if vcd.skipAdminTests {
-		check.Skip("Configuration org != 'Sysyem'")
+		check.Skip("Configuration org != 'System'")
 	}
 
+	if vcd.config.VCD.ProviderVdc.Name == "" {
+		check.Skip("No Provider VDC name given for VDC tests")
+	}
+	if vcd.config.VCD.ProviderVdc.StorageProfile == "" {
+		check.Skip("No Storage Profile given for VDC tests")
+	}
+	if vcd.config.VCD.ProviderVdc.NetworkPool == "" {
+		check.Skip("No Network Pool given for VDC tests")
+	}
 	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, Not(Equals), AdminOrg{})

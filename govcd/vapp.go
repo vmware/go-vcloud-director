@@ -610,22 +610,28 @@ func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
 		return Task{}, fmt.Errorf("error refreshing vapp before running customization: %v", err)
 	}
 
-	if vapp.VApp.Children == nil {
+	if vapp.VApp.Children == nil || len(vapp.VApp.Children.VM) == 0 {
 		return Task{}, fmt.Errorf("vApp doesn't contain any children, aborting customization")
 	}
 
 	vdc, err := vapp.getParentVDC()
-	storageprofileref, err := vdc.FindStorageProfileReference(name)
+	if err != nil {
+		return Task{}, fmt.Errorf("error retrieving parent VDC for vapp %s", vapp.VApp.Name)
+	}
+	storageProfileRef, err := vdc.FindStorageProfileReference(name)
+	if err != nil {
+		return Task{}, fmt.Errorf("error retrieving storage profile %s for vapp %s", name, vapp.VApp.Name)
+	}
 
-	newprofile := &types.VM{
+	newProfile := &types.VM{
 		Name:           vapp.VApp.Children.VM[0].Name,
-		StorageProfile: &storageprofileref,
+		StorageProfile: &storageProfileRef,
 		Xmlns:          "http://www.vmware.com/vcloud/v1.5",
 	}
 
-	output, err := xml.MarshalIndent(newprofile, "  ", "    ")
+	output, err := xml.MarshalIndent(newProfile, "  ", "    ")
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
+		return Task{}, fmt.Errorf("error encoding storage profile change metadata for vapp %s", vapp.VApp.Name)
 	}
 
 	util.Logger.Printf("[DEBUG] VCD Client configuration: %s", output)
