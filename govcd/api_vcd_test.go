@@ -249,14 +249,13 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		panic(err)
 	}
 	vcd.client = vcdClient
-	if config.Provider.SysOrg != "System" {
-		fmt.Printf("Skipping OrgAdmin tests\n")
-		vcd.skipAdminTests = true
-	}
 	// org and vdc are the test org and vdc that is used in all other test cases
 	err = vcd.client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
 	if err != nil {
 		panic(err)
+	}
+	if vcd.client.Client.IsSysAdmin {
+		vcd.skipAdminTests = true
 	}
 	// set org
 	vcd.org, err = GetOrgByName(vcd.client, config.VCD.Org)

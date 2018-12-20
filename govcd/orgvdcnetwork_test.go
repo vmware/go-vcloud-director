@@ -155,7 +155,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkDirect(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	networkName := TestCreateOrgVdcNetworkDirect
 
-	if !vcd.client.Client.IsSysAdmin {
+	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 	err := RemoveOrgVdcNetworkIfExists(vcd.vdc, networkName)

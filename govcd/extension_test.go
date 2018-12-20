@@ -13,7 +13,7 @@ import (
 func (vcd *TestVCD) Test_GetExternalNetwork(check *C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
-	if !vcd.client.Client.IsSysAdmin {
+	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 	networkName := vcd.config.VCD.ExternalNetwork
