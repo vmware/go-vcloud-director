@@ -92,11 +92,12 @@ type TestConfig struct {
 		}
 	} `yaml:"vcd"`
 	Logging struct {
-		Enabled         bool   `yaml:"enabled,omitempty"`
-		LogFileName     string `yaml:"logFileName,omitempty"`
-		LogHttpRequest  bool   `yaml:"logHttpRequest,omitempty"`
-		LogHttpResponse bool   `yaml:"logHttpResponse,omitempty"`
-		VerboseCleanup  bool   `yaml:"verboseCleanup,omitempty"`
+		Enabled                 bool   `yaml:"enabled,omitempty"`
+		LogFileName             string `yaml:"logFileName,omitempty"`
+		LogHttpRequest          bool   `yaml:"logHttpRequest,omitempty"`
+		LogHttpResponse         bool   `yaml:"logHttpResponse,omitempty"`
+		LogSkipVersionsResponse bool   `yaml:"logSkipVersionsResponse,omitempty"`
+		VerboseCleanup          bool   `yaml:"verboseCleanup,omitempty"`
 	} `yaml:"logging"`
 	OVA struct {
 		OVAPath        string `yaml:"ovaPath,omitempty"`
@@ -175,12 +176,12 @@ func PrependToCleanupList(name, entityType, parent, createdBy string) {
 // yaml file or if it cannot read it.
 func GetConfigStruct() (TestConfig, error) {
 	config := os.Getenv("GOVCD_CONFIG")
-	config_struct := TestConfig{}
+	configStruct := TestConfig{}
 	if config == "" {
 		// Finds the current directory, through the path of this running test
-		_, current_filename, _, _ := runtime.Caller(0)
-		current_directory := filepath.Dir(current_filename)
-		config = current_directory + "/govcd_test_config.yaml"
+		_, currentFilename, _, _ := runtime.Caller(0)
+		currentDirectory := filepath.Dir(currentFilename)
+		config = currentDirectory + "/govcd_test_config.yaml"
 	}
 	// Looks if the configuration file exists before attempting to read it
 	_, err := os.Stat(config)
@@ -191,11 +192,11 @@ func GetConfigStruct() (TestConfig, error) {
 	if err != nil {
 		return TestConfig{}, fmt.Errorf("could not read config file %s: %v", config, err)
 	}
-	err = yaml.Unmarshal(yamlFile, &config_struct)
+	err = yaml.Unmarshal(yamlFile, &configStruct)
 	if err != nil {
 		return TestConfig{}, fmt.Errorf("could not unmarshal yaml file: %v", err)
 	}
-	return config_struct, nil
+	return configStruct, nil
 }
 
 // Creates a VCDClient based on the endpoint given in the TestConfig argument.
@@ -235,6 +236,9 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		}
 		if vcd.config.Logging.LogHttpResponse {
 			util.LogHttpResponse = true
+		}
+		if vcd.config.Logging.LogSkipVersionsResponse {
+			util.SkipVersionsResponse = true
 		}
 	} else {
 		util.EnableLogging = false

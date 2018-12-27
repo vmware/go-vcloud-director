@@ -56,6 +56,12 @@ During the request and response processing, any password or authentication token
 util.LogPasswords = true
 ```
 
+It is also possible to skip the output of the `/versions` request, which is quite large (140 Kb, 2000+ lines) using 
+
+```go
+util.SkipVersionsResponse = true
+```
+
 ## Custom logger
 
 If the configuration options are not enough for your needs, you can supply your own logger.
@@ -68,8 +74,6 @@ util.SetCustomLogger(mylogger)
 
 The logging behavior can be changed without coding. There are a few environment variables that are checked when the library is used:
 
-```EnableLogging``` corresponds to
-
 Variable                    | Corresponding environment var 
 --------------------------- | :-------------------------------
 `EnableLogging`             | `GOVCD_LOG`
@@ -78,4 +82,5 @@ Variable                    | Corresponding environment var
 `LogOnScreen`               | `GOVCD_LOG_ON_SCREEN`
 `LogHttpRequest`            | `GOVCD_LOG_SKIP_HTTP_REQ`
 `LogHttpResponse`           | `GOVCD_LOG_SKIP_HTTP_RESP`
+`SkipVersionsResponse`      | `GOVCD_LOG_SKIP_VERSIONS`
 

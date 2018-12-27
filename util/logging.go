@@ -36,6 +36,9 @@ const (
 
 	// Name of the environment variable that enables logging of HTTP responses
 	envLogSkipHttpResp = "GOVCD_LOG_SKIP_HTTP_RESP"
+
+	// Name of the environment variable that skips logging of /versions response (2,000+ lines )
+	envLogSkipVersions = "GOVCD_LOG_SKIP_VERSIONS"
 )
 
 var (
@@ -64,6 +67,9 @@ var (
 	// Enable logging of Http responses
 	// disabled by GOVCD_LOG_SKIP_HTTP_RESP
 	LogHttpResponse bool = true
+
+	// Skips /versions requests (saves thousands of response lines)
+	SkipVersionsResponse bool = false
 
 	// Sends log to screen. If value is either "stderr" or "err"
 	// logging will go to os.Stderr. For any other value it will
@@ -132,18 +138,18 @@ func hidePasswords(in string, onScreen bool) string {
 
 // Determines whether a string is likely to contain binary data
 func isBinary(data string, req *http.Request) bool {
-	re_content_range := regexp.MustCompile(`(?i)content-range`)
-	re_multipart := regexp.MustCompile(`(?i)multipart/form`)
-	re_media_xml := regexp.MustCompile(`(?i)media+xml;`)
+	reContentRange := regexp.MustCompile(`(?i)content-range`)
+	reMultipart := regexp.MustCompile(`(?i)multipart/form`)
+	reMediaXml := regexp.MustCompile(`(?i)media+xml;`)
 	for key, value := range req.Header {
-		if re_content_range.MatchString(key) {
+		if reContentRange.MatchString(key) {
 			return true
 		}
-		if re_multipart.MatchString(key) {
+		if reMultipart.MatchString(key) {
 			return true
 		}
 		for _, v := range value {
-			if re_media_xml.MatchString(v) {
+			if reMediaXml.MatchString(v) {
 				return true
 			}
 		}
@@ -151,7 +157,7 @@ func isBinary(data string, req *http.Request) bool {
 	return false
 }
 
-// Scand the header for known keys that contain authentication tokens
+// Scans the header for known keys that contain authentication tokens
 // and hide the contents
 func logSanitizedHeader(input_header http.Header) {
 	for key, value := range input_header {
@@ -172,12 +178,12 @@ func ProcessRequestOutput(caller, operation, url, payload string, req *http.Requ
 	Logger.Printf("Request caller: %s\n", caller)
 	Logger.Printf("%s %s\n", operation, url)
 	Logger.Printf("%s\n", dashLine)
-	data_size := len(payload)
+	dataSize := len(payload)
 	if isBinary(payload, req) {
 		payload = "[binary data]"
 	}
-	if data_size > 0 {
-		Logger.Printf("Request data: [%d] %s\n", data_size, hidePasswords(payload, false))
+	if dataSize > 0 {
+		Logger.Printf("Request data: [%d] %s\n", dataSize, hidePasswords(payload, false))
 	}
 	Logger.Printf("Req header:\n")
 	logSanitizedHeader(req.Header)
@@ -188,14 +194,21 @@ func ProcessResponseOutput(caller string, resp *http.Response, result string) {
 	if !LogHttpResponse {
 		return
 	}
+	outText := result
+	if SkipVersionsResponse {
+		re := regexp.MustCompile(`<SupportedVersions`)
+		if re.MatchString(result) {
+			outText = "[SKIPPING VERSIONS RESPONSE]"
+		}
+	}
 	Logger.Printf("%s\n", hashLine)
 	Logger.Printf("Response caller %s\n", caller)
 	Logger.Printf("Response status %s\n", resp.Status)
 	Logger.Printf("%s\n", hashLine)
 	Logger.Printf("Response header:\n")
 	logSanitizedHeader(resp.Header)
-	data_size := len(result)
-	Logger.Printf("Response text: [%d] %s\n", data_size, result)
+	dataSize := len(result)
+	Logger.Printf("Response text: [%d] %s\n", dataSize, outText)
 }
 
 // Initializes default logging values
@@ -206,6 +219,9 @@ func InitLogging() {
 
 	if os.Getenv(envLogSkipHttpResp) != "" {
 		LogHttpResponse = false
+	}
+	if os.Getenv(envLogSkipVersions) != "" {
+		SkipVersionsResponse = true
 	}
 	if os.Getenv(envLogPasswords) != "" {
 		EnableLogging = true
