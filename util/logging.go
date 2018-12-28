@@ -196,9 +196,14 @@ func ProcessResponseOutput(caller string, resp *http.Response, result string) {
 	}
 	outText := result
 	if SkipVersionsResponse {
-		re := regexp.MustCompile(`<SupportedVersions`)
-		if re.MatchString(result) {
-			outText = "[SKIPPING VERSIONS RESPONSE]"
+		// We search for the initial and final supported versions tag
+		// If both are found, we skip the whole output
+		reInitialSupportedVersionsTag := regexp.MustCompile(`<SupportedVersions.*>`)
+		reFinalSupportedVersionsTag := regexp.MustCompile(`</SupportedVersions>`)
+		if reInitialSupportedVersionsTag.MatchString(result) {
+			if reFinalSupportedVersionsTag.MatchString(result) {
+				outText = "\n[SKIPPING SUPPORTED VERSIONS RESPONSE AT USER'S REQUEST]"
+			}
 		}
 	}
 	Logger.Printf("%s\n", hashLine)
