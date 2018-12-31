@@ -498,7 +498,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [INFO] Deleting %s '%s', VM: '%s|%s', disk is attached, detaching disk\n",
 				entity.EntityType, entity.Name, vmRef.Name, vmRef.HREF)
 
-			vm, err := vcd.client.FindVMByHREF(vmRef.HREF)
+			vm, err := vcd.client.Client.FindVMByHREF(vmRef.HREF)
 			if err != nil {
 				vcd.infoCleanup(
 					"removeLeftoverEntries: [ERROR] Deleting %s '%s', VM: '%s|%s', cannot find the VM details: %s\n",
