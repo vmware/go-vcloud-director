@@ -37,7 +37,7 @@
 		"enabled": true,
 		"logFileName": "go-vcloud-director.log",
 		"logHttpRequests": true,
-		"logSkipVersionsResponse": true,
+		"skipResponseTags": "SupportedVersions,VAppTemplate",
 		"logHttpResponses": true
 	},
   "ova": {

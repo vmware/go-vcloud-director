@@ -7,6 +7,7 @@ package util
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 )
 
@@ -82,19 +83,25 @@ func TestCaller(t *testing.T) {
 		{
 			label:    "current function name",
 			fun:      CurrentFuncName,
-			expected: "util.TestCaller",
+			expected: `^util.TestCaller$`,
 		},
 		{
 			label:    "function caller",
 			fun:      CallFuncName,
+			expected: `^testing.tRunner$`,
+		},
+		{
+			label:    "function stack",
+			fun:      FuncNameCallStack,
 			expected: "testing.tRunner",
 		},
 	}
 
 	for _, d := range data {
 		value := filepath.Base(d.fun())
-		if value == d.expected {
-			t.Logf("ok - %s as expected: '%s' \n", d.label, value)
+		reFunc := regexp.MustCompile(`\b` + d.expected + `\b`)
+		if reFunc.MatchString(value) {
+			t.Logf("ok - %s as expected: '%s' matches '%s' \n", d.label, value, d.expected)
 		} else {
 			t.Logf("not ok - %s doesn't match. Expected: '%s' - Found: '%s'\n", d.label, d.expected, value)
 			t.Fail()

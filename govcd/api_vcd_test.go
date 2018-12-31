@@ -92,12 +92,13 @@ type TestConfig struct {
 		}
 	} `yaml:"vcd"`
 	Logging struct {
-		Enabled                 bool   `yaml:"enabled,omitempty"`
-		LogFileName             string `yaml:"logFileName,omitempty"`
-		LogHttpRequest          bool   `yaml:"logHttpRequest,omitempty"`
-		LogHttpResponse         bool   `yaml:"logHttpResponse,omitempty"`
-		LogSkipVersionsResponse bool   `yaml:"logSkipVersionsResponse,omitempty"`
-		VerboseCleanup          bool   `yaml:"verboseCleanup,omitempty"`
+		Enabled          bool   `yaml:"enabled,omitempty"`
+		LogFileName      string `yaml:"logFileName,omitempty"`
+		LogHttpRequest   bool   `yaml:"logHttpRequest,omitempty"`
+		LogHttpResponse  bool   `yaml:"logHttpResponse,omitempty"`
+		SkipResponseTags string `yaml:"skipResponseTags,omitempty"`
+		IncludeFunctions string `yaml:"includeFunctions,omitempty"`
+		VerboseCleanup   bool   `yaml:"verboseCleanup,omitempty"`
 	} `yaml:"logging"`
 	OVA struct {
 		OVAPath        string `yaml:"ovaPath,omitempty"`
@@ -237,8 +238,11 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		if vcd.config.Logging.LogHttpResponse {
 			util.LogHttpResponse = true
 		}
-		if vcd.config.Logging.LogSkipVersionsResponse {
-			util.SkipVersionsResponse = true
+		if vcd.config.Logging.SkipResponseTags != "" {
+			util.SetSkipTags(vcd.config.Logging.SkipResponseTags)
+		}
+		if vcd.config.Logging.IncludeFunctions != "" {
+			util.SetIncludeFunctions(vcd.config.Logging.IncludeFunctions)
 		}
 	} else {
 		util.EnableLogging = false
