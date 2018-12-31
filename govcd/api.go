@@ -78,7 +78,7 @@ func (cli *Client) NewRequestWitNotEncodedParams(params map[string]string, notEn
 				payload = fmt.Sprintf("<Not retrieved from type %s>", reflect.TypeOf(body))
 			}
 		}
-		util.ProcessRequestOutput(util.CallFuncName(), method, reqUrl.String(), payload, req)
+		util.ProcessRequestOutput(util.FuncNameCallStack(), method, reqUrl.String(), payload, req)
 	}
 	return req
 
@@ -109,7 +109,7 @@ func decodeBody(resp *http.Response, out interface{}) error {
 
 	body, err := ioutil.ReadAll(resp.Body)
 
-	util.ProcessResponseOutput(util.CallFuncName(), resp, fmt.Sprintf("%s", body))
+	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, fmt.Sprintf("%s", body))
 	if err != nil {
 		return err
 	}
