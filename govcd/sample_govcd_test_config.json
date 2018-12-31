@@ -38,6 +38,7 @@
 		"logFileName": "go-vcloud-director.log",
 		"logHttpRequests": true,
 		"skipResponseTags": "SupportedVersions,VAppTemplate",
+		"includeFunctions": "FindVAppByName",
 		"logHttpResponses": true
 	},
   "ova": {

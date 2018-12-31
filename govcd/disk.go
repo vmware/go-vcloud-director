@@ -29,7 +29,9 @@ func NewDisk(cli *Client) *Disk {
 	}
 }
 
-const MinimumDiskSize int = 1048576
+// While theoretically we can use smaller amounts, there is an issue when updating
+// disks with size < 1MB
+const MinimumDiskSize int = 1048576 // = 1Mb
 
 // Create an independent disk in VDC
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 102 - 103,
