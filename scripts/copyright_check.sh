@@ -10,8 +10,23 @@ last_year=$((this_year-1))
 vmware_latest_copyright="Copyright $this_year VMware"
 vmware_last_year_copyright="Copyright $last_year VMware"
 exit_code=0
+
+modified_files=$(git status -uno | grep "modified:" | awk '{print $2}')
+
+function is_modified {
+    fname=$1
+    for fn in $modified_files
+    do
+        if [ "$fname" == "$fn" -o "$fname" == "./$fn" ]
+        then
+            echo yes
+        fi
+    done
+}
+
 for F in $(find . -name '*.go' | grep -v '/vendor/' )
 do
+    modified_not_committed_yet=$(is_modified $F)
     copyright_found=""
     for line_num in 1 2 3
     do
@@ -29,13 +44,24 @@ do
             copyright_found=$line_num
         elif [ -n "$has_last_year_copyright" ]
         then
-            current_file_date=$(date -r $F)
-            #updated_this_year=$(echo "$current_file_date" | grep -w $this_year)
-            #if [ -n "$updated_this_year" ]
-            #then
-            #    echo "$F updated this year, but has last year's copyright"
-            #    exit_code=1
-            #fi
+            commit_date=$(git log -1 --format="%cd" $F)
+            update_label=committed
+
+            # The file is updated this year if the commit date contains the current year
+            committed_this_year=$(echo "$commit_date" | grep -w $this_year)
+
+            # The file is also updated this year if it is in the list of modified files
+            # (not committed yet)
+            if [ -n "$modified_not_committed_yet" ]
+            then
+                update_label=modified
+            fi
+
+            if [ -n "$modified_not_committed_yet" -o "$committed_this_year" ]
+            then
+                echo "$F $update_label this year, but has last year's copyright"
+                exit_code=1
+            fi
             copyright_found=$line_num
         elif [ -n "$has_any_copyright" ]
         then
