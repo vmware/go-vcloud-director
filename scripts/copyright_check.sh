@@ -30,12 +30,12 @@ do
         elif [ -n "$has_last_year_copyright" ]
         then
             current_file_date=$(date -r $F)
-            updated_this_year=$(echo "$current_file_date" | grep -w $this_year)
-            if [ -n "$updated_this_year" ]
-            then
-                echo "$F updated this year, but has last year's copyright"
-                exit_code=1
-            fi
+            #updated_this_year=$(echo "$current_file_date" | grep -w $this_year)
+            #if [ -n "$updated_this_year" ]
+            #then
+            #    echo "$F updated this year, but has last year's copyright"
+            #    exit_code=1
+            #fi
             copyright_found=$line_num
         elif [ -n "$has_any_copyright" ]
         then
