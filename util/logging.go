@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 // Package util provides ancillary functionality to go-vcloud-director library
@@ -39,10 +39,10 @@ const (
 	envLogSkipHttpResp = "GOVCD_LOG_SKIP_HTTP_RESP"
 
 	// Name of the environment variable with a custom list of of responses to skip from logging
-	envLogSkipTagList = "GOVCD_LOG_SKIP_TAG_LIST"
+	envLogSkipTagList = "GOVCD_LOG_SKIP_TAGS"
 
 	// Name of the environment variable with a custom list of of functions to include in the logging
-	envLogIncludeFunctionList = "GOVCD_LOG_INCLUDE_FUNCTION_LIST"
+	envApiLogFunctions = "GOVCD_LOG_FUNCTIONS"
 )
 
 var (
@@ -73,11 +73,11 @@ var (
 	LogHttpResponse bool = true
 
 	// List of tags to be excluded from logging
-	skipTagList = []string{"SupportedVersions", "ovf:License"}
+	skipTags = []string{"SupportedVersions", "ovf:License"}
 
 	// List of functions included in logging
 	// If this variable is filled, only operations from matching function names will be logged
-	includeFunctionList []string
+	apiLogFunctions []string
 
 	// Sends log to screen. If value is either "stderr" or "err"
 	// logging will go to os.Stderr. For any other value it will
@@ -133,11 +133,11 @@ func SetLog() {
 	} else {
 		Logger = newLogger(ApiLogFileName)
 	}
-	if len(skipTagList) > 0 {
-		Logger.Printf("### WILL SKIP THE FOLLOWING TAGS: %+v", skipTagList)
+	if len(skipTags) > 0 {
+		Logger.Printf("### WILL SKIP THE FOLLOWING TAGS: %+v", skipTags)
 	}
-	if len(includeFunctionList) > 0 {
-		Logger.Printf("### WILL ONLY INCLUDE API LOGS FROM THE FOLLOWING FUNCTIONS: %+v", includeFunctionList)
+	if len(apiLogFunctions) > 0 {
+		Logger.Printf("### WILL ONLY INCLUDE API LOGS FROM THE FOLLOWING FUNCTIONS: %+v", apiLogFunctions)
 	}
 }
 
@@ -185,8 +185,8 @@ func logSanitizedHeader(input_header http.Header) {
 
 // Returns true if the caller function matches any of the functions in the include function list
 func includeFunction(caller string) bool {
-	if len(includeFunctionList) > 0 {
-		for _, f := range includeFunctionList {
+	if len(apiLogFunctions) > 0 {
+		for _, f := range apiLogFunctions {
 			reFunc := regexp.MustCompile(f)
 			if reFunc.MatchString(caller) {
 				return true
@@ -235,8 +235,8 @@ func ProcessResponseOutput(caller string, resp *http.Response, result string) {
 	}
 
 	outText := result
-	if len(skipTagList) > 0 {
-		for _, longTag := range skipTagList {
+	if len(skipTags) > 0 {
+		for _, longTag := range skipTags {
 			initialTag := `<` + longTag + `.*>`
 			finalTag := `</` + longTag + `>`
 			reInitialSearchTag := regexp.MustCompile(initialTag)
@@ -274,14 +274,14 @@ func ProcessResponseOutput(caller string, resp *http.Response, result string) {
 // Sets the list of tahs to skip
 func SetSkipTags(tags string) {
 	if tags != "" {
-		skipTagList = strings.Split(tags, ",")
+		skipTags = strings.Split(tags, ",")
 	}
 }
 
 // Sets the list of functions to include
-func SetIncludeFunctions(functions string) {
+func SetApiLogFunctions(functions string) {
 	if functions != "" {
-		includeFunctionList = strings.Split(functions, ",")
+		apiLogFunctions = strings.Split(functions, ",")
 	}
 }
 
@@ -295,8 +295,8 @@ func InitLogging() {
 		LogHttpResponse = false
 	}
 
-	if os.Getenv(envLogIncludeFunctionList) != "" {
-		SetIncludeFunctions(os.Getenv(envLogIncludeFunctionList))
+	if os.Getenv(envApiLogFunctions) != "" {
+		SetApiLogFunctions(os.Getenv(envApiLogFunctions))
 	}
 
 	if os.Getenv(envLogSkipTagList) != "" {

@@ -65,7 +65,7 @@ util.SetSkipTags("SupportedVersions,ovf:License")
 For an even more dedicated log, you can define from which function names you want the logs, using
 
 ```go
-util.SetIncludeFunctions("FindVAppByName,GetAdminOrgByName")
+util.SetApiLogFunctions("FindVAppByName,GetAdminOrgByName")
 ```
 
 ## Custom logger
@@ -88,6 +88,6 @@ Variable                    | Corresponding environment var
 `LogOnScreen`               | `GOVCD_LOG_ON_SCREEN`
 `LogHttpRequest`            | `GOVCD_LOG_SKIP_HTTP_REQ`
 `LogHttpResponse`           | `GOVCD_LOG_SKIP_HTTP_RESP`
-`SetSkipTags`               | `GOVCD_LOG_SKIP_TAG_LIST`
-`SetIncludeFunctions`       | `GOVCD_LOG_INCLUDE_FUNCTION_LIST`
+`SetSkipTags`               | `GOVCD_LOG_SKIP_TAGS`
+`SetApiLogFunctions`        | `GOVCD_LOG_INCLUDE_FUNCTIONS`
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -97,7 +97,7 @@ type TestConfig struct {
 		LogHttpRequest   bool   `yaml:"logHttpRequest,omitempty"`
 		LogHttpResponse  bool   `yaml:"logHttpResponse,omitempty"`
 		SkipResponseTags string `yaml:"skipResponseTags,omitempty"`
-		IncludeFunctions string `yaml:"includeFunctions,omitempty"`
+		ApiLogFunctions  string `yaml:"apiLogFunctions,omitempty"`
 		VerboseCleanup   bool   `yaml:"verboseCleanup,omitempty"`
 	} `yaml:"logging"`
 	OVA struct {
@@ -241,8 +241,8 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		if vcd.config.Logging.SkipResponseTags != "" {
 			util.SetSkipTags(vcd.config.Logging.SkipResponseTags)
 		}
-		if vcd.config.Logging.IncludeFunctions != "" {
-			util.SetIncludeFunctions(vcd.config.Logging.IncludeFunctions)
+		if vcd.config.Logging.ApiLogFunctions != "" {
+			util.SetApiLogFunctions(vcd.config.Logging.ApiLogFunctions)
 		}
 	} else {
 		util.EnableLogging = false
