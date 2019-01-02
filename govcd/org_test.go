@@ -16,7 +16,7 @@ import (
 func (vcd *TestVCD) Test_RefreshOrg(check *C) {
 
 	if vcd.skipAdminTests {
-		check.Skip("Configuration org != 'Sysyem'")
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 	adminOrg, err := GetAdminOrgByName(vcd.client, TestRefreshOrg)
 	if adminOrg != (AdminOrg{}) {
@@ -65,7 +65,7 @@ func (vcd *TestVCD) Test_RefreshOrg(check *C) {
 // delete org. Fails if org still exists
 func (vcd *TestVCD) Test_DeleteOrg(check *C) {
 	if vcd.skipAdminTests {
-		check.Skip("Configuration org != 'Sysyem'")
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 	org, err := GetAdminOrgByName(vcd.client, TestDeleteOrg)
 	if org != (AdminOrg{}) {
@@ -96,7 +96,7 @@ func (vcd *TestVCD) Test_DeleteOrg(check *C) {
 // refetched.
 func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	if vcd.skipAdminTests {
-		check.Skip("Configuration org != 'Sysyem'")
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 	org, err := GetAdminOrgByName(vcd.client, TestUpdateOrg)
 	if org != (AdminOrg{}) {
@@ -168,7 +168,7 @@ func (vcd *TestVCD) Test_GetVdcByName(check *C) {
 // if the error is not nil.
 func (vcd *TestVCD) Test_Admin_GetVdcByName(check *C) {
 	if vcd.skipAdminTests {
-		check.Skip("Configuration org != 'Sysyem'")
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
@@ -191,7 +191,7 @@ func (vcd *TestVCD) Test_Admin_GetVdcByName(check *C) {
 // if the error is not nil.
 func (vcd *TestVCD) Test_CreateVdc(check *C) {
 	if vcd.skipAdminTests {
-		check.Skip("Configuration org != 'System'")
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
 	if vcd.config.VCD.ProviderVdc.Name == "" {
@@ -344,7 +344,7 @@ func (vcd *TestVCD) Test_FindCatalog(check *C) {
 // if the error is not nil.
 func (vcd *TestVCD) Test_Admin_FindCatalog(check *C) {
 	if vcd.skipAdminTests {
-		check.Skip("Configuration org != 'Sysyem'")
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 	// Fetch admin org version of current test org
 	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
@@ -370,7 +370,7 @@ func (vcd *TestVCD) Test_Admin_FindCatalog(check *C) {
 // Then Deletes the catalog.
 func (vcd *TestVCD) Test_CreateCatalog(check *C) {
 	if vcd.skipAdminTests {
-		check.Skip("Configuration org != 'Sysyem'")
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 	org, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(org, Not(Equals), AdminOrg{})
@@ -405,7 +405,7 @@ func (vcd *TestVCD) Test_CreateCatalog(check *C) {
 // the names and description match, and that no error is returned
 func (vcd *TestVCD) Test_GetAdminCatalog(check *C) {
 	if vcd.skipAdminTests {
-		check.Skip("Configuration org != 'Sysyem'")
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 	// Fetch admin org version of current test org
 	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)

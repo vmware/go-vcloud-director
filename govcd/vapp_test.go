@@ -7,6 +7,7 @@ package govcd
 import (
 	"fmt"
 	"github.com/vmware/go-vcloud-director/types/v56"
+	"regexp"
 
 	. "gopkg.in/check.v1"
 )
@@ -179,6 +180,12 @@ func (vcd *TestVCD) Test_ChangeStorageProfile(check *C) {
 		check.Skip("Skipping test because second storage profile not given")
 	}
 	task, err := vcd.vapp.ChangeStorageProfile(vcd.config.VCD.StorageProfile.SP2)
+	errStr := fmt.Sprintf("%v", err)
+
+	re := regexp.MustCompile(`error retrieving storage profile`)
+	if re.MatchString(errStr) {
+		check.Skip("Skipping test because second storage profile not found")
+	}
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)

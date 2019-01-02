@@ -162,7 +162,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 func (vcd *TestVCD) Test_FindVApp(check *C) {
 
 	if vcd.vapp.VApp == nil {
-		check.Skip("No Vapp provided")
+		check.Skip("No vApp provided")
 	}
 	first_vapp, err := vcd.vdc.FindVAppByName(vcd.vapp.VApp.Name)
 
@@ -195,4 +195,24 @@ func (vcd *TestVCD) Test_FindMediaImage(check *C) {
 	mediaImage, err = vcd.vdc.FindMediaImage("INVALID")
 	check.Assert(err, IsNil)
 	check.Assert(mediaImage, Equals, MediaItem{})
+}
+
+// Tests function QueryVM by searching vm created
+// by test suite
+func (vcd *TestVCD) Test_QueryVM(check *C) {
+
+	if vcd.vapp.VApp == nil {
+		check.Skip("No Vapp provided")
+	}
+
+	// Find VM
+	vapp := vcd.findFirstVapp()
+	_, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+	vm, err := vcd.vdc.QueryVM(vcd.vapp.VApp.Name, vmName)
+	check.Assert(err, IsNil)
+
+	check.Assert(vm.VM.Name, Equals, vmName)
 }

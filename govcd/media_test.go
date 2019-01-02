@@ -131,3 +131,34 @@ func (vcd *TestVCD) Test_DeleteMediaImage(check *C) {
 	check.Assert(mediaItem, Equals, MediaItem{})
 
 }
+
+// Tests System function FindMediaAsCatalogItem by creating media item and
+// and finding it as catalog item after.
+func (vcd *TestVCD) Test_FindMediaAsCatalogItem(check *C) {
+	skipWhenMediaPathMissing(vcd, check)
+	itemName := TestUploadMedia + "6"
+
+	// Fetching organization
+	org, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
+	check.Assert(org, Not(Equals), AdminOrg{})
+	check.Assert(err, IsNil)
+
+	catalog, err := org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	check.Assert(err, IsNil)
+
+	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
+	check.Assert(err, IsNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadMediaImage")
+
+	err = vcd.org.Refresh()
+	check.Assert(err, IsNil)
+
+	catalogItem, err := FindMediaAsCatalogItem(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	check.Assert(err, IsNil)
+	check.Assert(catalogItem, Not(Equals), CatalogItem{})
+	check.Assert(catalogItem.CatalogItem.Name, Equals, itemName)
+
+}
