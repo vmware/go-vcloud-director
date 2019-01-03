@@ -1,13 +1,22 @@
 #!/bin/bash
 # This script will find code files that don't have a copyright notice
+# or the ones with an outdated copyright.
+#
+# The checks will fail if:
+# a) the source file does not have a copyright header
+# b) the source file has a copyright header from last year, but it was modified this year
 
-# This check will find files with a copyright but not for the current year
+
+# This check will find files with a copyright for any year
 vmware_any_copyright='Copyright \d\d\d\d VMware'
 
-# This check will find files with a copyright for the current year
 this_year=$(date +%Y)
 last_year=$((this_year-1))
+
+# This check will find files with a copyright for the current year
 vmware_latest_copyright="Copyright $this_year VMware"
+
+# This check will find files with a copyright for last year
 vmware_last_year_copyright="Copyright $last_year VMware"
 exit_code=0
 
