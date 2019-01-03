@@ -262,7 +262,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	if err != nil {
 		panic(err)
 	}
-	if vcd.client.Client.IsSysAdmin {
+	if !vcd.client.Client.IsSysAdmin {
 		vcd.skipAdminTests = true
 	}
 	// set org
