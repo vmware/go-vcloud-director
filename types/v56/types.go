@@ -832,14 +832,14 @@ type Catalog struct {
 	ID            string           `xml:"id,attr,omitempty"`
 	OperationKey  string           `xml:"operationKey,attr,omitempty"`
 	Name          string           `xml:"name,attr"`
-	CatalogItems  []*CatalogItems  `xml:"CatalogItems"`
-	DateCreated   string           `xml:"DateCreated"`
-	Description   string           `xml:"Description"`
-	IsPublished   bool             `xml:"IsPublished"`
-	Link          LinkList         `xml:"Link"`
+	CatalogItems  []*CatalogItems  `xml:"CatalogItems,omitempty"`
+	DateCreated   string           `xml:"DateCreated,omitempty"`
+	Description   string           `xml:"Description,omitempty"`
+	IsPublished   bool             `xml:"IsPublished,omitempty"`
+	Link          LinkList         `xml:"Link,omitempty"`
 	Owner         *Owner           `xml:"Owner,omitempty"`
 	Tasks         *TasksInProgress `xml:"Tasks,omitempty"`
-	VersionNumber int64            `xml:"VersionNumber"`
+	VersionNumber int64            `xml:"VersionNumber,omitempty"`
 }
 
 // AdminCatalog represents the Admin view of a Catalog object.
@@ -848,24 +848,13 @@ type Catalog struct {
 // Description: Represents the Admin view of a Catalog object.
 // Since: 0.9
 type AdminCatalog struct {
+	Catalog
 	XMLName                      xml.Name                      `xml:"AdminCatalog"`
 	Xmlns                        string                        `xml:"xmlns,attr"`
-	HREF                         string                        `xml:"href,attr,omitempty"`
-	Type                         string                        `xml:"type,attr,omitempty"`
-	ID                           string                        `xml:"id,attr,omitempty"`
-	OperationKey                 string                        `xml:"operationKey,attr,omitempty"`
-	Name                         string                        `xml:"name,attr"`
-	CatalogItems                 []*CatalogItems               `xml:"CatalogItems,omitempty"`
-	DateCreated                  string                        `xml:"DateCreated,omitempty"`
 	PublishExternalCatalogParams *PublishExternalCatalogParams `xml:"PublishExternalCatalogParams,omitempty"`
 	CatalogStorageProfiles       *CatalogStorageProfiles       `xml:"CatalogStorageProfiles,omitempty"`
 	ExternalCatalogSubscription  *ExternalCatalogSubscription  `xml:"ExternalCatalogSubscriptionParams,omitempty"`
-	Description                  string                        `xml:"Description"`
 	IsPublished                  bool                          `xml:"IsPublished,omitempty"`
-	Link                         LinkList                      `xml:"Link,omitempty"`
-	Owner                        *Owner                        `xml:"Owner,omitempty"`
-	Tasks                        *TasksInProgress              `xml:"Tasks,omitempty"`
-	VersionNumber                int64                         `xml:"VersionNumber"`
 }
 
 // PublishExternalCatalogParamsType represents the configuration parameters of a catalog published externally

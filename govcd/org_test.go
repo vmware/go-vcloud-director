@@ -369,9 +369,6 @@ func (vcd *TestVCD) Test_Admin_FindCatalog(check *C) {
 // asserts that the catalog returned contains the right contents or if it fails.
 // Then Deletes the catalog.
 func (vcd *TestVCD) Test_CreateCatalog(check *C) {
-	if vcd.skipAdminTests {
-		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
-	}
 	org, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(org, Not(Equals), AdminOrg{})
 	check.Assert(err, IsNil)
