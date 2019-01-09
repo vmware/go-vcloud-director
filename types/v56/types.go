@@ -825,6 +825,7 @@ type CatalogItems struct {
 // Type: CatalogType
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Represents the user view of a Catalog object.
+// https://code.vmware.com/apis/287/vcloud#/doc/doc/types/CatalogType.html
 // Since: 0.9
 type Catalog struct {
 	HREF          string           `xml:"href,attr,omitempty"`
@@ -846,6 +847,7 @@ type Catalog struct {
 // Type: AdminCatalogType
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Represents the Admin view of a Catalog object.
+// https://code.vmware.com/apis/287/vcloud#/doc/doc/types/AdminCatalogType.html
 // Since: 0.9
 type AdminCatalog struct {
 	Catalog
