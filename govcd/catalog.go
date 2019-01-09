@@ -62,15 +62,17 @@ func NewAdminCatalog(client *Client) *AdminCatalog {
 // Deletes the Catalog, returning an error if the vCD call fails.
 // Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Catalog.html
 func (catalog *Catalog) Delete(force, recursive bool) error {
-	adminCatalogHREF := catalog.client.VCDHREF
-	adminCatalogHREF.Path += "/admin/catalog/" + catalog.Catalog.ID[19:]
+	adminCatalogHREF, err := url.ParseRequestURI(catalog.Catalog.HREF)
+	if err != nil {
+		return fmt.Errorf("error parsing admin catalog's href: %v", err)
+	}
 
 	req := catalog.client.NewRequest(map[string]string{
 		"force":     strconv.FormatBool(force),
 		"recursive": strconv.FormatBool(recursive),
-	}, "DELETE", adminCatalogHREF, nil)
+	}, "DELETE", *adminCatalogHREF, nil)
 
-	_, err := checkResp(catalog.client.Http.Do(req))
+	_, err = checkResp(catalog.client.Http.Do(req))
 
 	if err != nil {
 		return fmt.Errorf("error deleting Catalog %s: %s", catalog.Catalog.ID, err)
