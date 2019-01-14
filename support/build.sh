@@ -25,6 +25,20 @@ echo "## GOPATH $GOPATH"
 echo "## OS $(uname -a)"
 echo "## hostname $(hostname)"
 
+echo "## GOVCD_CONFIG $GOVCD_CONFIG"
+if [ -n "$GOVCD_CONFIG" ]
+then
+    if [ -f $GOVCD_CONFIG ]
+    then
+        ls -l $GOVCD_CONFIG
+        grep -vi password $GOVCD_CONFIG
+    else
+        echo "## $GOVCD_CONFIG not found"
+    fi
+else
+    echo "## GOVCD_CONFIG not set"
+fi
+
 echo "## ls \$HOME"
 ls -l $HOME
 
@@ -51,6 +65,5 @@ done
 cd $destination
 
 echo "# Test $(date)"
-make build
-
+make
 
