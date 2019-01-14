@@ -4,8 +4,7 @@ GOFMT_FILES?=$$(find . -name '*.go' | grep -v vendor)
 default: fmtcheck vet build
 
 # test runs the test suite and vets the code
-test: get-deps fmtcheck
-	@golint ./...
+test: fmtcheck
 	@echo "==> Running Tests"
 	cd govcd && go test -timeout=45m -check.vv .
 
