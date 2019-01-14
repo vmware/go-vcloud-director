@@ -5,5 +5,5 @@ go version
 
 
 echo "# Test $(date)"
-make
+make build
 
