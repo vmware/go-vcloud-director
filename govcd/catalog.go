@@ -64,8 +64,7 @@ func NewAdminCatalog(client *Client) *AdminCatalog {
 func (catalog *Catalog) Delete(force, recursive bool) error {
 
 	adminCatalogHREF := catalog.client.VCDHREF
-	// slice only numeric part from ID:"urn:vcloud:catalog:97384890-180c-4563-b9b7-0dc50a2430b0"
-	adminCatalogHREF.Path += "/admin/catalog/" + catalog.Catalog.ID[19:]
+	adminCatalogHREF.Path += "/admin/catalog/" + getEntityNumericId(catalog.Catalog.ID)
 
 	req := catalog.client.NewRequest(map[string]string{
 		"force":     strconv.FormatBool(force),
@@ -79,6 +78,11 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 	}
 
 	return nil
+}
+
+// slice only numeric part from ID:"urn:vcloud:catalog:97384890-180c-4563-b9b7-0dc50a2430b0"
+func getEntityNumericId(catalogId string) string {
+	return catalogId[19:]
 }
 
 // Deletes the Catalog, returning an error if the vCD call fails.
