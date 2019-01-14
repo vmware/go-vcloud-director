@@ -27,6 +27,8 @@ fi
 # with additional files and environment variables
 docker run --rm \
     $VCD_ARGS \
+    --name=govcd_test \
+    --hostname=govcd_test \
     -v$SRCROOT:$SRCROOT \
     -w$SRCROOT \
     $DOCKER_IMAGE \

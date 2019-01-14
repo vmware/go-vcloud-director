@@ -3,13 +3,47 @@
 echo "# Build $(date)"
 go version
 
+echo "## USER $USER"
+echo "## HOME $HOME"
+if [  -z "$HOME" ]
+then
+    echo "\$HOME is not set"
+    export HOME=/home/worker
+    echo "## (2) HOME $HOME"
+fi
+
 echo "## PWD $PWD"
 echo "## GOROOT $GOROOT"
 echo "## GOPATH $GOPATH"
-echo "## OS: $(uname -a)"
+echo "## OS $(uname -a)"
+echo "## hostname $hostname"
+
+echo "## ls \$HOME"
+ls -l $HOME
+
+echo "## ls \$GOPATH"
+ls -l $GOPATH
+
+echo "## ls -l \$PWD"
 ls -l 
 
+destination=$HOME/go/src/github.com/vmware/go-vcloud-director
+mkdir -p $destination
+if [ ! -d $destination ]
+then
+    echo "# destination directory ($destination) not created"
+    exit 1
+fi
+
+export GOPATH=$HOME/go
+for item in Makefile scripts support govcd util types test-resources vendor
+do
+    ln -s $PWD/$item $destination/$item
+done
+
+chdir $destination
+
 echo "# Test $(date)"
-# make build
+make build
 
 
