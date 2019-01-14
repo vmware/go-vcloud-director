@@ -26,6 +26,7 @@ echo "## OS $(uname -a)"
 echo "## hostname $(hostname)"
 
 echo "## GOVCD_CONFIG $GOVCD_CONFIG"
+echo "## GOVCD_CONFIG_CONTENTS $GOVCD_CONFIG_CONTENTS"
 if [ -n "$GOVCD_CONFIG" ]
 then
     if [ -f $GOVCD_CONFIG ]
@@ -38,6 +39,9 @@ then
 else
     echo "## GOVCD_CONFIG not set"
 fi
+
+echo "## ls /tmp"
+ls -l /tmp
 
 echo "## ls \$HOME"
 ls -l $HOME
