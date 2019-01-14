@@ -70,4 +70,5 @@ cd $destination
 
 echo "# Test $(date)"
 make
-
+cd govcd
+go test -check.vv -check.f Test_RefreshOrg .
