@@ -12,11 +12,18 @@ then
     echo "## (2) HOME $HOME"
 fi
 
+if [  -z "$USER" ]
+then
+    echo "\$USER is not set"
+    export USER=worker
+    echo "## (2) USER $USER"
+fi
+
 echo "## PWD $PWD"
 echo "## GOROOT $GOROOT"
 echo "## GOPATH $GOPATH"
 echo "## OS $(uname -a)"
-echo "## hostname $hostname"
+echo "## hostname $(hostname)"
 
 echo "## ls \$HOME"
 ls -l $HOME
@@ -41,7 +48,7 @@ do
     ln -s $PWD/$item $destination/$item
 done
 
-chdir $destination
+cd $destination
 
 echo "# Test $(date)"
 make build
