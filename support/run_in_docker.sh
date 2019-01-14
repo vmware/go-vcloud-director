@@ -21,6 +21,9 @@ DOCKER_IMAGE=`echo $DOCKER_BUILD | awk -F: '{print $2}'`
 VCD_ARGS=""
 if [ "$GOVCD_CONFIG" != "" ]; then
     VCD_ARGS="-eGOVCD_CONFIG=$GOVCD_CONFIG -v$GOVCD_CONFIG:$GOVCD_CONFIG"
+    echo "$VCD_ARGS"
+else
+    echo "$0: GOVCD_CONFIG not set"
 fi
 
 # Run the Docker container with source code mounted along
