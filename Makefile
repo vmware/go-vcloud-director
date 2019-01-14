@@ -8,7 +8,7 @@ default: fmtcheck vet build
 test: get-deps fmtcheck
 	@golint ./...
 	@echo "==> Running Tests"
-	@go list $(TEST) | xargs -n1 go test -timeout=60s -parallel=10 $(TESTARGS)
+	cd govcd && go test -timeout=45m -check.vv .
 
 # testrace runs the race checker
 testrace:
@@ -44,3 +44,4 @@ copyright:
 build:
 	@echo "==> Building govcd library"
 	cd govcd && go build . && go test -c .
+

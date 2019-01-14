@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
 
-echo "Build"
+echo "# Build $(date)"
 go version
+
+
+echo "# Test $(date)"
+make
+

@@ -1,4 +1,4 @@
-FROM golang:latest
+FROM golang:1.10.3
 
 ARG build_user=root
 ARG build_uid=0
