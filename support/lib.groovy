@@ -38,8 +38,10 @@ def init() {
 }
 
 def build() {
-    withEnv(environmentArray) {
-        sh "support/run_in_docker.sh support/build.sh"
+    withCredentials(credentialsArray) {
+        withEnv(environmentArray) {
+            sh "support/run_in_docker.sh support/build.sh"
+        }
     }
 }
 

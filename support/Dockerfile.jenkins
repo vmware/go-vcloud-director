@@ -1,10 +1,11 @@
-FROM golang:latest
+FROM golang:1.10.3
 
 ARG build_user=root
 ARG build_uid=0
 ARG build_gid=0
 
 ENV HOME /home/${build_user}
+ENV USER ${build_user}
 
 # Creates the build user with the provided UID/GID
 # values to prevent filesystem permissions issues
