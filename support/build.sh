@@ -46,27 +46,6 @@ ls -l $HOME
 echo "## ls -l \$PWD"
 ls -l 
 
-# Creates a new $GOPATH, accessible to current user
-
-#export GOPATH=$HOME/go
-#destination=$HOME/go/src/github.com/vmware/go-vcloud-director
-#mkdir -p $destination
-#if [ ! -d $destination ]
-#then
-#    echo "# destination directory ($destination) not created"
-#    exit 1
-#fi
-#
-#echo "## NEW GOPATH $GOPATH"
-
-# creates symbolic links for source code in the new GOPATH
-#for item in Makefile scripts support govcd util types test-resources vendor
-#do
-#    ln -s $PWD/$item $destination/$item
-#done
-
-#cd $destination
-
 echo "# Test $(date)"
 make vet
 make test
