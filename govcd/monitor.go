@@ -130,6 +130,14 @@ func prettyTask(task *types.Task) string {
 	return ""
 }
 
+func prettyEdgeGatewayServiceConfiguration(conf *types.EdgeGatewayServiceConfiguration) string {
+	byteBuf, err := json.MarshalIndent(conf, " ", " ")
+	if err == nil {
+		return fmt.Sprintf("%s\n", string(byteBuf))
+	}
+	return ""
+}
+
 func LogNetwork(conf types.OrgVDCNetwork) {
 	out("log", prettyNetworkConf(conf))
 }

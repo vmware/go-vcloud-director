@@ -41,7 +41,7 @@ func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 		return VApp{}, fmt.Errorf("error finding catalog : %v", err)
 	}
 	// Populate Catalog Item
-	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.Catalogitem)
+	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
 	if err != nil {
 		return VApp{}, fmt.Errorf("error finding catalog item : %v", err)
 	}

@@ -21,12 +21,12 @@ func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
 	}
 
 	// Find Catalog Item
-	if vcd.config.VCD.Catalog.Catalogitem == "" {
+	if vcd.config.VCD.Catalog.CatalogItem == "" {
 		check.Skip("Test_FindCatalogItem: Catalog Item not given. Test can't proceed")
 	}
-	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.Catalogitem)
+	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
 	check.Assert(err, IsNil)
-	check.Assert(catitem.CatalogItem.Name, Equals, vcd.config.VCD.Catalog.Catalogitem)
+	check.Assert(catitem.CatalogItem.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
 	// If given a description in config file then it checks if the descriptions match
 	// Otherwise it skips the assert
 	if vcd.config.VCD.Catalog.CatalogItemDescription != "" {

@@ -5,8 +5,10 @@
 package govcd
 
 import (
+	"fmt"
 	types "github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
+	"os"
 )
 
 func (vcd *TestVCD) Test_Refresh(check *C) {
@@ -98,17 +100,37 @@ func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
+
+	// Check that the minimal input is included
+	check.Assert(vcd.config.VCD.InternalIp, Not(Equals), "")
+	check.Assert(vcd.config.VCD.InternalNetmask, Not(Equals), "")
+	check.Assert(vcd.config.VCD.ExternalIp, Not(Equals), "")
+	check.Assert(vcd.config.VCD.ExternalNetmask, Not(Equals), "")
+
 	tunnel := &types.GatewayIpsecVpnTunnel{
-		Name:        "Test VPN",
-		Description: "Testing VPN Creation",
-		IpsecVpnLocalPeer: &types.IpsecVpnLocalPeer{
-			ID:   "",
-			Name: "",
-		},
+		Name:               "TestVPN_API",
+		Description:        "Testing VPN Creation",
 		EncryptionProtocol: "AES",
-		LocalIPAddress:     vcd.config.VCD.ExternalIp,
-		LocalID:            vcd.config.VCD.ExternalIp,
+		SharedSecret:       "MadeUpWords",             // MANDATORY
+		LocalIPAddress:     vcd.config.VCD.ExternalIp, // MANDATORY
+		LocalID:            vcd.config.VCD.ExternalIp, // MANDATORY
+		PeerIPAddress:      vcd.config.VCD.InternalIp, // MANDATORY
+		PeerID:             vcd.config.VCD.InternalIp, // MANDATORY
 		IsEnabled:          true,
+		LocalSubnet: []*types.IpsecVpnSubnet{
+			&types.IpsecVpnSubnet{
+				Name:    vcd.config.VCD.ExternalIp,
+				Gateway: vcd.config.VCD.ExternalIp,      // MANDATORY
+				Netmask: vcd.config.VCD.ExternalNetmask, // MANDATORY
+			},
+		},
+		PeerSubnet: []*types.IpsecVpnSubnet{
+			&types.IpsecVpnSubnet{
+				Name:    vcd.config.VCD.InternalIp,
+				Gateway: vcd.config.VCD.InternalIp,      // MANDATORY
+				Netmask: vcd.config.VCD.InternalNetmask, // MANDATORY
+			},
+		},
 	}
 	tunnels := make([]*types.GatewayIpsecVpnTunnel, 1)
 	tunnels[0] = tunnel
@@ -119,6 +141,12 @@ func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
 			Tunnel:    tunnels,
 		},
 	}
-	_, err = edge.AddIpsecVPN(ipsecVPNConfig)
+
+	if os.Getenv("GOVCD_DEBUG") != "" {
+		fmt.Printf("%s\n", prettyEdgeGatewayServiceConfiguration(ipsecVPNConfig))
+	}
+
+	task, err := edge.AddIpsecVPN(ipsecVPNConfig)
+	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 }
