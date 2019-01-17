@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  * Copyright 2016 Skyscape Cloud Services.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
@@ -8,9 +8,10 @@ package govcd
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
-	"time"
 )
 
 func (vcd *TestVCD) findFirstVm(vapp VApp) (types.VM, string) {

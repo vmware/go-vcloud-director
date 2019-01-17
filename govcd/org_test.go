@@ -6,9 +6,10 @@ package govcd
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
-	"time"
 )
 
 // Tests Refresh for Org by updating the org and then asserting if the

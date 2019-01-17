@@ -9,9 +9,10 @@ package govcd
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/vmware/go-vcloud-director/types/v56"
 	"github.com/vmware/go-vcloud-director/util"
-	"time"
 )
 
 // For each library {entity}, we have two functions: Show{Entity} and Log{Entity}

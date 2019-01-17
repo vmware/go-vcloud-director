@@ -1,16 +1,17 @@
 /*
- * Copyright 2018 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
 
 import (
-	"github.com/vmware/go-vcloud-director/util"
-	. "gopkg.in/check.v1"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/vmware/go-vcloud-director/util"
+	. "gopkg.in/check.v1"
 )
 
 func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
