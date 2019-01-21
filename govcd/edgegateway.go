@@ -35,7 +35,7 @@ func (eGW *EdgeGateway) AddDhcpPool(network *types.OrgVDCNetwork, dhcppool []int
 	util.Logger.Printf("[DEBUG] EDGE GATEWAY: %#v", newEdgeConfig)
 	util.Logger.Printf("[DEBUG] EDGE GATEWAY SERVICE: %#v", newEdgeConfig.GatewayDhcpService)
 	newDchpService := &types.GatewayDhcpService{}
-	if newEdgeConfig.GatewayDhcpService == nil {
+	if newEdgeConfig.GatewayDhcpService.Pool == nil {
 		newDchpService.IsEnabled = true
 	} else {
 		newDchpService.IsEnabled = newEdgeConfig.GatewayDhcpService.IsEnabled
