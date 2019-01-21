@@ -737,3 +737,18 @@ func (eGW *EdgeGateway) AddIpsecVPN(ipsecVPNConfig *types.EdgeGatewayServiceConf
 	return *task, nil
 
 }
+
+// Removes an Edge Gateway VPN, by passing an empty configuration
+func (eGW *EdgeGateway) RemoveIpsecVPN() (Task, error) {
+	err := eGW.Refresh()
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+	ipsecVPNConfig := &types.EdgeGatewayServiceConfiguration{
+		Xmlns: "http://www.vmware.com/vcloud/v1.5",
+		GatewayIpsecVpnService: &types.GatewayIpsecVpnService{
+			IsEnabled: false,
+		},
+	}
+	return eGW.AddIpsecVPN(ipsecVPNConfig)
+}

@@ -147,7 +147,13 @@ func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
 		fmt.Printf("%s\n", prettyEdgeGatewayServiceConfiguration(ipsecVPNConfig))
 	}
 
+	// Configures VPN service
 	task, err := edge.AddIpsecVPN(ipsecVPNConfig)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	// Removes VPN service
+	task, err = edge.RemoveIpsecVPN()
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 }
