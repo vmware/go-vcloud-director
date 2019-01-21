@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -725,6 +726,10 @@ func (eGW *EdgeGateway) AddIpsecVPN(ipsecVPNConfig *types.EdgeGatewayServiceConf
 	resp, err := checkResp(eGW.client.Http.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error reconfiguring Edge Gateway: %s", err)
+	}
+
+	if os.Getenv("GOVCD_DEBUG") != "" {
+		util.Logger.Printf("Edge Gateway Service Configuration: %s\n", prettyEdgeGatewayServiceConfiguration(ipsecVPNConfig))
 	}
 
 	task := NewTask(eGW.client)

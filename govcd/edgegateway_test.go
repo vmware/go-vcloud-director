@@ -5,16 +5,13 @@
 package govcd
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
 )
 
 func (vcd *TestVCD) Test_Refresh(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
-		check.Skip("Skipping test because no edgegatway given")
+		check.Skip("Skipping test because no edge gateway given")
 	}
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
@@ -32,7 +29,7 @@ func (vcd *TestVCD) Test_NATMapping(check *C) {
 		check.Skip("Skipping test because no valid ip given")
 	}
 	if vcd.config.VCD.EdgeGateway == "" {
-		check.Skip("Skipping test because no edgegatway given")
+		check.Skip("Skipping test because no edge gateway given")
 	}
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
@@ -54,7 +51,7 @@ func (vcd *TestVCD) Test_NATPortMapping(check *C) {
 		check.Skip("Skipping test because no valid ip given")
 	}
 	if vcd.config.VCD.EdgeGateway == "" {
-		check.Skip("Skipping test because no edgegatway given")
+		check.Skip("Skipping test because no edge gateway given")
 	}
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
@@ -90,7 +87,6 @@ func (vcd *TestVCD) Test_1to1Mappings(check *C) {
 	check.Assert(err, IsNil)
 }
 
-// TODO: Add a check checking whether the IPsec VPN was added
 func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
 	if vcd.config.VCD.ExternalIp == "" {
 		check.Skip("Skipping test because no valid ip given")
@@ -143,17 +139,39 @@ func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
 		},
 	}
 
-	if os.Getenv("GOVCD_DEBUG") != "" {
-		fmt.Printf("%s\n", prettyEdgeGatewayServiceConfiguration(ipsecVPNConfig))
-	}
-
 	// Configures VPN service
 	task, err := edge.AddIpsecVPN(ipsecVPNConfig)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
+	// To check the effects of service configuration, we need to reload the edge gateway entity
+	err = edge.Refresh()
+	check.Assert(err, IsNil)
+
+	// We expect an enabled service, and non-null tunnel and endpoint
+	newConf := edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration
+	newConfState := newConf.GatewayIpsecVpnService.IsEnabled
+	newConfTunnel := newConf.GatewayIpsecVpnService.Tunnel
+	newConfEndpoint := newConf.GatewayIpsecVpnService.Endpoint
+	check.Assert(newConfState, Equals, true)
+	check.Assert(newConfTunnel, NotNil)
+	check.Assert(newConfEndpoint, NotNil)
+
 	// Removes VPN service
 	task, err = edge.RemoveIpsecVPN()
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
+
+	// To check the effects of service configuration, we need to reload the edge gateway entity
+	err = edge.Refresh()
+	check.Assert(err, IsNil)
+
+	// We expect a disabled service, and null tunnel and endpoint
+	afterDeletionConf := edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration
+	newConfState = afterDeletionConf.GatewayIpsecVpnService.IsEnabled
+	newConfTunnel = afterDeletionConf.GatewayIpsecVpnService.Tunnel
+	newConfEndpoint = afterDeletionConf.GatewayIpsecVpnService.Endpoint
+	check.Assert(newConfState, Equals, false)
+	check.Assert(newConfTunnel, IsNil)
+	check.Assert(newConfEndpoint, IsNil)
 }
