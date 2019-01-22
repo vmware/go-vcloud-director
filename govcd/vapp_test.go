@@ -6,9 +6,9 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/types/v56"
 	"regexp"
 
+	"github.com/vmware/go-vcloud-director/types/v56"
 	. "gopkg.in/check.v1"
 )
 
@@ -41,7 +41,7 @@ func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 		return VApp{}, fmt.Errorf("error finding catalog : %v", err)
 	}
 	// Populate Catalog Item
-	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.Catalogitem)
+	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
 	if err != nil {
 		return VApp{}, fmt.Errorf("error finding catalog item : %v", err)
 	}

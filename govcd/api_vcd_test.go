@@ -78,7 +78,7 @@ type TestConfig struct {
 		Catalog struct {
 			Name                   string `yaml:"name,omitempty"`
 			Description            string `yaml:"description,omitempty"`
-			Catalogitem            string `yaml:"catalogItem,omitempty"`
+			CatalogItem            string `yaml:"catalogItem,omitempty"`
 			CatalogItemDescription string `yaml:"catalogItemDescription,omitempty"`
 		} `yaml:"catalog"`
 		Network        string `yaml:"network,omitempty"`
@@ -87,7 +87,9 @@ type TestConfig struct {
 			SP2 string `yaml:"storageProfile2,omitempty"`
 		} `yaml:"storageProfile"`
 		ExternalIp      string `yaml:"externalIp,omitempty"`
+		ExternalNetmask string `yaml:"externalNetmask,omitempty"`
 		InternalIp      string `yaml:"internalIp,omitempty"`
+		InternalNetmask string `yaml:"internalNetmask,omitempty"`
 		EdgeGateway     string `yaml:"edgeGateway,omitempty"`
 		ExternalNetwork string `yaml:"externalNetwork,omitempty"`
 		Disk            struct {
@@ -277,7 +279,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	}
 	// creates a new VApp for vapp tests
 	if !skipVappCreation && config.VCD.Network != "" && config.VCD.StorageProfile.SP1 != "" &&
-		config.VCD.Catalog.Name != "" && config.VCD.Catalog.Catalogitem != "" {
+		config.VCD.Catalog.Name != "" && config.VCD.Catalog.CatalogItem != "" {
 		vcd.vapp, err = vcd.createTestVapp(TestSetUpSuite)
 		// If no vApp is created, we skip all vApp tests
 		if vcd.vapp == (VApp{}) || err != nil {

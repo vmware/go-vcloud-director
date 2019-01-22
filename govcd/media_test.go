@@ -1,13 +1,14 @@
 /*
- * Copyright 2018 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
 
 import (
-	. "gopkg.in/check.v1"
 	"io/ioutil"
 	"os"
+
+	. "gopkg.in/check.v1"
 )
 
 // Tests System function UploadMediaImage by checking if provided standard iso file uploaded.
