@@ -1136,7 +1136,7 @@ func updateNetworkConfigurations(vapp *VApp, networkConfigurations []types.VAppN
 
 	resp, err := checkResp(vapp.client.Http.Do(req))
 	if err != nil {
-		return Task{}, fmt.Errorf("error removing vApp Network: %s", err)
+		return Task{}, fmt.Errorf("error updating vApp Network: %s", err)
 	}
 
 	task := NewTask(vapp.client)
