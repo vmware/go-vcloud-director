@@ -333,12 +333,13 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedNetwork(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 
-	vcd.vapp.Refresh()
-	networkconfig, err := vcd.vapp.GetNetworkConfig()
+	err = vcd.vapp.Refresh()
+	check.Assert(err, IsNil)
+	networkConfig, err := vcd.vapp.GetNetworkConfig()
 	check.Assert(err, IsNil)
 
 	networkFound := types.VAppNetworkConfiguration{}
-	for _, networkConfig := range networkconfig.NetworkConfig {
+	for _, networkConfig := range networkConfig.NetworkConfig {
 		if networkConfig.NetworkName == networkName {
 			networkFound = networkConfig
 		}
@@ -358,12 +359,13 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedNetwork(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 
-	vcd.vapp.Refresh()
-	networkconfig, err = vcd.vapp.GetNetworkConfig()
+	err = vcd.vapp.Refresh()
+	check.Assert(err, IsNil)
+	networkConfig, err = vcd.vapp.GetNetworkConfig()
 	check.Assert(err, IsNil)
 
 	isExist := false
-	for _, networkConfig := range networkconfig.NetworkConfig {
+	for _, networkConfig := range networkConfig.NetworkConfig {
 		if networkConfig.NetworkName == networkName {
 			isExist = true
 		}
