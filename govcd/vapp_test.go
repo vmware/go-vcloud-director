@@ -305,3 +305,68 @@ func (vcd *TestVCD) Test_Undeploy(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 }
+
+func (vcd *TestVCD) Test_AddAndRemoveIsolatedNetwork(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+	// Add Metadata
+	networkName := "AddAndRemoveIsolatedNetworkTest"
+	const gateway = "192.168.0.1"
+	const netmask = "255.255.255.0"
+	const dns1 = "8.8.8.8"
+	const dns2 = "1.1.1.1"
+	const dnsSuffix = "biz.biz"
+	const startAddress = "192.168.0.10"
+	const endAddress = "192.168.0.20"
+	task, err := vcd.vapp.AddIsolatedNetwork(&VappNetworkSettings{
+		Name:             networkName,
+		Gateway:          gateway,
+		NetMask:          netmask,
+		DSN1:             dns1,
+		DNS2:             dns2,
+		DNSSuffix:        dnsSuffix,
+		IPRange:          []*types.IPRange{{StartAddress: startAddress, EndAddress: endAddress}},
+		GuestVLANAllowed: true})
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	vcd.vapp.Refresh()
+	networkconfig, err := vcd.vapp.GetNetworkConfig()
+	check.Assert(err, IsNil)
+
+	networkFound := types.VAppNetworkConfiguration{}
+	for _, networkConfig := range networkconfig.NetworkConfig {
+		if networkConfig.NetworkName == networkName {
+			networkFound = networkConfig
+		}
+	}
+
+	check.Assert(networkFound.Configuration.IPScopes.IPScope.Gateway, Equals, gateway)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope.Netmask, Equals, netmask)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope.DNS1, Equals, dns1)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope.DNS2, Equals, dns2)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope.DNSSuffix, Equals, dnsSuffix)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope.IPRanges.IPRange[0].StartAddress, Equals, startAddress)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope.IPRanges.IPRange[0].EndAddress, Equals, endAddress)
+
+	task, err = vcd.vapp.RemoveIsolatedNetwork(networkName)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	vcd.vapp.Refresh()
+	networkconfig, err = vcd.vapp.GetNetworkConfig()
+	check.Assert(err, IsNil)
+
+	isExist := false
+	for _, networkConfig := range networkconfig.NetworkConfig {
+		if networkConfig.NetworkName == networkName {
+			isExist = true
+		}
+	}
+	check.Assert(isExist, Equals, false)
+}
