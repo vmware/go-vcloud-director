@@ -125,7 +125,8 @@ func (vcd *TestVCD) Test_DeleteMediaImage(check *C) {
 
 	task, err := mediaItem.Delete()
 	check.Assert(err, IsNil)
-	task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 
 	mediaItem, err = vcd.vdc.FindMediaImage(itemName)
 	check.Assert(err, IsNil)

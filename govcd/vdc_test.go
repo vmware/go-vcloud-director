@@ -146,13 +146,19 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	check.Check(err, IsNil)
 	check.Check(vapp_status, Equals, "UNRESOLVED")
 	// Let the VApp creation complete
-	task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		panic(err)
+	}
 	vapp_status, err = vapp.GetStatus()
 	check.Check(err, IsNil)
 	check.Check(vapp_status, Equals, "POWERED_OFF")
 	// Deleting VApp
 	task, err = vapp.Delete()
-	task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		panic(err)
+	}
 	check.Assert(err, IsNil)
 	no_such_vapp, err := vcd.vdc.FindVAppByName(TestComposeVapp)
 	check.Assert(err, NotNil)
