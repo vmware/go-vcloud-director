@@ -136,14 +136,16 @@ func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName s
 		)
 	}
 
-	vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection = append(vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection,
-		&types.NetworkConnection{
-			Network:                 vappNetworkName,
-			NetworkConnectionIndex:  len(orgVdcNetworks),
-			IsConnected:             true,
-			IPAddressAllocationMode: "POOL",
-		},
-	)
+	if vappNetworkName != "" {
+		vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection = append(vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection,
+			&types.NetworkConnection{
+				Network:                 vappNetworkName,
+				NetworkConnectionIndex:  len(orgVdcNetworks),
+				IsConnected:             true,
+				IPAddressAllocationMode: "POOL",
+			},
+		)
+	}
 	vcomp.SourcedItem.NetworkAssignment = append(vcomp.SourcedItem.NetworkAssignment,
 		&types.NetworkAssignment{
 			InnerNetwork:     vappNetworkName,
