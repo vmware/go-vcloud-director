@@ -323,7 +323,7 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedNetwork(check *C) {
 		Name:             networkName,
 		Gateway:          gateway,
 		NetMask:          netmask,
-		DSN1:             dns1,
+		DNS1:             dns1,
 		DNS2:             dns2,
 		DNSSuffix:        dnsSuffix,
 		IPRange:          []*types.IPRange{{StartAddress: startAddress, EndAddress: endAddress}},
