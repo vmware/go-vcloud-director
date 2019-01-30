@@ -92,7 +92,13 @@ func (vapp *VApp) Refresh() error {
 	return nil
 }
 
-func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName string, vapptemplate VAppTemplate, name string, acceptalleulas bool) (Task, error) {
+// Function create vm in vApp using vApp template
+// orgVdcNetworks - adds org VDC networks to be available for vApp. Can be empty.
+// vappNetworkName - adds vApp network to be available for vApp. Can be empty.
+// vappTemplate - vApp Template which will be used for VM creation.
+// name - name for VM.
+// acceptAllEulas - setting allows to automatically accept or not Eulas.
+func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName string, vappTemplate VAppTemplate, name string, acceptAllEulas bool) (Task, error) {
 
 	vcomp := &types.ReComposeVAppParams{
 		Ovf:         "http://schemas.dmtf.org/ovf/envelope/1",
@@ -104,19 +110,19 @@ func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName s
 		Description: vapp.VApp.Description,
 		SourcedItem: &types.SourcedCompositionItemParam{
 			Source: &types.Reference{
-				HREF: vapptemplate.VAppTemplate.Children.VM[0].HREF,
+				HREF: vappTemplate.VAppTemplate.Children.VM[0].HREF,
 				Name: name,
 			},
 			InstantiationParams: &types.InstantiationParams{
 				NetworkConnectionSection: &types.NetworkConnectionSection{
-					Type: vapptemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.Type,
-					HREF: vapptemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.HREF,
+					Type: vappTemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.Type,
+					HREF: vappTemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.HREF,
 					Info: "Network config for sourced item",
-					PrimaryNetworkConnectionIndex: vapptemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.PrimaryNetworkConnectionIndex,
+					PrimaryNetworkConnectionIndex: vappTemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.PrimaryNetworkConnectionIndex,
 				},
 			},
 		},
-		AllEULAsAccepted: acceptalleulas,
+		AllEULAsAccepted: acceptAllEulas,
 	}
 
 	for index, orgVdcNetwork := range orgVdcNetworks {
@@ -1047,7 +1053,7 @@ func (vapp *VApp) GetNetworkConfig() (*types.NetworkConfigSection, error) {
 	return networkConfig, nil
 }
 
-// Function adds existing vDC network to vApp
+// Function adds existing VDC network to vApp
 func (vapp *VApp) AddRAWNetworkConfig(orgvdcnetworks []*types.OrgVDCNetwork) (Task, error) {
 
 	networkConfigurations := []types.VAppNetworkConfiguration{}
