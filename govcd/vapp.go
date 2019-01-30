@@ -37,7 +37,7 @@ type VappNetworkSettings struct {
 	Name             string
 	Gateway          string
 	NetMask          string
-	DSN1             string
+	DNS1             string
 	DNS2             string
 	DNSSuffix        string
 	GuestVLANAllowed bool
@@ -1080,7 +1080,7 @@ func (vapp *VApp) AddIsolatedNetwork(newIsolatedNetworkSettings *VappNetworkSett
 				FenceMode:        "isolated",
 				GuestVlanAllowed: newIsolatedNetworkSettings.GuestVLANAllowed,
 				IPScopes: &types.IPScopes{IPScope: types.IPScope{IsInherited: false, Gateway: newIsolatedNetworkSettings.Gateway,
-					Netmask: newIsolatedNetworkSettings.NetMask, DNS1: newIsolatedNetworkSettings.DSN1,
+					Netmask: newIsolatedNetworkSettings.NetMask, DNS1: newIsolatedNetworkSettings.DNS1,
 					DNS2: newIsolatedNetworkSettings.DNS2, DNSSuffix: newIsolatedNetworkSettings.DNSSuffix, IsEnabled: true,
 					IPRanges: &types.IPRanges{IPRange: newIsolatedNetworkSettings.IPRange}}},
 			},
