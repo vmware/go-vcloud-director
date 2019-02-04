@@ -7,6 +7,7 @@ package govcd
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -1082,6 +1083,11 @@ func (vapp *VApp) AddRAWNetworkConfig(orgvdcnetworks []*types.OrgVDCNetwork) (Ta
 // Function allows to create isolated network for vApp. This is equivalent to vCD UI function - vApp network creation.
 func (vapp *VApp) AddIsolatedNetwork(newIsolatedNetworkSettings *VappNetworkSettings) (Task, error) {
 
+	err := validateNetworkConfigSettings(newIsolatedNetworkSettings)
+	if err != nil {
+		return Task{}, err
+	}
+
 	networkConfigurations := vapp.VApp.NetworkConfigSection.NetworkConfig
 	networkConfigurations = append(networkConfigurations,
 		types.VAppNetworkConfiguration{
@@ -1102,6 +1108,34 @@ func (vapp *VApp) AddIsolatedNetwork(newIsolatedNetworkSettings *VappNetworkSett
 
 	return updateNetworkConfigurations(vapp, networkConfigurations)
 
+}
+
+func validateNetworkConfigSettings(networkSettings *VappNetworkSettings) error {
+	if networkSettings.Name == "" {
+		return errors.New("network name is missing")
+	}
+
+	if networkSettings.Gateway == "" {
+		return errors.New("network gateway ip is missing")
+	}
+
+	if networkSettings.NetMask == "" {
+		return errors.New("network mask config is missing")
+	}
+
+	if networkSettings.NetMask == "" {
+		return errors.New("network mask config is missing")
+	}
+
+	if networkSettings.DHCPIsEnabled && networkSettings.DHCPIPRange == nil {
+		return errors.New("network DHCP ip range config is missing")
+	}
+
+	if networkSettings.DHCPIPRange.StartAddress == "" {
+		return errors.New("network DHCP ip range start address is missing")
+	}
+
+	return nil
 }
 
 // Removes vApp isolated network
