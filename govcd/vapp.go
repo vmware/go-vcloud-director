@@ -34,14 +34,18 @@ func (vdcCli *VCDClient) NewVApp(client *Client) VApp {
 
 // struct type used to pass information for vApp network creation
 type VappNetworkSettings struct {
-	Name             string
-	Gateway          string
-	NetMask          string
-	DNS1             string
-	DNS2             string
-	DNSSuffix        string
-	GuestVLANAllowed bool
-	IPRange          []*types.IPRange
+	Name                 string
+	Gateway              string
+	NetMask              string
+	DNS1                 string
+	DNS2                 string
+	DNSSuffix            string
+	GuestVLANAllowed     bool
+	StaticIPRanges       []*types.IPRange
+	DHCPIsEnabled        bool
+	DHCPMaxLeaseTime     int
+	DHCPDefaultLeaseTime int
+	DHCPIPRange          *types.IPRange
 }
 
 // Returns the vdc where the vapp resides in.
@@ -1085,10 +1089,13 @@ func (vapp *VApp) AddIsolatedNetwork(newIsolatedNetworkSettings *VappNetworkSett
 			Configuration: &types.NetworkConfiguration{
 				FenceMode:        "isolated",
 				GuestVlanAllowed: newIsolatedNetworkSettings.GuestVLANAllowed,
+				Features: &types.NetworkFeatures{DhcpService: &types.DhcpService{IsEnabled: newIsolatedNetworkSettings.DHCPIsEnabled,
+					DefaultLeaseTime: newIsolatedNetworkSettings.DHCPDefaultLeaseTime,
+					MaxLeaseTime:     newIsolatedNetworkSettings.DHCPMaxLeaseTime, IPRange: newIsolatedNetworkSettings.DHCPIPRange}},
 				IPScopes: &types.IPScopes{IPScope: types.IPScope{IsInherited: false, Gateway: newIsolatedNetworkSettings.Gateway,
 					Netmask: newIsolatedNetworkSettings.NetMask, DNS1: newIsolatedNetworkSettings.DNS1,
 					DNS2: newIsolatedNetworkSettings.DNS2, DNSSuffix: newIsolatedNetworkSettings.DNSSuffix, IsEnabled: true,
-					IPRanges: &types.IPRanges{IPRange: newIsolatedNetworkSettings.IPRange}}},
+					IPRanges: &types.IPRanges{IPRange: newIsolatedNetworkSettings.StaticIPRanges}}},
 			},
 			IsDeployed: false,
 		})
