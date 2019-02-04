@@ -1141,12 +1141,21 @@ func validateNetworkConfigSettings(networkSettings *VappNetworkSettings) error {
 // Removes vApp isolated network
 func (vapp *VApp) RemoveIsolatedNetwork(networkName string) (Task, error) {
 
-	networkConfigurations := vapp.VApp.NetworkConfigSection.NetworkConfig
+	if networkName == "" {
+		return Task{}, fmt.Errorf("network name can't be empty")
+	}
 
+	networkConfigurations := vapp.VApp.NetworkConfigSection.NetworkConfig
+	isNetworkFound := false
 	for index, networkConfig := range networkConfigurations {
 		if networkConfig.NetworkName == networkName {
+			isNetworkFound = true
 			networkConfigurations = append(networkConfigurations[:index], networkConfigurations[index+1:]...)
 		}
+	}
+
+	if !isNetworkFound {
+		return Task{}, fmt.Errorf("network to remove: %s, isn't found", networkName)
 	}
 
 	return updateNetworkConfigurations(vapp, networkConfigurations)
