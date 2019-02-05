@@ -108,7 +108,7 @@ func (vapp *VApp) Refresh() error {
 // vappTemplate - vApp Template which will be used for VM creation.
 // name - name for VM.
 // acceptAllEulas - setting allows to automatically accept or not Eulas.
-func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName string, vappTemplate VAppTemplate, name string, acceptAllEulas bool) (Task, error) {
+func (vapp *VApp) AddVM(networks []map[string]interface{}, vappTemplate VAppTemplate, name string, acceptAllEulas bool) (Task, error) {
 
 	if vappTemplate == (VAppTemplate{}) || vappTemplate.VAppTemplate == nil {
 		return Task{}, fmt.Errorf("vApp Template can not be empty")
@@ -133,11 +133,15 @@ func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName s
 				HREF: vappTemplate.VAppTemplate.Children.VM[0].HREF,
 				Name: name,
 			},
+			VMGeneralParams: &types.VMGeneralParams {
+				Name: name,
+				NeedsCustomization: true,
+			},
 			InstantiationParams: &types.InstantiationParams{
 				NetworkConnectionSection: &types.NetworkConnectionSection{
-					Type: vappTemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.Type,
-					HREF: vappTemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.HREF,
 					Info: "Network config for sourced item",
+					HREF: vappTemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.HREF,
+					Type: vappTemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.Type,
 					PrimaryNetworkConnectionIndex: vappTemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.PrimaryNetworkConnectionIndex,
 				},
 			},
@@ -145,38 +149,46 @@ func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName s
 		AllEULAsAccepted: acceptAllEulas,
 	}
 
-	for index, orgVdcNetwork := range orgVdcNetworks {
+	for index, network := range networks {
+		ipAllocationMode := "NONE"
+		ipAddress := "Any"
+		if network["ip"].(string) != "" {
+			ipAllocationMode = "MANUAL"
+			// TODO: Check a valid IP has been given
+			ipAddress = network["ip"].(string)
+		} else {
+			ipAllocationMode = network["ip_allocation_mode"].(string)
+		}
+
 		vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection = append(vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection,
 			&types.NetworkConnection{
-				Network:                 orgVdcNetwork.Name,
+				Network:                 network["orgnetwork"].(string),
 				NetworkConnectionIndex:  index,
 				IsConnected:             true,
-				IPAddressAllocationMode: "POOL",
+				IPAddress:               ipAddress,
+				IPAddressAllocationMode: ipAllocationMode,
 			},
 		)
+
+		if network["adapter_type"].(string) != "" {
+			vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection[index].NetworkAdapterType = network["adapter_type"].(string)
+		}
+
+		if network["is_primary"] == true {
+			vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.PrimaryNetworkConnectionIndex = index
+		}
+
 		vcomp.SourcedItem.NetworkAssignment = append(vcomp.SourcedItem.NetworkAssignment,
 			&types.NetworkAssignment{
-				InnerNetwork:     orgVdcNetwork.Name,
-				ContainerNetwork: orgVdcNetwork.Name,
+				InnerNetwork:     network["orgnetwork"].(string),
+				ContainerNetwork: network["orgnetwork"].(string),
 			},
 		)
 	}
 
-	if vappNetworkName != "" {
-		vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection = append(vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection,
-			&types.NetworkConnection{
-				Network:                 vappNetworkName,
-				NetworkConnectionIndex:  len(orgVdcNetworks),
-				IsConnected:             true,
-				IPAddressAllocationMode: "POOL",
-			},
-		)
-		vcomp.SourcedItem.NetworkAssignment = append(vcomp.SourcedItem.NetworkAssignment,
-			&types.NetworkAssignment{
-				InnerNetwork:     vappNetworkName,
-				ContainerNetwork: vappNetworkName,
-			},
-		)
+	vcomp.SourcedItem.VMCapabilities = &types.VMCapabilities{
+		MemoryHotAddEnabled: true,
+		CPUHotAddEnabled: true,
 	}
 
 	output, _ := xml.MarshalIndent(vcomp, "  ", "    ")
