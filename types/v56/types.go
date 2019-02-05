@@ -257,14 +257,22 @@ type NetworkConfigSection struct {
 // Since: 0.9
 type NetworkConnection struct {
 	Network                 string `xml:"network,attr"`                      // Name of the network to which this NIC is connected.
-	NeedsCustomization      bool   `xml:"needsCustomization,attr,omitempty"` // True if this NIC needs customization.
 	NetworkConnectionIndex  int    `xml:"NetworkConnectionIndex"`            // Virtual slot number associated with this NIC. First slot number is 0.
 	IPAddress               string `xml:"IpAddress,omitempty"`               // IP address assigned to this NIC.
 	ExternalIPAddress       string `xml:"ExternalIpAddress,omitempty"`       // If the network to which this NIC connects provides NAT services, the external address assigned to this NIC appears here.
 	IsConnected             bool   `xml:"IsConnected"`                       // If the virtual machine is undeployed, this value specifies whether the NIC should be connected upon deployment. If the virtual machine is deployed, this value reports the current status of this NIC's connection, and can be updated to change that connection status.
 	MACAddress              string `xml:"MACAddress,omitempty"`              // MAC address associated with the NIC.
 	IPAddressAllocationMode string `xml:"IpAddressAllocationMode"`           // IP address allocation mode for this connection. One of: POOL (A static IP address is allocated automatically from a pool of addresses.) DHCP (The IP address is obtained from a DHCP service.) MANUAL (The IP address is assigned manually in the IpAddress element.) NONE (No IP addressing mode specified.)
+	// Type of network adapter to be used for this connection. One of:
+	// VLANCE (emulated version of the AMD 79C970 PCnet32-LANCE NIC)
+	// E1000 (emulated version of the Intel 82545EM Gigabit Ethernet NIC)
+	// E1000E (emulates a newer model of Intel Gigabit NIC (number 82574))
+	// VMXNET (has no physical counterpart; optimized for performance in a virtual machine)
+	// VMXNET2 (based on the VMXNET adapter but provides some high-performance features)
+	// VMXNET3 (next generation of a paravirtualized NIC designed for performance; not related to VMXNET or VMXNET2)
+	// FLEXIBLE (identifies itself as a Vlance adapter when a virtual machine boots, but initializes itself and functions as either a Vlance or a VMXNET adapter, depending on which driver initializes it)
 	NetworkAdapterType      string `xml:"NetworkAdapterType,omitempty"`
+	NeedsCustomization      bool   `xml:"needsCustomization,attr,omitempty"` // True if this NIC needs customization.
 }
 
 // NetworkConnectionSection the container for the network connections of this virtual machine.
@@ -967,9 +975,9 @@ type UndeployVAppParams struct {
 type VMCapabilities struct {
 	HREF                string   `xml:"href,attr,omitempty"`
 	Type                string   `xml:"type,attr,omitempty"`
-	CPUHotAddEnabled    bool     `xml:"CpuHotAddEnabled,omitempty"`
 	Link                LinkList `xml:"Link,omitempty"`
 	MemoryHotAddEnabled bool     `xml:"MemoryHotAddEnabled,omitempty"`
+	CPUHotAddEnabled    bool     `xml:"CpuHotAddEnabled,omitempty"`
 }
 
 // VMs represents a list of virtual machines.
@@ -1050,6 +1058,7 @@ type SourcedCompositionItemParam struct {
 	NetworkAssignment   []*NetworkAssignment `xml:"NetworkAssignment,omitempty"`   // If Source references a Vm, this element maps a network name specified in the Vm to the network name of a vApp network defined in the composed vApp.
 	StorageProfile      *Reference           `xml:"StorageProfile,omitempty"`      // If Source references a Vm, this element contains a reference to a storage profile to be used for the Vm. The specified storage profile must exist in the organization vDC that contains the composed vApp. If not specified, the default storage profile for the vDC is used.
 	LocalityParams      *LocalityParams      `xml:"LocalityParams,omitempty"`      // Represents locality parameters. Locality parameters provide a hint that may help the placement engine optimize placement of a VM and an independent a Disk so that the VM can make efficient use of the disk.
+	VMCapabilities      *VMCapabilities      `xml:"VmCapabilities,omitempty"`     // If Source references a Vm, this element describes the capabilities (hot swap, etc.) the instantiated VM should have.
 }
 
 // LocalityParams represents locality parameters. Locality parameters provide a hint that may help the placement engine optimize placement of a VM with respect to another VM or an independent disk.
