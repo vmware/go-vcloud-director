@@ -100,6 +100,14 @@ func (vapp *VApp) Refresh() error {
 // acceptAllEulas - setting allows to automatically accept or not Eulas.
 func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName string, vappTemplate VAppTemplate, name string, acceptAllEulas bool) (Task, error) {
 
+	if vappTemplate == (VAppTemplate{}) || vappTemplate.VAppTemplate == nil {
+		return Task{}, fmt.Errorf("vApp Template can not be empty")
+	}
+
+	if vappTemplate.VAppTemplate.Status != 8 { // status Ready
+		return Task{}, fmt.Errorf("vApp Template shape is not ok")
+	}
+
 	vcomp := &types.ReComposeVAppParams{
 		Ovf:         "http://schemas.dmtf.org/ovf/envelope/1",
 		Xsi:         "http://www.w3.org/2001/XMLSchema-instance",
