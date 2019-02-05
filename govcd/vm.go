@@ -281,6 +281,21 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}, ip string) 
 				}
 			}
 		}
+
+		util.Logger.Printf("[DEBUG] Function ChangeNetworkConfig() for %s invoked", network["orgnetwork"])
+
+		networksection.Xmlns = "http://www.vmware.com/vcloud/v1.5"
+		networksection.Ovf = "http://schemas.dmtf.org/ovf/envelope/1"
+		networksection.Info = "Specifies the available VM network connections"
+
+		networksection.NetworkConnection[index].IPAddress = ipAddress
+		networksection.NetworkConnection[index].IPAddressAllocationMode = ipAllocationMode
+		networksection.NetworkConnection[index].NeedsCustomization = true
+		networksection.NetworkConnection[index].MACAddress = ""
+
+		if network["is_primary"] == true {
+			networksection.PrimaryNetworkConnectionIndex = index
+		}
 	}
 
 	networkSection.Xmlns = "http://www.vmware.com/vcloud/v1.5"
