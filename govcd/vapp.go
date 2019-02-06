@@ -133,8 +133,8 @@ func (vapp *VApp) AddVM(networks []map[string]interface{}, vappTemplate VAppTemp
 				HREF: vappTemplate.VAppTemplate.Children.VM[0].HREF,
 				Name: name,
 			},
-			VMGeneralParams: &types.VMGeneralParams {
-				Name: name,
+			VMGeneralParams: &types.VMGeneralParams{
+				Name:               name,
 				NeedsCustomization: true,
 			},
 			InstantiationParams: &types.InstantiationParams{
@@ -188,7 +188,7 @@ func (vapp *VApp) AddVM(networks []map[string]interface{}, vappTemplate VAppTemp
 
 	vcomp.SourcedItem.VMCapabilities = &types.VMCapabilities{
 		MemoryHotAddEnabled: true,
-		CPUHotAddEnabled: true,
+		CPUHotAddEnabled:    true,
 	}
 
 	output, _ := xml.MarshalIndent(vcomp, "  ", "    ")

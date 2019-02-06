@@ -271,8 +271,8 @@ type NetworkConnection struct {
 	// VMXNET2 (based on the VMXNET adapter but provides some high-performance features)
 	// VMXNET3 (next generation of a paravirtualized NIC designed for performance; not related to VMXNET or VMXNET2)
 	// FLEXIBLE (identifies itself as a Vlance adapter when a virtual machine boots, but initializes itself and functions as either a Vlance or a VMXNET adapter, depending on which driver initializes it)
-	NetworkAdapterType      string `xml:"NetworkAdapterType,omitempty"`
-	NeedsCustomization      bool   `xml:"needsCustomization,attr,omitempty"` // True if this NIC needs customization.
+	NetworkAdapterType string `xml:"NetworkAdapterType,omitempty"`
+	NeedsCustomization bool   `xml:"needsCustomization,attr,omitempty"` // True if this NIC needs customization.
 }
 
 // NetworkConnectionSection the container for the network connections of this virtual machine.
@@ -1058,7 +1058,7 @@ type SourcedCompositionItemParam struct {
 	NetworkAssignment   []*NetworkAssignment `xml:"NetworkAssignment,omitempty"`   // If Source references a Vm, this element maps a network name specified in the Vm to the network name of a vApp network defined in the composed vApp.
 	StorageProfile      *Reference           `xml:"StorageProfile,omitempty"`      // If Source references a Vm, this element contains a reference to a storage profile to be used for the Vm. The specified storage profile must exist in the organization vDC that contains the composed vApp. If not specified, the default storage profile for the vDC is used.
 	LocalityParams      *LocalityParams      `xml:"LocalityParams,omitempty"`      // Represents locality parameters. Locality parameters provide a hint that may help the placement engine optimize placement of a VM and an independent a Disk so that the VM can make efficient use of the disk.
-	VMCapabilities      *VMCapabilities      `xml:"VmCapabilities,omitempty"`     // If Source references a Vm, this element describes the capabilities (hot swap, etc.) the instantiated VM should have.
+	VMCapabilities      *VMCapabilities      `xml:"VmCapabilities,omitempty"`      // If Source references a Vm, this element describes the capabilities (hot swap, etc.) the instantiated VM should have.
 }
 
 // LocalityParams represents locality parameters. Locality parameters provide a hint that may help the placement engine optimize placement of a VM with respect to another VM or an independent disk.
