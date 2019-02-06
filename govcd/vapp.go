@@ -1116,7 +1116,7 @@ func validateNetworkConfigSettings(networkSettings *VappNetworkSettings) error {
 	}
 
 	if networkSettings.Gateway == "" {
-		return errors.New("network gateway ip is missing")
+		return errors.New("network gateway IP is missing")
 	}
 
 	if networkSettings.NetMask == "" {
@@ -1155,7 +1155,7 @@ func (vapp *VApp) RemoveIsolatedNetwork(networkName string) (Task, error) {
 	}
 
 	if !isNetworkFound {
-		return Task{}, fmt.Errorf("network to remove: %s, isn't found", networkName)
+		return Task{}, fmt.Errorf("network to remove %s, wasn't found", networkName)
 	}
 
 	return updateNetworkConfigurations(vapp, networkConfigurations)
