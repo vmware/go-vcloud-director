@@ -30,61 +30,74 @@ To show the SDK in action run the example shown below.
 ```
 mkdir $GOPATH/src/example
 cd $GOPATH/src/example
-vi example.go    <-- Copy contents into file and fix config information.
-go build
-./example
+./example user_name "password" org_name vcd_IP vdc_name 
 ```
 Here's the code:
 ```go
 package main
 
 import (
-        "fmt"
-        "net/url"
-        "os"
+	"fmt"
+	"net/url"
+	"os"
 
-        "github.com/vmware/go-vcloud-director/govcd"
+	"github.com/vmware/go-vcloud-director/govcd"
 )
 
 type Config struct {
-        User     string
-        Password string
-        Org      string
-        Href     string
-        VDC      string
-        Insecure bool
+	User     string
+	Password string
+	Org      string
+	Href     string
+	VDC      string
+	Insecure bool
 }
 
 func (c *Config) Client() (*govcd.VCDClient, error) {
-        u, err := url.ParseRequestURI(c.Href)
-        if err != nil {
-                return nil, fmt.Errorf("Unable to pass url: %s", err)
-        }
+	u, err := url.ParseRequestURI(c.Href)
+	if err != nil {
+		return nil, fmt.Errorf("unable to pass url: %s", err)
+	}
 
-        vcdclient := govcd.NewVCDClient(*u, c.Insecure)
-        err = vcdclient.Authenticate(c.User, c.Password, c.Org)
-        if err != nil {
-                return nil, fmt.Errorf("Unable to authenticate: %s", err)
-        }
-        return vcdclient, nil
+	vcdclient := govcd.NewVCDClient(*u, c.Insecure)
+	err = vcdclient.Authenticate(c.User, c.Password, c.Org)
+	if err != nil {
+		return nil, fmt.Errorf("unable to authenticate: %s", err)
+	}
+	return vcdclient, nil
 }
 
 func main() {
-  config := Config{
-                User:     "myuser",
-                Password: "password",
-                Org:      "MyOrg",
-                Href:     "https://vcd-host/api",
-                VDC:      "My-VDC",
-        }
+	if len(os.Args) < 6 {
+		fmt.Println("Syntax: example user password org VCD_IP VDC ")
+		os.Exit(1)
+	}
+	config := Config{
+		User:     os.Args[1],
+		Password: os.Args[2],
+		Org:      os.Args[3],
+		Href:     fmt.Sprintf("https://%s/api", os.Args[4]),
+		VDC:      os.Args[5],
+		Insecure: true,
+	}
 
-  client, err := config.Client() // We now have a client
-  if err != nil {
-      fmt.Println(err)
-      os.Exit(1)
-  }
-  org := govcd.GetOrgByName(vcdclient, config.Org)
-  vdc := vcdclient.Org.GetVdcByName(config.Vdc)
-  fmt.Printf("Org URL: %s\n", org.Org.HREF)
+	client, err := config.Client() // We now have a client
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	org, err := govcd.GetOrgByName(client, config.Org)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	vdc, err := org.GetVdcByName(config.VDC)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	fmt.Printf("Org URL: %s\n", org.Org.HREF)
+	fmt.Printf("VDC URL: %s\n", vdc.Vdc.HREF)
 }
+
 ```
