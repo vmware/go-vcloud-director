@@ -104,7 +104,9 @@ func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName s
 		return Task{}, fmt.Errorf("vApp Template can not be empty")
 	}
 
-	if vappTemplate.VAppTemplate.Status != 8 { // status Ready
+	// Status 8 means The object is resolved and powered off.
+	// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/94b8bd8d-74ff-4fe3-b7a4-41ae31516ed7/1b42f3b5-8b31-4279-8b3f-547f6c7c5aa8/doc/GUID-843BE3AD-5EF6-4442-B864-BCAE44A51867.html
+	if vappTemplate.VAppTemplate.Status != 8 {
 		return Task{}, fmt.Errorf("vApp Template shape is not ok")
 	}
 
