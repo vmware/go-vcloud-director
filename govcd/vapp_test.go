@@ -329,15 +329,24 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedNetwork(check *C) {
 	const dnsSuffix = "biz.biz"
 	const startAddress = "192.168.0.10"
 	const endAddress = "192.168.0.20"
+	const dhcpStartAddress = "192.168.0.30"
+	const dhcpEndAddress = "192.168.0.40"
+	const maxLeaseTime = 3500
+	const defaultLeaseTime = 2400
 	task, err := vcd.vapp.AddIsolatedNetwork(&VappNetworkSettings{
-		Name:             networkName,
-		Gateway:          gateway,
-		NetMask:          netmask,
-		DNS1:             dns1,
-		DNS2:             dns2,
-		DNSSuffix:        dnsSuffix,
-		IPRange:          []*types.IPRange{{StartAddress: startAddress, EndAddress: endAddress}},
-		GuestVLANAllowed: true})
+		Name:                 networkName,
+		Gateway:              gateway,
+		NetMask:              netmask,
+		DNS1:                 dns1,
+		DNS2:                 dns2,
+		DNSSuffix:            dnsSuffix,
+		StaticIPRanges:       []*types.IPRange{{StartAddress: startAddress, EndAddress: endAddress}},
+		GuestVLANAllowed:     true,
+		DHCPIsEnabled:        true,
+		DHCPMaxLeaseTime:     maxLeaseTime,
+		DHCPDefaultLeaseTime: defaultLeaseTime,
+		DHCPIPRange:          &types.IPRange{StartAddress: dhcpStartAddress, EndAddress: dhcpEndAddress},
+	})
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
@@ -362,6 +371,12 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedNetwork(check *C) {
 	check.Assert(networkFound.Configuration.IPScopes.IPScope.DNSSuffix, Equals, dnsSuffix)
 	check.Assert(networkFound.Configuration.IPScopes.IPScope.IPRanges.IPRange[0].StartAddress, Equals, startAddress)
 	check.Assert(networkFound.Configuration.IPScopes.IPScope.IPRanges.IPRange[0].EndAddress, Equals, endAddress)
+
+	check.Assert(networkFound.Configuration.Features.DhcpService.IsEnabled, Equals, true)
+	check.Assert(networkFound.Configuration.Features.DhcpService.MaxLeaseTime, Equals, maxLeaseTime)
+	check.Assert(networkFound.Configuration.Features.DhcpService.DefaultLeaseTime, Equals, defaultLeaseTime)
+	check.Assert(networkFound.Configuration.Features.DhcpService.IPRange.StartAddress, Equals, dhcpStartAddress)
+	check.Assert(networkFound.Configuration.Features.DhcpService.IPRange.EndAddress, Equals, dhcpEndAddress)
 
 	task, err = vcd.vapp.RemoveIsolatedNetwork(networkName)
 	check.Assert(err, IsNil)

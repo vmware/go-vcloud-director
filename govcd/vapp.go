@@ -7,6 +7,7 @@ package govcd
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -34,14 +35,18 @@ func (vdcCli *VCDClient) NewVApp(client *Client) VApp {
 
 // struct type used to pass information for vApp network creation
 type VappNetworkSettings struct {
-	Name             string
-	Gateway          string
-	NetMask          string
-	DNS1             string
-	DNS2             string
-	DNSSuffix        string
-	GuestVLANAllowed bool
-	IPRange          []*types.IPRange
+	Name                 string
+	Gateway              string
+	NetMask              string
+	DNS1                 string
+	DNS2                 string
+	DNSSuffix            string
+	GuestVLANAllowed     bool
+	StaticIPRanges       []*types.IPRange
+	DHCPIsEnabled        bool
+	DHCPMaxLeaseTime     int
+	DHCPDefaultLeaseTime int
+	DHCPIPRange          *types.IPRange
 }
 
 // Returns the vdc where the vapp resides in.
@@ -161,13 +166,13 @@ func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName s
 				IPAddressAllocationMode: "POOL",
 			},
 		)
+		vcomp.SourcedItem.NetworkAssignment = append(vcomp.SourcedItem.NetworkAssignment,
+			&types.NetworkAssignment{
+				InnerNetwork:     vappNetworkName,
+				ContainerNetwork: vappNetworkName,
+			},
+		)
 	}
-	vcomp.SourcedItem.NetworkAssignment = append(vcomp.SourcedItem.NetworkAssignment,
-		&types.NetworkAssignment{
-			InnerNetwork:     vappNetworkName,
-			ContainerNetwork: vappNetworkName,
-		},
-	)
 
 	output, _ := xml.MarshalIndent(vcomp, "  ", "    ")
 
@@ -1088,6 +1093,11 @@ func (vapp *VApp) AddRAWNetworkConfig(orgvdcnetworks []*types.OrgVDCNetwork) (Ta
 // Function allows to create isolated network for vApp. This is equivalent to vCD UI function - vApp network creation.
 func (vapp *VApp) AddIsolatedNetwork(newIsolatedNetworkSettings *VappNetworkSettings) (Task, error) {
 
+	err := validateNetworkConfigSettings(newIsolatedNetworkSettings)
+	if err != nil {
+		return Task{}, err
+	}
+
 	networkConfigurations := vapp.VApp.NetworkConfigSection.NetworkConfig
 	networkConfigurations = append(networkConfigurations,
 		types.VAppNetworkConfiguration{
@@ -1095,10 +1105,13 @@ func (vapp *VApp) AddIsolatedNetwork(newIsolatedNetworkSettings *VappNetworkSett
 			Configuration: &types.NetworkConfiguration{
 				FenceMode:        "isolated",
 				GuestVlanAllowed: newIsolatedNetworkSettings.GuestVLANAllowed,
+				Features: &types.NetworkFeatures{DhcpService: &types.DhcpService{IsEnabled: newIsolatedNetworkSettings.DHCPIsEnabled,
+					DefaultLeaseTime: newIsolatedNetworkSettings.DHCPDefaultLeaseTime,
+					MaxLeaseTime:     newIsolatedNetworkSettings.DHCPMaxLeaseTime, IPRange: newIsolatedNetworkSettings.DHCPIPRange}},
 				IPScopes: &types.IPScopes{IPScope: types.IPScope{IsInherited: false, Gateway: newIsolatedNetworkSettings.Gateway,
 					Netmask: newIsolatedNetworkSettings.NetMask, DNS1: newIsolatedNetworkSettings.DNS1,
 					DNS2: newIsolatedNetworkSettings.DNS2, DNSSuffix: newIsolatedNetworkSettings.DNSSuffix, IsEnabled: true,
-					IPRanges: &types.IPRanges{IPRange: newIsolatedNetworkSettings.IPRange}}},
+					IPRanges: &types.IPRanges{IPRange: newIsolatedNetworkSettings.StaticIPRanges}}},
 			},
 			IsDeployed: false,
 		})
@@ -1107,15 +1120,52 @@ func (vapp *VApp) AddIsolatedNetwork(newIsolatedNetworkSettings *VappNetworkSett
 
 }
 
+func validateNetworkConfigSettings(networkSettings *VappNetworkSettings) error {
+	if networkSettings.Name == "" {
+		return errors.New("network name is missing")
+	}
+
+	if networkSettings.Gateway == "" {
+		return errors.New("network gateway IP is missing")
+	}
+
+	if networkSettings.NetMask == "" {
+		return errors.New("network mask config is missing")
+	}
+
+	if networkSettings.NetMask == "" {
+		return errors.New("network mask config is missing")
+	}
+
+	if networkSettings.DHCPIsEnabled && networkSettings.DHCPIPRange == nil {
+		return errors.New("network DHCP ip range config is missing")
+	}
+
+	if networkSettings.DHCPIPRange.StartAddress == "" {
+		return errors.New("network DHCP ip range start address is missing")
+	}
+
+	return nil
+}
+
 // Removes vApp isolated network
 func (vapp *VApp) RemoveIsolatedNetwork(networkName string) (Task, error) {
 
-	networkConfigurations := vapp.VApp.NetworkConfigSection.NetworkConfig
+	if networkName == "" {
+		return Task{}, fmt.Errorf("network name can't be empty")
+	}
 
+	networkConfigurations := vapp.VApp.NetworkConfigSection.NetworkConfig
+	isNetworkFound := false
 	for index, networkConfig := range networkConfigurations {
 		if networkConfig.NetworkName == networkName {
+			isNetworkFound = true
 			networkConfigurations = append(networkConfigurations[:index], networkConfigurations[index+1:]...)
 		}
+	}
+
+	if !isNetworkFound {
+		return Task{}, fmt.Errorf("network to remove %s, wasn't found", networkName)
 	}
 
 	return updateNetworkConfigurations(vapp, networkConfigurations)
