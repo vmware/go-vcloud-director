@@ -156,13 +156,13 @@ func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName s
 				IPAddressAllocationMode: "POOL",
 			},
 		)
+		vcomp.SourcedItem.NetworkAssignment = append(vcomp.SourcedItem.NetworkAssignment,
+			&types.NetworkAssignment{
+				InnerNetwork:     vappNetworkName,
+				ContainerNetwork: vappNetworkName,
+			},
+		)
 	}
-	vcomp.SourcedItem.NetworkAssignment = append(vcomp.SourcedItem.NetworkAssignment,
-		&types.NetworkAssignment{
-			InnerNetwork:     vappNetworkName,
-			ContainerNetwork: vappNetworkName,
-		},
-	)
 
 	output, _ := xml.MarshalIndent(vcomp, "  ", "    ")
 
