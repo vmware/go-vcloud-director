@@ -28,63 +28,8 @@ This command only builds a library. There is no executable.
 
 To show the SDK in action run the example shown below.  
 ```
-mkdir $GOPATH/src/example
-cd $GOPATH/src/example
-vi example.go    <-- Copy contents into file and fix config information.
-go build
-./example
+cd $GOPATH/src/github.com/vmware/go-vcloud-director/govcd
+vi example/example.go    <-- Edit to fix config information.
+go run example/example.go
 ```
-Here's the code:
-```go
-package main
-
-import (
-        "fmt"
-        "net/url"
-        "os"
-
-        "github.com/vmware/go-vcloud-director/govcd"
-)
-
-type Config struct {
-        User     string
-        Password string
-        Org      string
-        Href     string
-        VDC      string
-        Insecure bool
-}
-
-func (c *Config) Client() (*govcd.VCDClient, error) {
-        u, err := url.ParseRequestURI(c.Href)
-        if err != nil {
-                return nil, fmt.Errorf("Unable to pass url: %s", err)
-        }
-
-        vcdclient := govcd.NewVCDClient(*u, c.Insecure)
-        err = vcdclient.Authenticate(c.User, c.Password, c.Org)
-        if err != nil {
-                return nil, fmt.Errorf("Unable to authenticate: %s", err)
-        }
-        return vcdclient, nil
-}
-
-func main() {
-  config := Config{
-                User:     "myuser",
-                Password: "password",
-                Org:      "MyOrg",
-                Href:     "https://vcd-host/api",
-                VDC:      "My-VDC",
-        }
-
-  client, err := config.Client() // We now have a client
-  if err != nil {
-      fmt.Println(err)
-      os.Exit(1)
-  }
-  org := govcd.GetOrgByName(vcdclient, config.Org)
-  vdc := vcdclient.Org.GetVdcByName(config.Vdc)
-  fmt.Printf("Org URL: %s\n", org.Org.HREF)
-}
-```
+Here's the example code: [example/example.go](example/example.go)
