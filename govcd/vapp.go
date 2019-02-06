@@ -100,6 +100,16 @@ func (vapp *VApp) Refresh() error {
 // acceptAllEulas - setting allows to automatically accept or not Eulas.
 func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName string, vappTemplate VAppTemplate, name string, acceptAllEulas bool) (Task, error) {
 
+	if vappTemplate == (VAppTemplate{}) || vappTemplate.VAppTemplate == nil {
+		return Task{}, fmt.Errorf("vApp Template can not be empty")
+	}
+
+	// Status 8 means The object is resolved and powered off.
+	// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/94b8bd8d-74ff-4fe3-b7a4-41ae31516ed7/1b42f3b5-8b31-4279-8b3f-547f6c7c5aa8/doc/GUID-843BE3AD-5EF6-4442-B864-BCAE44A51867.html
+	if vappTemplate.VAppTemplate.Status != 8 {
+		return Task{}, fmt.Errorf("vApp Template shape is not ok")
+	}
+
 	vcomp := &types.ReComposeVAppParams{
 		Ovf:         "http://schemas.dmtf.org/ovf/envelope/1",
 		Xsi:         "http://www.w3.org/2001/XMLSchema-instance",
