@@ -342,6 +342,7 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedNetwork(check *C) {
 		DNSSuffix:            dnsSuffix,
 		StaticIPRanges:       []*types.IPRange{{StartAddress: startAddress, EndAddress: endAddress}},
 		GuestVLANAllowed:     true,
+		AddDHCPService:       true,
 		DHCPIsEnabled:        true,
 		DHCPMaxLeaseTime:     maxLeaseTime,
 		DHCPDefaultLeaseTime: defaultLeaseTime,

@@ -43,6 +43,7 @@ type VappNetworkSettings struct {
 	DNSSuffix            string
 	GuestVLANAllowed     bool
 	StaticIPRanges       []*types.IPRange
+	AddDHCPService       bool
 	DHCPIsEnabled        bool
 	DHCPMaxLeaseTime     int
 	DHCPDefaultLeaseTime int
@@ -1098,6 +1099,19 @@ func (vapp *VApp) AddIsolatedNetwork(newIsolatedNetworkSettings *VappNetworkSett
 		return Task{}, err
 	}
 
+	// for case when range is one ip address
+	if newIsolatedNetworkSettings.DHCPIPRange != nil && newIsolatedNetworkSettings.DHCPIPRange.EndAddress == "" {
+		newIsolatedNetworkSettings.DHCPIPRange.EndAddress = newIsolatedNetworkSettings.DHCPIPRange.StartAddress
+	}
+
+	// explicitly check if to add data, to not send any values
+	var networkFeatures *types.NetworkFeatures
+	if newIsolatedNetworkSettings.AddDHCPService {
+		networkFeatures = &types.NetworkFeatures{DhcpService: &types.DhcpService{IsEnabled: newIsolatedNetworkSettings.DHCPIsEnabled,
+			DefaultLeaseTime: newIsolatedNetworkSettings.DHCPDefaultLeaseTime,
+			MaxLeaseTime:     newIsolatedNetworkSettings.DHCPMaxLeaseTime, IPRange: newIsolatedNetworkSettings.DHCPIPRange}}
+	}
+
 	networkConfigurations := vapp.VApp.NetworkConfigSection.NetworkConfig
 	networkConfigurations = append(networkConfigurations,
 		types.VAppNetworkConfiguration{
@@ -1105,9 +1119,7 @@ func (vapp *VApp) AddIsolatedNetwork(newIsolatedNetworkSettings *VappNetworkSett
 			Configuration: &types.NetworkConfiguration{
 				FenceMode:        "isolated",
 				GuestVlanAllowed: newIsolatedNetworkSettings.GuestVLANAllowed,
-				Features: &types.NetworkFeatures{DhcpService: &types.DhcpService{IsEnabled: newIsolatedNetworkSettings.DHCPIsEnabled,
-					DefaultLeaseTime: newIsolatedNetworkSettings.DHCPDefaultLeaseTime,
-					MaxLeaseTime:     newIsolatedNetworkSettings.DHCPMaxLeaseTime, IPRange: newIsolatedNetworkSettings.DHCPIPRange}},
+				Features:         networkFeatures,
 				IPScopes: &types.IPScopes{IPScope: types.IPScope{IsInherited: false, Gateway: newIsolatedNetworkSettings.Gateway,
 					Netmask: newIsolatedNetworkSettings.NetMask, DNS1: newIsolatedNetworkSettings.DNS1,
 					DNS2: newIsolatedNetworkSettings.DNS2, DNSSuffix: newIsolatedNetworkSettings.DNSSuffix, IsEnabled: true,
@@ -1137,11 +1149,11 @@ func validateNetworkConfigSettings(networkSettings *VappNetworkSettings) error {
 		return errors.New("network mask config is missing")
 	}
 
-	if networkSettings.DHCPIsEnabled && networkSettings.DHCPIPRange == nil {
+	if networkSettings.AddDHCPService && networkSettings.DHCPIPRange == nil {
 		return errors.New("network DHCP ip range config is missing")
 	}
 
-	if networkSettings.DHCPIPRange.StartAddress == "" {
+	if networkSettings.AddDHCPService && networkSettings.DHCPIPRange.StartAddress == "" {
 		return errors.New("network DHCP ip range start address is missing")
 	}
 
