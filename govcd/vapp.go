@@ -1072,7 +1072,11 @@ func (vapp *VApp) GetNetworkConfig() (*types.NetworkConfigSection, error) {
 // Function adds existing VDC network to vApp
 func (vapp *VApp) AddRAWNetworkConfig(orgvdcnetworks []*types.OrgVDCNetwork) (Task, error) {
 
-	networkConfigurations := []types.VAppNetworkConfiguration{}
+	vAppNetworkConfig, err := vapp.GetNetworkConfig()
+	if err != nil {
+		return Task{}, fmt.Errorf("error getting vApp networks: %#v", err)
+	}
+	networkConfigurations := vAppNetworkConfig.NetworkConfig
 
 	for _, network := range orgvdcnetworks {
 		networkConfigurations = append(networkConfigurations,
