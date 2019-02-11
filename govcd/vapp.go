@@ -1103,7 +1103,7 @@ func (vapp *VApp) AddIsolatedNetwork(newIsolatedNetworkSettings *VappNetworkSett
 		return Task{}, err
 	}
 
-	// for case when range is one ip address
+	// for case when range is one ip address. E.g. 192.168.1.1-192.168.1.1
 	if newIsolatedNetworkSettings.DHCPIPRange != nil && newIsolatedNetworkSettings.DHCPIPRange.EndAddress == "" {
 		newIsolatedNetworkSettings.DHCPIPRange.EndAddress = newIsolatedNetworkSettings.DHCPIPRange.StartAddress
 	}
