@@ -264,6 +264,7 @@ type NetworkConnection struct {
 	IsConnected             bool   `xml:"IsConnected"`                       // If the virtual machine is undeployed, this value specifies whether the NIC should be connected upon deployment. If the virtual machine is deployed, this value reports the current status of this NIC's connection, and can be updated to change that connection status.
 	MACAddress              string `xml:"MACAddress,omitempty"`              // MAC address associated with the NIC.
 	IPAddressAllocationMode string `xml:"IpAddressAllocationMode"`           // IP address allocation mode for this connection. One of: POOL (A static IP address is allocated automatically from a pool of addresses.) DHCP (The IP address is obtained from a DHCP service.) MANUAL (The IP address is assigned manually in the IpAddress element.) NONE (No IP addressing mode specified.)
+	NetworkAdapterType      string `xml:"NetworkAdapterType,omitempty"`
 }
 
 // NetworkConnectionSection the container for the network connections of this virtual machine.
