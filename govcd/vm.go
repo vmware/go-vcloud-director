@@ -243,9 +243,10 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}, ip string) 
 
 	networkSection, err := vm.GetNetworkConnectionSection()
 
+	// changes network config when only matches network name with provided one
 	for _, network := range networks {
 		for index, networkConnection := range networkSection.NetworkConnection {
-			if networkConnection.Network == network["orgnetwork"] {
+			if networkConnection.Network == network["orgnetwork"] { // network name are equal
 				// Determine what type of address is requested for the vApp
 				ipAllocationMode := "NONE"
 				ipAddress := "Any"
