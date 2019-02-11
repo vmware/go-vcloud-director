@@ -334,18 +334,15 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedNetwork(check *C) {
 	const maxLeaseTime = 3500
 	const defaultLeaseTime = 2400
 	task, err := vcd.vapp.AddIsolatedNetwork(&VappNetworkSettings{
-		Name:                 networkName,
-		Gateway:              gateway,
-		NetMask:              netmask,
-		DNS1:                 dns1,
-		DNS2:                 dns2,
-		DNSSuffix:            dnsSuffix,
-		StaticIPRanges:       []*types.IPRange{{StartAddress: startAddress, EndAddress: endAddress}},
-		GuestVLANAllowed:     true,
-		DHCPIsEnabled:        true,
-		DHCPMaxLeaseTime:     maxLeaseTime,
-		DHCPDefaultLeaseTime: defaultLeaseTime,
-		DHCPIPRange:          &types.IPRange{StartAddress: dhcpStartAddress, EndAddress: dhcpEndAddress},
+		Name:             networkName,
+		Gateway:          gateway,
+		NetMask:          netmask,
+		DNS1:             dns1,
+		DNS2:             dns2,
+		DNSSuffix:        dnsSuffix,
+		StaticIPRanges:   []*types.IPRange{{StartAddress: startAddress, EndAddress: endAddress}},
+		GuestVLANAllowed: true,
+		DhcpSettings:     &DhcpSettings{IsEnabled: true, MaxLeaseTime: maxLeaseTime, DefaultLeaseTime: defaultLeaseTime, IPRange: &types.IPRange{StartAddress: dhcpStartAddress, EndAddress: dhcpEndAddress}},
 	})
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
