@@ -115,7 +115,7 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 				inspectionFunc(task.Task,
 					howManyTimesRefreshed,
 					elapsed,
-					howManyTimesRefreshed == 1,                                   // first
+					howManyTimesRefreshed == 1, // first
 					task.Task.Status == "error" || task.Task.Status == "success", // last
 				)
 			}
@@ -130,7 +130,7 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 				howManyTimesRefreshed,
 				elapsed,
 				howManyTimesRefreshed == 1, // first
-				false, // last
+				false,                      // last
 			)
 		}
 
