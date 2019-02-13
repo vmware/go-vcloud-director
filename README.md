@@ -19,7 +19,7 @@ Create a standard Golang development tree with bin, pkg, and src directories.
 Set GOPATH to the root directory. Then:
 ```
 go get github.com/vmware/go-vcloud-director
-cd $GOPATH/src/github.com/vmware/go-vcloud-director/govcd
+cd $GOPATH/src/github.com/Didainius/go-vcloud-director/v2/govcd
 go build
 ```
 This command only builds a library. There is no executable.
@@ -41,7 +41,7 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/vmware/go-vcloud-director/govcd"
+	"github.com/Didainius/go-vcloud-director/v2/govcd"
 )
 
 type Config struct {

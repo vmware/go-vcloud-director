@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/vmware/go-vcloud-director/types/v56"
+	"github.com/Didainius/go-vcloud-director/v2/types/v56"
 )
 
 type VAppTemplate struct {
