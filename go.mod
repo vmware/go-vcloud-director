@@ -1,4 +1,4 @@
-module github.com/vmware/go-vcloud-director
+module github.com/Didainius/go-vcloud-director/v2
 
 require (
 	github.com/kr/pretty v0.1.0
