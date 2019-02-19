@@ -88,13 +88,15 @@ type TestConfig struct {
 			SP1 string `yaml:"storageProfile1"`
 			SP2 string `yaml:"storageProfile2,omitempty"`
 		} `yaml:"storageProfile"`
-		ExternalIp      string `yaml:"externalIp,omitempty"`
-		ExternalNetmask string `yaml:"externalNetmask,omitempty"`
-		InternalIp      string `yaml:"internalIp,omitempty"`
-		InternalNetmask string `yaml:"internalNetmask,omitempty"`
-		EdgeGateway     string `yaml:"edgeGateway,omitempty"`
-		ExternalNetwork string `yaml:"externalNetwork,omitempty"`
-		Disk            struct {
+		ExternalIp               string `yaml:"externalIp,omitempty"`
+		ExternalNetmask          string `yaml:"externalNetmask,omitempty"`
+		InternalIp               string `yaml:"internalIp,omitempty"`
+		InternalNetmask          string `yaml:"internalNetmask,omitempty"`
+		EdgeGateway              string `yaml:"edgeGateway,omitempty"`
+		ExternalNetwork          string `yaml:"externalNetwork,omitempty"`
+		ExternalNetworkPortGroup string `yaml:"externalNetworkPortGroup,omitempty"`
+		VimServer                string `yaml:"vimServer,omitempty"`
+		Disk                     struct {
 			Size          int `yaml:"size,omitempty"`
 			SizeForUpdate int `yaml:"sizeForUpdate,omitempty"`
 		}
@@ -437,6 +439,23 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			return
 		}
 		err = RemoveOrgVdcNetworkIfExists(vdc, entity.Name)
+		if err == nil {
+			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		} else {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+		return
+	case "externalNetwork":
+		externalNetworkRef, err := GetExternalNetworkByName(vcd.client, entity.Name)
+		if *externalNetworkRef == (types.ExternalNetworkReference{}) {
+			vcd.infoCleanup(notFoundMsg, "externalNetwork", entity.Name)
+			return
+		}
+		externalNetwork := NewExternalNetwork(&vcd.client.Client)
+		externalNetwork.ExternalNetwork = &types.ExternalNetwork{
+			HREF: externalNetworkRef.HREF,
+		}
+		err = externalNetwork.DeleteWait()
 		if err == nil {
 			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		} else {

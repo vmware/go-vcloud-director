@@ -202,6 +202,7 @@ type IPScopes struct {
 // Description: The configurations applied to a network. This is an abstract base type. The concrete types include those for vApp and Organization wide networks.
 // Since: 0.9
 type NetworkConfiguration struct {
+	Xmlns                          string           `xml:"xmlns,attr,omitempty"`
 	BackwardCompatibilityMode      bool             `xml:"BackwardCompatibilityMode"`
 	IPScopes                       *IPScopes        `xml:"IpScopes,omitempty"`
 	ParentNetwork                  *Reference       `xml:"ParentNetwork,omitempty"`
@@ -2007,6 +2008,7 @@ type QueryResultRecordsType struct {
 	NetworkPoolRecord               []*QueryResultNetworkPoolRecordType               `xml:"NetworkPoolRecord"`               // A record representing a network pool
 	DiskRecord                      []*DiskRecordType                                 `xml:"DiskRecord"`                      // A record representing a independent Disk.
 	AdminDiskRecord                 []*DiskRecordType                                 `xml:"AdminDiskRecord"`                 // A record representing a independent Disk.
+	VirtualCenterRecord             []*QueryResultVirtualCenterRecordType             `xml:"VirtualCenterRecord"`             // A record representing a vSphere server
 }
 
 // QueryResultEdgeGatewayRecordType represents an edge gateway record as query result.
@@ -2154,6 +2156,22 @@ type QueryResultNetworkPoolRecordType struct {
 	NetworkPoolType int    `xml:"networkPoolType,attr,omitempty"`
 }
 
+// A record representing a vSphere server
+type QueryResultVirtualCenterRecordType struct {
+	HREF          string `xml:"href,attr,omitempty"`
+	Name          string `xml:"name,attr,omitempty"`
+	IsBusy        bool   `xml:"isBusy,attr,omitempty"`
+	IsEnabled     bool   `xml:"isEnabled,attr,omitempty"`
+	IsSupported   bool   `xml:"isSupported,attr,omitempty"`
+	ListenerState string `xml:"listenerState,attr,omitempty"`
+	Status        string `xml:"stats,attr,omitempty"`
+	Url           string `xml:"url,attr,omitempty"`
+	UserName      string `xml:"userName,attr,omitempty"`
+	VcVersion     string `xml:"vcVersion,attr,omitempty"`
+	UUID          string `xml:"uuid,attr,omitempty"`
+	VsmIP         string `xml:"vsmIP,attr,omitempty"`
+}
+
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Retrieve a list of extension objects and operations.
 // Since: 1.0
@@ -2169,6 +2187,32 @@ type ExternalNetworkReference struct {
 	HREF string `xml:"href,attr"`
 	Type string `xml:"type,attr,omitempty"`
 	Name string `xml:"name,attr,omitempty"`
+}
+
+type VimObjectRef struct {
+	VimServerRef  *Reference `xml:"VimServerRef"`
+	MoRef         string     `xml:"MoRef"`
+	VimObjectType string     `xml:"VimObjectType"`
+}
+
+type VimObjectRefs struct {
+	VimObjectRef []*VimObjectRef
+}
+
+type ExternalNetwork struct {
+	XMLName          xml.Name              `xml:"VMWExternalNetwork"`
+	Xmlns            string                `xml:"xmlns,attr,omitempty"`
+	HREF             string                `xml:"href,attr,omitempty"`
+	Type             string                `xml:"type,attr,omitempty"`
+	ID               string                `xml:"id,attr,omitempty"`
+	OperationKey     string                `xml:"operationKey,attr,omitempty"`
+	Name             string                `xml:"name,attr"`
+	Configuration    *NetworkConfiguration `xml:"Configuration,omitempty"`
+	Description      string                `xml:"Description,omitempty"`
+	Link             []*Link               `xml:"Link,omitempty"`
+	VimPortGroupRefs *VimObjectRefs        `xml:"VimPortGroupRefs,omitempty"`
+	Tasks            *TasksInProgress      `xml:"Tasks,omitempty"`
+	VCloudExtension  *VCloudExtension      `xml:"VCloudExtension,omitempty"`
 }
 
 // Type: MediaType

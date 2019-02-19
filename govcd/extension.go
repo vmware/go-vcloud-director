@@ -5,6 +5,8 @@
 package govcd
 
 import (
+	"bytes"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"net/url"
@@ -45,6 +47,49 @@ func GetExternalNetworkByName(vcdClient *VCDClient, networkName string) (*types.
 	}
 
 	return &types.ExternalNetworkReference{}, nil
+}
+
+func validateExternalNetwork(externalNetwork *types.ExternalNetwork) error {
+	if externalNetwork.Name == "" {
+		return errors.New("VdcConfiguration missing required field: Name")
+	}
+	if externalNetwork.Xmlns == "" {
+		return errors.New("VdcConfiguration missing required field: Xmlns")
+	}
+	return nil
+}
+
+func CreateExternalNetwork(vcdClient *VCDClient, externalNetwork *types.ExternalNetwork) (Task, error) {
+	err := validateExternalNetwork(externalNetwork)
+	if err != nil {
+		return Task{}, err
+	}
+
+	output, err := xml.MarshalIndent(externalNetwork, "  ", "    ")
+	if err != nil {
+		return Task{}, fmt.Errorf("error marshalling xml: %s", err)
+	}
+	xmlData := bytes.NewBufferString(xml.Header + string(output))
+	util.Logger.Printf("[TRACE] CreateExternalNetwork - xml payload: %s\n", xmlData)
+	externalnetsHREF := vcdClient.Client.VCDHREF
+	externalnetsHREF.Path += "/admin/extension/externalnets"
+	req := vcdClient.Client.NewRequest(map[string]string{}, "POST", externalnetsHREF, xmlData)
+	req.Header.Add("Content-Type", "application/vnd.vmware.admin.vmwexternalnet+xml")
+	resp, err := checkResp(vcdClient.Client.Http.Do(req))
+	if err != nil {
+		util.Logger.Printf("[TRACE] error instantiating a new ExternalNetwork: %s", err)
+		return Task{}, fmt.Errorf("error instantiating a new ExternalNetwork: %s", err)
+	}
+
+	externalNetwork = new(types.ExternalNetwork)
+	if err = decodeBody(resp, externalNetwork); err != nil {
+		util.Logger.Printf("[TRACE] error decoding admin extension externalnets response: %s", err)
+		return Task{}, fmt.Errorf("error decoding admin extension externalnets response: %s", err)
+	}
+
+	task := NewTask(&vcdClient.Client)
+	task.Task = externalNetwork.Tasks.Task[0]
+	return *task, nil
 }
 
 func getExternalNetworkHref(vcdClient *VCDClient) (string, error) {
