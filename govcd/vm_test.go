@@ -562,6 +562,56 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
 }
 
+func (vcd *TestVCD) Test_AddMetadataOnVm(check *C) {
+	// Find VApp
+	if vcd.vapp.VApp == nil {
+		check.Skip("skipping test because no vApp is found")
+	}
+
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	vm := NewVM(&vcd.client.Client)
+	vm.VM = &vmType
+
+	// Add metadata
+	task, err := vm.AddMetadata("key", "value")
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+}
+
+func (vcd *TestVCD) Test_DeleteMetadataOnVm(check *C) {
+	// Find VApp
+	if vcd.vapp.VApp == nil {
+		check.Skip("skipping test because no vApp is found")
+	}
+
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	vm := NewVM(&vcd.client.Client)
+	vm.VM = &vmType
+
+	// Remove metadata
+	task, err := vm.DeleteMetadata("key")
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+}
+
 // check resource subtype for specific value which means media is injected
 func isMediaInjected(items []*types.VirtualHardwareItem) bool {
 	isFound := false

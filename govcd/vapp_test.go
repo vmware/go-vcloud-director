@@ -171,13 +171,25 @@ func (vcd *TestVCD) Test_SetOvf(check *C) {
 
 }
 
-// TODO: Add a check checking if the metadata was added to the vapp
-func (vcd *TestVCD) Test_AddMetadata(check *C) {
+func (vcd *TestVCD) Test_AddMetadataOnVapp(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
-	// Add Metadata
+	// Add metadata
 	task, err := vcd.vapp.AddMetadata("key", "value")
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+}
+
+func (vcd *TestVCD) Test_DeleteMetadataOnVapp(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+	// Remove metadata
+	task, err := vcd.vapp.DeleteMetadata("key")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)

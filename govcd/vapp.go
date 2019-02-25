@@ -805,24 +805,22 @@ func (vapp *VApp) ChangeVMName(name string) (Task, error) {
 
 }
 
+// Deletes metadata (type MetadataStringValue) from the vApp
+// TODO: Support all MetadataTypedValue types with this function
 func (vapp *VApp) DeleteMetadata(key string) (Task, error) {
 	err := vapp.Refresh()
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %v", err)
 	}
 
-	if vapp.VApp.Children == nil {
-		return Task{}, fmt.Errorf("vApp doesn't contain any children, aborting customization")
-	}
-
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.Children.VM[0].HREF)
+	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/metadata/" + key
 
 	req := vapp.client.NewRequest(map[string]string{}, "DELETE", *apiEndpoint, nil)
 
 	resp, err := checkResp(vapp.client.Http.Do(req))
 	if err != nil {
-		return Task{}, fmt.Errorf("error deleting Metadata: %s", err)
+		return Task{}, fmt.Errorf("error deleting metadata: %s", err)
 	}
 
 	task := NewTask(vapp.client)
@@ -835,14 +833,12 @@ func (vapp *VApp) DeleteMetadata(key string) (Task, error) {
 	return *task, nil
 }
 
+// Adds metadata (type MetadataStringValue) to the vApp
+// TODO: Support all MetadataTypedValue types with this function
 func (vapp *VApp) AddMetadata(key, value string) (Task, error) {
 	err := vapp.Refresh()
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %v", err)
-	}
-
-	if vapp.VApp.Children == nil {
-		return Task{}, fmt.Errorf("vApp doesn't contain any children, aborting customization")
 	}
 
 	newmetadata := &types.MetadataValue{
@@ -863,7 +859,7 @@ func (vapp *VApp) AddMetadata(key, value string) (Task, error) {
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.Children.VM[0].HREF)
+	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/metadata/" + key
 
 	req := vapp.client.NewRequest(map[string]string{}, "PUT", *apiEndpoint, buffer)
@@ -872,7 +868,7 @@ func (vapp *VApp) AddMetadata(key, value string) (Task, error) {
 
 	resp, err := checkResp(vapp.client.Http.Do(req))
 	if err != nil {
-		return Task{}, fmt.Errorf("error customizing VM Network: %s", err)
+		return Task{}, fmt.Errorf("error customizing vApp metadata: %s", err)
 	}
 
 	task := NewTask(vapp.client)
