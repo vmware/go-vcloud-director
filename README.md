@@ -15,23 +15,33 @@ details on joining the community.
 
 ### Install and Build ###
 
-Create a standard Golang development tree with bin, pkg, and src directories. 
-Set GOPATH to the root directory. Then:
+This project started using Go [modules](https://github.com/golang/go/wiki/Modules)
+starting with version 2.1 and `vendor` directory is no longer bundled.
+
+As per the [modules documentation](https://github.com/golang/go/wiki/Modules)
+you no longer need to use `GOPATH`. You can clone the branch in any directory
+you like and go will fetch dependencies specified in the `go.mod` file:
 ```
-go get github.com/vmware/go-vcloud-director
-cd $GOPATH/src/github.com/vmware/go-vcloud-director/govcd
+cd ~/Documents/mycode
+git clone https://github.com/vmware/go-vcloud-director.git
+cd go-vcloud-director/govcd
 go build
 ```
-This command only builds a library. There is no executable.
 
-### Example ###
+**Note** Do not forget to set `GO111MODULE=on` if you are in your GOPATH.
+[Read more about this.](https://github.com/golang/go/wiki/Modules#how-to-install-and-activate-module-support)
 
-To show the SDK in action run the example shown below.  
+#### Example code ####
+
+To show the SDK in action run the example:
 ```
-mkdir $GOPATH/src/example
-cd $GOPATH/src/example
+mkdir ~/govcd_example
+go mod init govcd_example
+go get github.com/vmware/go-vcloud-director/v2@master
+go build -o example
 ./example user_name "password" org_name vcd_IP vdc_name 
 ```
+
 Here's the code:
 ```go
 package main
@@ -41,7 +51,7 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/vmware/go-vcloud-director/govcd"
+	"github.com/vmware/go-vcloud-director/v2/govcd"
 )
 
 type Config struct {
