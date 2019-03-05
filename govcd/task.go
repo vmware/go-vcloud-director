@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/vmware/go-vcloud-director/types/v56"
-	"github.com/vmware/go-vcloud-director/util"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 type Task struct {

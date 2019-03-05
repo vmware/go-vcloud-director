@@ -15,8 +15,8 @@ import (
 	"net/url"
 	"reflect"
 
-	"github.com/vmware/go-vcloud-director/types/v56"
-	"github.com/vmware/go-vcloud-director/util"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 // Client provides a client to vCloud Director, values can be populated automatically using the Authenticate method.
