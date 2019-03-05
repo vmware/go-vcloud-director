@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
@@ -583,10 +584,10 @@ func (vm *VM) HandleInsertMedia(org *Org, catalogName, mediaName string) (Task, 
 }
 
 // Helper function which finds media and calls EjectMedia
-func (vm *VM) HandleEjectMedia(org *Org, catalogName, mediaName string) (Task, error) {
+func (vm *VM) HandleEjectMedia(org *Org, catalogName, mediaName string) (EjectTask, error) {
 	media, err := FindMediaAsCatalogItem(org, catalogName, mediaName)
 	if err != nil || media == (CatalogItem{}) {
-		return Task{}, err
+		return EjectTask{}, err
 	}
 
 	task, err := vm.EjectMedia(&types.MediaInsertOrEjectParams{
@@ -614,24 +615,20 @@ func (vm *VM) InsertMedia(mediaParams *types.MediaInsertOrEjectParams) (Task, er
 // Eject media from VM
 // Call insertOrEjectMedia with media and types.RelMediaEjectMedia to eject media from VM.
 // If media isn't inserted then task still will be successful.
-func (vm *VM) EjectMedia(mediaParams *types.MediaInsertOrEjectParams) (Task, error) {
+func (vm *VM) EjectMedia(mediaParams *types.MediaInsertOrEjectParams) (EjectTask, error) {
 	util.Logger.Printf("[TRACE] Detach disk, HREF: %s\n", mediaParams.Media.HREF)
 
 	err := validateMediaParams(mediaParams)
 	if err != nil {
-		return Task{}, err
+		return EjectTask{}, err
 	}
 
-	vmStatus, err := vm.GetStatus()
+	task, err := vm.insertOrEjectMedia(mediaParams, types.RelMediaEjectMedia)
 	if err != nil {
-		return Task{}, err
+		return EjectTask{}, err
 	}
 
-	if vmStatus != types.VAppStatuses[8] {
-		return Task{}, fmt.Errorf("to eject media, vm has to be in power off state")
-	}
-
-	return vm.insertOrEjectMedia(mediaParams, types.RelMediaEjectMedia)
+	return *NewEjectTask(&task, vm), nil
 }
 
 // validates that media and media.href isn't empty
@@ -692,4 +689,72 @@ func (vm *VM) insertOrEjectMedia(mediaParams *types.MediaInsertOrEjectParams, li
 	}
 
 	return *task, nil
+}
+
+// Use the get existing VM questions for operations which need additional response
+// Reference:
+// https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/GET-VmPendingQuestion.html
+func (vm *VM) GetQuestions() (types.VmPendingQuestion, error) {
+
+	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint.Path += "/question"
+
+	req := vm.client.NewRequest(map[string]string{}, "GET", *apiEndpoint, nil)
+
+	resp, err := checkResp(vm.client.Http.Do(req))
+
+	// vCD security feature - on no questions return 403 access error
+	if err != nil && strings.Contains(err.Error(), "API Error: 403: The access to the resource") {
+		util.Logger.Printf("No question found for VM: %s\n", vm.VM.ID)
+		return types.VmPendingQuestion{}, nil
+	} else if err != nil {
+		return types.VmPendingQuestion{}, fmt.Errorf("error getting question: %s", err)
+	}
+
+	question := &types.VmPendingQuestion{}
+
+	if err = decodeBody(resp, question); err != nil {
+		return types.VmPendingQuestion{}, fmt.Errorf("error decoding question response: %s", err)
+	}
+
+	// The request was successful
+	return *question, nil
+
+}
+
+// Use the provide answer to existing VM questions for operations which need additional response
+// Reference:
+// https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/POST-AnswerVmPendingQuestion.html
+func (vm *VM) AnswerQuestion(questionId string, choiceId int) error {
+
+	//validate input
+
+	answer := &types.VmQuestionAnswer{
+		Xmlns:      "http://www.vmware.com/vcloud/v1.5",
+		QuestionId: questionId,
+		ChoiceId:   choiceId,
+	}
+
+	output, err := xml.MarshalIndent(answer, "  ", "    ")
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+
+	util.Logger.Printf("[TRACE] AnswerQuestion XML DEBUG \n : %s\n\n", string(output))
+
+	buffer := bytes.NewBufferString(xml.Header + string(output))
+
+	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint.Path += "/question/action/answer"
+
+	req := vm.client.NewRequest(map[string]string{}, "POST", *apiEndpoint, buffer)
+
+	_, err = checkResp(vm.client.Http.Do(req))
+	if err != nil {
+		return fmt.Errorf("error asnwering question: %s", err)
+	}
+
+	// The request was successful
+	return nil
+
 }
