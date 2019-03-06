@@ -595,6 +595,10 @@ func (vapp *VApp) GetNetworkConnectionSection() (*types.NetworkConnectionSection
 }
 
 func (vapp *VApp) ChangeCPUcount(size int) (Task, error) {
+	return vapp.ChangeCPUCountWithCore(size, nil)
+}
+
+func (vapp *VApp) ChangeCPUCountWithCore(size int, cores *int) (Task, error) {
 
 	err := vapp.Refresh()
 	if err != nil {
@@ -610,6 +614,7 @@ func (vapp *VApp) ChangeCPUcount(size int) (Task, error) {
 		XmlnsRasd:       "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData",
 		XmlnsVCloud:     "http://www.vmware.com/vcloud/v1.5",
 		XmlnsXsi:        "http://www.w3.org/2001/XMLSchema-instance",
+		XmlnsVmw:        "http://www.vmware.com/schema/ovf",
 		VCloudHREF:      vapp.VApp.Children.VM[0].HREF + "/virtualHardwareSection/cpu",
 		VCloudType:      "application/vnd.vmware.vcloud.rasdItem+xml",
 		AllocationUnits: "hertz * 10^6",
@@ -620,6 +625,7 @@ func (vapp *VApp) ChangeCPUcount(size int) (Task, error) {
 		ResourceType:    3,
 		VirtualQuantity: size,
 		Weight:          0,
+		CoresPerSocket:  cores,
 		Link: &types.Link{
 			HREF: vapp.VApp.Children.VM[0].HREF + "/virtualHardwareSection/cpu",
 			Rel:  "edit",
@@ -631,8 +637,6 @@ func (vapp *VApp) ChangeCPUcount(size int) (Task, error) {
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 	}
-
-	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 

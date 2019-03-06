@@ -161,6 +161,55 @@ func (vcd *TestVCD) Test_ChangeCPUcount(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
+// TODO: Add a check checking if the cpu count and cores did change
+func (vcd *TestVCD) Test_ChangeCPUCountWithCore(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
+	currentCpus := 0
+	currentCores := 0
+
+	// save current values
+	if nil != vcd.vapp.VApp.Children.VM[0] && nil != vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection && nil != vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection.Item {
+		for _, item := range vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection.Item {
+			if item.ResourceType == 3 {
+				currentCpus = item.VirtualQuantity
+				currentCores = item.CoresPerSocket
+				break
+			}
+		}
+	}
+
+	cores := 2
+	cpuCount := 4
+	task, err := vcd.vapp.ChangeCPUCountWithCore(cpuCount, &cores)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(task.Task.Status, Equals, "success")
+
+	err = vcd.vapp.Refresh()
+	check.Assert(err, IsNil)
+	foundItem := false
+	if nil != vcd.vapp.VApp.Children.VM[0] && nil != vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection && nil != vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection.Item {
+		for _, item := range vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection.Item {
+			if item.ResourceType == 3 {
+				check.Assert(item.CoresPerSocket, Equals, cores)
+				check.Assert(item.VirtualQuantity, Equals, cpuCount)
+				foundItem = true
+				break
+			}
+		}
+		check.Assert(foundItem, Equals, true)
+	}
+
+	// return tu previous value
+	task, err = vcd.vapp.ChangeCPUCountWithCore(currentCpus, &currentCores)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(task.Task.Status, Equals, "success")
+}
+
 // TODO: Add a check checking if the vapp uses the new memory size
 func (vcd *TestVCD) Test_ChangeMemorySize(check *C) {
 	if vcd.skipVappTests {
