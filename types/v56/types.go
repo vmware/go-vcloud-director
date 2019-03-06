@@ -2298,7 +2298,7 @@ type VmQuestionAnswerChoiceType struct {
 }
 
 // Parameters for VM question answer
-// Reference: vCloud API 27.0 - VmPendingQuestionType
+// Reference: vCloud API 27.0 - VmQuestionAnswerType
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/types/VmQuestionAnswerType.html
 type VmQuestionAnswer struct {
 	XMLName    xml.Name `xml:"VmQuestionAnswer"`

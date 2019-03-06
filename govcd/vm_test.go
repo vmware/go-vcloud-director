@@ -614,7 +614,7 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 	check.Assert(err, IsNil)
 
 	for i := 0; i < 10; i++ {
-		question, err := vm.GetQuestions()
+		question, err := vm.GetQuestion()
 		check.Assert(err, IsNil)
 
 		if question.QuestionId != "" && strings.Contains(question.Question, "Disconnect anyway and override the lock?") {

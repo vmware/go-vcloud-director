@@ -53,7 +53,7 @@ func (ejectTask *EjectTask) WaitInspectTaskCompletion(isAnswerYes bool, delay ti
 			return nil
 		}
 
-		question, err := ejectTask.vm.GetQuestions()
+		question, err := ejectTask.vm.GetQuestion()
 		if err != nil {
 			return fmt.Errorf("task did not complete succesfully: %s, quering question for VM failed: %s", ejectTask.Task.Task.Description, err.Error())
 		}

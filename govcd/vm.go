@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
@@ -691,10 +690,10 @@ func (vm *VM) insertOrEjectMedia(mediaParams *types.MediaInsertOrEjectParams, li
 	return *task, nil
 }
 
-// Use the get existing VM questions for operations which need additional response
+// Use the get existing VM question for operation which need additional response
 // Reference:
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/GET-VmPendingQuestion.html
-func (vm *VM) GetQuestions() (types.VmPendingQuestion, error) {
+func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
 
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/question"
@@ -703,11 +702,13 @@ func (vm *VM) GetQuestions() (types.VmPendingQuestion, error) {
 
 	resp, err := checkResp(vm.client.Http.Do(req))
 
-	// vCD security feature - on no questions return 403 access error
-	if err != nil && strings.Contains(err.Error(), "API Error: 403: The access to the resource") {
+	// vCD security feature - on no question return 403 access error
+	if resp.StatusCode == http.StatusForbidden {
 		util.Logger.Printf("No question found for VM: %s\n", vm.VM.ID)
 		return types.VmPendingQuestion{}, nil
-	} else if err != nil {
+	}
+
+	if err != nil {
 		return types.VmPendingQuestion{}, fmt.Errorf("error getting question: %s", err)
 	}
 
@@ -722,12 +723,15 @@ func (vm *VM) GetQuestions() (types.VmPendingQuestion, error) {
 
 }
 
-// Use the provide answer to existing VM questions for operations which need additional response
+// Use the provide answer to existing VM question for operation which need additional response
 // Reference:
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/POST-AnswerVmPendingQuestion.html
 func (vm *VM) AnswerQuestion(questionId string, choiceId int) error {
 
 	//validate input
+	if "" == questionId {
+		return fmt.Errorf("questionId can not be empty")
+	}
 
 	answer := &types.VmQuestionAnswer{
 		Xmlns:      "http://www.vmware.com/vcloud/v1.5",
