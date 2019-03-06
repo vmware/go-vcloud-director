@@ -36,7 +36,7 @@ func NewDisk(cli *Client) *Disk {
 	}
 }
 
-// create instance with reference to types.DiskRecordType
+// Create instance with reference to types.DiskRecordType
 func NewDiskRecord(cli *Client) *DiskRecord {
 	return &DiskRecord{
 		Disk:   new(types.DiskRecordType),
