@@ -395,8 +395,12 @@ func FindDiskByHREF(client *Client, href string) (*Disk, error) {
 	return disk, nil
 }
 
-// Find vm using vApp name and VM name. Returns VMRecord query return type
+// Find independent disk using disk name. Returns VMRecord query return type
 func (vdc *Vdc) QueryDisk(diskName string) (DiskRecord, error) {
+
+	if "" == diskName {
+		return DiskRecord{}, fmt.Errorf("disk name can not be empty")
+	}
 
 	typeMedia := "disk"
 	if vdc.client.IsSysAdmin {
