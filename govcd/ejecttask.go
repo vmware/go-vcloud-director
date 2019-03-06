@@ -17,6 +17,10 @@ type EjectTask struct {
 	vm *VM
 }
 
+var timeBetweenRefresh = 3 * time.Second
+
+const questionMessage = "Disconnect anyway and override the lock?"
+
 // Creates wrapped Task which is dedicated for eject media functionality and
 // provides additional functionality to answer VM questions
 func NewEjectTask(task *Task, vm *VM) *EjectTask {
@@ -29,7 +33,7 @@ func NewEjectTask(task *Task, vm *VM) *EjectTask {
 // Checks the status of the task every 3 seconds and returns when the
 // eject task is either completed or failed
 func (ejectTask *EjectTask) WaitTaskCompletion(isAnswerYes bool) error {
-	return ejectTask.WaitInspectTaskCompletion(isAnswerYes, 3*time.Second)
+	return ejectTask.WaitInspectTaskCompletion(isAnswerYes, timeBetweenRefresh)
 }
 
 // function which handles answers for ejecting
@@ -58,7 +62,7 @@ func (ejectTask *EjectTask) WaitInspectTaskCompletion(isAnswerYes bool, delay ti
 			return fmt.Errorf("task did not complete succesfully: %s, quering question for VM failed: %s", ejectTask.Task.Task.Description, err.Error())
 		}
 
-		if question.QuestionId != "" && strings.Contains(question.Question, "Disconnect anyway and override the lock?") {
+		if question.QuestionId != "" && strings.Contains(question.Question, questionMessage) {
 			var choiceToUse *types.VmQuestionAnswerChoiceType
 			for _, choice := range question.Choices {
 				if isAnswerYes {
