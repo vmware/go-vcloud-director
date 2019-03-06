@@ -8,11 +8,12 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	"github.com/vmware/go-vcloud-director/v2/util"
 	"net/http"
 	"net/url"
 	"strconv"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 type VM struct {
