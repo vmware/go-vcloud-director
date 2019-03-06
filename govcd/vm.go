@@ -8,12 +8,11 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 	"net/http"
 	"net/url"
 	"strconv"
-
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 type VM struct {
@@ -700,10 +699,10 @@ func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
 
 	req := vm.client.NewRequest(map[string]string{}, "GET", *apiEndpoint, nil)
 
-	resp, err := checkResp(vm.client.Http.Do(req))
+	resp, err := vm.client.Http.Do(req)
 
 	// vCD security feature - on no question return 403 access error
-	if resp.StatusCode == http.StatusForbidden {
+	if http.StatusForbidden == resp.StatusCode {
 		util.Logger.Printf("No question found for VM: %s\n", vm.VM.ID)
 		return types.VmPendingQuestion{}, nil
 	}
