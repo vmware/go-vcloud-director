@@ -22,10 +22,24 @@ type Disk struct {
 	client *Client
 }
 
+// Independent disk query record
+type DiskRecord struct {
+	Disk   *types.DiskRecordType
+	client *Client
+}
+
 // Init independent disk struct
 func NewDisk(cli *Client) *Disk {
 	return &Disk{
 		Disk:   new(types.Disk),
+		client: cli,
+	}
+}
+
+// create instance with reference to types.DiskRecordType
+func NewDiskRecord(cli *Client) *DiskRecord {
+	return &DiskRecord{
+		Disk:   new(types.DiskRecordType),
 		client: cli,
 	}
 }
@@ -379,4 +393,33 @@ func FindDiskByHREF(client *Client, href string) (*Disk, error) {
 
 	// Return the disk
 	return disk, nil
+}
+
+// Find vm using vApp name and VM name. Returns VMRecord query return type
+func (vdc *Vdc) QueryDisk(diskName string) (DiskRecord, error) {
+
+	typeMedia := "disk"
+	if vdc.client.IsSysAdmin {
+		typeMedia = "adminDisk"
+	}
+
+	results, err := vdc.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia, "filter": "name==" + url.QueryEscape(diskName)})
+	if err != nil {
+		return DiskRecord{}, fmt.Errorf("error querying disk %#v", err)
+	}
+
+	diskResults := results.Results.DiskRecord
+	if vdc.client.IsSysAdmin {
+		diskResults = results.Results.AdminDiskRecord
+	}
+
+	newDisk := NewDiskRecord(vdc.client)
+
+	if len(diskResults) == 1 {
+		newDisk.Disk = diskResults[0]
+	} else {
+		return DiskRecord{}, fmt.Errorf("found results %d", len(diskResults))
+	}
+
+	return *newDisk, nil
 }
