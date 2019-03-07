@@ -594,11 +594,18 @@ func (vapp *VApp) GetNetworkConnectionSection() (*types.NetworkConnectionSection
 	return networkConnectionSection, nil
 }
 
-func (vapp *VApp) ChangeCPUcount(size int) (Task, error) {
-	return vapp.ChangeCPUCountWithCore(size, nil)
+// Sets number of available virtual logical processors
+// (i.e. CPUs x cores per socket)
+// https://communities.vmware.com/thread/576209
+func (vapp *VApp) ChangeCPUcount(virtualCpuCount int) (Task, error) {
+	return vapp.ChangeCPUCountWithCore(virtualCpuCount, nil)
 }
 
-func (vapp *VApp) ChangeCPUCountWithCore(size int, cores *int) (Task, error) {
+// Sets number of available virtual logical processors
+// (i.e. CPUs x cores per socket) and cores per socket.
+// Socket count is a result of: virtual logical processors/cores per socket
+// https://communities.vmware.com/thread/576209
+func (vapp *VApp) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (Task, error) {
 
 	err := vapp.Refresh()
 	if err != nil {
@@ -619,13 +626,13 @@ func (vapp *VApp) ChangeCPUCountWithCore(size int, cores *int) (Task, error) {
 		VCloudType:      "application/vnd.vmware.vcloud.rasdItem+xml",
 		AllocationUnits: "hertz * 10^6",
 		Description:     "Number of Virtual CPUs",
-		ElementName:     strconv.Itoa(size) + " virtual CPU(s)",
+		ElementName:     strconv.Itoa(virtualCpuCount) + " virtual CPU(s)",
 		InstanceID:      4,
 		Reservation:     0,
 		ResourceType:    3,
-		VirtualQuantity: size,
+		VirtualQuantity: virtualCpuCount,
 		Weight:          0,
-		CoresPerSocket:  cores,
+		CoresPerSocket:  coresPerSocket,
 		Link: &types.Link{
 			HREF: vapp.VApp.Children.VM[0].HREF + "/virtualHardwareSection/cpu",
 			Rel:  "edit",
