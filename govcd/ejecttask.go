@@ -19,6 +19,7 @@ type EjectTask struct {
 
 var timeBetweenRefresh = 3 * time.Second
 
+// Question Message from vCD API
 const questionMessage = "Disconnect anyway and override the lock?"
 
 // Creates wrapped Task which is dedicated for eject media functionality and
