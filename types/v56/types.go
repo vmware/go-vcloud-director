@@ -2307,6 +2307,7 @@ type VmQuestionAnswer struct {
 	Xmlns      string   `xml:"xmlns,attr,omitempty"`
 	ChoiceId   int      `xml:"ChoiceId"`
 	QuestionId string   `xml:"QuestionId"`
+}
 
 // Represents an independent disk record
 // Reference: vCloud API 27.0 - DiskType
@@ -2333,5 +2334,4 @@ type DiskRecordType struct {
 	IsAttached         bool    `xml:"isAttached,attr,omitempty"`
 	Description        string  `xml:"description,attr,omitempty"`
 	Link               []*Link `xml:"Link,omitempty"`
-
 }
