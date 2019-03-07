@@ -2277,6 +2277,38 @@ type MediaInsertOrEjectParams struct {
 	VCloudExtension *VCloudExtension `xml:"VCloudExtension,omitempty"`
 }
 
+// Parameters for VM pending questions
+// Reference: vCloud API 27.0 - VmPendingQuestionType
+// https://code.vmware.com/apis/287/vcloud#/doc/doc/types/VmPendingQuestionType.html
+type VmPendingQuestion struct {
+	XMLName    xml.Name                      `xml:"VmPendingQuestion"`
+	Xmlns      string                        `xml:"xmlns,attr,omitempty"`
+	Type       string                        `xml:"type,attr"`
+	HREF       string                        `xml:"href,attr"`
+	Link       LinkList                      `xml:"Link,omitempty"`
+	Question   string                        `xml:"Question"`
+	QuestionId string                        `xml:"QuestionId"`
+	Choices    []*VmQuestionAnswerChoiceType `xml:"Choices"`
+}
+
+// Parameters for VM question answer choice
+// Reference: vCloud API 27.0 - VmQuestionAnswerChoiceType
+// https://code.vmware.com/apis/287/vcloud#/doc/doc/types/VmQuestionAnswerChoiceType.html
+type VmQuestionAnswerChoiceType struct {
+	Id   int    `xml:"Id"`
+	Text string `xml:"Text,omitempty"`
+}
+
+// Parameters for VM question answer
+// Reference: vCloud API 27.0 - VmQuestionAnswerType
+// https://code.vmware.com/apis/287/vcloud#/doc/doc/types/VmQuestionAnswerType.html
+type VmQuestionAnswer struct {
+	XMLName    xml.Name `xml:"VmQuestionAnswer"`
+	Xmlns      string   `xml:"xmlns,attr,omitempty"`
+	ChoiceId   int      `xml:"ChoiceId"`
+	QuestionId string   `xml:"QuestionId"`
+}
+
 // Represents an independent disk record
 // Reference: vCloud API 27.0 - DiskType
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/types/QueryResultDiskRecordType.html

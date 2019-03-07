@@ -8,6 +8,7 @@ package govcd
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -448,7 +449,7 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadMediaImage")
+	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_HandleInsertOrEjectMedia")
 
 	media, err := FindMediaAsCatalogItem(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
@@ -468,7 +469,7 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 	ejectMediaTask, err := vm.HandleEjectMedia(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 
-	err = ejectMediaTask.WaitTaskCompletion()
+	err = ejectMediaTask.WaitTaskCompletion(true)
 	check.Assert(err, IsNil)
 
 	//verify
@@ -507,7 +508,7 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadMediaImage")
+	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_InsertOrEjectMedia")
 
 	media, err := FindMediaAsCatalogItem(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
@@ -560,4 +561,74 @@ func isMediaInjected(items []*types.VirtualHardwareItem) bool {
 		}
 	}
 	return isFound
+}
+
+// Test Insert or Eject Media for VM
+func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
+
+	itemName := "TestAnswerVmQuestion"
+
+	// Find VApp
+	if vcd.vapp.VApp == nil {
+		check.Skip("skipping test because no vApp is found")
+	}
+
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	vm := NewVM(&vcd.client.Client)
+	vm.VM = &vmType
+
+	// Upload Media
+	catalog, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	check.Assert(err, IsNil)
+
+	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
+	check.Assert(err, IsNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_AnswerVmQuestion")
+
+	media, err := FindMediaAsCatalogItem(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	check.Assert(err, IsNil)
+	check.Assert(media, Not(Equals), CatalogItem{})
+
+	insertMediaTask, err := vm.HandleInsertMedia(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	check.Assert(err, IsNil)
+
+	err = insertMediaTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	//verify
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, true)
+
+	ejectMediaTask, err := vm.HandleEjectMedia(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	check.Assert(err, IsNil)
+
+	for i := 0; i < 10; i++ {
+		question, err := vm.GetQuestion()
+		check.Assert(err, IsNil)
+
+		if question.QuestionId != "" && strings.Contains(question.Question, "Disconnect anyway and override the lock?") {
+			err = vm.AnswerQuestion(question.QuestionId, 0)
+			check.Assert(err, IsNil)
+		}
+		time.Sleep(time.Second * 3)
+	}
+
+	err = ejectMediaTask.Task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	//verify
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
 }
