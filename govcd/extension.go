@@ -49,16 +49,6 @@ func GetExternalNetworkByName(vcdClient *VCDClient, networkName string) (*types.
 	return &types.ExternalNetworkReference{}, nil
 }
 
-func validateExternalNetwork(externalNetwork *types.ExternalNetwork) error {
-	if externalNetwork.Name == "" {
-		return errors.New("VdcConfiguration missing required field: Name")
-	}
-	if externalNetwork.Xmlns == "" {
-		return errors.New("VdcConfiguration missing required field: Xmlns")
-	}
-	return nil
-}
-
 func CreateExternalNetwork(vcdClient *VCDClient, externalNetwork *types.ExternalNetwork) (Task, error) {
 	err := validateExternalNetwork(externalNetwork)
 	if err != nil {

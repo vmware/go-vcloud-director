@@ -475,8 +475,8 @@ type Task struct {
 // Since: 0.9
 type CapacityWithUsage struct {
 	Units     string `xml:"Units"`
-	Allocated int64  `xml:"Allocated,omitempty"`
-	Limit     int64  `xml:"Limit,omitempty"`
+	Allocated int64  `xml:"Allocated"`
+	Limit     int64  `xml:"Limit"`
 	Reserved  int64  `xml:"Reserved,omitempty"`
 	Used      int64  `xml:"Used,omitempty"`
 	Overhead  int64  `xml:"Overhead,omitempty"`
@@ -2196,19 +2196,20 @@ type VimObjectRef struct {
 }
 
 type VimObjectRefs struct {
-	VimObjectRef []*VimObjectRef
+	VimObjectRef []*VimObjectRef `xml:VimObjectRef`
 }
 
 type ExternalNetwork struct {
 	XMLName          xml.Name              `xml:"VMWExternalNetwork"`
 	Xmlns            string                `xml:"xmlns,attr,omitempty"`
+	XmlnsVCloud      string                `xml:"xmlns:vcloud,attr,omitempty"`
 	HREF             string                `xml:"href,attr,omitempty"`
 	Type             string                `xml:"type,attr,omitempty"`
 	ID               string                `xml:"id,attr,omitempty"`
 	OperationKey     string                `xml:"operationKey,attr,omitempty"`
 	Name             string                `xml:"name,attr"`
+	Description      string                `xml:"vcloud:Description,omitempty"`
 	Configuration    *NetworkConfiguration `xml:"Configuration,omitempty"`
-	Description      string                `xml:"Description,omitempty"`
 	Link             []*Link               `xml:"Link,omitempty"`
 	VimPortGroupRefs *VimObjectRefs        `xml:"VimPortGroupRefs,omitempty"`
 	Tasks            *TasksInProgress      `xml:"Tasks,omitempty"`

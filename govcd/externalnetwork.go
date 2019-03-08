@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 
@@ -22,6 +23,36 @@ func NewExternalNetwork(cli *Client) *ExternalNetwork {
 		ExternalNetwork: new(types.ExternalNetwork),
 		client:          cli,
 	}
+}
+
+func (externalNetwork ExternalNetwork) Refresh() error {
+	extNetworkURL, err := url.ParseRequestURI(externalNetwork.ExternalNetwork.HREF)
+	if err != nil {
+		return err
+	}
+
+	req := externalNetwork.client.NewRequest(map[string]string{}, "GET", *extNetworkURL, nil)
+	resp, err := checkResp(externalNetwork.client.Http.Do(req))
+	if err != nil {
+		util.Logger.Printf("[TRACE] error retrieving external network: %s", err)
+		return fmt.Errorf("error retrieving external network: %s", err)
+	}
+
+	if err = decodeBody(resp, externalNetwork.ExternalNetwork); err != nil {
+		util.Logger.Printf("[TRACE] error decoding extension external network: %s", err)
+		return fmt.Errorf("error decoding extension external network: %s", err)
+	}
+	return nil
+}
+
+func validateExternalNetwork(externalNetwork *types.ExternalNetwork) error {
+	if externalNetwork.Name == "" {
+		return errors.New("VdcConfiguration missing required field: Name")
+	}
+	if externalNetwork.Xmlns == "" {
+		return errors.New("VdcConfiguration missing required field: Xmlns")
+	}
+	return nil
 }
 
 func (externalNetwork *ExternalNetwork) Delete() (Task, error) {

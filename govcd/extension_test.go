@@ -62,8 +62,9 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	vimServerHref := results.Results.VirtualCenterRecord[0].HREF
 
 	externalNetwork := &types.ExternalNetwork{
-		Name:  networkName,
-		Xmlns: "http://www.vmware.com/vcloud/extension/v1.5",
+		Name:        networkName,
+		Description: "Test Create External Network",
+		Xmlns:       "http://www.vmware.com/vcloud/extension/v1.5",
 		Configuration: &types.NetworkConfiguration{
 			Xmlns: "http://www.vmware.com/vcloud/v1.5",
 			IPScopes: &types.IPScopes{
