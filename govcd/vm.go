@@ -277,7 +277,7 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, erro
 						ipAddress = network["ip"].(string)
 					}
 				} else {
-					ipAllocationMode = network["ip_address_allocation_mode"].(string)
+					ipAllocationMode = network["ip_allocation_mode"].(string)
 				}
 
 				util.Logger.Printf("[DEBUG] Function ChangeNetworkConfig() for %s invoked", network["orgnetwork"])
