@@ -7,7 +7,8 @@ look at [README.md](README.md) to understand how Go modules impact build and dev
 
 FEATURES:
 
-* New insert and eject media functions 
+* New insert and eject media functions
+* Added metadata add/remove functions to vm
 
 IMPROVEMENTS:
 
@@ -17,4 +18,4 @@ IMPROVEMENTS:
 BREAKING CHANGES:
 
 * Deprecate vApp.ChangeCPUCountWithCore() and vApp.ChangeCPUCount()
-
+* vApp metadata now is attached to the vapp rather to first vm in vapp.
