@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
@@ -565,6 +566,31 @@ func (vapp *VApp) GetStatus() (string, error) {
 		return "", fmt.Errorf("error refreshing vApp: %v", err)
 	}
 	return types.VAppStatuses[vapp.VApp.Status], nil
+}
+
+// StatusWaitNot blocks until the status of vApp is not equal to unwantedStatus.
+// It sleeps 200 milliseconds between iterations and times out after timeOutAfterSeconds
+// of seconds.
+func (vapp *VApp) StatusWaitNot(unwantedStatus string, timeOutAfterSeconds int) error {
+	timeoutAfter := time.After(time.Duration(timeOutAfterSeconds) * time.Second)
+	tick := time.Tick(200 * time.Millisecond)
+
+	for {
+		select {
+		case <-timeoutAfter:
+			return fmt.Errorf("timed out waiting for vapp to become not %s after %d seconds",
+				unwantedStatus, timeOutAfterSeconds)
+		case <-tick:
+			currentStatus, err := vapp.GetStatus()
+
+			if err != nil {
+				return fmt.Errorf("could not get vApp status %s", err)
+			}
+			if currentStatus != unwantedStatus {
+				return nil
+			}
+		}
+	}
 }
 
 func (vapp *VApp) GetNetworkConnectionSection() (*types.NetworkConnectionSection, error) {

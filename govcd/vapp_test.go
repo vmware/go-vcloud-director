@@ -7,6 +7,7 @@ package govcd
 import (
 	"fmt"
 	"regexp"
+	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
@@ -104,6 +105,53 @@ func (vcd *TestVCD) Test_Reboot(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 
+}
+
+func (vcd *TestVCD) Test_StatusWaitNot(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
+	initialVappStatus, err := vcd.vapp.GetStatus()
+	check.Assert(err, IsNil)
+
+	// Trigger power on in a few seconds after we already wait for status change
+	// to simulate system lag
+	powerOnResponse := make(chan struct {
+		t   Task
+		err error
+	}, 1)
+
+	go func() {
+		time.Sleep(2 * time.Second)
+		task, err := vcd.vapp.PowerOn()
+		powerOnResponse <- struct {
+			t   Task
+			err error
+		}{task, err}
+	}()
+
+	// This must timeout as the timeout is zero
+	errMustTimeout := vcd.vapp.StatusWaitNot(initialVappStatus, 0)
+	check.Assert(errMustTimeout, ErrorMatches, "timed out waiting for vapp to become not .* seconds")
+
+	// This must wait until
+	err = vcd.vapp.StatusWaitNot(initialVappStatus, 120)
+	check.Assert(err, IsNil)
+
+	// Collect back status response from PowerOn goroutine
+	r := <-powerOnResponse
+	check.Assert(r.err, IsNil)
+	err = r.t.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(r.t.Task.Status, Equals, "success")
+
+	// Clean up and leave it down
+	task, err := vcd.vapp.PowerOff()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
 }
 
 // TODO: Add a check checking if the ovf was set properly
