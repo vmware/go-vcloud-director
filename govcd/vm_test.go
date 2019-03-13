@@ -580,11 +580,17 @@ func (vcd *TestVCD) Test_AddMetadataOnVm(check *C) {
 	vm.VM = &vmType
 
 	// Add metadata
-	task, err := vm.AddMetadata("key", "value")
+	task, err := vapp.AddMetadata("key", "value", vm.VM.HREF)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
+
+	// Check if metadata was added correctly
+	metadata, err := vcd.vapp.GetMetadata(vm.VM.HREF)
+	check.Assert(err, IsNil)
+	check.Assert(metadata.MetadataEntry[0].Key, Equals, "key")
+	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
 }
 
 func (vcd *TestVCD) Test_DeleteMetadataOnVm(check *C) {
@@ -605,7 +611,7 @@ func (vcd *TestVCD) Test_DeleteMetadataOnVm(check *C) {
 	vm.VM = &vmType
 
 	// Remove metadata
-	task, err := vm.DeleteMetadata("key")
+	task, err := vapp.DeleteMetadata("key", vm.VM.HREF)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)

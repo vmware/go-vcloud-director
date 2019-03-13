@@ -805,15 +805,42 @@ func (vapp *VApp) ChangeVMName(name string) (Task, error) {
 
 }
 
+func (vapp *VApp) GetMetadata(requestUri string) (*types.Metadata, error) {
+	err := vapp.Refresh()
+	if err != nil {
+		return &types.Metadata{}, fmt.Errorf("error refreshing vApp: %v", err)
+	}
+
+	metadata := &types.Metadata{}
+
+	getMetadata, _ := url.ParseRequestURI(requestUri + "/metadata/")
+
+	req := vapp.client.NewRequest(map[string]string{}, "GET", *getMetadata, nil)
+
+	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.metadata+xml")
+
+	resp, err := checkResp(vapp.client.Http.Do(req))
+	if err != nil {
+		return metadata, fmt.Errorf("error retrieving task: %s", err)
+	}
+
+	if err = decodeBody(resp, metadata); err != nil {
+		return metadata, fmt.Errorf("error decoding task response: %s", err)
+	}
+
+	// The request was successful
+	return metadata, nil
+}
+
 // Deletes metadata (type MetadataStringValue) from the vApp
 // TODO: Support all MetadataTypedValue types with this function
-func (vapp *VApp) DeleteMetadata(key string) (Task, error) {
+func (vapp *VApp) DeleteMetadata(key string, requestUri string) (Task, error) {
 	err := vapp.Refresh()
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %v", err)
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint, _ := url.ParseRequestURI(requestUri)
 	apiEndpoint.Path += "/metadata/" + key
 
 	req := vapp.client.NewRequest(map[string]string{}, "DELETE", *apiEndpoint, nil)
@@ -835,7 +862,7 @@ func (vapp *VApp) DeleteMetadata(key string) (Task, error) {
 
 // Adds metadata (type MetadataStringValue) to the vApp
 // TODO: Support all MetadataTypedValue types with this function
-func (vapp *VApp) AddMetadata(key, value string) (Task, error) {
+func (vapp *VApp) AddMetadata(key string, value string, requestUri string) (Task, error) {
 	err := vapp.Refresh()
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %v", err)
@@ -859,7 +886,7 @@ func (vapp *VApp) AddMetadata(key, value string) (Task, error) {
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint, _ := url.ParseRequestURI(requestUri)
 	apiEndpoint.Path += "/metadata/" + key
 
 	req := vapp.client.NewRequest(map[string]string{}, "PUT", *apiEndpoint, buffer)

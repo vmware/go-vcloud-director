@@ -10,7 +10,7 @@ FEATURES:
 * New insert and eject media functions
 * Added metadata add/remove functions to vm
 
-IMPROVEMENTS:
+BACKWARDS INCOMPATIBILITIES / NOTES
 
 * vApp vapp.PowerOn() implicitly waits for vApp to exit "UNRESOLVED" state which occurs shortly after creation and causes vapp.PowerOn() failure.
 * VM has new functions which allows to configure cores for CPU. VM.ChangeCPUCountWithCore()
