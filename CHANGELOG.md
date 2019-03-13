@@ -19,3 +19,4 @@ BREAKING CHANGES:
 
 * Deprecate vApp.ChangeCPUCountWithCore() and vApp.ChangeCPUCount()
 * vApp metadata now is attached to the vapp rather to first vm in vapp.
+* vApp metadata is no longer added to first VM in vApp it will be added to vApp directly instead.
