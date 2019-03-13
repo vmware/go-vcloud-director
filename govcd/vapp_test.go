@@ -176,14 +176,14 @@ func (vcd *TestVCD) Test_AddMetadataOnVapp(check *C) {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
 	// Add metadata
-	task, err := vcd.vapp.AddMetadata("key", "value", vcd.vapp.VAPP.HREF)
+	task, err := vcd.vapp.AddMetadata("key", "value", vcd.vapp.VApp.HREF)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 
 	// Check if metadata was added correctly
-	metadata, err := vcd.vapp.GetMetadata(vcd.vapp.VAPP.HREF)
+	metadata, err := vcd.vapp.GetMetadata(vcd.vapp.VApp.HREF)
 	check.Assert(err, IsNil)
 	check.Assert(metadata.MetadataEntry[0].Key, Equals, "key")
 	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
@@ -194,7 +194,7 @@ func (vcd *TestVCD) Test_DeleteMetadataOnVapp(check *C) {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
 	// Remove metadata
-	task, err := vcd.vapp.DeleteMetadata("key", vcd.vapp.VAPP.HREF)
+	task, err := vcd.vapp.DeleteMetadata("key", vcd.vapp.VApp.HREF)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
