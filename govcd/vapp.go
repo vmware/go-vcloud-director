@@ -568,17 +568,17 @@ func (vapp *VApp) GetStatus() (string, error) {
 	return types.VAppStatuses[vapp.VApp.Status], nil
 }
 
-// StatusWaitNot blocks until the status of vApp is not equal to unwantedStatus.
+// BlockWhileStatus blocks until the status of vApp exits unwantedStatus.
 // It sleeps 200 milliseconds between iterations and times out after timeOutAfterSeconds
 // of seconds.
-func (vapp *VApp) StatusWaitNot(unwantedStatus string, timeOutAfterSeconds int) error {
+func (vapp *VApp) BlockWhileStatus(unwantedStatus string, timeOutAfterSeconds int) error {
 	timeoutAfter := time.After(time.Duration(timeOutAfterSeconds) * time.Second)
 	tick := time.Tick(200 * time.Millisecond)
 
 	for {
 		select {
 		case <-timeoutAfter:
-			return fmt.Errorf("timed out waiting for vapp to become not %s after %d seconds",
+			return fmt.Errorf("timed out waiting for vApp to exit state %s after %d seconds",
 				unwantedStatus, timeOutAfterSeconds)
 		case <-tick:
 			currentStatus, err := vapp.GetStatus()

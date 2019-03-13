@@ -107,7 +107,7 @@ func (vcd *TestVCD) Test_Reboot(check *C) {
 
 }
 
-func (vcd *TestVCD) Test_StatusWaitNot(check *C) {
+func (vcd *TestVCD) Test_BlockWhileStatus(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
@@ -132,19 +132,19 @@ func (vcd *TestVCD) Test_StatusWaitNot(check *C) {
 	}()
 
 	// This must timeout as the timeout is zero
-	errMustTimeout := vcd.vapp.StatusWaitNot(initialVappStatus, 0)
-	check.Assert(errMustTimeout, ErrorMatches, "timed out waiting for vapp to become not .* seconds")
+	errMustTimeout := vcd.vapp.BlockWhileStatus(initialVappStatus, 0)
+	check.Assert(errMustTimeout, ErrorMatches, "timed out waiting for vApp to exit state .* after .* seconds")
 
-	// This must wait until
-	err = vcd.vapp.StatusWaitNot(initialVappStatus, 120)
+	// This must wait until vApp changes status from initialVappStatus
+	err = vcd.vapp.BlockWhileStatus(initialVappStatus, 120)
 	check.Assert(err, IsNil)
 
 	// Collect back status response from PowerOn goroutine
-	r := <-powerOnResponse
-	check.Assert(r.err, IsNil)
-	err = r.t.WaitTaskCompletion()
+	resp := <-powerOnResponse
+	check.Assert(resp.err, IsNil)
+	err = resp.t.WaitTaskCompletion()
 	check.Assert(err, IsNil)
-	check.Assert(r.t.Task.Status, Equals, "success")
+	check.Assert(resp.t.Task.Status, Equals, "success")
 
 	// Clean up and leave it down
 	task, err := vcd.vapp.PowerOff()
