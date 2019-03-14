@@ -262,7 +262,7 @@ func (vapp *VApp) RemoveVM(vm VM) error {
 
 func (vapp *VApp) PowerOn() (Task, error) {
 
-	err := vapp.BlockWhileStatus("UNRESOLVED", 60)
+	err := vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
 	if err != nil {
 		return Task{}, fmt.Errorf("error powering on vApp: %s", err)
 	}
