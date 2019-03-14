@@ -739,6 +739,18 @@ func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
 
 }
 
+func (vm *VM) GetMetadata(requestUri string) (*types.Metadata, error) {
+	return vm.client.GetMetadataWrapper(requestUri)
+}
+
+func (vm *VM) DeleteMetadata(key string) (Task, error) {
+	return vm.client.DeleteMetadataWrapper(key, vm.VM.HREF)
+}
+
+func (vm *VM) AddMetadata(key string, value string) (Task, error) {
+	return vm.client.AddMetadataWrapper(key, value, vm.VM.HREF)
+}
+
 // Use the provide answer to existing VM question for operation which need additional response
 // Reference:
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/POST-AnswerVmPendingQuestion.html

@@ -806,20 +806,19 @@ func (vapp *VApp) ChangeVMName(name string) (Task, error) {
 }
 
 func (vapp *VApp) GetMetadata(requestUri string) (*types.Metadata, error) {
-	err := vapp.Refresh()
-	if err != nil {
-		return &types.Metadata{}, fmt.Errorf("error refreshing vApp: %v", err)
-	}
+	return vapp.client.GetMetadataWrapper(requestUri)
+}
 
+func (client *Client) GetMetadataWrapper(requestUri string) (*types.Metadata, error) {
 	metadata := &types.Metadata{}
 
 	getMetadata, _ := url.ParseRequestURI(requestUri + "/metadata/")
 
-	req := vapp.client.NewRequest(map[string]string{}, "GET", *getMetadata, nil)
+	req := client.NewRequest(map[string]string{}, "GET", *getMetadata, nil)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.metadata+xml")
 
-	resp, err := checkResp(vapp.client.Http.Do(req))
+	resp, err := checkResp(client.Http.Do(req))
 	if err != nil {
 		return metadata, fmt.Errorf("error retrieving task: %s", err)
 	}
@@ -832,25 +831,24 @@ func (vapp *VApp) GetMetadata(requestUri string) (*types.Metadata, error) {
 	return metadata, nil
 }
 
+func (vapp *VApp) DeleteMetadata(key string) (Task, error) {
+	return vapp.client.DeleteMetadataWrapper(key, vapp.VApp.HREF)
+}
+
 // Deletes metadata (type MetadataStringValue) from the vApp
 // TODO: Support all MetadataTypedValue types with this function
-func (vapp *VApp) DeleteMetadata(key string, requestUri string) (Task, error) {
-	err := vapp.Refresh()
-	if err != nil {
-		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %v", err)
-	}
-
+func (client *Client) DeleteMetadataWrapper(key string, requestUri string) (Task, error) {
 	apiEndpoint, _ := url.ParseRequestURI(requestUri)
 	apiEndpoint.Path += "/metadata/" + key
 
-	req := vapp.client.NewRequest(map[string]string{}, "DELETE", *apiEndpoint, nil)
+	req := client.NewRequest(map[string]string{}, "DELETE", *apiEndpoint, nil)
 
-	resp, err := checkResp(vapp.client.Http.Do(req))
+	resp, err := checkResp(client.Http.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error deleting metadata: %s", err)
 	}
 
-	task := NewTask(vapp.client)
+	task := NewTask(client)
 
 	if err = decodeBody(resp, task.Task); err != nil {
 		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
@@ -860,14 +858,13 @@ func (vapp *VApp) DeleteMetadata(key string, requestUri string) (Task, error) {
 	return *task, nil
 }
 
+func (vapp *VApp) AddMetadata(key string, value string) (Task, error) {
+	return vapp.client.AddMetadataWrapper(key, value, vapp.VApp.HREF)
+}
+
 // Adds metadata (type MetadataStringValue) to the vApp
 // TODO: Support all MetadataTypedValue types with this function
-func (vapp *VApp) AddMetadata(key string, value string, requestUri string) (Task, error) {
-	err := vapp.Refresh()
-	if err != nil {
-		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %v", err)
-	}
-
+func (client *Client) AddMetadataWrapper(key string, value string, requestUri string) (Task, error) {
 	newmetadata := &types.MetadataValue{
 		Xmlns: "http://www.vmware.com/vcloud/v1.5",
 		Xsi:   "http://www.w3.org/2001/XMLSchema-instance",
@@ -889,16 +886,16 @@ func (vapp *VApp) AddMetadata(key string, value string, requestUri string) (Task
 	apiEndpoint, _ := url.ParseRequestURI(requestUri)
 	apiEndpoint.Path += "/metadata/" + key
 
-	req := vapp.client.NewRequest(map[string]string{}, "PUT", *apiEndpoint, buffer)
+	req := client.NewRequest(map[string]string{}, "PUT", *apiEndpoint, buffer)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.metadata.value+xml")
 
-	resp, err := checkResp(vapp.client.Http.Do(req))
+	resp, err := checkResp(client.Http.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error customizing vApp metadata: %s", err)
 	}
 
-	task := NewTask(vapp.client)
+	task := NewTask(client)
 
 	if err = decodeBody(resp, task.Task); err != nil {
 		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
@@ -906,7 +903,6 @@ func (vapp *VApp) AddMetadata(key string, value string, requestUri string) (Task
 
 	// The request was successful
 	return *task, nil
-
 }
 
 func (vapp *VApp) SetOvf(parameters map[string]string) (Task, error) {
