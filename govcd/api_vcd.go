@@ -19,11 +19,10 @@ import (
 type VCDClientOption func(*VCDClient) error
 
 type VCDClient struct {
-	Client          Client  // Client for the underlying VCD instance
-	sessionHREF     url.URL // HREF for the session API
-	QueryHREF       url.URL // HREF for the query API
-	Mutex           sync.Mutex
-	MaxRetryTimeout int // MaxRetryTimeout in seconds
+	Client      Client  // Client for the underlying VCD instance
+	sessionHREF url.URL // HREF for the session API
+	QueryHREF   url.URL // HREF for the query API
+	Mutex       sync.Mutex
 }
 
 type supportedVersions struct {
