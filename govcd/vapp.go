@@ -262,6 +262,11 @@ func (vapp *VApp) RemoveVM(vm VM) error {
 
 func (vapp *VApp) PowerOn() (Task, error) {
 
+	err := vapp.BlockWhileStatus("UNRESOLVED", 60)
+	if err != nil {
+		return Task{}, fmt.Errorf("error powering on vApp: %s", err)
+	}
+
 	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/power/action/powerOn"
 
