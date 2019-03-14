@@ -21,12 +21,13 @@ import (
 
 // Client provides a client to vCloud Director, values can be populated automatically using the Authenticate method.
 type Client struct {
-	APIVersion    string      // The API version required
-	VCDToken      string      // Access Token (authorization header)
-	VCDAuthHeader string      // Authorization header
-	VCDHREF       url.URL     // VCD API ENDPOINT
-	Http          http.Client // HttpClient is the client to use. Default will be used if not provided.
-	IsSysAdmin    bool        // flag if client is connected as system administrator
+	APIVersion      string      // The API version required
+	VCDToken        string      // Access Token (authorization header)
+	VCDAuthHeader   string      // Authorization header
+	VCDHREF         url.URL     // VCD API ENDPOINT
+	Http            http.Client // HttpClient is the client to use. Default will be used if not provided.
+	IsSysAdmin      bool        // flag if client is connected as system administrator
+	MaxRetryTimeout int         // MaxRetryTimeout in seconds
 }
 
 // Function allow to pass complex values params which shouldn't be encoded like for queries. e.g. /query?filter=(name=foo)

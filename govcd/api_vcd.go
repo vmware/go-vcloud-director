@@ -14,11 +14,16 @@ import (
 	"time"
 )
 
+// VCDClientOption defines signature for customizing VCDClient using
+// functional options pattern.
+type VCDClientOption func(*VCDClient) error
+
 type VCDClient struct {
-	Client      Client  // Client for the underlying VCD instance
-	sessionHREF url.URL // HREF for the session API
-	QueryHREF   url.URL // HREF for the query API
-	Mutex       sync.Mutex
+	Client          Client  // Client for the underlying VCD instance
+	sessionHREF     url.URL // HREF for the session API
+	QueryHREF       url.URL // HREF for the query API
+	Mutex           sync.Mutex
+	MaxRetryTimeout int // MaxRetryTimeout in seconds
 }
 
 type supportedVersions struct {
@@ -90,9 +95,11 @@ func (vdcCli *VCDClient) vcdauthorize(user, pass, org string) error {
 	return nil
 }
 
-func NewVCDClient(vcdEndpoint url.URL, insecure bool) *VCDClient {
-
-	return &VCDClient{
+// NewVCDClient initializes VMware vCloud Director client with reasonable defaults.
+// It accepts functions of type VCDClientOption for adjusting defaults.
+func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption) *VCDClient {
+	// Setting defaults
+	vcdClient := &VCDClient{
 		Client: Client{
 			APIVersion: "27.0", // supported by vCD 8.20, 9.0, 9.1, 9.5
 			VCDHREF:    vcdEndpoint,
@@ -105,8 +112,20 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool) *VCDClient {
 					TLSHandshakeTimeout: 120 * time.Second,
 				},
 			},
+			MaxRetryTimeout: 60, // Default timeout in seconds
 		},
 	}
+
+	// Override defaults with functional options
+	for _, option := range options {
+		err := option(vcdClient)
+		if err != nil {
+			// We do not have error in return of this function signature.
+			// To avoid breaking API the only thing we can do is panic.
+			panic(fmt.Sprintf("unable to initialize vCD client: %s", err))
+		}
+	}
+	return vcdClient
 }
 
 // Authenticate is an helper function that performs a login in vCloud Director.
@@ -138,4 +157,12 @@ func (vdcCli *VCDClient) Disconnect() error {
 		return fmt.Errorf("error processing session delete for vCloud Director: %s", err)
 	}
 	return nil
+}
+
+// WithMaxRetryTimeout allows default vCDClient MaxRetryTimeout value override
+func WithMaxRetryTimeout(timeoutSeconds int) VCDClientOption {
+	return func(vcdClient *VCDClient) error {
+		vcdClient.Client.MaxRetryTimeout = timeoutSeconds
+		return nil
+	}
 }
