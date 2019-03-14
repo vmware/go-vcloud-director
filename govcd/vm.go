@@ -740,15 +740,15 @@ func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
 }
 
 func (vm *VM) GetMetadata(requestUri string) (*types.Metadata, error) {
-	return vm.client.GetMetadataWrapper(requestUri)
+	return vm.client.GetMetadata(requestUri)
 }
 
 func (vm *VM) DeleteMetadata(key string) (Task, error) {
-	return vm.client.DeleteMetadataWrapper(key, vm.VM.HREF)
+	return vm.client.DeleteMetadata(key, vm.VM.HREF)
 }
 
 func (vm *VM) AddMetadata(key string, value string) (Task, error) {
-	return vm.client.AddMetadataWrapper(key, value, vm.VM.HREF)
+	return vm.client.AddMetadata(key, value, vm.VM.HREF)
 }
 
 // Use the provide answer to existing VM question for operation which need additional response

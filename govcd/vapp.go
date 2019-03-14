@@ -806,10 +806,10 @@ func (vapp *VApp) ChangeVMName(name string) (Task, error) {
 }
 
 func (vapp *VApp) GetMetadata(requestUri string) (*types.Metadata, error) {
-	return vapp.client.GetMetadataWrapper(requestUri)
+	return vapp.client.GetMetadata(requestUri)
 }
 
-func (client *Client) GetMetadataWrapper(requestUri string) (*types.Metadata, error) {
+func (client *Client) GetMetadata(requestUri string) (*types.Metadata, error) {
 	metadata := &types.Metadata{}
 
 	getMetadata, _ := url.ParseRequestURI(requestUri + "/metadata/")
@@ -832,12 +832,12 @@ func (client *Client) GetMetadataWrapper(requestUri string) (*types.Metadata, er
 }
 
 func (vapp *VApp) DeleteMetadata(key string) (Task, error) {
-	return vapp.client.DeleteMetadataWrapper(key, vapp.VApp.HREF)
+	return vapp.client.DeleteMetadata(key, vapp.VApp.HREF)
 }
 
 // Deletes metadata (type MetadataStringValue) from the vApp
 // TODO: Support all MetadataTypedValue types with this function
-func (client *Client) DeleteMetadataWrapper(key string, requestUri string) (Task, error) {
+func (client *Client) DeleteMetadata(key string, requestUri string) (Task, error) {
 	apiEndpoint, _ := url.ParseRequestURI(requestUri)
 	apiEndpoint.Path += "/metadata/" + key
 
@@ -859,12 +859,12 @@ func (client *Client) DeleteMetadataWrapper(key string, requestUri string) (Task
 }
 
 func (vapp *VApp) AddMetadata(key string, value string) (Task, error) {
-	return vapp.client.AddMetadataWrapper(key, value, vapp.VApp.HREF)
+	return vapp.client.AddMetadata(key, value, vapp.VApp.HREF)
 }
 
 // Adds metadata (type MetadataStringValue) to the vApp
 // TODO: Support all MetadataTypedValue types with this function
-func (client *Client) AddMetadataWrapper(key string, value string, requestUri string) (Task, error) {
+func (client *Client) AddMetadata(key string, value string, requestUri string) (Task, error) {
 	newmetadata := &types.MetadataValue{
 		Xmlns: "http://www.vmware.com/vcloud/v1.5",
 		Xsi:   "http://www.w3.org/2001/XMLSchema-instance",
