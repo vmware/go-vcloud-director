@@ -9,44 +9,22 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"net/url"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 func GetExternalNetworkByName(vcdClient *VCDClient, networkName string) (*types.ExternalNetworkReference, error) {
-	extNetworkRefs := &types.ExternalNetworkReferences{}
-
-	extNetworkHREF, err := getExternalNetworkHref(vcdClient)
+	externalNetwork := NewExternalNetwork(&vcdClient.Client)
+	err := externalNetwork.GetByName(networkName)
 	if err != nil {
 		return &types.ExternalNetworkReference{}, err
 	}
-
-	extNetworkURL, err := url.ParseRequestURI(extNetworkHREF)
-	if err != nil {
-		return &types.ExternalNetworkReference{}, err
-	}
-
-	req := vcdClient.Client.NewRequest(map[string]string{}, "GET", *extNetworkURL, nil)
-	resp, err := checkResp(vcdClient.Client.Http.Do(req))
-	if err != nil {
-		util.Logger.Printf("[TRACE] error retrieving external networks: %s", err)
-		return &types.ExternalNetworkReference{}, fmt.Errorf("error retrieving external networks: %s", err)
-	}
-
-	if err = decodeBody(resp, extNetworkRefs); err != nil {
-		util.Logger.Printf("[TRACE] error retrieving  external networks: %s", err)
-		return &types.ExternalNetworkReference{}, fmt.Errorf("error decoding extension  external networks: %s", err)
-	}
-
-	for _, netRef := range extNetworkRefs.ExternalNetworkReference {
-		if netRef.Name == networkName {
-			return netRef, nil
-		}
-	}
-
-	return &types.ExternalNetworkReference{}, nil
+	return &types.ExternalNetworkReference{
+		HREF: externalNetwork.ExternalNetwork.HREF,
+		Type: externalNetwork.ExternalNetwork.Type,
+		Name: externalNetwork.ExternalNetwork.Name,
+	}, nil
 }
 
 func CreateExternalNetwork(vcdClient *VCDClient, externalNetwork *types.ExternalNetwork) (Task, error) {
@@ -82,8 +60,8 @@ func CreateExternalNetwork(vcdClient *VCDClient, externalNetwork *types.External
 	return *task, nil
 }
 
-func getExternalNetworkHref(vcdClient *VCDClient) (string, error) {
-	extensions, err := getExtension(vcdClient)
+func getExternalNetworkHref(client *Client) (string, error) {
+	extensions, err := getExtension(client)
 	if err != nil {
 		return "", err
 	}
@@ -97,13 +75,13 @@ func getExternalNetworkHref(vcdClient *VCDClient) (string, error) {
 	return "", errors.New("external network link isn't found")
 }
 
-func getExtension(vcdClient *VCDClient) (*types.Extension, error) {
+func getExtension(client *Client) (*types.Extension, error) {
 	extensions := &types.Extension{}
 
-	extensionHREF := vcdClient.Client.VCDHREF
+	extensionHREF := client.VCDHREF
 	extensionHREF.Path += "/admin/extension/"
-	req := vcdClient.Client.NewRequest(map[string]string{}, "GET", extensionHREF, nil)
-	resp, err := checkResp(vcdClient.Client.Http.Do(req))
+	req := client.NewRequest(map[string]string{}, "GET", extensionHREF, nil)
+	resp, err := checkResp(client.Http.Do(req))
 	if err != nil {
 		util.Logger.Printf("[TRACE] error retrieving extension: %s", err)
 		return extensions, fmt.Errorf("error retrieving extension: %s", err)

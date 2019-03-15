@@ -25,6 +25,40 @@ func NewExternalNetwork(cli *Client) *ExternalNetwork {
 	}
 }
 
+func (externalNetwork ExternalNetwork) GetByName(networkName string) error {
+	extNetworkHREF, err := getExternalNetworkHref(externalNetwork.client)
+	if err != nil {
+		return err
+	}
+
+	extNetworkURL, err := url.ParseRequestURI(extNetworkHREF)
+	if err != nil {
+		return err
+	}
+
+	req := externalNetwork.client.NewRequest(map[string]string{}, "GET", *extNetworkURL, nil)
+	resp, err := checkResp(externalNetwork.client.Http.Do(req))
+	if err != nil {
+		util.Logger.Printf("[TRACE] error retrieving external networks: %s", err)
+		return fmt.Errorf("error retrieving external networks: %s", err)
+	}
+
+	extNetworkRefs := &types.ExternalNetworkReferences{}
+	if err = decodeBody(resp, extNetworkRefs); err != nil {
+		util.Logger.Printf("[TRACE] error retrieving external networks: %s", err)
+		return fmt.Errorf("error decoding extension external networks: %s", err)
+	}
+
+	for _, netRef := range extNetworkRefs.ExternalNetworkReference {
+		if netRef.Name == networkName {
+			externalNetwork.ExternalNetwork.HREF = netRef.HREF
+			return externalNetwork.Refresh()
+		}
+	}
+
+	return fmt.Errorf("external network %s not found", networkName)
+}
+
 func (externalNetwork ExternalNetwork) Refresh() error {
 	extNetworkURL, err := url.ParseRequestURI(externalNetwork.ExternalNetwork.HREF)
 	if err != nil {

@@ -25,7 +25,7 @@ func (vcd *TestVCD) Test_GetExternalNetwork(check *C) {
 	check.Assert(err, IsNil)
 	LogExternalNetwork(*externalNetwork)
 	check.Assert(externalNetwork.HREF, Not(Equals), "")
-	expectedType := "application/vnd.vmware.admin.extension.network+xml"
+	expectedType := "application/vnd.vmware.admin.vmwexternalnet+xml"
 	check.Assert(externalNetwork.Name, Equals, networkName)
 	check.Assert(externalNetwork.Type, Equals, expectedType)
 }
