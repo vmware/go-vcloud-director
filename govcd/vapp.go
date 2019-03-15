@@ -805,8 +805,10 @@ func (vapp *VApp) ChangeVMName(name string) (Task, error) {
 
 }
 
-func (vapp *VApp) GetMetadata(requestUri string) (*types.Metadata, error) {
-	return getMetadata(vapp.client, requestUri)
+// GetMetadata() function calls private function getMetadata() with vapp.client and vapp.VApp.HREF
+// which returns a *types.Metadata struct for provided vapp input.
+func (vapp *VApp) GetMetadata() (*types.Metadata, error) {
+	return getMetadata(vapp.client, vapp.VApp.HREF)
 }
 
 func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
@@ -831,6 +833,8 @@ func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
 	return metadata, nil
 }
 
+// DeleteMetadata() function calls private function deleteMetadata() with vapp.client and vapp.VApp.HREF
+// which deletes metadata depending on key provided as input from vApp.
 func (vapp *VApp) DeleteMetadata(key string) (Task, error) {
 	return deleteMetadata(vapp.client, key, vapp.VApp.HREF)
 }
@@ -858,6 +862,8 @@ func deleteMetadata(client *Client, key string, requestUri string) (Task, error)
 	return *task, nil
 }
 
+// AddMetadata() function calls private function addMetadata() with vapp.client and vapp.VApp.HREF
+// which adds metadata key, value pair provided as input.
 func (vapp *VApp) AddMetadata(key string, value string) (Task, error) {
 	return addMetadata(vapp.client, key, value, vapp.VApp.HREF)
 }

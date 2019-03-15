@@ -8,7 +8,7 @@ look at [README.md](README.md) to understand how Go modules impact build and dev
 FEATURES:
 
 * New insert and eject media functions
-* Added metadata add/remove functions to vm
+* Added metadata add/remove functions to VM
 
 BACKWARDS INCOMPATIBILITIES / NOTES
 

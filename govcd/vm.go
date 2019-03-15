@@ -739,14 +739,20 @@ func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
 
 }
 
-func (vm *VM) GetMetadata(requestUri string) (*types.Metadata, error) {
-	return getMetadata(vm.client, requestUri)
+// GetMetadata() function calls private function getMetadata() with vm.client and vm.VM.HREF
+// which returns a *types.Metadata struct for provided VM input.
+func (vm *VM) GetMetadata() (*types.Metadata, error) {
+	return getMetadata(vm.client, vm.VM.HREF)
 }
 
+// DeleteMetadata() function calls private function deleteMetadata() with vm.client and vm.VM.HREF
+// which deletes metadata depending on key provided as input from VM.
 func (vm *VM) DeleteMetadata(key string) (Task, error) {
 	return deleteMetadata(vm.client, key, vm.VM.HREF)
 }
 
+// AddMetadata() function calls private function addMetadata() with vm.client and vm.VM.HREF
+// which adds metadata key, value pair provided as input to VM.
 func (vm *VM) AddMetadata(key string, value string) (Task, error) {
 	return addMetadata(vm.client, key, value, vm.VM.HREF)
 }

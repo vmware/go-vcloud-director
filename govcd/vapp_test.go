@@ -183,7 +183,7 @@ func (vcd *TestVCD) Test_AddMetadataOnVapp(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 
 	// Check if metadata was added correctly
-	metadata, err := vcd.vapp.GetMetadata(vcd.vapp.VApp.HREF)
+	metadata, err := vcd.vapp.GetMetadata()
 	check.Assert(err, IsNil)
 	check.Assert(metadata.MetadataEntry[0].Key, Equals, "key")
 	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
