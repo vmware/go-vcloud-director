@@ -47,10 +47,10 @@ func (externalNetwork ExternalNetwork) Refresh() error {
 
 func validateExternalNetwork(externalNetwork *types.ExternalNetwork) error {
 	if externalNetwork.Name == "" {
-		return errors.New("VdcConfiguration missing required field: Name")
+		return errors.New("External Network missing required field: Name")
 	}
 	if externalNetwork.Xmlns == "" {
-		return errors.New("VdcConfiguration missing required field: Xmlns")
+		return errors.New("External Network missing required field: Xmlns")
 	}
 	return nil
 }

@@ -59,26 +59,26 @@ func CreateExternalNetwork(vcdClient *VCDClient, externalNetwork *types.External
 	if err != nil {
 		return Task{}, fmt.Errorf("error marshalling xml: %s", err)
 	}
+
 	xmlData := bytes.NewBufferString(xml.Header + string(output))
 	util.Logger.Printf("[TRACE] CreateExternalNetwork - xml payload: %s\n", xmlData)
 	externalnetsHREF := vcdClient.Client.VCDHREF
 	externalnetsHREF.Path += "/admin/extension/externalnets"
 	req := vcdClient.Client.NewRequest(map[string]string{}, "POST", externalnetsHREF, xmlData)
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.vmwexternalnet+xml")
+
 	resp, err := checkResp(vcdClient.Client.Http.Do(req))
 	if err != nil {
 		util.Logger.Printf("[TRACE] error instantiating a new ExternalNetwork: %s", err)
 		return Task{}, fmt.Errorf("error instantiating a new ExternalNetwork: %s", err)
 	}
 
-	externalNetwork = new(types.ExternalNetwork)
-	if err = decodeBody(resp, externalNetwork); err != nil {
+	task := NewTask(&vcdClient.Client)
+	if err = decodeBody(resp, task.Task); err != nil {
 		util.Logger.Printf("[TRACE] error decoding admin extension externalnets response: %s", err)
 		return Task{}, fmt.Errorf("error decoding admin extension externalnets response: %s", err)
 	}
 
-	task := NewTask(&vcdClient.Client)
-	task.Task = externalNetwork.Tasks.Task[0]
 	return *task, nil
 }
 
@@ -115,4 +115,16 @@ func getExtension(vcdClient *VCDClient) (*types.Extension, error) {
 	}
 
 	return extensions, nil
+}
+
+func queryVirtualCenters(vdcCli *VCDClient, filter string) ([]*types.QueryResultVirtualCenterRecordType, error) {
+	results, err := vdcCli.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "virtualCenter",
+		"filter": filter,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return results.Results.VirtualCenterRecord, nil
 }

@@ -53,6 +53,7 @@ const (
 	TestVMAttachOrDetachDisk      = "TestVMAttachOrDetachDisk"
 	TestVMAttachDisk              = "TestVMAttachDisk"
 	TestVMDetachDisk              = "TestVMDetachDisk"
+	TestCreateExternalNetwork     = "TestCreateExternalNetwork"
 )
 
 const (

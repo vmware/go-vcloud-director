@@ -13,7 +13,6 @@ import (
 
 // Retrieves an external network and checks that its contents are filled as expected
 func (vcd *TestVCD) Test_GetExternalNetwork(check *C) {
-
 	fmt.Printf("Running: %s\n", check.TestName())
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
@@ -33,38 +32,21 @@ func (vcd *TestVCD) Test_GetExternalNetwork(check *C) {
 
 func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	if vcd.skipAdminTests {
-		check.Skip("Configuration org != 'Sysyem'")
-	}
-	networkName := vcd.config.VCD.ExternalNetwork
-	if networkName == "" {
-		check.Skip("No external network provided")
+		check.Skip("Configuration org != 'System'")
 	}
 
-	externalNetworkRef, err := GetExternalNetworkByName(vcd.client, networkName)
+	virtualCenters, err := queryVirtualCenters(vcd.client, fmt.Sprintf("(name==%s)", vcd.config.VCD.VimServer))
 	check.Assert(err, IsNil)
-	if *externalNetworkRef != (types.ExternalNetworkReference{}) {
-		externalNetwork := NewExternalNetwork(&vcd.client.Client)
-		externalNetwork.ExternalNetwork = &types.ExternalNetwork{
-			HREF: externalNetworkRef.HREF,
-		}
-		err = externalNetwork.DeleteWait()
-		check.Assert(err, IsNil)
-	}
-
-	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":   "virtualCenter",
-		"filter": fmt.Sprintf("(name==%s)", vcd.config.VCD.VimServer),
-	})
-	check.Assert(err, IsNil)
-	if len(results.Results.VirtualCenterRecord) == 0 {
+	if len(virtualCenters) == 0 {
 		check.Skip(fmt.Sprintf("No vSphere server found with name '%s'", vcd.config.VCD.VimServer))
 	}
-	vimServerHref := results.Results.VirtualCenterRecord[0].HREF
+	vimServerHref := virtualCenters[0].HREF
 
 	externalNetwork := &types.ExternalNetwork{
-		Name:        networkName,
+		Name:        TestCreateExternalNetwork,
 		Description: "Test Create External Network",
 		Xmlns:       "http://www.vmware.com/vcloud/extension/v1.5",
+		XmlnsVCloud: "http://www.vmware.com/vcloud/v1.5",
 		Configuration: &types.NetworkConfiguration{
 			Xmlns: "http://www.vmware.com/vcloud/v1.5",
 			IPScopes: &types.IPScopes{
@@ -105,7 +87,7 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	externalNetworkRef, err = GetExternalNetworkByName(vcd.client, networkName)
+	externalNetworkRef, err := GetExternalNetworkByName(vcd.client, TestCreateExternalNetwork)
 	check.Assert(err, IsNil)
-	check.Assert(externalNetworkRef.Name, Equals, networkName)
+	check.Assert(externalNetworkRef.Name, Equals, TestCreateExternalNetwork)
 }
