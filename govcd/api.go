@@ -21,13 +21,17 @@ import (
 
 // Client provides a client to vCloud Director, values can be populated automatically using the Authenticate method.
 type Client struct {
-	APIVersion      string      // The API version required
-	VCDToken        string      // Access Token (authorization header)
-	VCDAuthHeader   string      // Authorization header
-	VCDHREF         url.URL     // VCD API ENDPOINT
-	Http            http.Client // HttpClient is the client to use. Default will be used if not provided.
-	IsSysAdmin      bool        // flag if client is connected as system administrator
-	MaxRetryTimeout int         // MaxRetryTimeout in seconds
+	APIVersion    string      // The API version required
+	VCDToken      string      // Access Token (authorization header)
+	VCDAuthHeader string      // Authorization header
+	VCDHREF       url.URL     // VCD API ENDPOINT
+	Http          http.Client // HttpClient is the client to use. Default will be used if not provided.
+	IsSysAdmin    bool        // flag if client is connected as system administrator
+
+	// MaxRetryTimeout specifies a time limit (in seconds) for retrying requests made by the SDK
+	// where vCloud director may take time to respond and retry mechanism is needed.
+	// This must be >0, but higher level NewVCDClient() sets safe default.
+	MaxRetryTimeout int
 }
 
 // Function allow to pass complex values params which shouldn't be encoded like for queries. e.g. /query?filter=(name=foo)

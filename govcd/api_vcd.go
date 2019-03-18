@@ -111,7 +111,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 					TLSHandshakeTimeout: 120 * time.Second,
 				},
 			},
-			MaxRetryTimeout: 60, // Default timeout in seconds
+			MaxRetryTimeout: 60, // Default timeout in seconds for Client
 		},
 	}
 
