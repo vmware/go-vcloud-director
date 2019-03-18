@@ -30,7 +30,7 @@ type Client struct {
 
 	// MaxRetryTimeout specifies a time limit (in seconds) for retrying requests made by the SDK
 	// where vCloud director may take time to respond and retry mechanism is needed.
-	// This must be >0, but higher level NewVCDClient() sets safe default.
+	// This must be >0 to avoid instant timeout errors.
 	MaxRetryTimeout int
 }
 
