@@ -2156,7 +2156,11 @@ type QueryResultNetworkPoolRecordType struct {
 	NetworkPoolType int    `xml:"networkPoolType,attr,omitempty"`
 }
 
-// A record representing a vSphere server
+// Type: QueryResultVirtualCenterRecordType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/QueryResultVirtualCenterRecordType.html
+// Description: Type for a single virtualCenter query result in records format.
+// Since: 1.5
 type QueryResultVirtualCenterRecordType struct {
 	HREF          string `xml:"href,attr,omitempty"`
 	Name          string `xml:"name,attr,omitempty"`

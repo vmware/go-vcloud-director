@@ -35,7 +35,7 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 		check.Skip("Configuration org != 'System'")
 	}
 
-	virtualCenters, err := queryVirtualCenters(vcd.client, fmt.Sprintf("(name==%s)", vcd.config.VCD.VimServer))
+	virtualCenters, err := QueryVirtualCenters(vcd.client, fmt.Sprintf("(name==%s)", vcd.config.VCD.VimServer))
 	check.Assert(err, IsNil)
 	if len(virtualCenters) == 0 {
 		check.Skip(fmt.Sprintf("No vSphere server found with name '%s'", vcd.config.VCD.VimServer))
