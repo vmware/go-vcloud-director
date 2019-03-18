@@ -136,7 +136,7 @@ func (vcd *TestVCD) Test_BlockWhileStatus(check *C) {
 	check.Assert(errMustTimeout, ErrorMatches, "timed out waiting for vApp to exit state .* after .* seconds")
 
 	// This must wait until vApp changes status from initialVappStatus
-	err = vcd.vapp.BlockWhileStatus(initialVappStatus, 120)
+	err = vcd.vapp.BlockWhileStatus(initialVappStatus, vcd.config.Provider.MaxRetryTimeout)
 	check.Assert(err, IsNil)
 
 	// Collect back status response from PowerOn goroutine
