@@ -6,10 +6,6 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	"github.com/vmware/go-vcloud-director/v2/util"
-	. "gopkg.in/check.v1"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -17,6 +13,11 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
+	. "gopkg.in/check.v1"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -62,10 +63,11 @@ const (
 // specifies
 type TestConfig struct {
 	Provider struct {
-		User     string `yaml:"user"`
-		Password string `yaml:"password"`
-		Url      string `yaml:"url"`
-		SysOrg   string `yaml:"sysOrg"`
+		User            string `yaml:"user"`
+		Password        string `yaml:"password"`
+		Url             string `yaml:"url"`
+		SysOrg          string `yaml:"sysOrg"`
+		MaxRetryTimeout int    `yaml:"maxRetryTimeout,omitempty"`
 	}
 	VCD struct {
 		Org         string `yaml:"org"`
@@ -214,8 +216,13 @@ func GetTestVCDFromYaml(testConfig TestConfig) (*VCDClient, error) {
 	if err != nil {
 		return &VCDClient{}, fmt.Errorf("could not parse Url: %s", err)
 	}
-	vcdClient := NewVCDClient(*configUrl, true)
-	return vcdClient, nil
+
+	if testConfig.Provider.MaxRetryTimeout != 0 {
+		return NewVCDClient(*configUrl, true,
+			WithMaxRetryTimeout(testConfig.Provider.MaxRetryTimeout)), nil
+	}
+
+	return NewVCDClient(*configUrl, true), nil
 }
 
 // Necessary to enable the suite tests with TestVCD
