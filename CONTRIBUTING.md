@@ -28,6 +28,7 @@ contributors.  Typical contribution flow steps are:
 - Open an Issue in go-vcloud-director describing what you propose to do (unless the change is so trivial that an issue is not needed)
 - Wait for discussion and possible direction hints in the issue thread
 - Once you know  which steps to take in your intended contribution, make changes in a topic branch and commit (don't forget to add or modify tests too)
+- Update Go modules files `go.mod` and `go.sum` if you're changing dependencies.
 - Fetch changes from upstream and resolve any merge conflicts so that your topic branch is up-to-date
 - Push all commits to the topic branch in your forked repo
 - Submit a pull request to merge topic branch commits to upstream master
@@ -41,7 +42,7 @@ GitHub](https://help.github.com/categories/collaborating-with-issues-and-pull-re
 Our standard for Golang contributions is to match the format of the [standard
 Go package library](https://golang.org/pkg).  
 
-- Run `go fmt` on all code.
+- Run `go fmt` on all code with latest stable version of Go (`go fmt` results may vary between Go versions).  
 - All public interfaces, functions, and structs must have complete, grammatically correct Godoc comments that explain their purpose and proper usage.
 - Use self-explanatory names for all variables, functions, and interfaces.
 - Add comments for non-obvious features of internal implementations but otherwise let the code explain itself.
@@ -82,8 +83,11 @@ of the repo for pull requests back to go-vcloud-director.
 Make a local clone of the forked repo and add the base go-vcloud-director
 repo as the upstream remote repository.
 
+The project uses Go modules so the path is up to you, but do not forget
+to set `GO111MODULE=on` if you are in `GOPATH`
+
 ``` shell
-# (Put forked code in correct path to ensure Go is happy.)
+
 cd $GOPATH/src/github.com/vmware
 git clone https://github.com/imahacker/go-vcloud-director
 cd go-vcloud-director

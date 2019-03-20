@@ -1,13 +1,13 @@
 language: go
 
 go:
-    - "1.10.x"
+    - "1.12.x"
 
 sudo: false
 install: false
 
 script:
-    - make
+    - env GO111MODULE=on make
 
 after_success:
     - echo "Build Successful!" 

@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/vmware/go-vcloud-director/types/v56"
-	"github.com/vmware/go-vcloud-director/util"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 type Task struct {
@@ -115,7 +115,7 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 				inspectionFunc(task.Task,
 					howManyTimesRefreshed,
 					elapsed,
-					howManyTimesRefreshed == 1,                                   // first
+					howManyTimesRefreshed == 1, // first
 					task.Task.Status == "error" || task.Task.Status == "success", // last
 				)
 			}
@@ -130,7 +130,7 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 				howManyTimesRefreshed,
 				elapsed,
 				howManyTimesRefreshed == 1, // first
-				false, // last
+				false,                      // last
 			)
 		}
 
