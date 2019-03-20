@@ -203,7 +203,7 @@ func (vcd *TestVCD) Test_ChangeCPUcount(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
-	task, err := vcd.vapp.ChangeCPUcount(1)
+	task, err := vcd.vapp.ChangeCPUCount(1)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(task.Task.Status, Equals, "success")
