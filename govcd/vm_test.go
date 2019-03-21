@@ -694,7 +694,7 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 		check.Assert(foundItem, Equals, true)
 	}
 
-	// return tu previous value
+	// return to previous value
 	task, err = vm.ChangeCPUCountWithCore(currentCpus, &currentCores)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()

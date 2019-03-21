@@ -177,6 +177,7 @@ func (vm *VM) PowerOff() (Task, error) {
 
 // Sets number of available virtual logical processors
 // (i.e. CPUs x cores per socket)
+// Cpu cores count is inherited from template.
 // https://communities.vmware.com/thread/576209
 func (vm *VM) ChangeCPUCount(virtualCpuCount int) (Task, error) {
 	return vm.ChangeCPUCountWithCore(virtualCpuCount, nil)
