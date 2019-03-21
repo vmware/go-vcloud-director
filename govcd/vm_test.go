@@ -325,6 +325,17 @@ func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 	check.Assert(vmRef, NotNil)
 	check.Assert(vmRef.Name, Equals, vm.VM.Name)
 
+	// Cleanup: Detach disk
+	detachDiskTask, err := vm.attachOrDetachDisk(&types.DiskAttachOrDetachParams{
+		Disk: &types.Reference{
+			HREF: disk.Disk.HREF,
+		},
+	}, types.RelDiskDetach)
+	check.Assert(err, IsNil)
+
+	err = detachDiskTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
 }
 
 // Test detach disk from VM
@@ -631,4 +642,61 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
+}
+
+func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	currentCpus := 0
+	currentCores := 0
+
+	// save current values
+	if nil != vcd.vapp.VApp.Children.VM[0] && nil != vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection && nil != vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection.Item {
+		for _, item := range vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection.Item {
+			if item.ResourceType == 3 {
+				currentCpus = item.VirtualQuantity
+				currentCores = item.CoresPerSocket
+				break
+			}
+		}
+	}
+
+	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+
+	cores := 2
+	cpuCount := 4
+
+	task, err := vm.ChangeCPUCountWithCore(cpuCount, &cores)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(task.Task.Status, Equals, "success")
+
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+	foundItem := false
+	if nil != vm.VM.VirtualHardwareSection.Item {
+		for _, item := range vm.VM.VirtualHardwareSection.Item {
+			if item.ResourceType == 3 {
+				check.Assert(item.CoresPerSocket, Equals, cores)
+				check.Assert(item.VirtualQuantity, Equals, cpuCount)
+				foundItem = true
+				break
+			}
+		}
+		check.Assert(foundItem, Equals, true)
+	}
+
+	// return to previous value
+	task, err = vm.ChangeCPUCountWithCore(currentCpus, &currentCores)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(task.Task.Status, Equals, "success")
 }
