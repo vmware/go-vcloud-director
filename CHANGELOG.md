@@ -12,3 +12,9 @@ FEATURES:
 IMPROVEMENTS:
 
 * vApp vapp.PowerOn() implicitly waits for vApp to exit "UNRESOLVED" state which occurs shortly after creation and causes vapp.PowerOn() failure.
+* VM has new functions which allows to configure cores for CPU. VM.ChangeCPUCountWithCore()
+
+BREAKING CHANGES:
+
+* Deprecate vApp.ChangeCPUCountWithCore() and vApp.ChangeCPUCount()
+
