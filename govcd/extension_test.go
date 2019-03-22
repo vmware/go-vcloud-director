@@ -8,7 +8,7 @@ import (
 	"fmt"
 	. "gopkg.in/check.v1"
 
-	"github.com/vmware/go-vcloud-director/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 // Retrieves an external network and checks that its contents are filled as expected
