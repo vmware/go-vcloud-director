@@ -430,6 +430,7 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedNetwork(check *C) {
 	const dhcpEndAddress = "192.168.0.40"
 	const maxLeaseTime = 3500
 	const defaultLeaseTime = 2400
+	var guestVlanAllowed = true
 	task, err := vcd.vapp.AddIsolatedNetwork(&VappNetworkSettings{
 		Name:             networkName,
 		Gateway:          gateway,
@@ -438,7 +439,7 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedNetwork(check *C) {
 		DNS2:             dns2,
 		DNSSuffix:        dnsSuffix,
 		StaticIPRanges:   []*types.IPRange{{StartAddress: startAddress, EndAddress: endAddress}},
-		GuestVLANAllowed: true,
+		GuestVLANAllowed: &guestVlanAllowed,
 		DhcpSettings:     &DhcpSettings{IsEnabled: true, MaxLeaseTime: maxLeaseTime, DefaultLeaseTime: defaultLeaseTime, IPRange: &types.IPRange{StartAddress: dhcpStartAddress, EndAddress: dhcpEndAddress}},
 	})
 	check.Assert(err, IsNil)
