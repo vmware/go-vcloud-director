@@ -882,10 +882,8 @@ func addMetadata(client *Client, key string, value string, requestUri string) (T
 
 	output, err := xml.MarshalIndent(newmetadata, "  ", "    ")
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
+		return Task{}, fmt.Errorf("error adding metadata: %s", err)
 	}
-
-	util.Logger.Printf("[DEBUG] NetworkXML: %s", output)
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 

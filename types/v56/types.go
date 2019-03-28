@@ -1176,7 +1176,7 @@ type MetadataEntry struct {
 	Type       string      `xml:"type,attr,omitempty"`
 	Xsi        string      `xml:"xmlns:xsi,attr"`
 	Domain     string      `xml:"Domain,omitempty"` // A value of SYSTEM places this MetadataEntry in the SYSTEM domain. Omit or leave empty to place this MetadataEntry in the GENERAL domain.
-	Key        string      `xml:"key"`              // An arbitrary key name. Length cannot exceed 256 UTF-8 characters.
+	Key        string      `xml:"Key"`              // An arbitrary key name. Length cannot exceed 256 UTF-8 characters.
 	Link       []*Link     `xml:"Link,omitempty"`   //A reference to an entity or operation associated with this object.
 	TypedValue *TypedValue `xml:"TypedValue"`
 }
