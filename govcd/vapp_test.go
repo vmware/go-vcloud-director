@@ -193,13 +193,24 @@ func (vcd *TestVCD) Test_DeleteMetadataOnVapp(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
+	// Add metadata
+	task, err := vcd.vapp.AddMetadata("key2", "value2")
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
 	// Remove metadata
-	task, err := vcd.vapp.DeleteMetadata("key")
+	task, err = vcd.vapp.DeleteMetadata("key2")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
-
+	metadata, err := vcd.vapp.GetMetadata()
+	check.Assert(err, IsNil)
+	for _, k := range metadata.MetadataEntry {
+		if k.Key == "key2" {
+			check.Errorf("metadata.MetadataEntry should not contain key: %s", k)
+		}
+	}
 }
 
 // TODO: Add a check checking if the customization script ran

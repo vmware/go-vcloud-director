@@ -610,12 +610,24 @@ func (vcd *TestVCD) Test_DeleteMetadataOnVm(check *C) {
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
 
+	// Add metadata
+	task, err := vm.AddMetadata("key2", "value2")
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
 	// Remove metadata
-	task, err := vm.DeleteMetadata("key")
+	task, err = vm.DeleteMetadata("key2")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
+	metadata, err := vm.GetMetadata()
+	check.Assert(err, IsNil)
+	for _, k := range metadata.MetadataEntry {
+		if k.Key == "key2" {
+			check.Errorf("metadata.MetadataEntry should not contain key: %s", k)
+		}
+	}
 }
 
 // check resource subtype for specific value which means media is injected
