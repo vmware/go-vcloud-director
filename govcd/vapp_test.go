@@ -196,6 +196,8 @@ func (vcd *TestVCD) Test_DeleteMetadataOnVapp(check *C) {
 	// Add metadata
 	task, err := vcd.vapp.AddMetadata("key2", "value2")
 	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 
 	// Remove metadata

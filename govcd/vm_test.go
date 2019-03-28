@@ -613,6 +613,8 @@ func (vcd *TestVCD) Test_DeleteMetadataOnVm(check *C) {
 	// Add metadata
 	task, err := vm.AddMetadata("key2", "value2")
 	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 
 	// Remove metadata
