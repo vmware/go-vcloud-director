@@ -1,3 +1,14 @@
+## 2.2.0 (Unreleased)
+
+FEATURES:
+
+* Added metadata add/remove functions to VM
+
+BREAKING CHANGES:
+
+* vApp metadata now is attached to the vApp rather to first VM in vApp.
+* vApp metadata is no longer added to first VM in vApp it will be added to vApp directly instead.
+
 ## 2.1.0 (March 21, 2019)
 
 ARCHITECTURAL:
@@ -7,7 +18,7 @@ look at [README.md](README.md) to understand how Go modules impact build and dev
 
 FEATURES:
 
-* New insert and eject media functions 
+* New insert and eject media functions
 
 IMPROVEMENTS:
 
@@ -17,4 +28,3 @@ IMPROVEMENTS:
 BREAKING CHANGES:
 
 * Deprecate vApp.ChangeCPUCountWithCore() and vApp.ChangeCPUCount()
-
