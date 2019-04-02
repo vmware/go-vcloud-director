@@ -275,6 +275,8 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, erro
 					ipAllocationMode = "MANUAL"
 					if net.ParseIP(network["ip"].(string)) != nil {
 						ipAddress = network["ip"].(string)
+					} else {
+						ipAllocationMode = "DHCP"
 					}
 				} else {
 					ipAllocationMode = network["ip_allocation_mode"].(string)

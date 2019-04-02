@@ -136,10 +136,8 @@ func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName s
 			},
 			InstantiationParams: &types.InstantiationParams{
 				NetworkConnectionSection: &types.NetworkConnectionSection{
-					Type:                          vappTemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.Type,
-					HREF:                          vappTemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.HREF,
 					Info:                          "Network config for sourced item",
-					PrimaryNetworkConnectionIndex: vappTemplate.VAppTemplate.Children.VM[0].NetworkConnectionSection.PrimaryNetworkConnectionIndex,
+					PrimaryNetworkConnectionIndex: 0,
 				},
 			},
 		},
@@ -149,10 +147,9 @@ func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName s
 	for index, orgVdcNetwork := range orgVdcNetworks {
 		vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection = append(vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection,
 			&types.NetworkConnection{
-				Network:                 orgVdcNetwork.Name,
-				NetworkConnectionIndex:  index,
-				IsConnected:             true,
-				IPAddressAllocationMode: "POOL",
+				Network:                orgVdcNetwork.Name,
+				NetworkConnectionIndex: index,
+				IsConnected:            true,
 			},
 		)
 		vcomp.SourcedItem.NetworkAssignment = append(vcomp.SourcedItem.NetworkAssignment,
@@ -166,10 +163,9 @@ func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName s
 	if vappNetworkName != "" {
 		vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection = append(vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection.NetworkConnection,
 			&types.NetworkConnection{
-				Network:                 vappNetworkName,
-				NetworkConnectionIndex:  len(orgVdcNetworks),
-				IsConnected:             true,
-				IPAddressAllocationMode: "POOL",
+				Network:                vappNetworkName,
+				NetworkConnectionIndex: len(orgVdcNetworks),
+				IsConnected:            true,
 			},
 		)
 		vcomp.SourcedItem.NetworkAssignment = append(vcomp.SourcedItem.NetworkAssignment,
