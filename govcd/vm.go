@@ -256,10 +256,11 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, erro
 
 	networkSection, err := vm.GetNetworkConnectionSection()
 
-	// changes network config when only matches network name with provided one
-	for _, network := range networks {
-		for index, networkConnection := range networkSection.NetworkConnection {
-			if networkConnection.Network == network["orgnetwork"] { // network name are equal
+	for index, network := range networks {
+		for nicSlot, networkConnection := range networkSection.NetworkConnection {
+			// changes network config only if network name matches with provided one and if order is correct (this is needed
+			// for example if you attach NICs from same network)
+			if networkConnection.Network == network["orgnetwork"] && index == nicSlot {
 				// Determine what type of address is requested for the vApp
 				ipAllocationMode := "NONE"
 				ipAddress := "Any"
