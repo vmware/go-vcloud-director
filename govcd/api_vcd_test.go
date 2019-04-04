@@ -211,18 +211,18 @@ func GetConfigStruct() (TestConfig, error) {
 // Creates a VCDClient based on the endpoint given in the TestConfig argument.
 // TestConfig struct can be obtained by calling GetConfigStruct. Throws an error
 // if endpoint given is not a valid url.
-func GetTestVCDFromYaml(testConfig TestConfig) (*VCDClient, error) {
+func GetTestVCDFromYaml(testConfig TestConfig, options ...VCDClientOption) (*VCDClient, error) {
 	configUrl, err := url.ParseRequestURI(testConfig.Provider.Url)
 	if err != nil {
 		return &VCDClient{}, fmt.Errorf("could not parse Url: %s", err)
 	}
 
 	if testConfig.Provider.MaxRetryTimeout != 0 {
-		return NewVCDClient(*configUrl, true,
-			WithMaxRetryTimeout(testConfig.Provider.MaxRetryTimeout)), nil
+		options = append(options, WithMaxRetryTimeout(testConfig.Provider.MaxRetryTimeout))
+		return NewVCDClient(*configUrl, true, options...), nil
 	}
 
-	return NewVCDClient(*configUrl, true), nil
+	return NewVCDClient(*configUrl, true, options...), nil
 }
 
 // Necessary to enable the suite tests with TestVCD
@@ -293,7 +293,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 			fmt.Printf("%v", err)
 			vcd.skipVappTests = true
 		}
-		// After a successful creation, the vAPp is added to the cleanup list
+		// After a successful creation, the vApp is added to the cleanup list
 		AddToCleanupList(TestSetUpSuite, "vapp", "", "SetUpSuite")
 	} else {
 		vcd.skipVappTests = true
@@ -627,4 +627,90 @@ func TestVCDClient_Authenticate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error authenticating: %v", err)
 	}
+}
+
+// func (vcd *TestVCD) Test_APIMaxVersionEquals(check *C) {
+// 	mockVcd := &VCDClient{
+// 		SupportedVersions: supportedVersions{
+// 			VersionInfos{
+// 				VersionInfo{
+// 					Version: "27.0",
+// 				},
+// 			},
+// 		},
+// 	}
+
+// 	var versionTests = []struct {
+// 		version      string
+// 		errChecker   Checker
+// 		boolChecker  Checker
+// 		isSsupported bool
+// 	}{
+// 		{"27.0", IsNil, Equals, true},
+// 		{"27", IsNil, Equals, true},
+// 		{"27.0.0", IsNil, Equals, true},
+// 		{"27.5.0", IsNil, Equals, false},
+// 		{"21.0", IsNil, Equals, false},
+// 		{"invalid", NotNil, Equals, false},
+// 		{"", NotNil, Equals, false},
+// 	}
+
+// 	for _, tt := range versionTests {
+// 		r, err := mockVcd.APIMaxVersionEquals(tt.version)
+// 		check.Assert(err, tt.errChecker)
+// 		check.Assert(r, tt.boolChecker, tt.isSsupported)
+// 	}
+// }
+
+func (vcd *TestVCD) Test_APIMaxVerIs(check *C) {
+
+	// vCD 8.20 introduced API version 27.0
+	r, err := vcd.client.APIMaxVerIs(">= 27.0")
+	check.Assert(err, IsNil)
+	check.Assert(r, Equals, true)
+
+	// Mocked tests
+	mockVcd := &VCDClient{
+		SupportedVersions: supportedVersions{
+			VersionInfos{
+				VersionInfo{
+					Version: "27.0",
+				},
+			},
+		},
+	}
+
+	var versionTests = []struct {
+		version      string
+		errChecker   Checker
+		boolChecker  Checker
+		isSsupported bool
+	}{
+		{"= 27.0", IsNil, Equals, true},
+		{">= 27.0", IsNil, Equals, true},
+		{">= 25.0, <= 30", IsNil, Equals, true},
+		{"> 27.0", IsNil, Equals, false},
+		{"< 27.0", IsNil, Equals, false},
+		{"invalid", NotNil, Equals, false},
+		{"", NotNil, Equals, false},
+	}
+
+	for _, tt := range versionTests {
+		r, err := mockVcd.APIMaxVerIs(tt.version)
+		check.Assert(err, tt.errChecker)
+		check.Assert(r, tt.boolChecker, tt.isSsupported)
+	}
+}
+
+func (vcd *TestVCD) Test_validateAPIVersion(check *C) {
+	// valid version is checked automatically in SetUpSuite
+	unsupportedVersion := "999.0"
+
+	config, err := GetConfigStruct()
+	check.Assert(err, IsNil)
+
+	vcdClient, err := GetTestVCDFromYaml(config, WithAPIVersion(unsupportedVersion))
+	check.Assert(err, IsNil)
+	err = vcdClient.validateAPIVersion()
+	check.Assert(err, ErrorMatches, "API version .* is not supported: version = .* is not supported")
 }

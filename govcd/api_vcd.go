@@ -9,9 +9,14 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 	"sync"
 	"time"
+
+	version "github.com/hashicorp/go-version"
+
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 // VCDClientOption defines signature for customizing VCDClient using
@@ -19,38 +24,79 @@ import (
 type VCDClientOption func(*VCDClient) error
 
 type VCDClient struct {
-	Client      Client  // Client for the underlying VCD instance
-	sessionHREF url.URL // HREF for the session API
-	QueryHREF   url.URL // HREF for the query API
-	Mutex       sync.Mutex
+	Client            Client  // Client for the underlying VCD instance
+	sessionHREF       url.URL // HREF for the session API
+	QueryHREF         url.URL // HREF for the query API
+	Mutex             sync.Mutex
+	SupportedVersions supportedVersions
 }
 
+type VersionInfo struct {
+	Version    string `xml:"Version"`
+	LoginUrl   string `xml:"LoginUrl"`
+	Deprecated bool   `xml:"deprecated,attr,omitempty"`
+}
+
+type VersionInfos []VersionInfo
+
 type supportedVersions struct {
-	VersionInfo struct {
-		Version  string `xml:"Version"`
-		LoginUrl string `xml:"LoginUrl"`
-	} `xml:"VersionInfo"`
+	VersionInfos `xml:"VersionInfo"`
+}
+
+// APIMaxVersionEquals checks if max supported API version is exactly equal to specified.
+// Simple string format "27.0", "31.0"
+//
+// vCD version mapping to API version support https://code.vmware.com/doc/preview?id=8072
+// func (vdcCli *VCDClient) APIMaxVersionEquals(version string) (bool, error) {
+// 	return vdcCli.APIMaxVersionConstraint(fmt.Sprintf("= %s", version))
+// }
+
+// APIMaxVerIs allows to compare against maximum vCD supported API version.
+//
+// Format: ">= 27.0, < 32.0",">= 30.0" ,"= 27.0"
+//
+// vCD version mapping to API version support https://code.vmware.com/doc/preview?id=8072
+func (vdcCli *VCDClient) APIMaxVerIs(versionConstraint string) (bool, error) {
+	util.Logger.Printf("[TRACE] checking API versions against constraints '%s'", versionConstraint)
+	maxVersion, err := vdcCli.maxSupportedVersion()
+	if err != nil {
+		return false, fmt.Errorf("unable to find max supported version : %s", err)
+	}
+	maxVer, err := version.NewVersion(maxVersion)
+	if err != nil {
+		return false, fmt.Errorf("unable to parse max version %s : %s", maxVersion, err)
+	}
+	// Create a provided constraint to check against current max version
+	constraints, err := version.NewConstraint(versionConstraint)
+	if err != nil {
+		return false, fmt.Errorf("unable to parse given version constraint '%s' : %s", versionConstraint, err)
+	}
+	if constraints.Check(maxVer) {
+		util.Logger.Printf("[TRACE] API version %s satisfies constraints '%s'", maxVer, constraints)
+		return true, nil
+	}
+
+	util.Logger.Printf("[TRACE] API version %s does not satisfy constraints '%s'", maxVer, constraints)
+	return false, nil
 }
 
 func (vdcCli *VCDClient) vcdloginurl() error {
-	apiEndpoint := vdcCli.Client.VCDHREF
-	apiEndpoint.Path += "/versions"
-	// No point in checking for errors here
-	req := vdcCli.Client.NewRequest(map[string]string{}, "GET", apiEndpoint, nil)
-	resp, err := checkResp(vdcCli.Client.Http.Do(req))
-	if err != nil {
-		return err
+	if err := vdcCli.validateAPIVersion(); err != nil {
+		return fmt.Errorf("could not find valid version for login: %s", err)
 	}
-	defer resp.Body.Close()
 
-	supportedVersions := new(supportedVersions)
-	err = decodeBody(resp, supportedVersions)
-	if err != nil {
-		return fmt.Errorf("error decoding versions response: %s", err)
+	// find login address matching the API version
+	var neededVersion VersionInfo
+	for _, v := range vdcCli.SupportedVersions.VersionInfos {
+		if v.Version == vdcCli.Client.APIVersion {
+			neededVersion = v
+			break
+		}
 	}
-	loginUrl, err := url.Parse(supportedVersions.VersionInfo.LoginUrl)
+
+	loginUrl, err := url.Parse(neededVersion.LoginUrl)
 	if err != nil {
-		return fmt.Errorf("couldn't find a LoginUrl in versions")
+		return fmt.Errorf("couldn't find a LoginUrl for version %s", vdcCli.Client.APIVersion)
 	}
 	vdcCli.sessionHREF = *loginUrl
 	return nil
@@ -100,7 +146,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 	// Setting defaults
 	vcdClient := &VCDClient{
 		Client: Client{
-			APIVersion: "27.0", // supported by vCD 8.20, 9.0, 9.1, 9.5
+			APIVersion: "27.0", // supported by vCD 8.20, 9.0, 9.1, 9.5, 9.7
 			VCDHREF:    vcdEndpoint,
 			Http: http.Client{
 				Transport: &http.Transport{
@@ -129,6 +175,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 
 // Authenticate is an helper function that performs a login in vCloud Director.
 func (vdcCli *VCDClient) Authenticate(username, password, org string) error {
+
 	// LoginUrl
 	err := vdcCli.vcdloginurl()
 	if err != nil {
@@ -164,4 +211,96 @@ func WithMaxRetryTimeout(timeoutSeconds int) VCDClientOption {
 		vcdClient.Client.MaxRetryTimeout = timeoutSeconds
 		return nil
 	}
+}
+
+// WithAPIVersion allows to override default API version. Please be cautious
+// about changing the version as the default specified is the most tested.
+func WithAPIVersion(version string) VCDClientOption {
+	return func(vcdClient *VCDClient) error {
+		vcdClient.Client.APIVersion = version
+		fmt.Println("Set version to ", version)
+		return nil
+	}
+}
+
+// vcdFetchSupportedVersions retrieves list of supported versions from
+// /api/versions endpoint and stores them in VCDClient for future uses
+func (vdcCli *VCDClient) vcdFetchSupportedVersions() error {
+	apiEndpoint := vdcCli.Client.VCDHREF
+	apiEndpoint.Path += "/versions"
+
+	req := vdcCli.Client.NewRequest(map[string]string{}, "GET", apiEndpoint, nil)
+	resp, err := checkResp(vdcCli.Client.Http.Do(req))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	suppVersions := new(supportedVersions)
+	err = decodeBody(resp, suppVersions)
+	if err != nil {
+		return fmt.Errorf("error decoding versions response: %s", err)
+	}
+
+	vdcCli.SupportedVersions = *suppVersions
+
+	return nil
+}
+
+// maxSupportedVersion parses supported version list and returns the highest string format
+func (vdcCli *VCDClient) maxSupportedVersion() (string, error) {
+	versions := make([]*version.Version, len(vdcCli.SupportedVersions.VersionInfos))
+	for i, raw := range vdcCli.SupportedVersions.VersionInfos {
+		v, _ := version.NewVersion(raw.Version)
+		versions[i] = v
+	}
+	// Sort supported versions in order lowest-highest
+	sort.Sort(version.Collection(versions))
+
+	switch {
+	case len(versions) > 1:
+		return versions[len(versions)-1].Original(), nil
+	case len(versions) == 1:
+		return versions[0].Original(), nil
+	default:
+		return "", fmt.Errorf("could not identify supported versions")
+	}
+}
+
+// Checks if there is at least one specified version exactly matching listed ones.
+// Format is like "27.0"
+func (vdcCli *VCDClient) vcdCheckSupportedVersion(version string) (bool, error) {
+	return vdcCli.checkSupportedVersionConstraint(fmt.Sprintf("= %s", version))
+}
+
+// Checks if there is at least one specified version matching the list.
+// Constraint format can be in format ">= 27.0, < 32",">= 30" ,"= 27.0".
+func (vdcCli *VCDClient) checkSupportedVersionConstraint(versionConstraint string) (bool, error) {
+	constraints, err := version.NewConstraint(versionConstraint)
+	if err != nil {
+		return false, fmt.Errorf("unable to parse version %s", versionConstraint)
+	}
+	for _, vi := range vdcCli.SupportedVersions.VersionInfos {
+		v, _ := version.NewVersion(vi.Version)
+		if constraints.Check(v) {
+			return true, nil
+		}
+
+	}
+	return false, fmt.Errorf("version %s is not supported", constraints)
+}
+
+func (vdcCli *VCDClient) validateAPIVersion() error {
+	// vcdRetrieve supported versions
+	err := vdcCli.vcdFetchSupportedVersions()
+	if err != nil {
+		return fmt.Errorf("could not retrieve versions: %s", err)
+	}
+
+	// Check if version is supported
+	if ok, err := vdcCli.vcdCheckSupportedVersion(vdcCli.Client.APIVersion); !ok || err != nil {
+		return fmt.Errorf("API version %s is not supported: %s", vdcCli.Client.APIVersion, err)
+	}
+
+	return nil
 }

@@ -608,6 +608,10 @@ func (vcd *TestVCD) Test_QueryDisk(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(diskRecord.Disk.Name, Equals, diskCreateParamsDisk.Name)
 	check.Assert(diskRecord.Disk.SizeB, Equals, int64(diskCreateParamsDisk.Size))
-	check.Assert(diskRecord.Disk.Description, Equals, diskCreateParamsDisk.Description)
+
+	// vCD version >= 9.5. Earlier versions don't return Description
+	if ok, err := vcd.client.APIMaxVerIs(">= 31.0"); ok && err == nil {
+		check.Assert(diskRecord.Disk.Description, Equals, diskCreateParamsDisk.Description)
+	}
 
 }
