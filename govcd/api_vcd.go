@@ -43,41 +43,37 @@ type supportedVersions struct {
 	VersionInfos `xml:"VersionInfo"`
 }
 
-// APIMaxVersionEquals checks if max supported API version is exactly equal to specified.
-// Simple string format "27.0", "31.0"
+// APIMaxVerIs allows to compare against maximum vCD supported API version. It will always
+// return false until the client has not done Authenticate().
+//
+// Format: ">= 27.0, < 32.0", ">= 30.0", "= 27.0"
 //
 // vCD version mapping to API version support https://code.vmware.com/doc/preview?id=8072
-// func (vdcCli *VCDClient) APIMaxVersionEquals(version string) (bool, error) {
-// 	return vdcCli.APIMaxVersionConstraint(fmt.Sprintf("= %s", version))
-// }
-
-// APIMaxVerIs allows to compare against maximum vCD supported API version.
-//
-// Format: ">= 27.0, < 32.0",">= 30.0" ,"= 27.0"
-//
-// vCD version mapping to API version support https://code.vmware.com/doc/preview?id=8072
-func (vdcCli *VCDClient) APIMaxVerIs(versionConstraint string) (bool, error) {
+func (vdcCli *VCDClient) APIMaxVerIs(versionConstraint string) bool {
 	util.Logger.Printf("[TRACE] checking API versions against constraints '%s'", versionConstraint)
 	maxVersion, err := vdcCli.maxSupportedVersion()
 	if err != nil {
-		return false, fmt.Errorf("unable to find max supported version : %s", err)
+		util.Logger.Printf("[ERROR] unable to find max supported version : %s", err)
+		return false
 	}
 	maxVer, err := version.NewVersion(maxVersion)
 	if err != nil {
-		return false, fmt.Errorf("unable to parse max version %s : %s", maxVersion, err)
+		util.Logger.Printf("[ERROR] unable to parse max version %s : %s", maxVersion, err)
+		return false
 	}
 	// Create a provided constraint to check against current max version
 	constraints, err := version.NewConstraint(versionConstraint)
 	if err != nil {
-		return false, fmt.Errorf("unable to parse given version constraint '%s' : %s", versionConstraint, err)
+		util.Logger.Printf("[ERROR] unable to parse given version constraint '%s' : %s", versionConstraint, err)
+		return false
 	}
 	if constraints.Check(maxVer) {
 		util.Logger.Printf("[TRACE] API version %s satisfies constraints '%s'", maxVer, constraints)
-		return true, nil
+		return true
 	}
 
 	util.Logger.Printf("[TRACE] API version %s does not satisfy constraints '%s'", maxVer, constraints)
-	return false, nil
+	return false
 }
 
 func (vdcCli *VCDClient) vcdloginurl() error {
@@ -267,8 +263,8 @@ func (vdcCli *VCDClient) maxSupportedVersion() (string, error) {
 	}
 }
 
-// Checks if there is at least one specified version exactly matching listed ones.
-// Format is like "27.0"
+// vcdCheckSupportedVersion checks if there is at least one specified version exactly matching listed ones.
+// Format example "27.0"
 func (vdcCli *VCDClient) vcdCheckSupportedVersion(version string) (bool, error) {
 	return vdcCli.checkSupportedVersionConstraint(fmt.Sprintf("= %s", version))
 }

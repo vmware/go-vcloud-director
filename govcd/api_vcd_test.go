@@ -629,44 +629,10 @@ func TestVCDClient_Authenticate(t *testing.T) {
 	}
 }
 
-// func (vcd *TestVCD) Test_APIMaxVersionEquals(check *C) {
-// 	mockVcd := &VCDClient{
-// 		SupportedVersions: supportedVersions{
-// 			VersionInfos{
-// 				VersionInfo{
-// 					Version: "27.0",
-// 				},
-// 			},
-// 		},
-// 	}
-
-// 	var versionTests = []struct {
-// 		version      string
-// 		errChecker   Checker
-// 		boolChecker  Checker
-// 		isSsupported bool
-// 	}{
-// 		{"27.0", IsNil, Equals, true},
-// 		{"27", IsNil, Equals, true},
-// 		{"27.0.0", IsNil, Equals, true},
-// 		{"27.5.0", IsNil, Equals, false},
-// 		{"21.0", IsNil, Equals, false},
-// 		{"invalid", NotNil, Equals, false},
-// 		{"", NotNil, Equals, false},
-// 	}
-
-// 	for _, tt := range versionTests {
-// 		r, err := mockVcd.APIMaxVersionEquals(tt.version)
-// 		check.Assert(err, tt.errChecker)
-// 		check.Assert(r, tt.boolChecker, tt.isSsupported)
-// 	}
-// }
-
 func (vcd *TestVCD) Test_APIMaxVerIs(check *C) {
 
 	// vCD 8.20 introduced API version 27.0
-	r, err := vcd.client.APIMaxVerIs(">= 27.0")
-	check.Assert(err, IsNil)
+	r := vcd.client.APIMaxVerIs(">= 27.0")
 	check.Assert(r, Equals, true)
 
 	// Mocked tests
@@ -682,22 +648,20 @@ func (vcd *TestVCD) Test_APIMaxVerIs(check *C) {
 
 	var versionTests = []struct {
 		version      string
-		errChecker   Checker
 		boolChecker  Checker
 		isSsupported bool
 	}{
-		{"= 27.0", IsNil, Equals, true},
-		{">= 27.0", IsNil, Equals, true},
-		{">= 25.0, <= 30", IsNil, Equals, true},
-		{"> 27.0", IsNil, Equals, false},
-		{"< 27.0", IsNil, Equals, false},
-		{"invalid", NotNil, Equals, false},
-		{"", NotNil, Equals, false},
+		{"= 27.0", Equals, true},
+		{">= 27.0", Equals, true},
+		{">= 25.0, <= 30", Equals, true},
+		{"> 27.0", Equals, false},
+		{"< 27.0", Equals, false},
+		{"invalid", Equals, false},
+		{"", Equals, false},
 	}
 
 	for _, tt := range versionTests {
-		r, err := mockVcd.APIMaxVerIs(tt.version)
-		check.Assert(err, tt.errChecker)
+		r := mockVcd.APIMaxVerIs(tt.version)
 		check.Assert(r, tt.boolChecker, tt.isSsupported)
 	}
 }
