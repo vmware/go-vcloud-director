@@ -16,16 +16,7 @@ func (vcd *TestVCD) Test_APIMaxVerIs(check *C) {
 	r := vcd.client.APIMaxVerIs(">= 27.0")
 	check.Assert(r, Equals, true)
 
-	// Mocked tests
-	mockVcd := &VCDClient{
-		supportedVersions: supportedVersions{
-			versionInfos{
-				versionInfo{
-					Version: "27.0",
-				},
-			},
-		},
-	}
+	mockVcd := getMockVcdWithAPIVersion("27.0")
 
 	var versionTests = []struct {
 		version      string
@@ -53,16 +44,10 @@ func (vcd *TestVCD) Test_APICurVerIs(check *C) {
 	r := vcd.client.APICurVerIs(fmt.Sprintf("= %s", vcd.client.Client.APIVersion))
 	check.Assert(r, Equals, true)
 
-	// Mocked tests
-	mockVcd := &VCDClient{
-		supportedVersions: supportedVersions{
-			versionInfos{
-				versionInfo{
-					Version: "27.0",
-				},
-			},
-		},
-	}
+	r = vcd.client.APICurVerIs(">= 27.0")
+	check.Assert(r, Equals, true)
+
+	mockVcd := getMockVcdWithAPIVersion("27.0")
 
 	var versionTests = []struct {
 		version      string
@@ -96,4 +81,16 @@ func (vcd *TestVCD) Test_validateAPIVersion(check *C) {
 	check.Assert(err, IsNil)
 	err = vcdClient.validateAPIVersion()
 	check.Assert(err, ErrorMatches, "API version .* is not supported: version = .* is not supported")
+}
+
+func getMockVcdWithAPIVersion(version string) *VCDClient {
+	return &VCDClient{
+		supportedVersions: supportedVersions{
+			versionInfos{
+				versionInfo{
+					Version: version,
+				},
+			},
+		},
+	}
 }
