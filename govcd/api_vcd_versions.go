@@ -25,6 +25,48 @@ type supportedVersions struct {
 	versionInfos `xml:"VersionInfo"`
 }
 
+// APIMaxVerIs allows to compare against maximum vCD supported API version. It will always
+// return false until the client has not done Authenticate(). Can be useful to validate
+// what vCD version is actually running.
+//
+// Format: ">= 27.0, < 32.0", ">= 30.0", "= 27.0"
+//
+// vCD version mapping to API version support https://code.vmware.com/doc/preview?id=8072
+func (vdcCli *VCDClient) APIMaxVerIs(versionConstraint string) bool {
+	util.Logger.Printf("[TRACE] checking max API version against constraints '%s'", versionConstraint)
+	maxVersion, err := vdcCli.maxSupportedVersion()
+	if err != nil {
+		util.Logger.Printf("[ERROR] unable to find max supported version : %s", err)
+		return false
+	}
+
+	isSupported, err := vdcCli.apiVerMatchesConstraint(maxVersion, versionConstraint)
+	if err != nil {
+		util.Logger.Printf("[ERROR] unable to find max supported version : %s", err)
+		return false
+	}
+
+	return isSupported
+}
+
+// APICurVerIs allows to compare against currently used API version. Can be useful to validate
+// if a certain feature can be used or not.
+//
+// Format: ">= 27.0, < 32.0", ">= 30.0", "= 27.0"
+//
+// vCD version mapping to API version support https://code.vmware.com/doc/preview?id=8072
+func (vdcCli *VCDClient) APICurVerIs(versionConstraint string) bool {
+	util.Logger.Printf("[TRACE] checking current API version against constraints '%s'", versionConstraint)
+
+	isSupported, err := vdcCli.apiVerMatchesConstraint(vdcCli.Client.APIVersion, versionConstraint)
+	if err != nil {
+		util.Logger.Printf("[ERROR] unable to find cur supported version : %s", err)
+		return false
+	}
+
+	return isSupported
+}
+
 // vcdFetchSupportedVersions retrieves list of supported versions from
 // /api/versions endpoint and stores them in VCDClient for future uses
 func (vdcCli *VCDClient) vcdFetchSupportedVersions() error {
