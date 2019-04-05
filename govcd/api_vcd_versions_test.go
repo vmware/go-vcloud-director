@@ -12,7 +12,7 @@ import (
 
 func (vcd *TestVCD) Test_APIMaxVerIs(check *C) {
 
-	// Minimum support vCD 8.20 introduced API version 27.0
+	// Minimum supported vCD 8.20 introduced API version 27.0
 	r := vcd.client.APIMaxVerIs(">= 27.0")
 	check.Assert(r, Equals, true)
 
