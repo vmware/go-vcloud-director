@@ -13,16 +13,16 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
-type versionInfo struct {
+type VersionInfo struct {
 	Version    string `xml:"Version"`
 	LoginUrl   string `xml:"LoginUrl"`
 	Deprecated bool   `xml:"deprecated,attr,omitempty"`
 }
 
-type versionInfos []versionInfo
+type VersionInfos []VersionInfo
 
-type supportedVersions struct {
-	versionInfos `xml:"VersionInfo"`
+type SupportedVersions struct {
+	VersionInfos `xml:"VersionInfo"`
 }
 
 // APIMaxVerIs allows to compare against maximum vCD supported API version. It will always
@@ -80,7 +80,7 @@ func (vdcCli *VCDClient) vcdFetchSupportedVersions() error {
 	}
 	defer resp.Body.Close()
 
-	suppVersions := new(supportedVersions)
+	suppVersions := new(SupportedVersions)
 	err = decodeBody(resp, suppVersions)
 	if err != nil {
 		return fmt.Errorf("error decoding versions response: %s", err)
@@ -93,8 +93,8 @@ func (vdcCli *VCDClient) vcdFetchSupportedVersions() error {
 
 // maxSupportedVersion parses supported version list and returns the highest version in string format.
 func (vdcCli *VCDClient) maxSupportedVersion() (string, error) {
-	versions := make([]*semver.Version, len(vdcCli.supportedVersions.versionInfos))
-	for i, raw := range vdcCli.supportedVersions.versionInfos {
+	versions := make([]*semver.Version, len(vdcCli.supportedVersions.VersionInfos))
+	for i, raw := range vdcCli.supportedVersions.VersionInfos {
 		v, _ := semver.NewVersion(raw.Version)
 		versions[i] = v
 	}
@@ -124,7 +124,7 @@ func (vdcCli *VCDClient) checkSupportedVersionConstraint(versionConstraint strin
 	if err != nil {
 		return false, fmt.Errorf("unable to parse version %s", versionConstraint)
 	}
-	for _, vi := range vdcCli.supportedVersions.versionInfos {
+	for _, vi := range vdcCli.supportedVersions.VersionInfos {
 		v, _ := semver.NewVersion(vi.Version)
 		if constraints.Check(v) {
 			return true, nil

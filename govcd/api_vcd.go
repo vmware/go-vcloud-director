@@ -23,7 +23,7 @@ type VCDClient struct {
 	sessionHREF       url.URL // HREF for the session API
 	QueryHREF         url.URL // HREF for the query API
 	Mutex             sync.Mutex
-	supportedVersions // Versions from /api/versions endpoint
+	supportedVersions SupportedVersions // Versions from /api/versions endpoint
 }
 
 func (vdcCli *VCDClient) vcdloginurl() error {
@@ -32,8 +32,8 @@ func (vdcCli *VCDClient) vcdloginurl() error {
 	}
 
 	// find login address matching the API version
-	var neededVersion versionInfo
-	for _, v := range vdcCli.supportedVersions.versionInfos {
+	var neededVersion VersionInfo
+	for _, v := range vdcCli.supportedVersions.VersionInfos {
 		if v.Version == vdcCli.Client.APIVersion {
 			neededVersion = v
 			break
@@ -164,7 +164,6 @@ func WithMaxRetryTimeout(timeoutSeconds int) VCDClientOption {
 func WithAPIVersion(version string) VCDClientOption {
 	return func(vcdClient *VCDClient) error {
 		vcdClient.Client.APIVersion = version
-		fmt.Println("Set version to ", version)
 		return nil
 	}
 }
