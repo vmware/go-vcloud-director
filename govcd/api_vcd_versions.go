@@ -138,7 +138,7 @@ func (vdcCli *VCDClient) apiVerMatchesConstraint(version, versionConstraint stri
 
 	checkVer, err := semver.NewVersion(version)
 	if err != nil {
-		return false, fmt.Errorf("[ERROR] unable to parse max version %s : %s", checkVer, err)
+		return false, fmt.Errorf("[ERROR] unable to parse version %s : %s", version, err)
 	}
 	// Create a provided constraint to check against current max version
 	constraints, err := semver.NewConstraint(versionConstraint)
@@ -146,7 +146,7 @@ func (vdcCli *VCDClient) apiVerMatchesConstraint(version, versionConstraint stri
 		return false, fmt.Errorf("[ERROR] unable to parse given version constraint '%s' : %s", versionConstraint, err)
 	}
 	if constraints.Check(checkVer) {
-		return true, fmt.Errorf("[TRACE] API version %s satisfies constraints '%s'", checkVer, constraints)
+		return true, nil
 	}
 
 	util.Logger.Printf("[TRACE] API version %s does not satisfy constraints '%s'", checkVer, constraints)

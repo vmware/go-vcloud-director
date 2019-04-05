@@ -85,6 +85,9 @@ func (vcd *TestVCD) Test_validateAPIVersion(check *C) {
 
 func getMockVcdWithAPIVersion(version string) *VCDClient {
 	return &VCDClient{
+		Client: Client{
+			APIVersion: version,
+		},
 		supportedVersions: SupportedVersions{
 			VersionInfos{
 				VersionInfo{
