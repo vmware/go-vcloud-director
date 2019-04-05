@@ -7,7 +7,6 @@ package govcd
 import (
 	"bytes"
 	"encoding/xml"
-	"errors"
 	"fmt"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -39,10 +38,9 @@ func CreateExternalNetwork(vcdClient *VCDClient, externalNetwork *types.External
 	}
 
 	xmlData := bytes.NewBufferString(xml.Header + string(output))
-	util.Logger.Printf("[TRACE] CreateExternalNetwork - xml payload: %s\n", xmlData)
-	externalnetsHREF := vcdClient.Client.VCDHREF
-	externalnetsHREF.Path += "/admin/extension/externalnets"
-	req := vcdClient.Client.NewRequest(map[string]string{}, "POST", externalnetsHREF, xmlData)
+	externalNetHREF := vcdClient.Client.VCDHREF
+	externalNetHREF.Path += "/admin/extension/externalnets"
+	req := vcdClient.Client.NewRequest(map[string]string{}, "POST", externalNetHREF, xmlData)
 	req.Header.Add("Content-Type", "application/vnd.vmware.admin.vmwexternalnet+xml")
 
 	resp, err := checkResp(vcdClient.Client.Http.Do(req))
@@ -58,21 +56,6 @@ func CreateExternalNetwork(vcdClient *VCDClient, externalNetwork *types.External
 	}
 
 	return *task, nil
-}
-
-func getExternalNetworkHref(client *Client) (string, error) {
-	extensions, err := getExtension(client)
-	if err != nil {
-		return "", err
-	}
-
-	for _, extensionLink := range extensions.Link {
-		if extensionLink.Type == "application/vnd.vmware.admin.vmwExternalNetworkReferences+xml" {
-			return extensionLink.HREF, nil
-		}
-	}
-
-	return "", errors.New("external network link isn't found")
 }
 
 func getExtension(client *Client) (*types.Extension, error) {
@@ -93,17 +76,4 @@ func getExtension(client *Client) (*types.Extension, error) {
 	}
 
 	return extensions, nil
-}
-
-// Find a list of Virtual Centers matching the filter parameter.
-func QueryVirtualCenters(vdcCli *VCDClient, filter string) ([]*types.QueryResultVirtualCenterRecordType, error) {
-	results, err := vdcCli.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":   "virtualCenter",
-		"filter": filter,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return results.Results.VirtualCenterRecord, nil
 }

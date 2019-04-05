@@ -666,3 +666,16 @@ func (adminOrg *AdminOrg) FindCatalog(catalogName string) (Catalog, error) {
 	}
 	return Catalog{}, nil
 }
+
+// Find a list of Virtual Centers matching the filter parameter.
+func QueryVirtualCenters(vdcCli *VCDClient, filter string) ([]*types.QueryResultVirtualCenterRecordType, error) {
+	results, err := vdcCli.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "virtualCenter",
+		"filter": filter,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return results.Results.VirtualCenterRecord, nil
+}

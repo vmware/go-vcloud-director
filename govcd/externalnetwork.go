@@ -25,6 +25,21 @@ func NewExternalNetwork(cli *Client) *ExternalNetwork {
 	}
 }
 
+func getExternalNetworkHref(client *Client) (string, error) {
+	extensions, err := getExtension(client)
+	if err != nil {
+		return "", err
+	}
+
+	for _, extensionLink := range extensions.Link {
+		if extensionLink.Type == "application/vnd.vmware.admin.vmwExternalNetworkReferences+xml" {
+			return extensionLink.HREF, nil
+		}
+	}
+
+	return "", errors.New("external network link isn't found")
+}
+
 func (externalNetwork ExternalNetwork) GetByName(networkName string) error {
 	extNetworkHREF, err := getExternalNetworkHref(externalNetwork.client)
 	if err != nil {
@@ -81,10 +96,10 @@ func (externalNetwork ExternalNetwork) Refresh() error {
 
 func validateExternalNetwork(externalNetwork *types.ExternalNetwork) error {
 	if externalNetwork.Name == "" {
-		return errors.New("External Network missing required field: Name")
+		return errors.New("external Network missing required field: Name")
 	}
 	if externalNetwork.Xmlns == "" {
-		return errors.New("External Network missing required field: Xmlns")
+		return errors.New("external Network missing required field: Xmlns")
 	}
 	return nil
 }
