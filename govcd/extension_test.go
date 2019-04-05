@@ -87,7 +87,21 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	externalNetworkRef, err := GetExternalNetworkByName(vcd.client, TestCreateExternalNetwork)
+	newExternalNetwork := NewExternalNetwork(&vcd.client.Client)
+	err = newExternalNetwork.GetByName(TestCreateExternalNetwork)
 	check.Assert(err, IsNil)
-	check.Assert(externalNetworkRef.Name, Equals, TestCreateExternalNetwork)
+	check.Assert(newExternalNetwork.ExternalNetwork.Name, Equals, TestCreateExternalNetwork)
+
+	ipScope := newExternalNetwork.ExternalNetwork.Configuration.IPScopes.IPScope
+	check.Assert(ipScope.Gateway, Equals, "192.168.201.1")
+	check.Assert(ipScope.Netmask, Equals, "255.255.255.0")
+	check.Assert(ipScope.DNS1, Equals, "192.168.202.253")
+	check.Assert(ipScope.DNS2, Equals, "192.168.202.254")
+
+	check.Assert(len(ipScope.IPRanges.IPRange), Equals, 1)
+	ipRange := ipScope.IPRanges.IPRange[0]
+	check.Assert(ipRange.StartAddress, Equals, "192.168.201.3")
+	check.Assert(ipRange.EndAddress, Equals, "192.168.201.250")
+
+	check.Assert(newExternalNetwork.ExternalNetwork.Configuration.FenceMode, Equals, "isolated")
 }
