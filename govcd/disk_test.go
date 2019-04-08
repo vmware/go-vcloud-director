@@ -612,6 +612,8 @@ func (vcd *TestVCD) Test_QueryDisk(check *C) {
 	// vCD version >= 9.5. Earlier versions don't return Description
 	if vcd.client.APIMaxVerIs(">= 31.0") {
 		check.Assert(diskRecord.Disk.Description, Equals, diskCreateParamsDisk.Description)
+	} else {
+		fmt.Printf("%s: skipping disk description check (not available in vCD < 9.5) \n", check.TestName())
 	}
 
 }
