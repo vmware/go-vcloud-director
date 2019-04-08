@@ -25,7 +25,7 @@ type SupportedVersions struct {
 	VersionInfos `xml:"VersionInfo"`
 }
 
-// APIMaxVerIs compares against maximum vCD supported API version from /api/versions (not necessarily
+// APIVCDMaxVersionIs compares against maximum vCD supported API version from /api/versions (not necessarily
 // the currently used one). This allows to check what is the maximum API version that vCD instance
 // supports and can be used to guess vCD product version. API 31.0 support was first introduced in
 // vCD 9.5 (as per https://code.vmware.com/doc/preview?id=8072). Therefore APIMaxVerIs(">= 31.0")
@@ -34,7 +34,7 @@ type SupportedVersions struct {
 // Format: ">= 27.0, < 32.0", ">= 30.0", "= 27.0"
 //
 // vCD version mapping to API version support https://code.vmware.com/doc/preview?id=8072
-func (vdcCli *VCDClient) APIMaxVerIs(versionConstraint string) bool {
+func (vdcCli *VCDClient) APIVCDMaxVersionIs(versionConstraint string) bool {
 	util.Logger.Printf("[TRACE] checking max API version against constraints '%s'", versionConstraint)
 	maxVersion, err := vdcCli.maxSupportedVersion()
 	if err != nil {

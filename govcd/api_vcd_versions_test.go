@@ -10,10 +10,10 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_APIMaxVerIs(check *C) {
+func (vcd *TestVCD) Test_APIVCDMaxVersionIs(check *C) {
 
 	// Minimum supported vCD 8.20 introduced API version 27.0
-	r := vcd.client.APIMaxVerIs(">= 27.0")
+	r := vcd.client.APIVCDMaxVersionIs(">= 27.0")
 	check.Assert(r, Equals, true)
 
 	mockVcd := getMockVcdWithAPIVersion("27.0")
@@ -33,7 +33,7 @@ func (vcd *TestVCD) Test_APIMaxVerIs(check *C) {
 	}
 
 	for _, tt := range versionTests {
-		r := mockVcd.APIMaxVerIs(tt.version)
+		r := mockVcd.APIVCDMaxVersionIs(tt.version)
 		check.Assert(r, tt.boolChecker, tt.isSsupported)
 	}
 }
