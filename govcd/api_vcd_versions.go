@@ -25,9 +25,11 @@ type SupportedVersions struct {
 	VersionInfos `xml:"VersionInfo"`
 }
 
-// APIMaxVerIs allows to compare against maximum vCD supported API version. It will always
-// return false until the client has not done Authenticate(). Can be useful to validate
-// what vCD version is actually running.
+// APIMaxVerIs compares against maximum vCD supported API version from /api/versions (not necessarily
+// the currently used one). This allows to check what is the maximum API version that vCD instance
+// supports and can be used to guess vCD product version. API 31.0 support was first introduced in
+// vCD 9.5 (as per https://code.vmware.com/doc/preview?id=8072). Therefore APIMaxVerIs(">= 31.0")
+// implies that you have vCD 9.5 or newer running inside.
 //
 // Format: ">= 27.0, < 32.0", ">= 30.0", "= 27.0"
 //
