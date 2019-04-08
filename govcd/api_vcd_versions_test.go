@@ -10,6 +10,30 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+func (vcd *TestVCD) Test_APIVCDMaxVersionIs_Unauthenticated(check *C) {
+	config, err := GetConfigStruct()
+	check.Assert(err, IsNil)
+
+	vcdClient, err := GetTestVCDFromYaml(config)
+	check.Assert(err, IsNil)
+
+	r := vcdClient.APIVCDMaxVersionIs(">= 27.0")
+	check.Assert(r, Equals, true)
+	check.Assert(vcdClient.supportedVersions.VersionInfos, Not(Equals), 0)
+}
+
+func (vcd *TestVCD) Test_APIClientVersionIs_Unauthenticated(check *C) {
+	config, err := GetConfigStruct()
+	check.Assert(err, IsNil)
+
+	vcdClient, err := GetTestVCDFromYaml(config)
+	check.Assert(err, IsNil)
+
+	r := vcdClient.APIClientVersionIs(">= 27.0")
+	check.Assert(r, Equals, true)
+	check.Assert(vcdClient.supportedVersions.VersionInfos, Not(Equals), 0)
+}
+
 func (vcd *TestVCD) Test_APIVCDMaxVersionIs(check *C) {
 
 	// Minimum supported vCD 8.20 introduced API version 27.0

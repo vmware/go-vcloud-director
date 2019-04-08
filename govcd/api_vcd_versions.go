@@ -30,11 +30,18 @@ type SupportedVersions struct {
 // supports and can be used to guess vCD product version. API 31.0 support was first introduced in
 // vCD 9.5 (as per https://code.vmware.com/doc/preview?id=8072). Therefore APIMaxVerIs(">= 31.0")
 // implies that you have vCD 9.5 or newer running inside.
+// It does not require for the client to be authenticated.
 //
 // Format: ">= 27.0, < 32.0", ">= 30.0", "= 27.0"
 //
 // vCD version mapping to API version support https://code.vmware.com/doc/preview?id=8072
 func (vdcCli *VCDClient) APIVCDMaxVersionIs(versionConstraint string) bool {
+	err := vdcCli.vcdFetchSupportedVersions()
+	if err != nil {
+		util.Logger.Printf("[ERROR] could not retrieve supported versions: %s", err)
+		return false
+	}
+
 	util.Logger.Printf("[TRACE] checking max API version against constraints '%s'", versionConstraint)
 	maxVersion, err := vdcCli.maxSupportedVersion()
 	if err != nil {
@@ -53,11 +60,18 @@ func (vdcCli *VCDClient) APIVCDMaxVersionIs(versionConstraint string) bool {
 
 // APIClientVersionIs allows to compare against currently used API version VCDClient.Client.APIVersion.
 // Can be useful to validate if a certain feature can be used or not.
+// It does not require for the client to be authenticated.
 //
 // Format: ">= 27.0, < 32.0", ">= 30.0", "= 27.0"
 //
 // vCD version mapping to API version support https://code.vmware.com/doc/preview?id=8072
 func (vdcCli *VCDClient) APIClientVersionIs(versionConstraint string) bool {
+	err := vdcCli.vcdFetchSupportedVersions()
+	if err != nil {
+		util.Logger.Printf("[ERROR] could not retrieve supported versions: %s", err)
+		return false
+	}
+
 	util.Logger.Printf("[TRACE] checking current API version against constraints '%s'", versionConstraint)
 
 	isSupported, err := vdcCli.apiVerMatchesConstraint(vdcCli.Client.APIVersion, versionConstraint)
@@ -70,8 +84,16 @@ func (vdcCli *VCDClient) APIClientVersionIs(versionConstraint string) bool {
 }
 
 // vcdFetchSupportedVersions retrieves list of supported versions from
-// /api/versions endpoint and stores them in VCDClient for future uses
+// /api/versions endpoint and stores them in VCDClient for future uses.
+// It only does it once.
 func (vdcCli *VCDClient) vcdFetchSupportedVersions() error {
+	// Only fetch /versions if it is not stored already
+	numVersions := len(vdcCli.supportedVersions.VersionInfos)
+	if numVersions > 0 {
+		util.Logger.Printf("[TRACE] skipping fetch of versions because %d are stored", numVersions)
+		return nil
+	}
+
 	apiEndpoint := vdcCli.Client.VCDHREF
 	apiEndpoint.Path += "/versions"
 
@@ -156,10 +178,9 @@ func (vdcCli *VCDClient) apiVerMatchesConstraint(version, versionConstraint stri
 
 // validateAPIVersion fetches API versions
 func (vdcCli *VCDClient) validateAPIVersion() error {
-	// vcdRetrieve supported versions
 	err := vdcCli.vcdFetchSupportedVersions()
 	if err != nil {
-		return fmt.Errorf("could not retrieve versions: %s", err)
+		return fmt.Errorf("could not retrieve supported versions: %s", err)
 	}
 
 	// Check if version is supported
