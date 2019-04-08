@@ -120,18 +120,17 @@ func (vdcCli *VCDClient) vcdCheckSupportedVersion(version string) (bool, error) 
 // Checks if there is at least one specified version matching the list returned by vCD.
 // Constraint format can be in format ">= 27.0, < 32",">= 30" ,"= 27.0".
 func (vdcCli *VCDClient) checkSupportedVersionConstraint(versionConstraint string) (bool, error) {
-	constraints, err := semver.NewConstraint(versionConstraint)
-	if err != nil {
-		return false, fmt.Errorf("unable to parse version %s", versionConstraint)
-	}
 	for _, vi := range vdcCli.supportedVersions.VersionInfos {
-		v, _ := semver.NewVersion(vi.Version)
-		if constraints.Check(v) {
-			return true, nil
+		match, err := vdcCli.apiVerMatchesConstraint(vi.Version, versionConstraint)
+		if err != nil {
+			return false, fmt.Errorf("cannot match version: %s", err)
 		}
 
+		if match {
+			return true, nil
+		}
 	}
-	return false, fmt.Errorf("version %s is not supported", constraints)
+	return false, fmt.Errorf("version %s is not supported", versionConstraint)
 }
 
 func (vdcCli *VCDClient) apiVerMatchesConstraint(version, versionConstraint string) (bool, error) {

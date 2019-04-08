@@ -219,7 +219,6 @@ func GetTestVCDFromYaml(testConfig TestConfig, options ...VCDClientOption) (*VCD
 
 	if testConfig.Provider.MaxRetryTimeout != 0 {
 		options = append(options, WithMaxRetryTimeout(testConfig.Provider.MaxRetryTimeout))
-		return NewVCDClient(*configUrl, true, options...), nil
 	}
 
 	return NewVCDClient(*configUrl, true, options...), nil
