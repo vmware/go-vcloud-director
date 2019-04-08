@@ -38,13 +38,13 @@ func (vcd *TestVCD) Test_APIMaxVerIs(check *C) {
 	}
 }
 
-func (vcd *TestVCD) Test_APICurVerIs(check *C) {
+func (vcd *TestVCD) Test_APIClientVersionIs(check *C) {
 
 	// Check with currently set version
-	r := vcd.client.APICurVerIs(fmt.Sprintf("= %s", vcd.client.Client.APIVersion))
+	r := vcd.client.APIClientVersionIs(fmt.Sprintf("= %s", vcd.client.Client.APIVersion))
 	check.Assert(r, Equals, true)
 
-	r = vcd.client.APICurVerIs(">= 27.0")
+	r = vcd.client.APIClientVersionIs(">= 27.0")
 	check.Assert(r, Equals, true)
 
 	mockVcd := getMockVcdWithAPIVersion("27.0")
@@ -64,7 +64,7 @@ func (vcd *TestVCD) Test_APICurVerIs(check *C) {
 	}
 
 	for _, tt := range versionTests {
-		r := mockVcd.APICurVerIs(tt.version)
+		r := mockVcd.APIClientVersionIs(tt.version)
 		check.Assert(r, tt.boolChecker, tt.isSsupported)
 	}
 }

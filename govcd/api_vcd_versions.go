@@ -49,13 +49,13 @@ func (vdcCli *VCDClient) APIMaxVerIs(versionConstraint string) bool {
 	return isSupported
 }
 
-// APICurVerIs allows to compare against currently used API version. Can be useful to validate
-// if a certain feature can be used or not.
+// APIClientVersionIs allows to compare against currently used API version VCDClient.Client.APIVersion.
+// Can be useful to validate if a certain feature can be used or not.
 //
 // Format: ">= 27.0, < 32.0", ">= 30.0", "= 27.0"
 //
 // vCD version mapping to API version support https://code.vmware.com/doc/preview?id=8072
-func (vdcCli *VCDClient) APICurVerIs(versionConstraint string) bool {
+func (vdcCli *VCDClient) APIClientVersionIs(versionConstraint string) bool {
 	util.Logger.Printf("[TRACE] checking current API version against constraints '%s'", versionConstraint)
 
 	isSupported, err := vdcCli.apiVerMatchesConstraint(vdcCli.Client.APIVersion, versionConstraint)
