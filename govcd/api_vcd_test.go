@@ -447,14 +447,10 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		return
 	case "externalNetwork":
-		externalNetworkRef, err := GetExternalNetworkByName(vcd.client, entity.Name)
-		if *externalNetworkRef == (types.ExternalNetworkReference{}) {
+		externalNetwork, err := GetExternalNetworkByName2(vcd.client, entity.Name)
+		if err != nil {
 			vcd.infoCleanup(notFoundMsg, "externalNetwork", entity.Name)
 			return
-		}
-		externalNetwork := NewExternalNetwork(&vcd.client.Client)
-		externalNetwork.ExternalNetwork = &types.ExternalNetwork{
-			HREF: externalNetworkRef.HREF,
 		}
 		err = externalNetwork.DeleteWait()
 		if err == nil {
