@@ -113,9 +113,9 @@ func (vdcCli *VCDClient) vcdFetchSupportedVersions() error {
 // maxSupportedVersion parses supported version list and returns the highest version in string format.
 func (vdcCli *VCDClient) maxSupportedVersion() (string, error) {
 	versions := make([]*semver.Version, len(vdcCli.supportedVersions.VersionInfos))
-	for i, raw := range vdcCli.supportedVersions.VersionInfos {
-		v, _ := semver.NewVersion(raw.Version)
-		versions[i] = v
+	for index, versionInfo := range vdcCli.supportedVersions.VersionInfos {
+		version, _ := semver.NewVersion(versionInfo.Version)
+		versions[index] = version
 	}
 	// Sort supported versions in order lowest-highest
 	sort.Sort(semver.Collection(versions))
@@ -139,13 +139,13 @@ func (vdcCli *VCDClient) vcdCheckSupportedVersion(version string) (bool, error) 
 // Checks if there is at least one specified version matching the list returned by vCD.
 // Constraint format can be in format ">= 27.0, < 32",">= 30" ,"= 27.0".
 func (vdcCli *VCDClient) checkSupportedVersionConstraint(versionConstraint string) (bool, error) {
-	for _, vi := range vdcCli.supportedVersions.VersionInfos {
-		match, err := vdcCli.apiVersionMatchesConstraint(vi.Version, versionConstraint)
+	for _, versionInfo := range vdcCli.supportedVersions.VersionInfos {
+		versionMatch, err := vdcCli.apiVersionMatchesConstraint(versionInfo.Version, versionConstraint)
 		if err != nil {
 			return false, fmt.Errorf("cannot match version: %s", err)
 		}
 
-		if match {
+		if versionMatch {
 			return true, nil
 		}
 	}
