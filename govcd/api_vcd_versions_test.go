@@ -62,6 +62,7 @@ func (vcd *TestVCD) Test_APIVCDMaxVersionIs(check *C) {
 	}
 }
 
+// Test_APIClientVersionIs uses already authenticated vcdClient (in SetupSuite)
 func (vcd *TestVCD) Test_APIClientVersionIs(check *C) {
 
 	// Check with currently set version
@@ -93,6 +94,7 @@ func (vcd *TestVCD) Test_APIClientVersionIs(check *C) {
 	}
 }
 
+// Test_validateAPIVersion uses already authenticated vcdClient (in SetupSuite)
 func (vcd *TestVCD) Test_validateAPIVersion(check *C) {
 	// valid version is checked automatically in SetUpSuite
 	// we're checking only for a bad version here
