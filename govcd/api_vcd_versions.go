@@ -66,11 +66,6 @@ func (vdcCli *VCDClient) APIVCDMaxVersionIs(versionConstraint string) bool {
 //
 // vCD version mapping to API version support https://code.vmware.com/doc/preview?id=8072
 func (vdcCli *VCDClient) APIClientVersionIs(versionConstraint string) bool {
-	err := vdcCli.vcdFetchSupportedVersions()
-	if err != nil {
-		util.Logger.Printf("[ERROR] could not retrieve supported versions: %s", err)
-		return false
-	}
 
 	util.Logger.Printf("[TRACE] checking current API version against constraints '%s'", versionConstraint)
 
