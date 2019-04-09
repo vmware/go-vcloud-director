@@ -33,9 +33,9 @@ func (vdcCli *VCDClient) vcdloginurl() error {
 
 	// find login address matching the API version
 	var neededVersion VersionInfo
-	for _, v := range vdcCli.supportedVersions.VersionInfos {
-		if v.Version == vdcCli.Client.APIVersion {
-			neededVersion = v
+	for _, versionInfo := range vdcCli.supportedVersions.VersionInfos {
+		if versionInfo.Version == vdcCli.Client.APIVersion {
+			neededVersion = versionInfo
 			break
 		}
 	}
