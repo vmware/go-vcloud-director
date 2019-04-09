@@ -286,6 +286,7 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, erro
 				util.Logger.Printf("[DEBUG] Function ChangeNetworkConfig() for %s invoked", network["orgnetwork"])
 
 				networkSection.NetworkConnection[index].NeedsCustomization = true
+				networkSection.NetworkConnection[index].IsConnected = true
 				networkSection.NetworkConnection[index].IPAddress = ipAddress
 				networkSection.NetworkConnection[index].IPAddressAllocationMode = ipAllocationMode
 
