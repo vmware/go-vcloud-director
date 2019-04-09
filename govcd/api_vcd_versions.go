@@ -49,7 +49,7 @@ func (vdcCli *VCDClient) APIVCDMaxVersionIs(versionConstraint string) bool {
 		return false
 	}
 
-	isSupported, err := vdcCli.apiVerMatchesConstraint(maxVersion, versionConstraint)
+	isSupported, err := vdcCli.apiVersionMatchesConstraint(maxVersion, versionConstraint)
 	if err != nil {
 		util.Logger.Printf("[ERROR] unable to find max supported version : %s", err)
 		return false
@@ -69,7 +69,7 @@ func (vdcCli *VCDClient) APIClientVersionIs(versionConstraint string) bool {
 
 	util.Logger.Printf("[TRACE] checking current API version against constraints '%s'", versionConstraint)
 
-	isSupported, err := vdcCli.apiVerMatchesConstraint(vdcCli.Client.APIVersion, versionConstraint)
+	isSupported, err := vdcCli.apiVersionMatchesConstraint(vdcCli.Client.APIVersion, versionConstraint)
 	if err != nil {
 		util.Logger.Printf("[ERROR] unable to find cur supported version : %s", err)
 		return false
@@ -140,7 +140,7 @@ func (vdcCli *VCDClient) vcdCheckSupportedVersion(version string) (bool, error) 
 // Constraint format can be in format ">= 27.0, < 32",">= 30" ,"= 27.0".
 func (vdcCli *VCDClient) checkSupportedVersionConstraint(versionConstraint string) (bool, error) {
 	for _, vi := range vdcCli.supportedVersions.VersionInfos {
-		match, err := vdcCli.apiVerMatchesConstraint(vi.Version, versionConstraint)
+		match, err := vdcCli.apiVersionMatchesConstraint(vi.Version, versionConstraint)
 		if err != nil {
 			return false, fmt.Errorf("cannot match version: %s", err)
 		}
@@ -152,7 +152,7 @@ func (vdcCli *VCDClient) checkSupportedVersionConstraint(versionConstraint strin
 	return false, fmt.Errorf("version %s is not supported", versionConstraint)
 }
 
-func (vdcCli *VCDClient) apiVerMatchesConstraint(version, versionConstraint string) (bool, error) {
+func (vdcCli *VCDClient) apiVersionMatchesConstraint(version, versionConstraint string) (bool, error) {
 
 	checkVer, err := semver.NewVersion(version)
 	if err != nil {
