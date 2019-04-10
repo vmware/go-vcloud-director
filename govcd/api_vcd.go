@@ -19,38 +19,30 @@ import (
 type VCDClientOption func(*VCDClient) error
 
 type VCDClient struct {
-	Client      Client  // Client for the underlying VCD instance
-	sessionHREF url.URL // HREF for the session API
-	QueryHREF   url.URL // HREF for the query API
-	Mutex       sync.Mutex
-}
-
-type supportedVersions struct {
-	VersionInfo struct {
-		Version  string `xml:"Version"`
-		LoginUrl string `xml:"LoginUrl"`
-	} `xml:"VersionInfo"`
+	Client            Client  // Client for the underlying VCD instance
+	sessionHREF       url.URL // HREF for the session API
+	QueryHREF         url.URL // HREF for the query API
+	Mutex             sync.Mutex
+	supportedVersions SupportedVersions // Versions from /api/versions endpoint
 }
 
 func (vdcCli *VCDClient) vcdloginurl() error {
-	apiEndpoint := vdcCli.Client.VCDHREF
-	apiEndpoint.Path += "/versions"
-	// No point in checking for errors here
-	req := vdcCli.Client.NewRequest(map[string]string{}, "GET", apiEndpoint, nil)
-	resp, err := checkResp(vdcCli.Client.Http.Do(req))
-	if err != nil {
-		return err
+	if err := vdcCli.validateAPIVersion(); err != nil {
+		return fmt.Errorf("could not find valid version for login: %s", err)
 	}
-	defer resp.Body.Close()
 
-	supportedVersions := new(supportedVersions)
-	err = decodeBody(resp, supportedVersions)
-	if err != nil {
-		return fmt.Errorf("error decoding versions response: %s", err)
+	// find login address matching the API version
+	var neededVersion VersionInfo
+	for _, versionInfo := range vdcCli.supportedVersions.VersionInfos {
+		if versionInfo.Version == vdcCli.Client.APIVersion {
+			neededVersion = versionInfo
+			break
+		}
 	}
-	loginUrl, err := url.Parse(supportedVersions.VersionInfo.LoginUrl)
+
+	loginUrl, err := url.Parse(neededVersion.LoginUrl)
 	if err != nil {
-		return fmt.Errorf("couldn't find a LoginUrl in versions")
+		return fmt.Errorf("couldn't find a LoginUrl for version %s", vdcCli.Client.APIVersion)
 	}
 	vdcCli.sessionHREF = *loginUrl
 	return nil
@@ -100,7 +92,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 	// Setting defaults
 	vcdClient := &VCDClient{
 		Client: Client{
-			APIVersion: "27.0", // supported by vCD 8.20, 9.0, 9.1, 9.5
+			APIVersion: "27.0", // supported by vCD 8.20, 9.0, 9.1, 9.5, 9.7
 			VCDHREF:    vcdEndpoint,
 			Http: http.Client{
 				Transport: &http.Transport{
@@ -129,6 +121,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 
 // Authenticate is an helper function that performs a login in vCloud Director.
 func (vdcCli *VCDClient) Authenticate(username, password, org string) error {
+
 	// LoginUrl
 	err := vdcCli.vcdloginurl()
 	if err != nil {
@@ -162,6 +155,15 @@ func (vdcCli *VCDClient) Disconnect() error {
 func WithMaxRetryTimeout(timeoutSeconds int) VCDClientOption {
 	return func(vcdClient *VCDClient) error {
 		vcdClient.Client.MaxRetryTimeout = timeoutSeconds
+		return nil
+	}
+}
+
+// WithAPIVersion allows to override default API version. Please be cautious
+// about changing the version as the default specified is the most tested.
+func WithAPIVersion(version string) VCDClientOption {
+	return func(vcdClient *VCDClient) error {
+		vcdClient.Client.APIVersion = version
 		return nil
 	}
 }
