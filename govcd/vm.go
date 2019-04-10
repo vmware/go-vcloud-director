@@ -555,3 +555,19 @@ func (vm *VM) AnswerQuestion(questionId string, choiceId int) error {
 	return vm.client.ExecuteRequestWithoutResponse(apiEndpoint.String(), http.MethodPost,
 		"", "error asnwering question: %s", answer)
 }
+
+// ToggleNestedHypervisor allows to either enable or disable hardware assisted CPU virtualization
+// which is mainly used for hypervisor nesting in VMs. It can only be performed on a powered off
+// VM and will return an error otherwise.
+func (vm *VM) ToggleNestedHypervisor(isEnabled bool) (Task, error) {
+	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	if isEnabled {
+		apiEndpoint.Path += "/action/enableNestedHypervisor"
+		return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+			"", "error enabling hypervisor nesting feature for VM: %s", nil)
+	}
+
+	apiEndpoint.Path += "/action/enableNestedHypervisor"
+	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+		"", "error disabling hypervisor nesting feature for VM: %s", nil)
+}
