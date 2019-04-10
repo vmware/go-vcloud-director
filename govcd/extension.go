@@ -13,7 +13,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
-// Deprecated - use GetExternalNetwork
+// DEPRECATED please use GetExternalNetwork function instead
 func GetExternalNetworkByName(vcdClient *VCDClient, networkName string) (*types.ExternalNetworkReference, error) {
 	externalNetwork := NewExternalNetwork(&vcdClient.Client)
 	err := externalNetwork.GetByName(networkName)
