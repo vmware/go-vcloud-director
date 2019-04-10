@@ -447,7 +447,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		return
 	case "externalNetwork":
-		externalNetwork, err := GetExternalNetworkByName2(vcd.client, entity.Name)
+		externalNetwork, err := GetExternalNetwork(vcd.client, entity.Name)
 		if err != nil {
 			vcd.infoCleanup(notFoundMsg, "externalNetwork", entity.Name)
 			return
