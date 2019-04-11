@@ -793,7 +793,7 @@ func (vcd *TestVCD) Test_VMChangeNetworkConfig(check *C) {
 		var nets []map[string]interface{}
 		n := make(map[string]interface{})
 
-		// Find network second network
+		// Find network
 		net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Networks[0])
 
 		check.Assert(err, IsNil)
@@ -896,7 +896,7 @@ func (vcd *TestVCD) Test_VMChangeNetworkConfig(check *C) {
 		check.Assert(err, IsNil)
 		check.Assert(task.Task.Status, Equals, "success")
 
-		// Check if metadata was added correctly
+		// Check if networks were added correctly
 		networkConnectionSection, err := vm.GetNetworkConnectionSection()
 		check.Assert(err, IsNil)
 		for index := range vcd.config.VCD.Networks {
