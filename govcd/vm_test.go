@@ -789,14 +789,30 @@ func (vcd *TestVCD) Test_VMToggleHWAssistedVirtualization(check *C) {
 
 	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
 
-	task, err := vm.ToggleHWAssistedVirtualization(true)
+	// PowerOn
+	task, err := vm.PowerOn()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(task.Task.Status, Equals, "success")
+
+	// Try to change the setting on powered on VM to fail
+	_, err = vm.ToggleHWAssistedVirtualization(true)
+	check.Assert(err, ErrorMatches, ".*Virtual machine.*must be powered off to update.*")
+
+	// PowerOf
+	task, err = vm.PowerOff()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(task.Task.Status, Equals, "success")
+
+	// Perform steps on powered off VM
+	task, err = vm.ToggleHWAssistedVirtualization(true)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(task.Task.Status, Equals, "success")
 
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
-
 	check.Assert(vm.VM.NestedHypervisorEnabled, Equals, true)
 
 	task, err = vm.ToggleHWAssistedVirtualization(false)
@@ -806,9 +822,7 @@ func (vcd *TestVCD) Test_VMToggleHWAssistedVirtualization(check *C) {
 
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
-
 	check.Assert(vm.VM.NestedHypervisorEnabled, Equals, false)
-
 }
 
 func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
