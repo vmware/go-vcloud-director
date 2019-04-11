@@ -777,19 +777,19 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
-func (vcd *TestVCD) Test_VMToggleNestedHypervisor(check *C) {
+func (vcd *TestVCD) Test_VMToggleHWAssistedVirtualization(check *C) {
 	vapp := vcd.findFirstVapp()
 	vmType, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
-
+	// Default nesting status should be false
 	nestingStatus := vmType.NestedHypervisorEnabled
 	check.Assert(nestingStatus, Equals, false)
 
 	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
 
-	task, err := vm.ToggleNestedHypervisor(true)
+	task, err := vm.ToggleHWAssistedVirtualization(true)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(task.Task.Status, Equals, "success")
@@ -799,7 +799,7 @@ func (vcd *TestVCD) Test_VMToggleNestedHypervisor(check *C) {
 
 	check.Assert(vm.VM.NestedHypervisorEnabled, Equals, true)
 
-	task, err = vm.ToggleNestedHypervisor(false)
+	task, err = vm.ToggleHWAssistedVirtualization(false)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(task.Task.Status, Equals, "success")
