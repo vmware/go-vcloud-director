@@ -1138,7 +1138,70 @@ func (vapp *VApp) GetNetworkConfig() (*types.NetworkConfigSection, error) {
 	return networkConfig, nil
 }
 
-// Function adds existing VDC network to vApp
+// AppendNetworkConfig appends a network config to a vApp
+func (vapp *VApp) AppendNetworkConfig(orgvdcnetwork *types.OrgVDCNetwork) (Task, error) {
+
+	// Get existing network config from current vApp
+	networkConfigSection, err := vapp.GetNetworkConfig()
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+
+	for _, net := range networkConfigSection.NetworkConfig {
+		// skip if network is already attached to vApp
+		if net.NetworkName == orgvdcnetwork.Name {
+			return Task{}, nil
+		}
+	}
+	networkConfigSection.Info = "Configuration parameters for logical networks"
+	networkConfigSection.Ovf = "http://schemas.dmtf.org/ovf/envelope/1"
+	networkConfigSection.Type = "application/vnd.vmware.vcloud.networkConfigSection+xml"
+	networkConfigSection.Xmlns = "http://www.vmware.com/vcloud/v1.5"
+
+	// Append a new networkConfigSection.NetworkConfig to the existing ones we got earlier
+	networkConfigSection.NetworkConfig = append(networkConfigSection.NetworkConfig,
+		types.VAppNetworkConfiguration{
+			NetworkName: orgvdcnetwork.Name,
+			Configuration: &types.NetworkConfiguration{
+				ParentNetwork: &types.Reference{
+					HREF: orgvdcnetwork.HREF,
+				},
+				FenceMode: "bridged",
+			},
+		},
+	)
+
+	output, err := xml.MarshalIndent(networkConfigSection, "  ", "    ")
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+
+	buffer := bytes.NewBufferString(xml.Header + string(output))
+
+	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint.Path += "/networkConfigSection/"
+
+	req := vapp.client.NewRequest(map[string]string{}, "PUT", *apiEndpoint, buffer)
+
+	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.networkconfigsection+xml")
+
+	resp, err := checkResp(vapp.client.Http.Do(req))
+	if err != nil {
+		return Task{}, fmt.Errorf("error adding vApp Network: %s", err)
+	}
+
+	task := NewTask(vapp.client)
+
+	if err = decodeBody(resp, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
+	}
+
+	// The request was successful
+	return *task, nil
+
+}
+
+// AddRAWNetworkConfig adds existing VDC network to vApp
 func (vapp *VApp) AddRAWNetworkConfig(orgvdcnetworks []*types.OrgVDCNetwork) (Task, error) {
 
 	vAppNetworkConfig, err := vapp.GetNetworkConfig()

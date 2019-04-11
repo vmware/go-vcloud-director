@@ -15,11 +15,11 @@ func (vcd *TestVCD) Test_FindVDCNetwork(check *C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network)
+	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Networks[0])
 
 	check.Assert(err, IsNil)
 	check.Assert(net, NotNil)
-	check.Assert(net.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network)
+	check.Assert(net.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Networks[0])
 	check.Assert(net.OrgVDCNetwork.HREF, Not(Equals), "")
 
 	// find Invalid Network
@@ -111,7 +111,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
-	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network)
+	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Networks[0])
 	networks = append(networks, net.OrgVDCNetwork)
 	check.Assert(err, IsNil)
 	// Populate Catalog

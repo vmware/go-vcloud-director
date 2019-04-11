@@ -77,6 +77,67 @@ func (vm *VM) Refresh() error {
 	return nil
 }
 
+// AppendNetworkConnection appends a network connection from OrgVDCNetwork to VM
+func (vm *VM) AppendNetworkConnection(orgvdcnetwork *types.OrgVDCNetwork) (Task, error) {
+
+	// Get existing network connections from current VM
+	networkConnectionSection, err := vm.GetNetworkConnectionSection()
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+
+	for _, net := range networkConnectionSection.NetworkConnection {
+		// skip if network is already connected to VM
+		if net.Network == orgvdcnetwork.Name {
+			return Task{}, nil
+		}
+	}
+	networkConnectionSection.Info = "Configuration parameters for logical networks"
+	networkConnectionSection.Ovf = "http://schemas.dmtf.org/ovf/envelope/1"
+	networkConnectionSection.Type = "application/vnd.vmware.vcloud.networkConfigSection+xml"
+	networkConnectionSection.Xmlns = "http://www.vmware.com/vcloud/v1.5"
+
+	// Append a new NetworkConnectionSection.NetworkConnection to existing ones
+	networkConnectionSection.NetworkConnection = append(networkConnectionSection.NetworkConnection,
+		&types.NetworkConnection{
+			Network:                 orgvdcnetwork.Name,
+			NetworkConnectionIndex:  len(networkConnectionSection.NetworkConnection),
+			IsConnected:             true,
+			IPAddressAllocationMode: "POOL",
+		},
+	)
+
+	output, err := xml.MarshalIndent(networkConnectionSection, "  ", "    ")
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+
+	buffer := bytes.NewBufferString(xml.Header + string(output))
+
+	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint.Path += "/networkConnectionSection/"
+
+	req := vm.client.NewRequest(map[string]string{}, "PUT", *apiEndpoint, buffer)
+
+	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.networkConnectionSection+xml")
+
+	resp, err := checkResp(vm.client.Http.Do(req))
+	if err != nil {
+		return Task{}, fmt.Errorf("error adding VM network connection: %s", err)
+	}
+
+	task := NewTask(vm.client)
+
+	if err = decodeBody(resp, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
+	}
+
+	// The request was successful
+	return *task, nil
+
+}
+
+// GetNetworkConnectionSection returns current networks attached to VM
 func (vm *VM) GetNetworkConnectionSection() (*types.NetworkConnectionSection, error) {
 
 	networkConnectionSection := &types.NetworkConnectionSection{}

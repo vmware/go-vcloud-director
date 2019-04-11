@@ -770,3 +770,140 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(task.Task.Status, Equals, "success")
 }
+
+// Test changing network configuration
+func (vcd *TestVCD) Test_VMChangeNetworkConfig(check *C) {
+	// Find VApp
+	if vcd.vapp.VApp == nil {
+		check.Skip("skipping test because no vApp is found")
+	}
+
+	if len(vcd.config.VCD.Networks) >= 1 {
+		vapp := vcd.findFirstVapp()
+		vmType, vmName := vcd.findFirstVm(vapp)
+		if vmName == "" {
+			check.Skip("skipping test because no VM is found")
+		}
+
+		fmt.Printf("Running: %s part 1 change ip\n", check.TestName())
+
+		vm := NewVM(&vcd.client.Client)
+		vm.VM = &vmType
+
+		var nets []map[string]interface{}
+		n := make(map[string]interface{})
+
+		// Find network second network
+		net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Networks[0])
+
+		check.Assert(err, IsNil)
+		check.Assert(net, NotNil)
+		check.Assert(net.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Networks[0])
+		check.Assert(net.OrgVDCNetwork.HREF, Not(Equals), "")
+
+		endAddress := net.OrgVDCNetwork.Configuration.IPScopes.IPScope.IPRanges.IPRange[0].EndAddress
+		startAddress := net.OrgVDCNetwork.Configuration.IPScopes.IPScope.IPRanges.IPRange[0].StartAddress
+
+		n["ip"] = endAddress
+		n["ip_allocation_mode"] = "MANUAL"
+		n["is_primary"] = true
+		n["orgnetwork"] = net.OrgVDCNetwork.Name
+
+		nets = append(nets, n)
+
+		// Change ipaddress to endAddress
+		task, err := vm.ChangeNetworkConfig(nets)
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+		check.Assert(task.Task.Status, Equals, "success")
+
+		// Check if ipaddress is endAddress
+		networkConnectionSection, err := vm.GetNetworkConnectionSection()
+		check.Assert(err, IsNil)
+		check.Assert(networkConnectionSection.NetworkConnection[0].Network, Equals, vcd.config.VCD.Networks[0])
+		check.Assert(networkConnectionSection.NetworkConnection[0].IPAddressAllocationMode, Equals, n["ip_allocation_mode"])
+		check.Assert(networkConnectionSection.NetworkConnection[0].IPAddress, Equals, endAddress)
+
+		n["ip"] = startAddress
+
+		// Change ipaddress to startAddress
+		task, err = vm.ChangeNetworkConfig(nets)
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+		check.Assert(task.Task.Status, Equals, "success")
+
+		// Check if ipaddress is startAddress
+		networkConnectionSection, err = vm.GetNetworkConnectionSection()
+		check.Assert(err, IsNil)
+		check.Assert(networkConnectionSection.NetworkConnection[0].Network, Equals, vcd.config.VCD.Networks[0])
+		check.Assert(networkConnectionSection.NetworkConnection[0].IPAddress, Equals, startAddress)
+	}
+
+	if len(vcd.config.VCD.Networks) >= 2 {
+		vapp := vcd.findFirstVapp()
+		vmType, vmName := vcd.findFirstVm(vapp)
+		if vmName == "" {
+			check.Skip("skipping test because no VM is found")
+		}
+
+		fmt.Printf("Running: %s part 2 change network adapter count\n", check.TestName())
+
+		vm := NewVM(&vcd.client.Client)
+		vm.VM = &vmType
+
+		var net OrgVDCNetwork
+		var nets []map[string]interface{}
+		var err error
+
+		// Find networks
+		for index := range vcd.config.VCD.Networks {
+			n := make(map[string]interface{})
+			net, err = vcd.vdc.FindVDCNetwork(vcd.config.VCD.Networks[index])
+
+			check.Assert(err, IsNil)
+			check.Assert(net, NotNil)
+			check.Assert(net.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Networks[index])
+			check.Assert(net.OrgVDCNetwork.HREF, Not(Equals), "")
+
+			n["ip"] = ""
+			n["ip_allocation_mode"] = "POOL"
+			n["is_primary"] = false
+			if index == 0 {
+				n["is_primary"] = true
+			}
+			n["orgnetwork"] = net.OrgVDCNetwork.Name
+
+			// Add missing networks before continue changing them
+			task, err := vapp.AppendNetworkConfig(net.OrgVDCNetwork)
+			check.Assert(err, IsNil)
+			if task != (Task{}) {
+				err = task.WaitTaskCompletion()
+				check.Assert(err, IsNil)
+				task, err = vm.AppendNetworkConnection(net.OrgVDCNetwork)
+				err = task.WaitTaskCompletion()
+				check.Assert(err, IsNil)
+			}
+
+			nets = append(nets, n)
+		}
+
+		// Add networks we found
+		task, err := vm.ChangeNetworkConfig(nets)
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+		check.Assert(task.Task.Status, Equals, "success")
+
+		// Check if metadata was added correctly
+		networkConnectionSection, err := vm.GetNetworkConnectionSection()
+		check.Assert(err, IsNil)
+		for index := range vcd.config.VCD.Networks {
+			check.Assert(networkConnectionSection.NetworkConnection[index].Network, Equals, vcd.config.VCD.Networks[index])
+			check.Assert(networkConnectionSection.NetworkConnection[index].IPAddressAllocationMode, Equals, nets[index]["ip_allocation_mode"])
+			check.Assert(networkConnectionSection.NetworkConnection[index].IPAddress, NotNil)
+		}
+		check.Assert(networkConnectionSection.PrimaryNetworkConnectionIndex, Equals, 0)
+	}
+}
