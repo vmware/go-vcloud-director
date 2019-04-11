@@ -777,7 +777,7 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
-func (vcd *TestVCD) Test_ToggleNestedHypervisor(check *C) {
+func (vcd *TestVCD) Test_VMToggleNestedHypervisor(check *C) {
 	vapp := vcd.findFirstVapp()
 	vmType, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
@@ -809,4 +809,42 @@ func (vcd *TestVCD) Test_ToggleNestedHypervisor(check *C) {
 
 	check.Assert(vm.VM.NestedHypervisorEnabled, Equals, false)
 
+}
+
+func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	check.Assert(err, IsNil)
+
+	// Ensure VM is not powered on
+	vmStatus, err := vm.GetStatus()
+	if vmStatus != "POWERED_OFF" {
+		task, err := vm.PowerOff()
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(task.Task.Status, Equals, "success")
+	}
+
+	task, err := vm.PowerOn()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(task.Task.Status, Equals, "success")
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+	vmStatus, err = vm.GetStatus()
+	check.Assert(vmStatus, Equals, "POWERED_ON")
+
+	// Power off again
+	task, err = vm.PowerOff()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(task.Task.Status, Equals, "success")
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+	vmStatus, err = vm.GetStatus()
+	check.Assert(vmStatus, Equals, "POWERED_OFF")
 }
