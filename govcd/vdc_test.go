@@ -160,9 +160,9 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 		panic(err)
 	}
 	check.Assert(err, IsNil)
-	no_such_vapp, err := vcd.vdc.FindVAppByName(TestComposeVapp)
+	noSuchVApp, err := vcd.vdc.FindVAppByName(TestComposeVapp)
 	check.Assert(err, NotNil)
-	check.Assert(no_such_vapp.VApp, IsNil)
+	check.Assert(noSuchVApp.VApp, IsNil)
 
 }
 
@@ -171,16 +171,16 @@ func (vcd *TestVCD) Test_FindVApp(check *C) {
 	if vcd.vapp.VApp == nil {
 		check.Skip("No vApp provided")
 	}
-	first_vapp, err := vcd.vdc.FindVAppByName(vcd.vapp.VApp.Name)
+	firstVApp, err := vcd.vdc.FindVAppByName(vcd.vapp.VApp.Name)
 
 	check.Assert(err, IsNil)
 
-	second_vapp, err := vcd.vdc.FindVAppByID(first_vapp.VApp.ID)
+	secondVapp, err := vcd.vdc.FindVAppByID(firstVApp.VApp.ID)
 
 	check.Assert(err, IsNil)
 
-	check.Assert(second_vapp.VApp.Name, Equals, first_vapp.VApp.Name)
-	check.Assert(second_vapp.VApp.HREF, Equals, first_vapp.VApp.HREF)
+	check.Assert(secondVapp.VApp.Name, Equals, firstVApp.VApp.Name)
+	check.Assert(secondVapp.VApp.HREF, Equals, firstVApp.VApp.HREF)
 }
 
 func (vcd *TestVCD) Test_FindMediaImage(check *C) {

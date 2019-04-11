@@ -17,11 +17,13 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
+// VApp Struct representing a vApp with it's client
 type VApp struct {
 	VApp   *types.VApp
 	client *Client
 }
 
+// NewVApp returns a pointer to vApp
 func NewVApp(cli *Client) *VApp {
 	return &VApp{
 		VApp:   new(types.VApp),
@@ -29,12 +31,13 @@ func NewVApp(cli *Client) *VApp {
 	}
 }
 
+// NewVApp returns a VApp
 func (vcdCli *VCDClient) NewVApp(client *Client) VApp {
 	newvapp := NewVApp(client)
 	return *newvapp
 }
 
-// struct type used to pass information for vApp network creation
+// VappNetworkSettings struct type used to pass information for vApp network creation
 type VappNetworkSettings struct {
 	Name             string
 	Gateway          string
@@ -47,7 +50,7 @@ type VappNetworkSettings struct {
 	DhcpSettings     *DhcpSettings
 }
 
-// struct type used to pass information for vApp network DHCP
+// DhcpSettings struct type used to pass information for vApp network DHCP
 type DhcpSettings struct {
 	IsEnabled        bool
 	MaxLeaseTime     int
@@ -59,11 +62,11 @@ type DhcpSettings struct {
 func (vapp *VApp) getParentVDC() (Vdc, error) {
 	for _, link := range vapp.VApp.Link {
 		if link.Type == "application/vnd.vmware.vcloud.vdc+xml" {
-			getParentUrl, err := url.ParseRequestURI(link.HREF)
+			getParentURL, err := url.ParseRequestURI(link.HREF)
 			if err != nil {
 				return Vdc{}, fmt.Errorf("Cannot parse HREF : %v", err)
 			}
-			req := vapp.client.NewRequest(map[string]string{}, "GET", *getParentUrl, nil)
+			req := vapp.client.NewRequest(map[string]string{}, "GET", *getParentURL, nil)
 			resp, err := checkResp(vapp.client.Http.Do(req))
 
 			vdc := NewVdc(vapp.client)
@@ -76,15 +79,16 @@ func (vapp *VApp) getParentVDC() (Vdc, error) {
 	return Vdc{}, fmt.Errorf("Could not find a parent Vdc")
 }
 
+// Refresh refreshes vApp state
 func (vapp *VApp) Refresh() error {
 
 	if vapp.VApp.HREF == "" {
 		return fmt.Errorf("cannot refresh, Object is empty")
 	}
 
-	refreshUrl, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	refreshURL, _ := url.ParseRequestURI(vapp.VApp.HREF)
 
-	req := vapp.client.NewRequest(map[string]string{}, "GET", *refreshUrl, nil)
+	req := vapp.client.NewRequest(map[string]string{}, "GET", *refreshURL, nil)
 
 	resp, err := checkResp(vapp.client.Http.Do(req))
 	if err != nil {
@@ -103,7 +107,7 @@ func (vapp *VApp) Refresh() error {
 	return nil
 }
 
-// Function create vm in vApp using vApp template
+// AddVM Function create vm in vApp using vApp template
 // orgVdcNetworks - adds org VDC networks to be available for vApp. Can be empty.
 // vappNetworkName - adds vApp network to be available for vApp. Can be empty.
 // vappTemplate - vApp Template which will be used for VM creation.
@@ -207,6 +211,7 @@ func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName s
 	return *task, nil
 }
 
+// RemoveVM removes VM from vApp
 func (vapp *VApp) RemoveVM(vm VM) error {
 
 	vapp.Refresh()
@@ -260,6 +265,7 @@ func (vapp *VApp) RemoveVM(vm VM) error {
 	return nil
 }
 
+// PowerOn powers vApp on
 func (vapp *VApp) PowerOn() (Task, error) {
 
 	err := vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
@@ -288,6 +294,7 @@ func (vapp *VApp) PowerOn() (Task, error) {
 
 }
 
+// PowerOff powers vApp off
 func (vapp *VApp) PowerOff() (Task, error) {
 
 	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
@@ -311,6 +318,7 @@ func (vapp *VApp) PowerOff() (Task, error) {
 
 }
 
+// Reboot reboots vApp
 func (vapp *VApp) Reboot() (Task, error) {
 
 	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
@@ -334,6 +342,7 @@ func (vapp *VApp) Reboot() (Task, error) {
 
 }
 
+// Reset resets vApp
 func (vapp *VApp) Reset() (Task, error) {
 
 	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
@@ -357,6 +366,7 @@ func (vapp *VApp) Reset() (Task, error) {
 
 }
 
+// Suspend supends vApp
 func (vapp *VApp) Suspend() (Task, error) {
 
 	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
@@ -380,6 +390,7 @@ func (vapp *VApp) Suspend() (Task, error) {
 
 }
 
+// Shutdown shutsdown vApp
 func (vapp *VApp) Shutdown() (Task, error) {
 
 	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
@@ -403,6 +414,7 @@ func (vapp *VApp) Shutdown() (Task, error) {
 
 }
 
+// Undeploy undeploys vApp
 func (vapp *VApp) Undeploy() (Task, error) {
 
 	vu := &types.UndeployVAppParams{
@@ -442,6 +454,7 @@ func (vapp *VApp) Undeploy() (Task, error) {
 
 }
 
+// Deploy deploys vApp
 func (vapp *VApp) Deploy() (Task, error) {
 
 	vu := &types.DeployVAppParams{
@@ -481,6 +494,7 @@ func (vapp *VApp) Deploy() (Task, error) {
 
 }
 
+// Delete deletes vApp
 func (vapp *VApp) Delete() (Task, error) {
 
 	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
@@ -503,10 +517,12 @@ func (vapp *VApp) Delete() (Task, error) {
 
 }
 
+// RunCustomizationScript calls vapp.Customize function with computername and script
 func (vapp *VApp) RunCustomizationScript(computername, script string) (Task, error) {
 	return vapp.Customize(computername, script, false)
 }
 
+// Customize customizes guest customazation section for first VM in vApp
 func (vapp *VApp) Customize(computername, script string, changeSid bool) (Task, error) {
 	err := vapp.Refresh()
 	if err != nil {
@@ -565,6 +581,7 @@ func (vapp *VApp) Customize(computername, script string, changeSid bool) (Task, 
 	return *task, nil
 }
 
+// GetStatus gets status from vApp
 func (vapp *VApp) GetStatus() (string, error) {
 	err := vapp.Refresh()
 	if err != nil {
@@ -598,6 +615,7 @@ func (vapp *VApp) BlockWhileStatus(unwantedStatus string, timeOutAfterSeconds in
 	}
 }
 
+// GetNetworkConnectionSection returns networks attached to vApp
 func (vapp *VApp) GetNetworkConnectionSection() (*types.NetworkConnectionSection, error) {
 
 	networkConnectionSection := &types.NetworkConnectionSection{}
@@ -606,9 +624,9 @@ func (vapp *VApp) GetNetworkConnectionSection() (*types.NetworkConnectionSection
 		return networkConnectionSection, fmt.Errorf("cannot refresh, Object is empty")
 	}
 
-	getNetworkUrl, _ := url.ParseRequestURI(vapp.VApp.Children.VM[0].HREF + "/networkConnectionSection/")
+	getNetworkURL, _ := url.ParseRequestURI(vapp.VApp.Children.VM[0].HREF + "/networkConnectionSection/")
 
-	req := vapp.client.NewRequest(map[string]string{}, "GET", *getNetworkUrl, nil)
+	req := vapp.client.NewRequest(map[string]string{}, "GET", *getNetworkURL, nil)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.networkConnectionSection+xml")
 
@@ -625,20 +643,20 @@ func (vapp *VApp) GetNetworkConnectionSection() (*types.NetworkConnectionSection
 	return networkConnectionSection, nil
 }
 
-// Sets number of available virtual logical processors
+// ChangeCPUCount sets number of available virtual logical processors
 // (i.e. CPUs x cores per socket)
 // https://communities.vmware.com/thread/576209
 // Deprecated: Use vm.ChangeCPUcount()
-func (vapp *VApp) ChangeCPUCount(virtualCpuCount int) (Task, error) {
-	return vapp.ChangeCPUCountWithCore(virtualCpuCount, nil)
+func (vapp *VApp) ChangeCPUCount(virtualCPUCount int) (Task, error) {
+	return vapp.ChangeCPUCountWithCore(virtualCPUCount, nil)
 }
 
-// Sets number of available virtual logical processors
+// ChangeCPUCountWithCore sets number of available virtual logical processors
 // (i.e. CPUs x cores per socket) and cores per socket.
 // Socket count is a result of: virtual logical processors/cores per socket
 // https://communities.vmware.com/thread/576209
 // Deprecated: Use vm.ChangeCPUCountWithCore()
-func (vapp *VApp) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (Task, error) {
+func (vapp *VApp) ChangeCPUCountWithCore(virtualCPUCount int, coresPerSocket *int) (Task, error) {
 
 	err := vapp.Refresh()
 	if err != nil {
@@ -659,11 +677,11 @@ func (vapp *VApp) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *in
 		VCloudType:      "application/vnd.vmware.vcloud.rasdItem+xml",
 		AllocationUnits: "hertz * 10^6",
 		Description:     "Number of Virtual CPUs",
-		ElementName:     strconv.Itoa(virtualCpuCount) + " virtual CPU(s)",
+		ElementName:     strconv.Itoa(virtualCPUCount) + " virtual CPU(s)",
 		InstanceID:      4,
 		Reservation:     0,
 		ResourceType:    3,
-		VirtualQuantity: virtualCpuCount,
+		VirtualQuantity: virtualCPUCount,
 		Weight:          0,
 		CoresPerSocket:  coresPerSocket,
 		Link: &types.Link{
@@ -703,6 +721,7 @@ func (vapp *VApp) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *in
 
 }
 
+// ChangeStorageProfile changes storageprofile for vApp
 func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
 	err := vapp.Refresh()
 	if err != nil {
@@ -759,6 +778,7 @@ func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
 
 }
 
+// ChangeVMName change name of first VM in vApp
 func (vapp *VApp) ChangeVMName(name string) (Task, error) {
 	err := vapp.Refresh()
 	if err != nil {
@@ -805,16 +825,17 @@ func (vapp *VApp) ChangeVMName(name string) (Task, error) {
 
 }
 
-// GetMetadata() function calls private function getMetadata() with vapp.client and vapp.VApp.HREF
+// GetMetadata function calls private function getMetadata with vapp.client and vapp.VApp.HREF
 // which returns a *types.Metadata struct for provided vapp input.
 func (vapp *VApp) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(vapp.client, vapp.VApp.HREF)
 }
 
-func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
+// getMetadata returns metadata from requested resource like VM or vApp
+func getMetadata(client *Client, requestURI string) (*types.Metadata, error) {
 	metadata := &types.Metadata{}
 
-	getMetadata, _ := url.ParseRequestURI(requestUri + "/metadata/")
+	getMetadata, _ := url.ParseRequestURI(requestURI + "/metadata/")
 
 	req := client.NewRequest(map[string]string{}, "GET", *getMetadata, nil)
 
@@ -833,16 +854,16 @@ func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
 	return metadata, nil
 }
 
-// DeleteMetadata() function calls private function deleteMetadata() with vapp.client and vapp.VApp.HREF
+// DeleteMetadata function calls private function deleteMetadata() with vapp.client and vapp.VApp.HREF
 // which deletes metadata depending on key provided as input from vApp.
 func (vapp *VApp) DeleteMetadata(key string) (Task, error) {
 	return deleteMetadata(vapp.client, key, vapp.VApp.HREF)
 }
 
-// Deletes metadata (type MetadataStringValue) from the vApp
+// deleteMetadata deletes metadata (type MetadataStringValue) from requested resource like VM or vApp
 // TODO: Support all MetadataTypedValue types with this function
-func deleteMetadata(client *Client, key string, requestUri string) (Task, error) {
-	apiEndpoint, _ := url.ParseRequestURI(requestUri)
+func deleteMetadata(client *Client, key string, requestURI string) (Task, error) {
+	apiEndpoint, _ := url.ParseRequestURI(requestURI)
 	apiEndpoint.Path += "/metadata/" + key
 
 	req := client.NewRequest(map[string]string{}, "DELETE", *apiEndpoint, nil)
@@ -862,15 +883,15 @@ func deleteMetadata(client *Client, key string, requestUri string) (Task, error)
 	return *task, nil
 }
 
-// AddMetadata() function calls private function addMetadata() with vapp.client and vapp.VApp.HREF
+// AddMetadata function calls private function addMetadata with vapp.client and vapp.VApp.HREF
 // which adds metadata key, value pair provided as input.
 func (vapp *VApp) AddMetadata(key string, value string) (Task, error) {
 	return addMetadata(vapp.client, key, value, vapp.VApp.HREF)
 }
 
-// Adds metadata (type MetadataStringValue) to the vApp
+// addMetadata adds metadata (type MetadataStringValue) to requested resource like VM or vApp
 // TODO: Support all MetadataTypedValue types with this function
-func addMetadata(client *Client, key string, value string, requestUri string) (Task, error) {
+func addMetadata(client *Client, key string, value string, requestURI string) (Task, error) {
 	newmetadata := &types.MetadataValue{
 		Xmlns: "http://www.vmware.com/vcloud/v1.5",
 		Xsi:   "http://www.w3.org/2001/XMLSchema-instance",
@@ -887,7 +908,7 @@ func addMetadata(client *Client, key string, value string, requestUri string) (T
 
 	buffer := bytes.NewBufferString(xml.Header + string(output))
 
-	apiEndpoint, _ := url.ParseRequestURI(requestUri)
+	apiEndpoint, _ := url.ParseRequestURI(requestURI)
 	apiEndpoint.Path += "/metadata/" + key
 
 	req := client.NewRequest(map[string]string{}, "PUT", *apiEndpoint, buffer)
@@ -909,6 +930,7 @@ func addMetadata(client *Client, key string, value string, requestUri string) (T
 	return *task, nil
 }
 
+// SetOvf change first VM in vApp according to ovf provided
 func (vapp *VApp) SetOvf(parameters map[string]string) (Task, error) {
 	err := vapp.Refresh()
 	if err != nil {
@@ -924,9 +946,9 @@ func (vapp *VApp) SetOvf(parameters map[string]string) (Task, error) {
 	}
 
 	for key, value := range parameters {
-		for _, ovf_value := range vapp.VApp.Children.VM[0].ProductSection.Property {
-			if ovf_value.Key == key {
-				ovf_value.Value = &types.Value{Value: value}
+		for _, ovfValue := range vapp.VApp.Children.VM[0].ProductSection.Property {
+			if ovfValue.Key == key {
+				ovfValue.Value = &types.Value{Value: value}
 				break
 			}
 		}
@@ -970,6 +992,7 @@ func (vapp *VApp) SetOvf(parameters map[string]string) (Task, error) {
 
 }
 
+// ChangeNetworkConfig changes networks attached to first VM in vApp
 func (vapp *VApp) ChangeNetworkConfig(networks []map[string]interface{}, ip string) (Task, error) {
 	err := vapp.Refresh()
 	if err != nil {
@@ -1048,6 +1071,7 @@ func (vapp *VApp) ChangeNetworkConfig(networks []map[string]interface{}, ip stri
 	return *task, nil
 }
 
+// ChangeMemorySize changes memory size for first VM in vApp
 func (vapp *VApp) ChangeMemorySize(size int) (Task, error) {
 
 	err := vapp.Refresh()
@@ -1083,7 +1107,7 @@ func (vapp *VApp) ChangeMemorySize(size int) (Task, error) {
 
 	output, err := xml.MarshalIndent(newmem, "  ", "    ")
 	if err != nil {
-		return Task{}, fmt.Errorf("error: %v\n", err)
+		return Task{}, fmt.Errorf("error: %v", err)
 	}
 
 	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
@@ -1113,6 +1137,7 @@ func (vapp *VApp) ChangeMemorySize(size int) (Task, error) {
 
 }
 
+// GetNetworkConfig returns network configuration from vApp
 func (vapp *VApp) GetNetworkConfig() (*types.NetworkConfigSection, error) {
 
 	networkConfig := &types.NetworkConfigSection{}
@@ -1121,9 +1146,9 @@ func (vapp *VApp) GetNetworkConfig() (*types.NetworkConfigSection, error) {
 		return networkConfig, fmt.Errorf("cannot refresh, Object is empty")
 	}
 
-	getNetworkUrl, _ := url.ParseRequestURI(vapp.VApp.HREF + "/networkConfigSection/")
+	getNetworkURL, _ := url.ParseRequestURI(vapp.VApp.HREF + "/networkConfigSection/")
 
-	req := vapp.client.NewRequest(map[string]string{}, "GET", *getNetworkUrl, nil)
+	req := vapp.client.NewRequest(map[string]string{}, "GET", *getNetworkURL, nil)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.networkConfigSection+xml")
 
@@ -1140,7 +1165,70 @@ func (vapp *VApp) GetNetworkConfig() (*types.NetworkConfigSection, error) {
 	return networkConfig, nil
 }
 
-// Function adds existing VDC network to vApp
+// AppendNetworkConfig appends a network config to a vApp
+func (vapp *VApp) AppendNetworkConfig(orgvdcnetwork *types.OrgVDCNetwork) (Task, error) {
+
+	// Get existing network config from vApp
+	networkConfigSection, err := vapp.GetNetworkConfig()
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+
+	for _, net := range networkConfigSection.NetworkConfig {
+		// skip if network is already attached to vApp
+		if net.NetworkName == orgvdcnetwork.Name {
+			return Task{}, nil
+		}
+	}
+	networkConfigSection.Info = "Configuration parameters for logical networks"
+	networkConfigSection.Ovf = "http://schemas.dmtf.org/ovf/envelope/1"
+	networkConfigSection.Type = "application/vnd.vmware.vcloud.networkConfigSection+xml"
+	networkConfigSection.Xmlns = "http://www.vmware.com/vcloud/v1.5"
+
+	// Append a new networkConfigSection.NetworkConfig to the existing ones we got earlier
+	networkConfigSection.NetworkConfig = append(networkConfigSection.NetworkConfig,
+		types.VAppNetworkConfiguration{
+			NetworkName: orgvdcnetwork.Name,
+			Configuration: &types.NetworkConfiguration{
+				ParentNetwork: &types.Reference{
+					HREF: orgvdcnetwork.HREF,
+				},
+				FenceMode: "bridged",
+			},
+		},
+	)
+
+	output, err := xml.MarshalIndent(networkConfigSection, "  ", "    ")
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+
+	buffer := bytes.NewBufferString(xml.Header + string(output))
+
+	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint.Path += "/networkConfigSection/"
+
+	req := vapp.client.NewRequest(map[string]string{}, "PUT", *apiEndpoint, buffer)
+
+	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.networkconfigsection+xml")
+
+	resp, err := checkResp(vapp.client.Http.Do(req))
+	if err != nil {
+		return Task{}, fmt.Errorf("error adding vApp Network: %s", err)
+	}
+
+	task := NewTask(vapp.client)
+
+	if err = decodeBody(resp, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
+	}
+
+	// The request was successful
+	return *task, nil
+
+}
+
+// AddRAWNetworkConfig adds existing VDC network to vApp
 func (vapp *VApp) AddRAWNetworkConfig(orgvdcnetworks []*types.OrgVDCNetwork) (Task, error) {
 
 	vAppNetworkConfig, err := vapp.GetNetworkConfig()
@@ -1166,7 +1254,7 @@ func (vapp *VApp) AddRAWNetworkConfig(orgvdcnetworks []*types.OrgVDCNetwork) (Ta
 	return updateNetworkConfigurations(vapp, networkConfigurations)
 }
 
-// Function allows to create isolated network for vApp. This is equivalent to vCD UI function - vApp network creation.
+// AddIsolatedNetwork allows to create isolated network for vApp. This is equivalent to vCD UI function - vApp network creation.
 func (vapp *VApp) AddIsolatedNetwork(newIsolatedNetworkSettings *VappNetworkSettings) (Task, error) {
 
 	err := validateNetworkConfigSettings(newIsolatedNetworkSettings)
@@ -1237,7 +1325,7 @@ func validateNetworkConfigSettings(networkSettings *VappNetworkSettings) error {
 	return nil
 }
 
-// Removes vApp isolated network
+// RemoveIsolatedNetwork removes vApp isolated network
 func (vapp *VApp) RemoveIsolatedNetwork(networkName string) (Task, error) {
 
 	if networkName == "" {
@@ -1260,7 +1348,7 @@ func (vapp *VApp) RemoveIsolatedNetwork(networkName string) (Task, error) {
 	return updateNetworkConfigurations(vapp, networkConfigurations)
 }
 
-// Function allows to update vApp network configuration. This works for updating, deleting and adding.
+// updateNetworkConfigurations allows to update vApp network configuration. This works for updating, deleting and adding.
 // Network configuration has to be full with new, changed elements and unchanged.
 // https://opengrok.eng.vmware.com/source/xref/cloud-sp-main.perforce-shark.1700/sp-main/dev-integration/system-tests/SystemTests/src/main/java/com/vmware/cloud/systemtests/util/VAppNetworkUtils.java#createVAppNetwork
 // http://pubs.vmware.com/vcloud-api-1-5/wwhelp/wwhimpl/js/html/wwhelp.htm#href=api_prog/GUID-92622A15-E588-4FA1-92DA-A22A4757F2A0.html#1_14_12_10_1

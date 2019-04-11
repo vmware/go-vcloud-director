@@ -16,16 +16,19 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
+// VM Struct representing a VM with it's client
 type VM struct {
 	VM     *types.VM
 	client *Client
 }
 
+// VMRecord is used when querying VMs
 type VMRecord struct {
 	VM     *types.QueryResultVMRecordType
 	client *Client
 }
 
+// NewVM returns a pointer to VM
 func NewVM(cli *Client) *VM {
 	return &VM{
 		VM:     new(types.VM),
@@ -33,7 +36,7 @@ func NewVM(cli *Client) *VM {
 	}
 }
 
-// create instance with reference to types.QueryResultVMRecordType
+// NewVMRecord create instance with reference to types.QueryResultVMRecordType
 func NewVMRecord(cli *Client) *VMRecord {
 	return &VMRecord{
 		VM:     new(types.QueryResultVMRecordType),
@@ -41,6 +44,7 @@ func NewVMRecord(cli *Client) *VMRecord {
 	}
 }
 
+// GetStatus gets VM status
 func (vm *VM) GetStatus() (string, error) {
 	err := vm.Refresh()
 	if err != nil {
@@ -49,15 +53,16 @@ func (vm *VM) GetStatus() (string, error) {
 	return types.VAppStatuses[vm.VM.Status], nil
 }
 
+// Refresh refreshes VM state
 func (vm *VM) Refresh() error {
 
 	if vm.VM.HREF == "" {
 		return fmt.Errorf("cannot refresh VM, Object is empty")
 	}
 
-	refreshUrl, _ := url.ParseRequestURI(vm.VM.HREF)
+	refreshURL, _ := url.ParseRequestURI(vm.VM.HREF)
 
-	req := vm.client.NewRequest(map[string]string{}, "GET", *refreshUrl, nil)
+	req := vm.client.NewRequest(map[string]string{}, "GET", *refreshURL, nil)
 
 	resp, err := checkResp(vm.client.Http.Do(req))
 	if err != nil {
@@ -76,6 +81,7 @@ func (vm *VM) Refresh() error {
 	return nil
 }
 
+// GetNetworkConnectionSection returns networks attached to VM
 func (vm *VM) GetNetworkConnectionSection() (*types.NetworkConnectionSection, error) {
 
 	networkConnectionSection := &types.NetworkConnectionSection{}
@@ -84,9 +90,9 @@ func (vm *VM) GetNetworkConnectionSection() (*types.NetworkConnectionSection, er
 		return networkConnectionSection, fmt.Errorf("cannot refresh, Object is empty")
 	}
 
-	getNetworkUrl, _ := url.ParseRequestURI(vm.VM.HREF + "/networkConnectionSection/")
+	getNetworkURL, _ := url.ParseRequestURI(vm.VM.HREF + "/networkConnectionSection/")
 
-	req := vm.client.NewRequest(map[string]string{}, "GET", *getNetworkUrl, nil)
+	req := vm.client.NewRequest(map[string]string{}, "GET", *getNetworkURL, nil)
 
 	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.networkConnectionSection+xml")
 
@@ -103,32 +109,34 @@ func (vm *VM) GetNetworkConnectionSection() (*types.NetworkConnectionSection, er
 	return networkConnectionSection, nil
 }
 
+// FindVMByHREF find VM via HREF provided
 func (cli *Client) FindVMByHREF(vmHREF string) (VM, error) {
 
-	findUrl, err := url.ParseRequestURI(vmHREF)
+	findURL, err := url.ParseRequestURI(vmHREF)
 
 	if err != nil {
 		return VM{}, fmt.Errorf("error decoding vm HREF: %s", err)
 	}
 
 	// Querying the VApp
-	req := cli.NewRequest(map[string]string{}, "GET", *findUrl, nil)
+	req := cli.NewRequest(map[string]string{}, "GET", *findURL, nil)
 
 	resp, err := checkResp(cli.Http.Do(req))
 	if err != nil {
 		return VM{}, fmt.Errorf("error retrieving VM: %s", err)
 	}
 
-	newVm := NewVM(cli)
+	newVM := NewVM(cli)
 
-	if err = decodeBody(resp, newVm.VM); err != nil {
+	if err = decodeBody(resp, newVM.VM); err != nil {
 		return VM{}, fmt.Errorf("error decoding VM response: %s", err)
 	}
 
-	return *newVm, nil
+	return *newVM, nil
 
 }
 
+// PowerOn powers VM on
 func (vm *VM) PowerOn() (Task, error) {
 
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
@@ -152,6 +160,7 @@ func (vm *VM) PowerOn() (Task, error) {
 
 }
 
+// PowerOff powers VM off
 func (vm *VM) PowerOff() (Task, error) {
 
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
@@ -175,19 +184,19 @@ func (vm *VM) PowerOff() (Task, error) {
 
 }
 
-// Sets number of available virtual logical processors
+// ChangeCPUCount sets number of available virtual logical processors
 // (i.e. CPUs x cores per socket)
 // Cpu cores count is inherited from template.
 // https://communities.vmware.com/thread/576209
-func (vm *VM) ChangeCPUCount(virtualCpuCount int) (Task, error) {
-	return vm.ChangeCPUCountWithCore(virtualCpuCount, nil)
+func (vm *VM) ChangeCPUCount(virtualCPUCount int) (Task, error) {
+	return vm.ChangeCPUCountWithCore(virtualCPUCount, nil)
 }
 
-// Sets number of available virtual logical processors
+// ChangeCPUCountWithCore sets number of available virtual logical processors
 // (i.e. CPUs x cores per socket) and cores per socket.
 // Socket count is a result of: virtual logical processors/cores per socket
 // https://communities.vmware.com/thread/576209
-func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (Task, error) {
+func (vm *VM) ChangeCPUCountWithCore(virtualCPUCount int, coresPerSocket *int) (Task, error) {
 
 	err := vm.Refresh()
 	if err != nil {
@@ -203,11 +212,11 @@ func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (
 		VCloudType:      "application/vnd.vmware.vcloud.rasdItem+xml",
 		AllocationUnits: "hertz * 10^6",
 		Description:     "Number of Virtual CPUs",
-		ElementName:     strconv.Itoa(virtualCpuCount) + " virtual CPU(s)",
+		ElementName:     strconv.Itoa(virtualCPUCount) + " virtual CPU(s)",
 		InstanceID:      4,
 		Reservation:     0,
 		ResourceType:    3,
-		VirtualQuantity: virtualCpuCount,
+		VirtualQuantity: virtualCPUCount,
 		Weight:          0,
 		CoresPerSocket:  coresPerSocket,
 		Link: &types.Link{
@@ -247,6 +256,7 @@ func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (
 
 }
 
+// ChangeNetworkConfig changes networks attached to VM
 func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}, ip string) (Task, error) {
 	err := vm.Refresh()
 	if err != nil {
@@ -283,6 +293,8 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}, ip string) 
 				}
 
 				util.Logger.Printf("[DEBUG] Function ChangeNetworkConfig() for %s invoked", network["orgnetwork"])
+				util.Logger.Printf("[DEBUG] network[\"ip_allocation_mode\"].(string)%s", network["ip_allocation_mode"].(string))
+				util.Logger.Printf("[DEBUG] Actual ipAllocationMode: %s", ipAllocationMode)
 
 				networkSection.NetworkConnection[index].NeedsCustomization = true
 				networkSection.NetworkConnection[index].IPAddress = ipAddress
@@ -330,6 +342,7 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}, ip string) 
 	return *task, nil
 }
 
+// ChangeMemorySize changes memory size for VM
 func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 
 	err := vm.Refresh()
@@ -390,10 +403,12 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 
 }
 
+// RunCustomizationScript calls vm.Customize function with computername and script
 func (vm *VM) RunCustomizationScript(computername, script string) (Task, error) {
 	return vm.Customize(computername, script, false)
 }
 
+// Customize customizes guest customazation section for VM
 func (vm *VM) Customize(computername, script string, changeSid bool) (Task, error) {
 	err := vm.Refresh()
 	if err != nil {
@@ -447,6 +462,7 @@ func (vm *VM) Customize(computername, script string, changeSid bool) (Task, erro
 	return *task, nil
 }
 
+// Undeploy undeploys VM
 func (vm *VM) Undeploy() (Task, error) {
 
 	vu := &types.UndeployVAppParams{
@@ -486,7 +502,7 @@ func (vm *VM) Undeploy() (Task, error) {
 
 }
 
-// Attach or detach an independent disk
+// attachOrDetachDisk attaches or detaches an independent disk
 // Use the disk/action/attach or disk/action/detach links in a Vm to attach or detach an independent disk.
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 164 - 165,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
@@ -512,7 +528,7 @@ func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel
 		return Task{}, fmt.Errorf("could not find request URL for attach or detach disk in disk Link")
 	}
 
-	reqUrl, err := url.ParseRequestURI(attachOrDetachDiskLink.HREF)
+	reqURL, err := url.ParseRequestURI(attachOrDetachDiskLink.HREF)
 
 	diskParams.Xmlns = types.NsVCloud
 
@@ -523,7 +539,7 @@ func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel
 
 	// Send request
 	reqPayload := bytes.NewBufferString(xml.Header + string(xmlPayload))
-	req := vm.client.NewRequest(nil, http.MethodPost, *reqUrl, reqPayload)
+	req := vm.client.NewRequest(nil, http.MethodPost, *reqURL, reqPayload)
 	req.Header.Add("Content-Type", attachOrDetachDiskLink.Type)
 	resp, err := checkResp(vm.client.Http.Do(req))
 	if err != nil {
@@ -540,7 +556,7 @@ func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel
 	return *task, nil
 }
 
-// Attach an independent disk
+// AttachDisk attaches an independent disk
 // Call attachOrDetachDisk with disk and types.RelDiskAttach to attach an independent disk.
 // Please verify the independent disk is not connected to any VM before calling this function.
 // If the independent disk is connected to a VM, the task will be failed.
@@ -557,7 +573,7 @@ func (vm *VM) AttachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, erro
 	return vm.attachOrDetachDisk(diskParams, types.RelDiskAttach)
 }
 
-// Detach an independent disk
+// DetachDisk detaches an independent disk
 // Call attachOrDetachDisk with disk and types.RelDiskDetach to detach an independent disk.
 // Please verify the independent disk is connected the VM before calling this function.
 // If the independent disk is not connected to the VM, the task will be failed.
@@ -574,7 +590,7 @@ func (vm *VM) DetachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, erro
 	return vm.attachOrDetachDisk(diskParams, types.RelDiskDetach)
 }
 
-// Helper function which finds media and calls InsertMedia
+// HandleInsertMedia helper function which finds media and calls InsertMedia
 func (vm *VM) HandleInsertMedia(org *Org, catalogName, mediaName string) (Task, error) {
 
 	media, err := FindMediaAsCatalogItem(org, catalogName, mediaName)
@@ -594,7 +610,7 @@ func (vm *VM) HandleInsertMedia(org *Org, catalogName, mediaName string) (Task, 
 	return task, err
 }
 
-// Helper function which finds media and calls EjectMedia
+// HandleEjectMedia helper function which finds media and calls EjectMedia
 func (vm *VM) HandleEjectMedia(org *Org, catalogName, mediaName string) (EjectTask, error) {
 	media, err := FindMediaAsCatalogItem(org, catalogName, mediaName)
 	if err != nil || media == (CatalogItem{}) {
@@ -610,7 +626,7 @@ func (vm *VM) HandleEjectMedia(org *Org, catalogName, mediaName string) (EjectTa
 	return task, err
 }
 
-// Insert media for VM
+// InsertMedia inserts media for VM
 // Call insertOrEjectMedia with media and types.RelMediaInsertMedia to insert media from VM.
 func (vm *VM) InsertMedia(mediaParams *types.MediaInsertOrEjectParams) (Task, error) {
 	util.Logger.Printf("[TRACE] Insert media, HREF: %s\n", mediaParams.Media.HREF)
@@ -623,7 +639,7 @@ func (vm *VM) InsertMedia(mediaParams *types.MediaInsertOrEjectParams) (Task, er
 	return vm.insertOrEjectMedia(mediaParams, types.RelMediaInsertMedia)
 }
 
-// Eject media from VM
+// EjectMedia ejects media from VM
 // Call insertOrEjectMedia with media and types.RelMediaEjectMedia to eject media from VM.
 // If media isn't inserted then task still will be successful.
 func (vm *VM) EjectMedia(mediaParams *types.MediaInsertOrEjectParams) (EjectTask, error) {
@@ -675,7 +691,7 @@ func (vm *VM) insertOrEjectMedia(mediaParams *types.MediaInsertOrEjectParams, li
 		return Task{}, fmt.Errorf("could not find request URL for insert or eject media")
 	}
 
-	reqUrl, err := url.ParseRequestURI(insertOrEjectMediaLink.HREF)
+	reqURL, err := url.ParseRequestURI(insertOrEjectMediaLink.HREF)
 	if err != nil {
 		return Task{}, fmt.Errorf("could not parse request URL for insert or eject media. Error: %#v", err)
 	}
@@ -687,7 +703,7 @@ func (vm *VM) insertOrEjectMedia(mediaParams *types.MediaInsertOrEjectParams, li
 	}
 
 	reqPayload := bytes.NewBufferString(xml.Header + string(xmlPayload))
-	req := vm.client.NewRequest(nil, http.MethodPost, *reqUrl, reqPayload)
+	req := vm.client.NewRequest(nil, http.MethodPost, *reqURL, reqPayload)
 	req.Header.Add("Content-Type", insertOrEjectMediaLink.Type)
 	resp, err := checkResp(vm.client.Http.Do(req))
 	if err != nil {
@@ -702,7 +718,7 @@ func (vm *VM) insertOrEjectMedia(mediaParams *types.MediaInsertOrEjectParams, li
 	return *task, nil
 }
 
-// Use the get existing VM question for operation which need additional response
+// GetQuestion Use the get existing VM question for operation which need additional response
 // Reference:
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/GET-VmPendingQuestion.html
 func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
@@ -739,38 +755,38 @@ func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
 
 }
 
-// GetMetadata() function calls private function getMetadata() with vm.client and vm.VM.HREF
+// GetMetadata function calls private function getMetadata() with vm.client and vm.VM.HREF
 // which returns a *types.Metadata struct for provided VM input.
 func (vm *VM) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(vm.client, vm.VM.HREF)
 }
 
-// DeleteMetadata() function calls private function deleteMetadata() with vm.client and vm.VM.HREF
+// DeleteMetadata function calls private function deleteMetadata() with vm.client and vm.VM.HREF
 // which deletes metadata depending on key provided as input from VM.
 func (vm *VM) DeleteMetadata(key string) (Task, error) {
 	return deleteMetadata(vm.client, key, vm.VM.HREF)
 }
 
-// AddMetadata() function calls private function addMetadata() with vm.client and vm.VM.HREF
+// AddMetadata function calls private function addMetadata() with vm.client and vm.VM.HREF
 // which adds metadata key, value pair provided as input to VM.
 func (vm *VM) AddMetadata(key string, value string) (Task, error) {
 	return addMetadata(vm.client, key, value, vm.VM.HREF)
 }
 
-// Use the provide answer to existing VM question for operation which need additional response
+// AnswerQuestion Use the provide answer to existing VM question for operation which need additional response
 // Reference:
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/POST-AnswerVmPendingQuestion.html
-func (vm *VM) AnswerQuestion(questionId string, choiceId int) error {
+func (vm *VM) AnswerQuestion(questionID string, choiceID int) error {
 
 	//validate input
-	if "" == questionId {
+	if "" == questionID {
 		return fmt.Errorf("questionId can not be empty")
 	}
 
 	answer := &types.VmQuestionAnswer{
 		Xmlns:      "http://www.vmware.com/vcloud/v1.5",
-		QuestionId: questionId,
-		ChoiceId:   choiceId,
+		QuestionID: questionID,
+		ChoiceID:   choiceID,
 	}
 
 	output, err := xml.MarshalIndent(answer, "  ", "    ")

@@ -15,6 +15,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+// findFirstVm get first VM in vApp
 func (vcd *TestVCD) findFirstVm(vapp VApp) (types.VM, string) {
 	for _, vm := range vapp.VApp.Children.VM {
 		if vm.Name != "" {
@@ -143,17 +144,17 @@ func (vcd *TestVCD) Test_FindVMByHREF(check *C) {
 	if vapp.VApp.Name == "" {
 		check.Skip("Disabled: No suitable vApp found in vDC")
 	}
-	vm, vm_name := vcd.findFirstVm(vapp)
+	vm, vmName := vcd.findFirstVm(vapp)
 	if vm.Name == "" {
 		check.Skip("Disabled: No suitable VM found in vDC")
 	}
 
-	vm_href := vm.HREF
-	new_vm, err := vcd.client.Client.FindVMByHREF(vm_href)
+	vmHref := vm.HREF
+	newVM, err := vcd.client.Client.FindVMByHREF(vmHref)
 
 	check.Assert(err, IsNil)
-	check.Assert(new_vm.VM.Name, Equals, vm_name)
-	check.Assert(new_vm.VM.VirtualHardwareSection.Item, NotNil)
+	check.Assert(newVM.VM.Name, Equals, vmName)
+	check.Assert(newVM.VM.VirtualHardwareSection.Item, NotNil)
 }
 
 // Test attach disk to VM and detach disk from VM
