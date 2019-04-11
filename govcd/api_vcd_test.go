@@ -212,18 +212,17 @@ func GetConfigStruct() (TestConfig, error) {
 // Creates a VCDClient based on the endpoint given in the TestConfig argument.
 // TestConfig struct can be obtained by calling GetConfigStruct. Throws an error
 // if endpoint given is not a valid url.
-func GetTestVCDFromYaml(testConfig TestConfig) (*VCDClient, error) {
+func GetTestVCDFromYaml(testConfig TestConfig, options ...VCDClientOption) (*VCDClient, error) {
 	configUrl, err := url.ParseRequestURI(testConfig.Provider.Url)
 	if err != nil {
 		return &VCDClient{}, fmt.Errorf("could not parse Url: %s", err)
 	}
 
 	if testConfig.Provider.MaxRetryTimeout != 0 {
-		return NewVCDClient(*configUrl, true,
-			WithMaxRetryTimeout(testConfig.Provider.MaxRetryTimeout)), nil
+		options = append(options, WithMaxRetryTimeout(testConfig.Provider.MaxRetryTimeout))
 	}
 
-	return NewVCDClient(*configUrl, true), nil
+	return NewVCDClient(*configUrl, true, options...), nil
 }
 
 // Necessary to enable the suite tests with TestVCD
@@ -294,7 +293,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 			fmt.Printf("%v", err)
 			vcd.skipVappTests = true
 		}
-		// After a successful creation, the vAPp is added to the cleanup list
+		// After a successful creation, the vApp is added to the cleanup list
 		AddToCleanupList(TestSetUpSuite, "vapp", "", "SetUpSuite")
 	} else {
 		vcd.skipVappTests = true
