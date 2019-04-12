@@ -179,8 +179,13 @@ func checkResp(resp *http.Response, err error) (*http.Response, error) {
 	}
 }
 
-//
-// E.g.
+// Helper function creates request, run it, check response and parse task from response.
+// pathUlr - request URL
+// requestType - HTTP method type
+// contentType - value which will be set for "Content-Type"
+// errorMessage - error message which to return when error happen
+// payload - XML struct which will be marshalled and added as body/payload
+// E.g. client.ExecuteTaskRequest(updateDiskLink.HREF, http.MethodPut, updateDiskLink.Type, "error update disk: %s", xmlPayload)
 func (client *Client) ExecuteTaskRequest(pathURL, requestType, contentType, errorMessage string, payload interface{}) (Task, error) {
 
 	resp, err := executeRequest(pathURL, requestType, contentType, errorMessage, payload, client)
@@ -200,6 +205,13 @@ func (client *Client) ExecuteTaskRequest(pathURL, requestType, contentType, erro
 	return *task, nil
 }
 
+// Helper function creates request, run it, check response and do not expect any values from it.
+// pathUlr - request URL
+// requestType - HTTP method type
+// contentType - value which will be set for "Content-Type"
+// errorMessage - error message which to return when error happen
+// payload - XML struct which will be marshalled and added as body/payload
+// E.g. client.ExecuteRequestWithoutResponse(catalogItemHREF.String(), http.MethodDelete, "", "error deleting Catalog item: %s", nil)
 func (client *Client) ExecuteRequestWithoutResponse(pathURL, requestType, contentType, errorMessage string, payload interface{}) error {
 
 	resp, err := executeRequest(pathURL, requestType, contentType, errorMessage, payload, client)
@@ -213,6 +225,15 @@ func (client *Client) ExecuteRequestWithoutResponse(pathURL, requestType, conten
 	return nil
 }
 
+// Helper function creates request, run it, check response and parse task from response.
+// pathUlr - request URL
+// requestType - HTTP method type
+// contentType - value which will be set for "Content-Type"
+// errorMessage - error message which to return when error happen
+// payload - XML struct which will be mashalled and added as body/payload
+// out - structure to be used for unmarshalling xml
+// E.g. 	unmarshalledAdminOrg := &types.AdminOrg{}
+// client.ExecuteRequest(adminOrg.AdminOrg.HREF, http.MethodGet, "", "error refreshing organization: %s", nil, unmarshalledAdminOrg)
 func (client *Client) ExecuteRequest(pathURL, requestType, contentType, errorMessage string, payload, out interface{}) error {
 
 	resp, err := executeRequest(pathURL, requestType, contentType, errorMessage, payload, client)
