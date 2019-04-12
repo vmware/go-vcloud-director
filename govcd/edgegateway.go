@@ -94,7 +94,7 @@ func (eGW *EdgeGateway) AddDhcpPool(network *types.OrgVDCNetwork, dhcppool []int
 		apiEndpoint, _ := url.ParseRequestURI(eGW.EdgeGateway.HREF)
 		apiEndpoint.Path += "/action/configureServices"
 
-		req := eGW.client.NewRequest(map[string]string{}, "POST", *apiEndpoint, buffer)
+		req := eGW.client.NewRequest(map[string]string{}, http.MethodPost, *apiEndpoint, buffer)
 		util.Logger.Printf("[DEBUG] POSTING TO URL: %s", apiEndpoint.Path)
 		util.Logger.Printf("[DEBUG] XML TO SEND:\n%s", buffer)
 
@@ -343,7 +343,7 @@ func (eGW *EdgeGateway) CreateFirewallRules(defaultAction string, rules []*types
 		apiEndpoint, _ := url.ParseRequestURI(eGW.EdgeGateway.HREF)
 		apiEndpoint.Path += "/action/configureServices"
 
-		req := eGW.client.NewRequest(map[string]string{}, "POST", *apiEndpoint, buffer)
+		req := eGW.client.NewRequest(map[string]string{}, http.MethodPost, *apiEndpoint, buffer)
 		util.Logger.Printf("[DEBUG] POSTING TO URL: %s", apiEndpoint.Path)
 		util.Logger.Printf("[DEBUG] XML TO SEND:\n%s", buffer)
 

@@ -78,18 +78,5 @@ const (
 )
 
 const (
-	// HTTPGet the http GET method
-	HTTPGet = "GET"
-	// HTTPPost the http POST method
-	HTTPPost = "POST"
-	// HTTPPut the http PUT method
-	HTTPPut = "PUT"
-	// HTTPPatch the http PATCH method
-	HTTPPatch = "PATCH"
-	// HTTPDelete the http DELETE method
-	HTTPDelete = "DELETE"
-)
-
-const (
 	VMsCDResourceSubType = "vmware.cdrom.iso"
 )

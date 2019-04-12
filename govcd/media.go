@@ -136,7 +136,7 @@ func createMedia(client *Client, link, mediaName, mediaDescription string, fileS
 			"<Description>" + mediaDescription + "</Description>" +
 			"</Media>")
 
-	request := client.NewRequest(map[string]string{}, "POST", *uploadUrl, reqBody)
+	request := client.NewRequest(map[string]string{}, http.MethodPost, *uploadUrl, reqBody)
 	request.Header.Add("Content-Type", "application/vnd.vmware.vcloud.media+xml")
 
 	response, err := checkResp(client.Http.Do(request))

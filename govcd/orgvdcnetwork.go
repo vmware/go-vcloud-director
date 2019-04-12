@@ -63,7 +63,7 @@ func (orgVdcNet *OrgVDCNetwork) Delete() (Task, error) {
 
 	var resp *http.Response
 	for {
-		req := orgVdcNet.client.NewRequest(map[string]string{}, "DELETE", *apiEndpoint, nil)
+		req := orgVdcNet.client.NewRequest(map[string]string{}, http.MethodDelete, *apiEndpoint, nil)
 		resp, err = checkResp(orgVdcNet.client.Http.Do(req))
 		if err != nil {
 			if match, _ := regexp.MatchString("is busy, cannot proceed with the operation.$", err.Error()); match {
@@ -144,7 +144,7 @@ func (vdc *Vdc) CreateOrgVDCNetwork(networkConfig *types.OrgVDCNetwork) (Task, e
 			for {
 				b := bytes.NewBufferString(xml.Header + string(output))
 				util.Logger.Printf("[DEBUG] VCD Client configuration: %s", b)
-				req := vdc.client.NewRequest(map[string]string{}, "POST", *createUrl, b)
+				req := vdc.client.NewRequest(map[string]string{}, http.MethodPost, *createUrl, b)
 				req.Header.Add("Content-Type", av.Type)
 				resp, err = checkResp(vdc.client.Http.Do(req))
 				if err != nil {

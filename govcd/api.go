@@ -179,6 +179,8 @@ func checkResp(resp *http.Response, err error) (*http.Response, error) {
 	}
 }
 
+//
+// E.g.
 func (client *Client) ExecuteTaskRequest(pathURL, requestType, contentType, errorMessage string, payload interface{}) (Task, error) {
 
 	resp, err := executeRequest(pathURL, requestType, contentType, errorMessage, payload, client)
@@ -232,7 +234,7 @@ func executeRequest(pathURL, requestType, contentType, errorMessage string, payl
 
 	var req *http.Request
 	switch requestType {
-	case "POST", "PUT":
+	case http.MethodPost, http.MethodPut:
 
 		marshaledXml, err := xml.MarshalIndent(payload, "  ", "    ")
 		if err != nil {

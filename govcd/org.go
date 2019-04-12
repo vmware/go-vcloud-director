@@ -349,7 +349,7 @@ func (adminOrg *AdminOrg) Delete(force bool, recursive bool) error {
 	req := adminOrg.client.NewRequest(map[string]string{
 		"force":     strconv.FormatBool(force),
 		"recursive": strconv.FormatBool(recursive),
-	}, "DELETE", *orgHREF, nil)
+	}, http.MethodDelete, *orgHREF, nil)
 	_, err = checkResp(adminOrg.client.Http.Do(req))
 	if err != nil {
 		return fmt.Errorf("error deleting Org %s: %s", adminOrg.AdminOrg.ID, err)
@@ -447,7 +447,7 @@ func (adminOrg *AdminOrg) removeAllOrgVDCs() error {
 		adminVdcUrl := adminOrg.client.VCDHREF
 		adminVdcUrl.Path += "/admin/vdc/" + strings.Split(vdcs.HREF, "/api/vdc/")[1] + "/action/disable"
 
-		req := adminOrg.client.NewRequest(map[string]string{}, "POST", adminVdcUrl, nil)
+		req := adminOrg.client.NewRequest(map[string]string{}, http.MethodPost, adminVdcUrl, nil)
 		_, err := checkResp(adminOrg.client.Http.Do(req))
 		if err != nil {
 			return fmt.Errorf("error disabling vdc: %s", err)
@@ -457,7 +457,7 @@ func (adminOrg *AdminOrg) removeAllOrgVDCs() error {
 		req = adminOrg.client.NewRequest(map[string]string{
 			"recursive": "true",
 			"force":     "true",
-		}, "DELETE", adminVdcUrl, nil)
+		}, http.MethodDelete, adminVdcUrl, nil)
 		resp, err := checkResp(adminOrg.client.Http.Do(req))
 		if err != nil {
 			return fmt.Errorf("error deleting vdc: %s", err)
@@ -512,7 +512,7 @@ func (adminOrg *AdminOrg) removeCatalogs() error {
 		req := adminOrg.client.NewRequest(map[string]string{
 			"force":     "true",
 			"recursive": "true",
-		}, "DELETE", catalogHREF, nil)
+		}, http.MethodDelete, catalogHREF, nil)
 		_, err := checkResp(adminOrg.client.Http.Do(req))
 		if err != nil {
 			return fmt.Errorf("error deleting catalog: %s, %s", err, catalogHREF.Path)

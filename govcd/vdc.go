@@ -150,7 +150,7 @@ func (vdc *Vdc) Delete(force bool, recursive bool) (Task, error) {
 	req := vdc.client.NewRequest(map[string]string{
 		"force":     strconv.FormatBool(force),
 		"recursive": strconv.FormatBool(recursive),
-	}, "DELETE", *vdcUrl, nil)
+	}, http.MethodDelete, *vdcUrl, nil)
 	resp, err := checkResp(vdc.client.Http.Do(req))
 	if err != nil {
 		return Task{}, fmt.Errorf("error deleting vdc: %s", err)

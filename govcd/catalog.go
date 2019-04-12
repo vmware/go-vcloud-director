@@ -71,7 +71,7 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 	req := catalog.client.NewRequest(map[string]string{
 		"force":     strconv.FormatBool(force),
 		"recursive": strconv.FormatBool(recursive),
-	}, "DELETE", adminCatalogHREF, nil)
+	}, http.MethodDelete, adminCatalogHREF, nil)
 
 	_, err := checkResp(catalog.client.Http.Do(req))
 
@@ -114,7 +114,7 @@ func (adminCatalog *AdminCatalog) Update() error {
 		IsPublished: adminCatalog.AdminCatalog.IsPublished,
 	}
 	catalog := &types.AdminCatalog{}
-	err := adminCatalog.client.ExecuteRequest(adminCatalog.AdminCatalog.HREF, "PUT",
+	err := adminCatalog.client.ExecuteRequest(adminCatalog.AdminCatalog.HREF, http.MethodPut,
 		"application/vnd.vmware.admin.catalog+xml", "error updating catalog: %s", vcomp, catalog)
 	adminCatalog.AdminCatalog = catalog
 	return err
@@ -143,7 +143,7 @@ func (cat *Catalog) FindCatalogItem(catalogItemName string) (CatalogItem, error)
 
 				cat := NewCatalogItem(cat.client)
 
-				err := cat.client.ExecuteRequest(catalogItem.HREF, "GET",
+				err := cat.client.ExecuteRequest(catalogItem.HREF, http.MethodGet,
 					"", "error retrieving catalog: %s", nil, cat.CatalogItem)
 				return *cat, err
 			}
@@ -437,7 +437,7 @@ func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL)
 	var buf bytes.Buffer
 	ovfReader := io.TeeReader(openedFile, &buf)
 
-	request := client.NewRequest(map[string]string{}, "PUT", *ovfUploadUrl, ovfReader)
+	request := client.NewRequest(map[string]string{}, http.MethodPut, *ovfUploadUrl, ovfReader)
 	request.Header.Add("Content-Type", "text/xml")
 
 	_, err = checkResp(client.Http.Do(request))
@@ -511,7 +511,7 @@ func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName st
 			"<Description>" + itemDescription + "</Description>" +
 			"</UploadVAppTemplateParams>")
 
-	request := client.NewRequest(map[string]string{}, "POST", *createHREF, reqBody)
+	request := client.NewRequest(map[string]string{}, http.MethodPost, *createHREF, reqBody)
 	request.Header.Add("Content-Type", "application/vnd.vmware.vcloud.uploadVAppTemplateParams+xml")
 
 	response, err := checkResp(client.Http.Do(request))

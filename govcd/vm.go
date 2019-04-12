@@ -486,7 +486,7 @@ func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/question"
 
-	req := vm.client.NewRequest(map[string]string{}, "GET", *apiEndpoint, nil)
+	req := vm.client.NewRequest(map[string]string{}, http.MethodGet, *apiEndpoint, nil)
 
 	resp, err := vm.client.Http.Do(req)
 

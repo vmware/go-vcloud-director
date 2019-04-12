@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"fmt"
+	"net/http"
 	"sort"
 
 	semver "github.com/hashicorp/go-version"
@@ -93,7 +94,7 @@ func (vcdCli *VCDClient) vcdFetchSupportedVersions() error {
 	apiEndpoint.Path += "/versions"
 
 	suppVersions := new(SupportedVersions)
-	err := vcdCli.Client.ExecuteRequest(apiEndpoint.String(), "GET",
+	err := vcdCli.Client.ExecuteRequest(apiEndpoint.String(), http.MethodGet,
 		"", "error fetching versions: %s", nil, suppVersions)
 
 	vcdCli.supportedVersions = *suppVersions
