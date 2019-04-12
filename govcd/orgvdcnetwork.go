@@ -38,25 +38,16 @@ func (orgVdcNet *OrgVDCNetwork) Refresh() error {
 		return fmt.Errorf("cannot refresh, Object is empty")
 	}
 
-	refreshUrl, _ := url.ParseRequestURI(orgVdcNet.OrgVDCNetwork.HREF)
-
-	req := orgVdcNet.client.NewRequest(map[string]string{}, "GET", *refreshUrl, nil)
-
-	resp, err := checkResp(orgVdcNet.client.Http.Do(req))
-	if err != nil {
-		return fmt.Errorf("error retrieving task: %s", err)
-	}
+	refreshUrl := orgVdcNet.OrgVDCNetwork.HREF
 
 	// Empty struct before a new unmarshal, otherwise we end up with duplicate
 	// elements in slices.
 	orgVdcNet.OrgVDCNetwork = &types.OrgVDCNetwork{}
 
-	if err = decodeBody(resp, orgVdcNet.OrgVDCNetwork); err != nil {
-		return fmt.Errorf("error decoding task response: %s", err)
-	}
+	err := orgVdcNet.client.ExecuteRequest(refreshUrl, http.MethodGet,
+		"", "error retrieving vDC network: %s", nil, orgVdcNet.OrgVDCNetwork)
 
-	// The request was successful
-	return nil
+	return err
 }
 
 // Delete a network. Fails if the network is busy.

@@ -8,6 +8,7 @@ package govcd
 import (
 	"errors"
 	"fmt"
+	"github.com/vmware/go-vcloud-director/v2/util"
 	"strings"
 	"time"
 
@@ -680,6 +681,11 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(media, Not(Equals), CatalogItem{})
 
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+
+	util.Logger.Printf("!!!!!!!!!!!!!!!!!!! %#v", vm.VM.Link)
+
 	insertMediaTask, err := vm.HandleInsertMedia(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 
@@ -728,6 +734,9 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 	currentCpus := 0
 	currentCores := 0
 
+	util.Logger.Printf("&&&&&&&&&&&1 %#v", vcd.vapp.VApp.Children.VM[0])
+	util.Logger.Printf("&&&&&&&&&&&2 %#v", vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection.Item)
+
 	// save current values
 	if nil != vcd.vapp.VApp.Children.VM[0] && nil != vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection && nil != vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection.Item {
 		for _, item := range vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection.Item {
@@ -738,6 +747,9 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 			}
 		}
 	}
+
+	check.Assert(0, Not(Equals), currentCpus)
+	check.Assert(0, Not(Equals), currentCores)
 
 	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
 

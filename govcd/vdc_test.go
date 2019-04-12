@@ -6,7 +6,6 @@ package govcd
 
 import (
 	"fmt"
-
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -130,7 +129,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	// Compose VApp
 	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, TestComposeVapp, TestComposeVappDesc, true)
 	check.Assert(err, IsNil)
-	check.Assert(task.Task.OperationName, Equals, "vdcComposeVapp")
+	check.Assert(task.Task.Tasks.Task[0].OperationName, Equals, "vdcComposeVapp")
 	// Get VApp
 	vapp, err := vcd.vdc.FindVAppByName(TestComposeVapp)
 	check.Assert(err, IsNil)
@@ -150,6 +149,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	if err != nil {
 		panic(err)
 	}
+	vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
 	vapp_status, err = vapp.GetStatus()
 	check.Check(err, IsNil)
 	check.Check(vapp_status, Equals, "POWERED_OFF")

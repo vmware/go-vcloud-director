@@ -178,3 +178,77 @@ func checkResp(resp *http.Response, err error) (*http.Response, error) {
 		return nil, fmt.Errorf("unhandled API response, please report this issue, status code: %s", resp.Status)
 	}
 }
+
+func (client *Client) ExecuteTaskRequest(pathURL, requestType, contentType, errorMessage string, payload interface{}) (Task, error) {
+
+	resp, err := executeRequest(pathURL, requestType, contentType, errorMessage, payload, client)
+	if err != nil {
+		return Task{}, fmt.Errorf(errorMessage, err)
+	}
+
+	task := NewTask(client)
+
+	if err = decodeBody(resp, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
+	}
+
+	resp.Body.Close()
+
+	// The request was successful
+	return *task, nil
+}
+
+func (client *Client) ExecuteRequestWithoutResponse(pathURL, requestType, contentType, errorMessage string, payload interface{}) error {
+
+	resp, err := executeRequest(pathURL, requestType, contentType, errorMessage, payload, client)
+	if err != nil {
+		return fmt.Errorf(errorMessage, err)
+	}
+
+	resp.Body.Close()
+
+	// The request was successful
+	return nil
+}
+
+func (client *Client) ExecuteRequest(pathURL, requestType, contentType, errorMessage string, payload, out interface{}) error {
+
+	resp, err := executeRequest(pathURL, requestType, contentType, errorMessage, payload, client)
+	if err != nil {
+		return fmt.Errorf(errorMessage, err)
+	}
+
+	if err = decodeBody(resp, out); err != nil {
+		return fmt.Errorf("error decoding response: %s", err)
+	}
+
+	resp.Body.Close()
+	// The request was successful
+	return nil
+}
+
+func executeRequest(pathURL, requestType, contentType, errorMessage string, payload interface{}, client *Client) (*http.Response, error) {
+	url, _ := url.ParseRequestURI(pathURL)
+
+	var req *http.Request
+	switch requestType {
+	case "POST", "PUT":
+
+		marshaledXml, err := xml.MarshalIndent(payload, "  ", "    ")
+		if err != nil {
+			return &http.Response{}, fmt.Errorf("error marshalling xml data %v", err)
+		}
+		body := bytes.NewBufferString(xml.Header + string(marshaledXml))
+
+		req = client.NewRequest(map[string]string{}, requestType, *url, body)
+
+	default:
+		req = client.NewRequest(map[string]string{}, requestType, *url, nil)
+	}
+
+	if contentType != "" {
+		req.Header.Add("Content-Type", contentType)
+	}
+
+	return checkResp(client.Http.Do(req))
+}

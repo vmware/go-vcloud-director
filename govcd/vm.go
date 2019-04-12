@@ -5,8 +5,6 @@
 package govcd
 
 import (
-	"bytes"
-	"encoding/xml"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -55,25 +53,17 @@ func (vm *VM) Refresh() error {
 		return fmt.Errorf("cannot refresh VM, Object is empty")
 	}
 
-	refreshUrl, _ := url.ParseRequestURI(vm.VM.HREF)
-
-	req := vm.client.NewRequest(map[string]string{}, "GET", *refreshUrl, nil)
-
-	resp, err := checkResp(vm.client.Http.Do(req))
-	if err != nil {
-		return fmt.Errorf("error retrieving task: %s", err)
-	}
+	refreshUrl := vm.VM.HREF
 
 	// Empty struct before a new unmarshal, otherwise we end up with duplicate
 	// elements in slices.
 	vm.VM = &types.VM{}
 
-	if err = decodeBody(resp, vm.VM); err != nil {
-		return fmt.Errorf("error decoding task response VM: %s", err)
-	}
+	err := vm.client.ExecuteRequest(refreshUrl, http.MethodGet,
+		"", "error refreshing VM: %s", nil, vm.VM)
 
 	// The request was successful
-	return nil
+	return err
 }
 
 func (vm *VM) GetNetworkConnectionSection() (*types.NetworkConnectionSection, error) {
@@ -84,48 +74,21 @@ func (vm *VM) GetNetworkConnectionSection() (*types.NetworkConnectionSection, er
 		return networkConnectionSection, fmt.Errorf("cannot refresh, Object is empty")
 	}
 
-	getNetworkUrl, _ := url.ParseRequestURI(vm.VM.HREF + "/networkConnectionSection/")
-
-	req := vm.client.NewRequest(map[string]string{}, "GET", *getNetworkUrl, nil)
-
-	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.networkConnectionSection+xml")
-
-	resp, err := checkResp(vm.client.Http.Do(req))
-	if err != nil {
-		return networkConnectionSection, fmt.Errorf("error retrieving task: %s", err)
-	}
-
-	if err = decodeBody(resp, networkConnectionSection); err != nil {
-		return networkConnectionSection, fmt.Errorf("error decoding task response: %s", err)
-	}
+	err := vm.client.ExecuteRequest(vm.VM.HREF+"/networkConnectionSection/", http.MethodGet,
+		"application/vnd.vmware.vcloud.networkConnectionSection+xml", "error retrieving network connection: %s", nil, networkConnectionSection)
 
 	// The request was successful
-	return networkConnectionSection, nil
+	return networkConnectionSection, err
 }
 
 func (cli *Client) FindVMByHREF(vmHREF string) (VM, error) {
 
-	findUrl, err := url.ParseRequestURI(vmHREF)
-
-	if err != nil {
-		return VM{}, fmt.Errorf("error decoding vm HREF: %s", err)
-	}
-
-	// Querying the VApp
-	req := cli.NewRequest(map[string]string{}, "GET", *findUrl, nil)
-
-	resp, err := checkResp(cli.Http.Do(req))
-	if err != nil {
-		return VM{}, fmt.Errorf("error retrieving VM: %s", err)
-	}
-
 	newVm := NewVM(cli)
 
-	if err = decodeBody(resp, newVm.VM); err != nil {
-		return VM{}, fmt.Errorf("error decoding VM response: %s", err)
-	}
+	err := cli.ExecuteRequest(vmHREF, http.MethodGet,
+		"", "error retrieving VM: %s", nil, newVm.VM)
 
-	return *newVm, nil
+	return *newVm, err
 
 }
 
@@ -134,21 +97,9 @@ func (vm *VM) PowerOn() (Task, error) {
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/power/action/powerOn"
 
-	req := vm.client.NewRequest(map[string]string{}, "POST", *apiEndpoint, nil)
-
-	resp, err := checkResp(vm.client.Http.Do(req))
-	if err != nil {
-		return Task{}, fmt.Errorf("error powering on VM: %s", err)
-	}
-
-	task := NewTask(vm.client)
-
-	if err = decodeBody(resp, task.Task); err != nil {
-		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
-	}
-
-	// The request was successful
-	return *task, nil
+	// Return the task
+	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+		"", "error powering on VM: %s", nil)
 
 }
 
@@ -157,22 +108,9 @@ func (vm *VM) PowerOff() (Task, error) {
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/power/action/powerOff"
 
-	req := vm.client.NewRequest(map[string]string{}, "POST", *apiEndpoint, nil)
-
-	resp, err := checkResp(vm.client.Http.Do(req))
-	if err != nil {
-		return Task{}, fmt.Errorf("error powering off VM: %s", err)
-	}
-
-	task := NewTask(vm.client)
-
-	if err = decodeBody(resp, task.Task); err != nil {
-		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
-	}
-
-	// The request was successful
-	return *task, nil
-
+	// Return the task
+	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+		"", "error powering off VM: %s", nil)
 }
 
 // Sets number of available virtual logical processors
@@ -194,7 +132,7 @@ func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %v", err)
 	}
 
-	newcpu := &types.OVFItem{
+	newCpu := &types.OVFItem{
 		XmlnsRasd:       "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData",
 		XmlnsVCloud:     "http://www.vmware.com/vcloud/v1.5",
 		XmlnsXsi:        "http://www.w3.org/2001/XMLSchema-instance",
@@ -217,33 +155,12 @@ func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (
 		},
 	}
 
-	output, err := xml.MarshalIndent(newcpu, "  ", "    ")
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-	}
-
-	buffer := bytes.NewBufferString(xml.Header + string(output))
-
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/virtualHardwareSection/cpu"
 
-	req := vm.client.NewRequest(map[string]string{}, "PUT", *apiEndpoint, buffer)
-
-	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.rasdItem+xml")
-
-	resp, err := checkResp(vm.client.Http.Do(req))
-	if err != nil {
-		return Task{}, fmt.Errorf("error customizing VM: %s", err)
-	}
-
-	task := NewTask(vm.client)
-
-	if err = decodeBody(resp, task.Task); err != nil {
-		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
-	}
-
-	// The request was successful
-	return *task, nil
+	// Return the task
+	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+		"application/vnd.vmware.vcloud.rasdItem+xml", "error changing CPU count: %s", newCpu)
 
 }
 
@@ -299,35 +216,12 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}, ip string) 
 	networkSection.Ovf = "http://schemas.dmtf.org/ovf/envelope/1"
 	networkSection.Info = "Specifies the available VM network connections"
 
-	output, err := xml.MarshalIndent(networkSection, "  ", "    ")
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-	}
-
-	util.Logger.Printf("[DEBUG] NetworkXML: %s", output)
-
-	buffer := bytes.NewBufferString(xml.Header + string(output))
-
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/networkConnectionSection/"
 
-	req := vm.client.NewRequest(map[string]string{}, "PUT", *apiEndpoint, buffer)
-
-	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.networkConnectionSection+xml")
-
-	resp, err := checkResp(vm.client.Http.Do(req))
-	if err != nil {
-		return Task{}, fmt.Errorf("error customizing VM Network: %s", err)
-	}
-
-	task := NewTask(vm.client)
-
-	if err = decodeBody(resp, task.Task); err != nil {
-		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
-	}
-
-	// The request was successful
-	return *task, nil
+	// Return the task
+	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+		"application/vnd.vmware.vcloud.networkConnectionSection+xml", "error changing network config: %s", networkSection)
 }
 
 func (vm *VM) ChangeMemorySize(size int) (Task, error) {
@@ -337,7 +231,7 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %v", err)
 	}
 
-	newmem := &types.OVFItem{
+	newMem := &types.OVFItem{
 		XmlnsRasd:       "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData",
 		XmlnsVCloud:     "http://www.vmware.com/vcloud/v1.5",
 		XmlnsXsi:        "http://www.w3.org/2001/XMLSchema-instance",
@@ -358,36 +252,12 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 		},
 	}
 
-	output, err := xml.MarshalIndent(newmem, "  ", "    ")
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-	}
-
-	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
-
-	buffer := bytes.NewBufferString(xml.Header + string(output))
-
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/virtualHardwareSection/memory"
 
-	req := vm.client.NewRequest(map[string]string{}, "PUT", *apiEndpoint, buffer)
-
-	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.rasdItem+xml")
-
-	resp, err := checkResp(vm.client.Http.Do(req))
-	if err != nil {
-		return Task{}, fmt.Errorf("error customizing VM: %s", err)
-	}
-
-	task := NewTask(vm.client)
-
-	if err = decodeBody(resp, task.Task); err != nil {
-		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
-	}
-
-	// The request was successful
-	return *task, nil
-
+	// Return the task
+	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+		"application/vnd.vmware.vcloud.rasdItem+xml", "error changing memory size: %s", newMem)
 }
 
 func (vm *VM) RunCustomizationScript(computername, script string) (Task, error) {
@@ -414,37 +284,12 @@ func (vm *VM) Customize(computername, script string, changeSid bool) (Task, erro
 		ChangeSid:           false,
 	}
 
-	output, err := xml.MarshalIndent(vu, "  ", "    ")
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-	}
-
-	util.Logger.Printf("[DEBUG] VCD Client configuration: %s", output)
-
-	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
-
-	buffer := bytes.NewBufferString(xml.Header + string(output))
-
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/guestCustomizationSection/"
 
-	req := vm.client.NewRequest(map[string]string{}, "PUT", *apiEndpoint, buffer)
-
-	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.guestCustomizationSection+xml")
-
-	resp, err := checkResp(vm.client.Http.Do(req))
-	if err != nil {
-		return Task{}, fmt.Errorf("error customizing VM: %s", err)
-	}
-
-	task := NewTask(vm.client)
-
-	if err = decodeBody(resp, task.Task); err != nil {
-		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
-	}
-
-	// The request was successful
-	return *task, nil
+	// Return the task
+	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+		"application/vnd.vmware.vcloud.guestCustomizationSection+xml", "error customizing VM: %s", vu)
 }
 
 func (vm *VM) Undeploy() (Task, error) {
@@ -454,36 +299,12 @@ func (vm *VM) Undeploy() (Task, error) {
 		UndeployPowerAction: "powerOff",
 	}
 
-	output, err := xml.MarshalIndent(vu, "  ", "    ")
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-	}
-
-	util.Logger.Printf("\n\nXML DEBUG: %s\n\n", string(output))
-
-	buffer := bytes.NewBufferString(xml.Header + string(output))
-
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/action/undeploy"
 
-	req := vm.client.NewRequest(map[string]string{}, "POST", *apiEndpoint, buffer)
-
-	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.undeployVAppParams+xml")
-
-	resp, err := checkResp(vm.client.Http.Do(req))
-	if err != nil {
-		return Task{}, fmt.Errorf("error undeploy vApp: %s", err)
-	}
-
-	task := NewTask(vm.client)
-
-	if err = decodeBody(resp, task.Task); err != nil {
-		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
-	}
-
-	// The request was successful
-	return *task, nil
-
+	// Return the task
+	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+		"application/vnd.vmware.vcloud.undeployVAppParams+xml", "error undeploy vApp: %s", vu)
 }
 
 // Attach or detach an independent disk
@@ -494,7 +315,6 @@ func (vm *VM) Undeploy() (Task, error) {
 func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel string) (Task, error) {
 	util.Logger.Printf("[TRACE] Attach or detach disk, href: %s, rel: %s \n", diskParams.Disk.HREF, rel)
 
-	var err error
 	var attachOrDetachDiskLink *types.Link
 	for _, link := range vm.VM.Link {
 		if link.Rel == rel && link.Type == types.MimeDiskAttachOrDetachParams {
@@ -512,32 +332,11 @@ func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel
 		return Task{}, fmt.Errorf("could not find request URL for attach or detach disk in disk Link")
 	}
 
-	reqUrl, err := url.ParseRequestURI(attachOrDetachDiskLink.HREF)
-
 	diskParams.Xmlns = types.NsVCloud
 
-	xmlPayload, err := xml.Marshal(diskParams)
-	if err != nil {
-		return Task{}, fmt.Errorf("error marshal xml: %s", err)
-	}
-
-	// Send request
-	reqPayload := bytes.NewBufferString(xml.Header + string(xmlPayload))
-	req := vm.client.NewRequest(nil, http.MethodPost, *reqUrl, reqPayload)
-	req.Header.Add("Content-Type", attachOrDetachDiskLink.Type)
-	resp, err := checkResp(vm.client.Http.Do(req))
-	if err != nil {
-		return Task{}, fmt.Errorf("error attach or detach disk: %s", err)
-	}
-
-	// Decode response
-	task := NewTask(vm.client)
-	if err = decodeBody(resp, task.Task); err != nil {
-		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
-	}
-
-	// The request was successful
-	return *task, nil
+	// Return the task
+	return vm.client.ExecuteTaskRequest(attachOrDetachDiskLink.HREF, http.MethodPost,
+		attachOrDetachDiskLink.Type, "error attach or detach disk: %s", diskParams)
 }
 
 // Attach an independent disk
@@ -582,7 +381,7 @@ func (vm *VM) HandleInsertMedia(org *Org, catalogName, mediaName string) (Task, 
 		return Task{}, err
 	}
 
-	task, err := vm.InsertMedia(&types.MediaInsertOrEjectParams{
+	return vm.InsertMedia(&types.MediaInsertOrEjectParams{
 		Media: &types.Reference{
 			HREF: media.CatalogItem.Entity.HREF,
 			Name: media.CatalogItem.Entity.Name,
@@ -590,8 +389,6 @@ func (vm *VM) HandleInsertMedia(org *Org, catalogName, mediaName string) (Task, 
 			Type: media.CatalogItem.Entity.Type,
 		},
 	})
-
-	return task, err
 }
 
 // Helper function which finds media and calls EjectMedia
@@ -661,7 +458,6 @@ func validateMediaParams(mediaParams *types.MediaInsertOrEjectParams) error {
 func (vm *VM) insertOrEjectMedia(mediaParams *types.MediaInsertOrEjectParams, linkRel string) (Task, error) {
 	util.Logger.Printf("[TRACE] Insert or eject media, href: %s, name: %s, , linkRel: %s \n", mediaParams.Media.HREF, mediaParams.Media.Name, linkRel)
 
-	var err error
 	var insertOrEjectMediaLink *types.Link
 	for _, link := range vm.VM.Link {
 		if link.Rel == linkRel && link.Type == types.MimeMediaInsertOrEjectParams {
@@ -675,31 +471,11 @@ func (vm *VM) insertOrEjectMedia(mediaParams *types.MediaInsertOrEjectParams, li
 		return Task{}, fmt.Errorf("could not find request URL for insert or eject media")
 	}
 
-	reqUrl, err := url.ParseRequestURI(insertOrEjectMediaLink.HREF)
-	if err != nil {
-		return Task{}, fmt.Errorf("could not parse request URL for insert or eject media. Error: %#v", err)
-	}
-
 	mediaParams.Xmlns = types.NsVCloud
-	xmlPayload, err := xml.Marshal(mediaParams)
-	if err != nil {
-		return Task{}, fmt.Errorf("error marshal xml: %s", err)
-	}
 
-	reqPayload := bytes.NewBufferString(xml.Header + string(xmlPayload))
-	req := vm.client.NewRequest(nil, http.MethodPost, *reqUrl, reqPayload)
-	req.Header.Add("Content-Type", insertOrEjectMediaLink.Type)
-	resp, err := checkResp(vm.client.Http.Do(req))
-	if err != nil {
-		return Task{}, fmt.Errorf("error insert or eject disk: %s", err)
-	}
-
-	task := NewTask(vm.client)
-	if err = decodeBody(resp, task.Task); err != nil {
-		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
-	}
-
-	return *task, nil
+	// Return the task
+	return vm.client.ExecuteTaskRequest(insertOrEjectMediaLink.HREF, http.MethodPost,
+		insertOrEjectMediaLink.Type, "error insert or eject media: %s", mediaParams)
 }
 
 // Use the get existing VM question for operation which need additional response
@@ -773,26 +549,9 @@ func (vm *VM) AnswerQuestion(questionId string, choiceId int) error {
 		ChoiceId:   choiceId,
 	}
 
-	output, err := xml.MarshalIndent(answer, "  ", "    ")
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-	}
-
-	util.Logger.Printf("[TRACE] AnswerQuestion XML DEBUG \n : %s\n\n", string(output))
-
-	buffer := bytes.NewBufferString(xml.Header + string(output))
-
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/question/action/answer"
 
-	req := vm.client.NewRequest(map[string]string{}, "POST", *apiEndpoint, buffer)
-
-	_, err = checkResp(vm.client.Http.Do(req))
-	if err != nil {
-		return fmt.Errorf("error asnwering question: %s", err)
-	}
-
-	// The request was successful
-	return nil
-
+	return vm.client.ExecuteRequestWithoutResponse(apiEndpoint.String(), http.MethodPost,
+		"", "error asnwering question: %s", answer)
 }

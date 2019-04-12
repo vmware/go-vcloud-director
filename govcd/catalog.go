@@ -12,6 +12,7 @@ import (
 	"io"
 	"io/ioutil"
 	"math"
+	"net/http"
 	"net/url"
 	"os"
 	"path"
@@ -112,28 +113,11 @@ func (adminCatalog *AdminCatalog) Update() error {
 		Catalog:     *reqCatalog,
 		IsPublished: adminCatalog.AdminCatalog.IsPublished,
 	}
-	adminCatalogHREF, err := url.ParseRequestURI(adminCatalog.AdminCatalog.HREF)
-	if err != nil {
-		return fmt.Errorf("error parsing admin catalog's href: %v", err)
-	}
-	output, err := xml.MarshalIndent(vcomp, "  ", "    ")
-	if err != nil {
-		return fmt.Errorf("error marshalling xml data for update %v", err)
-	}
-	xmlData := bytes.NewBufferString(xml.Header + string(output))
-	req := adminCatalog.client.NewRequest(map[string]string{}, "PUT", *adminCatalogHREF, xmlData)
-	req.Header.Add("Content-Type", "application/vnd.vmware.admin.catalog+xml")
-	resp, err := checkResp(adminCatalog.client.Http.Do(req))
-	if err != nil {
-		return fmt.Errorf("error updating catalog: %s : %s", err, adminCatalogHREF.Path)
-	}
-
 	catalog := &types.AdminCatalog{}
-	if err = decodeBody(resp, catalog); err != nil {
-		return fmt.Errorf("error decoding update response: %s", err)
-	}
+	err := adminCatalog.client.ExecuteRequest(adminCatalog.AdminCatalog.HREF, "PUT",
+		"application/vnd.vmware.admin.catalog+xml", "error updating catalog: %s", vcomp, catalog)
 	adminCatalog.AdminCatalog = catalog
-	return nil
+	return err
 }
 
 // Envelope is a ovf description root element. File contains information for vmdk files.
@@ -156,27 +140,12 @@ func (cat *Catalog) FindCatalogItem(catalogItemName string) (CatalogItem, error)
 	for _, catalogItems := range cat.Catalog.CatalogItems {
 		for _, catalogItem := range catalogItems.CatalogItem {
 			if catalogItem.Name == catalogItemName && catalogItem.Type == "application/vnd.vmware.vcloud.catalogItem+xml" {
-				catalogItemHREF, err := url.ParseRequestURI(catalogItem.HREF)
-
-				if err != nil {
-					return CatalogItem{}, fmt.Errorf("error decoding catalog response: %s", err)
-				}
-
-				req := cat.client.NewRequest(map[string]string{}, "GET", *catalogItemHREF, nil)
-
-				resp, err := checkResp(cat.client.Http.Do(req))
-				if err != nil {
-					return CatalogItem{}, fmt.Errorf("error retrieving catalog: %s", err)
-				}
 
 				cat := NewCatalogItem(cat.client)
 
-				if err = decodeBody(resp, cat.CatalogItem); err != nil {
-					return CatalogItem{}, fmt.Errorf("error decoding catalog response: %s", err)
-				}
-
-				// The request was successful
-				return *cat, nil
+				err := cat.client.ExecuteRequest(catalogItem.HREF, "GET",
+					"", "error retrieving catalog: %s", nil, cat.CatalogItem)
+				return *cat, err
 			}
 		}
 	}
@@ -437,18 +406,14 @@ func waitForTempUploadLinks(client *Client, vappTemplateUrl *url.URL, newItemNam
 
 func queryVappTemplate(client *Client, vappTemplateUrl *url.URL, newItemName string) (*types.VAppTemplate, error) {
 	util.Logger.Printf("[TRACE] Querying vapp template: %s\n", vappTemplateUrl)
-	request := client.NewRequest(map[string]string{}, "GET", *vappTemplateUrl, nil)
-	response, err := checkResp(client.Http.Do(request))
+
+	vappTemplateParsed := &types.VAppTemplate{}
+
+	err := client.ExecuteRequest(vappTemplateUrl.String(), http.MethodGet,
+		"", "error quering vApp template: %s", nil, vappTemplateParsed)
 	if err != nil {
 		return nil, err
 	}
-
-	vappTemplateParsed := &types.VAppTemplate{}
-	if err = decodeBody(response, vappTemplateParsed); err != nil {
-		return nil, err
-	}
-
-	defer response.Body.Close()
 
 	for _, task := range vappTemplateParsed.Tasks.Task {
 		if "error" == task.Status && newItemName == task.Owner.Name {
