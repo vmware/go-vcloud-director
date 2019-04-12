@@ -75,7 +75,7 @@ func (vm *VM) GetNetworkConnectionSection() (*types.NetworkConnectionSection, er
 	}
 
 	err := vm.client.ExecuteRequest(vm.VM.HREF+"/networkConnectionSection/", http.MethodGet,
-		"application/vnd.vmware.vcloud.networkConnectionSection+xml", "error retrieving network connection: %s", nil, networkConnectionSection)
+		types.MimeNetworkConnectionSection, "error retrieving network connection: %s", nil, networkConnectionSection)
 
 	// The request was successful
 	return networkConnectionSection, err
@@ -138,7 +138,7 @@ func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (
 		XmlnsXsi:        "http://www.w3.org/2001/XMLSchema-instance",
 		XmlnsVmw:        "http://www.vmware.com/schema/ovf",
 		VCloudHREF:      vm.VM.HREF + "/virtualHardwareSection/cpu",
-		VCloudType:      "application/vnd.vmware.vcloud.rasdItem+xml",
+		VCloudType:      types.MimeRasdItem,
 		AllocationUnits: "hertz * 10^6",
 		Description:     "Number of Virtual CPUs",
 		ElementName:     strconv.Itoa(virtualCpuCount) + " virtual CPU(s)",
@@ -151,7 +151,7 @@ func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (
 		Link: &types.Link{
 			HREF: vm.VM.HREF + "/virtualHardwareSection/cpu",
 			Rel:  "edit",
-			Type: "application/vnd.vmware.vcloud.rasdItem+xml",
+			Type: types.MimeRasdItem,
 		},
 	}
 
@@ -160,7 +160,7 @@ func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (
 
 	// Return the task
 	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
-		"application/vnd.vmware.vcloud.rasdItem+xml", "error changing CPU count: %s", newCpu)
+		types.MimeRasdItem, "error changing CPU count: %s", newCpu)
 
 }
 
@@ -221,7 +221,7 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}, ip string) 
 
 	// Return the task
 	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
-		"application/vnd.vmware.vcloud.networkConnectionSection+xml", "error changing network config: %s", networkSection)
+		types.MimeNetworkConnectionSection, "error changing network config: %s", networkSection)
 }
 
 func (vm *VM) ChangeMemorySize(size int) (Task, error) {
@@ -236,7 +236,7 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 		XmlnsVCloud:     "http://www.vmware.com/vcloud/v1.5",
 		XmlnsXsi:        "http://www.w3.org/2001/XMLSchema-instance",
 		VCloudHREF:      vm.VM.HREF + "/virtualHardwareSection/memory",
-		VCloudType:      "application/vnd.vmware.vcloud.rasdItem+xml",
+		VCloudType:      types.MimeRasdItem,
 		AllocationUnits: "byte * 2^20",
 		Description:     "Memory Size",
 		ElementName:     strconv.Itoa(size) + " MB of memory",
@@ -248,7 +248,7 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 		Link: &types.Link{
 			HREF: vm.VM.HREF + "/virtualHardwareSection/memory",
 			Rel:  "edit",
-			Type: "application/vnd.vmware.vcloud.rasdItem+xml",
+			Type: types.MimeRasdItem,
 		},
 	}
 
@@ -257,7 +257,7 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 
 	// Return the task
 	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
-		"application/vnd.vmware.vcloud.rasdItem+xml", "error changing memory size: %s", newMem)
+		types.MimeRasdItem, "error changing memory size: %s", newMem)
 }
 
 func (vm *VM) RunCustomizationScript(computername, script string) (Task, error) {
@@ -276,7 +276,7 @@ func (vm *VM) Customize(computername, script string, changeSid bool) (Task, erro
 		Xmlns: "http://www.vmware.com/vcloud/v1.5",
 
 		HREF:                vm.VM.HREF,
-		Type:                "application/vnd.vmware.vcloud.guestCustomizationSection+xml",
+		Type:                types.MimeGuestCustomizationSection,
 		Info:                "Specifies Guest OS Customization Settings",
 		Enabled:             true,
 		ComputerName:        computername,
@@ -289,7 +289,7 @@ func (vm *VM) Customize(computername, script string, changeSid bool) (Task, erro
 
 	// Return the task
 	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
-		"application/vnd.vmware.vcloud.guestCustomizationSection+xml", "error customizing VM: %s", vu)
+		types.MimeGuestCustomizationSection, "error customizing VM: %s", vu)
 }
 
 func (vm *VM) Undeploy() (Task, error) {
@@ -304,7 +304,7 @@ func (vm *VM) Undeploy() (Task, error) {
 
 	// Return the task
 	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
-		"application/vnd.vmware.vcloud.undeployVAppParams+xml", "error undeploy vApp: %s", vu)
+		types.MimeUndeployVappParams, "error undeploy vApp: %s", vu)
 }
 
 // Attach or detach an independent disk

@@ -173,7 +173,7 @@ func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName s
 
 	// Return the task
 	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
-		"application/vnd.vmware.vcloud.recomposeVAppParams+xml", "error instantiating a new VM: %s", vcomp)
+		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", vcomp)
 
 }
 
@@ -204,7 +204,7 @@ func (vapp *VApp) RemoveVM(vm VM) error {
 	apiEndpoint.Path += "/action/recomposeVApp"
 
 	deleteTask, err := vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
-		"application/vnd.vmware.vcloud.recomposeVAppParams+xml", "error removing VM: %s", vcomp)
+		types.MimeRecomposeVappParams, "error removing VM: %s", vcomp)
 	if err != nil {
 		return err
 	}
@@ -295,7 +295,7 @@ func (vapp *VApp) Undeploy() (Task, error) {
 
 	// Return the task
 	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
-		"application/vnd.vmware.vcloud.undeployVAppParams+xml", "error undeploy vApp: %s", vu)
+		types.MimeUndeployVappParams, "error undeploy vApp: %s", vu)
 }
 
 func (vapp *VApp) Deploy() (Task, error) {
@@ -310,7 +310,7 @@ func (vapp *VApp) Deploy() (Task, error) {
 
 	// Return the task
 	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
-		"application/vnd.vmware.vcloud.deployVAppParams+xml", "error deploy vApp: %s", vu)
+		types.MimeDeployVappParams, "error deploy vApp: %s", vu)
 }
 
 func (vapp *VApp) Delete() (Task, error) {
@@ -341,7 +341,7 @@ func (vapp *VApp) Customize(computername, script string, changeSid bool) (Task, 
 		Xmlns: "http://www.vmware.com/vcloud/v1.5",
 
 		HREF:                vapp.VApp.Children.VM[0].HREF,
-		Type:                "application/vnd.vmware.vcloud.guestCustomizationSection+xml",
+		Type:                types.MimeGuestCustomizationSection,
 		Info:                "Specifies Guest OS Customization Settings",
 		Enabled:             true,
 		ComputerName:        computername,
@@ -354,7 +354,7 @@ func (vapp *VApp) Customize(computername, script string, changeSid bool) (Task, 
 
 	// Return the task
 	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
-		"application/vnd.vmware.vcloud.guestCustomizationSection+xml", "error customizing VM: %s", vu)
+		types.MimeGuestCustomizationSection, "error customizing VM: %s", vu)
 }
 
 func (vapp *VApp) GetStatus() (string, error) {
@@ -399,7 +399,7 @@ func (vapp *VApp) GetNetworkConnectionSection() (*types.NetworkConnectionSection
 	}
 
 	err := vapp.client.ExecuteRequest(vapp.VApp.Children.VM[0].HREF+"/networkConnectionSection/", http.MethodGet,
-		"application/vnd.vmware.vcloud.networkConnectionSection+xml", "error retrieving network connection: %s", nil, networkConnectionSection)
+		types.MimeNetworkConnectionSection, "error retrieving network connection: %s", nil, networkConnectionSection)
 
 	// The request was successful
 	return networkConnectionSection, err
@@ -436,7 +436,7 @@ func (vapp *VApp) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *in
 		XmlnsXsi:        "http://www.w3.org/2001/XMLSchema-instance",
 		XmlnsVmw:        "http://www.vmware.com/schema/ovf",
 		VCloudHREF:      vapp.VApp.Children.VM[0].HREF + "/virtualHardwareSection/cpu",
-		VCloudType:      "application/vnd.vmware.vcloud.rasdItem+xml",
+		VCloudType:      types.MimeRasdItem,
 		AllocationUnits: "hertz * 10^6",
 		Description:     "Number of Virtual CPUs",
 		ElementName:     strconv.Itoa(virtualCpuCount) + " virtual CPU(s)",
@@ -449,7 +449,7 @@ func (vapp *VApp) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *in
 		Link: &types.Link{
 			HREF: vapp.VApp.Children.VM[0].HREF + "/virtualHardwareSection/cpu",
 			Rel:  "edit",
-			Type: "application/vnd.vmware.vcloud.rasdItem+xml",
+			Type: types.MimeRasdItem,
 		},
 	}
 
@@ -458,7 +458,7 @@ func (vapp *VApp) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *in
 
 	// Return the task
 	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
-		"application/vnd.vmware.vcloud.rasdItem+xml", "error changing CPU count: %s", newcpu)
+		types.MimeRasdItem, "error changing CPU count: %s", newcpu)
 }
 
 func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
@@ -488,7 +488,7 @@ func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
 
 	// Return the task
 	return vapp.client.ExecuteTaskRequest(vapp.VApp.Children.VM[0].HREF, http.MethodPut,
-		"application/vnd.vmware.vcloud.vm+xml", "error changing CPU count: %s", newProfile)
+		types.MimeVM, "error changing CPU count: %s", newProfile)
 }
 
 // Deprecated as it changes only first VM's name
@@ -509,7 +509,7 @@ func (vapp *VApp) ChangeVMName(name string) (Task, error) {
 
 	// Return the task
 	return vapp.client.ExecuteTaskRequest(vapp.VApp.Children.VM[0].HREF, http.MethodPut,
-		"application/vnd.vmware.vcloud.vm+xml", "error changing VM name: %s", newName)
+		types.MimeVM, "error changing VM name: %s", newName)
 }
 
 // GetMetadata() function calls private function getMetadata() with vapp.client and vapp.VApp.HREF
@@ -522,7 +522,7 @@ func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
 	metadata := &types.Metadata{}
 
 	err := client.ExecuteRequest(requestUri+"/metadata/", http.MethodGet,
-		"application/vnd.vmware.vcloud.metadata+xml", "error retrieving metadata: %s", nil, metadata)
+		types.MimeMetaData, "error retrieving metadata: %s", nil, metadata)
 
 	return metadata, err
 }
@@ -567,7 +567,7 @@ func addMetadata(client *Client, key string, value string, requestUri string) (T
 
 	// Return the task
 	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
-		"application/vnd.vmware.vcloud.metadata.value+xml", "error adding metadata: %s", newMetadata)
+		types.MimeMetaDataValue, "error adding metadata: %s", newMetadata)
 }
 
 func (vapp *VApp) SetOvf(parameters map[string]string) (Task, error) {
@@ -604,7 +604,7 @@ func (vapp *VApp) SetOvf(parameters map[string]string) (Task, error) {
 
 	// Return the task
 	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
-		"application/vnd.vmware.vcloud.productSections+xml", "error setting ovf: %s", ovf)
+		types.MimeProductSection, "error setting ovf: %s", ovf)
 }
 
 func (vapp *VApp) ChangeNetworkConfig(networks []map[string]interface{}, ip string) (Task, error) {
@@ -659,7 +659,7 @@ func (vapp *VApp) ChangeNetworkConfig(networks []map[string]interface{}, ip stri
 
 	// Return the task
 	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
-		"application/vnd.vmware.vcloud.networkConnectionSection+xml", "error changing network config: %s", networksection)
+		types.MimeNetworkConnectionSection, "error changing network config: %s", networksection)
 }
 
 // Deprecated as it changes only first VM's memory
@@ -680,7 +680,7 @@ func (vapp *VApp) ChangeMemorySize(size int) (Task, error) {
 		XmlnsVCloud:     "http://www.vmware.com/vcloud/v1.5",
 		XmlnsXsi:        "http://www.w3.org/2001/XMLSchema-instance",
 		VCloudHREF:      vapp.VApp.Children.VM[0].HREF + "/virtualHardwareSection/memory",
-		VCloudType:      "application/vnd.vmware.vcloud.rasdItem+xml",
+		VCloudType:      types.MimeRasdItem,
 		AllocationUnits: "byte * 2^20",
 		Description:     "Memory Size",
 		ElementName:     strconv.Itoa(size) + " MB of memory",
@@ -692,7 +692,7 @@ func (vapp *VApp) ChangeMemorySize(size int) (Task, error) {
 		Link: &types.Link{
 			HREF: vapp.VApp.Children.VM[0].HREF + "/virtualHardwareSection/memory",
 			Rel:  "edit",
-			Type: "application/vnd.vmware.vcloud.rasdItem+xml",
+			Type: types.MimeRasdItem,
 		},
 	}
 
@@ -701,7 +701,7 @@ func (vapp *VApp) ChangeMemorySize(size int) (Task, error) {
 
 	// Return the task
 	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
-		"application/vnd.vmware.vcloud.rasdItem+xml", "error changing memory size: %s", newMem)
+		types.MimeRasdItem, "error changing memory size: %s", newMem)
 }
 
 func (vapp *VApp) GetNetworkConfig() (*types.NetworkConfigSection, error) {
@@ -713,7 +713,7 @@ func (vapp *VApp) GetNetworkConfig() (*types.NetworkConfigSection, error) {
 	}
 
 	err := vapp.client.ExecuteRequest(vapp.VApp.HREF+"/networkConfigSection/", http.MethodGet,
-		"application/vnd.vmware.vcloud.networkConfigSection+xml", "error retrieving network config: %s", nil, networkConfig)
+		types.MimeNetworkConfigSection, "error retrieving network config: %s", nil, networkConfig)
 
 	// The request was successful
 	return networkConfig, err
@@ -847,7 +847,7 @@ func updateNetworkConfigurations(vapp *VApp, networkConfigurations []types.VAppN
 	networkConfig := &types.NetworkConfigSection{
 		Info:          "Configuration parameters for logical networks",
 		Ovf:           "http://schemas.dmtf.org/ovf/envelope/1",
-		Type:          "application/vnd.vmware.vcloud.networkConfigSection+xml",
+		Type:          types.MimeNetworkConfigSection,
 		Xmlns:         "http://www.vmware.com/vcloud/v1.5",
 		NetworkConfig: networkConfigurations,
 	}
@@ -857,5 +857,5 @@ func updateNetworkConfigurations(vapp *VApp, networkConfigurations []types.VAppN
 
 	// Return the task
 	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
-		"application/vnd.vmware.vcloud.networkconfigsection+xml", "error updating vApp Network: %s", networkConfig)
+		types.MimeNetworkConfigSection, "error updating vApp Network: %s", networkConfig)
 }

@@ -292,7 +292,7 @@ func (vdc *Vdc) ComposeRawVApp(name string) error {
 	vdcHref.Path += "/action/composeVApp"
 
 	task, err := vdc.client.ExecuteTaskRequest(vdcHref.String(), http.MethodPost,
-		"application/vnd.vmware.vcloud.composeVAppParams+xml", "error instantiating a new vApp:: %s", vcomp)
+		types.MimeComposeVappParams, "error instantiating a new vApp:: %s", vcomp)
 
 	err = task.WaitTaskCompletion()
 	if err != nil {
@@ -380,7 +380,7 @@ func (vdc *Vdc) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate 
 	vdcHref.Path += "/action/composeVApp"
 
 	return vdc.client.ExecuteTaskRequest(vdcHref.String(), http.MethodPost,
-		"application/vnd.vmware.vcloud.composeVAppParams+xml", "error instantiating a new vApp: %s", vcomp)
+		types.MimeComposeVappParams, "error instantiating a new vApp: %s", vcomp)
 }
 
 func (vdc *Vdc) FindVAppByName(vapp string) (VApp, error) {
