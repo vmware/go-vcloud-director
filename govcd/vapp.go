@@ -149,7 +149,7 @@ func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName s
 			&types.NetworkConnection{
 				Network:                 orgVdcNetwork.Name,
 				NetworkConnectionIndex:  index,
-				IsConnected:             false,
+				IsConnected:             true,
 				IPAddressAllocationMode: "POOL",
 			},
 		)
@@ -166,7 +166,7 @@ func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName s
 			&types.NetworkConnection{
 				Network:                 vappNetworkName,
 				NetworkConnectionIndex:  len(orgVdcNetworks),
-				IsConnected:             false,
+				IsConnected:             true,
 				IPAddressAllocationMode: "POOL",
 			},
 		)
