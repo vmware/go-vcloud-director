@@ -44,7 +44,7 @@ func (orgVdcNet *OrgVDCNetwork) Refresh() error {
 	// elements in slices.
 	orgVdcNet.OrgVDCNetwork = &types.OrgVDCNetwork{}
 
-	err := orgVdcNet.client.ExecuteRequest(refreshUrl, http.MethodGet,
+	_, err := orgVdcNet.client.ExecuteRequest(refreshUrl, http.MethodGet,
 		"", "error retrieving vDC network: %s", nil, orgVdcNet.OrgVDCNetwork)
 
 	return err

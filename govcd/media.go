@@ -203,7 +203,7 @@ func queryMedia(client *Client, mediaUrl string, newItemName string) (*types.Med
 
 	mediaParsed := &types.Media{}
 
-	err := client.ExecuteRequest(mediaUrl, http.MethodGet,
+	_, err := client.ExecuteRequest(mediaUrl, http.MethodGet,
 		"", "error quering vApp template: %s", nil, mediaParsed)
 	if err != nil {
 		return nil, err

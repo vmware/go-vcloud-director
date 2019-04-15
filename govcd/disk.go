@@ -90,7 +90,7 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (Task, erro
 
 	disk := NewDisk(vdc.client)
 
-	err = vdc.client.ExecuteRequest(createDiskLink.HREF, http.MethodPost,
+	_, err = vdc.client.ExecuteRequest(createDiskLink.HREF, http.MethodPost,
 		createDiskLink.Type, "error create disk: %s", diskCreateParams, disk.Disk)
 	if err != nil {
 		return Task{}, err
@@ -271,7 +271,7 @@ func (disk *Disk) AttachedVM() (*types.Reference, error) {
 	// Decode request
 	var vms = new(types.Vms)
 
-	err := disk.client.ExecuteRequest(attachedVMLink.HREF, http.MethodGet,
+	_, err := disk.client.ExecuteRequest(attachedVMLink.HREF, http.MethodGet,
 		attachedVMLink.Type, "error getting attached vms: %s", nil, vms)
 	if err != nil {
 		return nil, err
@@ -299,7 +299,7 @@ func FindDiskByHREF(client *Client, href string) (*Disk, error) {
 
 	disk := NewDisk(client)
 
-	err := client.ExecuteRequest(href, http.MethodGet,
+	_, err := client.ExecuteRequest(href, http.MethodGet,
 		"", "error updating disk: %s", nil, disk.Disk)
 
 	// Return the disk

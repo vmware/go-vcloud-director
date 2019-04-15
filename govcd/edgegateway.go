@@ -382,7 +382,7 @@ func (eGW *EdgeGateway) Refresh() error {
 	// elements in slices.
 	eGW.EdgeGateway = &types.EdgeGateway{}
 
-	err := eGW.client.ExecuteRequest(url, http.MethodGet,
+	_, err := eGW.client.ExecuteRequest(url, http.MethodGet,
 		"", "error retrieving Edge Gateway: %s", nil, eGW.EdgeGateway)
 
 	return err

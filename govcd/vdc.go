@@ -46,7 +46,7 @@ func NewAdminVdc(cli *Client) *AdminVdc {
 func (vdc *Vdc) getVdcVAppbyHREF(vappHREF *url.URL) (*VApp, error) {
 	vapp := NewVApp(vdc.client)
 
-	err := vdc.client.ExecuteRequest(vappHREF.String(), http.MethodGet,
+	_, err := vdc.client.ExecuteRequest(vappHREF.String(), http.MethodGet,
 		"", "error retrieving VApp: %s", nil, vapp.VApp)
 
 	return vapp, err
@@ -121,7 +121,7 @@ func (vdc *Vdc) Refresh() error {
 	// elements in slices.
 	unmarshalledVdc := &types.Vdc{}
 
-	err := vdc.client.ExecuteRequest(vdc.Vdc.HREF, http.MethodGet,
+	_, err := vdc.client.ExecuteRequest(vdc.Vdc.HREF, http.MethodGet,
 		"", "error refreshing vDC: %s", nil, unmarshalledVdc)
 	if err != nil {
 		return err
@@ -189,7 +189,7 @@ func (vdc *Vdc) FindVDCNetwork(network string) (OrgVDCNetwork, error) {
 			if reference.Name == network {
 				orgNet := NewOrgVDCNetwork(vdc.client)
 
-				err := vdc.client.ExecuteRequest(reference.HREF, http.MethodGet,
+				_, err := vdc.client.ExecuteRequest(reference.HREF, http.MethodGet,
 					"", "error retrieving org vdc network: %s", nil, orgNet.OrgVDCNetwork)
 
 				// The request was successful
@@ -244,7 +244,7 @@ func (vdc *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 
 			query := new(types.QueryResultEdgeGatewayRecordsType)
 
-			err := vdc.client.ExecuteRequest(av.HREF, http.MethodGet,
+			_, err := vdc.client.ExecuteRequest(av.HREF, http.MethodGet,
 				"", "error quering edge gateways: %s", nil, query)
 			if err != nil {
 				return EdgeGateway{}, err
@@ -264,7 +264,7 @@ func (vdc *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 
 			edge := NewEdgeGateway(vdc.client)
 
-			err = vdc.client.ExecuteRequest(href, http.MethodGet,
+			_, err = vdc.client.ExecuteRequest(href, http.MethodGet,
 				"", "error retrieving edge gateway: %s", nil, edge.EdgeGateway)
 
 			return *edge, err
@@ -397,7 +397,7 @@ func (vdc *Vdc) FindVAppByName(vapp string) (VApp, error) {
 
 				newVapp := NewVApp(vdc.client)
 
-				err := vdc.client.ExecuteRequest(resent.HREF, http.MethodGet,
+				_, err := vdc.client.ExecuteRequest(resent.HREF, http.MethodGet,
 					"", "error retrieving vApp: %s", nil, newVapp.VApp)
 
 				return *newVapp, err
@@ -434,7 +434,7 @@ func (vdc *Vdc) FindVMByName(vapp VApp, vm string) (VM, error) {
 
 			newVm := NewVM(vdc.client)
 
-			err := vdc.client.ExecuteRequest(child.HREF, http.MethodGet,
+			_, err := vdc.client.ExecuteRequest(child.HREF, http.MethodGet,
 				"", "error retrieving vm: %s", nil, newVm.VM)
 
 			return *newVm, err
@@ -507,7 +507,7 @@ func (vdc *Vdc) FindVAppByID(vappid string) (VApp, error) {
 
 				newVapp := NewVApp(vdc.client)
 
-				err := vdc.client.ExecuteRequest(resent.HREF, http.MethodGet,
+				_, err := vdc.client.ExecuteRequest(resent.HREF, http.MethodGet,
 					"", "error retrieving vApp: %s", nil, newVapp.VApp)
 
 				return *newVapp, err

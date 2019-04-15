@@ -59,7 +59,7 @@ func (vm *VM) Refresh() error {
 	// elements in slices.
 	vm.VM = &types.VM{}
 
-	err := vm.client.ExecuteRequest(refreshUrl, http.MethodGet,
+	_, err := vm.client.ExecuteRequest(refreshUrl, http.MethodGet,
 		"", "error refreshing VM: %s", nil, vm.VM)
 
 	// The request was successful
@@ -74,7 +74,7 @@ func (vm *VM) GetNetworkConnectionSection() (*types.NetworkConnectionSection, er
 		return networkConnectionSection, fmt.Errorf("cannot refresh, Object is empty")
 	}
 
-	err := vm.client.ExecuteRequest(vm.VM.HREF+"/networkConnectionSection/", http.MethodGet,
+	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/networkConnectionSection/", http.MethodGet,
 		types.MimeNetworkConnectionSection, "error retrieving network connection: %s", nil, networkConnectionSection)
 
 	// The request was successful
@@ -85,7 +85,7 @@ func (cli *Client) FindVMByHREF(vmHREF string) (VM, error) {
 
 	newVm := NewVM(cli)
 
-	err := cli.ExecuteRequest(vmHREF, http.MethodGet,
+	_, err := cli.ExecuteRequest(vmHREF, http.MethodGet,
 		"", "error retrieving VM: %s", nil, newVm.VM)
 
 	return *newVm, err

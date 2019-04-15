@@ -114,7 +114,7 @@ func (adminCatalog *AdminCatalog) Update() error {
 		IsPublished: adminCatalog.AdminCatalog.IsPublished,
 	}
 	catalog := &types.AdminCatalog{}
-	err := adminCatalog.client.ExecuteRequest(adminCatalog.AdminCatalog.HREF, http.MethodPut,
+	_, err := adminCatalog.client.ExecuteRequest(adminCatalog.AdminCatalog.HREF, http.MethodPut,
 		"application/vnd.vmware.admin.catalog+xml", "error updating catalog: %s", vcomp, catalog)
 	adminCatalog.AdminCatalog = catalog
 	return err
@@ -143,7 +143,7 @@ func (cat *Catalog) FindCatalogItem(catalogItemName string) (CatalogItem, error)
 
 				cat := NewCatalogItem(cat.client)
 
-				err := cat.client.ExecuteRequest(catalogItem.HREF, http.MethodGet,
+				_, err := cat.client.ExecuteRequest(catalogItem.HREF, http.MethodGet,
 					"", "error retrieving catalog: %s", nil, cat.CatalogItem)
 				return *cat, err
 			}
@@ -409,7 +409,7 @@ func queryVappTemplate(client *Client, vappTemplateUrl *url.URL, newItemName str
 
 	vappTemplateParsed := &types.VAppTemplate{}
 
-	err := client.ExecuteRequest(vappTemplateUrl.String(), http.MethodGet,
+	_, err := client.ExecuteRequest(vappTemplateUrl.String(), http.MethodGet,
 		"", "error quering vApp template: %s", nil, vappTemplateParsed)
 	if err != nil {
 		return nil, err

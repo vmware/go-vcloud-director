@@ -94,7 +94,7 @@ func (vcdCli *VCDClient) vcdFetchSupportedVersions() error {
 	apiEndpoint.Path += "/versions"
 
 	suppVersions := new(SupportedVersions)
-	err := vcdCli.Client.ExecuteRequest(apiEndpoint.String(), http.MethodGet,
+	_, err := vcdCli.Client.ExecuteRequest(apiEndpoint.String(), http.MethodGet,
 		"", "error fetching versions: %s", nil, suppVersions)
 
 	vcdCli.supportedVersions = *suppVersions

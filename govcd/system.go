@@ -53,7 +53,7 @@ func GetOrgByName(vcdClient *VCDClient, orgName string) (Org, error) {
 	}
 	org := NewOrg(&vcdClient.Client)
 
-	err = vcdClient.Client.ExecuteRequest(orgUrl, http.MethodGet,
+	_, err = vcdClient.Client.ExecuteRequest(orgUrl, http.MethodGet,
 		"", "error retrieving org list: %s", nil, org.Org)
 	if err != nil {
 		return Org{}, err
@@ -78,7 +78,7 @@ func GetAdminOrgByName(vcdClient *VCDClient, orgName string) (AdminOrg, error) {
 
 	org := NewAdminOrg(&vcdClient.Client)
 
-	err = vcdClient.Client.ExecuteRequest(orgHREF.String(), http.MethodGet,
+	_, err = vcdClient.Client.ExecuteRequest(orgHREF.String(), http.MethodGet,
 		"", "error retrieving org: %s", nil, org.AdminOrg)
 	if err != nil {
 		return AdminOrg{}, err
@@ -94,7 +94,7 @@ func getOrgHREF(vcdClient *VCDClient, orgName string) (string, error) {
 
 	orgList := new(types.OrgList)
 
-	err := vcdClient.Client.ExecuteRequest(orgListHREF.String(), http.MethodGet,
+	_, err := vcdClient.Client.ExecuteRequest(orgListHREF.String(), http.MethodGet,
 		"", "error retrieving org list: %s", nil, orgList)
 	if err != nil {
 		return "", err

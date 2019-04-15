@@ -18,7 +18,7 @@ func GetExternalNetworkByName(vcdClient *VCDClient, networkName string) (*types.
 		return &types.ExternalNetworkReference{}, err
 	}
 
-	err = vcdClient.Client.ExecuteRequest(extNetworkHREF, http.MethodGet,
+	_, err = vcdClient.Client.ExecuteRequest(extNetworkHREF, http.MethodGet,
 		"", "error retrieving external networks: %s", nil, extNetworkRefs)
 	if err != nil {
 		return &types.ExternalNetworkReference{}, err
@@ -54,7 +54,7 @@ func getExtension(vcdClient *VCDClient) (*types.Extension, error) {
 	extensionHREF := vcdClient.Client.VCDHREF
 	extensionHREF.Path += "/admin/extension/"
 
-	err := vcdClient.Client.ExecuteRequest(extensionHREF.String(), http.MethodGet,
+	_, err := vcdClient.Client.ExecuteRequest(extensionHREF.String(), http.MethodGet,
 		"", "error retrieving extension: %s", nil, extensions)
 
 	return extensions, err

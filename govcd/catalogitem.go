@@ -26,7 +26,7 @@ func (catalogItem *CatalogItem) GetVAppTemplate() (VAppTemplate, error) {
 
 	cat := NewVAppTemplate(catalogItem.client)
 
-	err := catalogItem.client.ExecuteRequest(catalogItem.CatalogItem.Entity.HREF, http.MethodGet,
+	_, err := catalogItem.client.ExecuteRequest(catalogItem.CatalogItem.Entity.HREF, http.MethodGet,
 		"", "error retrieving vApp template: %s", nil, cat.VAppTemplate)
 
 	// The request was successful

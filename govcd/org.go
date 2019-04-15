@@ -49,7 +49,7 @@ func (org *Org) Refresh() error {
 	// elements in slices.
 	unmarshalledOrg := &types.Org{}
 
-	err := org.client.ExecuteRequest(org.Org.HREF, http.MethodGet,
+	_, err := org.client.ExecuteRequest(org.Org.HREF, http.MethodGet,
 		"", "error refreshing organization: %s", nil, unmarshalledOrg)
 	if err != nil {
 		return err
@@ -70,7 +70,7 @@ func (org *Org) FindCatalog(catalogName string) (Catalog, error) {
 
 			cat := NewCatalog(org.client)
 
-			err := org.client.ExecuteRequest(link.HREF, http.MethodGet,
+			_, err := org.client.ExecuteRequest(link.HREF, http.MethodGet,
 				"", "error retrieving catalog: %s", nil, cat.Catalog)
 
 			return *cat, err
@@ -88,7 +88,7 @@ func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
 		if link.Name == vdcname {
 			vdc := NewVdc(org.client)
 
-			err := org.client.ExecuteRequest(link.HREF, http.MethodGet,
+			_, err := org.client.ExecuteRequest(link.HREF, http.MethodGet,
 				"", "error retrieving vdc: %s", nil, vdc.Vdc)
 
 			return *vdc, err
@@ -128,7 +128,7 @@ func (adminOrg *AdminOrg) Refresh() error {
 	// elements in slices.
 	unmarshalledAdminOrg := &types.AdminOrg{}
 
-	err := adminOrg.client.ExecuteRequest(adminOrg.AdminOrg.HREF, http.MethodGet,
+	_, err := adminOrg.client.ExecuteRequest(adminOrg.AdminOrg.HREF, http.MethodGet,
 		"", "error refreshing organization: %s", nil, unmarshalledAdminOrg)
 	if err != nil {
 		return err
@@ -184,7 +184,7 @@ func CreateCatalog(client *Client, links types.LinkList, Name, Description strin
 	}
 
 	catalog := NewAdminCatalog(client)
-	err := client.ExecuteRequest(createOrgLink.HREF, http.MethodPost,
+	_, err := client.ExecuteRequest(createOrgLink.HREF, http.MethodPost,
 		"application/vnd.vmware.admin.catalog+xml", "error creating catalog: %s", vcomp, catalog.AdminCatalog)
 
 	return *catalog, err
@@ -209,7 +209,7 @@ func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
 
 			vdc := NewVdc(adminOrg.client)
 
-			err := adminOrg.client.ExecuteRequest(vdcHREF, http.MethodGet,
+			_, err := adminOrg.client.ExecuteRequest(vdcHREF, http.MethodGet,
 				"", "error getting vdc: %s", nil, vdc.Vdc)
 
 			return *vdc, err
@@ -281,7 +281,7 @@ func (org *AdminOrg) CreateVdc(vdcConfiguration *types.VdcConfiguration) (Task, 
 
 	adminVdc := NewAdminVdc(org.client)
 
-	err = org.client.ExecuteRequest(vdcCreateHREF.String(), http.MethodPost,
+	_, err = org.client.ExecuteRequest(vdcCreateHREF.String(), http.MethodPost,
 		"application/vnd.vmware.admin.createVdcParams+xml", "error retrieving vdc: %s", vdcConfiguration, adminVdc.AdminVdc)
 	if err != nil {
 		return Task{}, err
@@ -433,7 +433,7 @@ func (adminOrg *AdminOrg) getVdcByAdminHREF(adminVdcUrl *url.URL) (*Vdc, error) 
 
 	vdc := NewVdc(adminOrg.client)
 
-	err := adminOrg.client.ExecuteRequest(vdcURL.String(), http.MethodGet,
+	_, err := adminOrg.client.ExecuteRequest(vdcURL.String(), http.MethodGet,
 		"", "error retrieving vdc: %s", nil, vdc.Vdc)
 
 	return vdc, err
@@ -535,7 +535,7 @@ func (adminOrg *AdminOrg) FindAdminCatalog(catalogName string) (AdminCatalog, er
 
 			adminCatalog := NewAdminCatalog(adminOrg.client)
 
-			err := adminOrg.client.ExecuteRequest(catalog.HREF, http.MethodGet,
+			_, err := adminOrg.client.ExecuteRequest(catalog.HREF, http.MethodGet,
 				"", "error retrieving catalog: %s", nil, adminCatalog.AdminCatalog)
 
 			// The request was successful
@@ -558,7 +558,7 @@ func (adminOrg *AdminOrg) FindCatalog(catalogName string) (Catalog, error) {
 
 			cat := NewCatalog(adminOrg.client)
 
-			err := adminOrg.client.ExecuteRequest(catalogURL.String(), http.MethodGet,
+			_, err := adminOrg.client.ExecuteRequest(catalogURL.String(), http.MethodGet,
 				"", "error retrieving catalog: %s", nil, cat.Catalog)
 
 			// The request was successful

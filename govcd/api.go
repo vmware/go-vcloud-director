@@ -241,28 +241,28 @@ func (client *Client) ExecuteRequestWithoutResponse(pathURL, requestType, conten
 // out - structure to be used for unmarshalling xml
 // E.g. 	unmarshalledAdminOrg := &types.AdminOrg{}
 // client.ExecuteRequest(adminOrg.AdminOrg.HREF, http.MethodGet, "", "error refreshing organization: %s", nil, unmarshalledAdminOrg)
-func (client *Client) ExecuteRequest(pathURL, requestType, contentType, errorMessage string, payload, out interface{}) error {
+func (client *Client) ExecuteRequest(pathURL, requestType, contentType, errorMessage string, payload, out interface{}) (*http.Response, error) {
 
 	if !isMessageWithPlaceHolder(errorMessage) {
-		return fmt.Errorf("error message has to include place holder for error")
+		return &http.Response{}, fmt.Errorf("error message has to include place holder for error")
 	}
 
 	resp, err := executeRequest(pathURL, requestType, contentType, payload, client)
 	if err != nil {
-		return fmt.Errorf(errorMessage, err)
+		return resp, fmt.Errorf(errorMessage, err)
 	}
 
 	if err = decodeBody(resp, out); err != nil {
-		return fmt.Errorf("error decoding response: %s", err)
+		return resp, fmt.Errorf("error decoding response: %s", err)
 	}
 
 	err = resp.Body.Close()
 	if err != nil {
-		return fmt.Errorf(errorMessage, err)
+		return resp, fmt.Errorf(errorMessage, err)
 	}
 
 	// The request was successful
-	return nil
+	return resp, nil
 }
 
 func executeRequest(pathURL, requestType, contentType string, payload interface{}, client *Client) (*http.Response, error) {

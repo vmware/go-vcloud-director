@@ -61,7 +61,7 @@ func (vapp *VApp) getParentVDC() (Vdc, error) {
 
 			vdc := NewVdc(vapp.client)
 
-			err := vapp.client.ExecuteRequest(link.HREF, http.MethodGet,
+			_, err := vapp.client.ExecuteRequest(link.HREF, http.MethodGet,
 				"", "error retrieving paren vdc: %s", nil, vdc.Vdc)
 			if err != nil {
 				return Vdc{}, err
@@ -84,7 +84,7 @@ func (vapp *VApp) Refresh() error {
 	// elements in slices.
 	vapp.VApp = &types.VApp{}
 
-	err := vapp.client.ExecuteRequest(url, http.MethodGet,
+	_, err := vapp.client.ExecuteRequest(url, http.MethodGet,
 		"", "error refreshing vApp: %s", nil, vapp.VApp)
 
 	// The request was successful
@@ -398,7 +398,7 @@ func (vapp *VApp) GetNetworkConnectionSection() (*types.NetworkConnectionSection
 		return networkConnectionSection, fmt.Errorf("cannot refresh, Object is empty")
 	}
 
-	err := vapp.client.ExecuteRequest(vapp.VApp.Children.VM[0].HREF+"/networkConnectionSection/", http.MethodGet,
+	_, err := vapp.client.ExecuteRequest(vapp.VApp.Children.VM[0].HREF+"/networkConnectionSection/", http.MethodGet,
 		types.MimeNetworkConnectionSection, "error retrieving network connection: %s", nil, networkConnectionSection)
 
 	// The request was successful
@@ -521,7 +521,7 @@ func (vapp *VApp) GetMetadata() (*types.Metadata, error) {
 func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
 	metadata := &types.Metadata{}
 
-	err := client.ExecuteRequest(requestUri+"/metadata/", http.MethodGet,
+	_, err := client.ExecuteRequest(requestUri+"/metadata/", http.MethodGet,
 		types.MimeMetaData, "error retrieving metadata: %s", nil, metadata)
 
 	return metadata, err
@@ -712,7 +712,7 @@ func (vapp *VApp) GetNetworkConfig() (*types.NetworkConfigSection, error) {
 		return networkConfig, fmt.Errorf("cannot refresh, Object is empty")
 	}
 
-	err := vapp.client.ExecuteRequest(vapp.VApp.HREF+"/networkConfigSection/", http.MethodGet,
+	_, err := vapp.client.ExecuteRequest(vapp.VApp.HREF+"/networkConfigSection/", http.MethodGet,
 		types.MimeNetworkConfigSection, "error retrieving network config: %s", nil, networkConfig)
 
 	// The request was successful
