@@ -225,7 +225,7 @@ func (client *Client) ExecuteRequestWithoutResponse(pathURL, requestType, conten
 
 	err = resp.Body.Close()
 	if err != nil {
-		return fmt.Errorf(errorMessage, err)
+		return fmt.Errorf("error closing response body: %s", err)
 	}
 
 	// The request was successful
@@ -258,7 +258,7 @@ func (client *Client) ExecuteRequest(pathURL, requestType, contentType, errorMes
 
 	err = resp.Body.Close()
 	if err != nil {
-		return resp, fmt.Errorf(errorMessage, err)
+		return resp, fmt.Errorf("error closing response body: %s", err)
 	}
 
 	// The request was successful
