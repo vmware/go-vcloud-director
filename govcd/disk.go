@@ -300,7 +300,7 @@ func FindDiskByHREF(client *Client, href string) (*Disk, error) {
 	disk := NewDisk(client)
 
 	_, err := client.ExecuteRequest(href, http.MethodGet,
-		"", "error updating disk: %s", nil, disk.Disk)
+		"", "error finding disk: %s", nil, disk.Disk)
 
 	// Return the disk
 	return disk, err
