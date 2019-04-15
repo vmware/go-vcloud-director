@@ -199,7 +199,10 @@ func (client *Client) ExecuteTaskRequest(pathURL, requestType, contentType, erro
 		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
 	}
 
-	resp.Body.Close()
+	err = resp.Body.Close()
+	if err != nil {
+		return Task{}, fmt.Errorf(errorMessage, err)
+	}
 
 	// The request was successful
 	return *task, nil
@@ -219,7 +222,10 @@ func (client *Client) ExecuteRequestWithoutResponse(pathURL, requestType, conten
 		return fmt.Errorf(errorMessage, err)
 	}
 
-	resp.Body.Close()
+	err = resp.Body.Close()
+	if err != nil {
+		return fmt.Errorf(errorMessage, err)
+	}
 
 	// The request was successful
 	return nil
@@ -245,7 +251,11 @@ func (client *Client) ExecuteRequest(pathURL, requestType, contentType, errorMes
 		return fmt.Errorf("error decoding response: %s", err)
 	}
 
-	resp.Body.Close()
+	err = resp.Body.Close()
+	if err != nil {
+		return fmt.Errorf(errorMessage, err)
+	}
+
 	// The request was successful
 	return nil
 }
