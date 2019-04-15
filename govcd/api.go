@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
@@ -188,7 +189,7 @@ func checkResp(resp *http.Response, err error) (*http.Response, error) {
 // E.g. client.ExecuteTaskRequest(updateDiskLink.HREF, http.MethodPut, updateDiskLink.Type, "error updating disk: %s", xmlPayload)
 func (client *Client) ExecuteTaskRequest(pathURL, requestType, contentType, errorMessage string, payload interface{}) (Task, error) {
 
-	resp, err := executeRequest(pathURL, requestType, contentType, errorMessage, payload, client)
+	resp, err := executeRequest(pathURL, requestType, contentType, payload, client)
 	if err != nil {
 		return Task{}, fmt.Errorf(errorMessage, err)
 	}
@@ -217,7 +218,7 @@ func (client *Client) ExecuteTaskRequest(pathURL, requestType, contentType, erro
 // E.g. client.ExecuteRequestWithoutResponse(catalogItemHREF.String(), http.MethodDelete, "", "error deleting Catalog item: %s", nil)
 func (client *Client) ExecuteRequestWithoutResponse(pathURL, requestType, contentType, errorMessage string, payload interface{}) error {
 
-	resp, err := executeRequest(pathURL, requestType, contentType, errorMessage, payload, client)
+	resp, err := executeRequest(pathURL, requestType, contentType, payload, client)
 	if err != nil {
 		return fmt.Errorf(errorMessage, err)
 	}
@@ -242,7 +243,11 @@ func (client *Client) ExecuteRequestWithoutResponse(pathURL, requestType, conten
 // client.ExecuteRequest(adminOrg.AdminOrg.HREF, http.MethodGet, "", "error refreshing organization: %s", nil, unmarshalledAdminOrg)
 func (client *Client) ExecuteRequest(pathURL, requestType, contentType, errorMessage string, payload, out interface{}) error {
 
-	resp, err := executeRequest(pathURL, requestType, contentType, errorMessage, payload, client)
+	if !isMessageWithPlaceHolder(errorMessage) {
+		return fmt.Errorf("error message has to include place holder for error")
+	}
+
+	resp, err := executeRequest(pathURL, requestType, contentType, payload, client)
 	if err != nil {
 		return fmt.Errorf(errorMessage, err)
 	}
@@ -260,7 +265,7 @@ func (client *Client) ExecuteRequest(pathURL, requestType, contentType, errorMes
 	return nil
 }
 
-func executeRequest(pathURL, requestType, contentType, errorMessage string, payload interface{}, client *Client) (*http.Response, error) {
+func executeRequest(pathURL, requestType, contentType string, payload interface{}, client *Client) (*http.Response, error) {
 	url, _ := url.ParseRequestURI(pathURL)
 
 	var req *http.Request
@@ -284,4 +289,12 @@ func executeRequest(pathURL, requestType, contentType, errorMessage string, payl
 	}
 
 	return checkResp(client.Http.Do(req))
+}
+
+func isMessageWithPlaceHolder(message string) bool {
+	err := fmt.Errorf(message, "test error")
+	if strings.Contains(err.Error(), "%!(EXTRA") {
+		return false
+	}
+	return true
 }
