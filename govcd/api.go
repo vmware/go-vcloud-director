@@ -189,6 +189,10 @@ func checkResp(resp *http.Response, err error) (*http.Response, error) {
 // E.g. client.ExecuteTaskRequest(updateDiskLink.HREF, http.MethodPut, updateDiskLink.Type, "error updating disk: %s", xmlPayload)
 func (client *Client) ExecuteTaskRequest(pathURL, requestType, contentType, errorMessage string, payload interface{}) (Task, error) {
 
+	if !isMessageWithPlaceHolder(errorMessage) {
+		return Task{}, fmt.Errorf("error message has to include place holder for error")
+	}
+
 	resp, err := executeRequest(pathURL, requestType, contentType, payload, client)
 	if err != nil {
 		return Task{}, fmt.Errorf(errorMessage, err)
@@ -217,6 +221,10 @@ func (client *Client) ExecuteTaskRequest(pathURL, requestType, contentType, erro
 // payload - XML struct which will be marshalled and added as body/payload
 // E.g. client.ExecuteRequestWithoutResponse(catalogItemHREF.String(), http.MethodDelete, "", "error deleting Catalog item: %s", nil)
 func (client *Client) ExecuteRequestWithoutResponse(pathURL, requestType, contentType, errorMessage string, payload interface{}) error {
+
+	if !isMessageWithPlaceHolder(errorMessage) {
+		return fmt.Errorf("error message has to include place holder for error")
+	}
 
 	resp, err := executeRequest(pathURL, requestType, contentType, payload, client)
 	if err != nil {
