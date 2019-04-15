@@ -180,11 +180,11 @@ func checkResp(resp *http.Response, err error) (*http.Response, error) {
 	}
 }
 
-// Helper function creates request, run it, check response and parse task from response.
-// pathUlr - request URL
+// Helper function creates request, runs it, checks response and parses task from response.
+// pathURL - request URL
 // requestType - HTTP method type
 // contentType - value to set for "Content-Type"
-// errorMessage - error message to return when error happen
+// errorMessage - error message to return when error happens
 // payload - XML struct which will be marshalled and added as body/payload
 // E.g. client.ExecuteTaskRequest(updateDiskLink.HREF, http.MethodPut, updateDiskLink.Type, "error updating disk: %s", xmlPayload)
 func (client *Client) ExecuteTaskRequest(pathURL, requestType, contentType, errorMessage string, payload interface{}) (Task, error) {
@@ -209,11 +209,11 @@ func (client *Client) ExecuteTaskRequest(pathURL, requestType, contentType, erro
 	return *task, nil
 }
 
-// Helper function creates request, run it, check response and do not expect any values from it.
-// pathUlr - request URL
+// Helper function creates request, runs it, checks response and do not expect any values from it.
+// pathURL - request URL
 // requestType - HTTP method type
 // contentType - value to set for "Content-Type"
-// errorMessage - error message to return when error happen
+// errorMessage - error message to return when error happens
 // payload - XML struct which will be marshalled and added as body/payload
 // E.g. client.ExecuteRequestWithoutResponse(catalogItemHREF.String(), http.MethodDelete, "", "error deleting Catalog item: %s", nil)
 func (client *Client) ExecuteRequestWithoutResponse(pathURL, requestType, contentType, errorMessage string, payload interface{}) error {
@@ -232,11 +232,11 @@ func (client *Client) ExecuteRequestWithoutResponse(pathURL, requestType, conten
 	return nil
 }
 
-// Helper function creates request, run it, check response and parse our interface from response.
-// pathUlr - request URL
+// Helper function creates request, runs it, check responses and parses out interface from response.
+// pathURL - request URL
 // requestType - HTTP method type
 // contentType - value to set for "Content-Type"
-// errorMessage - error message to return when error happen
+// errorMessage - error message to return when error happens
 // payload - XML struct which will be marshalled and added as body/payload
 // out - structure to be used for unmarshalling xml
 // E.g. 	unmarshalledAdminOrg := &types.AdminOrg{}
