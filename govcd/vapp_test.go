@@ -73,6 +73,12 @@ func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 	if err != nil {
 		return VApp{}, fmt.Errorf("error getting vapp: %v", err)
 	}
+
+	err = vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
+	if err != nil {
+		return VApp{}, fmt.Errorf("error waitinf for created test vApp to have working state: %s", err)
+	}
+
 	return vapp, err
 }
 
@@ -131,6 +137,10 @@ func (vcd *TestVCD) Test_BlockWhileStatus(check *C) {
 		}{task, err}
 	}()
 
+	// check that power on message sent
+	resp := <-powerOnResponse
+	check.Assert(resp.err, IsNil)
+
 	// This must timeout as the timeout is zero
 	errMustTimeout := vcd.vapp.BlockWhileStatus(initialVappStatus, 0)
 	check.Assert(errMustTimeout, ErrorMatches, "timed out waiting for vApp to exit state .* after .* seconds")
@@ -140,8 +150,6 @@ func (vcd *TestVCD) Test_BlockWhileStatus(check *C) {
 	check.Assert(err, IsNil)
 
 	// Collect back status response from PowerOn goroutine
-	resp := <-powerOnResponse
-	check.Assert(resp.err, IsNil)
 	err = resp.t.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(resp.t.Task.Status, Equals, "success")
