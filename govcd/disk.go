@@ -173,7 +173,7 @@ func (disk *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 
 	// Return the task
 	return disk.client.ExecuteTaskRequest(updateDiskLink.HREF, http.MethodPut,
-		updateDiskLink.Type, "error update disk: %s", xmlPayload)
+		updateDiskLink.Type, "error updating disk: %s", xmlPayload)
 }
 
 // Remove an independent disk
@@ -300,7 +300,7 @@ func FindDiskByHREF(client *Client, href string) (*Disk, error) {
 	disk := NewDisk(client)
 
 	err := client.ExecuteRequest(href, http.MethodGet,
-		"", "error update disk: %s", nil, disk.Disk)
+		"", "error updating disk: %s", nil, disk.Disk)
 
 	// Return the disk
 	return disk, err
