@@ -366,7 +366,7 @@ func (adminOrg *AdminOrg) Disable() error {
 	}
 	orgHREF.Path += "/action/disable"
 
-	return adminOrg.client.ExecuteRequestWithoutResponse(orgHREF.String(), http.MethodPost, "", "error disabling organization", nil)
+	return adminOrg.client.ExecuteRequestWithoutResponse(orgHREF.String(), http.MethodPost, "", "error disabling organization: %s", nil)
 }
 
 //   Updates the Org definition from current org struct contents.
