@@ -777,7 +777,7 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
-func (vcd *TestVCD) Test_VMToggleHWAssistedVirtualization(check *C) {
+func (vcd *TestVCD) Test_VMToggleHardwareVirtualization(check *C) {
 	vapp := vcd.findFirstVapp()
 	vmType, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
@@ -796,7 +796,7 @@ func (vcd *TestVCD) Test_VMToggleHWAssistedVirtualization(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 
 	// Try to change the setting on powered on VM to fail
-	_, err = vm.ToggleHWAssistedVirtualization(true)
+	_, err = vm.ToggleHardwareVirtualization(true)
 	check.Assert(err, ErrorMatches, ".*Virtual machine.*must be powered off to update.*")
 
 	// PowerOf
@@ -806,7 +806,7 @@ func (vcd *TestVCD) Test_VMToggleHWAssistedVirtualization(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 
 	// Perform steps on powered off VM
-	task, err = vm.ToggleHWAssistedVirtualization(true)
+	task, err = vm.ToggleHardwareVirtualization(true)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(task.Task.Status, Equals, "success")
@@ -815,7 +815,7 @@ func (vcd *TestVCD) Test_VMToggleHWAssistedVirtualization(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vm.VM.NestedHypervisorEnabled, Equals, true)
 
-	task, err = vm.ToggleHWAssistedVirtualization(false)
+	task, err = vm.ToggleHardwareVirtualization(false)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(task.Task.Status, Equals, "success")
