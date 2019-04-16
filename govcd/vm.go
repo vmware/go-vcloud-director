@@ -567,7 +567,7 @@ func (vm *VM) ToggleHardwareVirtualization(isEnabled bool) (Task, error) {
 			"", "error enabling hypervisor nesting feature for VM: %s", nil)
 	}
 
-	apiEndpoint.Path += "/action/enableNestedHypervisor"
+	apiEndpoint.Path += "/action/disableNestedHypervisor"
 	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
 		"", "error disabling hypervisor nesting feature for VM: %s", nil)
 }
