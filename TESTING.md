@@ -41,6 +41,13 @@ cd govcd
 go test -check.f Test_SetOvf -check.vv .
 ```
 
+To run tests with `concurency` build tag (omitted by default) and Go race detector:
+
+```bash
+make testconcurrent
+```
+__Note__. At the moment they are failing because go-vcloud-director is not thread safe.
+
 ## How to write a test
 
 go-vcloud-director tests are written using [check.v1](https://labix.org/gocheck), an auxiliary library for tests that provides several methods to help developers write comprehensive tests.
