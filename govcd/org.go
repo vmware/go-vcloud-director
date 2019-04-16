@@ -487,7 +487,7 @@ func (adminOrg *AdminOrg) removeAllOrgNetworks() error {
 		networkHREF.Path += "/admin/network/" + strings.Split(networks.HREF, "/api/admin/network/")[1] //gets id
 
 		task, err := adminOrg.client.ExecuteTaskRequest(networkHREF.String(), http.MethodDelete,
-			"", "error deleting newtork: %s", nil)
+			"", "error deleting network: %s", nil)
 		if err != nil {
 			return err
 		}
