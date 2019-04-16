@@ -6,11 +6,9 @@ package govcd
 
 import (
 	"fmt"
-	"regexp"
-	"time"
-
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
+	"regexp"
 )
 
 // Tests the helper function getParentVDC with the vapp
@@ -73,6 +71,12 @@ func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 	if err != nil {
 		return VApp{}, fmt.Errorf("error getting vapp: %v", err)
 	}
+
+	err = vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
+	if err != nil {
+		return VApp{}, fmt.Errorf("error waitinf for created test vApp to have working state: %s", err)
+	}
+
 	return vapp, err
 }
 
@@ -115,39 +119,23 @@ func (vcd *TestVCD) Test_BlockWhileStatus(check *C) {
 	initialVappStatus, err := vcd.vapp.GetStatus()
 	check.Assert(err, IsNil)
 
-	// Trigger power on in a few seconds after we already wait for status change
-	// to simulate system lag
-	powerOnResponse := make(chan struct {
-		t   Task
-		err error
-	}, 1)
-
-	go func() {
-		time.Sleep(2 * time.Second)
-		task, err := vcd.vapp.PowerOn()
-		powerOnResponse <- struct {
-			t   Task
-			err error
-		}{task, err}
-	}()
-
-	// This must timeout as the timeout is zero
+	// This must timeout as the timeout is zero and we are not changing vApp
 	errMustTimeout := vcd.vapp.BlockWhileStatus(initialVappStatus, 0)
 	check.Assert(errMustTimeout, ErrorMatches, "timed out waiting for vApp to exit state .* after .* seconds")
 
+	task, err := vcd.vapp.PowerOn()
+	check.Assert(err, IsNil)
 	// This must wait until vApp changes status from initialVappStatus
 	err = vcd.vapp.BlockWhileStatus(initialVappStatus, vcd.vapp.client.MaxRetryTimeout)
 	check.Assert(err, IsNil)
 
-	// Collect back status response from PowerOn goroutine
-	resp := <-powerOnResponse
-	check.Assert(resp.err, IsNil)
-	err = resp.t.WaitTaskCompletion()
+	// Ensure the powerOn operation succeeded
+	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
-	check.Assert(resp.t.Task.Status, Equals, "success")
+	check.Assert(task.Task.Status, Equals, "success")
 
 	// Clean up and leave it down
-	task, err := vcd.vapp.PowerOff()
+	task, err = vcd.vapp.PowerOff()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)

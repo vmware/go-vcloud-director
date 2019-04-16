@@ -680,6 +680,9 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(media, Not(Equals), CatalogItem{})
 
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+
 	insertMediaTask, err := vm.HandleInsertMedia(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 
@@ -738,6 +741,9 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 			}
 		}
 	}
+
+	check.Assert(0, Not(Equals), currentCpus)
+	check.Assert(0, Not(Equals), currentCores)
 
 	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
 

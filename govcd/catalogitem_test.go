@@ -30,7 +30,7 @@ func (vcd *TestVCD) Test_GetVAppTemplate(check *C) {
 
 	check.Assert(err, IsNil)
 	check.Assert(vapptemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
-	if vcd.config.VCD.Catalog.Description != "" {
+	if vcd.config.VCD.Catalog.CatalogItemDescription != "" {
 		check.Assert(vapptemplate.VAppTemplate.Description, Equals, vcd.config.VCD.Catalog.CatalogItemDescription)
 	}
 }

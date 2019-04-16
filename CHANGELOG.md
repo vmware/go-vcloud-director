@@ -9,6 +9,9 @@ BREAKING CHANGES:
 * vApp metadata now is attached to the vApp rather to first VM in vApp.
 * vApp metadata is no longer added to first VM in vApp it will be added to vApp directly instead.
 
+IMPROVEMENTS:
+* Refactored code by introducing helper function to handle API calls. New functions ExecuteRequest, ExecuteTaskRequest, ExecuteRequestWithoutResponse
+
 ## 2.1.0 (March 21, 2019)
 
 ARCHITECTURAL:
