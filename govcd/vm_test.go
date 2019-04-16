@@ -734,7 +734,7 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 	// save current values
 	if nil != vcd.vapp.VApp.Children.VM[0] && nil != vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection && nil != vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection.Item {
 		for _, item := range vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection.Item {
-			if item.ResourceType == 3 {
+			if item.ResourceType == types.ResourceTypeProcessor {
 				currentCpus = item.VirtualQuantity
 				currentCores = item.CoresPerSocket
 				break
@@ -760,7 +760,7 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 	foundItem := false
 	if nil != vm.VM.VirtualHardwareSection.Item {
 		for _, item := range vm.VM.VirtualHardwareSection.Item {
-			if item.ResourceType == 3 {
+			if item.ResourceType == types.ResourceTypeProcessor {
 				check.Assert(item.CoresPerSocket, Equals, cores)
 				check.Assert(item.VirtualQuantity, Equals, cpuCount)
 				foundItem = true

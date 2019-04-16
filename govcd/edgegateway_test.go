@@ -132,7 +132,7 @@ func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
 	tunnels := make([]*types.GatewayIpsecVpnTunnel, 1)
 	tunnels[0] = tunnel
 	ipsecVPNConfig := &types.EdgeGatewayServiceConfiguration{
-		Xmlns: "http://www.vmware.com/vcloud/v1.5",
+		Xmlns: types.XMLNamespaceVCloud,
 		GatewayIpsecVpnService: &types.GatewayIpsecVpnService{
 			IsEnabled: true,
 			Tunnel:    tunnels,
