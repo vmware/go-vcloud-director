@@ -242,7 +242,7 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 	for i, allocationModel := range allocationModels {
 		vdcConfiguration := &types.VdcConfiguration{
 			Name:            fmt.Sprintf("%s%d", TestCreateOrgVdc, i),
-			Xmlns:           "http://www.vmware.com/vcloud/v1.5",
+			Xmlns:           types.XMLNamespaceVCloud,
 			AllocationModel: allocationModel,
 			ComputeCapacity: []*types.ComputeCapacity{
 				&types.ComputeCapacity{
