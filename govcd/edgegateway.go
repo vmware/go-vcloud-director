@@ -177,14 +177,25 @@ func (eGW *EdgeGateway) RemoveNATPortMapping(natType, externalIP, externalPort s
 
 }
 
+func (eGW *EdgeGateway) AddNetworkNATMapping(network *types.OrgVDCNetwork, natType, externalIP, internalIP string) (Task, error) {
+	return eGW.AddNetworkNATPortMapping(network, natType, externalIP, "any", internalIP, "any", "any", "")
+}
+
+func (eGW *EdgeGateway) AddNetworkNATPortMapping(network *types.OrgVDCNetwork, natType, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType string) (Task, error) {
+	return eGW.AddNATPortMappingWithUplink(network, natType, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType)
+}
+
+// Deprecated: Use eGW.AddNetworkNATMapping()
 func (eGW *EdgeGateway) AddNATMapping(natType, externalIP, internalIP string) (Task, error) {
 	return eGW.AddNATPortMapping(natType, externalIP, "any", internalIP, "any", "any", "")
 }
 
+// Deprecated: Use eGW.AddNetworkNATPortMapping()
 func (eGW *EdgeGateway) AddNATPortMapping(natType, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType string) (Task, error) {
 	return eGW.AddNATPortMappingWithUplink(nil, natType, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType)
 }
 
+// Deprecated: creates not good behaviour of functionality
 func (eGW *EdgeGateway) getFirstUplink() types.Reference {
 	var uplink types.Reference
 	for _, gi := range eGW.EdgeGateway.Configuration.GatewayInterfaces.GatewayInterface {
@@ -241,6 +252,7 @@ func (eGW *EdgeGateway) AddNATPortMappingWithUplink(network *types.OrgVDCNetwork
 	if network != nil {
 		uplinkRef = network.HREF
 	} else {
+		// TODO: remove when method used this removed
 		uplinkRef = eGW.getFirstUplink().HREF
 	}
 
