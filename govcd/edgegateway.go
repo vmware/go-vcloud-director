@@ -177,7 +177,7 @@ func (eGW *EdgeGateway) RemoveNATPortMapping(natType, externalIP, externalPort s
 
 }
 
-func (eGW *EdgeGateway) AddNetworkNATMapping(network *types.OrgVDCNetwork, natType, externalIP, internalIP string) (Task, error) {
+func (eGW *EdgeGateway) AddNATRule(network *types.OrgVDCNetwork, natType, externalIP, internalIP string) (Task, error) {
 	return eGW.AddNATPortMappingWithUplink(network, natType, externalIP, "any", internalIP, "any", "any", "")
 }
 
