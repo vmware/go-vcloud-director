@@ -181,7 +181,7 @@ func (eGW *EdgeGateway) AddNATRule(network *types.OrgVDCNetwork, natType, extern
 	return eGW.AddNATPortMappingWithUplink(network, natType, externalIP, "any", internalIP, "any", "any", "")
 }
 
-// Deprecated: Use eGW.AddNetworkNATMapping()
+// Deprecated: Use eGW.AddNATRule()
 func (eGW *EdgeGateway) AddNATMapping(natType, externalIP, internalIP string) (Task, error) {
 	return eGW.AddNATPortMapping(natType, externalIP, "any", internalIP, "any", "any", "")
 }
