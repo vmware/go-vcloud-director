@@ -39,7 +39,7 @@ func (vcd *TestVCD) Test_NATMapping(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network)
 
-	task, err := edge.AddNetworkNATMapping(orgVdcNetwork.OrgVDCNetwork, "DNAT", vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp)
+	task, err := edge.AddNATRule(orgVdcNetwork.OrgVDCNetwork, "DNAT", vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
