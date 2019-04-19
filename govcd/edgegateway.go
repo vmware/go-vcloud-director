@@ -178,11 +178,7 @@ func (eGW *EdgeGateway) RemoveNATPortMapping(natType, externalIP, externalPort s
 }
 
 func (eGW *EdgeGateway) AddNetworkNATMapping(network *types.OrgVDCNetwork, natType, externalIP, internalIP string) (Task, error) {
-	return eGW.AddNetworkNATPortMapping(network, natType, externalIP, "any", internalIP, "any", "any", "")
-}
-
-func (eGW *EdgeGateway) AddNetworkNATPortMapping(network *types.OrgVDCNetwork, natType, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType string) (Task, error) {
-	return eGW.AddNATPortMappingWithUplink(network, natType, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType)
+	return eGW.AddNATPortMappingWithUplink(network, natType, externalIP, "any", internalIP, "any", "any", "")
 }
 
 // Deprecated: Use eGW.AddNetworkNATMapping()
