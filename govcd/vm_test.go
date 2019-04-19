@@ -776,3 +776,89 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(task.Task.Status, Equals, "success")
 }
+
+func (vcd *TestVCD) Test_VMToggleHardwareVirtualization(check *C) {
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+	// Default nesting status should be false
+	nestingStatus := vmType.NestedHypervisorEnabled
+	check.Assert(nestingStatus, Equals, false)
+
+	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+
+	// PowerOn
+	task, err := vm.PowerOn()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(task.Task.Status, Equals, "success")
+
+	// Try to change the setting on powered on VM to fail
+	_, err = vm.ToggleHardwareVirtualization(true)
+	check.Assert(err, ErrorMatches, ".*hardware virtualization can be changed from powered off state.*")
+
+	// PowerOf
+	task, err = vm.PowerOff()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(task.Task.Status, Equals, "success")
+
+	// Perform steps on powered off VM
+	task, err = vm.ToggleHardwareVirtualization(true)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(task.Task.Status, Equals, "success")
+
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+	check.Assert(vm.VM.NestedHypervisorEnabled, Equals, true)
+
+	task, err = vm.ToggleHardwareVirtualization(false)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(task.Task.Status, Equals, "success")
+
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+	check.Assert(vm.VM.NestedHypervisorEnabled, Equals, false)
+}
+
+func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	check.Assert(err, IsNil)
+
+	// Ensure VM is not powered on
+	vmStatus, err := vm.GetStatus()
+	if vmStatus != "POWERED_OFF" {
+		task, err := vm.PowerOff()
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(task.Task.Status, Equals, "success")
+	}
+
+	task, err := vm.PowerOn()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(task.Task.Status, Equals, "success")
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+	vmStatus, err = vm.GetStatus()
+	check.Assert(vmStatus, Equals, "POWERED_ON")
+
+	// Power off again
+	task, err = vm.PowerOff()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(task.Task.Status, Equals, "success")
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+	vmStatus, err = vm.GetStatus()
+	check.Assert(vmStatus, Equals, "POWERED_OFF")
+}

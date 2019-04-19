@@ -449,17 +449,26 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedNetwork(check *C) {
 	const maxLeaseTime = 3500
 	const defaultLeaseTime = 2400
 	var guestVlanAllowed = true
-	task, err := vcd.vapp.AddIsolatedNetwork(&VappNetworkSettings{
-		Name:             networkName,
-		Gateway:          gateway,
-		NetMask:          netmask,
-		DNS1:             dns1,
-		DNS2:             dns2,
-		DNSSuffix:        dnsSuffix,
-		StaticIPRanges:   []*types.IPRange{{StartAddress: startAddress, EndAddress: endAddress}},
-		GuestVLANAllowed: &guestVlanAllowed,
-		DhcpSettings:     &DhcpSettings{IsEnabled: true, MaxLeaseTime: maxLeaseTime, DefaultLeaseTime: defaultLeaseTime, IPRange: &types.IPRange{StartAddress: dhcpStartAddress, EndAddress: dhcpEndAddress}},
-	})
+
+	vappNetworkSettings := &VappNetworkSettings{
+		Name:           networkName,
+		Gateway:        gateway,
+		NetMask:        netmask,
+		DNS1:           dns1,
+		DNS2:           dns2,
+		DNSSuffix:      dnsSuffix,
+		StaticIPRanges: []*types.IPRange{{StartAddress: startAddress, EndAddress: endAddress}},
+		DhcpSettings:   &DhcpSettings{IsEnabled: true, MaxLeaseTime: maxLeaseTime, DefaultLeaseTime: defaultLeaseTime, IPRange: &types.IPRange{StartAddress: dhcpStartAddress, EndAddress: dhcpEndAddress}},
+	}
+
+	// vCD 8.20 does not support sending guestVlanAllowed
+	if vcd.client.APIVCDMaxVersionIs("> 27.0") {
+		vappNetworkSettings.GuestVLANAllowed = &guestVlanAllowed
+	} else {
+		fmt.Printf("Skipping GuestVLANAllowed parameter as it is not supported on vCD 8.20")
+	}
+
+	task, err := vcd.vapp.AddIsolatedNetwork(vappNetworkSettings)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)

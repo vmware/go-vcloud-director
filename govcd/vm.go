@@ -555,3 +555,26 @@ func (vm *VM) AnswerQuestion(questionId string, choiceId int) error {
 	return vm.client.ExecuteRequestWithoutResponse(apiEndpoint.String(), http.MethodPost,
 		"", "error asnwering question: %s", answer)
 }
+
+// ToggleHardwareVirtualization allows to either enable or disable hardware assisted
+// CPU virtualization for the VM. It can only be performed on a powered off VM and
+// will return an error otherwise. This is mainly useful for hypervisor nesting.
+func (vm *VM) ToggleHardwareVirtualization(isEnabled bool) (Task, error) {
+	vmStatus, err := vm.GetStatus()
+	if err != nil {
+		return Task{}, fmt.Errorf("unable to toggle hardware virtualization: %s", err)
+	}
+	if vmStatus != "POWERED_OFF" {
+		return Task{}, fmt.Errorf("hardware virtualization can be changed from powered off state, status: %s", vmStatus)
+	}
+
+	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	if isEnabled {
+		apiEndpoint.Path += "/action/enableNestedHypervisor"
+	} else {
+		apiEndpoint.Path += "/action/disableNestedHypervisor"
+	}
+	errMessage := fmt.Sprintf("error toggling hypervisor nesting feature to %t for VM: %%s", isEnabled)
+	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+		"", errMessage, nil)
+}

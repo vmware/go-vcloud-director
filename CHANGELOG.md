@@ -2,7 +2,12 @@
 
 FEATURES:
 
-* Added metadata add/remove functions to VM
+* Added metadata add/remove functions to VM.
+* Added ability to do vCD version checks and comparison [#174](https://github.com/vmware/go-vcloud-director/pull/174)
+using VCDClient.APIVCDMaxVersionIs(string) and VCDClient.APIClientVersionIs(string).
+* Added ability to override currently used vCD API version WithAPIVersion(string) [#174](https://github.com/vmware/go-vcloud-director/pull/174).
+* Added ability to enable nested hypervisor option for VM with VM.ToggleNestedHypervisor(bool) [#219](https://github.com/terraform-providers/terraform-provider-vcd/issues/219).
+
 
 BREAKING CHANGES:
 
