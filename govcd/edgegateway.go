@@ -186,7 +186,7 @@ func (eGW *EdgeGateway) AddNATMapping(natType, externalIP, internalIP string) (T
 	return eGW.AddNATPortMapping(natType, externalIP, "any", internalIP, "any", "any", "")
 }
 
-// Deprecated: Use eGW.AddNetworkNATPortMapping()
+// Deprecated: Use eGW.AddNATPortMappingWithUplink()
 func (eGW *EdgeGateway) AddNATPortMapping(natType, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType string) (Task, error) {
 	return eGW.AddNATPortMappingWithUplink(nil, natType, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType)
 }
