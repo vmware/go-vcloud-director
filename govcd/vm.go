@@ -5,7 +5,9 @@
 package govcd
 
 import (
+	"bytes"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -16,7 +18,7 @@ import (
 
 type VM struct {
 	VM     *types.VM
-	client *Client
+	client *Client/**/
 }
 
 type VMRecord struct {
@@ -66,6 +68,67 @@ func (vm *VM) Refresh() error {
 	return err
 }
 
+// AppendNetworkConnection appends a network connection from OrgVDCNetwork to VM
+func (vm *VM) AppendNetworkConnection(orgvdcnetwork *types.OrgVDCNetwork) (Task, error) {
+
+	// Get existing network connections from current VM
+	networkConnectionSection, err := vm.GetNetworkConnectionSection()
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+
+	for _, net := range networkConnectionSection.NetworkConnection {
+		// skip if network is already connected to VM
+		if net.Network == orgvdcnetwork.Name {
+			return Task{}, nil
+		}
+	}
+	networkConnectionSection.Info = "Configuration parameters for logical networks"
+	networkConnectionSection.Ovf = "http://schemas.dmtf.org/ovf/envelope/1"
+	networkConnectionSection.Type = "application/vnd.vmware.vcloud.networkConfigSection+xml"
+	networkConnectionSection.Xmlns = "http://www.vmware.com/vcloud/v1.5"
+
+	// Append a new NetworkConnectionSection.NetworkConnection to existing ones
+	networkConnectionSection.NetworkConnection = append(networkConnectionSection.NetworkConnection,
+		&types.NetworkConnection{
+			Network:                 orgvdcnetwork.Name,
+			NetworkConnectionIndex:  len(networkConnectionSection.NetworkConnection),
+			IsConnected:             true,
+			IPAddressAllocationMode: "POOL",
+		},
+	)
+
+	output, err := xml.MarshalIndent(networkConnectionSection, "  ", "    ")
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+
+	buffer := bytes.NewBufferString(xml.Header + string(output))
+
+	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint.Path += "/networkConnectionSection/"
+
+	req := vm.client.NewRequest(map[string]string{}, "PUT", *apiEndpoint, buffer)
+
+	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.networkConnectionSection+xml")
+
+	resp, err := checkResp(vm.client.Http.Do(req))
+	if err != nil {
+		return Task{}, fmt.Errorf("error adding VM network connection: %s", err)
+	}
+
+	task := NewTask(vm.client)
+
+	if err = decodeBody(resp, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
+	}
+
+	// The request was successful
+	return *task, nil
+
+}
+
+// GetNetworkConnectionSection returns current networks attached to VM
 func (vm *VM) GetNetworkConnectionSection() (*types.NetworkConnectionSection, error) {
 
 	networkConnectionSection := &types.NetworkConnectionSection{}
@@ -164,7 +227,7 @@ func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (
 
 }
 
-func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}, ip string) (Task, error) {
+func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, error) {
 	err := vm.Refresh()
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %v", err)
@@ -172,36 +235,37 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}, ip string) 
 
 	networkSection, err := vm.GetNetworkConnectionSection()
 
-	// changes network config when only matches network name with provided one
-	for _, network := range networks {
-		for index, networkConnection := range networkSection.NetworkConnection {
-			if networkConnection.Network == network["orgnetwork"] { // network name are equal
+	for index, network := range networks {
+		for nicSlot, networkConnection := range networkSection.NetworkConnection {
+			// changes network config only if network name matches with provided one and if order is correct (this is needed
+			// for example if you attach NICs from same network)
+			if networkConnection.Network == network["orgnetwork"] && index == nicSlot {
 				// Determine what type of address is requested for the vApp
 				ipAllocationMode := types.IPAllocationModeNone
 				ipAddress := "Any"
 
 				// TODO: Review current behaviour of using DHCP when left blank
-				if ip == "dhcp" || network["ip"].(string) == "dhcp" {
+				if network["ip"].(string) == "dhcp" {
 					ipAllocationMode = types.IPAllocationModeDHCP
-				} else if ip == "allocated" || network["ip"].(string) == "allocated" {
+				} else if network["ip"].(string) == "allocated" {
 					ipAllocationMode = types.IPAllocationModePool
-				} else if ip == "none" || network["ip"].(string) == "none" {
+				} else if network["ip"].(string) == "none" {
 					ipAllocationMode = types.IPAllocationModeNone
-				} else if ip != "" {
-					ipAllocationMode = types.IPAllocationModeManual
-					// TODO: Check a valid IP has been given
-					ipAddress = ip
 				} else if network["ip"].(string) != "" {
 					ipAllocationMode = types.IPAllocationModeManual
-					// TODO: Check a valid IP has been given
-					ipAddress = network["ip"].(string)
-				} else if ip == "" {
-					ipAllocationMode = types.IPAllocationModeDHCP
+					if net.ParseIP(network["ip"].(string)) != nil {
+						ipAddress = network["ip"].(string)
+					} else {
+						ipAllocationMode = types.IPAllocationModeDHCP
+					}
+				} else {
+					ipAllocationMode = network["ip_allocation_mode"].(string)
 				}
 
 				util.Logger.Printf("[DEBUG] Function ChangeNetworkConfig() for %s invoked", network["orgnetwork"])
 
 				networkSection.NetworkConnection[index].NeedsCustomization = true
+				networkSection.NetworkConnection[index].IsConnected = true
 				networkSection.NetworkConnection[index].IPAddress = ipAddress
 				networkSection.NetworkConnection[index].IPAddressAllocationMode = ipAllocationMode
 

@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"testing"
@@ -83,7 +84,7 @@ type TestConfig struct {
 			CatalogItem            string `yaml:"catalogItem,omitempty"`
 			CatalogItemDescription string `yaml:"catalogItemDescription,omitempty"`
 		} `yaml:"catalog"`
-		Network        string `yaml:"network,omitempty"`
+		Networks       []string `yaml:"networks,omitempty"`
 		StorageProfile struct {
 			SP1 string `yaml:"storageProfile1"`
 			SP2 string `yaml:"storageProfile2,omitempty"`
@@ -234,7 +235,7 @@ func Test(t *testing.T) { TestingT(t) }
 // case that uses the TestVCD struct is run.
 func (vcd *TestVCD) SetUpSuite(check *C) {
 	config, err := GetConfigStruct()
-	if config == (TestConfig{}) || err != nil {
+	if reflect.DeepEqual(config, (TestConfig{})) || err != nil {
 		panic(err)
 	}
 	vcd.config = config
@@ -284,7 +285,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		panic(err)
 	}
 	// creates a new VApp for vapp tests
-	if !skipVappCreation && config.VCD.Network != "" && config.VCD.StorageProfile.SP1 != "" &&
+	if !skipVappCreation && config.VCD.Networks[0] != "" && config.VCD.StorageProfile.SP1 != "" &&
 		config.VCD.Catalog.Name != "" && config.VCD.Catalog.CatalogItem != "" {
 		vcd.vapp, err = vcd.createTestVapp(TestSetUpSuite)
 		// If no vApp is created, we skip all vApp tests

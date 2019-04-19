@@ -29,7 +29,7 @@ func (vcd *TestVCD) TestGetParentVDC(check *C) {
 func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
-	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network)
+	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Networks[0])
 	if err != nil {
 		return VApp{}, fmt.Errorf("error finding network : %v", err)
 	}
