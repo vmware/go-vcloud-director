@@ -797,7 +797,7 @@ func (vcd *TestVCD) Test_VMToggleHardwareVirtualization(check *C) {
 
 	// Try to change the setting on powered on VM to fail
 	_, err = vm.ToggleHardwareVirtualization(true)
-	check.Assert(err, ErrorMatches, ".*hardware virtualization can be changed on powered of.*")
+	check.Assert(err, ErrorMatches, ".*hardware virtualization can be changed from powered off state.*")
 
 	// PowerOf
 	task, err = vm.PowerOff()
