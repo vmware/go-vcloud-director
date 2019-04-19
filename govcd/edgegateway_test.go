@@ -43,6 +43,22 @@ func (vcd *TestVCD) Test_NATMapping(check *C) {
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
+
+	err = edge.Refresh()
+	check.Assert(err, IsNil)
+	found := false
+	var rule *types.NatRule
+	for _, r := range edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule {
+		if r.RuleType == "DNAT" && r.GatewayNatRule.Interface.Name == orgVdcNetwork.OrgVDCNetwork.Name {
+			found = true
+			rule = r
+		}
+	}
+
+	check.Assert(found, Equals, true)
+	check.Assert(rule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.InternalIp)
+	check.Assert(rule.GatewayNatRule.OriginalIP, Equals, vcd.config.VCD.ExternalIp)
+
 	task, err = edge.RemoveNATMapping("DNAT", vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp, "77")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
@@ -69,6 +85,26 @@ func (vcd *TestVCD) Test_NATPortMapping(check *C) {
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
+
+	err = edge.Refresh()
+	check.Assert(err, IsNil)
+	found := false
+	var rule *types.NatRule
+	for _, r := range edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule {
+		if r.RuleType == "DNAT" && r.GatewayNatRule.Interface.Name == orgVdcNetwork.OrgVDCNetwork.Name {
+			found = true
+			rule = r
+		}
+	}
+
+	check.Assert(found, Equals, true)
+	check.Assert(rule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.InternalIp)
+	check.Assert(rule.GatewayNatRule.TranslatedPort, Equals, "77")
+	check.Assert(rule.GatewayNatRule.OriginalIP, Equals, vcd.config.VCD.ExternalIp)
+	check.Assert(rule.GatewayNatRule.OriginalPort, Equals, "1177")
+	check.Assert(rule.GatewayNatRule.Protocol, Equals, "tcp")
+	check.Assert(rule.GatewayNatRule.IcmpSubType, Equals, "")
+
 	task, err = edge.RemoveNATPortMapping("DNAT", vcd.config.VCD.ExternalIp, "1177", vcd.config.VCD.InternalIp, "77")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
