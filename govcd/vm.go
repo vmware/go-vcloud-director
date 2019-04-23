@@ -5,7 +5,6 @@
 package govcd
 
 import (
-	"bytes"
 	"fmt"
 	"net"
 	"net/http"
@@ -18,7 +17,7 @@ import (
 
 type VM struct {
 	VM     *types.VM
-	client *Client/**/
+	client *Client /**/
 }
 
 type VMRecord struct {
@@ -83,10 +82,10 @@ func (vm *VM) AppendNetworkConnection(orgvdcnetwork *types.OrgVDCNetwork) (Task,
 			return Task{}, nil
 		}
 	}
-	networkConnectionSection.Info = "Configuration parameters for logical networks"
-	networkConnectionSection.Ovf = "http://schemas.dmtf.org/ovf/envelope/1"
-	networkConnectionSection.Type = "application/vnd.vmware.vcloud.networkConfigSection+xml"
-	networkConnectionSection.Xmlns = "http://www.vmware.com/vcloud/v1.5"
+
+	networkConnectionSection.Ovf = types.XMLNamespaceOVF
+	networkConnectionSection.Type = types.MimeNetworkConnectionSection
+	networkConnectionSection.Xmlns = types.XMLNamespaceVCloud
 
 	// Append a new NetworkConnectionSection.NetworkConnection to existing ones
 	networkConnectionSection.NetworkConnection = append(networkConnectionSection.NetworkConnection,
@@ -98,34 +97,11 @@ func (vm *VM) AppendNetworkConnection(orgvdcnetwork *types.OrgVDCNetwork) (Task,
 		},
 	)
 
-	output, err := xml.MarshalIndent(networkConnectionSection, "  ", "    ")
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-	}
-
-	buffer := bytes.NewBufferString(xml.Header + string(output))
-
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/networkConnectionSection/"
 
-	req := vm.client.NewRequest(map[string]string{}, "PUT", *apiEndpoint, buffer)
-
-	req.Header.Add("Content-Type", "application/vnd.vmware.vcloud.networkConnectionSection+xml")
-
-	resp, err := checkResp(vm.client.Http.Do(req))
-	if err != nil {
-		return Task{}, fmt.Errorf("error adding VM network connection: %s", err)
-	}
-
-	task := NewTask(vm.client)
-
-	if err = decodeBody(resp, task.Task); err != nil {
-		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
-	}
-
-	// The request was successful
-	return *task, nil
-
+	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+		types.MimeNetworkConnectionSection, "error adding VM network connection: %s", networkConnectionSection)
 }
 
 // GetNetworkConnectionSection returns current networks attached to VM
