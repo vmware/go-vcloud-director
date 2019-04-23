@@ -230,11 +230,14 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, erro
 				} else if network["ip"].(string) != "" {
 					ipAllocationMode = types.IPAllocationModeManual
 					if net.ParseIP(network["ip"].(string)) != nil {
+						// In this case we have types.IPAllocationModeNone if IP is set
+						// But in fact this would be manual and could still be used.
+						// ipAllocationMode = types.IPAllocationModeManual
 						ipAddress = network["ip"].(string)
 					} else {
 						ipAllocationMode = types.IPAllocationModeDHCP
 					}
-				} else {
+				} else { // If IP is not set we use proper `ip_allocation_mode` specified
 					ipAllocationMode = network["ip_allocation_mode"].(string)
 				}
 
