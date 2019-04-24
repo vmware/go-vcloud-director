@@ -1138,6 +1138,15 @@ func (vcd *TestVCD) Test_updateNicParameters_singleNIC(check *C) {
 		},
 	}
 
+	tfCfgManual := []map[string]interface{}{
+		map[string]interface{}{
+			"orgnetwork":         "multinic-net",
+			"ip_allocation_mode": "",
+			"ip":                 "1.1.1.1",
+			"is_primary":         true,
+		},
+	}
+
 	vcdConfig := types.NetworkConnectionSection{
 		PrimaryNetworkConnectionIndex: 1,
 		NetworkConnection: []*types.NetworkConnection{
@@ -1152,18 +1161,7 @@ func (vcd *TestVCD) Test_updateNicParameters_singleNIC(check *C) {
 			},
 		},
 	}
-
-	// Create vcdConfig copies for each test case
-	//vcdCfgDHCP := &vcdConfig
-	//
-	//vcdConfigAllocated := vcdConfig
-	//vcdCfgAllocated := &vcdConfigAllocated
-	//
-	//
-	//vcdConfigNone := vcdConfig
-	//vcdCfgNone := &vcdConfigNone
-
-	//
+	
 	var tableTests = []struct {
 		tfConfig []map[string]interface{}
 		//vcdConfig types.NetworkConnectionSection
@@ -1173,11 +1171,12 @@ func (vcd *TestVCD) Test_updateNicParameters_singleNIC(check *C) {
 		{tfCfgDHCP,  types.IPAllocationModeDHCP, "Any"},
 		{tfCfgAllocated,  types.IPAllocationModePool, "Any"},
 		{tfCfgNone,  types.IPAllocationModeNone, "Any"},
+		{tfCfgManual,  types.IPAllocationModeManual, tfCfgManual[0]["ip"].(string)},
 	}
 
 	for _, tableTest := range tableTests {
 		vcdCfg := &vcdConfig
-		vm.updateNicParameters(tableTest.tfConfig, vcdCfg)	// Execute update procedure
+		vm.updateNicParameters(tableTest.tfConfig, vcdCfg)	// Execute parsing procedure
 
 		// Check that primary interface is reset to 0 as it is the only one
 		check.Assert(vcdCfg.PrimaryNetworkConnectionIndex, Equals, 0)
