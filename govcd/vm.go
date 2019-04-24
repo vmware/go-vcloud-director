@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/kr/pretty"
 	"net"
 	"net/http"
 	"net/url"
@@ -209,13 +210,25 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, erro
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %v", err)
 	}
 
+	// The API returns unordered list of NICs. This means that networkSection.NetworkConnection[0] will not
+	// necessarily be NIC 0.
 	networkSection, err := vm.GetNetworkConnectionSection()
 
-	for index, network := range networks {
-		for nicSlot, networkConnection := range networkSection.NetworkConnection {
-			// changes network config only if network name matches with provided one and if order is correct (this is needed
-			// for example if you attach NICs from same network)
-			if networkConnection.Network == network["orgnetwork"] && index == nicSlot {
+	util.Logger.Printf("[DEBUG] Initial networks %#+ v\n", pretty.Formatter(networks))
+	util.Logger.Printf("[DEBUG] Initial networkconnection %#+ v\n", pretty.Formatter(networkSection.NetworkConnection))
+
+	for tfNicSlot, network := range networks { //0, POOL===== 2, MANUAL
+		for index, networkConnection := range networkSection.NetworkConnection {	//2, POOL; 3, POOL; 0, POOl (==)
+			// THE BELOW IF WAS BAD because it comapared nicSlot to networkSection.NetworkConnection slice element index.
+			// This was not correct if slice 'networkSection.NetworkConnection' was not correctly ordered  because it comapared
+			// nicSlot to networkSection.NetworkConnection slice element index (not NetworkConnectionIndex) and mixed up
+			// NIC parameters.
+			//if networkConnection.Network == network["orgnetwork"] && tfNicSlot == index {	// not nic slot
+
+				// Change network config only if we're attached to the same network and have the same virtual slot number
+				if networkConnection.Network == network["orgnetwork"].(string) &&
+					tfNicSlot == networkSection.NetworkConnection[index].NetworkConnectionIndex { // not nic slot
+
 				// Determine what type of address is requested for the vApp
 				ipAllocationMode := types.IPAllocationModeNone
 				ipAddress := "Any"
@@ -243,13 +256,13 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, erro
 
 				util.Logger.Printf("[DEBUG] Function ChangeNetworkConfig() for %s invoked", network["orgnetwork"])
 
-				networkSection.NetworkConnection[index].NeedsCustomization = true
-				networkSection.NetworkConnection[index].IsConnected = true
-				networkSection.NetworkConnection[index].IPAddress = ipAddress
-				networkSection.NetworkConnection[index].IPAddressAllocationMode = ipAllocationMode
+				networkSection.NetworkConnection[tfNicSlot].NeedsCustomization = true
+				networkSection.NetworkConnection[tfNicSlot].IsConnected = true
+				networkSection.NetworkConnection[tfNicSlot].IPAddress = ipAddress
+				networkSection.NetworkConnection[tfNicSlot].IPAddressAllocationMode = ipAllocationMode
 
 				if network["is_primary"] == true {
-					networkSection.PrimaryNetworkConnectionIndex = index
+					networkSection.PrimaryNetworkConnectionIndex = tfNicSlot
 				}
 			}
 		}
