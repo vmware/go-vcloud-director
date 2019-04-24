@@ -6,10 +6,19 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_VMupdateNicParameters(check *C) {
-	//func Test_VMupdateNicParameters(t *testing.T) {
+// Test_updateNicParameters_multinic is meant to check functionality of a complicated
+// code structure used in vm.ChangeNetworkConfig which is abstracted into
+// vm.updateNicParameters() method so that it does not contain any API calls, but
+// only adjust the object. Initially we hit a bug which occurred only when API returned
+// NICs in random order (which happens rarely and was only seen with 3 NICs).
+func (vcd *TestVCD) Test_updateNicParameters_multiNIC(check *C) {
 
-	tfConfig := []map[string]interface{}{
+	// Mock VM struct
+	c := Client{}
+	vm := NewVM(&c)
+
+	// Sample config which is rendered by .tf schema parsed
+	tfCfg := []map[string]interface{}{
 		map[string]interface{}{
 			"orgnetwork":         "multinic-net",
 			"ip_allocation_mode": "POOL",
@@ -23,12 +32,6 @@ func (vcd *TestVCD) Test_VMupdateNicParameters(check *C) {
 			"is_primary":         true,
 		},
 		map[string]interface{}{
-			"orgnetwork":         "multinic-net",
-			"ip_allocation_mode": "MANUAL",
-			"ip":                 "11.10.0.170",
-			"is_primary":         false,
-		},
-		map[string]interface{}{
 			"orgnetwork":         "multinic-net2",
 			"ip_allocation_mode": "NONE",
 			"ip":                 "",
@@ -38,7 +41,7 @@ func (vcd *TestVCD) Test_VMupdateNicParameters(check *C) {
 
 	// A sample NetworkConnectionSection object simulating API returning ordered list
 	vcdConfig := types.NetworkConnectionSection{
-		PrimaryNetworkConnectionIndex: 1,
+		PrimaryNetworkConnectionIndex: 0,
 		NetworkConnection: []*types.NetworkConnection{
 			&types.NetworkConnection{
 				Network:                 "multinic-net",
@@ -70,63 +73,37 @@ func (vcd *TestVCD) Test_VMupdateNicParameters(check *C) {
 		},
 	}
 
-	// A sample NetworkConnectionSection object simulating API returning unordered list
-	vcdConfig2 := types.NetworkConnectionSection{
-		PrimaryNetworkConnectionIndex: 1,
-		NetworkConnection: []*types.NetworkConnection{
-			&types.NetworkConnection{
-				Network:                 "multinic-net",
-				NetworkConnectionIndex:  2,
-				IPAddress:               "",
-				IsConnected:             true,
-				MACAddress:              "00:00:00:00:00:02",
-				IPAddressAllocationMode: "POOL",
-				NetworkAdapterType:      "VMXNET3",
-			},
-			&types.NetworkConnection{
-				Network:                 "multinic-net",
-				NetworkConnectionIndex:  0,
-				IPAddress:               "",
-				IsConnected:             true,
-				MACAddress:              "00:00:00:00:00:00",
-				IPAddressAllocationMode: "POOL",
-				NetworkAdapterType:      "VMXNET3",
-			},
-			&types.NetworkConnection{
-				Network:                 "multinic-net",
-				NetworkConnectionIndex:  1,
-				IPAddress:               "",
-				IsConnected:             true,
-				MACAddress:              "00:00:00:00:00:01",
-				IPAddressAllocationMode: "POOL",
-				NetworkAdapterType:      "VMXNET3",
-			},
-		},
-	}
-
-	// Mock VM struct
-	c := Client{}
-	vm := NewVM(&c)
-
+	// NIC configuration when API returns an ordered list
 	vcdCfg := &vcdConfig
-	vm.updateNicParameters(tfConfig, vcdCfg)
+	vm.updateNicParameters(tfCfg, vcdCfg)
 
-	for loopIndex := range vcdCfg.NetworkConnection {
-		nicSlot := vcdCfg.NetworkConnection[loopIndex].NetworkConnectionIndex
-
-		check.Assert(vcdCfg.NetworkConnection[loopIndex].IPAddressAllocationMode, Equals, tfConfig[nicSlot]["ip_allocation_mode"].(string))
-		check.Assert(vcdCfg.NetworkConnection[loopIndex].Network, Equals, tfConfig[nicSlot]["orgnetwork"].(string))
-	}
-
+	// Test NIC updates when API returns an unordered list
+	// Swap two &types.NetworkConnection so that it is not ordered correctly
+	vcdConfig2 := vcdConfig
+	vcdConfig2.NetworkConnection[2], vcdConfig2.NetworkConnection[0] = vcdConfig2.NetworkConnection[0], vcdConfig2.NetworkConnection[2]
 	vcdCfg2 := &vcdConfig2
+	vm.updateNicParameters(tfCfg, vcdCfg2)
 
-	vm.updateNicParameters(tfConfig, vcdCfg2)
-
-	for loopIndex := range vcdCfg2.NetworkConnection {
-		nicSlot := vcdCfg2.NetworkConnection[loopIndex].NetworkConnectionIndex
-
-		check.Assert(vcdCfg2.NetworkConnection[loopIndex].IPAddressAllocationMode, Equals, tfConfig[nicSlot]["ip_allocation_mode"].(string))
-		check.Assert(vcdCfg2.NetworkConnection[loopIndex].Network, Equals, tfConfig[nicSlot]["orgnetwork"].(string))
+	var tableTests = []struct {
+		tfConfig []map[string]interface{}
+		vcdConfig *types.NetworkConnectionSection
+	}{
+		{tfConfig: tfCfg, vcdConfig:vcdCfg},	// Ordered NIC list
+		{tfConfig: tfCfg, vcdConfig:vcdCfg2},	// Unordered NIC list
 	}
 
+	for _, tableTest := range tableTests {
+
+		// Check that primary interface is reset to 1 as hardcoded in tfCfg "is_primary" parameter
+		check.Assert(vcdCfg.PrimaryNetworkConnectionIndex, Equals, 1)
+
+		for loopIndex := range tableTest.vcdConfig.NetworkConnection {
+			nicSlot := tableTest.vcdConfig.NetworkConnection[loopIndex].NetworkConnectionIndex
+
+			check.Assert(tableTest.vcdConfig.NetworkConnection[loopIndex].IPAddressAllocationMode, Equals, tableTest.tfConfig[nicSlot]["ip_allocation_mode"].(string))
+			check.Assert(tableTest.vcdConfig.NetworkConnection[loopIndex].IsConnected, Equals, true)
+			check.Assert(tableTest.vcdConfig.NetworkConnection[loopIndex].NeedsCustomization, Equals, true)
+			check.Assert(tableTest.vcdConfig.NetworkConnection[loopIndex].Network, Equals, tableTest.tfConfig[nicSlot]["orgnetwork"].(string))
+		}
+	}
 }
