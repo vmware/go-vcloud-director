@@ -1000,3 +1000,189 @@ func (vcd *TestVCD) Test_VMChangeNetworkConfig(check *C) {
 		check.Assert(networkConnectionSection.PrimaryNetworkConnectionIndex, Equals, 0)
 	}
 }
+
+// Test_updateNicParameters_multinic is meant to check functionality of a complicated
+// code structure used in vm.ChangeNetworkConfig which is abstracted into
+// vm.updateNicParameters() method so that it does not contain any API calls, but
+// only adjust the object which is meant to be sent to API. Initially we hit a bug
+// which occurred only when API returned NICs in random order.
+func (vcd *TestVCD) Test_updateNicParameters_multiNIC(check *C) {
+
+	// Mock VM struct
+	c := Client{}
+	vm := NewVM(&c)
+
+	// Sample config which is rendered by .tf schema parsed
+	tfCfg := []map[string]interface{}{
+		map[string]interface{}{
+			"orgnetwork":         "multinic-net",
+			"ip_allocation_mode": "POOL",
+			"ip":                 "",
+			"is_primary":         false,
+		},
+		map[string]interface{}{
+			"orgnetwork":         "multinic-net",
+			"ip_allocation_mode": "DHCP",
+			"ip":                 "",
+			"is_primary":         true,
+		},
+		map[string]interface{}{
+			"orgnetwork":         "multinic-net2",
+			"ip_allocation_mode": "NONE",
+			"ip":                 "",
+			"is_primary":         false,
+		},
+	}
+
+	// A sample NetworkConnectionSection object simulating API returning ordered list
+	vcdConfig := types.NetworkConnectionSection{
+		PrimaryNetworkConnectionIndex: 0,
+		NetworkConnection: []*types.NetworkConnection{
+			&types.NetworkConnection{
+				Network:                 "multinic-net",
+				NetworkConnectionIndex:  0,
+				IPAddress:               "",
+				IsConnected:             true,
+				MACAddress:              "00:00:00:00:00:00",
+				IPAddressAllocationMode: "POOL",
+				NetworkAdapterType:      "VMXNET3",
+			},
+			&types.NetworkConnection{
+				Network:                 "multinic-net",
+				NetworkConnectionIndex:  1,
+				IPAddress:               "",
+				IsConnected:             true,
+				MACAddress:              "00:00:00:00:00:01",
+				IPAddressAllocationMode: "POOL",
+				NetworkAdapterType:      "VMXNET3",
+			},
+			&types.NetworkConnection{
+				Network:                 "multinic-net",
+				NetworkConnectionIndex:  2,
+				IPAddress:               "",
+				IsConnected:             true,
+				MACAddress:              "00:00:00:00:00:02",
+				IPAddressAllocationMode: "POOL",
+				NetworkAdapterType:      "VMXNET3",
+			},
+		},
+	}
+
+	// NIC configuration when API returns an ordered list
+	vcdCfg := &vcdConfig
+	vm.updateNicParameters(tfCfg, vcdCfg)
+
+	// Test NIC updates when API returns an unordered list
+	// Swap two &types.NetworkConnection so that it is not ordered correctly
+	vcdConfig2 := vcdConfig
+	vcdConfig2.NetworkConnection[2], vcdConfig2.NetworkConnection[0] = vcdConfig2.NetworkConnection[0], vcdConfig2.NetworkConnection[2]
+	vcdCfg2 := &vcdConfig2
+	vm.updateNicParameters(tfCfg, vcdCfg2)
+
+	var tableTests = []struct {
+		tfConfig []map[string]interface{}
+		vcdConfig *types.NetworkConnectionSection
+	}{
+		{tfCfg, vcdCfg},	// Ordered NIC list
+		{tfCfg, vcdCfg2},	// Unordered NIC list
+	}
+
+	for _, tableTest := range tableTests {
+
+		// Check that primary interface is reset to 1 as hardcoded in tfCfg "is_primary" parameter
+		check.Assert(vcdCfg.PrimaryNetworkConnectionIndex, Equals, 1)
+
+		for loopIndex := range tableTest.vcdConfig.NetworkConnection {
+			nicSlot := tableTest.vcdConfig.NetworkConnection[loopIndex].NetworkConnectionIndex
+
+			check.Assert(tableTest.vcdConfig.NetworkConnection[loopIndex].IPAddressAllocationMode, Equals, tableTest.tfConfig[nicSlot]["ip_allocation_mode"].(string))
+			check.Assert(tableTest.vcdConfig.NetworkConnection[loopIndex].IsConnected, Equals, true)
+			check.Assert(tableTest.vcdConfig.NetworkConnection[loopIndex].NeedsCustomization, Equals, true)
+			check.Assert(tableTest.vcdConfig.NetworkConnection[loopIndex].Network, Equals, tableTest.tfConfig[nicSlot]["orgnetwork"].(string))
+		}
+	}
+}
+
+// Test_updateNicParameters_singleNIC is meant to check functionality when single NIC
+// is being configured and meant to check functionality so that the function is able
+// to cover legacy scenarios when Terraform provider was able to create single IP only.
+func (vcd *TestVCD) Test_updateNicParameters_singleNIC(check *C) {
+	// Mock VM struct
+	c := Client{}
+	vm := NewVM(&c)
+
+	tfCfgDHCP := []map[string]interface{}{
+		map[string]interface{}{
+			"orgnetwork":         "multinic-net",
+			"ip_allocation_mode": "",
+			"ip":                 "dhcp",
+			"is_primary":         true,
+		},
+	}
+
+	tfCfgAllocated := []map[string]interface{}{
+		map[string]interface{}{
+			"orgnetwork":         "multinic-net",
+			"ip_allocation_mode": "",
+			"ip":                 "allocated",
+			"is_primary":         true,
+		},
+	}
+
+	tfCfgNone := []map[string]interface{}{
+		map[string]interface{}{
+			"orgnetwork":         "multinic-net",
+			"ip_allocation_mode": "",
+			"ip":                 "none",
+			"is_primary":         true,
+		},
+	}
+
+	vcdConfig := types.NetworkConnectionSection{
+		PrimaryNetworkConnectionIndex: 1,
+		NetworkConnection: []*types.NetworkConnection{
+			&types.NetworkConnection{
+				Network:                 "singlenic-net",
+				NetworkConnectionIndex:  0,
+				IPAddress:               "",
+				IsConnected:             true,
+				MACAddress:              "00:00:00:00:00:00",
+				IPAddressAllocationMode: "POOL",
+				NetworkAdapterType:      "VMXNET3",
+			},
+		},
+	}
+
+	// Create vcdConfig copies for each test case
+	//vcdCfgDHCP := &vcdConfig
+	//
+	//vcdConfigAllocated := vcdConfig
+	//vcdCfgAllocated := &vcdConfigAllocated
+	//
+	//
+	//vcdConfigNone := vcdConfig
+	//vcdCfgNone := &vcdConfigNone
+
+	//
+	var tableTests = []struct {
+		tfConfig []map[string]interface{}
+		//vcdConfig types.NetworkConnectionSection
+		expectedIPAddressAllocationMode string
+		expectedIPAddress string
+	}{
+		{tfCfgDHCP,  types.IPAllocationModeDHCP, "Any"},
+		{tfCfgAllocated,  types.IPAllocationModePool, "Any"},
+		{tfCfgNone,  types.IPAllocationModeNone, "Any"},
+	}
+
+	for _, tableTest := range tableTests {
+		vcdCfg := &vcdConfig
+		vm.updateNicParameters(tableTest.tfConfig, vcdCfg)	// Execute update procedure
+
+		// Check that primary interface is reset to 0 as it is the only one
+		check.Assert(vcdCfg.PrimaryNetworkConnectionIndex, Equals, 0)
+
+		check.Assert(vcdCfg.NetworkConnection[0].IPAddressAllocationMode, Equals, tableTest.expectedIPAddressAllocationMode)
+		check.Assert(vcdCfg.NetworkConnection[0].IPAddress, Equals, tableTest.expectedIPAddress)
+	}
+}
