@@ -204,30 +204,22 @@ func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (
 
 }
 
-func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, error) {
-	err := vm.Refresh()
-	if err != nil {
-		return Task{}, fmt.Errorf("error refreshing VM before running customization: %v", err)
-	}
-
-	// The API returns unordered list of NICs. This means that networkSection.NetworkConnection[0] will not
-	// necessarily be NIC 0.
-	networkSection, err := vm.GetNetworkConnectionSection()
+func (vm *VM) updateNicParameters(networks []map[string]interface{}, networkSection *types.NetworkConnectionSection) {
 
 	util.Logger.Printf("[DEBUG] Initial networks %#+ v\n", pretty.Formatter(networks))
 	util.Logger.Printf("[DEBUG] Initial networkconnection %#+ v\n", pretty.Formatter(networkSection.NetworkConnection))
 
 	for tfNicSlot, network := range networks { //0, POOL===== 2, MANUAL
-		for index, networkConnection := range networkSection.NetworkConnection {	//2, POOL; 3, POOL; 0, POOl (==)
+		for loopIndex, networkConnection := range networkSection.NetworkConnection {	//2, POOL; 3, POOL; 0, POOl (==)
 			// THE BELOW IF WAS BAD because it comapared nicSlot to networkSection.NetworkConnection slice element index.
-			// This was not correct if slice 'networkSection.NetworkConnection' was not correctly ordered  because it comapared
+			// This was not correct if slice 'networkSection.NetworkConnection' was not ordered because it comapared
 			// nicSlot to networkSection.NetworkConnection slice element index (not NetworkConnectionIndex) and mixed up
 			// NIC parameters.
-			//if networkConnection.Network == network["orgnetwork"] && tfNicSlot == index {	// not nic slot
+			//if networkConnection.Network == network["orgnetwork"] && tfNicSlot == loopIndex {	// not nic slot
 
-				// Change network config only if we're attached to the same network and have the same virtual slot number
-				if networkConnection.Network == network["orgnetwork"].(string) &&
-					tfNicSlot == networkSection.NetworkConnection[index].NetworkConnectionIndex { // not nic slot
+			// Change network config only if we're attached to the same network and have the same virtual slot number
+			if networkConnection.Network == network["orgnetwork"].(string) &&
+				tfNicSlot == networkSection.NetworkConnection[loopIndex].NetworkConnectionIndex {
 
 				// Determine what type of address is requested for the vApp
 				ipAllocationMode := types.IPAllocationModeNone
@@ -256,10 +248,10 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, erro
 
 				util.Logger.Printf("[DEBUG] Function ChangeNetworkConfig() for %s invoked", network["orgnetwork"])
 
-				networkSection.NetworkConnection[tfNicSlot].NeedsCustomization = true
-				networkSection.NetworkConnection[tfNicSlot].IsConnected = true
-				networkSection.NetworkConnection[tfNicSlot].IPAddress = ipAddress
-				networkSection.NetworkConnection[tfNicSlot].IPAddressAllocationMode = ipAllocationMode
+				networkSection.NetworkConnection[loopIndex].NeedsCustomization = true
+				networkSection.NetworkConnection[loopIndex].IsConnected = true
+				networkSection.NetworkConnection[loopIndex].IPAddress = ipAddress
+				networkSection.NetworkConnection[loopIndex].IPAddressAllocationMode = ipAllocationMode
 
 				if network["is_primary"] == true {
 					networkSection.PrimaryNetworkConnectionIndex = tfNicSlot
@@ -267,6 +259,19 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, erro
 			}
 		}
 	}
+}
+
+func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, error) {
+	err := vm.Refresh()
+	if err != nil {
+		return Task{}, fmt.Errorf("error refreshing VM before running customization: %v", err)
+	}
+
+	// The API returns unordered list of NICs. This means that networkSection.NetworkConnection[0] will not
+	// necessarily be NIC 0.
+	networkSection, err := vm.GetNetworkConnectionSection()
+
+	vm.updateNicParameters(networks, networkSection)
 
 	networkSection.Xmlns = types.XMLNamespaceVCloud
 	networkSection.Ovf = types.XMLNamespaceOVF
