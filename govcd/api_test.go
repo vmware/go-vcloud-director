@@ -23,26 +23,26 @@ func tagsHelp(t *testing.T) {
 
 At least one of the following tags should be defined:
 
-   * ALL :      Runs all the tests
-   * gocheck:   Runs all the tests that use check.v1
-   * gotest:    Runs unit tests that do not use check.v1
-                and don't need a live vCD (currently unused, but we plan to)
+   * ALL :       Runs all the tests
+   * functional: Runs all the tests that use check.v1
+   * unit:       Runs unit tests that do not use check.v1
+                 and don't need a live vCD (currently unused, but we plan to)
 
-   * catalog:   Runs catalog related tests (also catalog_item, media)
-   * disk:      Runs disk related tests
-   * extension: Runs extension related tests
-   * network:   Runs network and edge gateway related tests
-   * org:       Runs org related tests
-   * query:     Runs query related tests
-   * system:    Runs system related tests
-   * task:      Runs task related tests
-   * vapp:      Runs vapp related tests
-   * vdc:       Runs vdc related tests
-   * vm:        Runs vm related tests
+   * catalog:    Runs catalog related tests (also catalog_item, media)
+   * disk:       Runs disk related tests
+   * extension:  Runs extension related tests
+   * network:    Runs network and edge gateway related tests
+   * org:        Runs org related tests
+   * query:      Runs query related tests
+   * system:     Runs system related tests
+   * task:       Runs task related tests
+   * vapp:       Runs vapp related tests
+   * vdc:        Runs vdc related tests
+   * vm:         Runs vm related tests
 
 Examples:
 
-go test -tags gocheck -check.vv -timeout=45m .
+go test -tags functional -check.vv -timeout=45m .
 go test -tags catalog -check.vv -timeout=15m .
 go test -tags "query extension" -check.vv -timeout=5m .
 `

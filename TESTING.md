@@ -23,7 +23,7 @@ To run tests with go use these commands:
 
 ```bash
 cd govcd
-go test -tags "gocheck" -check.v .
+go test -tags "functional" -check.v .
 ```
 
 If you want to see more details during the test run, use `-check.vv` instead of `-check.v`.
@@ -65,25 +65,25 @@ $ go test -v .
 
         At least one of the following tags should be defined:
 
-           * ALL :      Runs all the tests
-           * gocheck:   Runs all the tests that use check.v1
-           * gotest:    Runs unit tests that do not need a live vCD
+           * ALL :       Runs all the tests
+           * functional: Runs all the tests that use check.v1
+           * unit:       Runs unit tests that do not need a live vCD
 
-           * catalog:   Runs catalog related tests (also catalog_item, media)
-           * disk:      Runs disk related tests
-           * extension: Runs extension related tests
-           * network:   Runs network and edge gateway related tests
-           * org:       Runs org related tests
-           * query:     Runs query related tests
-           * system:    Runs system related tests
-           * task:      Runs task related tests
-           * vapp:      Runs vapp related tests
-           * vdc:       Runs vdc related tests
-           * vm:        Runs vm related tests
+           * catalog:    Runs catalog related tests (also catalog_item, media)
+           * disk:       Runs disk related tests
+           * extension:  Runs extension related tests
+           * network:    Runs network and edge gateway related tests
+           * org:        Runs org related tests
+           * query:      Runs query related tests
+           * system:     Runs system related tests
+           * task:       Runs task related tests
+           * vapp:       Runs vapp related tests
+           * vdc:        Runs vdc related tests
+           * vm:         Runs vm related tests
 
         Examples:
 
-        go test -tags gocheck -check.vv -timeout=45m .
+        go test -tags functional -check.vv -timeout=45m .
         go test -tags catalog -check.vv -timeout=45m .
         go test -tags "query extension" -check.vv -timeout=45m .
 FAIL
@@ -138,6 +138,29 @@ This entity is initialized when the test starts. You can assume that the variabl
 
 The `check` variable is our interface with the `check.v1` package. We can do several things with it, such as skipping a test, probing a condition, declare success or failure, and more.
 
+
+### Adding build tags.
+
+All tests need to have a build tag. The tag should be the first line of the file, followed by a blank line
+
+```go
+// +build functional featurename ALL
+
+package govcd
+```
+
+Tests that integrate in the existing suite use the tag `functional`. Using that tag, we can run all functional tests at once.
+The build tag line should also contain the tag `ALL` which will run all the tests, non only the functional suite. This includes tests that may use a different framework.
+Finally, each test file needs a tag for the feature we are testing, such as `catalog`, `vapp`, `network`, and so on. This allows us to run tests for a single feature without having to use complex regular expressions to match all wanted function names. A feature tag can be shared among several files (for example, catalog and catalog item tests both run under the `catalog` tag).
+
+If the test file defines a new function tag (i.e. one that has not been used before) the file should also implement an `init` function that sets the tag in the global tag list.
+This information is used by the main tag test in `api_test.go` to determine which tags were activated.
+
+```go
+func init() {
+	testingTags["newtag"] = "filename_test.go"
+}
+```
 
 ### Basic test function organization.
 

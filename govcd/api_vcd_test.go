@@ -1,4 +1,4 @@
-// +build api gocheck catalog vapp network org query extension task vm vdc system disk ALL
+// +build api functional catalog vapp network org query extension task vm vdc system disk ALL
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
