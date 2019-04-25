@@ -149,11 +149,28 @@ All tests need to have a build tag. The tag should be the first line of the file
 package govcd
 ```
 
-Tests that integrate in the existing suite use the tag `functional`. Using that tag, we can run all functional tests at once.
-The build tag line should also contain the tag `ALL` which will run all the tests, non only the functional suite. This includes tests that may use a different framework.
-Finally, each test file needs a tag for the feature we are testing, such as `catalog`, `vapp`, `network`, and so on. This allows us to run tests for a single feature without having to use complex regular expressions to match all wanted function names. A feature tag can be shared among several files (for example, catalog and catalog item tests both run under the `catalog` tag).
+Tests that integrate in the functional suite use the tag `functional`. Using that tag, we can run all functional tests
+at once.
+We define as `functional` the tests that need a live vCD to run.
 
-If the test file defines a new function tag (i.e. one that has not been used before) the file should also implement an `init` function that sets the tag in the global tag list.
+Note that as of today (April 2019) we only have functional tests, but we plan to add more, which can be, for example,
+`unit` tests (will test internal assumptions without using a vCD), or tests that take much time (such as performance,
+endurance, or memory leakage) or require repeated tests over a long period. For this reason, the set of tests that we
+want to run always is the functional suite. For everything else we need to decide whether it's safe or desirable to run
+them together or separately.
+
+The build tag line should also contain the tag `ALL` which will run all the tests, non only the functional suite.
+This includes tests that use a different framework. At the moment, this is useful to run a global compilation test.
+Depending on which additional tests we will implement, we may change the dependency on the `ALL` tag if we detect
+clashes between frameworks.
+
+Finally, each test file needs a tag for the feature we are testing, such as `catalog`, `vapp`, `network`, and so on.
+This allows us to run tests for a single feature without having to use complex regular expressions to match all wanted
+function names. A feature tag can be shared among several files (for example, catalog and catalog item tests both run
+under the `catalog` tag).
+
+If the test file defines a new feature tag (i.e. one that has not been used before) the file should also implement an
+`init` function that sets the tag in the global tag list.
 This information is used by the main tag test in `api_test.go` to determine which tags were activated.
 
 ```go
