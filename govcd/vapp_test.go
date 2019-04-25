@@ -1,3 +1,5 @@
+// +build vapp gocheck ALL
+
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
@@ -24,60 +26,6 @@ func (vcd *TestVCD) TestGetParentVDC(check *C) {
 
 	check.Assert(err, IsNil)
 	check.Assert(vdc.Vdc.Name, Equals, vcd.vdc.Vdc.Name)
-}
-
-func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
-	// Populate OrgVDCNetwork
-	networks := []*types.OrgVDCNetwork{}
-	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network)
-	if err != nil {
-		return VApp{}, fmt.Errorf("error finding network : %v", err)
-	}
-	networks = append(networks, net.OrgVDCNetwork)
-	// Populate Catalog
-	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
-	if err != nil || cat == (Catalog{}) {
-		return VApp{}, fmt.Errorf("error finding catalog : %v", err)
-	}
-	// Populate Catalog Item
-	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
-	if err != nil {
-		return VApp{}, fmt.Errorf("error finding catalog item : %v", err)
-	}
-	// Get VAppTemplate
-	vapptemplate, err := catitem.GetVAppTemplate()
-	if err != nil {
-		return VApp{}, fmt.Errorf("error finding vapptemplate : %v", err)
-	}
-	// Get StorageProfileReference
-	storageprofileref, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
-	if err != nil {
-		return VApp{}, fmt.Errorf("error finding storage profile: %v", err)
-	}
-	// Compose VApp
-	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, name, "description", true)
-	if err != nil {
-		return VApp{}, fmt.Errorf("error composing vapp: %v", err)
-	}
-	// After a successful creation, the entity is added to the cleanup list.
-	// If something fails after this point, the entity will be removed
-	AddToCleanupList(name, "vapp", "", "createTestVapp")
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return VApp{}, fmt.Errorf("error composing vapp: %v", err)
-	}
-	// Get VApp
-	vapp, err := vcd.vdc.FindVAppByName(name)
-	if err != nil {
-		return VApp{}, fmt.Errorf("error getting vapp: %v", err)
-	}
-
-	err = vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
-	if err != nil {
-		return VApp{}, fmt.Errorf("error waitinf for created test vApp to have working state: %s", err)
-	}
-
-	return vapp, err
 }
 
 // Tests Powering On and Powering Off a VApp. Also tests Deletion
@@ -518,4 +466,8 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedNetwork(check *C) {
 		}
 	}
 	check.Assert(isExist, Equals, false)
+}
+
+func init() {
+	testingTags["vapp"] = "vapp_test.go"
 }

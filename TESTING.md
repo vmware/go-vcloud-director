@@ -23,7 +23,7 @@ To run tests with go use these commands:
 
 ```bash
 cd govcd
-go test -check.v .
+go test -tags "gocheck" -check.v .
 ```
 
 If you want to see more details during the test run, use `-check.vv` instead of `-check.v`.
@@ -39,6 +39,55 @@ To run a specific test:
 ```bash
 cd govcd
 go test -check.f Test_SetOvf -check.vv .
+```
+
+The tests can run with several tags that define which components are tested.
+Using the Makefile, you can run one of the following:
+
+```bash
+make testcatalog
+make testnetwork
+make testvapp
+```
+
+For more options, you can run manually in `./govcd`
+When running `go test` without tags, we'll get a list of tags that are available.
+
+```bash
+$ go test -v .
+=== RUN   TestTags
+--- FAIL: TestTags (0.00s)
+    api_test.go:59: # No tags were defined
+    api_test.go:46:
+        # -----------------------------------------------------
+        # Tags are required to run the tests
+        # -----------------------------------------------------
+
+        At least one of the following tags should be defined:
+
+           * ALL :      Runs all the tests
+           * gocheck:   Runs all the tests that use check.v1
+           * gotest:    Runs unit tests that do not need a live vCD
+
+           * catalog:   Runs catalog related tests (also catalog_item, media)
+           * disk:      Runs disk related tests
+           * extension: Runs extension related tests
+           * network:   Runs network and edge gateway related tests
+           * org:       Runs org related tests
+           * query:     Runs query related tests
+           * system:    Runs system related tests
+           * task:      Runs task related tests
+           * vapp:      Runs vapp related tests
+           * vdc:       Runs vdc related tests
+           * vm:        Runs vm related tests
+
+        Examples:
+
+        go test -tags gocheck -check.vv -timeout=45m .
+        go test -tags catalog -check.vv -timeout=45m .
+        go test -tags "query extension" -check.vv -timeout=45m .
+FAIL
+FAIL	github.com/vmware/go-vcloud-director/v2/govcd	0.011s
 ```
 
 To run tests with `concurency` build tag (omitted by default) and Go race detector:

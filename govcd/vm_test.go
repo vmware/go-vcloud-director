@@ -1,3 +1,5 @@
+// +build vm gocheck ALL
+
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  * Copyright 2016 Skyscape Cloud Services.  All rights reserved.  Licensed under the Apache v2 License.
@@ -861,4 +863,8 @@ func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
 	check.Assert(err, IsNil)
 	vmStatus, err = vm.GetStatus()
 	check.Assert(vmStatus, Equals, "POWERED_OFF")
+}
+
+func init() {
+	testingTags["vm"] = "vm_test.go"
 }

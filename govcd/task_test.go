@@ -1,3 +1,5 @@
+// +build task gocheck ALL
+
 /*
  * Copyright 2018 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
@@ -23,3 +25,7 @@ func (vcd *TestVCD) Test_WaitTaskCompletion(check *C) {
 
 }
 */
+
+func init() {
+	testingTags["task"] = "task_test.go"
+}

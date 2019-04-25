@@ -1,3 +1,5 @@
+// +build system gocheck ALL
+
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
@@ -104,3 +106,7 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 var INVALID_NAME = `*******************************************INVALID
 					****************************************************
 					************************`
+
+func init() {
+	testingTags["system"] = "system_test.go"
+}
