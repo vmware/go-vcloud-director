@@ -153,13 +153,13 @@ Tests that integrate in the functional suite use the tag `functional`. Using tha
 at once.
 We define as `functional` the tests that need a live vCD to run.
 
-Note that as of today (April 2019) we only have functional tests, but we plan to add more, which can be, for example,
+Note that as of today we only have functional tests, but we plan to add more, which can be, for example,
 `unit` tests (will test internal assumptions without using a vCD), or tests that take much time (such as performance,
 endurance, or memory leakage) or require repeated tests over a long period. For this reason, the set of tests that we
 want to run always is the functional suite. For everything else we need to decide whether it's safe or desirable to run
 them together or separately.
 
-The build tag line should also contain the tag `ALL` which will run all the tests, non only the functional suite.
+The build tag line should also contain the tag `ALL` which will run all the tests, not only the functional suite.
 This includes tests that use a different framework. At the moment, this is useful to run a global compilation test.
 Depending on which additional tests we will implement, we may change the dependency on the `ALL` tag if we detect
 clashes between frameworks.
