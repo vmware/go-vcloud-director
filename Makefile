@@ -12,6 +12,10 @@ test: fmtcheck
 testrace:
 	@go list $(TEST) | xargs -n1 go test -race $(TESTARGS)
 
+# This will include tests guarded by build tag concurrent with race detector
+testconcurrent:
+	cd govcd && go test -race -tags "concurrent" -check.vv -check.f "Test.*Concurrent" .
+
 # vet runs the Go source code static analysis tool `vet` to find
 # any common errors.
 vet:

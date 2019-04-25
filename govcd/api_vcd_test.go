@@ -293,8 +293,6 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 			fmt.Printf("%v", err)
 			vcd.skipVappTests = true
 		}
-		// After a successful creation, the vApp is added to the cleanup list
-		AddToCleanupList(TestSetUpSuite, "vapp", "", "SetUpSuite")
 	} else {
 		vcd.skipVappTests = true
 		fmt.Printf("Skipping all vapp tests because one of the following wasn't given: Network, StorageProfile, Catalog, Catalogitem")
