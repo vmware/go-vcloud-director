@@ -1116,7 +1116,6 @@ func (vcd *TestVCD) Test_updateNicParameters_singleNIC(check *C) {
 			"orgnetwork":         "multinic-net",
 			"ip_allocation_mode": "",
 			"ip":                 "dhcp",
-			"is_primary":         true,
 		},
 	}
 
@@ -1125,7 +1124,6 @@ func (vcd *TestVCD) Test_updateNicParameters_singleNIC(check *C) {
 			"orgnetwork":         "multinic-net",
 			"ip_allocation_mode": "",
 			"ip":                 "allocated",
-			"is_primary":         true,
 		},
 	}
 
@@ -1134,7 +1132,6 @@ func (vcd *TestVCD) Test_updateNicParameters_singleNIC(check *C) {
 			"orgnetwork":         "multinic-net",
 			"ip_allocation_mode": "",
 			"ip":                 "none",
-			"is_primary":         true,
 		},
 	}
 
@@ -1143,7 +1140,6 @@ func (vcd *TestVCD) Test_updateNicParameters_singleNIC(check *C) {
 			"orgnetwork":         "multinic-net",
 			"ip_allocation_mode": "",
 			"ip":                 "1.1.1.1",
-			"is_primary":         true,
 		},
 	}
 
