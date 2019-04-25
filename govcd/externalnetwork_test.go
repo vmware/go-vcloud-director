@@ -6,31 +6,29 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 	"net/url"
-
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 // Retrieves an external network and checks that its contents are filled as expected
-func (vcd *TestVCD) Test_GetExternalNetwork(check *C) {
+func (vcd *TestVCD) Test_ExternalNetworkGetByName(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
-	if vcd.skipAdminTests {
-		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+
+	if vcd.config.VCD.ExternalNetwork == "" {
+		check.Skip("Test_GetByName: External network isn't configured. Test can't proceed")
 	}
-	networkName := vcd.config.VCD.ExternalNetwork
-	if networkName == "" {
-		check.Skip("No external network provided")
-	}
-	externalNetwork, err := GetExternalNetworkByName(vcd.client, networkName)
+
+	externalNetwork := NewExternalNetwork(&vcd.client.Client)
+	err := externalNetwork.GetByName(vcd.config.VCD.ExternalNetwork)
 	check.Assert(err, IsNil)
-	LogExternalNetwork(*externalNetwork)
-	check.Assert(externalNetwork.HREF, Not(Equals), "")
-	check.Assert(externalNetwork.Name, Equals, networkName)
-	check.Assert(externalNetwork.Type, Equals, types.MimeExtensionNetwork)
+
+	check.Assert(externalNetwork.ExternalNetwork.Name, Equals, vcd.config.VCD.ExternalNetwork)
 }
 
-func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
+// Tests System function Delete by creating external network and
+// deleting it after.
+func (vcd *TestVCD) Test_ExternalNetworkDelete(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip("Configuration org != 'System'")
 	}
@@ -49,7 +47,7 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 		check.Skip(fmt.Sprintf("No port group found with name '%s'", vcd.config.VCD.ExternalNetworkPortGroup))
 	}
 	if len(portGroups) > 1 {
-		check.Skip(fmt.Sprintf("More then one found with name '%s'", vcd.config.VCD.ExternalNetworkPortGroup))
+		check.Skip(fmt.Sprintf("More than one port group found with name '%s'", vcd.config.VCD.ExternalNetworkPortGroup))
 	}
 
 	externalNetwork := &types.ExternalNetwork{
@@ -97,21 +95,13 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	newExternalNetwork := NewExternalNetwork(&vcd.client.Client)
-	err = newExternalNetwork.GetByName(TestCreateExternalNetwork)
+	createdExternalNetwork, err := GetExternalNetwork(vcd.client, externalNetwork.Name)
 	check.Assert(err, IsNil)
-	check.Assert(newExternalNetwork.ExternalNetwork.Name, Equals, TestCreateExternalNetwork)
 
-	ipScope := newExternalNetwork.ExternalNetwork.Configuration.IPScopes.IPScope
-	check.Assert(ipScope.Gateway, Equals, "192.168.201.1")
-	check.Assert(ipScope.Netmask, Equals, "255.255.255.0")
-	check.Assert(ipScope.DNS1, Equals, "192.168.202.253")
-	check.Assert(ipScope.DNS2, Equals, "192.168.202.254")
+	err = createdExternalNetwork.DeleteWait()
+	check.Assert(err, IsNil)
 
-	check.Assert(len(ipScope.IPRanges.IPRange), Equals, 1)
-	ipRange := ipScope.IPRanges.IPRange[0]
-	check.Assert(ipRange.StartAddress, Equals, "192.168.201.3")
-	check.Assert(ipRange.EndAddress, Equals, "192.168.201.250")
-
-	check.Assert(newExternalNetwork.ExternalNetwork.Configuration.FenceMode, Equals, "isolated")
+	// check through existing catalogItems
+	_, err = GetExternalNetwork(vcd.client, externalNetwork.Name)
+	check.Assert(err, ErrorMatches, "external network.*not found")
 }

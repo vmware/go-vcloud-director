@@ -5,15 +5,15 @@
 package govcd
 
 import (
-	"errors"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/http"
 )
 
+// DEPRECATED please use GetExternalNetwork function instead
 func GetExternalNetworkByName(vcdClient *VCDClient, networkName string) (*types.ExternalNetworkReference, error) {
 	extNetworkRefs := &types.ExternalNetworkReferences{}
 
-	extNetworkHREF, err := getExternalNetworkHref(vcdClient)
+	extNetworkHREF, err := getExternalNetworkHref(&vcdClient.Client)
 	if err != nil {
 		return &types.ExternalNetworkReference{}, err
 	}
@@ -33,28 +33,33 @@ func GetExternalNetworkByName(vcdClient *VCDClient, networkName string) (*types.
 	return &types.ExternalNetworkReference{}, nil
 }
 
-func getExternalNetworkHref(vcdClient *VCDClient) (string, error) {
-	extensions, err := getExtension(vcdClient)
-	if err != nil {
-		return "", err
-	}
-
-	for _, extensionLink := range extensions.Link {
-		if extensionLink.Type == "application/vnd.vmware.admin.vmwExternalNetworkReferences+xml" {
-			return extensionLink.HREF, nil
-		}
-	}
-
-	return "", errors.New("external network link isn't found")
+func GetExternalNetwork(vcdClient *VCDClient, networkName string) (*ExternalNetwork, error) {
+	externalNetwork := NewExternalNetwork(&vcdClient.Client)
+	err := externalNetwork.GetByName(networkName)
+	return externalNetwork, err
 }
 
-func getExtension(vcdClient *VCDClient) (*types.Extension, error) {
+func CreateExternalNetwork(vcdClient *VCDClient, externalNetwork *types.ExternalNetwork) (Task, error) {
+	err := validateExternalNetwork(externalNetwork)
+	if err != nil {
+		return Task{}, err
+	}
+
+	externalNetHREF := vcdClient.Client.VCDHREF
+	externalNetHREF.Path += "/admin/extension/externalnets"
+
+	// Return the task
+	return vcdClient.Client.ExecuteTaskRequest(externalNetHREF.String(), http.MethodPost,
+		types.MimeExternalNetwork, "error instantiating a new ExternalNetwork: %s", externalNetwork)
+}
+
+func getExtension(client *Client) (*types.Extension, error) {
 	extensions := &types.Extension{}
 
-	extensionHREF := vcdClient.Client.VCDHREF
+	extensionHREF := client.VCDHREF
 	extensionHREF.Path += "/admin/extension/"
 
-	_, err := vcdClient.Client.ExecuteRequest(extensionHREF.String(), http.MethodGet,
+	_, err := client.ExecuteRequest(extensionHREF.String(), http.MethodGet,
 		"", "error retrieving extension: %s", nil, extensions)
 
 	return extensions, err

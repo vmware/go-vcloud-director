@@ -7,6 +7,7 @@ package govcd
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -107,4 +108,40 @@ func getOrgHREF(vcdClient *VCDClient, orgName string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("couldn't find org with name: %s. Please check Org name as it is case sensitive", orgName)
+}
+
+// Find a list of Virtual Centers matching the filter parameter.
+func QueryVirtualCenters(vdcCli *VCDClient, filter string) ([]*types.QueryResultVirtualCenterRecordType, error) {
+	results, err := vdcCli.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "virtualCenter",
+		"filter": filter,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return results.Results.VirtualCenterRecord, nil
+}
+
+// Find a Network port groups by name
+func QueryNetworkPortGroups(vdcCli *VCDClient, name string) ([]*types.PortGroupRecordType, error) {
+	return QueryPortGroups(vdcCli, fmt.Sprintf("(name==%s;portgroupType==%s)", url.QueryEscape(name), "NETWORK"))
+}
+
+// Find a Distributed port groups by name
+func QueryDistributedPortGroups(vdcCli *VCDClient, name string) ([]*types.PortGroupRecordType, error) {
+	return QueryPortGroups(vdcCli, fmt.Sprintf("(name==%s;portgroupType==%s)", url.QueryEscape(name), "DV_PORTGROUP"))
+}
+
+// Find a list of Port groups matching the filter parameter.
+func QueryPortGroups(vdcCli *VCDClient, filter string) ([]*types.PortGroupRecordType, error) {
+	results, err := vdcCli.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "portgroup",
+		"filter": filter,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return results.Results.PortGroupRecord, nil
 }
