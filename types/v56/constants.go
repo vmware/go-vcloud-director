@@ -92,7 +92,7 @@ const (
 	MimeMetaDataValue = "application/vnd.vmware.vcloud.metadata.value+xml"
 	// Mime for a admin network
 	MimeExtensionNetwork = "application/vnd.vmware.admin.extension.network+xml"
-	// Mime for for a external network
+	// Mime for a external network
 	MimeExternalNetwork = "application/vnd.vmware.admin.vmwexternalnet+xml"
 )
 

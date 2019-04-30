@@ -2,6 +2,7 @@
 
 FEATURES:
 
+* Added external network get/create/delete functions
 * Added metadata add/remove functions to VM.
 * Added ability to do vCD version checks and comparison [#174](https://github.com/vmware/go-vcloud-director/pull/174)
 using VCDClient.APIVCDMaxVersionIs(string) and VCDClient.APIClientVersionIs(string).
