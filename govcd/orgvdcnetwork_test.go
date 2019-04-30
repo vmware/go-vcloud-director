@@ -60,7 +60,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkEGW(check *C) {
 		Configuration: &types.NetworkConfiguration{
 			FenceMode: types.FenceModeNAT,
 			IPScopes: &types.IPScopes{
-				IPScope: types.IPScope{
+				IPScope: []*types.IPScope{&types.IPScope{
 					IsInherited: false,
 					Gateway:     "10.10.102.1",
 					Netmask:     "255.255.255.0",
@@ -72,7 +72,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkEGW(check *C) {
 						},
 					},
 				},
-			},
+				}},
 			BackwardCompatibilityMode: true,
 		},
 		EdgeGateway: &types.Reference{
@@ -119,7 +119,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkIso(check *C) {
 			  https://code.vmware.com/apis/287/vcloud#/doc/doc/types/OrgVdcNetworkType.html
 			*/
 			IPScopes: &types.IPScopes{
-				IPScope: types.IPScope{
+				IPScope: []*types.IPScope{&types.IPScope{
 					IsInherited: false,
 					Gateway:     "192.168.2.1",
 					Netmask:     "255.255.255.0",
@@ -134,7 +134,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkIso(check *C) {
 						},
 					},
 				},
-			},
+				}},
 			BackwardCompatibilityMode: true,
 		},
 		IsShared: false,

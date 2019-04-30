@@ -6,10 +6,10 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 	"net/url"
-
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"time"
 )
 
 // Retrieves an external network and checks that its contents are filled as expected
@@ -60,11 +60,12 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 		Configuration: &types.NetworkConfiguration{
 			Xmlns: types.XMLNamespaceVCloud,
 			IPScopes: &types.IPScopes{
-				IPScope: types.IPScope{
-					Gateway: "192.168.201.1",
-					Netmask: "255.255.255.0",
-					DNS1:    "192.168.202.253",
-					DNS2:    "192.168.202.254",
+				IPScope: []*types.IPScope{&types.IPScope{
+					Gateway:   "192.168.201.1",
+					Netmask:   "255.255.255.0",
+					DNS1:      "192.168.202.253",
+					DNS2:      "192.168.202.254",
+					DNSSuffix: "some.net",
 					IPRanges: &types.IPRanges{
 						IPRange: []*types.IPRange{
 							&types.IPRange{
@@ -74,7 +75,7 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 						},
 					},
 				},
-			},
+				}},
 			FenceMode: "isolated",
 		},
 		VimPortGroupRefs: &types.VimObjectRefs{
@@ -91,7 +92,6 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	}
 	task, err := CreateExternalNetwork(vcd.client, externalNetwork)
 	check.Assert(err, IsNil)
-	AddToCleanupList(externalNetwork.Name, "externalNetwork", "", "Test_CreateExternalNetwork")
 	check.Assert(task, Not(Equals), Task{})
 
 	err = task.WaitTaskCompletion()
@@ -103,15 +103,35 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	check.Assert(newExternalNetwork.ExternalNetwork.Name, Equals, TestCreateExternalNetwork)
 
 	ipScope := newExternalNetwork.ExternalNetwork.Configuration.IPScopes.IPScope
-	check.Assert(ipScope.Gateway, Equals, "192.168.201.1")
-	check.Assert(ipScope.Netmask, Equals, "255.255.255.0")
-	check.Assert(ipScope.DNS1, Equals, "192.168.202.253")
-	check.Assert(ipScope.DNS2, Equals, "192.168.202.254")
+	check.Assert(ipScope[0].Gateway, Equals, "192.168.201.1")
+	check.Assert(ipScope[0].Netmask, Equals, "255.255.255.0")
+	check.Assert(ipScope[0].DNS1, Equals, "192.168.202.253")
+	check.Assert(ipScope[0].DNS2, Equals, "192.168.202.254")
+	check.Assert(ipScope[0].DNSSuffix, Equals, "some.net")
 
-	check.Assert(len(ipScope.IPRanges.IPRange), Equals, 1)
-	ipRange := ipScope.IPRanges.IPRange[0]
+	check.Assert(len(ipScope[0].IPRanges.IPRange), Equals, 1)
+	ipRange := ipScope[0].IPRanges.IPRange[0]
 	check.Assert(ipRange.StartAddress, Equals, "192.168.201.3")
 	check.Assert(ipRange.EndAddress, Equals, "192.168.201.250")
 
 	check.Assert(newExternalNetwork.ExternalNetwork.Configuration.FenceMode, Equals, "isolated")
+
+	// Needs to be deleted as port group used by other tests
+	// Workaround to refresh until task is fully completed - as task wait isn't enough
+	// Task still exists and creates NETWORK_DELETE error, so we wait until disappears
+	for i := 0; i < 30; i++ {
+		err = newExternalNetwork.Refresh()
+		check.Assert(err, IsNil)
+		if len(newExternalNetwork.ExternalNetwork.Tasks.Task) == 0 {
+			break
+		} else {
+			time.Sleep(1 * time.Second)
+		}
+	}
+
+	err = newExternalNetwork.DeleteWait()
+	if err != nil {
+		AddToCleanupList(externalNetwork.Name, "externalNetwork", "", "Test_CreateExternalNetwork")
+	}
+	check.Assert(err, IsNil)
 }

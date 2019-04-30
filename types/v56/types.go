@@ -192,7 +192,7 @@ type SubAllocation struct {
 // Description: Represents a list of IP scopes.
 // Since: 5.1
 type IPScopes struct {
-	IPScope IPScope `xml:"IpScope"` // IP scope.
+	IPScope []*IPScope `xml:"IpScope"` // IP scope.
 }
 
 // NetworkConfiguration is the configuration applied to a network. This is an abstract base type.

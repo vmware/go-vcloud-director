@@ -111,8 +111,8 @@ func getOrgHREF(vcdClient *VCDClient, orgName string) (string, error) {
 }
 
 // Find a list of Virtual Centers matching the filter parameter.
-func QueryVirtualCenters(vdcCli *VCDClient, filter string) ([]*types.QueryResultVirtualCenterRecordType, error) {
-	results, err := vdcCli.QueryWithNotEncodedParams(nil, map[string]string{
+func QueryVirtualCenters(vcdClient *VCDClient, filter string) ([]*types.QueryResultVirtualCenterRecordType, error) {
+	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":   "virtualCenter",
 		"filter": filter,
 	})

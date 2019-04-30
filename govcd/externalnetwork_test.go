@@ -9,6 +9,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 	"net/url"
+	"time"
 )
 
 // Retrieves an external network and checks that its contents are filled as expected
@@ -51,14 +52,14 @@ func (vcd *TestVCD) Test_ExternalNetworkDelete(check *C) {
 	}
 
 	externalNetwork := &types.ExternalNetwork{
-		Name:        TestCreateExternalNetwork,
+		Name:        TestDeleteExternalNetwork,
 		Description: "Test Create External Network",
 		Xmlns:       types.XMLNamespaceExtension,
 		XmlnsVCloud: types.XMLNamespaceVCloud,
 		Configuration: &types.NetworkConfiguration{
 			Xmlns: types.XMLNamespaceVCloud,
 			IPScopes: &types.IPScopes{
-				IPScope: types.IPScope{
+				IPScope: []*types.IPScope{&types.IPScope{
 					Gateway: "192.168.201.1",
 					Netmask: "255.255.255.0",
 					DNS1:    "192.168.202.253",
@@ -72,7 +73,7 @@ func (vcd *TestVCD) Test_ExternalNetworkDelete(check *C) {
 						},
 					},
 				},
-			},
+				}},
 			FenceMode: "isolated",
 		},
 		VimPortGroupRefs: &types.VimObjectRefs{
@@ -89,7 +90,6 @@ func (vcd *TestVCD) Test_ExternalNetworkDelete(check *C) {
 	}
 	task, err := CreateExternalNetwork(vcd.client, externalNetwork)
 	check.Assert(err, IsNil)
-	AddToCleanupList(externalNetwork.Name, "externalNetwork", "", "Test_CreateExternalNetwork")
 	check.Assert(task, Not(Equals), Task{})
 
 	err = task.WaitTaskCompletion()
@@ -98,7 +98,22 @@ func (vcd *TestVCD) Test_ExternalNetworkDelete(check *C) {
 	createdExternalNetwork, err := GetExternalNetwork(vcd.client, externalNetwork.Name)
 	check.Assert(err, IsNil)
 
+	// Workaround to refresh until task is fully completed - as task wait isn't enough
+	// Task still exists and creates NETWORK_DELETE error, so we wait until disappears
+	for i := 0; i < 30; i++ {
+		err = createdExternalNetwork.Refresh()
+		check.Assert(err, IsNil)
+		if len(createdExternalNetwork.ExternalNetwork.Tasks.Task) == 0 {
+			break
+		} else {
+			time.Sleep(1 * time.Second)
+		}
+	}
+
 	err = createdExternalNetwork.DeleteWait()
+	if err != nil {
+		AddToCleanupList(externalNetwork.Name, "externalNetwork", "", "Test_CreateExternalNetwork")
+	}
 	check.Assert(err, IsNil)
 
 	// check through existing catalogItems
