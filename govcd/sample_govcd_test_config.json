@@ -34,7 +34,8 @@
 		"internalIp": "192.168.1.10",
 		"internalNetmask": "255.255.255.0",
 		"externalNetwork": "myexternalnet",
-		"externalNetworkPortGroup": "VMNetwork",
+    "//": "A port group name for creating an external network",
+		"externalNetworkPortGroup": "ForTestingPG",
     "externalNetworkPortGroupType": "NETWORK",
 		"vimServer": "vc9",
         "disk": {

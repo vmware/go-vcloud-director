@@ -78,7 +78,7 @@ vcd:
     externalNetwork: myexternalnet
     #
     # A port group name for creating an external network
-    externalNetworkPortGroup: dvportgroup-175
+    externalNetworkPortGroup: ForTestingPG
     #
     # A port group type for creating an external network. Can be DV_PORTGROUP or NETWORK
     externalNetworkPortGroupType: NETWORK
