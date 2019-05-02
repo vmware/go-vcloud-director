@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/http"
 )
@@ -40,6 +41,11 @@ func GetExternalNetwork(vcdClient *VCDClient, networkName string) (*ExternalNetw
 }
 
 func CreateExternalNetwork(vcdClient *VCDClient, externalNetwork *types.ExternalNetwork) (Task, error) {
+
+	if !vcdClient.Client.IsSysAdmin {
+		return Task{}, fmt.Errorf("functionality requires system administrator privileges")
+	}
+
 	err := validateExternalNetwork(externalNetwork)
 	if err != nil {
 		return Task{}, err

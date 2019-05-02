@@ -31,8 +31,9 @@ func (vcd *TestVCD) Test_GetExternalNetwork(check *C) {
 }
 
 func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
 	if vcd.skipAdminTests {
-		check.Skip("Configuration org != 'System'")
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
 	virtualCenters, err := QueryVirtualCenters(vcd.client, fmt.Sprintf("(name==%s)", vcd.config.VCD.VimServer))
@@ -122,7 +123,7 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	for i := 0; i < 30; i++ {
 		err = newExternalNetwork.Refresh()
 		check.Assert(err, IsNil)
-		if len(newExternalNetwork.ExternalNetwork.Tasks.Task) == 0 {
+		if newExternalNetwork.ExternalNetwork.Tasks != nil && len(newExternalNetwork.ExternalNetwork.Tasks.Task) == 0 {
 			break
 		} else {
 			time.Sleep(1 * time.Second)

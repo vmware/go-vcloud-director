@@ -15,6 +15,9 @@ import (
 // Retrieves an external network and checks that its contents are filled as expected
 func (vcd *TestVCD) Test_ExternalNetworkGetByName(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
 
 	if vcd.config.VCD.ExternalNetwork == "" {
 		check.Skip("Test_GetByName: External network isn't configured. Test can't proceed")
@@ -30,8 +33,9 @@ func (vcd *TestVCD) Test_ExternalNetworkGetByName(check *C) {
 // Tests System function Delete by creating external network and
 // deleting it after.
 func (vcd *TestVCD) Test_ExternalNetworkDelete(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
 	if vcd.skipAdminTests {
-		check.Skip("Configuration org != 'System'")
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
 	virtualCenters, err := QueryVirtualCenters(vcd.client, fmt.Sprintf("(name==%s)", vcd.config.VCD.VimServer))
@@ -103,7 +107,7 @@ func (vcd *TestVCD) Test_ExternalNetworkDelete(check *C) {
 	for i := 0; i < 30; i++ {
 		err = createdExternalNetwork.Refresh()
 		check.Assert(err, IsNil)
-		if len(createdExternalNetwork.ExternalNetwork.Tasks.Task) == 0 {
+		if createdExternalNetwork.ExternalNetwork.Tasks != nil && len(createdExternalNetwork.ExternalNetwork.Tasks.Task) == 0 {
 			break
 		} else {
 			time.Sleep(1 * time.Second)
