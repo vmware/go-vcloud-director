@@ -1,7 +1,7 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- * Copyright 2016 Skyscape Cloud Services.  All rights reserved.  Licensed under the Apache v2 License.
- */
+* Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+* Copyright 2016 Skyscape Cloud Services.  All rights reserved.  Licensed under the Apache v2 License.
+*/
 
 package govcd
 
@@ -899,7 +899,7 @@ func (vcd *TestVCD) Test_VMChangeNetworkConfig(check *C) {
 		n["ip"] = endAddress
 		n["ip_allocation_mode"] = "MANUAL"
 		n["is_primary"] = true
-		n["orgnetwork"] = net.OrgVDCNetwork.Name
+		n["network_name"] = net.OrgVDCNetwork.Name
 
 		nets = append(nets, n)
 
@@ -965,7 +965,7 @@ func (vcd *TestVCD) Test_VMChangeNetworkConfig(check *C) {
 			if index == 0 {
 				n["is_primary"] = true
 			}
-			n["orgnetwork"] = net.OrgVDCNetwork.Name
+			n["network_name"] = net.OrgVDCNetwork.Name
 
 			// Add missing networks before continue changing them
 			task, err := vapp.AppendNetworkConfig(net.OrgVDCNetwork)
@@ -1014,13 +1014,13 @@ func (vcd *TestVCD) Test_updateNicParameters_multiNIC(check *C) {
 	// Sample config which is rendered by .tf schema parsed
 	tfCfg := []map[string]interface{}{
 		map[string]interface{}{
-			"orgnetwork":         "multinic-net",
+			"network_name":         "multinic-net",
 			"ip_allocation_mode": "POOL",
 			"ip":                 "",
 			"is_primary":         false,
 		},
 		map[string]interface{}{
-			"orgnetwork":         "multinic-net",
+			"network_name":         "multinic-net",
 			"ip_allocation_mode": "DHCP",
 			"ip":                 "",
 			"is_primary":         true,
@@ -1028,7 +1028,7 @@ func (vcd *TestVCD) Test_updateNicParameters_multiNIC(check *C) {
 		map[string]interface{}{
 			"ip_allocation_mode": "NONE",
 		}, map[string]interface{}{
-			"orgnetwork":         "multinic-net2",
+			"network_name":         "multinic-net2",
 			"ip_allocation_mode": "MANUAL",
 			"ip":                 "1.1.1.1",
 			"is_primary":         false,
@@ -1109,7 +1109,7 @@ func (vcd *TestVCD) Test_updateNicParameters_multiNIC(check *C) {
 			check.Assert(tableTest.vcdConfig.NetworkConnection[loopIndex].IsConnected, Equals, true)
 			check.Assert(tableTest.vcdConfig.NetworkConnection[loopIndex].NeedsCustomization, Equals, true)
 			if tableTest.vcdConfig.NetworkConnection[loopIndex].IPAddressAllocationMode != types.IPAllocationModeNone {
-				check.Assert(tableTest.vcdConfig.NetworkConnection[loopIndex].Network, Equals, tableTest.tfConfig[nicSlot]["orgnetwork"].(string))
+				check.Assert(tableTest.vcdConfig.NetworkConnection[loopIndex].Network, Equals, tableTest.tfConfig[nicSlot]["network_name"].(string))
 			} else {
 				check.Assert(tableTest.vcdConfig.NetworkConnection[loopIndex].Network, Equals, "none")
 			}
@@ -1128,35 +1128,35 @@ func (vcd *TestVCD) Test_updateNicParameters_singleNIC(check *C) {
 
 	tfCfgDHCP := []map[string]interface{}{
 		map[string]interface{}{
-			"orgnetwork": "multinic-net",
+			"network_name": "multinic-net",
 			"ip":         "dhcp",
 		},
 	}
 
 	tfCfgAllocated := []map[string]interface{}{
 		map[string]interface{}{
-			"orgnetwork": "multinic-net",
+			"network_name": "multinic-net",
 			"ip":         "allocated",
 		},
 	}
 
 	tfCfgNone := []map[string]interface{}{
 		map[string]interface{}{
-			"orgnetwork": "multinic-net",
+			"network_name": "multinic-net",
 			"ip":         "none",
 		},
 	}
 
 	tfCfgManual := []map[string]interface{}{
 		map[string]interface{}{
-			"orgnetwork": "multinic-net",
+			"network_name": "multinic-net",
 			"ip":         "1.1.1.1",
 		},
 	}
 
 	tfCfgInvalidIp := []map[string]interface{}{
 		map[string]interface{}{
-			"orgnetwork": "multinic-net",
+			"network_name": "multinic-net",
 			"ip":         "invalidIp",
 		},
 	}
