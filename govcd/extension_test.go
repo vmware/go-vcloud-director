@@ -92,7 +92,7 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	}
 	task, err := CreateExternalNetwork(vcd.client, externalNetwork)
 	check.Assert(err, IsNil)
-	check.Assert(task, Not(Equals), Task{})
+	check.Assert(task.Task, Not(Equals), types.Task{})
 
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
