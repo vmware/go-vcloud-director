@@ -112,7 +112,7 @@ func (vcd *TestVCD) Test_ExternalNetworkDelete(check *C) {
 
 	err = createdExternalNetwork.DeleteWait()
 	if err != nil {
-		AddToCleanupList(externalNetwork.Name, "externalNetwork", "", "Test_CreateExternalNetwork")
+		AddToCleanupList(externalNetwork.Name, "externalNetwork", "", "Test_ExternalNetworkDelete")
 	}
 	check.Assert(err, IsNil)
 
