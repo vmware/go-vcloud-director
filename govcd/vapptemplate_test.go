@@ -1,3 +1,5 @@
+// +build vapp functional ALL
+
 /*
  * Copyright 2018 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */

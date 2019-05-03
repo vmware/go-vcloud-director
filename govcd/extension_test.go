@@ -1,3 +1,5 @@
+// +build extension functional ALL
+
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
@@ -27,4 +29,8 @@ func (vcd *TestVCD) Test_GetExternalNetwork(check *C) {
 	expectedType := "application/vnd.vmware.admin.extension.network+xml"
 	check.Assert(externalNetwork.Name, Equals, networkName)
 	check.Assert(externalNetwork.Type, Equals, expectedType)
+}
+
+func init() {
+	testingTags["extension"] = "extension_test.go"
 }
