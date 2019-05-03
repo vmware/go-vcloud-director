@@ -17,6 +17,7 @@ BREAKING CHANGES:
 IMPROVEMENTS:
 * Refactored code by introducing helper function to handle API calls. New functions ExecuteRequest, ExecuteTaskRequest, ExecuteRequestWithoutResponse
 * Add authorization request header for media file and catalog item upload
+* Tests files are now all tagged. Running them through Makefile works as before, but manual execution requires specific tags. Run `go test -v .` for tags list.
 
 ## 2.1.0 (March 21, 2019)
 

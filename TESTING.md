@@ -23,7 +23,7 @@ To run tests with go use these commands:
 
 ```bash
 cd govcd
-go test -check.v .
+go test -tags "functional" -check.v .
 ```
 
 If you want to see more details during the test run, use `-check.vv` instead of `-check.v`.
@@ -39,6 +39,56 @@ To run a specific test:
 ```bash
 cd govcd
 go test -check.f Test_SetOvf -check.vv .
+```
+
+The tests can run with several tags that define which components are tested.
+Using the Makefile, you can run one of the following:
+
+```bash
+make testcatalog
+make testnetwork
+make testvapp
+```
+
+For more options, you can run manually in `./govcd`
+When running `go test` without tags, we'll get a list of tags that are available.
+
+```bash
+$ go test -v .
+=== RUN   TestTags
+--- FAIL: TestTags (0.00s)
+    api_test.go:59: # No tags were defined
+    api_test.go:46:
+        # -----------------------------------------------------
+        # Tags are required to run the tests
+        # -----------------------------------------------------
+
+        At least one of the following tags should be defined:
+
+           * ALL :       Runs all the tests (== functional + unit == all feature tests)
+
+           * functional: Runs all the tests that use check.v1
+           * unit:       Runs unit tests that do not need a live vCD
+
+           * catalog:    Runs catalog related tests (also catalog_item, media)
+           * disk:       Runs disk related tests
+           * extension:  Runs extension related tests
+           * network:    Runs network and edge gateway related tests
+           * org:        Runs org related tests
+           * query:      Runs query related tests
+           * system:     Runs system related tests
+           * task:       Runs task related tests
+           * vapp:       Runs vapp related tests
+           * vdc:        Runs vdc related tests
+           * vm:         Runs vm related tests
+
+        Examples:
+
+        go test -tags functional -check.vv -timeout=45m .
+        go test -tags catalog -check.vv -timeout=45m .
+        go test -tags "query extension" -check.vv -timeout=45m .
+FAIL
+FAIL	github.com/vmware/go-vcloud-director/v2/govcd	0.011s
 ```
 
 To run tests with `concurency` build tag (omitted by default) and Go race detector:
@@ -89,6 +139,71 @@ This entity is initialized when the test starts. You can assume that the variabl
 
 The `check` variable is our interface with the `check.v1` package. We can do several things with it, such as skipping a test, probing a condition, declare success or failure, and more.
 
+
+### Adding build tags.
+
+All tests need to have a build tag. The tag should be the first line of the file, followed by a blank line
+
+```go
+// +build functional featurename ALL
+
+package govcd
+```
+
+Tests that integrate in the functional suite use the tag `functional`. Using that tag, we can run all functional tests
+at once.
+We define as `functional` the tests that need a live vCD to run.
+
+1. The test should always define the `ALL` tag:
+
+* ALL :       Runs all the tests
+
+2. The test should also always define either the `unit` or `functional` tag:
+
+* functional: Runs all the tests that use check.v1
+* unit:       Runs unit tests that do not need a live vCD
+
+3. Finally, the test should always define the feature tag. For example:
+
+* catalog:    Runs catalog related tests (also `catalog_item`, `media`)
+* disk:       Runs disk related tests
+
+The `ALL` tag includes tests that use a different framework. At the moment, this is useful to run a global compilation test.
+Depending on which additional tests we will implement, we may change the dependency on the `ALL` tag if we detect
+clashes between frameworks.
+
+If the test file defines a new feature tag (i.e. one that has not been used before) the file should also implement an
+`init` function that sets the tag in the global tag list.
+This information is used by the main tag test in `api_test.go` to determine which tags were activated.
+
+```go
+func init() {
+	testingTags["newtag"] = "filename_test.go"
+}
+```
+
+**VERY IMPORTANT**: if we add a test that runs using a different tag (i.e. it is not included in `functional` tests), we need
+to add such test to the Makefile under `make test`. **The general principle is that `make test` runs all tests**. If this can't be
+achieved by adding the new test to the `functional` tag (perhaps because we foresee framework conflicts), we need to add the
+new test as a separate command.
+For example:
+
+```
+test: fmtcheck
+	@echo "==> Running Tests"
+	cd govcd && \
+    go test -tags "MyNewTag" -timeout=10m -check.vv . && \ 
+	go test -tags "functional" -timeout=60m -check.vv .
+``` 
+
+or we can encapsulate a complex test into a self containing script.
+
+```
+test: fmtcheck
+	@echo "==> Running Tests"
+	./scripts/my_complicated_test.sh
+	cd govcd && go test -tags "functional" -timeout=60m -check.vv .
+``` 
 
 ### Basic test function organization.
 
