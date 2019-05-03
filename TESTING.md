@@ -65,7 +65,8 @@ $ go test -v .
 
         At least one of the following tags should be defined:
 
-           * ALL :       Runs all the tests
+           * ALL :       Runs all the tests (== functional + unit == all feature tests)
+
            * functional: Runs all the tests that use check.v1
            * unit:       Runs unit tests that do not need a live vCD
 
