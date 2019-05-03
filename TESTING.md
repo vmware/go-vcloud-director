@@ -154,21 +154,23 @@ Tests that integrate in the functional suite use the tag `functional`. Using tha
 at once.
 We define as `functional` the tests that need a live vCD to run.
 
-Note that as of today we only have functional tests, but we plan to add more, which can be, for example,
-`unit` tests (will test internal assumptions without using a vCD), or tests that take much time (such as performance,
-endurance, or memory leakage) or require repeated tests over a long period. For this reason, the set of tests that we
-want to run always is the functional suite. For everything else we need to decide whether it's safe or desirable to run
-them together or separately.
+1. The test should always define the `ALL` tag:
 
-The build tag line should also contain the tag `ALL` which will run all the tests, not only the functional suite.
-This includes tests that use a different framework. At the moment, this is useful to run a global compilation test.
+* ALL :       Runs all the tests
+
+2. The test should also always define either the `unit` or `functional` tag:
+
+* functional: Runs all the tests that use check.v1
+* unit:       Runs unit tests that do not need a live vCD
+
+3. Finally, the test should always define the feature tag. For example:
+
+* catalog:    Runs catalog related tests (also `catalog_item`, `media`)
+* disk:       Runs disk related tests
+
+The `ALL` tag includes tests that use a different framework. At the moment, this is useful to run a global compilation test.
 Depending on which additional tests we will implement, we may change the dependency on the `ALL` tag if we detect
 clashes between frameworks.
-
-Finally, each test file needs a tag for the feature we are testing, such as `catalog`, `vapp`, `network`, and so on.
-This allows us to run tests for a single feature without having to use complex regular expressions to match all wanted
-function names. A feature tag can be shared among several files (for example, catalog and catalog item tests both run
-under the `catalog` tag).
 
 If the test file defines a new feature tag (i.e. one that has not been used before) the file should also implement an
 `init` function that sets the tag in the global tag list.
@@ -181,7 +183,7 @@ func init() {
 ```
 
 **VERY IMPORTANT**: if we add a test that runs using a different tag (i.e. it is not included in `functional` tests), we need
-to add such test to the Makefile under `make test`. The general principle is that `make test` runs all tests. If this can't be
+to add such test to the Makefile under `make test`. **The general principle is that `make test` runs all tests**. If this can't be
 achieved by adding the new test to the `functional` tag (perhaps because we foresee framework conflicts), we need to add the
 new test as a separate command.
 For example:
