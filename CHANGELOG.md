@@ -16,6 +16,7 @@ BREAKING CHANGES:
 
 IMPROVEMENTS:
 * Refactored code by introducing helper function to handle API calls. New functions ExecuteRequest, ExecuteTaskRequest, ExecuteRequestWithoutResponse
+* Add authorization request header for media file and catalog item upload
 
 ## 2.1.0 (March 21, 2019)
 
