@@ -31,7 +31,8 @@ At least one of the following tags should be defined:
    * catalog:    Runs catalog related tests (also catalog_item, media)
    * disk:       Runs disk related tests
    * extension:  Runs extension related tests
-   * network:    Runs network and edge gateway related tests
+   * network:    Runs network related tests
+   * gateway:    Runs edge gateway related tests
    * org:        Runs org related tests
    * query:      Runs query related tests
    * system:     Runs system related tests
