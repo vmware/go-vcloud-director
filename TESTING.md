@@ -179,6 +179,29 @@ func init() {
 }
 ```
 
+**VERY IMPORTANT**: if we add a test that runs using a different tag (i.e. it is not included in `functional` tests), we need
+to add such test to the Makefile under `make test`. The general principle is that `make test` runs all tests. If this can't be
+achieved by adding the new test to the `functional` tag (perhaps because we foresee framework conflicts), we need to add the
+new test as a separate command.
+For example:
+
+```
+test: fmtcheck
+	@echo "==> Running Tests"
+	cd govcd && \
+    go test -tags "MyNewTag" -timeout=10m -check.vv . && \ 
+	go test -tags "functional" -timeout=60m -check.vv .
+``` 
+
+or we can encapsulate a complex test into a self containing script.
+
+```
+test: fmtcheck
+	@echo "==> Running Tests"
+	./scripts/my_complicated_test.sh
+	cd govcd && go test -tags "functional" -timeout=60m -check.vv .
+``` 
+
 ### Basic test function organization.
 
 Within the testing function, you should perform four actions:
