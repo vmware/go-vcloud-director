@@ -1,4 +1,4 @@
-// +build api functional catalog vapp network org query extension task vm vdc system disk ALL
+// +build api functional catalog vapp gateway network org query extension task vm vdc system disk ALL
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -297,9 +297,13 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		config.VCD.Catalog.Name != "" && config.VCD.Catalog.CatalogItem != "" {
 		vcd.vapp, err = vcd.createTestVapp(TestSetUpSuite)
 		// If no vApp is created, we skip all vApp tests
-		if vcd.vapp == (VApp{}) || err != nil {
-			fmt.Printf("%v", err)
-			vcd.skipVappTests = true
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			panic("Creation failed - Bailing out")
+		}
+		if vcd.vapp == (VApp{}) {
+			fmt.Printf("Creation of vApp %s failed unexpectedly. No error was reported, but vApp is empty\n", TestSetUpSuite)
+			panic("initial vApp is empty - bailing out")
 		}
 	} else {
 		vcd.skipVappTests = true
@@ -683,7 +687,7 @@ func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 
 	err = vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
 	if err != nil {
-		return VApp{}, fmt.Errorf("error waitinf for created test vApp to have working state: %s", err)
+		return VApp{}, fmt.Errorf("error waiting for created test vApp to have working state: %s", err)
 	}
 
 	return vapp, err
