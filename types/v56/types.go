@@ -249,6 +249,7 @@ type NetworkConfigSection struct {
 	Link          *Link                      `xml:"Link,omitempty"`
 	NetworkConfig []VAppNetworkConfiguration `xml:"NetworkConfig,omitempty"`
 }
+
 // NetworkNames allows to extract network names
 func (n NetworkConfigSection) NetworkNames() []string {
 	var list []string
