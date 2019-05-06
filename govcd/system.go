@@ -111,6 +111,9 @@ func getOrgHREF(vcdClient *VCDClient, orgName string) (string, error) {
 }
 
 // Find a list of Virtual Centers matching the filter parameter.
+// Filter constructing guide: https://pubs.vmware.com/vcloud-api-1-5/wwhelp/wwhimpl/js/html/wwhelp.htm#href=api_prog/GUID-CDF04296-5EB5-47E1-9BEC-228837C584CE.html
+// Possible parameters are any attribute from QueryResultVirtualCenterRecordType struct
+// E.g. filter could look like: (name==vC1)
 func QueryVirtualCenters(vcdClient *VCDClient, filter string) ([]*types.QueryResultVirtualCenterRecordType, error) {
 	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":   "virtualCenter",
