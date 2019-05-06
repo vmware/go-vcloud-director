@@ -1006,7 +1006,6 @@ func (vcd *TestVCD) Test_VMChangeNetworkConfig(check *C) {
 	}
 }
 
-
 // Test_updateNicParameters_multinic is meant to check functionality of a complicated
 // code structure used in vm.ChangeNetworkConfig which is abstracted into
 // vm.updateNicParameters() method so that it does not contain any API calls, but
