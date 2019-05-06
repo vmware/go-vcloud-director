@@ -2197,7 +2197,7 @@ type ExternalNetworkReference struct {
 // Type: VimObjectRefType
 // Namespace: http://www.vmware.com/vcloud/extension/v1.5
 // https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VimObjectRefsType.html
-// Description: Represents the moref and the type of a vSphere object.
+// Description: Represents the Managed Object Reference (MoRef) and the type of a vSphere object.
 // Since: 0.9
 type VimObjectRef struct {
 	VimServerRef  *Reference `xml:"VimServerRef"`
