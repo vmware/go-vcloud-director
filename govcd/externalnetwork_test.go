@@ -1,3 +1,5 @@
+// +build extnetwork network functional ALL
+
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
@@ -135,4 +137,8 @@ func (vcd *TestVCD) Test_ExternalNetworkDelete(check *C) {
 	// check through existing catalogItems
 	_, err = GetExternalNetwork(vcd.client, externalNetwork.Name)
 	check.Assert(err, ErrorMatches, "external network.*not found")
+}
+
+func init() {
+	testingTags["extnetwork"] = "externalnetwork_test.go"
 }

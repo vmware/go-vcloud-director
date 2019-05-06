@@ -73,6 +73,7 @@ $ go test -v .
            * catalog:    Runs catalog related tests (also catalog_item, media)
            * disk:       Runs disk related tests
            * extension:  Runs extension related tests
+           * extnetwork: Runs external network related tests
            * network:    Runs network and edge gateway related tests
            * org:        Runs org related tests
            * query:      Runs query related tests
