@@ -126,13 +126,13 @@ func QueryVirtualCenters(vcdClient *VCDClient, filter string) ([]*types.QueryRes
 	return results.Results.VirtualCenterRecord, nil
 }
 
-// Find a Network port groups by name
-func QueryNetworkPortGroups(vdcCli *VCDClient, name string) ([]*types.PortGroupRecordType, error) {
+// Find a Network port group by name
+func QueryNetworkPortGroup(vdcCli *VCDClient, name string) ([]*types.PortGroupRecordType, error) {
 	return QueryPortGroups(vdcCli, fmt.Sprintf("(name==%s;portgroupType==%s)", url.QueryEscape(name), "NETWORK"))
 }
 
-// Find a Distributed port groups by name
-func QueryDistributedPortGroups(vdcCli *VCDClient, name string) ([]*types.PortGroupRecordType, error) {
+// Find a Distributed port group by name
+func QueryDistributedPortGroup(vdcCli *VCDClient, name string) ([]*types.PortGroupRecordType, error) {
 	return QueryPortGroups(vdcCli, fmt.Sprintf("(name==%s;portgroupType==%s)", url.QueryEscape(name), "DV_PORTGROUP"))
 }
 
