@@ -39,34 +39,6 @@ func getExternalNetworkHref(client *Client) (string, error) {
 	return "", errors.New("external network link wasn't found")
 }
 
-func (externalNetwork ExternalNetwork) GetByName(networkName string) error {
-
-	if !externalNetwork.client.IsSysAdmin {
-		return fmt.Errorf("functionality requires system administrator privileges")
-	}
-
-	extNetworkHREF, err := getExternalNetworkHref(externalNetwork.client)
-	if err != nil {
-		return err
-	}
-
-	extNetworkRefs := &types.ExternalNetworkReferences{}
-	_, err = externalNetwork.client.ExecuteRequest(extNetworkHREF, http.MethodGet,
-		types.MimeNetworkConnectionSection, "error retrieving external networks: %s", nil, extNetworkRefs)
-	if err != nil {
-		return err
-	}
-
-	for _, netRef := range extNetworkRefs.ExternalNetworkReference {
-		if netRef.Name == networkName {
-			externalNetwork.ExternalNetwork.HREF = netRef.HREF
-			return externalNetwork.Refresh()
-		}
-	}
-
-	return fmt.Errorf("external network %s not found", networkName)
-}
-
 func (externalNetwork ExternalNetwork) Refresh() error {
 
 	if !externalNetwork.client.IsSysAdmin {

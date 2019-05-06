@@ -34,10 +34,42 @@ func GetExternalNetworkByName(vcdClient *VCDClient, networkName string) (*types.
 	return &types.ExternalNetworkReference{}, nil
 }
 
+// If user specifies a valid external network name, then this returns a
+// ExternalNetwork object. If no valid external network is found, it returns an empty
+// ExternalNetwork and no error. Otherwise it returns an error and an empty
+// ExternalNetwork object
 func GetExternalNetwork(vcdClient *VCDClient, networkName string) (*ExternalNetwork, error) {
+
+	if !vcdClient.Client.IsSysAdmin {
+		return &ExternalNetwork{}, fmt.Errorf("functionality requires system administrator privileges")
+	}
+
+	extNetworkHREF, err := getExternalNetworkHref(&vcdClient.Client)
+	if err != nil {
+		return &ExternalNetwork{}, err
+	}
+
+	extNetworkRefs := &types.ExternalNetworkReferences{}
+	_, err = vcdClient.Client.ExecuteRequest(extNetworkHREF, http.MethodGet,
+		types.MimeNetworkConnectionSection, "error retrieving external networks: %s", nil, extNetworkRefs)
+	if err != nil {
+		return &ExternalNetwork{}, err
+	}
+
 	externalNetwork := NewExternalNetwork(&vcdClient.Client)
-	err := externalNetwork.GetByName(networkName)
-	return externalNetwork, err
+
+	for _, netRef := range extNetworkRefs.ExternalNetworkReference {
+		if netRef.Name == networkName {
+			externalNetwork.ExternalNetwork.HREF = netRef.HREF
+			err = externalNetwork.Refresh()
+			if err != nil {
+				return &ExternalNetwork{}, err
+			}
+		}
+	}
+
+	return externalNetwork, nil
+
 }
 
 func CreateExternalNetwork(vcdClient *VCDClient, externalNetwork *types.ExternalNetwork) (Task, error) {

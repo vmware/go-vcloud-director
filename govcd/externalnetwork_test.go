@@ -21,8 +21,7 @@ func (vcd *TestVCD) Test_ExternalNetworkGetByName(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	externalNetwork := NewExternalNetwork(&vcd.client.Client)
-	err := externalNetwork.GetByName(vcd.config.VCD.ExternalNetwork)
+	externalNetwork, err := GetExternalNetwork(vcd.client, vcd.config.VCD.ExternalNetwork)
 	check.Assert(err, IsNil)
 
 	check.Assert(externalNetwork.ExternalNetwork.Name, Equals, vcd.config.VCD.ExternalNetwork)
@@ -136,7 +135,7 @@ func (vcd *TestVCD) Test_ExternalNetworkDelete(check *C) {
 
 	// check through existing catalogItems
 	_, err = GetExternalNetwork(vcd.client, externalNetwork.Name)
-	check.Assert(err, ErrorMatches, "external network.*not found")
+	check.Assert(err, IsNil)
 }
 
 func init() {

@@ -116,8 +116,7 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	newExternalNetwork := NewExternalNetwork(&vcd.client.Client)
-	err = newExternalNetwork.GetByName(TestCreateExternalNetwork)
+	newExternalNetwork, err := GetExternalNetwork(vcd.client, TestCreateExternalNetwork)
 	check.Assert(err, IsNil)
 	check.Assert(newExternalNetwork.ExternalNetwork.Name, Equals, TestCreateExternalNetwork)
 
