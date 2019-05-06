@@ -37,9 +37,9 @@ func (vcd *TestVCD) Test_NATMapping(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network)
+	orgVdcNetwork, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Networks[0])
 	check.Assert(err, IsNil)
-	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network)
+	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Networks[0])
 
 	task, err := edge.AddNATRule(orgVdcNetwork.OrgVDCNetwork, "DNAT", vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp)
 	check.Assert(err, IsNil)
@@ -79,9 +79,9 @@ func (vcd *TestVCD) Test_NATPortMapping(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network)
+	orgVdcNetwork, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Networks[0])
 	check.Assert(err, IsNil)
-	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network)
+	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Networks[0])
 
 	task, err := edge.AddNATPortMappingWithUplink(orgVdcNetwork.OrgVDCNetwork, "DNAT", vcd.config.VCD.ExternalIp, "1177", vcd.config.VCD.InternalIp, "77", "TCP", "")
 	check.Assert(err, IsNil)
