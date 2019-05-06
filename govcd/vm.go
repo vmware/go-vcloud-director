@@ -17,7 +17,7 @@ import (
 
 type VM struct {
 	VM     *types.VM
-	client *Client /**/
+	client *Client
 }
 
 type VMRecord struct {
