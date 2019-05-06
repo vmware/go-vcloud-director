@@ -36,7 +36,7 @@ func getExternalNetworkHref(client *Client) (string, error) {
 		}
 	}
 
-	return "", errors.New("external network link isn't found")
+	return "", errors.New("external network link wasn't found")
 }
 
 func (externalNetwork ExternalNetwork) GetByName(networkName string) error {
