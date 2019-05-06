@@ -6,7 +6,7 @@ default: fmtcheck vet build
 # test runs the test suite and vets the code
 test: fmtcheck
 	@echo "==> Running Tests"
-	cd govcd && go test -timeout=45m -check.vv .
+	cd govcd && go test -tags "functional" -timeout=60m -check.vv .
 
 # testrace runs the race checker
 testrace:
@@ -14,7 +14,24 @@ testrace:
 
 # This will include tests guarded by build tag concurrent with race detector
 testconcurrent:
-	cd govcd && go test -race -tags "concurrent" -check.vv -check.f "Test.*Concurrent" .
+	cd govcd && go test -race -tags "api concurrent" -timeout 15m -check.vv -check.f "Test.*Concurrent" .
+
+# tests only catalog related features
+testcatalog:
+	cd govcd && go test -tags "catalog" -timeout 15m -check.vv .
+
+# tests only vapp and vm features
+testvapp:
+	cd govcd && go test -tags "vapp vm" -timeout 25m -check.vv .
+
+# tests only edge gateway features
+testgateway:
+	cd govcd && go test -tags "gateway" -timeout 15m -check.vv .
+
+# tests only networking features
+testnetwork:
+	cd govcd && go test -tags "network" -timeout 15m -check.vv .
+
 
 # vet runs the Go source code static analysis tool `vet` to find
 # any common errors.
@@ -40,5 +57,5 @@ copyright:
 
 build:
 	@echo "==> Building govcd library"
-	cd govcd && go build . && go test -c .
+	cd govcd && go build . && go test -tags ALL -c .
 

@@ -1,3 +1,5 @@
+// +build vdc functional ALL
+
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
@@ -222,4 +224,8 @@ func (vcd *TestVCD) Test_QueryVM(check *C) {
 	check.Assert(err, IsNil)
 
 	check.Assert(vm.VM.Name, Equals, vmName)
+}
+
+func init() {
+	testingTags["vdc"] = "vdc_test.go"
 }

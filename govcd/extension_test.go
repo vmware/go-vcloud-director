@@ -1,3 +1,5 @@
+// +build extension functional ALL
+
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
@@ -151,4 +153,8 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 		AddToCleanupList(externalNetwork.Name, "externalNetwork", "", "Test_CreateExternalNetwork")
 	}
 	check.Assert(err, IsNil)
+}
+
+func init() {
+	testingTags["extension"] = "extension_test.go"
 }
