@@ -1,3 +1,5 @@
+// +build api functional catalog vapp gateway network org query extension task vm vdc system disk ALL
+
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
@@ -284,14 +286,25 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	if err != nil || vcd.vdc == (Vdc{}) {
 		panic(err)
 	}
+
+	// If neither the vApp or VM tags are set, we also skip the
+	// creation of the default vApp
+	if !isTagSet("vapp") && !isTagSet("vm") {
+		// vcd.skipVappTests = true
+		skipVappCreation = true
+	}
 	// creates a new VApp for vapp tests
 	if !skipVappCreation && config.VCD.Networks[0] != "" && config.VCD.StorageProfile.SP1 != "" &&
 		config.VCD.Catalog.Name != "" && config.VCD.Catalog.CatalogItem != "" {
 		vcd.vapp, err = vcd.createTestVapp(TestSetUpSuite)
 		// If no vApp is created, we skip all vApp tests
-		if vcd.vapp == (VApp{}) || err != nil {
-			fmt.Printf("%v", err)
-			vcd.skipVappTests = true
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			panic("Creation failed - Bailing out")
+		}
+		if vcd.vapp == (VApp{}) {
+			fmt.Printf("Creation of vApp %s failed unexpectedly. No error was reported, but vApp is empty\n", TestSetUpSuite)
+			panic("initial vApp is empty - bailing out")
 		}
 	} else {
 		vcd.skipVappTests = true
@@ -625,4 +638,62 @@ func TestVCDClient_Authenticate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error authenticating: %v", err)
 	}
+}
+
+func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
+	// Populate OrgVDCNetwork
+	networks := []*types.OrgVDCNetwork{}
+	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network)
+	if err != nil {
+		return VApp{}, fmt.Errorf("error finding network : %v", err)
+	}
+	networks = append(networks, net.OrgVDCNetwork)
+	// Populate Catalog
+	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	if err != nil || cat == (Catalog{}) {
+		return VApp{}, fmt.Errorf("error finding catalog : %v", err)
+	}
+	// Populate Catalog Item
+	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
+	if err != nil {
+		return VApp{}, fmt.Errorf("error finding catalog item : %v", err)
+	}
+	// Get VAppTemplate
+	vapptemplate, err := catitem.GetVAppTemplate()
+	if err != nil {
+		return VApp{}, fmt.Errorf("error finding vapptemplate : %v", err)
+	}
+	// Get StorageProfileReference
+	storageprofileref, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
+	if err != nil {
+		return VApp{}, fmt.Errorf("error finding storage profile: %v", err)
+	}
+	// Compose VApp
+	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, name, "description", true)
+	if err != nil {
+		return VApp{}, fmt.Errorf("error composing vapp: %v", err)
+	}
+	// After a successful creation, the entity is added to the cleanup list.
+	// If something fails after this point, the entity will be removed
+	AddToCleanupList(name, "vapp", "", "createTestVapp")
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return VApp{}, fmt.Errorf("error composing vapp: %v", err)
+	}
+	// Get VApp
+	vapp, err := vcd.vdc.FindVAppByName(name)
+	if err != nil {
+		return VApp{}, fmt.Errorf("error getting vapp: %v", err)
+	}
+
+	err = vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
+	if err != nil {
+		return VApp{}, fmt.Errorf("error waiting for created test vApp to have working state: %s", err)
+	}
+
+	return vapp, err
+}
+
+func init() {
+	testingTags["api"] = "api_vcd_test.go"
 }

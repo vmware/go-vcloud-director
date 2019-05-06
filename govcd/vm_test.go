@@ -1,3 +1,5 @@
+// +build vm functional ALL
+
 /*
 * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
 * Copyright 2016 Skyscape Cloud Services.  All rights reserved.  Licensed under the Apache v2 License.
@@ -14,6 +16,10 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
+
+func init() {
+	testingTags["vm"] = "vm_test.go"
+}
 
 func (vcd *TestVCD) findFirstVm(vapp VApp) (types.VM, string) {
 	for _, vm := range vapp.VApp.Children.VM {
@@ -1129,35 +1135,35 @@ func (vcd *TestVCD) Test_updateNicParameters_singleNIC(check *C) {
 	tfCfgDHCP := []map[string]interface{}{
 		map[string]interface{}{
 			"network_name": "multinic-net",
-			"ip":         "dhcp",
+			"ip":           "dhcp",
 		},
 	}
 
 	tfCfgAllocated := []map[string]interface{}{
 		map[string]interface{}{
 			"network_name": "multinic-net",
-			"ip":         "allocated",
+			"ip":           "allocated",
 		},
 	}
 
 	tfCfgNone := []map[string]interface{}{
 		map[string]interface{}{
 			"network_name": "multinic-net",
-			"ip":         "none",
+			"ip":           "none",
 		},
 	}
 
 	tfCfgManual := []map[string]interface{}{
 		map[string]interface{}{
 			"network_name": "multinic-net",
-			"ip":         "1.1.1.1",
+			"ip":           "1.1.1.1",
 		},
 	}
 
 	tfCfgInvalidIp := []map[string]interface{}{
 		map[string]interface{}{
 			"network_name": "multinic-net",
-			"ip":         "invalidIp",
+			"ip":           "invalidIp",
 		},
 	}
 

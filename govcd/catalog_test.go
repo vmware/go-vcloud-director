@@ -1,3 +1,5 @@
+// +build catalog functional ALL
+
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
@@ -406,4 +408,8 @@ func (vcd *TestVCD) Test_CatalogDeleteMediaImage(check *C) {
 		}
 	}
 	check.Assert(entityFound, Equals, false)
+}
+
+func init() {
+	testingTags["catalog"] = "catalog_test.go"
 }
