@@ -34,8 +34,8 @@ func GetExternalNetworkByName(vcdClient *VCDClient, networkName string) (*types.
 	return &types.ExternalNetworkReference{}, nil
 }
 
-// If user specifies a valid external network name, then this returns a
-// ExternalNetwork object. If no valid external network is found, it returns an empty
+// GetExternalNetwork returns ExternalNetwork object if user specifies a valid external network name.
+// If no valid external network is found, it returns an empty
 // ExternalNetwork and no error. Otherwise it returns an error and an empty
 // ExternalNetwork object
 func GetExternalNetwork(vcdClient *VCDClient, networkName string) (*ExternalNetwork, error) {
