@@ -127,18 +127,18 @@ func QueryVirtualCenters(vcdClient *VCDClient, filter string) ([]*types.QueryRes
 }
 
 // Find a Network port group by name
-func QueryNetworkPortGroup(vdcCli *VCDClient, name string) ([]*types.PortGroupRecordType, error) {
-	return QueryPortGroups(vdcCli, fmt.Sprintf("(name==%s;portgroupType==%s)", url.QueryEscape(name), "NETWORK"))
+func QueryNetworkPortGroup(vcdCli *VCDClient, name string) ([]*types.PortGroupRecordType, error) {
+	return QueryPortGroups(vcdCli, fmt.Sprintf("(name==%s;portgroupType==%s)", url.QueryEscape(name), "NETWORK"))
 }
 
 // Find a Distributed port group by name
-func QueryDistributedPortGroup(vdcCli *VCDClient, name string) ([]*types.PortGroupRecordType, error) {
-	return QueryPortGroups(vdcCli, fmt.Sprintf("(name==%s;portgroupType==%s)", url.QueryEscape(name), "DV_PORTGROUP"))
+func QueryDistributedPortGroup(vcdCli *VCDClient, name string) ([]*types.PortGroupRecordType, error) {
+	return QueryPortGroups(vcdCli, fmt.Sprintf("(name==%s;portgroupType==%s)", url.QueryEscape(name), "DV_PORTGROUP"))
 }
 
 // Find a list of Port groups matching the filter parameter.
-func QueryPortGroups(vdcCli *VCDClient, filter string) ([]*types.PortGroupRecordType, error) {
-	results, err := vdcCli.QueryWithNotEncodedParams(nil, map[string]string{
+func QueryPortGroups(vcdCli *VCDClient, filter string) ([]*types.PortGroupRecordType, error) {
+	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":   "portgroup",
 		"filter": filter,
 	})
