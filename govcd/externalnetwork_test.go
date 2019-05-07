@@ -36,19 +36,19 @@ func (vcd *TestVCD) Test_ExternalNetworkDelete(check *C) {
 	}
 
 	if vcd.config.VCD.ExternalNetwork == "" {
-		check.Skip("Test_GetByName: External network isn't configured. Test can't proceed")
+		check.Skip("Test_ExternalNetworkDelete: External network isn't configured. Test can't proceed")
 	}
 
 	if vcd.config.VCD.VimServer == "" {
-		check.Skip("Test_GetByName: Vim server isn't configured. Test can't proceed")
+		check.Skip("Test_ExternalNetworkDelete: Vim server isn't configured. Test can't proceed")
 	}
 
 	if vcd.config.VCD.ExternalNetworkPortGroup == "" {
-		check.Skip("Test_GetByName: Port group isn't configured. Test can't proceed")
+		check.Skip("Test_ExternalNetworkDelete: Port group isn't configured. Test can't proceed")
 	}
 
 	if vcd.config.VCD.ExternalNetworkPortGroupType == "" {
-		check.Skip("Test_GetByName: Port group type isn't configured. Test can't proceed")
+		check.Skip("Test_ExternalNetworkDelete: Port group type isn't configured. Test can't proceed")
 	}
 
 	virtualCenters, err := QueryVirtualCenters(vcd.client, fmt.Sprintf("(name==%s)", vcd.config.VCD.VimServer))
