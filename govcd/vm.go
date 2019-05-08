@@ -213,7 +213,7 @@ func (vm *VM) updateNicParameters(networks []map[string]interface{}, networkSect
 			if tfNicSlot == networkSection.NetworkConnection[loopIndex].NetworkConnectionIndex {
 
 				// Determine what type of address is requested for the vApp
-				ipAllocationMode := types.IPAllocationModeNone
+				var ipAllocationMode string
 				ipAddress := "Any"
 
 				var ipFieldString string
@@ -236,7 +236,7 @@ func (vm *VM) updateNicParameters(networks []map[string]interface{}, networkSect
 				case ipIsSet && net.ParseIP(ipFieldString) != nil:
 					ipAllocationMode = types.IPAllocationModeManual
 					ipAddress = ipFieldString
-				case ipIsSet && ipField != "": // Deprecated ip="something_invalid" we default to DHCP. This is odd but backwards compatible.
+				case ipIsSet && ipFieldString != "": // Deprecated ip="something_invalid" we default to DHCP. This is odd but backwards compatible.
 					ipAllocationMode = types.IPAllocationModeDHCP
 					// TODO v3.0 remove until here when deprecated `ip` and `network_name` attributes are removed
 

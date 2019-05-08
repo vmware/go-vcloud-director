@@ -91,12 +91,14 @@ func (vapp *VApp) Refresh() error {
 	return err
 }
 
-// Function create vm in vApp using vApp template
+// AddVM create vm in vApp using vApp template
 // orgVdcNetworks - adds org VDC networks to be available for vApp. Can be empty.
 // vappNetworkName - adds vApp network to be available for vApp. Can be empty.
 // vappTemplate - vApp Template which will be used for VM creation.
 // name - name for VM.
 // acceptAllEulas - setting allows to automatically accept or not Eulas.
+//
+// Deprecated: Use vapp.AddNewVM instead for more sophisticated network handling
 func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName string, vappTemplate VAppTemplate, name string, acceptAllEulas bool) (Task, error) {
 
 	if vappTemplate == (VAppTemplate{}) || vappTemplate.VAppTemplate == nil {
@@ -165,6 +167,55 @@ func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName s
 			},
 		)
 	}
+
+	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint.Path += "/action/recomposeVApp"
+
+	// Return the task
+	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", vcomp)
+
+}
+
+// AddNewVM adds VM from vApp template with multiple network cards
+func (vapp *VApp) AddNewVM(name string, vappTemplate VAppTemplate, network *types.NetworkConnectionSection, acceptAllEulas bool) (Task, error) {
+
+	if vappTemplate == (VAppTemplate{}) || vappTemplate.VAppTemplate == nil {
+		return Task{}, fmt.Errorf("vApp Template can not be empty")
+	}
+
+	if vappTemplate.VAppTemplate.Children == nil || len(vappTemplate.VAppTemplate.Children.VM) < 1 {
+		return Task{}, fmt.Errorf("vApp Template must have at least one child VM")
+	}
+
+	// Status 8 means The object is resolved and powered off.
+	// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/94b8bd8d-74ff-4fe3-b7a4-41ae31516ed7/1b42f3b5-8b31-4279-8b3f-547f6c7c5aa8/doc/GUID-843BE3AD-5EF6-4442-B864-BCAE44A51867.html
+	if vappTemplate.VAppTemplate.Status != 8 {
+		return Task{}, fmt.Errorf("vApp Template shape is not ok (status: %d)", vappTemplate.VAppTemplate.Status)
+	}
+
+	// TODO - validate network *types.NetworkConnectionSection for mandatory parameters
+
+	vcomp := &types.ReComposeVAppParams{
+		Ovf:         types.XMLNamespaceOVF,
+		Xsi:         types.XMLNamespaceXSI,
+		Xmlns:       types.XMLNamespaceVCloud,
+		Deploy:      false,
+		Name:        vapp.VApp.Name,
+		PowerOn:     false,
+		Description: vapp.VApp.Description,
+		SourcedItem: &types.SourcedCompositionItemParam{
+			Source: &types.Reference{
+				HREF: vappTemplate.VAppTemplate.Children.VM[0].HREF,
+				Name: name,
+			},
+			InstantiationParams: &types.InstantiationParams{}, // network config is injected below
+		},
+		AllEULAsAccepted: acceptAllEulas,
+	}
+
+	// Inject network config
+	vcomp.SourcedItem.InstantiationParams.NetworkConnectionSection = network
 
 	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/action/recomposeVApp"
