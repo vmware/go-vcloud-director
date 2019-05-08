@@ -72,7 +72,7 @@ $ go test -v .
 
            * catalog:    Runs catalog related tests (also catalog_item, media)
            * disk:       Runs disk related tests
-           * extension:  Runs extension related tests
+           * extnetwork: Runs external network related tests
            * network:    Runs network and edge gateway related tests
            * org:        Runs org related tests
            * query:      Runs query related tests
@@ -86,7 +86,7 @@ $ go test -v .
 
         go test -tags functional -check.vv -timeout=45m .
         go test -tags catalog -check.vv -timeout=45m .
-        go test -tags "query extension" -check.vv -timeout=45m .
+        go test -tags "query extnetwork" -check.vv -timeout=45m .
 FAIL
 FAIL	github.com/vmware/go-vcloud-director/v2/govcd	0.011s
 ```
