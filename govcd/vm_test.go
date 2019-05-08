@@ -1126,7 +1126,7 @@ func (vcd *TestVCD) Test_updateNicParameters_multiNIC(check *C) {
 // Test_updateNicParameters_singleNIC is meant to check functionality when single NIC
 // is being configured and meant to check functionality so that the function is able
 // to cover legacy scenarios when Terraform provider was able to create single IP only.
-// TODO 3.0 this test should become irrelevant once `ip` and `network_name` parameters are removed.
+// TODO v3.0 this test should become irrelevant once `ip` and `network_name` parameters are removed.
 func (vcd *TestVCD) Test_updateNicParameters_singleNIC(check *C) {
 	// Mock VM struct
 	c := Client{}
