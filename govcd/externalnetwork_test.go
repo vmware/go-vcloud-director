@@ -115,7 +115,7 @@ func (vcd *TestVCD) Test_ExternalNetworkDelete(check *C) {
 	createdExternalNetwork, err := GetExternalNetwork(vcd.client, externalNetwork.Name)
 	check.Assert(err, IsNil)
 
-	// Workaround to refresh until task is fully completed - as task wait isn't enough
+	// Due vCD bug this workaround to refresh until task is fully completed - as task wait isn't enough
 	// Task still exists and creates NETWORK_DELETE error, so we wait until disappears
 	for i := 0; i < 30; i++ {
 		err = createdExternalNetwork.Refresh()
