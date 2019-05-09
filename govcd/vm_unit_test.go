@@ -31,21 +31,22 @@ func Test_updateNicParameters_multiNIC(t *testing.T) {
 	// Sample config which is rendered by .tf schema parsed
 	tfCfg := []map[string]interface{}{
 		map[string]interface{}{
-			"network_name":       "multinic-net",
+			"name":               "multinic-net",
 			"ip_allocation_mode": "POOL",
 			"ip":                 "",
 			"is_primary":         false,
 		},
 		map[string]interface{}{
-			"network_name":       "multinic-net",
+			"name":               "multinic-net",
 			"ip_allocation_mode": "DHCP",
 			"ip":                 "",
 			"is_primary":         true,
 		},
 		map[string]interface{}{
 			"ip_allocation_mode": "NONE",
-		}, map[string]interface{}{
-			"network_name":       "multinic-net2",
+		},
+		map[string]interface{}{
+			"name":               "multinic-net2",
 			"ip_allocation_mode": "MANUAL",
 			"ip":                 "1.1.1.1",
 			"is_primary":         false,
@@ -97,14 +98,20 @@ func Test_updateNicParameters_multiNIC(t *testing.T) {
 
 	// NIC configuration when API returns an ordered list
 	vcdCfg := &vcdConfig
-	vm.updateNicParameters(tfCfg, vcdCfg)
+	err := vm.updateNicParameters(tfCfg, vcdCfg)
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Test NIC updates when API returns an unordered list
 	// Swap two &types.NetworkConnection so that it is not ordered correctly
 	vcdConfig2 := vcdConfig
 	vcdConfig2.NetworkConnection[2], vcdConfig2.NetworkConnection[0] = vcdConfig2.NetworkConnection[0], vcdConfig2.NetworkConnection[2]
 	vcdCfg2 := &vcdConfig2
-	vm.updateNicParameters(tfCfg, vcdCfg2)
+	err = vm.updateNicParameters(tfCfg, vcdCfg2)
+	if err != nil {
+		t.Error(err)
+	}
 
 	var tableTests = []struct {
 		title     string
@@ -144,7 +151,7 @@ func Test_updateNicParameters_multiNIC(t *testing.T) {
 				}
 
 				if vcdNic.IPAddressAllocationMode != types.IPAllocationModeNone {
-					if vcdNic.Network != tfNic["network_name"].(string) {
+					if vcdNic.Network != tfNic["name"].(string) {
 						t.Errorf("Network expected: %s, got: %s", tfNic["network_name"].(string), vcdNic.Network)
 					}
 				} else {
@@ -201,6 +208,12 @@ func Test_updateNicParameters_singleNIC(t *testing.T) {
 		},
 	}
 
+	tfCfgNoNetworkName := []map[string]interface{}{
+		map[string]interface{}{
+			"ip": "invalidIp",
+		},
+	}
+
 	vcdConfig := types.NetworkConnectionSection{
 		PrimaryNetworkConnectionIndex: 1,
 		NetworkConnection: []*types.NetworkConnection{
@@ -221,19 +234,27 @@ func Test_updateNicParameters_singleNIC(t *testing.T) {
 		tfConfig                        []map[string]interface{}
 		expectedIPAddressAllocationMode string
 		expectedIPAddress               string
+		mustNotError                    bool
 	}{
-		{"IPAllocationModeDHCP", tfCfgDHCP, types.IPAllocationModeDHCP, "Any"},
-		{"IPAllocationModePool", tfCfgAllocated, types.IPAllocationModePool, "Any"},
-		{"IPAllocationModeNone", tfCfgNone, types.IPAllocationModeNone, "Any"},
-		{"IPAllocationModeManual", tfCfgManual, types.IPAllocationModeManual, tfCfgManual[0]["ip"].(string)},
-		{"IPAllocationModeDHCPInvalidIP", tfCfgInvalidIp, types.IPAllocationModeDHCP, "Any"},
+		{"IPAllocationModeDHCP", tfCfgDHCP, types.IPAllocationModeDHCP, "Any", true},
+		{"IPAllocationModePool", tfCfgAllocated, types.IPAllocationModePool, "Any", true},
+		{"IPAllocationModeNone", tfCfgNone, types.IPAllocationModeNone, "Any", true},
+		{"IPAllocationModeManual", tfCfgManual, types.IPAllocationModeManual, tfCfgManual[0]["ip"].(string), true},
+		{"IPAllocationModeDHCPInvalidIP", tfCfgInvalidIp, types.IPAllocationModeDHCP, "Any", true},
+		{"ErrNoNetworkName", tfCfgNoNetworkName, types.IPAllocationModeDHCP, "Any", false},
 	}
 
 	for _, tableTest := range tableTests {
 
 		t.Run(tableTest.title, func(t *testing.T) {
 			vcdCfg := &vcdConfig
-			vm.updateNicParameters(tableTest.tfConfig, vcdCfg) // Execute parsing procedure
+			err := vm.updateNicParameters(tableTest.tfConfig, vcdCfg) // Execute parsing procedure
+
+			// if we got an error which was expected abandon the subtest
+			if err != nil && tableTest.mustNotError {
+				t.Errorf("unexpected error got: %s", err)
+				return
+			}
 
 			if vcdCfg.PrimaryNetworkConnectionIndex != 0 {
 				t.Errorf("PrimaryNetworkConnectionIndex expected: 0, got: %d", vcdCfg.PrimaryNetworkConnectionIndex)
