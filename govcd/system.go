@@ -207,8 +207,15 @@ func CreateExternalNetwork(vcdClient *VCDClient, externalNetwork *types.External
 	externalNetwork.Configuration.FenceMode = "isolated"
 
 	// Return the task
-	return vcdClient.Client.ExecuteTaskRequest(externalNetHREF.String(), http.MethodPost,
+	task, err := vcdClient.Client.ExecuteTaskRequest(externalNetHREF.String(), http.MethodPost,
 		types.MimeExternalNetwork, "error instantiating a new ExternalNetwork: %s", externalNetwork)
+
+	// Real task in task array
+	if err == nil {
+		task.Task = task.Task.Tasks.Task[0]
+	}
+
+	return task, err
 }
 
 func getExtension(client *Client) (*types.Extension, error) {

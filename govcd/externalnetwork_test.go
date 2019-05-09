@@ -11,7 +11,6 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 	"net/url"
-	"time"
 )
 
 // Retrieves an external network and checks that its contents are filled as expected
@@ -114,18 +113,6 @@ func (vcd *TestVCD) Test_ExternalNetworkDelete(check *C) {
 
 	createdExternalNetwork, err := GetExternalNetwork(vcd.client, externalNetwork.Name)
 	check.Assert(err, IsNil)
-
-	// Due vCD bug this workaround to refresh until task is fully completed - as task wait isn't enough
-	// Task still exists and creates NETWORK_DELETE error, so we wait until disappears
-	for i := 0; i < 30; i++ {
-		err = createdExternalNetwork.Refresh()
-		check.Assert(err, IsNil)
-		if createdExternalNetwork.ExternalNetwork.Tasks != nil && len(createdExternalNetwork.ExternalNetwork.Tasks.Task) == 0 {
-			break
-		} else {
-			time.Sleep(1 * time.Second)
-		}
-	}
 
 	err = createdExternalNetwork.DeleteWait()
 	if err != nil {
@@ -257,19 +244,6 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	check.Assert(ipRange.EndAddress, Equals, "192.168.201.250")
 
 	check.Assert(newExternalNetwork.ExternalNetwork.Configuration.FenceMode, Equals, "isolated")
-
-	// Needs to be deleted as port group used by other tests
-	// Workaround to refresh until task is fully completed - as task wait isn't enough
-	// Task still exists and creates NETWORK_DELETE error, so we wait until disappears
-	for i := 0; i < 30; i++ {
-		err = newExternalNetwork.Refresh()
-		check.Assert(err, IsNil)
-		if newExternalNetwork.ExternalNetwork.Tasks != nil && len(newExternalNetwork.ExternalNetwork.Tasks.Task) == 0 {
-			break
-		} else {
-			time.Sleep(1 * time.Second)
-		}
-	}
 
 	err = newExternalNetwork.DeleteWait()
 	if err != nil {
