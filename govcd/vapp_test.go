@@ -434,13 +434,13 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedNetwork(check *C) {
 		}
 	}
 
-	check.Assert(networkFound.Configuration.IPScopes.IPScope.Gateway, Equals, gateway)
-	check.Assert(networkFound.Configuration.IPScopes.IPScope.Netmask, Equals, netmask)
-	check.Assert(networkFound.Configuration.IPScopes.IPScope.DNS1, Equals, dns1)
-	check.Assert(networkFound.Configuration.IPScopes.IPScope.DNS2, Equals, dns2)
-	check.Assert(networkFound.Configuration.IPScopes.IPScope.DNSSuffix, Equals, dnsSuffix)
-	check.Assert(networkFound.Configuration.IPScopes.IPScope.IPRanges.IPRange[0].StartAddress, Equals, startAddress)
-	check.Assert(networkFound.Configuration.IPScopes.IPScope.IPRanges.IPRange[0].EndAddress, Equals, endAddress)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].Gateway, Equals, gateway)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].Netmask, Equals, netmask)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNS1, Equals, dns1)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNS2, Equals, dns2)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNSSuffix, Equals, dnsSuffix)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].StartAddress, Equals, startAddress)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress, Equals, endAddress)
 
 	check.Assert(networkFound.Configuration.Features.DhcpService.IsEnabled, Equals, true)
 	check.Assert(networkFound.Configuration.Features.DhcpService.MaxLeaseTime, Equals, maxLeaseTime)
