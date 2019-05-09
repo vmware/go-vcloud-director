@@ -869,340 +869,143 @@ func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
 	check.Assert(vmStatus, Equals, "POWERED_OFF")
 }
 
-// Test changing network configuration
-func (vcd *TestVCD) Test_VMChangeNetworkConfig(check *C) {
-	// Find VApp
-	if vcd.vapp.VApp == nil {
-		check.Skip("skipping test because no vApp is found")
-	}
+// // Test changing network configuration
+// func (vcd *TestVCD) Test_VMChangeNetworkConfigOneNIC(check *C) {
+// 	config := vcd.config
+// 	if config.VCD.Network.Net1 == "" {
+// 		check.Skip("Skipping test because no network was given")
+// 	}
+// 	// Find VApp
+// 	if vcd.vapp.VApp == nil {
+// 		check.Skip("skipping test because no vApp is found")
+// 	}
 
-	if len(vcd.config.VCD.Networks) >= 1 {
-		vapp := vcd.findFirstVapp()
-		vmType, vmName := vcd.findFirstVm(vapp)
-		if vmName == "" {
-			check.Skip("skipping test because no VM is found")
-		}
+// 	vapp := vcd.findFirstVapp()
+// 	vmType, vmName := vcd.findFirstVm(vapp)
+// 	if vmName == "" {
+// 		check.Skip("skipping test because no VM is found")
+// 	}
 
-		fmt.Printf("Running: %s part 1 change ip\n", check.TestName())
+// 	vm := NewVM(&vcd.client.Client)
+// 	vm.VM = &vmType
 
-		vm := NewVM(&vcd.client.Client)
-		vm.VM = &vmType
+// 	var nets []map[string]interface{}
+// 	netChange := make(map[string]interface{})
 
-		var nets []map[string]interface{}
-		n := make(map[string]interface{})
+// 	// Find network
+// 	net, err := vcd.vdc.FindVDCNetwork(config.VCD.Network.Net1)
 
-		// Find network
-		net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Networks[0])
+// 	check.Assert(err, IsNil)
+// 	check.Assert(net, NotNil)
+// 	check.Assert(net.OrgVDCNetwork.Name, Equals, config.VCD.Network.Net1)
+// 	check.Assert(net.OrgVDCNetwork.HREF, Not(Equals), "")
 
-		check.Assert(err, IsNil)
-		check.Assert(net, NotNil)
-		check.Assert(net.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Networks[0])
-		check.Assert(net.OrgVDCNetwork.HREF, Not(Equals), "")
+// 	endAddress := net.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress
+// 	startAddress := net.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].StartAddress
 
-		endAddress := net.OrgVDCNetwork.Configuration.IPScopes.IPScope.IPRanges.IPRange[0].EndAddress
-		startAddress := net.OrgVDCNetwork.Configuration.IPScopes.IPScope.IPRanges.IPRange[0].StartAddress
+// 	netChange["ip"] = endAddress
+// 	netChange["ip_allocation_mode"] = "MANUAL"
+// 	netChange["is_primary"] = true
+// 	netChange["network_name"] = net.OrgVDCNetwork.Name
 
-		n["ip"] = endAddress
-		n["ip_allocation_mode"] = "MANUAL"
-		n["is_primary"] = true
-		n["network_name"] = net.OrgVDCNetwork.Name
+// 	nets = append(nets, netChange)
 
-		nets = append(nets, n)
+// 	// Change ipaddress to endAddress
+// 	task, err := vm.ChangeNetworkConfig(nets)
+// 	check.Assert(err, IsNil)
+// 	err = task.WaitTaskCompletion()
+// 	check.Assert(err, IsNil)
+// 	check.Assert(task.Task.Status, Equals, "success")
 
-		// Change ipaddress to endAddress
-		task, err := vm.ChangeNetworkConfig(nets)
-		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
-		check.Assert(task.Task.Status, Equals, "success")
+// 	// Check if ipaddress is endAddress
+// 	networkConnectionSection, err := vm.GetNetworkConnectionSection()
+// 	check.Assert(err, IsNil)
+// 	check.Assert(networkConnectionSection.NetworkConnection[0].Network, Equals, config.VCD.Network.Net1)
+// 	check.Assert(networkConnectionSection.NetworkConnection[0].IPAddressAllocationMode, Equals, netChange["ip_allocation_mode"])
+// 	check.Assert(networkConnectionSection.NetworkConnection[0].IPAddress, Equals, endAddress)
 
-		// Check if ipaddress is endAddress
-		networkConnectionSection, err := vm.GetNetworkConnectionSection()
-		check.Assert(err, IsNil)
-		check.Assert(networkConnectionSection.NetworkConnection[0].Network, Equals, vcd.config.VCD.Networks[0])
-		check.Assert(networkConnectionSection.NetworkConnection[0].IPAddressAllocationMode, Equals, n["ip_allocation_mode"])
-		check.Assert(networkConnectionSection.NetworkConnection[0].IPAddress, Equals, endAddress)
+// 	netChange["ip"] = startAddress
 
-		n["ip"] = startAddress
+// 	// Change ipaddress to startAddress
+// 	task, err = vm.ChangeNetworkConfig(nets)
+// 	check.Assert(err, IsNil)
+// 	err = task.WaitTaskCompletion()
+// 	check.Assert(err, IsNil)
+// 	check.Assert(task.Task.Status, Equals, "success")
 
-		// Change ipaddress to startAddress
-		task, err = vm.ChangeNetworkConfig(nets)
-		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
-		check.Assert(task.Task.Status, Equals, "success")
+// 	// Check if ipaddress is startAddress
+// 	networkConnectionSection, err = vm.GetNetworkConnectionSection()
+// 	check.Assert(err, IsNil)
+// 	check.Assert(networkConnectionSection.NetworkConnection[0].Network, Equals, config.VCD.Network.Net1)
+// 	check.Assert(networkConnectionSection.NetworkConnection[0].IPAddress, Equals, startAddress)
 
-		// Check if ipaddress is startAddress
-		networkConnectionSection, err = vm.GetNetworkConnectionSection()
-		check.Assert(err, IsNil)
-		check.Assert(networkConnectionSection.NetworkConnection[0].Network, Equals, vcd.config.VCD.Networks[0])
-		check.Assert(networkConnectionSection.NetworkConnection[0].IPAddress, Equals, startAddress)
-	}
+// }
 
-	if len(vcd.config.VCD.Networks) >= 2 {
-		vapp := vcd.findFirstVapp()
-		vmType, vmName := vcd.findFirstVm(vapp)
-		if vmName == "" {
-			check.Skip("skipping test because no VM is found")
-		}
+// func (vcd *TestVCD) Test_VMChangeNetworkConfigTwoNICs(check *C) {
+// 	if vcd.config.VCD.Network.Net1 == "" || vcd.config.VCD.Network.Net2 == "" {
+// 		check.Skip("Skipping test because two networks were not given")
+// 	}
+// 	vapp := vcd.findFirstVapp()
+// 	vmType, vmName := vcd.findFirstVm(vapp)
+// 	if vmName == "" {
+// 		check.Skip("skipping test because no VM is found")
+// 	}
 
-		fmt.Printf("Running: %s part 2 change network adapter count\n", check.TestName())
+// 	vm := NewVM(&vcd.client.Client)
+// 	vm.VM = &vmType
 
-		vm := NewVM(&vcd.client.Client)
-		vm.VM = &vmType
+// 	var net OrgVDCNetwork
+// 	var nets []map[string]interface{}
+// 	var err error
 
-		var net OrgVDCNetwork
-		var nets []map[string]interface{}
-		var err error
+// 	netList := []string{vcd.config.VCD.Network.Net1, vcd.config.VCD.Network.Net1}
 
-		// Find networks
-		for index := range vcd.config.VCD.Networks {
-			n := make(map[string]interface{})
-			net, err = vcd.vdc.FindVDCNetwork(vcd.config.VCD.Networks[index])
+// 	// Find networks
+// 	for index := range netList {
+// 		netChange := make(map[string]interface{})
+// 		net, err = vcd.vdc.FindVDCNetwork(netList[index])
 
-			check.Assert(err, IsNil)
-			check.Assert(net, NotNil)
-			check.Assert(net.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Networks[index])
-			check.Assert(net.OrgVDCNetwork.HREF, Not(Equals), "")
+// 		check.Assert(err, IsNil)
+// 		check.Assert(net, NotNil)
+// 		check.Assert(net.OrgVDCNetwork.Name, Equals, netList[index])
+// 		check.Assert(net.OrgVDCNetwork.HREF, Not(Equals), "")
 
-			n["ip"] = ""
-			n["ip_allocation_mode"] = "POOL"
-			n["is_primary"] = false
-			if index == 0 {
-				n["is_primary"] = true
-			}
-			n["network_name"] = net.OrgVDCNetwork.Name
+// 		netChange["ip"] = ""
+// 		netChange["ip_allocation_mode"] = "POOL"
+// 		netChange["is_primary"] = false
+// 		if index == 0 {
+// 			netChange["is_primary"] = true
+// 		}
+// 		netChange["network_name"] = net.OrgVDCNetwork.Name
 
-			// Add missing networks before continue changing them
-			task, err := vapp.AppendNetworkConfig(net.OrgVDCNetwork)
-			check.Assert(err, IsNil)
-			if task != (Task{}) {
-				err = task.WaitTaskCompletion()
-				check.Assert(err, IsNil)
-				task, err = vm.AppendNetworkConnection(net.OrgVDCNetwork)
-				err = task.WaitTaskCompletion()
-				check.Assert(err, IsNil)
-			}
+// 		// Add missing networks before continue changing them
+// 		task, err := vapp.AppendNetworkConfig(net.OrgVDCNetwork)
+// 		check.Assert(err, IsNil)
+// 		if task != (Task{}) {
+// 			err = task.WaitTaskCompletion()
+// 			check.Assert(err, IsNil)
+// 			task, err = vm.AppendNetworkConnection(net.OrgVDCNetwork)
+// 			err = task.WaitTaskCompletion()
+// 			check.Assert(err, IsNil)
+// 		}
 
-			nets = append(nets, n)
-		}
+// 		nets = append(nets, netChange)
+// 	}
 
-		// Add networks we found
-		task, err := vm.ChangeNetworkConfig(nets)
-		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
-		check.Assert(task.Task.Status, Equals, "success")
+// 	// Add networks we found
+// 	task, err := vm.ChangeNetworkConfig(nets)
+// 	check.Assert(err, IsNil)
+// 	err = task.WaitTaskCompletion()
+// 	check.Assert(err, IsNil)
+// 	check.Assert(task.Task.Status, Equals, "success")
 
-		// Check if networks were added correctly
-		networkConnectionSection, err := vm.GetNetworkConnectionSection()
-		check.Assert(err, IsNil)
-		for index := range vcd.config.VCD.Networks {
-			check.Assert(networkConnectionSection.NetworkConnection[index].Network, Equals, vcd.config.VCD.Networks[index])
-			check.Assert(networkConnectionSection.NetworkConnection[index].IPAddressAllocationMode, Equals, nets[index]["ip_allocation_mode"])
-			check.Assert(networkConnectionSection.NetworkConnection[index].IPAddress, NotNil)
-		}
-		check.Assert(networkConnectionSection.PrimaryNetworkConnectionIndex, Equals, 0)
-	}
-}
-
-// Test_updateNicParameters_multinic is meant to check functionality of a complicated
-// code structure used in vm.ChangeNetworkConfig which is abstracted into
-// vm.updateNicParameters() method so that it does not contain any API calls, but
-// only adjust the object which is meant to be sent to API. Initially we hit a bug
-// which occurred only when API returned NICs in random order.
-func (vcd *TestVCD) Test_updateNicParameters_multiNIC(check *C) {
-
-	// Mock VM struct
-	c := Client{}
-	vm := NewVM(&c)
-
-	// Sample config which is rendered by .tf schema parsed
-	tfCfg := []map[string]interface{}{
-		map[string]interface{}{
-			"network_name":       "multinic-net",
-			"ip_allocation_mode": "POOL",
-			"ip":                 "",
-			"is_primary":         false,
-		},
-		map[string]interface{}{
-			"network_name":       "multinic-net",
-			"ip_allocation_mode": "DHCP",
-			"ip":                 "",
-			"is_primary":         true,
-		},
-		map[string]interface{}{
-			"ip_allocation_mode": "NONE",
-		}, map[string]interface{}{
-			"network_name":       "multinic-net2",
-			"ip_allocation_mode": "MANUAL",
-			"ip":                 "1.1.1.1",
-			"is_primary":         false,
-		},
-	}
-
-	// A sample NetworkConnectionSection object simulating API returning ordered list
-	vcdConfig := types.NetworkConnectionSection{
-		PrimaryNetworkConnectionIndex: 0,
-		NetworkConnection: []*types.NetworkConnection{
-			&types.NetworkConnection{
-				Network:                 "multinic-net",
-				NetworkConnectionIndex:  0,
-				IPAddress:               "",
-				IsConnected:             true,
-				MACAddress:              "00:00:00:00:00:00",
-				IPAddressAllocationMode: "POOL",
-				NetworkAdapterType:      "VMXNET3",
-			},
-			&types.NetworkConnection{
-				Network:                 "multinic-net",
-				NetworkConnectionIndex:  1,
-				IPAddress:               "",
-				IsConnected:             true,
-				MACAddress:              "00:00:00:00:00:01",
-				IPAddressAllocationMode: "POOL",
-				NetworkAdapterType:      "VMXNET3",
-			},
-			&types.NetworkConnection{
-				Network:                 "multinic-net",
-				NetworkConnectionIndex:  2,
-				IPAddress:               "",
-				IsConnected:             true,
-				MACAddress:              "00:00:00:00:00:02",
-				IPAddressAllocationMode: "POOL",
-				NetworkAdapterType:      "VMXNET3",
-			},
-			&types.NetworkConnection{
-				Network:                 "multinic-net",
-				NetworkConnectionIndex:  3,
-				IPAddress:               "",
-				IsConnected:             true,
-				MACAddress:              "00:00:00:00:00:03",
-				IPAddressAllocationMode: "POOL",
-				NetworkAdapterType:      "VMXNET3",
-			},
-		},
-	}
-
-	// NIC configuration when API returns an ordered list
-	vcdCfg := &vcdConfig
-	vm.updateNicParameters(tfCfg, vcdCfg)
-
-	// Test NIC updates when API returns an unordered list
-	// Swap two &types.NetworkConnection so that it is not ordered correctly
-	vcdConfig2 := vcdConfig
-	vcdConfig2.NetworkConnection[2], vcdConfig2.NetworkConnection[0] = vcdConfig2.NetworkConnection[0], vcdConfig2.NetworkConnection[2]
-	vcdCfg2 := &vcdConfig2
-	vm.updateNicParameters(tfCfg, vcdCfg2)
-
-	var tableTests = []struct {
-		tfConfig  []map[string]interface{}
-		vcdConfig *types.NetworkConnectionSection
-	}{
-		{tfCfg, vcdCfg},  // Ordered NIC list
-		{tfCfg, vcdCfg2}, // Unordered NIC list
-	}
-
-	for _, tableTest := range tableTests {
-
-		// Check that primary interface is reset to 1 as hardcoded in tfCfg "is_primary" parameter
-		check.Assert(vcdCfg.PrimaryNetworkConnectionIndex, Equals, 1)
-
-		for loopIndex := range tableTest.vcdConfig.NetworkConnection {
-			nicSlot := tableTest.vcdConfig.NetworkConnection[loopIndex].NetworkConnectionIndex
-
-			check.Assert(tableTest.vcdConfig.NetworkConnection[loopIndex].IPAddressAllocationMode, Equals, tableTest.tfConfig[nicSlot]["ip_allocation_mode"].(string))
-			check.Assert(tableTest.vcdConfig.NetworkConnection[loopIndex].IsConnected, Equals, true)
-			check.Assert(tableTest.vcdConfig.NetworkConnection[loopIndex].NeedsCustomization, Equals, true)
-			if tableTest.vcdConfig.NetworkConnection[loopIndex].IPAddressAllocationMode != types.IPAllocationModeNone {
-				check.Assert(tableTest.vcdConfig.NetworkConnection[loopIndex].Network, Equals, tableTest.tfConfig[nicSlot]["network_name"].(string))
-			} else {
-				check.Assert(tableTest.vcdConfig.NetworkConnection[loopIndex].Network, Equals, "none")
-			}
-		}
-	}
-}
-
-// Test_updateNicParameters_singleNIC is meant to check functionality when single NIC
-// is being configured and meant to check functionality so that the function is able
-// to cover legacy scenarios when Terraform provider was able to create single IP only.
-// TODO v3.0 this test should become irrelevant once `ip` and `network_name` parameters are removed.
-func (vcd *TestVCD) Test_updateNicParameters_singleNIC(check *C) {
-	// Mock VM struct
-	c := Client{}
-	vm := NewVM(&c)
-
-	tfCfgDHCP := []map[string]interface{}{
-		map[string]interface{}{
-			"network_name": "multinic-net",
-			"ip":           "dhcp",
-		},
-	}
-
-	tfCfgAllocated := []map[string]interface{}{
-		map[string]interface{}{
-			"network_name": "multinic-net",
-			"ip":           "allocated",
-		},
-	}
-
-	tfCfgNone := []map[string]interface{}{
-		map[string]interface{}{
-			"network_name": "multinic-net",
-			"ip":           "none",
-		},
-	}
-
-	tfCfgManual := []map[string]interface{}{
-		map[string]interface{}{
-			"network_name": "multinic-net",
-			"ip":           "1.1.1.1",
-		},
-	}
-
-	tfCfgInvalidIp := []map[string]interface{}{
-		map[string]interface{}{
-			"network_name": "multinic-net",
-			"ip":           "invalidIp",
-		},
-	}
-
-	vcdConfig := types.NetworkConnectionSection{
-		PrimaryNetworkConnectionIndex: 1,
-		NetworkConnection: []*types.NetworkConnection{
-			&types.NetworkConnection{
-				Network:                 "singlenic-net",
-				NetworkConnectionIndex:  0,
-				IPAddress:               "",
-				IsConnected:             true,
-				MACAddress:              "00:00:00:00:00:00",
-				IPAddressAllocationMode: "POOL",
-				NetworkAdapterType:      "VMXNET3",
-			},
-		},
-	}
-
-	var tableTests = []struct {
-		tfConfig []map[string]interface{}
-		//vcdConfig types.NetworkConnectionSection
-		expectedIPAddressAllocationMode string
-		expectedIPAddress               string
-	}{
-		{tfCfgDHCP, types.IPAllocationModeDHCP, "Any"},
-		{tfCfgAllocated, types.IPAllocationModePool, "Any"},
-		{tfCfgNone, types.IPAllocationModeNone, "Any"},
-		{tfCfgManual, types.IPAllocationModeManual, tfCfgManual[0]["ip"].(string)},
-		{tfCfgInvalidIp, types.IPAllocationModeDHCP, "Any"},
-	}
-
-	for _, tableTest := range tableTests {
-		vcdCfg := &vcdConfig
-		vm.updateNicParameters(tableTest.tfConfig, vcdCfg) // Execute parsing procedure
-
-		// Check that primary interface is reset to 0 as it is the only one
-		check.Assert(vcdCfg.PrimaryNetworkConnectionIndex, Equals, 0)
-
-		check.Assert(vcdCfg.NetworkConnection[0].IPAddressAllocationMode, Equals, tableTest.expectedIPAddressAllocationMode)
-		check.Assert(vcdCfg.NetworkConnection[0].IPAddress, Equals, tableTest.expectedIPAddress)
-	}
-}
+// 	// Check if networks were added correctly
+// 	networkConnectionSection, err := vm.GetNetworkConnectionSection()
+// 	check.Assert(err, IsNil)
+// 	for index := range netList {
+// 		check.Assert(networkConnectionSection.NetworkConnection[index].Network, Equals, netList[index])
+// 		check.Assert(networkConnectionSection.NetworkConnection[index].IPAddressAllocationMode, Equals, nets[index]["ip_allocation_mode"])
+// 		check.Assert(networkConnectionSection.NetworkConnection[index].IPAddress, NotNil)
+// 	}
+// 	check.Assert(networkConnectionSection.PrimaryNetworkConnectionIndex, Equals, 0)
+// }

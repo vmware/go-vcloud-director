@@ -33,13 +33,17 @@ func (vcd *TestVCD) Test_NATMapping(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
+	if vcd.config.VCD.Network.Net1 == "" {
+		check.Skip("Skipping test because no network was given")
+	}
+
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Networks[0])
+	orgVdcNetwork, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
 	check.Assert(err, IsNil)
-	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Networks[0])
+	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
 	task, err := edge.AddNATRule(orgVdcNetwork.OrgVDCNetwork, "DNAT", vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp)
 	check.Assert(err, IsNil)
@@ -75,13 +79,17 @@ func (vcd *TestVCD) Test_NATPortMapping(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
+	if vcd.config.VCD.Network.Net1 == "" {
+		check.Skip("Skipping test because no network was given")
+	}
+
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Networks[0])
+	orgVdcNetwork, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
 	check.Assert(err, IsNil)
-	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Networks[0])
+	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
 	task, err := edge.AddNATPortMappingWithUplink(orgVdcNetwork.OrgVDCNetwork, "DNAT", vcd.config.VCD.ExternalIp, "1177", vcd.config.VCD.InternalIp, "77", "TCP", "")
 	check.Assert(err, IsNil)

@@ -5,8 +5,15 @@ default: fmtcheck vet build
 
 # test runs the test suite and vets the code
 test: fmtcheck
-	@echo "==> Running Tests"
+	@echo "==> Running Unit Tests"
+	cd govcd && go test -v -tags "unit" .
+	@echo "==> Running Functional Tests"
 	cd govcd && go test -tags "functional" -timeout=60m -check.vv .
+
+# test runs the test suite and vets the code
+testunit: fmtcheck
+	@echo "==> Running Unit Tests"
+	cd govcd && go test -v -tags "unit" .
 
 # testrace runs the race checker
 testrace:

@@ -8,10 +8,15 @@ package govcd
 
 import (
 	"fmt"
+	"regexp"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
-	"regexp"
 )
+
+func init() {
+	testingTags["vapp"] = "vapp_test.go"
+}
 
 // Tests the helper function getParentVDC with the vapp
 // created at the start of testing
@@ -468,6 +473,111 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedNetwork(check *C) {
 	check.Assert(isExist, Equals, false)
 }
 
-func init() {
-	testingTags["vapp"] = "vapp_test.go"
+// Test_AddNewVM creates a new VM in vApp with multiple network cards
+func (vcd *TestVCD) Test_AddNewVM(check *C) {
+	config := vcd.config
+	if config.VCD.Network.Net1 == "" {
+		check.Skip("Skipping test because no network was given")
+	}
+	// Find VApp
+	if vcd.vapp.VApp == nil {
+		check.Skip("skipping test because no vApp is found")
+	}
+
+	// Populate Catalog
+	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	check.Assert((Catalog{}), Not(Equals), cat)
+	check.Assert(err, IsNil)
+
+	// Populate Catalog Item
+	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
+	check.Assert(err, IsNil)
+
+	// Get VAppTemplate
+	vapptemplate, err := catitem.GetVAppTemplate()
+	check.Assert(err, IsNil)
+
+	vapp := vcd.findFirstVapp()
+
+	desiredNetConfig := &types.NetworkConnectionSection{}
+	desiredNetConfig.PrimaryNetworkConnectionIndex = 0
+	desiredNetConfig.NetworkConnection = append(desiredNetConfig.NetworkConnection,
+		&types.NetworkConnection{
+			IsConnected:             true,
+			IPAddressAllocationMode: types.IPAllocationModePool,
+			Network:                 config.VCD.Network.Net1,
+			NetworkConnectionIndex:  0,
+		},
+		&types.NetworkConnection{
+			IsConnected:             true,
+			IPAddressAllocationMode: types.IPAllocationModeNone,
+			Network:                 types.NoneNetwork,
+			NetworkConnectionIndex:  1,
+		})
+
+	if config.VCD.Network.Net2 != "" {
+		// Attach second vdc network to vApp
+		vdcNetwork2, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net2)
+		check.Assert(err, IsNil)
+		orgvdcnetworks := []*types.OrgVDCNetwork{vdcNetwork2.OrgVDCNetwork}
+		task, err := vapp.AddRAWNetworkConfig(orgvdcnetworks)
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(task.Task.Status, Equals, "success")
+
+		desiredNetConfig.NetworkConnection = append(desiredNetConfig.NetworkConnection,
+			&types.NetworkConnection{
+				IsConnected:             true,
+				IPAddressAllocationMode: types.IPAllocationModePool,
+				Network:                 config.VCD.Network.Net2,
+				NetworkConnectionIndex:  2,
+			},
+		)
+	} else {
+		fmt.Println("Skipping adding another vdc network as network2 was not specified")
+	}
+
+	task, err := vapp.AddNewVM("Test_AddNewVM", vapptemplate, desiredNetConfig, true)
+
+	check.Assert(err, IsNil)
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	vdc, err := vapp.getParentVDC()
+	check.Assert(err, IsNil)
+
+	vm, err := vdc.FindVMByName(vapp, "Test_AddNewVM")
+	check.Assert(err, IsNil)
+
+	// Ensure network config was valid
+	actualNetConfig, err := vm.GetNetworkConnectionSection()
+	check.Assert(err, IsNil)
+
+	verifyNetworkConnectionSection(check, actualNetConfig, desiredNetConfig)
+
+	// Cleanup
+	err = vapp.RemoveVM(vm)
+	check.Assert(err, IsNil)
+}
+
+func verifyNetworkConnectionSection(check *C, actual, desired *types.NetworkConnectionSection) {
+	check.Assert(len(actual.NetworkConnection), Equals, len(desired.NetworkConnection))
+	check.Assert(actual.PrimaryNetworkConnectionIndex, Equals, desired.PrimaryNetworkConnectionIndex)
+	for index := range actual.NetworkConnection {
+		actualNic := actual.NetworkConnection[index]
+		desiredNic := desired.NetworkConnection[index]
+
+		check.Assert(actualNic.MACAddress, Not(Equals), "")
+		check.Assert(actualNic.NetworkAdapterType, Not(Equals), "")
+		check.Assert(actualNic.IPAddressAllocationMode, Equals, desiredNic.IPAddressAllocationMode)
+		check.Assert(actualNic.Network, Equals, desiredNic.Network)
+		check.Assert(actualNic.NetworkConnectionIndex, Equals, desiredNic.NetworkConnectionIndex)
+
+		if actualNic.IPAddressAllocationMode != types.IPAllocationModeNone {
+			check.Assert(actualNic.IPAddress, Not(Equals), "")
+		}
+	}
+	return
 }
