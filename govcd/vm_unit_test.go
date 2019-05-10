@@ -22,7 +22,7 @@ func init() {
 // vm.updateNicParameters() method so that it does not contain any API calls, but
 // only adjust the object which is meant to be sent to API. Initially we hit a bug
 // which occurred only when API returned NICs in random order.
-func Test_updateNicParameters_multiNIC(t *testing.T) {
+func Test_VMupdateNicParameters_multiNIC(t *testing.T) {
 
 	// Mock VM struct
 	c := Client{}
@@ -168,7 +168,7 @@ func Test_updateNicParameters_multiNIC(t *testing.T) {
 // // is being configured and meant to check functionality so that the function is able
 // // to cover legacy scenarios when Terraform provider was able to create single IP only.
 // // TODO v3.0 this test should become irrelevant once `ip` and `network_name` parameters are removed.
-func Test_updateNicParameters_singleNIC(t *testing.T) {
+func Test_VMupdateNicParameters_singleNIC(t *testing.T) {
 	// Mock VM struct
 	c := Client{}
 	vm := NewVM(&c)
