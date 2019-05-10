@@ -31,13 +31,13 @@ func Test_updateNicParameters_multiNIC(t *testing.T) {
 	// Sample config which is rendered by .tf schema parsed
 	tfCfg := []map[string]interface{}{
 		map[string]interface{}{
-			"name":               "multinic-net",
+			"network_name":       "multinic-net",
 			"ip_allocation_mode": "POOL",
 			"ip":                 "",
 			"is_primary":         false,
 		},
 		map[string]interface{}{
-			"name":               "multinic-net",
+			"network_name":       "multinic-net",
 			"ip_allocation_mode": "DHCP",
 			"ip":                 "",
 			"is_primary":         true,
@@ -46,7 +46,7 @@ func Test_updateNicParameters_multiNIC(t *testing.T) {
 			"ip_allocation_mode": "NONE",
 		},
 		map[string]interface{}{
-			"name":               "multinic-net2",
+			"network_name":       "multinic-net2",
 			"ip_allocation_mode": "MANUAL",
 			"ip":                 "1.1.1.1",
 			"is_primary":         false,
@@ -151,7 +151,7 @@ func Test_updateNicParameters_multiNIC(t *testing.T) {
 				}
 
 				if vcdNic.IPAddressAllocationMode != types.IPAllocationModeNone {
-					if vcdNic.Network != tfNic["name"].(string) {
+					if vcdNic.Network != tfNic["network_name"].(string) {
 						t.Errorf("Network expected: %s, got: %s", tfNic["network_name"].(string), vcdNic.Network)
 					}
 				} else {
