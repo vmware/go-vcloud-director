@@ -8,19 +8,22 @@ package govcd
 
 import (
 	"fmt"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
 
 func (vcd *TestVCD) Test_FindVDCNetwork(check *C) {
-
+	if vcd.config.VCD.Network.Net1 == "" {
+		check.Skip("Skipping test because no network was given")
+	}
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network)
+	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
 
 	check.Assert(err, IsNil)
 	check.Assert(net, NotNil)
-	check.Assert(net.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network)
+	check.Assert(net.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 	check.Assert(net.OrgVDCNetwork.HREF, Not(Equals), "")
 
 	// find Invalid Network
@@ -105,6 +108,9 @@ func (vcd *TestVCD) Test_NewVdc(check *C) {
 // Throws an error if networks, catalog, catalog item, and
 // storage preference are omitted from the config file.
 func (vcd *TestVCD) Test_ComposeVApp(check *C) {
+	if vcd.config.VCD.Network.Net1 == "" {
+		check.Skip("Skipping test because no network was given")
+	}
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp wasn't properly created")
 	}
@@ -112,7 +118,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
-	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network)
+	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
 	networks = append(networks, net.OrgVDCNetwork)
 	check.Assert(err, IsNil)
 	// Populate Catalog

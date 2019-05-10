@@ -87,7 +87,10 @@ type TestConfig struct {
 			CatalogItem            string `yaml:"catalogItem,omitempty"`
 			CatalogItemDescription string `yaml:"catalogItemDescription,omitempty"`
 		} `yaml:"catalog"`
-		Network        string `yaml:"network,omitempty"`
+		Network struct {
+			Net1 string `yaml:"network1"`
+			Net2 string `yaml:"network2,omitempty"`
+		} `yaml:"network"`
 		StorageProfile struct {
 			SP1 string `yaml:"storageProfile1"`
 			SP2 string `yaml:"storageProfile2,omitempty"`
@@ -298,7 +301,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		skipVappCreation = true
 	}
 	// creates a new VApp for vapp tests
-	if !skipVappCreation && config.VCD.Network != "" && config.VCD.StorageProfile.SP1 != "" &&
+	if !skipVappCreation && config.VCD.Network.Net1 != "" && config.VCD.StorageProfile.SP1 != "" &&
 		config.VCD.Catalog.Name != "" && config.VCD.Catalog.CatalogItem != "" {
 		vcd.vapp, err = vcd.createTestVapp(TestSetUpSuite)
 		// If no vApp is created, we skip all vApp tests
@@ -660,7 +663,7 @@ func TestVCDClient_Authenticate(t *testing.T) {
 func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
-	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network)
+	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
 	if err != nil {
 		return VApp{}, fmt.Errorf("error finding network : %v", err)
 	}

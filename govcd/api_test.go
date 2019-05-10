@@ -47,6 +47,8 @@ Examples:
 go test -tags functional -check.vv -timeout=45m .
 go test -tags catalog -check.vv -timeout=15m .
 go test -tags "query extension" -check.vv -timeout=5m .
+go test -tags functional -check.vv -check.f Test_AddNewVM  -timeout=15m .
+go test -v -tags unit .
 `
 	t.Logf(helpText)
 }

@@ -1,8 +1,8 @@
 // +build vm functional ALL
 
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- * Copyright 2016 Skyscape Cloud Services.  All rights reserved.  Licensed under the Apache v2 License.
+* Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+* Copyright 2016 Skyscape Cloud Services.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -16,6 +16,10 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
+
+func init() {
+	testingTags["vm"] = "vm_test.go"
+}
 
 func (vcd *TestVCD) findFirstVm(vapp VApp) (types.VM, string) {
 	for _, vm := range vapp.VApp.Children.VM {
@@ -863,8 +867,4 @@ func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
 	check.Assert(err, IsNil)
 	vmStatus, err = vm.GetStatus()
 	check.Assert(vmStatus, Equals, "POWERED_OFF")
-}
-
-func init() {
-	testingTags["vm"] = "vm_test.go"
 }

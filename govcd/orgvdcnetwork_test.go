@@ -14,13 +14,16 @@ import (
 )
 
 func (vcd *TestVCD) Test_NetRefresh(check *C) {
+	if vcd.config.VCD.Network.Net1 == "" {
+		check.Skip("Skipping test because no network was given")
+	}
 
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	network, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network)
+	network, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
 
 	check.Assert(err, IsNil)
-	check.Assert(network.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network)
+	check.Assert(network.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 	save_network := network
 
 	err = network.Refresh()
