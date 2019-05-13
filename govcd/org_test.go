@@ -259,7 +259,7 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 					},
 				},
 			},
-			VdcStorageProfile: &types.VdcStorageProfile{
+			VdcStorageProfile: []*types.VdcStorageProfile{&types.VdcStorageProfile{
 				Enabled: true,
 				Units:   "MB",
 				Limit:   1024,
@@ -267,6 +267,7 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 				ProviderVdcStorageProfile: &types.Reference{
 					HREF: providerVdcStorageProfileHref,
 				},
+			},
 			},
 			NetworkPoolReference: &types.Reference{
 				HREF: networkPoolHref,
