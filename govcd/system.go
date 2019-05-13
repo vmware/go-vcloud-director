@@ -233,7 +233,7 @@ func getExtension(client *Client) (*types.Extension, error) {
 	return extensions, err
 }
 
-// QueryProviderVdcStorageProfileByName finds a provider VDC storage profiles by name
+// QueryProviderVdcStorageProfileByName finds a provider VDC storage profile by name
 func QueryProviderVdcStorageProfileByName(vcdCli *VCDClient, name string) ([]*types.QueryResultProviderVdcStorageProfileRecordType, error) {
 	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":   "providerVdcStorageProfile",
