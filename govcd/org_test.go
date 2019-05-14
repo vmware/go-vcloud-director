@@ -21,9 +21,9 @@ func (vcd *TestVCD) Test_RefreshOrg(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
-	adminOrg, err := GetAdminOrgByName(vcd.client, TestRefreshOrg)
+	adminOrg, _ := GetAdminOrgByName(vcd.client, TestRefreshOrg)
 	if adminOrg != (AdminOrg{}) {
-		err = adminOrg.Delete(true, true)
+		err := adminOrg.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
 	task, err := CreateOrg(vcd.client, TestRefreshOrg, TestRefreshOrg, TestRefreshOrg, &types.OrgSettings{
@@ -70,9 +70,9 @@ func (vcd *TestVCD) Test_DeleteOrg(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
-	org, err := GetAdminOrgByName(vcd.client, TestDeleteOrg)
+	org, _ := GetAdminOrgByName(vcd.client, TestDeleteOrg)
 	if org != (AdminOrg{}) {
-		err = org.Delete(true, true)
+		err := org.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
 	task, err := CreateOrg(vcd.client, TestDeleteOrg, TestDeleteOrg, TestDeleteOrg, &types.OrgSettings{}, true)
@@ -101,9 +101,9 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
-	org, err := GetAdminOrgByName(vcd.client, TestUpdateOrg)
+	org, _ := GetAdminOrgByName(vcd.client, TestUpdateOrg)
 	if org != (AdminOrg{}) {
-		err = org.Delete(true, true)
+		err := org.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
 	task, err := CreateOrg(vcd.client, TestUpdateOrg, TestUpdateOrg, TestUpdateOrg, &types.OrgSettings{
@@ -374,9 +374,9 @@ func (vcd *TestVCD) Test_Admin_FindCatalog(check *C) {
 // Then Deletes the catalog.
 func (vcd *TestVCD) Test_CreateCatalog(check *C) {
 	org, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
-	check.Assert(org, Not(Equals), AdminOrg{})
 	check.Assert(err, IsNil)
-	catalog, err := org.FindAdminCatalog(TestCreateCatalog)
+	check.Assert(org, Not(Equals), AdminOrg{})
+	catalog, _ := org.FindAdminCatalog(TestCreateCatalog)
 	if catalog != (AdminCatalog{}) {
 		err = catalog.Delete(true, true)
 		check.Assert(err, IsNil)

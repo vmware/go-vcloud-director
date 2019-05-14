@@ -640,14 +640,12 @@ func (vcd *TestVCD) Test_DeleteMetadataOnVm(check *C) {
 
 // check resource subtype for specific value which means media is injected
 func isMediaInjected(items []*types.VirtualHardwareItem) bool {
-	isFound := false
 	for _, hardwareItem := range items {
 		if hardwareItem.ResourceSubType == types.VMsCDResourceSubType {
-			isFound = true
-			break
+			return true
 		}
 	}
-	return isFound
+	return false
 }
 
 // Test Insert or Eject Media for VM
@@ -752,6 +750,7 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 	check.Assert(0, Not(Equals), currentCores)
 
 	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	check.Assert(err, IsNil)
 
 	cores := 2
 	cpuCount := 4
@@ -759,6 +758,7 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 	task, err := vm.ChangeCPUCountWithCore(cpuCount, &cores)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 
 	err = vm.Refresh()
@@ -780,6 +780,7 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 	task, err = vm.ChangeCPUCountWithCore(currentCpus, &currentCores)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
@@ -794,11 +795,13 @@ func (vcd *TestVCD) Test_VMToggleHardwareVirtualization(check *C) {
 	check.Assert(nestingStatus, Equals, false)
 
 	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	check.Assert(err, IsNil)
 
 	// PowerOn
 	task, err := vm.PowerOn()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 
 	// Try to change the setting on powered on VM to fail
@@ -809,12 +812,14 @@ func (vcd *TestVCD) Test_VMToggleHardwareVirtualization(check *C) {
 	task, err = vm.PowerOff()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 
 	// Perform steps on powered off VM
 	task, err = vm.ToggleHardwareVirtualization(true)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 
 	err = vm.Refresh()
@@ -824,6 +829,7 @@ func (vcd *TestVCD) Test_VMToggleHardwareVirtualization(check *C) {
 	task, err = vm.ToggleHardwareVirtualization(false)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 
 	err = vm.Refresh()
@@ -842,29 +848,35 @@ func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
 
 	// Ensure VM is not powered on
 	vmStatus, err := vm.GetStatus()
+	check.Assert(err, IsNil)
 	if vmStatus != "POWERED_OFF" {
 		task, err := vm.PowerOff()
 		check.Assert(err, IsNil)
 		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
 		check.Assert(task.Task.Status, Equals, "success")
 	}
 
 	task, err := vm.PowerOn()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
 	vmStatus, err = vm.GetStatus()
+	check.Assert(err, IsNil)
 	check.Assert(vmStatus, Equals, "POWERED_ON")
 
 	// Power off again
 	task, err = vm.PowerOff()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
 	vmStatus, err = vm.GetStatus()
+	check.Assert(err, IsNil)
 	check.Assert(vmStatus, Equals, "POWERED_OFF")
 }

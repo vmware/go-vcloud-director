@@ -115,6 +115,7 @@ func (vcd *TestVCD) Test_UpdateDisk(check *C) {
 	}
 
 	updateTask, err := disk.Update(newDiskInfo)
+	check.Assert(err, IsNil)
 	err = updateTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
@@ -233,6 +234,7 @@ func (vcd *TestVCD) Test_RefreshDisk(check *C) {
 	}
 
 	updateTask, err := disk.Update(newDiskInfo)
+	check.Assert(err, IsNil)
 	err = updateTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 

@@ -163,6 +163,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	check.Check(vapp_status, Equals, "POWERED_OFF")
 	// Deleting VApp
 	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	if err != nil {
 		panic(err)
