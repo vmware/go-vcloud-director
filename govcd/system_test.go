@@ -102,6 +102,13 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 	doesOrgExist(check, vcd)
 }
 
+func (vcd *TestVCD) Test_FindBadlyNamedStorageProfile(check *C) {
+	reNotFound := `can't find any VDC Storage_profiles`
+	_, err := vcd.vdc.FindStorageProfileReference("name with spaces")
+	check.Assert(err, NotNil)
+	check.Assert(err.Error(), Matches, reNotFound)
+}
+
 // longer than the 128 characters so nothing can be named this
 var INVALID_NAME = `*******************************************INVALID
 					****************************************************
