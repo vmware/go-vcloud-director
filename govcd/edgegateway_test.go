@@ -196,6 +196,7 @@ func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
 
 	// Configures VPN service
 	task, err := edge.AddIpsecVPN(ipsecVPNConfig)
+	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
@@ -214,6 +215,7 @@ func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
 
 	// Removes VPN service
 	task, err = edge.RemoveIpsecVPN()
+	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 

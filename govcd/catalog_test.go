@@ -48,6 +48,7 @@ func (vcd *TestVCD) Test_UpdateCatalog(check *C) {
 	check.Assert(org, Not(Equals), AdminOrg{})
 	check.Assert(err, IsNil)
 	catalog, err := org.FindAdminCatalog(TestUpdateCatalog)
+	check.Assert(err, IsNil)
 	if catalog != (AdminCatalog{}) {
 		err = catalog.Delete(true, true)
 		check.Assert(err, IsNil)
@@ -75,6 +76,7 @@ func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
 	check.Assert(org, Not(Equals), AdminOrg{})
 	check.Assert(err, IsNil)
 	adminCatalog, err := org.FindAdminCatalog(TestDeleteCatalog)
+	check.Assert(err, IsNil)
 	if adminCatalog != (AdminCatalog{}) {
 		err = adminCatalog.Delete(true, true)
 		check.Assert(err, IsNil)
@@ -130,6 +132,7 @@ func (vcd *TestVCD) Test_UploadOvf_progress_works(check *C) {
 	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
 	catalog, err = org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	check.Assert(err, IsNil)
 	verifyCatalogItemUploaded(check, catalog, itemName)
 }
 
@@ -164,6 +167,7 @@ func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
 	check.Assert(string(result), Matches, ".*Upload progress 100.00%")
 
 	catalog, err = org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	check.Assert(err, IsNil)
 	verifyCatalogItemUploaded(check, catalog, itemName)
 }
 
@@ -237,6 +241,7 @@ func checkUploadOvf(vcd *TestVCD, check *C, ovaFileName, catalogName, itemName s
 	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
 	catalog, err = org.FindCatalog(catalogName)
+	check.Assert(err, IsNil)
 	verifyCatalogItemUploaded(check, catalog, itemName)
 }
 
@@ -288,6 +293,7 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage(check *C) {
 
 	//verifyMediaImageUploaded(vcd.vdc.client, check, TestUploadMedia)
 	catalog, err = org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	check.Assert(err, IsNil)
 	verifyCatalogItemUploaded(check, catalog, TestCatalogUploadMedia)
 }
 
@@ -313,6 +319,7 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_progress_works(check *C) {
 	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadCatalogMediaImage")
 
 	catalog, err = org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	check.Assert(err, IsNil)
 	verifyCatalogItemUploaded(check, catalog, itemName)
 }
 
@@ -345,6 +352,7 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_ShowUploadProgress_works(check 
 
 	check.Assert(string(result), Matches, ".*Upload progress 100.00%")
 	catalog, err = org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	check.Assert(err, IsNil)
 	verifyCatalogItemUploaded(check, catalog, itemName)
 }
 

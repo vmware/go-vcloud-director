@@ -56,9 +56,9 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
-	org, err := GetAdminOrgByName(vcd.client, TestCreateOrg)
+	org, _ := GetAdminOrgByName(vcd.client, TestCreateOrg)
 	if org != (AdminOrg{}) {
-		err = org.Delete(true, true)
+		err := org.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
 	settings := &types.OrgSettings{

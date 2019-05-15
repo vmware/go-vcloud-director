@@ -100,8 +100,7 @@ func (vcd *TestVCD) Test_SetOvf(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
-	var test map[string]string
-	test = make(map[string]string)
+	var test = make(map[string]string)
 	test["guestinfo.hostname"] = "testhostname"
 	task, err := vcd.vapp.SetOvf(test)
 
@@ -177,6 +176,7 @@ func (vcd *TestVCD) Test_ChangeCPUcount(check *C) {
 	task, err := vcd.vapp.ChangeCPUCount(1)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
@@ -205,6 +205,7 @@ func (vcd *TestVCD) Test_ChangeCPUCountWithCore(check *C) {
 	task, err := vcd.vapp.ChangeCPUCountWithCore(cpuCount, &cores)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 
 	err = vcd.vapp.Refresh()
@@ -226,6 +227,7 @@ func (vcd *TestVCD) Test_ChangeCPUCountWithCore(check *C) {
 	task, err = vcd.vapp.ChangeCPUCountWithCore(currentCpus, &currentCores)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
@@ -238,6 +240,7 @@ func (vcd *TestVCD) Test_ChangeMemorySize(check *C) {
 
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
@@ -269,6 +272,7 @@ func (vcd *TestVCD) Test_ChangeVMName(check *C) {
 	task, err := vcd.vapp.ChangeVMName("My-vm")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
@@ -565,6 +569,7 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 		task, err := vapp.AddRAWNetworkConfig(orgvdcnetworks)
 		check.Assert(err, IsNil)
 		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
 		check.Assert(task.Task.Status, Equals, "success")
 
 		desiredNetConfig.NetworkConnection = append(desiredNetConfig.NetworkConnection,
@@ -621,5 +626,4 @@ func verifyNetworkConnectionSection(check *C, actual, desired *types.NetworkConn
 			check.Assert(actualNic.IPAddress, Not(Equals), "")
 		}
 	}
-	return
 }
