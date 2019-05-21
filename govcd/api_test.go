@@ -26,8 +26,7 @@ At least one of the following tags should be defined:
    * ALL :       Runs all the tests (== functional + unit == all feature tests)
 
    * functional: Runs all the tests that use check.v1
-   * unit:       Runs unit tests that do not use check.v1
-                 and don't need a live vCD (currently unused, but we plan to)
+   * unit:       Runs unit tests that do not use check.v1 and don't need a live vCD
 
    * catalog:    Runs catalog related tests (also catalog_item, media)
    * disk:       Runs disk related tests

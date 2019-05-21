@@ -1,4 +1,4 @@
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk ALL
+// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk unit ALL
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -58,6 +58,7 @@ const (
 	TestCreateExternalNetwork     = "TestCreateExternalNetwork"
 	TestDeleteExternalNetwork     = "TestDeleteExternalNetwork"
 	Test_LBServiceMonitor         = "Test_LBServiceMonitor"
+	Test_LBServerPool             = "Test_LBServerPool"
 )
 
 const (
@@ -331,7 +332,7 @@ func (vcd *TestVCD) infoCleanup(format string, args ...interface{}) {
 // Gets the two components of a "parent" string, as passed to AddToCleanupList
 func splitParent(parent string, separator string) (first, second, third string) {
 	strList := strings.Split(parent, separator)
-	if len(strList) < 2 && len(strList) > 3 {
+	if len(strList) < 2 || len(strList) > 3 {
 		return "", "", ""
 	}
 	first = strList[0]
@@ -342,6 +343,27 @@ func splitParent(parent string, separator string) (first, second, third string) 
 	}
 
 	return
+}
+
+func getOrgVdcEdgeByNames(vcd *TestVCD, orgName, vdcName, edgeName string) (Org, Vdc, EdgeGateway, error) {
+	if orgName == "" || vdcName == "" || edgeName == "" {
+		return Org{}, Vdc{}, EdgeGateway{}, fmt.Errorf("orgName, vdcName, edgeName cant be empty")
+	}
+
+	org, err := GetOrgByName(vcd.client, orgName)
+	if err != nil {
+		vcd.infoCleanup("could not find org '%s'", orgName)
+	}
+	vdc, err := org.GetVdcByName(vdcName)
+	if err != nil {
+		vcd.infoCleanup("could not find vdc '%s'", vdcName)
+	}
+
+	edge, err := vdc.FindEdgeGateway(edgeName)
+	if err != nil {
+		vcd.infoCleanup("could not find edge '%s'", vdcName)
+	}
+	return org, vdc, edge, nil
 }
 
 var splitParentNotFound string = "removeLeftoverEntries: [ERROR] missing parent info (%s). The parent fields must be defined with a separator '|'\n"
@@ -631,21 +653,34 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 
 		orgName, vdcName, edgeName := splitParent(entity.Parent, "|")
 
-		org, err := GetOrgByName(vcd.client, orgName)
+		_, _, edge, err := getOrgVdcEdgeByNames(vcd, orgName, vdcName, edgeName)
 		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not find org '%s'\n", orgName)
-		}
-		vdc, err := org.GetVdcByName(vdcName)
-		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not find vdc '%s'\n", vdcName)
-		}
-
-		edge, err := vdc.FindEdgeGateway(edgeName)
-		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not find edge '%s'\n", vdcName)
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
 		}
 
 		err = edge.DeleteLBServiceMonitor(&types.LBMonitor{Name: entity.Name})
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+
+	case "lbServerPool":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No parent specified '%s'\n", entity.Name)
+			return
+		}
+
+		orgName, vdcName, edgeName := splitParent(entity.Parent, "|")
+
+		_, _, edge, err := getOrgVdcEdgeByNames(vcd, orgName, vdcName, edgeName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		err = edge.DeleteLBServerPool(&types.LBPool{Name: entity.Name})
 		if err != nil {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
@@ -765,34 +800,4 @@ func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 
 func init() {
 	testingTags["api"] = "api_vcd_test.go"
-}
-
-func Test_splitParent(t *testing.T) {
-	type args struct {
-		parent    string
-		separator string
-	}
-	tests := []struct {
-		name       string
-		args       args
-		wantFirst  string
-		wantSecond string
-		wantThird  string
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotFirst, gotSecond, gotThird := splitParent(tt.args.parent, tt.args.separator)
-			if gotFirst != tt.wantFirst {
-				t.Errorf("splitParent() gotFirst = %v, want %v", gotFirst, tt.wantFirst)
-			}
-			if gotSecond != tt.wantSecond {
-				t.Errorf("splitParent() gotSecond = %v, want %v", gotSecond, tt.wantSecond)
-			}
-			if gotThird != tt.wantThird {
-				t.Errorf("splitParent() gotThird = %v, want %v", gotThird, tt.wantThird)
-			}
-		})
-	}
 }
