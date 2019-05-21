@@ -57,6 +57,7 @@ const (
 	TestVMDetachDisk              = "TestVMDetachDisk"
 	TestCreateExternalNetwork     = "TestCreateExternalNetwork"
 	TestDeleteExternalNetwork     = "TestDeleteExternalNetwork"
+	Test_LBServiceMonitor         = "Test_LBServiceMonitor"
 )
 
 const (
@@ -617,6 +618,41 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
+	case "lbServiceMonitor":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No parent specified '%s'\n", entity.Name)
+			return
+		}
+
+		splitParent := strings.Split(entity.Parent, "|")
+		if len(splitParent) != 3 {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Incorrent parent info specified '%s'\n", entity.Parent)
+		}
+		orgName, vdcName, edgeName := splitParent[0], splitParent[1], splitParent[2]
+
+		org, err := GetOrgByName(vcd.client, orgName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not find org '%s'\n", orgName)
+		}
+		vdc, err := org.GetVdcByName(vdcName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not find vdc '%s'\n", vdcName)
+		}
+
+		edge, err := vdc.FindEdgeGateway(edgeName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not find edge '%s'\n", vdcName)
+		}
+
+		err = edge.DeleteLBServiceMonitor(&types.LBMonitor{Name: entity.Name})
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, entity.Name, err)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+
 	default:
 		// If we reach this point, we are trying to clean up an entity that
 		// we aren't prepared for yet.
