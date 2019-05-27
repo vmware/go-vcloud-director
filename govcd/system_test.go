@@ -125,9 +125,9 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 	orgName := vcd.config.VCD.Org
 	vdcName := vcd.config.VCD.Vdc
 	egc := EdgeGatewayCreation{
-		externalNetworks: []string{TestCreateExternalNetwork},
-		orgName:          orgName,
-		vdcName:          vdcName,
+		ExternalNetworks: []string{TestCreateExternalNetwork},
+		OrgName:          orgName,
+		VdcName:          vdcName,
 	}
 
 	// A full test takes approx 3m:30s with both "compact" and "full"
@@ -135,21 +135,21 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 	// To reduce testing time, comment the previous line and uncomment the next one
 	// testingRange := []string{"compact"}
 	for _, backingConf := range testingRange {
-		egc.backingConfiguration = backingConf
-		egc.egwName = newEgwName + "_" + backingConf
-		egc.description = egc.egwName
+		egc.BackingConfiguration = backingConf
+		egc.EgwName = newEgwName + "_" + backingConf
+		egc.Description = egc.EgwName
 		task, err := CreateEdgeGateway(vcd.client, egc)
 		check.Assert(task, NotNil)
 		check.Assert(err, IsNil)
 
-		AddToCleanupList(egc.egwName, "edgegateway", orgName+"|"+vdcName, "Test_CreateDeleteEdgeGateway")
+		AddToCleanupList(egc.EgwName, "edgegateway", orgName+"|"+vdcName, "Test_CreateDeleteEdgeGateway")
 		err = task.WaitInspectTaskCompletion(SimpleShowTask, 10*time.Second)
 		check.Assert(err, IsNil)
 
-		edge, err := vcd.vdc.FindEdgeGateway(egc.egwName)
+		edge, err := vcd.vdc.FindEdgeGateway(egc.EgwName)
 		check.Assert(err, IsNil)
 
-		check.Assert(edge.EdgeGateway.Name, Equals, egc.egwName)
+		check.Assert(edge.EdgeGateway.Name, Equals, egc.EgwName)
 		// Edge gateway status:
 		//  0 : being created
 		//  1 : ready
@@ -164,7 +164,7 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 		check.Assert(err, IsNil)
 
 		// Once deleted, look for the edge gateway again. It should return an error
-		edge, err = vcd.vdc.FindEdgeGateway(egc.egwName)
+		edge, err = vcd.vdc.FindEdgeGateway(egc.EgwName)
 		check.Assert(err, NotNil)
 		check.Assert(edge, Equals, EdgeGateway{})
 	}
