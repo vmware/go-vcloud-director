@@ -8,10 +8,24 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
+
+// Simple structure to pass Edge Gateway creation parameters.
+type EdgeGatewayCreation struct {
+	externalNetworks     []string
+	orgName              string
+	vdcName              string
+	egwName              string
+	description          string
+	backingConfiguration string
+}
+
+// List of allowed values for GatewayBackingConfig.
+var EGWAllowedBackingConfig = []string{"compact", "full"}
 
 // Creates an Organization based on settings, network, and org name.
 // The Organization created will have these settings specified in the
@@ -41,6 +55,133 @@ func CreateOrg(vcdClient *VCDClient, name string, fullName string, description s
 	return vcdClient.Client.ExecuteTaskRequest(orgCreateHREF.String(), http.MethodPost,
 		"application/vnd.vmware.admin.organization+xml", "error instantiating a new Org: %s", vcomp)
 
+}
+
+// Returns the UUID part of an entity ID
+// From "urn:vcloud:vdc:72fefde7-4fed-45b8-a774-79b72c870325",
+// will return "72fefde7-4fed-45b8-a774-79b72c870325"
+// From "urn:vcloud:catalog:97384890-180c-4563-b9b7-0dc50a2430b0"
+// will return "97384890-180c-4563-b9b7-0dc50a2430b0"
+func getBareEntityId(entityId string) (string, error) {
+	// Regular expression to match an ID:
+	//     3 strings (alphanumeric + "-") separated by a colon (:)
+	//     1 group of 8 hexadecimal digits
+	//     3 groups of 4 hexadecimal
+	//     1 group of 12 hexadecimal digits
+	reGetID := regexp.MustCompile(`^[\w-]+:[\w-]+:[\w-]+:([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$`)
+	matchList := reGetID.FindAllStringSubmatch(entityId, -1)
+
+	// matchList has the format
+	// [][]string{[]string{"TOTAL MATCHED STRING", "CAPTURED TEXT"}}
+	// such as
+	// [][]string{[]string{"urn:vcloud:catalog:97384890-180c-4563-b9b7-0dc50a2430b0", "97384890-180c-4563-b9b7-0dc50a2430b0"}}
+	if len(matchList) == 0 || len(matchList[0]) < 2 {
+		return "", fmt.Errorf("error extracting ID from '%s'", entityId)
+	}
+	return matchList[0][1], nil
+}
+
+// Creates an edge gateway using its parents entities
+// https://code.vmware.com/apis/442/vcloud-director/doc/doc/operations/POST-CreateEdgeGateway.html
+func CreateEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation) (Task, error) {
+
+	adminOrg, err := GetAdminOrgByName(vcdClient, egwc.orgName)
+	if err != nil {
+		return Task{}, err
+	}
+	vdc, err := adminOrg.GetVdcByName(egwc.vdcName)
+	if err != nil {
+		return Task{}, err
+	}
+
+	backingAllowed := false
+	for _, allowed := range EGWAllowedBackingConfig {
+		if allowed == egwc.backingConfiguration {
+			backingAllowed = true
+		}
+	}
+	if !backingAllowed {
+		return Task{},
+			fmt.Errorf("backing configuration value '%s' not accepted. Allowed values: %v ",
+				egwc.backingConfiguration, EGWAllowedBackingConfig)
+	}
+
+	// This is the main configuration structure
+	egwConfiguration := &types.EdgeGateway{
+		Xmlns:       types.XMLNamespaceVCloud,
+		Name:        egwc.egwName,
+		Description: egwc.description,
+		Configuration: &types.GatewayConfiguration{
+			GatewayBackingConfig: egwc.backingConfiguration,
+			GatewayInterfaces: &types.GatewayInterfaces{
+				GatewayInterface: []*types.GatewayInterface{},
+			},
+			EdgeGatewayServiceConfiguration: &types.GatewayFeatures{},
+		},
+	}
+
+	if len(egwc.externalNetworks) == 0 {
+		return Task{}, fmt.Errorf("no external networks provided. At least one is needed")
+	}
+
+	// Add external networks inside the configuration structure
+	for _, extNetName := range egwc.externalNetworks {
+		extNet, err := GetExternalNetworkByName(vcdClient, extNetName)
+		if err != nil {
+			return Task{}, err
+		}
+		networkConf := &types.GatewayInterface{
+			Name:          extNet.Name,
+			DisplayName:   extNet.Name,
+			InterfaceType: "uplink",
+			Network: &types.Reference{
+				HREF: extNet.HREF,
+				ID:   extNet.HREF,
+				Type: "application/vnd.vmware.admin.network+xml",
+				Name: extNet.Name,
+			},
+		}
+		egwConfiguration.Configuration.GatewayInterfaces.GatewayInterface =
+			append(egwConfiguration.Configuration.GatewayInterfaces.GatewayInterface, networkConf)
+	}
+
+	egwCreateHREF := vcdClient.Client.VCDHREF
+
+	ID, err := getBareEntityId(vdc.Vdc.ID)
+	if err != nil {
+		return Task{}, fmt.Errorf("error retrieving ID from Vdc %s: %s", egwc.vdcName, err)
+	}
+	if ID == "" {
+		return Task{}, fmt.Errorf("error retrieving ID from Vdc %s - empty ID returned", egwc.vdcName)
+	}
+	egwCreateHREF.Path += fmt.Sprintf("/admin/vdc/%s/edgeGateways", ID)
+
+	// The first task is the creation task. It is quick, and does only create the vCD entity,
+	// but not yet deploy the underlying VM
+	creationTask, err := vcdClient.Client.ExecuteTaskRequest(egwCreateHREF.String(), http.MethodPost,
+		"application/vnd.vmware.admin.edgeGateway+xml", "error instantiating a new Edge Gateway: %s", egwConfiguration)
+
+	if err != nil {
+		return Task{}, err
+	}
+
+	err = creationTask.WaitTaskCompletion()
+
+	if err != nil {
+		return Task{}, err
+	}
+
+	// After creation, there is a build task that supervises the gateway deployment
+	for _, innerTask := range creationTask.Task.Tasks.Task {
+		if innerTask.OperationName == "networkEdgeGatewayCreate" {
+			deployTask := Task{
+				Task:   innerTask,
+				client: &vcdClient.Client,
+			}
+			return deployTask, nil
+		}
+	}
+	return Task{}, fmt.Errorf("no deployment task found for edge gateway %s - The edge gateway might have been created, but not deployed properly", egwc.egwName)
 }
 
 // If user specifies a valid organization name, then this returns a

@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -633,4 +634,36 @@ func (eGW *EdgeGateway) RemoveIpsecVPN() (Task, error) {
 		},
 	}
 	return eGW.AddIpsecVPN(ipsecVPNConfig)
+}
+
+// Deletes the edge gateway, returning an error if the vCD call fails.
+// https://code.vmware.com/apis/442/vcloud-director/doc/doc/operations/DELETE-EdgeGateway.html
+func (egw *EdgeGateway) Delete(force bool, recursive bool) (Task, error) {
+	util.Logger.Printf("[TRACE] EdgeGateway.Delete - deleting edge gateway with force: %t, recursive: %t", force, recursive)
+
+	if egw.EdgeGateway.HREF == "" {
+		return Task{}, fmt.Errorf("cannot delete, Object is empty")
+	}
+
+	egwUrl, err := url.ParseRequestURI(egw.EdgeGateway.HREF)
+	if err != nil {
+		return Task{}, fmt.Errorf("error parsing edge gateway url: %s", err)
+	}
+
+	req := egw.client.NewRequest(map[string]string{
+		"force":     strconv.FormatBool(force),
+		"recursive": strconv.FormatBool(recursive),
+	}, http.MethodDelete, *egwUrl, nil)
+	resp, err := checkResp(egw.client.Http.Do(req))
+	if err != nil {
+		return Task{}, fmt.Errorf("error deleting edge gateway: %s", err)
+	}
+	task := NewTask(egw.client)
+	if err = decodeBody(resp, task.Task); err != nil {
+		return Task{}, fmt.Errorf("error decoding task response: %s", err)
+	}
+	if task.Task.Status == "error" {
+		return Task{}, fmt.Errorf("edge gateway not properly destroyed")
+	}
+	return *task, nil
 }

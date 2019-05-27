@@ -1486,6 +1486,7 @@ type InstantiateVAppTemplateParams struct {
 // Since: 5.1
 type EdgeGateway struct {
 	// Attributes
+	Xmlns        string `xml:"xmlns,attr,omitempty"`
 	HREF         string `xml:"href,attr,omitempty"`         // The URI of the entity.
 	Type         string `xml:"type,attr,omitempty"`         // The MIME type of the entity.
 	ID           string `xml:"id,attr,omitempty"`           // The entity identifier, expressed in URN format. The value of this attribute uniquely identifies the entity, persists for the life of the entity, and is never reused
