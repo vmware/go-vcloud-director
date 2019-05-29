@@ -478,24 +478,6 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
 	case "network":
-		/*
-			orgName, vdcName := splitParent(entity.Parent, "|")
-			if orgName == "" || vdcName == "" {
-				vcd.infoCleanup(splitParentNotFound, entity.Parent)
-				return
-			}
-			org, err := GetAdminOrgByName(vcd.client, orgName)
-			if org == (AdminOrg{}) || err != nil {
-				vcd.infoCleanup(notFoundMsg, "org", orgName)
-				return
-			}
-			vdc, err := org.GetVdcByName(vdcName)
-			if vdc == (Vdc{}) || err != nil {
-				vcd.infoCleanup(notFoundMsg, "vdc", vdcName)
-				return
-			}
-		*/
-
 		_, vdc, err := vcd.getAdminOrgAndVdcFromCleanupEntity(entity)
 		if err != nil {
 			vcd.infoCleanup("%s", err)
@@ -525,23 +507,6 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No VDC and ORG provided for media '%s'\n", entity.Name)
 			return
 		}
-		/*
-			orgName, vdcName := splitParent(entity.Parent, "|")
-			if orgName == "" || vdcName == "" {
-				vcd.infoCleanup(splitParentNotFound, entity.Parent)
-				return
-			}
-			org, err := GetAdminOrgByName(vcd.client, orgName)
-			if org == (AdminOrg{}) || err != nil {
-				vcd.infoCleanup(notFoundMsg, "org", orgName)
-				return
-			}
-			vdc, err := org.GetVdcByName(vdcName)
-			if vdc == (Vdc{}) || err != nil {
-				vcd.infoCleanup(notFoundMsg, "vdc", vdcName)
-				return
-			}
-		*/
 		_, vdc, err := vcd.getAdminOrgAndVdcFromCleanupEntity(entity)
 		if err != nil {
 			vcd.infoCleanup("%s", err)
