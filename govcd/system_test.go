@@ -106,55 +106,58 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 
 func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 	skippingReason, externalNetwork, task, err := vcd.testCreateExternalNetwork(check.TestName(), TestCreateExternalNetwork, "")
+	// skippingReason, _ , task, err := vcd.testCreateExternalNetwork(check.TestName(), TestCreateExternalNetwork, "")
 	if skippingReason != "" {
 		check.Skip(skippingReason)
 	}
+
 	check.Assert(err, IsNil)
 	check.Assert(task, NotNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	if err != nil {
-		AddToCleanupList(externalNetwork.Name, "externalNetwork", "", "Test_CreateExternalNetwork")
-	}
-	//if vcd.skipAdminTests {
-	//	check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
-	//}
+	// The external network ends up attached to the edge gateway.
+	// We need to add it to the list only after any edge gateways that have been created within this test.
+	// If the test fails, the edge gateway is going to be deleted before the external network
+	defer AddToCleanupList(externalNetwork.Name, "externalNetwork", "", "Test_CreateDeleteEdgeGateway")
 
 	newEgwName := "CreateDeleteEdgeGateway"
 	orgName := vcd.config.VCD.Org
 	vdcName := vcd.config.VCD.Vdc
 	egc := EdgeGatewayCreation{
-		ExternalNetworks: []string{TestCreateExternalNetwork},
-		OrgName:          orgName,
-		VdcName:          vdcName,
+		ExternalNetworks:          []string{TestCreateExternalNetwork},
+		OrgName:                   orgName,
+		VdcName:                   vdcName,
+		AdvancedNetworkingEnabled: true,
 	}
 
 	// A full test takes approx 3m:30s with both "compact" and "full"
-	testingRange := EGWAllowedBackingConfig
+	// testingRange := EGWAllowedBackingConfig
 	// To reduce testing time, comment the previous line and uncomment the next one
-	// testingRange := []string{"compact"}
+	testingRange := []string{"compact"}
 	for _, backingConf := range testingRange {
 		egc.BackingConfiguration = backingConf
-		egc.EgwName = newEgwName + "_" + backingConf
-		egc.Description = egc.EgwName
+		egc.Name = newEgwName + "_" + backingConf
+		egc.Description = egc.Name
 		task, err := CreateEdgeGateway(vcd.client, egc)
 		check.Assert(task, NotNil)
 		check.Assert(err, IsNil)
 
-		AddToCleanupList(egc.EgwName, "edgegateway", orgName+"|"+vdcName, "Test_CreateDeleteEdgeGateway")
+		AddToCleanupList(egc.Name, "edgegateway", orgName+"|"+vdcName, "Test_CreateDeleteEdgeGateway")
 		err = task.WaitInspectTaskCompletion(SimpleShowTask, 10*time.Second)
 		check.Assert(err, IsNil)
 
-		edge, err := vcd.vdc.FindEdgeGateway(egc.EgwName)
+		edge, err := vcd.vdc.FindEdgeGateway(egc.Name)
 		check.Assert(err, IsNil)
 
-		check.Assert(edge.EdgeGateway.Name, Equals, egc.EgwName)
+		check.Assert(edge.EdgeGateway.Name, Equals, egc.Name)
 		// Edge gateway status:
 		//  0 : being created
 		//  1 : ready
 		// -1 : creation error
 		check.Assert(edge.EdgeGateway.Status, Equals, 1)
+
+		check.Assert(edge.EdgeGateway.Configuration.AdvancedNetworkingEnabled, Equals, true)
 
 		task, err = edge.Delete(true, true)
 		check.Assert(err, IsNil)
@@ -164,7 +167,7 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 		check.Assert(err, IsNil)
 
 		// Once deleted, look for the edge gateway again. It should return an error
-		edge, err = vcd.vdc.FindEdgeGateway(egc.EgwName)
+		edge, err = vcd.vdc.FindEdgeGateway(egc.Name)
 		check.Assert(err, NotNil)
 		check.Assert(edge, Equals, EdgeGateway{})
 	}

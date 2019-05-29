@@ -125,6 +125,7 @@ func (vcd *TestVCD) Test_ExternalNetworkDelete(check *C) {
 	}
 
 	check.Assert(err, IsNil)
+	AddToCleanupList(externalNetwork.Name, "externalNetwork", "", "Test_ExternalNetworkDelete")
 	check.Assert(task.Task, Not(Equals), types.Task{})
 
 	err = task.WaitTaskCompletion()
@@ -134,14 +135,11 @@ func (vcd *TestVCD) Test_ExternalNetworkDelete(check *C) {
 	check.Assert(err, IsNil)
 
 	err = createdExternalNetwork.DeleteWait()
-	if err != nil {
-		AddToCleanupList(externalNetwork.Name, "externalNetwork", "", "Test_ExternalNetworkDelete")
-	}
 	check.Assert(err, IsNil)
 
-	// check through existing catalogItems
+	// check through existing external networks
 	_, err = GetExternalNetwork(vcd.client, externalNetwork.Name)
-	check.Assert(err, IsNil)
+	check.Assert(err, NotNil)
 }
 
 // Retrieves an external network and checks that its contents are filled as expected
@@ -174,6 +172,7 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(task.Task, Not(Equals), types.Task{})
 
+	AddToCleanupList(externalNetwork.Name, "externalNetwork", "", "Test_CreateExternalNetwork")
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
@@ -196,9 +195,6 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	check.Assert(newExternalNetwork.ExternalNetwork.Configuration.FenceMode, Equals, "isolated")
 
 	err = newExternalNetwork.DeleteWait()
-	if err != nil {
-		AddToCleanupList(externalNetwork.Name, "externalNetwork", "", "Test_CreateExternalNetwork")
-	}
 	check.Assert(err, IsNil)
 }
 

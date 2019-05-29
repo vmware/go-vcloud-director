@@ -16,12 +16,13 @@ import (
 
 // Simple structure to pass Edge Gateway creation parameters.
 type EdgeGatewayCreation struct {
-	ExternalNetworks     []string
-	OrgName              string
-	VdcName              string
-	EgwName              string
-	Description          string
-	BackingConfiguration string
+	ExternalNetworks          []string
+	OrgName                   string
+	VdcName                   string
+	Name                      string
+	Description               string
+	BackingConfiguration      string
+	AdvancedNetworkingEnabled bool
 }
 
 // List of allowed values for GatewayBackingConfig.
@@ -109,10 +110,11 @@ func CreateEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation) (Task, er
 	// This is the main configuration structure
 	egwConfiguration := &types.EdgeGateway{
 		Xmlns:       types.XMLNamespaceVCloud,
-		Name:        egwc.EgwName,
+		Name:        egwc.Name,
 		Description: egwc.Description,
 		Configuration: &types.GatewayConfiguration{
-			GatewayBackingConfig: egwc.BackingConfiguration,
+			GatewayBackingConfig:      egwc.BackingConfiguration,
+			AdvancedNetworkingEnabled: egwc.AdvancedNetworkingEnabled,
 			GatewayInterfaces: &types.GatewayInterfaces{
 				GatewayInterface: []*types.GatewayInterface{},
 			},
@@ -181,7 +183,7 @@ func CreateEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation) (Task, er
 			return deployTask, nil
 		}
 	}
-	return Task{}, fmt.Errorf("no deployment task found for edge gateway %s - The edge gateway might have been created, but not deployed properly", egwc.EgwName)
+	return Task{}, fmt.Errorf("no deployment task found for edge gateway %s - The edge gateway might have been created, but not deployed properly", egwc.Name)
 }
 
 // If user specifies a valid organization name, then this returns a
@@ -290,10 +292,8 @@ func QueryPortGroups(vcdCli *VCDClient, filter string) ([]*types.PortGroupRecord
 	return results.Results.PortGroupRecord, nil
 }
 
-// GetExternalNetwork returns ExternalNetwork object if user specifies a valid external network name.
-// If no valid external network is found, it returns an empty
-// ExternalNetwork and no error. Otherwise it returns an error and an empty
-// ExternalNetwork object
+// GetExternalNetwork returns an ExternalNetwork object if user the network name matches an existing one.
+// If no valid external network is found, it returns an empty ExternalNetwork and an error
 func GetExternalNetwork(vcdClient *VCDClient, networkName string) (*ExternalNetwork, error) {
 
 	if !vcdClient.Client.IsSysAdmin {
@@ -314,17 +314,22 @@ func GetExternalNetwork(vcdClient *VCDClient, networkName string) (*ExternalNetw
 
 	externalNetwork := NewExternalNetwork(&vcdClient.Client)
 
+	found := false
 	for _, netRef := range extNetworkRefs.ExternalNetworkReference {
 		if netRef.Name == networkName {
 			externalNetwork.ExternalNetwork.HREF = netRef.HREF
 			err = externalNetwork.Refresh()
+			found = true
 			if err != nil {
 				return &ExternalNetwork{}, err
 			}
 		}
 	}
 
-	return externalNetwork, nil
+	if found {
+		return externalNetwork, nil
+	}
+	return externalNetwork, fmt.Errorf("could not find external network named %s", networkName)
 
 }
 
