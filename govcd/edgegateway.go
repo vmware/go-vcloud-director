@@ -24,6 +24,11 @@ type EdgeGateway struct {
 	client      *Client
 }
 
+type SimpleNetworkIdentifier struct {
+	Name          string
+	InterfaceType string
+}
+
 var reErrorBusy = regexp.MustCompile(`is busy completing an operation.$`)
 
 func NewEdgeGateway(cli *Client) *EdgeGateway {
@@ -666,4 +671,22 @@ func (egw *EdgeGateway) Delete(force bool, recursive bool) (Task, error) {
 		return Task{}, fmt.Errorf("edge gateway not properly destroyed")
 	}
 	return *task, nil
+}
+
+// Returns the list of networks associated with an edge gateway
+func (egw *EdgeGateway) Networks() ([]SimpleNetworkIdentifier, error) {
+	var networks []SimpleNetworkIdentifier
+	err := egw.Refresh()
+	if err != nil {
+		return networks, err
+	}
+	for _, net := range egw.EdgeGateway.Configuration.GatewayInterfaces.GatewayInterface {
+		netIdentifier := SimpleNetworkIdentifier{
+			Name:          net.Name,
+			InterfaceType: net.InterfaceType,
+		}
+		networks = append(networks, netIdentifier)
+	}
+
+	return networks, nil
 }

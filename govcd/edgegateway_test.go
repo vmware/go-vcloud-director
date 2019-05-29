@@ -8,6 +8,7 @@ package govcd
 
 import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+
 	. "gopkg.in/check.v1"
 )
 
@@ -231,4 +232,45 @@ func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
 	check.Assert(newConfState, Equals, false)
 	check.Assert(newConfTunnel, IsNil)
 	check.Assert(newConfEndpoint, IsNil)
+}
+
+func (vcd *TestVCD) TestEdgeGateway_Networks(check *C) {
+	if vcd.config.VCD.EdgeGateway == "" {
+		check.Skip("Skipping test because no edgegatway given")
+	}
+	if vcd.config.VCD.ExternalNetwork == "" {
+		check.Skip("Skipping test because no external network given")
+	}
+	if vcd.config.VCD.Network.Net1 == "" {
+		check.Skip("Skipping test because no network given")
+	}
+	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	check.Assert(err, IsNil)
+	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
+	network, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
+	check.Assert(err, IsNil)
+	isRouted := false
+	// If the network is not linked to the edge gateway, we won't check for its name in the network list
+	if network.OrgVDCNetwork.EdgeGateway != nil {
+		isRouted = true
+	}
+
+	var networkList []SimpleNetworkIdentifier
+	networkList, err = edge.Networks()
+	check.Assert(err, IsNil)
+	foundExternalNetwork := false
+	foundNetwork := false
+	for _, net := range networkList {
+		if net.Name == vcd.config.VCD.ExternalNetwork && net.InterfaceType == "uplink" {
+			foundExternalNetwork = true
+		}
+		if net.Name == vcd.config.VCD.Network.Net1 && net.InterfaceType == "internal" {
+			foundNetwork = true
+		}
+	}
+	check.Assert(foundExternalNetwork, Equals, true)
+	if isRouted {
+		check.Assert(foundNetwork, Equals, true)
+	}
+
 }
