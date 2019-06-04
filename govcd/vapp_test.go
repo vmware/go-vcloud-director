@@ -627,3 +627,93 @@ func verifyNetworkConnectionSection(check *C, actual, desired *types.NetworkConn
 		}
 	}
 }
+
+func (vcd *TestVCD) Test_RemoveAllNetworks(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
+	networkName := "AddAndRemoveNetworkTest"
+	networkName2 := "AddAndRemoveNetworkTest2"
+	const gateway = "192.168.0.1"
+	const netmask = "255.255.255.0"
+	const dns1 = "8.8.8.8"
+	const dns2 = "1.1.1.1"
+	const dnsSuffix = "biz.biz"
+	const startAddress = "192.168.0.10"
+	const endAddress = "192.168.0.20"
+	const dhcpStartAddress = "192.168.0.30"
+	const dhcpEndAddress = "192.168.0.40"
+	const maxLeaseTime = 3500
+	const defaultLeaseTime = 2400
+	var guestVlanAllowed = true
+
+	vappNetworkSettings := &VappNetworkSettings{
+		Name:           networkName,
+		Gateway:        gateway,
+		NetMask:        netmask,
+		DNS1:           dns1,
+		DNS2:           dns2,
+		DNSSuffix:      dnsSuffix,
+		StaticIPRanges: []*types.IPRange{{StartAddress: startAddress, EndAddress: endAddress}},
+		DhcpSettings:   &DhcpSettings{IsEnabled: true, MaxLeaseTime: maxLeaseTime, DefaultLeaseTime: defaultLeaseTime, IPRange: &types.IPRange{StartAddress: dhcpStartAddress, EndAddress: dhcpEndAddress}},
+	}
+
+	vappNetworkSettings2 := &VappNetworkSettings{
+		Name:           networkName2,
+		Gateway:        gateway,
+		NetMask:        netmask,
+		DNS1:           dns1,
+		DNS2:           dns2,
+		DNSSuffix:      dnsSuffix,
+		StaticIPRanges: []*types.IPRange{{StartAddress: startAddress, EndAddress: endAddress}},
+		DhcpSettings:   &DhcpSettings{IsEnabled: true, MaxLeaseTime: maxLeaseTime, DefaultLeaseTime: defaultLeaseTime, IPRange: &types.IPRange{StartAddress: dhcpStartAddress, EndAddress: dhcpEndAddress}},
+	}
+
+	// vCD 8.20 does not support sending guestVlanAllowed
+	if vcd.client.APIVCDMaxVersionIs("> 27.0") {
+		vappNetworkSettings.GuestVLANAllowed = &guestVlanAllowed
+	} else {
+		fmt.Printf("Skipping GuestVLANAllowed parameter as it is not supported on vCD 8.20")
+	}
+
+	task, err := vcd.vapp.AddIsolatedNetwork(vappNetworkSettings)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	task, err = vcd.vapp.AddIsolatedNetwork(vappNetworkSettings2)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	err = vcd.vapp.Refresh()
+	check.Assert(err, IsNil)
+	networkConfig, err := vcd.vapp.GetNetworkConfig()
+	check.Assert(err, IsNil)
+
+	check.Assert(len(networkConfig.NetworkConfig), Equals, 2)
+
+	task, err = vcd.vapp.RemoveAllNetworks()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	err = vcd.vapp.Refresh()
+	check.Assert(err, IsNil)
+	networkConfig, err = vcd.vapp.GetNetworkConfig()
+	check.Assert(err, IsNil)
+
+	isExist := false
+	for _, networkConfig := range networkConfig.NetworkConfig {
+		if networkConfig.NetworkName == networkName || networkConfig.NetworkName == networkName2 {
+			isExist = true
+		}
+
+	}
+	check.Assert(isExist, Equals, false)
+}
+networkConfig.NetworkName == networkName
