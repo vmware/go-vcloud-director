@@ -716,4 +716,3 @@ func (vcd *TestVCD) Test_RemoveAllNetworks(check *C) {
 	}
 	check.Assert(isExist, Equals, false)
 }
-networkConfig.NetworkName == networkName
