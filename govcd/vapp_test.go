@@ -707,12 +707,12 @@ func (vcd *TestVCD) Test_RemoveAllNetworks(check *C) {
 	networkConfig, err = vcd.vapp.GetNetworkConfig()
 	check.Assert(err, IsNil)
 
-	isExist := false
+	hasNetworks := false
 	for _, networkConfig := range networkConfig.NetworkConfig {
 		if networkConfig.NetworkName == networkName || networkConfig.NetworkName == networkName2 {
-			isExist = true
+			hasNetworks = true
 		}
 
 	}
-	check.Assert(isExist, Equals, false)
+	check.Assert(hasNetworks, Equals, false)
 }
