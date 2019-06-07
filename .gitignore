@@ -29,6 +29,8 @@ secrets.yml
 # Pycharm IDE
 .idea
 
+# VScode IDE
+.vscode
 
 # Test artifacts
 govcd/govcd_test_config.yaml
