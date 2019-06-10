@@ -465,12 +465,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [INFO] edge gateway '%s' not found\n", entity.Name)
 			return
 		}
-		task, err := edge.Delete(true, true)
-		if err != nil {
-			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
-			return
-		}
-		err = task.WaitTaskCompletion()
+		err = edge.Delete(true, true)
 		if err != nil {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 			return
