@@ -209,7 +209,10 @@ func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
 	newConf := edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration
 	newConfState := newConf.GatewayIpsecVpnService.IsEnabled
 	newConfTunnel := newConf.GatewayIpsecVpnService.Tunnel
-	newConfEndpoint := newConf.GatewayIpsecVpnService.Endpoint
+
+	// TODO: assumption about not nil endpoints doesn't hold for all vCD versions and configurations
+	// Needs research
+	//newConfEndpoint := newConf.GatewayIpsecVpnService.Endpoint
 	check.Assert(newConfState, Equals, true)
 	check.Assert(newConfTunnel, NotNil)
 	// check.Assert(newConfEndpoint, NotNil)
@@ -228,7 +231,7 @@ func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
 	afterDeletionConf := edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration
 	newConfState = afterDeletionConf.GatewayIpsecVpnService.IsEnabled
 	newConfTunnel = afterDeletionConf.GatewayIpsecVpnService.Tunnel
-	newConfEndpoint = afterDeletionConf.GatewayIpsecVpnService.Endpoint
+	newConfEndpoint := afterDeletionConf.GatewayIpsecVpnService.Endpoint
 	check.Assert(newConfState, Equals, false)
 	check.Assert(newConfTunnel, IsNil)
 	check.Assert(newConfEndpoint, IsNil)
@@ -256,7 +259,7 @@ func (vcd *TestVCD) TestEdgeGateway_Networks(check *C) {
 	}
 
 	var networkList []SimpleNetworkIdentifier
-	networkList, err = edge.Networks()
+	networkList, err = edge.GetNetworks()
 	check.Assert(err, IsNil)
 	foundExternalNetwork := false
 	foundNetwork := false
