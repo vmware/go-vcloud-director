@@ -117,7 +117,7 @@ func prettyDisk(disk types.Disk) string {
 }
 
 // Returns an External Network structure as JSON
-func prettyExternalNetwork(network types.ExternalNetworkReference) string {
+func prettyExternalNetwork(network types.ExternalNetwork) string {
 	byteBuf, err := json.MarshalIndent(network, " ", " ")
 	if err == nil {
 		return fmt.Sprintf("%s\n", string(byteBuf))
@@ -162,11 +162,11 @@ func ShowNetwork(conf types.OrgVDCNetwork) {
 	out("screen", prettyNetworkConf(conf))
 }
 
-func LogExternalNetwork(network types.ExternalNetworkReference) {
+func LogExternalNetwork(network types.ExternalNetwork) {
 	out("log", prettyExternalNetwork(network))
 }
 
-func ShowExternalNetwork(network types.ExternalNetworkReference) {
+func ShowExternalNetwork(network types.ExternalNetwork) {
 	out("screen", prettyExternalNetwork(network))
 }
 
