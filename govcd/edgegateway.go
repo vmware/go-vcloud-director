@@ -24,6 +24,7 @@ type EdgeGateway struct {
 	client      *Client
 }
 
+// Simplified structure used to list networks connected to an edge gateway
 type SimpleNetworkIdentifier struct {
 	Name          string
 	InterfaceType string
@@ -641,9 +642,9 @@ func (eGW *EdgeGateway) RemoveIpsecVPN() (Task, error) {
 	return eGW.AddIpsecVPN(ipsecVPNConfig)
 }
 
-// Deletes the edge gateway, returning an error if the vCD call fails.
+// Deletes the edge gateway, returning a task and an error if the vCD call fails.
 // https://code.vmware.com/apis/442/vcloud-director/doc/doc/operations/DELETE-EdgeGateway.html
-func (egw *EdgeGateway) Delete(force bool, recursive bool) (Task, error) {
+func (egw *EdgeGateway) DeleteTask(force bool, recursive bool) (Task, error) {
 	util.Logger.Printf("[TRACE] EdgeGateway.Delete - deleting edge gateway with force: %t, recursive: %t", force, recursive)
 
 	if egw.EdgeGateway.HREF == "" {
@@ -667,14 +668,58 @@ func (egw *EdgeGateway) Delete(force bool, recursive bool) (Task, error) {
 	if err = decodeBody(resp, task.Task); err != nil {
 		return Task{}, fmt.Errorf("error decoding task response: %s", err)
 	}
-	if task.Task.Status == "error" {
-		return Task{}, fmt.Errorf("edge gateway not properly destroyed")
-	}
-	return *task, nil
+	return *task, err
 }
 
-// Returns the list of networks associated with an edge gateway
-func (egw *EdgeGateway) Networks() ([]SimpleNetworkIdentifier, error) {
+// Deletes the edge gateway, returning an error if the vCD call fails.
+// https://code.vmware.com/apis/442/vcloud-director/doc/doc/operations/DELETE-EdgeGateway.html
+func (egw *EdgeGateway) Delete(force bool, recursive bool) error {
+
+	task, err := egw.DeleteTask(force, recursive)
+	if err != nil {
+		return err
+	}
+	/*
+		util.Logger.Printf("[TRACE] EdgeGateway.Delete - deleting edge gateway with force: %t, recursive: %t", force, recursive)
+
+		if egw.EdgeGateway.HREF == "" {
+			return  fmt.Errorf("cannot delete, Object is empty")
+		}
+
+		egwUrl, err := url.ParseRequestURI(egw.EdgeGateway.HREF)
+		if err != nil {
+			return  fmt.Errorf("error parsing edge gateway url: %s", err)
+		}
+
+		req := egw.client.NewRequest(map[string]string{
+			"force":     strconv.FormatBool(force),
+			"recursive": strconv.FormatBool(recursive),
+		}, http.MethodDelete, *egwUrl, nil)
+		resp, err := checkResp(egw.client.Http.Do(req))
+		if err != nil {
+			return  fmt.Errorf("error deleting edge gateway: %s", err)
+		}
+		task := NewTask(egw.client)
+		if err = decodeBody(resp, task.Task); err != nil {
+			return  fmt.Errorf("error decoding task response: %s", err)
+		}
+	*/
+	if task.Task.Status == "error" {
+		return fmt.Errorf(combinedTaskErrorMessage(task.Task, fmt.Errorf("edge gateway not properly destroyed")))
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf(combinedTaskErrorMessage(task.Task, err))
+	}
+
+	return nil
+}
+
+// GetNetworks returns the list of networks associated with an edge gateway
+// In the return structure, an interfaceType of "uplink" indicates an external network,
+// while "internal" is for Org VDC routed networks
+func (egw *EdgeGateway) GetNetworks() ([]SimpleNetworkIdentifier, error) {
 	var networks []SimpleNetworkIdentifier
 	err := egw.Refresh()
 	if err != nil {
