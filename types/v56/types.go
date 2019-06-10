@@ -1514,6 +1514,7 @@ type GatewayConfiguration struct {
 	EdgeGatewayServiceConfiguration *GatewayFeatures   `xml:"EdgeGatewayServiceConfiguration,omitempty"` // Represents Gateway Features.
 	HaEnabled                       bool               `xml:"HaEnabled,omitempty"`                       // True if this gateway is highly available. (Requires two vShield edge VMs.)
 	AdvancedNetworkingEnabled       bool               `xml:"AdvancedNetworkingEnabled,omitempty"`       // True if the gateway uses advanced networking
+	DistributedRoutingEnabled       bool               `xml:"DistributedRoutingEnabled,omitempty"`       // True if gateway is attached to a Distributed Logical Router
 	UseDefaultRouteForDNSRelay      bool               `xml:"UseDefaultRouteForDnsRelay,omitempty"`      // True if the default gateway on the external network selected for default route should be used as the DNS relay.
 }
 
