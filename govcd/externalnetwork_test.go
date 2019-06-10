@@ -152,12 +152,12 @@ func (vcd *TestVCD) Test_GetExternalNetwork(check *C) {
 	if networkName == "" {
 		check.Skip("No external network provided")
 	}
-	externalNetwork, err := GetExternalNetworkByName(vcd.client, networkName)
+	externalNetwork, err := GetExternalNetwork(vcd.client, networkName)
 	check.Assert(err, IsNil)
-	LogExternalNetwork(*externalNetwork)
-	check.Assert(externalNetwork.HREF, Not(Equals), "")
-	check.Assert(externalNetwork.Name, Equals, networkName)
-	check.Assert(externalNetwork.Type, Equals, types.MimeExtensionNetwork)
+	LogExternalNetwork(*externalNetwork.ExternalNetwork)
+	check.Assert(externalNetwork.ExternalNetwork.HREF, Not(Equals), "")
+	check.Assert(externalNetwork.ExternalNetwork.Name, Equals, networkName)
+	check.Assert(externalNetwork.ExternalNetwork.Type, Equals, types.MimeExternalNetwork)
 }
 
 func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
