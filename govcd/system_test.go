@@ -127,6 +127,16 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 		egc.BackingConfiguration = backingConf
 		egc.Name = newEgwName + "_" + backingConf
 		egc.Description = egc.Name
+
+		builtWithDefaultGateway := true
+		// Tests one edge gateway with default gateway, and one without
+		if backingConf == "full" {
+			egc.DefaultGateway = vcd.config.VCD.ExternalNetwork
+		} else {
+			// The "compact" edge gateway is created without default gateway
+			egc.DefaultGateway = ""
+			builtWithDefaultGateway = false
+		}
 		task, err := CreateEdgeGateway(vcd.client, egc)
 		check.Assert(task, NotNil)
 		check.Assert(err, IsNil)
@@ -148,12 +158,14 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 		check.Assert(edge.EdgeGateway.Configuration.AdvancedNetworkingEnabled, Equals, true)
 		util.Logger.Printf("Edge Gateway:\n%s\n", prettyEdgeGateway(*edge.EdgeGateway))
 
+		check.Assert(edge.HasDefaultGateway(), Equals, builtWithDefaultGateway)
+
 		// testing both delete methods
 		if backingConf == "full" {
 			err = edge.Delete(true, true)
 			check.Assert(err, IsNil)
 		} else {
-			task, err = edge.DeleteTask(true, true)
+			task, err = edge.DeleteAsync(true, true)
 			check.Assert(err, IsNil)
 			err = task.WaitInspectTaskCompletion(SimpleShowTask, 5*time.Second)
 			check.Assert(err, IsNil)
