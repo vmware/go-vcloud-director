@@ -113,11 +113,10 @@ func CreateEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation) (Task, er
 		return Task{}, fmt.Errorf("no external networks provided. At least one is needed")
 	}
 
-	defaultGatewayFound := false
-
 	// If the user has indicated a default gateway, we make sure that it matches
 	// a name in the list of external networks
 	if egwc.DefaultGateway != "" {
+		defaultGatewayFound := false
 		for _, name := range egwc.ExternalNetworks {
 			if egwc.DefaultGateway == name {
 				defaultGatewayFound = true
@@ -133,14 +132,16 @@ func CreateEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation) (Task, er
 		if err != nil {
 			return Task{}, err
 		}
-		var gateway string
-		var netmask string
 
-		if extNet.ExternalNetwork.Name == egwc.DefaultGateway {
+		// Populate the subnet participation only if default gateway was set
+		var subnetParticipation *types.SubnetParticipation
+		if egwc.DefaultGateway != "" && extNet.ExternalNetwork.Name == egwc.DefaultGateway {
 			for _, net := range extNet.ExternalNetwork.Configuration.IPScopes.IPScope {
 				if net.IsEnabled {
-					gateway = net.Gateway
-					netmask = net.Netmask
+					subnetParticipation = &types.SubnetParticipation{
+						Gateway: net.Gateway,
+						Netmask: net.Netmask,
+					}
 					break
 				}
 			}
@@ -155,11 +156,8 @@ func CreateEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation) (Task, er
 				Type: "application/vnd.vmware.admin.network+xml",
 				Name: extNet.ExternalNetwork.Name,
 			},
-			UseForDefaultRoute: egwc.DefaultGateway == extNet.ExternalNetwork.Name,
-			SubnetParticipation: &types.SubnetParticipation{
-				Gateway: gateway,
-				Netmask: netmask,
-			},
+			UseForDefaultRoute:  egwc.DefaultGateway == extNet.ExternalNetwork.Name,
+			SubnetParticipation: subnetParticipation,
 		}
 
 		egwConfiguration.Configuration.GatewayInterfaces.GatewayInterface =
