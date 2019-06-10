@@ -66,7 +66,7 @@ func NewAdminCatalog(client *Client) *AdminCatalog {
 func (catalog *Catalog) Delete(force, recursive bool) error {
 
 	adminCatalogHREF := catalog.client.VCDHREF
-	catalogID, err := getBareEntityId(catalog.Catalog.ID)
+	catalogID, err := getBareEntityUuid(catalog.Catalog.ID)
 	if err != nil {
 		return err
 	}
