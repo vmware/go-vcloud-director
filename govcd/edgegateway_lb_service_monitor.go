@@ -12,8 +12,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// CreateLBServiceMonitor synchronously creates a load balancer service monitor based on mandatory fields
-// and returns created object with all fields (including ID) populated or an error.
+// CreateLBServiceMonitor creates a load balancer service monitor based on mandatory fields. It is a synchronous
+// operation. It returns created object with all fields (including ID) populated or an error.
 func (eGW *EdgeGateway) CreateLBServiceMonitor(lbMonitorConfig *types.LBMonitor) (*types.LBMonitor, error) {
 	if err := validateCreateLBServiceMonitor(lbMonitorConfig); err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (eGW *EdgeGateway) CreateLBServiceMonitor(lbMonitorConfig *types.LBMonitor)
 
 	// Last element in location header is the service monitor ID
 	// i.e. Location: [/network/edges/edge-3/loadbalancer/config/monitors/monitor-5]
-	// The code below extracts that ID
+	// The code below extracts that ID from the last segment
 	if location == "" {
 		return nil, fmt.Errorf("unable to retrieve ID for new load balancer service monitor with name %s", lbMonitorConfig.Name)
 	}
