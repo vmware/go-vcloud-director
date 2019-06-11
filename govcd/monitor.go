@@ -265,3 +265,7 @@ func ShowTask(task *types.Task, howManyTimes int, elapsed time.Duration, first, 
 func SimpleShowTask(task *types.Task, howManyTimes int, elapsed time.Duration, first, last bool) {
 	simpleOutTask("screen", task, howManyTimes, elapsed, first, last)
 }
+
+func SimpleLogTask(task *types.Task, howManyTimes int, elapsed time.Duration, first, last bool) {
+	simpleOutTask("log", task, howManyTimes, elapsed, first, last)
+}
