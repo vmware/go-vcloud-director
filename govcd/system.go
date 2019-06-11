@@ -83,9 +83,9 @@ func getBareEntityUuid(entityId string) (string, error) {
 	return matchList[0][1], nil
 }
 
-// CreateEdgeGateway creates an edge gateway using a simplified configuration structure
+// CreateEdgeGatewayAsync creates an edge gateway using a simplified configuration structure
 // https://code.vmware.com/apis/442/vcloud-director/doc/doc/operations/POST-CreateEdgeGateway.html
-func CreateEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation) (Task, error) {
+func CreateEdgeGatewayAsync(vcdClient *VCDClient, egwc EdgeGatewayCreation) (Task, error) {
 
 	distributed := egwc.DistributedRoutingEnabled
 	if !egwc.AdvancedNetworkingEnabled {
@@ -166,12 +166,15 @@ func CreateEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation) (Task, er
 
 	// Once the configuration structure has been filled using the simplified data, we delegate
 	// the edge gateway creation to the main configuration function.
-	return CreateAndConfigureEdgeGateway(vcdClient, egwc.OrgName, egwc.VdcName, egwc.Name, egwConfiguration)
+	return CreateAndConfigureEdgeGatewayAsync(vcdClient, egwc.OrgName, egwc.VdcName, egwc.Name, egwConfiguration)
 }
 
-// CreateAndConfigureEdgeGateway creates an edge gateway using a full configuration structure
-func CreateAndConfigureEdgeGateway(vcdClient *VCDClient, orgName, vdcName, egwName string, egwConfiguration *types.EdgeGateway) (Task, error) {
+// CreateAndConfigureEdgeGatewayAsync creates an edge gateway using a full configuration structure
+func CreateAndConfigureEdgeGatewayAsync(vcdClient *VCDClient, orgName, vdcName, egwName string, egwConfiguration *types.EdgeGateway) (Task, error) {
 
+	if egwConfiguration.Name != egwName {
+		return Task{}, fmt.Errorf("name mismatch: '%s' used as parameter but '%s' in the configuration structure", egwName, egwConfiguration.Name)
+	}
 	adminOrg, err := GetAdminOrgByName(vcdClient, orgName)
 	if err != nil {
 		return Task{}, err
@@ -218,6 +221,49 @@ func CreateAndConfigureEdgeGateway(vcdClient *VCDClient, orgName, vdcName, egwNa
 		}
 	}
 	return Task{}, fmt.Errorf("no deployment task found for edge gateway %s - The edge gateway might have been created, but not deployed properly", egwName)
+}
+
+func createEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation, egwConfiguration *types.EdgeGateway) (EdgeGateway, error) {
+	var task Task
+	var err error
+	if egwConfiguration != nil {
+		task, err = CreateAndConfigureEdgeGatewayAsync(vcdClient, egwc.OrgName, egwc.VdcName, egwc.Name, egwConfiguration)
+	} else {
+		task, err = CreateEdgeGatewayAsync(vcdClient, egwc)
+	}
+
+	if err != nil {
+		return EdgeGateway{}, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return EdgeGateway{}, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
+	}
+
+	// The edge gateway is created. Now we retrieve it from the server
+	org, err := GetAdminOrgByName(vcdClient, egwc.OrgName)
+	if err != nil {
+		return EdgeGateway{}, err
+	}
+	vdc, err := org.GetVdcByName(egwc.VdcName)
+	if err != nil {
+		return EdgeGateway{}, err
+	}
+	egw, err := vdc.FindEdgeGateway(egwc.Name)
+	if err != nil {
+		return EdgeGateway{}, err
+	}
+	return egw, nil
+}
+
+// CreateAndConfigureEdgeGateway creates an edge gateway using a full configuration structure
+func CreateAndConfigureEdgeGateway(vcdClient *VCDClient, orgName, vdcName, egwName string, egwConfiguration *types.EdgeGateway) (EdgeGateway, error) {
+	return createEdgeGateway(vcdClient, EdgeGatewayCreation{OrgName: orgName, VdcName: vdcName, Name: egwName}, egwConfiguration)
+}
+
+// CreateEdgeGateway creates an edge gateway using a simplified configuration structure
+func CreateEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation) (EdgeGateway, error) {
+	return createEdgeGateway(vcdClient, egwc, nil)
 }
 
 // If user specifies a valid organization name, then this returns a

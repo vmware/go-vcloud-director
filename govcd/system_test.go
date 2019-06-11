@@ -8,7 +8,6 @@ package govcd
 
 import (
 	"fmt"
-	"time"
 
 	. "gopkg.in/check.v1"
 
@@ -128,25 +127,29 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 		egc.Name = newEgwName + "_" + backingConf
 		egc.Description = egc.Name
 
+		var edge EdgeGateway
+		var task Task
+		var err error
 		builtWithDefaultGateway := true
 		// Tests one edge gateway with default gateway, and one without
+		// Also tests two different functions to create the gateway
 		if backingConf == "full" {
 			egc.DefaultGateway = vcd.config.VCD.ExternalNetwork
+			edge, err = CreateEdgeGateway(vcd.client, egc)
+			check.Assert(err, IsNil)
 		} else {
 			// The "compact" edge gateway is created without default gateway
 			egc.DefaultGateway = ""
 			builtWithDefaultGateway = false
+			task, err = CreateEdgeGatewayAsync(vcd.client, egc)
+			check.Assert(err, IsNil)
+			err = task.WaitTaskCompletion()
+			check.Assert(err, IsNil)
+			edge, err = vcd.vdc.FindEdgeGateway(egc.Name)
+			check.Assert(err, IsNil)
 		}
-		task, err := CreateEdgeGateway(vcd.client, egc)
-		check.Assert(task, NotNil)
-		check.Assert(err, IsNil)
 
 		AddToCleanupList(egc.Name, "edgegateway", orgName+"|"+vdcName, "Test_CreateDeleteEdgeGateway")
-		err = task.WaitInspectTaskCompletion(SimpleShowTask, 10*time.Second)
-		check.Assert(err, IsNil)
-
-		edge, err := vcd.vdc.FindEdgeGateway(egc.Name)
-		check.Assert(err, IsNil)
 
 		check.Assert(edge.EdgeGateway.Name, Equals, egc.Name)
 		// Edge gateway status:
@@ -165,9 +168,9 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 			err = edge.Delete(true, true)
 			check.Assert(err, IsNil)
 		} else {
-			task, err = edge.DeleteAsync(true, true)
+			task, err := edge.DeleteAsync(true, true)
 			check.Assert(err, IsNil)
-			err = task.WaitInspectTaskCompletion(SimpleShowTask, 5*time.Second)
+			err = task.WaitTaskCompletion()
 			check.Assert(err, IsNil)
 		}
 
