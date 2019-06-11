@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"time"
 
@@ -126,6 +127,21 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 			return nil
 		}
 
+		if inspectionFunc == nil {
+			taskMonitor := os.Getenv("GOVCD_TASK_MONITOR")
+			if taskMonitor != "" {
+				switch taskMonitor {
+				case "log":
+					inspectionFunc = LogTask
+				case "show":
+					inspectionFunc = ShowTask
+				case "simple_log":
+					inspectionFunc = SimpleLogTask
+				case "simple_show":
+					inspectionFunc = SimpleShowTask
+				}
+			}
+		}
 		if inspectionFunc != nil {
 			inspectionFunc(task.Task,
 				howManyTimesRefreshed,
