@@ -642,7 +642,7 @@ func (eGW *EdgeGateway) RemoveIpsecVPN() (Task, error) {
 	return eGW.AddIpsecVPN(ipsecVPNConfig)
 }
 
-// Deletes the edge gateway, returning a task and an error if the vCD call fails.
+// Deletes the edge gateway, returning a task and an error with the operation result.
 // https://code.vmware.com/apis/442/vcloud-director/doc/doc/operations/DELETE-EdgeGateway.html
 func (egw *EdgeGateway) DeleteAsync(force bool, recursive bool) (Task, error) {
 	util.Logger.Printf("[TRACE] EdgeGateway.Delete - deleting edge gateway with force: %t, recursive: %t", force, recursive)
@@ -671,7 +671,7 @@ func (egw *EdgeGateway) DeleteAsync(force bool, recursive bool) (Task, error) {
 	return *task, err
 }
 
-// Deletes the edge gateway, returning an error if the vCD call fails.
+// Deletes the edge gateway, returning an error with the operation result.
 // https://code.vmware.com/apis/442/vcloud-director/doc/doc/operations/DELETE-EdgeGateway.html
 func (egw *EdgeGateway) Delete(force bool, recursive bool) error {
 
