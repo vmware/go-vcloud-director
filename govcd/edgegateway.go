@@ -728,9 +728,9 @@ func (egw *EdgeGateway) HasDefaultGateway() bool {
 	return false
 }
 
-// getProxiedEdgeEndpoint helps to get root endpoint for Edge Gateway using the
+// buildProxiedEdgeEndpointURL helps to get root endpoint for Edge Gateway using the
 // NSX API Proxy and can append optionalSuffix which must have its own leading /
-func (eGW *EdgeGateway) getProxiedEdgeEndpoint(optionalSuffix string) (string, error) {
+func (eGW *EdgeGateway) buildProxiedEdgeEndpointURL(optionalSuffix string) (string, error) {
 	apiEndpoint, err := url.ParseRequestURI(eGW.EdgeGateway.HREF)
 	if err != nil {
 		return "", fmt.Errorf("unable to process edge gateway URL: %s", err)

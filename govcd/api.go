@@ -276,7 +276,7 @@ func (client *Client) ExecuteRequest(pathURL, requestType, contentType, errorMes
 }
 
 // ExecuteRequestHTTPCodeOrTypedError sends the request and expects `expectedHTTPStatus`. If the returned status code
-// was not as expected - the returned error will be unmarshaled to `errParser` which imlements Go's standard `error`
+// was not as expected - the returned error will be unmarshaled to `errParser` which implements Go's standard `error`
 // interface.
 func (client *Client) ExecuteRequestHTTPCodeOrTypedError(expectedHTTPStatus int, pathURL, requestType, contentType, errorMessage string, payload interface{}, errParser error) (*http.Response, error) {
 	if !isMessageWithPlaceHolder(errorMessage) {
