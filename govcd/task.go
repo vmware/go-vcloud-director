@@ -93,6 +93,7 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 		return fmt.Errorf("cannot refresh, Object is empty")
 	}
 
+	taskMonitor := os.Getenv("GOVCD_TASK_MONITOR")
 	howManyTimesRefreshed := 0
 	startTime := time.Now()
 	for {
@@ -127,18 +128,19 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 			return nil
 		}
 
+		// If the environment variable "GOVCD_TASK_MONITOR" is set, its value
+		// will be used to choose among pre-defined InspectionFunc
 		if inspectionFunc == nil {
-			taskMonitor := os.Getenv("GOVCD_TASK_MONITOR")
 			if taskMonitor != "" {
 				switch taskMonitor {
 				case "log":
-					inspectionFunc = LogTask
+					inspectionFunc = LogTask // writes full task details to the log
 				case "show":
-					inspectionFunc = ShowTask
+					inspectionFunc = ShowTask // writes full task details to the screen
 				case "simple_log":
-					inspectionFunc = SimpleLogTask
+					inspectionFunc = SimpleLogTask // writes a summary line for the task to the log
 				case "simple_show":
-					inspectionFunc = SimpleShowTask
+					inspectionFunc = SimpleShowTask // writes a summary line for the task to the screen
 				}
 			}
 		}
