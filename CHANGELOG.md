@@ -1,4 +1,8 @@
-## 2.2.0 (Unreleased)
+## 2.3.0 (Unreleased)
+
+* Added edge gateway create/delete functions [#130](https://github.com/vmware/go-vcloud-director/issues/130).
+
+## 2.2.0 (May 2, 2019)
 
 FEATURES:
 
@@ -8,7 +12,6 @@ FEATURES:
 using VCDClient.APIVCDMaxVersionIs(string) and VCDClient.APIClientVersionIs(string).
 * Added ability to override currently used vCD API version WithAPIVersion(string) [#174](https://github.com/vmware/go-vcloud-director/pull/174).
 * Added ability to enable nested hypervisor option for VM with VM.ToggleNestedHypervisor(bool) [#219](https://github.com/terraform-providers/terraform-provider-vcd/issues/219).
-* Added edge gateway create/delete functions [#130](https://github.com/vmware/go-vcloud-director/issues/130).
 
 
 BREAKING CHANGES:
