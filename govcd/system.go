@@ -223,6 +223,9 @@ func CreateAndConfigureEdgeGatewayAsync(vcdClient *VCDClient, orgName, vdcName, 
 	return Task{}, fmt.Errorf("no deployment task found for edge gateway %s - The edge gateway might have been created, but not deployed properly", egwName)
 }
 
+// Private convenience function used by CreateAndConfigureEdgeGateway and CreateEdgeGateway to
+// process the task and return the object that was created.
+// It should not be invoked directly.
 func createEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation, egwConfiguration *types.EdgeGateway) (EdgeGateway, error) {
 	var task Task
 	var err error
