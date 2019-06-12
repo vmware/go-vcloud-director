@@ -12,9 +12,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	. "gopkg.in/check.v1"
 )
 
 func init() {
@@ -137,6 +134,32 @@ func (vcd *TestVCD) ensureVMIsSuitableForVMTest(vm *VM) error {
 	}
 
 	return nil
+}
+
+// Test gathering VM virtual hardware items
+func (vdc *TestVCD) Test_GetVirtualHardwareSection(check *C) {
+	itemName := "TestGetVirtualHardwareSection"
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp wasn't properly created")
+	}
+
+	vapp := vcd.findFirstVapp()
+	if vapp.VApp.Name == "" {
+		check.Skip("Disabled: No suitable vApp found in vDC")
+	}
+	vm, vm_name := vcd.findFirstVm(vapp)
+	if vm.Name == "" {
+		check.Skip("Disabled: No suitable VM found in vDC")
+	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	task, err := vm.GetVirtualHardwareSection()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
 }
 
 func (vcd *TestVCD) Test_FindVMByHREF(check *C) {

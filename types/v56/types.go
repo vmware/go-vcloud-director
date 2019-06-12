@@ -367,7 +367,7 @@ type Vdc struct {
 	ID           string `xml:"id,attr,omitempty"`
 	OperationKey string `xml:"operationKey,attr,omitempty"`
 	Name         string `xml:"name,attr"`
-	Status       int    `xml:"status,attr,omitempty"`
+	Status       string `xml:"status,attr,omitempty"`
 
 	AllocationModel    string                `xml:"AllocationModel"`
 	AvailableNetworks  []*AvailableNetworks  `xml:"AvailableNetworks,omitempty"`

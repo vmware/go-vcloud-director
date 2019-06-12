@@ -67,12 +67,13 @@ func (vm *VM) Refresh() error {
 	return err
 }
 
+// GetVirtualHardwareSection returns the virtual hardware items attached to a VM
 func (vm *VM) GetVirtualHardwareSection() (*types.VirtualHardwareSection, error) {
 
 	virtualHardwareSection := &types.VirtualHardwareSection{}
 
 	if vm.VM.HREF == "" {
-		return virtualHardwareSection, fmt.Errorf("cannot refresh, Object is empty")
+		return virtualHardwareSection, fmt.Errorf("cannot refresh, invalid reference url")
 	}
 
 	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/virtualHardwareSection/", http.MethodGet,
