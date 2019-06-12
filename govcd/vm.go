@@ -67,6 +67,22 @@ func (vm *VM) Refresh() error {
 	return err
 }
 
+func (vm *VM) GetVirtualHardwareSection() (*types.VirtualHardwareSection, error) {
+
+	virtualHardwareSection := &types.VirtualHardwareSection{}
+
+	if vm.VM.HREF == "" {
+		return virtualHardwareSection, fmt.Errorf("cannot refresh, Object is empty")
+	}
+
+	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/virtualHardwareSection/", http.MethodGet,
+		types.MimeVirtualHardwareSection, "error retrieving virtual hardware: %s", nil, virtualHardwareSection)
+
+	// The request was successful
+	return virtualHardwareSection, err
+}
+
+
 // GetNetworkConnectionSection returns current networks attached to VM
 //
 // The slice of NICs is not necessarily ordered by NIC index

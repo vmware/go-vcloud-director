@@ -39,6 +39,7 @@ func (vcd *TestVCD) Test_PowerOn(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
+	vcd.vapp.
 	task, err := vcd.vapp.PowerOn()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
