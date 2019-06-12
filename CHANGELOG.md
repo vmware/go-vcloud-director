@@ -1,4 +1,8 @@
-## 2.2.0 (Unreleased)
+## 2.3.0 (Unreleased)
+
+* Added edge gateway create/delete functions [#130](https://github.com/vmware/go-vcloud-director/issues/130).
+
+## 2.2.0 (May 15, 2019)
 
 FEATURES:
 

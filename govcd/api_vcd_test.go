@@ -338,15 +338,35 @@ func splitParent(parent string, separator string) (first, second string) {
 	return
 }
 
+var splitParentNotFound string = "removeLeftoverEntries: [ERROR] missing parent info (%s). The parent fields must be defined with a separator '|'\n"
+var notFoundMsg string = "removeLeftoverEntries: [INFO] No action for %s '%s'\n"
+
+func (vcd *TestVCD) getAdminOrgAndVdcFromCleanupEntity(entity CleanupEntity) (org AdminOrg, vdc Vdc, err error) {
+	orgName, vdcName := splitParent(entity.Parent, "|")
+	if orgName == "" || vdcName == "" {
+		vcd.infoCleanup(splitParentNotFound, entity.Parent)
+		return AdminOrg{}, Vdc{}, fmt.Errorf("can't find parents names")
+	}
+	org, err = GetAdminOrgByName(vcd.client, orgName)
+	if org == (AdminOrg{}) || err != nil {
+		vcd.infoCleanup(notFoundMsg, "org", orgName)
+		return AdminOrg{}, Vdc{}, fmt.Errorf("can't find org")
+	}
+	vdc, err = org.GetVdcByName(vdcName)
+	if vdc == (Vdc{}) || err != nil {
+		vcd.infoCleanup(notFoundMsg, "vdc", vdcName)
+		return AdminOrg{}, Vdc{}, fmt.Errorf("can't find vdc")
+	}
+	return org, vdc, nil
+}
+
 // Removes leftover entities that may still exist after failed tests
 // or the ones that were explicitly created for several tests and
 // were relying on this procedure to clean up at the end.
 func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 	var introMsg string = "removeLeftoverEntries: [INFO] Attempting cleanup of %s '%s' instantiated by %s\n"
-	var notFoundMsg string = "removeLeftoverEntries: [INFO] No action for %s '%s'\n"
 	var removedMsg string = "removeLeftoverEntries: [INFO] Removed %s '%s' created by %s\n"
 	var notDeletedMsg string = "removeLeftoverEntries: [ERROR] Error deleting %s '%s': %s\n"
-	var splitParentNotFound string = "removeLeftopverEntries: [ERROR] missing parent info (%s). The parent fields must be defined with a separator '|'\n"
 	// NOTE: this is a cleanup function that should continue even if errors are found.
 	// For this reason, the [ERROR] messages won't be followed by a program termination
 	vcd.infoCleanup(introMsg, entity.EntityType, entity.Name, entity.CreatedBy)
@@ -436,23 +456,26 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		return
 	case "edgegateway":
-		//TODO: find an easy way of undoing edge GW customization
+		_, vdc, err := vcd.getAdminOrgAndVdcFromCleanupEntity(entity)
+		if err != nil {
+			return
+		}
+		edge, err := vdc.FindEdgeGateway(entity.Name)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [INFO] edge gateway '%s' not found\n", entity.Name)
+			return
+		}
+		err = edge.Delete(true, true)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
 	case "network":
-		orgName, vdcName := splitParent(entity.Parent, "|")
-		if orgName == "" || vdcName == "" {
-			vcd.infoCleanup(splitParentNotFound, entity.Parent)
-			return
-		}
-		org, err := GetAdminOrgByName(vcd.client, orgName)
-		if org == (AdminOrg{}) || err != nil {
-			vcd.infoCleanup(notFoundMsg, "org", orgName)
-			return
-		}
-		vdc, err := org.GetVdcByName(vdcName)
-		if vdc == (Vdc{}) || err != nil {
-			vcd.infoCleanup(notFoundMsg, "vdc", vdcName)
-			return
+		_, vdc, err := vcd.getAdminOrgAndVdcFromCleanupEntity(entity)
+		if err != nil {
+			vcd.infoCleanup("%s", err)
 		}
 		err = RemoveOrgVdcNetworkIfExists(vdc, entity.Name)
 		if err == nil {
@@ -479,20 +502,9 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No VDC and ORG provided for media '%s'\n", entity.Name)
 			return
 		}
-		orgName, vdcName := splitParent(entity.Parent, "|")
-		if orgName == "" || vdcName == "" {
-			vcd.infoCleanup(splitParentNotFound, entity.Parent)
-			return
-		}
-		org, err := GetAdminOrgByName(vcd.client, orgName)
-		if org == (AdminOrg{}) || err != nil {
-			vcd.infoCleanup(notFoundMsg, "org", orgName)
-			return
-		}
-		vdc, err := org.GetVdcByName(vdcName)
-		if vdc == (Vdc{}) || err != nil {
-			vcd.infoCleanup(notFoundMsg, "vdc", vdcName)
-			return
+		_, vdc, err := vcd.getAdminOrgAndVdcFromCleanupEntity(entity)
+		if err != nil {
+			vcd.infoCleanup("%s", err)
 		}
 		err = RemoveMediaImageIfExists(vdc, entity.Name)
 		if err == nil {

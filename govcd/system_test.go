@@ -9,8 +9,10 @@ package govcd
 import (
 	"fmt"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 // Tests System function GetOrgByName by checking if the org object
@@ -100,6 +102,83 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 	err = org.Delete(true, true)
 	check.Assert(err, IsNil)
 	doesOrgExist(check, vcd)
+}
+
+func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
+
+	if vcd.config.VCD.ExternalNetwork == "" {
+		check.Skip("No external network provided")
+	}
+
+	newEgwName := "CreateDeleteEdgeGateway"
+	orgName := vcd.config.VCD.Org
+	vdcName := vcd.config.VCD.Vdc
+	egc := EdgeGatewayCreation{
+		ExternalNetworks:          []string{vcd.config.VCD.ExternalNetwork},
+		DefaultGateway:            vcd.config.VCD.ExternalNetwork,
+		OrgName:                   orgName,
+		VdcName:                   vdcName,
+		AdvancedNetworkingEnabled: true,
+	}
+
+	testingRange := []string{"compact", "full"}
+	for _, backingConf := range testingRange {
+		egc.BackingConfiguration = backingConf
+		egc.Name = newEgwName + "_" + backingConf
+		egc.Description = egc.Name
+
+		var edge EdgeGateway
+		var task Task
+		var err error
+		builtWithDefaultGateway := true
+		// Tests one edge gateway with default gateway, and one without
+		// Also tests two different functions to create the gateway
+		if backingConf == "full" {
+			egc.DefaultGateway = vcd.config.VCD.ExternalNetwork
+			edge, err = CreateEdgeGateway(vcd.client, egc)
+			check.Assert(err, IsNil)
+		} else {
+			// The "compact" edge gateway is created without default gateway
+			egc.DefaultGateway = ""
+			builtWithDefaultGateway = false
+			task, err = CreateEdgeGatewayAsync(vcd.client, egc)
+			check.Assert(err, IsNil)
+			err = task.WaitTaskCompletion()
+			check.Assert(err, IsNil)
+			edge, err = vcd.vdc.FindEdgeGateway(egc.Name)
+			check.Assert(err, IsNil)
+		}
+
+		AddToCleanupList(egc.Name, "edgegateway", orgName+"|"+vdcName, "Test_CreateDeleteEdgeGateway")
+
+		check.Assert(edge.EdgeGateway.Name, Equals, egc.Name)
+		// Edge gateway status:
+		//  0 : being created
+		//  1 : ready
+		// -1 : creation error
+		check.Assert(edge.EdgeGateway.Status, Equals, 1)
+
+		check.Assert(edge.EdgeGateway.Configuration.AdvancedNetworkingEnabled, Equals, true)
+		util.Logger.Printf("Edge Gateway:\n%s\n", prettyEdgeGateway(*edge.EdgeGateway))
+
+		check.Assert(edge.HasDefaultGateway(), Equals, builtWithDefaultGateway)
+
+		// testing both delete methods
+		if backingConf == "full" {
+			err = edge.Delete(true, true)
+			check.Assert(err, IsNil)
+		} else {
+			task, err := edge.DeleteAsync(true, true)
+			check.Assert(err, IsNil)
+			err = task.WaitTaskCompletion()
+			check.Assert(err, IsNil)
+		}
+
+		// Once deleted, look for the edge gateway again. It should return an error
+		edge, err = vcd.vdc.FindEdgeGateway(egc.Name)
+		check.Assert(err, NotNil)
+		check.Assert(edge, Equals, EdgeGateway{})
+	}
 }
 
 func (vcd *TestVCD) Test_FindBadlyNamedStorageProfile(check *C) {
