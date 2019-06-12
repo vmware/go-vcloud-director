@@ -82,7 +82,6 @@ func (vm *VM) GetVirtualHardwareSection() (*types.VirtualHardwareSection, error)
 	return virtualHardwareSection, err
 }
 
-
 // GetNetworkConnectionSection returns current networks attached to VM
 //
 // The slice of NICs is not necessarily ordered by NIC index
