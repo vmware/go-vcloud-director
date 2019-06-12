@@ -237,9 +237,9 @@ func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
 	check.Assert(newConfEndpoint, IsNil)
 }
 
-func (vcd *TestVCD) TestEdgeGateway_Networks(check *C) {
+func (vcd *TestVCD) TestEdgeGateway_GetNetworks(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
-		check.Skip("Skipping test because no edgegatway given")
+		check.Skip("Skipping test because no edge gatway given")
 	}
 	if vcd.config.VCD.ExternalNetwork == "" {
 		check.Skip("Skipping test because no external network given")

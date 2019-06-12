@@ -186,14 +186,14 @@ func CreateAndConfigureEdgeGatewayAsync(vcdClient *VCDClient, orgName, vdcName, 
 
 	egwCreateHREF := vcdClient.Client.VCDHREF
 
-	ID, err := getBareEntityUuid(vdc.Vdc.ID)
+	vdcId, err := getBareEntityUuid(vdc.Vdc.ID)
 	if err != nil {
 		return Task{}, fmt.Errorf("error retrieving ID from Vdc %s: %s", vdcName, err)
 	}
-	if ID == "" {
+	if vdcId == "" {
 		return Task{}, fmt.Errorf("error retrieving ID from Vdc %s - empty ID returned", vdcName)
 	}
-	egwCreateHREF.Path += fmt.Sprintf("/admin/vdc/%s/edgeGateways", ID)
+	egwCreateHREF.Path += fmt.Sprintf("/admin/vdc/%s/edgeGateways", vdcId)
 
 	// The first task is the creation task. It is quick, and does only create the vCD entity,
 	// but not yet deploy the underlying VM

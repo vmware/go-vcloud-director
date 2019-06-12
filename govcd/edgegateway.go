@@ -648,7 +648,7 @@ func (egw *EdgeGateway) DeleteAsync(force bool, recursive bool) (Task, error) {
 	util.Logger.Printf("[TRACE] EdgeGateway.Delete - deleting edge gateway with force: %t, recursive: %t", force, recursive)
 
 	if egw.EdgeGateway.HREF == "" {
-		return Task{}, fmt.Errorf("cannot delete, Object is empty")
+		return Task{}, fmt.Errorf("cannot delete, HREF is missing")
 	}
 
 	egwUrl, err := url.ParseRequestURI(egw.EdgeGateway.HREF)
