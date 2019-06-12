@@ -11,6 +11,13 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+// Test_LBServiceMonitor tests CRUD methods for load balancer service monitor.
+// The following things are tested:
+// Creation of load balancer service monitor
+// Read load balancer by both ID and Name (service monitor name must be unique in single edge gateway)
+// Update - change a single field and compare that configuration and result objects are deeply equal
+// Update - try and fail to update without mandatory field
+// Delete
 func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
@@ -57,6 +64,9 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 	updatedLBMonitor, err := edge.UpdateLBServiceMonitor(lbMonitorByID)
 	check.Assert(err, IsNil)
 	check.Assert(updatedLBMonitor.Timeout, Equals, 35)
+
+	// Verify that updated monitor and it's configuration are identical
+	check.Assert(updatedLBMonitor, DeepEquals, lbMonitorByID)
 
 	// Update should fail without name
 	lbMonitorByID.Name = ""

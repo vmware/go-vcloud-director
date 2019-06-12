@@ -329,13 +329,18 @@ func (vcd *TestVCD) infoCleanup(format string, args ...interface{}) {
 }
 
 // Gets the two components of a "parent" string, as passed to AddToCleanupList
-func splitParent(parent string, separator string) (first, second string) {
+func splitParent(parent string, separator string) (first, second, third string) {
 	strList := strings.Split(parent, separator)
-	if len(strList) != 2 {
-		return "", ""
+	if len(strList) < 2 && len(strList) > 3 {
+		return "", "", ""
 	}
 	first = strList[0]
 	second = strList[1]
+
+	if len(strList) == 3 {
+		third = strList[2]
+	}
+
 	return
 }
 
@@ -457,8 +462,17 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		return
 	case "edgegateway":
+<<<<<<< HEAD
 		_, vdc, err := vcd.getAdminOrgAndVdcFromCleanupEntity(entity)
 		if err != nil {
+=======
+		//TODO: find an easy way of undoing edge GW customization
+		return
+	case "network":
+		orgName, vdcName, _ := splitParent(entity.Parent, "|")
+		if orgName == "" || vdcName == "" {
+			vcd.infoCleanup(splitParentNotFound, entity.Parent)
+>>>>>>> modify splitParent function, document test
 			return
 		}
 		edge, err := vdc.FindEdgeGateway(entity.Name)
@@ -503,9 +517,26 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No VDC and ORG provided for media '%s'\n", entity.Name)
 			return
 		}
+<<<<<<< HEAD
 		_, vdc, err := vcd.getAdminOrgAndVdcFromCleanupEntity(entity)
 		if err != nil {
 			vcd.infoCleanup("%s", err)
+=======
+		orgName, vdcName, _ := splitParent(entity.Parent, "|")
+		if orgName == "" || vdcName == "" {
+			vcd.infoCleanup(splitParentNotFound, entity.Parent)
+			return
+		}
+		org, err := GetAdminOrgByName(vcd.client, orgName)
+		if org == (AdminOrg{}) || err != nil {
+			vcd.infoCleanup(notFoundMsg, "org", orgName)
+			return
+		}
+		vdc, err := org.GetVdcByName(vdcName)
+		if vdc == (Vdc{}) || err != nil {
+			vcd.infoCleanup(notFoundMsg, "vdc", vdcName)
+			return
+>>>>>>> modify splitParent function, document test
 		}
 		err = RemoveMediaImageIfExists(vdc, entity.Name)
 		if err == nil {
@@ -624,11 +655,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			return
 		}
 
-		splitParent := strings.Split(entity.Parent, "|")
-		if len(splitParent) != 3 {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Incorrent parent info specified '%s'\n", entity.Parent)
-		}
-		orgName, vdcName, edgeName := splitParent[0], splitParent[1], splitParent[2]
+		orgName, vdcName, edgeName := splitParent(entity.Parent, "|")
 
 		org, err := GetOrgByName(vcd.client, orgName)
 		if err != nil {
@@ -646,7 +673,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 
 		err = edge.DeleteLBServiceMonitor(&types.LBMonitor{Name: entity.Name})
 		if err != nil {
-			vcd.infoCleanup(notFoundMsg, entity.Name, err)
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
 
