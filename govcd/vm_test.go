@@ -893,7 +893,7 @@ func (vcd *TestVCD) Test_GetVirtualHardwareSection(check *C) {
 	if vapp.VApp.Name == "" {
 		check.Skip("Disabled: No suitable vApp found in vDC")
 	}
-	firstVM, vm_name := vcd.findFirstVm(vapp)
+	firstVM, _ := vcd.findFirstVm(vapp)
 	if firstVM.Name == "" {
 		check.Skip("Disabled: No suitable VM found in vDC")
 	}
