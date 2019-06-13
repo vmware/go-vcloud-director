@@ -607,6 +607,12 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 	// Cleanup
 	err = vapp.RemoveVM(vm)
 	check.Assert(err, IsNil)
+
+	// Ensure network is detached from vApp to avoid conflicts in other tests
+	task, err = vapp.RemoveAllNetworks()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 func verifyNetworkConnectionSection(check *C, actual, desired *types.NetworkConnectionSection) {

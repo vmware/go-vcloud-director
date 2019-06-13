@@ -57,6 +57,7 @@ const (
 	TestVMDetachDisk              = "TestVMDetachDisk"
 	TestCreateExternalNetwork     = "TestCreateExternalNetwork"
 	TestDeleteExternalNetwork     = "TestDeleteExternalNetwork"
+	Test_LBServiceMonitor         = "Test_LBServiceMonitor"
 )
 
 const (
@@ -328,13 +329,18 @@ func (vcd *TestVCD) infoCleanup(format string, args ...interface{}) {
 }
 
 // Gets the two components of a "parent" string, as passed to AddToCleanupList
-func splitParent(parent string, separator string) (first, second string) {
+func splitParent(parent string, separator string) (first, second, third string) {
 	strList := strings.Split(parent, separator)
-	if len(strList) != 2 {
-		return "", ""
+	if len(strList) < 2 && len(strList) > 3 {
+		return "", "", ""
 	}
 	first = strList[0]
 	second = strList[1]
+
+	if len(strList) == 3 {
+		third = strList[2]
+	}
+
 	return
 }
 
@@ -342,7 +348,7 @@ var splitParentNotFound string = "removeLeftoverEntries: [ERROR] missing parent 
 var notFoundMsg string = "removeLeftoverEntries: [INFO] No action for %s '%s'\n"
 
 func (vcd *TestVCD) getAdminOrgAndVdcFromCleanupEntity(entity CleanupEntity) (org AdminOrg, vdc Vdc, err error) {
-	orgName, vdcName := splitParent(entity.Parent, "|")
+	orgName, vdcName, _ := splitParent(entity.Parent, "|")
 	if orgName == "" || vdcName == "" {
 		vcd.infoCleanup(splitParentNotFound, entity.Parent)
 		return AdminOrg{}, Vdc{}, fmt.Errorf("can't find parents names")
@@ -617,6 +623,37 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
+	case "lbServiceMonitor":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No parent specified '%s'\n", entity.Name)
+			return
+		}
+
+		orgName, vdcName, edgeName := splitParent(entity.Parent, "|")
+
+		org, err := GetOrgByName(vcd.client, orgName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not find org '%s'\n", orgName)
+		}
+		vdc, err := org.GetVdcByName(vdcName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not find vdc '%s'\n", vdcName)
+		}
+
+		edge, err := vdc.FindEdgeGateway(edgeName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not find edge '%s'\n", vdcName)
+		}
+
+		err = edge.DeleteLBServiceMonitor(&types.LBMonitor{Name: entity.Name})
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+
 	default:
 		// If we reach this point, we are trying to clean up an entity that
 		// we aren't prepared for yet.
@@ -728,4 +765,34 @@ func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 
 func init() {
 	testingTags["api"] = "api_vcd_test.go"
+}
+
+func Test_splitParent(t *testing.T) {
+	type args struct {
+		parent    string
+		separator string
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantFirst  string
+		wantSecond string
+		wantThird  string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotFirst, gotSecond, gotThird := splitParent(tt.args.parent, tt.args.separator)
+			if gotFirst != tt.wantFirst {
+				t.Errorf("splitParent() gotFirst = %v, want %v", gotFirst, tt.wantFirst)
+			}
+			if gotSecond != tt.wantSecond {
+				t.Errorf("splitParent() gotSecond = %v, want %v", gotSecond, tt.wantSecond)
+			}
+			if gotThird != tt.wantThird {
+				t.Errorf("splitParent() gotThird = %v, want %v", gotThird, tt.wantThird)
+			}
+		})
+	}
 }
