@@ -348,7 +348,7 @@ var splitParentNotFound string = "removeLeftoverEntries: [ERROR] missing parent 
 var notFoundMsg string = "removeLeftoverEntries: [INFO] No action for %s '%s'\n"
 
 func (vcd *TestVCD) getAdminOrgAndVdcFromCleanupEntity(entity CleanupEntity) (org AdminOrg, vdc Vdc, err error) {
-	orgName, vdcName := splitParent(entity.Parent, "|")
+	orgName, vdcName, _ := splitParent(entity.Parent, "|")
 	if orgName == "" || vdcName == "" {
 		vcd.infoCleanup(splitParentNotFound, entity.Parent)
 		return AdminOrg{}, Vdc{}, fmt.Errorf("can't find parents names")
@@ -462,17 +462,8 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		return
 	case "edgegateway":
-<<<<<<< HEAD
 		_, vdc, err := vcd.getAdminOrgAndVdcFromCleanupEntity(entity)
 		if err != nil {
-=======
-		//TODO: find an easy way of undoing edge GW customization
-		return
-	case "network":
-		orgName, vdcName, _ := splitParent(entity.Parent, "|")
-		if orgName == "" || vdcName == "" {
-			vcd.infoCleanup(splitParentNotFound, entity.Parent)
->>>>>>> modify splitParent function, document test
 			return
 		}
 		edge, err := vdc.FindEdgeGateway(entity.Name)
@@ -517,26 +508,9 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No VDC and ORG provided for media '%s'\n", entity.Name)
 			return
 		}
-<<<<<<< HEAD
 		_, vdc, err := vcd.getAdminOrgAndVdcFromCleanupEntity(entity)
 		if err != nil {
 			vcd.infoCleanup("%s", err)
-=======
-		orgName, vdcName, _ := splitParent(entity.Parent, "|")
-		if orgName == "" || vdcName == "" {
-			vcd.infoCleanup(splitParentNotFound, entity.Parent)
-			return
-		}
-		org, err := GetAdminOrgByName(vcd.client, orgName)
-		if org == (AdminOrg{}) || err != nil {
-			vcd.infoCleanup(notFoundMsg, "org", orgName)
-			return
-		}
-		vdc, err := org.GetVdcByName(vdcName)
-		if vdc == (Vdc{}) || err != nil {
-			vcd.infoCleanup(notFoundMsg, "vdc", vdcName)
-			return
->>>>>>> modify splitParent function, document test
 		}
 		err = RemoveMediaImageIfExists(vdc, entity.Name)
 		if err == nil {
@@ -791,4 +765,34 @@ func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 
 func init() {
 	testingTags["api"] = "api_vcd_test.go"
+}
+
+func Test_splitParent(t *testing.T) {
+	type args struct {
+		parent    string
+		separator string
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantFirst  string
+		wantSecond string
+		wantThird  string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotFirst, gotSecond, gotThird := splitParent(tt.args.parent, tt.args.separator)
+			if gotFirst != tt.wantFirst {
+				t.Errorf("splitParent() gotFirst = %v, want %v", gotFirst, tt.wantFirst)
+			}
+			if gotSecond != tt.wantSecond {
+				t.Errorf("splitParent() gotSecond = %v, want %v", gotSecond, tt.wantSecond)
+			}
+			if gotThird != tt.wantThird {
+				t.Errorf("splitParent() gotThird = %v, want %v", gotThird, tt.wantThird)
+			}
+		})
+	}
 }
