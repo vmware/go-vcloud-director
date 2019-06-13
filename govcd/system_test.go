@@ -162,6 +162,7 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 		util.Logger.Printf("Edge Gateway:\n%s\n", prettyEdgeGateway(*edge.EdgeGateway))
 
 		check.Assert(edge.HasDefaultGateway(), Equals, builtWithDefaultGateway)
+		check.Assert(edge.HasAdvancedNetworking(), Equals, egc.AdvancedNetworkingEnabled)
 
 		// testing both delete methods
 		if backingConf == "full" {

@@ -26,6 +26,10 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
+	if !edge.HasAdvancedNetworking() {
+		check.Skip("Skipping test because the edge gateway does not have advanced networking enabled")
+	}
+
 	// Used for creating
 	lbMon := &types.LBMonitor{
 		Name:       check.TestName(),
