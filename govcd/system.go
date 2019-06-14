@@ -500,3 +500,16 @@ func QueryProviderVdcByName(vcdCli *VCDClient, name string) ([]*types.QueryResul
 
 	return results.Results.VMWProviderVdcRecord, nil
 }
+
+// QueryOrgVdcNetworkByName finds a org VDC network by name which has edge gateway as reference
+func QueryOrgVdcNetworkByName(vcdCli *VCDClient, name string) ([]*types.QueryResultOrgVdcNetworkRecordType, error) {
+	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "orgVdcNetwork",
+		"filter": fmt.Sprintf("(name==%s)", name),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return results.Results.OrgVdcNetworkRecord, nil
+}
