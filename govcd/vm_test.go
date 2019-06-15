@@ -889,21 +889,31 @@ func (vcd *TestVCD) Test_GetVirtualHardwareSection(check *C) {
 		check.Skip("Skipping test because vapp wasn't properly created")
 	}
 
-	vapp := vcd.findFirstVapp()
-	if vapp.VApp.Name == "" {
-		check.Skip("Disabled: No suitable vApp found in vDC")
-	}
-	firstVM, _ := vcd.findFirstVm(vapp)
-	if firstVM.Name == "" {
-		check.Skip("Disabled: No suitable VM found in vDC")
-	}
-
 	fmt.Printf("Running: %s\n", itemName)
 
-	vm, err := vcd.client.Client.FindVMByHREF(firstVM.HREF)
+	newVM := types.VM{
+		VirtualHardwareSection: &types.VirtualHardwareSection{
+			Item: []*types.VirtualHardwareItem{
+				&types.VirtualHardwareItem{
+					InstanceID:          1,
+					AutomaticAllocation: true,
+					Address:             "1.1.1.1",
+					CoresPerSocket:      2,
+				},
+			},
+		},
+	}
+
+	vm, err := vcd.client.Client.FindVMByHREF(newVM.HREF)
 	check.Assert(err, IsNil)
 
 	section, err := vm.GetVirtualHardwareSection()
 	check.Assert(err, IsNil)
-	check.Assert(section, Equals, types.VirtualHardwareSection{})
+	for _, item := range section.Item {
+		check.Assert(item.InstanceID, Equals, newVM.VirtualHardwareSection.Item[0].InstanceID)
+		check.Assert(item.AutomaticAllocation, Equals, newVM.VirtualHardwareSection.Item[0].AutomaticAllocation)
+		check.Assert(item.Address, Equals, newVM.VirtualHardwareSection.Item[0].Address)
+		check.Assert(item.CoresPerSocket, Equals, newVM.VirtualHardwareSection.Item[0].CoresPerSocket)
+	}
+	check.Assert(len(section.Item), Equals, len(newVM.VirtualHardwareSection.Item))
 }
