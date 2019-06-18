@@ -560,22 +560,3 @@ func (vdc *Vdc) FindMediaImage(mediaName string) (MediaItem, error) {
 	util.Logger.Printf("[TRACE] Found media record by name: %#v \n", mediaResults)
 	return *newMediaItem, nil
 }
-
-// GetMetadata() function returns meta data for vDC.
-func (vdc *Vdc) GetMetadata() (*types.Metadata, error) {
-	return getMetadata(vdc.client, getAdminVdcURL(vdc.Vdc.HREF))
-}
-
-// DeleteMetadata() function deletes metadata by key provided as input
-func (vdc *Vdc) DeleteMetadata(key string) (Task, error) {
-	return deleteMetadata(vdc.client, key, getAdminVdcURL(vdc.Vdc.HREF))
-}
-
-// AddMetadata() function adds metadata key, value pair provided as input to vDC.
-func (vdc *Vdc) AddMetadata(key string, value string) (Task, error) {
-	return addMetadata(vdc.client, key, value, getAdminVdcURL(vdc.Vdc.HREF))
-}
-
-func getAdminVdcURL(vdcURL string) string {
-	return strings.Split(vdcURL, "/api/vdc/")[0] + "/api/admin/vdc/" + strings.Split(vdcURL, "/api/vdc/")[1]
-}
