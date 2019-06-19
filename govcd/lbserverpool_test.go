@@ -62,11 +62,11 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	check.Assert(createdLbPool.Members[0].Name, Equals, "Server_one")
 	check.Assert(createdLbPool.Members[1].Name, Equals, "Server_two")
 
-	// // We created pool successfully therefore let's add it to cleanup list
+	// We created pool successfully therefore let's add it to cleanup list
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
 	AddToCleanupList(Test_LBServerPool, "lbServerPool", parentEntity, check.TestName())
 
-	// // Lookup by both name and ID and compare that these are equal values
+	// Lookup by both name and ID and compare that these are equal values
 	lbPoolByID, err := edge.ReadLBServerPool(&types.LBPool{ID: createdLbPool.ID})
 	check.Assert(err, IsNil)
 
@@ -94,7 +94,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	updatedLBPool, err = edge.UpdateLBServerPool(lbPoolByID)
 	check.Assert(err, ErrorMatches, ".*Invalid algorithm.*Valid algorithms are:.*")
 
-	// // Update should fail without name
+	// Update should fail without name
 	lbPoolByID.Name = ""
 	_, err = edge.UpdateLBServerPool(lbPoolByID)
 	check.Assert(err.Error(), Equals, "load balancer server pool Name cannot be empty")
