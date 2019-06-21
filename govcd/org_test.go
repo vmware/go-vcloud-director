@@ -420,3 +420,213 @@ func (vcd *TestVCD) Test_GetAdminCatalog(check *C) {
 		check.Assert(cat.AdminCatalog.Description, Equals, vcd.config.VCD.Catalog.Description)
 	}
 }
+
+// Tests Refresh for Vdc by updating the Vdc and then asserting if the
+// variable is updated.
+func (vcd *TestVCD) Test_RefreshVdc(check *C) {
+
+	adminOrg, err, vdcConfiguration := setupVDc(vcd, check)
+
+	// Refresh so the new VDC shows up in the org's list
+	err = adminOrg.Refresh()
+	check.Assert(err, IsNil)
+
+	adminVdc, err := adminOrg.GetAdminVdcByName(vdcConfiguration.Name)
+
+	check.Assert(err, IsNil)
+	check.Assert(adminVdc, Not(Equals), Vdc{})
+	check.Assert(adminVdc.AdminVdc.Name, Equals, vdcConfiguration.Name)
+	check.Assert(adminVdc.AdminVdc.IsEnabled, Equals, vdcConfiguration.IsEnabled)
+	check.Assert(adminVdc.AdminVdc.AllocationModel, Equals, vdcConfiguration.AllocationModel)
+
+	adminVdc.AdminVdc.Name = TestRefreshOrgVdc
+	_, err = adminVdc.Update()
+	check.Assert(err, IsNil)
+	AddToCleanupList(TestRefreshOrgVdc, "vdc", vcd.org.Org.Name, check.TestName())
+
+	// Test Refresh on vdc
+	err = adminVdc.Refresh()
+	check.Assert(err, IsNil)
+	check.Assert(adminVdc.AdminVdc.Name, Equals, TestRefreshOrgVdc)
+}
+
+func setupVDc(vcd *TestVCD, check *C) (AdminOrg, error, *types.VdcConfiguration) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+	if vcd.config.VCD.ProviderVdc.Name == "" {
+		check.Skip("No Provider VDC name given for VDC tests")
+	}
+	if vcd.config.VCD.ProviderVdc.StorageProfile == "" {
+		check.Skip("No Storage Profile given for VDC tests")
+	}
+	if vcd.config.VCD.ProviderVdc.NetworkPool == "" {
+		check.Skip("No Network Pool given for VDC tests")
+	}
+	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, Not(Equals), AdminOrg{})
+	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "providerVdc",
+		"filter": fmt.Sprintf("(name==%s)", vcd.config.VCD.ProviderVdc.Name),
+	})
+	check.Assert(err, IsNil)
+	if len(results.Results.VMWProviderVdcRecord) == 0 {
+		check.Skip(fmt.Sprintf("No Provider VDC found with name '%s'", vcd.config.VCD.ProviderVdc.Name))
+	}
+	providerVdcHref := results.Results.VMWProviderVdcRecord[0].HREF
+	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "providerVdcStorageProfile",
+		"filter": fmt.Sprintf("(name==%s)", vcd.config.VCD.ProviderVdc.StorageProfile),
+	})
+	check.Assert(err, IsNil)
+	if len(results.Results.ProviderVdcStorageProfileRecord) == 0 {
+		check.Skip(fmt.Sprintf("No storage profile found with name '%s'", vcd.config.VCD.ProviderVdc.StorageProfile))
+	}
+	providerVdcStorageProfileHref := results.Results.ProviderVdcStorageProfileRecord[0].HREF
+	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "networkPool",
+		"filter": fmt.Sprintf("(name==%s)", vcd.config.VCD.ProviderVdc.NetworkPool),
+	})
+	check.Assert(err, IsNil)
+	if len(results.Results.NetworkPoolRecord) == 0 {
+		check.Skip(fmt.Sprintf("No network pool found with name '%s'", vcd.config.VCD.ProviderVdc.NetworkPool))
+	}
+	networkPoolHref := results.Results.NetworkPoolRecord[0].HREF
+	vdcConfiguration := &types.VdcConfiguration{
+		Name:            TestCreateOrgVdc + "ForRefresh",
+		Xmlns:           types.XMLNamespaceVCloud,
+		AllocationModel: "AllocationPool",
+		ComputeCapacity: []*types.ComputeCapacity{
+			&types.ComputeCapacity{
+				CPU: &types.CapacityWithUsage{
+					Units:     "MHz",
+					Allocated: 1024,
+					Limit:     1024,
+				},
+				Memory: &types.CapacityWithUsage{
+					Allocated: 1024,
+					Limit:     1024,
+					Units:     "MB",
+				},
+			},
+		},
+		VdcStorageProfile: []*types.VdcStorageProfile{&types.VdcStorageProfile{
+			Enabled: true,
+			Units:   "MB",
+			Limit:   1024,
+			Default: true,
+			ProviderVdcStorageProfile: &types.Reference{
+				HREF: providerVdcStorageProfileHref,
+			},
+		},
+		},
+		NetworkPoolReference: &types.Reference{
+			HREF: networkPoolHref,
+		},
+		ProviderVdcReference: &types.Reference{
+			HREF: providerVdcHref,
+		},
+		IsEnabled:            true,
+		IsThinProvision:      true,
+		UsesFastProvisioning: true,
+	}
+	vdc, err := adminOrg.GetVdcByName(vdcConfiguration.Name)
+	check.Assert(err, IsNil)
+	if vdc != (Vdc{}) {
+		err = vdc.DeleteWait(true, true)
+		check.Assert(err, IsNil)
+	}
+	err = adminOrg.CreateVdcWait(vdcConfiguration)
+	check.Assert(err, IsNil)
+	AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, check.TestName())
+	return adminOrg, err, vdcConfiguration
+}
+
+// Tests Vdc by updating the Vdc and then asserting if the
+// variable is updated.
+func (vcd *TestVCD) Test_UpdateVdc(check *C) {
+	adminOrg, err, vdcConfiguration := setupVDc(vcd, check)
+
+	// Refresh so the new VDC shows up in the org's list
+	err = adminOrg.Refresh()
+	check.Assert(err, IsNil)
+
+	adminVdc, err := adminOrg.GetAdminVdcByName(vdcConfiguration.Name)
+
+	check.Assert(err, IsNil)
+	check.Assert(adminVdc, Not(Equals), Vdc{})
+	check.Assert(adminVdc.AdminVdc.Name, Equals, vdcConfiguration.Name)
+	check.Assert(adminVdc.AdminVdc.IsEnabled, Equals, vdcConfiguration.IsEnabled)
+	check.Assert(adminVdc.AdminVdc.AllocationModel, Equals, vdcConfiguration.AllocationModel)
+
+	updateDescription := "updateDescription"
+	computeCapacity := []*types.ComputeCapacity{
+		&types.ComputeCapacity{
+			CPU: &types.CapacityWithUsage{
+				Units:     "MHz",
+				Allocated: 2024,
+				Limit:     2024,
+			},
+			Memory: &types.CapacityWithUsage{
+				Allocated: 2024,
+				Limit:     2024,
+				Units:     "MB",
+			},
+		},
+	}
+	quota := 111
+	vCpu := int64(1000)
+	guaranteed := float64(0.6)
+	adminVdc.AdminVdc.Description = updateDescription
+	adminVdc.AdminVdc.ComputeCapacity = computeCapacity
+	adminVdc.AdminVdc.IsEnabled = false
+	adminVdc.AdminVdc.IsThinProvision = false
+	adminVdc.AdminVdc.NetworkQuota = quota
+	adminVdc.AdminVdc.VMQuota = quota
+	adminVdc.AdminVdc.OverCommitAllowed = false
+	adminVdc.AdminVdc.VCpuInMhz = vCpu
+	adminVdc.AdminVdc.UsesFastProvisioning = false
+	adminVdc.AdminVdc.ResourceGuaranteedCpu = guaranteed
+	adminVdc.AdminVdc.ResourceGuaranteedMemory = guaranteed
+
+	updatedVdc, err := adminVdc.Update()
+	check.Assert(err, IsNil)
+	check.Assert(updatedVdc, Not(IsNil))
+	check.Assert(updatedVdc.AdminVdc.Description, Equals, updateDescription)
+	check.Assert(updatedVdc.AdminVdc.ComputeCapacity[0].CPU.Allocated, Equals, computeCapacity[0].CPU.Allocated)
+	check.Assert(updatedVdc.AdminVdc.IsEnabled, Equals, false)
+	check.Assert(updatedVdc.AdminVdc.IsThinProvision, Equals, false)
+	check.Assert(updatedVdc.AdminVdc.NetworkQuota, Equals, quota)
+	check.Assert(updatedVdc.AdminVdc.VMQuota, Equals, quota)
+	check.Assert(updatedVdc.AdminVdc.OverCommitAllowed, Equals, false)
+	check.Assert(updatedVdc.AdminVdc.VCpuInMhz, Equals, vCpu)
+	check.Assert(updatedVdc.AdminVdc.UsesFastProvisioning, Equals, false)
+	check.Assert(updatedVdc.AdminVdc.ResourceGuaranteedCpu, Equals, guaranteed)
+	check.Assert(updatedVdc.AdminVdc.ResourceGuaranteedMemory, Equals, guaranteed)
+}
+
+// Tests org function GetAdminVdcByName with the vdc specified
+// in the config file. Then tests with a vdc that doesn't exist.
+// Fails if the config file name doesn't match with the found vDC, or
+// if the invalid vDC is found by the function.  Also tests an vDC
+// that doesn't exist. Asserts an error if the function finds it or
+// if the error is not nil.
+func (vcd *TestVCD) Test_GetAdminVdcByName(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, Not(Equals), AdminOrg{})
+
+	adminVdc, err := adminOrg.GetAdminVdcByName(vcd.config.VCD.Vdc)
+	check.Assert(adminVdc, Not(Equals), AdminVdc{})
+	check.Assert(err, IsNil)
+	check.Assert(adminVdc.AdminVdc.Name, Equals, vcd.config.VCD.Vdc)
+	// Try a vdc that doesn't exist
+	adminVdc, err = adminOrg.GetAdminVdcByName(INVALID_NAME)
+	check.Assert(adminVdc, Equals, AdminVdc{})
+	check.Assert(err, IsNil)
+}
