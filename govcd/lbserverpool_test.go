@@ -30,10 +30,27 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 		check.Skip("Skipping test because the edge gateway does not have advanced networking enabled")
 	}
 
-	// Used for creating
+	// Establish prerequisite - service monitor
+	lbMon := &types.LBMonitor{
+		Name:       check.TestName(),
+		Interval:   10,
+		Timeout:    10,
+		MaxRetries: 3,
+		Type:       "http",
+	}
+	lbMonitor, err := edge.CreateLBServiceMonitor(lbMon)
+	check.Assert(err, IsNil)
+	check.Assert(lbMonitor.ID, NotNil)
+
+	// Add service monitor to cleanup
+	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
+	AddToCleanupList(check.TestName(), "lbServiceMonitor", parentEntity, check.TestName())
+
+	// Configure creation object including reference to service monitor
 	lbPoolConfig := &types.LBPool{
 		Name:      Test_LBServerPool,
 		Algorithm: "round-robin",
+		MonitorId: lbMonitor.ID,
 		Members: types.LBPoolMembers{
 			types.LBPoolMember{
 				Name:      "Server_one",
@@ -55,6 +72,8 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	createdLbPool, err := edge.CreateLBServerPool(lbPoolConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdLbPool.ID, Not(IsNil))
+	check.Assert(createdLbPool.MonitorId, Equals, lbMonitor.ID)
+	check.Assert(len(createdLbPool.Members), Equals, 2)
 	check.Assert(createdLbPool.Members[0].Condition, Equals, "enabled")
 	check.Assert(createdLbPool.Members[1].Condition, Equals, "enabled")
 	check.Assert(createdLbPool.Members[0].Weight, Equals, 1)
@@ -62,8 +81,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	check.Assert(createdLbPool.Members[0].Name, Equals, "Server_one")
 	check.Assert(createdLbPool.Members[1].Name, Equals, "Server_two")
 
-	// We created pool successfully therefore let's add it to cleanup list
-	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
+	// We created server pool successfully therefore let's add it to cleanup list
 	AddToCleanupList(Test_LBServerPool, "lbServerPool", parentEntity, check.TestName())
 
 	// Lookup by both name and ID and compare that these are equal values
