@@ -1,4 +1,4 @@
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk unit ALL
+// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk ALL
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -57,8 +57,8 @@ const (
 	TestVMDetachDisk              = "TestVMDetachDisk"
 	TestCreateExternalNetwork     = "TestCreateExternalNetwork"
 	TestDeleteExternalNetwork     = "TestDeleteExternalNetwork"
-	Test_LBServiceMonitor         = "Test_LBServiceMonitor"
-	Test_LBServerPool             = "Test_LBServerPool"
+	Test_LBServiceMonitor         = "TestLBServiceMonitor"
+	Test_LBServerPool             = "TestLBServerPool"
 )
 
 const (
@@ -329,7 +329,10 @@ func (vcd *TestVCD) infoCleanup(format string, args ...interface{}) {
 	}
 }
 
-// Gets the two components of a "parent" string, as passed to AddToCleanupList
+// Gets the two or three components of a "parent" string, as passed to AddToCleanupList
+// If the number of split strings is not 2 or 3 it return 3 empty strings
+// Example input parent: my-org|my-vdc|my-edge-gw, separator: |
+// Output output: first: my-org, second: my-vdc, third: my-edge-gw
 func splitParent(parent string, separator string) (first, second, third string) {
 	strList := strings.Split(parent, separator)
 	if len(strList) < 2 || len(strList) > 3 {
@@ -796,6 +799,69 @@ func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 	}
 
 	return vapp, err
+}
+
+func Test_splitParent(t *testing.T) {
+	type args struct {
+		parent    string
+		separator string
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantFirst  string
+		wantSecond string
+		wantThird  string
+	}{
+		{
+			name:       "Empty",
+			args:       args{parent: "", separator: "|"},
+			wantFirst:  "",
+			wantSecond: "",
+			wantThird:  "",
+		},
+		{
+			name:       "One",
+			wantFirst:  "",
+			wantSecond: "",
+			wantThird:  "",
+		},
+		{
+			name:       "Two",
+			args:       args{parent: "first|second", separator: "|"},
+			wantFirst:  "first",
+			wantSecond: "second",
+			wantThird:  "",
+		},
+		{
+			name:       "Three",
+			args:       args{parent: "first|second|third", separator: "|"},
+			wantFirst:  "first",
+			wantSecond: "second",
+			wantThird:  "third",
+		},
+		{
+			name:       "Four",
+			args:       args{parent: "first|second|third|fourth", separator: "|"},
+			wantFirst:  "",
+			wantSecond: "",
+			wantThird:  "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotFirst, gotSecond, gotThird := splitParent(tt.args.parent, tt.args.separator)
+			if gotFirst != tt.wantFirst {
+				t.Errorf("splitParent() gotFirst = %v, want %v", gotFirst, tt.wantFirst)
+			}
+			if gotSecond != tt.wantSecond {
+				t.Errorf("splitParent() gotSecond = %v, want %v", gotSecond, tt.wantSecond)
+			}
+			if gotThird != tt.wantThird {
+				t.Errorf("splitParent() gotThird = %v, want %v", gotThird, tt.wantThird)
+			}
+		})
+	}
 }
 
 func init() {

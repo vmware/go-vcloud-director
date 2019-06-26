@@ -12,7 +12,7 @@ import (
 )
 
 // Test_LBServerPool tests CRUD methods for load balancer server pool.
-// The following things are tested:
+// The following things are tested if prerequisite Edge Gateway exists:
 // Creation of load balancer server pool
 // Read load balancer server pool by both ID and Name (server pool name must be unique in single edge gateway)
 // Update - change a single field and compare that configuration and result objects are deeply equal
