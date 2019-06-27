@@ -577,7 +577,7 @@ func (vcd *TestVCD) Test_UpdateVdc(check *C) {
 	}
 	quota := 111
 	vCpu := int64(1000)
-	guaranteed := float64(0.6)
+	guaranteed := "0.6"
 	adminVdc.AdminVdc.Description = updateDescription
 	adminVdc.AdminVdc.ComputeCapacity = computeCapacity
 	adminVdc.AdminVdc.IsEnabled = false

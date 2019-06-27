@@ -394,8 +394,8 @@ type AdminVdc struct {
 	Xmlns string `xml:"xmlns,attr"`
 	Vdc
 
-	ResourceGuaranteedMemory float64    `xml:"ResourceGuaranteedMemory,omitempty"`
-	ResourceGuaranteedCpu    float64    `xml:"ResourceGuaranteedCpu,omitempty"`
+	ResourceGuaranteedMemory string     `xml:"ResourceGuaranteedMemory,omitempty"`
+	ResourceGuaranteedCpu    string     `xml:"ResourceGuaranteedCpu,omitempty"`
 	VCpuInMhz                int64      `xml:"VCpuInMhz,omitempty"`
 	IsThinProvision          bool       `xml:"IsThinProvision,omitempty"`
 	NetworkPoolReference     *Reference `xml:"NetworkPoolReference,omitempty"`
@@ -2460,4 +2460,17 @@ type QueryResultOrgVdcNetworkRecordType struct {
 	VdcName            string  `xml:"vdcName,attr,omitempty"`
 	IsIpScopeInherited bool    `xml:"isIpScopeInherited,attr,omitempty"`
 	Link               []*Link `xml:"Link,omitempty"`
+}
+
+// Represents org VDC Network
+// Reference: vCloud API 27.0 - Network Pool
+// https://code.vmware.com/apis/72/vcloud-director#/doc/doc/types/VMWNetworkPoolType.html
+type VMWNetworkPool struct {
+	HREF        string           `xml:"href,attr,omitempty"`
+	Id          string           `xml:"id,attr,omitempty"`
+	Type        string           `xml:"type,attr,omitempty"`
+	Name        string           `xml:"name,attr"`
+	Status      int              `xml:"status,attr,omitempty"`
+	Description string           `xml:"netmask,omitempty"`
+	Tasks       *TasksInProgress `xml:"Tasks,omitempty"`
 }
