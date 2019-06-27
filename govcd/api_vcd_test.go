@@ -106,8 +106,8 @@ type TestConfig struct {
 		ExternalNetworkPortGroupType string `yaml:"externalNetworkPortGroupType,omitempty"`
 		VimServer                    string `yaml:"vimServer,omitempty"`
 		Disk                         struct {
-			Size          int `yaml:"size,omitempty"`
-			SizeForUpdate int `yaml:"sizeForUpdate,omitempty"`
+			Size          int64 `yaml:"size,omitempty"`
+			SizeForUpdate int64 `yaml:"sizeForUpdate,omitempty"`
 		}
 	} `yaml:"vcd"`
 	Logging struct {
