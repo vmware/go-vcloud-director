@@ -18,50 +18,50 @@ func init() {
 
 func (vcd *TestVCD) Test_AddMetadataForVdc(check *C) {
 	if vcd.config.VCD.Vdc == "" {
-		check.Skip("skipping test because no vDC name is empty")
+		check.Skip("skipping test because VDC name is empty")
 	}
 
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	// Add metadata
-	task, err := vcd.vdc.AddMetadata("key", "value")
+	vdc, err := vcd.vdc.AddMetadata("key", "value")
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(task.Task.Status, Equals, "success")
+	check.Assert(vdc, Not(Equals), Vdc{})
+
+	AddToCleanupList("key", "vdcMetaData", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
 
 	// Check if metadata was added correctly
 	metadata, err := vcd.vdc.GetMetadata()
 	check.Assert(err, IsNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, 1)
 	check.Assert(metadata.MetadataEntry[0].Key, Equals, "key")
 	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
 }
 
 func (vcd *TestVCD) Test_DeleteMetadataForVdc(check *C) {
 	if vcd.config.VCD.Vdc == "" {
-		check.Skip("skipping test because no vDC name is empty")
+		check.Skip("skipping test because VDC name is empty")
 	}
 
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	// Add metadata
-	task, err := vcd.vdc.AddMetadata("key2", "value2")
+	vdc, err := vcd.vdc.AddMetadata("key", "value")
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(task.Task.Status, Equals, "success")
+	check.Assert(vdc, Not(Equals), Vdc{})
+
+	AddToCleanupList("key", "vdcMetaData", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
 
 	// Remove metadata
-	task, err = vcd.vdc.DeleteMetadata("key2")
+	vdc, err = vcd.vdc.DeleteMetadata("key2")
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(task.Task.Status, Equals, "success")
+	check.Assert(vdc, Not(Equals), Vdc{})
+
 	metadata, err := vcd.vdc.GetMetadata()
 	check.Assert(err, IsNil)
 	for _, k := range metadata.MetadataEntry {
 		if k.Key == "key2" {
-			check.Errorf("metadata.MetadataEntry should not contain key: %s", k)
+			check.Errorf("metadata.MetadataEntry should not contain key: 'key2'")
 		}
 	}
 }
@@ -80,6 +80,7 @@ func (vcd *TestVCD) Test_AddMetadataOnVapp(check *C) {
 	// Check if metadata was added correctly
 	metadata, err := vcd.vapp.GetMetadata()
 	check.Assert(err, IsNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, 1)
 	check.Assert(metadata.MetadataEntry[0].Key, Equals, "key")
 	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
 }
@@ -105,7 +106,7 @@ func (vcd *TestVCD) Test_DeleteMetadataOnVapp(check *C) {
 	check.Assert(err, IsNil)
 	for _, k := range metadata.MetadataEntry {
 		if k.Key == "key2" {
-			check.Errorf("metadata.MetadataEntry should not contain key: %s", k)
+			check.Errorf("metadata.MetadataEntry should not contain key: 'key2'")
 		}
 	}
 }
@@ -137,6 +138,7 @@ func (vcd *TestVCD) Test_AddMetadataOnVm(check *C) {
 	// Check if metadata was added correctly
 	metadata, err := vm.GetMetadata()
 	check.Assert(err, IsNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, 1)
 	check.Assert(metadata.MetadataEntry[0].Key, Equals, "key")
 	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
 }
@@ -175,7 +177,7 @@ func (vcd *TestVCD) Test_DeleteMetadataOnVm(check *C) {
 	check.Assert(err, IsNil)
 	for _, k := range metadata.MetadataEntry {
 		if k.Key == "key2" {
-			check.Errorf("metadata.MetadataEntry should not contain key: %s", k)
+			check.Errorf("metadata.MetadataEntry should not contain key: 'key2'")
 		}
 	}
 }

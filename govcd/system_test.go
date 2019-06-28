@@ -209,4 +209,5 @@ func (vcd *TestVCD) Test_QueryOrgVdcNetworkByName(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(orgVdcNetwork), Not(Equals), 0)
 	check.Assert(orgVdcNetwork[0].Name, Equals, vcd.config.VCD.Network.Net1)
+	check.Assert(orgVdcNetwork[0].ConnectedTo, Equals, vcd.config.VCD.EdgeGateway)
 }

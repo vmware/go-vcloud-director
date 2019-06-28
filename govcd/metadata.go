@@ -35,13 +35,55 @@ func (vdc *Vdc) GetMetadata() (*types.Metadata, error) {
 }
 
 // DeleteMetadata() function deletes metadata by key provided as input
-func (vdc *Vdc) DeleteMetadata(key string) (Task, error) {
-	return deleteMetadata(vdc.client, key, getAdminVdcURL(vdc.Vdc.HREF))
+func (vdc *Vdc) DeleteMetadata(key string) (Vdc, error) {
+	task, err := deleteMetadata(vdc.client, key, getAdminVdcURL(vdc.Vdc.HREF))
+	if err != nil {
+		return Vdc{}, err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return Vdc{}, err
+	}
+
+	err = vdc.Refresh()
+	if err != nil {
+		return Vdc{}, err
+	}
+
+	return *vdc, nil
 }
 
 // AddMetadata() function adds metadata key, value pair provided as input to vDC.
-func (vdc *Vdc) AddMetadata(key string, value string) (Task, error) {
+func (vdc *Vdc) AddMetadata(key string, value string) (Vdc, error) {
+	task, err := addMetadata(vdc.client, key, value, getAdminVdcURL(vdc.Vdc.HREF))
+	if err != nil {
+		return Vdc{}, err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return Vdc{}, err
+	}
+
+	err = vdc.Refresh()
+	if err != nil {
+		return Vdc{}, err
+	}
+
+	return *vdc, nil
+}
+
+// AddMetadata() function adds metadata key, value pair provided as input to vDC.
+// and returns task
+func (vdc *Vdc) AddMetadataAsync(key string, value string) (Task, error) {
 	return addMetadata(vdc.client, key, value, getAdminVdcURL(vdc.Vdc.HREF))
+}
+
+// DeleteMetadata() function deletes metadata by key provided as input
+// and returns task
+func (vdc *Vdc) DeleteMetadataAsync(key string) (Task, error) {
+	return deleteMetadata(vdc.client, key, getAdminVdcURL(vdc.Vdc.HREF))
 }
 
 func getAdminVdcURL(vdcURL string) string {
