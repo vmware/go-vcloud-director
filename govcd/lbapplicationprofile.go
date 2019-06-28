@@ -7,7 +7,6 @@ package govcd
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
@@ -29,15 +28,13 @@ func (eGW *EdgeGateway) CreateLBAppProfile(lbAppProfileConfig *types.LBAppProfil
 	if err != nil {
 		return nil, err
 	}
-	location := resp.Header.Get("Location")
 
-	// Last element in location header is the server pool ID
-	// i.e. Location: [/network/edges/edge-3/loadbalancer/config/applicationprofiles/applicationProfile-4]
-	if location == "" {
-		return nil, fmt.Errorf("unable to retrieve ID for new load balancer application profile with name %s", lbAppProfileConfig.Name)
+	// Location header should look similarly:
+	// [/network/edges/edge-3/loadbalancer/config/applicationprofiles/applicationProfile-4]
+	lbAppProfileID, err := extractNSXObjectIDfromLocation(resp.Header.Get("Location"))
+	if err != nil {
+		return nil, err
 	}
-	splitLocation := strings.Split(location, "/")
-	lbAppProfileID := splitLocation[len(splitLocation)-1]
 
 	readAppProfile, err := eGW.ReadLBAppProfile(&types.LBAppProfile{ID: lbAppProfileID})
 	if err != nil {
