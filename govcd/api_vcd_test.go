@@ -1,4 +1,4 @@
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk ALL
+// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lbAppProfile ALL
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -58,6 +58,7 @@ const (
 	TestCreateExternalNetwork     = "TestCreateExternalNetwork"
 	TestDeleteExternalNetwork     = "TestDeleteExternalNetwork"
 	Test_LBServiceMonitor         = "Test_LBServiceMonitor"
+	TestLBAppProfile              = "TestLBAppProfile"
 )
 
 const (
