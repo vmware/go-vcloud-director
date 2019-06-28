@@ -28,7 +28,7 @@ func (vcd *TestVCD) Test_AddMetadataForVdc(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vdc, Not(Equals), Vdc{})
 
-	AddToCleanupList("key", "vdcMetaData", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
+	AddToCleanupList("key", "vdcMetaData", vcd.org.Org.Name+"|"+vcd.config.VCD.Vdc, check.TestName())
 
 	// Check if metadata was added correctly
 	metadata, err := vcd.vdc.GetMetadata()
@@ -50,7 +50,7 @@ func (vcd *TestVCD) Test_DeleteMetadataForVdc(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vdc, Not(Equals), Vdc{})
 
-	AddToCleanupList("key", "vdcMetaData", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
+	AddToCleanupList("key", "vdcMetaData", vcd.org.Org.Name+"|"+vcd.config.VCD.Vdc, check.TestName())
 
 	// Remove metadata
 	vdc, err = vcd.vdc.DeleteMetadata("key2")
