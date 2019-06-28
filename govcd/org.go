@@ -98,13 +98,13 @@ func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
 }
 
 // Given an adminVdc with a valid HREF, the function refresh the adminVdc
-// and updates the adminVdc data. Otherwise if the function fails,
-// it returns an error.  Users should use refresh whenever they have
+// and updates the adminVdc data. Returns an error on failure
+// Users should use refresh whenever they suspect
 // a stale vDC due to the creation/update/deletion of a resource
-// within the org or the vDC itself.
+// within the the vDC itself.
 func (adminVdc *AdminVdc) Refresh() error {
-	if *adminVdc == (AdminVdc{}) {
-		return fmt.Errorf("cannot refresh, Object is empty")
+	if *adminVdc == (AdminVdc{}) || adminVdc.AdminVdc.HREF == "" {
+		return fmt.Errorf("cannot refresh, Object is empty or HREF is empty")
 	}
 
 	// Empty struct before a new unmarshal, otherwise we end up with duplicate
@@ -121,7 +121,7 @@ func (adminVdc *AdminVdc) Refresh() error {
 	return nil
 }
 
-// GetAdminVdcByName function uses user specifies valid vdc name and then returns a admin vDC object.
+// GetAdminVdcByName function uses a valid VDC name and returns a admin VDC object.
 // If no vDC is found, then it returns an empty vDC and no error.
 // Otherwise it returns an empty vDC and an error.
 func (adminOrg *AdminOrg) GetAdminVdcByName(vdcname string) (AdminVdc, error) {
@@ -139,7 +139,7 @@ func (adminOrg *AdminOrg) GetAdminVdcByName(vdcname string) (AdminVdc, error) {
 	return AdminVdc{}, nil
 }
 
-// Function UpdateAsync() updated vCD from current vCD struct contents.
+// UpdateAsync updates VDC from current VDC struct contents.
 // Any differences that may be legally applied will be updated.
 // Returns an error if the call to vCD fails.
 // API Documentation: https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/operations/PUT-Vdc.html
@@ -152,7 +152,7 @@ func (adminVdc *AdminVdc) UpdateAsync() (Task, error) {
 		types.MimeAdminVDC, "error updating vDC: %s", adminVdc.AdminVdc)
 }
 
-// Function Update() updated vCD from current vCD struct contents.
+// Update function updates an Admin VDC from current VDC struct contents.
 // Any differences that may be legally applied will be updated.
 // Returns an empty AdminVdc struct and error if the call to vCD fails.
 // API Documentation: https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/operations/PUT-Vdc.html

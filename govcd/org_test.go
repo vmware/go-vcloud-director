@@ -421,7 +421,7 @@ func (vcd *TestVCD) Test_GetAdminCatalog(check *C) {
 	}
 }
 
-// Tests Refresh for Vdc by updating the Vdc and then asserting if the
+// Tests Refresh for VDC by updating it and then asserting if the
 // variable is updated.
 func (vcd *TestVCD) Test_RefreshVdc(check *C) {
 
@@ -543,7 +543,7 @@ func setupVDc(vcd *TestVCD, check *C) (AdminOrg, error, *types.VdcConfiguration)
 	return adminOrg, err, vdcConfiguration
 }
 
-// Tests Vdc by updating the Vdc and then asserting if the
+// Tests VDC by updating it and then asserting if the
 // variable is updated.
 func (vcd *TestVCD) Test_UpdateVdc(check *C) {
 	adminOrg, err, vdcConfiguration := setupVDc(vcd, check)

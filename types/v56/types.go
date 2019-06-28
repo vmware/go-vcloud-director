@@ -367,7 +367,7 @@ type Vdc struct {
 	ID           string `xml:"id,attr,omitempty"`
 	OperationKey string `xml:"operationKey,attr,omitempty"`
 	Name         string `xml:"name,attr"`
-	Status       string `xml:"status,attr,omitempty"`
+	Status       int    `xml:"status,attr,omitempty"`
 
 	Link               LinkList              `xml:"Link,omitempty"`
 	Description        string                `xml:"Description,omitempty"`
