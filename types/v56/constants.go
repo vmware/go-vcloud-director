@@ -149,5 +149,6 @@ const (
 )
 
 const (
-	LBMonitorPath = "/loadbalancer/config/monitors/"
+	LBMonitorPath    = "/loadbalancer/config/monitors/"
+	LBServerPoolPath = "/loadbalancer/config/pools/"
 )
