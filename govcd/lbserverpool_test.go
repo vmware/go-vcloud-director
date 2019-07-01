@@ -48,7 +48,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 
 	// Configure creation object including reference to service monitor
 	lbPoolConfig := &types.LBPool{
-		Name:      Test_LBServerPool,
+		Name:      TestLBServerPool,
 		Algorithm: "round-robin",
 		MonitorId: lbMonitor.ID,
 		Members: types.LBPoolMembers{
@@ -82,7 +82,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	check.Assert(createdLbPool.Members[1].Name, Equals, "Server_two")
 
 	// We created server pool successfully therefore let's add it to cleanup list
-	AddToCleanupList(Test_LBServerPool, "lbServerPool", parentEntity, check.TestName())
+	AddToCleanupList(TestLBServerPool, "lbServerPool", parentEntity, check.TestName())
 
 	// Lookup by both name and ID and compare that these are equal values
 	lbPoolByID, err := edge.ReadLBServerPool(&types.LBPool{ID: createdLbPool.ID})

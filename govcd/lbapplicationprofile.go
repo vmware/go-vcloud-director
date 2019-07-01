@@ -89,6 +89,17 @@ func (eGW *EdgeGateway) ReadLBAppProfile(lbAppProfileConfig *types.LBAppProfile)
 		lbAppProfileConfig.Name, lbAppProfileConfig.ID)
 }
 
+// ReadLBAppProfileByID wraps ReadLBAppProfile and needs only an ID for lookup
+func (eGW *EdgeGateway) ReadLBAppProfileByID(id string) (*types.LBAppProfile, error) {
+	return eGW.ReadLBAppProfile(&types.LBAppProfile{ID: id})
+}
+
+// ReadLBAppProfileByName wraps ReadLBAppProfile and needs only a Name for lookup
+func (eGW *EdgeGateway) ReadLBAppProfileByName(name string) (*types.LBAppProfile, error) {
+	return eGW.ReadLBAppProfile(&types.LBAppProfile{Name: name})
+}
+
+
 // UpdateLBAppProfile updates types.LBAppProfile with all fields. At least name or ID must be specified.
 // If both - Name and ID are specified it performs a lookup by ID and returns an error if the specified name and found
 // name do not match.
@@ -149,6 +160,16 @@ func (eGW *EdgeGateway) DeleteLBAppProfile(lbAppProfileConfig *types.LBAppProfil
 	}
 
 	return eGW.client.ExecuteRequestWithoutResponse(httpPath, http.MethodDelete, "application/xml", "unable to delete Server Pool: %s", nil)
+}
+
+// DeleteLBAppProfileByID wraps DeleteLBAppProfile and requires only ID for deletion
+func (eGW *EdgeGateway) DeleteLBAppProfileByID(id string) error {
+	return eGW.DeleteLBAppProfile(&types.LBAppProfile{ID: id})
+}
+
+// DeleteLBAppProfileByName wraps DeleteLBAppProfile and requires only Name for deletion
+func (eGW *EdgeGateway) DeleteLBAppProfileByName(name string) error {
+	return eGW.DeleteLBAppProfile(&types.LBAppProfile{Name: name})
 }
 
 func validateCreateLBAppProfile(lbAppProfileConfig *types.LBAppProfile) error {

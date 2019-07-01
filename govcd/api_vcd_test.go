@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lbAppProfile ALL
-=======
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lbServerPool lbServiceMonitor ALL
->>>>>>> master
+// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lbAppProfile lbServerPool lbServiceMonitor ALL
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
