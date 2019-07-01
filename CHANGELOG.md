@@ -3,8 +3,8 @@
 * Added edge gateway create/delete functions [#130](https://github.com/vmware/go-vcloud-director/issues/130).
 * Added load balancer service monitor [#196](https://github.com/vmware/go-vcloud-director/pull/196)
 * Added load balancer server pool [#205](https://github.com/vmware/go-vcloud-director/pull/205)
-* Added vCD meta data create/get/delete functions [#197](https://github.com/vmware/go-vcloud-director/pull/197)
 * Added functions for refreshing, getting and update Org VDC [#206](https://github.com/vmware/go-vcloud-director/pull/206)
+* Added vCD meta data create/get/delete functions [#197](https://github.com/vmware/go-vcloud-director/pull/197)
 
 ## 2.2.0 (May 15, 2019)
 
