@@ -29,7 +29,7 @@ func (vm *VM) AddMetadata(key string, value string) (Task, error) {
 	return addMetadata(vm.client, key, value, vm.VM.HREF)
 }
 
-// GetMetadata() function returns meta data for vDC.
+// GetMetadata() function returns meta data for VDC.
 func (vdc *Vdc) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(vdc.client, getAdminVdcURL(vdc.Vdc.HREF))
 }
@@ -54,7 +54,7 @@ func (vdc *Vdc) DeleteMetadata(key string) (Vdc, error) {
 	return *vdc, nil
 }
 
-// AddMetadata() function adds metadata key, value pair provided as input to vDC.
+// AddMetadata() function adds metadata key, value pair provided as input to VDC.
 func (vdc *Vdc) AddMetadata(key string, value string) (Vdc, error) {
 	task, err := addMetadata(vdc.client, key, value, getAdminVdcURL(vdc.Vdc.HREF))
 	if err != nil {
@@ -74,7 +74,7 @@ func (vdc *Vdc) AddMetadata(key string, value string) (Vdc, error) {
 	return *vdc, nil
 }
 
-// AddMetadata() function adds metadata key, value pair provided as input to vDC.
+// AddMetadata() function adds metadata key, value pair provided as input to VDC.
 // and returns task
 func (vdc *Vdc) AddMetadataAsync(key string, value string) (Task, error) {
 	return addMetadata(vdc.client, key, value, getAdminVdcURL(vdc.Vdc.HREF))
