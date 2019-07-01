@@ -2506,27 +2506,3 @@ type VMWNetworkPool struct {
 	Description string           `xml:"netmask,omitempty"`
 	Tasks       *TasksInProgress `xml:"Tasks,omitempty"`
 }
-
-// Represents org VDC Network
-// Reference: vCloud API 27.0 - Org VDC Network
-// https://code.vmware.com/apis/72/doc/doc/types/QueryResultOrgVdcNetworkRecordType.html
-type QueryResultOrgVdcNetworkRecordType struct {
-	Xmlns              string  `xml:"xmlns,attr,omitempty"`
-	HREF               string  `xml:"href,attr,omitempty"`
-	Id                 string  `xml:"id,attr,omitempty"`
-	Type               string  `xml:"type,attr,omitempty"`
-	Name               string  `xml:"name,attr,omitempty"`
-	DefaultGateway     string  `xml:"defaultGateway,attr,omitempty"`
-	Netmask            string  `xml:"netmask,attr,omitempty"`
-	Dns1               string  `xml:"dns1,attr,omitempty"`
-	Dns2               string  `xml:"dns2,attr,omitempty"`
-	DnsSuffix          string  `xml:"dnsSuffix,attr,omitempty"`
-	LinkType           int     `xml:"linkType,attr,omitempty"`
-	ConnectedTo        string  `xml:"connectedTo,attr,omitempty"`
-	Vdc                string  `xml:"vdc,attr,omitempty"`
-	IsBusy             bool    `xml:"isBusy,attr,omitempty"`
-	IsShared           bool    `xml:"isShared,attr,omitempty"`
-	VdcName            string  `xml:"vdcName,attr,omitempty"`
-	IsIpScopeInherited bool    `xml:"isIpScopeInherited,attr,omitempty"`
-	Link               []*Link `xml:"Link,omitempty"`
-}
