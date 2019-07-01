@@ -426,7 +426,7 @@ func (vcd *TestVCD) Test_GetAdminCatalog(check *C) {
 // variable is updated.
 func (vcd *TestVCD) Test_RefreshVdc(check *C) {
 
-	adminOrg, err, vdcConfiguration := setupVDc(vcd, check)
+	adminOrg, vdcConfiguration, err := setupVDc(vcd, check)
 
 	// Refresh so the new VDC shows up in the org's list
 	err = adminOrg.Refresh()
@@ -451,7 +451,7 @@ func (vcd *TestVCD) Test_RefreshVdc(check *C) {
 	check.Assert(adminVdc.AdminVdc.Name, Equals, TestRefreshOrgVdc)
 }
 
-func setupVDc(vcd *TestVCD, check *C) (AdminOrg, error, *types.VdcConfiguration) {
+func setupVDc(vcd *TestVCD, check *C) (AdminOrg, *types.VdcConfiguration, error) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
@@ -541,13 +541,13 @@ func setupVDc(vcd *TestVCD, check *C) (AdminOrg, error, *types.VdcConfiguration)
 	err = adminOrg.CreateVdcWait(vdcConfiguration)
 	check.Assert(err, IsNil)
 	AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, check.TestName())
-	return adminOrg, err, vdcConfiguration
+	return adminOrg, vdcConfiguration, err
 }
 
 // Tests VDC by updating it and then asserting if the
 // variable is updated.
 func (vcd *TestVCD) Test_UpdateVdc(check *C) {
-	adminOrg, err, vdcConfiguration := setupVDc(vcd, check)
+	adminOrg, vdcConfiguration, err := setupVDc(vcd, check)
 
 	// Refresh so the new VDC shows up in the org's list
 	err = adminOrg.Refresh()
