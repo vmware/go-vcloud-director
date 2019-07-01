@@ -315,10 +315,10 @@ type InstantiationParams struct {
 	// SnapshotSection              SnapshotSection              `xml:"SnapshotSection,omitempty"`
 }
 
-// OrgVDCNetwork represents an Org vDC network in the vCloud model.
+// OrgVDCNetwork represents an Org VDC network in the vCloud model.
 // Type: OrgVdcNetworkType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents an Org vDC network in the vCloud model.
+// Description: Represents an Org VDC network in the vCloud model.
 // Since: 5.1
 type OrgVDCNetwork struct {
 	XMLName       xml.Name              `xml:"OrgVdcNetwork"`
@@ -334,7 +334,7 @@ type OrgVDCNetwork struct {
 	EdgeGateway   *Reference            `xml:"EdgeGateway,omitempty"`
 	IsShared      bool                  `xml:"IsShared"`
 	Link          []Link                `xml:"Link,omitempty"`
-	ServiceConfig *GatewayFeatures      `xml:"ServiceConfig,omitempty"` // Specifies the service configuration for an isolated Org vDC networks
+	ServiceConfig *GatewayFeatures      `xml:"ServiceConfig,omitempty"` // Specifies the service configuration for an isolated Org VDC networks
 	Tasks         *TasksInProgress      `xml:"Tasks,omitempty"`
 }
 
@@ -356,10 +356,10 @@ type Capabilities struct {
 	SupportedHardwareVersions *SupportedHardwareVersions `xml:"SupportedHardwareVersions,omitempty"` // Read-only list of virtual hardware versions supported by this vDC.
 }
 
-// Vdc represents the user view of an organization vDC.
+// Vdc represents the user view of an organization VDC.
 // Type: VdcType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the user view of an organization vDC.
+// Description: Represents the user view of an organization VDC.
 // Since: 0.9
 type Vdc struct {
 	HREF         string `xml:"href,attr,omitempty"`
@@ -385,10 +385,10 @@ type Vdc struct {
 	VdcStorageProfiles []*VdcStorageProfiles `xml:"VdcStorageProfiles"`
 }
 
-// AdminVdc represents the admin view of an organization vDC.
+// AdminVdc represents the admin view of an organization VDC.
 // Type: AdminVdcType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the admin view of an organization vDC.
+// Description: Represents the admin view of an organization VDC.
 // Since: 0.9
 type AdminVdc struct {
 	Xmlns string `xml:"xmlns,attr"`
@@ -422,7 +422,7 @@ type VdcStorageProfile struct {
 // VdcConfiguration models the payload for creating a VDC.
 // Type: CreateVdcParamsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Parameters for creating an organization vDC
+// Description: Parameters for creating an organization VDC
 // Since: 5.1
 // https://code.vmware.com/apis/220/vcloud#/doc/doc/types/CreateVdcParamsType.html
 type VdcConfiguration struct {
@@ -492,10 +492,10 @@ type CapacityWithUsage struct {
 	Overhead  int64  `xml:"Overhead,omitempty"` // not available anymore from API v30.0
 }
 
-// ComputeCapacity represents vDC compute capacity.
+// ComputeCapacity represents VDC compute capacity.
 // Type: ComputeCapacityType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents vDC compute capacity.
+// Description: Represents VDC compute capacity.
 // Since: 0.9
 type ComputeCapacity struct {
 	CPU    *CapacityWithUsage `xml:"Cpu"`
@@ -1997,7 +1997,7 @@ type QueryResultRecordsType struct {
 	AdminDiskRecord                 []*DiskRecordType                                 `xml:"AdminDiskRecord"`                    // A record representing a independent Disk.
 	VirtualCenterRecord             []*QueryResultVirtualCenterRecordType             `xml:"VirtualCenterRecord"`                // A record representing a vSphere server
 	PortGroupRecord                 []*PortGroupRecordType                            `xml:"PortgroupRecord"`                    // A record representing a port group
-	OrgVdcNetworkRecord             []*QueryResultOrgVdcNetworkRecordType             `xml:"QueryResultOrgVdcNetworkRecordType"` // A record representing a org vDC network
+	OrgVdcNetworkRecord             []*QueryResultOrgVdcNetworkRecordType             `xml:"QueryResultOrgVdcNetworkRecordType"` // A record representing a org VDC network
 }
 
 // QueryResultEdgeGatewayRecordType represents an edge gateway record as query result.

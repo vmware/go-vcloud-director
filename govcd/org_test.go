@@ -608,8 +608,8 @@ func (vcd *TestVCD) Test_UpdateVdc(check *C) {
 
 // Tests org function GetAdminVdcByName with the vdc specified
 // in the config file. Then tests with a vdc that doesn't exist.
-// Fails if the config file name doesn't match with the found vDC, or
-// if the invalid vDC is found by the function.  Also tests an vDC
+// Fails if the config file name doesn't match with the found VDC, or
+// if the invalid VDC is found by the function.  Also tests an VDC
 // that doesn't exist. Asserts an error if the function finds it or
 // if the error is not nil.
 func (vcd *TestVCD) Test_GetAdminVdcByName(check *C) {

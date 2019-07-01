@@ -100,8 +100,8 @@ func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
 // Given an adminVdc with a valid HREF, the function refresh the adminVdc
 // and updates the adminVdc data. Returns an error on failure
 // Users should use refresh whenever they suspect
-// a stale vDC due to the creation/update/deletion of a resource
-// within the the vDC itself.
+// a stale VDC due to the creation/update/deletion of a resource
+// within the the VDC itself.
 func (adminVdc *AdminVdc) Refresh() error {
 	if *adminVdc == (AdminVdc{}) || adminVdc.AdminVdc.HREF == "" {
 		return fmt.Errorf("cannot refresh, Object is empty or HREF is empty")
@@ -112,7 +112,7 @@ func (adminVdc *AdminVdc) Refresh() error {
 	unmarshalledAdminVdc := &types.AdminVdc{}
 
 	_, err := adminVdc.client.ExecuteRequest(adminVdc.AdminVdc.HREF, http.MethodGet,
-		"", "error refreshing vDC: %s", nil, unmarshalledAdminVdc)
+		"", "error refreshing VDC: %s", nil, unmarshalledAdminVdc)
 	if err != nil {
 		return err
 	}
@@ -122,8 +122,8 @@ func (adminVdc *AdminVdc) Refresh() error {
 }
 
 // GetAdminVdcByName function uses a valid VDC name and returns a admin VDC object.
-// If no vDC is found, then it returns an empty vDC and no error.
-// Otherwise it returns an empty vDC and an error.
+// If no VDC is found, then it returns an empty VDC and no error.
+// Otherwise it returns an empty VDC and an error.
 func (adminOrg *AdminOrg) GetAdminVdcByName(vdcname string) (AdminVdc, error) {
 	for _, vdcs := range adminOrg.AdminOrg.Vdcs.Vdcs {
 		if vdcs.Name == vdcname {
@@ -149,7 +149,7 @@ func (adminVdc *AdminVdc) UpdateAsync() (Task, error) {
 
 	// Return the task
 	return adminVdc.client.ExecuteTaskRequest(adminVdc.AdminVdc.HREF, http.MethodPut,
-		types.MimeAdminVDC, "error updating vDC: %s", adminVdc.AdminVdc)
+		types.MimeAdminVDC, "error updating VDC: %s", adminVdc.AdminVdc)
 }
 
 // Update function updates an Admin VDC from current VDC struct contents.
