@@ -39,6 +39,7 @@ const (
 	TestUploadOvf                 = "TestUploadOvf"
 	TestDeleteCatalogItem         = "TestDeleteCatalogItem"
 	TestCreateOrgVdc              = "TestCreateOrgVdc"
+	TestRefreshOrgVdc             = "TestRefreshOrgVdc"
 	TestCreateOrgVdcNetworkEGW    = "TestCreateOrgVdcNetworkEGW"
 	TestCreateOrgVdcNetworkIso    = "TestCreateOrgVdcNetworkIso"
 	TestCreateOrgVdcNetworkDirect = "TestCreateOrgVdcNetworkDirect"
