@@ -1698,7 +1698,7 @@ type LBAppProfiles []LBAppProfile
 // LBAppProfilePersistence defines persistence profile settings in LBAppProfile
 type LBAppProfilePersistence struct {
 	XMLName    xml.Name `xml:"persistence"`
-	Method     string   `xml:"method"`
+	Method     string   `xml:"method,omitempty"`
 	CookieName string   `xml:"cookieName,omitempty"`
 	CookieMode string   `xml:"cookieMode,omitempty"`
 }
