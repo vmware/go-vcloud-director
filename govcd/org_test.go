@@ -602,8 +602,8 @@ func (vcd *TestVCD) Test_UpdateVdc(check *C) {
 	check.Assert(updatedVdc.AdminVdc.OverCommitAllowed, Equals, false)
 	check.Assert(updatedVdc.AdminVdc.VCpuInMhz, Equals, vCpu)
 	check.Assert(updatedVdc.AdminVdc.UsesFastProvisioning, Equals, false)
-	check.Assert(*updatedVdc.AdminVdc.ResourceGuaranteedCpu, Equals, guaranteed)
-	check.Assert(*updatedVdc.AdminVdc.ResourceGuaranteedMemory, Equals, guaranteed)
+	check.Assert(*updatedVdc.AdminVdc.ResourceGuaranteedCpu-guaranteed < 0.001, Equals, true)
+	check.Assert(*updatedVdc.AdminVdc.ResourceGuaranteedMemory-guaranteed < 0.001, Equals, true)
 }
 
 // Tests org function GetAdminVdcByName with the vdc specified
