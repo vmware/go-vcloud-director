@@ -1645,16 +1645,15 @@ type LBMonitor struct {
 type LBMonitors []LBMonitor
 
 type LBAppProfile struct {
-	XMLName        xml.Name `xml:"applicationProfile"`
-	ID             string   `xml:"applicationProfileId,omitempty"`
-	Name           string   `xml:"name,omitempty"`
-	SSLPassthrough bool     `xml:"sslPassthrough,omitempty"`
-	Template       string   `xml:"template,omitempty"`
-	HTTPRedirect   string   `xml:"httpRedirect,omitempty"`
-
-	Persistence                   *LBAppProfilePersistence `xml:"persistence,omitempty"`
-	InsertXForwardedForHTTPHeader bool                     `xml:"insertXForwardedFor,omitempty"`
-	ServerSSLEnabled              bool                     `xml:"serverSslEnabled,omitempty"`
+	XMLName                       xml.Name                  `xml:"applicationProfile"`
+	ID                            string                    `xml:"applicationProfileId,omitempty"`
+	Name                          string                    `xml:"name,omitempty"`
+	SSLPassthrough                bool                      `xml:"sslPassthrough,omitempty"`
+	Template                      string                    `xml:"template,omitempty"`
+	HTTPRedirect                  *LBAppProfileHTTPRedirect `xml:"httpRedirect,omitempty"`
+	Persistence                   *LBAppProfilePersistence  `xml:"persistence,omitempty"`
+	InsertXForwardedForHTTPHeader bool                      `xml:"insertXForwardedFor,omitempty"`
+	ServerSSLEnabled              bool                      `xml:"serverSslEnabled,omitempty"`
 }
 
 type LBAppProfiles []LBAppProfile
@@ -1664,6 +1663,11 @@ type LBAppProfilePersistence struct {
 	Method     string   `xml:"method"`
 	CookieName string   `xml:"cookieName,omitempty"`
 	CookieMode string   `xml:"cookieMode,omitempty"`
+}
+
+type LBAppProfileHTTPRedirect struct {
+	XMLName xml.Name `xml:"httpRedirect"`
+	To      string   `xml:"to,omitempty"`
 }
 
 // LoadBalancerVirtualServer represents a load balancer virtual server.
