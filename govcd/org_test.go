@@ -8,6 +8,7 @@ package govcd
 
 import (
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -602,8 +603,8 @@ func (vcd *TestVCD) Test_UpdateVdc(check *C) {
 	check.Assert(updatedVdc.AdminVdc.OverCommitAllowed, Equals, false)
 	check.Assert(updatedVdc.AdminVdc.VCpuInMhz, Equals, vCpu)
 	check.Assert(updatedVdc.AdminVdc.UsesFastProvisioning, Equals, false)
-	check.Assert(*updatedVdc.AdminVdc.ResourceGuaranteedCpu-guaranteed < 0.001, Equals, true)
-	check.Assert(*updatedVdc.AdminVdc.ResourceGuaranteedMemory-guaranteed < 0.001, Equals, true)
+	check.Assert(math.Abs(*updatedVdc.AdminVdc.ResourceGuaranteedCpu-guaranteed) < 0.001, Equals, true)
+	check.Assert(math.Abs(*updatedVdc.AdminVdc.ResourceGuaranteedMemory-guaranteed) < 0.001, Equals, true)
 }
 
 // Tests org function GetAdminVdcByName with the vdc specified
