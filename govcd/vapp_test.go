@@ -111,50 +111,6 @@ func (vcd *TestVCD) Test_SetOvf(check *C) {
 
 }
 
-func (vcd *TestVCD) Test_AddMetadataOnVapp(check *C) {
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
-	}
-	// Add metadata
-	task, err := vcd.vapp.AddMetadata("key", "value")
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(task.Task.Status, Equals, "success")
-
-	// Check if metadata was added correctly
-	metadata, err := vcd.vapp.GetMetadata()
-	check.Assert(err, IsNil)
-	check.Assert(metadata.MetadataEntry[0].Key, Equals, "key")
-	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
-}
-
-func (vcd *TestVCD) Test_DeleteMetadataOnVapp(check *C) {
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
-	}
-	// Add metadata
-	task, err := vcd.vapp.AddMetadata("key2", "value2")
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(task.Task.Status, Equals, "success")
-
-	// Remove metadata
-	task, err = vcd.vapp.DeleteMetadata("key2")
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(task.Task.Status, Equals, "success")
-	metadata, err := vcd.vapp.GetMetadata()
-	check.Assert(err, IsNil)
-	for _, k := range metadata.MetadataEntry {
-		if k.Key == "key2" {
-			check.Errorf("metadata.MetadataEntry should not contain key: %s", k)
-		}
-	}
-}
-
 // TODO: Add a check checking if the customization script ran
 func (vcd *TestVCD) Test_RunCustomizationScript(check *C) {
 	if vcd.skipVappTests {
