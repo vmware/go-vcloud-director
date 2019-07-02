@@ -4,6 +4,7 @@
 * Added load balancer service monitor [#196](https://github.com/vmware/go-vcloud-director/pull/196)
 * Added load balancer server pool [#205](https://github.com/vmware/go-vcloud-director/pull/205)
 * Added functions for refreshing, getting and update Org VDC [#206](https://github.com/vmware/go-vcloud-director/pull/206)
+* Added load balancer application profile [#208](https://github.com/vmware/go-vcloud-director/pull/208)
 
 ## 2.2.0 (May 15, 2019)
 
