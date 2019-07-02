@@ -437,8 +437,8 @@ type VdcConfiguration struct {
 	VmQuota                  int                  `xml:"VmQuota,omitempty"`
 	IsEnabled                bool                 `xml:"IsEnabled,omitempty"`
 	VdcStorageProfile        []*VdcStorageProfile `xml:"VdcStorageProfile"`
-	ResourceGuaranteedMemory float64              `xml:"ResourceGuaranteedMemory,omitempty"`
-	ResourceGuaranteedCpu    float64              `xml:"ResourceGuaranteedCpu,omitempty"`
+	ResourceGuaranteedMemory *float64             `xml:"ResourceGuaranteedMemory,omitempty"`
+	ResourceGuaranteedCpu    *float64             `xml:"ResourceGuaranteedCpu,omitempty"`
 	VCpuInMhz                int64                `xml:"VCpuInMhz,omitempty"`
 	IsThinProvision          bool                 `xml:"IsThinProvision,omitempty"`
 	NetworkPoolReference     *Reference           `xml:"NetworkPoolReference,omitempty"`
