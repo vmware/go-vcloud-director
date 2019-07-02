@@ -33,7 +33,7 @@ func (eGW *EdgeGateway) CreateLBServiceMonitor(lbMonitorConfig *types.LBMonitor)
 		return nil, err
 	}
 
-	// Location header should look similarly:
+	// Location header should look similar to:
 	// Location: [/network/edges/edge-3/loadbalancer/config/monitors/monitor-5]
 	lbMonitorID, err := extractNSXObjectIDfromPath(resp.Header.Get("Location"))
 	if err != nil {

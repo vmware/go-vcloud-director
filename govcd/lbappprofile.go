@@ -29,7 +29,7 @@ func (eGW *EdgeGateway) CreateLBAppProfile(lbAppProfileConfig *types.LBAppProfil
 		return nil, err
 	}
 
-	// Location header should look similarly:
+	// Location header should look similar to:
 	// [/network/edges/edge-3/loadbalancer/config/applicationprofiles/applicationProfile-4]
 	lbAppProfileID, err := extractNSXObjectIDfromPath(resp.Header.Get("Location"))
 	if err != nil {
