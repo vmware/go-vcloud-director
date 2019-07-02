@@ -31,14 +31,15 @@ func (eGW *EdgeGateway) CreateLBAppProfile(lbAppProfileConfig *types.LBAppProfil
 
 	// Location header should look similarly:
 	// [/network/edges/edge-3/loadbalancer/config/applicationprofiles/applicationProfile-4]
-	lbAppProfileID, err := extractNSXObjectIDfromLocation(resp.Header.Get("Location"))
+	lbAppProfileID, err := extractNSXObjectIDfromPath(resp.Header.Get("Location"))
 	if err != nil {
 		return nil, err
 	}
 
 	readAppProfile, err := eGW.ReadLBAppProfile(&types.LBAppProfile{ID: lbAppProfileID})
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve application profile with ID (%s) after creation: %s", readAppProfile.ID, err)
+		return nil, fmt.Errorf("unable to retrieve application profile with ID (%s) after creation: %s",
+			readAppProfile.ID, err)
 	}
 	return readAppProfile, nil
 }
@@ -62,26 +63,28 @@ func (eGW *EdgeGateway) ReadLBAppProfile(lbAppProfileConfig *types.LBAppProfile)
 	}{}
 
 	// This query returns all application profiles as the API does not have filtering options
-	_, err = eGW.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime, "unable to read load balancer application profile: %s", nil, lbAppProfileResponse)
+	_, err = eGW.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
+		"unable to read load balancer application profile: %s", nil, lbAppProfileResponse)
 	if err != nil {
 		return nil, err
 	}
 
 	// Search for application profile by ID or by Name
-	for _, pool := range lbAppProfileResponse.LbAppProfiles {
+	for _, profile := range lbAppProfileResponse.LbAppProfiles {
 		// If ID was specified for lookup - look for the same ID
-		if lbAppProfileConfig.ID != "" && pool.ID == lbAppProfileConfig.ID {
-			return pool, nil
+		if lbAppProfileConfig.ID != "" && profile.ID == lbAppProfileConfig.ID {
+			return profile, nil
 		}
 
 		// If Name was specified for lookup - look for the same Name
-		if lbAppProfileConfig.Name != "" && pool.Name == lbAppProfileConfig.Name {
+		if lbAppProfileConfig.Name != "" && profile.Name == lbAppProfileConfig.Name {
 			// We found it by name. Let's verify if search ID was specified and it matches the lookup object
-			if lbAppProfileConfig.ID != "" && pool.ID != lbAppProfileConfig.ID {
-				return nil, fmt.Errorf("load balancer application profile was found by name (%s), but it's ID (%s) does not match specified ID (%s)",
-					pool.Name, pool.ID, lbAppProfileConfig.ID)
+			if lbAppProfileConfig.ID != "" && profile.ID != lbAppProfileConfig.ID {
+				return nil, fmt.Errorf("load balancer application profile was found by name (%s)"+
+					", but it's ID (%s) does not match specified ID (%s)",
+					profile.Name, profile.ID, lbAppProfileConfig.ID)
 			}
-			return pool, nil
+			return profile, nil
 		}
 	}
 
@@ -98,7 +101,6 @@ func (eGW *EdgeGateway) ReadLBAppProfileByID(id string) (*types.LBAppProfile, er
 func (eGW *EdgeGateway) ReadLBAppProfileByName(name string) (*types.LBAppProfile, error) {
 	return eGW.ReadLBAppProfile(&types.LBAppProfile{Name: name})
 }
-
 
 // UpdateLBAppProfile updates types.LBAppProfile with all fields. At least name or ID must be specified.
 // If both - Name and ID are specified it performs a lookup by ID and returns an error if the specified name and found
@@ -131,7 +133,8 @@ func (eGW *EdgeGateway) UpdateLBAppProfile(lbAppProfileConfig *types.LBAppProfil
 
 	readAppProfile, err := eGW.ReadLBAppProfile(&types.LBAppProfile{ID: lbAppProfileConfig.ID})
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve pool with ID (%s) after update: %s", readAppProfile.ID, err)
+		return nil, fmt.Errorf("unable to retrieve application profile with ID (%s) after update: %s",
+			readAppProfile.ID, err)
 	}
 	return readAppProfile, nil
 }
@@ -159,7 +162,8 @@ func (eGW *EdgeGateway) DeleteLBAppProfile(lbAppProfileConfig *types.LBAppProfil
 		return fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
 
-	return eGW.client.ExecuteRequestWithoutResponse(httpPath, http.MethodDelete, "application/xml", "unable to delete Server Pool: %s", nil)
+	return eGW.client.ExecuteRequestWithoutResponse(httpPath, http.MethodDelete, "application/xml",
+		"unable to delete application profile: %s", nil)
 }
 
 // DeleteLBAppProfileByID wraps DeleteLBAppProfile and requires only ID for deletion
@@ -182,7 +186,8 @@ func validateCreateLBAppProfile(lbAppProfileConfig *types.LBAppProfile) error {
 
 func validateReadLBAppProfile(lbAppProfileConfig *types.LBAppProfile) error {
 	if lbAppProfileConfig.ID == "" && lbAppProfileConfig.Name == "" {
-		return fmt.Errorf("to read load balancer application profile at least one of `ID`, `Name` fields must be specified")
+		return fmt.Errorf("to read load balancer application profile at least one of `ID`, `Name`" +
+			" fields must be specified")
 	}
 
 	return nil

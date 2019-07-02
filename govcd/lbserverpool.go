@@ -32,7 +32,7 @@ func (eGW *EdgeGateway) CreateLBServerPool(lbPoolConfig *types.LBPool) (*types.L
 
 	// Location header should look similarly:
 	// Location: [/network/edges/edge-3/loadbalancer/config/pools/pool-7]
-	lbPoolID, err := extractNSXObjectIDfromLocation(resp.Header.Get("Location"))
+	lbPoolID, err := extractNSXObjectIDfromPath(resp.Header.Get("Location"))
 	if err != nil {
 		return nil, err
 	}

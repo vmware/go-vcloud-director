@@ -10,19 +10,19 @@ import (
 	"strings"
 )
 
-func extractNSXObjectIDfromLocation(header string) (string, error) {
-	if header == "" {
-		return "", fmt.Errorf("unable to get ID from empty header")
+func extractNSXObjectIDfromPath(locationPath string) (string, error) {
+	if locationPath == "" {
+		return "", fmt.Errorf("unable to get ID from empty path")
 	}
 
-	cleanHeader := path.Clean(header) // Removes trailing slash if there is one
-	splitLocation := strings.Split(cleanHeader, "/")
+	cleanPath := path.Clean(locationPath) // Removes trailing slash if there is one
+	splitPath := strings.Split(cleanPath, "/")
 
-	if len(splitLocation) < 2 {
-		return "", fmt.Errorf("header does not contain url path: %s", header)
+	if len(splitPath) < 2 {
+		return "", fmt.Errorf("path does not contain url path: %s", splitPath)
 	}
 
-	objectID := splitLocation[len(splitLocation)-1]
+	objectID := splitPath[len(splitPath)-1]
 
 	return objectID, nil
 }

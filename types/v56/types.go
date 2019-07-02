@@ -1691,6 +1691,9 @@ type LBAppProfile struct {
 	Persistence                   *LBAppProfilePersistence  `xml:"persistence,omitempty"`
 	InsertXForwardedForHTTPHeader bool                      `xml:"insertXForwardedFor,omitempty"`
 	ServerSSLEnabled              bool                      `xml:"serverSslEnabled,omitempty"`
+	// Questionable field. UI has it, but does not send it. NSX documentation has it, but it is
+	// never returned, nor shown
+	Expire int `xml:"expire,omitempty"`
 }
 
 type LBAppProfiles []LBAppProfile
