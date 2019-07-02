@@ -219,3 +219,17 @@ var INVALID_NAME = `*******************************************INVALID
 func init() {
 	testingTags["system"] = "system_test.go"
 }
+
+func (vcd *TestVCD) Test_QueryOrgVdcNetworkByName(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	if vcd.config.VCD.Network.Net1 == "" {
+		check.Skip("Skipping test because no network was given")
+	}
+
+	orgVdcNetwork, err := QueryOrgVdcNetworkByName(vcd.client, vcd.config.VCD.Network.Net1)
+	check.Assert(err, IsNil)
+	check.Assert(len(orgVdcNetwork), Not(Equals), 0)
+	check.Assert(orgVdcNetwork[0].Name, Equals, vcd.config.VCD.Network.Net1)
+	check.Assert(orgVdcNetwork[0].ConnectedTo, Equals, vcd.config.VCD.EdgeGateway)
+}
