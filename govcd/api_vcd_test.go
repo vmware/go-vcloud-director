@@ -1,4 +1,4 @@
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk user ALL
+// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lbServerPool lbServiceMonitor user ALL
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -39,6 +39,7 @@ const (
 	TestUploadOvf                 = "TestUploadOvf"
 	TestDeleteCatalogItem         = "TestDeleteCatalogItem"
 	TestCreateOrgVdc              = "TestCreateOrgVdc"
+	TestRefreshOrgVdc             = "TestRefreshOrgVdc"
 	TestCreateOrgVdcNetworkEGW    = "TestCreateOrgVdcNetworkEGW"
 	TestCreateOrgVdcNetworkIso    = "TestCreateOrgVdcNetworkIso"
 	TestCreateOrgVdcNetworkDirect = "TestCreateOrgVdcNetworkDirect"
@@ -57,7 +58,8 @@ const (
 	TestVMDetachDisk              = "TestVMDetachDisk"
 	TestCreateExternalNetwork     = "TestCreateExternalNetwork"
 	TestDeleteExternalNetwork     = "TestDeleteExternalNetwork"
-	Test_LBServiceMonitor         = "Test_LBServiceMonitor"
+	Test_LBServiceMonitor         = "TestLBServiceMonitor"
+	Test_LBServerPool             = "TestLBServerPool"
 )
 
 const (
@@ -328,10 +330,13 @@ func (vcd *TestVCD) infoCleanup(format string, args ...interface{}) {
 	}
 }
 
-// Gets the two components of a "parent" string, as passed to AddToCleanupList
+// Gets the two or three components of a "parent" string, as passed to AddToCleanupList
+// If the number of split strings is not 2 or 3 it return 3 empty strings
+// Example input parent: my-org|my-vdc|my-edge-gw, separator: |
+// Output output: first: my-org, second: my-vdc, third: my-edge-gw
 func splitParent(parent string, separator string) (first, second, third string) {
 	strList := strings.Split(parent, separator)
-	if len(strList) < 2 && len(strList) > 3 {
+	if len(strList) < 2 || len(strList) > 3 {
 		return "", "", ""
 	}
 	first = strList[0]
@@ -342,6 +347,27 @@ func splitParent(parent string, separator string) (first, second, third string) 
 	}
 
 	return
+}
+
+func getOrgVdcEdgeByNames(vcd *TestVCD, orgName, vdcName, edgeName string) (Org, Vdc, EdgeGateway, error) {
+	if orgName == "" || vdcName == "" || edgeName == "" {
+		return Org{}, Vdc{}, EdgeGateway{}, fmt.Errorf("orgName, vdcName, edgeName cant be empty")
+	}
+
+	org, err := GetOrgByName(vcd.client, orgName)
+	if err != nil {
+		vcd.infoCleanup("could not find org '%s'", orgName)
+	}
+	vdc, err := org.GetVdcByName(vdcName)
+	if err != nil {
+		vcd.infoCleanup("could not find vdc '%s'", vdcName)
+	}
+
+	edge, err := vdc.FindEdgeGateway(edgeName)
+	if err != nil {
+		vcd.infoCleanup("could not find edge '%s'", vdcName)
+	}
+	return org, vdc, edge, nil
 }
 
 var splitParentNotFound string = "removeLeftoverEntries: [ERROR] missing parent info (%s). The parent fields must be defined with a separator '|'\n"
@@ -653,18 +679,9 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 
 		orgName, vdcName, edgeName := splitParent(entity.Parent, "|")
 
-		org, err := GetOrgByName(vcd.client, orgName)
+		_, _, edge, err := getOrgVdcEdgeByNames(vcd, orgName, vdcName, edgeName)
 		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not find org '%s'\n", orgName)
-		}
-		vdc, err := org.GetVdcByName(vdcName)
-		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not find vdc '%s'\n", vdcName)
-		}
-
-		edge, err := vdc.FindEdgeGateway(edgeName)
-		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not find edge '%s'\n", vdcName)
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
 		}
 
 		err = edge.DeleteLBServiceMonitor(&types.LBMonitor{Name: entity.Name})
@@ -674,6 +691,45 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+
+	case "lbServerPool":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No parent specified '%s'\n", entity.Name)
+			return
+		}
+
+		orgName, vdcName, edgeName := splitParent(entity.Parent, "|")
+
+		_, _, edge, err := getOrgVdcEdgeByNames(vcd, orgName, vdcName, edgeName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		err = edge.DeleteLBServerPool(&types.LBPool{Name: entity.Name})
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+
+	case "vdcMetaData":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No VDC and ORG provided for vDC meta data '%s'\n", entity.Name)
+			return
+		}
+		_, vdc, err := vcd.getAdminOrgAndVdcFromCleanupEntity(entity)
+		if err != nil {
+			vcd.infoCleanup("%s", err)
+		}
+		_, err = vdc.DeleteMetadata(entity.Name)
+		if err == nil {
+			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		} else {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
 		return
 
 	default:
@@ -785,10 +841,6 @@ func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 	return vapp, err
 }
 
-func init() {
-	testingTags["api"] = "api_vcd_test.go"
-}
-
 func Test_splitParent(t *testing.T) {
 	type args struct {
 		parent    string
@@ -801,7 +853,40 @@ func Test_splitParent(t *testing.T) {
 		wantSecond string
 		wantThird  string
 	}{
-		// TODO: Add test cases.
+		{
+			name:       "Empty",
+			args:       args{parent: "", separator: "|"},
+			wantFirst:  "",
+			wantSecond: "",
+			wantThird:  "",
+		},
+		{
+			name:       "One",
+			wantFirst:  "",
+			wantSecond: "",
+			wantThird:  "",
+		},
+		{
+			name:       "Two",
+			args:       args{parent: "first|second", separator: "|"},
+			wantFirst:  "first",
+			wantSecond: "second",
+			wantThird:  "",
+		},
+		{
+			name:       "Three",
+			args:       args{parent: "first|second|third", separator: "|"},
+			wantFirst:  "first",
+			wantSecond: "second",
+			wantThird:  "third",
+		},
+		{
+			name:       "Four",
+			args:       args{parent: "first|second|third|fourth", separator: "|"},
+			wantFirst:  "",
+			wantSecond: "",
+			wantThird:  "",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -817,4 +902,8 @@ func Test_splitParent(t *testing.T) {
 			}
 		})
 	}
+}
+
+func init() {
+	testingTags["api"] = "api_vcd_test.go"
 }

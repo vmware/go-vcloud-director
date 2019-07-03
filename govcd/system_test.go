@@ -189,6 +189,28 @@ func (vcd *TestVCD) Test_FindBadlyNamedStorageProfile(check *C) {
 	check.Assert(err.Error(), Matches, reNotFound)
 }
 
+// Test getting network pool by href and vdc client
+func (vcd *TestVCD) Test_GetNetworkPoolByHREF(check *C) {
+	if vcd.config.VCD.ProviderVdc.NetworkPool == "" {
+		check.Skip("Skipping test because network pool is not configured")
+	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
+	check.Assert(adminOrg, Not(Equals), AdminOrg{})
+	check.Assert(err, IsNil)
+
+	adminVdc, err := adminOrg.GetAdminVdcByName(vcd.config.VCD.Vdc)
+	check.Assert(adminVdc, Not(Equals), AdminVdc{})
+	check.Assert(err, IsNil)
+
+	// Get network pool by href
+	foundNetworkPool, err := GetNetworkPoolByHREF(vcd.client, adminVdc.AdminVdc.NetworkPoolReference.HREF)
+	check.Assert(err, IsNil)
+	check.Assert(foundNetworkPool, Not(Equals), types.VMWNetworkPool{})
+}
+
 // longer than the 128 characters so nothing can be named this
 var INVALID_NAME = `*******************************************INVALID
 					****************************************************
@@ -196,4 +218,18 @@ var INVALID_NAME = `*******************************************INVALID
 
 func init() {
 	testingTags["system"] = "system_test.go"
+}
+
+func (vcd *TestVCD) Test_QueryOrgVdcNetworkByName(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	if vcd.config.VCD.Network.Net1 == "" {
+		check.Skip("Skipping test because no network was given")
+	}
+
+	orgVdcNetwork, err := QueryOrgVdcNetworkByName(vcd.client, vcd.config.VCD.Network.Net1)
+	check.Assert(err, IsNil)
+	check.Assert(len(orgVdcNetwork), Not(Equals), 0)
+	check.Assert(orgVdcNetwork[0].Name, Equals, vcd.config.VCD.Network.Net1)
+	check.Assert(orgVdcNetwork[0].ConnectedTo, Equals, vcd.config.VCD.EdgeGateway)
 }
