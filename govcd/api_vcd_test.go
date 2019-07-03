@@ -1,4 +1,4 @@
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk ALL
+// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk user ALL
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -513,6 +513,28 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("%s", err)
 		}
 		err = RemoveMediaImageIfExists(vdc, entity.Name)
+		if err == nil {
+			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		} else {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+		return
+	case "user":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for user '%s'\n", entity.Name)
+			return
+		}
+		org, err := GetAdminOrgByName(vcd.client, entity.Parent)
+		if org == (AdminOrg{}) || err != nil {
+			vcd.infoCleanup(notFoundMsg, "org", entity.Parent)
+			return
+		}
+		user, err := org.GetUserByNameOrId(entity.Name, true)
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, "user", entity.Name)
+			return
+		}
+		err = user.SafeDelete()
 		if err == nil {
 			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		} else {

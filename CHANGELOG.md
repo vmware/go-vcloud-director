@@ -2,6 +2,7 @@
 
 * Added edge gateway create/delete functions [#130](https://github.com/vmware/go-vcloud-director/issues/130).
 * Added load balancer service monitor [#196](https://github.com/vmware/go-vcloud-director/pull/196)
+* Added org user create/delete/update functions [#18](https://github.com/vmware/go-vcloud-director/issues/18)
 
 ## 2.2.0 (May 15, 2019)
 
