@@ -81,7 +81,7 @@ func (eGW *EdgeGateway) ReadLBAppProfile(lbAppProfileConfig *types.LBAppProfile)
 			// We found it by name. Let's verify if search ID was specified and it matches the lookup object
 			if lbAppProfileConfig.ID != "" && profile.ID != lbAppProfileConfig.ID {
 				return nil, fmt.Errorf("load balancer application profile was found by name (%s)"+
-					", but it's ID (%s) does not match specified ID (%s)",
+					", but its ID (%s) does not match specified ID (%s)",
 					profile.Name, profile.ID, lbAppProfileConfig.ID)
 			}
 			return profile, nil

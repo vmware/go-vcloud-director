@@ -55,10 +55,10 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(updatedAppProfile.Persistence.Method, Equals, lbAppProfileByID.Persistence.Method)
 
-	// Verify that updated pool and it's configuration are identical
+	// Verify that updated pool and its configuration are identical
 	check.Assert(updatedAppProfile, DeepEquals, lbAppProfileByID)
 
-	// Try to set invalid algorithm hash and excpect API to return error
+	// Try to set invalid algorithm hash and expect API to return error
 	// Invalid persistence method invalid_method. Valid methods are: COOKIE|SSL-SESSIONID|SOURCEIP.
 	lbAppProfileByID.Persistence.Method = "invalid_method"
 	updatedAppProfile, err = edge.UpdateLBAppProfile(lbAppProfileByID)
