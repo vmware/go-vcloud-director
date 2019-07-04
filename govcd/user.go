@@ -18,7 +18,7 @@ import (
 type OrgUser struct {
 	User     *types.User
 	client   *Client
-	adminOrg *AdminOrg // needed to be able to update, as the list of roles is found in the Org
+	AdminOrg *AdminOrg // needed to be able to update, as the list of roles is found in the Org
 }
 
 // Simplified structure to insert or modify an organization user
@@ -35,7 +35,6 @@ type OrgUserConfiguration struct {
 	Description     string
 	EmailAddress    string
 	Telephone       string
-	TimeOut         time.Duration // Optional: default to 10 seconds
 }
 
 const (
@@ -67,7 +66,7 @@ func NewUser(cli *Client, org *AdminOrg) *OrgUser {
 	return &OrgUser{
 		User:     new(types.User),
 		client:   cli,
-		adminOrg: org,
+		AdminOrg: org,
 	}
 }
 
@@ -83,7 +82,7 @@ func (adminOrg *AdminOrg) GetUserByNameOrId(identifier string, willRefresh bool)
 	}
 
 	for _, orgUser := range adminOrg.AdminOrg.Users.User {
-		if (orgUser.Name == identifier || orgUser.ID == identifier) && orgUser.Type == types.MimeAdminUser {
+		if orgUser.Name == identifier || orgUser.ID == identifier {
 
 			user := NewUser(adminOrg.client, adminOrg)
 
@@ -106,19 +105,17 @@ func (adminOrg *AdminOrg) GetRole(roleName string) (*types.Reference, error) {
 		}
 	}
 
-	return &types.Reference{}, ErrorEntityNotFound
+	return nil, ErrorEntityNotFound
 }
 
 // CreateUser creates an OrgUser from a full configuration structure
 // The timeOut variable is the maximum time we wait for the user to be ready
 // (This operation does not return a task)
-// Note that the timeout is not absolute, meaning that we only wait the
-// full amount of the timeout if the user has not been created until then.
 // This function returns as soon as the user has been created, which could be as
-// little as 50ms or as much as TimeOut - 50 ms
+// little as 200ms or as much as Client.MaxRetryTimeout
 // Mandatory fields are: Name, Role, Password.
 // https://code.vmware.com/apis/442/vcloud-director#/doc/doc/operations/POST-CreateUser.html
-func (adminOrg *AdminOrg) CreateUser(userConfiguration *types.User, timeOut time.Duration) (*OrgUser, error) {
+func (adminOrg *AdminOrg) CreateUser(userConfiguration *types.User) (*OrgUser, error) {
 	err := validateUserForCreation(userConfiguration)
 	if err != nil {
 		return nil, err
@@ -138,9 +135,6 @@ func (adminOrg *AdminOrg) CreateUser(userConfiguration *types.User, timeOut time
 		return nil, err
 	}
 
-	// Uncomment this line to show the user structure after creation
-	// ShowUser(*user.OrgUser)
-
 	// If there is a valid task, we try to follow through
 	if user.User.Tasks != nil && len(user.User.Tasks.Task) > 0 {
 		task := NewTask(adminOrg.client)
@@ -153,35 +147,34 @@ func (adminOrg *AdminOrg) CreateUser(userConfiguration *types.User, timeOut time
 	}
 
 	// Attempting to retrieve the user
-	// Since there is no task to wait for, we try to retrieve using a max of 200 attempts
-	// at intervals of 50 Ms
-	// Experience shows that it usually takes less than one second to get the result
-	var delayPerAttempt time.Duration = 50
-	maxAttempts := 200
-	if timeOut > 0 && timeOut > delayPerAttempt {
-		maxAttempts = int(timeOut / delayPerAttempt)
+	delayPerAttempt := 200 * time.Millisecond
+	maxOperationTimeout := time.Duration(adminOrg.client.MaxRetryTimeout) * time.Second
+
+	// We make sure that the timeout is never less than 2 seconds
+	if maxOperationTimeout < 2*time.Second {
+		maxOperationTimeout = 2 * time.Second
 	}
 
-	// We make sure that the timeout is never less than 1 second
-	if maxAttempts < 20 {
-		maxAttempts = 20
+	// If maxRetryTimeout is set to a higher limit, we lower it to match the
+	// expectations for this operation. If the user is not created within 10 seconds,
+	// there is no need to wait for more. Usually, the operation lasts between 200ms and 900ms
+	if maxOperationTimeout > 10*time.Second {
+		maxOperationTimeout = 10 * time.Second
 	}
 
 	startTime := time.Now()
+	elapsed := time.Since(startTime)
 	var newUser *OrgUser
-	for N := 0; N <= int(maxAttempts); N++ {
+	for elapsed < maxOperationTimeout {
 		newUser, err = adminOrg.GetUserByNameOrId(userConfiguration.Name, true)
 		if err == nil {
 			break
 		}
 		time.Sleep(delayPerAttempt)
+		elapsed = time.Since(startTime)
 	}
-	endTime := time.Now()
 
-	elapsed := endTime.Sub(startTime)
-
-	// Uncomment this line to show how long the creation takes
-	// fmt.Printf("# %s: %s\n",user.OrgUser.Name,elapsed)
+	elapsed = time.Since(startTime)
 
 	// If the user was not retrieved within the allocated time, we inform the user about the failure
 	// and the time it occurred to get to this point, so that they may try with a longer time
@@ -224,11 +217,8 @@ func (adminOrg *AdminOrg) SimpleCreateUser(userData OrgUserConfiguration) (*OrgU
 		Role:            &types.Reference{HREF: role.HREF},
 	}
 
-	if userData.TimeOut == 0 {
-		userData.TimeOut = 10 * time.Second
-	}
 	// ShowUser(userConfiguration)
-	return adminOrg.CreateUser(&userConfiguration, userData.TimeOut)
+	return adminOrg.CreateUser(&userConfiguration)
 }
 
 // GetRoleName retrieves the name of the role currently assigned to the user
@@ -308,7 +298,7 @@ func (user *OrgUser) SimpleUpdate(userData OrgUserConfiguration) error {
 	user.User.IsLocked = userData.IsLocked
 
 	if userData.RoleName != "" && user.User.Role != nil && user.User.Role.Name != userData.RoleName {
-		newRole, err := user.adminOrg.GetRole(userData.RoleName)
+		newRole, err := user.AdminOrg.GetRole(userData.RoleName)
 		if err != nil {
 			return err
 		}
@@ -405,7 +395,7 @@ func (user *OrgUser) ChangeRole(roleName string) error {
 		return fmt.Errorf("new role is the same as current role")
 	}
 
-	newRole, err := user.adminOrg.GetRole(roleName)
+	newRole, err := user.AdminOrg.GetRole(roleName)
 	if err != nil {
 		return err
 	}
@@ -437,7 +427,10 @@ func (user *OrgUser) TakeOwnership() error {
 func validateUserForCreation(user *types.User) error {
 	var missingField = "missing field %s"
 	if user.Xmlns == "" {
-		return fmt.Errorf(missingField, "Xmlns")
+		user.Xmlns = types.XMLNamespaceVCloud
+	}
+	if user.Type == "" {
+		user.Type = types.MimeAdminUser
 	}
 	if user.Name == "" {
 		return fmt.Errorf(missingField, "Name")

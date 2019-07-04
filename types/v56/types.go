@@ -2533,6 +2533,8 @@ type GroupReference struct {
 // Represents an org user
 // Reference: vCloud API 27.0 - UserType
 // https://code.vmware.com/apis/442/vcloud-director#/doc/doc/types/UserType.html
+// Note that the order of fields is important. If this structure needs to change,
+// the field order must be preserved.
 type User struct {
 	XMLName         xml.Name         `xml:"User"`
 	Xmlns           string           `xml:"xmlns,attr"`
