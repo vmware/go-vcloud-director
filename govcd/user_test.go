@@ -179,6 +179,7 @@ func (vcd *TestVCD) Test_UserCRUD(check *C) {
 		// Tests both the error directly and the function IsNotFound
 		check.Assert(err, Equals, ErrorEntityNotFound)
 		check.Assert(IsNotFound(err), Equals, true)
-		check.Assert(user.User, IsNil)
+		// Expect a null pointer when user is not founc
+		check.Assert(user, IsNil)
 	}
 }

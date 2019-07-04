@@ -73,12 +73,12 @@ func NewUser(cli *Client, org *AdminOrg) *OrgUser {
 
 // GetUserByNameOrId retrieves an user within an admin organization
 // by either name or ID
-// Returns a valid user if it exists. If it doesn't, returns an empty user and ErrorEntityNotFound
-func (adminOrg *AdminOrg) GetUserByNameOrId(identifier string, willRefresh bool) (OrgUser, error) {
+// Returns a valid user if it exists. If it doesn't, returns nil and ErrorEntityNotFound
+func (adminOrg *AdminOrg) GetUserByNameOrId(identifier string, willRefresh bool) (*OrgUser, error) {
 	if willRefresh {
 		err := adminOrg.Refresh()
 		if err != nil {
-			return OrgUser{}, err
+			return nil, err
 		}
 	}
 
@@ -90,10 +90,10 @@ func (adminOrg *AdminOrg) GetUserByNameOrId(identifier string, willRefresh bool)
 			_, err := adminOrg.client.ExecuteRequest(orgUser.HREF, http.MethodGet,
 				types.MimeAdminUser, "error getting user: %s", nil, user.User)
 
-			return *user, err
+			return user, err
 		}
 	}
-	return OrgUser{}, ErrorEntityNotFound
+	return nil, ErrorEntityNotFound
 }
 
 // GetRole finds a role within the organization
@@ -118,15 +118,15 @@ func (adminOrg *AdminOrg) GetRole(roleName string) (*types.Reference, error) {
 // little as 50ms or as much as TimeOut - 50 ms
 // Mandatory fields are: Name, Role, Password.
 // https://code.vmware.com/apis/442/vcloud-director#/doc/doc/operations/POST-CreateUser.html
-func (adminOrg *AdminOrg) CreateUser(userConfiguration *types.User, timeOut time.Duration) (OrgUser, error) {
+func (adminOrg *AdminOrg) CreateUser(userConfiguration *types.User, timeOut time.Duration) (*OrgUser, error) {
 	err := validateUserForCreation(userConfiguration)
 	if err != nil {
-		return OrgUser{}, err
+		return nil, err
 	}
 
 	userCreateHREF, err := url.ParseRequestURI(adminOrg.AdminOrg.HREF)
 	if err != nil {
-		return OrgUser{}, fmt.Errorf("error parsing admin org url: %s", err)
+		return nil, fmt.Errorf("error parsing admin org url: %s", err)
 	}
 	userCreateHREF.Path += "/users"
 
@@ -135,7 +135,7 @@ func (adminOrg *AdminOrg) CreateUser(userConfiguration *types.User, timeOut time
 	_, err = adminOrg.client.ExecuteRequest(userCreateHREF.String(), http.MethodPost,
 		types.MimeAdminUser, "error creating user: %s", userConfiguration, user.User)
 	if err != nil {
-		return OrgUser{}, err
+		return nil, err
 	}
 
 	// Uncomment this line to show the user structure after creation
@@ -148,7 +148,7 @@ func (adminOrg *AdminOrg) CreateUser(userConfiguration *types.User, timeOut time
 		err = task.WaitTaskCompletion()
 
 		if err != nil {
-			return OrgUser{}, err
+			return nil, err
 		}
 	}
 
@@ -168,7 +168,7 @@ func (adminOrg *AdminOrg) CreateUser(userConfiguration *types.User, timeOut time
 	}
 
 	startTime := time.Now()
-	var newUser OrgUser
+	var newUser *OrgUser
 	for N := 0; N <= int(maxAttempts); N++ {
 		newUser, err = adminOrg.GetUserByNameOrId(userConfiguration.Name, true)
 		if err == nil {
@@ -186,27 +186,27 @@ func (adminOrg *AdminOrg) CreateUser(userConfiguration *types.User, timeOut time
 	// If the user was not retrieved within the allocated time, we inform the user about the failure
 	// and the time it occurred to get to this point, so that they may try with a longer time
 	if err != nil {
-		return OrgUser{}, fmt.Errorf("failure to retrieve a new user after %s : %s", elapsed, err)
+		return nil, fmt.Errorf("failure to retrieve a new user after %s : %s", elapsed, err)
 	}
 
 	return newUser, nil
 }
 
 // SimpleCreateUser creates an org user from a simplified structure
-func (adminOrg *AdminOrg) SimpleCreateUser(userData OrgUserConfiguration) (OrgUser, error) {
+func (adminOrg *AdminOrg) SimpleCreateUser(userData OrgUserConfiguration) (*OrgUser, error) {
 
 	if userData.Name == "" {
-		return OrgUser{}, fmt.Errorf("name is mandatory to create a user")
+		return nil, fmt.Errorf("name is mandatory to create a user")
 	}
 	if userData.Password == "" {
-		return OrgUser{}, fmt.Errorf("password is mandatory to create a user")
+		return nil, fmt.Errorf("password is mandatory to create a user")
 	}
 	if userData.RoleName == "" {
-		return OrgUser{}, fmt.Errorf("role is mandatory to create a user")
+		return nil, fmt.Errorf("role is mandatory to create a user")
 	}
 	role, err := adminOrg.GetRole(userData.RoleName)
 	if err != nil {
-		return OrgUser{}, fmt.Errorf("error finding a role named %s", userData.RoleName)
+		return nil, fmt.Errorf("error finding a role named %s", userData.RoleName)
 	}
 
 	var userConfiguration = types.User{
