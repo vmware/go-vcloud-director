@@ -40,7 +40,7 @@ func (eGW *EdgeGateway) CreateLBServiceMonitor(lbMonitorConfig *types.LBMonitor)
 		return nil, err
 	}
 
-	readMonitor, err := eGW.ReadLBServiceMonitor(&types.LBMonitor{ID: lbMonitorID})
+	readMonitor, err := eGW.ReadLBServiceMonitorByID(lbMonitorID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve monitor with ID (%s) after creation: %s", lbMonitorID, err)
 	}
@@ -98,8 +98,8 @@ func (eGW *EdgeGateway) ReadLBServiceMonitorByID(id string) (*types.LBMonitor, e
 	return eGW.ReadLBServiceMonitor(&types.LBMonitor{ID: id})
 }
 
-// ReadLBLBServiceMonitorByName wraps ReadLBServiceMonitor and needs only a Name for lookup
-func (eGW *EdgeGateway) ReadLBLBServiceMonitorByName(name string) (*types.LBMonitor, error) {
+// ReadLBServiceMonitorByName wraps ReadLBServiceMonitor and needs only a Name for lookup
+func (eGW *EdgeGateway) ReadLBServiceMonitorByName(name string) (*types.LBMonitor, error) {
 	return eGW.ReadLBServiceMonitor(&types.LBMonitor{Name: name})
 }
 
@@ -113,7 +113,7 @@ func (eGW *EdgeGateway) UpdateLBServiceMonitor(lbMonitorConfig *types.LBMonitor)
 
 	// if only name was specified for update, ID must be found, because ID is mandatory for update
 	if lbMonitorConfig.ID == "" {
-		readLBMonitor, err := eGW.ReadLBServiceMonitor(&types.LBMonitor{Name: lbMonitorConfig.Name})
+		readLBMonitor, err := eGW.ReadLBServiceMonitorByName(lbMonitorConfig.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -132,7 +132,7 @@ func (eGW *EdgeGateway) UpdateLBServiceMonitor(lbMonitorConfig *types.LBMonitor)
 		return nil, err
 	}
 
-	readMonitor, err := eGW.ReadLBServiceMonitor(&types.LBMonitor{ID: lbMonitorConfig.ID})
+	readMonitor, err := eGW.ReadLBServiceMonitorByID(lbMonitorConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve monitor with ID (%s) after update: %s", lbMonitorConfig.ID, err)
 	}
@@ -150,7 +150,7 @@ func (eGW *EdgeGateway) DeleteLBServiceMonitor(lbMonitorConfig *types.LBMonitor)
 	lbMonitorID := lbMonitorConfig.ID
 	// if only name was specified for deletion, ID must be found, because only ID can be used for deletion
 	if lbMonitorConfig.ID == "" {
-		readLBMonitor, err := eGW.ReadLBServiceMonitor(&types.LBMonitor{Name: lbMonitorConfig.Name})
+		readLBMonitor, err := eGW.ReadLBServiceMonitorByName(lbMonitorConfig.Name)
 		if err != nil {
 			return fmt.Errorf("unable to find load balancer monitor by name for deletion: %s", err)
 		}

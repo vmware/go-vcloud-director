@@ -37,7 +37,7 @@ func (eGW *EdgeGateway) CreateLBServerPool(lbPoolConfig *types.LBPool) (*types.L
 		return nil, err
 	}
 
-	readPool, err := eGW.ReadLBServerPool(&types.LBPool{ID: lbPoolID})
+	readPool, err := eGW.ReadLBServerPoolByID(lbPoolID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve lb server pool with ID (%s) after creation: %s", lbPoolID, err)
 	}
@@ -112,7 +112,7 @@ func (eGW *EdgeGateway) UpdateLBServerPool(lbPoolConfig *types.LBPool) (*types.L
 
 	// if only name was specified for update, ID must be found, because ID is mandatory for update
 	if lbPoolConfig.ID == "" {
-		readLBPool, err := eGW.ReadLBServerPool(&types.LBPool{Name: lbPoolConfig.Name})
+		readLBPool, err := eGW.ReadLBServerPoolByName(lbPoolConfig.Name)
 		if err != nil {
 			return nil, fmt.Errorf("unable to find load balancer pool by name for update: %s", err)
 		}
@@ -131,7 +131,7 @@ func (eGW *EdgeGateway) UpdateLBServerPool(lbPoolConfig *types.LBPool) (*types.L
 		return nil, err
 	}
 
-	readPool, err := eGW.ReadLBServerPool(&types.LBPool{ID: lbPoolConfig.ID})
+	readPool, err := eGW.ReadLBServerPoolByID(lbPoolConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve server pool with ID (%s) after update: %s", lbPoolConfig.ID, err)
 	}
@@ -149,7 +149,7 @@ func (eGW *EdgeGateway) DeleteLBServerPool(lbPoolConfig *types.LBPool) error {
 	lbPoolID := lbPoolConfig.ID
 	// if only name was specified for deletion, ID must be found, because only ID can be used for deletion
 	if lbPoolConfig.ID == "" {
-		readLBPool, err := eGW.ReadLBServerPool(&types.LBPool{Name: lbPoolConfig.Name})
+		readLBPool, err := eGW.ReadLBServerPoolByName(lbPoolConfig.Name)
 		if err != nil {
 			return fmt.Errorf("unable to find load balancer pool by name for deletion: %s", err)
 		}
