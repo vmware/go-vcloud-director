@@ -191,8 +191,8 @@ func (adminOrg *AdminOrg) CreateUser(userConfiguration *types.User) (*OrgUser, e
 	return newUser, nil
 }
 
-// SimpleCreateUser creates an org user from a simplified structure
-func (adminOrg *AdminOrg) SimpleCreateUser(userData OrgUserConfiguration) (*OrgUser, error) {
+// CreateUserSimple creates an org user from a simplified structure
+func (adminOrg *AdminOrg) CreateUserSimple(userData OrgUserConfiguration) (*OrgUser, error) {
 
 	if userData.Name == "" {
 		return nil, fmt.Errorf("name is mandatory to create a user")
@@ -274,10 +274,10 @@ func (user *OrgUser) SafeDelete() error {
 	return user.delete(true)
 }
 
-// SimpleUpdate updates the user, using ALL the fields in userData structure
+// UpdateSimple updates the user, using ALL the fields in userData structure
 // returning an error if the call fails.
 // Careful: DeployedVmQuota and StoredVmQuota use a `0` value to mean "unlimited"
-func (user *OrgUser) SimpleUpdate(userData OrgUserConfiguration) error {
+func (user *OrgUser) UpdateSimple(userData OrgUserConfiguration) error {
 	util.Logger.Printf("[TRACE] Updating user: %#v", user.User.Name)
 
 	if userData.Name != "" {

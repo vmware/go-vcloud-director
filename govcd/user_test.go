@@ -66,7 +66,7 @@ func (vcd *TestVCD) Test_GetUserByName(check *C) {
 		check.Assert(err, IsNil)
 		check.Assert(user.User.Name, Equals, userRef.Name)
 		// Uncomment this line to see the full user structure
-		// ShowUser(*user.OrgUser)
+		// ShowUser(*user.User)
 	}
 }
 
@@ -121,7 +121,7 @@ func (vcd *TestVCD) Test_UserCRUD(check *C) {
 		// Uncomment the following lines to see creation request and response
 		// enableDebugShowRequest()
 		// enableDebugShowResponse()
-		user, err := adminOrg.SimpleCreateUser(OrgUserConfiguration{
+		user, err := adminOrg.CreateUserSimple(OrgUserConfiguration{
 			Name:            ud.name,
 			Password:        "user_pass",
 			RoleName:        ud.roleName,
