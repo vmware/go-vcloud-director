@@ -31,10 +31,10 @@ type OrgUserConfiguration struct {
 	IsLocked        bool   // Only used for updates
 	DeployedVmQuota int    // Optional: 0 means "unlimited"
 	StoredVmQuota   int    // Optional: 0 means "unlimited"
-	FullName        string
-	Description     string
-	EmailAddress    string
-	Telephone       string
+	FullName        string // Optional
+	Description     string // Optional
+	EmailAddress    string // Optional
+	Telephone       string // Optional
 }
 
 const (
@@ -73,6 +73,10 @@ func NewUser(cli *Client, org *AdminOrg) *OrgUser {
 // GetUserByNameOrId retrieves an user within an admin organization
 // by either name or ID
 // Returns a valid user if it exists. If it doesn't, returns nil and ErrorEntityNotFound
+// If argument willRefresh is true, the AdminOrg will be refreshed before searching.
+// This is usually done after creating, modifying, or deleting users.
+// If it is false, it will search within the data already in memory (useful when
+// looping through the users and we know that no changes have occurred in the meantime)
 func (adminOrg *AdminOrg) GetUserByNameOrId(identifier string, willRefresh bool) (*OrgUser, error) {
 	if willRefresh {
 		err := adminOrg.Refresh()
@@ -136,6 +140,8 @@ func (adminOrg *AdminOrg) CreateUser(userConfiguration *types.User) (*OrgUser, e
 	}
 
 	// If there is a valid task, we try to follow through
+	// A valid task exists if the Task object in the user structure
+	// is not nil and contains at least a task
 	if user.User.Tasks != nil && len(user.User.Tasks.Task) > 0 {
 		task := NewTask(adminOrg.client)
 		task.Task = user.User.Tasks.Task[0]
@@ -235,7 +241,7 @@ func (user *OrgUser) GetRoleName() string {
 // Note: in the GUI we need to disable the user before deleting.
 // There is no such constraint with the API.
 func (user *OrgUser) delete(takeOwnership bool) error {
-	util.Logger.Printf("[TRACE] Deleting user: %#v", user.User.Name)
+	util.Logger.Printf("[TRACE] Deleting user: %#v (take ownership: %v)", user.User.Name, takeOwnership)
 
 	if takeOwnership {
 		err := user.TakeOwnership()
@@ -256,11 +262,14 @@ func (user *OrgUser) delete(takeOwnership bool) error {
 
 // UnconditionalDelete deletes the user, WITHOUT running a call to take ownership of the user objects
 // This call will fail if the user has owns *running* vApps/VMs
+// If the objects are not running (i.e. vApps/VMs are powered off,) they will be deleted together with the user.
 func (user *OrgUser) UnconditionalDelete() error {
 	return user.delete(false)
 }
 
 // SafeDelete deletes the user after taking ownership of its objects
+// Ownership of the objects belonging to the user are transferred to the caller.
+// Objects are not deleted.
 func (user *OrgUser) SafeDelete() error {
 	return user.delete(true)
 }
