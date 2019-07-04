@@ -11,6 +11,13 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+// Test_LBAppProfile tests CRUD methods for load balancer application profile.
+// The following things are tested if prerequisite Edge Gateway exists:
+// Creation of load balancer application profile
+// Read load balancer application profile by both ID and Name (application profile name must be unique in single edge gateway)
+// Update - change a single field and compare that configuration and result objects are deeply equal
+// Update - try and fail to update without mandatory field
+// Delete
 func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
@@ -55,7 +62,7 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(updatedAppProfile.Persistence.Method, Equals, lbAppProfileByID.Persistence.Method)
 
-	// Verify that updated pool and its configuration are identical
+	// Verify that updated application profile and its configuration are identical
 	check.Assert(updatedAppProfile, DeepEquals, lbAppProfileByID)
 
 	// Try to set invalid algorithm hash and expect API to return error

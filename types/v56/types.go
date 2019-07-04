@@ -1679,7 +1679,6 @@ type LBPoolMembers []LBPoolMember
 
 // LBAppProfile represents a load balancer application profile as per "vCloud Director API for NSX
 // Programming Guide"
-// Type: LBPoolHealthCheckType
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 type LBAppProfile struct {
 	XMLName                       xml.Name                  `xml:"applicationProfile"`
