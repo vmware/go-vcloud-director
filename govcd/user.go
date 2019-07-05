@@ -70,60 +70,62 @@ func NewUser(cli *Client, org *AdminOrg) *OrgUser {
 	}
 }
 
-// Private function to perform the user search by either name or ID
-// It will only look for one of the two fields, depending on the value of byName
-func (adminOrg *AdminOrg) fetchUserByNameOrId(identifier string, byName, refresh bool) (*OrgUser, error) {
-	if refresh {
-		err := adminOrg.Refresh()
-		if err != nil {
-			return nil, err
-		}
-	}
-	var userHREF string
+// FetchUserByHref returns a user by its HREF, without need for
+// searching in the adminOrg user list
+func (adminOrg *AdminOrg) FetchUserByHref(href string) (*OrgUser, error) {
+	orgUser := NewUser(adminOrg.client, adminOrg)
 
-	for _, orgUser := range adminOrg.AdminOrg.Users.User {
-		if !byName && orgUser.ID == identifier {
-			userHREF = orgUser.HREF
-			break
-		}
-		if byName && orgUser.Name == identifier {
-			userHREF = orgUser.HREF
-			break
-		}
-	}
+	_, err := adminOrg.client.ExecuteRequest(href, http.MethodGet,
+		types.MimeAdminUser, "error getting user: %s", nil, orgUser.User)
 
-	if userHREF != "" {
-		orgUser := NewUser(adminOrg.client, adminOrg)
-
-		_, err := adminOrg.client.ExecuteRequest(userHREF, http.MethodGet,
-			types.MimeAdminUser, "error getting user: %s", nil, orgUser.User)
-
-		return orgUser, err
-	}
-	return nil, ErrorEntityNotFound
+	return orgUser, err
 }
 
-// FetchUserByName retrieves an user within an admin organization by name
+// FetchUserByName retrieves a user within an admin organization by name
 // Returns a valid user if it exists. If it doesn't, returns nil and ErrorEntityNotFound
 // If argument refresh is true, the AdminOrg will be refreshed before searching.
 // This is usually done after creating, modifying, or deleting users.
 // If it is false, it will search within the data already in memory (useful when
 // looping through the users and we know that no changes have occurred in the meantime)
 func (adminOrg *AdminOrg) FetchUserByName(name string, refresh bool) (*OrgUser, error) {
-	return adminOrg.fetchUserByNameOrId(name, true, true)
+	if refresh {
+		err := adminOrg.Refresh()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	for _, user := range adminOrg.AdminOrg.Users.User {
+		if user.Name == name {
+			return adminOrg.FetchUserByHref(user.HREF)
+		}
+	}
+	return nil, ErrorEntityNotFound
 }
 
-// FetchUserById retrieves an user within an admin organization by ID
+// FetchUserById retrieves a user within an admin organization by ID
 // Returns a valid user if it exists. If it doesn't, returns nil and ErrorEntityNotFound
 // If argument refresh is true, the AdminOrg will be refreshed before searching.
 // This is usually done after creating, modifying, or deleting users.
 // If it is false, it will search within the data already in memory (useful when
 // looping through the users and we know that no changes have occurred in the meantime)
 func (adminOrg *AdminOrg) FetchUserById(ID string, refresh bool) (*OrgUser, error) {
-	return adminOrg.fetchUserByNameOrId(ID, false, true)
+	if refresh {
+		err := adminOrg.Refresh()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	for _, user := range adminOrg.AdminOrg.Users.User {
+		if user.ID == ID {
+			return adminOrg.FetchUserByHref(user.HREF)
+		}
+	}
+	return nil, ErrorEntityNotFound
 }
 
-// FetchUserByNameOrId retrieves an user within an admin organization
+// FetchUserByNameOrId retrieves a user within an admin organization
 // by either name or ID
 // Returns a valid user if it exists. If it doesn't, returns nil and ErrorEntityNotFound
 // If argument refresh is true, the AdminOrg will be refreshed before searching.
@@ -132,10 +134,10 @@ func (adminOrg *AdminOrg) FetchUserById(ID string, refresh bool) (*OrgUser, erro
 // looping through the users and we know that no changes have occurred in the meantime)
 func (adminOrg *AdminOrg) FetchUserByNameOrId(identifier string, refresh bool) (*OrgUser, error) {
 	// First look by ID
-	orgUser, err := adminOrg.fetchUserByNameOrId(identifier, false, true)
+	orgUser, err := adminOrg.FetchUserByName(identifier, true)
 	// if it fails, look by name
 	if IsNotFound(err) {
-		orgUser, err = adminOrg.fetchUserByNameOrId(identifier, true, false)
+		orgUser, err = adminOrg.FetchUserById(identifier, false)
 	}
 	return orgUser, err
 }
@@ -153,7 +155,7 @@ func (adminOrg *AdminOrg) GetRole(roleName string) (*types.Reference, error) {
 	return nil, ErrorEntityNotFound
 }
 
-// Retrieves an user within the boundaries of MaxRetryTimeout
+// Retrieves a user within the boundaries of MaxRetryTimeout
 func retrieveUserWithTimeout(adminOrg *AdminOrg, userName string) (*OrgUser, error) {
 
 	// Attempting to retrieve the user
