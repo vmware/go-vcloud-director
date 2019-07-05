@@ -15,6 +15,30 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+/*
+  TODO: Add test for takeOwnership.
+
+This is more complicated than it looks, because it requires the following:
+
+Either:
+1a. Separate connection with a newly created user [requires test enhancement]
+2a. Creation of entities with new user (vapp/catalog/catalog items)
+
+OR
+1b. create entities with the user that runs the tests
+2b. change ownership of such entities to the new user [requires new feature]
+
+3. Check that the user is the intended one (this is currently doable, because we can
+  inspect the Owner structure of the entity being created)
+
+4. Try deleting the user that owns the new entities
+5. get an error
+6. take ownership from the user
+7. delete the user and see the operation succeed
+8. Check that the new entities belong to the current user
+9. Delete the new entities
+*/
+
 // Checks that the default roles are available from the organization
 func (vcd *TestVCD) Test_GetRole(check *C) {
 	if vcd.skipAdminTests {
