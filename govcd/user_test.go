@@ -41,9 +41,6 @@ OR
 
 // Checks that the default roles are available from the organization
 func (vcd *TestVCD) Test_GetRole(check *C) {
-	if vcd.skipAdminTests {
-		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
-	}
 	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, Not(Equals), AdminOrg{})
@@ -63,11 +60,8 @@ func (vcd *TestVCD) Test_GetRole(check *C) {
 	}
 }
 
-// Checks that we can retrieve an user by name or ID
+// Checks that we can retrieve a user by name or ID
 func (vcd *TestVCD) Test_GetUserByNameOrId(check *C) {
-	if vcd.skipAdminTests {
-		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
-	}
 	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, Not(Equals), AdminOrg{})
@@ -109,10 +103,6 @@ func (vcd *TestVCD) Test_GetUserByNameOrId(check *C) {
 // Furthermore, disables, and then enables the users again
 // and finally deletes all of them
 func (vcd *TestVCD) Test_UserCRUD(check *C) {
-
-	if vcd.skipAdminTests {
-		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
-	}
 	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, Not(Equals), AdminOrg{})
