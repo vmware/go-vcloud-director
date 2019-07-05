@@ -112,6 +112,49 @@ func (adminOrg *AdminOrg) GetRole(roleName string) (*types.Reference, error) {
 	return nil, ErrorEntityNotFound
 }
 
+// Retrieves an user within the boundaries of MaxRetryTimeout
+func retrieveUserWithTimeout(adminOrg *AdminOrg, userName string) (*OrgUser, error) {
+
+	// Attempting to retrieve the user
+	delayPerAttempt := 200 * time.Millisecond
+	maxOperationTimeout := time.Duration(adminOrg.client.MaxRetryTimeout) * time.Second
+
+	// We make sure that the timeout is never less than 2 seconds
+	if maxOperationTimeout < 2*time.Second {
+		maxOperationTimeout = 2 * time.Second
+	}
+
+	// If maxRetryTimeout is set to a higher limit, we lower it to match the
+	// expectations for this operation. If the user is not created within 10 seconds,
+	// there is no need to wait for more. Usually, the operation lasts between 200ms and 900ms
+	if maxOperationTimeout > 10*time.Second {
+		maxOperationTimeout = 10 * time.Second
+	}
+
+	startTime := time.Now()
+	elapsed := time.Since(startTime)
+	var newUser *OrgUser
+	var err error
+	for elapsed < maxOperationTimeout {
+		newUser, err = adminOrg.GetUserByNameOrId(userName, true)
+		if err == nil {
+			break
+		}
+		time.Sleep(delayPerAttempt)
+		elapsed = time.Since(startTime)
+	}
+
+	elapsed = time.Since(startTime)
+
+	// If the user was not retrieved within the allocated time, we inform the user about the failure
+	// and the time it occurred to get to this point, so that they may try with a longer time
+	if err != nil {
+		return nil, fmt.Errorf("failure to retrieve a new user after %s : %s", elapsed, err)
+	}
+
+	return newUser, nil
+}
+
 // CreateUser creates an OrgUser from a full configuration structure
 // The timeOut variable is the maximum time we wait for the user to be ready
 // (This operation does not return a task)
@@ -152,43 +195,7 @@ func (adminOrg *AdminOrg) CreateUser(userConfiguration *types.User) (*OrgUser, e
 		}
 	}
 
-	// Attempting to retrieve the user
-	delayPerAttempt := 200 * time.Millisecond
-	maxOperationTimeout := time.Duration(adminOrg.client.MaxRetryTimeout) * time.Second
-
-	// We make sure that the timeout is never less than 2 seconds
-	if maxOperationTimeout < 2*time.Second {
-		maxOperationTimeout = 2 * time.Second
-	}
-
-	// If maxRetryTimeout is set to a higher limit, we lower it to match the
-	// expectations for this operation. If the user is not created within 10 seconds,
-	// there is no need to wait for more. Usually, the operation lasts between 200ms and 900ms
-	if maxOperationTimeout > 10*time.Second {
-		maxOperationTimeout = 10 * time.Second
-	}
-
-	startTime := time.Now()
-	elapsed := time.Since(startTime)
-	var newUser *OrgUser
-	for elapsed < maxOperationTimeout {
-		newUser, err = adminOrg.GetUserByNameOrId(userConfiguration.Name, true)
-		if err == nil {
-			break
-		}
-		time.Sleep(delayPerAttempt)
-		elapsed = time.Since(startTime)
-	}
-
-	elapsed = time.Since(startTime)
-
-	// If the user was not retrieved within the allocated time, we inform the user about the failure
-	// and the time it occurred to get to this point, so that they may try with a longer time
-	if err != nil {
-		return nil, fmt.Errorf("failure to retrieve a new user after %s : %s", elapsed, err)
-	}
-
-	return newUser, nil
+	return retrieveUserWithTimeout(adminOrg, userConfiguration.Name)
 }
 
 // CreateUserSimple creates an org user from a simplified structure
@@ -261,8 +268,8 @@ func (user *OrgUser) delete(takeOwnership bool) error {
 }
 
 // UnconditionalDelete deletes the user, WITHOUT running a call to take ownership of the user objects
-// This call will fail if the user has owns *running* vApps/VMs
-// If the objects are not running (i.e. vApps/VMs are powered off,) they will be deleted together with the user.
+// This call will fail if the user has owns catalogs, org Networks, or *running* vApps/VMs.
+// If the objects can be deleted (i.e. powered off vApps/VMs) they will be deleted together with the user.
 func (user *OrgUser) UnconditionalDelete() error {
 	return user.delete(false)
 }
