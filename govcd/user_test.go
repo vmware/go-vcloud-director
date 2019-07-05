@@ -57,13 +57,14 @@ func (vcd *TestVCD) Test_GetRole(check *C) {
 		// fmt.Printf("# retrieving role %s\n", roleName)
 		roleReference, err := adminOrg.GetRole(roleName)
 		check.Assert(err, IsNil)
+		check.Assert(roleReference, NotNil)
 		check.Assert(roleReference.Name, Equals, roleName)
 		check.Assert(roleReference.HREF, Not(Equals), "")
 	}
 }
 
 // Checks that we can retrieve an user by name or ID
-func (vcd *TestVCD) Test_GetUserByName(check *C) {
+func (vcd *TestVCD) Test_GetUserByNameOrId(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
@@ -79,18 +80,27 @@ func (vcd *TestVCD) Test_GetUserByName(check *C) {
 
 	// Using the list above, we first try to get each user by name
 	for _, userRef := range userRefs {
-		user, err := adminOrg.GetUserByNameOrId(userRef.Name, false)
-		check.Assert(user, Not(Equals), OrgUser{})
+		user, err := adminOrg.FetchUserByName(userRef.Name, false)
 		check.Assert(err, IsNil)
+		check.Assert(user, NotNil)
 		check.Assert(user.User.Name, Equals, userRef.Name)
 
 		// Then we try to get the same user by ID
-		user, err = adminOrg.GetUserByNameOrId(userRef.ID, false)
-		check.Assert(user, Not(Equals), OrgUser{})
+		user, err = adminOrg.FetchUserById(userRef.ID, false)
 		check.Assert(err, IsNil)
+		check.Assert(user, NotNil)
 		check.Assert(user.User.Name, Equals, userRef.Name)
-		// Uncomment this line to see the full user structure
-		// ShowUser(*user.User)
+
+		// Then we try to get the same user by Name or ID combined
+		user, err = adminOrg.FetchUserByNameOrId(userRef.ID, true)
+		check.Assert(err, IsNil)
+		check.Assert(user, NotNil)
+		check.Assert(user.User.Name, Equals, userRef.Name)
+
+		user, err = adminOrg.FetchUserByNameOrId(userRef.Name, false)
+		check.Assert(err, IsNil)
+		check.Assert(user, NotNil)
+		check.Assert(user.User.Name, Equals, userRef.Name)
 	}
 }
 
@@ -187,23 +197,23 @@ func (vcd *TestVCD) Test_UserCRUD(check *C) {
 		false: "disabled",
 	}
 	for _, ud := range userData {
-		user, err := adminOrg.GetUserByNameOrId(ud.name, true)
+		user, err := adminOrg.FetchUserByNameOrId(ud.name, true)
 		check.Assert(err, IsNil)
 
 		fmt.Printf("# deleting user %s (%s - %s)\n", ud.name, user.GetRoleName(), enableMap[user.User.IsEnabled])
 		// uncomment the following two lines to see the deletion request and response
 		// enableDebugShowRequest()
 		// enableDebugShowResponse()
-		err = user.SafeDelete()
+		err = user.Delete(true)
 		// disableDebugShowRequest()
 		// disableDebugShowResponse()
 		check.Assert(err, IsNil)
-		user, err = adminOrg.GetUserByNameOrId(user.User.ID, true)
+		user, err = adminOrg.FetchUserByNameOrId(user.User.ID, true)
 		check.Assert(err, NotNil)
 		// Tests both the error directly and the function IsNotFound
 		check.Assert(err, Equals, ErrorEntityNotFound)
 		check.Assert(IsNotFound(err), Equals, true)
-		// Expect a null pointer when user is not founc
+		// Expect a null pointer when user is not found
 		check.Assert(user, IsNil)
 	}
 }

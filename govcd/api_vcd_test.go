@@ -555,12 +555,12 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup(notFoundMsg, "org", entity.Parent)
 			return
 		}
-		user, err := org.GetUserByNameOrId(entity.Name, true)
+		user, err := org.FetchUserByName(entity.Name, true)
 		if err != nil {
 			vcd.infoCleanup(notFoundMsg, "user", entity.Name)
 			return
 		}
-		err = user.SafeDelete()
+		err = user.Delete(true)
 		if err == nil {
 			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		} else {

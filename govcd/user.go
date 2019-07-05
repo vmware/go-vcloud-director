@@ -70,33 +70,74 @@ func NewUser(cli *Client, org *AdminOrg) *OrgUser {
 	}
 }
 
-// GetUserByNameOrId retrieves an user within an admin organization
-// by either name or ID
-// Returns a valid user if it exists. If it doesn't, returns nil and ErrorEntityNotFound
-// If argument willRefresh is true, the AdminOrg will be refreshed before searching.
-// This is usually done after creating, modifying, or deleting users.
-// If it is false, it will search within the data already in memory (useful when
-// looping through the users and we know that no changes have occurred in the meantime)
-func (adminOrg *AdminOrg) GetUserByNameOrId(identifier string, willRefresh bool) (*OrgUser, error) {
-	if willRefresh {
+// Private function to perform the user search by either name or ID
+// It will only look for one of the two fields, depending on the value of byName
+func (adminOrg *AdminOrg) fetchUserByNameOrId(identifier string, byName, refresh bool) (*OrgUser, error) {
+	if refresh {
 		err := adminOrg.Refresh()
 		if err != nil {
 			return nil, err
 		}
 	}
+	var userHREF string
 
 	for _, orgUser := range adminOrg.AdminOrg.Users.User {
-		if orgUser.Name == identifier || orgUser.ID == identifier {
-
-			user := NewUser(adminOrg.client, adminOrg)
-
-			_, err := adminOrg.client.ExecuteRequest(orgUser.HREF, http.MethodGet,
-				types.MimeAdminUser, "error getting user: %s", nil, user.User)
-
-			return user, err
+		if !byName && orgUser.ID == identifier {
+			userHREF = orgUser.HREF
+			break
+		}
+		if byName && orgUser.Name == identifier {
+			userHREF = orgUser.HREF
+			break
 		}
 	}
+
+	if userHREF != "" {
+		orgUser := NewUser(adminOrg.client, adminOrg)
+
+		_, err := adminOrg.client.ExecuteRequest(userHREF, http.MethodGet,
+			types.MimeAdminUser, "error getting user: %s", nil, orgUser.User)
+
+		return orgUser, err
+	}
 	return nil, ErrorEntityNotFound
+}
+
+// FetchUserByName retrieves an user within an admin organization by name
+// Returns a valid user if it exists. If it doesn't, returns nil and ErrorEntityNotFound
+// If argument refresh is true, the AdminOrg will be refreshed before searching.
+// This is usually done after creating, modifying, or deleting users.
+// If it is false, it will search within the data already in memory (useful when
+// looping through the users and we know that no changes have occurred in the meantime)
+func (adminOrg *AdminOrg) FetchUserByName(name string, refresh bool) (*OrgUser, error) {
+	return adminOrg.fetchUserByNameOrId(name, true, true)
+}
+
+// FetchUserById retrieves an user within an admin organization by ID
+// Returns a valid user if it exists. If it doesn't, returns nil and ErrorEntityNotFound
+// If argument refresh is true, the AdminOrg will be refreshed before searching.
+// This is usually done after creating, modifying, or deleting users.
+// If it is false, it will search within the data already in memory (useful when
+// looping through the users and we know that no changes have occurred in the meantime)
+func (adminOrg *AdminOrg) FetchUserById(ID string, refresh bool) (*OrgUser, error) {
+	return adminOrg.fetchUserByNameOrId(ID, false, true)
+}
+
+// FetchUserByNameOrId retrieves an user within an admin organization
+// by either name or ID
+// Returns a valid user if it exists. If it doesn't, returns nil and ErrorEntityNotFound
+// If argument refresh is true, the AdminOrg will be refreshed before searching.
+// This is usually done after creating, modifying, or deleting users.
+// If it is false, it will search within the data already in memory (useful when
+// looping through the users and we know that no changes have occurred in the meantime)
+func (adminOrg *AdminOrg) FetchUserByNameOrId(identifier string, refresh bool) (*OrgUser, error) {
+	// First look by ID
+	orgUser, err := adminOrg.fetchUserByNameOrId(identifier, false, true)
+	// if it fails, look by name
+	if IsNotFound(err) {
+		orgUser, err = adminOrg.fetchUserByNameOrId(identifier, true, false)
+	}
+	return orgUser, err
 }
 
 // GetRole finds a role within the organization
@@ -136,7 +177,7 @@ func retrieveUserWithTimeout(adminOrg *AdminOrg, userName string) (*OrgUser, err
 	var newUser *OrgUser
 	var err error
 	for elapsed < maxOperationTimeout {
-		newUser, err = adminOrg.GetUserByNameOrId(userName, true)
+		newUser, err = adminOrg.FetchUserByName(userName, true)
 		if err == nil {
 			break
 		}
@@ -242,12 +283,18 @@ func (user *OrgUser) GetRoleName() string {
 	return user.User.Role.Name
 }
 
-// delete removes the user, returning an error if the call fails.
+// Delete removes the user, returning an error if the call fails.
 // if requested, it will attempt to take ownership before the removal.
 // API Documentation: https://code.vmware.com/apis/442/vcloud-director#/doc/doc/operations/DELETE-User.html
 // Note: in the GUI we need to disable the user before deleting.
 // There is no such constraint with the API.
-func (user *OrgUser) delete(takeOwnership bool) error {
+//
+// Expected behaviour:
+// with takeOwnership = true, all entities owned by the user being deleted will be transferred to the caller.
+// with takeOwnership = false, if the user own catalogs, networks, or running VMs/vApps, the call will fail.
+//                             If the user owns only powered-off VMs/vApps, the call will succeeds and the
+//                             VMs/vApps will be removed.
+func (user *OrgUser) Delete(takeOwnership bool) error {
 	util.Logger.Printf("[TRACE] Deleting user: %#v (take ownership: %v)", user.User.Name, takeOwnership)
 
 	if takeOwnership {
@@ -265,20 +312,6 @@ func (user *OrgUser) delete(takeOwnership bool) error {
 
 	return user.client.ExecuteRequestWithoutResponse(userHREF.String(), http.MethodDelete,
 		types.MimeAdminUser, "error deleting user : %s", nil)
-}
-
-// UnconditionalDelete deletes the user, WITHOUT running a call to take ownership of the user objects
-// This call will fail if the user has owns catalogs, org Networks, or *running* vApps/VMs.
-// If the objects can be deleted (i.e. powered off vApps/VMs) they will be deleted together with the user.
-func (user *OrgUser) UnconditionalDelete() error {
-	return user.delete(false)
-}
-
-// SafeDelete deletes the user after taking ownership of its objects
-// Ownership of the objects belonging to the user are transferred to the caller.
-// Objects are not deleted.
-func (user *OrgUser) SafeDelete() error {
-	return user.delete(true)
 }
 
 // UpdateSimple updates the user, using ALL the fields in userData structure
@@ -422,7 +455,7 @@ func (user *OrgUser) ChangeRole(roleName string) error {
 
 // TakeOwnership takes ownership of the user's objects.
 // Ownership is transferred to the caller.
-// This is a call to make before deleting. Calling user.SafeDelete() will
+// This is a call to make before deleting. Calling user.DeleteTakeOwnership() will
 // run TakeOwnership before the actual user removal.
 // API Documentation: https://code.vmware.com/apis/442/vcloud-director#/doc/doc/operations/POST-TakeOwnership.html
 func (user *OrgUser) TakeOwnership() error {
