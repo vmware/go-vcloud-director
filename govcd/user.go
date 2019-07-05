@@ -78,7 +78,10 @@ func (adminOrg *AdminOrg) FetchUserByHref(href string) (*OrgUser, error) {
 	_, err := adminOrg.client.ExecuteRequest(href, http.MethodGet,
 		types.MimeAdminUser, "error getting user: %s", nil, orgUser.User)
 
-	return orgUser, err
+	if err != nil {
+		return nil, err
+	}
+	return orgUser, nil
 }
 
 // FetchUserByName retrieves a user within an admin organization by name
