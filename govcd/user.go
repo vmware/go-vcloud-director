@@ -109,7 +109,7 @@ func (adminOrg *AdminOrg) FetchUserByName(name string, refresh bool) (*OrgUser, 
 // This is usually done after creating, modifying, or deleting users.
 // If it is false, it will search within the data already in memory (useful when
 // looping through the users and we know that no changes have occurred in the meantime)
-func (adminOrg *AdminOrg) FetchUserById(ID string, refresh bool) (*OrgUser, error) {
+func (adminOrg *AdminOrg) FetchUserById(id string, refresh bool) (*OrgUser, error) {
 	if refresh {
 		err := adminOrg.Refresh()
 		if err != nil {
@@ -118,7 +118,7 @@ func (adminOrg *AdminOrg) FetchUserById(ID string, refresh bool) (*OrgUser, erro
 	}
 
 	for _, user := range adminOrg.AdminOrg.Users.User {
-		if user.ID == ID {
+		if user.ID == id {
 			return adminOrg.FetchUserByHref(user.HREF)
 		}
 	}
