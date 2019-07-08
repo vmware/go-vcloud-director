@@ -31,6 +31,7 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 		Name: TestLBAppProfile,
 		Persistence: &types.LBAppProfilePersistence{
 			Method: "sourceip",
+			Expire: 13,
 		},
 		Template: "HTTPS",
 	}
@@ -39,11 +40,11 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(createdLbAppProfile.ID, Not(IsNil))
 
-	// // We created application profile successfully therefore let's add it to cleanup list
+	// We created application profile successfully therefore let's add it to cleanup list
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
 	AddToCleanupList(TestLBAppProfile, "lbAppProfile", parentEntity, check.TestName())
 
-	// // Lookup by both name and ID and compare that these are equal values
+	// Lookup by both name and ID and compare that these are equal values
 	lbAppProfileByID, err := edge.ReadLBAppProfile(&types.LBAppProfile{ID: createdLbAppProfile.ID})
 	check.Assert(err, IsNil)
 
@@ -52,6 +53,7 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	check.Assert(createdLbAppProfile.ID, Equals, lbPoolByName.ID)
 	check.Assert(lbAppProfileByID.ID, Equals, lbPoolByName.ID)
 	check.Assert(lbAppProfileByID.Name, Equals, lbPoolByName.Name)
+	check.Assert(lbAppProfileByID.Persistence.Expire, Equals, lbPoolByName.Persistence.Expire)
 
 	check.Assert(createdLbAppProfile.Template, Equals, lbAppProfileConfig.Template)
 
