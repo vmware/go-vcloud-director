@@ -31,12 +31,12 @@ func (eGW *EdgeGateway) CreateLBAppProfile(lbAppProfileConfig *types.LBAppProfil
 
 	// Location header should look similar to:
 	// [/network/edges/edge-3/loadbalancer/config/applicationprofiles/applicationProfile-4]
-	lbAppProfileId, err := extractNSXObjectIdfromPath(resp.Header.Get("Location"))
+	lbAppProfileID, err := extractNSXObjectIDfromPath(resp.Header.Get("Location"))
 	if err != nil {
 		return nil, err
 	}
 
-	readAppProfile, err := eGW.ReadLBAppProfileById(lbAppProfileId)
+	readAppProfile, err := eGW.ReadLBAppProfileByID(lbAppProfileID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve application profile with ID (%s) after creation: %s",
 			readAppProfile.ID, err)
@@ -92,8 +92,8 @@ func (eGW *EdgeGateway) ReadLBAppProfile(lbAppProfileConfig *types.LBAppProfile)
 		lbAppProfileConfig.Name, lbAppProfileConfig.ID)
 }
 
-// ReadLBAppProfileById wraps ReadLBAppProfile and needs only an ID for lookup
-func (eGW *EdgeGateway) ReadLBAppProfileById(id string) (*types.LBAppProfile, error) {
+// ReadLBAppProfileByID wraps ReadLBAppProfile and needs only an ID for lookup
+func (eGW *EdgeGateway) ReadLBAppProfileByID(id string) (*types.LBAppProfile, error) {
 	return eGW.ReadLBAppProfile(&types.LBAppProfile{ID: id})
 }
 
@@ -111,7 +111,7 @@ func (eGW *EdgeGateway) UpdateLBAppProfile(lbAppProfileConfig *types.LBAppProfil
 		return nil, err
 	}
 
-	lbAppProfileConfig.ID, err = eGW.getLBAppProfileIdByNameId(lbAppProfileConfig.Name, lbAppProfileConfig.ID)
+	lbAppProfileConfig.ID, err = eGW.getLBAppProfileIDByNameID(lbAppProfileConfig.Name, lbAppProfileConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("cannot update load balancer application profile: %s", err)
 	}
@@ -128,7 +128,7 @@ func (eGW *EdgeGateway) UpdateLBAppProfile(lbAppProfileConfig *types.LBAppProfil
 		return nil, err
 	}
 
-	readAppProfile, err := eGW.ReadLBAppProfileById(lbAppProfileConfig.ID)
+	readAppProfile, err := eGW.ReadLBAppProfileByID(lbAppProfileConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve application profile with ID (%s) after update: %s",
 			readAppProfile.ID, err)
@@ -145,7 +145,7 @@ func (eGW *EdgeGateway) DeleteLBAppProfile(lbAppProfileConfig *types.LBAppProfil
 		return err
 	}
 
-	lbAppProfileConfig.ID, err = eGW.getLBAppProfileIdByNameId(lbAppProfileConfig.Name, lbAppProfileConfig.ID)
+	lbAppProfileConfig.ID, err = eGW.getLBAppProfileIDByNameID(lbAppProfileConfig.Name, lbAppProfileConfig.ID)
 	if err != nil {
 		return fmt.Errorf("cannot delete load balancer application profile: %s", err)
 	}
@@ -159,8 +159,8 @@ func (eGW *EdgeGateway) DeleteLBAppProfile(lbAppProfileConfig *types.LBAppProfil
 		"unable to delete application profile: %s", nil)
 }
 
-// DeleteLBAppProfileById wraps DeleteLBAppProfile and requires only ID for deletion
-func (eGW *EdgeGateway) DeleteLBAppProfileById(id string) error {
+// DeleteLBAppProfileByID wraps DeleteLBAppProfile and requires only ID for deletion
+func (eGW *EdgeGateway) DeleteLBAppProfileByID(id string) error {
 	return eGW.DeleteLBAppProfile(&types.LBAppProfile{ID: id})
 }
 
@@ -196,10 +196,10 @@ func validateDeleteLBAppProfile(lbAppProfileConfig *types.LBAppProfile) error {
 	return validateReadLBAppProfile(lbAppProfileConfig)
 }
 
-// getLBAppProfileIdByNameId checks if at least name or ID is set and returns the ID.
+// getLBAppProfileIDByNameID checks if at least name or ID is set and returns the ID.
 // If the ID is specified - it passes through the ID. If only name was specified
 // it will lookup the object by name and return the ID.
-func (eGW *EdgeGateway) getLBAppProfileIdByNameId(name, id string) (string, error) {
+func (eGW *EdgeGateway) getLBAppProfileIDByNameID(name, id string) (string, error) {
 	if name == "" && id == "" {
 		return "", fmt.Errorf("at least Name or ID must be specific to find load balancer "+
 			"application profile got name (%s) ID (%s)", name, id)

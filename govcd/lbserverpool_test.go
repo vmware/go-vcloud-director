@@ -85,36 +85,36 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	AddToCleanupList(TestLBServerPool, "lbServerPool", parentEntity, check.TestName())
 
 	// Lookup by both name and ID and compare that these are equal values
-	lbPoolById, err := edge.ReadLBServerPool(&types.LBPool{ID: createdLbPool.ID})
+	lbPoolByID, err := edge.ReadLBServerPool(&types.LBPool{ID: createdLbPool.ID})
 	check.Assert(err, IsNil)
 
 	lbPoolByName, err := edge.ReadLBServerPool(&types.LBPool{Name: createdLbPool.Name})
 	check.Assert(err, IsNil)
 	check.Assert(createdLbPool.ID, Equals, lbPoolByName.ID)
-	check.Assert(lbPoolById.ID, Equals, lbPoolByName.ID)
-	check.Assert(lbPoolById.Name, Equals, lbPoolByName.Name)
+	check.Assert(lbPoolByID.ID, Equals, lbPoolByName.ID)
+	check.Assert(lbPoolByID.Name, Equals, lbPoolByName.Name)
 
 	check.Assert(createdLbPool.Algorithm, Equals, lbPoolConfig.Algorithm)
 
 	// Test updating fields
 	// Update algorithm
-	lbPoolById.Algorithm = "ip-hash"
-	updatedLBPool, err := edge.UpdateLBServerPool(lbPoolById)
+	lbPoolByID.Algorithm = "ip-hash"
+	updatedLBPool, err := edge.UpdateLBServerPool(lbPoolByID)
 	check.Assert(err, IsNil)
-	check.Assert(updatedLBPool.Algorithm, Equals, lbPoolById.Algorithm)
+	check.Assert(updatedLBPool.Algorithm, Equals, lbPoolByID.Algorithm)
 
 	// Verify that updated pool and it's configuration are identical
-	check.Assert(updatedLBPool, DeepEquals, lbPoolById)
+	check.Assert(updatedLBPool, DeepEquals, lbPoolByID)
 
 	// Try to set invalid algorithm hash and expect API to return error
 	// Invalid algorithm hash. Valid algorithms are: IP-HASH|ROUND-ROBIN|URI|LEASTCONN|URL|HTTP-HEADER.
-	lbPoolById.Algorithm = "invalid_algorithm"
-	updatedLBPool, err = edge.UpdateLBServerPool(lbPoolById)
+	lbPoolByID.Algorithm = "invalid_algorithm"
+	updatedLBPool, err = edge.UpdateLBServerPool(lbPoolByID)
 	check.Assert(err, ErrorMatches, ".*Invalid algorithm.*Valid algorithms are:.*")
 
 	// Update should fail without name
-	lbPoolById.Name = ""
-	_, err = edge.UpdateLBServerPool(lbPoolById)
+	lbPoolByID.Name = ""
+	_, err = edge.UpdateLBServerPool(lbPoolByID)
 	check.Assert(err.Error(), Equals, "load balancer server pool Name cannot be empty")
 
 	// Delete / cleanup
