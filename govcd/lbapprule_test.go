@@ -41,38 +41,38 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 	AddToCleanupList(TestLBAppRule, "lbAppRule", parentEntity, check.TestName())
 
 	// // Lookup by both name and ID and compare that these are equal values
-	lbAppRuleByID, err := edge.ReadLBAppRule(&types.LBAppRule{ID: createdLbAppRule.ID})
+	lbAppRuleById, err := edge.ReadLBAppRule(&types.LBAppRule{ID: createdLbAppRule.ID})
 	check.Assert(err, IsNil)
 
 	lbPoolByName, err := edge.ReadLBAppRule(&types.LBAppRule{Name: createdLbAppRule.Name})
 	check.Assert(err, IsNil)
 	check.Assert(createdLbAppRule.ID, Equals, lbPoolByName.ID)
-	check.Assert(lbAppRuleByID.ID, Equals, lbPoolByName.ID)
-	check.Assert(lbAppRuleByID.Name, Equals, lbPoolByName.Name)
+	check.Assert(lbAppRuleById.ID, Equals, lbPoolByName.ID)
+	check.Assert(lbAppRuleById.Name, Equals, lbPoolByName.Name)
 
 	check.Assert(createdLbAppRule.Script, Equals, lbAppRuleConfig.Script)
 
 	// Test updating fields
 	// Update script to be multi-line
-	lbAppRuleByID.Script = "acl other_page url_beg / other redirect location https://www.other.com/ ifother_page\n" +
+	lbAppRuleById.Script = "acl other_page url_beg / other redirect location https://www.other.com/ ifother_page\n" +
 		"acl other_page2 url_beg / other2 redirect location https://www.other2.com/ ifother_page2"
-	updatedAppProfile, err := edge.UpdateLBAppRule(lbAppRuleByID)
+	updatedAppProfile, err := edge.UpdateLBAppRule(lbAppRuleById)
 	check.Assert(err, IsNil)
-	check.Assert(updatedAppProfile.Script, Equals, lbAppRuleByID.Script)
+	check.Assert(updatedAppProfile.Script, Equals, lbAppRuleById.Script)
 
 	// Verify that updated pool and its configuration are identical
-	check.Assert(updatedAppProfile, DeepEquals, lbAppRuleByID)
+	check.Assert(updatedAppProfile, DeepEquals, lbAppRuleById)
 
 	// Try to set invalid script expect API to return error
 	// invalid applicationRule script, invalid script line : invalid_script, error details :
 	// Unknown keyword 'invalid_script'
-	lbAppRuleByID.Script = "invalid_script"
-	updatedAppProfile, err = edge.UpdateLBAppRule(lbAppRuleByID)
+	lbAppRuleById.Script = "invalid_script"
+	updatedAppProfile, err = edge.UpdateLBAppRule(lbAppRuleById)
 	check.Assert(err, ErrorMatches, ".*invalid applicationRule script.*")
 
 	// Update should fail without name
-	lbAppRuleByID.Name = ""
-	_, err = edge.UpdateLBAppRule(lbAppRuleByID)
+	lbAppRuleById.Name = ""
+	_, err = edge.UpdateLBAppRule(lbAppRuleById)
 	check.Assert(err.Error(), Equals, "load balancer application rule Name cannot be empty")
 
 	// Delete / cleanup

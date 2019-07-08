@@ -48,36 +48,36 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 	AddToCleanupList(check.TestName(), "lbServiceMonitor", parentEntity, check.TestName())
 
 	// Lookup by both name and ID and compare that these are equal values
-	lbMonitorByID, err := edge.ReadLBServiceMonitor(&types.LBMonitor{ID: lbMonitor.ID})
+	lbMonitorById, err := edge.ReadLBServiceMonitor(&types.LBMonitor{ID: lbMonitor.ID})
 	check.Assert(err, IsNil)
 
 	lbMonitorByName, err := edge.ReadLBServiceMonitor(&types.LBMonitor{Name: lbMonitor.Name})
 	check.Assert(err, IsNil)
 	check.Assert(lbMonitor.ID, Equals, lbMonitorByName.ID)
-	check.Assert(lbMonitorByID.ID, Equals, lbMonitorByName.ID)
-	check.Assert(lbMonitorByID.Name, Equals, lbMonitorByName.Name)
+	check.Assert(lbMonitorById.ID, Equals, lbMonitorByName.ID)
+	check.Assert(lbMonitorById.Name, Equals, lbMonitorByName.Name)
 
-	check.Assert(lbMonitor.ID, Equals, lbMonitorByID.ID)
-	check.Assert(lbMonitor.Interval, Equals, lbMonitorByID.Interval)
-	check.Assert(lbMonitor.Timeout, Equals, lbMonitorByID.Timeout)
-	check.Assert(lbMonitor.MaxRetries, Equals, lbMonitorByID.MaxRetries)
+	check.Assert(lbMonitor.ID, Equals, lbMonitorById.ID)
+	check.Assert(lbMonitor.Interval, Equals, lbMonitorById.Interval)
+	check.Assert(lbMonitor.Timeout, Equals, lbMonitorById.Timeout)
+	check.Assert(lbMonitor.MaxRetries, Equals, lbMonitorById.MaxRetries)
 
 	// Test updating fields
 	// Update timeout
-	lbMonitorByID.Timeout = 35
-	updatedLBMonitor, err := edge.UpdateLBServiceMonitor(lbMonitorByID)
+	lbMonitorById.Timeout = 35
+	updatedLBMonitor, err := edge.UpdateLBServiceMonitor(lbMonitorById)
 	check.Assert(err, IsNil)
 	check.Assert(updatedLBMonitor.Timeout, Equals, 35)
 
 	// Verify that updated monitor and it's configuration are identical
-	check.Assert(updatedLBMonitor, DeepEquals, lbMonitorByID)
+	check.Assert(updatedLBMonitor, DeepEquals, lbMonitorById)
 
 	// Update should fail without name
-	lbMonitorByID.Name = ""
-	_, err = edge.UpdateLBServiceMonitor(lbMonitorByID)
+	lbMonitorById.Name = ""
+	_, err = edge.UpdateLBServiceMonitor(lbMonitorById)
 	check.Assert(err.Error(), Equals, "load balancer monitor Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLBServiceMonitor(&types.LBMonitor{ID: lbMonitorByID.ID})
+	err = edge.DeleteLBServiceMonitor(&types.LBMonitor{ID: lbMonitorById.ID})
 	check.Assert(err, IsNil)
 }

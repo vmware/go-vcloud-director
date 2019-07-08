@@ -35,14 +35,14 @@ func (eGW *EdgeGateway) CreateLBServiceMonitor(lbMonitorConfig *types.LBMonitor)
 
 	// Location header should look similar to:
 	// Location: [/network/edges/edge-3/loadbalancer/config/monitors/monitor-5]
-	lbMonitorID, err := extractNSXObjectIDfromPath(resp.Header.Get("Location"))
+	lbMonitorId, err := extractNSXObjectIdfromPath(resp.Header.Get("Location"))
 	if err != nil {
 		return nil, err
 	}
 
-	readMonitor, err := eGW.ReadLBServiceMonitorByID(lbMonitorID)
+	readMonitor, err := eGW.ReadLBServiceMonitorById(lbMonitorId)
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve monitor with ID (%s) after creation: %s", lbMonitorID, err)
+		return nil, fmt.Errorf("unable to retrieve monitor with ID (%s) after creation: %s", lbMonitorId, err)
 	}
 	return readMonitor, nil
 }
@@ -93,8 +93,8 @@ func (eGW *EdgeGateway) ReadLBServiceMonitor(lbMonitorConfig *types.LBMonitor) (
 		lbMonitorConfig.Name, lbMonitorConfig.ID)
 }
 
-// ReadLBServiceMonitorByID wraps ReadLBServiceMonitor and needs only an ID for lookup
-func (eGW *EdgeGateway) ReadLBServiceMonitorByID(id string) (*types.LBMonitor, error) {
+// ReadLBServiceMonitorById wraps ReadLBServiceMonitor and needs only an ID for lookup
+func (eGW *EdgeGateway) ReadLBServiceMonitorById(id string) (*types.LBMonitor, error) {
 	return eGW.ReadLBServiceMonitor(&types.LBMonitor{ID: id})
 }
 
@@ -112,7 +112,7 @@ func (eGW *EdgeGateway) UpdateLBServiceMonitor(lbMonitorConfig *types.LBMonitor)
 		return nil, err
 	}
 
-	lbMonitorConfig.ID, err = eGW.getLBServiceMonitorIDByNameID(lbMonitorConfig.Name, lbMonitorConfig.ID)
+	lbMonitorConfig.ID, err = eGW.getLBServiceMonitorIdByNameId(lbMonitorConfig.Name, lbMonitorConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("cannot update load balancer service monitor: %s", err)
 	}
@@ -129,7 +129,7 @@ func (eGW *EdgeGateway) UpdateLBServiceMonitor(lbMonitorConfig *types.LBMonitor)
 		return nil, err
 	}
 
-	readMonitor, err := eGW.ReadLBServiceMonitorByID(lbMonitorConfig.ID)
+	readMonitor, err := eGW.ReadLBServiceMonitorById(lbMonitorConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve monitor with ID (%s) after update: %s", lbMonitorConfig.ID, err)
 	}
@@ -145,7 +145,7 @@ func (eGW *EdgeGateway) DeleteLBServiceMonitor(lbMonitorConfig *types.LBMonitor)
 		return err
 	}
 
-	lbMonitorConfig.ID, err = eGW.getLBServiceMonitorIDByNameID(lbMonitorConfig.Name, lbMonitorConfig.ID)
+	lbMonitorConfig.ID, err = eGW.getLBServiceMonitorIdByNameId(lbMonitorConfig.Name, lbMonitorConfig.ID)
 	if err != nil {
 		return fmt.Errorf("cannot delete load balancer service monitor: %s", err)
 	}
@@ -158,8 +158,8 @@ func (eGW *EdgeGateway) DeleteLBServiceMonitor(lbMonitorConfig *types.LBMonitor)
 		"unable to delete Service Monitor: %s", nil)
 }
 
-// DeleteLBServiceMonitorByID wraps DeleteLBServiceMonitor and requires only ID for deletion
-func (eGW *EdgeGateway) DeleteLBServiceMonitorByID(id string) error {
+// DeleteLBServiceMonitorById wraps DeleteLBServiceMonitor and requires only ID for deletion
+func (eGW *EdgeGateway) DeleteLBServiceMonitorById(id string) error {
 	return eGW.DeleteLBServiceMonitor(&types.LBMonitor{ID: id})
 }
 
@@ -210,10 +210,10 @@ func validateDeleteLBServiceMonitor(lbMonitorConfig *types.LBMonitor) error {
 	return validateReadLBServiceMonitor(lbMonitorConfig)
 }
 
-// getLBServiceMonitorIDByNameID checks if at least name or ID is set and returns the ID.
+// getLBServiceMonitorIdByNameId checks if at least name or ID is set and returns the ID.
 // If the ID is specified - it passes through the ID. If only name was specified
 // it will lookup the object by name and return the ID.
-func (eGW *EdgeGateway) getLBServiceMonitorIDByNameID(name, id string) (string, error) {
+func (eGW *EdgeGateway) getLBServiceMonitorIdByNameId(name, id string) (string, error) {
 	if name == "" && id == "" {
 		return "", fmt.Errorf("at least Name or ID must be specific to find load balancer "+
 			"service monitor got name (%s) ID (%s)", name, id)

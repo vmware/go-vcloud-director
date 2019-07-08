@@ -31,12 +31,12 @@ func (eGW *EdgeGateway) CreateLBAppRule(lbAppRuleConfig *types.LBAppRule) (*type
 
 	// Location header should look similar to:
 	// [/network/edges/edge-3/loadbalancer/config/applicationrules/applicationRule-4]
-	lbAppRuleID, err := extractNSXObjectIDfromPath(resp.Header.Get("Location"))
+	lbAppRuleId, err := extractNSXObjectIdfromPath(resp.Header.Get("Location"))
 	if err != nil {
 		return nil, err
 	}
 
-	readAppRule, err := eGW.ReadLBAppRule(&types.LBAppRule{ID: lbAppRuleID})
+	readAppRule, err := eGW.ReadLBAppRule(&types.LBAppRule{ID: lbAppRuleId})
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve application rule with ID (%s) after creation: %s",
 			readAppRule.ID, err)
@@ -92,8 +92,8 @@ func (eGW *EdgeGateway) ReadLBAppRule(lbAppRuleConfig *types.LBAppRule) (*types.
 		lbAppRuleConfig.Name, lbAppRuleConfig.ID)
 }
 
-// ReadLBAppRuleByID wraps ReadLBAppRule and needs only an ID for lookup
-func (eGW *EdgeGateway) ReadLBAppRuleByID(id string) (*types.LBAppRule, error) {
+// ReadLBAppRuleById wraps ReadLBAppRule and needs only an ID for lookup
+func (eGW *EdgeGateway) ReadLBAppRuleById(id string) (*types.LBAppRule, error) {
 	return eGW.ReadLBAppRule(&types.LBAppRule{ID: id})
 }
 
@@ -147,17 +147,17 @@ func (eGW *EdgeGateway) DeleteLBAppRule(lbAppRuleConfig *types.LBAppRule) error 
 		return err
 	}
 
-	lbAppRuleID := lbAppRuleConfig.ID
+	lbAppRuleId := lbAppRuleConfig.ID
 	// if only name was specified for deletion, ID must be found, because only ID can be used for deletion
 	if lbAppRuleConfig.ID == "" {
 		readlbAppRule, err := eGW.ReadLBAppRule(&types.LBAppRule{Name: lbAppRuleConfig.Name})
 		if err != nil {
 			return fmt.Errorf("unable to find load balancer application rule by name for deletion: %s", err)
 		}
-		lbAppRuleID = readlbAppRule.ID
+		lbAppRuleId = readlbAppRule.ID
 	}
 
-	httpPath, err := eGW.buildProxiedEdgeEndpointURL(types.LBAppRulePath + lbAppRuleID)
+	httpPath, err := eGW.buildProxiedEdgeEndpointURL(types.LBAppRulePath + lbAppRuleId)
 	if err != nil {
 		return fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
@@ -166,8 +166,8 @@ func (eGW *EdgeGateway) DeleteLBAppRule(lbAppRuleConfig *types.LBAppRule) error 
 		"unable to delete application rule: %s", nil)
 }
 
-// DeleteLBAppRuleByID wraps DeleteLBAppRule and requires only ID for deletion
-func (eGW *EdgeGateway) DeleteLBAppRuleByID(id string) error {
+// DeleteLBAppRuleById wraps DeleteLBAppRule and requires only ID for deletion
+func (eGW *EdgeGateway) DeleteLBAppRuleById(id string) error {
 	return eGW.DeleteLBAppRule(&types.LBAppRule{ID: id})
 }
 

@@ -45,37 +45,37 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	AddToCleanupList(TestLBAppProfile, "lbAppProfile", parentEntity, check.TestName())
 
 	// Lookup by both name and ID and compare that these are equal values
-	lbAppProfileByID, err := edge.ReadLBAppProfile(&types.LBAppProfile{ID: createdLbAppProfile.ID})
+	lbAppProfileById, err := edge.ReadLBAppProfile(&types.LBAppProfile{ID: createdLbAppProfile.ID})
 	check.Assert(err, IsNil)
 
 	lbPoolByName, err := edge.ReadLBAppProfile(&types.LBAppProfile{Name: createdLbAppProfile.Name})
 	check.Assert(err, IsNil)
 	check.Assert(createdLbAppProfile.ID, Equals, lbPoolByName.ID)
-	check.Assert(lbAppProfileByID.ID, Equals, lbPoolByName.ID)
-	check.Assert(lbAppProfileByID.Name, Equals, lbPoolByName.Name)
-	check.Assert(lbAppProfileByID.Persistence.Expire, Equals, lbPoolByName.Persistence.Expire)
+	check.Assert(lbAppProfileById.ID, Equals, lbPoolByName.ID)
+	check.Assert(lbAppProfileById.Name, Equals, lbPoolByName.Name)
+	check.Assert(lbAppProfileById.Persistence.Expire, Equals, lbPoolByName.Persistence.Expire)
 
 	check.Assert(createdLbAppProfile.Template, Equals, lbAppProfileConfig.Template)
 
 	// Test updating fields
 	// Update persistence method
-	lbAppProfileByID.Persistence.Method = "sourceip"
-	updatedAppProfile, err := edge.UpdateLBAppProfile(lbAppProfileByID)
+	lbAppProfileById.Persistence.Method = "sourceip"
+	updatedAppProfile, err := edge.UpdateLBAppProfile(lbAppProfileById)
 	check.Assert(err, IsNil)
-	check.Assert(updatedAppProfile.Persistence.Method, Equals, lbAppProfileByID.Persistence.Method)
+	check.Assert(updatedAppProfile.Persistence.Method, Equals, lbAppProfileById.Persistence.Method)
 
 	// Verify that updated application profile and its configuration are identical
-	check.Assert(updatedAppProfile, DeepEquals, lbAppProfileByID)
+	check.Assert(updatedAppProfile, DeepEquals, lbAppProfileById)
 
 	// Try to set invalid algorithm hash and expect API to return error
-	// Invalid persistence method invalid_method. Valid methods are: COOKIE|SSL-SESSIONID|SOURCEIP.
-	lbAppProfileByID.Persistence.Method = "invalid_method"
-	updatedAppProfile, err = edge.UpdateLBAppProfile(lbAppProfileByID)
+	// Invalid persistence method invalid_method. Valid methods are: COOKIE|SSL-SESSIONId|SOURCEIP.
+	lbAppProfileById.Persistence.Method = "invalid_method"
+	updatedAppProfile, err = edge.UpdateLBAppProfile(lbAppProfileById)
 	check.Assert(err, ErrorMatches, ".*Invalid persistence method .*Valid methods are:.*")
 
 	// Update should fail without name
-	lbAppProfileByID.Name = ""
-	_, err = edge.UpdateLBAppProfile(lbAppProfileByID)
+	lbAppProfileById.Name = ""
+	_, err = edge.UpdateLBAppProfile(lbAppProfileById)
 	check.Assert(err.Error(), Equals, "load balancer application profile Name cannot be empty")
 
 	// Delete / cleanup
