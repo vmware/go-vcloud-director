@@ -11,6 +11,13 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+// Test_LBAppRule tests CRUD methods for load balancer application rule.
+// The following things are tested if prerequisite Edge Gateway exists:
+// Creation of load balancer application rule
+// Read load balancer application rule by both ID and Name (application rule name must be unique in single edge gateway)
+// Update - change a field and compare that configuration and result objects are deeply equal
+// Update - try and fail to update without mandatory field
+// Delete
 func (vcd *TestVCD) Test_LBAppRule(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
