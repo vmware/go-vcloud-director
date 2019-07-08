@@ -1696,6 +1696,38 @@ type LBPoolMember struct {
 
 type LBPoolMembers []LBPoolMember
 
+// LBAppProfile represents a load balancer application profile as per "vCloud Director API for NSX
+// Programming Guide"
+// https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
+type LBAppProfile struct {
+	XMLName                       xml.Name                  `xml:"applicationProfile"`
+	ID                            string                    `xml:"applicationProfileId,omitempty"`
+	Name                          string                    `xml:"name,omitempty"`
+	SSLPassthrough                bool                      `xml:"sslPassthrough,omitempty"`
+	Template                      string                    `xml:"template,omitempty"`
+	HTTPRedirect                  *LBAppProfileHTTPRedirect `xml:"httpRedirect,omitempty"`
+	Persistence                   *LBAppProfilePersistence  `xml:"persistence,omitempty"`
+	InsertXForwardedForHTTPHeader bool                      `xml:"insertXForwardedFor,omitempty"`
+	ServerSSLEnabled              bool                      `xml:"serverSslEnabled,omitempty"`
+}
+
+type LBAppProfiles []LBAppProfile
+
+// LBAppProfilePersistence defines persistence profile settings in LBAppProfile
+type LBAppProfilePersistence struct {
+	XMLName    xml.Name `xml:"persistence"`
+	Method     string   `xml:"method,omitempty"`
+	CookieName string   `xml:"cookieName,omitempty"`
+	CookieMode string   `xml:"cookieMode,omitempty"`
+	Expire     int      `xml:"expire,omitempty"`
+}
+
+// LBAppProfileHTTPRedirect defines http redirect settings in LBAppProfile
+type LBAppProfileHTTPRedirect struct {
+	XMLName xml.Name `xml:"httpRedirect"`
+	To      string   `xml:"to,omitempty"`
+}
+
 // LoadBalancerVirtualServer represents a load balancer virtual server.
 // Type: LoadBalancerVirtualServerType
 // Namespace: http://www.vmware.com/vcloud/v1.5

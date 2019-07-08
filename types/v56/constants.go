@@ -153,4 +153,5 @@ const (
 const (
 	LBMonitorPath    = "/loadbalancer/config/monitors/"
 	LBServerPoolPath = "/loadbalancer/config/pools/"
+	LBAppProfilePath = "/loadbalancer/config/applicationprofiles/"
 )
