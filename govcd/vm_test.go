@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
 
@@ -891,29 +890,34 @@ func (vcd *TestVCD) Test_GetVirtualHardwareSection(check *C) {
 
 	fmt.Printf("Running: %s\n", itemName)
 
-	newVM := types.VM{
-		VirtualHardwareSection: &types.VirtualHardwareSection{
-			Item: []*types.VirtualHardwareItem{
-				&types.VirtualHardwareItem{
-					InstanceID:          1,
-					AutomaticAllocation: true,
-					Address:             "1.1.1.1",
-					CoresPerSocket:      2,
-				},
+	// Find VM
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	vm := NewVM(&vcd.client.Client)
+	vm.VM = &vmType
+
+	vm.VM.VirtualHardwareSection = &types.VirtualHardwareSection{
+		Item: []*types.VirtualHardwareItem{
+			&types.VirtualHardwareItem{
+				InstanceID:          1,
+				AutomaticAllocation: true,
+				Address:             "1.1.1.1",
+				CoresPerSocket:      2,
 			},
 		},
 	}
 
-	vm, err := vcd.client.Client.FindVMByHREF(newVM.HREF)
-	check.Assert(err, IsNil)
-
 	section, err := vm.GetVirtualHardwareSection()
 	check.Assert(err, IsNil)
 	for _, item := range section.Item {
-		check.Assert(item.InstanceID, Equals, newVM.VirtualHardwareSection.Item[0].InstanceID)
-		check.Assert(item.AutomaticAllocation, Equals, newVM.VirtualHardwareSection.Item[0].AutomaticAllocation)
-		check.Assert(item.Address, Equals, newVM.VirtualHardwareSection.Item[0].Address)
-		check.Assert(item.CoresPerSocket, Equals, newVM.VirtualHardwareSection.Item[0].CoresPerSocket)
+		check.Assert(item.InstanceID, Equals, vm.VM.VirtualHardwareSection.Item[0].InstanceID)
+		check.Assert(item.AutomaticAllocation, Equals, vm.VM.VirtualHardwareSection.Item[0].AutomaticAllocation)
+		check.Assert(item.Address, Equals, vm.VM.VirtualHardwareSection.Item[0].Address)
+		check.Assert(item.CoresPerSocket, Equals, vm.VM.VirtualHardwareSection.Item[0].CoresPerSocket)
 	}
 	check.Assert(len(section.Item), Equals, len(newVM.VirtualHardwareSection.Item))
 }
