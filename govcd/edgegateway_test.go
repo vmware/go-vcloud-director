@@ -277,3 +277,157 @@ func (vcd *TestVCD) TestEdgeGateway_GetNetworks(check *C) {
 	}
 
 }
+
+func (vcd *TestVCD) Test_AddSNATRule(check *C) {
+	if vcd.config.VCD.ExternalIp == "" || vcd.config.VCD.InternalIp == "" {
+		check.Skip("Skipping test because no valid ip given")
+	}
+	if vcd.config.VCD.ExternalNetwork == "" {
+		check.Skip("Skipping test because no external network given")
+	}
+	if vcd.config.VCD.EdgeGateway == "" {
+		check.Skip("Skipping test because no edge gateway given")
+	}
+	if vcd.config.VCD.Network.Net1 == "" {
+		check.Skip("Skipping test because no network was given")
+	}
+
+	description1 := "my Description 1"
+	description2 := "my Description 2"
+
+	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	check.Assert(err, IsNil)
+	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
+
+	orgVdcNetwork, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
+	check.Assert(err, IsNil)
+	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
+
+	externalNetwork, err := GetExternalNetwork(vcd.client, vcd.config.VCD.ExternalNetwork)
+	check.Assert(err, IsNil)
+	check.Assert(externalNetwork.ExternalNetwork.Name, Equals, vcd.config.VCD.ExternalNetwork)
+
+	natRules, err := edge.AddSNATRule(orgVdcNetwork.OrgVDCNetwork.HREF, vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp, description1)
+	check.Assert(err, IsNil)
+
+	found := false
+	var rule *types.NatRule
+	for _, r := range natRules {
+		if r.RuleType == "SNAT" && r.GatewayNatRule.Interface.Name == orgVdcNetwork.OrgVDCNetwork.Name {
+			found = true
+			rule = r
+		}
+	}
+
+	check.Assert(found, Equals, true)
+	check.Assert(rule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.InternalIp)
+	check.Assert(rule.GatewayNatRule.OriginalIP, Equals, vcd.config.VCD.ExternalIp)
+	check.Assert(rule.Description, Equals, description1)
+
+	task, err := edge.RemoveNATMapping("SNAT", vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp, "77")
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	// check with external network
+	natRules, err = edge.AddSNATRule(externalNetwork.ExternalNetwork.HREF, vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp, description2)
+	check.Assert(err, IsNil)
+
+	found = false
+	for _, r := range natRules {
+		if r.RuleType == "SNAT" && r.GatewayNatRule.Interface.Name == externalNetwork.ExternalNetwork.Name {
+			found = true
+			rule = r
+		}
+	}
+
+	check.Assert(found, Equals, true)
+	check.Assert(rule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.ExternalIp)
+	check.Assert(rule.GatewayNatRule.OriginalIP, Equals, vcd.config.VCD.InternalIp)
+	check.Assert(rule.Description, Equals, description2)
+
+	task, err = edge.RemoveNATMapping("SNAT", vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp, "77")
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_AddDNATRule(check *C) {
+	if vcd.config.VCD.ExternalIp == "" || vcd.config.VCD.InternalIp == "" {
+		check.Skip("Skipping test because no valid ip given")
+	}
+	if vcd.config.VCD.ExternalNetwork == "" {
+		check.Skip("Skipping test because no external network given")
+	}
+	if vcd.config.VCD.EdgeGateway == "" {
+		check.Skip("Skipping test because no edge gateway given")
+	}
+	if vcd.config.VCD.Network.Net1 == "" {
+		check.Skip("Skipping test because no network was given")
+	}
+
+	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	check.Assert(err, IsNil)
+	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
+
+	orgVdcNetwork, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
+	check.Assert(err, IsNil)
+	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
+
+	externalNetwork, err := GetExternalNetwork(vcd.client, vcd.config.VCD.ExternalNetwork)
+	check.Assert(err, IsNil)
+	check.Assert(externalNetwork.ExternalNetwork.Name, Equals, vcd.config.VCD.ExternalNetwork)
+
+	description1 := "my Dnat Description 1"
+	description2 := "my Dnatt Description 2"
+
+	natRules, err := edge.AddDNATRule(orgVdcNetwork.OrgVDCNetwork.HREF, vcd.config.VCD.ExternalIp, "1177", vcd.config.VCD.InternalIp, "77", "TCP", "", description1)
+	check.Assert(err, IsNil)
+
+	found := false
+	var rule *types.NatRule
+	for _, r := range natRules {
+		if r.RuleType == "DNAT" && r.GatewayNatRule.Interface.Name == orgVdcNetwork.OrgVDCNetwork.Name {
+			found = true
+			rule = r
+		}
+	}
+
+	check.Assert(found, Equals, true)
+	check.Assert(rule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.InternalIp)
+	check.Assert(rule.GatewayNatRule.TranslatedPort, Equals, "77")
+	check.Assert(rule.GatewayNatRule.OriginalIP, Equals, vcd.config.VCD.ExternalIp)
+	check.Assert(rule.GatewayNatRule.OriginalPort, Equals, "1177")
+	check.Assert(rule.GatewayNatRule.Protocol, Equals, "tcp")
+	check.Assert(rule.GatewayNatRule.IcmpSubType, Equals, "")
+
+	task, err := edge.RemoveNATPortMapping("DNAT", vcd.config.VCD.ExternalIp, "1177", vcd.config.VCD.InternalIp, "77")
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	// check with external network
+	natRules, err = edge.AddDNATRule(externalNetwork.ExternalNetwork.HREF, vcd.config.VCD.ExternalIp, "1188", vcd.config.VCD.InternalIp, "88", "TCP", "", description2)
+	check.Assert(err, IsNil)
+
+	found = false
+	for _, r := range natRules {
+		if r.RuleType == "DNAT" && r.GatewayNatRule.Interface.Name == externalNetwork.ExternalNetwork.Name {
+			found = true
+			rule = r
+		}
+	}
+
+	check.Assert(found, Equals, true)
+	check.Assert(rule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.InternalIp)
+	check.Assert(rule.GatewayNatRule.TranslatedPort, Equals, "88")
+	check.Assert(rule.GatewayNatRule.OriginalIP, Equals, vcd.config.VCD.ExternalIp)
+	check.Assert(rule.GatewayNatRule.OriginalPort, Equals, "1188")
+	check.Assert(rule.GatewayNatRule.Protocol, Equals, "tcp")
+	check.Assert(rule.GatewayNatRule.IcmpSubType, Equals, "")
+
+	task, err = edge.RemoveNATPortMapping("DNAT", vcd.config.VCD.ExternalIp, "1188", vcd.config.VCD.InternalIp, "88")
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+}
