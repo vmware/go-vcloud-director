@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
 
@@ -897,8 +898,8 @@ func (vcd *TestVCD) Test_GetVirtualHardwareSection(check *C) {
 		check.Skip("skipping test because no VM is found")
 	}
 
-	vm := NewVM(&vcd.client.Client)
-	vm.VM = &vmType
+	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	check.Assert(err, IsNil)
 
 	vm.VM.VirtualHardwareSection = &types.VirtualHardwareSection{
 		Item: []*types.VirtualHardwareItem{
@@ -919,5 +920,5 @@ func (vcd *TestVCD) Test_GetVirtualHardwareSection(check *C) {
 		check.Assert(item.Address, Equals, vm.VM.VirtualHardwareSection.Item[0].Address)
 		check.Assert(item.CoresPerSocket, Equals, vm.VM.VirtualHardwareSection.Item[0].CoresPerSocket)
 	}
-	check.Assert(len(section.Item), Equals, len(newVM.VirtualHardwareSection.Item))
+	check.Assert(len(section.Item), Equals, len(vm.VM.VirtualHardwareSection.Item))
 }
