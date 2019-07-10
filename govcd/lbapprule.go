@@ -31,7 +31,7 @@ func (eGW *EdgeGateway) CreateLBAppRule(lbAppRuleConfig *types.LBAppRule) (*type
 
 	// Location header should look similar to:
 	// [/network/edges/edge-3/loadbalancer/config/applicationrules/applicationRule-4]
-	lbAppRuleId, err := extractNSXObjectIDfromPath(resp.Header.Get("Location"))
+	lbAppRuleId, err := extractNSXObjectIDFromPath(resp.Header.Get("Location"))
 	if err != nil {
 		return nil, err
 	}
