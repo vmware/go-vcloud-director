@@ -401,7 +401,8 @@ func (vcd *TestVCD) Test_AddDNATRule(check *C) {
 	description1 := "my Dnat Description 1"
 	description2 := "my Dnatt Description 2"
 
-	natRules, err := edge.AddDNATRule(orgVdcNetwork.OrgVDCNetwork.HREF, vcd.config.VCD.ExternalIp, "1177", vcd.config.VCD.InternalIp, "77", "TCP", "", description1)
+	natRules, err := edge.AddDNATRule(NatRule{networkHref: orgVdcNetwork.OrgVDCNetwork.HREF, externalIP: vcd.config.VCD.ExternalIp,
+		externalPort: "1177", internalIP: vcd.config.VCD.InternalIp, internalPort: "77", protocol: "TCP", description: description1})
 	check.Assert(err, IsNil)
 
 	found := false
@@ -433,7 +434,8 @@ func (vcd *TestVCD) Test_AddDNATRule(check *C) {
 	check.Assert(len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule), Equals, beforeChangeNatRulesNumber)
 
 	// check with external network
-	natRules, err = edge.AddDNATRule(externalNetwork.ExternalNetwork.HREF, vcd.config.VCD.ExternalIp, "1188", vcd.config.VCD.InternalIp, "88", "TCP", "", description2)
+	natRules, err = edge.AddDNATRule(NatRule{networkHref: externalNetwork.ExternalNetwork.HREF, externalIP: vcd.config.VCD.ExternalIp,
+		externalPort: "1188", internalIP: vcd.config.VCD.InternalIp, internalPort: "88", protocol: "TCP", description: description2})
 	check.Assert(err, IsNil)
 
 	found = false

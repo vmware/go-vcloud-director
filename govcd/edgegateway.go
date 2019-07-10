@@ -40,6 +40,19 @@ func NewEdgeGateway(cli *Client) *EdgeGateway {
 	}
 }
 
+// Struct which covers NAT rule fields
+type NatRule struct {
+	natType      string
+	networkHref  string
+	externalIP   string
+	externalPort string
+	internalIP   string
+	internalPort string
+	protocol     string
+	icmpSubType  string
+	description  string
+}
+
 func (eGW *EdgeGateway) AddDhcpPool(network *types.OrgVDCNetwork, dhcppool []interface{}) (Task, error) {
 	newEdgeConfig := eGW.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration
 	util.Logger.Printf("[DEBUG] EDGE GATEWAY: %#v", newEdgeConfig)
@@ -256,9 +269,10 @@ func (eGW *EdgeGateway) RemoveNATPortMapping(natType, externalIP, externalPort, 
 }
 
 // AddDNATRule creates firewall DNAT rule and return refreshed existing NAT rules array or error
-func (eGW *EdgeGateway) AddDNATRule(networkHref, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType, description string) ([]*types.NatRule, error) {
+func (eGW *EdgeGateway) AddDNATRule(ruleDetails NatRule) ([]*types.NatRule, error) {
 
-	task, err := eGW.AddNATRuleAsync(networkHref, "DNAT", externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType, description)
+	ruleDetails.natType = "DNAT"
+	task, err := eGW.AddNATRuleAsync(ruleDetails)
 	if err != nil {
 		return nil, fmt.Errorf("error creating DNAT rule: %#v", err)
 	}
@@ -278,7 +292,9 @@ func (eGW *EdgeGateway) AddDNATRule(networkHref, externalIP, externalPort, inter
 // AddSNATRule creates SNAT rule and returns refreshed existing NAT rules array or error
 func (eGW *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, description string) ([]*types.NatRule, error) {
 
-	task, err := eGW.AddNATRuleAsync(networkHref, "SNAT", externalIP, "any", internalIP, "any", "any", "", description)
+	task, err := eGW.AddNATRuleAsync(NatRule{networkHref: networkHref, natType: "SNAT", externalIP: externalIP,
+		externalPort: "any", internalIP: internalIP, internalPort: "any",
+		icmpSubType: "", protocol: "any", description: description})
 	if err != nil {
 		return nil, fmt.Errorf("error creating SNAT rule: %#v", err)
 	}
@@ -296,12 +312,12 @@ func (eGW *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, descrip
 }
 
 // AddNATRuleAsync creates NAT rule and return task or err
-func (eGW *EdgeGateway) AddNATRuleAsync(networkHref, natType, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType, description string) (Task, error) {
-	if !isValidProtocol(protocol) {
+func (eGW *EdgeGateway) AddNATRuleAsync(ruleDetails NatRule) (Task, error) {
+	if !isValidProtocol(ruleDetails.protocol) {
 		return Task{}, fmt.Errorf("provided protocol is not one of TCP, UDP, TCPUDP, ICMP, ANY")
 	}
 
-	if strings.ToUpper(protocol) == "ICMP" && !isValidIcmpSubType(icmpSubType) {
+	if strings.ToUpper(ruleDetails.protocol) == "ICMP" && !isValidIcmpSubType(ruleDetails.icmpSubType) {
 		return Task{}, fmt.Errorf("provided icmp sub type is not correct")
 	}
 
@@ -322,12 +338,12 @@ func (eGW *EdgeGateway) AddNATRuleAsync(networkHref, natType, externalIP, extern
 
 			// Kludgy IF to avoid deleting DNAT rules not created by us.
 			// If matches, let's skip it and continue the loop
-			if natRule.RuleType == natType &&
-				natRule.GatewayNatRule.OriginalIP == externalIP &&
-				natRule.GatewayNatRule.OriginalPort == externalPort &&
-				natRule.GatewayNatRule.TranslatedIP == internalIP &&
-				natRule.GatewayNatRule.TranslatedPort == internalPort &&
-				natRule.GatewayNatRule.Interface.HREF == networkHref {
+			if natRule.RuleType == ruleDetails.natType &&
+				natRule.GatewayNatRule.OriginalIP == ruleDetails.externalIP &&
+				natRule.GatewayNatRule.OriginalPort == ruleDetails.externalPort &&
+				natRule.GatewayNatRule.TranslatedIP == ruleDetails.internalIP &&
+				natRule.GatewayNatRule.TranslatedPort == ruleDetails.internalPort &&
+				natRule.GatewayNatRule.Interface.HREF == ruleDetails.networkHref {
 				continue
 			}
 
@@ -337,19 +353,19 @@ func (eGW *EdgeGateway) AddNATRuleAsync(networkHref, natType, externalIP, extern
 
 	//add rule
 	natRule := &types.NatRule{
-		RuleType:    natType,
+		RuleType:    ruleDetails.natType,
 		IsEnabled:   true,
-		Description: description,
+		Description: ruleDetails.description,
 		GatewayNatRule: &types.GatewayNatRule{
 			Interface: &types.Reference{
-				HREF: networkHref,
+				HREF: ruleDetails.networkHref,
 			},
-			OriginalIP:     externalIP,
-			OriginalPort:   externalPort,
-			TranslatedIP:   internalIP,
-			TranslatedPort: internalPort,
-			Protocol:       protocol,
-			IcmpSubType:    icmpSubType,
+			OriginalIP:     ruleDetails.externalIP,
+			OriginalPort:   ruleDetails.externalPort,
+			TranslatedIP:   ruleDetails.internalIP,
+			TranslatedPort: ruleDetails.internalPort,
+			Protocol:       ruleDetails.protocol,
+			IcmpSubType:    ruleDetails.icmpSubType,
 		},
 	}
 	newNatService.NatRule = append(newNatService.NatRule, natRule)
