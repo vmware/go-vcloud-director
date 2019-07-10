@@ -897,10 +897,10 @@ func (vcd *TestVCD) Test_GetVirtualHardwareSection(check *C) {
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
-
 	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
 	check.Assert(err, IsNil)
 
+	// Set VirtualHardwareSection of found vm
 	vm.VM.VirtualHardwareSection = &types.VirtualHardwareSection{
 		Item: []*types.VirtualHardwareItem{
 			&types.VirtualHardwareItem{
@@ -912,6 +912,7 @@ func (vcd *TestVCD) Test_GetVirtualHardwareSection(check *C) {
 		},
 	}
 
+	// Preform check of virtual hardware section
 	section, err := vm.GetVirtualHardwareSection()
 	check.Assert(err, IsNil)
 	for _, item := range section.Item {
