@@ -88,8 +88,7 @@ func (eGW *EdgeGateway) ReadLBAppRule(lbAppRuleConfig *types.LBAppRule) (*types.
 		}
 	}
 
-	return nil, fmt.Errorf("could not find load balancer application rule (name: %s, ID: %s)",
-		lbAppRuleConfig.Name, lbAppRuleConfig.ID)
+	return nil, ErrorEntityNotFound
 }
 
 // ReadLBAppRuleById wraps ReadLBAppRule and needs only an ID for lookup

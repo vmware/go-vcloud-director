@@ -87,8 +87,7 @@ func (eGW *EdgeGateway) ReadLBServerPool(lbPoolConfig *types.LBPool) (*types.LBP
 		}
 	}
 
-	return nil, fmt.Errorf("could not find load balancer server pool (name: %s, ID: %s)",
-		lbPoolConfig.Name, lbPoolConfig.ID)
+	return nil, ErrorEntityNotFound
 }
 
 // ReadLBServerPoolByName wraps ReadLBServerPool and needs only an ID for lookup

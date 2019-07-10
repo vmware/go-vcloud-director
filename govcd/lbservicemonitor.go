@@ -89,8 +89,7 @@ func (eGW *EdgeGateway) ReadLBServiceMonitor(lbMonitorConfig *types.LBMonitor) (
 		}
 	}
 
-	return nil, fmt.Errorf("could not find load balancer service monitor (name: %s, ID: %s)",
-		lbMonitorConfig.Name, lbMonitorConfig.ID)
+	return nil, ErrorEntityNotFound
 }
 
 // ReadLBServiceMonitorByID wraps ReadLBServiceMonitor and needs only an ID for lookup

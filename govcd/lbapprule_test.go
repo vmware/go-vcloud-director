@@ -78,4 +78,8 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 	// Delete / cleanup
 	err = edge.DeleteLBAppRule(&types.LBAppRule{ID: createdLbAppRule.ID})
 	check.Assert(err, IsNil)
+
+	// Ensure it is deleted
+	_, err = edge.ReadLBAppRuleByID(createdLbAppRule.ID)
+	check.Assert(IsNotFound(err), Equals, true)
 }

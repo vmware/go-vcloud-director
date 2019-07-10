@@ -88,8 +88,7 @@ func (eGW *EdgeGateway) ReadLBAppProfile(lbAppProfileConfig *types.LBAppProfile)
 		}
 	}
 
-	return nil, fmt.Errorf("could not find load balancer application profile (name: %s, ID: %s)",
-		lbAppProfileConfig.Name, lbAppProfileConfig.ID)
+	return nil, ErrorEntityNotFound
 }
 
 // ReadLBAppProfileByID wraps ReadLBAppProfile and needs only an ID for lookup
