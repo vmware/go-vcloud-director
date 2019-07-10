@@ -752,3 +752,45 @@ func (eGW *EdgeGateway) buildProxiedEdgeEndpointURL(optionalSuffix string) (stri
 
 	return hostname, nil
 }
+
+func (egw *EdgeGateway) ReadLoadBalancerConfig() (*types.LoadBalancer, error) {
+	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LBConfigPath)
+	if err != nil {
+		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
+	}
+
+	lbConfig := &types.LoadBalancer{}
+	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
+		"unable to read Load Balancer: %s", nil, lbConfig)
+	if err != nil {
+		return nil, err
+	}
+	return lbConfig, nil
+}
+
+func (egw *EdgeGateway) UpdateLoadBalancerConfig(enabled, accelerationEnabled, loggingEnabled bool, logLevel string) error {
+
+	lbConfig, err := egw.ReadLoadBalancerConfig()
+	if err != nil {
+		return fmt.Errorf("could not read current load balancer configuration: %s", err)
+	}
+
+	lbConfig.Enabled = enabled
+	lbConfig.AccelerationEnabled = accelerationEnabled
+	lbConfig.Logging.Enable = loggingEnabled
+	lbConfig.Logging.LogLevel = logLevel
+
+	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LBConfigPath)
+	if err != nil {
+		return fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
+	}
+
+	// Result should be 204, if not we expect an error of type types.NSXError
+	_, err = egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodPut, types.AnyXMLMime,
+		"error while updating load balancer: %s", lbConfig, &types.NSXError{})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

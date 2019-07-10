@@ -1643,6 +1643,32 @@ type StaticRoute struct {
 	GatewayInterface *Reference `xml:"GatewayInterface,omitempty"` // Gateway interface to which static route is bound.
 }
 
+// LoadBalancer allows to enable/disable load balancing capabilities on specific edge gateway
+// Reference: vCloud Director API for NSX Programming Guide
+// https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
+//
+// Note. It also nests all components (LBMonitor, LBPool, LBAppProfile, LBVirtualServer) because
+// Edge Gateway API is done so that if this data is not sent while enabling it would wipe all load
+// balancer configurations.
+type LoadBalancer struct {
+	XMLName                xml.Name             `xml:"loadBalancer"`
+	Enabled                bool                 `xml:"enabled"`
+	AccelerationEnabled    bool                 `xml:"accelerationEnabled"`
+	EnableServiceInsertion bool                 `xml:"enableServiceInsertion"`
+	Logging                *LoadBalancerLogging `xml:"logging"`
+
+	// The load balancer
+	Monitor    *LBMonitor    `xml:"monitor"`
+	Pool       *LBPool       `xml:"pool"`
+	AppProfile *LBAppProfile `xml:"applicationProfile"`
+}
+
+// LoadBalancerLogging represents logging configuration for LoadBalancer
+type LoadBalancerLogging struct {
+	Enable   bool   `xml:"enable"`
+	LogLevel string `xml:"logLevel"`
+}
+
 // LBMonitor defines health check parameters for a particular type of network traffic
 // Reference: vCloud Director API for NSX Programming Guide
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide

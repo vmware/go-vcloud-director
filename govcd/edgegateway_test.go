@@ -277,3 +277,32 @@ func (vcd *TestVCD) TestEdgeGateway_GetNetworks(check *C) {
 	}
 
 }
+
+func (vcd *TestVCD) TestEdgeGateway_UpdateLoadBalancerConfig(check *C) {
+	if vcd.config.VCD.EdgeGateway == "" {
+		check.Skip("Skipping test because no edge gatway given")
+	}
+	if vcd.config.VCD.ExternalNetwork == "" {
+		check.Skip("Skipping test because no external network given")
+	}
+	if vcd.config.VCD.Network.Net1 == "" {
+		check.Skip("Skipping test because no network given")
+	}
+	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	check.Assert(err, IsNil)
+
+	lbConfigBefore, err := edge.ReadLoadBalancerConfig()
+	check.Assert(err, IsNil)
+
+	err = edge.UpdateLoadBalancerConfig(true, true, true, "critical")
+	check.Assert(err, IsNil)
+
+	lbConfigAfter, err := edge.ReadLoadBalancerConfig()
+	lbConfigAfter.Enabled = true
+	lbConfigAfter.AccelerationEnabled = true
+	lbConfigAfter.Logging.Enable = true
+	lbConfigAfter.Logging.LogLevel = "critical"
+
+	check.Assert(err, IsNil)
+	check.Assert(lbConfigAfter, DeepEquals, lbConfigBefore)
+}
