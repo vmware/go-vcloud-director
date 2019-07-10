@@ -275,7 +275,7 @@ func (eGW *EdgeGateway) AddDNATRule(networkHref, externalIP, externalPort, inter
 	return eGW.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule, nil
 }
 
-// AddSNATRule creates firewall SNAT rule and return refreshed existing NAT rules array or error
+// AddSNATRule creates SNAT rule and returns refreshed existing NAT rules array or error
 func (eGW *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, description string) ([]*types.NatRule, error) {
 
 	task, err := eGW.AddNATRuleAsync(networkHref, "SNAT", externalIP, "any", internalIP, "any", "any", "", description)
@@ -295,7 +295,7 @@ func (eGW *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, descrip
 	return eGW.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule, nil
 }
 
-// AddNATRuleAsync creates firewall NAT rule and return task or err
+// AddNATRuleAsync creates NAT rule and return task or err
 func (eGW *EdgeGateway) AddNATRuleAsync(networkHref, natType, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType, description string) (Task, error) {
 	if !isValidProtocol(protocol) {
 		return Task{}, fmt.Errorf("provided protocol is not one of TCP, UDP, TCPUDP, ICMP, ANY")
