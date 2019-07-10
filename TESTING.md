@@ -73,11 +73,14 @@ $ go test -v .
            * catalog:    Runs catalog related tests (also catalog_item, media)
            * disk:       Runs disk related tests
            * extnetwork: Runs external network related tests
-           * network:    Runs network and edge gateway related tests
+           * lb:       	 Runs load balancer related tests
+           * network:    Runs network related tests
+           * gateway:    Runs edge gateway related tests
            * org:        Runs org related tests
            * query:      Runs query related tests
            * system:     Runs system related tests
            * task:       Runs task related tests
+           * user:       Runs user related tests
            * vapp:       Runs vapp related tests
            * vdc:        Runs vdc related tests
            * vm:         Runs vm related tests
