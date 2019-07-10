@@ -307,6 +307,8 @@ func (vcd *TestVCD) Test_AddSNATRule(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(externalNetwork.ExternalNetwork.Name, Equals, vcd.config.VCD.ExternalNetwork)
 
+	beforeChangeNatRulesNumber := len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule)
+
 	natRules, err := edge.AddSNATRule(orgVdcNetwork.OrgVDCNetwork.HREF, vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp, description1)
 	check.Assert(err, IsNil)
 
@@ -324,10 +326,16 @@ func (vcd *TestVCD) Test_AddSNATRule(check *C) {
 	check.Assert(rule.GatewayNatRule.OriginalIP, Equals, vcd.config.VCD.ExternalIp)
 	check.Assert(rule.Description, Equals, description1)
 
-	task, err := edge.RemoveNATMapping("SNAT", vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp, "77")
+	task, err := edge.RemoveNATMappingRule(orgVdcNetwork.OrgVDCNetwork.HREF, "SNAT", vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp, "")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
+
+	// verify delete
+	err = edge.Refresh()
+	check.Assert(err, IsNil)
+
+	check.Assert(len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule), Equals, beforeChangeNatRulesNumber)
 
 	// check with external network
 	natRules, err = edge.AddSNATRule(externalNetwork.ExternalNetwork.HREF, vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp, description2)
@@ -346,10 +354,20 @@ func (vcd *TestVCD) Test_AddSNATRule(check *C) {
 	check.Assert(rule.GatewayNatRule.OriginalIP, Equals, vcd.config.VCD.InternalIp)
 	check.Assert(rule.Description, Equals, description2)
 
-	task, err = edge.RemoveNATMapping("SNAT", vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp, "77")
+	task, err = edge.RemoveNATMappingRule(externalNetwork.ExternalNetwork.HREF, "SNAT", vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp, "")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
+
+	err = edge.Refresh()
+	check.Assert(err, IsNil)
+
+	// verify delete
+	err = edge.Refresh()
+	check.Assert(err, IsNil)
+
+	check.Assert(len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule), Equals, beforeChangeNatRulesNumber)
+
 }
 
 func (vcd *TestVCD) Test_AddDNATRule(check *C) {
@@ -378,6 +396,8 @@ func (vcd *TestVCD) Test_AddDNATRule(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(externalNetwork.ExternalNetwork.Name, Equals, vcd.config.VCD.ExternalNetwork)
 
+	beforeChangeNatRulesNumber := len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule)
+
 	description1 := "my Dnat Description 1"
 	description2 := "my Dnatt Description 2"
 
@@ -401,10 +421,16 @@ func (vcd *TestVCD) Test_AddDNATRule(check *C) {
 	check.Assert(rule.GatewayNatRule.Protocol, Equals, "tcp")
 	check.Assert(rule.GatewayNatRule.IcmpSubType, Equals, "")
 
-	task, err := edge.RemoveNATPortMapping("DNAT", vcd.config.VCD.ExternalIp, "1177", vcd.config.VCD.InternalIp, "77")
+	task, err := edge.RemoveNATPortRule(orgVdcNetwork.OrgVDCNetwork.HREF, "DNAT", vcd.config.VCD.ExternalIp, "1177", vcd.config.VCD.InternalIp, "77")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
+
+	// verify delete
+	err = edge.Refresh()
+	check.Assert(err, IsNil)
+
+	check.Assert(len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule), Equals, beforeChangeNatRulesNumber)
 
 	// check with external network
 	natRules, err = edge.AddDNATRule(externalNetwork.ExternalNetwork.HREF, vcd.config.VCD.ExternalIp, "1188", vcd.config.VCD.InternalIp, "88", "TCP", "", description2)
@@ -426,8 +452,14 @@ func (vcd *TestVCD) Test_AddDNATRule(check *C) {
 	check.Assert(rule.GatewayNatRule.Protocol, Equals, "tcp")
 	check.Assert(rule.GatewayNatRule.IcmpSubType, Equals, "")
 
-	task, err = edge.RemoveNATPortMapping("DNAT", vcd.config.VCD.ExternalIp, "1188", vcd.config.VCD.InternalIp, "88")
+	task, err = edge.RemoveNATPortRule(externalNetwork.ExternalNetwork.HREF, "DNAT", vcd.config.VCD.ExternalIp, "1188", vcd.config.VCD.InternalIp, "88")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
+
+	// verify delete
+	err = edge.Refresh()
+	check.Assert(err, IsNil)
+
+	check.Assert(len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule), Equals, beforeChangeNatRulesNumber)
 }
