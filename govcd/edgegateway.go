@@ -145,12 +145,14 @@ func (eGW *EdgeGateway) AddDhcpPool(network *types.OrgVDCNetwork, dhcppool []int
 
 }
 
-// Temporary fix for existing Remove functions - until ID support
+// Temporary fix for existing Remove functions as it doesn't support network interfaces
+// TODO: remove this function when ruleId is available
 func (eGW *EdgeGateway) RemoveNATMappingRule(networkHref, natType, externalIP, internalIP, port string) (Task, error) {
 	return eGW.RemoveNATPortRule(networkHref, natType, externalIP, port, internalIP, port)
 }
 
-// Temporary fix for existing Remove functions - until ID support
+// Temporary fix for existing Remove functions as it doesn't support network interfaces
+// TODO: remove this function when ruleId is available
 func (eGW *EdgeGateway) RemoveNATPortRule(networkHref, natType, externalIP, externalPort, internalIP, internalPort string) (Task, error) {
 	newEdgeConfig := eGW.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration
 
@@ -198,6 +200,8 @@ func (eGW *EdgeGateway) RemoveNATPortRule(networkHref, natType, externalIP, exte
 
 }
 
+// Temporary fix to support parsing network Id from HREF
+// TODO: remove this function when ruleId is available
 func extractObjectIDfromPath(locationPath string) (string, error) {
 	if locationPath == "" {
 		return "", fmt.Errorf("unable to get ID from empty path")
