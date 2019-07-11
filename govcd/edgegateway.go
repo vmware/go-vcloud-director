@@ -272,7 +272,9 @@ func (eGW *EdgeGateway) RemoveNATPortMapping(natType, externalIP, externalPort, 
 
 }
 
-// AddDNATRule creates firewall DNAT rule and return refreshed existing NAT rules array or error
+// AddDNATRule creates DNAT rule and return refreshed existing NAT rules array or error
+// Allows to assign specific network Org VDC or external. Old function AddNATPortMapping and
+// AddNATMapping assigns rule to first external network
 func (eGW *EdgeGateway) AddDNATRule(ruleDetails NatRule) ([]*types.NatRule, error) {
 
 	ruleDetails.natType = "DNAT"
@@ -294,6 +296,8 @@ func (eGW *EdgeGateway) AddDNATRule(ruleDetails NatRule) ([]*types.NatRule, erro
 }
 
 // AddSNATRule creates SNAT rule and returns refreshed existing NAT rules array or error
+// Allows to assign specific network Org VDC or external. Old function AddNATPortMapping and
+// AddNATMapping assigns rule to first external network
 func (eGW *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, description string) ([]*types.NatRule, error) {
 
 	task, err := eGW.AddNATRuleAsync(NatRule{networkHref: networkHref, natType: "SNAT", externalIP: externalIP,
@@ -316,6 +320,8 @@ func (eGW *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, descrip
 }
 
 // AddNATRuleAsync creates NAT rule and return task or err
+// Allows to assign specific network Org VDC or external. Old function AddNATPortMapping and
+// AddNATMapping assigns rule to first external network
 func (eGW *EdgeGateway) AddNATRuleAsync(ruleDetails NatRule) (Task, error) {
 	if !isValidProtocol(ruleDetails.protocol) {
 		return Task{}, fmt.Errorf("provided protocol is not one of TCP, UDP, TCPUDP, ICMP, ANY")
