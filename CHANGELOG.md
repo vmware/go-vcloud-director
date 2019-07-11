@@ -8,6 +8,7 @@
 * Added functions for refreshing, getting and update Org VDC [#206](https://github.com/vmware/go-vcloud-director/pull/206)
 * Added VDC meta data create/get/delete functions [#203](https://github.com/vmware/go-vcloud-director/pull/203)
 * Added org user create/delete/update functions [#18](https://github.com/vmware/go-vcloud-director/issues/18)
+* Added edge gateway SNAT/DNAT rule functions which support org VDC network and external network [#225](https://github.com/terraform-providers/terraform-provider-vcd/issues/225)
 
 ## 2.2.0 (May 15, 2019)
 
