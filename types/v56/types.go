@@ -1728,44 +1728,23 @@ type LBAppProfileHTTPRedirect struct {
 	To      string   `xml:"to,omitempty"`
 }
 
-// LoadBalancerVirtualServer represents a load balancer virtual server.
-// Type: LoadBalancerVirtualServerType
-// Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents a load balancer virtual server.
-// Since: 5.1
-type LoadBalancerVirtualServer struct {
-	IsEnabled             bool                           `xml:"IsEnabled,omitempty"`             // True if this virtual server is enabled.
-	Name                  string                         `xml:"Name"`                            // Load balancer virtual server name.
-	Description           string                         `xml:"Description,omitempty"`           // Load balancer virtual server description.
-	Interface             *Reference                     `xml:"Interface"`                       // Gateway Interface to which Load Balancer Virtual Server is bound.
-	IPAddress             string                         `xml:"IpAddress"`                       // Load balancer virtual server Ip Address.
-	ServiceProfile        *LBVirtualServerServiceProfile `xml:"ServiceProfile"`                  // Load balancer virtual server service profiles.
-	Logging               bool                           `xml:"Logging,omitempty"`               // Enable logging for this virtual server.
-	Pool                  string                         `xml:"Pool"`                            // Name of Load balancer pool associated with this virtual server.
-	LoadBalancerTemplates *VendorTemplate                `xml:"LoadBalancerTemplates,omitempty"` // Service template related attributes.
-}
-
-// LBVirtualServerServiceProfile represents service profile for a load balancing virtual server.
-// Type: LBVirtualServerServiceProfileType
-// Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents service profile for a load balancing virtual server.
-// Since: 5.1
-type LBVirtualServerServiceProfile struct {
-	IsEnabled   bool           `xml:"IsEnabled,omitempty"`   // True if this service profile is enabled.
-	Protocol    string         `xml:"Protocol"`              // Load balancer Protocol type. One of: HTTP, HTTPS, TCP.
-	Port        string         `xml:"Port"`                  // Port for this service profile.
-	Persistence *LBPersistence `xml:"Persistence,omitempty"` // Persistence type for service profile.
-}
-
-// LBPersistence represents persistence type for a load balancer service profile.
-// Type: LBPersistenceType
-// Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents persistence type for a load balancer service profile.
-// Since: 5.1
-type LBPersistence struct {
-	Method     string `xml:"Method"`               // Persistence method. One of: COOKIE, SSL_SESSION_ID.
-	CookieName string `xml:"CookieName,omitempty"` // Cookie name when persistence method is COOKIE.
-	CookieMode string `xml:"CookieMode,omitempty"` // Cookie Mode. One of: INSERT, PREFIX, APP.
+// LBVirtualServer represents a load balancer virtual serveras per "vCloud Director API for NSX
+// Programming Guide"
+// https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
+type LBVirtualServer struct {
+	XMLName             xml.Name `xml:"virtualServer"`
+	ID                  string   `xml:"applicationProfileId,omitempty"`
+	Name                string   `xml:"name,omitempty"`
+	Description         string   `xml:"description,omitempty"`
+	Enabled             bool     `xml:"enabled,omitempty"`
+	IpAddress           string   `xml:"ipAddress"`
+	Protocol            string   `xml:"protocol"`
+	Port                *int     `xml:"port"`
+	AccelerationEnabled bool     `xml:"accelerationEnabled,omitempty"`
+	ApplicationRuleID   string   `xml:"applicationRuleId,omitempty"`
+	ConnectionLimit     int      `xml:"connectionLimit,omitempty"`
+	ConnectionRateLimit int      `xml:"connectionRateLimit,omitempty"`
+	DefaultPoolId       string   `xml:"defaultPoolId,omitempty"`
 }
 
 // VendorTemplate is information about a vendor service template. This is optional.
