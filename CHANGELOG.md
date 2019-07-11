@@ -3,10 +3,11 @@
 * Added edge gateway create/delete functions [#130](https://github.com/vmware/go-vcloud-director/issues/130).
 * Added load balancer service monitor [#196](https://github.com/vmware/go-vcloud-director/pull/196)
 * Added load balancer server pool [#205](https://github.com/vmware/go-vcloud-director/pull/205)
+* Added load balancer application profile [#208](https://github.com/vmware/go-vcloud-director/pull/208)
+* Added load balancer application rule [#212](https://github.com/vmware/go-vcloud-director/pull/212)
 * Added functions for refreshing, getting and update Org VDC [#206](https://github.com/vmware/go-vcloud-director/pull/206)
 * Added VDC meta data create/get/delete functions [#203](https://github.com/vmware/go-vcloud-director/pull/203)
 * Added org user create/delete/update functions [#18](https://github.com/vmware/go-vcloud-director/issues/18)
-* Added load balancer application profile [#208](https://github.com/vmware/go-vcloud-director/pull/208)
 * Added edge gateway SNAT/DNAT rule functions which support org VDC network and external network [#225](https://github.com/terraform-providers/terraform-provider-vcd/issues/225)
 
 ## 2.2.0 (May 15, 2019)

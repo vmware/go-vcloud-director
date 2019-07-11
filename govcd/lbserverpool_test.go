@@ -120,4 +120,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	// Delete / cleanup
 	err = edge.DeleteLBServerPool(&types.LBPool{ID: createdLbPool.ID})
 	check.Assert(err, IsNil)
+
+	_, err = edge.ReadLBServerPoolByID(createdLbPool.ID)
+	check.Assert(IsNotFound(err), Equals, true)
 }
