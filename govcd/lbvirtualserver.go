@@ -33,15 +33,15 @@ func (eGW *EdgeGateway) CreateLBVirtualServer(lbVirtualServerConfig *types.LBVir
 
 	// Location header should look similar to:
 	// Location: [/network/edges/edge-3/loadbalancer/config/virtualservers/virtualServer-10]
-	lbPoolID, err := extractNSXObjectIDfromPath(resp.Header.Get("Location"))
+	lbVirtualServerId, err := extractNSXObjectIDfromPath(resp.Header.Get("Location"))
 	if err != nil {
 		return nil, err
 	}
 
-	readPool, err := eGW.ReadLBVirtualServerByID(lbPoolID)
+	readPool, err := eGW.ReadLBVirtualServerByID(lbVirtualServerId)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve load balancer virtual server with ID (%s) after creation: %s",
-			lbPoolID, err)
+			lbVirtualServerId, err)
 	}
 	return readPool, nil
 }
@@ -181,7 +181,7 @@ func validateCreateLBVirtualServer(lbVirtualServerConfig *types.LBVirtualServer)
 		return fmt.Errorf("load balancer virtual server Protocol cannot be empty")
 	}
 
-	if lbVirtualServerConfig.Port == nil {
+	if lbVirtualServerConfig.Port == 0 {
 		return fmt.Errorf("load balancer virtual server Port cannot be empty")
 	}
 

@@ -1,4 +1,4 @@
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lbAppProfile lbServerPool lbServiceMonitor user ALL
+// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user ALL
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -61,6 +61,7 @@ const (
 	TestLBServiceMonitor          = "TestLBServiceMonitor"
 	TestLBServerPool              = "TestLBServerPool"
 	TestLBAppProfile              = "TestLBAppProfile"
+	TestLBVirtualServer           = "TestLBVirtualServer"
 )
 
 const (
@@ -729,6 +730,29 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		err = edge.DeleteLBAppProfileByName(entity.Name)
+		if err != nil {
+			fmt.Println("err:", err)
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+
+	case "lbVirtualServer":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No parent specified '%s'\n", entity.Name)
+			return
+		}
+
+		orgName, vdcName, edgeName := splitParent(entity.Parent, "|")
+
+		_, _, edge, err := getOrgVdcEdgeByNames(vcd, orgName, vdcName, edgeName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		err = edge.DeleteLBVirtualServerByName(entity.Name)
 		if err != nil {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return

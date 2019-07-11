@@ -1732,19 +1732,20 @@ type LBAppProfileHTTPRedirect struct {
 // Programming Guide"
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 type LBVirtualServer struct {
-	XMLName             xml.Name `xml:"virtualServer"`
-	ID                  string   `xml:"applicationProfileId,omitempty"`
-	Name                string   `xml:"name,omitempty"`
-	Description         string   `xml:"description,omitempty"`
-	Enabled             bool     `xml:"enabled,omitempty"`
-	IpAddress           string   `xml:"ipAddress"`
-	Protocol            string   `xml:"protocol"`
-	Port                *int     `xml:"port"`
-	AccelerationEnabled bool     `xml:"accelerationEnabled,omitempty"`
-	ApplicationRuleID   string   `xml:"applicationRuleId,omitempty"`
-	ConnectionLimit     int      `xml:"connectionLimit,omitempty"`
-	ConnectionRateLimit int      `xml:"connectionRateLimit,omitempty"`
-	DefaultPoolId       string   `xml:"defaultPoolId,omitempty"`
+	XMLName              xml.Name `xml:"virtualServer"`
+	ID                   string   `xml:"virtualServerId,omitempty"`
+	Name                 string   `xml:"name,omitempty"`
+	Description          string   `xml:"description,omitempty"`
+	Enabled              bool     `xml:"enabled,omitempty"`
+	IpAddress            string   `xml:"ipAddress"`
+	Protocol             string   `xml:"protocol"`
+	Port                 int      `xml:"port"`
+	AccelerationEnabled  bool     `xml:"accelerationEnabled,omitempty"`
+	ConnectionLimit      int      `xml:"connectionLimit,omitempty"`
+	ConnectionRateLimit  int      `xml:"connectionRateLimit,omitempty"`
+	ApplicationRuleId    string   `xml:"applicationRuleId,omitempty"`
+	ApplicationProfileId string   `xml:"applicationProfileId,omitempty"`
+	DefaultPoolId        string   `xml:"defaultPoolId,omitempty"`
 }
 
 // VendorTemplate is information about a vendor service template. This is optional.
