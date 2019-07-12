@@ -12,11 +12,11 @@ import (
 )
 
 // Test_LBVirtualServer tests CRUD methods for load balancer virtual server.
-// It uses helper function buildTestLBVirtualServerPrereqs to create prerequisite components:
+// With help of function buildTestLBVirtualServerPrereqs such prerequisite components are created:
 // service monitor, server pool, application profile and application rule.
-// The following things are tested if prerequisite Edge Gateway exists:
+// The following things are tested if prerequisites are met:
 // Creation of load balancer virtual server
-// Read load balancer virtual server by both ID and Name (virtual server name must be unique in single edge gateway)
+// Read load balancer virtual server by both Id and Name (virtual server name must be unique in single edge gateway)
 // Update - change a single field and compare that configuration and result objects are deeply equal
 // Update - try and fail to update without mandatory field
 // Delete
@@ -36,7 +36,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 		check.Skip("Skipping test because the edge gateway does not have advanced networking enabled")
 	}
 
-	_, serverPoolId, appProfileId := buildTestLBVirtualServerPrereqs(check, vcd, edge)
+	_, serverPoolId, appProfileId, appRuleId := buildTestLBVirtualServerPrereqs(check, vcd, edge)
 
 	// Configure creation object including reference to service monitor
 	lbVirtualServerConfig := &types.LBVirtualServer{
@@ -49,12 +49,13 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 		ConnectionLimit:      5,
 		ConnectionRateLimit:  10,
 		ApplicationProfileId: appProfileId,
+		ApplicationRuleId:    appRuleId,
 		DefaultPoolId:        serverPoolId,
 	}
 
 	createdLbVirtualServer, err := edge.CreateLBVirtualServer(lbVirtualServerConfig)
 	check.Assert(err, IsNil)
-	check.Assert(createdLbVirtualServer.ID, Not(IsNil))
+	check.Assert(createdLbVirtualServer.Id, Not(IsNil))
 	check.Assert(createdLbVirtualServer.IpAddress, Equals, lbVirtualServerConfig.IpAddress)
 	check.Assert(createdLbVirtualServer.Protocol, Equals, lbVirtualServerConfig.Protocol)
 	check.Assert(createdLbVirtualServer.Port, Equals, lbVirtualServerConfig.Port)
@@ -62,7 +63,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	check.Assert(createdLbVirtualServer.ConnectionRateLimit, Equals, lbVirtualServerConfig.ConnectionRateLimit)
 	check.Assert(createdLbVirtualServer.Enabled, Equals, lbVirtualServerConfig.Enabled)
 	check.Assert(createdLbVirtualServer.AccelerationEnabled, Equals, lbVirtualServerConfig.AccelerationEnabled)
-	// check.Assert(createdLbVirtualServer.ApplicationRuleId, Equals, lbVirtualServerConfig.ApplicationRuleId)
+	check.Assert(createdLbVirtualServer.ApplicationRuleId, Equals, lbVirtualServerConfig.ApplicationRuleId)
 	check.Assert(createdLbVirtualServer.DefaultPoolId, Equals, lbVirtualServerConfig.DefaultPoolId)
 
 	// We created virtual server successfully therefore let's prepend it to cleanup list so that it
@@ -70,49 +71,51 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
 	PrependToCleanupList(TestLBVirtualServer, "lbVirtualServer", parentEntity, check.TestName())
 
-	// Lookup by both name and ID and compare that these are equal values
-	lbVirtualServerByID, err := edge.ReadLBVirtualServer(&types.LBVirtualServer{ID: createdLbVirtualServer.ID})
+	// Lookup by both name and Id and compare that these are equal values
+	lbVirtualServerById, err := edge.ReadLBVirtualServer(&types.LBVirtualServer{Id: createdLbVirtualServer.Id})
 	check.Assert(err, IsNil)
 
 	lbVirtualServerByName, err := edge.ReadLBVirtualServer(&types.LBVirtualServer{Name: createdLbVirtualServer.Name})
 	check.Assert(err, IsNil)
-	check.Assert(createdLbVirtualServer.ID, Equals, lbVirtualServerByName.ID)
-	check.Assert(lbVirtualServerByID.ID, Equals, lbVirtualServerByName.ID)
-	check.Assert(lbVirtualServerByID.Name, Equals, lbVirtualServerByName.Name)
+	check.Assert(createdLbVirtualServer.Id, Equals, lbVirtualServerByName.Id)
+	check.Assert(lbVirtualServerById.Id, Equals, lbVirtualServerByName.Id)
+	check.Assert(lbVirtualServerById.Name, Equals, lbVirtualServerByName.Name)
 
 	// Test updating fields
 	// Update algorithm
-	lbVirtualServerByID.Port = 8889
-	updatedLBPool, err := edge.UpdateLBVirtualServer(lbVirtualServerByID)
+	lbVirtualServerById.Port = 8889
+	updatedLBPool, err := edge.UpdateLBVirtualServer(lbVirtualServerById)
 	check.Assert(err, IsNil)
-	check.Assert(updatedLBPool.Port, Equals, lbVirtualServerByID.Port)
+	check.Assert(updatedLBPool.Port, Equals, lbVirtualServerById.Port)
 
 	// Verify that updated pool and it's configuration are identical
-	check.Assert(updatedLBPool, DeepEquals, lbVirtualServerByID)
+	check.Assert(updatedLBPool, DeepEquals, lbVirtualServerById)
 
 	// Try to set invalid protocol and expect API to return error:
 	// vShield Edge [LoadBalancer] Invalid protocol invalid_protocol. Valid protocols are: HTTP|HTTPS|TCP|UDP. (API error: 14542)
-	lbVirtualServerByID.Protocol = "invalid_protocol"
-	updatedLBPool, err = edge.UpdateLBVirtualServer(lbVirtualServerByID)
+	lbVirtualServerById.Protocol = "invalid_protocol"
+	updatedLBPool, err = edge.UpdateLBVirtualServer(lbVirtualServerById)
 	check.Assert(err, ErrorMatches, ".*Invalid protocol.*Valid protocols are:.*")
 
 	// Update should fail without name
-	lbVirtualServerByID.Name = ""
-	_, err = edge.UpdateLBVirtualServer(lbVirtualServerByID)
+	lbVirtualServerById.Name = ""
+	_, err = edge.UpdateLBVirtualServer(lbVirtualServerById)
 	check.Assert(err.Error(), Equals, "load balancer virtual server Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLBVirtualServer(&types.LBVirtualServer{ID: createdLbVirtualServer.ID})
+	err = edge.DeleteLBVirtualServer(&types.LBVirtualServer{Id: createdLbVirtualServer.Id})
 	check.Assert(err, IsNil)
 
 	// Ensure it is deleted
-	_, err = edge.ReadLBVirtualServerByID(createdLbVirtualServer.ID)
+	_, err = edge.ReadLBVirtualServerById(createdLbVirtualServer.Id)
 	check.Assert(IsNotFound(err), Equals, true)
 }
 
-// TODO create application rule once it is merged
-func buildTestLBVirtualServerPrereqs(check *C, vcd *TestVCD, edge EdgeGateway) (serviceMonitorId, serverPoolId, appProfileId string) {
-	// Establish prerequisite - service monitor
+// buildTestLBVirtualServerPrereqs creates all load balancer components which are consumed by
+// load balanver virtual server and ads them to cleanup in correct order to avoid deletion of used
+// resources
+func buildTestLBVirtualServerPrereqs(check *C, vcd *TestVCD, edge EdgeGateway) (serviceMonitorId, serverPoolId, appProfileId, appRuleId string) {
+	// Create prerequisites - service monitor
 	lbMon := &types.LBMonitor{
 		Name:       TestLBVirtualServer,
 		Interval:   10,
@@ -123,6 +126,7 @@ func buildTestLBVirtualServerPrereqs(check *C, vcd *TestVCD, edge EdgeGateway) (
 	lbMonitor, err := edge.CreateLBServiceMonitor(lbMon)
 	check.Assert(err, IsNil)
 
+	// Create prerequisites - server pool
 	lbPoolConfig := &types.LBPool{
 		Name:      TestLBVirtualServer,
 		Algorithm: "round-robin",
@@ -147,7 +151,8 @@ func buildTestLBVirtualServerPrereqs(check *C, vcd *TestVCD, edge EdgeGateway) (
 
 	lbPool, err := edge.CreateLBServerPool(lbPoolConfig)
 	check.Assert(err, IsNil)
-	// Used for creating
+
+	// Create prerequisites - application profile
 	lbAppProfileConfig := &types.LBAppProfile{
 		Name: TestLBVirtualServer,
 		Persistence: &types.LBAppProfilePersistence{
@@ -159,12 +164,21 @@ func buildTestLBVirtualServerPrereqs(check *C, vcd *TestVCD, edge EdgeGateway) (
 
 	lbAppProfile, err := edge.CreateLBAppProfile(lbAppProfileConfig)
 	check.Assert(err, IsNil)
-	// ToDo Add application rule once it is in master
+
+	lbAppRuleConfig := &types.LBAppRule{
+		Name:   TestLBVirtualServer,
+		Script: "acl vmware_page url_beg / vmware redirect location https://www.vmware.com/ ifvmware_page",
+	}
+
+	// Create prerequisites - application rule
+	lbAppRule, err := edge.CreateLBAppRule(lbAppRuleConfig)
+	check.Assert(err, IsNil)
 
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
 	AddToCleanupList(TestLBVirtualServer, "lbServerPool", parentEntity, check.TestName())
 	AddToCleanupList(TestLBVirtualServer, "lbServiceMonitor", parentEntity, check.TestName())
 	AddToCleanupList(TestLBVirtualServer, "lbAppProfile", parentEntity, check.TestName())
+	AddToCleanupList(TestLBVirtualServer, "lbAppRule", parentEntity, check.TestName())
 
-	return lbMonitor.ID, lbPool.ID, lbAppProfile.ID
+	return lbMonitor.ID, lbPool.ID, lbAppProfile.ID, lbAppRule.ID
 }

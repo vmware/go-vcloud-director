@@ -8,7 +8,7 @@ package govcd
 
 import "testing"
 
-func Test_extractNSXObjectIDfromPath(t *testing.T) {
+func Test_extractNSXObjectIDFromPath(t *testing.T) {
 	type args struct {
 		header string
 	}
@@ -51,13 +51,13 @@ func Test_extractNSXObjectIDfromPath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := extractNSXObjectIDfromPath(tt.args.header)
+			got, err := extractNSXObjectIDFromPath(tt.args.header)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("extractNSXObjectIDfromPath() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("extractNSXObjectIDFromPath() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("extractNSXObjectIDfromPath() = %v, want %v", got, tt.want)
+				t.Errorf("extractNSXObjectIDFromPath() = %v, want %v", got, tt.want)
 			}
 		})
 	}
