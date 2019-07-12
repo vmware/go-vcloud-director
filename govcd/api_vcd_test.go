@@ -732,7 +732,6 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 
 		err = edge.DeleteLBAppProfileByName(entity.Name)
 		if err != nil {
-			fmt.Println("err:", err)
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
