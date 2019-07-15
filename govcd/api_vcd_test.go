@@ -63,6 +63,7 @@ const (
 	TestLBAppProfile              = "TestLBAppProfile"
 	TestLBAppRule                 = "TestLBAppRule"
 	TestLBVirtualServer           = "TestLBVirtualServer"
+	TestLB           = "TestLB"
 )
 
 const (
@@ -129,8 +130,9 @@ type TestConfig struct {
 		OVAChunkedPath string `yaml:"ovaChunkedPath,omitempty"`
 	} `yaml:"ova"`
 	Media struct {
-		MediaPath string `yaml:"mediaPath,omitempty"`
-		Media     string `yaml:"mediaName,omitempty"`
+		MediaPath       string `yaml:"mediaPath,omitempty"`
+		Media           string `yaml:"mediaName,omitempty"`
+		PhotonOsOvaPath string `yaml:"photonOsOvaPath,omitempty"`
 	} `yaml:"media"`
 }
 
