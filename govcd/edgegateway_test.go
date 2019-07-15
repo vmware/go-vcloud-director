@@ -8,6 +8,7 @@ package govcd
 
 import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"strings"
 
 	. "gopkg.in/check.v1"
 )
@@ -309,26 +310,16 @@ func (vcd *TestVCD) Test_AddSNATRule(check *C) {
 
 	beforeChangeNatRulesNumber := len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule)
 
-	natRules, err := edge.AddSNATRule(orgVdcNetwork.OrgVDCNetwork.HREF, vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp, description1)
+	natRule, err := edge.AddSNATRule(orgVdcNetwork.OrgVDCNetwork.HREF, vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp, description1)
 	check.Assert(err, IsNil)
 
-	found := false
-	var rule *types.NatRule
-	for _, r := range natRules {
-		if r.RuleType == "SNAT" && r.GatewayNatRule.Interface.Name == orgVdcNetwork.OrgVDCNetwork.Name {
-			found = true
-			rule = r
-		}
-	}
+	check.Assert(natRule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.InternalIp)
+	check.Assert(natRule.GatewayNatRule.OriginalIP, Equals, vcd.config.VCD.ExternalIp)
+	check.Assert(natRule.Description, Equals, description1)
+	check.Assert(natRule.RuleType, Equals, "SNAT")
+	check.Assert(strings.Split(natRule.GatewayNatRule.Interface.HREF, "network/")[1], Equals, strings.Split(orgVdcNetwork.OrgVDCNetwork.HREF, "network/")[1])
 
-	check.Assert(found, Equals, true)
-	check.Assert(rule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.InternalIp)
-	check.Assert(rule.GatewayNatRule.OriginalIP, Equals, vcd.config.VCD.ExternalIp)
-	check.Assert(rule.Description, Equals, description1)
-
-	task, err := edge.RemoveNATMappingRule(orgVdcNetwork.OrgVDCNetwork.HREF, "SNAT", vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp, "")
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = edge.RemoveNATRule(natRule.ID)
 	check.Assert(err, IsNil)
 
 	// verify delete
@@ -338,28 +329,16 @@ func (vcd *TestVCD) Test_AddSNATRule(check *C) {
 	check.Assert(len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule), Equals, beforeChangeNatRulesNumber)
 
 	// check with external network
-	natRules, err = edge.AddSNATRule(externalNetwork.ExternalNetwork.HREF, vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp, description2)
+	natRule, err = edge.AddSNATRule(externalNetwork.ExternalNetwork.HREF, vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp, description2)
 	check.Assert(err, IsNil)
 
-	found = false
-	for _, r := range natRules {
-		if r.RuleType == "SNAT" && r.GatewayNatRule.Interface.Name == externalNetwork.ExternalNetwork.Name {
-			found = true
-			rule = r
-		}
-	}
+	check.Assert(natRule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.ExternalIp)
+	check.Assert(natRule.GatewayNatRule.OriginalIP, Equals, vcd.config.VCD.InternalIp)
+	check.Assert(natRule.Description, Equals, description2)
+	check.Assert(natRule.RuleType, Equals, "SNAT")
+	check.Assert(strings.Split(natRule.GatewayNatRule.Interface.HREF, "network/")[1], Equals, strings.Split(externalNetwork.ExternalNetwork.HREF, "externalnet/")[1])
 
-	check.Assert(found, Equals, true)
-	check.Assert(rule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.ExternalIp)
-	check.Assert(rule.GatewayNatRule.OriginalIP, Equals, vcd.config.VCD.InternalIp)
-	check.Assert(rule.Description, Equals, description2)
-
-	task, err = edge.RemoveNATMappingRule(externalNetwork.ExternalNetwork.HREF, "SNAT", vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp, "")
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	err = edge.Refresh()
+	err = edge.RemoveNATRule(natRule.ID)
 	check.Assert(err, IsNil)
 
 	// verify delete
@@ -401,30 +380,21 @@ func (vcd *TestVCD) Test_AddDNATRule(check *C) {
 	description1 := "my Dnat Description 1"
 	description2 := "my Dnatt Description 2"
 
-	natRules, err := edge.AddDNATRule(NatRule{networkHref: orgVdcNetwork.OrgVDCNetwork.HREF, externalIP: vcd.config.VCD.ExternalIp,
-		externalPort: "1177", internalIP: vcd.config.VCD.InternalIp, internalPort: "77", protocol: "TCP", description: description1})
+	natRule, err := edge.AddDNATRule(NatRule{NetworkHref: orgVdcNetwork.OrgVDCNetwork.HREF, ExternalIP: vcd.config.VCD.ExternalIp,
+		ExternalPort: "1177", InternalIP: vcd.config.VCD.InternalIp, InternalPort: "77", Protocol: "TCP", Description: description1})
 	check.Assert(err, IsNil)
 
-	found := false
-	var rule *types.NatRule
-	for _, r := range natRules {
-		if r.RuleType == "DNAT" && r.GatewayNatRule.Interface.Name == orgVdcNetwork.OrgVDCNetwork.Name {
-			found = true
-			rule = r
-		}
-	}
+	check.Assert(natRule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.InternalIp)
+	check.Assert(natRule.GatewayNatRule.TranslatedPort, Equals, "77")
+	check.Assert(natRule.GatewayNatRule.OriginalIP, Equals, vcd.config.VCD.ExternalIp)
+	check.Assert(natRule.GatewayNatRule.OriginalPort, Equals, "1177")
+	check.Assert(natRule.GatewayNatRule.Protocol, Equals, "tcp")
+	check.Assert(natRule.GatewayNatRule.IcmpSubType, Equals, "")
+	check.Assert(natRule.Description, Equals, description1)
+	check.Assert(natRule.RuleType, Equals, "DNAT")
+	check.Assert(strings.Split(natRule.GatewayNatRule.Interface.HREF, "network/")[1], Equals, strings.Split(orgVdcNetwork.OrgVDCNetwork.HREF, "network/")[1])
 
-	check.Assert(found, Equals, true)
-	check.Assert(rule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.InternalIp)
-	check.Assert(rule.GatewayNatRule.TranslatedPort, Equals, "77")
-	check.Assert(rule.GatewayNatRule.OriginalIP, Equals, vcd.config.VCD.ExternalIp)
-	check.Assert(rule.GatewayNatRule.OriginalPort, Equals, "1177")
-	check.Assert(rule.GatewayNatRule.Protocol, Equals, "tcp")
-	check.Assert(rule.GatewayNatRule.IcmpSubType, Equals, "")
-
-	task, err := edge.RemoveNATPortRule(orgVdcNetwork.OrgVDCNetwork.HREF, "DNAT", vcd.config.VCD.ExternalIp, "1177", vcd.config.VCD.InternalIp, "77")
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = edge.RemoveNATRule(natRule.ID)
 	check.Assert(err, IsNil)
 
 	// verify delete
@@ -434,29 +404,22 @@ func (vcd *TestVCD) Test_AddDNATRule(check *C) {
 	check.Assert(len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule), Equals, beforeChangeNatRulesNumber)
 
 	// check with external network
-	natRules, err = edge.AddDNATRule(NatRule{networkHref: externalNetwork.ExternalNetwork.HREF, externalIP: vcd.config.VCD.ExternalIp,
-		externalPort: "1188", internalIP: vcd.config.VCD.InternalIp, internalPort: "88", protocol: "TCP", description: description2})
+	natRule, err = edge.AddDNATRule(NatRule{NetworkHref: externalNetwork.ExternalNetwork.HREF, ExternalIP: vcd.config.VCD.ExternalIp,
+		ExternalPort: "1188", InternalIP: vcd.config.VCD.InternalIp, InternalPort: "88", Protocol: "TCP", Description: description2})
 	check.Assert(err, IsNil)
 
-	found = false
-	for _, r := range natRules {
-		if r.RuleType == "DNAT" && r.GatewayNatRule.Interface.Name == externalNetwork.ExternalNetwork.Name {
-			found = true
-			rule = r
-		}
-	}
+	check.Assert(natRule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.InternalIp)
+	check.Assert(natRule.GatewayNatRule.TranslatedPort, Equals, "88")
+	check.Assert(natRule.GatewayNatRule.OriginalIP, Equals, vcd.config.VCD.ExternalIp)
+	check.Assert(natRule.GatewayNatRule.OriginalPort, Equals, "1188")
+	check.Assert(natRule.GatewayNatRule.Protocol, Equals, "tcp")
+	check.Assert(natRule.GatewayNatRule.IcmpSubType, Equals, "")
+	check.Assert(natRule.Description, Equals, description2)
+	check.Assert(natRule.RuleType, Equals, "DNAT")
+	//check.Assert(natRule.GatewayNatRule.Interface.HREF, Equals, externalNetwork.ExternalNetwork.HREF)
+	check.Assert(strings.Split(natRule.GatewayNatRule.Interface.HREF, "network/")[1], Equals, strings.Split(externalNetwork.ExternalNetwork.HREF, "externalnet/")[1])
 
-	check.Assert(found, Equals, true)
-	check.Assert(rule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.InternalIp)
-	check.Assert(rule.GatewayNatRule.TranslatedPort, Equals, "88")
-	check.Assert(rule.GatewayNatRule.OriginalIP, Equals, vcd.config.VCD.ExternalIp)
-	check.Assert(rule.GatewayNatRule.OriginalPort, Equals, "1188")
-	check.Assert(rule.GatewayNatRule.Protocol, Equals, "tcp")
-	check.Assert(rule.GatewayNatRule.IcmpSubType, Equals, "")
-
-	task, err = edge.RemoveNATPortRule(externalNetwork.ExternalNetwork.HREF, "DNAT", vcd.config.VCD.ExternalIp, "1188", vcd.config.VCD.InternalIp, "88")
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = edge.RemoveNATRule(natRule.ID)
 	check.Assert(err, IsNil)
 
 	// verify delete
