@@ -262,6 +262,8 @@ func (eGW *EdgeGateway) RemoveNATRuleAsync(id string) (Task, error) {
 
 // AddDNATRule creates DNAT rule and return created NAT struct or error.
 // Allows to assign specific Org VDC or external network.
+// When edge gtw is advanced vCD API uses element <tag> to map with NSX edge gtw ID. Currently existing issue,
+// that changed rule using UI resets <tag> as so mapping and as result fetched NatRule.ID won't be valid anymore.
 // Old functions AddNATPortMapping and AddNATMapping assigns rule only to first external network
 func (eGW *EdgeGateway) AddDNATRule(ruleDetails NatRule) (*types.NatRule, error) {
 	mappingId := getPseudoUuid()
