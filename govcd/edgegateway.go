@@ -307,6 +307,12 @@ func (eGW *EdgeGateway) AddDNATRule(ruleDetails NatRule) (*types.NatRule, error)
 // Allows to assign specific Org VDC or external network.
 // Old function AddNATPortMapping and AddNATMapping assigns rule to only first external network
 func (eGW *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, description string) (*types.NatRule, error) {
+
+	// As vCD API don't return rule API we fetch it manually:
+	//  * create rule with description which value is our generated Id
+	//  * find rule which has description with our generated Id
+	//  * update description with real value and return nat rule
+
 	mappingId := getPseudoUuid()
 
 	task, err := eGW.AddNATRuleAsync(NatRule{NetworkHref: networkHref, natType: "SNAT", ExternalIP: externalIP,
