@@ -200,8 +200,9 @@ func (eGW *EdgeGateway) RemoveNATPortMapping(natType, externalIP, externalPort, 
 
 }
 
-// RemoveNATRule removes NAT rule and handles task. Return errors when issue risen.
-// Old functions RemoveNATPortMapping and RemoveNATMapping removes using rule details and expects interface is external network.
+// RemoveNATRule removes NAT removes NAT rule identified by ID and handles task. Returns error if issues rise.
+// Old functions RemoveNATPortMapping and RemoveNATMapping removed using rule details
+// and expected interface to be of external network type.
 func (eGW *EdgeGateway) RemoveNATRule(id string) error {
 	task, err := eGW.RemoveNATRuleAsync(id)
 	if err != nil {
@@ -216,8 +217,8 @@ func (eGW *EdgeGateway) RemoveNATRule(id string) error {
 }
 
 // RemoveNATRuleAsync removes NAT rule and return  or error.
-// Old functions RemoveNATPortMapping and RemoveNATMapping
-// removes using rule details and expects interface is external network.
+// Old functions RemoveNATPortMapping and RemoveNATMapping removed using rule details
+// and expected interface to be of external network type.
 func (eGW *EdgeGateway) RemoveNATRuleAsync(id string) (Task, error) {
 	if "" == id {
 		return Task{}, fmt.Errorf("provided id is empty")
@@ -267,8 +268,9 @@ func (eGW *EdgeGateway) RemoveNATRuleAsync(id string) (Task, error) {
 // AddDNATRule creates DNAT rule and return created NAT struct or error.
 // Allows to assign specific Org VDC or external network.
 // When edge gateway is advanced vCD API uses element <tag> to map with NSX edge gateway ID. Currently existing issue,
-// that changed rule using UI resets <tag> as so mapping and as result fetched NatRule.ID won't be valid anymore.
-// Old functions AddNATPortMapping and AddNATMapping assigns rule only to first external network
+// that updating rule using User interface resets <tag> and as result mapping is lost.
+// Fetching using NatRule.ID won't be valid anymore.
+// Old functions AddNATPortMapping and AddNATMapping assigned rule only to first external network
 func (eGW *EdgeGateway) AddDNATRule(ruleDetails NatRule) (*types.NatRule, error) {
 	mappingId, err := getPseudoUuid()
 	if err != nil {
@@ -312,12 +314,13 @@ func (eGW *EdgeGateway) AddDNATRule(ruleDetails NatRule) (*types.NatRule, error)
 
 // AddSNATRule creates SNAT rule and returns created NAT rule or error.
 // Allows to assign specific Org VDC or external network.
-// Old function AddNATPortMapping and AddNATMapping assigns rule to only first external network
+// Old functions AddNATPortMapping and AddNATMapping aren't correct as assigned rule only to first external network
 func (eGW *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, description string) (*types.NatRule, error) {
 
-	// As vCD API don't return rule API we fetch it manually:
+	// As vCD API doesn't return rule ID we fetch it manually:
 	//  * create rule with description which value is our generated Id
 	//  * find rule which has description with our generated Id
+	//  * read the real (vCD's) rule Id
 	//  * update description with real value and return nat rule
 
 	mappingId, err := getPseudoUuid()
@@ -447,7 +450,7 @@ func (eGW *EdgeGateway) FetchNatRule(id string) (*types.NatRule, error) {
 
 // AddNATRuleAsync creates NAT rule and return task or err
 // Allows to assign specific network Org VDC or external. Old function AddNATPortMapping and
-// AddNATMapping assigns rule to first external network
+// AddNATMapping function shouldn't be used cause assigns rule to first external network
 func (eGW *EdgeGateway) AddNATRuleAsync(ruleDetails NatRule) (Task, error) {
 	if !isValidProtocol(ruleDetails.Protocol) {
 		return Task{}, fmt.Errorf("provided protocol is not one of TCP, UDP, TCPUDP, ICMP, ANY")
