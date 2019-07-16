@@ -67,7 +67,7 @@ func (vcd *TestVCD) Test_NATMapping(check *C) {
 	check.Assert(rule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.InternalIp)
 	check.Assert(rule.GatewayNatRule.OriginalIP, Equals, vcd.config.VCD.ExternalIp)
 
-	task, err = edge.RemoveNATMapping("DNAT", vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp, "77")
+	task, err = edge.Remove1to1Mapping(vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
@@ -93,7 +93,7 @@ func (vcd *TestVCD) Test_NATPortMapping(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
-	task, err := edge.AddNATPortMappingWithUplink(orgVdcNetwork.OrgVDCNetwork, "DNAT", vcd.config.VCD.ExternalIp, "1177", vcd.config.VCD.InternalIp, "77", "TCP", "")
+	task, err := edge.AddNATPortMappingWithUplink(orgVdcNetwork.OrgVDCNetwork, "DNAT", vcd.config.VCD.ExternalIp, "any", vcd.config.VCD.InternalIp, "any", "any", "")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
@@ -117,7 +117,7 @@ func (vcd *TestVCD) Test_NATPortMapping(check *C) {
 	check.Assert(rule.GatewayNatRule.Protocol, Equals, "tcp")
 	check.Assert(rule.GatewayNatRule.IcmpSubType, Equals, "")
 
-	task, err = edge.RemoveNATPortMapping("DNAT", vcd.config.VCD.ExternalIp, "1177", vcd.config.VCD.InternalIp, "77")
+	task, err = edge.Remove1to1Mapping(vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
@@ -416,7 +416,6 @@ func (vcd *TestVCD) Test_AddDNATRule(check *C) {
 	check.Assert(natRule.GatewayNatRule.IcmpSubType, Equals, "")
 	check.Assert(natRule.Description, Equals, description2)
 	check.Assert(natRule.RuleType, Equals, "DNAT")
-	//check.Assert(natRule.GatewayNatRule.Interface.HREF, Equals, externalNetwork.ExternalNetwork.HREF)
 	check.Assert(strings.Split(natRule.GatewayNatRule.Interface.HREF, "network/")[1], Equals, strings.Split(externalNetwork.ExternalNetwork.HREF, "externalnet/")[1])
 
 	err = edge.RemoveNATRule(natRule.ID)

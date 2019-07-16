@@ -205,7 +205,7 @@ func (eGW *EdgeGateway) RemoveNATPortMapping(natType, externalIP, externalPort, 
 func (eGW *EdgeGateway) RemoveNATRule(id string) error {
 	task, err := eGW.RemoveNATRuleAsync(id)
 	if err != nil {
-		return fmt.Errorf("error creating DNAT rule: %#v", err)
+		return fmt.Errorf("error removing DNAT rule: %#v", err)
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
@@ -238,14 +238,18 @@ func (eGW *EdgeGateway) RemoveNATRuleAsync(id string) (Task, error) {
 			}
 		}
 	} else {
-		return Task{}, fmt.Errorf("edge gtw doesn't have NAT rules")
+		return Task{}, fmt.Errorf("edge gateway doesn't have NAT rules")
 	}
 
 	if ruleIndex == -1 {
-		return Task{}, fmt.Errorf("edge gtw doesn't have rule with such Id")
+		return Task{}, fmt.Errorf("edge gateway doesn't have rule with such Id")
 	}
 
-	natServiceToUpdate.NatRule = append(natServiceToUpdate.NatRule[:ruleIndex], natServiceToUpdate.NatRule[ruleIndex+1:]...)
+	if len(natServiceToUpdate.NatRule) > 1 {
+		natServiceToUpdate.NatRule = append(natServiceToUpdate.NatRule[:ruleIndex], natServiceToUpdate.NatRule[ruleIndex+1:]...)
+	} else {
+		natServiceToUpdate.NatRule = nil
+	}
 
 	newRules := &types.EdgeGatewayServiceConfiguration{
 		Xmlns:      types.XMLNamespaceVCloud,
@@ -262,11 +266,14 @@ func (eGW *EdgeGateway) RemoveNATRuleAsync(id string) (Task, error) {
 
 // AddDNATRule creates DNAT rule and return created NAT struct or error.
 // Allows to assign specific Org VDC or external network.
-// When edge gtw is advanced vCD API uses element <tag> to map with NSX edge gtw ID. Currently existing issue,
+// When edge gateway is advanced vCD API uses element <tag> to map with NSX edge gateway ID. Currently existing issue,
 // that changed rule using UI resets <tag> as so mapping and as result fetched NatRule.ID won't be valid anymore.
 // Old functions AddNATPortMapping and AddNATMapping assigns rule only to first external network
 func (eGW *EdgeGateway) AddDNATRule(ruleDetails NatRule) (*types.NatRule, error) {
-	mappingId := getPseudoUuid()
+	mappingId, err := getPseudoUuid()
+	if err != nil {
+		return nil, err
+	}
 	originalDescription := ruleDetails.Description
 	ruleDetails.Description = mappingId
 
@@ -295,7 +302,7 @@ func (eGW *EdgeGateway) AddDNATRule(ruleDetails NatRule) (*types.NatRule, error)
 	}
 
 	if createdNatRule == nil {
-		return nil, fmt.Errorf("error creating SNAT rule, didn't matched created rule")
+		return nil, fmt.Errorf("error creating DNAT rule, didn't match created rule")
 	}
 
 	createdNatRule.Description = originalDescription
@@ -341,7 +348,7 @@ func (eGW *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, descrip
 	}
 
 	if createdNatRule == nil {
-		return nil, fmt.Errorf("error creating SNAT rule, didn't matched created rule")
+		return nil, fmt.Errorf("error creating SNAT rule, didn't match created rule")
 	}
 
 	createdNatRule.Description = description
@@ -349,26 +356,25 @@ func (eGW *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, descrip
 	return eGW.UpdateNatRule(createdNatRule)
 }
 
-// Creates unique ID/UUID
-func getPseudoUuid() (uuid string) {
+// getPseudoUuid creates unique ID/UUID
+func getPseudoUuid() (string, error) {
 
 	b := make([]byte, 16)
 	_, err := rand.Read(b)
 	if err != nil {
-		fmt.Println("Error: ", err)
-		return
+		return "", err
 	}
 
-	uuid = fmt.Sprintf("%X-%X-%X-%X-%X", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
+	uuid := fmt.Sprintf("%X-%X-%X-%X-%X", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 
-	return
+	return uuid, nil
 }
 
 // UpdateNatRule updates NAT rule and handles task. Returns updated NAT rule or error.
 func (eGW *EdgeGateway) UpdateNatRule(natRule *types.NatRule) (*types.NatRule, error) {
 	task, err := eGW.UpdateNatRuleAsync(natRule)
 	if err != nil {
-		return nil, fmt.Errorf("error updating SNAT rule: %#v", err)
+		return nil, fmt.Errorf("error updating NAT rule: %#v", err)
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
@@ -402,7 +408,7 @@ func (eGW *EdgeGateway) UpdateNatRuleAsync(natRule *types.NatRule) (Task, error)
 			}
 		}
 	} else {
-		return Task{}, fmt.Errorf("edge gtw doesn't have such nat rule")
+		return Task{}, fmt.Errorf("edge gateway doesn't have such nat rule")
 	}
 
 	newRules := &types.EdgeGatewayServiceConfiguration{
