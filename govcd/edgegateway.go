@@ -320,7 +320,10 @@ func (eGW *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, descrip
 	//  * find rule which has description with our generated Id
 	//  * update description with real value and return nat rule
 
-	mappingId := getPseudoUuid()
+	mappingId, err := getPseudoUuid()
+	if err != nil {
+		return nil, err
+	}
 
 	task, err := eGW.AddNATRuleAsync(NatRule{NetworkHref: networkHref, natType: "SNAT", ExternalIP: externalIP,
 		ExternalPort: "any", InternalIP: internalIP, InternalPort: "any",
