@@ -69,7 +69,7 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(updatedLBMonitor.Timeout, Equals, 35)
 
-	// Verify that updated monitor and it's configuration are identical
+	// Verify that updated monitor and its configuration are identical
 	check.Assert(updatedLBMonitor, DeepEquals, lbMonitorByID)
 
 	// Update should fail without name
