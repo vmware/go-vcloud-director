@@ -36,7 +36,8 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 		check.Skip("Skipping test because the edge gateway does not have advanced networking enabled")
 	}
 
-	_, serverPoolId, appProfileId, appRuleId := buildTestLBVirtualServerPrereqs("1.1.1.1", "2.2.2.2", check, vcd, edge)
+	_, serverPoolId, appProfileId, appRuleId := buildTestLBVirtualServerPrereqs("1.1.1.1", "2.2.2.2",
+		TestLBVirtualServer, check, vcd, edge)
 
 	// Configure creation object including reference to service monitor
 	lbVirtualServerConfig := &types.LBVirtualServer{
@@ -114,10 +115,10 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 // buildTestLBVirtualServerPrereqs creates all load balancer components which are consumed by
 // load balanver virtual server and ads them to cleanup in correct order to avoid deletion of used
 // resources
-func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip string, check *C, vcd *TestVCD, edge EdgeGateway) (serviceMonitorId, serverPoolId, appProfileId, appRuleId string) {
+func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, check *C, vcd *TestVCD, edge EdgeGateway) (serviceMonitorId, serverPoolId, appProfileId, appRuleId string) {
 	// Create prerequisites - service monitor
 	lbMon := &types.LBMonitor{
-		Name:       TestLBVirtualServer,
+		Name:       componentsName,
 		Interval:   10,
 		Timeout:    10,
 		MaxRetries: 3,
@@ -128,7 +129,7 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip string, check *C, vcd *Tes
 
 	// Create prerequisites - server pool
 	lbPoolConfig := &types.LBPool{
-		Name:      TestLBVirtualServer,
+		Name:      componentsName,
 		Algorithm: "round-robin",
 		MonitorId: lbMonitor.ID,
 		Members: types.LBPoolMembers{
@@ -154,73 +155,28 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip string, check *C, vcd *Tes
 
 	// Create prerequisites - application profile
 	lbAppProfileConfig := &types.LBAppProfile{
-		Name: TestLBVirtualServer,
-		// Persistence: &types.LBAppProfilePersistence{
-		// 	Method: "None",
-		// 	Expire: 13,
-		// },
+		Name:     componentsName,
 		Template: "HTTP",
 	}
 
 	lbAppProfile, err := edge.CreateLBAppProfile(lbAppProfileConfig)
 	check.Assert(err, IsNil)
 
-	// lbAppRuleConfig := &types.LBAppRule{
-	// 	Name:   TestLBVirtualServer,
-	// 	Script: "acl vmware_page url_beg / vmware redirect location https://www.vmware.com/ ifvmware_page",
-	// }
+	lbAppRuleConfig := &types.LBAppRule{
+		Name:   componentsName,
+		Script: "acl vmware_page url_beg / vmware redirect location https://www.vmware.com/ ifvmware_page",
+	}
 
 	// Create prerequisites - application rule
-	// lbAppRule, err := edge.CreateLBAppRule(lbAppRuleConfig)
-	// check.Assert(err, IsNil)
+	lbAppRule, err := edge.CreateLBAppRule(lbAppRuleConfig)
+	check.Assert(err, IsNil)
 
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
-	AddToCleanupList(TestLBVirtualServer, "lbServerPool", parentEntity, check.TestName())
-	AddToCleanupList(TestLBVirtualServer, "lbServiceMonitor", parentEntity, check.TestName())
-	AddToCleanupList(TestLBVirtualServer, "lbAppProfile", parentEntity, check.TestName())
-	// AddToCleanupList(TestLBVirtualServer, "lbAppRule", parentEntity, check.TestName())
+	AddToCleanupList(componentsName, "lbServerPool", parentEntity, check.TestName())
+	AddToCleanupList(componentsName, "lbServiceMonitor", parentEntity, check.TestName())
+	AddToCleanupList(componentsName, "lbAppProfile", parentEntity, check.TestName())
+	AddToCleanupList(componentsName, "lbAppRule", parentEntity, check.TestName())
 
 	// return lbMonitor.ID, lbPool.ID, lbAppProfile.ID, lbAppRule.ID
-	return lbMonitor.ID, lbPool.ID, lbAppProfile.ID, ""
-}
-
-func (vcd *TestVCD) buildLB(node1Ip, node2Ip string, check *C) {
-	if vcd.config.VCD.EdgeGateway == "" {
-		check.Skip("Skipping test because no edge gateway given")
-	}
-	if vcd.config.VCD.ExternalIp == "" {
-		check.Skip("Skipping test because no edge gateway external IP given")
-	}
-
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
-	check.Assert(err, IsNil)
-	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
-
-	if !edge.HasAdvancedNetworking() {
-		check.Skip("Skipping test because the edge gateway does not have advanced networking enabled")
-	}
-
-	_, serverPoolId, appProfileId, _ := buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, check, vcd, edge)
-
-	// Configure creation object including reference to service monitor
-	lbVirtualServerConfig := &types.LBVirtualServer{
-		Name:                 TestLBVirtualServer,
-		IpAddress:            vcd.config.VCD.ExternalIp, // Load balancer virtual server serves on Edge gw IP
-		Enabled:              true,
-		AccelerationEnabled:  true,
-		Protocol:             "http",
-		Port:                 8000,
-		ConnectionLimit:      5,
-		ConnectionRateLimit:  10,
-		ApplicationProfileId: appProfileId,
-		// ApplicationRuleId:    appRuleId,
-		DefaultPoolId: serverPoolId,
-	}
-
-	createdLbVirtualServer, err := edge.CreateLBVirtualServer(lbVirtualServerConfig)
-
-	// We created virtual server successfully therefore let's prepend it to cleanup list so that it
-	// is deleted before the child components
-	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
-	PrependToCleanupList(createdLbVirtualServer.Name, "lbVirtualServer", parentEntity, check.TestName())
+	return lbMonitor.ID, lbPool.ID, lbAppProfile.ID, lbAppRule.ID
 }

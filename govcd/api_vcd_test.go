@@ -63,7 +63,7 @@ const (
 	TestLBAppProfile              = "TestLBAppProfile"
 	TestLBAppRule                 = "TestLBAppRule"
 	TestLBVirtualServer           = "TestLBVirtualServer"
-	TestLB           = "TestLB"
+	TestLB                        = "TestLB"
 )
 
 const (
