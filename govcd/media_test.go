@@ -143,8 +143,8 @@ func (vcd *TestVCD) Test_FindMediaAsCatalogItem(check *C) {
 	itemName := TestUploadMedia + "6"
 
 	// Fetching organization
-	org, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
-	check.Assert(org, Not(Equals), AdminOrg{})
+	org, err := vcd.client.ReadAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(org, NotNil)
 	check.Assert(err, IsNil)
 
 	catalog, err := org.FindCatalog(vcd.config.VCD.Catalog.Name)
@@ -160,7 +160,7 @@ func (vcd *TestVCD) Test_FindMediaAsCatalogItem(check *C) {
 	err = vcd.org.Refresh()
 	check.Assert(err, IsNil)
 
-	catalogItem, err := FindMediaAsCatalogItem(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	catalogItem, err := FindMediaAsCatalogItem(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 	check.Assert(catalogItem, Not(Equals), CatalogItem{})
 	check.Assert(catalogItem.CatalogItem.Name, Equals, itemName)

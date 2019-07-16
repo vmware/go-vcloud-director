@@ -33,7 +33,7 @@ func (vcd *TestVCD) findFirstVm(vapp VApp) (types.VM, string) {
 func (vcd *TestVCD) findFirstVapp() VApp {
 	client := vcd.client
 	config := vcd.config
-	org, err := GetOrgByName(client, config.VCD.Org)
+	org, err := client.ReadOrgByName(config.VCD.Org)
 	if err != nil {
 		fmt.Println(err)
 		return VApp{}
@@ -468,11 +468,11 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 
 	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_HandleInsertOrEjectMedia")
 
-	media, err := FindMediaAsCatalogItem(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	media, err := FindMediaAsCatalogItem(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 	check.Assert(media, Not(Equals), CatalogItem{})
 
-	insertMediaTask, err := vm.HandleInsertMedia(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	insertMediaTask, err := vm.HandleInsertMedia(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 
 	err = insertMediaTask.WaitTaskCompletion()
@@ -483,7 +483,7 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, true)
 
-	ejectMediaTask, err := vm.HandleEjectMedia(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	ejectMediaTask, err := vm.HandleEjectMedia(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 
 	err = ejectMediaTask.WaitTaskCompletion(true)
@@ -527,7 +527,7 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 
 	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_InsertOrEjectMedia")
 
-	media, err := FindMediaAsCatalogItem(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	media, err := FindMediaAsCatalogItem(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 	check.Assert(media, Not(Equals), CatalogItem{})
 
@@ -610,14 +610,14 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 
 	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_AnswerVmQuestion")
 
-	media, err := FindMediaAsCatalogItem(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	media, err := FindMediaAsCatalogItem(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 	check.Assert(media, Not(Equals), CatalogItem{})
 
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
 
-	insertMediaTask, err := vm.HandleInsertMedia(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	insertMediaTask, err := vm.HandleInsertMedia(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 
 	err = insertMediaTask.WaitTaskCompletion()
@@ -628,7 +628,7 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, true)
 
-	ejectMediaTask, err := vm.HandleEjectMedia(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	ejectMediaTask, err := vm.HandleEjectMedia(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 
 	for i := 0; i < 10; i++ {

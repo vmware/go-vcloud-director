@@ -139,7 +139,7 @@ type TestConfig struct {
 // tests on
 type TestVCD struct {
 	client         *VCDClient
-	org            Org
+	org            *Org
 	vdc            Vdc
 	vapp           VApp
 	config         TestConfig
@@ -289,9 +289,10 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		vcd.skipAdminTests = true
 	}
 	// set org
-	vcd.org, err = GetOrgByName(vcd.client, config.VCD.Org)
-	if err != nil || vcd.org == (Org{}) {
-		panic(err)
+	vcd.org, err = vcd.client.ReadOrgByName(config.VCD.Org)
+	if err != nil {
+		fmt.Printf("error retrieving org %s: %s\n", config.VCD.Org, err)
+		os.Exit(1)
 	}
 	// set vdc
 	vcd.vdc, err = vcd.org.GetVdcByName(config.VCD.Vdc)
@@ -351,18 +352,20 @@ func splitParent(parent string, separator string) (first, second, third string) 
 	return
 }
 
-func getOrgVdcEdgeByNames(vcd *TestVCD, orgName, vdcName, edgeName string) (Org, Vdc, EdgeGateway, error) {
+func getOrgVdcEdgeByNames(vcd *TestVCD, orgName, vdcName, edgeName string) (*Org, Vdc, EdgeGateway, error) {
 	if orgName == "" || vdcName == "" || edgeName == "" {
-		return Org{}, Vdc{}, EdgeGateway{}, fmt.Errorf("orgName, vdcName, edgeName cant be empty")
+		return nil, Vdc{}, EdgeGateway{}, fmt.Errorf("orgName, vdcName, edgeName cant be empty")
 	}
 
-	org, err := GetOrgByName(vcd.client, orgName)
-	if err != nil {
+	org, _ := vcd.client.ReadOrgByName(orgName)
+	if org == nil {
 		vcd.infoCleanup("could not find org '%s'", orgName)
+		return nil, Vdc{}, EdgeGateway{}, fmt.Errorf("can't find org")
 	}
 	vdc, err := org.GetVdcByName(vdcName)
 	if err != nil {
 		vcd.infoCleanup("could not find vdc '%s'", vdcName)
+		return nil, Vdc{}, EdgeGateway{}, fmt.Errorf("can't find org")
 	}
 
 	edge, err := vdc.FindEdgeGateway(edgeName)
@@ -375,21 +378,21 @@ func getOrgVdcEdgeByNames(vcd *TestVCD, orgName, vdcName, edgeName string) (Org,
 var splitParentNotFound string = "removeLeftoverEntries: [ERROR] missing parent info (%s). The parent fields must be defined with a separator '|'\n"
 var notFoundMsg string = "removeLeftoverEntries: [INFO] No action for %s '%s'\n"
 
-func (vcd *TestVCD) getAdminOrgAndVdcFromCleanupEntity(entity CleanupEntity) (org AdminOrg, vdc Vdc, err error) {
+func (vcd *TestVCD) getAdminOrgAndVdcFromCleanupEntity(entity CleanupEntity) (org *AdminOrg, vdc Vdc, err error) {
 	orgName, vdcName, _ := splitParent(entity.Parent, "|")
 	if orgName == "" || vdcName == "" {
 		vcd.infoCleanup(splitParentNotFound, entity.Parent)
-		return AdminOrg{}, Vdc{}, fmt.Errorf("can't find parents names")
+		return nil, Vdc{}, fmt.Errorf("can't find parents names")
 	}
-	org, err = GetAdminOrgByName(vcd.client, orgName)
-	if org == (AdminOrg{}) || err != nil {
+	org, err = vcd.client.ReadAdminOrgByName(orgName)
+	if err != nil {
 		vcd.infoCleanup(notFoundMsg, "org", orgName)
-		return AdminOrg{}, Vdc{}, fmt.Errorf("can't find org")
+		return nil, Vdc{}, fmt.Errorf("can't find org")
 	}
 	vdc, err = org.GetVdcByName(vdcName)
 	if vdc == (Vdc{}) || err != nil {
 		vcd.infoCleanup(notFoundMsg, "vdc", vdcName)
-		return AdminOrg{}, Vdc{}, fmt.Errorf("can't find vdc")
+		return nil, Vdc{}, fmt.Errorf("can't find vdc")
 	}
 	return org, vdc, nil
 }
@@ -426,8 +429,8 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No Org provided for catalog '%s'\n", entity.Name)
 			return
 		}
-		org, err := GetAdminOrgByName(vcd.client, entity.Parent)
-		if org == (AdminOrg{}) || err != nil {
+		org, err := vcd.client.ReadAdminOrgByName(entity.Parent)
+		if err != nil {
 			vcd.infoCleanup("removeLeftoverEntries: [INFO] organization '%s' not found\n", entity.Parent)
 			return
 		}
@@ -445,8 +448,8 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		return
 
 	case "org":
-		org, err := GetAdminOrgByName(vcd.client, entity.Name)
-		if org == (AdminOrg{}) || err != nil {
+		org, err := vcd.client.ReadAdminOrgByName(entity.Name)
+		if err != nil {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
@@ -462,8 +465,8 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No Org provided for catalogItem '%s'\n", strings.Split(entity.Parent, "|")[0])
 			return
 		}
-		org, err := GetAdminOrgByName(vcd.client, strings.Split(entity.Parent, "|")[0])
-		if org == (AdminOrg{}) || err != nil {
+		org, err := vcd.client.ReadAdminOrgByName(strings.Split(entity.Parent, "|")[0])
+		if err != nil {
 			vcd.infoCleanup("removeLeftoverEntries: [INFO] organization '%s' not found\n", entity.Parent)
 			return
 		}
@@ -552,12 +555,12 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for user '%s'\n", entity.Name)
 			return
 		}
-		org, err := GetAdminOrgByName(vcd.client, entity.Parent)
-		if org == (AdminOrg{}) || err != nil {
+		org, err := vcd.client.ReadAdminOrgByName(entity.Parent)
+		if err != nil {
 			vcd.infoCleanup(notFoundMsg, "org", entity.Parent)
 			return
 		}
-		user, err := org.FetchUserByName(entity.Name, true)
+		user, err := org.ReadUserByName(entity.Name, true)
 		if err != nil {
 			vcd.infoCleanup(notFoundMsg, "user", entity.Name)
 			return
@@ -574,8 +577,8 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for VDC '%s'\n", entity.Name)
 			return
 		}
-		org, err := GetAdminOrgByName(vcd.client, entity.Parent)
-		if org == (AdminOrg{}) || err != nil {
+		org, err := vcd.client.ReadAdminOrgByName(entity.Parent)
+		if err != nil {
 			vcd.infoCleanup(notFoundMsg, "org", entity.Parent)
 			return
 		}

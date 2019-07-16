@@ -44,8 +44,8 @@ func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
 // Creates a Catalog, updates the description, and checks the changes against the
 // newly updated catalog. Then deletes the catalog
 func (vcd *TestVCD) Test_UpdateCatalog(check *C) {
-	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
-	check.Assert(org, Not(Equals), AdminOrg{})
+	org, err := vcd.client.ReadAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(org, NotNil)
 	check.Assert(err, IsNil)
 	catalog, err := org.FindAdminCatalog(TestUpdateCatalog)
 	check.Assert(err, IsNil)
@@ -72,8 +72,8 @@ func (vcd *TestVCD) Test_UpdateCatalog(check *C) {
 // Creates a Catalog, and then deletes the catalog, and checks if
 // the catalog still exists. If it does the assertion fails.
 func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
-	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
-	check.Assert(org, Not(Equals), AdminOrg{})
+	org, err := vcd.client.ReadAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(org, NotNil)
 	check.Assert(err, IsNil)
 	adminCatalog, err := org.FindAdminCatalog(TestDeleteCatalog)
 	check.Assert(err, IsNil)
@@ -261,13 +261,13 @@ func findCatalog(vcd *TestVCD, check *C, catalogName string) (Catalog, AdminOrg)
 	org := getOrg(vcd, check)
 	catalog, err := org.FindCatalog(catalogName)
 	check.Assert(err, IsNil)
-	return catalog, org
+	return catalog, *org
 }
 
-func getOrg(vcd *TestVCD, check *C) AdminOrg {
+func getOrg(vcd *TestVCD, check *C) *AdminOrg {
 	// Fetching organization
-	org, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
-	check.Assert(org, Not(Equals), AdminOrg{})
+	org, err := vcd.client.ReadAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(org, NotNil)
 	check.Assert(err, IsNil)
 	return org
 }
