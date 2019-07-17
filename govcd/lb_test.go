@@ -117,13 +117,24 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	fmt.Printf("# VM '%s' got IP '%s' in vDC network %s\n", vm2.VM.Name, ip2, vcd.config.VCD.Network.Net1)
 
 	fmt.Printf("# Setting up load balancer for VMs: '%s' (%s), '%s' (%s)\n", vm1.VM.Name, ip1, vm2.VM.Name, ip2)
+
+	fmt.Printf("# Creating firewall rule for load balancer virtual server access. ")
+	ruleDescription := addFirewallRule(vdc, vcd, check)
+	fmt.Printf("Done\n")
+
 	buildLoadBalancer(ip1, ip2, vcd, check)
 
-	// using external edge gateway's IP for
+	// Using external edge gateway IP for
 	queryUrl := "http://" + vcd.config.VCD.ExternalIp + ":8000/server"
 	fmt.Printf("# Querying load balancer for expected responses at %s\n", queryUrl)
-	err = checkLoadBalancer(queryUrl, []string{vm1.VM.Name, vm2.VM.Name}, vcd.vapp.client.MaxRetryTimeout)
-	check.Assert(err, IsNil)
+	bigErr := checkLoadBalancer(queryUrl, []string{vm1.VM.Name, vm2.VM.Name}, vcd.vapp.client.MaxRetryTimeout)
+
+	// Remove firewall rule
+	fmt.Printf("# Deleting firewall rule used for load balancer virtual server access. ")
+	deleteFirewallRule(ruleDescription, vdc, vcd, check)
+	fmt.Printf("Done\n")
+
+	check.Assert(bigErr, IsNil)
 	return
 }
 
@@ -289,4 +300,47 @@ func checkLoadBalancer(queryUrl string, expectedResponses []string, maxRetryTime
 	}
 
 	return fmt.Errorf("timed out waiting for all nodes to be up: %s", err)
+}
+
+// addFirewallRule adds a firewall rule needed to access virtual server port on edge gateway
+func addFirewallRule(vdc Vdc, vcd *TestVCD, check *C) string {
+	description := "Created by: " + TestLB
+
+	edge, err := vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	check.Assert(err, IsNil)
+
+	// Open up firewall to access edge gateway on load balancer port
+	fwRule := &types.FirewallRule{
+		IsEnabled:     true,
+		Description:   description,
+		Protocols:     &types.FirewallRuleProtocols{TCP: true},
+		Port:          8000,
+		DestinationIP: vcd.config.VCD.ExternalIp,
+		SourceIP:      "any",
+		SourcePort:    -1,
+	}
+	fwRules := []*types.FirewallRule{fwRule}
+	task, err := edge.CreateFirewallRules("allow", fwRules)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	return description
+}
+
+// deleteFirewallRule removes firewall rule which was used for testing load balancer
+func deleteFirewallRule(ruleDescription string, vdc Vdc, vcd *TestVCD, check *C) {
+	edge, err := vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	check.Assert(err, IsNil)
+	rules := edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.FirewallService.FirewallRule
+	for index, _ := range rules {
+		if rules[index].Description == ruleDescription {
+			rules = append(rules[:index], rules[index+1:]...)
+		}
+	}
+
+	task, err := edge.CreateFirewallRules("allow", rules)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
