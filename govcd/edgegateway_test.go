@@ -67,7 +67,9 @@ func (vcd *TestVCD) Test_NATMapping(check *C) {
 	check.Assert(rule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.InternalIp)
 	check.Assert(rule.GatewayNatRule.OriginalIP, Equals, vcd.config.VCD.ExternalIp)
 
-	task, err = edge.Remove1to1Mapping(vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp)
+	//task, err = edge.Remove1to1Mapping(vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp)
+	// Cause Remove1to1Mapping isn't working correctly we will use new function
+	err = edge.RemoveNATRule(rule.ID)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
@@ -93,7 +95,7 @@ func (vcd *TestVCD) Test_NATPortMapping(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
-	task, err := edge.AddNATPortMappingWithUplink(orgVdcNetwork.OrgVDCNetwork, "DNAT", vcd.config.VCD.ExternalIp, "any", vcd.config.VCD.InternalIp, "any", "any", "")
+	task, err := edge.AddNATPortMappingWithUplink(orgVdcNetwork.OrgVDCNetwork, "DNAT", vcd.config.VCD.ExternalIp, "1177", vcd.config.VCD.InternalIp, "77", "TCP", "")
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
@@ -117,7 +119,10 @@ func (vcd *TestVCD) Test_NATPortMapping(check *C) {
 	check.Assert(rule.GatewayNatRule.Protocol, Equals, "tcp")
 	check.Assert(rule.GatewayNatRule.IcmpSubType, Equals, "")
 
-	task, err = edge.Remove1to1Mapping(vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp)
+	//task, err = edge.Remove1to1Mapping(vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp)
+	// Cause Remove1to1Mapping isn't working correctly we will use new function
+	err = edge.RemoveNATRule(rule.ID)
+
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
