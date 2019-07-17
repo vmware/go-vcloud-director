@@ -145,12 +145,12 @@ func (eGW *EdgeGateway) AddDhcpPool(network *types.OrgVDCNetwork, dhcppool []int
 
 }
 
-// Deprecated in favor of RemoveNATRuleAsync, RemoveNATRule
+// Deprecated: use one of RemoveNATRuleAsync, RemoveNATRule
 func (eGW *EdgeGateway) RemoveNATMapping(natType, externalIP, internalIP, port string) (Task, error) {
 	return eGW.RemoveNATPortMapping(natType, externalIP, port, internalIP, port)
 }
 
-// Deprecated in favor of RemoveNATRuleAsync, RemoveNATRule
+// Deprecated: use one of RemoveNATRuleAsync, RemoveNATRule
 func (eGW *EdgeGateway) RemoveNATPortMapping(natType, externalIP, externalPort, internalIP, internalPort string) (Task, error) {
 	// Find uplink interface
 	var uplink types.Reference
