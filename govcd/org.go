@@ -462,6 +462,7 @@ func (adminOrg *AdminOrg) Update() (Task, error) {
 		Name:        adminOrg.AdminOrg.Name,
 		IsEnabled:   adminOrg.AdminOrg.IsEnabled,
 		FullName:    adminOrg.AdminOrg.FullName,
+		Description: adminOrg.AdminOrg.Description,
 		OrgSettings: adminOrg.AdminOrg.OrgSettings,
 	}
 

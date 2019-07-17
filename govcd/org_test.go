@@ -115,7 +115,11 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg.AdminOrg.Name, Equals, TestUpdateOrg)
 	check.Assert(adminOrg.AdminOrg.Description, Equals, TestUpdateOrg)
+	updatedDescription := "description_changed"
+	updatedFullName := "full_name_changed"
 	adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.DeployedVMQuota = 100
+	adminOrg.AdminOrg.Description = updatedDescription
+	adminOrg.AdminOrg.FullName = updatedFullName
 	task, err = adminOrg.Update()
 	check.Assert(err, IsNil)
 	// Wait until update is complete
@@ -124,6 +128,8 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	// Refresh
 	err = adminOrg.Refresh()
 	check.Assert(err, IsNil)
+	check.Assert(adminOrg.AdminOrg.Description, Equals, updatedDescription)
+	check.Assert(adminOrg.AdminOrg.FullName, Equals, updatedFullName)
 	check.Assert(adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.DeployedVMQuota, Equals, 100)
 	// Delete, with force and recursive true
 	err = adminOrg.Delete(true, true)
