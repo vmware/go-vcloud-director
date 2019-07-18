@@ -147,7 +147,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	org, err := client.ReadOrgByName(config.Org)
+	org, err := client.GetOrgByName(config.Org)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

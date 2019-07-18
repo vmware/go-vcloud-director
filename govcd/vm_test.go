@@ -33,7 +33,7 @@ func (vcd *TestVCD) findFirstVm(vapp VApp) (types.VM, string) {
 func (vcd *TestVCD) findFirstVapp() VApp {
 	client := vcd.client
 	config := vcd.config
-	org, err := client.ReadOrgByName(config.VCD.Org)
+	org, err := client.GetOrgByName(config.VCD.Org)
 	if err != nil {
 		fmt.Println(err)
 		return VApp{}

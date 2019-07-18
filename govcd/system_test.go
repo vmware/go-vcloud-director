@@ -15,190 +15,190 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
-// Tests System methods vcd.ReadOrg* by checking if the org object
+// Tests System methods vcd.GetOrg* by checking if the org object
 // returned has the same name as the one provided in the config file.
 // Asserts an error if the names don't match or if the function returned
 // an error. Also tests an org that doesn't exist. Asserts an error
 // if the function finds it or if the error is nil.
-// Repeats the same operations fot ReadOrgById, ReadOrgByNameOrId, ReadOrg
-func (vcd *TestVCD) Test_ReadOrgByNameOrId(check *C) {
+// Repeats the same operations fot GetOrgById, GetOrgByNameOrId, GetOrg
+func (vcd *TestVCD) Test_GetOrgByNameOrId(check *C) {
 
-	// Test Read by name
+	// Test Get by name
 	orgName := vcd.config.VCD.Org
-	org1, err1 := vcd.client.ReadOrgByName(orgName)
+	org1, err1 := vcd.client.GetOrgByName(orgName)
 	check.Assert(org1, NotNil)
 	check.Assert(err1, IsNil)
 	check.Assert(org1.Org.Name, Equals, orgName)
 	orgId := org1.Org.ID
 	// Tests Org that doesn't exist
-	org1, err1 = vcd.client.ReadOrgByName(INVALID_NAME)
+	org1, err1 = vcd.client.GetOrgByName(INVALID_NAME)
 	check.Assert(org1, IsNil)
 	// When we explicitly search for a non existing item, we expect the error to be not nil
 	check.Assert(err1, NotNil)
 	check.Assert(IsNotFound(err1), Equals, true)
 
-	// Test Read by ID
-	org2, err2 := vcd.client.ReadOrgById(orgId)
+	// Test Get by ID
+	org2, err2 := vcd.client.GetOrgById(orgId)
 	check.Assert(org2, NotNil)
 	check.Assert(err2, IsNil)
 	check.Assert(org2.Org.Name, Equals, orgName)
 	check.Assert(org2.Org.ID, Equals, orgId)
-	org2, err2 = vcd.client.ReadOrgById(invalidEntityId)
+	org2, err2 = vcd.client.GetOrgById(invalidEntityId)
 	check.Assert(org2, IsNil)
 	check.Assert(err2, NotNil)
 	check.Assert(IsNotFound(err2), Equals, true)
 
-	// Test Read by name or ID using the ID
-	org3, err3 := vcd.client.ReadOrgByNameOrId(orgId)
+	// Test Get by name or ID using the ID
+	org3, err3 := vcd.client.GetOrgByNameOrId(orgId)
 	check.Assert(org3, NotNil)
 	check.Assert(err3, IsNil)
 	check.Assert(org3.Org.Name, Equals, orgName)
 	check.Assert(org3.Org.ID, Equals, orgId)
-	org3, err3 = vcd.client.ReadOrgByNameOrId(invalidEntityId)
+	org3, err3 = vcd.client.GetOrgByNameOrId(invalidEntityId)
 	check.Assert(org3, IsNil)
 	check.Assert(err3, NotNil)
 	check.Assert(IsNotFound(err3), Equals, true)
 
-	// Test Read by name or ID using the name
-	org4, err4 := vcd.client.ReadOrgByNameOrId(orgName)
+	// Test Get by name or ID using the name
+	org4, err4 := vcd.client.GetOrgByNameOrId(orgName)
 	check.Assert(org4, NotNil)
 	check.Assert(err4, IsNil)
 	check.Assert(org4.Org.Name, Equals, orgName)
 	check.Assert(org4.Org.ID, Equals, orgId)
-	org4, err4 = vcd.client.ReadOrgByNameOrId(INVALID_NAME)
+	org4, err4 = vcd.client.GetOrgByNameOrId(INVALID_NAME)
 	check.Assert(org4, IsNil)
 	check.Assert(err4, NotNil)
 	check.Assert(IsNotFound(err4), Equals, true)
 
-	// Test Read by name or ID using a structure, with name
-	org5, err5 := vcd.client.ReadOrg(&types.Org{Name: orgName})
+	// Test Get by name or ID using a structure, with name
+	org5, err5 := vcd.client.GetOrg(&types.Org{Name: orgName})
 	check.Assert(org5, NotNil)
 	check.Assert(err5, IsNil)
 	check.Assert(org5.Org.Name, Equals, orgName)
 	check.Assert(org5.Org.ID, Equals, orgId)
-	org5, err5 = vcd.client.ReadOrg(&types.Org{Name: INVALID_NAME})
+	org5, err5 = vcd.client.GetOrg(&types.Org{Name: INVALID_NAME})
 	check.Assert(org5, IsNil)
 	check.Assert(err5, NotNil)
 	check.Assert(IsNotFound(err5), Equals, true)
 
-	// Test Read by name or ID using a structure, with ID
-	org6, err6 := vcd.client.ReadOrg(&types.Org{ID: orgId})
+	// Test Get by name or ID using a structure, with ID
+	org6, err6 := vcd.client.GetOrg(&types.Org{ID: orgId})
 	check.Assert(org6, NotNil)
 	check.Assert(err6, IsNil)
 	check.Assert(org6.Org.Name, Equals, orgName)
 	check.Assert(org6.Org.ID, Equals, orgId)
-	org6, err6 = vcd.client.ReadOrg(&types.Org{ID: invalidEntityId})
+	org6, err6 = vcd.client.GetOrg(&types.Org{ID: invalidEntityId})
 	check.Assert(org6, IsNil)
 	check.Assert(err6, NotNil)
 	check.Assert(IsNotFound(err6), Equals, true)
 
-	// Test Read by name or ID using a structure, with both name and ID
-	org7, err7 := vcd.client.ReadOrg(&types.Org{ID: orgId, Name: orgName})
+	// Test Get by name or ID using a structure, with both name and ID
+	org7, err7 := vcd.client.GetOrg(&types.Org{ID: orgId, Name: orgName})
 	check.Assert(org7, NotNil)
 	check.Assert(err7, IsNil)
 	check.Assert(org7.Org.Name, Equals, orgName)
 	check.Assert(org7.Org.ID, Equals, orgId)
-	org7, err7 = vcd.client.ReadOrg(&types.Org{ID: invalidEntityId, Name: INVALID_NAME})
+	org7, err7 = vcd.client.GetOrg(&types.Org{ID: invalidEntityId, Name: INVALID_NAME})
 	check.Assert(org7, IsNil)
 	check.Assert(err7, NotNil)
 	check.Assert(IsNotFound(err7), Equals, true)
 
-	// Test Read by name or ID using an empty structure: expects an error
-	org8, err8 := vcd.client.ReadOrg(&types.Org{Name: "", ID: ""})
+	// Test Get by name or ID using an empty structure: expects an error
+	org8, err8 := vcd.client.GetOrg(&types.Org{Name: "", ID: ""})
 	check.Assert(org8, IsNil)
 	check.Assert(err8, NotNil)
 }
 
-// Tests System methods vcd.ReadAdminOrg* by checking if the adminOrg object
+// Tests System methods vcd.GetAdminOrg* by checking if the adminOrg object
 // returned has the same name as the one provided in the config file.
 // Asserts an error if the names don't match or if the function returned
 // an error. Also tests an admin org that doesn't exist. Asserts an error
 // if the function finds it or if the error is nil.
-// Repeats the same operations fot ReadAdminOrgById, ReadAdminOrgByNameOrId, ReadAdminOrg
-func (vcd *TestVCD) Test_ReadAdminOrgByNameOrId(check *C) {
+// Repeats the same operations fot GetAdminOrgById, GetAdminOrgByNameOrId, GetAdminOrg
+func (vcd *TestVCD) Test_GetAdminOrgByNameOrId(check *C) {
 
-	// Test Read by name
+	// Test Get by name
 	adminOrgName := vcd.config.VCD.Org
-	adminOrg1, err1 := vcd.client.ReadAdminOrgByName(adminOrgName)
+	adminOrg1, err1 := vcd.client.GetAdminOrgByName(adminOrgName)
 	check.Assert(adminOrg1, NotNil)
 	check.Assert(err1, IsNil)
 	check.Assert(adminOrg1.AdminOrg.Name, Equals, adminOrgName)
 	orgId := adminOrg1.AdminOrg.ID
 	// Tests Org that doesn't exist
-	adminOrg1, err1 = vcd.client.ReadAdminOrgByName(INVALID_NAME)
+	adminOrg1, err1 = vcd.client.GetAdminOrgByName(INVALID_NAME)
 	check.Assert(adminOrg1, IsNil)
 	// When we explicitly search for a non existing item, we expect the error to be not nil
 	check.Assert(err1, NotNil)
 	check.Assert(IsNotFound(err1), Equals, true)
 
-	// Test Read by ID
-	adminOrg2, err2 := vcd.client.ReadAdminOrgById(orgId)
+	// Test Get by ID
+	adminOrg2, err2 := vcd.client.GetAdminOrgById(orgId)
 	check.Assert(adminOrg2, NotNil)
 	check.Assert(err2, IsNil)
 	check.Assert(adminOrg2.AdminOrg.Name, Equals, adminOrgName)
 	check.Assert(adminOrg2.AdminOrg.ID, Equals, orgId)
-	adminOrg2, err2 = vcd.client.ReadAdminOrgById(invalidEntityId)
+	adminOrg2, err2 = vcd.client.GetAdminOrgById(invalidEntityId)
 	check.Assert(adminOrg2, IsNil)
 	check.Assert(err2, NotNil)
 	check.Assert(IsNotFound(err2), Equals, true)
 
-	// Test Read by name or ID using the ID
-	adminOrg3, err3 := vcd.client.ReadAdminOrgByNameOrId(orgId)
+	// Test Get by name or ID using the ID
+	adminOrg3, err3 := vcd.client.GetAdminOrgByNameOrId(orgId)
 	check.Assert(adminOrg3, NotNil)
 	check.Assert(err3, IsNil)
 	check.Assert(adminOrg3.AdminOrg.Name, Equals, adminOrgName)
 	check.Assert(adminOrg3.AdminOrg.ID, Equals, orgId)
-	adminOrg3, err3 = vcd.client.ReadAdminOrgByNameOrId(invalidEntityId)
+	adminOrg3, err3 = vcd.client.GetAdminOrgByNameOrId(invalidEntityId)
 	check.Assert(adminOrg3, IsNil)
 	check.Assert(err3, NotNil)
 	check.Assert(IsNotFound(err3), Equals, true)
 
-	// Test Read by name or ID using the name
-	adminOrg4, err4 := vcd.client.ReadAdminOrgByNameOrId(adminOrgName)
+	// Test Get by name or ID using the name
+	adminOrg4, err4 := vcd.client.GetAdminOrgByNameOrId(adminOrgName)
 	check.Assert(adminOrg4, NotNil)
 	check.Assert(err4, IsNil)
 	check.Assert(adminOrg4.AdminOrg.Name, Equals, adminOrgName)
 	check.Assert(adminOrg4.AdminOrg.ID, Equals, orgId)
-	adminOrg4, err4 = vcd.client.ReadAdminOrgByNameOrId(INVALID_NAME)
+	adminOrg4, err4 = vcd.client.GetAdminOrgByNameOrId(INVALID_NAME)
 	check.Assert(adminOrg4, IsNil)
 	check.Assert(err4, NotNil)
 	check.Assert(IsNotFound(err4), Equals, true)
 
-	// Test Read by name or ID using a structure, with name
-	adminOrg5, err5 := vcd.client.ReadAdminOrg(&types.AdminOrg{Name: adminOrgName})
+	// Test Get by name or ID using a structure, with name
+	adminOrg5, err5 := vcd.client.GetAdminOrg(&types.AdminOrg{Name: adminOrgName})
 	check.Assert(adminOrg5, NotNil)
 	check.Assert(err5, IsNil)
 	check.Assert(adminOrg5.AdminOrg.Name, Equals, adminOrgName)
 	check.Assert(adminOrg5.AdminOrg.ID, Equals, orgId)
-	adminOrg5, err5 = vcd.client.ReadAdminOrg(&types.AdminOrg{Name: INVALID_NAME})
+	adminOrg5, err5 = vcd.client.GetAdminOrg(&types.AdminOrg{Name: INVALID_NAME})
 	check.Assert(adminOrg5, IsNil)
 	check.Assert(err5, NotNil)
 	check.Assert(IsNotFound(err5), Equals, true)
 
-	// Test Read by name or ID using a structure, with ID
-	adminOrg6, err6 := vcd.client.ReadAdminOrg(&types.AdminOrg{ID: orgId})
+	// Test Get by name or ID using a structure, with ID
+	adminOrg6, err6 := vcd.client.GetAdminOrg(&types.AdminOrg{ID: orgId})
 	check.Assert(adminOrg6, NotNil)
 	check.Assert(err6, IsNil)
 	check.Assert(adminOrg6.AdminOrg.Name, Equals, adminOrgName)
 	check.Assert(adminOrg6.AdminOrg.ID, Equals, orgId)
-	adminOrg6, err6 = vcd.client.ReadAdminOrg(&types.AdminOrg{ID: invalidEntityId})
+	adminOrg6, err6 = vcd.client.GetAdminOrg(&types.AdminOrg{ID: invalidEntityId})
 	check.Assert(adminOrg6, IsNil)
 	check.Assert(err6, NotNil)
 	check.Assert(IsNotFound(err6), Equals, true)
 
-	// Test Read by name or ID using a structure, with both name and ID
-	adminOrg7, err7 := vcd.client.ReadAdminOrg(&types.AdminOrg{ID: orgId, Name: adminOrgName})
+	// Test Get by name or ID using a structure, with both name and ID
+	adminOrg7, err7 := vcd.client.GetAdminOrg(&types.AdminOrg{ID: orgId, Name: adminOrgName})
 	check.Assert(adminOrg7, NotNil)
 	check.Assert(err7, IsNil)
 	check.Assert(adminOrg7.AdminOrg.Name, Equals, adminOrgName)
 	check.Assert(adminOrg7.AdminOrg.ID, Equals, orgId)
-	adminOrg7, err7 = vcd.client.ReadAdminOrg(&types.AdminOrg{ID: invalidEntityId, Name: INVALID_NAME})
+	adminOrg7, err7 = vcd.client.GetAdminOrg(&types.AdminOrg{ID: invalidEntityId, Name: INVALID_NAME})
 	check.Assert(adminOrg7, IsNil)
 	check.Assert(err7, NotNil)
 	check.Assert(IsNotFound(err7), Equals, true)
 
-	// Test Read by name or ID using an empty structure: expects an error
-	adminOrg8, err8 := vcd.client.ReadAdminOrg(&types.AdminOrg{Name: "", ID: ""})
+	// Test Get by name or ID using an empty structure: expects an error
+	adminOrg8, err8 := vcd.client.GetAdminOrg(&types.AdminOrg{Name: "", ID: ""})
 	check.Assert(adminOrg8, IsNil)
 	check.Assert(err8, NotNil)
 }
@@ -268,7 +268,7 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 		err = task.WaitTaskCompletion()
 		check.Assert(err, IsNil)
 		// fetch newly created org
-		adminOrg, err := vcd.client.ReadAdminOrgByName(orgName)
+		adminOrg, err := vcd.client.GetAdminOrgByName(orgName)
 		check.Assert(adminOrg, NotNil)
 		check.Assert(err, IsNil)
 		check.Assert(adminOrg.AdminOrg.Name, Equals, orgName)
@@ -379,7 +379,7 @@ func (vcd *TestVCD) Test_GetNetworkPoolByHREF(check *C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	adminOrg, err := vcd.client.ReadAdminOrgByName(vcd.config.VCD.Org)
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(adminOrg, NotNil)
 	check.Assert(err, IsNil)
 
@@ -398,6 +398,7 @@ var INVALID_NAME = `*******************************************INVALID
 					****************************************************
 					************************`
 
+// This ID won't be found by lookup in any entity
 var invalidEntityId = "one:two:three:aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 
 func init() {

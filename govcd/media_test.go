@@ -143,7 +143,7 @@ func (vcd *TestVCD) Test_FindMediaAsCatalogItem(check *C) {
 	itemName := TestUploadMedia + "6"
 
 	// Fetching organization
-	org, err := vcd.client.ReadAdminOrgByName(vcd.org.Org.Name)
+	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(org, NotNil)
 	check.Assert(err, IsNil)
 

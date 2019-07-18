@@ -202,7 +202,7 @@ func CreateAndConfigureEdgeGatewayAsync(vcdClient *VCDClient, orgName, vdcName, 
 	if egwConfiguration.Name != egwName {
 		return Task{}, fmt.Errorf("name mismatch: '%s' used as parameter but '%s' in the configuration structure", egwName, egwConfiguration.Name)
 	}
-	adminOrg, err := vcdClient.ReadAdminOrgByName(orgName)
+	adminOrg, err := vcdClient.GetAdminOrgByName(orgName)
 	if err != nil {
 		return Task{}, err
 	}
@@ -271,7 +271,7 @@ func createEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation, egwConfig
 	}
 
 	// The edge gateway is created. Now we retrieve it from the server
-	org, err := vcdClient.ReadAdminOrgByName(egwc.OrgName)
+	org, err := vcdClient.GetAdminOrgByName(egwc.OrgName)
 	if err != nil {
 		return EdgeGateway{}, err
 	}
@@ -301,7 +301,7 @@ func CreateEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation) (EdgeGate
 // org and no error. Otherwise it returns an error and an empty
 // Org object
 // DEPRECATED
-// Use vcdClient.ReadOrgByName instead
+// Use vcdClient.GetOrgByName instead
 func GetOrgByName(vcdClient *VCDClient, orgName string) (Org, error) {
 	orgUrl, err := getOrgHREF(vcdClient, orgName)
 	if err != nil {
@@ -325,7 +325,7 @@ func GetOrgByName(vcdClient *VCDClient, orgName string) (Org, error) {
 // and an error.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/GET-Organization-AdminView.html
 // DEPRECATED
-// Use vcdClient.ReadAdminOrgByName instead
+// Use vcdClient.GetAdminOrgByName instead
 func GetAdminOrgByName(vcdClient *VCDClient, orgName string) (AdminOrg, error) {
 	orgUrl, err := getOrgHREF(vcdClient, orgName)
 	if err != nil {
@@ -590,10 +590,10 @@ func QueryOrgVdcNetworkByName(vcdCli *VCDClient, name string) ([]*types.QueryRes
 	return results.Results.OrgVdcNetworkRecord, nil
 }
 
-// ReadOrgByName finds an Organization by name
+// GetOrgByName finds an Organization by name
 // On success, returns a pointer to the Org structure and a nil error
 // On failure, returns a nil pointer and an error
-func (vcdClient *VCDClient) ReadOrgByName(orgName string) (*Org, error) {
+func (vcdClient *VCDClient) GetOrgByName(orgName string) (*Org, error) {
 	orgUrl, err := getOrgHREF(vcdClient, orgName)
 	if err != nil {
 		// Since this operation is a lookup from a list, we return the standard ErrorEntityNotFound
@@ -610,10 +610,10 @@ func (vcdClient *VCDClient) ReadOrgByName(orgName string) (*Org, error) {
 	return org, nil
 }
 
-// ReadOrgById finds an Organization by ID
+// GetOrgById finds an Organization by ID
 // On success, returns a pointer to the Org structure and a nil error
 // On failure, returns a nil pointer and an error
-func (vcdClient *VCDClient) ReadOrgById(orgId string) (*Org, error) {
+func (vcdClient *VCDClient) GetOrgById(orgId string) (*Org, error) {
 	orgUrl, err := getOrgHREFById(vcdClient, orgId)
 	if err != nil {
 		// Since this operation is a lookup from a list, we return the standard ErrorEntityNotFound
@@ -630,39 +630,39 @@ func (vcdClient *VCDClient) ReadOrgById(orgId string) (*Org, error) {
 	return org, nil
 }
 
-// ReadOrgByNameOrId finds an Organization by name or ID
+// GetOrgByNameOrId finds an Organization by name or ID
 // On success, returns a pointer to the Org structure and a nil error
 // On failure, returns a nil pointer and an error
-func (vcdClient *VCDClient) ReadOrgByNameOrId(identifier string) (*Org, error) {
+func (vcdClient *VCDClient) GetOrgByNameOrId(identifier string) (*Org, error) {
 
-	org, err := vcdClient.ReadOrgById(identifier)
+	org, err := vcdClient.GetOrgById(identifier)
 	if err != nil {
-		org, err = vcdClient.ReadOrgByName(identifier)
+		org, err = vcdClient.GetOrgByName(identifier)
 	}
 	return org, err
 }
 
-// ReadOrg finds an Organization by name or ID (in a structure)
+// GetOrg finds an Organization by name or ID (in a structure)
 // On success, returns a pointer to the Admin Org structure and a nil error
 // On failure, returns a nil pointer and an error
-func (vcdClient *VCDClient) ReadOrg(orgInput *types.Org) (*Org, error) {
+func (vcdClient *VCDClient) GetOrg(orgInput *types.Org) (*Org, error) {
 
-	if err := validateReadOrg(orgInput); err != nil {
+	if err := validateGetOrg(orgInput); err != nil {
 		return nil, err
 	}
 	if orgInput.ID != "" {
-		org, err := vcdClient.ReadOrgById(orgInput.ID)
+		org, err := vcdClient.GetOrgById(orgInput.ID)
 		if err == nil {
 			return org, nil
 		}
 	}
-	return vcdClient.ReadOrgByName(orgInput.Name)
+	return vcdClient.GetOrgByName(orgInput.Name)
 }
 
-// ReadAdminOrgByName finds an Admin Organization by name
+// GetAdminOrgByName finds an Admin Organization by name
 // On success, returns a pointer to the Admin Org structure and a nil error
 // On failure, returns a nil pointer and an error
-func (vcdClient *VCDClient) ReadAdminOrgByName(orgName string) (*AdminOrg, error) {
+func (vcdClient *VCDClient) GetAdminOrgByName(orgName string) (*AdminOrg, error) {
 	orgUrl, err := getOrgHREF(vcdClient, orgName)
 	if err != nil {
 		return nil, ErrorEntityNotFound
@@ -681,10 +681,10 @@ func (vcdClient *VCDClient) ReadAdminOrgByName(orgName string) (*AdminOrg, error
 	return adminOrg, nil
 }
 
-// ReadAdminOrgById finds an Admin Organization by ID
+// GetAdminOrgById finds an Admin Organization by ID
 // On success, returns a pointer to the Admin Org structure and a nil error
 // On failure, returns a nil pointer and an error
-func (vcdClient *VCDClient) ReadAdminOrgById(orgId string) (*AdminOrg, error) {
+func (vcdClient *VCDClient) GetAdminOrgById(orgId string) (*AdminOrg, error) {
 	orgUrl, err := getOrgHREFById(vcdClient, orgId)
 	if err != nil {
 		return nil, ErrorEntityNotFound
@@ -703,38 +703,38 @@ func (vcdClient *VCDClient) ReadAdminOrgById(orgId string) (*AdminOrg, error) {
 	return adminOrg, nil
 }
 
-// ReadAdminOrgByNameOrId finds an Admin Organization by name or ID
+// GetAdminOrgByNameOrId finds an Admin Organization by name or ID
 // On success, returns a pointer to the Admin Org structure and a nil error
 // On failure, returns a nil pointer and an error
-func (vcdClient *VCDClient) ReadAdminOrgByNameOrId(identifier string) (*AdminOrg, error) {
+func (vcdClient *VCDClient) GetAdminOrgByNameOrId(identifier string) (*AdminOrg, error) {
 
-	adminOrg, err := vcdClient.ReadAdminOrgById(identifier)
+	adminOrg, err := vcdClient.GetAdminOrgById(identifier)
 	if err != nil {
-		adminOrg, err = vcdClient.ReadAdminOrgByName(identifier)
+		adminOrg, err = vcdClient.GetAdminOrgByName(identifier)
 	}
 	return adminOrg, err
 }
 
-// ReadAdminOrg finds an Admin Organization by name or ID (in a structure)
+// GetAdminOrg finds an Admin Organization by name or ID (in a structure)
 // On success, returns a pointer to the Admin Org structure and a nil error
 // On failure, returns a nil pointer and an error
-func (vcdClient *VCDClient) ReadAdminOrg(orgInput *types.AdminOrg) (*AdminOrg, error) {
+func (vcdClient *VCDClient) GetAdminOrg(orgInput *types.AdminOrg) (*AdminOrg, error) {
 
-	if err := validateReadAdminOrg(orgInput); err != nil {
+	if err := validateGetAdminOrg(orgInput); err != nil {
 		return nil, err
 	}
 	if orgInput.ID != "" {
-		org, err := vcdClient.ReadAdminOrgById(orgInput.ID)
+		org, err := vcdClient.GetAdminOrgById(orgInput.ID)
 		if err == nil {
 			return org, nil
 		}
 	}
-	return vcdClient.ReadAdminOrgByName(orgInput.Name)
+	return vcdClient.GetAdminOrgByName(orgInput.Name)
 }
 
-// Validates an Admin Org used for ReadAdminOrg, making sure
+// Validates an Admin Org used for GetAdminOrg, making sure
 // that at least one searching field is filled.
-func validateReadAdminOrg(org *types.AdminOrg) error {
+func validateGetAdminOrg(org *types.AdminOrg) error {
 
 	if org == nil {
 		return fmt.Errorf("nil input for AdminOrg")
@@ -746,9 +746,9 @@ func validateReadAdminOrg(org *types.AdminOrg) error {
 	return nil
 }
 
-// Validates an Org used for ReadOrg, making sure
+// Validates an Org used for GetOrg, making sure
 // that at least one searching field is filled.
-func validateReadOrg(org *types.Org) error {
+func validateGetOrg(org *types.Org) error {
 
 	if org == nil {
 		return fmt.Errorf("nil input for Org")

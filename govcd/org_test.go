@@ -22,7 +22,7 @@ func (vcd *TestVCD) Test_RefreshOrg(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
-	adminOrg, err := vcd.client.ReadAdminOrgByName(TestRefreshOrg)
+	adminOrg, err := vcd.client.GetAdminOrgByName(TestRefreshOrg)
 	if adminOrg != nil {
 		check.Assert(err, IsNil)
 		err := adminOrg.Delete(true, true)
@@ -40,11 +40,11 @@ func (vcd *TestVCD) Test_RefreshOrg(check *C) {
 	check.Assert(err, IsNil)
 
 	// fetch newly created org
-	org, err := vcd.client.ReadOrgByName(TestRefreshOrg)
+	org, err := vcd.client.GetOrgByName(TestRefreshOrg)
 	check.Assert(err, IsNil)
 	check.Assert(org.Org.Name, Equals, TestRefreshOrg)
 	// fetch admin version of org for updating
-	adminOrg, err = vcd.client.ReadAdminOrgByName(TestRefreshOrg)
+	adminOrg, err = vcd.client.GetAdminOrgByName(TestRefreshOrg)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg.AdminOrg.Name, Equals, TestRefreshOrg)
 	adminOrg.AdminOrg.FullName = TestRefreshOrgFullName
@@ -72,7 +72,7 @@ func (vcd *TestVCD) Test_DeleteOrg(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
-	org, _ := vcd.client.ReadAdminOrgByName(TestDeleteOrg)
+	org, _ := vcd.client.GetAdminOrgByName(TestDeleteOrg)
 	if org != nil {
 		err := org.Delete(true, true)
 		check.Assert(err, IsNil)
@@ -86,7 +86,7 @@ func (vcd *TestVCD) Test_DeleteOrg(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	org, err = vcd.client.ReadAdminOrgByName(TestDeleteOrg)
+	org, err = vcd.client.GetAdminOrgByName(TestDeleteOrg)
 	check.Assert(err, IsNil)
 	check.Assert(org.AdminOrg.Name, Equals, TestDeleteOrg)
 	// Delete, with force and recursive true
@@ -111,7 +111,7 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	check.Assert(err, IsNil)
 	AddToCleanupList(TestUpdateOrg, "org", "", "TestUpdateOrg")
 	// fetch newly created org
-	adminOrg, err := vcd.client.ReadAdminOrgByName(TestUpdateOrg)
+	adminOrg, err := vcd.client.GetAdminOrgByName(TestUpdateOrg)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg.AdminOrg.Name, Equals, TestUpdateOrg)
 	check.Assert(adminOrg.AdminOrg.Description, Equals, TestUpdateOrg)
@@ -140,7 +140,7 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 func doesOrgExist(check *C, vcd *TestVCD) {
 	var org *AdminOrg
 	for i := 0; i < 30; i++ {
-		org, _ = vcd.client.ReadAdminOrgByName(TestDeleteOrg)
+		org, _ = vcd.client.GetAdminOrgByName(TestDeleteOrg)
 		if org == nil {
 			break
 		} else {
@@ -176,7 +176,7 @@ func (vcd *TestVCD) Test_Admin_GetVdcByName(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
-	adminOrg, err := vcd.client.ReadAdminOrgByName(vcd.org.Org.Name)
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 	vdc, err := adminOrg.GetVdcByName(vcd.config.VCD.Vdc)
@@ -209,7 +209,7 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 	if vcd.config.VCD.ProviderVdc.NetworkPool == "" {
 		check.Skip("No Network Pool given for VDC tests")
 	}
-	adminOrg, err := vcd.client.ReadAdminOrgByName(vcd.org.Org.Name)
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
@@ -354,7 +354,7 @@ func (vcd *TestVCD) Test_Admin_FindCatalog(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 	// Fetch admin org version of current test org
-	adminOrg, err := vcd.client.ReadAdminOrgByName(vcd.org.Org.Name)
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(adminOrg, NotNil)
 	check.Assert(err, IsNil)
 	// Find Catalog
@@ -376,7 +376,7 @@ func (vcd *TestVCD) Test_Admin_FindCatalog(check *C) {
 // asserts that the catalog returned contains the right contents or if it fails.
 // Then Deletes the catalog.
 func (vcd *TestVCD) Test_CreateCatalog(check *C) {
-	org, err := vcd.client.ReadAdminOrgByName(vcd.org.Org.Name)
+	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 	catalog, _ := org.FindAdminCatalog(TestCreateCatalog)
@@ -393,7 +393,7 @@ func (vcd *TestVCD) Test_CreateCatalog(check *C) {
 	task.Task = catalog.AdminCatalog.Tasks.Task[0]
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
-	org, err = vcd.client.ReadAdminOrgByName(vcd.org.Org.Name)
+	org, err = vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	copyCatalog, err := org.FindAdminCatalog(TestCreateCatalog)
 	check.Assert(copyCatalog, Not(Equals), AdminCatalog{})
@@ -412,7 +412,7 @@ func (vcd *TestVCD) Test_GetAdminCatalog(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 	// Fetch admin org version of current test org
-	adminOrg, err := vcd.client.ReadAdminOrgByName(vcd.org.Org.Name)
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	// Find Catalog
 	cat, err := adminOrg.FindAdminCatalog(vcd.config.VCD.Catalog.Name)
@@ -466,7 +466,7 @@ func setupVDc(vcd *TestVCD, check *C) (AdminOrg, *types.VdcConfiguration, error)
 	if vcd.config.VCD.ProviderVdc.NetworkPool == "" {
 		check.Skip("No Network Pool given for VDC tests")
 	}
-	adminOrg, err := vcd.client.ReadAdminOrgByName(vcd.org.Org.Name)
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
@@ -620,7 +620,7 @@ func (vcd *TestVCD) Test_GetAdminVdcByName(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	adminOrg, err := vcd.client.ReadAdminOrgByName(vcd.org.Org.Name)
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 

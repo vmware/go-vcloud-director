@@ -44,7 +44,7 @@ func (vcd *TestVCD) Test_Delete(check *C) {
 	AddToCleanupList(TestDeleteCatalogItem, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_Delete")
 
 	// Fetching organization
-	org, err := vcd.client.ReadAdminOrgByName(vcd.org.Org.Name)
+	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(org, NotNil)
 	check.Assert(err, IsNil)
 
