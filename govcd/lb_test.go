@@ -297,7 +297,7 @@ func checkLoadBalancer(queryUrl string, expectedResponses []string, maxRetryTime
 				if value == string(body) {
 					expectedResponses = append(expectedResponses[:index], expectedResponses[index+1:]...)
 					if len(expectedResponses) > 0 {
-						fmt.Printf("'%s' responded. Waiting for node(s) '%s': ",
+						fmt.Printf("\n# '%s' responded. Waiting for node(s) '%s': ",
 							value, strings.Join(expectedResponses, ","))
 					} else {
 						fmt.Printf("\n# Last node '%s' responded. Exiting\n", value)

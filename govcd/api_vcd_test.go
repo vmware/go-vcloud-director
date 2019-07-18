@@ -690,9 +690,12 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		err = edge.DeleteLBServiceMonitorByName(entity.Name)
-		if err != nil {
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
@@ -712,9 +715,12 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		err = edge.DeleteLBServerPoolByName(entity.Name)
-		if err != nil {
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
@@ -733,9 +739,12 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		err = edge.DeleteLBAppProfileByName(entity.Name)
-		if err != nil {
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
@@ -755,9 +764,12 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		err = edge.DeleteLBVirtualServerByName(entity.Name)
-		if err != nil {
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
@@ -776,9 +788,12 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		err = edge.DeleteLBAppRuleByName(entity.Name)
-		if err != nil {
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)

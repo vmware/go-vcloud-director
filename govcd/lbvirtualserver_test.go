@@ -174,10 +174,10 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 	check.Assert(err, IsNil)
 
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
-	AddToCleanupList(componentsName, "lbServerPool", parentEntity, check.TestName())
-	AddToCleanupList(componentsName, "lbServiceMonitor", parentEntity, check.TestName())
-	AddToCleanupList(componentsName, "lbAppProfile", parentEntity, check.TestName())
-	AddToCleanupList(componentsName, "lbAppRule", parentEntity, check.TestName())
+	AddToCleanupList(lbAppRule.Name, "lbAppRule", parentEntity, check.TestName())
+	AddToCleanupList(lbAppProfile.Name, "lbAppProfile", parentEntity, check.TestName())
+	AddToCleanupList(lbPool.Name, "lbServerPool", parentEntity, check.TestName())
+	AddToCleanupList(lbMon.Name, "lbServiceMonitor", parentEntity, check.TestName())
 
 	// return lbMonitor.ID, lbPool.ID, lbAppProfile.ID, lbAppRule.ID
 	return lbMonitor.ID, lbPool.ID, lbAppProfile.ID, lbAppRule.ID
