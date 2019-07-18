@@ -243,12 +243,13 @@ func buildLoadBalancer(node1Ip, node2Ip string, vcd *TestVCD, check *C) {
 		DefaultPoolId:        serverPoolId,
 	}
 
-	createdLbVirtualServer, err := edge.CreateLBVirtualServer(lbVirtualServerConfig)
+	_, err = edge.CreateLBVirtualServer(lbVirtualServerConfig)
+	check.Assert(err, IsNil)
 
 	// We created virtual server successfully therefore let's prepend it to cleanup list so that it
 	// is deleted before the child components
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
-	PrependToCleanupList(createdLbVirtualServer.Name, "lbVirtualServer", parentEntity, check.TestName())
+	PrependToCleanupList(TestLB, "lbVirtualServer", parentEntity, check.TestName())
 }
 
 // checkLoadBalancer queries specified endpoint until it gets all responses in expectedResponses slice
@@ -269,14 +270,23 @@ func checkLoadBalancer(queryUrl string, expectedResponses []string, maxRetryTime
 		iterations = maxRetryTimeout / 5
 	}
 
-	fmt.Printf("# Waiting for the virtual server to accept responses (%s interval x %d iterations "+
-		"= %ds total time) [x = http error, . = no response from all nodes yet]: ",
-		sleepIntervalDuration.String(), iterations, sleepInterval*iterations)
+	fmt.Printf("# Waiting for the virtual server to accept responses (%s interval x %d iterations)"+
+		"\n[_ = timeout, x = connection refused, ?(err) = unknown error, / = no nodes are up yet, "+
+		". = no response from all nodes yet]: ", sleepIntervalDuration.String(), iterations)
 	for i := 1; i <= iterations; i++ {
 		var resp *http.Response
 		resp, err = http.Get(queryUrl)
 		if err != nil {
-			fmt.Printf("x") // progress bar for http errors (load balancer not being up)
+			switch {
+			case strings.Contains(err.Error(), "i/o timeout"):
+				fmt.Printf("_")
+			case strings.Contains(err.Error(), "connect: connection refused"):
+				fmt.Printf("x")
+			case strings.Contains(err.Error(), "connect: network is unreachable"):
+				fmt.Printf("/")
+			default:
+				fmt.Printf("?(%s)", err.Error())
+			}
 		}
 
 		if err == nil {
@@ -287,7 +297,7 @@ func checkLoadBalancer(queryUrl string, expectedResponses []string, maxRetryTime
 				if value == string(body) {
 					expectedResponses = append(expectedResponses[:index], expectedResponses[index+1:]...)
 					if len(expectedResponses) > 0 {
-						fmt.Printf("\n# Node '%s' responded. Waiting for node(s) '%s': ",
+						fmt.Printf("'%s' responded. Waiting for node(s) '%s': ",
 							value, strings.Join(expectedResponses, ","))
 					} else {
 						fmt.Printf("\n# Last node '%s' responded. Exiting\n", value)
