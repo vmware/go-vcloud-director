@@ -269,7 +269,7 @@ func (eGW *EdgeGateway) RemoveNATRuleAsync(id string) (Task, error) {
 // Allows assigning a specific Org VDC or an external network.
 // When edge gateway is advanced vCD API uses element <tag> to map with NSX edge gateway ID. A known issue is
 // that updating rule using User interface resets <tag> and as result mapping is lost.
-// Fetching using NatRule.ID won't be valid anymore.
+// Getting using NatRule.ID won't be valid anymore.
 // Old functions AddNATPortMapping and AddNATMapping assigned rule only to first external network
 func (eGW *EdgeGateway) AddDNATRule(ruleDetails NatRule) (*types.NatRule, error) {
 	mappingId, err := getPseudoUuid()
@@ -317,10 +317,10 @@ func (eGW *EdgeGateway) AddDNATRule(ruleDetails NatRule) (*types.NatRule, error)
 // Old functions AddNATPortMapping and AddNATMapping aren't correct as assigned rule only to first external network
 func (eGW *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, description string) (*types.NatRule, error) {
 
-	// As vCD API doesn't return rule ID we fetch it manually:
+	// As vCD API doesn't return rule ID we get it manually:
 	//  * create rule with description which value is our generated Id
 	//  * find rule which has description with our generated Id
-	//  * read the real (vCD's) rule Id
+	//  * get the real (vCD's) rule Id
 	//  * update description with real value and return nat rule
 
 	mappingId, err := getPseudoUuid()
@@ -387,7 +387,7 @@ func (eGW *EdgeGateway) UpdateNatRule(natRule *types.NatRule) (*types.NatRule, e
 		return nil, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
 	}
 
-	return eGW.ReadNatRule(natRule.ID)
+	return eGW.GetNatRule(natRule.ID)
 }
 
 // UpdateNatRuleAsync updates NAT rule and returns task or error.
@@ -430,8 +430,8 @@ func (eGW *EdgeGateway) UpdateNatRuleAsync(natRule *types.NatRule) (Task, error)
 		"application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml", "error reconfiguring Edge Gateway: %s", newRules)
 }
 
-// ReadNatRule returns NAT rule or error.
-func (eGW *EdgeGateway) ReadNatRule(id string) (*types.NatRule, error) {
+// GetNatRule returns NAT rule or error.
+func (eGW *EdgeGateway) GetNatRule(id string) (*types.NatRule, error) {
 	err := eGW.Refresh()
 	if err != nil {
 		return nil, fmt.Errorf("error refreshing edge gateway: %#v", err)
