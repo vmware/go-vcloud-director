@@ -15,11 +15,13 @@ import (
 // With help of function buildTestLBVirtualServerPrereqs such prerequisite components are created:
 // service monitor, server pool, application profile and application rule.
 // The following things are tested if prerequisites are met:
-// Creation of load balancer virtual server
-// Read load balancer virtual server by both Id and Name (virtual server name must be unique in single edge gateway)
-// Update - change a single field and compare that configuration and result objects are deeply equal
-// Update - try and fail to update without mandatory field
-// Delete
+// 1. Creation of load balancer virtual server
+// 2. Read load balancer virtual server by both Id and Name (virtual server name must be unique in
+// single edge gateway)
+// 3. Update - change a single field and compare that configuration and result objects are deeply
+// equal
+// 4. Update - try and fail to update without mandatory field
+// 5. Delete
 func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
@@ -89,7 +91,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(updatedLBPool.Port, Equals, lbVirtualServerById.Port)
 
-	// Verify that updated pool and it's configuration are identical
+	// Verify that updated pool and its configuration are identical
 	check.Assert(updatedLBPool, DeepEquals, lbVirtualServerById)
 
 	// Try to set invalid protocol and expect API to return error:

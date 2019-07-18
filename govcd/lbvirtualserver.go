@@ -83,7 +83,7 @@ func (eGW *EdgeGateway) ReadLBVirtualServer(lbVirtualServerConfig *types.LBVirtu
 			// We found it by name. Let's verify if search Id was specified and it matches the lookup object
 			if lbVirtualServerConfig.Id != "" && virtualServer.Id != lbVirtualServerConfig.Id {
 				return nil, fmt.Errorf("load balancer virtual server was found by name (%s), "+
-					"but it's Id (%s) does not match specified Id (%s)",
+					"but its Id (%s) does not match specified Id (%s)",
 					virtualServer.Name, virtualServer.Id, lbVirtualServerConfig.Id)
 			}
 			return virtualServer, nil

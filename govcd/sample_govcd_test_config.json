@@ -63,7 +63,7 @@
     "mediaName": "uploadedMediaName",
 	"//": "Relative path for Photon OS image or existing image name (as it appears in the Catalog UI).",
 	"//": "the Catalog UI). This is required for load balancer integration test. If the image ",
-	"//": "already exists in your environment just set it's name here to reuse it",
+	"//": "already exists in your environment just set its name here to reuse it",
 	"//": "(e.g. photon-hw11-3.0-26156e2.ova, photon-os)",
 	"photonOsOvaPath": "/Users/user/Downloads/photon-hw11-3.0-26156e2.ova"
   }
