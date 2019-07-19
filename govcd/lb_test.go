@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"path"
 	"strings"
 	"time"
 
@@ -40,31 +39,16 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	vdc, err := org.GetVdcByName(vcd.config.VCD.Vdc)
 	check.Assert(err, IsNil)
 
-	// Find catalog and check if we have
+	// Find catalog and catalog item
 	catalog, err := org.FindCatalog(vcd.config.VCD.Catalog.Name)
 	check.Assert(err, IsNil)
-
-	// Check if the image was already uploaded
-	ovaPath := vcd.config.Media.PhotonOsOvaPath
-	_, ovaFile := path.Split(ovaPath)
-	catalogItem, err := catalog.FindCatalogItem(ovaFile)
+	catalogItem, err := catalog.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
 	check.Assert(err, IsNil)
 
-	// If the image is not already uploaded - upload it
-	if catalogItem == (CatalogItem{}) || catalogItem.CatalogItem.Name == "" {
-		fmt.Printf("# OS image '%s' not found in catalog '%s. Uploading '%s'",
-			ovaFile, catalog.Catalog.Name, ovaPath)
-		// Upload OS image
-		uploadImage(ovaPath, ovaFile, catalog, vcd, check)
-		check.Assert(err, IsNil)
-		// Reload catalogItem
-		catalog, err := org.FindCatalog(vcd.config.VCD.Catalog.Name)
-		check.Assert(err, IsNil)
-		catalogItem, err = catalog.FindCatalogItem(ovaFile)
-		fmt.Printf(". Done\n")
-
-	} else {
-		fmt.Printf("# Found OS image '%s' in catalog '%s'. Reusing\n", ovaFile, catalog.Catalog.Name)
+	// Skip the test if catalog item is not Photon OS
+	if !isItemPhotonOs(catalogItem) {
+		check.Skip(fmt.Sprintf("Skipping test because catalog item %s is not Photon OS",
+			vcd.config.VCD.Catalog.CatalogItem))
 	}
 
 	fmt.Printf("# Creating RAW vApp '%s'", TestLB)
@@ -151,10 +135,6 @@ func validateTestLbPrerequisites(vcd *TestVCD, check *C) {
 
 	if vcd.config.VCD.ExternalIp == "" {
 		check.Skip("Skipping test because no edge gateway external IP given")
-	}
-
-	if vcd.config.Media.PhotonOsOvaPath == "" {
-		check.Skip("Skipping test because no Photon OS OVA path given")
 	}
 
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
@@ -353,4 +333,24 @@ func deleteFirewallRule(ruleDescription string, vdc Vdc, vcd *TestVCD, check *C)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
+}
+
+// isItemPhotonOs checks if a catalog item is Photon OS
+func isItemPhotonOs(item CatalogItem) bool {
+	vappTemplate, err := item.GetVAppTemplate()
+	// Unable to get template - can validate it's Photon OS
+	if err != nil {
+		return false
+	}
+	// Photon OS template has exactly 1 child
+	if len(vappTemplate.VAppTemplate.Children.VM) != 1 {
+		return false
+	}
+
+	// If child name is not "Photon OS" it's not Photon OS
+	if vappTemplate.VAppTemplate.Children.VM[0].Name != "Photon OS" {
+		return false
+	}
+
+	return true
 }

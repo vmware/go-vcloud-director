@@ -38,8 +38,8 @@ vcd:
     # An Org catalog, possibly containing at least one item
     catalog:
         name: mycat
-        #
-        # One item in the catalog. It will be used to compose test vApps
+        # One item in the catalog. It will be used to compose test vApps. Some tests rely on it
+        # being Photon OS. If it is not Photon OS - some tests will be skipped
         catalogItem: myitem
         #
         # An optional description for the catalog. Its test will be skipped if omitted.
@@ -143,7 +143,3 @@ media:
   mediaPath: ../test-resources/test.iso
   # Existing media in test system
   mediaName: uploadedMediaName
-  # Relative path for Photon OS image or existing image name (as it appears in the Catalog UI).
-  # This is required for load balancer integration test. If the image already exists in your
-  # environment just set its name here to reuse it (e.g. photon-hw11-3.0-26156e2.ova, photon-os)
-  photonOsOvaPath: /Users/user/Downloads/photon-hw11-3.0-26156e2.ova
