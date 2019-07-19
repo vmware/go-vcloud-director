@@ -220,7 +220,7 @@ func (eGW *EdgeGateway) RemoveNATRule(id string) error {
 // Old functions RemoveNATPortMapping and RemoveNATMapping removed using rule details
 // and expected interface to be of external network type.
 func (eGW *EdgeGateway) RemoveNATRuleAsync(id string) (Task, error) {
-	if "" == id {
+	if id == "" {
 		return Task{}, fmt.Errorf("provided id is empty")
 	}
 
@@ -392,7 +392,7 @@ func (eGW *EdgeGateway) UpdateNatRule(natRule *types.NatRule) (*types.NatRule, e
 
 // UpdateNatRuleAsync updates NAT rule and returns task or error.
 func (eGW *EdgeGateway) UpdateNatRuleAsync(natRule *types.NatRule) (Task, error) {
-	if "" != natRule.GatewayNatRule.Protocol && !isValidProtocol(natRule.GatewayNatRule.Protocol) {
+	if natRule.GatewayNatRule.Protocol != "" && !isValidProtocol(natRule.GatewayNatRule.Protocol) {
 		return Task{}, fmt.Errorf("provided protocol is not one of TCP, UDP, TCPUDP, ICMP, ANY")
 	}
 
