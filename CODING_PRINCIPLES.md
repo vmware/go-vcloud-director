@@ -147,7 +147,7 @@ parent's list of entities, the method will return `ErrorEntityNotFound`.
 In no cases we return a nil error when the method fails to find the entity.
 
 Note: We are in the process of replacing methods that don't adhere to the above principles (for example, return a
-structure instead of a pointer, retuen a nil error on not-found, etc).
+structure instead of a pointer, return a nil error on not-found, etc).
 
 ## Testing
 
