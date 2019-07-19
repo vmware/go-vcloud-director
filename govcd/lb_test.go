@@ -146,16 +146,6 @@ func validateTestLbPrerequisites(vcd *TestVCD, check *C) {
 	}
 }
 
-// uploadImage uploads an OVA image for specified file and path
-func uploadImage(ovaPath, ovaFile string, catalog Catalog, vcd *TestVCD, check *C) {
-	uploadTask, err := catalog.UploadOvf(ovaPath, ovaFile, ovaFile, 1024)
-	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	// This is intentionally left out to avoid uploading the image each time as it is a lengthy operation
-	// AddToCleanupList(ovaFile, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_LB")
-}
-
 // spawnVM spawns VMs in provided vApp from template and also applies customization script to
 // spawn a Python 3 HTTP server
 func spawnVM(name string, vdc Vdc, vapp VApp, net types.NetworkConnectionSection, vAppTemplate VAppTemplate, check *C) (VM, error) {
