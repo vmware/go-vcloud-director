@@ -285,6 +285,8 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("Running on vCD %s\nas user %s@%s\n", vcd.config.Provider.Url,
+		vcd.config.Provider.User, vcd.config.Provider.SysOrg)
 	if !vcd.client.Client.IsSysAdmin {
 		vcd.skipAdminTests = true
 	}

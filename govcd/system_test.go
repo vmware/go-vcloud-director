@@ -69,44 +69,6 @@ func (vcd *TestVCD) Test_GetOrgByNameOrId(check *C) {
 	check.Assert(org4, IsNil)
 	check.Assert(err4, NotNil)
 	check.Assert(IsNotFound(err4), Equals, true)
-
-	// Test Get by name or ID using a structure, with name
-	org5, err5 := vcd.client.GetOrg(&types.Org{Name: orgName})
-	check.Assert(org5, NotNil)
-	check.Assert(err5, IsNil)
-	check.Assert(org5.Org.Name, Equals, orgName)
-	check.Assert(org5.Org.ID, Equals, orgId)
-	org5, err5 = vcd.client.GetOrg(&types.Org{Name: INVALID_NAME})
-	check.Assert(org5, IsNil)
-	check.Assert(err5, NotNil)
-	check.Assert(IsNotFound(err5), Equals, true)
-
-	// Test Get by name or ID using a structure, with ID
-	org6, err6 := vcd.client.GetOrg(&types.Org{ID: orgId})
-	check.Assert(org6, NotNil)
-	check.Assert(err6, IsNil)
-	check.Assert(org6.Org.Name, Equals, orgName)
-	check.Assert(org6.Org.ID, Equals, orgId)
-	org6, err6 = vcd.client.GetOrg(&types.Org{ID: invalidEntityId})
-	check.Assert(org6, IsNil)
-	check.Assert(err6, NotNil)
-	check.Assert(IsNotFound(err6), Equals, true)
-
-	// Test Get by name or ID using a structure, with both name and ID
-	org7, err7 := vcd.client.GetOrg(&types.Org{ID: orgId, Name: orgName})
-	check.Assert(org7, NotNil)
-	check.Assert(err7, IsNil)
-	check.Assert(org7.Org.Name, Equals, orgName)
-	check.Assert(org7.Org.ID, Equals, orgId)
-	org7, err7 = vcd.client.GetOrg(&types.Org{ID: invalidEntityId, Name: INVALID_NAME})
-	check.Assert(org7, IsNil)
-	check.Assert(err7, NotNil)
-	check.Assert(IsNotFound(err7), Equals, true)
-
-	// Test Get by name or ID using an empty structure: expects an error
-	org8, err8 := vcd.client.GetOrg(&types.Org{Name: "", ID: ""})
-	check.Assert(org8, IsNil)
-	check.Assert(err8, NotNil)
 }
 
 // Tests System methods vcd.GetAdminOrg* by checking if the adminOrg object
@@ -163,44 +125,6 @@ func (vcd *TestVCD) Test_GetAdminOrgByNameOrId(check *C) {
 	check.Assert(adminOrg4, IsNil)
 	check.Assert(err4, NotNil)
 	check.Assert(IsNotFound(err4), Equals, true)
-
-	// Test Get by name or ID using a structure, with name
-	adminOrg5, err5 := vcd.client.GetAdminOrg(&types.AdminOrg{Name: adminOrgName})
-	check.Assert(adminOrg5, NotNil)
-	check.Assert(err5, IsNil)
-	check.Assert(adminOrg5.AdminOrg.Name, Equals, adminOrgName)
-	check.Assert(adminOrg5.AdminOrg.ID, Equals, orgId)
-	adminOrg5, err5 = vcd.client.GetAdminOrg(&types.AdminOrg{Name: INVALID_NAME})
-	check.Assert(adminOrg5, IsNil)
-	check.Assert(err5, NotNil)
-	check.Assert(IsNotFound(err5), Equals, true)
-
-	// Test Get by name or ID using a structure, with ID
-	adminOrg6, err6 := vcd.client.GetAdminOrg(&types.AdminOrg{ID: orgId})
-	check.Assert(adminOrg6, NotNil)
-	check.Assert(err6, IsNil)
-	check.Assert(adminOrg6.AdminOrg.Name, Equals, adminOrgName)
-	check.Assert(adminOrg6.AdminOrg.ID, Equals, orgId)
-	adminOrg6, err6 = vcd.client.GetAdminOrg(&types.AdminOrg{ID: invalidEntityId})
-	check.Assert(adminOrg6, IsNil)
-	check.Assert(err6, NotNil)
-	check.Assert(IsNotFound(err6), Equals, true)
-
-	// Test Get by name or ID using a structure, with both name and ID
-	adminOrg7, err7 := vcd.client.GetAdminOrg(&types.AdminOrg{ID: orgId, Name: adminOrgName})
-	check.Assert(adminOrg7, NotNil)
-	check.Assert(err7, IsNil)
-	check.Assert(adminOrg7.AdminOrg.Name, Equals, adminOrgName)
-	check.Assert(adminOrg7.AdminOrg.ID, Equals, orgId)
-	adminOrg7, err7 = vcd.client.GetAdminOrg(&types.AdminOrg{ID: invalidEntityId, Name: INVALID_NAME})
-	check.Assert(adminOrg7, IsNil)
-	check.Assert(err7, NotNil)
-	check.Assert(IsNotFound(err7), Equals, true)
-
-	// Test Get by name or ID using an empty structure: expects an error
-	adminOrg8, err8 := vcd.client.GetAdminOrg(&types.AdminOrg{Name: "", ID: ""})
-	check.Assert(adminOrg8, IsNil)
-	check.Assert(err8, NotNil)
 }
 
 // Tests the creation of an org with general settings,
