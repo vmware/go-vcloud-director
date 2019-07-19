@@ -51,7 +51,7 @@ Go package library](https://golang.org/pkg).
 Go is pretty readable so if you follow these rules most functions
 will not need additional comments.
 
-See **CODING_PRINCIPLES.md** for more advice on how to write code for this project.
+See **CODING_GUIDELINES.md** for more advice on how to write code for this project.
 
 ### Commit Message Format
 
