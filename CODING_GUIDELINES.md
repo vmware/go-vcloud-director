@@ -1,10 +1,10 @@
-# Coding principles
+# Coding guidelines
 
 
 ( **Work in progress** )
 
 
-## Concepts
+## Principles
 
 The functions, entities, and methods in this library have the wide goal of providing access to vCD functionality
 using Go clients.
