@@ -81,4 +81,8 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	// Delete / cleanup
 	err = edge.DeleteLBAppProfile(&types.LBAppProfile{ID: createdLbAppProfile.ID})
 	check.Assert(err, IsNil)
+
+	// Ensure it is deleted
+	_, err = edge.ReadLBAppProfileByID(createdLbAppProfile.ID)
+	check.Assert(IsNotFound(err), Equals, true)
 }

@@ -80,4 +80,7 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 	// Delete / cleanup
 	err = edge.DeleteLBServiceMonitor(&types.LBMonitor{ID: lbMonitorByID.ID})
 	check.Assert(err, IsNil)
+
+	_, err = edge.ReadLBServiceMonitorByID(lbMonitorByID.ID)
+	check.Assert(IsNotFound(err), Equals, true)
 }

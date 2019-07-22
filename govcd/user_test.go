@@ -61,7 +61,7 @@ func (vcd *TestVCD) Test_GetRole(check *C) {
 }
 
 // Checks that we can retrieve a user by name or ID
-func (vcd *TestVCD) Test_GetUserByNameOrId(check *C) {
+func (vcd *TestVCD) Test_FetchUserByNameOrId(check *C) {
 	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, Not(Equals), AdminOrg{})
@@ -140,22 +140,31 @@ func (vcd *TestVCD) Test_UserCRUD(check *C) {
 		},
 	}
 
+	quotaDeployed := 10
+	quotaStored := 10
 	for _, ud := range userData {
+		quotaDeployed += 2
+		quotaStored += 2
 		fmt.Printf("# Creating user %s with role %s\n", ud.name, ud.roleName)
 		// Uncomment the following lines to see creation request and response
 		// enableDebugShowRequest()
 		// enableDebugShowResponse()
-		user, err := adminOrg.CreateUserSimple(OrgUserConfiguration{
+		var userDefinition = OrgUserConfiguration{
 			Name:            ud.name,
 			Password:        "user_pass",
 			RoleName:        ud.roleName,
 			ProviderType:    OrgUserProviderIntegrated,
-			DeployedVmQuota: 10,
-			StoredVmQuota:   10,
+			DeployedVmQuota: quotaDeployed,
+			StoredVmQuota:   quotaStored,
 			FullName:        strings.ReplaceAll(ud.name, "_", " "),
 			Description:     "user " + strings.ReplaceAll(ud.name, "_", " "),
 			IsEnabled:       true,
-		})
+			IM:              "TextIM",
+			EmailAddress:    "somename@somedomain.com",
+			Telephone:       "TextTelephone",
+		}
+
+		user, err := adminOrg.CreateUserSimple(userDefinition)
 		// disableDebugShowRequest()
 		// disableDebugShowResponse()
 		check.Assert(err, IsNil)
@@ -165,6 +174,11 @@ func (vcd *TestVCD) Test_UserCRUD(check *C) {
 		check.Assert(user.User.Name, Equals, ud.name)
 		check.Assert(user.GetRoleName(), Equals, ud.roleName)
 		check.Assert(user.User.IsEnabled, Equals, true)
+		check.Assert(user.User.FullName, Equals, userDefinition.FullName)
+		check.Assert(user.User.EmailAddress, Equals, userDefinition.EmailAddress)
+		check.Assert(user.User.IM, Equals, userDefinition.IM)
+		check.Assert(user.User.StoredVmQuota, Equals, userDefinition.StoredVmQuota)
+		check.Assert(user.User.DeployedVmQuota, Equals, userDefinition.DeployedVmQuota)
 
 		err = user.Disable()
 		check.Assert(err, IsNil)
@@ -206,4 +220,8 @@ func (vcd *TestVCD) Test_UserCRUD(check *C) {
 		// Expect a null pointer when user is not found
 		check.Assert(user, IsNil)
 	}
+}
+
+func init() {
+	testingTags["user"] = "user_test.go"
 }
