@@ -1755,9 +1755,9 @@ type LBVirtualServer struct {
 	AccelerationEnabled  bool     `xml:"accelerationEnabled,omitempty"`
 	ConnectionLimit      int      `xml:"connectionLimit,omitempty"`
 	ConnectionRateLimit  int      `xml:"connectionRateLimit,omitempty"`
-	ApplicationRuleId    string   `xml:"applicationRuleId,omitempty"`
 	ApplicationProfileId string   `xml:"applicationProfileId,omitempty"`
 	DefaultPoolId        string   `xml:"defaultPoolId,omitempty"`
+	ApplicationRuleIds   []string `xml:"applicationRuleId,omitempty"`
 }
 
 // VendorTemplate is information about a vendor service template. This is optional.

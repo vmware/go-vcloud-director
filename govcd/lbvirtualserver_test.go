@@ -52,7 +52,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 		ConnectionLimit:      5,
 		ConnectionRateLimit:  10,
 		ApplicationProfileId: appProfileId,
-		ApplicationRuleId:    appRuleId,
+		ApplicationRuleIds:   []string{appRuleId},
 		DefaultPoolId:        serverPoolId,
 	}
 
@@ -66,7 +66,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	check.Assert(createdLbVirtualServer.ConnectionRateLimit, Equals, lbVirtualServerConfig.ConnectionRateLimit)
 	check.Assert(createdLbVirtualServer.Enabled, Equals, lbVirtualServerConfig.Enabled)
 	check.Assert(createdLbVirtualServer.AccelerationEnabled, Equals, lbVirtualServerConfig.AccelerationEnabled)
-	check.Assert(createdLbVirtualServer.ApplicationRuleId, Equals, lbVirtualServerConfig.ApplicationRuleId)
+	check.Assert(createdLbVirtualServer.ApplicationRuleIds, DeepEquals, lbVirtualServerConfig.ApplicationRuleIds)
 	check.Assert(createdLbVirtualServer.DefaultPoolId, Equals, lbVirtualServerConfig.DefaultPoolId)
 
 	// We created virtual server successfully therefore let's prepend it to cleanup list so that it

@@ -369,6 +369,7 @@ func getOrgVdcEdgeByNames(vcd *TestVCD, orgName, vdcName, edgeName string) (Org,
 	}
 
 	edge, err := vdc.FindEdgeGateway(edgeName)
+
 	if err != nil {
 		vcd.infoCleanup("could not find edge '%s': %s", edgeName, err)
 	}
