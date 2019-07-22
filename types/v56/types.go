@@ -1647,7 +1647,7 @@ type StaticRoute struct {
 // Reference: vCloud Director API for NSX Programming Guide
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 //
-// Note. It also nests all components (LBMonitor, LBPool, LBAppProfile, LBVirtualServer) because
+// Warning. It nests all components (LBMonitor, LBPool, LBAppProfile, LBVirtualServer) because
 // Edge Gateway API is done so that if this data is not sent while enabling it would wipe all load
 // balancer configurations.
 type LoadBalancer struct {
@@ -1658,9 +1658,10 @@ type LoadBalancer struct {
 	Logging                *LoadBalancerLogging `xml:"logging"`
 
 	// The load balancer
-	Monitor    *LBMonitor    `xml:"monitor"`
-	Pool       *LBPool       `xml:"pool"`
-	AppProfile *LBAppProfile `xml:"applicationProfile"`
+	Monitor       *LBMonitor       `xml:"monitor"`
+	Pool          *LBPool          `xml:"pool"`
+	AppProfile    *LBAppProfile    `xml:"applicationProfile"`
+	VirtualServer *LBVirtualServer `xml:"virtualServer"`
 }
 
 // LoadBalancerLogging represents logging configuration for LoadBalancer

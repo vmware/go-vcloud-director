@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -539,26 +540,66 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 	check.Assert(len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule), Equals, beforeChangeNatRulesNumber)
 }
 
-func (vcd *TestVCD) TestEdgeGateway_UpdateLoadBalancerConfig(check *C) {
+// TestEdgeGateway_UpdateLoadBalancer main point is to test that no load balancer configuration
+// configuration xml tags are not lost during changes of load balancer main settings (enable, logging)
+// the main concept for this test is:
+// 1. cache raw XML body in a variable before running the test
+// 2. toggle the settings of load balancer in various ways and ensure no err is returned
+// 3. set the settings back as they originally were and again get raw XML body
+// 4. compare the XML text before configuration and after configuration - they should be identical
+// The only tag which is changing is <version></version> which is versioning the configuration
+// therefor it must be stripped before deeply comparing "before" and "after" XML body
+func (vcd *TestVCD) TestEdgeGateway_UpdateLoadBalancer(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gatway given")
 	}
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
 
-	lbConfigBefore, err := edge.ReadLoadBalancerConfig()
+	// cache load balancer config in raw XML for later comparison
+
+	err = edge.UpdateLoadBalancer(false, false, false, "info")
 	check.Assert(err, IsNil)
 
-	err = edge.UpdateLoadBalancerConfig(true, true, true, "critical")
+	rawXMLbefore, err := edge.getLoadBalancerXML()
 	check.Assert(err, IsNil)
 
-	lbConfigAfter, err := edge.ReadLoadBalancerConfig()
-	lbConfigAfter.Enabled = true
-	lbConfigAfter.AccelerationEnabled = true
-	lbConfigAfter.Logging.Enable = true
-	lbConfigAfter.Logging.LogLevel = "critical"
+	reg := regexp.MustCompile(`<version>\d*<\/version>`)
+	rawXMLbefore = reg.ReplaceAllString(rawXMLbefore, "")
 
+	// err = edge.UpdateLoadBalancer(false, false, false, "info")
+	// check.Assert(err, IsNil)
+
+	// set all values to true
+	err = edge.UpdateLoadBalancer(true, true, true, "info")
 	check.Assert(err, IsNil)
-	check.Assert(lbConfigAfter, DeepEquals, lbConfigBefore)
+
+	err = edge.UpdateLoadBalancer(true, false, false, "critical")
+	check.Assert(err, IsNil)
+
+	err = edge.UpdateLoadBalancer(false, true, true, "warning")
+	check.Assert(err, IsNil)
+
+	// reset back to the state it was originally
+	err = edge.UpdateLoadBalancer(false, false, false, "info")
+	check.Assert(err, IsNil)
+
+	rawXMLafter, err := edge.getLoadBalancerXML()
+	check.Assert(err, IsNil)
+	rawXMLafter = reg.ReplaceAllString(rawXMLafter, "")
+
+	check.Assert(rawXMLbefore, DeepEquals, rawXMLafter)
+
+	// err = edge.UpdateLoadBalancerConfig(true, true, true, "critical")
+	// check.Assert(err, IsNil)
+
+	// lbConfigAfter, err := edge.ReadLoadBalancerConfig()
+	// lbConfigAfter.Enabled = true
+	// lbConfigAfter.AccelerationEnabled = true
+	// lbConfigAfter.Logging.Enable = true
+	// lbConfigAfter.Logging.LogLevel = "critical"
+
+	// check.Assert(err, IsNil)
+	// check.Assert(lbConfigAfter, DeepEquals, lbConfigBefore)
 
 }
