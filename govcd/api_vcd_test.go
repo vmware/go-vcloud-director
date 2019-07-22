@@ -1,4 +1,4 @@
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor user ALL
+// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user ALL
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -62,6 +62,8 @@ const (
 	TestLBServerPool              = "TestLBServerPool"
 	TestLBAppProfile              = "TestLBAppProfile"
 	TestLBAppRule                 = "TestLBAppRule"
+	TestLBVirtualServer           = "TestLBVirtualServer"
+	TestLB                        = "TestLB"
 )
 
 const (
@@ -128,8 +130,9 @@ type TestConfig struct {
 		OVAChunkedPath string `yaml:"ovaChunkedPath,omitempty"`
 	} `yaml:"ova"`
 	Media struct {
-		MediaPath string `yaml:"mediaPath,omitempty"`
-		Media     string `yaml:"mediaName,omitempty"`
+		MediaPath       string `yaml:"mediaPath,omitempty"`
+		Media           string `yaml:"mediaName,omitempty"`
+		PhotonOsOvaPath string `yaml:"photonOsOvaPath,omitempty"`
 	} `yaml:"media"`
 }
 
@@ -366,8 +369,9 @@ func getOrgVdcEdgeByNames(vcd *TestVCD, orgName, vdcName, edgeName string) (Org,
 	}
 
 	edge, err := vdc.FindEdgeGateway(edgeName)
+
 	if err != nil {
-		vcd.infoCleanup("could not find edge '%s'", vdcName)
+		vcd.infoCleanup("could not find edge '%s': %s", edgeName, err)
 	}
 	return org, vdc, edge, nil
 }
@@ -687,9 +691,12 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		err = edge.DeleteLBServiceMonitorByName(entity.Name)
-		if err != nil {
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
@@ -709,9 +716,12 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		err = edge.DeleteLBServerPoolByName(entity.Name)
-		if err != nil {
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
@@ -730,9 +740,37 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		err = edge.DeleteLBAppProfileByName(entity.Name)
-		if err != nil {
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+
+	case "lbVirtualServer":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No parent specified '%s'\n", entity.Name)
+			return
+		}
+
+		orgName, vdcName, edgeName := splitParent(entity.Parent, "|")
+
+		_, _, edge, err := getOrgVdcEdgeByNames(vcd, orgName, vdcName, edgeName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		err = edge.DeleteLBVirtualServerByName(entity.Name)
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
@@ -751,9 +789,12 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		err = edge.DeleteLBAppRuleByName(entity.Name)
-		if err != nil {
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
