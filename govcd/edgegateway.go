@@ -1078,10 +1078,14 @@ func (eGW *EdgeGateway) buildProxiedEdgeEndpointURL(optionalSuffix string) (stri
 }
 
 // GetLoadBalancer retrieves load balancer configuration of `&types.LoadBalancer` and can be used
-// to access load balancer global configuration options. These are 4 fields only:
+// to access global configuration options. These are 4 fields only:
 // LoadBalancer.Enabled, LoadBalancer.AccelerationEnabled, LoadBalancer.Logging.Enable,
 // LoadBalancer.Logging.LogLevel
 func (egw *EdgeGateway) GetLoadBalancer() (*types.LoadBalancer, error) {
+	if !egw.HasAdvancedNetworking() {
+		return nil, fmt.Errorf("only advanced edge gateway supports load balancing")
+	}
+
 	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LBConfigPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
@@ -1105,6 +1109,10 @@ func (egw *EdgeGateway) GetLoadBalancer() (*types.LoadBalancer, error) {
 // All other fields are ignored and sent as they are in order to prevent load balancer configuration
 // corruption
 func (egw *EdgeGateway) UpdateLoadBalancer(lb *types.LoadBalancer) (*types.LoadBalancer, error) {
+	if !egw.HasAdvancedNetworking() {
+		return nil, fmt.Errorf("only advanced edge gateway supports load balancing")
+	}
+
 	if err := validateUpdateLoadBalancer(lb); err != nil {
 		return nil, err
 	}
