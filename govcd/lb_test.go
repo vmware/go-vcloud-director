@@ -65,10 +65,10 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	// vApp was created - let's add it to cleanup list
 	AddToCleanupList(TestLB, "vapp", "", "createTestVapp")
 
-	// Wait untill vApp becomes configuraable
+	// Wait until vApp becomes configurable
 	initialVappStatus, err := vapp.GetStatus()
 	check.Assert(err, IsNil)
-	vapp.BlockWhileStatus(initialVappStatus, vcd.vapp.client.MaxRetryTimeout)
+	vapp.BlockWhileStatus(initialVappStatus, vapp.client.MaxRetryTimeout)
 	fmt.Printf(". Done\n")
 
 	fmt.Printf("# Attaching vDC network '%s' to vApp '%s'", vcd.config.VCD.Network.Net1, TestLB)
@@ -128,7 +128,7 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	// Using external edge gateway IP for
 	queryUrl := "http://" + vcd.config.VCD.ExternalIp + ":8000/server"
 	fmt.Printf("# Querying load balancer for expected responses at %s\n", queryUrl)
-	queryErr := checkLoadBalancer(queryUrl, []string{vm1.VM.Name, vm2.VM.Name}, vcd.vapp.client.MaxRetryTimeout)
+	queryErr := checkLoadBalancer(queryUrl, []string{vm1.VM.Name, vm2.VM.Name}, vapp.client.MaxRetryTimeout)
 
 	// Remove firewall rule
 	fmt.Printf("# Deleting firewall rule used for load balancer virtual server access. ")
