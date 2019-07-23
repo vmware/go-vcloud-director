@@ -1102,18 +1102,18 @@ func (egw *EdgeGateway) GetLoadBalancer() (*types.LoadBalancer, error) {
 	return loadBalancerConfig, nil
 }
 
-// UpdateLoadBalancer allows to update global load balancer configuration.
+// UpdateLoadBalancerGlobal allows to update global load balancer configuration.
 // These are 4 fields only: LoadBalancer.Enabled, LoadBalancer.AccelerationEnabled,
 // LoadBalancer.Logging.Enable, LoadBalancer.Logging.LogLevel. They are represented in load balancer
 // global configuration tab in the UI.
 // All other fields are ignored and sent as they are in order to prevent load balancer configuration
 // corruption
-func (egw *EdgeGateway) UpdateLoadBalancer(lb *types.LoadBalancer) (*types.LoadBalancer, error) {
+func (egw *EdgeGateway) UpdateLoadBalancerGlobal(lb *types.LoadBalancer) (*types.LoadBalancer, error) {
 	if !egw.HasAdvancedNetworking() {
 		return nil, fmt.Errorf("only advanced edge gateway supports load balancing")
 	}
 
-	if err := validateUpdateLoadBalancer(lb); err != nil {
+	if err := validateUpdateLoadBalancerGlobal(lb); err != nil {
 		return nil, err
 	}
 	// Retrieve load balancer to work on latest configuration
@@ -1151,7 +1151,7 @@ func (egw *EdgeGateway) UpdateLoadBalancer(lb *types.LoadBalancer) (*types.LoadB
 
 // validateUpdateLoadBalancer validates mandatory fields for global load balancer configuration
 // settings
-func validateUpdateLoadBalancer(lb *types.LoadBalancer) error {
+func validateUpdateLoadBalancerGlobal(lb *types.LoadBalancer) error {
 	if lb.Logging == nil {
 		return fmt.Errorf("field Logging must be set to update load balancer")
 	}

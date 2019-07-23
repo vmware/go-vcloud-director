@@ -121,7 +121,7 @@ func (vcd *TestVCD) Test_LB(check *C) {
 		AccelerationEnabled: true,
 		Logging:             &types.LoadBalancerLogging{LogLevel: "warning", Enable: true},
 	}
-	_, err = edge.UpdateLoadBalancer(lbConfig)
+	_, err = edge.UpdateLoadBalancerGlobal(lbConfig)
 	check.Assert(err, IsNil)
 	fmt.Printf("Done\n")
 
@@ -137,7 +137,7 @@ func (vcd *TestVCD) Test_LB(check *C) {
 
 	// Restore global load balancer configuration
 	fmt.Printf("# Restoring load balancer global configuration: ")
-	_, err = edge.UpdateLoadBalancer(beforeLb)
+	_, err = edge.UpdateLoadBalancerGlobal(beforeLb)
 	check.Assert(err, IsNil)
 	fmt.Printf("Done\n")
 

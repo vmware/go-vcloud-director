@@ -1662,7 +1662,7 @@ type LoadBalancer struct {
 	Version                string `xml:"version,omitempty"`
 
 	// The below fields have `innerxml` tag so that they are not processed but instead
-	// used sent verbatim
+	// sent verbatim
 	VirtualServers []InnerXML `xml:"virtualServer,omitempty"`
 	Pools          []InnerXML `xml:"pool,omitempty"`
 	AppProfiles    []InnerXML `xml:"applicationProfile,omitempty"`

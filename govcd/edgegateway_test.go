@@ -543,7 +543,7 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 	check.Assert(len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule), Equals, beforeChangeNatRulesNumber)
 }
 
-// TestEdgeGateway_UpdateLoadBalancer main point is to test that no load balancer configuration
+// TestEdgeGateway_UpdateLoadBalancerGlobal main point is to test that no load balancer configuration
 // xml tags are lost during changes of load balancer main settings (enable, logging)
 // The test does following steps:
 // 1. Cache raw XML body and marshaled struct in variables before running the test
@@ -551,7 +551,7 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 // 3. Set the settings back as they originally were and again get raw XML body and marshaled struct
 // 4. Compare the XML text and structs before configuration and after configuration - they should be
 // identical except <version></version> tag which is versioning the configuration
-func (vcd *TestVCD) TestEdgeGateway_UpdateLoadBalancer(check *C) {
+func (vcd *TestVCD) TestEdgeGateway_UpdateLoadBalancerGlobal(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gatway given")
 	}
@@ -573,23 +573,23 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateLoadBalancer(check *C) {
 	lbModify.Logging.Enable = true
 	lbModify.Logging.LogLevel = "critical"
 
-	_, err = edge.UpdateLoadBalancer(lbModify)
+	_, err = edge.UpdateLoadBalancerGlobal(lbModify)
 	check.Assert(err, IsNil)
 
 	lbModify.Enabled = false
 	lbModify.AccelerationEnabled = false
 	lbModify.Logging.Enable = true
 	lbModify.Logging.LogLevel = "emergency"
-	_, err = edge.UpdateLoadBalancer(lbModify)
+	_, err = edge.UpdateLoadBalancerGlobal(lbModify)
 	check.Assert(err, IsNil)
 
 	// Try to set invalid loglevel to get validation error
 	lbModify.Logging.LogLevel = "invalid_loglevel"
-	_, err = edge.UpdateLoadBalancer(lbModify)
+	_, err = edge.UpdateLoadBalancerGlobal(lbModify)
 	check.Assert(err, ErrorMatches, ".*Valid log levels are.*")
 
 	// Restore to initial settings and validate that it
-	_, err = edge.UpdateLoadBalancer(beforeLb)
+	_, err = edge.UpdateLoadBalancerGlobal(beforeLb)
 	check.Assert(err, IsNil)
 
 	// Validate load balancer configuration against initially cached version
