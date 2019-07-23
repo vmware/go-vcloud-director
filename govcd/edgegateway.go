@@ -1108,12 +1108,12 @@ func (egw *EdgeGateway) GetLoadBalancer() (*types.LoadBalancer, error) {
 // global configuration tab in the UI.
 // All other fields are ignored and sent as they are in order to prevent load balancer configuration
 // corruption
-func (egw *EdgeGateway) UpdateLoadBalancerGlobal(lb *types.LoadBalancer) (*types.LoadBalancer, error) {
+func (egw *EdgeGateway) UpdateLoadBalancerGlobal(lbConfig *types.LoadBalancer) (*types.LoadBalancer, error) {
 	if !egw.HasAdvancedNetworking() {
 		return nil, fmt.Errorf("only advanced edge gateway supports load balancing")
 	}
 
-	if err := validateUpdateLoadBalancerGlobal(lb); err != nil {
+	if err := validateUpdateLoadBalancerGlobal(lbConfig); err != nil {
 		return nil, err
 	}
 	// Retrieve load balancer to work on latest configuration
@@ -1122,11 +1122,18 @@ func (egw *EdgeGateway) UpdateLoadBalancerGlobal(lb *types.LoadBalancer) (*types
 		return nil, fmt.Errorf("unable to retrieve load balancer before update: %s", err)
 	}
 
+	// Check if change if needed. If not - return early.
+	if currentLb.Enabled == lbConfig.Enabled &&
+		currentLb.AccelerationEnabled == lbConfig.AccelerationEnabled &&
+		currentLb.Logging == lbConfig.Logging {
+		return currentLb, nil
+	}
+
 	// Modify only the global configuration settings
-	currentLb.Enabled = lb.Enabled
-	currentLb.AccelerationEnabled = lb.AccelerationEnabled
-	currentLb.Logging = lb.Logging
-	// Ommit the version as it is updated automatically with each put
+	currentLb.Enabled = lbConfig.Enabled
+	currentLb.AccelerationEnabled = lbConfig.AccelerationEnabled
+	currentLb.Logging = lbConfig.Logging
+	// Omit the version as it is updated automatically with each put
 	currentLb.Version = ""
 
 	// Push updated configuration
