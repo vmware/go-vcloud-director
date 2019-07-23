@@ -9,7 +9,6 @@ package govcd
 import (
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 
@@ -603,12 +602,8 @@ func testGetLoadBalancerXML(edge EdgeGateway, check *C) string {
 	httpPath, err := edge.buildProxiedEdgeEndpointURL(types.LBConfigPath)
 	check.Assert(err, IsNil)
 
-	reqUrl, err := url.ParseRequestURI(httpPath)
-	check.Assert(err, IsNil)
-
-	req := edge.client.NewRequest(nil, http.MethodGet, *reqUrl, nil)
-
-	resp, err := checkResp(edge.client.Http.Do(req))
+	resp, err := edge.client.ExecuteRequestWithCustomError(httpPath, http.MethodGet, types.AnyXMLMime,
+		"unable to get XML from load balancer %s", nil, &types.NSXError{})
 	check.Assert(err, IsNil)
 
 	defer resp.Body.Close()
