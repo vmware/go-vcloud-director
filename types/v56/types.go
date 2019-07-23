@@ -1643,7 +1643,7 @@ type StaticRoute struct {
 	GatewayInterface *Reference `xml:"GatewayInterface,omitempty"` // Gateway interface to which static route is bound.
 }
 
-// LoadBalancer allows to enable/disable load balancing capabilities on specific edge gateway
+// LBGeneralParamsWithXML allows to enable/disable load balancing capabilities on specific edge gateway
 // Reference: vCloud Director API for NSX Programming Guide
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 //
@@ -1651,7 +1651,7 @@ type StaticRoute struct {
 // because Edge Gateway API is done so that if this data is not sent while enabling it would wipe
 // all load balancer configurations. InnerXML type fields are used with struct tag `innerxml` to
 // prevent any manipulation of configuration and sending it verbatim
-type LoadBalancer struct {
+type LBGeneralParamsWithXML struct {
 	XMLName             xml.Name             `xml:"loadBalancer"`
 	Enabled             bool                 `xml:"enabled"`
 	AccelerationEnabled bool                 `xml:"accelerationEnabled"`
@@ -1670,16 +1670,16 @@ type LoadBalancer struct {
 	AppRules       []InnerXML `xml:"applicationRule,omitempty"`
 }
 
-// InnerXML is meant to be used when unmarshaling a field into text rather than struct
-// It helps to avoid missing out any fields which may not have been specified in the struct.
-type InnerXML struct {
-	Text string `xml:",innerxml"`
-}
-
 // LoadBalancerLogging represents logging configuration for LoadBalancer
 type LoadBalancerLogging struct {
 	Enable   bool   `xml:"enable"`
 	LogLevel string `xml:"logLevel"`
+}
+
+// InnerXML is meant to be used when unmarshaling a field into text rather than struct
+// It helps to avoid missing out any fields which may not have been specified in the struct.
+type InnerXML struct {
+	Text string `xml:",innerxml"`
 }
 
 // LBMonitor defines health check parameters for a particular type of network traffic

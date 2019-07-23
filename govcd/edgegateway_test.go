@@ -542,7 +542,7 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 	check.Assert(len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule), Equals, beforeChangeNatRulesNumber)
 }
 
-// TestEdgeGateway_UpdateLoadBalancerGlobal main point is to test that no load balancer configuration
+// TestEdgeGateway_UpdateLBGeneralParams main point is to test that no load balancer configuration
 // xml tags are lost during changes of load balancer main settings (enable, logging)
 // The test does following steps:
 // 1. Cache raw XML body and marshaled struct in variables before running the test
@@ -550,7 +550,7 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 // 3. Set the settings back as they originally were and again get raw XML body and marshaled struct
 // 4. Compare the XML text and structs before configuration and after configuration - they should be
 // identical except <version></version> tag which is versioning the configuration
-func (vcd *TestVCD) TestEdgeGateway_UpdateLoadBalancerGlobal(check *C) {
+func (vcd *TestVCD) TestEdgeGateway_UpdateLBGeneralParams(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gatway given")
 	}
@@ -564,40 +564,28 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateLoadBalancerGlobal(check *C) {
 	// Cache current load balancer settings for change validation in the end
 	beforeLb, beforeLbXml := testCacheLoadBalancer(edge, check)
 
-	lbModify, err := edge.GetLoadBalancer()
+	_, err = edge.UpdateLBGeneralParams(true, true, true, "critical")
 	check.Assert(err, IsNil)
 
-	lbModify.Enabled = true
-	lbModify.AccelerationEnabled = true
-	lbModify.Logging.Enable = true
-	lbModify.Logging.LogLevel = "critical"
-
-	_, err = edge.UpdateLoadBalancerGlobal(lbModify)
-	check.Assert(err, IsNil)
-
-	lbModify.Enabled = false
-	lbModify.AccelerationEnabled = false
-	lbModify.Logging.Enable = true
-	lbModify.Logging.LogLevel = "emergency"
-	_, err = edge.UpdateLoadBalancerGlobal(lbModify)
+	_, err = edge.UpdateLBGeneralParams(false, false, false, "emergency")
 	check.Assert(err, IsNil)
 
 	// Try to set invalid loglevel to get validation error
-	lbModify.Logging.LogLevel = "invalid_loglevel"
-	_, err = edge.UpdateLoadBalancerGlobal(lbModify)
+	_, err = edge.UpdateLBGeneralParams(false, false, false, "invalid_loglevel")
 	check.Assert(err, ErrorMatches, ".*Valid log levels are.*")
 
 	// Restore to initial settings and validate that it
-	_, err = edge.UpdateLoadBalancerGlobal(beforeLb)
+	_, err = edge.UpdateLBGeneralParams(beforeLb.Enabled, beforeLb.AccelerationEnabled,
+		beforeLb.Logging.Enable, beforeLb.Logging.LogLevel)
 	check.Assert(err, IsNil)
 
 	// Validate load balancer configuration against initially cached version
 	testCheckLoadBalancerConfig(beforeLb, beforeLbXml, edge, check)
 }
 
-// testGetLoadBalancerXML is used for additional validation that modifying load balancer
+// testGetLBGeneralParamsXML is used for additional validation that modifying load balancer
 // does not change any single field. It returns a string of whole load balancer configuration
-func testGetLoadBalancerXML(edge EdgeGateway, check *C) string {
+func testGetLBGeneralParamsXML(edge EdgeGateway, check *C) string {
 
 	httpPath, err := edge.buildProxiedEdgeEndpointURL(types.LBConfigPath)
 	check.Assert(err, IsNil)
@@ -616,20 +604,20 @@ func testGetLoadBalancerXML(edge EdgeGateway, check *C) string {
 
 // cacheLoadBalancer is meant to store load balancer settings before any operations so that all
 // configuration can be checked after manipulation
-func testCacheLoadBalancer(edge EdgeGateway, check *C) (*types.LoadBalancer, string) {
-	beforeLb, err := edge.GetLoadBalancer()
+func testCacheLoadBalancer(edge EdgeGateway, check *C) (*types.LBGeneralParamsWithXML, string) {
+	beforeLb, err := edge.GetLBGeneralParams()
 	check.Assert(err, IsNil)
-	beforeLbXml := testGetLoadBalancerXML(edge, check)
+	beforeLbXml := testGetLBGeneralParamsXML(edge, check)
 	return beforeLb, beforeLbXml
 }
 
 // testCheckLoadBalancerConfig validates if both raw XML string and load balancer struct remain
 // identical after settings manipulation.
-func testCheckLoadBalancerConfig(beforeLb *types.LoadBalancer, beforeLbXml string, edge EdgeGateway, check *C) {
-	afterLb, err := edge.GetLoadBalancer()
+func testCheckLoadBalancerConfig(beforeLb *types.LBGeneralParamsWithXML, beforeLbXml string, edge EdgeGateway, check *C) {
+	afterLb, err := edge.GetLBGeneralParams()
 	check.Assert(err, IsNil)
 
-	afterLbXml := testGetLoadBalancerXML(edge, check)
+	afterLbXml := testGetLBGeneralParamsXML(edge, check)
 
 	// remove `<version></version>` tag from both XML represntation and struct for deep comparison
 	// because this version changes with each update and will never be the same after a few
