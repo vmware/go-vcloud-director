@@ -9,7 +9,6 @@ import (
 	"crypto/rand"
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -1078,138 +1077,79 @@ func (eGW *EdgeGateway) buildProxiedEdgeEndpointURL(optionalSuffix string) (stri
 	return hostname, nil
 }
 
-func (egw *EdgeGateway) getLoadBalancerXML() (string, error) {
+// GetLoadBalancer retrieves load balancer configuration of `&types.LoadBalancer` and can be used
+// to access load balancer global configuration options. These are 4 fields only:
+// LoadBalancer.Enabled, LoadBalancer.AccelerationEnabled, LoadBalancer.Logging.Enable,
+// LoadBalancer.Logging.LogLevel
+func (egw *EdgeGateway) GetLoadBalancer() (*types.LoadBalancer, error) {
 	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LBConfigPath)
 	if err != nil {
-		return "", fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
+		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
 
-	reqUrl, err := url.ParseRequestURI(httpPath)
+	loadBalancerConfig := &types.LoadBalancer{}
+	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
+		"unable to read load balancer configuration: %s", nil, loadBalancerConfig)
+
 	if err != nil {
-		return "", fmt.Errorf("unable to parse request URL (%s): %s", httpPath, err)
+		return nil, err
 	}
 
-	req := egw.client.NewRequest(nil, http.MethodGet, *reqUrl, nil)
-
-	resp, err := checkResp(egw.client.Http.Do(req))
-	if err != nil {
-		return "", fmt.Errorf("error getting load balancer settings: %s", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("could not read body: %s", err)
-	}
-	bodyString := string(body)
-
-	util.Logger.Printf("[DEBUG] got load balancer settings XML: %s", bodyString)
-
-	return bodyString, nil
+	return loadBalancerConfig, nil
 }
 
-func (egw *EdgeGateway) UpdateLoadBalancer(enabled, accelerationEnabled, loggingEnabled bool, logLevel string) error {
-	body, err := egw.getLoadBalancerXML()
+// UpdateLoadBalancer allows to update global load balancer configuration.
+// These are 4 fields only: LoadBalancer.Enabled, LoadBalancer.AccelerationEnabled,
+// LoadBalancer.Logging.Enable, LoadBalancer.Logging.LogLevel. They are represented in load balancer
+// global configuration tab in the UI.
+// All other fields are ignored and sent as they are in order to prevent load balancer configuration
+// corruption
+func (egw *EdgeGateway) UpdateLoadBalancer(lb *types.LoadBalancer) (*types.LoadBalancer, error) {
+	if err := validateUpdateLoadBalancer(lb); err != nil {
+		return nil, err
+	}
+	// Retrieve load balancer to work on latest configuration
+	currentLb, err := egw.GetLoadBalancer()
 	if err != nil {
-		return fmt.Errorf("could not lookup edge gateway: %s", err)
+		return nil, fmt.Errorf("unable to retrieve load balancer before update: %s", err)
 	}
 
-	updatedBody, err := updateLoadBalancerRawXml(string(body), enabled, accelerationEnabled, loggingEnabled, logLevel)
-	if err != nil {
-		return fmt.Errorf("could not update XML structure: %s", err)
-	}
+	// Modify only the global configuration settings
+	currentLb.Enabled = lb.Enabled
+	currentLb.AccelerationEnabled = lb.AccelerationEnabled
+	currentLb.Logging = lb.Logging
+	// Ommit the version as it is updated automatically with each put
+	currentLb.Version = ""
 
+	// Push updated configuration
 	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LBConfigPath)
 	if err != nil {
-		return fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
+		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
-
-	reqUrl, err := url.ParseRequestURI(httpPath)
-	if err != nil {
-		return fmt.Errorf("unable to parse request URL (%s): %s", httpPath, err)
-	}
-
-	req := egw.client.NewRequest(nil, http.MethodPut, *reqUrl, strings.NewReader(updatedBody))
-	req.Header.Add("content-type", types.AnyXMLMime)
-
-	util.Logger.Printf("[DEBUG] posting load balancer settings XML: %s", updatedBody)
-
-	resp, err := checkResp(egw.client.Http.Do(req))
-	if err != nil {
-		return fmt.Errorf("error updating load balancer settings: %s", err)
-	}
-	defer resp.Body.Close()
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("error reading response after load balancer update: %s", err)
-	}
-
-	if resp.StatusCode != http.StatusNoContent { // If the response is not 204
-		return fmt.Errorf("error updating load balancer settings. got status %d, body: %s",
-			resp.StatusCode, string(bodyBytes))
-	}
-
-	return nil
-
-}
-
-func updateLoadBalancerRawXml(body string, enabled, accelerationEnabled, loggingEnabled bool, logLevel string) (string, error) {
-
-	reEnabled := regexp.MustCompile(`<enabled>\w*<\/enabled>`)
-	reAccelerationEnabled := regexp.MustCompile(`<accelerationEnabled>\w*</accelerationEnabled>`)
-	reLogging := regexp.MustCompile(`<logging>(<enable>|<logLevel>)\w*(<\/enable>|<\/logLevel>)(<enable>|<logLevel>)\w*(<\/enable>|<\/logLevel>)<\/logging>`)
-
-	if !reEnabled.MatchString(body) || !reAccelerationEnabled.MatchString(body) || !reLogging.MatchString(body) {
-		return "", fmt.Errorf("not all fields are available in body")
-	}
-
-	// update enabled
-	newEnabled := fmt.Sprintf("<enabled>%t</enabled>", enabled)
-	returnBody := reEnabled.ReplaceAllLiteralString(body, newEnabled)
-
-	// update acceleration enabled
-	newAccelerationEnabled := fmt.Sprintf("<accelerationEnabled>%t</accelerationEnabled>", accelerationEnabled)
-	returnBody = reAccelerationEnabled.ReplaceAllLiteralString(returnBody, newAccelerationEnabled)
-
-	// update logging. this is tricky because logging XML is nested and there is no proof that
-	// order of fields `<enable>` and `<logLevel>` with parent `<logging>` will always be preserved
-	// this update must cover both
-	//
-	// example: <logging><enable>false</enable><logLevel>info</logLevel></logging> may as well be
-	// ordered differently <logging><logLevel>info</logLevel><enable>false</enable></logging>
-	newLogging := fmt.Sprintf("<logging><enable>%t</enable><logLevel>%s</logLevel></logging>",
-		loggingEnabled, logLevel)
-	// the regex matches the whole fields ordered in both ways
-	returnBody = reLogging.ReplaceAllLiteralString(returnBody, newLogging)
-
-	return returnBody, nil
-}
-
-/*
-func (egw *EdgeGateway) UpdateLoadBalancerConfig(enabled, accelerationEnabled, loggingEnabled bool, logLevel string) error {
-
-	lbConfig, err := egw.ReadLoadBalancerConfig()
-	if err != nil {
-		return fmt.Errorf("could not read current load balancer configuration: %s", err)
-	}
-
-	lbConfig.Enabled = enabled
-	lbConfig.AccelerationEnabled = accelerationEnabled
-	lbConfig.Logging.Enable = loggingEnabled
-	lbConfig.Logging.LogLevel = logLevel
-
-	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LBConfigPath)
-	if err != nil {
-		return fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
-	}
-
-	// Result should be 204, if not we expect an error of type types.NSXError
 	_, err = egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodPut, types.AnyXMLMime,
-		"error while updating load balancer: %s", lbConfig, &types.NSXError{})
+		"error while updating load balancer application rule : %s", currentLb, &types.NSXError{})
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	// Retrieve configuration after update
+	updatedLb, err := egw.GetLoadBalancer()
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve load balancer after update: %s", err)
+	}
+
+	return updatedLb, nil
+}
+
+// validateUpdateLoadBalancer validates mandatory fields for global load balancer configuration
+// settings
+func validateUpdateLoadBalancer(lb *types.LoadBalancer) error {
+	if lb.Logging == nil {
+		return fmt.Errorf("field Logging must be set to update load balancer")
+	}
+	if lb.Logging.LogLevel == "" {
+		return fmt.Errorf("field Logging.LogLevel must be set to update load balancer")
 	}
 
 	return nil
 }
-*/

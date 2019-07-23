@@ -1647,21 +1647,33 @@ type StaticRoute struct {
 // Reference: vCloud Director API for NSX Programming Guide
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 //
-// Warning. It nests all components (LBMonitor, LBPool, LBAppProfile, LBVirtualServer) because
-// Edge Gateway API is done so that if this data is not sent while enabling it would wipe all load
-// balancer configurations.
+// Warning. It nests all components (LBMonitor, LBPool, LBAppProfile, LBAppRule, LBVirtualServer)
+// because Edge Gateway API is done so that if this data is not sent while enabling it would wipe
+// all load balancer configurations. InnerXML type fields are used with struct tag `innerxml` to
+// prevent any manipulation of configuration and sending it verbatim
 type LoadBalancer struct {
-	XMLName                xml.Name             `xml:"loadBalancer"`
-	Enabled                bool                 `xml:"enabled"`
-	AccelerationEnabled    bool                 `xml:"accelerationEnabled"`
-	EnableServiceInsertion bool                 `xml:"enableServiceInsertion"`
-	Logging                *LoadBalancerLogging `xml:"logging"`
+	XMLName             xml.Name             `xml:"loadBalancer"`
+	Enabled             bool                 `xml:"enabled"`
+	AccelerationEnabled bool                 `xml:"accelerationEnabled"`
+	Logging             *LoadBalancerLogging `xml:"logging"`
 
-	// The load balancer
-	Monitor       *LBMonitor       `xml:"monitor"`
-	Pool          *LBPool          `xml:"pool"`
-	AppProfile    *LBAppProfile    `xml:"applicationProfile"`
-	VirtualServer *LBVirtualServer `xml:"virtualServer"`
+	//
+	EnableServiceInsertion bool   `xml:"enableServiceInsertion"`
+	Version                string `xml:"version,omitempty"`
+
+	// The below fields have `innerxml` tag so that they are not processed but instead
+	// used sent verbatim
+	VirtualServers []InnerXML `xml:"virtualServer,omitempty"`
+	Pools          []InnerXML `xml:"pool,omitempty"`
+	AppProfiles    []InnerXML `xml:"applicationProfile,omitempty"`
+	Monitors       []InnerXML `xml:"monitor,omitempty"`
+	AppRules       []InnerXML `xml:"applicationRule,omitempty"`
+}
+
+// InnerXML is meant to be used when unmarshaling a field into text rather than struct
+// It helps to avoid missing out any fields which may not have been specified in the struct.
+type InnerXML struct {
+	Text string `xml:",innerxml"`
 }
 
 // LoadBalancerLogging represents logging configuration for LoadBalancer

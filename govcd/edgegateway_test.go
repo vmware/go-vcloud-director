@@ -7,6 +7,9 @@
 package govcd
 
 import (
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -541,14 +544,13 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 }
 
 // TestEdgeGateway_UpdateLoadBalancer main point is to test that no load balancer configuration
-// configuration xml tags are not lost during changes of load balancer main settings (enable, logging)
-// the main concept for this test is:
-// 1. cache raw XML body in a variable before running the test
-// 2. toggle the settings of load balancer in various ways and ensure no err is returned
-// 3. set the settings back as they originally were and again get raw XML body
-// 4. compare the XML text before configuration and after configuration - they should be identical
-// The only tag which is changing is <version></version> which is versioning the configuration
-// therefor it must be stripped before deeply comparing "before" and "after" XML body
+// xml tags are lost during changes of load balancer main settings (enable, logging)
+// The test does following steps:
+// 1. Cache raw XML body and marshaled struct in variables before running the test
+// 2. Toggle the settings of load balancer in various ways and ensure no err is returned
+// 3. Set the settings back as they originally were and again get raw XML body and marshaled struct
+// 4. Compare the XML text and structs before configuration and after configuration - they should be
+// identical except <version></version> tag which is versioning the configuration
 func (vcd *TestVCD) TestEdgeGateway_UpdateLoadBalancer(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gatway given")
@@ -556,50 +558,95 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateLoadBalancer(check *C) {
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
 
-	// cache load balancer config in raw XML for later comparison
+	if !edge.HasAdvancedNetworking() {
+		check.Skip("Skipping test because the edge gateway does not have advanced networking enabled")
+	}
 
-	err = edge.UpdateLoadBalancer(false, false, false, "info")
+	// Cache current load balancer settings for change validation in the end
+	beforeLb, beforeLbXml := testCacheLoadBalancer(edge, check)
+
+	lbModify, err := edge.GetLoadBalancer()
 	check.Assert(err, IsNil)
 
-	rawXMLbefore, err := edge.getLoadBalancerXML()
+	lbModify.Enabled = true
+	lbModify.AccelerationEnabled = true
+	lbModify.Logging.Enable = true
+	lbModify.Logging.LogLevel = "critical"
+
+	_, err = edge.UpdateLoadBalancer(lbModify)
 	check.Assert(err, IsNil)
 
-	reg := regexp.MustCompile(`<version>\d*<\/version>`)
-	rawXMLbefore = reg.ReplaceAllString(rawXMLbefore, "")
-
-	// err = edge.UpdateLoadBalancer(false, false, false, "info")
-	// check.Assert(err, IsNil)
-
-	// set all values to true
-	err = edge.UpdateLoadBalancer(true, true, true, "info")
+	lbModify.Enabled = false
+	lbModify.AccelerationEnabled = false
+	lbModify.Logging.Enable = true
+	lbModify.Logging.LogLevel = "emergency"
+	_, err = edge.UpdateLoadBalancer(lbModify)
 	check.Assert(err, IsNil)
 
-	err = edge.UpdateLoadBalancer(true, false, false, "critical")
+	// Try to set invalid loglevel to get validation error
+	lbModify.Logging.LogLevel = "invalid_loglevel"
+	_, err = edge.UpdateLoadBalancer(lbModify)
+	check.Assert(err, ErrorMatches, ".*Valid log levels are.*")
+
+	// Restore to initial settings and validate that it
+	_, err = edge.UpdateLoadBalancer(beforeLb)
 	check.Assert(err, IsNil)
 
-	err = edge.UpdateLoadBalancer(false, true, true, "warning")
+	// Validate load balancer configuration against initially cached version
+	testCheckLoadBalancerConfig(beforeLb, beforeLbXml, edge, check)
+}
+
+// testGetLoadBalancerXML is used for additional validation that modifying load balancer
+// does not change any single field. It returns a string of whole load balancer configuration
+func testGetLoadBalancerXML(edge EdgeGateway, check *C) string {
+
+	httpPath, err := edge.buildProxiedEdgeEndpointURL(types.LBConfigPath)
 	check.Assert(err, IsNil)
 
-	// reset back to the state it was originally
-	err = edge.UpdateLoadBalancer(false, false, false, "info")
+	reqUrl, err := url.ParseRequestURI(httpPath)
 	check.Assert(err, IsNil)
 
-	rawXMLafter, err := edge.getLoadBalancerXML()
+	req := edge.client.NewRequest(nil, http.MethodGet, *reqUrl, nil)
+
+	resp, err := checkResp(edge.client.Http.Do(req))
 	check.Assert(err, IsNil)
-	rawXMLafter = reg.ReplaceAllString(rawXMLafter, "")
 
-	check.Assert(rawXMLbefore, DeepEquals, rawXMLafter)
+	defer resp.Body.Close()
 
-	// err = edge.UpdateLoadBalancerConfig(true, true, true, "critical")
-	// check.Assert(err, IsNil)
+	body, err := ioutil.ReadAll(resp.Body)
+	check.Assert(err, IsNil)
 
-	// lbConfigAfter, err := edge.ReadLoadBalancerConfig()
-	// lbConfigAfter.Enabled = true
-	// lbConfigAfter.AccelerationEnabled = true
-	// lbConfigAfter.Logging.Enable = true
-	// lbConfigAfter.Logging.LogLevel = "critical"
+	return string(body)
+}
 
-	// check.Assert(err, IsNil)
-	// check.Assert(lbConfigAfter, DeepEquals, lbConfigBefore)
+// cacheLoadBalancer is meant to store load balancer settings before any operations so that all
+// configuration can be checked after manipulation
+func testCacheLoadBalancer(edge EdgeGateway, check *C) (*types.LoadBalancer, string) {
+	beforeLb, err := edge.GetLoadBalancer()
+	check.Assert(err, IsNil)
+	beforeLbXml := testGetLoadBalancerXML(edge, check)
+	return beforeLb, beforeLbXml
+}
 
+// testCheckLoadBalancerConfig validates if both raw XML string and load balancer struct remain
+// identical after settings manipulation.
+func testCheckLoadBalancerConfig(beforeLb *types.LoadBalancer, beforeLbXml string, edge EdgeGateway, check *C) {
+	afterLb, err := edge.GetLoadBalancer()
+	check.Assert(err, IsNil)
+
+	afterLbXml := testGetLoadBalancerXML(edge, check)
+
+	// remove `<version></version>` tag from both XML represntation and struct for deep comparison
+	// because this version changes with each update and will never be the same after a few
+	// operations
+
+	reVersion := regexp.MustCompile(`<version>\w*<\/version>`)
+	beforeLbXml = reVersion.ReplaceAllLiteralString(beforeLbXml, "")
+	afterLbXml = reVersion.ReplaceAllLiteralString(afterLbXml, "")
+
+	beforeLb.Version = ""
+	afterLb.Version = ""
+
+	check.Assert(beforeLb, DeepEquals, afterLb)
+	check.Assert(beforeLbXml, DeepEquals, afterLbXml)
 }
