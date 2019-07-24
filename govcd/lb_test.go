@@ -38,6 +38,8 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	check.Assert(err, IsNil)
 	vdc, err := org.GetVdcByName(vcd.config.VCD.Vdc)
 	check.Assert(err, IsNil)
+	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	check.Assert(err, IsNil)
 
 	// Find catalog and catalog item
 	catalog, err := org.FindCatalog(vcd.config.VCD.Catalog.Name)
@@ -63,10 +65,10 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	// vApp was created - let's add it to cleanup list
 	AddToCleanupList(TestLB, "vapp", "", "createTestVapp")
 
-	// Wait untill vApp becomes configuraable
+	// Wait until vApp becomes configurable
 	initialVappStatus, err := vapp.GetStatus()
 	check.Assert(err, IsNil)
-	vapp.BlockWhileStatus(initialVappStatus, vcd.vapp.client.MaxRetryTimeout)
+	vapp.BlockWhileStatus(initialVappStatus, vapp.client.MaxRetryTimeout)
 	fmt.Printf(". Done\n")
 
 	fmt.Printf("# Attaching vDC network '%s' to vApp '%s'", vcd.config.VCD.Network.Net1, TestLB)
@@ -106,19 +108,42 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	ruleDescription := addFirewallRule(vdc, vcd, check)
 	fmt.Printf("Done\n")
 
-	buildLoadBalancer(ip1, ip2, vcd, check)
+	// Build load balancer
+	buildLoadBalancer(edge, ip1, ip2, vcd, check)
+
+	// Cache current load balancer settings for change validation in the end
+	beforeLb, beforeLbXml := testCacheLoadBalancer(edge, check)
+
+	// Enable load balancer globally
+	fmt.Printf("# Enabling load balancer with acceleration: ")
+	_, err = edge.UpdateLBGeneralParams(true, true, true, "warning")
+	check.Assert(err, IsNil)
+	fmt.Printf("Done\n")
 
 	// Using external edge gateway IP for
 	queryUrl := "http://" + vcd.config.VCD.ExternalIp + ":8000/server"
 	fmt.Printf("# Querying load balancer for expected responses at %s\n", queryUrl)
-	bigErr := checkLoadBalancer(queryUrl, []string{vm1.VM.Name, vm2.VM.Name}, vcd.vapp.client.MaxRetryTimeout)
+	queryErr := checkLoadBalancer(queryUrl, []string{vm1.VM.Name, vm2.VM.Name}, vapp.client.MaxRetryTimeout)
 
 	// Remove firewall rule
 	fmt.Printf("# Deleting firewall rule used for load balancer virtual server access. ")
 	deleteFirewallRule(ruleDescription, vdc, vcd, check)
 	fmt.Printf("Done\n")
 
-	check.Assert(bigErr, IsNil)
+	// Restore global load balancer configuration
+	fmt.Printf("# Restoring load balancer global configuration: ")
+	_, err = edge.UpdateLBGeneralParams(beforeLb.Enabled, beforeLb.AccelerationEnabled,
+		beforeLb.Logging.Enable, beforeLb.Logging.LogLevel)
+	check.Assert(err, IsNil)
+	fmt.Printf("Done\n")
+
+	// Validate load balancer configuration against initially cached version
+	fmt.Printf("# Validating load balancer XML structure: ")
+	testCheckLoadBalancerConfig(beforeLb, beforeLbXml, edge, check)
+	fmt.Printf("Done\n")
+
+	// Finally after some cleanups - check if querying succeeded
+	check.Assert(queryErr, IsNil)
 	return
 }
 
@@ -127,7 +152,6 @@ func (vcd *TestVCD) Test_LB(check *C) {
 // * ExternalIp is set in config (will be edge gateway external IP)
 // * PhotonOsOvaPath is set (will be used for spawning VMs)
 // * Edge Gateway can be found and it has advanced networking enabled (a must for load balancers)
-// TODO check if load balancing is enabled once edge gateway supports it
 func validateTestLbPrerequisites(vcd *TestVCD, check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
@@ -144,6 +168,7 @@ func validateTestLbPrerequisites(vcd *TestVCD, check *C) {
 	if !edge.HasAdvancedNetworking() {
 		check.Skip("Skipping test because the edge gateway does not have advanced networking enabled")
 	}
+
 }
 
 // spawnVM spawns VMs in provided vApp from template and also applies customization script to
@@ -189,11 +214,7 @@ func spawnVM(name string, vdc Vdc, vapp VApp, net types.NetworkConnectionSection
 }
 
 // buildLB establishes an HTTP load balancer for 2 IPs specified as arguments
-func buildLoadBalancer(node1Ip, node2Ip string, vcd *TestVCD, check *C) {
-
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
-	check.Assert(err, IsNil)
-	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
+func buildLoadBalancer(edge EdgeGateway, node1Ip, node2Ip string, vcd *TestVCD, check *C) {
 
 	_, serverPoolId, appProfileId, _ := buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, TestLB,
 		check, vcd, edge)
@@ -213,7 +234,7 @@ func buildLoadBalancer(node1Ip, node2Ip string, vcd *TestVCD, check *C) {
 		DefaultPoolId:        serverPoolId,
 	}
 
-	_, err = edge.CreateLBVirtualServer(lbVirtualServerConfig)
+	_, err := edge.CreateLBVirtualServer(lbVirtualServerConfig)
 	check.Assert(err, IsNil)
 
 	// We created virtual server successfully therefore let's prepend it to cleanup list so that it
