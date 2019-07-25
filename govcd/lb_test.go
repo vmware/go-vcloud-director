@@ -19,7 +19,6 @@ import (
 )
 
 // Test_Lb load balancer integration test
-// MANDATORY PREREQUISITE - manually enable load balancing for edge gateway with enabled acceleration
 // 1. Validates that all needed parameters are here
 // 2. Uploads or reuses media.photonOsOvaPath OVA image
 // 3. Creates RAW vApp and attaches vDC network to it
