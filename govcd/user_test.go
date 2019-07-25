@@ -60,7 +60,7 @@ func (vcd *TestVCD) Test_GetRole(check *C) {
 	}
 }
 
-// Checks that we can retrieve a user by name or Id
+// Checks that we can retrieve a user by name or ID
 func (vcd *TestVCD) Test_FetchUserByNameOrId(check *C) {
 	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
@@ -79,13 +79,13 @@ func (vcd *TestVCD) Test_FetchUserByNameOrId(check *C) {
 		check.Assert(user, NotNil)
 		check.Assert(user.User.Name, Equals, userRef.Name)
 
-		// Then we try to get the same user by Id
+		// Then we try to get the same user by ID
 		user, err = adminOrg.FetchUserById(userRef.ID, false)
 		check.Assert(err, IsNil)
 		check.Assert(user, NotNil)
 		check.Assert(user.User.Name, Equals, userRef.Name)
 
-		// Then we try to get the same user by Name or Id combined
+		// Then we try to get the same user by Name or ID combined
 		user, err = adminOrg.FetchUserByNameOrId(userRef.ID, true)
 		check.Assert(err, IsNil)
 		check.Assert(user, NotNil)

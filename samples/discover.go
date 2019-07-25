@@ -188,7 +188,7 @@ func main() {
 		}
 		for _, item := range cat.Catalog.CatalogItems {
 			for N, deepItem := range item.CatalogItem {
-				fmt.Printf("%3d %-40s %s (Id: %s)\n", N, deepItem.Name, deepItem.Type, deepItem.ID)
+				fmt.Printf("%3d %-40s %s (ID: %s)\n", N, deepItem.Name, deepItem.Type, deepItem.ID)
 			}
 		}
 	}

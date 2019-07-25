@@ -16,7 +16,7 @@ import (
 // service monitor, server pool, application profile and application rule.
 // The following things are tested if prerequisites are met:
 // 1. Creation of load balancer virtual server
-// 2. Read load balancer virtual server by both Id and Name (virtual server name must be unique in
+// 2. Get load balancer virtual server by both Id and Name (virtual server name must be unique in
 // single edge gateway)
 // 3. Update - change a single field and compare that configuration and result objects are deeply
 // equal
@@ -179,6 +179,5 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 	AddToCleanupList(lbPool.Name, "lbServerPool", parentEntity, check.TestName())
 	AddToCleanupList(lbMon.Name, "lbServiceMonitor", parentEntity, check.TestName())
 
-	// return lbMonitor.Id, lbPool.Id, lbAppProfile.Id, lbAppRule.Id
 	return lbMonitor.Id, lbPool.Id, lbAppProfile.Id, lbAppRule.Id
 }

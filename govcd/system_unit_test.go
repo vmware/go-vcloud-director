@@ -13,7 +13,7 @@ import (
 )
 
 // Tests reliability of getBareEntityUuid, which returns a bare UUID from an
-// entity Id field
+// entity ID field
 func Test_BareID(t *testing.T) {
 
 	type idTest struct {
@@ -101,30 +101,30 @@ func Test_BareID(t *testing.T) {
 	for _, it := range idTestList {
 		bareId, err := getBareEntityUuid(it.rawId)
 		if err != nil {
-			t.Logf("error extracting bare Id: %s", err)
+			t.Logf("error extracting bare ID: %s", err)
 			t.Fail()
 		}
 		if bareId == it.expected {
 			if os.Getenv("TEST_VERBOSE") != "" {
-				t.Logf("Id '%s': found '%s' as expected", it.rawId, it.expected)
+				t.Logf("ID '%s': found '%s' as expected", it.rawId, it.expected)
 			}
 		} else {
-			t.Logf("error getting bare Id: expected '%s' but found '%s'", it.expected, bareId)
+			t.Logf("error getting bare ID: expected '%s' but found '%s'", it.expected, bareId)
 			t.Fail()
 		}
 	}
 	for _, it := range idTestExpectedToFailList {
 		bareId, err := getBareEntityUuid(it.rawId)
 		if err == nil {
-			t.Logf("unexpected success with raw Id %s", it.rawId)
+			t.Logf("unexpected success with raw ID %s", it.rawId)
 			t.Fail()
 		}
 		if bareId == it.expected {
 			if os.Getenv("TEST_VERBOSE") != "" {
-				t.Logf("Id '%s': found '%s' as expected", it.rawId, it.expected)
+				t.Logf("ID '%s': found '%s' as expected", it.rawId, it.expected)
 			}
 		} else {
-			t.Logf("error getting bare Id: expected '%s' but found '%s'", it.expected, bareId)
+			t.Logf("error getting bare ID: expected '%s' but found '%s'", it.expected, bareId)
 			t.Fail()
 		}
 	}
