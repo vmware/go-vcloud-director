@@ -1671,7 +1671,7 @@ type LbGeneralParamsWithXml struct {
 	AppRules       []InnerXML `xml:"applicationRule,omitempty"`
 }
 
-// LbLogging represents logging configuration for LoadBalancer
+// LbLogging represents logging configuration for load balancer
 type LbLogging struct {
 	Enable   bool   `xml:"enable"`
 	LogLevel string `xml:"logLevel"`
