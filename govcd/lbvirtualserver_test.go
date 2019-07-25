@@ -39,11 +39,11 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	}
 
 	_, serverPoolId, appProfileId, appRuleId := buildTestLBVirtualServerPrereqs("1.1.1.1", "2.2.2.2",
-		TestLBVirtualServer, check, vcd, edge)
+		TestLbVirtualServer, check, vcd, edge)
 
 	// Configure creation object including reference to service monitor
 	lbVirtualServerConfig := &types.LbVirtualServer{
-		Name:                 TestLBVirtualServer,
+		Name:                 TestLbVirtualServer,
 		IpAddress:            vcd.config.VCD.ExternalIp, // Load balancer virtual server serves on Edge gw IP
 		Enabled:              true,
 		AccelerationEnabled:  true,
@@ -72,7 +72,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	// We created virtual server successfully therefore let's prepend it to cleanup list so that it
 	// is deleted before the child components
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
-	PrependToCleanupList(TestLBVirtualServer, "lbVirtualServer", parentEntity, check.TestName())
+	PrependToCleanupList(TestLbVirtualServer, "lbVirtualServer", parentEntity, check.TestName())
 
 	// Lookup by both name and Id and compare that these are equal values
 	lbVirtualServerById, err := edge.GetLbVirtualServer(&types.LbVirtualServer{Id: createdLbVirtualServer.Id})

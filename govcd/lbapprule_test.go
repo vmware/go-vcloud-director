@@ -28,7 +28,7 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 
 	// Used for creating
 	lbAppRuleConfig := &types.LbAppRule{
-		Name:   TestLBAppRule,
+		Name:   TestLbAppRule,
 		Script: "acl vmware_page url_beg / vmware redirect location https://www.vmware.com/ ifvmware_page",
 	}
 
@@ -38,7 +38,7 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 
 	// // We created application rule successfully therefore let's add it to cleanup list
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
-	AddToCleanupList(TestLBAppRule, "lbAppRule", parentEntity, check.TestName())
+	AddToCleanupList(TestLbAppRule, "lbAppRule", parentEntity, check.TestName())
 
 	// // Lookup by both name and Id and compare that these are equal values
 	lbAppRuleByID, err := edge.GetLbAppRule(&types.LbAppRule{Id: createdLbAppRule.Id})

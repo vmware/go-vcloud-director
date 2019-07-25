@@ -28,7 +28,7 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 
 	// Used for creating
 	lbAppProfileConfig := &types.LbAppProfile{
-		Name: TestLBAppProfile,
+		Name: TestLbAppProfile,
 		Persistence: &types.LbAppProfilePersistence{
 			Method: "sourceip",
 			Expire: 13,
@@ -42,7 +42,7 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 
 	// We created application profile successfully therefore let's add it to cleanup list
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
-	AddToCleanupList(TestLBAppProfile, "lbAppProfile", parentEntity, check.TestName())
+	AddToCleanupList(TestLbAppProfile, "lbAppProfile", parentEntity, check.TestName())
 
 	// Lookup by both name and Id and compare that these are equal values
 	lbAppProfileByID, err := edge.GetLbAppProfile(&types.LbAppProfile{Id: createdLbAppProfile.Id})
