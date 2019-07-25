@@ -7,17 +7,19 @@
 package govcd
 
 import (
+	"fmt"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
 
 // Test_LBAppProfile tests CRUD methods for load balancer application profile.
 // The following things are tested if prerequisite Edge Gateway exists:
-// Creation of load balancer application profile
-// Read load balancer application profile by both ID and Name (application profile name must be unique in single edge gateway)
-// Update - change a single field and compare that configuration and result objects are deeply equal
-// Update - try and fail to update without mandatory field
-// Delete
+// 1. Creation of load balancer application profile
+// 2. Get load balancer application profile by both ID and Name (application profile name must be unique in single edge gateway)
+// 3. Update - change a single field and compare that configuration and result objects are deeply equal
+// 4. Update - try and fail to update without mandatory field
+// 5. Delete
 func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
@@ -27,40 +29,44 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
 	// Used for creating
-	lbAppProfileConfig := &types.LBAppProfile{
-		Name: TestLBAppProfile,
-		Persistence: &types.LBAppProfilePersistence{
+	lbAppProfileConfig := &types.LbAppProfile{
+		Name: TestLbAppProfile,
+		Persistence: &types.LbAppProfilePersistence{
 			Method: "sourceip",
 			Expire: 13,
 		},
 		Template: "HTTPS",
 	}
 
-	createdLbAppProfile, err := edge.CreateLBAppProfile(lbAppProfileConfig)
+	err = deleteLbAppProfileIfExists(edge, lbAppProfileConfig.Name)
+	check.Assert(err, IsNil)
+	createdLbAppProfile, err := edge.CreateLbAppProfile(lbAppProfileConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdLbAppProfile.ID, Not(IsNil))
 
 	// We created application profile successfully therefore let's add it to cleanup list
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
-	AddToCleanupList(TestLBAppProfile, "lbAppProfile", parentEntity, check.TestName())
+	AddToCleanupList(TestLbAppProfile, "lbAppProfile", parentEntity, check.TestName())
 
 	// Lookup by both name and ID and compare that these are equal values
-	lbAppProfileByID, err := edge.ReadLBAppProfile(&types.LBAppProfile{ID: createdLbAppProfile.ID})
+	lbAppProfileByID, err := edge.GetLbAppProfileById(createdLbAppProfile.ID)
 	check.Assert(err, IsNil)
+	check.Assert(lbAppProfileByID, Not(IsNil))
 
-	lbPoolByName, err := edge.ReadLBAppProfile(&types.LBAppProfile{Name: createdLbAppProfile.Name})
+	lbAppProfileByName, err := edge.GetLbAppProfileByName(createdLbAppProfile.Name)
 	check.Assert(err, IsNil)
-	check.Assert(createdLbAppProfile.ID, Equals, lbPoolByName.ID)
-	check.Assert(lbAppProfileByID.ID, Equals, lbPoolByName.ID)
-	check.Assert(lbAppProfileByID.Name, Equals, lbPoolByName.Name)
-	check.Assert(lbAppProfileByID.Persistence.Expire, Equals, lbPoolByName.Persistence.Expire)
+	check.Assert(lbAppProfileByName, Not(IsNil))
+	check.Assert(createdLbAppProfile.ID, Equals, lbAppProfileByName.ID)
+	check.Assert(lbAppProfileByID.ID, Equals, lbAppProfileByName.ID)
+	check.Assert(lbAppProfileByID.Name, Equals, lbAppProfileByName.Name)
+	check.Assert(lbAppProfileByID.Persistence.Expire, Equals, lbAppProfileByName.Persistence.Expire)
 
 	check.Assert(createdLbAppProfile.Template, Equals, lbAppProfileConfig.Template)
 
 	// Test updating fields
 	// Update persistence method
 	lbAppProfileByID.Persistence.Method = "sourceip"
-	updatedAppProfile, err := edge.UpdateLBAppProfile(lbAppProfileByID)
+	updatedAppProfile, err := edge.UpdateLbAppProfile(lbAppProfileByID)
 	check.Assert(err, IsNil)
 	check.Assert(updatedAppProfile.Persistence.Method, Equals, lbAppProfileByID.Persistence.Method)
 
@@ -70,19 +76,34 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	// Try to set invalid algorithm hash and expect API to return error
 	// Invalid persistence method invalid_method. Valid methods are: COOKIE|SSL-SESSIONID|SOURCEIP.
 	lbAppProfileByID.Persistence.Method = "invalid_method"
-	updatedAppProfile, err = edge.UpdateLBAppProfile(lbAppProfileByID)
+	updatedAppProfile, err = edge.UpdateLbAppProfile(lbAppProfileByID)
 	check.Assert(err, ErrorMatches, ".*Invalid persistence method .*Valid methods are:.*")
 
 	// Update should fail without name
 	lbAppProfileByID.Name = ""
-	_, err = edge.UpdateLBAppProfile(lbAppProfileByID)
+	_, err = edge.UpdateLbAppProfile(lbAppProfileByID)
 	check.Assert(err.Error(), Equals, "load balancer application profile Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLBAppProfile(&types.LBAppProfile{ID: createdLbAppProfile.ID})
+	err = edge.DeleteLbAppProfile(&types.LbAppProfile{ID: createdLbAppProfile.ID})
 	check.Assert(err, IsNil)
 
 	// Ensure it is deleted
-	_, err = edge.ReadLBAppProfileByID(createdLbAppProfile.ID)
+	_, err = edge.GetLbAppProfileById(createdLbAppProfile.ID)
 	check.Assert(IsNotFound(err), Equals, true)
+}
+
+// deleteLbAppProfileIfExists is used to cleanup before creation of component. It returns error only if there was
+// other error than govcd.ErrorEntityNotFound
+func deleteLbAppProfileIfExists(edge EdgeGateway, name string) error {
+	err := edge.DeleteLbAppProfileByName(name)
+	if err != nil && !ContainsNotFound(err) {
+		return err
+	}
+	if err != nil && ContainsNotFound(err) {
+		return nil
+	}
+
+	fmt.Printf("# Removed leftover LB app profile '%s'\n", name)
+	return nil
 }

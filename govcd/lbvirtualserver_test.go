@@ -7,6 +7,8 @@
 package govcd
 
 import (
+	"fmt"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -16,7 +18,7 @@ import (
 // service monitor, server pool, application profile and application rule.
 // The following things are tested if prerequisites are met:
 // 1. Creation of load balancer virtual server
-// 2. Read load balancer virtual server by both Id and Name (virtual server name must be unique in
+// 2. Get load balancer virtual server by both ID and Name (virtual server name must be unique in
 // single edge gateway)
 // 3. Update - change a single field and compare that configuration and result objects are deeply
 // equal
@@ -39,11 +41,11 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	}
 
 	_, serverPoolId, appProfileId, appRuleId := buildTestLBVirtualServerPrereqs("1.1.1.1", "2.2.2.2",
-		TestLBVirtualServer, check, vcd, edge)
+		TestLbVirtualServer, check, vcd, edge)
 
 	// Configure creation object including reference to service monitor
-	lbVirtualServerConfig := &types.LBVirtualServer{
-		Name:                 TestLBVirtualServer,
+	lbVirtualServerConfig := &types.LbVirtualServer{
+		Name:                 TestLbVirtualServer,
 		IpAddress:            vcd.config.VCD.ExternalIp, // Load balancer virtual server serves on Edge gw IP
 		Enabled:              true,
 		AccelerationEnabled:  true,
@@ -56,9 +58,11 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 		DefaultPoolId:        serverPoolId,
 	}
 
-	createdLbVirtualServer, err := edge.CreateLBVirtualServer(lbVirtualServerConfig)
+	err = deleteLbVirtualServerIfExists(edge, lbVirtualServerConfig.Name)
 	check.Assert(err, IsNil)
-	check.Assert(createdLbVirtualServer.Id, Not(IsNil))
+	createdLbVirtualServer, err := edge.CreateLbVirtualServer(lbVirtualServerConfig)
+	check.Assert(err, IsNil)
+	check.Assert(createdLbVirtualServer.ID, Not(IsNil))
 	check.Assert(createdLbVirtualServer.IpAddress, Equals, lbVirtualServerConfig.IpAddress)
 	check.Assert(createdLbVirtualServer.Protocol, Equals, lbVirtualServerConfig.Protocol)
 	check.Assert(createdLbVirtualServer.Port, Equals, lbVirtualServerConfig.Port)
@@ -72,22 +76,24 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	// We created virtual server successfully therefore let's prepend it to cleanup list so that it
 	// is deleted before the child components
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
-	PrependToCleanupList(TestLBVirtualServer, "lbVirtualServer", parentEntity, check.TestName())
+	PrependToCleanupList(TestLbVirtualServer, "lbVirtualServer", parentEntity, check.TestName())
 
-	// Lookup by both name and Id and compare that these are equal values
-	lbVirtualServerById, err := edge.ReadLBVirtualServer(&types.LBVirtualServer{Id: createdLbVirtualServer.Id})
+	// Lookup by both name and ID and compare that these are equal values
+	lbVirtualServerById, err := edge.getLbVirtualServer(&types.LbVirtualServer{ID: createdLbVirtualServer.ID})
 	check.Assert(err, IsNil)
+	check.Assert(lbVirtualServerById, Not(IsNil))
 
-	lbVirtualServerByName, err := edge.ReadLBVirtualServer(&types.LBVirtualServer{Name: createdLbVirtualServer.Name})
+	lbVirtualServerByName, err := edge.getLbVirtualServer(&types.LbVirtualServer{Name: createdLbVirtualServer.Name})
 	check.Assert(err, IsNil)
-	check.Assert(createdLbVirtualServer.Id, Equals, lbVirtualServerByName.Id)
-	check.Assert(lbVirtualServerById.Id, Equals, lbVirtualServerByName.Id)
+	check.Assert(lbVirtualServerByName, Not(IsNil))
+	check.Assert(createdLbVirtualServer.ID, Equals, lbVirtualServerByName.ID)
+	check.Assert(lbVirtualServerById.ID, Equals, lbVirtualServerByName.ID)
 	check.Assert(lbVirtualServerById.Name, Equals, lbVirtualServerByName.Name)
 
 	// Test updating fields
 	// Update algorithm
 	lbVirtualServerById.Port = 8889
-	updatedLBPool, err := edge.UpdateLBVirtualServer(lbVirtualServerById)
+	updatedLBPool, err := edge.UpdateLbVirtualServer(lbVirtualServerById)
 	check.Assert(err, IsNil)
 	check.Assert(updatedLBPool.Port, Equals, lbVirtualServerById.Port)
 
@@ -97,20 +103,20 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	// Try to set invalid protocol and expect API to return error:
 	// vShield Edge [LoadBalancer] Invalid protocol invalid_protocol. Valid protocols are: HTTP|HTTPS|TCP|UDP. (API error: 14542)
 	lbVirtualServerById.Protocol = "invalid_protocol"
-	updatedLBPool, err = edge.UpdateLBVirtualServer(lbVirtualServerById)
+	updatedLBPool, err = edge.UpdateLbVirtualServer(lbVirtualServerById)
 	check.Assert(err, ErrorMatches, ".*Invalid protocol.*Valid protocols are:.*")
 
 	// Update should fail without name
 	lbVirtualServerById.Name = ""
-	_, err = edge.UpdateLBVirtualServer(lbVirtualServerById)
+	_, err = edge.UpdateLbVirtualServer(lbVirtualServerById)
 	check.Assert(err.Error(), Equals, "load balancer virtual server Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLBVirtualServer(&types.LBVirtualServer{Id: createdLbVirtualServer.Id})
+	err = edge.DeleteLbVirtualServer(&types.LbVirtualServer{ID: createdLbVirtualServer.ID})
 	check.Assert(err, IsNil)
 
 	// Ensure it is deleted
-	_, err = edge.ReadLBVirtualServerById(createdLbVirtualServer.Id)
+	_, err = edge.GetLbVirtualServerById(createdLbVirtualServer.ID)
 	check.Assert(IsNotFound(err), Equals, true)
 }
 
@@ -119,30 +125,32 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 // resources
 func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, check *C, vcd *TestVCD, edge EdgeGateway) (serviceMonitorId, serverPoolId, appProfileId, appRuleId string) {
 	// Create prerequisites - service monitor
-	lbMon := &types.LBMonitor{
+	lbMon := &types.LbMonitor{
 		Name:       componentsName,
 		Interval:   10,
 		Timeout:    10,
 		MaxRetries: 3,
 		Type:       "http",
 	}
-	lbMonitor, err := edge.CreateLBServiceMonitor(lbMon)
+	err := deleteLbServiceMonitorIfExists(edge, lbMon.Name)
+	check.Assert(err, IsNil)
+	lbMonitor, err := edge.CreateLbServiceMonitor(lbMon)
 	check.Assert(err, IsNil)
 
 	// Create prerequisites - server pool
-	lbPoolConfig := &types.LBPool{
+	lbPoolConfig := &types.LbPool{
 		Name:      componentsName,
 		Algorithm: "round-robin",
 		MonitorId: lbMonitor.ID,
-		Members: types.LBPoolMembers{
-			types.LBPoolMember{
+		Members: types.LbPoolMembers{
+			types.LbPoolMember{
 				Name:      "Server_one",
 				IpAddress: node1Ip,
 				Port:      8000,
 				Weight:    1,
 				Condition: "enabled",
 			},
-			types.LBPoolMember{
+			types.LbPoolMember{
 				Name:      "Server_two",
 				IpAddress: node2Ip,
 				Port:      8000,
@@ -152,25 +160,31 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 		},
 	}
 
-	lbPool, err := edge.CreateLBServerPool(lbPoolConfig)
+	err = deleteLbServerPoolIfExists(edge, lbPoolConfig.Name)
+	check.Assert(err, IsNil)
+	lbPool, err := edge.CreateLbServerPool(lbPoolConfig)
 	check.Assert(err, IsNil)
 
 	// Create prerequisites - application profile
-	lbAppProfileConfig := &types.LBAppProfile{
+	lbAppProfileConfig := &types.LbAppProfile{
 		Name:     componentsName,
 		Template: "HTTP",
 	}
 
-	lbAppProfile, err := edge.CreateLBAppProfile(lbAppProfileConfig)
+	err = deleteLbAppProfileIfExists(edge, lbAppProfileConfig.Name)
+	check.Assert(err, IsNil)
+	lbAppProfile, err := edge.CreateLbAppProfile(lbAppProfileConfig)
 	check.Assert(err, IsNil)
 
-	lbAppRuleConfig := &types.LBAppRule{
+	lbAppRuleConfig := &types.LbAppRule{
 		Name:   componentsName,
 		Script: "acl vmware_page url_beg / vmware redirect location https://www.vmware.com/ ifvmware_page",
 	}
 
 	// Create prerequisites - application rule
-	lbAppRule, err := edge.CreateLBAppRule(lbAppRuleConfig)
+	err = deleteLbAppRuleIfExists(edge, lbAppRuleConfig.Name)
+	check.Assert(err, IsNil)
+	lbAppRule, err := edge.CreateLbAppRule(lbAppRuleConfig)
 	check.Assert(err, IsNil)
 
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
@@ -179,6 +193,20 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 	AddToCleanupList(lbPool.Name, "lbServerPool", parentEntity, check.TestName())
 	AddToCleanupList(lbMon.Name, "lbServiceMonitor", parentEntity, check.TestName())
 
-	// return lbMonitor.ID, lbPool.ID, lbAppProfile.ID, lbAppRule.ID
 	return lbMonitor.ID, lbPool.ID, lbAppProfile.ID, lbAppRule.ID
+}
+
+// deleteLbVirtualServerIfExists is used to cleanup before creation of component. It returns error only if there was
+// other error than govcd.ErrorEntityNotFound
+func deleteLbVirtualServerIfExists(edge EdgeGateway, name string) error {
+	err := edge.DeleteLbVirtualServerByName(name)
+	if err != nil && !ContainsNotFound(err) {
+		return err
+	}
+	if err != nil && ContainsNotFound(err) {
+		return nil
+	}
+
+	fmt.Printf("# Removed leftover LB virtual server '%s'\n", name)
+	return nil
 }

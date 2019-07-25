@@ -7,9 +7,6 @@
 package govcd
 
 import (
-	"io/ioutil"
-	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -581,55 +578,4 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateLBGeneralParams(check *C) {
 
 	// Validate load balancer configuration against initially cached version
 	testCheckLoadBalancerConfig(beforeLb, beforeLbXml, edge, check)
-}
-
-// testGetLBGeneralParamsXML is used for additional validation that modifying load balancer
-// does not change any single field. It returns a string of whole load balancer configuration
-func testGetLBGeneralParamsXML(edge EdgeGateway, check *C) string {
-
-	httpPath, err := edge.buildProxiedEdgeEndpointURL(types.LBConfigPath)
-	check.Assert(err, IsNil)
-
-	resp, err := edge.client.ExecuteRequestWithCustomError(httpPath, http.MethodGet, types.AnyXMLMime,
-		"unable to get XML from load balancer %s", nil, &types.NSXError{})
-	check.Assert(err, IsNil)
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	check.Assert(err, IsNil)
-
-	return string(body)
-}
-
-// cacheLoadBalancer is meant to store load balancer settings before any operations so that all
-// configuration can be checked after manipulation
-func testCacheLoadBalancer(edge EdgeGateway, check *C) (*types.LBGeneralParamsWithXML, string) {
-	beforeLb, err := edge.GetLBGeneralParams()
-	check.Assert(err, IsNil)
-	beforeLbXml := testGetLBGeneralParamsXML(edge, check)
-	return beforeLb, beforeLbXml
-}
-
-// testCheckLoadBalancerConfig validates if both raw XML string and load balancer struct remain
-// identical after settings manipulation.
-func testCheckLoadBalancerConfig(beforeLb *types.LBGeneralParamsWithXML, beforeLbXml string, edge EdgeGateway, check *C) {
-	afterLb, err := edge.GetLBGeneralParams()
-	check.Assert(err, IsNil)
-
-	afterLbXml := testGetLBGeneralParamsXML(edge, check)
-
-	// remove `<version></version>` tag from both XML represntation and struct for deep comparison
-	// because this version changes with each update and will never be the same after a few
-	// operations
-
-	reVersion := regexp.MustCompile(`<version>\w*<\/version>`)
-	beforeLbXml = reVersion.ReplaceAllLiteralString(beforeLbXml, "")
-	afterLbXml = reVersion.ReplaceAllLiteralString(afterLbXml, "")
-
-	beforeLb.Version = ""
-	afterLb.Version = ""
-
-	check.Assert(beforeLb, DeepEquals, afterLb)
-	check.Assert(beforeLbXml, DeepEquals, afterLbXml)
 }
