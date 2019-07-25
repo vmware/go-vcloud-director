@@ -41,10 +41,10 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 	AddToCleanupList(TestLbAppRule, "lbAppRule", parentEntity, check.TestName())
 
 	// // Lookup by both name and ID and compare that these are equal values
-	lbAppRuleByID, err := edge.GetLbAppRule(&types.LbAppRule{ID: createdLbAppRule.ID})
+	lbAppRuleByID, err := edge.getLbAppRule(&types.LbAppRule{ID: createdLbAppRule.ID})
 	check.Assert(err, IsNil)
 
-	lbPoolByName, err := edge.GetLbAppRule(&types.LbAppRule{Name: createdLbAppRule.Name})
+	lbPoolByName, err := edge.getLbAppRule(&types.LbAppRule{Name: createdLbAppRule.Name})
 	check.Assert(err, IsNil)
 	check.Assert(createdLbAppRule.ID, Equals, lbPoolByName.ID)
 	check.Assert(lbAppRuleByID.ID, Equals, lbPoolByName.ID)

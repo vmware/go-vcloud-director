@@ -75,10 +75,10 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	PrependToCleanupList(TestLbVirtualServer, "lbVirtualServer", parentEntity, check.TestName())
 
 	// Lookup by both name and ID and compare that these are equal values
-	lbVirtualServerById, err := edge.GetLbVirtualServer(&types.LbVirtualServer{ID: createdLbVirtualServer.ID})
+	lbVirtualServerById, err := edge.getLbVirtualServer(&types.LbVirtualServer{ID: createdLbVirtualServer.ID})
 	check.Assert(err, IsNil)
 
-	lbVirtualServerByName, err := edge.GetLbVirtualServer(&types.LbVirtualServer{Name: createdLbVirtualServer.Name})
+	lbVirtualServerByName, err := edge.getLbVirtualServer(&types.LbVirtualServer{Name: createdLbVirtualServer.Name})
 	check.Assert(err, IsNil)
 	check.Assert(createdLbVirtualServer.ID, Equals, lbVirtualServerByName.ID)
 	check.Assert(lbVirtualServerById.ID, Equals, lbVirtualServerByName.ID)

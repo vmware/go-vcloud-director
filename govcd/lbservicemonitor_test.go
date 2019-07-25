@@ -48,10 +48,10 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 	AddToCleanupList(check.TestName(), "lbServiceMonitor", parentEntity, check.TestName())
 
 	// Lookup by both name and ID and compare that these are equal values
-	lbMonitorByID, err := edge.GetLbServiceMonitor(&types.LbMonitor{ID: lbMonitor.ID})
+	lbMonitorByID, err := edge.getLbServiceMonitor(&types.LbMonitor{ID: lbMonitor.ID})
 	check.Assert(err, IsNil)
 
-	lbMonitorByName, err := edge.GetLbServiceMonitor(&types.LbMonitor{Name: lbMonitor.Name})
+	lbMonitorByName, err := edge.getLbServiceMonitor(&types.LbMonitor{Name: lbMonitor.Name})
 	check.Assert(err, IsNil)
 	check.Assert(lbMonitor.ID, Equals, lbMonitorByName.ID)
 	check.Assert(lbMonitorByID.ID, Equals, lbMonitorByName.ID)

@@ -45,10 +45,10 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	AddToCleanupList(TestLbAppProfile, "lbAppProfile", parentEntity, check.TestName())
 
 	// Lookup by both name and ID and compare that these are equal values
-	lbAppProfileByID, err := edge.GetLbAppProfile(&types.LbAppProfile{ID: createdLbAppProfile.ID})
+	lbAppProfileByID, err := edge.getLbAppProfile(&types.LbAppProfile{ID: createdLbAppProfile.ID})
 	check.Assert(err, IsNil)
 
-	lbPoolByName, err := edge.GetLbAppProfile(&types.LbAppProfile{Name: createdLbAppProfile.Name})
+	lbPoolByName, err := edge.getLbAppProfile(&types.LbAppProfile{Name: createdLbAppProfile.Name})
 	check.Assert(err, IsNil)
 	check.Assert(createdLbAppProfile.ID, Equals, lbPoolByName.ID)
 	check.Assert(lbAppProfileByID.ID, Equals, lbPoolByName.ID)

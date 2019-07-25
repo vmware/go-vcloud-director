@@ -85,10 +85,10 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	AddToCleanupList(TestLbServerPool, "lbServerPool", parentEntity, check.TestName())
 
 	// Lookup by both name and ID and compare that these are equal values
-	lbPoolByID, err := edge.GetLbServerPool(&types.LbPool{ID: createdLbPool.ID})
+	lbPoolByID, err := edge.getLbServerPool(&types.LbPool{ID: createdLbPool.ID})
 	check.Assert(err, IsNil)
 
-	lbPoolByName, err := edge.GetLbServerPool(&types.LbPool{Name: createdLbPool.Name})
+	lbPoolByName, err := edge.getLbServerPool(&types.LbPool{Name: createdLbPool.Name})
 	check.Assert(err, IsNil)
 	check.Assert(createdLbPool.ID, Equals, lbPoolByName.ID)
 	check.Assert(lbPoolByID.ID, Equals, lbPoolByName.ID)
