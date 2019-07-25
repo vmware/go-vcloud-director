@@ -13,17 +13,17 @@ import (
 
 // CreateLBAppProfile creates a load balancer application profile based on mandatory fields. It is a
 // synchronous operation. It returns created object with all fields (including Id) populated or an error.
-func (eGW *EdgeGateway) CreateLBAppProfile(lbAppProfileConfig *types.LbAppProfile) (*types.LbAppProfile, error) {
+func (egw *EdgeGateway) CreateLBAppProfile(lbAppProfileConfig *types.LbAppProfile) (*types.LbAppProfile, error) {
 	if err := validateCreateLBAppProfile(lbAppProfileConfig); err != nil {
 		return nil, err
 	}
 
-	httpPath, err := eGW.buildProxiedEdgeEndpointURL(types.LbAppProfilePath)
+	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LbAppProfilePath)
 	if err != nil {
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
 	// We expect to get http.StatusCreated or if not an error of type types.NSXError
-	resp, err := eGW.client.ExecuteRequestWithCustomError(httpPath, http.MethodPost, types.AnyXMLMime,
+	resp, err := egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodPost, types.AnyXMLMime,
 		"error creating load balancer application profile: %s", lbAppProfileConfig, &types.NSXError{})
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func (eGW *EdgeGateway) CreateLBAppProfile(lbAppProfileConfig *types.LbAppProfil
 		return nil, err
 	}
 
-	readAppProfile, err := eGW.ReadLBAppProfileByID(lbAppProfileID)
+	readAppProfile, err := egw.ReadLBAppProfileByID(lbAppProfileID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve application profile with Id (%s) after creation: %s",
 			readAppProfile.Id, err)
@@ -47,12 +47,12 @@ func (eGW *EdgeGateway) CreateLBAppProfile(lbAppProfileConfig *types.LbAppProfil
 // ReadLBAppProfile is able to find the types.LbAppProfile type by Name and/or Id.
 // If both - Name and Id are specified it performs a lookup by Id and returns an error if the specified name and found
 // name do not match.
-func (eGW *EdgeGateway) ReadLBAppProfile(lbAppProfileConfig *types.LbAppProfile) (*types.LbAppProfile, error) {
+func (egw *EdgeGateway) ReadLBAppProfile(lbAppProfileConfig *types.LbAppProfile) (*types.LbAppProfile, error) {
 	if err := validateReadLBAppProfile(lbAppProfileConfig); err != nil {
 		return nil, err
 	}
 
-	httpPath, err := eGW.buildProxiedEdgeEndpointURL(types.LbAppProfilePath)
+	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LbAppProfilePath)
 	if err != nil {
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
@@ -63,7 +63,7 @@ func (eGW *EdgeGateway) ReadLBAppProfile(lbAppProfileConfig *types.LbAppProfile)
 	}{}
 
 	// This query returns all application profiles as the API does not have filtering options
-	_, err = eGW.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
+	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
 		"unable to read load balancer application profile: %s", nil, lbAppProfileResponse)
 	if err != nil {
 		return nil, err
@@ -92,42 +92,42 @@ func (eGW *EdgeGateway) ReadLBAppProfile(lbAppProfileConfig *types.LbAppProfile)
 }
 
 // ReadLBAppProfileByID wraps ReadLBAppProfile and needs only an Id for lookup
-func (eGW *EdgeGateway) ReadLBAppProfileByID(id string) (*types.LbAppProfile, error) {
-	return eGW.ReadLBAppProfile(&types.LbAppProfile{Id: id})
+func (egw *EdgeGateway) ReadLBAppProfileByID(id string) (*types.LbAppProfile, error) {
+	return egw.ReadLBAppProfile(&types.LbAppProfile{Id: id})
 }
 
 // ReadLBAppProfileByName wraps ReadLBAppProfile and needs only a Name for lookup
-func (eGW *EdgeGateway) ReadLBAppProfileByName(name string) (*types.LbAppProfile, error) {
-	return eGW.ReadLBAppProfile(&types.LbAppProfile{Name: name})
+func (egw *EdgeGateway) ReadLBAppProfileByName(name string) (*types.LbAppProfile, error) {
+	return egw.ReadLBAppProfile(&types.LbAppProfile{Name: name})
 }
 
 // UpdateLBAppProfile updates types.LbAppProfile with all fields. At least name or Id must be specified.
 // If both - Name and Id are specified it performs a lookup by Id and returns an error if the specified name and found
 // name do not match.
-func (eGW *EdgeGateway) UpdateLBAppProfile(lbAppProfileConfig *types.LbAppProfile) (*types.LbAppProfile, error) {
+func (egw *EdgeGateway) UpdateLBAppProfile(lbAppProfileConfig *types.LbAppProfile) (*types.LbAppProfile, error) {
 	err := validateUpdateLBAppProfile(lbAppProfileConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	lbAppProfileConfig.Id, err = eGW.getLBAppProfileIDByNameID(lbAppProfileConfig.Name, lbAppProfileConfig.Id)
+	lbAppProfileConfig.Id, err = egw.getLBAppProfileIDByNameID(lbAppProfileConfig.Name, lbAppProfileConfig.Id)
 	if err != nil {
 		return nil, fmt.Errorf("cannot update load balancer application profile: %s", err)
 	}
 
-	httpPath, err := eGW.buildProxiedEdgeEndpointURL(types.LbAppProfilePath + lbAppProfileConfig.Id)
+	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LbAppProfilePath + lbAppProfileConfig.Id)
 	if err != nil {
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
 
 	// Result should be 204, if not we expect an error of type types.NSXError
-	_, err = eGW.client.ExecuteRequestWithCustomError(httpPath, http.MethodPut, types.AnyXMLMime,
+	_, err = egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodPut, types.AnyXMLMime,
 		"error while updating load balancer application profile : %s", lbAppProfileConfig, &types.NSXError{})
 	if err != nil {
 		return nil, err
 	}
 
-	readAppProfile, err := eGW.ReadLBAppProfileByID(lbAppProfileConfig.Id)
+	readAppProfile, err := egw.ReadLBAppProfileByID(lbAppProfileConfig.Id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve application profile with Id (%s) after update: %s",
 			readAppProfile.Id, err)
@@ -138,34 +138,34 @@ func (eGW *EdgeGateway) UpdateLBAppProfile(lbAppProfileConfig *types.LbAppProfil
 // DeleteLBAppProfile is able to delete the types.LbAppProfile type by Name and/or Id.
 // If both - Name and Id are specified it performs a lookup by Id and returns an error if the specified name and found
 // name do not match.
-func (eGW *EdgeGateway) DeleteLBAppProfile(lbAppProfileConfig *types.LbAppProfile) error {
+func (egw *EdgeGateway) DeleteLBAppProfile(lbAppProfileConfig *types.LbAppProfile) error {
 	err := validateDeleteLBAppProfile(lbAppProfileConfig)
 	if err != nil {
 		return err
 	}
 
-	lbAppProfileConfig.Id, err = eGW.getLBAppProfileIDByNameID(lbAppProfileConfig.Name, lbAppProfileConfig.Id)
+	lbAppProfileConfig.Id, err = egw.getLBAppProfileIDByNameID(lbAppProfileConfig.Name, lbAppProfileConfig.Id)
 	if err != nil {
 		return fmt.Errorf("cannot delete load balancer application profile: %s", err)
 	}
 
-	httpPath, err := eGW.buildProxiedEdgeEndpointURL(types.LbAppProfilePath + lbAppProfileConfig.Id)
+	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LbAppProfilePath + lbAppProfileConfig.Id)
 	if err != nil {
 		return fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
 
-	return eGW.client.ExecuteRequestWithoutResponse(httpPath, http.MethodDelete, "application/xml",
+	return egw.client.ExecuteRequestWithoutResponse(httpPath, http.MethodDelete, "application/xml",
 		"unable to delete application profile: %s", nil)
 }
 
 // DeleteLBAppProfileByID wraps DeleteLBAppProfile and requires only Id for deletion
-func (eGW *EdgeGateway) DeleteLBAppProfileByID(id string) error {
-	return eGW.DeleteLBAppProfile(&types.LbAppProfile{Id: id})
+func (egw *EdgeGateway) DeleteLBAppProfileByID(id string) error {
+	return egw.DeleteLBAppProfile(&types.LbAppProfile{Id: id})
 }
 
 // DeleteLBAppProfileByName wraps DeleteLBAppProfile and requires only Name for deletion
-func (eGW *EdgeGateway) DeleteLBAppProfileByName(name string) error {
-	return eGW.DeleteLBAppProfile(&types.LbAppProfile{Name: name})
+func (egw *EdgeGateway) DeleteLBAppProfileByName(name string) error {
+	return egw.DeleteLBAppProfile(&types.LbAppProfile{Name: name})
 }
 
 func validateCreateLBAppProfile(lbAppProfileConfig *types.LbAppProfile) error {
@@ -198,7 +198,7 @@ func validateDeleteLBAppProfile(lbAppProfileConfig *types.LbAppProfile) error {
 // getLBAppProfileIDByNameID checks if at least name or Id is set and returns the Id.
 // If the Id is specified - it passes through the Id. If only name was specified
 // it will lookup the object by name and return the Id.
-func (eGW *EdgeGateway) getLBAppProfileIDByNameID(name, id string) (string, error) {
+func (egw *EdgeGateway) getLBAppProfileIDByNameID(name, id string) (string, error) {
 	if name == "" && id == "" {
 		return "", fmt.Errorf("at least Name or Id must be specific to find load balancer "+
 			"application profile got name (%s) Id (%s)", name, id)
@@ -208,7 +208,7 @@ func (eGW *EdgeGateway) getLBAppProfileIDByNameID(name, id string) (string, erro
 	}
 
 	// if only name was specified, Id must be found, because only Id can be used in request path
-	readlbAppProfile, err := eGW.ReadLBAppProfileByName(name)
+	readlbAppProfile, err := egw.ReadLBAppProfileByName(name)
 	if err != nil {
 		return "", fmt.Errorf("unable to find load balancer application profile by name: %s", err)
 	}
