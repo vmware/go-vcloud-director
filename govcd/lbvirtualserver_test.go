@@ -105,7 +105,6 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	// Update should fail without name
 	lbVirtualServerById.Name = ""
 	_, err = edge.UpdateLbVirtualServer(lbVirtualServerById)
-	check.Assert(err, IsNil)
 	check.Assert(err.Error(), Equals, "load balancer virtual server Name cannot be empty")
 
 	// Delete / cleanup

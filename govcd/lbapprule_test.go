@@ -75,7 +75,6 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 	// Update should fail without name
 	lbAppRuleByID.Name = ""
 	_, err = edge.UpdateLbAppRule(lbAppRuleByID)
-	check.Assert(err, IsNil)
 	check.Assert(err.Error(), Equals, "load balancer application rule Name cannot be empty")
 
 	// Delete / cleanup

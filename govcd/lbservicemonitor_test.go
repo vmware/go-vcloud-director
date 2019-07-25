@@ -77,7 +77,6 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 	// Update should fail without name
 	lbMonitorByID.Name = ""
 	_, err = edge.UpdateLbServiceMonitor(lbMonitorByID)
-	check.Assert(err, IsNil)
 	check.Assert(err.Error(), Equals, "load balancer monitor Name cannot be empty")
 
 	// Delete / cleanup

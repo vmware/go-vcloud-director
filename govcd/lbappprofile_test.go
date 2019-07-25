@@ -78,7 +78,6 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	// Update should fail without name
 	lbAppProfileByID.Name = ""
 	_, err = edge.UpdateLbAppProfile(lbAppProfileByID)
-	check.Assert(err, IsNil)
 	check.Assert(err.Error(), Equals, "load balancer application profile Name cannot be empty")
 
 	// Delete / cleanup

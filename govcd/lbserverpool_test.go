@@ -117,7 +117,6 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	// Update should fail without name
 	lbPoolByID.Name = ""
 	_, err = edge.UpdateLbServerPool(lbPoolByID)
-	check.Assert(err, IsNil)
 	check.Assert(err.Error(), Equals, "load balancer server pool Name cannot be empty")
 
 	// Delete / cleanup
