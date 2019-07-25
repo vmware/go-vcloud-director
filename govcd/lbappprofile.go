@@ -39,7 +39,7 @@ func (egw *EdgeGateway) CreateLbAppProfile(lbAppProfileConfig *types.LbAppProfil
 	readAppProfile, err := egw.GetLbAppProfileById(lbAppProfileID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve application profile with ID (%s) after creation: %s",
-			readAppProfile.ID, err)
+			lbAppProfileID, err)
 	}
 	return readAppProfile, nil
 }

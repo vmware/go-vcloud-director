@@ -36,10 +36,10 @@ func (egw *EdgeGateway) CreateLbAppRule(lbAppRuleConfig *types.LbAppRule) (*type
 		return nil, err
 	}
 
-	readAppRule, err := egw.getLbAppRule(&types.LbAppRule{ID: lbAppRuleId})
+	readAppRule, err := egw.GetLbAppRuleById(lbAppRuleId)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve application rule with ID (%s) after creation: %s",
-			readAppRule.ID, err)
+			lbAppRuleId, err)
 	}
 	return readAppRule, nil
 }
