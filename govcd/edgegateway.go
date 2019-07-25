@@ -200,7 +200,7 @@ func (eGW *EdgeGateway) RemoveNATPortMapping(natType, externalIP, externalPort, 
 
 }
 
-// RemoveNATRule removes NAT removes NAT rule identified by ID and handles task. Returns error if issues rise.
+// RemoveNATRule removes NAT removes NAT rule identified by Id and handles task. Returns error if issues rise.
 // Old functions RemoveNATPortMapping and RemoveNATMapping removed using rule details
 // and expected interface to be of external network type.
 func (eGW *EdgeGateway) RemoveNATRule(id string) error {
@@ -267,9 +267,9 @@ func (eGW *EdgeGateway) RemoveNATRuleAsync(id string) (Task, error) {
 
 // AddDNATRule creates DNAT rule and returns the NAT struct that was created or an error.
 // Allows assigning a specific Org VDC or an external network.
-// When edge gateway is advanced vCD API uses element <tag> to map with NSX edge gateway ID. A known issue is
+// When edge gateway is advanced vCD API uses element <tag> to map with NSX edge gateway Id. A known issue is
 // that updating rule using User interface resets <tag> and as result mapping is lost.
-// Getting using NatRule.ID won't be valid anymore.
+// Getting using NatRule.Id won't be valid anymore.
 // Old functions AddNATPortMapping and AddNATMapping assigned rule only to first external network
 func (eGW *EdgeGateway) AddDNATRule(ruleDetails NatRule) (*types.NatRule, error) {
 	mappingId, err := getPseudoUuid()
@@ -317,7 +317,7 @@ func (eGW *EdgeGateway) AddDNATRule(ruleDetails NatRule) (*types.NatRule, error)
 // Old functions AddNATPortMapping and AddNATMapping aren't correct as assigned rule only to first external network
 func (eGW *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, description string) (*types.NatRule, error) {
 
-	// As vCD API doesn't return rule ID we get it manually:
+	// As vCD API doesn't return rule Id we get it manually:
 	//  * create rule with description which value is our generated Id
 	//  * find rule which has description with our generated Id
 	//  * get the real (vCD's) rule Id
@@ -362,7 +362,7 @@ func (eGW *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, descrip
 	return eGW.UpdateNatRule(createdNatRule)
 }
 
-// getPseudoUuid creates unique ID/UUID
+// getPseudoUuid creates unique Id/UUID
 func getPseudoUuid() (string, error) {
 
 	b := make([]byte, 16)
@@ -1081,17 +1081,17 @@ func (eGW *EdgeGateway) buildProxiedEdgeEndpointURL(optionalSuffix string) (stri
 // to access global configuration options. These are 4 fields only:
 // LoadBalancer.Enabled, LoadBalancer.AccelerationEnabled, LoadBalancer.Logging.Enable,
 // LoadBalancer.Logging.LogLevel
-func (egw *EdgeGateway) GetLBGeneralParams() (*types.LBGeneralParamsWithXML, error) {
+func (egw *EdgeGateway) GetLBGeneralParams() (*types.LbGeneralParamsWithXml, error) {
 	if !egw.HasAdvancedNetworking() {
 		return nil, fmt.Errorf("only advanced edge gateway supports load balancing")
 	}
 
-	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LBConfigPath)
+	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LbConfigPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
 
-	loadBalancerConfig := &types.LBGeneralParamsWithXML{}
+	loadBalancerConfig := &types.LbGeneralParamsWithXml{}
 	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
 		"unable to read load balancer configuration: %s", nil, loadBalancerConfig)
 
@@ -1104,10 +1104,10 @@ func (egw *EdgeGateway) GetLBGeneralParams() (*types.LBGeneralParamsWithXML, err
 
 // UpdateLBGeneralParams allows to update global load balancer configuration.
 // It accepts four fields (Enabled, AccelerationEnabled, Logging.Enable, Logging.LogLevel) and uses
-// them to construct types.LBGeneralParamsWithXML without altering other options to prevent config
+// them to construct types.LbGeneralParamsWithXml without altering other options to prevent config
 // corruption.
 // They are represented in load balancer global configuration tab in the UI.
-func (egw *EdgeGateway) UpdateLBGeneralParams(enabled, accelerationEnabled, loggingEnabled bool, logLevel string) (*types.LBGeneralParamsWithXML, error) {
+func (egw *EdgeGateway) UpdateLBGeneralParams(enabled, accelerationEnabled, loggingEnabled bool, logLevel string) (*types.LbGeneralParamsWithXml, error) {
 	if !egw.HasAdvancedNetworking() {
 		return nil, fmt.Errorf("only advanced edge gateway supports load balancing")
 	}
@@ -1131,7 +1131,7 @@ func (egw *EdgeGateway) UpdateLBGeneralParams(enabled, accelerationEnabled, logg
 	// Modify only the global configuration settings
 	currentLb.Enabled = enabled
 	currentLb.AccelerationEnabled = accelerationEnabled
-	currentLb.Logging = &types.LoadBalancerLogging{
+	currentLb.Logging = &types.LbLogging{
 		Enable:   loggingEnabled,
 		LogLevel: logLevel,
 	}
@@ -1139,7 +1139,7 @@ func (egw *EdgeGateway) UpdateLBGeneralParams(enabled, accelerationEnabled, logg
 	currentLb.Version = ""
 
 	// Push updated configuration
-	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LBConfigPath)
+	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LbConfigPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}

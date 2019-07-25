@@ -42,7 +42,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 		TestLBVirtualServer, check, vcd, edge)
 
 	// Configure creation object including reference to service monitor
-	lbVirtualServerConfig := &types.LBVirtualServer{
+	lbVirtualServerConfig := &types.LbVirtualServer{
 		Name:                 TestLBVirtualServer,
 		IpAddress:            vcd.config.VCD.ExternalIp, // Load balancer virtual server serves on Edge gw IP
 		Enabled:              true,
@@ -75,10 +75,10 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	PrependToCleanupList(TestLBVirtualServer, "lbVirtualServer", parentEntity, check.TestName())
 
 	// Lookup by both name and Id and compare that these are equal values
-	lbVirtualServerById, err := edge.ReadLBVirtualServer(&types.LBVirtualServer{Id: createdLbVirtualServer.Id})
+	lbVirtualServerById, err := edge.ReadLBVirtualServer(&types.LbVirtualServer{Id: createdLbVirtualServer.Id})
 	check.Assert(err, IsNil)
 
-	lbVirtualServerByName, err := edge.ReadLBVirtualServer(&types.LBVirtualServer{Name: createdLbVirtualServer.Name})
+	lbVirtualServerByName, err := edge.ReadLBVirtualServer(&types.LbVirtualServer{Name: createdLbVirtualServer.Name})
 	check.Assert(err, IsNil)
 	check.Assert(createdLbVirtualServer.Id, Equals, lbVirtualServerByName.Id)
 	check.Assert(lbVirtualServerById.Id, Equals, lbVirtualServerByName.Id)
@@ -106,7 +106,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	check.Assert(err.Error(), Equals, "load balancer virtual server Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLBVirtualServer(&types.LBVirtualServer{Id: createdLbVirtualServer.Id})
+	err = edge.DeleteLBVirtualServer(&types.LbVirtualServer{Id: createdLbVirtualServer.Id})
 	check.Assert(err, IsNil)
 
 	// Ensure it is deleted
@@ -119,7 +119,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 // resources
 func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, check *C, vcd *TestVCD, edge EdgeGateway) (serviceMonitorId, serverPoolId, appProfileId, appRuleId string) {
 	// Create prerequisites - service monitor
-	lbMon := &types.LBMonitor{
+	lbMon := &types.LbMonitor{
 		Name:       componentsName,
 		Interval:   10,
 		Timeout:    10,
@@ -130,19 +130,19 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 	check.Assert(err, IsNil)
 
 	// Create prerequisites - server pool
-	lbPoolConfig := &types.LBPool{
+	lbPoolConfig := &types.LbPool{
 		Name:      componentsName,
 		Algorithm: "round-robin",
-		MonitorId: lbMonitor.ID,
-		Members: types.LBPoolMembers{
-			types.LBPoolMember{
+		MonitorId: lbMonitor.Id,
+		Members: types.LbPoolMembers{
+			types.LbPoolMember{
 				Name:      "Server_one",
 				IpAddress: node1Ip,
 				Port:      8000,
 				Weight:    1,
 				Condition: "enabled",
 			},
-			types.LBPoolMember{
+			types.LbPoolMember{
 				Name:      "Server_two",
 				IpAddress: node2Ip,
 				Port:      8000,
@@ -156,7 +156,7 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 	check.Assert(err, IsNil)
 
 	// Create prerequisites - application profile
-	lbAppProfileConfig := &types.LBAppProfile{
+	lbAppProfileConfig := &types.LbAppProfile{
 		Name:     componentsName,
 		Template: "HTTP",
 	}
@@ -164,7 +164,7 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 	lbAppProfile, err := edge.CreateLBAppProfile(lbAppProfileConfig)
 	check.Assert(err, IsNil)
 
-	lbAppRuleConfig := &types.LBAppRule{
+	lbAppRuleConfig := &types.LbAppRule{
 		Name:   componentsName,
 		Script: "acl vmware_page url_beg / vmware redirect location https://www.vmware.com/ ifvmware_page",
 	}
@@ -179,6 +179,6 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 	AddToCleanupList(lbPool.Name, "lbServerPool", parentEntity, check.TestName())
 	AddToCleanupList(lbMon.Name, "lbServiceMonitor", parentEntity, check.TestName())
 
-	// return lbMonitor.ID, lbPool.ID, lbAppProfile.ID, lbAppRule.ID
-	return lbMonitor.ID, lbPool.ID, lbAppProfile.ID, lbAppRule.ID
+	// return lbMonitor.Id, lbPool.Id, lbAppProfile.Id, lbAppRule.Id
+	return lbMonitor.Id, lbPool.Id, lbAppProfile.Id, lbAppRule.Id
 }

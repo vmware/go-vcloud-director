@@ -107,7 +107,7 @@ func (adminOrg *AdminOrg) FetchUserByName(name string, refresh bool) (*OrgUser, 
 	return nil, ErrorEntityNotFound
 }
 
-// FetchUserById retrieves a user within an admin organization by ID
+// FetchUserById retrieves a user within an admin organization by Id
 // Returns a valid user if it exists. If it doesn't, returns nil and ErrorEntityNotFound
 // If argument refresh is true, the AdminOrg will be refreshed before searching.
 // This is usually done after creating, modifying, or deleting users.
@@ -130,14 +130,14 @@ func (adminOrg *AdminOrg) FetchUserById(id string, refresh bool) (*OrgUser, erro
 }
 
 // FetchUserByNameOrId retrieves a user within an admin organization
-// by either name or ID
+// by either name or Id
 // Returns a valid user if it exists. If it doesn't, returns nil and ErrorEntityNotFound
 // If argument refresh is true, the AdminOrg will be refreshed before searching.
 // This is usually done after creating, modifying, or deleting users.
 // If it is false, it will search within the data already in memory (useful when
 // looping through the users and we know that no changes have occurred in the meantime)
 func (adminOrg *AdminOrg) FetchUserByNameOrId(identifier string, refresh bool) (*OrgUser, error) {
-	// First look by ID
+	// First look by Id
 	orgUser, err := adminOrg.FetchUserByName(identifier, true)
 	// if it fails, look by name
 	if IsNotFound(err) {

@@ -220,7 +220,7 @@ func buildLoadBalancer(edge EdgeGateway, node1Ip, node2Ip string, vcd *TestVCD, 
 		check, vcd, edge)
 
 	// Configure creation object including reference to service monitor
-	lbVirtualServerConfig := &types.LBVirtualServer{
+	lbVirtualServerConfig := &types.LbVirtualServer{
 		Name: TestLB,
 		// Load balancer virtual server serves on Edge gw IP
 		IpAddress:            vcd.config.VCD.ExternalIp,

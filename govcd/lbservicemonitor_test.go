@@ -14,7 +14,7 @@ import (
 // Test_LBServiceMonitor tests CRUD methods for load balancer service monitor.
 // The following things are tested if prerequisite Edge Gateway exists:
 // Creation of load balancer service monitor
-// Read load balancer by both ID and Name (service monitor name must be unique in single edge gateway)
+// Read load balancer by both Id and Name (service monitor name must be unique in single edge gateway)
 // Update - change a single field and compare that configuration and result objects are deeply equal
 // Update - try and fail to update without mandatory field
 // Delete
@@ -31,7 +31,7 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 	}
 
 	// Used for creating
-	lbMon := &types.LBMonitor{
+	lbMon := &types.LbMonitor{
 		Name:       check.TestName(),
 		Interval:   10,
 		Timeout:    10,
@@ -41,23 +41,23 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 
 	lbMonitor, err := edge.CreateLBServiceMonitor(lbMon)
 	check.Assert(err, IsNil)
-	check.Assert(lbMonitor.ID, Not(IsNil))
+	check.Assert(lbMonitor.Id, Not(IsNil))
 
 	// We created monitor successfully therefore let's add it to cleanup list
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
 	AddToCleanupList(check.TestName(), "lbServiceMonitor", parentEntity, check.TestName())
 
-	// Lookup by both name and ID and compare that these are equal values
-	lbMonitorByID, err := edge.ReadLBServiceMonitor(&types.LBMonitor{ID: lbMonitor.ID})
+	// Lookup by both name and Id and compare that these are equal values
+	lbMonitorByID, err := edge.ReadLBServiceMonitor(&types.LbMonitor{Id: lbMonitor.Id})
 	check.Assert(err, IsNil)
 
-	lbMonitorByName, err := edge.ReadLBServiceMonitor(&types.LBMonitor{Name: lbMonitor.Name})
+	lbMonitorByName, err := edge.ReadLBServiceMonitor(&types.LbMonitor{Name: lbMonitor.Name})
 	check.Assert(err, IsNil)
-	check.Assert(lbMonitor.ID, Equals, lbMonitorByName.ID)
-	check.Assert(lbMonitorByID.ID, Equals, lbMonitorByName.ID)
+	check.Assert(lbMonitor.Id, Equals, lbMonitorByName.Id)
+	check.Assert(lbMonitorByID.Id, Equals, lbMonitorByName.Id)
 	check.Assert(lbMonitorByID.Name, Equals, lbMonitorByName.Name)
 
-	check.Assert(lbMonitor.ID, Equals, lbMonitorByID.ID)
+	check.Assert(lbMonitor.Id, Equals, lbMonitorByID.Id)
 	check.Assert(lbMonitor.Interval, Equals, lbMonitorByID.Interval)
 	check.Assert(lbMonitor.Timeout, Equals, lbMonitorByID.Timeout)
 	check.Assert(lbMonitor.MaxRetries, Equals, lbMonitorByID.MaxRetries)
@@ -78,9 +78,9 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 	check.Assert(err.Error(), Equals, "load balancer monitor Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLBServiceMonitor(&types.LBMonitor{ID: lbMonitorByID.ID})
+	err = edge.DeleteLBServiceMonitor(&types.LbMonitor{Id: lbMonitorByID.Id})
 	check.Assert(err, IsNil)
 
-	_, err = edge.ReadLBServiceMonitorByID(lbMonitorByID.ID)
+	_, err = edge.ReadLBServiceMonitorByID(lbMonitorByID.Id)
 	check.Assert(IsNotFound(err), Equals, true)
 }

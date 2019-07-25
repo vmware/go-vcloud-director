@@ -51,13 +51,13 @@ func Test_extractNSXObjectIDFromPath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := extractNSXObjectIDFromPath(tt.args.header)
+			got, err := extractNsxObjectIdFromPath(tt.args.header)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("extractNSXObjectIDFromPath() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("extractNsxObjectIdFromPath() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("extractNSXObjectIDFromPath() = %v, want %v", got, tt.want)
+				t.Errorf("extractNsxObjectIdFromPath() = %v, want %v", got, tt.want)
 			}
 		})
 	}

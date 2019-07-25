@@ -14,7 +14,7 @@ import (
 // Test_LBServerPool tests CRUD methods for load balancer server pool.
 // The following things are tested if prerequisite Edge Gateway exists:
 // Creation of load balancer server pool
-// Read load balancer server pool by both ID and Name (server pool name must be unique in single edge gateway)
+// Read load balancer server pool by both Id and Name (server pool name must be unique in single edge gateway)
 // Update - change a single field and compare that configuration and result objects are deeply equal
 // Update - try and fail to update without mandatory field
 // Delete
@@ -31,7 +31,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	}
 
 	// Establish prerequisite - service monitor
-	lbMon := &types.LBMonitor{
+	lbMon := &types.LbMonitor{
 		Name:       check.TestName(),
 		Interval:   10,
 		Timeout:    10,
@@ -40,26 +40,26 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	}
 	lbMonitor, err := edge.CreateLBServiceMonitor(lbMon)
 	check.Assert(err, IsNil)
-	check.Assert(lbMonitor.ID, NotNil)
+	check.Assert(lbMonitor.Id, NotNil)
 
 	// Add service monitor to cleanup
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
 	AddToCleanupList(check.TestName(), "lbServiceMonitor", parentEntity, check.TestName())
 
 	// Configure creation object including reference to service monitor
-	lbPoolConfig := &types.LBPool{
+	lbPoolConfig := &types.LbPool{
 		Name:      TestLBServerPool,
 		Algorithm: "round-robin",
-		MonitorId: lbMonitor.ID,
-		Members: types.LBPoolMembers{
-			types.LBPoolMember{
+		MonitorId: lbMonitor.Id,
+		Members: types.LbPoolMembers{
+			types.LbPoolMember{
 				Name:      "Server_one",
 				IpAddress: "1.1.1.1",
 				Port:      8443,
 				Weight:    1,
 				Condition: "enabled",
 			},
-			types.LBPoolMember{
+			types.LbPoolMember{
 				Name:      "Server_two",
 				IpAddress: "2.2.2.2",
 				Port:      8443,
@@ -71,8 +71,8 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 
 	createdLbPool, err := edge.CreateLBServerPool(lbPoolConfig)
 	check.Assert(err, IsNil)
-	check.Assert(createdLbPool.ID, Not(IsNil))
-	check.Assert(createdLbPool.MonitorId, Equals, lbMonitor.ID)
+	check.Assert(createdLbPool.Id, Not(IsNil))
+	check.Assert(createdLbPool.MonitorId, Equals, lbMonitor.Id)
 	check.Assert(len(createdLbPool.Members), Equals, 2)
 	check.Assert(createdLbPool.Members[0].Condition, Equals, "enabled")
 	check.Assert(createdLbPool.Members[1].Condition, Equals, "enabled")
@@ -84,14 +84,14 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	// We created server pool successfully therefore let's add it to cleanup list
 	AddToCleanupList(TestLBServerPool, "lbServerPool", parentEntity, check.TestName())
 
-	// Lookup by both name and ID and compare that these are equal values
-	lbPoolByID, err := edge.ReadLBServerPool(&types.LBPool{ID: createdLbPool.ID})
+	// Lookup by both name and Id and compare that these are equal values
+	lbPoolByID, err := edge.ReadLBServerPool(&types.LbPool{Id: createdLbPool.Id})
 	check.Assert(err, IsNil)
 
-	lbPoolByName, err := edge.ReadLBServerPool(&types.LBPool{Name: createdLbPool.Name})
+	lbPoolByName, err := edge.ReadLBServerPool(&types.LbPool{Name: createdLbPool.Name})
 	check.Assert(err, IsNil)
-	check.Assert(createdLbPool.ID, Equals, lbPoolByName.ID)
-	check.Assert(lbPoolByID.ID, Equals, lbPoolByName.ID)
+	check.Assert(createdLbPool.Id, Equals, lbPoolByName.Id)
+	check.Assert(lbPoolByID.Id, Equals, lbPoolByName.Id)
 	check.Assert(lbPoolByID.Name, Equals, lbPoolByName.Name)
 
 	check.Assert(createdLbPool.Algorithm, Equals, lbPoolConfig.Algorithm)
@@ -118,9 +118,9 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	check.Assert(err.Error(), Equals, "load balancer server pool Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLBServerPool(&types.LBPool{ID: createdLbPool.ID})
+	err = edge.DeleteLBServerPool(&types.LbPool{Id: createdLbPool.Id})
 	check.Assert(err, IsNil)
 
-	_, err = edge.ReadLBServerPoolByID(createdLbPool.ID)
+	_, err = edge.ReadLBServerPoolByID(createdLbPool.Id)
 	check.Assert(IsNotFound(err), Equals, true)
 }

@@ -587,7 +587,7 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateLBGeneralParams(check *C) {
 // does not change any single field. It returns a string of whole load balancer configuration
 func testGetLBGeneralParamsXML(edge EdgeGateway, check *C) string {
 
-	httpPath, err := edge.buildProxiedEdgeEndpointURL(types.LBConfigPath)
+	httpPath, err := edge.buildProxiedEdgeEndpointURL(types.LbConfigPath)
 	check.Assert(err, IsNil)
 
 	resp, err := edge.client.ExecuteRequestWithCustomError(httpPath, http.MethodGet, types.AnyXMLMime,
@@ -604,7 +604,7 @@ func testGetLBGeneralParamsXML(edge EdgeGateway, check *C) string {
 
 // cacheLoadBalancer is meant to store load balancer settings before any operations so that all
 // configuration can be checked after manipulation
-func testCacheLoadBalancer(edge EdgeGateway, check *C) (*types.LBGeneralParamsWithXML, string) {
+func testCacheLoadBalancer(edge EdgeGateway, check *C) (*types.LbGeneralParamsWithXml, string) {
 	beforeLb, err := edge.GetLBGeneralParams()
 	check.Assert(err, IsNil)
 	beforeLbXml := testGetLBGeneralParamsXML(edge, check)
@@ -613,7 +613,7 @@ func testCacheLoadBalancer(edge EdgeGateway, check *C) (*types.LBGeneralParamsWi
 
 // testCheckLoadBalancerConfig validates if both raw XML string and load balancer struct remain
 // identical after settings manipulation.
-func testCheckLoadBalancerConfig(beforeLb *types.LBGeneralParamsWithXML, beforeLbXml string, edge EdgeGateway, check *C) {
+func testCheckLoadBalancerConfig(beforeLb *types.LbGeneralParamsWithXml, beforeLbXml string, edge EdgeGateway, check *C) {
 	afterLb, err := edge.GetLBGeneralParams()
 	check.Assert(err, IsNil)
 

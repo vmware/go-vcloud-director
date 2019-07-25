@@ -71,7 +71,7 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 		return err
 	}
 	if catalogID == "" {
-		return fmt.Errorf("empty ID returned for catalog ID %s", catalog.Catalog.ID)
+		return fmt.Errorf("empty Id returned for catalog Id %s", catalog.Catalog.ID)
 	}
 	adminCatalogHREF.Path += "/admin/catalog/" + catalogID
 
