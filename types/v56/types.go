@@ -2314,7 +2314,7 @@ type VimObjectRef struct {
 // Description: List of VimObjectRef elements.
 // Since: 0.9
 type VimObjectRefs struct {
-	VimObjectRef []*VimObjectRef `xml:VimObjectRef`
+	VimObjectRef []*VimObjectRef `xml:"VimObjectRef"`
 }
 
 // Type: VMWExternalNetworkType
