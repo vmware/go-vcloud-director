@@ -7,6 +7,8 @@
 package govcd
 
 import (
+	"fmt"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -36,6 +38,8 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 		Template: "HTTPS",
 	}
 
+	err = deleteLbAppProfileIfExists(edge, lbAppProfileConfig.Name)
+	check.Assert(err, IsNil)
 	createdLbAppProfile, err := edge.CreateLbAppProfile(lbAppProfileConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdLbAppProfile.ID, Not(IsNil))
@@ -87,4 +91,19 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	// Ensure it is deleted
 	_, err = edge.GetLbAppProfileById(createdLbAppProfile.ID)
 	check.Assert(IsNotFound(err), Equals, true)
+}
+
+// deleteLbAppProfileIfExists is used to cleanup before creation of component. It returns error only if there was
+// other error than govcd.ErrorEntityNotFound
+func deleteLbAppProfileIfExists(edge EdgeGateway, name string) error {
+	err := edge.DeleteLbAppProfileByName(name)
+	if err != nil && !ContainsNotFound(err) {
+		return err
+	}
+	if err != nil && ContainsNotFound(err) {
+		return nil
+	}
+
+	fmt.Printf("# Removed leftover LB app profile '%s'\n", name)
+	return nil
 }

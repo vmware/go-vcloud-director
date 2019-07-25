@@ -18,7 +18,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// Test_Lb load balancer integration test
+// Test_LB load balancer integration test
 // 1. Validates that all needed parameters are here
 // 2. Uploads or reuses media.photonOsOvaPath OVA image
 // 3. Creates RAW vApp and attaches vDC network to it
@@ -27,7 +27,7 @@ import (
 // 6. Probes load balancer virtual server's external IP (edge gateway IP) for traffic
 // being server in 2 VMs
 // 7. Tears down
-func (vcd *TestVCD) Test_Lb(check *C) {
+func (vcd *TestVCD) Test_LB(check *C) {
 
 	// Validate prerequisites
 	validateTestLbPrerequisites(vcd, check)
@@ -233,7 +233,10 @@ func buildLb(edge EdgeGateway, node1Ip, node2Ip string, vcd *TestVCD, check *C) 
 		DefaultPoolId:        serverPoolId,
 	}
 
-	_, err := edge.CreateLbVirtualServer(lbVirtualServerConfig)
+	err := deleteLbVirtualServerIfExists(edge, lbVirtualServerConfig.Name)
+	check.Assert(err, IsNil)
+
+	_, err = edge.CreateLbVirtualServer(lbVirtualServerConfig)
 	check.Assert(err, IsNil)
 
 	// We created virtual server successfully therefore let's prepend it to cleanup list so that it

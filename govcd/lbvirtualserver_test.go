@@ -7,6 +7,8 @@
 package govcd
 
 import (
+	"fmt"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -56,6 +58,8 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 		DefaultPoolId:        serverPoolId,
 	}
 
+	err = deleteLbVirtualServerIfExists(edge, lbVirtualServerConfig.Name)
+	check.Assert(err, IsNil)
 	createdLbVirtualServer, err := edge.CreateLbVirtualServer(lbVirtualServerConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdLbVirtualServer.ID, Not(IsNil))
@@ -128,6 +132,8 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 		MaxRetries: 3,
 		Type:       "http",
 	}
+	err := deleteLbServiceMonitorIfExists(edge, lbMon.Name)
+	check.Assert(err, IsNil)
 	lbMonitor, err := edge.CreateLbServiceMonitor(lbMon)
 	check.Assert(err, IsNil)
 
@@ -154,6 +160,8 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 		},
 	}
 
+	err = deleteLbServerPoolIfExists(edge, lbPoolConfig.Name)
+	check.Assert(err, IsNil)
 	lbPool, err := edge.CreateLbServerPool(lbPoolConfig)
 	check.Assert(err, IsNil)
 
@@ -163,6 +171,8 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 		Template: "HTTP",
 	}
 
+	err = deleteLbAppProfileIfExists(edge, lbAppProfileConfig.Name)
+	check.Assert(err, IsNil)
 	lbAppProfile, err := edge.CreateLbAppProfile(lbAppProfileConfig)
 	check.Assert(err, IsNil)
 
@@ -172,6 +182,8 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 	}
 
 	// Create prerequisites - application rule
+	err = deleteLbAppRuleIfExists(edge, lbAppRuleConfig.Name)
+	check.Assert(err, IsNil)
 	lbAppRule, err := edge.CreateLbAppRule(lbAppRuleConfig)
 	check.Assert(err, IsNil)
 
@@ -182,4 +194,19 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 	AddToCleanupList(lbMon.Name, "lbServiceMonitor", parentEntity, check.TestName())
 
 	return lbMonitor.ID, lbPool.ID, lbAppProfile.ID, lbAppRule.ID
+}
+
+// deleteLbVirtualServerIfExists is used to cleanup before creation of component. It returns error only if there was
+// other error than govcd.ErrorEntityNotFound
+func deleteLbVirtualServerIfExists(edge EdgeGateway, name string) error {
+	err := edge.DeleteLbVirtualServerByName(name)
+	if err != nil && !ContainsNotFound(err) {
+		return err
+	}
+	if err != nil && ContainsNotFound(err) {
+		return nil
+	}
+
+	fmt.Printf("# Removed leftover LB virtual server '%s'\n", name)
+	return nil
 }

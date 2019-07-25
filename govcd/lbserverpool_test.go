@@ -7,6 +7,8 @@
 package govcd
 
 import (
+	"fmt"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -38,6 +40,8 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 		MaxRetries: 3,
 		Type:       "http",
 	}
+	err = deleteLbServiceMonitorIfExists(edge, lbMon.Name)
+	check.Assert(err, IsNil)
 	lbMonitor, err := edge.CreateLbServiceMonitor(lbMon)
 	check.Assert(err, IsNil)
 	check.Assert(lbMonitor.ID, NotNil)
@@ -69,6 +73,8 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 		},
 	}
 
+	err = deleteLbServerPoolIfExists(edge, lbMon.Name)
+	check.Assert(err, IsNil)
 	createdLbPool, err := edge.CreateLbServerPool(lbPoolConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdLbPool.ID, Not(IsNil))
@@ -125,4 +131,19 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 
 	_, err = edge.GetLbServerPoolById(createdLbPool.ID)
 	check.Assert(IsNotFound(err), Equals, true)
+}
+
+// deleteLbServerPoolIfExists is used to cleanup before creation of component. It returns error only if there was
+// other error than govcd.ErrorEntityNotFound
+func deleteLbServerPoolIfExists(edge EdgeGateway, name string) error {
+	err := edge.DeleteLbServerPoolByName(name)
+	if err != nil && !ContainsNotFound(err) {
+		return err
+	}
+	if err != nil && ContainsNotFound(err) {
+		return nil
+	}
+
+	fmt.Printf("# Removed leftover LB server pool'%s'\n", name)
+	return nil
 }

@@ -7,6 +7,8 @@
 package govcd
 
 import (
+	"fmt"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -32,6 +34,8 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 		Script: "acl vmware_page url_beg / vmware redirect location https://www.vmware.com/ ifvmware_page",
 	}
 
+	err = deleteLbAppRuleIfExists(edge, lbAppRuleConfig.Name)
+	check.Assert(err, IsNil)
 	createdLbAppRule, err := edge.CreateLbAppRule(lbAppRuleConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdLbAppRule.ID, Not(IsNil))
@@ -84,4 +88,19 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 	// Ensure it is deleted
 	_, err = edge.GetLbAppRuleById(createdLbAppRule.ID)
 	check.Assert(IsNotFound(err), Equals, true)
+}
+
+// deleteLbAppRuleIfExists is used to cleanup before creation of component. It returns error only if there was
+// other error than govcd.ErrorEntityNotFound
+func deleteLbAppRuleIfExists(edge EdgeGateway, name string) error {
+	err := edge.DeleteLbAppRuleByName(name)
+	if err != nil && !ContainsNotFound(err) {
+		return err
+	}
+	if err != nil && ContainsNotFound(err) {
+		return nil
+	}
+
+	fmt.Printf("# Removed leftover LB app rule '%s'\n", name)
+	return nil
 }
