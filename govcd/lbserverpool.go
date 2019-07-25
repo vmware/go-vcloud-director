@@ -15,7 +15,7 @@ import (
 // operation. It returns created object with all fields (including Id) populated or an error.
 // Name and Algorithm fields must be populated.
 func (egw *EdgeGateway) CreateLbServerPool(lbPoolConfig *types.LbPool) (*types.LbPool, error) {
-	if err := validateCreateLbServerPool(lbPoolConfig); err != nil {
+	if err := validateCreateLbServerPool(lbPoolConfig, egw); err != nil {
 		return nil, err
 	}
 
@@ -105,7 +105,7 @@ func (egw *EdgeGateway) GetLbServerPoolByName(name string) (*types.LbPool, error
 // name do not match.
 // Name and Algorithm fields must be populated.
 func (egw *EdgeGateway) UpdateLbServerPool(lbPoolConfig *types.LbPool) (*types.LbPool, error) {
-	err := validateUpdateLbServerPool(lbPoolConfig)
+	err := validateUpdateLbServerPool(lbPoolConfig, egw)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +166,11 @@ func (egw *EdgeGateway) DeleteLbServerPoolByName(name string) error {
 	return egw.DeleteLbServerPool(&types.LbPool{Name: name})
 }
 
-func validateCreateLbServerPool(lbPoolConfig *types.LbPool) error {
+func validateCreateLbServerPool(lbPoolConfig *types.LbPool, egw *EdgeGateway) error {
+	if !egw.HasAdvancedNetworking() {
+		return fmt.Errorf("only advanced edge gateways support load balancers")
+	}
+
 	if lbPoolConfig.Name == "" {
 		return fmt.Errorf("load balancer server pool Name cannot be empty")
 	}
@@ -192,9 +196,9 @@ func validateGetLbServerPool(lbPoolConfig *types.LbPool) error {
 	return nil
 }
 
-func validateUpdateLbServerPool(lbPoolConfig *types.LbPool) error {
+func validateUpdateLbServerPool(lbPoolConfig *types.LbPool, egw *EdgeGateway) error {
 	// Update and create have the same requirements for now
-	return validateCreateLbServerPool(lbPoolConfig)
+	return validateCreateLbServerPool(lbPoolConfig, egw)
 }
 
 func validateDeleteLbServerPool(lbPoolConfig *types.LbPool) error {

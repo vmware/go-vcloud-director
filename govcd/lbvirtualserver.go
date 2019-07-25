@@ -16,7 +16,7 @@ import (
 // or an error.
 // Name, Protocol, Port and IpAddress fields must be populated
 func (egw *EdgeGateway) CreateLbVirtualServer(lbVirtualServerConfig *types.LbVirtualServer) (*types.LbVirtualServer, error) {
-	if err := validateCreateLbVirtualServer(lbVirtualServerConfig); err != nil {
+	if err := validateCreateLbVirtualServer(lbVirtualServerConfig, egw); err != nil {
 		return nil, err
 	}
 
@@ -108,7 +108,7 @@ func (egw *EdgeGateway) GetLbVirtualServerByName(name string) (*types.LbVirtualS
 // the specified name and found name do not match.
 // Name, Protocol, Port and IpAddress fields must be populated
 func (egw *EdgeGateway) UpdateLbVirtualServer(lbVirtualServerConfig *types.LbVirtualServer) (*types.LbVirtualServer, error) {
-	err := validateUpdateLbVirtualServer(lbVirtualServerConfig)
+	err := validateUpdateLbVirtualServer(lbVirtualServerConfig, egw)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,11 @@ func (egw *EdgeGateway) DeleteLbVirtualServerByName(name string) error {
 	return egw.DeleteLbVirtualServer(&types.LbVirtualServer{Name: name})
 }
 
-func validateCreateLbVirtualServer(lbVirtualServerConfig *types.LbVirtualServer) error {
+func validateCreateLbVirtualServer(lbVirtualServerConfig *types.LbVirtualServer, egw *EdgeGateway) error {
+	if !egw.HasAdvancedNetworking() {
+		return fmt.Errorf("only advanced edge gateways support load balancers")
+	}
+
 	if lbVirtualServerConfig.Name == "" {
 		return fmt.Errorf("load balancer virtual server Name cannot be empty")
 	}
@@ -199,9 +203,9 @@ func validateGetLbVirtualServer(lbVirtualServerConfig *types.LbVirtualServer) er
 	return nil
 }
 
-func validateUpdateLbVirtualServer(lbVirtualServerConfig *types.LbVirtualServer) error {
+func validateUpdateLbVirtualServer(lbVirtualServerConfig *types.LbVirtualServer, egw *EdgeGateway) error {
 	// Update and create have the same requirements for now
-	return validateCreateLbVirtualServer(lbVirtualServerConfig)
+	return validateCreateLbVirtualServer(lbVirtualServerConfig, egw)
 }
 
 func validateDeleteLbVirtualServer(lbVirtualServerConfig *types.LbVirtualServer) error {

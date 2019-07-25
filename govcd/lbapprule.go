@@ -14,7 +14,7 @@ import (
 // CreateLbAppRule creates a load balancer application rule based on mandatory fields. It is a
 // synchronous operation. It returns created object with all fields (including Id) populated or an error.
 func (egw *EdgeGateway) CreateLbAppRule(lbAppRuleConfig *types.LbAppRule) (*types.LbAppRule, error) {
-	if err := validateCreateLbAppRule(lbAppRuleConfig); err != nil {
+	if err := validateCreateLbAppRule(lbAppRuleConfig, egw); err != nil {
 		return nil, err
 	}
 
@@ -105,7 +105,7 @@ func (egw *EdgeGateway) GetLbAppRuleByName(name string) (*types.LbAppRule, error
 // If both - Name and Id are specified it performs a lookup by Id and returns an error if the specified name and found
 // name do not match.
 func (egw *EdgeGateway) UpdateLbAppRule(lbAppRuleConfig *types.LbAppRule) (*types.LbAppRule, error) {
-	err := validateUpdateLbAppRule(lbAppRuleConfig)
+	err := validateUpdateLbAppRule(lbAppRuleConfig, egw)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +168,11 @@ func (egw *EdgeGateway) DeleteLbAppRuleByName(name string) error {
 	return egw.DeleteLbAppRule(&types.LbAppRule{Name: name})
 }
 
-func validateCreateLbAppRule(lbAppRuleConfig *types.LbAppRule) error {
+func validateCreateLbAppRule(lbAppRuleConfig *types.LbAppRule, egw *EdgeGateway) error {
+	if !egw.HasAdvancedNetworking() {
+		return fmt.Errorf("only advanced edge gateways support load balancers")
+	}
+
 	if lbAppRuleConfig.Name == "" {
 		return fmt.Errorf("load balancer application rule Name cannot be empty")
 	}
@@ -185,9 +189,9 @@ func validateGetLbAppRule(lbAppRuleConfig *types.LbAppRule) error {
 	return nil
 }
 
-func validateUpdateLbAppRule(lbAppRuleConfig *types.LbAppRule) error {
+func validateUpdateLbAppRule(lbAppRuleConfig *types.LbAppRule, egw *EdgeGateway) error {
 	// Update and create have the same requirements for now
-	return validateCreateLbAppRule(lbAppRuleConfig)
+	return validateCreateLbAppRule(lbAppRuleConfig, egw)
 }
 
 func validateDeleteLbAppRule(lbAppRuleConfig *types.LbAppRule) error {

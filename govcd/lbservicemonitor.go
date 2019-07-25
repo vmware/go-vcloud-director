@@ -14,7 +14,7 @@ import (
 // CreateLbServiceMonitor creates a load balancer service monitor based on mandatory fields. It is a synchronous
 // operation. It returns created object with all fields (including Id) populated or an error.
 func (egw *EdgeGateway) CreateLbServiceMonitor(lbMonitorConfig *types.LbMonitor) (*types.LbMonitor, error) {
-	if err := validateCreateLbServiceMonitor(lbMonitorConfig); err != nil {
+	if err := validateCreateLbServiceMonitor(lbMonitorConfig, egw); err != nil {
 		return nil, err
 	}
 
@@ -106,7 +106,7 @@ func (egw *EdgeGateway) GetLbServiceMonitorByName(name string) (*types.LbMonitor
 // If both - Name and Id are specified it performs a lookup by Id and returns an error if the specified name and found
 // name do not match.
 func (egw *EdgeGateway) UpdateLbServiceMonitor(lbMonitorConfig *types.LbMonitor) (*types.LbMonitor, error) {
-	err := validateUpdateLbServiceMonitor(lbMonitorConfig)
+	err := validateUpdateLbServiceMonitor(lbMonitorConfig, egw)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,11 @@ func (egw *EdgeGateway) DeleteLbServiceMonitorByName(name string) error {
 	return egw.DeleteLbServiceMonitor(&types.LbMonitor{Name: name})
 }
 
-func validateCreateLbServiceMonitor(lbMonitorConfig *types.LbMonitor) error {
+func validateCreateLbServiceMonitor(lbMonitorConfig *types.LbMonitor, egw *EdgeGateway) error {
+	if !egw.HasAdvancedNetworking() {
+		return fmt.Errorf("only advanced edge gateways support load balancers")
+	}
+
 	if lbMonitorConfig.Name == "" {
 		return fmt.Errorf("load balancer monitor Name cannot be empty")
 	}
@@ -199,9 +203,9 @@ func validateGetLbServiceMonitor(lbMonitorConfig *types.LbMonitor) error {
 	return nil
 }
 
-func validateUpdateLbServiceMonitor(lbMonitorConfig *types.LbMonitor) error {
+func validateUpdateLbServiceMonitor(lbMonitorConfig *types.LbMonitor, egw *EdgeGateway) error {
 	// Update and create have the same requirements for now
-	return validateCreateLbServiceMonitor(lbMonitorConfig)
+	return validateCreateLbServiceMonitor(lbMonitorConfig, egw)
 }
 
 func validateDeleteLbServiceMonitor(lbMonitorConfig *types.LbMonitor) error {

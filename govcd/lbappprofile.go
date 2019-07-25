@@ -14,7 +14,7 @@ import (
 // CreateLbAppProfile creates a load balancer application profile based on mandatory fields. It is a
 // synchronous operation. It returns created object with all fields (including Id) populated or an error.
 func (egw *EdgeGateway) CreateLbAppProfile(lbAppProfileConfig *types.LbAppProfile) (*types.LbAppProfile, error) {
-	if err := validateCreateLbAppProfile(lbAppProfileConfig); err != nil {
+	if err := validateCreateLbAppProfile(lbAppProfileConfig, egw); err != nil {
 		return nil, err
 	}
 
@@ -105,7 +105,7 @@ func (egw *EdgeGateway) GetLbAppProfileByName(name string) (*types.LbAppProfile,
 // If both - Name and Id are specified it performs a lookup by Id and returns an error if the specified name and found
 // name do not match.
 func (egw *EdgeGateway) UpdateLbAppProfile(lbAppProfileConfig *types.LbAppProfile) (*types.LbAppProfile, error) {
-	err := validateUpdateLbAppProfile(lbAppProfileConfig)
+	err := validateUpdateLbAppProfile(lbAppProfileConfig, egw)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +168,11 @@ func (egw *EdgeGateway) DeleteLbAppProfileByName(name string) error {
 	return egw.DeleteLbAppProfile(&types.LbAppProfile{Name: name})
 }
 
-func validateCreateLbAppProfile(lbAppProfileConfig *types.LbAppProfile) error {
+func validateCreateLbAppProfile(lbAppProfileConfig *types.LbAppProfile, egw *EdgeGateway) error {
+	if !egw.HasAdvancedNetworking() {
+		return fmt.Errorf("only advanced edge gateways support load balancers")
+	}
+
 	if lbAppProfileConfig.Name == "" {
 		return fmt.Errorf("load balancer application profile Name cannot be empty")
 	}
@@ -185,9 +189,9 @@ func validateGetLbAppProfile(lbAppProfileConfig *types.LbAppProfile) error {
 	return nil
 }
 
-func validateUpdateLbAppProfile(lbAppProfileConfig *types.LbAppProfile) error {
+func validateUpdateLbAppProfile(lbAppProfileConfig *types.LbAppProfile, egw *EdgeGateway) error {
 	// Update and create have the same requirements for now
-	return validateCreateLbAppProfile(lbAppProfileConfig)
+	return validateCreateLbAppProfile(lbAppProfileConfig, egw)
 }
 
 func validateDeleteLbAppProfile(lbAppProfileConfig *types.LbAppProfile) error {
