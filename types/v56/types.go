@@ -1784,17 +1784,17 @@ type LbAppRules []LbAppRule
 // Programming Guide"
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 type LbVirtualServer struct {
-	XMLName             xml.Name `xml:"virtualServer"`
-	ID                  string   `xml:"virtualServerId,omitempty"`
-	Name                string   `xml:"name,omitempty"`
-	Description         string   `xml:"description,omitempty"`
-	Enabled             bool     `xml:"enabled,omitempty"`
-	IpAddress           string   `xml:"ipAddress"`
-	Protocol            string   `xml:"protocol"`
-	Port                int      `xml:"port"`
-	AccelerationEnabled bool     `xml:"accelerationEnabled,omitempty"`
-	ConnectionLimit     int      `xml:"connectionLimit,omitempty"`
-	ConnectionRateLimit int      `xml:"connectionRateLimit,omitempty"`
+	XMLName              xml.Name `xml:"virtualServer"`
+	ID                   string   `xml:"virtualServerId,omitempty"`
+	Name                 string   `xml:"name,omitempty"`
+	Description          string   `xml:"description,omitempty"`
+	Enabled              bool     `xml:"enabled,omitempty"`
+	IpAddress            string   `xml:"ipAddress"`
+	Protocol             string   `xml:"protocol"`
+	Port                 int      `xml:"port"`
+	AccelerationEnabled  bool     `xml:"accelerationEnabled,omitempty"`
+	ConnectionLimit      int      `xml:"connectionLimit,omitempty"`
+	ConnectionRateLimit  int      `xml:"connectionRateLimit,omitempty"`
 	ApplicationProfileId string   `xml:"applicationProfileId,omitempty"`
 	DefaultPoolId        string   `xml:"defaultPoolId,omitempty"`
 	ApplicationRuleIds   []string `xml:"applicationRuleId,omitempty"`
