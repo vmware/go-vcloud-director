@@ -48,7 +48,7 @@ func (egw *EdgeGateway) CreateLbAppProfile(lbAppProfileConfig *types.LbAppProfil
 // If both - Name and Id are specified it performs a lookup by Id and returns an error if the specified name and found
 // name do not match.
 func (egw *EdgeGateway) GetLbAppProfile(lbAppProfileConfig *types.LbAppProfile) (*types.LbAppProfile, error) {
-	if err := validateGetLbAppProfile(lbAppProfileConfig); err != nil {
+	if err := validateGetLbAppProfile(lbAppProfileConfig, egw); err != nil {
 		return nil, err
 	}
 
@@ -139,7 +139,7 @@ func (egw *EdgeGateway) UpdateLbAppProfile(lbAppProfileConfig *types.LbAppProfil
 // If both - Name and Id are specified it performs a lookup by Id and returns an error if the specified name and found
 // name do not match.
 func (egw *EdgeGateway) DeleteLbAppProfile(lbAppProfileConfig *types.LbAppProfile) error {
-	err := validateDeleteLbAppProfile(lbAppProfileConfig)
+	err := validateDeleteLbAppProfile(lbAppProfileConfig, egw)
 	if err != nil {
 		return err
 	}
@@ -180,7 +180,11 @@ func validateCreateLbAppProfile(lbAppProfileConfig *types.LbAppProfile, egw *Edg
 	return nil
 }
 
-func validateGetLbAppProfile(lbAppProfileConfig *types.LbAppProfile) error {
+func validateGetLbAppProfile(lbAppProfileConfig *types.LbAppProfile, egw *EdgeGateway) error {
+	if !egw.HasAdvancedNetworking() {
+		return fmt.Errorf("only advanced edge gateways support load balancers")
+	}
+
 	if lbAppProfileConfig.Id == "" && lbAppProfileConfig.Name == "" {
 		return fmt.Errorf("to read load balancer application profile at least one of `Id`, `Name`" +
 			" fields must be specified")
@@ -194,9 +198,9 @@ func validateUpdateLbAppProfile(lbAppProfileConfig *types.LbAppProfile, egw *Edg
 	return validateCreateLbAppProfile(lbAppProfileConfig, egw)
 }
 
-func validateDeleteLbAppProfile(lbAppProfileConfig *types.LbAppProfile) error {
+func validateDeleteLbAppProfile(lbAppProfileConfig *types.LbAppProfile, egw *EdgeGateway) error {
 	// Read and delete have the same requirements for now
-	return validateGetLbAppProfile(lbAppProfileConfig)
+	return validateGetLbAppProfile(lbAppProfileConfig, egw)
 }
 
 // getLbAppProfileIdByNameId checks if at least name or Id is set and returns the Id.

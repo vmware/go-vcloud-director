@@ -48,7 +48,7 @@ func (egw *EdgeGateway) CreateLbServerPool(lbPoolConfig *types.LbPool) (*types.L
 // If both - Name and Id are specified it performs a lookup by Id and returns an error if the specified name and found
 // name do not match.
 func (egw *EdgeGateway) GetLbServerPool(lbPoolConfig *types.LbPool) (*types.LbPool, error) {
-	if err := validateGetLbServerPool(lbPoolConfig); err != nil {
+	if err := validateGetLbServerPool(lbPoolConfig, egw); err != nil {
 		return nil, err
 	}
 
@@ -138,7 +138,7 @@ func (egw *EdgeGateway) UpdateLbServerPool(lbPoolConfig *types.LbPool) (*types.L
 // If both - Name and Id are specified it performs a lookup by Id and returns an error if the specified name and found
 // name do not match.
 func (egw *EdgeGateway) DeleteLbServerPool(lbPoolConfig *types.LbPool) error {
-	err := validateDeleteLbServerPool(lbPoolConfig)
+	err := validateDeleteLbServerPool(lbPoolConfig, egw)
 	if err != nil {
 		return err
 	}
@@ -188,7 +188,11 @@ func validateCreateLbServerPool(lbPoolConfig *types.LbPool, egw *EdgeGateway) er
 	return nil
 }
 
-func validateGetLbServerPool(lbPoolConfig *types.LbPool) error {
+func validateGetLbServerPool(lbPoolConfig *types.LbPool, egw *EdgeGateway) error {
+	if !egw.HasAdvancedNetworking() {
+		return fmt.Errorf("only advanced edge gateways support load balancers")
+	}
+
 	if lbPoolConfig.Id == "" && lbPoolConfig.Name == "" {
 		return fmt.Errorf("to read load balancer server pool at least one of `Id`, `Name` fields must be specified")
 	}
@@ -201,9 +205,9 @@ func validateUpdateLbServerPool(lbPoolConfig *types.LbPool, egw *EdgeGateway) er
 	return validateCreateLbServerPool(lbPoolConfig, egw)
 }
 
-func validateDeleteLbServerPool(lbPoolConfig *types.LbPool) error {
+func validateDeleteLbServerPool(lbPoolConfig *types.LbPool, egw *EdgeGateway) error {
 	// Read and delete have the same requirements for now
-	return validateGetLbServerPool(lbPoolConfig)
+	return validateGetLbServerPool(lbPoolConfig, egw)
 }
 
 // getLbServerPoolIdByNameId checks if at least name or Id is set and returns the Id.

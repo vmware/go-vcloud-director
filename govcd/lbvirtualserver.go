@@ -50,7 +50,7 @@ func (egw *EdgeGateway) CreateLbVirtualServer(lbVirtualServerConfig *types.LbVir
 // If both - Name and Id are specified it performs a lookup by Id and returns an error if the specified name and found
 // name do not match.
 func (egw *EdgeGateway) GetLbVirtualServer(lbVirtualServerConfig *types.LbVirtualServer) (*types.LbVirtualServer, error) {
-	if err := validateGetLbVirtualServer(lbVirtualServerConfig); err != nil {
+	if err := validateGetLbVirtualServer(lbVirtualServerConfig, egw); err != nil {
 		return nil, err
 	}
 
@@ -142,7 +142,7 @@ func (egw *EdgeGateway) UpdateLbVirtualServer(lbVirtualServerConfig *types.LbVir
 // If both - Name and Id are specified it performs a lookup by Id and returns an error if the
 // specified name and found name do not match.
 func (egw *EdgeGateway) DeleteLbVirtualServer(lbVirtualServerConfig *types.LbVirtualServer) error {
-	err := validateDeleteLbVirtualServer(lbVirtualServerConfig)
+	err := validateDeleteLbVirtualServer(lbVirtualServerConfig, egw)
 	if err != nil {
 		return err
 	}
@@ -194,7 +194,11 @@ func validateCreateLbVirtualServer(lbVirtualServerConfig *types.LbVirtualServer,
 	return nil
 }
 
-func validateGetLbVirtualServer(lbVirtualServerConfig *types.LbVirtualServer) error {
+func validateGetLbVirtualServer(lbVirtualServerConfig *types.LbVirtualServer, egw *EdgeGateway) error {
+	if !egw.HasAdvancedNetworking() {
+		return fmt.Errorf("only advanced edge gateways support load balancers")
+	}
+
 	if lbVirtualServerConfig.Id == "" && lbVirtualServerConfig.Name == "" {
 		return fmt.Errorf("to read load balancer virtual server at least one of `Id`, `Name` " +
 			"fields must be specified")
@@ -208,9 +212,9 @@ func validateUpdateLbVirtualServer(lbVirtualServerConfig *types.LbVirtualServer,
 	return validateCreateLbVirtualServer(lbVirtualServerConfig, egw)
 }
 
-func validateDeleteLbVirtualServer(lbVirtualServerConfig *types.LbVirtualServer) error {
+func validateDeleteLbVirtualServer(lbVirtualServerConfig *types.LbVirtualServer, egw *EdgeGateway) error {
 	// Read and delete have the same requirements for now
-	return validateGetLbVirtualServer(lbVirtualServerConfig)
+	return validateGetLbVirtualServer(lbVirtualServerConfig, egw)
 }
 
 // getLbVirtualServerIdByNameId checks if at least name or Id is set and returns the Id.

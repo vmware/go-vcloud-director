@@ -48,7 +48,7 @@ func (egw *EdgeGateway) CreateLbAppRule(lbAppRuleConfig *types.LbAppRule) (*type
 // If both - Name and Id are specified it performs a lookup by Id and returns an error if the specified name and found
 // name do not match.
 func (egw *EdgeGateway) GetLbAppRule(lbAppRuleConfig *types.LbAppRule) (*types.LbAppRule, error) {
-	if err := validateGetLbAppRule(lbAppRuleConfig); err != nil {
+	if err := validateGetLbAppRule(lbAppRuleConfig, egw); err != nil {
 		return nil, err
 	}
 
@@ -139,7 +139,7 @@ func (egw *EdgeGateway) UpdateLbAppRule(lbAppRuleConfig *types.LbAppRule) (*type
 // If both - Name and Id are specified it performs a lookup by Id and returns an error if the specified name and found
 // name do not match.
 func (egw *EdgeGateway) DeleteLbAppRule(lbAppRuleConfig *types.LbAppRule) error {
-	err := validateDeleteLbAppRule(lbAppRuleConfig)
+	err := validateDeleteLbAppRule(lbAppRuleConfig, egw)
 	if err != nil {
 		return err
 	}
@@ -180,7 +180,11 @@ func validateCreateLbAppRule(lbAppRuleConfig *types.LbAppRule, egw *EdgeGateway)
 	return nil
 }
 
-func validateGetLbAppRule(lbAppRuleConfig *types.LbAppRule) error {
+func validateGetLbAppRule(lbAppRuleConfig *types.LbAppRule, egw *EdgeGateway) error {
+	if !egw.HasAdvancedNetworking() {
+		return fmt.Errorf("only advanced edge gateways support load balancers")
+	}
+
 	if lbAppRuleConfig.Id == "" && lbAppRuleConfig.Name == "" {
 		return fmt.Errorf("to read load balancer application rule at least one of `Id`, `Name`" +
 			" fields must be specified")
@@ -194,9 +198,9 @@ func validateUpdateLbAppRule(lbAppRuleConfig *types.LbAppRule, egw *EdgeGateway)
 	return validateCreateLbAppRule(lbAppRuleConfig, egw)
 }
 
-func validateDeleteLbAppRule(lbAppRuleConfig *types.LbAppRule) error {
+func validateDeleteLbAppRule(lbAppRuleConfig *types.LbAppRule, egw *EdgeGateway) error {
 	// Read and delete have the same requirements for now
-	return validateGetLbAppRule(lbAppRuleConfig)
+	return validateGetLbAppRule(lbAppRuleConfig, egw)
 }
 
 // getLbAppRuleIdByNameId checks if at least name or Id is set and returns the Id.

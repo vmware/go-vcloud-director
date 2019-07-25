@@ -51,7 +51,7 @@ func (egw *EdgeGateway) CreateLbServiceMonitor(lbMonitorConfig *types.LbMonitor)
 // If both - Name and Id are specified it performs a lookup by Id and returns an error if the specified name and found
 // name do not match.
 func (egw *EdgeGateway) GetLbServiceMonitor(lbMonitorConfig *types.LbMonitor) (*types.LbMonitor, error) {
-	if err := validateGetLbServiceMonitor(lbMonitorConfig); err != nil {
+	if err := validateGetLbServiceMonitor(lbMonitorConfig, egw); err != nil {
 		return nil, err
 	}
 
@@ -139,7 +139,7 @@ func (egw *EdgeGateway) UpdateLbServiceMonitor(lbMonitorConfig *types.LbMonitor)
 // If both - Name and Id are specified it performs a lookup by Id and returns an error if the specified name and found
 // name do not match.
 func (egw *EdgeGateway) DeleteLbServiceMonitor(lbMonitorConfig *types.LbMonitor) error {
-	err := validateDeleteLbServiceMonitor(lbMonitorConfig)
+	err := validateDeleteLbServiceMonitor(lbMonitorConfig, egw)
 	if err != nil {
 		return err
 	}
@@ -195,7 +195,11 @@ func validateCreateLbServiceMonitor(lbMonitorConfig *types.LbMonitor, egw *EdgeG
 	return nil
 }
 
-func validateGetLbServiceMonitor(lbMonitorConfig *types.LbMonitor) error {
+func validateGetLbServiceMonitor(lbMonitorConfig *types.LbMonitor, egw *EdgeGateway) error {
+	if !egw.HasAdvancedNetworking() {
+		return fmt.Errorf("only advanced edge gateways support load balancers")
+	}
+
 	if lbMonitorConfig.Id == "" && lbMonitorConfig.Name == "" {
 		return fmt.Errorf("to read load balancer service monitor at least one of `Id`, `Name` fields must be specified")
 	}
@@ -208,9 +212,9 @@ func validateUpdateLbServiceMonitor(lbMonitorConfig *types.LbMonitor, egw *EdgeG
 	return validateCreateLbServiceMonitor(lbMonitorConfig, egw)
 }
 
-func validateDeleteLbServiceMonitor(lbMonitorConfig *types.LbMonitor) error {
+func validateDeleteLbServiceMonitor(lbMonitorConfig *types.LbMonitor, egw *EdgeGateway) error {
 	// Read and delete have the same requirements for now
-	return validateGetLbServiceMonitor(lbMonitorConfig)
+	return validateGetLbServiceMonitor(lbMonitorConfig, egw)
 }
 
 // getLbServiceMonitorIdByNameId checks if at least name or Id is set and returns the Id.
