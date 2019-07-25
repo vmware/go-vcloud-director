@@ -36,7 +36,7 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 		Template: "HTTPS",
 	}
 
-	createdLbAppProfile, err := edge.CreateLBAppProfile(lbAppProfileConfig)
+	createdLbAppProfile, err := edge.CreateLbAppProfile(lbAppProfileConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdLbAppProfile.Id, Not(IsNil))
 
@@ -45,10 +45,10 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	AddToCleanupList(TestLBAppProfile, "lbAppProfile", parentEntity, check.TestName())
 
 	// Lookup by both name and Id and compare that these are equal values
-	lbAppProfileByID, err := edge.ReadLBAppProfile(&types.LbAppProfile{Id: createdLbAppProfile.Id})
+	lbAppProfileByID, err := edge.GetLbAppProfile(&types.LbAppProfile{Id: createdLbAppProfile.Id})
 	check.Assert(err, IsNil)
 
-	lbPoolByName, err := edge.ReadLBAppProfile(&types.LbAppProfile{Name: createdLbAppProfile.Name})
+	lbPoolByName, err := edge.GetLbAppProfile(&types.LbAppProfile{Name: createdLbAppProfile.Name})
 	check.Assert(err, IsNil)
 	check.Assert(createdLbAppProfile.Id, Equals, lbPoolByName.Id)
 	check.Assert(lbAppProfileByID.Id, Equals, lbPoolByName.Id)
@@ -60,7 +60,7 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	// Test updating fields
 	// Update persistence method
 	lbAppProfileByID.Persistence.Method = "sourceip"
-	updatedAppProfile, err := edge.UpdateLBAppProfile(lbAppProfileByID)
+	updatedAppProfile, err := edge.UpdateLbAppProfile(lbAppProfileByID)
 	check.Assert(err, IsNil)
 	check.Assert(updatedAppProfile.Persistence.Method, Equals, lbAppProfileByID.Persistence.Method)
 
@@ -70,19 +70,19 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	// Try to set invalid algorithm hash and expect API to return error
 	// Invalid persistence method invalid_method. Valid methods are: COOKIE|SSL-SESSIONID|SOURCEIP.
 	lbAppProfileByID.Persistence.Method = "invalid_method"
-	updatedAppProfile, err = edge.UpdateLBAppProfile(lbAppProfileByID)
+	updatedAppProfile, err = edge.UpdateLbAppProfile(lbAppProfileByID)
 	check.Assert(err, ErrorMatches, ".*Invalid persistence method .*Valid methods are:.*")
 
 	// Update should fail without name
 	lbAppProfileByID.Name = ""
-	_, err = edge.UpdateLBAppProfile(lbAppProfileByID)
+	_, err = edge.UpdateLbAppProfile(lbAppProfileByID)
 	check.Assert(err.Error(), Equals, "load balancer application profile Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLBAppProfile(&types.LbAppProfile{Id: createdLbAppProfile.Id})
+	err = edge.DeleteLbAppProfile(&types.LbAppProfile{Id: createdLbAppProfile.Id})
 	check.Assert(err, IsNil)
 
 	// Ensure it is deleted
-	_, err = edge.ReadLBAppProfileByID(createdLbAppProfile.Id)
+	_, err = edge.GetLbAppProfileById(createdLbAppProfile.Id)
 	check.Assert(IsNotFound(err), Equals, true)
 }

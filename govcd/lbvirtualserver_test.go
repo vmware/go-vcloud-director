@@ -56,7 +56,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 		DefaultPoolId:        serverPoolId,
 	}
 
-	createdLbVirtualServer, err := edge.CreateLBVirtualServer(lbVirtualServerConfig)
+	createdLbVirtualServer, err := edge.CreateLbVirtualServer(lbVirtualServerConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdLbVirtualServer.Id, Not(IsNil))
 	check.Assert(createdLbVirtualServer.IpAddress, Equals, lbVirtualServerConfig.IpAddress)
@@ -75,10 +75,10 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	PrependToCleanupList(TestLBVirtualServer, "lbVirtualServer", parentEntity, check.TestName())
 
 	// Lookup by both name and Id and compare that these are equal values
-	lbVirtualServerById, err := edge.ReadLBVirtualServer(&types.LbVirtualServer{Id: createdLbVirtualServer.Id})
+	lbVirtualServerById, err := edge.GetLbVirtualServer(&types.LbVirtualServer{Id: createdLbVirtualServer.Id})
 	check.Assert(err, IsNil)
 
-	lbVirtualServerByName, err := edge.ReadLBVirtualServer(&types.LbVirtualServer{Name: createdLbVirtualServer.Name})
+	lbVirtualServerByName, err := edge.GetLbVirtualServer(&types.LbVirtualServer{Name: createdLbVirtualServer.Name})
 	check.Assert(err, IsNil)
 	check.Assert(createdLbVirtualServer.Id, Equals, lbVirtualServerByName.Id)
 	check.Assert(lbVirtualServerById.Id, Equals, lbVirtualServerByName.Id)
@@ -87,7 +87,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	// Test updating fields
 	// Update algorithm
 	lbVirtualServerById.Port = 8889
-	updatedLBPool, err := edge.UpdateLBVirtualServer(lbVirtualServerById)
+	updatedLBPool, err := edge.UpdateLbVirtualServer(lbVirtualServerById)
 	check.Assert(err, IsNil)
 	check.Assert(updatedLBPool.Port, Equals, lbVirtualServerById.Port)
 
@@ -97,20 +97,20 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	// Try to set invalid protocol and expect API to return error:
 	// vShield Edge [LoadBalancer] Invalid protocol invalid_protocol. Valid protocols are: HTTP|HTTPS|TCP|UDP. (API error: 14542)
 	lbVirtualServerById.Protocol = "invalid_protocol"
-	updatedLBPool, err = edge.UpdateLBVirtualServer(lbVirtualServerById)
+	updatedLBPool, err = edge.UpdateLbVirtualServer(lbVirtualServerById)
 	check.Assert(err, ErrorMatches, ".*Invalid protocol.*Valid protocols are:.*")
 
 	// Update should fail without name
 	lbVirtualServerById.Name = ""
-	_, err = edge.UpdateLBVirtualServer(lbVirtualServerById)
+	_, err = edge.UpdateLbVirtualServer(lbVirtualServerById)
 	check.Assert(err.Error(), Equals, "load balancer virtual server Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLBVirtualServer(&types.LbVirtualServer{Id: createdLbVirtualServer.Id})
+	err = edge.DeleteLbVirtualServer(&types.LbVirtualServer{Id: createdLbVirtualServer.Id})
 	check.Assert(err, IsNil)
 
 	// Ensure it is deleted
-	_, err = edge.ReadLBVirtualServerById(createdLbVirtualServer.Id)
+	_, err = edge.GetLbVirtualServerById(createdLbVirtualServer.Id)
 	check.Assert(IsNotFound(err), Equals, true)
 }
 
@@ -126,7 +126,7 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 		MaxRetries: 3,
 		Type:       "http",
 	}
-	lbMonitor, err := edge.CreateLBServiceMonitor(lbMon)
+	lbMonitor, err := edge.CreateLbServiceMonitor(lbMon)
 	check.Assert(err, IsNil)
 
 	// Create prerequisites - server pool
@@ -152,7 +152,7 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 		},
 	}
 
-	lbPool, err := edge.CreateLBServerPool(lbPoolConfig)
+	lbPool, err := edge.CreateLbServerPool(lbPoolConfig)
 	check.Assert(err, IsNil)
 
 	// Create prerequisites - application profile
@@ -161,7 +161,7 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 		Template: "HTTP",
 	}
 
-	lbAppProfile, err := edge.CreateLBAppProfile(lbAppProfileConfig)
+	lbAppProfile, err := edge.CreateLbAppProfile(lbAppProfileConfig)
 	check.Assert(err, IsNil)
 
 	lbAppRuleConfig := &types.LbAppRule{
@@ -170,7 +170,7 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 	}
 
 	// Create prerequisites - application rule
-	lbAppRule, err := edge.CreateLBAppRule(lbAppRuleConfig)
+	lbAppRule, err := edge.CreateLbAppRule(lbAppRuleConfig)
 	check.Assert(err, IsNil)
 
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway

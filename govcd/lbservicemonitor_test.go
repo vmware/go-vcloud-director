@@ -39,7 +39,7 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 		Type:       "http",
 	}
 
-	lbMonitor, err := edge.CreateLBServiceMonitor(lbMon)
+	lbMonitor, err := edge.CreateLbServiceMonitor(lbMon)
 	check.Assert(err, IsNil)
 	check.Assert(lbMonitor.Id, Not(IsNil))
 
@@ -48,10 +48,10 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 	AddToCleanupList(check.TestName(), "lbServiceMonitor", parentEntity, check.TestName())
 
 	// Lookup by both name and Id and compare that these are equal values
-	lbMonitorByID, err := edge.ReadLBServiceMonitor(&types.LbMonitor{Id: lbMonitor.Id})
+	lbMonitorByID, err := edge.GetLbServiceMonitor(&types.LbMonitor{Id: lbMonitor.Id})
 	check.Assert(err, IsNil)
 
-	lbMonitorByName, err := edge.ReadLBServiceMonitor(&types.LbMonitor{Name: lbMonitor.Name})
+	lbMonitorByName, err := edge.GetLbServiceMonitor(&types.LbMonitor{Name: lbMonitor.Name})
 	check.Assert(err, IsNil)
 	check.Assert(lbMonitor.Id, Equals, lbMonitorByName.Id)
 	check.Assert(lbMonitorByID.Id, Equals, lbMonitorByName.Id)
@@ -65,7 +65,7 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 	// Test updating fields
 	// Update timeout
 	lbMonitorByID.Timeout = 35
-	updatedLBMonitor, err := edge.UpdateLBServiceMonitor(lbMonitorByID)
+	updatedLBMonitor, err := edge.UpdateLbServiceMonitor(lbMonitorByID)
 	check.Assert(err, IsNil)
 	check.Assert(updatedLBMonitor.Timeout, Equals, 35)
 
@@ -74,13 +74,13 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 
 	// Update should fail without name
 	lbMonitorByID.Name = ""
-	_, err = edge.UpdateLBServiceMonitor(lbMonitorByID)
+	_, err = edge.UpdateLbServiceMonitor(lbMonitorByID)
 	check.Assert(err.Error(), Equals, "load balancer monitor Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLBServiceMonitor(&types.LbMonitor{Id: lbMonitorByID.Id})
+	err = edge.DeleteLbServiceMonitor(&types.LbMonitor{Id: lbMonitorByID.Id})
 	check.Assert(err, IsNil)
 
-	_, err = edge.ReadLBServiceMonitorByID(lbMonitorByID.Id)
+	_, err = edge.GetLbServiceMonitorById(lbMonitorByID.Id)
 	check.Assert(IsNotFound(err), Equals, true)
 }

@@ -234,7 +234,7 @@ func buildLoadBalancer(edge EdgeGateway, node1Ip, node2Ip string, vcd *TestVCD, 
 		DefaultPoolId:        serverPoolId,
 	}
 
-	_, err := edge.CreateLBVirtualServer(lbVirtualServerConfig)
+	_, err := edge.CreateLbVirtualServer(lbVirtualServerConfig)
 	check.Assert(err, IsNil)
 
 	// We created virtual server successfully therefore let's prepend it to cleanup list so that it

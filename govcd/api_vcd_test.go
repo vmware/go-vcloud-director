@@ -690,7 +690,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
 		}
 
-		err = edge.DeleteLBServiceMonitorByName(entity.Name)
+		err = edge.DeleteLbServiceMonitorByName(entity.Name)
 		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
@@ -715,7 +715,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
 		}
 
-		err = edge.DeleteLBServerPoolByName(entity.Name)
+		err = edge.DeleteLbServerPoolByName(entity.Name)
 		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
@@ -739,7 +739,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
 		}
 
-		err = edge.DeleteLBAppProfileByName(entity.Name)
+		err = edge.DeleteLbAppProfileByName(entity.Name)
 		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
@@ -764,7 +764,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
 		}
 
-		err = edge.DeleteLBVirtualServerByName(entity.Name)
+		err = edge.DeleteLbVirtualServerByName(entity.Name)
 		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
@@ -788,7 +788,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
 		}
 
-		err = edge.DeleteLBAppRuleByName(entity.Name)
+		err = edge.DeleteLbAppRuleByName(entity.Name)
 		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
