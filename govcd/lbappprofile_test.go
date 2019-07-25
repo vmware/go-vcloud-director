@@ -45,15 +45,17 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	AddToCleanupList(TestLbAppProfile, "lbAppProfile", parentEntity, check.TestName())
 
 	// Lookup by both name and ID and compare that these are equal values
-	lbAppProfileByID, err := edge.getLbAppProfile(&types.LbAppProfile{ID: createdLbAppProfile.ID})
+	lbAppProfileByID, err := edge.GetLbAppProfileById(createdLbAppProfile.ID)
 	check.Assert(err, IsNil)
+	check.Assert(lbAppProfileByID, Not(IsNil))
 
-	lbPoolByName, err := edge.getLbAppProfile(&types.LbAppProfile{Name: createdLbAppProfile.Name})
+	lbAppProfileByName, err := edge.GetLbAppProfileByName(createdLbAppProfile.Name)
 	check.Assert(err, IsNil)
-	check.Assert(createdLbAppProfile.ID, Equals, lbPoolByName.ID)
-	check.Assert(lbAppProfileByID.ID, Equals, lbPoolByName.ID)
-	check.Assert(lbAppProfileByID.Name, Equals, lbPoolByName.Name)
-	check.Assert(lbAppProfileByID.Persistence.Expire, Equals, lbPoolByName.Persistence.Expire)
+	check.Assert(lbAppProfileByName, Not(IsNil))
+	check.Assert(createdLbAppProfile.ID, Equals, lbAppProfileByName.ID)
+	check.Assert(lbAppProfileByID.ID, Equals, lbAppProfileByName.ID)
+	check.Assert(lbAppProfileByID.Name, Equals, lbAppProfileByName.Name)
+	check.Assert(lbAppProfileByID.Persistence.Expire, Equals, lbAppProfileByName.Persistence.Expire)
 
 	check.Assert(createdLbAppProfile.Template, Equals, lbAppProfileConfig.Template)
 
@@ -76,6 +78,7 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	// Update should fail without name
 	lbAppProfileByID.Name = ""
 	_, err = edge.UpdateLbAppProfile(lbAppProfileByID)
+	check.Assert(err, IsNil)
 	check.Assert(err.Error(), Equals, "load balancer application profile Name cannot be empty")
 
 	// Delete / cleanup

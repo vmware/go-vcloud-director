@@ -130,7 +130,7 @@ func (egw *EdgeGateway) UpdateLbAppProfile(lbAppProfileConfig *types.LbAppProfil
 	readAppProfile, err := egw.GetLbAppProfileById(lbAppProfileConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve application profile with ID (%s) after update: %s",
-			readAppProfile.ID, err)
+			lbAppProfileConfig.ID, err)
 	}
 	return readAppProfile, nil
 }

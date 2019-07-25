@@ -43,12 +43,14 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 	// // Lookup by both name and ID and compare that these are equal values
 	lbAppRuleByID, err := edge.getLbAppRule(&types.LbAppRule{ID: createdLbAppRule.ID})
 	check.Assert(err, IsNil)
+	check.Assert(lbAppRuleByID, Not(IsNil))
 
-	lbPoolByName, err := edge.getLbAppRule(&types.LbAppRule{Name: createdLbAppRule.Name})
+	lbAppRuleByName, err := edge.getLbAppRule(&types.LbAppRule{Name: createdLbAppRule.Name})
 	check.Assert(err, IsNil)
-	check.Assert(createdLbAppRule.ID, Equals, lbPoolByName.ID)
-	check.Assert(lbAppRuleByID.ID, Equals, lbPoolByName.ID)
-	check.Assert(lbAppRuleByID.Name, Equals, lbPoolByName.Name)
+	check.Assert(lbAppRuleByName, Not(IsNil))
+	check.Assert(createdLbAppRule.ID, Equals, lbAppRuleByName.ID)
+	check.Assert(lbAppRuleByID.ID, Equals, lbAppRuleByName.ID)
+	check.Assert(lbAppRuleByID.Name, Equals, lbAppRuleByName.Name)
 
 	check.Assert(createdLbAppRule.Script, Equals, lbAppRuleConfig.Script)
 
@@ -73,6 +75,7 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 	// Update should fail without name
 	lbAppRuleByID.Name = ""
 	_, err = edge.UpdateLbAppRule(lbAppRuleByID)
+	check.Assert(err, IsNil)
 	check.Assert(err.Error(), Equals, "load balancer application rule Name cannot be empty")
 
 	// Delete / cleanup

@@ -87,9 +87,11 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	// Lookup by both name and ID and compare that these are equal values
 	lbPoolByID, err := edge.getLbServerPool(&types.LbPool{ID: createdLbPool.ID})
 	check.Assert(err, IsNil)
+	check.Assert(lbPoolByID, Not(IsNil))
 
 	lbPoolByName, err := edge.getLbServerPool(&types.LbPool{Name: createdLbPool.Name})
 	check.Assert(err, IsNil)
+	check.Assert(lbPoolByName, Not(IsNil))
 	check.Assert(createdLbPool.ID, Equals, lbPoolByName.ID)
 	check.Assert(lbPoolByID.ID, Equals, lbPoolByName.ID)
 	check.Assert(lbPoolByID.Name, Equals, lbPoolByName.Name)
@@ -115,6 +117,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	// Update should fail without name
 	lbPoolByID.Name = ""
 	_, err = edge.UpdateLbServerPool(lbPoolByID)
+	check.Assert(err, IsNil)
 	check.Assert(err.Error(), Equals, "load balancer server pool Name cannot be empty")
 
 	// Delete / cleanup

@@ -50,9 +50,11 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 	// Lookup by both name and ID and compare that these are equal values
 	lbMonitorByID, err := edge.getLbServiceMonitor(&types.LbMonitor{ID: lbMonitor.ID})
 	check.Assert(err, IsNil)
+	check.Assert(lbMonitorByID, Not(IsNil))
 
 	lbMonitorByName, err := edge.getLbServiceMonitor(&types.LbMonitor{Name: lbMonitor.Name})
 	check.Assert(err, IsNil)
+	check.Assert(lbMonitorByName, Not(IsNil))
 	check.Assert(lbMonitor.ID, Equals, lbMonitorByName.ID)
 	check.Assert(lbMonitorByID.ID, Equals, lbMonitorByName.ID)
 	check.Assert(lbMonitorByID.Name, Equals, lbMonitorByName.Name)
@@ -75,6 +77,7 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 	// Update should fail without name
 	lbMonitorByID.Name = ""
 	_, err = edge.UpdateLbServiceMonitor(lbMonitorByID)
+	check.Assert(err, IsNil)
 	check.Assert(err.Error(), Equals, "load balancer monitor Name cannot be empty")
 
 	// Delete / cleanup

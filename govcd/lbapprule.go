@@ -130,7 +130,7 @@ func (egw *EdgeGateway) UpdateLbAppRule(lbAppRuleConfig *types.LbAppRule) (*type
 	readAppRule, err := egw.getLbAppRule(&types.LbAppRule{ID: lbAppRuleConfig.ID})
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve application rule with ID (%s) after update: %s",
-			readAppRule.ID, err)
+			lbAppRuleConfig.ID, err)
 	}
 	return readAppRule, nil
 }

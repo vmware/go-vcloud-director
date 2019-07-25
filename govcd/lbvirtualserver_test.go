@@ -77,9 +77,11 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	// Lookup by both name and ID and compare that these are equal values
 	lbVirtualServerById, err := edge.getLbVirtualServer(&types.LbVirtualServer{ID: createdLbVirtualServer.ID})
 	check.Assert(err, IsNil)
+	check.Assert(lbVirtualServerById, Not(IsNil))
 
 	lbVirtualServerByName, err := edge.getLbVirtualServer(&types.LbVirtualServer{Name: createdLbVirtualServer.Name})
 	check.Assert(err, IsNil)
+	check.Assert(lbVirtualServerByName, Not(IsNil))
 	check.Assert(createdLbVirtualServer.ID, Equals, lbVirtualServerByName.ID)
 	check.Assert(lbVirtualServerById.ID, Equals, lbVirtualServerByName.ID)
 	check.Assert(lbVirtualServerById.Name, Equals, lbVirtualServerByName.Name)
@@ -103,6 +105,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	// Update should fail without name
 	lbVirtualServerById.Name = ""
 	_, err = edge.UpdateLbVirtualServer(lbVirtualServerById)
+	check.Assert(err, IsNil)
 	check.Assert(err.Error(), Equals, "load balancer virtual server Name cannot be empty")
 
 	// Delete / cleanup
