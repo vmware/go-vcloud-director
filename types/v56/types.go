@@ -1474,7 +1474,7 @@ type GuestCustomizationSection struct {
 	// Elements
 	Enabled               bool     `xml:"Enabled,omitempty"`               // True if guest customization is enabled.
 	ChangeSid             bool     `xml:"ChangeSid,omitempty"`             // True if customization can change the Windows SID of this virtual machine.
-	VirtualMachineID      string   `xml:"VirtualMachineId,omitempty"`      // Virtual machine Id to apply.
+	VirtualMachineID      string   `xml:"VirtualMachineId,omitempty"`      // Virtual machine ID to apply.
 	JoinDomainEnabled     bool     `xml:"JoinDomainEnabled,omitempty"`     // True if this virtual machine can join a Windows Domain.
 	UseOrgSettings        bool     `xml:"UseOrgSettings,omitempty"`        // True if customization should use organization settings (OrgGuestPersonalizationSettings) when joining a Windows Domain.
 	DomainName            string   `xml:"DomainName,omitempty"`            // The name of the Windows Domain to join.
@@ -1807,7 +1807,7 @@ type LbVirtualServer struct {
 // Since: 5.1
 type VendorTemplate struct {
 	Name string `xml:"Name"` // Name of the vendor template. This is required.
-	ID   string `xml:"Id"`   // Id of the vendor template. This is required.
+	ID   string `xml:"Id"`   // ID of the vendor template. This is required.
 }
 
 // GatewayIpsecVpnService represents gateway IPsec VPN service.
@@ -1910,7 +1910,7 @@ type DhcpPoolService struct {
 // Since: 5.1
 type VMSelection struct {
 	VAppScopedVMID string `xml:"VAppScopedVmId"` // VAppScopedVmId of VM to which this rule applies.
-	VMNicID        int    `xml:"VmNicId"`        // VM NIC Id to which this rule applies.
+	VMNicID        int    `xml:"VmNicId"`        // VM NIC ID to which this rule applies.
 	IPType         string `xml:"IpType"`         // The value can be one of:- assigned: assigned internal IP be automatically choosen. NAT: NATed external IP will be automatically choosen.
 }
 
@@ -2040,7 +2040,7 @@ type NatOneToOneVMRule struct {
 	MappingMode       string `xml:"MappingMode"`       // Mapping mode.
 	ExternalIPAddress string `xml:"ExternalIpAddress"` // External IP address to map.
 	VAppScopedVMID    string `xml:"VAppScopedVmId"`    // VAppScopedVmId of VM to which this rule applies.
-	VMNicID           int    `xml:"VmNicId"`           // VM NIC Id to which this rule applies.
+	VMNicID           int    `xml:"VmNicId"`           // VM NIC ID to which this rule applies.
 }
 
 // NatPortForwardingRule represents the NAT rule for port forwarding between internal IP/port and external IP/port.
@@ -2065,7 +2065,7 @@ type NatVMRule struct {
 	ExternalIPAddress string `xml:"ExternalIpAddress,omitempty"` // External IP address to map.
 	ExternalPort      int    `xml:"ExternalPort"`                // External port to forward to.
 	VAppScopedVMID    string `xml:"VAppScopedVmId"`              // VAppScopedVmId of VM to which this rule applies.
-	VMNicID           int    `xml:"VmNicId"`                     // VM NIC Id to which this rule applies.
+	VMNicID           int    `xml:"VmNicId"`                     // VM NIC ID to which this rule applies.
 	InternalPort      int    `xml:"InternalPort"`                // Internal port to forward to.
 	Protocol          string `xml:"Protocol,omitempty"`          // Protocol to forward. One of: TCP (forward TCP packets), UDP (forward UDP packets), TCP_UDP (forward TCP and UDP packets).
 }
@@ -2121,7 +2121,7 @@ type QueryResultEdgeGatewayRecordType struct {
 	HREF                string `xml:"href,attr,omitempty"`                // The URI of the entity.
 	Type                string `xml:"type,attr,omitempty"`                // The MIME type of the entity.
 	Name                string `xml:"name,attr,omitempty"`                // EdgeGateway name.
-	Vdc                 string `xml:"vdc,attr,omitempty"`                 // VDC Reference or Id
+	Vdc                 string `xml:"vdc,attr,omitempty"`                 // VDC Reference or ID
 	NumberOfExtNetworks int    `xml:"numberOfExtNetworks,attr,omitempty"` // Number of external networks connected to the edgeGateway.	Yes	Yes
 	NumberOfOrgNetworks int    `xml:"numberOfOrgNetworks,attr,omitempty"` // Number of org VDC networks connected to the edgeGateway	Yes	Yes
 	IsBusy              bool   `xml:"isBusy,attr"`                        // True if this Edge Gateway is busy.	Yes	Yes
