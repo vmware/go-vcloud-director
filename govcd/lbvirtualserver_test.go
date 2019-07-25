@@ -16,7 +16,7 @@ import (
 // service monitor, server pool, application profile and application rule.
 // The following things are tested if prerequisites are met:
 // 1. Creation of load balancer virtual server
-// 2. Get load balancer virtual server by both Id and Name (virtual server name must be unique in
+// 2. Get load balancer virtual server by both ID and Name (virtual server name must be unique in
 // single edge gateway)
 // 3. Update - change a single field and compare that configuration and result objects are deeply
 // equal
@@ -58,7 +58,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 
 	createdLbVirtualServer, err := edge.CreateLbVirtualServer(lbVirtualServerConfig)
 	check.Assert(err, IsNil)
-	check.Assert(createdLbVirtualServer.Id, Not(IsNil))
+	check.Assert(createdLbVirtualServer.ID, Not(IsNil))
 	check.Assert(createdLbVirtualServer.IpAddress, Equals, lbVirtualServerConfig.IpAddress)
 	check.Assert(createdLbVirtualServer.Protocol, Equals, lbVirtualServerConfig.Protocol)
 	check.Assert(createdLbVirtualServer.Port, Equals, lbVirtualServerConfig.Port)
@@ -74,14 +74,14 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
 	PrependToCleanupList(TestLbVirtualServer, "lbVirtualServer", parentEntity, check.TestName())
 
-	// Lookup by both name and Id and compare that these are equal values
-	lbVirtualServerById, err := edge.GetLbVirtualServer(&types.LbVirtualServer{Id: createdLbVirtualServer.Id})
+	// Lookup by both name and ID and compare that these are equal values
+	lbVirtualServerById, err := edge.GetLbVirtualServer(&types.LbVirtualServer{ID: createdLbVirtualServer.ID})
 	check.Assert(err, IsNil)
 
 	lbVirtualServerByName, err := edge.GetLbVirtualServer(&types.LbVirtualServer{Name: createdLbVirtualServer.Name})
 	check.Assert(err, IsNil)
-	check.Assert(createdLbVirtualServer.Id, Equals, lbVirtualServerByName.Id)
-	check.Assert(lbVirtualServerById.Id, Equals, lbVirtualServerByName.Id)
+	check.Assert(createdLbVirtualServer.ID, Equals, lbVirtualServerByName.ID)
+	check.Assert(lbVirtualServerById.ID, Equals, lbVirtualServerByName.ID)
 	check.Assert(lbVirtualServerById.Name, Equals, lbVirtualServerByName.Name)
 
 	// Test updating fields
@@ -106,11 +106,11 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	check.Assert(err.Error(), Equals, "load balancer virtual server Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLbVirtualServer(&types.LbVirtualServer{Id: createdLbVirtualServer.Id})
+	err = edge.DeleteLbVirtualServer(&types.LbVirtualServer{ID: createdLbVirtualServer.ID})
 	check.Assert(err, IsNil)
 
 	// Ensure it is deleted
-	_, err = edge.GetLbVirtualServerById(createdLbVirtualServer.Id)
+	_, err = edge.GetLbVirtualServerById(createdLbVirtualServer.ID)
 	check.Assert(IsNotFound(err), Equals, true)
 }
 
@@ -133,7 +133,7 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 	lbPoolConfig := &types.LbPool{
 		Name:      componentsName,
 		Algorithm: "round-robin",
-		MonitorId: lbMonitor.Id,
+		MonitorId: lbMonitor.ID,
 		Members: types.LbPoolMembers{
 			types.LbPoolMember{
 				Name:      "Server_one",
@@ -179,5 +179,5 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 	AddToCleanupList(lbPool.Name, "lbServerPool", parentEntity, check.TestName())
 	AddToCleanupList(lbMon.Name, "lbServiceMonitor", parentEntity, check.TestName())
 
-	return lbMonitor.Id, lbPool.Id, lbAppProfile.Id, lbAppRule.Id
+	return lbMonitor.ID, lbPool.ID, lbAppProfile.ID, lbAppRule.ID
 }

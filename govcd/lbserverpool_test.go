@@ -14,7 +14,7 @@ import (
 // Test_LBServerPool tests CRUD methods for load balancer server pool.
 // The following things are tested if prerequisite Edge Gateway exists:
 // 1. Creation of load balancer server pool
-// 2. Get load balancer server pool by both Id and Name (server pool name must be unique in single edge gateway)
+// 2. Get load balancer server pool by both ID and Name (server pool name must be unique in single edge gateway)
 // 3. Update - change a single field and compare that configuration and result objects are deeply equal
 // 4. Update - try and fail to update without mandatory field
 // 5. Delete
@@ -40,7 +40,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	}
 	lbMonitor, err := edge.CreateLbServiceMonitor(lbMon)
 	check.Assert(err, IsNil)
-	check.Assert(lbMonitor.Id, NotNil)
+	check.Assert(lbMonitor.ID, NotNil)
 
 	// Add service monitor to cleanup
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
@@ -50,7 +50,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	lbPoolConfig := &types.LbPool{
 		Name:      TestLbServerPool,
 		Algorithm: "round-robin",
-		MonitorId: lbMonitor.Id,
+		MonitorId: lbMonitor.ID,
 		Members: types.LbPoolMembers{
 			types.LbPoolMember{
 				Name:      "Server_one",
@@ -71,8 +71,8 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 
 	createdLbPool, err := edge.CreateLbServerPool(lbPoolConfig)
 	check.Assert(err, IsNil)
-	check.Assert(createdLbPool.Id, Not(IsNil))
-	check.Assert(createdLbPool.MonitorId, Equals, lbMonitor.Id)
+	check.Assert(createdLbPool.ID, Not(IsNil))
+	check.Assert(createdLbPool.MonitorId, Equals, lbMonitor.ID)
 	check.Assert(len(createdLbPool.Members), Equals, 2)
 	check.Assert(createdLbPool.Members[0].Condition, Equals, "enabled")
 	check.Assert(createdLbPool.Members[1].Condition, Equals, "enabled")
@@ -84,14 +84,14 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	// We created server pool successfully therefore let's add it to cleanup list
 	AddToCleanupList(TestLbServerPool, "lbServerPool", parentEntity, check.TestName())
 
-	// Lookup by both name and Id and compare that these are equal values
-	lbPoolByID, err := edge.GetLbServerPool(&types.LbPool{Id: createdLbPool.Id})
+	// Lookup by both name and ID and compare that these are equal values
+	lbPoolByID, err := edge.GetLbServerPool(&types.LbPool{ID: createdLbPool.ID})
 	check.Assert(err, IsNil)
 
 	lbPoolByName, err := edge.GetLbServerPool(&types.LbPool{Name: createdLbPool.Name})
 	check.Assert(err, IsNil)
-	check.Assert(createdLbPool.Id, Equals, lbPoolByName.Id)
-	check.Assert(lbPoolByID.Id, Equals, lbPoolByName.Id)
+	check.Assert(createdLbPool.ID, Equals, lbPoolByName.ID)
+	check.Assert(lbPoolByID.ID, Equals, lbPoolByName.ID)
 	check.Assert(lbPoolByID.Name, Equals, lbPoolByName.Name)
 
 	check.Assert(createdLbPool.Algorithm, Equals, lbPoolConfig.Algorithm)
@@ -118,9 +118,9 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	check.Assert(err.Error(), Equals, "load balancer server pool Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLbServerPool(&types.LbPool{Id: createdLbPool.Id})
+	err = edge.DeleteLbServerPool(&types.LbPool{ID: createdLbPool.ID})
 	check.Assert(err, IsNil)
 
-	_, err = edge.GetLbServerPoolById(createdLbPool.Id)
+	_, err = edge.GetLbServerPoolById(createdLbPool.ID)
 	check.Assert(IsNotFound(err), Equals, true)
 }

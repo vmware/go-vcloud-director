@@ -200,7 +200,7 @@ func (egw *EdgeGateway) RemoveNATPortMapping(natType, externalIP, externalPort, 
 
 }
 
-// RemoveNATRule removes NAT removes NAT rule identified by Id and handles task. Returns error if issues rise.
+// RemoveNATRule removes NAT removes NAT rule identified by ID and handles task. Returns error if issues rise.
 // Old functions RemoveNATPortMapping and RemoveNATMapping removed using rule details
 // and expected interface to be of external network type.
 func (egw *EdgeGateway) RemoveNATRule(id string) error {
@@ -243,7 +243,7 @@ func (egw *EdgeGateway) RemoveNATRuleAsync(id string) (Task, error) {
 	}
 
 	if ruleIndex == -1 {
-		return Task{}, fmt.Errorf("edge gateway doesn't have rule with such Id")
+		return Task{}, fmt.Errorf("edge gateway doesn't have rule with such ID")
 	}
 
 	if len(natServiceToUpdate.NatRule) > 1 {
@@ -267,9 +267,9 @@ func (egw *EdgeGateway) RemoveNATRuleAsync(id string) (Task, error) {
 
 // AddDNATRule creates DNAT rule and returns the NAT struct that was created or an error.
 // Allows assigning a specific Org VDC or an external network.
-// When edge gateway is advanced vCD API uses element <tag> to map with NSX edge gateway Id. A known issue is
+// When edge gateway is advanced vCD API uses element <tag> to map with NSX edge gateway ID. A known issue is
 // that updating rule using User interface resets <tag> and as result mapping is lost.
-// Getting using NatRule.Id won't be valid anymore.
+// Getting using NatRule.ID won't be valid anymore.
 // Old functions AddNATPortMapping and AddNATMapping assigned rule only to first external network
 func (egw *EdgeGateway) AddDNATRule(ruleDetails NatRule) (*types.NatRule, error) {
 	mappingId, err := getPseudoUuid()
@@ -317,10 +317,10 @@ func (egw *EdgeGateway) AddDNATRule(ruleDetails NatRule) (*types.NatRule, error)
 // Old functions AddNATPortMapping and AddNATMapping aren't correct as assigned rule only to first external network
 func (egw *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, description string) (*types.NatRule, error) {
 
-	// As vCD API doesn't return rule Id we get it manually:
-	//  * create rule with description which value is our generated Id
-	//  * find rule which has description with our generated Id
-	//  * get the real (vCD's) rule Id
+	// As vCD API doesn't return rule ID we get it manually:
+	//  * create rule with description which value is our generated ID
+	//  * find rule which has description with our generated ID
+	//  * get the real (vCD's) rule ID
 	//  * update description with real value and return nat rule
 
 	mappingId, err := getPseudoUuid()
@@ -362,7 +362,7 @@ func (egw *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, descrip
 	return egw.UpdateNatRule(createdNatRule)
 }
 
-// getPseudoUuid creates unique Id/UUID
+// getPseudoUuid creates unique ID/UUID
 func getPseudoUuid() (string, error) {
 
 	b := make([]byte, 16)

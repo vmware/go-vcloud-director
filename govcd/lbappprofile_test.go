@@ -14,7 +14,7 @@ import (
 // Test_LBAppProfile tests CRUD methods for load balancer application profile.
 // The following things are tested if prerequisite Edge Gateway exists:
 // 1. Creation of load balancer application profile
-// 2. Get load balancer application profile by both Id and Name (application profile name must be unique in single edge gateway)
+// 2. Get load balancer application profile by both ID and Name (application profile name must be unique in single edge gateway)
 // 3. Update - change a single field and compare that configuration and result objects are deeply equal
 // 4. Update - try and fail to update without mandatory field
 // 5. Delete
@@ -38,20 +38,20 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 
 	createdLbAppProfile, err := edge.CreateLbAppProfile(lbAppProfileConfig)
 	check.Assert(err, IsNil)
-	check.Assert(createdLbAppProfile.Id, Not(IsNil))
+	check.Assert(createdLbAppProfile.ID, Not(IsNil))
 
 	// We created application profile successfully therefore let's add it to cleanup list
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
 	AddToCleanupList(TestLbAppProfile, "lbAppProfile", parentEntity, check.TestName())
 
-	// Lookup by both name and Id and compare that these are equal values
-	lbAppProfileByID, err := edge.GetLbAppProfile(&types.LbAppProfile{Id: createdLbAppProfile.Id})
+	// Lookup by both name and ID and compare that these are equal values
+	lbAppProfileByID, err := edge.GetLbAppProfile(&types.LbAppProfile{ID: createdLbAppProfile.ID})
 	check.Assert(err, IsNil)
 
 	lbPoolByName, err := edge.GetLbAppProfile(&types.LbAppProfile{Name: createdLbAppProfile.Name})
 	check.Assert(err, IsNil)
-	check.Assert(createdLbAppProfile.Id, Equals, lbPoolByName.Id)
-	check.Assert(lbAppProfileByID.Id, Equals, lbPoolByName.Id)
+	check.Assert(createdLbAppProfile.ID, Equals, lbPoolByName.ID)
+	check.Assert(lbAppProfileByID.ID, Equals, lbPoolByName.ID)
 	check.Assert(lbAppProfileByID.Name, Equals, lbPoolByName.Name)
 	check.Assert(lbAppProfileByID.Persistence.Expire, Equals, lbPoolByName.Persistence.Expire)
 
@@ -79,10 +79,10 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	check.Assert(err.Error(), Equals, "load balancer application profile Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLbAppProfile(&types.LbAppProfile{Id: createdLbAppProfile.Id})
+	err = edge.DeleteLbAppProfile(&types.LbAppProfile{ID: createdLbAppProfile.ID})
 	check.Assert(err, IsNil)
 
 	// Ensure it is deleted
-	_, err = edge.GetLbAppProfileById(createdLbAppProfile.Id)
+	_, err = edge.GetLbAppProfileById(createdLbAppProfile.ID)
 	check.Assert(IsNotFound(err), Equals, true)
 }

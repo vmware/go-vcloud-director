@@ -12,7 +12,7 @@ import (
 )
 
 // CreateLbAppProfile creates a load balancer application profile based on mandatory fields. It is a
-// synchronous operation. It returns created object with all fields (including Id) populated or an error.
+// synchronous operation. It returns created object with all fields (including ID) populated or an error.
 func (egw *EdgeGateway) CreateLbAppProfile(lbAppProfileConfig *types.LbAppProfile) (*types.LbAppProfile, error) {
 	if err := validateCreateLbAppProfile(lbAppProfileConfig, egw); err != nil {
 		return nil, err
@@ -38,14 +38,14 @@ func (egw *EdgeGateway) CreateLbAppProfile(lbAppProfileConfig *types.LbAppProfil
 
 	readAppProfile, err := egw.GetLbAppProfileById(lbAppProfileID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve application profile with Id (%s) after creation: %s",
-			readAppProfile.Id, err)
+		return nil, fmt.Errorf("unable to retrieve application profile with ID (%s) after creation: %s",
+			readAppProfile.ID, err)
 	}
 	return readAppProfile, nil
 }
 
-// GetLbAppProfile is able to find the types.LbAppProfile type by Name and/or Id.
-// If both - Name and Id are specified it performs a lookup by Id and returns an error if the specified name and found
+// GetLbAppProfile is able to find the types.LbAppProfile type by Name and/or ID.
+// If both - Name and ID are specified it performs a lookup by ID and returns an error if the specified name and found
 // name do not match.
 func (egw *EdgeGateway) GetLbAppProfile(lbAppProfileConfig *types.LbAppProfile) (*types.LbAppProfile, error) {
 	if err := validateGetLbAppProfile(lbAppProfileConfig, egw); err != nil {
@@ -69,20 +69,20 @@ func (egw *EdgeGateway) GetLbAppProfile(lbAppProfileConfig *types.LbAppProfile) 
 		return nil, err
 	}
 
-	// Search for application profile by Id or by Name
+	// Search for application profile by ID or by Name
 	for _, profile := range lbAppProfileResponse.LbAppProfiles {
-		// If Id was specified for lookup - look for the same Id
-		if lbAppProfileConfig.Id != "" && profile.Id == lbAppProfileConfig.Id {
+		// If ID was specified for lookup - look for the same ID
+		if lbAppProfileConfig.ID != "" && profile.ID == lbAppProfileConfig.ID {
 			return profile, nil
 		}
 
 		// If Name was specified for lookup - look for the same Name
 		if lbAppProfileConfig.Name != "" && profile.Name == lbAppProfileConfig.Name {
-			// We found it by name. Let's verify if search Id was specified and it matches the lookup object
-			if lbAppProfileConfig.Id != "" && profile.Id != lbAppProfileConfig.Id {
+			// We found it by name. Let's verify if search ID was specified and it matches the lookup object
+			if lbAppProfileConfig.ID != "" && profile.ID != lbAppProfileConfig.ID {
 				return nil, fmt.Errorf("load balancer application profile was found by name (%s)"+
-					", but its Id (%s) does not match specified Id (%s)",
-					profile.Name, profile.Id, lbAppProfileConfig.Id)
+					", but its ID (%s) does not match specified ID (%s)",
+					profile.Name, profile.ID, lbAppProfileConfig.ID)
 			}
 			return profile, nil
 		}
@@ -91,9 +91,9 @@ func (egw *EdgeGateway) GetLbAppProfile(lbAppProfileConfig *types.LbAppProfile) 
 	return nil, ErrorEntityNotFound
 }
 
-// GetLbAppProfileById wraps GetLbAppProfile and needs only an Id for lookup
+// GetLbAppProfileById wraps GetLbAppProfile and needs only an ID for lookup
 func (egw *EdgeGateway) GetLbAppProfileById(id string) (*types.LbAppProfile, error) {
-	return egw.GetLbAppProfile(&types.LbAppProfile{Id: id})
+	return egw.GetLbAppProfile(&types.LbAppProfile{ID: id})
 }
 
 // GetLbAppProfileByName wraps GetLbAppProfile and needs only a Name for lookup
@@ -101,8 +101,8 @@ func (egw *EdgeGateway) GetLbAppProfileByName(name string) (*types.LbAppProfile,
 	return egw.GetLbAppProfile(&types.LbAppProfile{Name: name})
 }
 
-// UpdateLbAppProfile updates types.LbAppProfile with all fields. At least name or Id must be specified.
-// If both - Name and Id are specified it performs a lookup by Id and returns an error if the specified name and found
+// UpdateLbAppProfile updates types.LbAppProfile with all fields. At least name or ID must be specified.
+// If both - Name and ID are specified it performs a lookup by ID and returns an error if the specified name and found
 // name do not match.
 func (egw *EdgeGateway) UpdateLbAppProfile(lbAppProfileConfig *types.LbAppProfile) (*types.LbAppProfile, error) {
 	err := validateUpdateLbAppProfile(lbAppProfileConfig, egw)
@@ -110,12 +110,12 @@ func (egw *EdgeGateway) UpdateLbAppProfile(lbAppProfileConfig *types.LbAppProfil
 		return nil, err
 	}
 
-	lbAppProfileConfig.Id, err = egw.getLbAppProfileIdByNameId(lbAppProfileConfig.Name, lbAppProfileConfig.Id)
+	lbAppProfileConfig.ID, err = egw.getLbAppProfileIdByNameId(lbAppProfileConfig.Name, lbAppProfileConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("cannot update load balancer application profile: %s", err)
 	}
 
-	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LbAppProfilePath + lbAppProfileConfig.Id)
+	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LbAppProfilePath + lbAppProfileConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
@@ -127,16 +127,16 @@ func (egw *EdgeGateway) UpdateLbAppProfile(lbAppProfileConfig *types.LbAppProfil
 		return nil, err
 	}
 
-	readAppProfile, err := egw.GetLbAppProfileById(lbAppProfileConfig.Id)
+	readAppProfile, err := egw.GetLbAppProfileById(lbAppProfileConfig.ID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve application profile with Id (%s) after update: %s",
-			readAppProfile.Id, err)
+		return nil, fmt.Errorf("unable to retrieve application profile with ID (%s) after update: %s",
+			readAppProfile.ID, err)
 	}
 	return readAppProfile, nil
 }
 
-// DeleteLbAppProfile is able to delete the types.LbAppProfile type by Name and/or Id.
-// If both - Name and Id are specified it performs a lookup by Id and returns an error if the specified name and found
+// DeleteLbAppProfile is able to delete the types.LbAppProfile type by Name and/or ID.
+// If both - Name and ID are specified it performs a lookup by ID and returns an error if the specified name and found
 // name do not match.
 func (egw *EdgeGateway) DeleteLbAppProfile(lbAppProfileConfig *types.LbAppProfile) error {
 	err := validateDeleteLbAppProfile(lbAppProfileConfig, egw)
@@ -144,12 +144,12 @@ func (egw *EdgeGateway) DeleteLbAppProfile(lbAppProfileConfig *types.LbAppProfil
 		return err
 	}
 
-	lbAppProfileConfig.Id, err = egw.getLbAppProfileIdByNameId(lbAppProfileConfig.Name, lbAppProfileConfig.Id)
+	lbAppProfileConfig.ID, err = egw.getLbAppProfileIdByNameId(lbAppProfileConfig.Name, lbAppProfileConfig.ID)
 	if err != nil {
 		return fmt.Errorf("cannot delete load balancer application profile: %s", err)
 	}
 
-	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LbAppProfilePath + lbAppProfileConfig.Id)
+	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LbAppProfilePath + lbAppProfileConfig.ID)
 	if err != nil {
 		return fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
@@ -158,9 +158,9 @@ func (egw *EdgeGateway) DeleteLbAppProfile(lbAppProfileConfig *types.LbAppProfil
 		"unable to delete application profile: %s", nil)
 }
 
-// DeleteLbAppProfileById wraps DeleteLbAppProfile and requires only Id for deletion
+// DeleteLbAppProfileById wraps DeleteLbAppProfile and requires only ID for deletion
 func (egw *EdgeGateway) DeleteLbAppProfileById(id string) error {
-	return egw.DeleteLbAppProfile(&types.LbAppProfile{Id: id})
+	return egw.DeleteLbAppProfile(&types.LbAppProfile{ID: id})
 }
 
 // DeleteLbAppProfileByName wraps DeleteLbAppProfile and requires only Name for deletion
@@ -185,8 +185,8 @@ func validateGetLbAppProfile(lbAppProfileConfig *types.LbAppProfile, egw *EdgeGa
 		return fmt.Errorf("only advanced edge gateways support load balancers")
 	}
 
-	if lbAppProfileConfig.Id == "" && lbAppProfileConfig.Name == "" {
-		return fmt.Errorf("to read load balancer application profile at least one of `Id`, `Name`" +
+	if lbAppProfileConfig.ID == "" && lbAppProfileConfig.Name == "" {
+		return fmt.Errorf("to read load balancer application profile at least one of `ID`, `Name`" +
 			" fields must be specified")
 	}
 
@@ -203,22 +203,22 @@ func validateDeleteLbAppProfile(lbAppProfileConfig *types.LbAppProfile, egw *Edg
 	return validateGetLbAppProfile(lbAppProfileConfig, egw)
 }
 
-// getLbAppProfileIdByNameId checks if at least name or Id is set and returns the Id.
-// If the Id is specified - it passes through the Id. If only name was specified
-// it will lookup the object by name and return the Id.
+// getLbAppProfileIdByNameId checks if at least name or ID is set and returns the ID.
+// If the ID is specified - it passes through the ID. If only name was specified
+// it will lookup the object by name and return the ID.
 func (egw *EdgeGateway) getLbAppProfileIdByNameId(name, id string) (string, error) {
 	if name == "" && id == "" {
-		return "", fmt.Errorf("at least Name or Id must be specific to find load balancer "+
-			"application profile got name (%s) Id (%s)", name, id)
+		return "", fmt.Errorf("at least Name or ID must be specific to find load balancer "+
+			"application profile got name (%s) ID (%s)", name, id)
 	}
 	if id != "" {
 		return id, nil
 	}
 
-	// if only name was specified, Id must be found, because only Id can be used in request path
+	// if only name was specified, ID must be found, because only ID can be used in request path
 	readlbAppProfile, err := egw.GetLbAppProfileByName(name)
 	if err != nil {
 		return "", fmt.Errorf("unable to find load balancer application profile by name: %s", err)
 	}
-	return readlbAppProfile.Id, nil
+	return readlbAppProfile.ID, nil
 }

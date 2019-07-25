@@ -1688,7 +1688,7 @@ type InnerXML struct {
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 type LbMonitor struct {
 	XMLName    xml.Name `xml:"monitor"`
-	Id         string   `xml:"monitorId,omitempty"`
+	ID         string   `xml:"monitorId,omitempty"`
 	Type       string   `xml:"type"`
 	Interval   int      `xml:"interval,omitempty"`
 	Timeout    int      `xml:"timeout,omitempty"`
@@ -1709,7 +1709,7 @@ type LbMonitors []LbMonitor
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 type LbPool struct {
 	XMLName             xml.Name      `xml:"pool"`
-	Id                  string        `xml:"poolId,omitempty"`
+	ID                  string        `xml:"poolId,omitempty"`
 	Name                string        `xml:"name"`
 	Description         string        `xml:"description,omitempty"`
 	Algorithm           string        `xml:"algorithm"`
@@ -1723,7 +1723,7 @@ type LbPools []LbPool
 
 // LbPoolMember represents a single member inside LbPool
 type LbPoolMember struct {
-	Id          string `xml:"memberId,omitempty"`
+	ID          string `xml:"memberId,omitempty"`
 	Name        string `xml:"name"`
 	IpAddress   string `xml:"ipAddress"`
 	Weight      int    `xml:"weight,omitempty"`
@@ -1741,7 +1741,7 @@ type LbPoolMembers []LbPoolMember
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 type LbAppProfile struct {
 	XMLName                       xml.Name                  `xml:"applicationProfile"`
-	Id                            string                    `xml:"applicationProfileId,omitempty"`
+	ID                            string                    `xml:"applicationProfileId,omitempty"`
 	Name                          string                    `xml:"name,omitempty"`
 	SslPassthrough                bool                      `xml:"sslPassthrough,omitempty"`
 	Template                      string                    `xml:"template,omitempty"`
@@ -1773,7 +1773,7 @@ type LbAppProfileHttpRedirect struct {
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 type LbAppRule struct {
 	XMLName xml.Name `xml:"applicationRule"`
-	Id      string   `xml:"applicationRuleId,omitempty"`
+	ID      string   `xml:"applicationRuleId,omitempty"`
 	Name    string   `xml:"name,omitempty"`
 	Script  string   `xml:"script,omitempty"`
 }
@@ -1784,17 +1784,17 @@ type LbAppRules []LbAppRule
 // Programming Guide"
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 type LbVirtualServer struct {
-	XMLName              xml.Name `xml:"virtualServer"`
-	Id                   string   `xml:"virtualServerId,omitempty"`
-	Name                 string   `xml:"name,omitempty"`
-	Description          string   `xml:"description,omitempty"`
-	Enabled              bool     `xml:"enabled,omitempty"`
-	IpAddress            string   `xml:"ipAddress"`
-	Protocol             string   `xml:"protocol"`
-	Port                 int      `xml:"port"`
-	AccelerationEnabled  bool     `xml:"accelerationEnabled,omitempty"`
-	ConnectionLimit      int      `xml:"connectionLimit,omitempty"`
-	ConnectionRateLimit  int      `xml:"connectionRateLimit,omitempty"`
+	XMLName             xml.Name `xml:"virtualServer"`
+	ID                  string   `xml:"virtualServerId,omitempty"`
+	Name                string   `xml:"name,omitempty"`
+	Description         string   `xml:"description,omitempty"`
+	Enabled             bool     `xml:"enabled,omitempty"`
+	IpAddress           string   `xml:"ipAddress"`
+	Protocol            string   `xml:"protocol"`
+	Port                int      `xml:"port"`
+	AccelerationEnabled bool     `xml:"accelerationEnabled,omitempty"`
+	ConnectionLimit     int      `xml:"connectionLimit,omitempty"`
+	ConnectionRateLimit int      `xml:"connectionRateLimit,omitempty"`
 	ApplicationProfileId string   `xml:"applicationProfileId,omitempty"`
 	DefaultPoolId        string   `xml:"defaultPoolId,omitempty"`
 	ApplicationRuleIds   []string `xml:"applicationRuleId,omitempty"`
@@ -1807,7 +1807,7 @@ type LbVirtualServer struct {
 // Since: 5.1
 type VendorTemplate struct {
 	Name string `xml:"Name"` // Name of the vendor template. This is required.
-	ID   string `xml:"Id"`   // ID of the vendor template. This is required.
+	ID   string `xml:"ID"`   // ID of the vendor template. This is required.
 }
 
 // GatewayIpsecVpnService represents gateway IPsec VPN service.
@@ -1843,9 +1843,9 @@ type GatewayIpsecVpnTunnel struct {
 	IpsecVpnThirdPartyPeer *IpsecVpnThirdPartyPeer `xml:"IpsecVpnThirdPartyPeer,omitempty"` // Details about the peer network.
 	IpsecVpnLocalPeer      *IpsecVpnLocalPeer      `xml:"IpsecVpnLocalPeer"`                // Details about the local peer network.
 	PeerIPAddress          string                  `xml:"PeerIpAddress"`                    // IP address of the peer endpoint.
-	PeerID                 string                  `xml:"PeerId"`                           // Id for the peer end point
+	PeerID                 string                  `xml:"PeerId"`                           // ID for the peer end point
 	LocalIPAddress         string                  `xml:"LocalIpAddress"`                   // Address of the local network.
-	LocalID                string                  `xml:"LocalId"`                          // Id for local end point
+	LocalID                string                  `xml:"LocalId"`                          // ID for local end point
 	LocalSubnet            []*IpsecVpnSubnet       `xml:"LocalSubnet"`                      // List of local subnets in the tunnel.
 	PeerSubnet             []*IpsecVpnSubnet       `xml:"PeerSubnet"`                       // List of peer subnets in the tunnel.
 	SharedSecret           string                  `xml:"SharedSecret"`                     // Shared secret used for authentication.
@@ -1859,12 +1859,12 @@ type GatewayIpsecVpnTunnel struct {
 
 // IpsecVpnThirdPartyPeer represents details about a peer network
 type IpsecVpnThirdPartyPeer struct {
-	PeerID string `xml:"PeerId,omitempty"` // Id for the peer end point
+	PeerID string `xml:"PeerId,omitempty"` // ID for the peer end point
 }
 
 // IpsecVpnThirdPartyPeer represents details about a peer network
 type IpsecVpnLocalPeer struct {
-	ID   string `xml:"Id"`   // Id for the peer end point
+	ID   string `xml:"ID"`   // ID for the peer end point
 	Name string `xml:"Name"` // Name for the peer
 }
 
@@ -1934,7 +1934,7 @@ type FirewallRuleProtocols struct {
 // Description: Represents a firewall rule.
 // Since: 0.9
 type FirewallRule struct {
-	ID                   string                 `xml:"Id,omitempty"`                   // Firewall rule identifier.
+	ID                   string                 `xml:"ID,omitempty"`                   // Firewall rule identifier.
 	IsEnabled            bool                   `xml:"IsEnabled"`                      // Used to enable or disable the firewall rule. Default value is true.
 	MatchOnTranslate     bool                   `xml:"MatchOnTranslate"`               // For DNATed traffic, match the firewall rules only after the destination IP is translated.
 	Description          string                 `xml:"Description,omitempty"`          // A description of the rule.
@@ -1991,7 +1991,7 @@ type NatRule struct {
 	Description        string                 `xml:"Description,omitempty"`        // A description of the rule.
 	RuleType           string                 `xml:"RuleType,omitempty"`           // Type of NAT rule. One of: SNAT (source NAT), DNAT (destination NAT)
 	IsEnabled          bool                   `xml:"IsEnabled"`                    // Used to enable or disable the firewall rule. Default value is true.
-	ID                 string                 `xml:"Id,omitempty"`                 // Firewall rule identifier.
+	ID                 string                 `xml:"ID,omitempty"`                 // Firewall rule identifier.
 	GatewayNatRule     *GatewayNatRule        `xml:"GatewayNatRule,omitempty"`     // Defines SNAT and DNAT types.
 	OneToOneBasicRule  *NatOneToOneBasicRule  `xml:"OneToOneBasicRule,omitempty"`  // Maps one internal IP address to one external IP address.
 	OneToOneVMRule     *NatOneToOneVMRule     `xml:"OneToOneVmRule,omitempty"`     // Maps one VM NIC to one external IP addresses.
@@ -2492,7 +2492,7 @@ type VmPendingQuestion struct {
 // Reference: vCloud API 27.0 - VmQuestionAnswerChoiceType
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/types/VmQuestionAnswerChoiceType.html
 type VmQuestionAnswerChoiceType struct {
-	Id   int    `xml:"Id"`
+	Id   int    `xml:"ID"`
 	Text string `xml:"Text,omitempty"`
 }
 

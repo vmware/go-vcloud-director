@@ -14,7 +14,7 @@ import (
 // Test_LBAppRule tests CRUD methods for load balancer application rule.
 // The following things are tested if prerequisite Edge Gateway exists:
 // 1. Creation of load balancer application rule
-// 2. Get load balancer application rule by both Id and Name (application rule name must be unique in single edge gateway)
+// 2. Get load balancer application rule by both ID and Name (application rule name must be unique in single edge gateway)
 // 3. Update - change a field and compare that configuration and result objects are deeply equal
 // 4. Update - try and fail to update without mandatory field
 // 5. Delete
@@ -34,20 +34,20 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 
 	createdLbAppRule, err := edge.CreateLbAppRule(lbAppRuleConfig)
 	check.Assert(err, IsNil)
-	check.Assert(createdLbAppRule.Id, Not(IsNil))
+	check.Assert(createdLbAppRule.ID, Not(IsNil))
 
 	// // We created application rule successfully therefore let's add it to cleanup list
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
 	AddToCleanupList(TestLbAppRule, "lbAppRule", parentEntity, check.TestName())
 
-	// // Lookup by both name and Id and compare that these are equal values
-	lbAppRuleByID, err := edge.GetLbAppRule(&types.LbAppRule{Id: createdLbAppRule.Id})
+	// // Lookup by both name and ID and compare that these are equal values
+	lbAppRuleByID, err := edge.GetLbAppRule(&types.LbAppRule{ID: createdLbAppRule.ID})
 	check.Assert(err, IsNil)
 
 	lbPoolByName, err := edge.GetLbAppRule(&types.LbAppRule{Name: createdLbAppRule.Name})
 	check.Assert(err, IsNil)
-	check.Assert(createdLbAppRule.Id, Equals, lbPoolByName.Id)
-	check.Assert(lbAppRuleByID.Id, Equals, lbPoolByName.Id)
+	check.Assert(createdLbAppRule.ID, Equals, lbPoolByName.ID)
+	check.Assert(lbAppRuleByID.ID, Equals, lbPoolByName.ID)
 	check.Assert(lbAppRuleByID.Name, Equals, lbPoolByName.Name)
 
 	check.Assert(createdLbAppRule.Script, Equals, lbAppRuleConfig.Script)
@@ -76,10 +76,10 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 	check.Assert(err.Error(), Equals, "load balancer application rule Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLbAppRule(&types.LbAppRule{Id: createdLbAppRule.Id})
+	err = edge.DeleteLbAppRule(&types.LbAppRule{ID: createdLbAppRule.ID})
 	check.Assert(err, IsNil)
 
 	// Ensure it is deleted
-	_, err = edge.GetLbAppRuleById(createdLbAppRule.Id)
+	_, err = edge.GetLbAppRuleById(createdLbAppRule.ID)
 	check.Assert(IsNotFound(err), Equals, true)
 }
