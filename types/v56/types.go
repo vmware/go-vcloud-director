@@ -1658,9 +1658,9 @@ type LbGeneralParamsWithXml struct {
 	Logging             *LbLogging `xml:"logging"`
 
 	// This field is not used anywhere but needs to be passed through
-	EnableServiceInsertion bool   `xml:"enableServiceInsertion"`
+	EnableServiceInsertion bool `xml:"enableServiceInsertion"`
 	// Each configuration change has a version number
-	Version                string `xml:"version,omitempty"`
+	Version string `xml:"version,omitempty"`
 
 	// The below fields have `innerxml` tag so that they are not processed but instead
 	// sent verbatim
