@@ -1,4 +1,4 @@
-## 2.3.0 (Unreleased)
+## 2.3.0 (Jul 26, 2019)
 
 * Added edge gateway create/delete functions [#130](https://github.com/vmware/go-vcloud-director/issues/130).
 * Added edge gateway global load balancer configuration support (e.g. enable/disable) [#219](https://github.com/vmware/go-vcloud-director/pull/219)
