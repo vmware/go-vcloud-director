@@ -90,6 +90,10 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	// We created server pool successfully therefore let's add it to cleanup list
 	AddToCleanupList(TestLbServerPool, "lbServerPool", parentEntity, check.TestName())
 
+	// Try to delete used service monitor and expect it to fail with nice error
+	err = edge.DeleteLbServiceMonitor(lbMon)
+	check.Assert(err, ErrorMatches, `.*Fail to delete objectId .*\S+.* for it is used by .*`)
+
 	// Lookup by both name and ID and compare that these are equal values
 	lbPoolByID, err := edge.getLbServerPool(&types.LbPool{ID: createdLbPool.ID})
 	check.Assert(err, IsNil)
