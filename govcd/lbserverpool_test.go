@@ -92,7 +92,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 
 	// Try to delete used service monitor and expect it to fail with nice error
 	err = edge.DeleteLbServiceMonitor(lbMon)
-	check.Assert(err, ErrorMatches, ".*Fail to delete objectId .* for it is used by .*")
+	check.Assert(err, ErrorMatches, `.*Fail to delete objectId .*\S+.* for it is used by .*`)
 
 	// Lookup by both name and ID and compare that these are equal values
 	lbPoolByID, err := edge.getLbServerPool(&types.LbPool{ID: createdLbPool.ID})

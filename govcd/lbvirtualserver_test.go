@@ -73,15 +73,15 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	check.Assert(createdLbVirtualServer.ApplicationRuleIds, DeepEquals, lbVirtualServerConfig.ApplicationRuleIds)
 	check.Assert(createdLbVirtualServer.DefaultPoolId, Equals, lbVirtualServerConfig.DefaultPoolId)
 
-	// Try to delete child components and expect a a well parsed NSX error
+	// Try to delete child components and expect a well parsed NSX error
 	err = edge.DeleteLbServiceMonitorById(serviceMonitorId)
-	check.Assert(err, ErrorMatches, ".*Fail to delete objectId .* for it is used by .*")
+	check.Assert(err, ErrorMatches, `.*Fail to delete objectId .*\S+.* for it is used by .*`)
 	err = edge.DeleteLbServerPoolById(serverPoolId)
-	check.Assert(err, ErrorMatches, ".*Fail to delete objectId .* for it is used by .*")
+	check.Assert(err, ErrorMatches, `.*Fail to delete objectId .*\S+.* for it is used by .*`)
 	err = edge.DeleteLbAppProfileById(appProfileId)
-	check.Assert(err, ErrorMatches, ".*Fail to delete objectId .* for it is used by .*")
+	check.Assert(err, ErrorMatches, `.*Fail to delete objectId .*\S+.* for it is used by .*`)
 	err = edge.DeleteLbAppRuleById(appRuleId)
-	check.Assert(err, ErrorMatches, ".*Fail to delete objectId .* for it is used by .*")
+	check.Assert(err, ErrorMatches, `.*Fail to delete objectId .*\S+.* for it is used by .*`)
 
 	// We created virtual server successfully therefore let's prepend it to cleanup list so that it
 	// is deleted before the child components
