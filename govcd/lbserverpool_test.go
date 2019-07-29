@@ -52,9 +52,10 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 
 	// Configure creation object including reference to service monitor
 	lbPoolConfig := &types.LbPool{
-		Name:      TestLbServerPool,
-		Algorithm: "round-robin",
-		MonitorId: lbMonitor.ID,
+		Name:        TestLbServerPool,
+		Transparent: false,
+		Algorithm:   "round-robin",
+		MonitorId:   lbMonitor.ID,
 		Members: types.LbPoolMembers{
 			types.LbPoolMember{
 				Name:      "Server_one",
@@ -78,6 +79,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	createdLbPool, err := edge.CreateLbServerPool(lbPoolConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdLbPool.ID, Not(IsNil))
+	check.Assert(createdLbPool.Transparent, Equals, lbPoolConfig.Transparent)
 	check.Assert(createdLbPool.MonitorId, Equals, lbMonitor.ID)
 	check.Assert(len(createdLbPool.Members), Equals, 2)
 	check.Assert(createdLbPool.Members[0].Condition, Equals, "enabled")
@@ -114,6 +116,12 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	updatedLBPool, err := edge.UpdateLbServerPool(lbPoolByID)
 	check.Assert(err, IsNil)
 	check.Assert(updatedLBPool.Algorithm, Equals, lbPoolByID.Algorithm)
+
+	// Update boolean value fields
+	lbPoolByID.Transparent = true
+	updatedLBPool, err = edge.UpdateLbServerPool(lbPoolByID)
+	check.Assert(err, IsNil)
+	check.Assert(updatedLBPool.Transparent, Equals, lbPoolByID.Transparent)
 
 	// Verify that updated pool and it's configuration are identical
 	check.Assert(updatedLBPool, DeepEquals, lbPoolByID)
