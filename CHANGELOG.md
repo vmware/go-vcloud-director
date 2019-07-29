@@ -1,3 +1,9 @@
+## 2.3.1 (Jul 29, 2019)
+
+BUG FIXES:
+
+* Remove `omitempty` struct tags from load balancer component boolean fields to allow sending `false` values to API [#222](https://github.com/vmware/go-vcloud-director/pull/222)
+
 ## 2.3.0 (Jul 26, 2019)
 
 * Added edge gateway create/delete functions [#130](https://github.com/vmware/go-vcloud-director/issues/130).
