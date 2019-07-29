@@ -47,8 +47,8 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	lbVirtualServerConfig := &types.LbVirtualServer{
 		Name:                 TestLbVirtualServer,
 		IpAddress:            vcd.config.VCD.ExternalIp, // Load balancer virtual server serves on Edge gw IP
-		Enabled:              true,
-		AccelerationEnabled:  true,
+		Enabled:              false,
+		AccelerationEnabled:  false,
 		Protocol:             "http",
 		Port:                 8888,
 		ConnectionLimit:      5,
@@ -106,6 +106,14 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	updatedLBPool, err := edge.UpdateLbVirtualServer(lbVirtualServerById)
 	check.Assert(err, IsNil)
 	check.Assert(updatedLBPool.Port, Equals, lbVirtualServerById.Port)
+
+	// Update boolean value fields
+	lbVirtualServerById.Enabled = true
+	lbVirtualServerById.AccelerationEnabled = true
+	updatedLBPool, err = edge.UpdateLbVirtualServer(lbVirtualServerById)
+	check.Assert(err, IsNil)
+	check.Assert(updatedLBPool.Enabled, Equals, lbVirtualServerById.Enabled)
+	check.Assert(updatedLBPool.AccelerationEnabled, Equals, lbVirtualServerById.AccelerationEnabled)
 
 	// Verify that updated pool and its configuration are identical
 	check.Assert(updatedLBPool, DeepEquals, lbVirtualServerById)

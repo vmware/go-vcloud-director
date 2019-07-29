@@ -35,7 +35,10 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 			Method: "sourceip",
 			Expire: 13,
 		},
-		Template: "HTTPS",
+		Template:                      "https",
+		SslPassthrough:                false,
+		InsertXForwardedForHttpHeader: false,
+		ServerSslEnabled:              false,
 	}
 
 	err = deleteLbAppProfileIfExists(edge, lbAppProfileConfig.Name)
@@ -43,6 +46,12 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	createdLbAppProfile, err := edge.CreateLbAppProfile(lbAppProfileConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdLbAppProfile.ID, Not(IsNil))
+	check.Assert(createdLbAppProfile.Persistence.Method, Equals, lbAppProfileConfig.Persistence.Method)
+	check.Assert(createdLbAppProfile.Template, Equals, lbAppProfileConfig.Template)
+	check.Assert(createdLbAppProfile.Persistence.Expire, Equals, lbAppProfileConfig.Persistence.Expire)
+	check.Assert(createdLbAppProfile.SslPassthrough, Equals, lbAppProfileConfig.SslPassthrough)
+	check.Assert(createdLbAppProfile.InsertXForwardedForHttpHeader, Equals, lbAppProfileConfig.InsertXForwardedForHttpHeader)
+	check.Assert(createdLbAppProfile.ServerSslEnabled, Equals, lbAppProfileConfig.ServerSslEnabled)
 
 	// We created application profile successfully therefore let's add it to cleanup list
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
@@ -69,6 +78,16 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	updatedAppProfile, err := edge.UpdateLbAppProfile(lbAppProfileByID)
 	check.Assert(err, IsNil)
 	check.Assert(updatedAppProfile.Persistence.Method, Equals, lbAppProfileByID.Persistence.Method)
+
+	// Update boolean value fields
+	lbAppProfileByID.SslPassthrough = true
+	lbAppProfileByID.InsertXForwardedForHttpHeader = true
+	lbAppProfileByID.ServerSslEnabled = true
+	updatedAppProfile, err = edge.UpdateLbAppProfile(lbAppProfileByID)
+	check.Assert(err, IsNil)
+	check.Assert(updatedAppProfile.SslPassthrough, Equals, lbAppProfileByID.SslPassthrough)
+	check.Assert(updatedAppProfile.InsertXForwardedForHttpHeader, Equals, lbAppProfileByID.InsertXForwardedForHttpHeader)
+	check.Assert(updatedAppProfile.ServerSslEnabled, Equals, lbAppProfileByID.ServerSslEnabled)
 
 	// Verify that updated application profile and its configuration are identical
 	check.Assert(updatedAppProfile, DeepEquals, lbAppProfileByID)
