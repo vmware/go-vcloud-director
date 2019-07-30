@@ -45,8 +45,8 @@ func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
 // newly updated catalog. Then deletes the catalog
 func (vcd *TestVCD) Test_UpdateCatalog(check *C) {
 	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
-	check.Assert(org, NotNil)
 	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
 	catalog, err := org.FindAdminCatalog(TestUpdateCatalog)
 	check.Assert(err, IsNil)
 	if catalog != (AdminCatalog{}) {
@@ -73,8 +73,8 @@ func (vcd *TestVCD) Test_UpdateCatalog(check *C) {
 // the catalog still exists. If it does the assertion fails.
 func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
 	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
-	check.Assert(org, NotNil)
 	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
 	adminCatalog, err := org.FindAdminCatalog(TestDeleteCatalog)
 	check.Assert(err, IsNil)
 	if adminCatalog != (AdminCatalog{}) {
@@ -267,8 +267,8 @@ func findCatalog(vcd *TestVCD, check *C, catalogName string) (Catalog, AdminOrg)
 func getOrg(vcd *TestVCD, check *C) *AdminOrg {
 	// Fetching organization
 	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
-	check.Assert(org, NotNil)
 	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
 	return org
 }
 
