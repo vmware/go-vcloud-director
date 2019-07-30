@@ -14,6 +14,8 @@ import (
 
 var testingTags = make(map[string]string)
 
+var testVerbose bool = os.Getenv("GOVCD_TEST_VERBOSE") != ""
+
 func tagsHelp(t *testing.T) {
 
 	var helpText string = `

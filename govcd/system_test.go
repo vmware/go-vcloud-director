@@ -8,7 +8,6 @@ package govcd
 
 import (
 	"fmt"
-	"os"
 
 	. "gopkg.in/check.v1"
 
@@ -245,7 +244,6 @@ func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {
 	providerVdcs, err := vcd.client.QueryProviderVdcs()
 	check.Assert(err, IsNil)
 
-	testVerbose := os.Getenv("TEST_VERBOSE") != ""
 	providerFound := false
 	for _, providerVdc := range providerVdcs {
 		if providerVdcName == providerVdc.Name {

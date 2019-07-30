@@ -8,7 +8,6 @@
 package govcd
 
 import (
-	"os"
 	"testing"
 )
 
@@ -105,7 +104,7 @@ func Test_BareID(t *testing.T) {
 			t.Fail()
 		}
 		if bareId == it.expected {
-			if os.Getenv("TEST_VERBOSE") != "" {
+			if testVerbose {
 				t.Logf("ID '%s': found '%s' as expected", it.rawId, it.expected)
 			}
 		} else {
@@ -120,7 +119,7 @@ func Test_BareID(t *testing.T) {
 			t.Fail()
 		}
 		if bareId == it.expected {
-			if os.Getenv("TEST_VERBOSE") != "" {
+			if testVerbose {
 				t.Logf("ID '%s': found '%s' as expected", it.rawId, it.expected)
 			}
 		} else {
