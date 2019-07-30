@@ -8,6 +8,7 @@ package govcd
 
 import (
 	"fmt"
+	"os"
 
 	. "gopkg.in/check.v1"
 
@@ -232,4 +233,83 @@ func (vcd *TestVCD) Test_QueryOrgVdcNetworkByName(check *C) {
 	check.Assert(len(orgVdcNetwork), Not(Equals), 0)
 	check.Assert(orgVdcNetwork[0].Name, Equals, vcd.config.VCD.Network.Net1)
 	check.Assert(orgVdcNetwork[0].ConnectedTo, Equals, vcd.config.VCD.EdgeGateway)
+}
+
+func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {
+	providerVdcName := vcd.config.VCD.ProviderVdc.Name
+	networkPoolName := vcd.config.VCD.ProviderVdc.NetworkPool
+	storageProfileName := vcd.config.VCD.ProviderVdc.StorageProfile
+	if providerVdcName == "" {
+		check.Skip("Skipping Provider VDC query: no provider VDC was given")
+	}
+	providerVdcs, err := vcd.client.QueryProviderVdcs()
+	check.Assert(err, IsNil)
+
+	testVerbose := os.Getenv("TEST_VERBOSE") != ""
+	providerFound := false
+	for _, providerVdc := range providerVdcs {
+		if providerVdcName == providerVdc.Name {
+			providerFound = true
+		}
+
+		if testVerbose {
+			fmt.Printf("PVDC %s\n", providerVdc.Name)
+			fmt.Printf("\t href    %s\n", providerVdc.HREF)
+			fmt.Printf("\t status  %s\n", providerVdc.Status)
+			fmt.Printf("\t enabled %v\n", providerVdc.IsEnabled)
+			fmt.Println("")
+		}
+		newPvdc, err := vcd.client.QueryProviderVdcByName(providerVdc.Name)
+		check.Assert(err, IsNil)
+		check.Assert(newPvdc.Name, Equals, providerVdc.Name)
+	}
+	check.Assert(providerFound, Equals, true)
+
+	if networkPoolName == "" {
+		check.Skip("Skipping Network pool query: no network pool was given")
+	}
+	netPools, err := vcd.client.QueryNetworkPools()
+	check.Assert(err, IsNil)
+	networkPoolFound := false
+	for _, networkPool := range netPools {
+		if networkPoolName == networkPool.Name {
+			networkPoolFound = true
+		}
+		if testVerbose {
+			fmt.Printf("NP %s\n", networkPool.Name)
+			fmt.Printf("\t href %s\n", networkPool.HREF)
+			fmt.Printf("\t type %v\n", networkPool.NetworkPoolType)
+			fmt.Println("")
+		}
+		newNetworkPool, err := vcd.client.QueryNetworkPoolByName(networkPool.Name)
+		check.Assert(err, IsNil)
+		check.Assert(newNetworkPool.Name, Equals, networkPool.Name)
+	}
+	check.Assert(networkPoolFound, Equals, true)
+
+	if storageProfileName == "" {
+		check.Skip("Skipping storage profile query: no storage profile was given")
+	}
+	storageProfiles, err := vcd.client.QueryProviderVdcStorageProfiles()
+	check.Assert(err, IsNil)
+	storageProfileFound := false
+	for _, sp := range storageProfiles {
+		if storageProfileName == sp.Name {
+			storageProfileFound = true
+		}
+		if testVerbose {
+			fmt.Printf("SP %s\n", sp.Name)
+			fmt.Printf("\t enabled     %12v\n", sp.IsEnabled)
+			fmt.Printf("\t storage     %12d\n", sp.StorageTotalMB)
+			fmt.Printf("\t provisioned %12d\n", sp.StorageProvisionedMB)
+			fmt.Printf("\t requested   %12d\n", sp.StorageRequestedMB)
+			fmt.Printf("\t used        %12d\n", sp.StorageUsedMB)
+			fmt.Println("")
+		}
+		newStorageProfile, err := vcd.client.QueryProviderVdcStorageProfileByName(sp.Name)
+		check.Assert(err, IsNil)
+		check.Assert(newStorageProfile.Name, Equals, sp.Name)
+	}
+	check.Assert(storageProfileFound, Equals, true)
+
 }
