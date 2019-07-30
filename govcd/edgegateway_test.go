@@ -538,3 +538,44 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 
 	check.Assert(len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule), Equals, beforeChangeNatRulesNumber)
 }
+
+// TestEdgeGateway_UpdateLBGeneralParams main point is to test that no load balancer configuration
+// xml tags are lost during changes of load balancer main settings (enable, logging)
+// The test does following steps:
+// 1. Cache raw XML body and marshaled struct in variables before running the test
+// 2. Toggle the settings of load balancer in various ways and ensure no err is returned
+// 3. Set the settings back as they originally were and again get raw XML body and marshaled struct
+// 4. Compare the XML text and structs before configuration and after configuration - they should be
+// identical except <version></version> tag which is versioning the configuration
+func (vcd *TestVCD) TestEdgeGateway_UpdateLBGeneralParams(check *C) {
+	if vcd.config.VCD.EdgeGateway == "" {
+		check.Skip("Skipping test because no edge gatway given")
+	}
+	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	check.Assert(err, IsNil)
+
+	if !edge.HasAdvancedNetworking() {
+		check.Skip("Skipping test because the edge gateway does not have advanced networking enabled")
+	}
+
+	// Cache current load balancer settings for change validation in the end
+	beforeLb, beforeLbXml := testCacheLoadBalancer(edge, check)
+
+	_, err = edge.UpdateLBGeneralParams(true, true, true, "critical")
+	check.Assert(err, IsNil)
+
+	_, err = edge.UpdateLBGeneralParams(false, false, false, "emergency")
+	check.Assert(err, IsNil)
+
+	// Try to set invalid loglevel to get validation error
+	_, err = edge.UpdateLBGeneralParams(false, false, false, "invalid_loglevel")
+	check.Assert(err, ErrorMatches, ".*Valid log levels are.*")
+
+	// Restore to initial settings and validate that it
+	_, err = edge.UpdateLBGeneralParams(beforeLb.Enabled, beforeLb.AccelerationEnabled,
+		beforeLb.Logging.Enable, beforeLb.Logging.LogLevel)
+	check.Assert(err, IsNil)
+
+	// Validate load balancer configuration against initially cached version
+	testCheckLoadBalancerConfig(beforeLb, beforeLbXml, edge, check)
+}

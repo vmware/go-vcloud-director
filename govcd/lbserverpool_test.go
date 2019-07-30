@@ -7,17 +7,19 @@
 package govcd
 
 import (
+	"fmt"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
 
 // Test_LBServerPool tests CRUD methods for load balancer server pool.
 // The following things are tested if prerequisite Edge Gateway exists:
-// Creation of load balancer server pool
-// Read load balancer server pool by both ID and Name (server pool name must be unique in single edge gateway)
-// Update - change a single field and compare that configuration and result objects are deeply equal
-// Update - try and fail to update without mandatory field
-// Delete
+// 1. Creation of load balancer server pool
+// 2. Get load balancer server pool by both ID and Name (server pool name must be unique in single edge gateway)
+// 3. Update - change a single field and compare that configuration and result objects are deeply equal
+// 4. Update - try and fail to update without mandatory field
+// 5. Delete
 func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
@@ -31,14 +33,16 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	}
 
 	// Establish prerequisite - service monitor
-	lbMon := &types.LBMonitor{
+	lbMon := &types.LbMonitor{
 		Name:       check.TestName(),
 		Interval:   10,
 		Timeout:    10,
 		MaxRetries: 3,
 		Type:       "http",
 	}
-	lbMonitor, err := edge.CreateLBServiceMonitor(lbMon)
+	err = deleteLbServiceMonitorIfExists(edge, lbMon.Name)
+	check.Assert(err, IsNil)
+	lbMonitor, err := edge.CreateLbServiceMonitor(lbMon)
 	check.Assert(err, IsNil)
 	check.Assert(lbMonitor.ID, NotNil)
 
@@ -47,19 +51,20 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	AddToCleanupList(check.TestName(), "lbServiceMonitor", parentEntity, check.TestName())
 
 	// Configure creation object including reference to service monitor
-	lbPoolConfig := &types.LBPool{
-		Name:      TestLBServerPool,
-		Algorithm: "round-robin",
-		MonitorId: lbMonitor.ID,
-		Members: types.LBPoolMembers{
-			types.LBPoolMember{
+	lbPoolConfig := &types.LbPool{
+		Name:        TestLbServerPool,
+		Transparent: false,
+		Algorithm:   "round-robin",
+		MonitorId:   lbMonitor.ID,
+		Members: types.LbPoolMembers{
+			types.LbPoolMember{
 				Name:      "Server_one",
 				IpAddress: "1.1.1.1",
 				Port:      8443,
 				Weight:    1,
 				Condition: "enabled",
 			},
-			types.LBPoolMember{
+			types.LbPoolMember{
 				Name:      "Server_two",
 				IpAddress: "2.2.2.2",
 				Port:      8443,
@@ -69,9 +74,12 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 		},
 	}
 
-	createdLbPool, err := edge.CreateLBServerPool(lbPoolConfig)
+	err = deleteLbServerPoolIfExists(edge, lbMon.Name)
+	check.Assert(err, IsNil)
+	createdLbPool, err := edge.CreateLbServerPool(lbPoolConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdLbPool.ID, Not(IsNil))
+	check.Assert(createdLbPool.Transparent, Equals, lbPoolConfig.Transparent)
 	check.Assert(createdLbPool.MonitorId, Equals, lbMonitor.ID)
 	check.Assert(len(createdLbPool.Members), Equals, 2)
 	check.Assert(createdLbPool.Members[0].Condition, Equals, "enabled")
@@ -82,14 +90,20 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	check.Assert(createdLbPool.Members[1].Name, Equals, "Server_two")
 
 	// We created server pool successfully therefore let's add it to cleanup list
-	AddToCleanupList(TestLBServerPool, "lbServerPool", parentEntity, check.TestName())
+	AddToCleanupList(TestLbServerPool, "lbServerPool", parentEntity, check.TestName())
+
+	// Try to delete used service monitor and expect it to fail with nice error
+	err = edge.DeleteLbServiceMonitor(lbMon)
+	check.Assert(err, ErrorMatches, `.*Fail to delete objectId .*\S+.* for it is used by .*`)
 
 	// Lookup by both name and ID and compare that these are equal values
-	lbPoolByID, err := edge.ReadLBServerPool(&types.LBPool{ID: createdLbPool.ID})
+	lbPoolByID, err := edge.getLbServerPool(&types.LbPool{ID: createdLbPool.ID})
 	check.Assert(err, IsNil)
+	check.Assert(lbPoolByID, Not(IsNil))
 
-	lbPoolByName, err := edge.ReadLBServerPool(&types.LBPool{Name: createdLbPool.Name})
+	lbPoolByName, err := edge.getLbServerPool(&types.LbPool{Name: createdLbPool.Name})
 	check.Assert(err, IsNil)
+	check.Assert(lbPoolByName, Not(IsNil))
 	check.Assert(createdLbPool.ID, Equals, lbPoolByName.ID)
 	check.Assert(lbPoolByID.ID, Equals, lbPoolByName.ID)
 	check.Assert(lbPoolByID.Name, Equals, lbPoolByName.Name)
@@ -99,9 +113,15 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	// Test updating fields
 	// Update algorithm
 	lbPoolByID.Algorithm = "ip-hash"
-	updatedLBPool, err := edge.UpdateLBServerPool(lbPoolByID)
+	updatedLBPool, err := edge.UpdateLbServerPool(lbPoolByID)
 	check.Assert(err, IsNil)
 	check.Assert(updatedLBPool.Algorithm, Equals, lbPoolByID.Algorithm)
+
+	// Update boolean value fields
+	lbPoolByID.Transparent = true
+	updatedLBPool, err = edge.UpdateLbServerPool(lbPoolByID)
+	check.Assert(err, IsNil)
+	check.Assert(updatedLBPool.Transparent, Equals, lbPoolByID.Transparent)
 
 	// Verify that updated pool and its configuration are identical
 	check.Assert(updatedLBPool, DeepEquals, lbPoolByID)
@@ -109,18 +129,33 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	// Try to set invalid algorithm hash and expect API to return error
 	// Invalid algorithm hash. Valid algorithms are: IP-HASH|ROUND-ROBIN|URI|LEASTCONN|URL|HTTP-HEADER.
 	lbPoolByID.Algorithm = "invalid_algorithm"
-	updatedLBPool, err = edge.UpdateLBServerPool(lbPoolByID)
+	updatedLBPool, err = edge.UpdateLbServerPool(lbPoolByID)
 	check.Assert(err, ErrorMatches, ".*Invalid algorithm.*Valid algorithms are:.*")
 
 	// Update should fail without name
 	lbPoolByID.Name = ""
-	_, err = edge.UpdateLBServerPool(lbPoolByID)
+	_, err = edge.UpdateLbServerPool(lbPoolByID)
 	check.Assert(err.Error(), Equals, "load balancer server pool Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLBServerPool(&types.LBPool{ID: createdLbPool.ID})
+	err = edge.DeleteLbServerPool(&types.LbPool{ID: createdLbPool.ID})
 	check.Assert(err, IsNil)
 
-	_, err = edge.ReadLBServerPoolByID(createdLbPool.ID)
+	_, err = edge.GetLbServerPoolById(createdLbPool.ID)
 	check.Assert(IsNotFound(err), Equals, true)
+}
+
+// deleteLbServerPoolIfExists is used to cleanup before creation of component. It returns error only if there was
+// other error than govcd.ErrorEntityNotFound
+func deleteLbServerPoolIfExists(edge EdgeGateway, name string) error {
+	err := edge.DeleteLbServerPoolByName(name)
+	if err != nil && !ContainsNotFound(err) {
+		return err
+	}
+	if err != nil && ContainsNotFound(err) {
+		return nil
+	}
+
+	fmt.Printf("# Removed leftover LB server pool'%s'\n", name)
+	return nil
 }

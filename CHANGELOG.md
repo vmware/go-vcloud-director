@@ -1,10 +1,18 @@
-## 2.3.0 (Unreleased)
+## 2.3.1 (Jul 29, 2019)
+
+BUG FIXES:
+
+* Remove `omitempty` struct tags from load balancer component boolean fields to allow sending `false` values to API [#222](https://github.com/vmware/go-vcloud-director/pull/222)
+
+## 2.3.0 (Jul 26, 2019)
 
 * Added edge gateway create/delete functions [#130](https://github.com/vmware/go-vcloud-director/issues/130).
+* Added edge gateway global load balancer configuration support (e.g. enable/disable) [#219](https://github.com/vmware/go-vcloud-director/pull/219)
 * Added load balancer service monitor [#196](https://github.com/vmware/go-vcloud-director/pull/196)
 * Added load balancer server pool [#205](https://github.com/vmware/go-vcloud-director/pull/205)
 * Added load balancer application profile [#208](https://github.com/vmware/go-vcloud-director/pull/208)
 * Added load balancer application rule [#212](https://github.com/vmware/go-vcloud-director/pull/212)
+* Added load balancer virtual server [#215](https://github.com/vmware/go-vcloud-director/pull/215)
 * Added functions for refreshing, getting and update Org VDC [#206](https://github.com/vmware/go-vcloud-director/pull/206)
 * Added VDC meta data create/get/delete functions [#203](https://github.com/vmware/go-vcloud-director/pull/203)
 * Added org user create/delete/update functions [#18](https://github.com/vmware/go-vcloud-director/issues/18)

@@ -1,4 +1,4 @@
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor user ALL
+// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user ALL
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -9,9 +9,11 @@ package govcd
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"testing"
@@ -21,6 +23,10 @@ import (
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v2"
 )
+
+func init() {
+	testingTags["api"] = "api_vcd_test.go"
+}
 
 const (
 	// Names for entities created by the tests
@@ -58,10 +64,12 @@ const (
 	TestVMDetachDisk              = "TestVMDetachDisk"
 	TestCreateExternalNetwork     = "TestCreateExternalNetwork"
 	TestDeleteExternalNetwork     = "TestDeleteExternalNetwork"
-	TestLBServiceMonitor          = "TestLBServiceMonitor"
-	TestLBServerPool              = "TestLBServerPool"
-	TestLBAppProfile              = "TestLBAppProfile"
-	TestLBAppRule                 = "TestLBAppRule"
+	TestLbServiceMonitor          = "TestLbServiceMonitor"
+	TestLbServerPool              = "TestLbServerPool"
+	TestLbAppProfile              = "TestLbAppProfile"
+	TestLbAppRule                 = "TestLbAppRule"
+	TestLbVirtualServer           = "TestLbVirtualServer"
+	TestLb                        = "TestLb"
 )
 
 const (
@@ -128,8 +136,9 @@ type TestConfig struct {
 		OVAChunkedPath string `yaml:"ovaChunkedPath,omitempty"`
 	} `yaml:"ova"`
 	Media struct {
-		MediaPath string `yaml:"mediaPath,omitempty"`
-		Media     string `yaml:"mediaName,omitempty"`
+		MediaPath       string `yaml:"mediaPath,omitempty"`
+		Media           string `yaml:"mediaName,omitempty"`
+		PhotonOsOvaPath string `yaml:"photonOsOvaPath,omitempty"`
 	} `yaml:"media"`
 }
 
@@ -371,8 +380,9 @@ func getOrgVdcEdgeByNames(vcd *TestVCD, orgName, vdcName, edgeName string) (*Org
 	}
 
 	edge, err := vdc.FindEdgeGateway(edgeName)
+
 	if err != nil {
-		vcd.infoCleanup("could not find edge '%s'", vdcName)
+		vcd.infoCleanup("could not find edge '%s': %s", edgeName, err)
 	}
 	return org, vdc, edge, nil
 }
@@ -691,10 +701,13 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
 		}
 
-		err = edge.DeleteLBServiceMonitorByName(entity.Name)
-		if err != nil {
+		err = edge.DeleteLbServiceMonitorByName(entity.Name)
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
@@ -713,10 +726,13 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
 		}
 
-		err = edge.DeleteLBServerPoolByName(entity.Name)
-		if err != nil {
+		err = edge.DeleteLbServerPoolByName(entity.Name)
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
@@ -734,10 +750,38 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
 		}
 
-		err = edge.DeleteLBAppProfileByName(entity.Name)
-		if err != nil {
+		err = edge.DeleteLbAppProfileByName(entity.Name)
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+
+	case "lbVirtualServer":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No parent specified '%s'\n", entity.Name)
+			return
+		}
+
+		orgName, vdcName, edgeName := splitParent(entity.Parent, "|")
+
+		_, _, edge, err := getOrgVdcEdgeByNames(vcd, orgName, vdcName, edgeName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		err = edge.DeleteLbVirtualServerByName(entity.Name)
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
@@ -755,10 +799,13 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
 		}
 
-		err = edge.DeleteLBAppRuleByName(entity.Name)
-		if err != nil {
+		err = edge.DeleteLbAppRuleByName(entity.Name)
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
@@ -953,6 +1000,53 @@ func Test_splitParent(t *testing.T) {
 	}
 }
 
-func init() {
-	testingTags["api"] = "api_vcd_test.go"
+// testGetLBGeneralParamsXML is used for additional validation that modifying load balancer
+// does not change any single field. It returns a string of whole load balancer configuration
+func testGetLBGeneralParamsXML(edge EdgeGateway, check *C) string {
+
+	httpPath, err := edge.buildProxiedEdgeEndpointURL(types.LbConfigPath)
+	check.Assert(err, IsNil)
+
+	resp, err := edge.client.ExecuteRequestWithCustomError(httpPath, http.MethodGet, types.AnyXMLMime,
+		"unable to get XML from load balancer %s", nil, &types.NSXError{})
+	check.Assert(err, IsNil)
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	check.Assert(err, IsNil)
+
+	return string(body)
+}
+
+// cacheLoadBalancer is meant to store load balancer settings before any operations so that all
+// configuration can be checked after manipulation
+func testCacheLoadBalancer(edge EdgeGateway, check *C) (*types.LbGeneralParamsWithXml, string) {
+	beforeLb, err := edge.GetLBGeneralParams()
+	check.Assert(err, IsNil)
+	beforeLbXml := testGetLBGeneralParamsXML(edge, check)
+	return beforeLb, beforeLbXml
+}
+
+// testCheckLoadBalancerConfig validates if both raw XML string and load balancer struct remain
+// identical after settings manipulation.
+func testCheckLoadBalancerConfig(beforeLb *types.LbGeneralParamsWithXml, beforeLbXml string, edge EdgeGateway, check *C) {
+	afterLb, err := edge.GetLBGeneralParams()
+	check.Assert(err, IsNil)
+
+	afterLbXml := testGetLBGeneralParamsXML(edge, check)
+
+	// remove `<version></version>` tag from both XML represntation and struct for deep comparison
+	// because this version changes with each update and will never be the same after a few
+	// operations
+
+	reVersion := regexp.MustCompile(`<version>\w*<\/version>`)
+	beforeLbXml = reVersion.ReplaceAllLiteralString(beforeLbXml, "")
+	afterLbXml = reVersion.ReplaceAllLiteralString(afterLbXml, "")
+
+	beforeLb.Version = ""
+	afterLb.Version = ""
+
+	check.Assert(beforeLb, DeepEquals, afterLb)
+	check.Assert(beforeLbXml, DeepEquals, afterLbXml)
 }
