@@ -1,3 +1,9 @@
+## 2.4.0 (Unreleased)
+
+* Deprecated functions `GetOrgByName(*VCDClient, string) (Org, error)` and `GetAdminOrgByName(*VCDClient, string) (AdminOrg, error)`
+* Added method `(*VCDClient) GetOrgByName(string) (*Org, error)`  and related `GetOrgById`, `GetOrgByNameOrId`
+* Added method `(*VCDClient) GetAdminOrgByName(string) (*AdminOrg, error)` and related `GetAdminOrgById`, `GetAdminOrgByNameOrId`
+
 ## 2.3.1 (Jul 29, 2019)
 
 BUG FIXES:
@@ -19,9 +25,6 @@ BUG FIXES:
 * Added load balancer application profile [#208](https://github.com/vmware/go-vcloud-director/pull/208)
 * Added edge gateway SNAT/DNAT rule functions which support org VDC network and external network [#225](https://github.com/terraform-providers/terraform-provider-vcd/issues/225)
 * Added edge gateway SNAT/DNAT rule functions which work with IDs [#244](https://github.com/terraform-providers/terraform-provider-vcd/issues/244)
-* Deprecated functions `GetOrgByName(*VCDClient, string) (Org, error)` and `GetAdminOrgByName(*VCDClient, string) (AdminOrg, error)`
-* Added method `(*VCDClient) GetOrgByName(string) (*Org, error)`  and related `GetOrgById`, `GetOrgByNameOrId`
-* Added method `(*VCDClient) GetAdminOrgByName(string) (*AdminOrg, error)` and related `GetAdminOrgById`, `GetAdminOrgByNameOrId`
 
 ## 2.2.0 (May 15, 2019)
 
