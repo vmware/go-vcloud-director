@@ -810,3 +810,34 @@ func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vmStatus, Equals, "POWERED_OFF")
 }
+
+func (vcd *TestVCD) Test_GetNetworkConnectionSection(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	check.Assert(err, IsNil)
+
+	networkBefore, err := vm.GetNetworkConnectionSection()
+	check.Assert(err, IsNil)
+	//check.Assert(network, IsNil)
+
+	err = vm.UpdateNetworkConnectionSection(networkBefore)
+	check.Assert(err, IsNil)
+
+	networkAfter, err := vm.GetNetworkConnectionSection()
+	check.Assert(err, IsNil)
+
+	// Filter out always differing fields and do deep comparison of objects
+	networkBefore.Link = &types.Link{}
+	networkAfter.Link = &types.Link{}
+	check.Assert(networkAfter, DeepEquals, networkBefore)
+
+}
