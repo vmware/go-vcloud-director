@@ -243,6 +243,7 @@ func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {
 	}
 	providerVdcs, err := vcd.client.QueryProviderVdcs()
 	check.Assert(err, IsNil)
+	check.Assert(len(providerVdcName) > 0, Equals, true)
 
 	providerFound := false
 	for _, providerVdc := range providerVdcs {
@@ -257,9 +258,6 @@ func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {
 			fmt.Printf("\t enabled %v\n", providerVdc.IsEnabled)
 			fmt.Println("")
 		}
-		newPvdc, err := vcd.client.QueryProviderVdcByName(providerVdc.Name)
-		check.Assert(err, IsNil)
-		check.Assert(newPvdc.Name, Equals, providerVdc.Name)
 	}
 	check.Assert(providerFound, Equals, true)
 
@@ -268,6 +266,7 @@ func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {
 	}
 	netPools, err := vcd.client.QueryNetworkPools()
 	check.Assert(err, IsNil)
+	check.Assert(len(netPools) > 0, Equals, true)
 	networkPoolFound := false
 	for _, networkPool := range netPools {
 		if networkPoolName == networkPool.Name {
@@ -279,9 +278,6 @@ func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {
 			fmt.Printf("\t type %v\n", networkPool.NetworkPoolType)
 			fmt.Println("")
 		}
-		newNetworkPool, err := vcd.client.QueryNetworkPoolByName(networkPool.Name)
-		check.Assert(err, IsNil)
-		check.Assert(newNetworkPool.Name, Equals, networkPool.Name)
 	}
 	check.Assert(networkPoolFound, Equals, true)
 
@@ -290,6 +286,7 @@ func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {
 	}
 	storageProfiles, err := vcd.client.QueryProviderVdcStorageProfiles()
 	check.Assert(err, IsNil)
+	check.Assert(len(storageProfiles) > 0, Equals, true)
 	storageProfileFound := false
 	for _, sp := range storageProfiles {
 		if storageProfileName == sp.Name {
@@ -304,9 +301,6 @@ func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {
 			fmt.Printf("\t used        %12d\n", sp.StorageUsedMB)
 			fmt.Println("")
 		}
-		newStorageProfile, err := vcd.client.QueryProviderVdcStorageProfileByName(sp.Name)
-		check.Assert(err, IsNil)
-		check.Assert(newStorageProfile.Name, Equals, sp.Name)
 	}
 	check.Assert(storageProfileFound, Equals, true)
 
