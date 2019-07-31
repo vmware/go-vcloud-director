@@ -71,6 +71,30 @@ func NewUser(cli *Client, org *AdminOrg) *OrgUser {
 	}
 }
 
+// FetchUserByHref returns a user by its HREF
+// Deprecated: use GetUserByHref instead
+func (adminOrg *AdminOrg) FetchUserByHref(href string) (*OrgUser, error) {
+	return adminOrg.GetUserByHref(href)
+}
+
+// FetchUserByName returns a user by its Name
+// Deprecated: use GetUserByName instead
+func (adminOrg *AdminOrg) FetchUserByName(name string, refresh bool) (*OrgUser, error) {
+	return adminOrg.GetUserByName(name, refresh)
+}
+
+// FetchUserById returns a user by its ID
+// Deprecated: use GetUserById instead
+func (adminOrg *AdminOrg) FetchUserById(id string, refresh bool) (*OrgUser, error) {
+	return adminOrg.GetUserById(id, refresh)
+}
+
+// FetchUserById returns a user by its Name or ID
+// Deprecated: use GetUserByNameOrId instead
+func (adminOrg *AdminOrg) FetchUserByNameOrId(identifier string, refresh bool) (*OrgUser, error) {
+	return adminOrg.GetUserByNameOrId(identifier, refresh)
+}
+
 // GetUserByHref returns a user by its HREF, without need for
 // searching in the adminOrg user list
 func (adminOrg *AdminOrg) GetUserByHref(href string) (*OrgUser, error) {
