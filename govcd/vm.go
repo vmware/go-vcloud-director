@@ -85,6 +85,16 @@ func (vm *VM) GetNetworkConnectionSection() (*types.NetworkConnectionSection, er
 	return networkConnectionSection, err
 }
 
+// UpdateNetworkConnectionSection applies network configuration of types.NetworkConnectionSection for the VM
+func (vm *VM) UpdateNetworkConnectionSection(networks *types.NetworkConnectionSection) error {
+	if vm.VM.HREF == "" {
+		return fmt.Errorf("cannot refresh, Object is empty")
+	}
+
+	return vm.client.ExecuteRequestWithoutResponse(vm.VM.HREF+"/networkConnectionSection/", http.MethodPut,
+		types.MimeNetworkConnectionSection, "error updating network connection: %s", networks)
+}
+
 func (cli *Client) FindVMByHREF(vmHREF string) (VM, error) {
 
 	newVm := NewVM(cli)
