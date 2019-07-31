@@ -161,13 +161,27 @@ func (adminOrg *AdminOrg) GetUserById(id string, refresh bool) (*OrgUser, error)
 // If it is false, it will search within the data already in memory (useful when
 // looping through the users and we know that no changes have occurred in the meantime)
 func (adminOrg *AdminOrg) GetUserByNameOrId(identifier string, refresh bool) (*OrgUser, error) {
+	var byNameErr, byIdErr error
 	// First look by ID
-	orgUser, err := adminOrg.GetUserByName(identifier, true)
-	// if it fails, look by name
-	if IsNotFound(err) {
-		orgUser, err = adminOrg.GetUserById(identifier, false)
+	orgUser, byIdErr := adminOrg.GetUserByName(identifier, true)
+	if byIdErr == nil {
+		// found by ID
+		return orgUser, nil
 	}
-	return orgUser, err
+	// If not found by ID, look by name
+	if IsNotFound(byIdErr) {
+		orgUser, byNameErr = adminOrg.GetUserById(identifier, false)
+		return orgUser, byNameErr
+	} else {
+		// On any other error, we return it
+		return nil, byIdErr
+	}
+}
+
+// GetRole finds a role within the organization
+// Deprecated: use GetRoleReference
+func (adminOrg *AdminOrg) GetRole(roleName string) (*types.Reference, error) {
+	return adminOrg.GetRoleReference(roleName)
 }
 
 // GetRoleReference finds a role within the organization
