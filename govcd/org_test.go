@@ -117,9 +117,16 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	check.Assert(adminOrg.AdminOrg.Description, Equals, TestUpdateOrg)
 	updatedDescription := "description_changed"
 	updatedFullName := "full_name_changed"
+
+	originalEnabled := adminOrg.AdminOrg.IsEnabled
+	originalCanPublishCatalogs := adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishCatalogs
+
 	adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.DeployedVMQuota = 100
 	adminOrg.AdminOrg.Description = updatedDescription
 	adminOrg.AdminOrg.FullName = updatedFullName
+	adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishCatalogs = !originalCanPublishCatalogs
+	adminOrg.AdminOrg.IsEnabled = !originalEnabled
+
 	task, err = adminOrg.Update()
 	check.Assert(err, IsNil)
 	// Wait until update is complete
@@ -127,6 +134,8 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	check.Assert(err, IsNil)
 	// Refresh
 	err = adminOrg.Refresh()
+	check.Assert(adminOrg.AdminOrg.IsEnabled, Equals, !originalEnabled)
+	check.Assert(adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishCatalogs, Equals, !originalCanPublishCatalogs)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg.AdminOrg.Description, Equals, updatedDescription)
 	check.Assert(adminOrg.AdminOrg.FullName, Equals, updatedFullName)
