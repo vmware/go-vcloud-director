@@ -337,3 +337,20 @@ func FindMediaAsCatalogItem(org *Org, catalogName, mediaName string) (CatalogIte
 	}
 	return media, nil
 }
+
+// Refresh refreshes the media item information by href
+func (mediaItem *MediaItem) Refresh() error {
+
+	if mediaItem.MediaItem == nil {
+		return fmt.Errorf("cannot refresh, Object is empty")
+	}
+
+	url := mediaItem.MediaItem.HREF
+
+	mediaItem.MediaItem = &types.MediaRecordType{}
+
+	_, err := mediaItem.client.ExecuteRequest(url, http.MethodGet,
+		"", "error retrieving media item: %s", nil, mediaItem.MediaItem)
+
+	return err
+}
