@@ -193,8 +193,8 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 		check.Assert(err, IsNil)
 		// fetch newly created org
 		adminOrg, err := vcd.client.GetAdminOrgByName(orgName)
-		check.Assert(adminOrg, NotNil)
 		check.Assert(err, IsNil)
+		check.Assert(adminOrg, NotNil)
 		check.Assert(adminOrg.AdminOrg.Name, Equals, orgName)
 		check.Assert(adminOrg.AdminOrg.Description, Equals, TestCreateOrg)
 		check.Assert(adminOrg.AdminOrg.IsEnabled, Equals, od.enabled)
@@ -304,8 +304,8 @@ func (vcd *TestVCD) Test_GetNetworkPoolByHREF(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
-	check.Assert(adminOrg, NotNil)
 	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
 
 	adminVdc, err := adminOrg.GetAdminVdcByName(vcd.config.VCD.Vdc)
 	check.Assert(adminVdc, Not(Equals), AdminVdc{})

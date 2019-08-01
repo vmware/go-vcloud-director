@@ -355,8 +355,8 @@ func (vcd *TestVCD) Test_Admin_FindCatalog(check *C) {
 	}
 	// Fetch admin org version of current test org
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
-	check.Assert(adminOrg, NotNil)
 	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
 	// Find Catalog
 	cat, err := adminOrg.FindCatalog(vcd.config.VCD.Catalog.Name)
 	check.Assert(cat, Not(Equals), Catalog{})
