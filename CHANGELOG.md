@@ -1,3 +1,9 @@
+## 2.4.0 (Unreleased)
+
+* Added method `(*VCDClient) QueryProviderVdcs()` 
+* Added method `(*VCDClient) QueryProviderVdcStorageProfiles()` 
+* Added method `(*VCDClient) QueryNetworkPools()` 
+
 ## 2.3.1 (Jul 29, 2019)
 
 BUG FIXES:
