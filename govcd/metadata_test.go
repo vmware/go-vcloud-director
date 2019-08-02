@@ -248,7 +248,6 @@ func (vcd *TestVCD) Test_AddMetadataOnVAppTemplate(check *C) {
 	metadata, err := vAppTemplate.GetMetadata()
 	check.Assert(err, IsNil)
 	check.Assert(metadata, NotNil)
-	check.Assert(metadata.MetadataEntry, NotNil)
 	existingMetaDataCount := len(metadata.MetadataEntry)
 
 	// Add metadata
@@ -259,7 +258,6 @@ func (vcd *TestVCD) Test_AddMetadataOnVAppTemplate(check *C) {
 	metadata, err = vAppTemplate.GetMetadata()
 	check.Assert(err, IsNil)
 	check.Assert(metadata, NotNil)
-	check.Assert(metadata.MetadataEntry, NotNil)
 	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount+1)
 	var foundEntry *types.MetadataEntry
 	for _, entry := range metadata.MetadataEntry {
