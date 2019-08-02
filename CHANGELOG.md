@@ -10,6 +10,10 @@
 * Added method `(*VCDClient) QueryNetworkPools()` 
 * Added get/add/delete metadata functions for vApp template and media item [#225](https://github.com/vmware/go-vcloud-director/pull/225).
 
+BUGS FIXED:
+
+* Fix bug in AdminOrg.Update, where OrgGeneralSettings would not update correctly if it contained only one property
+
 ## 2.3.1 (Jul 29, 2019)
 
 BUG FIXES:
