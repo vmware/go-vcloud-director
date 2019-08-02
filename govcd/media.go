@@ -346,6 +346,9 @@ func (mediaItem *MediaItem) Refresh() error {
 	}
 
 	url := mediaItem.MediaItem.HREF
+	if url == "nil" {
+		return fmt.Errorf("cannot refresh, HREF is empty")
+	}
 
 	mediaItem.MediaItem = &types.MediaRecordType{}
 

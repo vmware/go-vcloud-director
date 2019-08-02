@@ -58,6 +58,9 @@ func (vAppTemplate *VAppTemplate) Refresh() error {
 	}
 
 	url := vAppTemplate.VAppTemplate.HREF
+	if url == "nil" {
+		return fmt.Errorf("cannot refresh, HREF is empty")
+	}
 
 	vAppTemplate.VAppTemplate = &types.VAppTemplate{}
 

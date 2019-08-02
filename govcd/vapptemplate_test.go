@@ -28,14 +28,18 @@ func (vcd *TestVCD) Test_RefreshVAppTemplate(check *C) {
 
 	catItem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
 	check.Assert(err, IsNil)
+	check.Assert(catItem, NotNil)
+	check.Assert(catItem.CatalogItem.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
 
 	// Get VAppTemplate
 	vAppTemplate, err := catItem.GetVAppTemplate()
 	check.Assert(err, IsNil)
+	check.Assert(vAppTemplate, NotNil)
 	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
 
 	oldVAppTemplate := vAppTemplate
 
 	err = vAppTemplate.Refresh()
+	check.Assert(err, IsNil)
 	check.Assert(oldVAppTemplate.VAppTemplate, Equals, vAppTemplate.VAppTemplate)
 }

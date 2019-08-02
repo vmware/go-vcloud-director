@@ -170,10 +170,11 @@ func (vcd *TestVCD) Test_FindMediaAsCatalogItem(check *C) {
 // Tests System function Refresh
 func (vcd *TestVCD) Test_RefreshMediaImage(check *C) {
 	skipWhenMediaPathMissing(vcd, check)
-	itemName := TestUploadMedia + "6"
+	itemName := "TestRefreshMedia"
 
 	uploadTask, err := vcd.vdc.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
+	check.Assert(uploadTask, NotNil)
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
@@ -181,6 +182,7 @@ func (vcd *TestVCD) Test_RefreshMediaImage(check *C) {
 
 	mediaItem, err := vcd.vdc.FindMediaImage(itemName)
 	check.Assert(err, IsNil)
+	check.Assert(mediaItem, NotNil)
 	check.Assert(mediaItem, Not(Equals), MediaItem{})
 
 	oldMediaItem := mediaItem

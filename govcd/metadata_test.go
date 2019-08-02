@@ -197,9 +197,13 @@ func (vcd *TestVCD) Test_DeleteMetadataOnVAppTemplate(check *C) {
 
 	catItem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
 	check.Assert(err, IsNil)
+	check.Assert(catItem, NotNil)
+	check.Assert(catItem.CatalogItem.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
 
 	vAppTemplate, err := catItem.GetVAppTemplate()
 	check.Assert(err, IsNil)
+	check.Assert(vAppTemplate, NotNil)
+	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
 
 	// Add metadata
 	_, err = vAppTemplate.AddMetadata("key2", "value2")
@@ -211,6 +215,7 @@ func (vcd *TestVCD) Test_DeleteMetadataOnVAppTemplate(check *C) {
 
 	metadata, err := vAppTemplate.GetMetadata()
 	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
 	for _, k := range metadata.MetadataEntry {
 		if k.Key == "key2" {
 			check.Errorf("metadata.MetadataEntry should not contain key: 'key2'")
@@ -231,13 +236,19 @@ func (vcd *TestVCD) Test_AddMetadataOnVAppTemplate(check *C) {
 
 	catItem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
 	check.Assert(err, IsNil)
+	check.Assert(catItem, NotNil)
+	check.Assert(catItem.CatalogItem.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
 
 	vAppTemplate, err := catItem.GetVAppTemplate()
 	check.Assert(err, IsNil)
+	check.Assert(vAppTemplate, NotNil)
+	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
 
 	// Check how much metaData exist
 	metadata, err := vAppTemplate.GetMetadata()
 	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(metadata.MetadataEntry, NotNil)
 	existingMetaDataCount := len(metadata.MetadataEntry)
 
 	// Add metadata
@@ -247,6 +258,8 @@ func (vcd *TestVCD) Test_AddMetadataOnVAppTemplate(check *C) {
 	// Check if metadata was added correctly
 	metadata, err = vAppTemplate.GetMetadata()
 	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(metadata.MetadataEntry, NotNil)
 	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount+1)
 	var foundEntry *types.MetadataEntry
 	for _, entry := range metadata.MetadataEntry {
@@ -273,19 +286,22 @@ func (vcd *TestVCD) Test_DeleteMetadataOnMediaItem(check *C) {
 
 	catalog, err := org.FindCatalog(vcd.config.VCD.Catalog.Name)
 	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
 
 	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
+	check.Assert(uploadTask, NotNil)
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadMediaImage")
+	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_DeleteMetadataOnMediaItem")
 
 	err = vcd.org.Refresh()
 	check.Assert(err, IsNil)
 
 	mediaItem, err := vcd.vdc.FindMediaImage(itemName)
 	check.Assert(err, IsNil)
+	check.Assert(mediaItem, NotNil)
 	check.Assert(mediaItem, Not(Equals), MediaItem{})
 	check.Assert(mediaItem.MediaItem.Name, Equals, itemName)
 
@@ -299,6 +315,7 @@ func (vcd *TestVCD) Test_DeleteMetadataOnMediaItem(check *C) {
 
 	metadata, err := mediaItem.GetMetadata()
 	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
 	for _, k := range metadata.MetadataEntry {
 		if k.Key == "key2" {
 			check.Errorf("metadata.MetadataEntry should not contain key: 'key2'")
@@ -317,19 +334,23 @@ func (vcd *TestVCD) Test_AddMetadataOnMediaItem(check *C) {
 
 	catalog, err := org.FindCatalog(vcd.config.VCD.Catalog.Name)
 	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+	check.Assert(catalog.Catalog.Name, Equals, vcd.config.VCD.Catalog.Name)
 
 	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
+	check.Assert(uploadTask, NotNil)
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadMediaImage")
+	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_AddMetadataOnMediaItem")
 
 	err = vcd.org.Refresh()
 	check.Assert(err, IsNil)
 
 	mediaItem, err := vcd.vdc.FindMediaImage(itemName)
 	check.Assert(err, IsNil)
+	check.Assert(mediaItem, NotNil)
 	check.Assert(mediaItem, Not(Equals), MediaItem{})
 	check.Assert(mediaItem.MediaItem.Name, Equals, itemName)
 
@@ -340,6 +361,7 @@ func (vcd *TestVCD) Test_AddMetadataOnMediaItem(check *C) {
 	// Check if metadata was added correctly
 	metadata, err := mediaItem.GetMetadata()
 	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
 	check.Assert(len(metadata.MetadataEntry), Equals, 1)
 	check.Assert(metadata.MetadataEntry[0].Key, Equals, "key")
 	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")

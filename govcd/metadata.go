@@ -25,7 +25,7 @@ func (vm *VM) DeleteMetadata(key string) (Task, error) {
 }
 
 // AddMetadata() function calls private function addMetadata() with vm.client and vm.VM.HREF
-// which adds metadata key, value pair provided as input to VM.
+// which adds metadata key/value pair provided as input to VM.
 func (vm *VM) AddMetadata(key string, value string) (Task, error) {
 	return addMetadata(vm.client, key, value, vm.VM.HREF)
 }
@@ -55,7 +55,7 @@ func (vdc *Vdc) DeleteMetadata(key string) (Vdc, error) {
 	return *vdc, nil
 }
 
-// AddMetadata() function adds metadata key, value pair provided as input to VDC.
+// AddMetadata() function adds metadata key/value pair provided as input to VDC.
 func (vdc *Vdc) AddMetadata(key string, value string) (Vdc, error) {
 	task, err := addMetadata(vdc.client, key, value, getAdminVdcURL(vdc.Vdc.HREF))
 	if err != nil {
@@ -75,7 +75,7 @@ func (vdc *Vdc) AddMetadata(key string, value string) (Vdc, error) {
 	return *vdc, nil
 }
 
-// AddMetadata() function adds metadata key, value pair provided as input to VDC.
+// AddMetadata() function adds metadata key/value pair provided as input to VDC.
 // and returns task
 func (vdc *Vdc) AddMetadataAsync(key string, value string) (Task, error) {
 	return addMetadata(vdc.client, key, value, getAdminVdcURL(vdc.Vdc.HREF))
@@ -124,7 +124,7 @@ func deleteMetadata(client *Client, key string, requestUri string) (Task, error)
 }
 
 // AddMetadata() function calls private function addMetadata() with vapp.client and vapp.VApp.HREF
-// which adds metadata key, value pair provided as input
+// which adds metadata key/value pair provided as input
 func (vapp *VApp) AddMetadata(key string, value string) (Task, error) {
 	return addMetadata(vapp.client, key, value, vapp.VApp.HREF)
 }
@@ -155,7 +155,7 @@ func (vAppTemplate *VAppTemplate) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(vAppTemplate.client, vAppTemplate.VAppTemplate.HREF)
 }
 
-// AddMetadata() function adds metadata key, value pair provided as input and returned update VAppTemplate
+// AddMetadata() function adds metadata key/value pair provided as input and returned update VAppTemplate
 func (vAppTemplate *VAppTemplate) AddMetadata(key string, value string) (*VAppTemplate, error) {
 	task, err := vAppTemplate.AddMetadataAsync(key, value)
 	if err != nil {
@@ -174,8 +174,8 @@ func (vAppTemplate *VAppTemplate) AddMetadata(key string, value string) (*VAppTe
 	return vAppTemplate, nil
 }
 
-// AddMetadata() function calls private function addMetadata() with vAppTemplate.client and vAppTemplate.VAppTemplate.HREF
-// which adds metadata key, value pair provided as input.
+// AddMetadataAsync() function calls private function addMetadata() with vAppTemplate.client and vAppTemplate.VAppTemplate.HREF
+// which adds metadata key/value pair provided as input.
 func (vAppTemplate *VAppTemplate) AddMetadataAsync(key string, value string) (Task, error) {
 	return addMetadata(vAppTemplate.client, key, value, vAppTemplate.VAppTemplate.HREF)
 }
@@ -194,7 +194,7 @@ func (vAppTemplate *VAppTemplate) DeleteMetadata(key string) error {
 	return nil
 }
 
-// DeleteMetadata() function calls private function deleteMetadata() with vAppTemplate.client and vAppTemplate.VAppTemplate.HREF
+// DeleteMetadataAsync() function calls private function deleteMetadata() with vAppTemplate.client and vAppTemplate.VAppTemplate.HREF
 // which deletes metadata depending on key provided as input from catalog item.
 func (vAppTemplate *VAppTemplate) DeleteMetadataAsync(key string) (Task, error) {
 	return deleteMetadata(vAppTemplate.client, key, vAppTemplate.VAppTemplate.HREF)
@@ -206,7 +206,7 @@ func (mediaItem *MediaItem) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(mediaItem.client, mediaItem.MediaItem.HREF)
 }
 
-// AddMetadata() function adds metadata key, value pair provided as input.
+// AddMetadata() function adds metadata key/value pair provided as input.
 func (mediaItem *MediaItem) AddMetadata(key string, value string) (*MediaItem, error) {
 	task, err := mediaItem.AddMetadataAsync(key, value)
 	if err != nil {
@@ -214,19 +214,19 @@ func (mediaItem *MediaItem) AddMetadata(key string, value string) (*MediaItem, e
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
-		return nil, fmt.Errorf("error completing add metadata for media item task: %#v", err)
+		return nil, fmt.Errorf("error completing add metadata for media item task: %s", err)
 	}
 
 	err = mediaItem.Refresh()
 	if err != nil {
-		return nil, fmt.Errorf("error refreshing media item: %#v", err)
+		return nil, fmt.Errorf("error refreshing media item: %s", err)
 	}
 
 	return mediaItem, nil
 }
 
-// AddMetadata() function calls private function addMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
-// which adds metadata key, value pair provided as input.
+// AddMetadataAsync() function calls private function addMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
+// which adds metadata key/value pair provided as input.
 func (mediaItem *MediaItem) AddMetadataAsync(key string, value string) (Task, error) {
 	return addMetadata(mediaItem.client, key, value, mediaItem.MediaItem.HREF)
 }
@@ -239,13 +239,13 @@ func (mediaItem *MediaItem) DeleteMetadata(key string) error {
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
-		return fmt.Errorf("error completing delete metadata for media item task: %#v", err)
+		return fmt.Errorf("error completing delete metadata for media item task: %s", err)
 	}
 
 	return nil
 }
 
-// DeleteMetadata() function calls private function deleteMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
+// DeleteMetadataAsync() function calls private function deleteMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
 // which deletes metadata depending on key provided as input from media item.
 func (mediaItem *MediaItem) DeleteMetadataAsync(key string) (Task, error) {
 	return deleteMetadata(mediaItem.client, key, mediaItem.MediaItem.HREF)
