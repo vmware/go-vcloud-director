@@ -470,10 +470,10 @@ func (adminOrg *AdminOrg) Update() (Task, error) {
 	// Same workaround used in Org creation, where OrgGeneralSettings properties
 	// are not set unless UseServerBootSequence is also set
 	if vcomp.OrgSettings.OrgGeneralSettings != nil {
-			vcomp.OrgSettings.OrgGeneralSettings.UseServerBootSequence = true
+		vcomp.OrgSettings.OrgGeneralSettings.UseServerBootSequence = true
 	}
 
-	 /**/
+	/**/
 
 	// Return the task
 	return adminOrg.client.ExecuteTaskRequest(adminOrg.AdminOrg.HREF, http.MethodPut,
