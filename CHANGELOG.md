@@ -8,6 +8,7 @@
 * Added method `(*VCDClient) QueryProviderVdcs()` 
 * Added method `(*VCDClient) QueryProviderVdcStorageProfiles()` 
 * Added method `(*VCDClient) QueryNetworkPools()` 
+* Added get/add/delete metadata functions for vApp template and media item [#225](https://github.com/vmware/go-vcloud-director/pull/225).
 
 ## 2.3.1 (Jul 29, 2019)
 
