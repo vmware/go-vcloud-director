@@ -188,5 +188,8 @@ func (vcd *TestVCD) Test_RefreshMediaImage(check *C) {
 	oldMediaItem := mediaItem
 	mediaItem.Refresh()
 
-	check.Assert(oldMediaItem.MediaItem, Equals, mediaItem.MediaItem)
+	check.Assert(mediaItem, NotNil)
+	check.Assert(oldMediaItem.MediaItem.ID, Equals, mediaItem.MediaItem.ID)
+	check.Assert(oldMediaItem.MediaItem.Name, Equals, mediaItem.MediaItem.Name)
+	check.Assert(oldMediaItem.MediaItem.HREF, Equals, mediaItem.MediaItem.HREF)
 }

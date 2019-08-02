@@ -41,5 +41,7 @@ func (vcd *TestVCD) Test_RefreshVAppTemplate(check *C) {
 
 	err = vAppTemplate.Refresh()
 	check.Assert(err, IsNil)
-	check.Assert(oldVAppTemplate.VAppTemplate, Equals, vAppTemplate.VAppTemplate)
+	check.Assert(oldVAppTemplate.VAppTemplate.ID, Equals, vAppTemplate.VAppTemplate.ID)
+	check.Assert(oldVAppTemplate.VAppTemplate.Name, Equals, vAppTemplate.VAppTemplate.Name)
+	check.Assert(oldVAppTemplate.VAppTemplate.HREF, Equals, vAppTemplate.VAppTemplate.HREF)
 }

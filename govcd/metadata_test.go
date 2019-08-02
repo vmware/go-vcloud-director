@@ -281,8 +281,8 @@ func (vcd *TestVCD) Test_DeleteMetadataOnMediaItem(check *C) {
 	itemName := "TestDeleteMediaMetaData"
 
 	org, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
-	check.Assert(org, Not(Equals), AdminOrg{})
 	check.Assert(err, IsNil)
+	check.Assert(org, Not(Equals), AdminOrg{})
 
 	catalog, err := org.FindCatalog(vcd.config.VCD.Catalog.Name)
 	check.Assert(err, IsNil)

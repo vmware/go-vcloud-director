@@ -203,7 +203,7 @@ func (vAppTemplate *VAppTemplate) DeleteMetadataAsync(key string) (Task, error) 
 // GetMetadata() function calls private function getMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
 // which returns a *types.Metadata struct for provided media item input.
 func (mediaItem *MediaItem) GetMetadata() (*types.Metadata, error) {
-	return getMetadata(mediaItem.client, mediaItem.MediaItem.HREF)
+	return getMetadata(mediaItem.vdc.client, mediaItem.MediaItem.HREF)
 }
 
 // AddMetadata() function adds metadata key/value pair provided as input.
@@ -228,7 +228,7 @@ func (mediaItem *MediaItem) AddMetadata(key string, value string) (*MediaItem, e
 // AddMetadataAsync() function calls private function addMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
 // which adds metadata key/value pair provided as input.
 func (mediaItem *MediaItem) AddMetadataAsync(key string, value string) (Task, error) {
-	return addMetadata(mediaItem.client, key, value, mediaItem.MediaItem.HREF)
+	return addMetadata(mediaItem.vdc.client, key, value, mediaItem.MediaItem.HREF)
 }
 
 // DeleteMetadata() function calls deletes metadata depending on key provided as input from media item.
@@ -248,5 +248,5 @@ func (mediaItem *MediaItem) DeleteMetadata(key string) error {
 // DeleteMetadataAsync() function calls private function deleteMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
 // which deletes metadata depending on key provided as input from media item.
 func (mediaItem *MediaItem) DeleteMetadataAsync(key string) (Task, error) {
-	return deleteMetadata(mediaItem.client, key, mediaItem.MediaItem.HREF)
+	return deleteMetadata(mediaItem.vdc.client, key, mediaItem.MediaItem.HREF)
 }
