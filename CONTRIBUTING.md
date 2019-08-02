@@ -51,6 +51,8 @@ Go package library](https://golang.org/pkg).
 Go is pretty readable so if you follow these rules most functions
 will not need additional comments.
 
+See **CODING_GUIDELINES.md** for more advice on how to write code for this project.
+
 ### Commit Message Format
 
 We follow the conventions on [How to Write a Git Commit Message](http://chris.beams.io/posts/git-commit/).

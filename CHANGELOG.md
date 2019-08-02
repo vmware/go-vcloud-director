@@ -1,5 +1,10 @@
-## 2.4.0 (To be decided, 2019)
+## 2.4.0 (Unreleased)
 
+* Deprecated functions `GetOrgByName(*VCDClient, string) (Org, error)` and `GetAdminOrgByName(*VCDClient, string) (AdminOrg, error)`
+* Deprecated methods `(*AdminOrg)FetchUserByName`, `(*AdminOrg)FetchUserById`, `(*AdminOrg)FetchUserByNameOrId`, `(*AdminOrg)GetRole`.
+* Added method `(*VCDClient) GetOrgByName(string) (*Org, error)`  and related `GetOrgById`, `GetOrgByNameOrId`
+* Added method `(*VCDClient) GetAdminOrgByName(string) (*AdminOrg, error)` and related `GetAdminOrgById`, `GetAdminOrgByNameOrId`
+* Added methods `GetUserByName`, `GetUserById`, `GetUserByNameOrId`, `GetRoleReference`.
 * Added get/add/delete metadata functions for vApp template and media item [#225](https://github.com/vmware/go-vcloud-director/pull/225).
 
 ## 2.3.1 (Jul 29, 2019)

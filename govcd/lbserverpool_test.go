@@ -123,7 +123,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(updatedLBPool.Transparent, Equals, lbPoolByID.Transparent)
 
-	// Verify that updated pool and it's configuration are identical
+	// Verify that updated pool and its configuration are identical
 	check.Assert(updatedLBPool, DeepEquals, lbPoolByID)
 
 	// Try to set invalid algorithm hash and expect API to return error

@@ -278,7 +278,7 @@ func (vcd *TestVCD) Test_DeleteMetadataOnMediaItem(check *C) {
 	skipWhenMediaPathMissing(vcd, check)
 	itemName := "TestDeleteMediaMetaData"
 
-	org, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
+	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, Not(Equals), AdminOrg{})
 
@@ -326,7 +326,7 @@ func (vcd *TestVCD) Test_AddMetadataOnMediaItem(check *C) {
 	skipWhenMediaPathMissing(vcd, check)
 	itemName := "TestAddMediaMetaData"
 
-	org, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
+	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(org, Not(Equals), AdminOrg{})
 	check.Assert(err, IsNil)
 
