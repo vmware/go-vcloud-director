@@ -5,6 +5,9 @@
 * Added method `(*VCDClient) GetOrgByName(string) (*Org, error)`  and related `GetOrgById`, `GetOrgByNameOrId`
 * Added method `(*VCDClient) GetAdminOrgByName(string) (*AdminOrg, error)` and related `GetAdminOrgById`, `GetAdminOrgByNameOrId`
 * Added methods `GetUserByName`, `GetUserById`, `GetUserByNameOrId`, `GetRoleReference`.
+* Added method `(*VCDClient) QueryProviderVdcs()` 
+* Added method `(*VCDClient) QueryProviderVdcStorageProfiles()` 
+* Added method `(*VCDClient) QueryNetworkPools()` 
 
 ## 2.3.1 (Jul 29, 2019)
 

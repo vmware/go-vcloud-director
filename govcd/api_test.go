@@ -14,6 +14,8 @@ import (
 
 var testingTags = make(map[string]string)
 
+var testVerbose bool = os.Getenv("GOVCD_TEST_VERBOSE") != ""
+
 // longer than the 128 characters so nothing can be named this
 var INVALID_NAME = `*******************************************INVALID
 					****************************************************
