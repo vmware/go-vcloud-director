@@ -119,6 +119,20 @@ func CreateCatalog(client *Client, links types.LinkList, Name, Description strin
 	return *catalog, err
 }
 
+// CreateCatalog creates a catalog with given name and description under
+// the given organization. Returns an Catalog that contains a creation
+// task.
+// API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-CreateCatalog.html
+func (org *Org) CreateCatalog(name, description string) (Catalog, error) {
+	catalog := NewCatalog(org.client)
+	adminCatalog, err := CreateCatalog(org.client, org.Org.Link, name, description)
+	if err != nil {
+		return Catalog{}, err
+	}
+	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
+	return *catalog, nil
+}
+
 func validateVdcConfiguration(vdcDefinition *types.VdcConfiguration) error {
 	if vdcDefinition.Xmlns == "" {
 		return errors.New("VdcConfiguration missing required field: Xmlns")
