@@ -163,7 +163,7 @@ func (adminOrg *AdminOrg) GetUserById(id string, refresh bool) (*OrgUser, error)
 func (adminOrg *AdminOrg) GetUserByNameOrId(identifier string, refresh bool) (*OrgUser, error) {
 	byName := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetUserByName(name, refresh) }
 	byId := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetUserById(name, refresh) }
-	entity, err := GetEntityByNameOrId(byName, byId, identifier, refresh)
+	entity, err := getEntityByNameOrId(byName, byId, identifier, refresh)
 	return entity.(*OrgUser), err
 }
 

@@ -224,7 +224,7 @@ func (org *Org) GetCatalogById(catalogId string, refresh bool) (*Catalog, error)
 func (org *Org) GetCatalogByNameOrId(identifier string, refresh bool) (*Catalog, error) {
 	byName := func(name string, refresh bool) (interface{}, error) { return org.GetCatalogByName(name, refresh) }
 	byId := func(id string, refresh bool) (interface{}, error) { return org.GetCatalogById(id, refresh) }
-	entity, err := GetEntityByNameOrId(byName, byId, identifier, refresh)
+	entity, err := getEntityByNameOrId(byName, byId, identifier, refresh)
 	return entity.(*Catalog), err
 }
 
@@ -284,6 +284,6 @@ func (org *Org) GetVDCById(vdcId string, refresh bool) (*Vdc, error) {
 func (org *Org) GetVDCByNameOrId(identifier string, refresh bool) (*Vdc, error) {
 	byName := func(name string, refresh bool) (interface{}, error) { return org.GetVDCByName(name, refresh) }
 	byId := func(id string, refresh bool) (interface{}, error) { return org.GetVDCById(id, refresh) }
-	entity, err := GetEntityByNameOrId(byName, byId, identifier, refresh)
+	entity, err := getEntityByNameOrId(byName, byId, identifier, refresh)
 	return entity.(*Vdc), err
 }

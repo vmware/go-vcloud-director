@@ -532,7 +532,7 @@ func (adminOrg *AdminOrg) GetCatalogById(catalogId string, refresh bool) (*Catal
 func (adminOrg *AdminOrg) GetCatalogByNameOrId(identifier string, refresh bool) (*Catalog, error) {
 	byName := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetCatalogByName(name, refresh) }
 	byId := func(id string, refresh bool) (interface{}, error) { return adminOrg.GetCatalogById(id, refresh) }
-	entity, err := GetEntityByNameOrId(byName, byId, identifier, refresh)
+	entity, err := getEntityByNameOrId(byName, byId, identifier, refresh)
 	return entity.(*Catalog), err
 }
 
@@ -601,7 +601,7 @@ func (adminOrg *AdminOrg) GetAdminCatalogByNameOrId(identifier string, refresh b
 	byId := func(id string, refresh bool) (interface{}, error) {
 		return adminOrg.GetAdminCatalogById(id, refresh)
 	}
-	entity, err := GetEntityByNameOrId(byName, byId, identifier, refresh)
+	entity, err := getEntityByNameOrId(byName, byId, identifier, refresh)
 	return entity.(*AdminCatalog), err
 }
 
@@ -671,7 +671,7 @@ func (adminOrg *AdminOrg) GetVDCById(vdcId string, refresh bool) (*Vdc, error) {
 func (adminOrg *AdminOrg) GetVDCByNameOrId(identifier string, refresh bool) (*Vdc, error) {
 	byName := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetVDCByName(name, refresh) }
 	byId := func(id string, refresh bool) (interface{}, error) { return adminOrg.GetVDCById(id, refresh) }
-	entity, err := GetEntityByNameOrId(byName, byId, identifier, refresh)
+	entity, err := getEntityByNameOrId(byName, byId, identifier, refresh)
 	return entity.(*Vdc), err
 }
 
@@ -733,6 +733,6 @@ func (adminOrg *AdminOrg) GetAdminVDCByNameOrId(identifier string, refresh bool)
 		return adminOrg.GetAdminVDCByName(name, refresh)
 	}
 	byId := func(id string, refresh bool) (interface{}, error) { return adminOrg.GetAdminVDCById(id, refresh) }
-	entity, err := GetEntityByNameOrId(byName, byId, identifier, refresh)
+	entity, err := getEntityByNameOrId(byName, byId, identifier, refresh)
 	return entity.(*AdminVdc), err
 }

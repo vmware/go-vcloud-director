@@ -62,7 +62,7 @@ func (vdc *Vdc) id() string   { return vdc.Vdc.ID }
 // Semi-generic tests that check the complete set of Get methods for an entity
 // GetEntityByName
 // GetEntityById
-// GetEntityByNameOrId (using name or Id)
+// getEntityByNameOrId (using name or Id)
 // Get invalid name or ID
 // To use this function, the entity must satisfy the interface GenericEntity
 // and within the caller it must define the getter functions

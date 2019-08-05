@@ -134,7 +134,7 @@ Each entity should have the following methods:
 // ALWAYS
 (parent *Parent) GetEntityByName(name string) (*Entity, error)
 (parent *Parent) GetEntityById(id string) (*Entity, error)
-(parent *Parent) GetEntityByNameOrId(identifier string) (*Entity, error)
+(parent *Parent) getEntityByNameOrId(identifier string) (*Entity, error)
 ```
 
 For example, the parent for `Vdc` is `Org`, the parent for `EdgeGateway` is `Vdc`.

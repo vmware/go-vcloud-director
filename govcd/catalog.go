@@ -738,6 +738,6 @@ func (cat *Catalog) GetCatalogItemById(catalogItemId string, refresh bool) (*Cat
 func (cat *Catalog) GetCatalogItemByNameOrId(identifier string, refresh bool) (*CatalogItem, error) {
 	byName := func(name string, refresh bool) (interface{}, error) { return cat.GetCatalogItemByName(name, refresh) }
 	byId := func(id string, refresh bool) (interface{}, error) { return cat.GetCatalogItemById(id, refresh) }
-	entity, err := GetEntityByNameOrId(byName, byId, identifier, refresh)
+	entity, err := getEntityByNameOrId(byName, byId, identifier, refresh)
 	return entity.(*CatalogItem), err
 }

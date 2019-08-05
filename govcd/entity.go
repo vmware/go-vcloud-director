@@ -6,7 +6,7 @@ package govcd
 
 type genericGetter func(string, bool) (interface{}, error)
 
-// GetEntityByNameOrId finds a generic entity by Name Or ID
+// getEntityByNameOrId finds a generic entity by Name Or ID
 // On success, returns a pointer to the AdminVdc structure and a nil error
 // On failure, returns a nil pointer and an error
 // Example usage:
@@ -18,10 +18,10 @@ type genericGetter func(string, bool) (interface{}, error)
 // 	byId := func(id string, refresh bool) (interface{}, error) {
 // 	  return org.GetCatalogById(id, refresh)
 // 	}
-// 	entity, err := GetEntityByNameOrId(byName, byId, identifier, refresh)
+// 	entity, err := getEntityByNameOrId(byName, byId, identifier, refresh)
 // 	return entity.(*Catalog), err
 // }
-func GetEntityByNameOrId(byName, byId genericGetter, identifier string, refresh bool) (interface{}, error) {
+func getEntityByNameOrId(byName, byId genericGetter, identifier string, refresh bool) (interface{}, error) {
 
 	var byNameErr, byIdErr error
 	var entity interface{}

@@ -576,7 +576,7 @@ func (vcdClient *VCDClient) GetExternalNetworkByNameOrId(identifier string) (*Ex
 	*/
 	byName := func(name string, refresh bool) (interface{}, error) { return vcdClient.GetExternalNetworkByName(name) }
 	byId := func(id string, refresh bool) (interface{}, error) { return vcdClient.GetExternalNetworkById(id) }
-	entity, err := GetEntityByNameOrId(byName, byId, identifier, false)
+	entity, err := getEntityByNameOrId(byName, byId, identifier, false)
 	return entity.(*ExternalNetwork), err
 }
 
@@ -793,7 +793,7 @@ func (vcdClient *VCDClient) GetOrgByNameOrId(identifier string) (*Org, error) {
 
 	byName := func(name string, refresh bool) (interface{}, error) { return vcdClient.GetOrgByName(name) }
 	byId := func(id string, refresh bool) (interface{}, error) { return vcdClient.GetOrgById(id) }
-	entity, err := GetEntityByNameOrId(byName, byId, identifier, false)
+	entity, err := getEntityByNameOrId(byName, byId, identifier, false)
 	return entity.(*Org), err
 }
 
@@ -866,6 +866,6 @@ func (vcdClient *VCDClient) GetAdminOrgByNameOrId(identifier string) (*AdminOrg,
 
 	byName := func(name string, refresh bool) (interface{}, error) { return vcdClient.GetAdminOrgByName(name) }
 	byId := func(id string, refresh bool) (interface{}, error) { return vcdClient.GetAdminOrgById(id) }
-	entity, err := GetEntityByNameOrId(byName, byId, identifier, false)
+	entity, err := getEntityByNameOrId(byName, byId, identifier, false)
 	return entity.(*AdminOrg), err
 }
