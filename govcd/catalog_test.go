@@ -479,22 +479,22 @@ func (vcd *TestVCD) Test_CatalogGetItem(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	getterByName := func(name string, refresh bool) (GenericEntity, error) {
+	getByName := func(name string, refresh bool) (genericEntity, error) {
 		return catalog.GetCatalogItemByName(name, refresh)
 	}
-	getterById := func(id string, refresh bool) (GenericEntity, error) { return catalog.GetCatalogItemById(id, refresh) }
-	getterByNameOrId := func(id string, refresh bool) (GenericEntity, error) {
+	getById := func(id string, refresh bool) (genericEntity, error) { return catalog.GetCatalogItemById(id, refresh) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
 		return catalog.GetCatalogItemByNameOrId(id, refresh)
 	}
 
-	var def = GetterTestDefinition{
-		parentType:       "Catalog",
-		parentName:       vcd.config.VCD.Catalog.Name,
-		entityType:       "CatalogItem",
-		entityName:       vcd.config.VCD.Catalog.CatalogItem,
-		getterByName:     getterByName,
-		getterById:       getterById,
-		getterByNameOrId: getterByNameOrId,
+	var def = getterTestDefinition{
+		parentType:    "Catalog",
+		parentName:    vcd.config.VCD.Catalog.Name,
+		entityType:    "CatalogItem",
+		entityName:    vcd.config.VCD.Catalog.CatalogItem,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
 	}
 	vcd.testFinderGetGenericEntity(def, check)
 }

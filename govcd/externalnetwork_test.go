@@ -209,22 +209,22 @@ func init() {
 // Tests ExternalNetwork retrieval by name, by ID, and by a combination of name and ID
 func (vcd *TestVCD) Test_SystemGetExternalNetwork(check *C) {
 
-	getterByName := func(name string, refresh bool) (GenericEntity, error) {
+	getByName := func(name string, refresh bool) (genericEntity, error) {
 		return vcd.client.GetExternalNetworkByName(name)
 	}
-	getterById := func(id string, refresh bool) (GenericEntity, error) { return vcd.client.GetExternalNetworkById(id) }
-	getterByNameOrId := func(id string, refresh bool) (GenericEntity, error) {
+	getById := func(id string, refresh bool) (genericEntity, error) { return vcd.client.GetExternalNetworkById(id) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
 		return vcd.client.GetExternalNetworkByNameOrId(id)
 	}
 
-	var def = GetterTestDefinition{
-		parentType:       "VDCClient",
-		parentName:       "System",
-		entityType:       "ExternalNetwork",
-		entityName:       vcd.config.VCD.ExternalNetwork,
-		getterByName:     getterByName,
-		getterById:       getterById,
-		getterByNameOrId: getterByNameOrId,
+	var def = getterTestDefinition{
+		parentType:    "VDCClient",
+		parentName:    "System",
+		entityType:    "ExternalNetwork",
+		entityName:    vcd.config.VCD.ExternalNetwork,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
 	}
 	vcd.testFinderGetGenericEntity(def, check)
 }

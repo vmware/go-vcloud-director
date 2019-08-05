@@ -705,22 +705,22 @@ func (vcd *TestVCD) Test_GetAdminVdcByName(check *C) {
 // Tests catalog retrieval by name, by ID, and by a combination of name and ID
 func (vcd *TestVCD) Test_OrgGetCatalog(check *C) {
 
-	getterByName := func(name string, refresh bool) (GenericEntity, error) {
+	getByName := func(name string, refresh bool) (genericEntity, error) {
 		return vcd.org.GetCatalogByName(name, refresh)
 	}
-	getterById := func(id string, refresh bool) (GenericEntity, error) { return vcd.org.GetCatalogById(id, refresh) }
-	getterByNameOrId := func(id string, refresh bool) (GenericEntity, error) {
+	getById := func(id string, refresh bool) (genericEntity, error) { return vcd.org.GetCatalogById(id, refresh) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
 		return vcd.org.GetCatalogByNameOrId(id, refresh)
 	}
 
-	var def = GetterTestDefinition{
-		parentType:       "Org",
-		parentName:       vcd.config.VCD.Org,
-		entityType:       "Catalog",
-		entityName:       vcd.config.VCD.Catalog.Name,
-		getterByName:     getterByName,
-		getterById:       getterById,
-		getterByNameOrId: getterByNameOrId,
+	var def = getterTestDefinition{
+		parentType:    "Org",
+		parentName:    vcd.config.VCD.Org,
+		entityType:    "Catalog",
+		entityName:    vcd.config.VCD.Catalog.Name,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
 	}
 
 	vcd.testFinderGetGenericEntity(def, check)
@@ -738,24 +738,24 @@ func (vcd *TestVCD) Test_AdminOrgGetAdminCatalog(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	getterByName := func(name string, refresh bool) (GenericEntity, error) {
+	getByName := func(name string, refresh bool) (genericEntity, error) {
 		return adminOrg.GetAdminCatalogByName(name, refresh)
 	}
-	getterById := func(id string, refresh bool) (GenericEntity, error) {
+	getById := func(id string, refresh bool) (genericEntity, error) {
 		return adminOrg.GetAdminCatalogById(id, refresh)
 	}
-	getterByNameOrId := func(id string, refresh bool) (GenericEntity, error) {
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
 		return adminOrg.GetAdminCatalogByNameOrId(id, refresh)
 	}
 
-	var def = GetterTestDefinition{
-		parentType:       "AdminOrg",
-		parentName:       vcd.config.VCD.Org,
-		entityType:       "AdminCatalog",
-		entityName:       catalogName,
-		getterByName:     getterByName,
-		getterById:       getterById,
-		getterByNameOrId: getterByNameOrId,
+	var def = getterTestDefinition{
+		parentType:    "AdminOrg",
+		parentName:    vcd.config.VCD.Org,
+		entityType:    "AdminCatalog",
+		entityName:    catalogName,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
 	}
 
 	vcd.testFinderGetGenericEntity(def, check)
@@ -774,22 +774,22 @@ func (vcd *TestVCD) Test_AdminOrgGetCatalog(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	getterByName := func(name string, refresh bool) (GenericEntity, error) {
+	getByName := func(name string, refresh bool) (genericEntity, error) {
 		return adminOrg.GetCatalogByName(name, refresh)
 	}
-	getterById := func(id string, refresh bool) (GenericEntity, error) { return adminOrg.GetCatalogById(id, refresh) }
-	getterByNameOrId := func(id string, refresh bool) (GenericEntity, error) {
+	getById := func(id string, refresh bool) (genericEntity, error) { return adminOrg.GetCatalogById(id, refresh) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
 		return adminOrg.GetCatalogByNameOrId(id, refresh)
 	}
 
-	var def = GetterTestDefinition{
-		parentType:       "AdminOrg",
-		parentName:       vcd.config.VCD.Org,
-		entityType:       "Catalog",
-		entityName:       catalogName,
-		getterByName:     getterByName,
-		getterById:       getterById,
-		getterByNameOrId: getterByNameOrId,
+	var def = getterTestDefinition{
+		parentType:    "AdminOrg",
+		parentName:    vcd.config.VCD.Org,
+		entityType:    "Catalog",
+		entityName:    catalogName,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
 	}
 
 	vcd.testFinderGetGenericEntity(def, check)
@@ -807,19 +807,19 @@ func (vcd *TestVCD) Test_AdminOrgGetVdc(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	getterByName := func(name string, refresh bool) (GenericEntity, error) { return adminOrg.GetVDCByName(name, refresh) }
-	getterById := func(id string, refresh bool) (GenericEntity, error) { return adminOrg.GetVDCById(id, refresh) }
-	getterByNameOrId := func(id string, refresh bool) (GenericEntity, error) { return adminOrg.GetVDCByNameOrId(id, refresh) }
+	getByName := func(name string, refresh bool) (genericEntity, error) { return adminOrg.GetVDCByName(name, refresh) }
+	getById := func(id string, refresh bool) (genericEntity, error) { return adminOrg.GetVDCById(id, refresh) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) { return adminOrg.GetVDCByNameOrId(id, refresh) }
 
-	var def = GetterTestDefinition{
-		parentType:       "AdminOrg",
-		parentName:       vcd.config.VCD.Org,
-		entityType:       "Vdc",
-		getterPrefix:     "VDC",
-		entityName:       vcd.config.VCD.Vdc,
-		getterByName:     getterByName,
-		getterById:       getterById,
-		getterByNameOrId: getterByNameOrId,
+	var def = getterTestDefinition{
+		parentType:    "AdminOrg",
+		parentName:    vcd.config.VCD.Org,
+		entityType:    "Vdc",
+		getterPrefix:  "VDC",
+		entityName:    vcd.config.VCD.Vdc,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
 	}
 	vcd.testFinderGetGenericEntity(def, check)
 }
@@ -835,23 +835,23 @@ func (vcd *TestVCD) Test_AdminOrgGetAdminVdc(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	getterByName := func(name string, refresh bool) (GenericEntity, error) {
+	getByName := func(name string, refresh bool) (genericEntity, error) {
 		return adminOrg.GetAdminVDCByName(name, refresh)
 	}
-	getterById := func(id string, refresh bool) (GenericEntity, error) { return adminOrg.GetAdminVDCById(id, refresh) }
-	getterByNameOrId := func(id string, refresh bool) (GenericEntity, error) {
+	getById := func(id string, refresh bool) (genericEntity, error) { return adminOrg.GetAdminVDCById(id, refresh) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
 		return adminOrg.GetAdminVDCByNameOrId(id, refresh)
 	}
 
-	var def = GetterTestDefinition{
-		parentType:       "AdminOrg",
-		parentName:       vcd.config.VCD.Org,
-		entityType:       "AdminVdc",
-		getterPrefix:     "AdminVDC",
-		entityName:       vcd.config.VCD.Vdc,
-		getterByName:     getterByName,
-		getterById:       getterById,
-		getterByNameOrId: getterByNameOrId,
+	var def = getterTestDefinition{
+		parentType:    "AdminOrg",
+		parentName:    vcd.config.VCD.Org,
+		entityType:    "AdminVdc",
+		getterPrefix:  "AdminVDC",
+		entityName:    vcd.config.VCD.Vdc,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
 	}
 	vcd.testFinderGetGenericEntity(def, check)
 }
@@ -867,19 +867,19 @@ func (vcd *TestVCD) Test_OrgGetVdc(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	getterByName := func(name string, refresh bool) (GenericEntity, error) { return org.GetVDCByName(name, refresh) }
-	getterById := func(id string, refresh bool) (GenericEntity, error) { return org.GetVDCById(id, refresh) }
-	getterByNameOrId := func(id string, refresh bool) (GenericEntity, error) { return org.GetVDCByNameOrId(id, refresh) }
+	getByName := func(name string, refresh bool) (genericEntity, error) { return org.GetVDCByName(name, refresh) }
+	getById := func(id string, refresh bool) (genericEntity, error) { return org.GetVDCById(id, refresh) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) { return org.GetVDCByNameOrId(id, refresh) }
 
-	var def = GetterTestDefinition{
-		parentType:       "Org",
-		parentName:       vcd.config.VCD.Org,
-		entityType:       "Vdc",
-		getterPrefix:     "VDC",
-		entityName:       vcd.config.VCD.Vdc,
-		getterByName:     getterByName,
-		getterById:       getterById,
-		getterByNameOrId: getterByNameOrId,
+	var def = getterTestDefinition{
+		parentType:    "Org",
+		parentName:    vcd.config.VCD.Org,
+		entityType:    "Vdc",
+		getterPrefix:  "VDC",
+		entityName:    vcd.config.VCD.Vdc,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
 	}
 	vcd.testFinderGetGenericEntity(def, check)
 }

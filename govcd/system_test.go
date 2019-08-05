@@ -23,18 +23,18 @@ func (vcd *TestVCD) Test_SystemGetOrg(check *C) {
 		return
 	}
 
-	getterByName := func(name string, refresh bool) (GenericEntity, error) { return vcd.client.GetOrgByName(name) }
-	getterById := func(id string, refresh bool) (GenericEntity, error) { return vcd.client.GetOrgById(id) }
-	getterByNameOrId := func(id string, refresh bool) (GenericEntity, error) { return vcd.client.GetOrgByNameOrId(id) }
+	getByName := func(name string, refresh bool) (genericEntity, error) { return vcd.client.GetOrgByName(name) }
+	getById := func(id string, refresh bool) (genericEntity, error) { return vcd.client.GetOrgById(id) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) { return vcd.client.GetOrgByNameOrId(id) }
 
-	var def = GetterTestDefinition{
-		parentType:       "VCDClient",
-		parentName:       "System",
-		entityType:       "Org",
-		entityName:       vcd.config.VCD.Org,
-		getterByName:     getterByName,
-		getterById:       getterById,
-		getterByNameOrId: getterByNameOrId,
+	var def = getterTestDefinition{
+		parentType:    "VCDClient",
+		parentName:    "System",
+		entityType:    "Org",
+		entityName:    vcd.config.VCD.Org,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
 	}
 	vcd.testFinderGetGenericEntity(def, check)
 }
@@ -47,18 +47,18 @@ func (vcd *TestVCD) Test_SystemGetAdminOrg(check *C) {
 		return
 	}
 
-	getterByName := func(name string, refresh bool) (GenericEntity, error) { return vcd.client.GetAdminOrgByName(name) }
-	getterById := func(id string, refresh bool) (GenericEntity, error) { return vcd.client.GetAdminOrgById(id) }
-	getterByNameOrId := func(id string, refresh bool) (GenericEntity, error) { return vcd.client.GetAdminOrgByNameOrId(id) }
+	getByName := func(name string, refresh bool) (genericEntity, error) { return vcd.client.GetAdminOrgByName(name) }
+	getById := func(id string, refresh bool) (genericEntity, error) { return vcd.client.GetAdminOrgById(id) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) { return vcd.client.GetAdminOrgByNameOrId(id) }
 
-	var def = GetterTestDefinition{
-		parentType:       "VCDClient",
-		parentName:       "System",
-		entityType:       "AdminOrg",
-		entityName:       vcd.config.VCD.Org,
-		getterByName:     getterByName,
-		getterById:       getterById,
-		getterByNameOrId: getterByNameOrId,
+	var def = getterTestDefinition{
+		parentType:    "VCDClient",
+		parentName:    "System",
+		entityType:    "AdminOrg",
+		entityName:    vcd.config.VCD.Org,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
 	}
 	vcd.testFinderGetGenericEntity(def, check)
 }

@@ -14,24 +14,24 @@ import (
 )
 
 // An interface used to test the result of Get* methods
-type GenericEntity interface {
+type genericEntity interface {
 	name() string // returns the entity name
 	id() string   // returns the entity ID
 }
 
 // Defines a generic getter to test all Get* methods
-type GetterTestDefinition struct {
-	parentName       string                                    // Name of the parent entity
-	parentType       string                                    // Type of the parent entity
-	entityType       string                                    // Type of the entity to retrieve (Must match the type name)
-	entityName       string                                    // Name of the entity to retrieve
-	getterPrefix     string                                    // Base name for getter functions
-	getterByName     func(string, bool) (GenericEntity, error) // A function that retrieves the entity by name
-	getterById       func(string, bool) (GenericEntity, error) // A function that retrieves the entity by ID
-	getterByNameOrId func(string, bool) (GenericEntity, error) // A function that retrieves the entity by name or ID
+type getterTestDefinition struct {
+	parentName    string                                    // Name of the parent entity
+	parentType    string                                    // Type of the parent entity
+	entityType    string                                    // Type of the entity to retrieve (Must match the type name)
+	entityName    string                                    // Name of the entity to retrieve
+	getterPrefix  string                                    // Base name for getter functions
+	getByName     func(string, bool) (genericEntity, error) // A function that retrieves the entity by name
+	getById       func(string, bool) (genericEntity, error) // A function that retrieves the entity by ID
+	getByNameOrId func(string, bool) (genericEntity, error) // A function that retrieves the entity by name or ID
 }
 
-// Satisfy interface GenericEntity
+// Satisfy interface genericEntity
 func (adminCat *AdminCatalog) name() string { return adminCat.AdminCatalog.Name }
 func (adminCat *AdminCatalog) id() string   { return adminCat.AdminCatalog.ID }
 
@@ -64,7 +64,7 @@ func (vdc *Vdc) id() string   { return vdc.Vdc.ID }
 // GetEntityById
 // getEntityByNameOrId (using name or Id)
 // Get invalid name or ID
-// To use this function, the entity must satisfy the interface GenericEntity
+// To use this function, the entity must satisfy the interface genericEntity
 // and within the caller it must define the getter functions
 //
 // Example usage:
@@ -78,23 +78,23 @@ func (vdc *Vdc) id() string   { return vdc.Vdc.ID }
 //	check.Assert(err, IsNil)
 //	check.Assert(org, NotNil)
 //
-//	byName := func(name string, refresh bool) (GenericEntity, error) { return org.GetVDCByName(name, refresh) }
-//	byId := func(id string, refresh bool) (GenericEntity, error) { return org.GetVDCById(id, refresh) }
-//	byNameOrId := func(id string, refresh bool) (GenericEntity, error) { return org.GetVDCByNameOrId(id, refresh) }
+//	getByName := func(name string, refresh bool) (genericEntity, error) { return org.GetVDCByName(name, refresh) }
+//	getById := func(id string, refresh bool) (genericEntity, error) { return org.GetVDCById(id, refresh) }
+//	getByNameOrId := func(id string, refresh bool) (genericEntity, error) { return org.GetVDCByNameOrId(id, refresh) }
 //
-//	var def = GetterTestDefinition{
+//	var def = getterTestDefinition{
 //		parentType:       "Org",
 //		parentName:       vcd.config.VCD.Org,
 //		entityType:       "Vdc",
 //		getterPrefix:     "VDC",
 //		entityName:       vcd.config.VCD.Vdc,
-//		getterByName:     byName,
-//		getterById:       byId,
-//		getterByNameOrId: byNameOrId,
+//		getByName:        getByName,
+//		getById:          getById,
+//		getByNameOrId:    getByNameOrId,
 //	}
 //	vcd.testFinderGetGenericEntity(def, check)
 // }
-func (vcd *TestVCD) testFinderGetGenericEntity(def GetterTestDefinition, check *C) {
+func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *C) {
 	entityName := def.entityName
 	if entityName == "" {
 		check.Skip(fmt.Sprintf("testFinderGetGenericEntity: %s name not given.", def.entityType))
@@ -116,8 +116,8 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def GetterTestDefinition, check *
 	if testVerbose {
 		fmt.Printf("#Testing %s.Get%sByName\n", def.parentType, def.getterPrefix)
 	}
-	ge, err := def.getterByName(entityName, false)
-	entity1 := ge.(GenericEntity)
+	ge, err := def.getByName(entityName, false)
+	entity1 := ge.(genericEntity)
 	if err != nil {
 		check.Skip(fmt.Sprintf("testFinderGetGenericEntity: %s %s not found.", def.entityType, def.entityName))
 		return
@@ -138,8 +138,8 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def GetterTestDefinition, check *
 	if testVerbose {
 		fmt.Printf("#Testing %s.Get%sById\n", def.parentType, def.getterPrefix)
 	}
-	ge, err = def.getterById(entityId, false)
-	entity2 := ge.(GenericEntity)
+	ge, err = def.getById(entityId, false)
+	entity2 := ge.(genericEntity)
 	check.Assert(err, IsNil)
 	check.Assert(entity2, NotNil)
 	check.Assert(entity2.name(), Equals, entityName)
@@ -150,8 +150,8 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def GetterTestDefinition, check *
 	if testVerbose {
 		fmt.Printf("#Testing %s.Get%sByNameOrId\n", def.parentType, def.getterPrefix)
 	}
-	ge, err = def.getterByNameOrId(entityId, false)
-	entity3 := ge.(GenericEntity)
+	ge, err = def.getByNameOrId(entityId, false)
+	entity3 := ge.(genericEntity)
 	check.Assert(err, IsNil)
 	check.Assert(entity3, NotNil)
 	check.Assert(entity3.name(), Equals, entityName)
@@ -162,8 +162,8 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def GetterTestDefinition, check *
 	if testVerbose {
 		fmt.Printf("#Testing %s.Get%sByNameOrId\n", def.parentType, def.getterPrefix)
 	}
-	ge, err = def.getterByNameOrId(entityName, false)
-	entity4 := ge.(GenericEntity)
+	ge, err = def.getByNameOrId(entityName, false)
+	entity4 := ge.(genericEntity)
 	check.Assert(err, IsNil)
 	check.Assert(entity4, NotNil)
 	check.Assert(entity4.name(), Equals, entityName)
@@ -174,8 +174,8 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def GetterTestDefinition, check *
 	if testVerbose {
 		fmt.Printf("#Testing %s.Get%sByName (invalid name)\n", def.parentType, def.getterPrefix)
 	}
-	ge, err = def.getterByName(INVALID_NAME, false)
-	entity5 := ge.(GenericEntity)
+	ge, err = def.getByName(INVALID_NAME, false)
+	entity5 := ge.(genericEntity)
 	check.Assert(err, NotNil)
 	check.Assert(IsNotFound(err), Equals, true)
 	check.Assert(entity5, IsNil)
@@ -184,8 +184,8 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def GetterTestDefinition, check *
 	if testVerbose {
 		fmt.Printf("#Testing %s.Get%sByNameOrId (invalid name)\n", def.parentType, def.getterPrefix)
 	}
-	ge, err = def.getterByNameOrId(INVALID_NAME, false)
-	entity6 := ge.(GenericEntity)
+	ge, err = def.getByNameOrId(INVALID_NAME, false)
+	entity6 := ge.(genericEntity)
 	check.Assert(err, NotNil)
 	check.Assert(IsNotFound(err), Equals, true)
 	check.Assert(entity6, IsNil)
@@ -194,8 +194,8 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def GetterTestDefinition, check *
 	if testVerbose {
 		fmt.Printf("#Testing %s.Get%sById (invalid ID)\n", def.parentType, def.getterPrefix)
 	}
-	ge, err = def.getterById(invalidEntityId, false)
-	entity7 := ge.(GenericEntity)
+	ge, err = def.getById(invalidEntityId, false)
+	entity7 := ge.(genericEntity)
 	check.Assert(err, NotNil)
 	check.Assert(IsNotFound(err), Equals, true)
 	check.Assert(entity7, IsNil)
@@ -204,8 +204,8 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def GetterTestDefinition, check *
 	if testVerbose {
 		fmt.Printf("#Testing %s.Get%sByNameOrId (invalid ID)\n", def.parentType, def.getterPrefix)
 	}
-	ge, err = def.getterByNameOrId(invalidEntityId, false)
-	entity8 := ge.(GenericEntity)
+	ge, err = def.getByNameOrId(invalidEntityId, false)
+	entity8 := ge.(genericEntity)
 	check.Assert(err, NotNil)
 	check.Assert(IsNotFound(err), Equals, true)
 	check.Assert(entity8, IsNil)
