@@ -36,11 +36,11 @@ func (adminCatalog *AdminCatalog) Delete(force, recursive bool) error {
 	return catalog.Delete(force, recursive)
 }
 
-//   Updates the Catalog definition from current Catalog struct contents.
-//   Any differences that may be legally applied will be updated.
-//   Returns an error if the call to vCD fails. Update automatically performs
-//   a refresh with the admin catalog it gets back from the rest api
-//   Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/PUT-Catalog.html
+// Updates the Catalog definition from current Catalog struct contents.
+// Any differences that may be legally applied will be updated.
+// Returns an error if the call to vCD fails. Update automatically performs
+// a refresh with the admin catalog it gets back from the rest api
+// Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/PUT-Catalog.html
 func (adminCatalog *AdminCatalog) Update() error {
 	reqCatalog := &types.Catalog{
 		Name:        adminCatalog.AdminCatalog.Catalog.Name,

@@ -556,27 +556,12 @@ func (vcdClient *VCDClient) GetExternalNetworkById(id string) (*ExternalNetwork,
 // GetExternalNetworkByNameOrId returns an ExternalNetwork reference if either the network name or ID matches an existing one.
 // If no valid external network is found, it returns an empty ExternalNetwork reference and an error
 func (vcdClient *VCDClient) GetExternalNetworkByNameOrId(identifier string) (*ExternalNetwork, error) {
-	/*
-		var byNameErr, byIdErr error
-		var externalNetwork *ExternalNetwork
-
-		externalNetwork, byIdErr = vcdClient.GetExternalNetworkById(identifier)
-		if byIdErr == nil {
-			// Found by ID
-			return externalNetwork, nil
-		}
-		if IsNotFound(byIdErr) {
-			// Not found by ID, try by name
-			externalNetwork, byNameErr = vcdClient.GetExternalNetworkByName(identifier)
-			return externalNetwork, byNameErr
-		} else {
-			// On any other error, we return it
-			return nil, byIdErr
-		}
-	*/
-	byName := func(name string, refresh bool) (interface{}, error) { return vcdClient.GetExternalNetworkByName(name) }
-	byId := func(id string, refresh bool) (interface{}, error) { return vcdClient.GetExternalNetworkById(id) }
-	entity, err := getEntityByNameOrId(byName, byId, identifier, false)
+	getByName := func(name string, refresh bool) (interface{}, error) { return vcdClient.GetExternalNetworkByName(name) }
+	getById := func(id string, refresh bool) (interface{}, error) { return vcdClient.GetExternalNetworkById(id) }
+	entity, err := getEntityByNameOrId(getByName, getById, identifier, false)
+	if entity == nil {
+		return nil, err
+	}
 	return entity.(*ExternalNetwork), err
 }
 
@@ -772,28 +757,12 @@ func (vcdClient *VCDClient) GetOrgById(orgId string) (*Org, error) {
 // On success, returns a pointer to the Org structure and a nil error
 // On failure, returns a nil pointer and an error
 func (vcdClient *VCDClient) GetOrgByNameOrId(identifier string) (*Org, error) {
-	/*
-		var byNameErr, byIdErr error
-		var org *Org
-		org, byIdErr = vcdClient.GetOrgById(identifier)
-		if byIdErr == nil {
-			// Found by ID
-			return org, nil
-		}
-		if IsNotFound(byIdErr) {
-			// Not found by ID, try by name
-			org, byNameErr = vcdClient.GetOrgByName(identifier)
-			return org, byNameErr
-		} else {
-			// On any other error, we return it
-			return nil, byIdErr
-		}
-
-	*/
-
-	byName := func(name string, refresh bool) (interface{}, error) { return vcdClient.GetOrgByName(name) }
-	byId := func(id string, refresh bool) (interface{}, error) { return vcdClient.GetOrgById(id) }
-	entity, err := getEntityByNameOrId(byName, byId, identifier, false)
+	getByName := func(name string, refresh bool) (interface{}, error) { return vcdClient.GetOrgByName(name) }
+	getById := func(id string, refresh bool) (interface{}, error) { return vcdClient.GetOrgById(id) }
+	entity, err := getEntityByNameOrId(getByName, getById, identifier, false)
+	if entity == nil {
+		return nil, err
+	}
 	return entity.(*Org), err
 }
 
@@ -845,27 +814,11 @@ func (vcdClient *VCDClient) GetAdminOrgById(orgId string) (*AdminOrg, error) {
 // On success, returns a pointer to the Admin Org structure and a nil error
 // On failure, returns a nil pointer and an error
 func (vcdClient *VCDClient) GetAdminOrgByNameOrId(identifier string) (*AdminOrg, error) {
-	/*
-		var byNameErr, byIdErr error
-		var adminOrg *AdminOrg
-
-		adminOrg, byIdErr = vcdClient.GetAdminOrgById(identifier)
-		if byIdErr == nil {
-			// Found by ID
-			return adminOrg, nil
-		}
-		if IsNotFound(byIdErr) {
-			// Not found by ID, try by name
-			adminOrg, byNameErr = vcdClient.GetAdminOrgByName(identifier)
-			return adminOrg, byNameErr
-		} else {
-			// On any other error, we return it
-			return nil, byIdErr
-		}
-	*/
-
-	byName := func(name string, refresh bool) (interface{}, error) { return vcdClient.GetAdminOrgByName(name) }
-	byId := func(id string, refresh bool) (interface{}, error) { return vcdClient.GetAdminOrgById(id) }
-	entity, err := getEntityByNameOrId(byName, byId, identifier, false)
+	getByName := func(name string, refresh bool) (interface{}, error) { return vcdClient.GetAdminOrgByName(name) }
+	getById := func(id string, refresh bool) (interface{}, error) { return vcdClient.GetAdminOrgById(id) }
+	entity, err := getEntityByNameOrId(getByName, getById, identifier, false)
+	if entity == nil {
+		return nil, err
+	}
 	return entity.(*AdminOrg), err
 }

@@ -736,8 +736,11 @@ func (cat *Catalog) GetCatalogItemById(catalogItemId string, refresh bool) (*Cat
 // On success, returns a pointer to the CatalogItem structure and a nil error
 // On failure, returns a nil pointer and an error
 func (cat *Catalog) GetCatalogItemByNameOrId(identifier string, refresh bool) (*CatalogItem, error) {
-	byName := func(name string, refresh bool) (interface{}, error) { return cat.GetCatalogItemByName(name, refresh) }
-	byId := func(id string, refresh bool) (interface{}, error) { return cat.GetCatalogItemById(id, refresh) }
-	entity, err := getEntityByNameOrId(byName, byId, identifier, refresh)
+	getByName := func(name string, refresh bool) (interface{}, error) { return cat.GetCatalogItemByName(name, refresh) }
+	getById := func(id string, refresh bool) (interface{}, error) { return cat.GetCatalogItemById(id, refresh) }
+	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
+	if entity == nil {
+		return nil, err
+	}
 	return entity.(*CatalogItem), err
 }

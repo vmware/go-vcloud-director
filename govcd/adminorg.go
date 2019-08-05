@@ -39,12 +39,9 @@ func NewAdminOrg(cli *Client) *AdminOrg {
 func (adminOrg *AdminOrg) GetAdminVdcByName(vdcname string) (AdminVdc, error) {
 	for _, vdcs := range adminOrg.AdminOrg.Vdcs.Vdcs {
 		if vdcs.Name == vdcname {
-
 			adminVdc := NewAdminVdc(adminOrg.client)
-
 			_, err := adminOrg.client.ExecuteRequest(vdcs.HREF, http.MethodGet,
 				"", "error getting vdc: %s", nil, adminVdc.AdminVdc)
-
 			return *adminVdc, err
 		}
 	}
@@ -393,12 +390,9 @@ func (adminOrg *AdminOrg) FindAdminCatalog(catalogName string) (AdminCatalog, er
 	for _, catalog := range adminOrg.AdminOrg.Catalogs.Catalog {
 		// Get Catalog HREF
 		if catalog.Name == catalogName {
-
 			adminCatalog := NewAdminCatalog(adminOrg.client)
-
 			_, err := adminOrg.client.ExecuteRequest(catalog.HREF, http.MethodGet,
 				"", "error retrieving catalog: %s", nil, adminCatalog.AdminCatalog)
-
 			// The request was successful
 			return *adminCatalog, err
 		}
@@ -530,9 +524,12 @@ func (adminOrg *AdminOrg) GetCatalogById(catalogId string, refresh bool) (*Catal
 // On success, returns a pointer to the Catalog structure and a nil error
 // On failure, returns a nil pointer and an error
 func (adminOrg *AdminOrg) GetCatalogByNameOrId(identifier string, refresh bool) (*Catalog, error) {
-	byName := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetCatalogByName(name, refresh) }
-	byId := func(id string, refresh bool) (interface{}, error) { return adminOrg.GetCatalogById(id, refresh) }
-	entity, err := getEntityByNameOrId(byName, byId, identifier, refresh)
+	getByName := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetCatalogByName(name, refresh) }
+	getById := func(id string, refresh bool) (interface{}, error) { return adminOrg.GetCatalogById(id, refresh) }
+	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
+	if entity == nil {
+		return nil, err
+	}
 	return entity.(*Catalog), err
 }
 
@@ -595,13 +592,16 @@ func (adminOrg *AdminOrg) GetAdminCatalogById(catalogId string, refresh bool) (*
 // On success, returns a pointer to the AdminCatalog structure and a nil error
 // On failure, returns a nil pointer and an error
 func (adminOrg *AdminOrg) GetAdminCatalogByNameOrId(identifier string, refresh bool) (*AdminCatalog, error) {
-	byName := func(name string, refresh bool) (interface{}, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) {
 		return adminOrg.GetAdminCatalogByName(name, refresh)
 	}
-	byId := func(id string, refresh bool) (interface{}, error) {
+	getById := func(id string, refresh bool) (interface{}, error) {
 		return adminOrg.GetAdminCatalogById(id, refresh)
 	}
-	entity, err := getEntityByNameOrId(byName, byId, identifier, refresh)
+	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
+	if entity == nil {
+		return nil, err
+	}
 	return entity.(*AdminCatalog), err
 }
 
@@ -669,9 +669,12 @@ func (adminOrg *AdminOrg) GetVDCById(vdcId string, refresh bool) (*Vdc, error) {
 // On success, returns a pointer to the VDC structure and a nil error
 // On failure, returns a nil pointer and an error
 func (adminOrg *AdminOrg) GetVDCByNameOrId(identifier string, refresh bool) (*Vdc, error) {
-	byName := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetVDCByName(name, refresh) }
-	byId := func(id string, refresh bool) (interface{}, error) { return adminOrg.GetVDCById(id, refresh) }
-	entity, err := getEntityByNameOrId(byName, byId, identifier, refresh)
+	getByName := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetVDCByName(name, refresh) }
+	getById := func(id string, refresh bool) (interface{}, error) { return adminOrg.GetVDCById(id, refresh) }
+	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
+	if entity == nil {
+		return nil, err
+	}
 	return entity.(*Vdc), err
 }
 
@@ -729,10 +732,13 @@ func (adminOrg *AdminOrg) GetAdminVDCById(vdcId string, refresh bool) (*AdminVdc
 // On success, returns a pointer to the AdminVdc structure and a nil error
 // On failure, returns a nil pointer and an error
 func (adminOrg *AdminOrg) GetAdminVDCByNameOrId(identifier string, refresh bool) (*AdminVdc, error) {
-	byName := func(name string, refresh bool) (interface{}, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) {
 		return adminOrg.GetAdminVDCByName(name, refresh)
 	}
-	byId := func(id string, refresh bool) (interface{}, error) { return adminOrg.GetAdminVDCById(id, refresh) }
-	entity, err := getEntityByNameOrId(byName, byId, identifier, refresh)
+	getById := func(id string, refresh bool) (interface{}, error) { return adminOrg.GetAdminVDCById(id, refresh) }
+	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
+	if entity == nil {
+		return nil, err
+	}
 	return entity.(*AdminVdc), err
 }

@@ -161,9 +161,12 @@ func (adminOrg *AdminOrg) GetUserById(id string, refresh bool) (*OrgUser, error)
 // If it is false, it will search within the data already in memory (useful when
 // looping through the users and we know that no changes have occurred in the meantime)
 func (adminOrg *AdminOrg) GetUserByNameOrId(identifier string, refresh bool) (*OrgUser, error) {
-	byName := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetUserByName(name, refresh) }
-	byId := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetUserById(name, refresh) }
-	entity, err := getEntityByNameOrId(byName, byId, identifier, refresh)
+	getByName := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetUserByName(name, refresh) }
+	getById := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetUserById(name, refresh) }
+	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
+	if entity == nil {
+		return nil, err
+	}
 	return entity.(*OrgUser), err
 }
 

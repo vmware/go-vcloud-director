@@ -7,33 +7,33 @@ package govcd
 type genericGetter func(string, bool) (interface{}, error)
 
 // getEntityByNameOrId finds a generic entity by Name Or ID
-// On success, returns a pointer to the AdminVdc structure and a nil error
+// On success, returns an empty interface representing a pointer to the structure and a nil error
 // On failure, returns a nil pointer and an error
 // Example usage:
 //
 // func (org *Org) GetCatalogByNameOrId(identifier string, refresh bool) (*Catalog, error) {
-// 	byName := func(name string, refresh bool) (interface{}, error) {
+// 	getByName := func(name string, refresh bool) (interface{}, error) {
 // 		return org.GetCatalogByName(name, refresh)
 // 	}
-// 	byId := func(id string, refresh bool) (interface{}, error) {
+// 	getById := func(id string, refresh bool) (interface{}, error) {
 // 	  return org.GetCatalogById(id, refresh)
 // 	}
-// 	entity, err := getEntityByNameOrId(byName, byId, identifier, refresh)
+// 	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
 // 	return entity.(*Catalog), err
 // }
-func getEntityByNameOrId(byName, byId genericGetter, identifier string, refresh bool) (interface{}, error) {
+func getEntityByNameOrId(getByName, getById genericGetter, identifier string, refresh bool) (interface{}, error) {
 
 	var byNameErr, byIdErr error
 	var entity interface{}
 
-	entity, byIdErr = byId(identifier, refresh)
+	entity, byIdErr = getById(identifier, refresh)
 	if byIdErr == nil {
 		// Found by ID
 		return entity, nil
 	}
 	if IsNotFound(byIdErr) {
 		// Not found by ID, try by name
-		entity, byNameErr = byName(identifier, false)
+		entity, byNameErr = getByName(identifier, false)
 		return entity, byNameErr
 	} else {
 		// On any other error, we return it
