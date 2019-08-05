@@ -149,7 +149,7 @@ type TestConfig struct {
 type TestVCD struct {
 	client         *VCDClient
 	org            *Org
-	vdc            Vdc
+	vdc            *Vdc
 	vapp           VApp
 	config         TestConfig
 	skipVappTests  bool
@@ -306,8 +306,8 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		os.Exit(1)
 	}
 	// set vdc
-	vcd.vdc, err = vcd.org.GetVdcByName(config.VCD.Vdc)
-	if err != nil || vcd.vdc == (Vdc{}) {
+	vcd.vdc, err = vcd.org.GetVDCByName(config.VCD.Vdc, false)
+	if err != nil || vcd.vdc == nil {
 		panic(err)
 	}
 
@@ -363,20 +363,20 @@ func splitParent(parent string, separator string) (first, second, third string) 
 	return
 }
 
-func getOrgVdcEdgeByNames(vcd *TestVCD, orgName, vdcName, edgeName string) (*Org, Vdc, EdgeGateway, error) {
+func getOrgVdcEdgeByNames(vcd *TestVCD, orgName, vdcName, edgeName string) (*Org, *Vdc, EdgeGateway, error) {
 	if orgName == "" || vdcName == "" || edgeName == "" {
-		return nil, Vdc{}, EdgeGateway{}, fmt.Errorf("orgName, vdcName, edgeName cant be empty")
+		return nil, nil, EdgeGateway{}, fmt.Errorf("orgName, vdcName, edgeName cant be empty")
 	}
 
 	org, _ := vcd.client.GetOrgByName(orgName)
 	if org == nil {
 		vcd.infoCleanup("could not find org '%s'", orgName)
-		return nil, Vdc{}, EdgeGateway{}, fmt.Errorf("can't find org")
+		return nil, nil, EdgeGateway{}, fmt.Errorf("can't find org")
 	}
-	vdc, err := org.GetVdcByName(vdcName)
+	vdc, err := org.GetVDCByName(vdcName, false)
 	if err != nil {
 		vcd.infoCleanup("could not find vdc '%s'", vdcName)
-		return nil, Vdc{}, EdgeGateway{}, fmt.Errorf("can't find org")
+		return nil, nil, EdgeGateway{}, fmt.Errorf("can't find org")
 	}
 
 	edge, err := vdc.FindEdgeGateway(edgeName)
@@ -390,21 +390,21 @@ func getOrgVdcEdgeByNames(vcd *TestVCD, orgName, vdcName, edgeName string) (*Org
 var splitParentNotFound string = "removeLeftoverEntries: [ERROR] missing parent info (%s). The parent fields must be defined with a separator '|'\n"
 var notFoundMsg string = "removeLeftoverEntries: [INFO] No action for %s '%s'\n"
 
-func (vcd *TestVCD) getAdminOrgAndVdcFromCleanupEntity(entity CleanupEntity) (org *AdminOrg, vdc Vdc, err error) {
+func (vcd *TestVCD) getAdminOrgAndVdcFromCleanupEntity(entity CleanupEntity) (org *AdminOrg, vdc *Vdc, err error) {
 	orgName, vdcName, _ := splitParent(entity.Parent, "|")
 	if orgName == "" || vdcName == "" {
 		vcd.infoCleanup(splitParentNotFound, entity.Parent)
-		return nil, Vdc{}, fmt.Errorf("can't find parents names")
+		return nil, nil, fmt.Errorf("can't find parents names")
 	}
 	org, err = vcd.client.GetAdminOrgByName(orgName)
 	if err != nil {
 		vcd.infoCleanup(notFoundMsg, "org", orgName)
-		return nil, Vdc{}, fmt.Errorf("can't find org")
+		return nil, nil, fmt.Errorf("can't find org")
 	}
-	vdc, err = org.GetVdcByName(vdcName)
-	if vdc == (Vdc{}) || err != nil {
+	vdc, err = org.GetVDCByName(vdcName, false)
+	if vdc == nil || err != nil {
 		vcd.infoCleanup(notFoundMsg, "vdc", vdcName)
-		return nil, Vdc{}, fmt.Errorf("can't find vdc")
+		return nil, nil, fmt.Errorf("can't find vdc")
 	}
 	return org, vdc, nil
 }
@@ -446,8 +446,8 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [INFO] organization '%s' not found\n", entity.Parent)
 			return
 		}
-		catalog, err := org.FindAdminCatalog(entity.Name)
-		if catalog == (AdminCatalog{}) || err != nil {
+		catalog, err := org.GetAdminCatalogByName(entity.Name, false)
+		if catalog == nil || err != nil {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
@@ -482,16 +482,16 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [INFO] organization '%s' not found\n", entity.Parent)
 			return
 		}
-		catalog, err := org.FindCatalog(strings.Split(entity.Parent, "|")[1])
-		if catalog == (Catalog{}) || err != nil {
+		catalog, err := org.GetCatalogByName(strings.Split(entity.Parent, "|")[1], false)
+		if catalog == nil || err != nil {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
 		for _, catalogItems := range catalog.Catalog.CatalogItems {
 			for _, catalogItem := range catalogItems.CatalogItem {
 				if catalogItem.Name == entity.Name {
-					catalogItemApi, err := catalog.FindCatalogItem(catalogItem.Name)
-					if catalogItemApi == (CatalogItem{}) || err != nil {
+					catalogItemApi, err := catalog.GetCatalogItemByName(catalogItem.Name, false)
+					if catalogItemApi == nil || err != nil {
 						vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 						return
 					}
@@ -526,7 +526,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		if err != nil {
 			vcd.infoCleanup("%s", err)
 		}
-		err = RemoveOrgVdcNetworkIfExists(vdc, entity.Name)
+		err = RemoveOrgVdcNetworkIfExists(*vdc, entity.Name)
 		if err == nil {
 			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		} else {
@@ -534,7 +534,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		return
 	case "externalNetwork":
-		externalNetwork, err := GetExternalNetwork(vcd.client, entity.Name)
+		externalNetwork, err := vcd.client.GetExternalNetworkByName(entity.Name)
 		if err != nil {
 			vcd.infoCleanup(notFoundMsg, "externalNetwork", entity.Name)
 			return
@@ -555,7 +555,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		if err != nil {
 			vcd.infoCleanup("%s", err)
 		}
-		err = RemoveMediaImageIfExists(vdc, entity.Name)
+		err = RemoveMediaImageIfExists(*vdc, entity.Name)
 		if err == nil {
 			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		} else {
@@ -594,8 +594,8 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup(notFoundMsg, "org", entity.Parent)
 			return
 		}
-		vdc, err := org.GetVdcByName(entity.Name)
-		if vdc == (Vdc{}) || err != nil {
+		vdc, err := org.GetVDCByName(entity.Name, false)
+		if vdc == nil || err != nil {
 			vcd.infoCleanup(notFoundMsg, "vdc", entity.Name)
 			return
 		}
@@ -892,27 +892,27 @@ func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 	}
 	networks = append(networks, net.OrgVDCNetwork)
 	// Populate Catalog
-	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
-	if err != nil || cat == (Catalog{}) {
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	if err != nil || cat == nil {
 		return VApp{}, fmt.Errorf("error finding catalog : %v", err)
 	}
 	// Populate Catalog Item
-	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
+	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
 	if err != nil {
 		return VApp{}, fmt.Errorf("error finding catalog item : %v", err)
 	}
 	// Get VAppTemplate
-	vapptemplate, err := catitem.GetVAppTemplate()
+	vAppTemplate, err := catitem.GetVAppTemplate()
 	if err != nil {
 		return VApp{}, fmt.Errorf("error finding vapptemplate : %v", err)
 	}
 	// Get StorageProfileReference
-	storageprofileref, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
+	storageProfileRef, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
 	if err != nil {
 		return VApp{}, fmt.Errorf("error finding storage profile: %v", err)
 	}
 	// Compose VApp
-	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, name, "description", true)
+	task, err := vcd.vdc.ComposeVApp(networks, vAppTemplate, storageProfileRef, name, "description", true)
 	if err != nil {
 		return VApp{}, fmt.Errorf("error composing vapp: %v", err)
 	}

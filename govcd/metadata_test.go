@@ -186,16 +186,17 @@ func (vcd *TestVCD) Test_DeleteMetadataOnVm(check *C) {
 func (vcd *TestVCD) Test_DeleteMetadataOnVAppTemplate(check *C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
-	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	if err != nil {
 		check.Skip("Test_DeleteMetadataOnCatalogItem: Catalog not found. Test can't proceed")
+		return
 	}
 
 	if vcd.config.VCD.Catalog.CatalogItem == "" {
 		check.Skip("Test_DeleteMetadataOnCatalogItem: Catalog Item not given. Test can't proceed")
 	}
 
-	catItem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
+	catItem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
 	check.Assert(catItem, NotNil)
 	check.Assert(catItem.CatalogItem.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
@@ -225,16 +226,17 @@ func (vcd *TestVCD) Test_DeleteMetadataOnVAppTemplate(check *C) {
 
 func (vcd *TestVCD) Test_AddMetadataOnVAppTemplate(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
-	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	if err != nil {
 		check.Skip("Test_DeleteMetadataOnCatalogItem: Catalog not found. Test can't proceed")
+		return
 	}
 
 	if vcd.config.VCD.Catalog.CatalogItem == "" {
 		check.Skip("Test_DeleteMetadataOnCatalogItem: Catalog Item not given. Test can't proceed")
 	}
 
-	catItem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
+	catItem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
 	check.Assert(catItem, NotNil)
 	check.Assert(catItem.CatalogItem.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
@@ -282,7 +284,7 @@ func (vcd *TestVCD) Test_DeleteMetadataOnMediaItem(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	catalog, err := org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 
@@ -330,7 +332,7 @@ func (vcd *TestVCD) Test_AddMetadataOnMediaItem(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	catalog, err := org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 	check.Assert(catalog.Catalog.Name, Equals, vcd.config.VCD.Catalog.Name)

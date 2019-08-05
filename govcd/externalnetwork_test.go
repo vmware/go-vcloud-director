@@ -22,8 +22,9 @@ func (vcd *TestVCD) Test_ExternalNetworkGetByName(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	externalNetwork, err := GetExternalNetwork(vcd.client, vcd.config.VCD.ExternalNetwork)
+	externalNetwork, err := vcd.client.GetExternalNetworkByName(vcd.config.VCD.ExternalNetwork)
 	check.Assert(err, IsNil)
+	check.Assert(externalNetwork, NotNil)
 
 	check.Assert(externalNetwork.ExternalNetwork.Name, Equals, vcd.config.VCD.ExternalNetwork)
 }
@@ -131,14 +132,15 @@ func (vcd *TestVCD) Test_ExternalNetworkDelete(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	createdExternalNetwork, err := GetExternalNetwork(vcd.client, externalNetwork.Name)
+	createdExternalNetwork, err := vcd.client.GetExternalNetworkByName(externalNetwork.Name)
 	check.Assert(err, IsNil)
+	check.Assert(createdExternalNetwork, NotNil)
 
 	err = createdExternalNetwork.DeleteWait()
 	check.Assert(err, IsNil)
 
 	// check through existing external networks
-	_, err = GetExternalNetwork(vcd.client, externalNetwork.Name)
+	_, err = vcd.client.GetExternalNetworkByName(externalNetwork.Name)
 	check.Assert(err, NotNil)
 }
 
@@ -152,8 +154,9 @@ func (vcd *TestVCD) Test_GetExternalNetwork(check *C) {
 	if networkName == "" {
 		check.Skip("No external network provided")
 	}
-	externalNetwork, err := GetExternalNetwork(vcd.client, networkName)
+	externalNetwork, err := vcd.client.GetExternalNetworkByName(networkName)
 	check.Assert(err, IsNil)
+	check.Assert(externalNetwork, NotNil)
 	LogExternalNetwork(*externalNetwork.ExternalNetwork)
 	check.Assert(externalNetwork.ExternalNetwork.HREF, Not(Equals), "")
 	check.Assert(externalNetwork.ExternalNetwork.Name, Equals, networkName)
@@ -176,8 +179,9 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	newExternalNetwork, err := GetExternalNetwork(vcd.client, TestCreateExternalNetwork)
+	newExternalNetwork, err := vcd.client.GetExternalNetworkByName(TestCreateExternalNetwork)
 	check.Assert(err, IsNil)
+	check.Assert(newExternalNetwork, NotNil)
 	check.Assert(newExternalNetwork.ExternalNetwork.Name, Equals, TestCreateExternalNetwork)
 
 	ipScope := newExternalNetwork.ExternalNetwork.Configuration.IPScopes.IPScope
@@ -200,4 +204,27 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 
 func init() {
 	testingTags["extnetwork"] = "externalnetwork_test.go"
+}
+
+// Tests ExternalNetwork retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_SystemGetExternalNetwork(check *C) {
+
+	getterByName := func(name string, refresh bool) (GenericEntity, error) {
+		return vcd.client.GetExternalNetworkByName(name)
+	}
+	getterById := func(id string, refresh bool) (GenericEntity, error) { return vcd.client.GetExternalNetworkById(id) }
+	getterByNameOrId := func(id string, refresh bool) (GenericEntity, error) {
+		return vcd.client.GetExternalNetworkByNameOrId(id)
+	}
+
+	var def = GetterTestDefinition{
+		parentType:       "VDCClient",
+		parentName:       "System",
+		entityType:       "ExternalNetwork",
+		entityName:       vcd.config.VCD.ExternalNetwork,
+		getterByName:     getterByName,
+		getterById:       getterById,
+		getterByNameOrId: getterByNameOrId,
+	}
+	vcd.testFinderGetGenericEntity(def, check)
 }

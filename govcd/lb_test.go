@@ -33,21 +33,23 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	validateTestLbPrerequisites(vcd, check)
 
 	// Get org and vdc
-	org, err := GetAdminOrgByName(vcd.client, vcd.config.VCD.Org)
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
-	vdc, err := org.GetVdcByName(vcd.config.VCD.Vdc)
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
 
 	// Find catalog and catalog item
-	catalog, err := org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
-	catalogItem, err := catalog.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
+	check.Assert(catalog, NotNil)
+	catalogItem, err := catalog.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
 
 	// Skip the test if catalog item is not Photon OS
-	if !isItemPhotonOs(catalogItem) {
+	if !isItemPhotonOs(*catalogItem) {
 		check.Skip(fmt.Sprintf("Skipping test because catalog item %s is not Photon OS",
 			vcd.config.VCD.Catalog.CatalogItem))
 	}
@@ -91,8 +93,8 @@ func (vcd *TestVCD) Test_LB(check *C) {
 			NetworkConnectionIndex:  0,
 		})
 
-	vm1, err := spawnVM("FirstNode", vdc, vapp, desiredNetConfig, vappTemplate, check)
-	vm2, err := spawnVM("SecondNode", vdc, vapp, desiredNetConfig, vappTemplate, check)
+	vm1, err := spawnVM("FirstNode", *vdc, vapp, desiredNetConfig, vappTemplate, check)
+	vm2, err := spawnVM("SecondNode", *vdc, vapp, desiredNetConfig, vappTemplate, check)
 
 	// Get IPs alocated to the VMs
 	ip1 := vm1.VM.NetworkConnectionSection.NetworkConnection[0].IPAddress
@@ -104,7 +106,7 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	fmt.Printf("# Setting up load balancer for VMs: '%s' (%s), '%s' (%s)\n", vm1.VM.Name, ip1, vm2.VM.Name, ip2)
 
 	fmt.Printf("# Creating firewall rule for load balancer virtual server access. ")
-	ruleDescription := addFirewallRule(vdc, vcd, check)
+	ruleDescription := addFirewallRule(*vdc, vcd, check)
 	fmt.Printf("Done\n")
 
 	// Build load balancer
@@ -126,7 +128,7 @@ func (vcd *TestVCD) Test_LB(check *C) {
 
 	// Remove firewall rule
 	fmt.Printf("# Deleting firewall rule used for load balancer virtual server access. ")
-	deleteFirewallRule(ruleDescription, vdc, vcd, check)
+	deleteFirewallRule(ruleDescription, *vdc, vcd, check)
 	fmt.Printf("Done\n")
 
 	// Restore global load balancer configuration
