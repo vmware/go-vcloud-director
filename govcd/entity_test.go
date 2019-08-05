@@ -66,6 +66,34 @@ func (vdc *Vdc) id() string   { return vdc.Vdc.ID }
 // Get invalid name or ID
 // To use this function, the entity must satisfy the interface GenericEntity
 // and within the caller it must define the getter functions
+//
+// Example usage:
+//
+// func (vcd *TestVCD) Test_OrgGetVdc(check *C) {
+//	if vcd.config.VCD.Org == "" {
+//		check.Skip("Test_OrgGetVdc: Org name not given.")
+//		return
+//	}
+//	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+//	check.Assert(err, IsNil)
+//	check.Assert(org, NotNil)
+//
+//	byName := func(name string, refresh bool) (GenericEntity, error) { return org.GetVDCByName(name, refresh) }
+//	byId := func(id string, refresh bool) (GenericEntity, error) { return org.GetVDCById(id, refresh) }
+//	byNameOrId := func(id string, refresh bool) (GenericEntity, error) { return org.GetVDCByNameOrId(id, refresh) }
+//
+//	var def = GetterTestDefinition{
+//		parentType:       "Org",
+//		parentName:       vcd.config.VCD.Org,
+//		entityType:       "Vdc",
+//		getterPrefix:     "VDC",
+//		entityName:       vcd.config.VCD.Vdc,
+//		getterByName:     byName,
+//		getterById:       byId,
+//		getterByNameOrId: byNameOrId,
+//	}
+//	vcd.testFinderGetGenericEntity(def, check)
+// }
 func (vcd *TestVCD) testFinderGetGenericEntity(def GetterTestDefinition, check *C) {
 	entityName := def.entityName
 	if entityName == "" {
