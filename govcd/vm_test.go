@@ -84,8 +84,8 @@ func (vcd *TestVCD) ensureVappIsSuitableForVMTest(vapp VApp) error {
 		if err != nil {
 			return err
 		}
-		err = task.WaitTaskCompletion()
 		if err != nil {
+			err = task.WaitTaskCompletion()
 			return err
 		}
 	}

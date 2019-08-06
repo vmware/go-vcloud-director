@@ -140,6 +140,16 @@ func (vm *VM) PowerOn() (Task, error) {
 
 }
 
+// ForceCustomization forces VM configuration on next power on
+func (vm *VM) ForceCustomization() error {
+	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint.Path += "/action/customizeAtNextPowerOn"
+
+	return vm.client.ExecuteRequestWithoutResponse(apiEndpoint.String(), http.MethodPost, "",
+		"error powering on VM with forced customization: %s", nil)
+}
+
+
 func (vm *VM) PowerOff() (Task, error) {
 
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
