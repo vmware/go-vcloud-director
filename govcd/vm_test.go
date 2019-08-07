@@ -841,3 +841,77 @@ func (vcd *TestVCD) Test_GetNetworkConnectionSection(check *C) {
 	check.Assert(networkAfter, DeepEquals, networkBefore)
 
 }
+
+func (vcd *TestVCD) Test_CustomizeAtNextPowerOn(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp wasn't properly created")
+	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	check.Assert(err, IsNil)
+
+	// It may be that prebuilt VM was not booted before in the test vApp and it would still have
+	// a guest customization status 'GC_PENDING'. This is because initially VM has this flag set
+	// but while this flag is here the test cannot actually check if vm.CustomizeAtNextPowerOn()
+	// gives any effect therefore we must "wait through" initial guest customization if it is in
+	// 'GC_PENDING' state.
+	custStatus, err := vm.GetGuestCustomizationStatus()
+	if custStatus.GuestCustStatus == "GC_PENDING" {
+		vmStatus, err := vm.GetStatus()
+		check.Assert(err, IsNil)
+		// If VM is POWERED OFF - let's power it on before waiting for its status to change
+		if vmStatus == "POWERED_OFF" {
+			task, err := vm.PowerOn()
+			check.Assert(err, IsNil)
+			err = task.WaitTaskCompletion()
+			check.Assert(err, IsNil)
+			check.Assert(task.Task.Status, Equals, "success")
+		}
+
+		err = vm.BlockWhileGuestCustomizationStatus("GC_PENDING", 300)
+	}
+
+	// VM Now has exited initial "GC_PENDING" status. Let's reboot it once again.
+
+	// Enable customization for next power on again
+	beforeVmGuestCustomizationStatus, err := vm.GetGuestCustomizationStatus()
+	check.Assert(err, IsNil)
+	fmt.Println("first reboot round : ", beforeVmGuestCustomizationStatus.GuestCustStatus)
+
+	// Reapply network connection settings as otherwise VM will never exit GC_PENDING customization status
+	net, err := vm.GetNetworkConnectionSection()
+	check.Assert(err, IsNil)
+	err = vm.UpdateNetworkConnectionSection(net)
+	check.Assert(err, IsNil)
+
+	time.Sleep(5* time.Second)
+
+	beforeVmGuestCustomizationStatus, err = vm.GetGuestCustomizationStatus()
+	check.Assert(err, IsNil)
+	fmt.Println("after network update : ", beforeVmGuestCustomizationStatus.GuestCustStatus)
+
+
+	err = vm.CustomizeAtNextPowerOn()
+	check.Assert(err, IsNil)
+
+	task, err := vm.PowerOn()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	afterVmGuestCustomizationStatus, err := vm.GetGuestCustomizationStatus()
+	check.Assert(err, IsNil)
+	fmt.Println("after poweron after customization : ", afterVmGuestCustomizationStatus.GuestCustStatus)
+
+
+	err = vm.BlockWhileGuestCustomizationStatus("GC_PENDING", 300)
+	check.Assert(err, IsNil)
+}
