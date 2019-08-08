@@ -693,7 +693,7 @@ func GetNetworkPoolByHREF(client *VCDClient, href string) (*types.VMWNetworkPool
 	networkPool := &types.VMWNetworkPool{}
 
 	_, err := client.Client.ExecuteRequest(href, http.MethodGet,
-		"", "error fetching network ppol: %s", nil, networkPool)
+		"", "error fetching network pool: %s", nil, networkPool)
 
 	// Return the disk
 	return networkPool, err
