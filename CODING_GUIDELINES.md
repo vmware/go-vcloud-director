@@ -134,7 +134,7 @@ Each entity should have the following methods:
 // ALWAYS
 (parent *Parent) GetEntityByName(name string) (*Entity, error)
 (parent *Parent) GetEntityById(id string) (*Entity, error)
-(parent *Parent) getEntityByNameOrId(identifier string) (*Entity, error)
+(parent *Parent) GetEntityByNameOrId(identifier string) (*Entity, error)
 ```
 
 For example, the parent for `Vdc` is `Org`, the parent for `EdgeGateway` is `Vdc`.
@@ -145,6 +145,8 @@ a nil pointer and an error in every other case.
 When the method can establish that the entity was not found because it did not appear in the
 parent's list of entities, the method will return `ErrorEntityNotFound`.
 In no cases we return a nil error when the method fails to find the entity.
+The "ALWAYS" methods can optionally add a Boolean `refresh` argument, signifying that the parent should be refreshed
+prior to attempting a search.
 
 Note: We are in the process of replacing methods that don't adhere to the above principles (for example, return a
 structure instead of a pointer, return a nil error on not-found, etc).
