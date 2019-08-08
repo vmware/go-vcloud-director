@@ -19,6 +19,9 @@ type genericGetter func(string, bool) (interface{}, error)
 // 	  return org.GetCatalogById(id, refresh)
 // 	}
 // 	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
+//  if entity != nil {
+//    return nil, err
+//  }
 // 	return entity.(*Catalog), err
 // }
 func getEntityByNameOrId(getByName, getById genericGetter, identifier string, refresh bool) (interface{}, error) {
