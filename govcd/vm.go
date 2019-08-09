@@ -137,9 +137,9 @@ func (vm *VM) PowerOn() (Task, error) {
 
 }
 
-// PowerOnAndForceCustomization
+// PowerOnAndForceCustomization is a synchronous function which is equivalent to the functionality
+// one has in UI. It triggers customization which may be useful in some cases (like altering NICs)
 func (vm *VM) PowerOnAndForceCustomization() error {
-
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/action/deploy"
 
@@ -162,15 +162,6 @@ func (vm *VM) PowerOnAndForceCustomization() error {
 	}
 
 	return nil
-}
-
-// CustomizeAtNextPowerOn forces VM customization on next power on
-func (vm *VM) CustomizeAtNextPowerOn() error {
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
-	apiEndpoint.Path += "/action/customizeAtNextPowerOn"
-
-	return vm.client.ExecuteRequestWithoutResponse(apiEndpoint.String(), http.MethodPost, "",
-		"error setting forced VM customization for next power on: %s", nil)
 }
 
 func (vm *VM) PowerOff() (Task, error) {
@@ -368,20 +359,6 @@ func (vm *VM) RunCustomizationScript(computername, script string) (Task, error) 
 	return vm.Customize(computername, script, false)
 }
 
-// GetGuestCustomizationSection retrieves
-func (vm *VM) GetGuestCustomizationSection() (*types.GuestCustomizationSection, error) {
-	guestCustomizationSection := &types.GuestCustomizationSection{}
-
-	if vm.VM.HREF == "" {
-		return nil, fmt.Errorf("cannot load guest customization, VM HREF is empty")
-	}
-
-	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/guestCustomizationSection/", http.MethodGet,
-		types.MimeGuestCustomizationSection, "error retrieving guest customization: %s", nil, guestCustomizationSection)
-
-	return guestCustomizationSection, err
-}
-
 func (vm *VM) GetGuestCustomizationStatus() (string, error) {
 	guestCustomizationStatus := &types.GuestCustomizationStatusSection{}
 
@@ -396,28 +373,11 @@ func (vm *VM) GetGuestCustomizationStatus() (string, error) {
 	return guestCustomizationStatus.GuestCustStatus, err
 }
 
-//func (vm *VM) UpdateGuestCustomizationSection(*types.GuestCustomizationSection) (*types.GuestCustomizationSection, error) {
-//	guestCustomizationSection := &types.GuestCustomizationSection{}
-//
-//	if vm.VM.HREF == "" {
-//		return nil, fmt.Errorf("cannot load guest customization, VM HREF is empty")
-//	}
-//
-//	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/guestCustomizationSection/", http.MethodGet,
-//		types.MimeGuestCustomizationSection, "error retrieving guest customization: %s", nil, guestCustomizationSection)
-//
-//	// The request was successful
-//	return guestCustomizationSection, err
-//}
-
 // BlockWhileGuestCustomizationStatus blocks until the customization status of VM exits unwantedStatus.
-// It sleeps 3 seconds between iterations and times out after timeOutAfterSeconds
-// of seconds.
+// It sleeps 3 seconds between iterations and times out after timeOutAfterSeconds of seconds.
 func (vm *VM) BlockWhileGuestCustomizationStatus(unwantedStatus string, timeOutAfterSeconds int) error {
 	timeoutAfter := time.After(time.Duration(timeOutAfterSeconds) * time.Second)
 	tick := time.Tick(3 * time.Second)
-
-	fmt.Printf("Waiting for VM customization status to exit %s state:", unwantedStatus)
 
 	for {
 		select {
@@ -429,9 +389,7 @@ func (vm *VM) BlockWhileGuestCustomizationStatus(unwantedStatus string, timeOutA
 			if err != nil {
 				return fmt.Errorf("could not get VM customization status %s", err)
 			}
-			fmt.Printf(".")
 			if currentStatus != unwantedStatus {
-				fmt.Printf(" state changed to %s\n", currentStatus)
 				return nil
 			}
 		}
