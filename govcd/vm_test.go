@@ -850,7 +850,6 @@ func (vcd *TestVCD) Test_GetNetworkConnectionSection(check *C) {
 // This test relies on longer timeouts in BlockWhileGuestCustomizationStatus because VMs take a lengthy time
 // to boot up and report customization done.
 func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
-
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vApp wasn't properly created")
 	}
@@ -887,20 +886,19 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 		check.Assert(err, IsNil)
 	}
 
-	// VM _must_ be _undeployed_ because PowerOnAndForceCustomization task will never finish (and probably
-	// not triggered) if it is not undeployed.
+	// VM _must_ be _un-deployed_ because PowerOnAndForceCustomization task will never finish (and probably
+	// not triggered) if it is not un-deployed.
 	task, err := vm.Undeploy()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-
 	err = vm.PowerOnAndForceCustomization()
 	check.Assert(err, IsNil)
 
 	// Ensure that VM has the status set to "GC_PENDING" after forced re-customization
-	sa, err := vm.GetGuestCustomizationStatus()
-	check.Assert(sa, Equals, "GC_PENDING")
+	recustomizedVmStatus, err := vm.GetGuestCustomizationStatus()
+	check.Assert(recustomizedVmStatus, Equals, "GC_PENDING")
 
 	// Wait until the VM exists GC_PENDING status again. At the moment this is the only simple way
 	// to see that the customization really worked as there is no API in vCD to execute remote
