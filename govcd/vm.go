@@ -379,14 +379,14 @@ func (vm *VM) GetGuestCustomizationStatus() (string, error) {
 // It sleeps 3 seconds between iterations and times out after timeOutAfterSeconds of seconds.
 func (vm *VM) BlockWhileGuestCustomizationStatus(unwantedStatus string, timeOutAfterSeconds int) error {
 	timeoutAfter := time.After(time.Duration(timeOutAfterSeconds) * time.Second)
-	tick := time.Tick(3 * time.Second)
+	tick := time.NewTicker(3 * time.Second)
 
 	for {
 		select {
 		case <-timeoutAfter:
 			return fmt.Errorf("timed out waiting for VM guest customization status to exit state %s after %d seconds",
 				unwantedStatus, timeOutAfterSeconds)
-		case <-tick:
+		case <-tick.C:
 			currentStatus, err := vm.GetGuestCustomizationStatus()
 			if err != nil {
 				return fmt.Errorf("could not get VM customization status %s", err)

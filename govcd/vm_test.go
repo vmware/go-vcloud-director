@@ -84,8 +84,8 @@ func (vcd *TestVCD) ensureVappIsSuitableForVMTest(vapp VApp) error {
 		if err != nil {
 			return err
 		}
+		err = task.WaitTaskCompletion()
 		if err != nil {
-			err = task.WaitTaskCompletion()
 			return err
 		}
 	}
@@ -870,6 +870,7 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 	// gives any effect therefore we must "wait through" initial guest customization if it is in
 	// 'GC_PENDING' state.
 	custStatus, err := vm.GetGuestCustomizationStatus()
+	check.Assert(err, IsNil)
 	if custStatus == "GC_PENDING" {
 		vmStatus, err := vm.GetStatus()
 		check.Assert(err, IsNil)
@@ -898,6 +899,7 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 
 	// Ensure that VM has the status set to "GC_PENDING" after forced re-customization
 	recustomizedVmStatus, err := vm.GetGuestCustomizationStatus()
+	check.Assert(err, IsNil)
 	check.Assert(recustomizedVmStatus, Equals, "GC_PENDING")
 
 	// Wait until the VM exists GC_PENDING status again. At the moment this is the only simple way

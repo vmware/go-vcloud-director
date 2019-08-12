@@ -263,12 +263,14 @@ func checkLb(queryUrl string, expectedResponses []string, maxRetryTimeout int) e
 		iterations = maxRetryTimeout / 5
 	}
 
+	httpClient := &http.Client{Timeout: 5}
+
 	fmt.Printf("# Waiting for the virtual server to accept responses (%s interval x %d iterations)"+
 		"\n[_ = timeout, x = connection refused, ?(err) = unknown error, / = no nodes are up yet, "+
 		". = no response from all nodes yet]: ", sleepIntervalDuration.String(), iterations)
 	for i := 1; i <= iterations; i++ {
 		var resp *http.Response
-		resp, err = http.Get(queryUrl)
+		resp, err = httpClient.Get(queryUrl)
 		if err != nil {
 			switch {
 			case strings.Contains(err.Error(), "i/o timeout"):
