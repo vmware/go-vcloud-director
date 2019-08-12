@@ -9,6 +9,8 @@
 * Added method `(*VCDClient) QueryProviderVdcStorageProfiles()` 
 * Added method `(*VCDClient) QueryNetworkPools()` 
 * Added get/add/delete metadata functions for vApp template and media item [#225](https://github.com/vmware/go-vcloud-director/pull/225).
+* Added `UpdateNetworkConnectionSection` for updating VM network configuration [#229](https://github.com/vmware/go-vcloud-director/pull/229)
+* Added `PowerOnAndForceCustomization`, `GetGuestCustomizationStatus`, `BlockWhileGuestCustomizationStatus` [#229](https://github.com/vmware/go-vcloud-director/pull/229)
 
 BUGS FIXED:
 
