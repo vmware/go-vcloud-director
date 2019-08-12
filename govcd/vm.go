@@ -139,6 +139,8 @@ func (vm *VM) PowerOn() (Task, error) {
 
 // PowerOnAndForceCustomization is a synchronous function which is equivalent to the functionality
 // one has in UI. It triggers customization which may be useful in some cases (like altering NICs)
+//
+// The VM _must_ be Undeployed for this action to actually work.
 func (vm *VM) PowerOnAndForceCustomization() error {
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/action/deploy"
@@ -424,6 +426,7 @@ func (vm *VM) Customize(computername, script string, changeSid bool) (Task, erro
 		types.MimeGuestCustomizationSection, "error customizing VM: %s", vu)
 }
 
+// Undeploy triggers a VM undeploy and power off action. "Power off" action in UI behaves this way.
 func (vm *VM) Undeploy() (Task, error) {
 
 	vu := &types.UndeployVAppParams{

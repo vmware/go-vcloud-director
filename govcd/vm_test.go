@@ -845,8 +845,10 @@ func (vcd *TestVCD) Test_GetNetworkConnectionSection(check *C) {
 // Test_PowerOnAndForceCustomization uses the VM from TestSuite and forces guest customization
 // in addition to the one which is triggered on first boot. It waits until the initial guest
 // customization after first power on is finished because it is inherited from the template.
-// After this initial wait it triggers a second customization and again waits until guest
+// After this initial wait it Undeploys VM and triggers a second customization and again waits until guest
 // customization status exits "GC_PENDING" state to succeed the test.
+// This test relies on longer timeouts in BlockWhileGuestCustomizationStatus because VMs take a lengthy time
+// to boot up and report customization done.
 func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 
 	if vcd.skipVappTests {
@@ -883,63 +885,21 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 
 		err = vm.BlockWhileGuestCustomizationStatus("GC_PENDING", 300)
 		check.Assert(err, IsNil)
-
-		// VM Now has exited initial "GC_PENDING" status. Power it off as the PowerOnAndForceCustomization
-		// operation can only be run on powered of VM
-		task, err := vm.PowerOff()
-		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
 	}
 
-	// Before forcing customization status must not be equal to "GC_PENDING"
-	statusBeforePowerOn, err := vm.GetGuestCustomizationStatus()
-	check.Assert(statusBeforePowerOn, Not(Equals), "GC_PENDING")
-	fmt.Println("statusBeforePowerOn: ", statusBeforePowerOn)
-	if statusBeforePowerOn == "REBOOT_PENDING" {
-		task, err := vm.PowerOn()
-		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
-
-		err = vm.BlockWhileGuestCustomizationStatus("REBOOT_PENDING", 300)
-		check.Assert(err, IsNil)
-
-		// Power off again
-		task, err = vm.PowerOff()
-		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
-	}
-
-	statusAfterReboot, err := vm.GetGuestCustomizationStatus()
-	//check.Assert(statusBeforePowerOn, Not(Equals), "GC_PENDING")
-	fmt.Println("statusAfterReboot: ", statusAfterReboot)
-
-	// Reapply network connection settings as otherwise VM will never exit GC_PENDING customization status
-	net, err := vm.GetNetworkConnectionSection()
+	// VM _must_ be _undeployed_ because PowerOnAndForceCustomization task will never finish (and probably
+	// not triggered) if it is not undeployed.
+	task, err := vm.Undeploy()
 	check.Assert(err, IsNil)
-	net.NetworkConnection = append(net.NetworkConnection, &types.NetworkConnection{
-		Network: "my-vdc-int-net",
-		IsConnected:true,
-		IPAddressAllocationMode: types.IPAllocationModePool,
-	})
-	err = vm.UpdateNetworkConnectionSection(net)
+	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	statusAfterNetwork, err := vm.GetGuestCustomizationStatus()
-	//check.Assert(statusBeforePowerOn, Not(Equals), "GC_PENDING")
-	fmt.Println("statusAfterNetwork: ", statusAfterNetwork)
 
 	err = vm.PowerOnAndForceCustomization()
 	check.Assert(err, IsNil)
 
-	//time.Sleep(10 * time.Second)
-	err = vm.BlockWhileGuestCustomizationStatus("GC_COMPLETE", 300)
-	check.Assert(err, IsNil)
 	// Ensure that VM has the status set to "GC_PENDING" after forced re-customization
 	sa, err := vm.GetGuestCustomizationStatus()
-	fmt.Println("sa: ", sa)
 	check.Assert(sa, Equals, "GC_PENDING")
 
 	// Wait until the VM exists GC_PENDING status again. At the moment this is the only simple way
