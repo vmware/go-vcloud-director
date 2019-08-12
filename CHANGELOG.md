@@ -1,3 +1,19 @@
+## 2.4.0 (Unreleased)
+
+* Deprecated functions `GetOrgByName(*VCDClient, string) (Org, error)` and `GetAdminOrgByName(*VCDClient, string) (AdminOrg, error)`
+* Deprecated methods `(*AdminOrg)FetchUserByName`, `(*AdminOrg)FetchUserById`, `(*AdminOrg)FetchUserByNameOrId`, `(*AdminOrg)GetRole`.
+* Added method `(*VCDClient) GetOrgByName(string) (*Org, error)`  and related `GetOrgById`, `GetOrgByNameOrId`
+* Added method `(*VCDClient) GetAdminOrgByName(string) (*AdminOrg, error)` and related `GetAdminOrgById`, `GetAdminOrgByNameOrId`
+* Added methods `GetUserByName`, `GetUserById`, `GetUserByNameOrId`, `GetRoleReference`.
+* Added method `(*VCDClient) QueryProviderVdcs()` 
+* Added method `(*VCDClient) QueryProviderVdcStorageProfiles()` 
+* Added method `(*VCDClient) QueryNetworkPools()` 
+* Added get/add/delete metadata functions for vApp template and media item [#225](https://github.com/vmware/go-vcloud-director/pull/225).
+
+BUGS FIXED:
+
+* Fix bug in AdminOrg.Update, where OrgGeneralSettings would not update correctly if it contained only one property
+
 ## 2.3.1 (Jul 29, 2019)
 
 BUG FIXES:

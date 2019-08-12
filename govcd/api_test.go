@@ -14,6 +14,16 @@ import (
 
 var testingTags = make(map[string]string)
 
+var testVerbose bool = os.Getenv("GOVCD_TEST_VERBOSE") != ""
+
+// longer than the 128 characters so nothing can be named this
+var INVALID_NAME = `*******************************************INVALID
+					****************************************************
+					************************`
+
+// This ID won't be found by lookup in any entity
+var invalidEntityId = "one:two:three:aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+
 func tagsHelp(t *testing.T) {
 
 	var helpText string = `

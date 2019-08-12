@@ -316,7 +316,7 @@ While running tests, the following environment variables can be used:
 * `GOVCD_CONFIG=/path/file`: sets an alternative configuration file for the tests.
    e.g.:  `GOVCD_CONFIG=/some/path/govcd_test_config.yaml go test -tags functional -timeout 0 .`
 * `GOVCD_DEBUG=1`: enable debug output on screen.
-* `TEST_VERBOSE=1`: shows execution details in unit tests.
+* `GOVCD_TEST_VERBOSE=1`: shows execution details in some tests.
 * `GOVCD_SKIP_VAPP_CREATION=1`: will not create the initial vApp. All tests that
    depend on a vApp availability will be skipped.
 * `GOVCD_TASK_MONITOR=show|log|simple_show|simple|log`: sets a task monitor function when running `task.WaitCompletion`

@@ -40,10 +40,10 @@ OR
 */
 
 // Checks that the default roles are available from the organization
-func (vcd *TestVCD) Test_GetRole(check *C) {
-	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
+func (vcd *TestVCD) Test_GetRoleReference(check *C) {
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
-	check.Assert(adminOrg, Not(Equals), AdminOrg{})
+	check.Assert(adminOrg, NotNil)
 	Roles := []string{
 		OrgUserRoleOrganizationAdministrator,
 		OrgUserRoleVappUser,
@@ -51,8 +51,7 @@ func (vcd *TestVCD) Test_GetRole(check *C) {
 		OrgUserRoleConsoleAccessOnly,
 	}
 	for _, roleName := range Roles {
-		// fmt.Printf("# retrieving role %s\n", roleName)
-		roleReference, err := adminOrg.GetRole(roleName)
+		roleReference, err := adminOrg.GetRoleReference(roleName)
 		check.Assert(err, IsNil)
 		check.Assert(roleReference, NotNil)
 		check.Assert(roleReference.Name, Equals, roleName)
@@ -61,10 +60,10 @@ func (vcd *TestVCD) Test_GetRole(check *C) {
 }
 
 // Checks that we can retrieve a user by name or ID
-func (vcd *TestVCD) Test_FetchUserByNameOrId(check *C) {
-	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
+func (vcd *TestVCD) Test_GetUserByNameOrId(check *C) {
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
-	check.Assert(adminOrg, Not(Equals), AdminOrg{})
+	check.Assert(adminOrg, NotNil)
 
 	// We get the list of users from the organization
 	var userRefs []types.Reference
@@ -74,24 +73,24 @@ func (vcd *TestVCD) Test_FetchUserByNameOrId(check *C) {
 
 	// Using the list above, we first try to get each user by name
 	for _, userRef := range userRefs {
-		user, err := adminOrg.FetchUserByName(userRef.Name, false)
+		user, err := adminOrg.GetUserByName(userRef.Name, false)
 		check.Assert(err, IsNil)
 		check.Assert(user, NotNil)
 		check.Assert(user.User.Name, Equals, userRef.Name)
 
 		// Then we try to get the same user by ID
-		user, err = adminOrg.FetchUserById(userRef.ID, false)
+		user, err = adminOrg.GetUserById(userRef.ID, false)
 		check.Assert(err, IsNil)
 		check.Assert(user, NotNil)
 		check.Assert(user.User.Name, Equals, userRef.Name)
 
 		// Then we try to get the same user by Name or ID combined
-		user, err = adminOrg.FetchUserByNameOrId(userRef.ID, true)
+		user, err = adminOrg.GetUserByNameOrId(userRef.ID, true)
 		check.Assert(err, IsNil)
 		check.Assert(user, NotNil)
 		check.Assert(user.User.Name, Equals, userRef.Name)
 
-		user, err = adminOrg.FetchUserByNameOrId(userRef.Name, false)
+		user, err = adminOrg.GetUserByNameOrId(userRef.Name, false)
 		check.Assert(err, IsNil)
 		check.Assert(user, NotNil)
 		check.Assert(user.User.Name, Equals, userRef.Name)
@@ -103,9 +102,9 @@ func (vcd *TestVCD) Test_FetchUserByNameOrId(check *C) {
 // Furthermore, disables, and then enables the users again
 // and finally deletes all of them
 func (vcd *TestVCD) Test_UserCRUD(check *C) {
-	adminOrg, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
-	check.Assert(adminOrg, Not(Equals), AdminOrg{})
+	check.Assert(adminOrg, NotNil)
 
 	type userTestData struct {
 		name       string // name of the user. Note: only lowercase letters allowed
@@ -201,7 +200,7 @@ func (vcd *TestVCD) Test_UserCRUD(check *C) {
 		false: "disabled",
 	}
 	for _, ud := range userData {
-		user, err := adminOrg.FetchUserByNameOrId(ud.name, true)
+		user, err := adminOrg.GetUserByNameOrId(ud.name, true)
 		check.Assert(err, IsNil)
 
 		fmt.Printf("# deleting user %s (%s - %s)\n", ud.name, user.GetRoleName(), enableMap[user.User.IsEnabled])
@@ -212,7 +211,7 @@ func (vcd *TestVCD) Test_UserCRUD(check *C) {
 		// disableDebugShowRequest()
 		// disableDebugShowResponse()
 		check.Assert(err, IsNil)
-		user, err = adminOrg.FetchUserByNameOrId(user.User.ID, true)
+		user, err = adminOrg.GetUserByNameOrId(user.User.ID, true)
 		check.Assert(err, NotNil)
 		// Tests both the error directly and the function IsNotFound
 		check.Assert(err, Equals, ErrorEntityNotFound)
