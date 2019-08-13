@@ -76,7 +76,7 @@ func (vm *VM) GetNetworkConnectionSection() (*types.NetworkConnectionSection, er
 	networkConnectionSection := &types.NetworkConnectionSection{}
 
 	if vm.VM.HREF == "" {
-		return networkConnectionSection, fmt.Errorf("cannot refresh, Object is empty")
+		return networkConnectionSection, fmt.Errorf("cannot retrieve network when VM HREF is unset")
 	}
 
 	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/networkConnectionSection/", http.MethodGet,
@@ -90,7 +90,7 @@ func (vm *VM) GetNetworkConnectionSection() (*types.NetworkConnectionSection, er
 // Runs synchronously, VM is ready for another operation after this function returns.
 func (vm *VM) UpdateNetworkConnectionSection(networks *types.NetworkConnectionSection) error {
 	if vm.VM.HREF == "" {
-		return fmt.Errorf("cannot refresh, Object is empty")
+		return fmt.Errorf("cannot update network connection when VM HREF is unset")
 	}
 
 	// Retrieve current network configuration so that we are not altering any other internal fields
@@ -361,11 +361,13 @@ func (vm *VM) RunCustomizationScript(computername, script string) (Task, error) 
 	return vm.Customize(computername, script, false)
 }
 
+// GetGuestCustomizationStatus retrieves guest customization status.
+// It can be one of "GC_PENDING", "REBOOT_PENDING", "GC_FAILED", "POST_GC_PENDING", "GC_COMPLETE"
 func (vm *VM) GetGuestCustomizationStatus() (string, error) {
 	guestCustomizationStatus := &types.GuestCustomizationStatusSection{}
 
 	if vm.VM.HREF == "" {
-		return "", fmt.Errorf("cannot load guest customization, VM HREF is empty")
+		return "", fmt.Errorf("cannot retrieve guest customization, VM HREF is empty")
 	}
 
 	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/guestcustomizationstatus", http.MethodGet,

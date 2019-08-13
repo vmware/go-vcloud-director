@@ -827,7 +827,6 @@ func (vcd *TestVCD) Test_GetNetworkConnectionSection(check *C) {
 
 	networkBefore, err := vm.GetNetworkConnectionSection()
 	check.Assert(err, IsNil)
-	//check.Assert(network, IsNil)
 
 	err = vm.UpdateNetworkConnectionSection(networkBefore)
 	check.Assert(err, IsNil)
@@ -871,7 +870,7 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 	// 'GC_PENDING' state.
 	custStatus, err := vm.GetGuestCustomizationStatus()
 	check.Assert(err, IsNil)
-	if custStatus == "GC_PENDING" {
+	if custStatus == types.GuestCustStatusPending {
 		vmStatus, err := vm.GetStatus()
 		check.Assert(err, IsNil)
 		// If VM is POWERED OFF - let's power it on before waiting for its status to change
@@ -883,7 +882,7 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 			check.Assert(task.Task.Status, Equals, "success")
 		}
 
-		err = vm.BlockWhileGuestCustomizationStatus("GC_PENDING", 300)
+		err = vm.BlockWhileGuestCustomizationStatus(types.GuestCustStatusPending, 300)
 		check.Assert(err, IsNil)
 	}
 
@@ -900,11 +899,11 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 	// Ensure that VM has the status set to "GC_PENDING" after forced re-customization
 	recustomizedVmStatus, err := vm.GetGuestCustomizationStatus()
 	check.Assert(err, IsNil)
-	check.Assert(recustomizedVmStatus, Equals, "GC_PENDING")
+	check.Assert(recustomizedVmStatus, Equals, types.GuestCustStatusPending)
 
 	// Wait until the VM exists GC_PENDING status again. At the moment this is the only simple way
 	// to see that the customization really worked as there is no API in vCD to execute remote
 	// commands on guest VMs
-	err = vm.BlockWhileGuestCustomizationStatus("GC_PENDING", 300)
+	err = vm.BlockWhileGuestCustomizationStatus(types.GuestCustStatusPending, 300)
 	check.Assert(err, IsNil)
 }
