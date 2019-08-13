@@ -51,12 +51,15 @@ func (externalNetwork ExternalNetwork) Refresh() error {
 	return err
 }
 
-func validateExternalNetwork(externalNetwork *types.ExternalNetwork) error {
+func validateExternalNetwork(externalNetwork *types.ExternalNetworkCreate) error {
 	if externalNetwork.Name == "" {
 		return errors.New("external Network missing required field: Name")
 	}
-	if externalNetwork.Xmlns == "" {
-		return errors.New("external Network missing required field: Xmlns")
+	if externalNetwork.XmlnsVmext == "" {
+		return errors.New("external Network missing required field: XmlnsVmext")
+	}
+	if externalNetwork.XmlnsVcload == "" {
+		return errors.New("external Network missing required field: XmlnsVcload")
 	}
 	return nil
 }

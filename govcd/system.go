@@ -479,7 +479,7 @@ func GetExternalNetwork(vcdClient *VCDClient, networkName string) (*ExternalNetw
 // CreateExternalNetwork allows create external network and returns Task or error.
 // types.ExternalNetwork struct is general and used for various types of networks. But for external network
 // fence mode is always isolated, isInherited is false, parentNetwork is empty.
-func CreateExternalNetwork(vcdClient *VCDClient, externalNetwork *types.ExternalNetwork) (Task, error) {
+func CreateExternalNetwork(vcdClient *VCDClient, externalNetwork *types.ExternalNetworkCreate) (Task, error) {
 
 	if !vcdClient.Client.IsSysAdmin {
 		return Task{}, fmt.Errorf("functionality requires system administrator privileges")

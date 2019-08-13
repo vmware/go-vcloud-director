@@ -29,7 +29,7 @@ func (vcd *TestVCD) Test_ExternalNetworkGetByName(check *C) {
 }
 
 // Helper function that creates an external network to be used in other tests
-func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix string) (skippingReason string, externalNetwork *types.ExternalNetwork, task Task, err error) {
+func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix string) (skippingReason string, externalNetwork *types.ExternalNetworkCreate, task Task, err error) {
 
 	if vcd.skipAdminTests {
 		return fmt.Sprintf(TestRequiresSysAdminPrivileges, testName), externalNetwork, Task{}, nil
@@ -72,11 +72,12 @@ func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix s
 		return fmt.Sprintf("More than one port group found with name '%s'", vcd.config.VCD.ExternalNetworkPortGroup), externalNetwork, Task{}, nil
 	}
 
-	externalNetwork = &types.ExternalNetwork{
+	externalNetwork = &types.ExternalNetworkCreate{
 		Name:        networkName,
 		Description: "Test Create External Network",
-		Xmlns:       types.XMLNamespaceExtension,
-		XmlnsVCloud: types.XMLNamespaceVCloud,
+		XmlnsVmext:  types.XMLNamespaceExtension,
+		XmlnsVcload: types.XMLNamespaceVCloud,
+		Type:        types.MimeExternalNetwork,
 		Configuration: &types.NetworkConfiguration{
 			Xmlns: types.XMLNamespaceVCloud,
 			IPScopes: &types.IPScopes{
@@ -98,9 +99,9 @@ func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix s
 				}},
 			FenceMode: "isolated",
 		},
-		VimPortGroupRefs: &types.VimObjectRefs{
-			VimObjectRef: []*types.VimObjectRef{
-				&types.VimObjectRef{
+		VimPortGroupRefs: &types.VimObjectRefsCreate{
+			VimObjectRef: []*types.VimObjectRefCreate{
+				&types.VimObjectRefCreate{
 					VimServerRef: &types.Reference{
 						HREF: vimServerHref,
 					},
@@ -193,6 +194,11 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	check.Assert(ipRange.EndAddress, Equals, "192.168.201.250")
 
 	check.Assert(newExternalNetwork.ExternalNetwork.Configuration.FenceMode, Equals, "isolated")
+	check.Assert(newExternalNetwork.ExternalNetwork.Description, Equals, "Test Create External Network")
+	check.Assert(newExternalNetwork.ExternalNetwork.VimPortGroupRef, NotNil)
+	check.Assert(newExternalNetwork.ExternalNetwork.VimPortGroupRef.VimObjectType, Equals, externalNetwork.VimPortGroupRefs.VimObjectRef[0].VimObjectType)
+	check.Assert(newExternalNetwork.ExternalNetwork.VimPortGroupRef.MoRef, Equals, externalNetwork.VimPortGroupRefs.VimObjectRef[0].MoRef)
+	check.Assert(newExternalNetwork.ExternalNetwork.VimPortGroupRef.VimServerRef.HREF, Equals, externalNetwork.VimPortGroupRefs.VimObjectRef[0].VimServerRef.HREF)
 
 	err = newExternalNetwork.DeleteWait()
 	check.Assert(err, IsNil)
