@@ -439,8 +439,8 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 			// If we found a cleanup file and we want to process it (default)
 			// We proceed to cleanup the leftovers before any other operation
 			fmt.Printf("*** Found cleanup file %s\n", makePersistentCleanupFileName())
-			for N, cleanupEntity := range cleanupList {
-				fmt.Printf("# %d ", N+1)
+			for i, cleanupEntity := range cleanupList {
+				fmt.Printf("# %d ", i+1)
 				vcd.removeLeftoverEntities(cleanupEntity)
 			}
 		}
@@ -970,8 +970,8 @@ func (vcd *TestVCD) TearDownSuite(check *C) {
 	// We will try to remove every entity that has been registered into
 	// CleanupEntityList. Entities that have already been cleaned up by their
 	// functions will be ignored.
-	for N, cleanupEntity := range cleanupEntityList {
-		fmt.Printf("# %d ", N+1)
+	for i, cleanupEntity := range cleanupEntityList {
+		fmt.Printf("# %d ", i+1)
 		vcd.removeLeftoverEntities(cleanupEntity)
 		removePersistentCleanupList()
 	}
