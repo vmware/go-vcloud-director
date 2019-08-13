@@ -21,6 +21,11 @@
 * Added methods `AdminOrg.GetAdminVDCByName` and related `GetAdminVDCById`, `GetAdminVDCByNameOrId`
 * Added methods `Catalog.Refresh` and `AdminCatalog.Refresh`
 
+IMPROVEMENTS:
+
+* Move methods for `AdminOrg`, `AdminCatalog`, `AdminVdc` to new files `adminorg.go`,
+ `admincatalog.go`, `adminvdc.go`.
+
 BUGS FIXED:
 
 * Fix bug in AdminOrg.Update, where OrgGeneralSettings would not update correctly if it contained only one property
