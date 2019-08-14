@@ -15,116 +15,52 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
-// Tests System methods vcd.GetOrg* by checking if the org object
-// returned has the same name as the one provided in the config file.
-// Asserts an error if the names don't match or if the function returned
-// an error. Also tests an org that doesn't exist. Asserts an error
-// if the function finds it or if the error is nil.
-// Repeats the same operations fot GetOrgById, GetOrgByNameOrId, GetOrg
-func (vcd *TestVCD) Test_GetOrgByNameOrId(check *C) {
+// Tests Org retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_SystemGetOrg(check *C) {
 
-	// Test Get by name
-	orgName := vcd.config.VCD.Org
-	org1, err1 := vcd.client.GetOrgByName(orgName)
-	check.Assert(org1, NotNil)
-	check.Assert(err1, IsNil)
-	check.Assert(org1.Org.Name, Equals, orgName)
-	orgId := org1.Org.ID
-	// Tests Org that doesn't exist
-	org1, err1 = vcd.client.GetOrgByName(INVALID_NAME)
-	check.Assert(org1, IsNil)
-	// When we explicitly search for a non existing item, we expect the error to be not nil
-	check.Assert(err1, NotNil)
-	check.Assert(IsNotFound(err1), Equals, true)
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_SystemGetOrg: Org name not given.")
+		return
+	}
 
-	// Test Get by ID
-	org2, err2 := vcd.client.GetOrgById(orgId)
-	check.Assert(org2, NotNil)
-	check.Assert(err2, IsNil)
-	check.Assert(org2.Org.Name, Equals, orgName)
-	check.Assert(org2.Org.ID, Equals, orgId)
-	org2, err2 = vcd.client.GetOrgById(invalidEntityId)
-	check.Assert(org2, IsNil)
-	check.Assert(err2, NotNil)
-	check.Assert(IsNotFound(err2), Equals, true)
+	getByName := func(name string, refresh bool) (genericEntity, error) { return vcd.client.GetOrgByName(name) }
+	getById := func(id string, refresh bool) (genericEntity, error) { return vcd.client.GetOrgById(id) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) { return vcd.client.GetOrgByNameOrId(id) }
 
-	// Test Get by name or ID using the ID
-	org3, err3 := vcd.client.GetOrgByNameOrId(orgId)
-	check.Assert(org3, NotNil)
-	check.Assert(err3, IsNil)
-	check.Assert(org3.Org.Name, Equals, orgName)
-	check.Assert(org3.Org.ID, Equals, orgId)
-	org3, err3 = vcd.client.GetOrgByNameOrId(invalidEntityId)
-	check.Assert(org3, IsNil)
-	check.Assert(err3, NotNil)
-	check.Assert(IsNotFound(err3), Equals, true)
-
-	// Test Get by name or ID using the name
-	org4, err4 := vcd.client.GetOrgByNameOrId(orgName)
-	check.Assert(org4, NotNil)
-	check.Assert(err4, IsNil)
-	check.Assert(org4.Org.Name, Equals, orgName)
-	check.Assert(org4.Org.ID, Equals, orgId)
-	org4, err4 = vcd.client.GetOrgByNameOrId(INVALID_NAME)
-	check.Assert(org4, IsNil)
-	check.Assert(err4, NotNil)
-	check.Assert(IsNotFound(err4), Equals, true)
+	var def = getterTestDefinition{
+		parentType:    "VCDClient",
+		parentName:    "System",
+		entityType:    "Org",
+		entityName:    vcd.config.VCD.Org,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
+	}
+	vcd.testFinderGetGenericEntity(def, check)
 }
 
-// Tests System methods vcd.GetAdminOrg* by checking if the adminOrg object
-// returned has the same name as the one provided in the config file.
-// Asserts an error if the names don't match or if the function returned
-// an error. Also tests an admin org that doesn't exist. Asserts an error
-// if the function finds it or if the error is nil.
-// Repeats the same operations fot GetAdminOrgById, GetAdminOrgByNameOrId, GetAdminOrg
-func (vcd *TestVCD) Test_GetAdminOrgByNameOrId(check *C) {
+// Tests AdminOrg retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_SystemGetAdminOrg(check *C) {
 
-	// Test Get by name
-	adminOrgName := vcd.config.VCD.Org
-	adminOrg1, err1 := vcd.client.GetAdminOrgByName(adminOrgName)
-	check.Assert(adminOrg1, NotNil)
-	check.Assert(err1, IsNil)
-	check.Assert(adminOrg1.AdminOrg.Name, Equals, adminOrgName)
-	orgId := adminOrg1.AdminOrg.ID
-	// Tests Org that doesn't exist
-	adminOrg1, err1 = vcd.client.GetAdminOrgByName(INVALID_NAME)
-	check.Assert(adminOrg1, IsNil)
-	// When we explicitly search for a non existing item, we expect the error to be not nil
-	check.Assert(err1, NotNil)
-	check.Assert(IsNotFound(err1), Equals, true)
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_SystemGetAdminOrg: Org name not given.")
+		return
+	}
 
-	// Test Get by ID
-	adminOrg2, err2 := vcd.client.GetAdminOrgById(orgId)
-	check.Assert(adminOrg2, NotNil)
-	check.Assert(err2, IsNil)
-	check.Assert(adminOrg2.AdminOrg.Name, Equals, adminOrgName)
-	check.Assert(adminOrg2.AdminOrg.ID, Equals, orgId)
-	adminOrg2, err2 = vcd.client.GetAdminOrgById(invalidEntityId)
-	check.Assert(adminOrg2, IsNil)
-	check.Assert(err2, NotNil)
-	check.Assert(IsNotFound(err2), Equals, true)
+	getByName := func(name string, refresh bool) (genericEntity, error) { return vcd.client.GetAdminOrgByName(name) }
+	getById := func(id string, refresh bool) (genericEntity, error) { return vcd.client.GetAdminOrgById(id) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) { return vcd.client.GetAdminOrgByNameOrId(id) }
 
-	// Test Get by name or ID using the ID
-	adminOrg3, err3 := vcd.client.GetAdminOrgByNameOrId(orgId)
-	check.Assert(adminOrg3, NotNil)
-	check.Assert(err3, IsNil)
-	check.Assert(adminOrg3.AdminOrg.Name, Equals, adminOrgName)
-	check.Assert(adminOrg3.AdminOrg.ID, Equals, orgId)
-	adminOrg3, err3 = vcd.client.GetAdminOrgByNameOrId(invalidEntityId)
-	check.Assert(adminOrg3, IsNil)
-	check.Assert(err3, NotNil)
-	check.Assert(IsNotFound(err3), Equals, true)
-
-	// Test Get by name or ID using the name
-	adminOrg4, err4 := vcd.client.GetAdminOrgByNameOrId(adminOrgName)
-	check.Assert(adminOrg4, NotNil)
-	check.Assert(err4, IsNil)
-	check.Assert(adminOrg4.AdminOrg.Name, Equals, adminOrgName)
-	check.Assert(adminOrg4.AdminOrg.ID, Equals, orgId)
-	adminOrg4, err4 = vcd.client.GetAdminOrgByNameOrId(INVALID_NAME)
-	check.Assert(adminOrg4, IsNil)
-	check.Assert(err4, NotNil)
-	check.Assert(IsNotFound(err4), Equals, true)
+	var def = getterTestDefinition{
+		parentType:    "VCDClient",
+		parentName:    "System",
+		entityType:    "AdminOrg",
+		entityName:    vcd.config.VCD.Org,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
+	}
+	vcd.testFinderGetGenericEntity(def, check)
 }
 
 // Tests the creation of an org with general settings,
@@ -307,9 +243,9 @@ func (vcd *TestVCD) Test_GetNetworkPoolByHREF(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	adminVdc, err := adminOrg.GetAdminVdcByName(vcd.config.VCD.Vdc)
-	check.Assert(adminVdc, Not(Equals), AdminVdc{})
+	adminVdc, err := adminOrg.GetAdminVDCByName(vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
+	check.Assert(adminVdc, NotNil)
 
 	// Get network pool by href
 	foundNetworkPool, err := GetNetworkPoolByHREF(vcd.client, adminVdc.AdminVdc.NetworkPoolReference.HREF)

@@ -17,16 +17,18 @@ import (
 func (vcd *TestVCD) Test_RefreshVAppTemplate(check *C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
-	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	if err != nil {
 		check.Skip("Test_GetVAppTemplate: Catalog not found. Test can't proceed")
+		return
 	}
+	check.Assert(cat, NotNil)
 
 	if vcd.config.VCD.Catalog.CatalogItem == "" {
 		check.Skip("Test_GetVAppTemplate: Catalog Item not given. Test can't proceed")
 	}
 
-	catItem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
+	catItem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
 	check.Assert(catItem, NotNil)
 	check.Assert(catItem.CatalogItem.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)

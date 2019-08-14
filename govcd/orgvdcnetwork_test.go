@@ -44,7 +44,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkEGW(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	networkName := TestCreateOrgVdcNetworkEGW
 
-	err := RemoveOrgVdcNetworkIfExists(vcd.vdc, networkName)
+	err := RemoveOrgVdcNetworkIfExists(*vcd.vdc, networkName)
 	if err != nil {
 		check.Skip(fmt.Sprintf("Error deleting network : %s", err))
 	}
@@ -106,7 +106,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkIso(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	networkName := TestCreateOrgVdcNetworkIso
 
-	err := RemoveOrgVdcNetworkIfExists(vcd.vdc, networkName)
+	err := RemoveOrgVdcNetworkIfExists(*vcd.vdc, networkName)
 	if err != nil {
 		check.Skip(fmt.Sprintf("Error deleting network : %s", err))
 	}
@@ -164,7 +164,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkDirect(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
-	err := RemoveOrgVdcNetworkIfExists(vcd.vdc, networkName)
+	err := RemoveOrgVdcNetworkIfExists(*vcd.vdc, networkName)
 	if err != nil {
 		check.Skip(fmt.Sprintf("Error deleting network : %s", err))
 	}

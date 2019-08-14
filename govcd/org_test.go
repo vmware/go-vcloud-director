@@ -11,8 +11,9 @@ import (
 	"math"
 	"time"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 // Tests Refresh for Org by updating the org and then asserting if the
@@ -196,14 +197,14 @@ func doesOrgExist(check *C, vcd *TestVCD) {
 // that doesn't exist. Asserts an error if the function finds it or
 // if the error is not nil.
 func (vcd *TestVCD) Test_GetVdcByName(check *C) {
-	vdc, err := vcd.org.GetVdcByName(vcd.config.VCD.Vdc)
-	check.Assert(vdc, Not(Equals), Vdc{})
+	vdc, err := vcd.org.GetVDCByName(vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
 	check.Assert(vdc.Vdc.Name, Equals, vcd.config.VCD.Vdc)
 	// Try a vdc that doesn't exist
-	vdc, err = vcd.org.GetVdcByName(INVALID_NAME)
-	check.Assert(vdc, Equals, Vdc{})
-	check.Assert(err, IsNil)
+	vdc, err = vcd.org.GetVDCByName(INVALID_NAME, false)
+	check.Assert(err, NotNil)
+	check.Assert(vdc, IsNil)
 }
 
 // Tests org function Admin version of GetVDCByName with the vdc
@@ -218,14 +219,14 @@ func (vcd *TestVCD) Test_Admin_GetVdcByName(check *C) {
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
-	vdc, err := adminOrg.GetVdcByName(vcd.config.VCD.Vdc)
-	check.Assert(vdc, Not(Equals), Vdc{})
+	vdc, err := adminOrg.GetVDCByName(vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
 	check.Assert(vdc.Vdc.Name, Equals, vcd.config.VCD.Vdc)
 	// Try a vdc that doesn't exist
-	vdc, err = adminOrg.GetVdcByName(INVALID_NAME)
-	check.Assert(vdc, Equals, Vdc{})
-	check.Assert(err, IsNil)
+	vdc, err = adminOrg.GetVDCByName(INVALID_NAME, false)
+	check.Assert(vdc, IsNil)
+	check.Assert(err, NotNil)
 }
 
 // Tests org function GetVDCByName with the vdc specified
@@ -322,16 +323,15 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 			UsesFastProvisioning: true,
 		}
 
-		vdc, err := adminOrg.GetVdcByName(vdcConfiguration.Name)
-		check.Assert(err, IsNil)
-		if vdc != (Vdc{}) {
+		vdc, _ := adminOrg.GetVDCByName(vdcConfiguration.Name, false)
+		if vdc != nil {
 			err = vdc.DeleteWait(true, true)
 			check.Assert(err, IsNil)
 		}
 
 		task, err := adminOrg.CreateVdc(vdcConfiguration)
-		check.Assert(task, Equals, Task{})
 		check.Assert(err, Not(IsNil))
+		check.Assert(task, Equals, Task{})
 		check.Assert(err.Error(), Equals, "VdcConfiguration missing required field: ComputeCapacity[0].Memory.Units")
 		vdcConfiguration.ComputeCapacity[0].Memory.Units = "MB"
 
@@ -340,13 +340,9 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 
 		AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, "Test_CreateVdc")
 
-		// Refresh so the new VDC shows up in the org's list
-		err = adminOrg.Refresh()
+		vdc, err = adminOrg.GetVDCByName(vdcConfiguration.Name, true)
 		check.Assert(err, IsNil)
-
-		vdc, err = adminOrg.GetVdcByName(vdcConfiguration.Name)
-		check.Assert(err, IsNil)
-		check.Assert(vdc, Not(Equals), Vdc{})
+		check.Assert(vdc, NotNil)
 		check.Assert(vdc.Vdc.Name, Equals, vdcConfiguration.Name)
 		check.Assert(vdc.Vdc.IsEnabled, Equals, vdcConfiguration.IsEnabled)
 		check.Assert(vdc.Vdc.AllocationModel, Equals, vdcConfiguration.AllocationModel)
@@ -354,11 +350,9 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 		err = vdc.DeleteWait(true, true)
 		check.Assert(err, IsNil)
 
-		err = adminOrg.Refresh()
-		check.Assert(err, IsNil)
-		vdc, err = adminOrg.GetVdcByName(vdcConfiguration.Name)
-		check.Assert(err, IsNil)
-		check.Assert(vdc, Equals, Vdc{})
+		vdc, err = adminOrg.GetVDCByName(vdcConfiguration.Name, true)
+		check.Assert(err, NotNil)
+		check.Assert(vdc, IsNil)
 	}
 }
 
@@ -369,18 +363,18 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 // if the error is not nil.
 func (vcd *TestVCD) Test_FindCatalog(check *C) {
 	// Find Catalog
-	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
-	check.Assert(cat, Not(Equals), Catalog{})
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
+	check.Assert(cat, NotNil)
 	check.Assert(cat.Catalog.Name, Equals, vcd.config.VCD.Catalog.Name)
 	// checks if user gave a catalog description in config file
 	if vcd.config.VCD.Catalog.Description != "" {
 		check.Assert(cat.Catalog.Description, Equals, vcd.config.VCD.Catalog.Description)
 	}
 	// Check Invalid Catalog
-	cat, err = vcd.org.FindCatalog(INVALID_NAME)
-	check.Assert(cat, Equals, Catalog{})
-	check.Assert(err, IsNil)
+	cat, err = vcd.org.GetCatalogByName(INVALID_NAME, false)
+	check.Assert(err, NotNil)
+	check.Assert(cat, IsNil)
 }
 
 // Tests Admin version of FindCatalog with Catalog in config file. Asserts an
@@ -397,7 +391,7 @@ func (vcd *TestVCD) Test_Admin_FindCatalog(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 	// Find Catalog
-	cat, err := adminOrg.FindCatalog(vcd.config.VCD.Catalog.Name)
+	cat, err := adminOrg.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(cat, Not(Equals), Catalog{})
 	check.Assert(err, IsNil)
 	check.Assert(cat.Catalog.Name, Equals, vcd.config.VCD.Catalog.Name)
@@ -406,40 +400,73 @@ func (vcd *TestVCD) Test_Admin_FindCatalog(check *C) {
 		check.Assert(cat.Catalog.Description, Equals, vcd.config.VCD.Catalog.Description)
 	}
 	// Check Invalid Catalog
-	cat, err = adminOrg.FindCatalog(INVALID_NAME)
-	check.Assert(cat, Equals, Catalog{})
+	cat, err = adminOrg.GetCatalogByName(INVALID_NAME, false)
+	check.Assert(err, NotNil)
+	check.Assert(cat, IsNil)
+}
+
+// Tests CreateCatalog by creating a catalog using an AdminOrg and
+// asserts that the catalog returned contains the right contents or if it fails.
+// Then Deletes the catalog.
+func (vcd *TestVCD) Test_AdminOrgCreateCatalog(check *C) {
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+	oldAdminCatalog, _ := adminOrg.GetAdminCatalogByName(TestCreateCatalog, false)
+	if oldAdminCatalog != nil {
+		err = oldAdminCatalog.Delete(true, true)
+		check.Assert(err, IsNil)
+	}
+	adminCatalog, err := adminOrg.CreateCatalog(TestCreateCatalog, TestCreateCatalogDesc)
+	check.Assert(err, IsNil)
+	AddToCleanupList(TestCreateCatalog, "catalog", vcd.org.Org.Name, "Test_CreateCatalog")
+	check.Assert(adminCatalog.AdminCatalog.Name, Equals, TestCreateCatalog)
+	check.Assert(adminCatalog.AdminCatalog.Description, Equals, TestCreateCatalogDesc)
+	task := NewTask(&vcd.client.Client)
+	task.Task = adminCatalog.AdminCatalog.Tasks.Task[0]
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	adminOrg, err = vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	copyAdminCatalog, err := adminOrg.GetAdminCatalogByName(TestCreateCatalog, false)
+	check.Assert(err, IsNil)
+	check.Assert(copyAdminCatalog, NotNil)
+	check.Assert(adminCatalog.AdminCatalog.Name, Equals, copyAdminCatalog.AdminCatalog.Name)
+	check.Assert(adminCatalog.AdminCatalog.Description, Equals, copyAdminCatalog.AdminCatalog.Description)
+	check.Assert(adminCatalog.AdminCatalog.IsPublished, Equals, false)
+	err = adminCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
 }
 
-// Tests CreateCatalog by creating a catalog named CatalogCreationTest and
+// Tests CreateCatalog by creating a catalog using an Org and
 // asserts that the catalog returned contains the right contents or if it fails.
 // Then Deletes the catalog.
-func (vcd *TestVCD) Test_CreateCatalog(check *C) {
-	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+func (vcd *TestVCD) Test_OrgCreateCatalog(check *C) {
+	org, err := vcd.client.GetOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
-	catalog, _ := org.FindAdminCatalog(TestCreateCatalog)
-	if catalog != (AdminCatalog{}) {
-		err = catalog.Delete(true, true)
+	oldCatalog, _ := org.GetCatalogByName(TestCreateCatalog, false)
+	if oldCatalog != nil {
+		err = oldCatalog.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
-	catalog, err = org.CreateCatalog(TestCreateCatalog, TestCreateCatalogDesc)
+	catalog, err := org.CreateCatalog(TestCreateCatalog, TestCreateCatalogDesc)
 	check.Assert(err, IsNil)
 	AddToCleanupList(TestCreateCatalog, "catalog", vcd.org.Org.Name, "Test_CreateCatalog")
-	check.Assert(catalog.AdminCatalog.Name, Equals, TestCreateCatalog)
-	check.Assert(catalog.AdminCatalog.Description, Equals, TestCreateCatalogDesc)
+	check.Assert(catalog.Catalog.Name, Equals, TestCreateCatalog)
+	check.Assert(catalog.Catalog.Description, Equals, TestCreateCatalogDesc)
 	task := NewTask(&vcd.client.Client)
-	task.Task = catalog.AdminCatalog.Tasks.Task[0]
+	task.Task = catalog.Catalog.Tasks.Task[0]
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
-	org, err = vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	org, err = vcd.client.GetOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
-	copyCatalog, err := org.FindAdminCatalog(TestCreateCatalog)
-	check.Assert(copyCatalog, Not(Equals), AdminCatalog{})
+	copyCatalog, err := org.GetCatalogByName(TestCreateCatalog, false)
 	check.Assert(err, IsNil)
-	check.Assert(catalog.AdminCatalog.Name, Equals, copyCatalog.AdminCatalog.Name)
-	check.Assert(catalog.AdminCatalog.Description, Equals, copyCatalog.AdminCatalog.Description)
-	check.Assert(catalog.AdminCatalog.IsPublished, Equals, false)
+	check.Assert(copyCatalog, NotNil)
+	check.Assert(catalog.Catalog.Name, Equals, copyCatalog.Catalog.Name)
+	check.Assert(catalog.Catalog.Description, Equals, copyCatalog.Catalog.Description)
+	check.Assert(catalog.Catalog.IsPublished, Equals, false)
 	err = catalog.Delete(true, true)
 	check.Assert(err, IsNil)
 }
@@ -454,12 +481,13 @@ func (vcd *TestVCD) Test_GetAdminCatalog(check *C) {
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	// Find Catalog
-	cat, err := adminOrg.FindAdminCatalog(vcd.config.VCD.Catalog.Name)
+	adminCatalog, err := adminOrg.GetAdminCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
-	check.Assert(cat.AdminCatalog.Name, Equals, vcd.config.VCD.Catalog.Name)
+	check.Assert(adminCatalog, NotNil)
+	check.Assert(adminCatalog.AdminCatalog.Name, Equals, vcd.config.VCD.Catalog.Name)
 	// checks if user gave a catalog description in config file
 	if vcd.config.VCD.Catalog.Description != "" {
-		check.Assert(cat.AdminCatalog.Description, Equals, vcd.config.VCD.Catalog.Description)
+		check.Assert(adminCatalog.AdminCatalog.Description, Equals, vcd.config.VCD.Catalog.Description)
 	}
 }
 
@@ -468,15 +496,16 @@ func (vcd *TestVCD) Test_GetAdminCatalog(check *C) {
 func (vcd *TestVCD) Test_RefreshVdc(check *C) {
 
 	adminOrg, vdcConfiguration, err := setupVDc(vcd, check)
+	check.Assert(err, IsNil)
 
 	// Refresh so the new VDC shows up in the org's list
 	err = adminOrg.Refresh()
 	check.Assert(err, IsNil)
 
-	adminVdc, err := adminOrg.GetAdminVdcByName(vdcConfiguration.Name)
+	adminVdc, err := adminOrg.GetAdminVDCByName(vdcConfiguration.Name, false)
 
 	check.Assert(err, IsNil)
-	check.Assert(adminVdc, Not(Equals), Vdc{})
+	check.Assert(adminVdc, NotNil)
 	check.Assert(adminVdc.AdminVdc.Name, Equals, vdcConfiguration.Name)
 	check.Assert(adminVdc.AdminVdc.IsEnabled, Equals, vdcConfiguration.IsEnabled)
 	check.Assert(adminVdc.AdminVdc.AllocationModel, Equals, vdcConfiguration.AllocationModel)
@@ -573,9 +602,8 @@ func setupVDc(vcd *TestVCD, check *C) (AdminOrg, *types.VdcConfiguration, error)
 		IsThinProvision:      true,
 		UsesFastProvisioning: true,
 	}
-	vdc, err := adminOrg.GetVdcByName(vdcConfiguration.Name)
-	check.Assert(err, IsNil)
-	if vdc != (Vdc{}) {
+	vdc, _ := adminOrg.GetVDCByName(vdcConfiguration.Name, false)
+	if vdc != nil {
 		err = vdc.DeleteWait(true, true)
 		check.Assert(err, IsNil)
 	}
@@ -589,15 +617,16 @@ func setupVDc(vcd *TestVCD, check *C) (AdminOrg, *types.VdcConfiguration, error)
 // variable is updated.
 func (vcd *TestVCD) Test_UpdateVdc(check *C) {
 	adminOrg, vdcConfiguration, err := setupVDc(vcd, check)
+	check.Assert(err, IsNil)
 
 	// Refresh so the new VDC shows up in the org's list
 	err = adminOrg.Refresh()
 	check.Assert(err, IsNil)
 
-	adminVdc, err := adminOrg.GetAdminVdcByName(vdcConfiguration.Name)
+	adminVdc, err := adminOrg.GetAdminVDCByName(vdcConfiguration.Name, false)
 
 	check.Assert(err, IsNil)
-	check.Assert(adminVdc, Not(Equals), Vdc{})
+	check.Assert(adminVdc, NotNil)
 	check.Assert(adminVdc.AdminVdc.Name, Equals, vdcConfiguration.Name)
 	check.Assert(adminVdc.AdminVdc.IsEnabled, Equals, vdcConfiguration.IsEnabled)
 	check.Assert(adminVdc.AdminVdc.AllocationModel, Equals, vdcConfiguration.AllocationModel)
@@ -663,12 +692,194 @@ func (vcd *TestVCD) Test_GetAdminVdcByName(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	adminVdc, err := adminOrg.GetAdminVdcByName(vcd.config.VCD.Vdc)
-	check.Assert(adminVdc, Not(Equals), AdminVdc{})
+	adminVdc, err := adminOrg.GetAdminVDCByName(vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
+	check.Assert(adminVdc, NotNil)
 	check.Assert(adminVdc.AdminVdc.Name, Equals, vcd.config.VCD.Vdc)
 	// Try a vdc that doesn't exist
-	adminVdc, err = adminOrg.GetAdminVdcByName(INVALID_NAME)
-	check.Assert(adminVdc, Equals, AdminVdc{})
+	adminVdc, err = adminOrg.GetAdminVDCByName(INVALID_NAME, false)
+	check.Assert(err, NotNil)
+	check.Assert(adminVdc, IsNil)
+}
+
+// Tests catalog retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_OrgGetCatalog(check *C) {
+
+	getByName := func(name string, refresh bool) (genericEntity, error) {
+		return vcd.org.GetCatalogByName(name, refresh)
+	}
+	getById := func(id string, refresh bool) (genericEntity, error) { return vcd.org.GetCatalogById(id, refresh) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
+		return vcd.org.GetCatalogByNameOrId(id, refresh)
+	}
+
+	var def = getterTestDefinition{
+		parentType:    "Org",
+		parentName:    vcd.config.VCD.Org,
+		entityType:    "Catalog",
+		entityName:    vcd.config.VCD.Catalog.Name,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
+	}
+
+	vcd.testFinderGetGenericEntity(def, check)
+}
+
+// Tests admin catalog retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_AdminOrgGetAdminCatalog(check *C) {
+	catalogName := vcd.config.VCD.Catalog.Name
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_AdminOrgGetAdminCatalog: Org name not given.")
+		return
+	}
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	getByName := func(name string, refresh bool) (genericEntity, error) {
+		return adminOrg.GetAdminCatalogByName(name, refresh)
+	}
+	getById := func(id string, refresh bool) (genericEntity, error) {
+		return adminOrg.GetAdminCatalogById(id, refresh)
+	}
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
+		return adminOrg.GetAdminCatalogByNameOrId(id, refresh)
+	}
+
+	var def = getterTestDefinition{
+		parentType:    "AdminOrg",
+		parentName:    vcd.config.VCD.Org,
+		entityType:    "AdminCatalog",
+		entityName:    catalogName,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
+	}
+
+	vcd.testFinderGetGenericEntity(def, check)
+
+}
+
+// Tests catalog retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_AdminOrgGetCatalog(check *C) {
+	catalogName := vcd.config.VCD.Catalog.Name
+
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_AdminOrgGetCatalog: Org name not given.")
+		return
+	}
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	getByName := func(name string, refresh bool) (genericEntity, error) {
+		return adminOrg.GetCatalogByName(name, refresh)
+	}
+	getById := func(id string, refresh bool) (genericEntity, error) { return adminOrg.GetCatalogById(id, refresh) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
+		return adminOrg.GetCatalogByNameOrId(id, refresh)
+	}
+
+	var def = getterTestDefinition{
+		parentType:    "AdminOrg",
+		parentName:    vcd.config.VCD.Org,
+		entityType:    "Catalog",
+		entityName:    catalogName,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
+	}
+
+	vcd.testFinderGetGenericEntity(def, check)
+
+}
+
+// Tests VDC retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_AdminOrgGetVdc(check *C) {
+
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_AdminOrgGetVdc: Org name not given.")
+		return
+	}
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	getByName := func(name string, refresh bool) (genericEntity, error) { return adminOrg.GetVDCByName(name, refresh) }
+	getById := func(id string, refresh bool) (genericEntity, error) { return adminOrg.GetVDCById(id, refresh) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) { return adminOrg.GetVDCByNameOrId(id, refresh) }
+
+	var def = getterTestDefinition{
+		parentType:    "AdminOrg",
+		parentName:    vcd.config.VCD.Org,
+		entityType:    "Vdc",
+		getterPrefix:  "VDC",
+		entityName:    vcd.config.VCD.Vdc,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
+	}
+	vcd.testFinderGetGenericEntity(def, check)
+}
+
+// Tests VDC retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_AdminOrgGetAdminVdc(check *C) {
+
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_AdminOrgGetAdminVdc: Org name not given.")
+		return
+	}
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	getByName := func(name string, refresh bool) (genericEntity, error) {
+		return adminOrg.GetAdminVDCByName(name, refresh)
+	}
+	getById := func(id string, refresh bool) (genericEntity, error) { return adminOrg.GetAdminVDCById(id, refresh) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
+		return adminOrg.GetAdminVDCByNameOrId(id, refresh)
+	}
+
+	var def = getterTestDefinition{
+		parentType:    "AdminOrg",
+		parentName:    vcd.config.VCD.Org,
+		entityType:    "AdminVdc",
+		getterPrefix:  "AdminVDC",
+		entityName:    vcd.config.VCD.Vdc,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
+	}
+	vcd.testFinderGetGenericEntity(def, check)
+}
+
+// Tests VDC retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_OrgGetVdc(check *C) {
+
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_OrgGetVdc: Org name not given.")
+		return
+	}
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	getByName := func(name string, refresh bool) (genericEntity, error) { return org.GetVDCByName(name, refresh) }
+	getById := func(id string, refresh bool) (genericEntity, error) { return org.GetVDCById(id, refresh) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) { return org.GetVDCByNameOrId(id, refresh) }
+
+	var def = getterTestDefinition{
+		parentType:    "Org",
+		parentName:    vcd.config.VCD.Org,
+		entityType:    "Vdc",
+		getterPrefix:  "VDC",
+		entityName:    vcd.config.VCD.Vdc,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
+	}
+	vcd.testFinderGetGenericEntity(def, check)
 }
