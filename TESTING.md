@@ -324,6 +324,9 @@ While running tests, the following environment variables can be used:
     * `log` : writes full task details in the log
     * `simple_show` : displays a summary line for the task on screen
     * `simple_log` : writes a summary line for the task in the log
+* `GOVCD_IGNORE_CLEANUP_FILE` Ignore the cleanup file if it is left behind after a test failure.
+    This could be useful after running a single test, when we need to check how the test behaves with the resource still
+    in place.
 
 # Final Words
 Be careful about using our tests as these tests run on a real vcd. If you don't have 1 gb of ram and 2 vcpus available then you should not be running tests that deploy your vm/change memory and cpu. However everything created will be removed at the end of testing.

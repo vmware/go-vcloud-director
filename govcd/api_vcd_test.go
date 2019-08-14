@@ -7,6 +7,8 @@
 package govcd
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -16,6 +18,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -165,6 +168,13 @@ type CleanupEntity struct {
 	CreatedBy  string
 }
 
+// CleanupInfo is the data used to persist an entity list in a file
+type CleanupInfo struct {
+	VcdIp      string          // IP of the vCD where the test runs
+	Info       string          // Information about this file
+	EntityList []CleanupEntity // List of entities to remove
+}
+
 // Internally used by the test suite to run tests based on TestVCD structures
 var _ = Suite(&TestVCD{})
 
@@ -172,8 +182,96 @@ var _ = Suite(&TestVCD{})
 // at the end of the tests
 var cleanupEntityList []CleanupEntity
 
+// Lock for of cleanup entities persistent file
+var persistentCleanupListLock sync.Mutex
+
+// IP of the vCD being tested. It is initialized at the first client authentication
+var persistentCleanupIp string
+
 // Use this value to run a specific test that does not need a pre-created vApp.
 var skipVappCreation bool = os.Getenv("GOVCD_SKIP_VAPP_CREATION") != ""
+
+// Makes the name for the cleanup entities persistent file
+// Using a name for each vCD allows us to run tests with different servers
+// and persist the cleanup list for all.
+func makePersistentCleanupFileName() string {
+	var persistentCleanupListMask = "test_cleanup_list-%s.%s"
+	if persistentCleanupIp == "" {
+		fmt.Printf("######## Persistent Cleanup IP was not set ########\n")
+		os.Exit(1)
+	}
+	reForbiddenChars := regexp.MustCompile(`[/]`)
+	fileName := fmt.Sprintf(persistentCleanupListMask,
+		reForbiddenChars.ReplaceAllString(persistentCleanupIp, ""), "json")
+	return fileName
+
+}
+
+// Removes the list of cleanup entities
+// To be called only after the list has been processed
+func removePersistentCleanupList() {
+	persistentCleanupListFile := makePersistentCleanupFileName()
+	persistentCleanupListLock.Lock()
+	defer persistentCleanupListLock.Unlock()
+	_, err := os.Stat(persistentCleanupListFile)
+	if os.IsNotExist(err) {
+		return
+	}
+	_ = os.Remove(persistentCleanupListFile)
+}
+
+// Reads a cleanup list from file
+func readCleanupList() ([]CleanupEntity, error) {
+	persistentCleanupListFile := makePersistentCleanupFileName()
+	persistentCleanupListLock.Lock()
+	defer persistentCleanupListLock.Unlock()
+	var cleanupInfo CleanupInfo
+	_, err := os.Stat(persistentCleanupListFile)
+	if os.IsNotExist(err) {
+		return nil, err
+	}
+	listText, err := ioutil.ReadFile(persistentCleanupListFile)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(listText, &cleanupInfo)
+	return cleanupInfo.EntityList, err
+}
+
+// Writes a cleanup list to file.
+// If the test suite terminates without having a chance to
+// clean up properly, the next run of the test suite will try to
+// remove the leftovers
+func writeCleanupList(cleanupList []CleanupEntity) error {
+	persistentCleanupListFile := makePersistentCleanupFileName()
+	persistentCleanupListLock.Lock()
+	defer persistentCleanupListLock.Unlock()
+	cleanupInfo := CleanupInfo{
+		VcdIp: persistentCleanupIp,
+		Info: "Persistent list of entities to be destroyed. " +
+			" If this file is found when starting the tests, its entities will be " +
+			" processed for removal before any other operation.",
+		EntityList: cleanupList,
+	}
+	listText, err := json.MarshalIndent(cleanupInfo, " ", " ")
+	if err != nil {
+		return err
+	}
+	file, err := os.Create(persistentCleanupListFile)
+	if err != nil {
+		return err
+	}
+	writer := bufio.NewWriter(file)
+	count, err := writer.Write(listText)
+	if err != nil || count == 0 {
+		return err
+	}
+	err = writer.Flush()
+	if err != nil {
+		return err
+	}
+	return file.Close()
+}
 
 // Adds an entity to the cleanup list.
 // To be called by all tests when a new entity has been created, before
@@ -187,6 +285,10 @@ func AddToCleanupList(name, entityType, parent, createdBy string) {
 		}
 	}
 	cleanupEntityList = append(cleanupEntityList, CleanupEntity{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy})
+	err := writeCleanupList(cleanupEntityList)
+	if err != nil {
+		fmt.Printf("################ error writing cleanup list %s\n", err)
+	}
 }
 
 // Prepend an entity to the cleanup list.
@@ -201,6 +303,10 @@ func PrependToCleanupList(name, entityType, parent, createdBy string) {
 		}
 	}
 	cleanupEntityList = append([]CleanupEntity{{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy}}, cleanupEntityList...)
+	err := writeCleanupList(cleanupEntityList)
+	if err != nil {
+		fmt.Printf("################ error writing cleanup list %s\n", err)
+	}
 }
 
 // Users use the environmental variable GOVCD_CONFIG as
@@ -299,6 +405,14 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	if !vcd.client.Client.IsSysAdmin {
 		vcd.skipAdminTests = true
 	}
+
+	// Sets the vCD IP value, removing the elements that would
+	// not be appropriate in a file name
+	reHttp := regexp.MustCompile(`^https?://`)
+	reApi := regexp.MustCompile(`/api/?`)
+	persistentCleanupIp = vcd.config.Provider.Url
+	persistentCleanupIp = reHttp.ReplaceAllString(persistentCleanupIp, "")
+	persistentCleanupIp = reApi.ReplaceAllString(persistentCleanupIp, "")
 	// set org
 	vcd.org, err = vcd.client.GetOrgByName(config.VCD.Org)
 	if err != nil {
@@ -317,6 +431,22 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		// vcd.skipVappTests = true
 		skipVappCreation = true
 	}
+
+	// Gets the persistent cleanup list from file, if exists.
+	cleanupList, err := readCleanupList()
+	if len(cleanupList) > 0 && err == nil {
+		if os.Getenv("GOVCD_IGNORE_CLEANUP_FILE") == "" {
+			// If we found a cleanup file and we want to process it (default)
+			// We proceed to cleanup the leftovers before any other operation
+			fmt.Printf("*** Found cleanup file %s\n", makePersistentCleanupFileName())
+			for i, cleanupEntity := range cleanupList {
+				fmt.Printf("# %d ", i+1)
+				vcd.removeLeftoverEntities(cleanupEntity)
+			}
+		}
+		removePersistentCleanupList()
+	}
+
 	// creates a new VApp for vapp tests
 	if !skipVappCreation && config.VCD.Network.Net1 != "" && config.VCD.StorageProfile.SP1 != "" &&
 		config.VCD.Catalog.Name != "" && config.VCD.Catalog.CatalogItem != "" {
@@ -840,8 +970,10 @@ func (vcd *TestVCD) TearDownSuite(check *C) {
 	// We will try to remove every entity that has been registered into
 	// CleanupEntityList. Entities that have already been cleaned up by their
 	// functions will be ignored.
-	for _, cleanupEntity := range cleanupEntityList {
+	for i, cleanupEntity := range cleanupEntityList {
+		fmt.Printf("# %d ", i+1)
 		vcd.removeLeftoverEntities(cleanupEntity)
+		removePersistentCleanupList()
 	}
 }
 
