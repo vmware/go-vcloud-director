@@ -2355,6 +2355,7 @@ type ExternalNetworkCreate struct {
 	Description      string                `xml:"vcloud:Description,omitempty"`
 	Tasks            *TasksInProgress      `xml:"Tasks,omitempty"`
 	Configuration    *NetworkConfiguration `xml:"vcloud:Configuration,omitempty"`
+	VimPortGroupRef  *VimObjectRefCreate   `xml:"VimPortGroupRef,omitempty"`
 	VimPortGroupRefs *VimObjectRefsCreate  `xml:"vmext:VimPortGroupRefs,omitempty"`
 	VCloudExtension  *VCloudExtension      `xml:"VCloudExtension,omitempty"`
 }

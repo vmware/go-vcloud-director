@@ -29,7 +29,7 @@ func (vcd *TestVCD) Test_ExternalNetworkGetByName(check *C) {
 }
 
 // Helper function that creates an external network to be used in other tests
-func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix string) (skippingReason string, externalNetwork *types.ExternalNetworkCreate, task Task, err error) {
+func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix string) (skippingReason string, externalNetwork *types.ExternalNetwork, task Task, err error) {
 
 	if vcd.skipAdminTests {
 		return fmt.Sprintf(TestRequiresSysAdminPrivileges, testName), externalNetwork, Task{}, nil
@@ -72,12 +72,9 @@ func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix s
 		return fmt.Sprintf("More than one port group found with name '%s'", vcd.config.VCD.ExternalNetworkPortGroup), externalNetwork, Task{}, nil
 	}
 
-	externalNetwork = &types.ExternalNetworkCreate{
+	externalNetwork = &types.ExternalNetwork{
 		Name:        networkName,
 		Description: "Test Create External Network",
-		XmlnsVmext:  types.XMLNamespaceExtension,
-		XmlnsVcloud: types.XMLNamespaceVCloud,
-		Type:        types.MimeExternalNetwork,
 		Configuration: &types.NetworkConfiguration{
 			Xmlns: types.XMLNamespaceVCloud,
 			IPScopes: &types.IPScopes{
@@ -99,9 +96,9 @@ func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix s
 				}},
 			FenceMode: "isolated",
 		},
-		VimPortGroupRefs: &types.VimObjectRefsCreate{
-			VimObjectRef: []*types.VimObjectRefCreate{
-				&types.VimObjectRefCreate{
+		VimPortGroupRefs: &types.VimObjectRefs{
+			VimObjectRef: []*types.VimObjectRef{
+				&types.VimObjectRef{
 					VimServerRef: &types.Reference{
 						HREF: vimServerHref,
 					},

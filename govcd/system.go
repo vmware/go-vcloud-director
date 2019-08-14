@@ -479,15 +479,46 @@ func GetExternalNetwork(vcdClient *VCDClient, networkName string) (*ExternalNetw
 // CreateExternalNetwork allows create external network and returns Task or error.
 // types.ExternalNetwork struct is general and used for various types of networks. But for external network
 // fence mode is always isolated, isInherited is false, parentNetwork is empty.
-func CreateExternalNetwork(vcdClient *VCDClient, externalNetwork *types.ExternalNetworkCreate) (Task, error) {
+func CreateExternalNetwork(vcdClient *VCDClient, externalNetworkData *types.ExternalNetwork) (Task, error) {
 
 	if !vcdClient.Client.IsSysAdmin {
 		return Task{}, fmt.Errorf("functionality requires system administrator privileges")
 	}
 
-	err := validateExternalNetwork(externalNetwork)
+	err := validateExternalNetwork(externalNetworkData)
 	if err != nil {
 		return Task{}, err
+	}
+
+	externalNetwork := &types.ExternalNetworkCreate{}
+	externalNetwork.HREF = externalNetworkData.HREF
+	externalNetwork.Description = externalNetworkData.Description
+	externalNetwork.Name = externalNetworkData.Name
+	externalNetwork.Type = externalNetworkData.Type
+	externalNetwork.ID = externalNetworkData.ID
+	externalNetwork.OperationKey = externalNetworkData.OperationKey
+	externalNetwork.Link = externalNetworkData.Link
+	externalNetwork.Configuration = externalNetworkData.Configuration
+	externalNetwork.VCloudExtension = externalNetworkData.VCloudExtension
+	externalNetwork.XmlnsVmext = types.XMLNamespaceExtension
+	externalNetwork.XmlnsVcloud = types.XMLNamespaceVCloud
+	externalNetwork.Type = types.MimeExternalNetwork
+	if externalNetworkData.VimPortGroupRefs != nil {
+		externalNetwork.VimPortGroupRefs = &types.VimObjectRefsCreate{}
+		for _, vimObjRef := range externalNetworkData.VimPortGroupRefs.VimObjectRef {
+			externalNetwork.VimPortGroupRefs.VimObjectRef = append(externalNetwork.VimPortGroupRefs.VimObjectRef, &types.VimObjectRefCreate{
+				VimServerRef:  vimObjRef.VimServerRef,
+				MoRef:         vimObjRef.MoRef,
+				VimObjectType: vimObjRef.VimObjectType,
+			})
+		}
+	}
+	if externalNetworkData.VimPortGroupRef != nil {
+		externalNetwork.VimPortGroupRef = &types.VimObjectRefCreate{
+			VimServerRef:  externalNetworkData.VimPortGroupRef.VimServerRef,
+			MoRef:         externalNetworkData.VimPortGroupRef.MoRef,
+			VimObjectType: externalNetworkData.VimPortGroupRef.VimObjectType,
+		}
 	}
 
 	externalNetHREF := vcdClient.Client.VCDHREF
