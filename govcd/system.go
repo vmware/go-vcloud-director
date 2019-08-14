@@ -31,49 +31,6 @@ type EdgeGatewayCreation struct {
 	DistributedRoutingEnabled  bool     // If advanced networking enabled, also enable distributed routing
 }
 
-// Type: VimObjectRefType
-// Namespace: http://www.vmware.com/vcloud/extension/v1.5
-// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VimObjectRefsType.html
-// Description: Represents the Managed Object Reference (MoRef) and the type of a vSphere object.
-// Since: 0.9
-type vimObjectRefCreate struct {
-	VimServerRef  *types.Reference `xml:"vmext:VimServerRef"`
-	MoRef         string           `xml:"vmext:MoRef"`
-	VimObjectType string           `xml:"vmext:VimObjectType"`
-}
-
-// Type: VimObjectRefsType
-// Namespace: http://www.vmware.com/vcloud/extension/v1.5
-// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VimObjectRefsType.html
-// Description: List of VimObjectRef elements.
-// Since: 0.9
-type vimObjectRefsCreate struct {
-	VimObjectRef []*vimObjectRefCreate `xml:"vmext:VimObjectRef"`
-}
-
-// Type: VMWExternalNetworkType
-// Namespace: http://www.vmware.com/vcloud/extension/v1.5
-// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VMWExternalNetworkType.html
-// Description: External network type.
-// Since: 1.0
-type externalNetworkCreate struct {
-	XMLName          xml.Name                    `xml:"vmext:VMWExternalNetwork"`
-	XmlnsVmext       string                      `xml:"xmlns:vmext,attr,omitempty"`
-	XmlnsVcloud      string                      `xml:"xmlns:vcloud,attr,omitempty"`
-	HREF             string                      `xml:"href,attr,omitempty"`
-	Type             string                      `xml:"type,attr,omitempty"`
-	ID               string                      `xml:"id,attr,omitempty"`
-	OperationKey     string                      `xml:"operationKey,attr,omitempty"`
-	Name             string                      `xml:"name,attr"`
-	Link             []*types.Link               `xml:"Link,omitempty"`
-	Description      string                      `xml:"vcloud:Description,omitempty"`
-	Tasks            *types.TasksInProgress      `xml:"Tasks,omitempty"`
-	Configuration    *types.NetworkConfiguration `xml:"vcloud:Configuration,omitempty"`
-	VimPortGroupRef  *vimObjectRefCreate         `xml:"VimPortGroupRef,omitempty"`
-	VimPortGroupRefs *vimObjectRefsCreate        `xml:"vmext:VimPortGroupRefs,omitempty"`
-	VCloudExtension  *types.VCloudExtension      `xml:"VCloudExtension,omitempty"`
-}
-
 // Creates an Admin Organization based on settings, description, and org name.
 // The Organization created will have these settings specified in the
 // settings parameter. The settings variable is defined in types.go.
@@ -532,6 +489,49 @@ func CreateExternalNetwork(vcdClient *VCDClient, externalNetworkData *types.Exte
 	err := validateExternalNetwork(externalNetworkData)
 	if err != nil {
 		return Task{}, err
+	}
+
+	// Type: VimObjectRefType
+	// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+	// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VimObjectRefsType.html
+	// Description: Represents the Managed Object Reference (MoRef) and the type of a vSphere object.
+	// Since: 0.9
+	type vimObjectRefCreate struct {
+		VimServerRef  *types.Reference `xml:"vmext:VimServerRef"`
+		MoRef         string           `xml:"vmext:MoRef"`
+		VimObjectType string           `xml:"vmext:VimObjectType"`
+	}
+
+	// Type: VimObjectRefsType
+	// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+	// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VimObjectRefsType.html
+	// Description: List of VimObjectRef elements.
+	// Since: 0.9
+	type vimObjectRefsCreate struct {
+		VimObjectRef []*vimObjectRefCreate `xml:"vmext:VimObjectRef"`
+	}
+
+	// Type: VMWExternalNetworkType
+	// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+	// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VMWExternalNetworkType.html
+	// Description: External network type.
+	// Since: 1.0
+	type externalNetworkCreate struct {
+		XMLName          xml.Name                    `xml:"vmext:VMWExternalNetwork"`
+		XmlnsVmext       string                      `xml:"xmlns:vmext,attr,omitempty"`
+		XmlnsVcloud      string                      `xml:"xmlns:vcloud,attr,omitempty"`
+		HREF             string                      `xml:"href,attr,omitempty"`
+		Type             string                      `xml:"type,attr,omitempty"`
+		ID               string                      `xml:"id,attr,omitempty"`
+		OperationKey     string                      `xml:"operationKey,attr,omitempty"`
+		Name             string                      `xml:"name,attr"`
+		Link             []*types.Link               `xml:"Link,omitempty"`
+		Description      string                      `xml:"vcloud:Description,omitempty"`
+		Tasks            *types.TasksInProgress      `xml:"Tasks,omitempty"`
+		Configuration    *types.NetworkConfiguration `xml:"vcloud:Configuration,omitempty"`
+		VimPortGroupRef  *vimObjectRefCreate         `xml:"VimPortGroupRef,omitempty"`
+		VimPortGroupRefs *vimObjectRefsCreate        `xml:"vmext:VimPortGroupRefs,omitempty"`
+		VCloudExtension  *types.VCloudExtension      `xml:"VCloudExtension,omitempty"`
 	}
 
 	externalNetwork := &externalNetworkCreate{}
