@@ -119,15 +119,17 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
 	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
+	check.Assert(err, IsNil)
 	networks = append(networks, net.OrgVDCNetwork)
 	check.Assert(err, IsNil)
 	// Populate Catalog
-	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
-	check.Assert(cat, Not(Equals), (Catalog{}))
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
+	check.Assert(cat, NotNil)
 	// Populate Catalog Item
-	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
+	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
+	check.Assert(catitem, NotNil)
 	// Get VAppTemplate
 	vapptemplate, err := catitem.GetVAppTemplate()
 	check.Assert(err, IsNil)

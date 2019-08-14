@@ -1,16 +1,32 @@
 ## 2.4.0 (Unreleased)
 
-* Deprecated functions `GetOrgByName(*VCDClient, string) (Org, error)` and `GetAdminOrgByName(*VCDClient, string) (AdminOrg, error)`
-* Deprecated methods `(*AdminOrg)FetchUserByName`, `(*AdminOrg)FetchUserById`, `(*AdminOrg)FetchUserByNameOrId`, `(*AdminOrg)GetRole`.
-* Added method `(*VCDClient) GetOrgByName(string) (*Org, error)`  and related `GetOrgById`, `GetOrgByNameOrId`
-* Added method `(*VCDClient) GetAdminOrgByName(string) (*AdminOrg, error)` and related `GetAdminOrgById`, `GetAdminOrgByNameOrId`
-* Added methods `GetUserByName`, `GetUserById`, `GetUserByNameOrId`, `GetRoleReference`.
-* Added method `(*VCDClient) QueryProviderVdcs()` 
-* Added method `(*VCDClient) QueryProviderVdcStorageProfiles()` 
-* Added method `(*VCDClient) QueryNetworkPools()` 
+* Deprecated functions `GetOrgByName` and `GetAdminOrgByName`
+* Deprecated methods `AdminOrg.FetchUserByName`, `AdminOrg.FetchUserById`, `AdminOrg.FetchUserByNameOrId`, `AdminOrg.GetRole`.
+* Added method `VCDClient.GetOrgByName`  and related `GetOrgById`, `GetOrgByNameOrId`
+* Added method `VCDClient.GetAdminOrgByName` and related `GetAdminOrgById`, `GetAdminOrgByNameOrId`
+* Added methods `AdminOrg.GetUserByName`, `GetUserById`, `GetUserByNameOrId`, `GetRoleReference`.
+* Added method `VCDClient.QueryProviderVdcs` 
+* Added method `VCDClient.QueryProviderVdcStorageProfiles` 
+* Added method `VCDClient.QueryNetworkPools` 
 * Added get/add/delete metadata functions for vApp template and media item [#225](https://github.com/vmware/go-vcloud-director/pull/225).
 * Added `UpdateNetworkConnectionSection` for updating VM network configuration [#229](https://github.com/vmware/go-vcloud-director/pull/229)
 * Added `PowerOnAndForceCustomization`, `GetGuestCustomizationStatus`, `BlockWhileGuestCustomizationStatus` [#229](https://github.com/vmware/go-vcloud-director/pull/229)
+* Deprecated methods `AdminOrg.GetAdminVdcByName`, `AdminOrg.GetVdcByName`, `AdminOrg.FindAdminCatalog`, `AdminOrg.FindCatalog`
+* Deprecated methods `Catalog.FindCatalogItem`, `Org.FindCatalog`, `Org.GetVdcByName`
+* Deprecated function `GetExternalNetwork`
+* Added methods `Org.GetCatalogByName` and related `Org.GetCatalogById`, `GetCatalogItemByNameOrId`
+* Added methods `VCDClient.GetExternalNetworkByName` and related `GetExternalNetworkById` and `GetExternalNetworkByNameOrId`
+* Added methods `AdminOrg.GetCatalogByName` and related `Org.GetCatalogById`, `GetCatalogByNameOrId`
+* Added methods `AdminOrg.GetAdminCatalogByName` and related `Org.GetAdminCatalogById`, `GetAdminCatalogByNameOrId`
+* Added methods `Org.GetVDCByName` and related `GetVDCById`, `GetVDCByNameOrId`
+* Added methods `AdminOrg.GetVDCByName` and related `GetVDCById`, `GetVDCByNameOrId`
+* Added methods `AdminOrg.GetAdminVDCByName` and related `GetAdminVDCById`, `GetAdminVDCByNameOrId`
+* Added methods `Catalog.Refresh` and `AdminCatalog.Refresh`
+
+IMPROVEMENTS:
+
+* Move methods for `AdminOrg`, `AdminCatalog`, `AdminVdc` to new files `adminorg.go`,
+ `admincatalog.go`, `adminvdc.go`.
 
 BUGS FIXED:
 

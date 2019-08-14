@@ -441,13 +441,14 @@ func (vcd *TestVCD) Test_AddNewVMNilNIC(check *C) {
 	}
 
 	// Populate Catalog
-	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
-	check.Assert((Catalog{}), Not(Equals), cat)
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
+	check.Assert(cat, NotNil)
 
 	// Populate Catalog Item
-	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
+	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
+	check.Assert(catitem, NotNil)
 
 	// Get VAppTemplate
 	vapptemplate, err := catitem.GetVAppTemplate()
@@ -486,13 +487,14 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 	}
 
 	// Populate Catalog
-	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
-	check.Assert((Catalog{}), Not(Equals), cat)
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
+	check.Assert(cat, NotNil)
 
 	// Populate Catalog Item
-	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
+	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
+	check.Assert(catitem, NotNil)
 
 	// Get VAppTemplate
 	vapptemplate, err := catitem.GetVAppTemplate()

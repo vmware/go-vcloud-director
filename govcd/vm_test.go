@@ -38,7 +38,7 @@ func (vcd *TestVCD) findFirstVapp() VApp {
 		fmt.Println(err)
 		return VApp{}
 	}
-	vdc, err := org.GetVdcByName(config.VCD.Vdc)
+	vdc, err := org.GetVDCByName(config.VCD.Vdc, false)
 	if err != nil {
 		fmt.Println(err)
 		return VApp{}
@@ -439,6 +439,9 @@ func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
 // Test Insert or Eject Media for VM
 func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
 	itemName := "TestHandleInsertOrEjectMedia"
 
 	// Find VApp
@@ -458,8 +461,9 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 	vm.VM = &vmType
 
 	// Upload Media
-	catalog, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
 
 	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
@@ -498,6 +502,9 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 // Test Insert or Eject Media for VM
 func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
 	itemName := "TestInsertOrEjectMedia"
 
 	// Find VApp
@@ -517,8 +524,9 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 	vm.VM = &vmType
 
 	// Upload Media
-	catalog, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
 
 	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
@@ -580,6 +588,9 @@ func isMediaInjected(items []*types.VirtualHardwareItem) bool {
 
 // Test Insert or Eject Media for VM
 func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
 
 	itemName := "TestAnswerVmQuestion"
 
@@ -600,8 +611,9 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 	vm.VM = &vmType
 
 	// Upload Media
-	catalog, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
 
 	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
@@ -715,6 +727,9 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 }
 
 func (vcd *TestVCD) Test_VMToggleHardwareVirtualization(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
 	vapp := vcd.findFirstVapp()
 	vmType, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
@@ -768,6 +783,9 @@ func (vcd *TestVCD) Test_VMToggleHardwareVirtualization(check *C) {
 }
 
 func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
 	vapp := vcd.findFirstVapp()
 	vmType, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
