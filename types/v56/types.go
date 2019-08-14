@@ -2308,17 +2308,6 @@ type VimObjectRef struct {
 	VimObjectType string     `xml:"VimObjectType"`
 }
 
-// Type: VimObjectRefType
-// Namespace: http://www.vmware.com/vcloud/extension/v1.5
-// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VimObjectRefsType.html
-// Description: Represents the Managed Object Reference (MoRef) and the type of a vSphere object.
-// Since: 0.9
-type VimObjectRefCreate struct {
-	VimServerRef  *Reference `xml:"vmext:VimServerRef"`
-	MoRef         string     `xml:"vmext:MoRef"`
-	VimObjectType string     `xml:"vmext:VimObjectType"`
-}
-
 // Type: VimObjectRefsType
 // Namespace: http://www.vmware.com/vcloud/extension/v1.5
 // https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VimObjectRefsType.html
@@ -2326,38 +2315,6 @@ type VimObjectRefCreate struct {
 // Since: 0.9
 type VimObjectRefs struct {
 	VimObjectRef []*VimObjectRef `xml:"VimObjectRef"`
-}
-
-// Type: VimObjectRefsType
-// Namespace: http://www.vmware.com/vcloud/extension/v1.5
-// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VimObjectRefsType.html
-// Description: List of VimObjectRef elements.
-// Since: 0.9
-type VimObjectRefsCreate struct {
-	VimObjectRef []*VimObjectRefCreate `xml:"vmext:VimObjectRef"`
-}
-
-// Type: VMWExternalNetworkType
-// Namespace: http://www.vmware.com/vcloud/extension/v1.5
-// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VMWExternalNetworkType.html
-// Description: External network type.
-// Since: 1.0
-type ExternalNetworkCreate struct {
-	XMLName          xml.Name              `xml:"vmext:VMWExternalNetwork"`
-	XmlnsVmext       string                `xml:"xmlns:vmext,attr,omitempty"`
-	XmlnsVcloud      string                `xml:"xmlns:vcloud,attr,omitempty"`
-	HREF             string                `xml:"href,attr,omitempty"`
-	Type             string                `xml:"type,attr,omitempty"`
-	ID               string                `xml:"id,attr,omitempty"`
-	OperationKey     string                `xml:"operationKey,attr,omitempty"`
-	Name             string                `xml:"name,attr"`
-	Link             []*Link               `xml:"Link,omitempty"`
-	Description      string                `xml:"vcloud:Description,omitempty"`
-	Tasks            *TasksInProgress      `xml:"Tasks,omitempty"`
-	Configuration    *NetworkConfiguration `xml:"vcloud:Configuration,omitempty"`
-	VimPortGroupRef  *VimObjectRefCreate   `xml:"VimPortGroupRef,omitempty"`
-	VimPortGroupRefs *VimObjectRefsCreate  `xml:"vmext:VimPortGroupRefs,omitempty"`
-	VCloudExtension  *VCloudExtension      `xml:"VCloudExtension,omitempty"`
 }
 
 // Type: VMWExternalNetworkType

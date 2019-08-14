@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"encoding/xml"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -28,6 +29,49 @@ type EdgeGatewayCreation struct {
 	HAEnabled                  bool     // enable HA
 	UseDefaultRouteForDNSRelay bool     // True if the default gateway should be used as the DNS relay
 	DistributedRoutingEnabled  bool     // If advanced networking enabled, also enable distributed routing
+}
+
+// Type: VimObjectRefType
+// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VimObjectRefsType.html
+// Description: Represents the Managed Object Reference (MoRef) and the type of a vSphere object.
+// Since: 0.9
+type vimObjectRefCreate struct {
+	VimServerRef  *types.Reference `xml:"vmext:VimServerRef"`
+	MoRef         string           `xml:"vmext:MoRef"`
+	VimObjectType string           `xml:"vmext:VimObjectType"`
+}
+
+// Type: VimObjectRefsType
+// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VimObjectRefsType.html
+// Description: List of VimObjectRef elements.
+// Since: 0.9
+type vimObjectRefsCreate struct {
+	VimObjectRef []*vimObjectRefCreate `xml:"vmext:VimObjectRef"`
+}
+
+// Type: VMWExternalNetworkType
+// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VMWExternalNetworkType.html
+// Description: External network type.
+// Since: 1.0
+type externalNetworkCreate struct {
+	XMLName          xml.Name                    `xml:"vmext:VMWExternalNetwork"`
+	XmlnsVmext       string                      `xml:"xmlns:vmext,attr,omitempty"`
+	XmlnsVcloud      string                      `xml:"xmlns:vcloud,attr,omitempty"`
+	HREF             string                      `xml:"href,attr,omitempty"`
+	Type             string                      `xml:"type,attr,omitempty"`
+	ID               string                      `xml:"id,attr,omitempty"`
+	OperationKey     string                      `xml:"operationKey,attr,omitempty"`
+	Name             string                      `xml:"name,attr"`
+	Link             []*types.Link               `xml:"Link,omitempty"`
+	Description      string                      `xml:"vcloud:Description,omitempty"`
+	Tasks            *types.TasksInProgress      `xml:"Tasks,omitempty"`
+	Configuration    *types.NetworkConfiguration `xml:"vcloud:Configuration,omitempty"`
+	VimPortGroupRef  *vimObjectRefCreate         `xml:"VimPortGroupRef,omitempty"`
+	VimPortGroupRefs *vimObjectRefsCreate        `xml:"vmext:VimPortGroupRefs,omitempty"`
+	VCloudExtension  *types.VCloudExtension      `xml:"VCloudExtension,omitempty"`
 }
 
 // Creates an Admin Organization based on settings, description, and org name.
@@ -490,7 +534,7 @@ func CreateExternalNetwork(vcdClient *VCDClient, externalNetworkData *types.Exte
 		return Task{}, err
 	}
 
-	externalNetwork := &types.ExternalNetworkCreate{}
+	externalNetwork := &externalNetworkCreate{}
 	externalNetwork.HREF = externalNetworkData.HREF
 	externalNetwork.Description = externalNetworkData.Description
 	externalNetwork.Name = externalNetworkData.Name
@@ -504,9 +548,9 @@ func CreateExternalNetwork(vcdClient *VCDClient, externalNetworkData *types.Exte
 	externalNetwork.XmlnsVcloud = types.XMLNamespaceVCloud
 	externalNetwork.Type = types.MimeExternalNetwork
 	if externalNetworkData.VimPortGroupRefs != nil {
-		externalNetwork.VimPortGroupRefs = &types.VimObjectRefsCreate{}
+		externalNetwork.VimPortGroupRefs = &vimObjectRefsCreate{}
 		for _, vimObjRef := range externalNetworkData.VimPortGroupRefs.VimObjectRef {
-			externalNetwork.VimPortGroupRefs.VimObjectRef = append(externalNetwork.VimPortGroupRefs.VimObjectRef, &types.VimObjectRefCreate{
+			externalNetwork.VimPortGroupRefs.VimObjectRef = append(externalNetwork.VimPortGroupRefs.VimObjectRef, &vimObjectRefCreate{
 				VimServerRef:  vimObjRef.VimServerRef,
 				MoRef:         vimObjRef.MoRef,
 				VimObjectType: vimObjRef.VimObjectType,
@@ -514,7 +558,7 @@ func CreateExternalNetwork(vcdClient *VCDClient, externalNetworkData *types.Exte
 		}
 	}
 	if externalNetworkData.VimPortGroupRef != nil {
-		externalNetwork.VimPortGroupRef = &types.VimObjectRefCreate{
+		externalNetwork.VimPortGroupRef = &vimObjectRefCreate{
 			VimServerRef:  externalNetworkData.VimPortGroupRef.VimServerRef,
 			MoRef:         externalNetworkData.VimPortGroupRef.MoRef,
 			VimObjectType: externalNetworkData.VimPortGroupRef.VimObjectType,
