@@ -76,7 +76,7 @@ func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix s
 		Name:        networkName,
 		Description: "Test Create External Network",
 		XmlnsVmext:  types.XMLNamespaceExtension,
-		XmlnsVcload: types.XMLNamespaceVCloud,
+		XmlnsVcloud: types.XMLNamespaceVCloud,
 		Type:        types.MimeExternalNetwork,
 		Configuration: &types.NetworkConfiguration{
 			Xmlns: types.XMLNamespaceVCloud,

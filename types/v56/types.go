@@ -2345,7 +2345,7 @@ type VimObjectRefsCreate struct {
 type ExternalNetworkCreate struct {
 	XMLName          xml.Name              `xml:"vmext:VMWExternalNetwork"`
 	XmlnsVmext       string                `xml:"xmlns:vmext,attr,omitempty"`
-	XmlnsVcload      string                `xml:"xmlns:vcloud,attr,omitempty"`
+	XmlnsVcloud      string                `xml:"xmlns:vcloud,attr,omitempty"`
 	HREF             string                `xml:"href,attr,omitempty"`
 	Type             string                `xml:"type,attr,omitempty"`
 	ID               string                `xml:"id,attr,omitempty"`

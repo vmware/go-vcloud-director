@@ -58,8 +58,8 @@ func validateExternalNetwork(externalNetwork *types.ExternalNetworkCreate) error
 	if externalNetwork.XmlnsVmext == "" {
 		return errors.New("external Network missing required field: XmlnsVmext")
 	}
-	if externalNetwork.XmlnsVcload == "" {
-		return errors.New("external Network missing required field: XmlnsVcload")
+	if externalNetwork.XmlnsVcloud == "" {
+		return errors.New("external Network missing required field: XmlnsVcloud")
 	}
 	return nil
 }
