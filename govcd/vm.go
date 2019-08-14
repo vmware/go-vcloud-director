@@ -399,7 +399,13 @@ func (vm *VM) GetGuestCustomizationStatus() (string, error) {
 
 // BlockWhileGuestCustomizationStatus blocks until the customization status of VM exits unwantedStatus.
 // It sleeps 3 seconds between iterations and times out after timeOutAfterSeconds of seconds.
+//
+// timeOutAfterSeconds must be more than 4 and less than 2 hours (60s*120)
 func (vm *VM) BlockWhileGuestCustomizationStatus(unwantedStatus string, timeOutAfterSeconds int) error {
+	if timeOutAfterSeconds < 5 || timeOutAfterSeconds > 60*120 {
+		return fmt.Errorf("timeOutAfterSeconds must be in range 4<X<7200")
+	}
+
 	timeoutAfter := time.After(time.Duration(timeOutAfterSeconds) * time.Second)
 	tick := time.NewTicker(3 * time.Second)
 

@@ -926,3 +926,40 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 	err = vm.BlockWhileGuestCustomizationStatus(types.GuestCustStatusPending, 300)
 	check.Assert(err, IsNil)
 }
+
+func (vcd *TestVCD) Test_BlockWhileGuestCustomizationStatus(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp wasn't properly created")
+	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	check.Assert(err, IsNil)
+
+	// Attempt to set invalid timeout values and expect validation error
+	err = vm.BlockWhileGuestCustomizationStatus(types.GuestCustStatusPending, 0)
+	check.Assert(err, ErrorMatches, "timeOutAfterSeconds must be in range 4<X<7200")
+	err = vm.BlockWhileGuestCustomizationStatus(types.GuestCustStatusPending, 4)
+	check.Assert(err, ErrorMatches, "timeOutAfterSeconds must be in range 4<X<7200")
+	err = vm.BlockWhileGuestCustomizationStatus(types.GuestCustStatusPending, -30)
+	check.Assert(err, ErrorMatches, "timeOutAfterSeconds must be in range 4<X<7200")
+	err = vm.BlockWhileGuestCustomizationStatus(types.GuestCustStatusPending, 7201)
+	check.Assert(err, ErrorMatches, "timeOutAfterSeconds must be in range 4<X<7200")
+
+	vmCustStatus, err := vm.GetGuestCustomizationStatus()
+	check.Assert(err, IsNil)
+
+	// Use current value to trigger timeout
+	err = vm.BlockWhileGuestCustomizationStatus(vmCustStatus, 5)
+	check.Assert(err, ErrorMatches, "timed out waiting for VM guest customization status to exit state GC_PENDING after 5 seconds")
+
+	// Use unreal value to trigger instant unblocking
+	err = vm.BlockWhileGuestCustomizationStatus("invalid_GC_STATUS", 5)
+	check.Assert(err, IsNil)
+}
