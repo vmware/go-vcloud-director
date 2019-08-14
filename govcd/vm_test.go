@@ -886,12 +886,26 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 		check.Assert(err, IsNil)
 	}
 
-	// VM _must_ be _un-deployed_ because PowerOnAndForceCustomization task will never finish (and probably
-	// not triggered) if it is not un-deployed.
+	// Check that VM is deployed
+	vmIsDeployed, err := vm.IsDeployed()
+	check.Assert(err, IsNil)
+	check.Assert(vmIsDeployed, Equals, true)
+
+	// Try to force operation on deployed VM and expect an error
+	err = vm.PowerOnAndForceCustomization()
+	check.Assert(err, Not(IsNil))
+
+	// VM _must_ be un-deployed because PowerOnAndForceCustomization task will never finish (and
+	// probably not triggered) if it is not un-deployed.
 	task, err := vm.Undeploy()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
+
+	// Check that VM is un-deployed
+	vmIsDeployed, err = vm.IsDeployed()
+	check.Assert(err, IsNil)
+	check.Assert(vmIsDeployed, Equals, false)
 
 	err = vm.PowerOnAndForceCustomization()
 	check.Assert(err, IsNil)
@@ -900,6 +914,11 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 	recustomizedVmStatus, err := vm.GetGuestCustomizationStatus()
 	check.Assert(err, IsNil)
 	check.Assert(recustomizedVmStatus, Equals, types.GuestCustStatusPending)
+
+	// Check that VM is deployed
+	vmIsDeployed, err = vm.IsDeployed()
+	check.Assert(err, IsNil)
+	check.Assert(vmIsDeployed, Equals, true)
 
 	// Wait until the VM exists GC_PENDING status again. At the moment this is the only simple way
 	// to see that the customization really worked as there is no API in vCD to execute remote

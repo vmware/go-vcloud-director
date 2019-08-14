@@ -49,6 +49,15 @@ func (vm *VM) GetStatus() (string, error) {
 	return types.VAppStatuses[vm.VM.Status], nil
 }
 
+// IsDeployed checks if the VM is deployed or not
+func (vm *VM) IsDeployed() (bool, error) {
+	err := vm.Refresh()
+	if err != nil {
+		return false, fmt.Errorf("error refreshing VM: %v", err)
+	}
+	return vm.VM.Deployed, nil
+}
+
 func (vm *VM) Refresh() error {
 
 	if vm.VM.HREF == "" {
@@ -140,8 +149,19 @@ func (vm *VM) PowerOn() (Task, error) {
 // PowerOnAndForceCustomization is a synchronous function which is equivalent to the functionality
 // one has in UI. It triggers customization which may be useful in some cases (like altering NICs)
 //
-// The VM _must_ be Undeployed for this action to actually work.
+// The VM _must_ be un-deployed for this action to actually work.
 func (vm *VM) PowerOnAndForceCustomization() error {
+	// PowerOnAndForceCustomization only works if the VM was previously un-deployed
+	vmIsDeployed, err := vm.IsDeployed()
+	if err != nil {
+		return fmt.Errorf("unable to check if VM %s is un-deployed forcing customization: %s",
+			vm.VM.Name, err)
+	}
+
+	if vmIsDeployed {
+		return fmt.Errorf("VM %s must be undeployed before forcing customization", vm.VM.Name)
+	}
+
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/action/deploy"
 
