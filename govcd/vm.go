@@ -598,3 +598,42 @@ func (vm *VM) ToggleHardwareVirtualization(isEnabled bool) (Task, error) {
 	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
 		"", errMessage, nil)
 }
+
+// SetGuestProperties
+func (vm *VM) SetGuestProperties(productSectionList *types.ProductSectionList) (*types.ProductSectionList, error) {
+	productSectionList.Xmlns = types.XMLNamespaceVCloud
+	productSectionList.Ovf = types.XMLNamespaceOVF
+
+	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint.Path += "/productSections"
+
+	task, err := vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+		types.MimeProductSection, "error setting guest properties: %s", productSectionList)
+
+	if err != nil {
+		return nil, fmt.Errorf("unable to set guest properties: %s", err)
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("task for setting guest properties failed: %s", err)
+	}
+
+	return vm.GetGuestProperties()
+}
+
+// GetGuestProperties
+func (vm *VM) GetGuestProperties() (*types.ProductSectionList, error) {
+	properties := &types.ProductSectionList{}
+
+	if vm.VM.HREF == "" {
+		return properties, fmt.Errorf("cannot refresh VM, HREF is not set")
+	}
+
+	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/productSections", http.MethodGet,
+		types.MimeNetworkConnectionSection, "error retrieving network connection: %s", nil, properties)
+
+	// The request was successful
+	return properties, err
+
+}

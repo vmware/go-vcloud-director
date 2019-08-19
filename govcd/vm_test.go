@@ -15,6 +15,8 @@ import (
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 func init() {
@@ -827,4 +829,47 @@ func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
 	vmStatus, err = vm.GetStatus()
 	check.Assert(err, IsNil)
 	check.Assert(vmStatus, Equals, "POWERED_OFF")
+}
+
+// Test_SetGuestProperties sets guest properties, retrieves them and deeply matches if properties
+// were properly set.
+func (vcd *TestVCD) Test_SetGuestProperties(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	check.Assert(err, IsNil)
+
+	vmProperties := &types.ProductSectionList{
+		ProductSection: &types.ProductSection{
+			Info: "Custom properties",
+			Property: []*types.Property{
+				&types.Property{
+					Key:   "sys_owner",
+					Type:  "string",
+					Value: &types.Value{Value: "test"},
+				},
+				&types.Property{
+					Key:   "asset_tag",
+					Value: &types.Value{Value: "xxxyyy"},
+					Type:  "string",
+				},
+			},
+		},
+	}
+
+	gotProperties, err := vm.SetGuestProperties(vmProperties)
+	check.Assert(err, IsNil)
+
+	getProperties, err := vm.GetGuestProperties()
+	check.Assert(err, IsNil)
+	
+	check.Assert(gotProperties.ProductSection.Property, DeepEquals, vmProperties.ProductSection.Property)
+	check.Assert(getProperties, DeepEquals, gotProperties)
+
 }
