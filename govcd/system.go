@@ -534,6 +534,7 @@ func CreateExternalNetwork(vcdClient *VCDClient, externalNetworkData *types.Exte
 		VCloudExtension  *types.VCloudExtension      `xml:"VCloudExtension,omitempty"`
 	}
 
+	// Specific struct is used as two different name spaces needed for vCD API and return struct has diff name spaces
 	externalNetwork := &externalNetworkCreate{}
 	externalNetwork.HREF = externalNetworkData.HREF
 	externalNetwork.Description = externalNetworkData.Description
