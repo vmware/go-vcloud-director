@@ -169,7 +169,7 @@ func WithAPIVersion(version string) VCDClientOption {
 	}
 }
 
-// WithTimeout allows to override default http timeout
+// WithHttpTimeout allows to override default http timeout
 func WithHttpTimeout(timeout int64) VCDClientOption {
 	return func(vcdClient *VCDClient) error {
 		vcdClient.Client.Http.Timeout = time.Duration(timeout) * time.Second
