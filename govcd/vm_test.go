@@ -900,26 +900,23 @@ func (vcd *TestVCD) Test_GetVirtualHardwareSection(check *C) {
 	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
 	check.Assert(err, IsNil)
 
-	// Set VirtualHardwareSection of found vm
-	vm.VM.VirtualHardwareSection = &types.VirtualHardwareSection{
-		Item: []*types.VirtualHardwareItem{
-			&types.VirtualHardwareItem{
-				InstanceID:          1,
-				AutomaticAllocation: true,
-				Address:             "1.1.1.1",
-				CoresPerSocket:      2,
-			},
-		},
-	}
-
 	// Preform check of virtual hardware section
 	section, err := vm.GetVirtualHardwareSection()
 	check.Assert(err, IsNil)
+
+	// Check that section.Info is not Nil, as its the only field that may not be omitted when marshelled
+	check.Assert(section.Info, NotNil)
+
+	// Check that section.Item is not Nil before looping over it
+	check.Assert(section.Item, NotNil)
+
+	// Loop over the Items to ensure
 	for _, item := range section.Item {
-		check.Assert(item.InstanceID, Equals, vm.VM.VirtualHardwareSection.Item[0].InstanceID)
-		check.Assert(item.AutomaticAllocation, Equals, vm.VM.VirtualHardwareSection.Item[0].AutomaticAllocation)
-		check.Assert(item.Address, Equals, vm.VM.VirtualHardwareSection.Item[0].Address)
-		check.Assert(item.CoresPerSocket, Equals, vm.VM.VirtualHardwareSection.Item[0].CoresPerSocket)
+		check.Assert(item.ResourceType, NotNil)
+		check.Assert(item.ResourceSubType, NotNil)
+
+		if item.ResourceSubType == "VMXNET3" && item.ResourceType == 10 {
+			check.Assert(item.Address, Matches, "^[a-fA-F0-9:]{17}|[a-fA-F0-9]{12}$")
+		}
 	}
-	check.Assert(len(section.Item), Equals, len(vm.VM.VirtualHardwareSection.Item))
 }
