@@ -838,43 +838,17 @@ func (vapp *VApp) RemoveAllNetworks() (Task, error) {
 	return updateNetworkConfigurations(vapp, []types.VAppNetworkConfiguration{})
 }
 
-// SetVappProperties sets vApp properties
-func (vapp *VApp) SetVappProperties(productSectionList *types.ProductSectionList) (*types.ProductSectionList, error) {
-	productSectionList.Xmlns = types.XMLNamespaceVCloud
-	productSectionList.Ovf = types.XMLNamespaceOVF
-
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
-	apiEndpoint.Path += "/productSections"
-
-	task, err := vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
-		types.MimeProductSection, "error setting vApp properties: %s", productSectionList)
-
+// SetGuestProperties sets guest properties for a vApp
+func (vapp *VApp) SetGuestProperties(properties *types.ProductSectionList) (*types.ProductSectionList, error) {
+	err := setGuestProperties(vapp.client, vapp.VApp.HREF, properties)
 	if err != nil {
-		return nil, fmt.Errorf("unable to set vApp properties: %s", err)
+		return nil, fmt.Errorf("unable to set VM guest properties: %s", err)
 	}
 
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return nil, fmt.Errorf("task for setting vApp properties failed: %s", err)
-	}
-
-	return vapp.GetVappProperties()
+	return vapp.GetGuestProperties()
 }
 
-// GetVappProperties retrieves vApp properties
-func (vapp *VApp) GetVappProperties() (*types.ProductSectionList, error) {
-	properties := &types.ProductSectionList{}
-
-	if vapp.VApp.HREF == "" {
-		return properties, fmt.Errorf("cannot refresh vApp, HREF is not set")
-	}
-
-	_, err := vapp.client.ExecuteRequest(vapp.VApp.HREF+"/productSections", http.MethodGet,
-		types.MimeProductSection, "error retrieving vApp properties: %s", nil, properties)
-
-	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve vApp properties: %s", err)
-	}
-
-	return properties, nil
+// GetGuestProperties retrieves guest properties for a vApp
+func (vapp *VApp) GetGuestProperties() (*types.ProductSectionList, error) {
+	return getGuestProperties(vapp.client, vapp.VApp.HREF)
 }

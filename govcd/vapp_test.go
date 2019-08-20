@@ -681,76 +681,12 @@ func (vcd *TestVCD) Test_RemoveAllNetworks(check *C) {
 	check.Assert(hasNetworks, Equals, false)
 }
 
-// Test_SetVappProperties sets vApp properties, retrieves them and deeply matches if properties
-// were properly set.
-func (vcd *TestVCD) Test_SetVappProperties(check *C) {
+// Test_VappSetGuestProperties sets vApp properties, retrieves them and deeply matches if properties
+// were properly set using a propertyTester helper.
+func (vcd *TestVCD) Test_VappSetGuestProperties(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
 	vapp := vcd.findFirstVapp()
-
-	vappProperties := &types.ProductSectionList{
-		ProductSection: &types.ProductSection{
-			Info: "Custom properties",
-			Property: []*types.Property{
-				&types.Property{
-					UserConfigurable: false,
-					Key:              "sys_owner",
-					Label:            "sys_owner_label",
-					Type:             "string",
-					DefaultValue:     "sys_owner_default",
-					Value:            &types.Value{Value: "test"},
-				},
-				&types.Property{
-					UserConfigurable: true,
-					Key:              "asset_tag",
-					Label:            "asset_tag_label",
-					Type:             "string",
-					DefaultValue:     "asset_tag_default",
-					Value:            &types.Value{Value: "xxxyyy"},
-				},
-				&types.Property{
-					UserConfigurable: true,
-					Key:              "guestinfo.config.bootstrap.ip",
-					Label:            "guestinfo.config.bootstrap.ip_label",
-					Type:             "string",
-					DefaultValue:     "default_ip",
-					Value:            &types.Value{Value: "192.168.12.180"},
-				},
-			},
-		},
-	}
-
-	gotProperties, err := vapp.SetVappProperties(vappProperties)
-	check.Assert(err, IsNil)
-
-	getProperties, err := vapp.GetVappProperties()
-	check.Assert(err, IsNil)
-
-	// Check that values were set in API
-	check.Assert(getProperties.ProductSection.Property[0].Key, Equals, "sys_owner")
-	check.Assert(getProperties.ProductSection.Property[0].Label, Equals, "sys_owner_label")
-	check.Assert(getProperties.ProductSection.Property[0].Type, Equals, "string")
-	check.Assert(getProperties.ProductSection.Property[0].Value.Value, Equals, "test")
-	check.Assert(getProperties.ProductSection.Property[0].DefaultValue, Equals, "sys_owner_default")
-	check.Assert(getProperties.ProductSection.Property[0].UserConfigurable, Equals, false)
-
-	check.Assert(getProperties.ProductSection.Property[1].Key, Equals, "asset_tag")
-	check.Assert(getProperties.ProductSection.Property[1].Label, Equals, "asset_tag_label")
-	check.Assert(getProperties.ProductSection.Property[1].Type, Equals, "string")
-	check.Assert(getProperties.ProductSection.Property[1].Value.Value, Equals, "xxxyyy")
-	check.Assert(getProperties.ProductSection.Property[1].DefaultValue, Equals, "asset_tag_default")
-	check.Assert(getProperties.ProductSection.Property[1].UserConfigurable, Equals, true)
-
-	check.Assert(getProperties.ProductSection.Property[2].Key, Equals, "guestinfo.config.bootstrap.ip")
-	check.Assert(getProperties.ProductSection.Property[2].Label, Equals, "guestinfo.config.bootstrap.ip_label")
-	check.Assert(getProperties.ProductSection.Property[2].Type, Equals, "string")
-	check.Assert(getProperties.ProductSection.Property[2].Value.Value, Equals, "192.168.12.180")
-	check.Assert(getProperties.ProductSection.Property[2].DefaultValue, Equals, "default_ip")
-	check.Assert(getProperties.ProductSection.Property[2].UserConfigurable, Equals, true)
-
-	// Ensure the object are deeply equal
-	check.Assert(gotProperties.ProductSection.Property, DeepEquals, vappProperties.ProductSection.Property)
-	check.Assert(getProperties, DeepEquals, gotProperties)
-
+	propertyTester(vcd, check, &vapp)
 }

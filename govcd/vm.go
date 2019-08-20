@@ -600,23 +600,10 @@ func (vm *VM) ToggleHardwareVirtualization(isEnabled bool) (Task, error) {
 }
 
 // SetGuestProperties sets guest properties for a VM
-func (vm *VM) SetGuestProperties(productSectionList *types.ProductSectionList) (*types.ProductSectionList, error) {
-	productSectionList.Xmlns = types.XMLNamespaceVCloud
-	productSectionList.Ovf = types.XMLNamespaceOVF
-
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
-	apiEndpoint.Path += "/productSections"
-
-	task, err := vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
-		types.MimeProductSection, "error setting guest properties: %s", productSectionList)
-
+func (vm *VM) SetGuestProperties(properties *types.ProductSectionList) (*types.ProductSectionList, error) {
+	err := setGuestProperties(vm.client, vm.VM.HREF, properties)
 	if err != nil {
-		return nil, fmt.Errorf("unable to set guest properties: %s", err)
-	}
-
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return nil, fmt.Errorf("task for setting guest properties failed: %s", err)
+		return nil, fmt.Errorf("unable to set VM guest properties: %s", err)
 	}
 
 	return vm.GetGuestProperties()
@@ -624,17 +611,5 @@ func (vm *VM) SetGuestProperties(productSectionList *types.ProductSectionList) (
 
 // GetGuestProperties retrieves guest properties for a VM
 func (vm *VM) GetGuestProperties() (*types.ProductSectionList, error) {
-	properties := &types.ProductSectionList{}
-	if vm.VM.HREF == "" {
-		return properties, fmt.Errorf("cannot refresh VM, HREF is not set")
-	}
-
-	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/productSections", http.MethodGet,
-		types.MimeProductSection, "error retrieving guest properties: %s", nil, properties)
-
-	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve guest properties: %s", err)
-	}
-
-	return properties, nil
+	return getGuestProperties(vm.client, vm.VM.HREF)
 }
