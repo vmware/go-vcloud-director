@@ -842,7 +842,7 @@ func (vapp *VApp) RemoveAllNetworks() (Task, error) {
 func (vapp *VApp) SetGuestProperties(properties *types.ProductSectionList) (*types.ProductSectionList, error) {
 	err := setGuestProperties(vapp.client, vapp.VApp.HREF, properties)
 	if err != nil {
-		return nil, fmt.Errorf("unable to set VM guest properties: %s", err)
+		return nil, fmt.Errorf("unable to set vApp guest properties: %s", err)
 	}
 
 	return vapp.GetGuestProperties()
