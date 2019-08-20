@@ -15,8 +15,6 @@ import (
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 func init() {
@@ -850,14 +848,25 @@ func (vcd *TestVCD) Test_SetGuestProperties(check *C) {
 			Info: "Custom properties",
 			Property: []*types.Property{
 				&types.Property{
-					Key:   "sys_owner",
-					Type:  "string",
-					Value: &types.Value{Value: "test"},
+					UserConfigurable: true,
+					Key:              "sys_owner",
+					Label:            "sys_owner",
+					Type:             "string",
+					DefaultValue:     "test",
 				},
 				&types.Property{
-					Key:   "asset_tag",
-					Value: &types.Value{Value: "xxxyyy"},
-					Type:  "string",
+					UserConfigurable: true,
+					Key:              "asset_tag",
+					Label:            "asset_tag",
+					DefaultValue:     "xxxyyy",
+					Type:             "string",
+				},
+				&types.Property{
+					UserConfigurable: true,
+					Key:              "guestinfo.config.bootstrap.ip",
+					Label:            "guestinfo.config.bootstrap.ip",
+					DefaultValue:     "192.168.12.180",
+					Type:             "string",
 				},
 			},
 		},
@@ -868,7 +877,7 @@ func (vcd *TestVCD) Test_SetGuestProperties(check *C) {
 
 	getProperties, err := vm.GetGuestProperties()
 	check.Assert(err, IsNil)
-	
+
 	check.Assert(gotProperties.ProductSection.Property, DeepEquals, vmProperties.ProductSection.Property)
 	check.Assert(getProperties, DeepEquals, gotProperties)
 
