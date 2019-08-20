@@ -100,11 +100,11 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 						InsecureSkipVerify: insecure,
 					},
 					Proxy:               http.ProxyFromEnvironment,
-					TLSHandshakeTimeout: 120 * time.Second,
+					TLSHandshakeTimeout: 120 * time.Second, // Default timeout for TSL hand shake
 				},
-				Timeout: 600 * time.Second,
+				Timeout: 600 * time.Second, // Default value for http request+response timeout
 			},
-			MaxRetryTimeout: 60, // Default timeout in seconds for Client
+			MaxRetryTimeout: 60, // Default timeout in seconds for retries calls in functions
 		},
 	}
 
