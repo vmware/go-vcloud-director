@@ -599,7 +599,7 @@ func (vm *VM) ToggleHardwareVirtualization(isEnabled bool) (Task, error) {
 		"", errMessage, nil)
 }
 
-// SetGuestProperties
+// SetGuestProperties sets guest properties for a VM
 func (vm *VM) SetGuestProperties(productSectionList *types.ProductSectionList) (*types.ProductSectionList, error) {
 	productSectionList.Xmlns = types.XMLNamespaceVCloud
 	productSectionList.Ovf = types.XMLNamespaceOVF
@@ -622,18 +622,19 @@ func (vm *VM) SetGuestProperties(productSectionList *types.ProductSectionList) (
 	return vm.GetGuestProperties()
 }
 
-// GetGuestProperties
+// GetGuestProperties retrieves guest properties for a VM
 func (vm *VM) GetGuestProperties() (*types.ProductSectionList, error) {
 	properties := &types.ProductSectionList{}
-
 	if vm.VM.HREF == "" {
 		return properties, fmt.Errorf("cannot refresh VM, HREF is not set")
 	}
 
 	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/productSections", http.MethodGet,
-		types.MimeNetworkConnectionSection, "error retrieving network connection: %s", nil, properties)
+		types.MimeProductSection, "error retrieving guest properties: %s", nil, properties)
 
-	// The request was successful
-	return properties, err
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve guest properties: %s", err)
+	}
 
+	return properties, nil
 }

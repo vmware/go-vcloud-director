@@ -537,6 +537,9 @@ func (vapp *VApp) ChangeVMName(name string) (Task, error) {
 		types.MimeVM, "error changing VM name: %s", newName)
 }
 
+// SetOvf sets guest properties for the first child VM in vApp
+//
+// Deprecated: Use vm.SetGuestProperties()
 func (vapp *VApp) SetOvf(parameters map[string]string) (Task, error) {
 	err := vapp.Refresh()
 	if err != nil {
@@ -833,4 +836,45 @@ func updateNetworkConfigurations(vapp *VApp, networkConfigurations []types.VAppN
 // Function RemoveAllNetworks unattach all networks from VAPP
 func (vapp *VApp) RemoveAllNetworks() (Task, error) {
 	return updateNetworkConfigurations(vapp, []types.VAppNetworkConfiguration{})
+}
+
+// SetVappProperties sets vApp properties
+func (vapp *VApp) SetVappProperties(productSectionList *types.ProductSectionList) (*types.ProductSectionList, error) {
+	productSectionList.Xmlns = types.XMLNamespaceVCloud
+	productSectionList.Ovf = types.XMLNamespaceOVF
+
+	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint.Path += "/productSections"
+
+	task, err := vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+		types.MimeProductSection, "error setting vApp properties: %s", productSectionList)
+
+	if err != nil {
+		return nil, fmt.Errorf("unable to set vApp properties: %s", err)
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("task for setting vApp properties failed: %s", err)
+	}
+
+	return vapp.GetVappProperties()
+}
+
+// GetVappProperties retrieves vApp properties
+func (vapp *VApp) GetVappProperties() (*types.ProductSectionList, error) {
+	properties := &types.ProductSectionList{}
+
+	if vapp.VApp.HREF == "" {
+		return properties, fmt.Errorf("cannot refresh vApp, HREF is not set")
+	}
+
+	_, err := vapp.client.ExecuteRequest(vapp.VApp.HREF+"/productSections", http.MethodGet,
+		types.MimeProductSection, "error retrieving vApp properties: %s", nil, properties)
+
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve vApp properties: %s", err)
+	}
+
+	return properties, nil
 }

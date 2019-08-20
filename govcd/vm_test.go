@@ -893,7 +893,7 @@ func (vcd *TestVCD) Test_SetGuestProperties(check *C) {
 	check.Assert(getProperties.ProductSection.Property[1].Label, Equals, "asset_tag_label")
 	check.Assert(getProperties.ProductSection.Property[1].Type, Equals, "string")
 	check.Assert(getProperties.ProductSection.Property[1].Value.Value, Equals, "xxxyyy")
-	check.Assert(getProperties.ProductSection.Property[0].DefaultValue, Equals, "asset_tag_default")
+	check.Assert(getProperties.ProductSection.Property[1].DefaultValue, Equals, "asset_tag_default")
 	check.Assert(getProperties.ProductSection.Property[1].UserConfigurable, Equals, true)
 
 	check.Assert(getProperties.ProductSection.Property[2].Key, Equals, "guestinfo.config.bootstrap.ip")
