@@ -351,7 +351,7 @@ func GetTestVCDFromYaml(testConfig TestConfig, options ...VCDClientOption) (*VCD
 		options = append(options, WithMaxRetryTimeout(testConfig.Provider.MaxRetryTimeout))
 	}
 
-	return NewVCDClient(*configUrl, true, options...), nil
+	return NewVCDClient(*configUrl, true, 600, options...), nil
 }
 
 // Necessary to enable the suite tests with TestVCD
