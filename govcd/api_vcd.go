@@ -88,7 +88,7 @@ func (vcdCli *VCDClient) vcdauthorize(user, pass, org string) error {
 
 // NewVCDClient initializes VMware vCloud Director client with reasonable defaults.
 // It accepts functions of type VCDClientOption for adjusting defaults.
-func NewVCDClient(vcdEndpoint url.URL, insecure bool, timeout int, options ...VCDClientOption) *VCDClient {
+func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption) *VCDClient {
 	// Setting defaults
 	vcdClient := &VCDClient{
 		Client: Client{
@@ -102,7 +102,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, timeout int, options ...VC
 					Proxy:               http.ProxyFromEnvironment,
 					TLSHandshakeTimeout: 120 * time.Second,
 				},
-				Timeout: time.Duration(timeout) * time.Second,
+				Timeout: 600 * time.Second,
 			},
 			MaxRetryTimeout: 60, // Default timeout in seconds for Client
 		},
@@ -165,6 +165,14 @@ func WithMaxRetryTimeout(timeoutSeconds int) VCDClientOption {
 func WithAPIVersion(version string) VCDClientOption {
 	return func(vcdClient *VCDClient) error {
 		vcdClient.Client.APIVersion = version
+		return nil
+	}
+}
+
+// WithTimeout allows to override default http timeout
+func WithHttpTimeout(timeout int64) VCDClientOption {
+	return func(vcdClient *VCDClient) error {
+		vcdClient.Client.Http.Timeout = time.Duration(timeout) * time.Second
 		return nil
 	}
 }
