@@ -76,8 +76,6 @@ func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix s
 	externalNetwork = &types.ExternalNetwork{
 		Name:        networkName,
 		Description: "Test Create External Network",
-		Xmlns:       types.XMLNamespaceExtension,
-		XmlnsVCloud: types.XMLNamespaceVCloud,
 		Configuration: &types.NetworkConfiguration{
 			Xmlns: types.XMLNamespaceVCloud,
 			IPScopes: &types.IPScopes{
@@ -197,6 +195,11 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	check.Assert(ipRange.EndAddress, Equals, "192.168.201.250")
 
 	check.Assert(newExternalNetwork.ExternalNetwork.Configuration.FenceMode, Equals, "isolated")
+	check.Assert(newExternalNetwork.ExternalNetwork.Description, Equals, "Test Create External Network")
+	check.Assert(newExternalNetwork.ExternalNetwork.VimPortGroupRef, NotNil)
+	check.Assert(newExternalNetwork.ExternalNetwork.VimPortGroupRef.VimObjectType, Equals, externalNetwork.VimPortGroupRefs.VimObjectRef[0].VimObjectType)
+	check.Assert(newExternalNetwork.ExternalNetwork.VimPortGroupRef.MoRef, Equals, externalNetwork.VimPortGroupRefs.VimObjectRef[0].MoRef)
+	check.Assert(newExternalNetwork.ExternalNetwork.VimPortGroupRef.VimServerRef.HREF, Equals, externalNetwork.VimPortGroupRefs.VimObjectRef[0].VimServerRef.HREF)
 
 	err = newExternalNetwork.DeleteWait()
 	check.Assert(err, IsNil)
