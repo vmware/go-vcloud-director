@@ -833,7 +833,7 @@ func updateNetworkConfigurations(vapp *VApp, networkConfigurations []types.VAppN
 		types.MimeNetworkConfigSection, "error updating vApp Network: %s", networkConfig)
 }
 
-// Function RemoveAllNetworks unattach all networks from VAPP
+// RemoveAllNetworks detaches all networks from vApp
 func (vapp *VApp) RemoveAllNetworks() (Task, error) {
 	return updateNetworkConfigurations(vapp, []types.VAppNetworkConfiguration{})
 }
