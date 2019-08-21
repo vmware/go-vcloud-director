@@ -389,7 +389,7 @@ func (adminOrg *AdminOrg) removeCatalogs() error {
 // isCatalogFromSameOrg checks if catalog is in same Org. Shared catalogs form other Org are showed as normal one
 // in some API responses.
 func isCatalogFromSameOrg(adminOrg *AdminOrg, catalogName string) (bool, error) {
-	foundCatalogs, err := adminOrg.FinAdminCatalogByName(catalogName, adminOrg.AdminOrg.Name)
+	foundCatalogs, err := adminOrg.FindCatalogRecordTypes(catalogName)
 	if err != nil {
 		return false, err
 	}
@@ -401,17 +401,17 @@ func isCatalogFromSameOrg(adminOrg *AdminOrg, catalogName string) (bool, error) 
 }
 
 // FinCatalogByName uses catalog name and Org name to return CatalogRecordType information.
-func (adminOrg *AdminOrg) FinAdminCatalogByName(name, orgName string) ([]*types.CatalogRecordType, error) {
-	util.Logger.Printf("[DEBUG] FinAdminCatalogByName with name: %s and org name: %s", name, orgName)
+func (adminOrg *AdminOrg) FindCatalogRecordTypes(name string) ([]*types.CatalogRecordType, error) {
+	util.Logger.Printf("[DEBUG] FindCatalogRecordTypes with name: %s and org name: %s", name, adminOrg.AdminOrg.Name)
 	results, err := adminOrg.client.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":   "adminCatalog",
-		"filter": fmt.Sprintf("(name==%s;orgName==%s)", url.QueryEscape(name), url.QueryEscape(orgName)),
+		"filter": fmt.Sprintf("(name==%s;orgName==%s)", url.QueryEscape(name), url.QueryEscape(adminOrg.AdminOrg.Name)),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	util.Logger.Printf("[DEBUG] FinAdminCatalogByName returned with : %#v and error: %s", results.Results.CatalogRecord, err)
+	util.Logger.Printf("[DEBUG] FindCatalogRecordTypes returned with : %#v and error: %s", results.Results.CatalogRecord, err)
 	return results.Results.CatalogRecord, nil
 }
 

@@ -11,7 +11,7 @@ import (
 )
 
 // Creates a Catalog and then verify that finds it
-func (vcd *TestVCD) Test_Client_FinAdminCatalogByName(check *C) {
+func (vcd *TestVCD) Test_FindCatalogRecordTypes(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
@@ -29,7 +29,7 @@ func (vcd *TestVCD) Test_Client_FinAdminCatalogByName(check *C) {
 	err = adminOrg.Refresh()
 	check.Assert(err, IsNil)
 
-	findRecords, err := adminOrg.FinAdminCatalogByName(catalogName, adminOrg.AdminOrg.Name)
+	findRecords, err := adminOrg.FindCatalogRecordTypes(catalogName)
 	check.Assert(err, IsNil)
 	check.Assert(findRecords, NotNil)
 	check.Assert(len(findRecords), Equals, 1)
