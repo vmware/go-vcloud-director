@@ -31,6 +31,16 @@ func (vcdCli *VCDClient) Query(params map[string]string) (Results, error) {
 	return getResult(&vcdCli.Client, req)
 }
 
+func (client *Client) QueryWithNotEncodedParams(params map[string]string, notEncodedParams map[string]string) (Results, error) {
+	queryUlr := client.VCDHREF
+	queryUlr.Path += "/query"
+
+	req := client.NewRequestWitNotEncodedParams(params, notEncodedParams, http.MethodGet, queryUlr, nil)
+	req.Header.Add("Accept", "vnd.vmware.vcloud.org+xml;version="+client.APIVersion)
+
+	return getResult(client, req)
+}
+
 func (vcdCli *VCDClient) QueryWithNotEncodedParams(params map[string]string, notEncodedParams map[string]string) (Results, error) {
 	req := vcdCli.Client.NewRequestWitNotEncodedParams(params, notEncodedParams, http.MethodGet, vcdCli.QueryHREF, nil)
 	req.Header.Add("Accept", "vnd.vmware.vcloud.org+xml;version="+vcdCli.Client.APIVersion)

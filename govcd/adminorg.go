@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/vmware/go-vcloud-director/v2/util"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -362,21 +363,56 @@ func (adminOrg *AdminOrg) removeAllOrgNetworks() error {
 
 // Forced removal of all organization catalogs
 func (adminOrg *AdminOrg) removeCatalogs() error {
-	for _, catalogs := range adminOrg.AdminOrg.Catalogs.Catalog {
-		// Get Catalog HREF
-		catalogHREF := adminOrg.client.VCDHREF
-		catalogHREF.Path += "/admin/catalog/" + strings.Split(catalogs.HREF, "/api/admin/catalog/")[1] //gets id
-		req := adminOrg.client.NewRequest(map[string]string{
-			"force":     "true",
-			"recursive": "true",
-		}, http.MethodDelete, catalogHREF, nil)
-		_, err := checkResp(adminOrg.client.Http.Do(req))
+	for _, catalog := range adminOrg.AdminOrg.Catalogs.Catalog {
+		isCatalogFromSameOrg, err := isCatalogFromSameOrg(adminOrg, catalog.Name)
 		if err != nil {
-			return fmt.Errorf("error deleting catalog: %s, %s", err, catalogHREF.Path)
+			return fmt.Errorf("error deleting catalog: %s", err)
+		}
+		if isCatalogFromSameOrg {
+			// Get Catalog HREF
+			catalogHREF := adminOrg.client.VCDHREF
+			catalogHREF.Path += "/admin/catalog/" + strings.Split(catalog.HREF, "/api/admin/catalog/")[1] //gets id
+			req := adminOrg.client.NewRequest(map[string]string{
+				"force":     "true",
+				"recursive": "true",
+			}, http.MethodDelete, catalogHREF, nil)
+			_, err := checkResp(adminOrg.client.Http.Do(req))
+			if err != nil {
+				return fmt.Errorf("error deleting catalog: %s, %s", err, catalogHREF.Path)
+			}
 		}
 	}
 	return nil
 
+}
+
+// isCatalogFromSameOrg checks if catalog is in same Org. Shared catalogs form other Org are showed as normal one
+// in some API responses.
+func isCatalogFromSameOrg(adminOrg *AdminOrg, catalogName string) (bool, error) {
+	foundCatalogs, err := adminOrg.FinAdminCatalogByName(catalogName, adminOrg.AdminOrg.Name)
+	if err != nil {
+		return false, err
+	}
+
+	if len(foundCatalogs) == 1 {
+		return true, nil
+	}
+	return false, nil
+}
+
+// FinCatalogByName uses catalog name and Org name to return CatalogRecordType information.
+func (adminOrg *AdminOrg) FinAdminCatalogByName(name, orgName string) ([]*types.CatalogRecordType, error) {
+	util.Logger.Printf("[DEBUG] FinAdminCatalogByName with name: %s and org name: %s", name, orgName)
+	results, err := adminOrg.client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "adminCatalog",
+		"filter": fmt.Sprintf("(name==%s;orgName==%s)", url.QueryEscape(name), url.QueryEscape(orgName)),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	util.Logger.Printf("[DEBUG] FinAdminCatalogByName returned with : %#v and error: %s", results.Results.CatalogRecord, err)
+	return results.Results.CatalogRecord, nil
 }
 
 // Given a valid catalog name, FindAdminCatalog returns an AdminCatalog object.
