@@ -11,7 +11,7 @@ import (
 )
 
 // Creates a Catalog and then verify that finds it
-func (vcd *TestVCD) Test_FindCatalogRecordTypes(check *C) {
+func (vcd *TestVCD) Test_FindAdminCatalogRecords(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
