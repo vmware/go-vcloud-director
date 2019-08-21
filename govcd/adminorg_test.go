@@ -29,7 +29,7 @@ func (vcd *TestVCD) Test_FindCatalogRecordTypes(check *C) {
 	err = adminOrg.Refresh()
 	check.Assert(err, IsNil)
 
-	findRecords, err := adminOrg.FindCatalogRecordTypes(catalogName)
+	findRecords, err := adminOrg.FindAdminCatalogRecords(catalogName)
 	check.Assert(err, IsNil)
 	check.Assert(findRecords, NotNil)
 	check.Assert(len(findRecords), Equals, 1)

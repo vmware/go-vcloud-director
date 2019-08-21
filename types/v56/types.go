@@ -2113,7 +2113,7 @@ type QueryResultRecordsType struct {
 	VirtualCenterRecord             []*QueryResultVirtualCenterRecordType             `xml:"VirtualCenterRecord"`             // A record representing a vSphere server
 	PortGroupRecord                 []*PortGroupRecordType                            `xml:"PortgroupRecord"`                 // A record representing a port group
 	OrgVdcNetworkRecord             []*QueryResultOrgVdcNetworkRecordType             `xml:"OrgVdcNetworkRecord"`             // A record representing a org VDC network
-	CatalogRecord                   []*CatalogRecordType                              `xml:"AdminCatalogRecord"`              // A record representing a catalog
+	AdminCatalogRecord              []*AdminCatalogRecord                             `xml:"AdminCatalogRecord"`              // A record representing a catalog
 }
 
 // QueryResultEdgeGatewayRecordType represents an edge gateway record as query result.
@@ -2627,13 +2627,13 @@ type User struct {
 	Tasks           *TasksInProgress `xml:"Tasks"`
 }
 
-// Type: CatalogRecord
+// Type: AdminCatalogRecord
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/types/QueryResultCatalogRecordType.html
 // Issue that description partly matches with what is returned
 // Description: Represents Catalog record
 // Since: 1.5
-type CatalogRecordType struct {
+type AdminCatalogRecord struct {
 	HREF                    string    `xml:"href,attr,omitempty"`
 	ID                      string    `xml:"id,attr,omitempty"`
 	Type                    string    `xml:"type,attr,omitempty"`

@@ -31,6 +31,7 @@ func (vcdCli *VCDClient) Query(params map[string]string) (Results, error) {
 	return getResult(&vcdCli.Client, req)
 }
 
+// QueryWithNotEncodedParams uses Query API to search for requested data
 func (client *Client) QueryWithNotEncodedParams(params map[string]string, notEncodedParams map[string]string) (Results, error) {
 	queryUlr := client.VCDHREF
 	queryUlr.Path += "/query"
