@@ -390,7 +390,7 @@ func (adminOrg *AdminOrg) removeCatalogs() error {
 
 }
 
-// isCatalogFromSameOrg checks if catalog is in same Org. Shared catalogs form other Org are showed as normal one
+// isCatalogFromSameOrg checks if catalog is in same Org. Shared catalogs from other Org are showed as normal one
 // in some API responses.
 func isCatalogFromSameOrg(adminOrg *AdminOrg, catalogName string) (bool, error) {
 	foundCatalogs, err := adminOrg.FindAdminCatalogRecords(catalogName)
