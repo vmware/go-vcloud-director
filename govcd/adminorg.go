@@ -365,7 +365,7 @@ func (adminOrg *AdminOrg) removeAllOrgNetworks() error {
 	return nil
 }
 
-// Forced removal of all organization catalogs
+// removeCatalogs force removal of all organization catalogs
 func (adminOrg *AdminOrg) removeCatalogs() error {
 	for _, catalog := range adminOrg.AdminOrg.Catalogs.Catalog {
 		isCatalogFromSameOrg, err := isCatalogFromSameOrg(adminOrg, catalog.Name)
@@ -404,7 +404,7 @@ func isCatalogFromSameOrg(adminOrg *AdminOrg, catalogName string) (bool, error) 
 	return false, nil
 }
 
-// FinCatalogByName uses catalog name and Org name to return AdminCatalogRecord information.
+// FindAdminCatalogRecords uses catalog name to return AdminCatalogRecord information.
 func (adminOrg *AdminOrg) FindAdminCatalogRecords(name string) ([]*types.AdminCatalogRecord, error) {
 	util.Logger.Printf("[DEBUG] FindAdminCatalogRecords with name: %s and org name: %s", name, adminOrg.AdminOrg.Name)
 	results, err := adminOrg.client.QueryWithNotEncodedParams(nil, map[string]string{
