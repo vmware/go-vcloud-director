@@ -301,9 +301,13 @@ func (adminOrg *AdminOrg) getVdcByAdminHREF(adminVdcUrl *url.URL) (*Vdc, error) 
 func (adminOrg *AdminOrg) removeAllOrgVDCs() error {
 	for _, vdcs := range adminOrg.AdminOrg.Vdcs.Vdcs {
 
-		// Get admin Vdc HREF
 		adminVdcUrl := adminOrg.client.VCDHREF
-		adminVdcUrl.Path += "/admin/vdc/" + strings.Split(vdcs.HREF, "/api/vdc/")[1] + "/action/disable"
+		splitVcdId := strings.Split(vdcs.HREF, "/api/vdc/")
+		if len(splitVcdId) == 1 {
+			adminVdcUrl.Path += "/admin/vdc/" + strings.Split(vdcs.HREF, "/api/admin/vdc/")[1] + "/action/disable"
+		} else {
+			adminVdcUrl.Path += "/admin/vdc/" + splitVcdId[1] + "/action/disable"
+		}
 
 		req := adminOrg.client.NewRequest(map[string]string{}, http.MethodPost, adminVdcUrl, nil)
 		_, err := checkResp(adminOrg.client.Http.Do(req))
