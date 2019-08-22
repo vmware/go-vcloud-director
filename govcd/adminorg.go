@@ -302,11 +302,11 @@ func (adminOrg *AdminOrg) removeAllOrgVDCs() error {
 	for _, vdcs := range adminOrg.AdminOrg.Vdcs.Vdcs {
 
 		adminVdcUrl := adminOrg.client.VCDHREF
-		splitVcdId := strings.Split(vdcs.HREF, "/api/vdc/")
-		if len(splitVcdId) == 1 {
+		splitVdcId := strings.Split(vdcs.HREF, "/api/vdc/")
+		if len(splitVdcId) == 1 {
 			adminVdcUrl.Path += "/admin/vdc/" + strings.Split(vdcs.HREF, "/api/admin/vdc/")[1] + "/action/disable"
 		} else {
-			adminVdcUrl.Path += "/admin/vdc/" + splitVcdId[1] + "/action/disable"
+			adminVdcUrl.Path += "/admin/vdc/" + splitVdcId[1] + "/action/disable"
 		}
 
 		req := adminOrg.client.NewRequest(map[string]string{}, http.MethodPost, adminVdcUrl, nil)
