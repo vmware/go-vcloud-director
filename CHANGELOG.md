@@ -27,6 +27,7 @@ IMPROVEMENTS:
 
 * Move methods for `AdminOrg`, `AdminCatalog`, `AdminVdc` to new files `adminorg.go`,
  `admincatalog.go`, `adminvdc.go`.
+* Added default value for HTTP timeout (600s) which is configurable
 
 BUGS FIXED:
 
