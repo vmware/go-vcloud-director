@@ -33,6 +33,7 @@ BUGS FIXED:
 
 * Fix bug in AdminOrg.Update, where OrgGeneralSettings would not update correctly if it contained only one property
 * Fix bug in External network creation and get when description wasn't populated.
+* Fix bug in VDC creation when name with space throw error
 
 ## 2.3.1 (Jul 29, 2019)
 
