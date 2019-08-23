@@ -342,3 +342,53 @@ func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {
 	check.Assert(storageProfileFound, Equals, true)
 
 }
+
+func (vcd *TestVCD) Test_QueryProviderVdcByName(check *C) {
+	if vcd.config.VCD.ProviderVdc.Name == "" {
+		check.Skip("Skipping Provider VDC query: no provider VDC was given")
+	}
+	providerVdcs, err := QueryProviderVdcByName(vcd.client, vcd.config.VCD.ProviderVdc.Name)
+	check.Assert(err, IsNil)
+	check.Assert(len(providerVdcs) > 0, Equals, true)
+
+	providerFound := false
+	for _, providerVdc := range providerVdcs {
+		if vcd.config.VCD.ProviderVdc.Name == providerVdc.Name {
+			providerFound = true
+		}
+
+		if testVerbose {
+			fmt.Printf("PVDC %s\n", providerVdc.Name)
+			fmt.Printf("\t href    %s\n", providerVdc.HREF)
+			fmt.Printf("\t status  %s\n", providerVdc.Status)
+			fmt.Printf("\t enabled %v\n", providerVdc.IsEnabled)
+			fmt.Println("")
+		}
+	}
+	check.Assert(providerFound, Equals, true)
+
+}
+
+func (vcd *TestVCD) Test_QueryNetworkPoolByName(check *C) {
+	if vcd.config.VCD.ProviderVdc.NetworkPool == "" {
+		check.Skip("Skipping Provider VDC network pool query: no provider VDC network pool was given")
+	}
+	netPools, err := QueryNetworkPoolByName(vcd.client, vcd.config.VCD.ProviderVdc.NetworkPool)
+	check.Assert(err, IsNil)
+	check.Assert(len(netPools) > 0, Equals, true)
+
+	networkPoolFound := false
+	for _, networkPool := range netPools {
+		if vcd.config.VCD.ProviderVdc.NetworkPool == networkPool.Name {
+			networkPoolFound = true
+		}
+		if testVerbose {
+			fmt.Printf("NP %s\n", networkPool.Name)
+			fmt.Printf("\t href %s\n", networkPool.HREF)
+			fmt.Printf("\t type %v\n", networkPool.NetworkPoolType)
+			fmt.Println("")
+		}
+	}
+	check.Assert(networkPoolFound, Equals, true)
+
+}
