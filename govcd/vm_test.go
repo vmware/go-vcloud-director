@@ -904,7 +904,7 @@ func (vcd *TestVCD) Test_GetVirtualHardwareSection(check *C) {
 	section, err := vm.GetVirtualHardwareSection()
 	check.Assert(err, IsNil)
 
-	// Check that section.Info is not Nil, as its the only field that may not be omitted when marshelled
+	// Check that section.Info is not Nil, as its the only field that may not be omitted when marshalled
 	check.Assert(section.Info, NotNil)
 
 	// Check that section.Item is not Nil before looping over it
