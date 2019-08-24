@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+
 	. "gopkg.in/check.v1"
 )
 
@@ -915,7 +916,7 @@ func (vcd *TestVCD) Test_GetVirtualHardwareSection(check *C) {
 		check.Assert(item.ResourceType, NotNil)
 		check.Assert(item.ResourceSubType, NotNil)
 
-		if item.ResourceSubType == "VMXNET3" && item.ResourceType == 10 {
+		if item.ResourceType == 10 {
 			check.Assert(item.Address, Matches, "^[a-fA-F0-9:]{17}|[a-fA-F0-9]{12}$")
 		}
 	}
