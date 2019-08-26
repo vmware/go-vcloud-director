@@ -921,3 +921,156 @@ func (vcd *TestVCD) Test_GetVirtualHardwareSection(check *C) {
 		}
 	}
 }
+
+func (vcd *TestVCD) Test_GetNetworkConnectionSection(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	check.Assert(err, IsNil)
+
+	networkBefore, err := vm.GetNetworkConnectionSection()
+	check.Assert(err, IsNil)
+
+	err = vm.UpdateNetworkConnectionSection(networkBefore)
+	check.Assert(err, IsNil)
+
+	networkAfter, err := vm.GetNetworkConnectionSection()
+	check.Assert(err, IsNil)
+
+	// Filter out always differing fields and do deep comparison of objects
+	networkBefore.Link = &types.Link{}
+	networkAfter.Link = &types.Link{}
+	check.Assert(networkAfter, DeepEquals, networkBefore)
+
+}
+
+// Test_PowerOnAndForceCustomization uses the VM from TestSuite and forces guest customization
+// in addition to the one which is triggered on first boot. It waits until the initial guest
+// customization after first power on is finished because it is inherited from the template.
+// After this initial wait it Undeploys VM and triggers a second customization and again waits until guest
+// customization status exits "GC_PENDING" state to succeed the test.
+// This test relies on longer timeouts in BlockWhileGuestCustomizationStatus because VMs take a lengthy time
+// to boot up and report customization done.
+func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp wasn't properly created")
+	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	check.Assert(err, IsNil)
+
+	// It may be that prebuilt VM was not booted before in the test vApp and it would still have
+	// a guest customization status 'GC_PENDING'. This is because initially VM has this flag set
+	// but while this flag is here the test cannot actually check if vm.PowerOnAndForceCustomization()
+	// gives any effect therefore we must "wait through" initial guest customization if it is in
+	// 'GC_PENDING' state.
+	custStatus, err := vm.GetGuestCustomizationStatus()
+	check.Assert(err, IsNil)
+	if custStatus == types.GuestCustStatusPending {
+		vmStatus, err := vm.GetStatus()
+		check.Assert(err, IsNil)
+		// If VM is POWERED OFF - let's power it on before waiting for its status to change
+		if vmStatus == "POWERED_OFF" {
+			task, err := vm.PowerOn()
+			check.Assert(err, IsNil)
+			err = task.WaitTaskCompletion()
+			check.Assert(err, IsNil)
+			check.Assert(task.Task.Status, Equals, "success")
+		}
+
+		err = vm.BlockWhileGuestCustomizationStatus(types.GuestCustStatusPending, 300)
+		check.Assert(err, IsNil)
+	}
+
+	// Check that VM is deployed
+	vmIsDeployed, err := vm.IsDeployed()
+	check.Assert(err, IsNil)
+	check.Assert(vmIsDeployed, Equals, true)
+
+	// Try to force operation on deployed VM and expect an error
+	err = vm.PowerOnAndForceCustomization()
+	check.Assert(err, Not(IsNil))
+
+	// VM _must_ be un-deployed because PowerOnAndForceCustomization task will never finish (and
+	// probably not triggered) if it is not un-deployed.
+	task, err := vm.Undeploy()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	// Check that VM is un-deployed
+	vmIsDeployed, err = vm.IsDeployed()
+	check.Assert(err, IsNil)
+	check.Assert(vmIsDeployed, Equals, false)
+
+	err = vm.PowerOnAndForceCustomization()
+	check.Assert(err, IsNil)
+
+	// Ensure that VM has the status set to "GC_PENDING" after forced re-customization
+	recustomizedVmStatus, err := vm.GetGuestCustomizationStatus()
+	check.Assert(err, IsNil)
+	check.Assert(recustomizedVmStatus, Equals, types.GuestCustStatusPending)
+
+	// Check that VM is deployed
+	vmIsDeployed, err = vm.IsDeployed()
+	check.Assert(err, IsNil)
+	check.Assert(vmIsDeployed, Equals, true)
+
+	// Wait until the VM exists GC_PENDING status again. At the moment this is the only simple way
+	// to see that the customization really worked as there is no API in vCD to execute remote
+	// commands on guest VMs
+	err = vm.BlockWhileGuestCustomizationStatus(types.GuestCustStatusPending, 300)
+	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_BlockWhileGuestCustomizationStatus(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp wasn't properly created")
+	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	check.Assert(err, IsNil)
+
+	// Attempt to set invalid timeout values and expect validation error
+	err = vm.BlockWhileGuestCustomizationStatus(types.GuestCustStatusPending, 0)
+	check.Assert(err, ErrorMatches, "timeOutAfterSeconds must be in range 4<X<7200")
+	err = vm.BlockWhileGuestCustomizationStatus(types.GuestCustStatusPending, 4)
+	check.Assert(err, ErrorMatches, "timeOutAfterSeconds must be in range 4<X<7200")
+	err = vm.BlockWhileGuestCustomizationStatus(types.GuestCustStatusPending, -30)
+	check.Assert(err, ErrorMatches, "timeOutAfterSeconds must be in range 4<X<7200")
+	err = vm.BlockWhileGuestCustomizationStatus(types.GuestCustStatusPending, 7201)
+	check.Assert(err, ErrorMatches, "timeOutAfterSeconds must be in range 4<X<7200")
+
+	vmCustStatus, err := vm.GetGuestCustomizationStatus()
+	check.Assert(err, IsNil)
+
+	// Use current value to trigger timeout
+	err = vm.BlockWhileGuestCustomizationStatus(vmCustStatus, 5)
+	check.Assert(err, ErrorMatches, "timed out waiting for VM guest customization status to exit state GC_PENDING after 5 seconds")
+
+	// Use unreal value to trigger instant unblocking
+	err = vm.BlockWhileGuestCustomizationStatus("invalid_GC_STATUS", 5)
+	check.Assert(err, IsNil)
+}
