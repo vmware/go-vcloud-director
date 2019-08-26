@@ -498,7 +498,7 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
 }
 
-// waitUntilEjected checks status until ready. We need this cause VCD is slow to change representative state
+// waitUntilEjected checks status until ready. We need this because VCD is slow to change representative state
 func (vcd *TestVCD) waitUntilEjected(err error, vm *VM, check *C) {
 
 	for i := 1; i < 5; i++ {
