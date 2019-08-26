@@ -22,6 +22,8 @@
 * Added methods `AdminOrg.GetVDCByName` and related `GetVDCById`, `GetVDCByNameOrId`
 * Added methods `AdminOrg.GetAdminVDCByName` and related `GetAdminVDCById`, `GetAdminVDCByNameOrId`
 * Added methods `Catalog.Refresh` and `AdminCatalog.Refresh`
+* Added methods `vm.SetGuestProperties` and `vm.GetGuestProperties` [#]()
+* Added methods `vapp.SetGuestProperties` and `vapp.GetGuestProperties` [#]()
 
 IMPROVEMENTS:
 
