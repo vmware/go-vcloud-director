@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
-
 	. "gopkg.in/check.v1"
 )
 
@@ -34,12 +33,12 @@ func (vcd *TestVCD) findFirstVm(vapp VApp) (types.VM, string) {
 func (vcd *TestVCD) findFirstVapp() VApp {
 	client := vcd.client
 	config := vcd.config
-	org, err := GetOrgByName(client, config.VCD.Org)
+	org, err := client.GetOrgByName(config.VCD.Org)
 	if err != nil {
 		fmt.Println(err)
 		return VApp{}
 	}
-	vdc, err := org.GetVdcByName(config.VCD.Vdc)
+	vdc, err := org.GetVDCByName(config.VCD.Vdc, false)
 	if err != nil {
 		fmt.Println(err)
 		return VApp{}
@@ -440,6 +439,9 @@ func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
 // Test Insert or Eject Media for VM
 func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
 	itemName := "TestHandleInsertOrEjectMedia"
 
 	// Find VApp
@@ -459,8 +461,9 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 	vm.VM = &vmType
 
 	// Upload Media
-	catalog, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
 
 	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
@@ -469,11 +472,11 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 
 	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_HandleInsertOrEjectMedia")
 
-	media, err := FindMediaAsCatalogItem(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	media, err := FindMediaAsCatalogItem(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 	check.Assert(media, Not(Equals), CatalogItem{})
 
-	insertMediaTask, err := vm.HandleInsertMedia(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	insertMediaTask, err := vm.HandleInsertMedia(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 
 	err = insertMediaTask.WaitTaskCompletion()
@@ -484,7 +487,7 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, true)
 
-	ejectMediaTask, err := vm.HandleEjectMedia(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	ejectMediaTask, err := vm.HandleEjectMedia(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 
 	err = ejectMediaTask.WaitTaskCompletion(true)
@@ -499,6 +502,9 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 // Test Insert or Eject Media for VM
 func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
 	itemName := "TestInsertOrEjectMedia"
 
 	// Find VApp
@@ -518,8 +524,9 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 	vm.VM = &vmType
 
 	// Upload Media
-	catalog, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
 
 	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
@@ -528,7 +535,7 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 
 	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_InsertOrEjectMedia")
 
-	media, err := FindMediaAsCatalogItem(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	media, err := FindMediaAsCatalogItem(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 	check.Assert(media, Not(Equals), CatalogItem{})
 
@@ -569,76 +576,6 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
 }
 
-func (vcd *TestVCD) Test_AddMetadataOnVm(check *C) {
-	// Find VApp
-	if vcd.vapp.VApp == nil {
-		check.Skip("skipping test because no vApp is found")
-	}
-
-	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
-
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	vm := NewVM(&vcd.client.Client)
-	vm.VM = &vmType
-
-	// Add metadata
-	task, err := vm.AddMetadata("key", "value")
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(task.Task.Status, Equals, "success")
-
-	// Check if metadata was added correctly
-	metadata, err := vm.GetMetadata()
-	check.Assert(err, IsNil)
-	check.Assert(metadata.MetadataEntry[0].Key, Equals, "key")
-	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
-}
-
-func (vcd *TestVCD) Test_DeleteMetadataOnVm(check *C) {
-	// Find VApp
-	if vcd.vapp.VApp == nil {
-		check.Skip("skipping test because no vApp is found")
-	}
-
-	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
-
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	vm := NewVM(&vcd.client.Client)
-	vm.VM = &vmType
-
-	// Add metadata
-	task, err := vm.AddMetadata("key2", "value2")
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(task.Task.Status, Equals, "success")
-
-	// Remove metadata
-	task, err = vm.DeleteMetadata("key2")
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(task.Task.Status, Equals, "success")
-	metadata, err := vm.GetMetadata()
-	check.Assert(err, IsNil)
-	for _, k := range metadata.MetadataEntry {
-		if k.Key == "key2" {
-			check.Errorf("metadata.MetadataEntry should not contain key: %s", k)
-		}
-	}
-}
-
 // check resource subtype for specific value which means media is injected
 func isMediaInjected(items []*types.VirtualHardwareItem) bool {
 	for _, hardwareItem := range items {
@@ -651,6 +588,9 @@ func isMediaInjected(items []*types.VirtualHardwareItem) bool {
 
 // Test Insert or Eject Media for VM
 func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
 
 	itemName := "TestAnswerVmQuestion"
 
@@ -671,8 +611,9 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 	vm.VM = &vmType
 
 	// Upload Media
-	catalog, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
 
 	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
@@ -681,14 +622,14 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 
 	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_AnswerVmQuestion")
 
-	media, err := FindMediaAsCatalogItem(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	media, err := FindMediaAsCatalogItem(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 	check.Assert(media, Not(Equals), CatalogItem{})
 
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
 
-	insertMediaTask, err := vm.HandleInsertMedia(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	insertMediaTask, err := vm.HandleInsertMedia(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 
 	err = insertMediaTask.WaitTaskCompletion()
@@ -699,7 +640,7 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, true)
 
-	ejectMediaTask, err := vm.HandleEjectMedia(&vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	ejectMediaTask, err := vm.HandleEjectMedia(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 
 	for i := 0; i < 10; i++ {
@@ -786,6 +727,9 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 }
 
 func (vcd *TestVCD) Test_VMToggleHardwareVirtualization(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
 	vapp := vcd.findFirstVapp()
 	vmType, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
@@ -839,6 +783,9 @@ func (vcd *TestVCD) Test_VMToggleHardwareVirtualization(check *C) {
 }
 
 func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
 	vapp := vcd.findFirstVapp()
 	vmType, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
@@ -880,46 +827,6 @@ func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
 	vmStatus, err = vm.GetStatus()
 	check.Assert(err, IsNil)
 	check.Assert(vmStatus, Equals, "POWERED_OFF")
-}
-
-// Test gathering VM virtual hardware items
-func (vcd *TestVCD) Test_GetVirtualHardwareSection(check *C) {
-	itemName := "TestGetVirtualHardwareSection"
-
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp wasn't properly created")
-	}
-
-	fmt.Printf("Running: %s\n", itemName)
-
-	// Find VM
-	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
-	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
-	check.Assert(err, IsNil)
-
-	// Preform check of virtual hardware section
-	section, err := vm.GetVirtualHardwareSection()
-	check.Assert(err, IsNil)
-
-	// Check that section.Info is not Nil, as its the only field that may not be omitted when marshalled
-	check.Assert(section.Info, NotNil)
-
-	// Check that section.Item is not Nil before looping over it
-	check.Assert(section.Item, NotNil)
-
-	// Loop over the Items to ensure
-	for _, item := range section.Item {
-		check.Assert(item.ResourceType, NotNil)
-		check.Assert(item.ResourceSubType, NotNil)
-
-		if item.ResourceType == 10 {
-			check.Assert(item.Address, Matches, "^[a-fA-F0-9:]{17}|[a-fA-F0-9]{12}$")
-		}
-	}
 }
 
 func (vcd *TestVCD) Test_GetNetworkConnectionSection(check *C) {
@@ -1073,4 +980,44 @@ func (vcd *TestVCD) Test_BlockWhileGuestCustomizationStatus(check *C) {
 	// Use unreal value to trigger instant unblocking
 	err = vm.BlockWhileGuestCustomizationStatus("invalid_GC_STATUS", 5)
 	check.Assert(err, IsNil)
+}
+
+// Test gathering VM virtual hardware items
+func (vcd *TestVCD) Test_GetVirtualHardwareSection(check *C) {
+	itemName := "TestGetVirtualHardwareSection"
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp wasn't properly created")
+	}
+
+	fmt.Printf("Running: %s\n", itemName)
+
+	// Find VM
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	check.Assert(err, IsNil)
+
+	// Preform check of virtual hardware section
+	section, err := vm.GetVirtualHardwareSection()
+	check.Assert(err, IsNil)
+
+	// Check that section.Info is not Nil, as its the only field that may not be omitted when marshalled
+	check.Assert(section.Info, NotNil)
+
+	// Check that section.Item is not Nil before looping over it
+	check.Assert(section.Item, NotNil)
+
+	// Loop over the Items to ensure
+	for _, item := range section.Item {
+		check.Assert(item.ResourceType, NotNil)
+		check.Assert(item.ResourceSubType, NotNil)
+
+		if item.ResourceType == 10 {
+			check.Assert(item.Address, Matches, "^[a-fA-F0-9:]{17}|[a-fA-F0-9]{12}$")
+		}
+	}
 }
