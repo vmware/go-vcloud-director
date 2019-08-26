@@ -250,61 +250,68 @@ func buildLb(edge EdgeGateway, node1Ip, node2Ip string, vcd *TestVCD, check *C) 
 // checkLb queries specified endpoint until it gets all responses in expectedResponses slice
 func checkLb(queryUrl string, expectedResponses []string, maxRetryTimeout int) error {
 	var err error
-	var iterations int
 	if len(expectedResponses) == 0 {
 		return fmt.Errorf("no expected responses specified")
 	}
 
+	retryTimeout := maxRetryTimeout
 	// due to the VMs taking long time to boot it needs to be at least 5 minutes
 	// may be even more in slower environments
-	sleepInterval := 5
-	sleepIntervalDuration := time.Duration(sleepInterval) * time.Second
 	if maxRetryTimeout < 5*60 { // 5 minutes
-		iterations = 60
-	} else {
-		iterations = maxRetryTimeout / 5
+		retryTimeout = 5 * 60 // 5 minutes
 	}
 
-	fmt.Printf("# Waiting for the virtual server to accept responses (%s interval x %d iterations)"+
-		"\n[_ = timeout, x = connection refused, ?(err) = unknown error, / = no nodes are up yet, "+
-		". = no response from all nodes yet]: ", sleepIntervalDuration.String(), iterations)
-	for i := 1; i <= iterations; i++ {
-		var resp *http.Response
-		resp, err = http.Get(queryUrl)
-		if err != nil {
-			switch {
-			case strings.Contains(err.Error(), "i/o timeout"):
-				fmt.Printf("_")
-			case strings.Contains(err.Error(), "connect: connection refused"):
-				fmt.Printf("x")
-			case strings.Contains(err.Error(), "connect: network is unreachable"):
-				fmt.Printf("/")
-			default:
-				fmt.Printf("?(%s)", err.Error())
-			}
-		}
+	timeOutAfterInterval := time.Duration(retryTimeout) * time.Second
+	timeoutAfter := time.After(timeOutAfterInterval)
+	tick := time.NewTicker(time.Duration(5) * time.Second)
 
-		if err == nil {
-			fmt.Printf(".") // progress bar when waiting for responses from all nodes
-			body, _ := ioutil.ReadAll(resp.Body)
-			// check if the element is in the list
-			for index, value := range expectedResponses {
-				if value == string(body) {
-					expectedResponses = append(expectedResponses[:index], expectedResponses[index+1:]...)
-					if len(expectedResponses) > 0 {
-						fmt.Printf("\n# '%s' responded. Waiting for node(s) '%s': ",
-							value, strings.Join(expectedResponses, ","))
-					} else {
-						fmt.Printf("\n# Last node '%s' responded. Exiting\n", value)
-						return nil
+	httpClient := &http.Client{Timeout: 5 * time.Second}
+
+	fmt.Printf("# Waiting for the virtual server to accept responses (timeout after %s)"+
+		"\n[_ = timeout, x = connection refused, ?(err) = unknown error, / = no nodes are up yet, "+
+		". = no response from all nodes yet]: ", timeOutAfterInterval.String())
+
+	for {
+		select {
+		case <-timeoutAfter:
+			return fmt.Errorf("timed out waiting for all nodes to be up: %s", err)
+		case <-tick.C:
+			var resp *http.Response
+			resp, err = httpClient.Get(queryUrl)
+			if err != nil {
+				switch {
+				case strings.Contains(err.Error(), "i/o timeout"):
+					fmt.Printf("_")
+				case strings.Contains(err.Error(), "connect: connection refused"):
+					fmt.Printf("x")
+				case strings.Contains(err.Error(), "connect: network is unreachable"):
+					fmt.Printf("/")
+				default:
+					fmt.Printf("?(%s)", err.Error())
+				}
+			}
+
+			if err == nil {
+				fmt.Printf(".") // progress bar when waiting for responses from all nodes
+				body, _ := ioutil.ReadAll(resp.Body)
+				resp.Body.Close()
+				// check if the element is in the list
+				for index, value := range expectedResponses {
+					if value == string(body) {
+						expectedResponses = append(expectedResponses[:index], expectedResponses[index+1:]...)
+						if len(expectedResponses) > 0 {
+							fmt.Printf("\n# '%s' responded. Waiting for node(s) '%s': ",
+								value, strings.Join(expectedResponses, ","))
+						} else {
+							fmt.Printf("\n# Last node '%s' responded. Exiting\n", value)
+							return nil
+						}
 					}
 				}
 			}
 		}
-		time.Sleep(sleepIntervalDuration)
 	}
 
-	return fmt.Errorf("timed out waiting for all nodes to be up: %s", err)
 }
 
 // addFirewallRule adds a firewall rule needed to access virtual server port on edge gateway

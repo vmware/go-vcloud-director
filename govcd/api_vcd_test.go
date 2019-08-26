@@ -88,6 +88,7 @@ type TestConfig struct {
 		Url             string `yaml:"url"`
 		SysOrg          string `yaml:"sysOrg"`
 		MaxRetryTimeout int    `yaml:"maxRetryTimeout,omitempty"`
+		HttpTimeout     int64  `yaml:"httpTimeout,omitempty"`
 	}
 	VCD struct {
 		Org         string `yaml:"org"`
@@ -349,6 +350,10 @@ func GetTestVCDFromYaml(testConfig TestConfig, options ...VCDClientOption) (*VCD
 
 	if testConfig.Provider.MaxRetryTimeout != 0 {
 		options = append(options, WithMaxRetryTimeout(testConfig.Provider.MaxRetryTimeout))
+	}
+
+	if testConfig.Provider.HttpTimeout != 0 {
+		options = append(options, WithHttpTimeout(testConfig.Provider.HttpTimeout))
 	}
 
 	return NewVCDClient(*configUrl, true, options...), nil

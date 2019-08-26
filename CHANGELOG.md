@@ -9,6 +9,8 @@
 * Added method `VCDClient.QueryProviderVdcStorageProfiles` 
 * Added method `VCDClient.QueryNetworkPools` 
 * Added get/add/delete metadata functions for vApp template and media item [#225](https://github.com/vmware/go-vcloud-director/pull/225).
+* Added `UpdateNetworkConnectionSection` for updating VM network configuration [#229](https://github.com/vmware/go-vcloud-director/pull/229)
+* Added `PowerOnAndForceCustomization`, `GetGuestCustomizationStatus`, `BlockWhileGuestCustomizationStatus` [#229](https://github.com/vmware/go-vcloud-director/pull/229)
 * Deprecated methods `AdminOrg.GetAdminVdcByName`, `AdminOrg.GetVdcByName`, `AdminOrg.FindAdminCatalog`, `AdminOrg.FindCatalog`
 * Deprecated methods `Catalog.FindCatalogItem`, `Org.FindCatalog`, `Org.GetVdcByName`
 * Deprecated function `GetExternalNetwork`
@@ -25,10 +27,12 @@ IMPROVEMENTS:
 
 * Move methods for `AdminOrg`, `AdminCatalog`, `AdminVdc` to new files `adminorg.go`,
  `admincatalog.go`, `adminvdc.go`.
+* Added default value for HTTP timeout (600s) which is configurable
 
 BUGS FIXED:
 
 * Fix bug in AdminOrg.Update, where OrgGeneralSettings would not update correctly if it contained only one property
+* Fix bug in External network creation and get when description wasn't populated.
 
 ## 2.3.1 (Jul 29, 2019)
 
