@@ -59,6 +59,10 @@ func propertyTester(vcd *TestVCD, check *C, object guestPropertyGetSetter) {
 	check.Assert(err, IsNil)
 
 	// Check that values were set in API
+	check.Assert(getProperties, NotNil)
+	check.Assert(getProperties.ProductSection, NotNil)
+	check.Assert(len(getProperties.ProductSection.Property), Equals, 3)
+
 	check.Assert(getProperties.ProductSection.Property[0].Key, Equals, "sys_owner")
 	check.Assert(getProperties.ProductSection.Property[0].Label, Equals, "sys_owner_label")
 	check.Assert(getProperties.ProductSection.Property[0].Type, Equals, "string")

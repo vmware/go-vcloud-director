@@ -11,7 +11,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// setGuestProperties is a shared function for
+// setGuestProperties is a shared function for both vApp and VM
 func setGuestProperties(client *Client, href string, properties *types.ProductSectionList) error {
 	if href == "" {
 		return fmt.Errorf("href cannot be empty to set guest properties")
