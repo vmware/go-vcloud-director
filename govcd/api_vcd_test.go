@@ -1,4 +1,4 @@
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk ALL
+// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user ALL
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -7,13 +7,18 @@
 package govcd
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -21,6 +26,10 @@ import (
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v2"
 )
+
+func init() {
+	testingTags["api"] = "api_vcd_test.go"
+}
 
 const (
 	// Names for entities created by the tests
@@ -39,6 +48,7 @@ const (
 	TestUploadOvf                 = "TestUploadOvf"
 	TestDeleteCatalogItem         = "TestDeleteCatalogItem"
 	TestCreateOrgVdc              = "TestCreateOrgVdc"
+	TestRefreshOrgVdc             = "TestRefreshOrgVdc"
 	TestCreateOrgVdcNetworkEGW    = "TestCreateOrgVdcNetworkEGW"
 	TestCreateOrgVdcNetworkIso    = "TestCreateOrgVdcNetworkIso"
 	TestCreateOrgVdcNetworkDirect = "TestCreateOrgVdcNetworkDirect"
@@ -57,6 +67,12 @@ const (
 	TestVMDetachDisk              = "TestVMDetachDisk"
 	TestCreateExternalNetwork     = "TestCreateExternalNetwork"
 	TestDeleteExternalNetwork     = "TestDeleteExternalNetwork"
+	TestLbServiceMonitor          = "TestLbServiceMonitor"
+	TestLbServerPool              = "TestLbServerPool"
+	TestLbAppProfile              = "TestLbAppProfile"
+	TestLbAppRule                 = "TestLbAppRule"
+	TestLbVirtualServer           = "TestLbVirtualServer"
+	TestLb                        = "TestLb"
 )
 
 const (
@@ -72,6 +88,7 @@ type TestConfig struct {
 		Url             string `yaml:"url"`
 		SysOrg          string `yaml:"sysOrg"`
 		MaxRetryTimeout int    `yaml:"maxRetryTimeout,omitempty"`
+		HttpTimeout     int64  `yaml:"httpTimeout,omitempty"`
 	}
 	VCD struct {
 		Org         string `yaml:"org"`
@@ -105,8 +122,8 @@ type TestConfig struct {
 		ExternalNetworkPortGroupType string `yaml:"externalNetworkPortGroupType,omitempty"`
 		VimServer                    string `yaml:"vimServer,omitempty"`
 		Disk                         struct {
-			Size          int `yaml:"size,omitempty"`
-			SizeForUpdate int `yaml:"sizeForUpdate,omitempty"`
+			Size          int64 `yaml:"size,omitempty"`
+			SizeForUpdate int64 `yaml:"sizeForUpdate,omitempty"`
 		}
 	} `yaml:"vcd"`
 	Logging struct {
@@ -123,8 +140,9 @@ type TestConfig struct {
 		OVAChunkedPath string `yaml:"ovaChunkedPath,omitempty"`
 	} `yaml:"ova"`
 	Media struct {
-		MediaPath string `yaml:"mediaPath,omitempty"`
-		Media     string `yaml:"mediaName,omitempty"`
+		MediaPath       string `yaml:"mediaPath,omitempty"`
+		Media           string `yaml:"mediaName,omitempty"`
+		PhotonOsOvaPath string `yaml:"photonOsOvaPath,omitempty"`
 	} `yaml:"media"`
 }
 
@@ -134,8 +152,8 @@ type TestConfig struct {
 // tests on
 type TestVCD struct {
 	client         *VCDClient
-	org            Org
-	vdc            Vdc
+	org            *Org
+	vdc            *Vdc
 	vapp           VApp
 	config         TestConfig
 	skipVappTests  bool
@@ -151,6 +169,13 @@ type CleanupEntity struct {
 	CreatedBy  string
 }
 
+// CleanupInfo is the data used to persist an entity list in a file
+type CleanupInfo struct {
+	VcdIp      string          // IP of the vCD where the test runs
+	Info       string          // Information about this file
+	EntityList []CleanupEntity // List of entities to remove
+}
+
 // Internally used by the test suite to run tests based on TestVCD structures
 var _ = Suite(&TestVCD{})
 
@@ -158,8 +183,96 @@ var _ = Suite(&TestVCD{})
 // at the end of the tests
 var cleanupEntityList []CleanupEntity
 
+// Lock for of cleanup entities persistent file
+var persistentCleanupListLock sync.Mutex
+
+// IP of the vCD being tested. It is initialized at the first client authentication
+var persistentCleanupIp string
+
 // Use this value to run a specific test that does not need a pre-created vApp.
 var skipVappCreation bool = os.Getenv("GOVCD_SKIP_VAPP_CREATION") != ""
+
+// Makes the name for the cleanup entities persistent file
+// Using a name for each vCD allows us to run tests with different servers
+// and persist the cleanup list for all.
+func makePersistentCleanupFileName() string {
+	var persistentCleanupListMask = "test_cleanup_list-%s.%s"
+	if persistentCleanupIp == "" {
+		fmt.Printf("######## Persistent Cleanup IP was not set ########\n")
+		os.Exit(1)
+	}
+	reForbiddenChars := regexp.MustCompile(`[/]`)
+	fileName := fmt.Sprintf(persistentCleanupListMask,
+		reForbiddenChars.ReplaceAllString(persistentCleanupIp, ""), "json")
+	return fileName
+
+}
+
+// Removes the list of cleanup entities
+// To be called only after the list has been processed
+func removePersistentCleanupList() {
+	persistentCleanupListFile := makePersistentCleanupFileName()
+	persistentCleanupListLock.Lock()
+	defer persistentCleanupListLock.Unlock()
+	_, err := os.Stat(persistentCleanupListFile)
+	if os.IsNotExist(err) {
+		return
+	}
+	_ = os.Remove(persistentCleanupListFile)
+}
+
+// Reads a cleanup list from file
+func readCleanupList() ([]CleanupEntity, error) {
+	persistentCleanupListFile := makePersistentCleanupFileName()
+	persistentCleanupListLock.Lock()
+	defer persistentCleanupListLock.Unlock()
+	var cleanupInfo CleanupInfo
+	_, err := os.Stat(persistentCleanupListFile)
+	if os.IsNotExist(err) {
+		return nil, err
+	}
+	listText, err := ioutil.ReadFile(persistentCleanupListFile)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(listText, &cleanupInfo)
+	return cleanupInfo.EntityList, err
+}
+
+// Writes a cleanup list to file.
+// If the test suite terminates without having a chance to
+// clean up properly, the next run of the test suite will try to
+// remove the leftovers
+func writeCleanupList(cleanupList []CleanupEntity) error {
+	persistentCleanupListFile := makePersistentCleanupFileName()
+	persistentCleanupListLock.Lock()
+	defer persistentCleanupListLock.Unlock()
+	cleanupInfo := CleanupInfo{
+		VcdIp: persistentCleanupIp,
+		Info: "Persistent list of entities to be destroyed. " +
+			" If this file is found when starting the tests, its entities will be " +
+			" processed for removal before any other operation.",
+		EntityList: cleanupList,
+	}
+	listText, err := json.MarshalIndent(cleanupInfo, " ", " ")
+	if err != nil {
+		return err
+	}
+	file, err := os.Create(persistentCleanupListFile)
+	if err != nil {
+		return err
+	}
+	writer := bufio.NewWriter(file)
+	count, err := writer.Write(listText)
+	if err != nil || count == 0 {
+		return err
+	}
+	err = writer.Flush()
+	if err != nil {
+		return err
+	}
+	return file.Close()
+}
 
 // Adds an entity to the cleanup list.
 // To be called by all tests when a new entity has been created, before
@@ -173,6 +286,10 @@ func AddToCleanupList(name, entityType, parent, createdBy string) {
 		}
 	}
 	cleanupEntityList = append(cleanupEntityList, CleanupEntity{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy})
+	err := writeCleanupList(cleanupEntityList)
+	if err != nil {
+		fmt.Printf("################ error writing cleanup list %s\n", err)
+	}
 }
 
 // Prepend an entity to the cleanup list.
@@ -187,6 +304,10 @@ func PrependToCleanupList(name, entityType, parent, createdBy string) {
 		}
 	}
 	cleanupEntityList = append([]CleanupEntity{{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy}}, cleanupEntityList...)
+	err := writeCleanupList(cleanupEntityList)
+	if err != nil {
+		fmt.Printf("################ error writing cleanup list %s\n", err)
+	}
 }
 
 // Users use the environmental variable GOVCD_CONFIG as
@@ -229,6 +350,10 @@ func GetTestVCDFromYaml(testConfig TestConfig, options ...VCDClientOption) (*VCD
 
 	if testConfig.Provider.MaxRetryTimeout != 0 {
 		options = append(options, WithMaxRetryTimeout(testConfig.Provider.MaxRetryTimeout))
+	}
+
+	if testConfig.Provider.HttpTimeout != 0 {
+		options = append(options, WithHttpTimeout(testConfig.Provider.HttpTimeout))
 	}
 
 	return NewVCDClient(*configUrl, true, options...), nil
@@ -280,17 +405,28 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("Running on vCD %s\nas user %s@%s\n", vcd.config.Provider.Url,
+		vcd.config.Provider.User, vcd.config.Provider.SysOrg)
 	if !vcd.client.Client.IsSysAdmin {
 		vcd.skipAdminTests = true
 	}
+
+	// Sets the vCD IP value, removing the elements that would
+	// not be appropriate in a file name
+	reHttp := regexp.MustCompile(`^https?://`)
+	reApi := regexp.MustCompile(`/api/?`)
+	persistentCleanupIp = vcd.config.Provider.Url
+	persistentCleanupIp = reHttp.ReplaceAllString(persistentCleanupIp, "")
+	persistentCleanupIp = reApi.ReplaceAllString(persistentCleanupIp, "")
 	// set org
-	vcd.org, err = GetOrgByName(vcd.client, config.VCD.Org)
-	if err != nil || vcd.org == (Org{}) {
-		panic(err)
+	vcd.org, err = vcd.client.GetOrgByName(config.VCD.Org)
+	if err != nil {
+		fmt.Printf("error retrieving org %s: %s\n", config.VCD.Org, err)
+		os.Exit(1)
 	}
 	// set vdc
-	vcd.vdc, err = vcd.org.GetVdcByName(config.VCD.Vdc)
-	if err != nil || vcd.vdc == (Vdc{}) {
+	vcd.vdc, err = vcd.org.GetVDCByName(config.VCD.Vdc, false)
+	if err != nil || vcd.vdc == nil {
 		panic(err)
 	}
 
@@ -300,6 +436,22 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		// vcd.skipVappTests = true
 		skipVappCreation = true
 	}
+
+	// Gets the persistent cleanup list from file, if exists.
+	cleanupList, err := readCleanupList()
+	if len(cleanupList) > 0 && err == nil {
+		if os.Getenv("GOVCD_IGNORE_CLEANUP_FILE") == "" {
+			// If we found a cleanup file and we want to process it (default)
+			// We proceed to cleanup the leftovers before any other operation
+			fmt.Printf("*** Found cleanup file %s\n", makePersistentCleanupFileName())
+			for i, cleanupEntity := range cleanupList {
+				fmt.Printf("# %d ", i+1)
+				vcd.removeLeftoverEntities(cleanupEntity)
+			}
+		}
+		removePersistentCleanupList()
+	}
+
 	// creates a new VApp for vapp tests
 	if !skipVappCreation && config.VCD.Network.Net1 != "" && config.VCD.StorageProfile.SP1 != "" &&
 		config.VCD.Catalog.Name != "" && config.VCD.Catalog.CatalogItem != "" {
@@ -327,15 +479,69 @@ func (vcd *TestVCD) infoCleanup(format string, args ...interface{}) {
 	}
 }
 
-// Gets the two components of a "parent" string, as passed to AddToCleanupList
-func splitParent(parent string, separator string) (first, second string) {
+// Gets the two or three components of a "parent" string, as passed to AddToCleanupList
+// If the number of split strings is not 2 or 3 it return 3 empty strings
+// Example input parent: my-org|my-vdc|my-edge-gw, separator: |
+// Output output: first: my-org, second: my-vdc, third: my-edge-gw
+func splitParent(parent string, separator string) (first, second, third string) {
 	strList := strings.Split(parent, separator)
-	if len(strList) != 2 {
-		return "", ""
+	if len(strList) < 2 || len(strList) > 3 {
+		return "", "", ""
 	}
 	first = strList[0]
 	second = strList[1]
+
+	if len(strList) == 3 {
+		third = strList[2]
+	}
+
 	return
+}
+
+func getOrgVdcEdgeByNames(vcd *TestVCD, orgName, vdcName, edgeName string) (*Org, *Vdc, EdgeGateway, error) {
+	if orgName == "" || vdcName == "" || edgeName == "" {
+		return nil, nil, EdgeGateway{}, fmt.Errorf("orgName, vdcName, edgeName cant be empty")
+	}
+
+	org, _ := vcd.client.GetOrgByName(orgName)
+	if org == nil {
+		vcd.infoCleanup("could not find org '%s'", orgName)
+		return nil, nil, EdgeGateway{}, fmt.Errorf("can't find org")
+	}
+	vdc, err := org.GetVDCByName(vdcName, false)
+	if err != nil {
+		vcd.infoCleanup("could not find vdc '%s'", vdcName)
+		return nil, nil, EdgeGateway{}, fmt.Errorf("can't find org")
+	}
+
+	edge, err := vdc.FindEdgeGateway(edgeName)
+
+	if err != nil {
+		vcd.infoCleanup("could not find edge '%s': %s", edgeName, err)
+	}
+	return org, vdc, edge, nil
+}
+
+var splitParentNotFound string = "removeLeftoverEntries: [ERROR] missing parent info (%s). The parent fields must be defined with a separator '|'\n"
+var notFoundMsg string = "removeLeftoverEntries: [INFO] No action for %s '%s'\n"
+
+func (vcd *TestVCD) getAdminOrgAndVdcFromCleanupEntity(entity CleanupEntity) (org *AdminOrg, vdc *Vdc, err error) {
+	orgName, vdcName, _ := splitParent(entity.Parent, "|")
+	if orgName == "" || vdcName == "" {
+		vcd.infoCleanup(splitParentNotFound, entity.Parent)
+		return nil, nil, fmt.Errorf("can't find parents names")
+	}
+	org, err = vcd.client.GetAdminOrgByName(orgName)
+	if err != nil {
+		vcd.infoCleanup(notFoundMsg, "org", orgName)
+		return nil, nil, fmt.Errorf("can't find org")
+	}
+	vdc, err = org.GetVDCByName(vdcName, false)
+	if vdc == nil || err != nil {
+		vcd.infoCleanup(notFoundMsg, "vdc", vdcName)
+		return nil, nil, fmt.Errorf("can't find vdc")
+	}
+	return org, vdc, nil
 }
 
 // Removes leftover entities that may still exist after failed tests
@@ -343,10 +549,8 @@ func splitParent(parent string, separator string) (first, second string) {
 // were relying on this procedure to clean up at the end.
 func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 	var introMsg string = "removeLeftoverEntries: [INFO] Attempting cleanup of %s '%s' instantiated by %s\n"
-	var notFoundMsg string = "removeLeftoverEntries: [INFO] No action for %s '%s'\n"
 	var removedMsg string = "removeLeftoverEntries: [INFO] Removed %s '%s' created by %s\n"
 	var notDeletedMsg string = "removeLeftoverEntries: [ERROR] Error deleting %s '%s': %s\n"
-	var splitParentNotFound string = "removeLeftopverEntries: [ERROR] missing parent info (%s). The parent fields must be defined with a separator '|'\n"
 	// NOTE: this is a cleanup function that should continue even if errors are found.
 	// For this reason, the [ERROR] messages won't be followed by a program termination
 	vcd.infoCleanup(introMsg, entity.EntityType, entity.Name, entity.CreatedBy)
@@ -372,13 +576,13 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No Org provided for catalog '%s'\n", entity.Name)
 			return
 		}
-		org, err := GetAdminOrgByName(vcd.client, entity.Parent)
-		if org == (AdminOrg{}) || err != nil {
+		org, err := vcd.client.GetAdminOrgByName(entity.Parent)
+		if err != nil {
 			vcd.infoCleanup("removeLeftoverEntries: [INFO] organization '%s' not found\n", entity.Parent)
 			return
 		}
-		catalog, err := org.FindAdminCatalog(entity.Name)
-		if catalog == (AdminCatalog{}) || err != nil {
+		catalog, err := org.GetAdminCatalogByName(entity.Name, false)
+		if catalog == nil || err != nil {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
@@ -391,8 +595,8 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		return
 
 	case "org":
-		org, err := GetAdminOrgByName(vcd.client, entity.Name)
-		if org == (AdminOrg{}) || err != nil {
+		org, err := vcd.client.GetAdminOrgByName(entity.Name)
+		if err != nil {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
@@ -408,21 +612,21 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No Org provided for catalogItem '%s'\n", strings.Split(entity.Parent, "|")[0])
 			return
 		}
-		org, err := GetAdminOrgByName(vcd.client, strings.Split(entity.Parent, "|")[0])
-		if org == (AdminOrg{}) || err != nil {
+		org, err := vcd.client.GetAdminOrgByName(strings.Split(entity.Parent, "|")[0])
+		if err != nil {
 			vcd.infoCleanup("removeLeftoverEntries: [INFO] organization '%s' not found\n", entity.Parent)
 			return
 		}
-		catalog, err := org.FindCatalog(strings.Split(entity.Parent, "|")[1])
-		if catalog == (Catalog{}) || err != nil {
+		catalog, err := org.GetCatalogByName(strings.Split(entity.Parent, "|")[1], false)
+		if catalog == nil || err != nil {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
 		for _, catalogItems := range catalog.Catalog.CatalogItems {
 			for _, catalogItem := range catalogItems.CatalogItem {
 				if catalogItem.Name == entity.Name {
-					catalogItemApi, err := catalog.FindCatalogItem(catalogItem.Name)
-					if catalogItemApi == (CatalogItem{}) || err != nil {
+					catalogItemApi, err := catalog.GetCatalogItemByName(catalogItem.Name, false)
+					if catalogItemApi == nil || err != nil {
 						vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 						return
 					}
@@ -436,25 +640,28 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		return
 	case "edgegateway":
-		//TODO: find an easy way of undoing edge GW customization
+		_, vdc, err := vcd.getAdminOrgAndVdcFromCleanupEntity(entity)
+		if err != nil {
+			return
+		}
+		edge, err := vdc.FindEdgeGateway(entity.Name)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [INFO] edge gateway '%s' not found\n", entity.Name)
+			return
+		}
+		err = edge.Delete(true, true)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
 	case "network":
-		orgName, vdcName := splitParent(entity.Parent, "|")
-		if orgName == "" || vdcName == "" {
-			vcd.infoCleanup(splitParentNotFound, entity.Parent)
-			return
+		_, vdc, err := vcd.getAdminOrgAndVdcFromCleanupEntity(entity)
+		if err != nil {
+			vcd.infoCleanup("%s", err)
 		}
-		org, err := GetAdminOrgByName(vcd.client, orgName)
-		if org == (AdminOrg{}) || err != nil {
-			vcd.infoCleanup(notFoundMsg, "org", orgName)
-			return
-		}
-		vdc, err := org.GetVdcByName(vdcName)
-		if vdc == (Vdc{}) || err != nil {
-			vcd.infoCleanup(notFoundMsg, "vdc", vdcName)
-			return
-		}
-		err = RemoveOrgVdcNetworkIfExists(vdc, entity.Name)
+		err = RemoveOrgVdcNetworkIfExists(*vdc, entity.Name)
 		if err == nil {
 			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		} else {
@@ -462,7 +669,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		return
 	case "externalNetwork":
-		externalNetwork, err := GetExternalNetwork(vcd.client, entity.Name)
+		externalNetwork, err := vcd.client.GetExternalNetworkByName(entity.Name)
 		if err != nil {
 			vcd.infoCleanup(notFoundMsg, "externalNetwork", entity.Name)
 			return
@@ -479,22 +686,33 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No VDC and ORG provided for media '%s'\n", entity.Name)
 			return
 		}
-		orgName, vdcName := splitParent(entity.Parent, "|")
-		if orgName == "" || vdcName == "" {
-			vcd.infoCleanup(splitParentNotFound, entity.Parent)
+		_, vdc, err := vcd.getAdminOrgAndVdcFromCleanupEntity(entity)
+		if err != nil {
+			vcd.infoCleanup("%s", err)
+		}
+		err = RemoveMediaImageIfExists(*vdc, entity.Name)
+		if err == nil {
+			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		} else {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+		return
+	case "user":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for user '%s'\n", entity.Name)
 			return
 		}
-		org, err := GetAdminOrgByName(vcd.client, orgName)
-		if org == (AdminOrg{}) || err != nil {
-			vcd.infoCleanup(notFoundMsg, "org", orgName)
+		org, err := vcd.client.GetAdminOrgByName(entity.Parent)
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, "org", entity.Parent)
 			return
 		}
-		vdc, err := org.GetVdcByName(vdcName)
-		if vdc == (Vdc{}) || err != nil {
-			vcd.infoCleanup(notFoundMsg, "vdc", vdcName)
+		user, err := org.GetUserByName(entity.Name, true)
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, "user", entity.Name)
 			return
 		}
-		err = RemoveMediaImageIfExists(vdc, entity.Name)
+		err = user.Delete(true)
 		if err == nil {
 			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		} else {
@@ -506,13 +724,13 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for VDC '%s'\n", entity.Name)
 			return
 		}
-		org, err := GetAdminOrgByName(vcd.client, entity.Parent)
-		if org == (AdminOrg{}) || err != nil {
+		org, err := vcd.client.GetAdminOrgByName(entity.Parent)
+		if err != nil {
 			vcd.infoCleanup(notFoundMsg, "org", entity.Parent)
 			return
 		}
-		vdc, err := org.GetVdcByName(entity.Name)
-		if vdc == (Vdc{}) || err != nil {
+		vdc, err := org.GetVDCByName(entity.Name, false)
+		if vdc == nil || err != nil {
 			vcd.infoCleanup(notFoundMsg, "vdc", entity.Name)
 			return
 		}
@@ -605,6 +823,146 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
+	case "lbServiceMonitor":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No parent specified '%s'\n", entity.Name)
+			return
+		}
+
+		orgName, vdcName, edgeName := splitParent(entity.Parent, "|")
+
+		_, _, edge, err := getOrgVdcEdgeByNames(vcd, orgName, vdcName, edgeName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		err = edge.DeleteLbServiceMonitorByName(entity.Name)
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+
+	case "lbServerPool":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No parent specified '%s'\n", entity.Name)
+			return
+		}
+
+		orgName, vdcName, edgeName := splitParent(entity.Parent, "|")
+
+		_, _, edge, err := getOrgVdcEdgeByNames(vcd, orgName, vdcName, edgeName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		err = edge.DeleteLbServerPoolByName(entity.Name)
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+	case "lbAppProfile":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No parent specified '%s'\n", entity.Name)
+			return
+		}
+
+		orgName, vdcName, edgeName := splitParent(entity.Parent, "|")
+
+		_, _, edge, err := getOrgVdcEdgeByNames(vcd, orgName, vdcName, edgeName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		err = edge.DeleteLbAppProfileByName(entity.Name)
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+
+	case "lbVirtualServer":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No parent specified '%s'\n", entity.Name)
+			return
+		}
+
+		orgName, vdcName, edgeName := splitParent(entity.Parent, "|")
+
+		_, _, edge, err := getOrgVdcEdgeByNames(vcd, orgName, vdcName, edgeName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		err = edge.DeleteLbVirtualServerByName(entity.Name)
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+	case "lbAppRule":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No parent specified '%s'\n", entity.Name)
+			return
+		}
+
+		orgName, vdcName, edgeName := splitParent(entity.Parent, "|")
+
+		_, _, edge, err := getOrgVdcEdgeByNames(vcd, orgName, vdcName, edgeName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		err = edge.DeleteLbAppRuleByName(entity.Name)
+		if err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error()) {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+
+	case "vdcMetaData":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No VDC and ORG provided for vDC meta data '%s'\n", entity.Name)
+			return
+		}
+		_, vdc, err := vcd.getAdminOrgAndVdcFromCleanupEntity(entity)
+		if err != nil {
+			vcd.infoCleanup("%s", err)
+		}
+		_, err = vdc.DeleteMetadata(entity.Name)
+		if err == nil {
+			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		} else {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+		return
+
 	default:
 		// If we reach this point, we are trying to clean up an entity that
 		// we aren't prepared for yet.
@@ -617,8 +975,10 @@ func (vcd *TestVCD) TearDownSuite(check *C) {
 	// We will try to remove every entity that has been registered into
 	// CleanupEntityList. Entities that have already been cleaned up by their
 	// functions will be ignored.
-	for _, cleanupEntity := range cleanupEntityList {
+	for i, cleanupEntity := range cleanupEntityList {
+		fmt.Printf("# %d ", i+1)
 		vcd.removeLeftoverEntities(cleanupEntity)
+		removePersistentCleanupList()
 	}
 }
 
@@ -669,27 +1029,27 @@ func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 	}
 	networks = append(networks, net.OrgVDCNetwork)
 	// Populate Catalog
-	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
-	if err != nil || cat == (Catalog{}) {
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	if err != nil || cat == nil {
 		return VApp{}, fmt.Errorf("error finding catalog : %v", err)
 	}
 	// Populate Catalog Item
-	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
+	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
 	if err != nil {
 		return VApp{}, fmt.Errorf("error finding catalog item : %v", err)
 	}
 	// Get VAppTemplate
-	vapptemplate, err := catitem.GetVAppTemplate()
+	vAppTemplate, err := catitem.GetVAppTemplate()
 	if err != nil {
 		return VApp{}, fmt.Errorf("error finding vapptemplate : %v", err)
 	}
 	// Get StorageProfileReference
-	storageprofileref, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
+	storageProfileRef, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
 	if err != nil {
 		return VApp{}, fmt.Errorf("error finding storage profile: %v", err)
 	}
 	// Compose VApp
-	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, name, "description", true)
+	task, err := vcd.vdc.ComposeVApp(networks, vAppTemplate, storageProfileRef, name, "description", true)
 	if err != nil {
 		return VApp{}, fmt.Errorf("error composing vapp: %v", err)
 	}
@@ -714,6 +1074,116 @@ func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 	return vapp, err
 }
 
-func init() {
-	testingTags["api"] = "api_vcd_test.go"
+func Test_splitParent(t *testing.T) {
+	type args struct {
+		parent    string
+		separator string
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantFirst  string
+		wantSecond string
+		wantThird  string
+	}{
+		{
+			name:       "Empty",
+			args:       args{parent: "", separator: "|"},
+			wantFirst:  "",
+			wantSecond: "",
+			wantThird:  "",
+		},
+		{
+			name:       "One",
+			wantFirst:  "",
+			wantSecond: "",
+			wantThird:  "",
+		},
+		{
+			name:       "Two",
+			args:       args{parent: "first|second", separator: "|"},
+			wantFirst:  "first",
+			wantSecond: "second",
+			wantThird:  "",
+		},
+		{
+			name:       "Three",
+			args:       args{parent: "first|second|third", separator: "|"},
+			wantFirst:  "first",
+			wantSecond: "second",
+			wantThird:  "third",
+		},
+		{
+			name:       "Four",
+			args:       args{parent: "first|second|third|fourth", separator: "|"},
+			wantFirst:  "",
+			wantSecond: "",
+			wantThird:  "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotFirst, gotSecond, gotThird := splitParent(tt.args.parent, tt.args.separator)
+			if gotFirst != tt.wantFirst {
+				t.Errorf("splitParent() gotFirst = %v, want %v", gotFirst, tt.wantFirst)
+			}
+			if gotSecond != tt.wantSecond {
+				t.Errorf("splitParent() gotSecond = %v, want %v", gotSecond, tt.wantSecond)
+			}
+			if gotThird != tt.wantThird {
+				t.Errorf("splitParent() gotThird = %v, want %v", gotThird, tt.wantThird)
+			}
+		})
+	}
+}
+
+// testGetLBGeneralParamsXML is used for additional validation that modifying load balancer
+// does not change any single field. It returns a string of whole load balancer configuration
+func testGetLBGeneralParamsXML(edge EdgeGateway, check *C) string {
+
+	httpPath, err := edge.buildProxiedEdgeEndpointURL(types.LbConfigPath)
+	check.Assert(err, IsNil)
+
+	resp, err := edge.client.ExecuteRequestWithCustomError(httpPath, http.MethodGet, types.AnyXMLMime,
+		"unable to get XML from load balancer %s", nil, &types.NSXError{})
+	check.Assert(err, IsNil)
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	check.Assert(err, IsNil)
+
+	return string(body)
+}
+
+// cacheLoadBalancer is meant to store load balancer settings before any operations so that all
+// configuration can be checked after manipulation
+func testCacheLoadBalancer(edge EdgeGateway, check *C) (*types.LbGeneralParamsWithXml, string) {
+	beforeLb, err := edge.GetLBGeneralParams()
+	check.Assert(err, IsNil)
+	beforeLbXml := testGetLBGeneralParamsXML(edge, check)
+	return beforeLb, beforeLbXml
+}
+
+// testCheckLoadBalancerConfig validates if both raw XML string and load balancer struct remain
+// identical after settings manipulation.
+func testCheckLoadBalancerConfig(beforeLb *types.LbGeneralParamsWithXml, beforeLbXml string, edge EdgeGateway, check *C) {
+	afterLb, err := edge.GetLBGeneralParams()
+	check.Assert(err, IsNil)
+
+	afterLbXml := testGetLBGeneralParamsXML(edge, check)
+
+	// remove `<version></version>` tag from both XML represntation and struct for deep comparison
+	// because this version changes with each update and will never be the same after a few
+	// operations
+
+	reVersion := regexp.MustCompile(`<version>\w*<\/version>`)
+	beforeLbXml = reVersion.ReplaceAllLiteralString(beforeLbXml, "")
+	afterLbXml = reVersion.ReplaceAllLiteralString(afterLbXml, "")
+
+	beforeLb.Version = ""
+	afterLb.Version = ""
+
+	check.Assert(beforeLb, DeepEquals, afterLb)
+	check.Assert(beforeLbXml, DeepEquals, afterLbXml)
 }

@@ -73,11 +73,14 @@ $ go test -v .
            * catalog:    Runs catalog related tests (also catalog_item, media)
            * disk:       Runs disk related tests
            * extnetwork: Runs external network related tests
-           * network:    Runs network and edge gateway related tests
+           * lb:       	 Runs load balancer related tests
+           * network:    Runs network related tests
+           * gateway:    Runs edge gateway related tests
            * org:        Runs org related tests
            * query:      Runs query related tests
            * system:     Runs system related tests
            * task:       Runs task related tests
+           * user:       Runs user related tests
            * vapp:       Runs vapp related tests
            * vdc:        Runs vdc related tests
            * vm:         Runs vm related tests
@@ -305,6 +308,25 @@ func (vcd *TestVCD) Test_ComposeVApp(check *checks.C) {
     // by the cleanup function at the end of all tests
 }
 ```
+
+# Environment variables
+
+While running tests, the following environment variables can be used:
+
+* `GOVCD_CONFIG=/path/file`: sets an alternative configuration file for the tests.
+   e.g.:  `GOVCD_CONFIG=/some/path/govcd_test_config.yaml go test -tags functional -timeout 0 .`
+* `GOVCD_DEBUG=1`: enable debug output on screen.
+* `GOVCD_TEST_VERBOSE=1`: shows execution details in some tests.
+* `GOVCD_SKIP_VAPP_CREATION=1`: will not create the initial vApp. All tests that
+   depend on a vApp availability will be skipped.
+* `GOVCD_TASK_MONITOR=show|log|simple_show|simple|log`: sets a task monitor function when running `task.WaitCompletion`
+    * `show` : displays full task details on screen
+    * `log` : writes full task details in the log
+    * `simple_show` : displays a summary line for the task on screen
+    * `simple_log` : writes a summary line for the task in the log
+* `GOVCD_IGNORE_CLEANUP_FILE` Ignore the cleanup file if it is left behind after a test failure.
+    This could be useful after running a single test, when we need to check how the test behaves with the resource still
+    in place.
 
 # Final Words
 Be careful about using our tests as these tests run on a real vcd. If you don't have 1 gb of ram and 2 vcpus available then you should not be running tests that deploy your vm/change memory and cpu. However everything created will be removed at the end of testing.

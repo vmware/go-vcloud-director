@@ -111,50 +111,6 @@ func (vcd *TestVCD) Test_SetOvf(check *C) {
 
 }
 
-func (vcd *TestVCD) Test_AddMetadataOnVapp(check *C) {
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
-	}
-	// Add metadata
-	task, err := vcd.vapp.AddMetadata("key", "value")
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(task.Task.Status, Equals, "success")
-
-	// Check if metadata was added correctly
-	metadata, err := vcd.vapp.GetMetadata()
-	check.Assert(err, IsNil)
-	check.Assert(metadata.MetadataEntry[0].Key, Equals, "key")
-	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
-}
-
-func (vcd *TestVCD) Test_DeleteMetadataOnVapp(check *C) {
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
-	}
-	// Add metadata
-	task, err := vcd.vapp.AddMetadata("key2", "value2")
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(task.Task.Status, Equals, "success")
-
-	// Remove metadata
-	task, err = vcd.vapp.DeleteMetadata("key2")
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(task.Task.Status, Equals, "success")
-	metadata, err := vcd.vapp.GetMetadata()
-	check.Assert(err, IsNil)
-	for _, k := range metadata.MetadataEntry {
-		if k.Key == "key2" {
-			check.Errorf("metadata.MetadataEntry should not contain key: %s", k)
-		}
-	}
-}
-
 // TODO: Add a check checking if the customization script ran
 func (vcd *TestVCD) Test_RunCustomizationScript(check *C) {
 	if vcd.skipVappTests {
@@ -485,13 +441,14 @@ func (vcd *TestVCD) Test_AddNewVMNilNIC(check *C) {
 	}
 
 	// Populate Catalog
-	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
-	check.Assert((Catalog{}), Not(Equals), cat)
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
+	check.Assert(cat, NotNil)
 
 	// Populate Catalog Item
-	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
+	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
+	check.Assert(catitem, NotNil)
 
 	// Get VAppTemplate
 	vapptemplate, err := catitem.GetVAppTemplate()
@@ -530,13 +487,14 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 	}
 
 	// Populate Catalog
-	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
-	check.Assert((Catalog{}), Not(Equals), cat)
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
+	check.Assert(cat, NotNil)
 
 	// Populate Catalog Item
-	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
+	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
+	check.Assert(catitem, NotNil)
 
 	// Get VAppTemplate
 	vapptemplate, err := catitem.GetVAppTemplate()
@@ -606,6 +564,12 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 
 	// Cleanup
 	err = vapp.RemoveVM(vm)
+	check.Assert(err, IsNil)
+
+	// Ensure network is detached from vApp to avoid conflicts in other tests
+	task, err = vapp.RemoveAllNetworks()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 }
 

@@ -53,6 +53,15 @@ func prettyVapp(vapp types.VApp) string {
 	return ""
 }
 
+// Returns an OrgUser structure as JSON
+func prettyUser(user types.User) string {
+	byteBuf, err := json.MarshalIndent(user, " ", " ")
+	if err == nil {
+		return fmt.Sprintf("%s\n", string(byteBuf))
+	}
+	return ""
+}
+
 // Returns a VDC structure as JSON
 func prettyVdc(vdc types.Vdc) string {
 	byteBuf, err := json.MarshalIndent(vdc, " ", " ")
@@ -117,7 +126,7 @@ func prettyDisk(disk types.Disk) string {
 }
 
 // Returns an External Network structure as JSON
-func prettyExternalNetwork(network types.ExternalNetworkReference) string {
+func prettyExternalNetwork(network types.ExternalNetwork) string {
 	byteBuf, err := json.MarshalIndent(network, " ", " ")
 	if err == nil {
 		return fmt.Sprintf("%s\n", string(byteBuf))
@@ -144,12 +153,14 @@ func prettyTask(task *types.Task) string {
 }
 
 // Returns an Edge Gateway service configuration structure as JSON
-func prettyEdgeGatewayServiceConfiguration(conf *types.EdgeGatewayServiceConfiguration) string {
-	byteBuf, err := json.MarshalIndent(conf, " ", " ")
+//func prettyEdgeGatewayServiceConfiguration(conf types.EdgeGatewayServiceConfiguration) string {
+func prettyEdgeGateway(egw types.EdgeGateway) string {
+	result := ""
+	byteBuf, err := json.MarshalIndent(egw, " ", " ")
 	if err == nil {
-		return fmt.Sprintf("%s\n", string(byteBuf))
+		result += fmt.Sprintf("%s\n", string(byteBuf))
 	}
-	return ""
+	return result
 }
 
 func LogNetwork(conf types.OrgVDCNetwork) {
@@ -160,11 +171,11 @@ func ShowNetwork(conf types.OrgVDCNetwork) {
 	out("screen", prettyNetworkConf(conf))
 }
 
-func LogExternalNetwork(network types.ExternalNetworkReference) {
+func LogExternalNetwork(network types.ExternalNetwork) {
 	out("log", prettyExternalNetwork(network))
 }
 
-func ShowExternalNetwork(network types.ExternalNetworkReference) {
+func ShowExternalNetwork(network types.ExternalNetwork) {
 	out("screen", prettyExternalNetwork(network))
 }
 
@@ -198,6 +209,14 @@ func ShowVdc(vdc types.Vdc) {
 
 func LogVdc(vdc types.Vdc) {
 	out("log", prettyVdc(vdc))
+}
+
+func ShowUser(user types.User) {
+	out("screen", prettyUser(user))
+}
+
+func LogUser(user types.User) {
+	out("log", prettyUser(user))
 }
 
 func ShowDisk(disk types.Disk) {
@@ -244,10 +263,26 @@ func outTask(destination string, task *types.Task, howManyTimes int, elapsed tim
 	out(destination, "-------------------------------\n")
 }
 
+func simpleOutTask(destination string, task *types.Task, howManyTimes int, elapsed time.Duration, first, last bool) {
+	if task == nil {
+		out(destination, "Task is null\n")
+		return
+	}
+	out(destination, "%s (%s) - elapsed: [%s:%d] - progress: %d%%\n", task.OperationName, task.Status, elapsed.Round(1*time.Second), howManyTimes, task.Progress)
+}
+
 func LogTask(task *types.Task, howManyTimes int, elapsed time.Duration, first, last bool) {
 	outTask("log", task, howManyTimes, elapsed, first, last)
 }
 
 func ShowTask(task *types.Task, howManyTimes int, elapsed time.Duration, first, last bool) {
 	outTask("screen", task, howManyTimes, elapsed, first, last)
+}
+
+func SimpleShowTask(task *types.Task, howManyTimes int, elapsed time.Duration, first, last bool) {
+	simpleOutTask("screen", task, howManyTimes, elapsed, first, last)
+}
+
+func SimpleLogTask(task *types.Task, howManyTimes int, elapsed time.Duration, first, last bool) {
+	simpleOutTask("log", task, howManyTimes, elapsed, first, last)
 }

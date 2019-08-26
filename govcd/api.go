@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"reflect"
 	"strings"
 
@@ -33,6 +34,88 @@ type Client struct {
 	// where vCloud director may take time to respond and retry mechanism is needed.
 	// This must be >0 to avoid instant timeout errors.
 	MaxRetryTimeout int
+}
+
+// General purpose error to be used whenever an entity is not found from a "GET" request
+// Allows a simpler checking of the call result
+// such as
+// if err == ErrorEntityNotFound {
+//    // do what is needed in case of not found
+// }
+var errorEntityNotFoundMessage = "[ENF] entity not found"
+var ErrorEntityNotFound = fmt.Errorf(errorEntityNotFoundMessage)
+
+// Triggers for debugging functions that show requests and responses
+var debugShowRequestEnabled = os.Getenv("GOVCD_SHOW_REQ") != ""
+var debugShowResponseEnabled = os.Getenv("GOVCD_SHOW_RESP") != ""
+
+// Enables the debugging hook to show requests as they are processed.
+func enableDebugShowRequest() {
+	debugShowRequestEnabled = true
+}
+
+// Disables the debugging hook to show requests as they are processed.
+func disableDebugShowRequest() {
+	debugShowRequestEnabled = false
+	_ = os.Setenv("GOVCD_SHOW_REQ", "")
+}
+
+// Enables the debugging hook to show responses as they are processed.
+func enableDebugShowResponse() {
+	debugShowResponseEnabled = true
+}
+
+// Disables the debugging hook to show responses as they are processed.
+func disableDebugShowResponse() {
+	debugShowResponseEnabled = false
+	_ = os.Setenv("GOVCD_SHOW_RESP", "")
+}
+
+// On-the-fly debug hook. If either debugShowRequestEnabled or the environment
+// variable "GOVCD_SHOW_REQ" are enabled, this function will show the contents
+// of the request as it is being processed.
+func debugShowRequest(req *http.Request, payload string) {
+	if debugShowRequestEnabled {
+		header := "[\n"
+		for key, value := range req.Header {
+			header += fmt.Sprintf("\t%s => %s\n", key, value)
+		}
+		header += "]\n"
+		fmt.Printf("method:  %s\n", req.Method)
+		fmt.Printf("host:    %s\n", req.Host)
+		fmt.Printf("length:  %d\n", req.ContentLength)
+		fmt.Printf("URL:     %s\n", req.URL.String())
+		fmt.Printf("header:  %s\n", header)
+		fmt.Printf("payload: %s\n", payload)
+	}
+}
+
+// On-the-fly debug hook. If either debugShowResponseEnabled or the environment
+// variable "GOVCD_SHOW_RESP" are enabled, this function will show the contents
+// of the response as it is being processed.
+func debugShowResponse(resp *http.Response, body []byte) {
+	if debugShowResponseEnabled {
+		fmt.Printf("status: %d - %s \n", resp.StatusCode, resp.Status)
+		fmt.Printf("length: %d\n", resp.ContentLength)
+		fmt.Printf("header: %v\n", resp.Header)
+		fmt.Printf("body: %s\n", body)
+	}
+}
+
+// Convenience function, similar to os.IsNotExist that checks whether a given error
+// is a "Not found" error, such as
+// if isNotFound(err) {
+//    // do what is needed in case of not found
+// }
+func IsNotFound(err error) bool {
+	return err != nil && err == ErrorEntityNotFound
+}
+
+// ContainsNotFound is a convenience function, similar to os.IsNotExist that checks whether a given error
+// contains a "Not found" error. It is almost the same as `IsNotFound` but checks if an error contains substring
+// ErrorEntityNotFound
+func ContainsNotFound(err error) bool {
+	return err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error())
 }
 
 // Function allow to pass complex values params which shouldn't be encoded like for queries. e.g. /query?filter=(name=foo)
@@ -85,6 +168,8 @@ func (cli *Client) NewRequestWitNotEncodedParams(params map[string]string, notEn
 			}
 		}
 		util.ProcessRequestOutput(util.FuncNameCallStack(), method, reqUrl.String(), payload, req)
+
+		debugShowRequest(req, payload)
 	}
 	return req
 
@@ -96,18 +181,16 @@ func (cli *Client) NewRequest(params map[string]string, method string, reqUrl ur
 	return cli.NewRequestWitNotEncodedParams(params, nil, method, reqUrl, body)
 }
 
-// ParseErr takes an error XML resp and returns a single string for use in error messages.
-func ParseErr(resp *http.Response) error {
-
-	errBody := new(types.Error)
-
+// ParseErr takes an error XML resp, error interface for unmarshaling and returns a single string for
+// use in error messages.
+func ParseErr(resp *http.Response, errType error) error {
 	// if there was an error decoding the body, just return that
-	if err := decodeBody(resp, errBody); err != nil {
+	if err := decodeBody(resp, errType); err != nil {
 		util.Logger.Printf("[ParseErr]: unhandled response <--\n%+v\n-->\n", resp)
 		return fmt.Errorf("[ParseErr]: error parsing error body for non-200 request: %s (%+v)", err, resp)
 	}
 
-	return fmt.Errorf("API Error: %d: %s", errBody.MajorErrorCode, errBody.Message)
+	return errType
 }
 
 // decodeBody is used to XML decode a response body
@@ -120,6 +203,7 @@ func decodeBody(resp *http.Response, out interface{}) error {
 		return err
 	}
 
+	debugShowResponse(resp, body)
 	// Unmarshal the XML.
 	if err = xml.Unmarshal(body, &out); err != nil {
 		return err
@@ -133,6 +217,12 @@ func decodeBody(resp *http.Response, out interface{}) error {
 // parses the resultant XML error and returns a descriptive error, if the
 // status code is not handled it returns a generic error with the status code.
 func checkResp(resp *http.Response, err error) (*http.Response, error) {
+	return checkRespWithErrType(resp, err, &types.Error{})
+}
+
+// checkRespWithErrType allows to specify custom error errType for checkResp unmarshaling
+// the error.
+func checkRespWithErrType(resp *http.Response, err, errType error) (*http.Response, error) {
 	if err != nil {
 		return resp, err
 	}
@@ -172,7 +262,7 @@ func checkResp(resp *http.Response, err error) (*http.Response, error) {
 		http.StatusInternalServerError,         // 500
 		http.StatusServiceUnavailable,          // 503
 		http.StatusGatewayTimeout:              // 504
-		return nil, ParseErr(resp)
+		return nil, ParseErr(resp, errType)
 	// Unhandled response.
 	default:
 		return nil, fmt.Errorf("unhandled API response, please report this issue, status code: %s", resp.Status)
@@ -230,6 +320,10 @@ func (client *Client) ExecuteRequestWithoutResponse(pathURL, requestType, conten
 		return fmt.Errorf(errorMessage, err)
 	}
 
+	// log response explicitly because decodeBody() was not triggered
+	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, fmt.Sprintf("%s", resp.Body))
+
+	debugShowResponse(resp, []byte("SKIPPED RESPONSE"))
 	err = resp.Body.Close()
 	if err != nil {
 		return fmt.Errorf("error closing response body: %s", err)
@@ -272,7 +366,44 @@ func (client *Client) ExecuteRequest(pathURL, requestType, contentType, errorMes
 	return resp, nil
 }
 
+// ExecuteRequestWithCustomError sends the request and checks for 2xx response. If the returned status code
+// was not as expected - the returned error will be unmarshaled to `errType` which implements Go's standard `error`
+// interface.
+func (client *Client) ExecuteRequestWithCustomError(pathURL, requestType, contentType, errorMessage string,
+	payload interface{}, errType error) (*http.Response, error) {
+	if !isMessageWithPlaceHolder(errorMessage) {
+		return &http.Response{}, fmt.Errorf("error message has to include place holder for error")
+	}
+
+	resp, err := executeRequestCustomErr(pathURL, requestType, contentType, payload, client, errType)
+	if err != nil {
+		return &http.Response{}, fmt.Errorf(errorMessage, err)
+	}
+
+	// read from resp.Body io.Reader for debug output if it has body
+	var bodyBytes []byte
+	if resp.Body != nil {
+		bodyBytes, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return &http.Response{}, fmt.Errorf("could not read response body: %s", err)
+		}
+		// Restore the io.ReadCloser to its original state with no-op closer
+		resp.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+	}
+
+	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, string(bodyBytes))
+	debugShowResponse(resp, bodyBytes)
+
+	return resp, nil
+}
+
+// executeRequest does executeRequestCustomErr and checks for vCD errors in API response
 func executeRequest(pathURL, requestType, contentType string, payload interface{}, client *Client) (*http.Response, error) {
+	return executeRequestCustomErr(pathURL, requestType, contentType, payload, client, &types.Error{})
+}
+
+// executeRequestCustomErr performs request and unmarshals API error to errType if not 2xx status was returned
+func executeRequestCustomErr(pathURL, requestType, contentType string, payload interface{}, client *Client, errType error) (*http.Response, error) {
 	url, _ := url.ParseRequestURI(pathURL)
 
 	var req *http.Request
@@ -295,13 +426,27 @@ func executeRequest(pathURL, requestType, contentType string, payload interface{
 		req.Header.Add("Content-Type", contentType)
 	}
 
-	return checkResp(client.Http.Do(req))
+	resp, err := client.Http.Do(req)
+	if err != nil {
+		return resp, err
+	}
+
+	return checkRespWithErrType(resp, err, errType)
 }
 
 func isMessageWithPlaceHolder(message string) bool {
 	err := fmt.Errorf(message, "test error")
-	if strings.Contains(err.Error(), "%!(EXTRA") {
-		return false
+	return !strings.Contains(err.Error(), "%!(EXTRA")
+}
+
+// combinedTaskErrorMessage is a general purpose function
+// that returns the contents of the operation error and, if found, the error
+// returned by the associated task
+func combinedTaskErrorMessage(task *types.Task, err error) string {
+	extendedError := err.Error()
+	if task.Error != nil {
+		extendedError = fmt.Sprintf("operation error: %s - task error: [%d - %s] %s",
+			err, task.Error.MajorErrorCode, task.Error.MinorErrorCode, task.Error.Message)
 	}
-	return true
+	return extendedError
 }

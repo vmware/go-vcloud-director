@@ -15,16 +15,18 @@ import (
 func (vcd *TestVCD) Test_GetVAppTemplate(check *C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
-	cat, err := vcd.org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	if err != nil {
 		check.Skip("Test_GetVAppTemplate: Catalog not found. Test can't proceed")
+		return
 	}
+	check.Assert(cat, NotNil)
 
 	if vcd.config.VCD.Catalog.CatalogItem == "" {
 		check.Skip("Test_GetVAppTemplate: Catalog Item not given. Test can't proceed")
 	}
 
-	catitem, err := cat.FindCatalogItem(vcd.config.VCD.Catalog.CatalogItem)
+	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
 
 	// Get VAppTemplate
@@ -44,12 +46,13 @@ func (vcd *TestVCD) Test_Delete(check *C) {
 	AddToCleanupList(TestDeleteCatalogItem, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_Delete")
 
 	// Fetching organization
-	org, err := GetAdminOrgByName(vcd.client, vcd.org.Org.Name)
-	check.Assert(org, Not(Equals), AdminOrg{})
+	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
 
-	catalog, err := org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
 
 	// add catalogItem
 	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OVAPath, TestDeleteCatalogItem, "upload from delete catalog item test", 1024)
@@ -57,16 +60,16 @@ func (vcd *TestVCD) Test_Delete(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	catalog, err = org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
-	catalogItem, err := catalog.FindCatalogItem(TestDeleteCatalogItem)
+	catalogItem, err := catalog.GetCatalogItemByName(TestDeleteCatalogItem, false)
 	check.Assert(err, IsNil)
 
 	err = catalogItem.Delete()
 	check.Assert(err, IsNil)
 
 	// check through existing catalogItems
-	catalog, err = org.FindCatalog(vcd.config.VCD.Catalog.Name)
+	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	entityFound := false
 	for _, catalogItems := range catalog.Catalog.CatalogItems {

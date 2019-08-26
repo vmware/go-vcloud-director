@@ -14,6 +14,16 @@ import (
 
 var testingTags = make(map[string]string)
 
+var testVerbose bool = os.Getenv("GOVCD_TEST_VERBOSE") != ""
+
+// longer than the 128 characters so nothing can be named this
+var INVALID_NAME = `*******************************************INVALID
+					****************************************************
+					************************`
+
+// This ID won't be found by lookup in any entity
+var invalidEntityId = "one:two:three:aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+
 func tagsHelp(t *testing.T) {
 
 	var helpText string = `
@@ -26,18 +36,19 @@ At least one of the following tags should be defined:
    * ALL :       Runs all the tests (== functional + unit == all feature tests)
 
    * functional: Runs all the tests that use check.v1
-   * unit:       Runs unit tests that do not use check.v1
-                 and don't need a live vCD (currently unused, but we plan to)
+   * unit:       Runs unit tests that do not use check.v1 and don't need a live vCD
 
    * catalog:    Runs catalog related tests (also catalog_item, media)
    * disk:       Runs disk related tests
    * extnetwork: Runs external network related tests
+   * lb:       	 Runs load balancer related tests
    * network:    Runs network related tests
    * gateway:    Runs edge gateway related tests
    * org:        Runs org related tests
    * query:      Runs query related tests
    * system:     Runs system related tests
    * task:       Runs task related tests
+   * user:       Runs user related tests
    * vapp:       Runs vapp related tests
    * vdc:        Runs vdc related tests
    * vm:         Runs vm related tests

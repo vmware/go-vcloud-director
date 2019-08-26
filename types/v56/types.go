@@ -6,6 +6,7 @@ package types
 
 import (
 	"encoding/xml"
+	"fmt"
 )
 
 // Maps status Attribute Values for VAppTemplate, VApp, Vm, and Media Objects
@@ -120,7 +121,6 @@ type NetworkFeatures struct {
 	DhcpService          *DhcpService          `xml:"DhcpService,omitempty"`          // Substitute for NetworkService. DHCP service settings
 	FirewallService      *FirewallService      `xml:"FirewallService,omitempty"`      // Substitute for NetworkService. Firewall service settings
 	NatService           *NatService           `xml:"NatService,omitempty"`           // Substitute for NetworkService. NAT service settings
-	LoadBalancerService  *LoadBalancerService  `xml:"LoadBalancerService,omitempty"`  // Substitute for NetworkService. Load Balancer service settings
 	StaticRoutingService *StaticRoutingService `xml:"StaticRoutingService,omitempty"` // Substitute for NetworkService. Static Routing service settings
 	// TODO: Not Implemented
 	// IpsecVpnService      IpsecVpnService      `xml:"IpsecVpnService,omitempty"`      // Substitute for NetworkService. Ipsec Vpn service settings
@@ -315,14 +315,14 @@ type InstantiationParams struct {
 	// SnapshotSection              SnapshotSection              `xml:"SnapshotSection,omitempty"`
 }
 
-// OrgVDCNetwork represents an Org vDC network in the vCloud model.
+// OrgVDCNetwork represents an Org VDC network in the vCloud model.
 // Type: OrgVdcNetworkType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents an Org vDC network in the vCloud model.
+// Description: Represents an Org VDC network in the vCloud model.
 // Since: 5.1
 type OrgVDCNetwork struct {
 	XMLName       xml.Name              `xml:"OrgVdcNetwork"`
-	Xmlns         string                `xml:"xmlns,attr,imitempty"`
+	Xmlns         string                `xml:"xmlns,attr,omitempty"`
 	HREF          string                `xml:"href,attr,omitempty"`
 	Type          string                `xml:"type,attr,omitempty"`
 	ID            string                `xml:"id,attr,omitempty"`
@@ -334,7 +334,7 @@ type OrgVDCNetwork struct {
 	EdgeGateway   *Reference            `xml:"EdgeGateway,omitempty"`
 	IsShared      bool                  `xml:"IsShared"`
 	Link          []Link                `xml:"Link,omitempty"`
-	ServiceConfig *GatewayFeatures      `xml:"ServiceConfig,omitempty"` // Specifies the service configuration for an isolated Org vDC networks
+	ServiceConfig *GatewayFeatures      `xml:"ServiceConfig,omitempty"` // Specifies the service configuration for an isolated Org VDC networks
 	Tasks         *TasksInProgress      `xml:"Tasks,omitempty"`
 }
 
@@ -356,10 +356,10 @@ type Capabilities struct {
 	SupportedHardwareVersions *SupportedHardwareVersions `xml:"SupportedHardwareVersions,omitempty"` // Read-only list of virtual hardware versions supported by this vDC.
 }
 
-// Vdc represents the user view of an organization vDC.
+// Vdc represents the user view of an organization VDC.
 // Type: VdcType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the user view of an organization vDC.
+// Description: Represents the user view of an organization VDC.
 // Since: 0.9
 type Vdc struct {
 	HREF         string `xml:"href,attr,omitempty"`
@@ -367,34 +367,35 @@ type Vdc struct {
 	ID           string `xml:"id,attr,omitempty"`
 	OperationKey string `xml:"operationKey,attr,omitempty"`
 	Name         string `xml:"name,attr"`
-	Status       string `xml:"status,attr,omitempty"`
+	Status       int    `xml:"status,attr,omitempty"`
 
+	Link               LinkList              `xml:"Link,omitempty"`
+	Description        string                `xml:"Description,omitempty"`
 	AllocationModel    string                `xml:"AllocationModel"`
+	ComputeCapacity    []*ComputeCapacity    `xml:"ComputeCapacity"`
+	ResourceEntities   []*ResourceEntities   `xml:"ResourceEntities,omitempty"`
 	AvailableNetworks  []*AvailableNetworks  `xml:"AvailableNetworks,omitempty"`
 	Capabilities       []*Capabilities       `xml:"Capabilities,omitempty"`
-	ComputeCapacity    []*ComputeCapacity    `xml:"ComputeCapacity"`
-	Description        string                `xml:"Description,omitempty"`
-	IsEnabled          bool                  `xml:"IsEnabled"`
-	Link               LinkList              `xml:"Link,omitempty"`
-	NetworkQuota       int                   `xml:"NetworkQuota"`
 	NicQuota           int                   `xml:"NicQuota"`
-	ResourceEntities   []*ResourceEntities   `xml:"ResourceEntities,omitempty"`
+	NetworkQuota       int                   `xml:"NetworkQuota"`
+	VMQuota            int                   `xml:"VmQuota"`
+	IsEnabled          bool                  `xml:"IsEnabled"`
 	Tasks              *TasksInProgress      `xml:"Tasks,omitempty"`
 	UsedNetworkCount   int                   `xml:"UsedNetworkCount,omitempty"`
 	VdcStorageProfiles []*VdcStorageProfiles `xml:"VdcStorageProfiles"`
-	VMQuota            int                   `xml:"VmQuota"`
 }
 
-// AdminVdc represents the admin view of an organization vDC.
+// AdminVdc represents the admin view of an organization VDC.
 // Type: AdminVdcType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the admin view of an organization vDC.
+// Description: Represents the admin view of an organization VDC.
 // Since: 0.9
 type AdminVdc struct {
+	Xmlns string `xml:"xmlns,attr"`
 	Vdc
 
-	ResourceGuaranteedMemory float64    `xml:"ResourceGuaranteedMemory,omitempty"`
-	ResourceGuaranteedCpu    float64    `xml:"ResourceGuaranteedCpu,omitempty"`
+	ResourceGuaranteedMemory *float64   `xml:"ResourceGuaranteedMemory,omitempty"`
+	ResourceGuaranteedCpu    *float64   `xml:"ResourceGuaranteedCpu,omitempty"`
 	VCpuInMhz                int64      `xml:"VCpuInMhz,omitempty"`
 	IsThinProvision          bool       `xml:"IsThinProvision,omitempty"`
 	NetworkPoolReference     *Reference `xml:"NetworkPoolReference,omitempty"`
@@ -421,7 +422,7 @@ type VdcStorageProfile struct {
 // VdcConfiguration models the payload for creating a VDC.
 // Type: CreateVdcParamsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Parameters for creating an organization vDC
+// Description: Parameters for creating an organization VDC
 // Since: 5.1
 // https://code.vmware.com/apis/220/vcloud#/doc/doc/types/CreateVdcParamsType.html
 type VdcConfiguration struct {
@@ -436,8 +437,8 @@ type VdcConfiguration struct {
 	VmQuota                  int                  `xml:"VmQuota,omitempty"`
 	IsEnabled                bool                 `xml:"IsEnabled,omitempty"`
 	VdcStorageProfile        []*VdcStorageProfile `xml:"VdcStorageProfile"`
-	ResourceGuaranteedMemory float64              `xml:"ResourceGuaranteedMemory,omitempty"`
-	ResourceGuaranteedCpu    float64              `xml:"ResourceGuaranteedCpu,omitempty"`
+	ResourceGuaranteedMemory *float64             `xml:"ResourceGuaranteedMemory,omitempty"`
+	ResourceGuaranteedCpu    *float64             `xml:"ResourceGuaranteedCpu,omitempty"`
 	VCpuInMhz                int64                `xml:"VCpuInMhz,omitempty"`
 	IsThinProvision          bool                 `xml:"IsThinProvision,omitempty"`
 	NetworkPoolReference     *Reference           `xml:"NetworkPoolReference,omitempty"`
@@ -491,10 +492,10 @@ type CapacityWithUsage struct {
 	Overhead  int64  `xml:"Overhead,omitempty"` // not available anymore from API v30.0
 }
 
-// ComputeCapacity represents vDC compute capacity.
+// ComputeCapacity represents VDC compute capacity.
 // Type: ComputeCapacityType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents vDC compute capacity.
+// Description: Represents VDC compute capacity.
 // Since: 0.9
 type ComputeCapacity struct {
 	CPU    *CapacityWithUsage `xml:"Cpu"`
@@ -595,28 +596,47 @@ type Org struct {
 	Tasks        *TasksInProgress `xml:"Tasks,omitempty"`
 }
 
+// List of the users within the organization
+type OrgUserList struct {
+	User []*Reference `xml:"UserReference,omitempty"`
+}
+
+// List of available roles in the organization
+type OrgRoleType struct {
+	RoleReference []*Reference `xml:"RoleReference,omitempty"`
+}
+
+// List of available rights in the organization
+type RightsType struct {
+	Links          LinkList     `xml:"Link,omitempty"`
+	RightReference []*Reference `xml:"RightReference,omitempty"`
+}
+
 // AdminOrg represents the admin view of a vCloud Director organization.
 // Type: AdminOrgType
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Represents the admin view of a vCloud Director organization.
 // Since: 0.9
 type AdminOrg struct {
-	XMLName      xml.Name         `xml:"AdminOrg"`
-	Xmlns        string           `xml:"xmlns,attr"`
-	HREF         string           `xml:"href,attr,omitempty"`
-	Type         string           `xml:"type,attr,omitempty"`
-	ID           string           `xml:"id,attr,omitempty"`
-	OperationKey string           `xml:"operationKey,attr,omitempty"`
-	Name         string           `xml:"name,attr"`
-	Description  string           `xml:"Description,omitempty"`
-	FullName     string           `xml:"FullName"`
-	IsEnabled    bool             `xml:"IsEnabled,omitempty"`
-	Link         LinkList         `xml:"Link,omitempty"`
-	Tasks        *TasksInProgress `xml:"Tasks,omitempty"`
-	OrgSettings  *OrgSettings     `xml:"Settings,omitempty"`
-	Vdcs         *VDCList         `xml:"Vdcs,omitempty"`
-	Networks     *NetworksList    `xml:"Networks,omitempty"`
-	Catalogs     *CatalogsList    `xml:"Catalogs,omitempty"`
+	XMLName         xml.Name         `xml:"AdminOrg"`
+	Xmlns           string           `xml:"xmlns,attr"`
+	HREF            string           `xml:"href,attr,omitempty"`
+	Type            string           `xml:"type,attr,omitempty"`
+	ID              string           `xml:"id,attr,omitempty"`
+	OperationKey    string           `xml:"operationKey,attr,omitempty"`
+	Name            string           `xml:"name,attr"`
+	Description     string           `xml:"Description,omitempty"`
+	FullName        string           `xml:"FullName"`
+	IsEnabled       bool             `xml:"IsEnabled,omitempty"`
+	Link            LinkList         `xml:"Link,omitempty"`
+	Tasks           *TasksInProgress `xml:"Tasks,omitempty"`
+	Users           *OrgUserList     `xml:"Users,omitempty"`
+	Catalogs        *CatalogsList    `xml:"Catalogs,omitempty"`
+	OrgSettings     *OrgSettings     `xml:"Settings,omitempty"`
+	Vdcs            *VDCList         `xml:"Vdcs,omitempty"`
+	Networks        *NetworksList    `xml:"Networks,omitempty"`
+	RightReferences *OrgRoleType     `xml:"RightReferences,omitempty"`
+	RoleReferences  *OrgRoleType     `xml:"RoleReferences,omitempty"`
 }
 
 // OrgSettingsType represents the settings for a vCloud Director organization.
@@ -929,6 +949,25 @@ type Error struct {
 	MinorErrorCode          string `xml:"minorErrorCode,attr"`
 	VendorSpecificErrorCode string `xml:"vendorSpecificErrorCode,attr,omitempty"`
 	StackTrace              string `xml:"stackTrace,attr,omitempty"`
+}
+
+func (err Error) Error() string {
+	return fmt.Sprintf("API Error: %d: %s", err.MajorErrorCode, err.Message)
+}
+
+// NSXError is the standard error message type used in the NSX API which is proxied by vCD.
+// It has attached method `Error() string` and implements Go's default `type error` interface.
+type NSXError struct {
+	XMLName    xml.Name `xml:"error"`
+	ErrorCode  string   `xml:"errorCode"`
+	Details    string   `xml:"details"`
+	ModuleName string   `xml:"moduleName"`
+}
+
+// Error method implements Go's default `error` interface for NSXError and formats NSX error
+// output for human readable output.
+func (nsxErr NSXError) Error() string {
+	return fmt.Sprintf("%s %s (API error: %s)", nsxErr.ModuleName, nsxErr.Details, nsxErr.ErrorCode)
 }
 
 // File represents a file to be transferred (uploaded or downloaded).
@@ -1416,6 +1455,15 @@ type DeployVAppParams struct {
 	ForceCustomization     bool `xml:"forceCustomization,attr,omitempty"`     // Used to specify whether to force customization on deployment, if not set default value is false
 }
 
+// GuestCustomizationStatusSection holds information about guest customization status
+// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/76f491b4-679c-4e1e-8428-f813d668297a/a2555a1b-22f1-4cca-b481-2a98ab874022/doc/doc/operations/GET-GuestCustStatus.html
+type GuestCustomizationStatusSection struct {
+	XMLName xml.Name `xml:"GuestCustomizationStatusSection"`
+	Xmlns   string   `xml:"xmlns,attr"`
+
+	GuestCustStatus string `xml:"GuestCustStatus"`
+}
+
 // GuestCustomizationSection represents guest customization settings
 // Type: GuestCustomizationSectionType
 // Namespace: http://www.vmware.com/vcloud/v1.5
@@ -1486,6 +1534,7 @@ type InstantiateVAppTemplateParams struct {
 // Since: 5.1
 type EdgeGateway struct {
 	// Attributes
+	Xmlns        string `xml:"xmlns,attr,omitempty"`
 	HREF         string `xml:"href,attr,omitempty"`         // The URI of the entity.
 	Type         string `xml:"type,attr,omitempty"`         // The MIME type of the entity.
 	ID           string `xml:"id,attr,omitempty"`           // The entity identifier, expressed in URN format. The value of this attribute uniquely identifies the entity, persists for the life of the entity, and is never reused
@@ -1512,6 +1561,8 @@ type GatewayConfiguration struct {
 	GatewayInterfaces               *GatewayInterfaces `xml:"GatewayInterfaces"`                         // List of Gateway interfaces.
 	EdgeGatewayServiceConfiguration *GatewayFeatures   `xml:"EdgeGatewayServiceConfiguration,omitempty"` // Represents Gateway Features.
 	HaEnabled                       bool               `xml:"HaEnabled,omitempty"`                       // True if this gateway is highly available. (Requires two vShield edge VMs.)
+	AdvancedNetworkingEnabled       bool               `xml:"AdvancedNetworkingEnabled,omitempty"`       // True if the gateway uses advanced networking
+	DistributedRoutingEnabled       bool               `xml:"DistributedRoutingEnabled,omitempty"`       // True if gateway is attached to a Distributed Logical Router
 	UseDefaultRouteForDNSRelay      bool               `xml:"UseDefaultRouteForDnsRelay,omitempty"`      // True if the default gateway on the external network selected for default route should be used as the DNS relay.
 }
 
@@ -1575,7 +1626,6 @@ type GatewayFeatures struct {
 	NatService             *NatService             `xml:"NatService,omitempty"`             // Substitute for NetworkService. NAT service settings
 	GatewayDhcpService     *GatewayDhcpService     `xml:"GatewayDhcpService,omitempty"`     // Substitute for NetworkService. Gateway DHCP service settings
 	GatewayIpsecVpnService *GatewayIpsecVpnService `xml:"GatewayIpsecVpnService,omitempty"` // Substitute for NetworkService. Gateway Ipsec VPN service settings
-	LoadBalancerService    *LoadBalancerService    `xml:"LoadBalancerService,omitempty"`    // Substitute for NetworkService. Load Balancer service settings
 	StaticRoutingService   *StaticRoutingService   `xml:"StaticRoutingService,omitempty"`   // Substitute for NetworkService. Static Routing service settings
 }
 
@@ -1602,109 +1652,161 @@ type StaticRoute struct {
 	GatewayInterface *Reference `xml:"GatewayInterface,omitempty"` // Gateway interface to which static route is bound.
 }
 
-// LoadBalancerService represents gateway load balancer service.
-// Type: LoadBalancerServiceType
-// Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents gateway load balancer service.
-// Since: 5.1
-type LoadBalancerService struct {
-	IsEnabled     bool                       `xml:"IsEnabled"`               // Enable or disable the service using this flag
-	Pool          *LoadBalancerPool          `xml:"Pool,omitempty"`          // List of load balancer pools.
-	VirtualServer *LoadBalancerVirtualServer `xml:"VirtualServer,omitempty"` // List of load balancer virtual servers.
+// LbGeneralParamsWithXml allows to enable/disable load balancing capabilities on specific edge gateway
+// Reference: vCloud Director API for NSX Programming Guide
+// https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
+//
+// Warning. It nests all components (LbMonitor, LbPool, LbAppProfile, LbAppRule, LbVirtualServer)
+// because Edge Gateway API is done so that if this data is not sent while enabling it would wipe
+// all load balancer configurations. InnerXML type fields are used with struct tag `innerxml` to
+// prevent any manipulation of configuration and sending it verbatim
+type LbGeneralParamsWithXml struct {
+	XMLName             xml.Name   `xml:"loadBalancer"`
+	Enabled             bool       `xml:"enabled"`
+	AccelerationEnabled bool       `xml:"accelerationEnabled"`
+	Logging             *LbLogging `xml:"logging"`
+
+	// This field is not used anywhere but needs to be passed through
+	EnableServiceInsertion bool `xml:"enableServiceInsertion"`
+	// Each configuration change has a version number
+	Version string `xml:"version,omitempty"`
+
+	// The below fields have `innerxml` tag so that they are not processed but instead
+	// sent verbatim
+	VirtualServers []InnerXML `xml:"virtualServer,omitempty"`
+	Pools          []InnerXML `xml:"pool,omitempty"`
+	AppProfiles    []InnerXML `xml:"applicationProfile,omitempty"`
+	Monitors       []InnerXML `xml:"monitor,omitempty"`
+	AppRules       []InnerXML `xml:"applicationRule,omitempty"`
 }
 
-// LoadBalancerPool represents a load balancer pool.
-// Type: LoadBalancerPoolType
-// Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents a load balancer pool.
-// Since: 5.1
-type LoadBalancerPool struct {
-	ID           string             `xml:"Id,omitempty"`           // Load balancer pool id.
-	Name         string             `xml:"Name"`                   // Load balancer pool name.
-	Description  string             `xml:"Description,omitempty"`  // Load balancer pool description.
-	ServicePort  *LBPoolServicePort `xml:"ServicePort"`            // Load balancer pool service port.
-	Member       *LBPoolMember      `xml:"Member"`                 // Load balancer pool member.
-	Operational  bool               `xml:"Operational,omitempty"`  // True if the load balancer pool is operational.
-	ErrorDetails string             `xml:"ErrorDetails,omitempty"` // Error details for this pool.
+// LbLogging represents logging configuration for load balancer
+type LbLogging struct {
+	Enable   bool   `xml:"enable"`
+	LogLevel string `xml:"logLevel"`
 }
 
-// LBPoolServicePort represents a service port in a load balancer pool.
-// Type: LBPoolServicePortType
-// Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents a service port in a load balancer pool.
-// Since: 5.1
-type LBPoolServicePort struct {
-	IsEnabled       bool               `xml:"IsEnabled,omitempty"`       // True if this service port is enabled.
-	Protocol        string             `xml:"Protocol"`                  // Load balancer protocol type. One of: HTTP, HTTPS, TCP.
-	Algorithm       string             `xml:"Algorithm"`                 // Load Balancer algorithm type. One of: IP_HASH, ROUND_ROBIN, URI, LEAST_CONN.
-	Port            string             `xml:"Port"`                      // Port for this service profile.
-	HealthCheckPort string             `xml:"HealthCheckPort,omitempty"` // Health check port for this profile.
-	HealthCheck     *LBPoolHealthCheck `xml:"HealthCheck,omitempty"`     // Health check list.
+// InnerXML is meant to be used when unmarshaling a field into text rather than struct
+// It helps to avoid missing out any fields which may not have been specified in the struct.
+type InnerXML struct {
+	Text string `xml:",innerxml"`
 }
 
-// LBPoolHealthCheck represents a service port health check list.
+// LbMonitor defines health check parameters for a particular type of network traffic
+// Reference: vCloud Director API for NSX Programming Guide
+// https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
+type LbMonitor struct {
+	XMLName    xml.Name `xml:"monitor"`
+	ID         string   `xml:"monitorId,omitempty"`
+	Type       string   `xml:"type"`
+	Interval   int      `xml:"interval,omitempty"`
+	Timeout    int      `xml:"timeout,omitempty"`
+	MaxRetries int      `xml:"maxRetries,omitempty"`
+	Method     string   `xml:"method,omitempty"`
+	URL        string   `xml:"url,omitempty"`
+	Expected   string   `xml:"expected,omitempty"`
+	Name       string   `xml:"name,omitempty"`
+	Send       string   `xml:"send,omitempty"`
+	Receive    string   `xml:"receive,omitempty"`
+	Extension  string   `xml:"extension,omitempty"`
+}
+
+type LbMonitors []LbMonitor
+
+// LbPool represents a load balancer server pool as per "vCloud Director API for NSX Programming Guide"
 // Type: LBPoolHealthCheckType
-// Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents a service port health check list.
-// Since: 5.1
-type LBPoolHealthCheck struct {
-	Mode              string `xml:"Mode"`                        // Load balancer service port health check mode. One of: TCP, HTTP, SSL.
-	URI               string `xml:"Uri,omitempty"`               // Load balancer service port health check URI.
-	HealthThreshold   string `xml:"HealthThreshold,omitempty"`   // Health threshold for this service port.
-	UnhealthThreshold string `xml:"UnhealthThreshold,omitempty"` // Unhealth check port for this profile.
-	Interval          string `xml:"Interval,omitempty"`          // Interval between health checks.
-	Timeout           string `xml:"Timeout,omitempty"`           // Health check timeout.
+// https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
+type LbPool struct {
+	XMLName             xml.Name      `xml:"pool"`
+	ID                  string        `xml:"poolId,omitempty"`
+	Name                string        `xml:"name"`
+	Description         string        `xml:"description,omitempty"`
+	Algorithm           string        `xml:"algorithm"`
+	AlgorithmParameters string        `xml:"algorithmParameters,omitempty"`
+	Transparent         bool          `xml:"transparent"`
+	MonitorId           string        `xml:"monitorId,omitempty"`
+	Members             LbPoolMembers `xml:"member,omitempty"`
 }
 
-// LBPoolMember represents a member in a load balancer pool.
-// Type: LBPoolMemberType
-// Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents a member in a load balancer pool.
-// Since: 5.1
-type LBPoolMember struct {
-	IPAddress   string             `xml:"IpAddress"`             // Ip Address for load balancer member.
-	Weight      string             `xml:"Weight"`                // Weight of this member.
-	ServicePort *LBPoolServicePort `xml:"ServicePort,omitempty"` // Load balancer member service port.
+type LbPools []LbPool
+
+// LbPoolMember represents a single member inside LbPool
+type LbPoolMember struct {
+	ID          string `xml:"memberId,omitempty"`
+	Name        string `xml:"name"`
+	IpAddress   string `xml:"ipAddress"`
+	Weight      int    `xml:"weight,omitempty"`
+	MonitorPort int    `xml:"monitorPort,omitempty"`
+	Port        int    `xml:"port"`
+	MaxConn     int    `xml:"maxConn,omitempty"`
+	MinConn     int    `xml:"minConn,omitempty"`
+	Condition   string `xml:"condition,omitempty"`
 }
 
-// LoadBalancerVirtualServer represents a load balancer virtual server.
-// Type: LoadBalancerVirtualServerType
-// Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents a load balancer virtual server.
-// Since: 5.1
-type LoadBalancerVirtualServer struct {
-	IsEnabled             bool                           `xml:"IsEnabled,omitempty"`             // True if this virtual server is enabled.
-	Name                  string                         `xml:"Name"`                            // Load balancer virtual server name.
-	Description           string                         `xml:"Description,omitempty"`           // Load balancer virtual server description.
-	Interface             *Reference                     `xml:"Interface"`                       // Gateway Interface to which Load Balancer Virtual Server is bound.
-	IPAddress             string                         `xml:"IpAddress"`                       // Load balancer virtual server Ip Address.
-	ServiceProfile        *LBVirtualServerServiceProfile `xml:"ServiceProfile"`                  // Load balancer virtual server service profiles.
-	Logging               bool                           `xml:"Logging,omitempty"`               // Enable logging for this virtual server.
-	Pool                  string                         `xml:"Pool"`                            // Name of Load balancer pool associated with this virtual server.
-	LoadBalancerTemplates *VendorTemplate                `xml:"LoadBalancerTemplates,omitempty"` // Service template related attributes.
+type LbPoolMembers []LbPoolMember
+
+// LbAppProfile represents a load balancer application profile as per "vCloud Director API for NSX
+// Programming Guide"
+// https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
+type LbAppProfile struct {
+	XMLName                       xml.Name                  `xml:"applicationProfile"`
+	ID                            string                    `xml:"applicationProfileId,omitempty"`
+	Name                          string                    `xml:"name,omitempty"`
+	SslPassthrough                bool                      `xml:"sslPassthrough"`
+	Template                      string                    `xml:"template,omitempty"`
+	HttpRedirect                  *LbAppProfileHttpRedirect `xml:"httpRedirect,omitempty"`
+	Persistence                   *LbAppProfilePersistence  `xml:"persistence,omitempty"`
+	InsertXForwardedForHttpHeader bool                      `xml:"insertXForwardedFor"`
+	ServerSslEnabled              bool                      `xml:"serverSslEnabled"`
 }
 
-// LBVirtualServerServiceProfile represents service profile for a load balancing virtual server.
-// Type: LBVirtualServerServiceProfileType
-// Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents service profile for a load balancing virtual server.
-// Since: 5.1
-type LBVirtualServerServiceProfile struct {
-	IsEnabled   bool           `xml:"IsEnabled,omitempty"`   // True if this service profile is enabled.
-	Protocol    string         `xml:"Protocol"`              // Load balancer Protocol type. One of: HTTP, HTTPS, TCP.
-	Port        string         `xml:"Port"`                  // Port for this service profile.
-	Persistence *LBPersistence `xml:"Persistence,omitempty"` // Persistence type for service profile.
+type LbAppProfiles []LbAppProfile
+
+// LbAppProfilePersistence defines persistence profile settings in LbAppProfile
+type LbAppProfilePersistence struct {
+	XMLName    xml.Name `xml:"persistence"`
+	Method     string   `xml:"method,omitempty"`
+	CookieName string   `xml:"cookieName,omitempty"`
+	CookieMode string   `xml:"cookieMode,omitempty"`
+	Expire     int      `xml:"expire,omitempty"`
 }
 
-// LBPersistence represents persistence type for a load balancer service profile.
-// Type: LBPersistenceType
-// Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents persistence type for a load balancer service profile.
-// Since: 5.1
-type LBPersistence struct {
-	Method     string `xml:"Method"`               // Persistence method. One of: COOKIE, SSL_SESSION_ID.
-	CookieName string `xml:"CookieName,omitempty"` // Cookie name when persistence method is COOKIE.
-	CookieMode string `xml:"CookieMode,omitempty"` // Cookie Mode. One of: INSERT, PREFIX, APP.
+// LbAppProfileHttpRedirect defines http redirect settings in LbAppProfile
+type LbAppProfileHttpRedirect struct {
+	XMLName xml.Name `xml:"httpRedirect"`
+	To      string   `xml:"to,omitempty"`
+}
+
+// LbAppRule represents a load balancer application rule as per "vCloud Director API for NSX
+// Programming Guide"
+// https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
+type LbAppRule struct {
+	XMLName xml.Name `xml:"applicationRule"`
+	ID      string   `xml:"applicationRuleId,omitempty"`
+	Name    string   `xml:"name,omitempty"`
+	Script  string   `xml:"script,omitempty"`
+}
+
+type LbAppRules []LbAppRule
+
+// LbVirtualServer represents a load balancer virtual server as per "vCloud Director API for NSX
+// Programming Guide"
+// https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
+type LbVirtualServer struct {
+	XMLName              xml.Name `xml:"virtualServer"`
+	ID                   string   `xml:"virtualServerId,omitempty"`
+	Name                 string   `xml:"name,omitempty"`
+	Description          string   `xml:"description,omitempty"`
+	Enabled              bool     `xml:"enabled"`
+	IpAddress            string   `xml:"ipAddress"`
+	Protocol             string   `xml:"protocol"`
+	Port                 int      `xml:"port"`
+	AccelerationEnabled  bool     `xml:"accelerationEnabled"`
+	ConnectionLimit      int      `xml:"connectionLimit,omitempty"`
+	ConnectionRateLimit  int      `xml:"connectionRateLimit,omitempty"`
+	ApplicationProfileId string   `xml:"applicationProfileId,omitempty"`
+	DefaultPoolId        string   `xml:"defaultPoolId,omitempty"`
+	ApplicationRuleIds   []string `xml:"applicationRuleId,omitempty"`
 }
 
 // VendorTemplate is information about a vendor service template. This is optional.
@@ -2019,6 +2121,8 @@ type QueryResultRecordsType struct {
 	AdminDiskRecord                 []*DiskRecordType                                 `xml:"AdminDiskRecord"`                 // A record representing a independent Disk.
 	VirtualCenterRecord             []*QueryResultVirtualCenterRecordType             `xml:"VirtualCenterRecord"`             // A record representing a vSphere server
 	PortGroupRecord                 []*PortGroupRecordType                            `xml:"PortgroupRecord"`                 // A record representing a port group
+	OrgVdcNetworkRecord             []*QueryResultOrgVdcNetworkRecordType             `xml:"OrgVdcNetworkRecord"`             // A record representing a org VDC network
+	AdminCatalogRecord              []*AdminCatalogRecord                             `xml:"AdminCatalogRecord"`              // A record representing a catalog
 }
 
 // QueryResultEdgeGatewayRecordType represents an edge gateway record as query result.
@@ -2220,7 +2324,7 @@ type VimObjectRef struct {
 // Description: List of VimObjectRef elements.
 // Since: 0.9
 type VimObjectRefs struct {
-	VimObjectRef []*VimObjectRef `xml:VimObjectRef`
+	VimObjectRef []*VimObjectRef `xml:"VimObjectRef"`
 }
 
 // Type: VMWExternalNetworkType
@@ -2230,18 +2334,17 @@ type VimObjectRefs struct {
 // Since: 1.0
 type ExternalNetwork struct {
 	XMLName          xml.Name              `xml:"VMWExternalNetwork"`
-	Xmlns            string                `xml:"xmlns,attr,omitempty"`
-	XmlnsVCloud      string                `xml:"xmlns:vcloud,attr,omitempty"`
 	HREF             string                `xml:"href,attr,omitempty"`
 	Type             string                `xml:"type,attr,omitempty"`
 	ID               string                `xml:"id,attr,omitempty"`
 	OperationKey     string                `xml:"operationKey,attr,omitempty"`
 	Name             string                `xml:"name,attr"`
-	Description      string                `xml:"vcloud:Description,omitempty"`
-	Configuration    *NetworkConfiguration `xml:"Configuration,omitempty"`
 	Link             []*Link               `xml:"Link,omitempty"`
-	VimPortGroupRefs *VimObjectRefs        `xml:"VimPortGroupRefs,omitempty"`
+	Description      string                `xml:"Description,omitempty"`
 	Tasks            *TasksInProgress      `xml:"Tasks,omitempty"`
+	Configuration    *NetworkConfiguration `xml:"Configuration,omitempty"`
+	VimPortGroupRef  *VimObjectRef         `xml:"VimPortGroupRef,omitempty"`
+	VimPortGroupRefs *VimObjectRefs        `xml:"VimPortGroupRefs,omitempty"`
 	VCloudExtension  *VCloudExtension      `xml:"VCloudExtension,omitempty"`
 }
 
@@ -2326,7 +2429,7 @@ type Disk struct {
 	OperationKey    string           `xml:"operationKey,attr,omitempty"`
 	Name            string           `xml:"name,attr"`
 	Status          int              `xml:"status,attr,omitempty"`
-	Size            int              `xml:"size,attr"`
+	Size            int64            `xml:"size,attr"`
 	Iops            *int             `xml:"iops,attr,omitempty"`
 	BusType         string           `xml:"busType,attr,omitempty"`
 	BusSubType      string           `xml:"busSubType,attr,omitempty"`
@@ -2457,4 +2560,105 @@ type PortGroupRecordType struct {
 	NetworkName   string  `xml:"networkName,attr,omitempty"`
 	ScopeType     int     `xml:"scopeType,attr,omitempty"` // Scope of network using the portgroup(1=Global, 2=Organization, 3=vApp)
 	Link          []*Link `xml:"Link,omitempty"`
+}
+
+// Represents org VDC Network
+// Reference: vCloud API 27.0 - Org VDC Network
+// https://code.vmware.com/apis/72/doc/doc/types/QueryResultOrgVdcNetworkRecordType.html
+type QueryResultOrgVdcNetworkRecordType struct {
+	Xmlns              string  `xml:"xmlns,attr,omitempty"`
+	HREF               string  `xml:"href,attr,omitempty"`
+	Id                 string  `xml:"id,attr,omitempty"`
+	Type               string  `xml:"type,attr,omitempty"`
+	Name               string  `xml:"name,attr,omitempty"`
+	DefaultGateway     string  `xml:"defaultGateway,attr,omitempty"`
+	Netmask            string  `xml:"netmask,attr,omitempty"`
+	Dns1               string  `xml:"dns1,attr,omitempty"`
+	Dns2               string  `xml:"dns2,attr,omitempty"`
+	DnsSuffix          string  `xml:"dnsSuffix,attr,omitempty"`
+	LinkType           int     `xml:"linkType,attr,omitempty"`
+	ConnectedTo        string  `xml:"connectedTo,attr,omitempty"`
+	Vdc                string  `xml:"vdc,attr,omitempty"`
+	IsBusy             bool    `xml:"isBusy,attr,omitempty"`
+	IsShared           bool    `xml:"isShared,attr,omitempty"`
+	VdcName            string  `xml:"vdcName,attr,omitempty"`
+	IsIpScopeInherited bool    `xml:"isIpScopeInherited,attr,omitempty"`
+	Link               []*Link `xml:"Link,omitempty"`
+}
+
+// Represents org VDC Network
+// Reference: vCloud API 27.0 - Network Pool
+// https://code.vmware.com/apis/72/vcloud-director#/doc/doc/types/VMWNetworkPoolType.html
+type VMWNetworkPool struct {
+	HREF        string           `xml:"href,attr,omitempty"`
+	Id          string           `xml:"id,attr,omitempty"`
+	Type        string           `xml:"type,attr,omitempty"`
+	Name        string           `xml:"name,attr"`
+	Status      int              `xml:"status,attr,omitempty"`
+	Description string           `xml:"netmask,omitempty"`
+	Tasks       *TasksInProgress `xml:"Tasks,omitempty"`
+}
+
+type GroupReference struct {
+	GroupReference []*Reference `xml:"GroupReference,omitempty"`
+}
+
+// Represents an org user
+// Reference: vCloud API 27.0 - UserType
+// https://code.vmware.com/apis/442/vcloud-director#/doc/doc/types/UserType.html
+// Note that the order of fields is important. If this structure needs to change,
+// the field order must be preserved.
+type User struct {
+	XMLName         xml.Name         `xml:"User"`
+	Xmlns           string           `xml:"xmlns,attr"`
+	Href            string           `xml:"href,attr"`
+	Type            string           `xml:"type,attr"`
+	ID              string           `xml:"id,attr"`
+	OperationKey    string           `xml:"operationKey,attr"`
+	Name            string           `xml:"name,attr"`
+	Links           LinkList         `xml:"Link,omitempty"`
+	Description     string           `xml:"Description,omitempty"`
+	FullName        string           `xml:"FullName,omitempty"`
+	EmailAddress    string           `xml:"EmailAddress,omitempty"`
+	Telephone       string           `xml:"Telephone,omitempty"`
+	IsEnabled       bool             `xml:"IsEnabled,omitempty"`
+	IsLocked        bool             `xml:"IsLocked,omitempty"`
+	IM              string           `xml:"IM,omitempty"`
+	NameInSource    string           `xml:"NameInSource,omitempty"`
+	IsExternal      bool             `xml:"IsExternal,omitempty"`
+	ProviderType    string           `xml:"ProviderType,omitempty"`
+	IsGroupRole     bool             `xml:"IsGroupRole,omitempty"`
+	StoredVmQuota   int              `xml:"StoredVmQuota,omitempty"`
+	DeployedVmQuota int              `xml:"DeployedVmQuota,omitempty"`
+	Role            *Reference       `xml:"Role,omitempty"`
+	GroupReferences *GroupReference  `xml:"GroupReferences,omitempty"`
+	Password        string           `xml:"Password,omitempty"`
+	Tasks           *TasksInProgress `xml:"Tasks"`
+}
+
+// Type: AdminCatalogRecord
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// https://code.vmware.com/apis/287/vcloud#/doc/doc/types/QueryResultCatalogRecordType.html
+// Issue that description partly matches with what is returned
+// Description: Represents Catalog record
+// Since: 1.5
+type AdminCatalogRecord struct {
+	HREF                    string    `xml:"href,attr,omitempty"`
+	ID                      string    `xml:"id,attr,omitempty"`
+	Type                    string    `xml:"type,attr,omitempty"`
+	Name                    string    `xml:"name,attr,omitempty"`
+	Description             string    `xml:"description,attr,omitempty"`
+	IsPublished             bool      `xml:"isPublished,attr,omitempty"`
+	IsShared                bool      `xml:"isShared,attr,omitempty"`
+	CreationDate            string    `xml:"creationDate,attr,omitempty"`
+	OrgName                 string    `xml:"orgName,attr,omitempty"`
+	OwnerName               string    `xml:"ownerName,attr,omitempty"`
+	NumberOfVAppTemplates   int64     `xml:"numberOfVAppTemplates,attr,omitempty"`
+	NumberOfMedia           int64     `xml:"numberOfMedia,attr,omitempty"`
+	Owner                   string    `xml:"owner,attr,omitempty"`
+	PublishSubscriptionType string    `xml:"publishSubscriptionType,attr,omitempty"`
+	Version                 int64     `xml:"version,attr,omitempty"`
+	Status                  string    `xml:"status,attr,omitempty"`
+	Link                    *Link     `xml:"Link,omitempty"`
+	Vdc                     *Metadata `xml:"Metadata,omitempty"`
 }

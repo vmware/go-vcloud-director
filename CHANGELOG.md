@@ -1,4 +1,63 @@
-## 2.2.0 (Unreleased)
+## 2.4.0 (Unreleased)
+
+* Deprecated functions `GetOrgByName` and `GetAdminOrgByName`
+* Deprecated methods `AdminOrg.FetchUserByName`, `AdminOrg.FetchUserById`, `AdminOrg.FetchUserByNameOrId`, `AdminOrg.GetRole`.
+* Added method `VCDClient.GetOrgByName`  and related `GetOrgById`, `GetOrgByNameOrId`
+* Added method `VCDClient.GetAdminOrgByName` and related `GetAdminOrgById`, `GetAdminOrgByNameOrId`
+* Added methods `AdminOrg.GetUserByName`, `GetUserById`, `GetUserByNameOrId`, `GetRoleReference`.
+* Added method `VCDClient.QueryProviderVdcs` 
+* Added method `VCDClient.QueryProviderVdcStorageProfiles` 
+* Added method `VCDClient.QueryNetworkPools` 
+* Added get/add/delete metadata functions for vApp template and media item [#225](https://github.com/vmware/go-vcloud-director/pull/225).
+* Added `UpdateNetworkConnectionSection` for updating VM network configuration [#229](https://github.com/vmware/go-vcloud-director/pull/229)
+* Added `PowerOnAndForceCustomization`, `GetGuestCustomizationStatus`, `BlockWhileGuestCustomizationStatus` [#229](https://github.com/vmware/go-vcloud-director/pull/229)
+* Deprecated methods `AdminOrg.GetAdminVdcByName`, `AdminOrg.GetVdcByName`, `AdminOrg.FindAdminCatalog`, `AdminOrg.FindCatalog`
+* Deprecated methods `Catalog.FindCatalogItem`, `Org.FindCatalog`, `Org.GetVdcByName`
+* Deprecated function `GetExternalNetwork`
+* Added methods `Org.GetCatalogByName` and related `Org.GetCatalogById`, `GetCatalogItemByNameOrId`
+* Added methods `VCDClient.GetExternalNetworkByName` and related `GetExternalNetworkById` and `GetExternalNetworkByNameOrId`
+* Added methods `AdminOrg.GetCatalogByName` and related `Org.GetCatalogById`, `GetCatalogByNameOrId`
+* Added methods `AdminOrg.GetAdminCatalogByName` and related `Org.GetAdminCatalogById`, `GetAdminCatalogByNameOrId`
+* Added methods `Org.GetVDCByName` and related `GetVDCById`, `GetVDCByNameOrId`
+* Added methods `AdminOrg.GetVDCByName` and related `GetVDCById`, `GetVDCByNameOrId`
+* Added methods `AdminOrg.GetAdminVDCByName` and related `GetAdminVDCById`, `GetAdminVDCByNameOrId`
+* Added methods `Catalog.Refresh` and `AdminCatalog.Refresh`
+
+IMPROVEMENTS:
+
+* Move methods for `AdminOrg`, `AdminCatalog`, `AdminVdc` to new files `adminorg.go`,
+ `admincatalog.go`, `adminvdc.go`.
+* Added default value for HTTP timeout (600s) which is configurable
+
+BUGS FIXED:
+
+* Fix bug in AdminOrg.Update, where OrgGeneralSettings would not update correctly if it contained only one property
+* Fix bug in External network creation and get when description wasn't populated.
+* Fix bug in Org Delete, which would remove catalogs shared from other organizations.
+
+## 2.3.1 (Jul 29, 2019)
+
+BUG FIXES:
+
+* Remove `omitempty` struct tags from load balancer component boolean fields to allow sending `false` values to API [#222](https://github.com/vmware/go-vcloud-director/pull/222)
+
+## 2.3.0 (Jul 26, 2019)
+
+* Added edge gateway create/delete functions [#130](https://github.com/vmware/go-vcloud-director/issues/130).
+* Added edge gateway global load balancer configuration support (e.g. enable/disable) [#219](https://github.com/vmware/go-vcloud-director/pull/219)
+* Added load balancer service monitor [#196](https://github.com/vmware/go-vcloud-director/pull/196)
+* Added load balancer server pool [#205](https://github.com/vmware/go-vcloud-director/pull/205)
+* Added load balancer application profile [#208](https://github.com/vmware/go-vcloud-director/pull/208)
+* Added load balancer application rule [#212](https://github.com/vmware/go-vcloud-director/pull/212)
+* Added load balancer virtual server [#215](https://github.com/vmware/go-vcloud-director/pull/215)
+* Added functions for refreshing, getting and update Org VDC [#206](https://github.com/vmware/go-vcloud-director/pull/206)
+* Added VDC meta data create/get/delete functions [#203](https://github.com/vmware/go-vcloud-director/pull/203)
+* Added org user create/delete/update functions [#18](https://github.com/vmware/go-vcloud-director/issues/18)
+* Added load balancer application profile [#208](https://github.com/vmware/go-vcloud-director/pull/208)
+* Added edge gateway SNAT/DNAT rule functions which support org VDC network and external network [#225](https://github.com/terraform-providers/terraform-provider-vcd/issues/225)
+* Added edge gateway SNAT/DNAT rule functions which work with IDs [#244](https://github.com/terraform-providers/terraform-provider-vcd/issues/244)
+
+## 2.2.0 (May 15, 2019)
 
 FEATURES:
 

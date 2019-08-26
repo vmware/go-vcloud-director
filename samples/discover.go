@@ -147,12 +147,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	org, err := govcd.GetOrgByName(client, config.Org)
+	org, err := client.GetOrgByName(config.Org)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	vdc, err := org.GetVdcByName(config.VDC)
+	vdc, err := org.GetVDCByName(config.VDC, false)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -181,7 +181,7 @@ func main() {
 
 	if catalog_name != "" {
 		fmt.Printf("\ncatalog items\n")
-		cat, err := org.FindCatalog(catalog_name)
+		cat, err := org.GetCatalogByName(catalog_name, false)
 		if err != nil {
 			fmt.Printf("Error retrieving catalog %s\n%s\n", catalog_name, err)
 			os.Exit(1)

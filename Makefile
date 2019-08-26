@@ -8,7 +8,7 @@ test: fmtcheck
 	@echo "==> Running Unit Tests"
 	cd govcd && go test -v -tags "unit" .
 	@echo "==> Running Functional Tests"
-	cd govcd && go test -tags "functional" -timeout=60m -check.vv .
+	cd govcd && go test -tags "functional" -timeout=90m -check.vv .
 
 # test runs the test suite and vets the code
 testunit: fmtcheck
@@ -39,6 +39,9 @@ testgateway:
 testnetwork:
 	cd govcd && go test -tags "network" -timeout 15m -check.vv .
 
+# tests only load balancer features
+testlb:
+	cd govcd && go test -tags "lb" -timeout 15m -check.vv .
 
 # vet runs the Go source code static analysis tool `vet` to find
 # any common errors.

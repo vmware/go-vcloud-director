@@ -15,6 +15,7 @@ const (
 	JSONMimeV57 = "application/json;version=5.7"
 	// AnyXMLMime511 the wildcard xml mime for version 5.11 of the API
 	AnyXMLMime511 = "application/*+xml;version=5.11"
+	AnyXMLMime    = "application/xml"
 	// Version511 the 5.11 version
 	Version511 = "5.11"
 	// Version is the default version number
@@ -32,6 +33,8 @@ const (
 	MimeCatalogItem = "application/vnd.vmware.vcloud.catalogItem+xml"
 	// MimeVDC mime for a VDC
 	MimeVDC = "application/vnd.vmware.vcloud.vdc+xml"
+	// MimeVDC mime for a admin VDC
+	MimeAdminVDC = "application/vnd.vmware.admin.vdc+xml"
 	// MimeVAppTemplate mime for a vapp template
 	MimeVAppTemplate = "application/vnd.vmware.vcloud.vAppTemplate+xml"
 	// MimeVApp mime for a vApp
@@ -72,6 +75,8 @@ const (
 	MimeRasdItem = "application/vnd.vmware.vcloud.rasdItem+xml"
 	// Mime for guest customization section
 	MimeGuestCustomizationSection = "application/vnd.vmware.vcloud.guestCustomizationSection+xml"
+	// Mime for guest customization status
+	MimeGuestCustomizationStatus = "application/vnd.vmware.vcloud.guestcustomizationstatussection"
 	// Mime for network config section
 	MimeNetworkConfigSection = "application/vnd.vmware.vcloud.networkconfigsection+xml"
 	// Mime for recompose vApp params
@@ -96,6 +101,8 @@ const (
 	MimeExtensionNetwork = "application/vnd.vmware.admin.extension.network+xml"
 	// Mime for an external network
 	MimeExternalNetwork = "application/vnd.vmware.admin.vmwexternalnet+xml"
+	// Mime of an Org User
+	MimeAdminUser = "application/vnd.vmware.admin.user+xml"
 )
 
 const (
@@ -145,4 +152,22 @@ const (
 	XMLNamespaceRASD      = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData"
 	XMLNamespaceVSSD      = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData"
 	XMLNamespaceExtension = "http://www.vmware.com/vcloud/extension/v1.5"
+)
+
+const (
+	LbConfigPath        = "/loadbalancer/config/"
+	LbMonitorPath       = "/loadbalancer/config/monitors/"
+	LbServerPoolPath    = "/loadbalancer/config/pools/"
+	LbAppProfilePath    = "/loadbalancer/config/applicationprofiles/"
+	LbAppRulePath       = "/loadbalancer/config/applicationrules/"
+	LbVirtualServerPath = "/loadbalancer/config/virtualservers/"
+)
+
+// Guest customization statuses. These are all known possible statuses
+const (
+	GuestCustStatusPending       = "GC_PENDING"
+	GuestCustStatusPostPending   = "POST_GC_PENDING"
+	GuestCustStatusComplete      = "GC_COMPLETE"
+	GuestCustStatusFailed        = "GC_FAILED"
+	GuestCustStatusRebootPending = "REBOOT_PENDING"
 )
