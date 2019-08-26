@@ -494,9 +494,21 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 	check.Assert(err, IsNil)
 
 	//verify
-	err = vm.Refresh()
-	check.Assert(err, IsNil)
+	vcd.waitUntilEjected(err, vm, check)
+
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
+}
+
+// waitUntilEjected checks status until ready. We need this cause VCD is slow to change representative state
+func (vcd *TestVCD) waitUntilEjected(err error, vm *VM, check *C) {
+
+	for i := 1; i < 5; i++ {
+		err = vm.Refresh()
+		check.Assert(err, IsNil)
+		if isMediaInjected(vm.VM.VirtualHardwareSection.Item) == false {
+			break
+		}
+	}
 }
 
 // Test Insert or Eject Media for VM
@@ -571,8 +583,14 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 	check.Assert(err, IsNil)
 
 	//verify
-	err = vm.Refresh()
-	check.Assert(err, IsNil)
+	// VCD is slow to change representative state
+	for i := 1; i < 5; i++ {
+		err = vm.Refresh()
+		check.Assert(err, IsNil)
+		if isMediaInjected(vm.VM.VirtualHardwareSection.Item) == false {
+			break
+		}
+	}
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
 }
 
@@ -658,8 +676,14 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 	check.Assert(err, IsNil)
 
 	//verify
-	err = vm.Refresh()
-	check.Assert(err, IsNil)
+	// VCD is slow to change representative state
+	for i := 1; i < 5; i++ {
+		err = vm.Refresh()
+		check.Assert(err, IsNil)
+		if isMediaInjected(vm.VM.VirtualHardwareSection.Item) == false {
+			break
+		}
+	}
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
 }
 
