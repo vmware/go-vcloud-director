@@ -38,7 +38,7 @@ func setGuestProperties(client *Client, href string, properties *types.ProductSe
 // getGuestProperties is a shared function for both vApp and VM
 func getGuestProperties(client *Client, href string) (*types.ProductSectionList, error) {
 	if href == "" {
-		return nil, fmt.Errorf("href cannot be empty to set guest properties")
+		return nil, fmt.Errorf("href cannot be empty to get guest properties")
 	}
 	properties := &types.ProductSectionList{}
 
