@@ -495,7 +495,6 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 
 	//verify
 	vcd.waitUntilEjected(err, vm, check)
-
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
 }
 
@@ -584,13 +583,7 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 
 	//verify
 	// VCD is slow to change representative state
-	for i := 1; i < 5; i++ {
-		err = vm.Refresh()
-		check.Assert(err, IsNil)
-		if isMediaInjected(vm.VM.VirtualHardwareSection.Item) == false {
-			break
-		}
-	}
+	vcd.waitUntilEjected(err, vm, check)
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
 }
 
@@ -677,13 +670,7 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 
 	//verify
 	// VCD is slow to change representative state
-	for i := 1; i < 5; i++ {
-		err = vm.Refresh()
-		check.Assert(err, IsNil)
-		if isMediaInjected(vm.VM.VirtualHardwareSection.Item) == false {
-			break
-		}
-	}
+	vcd.waitUntilEjected(err, vm, check)
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
 }
 
