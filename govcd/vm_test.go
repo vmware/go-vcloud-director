@@ -487,15 +487,10 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, true)
 
-	ejectMediaTask, err := vm.HandleEjectMedia(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
-	check.Assert(err, IsNil)
-
-	err = ejectMediaTask.WaitTaskCompletion(true)
+	vm, err = vm.HandleEjectMediaAndAnswer(vcd.org, vcd.config.VCD.Catalog.Name, itemName, true)
 	check.Assert(err, IsNil)
 
 	//verify
-	err = vm.Refresh()
-	check.Assert(err, IsNil)
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
 }
 
@@ -574,16 +569,6 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
-}
-
-// check resource subtype for specific value which means media is injected
-func isMediaInjected(items []*types.VirtualHardwareItem) bool {
-	for _, hardwareItem := range items {
-		if hardwareItem.ResourceSubType == types.VMsCDResourceSubType {
-			return true
-		}
-	}
-	return false
 }
 
 // Test Insert or Eject Media for VM
