@@ -838,9 +838,10 @@ func (vapp *VApp) RemoveAllNetworks() (Task, error) {
 	return updateNetworkConfigurations(vapp, []types.VAppNetworkConfiguration{})
 }
 
-// SetProductSectionList sets product section for a vApp
+// SetProductSectionList sets product section for a vApp. It allows to change vApp guest properties.
 //
-// The slice of properties "ProductSectionList.ProductSection.Property" is not necessarily ordered or returned as set before
+// The slice of properties "ProductSectionList.ProductSection.Property" is not necessarily ordered
+// or returned as set before
 func (vapp *VApp) SetProductSectionList(productSection *types.ProductSectionList) (*types.ProductSectionList, error) {
 	err := setProductSectionList(vapp.client, vapp.VApp.HREF, productSection)
 	if err != nil {
@@ -850,9 +851,10 @@ func (vapp *VApp) SetProductSectionList(productSection *types.ProductSectionList
 	return vapp.GetProductSectionList()
 }
 
-// GetProductSectionList retrieves product section for a vApp
+// GetProductSectionList retrieves product section for a vApp. It allows to read vApp guest properties.
 //
-// The slice of properties "ProductSectionList.ProductSection.Property" is not necessarily ordered or returned as set before
+// The slice of properties "ProductSectionList.ProductSection.Property" is not necessarily ordered
+// or returned as set before
 func (vapp *VApp) GetProductSectionList() (*types.ProductSectionList, error) {
 	return getProductSectionList(vapp.client, vapp.VApp.HREF)
 }

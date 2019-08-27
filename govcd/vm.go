@@ -724,9 +724,10 @@ func (vm *VM) ToggleHardwareVirtualization(isEnabled bool) (Task, error) {
 		"", errMessage, nil)
 }
 
-// SetProductSectionList sets product section for a VM
+// SetProductSectionList sets product section for a VM. It allows to change VM guest properties.
 //
-// The slice of properties "ProductSectionList.ProductSection.Property" is not necessarily ordered or returned as set before
+// The slice of properties "ProductSectionList.ProductSection.Property" is not necessarily ordered
+// or returned as set before
 func (vm *VM) SetProductSectionList(productSection *types.ProductSectionList) (*types.ProductSectionList, error) {
 	err := setProductSectionList(vm.client, vm.VM.HREF, productSection)
 	if err != nil {
@@ -736,9 +737,10 @@ func (vm *VM) SetProductSectionList(productSection *types.ProductSectionList) (*
 	return vm.GetProductSectionList()
 }
 
-// GetProductSectionList retrieves product section for a VM
+// GetProductSectionList retrieves product section for a VM. It allows to read VM guest properties.
 //
-// The slice of properties is not necessarily ordered or returned as set before
+// The slice of properties "ProductSectionList.ProductSection.Property" is not necessarily ordered
+// or returned as set before
 func (vm *VM) GetProductSectionList() (*types.ProductSectionList, error) {
 	return getProductSectionList(vm.client, vm.VM.HREF)
 }
