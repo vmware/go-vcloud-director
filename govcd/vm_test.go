@@ -501,7 +501,7 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
 
-	// Skipping this test due bug in vCD. VM refresh status returns old state, though eject task is finished.
+	// Skipping this test due to a bug in vCD. VM refresh status returns old state, though eject task is finished.
 	if vcd.client.APIClientVersionIs("<= 31.0, >= 34.0") {
 		check.Skip("Skipping test because this vCD version has bug")
 	}
