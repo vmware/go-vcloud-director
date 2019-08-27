@@ -554,8 +554,8 @@ func (vm *VM) HandleInsertMedia(org *Org, catalogName, mediaName string) (Task, 
 	})
 }
 
-// Helper function which finds media, calls EjectMedia, waits for task to complete and answer question.
-// Also waits until VM status refreshes - this added as current vCD version has lag in status update.
+// HandleEjectMediaAndAnswer helper function which finds media, calls EjectMedia, waits for task to complete and answer question.
+// Also waits until VM status refreshes - this added as 8.2-10.0 vCD version has lag in status update.
 // answerYes - handles question risen when VM is running. True value enforces ejection.
 func (vm *VM) HandleEjectMediaAndAnswer(org *Org, catalogName, mediaName string, answerYes bool) (*VM, error) {
 	task, err := vm.HandleEjectMedia(org, catalogName, mediaName)
