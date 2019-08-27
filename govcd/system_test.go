@@ -271,6 +271,66 @@ func (vcd *TestVCD) Test_QueryOrgVdcNetworkByName(check *C) {
 	check.Assert(orgVdcNetwork[0].ConnectedTo, Equals, vcd.config.VCD.EdgeGateway)
 }
 
+func (vcd *TestVCD) Test_QueryOrgVdcNetworkByNameWithSpace(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	networkName := "Test_QueryOrgVdcNetworkByNameWith Space"
+
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	if vcd.config.VCD.ExternalNetwork == "" {
+		check.Skip("[Test_CreateOrgVdcNetworkDirect] external network not provided")
+	}
+	externalNetwork, err := vcd.client.GetExternalNetworkByName(vcd.config.VCD.ExternalNetwork)
+	if err != nil {
+		check.Skip("[Test_CreateOrgVdcNetworkDirect] parent external network not found")
+	}
+	// Note that there is no IPScope for this type of network
+	var networkConfig = types.OrgVDCNetwork{
+		Xmlns: types.XMLNamespaceVCloud,
+		Name:  networkName,
+		Configuration: &types.NetworkConfiguration{
+			FenceMode: types.FenceModeBridged,
+			ParentNetwork: &types.Reference{
+				HREF: externalNetwork.ExternalNetwork.HREF,
+				Name: externalNetwork.ExternalNetwork.Name,
+				Type: externalNetwork.ExternalNetwork.Type,
+			},
+			BackwardCompatibilityMode: true,
+		},
+		IsShared: false,
+	}
+	LogNetwork(networkConfig)
+
+	task, err := vcd.vdc.CreateOrgVDCNetwork(&networkConfig)
+	if err != nil {
+		fmt.Printf("error creating the network: %s", err)
+	}
+	check.Assert(err, IsNil)
+	if task == (Task{}) {
+		fmt.Printf("NULL task retrieved after network creation")
+	}
+	check.Assert(task.Task.HREF, Not(Equals), "")
+
+	AddToCleanupList(networkName,
+		"network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name,
+		"Test_CreateOrgVdcNetworkDirect")
+
+	// err = task.WaitTaskCompletion()
+	err = task.WaitInspectTaskCompletion(LogTask, 10)
+	if err != nil {
+		fmt.Printf("error performing task: %#v", err)
+	}
+	check.Assert(err, IsNil)
+
+	orgVdcNetwork, err := QueryOrgVdcNetworkByName(vcd.client, networkName)
+	check.Assert(err, IsNil)
+	check.Assert(len(orgVdcNetwork), Not(Equals), 0)
+	check.Assert(orgVdcNetwork[0].Name, Equals, networkName)
+	check.Assert(orgVdcNetwork[0].ConnectedTo, Equals, externalNetwork.ExternalNetwork.Name)
+}
+
 func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {
 	providerVdcName := vcd.config.VCD.ProviderVdc.Name
 	networkPoolName := vcd.config.VCD.ProviderVdc.NetworkPool
@@ -340,5 +400,55 @@ func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {
 		}
 	}
 	check.Assert(storageProfileFound, Equals, true)
+
+}
+
+func (vcd *TestVCD) Test_QueryProviderVdcByName(check *C) {
+	if vcd.config.VCD.ProviderVdc.Name == "" {
+		check.Skip("Skipping Provider VDC query: no provider VDC was given")
+	}
+	providerVdcs, err := QueryProviderVdcByName(vcd.client, vcd.config.VCD.ProviderVdc.Name)
+	check.Assert(err, IsNil)
+	check.Assert(len(providerVdcs) > 0, Equals, true)
+
+	providerFound := false
+	for _, providerVdc := range providerVdcs {
+		if vcd.config.VCD.ProviderVdc.Name == providerVdc.Name {
+			providerFound = true
+		}
+
+		if testVerbose {
+			fmt.Printf("PVDC %s\n", providerVdc.Name)
+			fmt.Printf("\t href    %s\n", providerVdc.HREF)
+			fmt.Printf("\t status  %s\n", providerVdc.Status)
+			fmt.Printf("\t enabled %v\n", providerVdc.IsEnabled)
+			fmt.Println("")
+		}
+	}
+	check.Assert(providerFound, Equals, true)
+
+}
+
+func (vcd *TestVCD) Test_QueryNetworkPoolByName(check *C) {
+	if vcd.config.VCD.ProviderVdc.NetworkPool == "" {
+		check.Skip("Skipping Provider VDC network pool query: no provider VDC network pool was given")
+	}
+	netPools, err := QueryNetworkPoolByName(vcd.client, vcd.config.VCD.ProviderVdc.NetworkPool)
+	check.Assert(err, IsNil)
+	check.Assert(len(netPools) > 0, Equals, true)
+
+	networkPoolFound := false
+	for _, networkPool := range netPools {
+		if vcd.config.VCD.ProviderVdc.NetworkPool == networkPool.Name {
+			networkPoolFound = true
+		}
+		if testVerbose {
+			fmt.Printf("NP %s\n", networkPool.Name)
+			fmt.Printf("\t href %s\n", networkPool.HREF)
+			fmt.Printf("\t type %v\n", networkPool.NetworkPoolType)
+			fmt.Println("")
+		}
+	}
+	check.Assert(networkPoolFound, Equals, true)
 
 }
