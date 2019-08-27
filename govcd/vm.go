@@ -724,17 +724,17 @@ func (vm *VM) ToggleHardwareVirtualization(isEnabled bool) (Task, error) {
 		"", errMessage, nil)
 }
 
-// SetGuestProperties sets guest properties for a VM
-func (vm *VM) SetGuestProperties(properties *types.ProductSectionList) (*types.ProductSectionList, error) {
-	err := setGuestProperties(vm.client, vm.VM.HREF, properties)
+// SetProductSectionList sets product section for a VM
+func (vm *VM) SetProductSectionList(productSection *types.ProductSectionList) (*types.ProductSectionList, error) {
+	err := setProductSectionList(vm.client, vm.VM.HREF, productSection)
 	if err != nil {
-		return nil, fmt.Errorf("unable to set VM guest properties: %s", err)
+		return nil, fmt.Errorf("unable to set VM product section: %s", err)
 	}
 
-	return vm.GetGuestProperties()
+	return vm.GetProductSectionList()
 }
 
-// GetGuestProperties retrieves guest properties for a VM
-func (vm *VM) GetGuestProperties() (*types.ProductSectionList, error) {
-	return getGuestProperties(vm.client, vm.VM.HREF)
+// GetProductSectionList retrieves product section for a VM
+func (vm *VM) GetProductSectionList() (*types.ProductSectionList, error) {
+	return getProductSectionList(vm.client, vm.VM.HREF)
 }

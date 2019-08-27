@@ -982,9 +982,9 @@ func (vcd *TestVCD) Test_BlockWhileGuestCustomizationStatus(check *C) {
 	check.Assert(err, IsNil)
 }
 
-// Test_VMSetGuestProperties sets guest properties, retrieves them and deeply matches if properties
+// Test_VMSetProductSectionList sets product section, retrieves it and deeply matches if properties
 // were properly set using a propertyTester helper.
-func (vcd *TestVCD) Test_VMSetGuestProperties(check *C) {
+func (vcd *TestVCD) Test_VMSetProductSectionList(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
