@@ -274,7 +274,8 @@ func Test_VMupdateNicParameters_singleNIC(t *testing.T) {
 
 
 // TestProductSectionList_SortByPropertyKeyName validates that a 
-// SortByPropertyKeyName() works on ProductSectionList 
+// SortByPropertyKeyName() works on ProductSectionList and can handle empty properties as well as
+// sort correctly
 func TestProductSectionList_SortByPropertyKeyName(t *testing.T) {
 	sliceProductSection := &types.ProductSectionList{
 		ProductSection: &types.ProductSection{},
@@ -354,20 +355,20 @@ func TestProductSectionList_SortByPropertyKeyName(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		ps *types.ProductSectionList
-		expected *types.ProductSectionList
+		setValue *types.ProductSectionList
+		expectedValue *types.ProductSectionList
 	}{
-		{name: "Slice", ps: sliceProductSection, expected: sliceProductSection},
-		{name: "Empty", ps: emptyProductSection, expected: emptyProductSection},
-		{name: "SortOrder", ps: sortOrder, expected: expectedSortedOrder},
+		{name: "Empty", setValue: emptyProductSection, expectedValue: emptyProductSection},
+		{name: "Slice", setValue: sliceProductSection, expectedValue: sliceProductSection},
+		{name: "SortOrder", setValue: sortOrder, expectedValue: expectedSortedOrder},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := tt.ps
+			p := tt.setValue
 			p.SortByPropertyKeyName()
 
-			if !reflect.DeepEqual(tt.ps, tt.expected) {
-				t.Errorf("Results was not as expected: \n%#+v\n, got:\n %#+v\n", tt.expected, tt.ps)
+			if !reflect.DeepEqual(p, tt.expectedValue) {
+				t.Errorf("Objects were not deeply equal: \n%#+v\n, got:\n %#+v\n", tt.expectedValue, p)
 			}
 
 		})
