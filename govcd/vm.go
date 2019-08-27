@@ -566,21 +566,19 @@ func (vm *VM) HandleEjectMediaAndAnswer(org *Org, catalogName, mediaName string,
 	if err != nil {
 		return nil, fmt.Errorf("error: %s", err)
 	}
-	for i := 1; i < 4; i++ {
-		time.Sleep(200 * time.Millisecond)
+
+	for i := 0; i < 3; i++ {
 		err = vm.Refresh()
 		if err != nil {
 			return nil, fmt.Errorf("error: %s", err)
 		}
 		if isMediaInjected(vm.VM.VirtualHardwareSection.Item) == false {
-			break
+			return vm, nil
 		}
-		if i == 3 {
-			return nil, fmt.Errorf("eject media executed but waiting for state update failed")
-		}
+		time.Sleep(200 * time.Millisecond)
 	}
 
-	return vm, nil
+	return nil, fmt.Errorf("eject media executed but waiting for state update failed")
 }
 
 // check resource subtype for specific value which means media is injected
