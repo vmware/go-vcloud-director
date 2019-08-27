@@ -88,7 +88,6 @@ func propertyTester(vcd *TestVCD, check *C, object productSectionListGetSetter) 
 	check.Assert(getproductSection.ProductSection.Property[2].DefaultValue, Equals, "sys_owner_default")
 	check.Assert(getproductSection.ProductSection.Property[2].UserConfigurable, Equals, false)
 
-
 	// Ensure the object are deeply equal
 	check.Assert(gotproductSection.ProductSection.Property, DeepEquals, productSection.ProductSection.Property)
 	check.Assert(getproductSection, DeepEquals, gotproductSection)

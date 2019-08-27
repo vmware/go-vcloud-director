@@ -272,8 +272,7 @@ func Test_VMupdateNicParameters_singleNIC(t *testing.T) {
 	}
 }
 
-
-// TestProductSectionList_SortByPropertyKeyName validates that a 
+// TestProductSectionList_SortByPropertyKeyName validates that a
 // SortByPropertyKeyName() works on ProductSectionList and can handle empty properties as well as
 // sort correctly
 func TestProductSectionList_SortByPropertyKeyName(t *testing.T) {
@@ -352,10 +351,9 @@ func TestProductSectionList_SortByPropertyKeyName(t *testing.T) {
 		},
 	}
 
-
 	tests := []struct {
-		name   string
-		setValue *types.ProductSectionList
+		name          string
+		setValue      *types.ProductSectionList
 		expectedValue *types.ProductSectionList
 	}{
 		{name: "Empty", setValue: emptyProductSection, expectedValue: emptyProductSection},
