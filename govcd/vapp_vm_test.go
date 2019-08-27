@@ -52,37 +52,42 @@ func propertyTester(vcd *TestVCD, check *C, object productSectionListGetSetter) 
 		},
 	}
 
+	productSection.SortByPropertyKeyName()
+
 	gotproductSection, err := object.SetProductSectionList(productSection)
 	check.Assert(err, IsNil)
+	gotproductSection.SortByPropertyKeyName()
 
 	getproductSection, err := object.GetProductSectionList()
 	check.Assert(err, IsNil)
+	getproductSection.SortByPropertyKeyName()
 
 	// Check that values were set in API
 	check.Assert(getproductSection, NotNil)
 	check.Assert(getproductSection.ProductSection, NotNil)
 	check.Assert(len(getproductSection.ProductSection.Property), Equals, 3)
 
-	check.Assert(getproductSection.ProductSection.Property[0].Key, Equals, "sys_owner")
-	check.Assert(getproductSection.ProductSection.Property[0].Label, Equals, "sys_owner_label")
+	check.Assert(getproductSection.ProductSection.Property[0].Key, Equals, "asset_tag")
+	check.Assert(getproductSection.ProductSection.Property[0].Label, Equals, "asset_tag_label")
 	check.Assert(getproductSection.ProductSection.Property[0].Type, Equals, "string")
-	check.Assert(getproductSection.ProductSection.Property[0].Value.Value, Equals, "test")
-	check.Assert(getproductSection.ProductSection.Property[0].DefaultValue, Equals, "sys_owner_default")
-	check.Assert(getproductSection.ProductSection.Property[0].UserConfigurable, Equals, false)
+	check.Assert(getproductSection.ProductSection.Property[0].Value.Value, Equals, "xxxyyy")
+	check.Assert(getproductSection.ProductSection.Property[0].DefaultValue, Equals, "asset_tag_default")
+	check.Assert(getproductSection.ProductSection.Property[0].UserConfigurable, Equals, true)
 
-	check.Assert(getproductSection.ProductSection.Property[1].Key, Equals, "asset_tag")
-	check.Assert(getproductSection.ProductSection.Property[1].Label, Equals, "asset_tag_label")
+	check.Assert(getproductSection.ProductSection.Property[1].Key, Equals, "guestinfo.config.bootstrap.ip")
+	check.Assert(getproductSection.ProductSection.Property[1].Label, Equals, "guestinfo.config.bootstrap.ip_label")
 	check.Assert(getproductSection.ProductSection.Property[1].Type, Equals, "string")
-	check.Assert(getproductSection.ProductSection.Property[1].Value.Value, Equals, "xxxyyy")
-	check.Assert(getproductSection.ProductSection.Property[1].DefaultValue, Equals, "asset_tag_default")
+	check.Assert(getproductSection.ProductSection.Property[1].Value.Value, Equals, "192.168.12.180")
+	check.Assert(getproductSection.ProductSection.Property[1].DefaultValue, Equals, "default_ip")
 	check.Assert(getproductSection.ProductSection.Property[1].UserConfigurable, Equals, true)
 
-	check.Assert(getproductSection.ProductSection.Property[2].Key, Equals, "guestinfo.config.bootstrap.ip")
-	check.Assert(getproductSection.ProductSection.Property[2].Label, Equals, "guestinfo.config.bootstrap.ip_label")
+	check.Assert(getproductSection.ProductSection.Property[2].Key, Equals, "sys_owner")
+	check.Assert(getproductSection.ProductSection.Property[2].Label, Equals, "sys_owner_label")
 	check.Assert(getproductSection.ProductSection.Property[2].Type, Equals, "string")
-	check.Assert(getproductSection.ProductSection.Property[2].Value.Value, Equals, "192.168.12.180")
-	check.Assert(getproductSection.ProductSection.Property[2].DefaultValue, Equals, "default_ip")
-	check.Assert(getproductSection.ProductSection.Property[2].UserConfigurable, Equals, true)
+	check.Assert(getproductSection.ProductSection.Property[2].Value.Value, Equals, "test")
+	check.Assert(getproductSection.ProductSection.Property[2].DefaultValue, Equals, "sys_owner_default")
+	check.Assert(getproductSection.ProductSection.Property[2].UserConfigurable, Equals, false)
+
 
 	// Ensure the object are deeply equal
 	check.Assert(gotproductSection.ProductSection.Property, DeepEquals, productSection.ProductSection.Property)
