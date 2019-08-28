@@ -988,3 +988,43 @@ func (vcd *TestVCD) Test_VMSetProductSectionList(check *C) {
 	check.Assert(err, IsNil)
 	propertyTester(vcd, check, &vm)
 }
+
+// Test gathering VM virtual hardware items
+func (vcd *TestVCD) Test_GetVirtualHardwareSection(check *C) {
+	itemName := "TestGetVirtualHardwareSection"
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp wasn't properly created")
+	}
+
+	fmt.Printf("Running: %s\n", itemName)
+
+	// Find VM
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	check.Assert(err, IsNil)
+
+	// Preform check of virtual hardware section
+	section, err := vm.GetVirtualHardwareSection()
+	check.Assert(err, IsNil)
+
+	// Check that section.Info is not Nil, as its the only field that may not be omitted when marshalled
+	check.Assert(section.Info, NotNil)
+
+	// Check that section.Item is not Nil before looping over it
+	check.Assert(section.Item, NotNil)
+
+	// Loop over the Items to ensure
+	for _, item := range section.Item {
+		check.Assert(item.ResourceType, NotNil)
+		check.Assert(item.ResourceSubType, NotNil)
+
+		if item.ResourceType == 10 {
+			check.Assert(item.Address, Matches, "^[a-fA-F0-9:]{17}|[a-fA-F0-9]{12}$")
+		}
+	}
+}
