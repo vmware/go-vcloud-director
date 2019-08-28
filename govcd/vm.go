@@ -554,6 +554,44 @@ func (vm *VM) HandleInsertMedia(org *Org, catalogName, mediaName string) (Task, 
 	})
 }
 
+// HandleEjectMediaAndAnswer helper function which finds media, calls EjectMedia, waits for task to complete and answer question.
+// Also waits until VM status refreshes - this added as 9.7-10.0 vCD versions has lag in status update.
+// answerYes - handles question risen when VM is running. True value enforces ejection.
+func (vm *VM) HandleEjectMediaAndAnswer(org *Org, catalogName, mediaName string, answerYes bool) (*VM, error) {
+	task, err := vm.HandleEjectMedia(org, catalogName, mediaName)
+	if err != nil {
+		return nil, fmt.Errorf("error: %s", err)
+	}
+
+	err = task.WaitTaskCompletion(answerYes)
+	if err != nil {
+		return nil, fmt.Errorf("error: %s", err)
+	}
+
+	for i := 0; i < 3; i++ {
+		err = vm.Refresh()
+		if err != nil {
+			return nil, fmt.Errorf("error: %s", err)
+		}
+		if isMediaInjected(vm.VM.VirtualHardwareSection.Item) == false {
+			return vm, nil
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+
+	return nil, fmt.Errorf("eject media executed but waiting for state update failed")
+}
+
+// check resource subtype for specific value which means media is injected
+func isMediaInjected(items []*types.VirtualHardwareItem) bool {
+	for _, hardwareItem := range items {
+		if hardwareItem.ResourceSubType == types.VMsCDResourceSubType {
+			return true
+		}
+	}
+	return false
+}
+
 // Helper function which finds media and calls EjectMedia
 func (vm *VM) HandleEjectMedia(org *Org, catalogName, mediaName string) (EjectTask, error) {
 	media, err := FindMediaAsCatalogItem(org, catalogName, mediaName)
