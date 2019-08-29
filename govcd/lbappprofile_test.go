@@ -96,6 +96,7 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	// Invalid persistence method invalid_method. Valid methods are: COOKIE|SSL-SESSIONID|SOURCEIP.
 	lbAppProfileByID.Persistence.Method = "invalid_method"
 	updatedAppProfile, err = edge.UpdateLbAppProfile(lbAppProfileByID)
+	check.Assert(updatedAppProfile, IsNil)
 	check.Assert(err, ErrorMatches, ".*Invalid persistence method .*Valid methods are:.*")
 
 	// Update should fail without name

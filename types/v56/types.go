@@ -1179,7 +1179,6 @@ func (p *ProductSectionList) SortByPropertyKeyName() {
 	sort.SliceStable(p.ProductSection.Property, func(i, j int) bool {
 		return p.ProductSection.Property[i].Key < p.ProductSection.Property[j].Key
 	})
-	return
 }
 
 type ProductSection struct {
