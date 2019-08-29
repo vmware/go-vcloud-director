@@ -680,3 +680,13 @@ func (vcd *TestVCD) Test_RemoveAllNetworks(check *C) {
 	}
 	check.Assert(hasNetworks, Equals, false)
 }
+
+// Test_VappSetProductSectionList sets vApp product section, retrieves it and deeply matches if
+// properties were properly set using a propertyTester helper.
+func (vcd *TestVCD) Test_VappSetProductSectionList(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+	vapp := vcd.findFirstVapp()
+	propertyTester(vcd, check, &vapp)
+}

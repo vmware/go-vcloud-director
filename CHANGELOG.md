@@ -22,6 +22,11 @@
 * Added methods `AdminOrg.GetVDCByName` and related `GetVDCById`, `GetVDCByNameOrId`
 * Added methods `AdminOrg.GetAdminVDCByName` and related `GetAdminVDCById`, `GetAdminVDCByNameOrId`
 * Added methods `Catalog.Refresh` and `AdminCatalog.Refresh`
+* Added method `vm.GetVirtualHardwareSection` to retrieve virtual hardware items [#200](https://github.com/vmware/go-vcloud-director/pull/200)
+* Added methods `vm.SetProductSectionList` and `vm.GetProductSectionList` allowing to manipulate VM
+guest properties [#235](https://github.com/vmware/go-vcloud-director/pull/235)
+* Added methods `vapp.SetProductSectionList` and `vapp.GetProductSectionList` allowing to manipulate
+vApp guest properties [#235](https://github.com/vmware/go-vcloud-director/pull/235)
 
 IMPROVEMENTS:
 

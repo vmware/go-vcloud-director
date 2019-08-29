@@ -274,7 +274,7 @@ func checkLb(queryUrl string, expectedResponses []string, maxRetryTimeout int) e
 	for {
 		select {
 		case <-timeoutAfter:
-			return fmt.Errorf("timed out waiting for all nodes to be up: %s", err)
+			return fmt.Errorf("timed out waiting for all nodes to be up")
 		case <-tick.C:
 			var resp *http.Response
 			resp, err = httpClient.Get(queryUrl)

@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -268,5 +269,106 @@ func Test_VMupdateNicParameters_singleNIC(t *testing.T) {
 			}
 		})
 
+	}
+}
+
+// TestProductSectionList_SortByPropertyKeyName validates that a
+// SortByPropertyKeyName() works on ProductSectionList and can handle empty properties as well as
+// sort correctly
+func TestProductSectionList_SortByPropertyKeyName(t *testing.T) {
+	sliceProductSection := &types.ProductSectionList{
+		ProductSection: &types.ProductSection{},
+	}
+
+	emptyProductSection := &types.ProductSectionList{
+		ProductSection: &types.ProductSection{
+			Info: "Custom properties",
+		},
+	}
+
+	// unordered list for test
+	sortOrder := &types.ProductSectionList{
+		ProductSection: &types.ProductSection{
+			Info: "Custom properties",
+			Property: []*types.Property{
+				&types.Property{
+					UserConfigurable: false,
+					Key:              "sys_owner",
+					Label:            "sys_owner_label",
+					Type:             "string",
+					DefaultValue:     "sys_owner_default",
+					Value:            &types.Value{Value: "test"},
+				},
+				&types.Property{
+					UserConfigurable: true,
+					Key:              "asset_tag",
+					Label:            "asset_tag_label",
+					Type:             "string",
+					DefaultValue:     "asset_tag_default",
+					Value:            &types.Value{Value: "xxxyyy"},
+				},
+				&types.Property{
+					UserConfigurable: true,
+					Key:              "guestinfo.config.bootstrap.ip",
+					Label:            "guestinfo.config.bootstrap.ip_label",
+					Type:             "string",
+					DefaultValue:     "default_ip",
+					Value:            &types.Value{Value: "192.168.12.180"},
+				},
+			},
+		},
+	}
+	// correct state after ordering
+	expectedSortedOrder := &types.ProductSectionList{
+		ProductSection: &types.ProductSection{
+			Info: "Custom properties",
+			Property: []*types.Property{
+				&types.Property{
+					UserConfigurable: true,
+					Key:              "asset_tag",
+					Label:            "asset_tag_label",
+					Type:             "string",
+					DefaultValue:     "asset_tag_default",
+					Value:            &types.Value{Value: "xxxyyy"},
+				},
+				&types.Property{
+					UserConfigurable: true,
+					Key:              "guestinfo.config.bootstrap.ip",
+					Label:            "guestinfo.config.bootstrap.ip_label",
+					Type:             "string",
+					DefaultValue:     "default_ip",
+					Value:            &types.Value{Value: "192.168.12.180"},
+				},
+				&types.Property{
+					UserConfigurable: false,
+					Key:              "sys_owner",
+					Label:            "sys_owner_label",
+					Type:             "string",
+					DefaultValue:     "sys_owner_default",
+					Value:            &types.Value{Value: "test"},
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		name          string
+		setValue      *types.ProductSectionList
+		expectedValue *types.ProductSectionList
+	}{
+		{name: "Empty", setValue: emptyProductSection, expectedValue: emptyProductSection},
+		{name: "Slice", setValue: sliceProductSection, expectedValue: sliceProductSection},
+		{name: "SortOrder", setValue: sortOrder, expectedValue: expectedSortedOrder},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := tt.setValue
+			p.SortByPropertyKeyName()
+
+			if !reflect.DeepEqual(p, tt.expectedValue) {
+				t.Errorf("Objects were not deeply equal: \n%#+v\n, got:\n %#+v\n", tt.expectedValue, p)
+			}
+
+		})
 	}
 }
