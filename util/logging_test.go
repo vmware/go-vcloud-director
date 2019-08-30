@@ -49,10 +49,8 @@ func TestEnableLogging(t *testing.T) {
 	ApiLogFileName = "temporary-for-test.log"
 	customLogFile := "temporary-custom-for-test.log"
 	if fileExists(ApiLogFileName) {
-		err := os.Remove(ApiLogFileName)
+		err := removeFile(t, ApiLogFileName)
 		if err != nil {
-			t.Logf("couldn't remove %s: %s", ApiLogFileName, err)
-			t.Fail()
 			return
 		}
 	}
