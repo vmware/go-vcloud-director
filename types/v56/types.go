@@ -1819,6 +1819,56 @@ type LbVirtualServer struct {
 	ApplicationRuleIds   []string `xml:"applicationRuleId,omitempty"`
 }
 
+// EdgeNatRule contains shared structure for SNAT and DNAT rule configuration using
+// NSX-V proxied edge gateway endpoint
+type EdgeNatRule struct {
+	XMLName           xml.Name `xml:"natRule"`
+	ID                string   `xml:"ruleId,omitempty"`
+	Name              string   `xml:"name"`
+	RuleType          string   `xml:"ruleType"`
+	RuleTag           string   `xml:"ruleTag"`
+	Action            string   `xml:"action"`
+	Vnic              string   `xml:"vnic"`
+	OriginalAddress   string   `xml:"originalAddress"`
+	TranslatedAddress string   `xml:"translatedAddress"`
+	LoggingEnabled    string   `xml:"loggingEnabled"`
+	Enabled           string   `xml:"enabled"`
+	Description       string   `xml:"description"`
+	Protocol          string   `xml:"protocol"`
+	OriginalPort      string   `xml:"originalPort"`
+	TranslatedPort    string   `xml:"translatedPort"`
+}
+
+// EdgeSnatRule embeds EdgeNatRule and adds SNAT specific fields
+type EdgeSnatRule struct {
+	XMLName           xml.Name `xml:"natRule"`
+	ID                string   `xml:"ruleId,omitempty"`
+	Name              string   `xml:"name"`
+	RuleType          string   `xml:"ruleType"`
+	RuleTag           string   `xml:"ruleTag"`
+	Action            string   `xml:"action,omitempty"`
+	Vnic              string   `xml:"vnic,omitempty"`
+	OriginalAddress   string   `xml:"originalAddress,omitempty"`
+	TranslatedAddress string   `xml:"translatedAddress,omitempty"`
+	LoggingEnabled    string   `xml:"loggingEnabled,omitempty"`
+	Enabled           string   `xml:"enabled,omitempty"`
+	Description       string   `xml:"description,omitempty"`
+	Protocol          string   `xml:"protocol,omitempty"`
+	OriginalPort      string   `xml:"originalPort,omitempty"`
+	TranslatedPort    string   `xml:"translatedPort,omitempty"`
+
+	SnatMatchDestinationAddress string `xml:"dnatMatchDestinationAddress,omitempty"`
+	SnatMatchDestinationPort    string `xml:"dnatMatchDestinationPort,omitempty"`
+}
+
+// EdgeDnatRule embeds EdgeNatRule and adds DNAT specific fields
+type EdgeDnatRule struct {
+	EdgeNatRule
+
+	DnatMatchSourceAddress string `xml:"dnatMatchSourceAddress"`
+	DnatMatchSourcePort    string `xml:"dnatMatchSourcePort"`
+}
+
 // VendorTemplate is information about a vendor service template. This is optional.
 // Type: VendorTemplateType
 // Namespace: http://www.vmware.com/vcloud/v1.5
