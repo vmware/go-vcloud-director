@@ -74,6 +74,7 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 	// Unknown keyword 'invalid_script'
 	lbAppRuleByID.Script = "invalid_script"
 	updatedAppProfile, err = edge.UpdateLbAppRule(lbAppRuleByID)
+	check.Assert(updatedAppProfile, IsNil)
 	check.Assert(err, ErrorMatches, ".*invalid applicationRule script.*")
 
 	// Update should fail without name

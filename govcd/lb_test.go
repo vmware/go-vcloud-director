@@ -69,7 +69,8 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	// Wait until vApp becomes configurable
 	initialVappStatus, err := vapp.GetStatus()
 	check.Assert(err, IsNil)
-	vapp.BlockWhileStatus(initialVappStatus, vapp.client.MaxRetryTimeout)
+	err = vapp.BlockWhileStatus(initialVappStatus, vapp.client.MaxRetryTimeout)
+	check.Assert(err, IsNil)
 	fmt.Printf(". Done\n")
 
 	fmt.Printf("# Attaching vDC network '%s' to vApp '%s'", vcd.config.VCD.Network.Net1, TestLb)
@@ -94,7 +95,9 @@ func (vcd *TestVCD) Test_LB(check *C) {
 		})
 
 	vm1, err := spawnVM("FirstNode", *vdc, vapp, desiredNetConfig, vappTemplate, check)
+	check.Assert(err, IsNil)
 	vm2, err := spawnVM("SecondNode", *vdc, vapp, desiredNetConfig, vappTemplate, check)
+	check.Assert(err, IsNil)
 
 	// Get IPs alocated to the VMs
 	ip1 := vm1.VM.NetworkConnectionSection.NetworkConnection[0].IPAddress
@@ -145,7 +148,6 @@ func (vcd *TestVCD) Test_LB(check *C) {
 
 	// Finally after some cleanups - check if querying succeeded
 	check.Assert(queryErr, IsNil)
-	return
 }
 
 // validateTestLbPrerequisites verifies the following:
@@ -188,10 +190,12 @@ func spawnVM(name string, vdc Vdc, vapp VApp, net types.NetworkConnectionSection
 	task, err = vm.ChangeCPUCount(2)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 
 	task, err = vm.ChangeMemorySize(512)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 	fmt.Printf(". Done\n")
 
 	fmt.Printf("# Applying customization script for VM '%s'", name)
@@ -208,7 +212,9 @@ func spawnVM(name string, vdc Vdc, vapp VApp, net types.NetworkConnectionSection
 
 	fmt.Printf("# Powering on VM '%s'", name)
 	task, err = vm.PowerOn()
+	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 	fmt.Printf(". Done\n")
 
 	return vm, nil
@@ -345,7 +351,7 @@ func deleteFirewallRule(ruleDescription string, vdc Vdc, vcd *TestVCD, check *C)
 	edge, err := vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
 	rules := edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.FirewallService.FirewallRule
-	for index, _ := range rules {
+	for index := range rules {
 		if rules[index].Description == ruleDescription {
 			rules = append(rules[:index], rules[index+1:]...)
 		}

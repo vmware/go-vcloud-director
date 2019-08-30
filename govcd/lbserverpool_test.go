@@ -130,6 +130,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	// Invalid algorithm hash. Valid algorithms are: IP-HASH|ROUND-ROBIN|URI|LEASTCONN|URL|HTTP-HEADER.
 	lbPoolByID.Algorithm = "invalid_algorithm"
 	updatedLBPool, err = edge.UpdateLbServerPool(lbPoolByID)
+	check.Assert(updatedLBPool, IsNil)
 	check.Assert(err, ErrorMatches, ".*Invalid algorithm.*Valid algorithms are:.*")
 
 	// Update should fail without name
