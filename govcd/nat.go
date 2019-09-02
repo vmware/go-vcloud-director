@@ -5,16 +5,50 @@
 package govcd
 
 import (
+	"encoding/xml"
 	"fmt"
 	"net/http"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+
+type natRuleRequest struct {
+	XMLName       xml.Name `xml:"natRules"`
+	EdgeSnatRules []*types.EdgeSnatRule
+}
+
+type jonines struct {
+	XMLName  xml.Name `xml:"nat"`
+	Version  string   `xml:"version"`
+	NatRule natRuleRequest
+}
+
+type petrines struct {
+	XMLName  xml.Name `xml:"nat"`
+	Version  string   `xml:"version"`
+	NatRules struct {
+		Rules []*types.EdgeSnatRule `xml:"natRule"`
+	} `xml:"natRules"`
+}
+
 func (egw *EdgeGateway) CreateSnatRule(snatRuleConfig *types.EdgeSnatRule) (*types.EdgeSnatRule, error) {
 	if err := validateCreateSnatRule(snatRuleConfig, egw); err != nil {
 		return nil, err
 	}
+
+	natRuleRequest := &struct {
+		XMLName       xml.Name `xml:"natRules"`
+		EdgeSnatRules []*types.EdgeSnatRule
+	}{}
+	// natRuleRequest := &jonines{}
+
+	// natRuleRequest := &petrines{}
+
+	natRules := []*types.EdgeSnatRule{}
+	natRules = append(natRules, snatRuleConfig)
+
+	natRuleRequest.EdgeSnatRules = natRules
 
 	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeCreateNatPath)
 	if err != nil {
@@ -22,7 +56,7 @@ func (egw *EdgeGateway) CreateSnatRule(snatRuleConfig *types.EdgeSnatRule) (*typ
 	}
 	// We expect to get http.StatusCreated or if not an error of type types.NSXError
 	resp, err := egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodPost, types.AnyXMLMime,
-		"error creating SNAT rule: %s", snatRuleConfig, &types.NSXError{})
+		"error creating SNAT rule: %s", natRuleRequest, &types.NSXError{})
 	if err != nil {
 		return nil, err
 	}
@@ -57,9 +91,11 @@ func (egw *EdgeGateway) GetSnatRule(snatRuleConfig *types.EdgeSnatRule) (*types.
 	}
 
 	// Anonymous struct to unwrap response
-	natRuleResponse := &struct {
-		EdgeSnatRules []*types.EdgeSnatRule `xml:"natRules"`
-	}{}
+	// natRuleResponse := &struct {
+	// 	EdgeSnatRules []*types.EdgeSnatRule `xml:"natRules"`
+	// }{}
+
+	natRuleResponse := &petrines{}
 
 	// This query returns all application rules as the API does not have filtering options
 	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
@@ -68,9 +104,13 @@ func (egw *EdgeGateway) GetSnatRule(snatRuleConfig *types.EdgeSnatRule) (*types.
 		return nil, err
 	}
 
+
+	fmt.Printf("whole struct %+#v\n", natRuleResponse)
+
 	// Search for nat rule by ID or by Name
-	for _, rule := range natRuleResponse.EdgeSnatRules {
+	for _, rule := range natRuleResponse.NatRules.Rules {
 		// If ID was specified for lookup - look for the same ID
+		fmt.Printf("checking %+#v\n", rule)
 		if rule.ID != "" && rule.ID == snatRuleConfig.ID {
 			return rule, nil
 		}
@@ -91,7 +131,7 @@ func (egw *EdgeGateway) GetSnatRule(snatRuleConfig *types.EdgeSnatRule) (*types.
 	return nil, ErrorEntityNotFound
 }
 
-func (egw *EdgeGateway) DeleteSnatRule(SnatRuleConfig *types.EdgeSnatRule) error {
+func (egw *EdgeGateway) DeleteSnatRule(snatRuleConfig *types.EdgeSnatRule) error {
 	return nil
 }
 

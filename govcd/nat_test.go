@@ -20,10 +20,18 @@ func (vcd *TestVCD) Test_NatRule(check *C) {
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
 	natRule := &types.EdgeSnatRule{
-		Name:              "asd",
-		Action:            "snat",
-		OriginalAddress:   "10.10.10.15",
-		TranslatedAddress: "192.168.1.110",
+		RuleType: "user",
+		// Name:                        "asd",
+		Action:                      "snat",
+		OriginalAddress:             "10.10.10.15",
+		TranslatedAddress:           "192.168.1.110",
+		// SnatMatchDestinationAddress: "any",
+		Enabled:                     "true",
+		// LoggingEnabled:              "false",
+		// OriginalPort:                "3380",
+		// TranslatedPort:              "3380",
+		Protocol: "any",
+		Vnic: "0",
 	}
 
 	_, err = edge.CreateSnatRule(natRule)
