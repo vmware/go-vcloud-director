@@ -12,24 +12,11 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-
-type natRuleRequest struct {
-	XMLName       xml.Name `xml:"natRules"`
-	EdgeSnatRules []*types.EdgeSnatRule
-}
-
-type jonines struct {
+// wrappedEdgeSnatRules is used to unwrap response when retrieving
+type wrappedEdgeSnatRules struct {
 	XMLName  xml.Name `xml:"nat"`
 	Version  string   `xml:"version"`
-	NatRule natRuleRequest
-}
-
-type petrines struct {
-	XMLName  xml.Name `xml:"nat"`
-	Version  string   `xml:"version"`
-	NatRules struct {
-		Rules []*types.EdgeSnatRule `xml:"natRule"`
-	} `xml:"natRules"`
+	NatR types.EdgeSnatRules   `xml:"natRules"`
 }
 
 func (egw *EdgeGateway) CreateSnatRule(snatRuleConfig *types.EdgeSnatRule) (*types.EdgeSnatRule, error) {
@@ -37,13 +24,7 @@ func (egw *EdgeGateway) CreateSnatRule(snatRuleConfig *types.EdgeSnatRule) (*typ
 		return nil, err
 	}
 
-	natRuleRequest := &struct {
-		XMLName       xml.Name `xml:"natRules"`
-		EdgeSnatRules []*types.EdgeSnatRule
-	}{}
-	// natRuleRequest := &jonines{}
-
-	// natRuleRequest := &petrines{}
+	natRuleRequest := &types.EdgeSnatRules{}
 
 	natRules := []*types.EdgeSnatRule{}
 	natRules = append(natRules, snatRuleConfig)
@@ -90,12 +71,7 @@ func (egw *EdgeGateway) GetSnatRule(snatRuleConfig *types.EdgeSnatRule) (*types.
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
 
-	// Anonymous struct to unwrap response
-	// natRuleResponse := &struct {
-	// 	EdgeSnatRules []*types.EdgeSnatRule `xml:"natRules"`
-	// }{}
-
-	natRuleResponse := &petrines{}
+	natRuleResponse := &wrappedEdgeSnatRules{}
 
 	// This query returns all application rules as the API does not have filtering options
 	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
@@ -108,7 +84,8 @@ func (egw *EdgeGateway) GetSnatRule(snatRuleConfig *types.EdgeSnatRule) (*types.
 	fmt.Printf("whole struct %+#v\n", natRuleResponse)
 
 	// Search for nat rule by ID or by Name
-	for _, rule := range natRuleResponse.NatRules.Rules {
+	// for _, rule := range natRuleResponse.NatRules.EdgeSnatRules  {
+	for _, rule := range natRuleResponse.NatR.EdgeSnatRules  {
 		// If ID was specified for lookup - look for the same ID
 		fmt.Printf("checking %+#v\n", rule)
 		if rule.ID != "" && rule.ID == snatRuleConfig.ID {
@@ -140,9 +117,13 @@ func validateCreateSnatRule(snatRuleConfig *types.EdgeSnatRule, egw *EdgeGateway
 		return fmt.Errorf("only advanced edge gateways support SNAT rules")
 	}
 
-	// if snatRuleConfig.RuleType == "" {
-	// 	return fmt.Errorf("SnatRule")
-	// }
+	if snatRuleConfig.Action == "" {
+		return fmt.Errorf("NAT rule must have an action")
+	}
+
+	if snatRuleConfig.TranslatedAddress == "" {
+		return fmt.Errorf("NAT rule must translated address specified")
+	}
 
 	return nil
 }
