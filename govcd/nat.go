@@ -14,9 +14,9 @@ import (
 
 // wrappedEdgeSnatRules is used to unwrap response when retrieving
 type wrappedEdgeSnatRules struct {
-	XMLName  xml.Name `xml:"nat"`
-	Version  string   `xml:"version"`
-	NatR types.EdgeSnatRules   `xml:"natRules"`
+	XMLName xml.Name            `xml:"nat"`
+	Version string              `xml:"version"`
+	NatR    types.EdgeSnatRules `xml:"natRules"`
 }
 
 func (egw *EdgeGateway) CreateSnatRule(snatRuleConfig *types.EdgeSnatRule) (*types.EdgeSnatRule, error) {
@@ -80,12 +80,11 @@ func (egw *EdgeGateway) GetSnatRule(snatRuleConfig *types.EdgeSnatRule) (*types.
 		return nil, err
 	}
 
-
 	fmt.Printf("whole struct %+#v\n", natRuleResponse)
 
 	// Search for nat rule by ID or by Name
 	// for _, rule := range natRuleResponse.NatRules.EdgeSnatRules  {
-	for _, rule := range natRuleResponse.NatR.EdgeSnatRules  {
+	for _, rule := range natRuleResponse.NatR.EdgeSnatRules {
 		// If ID was specified for lookup - look for the same ID
 		fmt.Printf("checking %+#v\n", rule)
 		if rule.ID != "" && rule.ID == snatRuleConfig.ID {
@@ -132,10 +131,6 @@ func validateGetSnatRule(snatRuleConfig *types.EdgeSnatRule, egw *EdgeGateway) e
 	if !egw.HasAdvancedNetworking() {
 		return fmt.Errorf("only advanced edge gateways support SNAT rules")
 	}
-
-	// if snatRuleConfig.RuleType == "" {
-	// 	return fmt.Errorf("SnatRule")
-	// }
 
 	return nil
 }

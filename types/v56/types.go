@@ -1854,8 +1854,8 @@ type EdgeSnatRule struct {
 	Enabled           string   `xml:"enabled,omitempty"`
 	Description       string   `xml:"description,omitempty"`
 	Protocol          string   `xml:"protocol,omitempty"`
-	OriginalPort      int   `xml:"originalPort,omitempty"`
-	TranslatedPort    int   `xml:"translatedPort,omitempty"`
+	OriginalPort      int      `xml:"originalPort,omitempty"`
+	TranslatedPort    int      `xml:"translatedPort,omitempty"`
 
 	SnatMatchDestinationAddress string `xml:"dnatMatchDestinationAddress,omitempty"`
 	SnatMatchDestinationPort    string `xml:"dnatMatchDestinationPort,omitempty"`
@@ -1863,11 +1863,9 @@ type EdgeSnatRule struct {
 
 // EdgeSnatRules nests EdgeSnatRule as a convenience for mashalling
 type EdgeSnatRules struct {
-	XMLName       xml.Name `xml:"natRules"`
-	EdgeSnatRules []*EdgeSnatRule  `xml:"natRule"`
+	XMLName       xml.Name        `xml:"natRules"`
+	EdgeSnatRules []*EdgeSnatRule `xml:"natRule"`
 }
-
-
 
 // EdgeDnatRule embeds EdgeNatRule and adds DNAT specific fields
 type EdgeDnatRule struct {
