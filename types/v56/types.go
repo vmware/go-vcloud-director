@@ -1824,25 +1824,6 @@ type LbVirtualServer struct {
 type EdgeNatRule struct {
 	XMLName           xml.Name `xml:"natRule"`
 	ID                string   `xml:"ruleId,omitempty"`
-	Name              string   `xml:"name"`
-	RuleType          string   `xml:"ruleType"`
-	RuleTag           string   `xml:"ruleTag"`
-	Action            string   `xml:"action"`
-	Vnic              string   `xml:"vnic"`
-	OriginalAddress   string   `xml:"originalAddress"`
-	TranslatedAddress string   `xml:"translatedAddress"`
-	LoggingEnabled    string   `xml:"loggingEnabled"`
-	Enabled           string   `xml:"enabled"`
-	Description       string   `xml:"description"`
-	Protocol          string   `xml:"protocol"`
-	OriginalPort      string   `xml:"originalPort"`
-	TranslatedPort    string   `xml:"translatedPort"`
-}
-
-// EdgeSnatRule embeds EdgeNatRule and adds SNAT specific fields
-type EdgeSnatRule struct {
-	XMLName           xml.Name `xml:"natRule"`
-	ID                string   `xml:"ruleId,omitempty"`
 	Name              string   `xml:"name,omitempty"`
 	RuleType          string   `xml:"ruleType,omitempty"`
 	RuleTag           string   `xml:"ruleTag,omitempty"`
@@ -1854,17 +1835,29 @@ type EdgeSnatRule struct {
 	Enabled           string   `xml:"enabled,omitempty"`
 	Description       string   `xml:"description,omitempty"`
 	Protocol          string   `xml:"protocol,omitempty"`
-	OriginalPort      int      `xml:"originalPort,omitempty"`
-	TranslatedPort    int      `xml:"translatedPort,omitempty"`
+	OriginalPort      string   `xml:"originalPort,omitempty"`
+	TranslatedPort    string   `xml:"translatedPort,omitempty"`
+}
+
+// EdgeSnatRule embeds EdgeNatRule and adds SNAT specific fields
+type EdgeSnatRule struct {
+	XMLName           xml.Name `xml:"natRule"`
+	ID                string   `xml:"ruleId,omitempty"`
+	RuleType          string   `xml:"ruleType,omitempty"`
+	RuleTag           string   `xml:"ruleTag,omitempty"`
+	Action            string   `xml:"action,omitempty"`
+	Vnic              string   `xml:"vnic,omitempty"`
+	OriginalAddress   string   `xml:"originalAddress,omitempty"`
+	TranslatedAddress string   `xml:"translatedAddress,omitempty"`
+	LoggingEnabled    string   `xml:"loggingEnabled,omitempty"`
+	Enabled           string   `xml:"enabled,omitempty"`
+	Description       string   `xml:"description,omitempty"`
+	Protocol          string   `xml:"protocol,omitempty"`
+	OriginalPort      string   `xml:"originalPort,omitempty"`
+	TranslatedPort    string   `xml:"translatedPort,omitempty"`
 
 	SnatMatchDestinationAddress string `xml:"dnatMatchDestinationAddress,omitempty"`
 	SnatMatchDestinationPort    string `xml:"dnatMatchDestinationPort,omitempty"`
-}
-
-// EdgeSnatRules nests EdgeSnatRule as a convenience for mashalling
-type EdgeSnatRules struct {
-	XMLName       xml.Name        `xml:"natRules"`
-	EdgeSnatRules []*EdgeSnatRule `xml:"natRule"`
 }
 
 // EdgeDnatRule embeds EdgeNatRule and adds DNAT specific fields

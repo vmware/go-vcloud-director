@@ -21,11 +21,11 @@ func (vcd *TestVCD) Test_NatRule(check *C) {
 
 	natRule := &types.EdgeSnatRule{
 		Action:            "snat",
-		TranslatedAddress: "192.168.1.110",
+		TranslatedAddress: vcd.config.VCD.ExternalIp, // Edge gateway address
+		OriginalAddress:   vcd.config.VCD.InternalIp,
 		Enabled:           "true",
 		// RuleType: "user",
 		// Name:                        "asd",
-		// OriginalAddress:             "10.10.10.15",
 		// SnatMatchDestinationAddress: "any",
 		// LoggingEnabled:              "false",
 		// OriginalPort:                "3380",
@@ -34,7 +34,22 @@ func (vcd *TestVCD) Test_NatRule(check *C) {
 		// Vnic: "0",
 	}
 
-	_, err = edge.CreateSnatRule(natRule)
+	createdSnatRule, err := edge.CreateSnatRule(natRule)
+	check.Assert(err, IsNil)
+
+	gotSnatRule, err := edge.GetSnatRuleById(createdSnatRule.ID)
+	check.Assert(err, IsNil)
+	check.Assert(gotSnatRule.ID, Equals, createdSnatRule.ID)
+
+	// Set ID and update nat rule with description
+	natRule.ID = gotSnatRule.ID
+	natRule.Description = "Description for SNAT rule"
+	updatedSnatRule, err := edge.UpdateSnatRule(natRule)
+	check.Assert(err, IsNil)
+	check.Assert(updatedSnatRule.Description, Equals, natRule.Description)
+
+
+	err = edge.DeleteSnatRuleById(gotSnatRule.ID)
 	check.Assert(err, IsNil)
 
 }

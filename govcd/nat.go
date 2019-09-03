@@ -12,24 +12,29 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// wrappedEdgeSnatRules is used to unwrap response when retrieving
-type wrappedEdgeSnatRules struct {
-	XMLName xml.Name            `xml:"nat"`
-	Version string              `xml:"version"`
-	NatR    types.EdgeSnatRules `xml:"natRules"`
+// requestEdgeSnatRules nests EdgeSnatRule as a convenience for unmarshalling POST requests
+type requestEdgeSnatRules struct {
+	XMLName       xml.Name              `xml:"natRules"`
+	EdgeSnatRules []*types.EdgeSnatRule `xml:"natRule"`
 }
 
+// responseEdgeSnatRules is used to unwrap response when retrieving
+type responseEdgeSnatRules struct {
+	XMLName  xml.Name             `xml:"nat"`
+	Version  string               `xml:"version"`
+	NatRules requestEdgeSnatRules `xml:"natRules"`
+}
+
+// CreateSnatRule
 func (egw *EdgeGateway) CreateSnatRule(snatRuleConfig *types.EdgeSnatRule) (*types.EdgeSnatRule, error) {
 	if err := validateCreateSnatRule(snatRuleConfig, egw); err != nil {
 		return nil, err
 	}
 
-	natRuleRequest := &types.EdgeSnatRules{}
-
-	natRules := []*types.EdgeSnatRule{}
-	natRules = append(natRules, snatRuleConfig)
-
-	natRuleRequest.EdgeSnatRules = natRules
+	// Wrap the provided rule for POST request
+	natRuleRequest := requestEdgeSnatRules{
+		EdgeSnatRules: []*types.EdgeSnatRule{snatRuleConfig},
+	}
 
 	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeCreateNatPath)
 	if err != nil {
@@ -43,22 +48,44 @@ func (egw *EdgeGateway) CreateSnatRule(snatRuleConfig *types.EdgeSnatRule) (*typ
 	}
 
 	// Location header should look similar to:
-	// [/network/edges/edge-3/loadbalancer/config/applicationrules/applicationRule-4]
-	lbAppRuleId, err := extractNsxObjectIdFromPath(resp.Header.Get("Location"))
+	// [/network/edges/edge-1/nat/config/rules/197157]
+	snatRuleId, err := extractNsxObjectIdFromPath(resp.Header.Get("Location"))
 	if err != nil {
 		return nil, err
 	}
 
-	readAppRule, err := egw.GetSnatRule(&types.EdgeSnatRule{ID: lbAppRuleId})
+	readSnatRule, err := egw.GetSnatRule(&types.EdgeSnatRule{ID: snatRuleId})
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve application rule with ID (%s) after creation: %s",
-			lbAppRuleId, err)
+		return nil, fmt.Errorf("unable to retrieve SNAT rule with ID (%s) after creation: %s",
+			snatRuleId, err)
 	}
-	return readAppRule, nil
+	return readSnatRule, nil
 }
 
-func (egw *EdgeGateway) UpdateSnatRule(SnatRuleConfig *types.EdgeSnatRule) (*types.EdgeSnatRule, error) {
-	return nil, nil
+func (egw *EdgeGateway) UpdateSnatRule(snatRuleConfig *types.EdgeSnatRule) (*types.EdgeSnatRule, error) {
+	err := validateUpdateSnatRule(snatRuleConfig, egw)
+	if err != nil {
+		return nil, err
+	}
+	
+	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeCreateNatPath + "/" + snatRuleConfig.ID)
+	if err != nil {
+		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
+	}
+
+	// Result should be 204, if not we expect an error of type types.NSXError
+	_, err = egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodPut, types.AnyXMLMime,
+		"error while updating NAT rule : %s", snatRuleConfig, &types.NSXError{})
+	if err != nil {
+		return nil, err
+	}
+
+	readSnatRule, err := egw.GetSnatRuleById(snatRuleConfig.ID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve NAT rule with ID (%s) after update: %s",
+		readSnatRule.ID, err)
+	}
+	return readSnatRule, nil
 }
 
 func (egw *EdgeGateway) GetSnatRule(snatRuleConfig *types.EdgeSnatRule) (*types.EdgeSnatRule, error) {
@@ -71,7 +98,7 @@ func (egw *EdgeGateway) GetSnatRule(snatRuleConfig *types.EdgeSnatRule) (*types.
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
 
-	natRuleResponse := &wrappedEdgeSnatRules{}
+	natRuleResponse := &responseEdgeSnatRules{}
 
 	// This query returns all application rules as the API does not have filtering options
 	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
@@ -80,13 +107,13 @@ func (egw *EdgeGateway) GetSnatRule(snatRuleConfig *types.EdgeSnatRule) (*types.
 		return nil, err
 	}
 
-	fmt.Printf("whole struct %+#v\n", natRuleResponse)
+	// fmt.Printf("whole struct %+#v\n", natRuleResponse)
 
 	// Search for nat rule by ID or by Name
 	// for _, rule := range natRuleResponse.NatRules.EdgeSnatRules  {
-	for _, rule := range natRuleResponse.NatR.EdgeSnatRules {
+	for _, rule := range natRuleResponse.NatRules.EdgeSnatRules {
 		// If ID was specified for lookup - look for the same ID
-		fmt.Printf("checking %+#v\n", rule)
+		// fmt.Printf("checking %+#v\n", rule)
 		if rule.ID != "" && rule.ID == snatRuleConfig.ID {
 			return rule, nil
 		}
@@ -107,8 +134,32 @@ func (egw *EdgeGateway) GetSnatRule(snatRuleConfig *types.EdgeSnatRule) (*types.
 	return nil, ErrorEntityNotFound
 }
 
+func (egw *EdgeGateway) GetSnatRuleById(id string) (*types.EdgeSnatRule, error) {
+	return egw.GetSnatRule(&types.EdgeSnatRule{ID: id})
+}
+
 func (egw *EdgeGateway) DeleteSnatRule(snatRuleConfig *types.EdgeSnatRule) error {
+	err := validateDeleteSnatRule(snatRuleConfig, egw)
+	if err != nil {
+		return err
+	}
+
+	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeCreateNatPath + "/" + snatRuleConfig.ID)
+	if err != nil {
+		return fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
+	}
+
+	_, err = egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodDelete, types.AnyXMLMime,
+		"unable to delete nat rule: %s", nil, &types.NSXError{})
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func (egw *EdgeGateway) DeleteSnatRuleById(id string) error {
+	return egw.DeleteSnatRule(&types.EdgeSnatRule{ID: id})
 }
 
 func validateCreateSnatRule(snatRuleConfig *types.EdgeSnatRule, egw *EdgeGateway) error {
@@ -127,10 +178,26 @@ func validateCreateSnatRule(snatRuleConfig *types.EdgeSnatRule, egw *EdgeGateway
 	return nil
 }
 
+func validateUpdateSnatRule(snatRuleConfig *types.EdgeSnatRule, egw *EdgeGateway) error {
+	if snatRuleConfig.ID == "" {
+		return fmt.Errorf("NAT rule must ID must be set for update")
+	}
+
+	return validateCreateSnatRule(snatRuleConfig, egw)
+}
+
 func validateGetSnatRule(snatRuleConfig *types.EdgeSnatRule, egw *EdgeGateway) error {
 	if !egw.HasAdvancedNetworking() {
 		return fmt.Errorf("only advanced edge gateways support SNAT rules")
 	}
 
+	if snatRuleConfig.ID == "" {
+		return fmt.Errorf("unable to retrieve SNAT rule without ID")
+	}
+
 	return nil
+}
+
+func validateDeleteSnatRule(snatRuleConfig *types.EdgeSnatRule, egw *EdgeGateway) error {
+	return validateGetSnatRule(snatRuleConfig, egw)
 }
