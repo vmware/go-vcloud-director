@@ -128,7 +128,7 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 		fmt.Printf("# Detected entity type %s\n", reflect.TypeOf(entity1))
 	}
 
-	check.Assert(fmt.Sprintf("%s", reflect.TypeOf(entity1)), Equals, wantedType)
+	check.Assert(reflect.TypeOf(entity1).String(), Equals, wantedType)
 
 	check.Assert(entity1, NotNil)
 	check.Assert(entity1.name(), Equals, entityName)
@@ -144,7 +144,7 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 	check.Assert(entity2, NotNil)
 	check.Assert(entity2.name(), Equals, entityName)
 	check.Assert(entity2.id(), Equals, entityId)
-	check.Assert(fmt.Sprintf("%s", reflect.TypeOf(entity2)), Equals, wantedType)
+	check.Assert(reflect.TypeOf(entity2).String(), Equals, wantedType)
 
 	// 3. Get the entity by Name or ID, using a known ID
 	if testVerbose {
@@ -156,7 +156,7 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 	check.Assert(entity3, NotNil)
 	check.Assert(entity3.name(), Equals, entityName)
 	check.Assert(entity3.id(), Equals, entityId)
-	check.Assert(fmt.Sprintf("%s", reflect.TypeOf(entity3)), Equals, wantedType)
+	check.Assert(reflect.TypeOf(entity3).String(), Equals, wantedType)
 
 	// 4. Get the entity by Name or ID, using the entity name
 	if testVerbose {
@@ -168,7 +168,7 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 	check.Assert(entity4, NotNil)
 	check.Assert(entity4.name(), Equals, entityName)
 	check.Assert(entity4.id(), Equals, entityId)
-	check.Assert(fmt.Sprintf("%s", reflect.TypeOf(entity4)), Equals, wantedType)
+	check.Assert(reflect.TypeOf(entity4).String(), Equals, wantedType)
 
 	// 5. Attempting a search by name with an invalid name
 	if testVerbose {

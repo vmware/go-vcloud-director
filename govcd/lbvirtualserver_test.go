@@ -122,6 +122,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	// vShield Edge [LoadBalancer] Invalid protocol invalid_protocol. Valid protocols are: HTTP|HTTPS|TCP|UDP. (API error: 14542)
 	lbVirtualServerById.Protocol = "invalid_protocol"
 	updatedLBPool, err = edge.UpdateLbVirtualServer(lbVirtualServerById)
+	check.Assert(updatedLBPool, IsNil)
 	check.Assert(err, ErrorMatches, ".*Invalid protocol.*Valid protocols are:.*")
 
 	// Update should fail without name

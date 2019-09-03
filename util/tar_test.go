@@ -20,6 +20,7 @@ func TestSanitizedName(t *testing.T) {
 		{"C:/loo/bar2", "loo/bar2"},
 		{"C:\\loo\\bar2", "loo\\bar2"},
 		{"../../foo../../ba..r", "foo../ba..r"},
+		{"../my.file", "my.file"},
 	}
 	for _, table := range tables {
 		fixedPath := sanitizedName(table.badPath)

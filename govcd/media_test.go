@@ -75,7 +75,8 @@ func (vcd *TestVCD) Test_UploadMediaImage_ShowUploadProgress_works(check *C) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	uploadTask.ShowUploadProgress()
+	err = uploadTask.ShowUploadProgress()
+	check.Assert(err, IsNil)
 
 	w.Close()
 	//read stdin
@@ -187,7 +188,8 @@ func (vcd *TestVCD) Test_RefreshMediaImage(check *C) {
 	check.Assert(mediaItem, Not(Equals), MediaItem{})
 
 	oldMediaItem := mediaItem
-	mediaItem.Refresh()
+	err = mediaItem.Refresh()
+	check.Assert(err, IsNil)
 
 	check.Assert(mediaItem, NotNil)
 	check.Assert(oldMediaItem.MediaItem.ID, Equals, mediaItem.MediaItem.ID)

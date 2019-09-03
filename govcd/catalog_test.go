@@ -185,8 +185,8 @@ func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	uploadTask.ShowUploadProgress()
-
+	err = uploadTask.ShowUploadProgress()
+	check.Assert(err, IsNil)
 	w.Close()
 	//read stdin
 	result, _ := ioutil.ReadAll(r)
@@ -373,8 +373,8 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_ShowUploadProgress_works(check 
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	uploadTask.ShowUploadProgress()
-
+	err = uploadTask.ShowUploadProgress()
+	check.Assert(err, IsNil)
 	w.Close()
 	//read stdin
 	result, _ := ioutil.ReadAll(r)

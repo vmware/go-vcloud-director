@@ -13,10 +13,7 @@ import (
 
 func fileExists(filename string) bool {
 	_, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return true
+	return !os.IsNotExist(err)
 }
 
 func testLog(logn int, t *testing.T, filename string, want_enabled bool, success_msg, failure_msg string) {

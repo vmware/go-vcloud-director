@@ -159,7 +159,8 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	if err != nil {
 		panic(err)
 	}
-	vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
+	err = vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
+	check.Check(err, IsNil)
 	vapp_status, err = vapp.GetStatus()
 	check.Check(err, IsNil)
 	check.Check(vapp_status, Equals, "POWERED_OFF")
