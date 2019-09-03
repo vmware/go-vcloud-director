@@ -1821,28 +1821,10 @@ type LbVirtualServer struct {
 
 // EdgeNatRule contains shared structure for SNAT and DNAT rule configuration using
 // NSX-V proxied edge gateway endpoint
+// // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 type EdgeNatRule struct {
 	XMLName           xml.Name `xml:"natRule"`
 	ID                string   `xml:"ruleId,omitempty"`
-	Name              string   `xml:"name,omitempty"`
-	RuleType          string   `xml:"ruleType,omitempty"`
-	RuleTag           string   `xml:"ruleTag,omitempty"`
-	Action            string   `xml:"action,omitempty"`
-	Vnic              string   `xml:"vnic,omitempty"`
-	OriginalAddress   string   `xml:"originalAddress,omitempty"`
-	TranslatedAddress string   `xml:"translatedAddress,omitempty"`
-	LoggingEnabled    string   `xml:"loggingEnabled,omitempty"`
-	Enabled           string   `xml:"enabled,omitempty"`
-	Description       string   `xml:"description,omitempty"`
-	Protocol          string   `xml:"protocol,omitempty"`
-	OriginalPort      string   `xml:"originalPort,omitempty"`
-	TranslatedPort    string   `xml:"translatedPort,omitempty"`
-}
-
-// EdgeSnatRule embeds EdgeNatRule and adds SNAT specific fields
-type EdgeSnatRule struct {
-	XMLName           xml.Name `xml:"natRule"`
-	ID                string   `xml:"ruleId,omitempty"`
 	RuleType          string   `xml:"ruleType,omitempty"`
 	RuleTag           string   `xml:"ruleTag,omitempty"`
 	Action            string   `xml:"action,omitempty"`
@@ -1856,16 +1838,13 @@ type EdgeSnatRule struct {
 	OriginalPort      string   `xml:"originalPort,omitempty"`
 	TranslatedPort    string   `xml:"translatedPort,omitempty"`
 
+	// Optional SNAT related fields
 	SnatMatchDestinationAddress string `xml:"dnatMatchDestinationAddress,omitempty"`
 	SnatMatchDestinationPort    string `xml:"dnatMatchDestinationPort,omitempty"`
-}
 
-// EdgeDnatRule embeds EdgeNatRule and adds DNAT specific fields
-type EdgeDnatRule struct {
-	EdgeNatRule
-
-	DnatMatchSourceAddress string `xml:"dnatMatchSourceAddress"`
-	DnatMatchSourcePort    string `xml:"dnatMatchSourcePort"`
+	// Optional DNAT related fields
+	DnatMatchSourceAddress string `xml:"dnatMatchSourceAddress,omitempty"`
+	DnatMatchSourcePort    string `xml:"dnatMatchSourcePort,omitempty"`
 }
 
 // VendorTemplate is information about a vendor service template. This is optional.
