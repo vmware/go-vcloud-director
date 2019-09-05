@@ -1830,12 +1830,13 @@ type EdgeNatRule struct {
 	Vnic              string   `xml:"vnic,omitempty"`
 	OriginalAddress   string   `xml:"originalAddress,omitempty"`
 	TranslatedAddress string   `xml:"translatedAddress,omitempty"`
-	LoggingEnabled    string   `xml:"loggingEnabled,omitempty"`
-	Enabled           string   `xml:"enabled,omitempty"`
+	LoggingEnabled    bool     `xml:"loggingEnabled"`
+	Enabled           bool     `xml:"enabled"`
 	Description       string   `xml:"description,omitempty"`
 	Protocol          string   `xml:"protocol,omitempty"`
 	OriginalPort      string   `xml:"originalPort,omitempty"`
 	TranslatedPort    string   `xml:"translatedPort,omitempty"`
+	IcmpType          string   `xml:"icmpType,omitempty"`
 
 	// Optional SNAT related fields
 	SnatMatchDestinationAddress string `xml:"dnatMatchDestinationAddress,omitempty"`
