@@ -32,7 +32,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 		check.Skip("Skipping test because no edge gateway external IP given")
 	}
 
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
@@ -41,7 +41,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	}
 
 	serviceMonitorId, serverPoolId, appProfileId, appRuleId := buildTestLBVirtualServerPrereqs("1.1.1.1", "2.2.2.2",
-		TestLbVirtualServer, check, vcd, edge)
+		TestLbVirtualServer, check, vcd, *edge)
 
 	// Configure creation object including reference to service monitor
 	lbVirtualServerConfig := &types.LbVirtualServer{
@@ -58,7 +58,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 		DefaultPoolId:        serverPoolId,
 	}
 
-	err = deleteLbVirtualServerIfExists(edge, lbVirtualServerConfig.Name)
+	err = deleteLbVirtualServerIfExists(*edge, lbVirtualServerConfig.Name)
 	check.Assert(err, IsNil)
 	createdLbVirtualServer, err := edge.CreateLbVirtualServer(lbVirtualServerConfig)
 	check.Assert(err, IsNil)

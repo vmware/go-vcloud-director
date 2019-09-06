@@ -19,7 +19,7 @@ func (vcd *TestVCD) Test_FindVDCNetwork(check *C) {
 	}
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
+	net, err := vcd.vdc.GetVdcNetworkByName(vcd.config.VCD.Network.Net1, true)
 
 	check.Assert(err, IsNil)
 	check.Assert(net, NotNil)
@@ -27,8 +27,47 @@ func (vcd *TestVCD) Test_FindVDCNetwork(check *C) {
 	check.Assert(net.OrgVDCNetwork.HREF, Not(Equals), "")
 
 	// find Invalid Network
-	net, err = vcd.vdc.FindVDCNetwork("INVALID")
+	net, err = vcd.vdc.GetVdcNetworkByName("INVALID", false)
 	check.Assert(err, NotNil)
+}
+
+// Tests Network retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_GetOrgVDCNetwork(check *C) {
+
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_GetOrgVDCNetwork: Org name not given.")
+		return
+	}
+	if vcd.config.VCD.Vdc == "" {
+		check.Skip("Test_GetOrgVDCNetwork: VDC name not given.")
+		return
+	}
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	getByName := func(name string, refresh bool) (genericEntity, error) {
+		return vdc.GetVdcNetworkByName(name, refresh)
+	}
+	getById := func(id string, refresh bool) (genericEntity, error) { return vdc.GetVdcNetworkById(id, refresh) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
+		return vdc.GetVdcNetworkByNameOrId(id, refresh)
+	}
+
+	var def = getterTestDefinition{
+		parentType:    "Vdc",
+		parentName:    vcd.config.VCD.Vdc,
+		entityType:    "OrgVDCNetwork",
+		entityName:    vcd.config.VCD.Network.Net1,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
+	}
+	vcd.testFinderGetGenericEntity(def, check)
 }
 
 func (vcd *TestVCD) Test_NewVdc(check *C) {
@@ -118,7 +157,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
-	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
+	net, err := vcd.vdc.GetVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	networks = append(networks, net.OrgVDCNetwork)
 	check.Assert(err, IsNil)
@@ -238,4 +277,43 @@ func (vcd *TestVCD) Test_QueryVM(check *C) {
 
 func init() {
 	testingTags["vdc"] = "vdc_test.go"
+}
+
+// Tests Edge Gateway retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_GetEdgeGateway(check *C) {
+
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_GetEdgeGateway: Org name not given.")
+		return
+	}
+	if vcd.config.VCD.Vdc == "" {
+		check.Skip("Test_GetEdgeGateway: VDC name not given.")
+		return
+	}
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	getByName := func(name string, refresh bool) (genericEntity, error) {
+		return vdc.GetEdgeGatewayByName(name, refresh)
+	}
+	getById := func(id string, refresh bool) (genericEntity, error) { return vdc.GetEdgeGatewayById(id, refresh) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
+		return vdc.GetEdgeGatewayByNameOrId(id, refresh)
+	}
+
+	var def = getterTestDefinition{
+		parentType:    "Vdc",
+		parentName:    vcd.config.VCD.Vdc,
+		entityType:    "EdgeGateway",
+		entityName:    vcd.config.VCD.EdgeGateway,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
+	}
+	vcd.testFinderGetGenericEntity(def, check)
 }

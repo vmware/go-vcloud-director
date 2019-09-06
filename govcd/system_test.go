@@ -187,8 +187,10 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 			check.Assert(err, IsNil)
 			err = task.WaitTaskCompletion()
 			check.Assert(err, IsNil)
-			edge, err = vcd.vdc.FindEdgeGateway(egc.Name)
+			newEdge, err := vcd.vdc.GetEdgeGatewayByName(egc.Name, true)
 			check.Assert(err, IsNil)
+			check.Assert(newEdge, NotNil)
+			edge = *newEdge
 		}
 
 		AddToCleanupList(egc.Name, "edgegateway", orgName+"|"+vdcName, "Test_CreateDeleteEdgeGateway")
@@ -218,9 +220,9 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 		}
 
 		// Once deleted, look for the edge gateway again. It should return an error
-		edge, err = vcd.vdc.FindEdgeGateway(egc.Name)
+		newEdge, err := vcd.vdc.GetEdgeGatewayByName(egc.Name, true)
 		check.Assert(err, NotNil)
-		check.Assert(edge, Equals, EdgeGateway{})
+		check.Assert(newEdge, IsNil)
 	}
 }
 

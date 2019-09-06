@@ -477,7 +477,7 @@ func (vcd *TestVCD) Test_CatalogGetItem(check *C) {
 
 	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
-	check.Assert(org, NotNil)
+	check.Assert(catalog, NotNil)
 
 	getByName := func(name string, refresh bool) (genericEntity, error) {
 		return catalog.GetCatalogItemByName(name, refresh)

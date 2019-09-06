@@ -38,7 +38,7 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 
 	// Find catalog and catalog item
@@ -75,7 +75,7 @@ func (vcd *TestVCD) Test_LB(check *C) {
 
 	fmt.Printf("# Attaching vDC network '%s' to vApp '%s'", vcd.config.VCD.Network.Net1, TestLb)
 	// Attach vDC network to vApp so that VMs can use it
-	net, err := vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
+	net, err := vdc.GetVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	task, err := vapp.AddRAWNetworkConfig([]*types.OrgVDCNetwork{net.OrgVDCNetwork})
 	check.Assert(err, IsNil)
@@ -113,10 +113,10 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	fmt.Printf("Done\n")
 
 	// Build load balancer
-	buildLb(edge, ip1, ip2, vcd, check)
+	buildLb(*edge, ip1, ip2, vcd, check)
 
 	// Cache current load balancer settings for change validation in the end
-	beforeLb, beforeLbXml := testCacheLoadBalancer(edge, check)
+	beforeLb, beforeLbXml := testCacheLoadBalancer(*edge, check)
 
 	// Enable load balancer globally
 	fmt.Printf("# Enabling load balancer with acceleration: ")
@@ -143,7 +143,7 @@ func (vcd *TestVCD) Test_LB(check *C) {
 
 	// Validate load balancer configuration against initially cached version
 	fmt.Printf("# Validating load balancer XML structure: ")
-	testCheckLoadBalancerConfig(beforeLb, beforeLbXml, edge, check)
+	testCheckLoadBalancerConfig(beforeLb, beforeLbXml, *edge, check)
 	fmt.Printf("Done\n")
 
 	// Finally after some cleanups - check if querying succeeded
@@ -164,7 +164,7 @@ func validateTestLbPrerequisites(vcd *TestVCD, check *C) {
 		check.Skip("Skipping test because no edge gateway external IP given")
 	}
 
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
@@ -324,7 +324,7 @@ func checkLb(queryUrl string, expectedResponses []string, maxRetryTimeout int) e
 func addFirewallRule(vdc Vdc, vcd *TestVCD, check *C) string {
 	description := "Created by: " + TestLb
 
-	edge, err := vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 
 	// Open up firewall to access edge gateway on load balancer port
@@ -348,7 +348,7 @@ func addFirewallRule(vdc Vdc, vcd *TestVCD, check *C) string {
 
 // deleteFirewallRule removes firewall rule which was used for testing load balancer
 func deleteFirewallRule(ruleDescription string, vdc Vdc, vcd *TestVCD, check *C) {
-	edge, err := vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	rules := edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.FirewallService.FirewallRule
 	for index := range rules {

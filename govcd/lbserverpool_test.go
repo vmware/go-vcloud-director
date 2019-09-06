@@ -24,7 +24,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
@@ -40,7 +40,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 		MaxRetries: 3,
 		Type:       "http",
 	}
-	err = deleteLbServiceMonitorIfExists(edge, lbMon.Name)
+	err = deleteLbServiceMonitorIfExists(*edge, lbMon.Name)
 	check.Assert(err, IsNil)
 	lbMonitor, err := edge.CreateLbServiceMonitor(lbMon)
 	check.Assert(err, IsNil)
@@ -74,7 +74,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 		},
 	}
 
-	err = deleteLbServerPoolIfExists(edge, lbMon.Name)
+	err = deleteLbServerPoolIfExists(*edge, lbMon.Name)
 	check.Assert(err, IsNil)
 	createdLbPool, err := edge.CreateLbServerPool(lbPoolConfig)
 	check.Assert(err, IsNil)

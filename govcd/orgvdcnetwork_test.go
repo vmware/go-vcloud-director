@@ -20,7 +20,7 @@ func (vcd *TestVCD) Test_NetRefresh(check *C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	network, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
+	network, err := vcd.vdc.GetVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 
 	check.Assert(err, IsNil)
 	check.Assert(network.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
@@ -53,7 +53,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkEGW(check *C) {
 	if edgeGWName == "" {
 		check.Skip("Edge Gateway not provided")
 	}
-	edgeGateway, err := vcd.vdc.FindEdgeGateway(edgeGWName)
+	edgeGateway, err := vcd.vdc.GetEdgeGatewayByName(edgeGWName, false)
 	if err != nil {
 		check.Skip(fmt.Sprintf("Edge Gateway %s not found", edgeGWName))
 	}

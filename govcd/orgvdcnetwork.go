@@ -89,8 +89,8 @@ func (orgVdcNet *OrgVDCNetwork) Delete() (Task, error) {
 
 // Looks for an Org Vdc network and, if found, will delete it.
 func RemoveOrgVdcNetworkIfExists(vdc Vdc, networkName string) error {
-	network, err := vdc.FindVDCNetwork(networkName)
-	if err == nil && network != (OrgVDCNetwork{}) {
+	network, err := vdc.GetVdcNetworkByName(networkName, false)
+	if err == nil {
 		task, err := network.Delete()
 		if err != nil {
 			return fmt.Errorf("error deleting network [phase 1] %s", networkName)

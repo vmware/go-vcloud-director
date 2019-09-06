@@ -24,7 +24,7 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
@@ -34,7 +34,7 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 		Script: "acl vmware_page url_beg / vmware redirect location https://www.vmware.com/ ifvmware_page",
 	}
 
-	err = deleteLbAppRuleIfExists(edge, lbAppRuleConfig.Name)
+	err = deleteLbAppRuleIfExists(*edge, lbAppRuleConfig.Name)
 	check.Assert(err, IsNil)
 	createdLbAppRule, err := edge.CreateLbAppRule(lbAppRuleConfig)
 	check.Assert(err, IsNil)
