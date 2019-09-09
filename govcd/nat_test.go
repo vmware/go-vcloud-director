@@ -23,7 +23,7 @@ func (vcd *TestVCD) Test_NatRule(check *C) {
 		Action:            "snat",
 		TranslatedAddress: vcd.config.VCD.ExternalIp, // Edge gateway address
 		OriginalAddress:   vcd.config.VCD.InternalIp,
-		Enabled:           "true",
+		Enabled:           true,
 		// RuleType: "user",
 		// Name:                        "asd",
 		// SnatMatchDestinationAddress: "any",
@@ -47,7 +47,6 @@ func (vcd *TestVCD) Test_NatRule(check *C) {
 	updatedSnatRule, err := edge.UpdateNsxvNatRule(natRule)
 	check.Assert(err, IsNil)
 	check.Assert(updatedSnatRule.Description, Equals, natRule.Description)
-
 
 	err = edge.DeleteNsxvNatRuleById(gotSnatRule.ID)
 	check.Assert(err, IsNil)

@@ -2700,3 +2700,52 @@ type AdminCatalogRecord struct {
 	Link                    *Link     `xml:"Link,omitempty"`
 	Vdc                     *Metadata `xml:"Metadata,omitempty"`
 }
+
+// EdgeGatewayVnics is a data structure holding information of vNic configuration in NSX-V edge
+// gateway
+type EdgeGatewayVnics struct {
+	XMLName xml.Name `xml:"vnics"`
+	Vnic    []struct {
+		Label         string `xml:"label"`
+		Name          string `xml:"name"`
+		AddressGroups struct {
+			AddressGroup struct {
+				PrimaryAddress     string `xml:"primaryAddress"`
+				SecondaryAddresses struct {
+					IpAddress []string `xml:"ipAddress"`
+				} `xml:"secondaryAddresses"`
+				SubnetMask         string `xml:"subnetMask"`
+				SubnetPrefixLength string `xml:"subnetPrefixLength"`
+			} `xml:"addressGroup"`
+		} `xml:"addressGroups"`
+		Mtu                 string `xml:"mtu"`
+		Type                string `xml:"type"`
+		IsConnected         string `xml:"isConnected"`
+		Index               string `xml:"index"`
+		PortgroupId         string `xml:"portgroupId"`
+		PortgroupName       string `xml:"portgroupName"`
+		EnableProxyArp      string `xml:"enableProxyArp"`
+		EnableSendRedirects string `xml:"enableSendRedirects"`
+		SubInterfaces       struct {
+			SubInterface []struct {
+				IsConnected         string `xml:"isConnected"`
+				Label               string `xml:"label"`
+				Name                string `xml:"name"`
+				Index               string `xml:"index"`
+				TunnelId            string `xml:"tunnelId"`
+				LogicalSwitchId     string `xml:"logicalSwitchId"`
+				LogicalSwitchName   string `xml:"logicalSwitchName"`
+				EnableSendRedirects string `xml:"enableSendRedirects"`
+				Mtu                 string `xml:"mtu"`
+				AddressGroups       struct {
+					AddressGroup struct {
+						Text               string `xml:",chardata"`
+						PrimaryAddress     string `xml:"primaryAddress"`
+						SubnetMask         string `xml:"subnetMask"`
+						SubnetPrefixLength string `xml:"subnetPrefixLength"`
+					} `xml:"addressGroup"`
+				} `xml:"addressGroups"`
+			} `xml:"subInterface"`
+		} `xml:"subInterfaces"`
+	} `xml:"vnic"`
+}

@@ -14,14 +14,14 @@ import (
 
 // requestEdgeNatRules nests EdgeNatRule as a convenience for unmarshalling POST requests
 type requestEdgeNatRules struct {
-	XMLName       xml.Name              `xml:"natRules"`
+	XMLName      xml.Name             `xml:"natRules"`
 	EdgeNatRules []*types.EdgeNatRule `xml:"natRule"`
 }
 
 // responseEdgeNatRules is used to unwrap response when retrieving
 type responseEdgeNatRules struct {
-	XMLName  xml.Name             `xml:"nat"`
-	Version  string               `xml:"version"`
+	XMLName  xml.Name            `xml:"nat"`
+	Version  string              `xml:"version"`
 	NatRules requestEdgeNatRules `xml:"natRules"`
 }
 
@@ -67,7 +67,7 @@ func (egw *EdgeGateway) UpdateNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*ty
 	if err != nil {
 		return nil, err
 	}
-	
+
 	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeCreateNatPath + "/" + natRuleConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
@@ -83,7 +83,7 @@ func (egw *EdgeGateway) UpdateNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*ty
 	readNatRule, err := egw.GetNsxvNatRuleById(natRuleConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve NAT rule with ID (%s) after update: %s",
-		readNatRule.ID, err)
+			readNatRule.ID, err)
 	}
 	return readNatRule, nil
 }

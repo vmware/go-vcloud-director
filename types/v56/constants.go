@@ -163,10 +163,11 @@ const (
 	LbVirtualServerPath = "/loadbalancer/config/virtualservers/"
 )
 
-// Edge gateway NAT rule API endpoints
+// Edge gateway API endpoints
 const (
 	EdgeNatPath       = "/nat/config"
 	EdgeCreateNatPath = "/nat/config/rules"
+	EdgeVnicConfig    = "/vnics"
 )
 
 // Guest customization statuses. These are all known possible statuses

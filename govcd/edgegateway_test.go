@@ -582,3 +582,27 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateLBGeneralParams(check *C) {
 	// Validate load balancer configuration against initially cached version
 	testCheckLoadBalancerConfig(beforeLb, beforeLbXml, edge, check)
 }
+
+func (vcd *TestVCD) TestEdgeGateway_GetVnics(check *C) {
+	if vcd.config.VCD.EdgeGateway == "" {
+		check.Skip("Skipping test because no edge gatway given")
+	}
+	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	check.Assert(err, IsNil)
+
+	if !edge.HasAdvancedNetworking() {
+		check.Skip("Skipping test because the edge gateway does not have advanced networking enabled")
+	}
+
+	vnics, err := edge.GetVnics()
+	check.Assert(err, IsNil)
+	check.Assert(len(vnics.Vnic) > 1, Equals, true)
+	check.Assert(vnics.Vnic[0].Name, Equals, vcd.config.VCD.ExternalNetwork)
+	check.Assert(vnics.Vnic[0].PortgroupName, Equals, vcd.config.VCD.ExternalNetwork)
+	check.Assert(vnics.Vnic[0].AddressGroups.AddressGroup.PrimaryAddress, Equals, vcd.config.VCD.ExternalIp)
+	check.Assert(vnics.Vnic[0].Type, Equals, "uplink")
+
+	check.Assert(vnics.Vnic[1].Type, Equals, "internal")
+	check.Assert(vnics.Vnic[1].PortgroupName, Equals, vcd.config.VCD.Network.Net1)
+
+}
