@@ -1171,6 +1171,10 @@ func validateUpdateLBGeneralParams(logLevel string) error {
 // GetVnics retrieves a structure of type EdgeGatewayVnics which contains network interfaces
 // available in Edge Gateway
 func (egw *EdgeGateway) GetVnics() (*types.EdgeGatewayVnics, error) {
+	if !egw.HasAdvancedNetworking() {
+		return nil, fmt.Errorf("only advanced edge gateway supports vNics")
+	}
+
 	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeVnicConfig)
 	if err != nil {
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
@@ -1185,4 +1189,60 @@ func (egw *EdgeGateway) GetVnics() (*types.EdgeGatewayVnics, error) {
 	}
 
 	return vnicConfig, nil
+}
+
+// GetVnicIndexFromNetworkNameType returns *int of vNic index for specified network name and network type
+// networkType one of: 'internal', 'uplink', 'trunk', 'subinterface'
+// networkName cannot be empty
+func (egw *EdgeGateway) GetVnicIndexFromNetworkNameType(networkName, networkType string) (*int, error) {
+	vnics, err := egw.GetVnics()
+	if err != nil {
+		return nil, fmt.Errorf("cannot retrieve vNic configuration: %s", err)
+	}
+	return getVnicIndexFromNetworkNameType(networkName, networkType, vnics)
+}
+
+// getVnicIndexFromNetworkNameType is wrapped and used by public function GetVnicIndexFromNetworkNameType
+func getVnicIndexFromNetworkNameType(networkName, networkType string, vnics *types.EdgeGatewayVnics) (*int, error) {
+	if networkName == "" {
+		return nil, fmt.Errorf("network name cannot be empty")
+	}
+	if networkType != types.EdgeGatewayVnicTypeUplink &&
+		networkType != types.EdgeGatewayVnicTypeInternal &&
+		networkType != types.EdgeGatewayVnicTypeTrunk &&
+		networkType != types.EdgeGatewayVnicTypeSubinterface {
+		return nil, fmt.Errorf("networkType must be one of 'uplink', 'internal', 'trunk', 'subinterface'")
+	}
+
+	var foundIndex *int
+	foundCount := 0
+
+	for _, vnic := range vnics.Vnic {
+		// Look for matching portgroup name and network type
+		if networkType != types.EdgeGatewayVnicTypeSubinterface && vnic.PortgroupName == networkName && vnic.Type == networkType {
+			foundIndex = vnic.Index
+			foundCount++
+		}
+
+		// if looking for subinterface - check if they are defined and search for logicalSwitchName
+		if networkType == types.EdgeGatewayVnicTypeSubinterface && len(vnic.SubInterfaces.SubInterface) > 0 {
+			for _, subInterface := range vnic.SubInterfaces.SubInterface {
+				if subInterface.LogicalSwitchName == networkName {
+					foundIndex = subInterface.Index
+					foundCount++
+				}
+			}
+		}
+	}
+
+	if foundCount > 1 {
+		return nil, fmt.Errorf("more than one (%d) networks of type '%s' with name '%s' found",
+			foundCount, networkType, networkName)
+	}
+
+	if foundCount == 0 {
+		return nil, ErrorEntityNotFound
+	}
+
+	return foundIndex, nil
 }

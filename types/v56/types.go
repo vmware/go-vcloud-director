@@ -2721,7 +2721,7 @@ type EdgeGatewayVnics struct {
 		Mtu                 string `xml:"mtu"`
 		Type                string `xml:"type"`
 		IsConnected         string `xml:"isConnected"`
-		Index               string `xml:"index"`
+		Index               *int   `xml:"index"`
 		PortgroupId         string `xml:"portgroupId"`
 		PortgroupName       string `xml:"portgroupName"`
 		EnableProxyArp      string `xml:"enableProxyArp"`
@@ -2731,7 +2731,7 @@ type EdgeGatewayVnics struct {
 				IsConnected         string `xml:"isConnected"`
 				Label               string `xml:"label"`
 				Name                string `xml:"name"`
-				Index               string `xml:"index"`
+				Index               *int   `xml:"index"`
 				TunnelId            string `xml:"tunnelId"`
 				LogicalSwitchId     string `xml:"logicalSwitchId"`
 				LogicalSwitchName   string `xml:"logicalSwitchName"`

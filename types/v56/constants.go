@@ -178,3 +178,11 @@ const (
 	GuestCustStatusFailed        = "GC_FAILED"
 	GuestCustStatusRebootPending = "REBOOT_PENDING"
 )
+
+// Edge gateway vNic types
+const (
+	EdgeGatewayVnicTypeUplink       = "uplink"
+	EdgeGatewayVnicTypeInternal     = "internal"
+	EdgeGatewayVnicTypeTrunk        = "trunk"
+	EdgeGatewayVnicTypeSubinterface = "subinterface"
+)
