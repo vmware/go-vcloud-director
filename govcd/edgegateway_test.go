@@ -13,11 +13,11 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_Refresh(check *C) {
+func (vcd *TestVCD) Test_RefreshEdgeGateway(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 	copyEdge := edge
@@ -39,11 +39,11 @@ func (vcd *TestVCD) Test_NATMapping(check *C) {
 		check.Skip("Skipping test because no network was given")
 	}
 
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
@@ -87,11 +87,11 @@ func (vcd *TestVCD) Test_NATPortMapping(check *C) {
 		check.Skip("Skipping test because no network was given")
 	}
 
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
@@ -136,7 +136,7 @@ func (vcd *TestVCD) Test_1to1Mappings(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edgegatway given")
 	}
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 	task, err := edge.Create1to1Mapping(vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp, "description")
@@ -156,7 +156,7 @@ func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edgegatway given")
 	}
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
@@ -253,10 +253,10 @@ func (vcd *TestVCD) TestEdgeGateway_GetNetworks(check *C) {
 	if vcd.config.VCD.Network.Net1 == "" {
 		check.Skip("Skipping test because no network given")
 	}
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
-	network, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
+	network, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	isRouted := false
 	// If the network is not linked to the edge gateway, we won't check for its name in the network list
@@ -301,11 +301,11 @@ func (vcd *TestVCD) Test_AddSNATRule(check *C) {
 	description1 := "my Description 1"
 	description2 := "my Description 2"
 
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
@@ -369,11 +369,11 @@ func (vcd *TestVCD) Test_AddDNATRule(check *C) {
 		check.Skip("Skipping test because no network was given")
 	}
 
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
@@ -449,11 +449,11 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 		check.Skip("Skipping test because no network was given")
 	}
 
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
@@ -554,7 +554,7 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateLBGeneralParams(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gatway given")
 	}
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 
 	if !edge.HasAdvancedNetworking() {
@@ -562,7 +562,7 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateLBGeneralParams(check *C) {
 	}
 
 	// Cache current load balancer settings for change validation in the end
-	beforeLb, beforeLbXml := testCacheLoadBalancer(edge, check)
+	beforeLb, beforeLbXml := testCacheLoadBalancer(*edge, check)
 
 	_, err = edge.UpdateLBGeneralParams(true, true, true, "critical")
 	check.Assert(err, IsNil)
@@ -580,5 +580,5 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateLBGeneralParams(check *C) {
 	check.Assert(err, IsNil)
 
 	// Validate load balancer configuration against initially cached version
-	testCheckLoadBalancerConfig(beforeLb, beforeLbXml, edge, check)
+	testCheckLoadBalancerConfig(beforeLb, beforeLbXml, *edge, check)
 }

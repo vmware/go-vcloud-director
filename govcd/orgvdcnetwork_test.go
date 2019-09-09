@@ -20,7 +20,7 @@ func (vcd *TestVCD) Test_NetRefresh(check *C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	network, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
+	network, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 
 	check.Assert(err, IsNil)
 	check.Assert(network.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
@@ -53,7 +53,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkEGW(check *C) {
 	if edgeGWName == "" {
 		check.Skip("Edge Gateway not provided")
 	}
-	edgeGateway, err := vcd.vdc.FindEdgeGateway(edgeGWName)
+	edgeGateway, err := vcd.vdc.GetEdgeGatewayByName(edgeGWName, false)
 	if err != nil {
 		check.Skip(fmt.Sprintf("Edge Gateway %s not found", edgeGWName))
 	}
@@ -172,9 +172,10 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkDirect(check *C) {
 	if vcd.config.VCD.ExternalNetwork == "" {
 		check.Skip("[Test_CreateOrgVdcNetworkDirect] external network not provided")
 	}
-	externalNetwork, err := GetExternalNetworkByName(vcd.client, vcd.config.VCD.ExternalNetwork)
+	externalNetwork, err := vcd.client.GetExternalNetworkByName(vcd.config.VCD.ExternalNetwork)
 	if err != nil {
 		check.Skip("[Test_CreateOrgVdcNetworkDirect] parent network not found")
+		return
 	}
 	// Note that there is no IPScope for this type of network
 	var networkConfig = types.OrgVDCNetwork{
@@ -183,9 +184,9 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkDirect(check *C) {
 		Configuration: &types.NetworkConfiguration{
 			FenceMode: types.FenceModeBridged,
 			ParentNetwork: &types.Reference{
-				HREF: externalNetwork.HREF,
-				Name: externalNetwork.Name,
-				Type: externalNetwork.Type,
+				HREF: externalNetwork.ExternalNetwork.HREF,
+				Name: externalNetwork.ExternalNetwork.Name,
+				Type: externalNetwork.ExternalNetwork.Type,
 			},
 			BackwardCompatibilityMode: true,
 		},
@@ -210,7 +211,26 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkDirect(check *C) {
 	// err = task.WaitTaskCompletion()
 	err = task.WaitInspectTaskCompletion(LogTask, 10)
 	if err != nil {
-		fmt.Printf("error performing task: %#v", err)
+		fmt.Printf("error performing task: %s", err)
 	}
+	check.Assert(err, IsNil)
+
+	// Testing RemoveOrgVdcNetworkIfExists:
+	// (1) Make sure the network exists
+	newNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(TestCreateOrgVdcNetworkDirect, true)
+	check.Assert(err, IsNil)
+	check.Assert(newNetwork, NotNil)
+
+	// (2) Removing the network. It should return nil, as a successful deletion
+	err = RemoveOrgVdcNetworkIfExists(*vcd.vdc, TestCreateOrgVdcNetworkDirect)
+	check.Assert(err, IsNil)
+
+	// (3) Look for the network again. It should be deleted
+	_, err = vcd.vdc.GetOrgVdcNetworkByName(TestCreateOrgVdcNetworkDirect, true)
+	check.Assert(err, NotNil)
+	check.Assert(IsNotFound(err), Equals, true)
+
+	// (4) Attempting a second conditional deletion. It should also return nil, as the network was not found
+	err = RemoveOrgVdcNetworkIfExists(*vcd.vdc, TestCreateOrgVdcNetworkDirect)
 	check.Assert(err, IsNil)
 }

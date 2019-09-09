@@ -280,11 +280,11 @@ func createEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation, egwConfig
 	if err != nil {
 		return EdgeGateway{}, err
 	}
-	egw, err := vdc.FindEdgeGateway(egwc.Name)
+	egw, err := vdc.GetEdgeGatewayByName(egwc.Name, false)
 	if err != nil {
 		return EdgeGateway{}, err
 	}
-	return egw, nil
+	return *egw, nil
 }
 
 // CreateAndConfigureEdgeGateway creates an edge gateway using a full configuration structure
