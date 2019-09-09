@@ -695,7 +695,7 @@ func GetStorageProfileByHref(vcdClient *VCDClient, url string) (*types.VdcStorag
 	_, err := vcdClient.Client.ExecuteRequest(url, http.MethodGet,
 		"", "error retrieving storage profile: %s", nil, vdcStorageProfile)
 	if err != nil {
-		return &types.VdcStorageProfile{}, err
+		return nil, err
 	}
 
 	return vdcStorageProfile, nil
