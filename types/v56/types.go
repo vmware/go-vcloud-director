@@ -1827,7 +1827,7 @@ type EdgeNatRule struct {
 	RuleType          string   `xml:"ruleType,omitempty"`
 	RuleTag           string   `xml:"ruleTag,omitempty"`
 	Action            string   `xml:"action,omitempty"`
-	Vnic              string   `xml:"vnic,omitempty"`
+	Vnic              *int     `xml:"vnic,omitempty"`
 	OriginalAddress   string   `xml:"originalAddress,omitempty"`
 	TranslatedAddress string   `xml:"translatedAddress,omitempty"`
 	LoggingEnabled    bool     `xml:"loggingEnabled"`

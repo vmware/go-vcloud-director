@@ -9,6 +9,7 @@ package govcd
 import (
 	"fmt"
 	"regexp"
+	"sort"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
@@ -574,8 +575,21 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 }
 
 func verifyNetworkConnectionSection(check *C, actual, desired *types.NetworkConnectionSection) {
+
 	check.Assert(len(actual.NetworkConnection), Equals, len(desired.NetworkConnection))
 	check.Assert(actual.PrimaryNetworkConnectionIndex, Equals, desired.PrimaryNetworkConnectionIndex)
+
+	// sort both objects by index before comparison
+	sort.SliceStable(actual.NetworkConnection, func(i, j int) bool {
+		return actual.NetworkConnection[i].NetworkConnectionIndex <
+			actual.NetworkConnection[j].NetworkConnectionIndex
+	})
+
+	sort.SliceStable(desired.NetworkConnection, func(i, j int) bool {
+		return desired.NetworkConnection[i].NetworkConnectionIndex <
+			desired.NetworkConnection[j].NetworkConnectionIndex
+	})
+
 	for index := range actual.NetworkConnection {
 		actualNic := actual.NetworkConnection[index]
 		desiredNic := desired.NetworkConnection[index]

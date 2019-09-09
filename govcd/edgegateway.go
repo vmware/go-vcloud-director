@@ -1202,6 +1202,16 @@ func (egw *EdgeGateway) GetVnicIndexFromNetworkNameType(networkName, networkType
 	return getVnicIndexFromNetworkNameType(networkName, networkType, vnics)
 }
 
+// GetNetworkNameTypeFromVnicIndex returns network name and network type for given vNic index
+// returned networkType can be one of: 'internal', 'uplink', 'trunk', 'subinterface'
+func (egw *EdgeGateway) GetNetworkNameTypeFromVnicIndex(vNicIndex int) (string, string, error) {
+	vnics, err := egw.GetVnics()
+	if err != nil {
+		return "", "", fmt.Errorf("cannot retrieve vNic configuration: %s", err)
+	}
+	return getNetworkNameTypeFromVnicIndex(vNicIndex, vnics)
+}
+
 // getVnicIndexFromNetworkNameType is wrapped and used by public function GetVnicIndexFromNetworkNameType
 func getVnicIndexFromNetworkNameType(networkName, networkType string, vnics *types.EdgeGatewayVnics) (*int, error) {
 	if networkName == "" {
@@ -1245,4 +1255,42 @@ func getVnicIndexFromNetworkNameType(networkName, networkType string, vnics *typ
 	}
 
 	return foundIndex, nil
+}
+
+func getNetworkNameTypeFromVnicIndex(vNicIndex int, vnics *types.EdgeGatewayVnics) (string, string, error) {
+	if vNicIndex < 0 {
+		return "", "", fmt.Errorf("vNic index cannot be negative")
+	}
+
+	foundCount := 0
+	var networkName, networkType string
+
+	for _, vnic := range vnics.Vnic {
+		if vnic.Index != nil && *vnic.Index == vNicIndex {
+			foundCount++
+			networkName = vnic.PortgroupName
+			networkType = vnic.Type
+		}
+
+		// Search inside "subinterface tree"
+		if vnic.Type == types.EdgeGatewayVnicTypeTrunk && len(vnic.SubInterfaces.SubInterface) > 0 {
+			for _, subInterface := range vnic.SubInterfaces.SubInterface {
+				if subInterface.Index != nil && *subInterface.Index == vNicIndex {
+					foundCount++
+					networkName = subInterface.LogicalSwitchName
+					networkType = types.EdgeGatewayVnicTypeSubinterface
+				}
+			}
+		}
+	}
+
+	if foundCount > 1 {
+		return "", "", fmt.Errorf("more than one networks found for vNic %d", vNicIndex)
+	}
+
+	if foundCount == 0 {
+		return "", "", ErrorEntityNotFound
+	}
+
+	return networkName, networkType, nil
 }
