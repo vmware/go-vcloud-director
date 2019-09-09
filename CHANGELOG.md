@@ -27,6 +27,7 @@
 guest properties [#235](https://github.com/vmware/go-vcloud-director/pull/235)
 * Added methods `vapp.SetProductSectionList` and `vapp.GetProductSectionList` allowing to manipulate
 vApp guest properties [#235](https://github.com/vmware/go-vcloud-director/pull/235)
+* Added method GetStorageProfileByHref
 
 IMPROVEMENTS:
 
@@ -40,6 +41,7 @@ BUGS FIXED:
 * Fix bug in External network creation and get when description wasn't populated.
 * Fix bug in VDC creation when name with space caused an error
 * Fix bug in Org Delete, which would remove catalogs shared from other organizations.
+* Fix Vcd.StorageProfiles type from array to single.
 
 ## 2.3.1 (Jul 29, 2019)
 
