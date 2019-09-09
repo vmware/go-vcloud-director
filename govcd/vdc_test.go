@@ -19,7 +19,7 @@ func (vcd *TestVCD) Test_FindVDCNetwork(check *C) {
 	}
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	net, err := vcd.vdc.GetVdcNetworkByName(vcd.config.VCD.Network.Net1, true)
+	net, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, true)
 
 	check.Assert(err, IsNil)
 	check.Assert(net, NotNil)
@@ -27,7 +27,7 @@ func (vcd *TestVCD) Test_FindVDCNetwork(check *C) {
 	check.Assert(net.OrgVDCNetwork.HREF, Not(Equals), "")
 
 	// find Invalid Network
-	net, err = vcd.vdc.GetVdcNetworkByName("INVALID", false)
+	net, err = vcd.vdc.GetOrgVdcNetworkByName("INVALID", false)
 	check.Assert(err, NotNil)
 }
 
@@ -51,11 +51,11 @@ func (vcd *TestVCD) Test_GetOrgVDCNetwork(check *C) {
 	check.Assert(vdc, NotNil)
 
 	getByName := func(name string, refresh bool) (genericEntity, error) {
-		return vdc.GetVdcNetworkByName(name, refresh)
+		return vdc.GetOrgVdcNetworkByName(name, refresh)
 	}
-	getById := func(id string, refresh bool) (genericEntity, error) { return vdc.GetVdcNetworkById(id, refresh) }
+	getById := func(id string, refresh bool) (genericEntity, error) { return vdc.GetOrgVdcNetworkById(id, refresh) }
 	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
-		return vdc.GetVdcNetworkByNameOrId(id, refresh)
+		return vdc.GetOrgVdcNetworkByNameOrId(id, refresh)
 	}
 
 	var def = getterTestDefinition{
@@ -157,7 +157,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
-	net, err := vcd.vdc.GetVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	net, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	networks = append(networks, net.OrgVDCNetwork)
 	check.Assert(err, IsNil)

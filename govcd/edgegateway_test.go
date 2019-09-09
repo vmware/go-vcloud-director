@@ -43,7 +43,7 @@ func (vcd *TestVCD) Test_NATMapping(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.GetVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
@@ -91,7 +91,7 @@ func (vcd *TestVCD) Test_NATPortMapping(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.GetVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
@@ -256,7 +256,7 @@ func (vcd *TestVCD) TestEdgeGateway_GetNetworks(check *C) {
 	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
-	network, err := vcd.vdc.GetVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	network, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	isRouted := false
 	// If the network is not linked to the edge gateway, we won't check for its name in the network list
@@ -305,7 +305,7 @@ func (vcd *TestVCD) Test_AddSNATRule(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.GetVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
@@ -373,7 +373,7 @@ func (vcd *TestVCD) Test_AddDNATRule(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.GetVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
@@ -453,7 +453,7 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.GetVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 

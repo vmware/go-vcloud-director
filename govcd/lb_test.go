@@ -75,7 +75,7 @@ func (vcd *TestVCD) Test_LB(check *C) {
 
 	fmt.Printf("# Attaching vDC network '%s' to vApp '%s'", vcd.config.VCD.Network.Net1, TestLb)
 	// Attach vDC network to vApp so that VMs can use it
-	net, err := vdc.GetVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	net, err := vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	task, err := vapp.AddRAWNetworkConfig([]*types.OrgVDCNetwork{net.OrgVDCNetwork})
 	check.Assert(err, IsNil)

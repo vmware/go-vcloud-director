@@ -521,7 +521,7 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 	// Test with two different networks if we have them
 	if config.VCD.Network.Net2 != "" {
 		// Attach second vdc network to vApp
-		vdcNetwork2, err := vcd.vdc.GetVdcNetworkByName(vcd.config.VCD.Network.Net2, false)
+		vdcNetwork2, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net2, false)
 		check.Assert(err, IsNil)
 		orgvdcnetworks := []*types.OrgVDCNetwork{vdcNetwork2.OrgVDCNetwork}
 		task, err := vapp.AddRAWNetworkConfig(orgvdcnetworks)

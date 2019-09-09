@@ -20,7 +20,7 @@ func (vcd *TestVCD) Test_NetRefresh(check *C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	network, err := vcd.vdc.GetVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	network, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 
 	check.Assert(err, IsNil)
 	check.Assert(network.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)

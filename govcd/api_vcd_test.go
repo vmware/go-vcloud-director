@@ -1023,7 +1023,7 @@ func TestVCDClient_Authenticate(t *testing.T) {
 func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
-	net, err := vcd.vdc.GetVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	net, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	if err != nil {
 		return VApp{}, fmt.Errorf("error finding network : %v", err)
 	}

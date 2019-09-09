@@ -172,7 +172,7 @@ func (vdc *Vdc) DeleteWait(force bool, recursive bool) error {
 	return nil
 }
 
-// Deprecated: use GetVdcNetworkByName
+// Deprecated: use GetOrgVdcNetworkByName
 func (vdc *Vdc) FindVDCNetwork(network string) (OrgVDCNetwork, error) {
 
 	err := vdc.Refresh()
@@ -197,9 +197,9 @@ func (vdc *Vdc) FindVDCNetwork(network string) (OrgVDCNetwork, error) {
 	return OrgVDCNetwork{}, fmt.Errorf("can't find VDC Network: %s", network)
 }
 
-// GetVdcNetworkByHref returns an Org VDC Network reference if the network HREF matches an existing one.
+// GetOrgVdcNetworkByHref returns an Org VDC Network reference if the network HREF matches an existing one.
 // If no valid external network is found, it returns an nil Network reference and an error
-func (vdc *Vdc) GetVdcNetworkByHref(href string) (*OrgVDCNetwork, error) {
+func (vdc *Vdc) GetOrgVdcNetworkByHref(href string) (*OrgVDCNetwork, error) {
 
 	orgNet := NewOrgVDCNetwork(vdc.client)
 
@@ -210,9 +210,9 @@ func (vdc *Vdc) GetVdcNetworkByHref(href string) (*OrgVDCNetwork, error) {
 	return orgNet, err
 }
 
-// GetVdcNetworkByName returns an Org VDC Network reference if the network name matches an existing one.
+// GetOrgVdcNetworkByName returns an Org VDC Network reference if the network name matches an existing one.
 // If no valid external network is found, it returns an nil Network reference and an error
-func (vdc *Vdc) GetVdcNetworkByName(name string, refresh bool) (*OrgVDCNetwork, error) {
+func (vdc *Vdc) GetOrgVdcNetworkByName(name string, refresh bool) (*OrgVDCNetwork, error) {
 	if refresh {
 		err := vdc.Refresh()
 		if err != nil {
@@ -222,7 +222,7 @@ func (vdc *Vdc) GetVdcNetworkByName(name string, refresh bool) (*OrgVDCNetwork, 
 	for _, an := range vdc.Vdc.AvailableNetworks {
 		for _, reference := range an.Network {
 			if reference.Name == name {
-				return vdc.GetVdcNetworkByHref(reference.HREF)
+				return vdc.GetOrgVdcNetworkByHref(reference.HREF)
 			}
 		}
 	}
@@ -230,9 +230,9 @@ func (vdc *Vdc) GetVdcNetworkByName(name string, refresh bool) (*OrgVDCNetwork, 
 	return nil, ErrorEntityNotFound
 }
 
-// GetVdcNetworkById returns an Org VDC Network reference if the network ID matches an existing one.
+// GetOrgVdcNetworkById returns an Org VDC Network reference if the network ID matches an existing one.
 // If no valid external network is found, it returns an nil Network reference and an error
-func (vdc *Vdc) GetVdcNetworkById(id string, refresh bool) (*OrgVDCNetwork, error) {
+func (vdc *Vdc) GetOrgVdcNetworkById(id string, refresh bool) (*OrgVDCNetwork, error) {
 	if refresh {
 		err := vdc.Refresh()
 		if err != nil {
@@ -242,7 +242,7 @@ func (vdc *Vdc) GetVdcNetworkById(id string, refresh bool) (*OrgVDCNetwork, erro
 	for _, an := range vdc.Vdc.AvailableNetworks {
 		for _, reference := range an.Network {
 			if reference.ID == id {
-				return vdc.GetVdcNetworkByHref(reference.HREF)
+				return vdc.GetOrgVdcNetworkByHref(reference.HREF)
 			}
 		}
 	}
@@ -250,11 +250,11 @@ func (vdc *Vdc) GetVdcNetworkById(id string, refresh bool) (*OrgVDCNetwork, erro
 	return nil, ErrorEntityNotFound
 }
 
-// GetVdcNetworkByNameOrId returns a VDC Network reference if either the network name or ID matches an existing one.
+// GetOrgVdcNetworkByNameOrId returns a VDC Network reference if either the network name or ID matches an existing one.
 // If no valid external network is found, it returns an empty ExternalNetwork reference and an error
-func (vdc *Vdc) GetVdcNetworkByNameOrId(identifier string, refresh bool) (*OrgVDCNetwork, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return vdc.GetVdcNetworkByName(name, refresh) }
-	getById := func(id string, refresh bool) (interface{}, error) { return vdc.GetVdcNetworkById(id, refresh) }
+func (vdc *Vdc) GetOrgVdcNetworkByNameOrId(identifier string, refresh bool) (*OrgVDCNetwork, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) { return vdc.GetOrgVdcNetworkByName(name, refresh) }
+	getById := func(id string, refresh bool) (interface{}, error) { return vdc.GetOrgVdcNetworkById(id, refresh) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, false)
 	if entity == nil {
 		return nil, err
