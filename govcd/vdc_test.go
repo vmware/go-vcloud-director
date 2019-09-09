@@ -95,11 +95,9 @@ func (vcd *TestVCD) Test_NewVdc(check *C) {
 		check.Assert(vcd.vdc.Vdc.IsEnabled, Equals, true)
 	*/
 
-	for _, storageProfiles := range vcd.vdc.Vdc.VdcStorageProfiles {
-		for _, v2 := range storageProfiles.VdcStorageProfile {
-			check.Assert(v2.Type, Equals, "application/vnd.vmware.vcloud.vdcStorageProfile+xml")
-			check.Assert(v2.HREF, Not(Equals), "")
-		}
+	for _, v2 := range vcd.vdc.Vdc.VdcStorageProfiles.VdcStorageProfile {
+		check.Assert(v2.Type, Equals, "application/vnd.vmware.vcloud.vdcStorageProfile+xml")
+		check.Assert(v2.HREF, Not(Equals), "")
 	}
 
 }

@@ -687,6 +687,20 @@ func getExtension(client *Client) (*types.Extension, error) {
 	return extensions, err
 }
 
+// GetStorageProfileByHref fetches storage profile using provided HREF.
+func GetStorageProfileByHref(vcdClient *VCDClient, url string) (*types.VdcStorageProfile, error) {
+
+	vdcStorageProfile := &types.VdcStorageProfile{}
+
+	_, err := vcdClient.Client.ExecuteRequest(url, http.MethodGet,
+		"", "error retrieving storage profile: %s", nil, vdcStorageProfile)
+	if err != nil {
+		return &types.VdcStorageProfile{}, err
+	}
+
+	return vdcStorageProfile, nil
+}
+
 // QueryProviderVdcStorageProfileByName finds a provider VDC storage profile by name
 func QueryProviderVdcStorageProfileByName(vcdCli *VCDClient, name string) ([]*types.QueryResultProviderVdcStorageProfileRecordType, error) {
 	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
