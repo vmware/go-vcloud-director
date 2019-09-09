@@ -661,9 +661,16 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		if err != nil {
 			vcd.infoCleanup("%s", err)
 		}
+		_, errExists := vdc.GetOrgVdcNetworkByName(entity.Name, false)
+		networkExists := errExists == nil
+
 		err = RemoveOrgVdcNetworkIfExists(*vdc, entity.Name)
 		if err == nil {
-			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+			if networkExists {
+				vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+			} else {
+				vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			}
 		} else {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
