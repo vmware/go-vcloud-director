@@ -38,7 +38,7 @@ func TestGetPseudoUUID(t *testing.T) {
 
 func Test_getVnicIndexFromNetworkNameType(t *testing.T) {
 	// sample body for unit testing. vNic4 interface is made to contain duplicate network
-	// name on purpose (not a real respone from API)
+	// name on purpose (not a real response from API)
 	sampleBody := []byte(`
 	<vnics>
   <vnic>
@@ -293,8 +293,7 @@ func Test_getVnicIndexFromNetworkNameType(t *testing.T) {
 }
 
 func Test_getNetworkNameTypeFromVnicIndex(t *testing.T) {
-	// sample body for unit testing. vNic4 interface is made to contain duplicate network
-	// name on purpose (not a real respone from API)
+	// sample body for unit testing. The vNic 8 record is duplicated on purpose for testing.
 	sampleBody := []byte(`
 	<vnics>
   <vnic>
@@ -493,6 +492,17 @@ func Test_getNetworkNameTypeFromVnicIndex(t *testing.T) {
     <enableSendRedirects>true</enableSendRedirects>
   </vnic>
   <vnic>
+  <label>vNic_8</label>
+  <name>vnic8</name>
+  <addressGroups/>
+  <mtu>1500</mtu>
+  <type>internal</type>
+  <isConnected>false</isConnected>
+  <index>8</index>
+  <enableProxyArp>false</enableProxyArp>
+  <enableSendRedirects>true</enableSendRedirects>
+</vnic>
+  <vnic>
     <label>vNic_9</label>
     <name>vnic9</name>
     <addressGroups/>
@@ -515,11 +525,16 @@ func Test_getNetworkNameTypeFromVnicIndex(t *testing.T) {
 		hasError            bool
 		expectedError       error
 	}{
-		{"0", 0, "my-ext-network", "uplink", false, nil},
+		{"ExternalUplink", 0, "my-ext-network", "uplink", false, nil},
+		{"Internal", 1, "my-vdc-int-net", "internal", false, nil},
+		{"Trunk", 2, "dvs.VCDVS-Trunk-Portgroup-vdcf9daf2da-b4f9-4921-a2f4-d77a943a381c", "trunk", false, nil},
+		{"Subinterface", 10, "with-subinterfaces", "subinterface", false, nil},
+		{"NonExistent", 219, "", "", true, ErrorEntityNotFound},
+		{"DuplicateRecords", 8, "", "", true, fmt.Errorf("more than one networks found for vNic 8")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			vnicIndex, err := getVnicIndexFromNetworkNameType(tt.networkName, tt.networkType, vnicObject)
+			networkName, networkType, err := getNetworkNameTypeFromVnicIndex(tt.vnicIndex, vnicObject)
 
 			if !tt.hasError && err != nil {
 				t.Errorf("error was not expected: %s", err)
@@ -529,8 +544,12 @@ func Test_getNetworkNameTypeFromVnicIndex(t *testing.T) {
 				t.Errorf("Got unexpected error: %s, expected: %s", err, tt.expectedError)
 			}
 
-			if vnicIndex != nil && tt.expectedVnicIndex != nil && *vnicIndex != *tt.expectedVnicIndex {
-				t.Errorf("Got unexpected vNic name: %d, expected: %d", vnicIndex, tt.expectedVnicIndex)
+			if networkName != tt.expectednetworkName {
+				t.Errorf("Got unexpected network name: %s, expected: %s", networkName, tt.expectednetworkName)
+			}
+
+			if networkType != tt.expectednetworkType {
+				t.Errorf("Got unexpected vNic name: %s, expected: %s", networkType, tt.expectednetworkType)
 			}
 
 		})
