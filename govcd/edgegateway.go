@@ -1257,6 +1257,7 @@ func getVnicIndexFromNetworkNameType(networkName, networkType string, vnics *typ
 	return foundIndex, nil
 }
 
+// getNetworkNameTypeFromVnicIndex is wrapped and used by public function GetNetworkNameTypeFromVnicIndex
 func getNetworkNameTypeFromVnicIndex(vNicIndex int, vnics *types.EdgeGatewayVnics) (string, string, error) {
 	if vNicIndex < 0 {
 		return "", "", fmt.Errorf("vNic index cannot be negative")

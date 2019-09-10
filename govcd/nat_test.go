@@ -24,14 +24,6 @@ func (vcd *TestVCD) Test_NatRule(check *C) {
 		TranslatedAddress: vcd.config.VCD.ExternalIp, // Edge gateway address
 		OriginalAddress:   vcd.config.VCD.InternalIp,
 		Enabled:           true,
-		// RuleType: "user",
-		// Name:                        "asd",
-		// SnatMatchDestinationAddress: "any",
-		// LoggingEnabled:              "false",
-		// OriginalPort:                "3380",
-		// TranslatedPort:              "3380",
-		// Protocol: "any",
-		// Vnic: "0",
 	}
 
 	createdSnatRule, err := edge.CreateNsxvNatRule(natRule)
