@@ -16,6 +16,16 @@ func fileExists(filename string) bool {
 	return !os.IsNotExist(err)
 }
 
+func removeFile(t *testing.T, filename string) error {
+	err := os.Remove(filename)
+	if err != nil {
+		t.Logf("Can't remove file %s", filename)
+		t.Fail()
+		return err
+	}
+	return nil
+}
+
 func testLog(logn int, t *testing.T, filename string, want_enabled bool, success_msg, failure_msg string) {
 	Logger.Printf("test %d\n", logn)
 	if want_enabled {
@@ -37,37 +47,52 @@ func testLog(logn int, t *testing.T, filename string, want_enabled bool, success
 
 func TestEnableLogging(t *testing.T) {
 	ApiLogFileName = "temporary-for-test.log"
-	custom_log_file := "temporary-custom-for-test.log"
+	customLogFile := "temporary-custom-for-test.log"
 	if fileExists(ApiLogFileName) {
-		os.Remove(ApiLogFileName)
+		err := removeFile(t, ApiLogFileName)
+		if err != nil {
+			return
+		}
 	}
-	if fileExists(custom_log_file) {
-		os.Remove(custom_log_file)
+	if fileExists(customLogFile) {
+		err := removeFile(t, customLogFile)
+		if err != nil {
+			return
+		}
 	}
 
 	EnableLogging = true
 	SetLog()
 	testLog(1, t, ApiLogFileName, true, "log enabled", "log was not enabled")
-	os.Remove(ApiLogFileName)
+	err := removeFile(t, ApiLogFileName)
+	if err != nil {
+		return
+	}
 
 	EnableLogging = false
 	SetLog()
 	testLog(2, t, ApiLogFileName, false, "log was disabled", "log was not disabled")
 
 	EnableLogging = false
-	os.Setenv(envUseLog, "1")
+	_ = os.Setenv(envUseLog, "1")
 	InitLogging()
 	testLog(3, t, ApiLogFileName, true, "log enabled via env variable", "log was not enabled via env variable")
-	os.Remove(ApiLogFileName)
+	err = removeFile(t, ApiLogFileName)
+	if err != nil {
+		return
+	}
 
 	EnableLogging = false
-	os.Setenv(envUseLog, "")
+	_ = os.Setenv(envUseLog, "")
 	InitLogging()
 	testLog(4, t, ApiLogFileName, false, "log was disabled via env variable", "log was not disabled via env variable")
-	customLogger := newLogger(custom_log_file)
+	customLogger := newLogger(customLogFile)
 	SetCustomLogger(customLogger)
-	testLog(5, t, custom_log_file, true, "log was enabled via custom logger", "log was not enabled via custom logger")
-	os.Remove(custom_log_file)
+	testLog(5, t, customLogFile, true, "log was enabled via custom logger", "log was not enabled via custom logger")
+	err = removeFile(t, customLogFile)
+	if err != nil {
+		return
+	}
 }
 
 func TestCaller(t *testing.T) {
@@ -104,4 +129,17 @@ func TestCaller(t *testing.T) {
 			t.Fail()
 		}
 	}
+}
+
+func init() {
+	// Before running log tests, let's make sure all the log related
+	// environment variables are unset
+	_ = os.Setenv(envUseLog, "")
+	_ = os.Setenv(envLogFileName, "")
+	_ = os.Setenv(envLogOnScreen, "")
+	_ = os.Setenv(envLogPasswords, "")
+	_ = os.Setenv(envLogSkipHttpReq, "")
+	_ = os.Setenv(envLogSkipHttpResp, "")
+	_ = os.Setenv(envLogSkipTagList, "")
+	_ = os.Setenv(envLogFileName, "")
 }

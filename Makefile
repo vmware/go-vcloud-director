@@ -1,19 +1,19 @@
 TEST?=./...
 GOFMT_FILES?=$$(find . -name '*.go')
+maindir=$(PWD)
 
 default: fmtcheck vet build
 
 # test runs the test suite and vets the code
-test: fmtcheck
-	@echo "==> Running Unit Tests"
-	cd govcd && go test -v -tags "unit" .
+test: testunit
 	@echo "==> Running Functional Tests"
 	cd govcd && go test -tags "functional" -timeout=90m -check.vv .
 
-# test runs the test suite and vets the code
+# testunit runs the unit tests
 testunit: fmtcheck
 	@echo "==> Running Unit Tests"
-	cd govcd && go test -v -tags "unit" .
+	cd $(maindir)/govcd && go test -tags unit -v .
+	cd $(maindir)/util && go test -v .
 
 # testrace runs the race checker
 testrace:
@@ -53,7 +53,6 @@ get-deps:
 	@echo "==> Fetching dependencies"
 	@go get -v $(TEST)
 	@go get -u github.com/golang/lint/golint
-	
 
 fmt:
 	gofmt -w $(GOFMT_FILES)

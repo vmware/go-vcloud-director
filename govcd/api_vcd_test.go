@@ -500,23 +500,23 @@ func splitParent(parent string, separator string) (first, second, third string) 
 	return
 }
 
-func getOrgVdcEdgeByNames(vcd *TestVCD, orgName, vdcName, edgeName string) (*Org, *Vdc, EdgeGateway, error) {
+func getOrgVdcEdgeByNames(vcd *TestVCD, orgName, vdcName, edgeName string) (*Org, *Vdc, *EdgeGateway, error) {
 	if orgName == "" || vdcName == "" || edgeName == "" {
-		return nil, nil, EdgeGateway{}, fmt.Errorf("orgName, vdcName, edgeName cant be empty")
+		return nil, nil, nil, fmt.Errorf("orgName, vdcName, edgeName cant be empty")
 	}
 
 	org, _ := vcd.client.GetOrgByName(orgName)
 	if org == nil {
 		vcd.infoCleanup("could not find org '%s'", orgName)
-		return nil, nil, EdgeGateway{}, fmt.Errorf("can't find org")
+		return nil, nil, nil, fmt.Errorf("can't find org")
 	}
 	vdc, err := org.GetVDCByName(vdcName, false)
 	if err != nil {
 		vcd.infoCleanup("could not find vdc '%s'", vdcName)
-		return nil, nil, EdgeGateway{}, fmt.Errorf("can't find org")
+		return nil, nil, nil, fmt.Errorf("can't find org")
 	}
 
-	edge, err := vdc.FindEdgeGateway(edgeName)
+	edge, err := vdc.GetEdgeGatewayByName(edgeName, false)
 
 	if err != nil {
 		vcd.infoCleanup("could not find edge '%s': %s", edgeName, err)
@@ -646,7 +646,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		if err != nil {
 			return
 		}
-		edge, err := vdc.FindEdgeGateway(entity.Name)
+		edge, err := vdc.GetEdgeGatewayByName(entity.Name, false)
 		if err != nil {
 			vcd.infoCleanup("removeLeftoverEntries: [INFO] edge gateway '%s' not found\n", entity.Name)
 			return
@@ -663,9 +663,16 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		if err != nil {
 			vcd.infoCleanup("%s", err)
 		}
+		_, errExists := vdc.GetOrgVdcNetworkByName(entity.Name, false)
+		networkExists := errExists == nil
+
 		err = RemoveOrgVdcNetworkIfExists(*vdc, entity.Name)
 		if err == nil {
-			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+			if networkExists {
+				vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+			} else {
+				vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			}
 		} else {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
@@ -1050,7 +1057,7 @@ func TestVCDClient_Authenticate(t *testing.T) {
 func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
-	net, err := vcd.vdc.FindVDCNetwork(vcd.config.VCD.Network.Net1)
+	net, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	if err != nil {
 		return VApp{}, fmt.Errorf("error finding network : %v", err)
 	}

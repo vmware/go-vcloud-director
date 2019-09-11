@@ -24,7 +24,7 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
@@ -41,7 +41,7 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 		ServerSslEnabled:              false,
 	}
 
-	err = deleteLbAppProfileIfExists(edge, lbAppProfileConfig.Name)
+	err = deleteLbAppProfileIfExists(*edge, lbAppProfileConfig.Name)
 	check.Assert(err, IsNil)
 	createdLbAppProfile, err := edge.CreateLbAppProfile(lbAppProfileConfig)
 	check.Assert(err, IsNil)
