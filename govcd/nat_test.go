@@ -21,7 +21,7 @@ func (vcd *TestVCD) Test_NsxvSnatRule(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	vnicIndex, err := edge.GetVnicIndexFromNetworkNameType(vcd.config.VCD.Network.Net1, "internal")
+	vnicIndex, err := edge.GetVnicIndexByNetworkNameAndType(vcd.config.VCD.Network.Net1, "internal")
 	check.Assert(err, IsNil)
 
 	natRule := &types.EdgeNatRule{
@@ -47,7 +47,7 @@ func (vcd *TestVCD) Test_NsxvDnatRule(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	vnicIndex, err := edge.GetVnicIndexFromNetworkNameType(vcd.config.VCD.ExternalNetwork, "uplink")
+	vnicIndex, err := edge.GetVnicIndexByNetworkNameAndType(vcd.config.VCD.ExternalNetwork, "uplink")
 	check.Assert(err, IsNil)
 
 	natRule := &types.EdgeNatRule{

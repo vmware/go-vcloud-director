@@ -1191,29 +1191,29 @@ func (egw *EdgeGateway) getVnics() (*types.EdgeGatewayVnics, error) {
 	return vnicConfig, nil
 }
 
-// GetVnicIndexFromNetworkNameType returns *int of vNic index for specified network name and network type
+// GetVnicIndexByNetworkNameAndType returns *int of vNic index for specified network name and network type
 // networkType one of: 'internal', 'uplink', 'trunk', 'subinterface'
 // networkName cannot be empty
-func (egw *EdgeGateway) GetVnicIndexFromNetworkNameType(networkName, networkType string) (*int, error) {
+func (egw *EdgeGateway) GetVnicIndexByNetworkNameAndType(networkName, networkType string) (*int, error) {
 	vnics, err := egw.getVnics()
 	if err != nil {
 		return nil, fmt.Errorf("cannot retrieve vNic configuration: %s", err)
 	}
-	return getVnicIndexFromNetworkNameType(networkName, networkType, vnics)
+	return GetVnicIndexByNetworkNameAndType(networkName, networkType, vnics)
 }
 
-// GetNetworkNameTypeFromVnicIndex returns network name and network type for given vNic index
+// GetNetworkNameAndTypeByVnicIndex returns network name and network type for given vNic index
 // returned networkType can be one of: 'internal', 'uplink', 'trunk', 'subinterface'
-func (egw *EdgeGateway) GetNetworkNameTypeFromVnicIndex(vNicIndex int) (string, string, error) {
+func (egw *EdgeGateway) GetNetworkNameAndTypeByVnicIndex(vNicIndex int) (string, string, error) {
 	vnics, err := egw.getVnics()
 	if err != nil {
 		return "", "", fmt.Errorf("cannot retrieve vNic configuration: %s", err)
 	}
-	return getNetworkNameTypeFromVnicIndex(vNicIndex, vnics)
+	return GetNetworkNameAndTypeByVnicIndex(vNicIndex, vnics)
 }
 
-// getVnicIndexFromNetworkNameType is wrapped and used by public function GetVnicIndexFromNetworkNameType
-func getVnicIndexFromNetworkNameType(networkName, networkType string, vnics *types.EdgeGatewayVnics) (*int, error) {
+// GetVnicIndexByNetworkNameAndType is wrapped and used by public function GetVnicIndexByNetworkNameAndType
+func GetVnicIndexByNetworkNameAndType(networkName, networkType string, vnics *types.EdgeGatewayVnics) (*int, error) {
 	if networkName == "" {
 		return nil, fmt.Errorf("network name cannot be empty")
 	}
@@ -1257,8 +1257,8 @@ func getVnicIndexFromNetworkNameType(networkName, networkType string, vnics *typ
 	return foundIndex, nil
 }
 
-// getNetworkNameTypeFromVnicIndex is wrapped and used by public function GetNetworkNameTypeFromVnicIndex
-func getNetworkNameTypeFromVnicIndex(vNicIndex int, vnics *types.EdgeGatewayVnics) (string, string, error) {
+// GetNetworkNameAndTypeByVnicIndex is wrapped and used by public function GetNetworkNameAndTypeByVnicIndex
+func GetNetworkNameAndTypeByVnicIndex(vNicIndex int, vnics *types.EdgeGatewayVnics) (string, string, error) {
 	if vNicIndex < 0 {
 		return "", "", fmt.Errorf("vNic index cannot be negative")
 	}
