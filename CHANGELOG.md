@@ -28,8 +28,9 @@ guest properties [#235](https://github.com/vmware/go-vcloud-director/pull/235)
 * Added methods `vapp.SetProductSectionList` and `vapp.GetProductSectionList` allowing to manipulate
 vApp guest properties [#235](https://github.com/vmware/go-vcloud-director/pull/235)
 * Added method GetStorageProfileByHref
-* Added methods `CreateNsxvNatRule()`, `UpdateNsxvNatRule()`, `GetNsxvNatRuleById()`, `DeleteNsxvNatRuleById()` [#xx]()
-* Added methods `GetVnicIndexFromNetworkNameType()` and `GetNetworkNameTypeFromVnicIndex()` [#xx]()
+* Added methods `CreateNsxvNatRule()`, `UpdateNsxvNatRule()`, `GetNsxvNatRuleById()`, `DeleteNsxvNatRuleById()`
+which use the proxied NSX-V API for handling NAT rules [#241](https://github.com/vmware/go-vcloud-director/pull/241)
+* Added methods `GetVnicIndexFromNetworkNameType()` and `GetNetworkNameTypeFromVnicIndex()` [#241](https://github.com/vmware/go-vcloud-director/pull/241)
 
 IMPROVEMENTS:
 
