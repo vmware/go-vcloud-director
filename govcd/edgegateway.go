@@ -1168,9 +1168,9 @@ func validateUpdateLBGeneralParams(logLevel string) error {
 	return nil
 }
 
-// GetVnics retrieves a structure of type EdgeGatewayVnics which contains network interfaces
+// getVnics retrieves a structure of type EdgeGatewayVnics which contains network interfaces
 // available in Edge Gateway
-func (egw *EdgeGateway) GetVnics() (*types.EdgeGatewayVnics, error) {
+func (egw *EdgeGateway) getVnics() (*types.EdgeGatewayVnics, error) {
 	if !egw.HasAdvancedNetworking() {
 		return nil, fmt.Errorf("only advanced edge gateway supports vNics")
 	}
@@ -1195,7 +1195,7 @@ func (egw *EdgeGateway) GetVnics() (*types.EdgeGatewayVnics, error) {
 // networkType one of: 'internal', 'uplink', 'trunk', 'subinterface'
 // networkName cannot be empty
 func (egw *EdgeGateway) GetVnicIndexFromNetworkNameType(networkName, networkType string) (*int, error) {
-	vnics, err := egw.GetVnics()
+	vnics, err := egw.getVnics()
 	if err != nil {
 		return nil, fmt.Errorf("cannot retrieve vNic configuration: %s", err)
 	}
@@ -1205,7 +1205,7 @@ func (egw *EdgeGateway) GetVnicIndexFromNetworkNameType(networkName, networkType
 // GetNetworkNameTypeFromVnicIndex returns network name and network type for given vNic index
 // returned networkType can be one of: 'internal', 'uplink', 'trunk', 'subinterface'
 func (egw *EdgeGateway) GetNetworkNameTypeFromVnicIndex(vNicIndex int) (string, string, error) {
-	vnics, err := egw.GetVnics()
+	vnics, err := egw.getVnics()
 	if err != nil {
 		return "", "", fmt.Errorf("cannot retrieve vNic configuration: %s", err)
 	}

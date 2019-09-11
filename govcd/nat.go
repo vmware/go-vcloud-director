@@ -8,6 +8,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
@@ -53,6 +54,8 @@ func (egw *EdgeGateway) CreateNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*ty
 	if err != nil {
 		return nil, err
 	}
+
+	time.Sleep(5 * time.Second)
 
 	readNatRule, err := egw.GetNsxvNatRule(&types.EdgeNatRule{ID: natRuleId})
 	if err != nil {
@@ -107,29 +110,11 @@ func (egw *EdgeGateway) GetNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*types
 		return nil, err
 	}
 
-	// fmt.Printf("whole struct %+#v\n", natRuleResponse)
-
-	// Search for nat rule by ID or by Name
-	// for _, rule := range natRuleResponse.NatRules.EdgeNatRules  {
 	for _, rule := range natRuleResponse.NatRules.EdgeNatRules {
-		// If ID was specified for lookup - look for the same ID
-		// fmt.Printf("checking %+#v\n", rule)
 		if rule.ID != "" && rule.ID == natRuleConfig.ID {
 			return rule, nil
 		}
 	}
-
-	// 	// If Name was specified for lookup - look for the same Name
-	// 	if lbAppRuleConfig.Name != "" && rule.Name == lbAppRuleConfig.Name {
-	// 		// We found it by name. Let's verify if search ID was specified and it matches the lookup object
-	// 		if lbAppRuleConfig.ID != "" && rule.ID != lbAppRuleConfig.ID {
-	// 			return nil, fmt.Errorf("load balancer application rule was found by name (%s)"+
-	// 				", but its ID (%s) does not match specified ID (%s)",
-	// 				rule.Name, rule.ID, lbAppRuleConfig.ID)
-	// 		}
-	// 		return rule, nil
-	// 	}
-	// }
 
 	return nil, ErrorEntityNotFound
 }
@@ -138,7 +123,7 @@ func (egw *EdgeGateway) GetNsxvNatRuleById(id string) (*types.EdgeNatRule, error
 	return egw.GetNsxvNatRule(&types.EdgeNatRule{ID: id})
 }
 
-func (egw *EdgeGateway) DeleteNsxvNatRule(natRuleConfig *types.EdgeNatRule) error {
+func (egw *EdgeGateway) deleteNsxvNatRule(natRuleConfig *types.EdgeNatRule) error {
 	err := validateDeleteNsxvNatRule(natRuleConfig, egw)
 	if err != nil {
 		return err
@@ -147,6 +132,12 @@ func (egw *EdgeGateway) DeleteNsxvNatRule(natRuleConfig *types.EdgeNatRule) erro
 	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeCreateNatPath + "/" + natRuleConfig.ID)
 	if err != nil {
 		return fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
+	}
+
+	// check if the rule exists and pass back the error at it may be 'ErrorEntityNotFound'
+	_, err = egw.GetNsxvNatRuleById(natRuleConfig.ID)
+	if err != nil {
+		return err
 	}
 
 	_, err = egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodDelete, types.AnyXMLMime,
@@ -159,7 +150,7 @@ func (egw *EdgeGateway) DeleteNsxvNatRule(natRuleConfig *types.EdgeNatRule) erro
 }
 
 func (egw *EdgeGateway) DeleteNsxvNatRuleById(id string) error {
-	return egw.DeleteNsxvNatRule(&types.EdgeNatRule{ID: id})
+	return egw.deleteNsxvNatRule(&types.EdgeNatRule{ID: id})
 }
 
 func validateCreateNsxvNatRule(natRuleConfig *types.EdgeNatRule, egw *EdgeGateway) error {

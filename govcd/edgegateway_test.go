@@ -594,7 +594,7 @@ func (vcd *TestVCD) TestEdgeGateway_GetVnics(check *C) {
 		check.Skip("Skipping test because the edge gateway does not have advanced networking enabled")
 	}
 
-	vnics, err := edge.GetVnics()
+	vnics, err := edge.getVnics()
 	check.Assert(err, IsNil)
 	check.Assert(len(vnics.Vnic) > 1, Equals, true)
 	check.Assert(vnics.Vnic[0].Name, Equals, vcd.config.VCD.ExternalNetwork)

@@ -1837,14 +1837,6 @@ type EdgeNatRule struct {
 	OriginalPort      string   `xml:"originalPort,omitempty"`
 	TranslatedPort    string   `xml:"translatedPort,omitempty"`
 	IcmpType          string   `xml:"icmpType,omitempty"`
-
-	// Optional SNAT related fields
-	SnatMatchDestinationAddress string `xml:"dnatMatchDestinationAddress,omitempty"`
-	SnatMatchDestinationPort    string `xml:"dnatMatchDestinationPort,omitempty"`
-
-	// Optional DNAT related fields
-	DnatMatchSourceAddress string `xml:"dnatMatchSourceAddress,omitempty"`
-	DnatMatchSourcePort    string `xml:"dnatMatchSourcePort,omitempty"`
 }
 
 // VendorTemplate is information about a vendor service template. This is optional.

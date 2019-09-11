@@ -73,6 +73,8 @@ const (
 	TestLbAppRule                 = "TestLbAppRule"
 	TestLbVirtualServer           = "TestLbVirtualServer"
 	TestLb                        = "TestLb"
+	TestNsxvSnatRule              = "TestNsxvSnatRule"
+	TestNsxvDnatRule              = "TestNsxvDnatRule"
 )
 
 const (
@@ -961,6 +963,31 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		} else {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
+		return
+
+	case "nsxvNatRule":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No parent specified '%s'\n", entity.Name)
+			return
+		}
+
+		orgName, vdcName, edgeName := splitParent(entity.Parent, "|")
+
+		_, _, edge, err := getOrgVdcEdgeByNames(vcd, orgName, vdcName, edgeName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		err = edge.DeleteNsxvNatRuleById(entity.Name)
+		if IsNotFound(err) {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
 
 	default:
