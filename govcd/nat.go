@@ -26,7 +26,8 @@ type responseEdgeNatRules struct {
 	NatRules requestEdgeNatRules `xml:"natRules"`
 }
 
-// CreateNatRule
+// CreateNsxvNatRule creates NAT rule using proxied NSX-V API. It is a synchronuous operation.
+// It returns an object with all fields populated (including ID)
 func (egw *EdgeGateway) CreateNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*types.EdgeNatRule, error) {
 	if err := validateCreateNsxvNatRule(natRuleConfig, egw); err != nil {
 		return nil, err
@@ -57,7 +58,7 @@ func (egw *EdgeGateway) CreateNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*ty
 
 	time.Sleep(5 * time.Second)
 
-	readNatRule, err := egw.GetNsxvNatRule(&types.EdgeNatRule{ID: natRuleId})
+	readNatRule, err := egw.getNsxvNatRule(&types.EdgeNatRule{ID: natRuleId})
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve NAT rule with ID (%s) after creation: %s",
 			natRuleId, err)
@@ -65,6 +66,8 @@ func (egw *EdgeGateway) CreateNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*ty
 	return readNatRule, nil
 }
 
+// UpdateNsxvNatRule updates types.EdgeNatRule with all fields using proxied NSX-V API. ID is
+// mandatory to perform the update.
 func (egw *EdgeGateway) UpdateNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*types.EdgeNatRule, error) {
 	err := validateUpdateNsxvNatRule(natRuleConfig, egw)
 	if err != nil {
@@ -91,7 +94,7 @@ func (egw *EdgeGateway) UpdateNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*ty
 	return readNatRule, nil
 }
 
-func (egw *EdgeGateway) GetNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*types.EdgeNatRule, error) {
+func (egw *EdgeGateway) getNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*types.EdgeNatRule, error) {
 	if err := validateGetNsxvNatRule(natRuleConfig, egw); err != nil {
 		return nil, err
 	}
@@ -119,8 +122,11 @@ func (egw *EdgeGateway) GetNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*types
 	return nil, ErrorEntityNotFound
 }
 
+// GetNsxvNatRuleById retrieves types.EdgeNatRule by NAT rule ID as shown in the UI using proxied
+// NSX-V API.
+// It returns and error `ErrorEntityNotFound` if the NAT rule is now found.
 func (egw *EdgeGateway) GetNsxvNatRuleById(id string) (*types.EdgeNatRule, error) {
-	return egw.GetNsxvNatRule(&types.EdgeNatRule{ID: id})
+	return egw.getNsxvNatRule(&types.EdgeNatRule{ID: id})
 }
 
 func (egw *EdgeGateway) deleteNsxvNatRule(natRuleConfig *types.EdgeNatRule) error {
@@ -149,6 +155,9 @@ func (egw *EdgeGateway) deleteNsxvNatRule(natRuleConfig *types.EdgeNatRule) erro
 	return nil
 }
 
+// DeleteNsxvNatRuleById deletes types.EdgeNatRule by NAT rule ID as shown in the UI using proxied
+// NSX-V API.
+// It returns and error `ErrorEntityNotFound` if the NAT rule is now found.
 func (egw *EdgeGateway) DeleteNsxvNatRuleById(id string) error {
 	return egw.deleteNsxvNatRule(&types.EdgeNatRule{ID: id})
 }
