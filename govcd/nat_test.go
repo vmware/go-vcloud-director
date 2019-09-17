@@ -118,6 +118,7 @@ func testNsxvNat(natRule *types.EdgeNatRule, vcd *TestVCD, check *C, edge EdgeGa
 
 	gotNatRule, err := edge.GetNsxvNatRuleById(createdNatRule.ID)
 	check.Assert(err, IsNil)
+	check.Assert(gotNatRule, NotNil)
 	check.Assert(gotNatRule, DeepEquals, createdNatRule)
 	check.Assert(gotNatRule.ID, Equals, createdNatRule.ID)
 
@@ -126,6 +127,7 @@ func testNsxvNat(natRule *types.EdgeNatRule, vcd *TestVCD, check *C, edge EdgeGa
 	natRule.Description = "Description for NAT rule"
 	updatedNatRule, err := edge.UpdateNsxvNatRule(natRule)
 	check.Assert(err, IsNil)
+	check.Assert(updatedNatRule, NotNil)
 
 	check.Assert(updatedNatRule.Description, Equals, natRule.Description)
 
