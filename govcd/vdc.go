@@ -198,7 +198,7 @@ func (vdc *Vdc) FindVDCNetwork(network string) (OrgVDCNetwork, error) {
 }
 
 // GetOrgVdcNetworkByHref returns an Org VDC Network reference if the network HREF matches an existing one.
-// If no valid external network is found, it returns an nil Network reference and an error
+// If no valid external network is found, it returns a nil Network reference and an error
 func (vdc *Vdc) GetOrgVdcNetworkByHref(href string) (*OrgVDCNetwork, error) {
 
 	orgNet := NewOrgVDCNetwork(vdc.client)
@@ -211,7 +211,7 @@ func (vdc *Vdc) GetOrgVdcNetworkByHref(href string) (*OrgVDCNetwork, error) {
 }
 
 // GetOrgVdcNetworkByName returns an Org VDC Network reference if the network name matches an existing one.
-// If no valid external network is found, it returns an nil Network reference and an error
+// If no valid external network is found, it returns a nil Network reference and an error
 func (vdc *Vdc) GetOrgVdcNetworkByName(name string, refresh bool) (*OrgVDCNetwork, error) {
 	if refresh {
 		err := vdc.Refresh()
@@ -231,7 +231,7 @@ func (vdc *Vdc) GetOrgVdcNetworkByName(name string, refresh bool) (*OrgVDCNetwor
 }
 
 // GetOrgVdcNetworkById returns an Org VDC Network reference if the network ID matches an existing one.
-// If no valid external network is found, it returns an nil Network reference and an error
+// If no valid external network is found, it returns a nil Network reference and an error
 func (vdc *Vdc) GetOrgVdcNetworkById(id string, refresh bool) (*OrgVDCNetwork, error) {
 	if refresh {
 		err := vdc.Refresh()
@@ -251,7 +251,7 @@ func (vdc *Vdc) GetOrgVdcNetworkById(id string, refresh bool) (*OrgVDCNetwork, e
 }
 
 // GetOrgVdcNetworkByNameOrId returns a VDC Network reference if either the network name or ID matches an existing one.
-// If no valid external network is found, it returns an empty ExternalNetwork reference and an error
+// If no valid external network is found, it returns a nil ExternalNetwork reference and an error
 func (vdc *Vdc) GetOrgVdcNetworkByNameOrId(identifier string, refresh bool) (*OrgVDCNetwork, error) {
 	getByName := func(name string, refresh bool) (interface{}, error) { return vdc.GetOrgVdcNetworkByName(name, refresh) }
 	getById := func(id string, refresh bool) (interface{}, error) { return vdc.GetOrgVdcNetworkById(id, refresh) }
@@ -747,7 +747,7 @@ func (vdc *Vdc) FindMediaImage(mediaName string) (MediaItem, error) {
 }
 
 // GetVappByHref returns a vApp reference by running a vCD API call
-// If no valid vApp is found, it returns an empty VApp reference and an error
+// If no valid vApp is found, it returns a nil VApp reference and an error
 func (vdc *Vdc) GetVAppByHref(vappHref string) (*VApp, error) {
 
 	newVapp := NewVApp(vdc.client)
@@ -762,7 +762,7 @@ func (vdc *Vdc) GetVAppByHref(vappHref string) (*VApp, error) {
 }
 
 // GetVappByName returns a vApp reference if the vApp Name matches an existing one.
-// If no valid vApp is found, it returns an empty VApp reference and an error
+// If no valid vApp is found, it returns a nil VApp reference and an error
 func (vdc *Vdc) GetVAppByName(vappName string, refresh bool) (*VApp, error) {
 
 	if refresh {
@@ -783,7 +783,7 @@ func (vdc *Vdc) GetVAppByName(vappName string, refresh bool) (*VApp, error) {
 }
 
 // GetVappById returns a vApp reference if the vApp ID matches an existing one.
-// If no valid vApp is found, it returns an empty VApp reference and an error
+// If no valid vApp is found, it returns a nil VApp reference and an error
 func (vdc *Vdc) GetVAppById(id string, refresh bool) (*VApp, error) {
 
 	if refresh {
@@ -804,7 +804,7 @@ func (vdc *Vdc) GetVAppById(id string, refresh bool) (*VApp, error) {
 }
 
 // GetVappByNameOrId returns a vApp reference if either the vApp name or ID matches an existing one.
-// If no valid vApp is found, it returns an empty VApp reference and an error
+// If no valid vApp is found, it returns a nil VApp reference and an error
 func (vdc *Vdc) GetVAppByNameOrId(identifier string, refresh bool) (*VApp, error) {
 	getByName := func(name string, refresh bool) (interface{}, error) { return vdc.GetVAppByName(name, refresh) }
 	getById := func(id string, refresh bool) (interface{}, error) { return vdc.GetVAppById(id, refresh) }

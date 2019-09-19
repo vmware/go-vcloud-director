@@ -860,7 +860,7 @@ func (vapp *VApp) GetProductSectionList() (*types.ProductSectionList, error) {
 }
 
 // GetVMByHref returns a VM reference by running a vCD API call
-// If no valid VM is found, it returns an empty VM reference and an error
+// If no valid VM is found, it returns a nil VM reference and an error
 func (client *Client) GetVMByHref(vmHref string) (*VM, error) {
 
 	newVm := NewVM(client)
@@ -877,7 +877,7 @@ func (client *Client) GetVMByHref(vmHref string) (*VM, error) {
 }
 
 // GetVMByName returns a VM reference if the VM name matches an existing one.
-// If no valid VM is found, it returns an empty VM reference and an error
+// If no valid VM is found, it returns a nil VM reference and an error
 func (vapp *VApp) GetVMByName(vmName string, refresh bool) (*VM, error) {
 	if refresh {
 		err := vapp.Refresh()
@@ -905,7 +905,7 @@ func (vapp *VApp) GetVMByName(vmName string, refresh bool) (*VM, error) {
 }
 
 // GetVMById returns a VM reference if the VM ID matches an existing one.
-// If no valid VM is found, it returns an empty VM reference and an error
+// If no valid VM is found, it returns a nil VM reference and an error
 func (vapp *VApp) GetVMById(id string, refresh bool) (*VM, error) {
 	if refresh {
 		err := vapp.Refresh()
@@ -932,7 +932,7 @@ func (vapp *VApp) GetVMById(id string, refresh bool) (*VM, error) {
 }
 
 // GetVMByNameOrId returns a VM reference if either the VM name or ID matches an existing one.
-// If no valid VM is found, it returns an empty VM reference and an error
+// If no valid VM is found, it returns a nil VM reference and an error
 func (vapp *VApp) GetVMByNameOrId(identifier string, refresh bool) (*VM, error) {
 	getByName := func(name string, refresh bool) (interface{}, error) { return vapp.GetVMByName(name, refresh) }
 	getById := func(id string, refresh bool) (interface{}, error) { return vapp.GetVMById(id, refresh) }
