@@ -861,6 +861,8 @@ func (vapp *VApp) GetProductSectionList() (*types.ProductSectionList, error) {
 
 // GetVMByHref returns a VM reference by running a vCD API call
 // If no valid VM is found, it returns a nil VM reference and an error
+// Note that the pointer receiver here is a Client instead of a VApp, because
+// there are cases where we know the VM HREF but not which VApp it belongs to.
 func (client *Client) GetVMByHref(vmHref string) (*VM, error) {
 
 	newVm := NewVM(client)
