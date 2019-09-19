@@ -582,3 +582,40 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateLBGeneralParams(check *C) {
 	// Validate load balancer configuration against initially cached version
 	testCheckLoadBalancerConfig(beforeLb, beforeLbXml, *edge, check)
 }
+
+func (vcd *TestVCD) TestEdgeGateway_GetVnics(check *C) {
+	if vcd.config.VCD.EdgeGateway == "" {
+		check.Skip("Skipping test because no edge gatway given")
+	}
+	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	check.Assert(err, IsNil)
+
+	if !edge.HasAdvancedNetworking() {
+		check.Skip("Skipping test because the edge gateway does not have advanced networking enabled")
+	}
+
+	vnics, err := edge.getVnics()
+	check.Assert(err, IsNil)
+
+	foundExtNet := false
+	foundOrgNet := false
+
+	check.Assert(len(vnics.Vnic) > 1, Equals, true)
+	// Look for both - external and Org networks in returned edge gateway vNics
+	for _, vnic := range vnics.Vnic {
+		// Look for external network attached to Edge gateway
+		if vnic.PortgroupName == vcd.config.VCD.ExternalNetwork {
+			check.Assert(vnic.AddressGroups.AddressGroup.PrimaryAddress, Equals, vcd.config.VCD.ExternalIp)
+			check.Assert(vnic.Type, Equals, "uplink")
+			foundExtNet = true
+		}
+
+		// Look for org network 1 attached
+		if vnic.PortgroupName == vcd.config.VCD.Network.Net1 {
+			check.Assert(vnic.Type, Equals, "internal")
+			foundOrgNet = true
+		}
+	}
+	check.Assert(foundExtNet, Equals, true)
+	check.Assert(foundOrgNet, Equals, true)
+}

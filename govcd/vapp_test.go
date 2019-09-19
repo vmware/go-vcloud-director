@@ -570,8 +570,10 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 }
 
 func verifyNetworkConnectionSection(check *C, actual, desired *types.NetworkConnectionSection) {
+
 	check.Assert(len(actual.NetworkConnection), Equals, len(desired.NetworkConnection))
 	check.Assert(actual.PrimaryNetworkConnectionIndex, Equals, desired.PrimaryNetworkConnectionIndex)
+
 	for index := range actual.NetworkConnection {
 		actualNic := actual.NetworkConnection[index]
 		desiredNic := desired.NetworkConnection[index]
