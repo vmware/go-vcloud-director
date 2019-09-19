@@ -69,8 +69,11 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	// Wait until vApp becomes configurable
 	initialVappStatus, err := vapp.GetStatus()
 	check.Assert(err, IsNil)
-	err = vapp.BlockWhileStatus(initialVappStatus, vapp.client.MaxRetryTimeout)
-	check.Assert(err, IsNil)
+	if initialVappStatus != "RESOLVED" { // RESOLVED vApp is ready to accept operations
+		err = vapp.BlockWhileStatus(initialVappStatus, vapp.client.MaxRetryTimeout)
+		check.Assert(err, IsNil)
+	}
+
 	fmt.Printf(". Done\n")
 
 	fmt.Printf("# Attaching vDC network '%s' to vApp '%s'", vcd.config.VCD.Network.Net1, TestLb)
