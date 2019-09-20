@@ -65,8 +65,8 @@ func (vcd *TestVCD) findFirstVapp() VApp {
 	if wantedVapp == "" {
 		return VApp{}
 	}
-	vapp, _ := vdc.FindVAppByName(vappName)
-	return vapp
+	vapp, _ := vdc.GetVAppByName(vappName, false)
+	return *vapp
 }
 
 // Ensure vApp is suitable for VM test
@@ -149,17 +149,15 @@ func (vcd *TestVCD) Test_FindVMByHREF(check *C) {
 	if vapp.VApp.Name == "" {
 		check.Skip("Disabled: No suitable vApp found in vDC")
 	}
-	vm, vm_name := vcd.findFirstVm(vapp)
+	vm, vmName := vcd.findFirstVm(vapp)
 	if vm.Name == "" {
 		check.Skip("Disabled: No suitable VM found in vDC")
 	}
 
-	vm_href := vm.HREF
-	new_vm, err := vcd.client.Client.FindVMByHREF(vm_href)
-
+	newVM, err := vcd.client.Client.GetVMByHref(vm.HREF)
 	check.Assert(err, IsNil)
-	check.Assert(new_vm.VM.Name, Equals, vm_name)
-	check.Assert(new_vm.VM.VirtualHardwareSection.Item, NotNil)
+	check.Assert(newVM.VM.Name, Equals, vmName)
+	check.Assert(newVM.VM.VirtualHardwareSection.Item, NotNil)
 }
 
 // Test attach disk to VM and detach disk from VM
@@ -660,7 +658,7 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 	}
 
 	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
+	existingVm, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
@@ -682,7 +680,7 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 	check.Assert(0, Not(Equals), currentCpus)
 	check.Assert(0, Not(Equals), currentCores)
 
-	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
 	check.Assert(err, IsNil)
 
 	cores := 2
@@ -722,15 +720,15 @@ func (vcd *TestVCD) Test_VMToggleHardwareVirtualization(check *C) {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
 	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
+	existingVm, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
 	// Default nesting status should be false
-	nestingStatus := vmType.NestedHypervisorEnabled
+	nestingStatus := existingVm.NestedHypervisorEnabled
 	check.Assert(nestingStatus, Equals, false)
 
-	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
 	check.Assert(err, IsNil)
 
 	// PowerOn
@@ -778,11 +776,11 @@ func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
 	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
+	existingVm, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
-	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
 	check.Assert(err, IsNil)
 
 	// Ensure VM is not powered on
@@ -826,12 +824,12 @@ func (vcd *TestVCD) Test_GetNetworkConnectionSection(check *C) {
 	}
 
 	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
+	existingVm, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
 
-	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
 	check.Assert(err, IsNil)
 
 	networkBefore, err := vm.GetNetworkConnectionSection()
@@ -869,7 +867,7 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 		check.Skip("skipping test because no VM is found")
 	}
 
-	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	vm, err := vcd.client.Client.GetVMByHref(vmType.HREF)
 	check.Assert(err, IsNil)
 
 	// It may be that prebuilt VM was not booted before in the test vApp and it would still have
@@ -943,12 +941,12 @@ func (vcd *TestVCD) Test_BlockWhileGuestCustomizationStatus(check *C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
 	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
+	existingVm, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
 
-	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
 	check.Assert(err, IsNil)
 
 	// Attempt to set invalid timeout values and expect validation error
@@ -980,13 +978,13 @@ func (vcd *TestVCD) Test_VMSetProductSectionList(check *C) {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
 	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
+	existingVm, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
-	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
 	check.Assert(err, IsNil)
-	propertyTester(vcd, check, &vm)
+	propertyTester(vcd, check, vm)
 }
 
 // Test gathering VM virtual hardware items
@@ -1001,11 +999,11 @@ func (vcd *TestVCD) Test_GetVirtualHardwareSection(check *C) {
 
 	// Find VM
 	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
+	existingVm, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
-	vm, err := vcd.client.Client.FindVMByHREF(vmType.HREF)
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
 	check.Assert(err, IsNil)
 
 	// Preform check of virtual hardware section

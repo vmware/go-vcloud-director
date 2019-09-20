@@ -10,8 +10,9 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 func init() {
@@ -24,7 +25,7 @@ func (vcd *TestVCD) TestGetParentVDC(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
-	vapp, err := vcd.vdc.FindVAppByName(vcd.vapp.VApp.Name)
+	vapp, err := vcd.vdc.GetVAppByName(vcd.vapp.VApp.Name, false)
 	check.Assert(err, IsNil)
 
 	vdc, err := vapp.getParentVDC()
@@ -464,13 +465,11 @@ func (vcd *TestVCD) Test_AddNewVMNilNIC(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 
-	vdc, err := vapp.getParentVDC()
-	check.Assert(err, IsNil)
-	vm, err := vdc.FindVMByName(vapp, check.TestName())
+	vm, err := vapp.GetVMByName(check.TestName(), true)
 	check.Assert(err, IsNil)
 
 	// Cleanup the created VM
-	err = vapp.RemoveVM(vm)
+	err = vapp.RemoveVM(*vm)
 	check.Assert(err, IsNil)
 }
 
@@ -550,10 +549,7 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 
-	vdc, err := vapp.getParentVDC()
-	check.Assert(err, IsNil)
-
-	vm, err := vdc.FindVMByName(vapp, check.TestName())
+	vm, err := vapp.GetVMByName(check.TestName(), true)
 	check.Assert(err, IsNil)
 
 	// Ensure network config was valid
@@ -563,7 +559,7 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 	verifyNetworkConnectionSection(check, actualNetConfig, desiredNetConfig)
 
 	// Cleanup
-	err = vapp.RemoveVM(vm)
+	err = vapp.RemoveVM(*vm)
 	check.Assert(err, IsNil)
 
 	// Ensure network is detached from vApp to avoid conflicts in other tests
@@ -691,4 +687,57 @@ func (vcd *TestVCD) Test_VappSetProductSectionList(check *C) {
 	}
 	vapp := vcd.findFirstVapp()
 	propertyTester(vcd, check, &vapp)
+}
+
+// Tests VM retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_GetVM(check *C) {
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp wasn't properly created")
+	}
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_GetVapp: Org name not given.")
+		return
+	}
+	if vcd.config.VCD.Vdc == "" {
+		check.Skip("Test_GetVapp: VDC name not given.")
+		return
+	}
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	vapp := vcd.findFirstVapp()
+
+	if vapp.VApp == nil || vapp.VApp.HREF == "" || vapp.client == nil {
+		check.Skip("no suitable vApp found")
+	}
+	_, vmName := vcd.findFirstVm(vapp)
+
+	if vmName == "" {
+		check.Skip("no suitable VM found")
+	}
+
+	getByName := func(name string, refresh bool) (genericEntity, error) {
+		return vapp.GetVMByName(name, refresh)
+	}
+	getById := func(id string, refresh bool) (genericEntity, error) { return vapp.GetVMById(id, refresh) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
+		return vapp.GetVMByNameOrId(id, refresh)
+	}
+
+	var def = getterTestDefinition{
+		parentType:    "VApp",
+		parentName:    vapp.VApp.Name,
+		entityType:    "VM",
+		entityName:    vmName,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
+	}
+	vcd.testFinderGetGenericEntity(def, check)
 }

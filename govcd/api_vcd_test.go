@@ -558,8 +558,8 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 	vcd.infoCleanup(introMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 	switch entity.EntityType {
 	case "vapp":
-		vapp, err := vcd.vdc.FindVAppByName(entity.Name)
-		if vapp == (VApp{}) || err != nil {
+		vapp, err := vcd.vdc.GetVAppByName(entity.Name, true)
+		if err != nil {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
@@ -777,7 +777,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [INFO] Deleting %s '%s', VM: '%s|%s', disk is attached, detaching disk\n",
 				entity.EntityType, entity.Name, vmRef.Name, vmRef.HREF)
 
-			vm, err := vcd.client.Client.FindVMByHREF(vmRef.HREF)
+			vm, err := vcd.client.Client.GetVMByHref(vmRef.HREF)
 			if err != nil {
 				vcd.infoCleanup(
 					"removeLeftoverEntries: [ERROR] Deleting %s '%s', VM: '%s|%s', cannot find the VM details: %s\n",
@@ -1095,7 +1095,7 @@ func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 		return VApp{}, fmt.Errorf("error composing vapp: %v", err)
 	}
 	// Get VApp
-	vapp, err := vcd.vdc.FindVAppByName(name)
+	vapp, err := vcd.vdc.GetVAppByName(name, true)
 	if err != nil {
 		return VApp{}, fmt.Errorf("error getting vapp: %v", err)
 	}
@@ -1105,7 +1105,7 @@ func (vcd *TestVCD) createTestVapp(name string) (VApp, error) {
 		return VApp{}, fmt.Errorf("error waiting for created test vApp to have working state: %s", err)
 	}
 
-	return vapp, err
+	return *vapp, err
 }
 
 func Test_splitParent(t *testing.T) {

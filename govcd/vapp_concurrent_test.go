@@ -20,7 +20,7 @@ func (vcd *TestVCD) Test_VAPPRefreshConcurrent(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
-	vapp, err := vcd.vdc.FindVAppByName(vcd.vapp.VApp.Name)
+	vapp, err := vcd.vdc.GetVAppByName(vcd.vapp.VApp.Name, false)
 	check.Assert(err, IsNil)
 
 	for counter := 0; counter < 5; counter++ {

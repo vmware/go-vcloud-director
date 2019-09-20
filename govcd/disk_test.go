@@ -342,7 +342,7 @@ func (vcd *TestVCD) detachIndependentDisk(disk Disk) error {
 	// If the disk is attached to the VM, detach disk from the VM
 	if vmRef != nil {
 
-		vm, err := vcd.client.Client.FindVMByHREF(vmRef.HREF)
+		vm, err := vcd.client.Client.GetVMByHref(vmRef.HREF)
 		if err != nil {
 			return err
 		}

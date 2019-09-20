@@ -178,7 +178,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Tasks.Task[0].OperationName, Equals, "vdcComposeVapp")
 	// Get VApp
-	vapp, err := vcd.vdc.FindVAppByName(TestComposeVapp)
+	vapp, err := vcd.vdc.GetVAppByName(TestComposeVapp, true)
 	check.Assert(err, IsNil)
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
@@ -209,9 +209,9 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 		panic(err)
 	}
 	check.Assert(err, IsNil)
-	no_such_vapp, err := vcd.vdc.FindVAppByName(TestComposeVapp)
+	noSuchVapp, err := vcd.vdc.GetVAppByName(TestComposeVapp, true)
 	check.Assert(err, NotNil)
-	check.Assert(no_such_vapp.VApp, IsNil)
+	check.Assert(noSuchVapp, IsNil)
 
 }
 
@@ -220,16 +220,16 @@ func (vcd *TestVCD) Test_FindVApp(check *C) {
 	if vcd.vapp.VApp == nil {
 		check.Skip("No vApp provided")
 	}
-	first_vapp, err := vcd.vdc.FindVAppByName(vcd.vapp.VApp.Name)
+	firstVapp, err := vcd.vdc.GetVAppByName(vcd.vapp.VApp.Name, false)
 
 	check.Assert(err, IsNil)
 
-	second_vapp, err := vcd.vdc.FindVAppByID(first_vapp.VApp.ID)
+	secondVapp, err := vcd.vdc.GetVAppById(firstVapp.VApp.ID, false)
 
 	check.Assert(err, IsNil)
 
-	check.Assert(second_vapp.VApp.Name, Equals, first_vapp.VApp.Name)
-	check.Assert(second_vapp.VApp.HREF, Equals, first_vapp.VApp.HREF)
+	check.Assert(secondVapp.VApp.Name, Equals, firstVapp.VApp.Name)
+	check.Assert(secondVapp.VApp.HREF, Equals, firstVapp.VApp.HREF)
 }
 
 func (vcd *TestVCD) Test_FindMediaImage(check *C) {
@@ -309,6 +309,48 @@ func (vcd *TestVCD) Test_GetEdgeGateway(check *C) {
 		parentName:    vcd.config.VCD.Vdc,
 		entityType:    "EdgeGateway",
 		entityName:    vcd.config.VCD.EdgeGateway,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
+	}
+	vcd.testFinderGetGenericEntity(def, check)
+}
+
+// Tests vApp retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_GetVApp(check *C) {
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp wasn't properly created")
+	}
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_GetVapp: Org name not given.")
+		return
+	}
+	if vcd.config.VCD.Vdc == "" {
+		check.Skip("Test_GetVapp: VDC name not given.")
+		return
+	}
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	getByName := func(name string, refresh bool) (genericEntity, error) {
+		return vdc.GetVAppByName(name, refresh)
+	}
+	getById := func(id string, refresh bool) (genericEntity, error) { return vdc.GetVAppById(id, refresh) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
+		return vdc.GetVAppByNameOrId(id, refresh)
+	}
+
+	var def = getterTestDefinition{
+		parentType:    "Vdc",
+		parentName:    vcd.config.VCD.Vdc,
+		entityType:    "VApp",
+		entityName:    TestSetUpSuite,
 		getByName:     getByName,
 		getById:       getById,
 		getByNameOrId: getByNameOrId,

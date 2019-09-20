@@ -140,6 +140,7 @@ func (vm *VM) UpdateNetworkConnectionSection(networks *types.NetworkConnectionSe
 	return nil
 }
 
+// Deprecated: use client.GetVMByHref instead
 func (cli *Client) FindVMByHREF(vmHREF string) (VM, error) {
 
 	newVm := NewVM(cli)
