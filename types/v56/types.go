@@ -1821,7 +1821,7 @@ type LbVirtualServer struct {
 
 // EdgeNatRule contains shared structure for SNAT and DNAT rule configuration using
 // NSX-V proxied edge gateway endpoint
-// // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
+// https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 type EdgeNatRule struct {
 	XMLName           xml.Name `xml:"natRule"`
 	ID                string   `xml:"ruleId,omitempty"`
@@ -1838,6 +1838,41 @@ type EdgeNatRule struct {
 	OriginalPort      string   `xml:"originalPort,omitempty"`
 	TranslatedPort    string   `xml:"translatedPort,omitempty"`
 	IcmpType          string   `xml:"icmpType,omitempty"`
+}
+
+// EdgeFirewall holds data for creating firewall rule using proxied NSX-V api
+type EdgeFirewallRule struct {
+	XMLName         xml.Name                `xml:"firewallRule" `
+	ID              string                  `xml:"id,omitempty"`
+	Name            string                  `xml:"name,omitempty"`
+	RuleTag         string                  `xml:"ruleTag,omitempty"`
+	Source          EdgeFirewallObject      `xml:"source" `
+	Destination     EdgeFirewallObject      `xml:"destination"`
+	Application     EdgeFirewallApplication `xml:"application"`
+	MatchTranslated *bool                   `xml:"matchTranslated,omitempty"`
+	Direction       string                  `xml:"direction,omitempty"`
+	Action          string                  `xml:"action,omitempty"`
+	Enabled         bool                    `xml:"enabled"`
+	LoggingEnabled  bool                    `xml:"loggingEnabled"`
+	Description     string                  `xml:"description,omitempty"`
+}
+
+type EdgeFirewallObject struct {
+	Exclude          bool   `xml:"exclude"`
+	VnicGroupId      string `xml:"vnicGroupId,omitempty"`
+	GroupingObjectId string `xml:"groupingObjectId,omitempty"`
+	IpAddress        string `xml:"ipAddress,omitempty"`
+}
+
+type EdgeFirewallApplication struct {
+	ID      string                         `xml:"applicationId,omitempty"`
+	Service EdgeFirewallApplicationService `xml:"service,omitempty"`
+}
+
+type EdgeFirewallApplicationService struct {
+	Protocol   string `xml:"protocol,omitempty"`
+	Port       string `xml:"port,omitempty"`
+	SourcePort string `xml:"sourcePort,omitempty"`
 }
 
 // VendorTemplate is information about a vendor service template. This is optional.

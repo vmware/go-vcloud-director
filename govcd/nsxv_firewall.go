@@ -10,34 +10,35 @@ import (
 	"net/http"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 // requestEdgeNatRules nests EdgeNatRule as a convenience for unmarshalling POST requests
-type requestEdgeNatRules struct {
-	XMLName      xml.Name             `xml:"natRules"`
-	EdgeNatRules []*types.EdgeNatRule `xml:"natRule"`
+type requestEdgeFirewallRules struct {
+	XMLName           xml.Name                  `xml:"firewallRules"`
+	EdgeFirewallRules []*types.EdgeFirewallRule `xml:"firewallRule"`
 }
 
 // responseEdgeNatRules is used to unwrap response when retrieving
-type responseEdgeNatRules struct {
-	XMLName  xml.Name            `xml:"nat"`
-	Version  string              `xml:"version"`
-	NatRules requestEdgeNatRules `xml:"natRules"`
+type responseEdgeFirewallRules struct {
+	XMLName           xml.Name                 `xml:"firewall"`
+	Version           string                   `xml:"version"`
+	EdgeFirewallRules requestEdgeFirewallRules `xml:"firewallRules"`
 }
 
-// CreateNsxvNatRule creates NAT rule using proxied NSX-V API. It is a synchronuous operation.
+// CreateNsxvFirewall creates NAT rule using proxied NSX-V API. It is a synchronuous operation.
 // It returns an object with all fields populated (including ID)
-func (egw *EdgeGateway) CreateNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*types.EdgeNatRule, error) {
-	if err := validateCreateNsxvNatRule(natRuleConfig, egw); err != nil {
+func (egw *EdgeGateway) CreateNsxvFirewall(natRuleConfig *types.EdgeFirewallRule) (*types.EdgeFirewallRule, error) {
+	if err := validateCreateNsxvFirewall(natRuleConfig, egw); err != nil {
 		return nil, err
 	}
 
 	// Wrap the provided rule for POST request
-	natRuleRequest := requestEdgeNatRules{
-		EdgeNatRules: []*types.EdgeNatRule{natRuleConfig},
+	natRuleRequest := requestEdgeFirewallRules{
+		EdgeFirewallRules: []*types.EdgeFirewallRule{natRuleConfig},
 	}
 
-	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeCreateNatPath)
+	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeCreateFirewallPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
@@ -55,7 +56,7 @@ func (egw *EdgeGateway) CreateNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*ty
 		return nil, err
 	}
 
-	readNatRule, err := egw.GetNsxvNatRuleById(natRuleId)
+	readNatRule, err := egw.GetNsxvFirewallById(natRuleId)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve NAT rule with ID (%s) after creation: %s",
 			natRuleId, err)
@@ -63,15 +64,15 @@ func (egw *EdgeGateway) CreateNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*ty
 	return readNatRule, nil
 }
 
-// UpdateNsxvNatRule updates types.EdgeNatRule with all fields using proxied NSX-V API. ID is
+// UpdateNsxvFirewall updates types.EdgeFirewallRule with all fields using proxied NSX-V API. ID is
 // mandatory to perform the update.
-func (egw *EdgeGateway) UpdateNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*types.EdgeNatRule, error) {
-	err := validateUpdateNsxvNatRule(natRuleConfig, egw)
+func (egw *EdgeGateway) UpdateNsxvFirewall(natRuleConfig *types.EdgeFirewallRule) (*types.EdgeFirewallRule, error) {
+	err := validateUpdateNsxvFirewall(natRuleConfig, egw)
 	if err != nil {
 		return nil, err
 	}
 
-	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeCreateNatPath + "/" + natRuleConfig.ID)
+	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeCreateFirewallPath + "/" + natRuleConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
@@ -83,7 +84,7 @@ func (egw *EdgeGateway) UpdateNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*ty
 		return nil, err
 	}
 
-	readNatRule, err := egw.GetNsxvNatRuleById(natRuleConfig.ID)
+	readNatRule, err := egw.GetNsxvFirewallById(natRuleConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve NAT rule with ID (%s) after update: %s",
 			readNatRule.ID, err)
@@ -91,20 +92,20 @@ func (egw *EdgeGateway) UpdateNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*ty
 	return readNatRule, nil
 }
 
-// GetNsxvNatRuleById retrieves types.EdgeNatRule by NAT rule ID as shown in the UI using proxied
+// GetNsxvFirewallById retrieves types.EdgeFirewallRule by NAT rule ID as shown in the UI using proxied
 // NSX-V API.
 // It returns and error `ErrorEntityNotFound` if the NAT rule is now found.
-func (egw *EdgeGateway) GetNsxvNatRuleById(id string) (*types.EdgeNatRule, error) {
-	if err := validateGetNsxvNatRule(id, egw); err != nil {
+func (egw *EdgeGateway) GetNsxvFirewallById(id string) (*types.EdgeFirewallRule, error) {
+	if err := validateGetNsxvFirewall(id, egw); err != nil {
 		return nil, err
 	}
 
-	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeNatPath)
+	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeFirewallPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
 
-	natRuleResponse := &responseEdgeNatRules{}
+	natRuleResponse := &responseEdgeFirewallRules{}
 
 	// This query returns all application rules as the API does not have filtering options
 	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
@@ -113,7 +114,9 @@ func (egw *EdgeGateway) GetNsxvNatRuleById(id string) (*types.EdgeNatRule, error
 		return nil, err
 	}
 
-	for _, rule := range natRuleResponse.NatRules.EdgeNatRules {
+	util.Logger.Printf("[DEBUG] Searching for firewall rule with ID: %s", id)
+	for _, rule := range natRuleResponse.EdgeFirewallRules.EdgeFirewallRules {
+		util.Logger.Printf("[DEBUG] Checking rule: %#+v", rule)
 		if rule.ID != "" && rule.ID == id {
 			return rule, nil
 		}
@@ -122,11 +125,11 @@ func (egw *EdgeGateway) GetNsxvNatRuleById(id string) (*types.EdgeNatRule, error
 	return nil, ErrorEntityNotFound
 }
 
-// DeleteNsxvNatRuleById deletes types.EdgeNatRule by NAT rule ID as shown in the UI using proxied
+// DeleteNsxvFirewallById deletes types.EdgeFirewallRule by NAT rule ID as shown in the UI using proxied
 // NSX-V API.
 // It returns and error `ErrorEntityNotFound` if the NAT rule is now found.
-func (egw *EdgeGateway) DeleteNsxvNatRuleById(id string) error {
-	err := validateDeleteNsxvNatRule(id, egw)
+func (egw *EdgeGateway) DeleteNsxvFirewallById(id string) error {
+	err := validateDeleteNsxvFirewall(id, egw)
 	if err != nil {
 		return err
 	}
@@ -151,7 +154,7 @@ func (egw *EdgeGateway) DeleteNsxvNatRuleById(id string) error {
 	return nil
 }
 
-func validateCreateNsxvNatRule(natRuleConfig *types.EdgeNatRule, egw *EdgeGateway) error {
+func validateCreateNsxvFirewall(natRuleConfig *types.EdgeFirewallRule, egw *EdgeGateway) error {
 	if !egw.HasAdvancedNetworking() {
 		return fmt.Errorf("only advanced edge gateways support NAT rules")
 	}
@@ -160,22 +163,18 @@ func validateCreateNsxvNatRule(natRuleConfig *types.EdgeNatRule, egw *EdgeGatewa
 		return fmt.Errorf("NAT rule must have an action")
 	}
 
-	if natRuleConfig.TranslatedAddress == "" {
-		return fmt.Errorf("NAT rule must translated address specified")
-	}
-
 	return nil
 }
 
-func validateUpdateNsxvNatRule(natRuleConfig *types.EdgeNatRule, egw *EdgeGateway) error {
+func validateUpdateNsxvFirewall(natRuleConfig *types.EdgeFirewallRule, egw *EdgeGateway) error {
 	if natRuleConfig.ID == "" {
 		return fmt.Errorf("NAT rule must ID must be set for update")
 	}
 
-	return validateCreateNsxvNatRule(natRuleConfig, egw)
+	return validateCreateNsxvFirewall(natRuleConfig, egw)
 }
 
-func validateGetNsxvNatRule(id string, egw *EdgeGateway) error {
+func validateGetNsxvFirewall(id string, egw *EdgeGateway) error {
 	if !egw.HasAdvancedNetworking() {
 		return fmt.Errorf("only advanced edge gateways support NAT rules")
 	}
@@ -187,6 +186,6 @@ func validateGetNsxvNatRule(id string, egw *EdgeGateway) error {
 	return nil
 }
 
-func validateDeleteNsxvNatRule(id string, egw *EdgeGateway) error {
-	return validateGetNsxvNatRule(id, egw)
+func validateDeleteNsxvFirewall(id string, egw *EdgeGateway) error {
+	return validateGetNsxvFirewall(id, egw)
 }
