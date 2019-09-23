@@ -799,3 +799,20 @@ func (vm *VM) SetProductSectionList(productSection *types.ProductSectionList) (*
 func (vm *VM) GetProductSectionList() (*types.ProductSectionList, error) {
 	return getProductSectionList(vm.client, vm.VM.HREF)
 }
+
+// GetGuestCustomizationSection retrieves  guest customization section for a VM. It allows to read VM guest customization properties.
+func (vm *VM) GetGuestCustomizationSection() (*types.GuestCustomizationSection, error) {
+	if vm == nil || vm.VM.HREF == "" {
+		return nil, fmt.Errorf("vm or href cannot be empty to get  guest customization section")
+	}
+	guestCustomizationSection := &types.GuestCustomizationSection{}
+
+	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/guestCustomizationSection", http.MethodGet,
+		types.MimeGuestCustomizationSection, "error retrieving guest customization section : %s", nil, guestCustomizationSection)
+
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve guest customization section: %s", err)
+	}
+
+	return guestCustomizationSection, nil
+}

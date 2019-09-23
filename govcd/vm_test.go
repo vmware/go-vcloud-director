@@ -987,6 +987,21 @@ func (vcd *TestVCD) Test_VMSetProductSectionList(check *C) {
 	propertyTester(vcd, check, vm)
 }
 
+// Test_VMGetGuestCustomizationSection retrieves guest customization and checks if properties are right.
+func (vcd *TestVCD) Test_VMGetGuestCustomizationSection(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+	vapp := vcd.findFirstVapp()
+	existingVm, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
+	check.Assert(err, IsNil)
+	guestCustomizationPropertyTester(vcd, check, vm)
+}
+
 // Test gathering VM virtual hardware items
 func (vcd *TestVCD) Test_GetVirtualHardwareSection(check *C) {
 	itemName := "TestGetVirtualHardwareSection"
