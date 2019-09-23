@@ -120,5 +120,5 @@ func guestCustomizationPropertyTester(vcd *TestVCD, check *C, object getGuestCus
 	check.Assert(guestCustomizationSection.AdminAutoLogonEnabled, Equals, false)
 	check.Assert(guestCustomizationSection.ResetPasswordRequired, Equals, false)
 	check.Assert(guestCustomizationSection.CustomizationScript, Equals, "")
-	check.Assert(guestCustomizationSection.ComputerName, Equals, "PhotonOS-001")
+	check.Assert(guestCustomizationSection.ComputerName, Not(Equals), "")
 }
