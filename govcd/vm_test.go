@@ -987,8 +987,8 @@ func (vcd *TestVCD) Test_VMSetProductSectionList(check *C) {
 	propertyTester(vcd, check, vm)
 }
 
-// Test_VMGetGuestCustomizationSection retrieves guest customization and checks if properties are right.
-func (vcd *TestVCD) Test_VMGetGuestCustomizationSection(check *C) {
+// Test_VMSetGetGuestCustomizationSection sets and when retrieves guest customization and checks if properties are right.
+func (vcd *TestVCD) Test_VMSetGetGuestCustomizationSection(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}

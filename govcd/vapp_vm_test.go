@@ -96,12 +96,20 @@ func propertyTester(vcd *TestVCD, check *C, object productSectionListGetSetter) 
 // guestPropertyGetSetter interface is used for covering tests
 type getGuestCustomizationSectionGetSetter interface {
 	GetGuestCustomizationSection() (*types.GuestCustomizationSection, error)
+	SetGuestCustomizationSection(guestCustomizationSection *types.GuestCustomizationSection) (*types.GuestCustomizationSection, error)
 }
 
 // guestCustomizationPropertyTester is a guest customization property get and setter accepting guestPropertyGetSetter interface for trying
 // out settings on all objects implementing such interface
 func guestCustomizationPropertyTester(vcd *TestVCD, check *C, object getGuestCustomizationSectionGetSetter) {
-	guestCustomizationSection, err := object.GetGuestCustomizationSection()
+	setupedGuestCustomizationSection := &types.GuestCustomizationSection{
+		Enabled: true, JoinDomainEnabled: false, UseOrgSettings: false,
+		DomainUserName: "", DomainName: "", DomainUserPassword: "",
+		AdminPasswordEnabled: true, AdminPassword: "adminPass", AdminPasswordAuto: false,
+		AdminAutoLogonEnabled: true, AdminAutoLogonCount: 15, ResetPasswordRequired: true,
+		CustomizationScript: "ls", ComputerName: "Cname18"}
+
+	guestCustomizationSection, err := object.SetGuestCustomizationSection(setupedGuestCustomizationSection)
 	check.Assert(err, IsNil)
 
 	// Check that values were set from API
@@ -114,11 +122,11 @@ func guestCustomizationPropertyTester(vcd *TestVCD, check *C, object getGuestCus
 	check.Assert(guestCustomizationSection.DomainName, Equals, "")
 	check.Assert(guestCustomizationSection.DomainUserPassword, Equals, "")
 	check.Assert(guestCustomizationSection.AdminPasswordEnabled, Equals, true)
-	check.Assert(guestCustomizationSection.AdminPasswordAuto, Equals, true)
-	check.Assert(guestCustomizationSection.AdminPassword, Equals, "")
-	check.Assert(guestCustomizationSection.AdminAutoLogonCount, Equals, 0)
-	check.Assert(guestCustomizationSection.AdminAutoLogonEnabled, Equals, false)
-	check.Assert(guestCustomizationSection.ResetPasswordRequired, Equals, false)
-	check.Assert(guestCustomizationSection.CustomizationScript, Equals, "")
-	check.Assert(guestCustomizationSection.ComputerName, Not(Equals), "")
+	check.Assert(guestCustomizationSection.AdminPasswordAuto, Equals, false)
+	check.Assert(guestCustomizationSection.AdminPassword, Equals, "adminPass")
+	check.Assert(guestCustomizationSection.AdminAutoLogonCount, Equals, 15)
+	check.Assert(guestCustomizationSection.AdminAutoLogonEnabled, Equals, true)
+	check.Assert(guestCustomizationSection.ResetPasswordRequired, Equals, true)
+	check.Assert(guestCustomizationSection.CustomizationScript, Equals, "ls")
+	check.Assert(guestCustomizationSection.ComputerName, Equals, "Cname18")
 }
