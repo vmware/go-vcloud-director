@@ -1845,6 +1845,7 @@ type EdgeFirewallRule struct {
 	XMLName         xml.Name                `xml:"firewallRule" `
 	ID              string                  `xml:"id,omitempty"`
 	Name            string                  `xml:"name,omitempty"`
+	RuleType        string                  `xml:"ruleType,omitempty"`
 	RuleTag         string                  `xml:"ruleTag,omitempty"`
 	Source          EdgeFirewallObject      `xml:"source" `
 	Destination     EdgeFirewallObject      `xml:"destination"`
@@ -1858,10 +1859,10 @@ type EdgeFirewallRule struct {
 }
 
 type EdgeFirewallObject struct {
-	Exclude          bool   `xml:"exclude"`
-	VnicGroupId      string `xml:"vnicGroupId,omitempty"`
-	GroupingObjectId string `xml:"groupingObjectId,omitempty"`
-	IpAddress        string `xml:"ipAddress,omitempty"`
+	Exclude          bool     `xml:"exclude"`
+	VnicGroupId      []string `xml:"vnicGroupId,omitempty"`
+	GroupingObjectId []string `xml:"groupingObjectId,omitempty"`
+	IpAddress        []string `xml:"ipAddress,omitempty"`
 }
 
 type EdgeFirewallApplication struct {
