@@ -291,7 +291,7 @@ func queryMediaItemsWithFilter(vdc *Vdc, filter string) ([]*types.MediaRecordTyp
 
 // Looks for an Org Vdc network and, if found, will delete it.
 func RemoveMediaImageIfExists(vdc Vdc, mediaName string) error {
-	mediaItem, err := vdc.FindMediaImage(mediaName, "")
+	mediaItem, err := vdc.QueryMediaImage(mediaName, "")
 	if err == nil && mediaItem != (MediaItem{}) {
 		task, err := mediaItem.Delete()
 		if err != nil {
@@ -349,7 +349,7 @@ func (mediaItem *MediaItem) Refresh() error {
 		return fmt.Errorf("cannot refresh, Name is empty")
 	}
 
-	latestMediaItem, err := mediaItem.vdc.FindMediaImage(mediaItem.MediaItem.Name, mediaItem.MediaItem.CatalogName)
+	latestMediaItem, err := mediaItem.vdc.QueryMediaImage(mediaItem.MediaItem.Name, mediaItem.MediaItem.CatalogName)
 	*mediaItem = latestMediaItem
 
 	return err

@@ -123,7 +123,7 @@ func (vcd *TestVCD) Test_DeleteMediaImage(check *C) {
 
 	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadMediaImage")
 
-	mediaItem, err := vcd.vdc.FindMediaImage(itemName)
+	mediaItem, err := vcd.vdc.QueryMediaImage(itemName, "")
 	check.Assert(err, IsNil)
 	check.Assert(mediaItem, Not(Equals), MediaItem{})
 
@@ -132,7 +132,7 @@ func (vcd *TestVCD) Test_DeleteMediaImage(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	mediaItem, err = vcd.vdc.FindMediaImage(itemName)
+	mediaItem, err = vcd.vdc.QueryMediaImage(itemName, "")
 	check.Assert(err, IsNil)
 	check.Assert(mediaItem, Equals, MediaItem{})
 
@@ -182,7 +182,7 @@ func (vcd *TestVCD) Test_RefreshMediaImage(check *C) {
 
 	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadMediaImage")
 
-	mediaItem, err := vcd.vdc.FindMediaImage(itemName)
+	mediaItem, err := vcd.vdc.QueryMediaImage(itemName, "")
 	check.Assert(err, IsNil)
 	check.Assert(mediaItem, NotNil)
 	check.Assert(mediaItem, Not(Equals), MediaItem{})

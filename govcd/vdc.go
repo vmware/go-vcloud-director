@@ -720,7 +720,12 @@ func (vdc *Vdc) FindVAppByID(vappid string) (VApp, error) {
 
 }
 
-func (vdc *Vdc) FindMediaImage(mediaName, catalogName string) (MediaItem, error) {
+// Deprecated: use QueryMediaImage
+func (vdc *Vdc) FindMediaImage(mediaName string) (MediaItem, error) {
+	return vdc.QueryMediaImage(mediaName, "")
+}
+
+func (vdc *Vdc) QueryMediaImage(mediaName, catalogName string) (MediaItem, error) {
 	util.Logger.Printf("[TRACE] Querying medias by name\n")
 
 	mediaResults, err := queryMediaItemsWithFilter(vdc,

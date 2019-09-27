@@ -299,7 +299,7 @@ func (vcd *TestVCD) Test_DeleteMetadataOnMediaItem(check *C) {
 	err = vcd.org.Refresh()
 	check.Assert(err, IsNil)
 
-	mediaItem, err := vcd.vdc.FindMediaImage(itemName)
+	mediaItem, err := vcd.vdc.QueryMediaImage(itemName, vcd.config.VCD.Catalog.Name)
 	check.Assert(err, IsNil)
 	check.Assert(mediaItem, NotNil)
 	check.Assert(mediaItem, Not(Equals), MediaItem{})
@@ -348,7 +348,7 @@ func (vcd *TestVCD) Test_AddMetadataOnMediaItem(check *C) {
 	err = vcd.org.Refresh()
 	check.Assert(err, IsNil)
 
-	mediaItem, err := vcd.vdc.FindMediaImage(itemName)
+	mediaItem, err := vcd.vdc.QueryMediaImage(itemName, vcd.config.VCD.Catalog.Name)
 	check.Assert(err, IsNil)
 	check.Assert(mediaItem, NotNil)
 	check.Assert(mediaItem, Not(Equals), MediaItem{})
