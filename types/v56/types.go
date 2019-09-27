@@ -1847,8 +1847,8 @@ type EdgeFirewallRule struct {
 	Name            string                  `xml:"name,omitempty"`
 	RuleType        string                  `xml:"ruleType,omitempty"`
 	RuleTag         string                  `xml:"ruleTag,omitempty"`
-	Source          EdgeFirewallObject      `xml:"source" `
-	Destination     EdgeFirewallObject      `xml:"destination"`
+	Source          EdgeFirewallEndpoint    `xml:"source" `
+	Destination     EdgeFirewallEndpoint    `xml:"destination"`
 	Application     EdgeFirewallApplication `xml:"application"`
 	MatchTranslated *bool                   `xml:"matchTranslated,omitempty"`
 	Direction       string                  `xml:"direction,omitempty"`
@@ -1856,9 +1856,13 @@ type EdgeFirewallRule struct {
 	Enabled         bool                    `xml:"enabled"`
 	LoggingEnabled  bool                    `xml:"loggingEnabled"`
 	Description     string                  `xml:"description,omitempty"`
+	// InsertAboveRuleId is not sent via API but is used to specify the rule ID above which
+	// new rule should be inserted during Create operation
+	InsertAboveRuleId string
 }
 
-type EdgeFirewallObject struct {
+// EdgeFirewallEndpoint can contains slices of objects for source or destination
+type EdgeFirewallEndpoint struct {
 	Exclude          bool     `xml:"exclude"`
 	VnicGroupId      []string `xml:"vnicGroupId,omitempty"`
 	GroupingObjectId []string `xml:"groupingObjectId,omitempty"`
