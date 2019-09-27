@@ -22,17 +22,22 @@ func (vcd *TestVCD) Test_NsxvFirewallRule(check *C) {
 	firewallRule := &types.EdgeFirewallRule{
 		Name:        "test-firewall",
 		Description: "test-firewall description",
-		Source: types.EdgeFirewallObject{
-			VnicGroupId: "vnic-0",
+		Source: types.EdgeFirewallEndpoint{
+			VnicGroupIds: []string{"vnic-0"},
 		},
-		Destination: types.EdgeFirewallObject{
+		Destination: types.EdgeFirewallEndpoint{
 			Exclude: true,
 		},
 		Application: types.EdgeFirewallApplication{
-			Service: types.EdgeFirewallApplicationService{
-				Protocol:   "tcp",
-				Port:       "55",
-				SourcePort: "44",
+			Services: []types.EdgeFirewallApplicationService{
+				{
+					Protocol:   "tcp",
+					Port:       "55",
+					SourcePort: "44",
+				},
+				{
+					Protocol: "icmp",
+				},
 			},
 		},
 		Enabled:        true,

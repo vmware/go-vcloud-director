@@ -1863,15 +1863,15 @@ type EdgeFirewallRule struct {
 
 // EdgeFirewallEndpoint can contains slices of objects for source or destination
 type EdgeFirewallEndpoint struct {
-	Exclude          bool     `xml:"exclude"`
-	VnicGroupId      []string `xml:"vnicGroupId,omitempty"`
-	GroupingObjectId []string `xml:"groupingObjectId,omitempty"`
-	IpAddress        []string `xml:"ipAddress,omitempty"`
+	Exclude           bool     `xml:"exclude"`
+	VnicGroupIds      []string `xml:"vnicGroupId,omitempty"`
+	GroupingObjectIds []string `xml:"groupingObjectId,omitempty"`
+	IpAddresses       []string `xml:"ipAddress,omitempty"`
 }
 
 type EdgeFirewallApplication struct {
-	ID      string                         `xml:"applicationId,omitempty"`
-	Service EdgeFirewallApplicationService `xml:"service,omitempty"`
+	ID       string                           `xml:"applicationId,omitempty"`
+	Services []EdgeFirewallApplicationService `xml:"service,omitempty"`
 }
 
 type EdgeFirewallApplicationService struct {
