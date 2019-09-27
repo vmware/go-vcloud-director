@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-// Tests reliability of getBareEntityUuid, which returns a bare UUID from an
+// Tests reliability of GetBareEntityUuid, which returns a bare UUID from an
 // entity ID field
 func Test_BareEntityID(t *testing.T) {
 
@@ -97,7 +97,7 @@ func Test_BareEntityID(t *testing.T) {
 	}
 
 	for _, it := range idTestList {
-		bareId, err := getBareEntityUuid(it.rawId)
+		bareId, err := GetBareEntityUuid(it.rawId)
 		if err != nil {
 			t.Logf("error extracting bare ID: %s", err)
 			t.Fail()
@@ -112,7 +112,7 @@ func Test_BareEntityID(t *testing.T) {
 		}
 	}
 	for _, it := range idTestExpectedToFailList {
-		bareId, err := getBareEntityUuid(it.rawId)
+		bareId, err := GetBareEntityUuid(it.rawId)
 		if err == nil {
 			t.Logf("unexpected success with raw ID %s", it.rawId)
 			t.Fail()

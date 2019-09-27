@@ -720,10 +720,13 @@ func (vdc *Vdc) FindVAppByID(vappid string) (VApp, error) {
 
 }
 
-func (vdc *Vdc) FindMediaImage(mediaName string) (MediaItem, error) {
+func (vdc *Vdc) FindMediaImage(mediaName, catalogName string) (MediaItem, error) {
 	util.Logger.Printf("[TRACE] Querying medias by name\n")
 
-	mediaResults, err := queryMediaItemsWithFilter(vdc, "name=="+url.QueryEscape(mediaName))
+	mediaResults, err := queryMediaItemsWithFilter(vdc,
+		fmt.Sprintf("(name==%s;catalogName==%s)",
+			url.QueryEscape(mediaName),
+			url.QueryEscape(catalogName)))
 	if err != nil {
 		return MediaItem{}, err
 	}
@@ -742,7 +745,7 @@ func (vdc *Vdc) FindMediaImage(mediaName string) (MediaItem, error) {
 		return MediaItem{}, errors.New("found more than result")
 	}
 
-	util.Logger.Printf("[TRACE] Found media record by name: %#v \n", mediaResults)
+	util.Logger.Printf("[TRACE] Found media record by name: %#v \n", mediaResults[0])
 	return *newMediaItem, nil
 }
 
