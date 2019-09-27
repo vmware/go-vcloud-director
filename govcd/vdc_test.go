@@ -237,7 +237,7 @@ func (vcd *TestVCD) Test_FindMediaImage(check *C) {
 	if vcd.config.Media.Media == "" {
 		check.Skip("Skipping test because no media name given")
 	}
-	mediaImage, err := vcd.vdc.QueryMediaImage(vcd.config.Media.Media, "")
+	mediaImage, err := vcd.vdc.FindMediaImage(vcd.config.Media.Media)
 	check.Assert(err, IsNil)
 	if mediaImage == (MediaItem{}) {
 		fmt.Printf("Media not found: %s\n", vcd.config.Media.Media)
@@ -248,7 +248,7 @@ func (vcd *TestVCD) Test_FindMediaImage(check *C) {
 	check.Assert(mediaImage.MediaItem.HREF, Not(Equals), "")
 
 	// find Invalid Network
-	mediaImage, err = vcd.vdc.QueryMediaImage("INVALID", "INVALID")
+	mediaImage, err = vcd.vdc.FindMediaImage("INVALID")
 	check.Assert(err, IsNil)
 	check.Assert(mediaImage, Equals, MediaItem{})
 }
