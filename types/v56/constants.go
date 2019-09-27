@@ -184,4 +184,5 @@ const (
 	EdgeGatewayVnicTypeInternal     = "internal"
 	EdgeGatewayVnicTypeTrunk        = "trunk"
 	EdgeGatewayVnicTypeSubinterface = "subinterface"
+	EdgeGatewayVnicTypeAny          = "any"
 )
