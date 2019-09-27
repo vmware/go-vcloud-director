@@ -61,7 +61,7 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	// Compose Raw vApp
 	err = vdc.ComposeRawVApp(TestLb)
 	check.Assert(err, IsNil)
-	vapp, err := vdc.FindVAppByName(TestLb)
+	vapp, err := vdc.GetVAppByName(TestLb, true)
 	check.Assert(err, IsNil)
 	// vApp was created - let's add it to cleanup list
 	AddToCleanupList(TestLb, "vapp", "", "createTestVapp")
@@ -97,9 +97,9 @@ func (vcd *TestVCD) Test_LB(check *C) {
 			NetworkConnectionIndex:  0,
 		})
 
-	vm1, err := spawnVM("FirstNode", *vdc, vapp, desiredNetConfig, vappTemplate, check)
+	vm1, err := spawnVM("FirstNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check)
 	check.Assert(err, IsNil)
-	vm2, err := spawnVM("SecondNode", *vdc, vapp, desiredNetConfig, vappTemplate, check)
+	vm2, err := spawnVM("SecondNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check)
 	check.Assert(err, IsNil)
 
 	// Get IPs alocated to the VMs
@@ -185,7 +185,7 @@ func spawnVM(name string, vdc Vdc, vapp VApp, net types.NetworkConnectionSection
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
-	vm, err := vdc.FindVMByName(vapp, name)
+	vm, err := vapp.GetVMByName(name, true)
 	check.Assert(err, IsNil)
 	fmt.Printf(". Done\n")
 
@@ -220,7 +220,7 @@ func spawnVM(name string, vdc Vdc, vapp VApp, net types.NetworkConnectionSection
 	check.Assert(err, IsNil)
 	fmt.Printf(". Done\n")
 
-	return vm, nil
+	return *vm, nil
 }
 
 // buildLB establishes an HTTP load balancer for 2 IPs specified as arguments

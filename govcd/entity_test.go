@@ -65,6 +65,12 @@ func (network *OrgVDCNetwork) id() string   { return network.OrgVDCNetwork.ID }
 func (egw *EdgeGateway) name() string { return egw.EdgeGateway.Name }
 func (egw *EdgeGateway) id() string   { return egw.EdgeGateway.ID }
 
+func (vapp *VApp) name() string { return vapp.VApp.Name }
+func (vapp *VApp) id() string   { return vapp.VApp.ID }
+
+func (vm *VM) name() string { return vm.VM.Name }
+func (vm *VM) id() string   { return vm.VM.ID }
+
 // Semi-generic tests that check the complete set of Get methods for an entity
 // GetEntityByName
 // GetEntityById
