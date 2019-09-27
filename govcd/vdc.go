@@ -750,7 +750,7 @@ func (vdc *Vdc) FindMediaImage(mediaName string) (MediaItem, error) {
 }
 
 // QueryMediaImage returns media image found in system using `name` and `catalog name` as query.
-func (vdc *Vdc) QueryMediaImage(mediaName, catalogName string) (MediaItem, error) {
+func (vdc *Vdc) QueryMediaImage(mediaName, catalogName string) (*MediaItem, error) {
 	util.Logger.Printf("[TRACE] Querying medias by name and catalog\n")
 
 	mediaResults, err := queryMediaItemsWithFilter(vdc,
@@ -758,7 +758,7 @@ func (vdc *Vdc) QueryMediaImage(mediaName, catalogName string) (MediaItem, error
 			url.QueryEscape(mediaName),
 			url.QueryEscape(catalogName)))
 	if err != nil {
-		return MediaItem{}, err
+		return nil, err
 	}
 
 	newMediaItem := NewMediaItem(vdc)
@@ -768,15 +768,15 @@ func (vdc *Vdc) QueryMediaImage(mediaName, catalogName string) (MediaItem, error
 	}
 
 	if len(mediaResults) == 0 {
-		return MediaItem{}, nil
+		return nil, ErrorEntityNotFound
 	}
 
 	if len(mediaResults) > 1 {
-		return MediaItem{}, errors.New("found more than result")
+		return nil, errors.New("found more than one result")
 	}
 
 	util.Logger.Printf("[TRACE] Found media record by name: %#v \n", mediaResults[0])
-	return *newMediaItem, nil
+	return newMediaItem, nil
 }
 
 // GetVappByHref returns a vApp reference by running a vCD API call

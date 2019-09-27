@@ -350,7 +350,7 @@ func (mediaItem *MediaItem) Refresh() error {
 	}
 
 	latestMediaItem, err := mediaItem.vdc.QueryMediaImage(mediaItem.MediaItem.Name, mediaItem.MediaItem.CatalogName)
-	*mediaItem = latestMediaItem
+	*mediaItem = *latestMediaItem
 
 	return err
 }

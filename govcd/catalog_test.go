@@ -437,8 +437,8 @@ func (vcd *TestVCD) Test_CatalogDeleteMediaImage(check *C) {
 	check.Assert(err, IsNil)
 
 	mediaItem, err = vcd.vdc.QueryMediaImage(itemName, vcd.config.VCD.Catalog.Name)
-	check.Assert(err, IsNil)
-	check.Assert(mediaItem, Equals, MediaItem{})
+	check.Assert(err, Equals, ErrorEntityNotFound)
+	check.Assert(mediaItem, IsNil)
 
 	//addition check
 	// check through existing catalogItems
