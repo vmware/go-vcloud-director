@@ -1144,7 +1144,7 @@ func (egw *EdgeGateway) UpdateLBGeneralParams(enabled, accelerationEnabled, logg
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
 	_, err = egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodPut, types.AnyXMLMime,
-		"error while updating load balancer application rule : %s", currentLb, &types.NSXError{})
+		"error while updating load balancer config: %s", currentLb, &types.NSXError{})
 	if err != nil {
 		return nil, err
 	}
@@ -1152,10 +1152,89 @@ func (egw *EdgeGateway) UpdateLBGeneralParams(enabled, accelerationEnabled, logg
 	// Retrieve configuration after update
 	updatedLb, err := egw.GetLBGeneralParams()
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve load balancer after update: %s", err)
+		return nil, fmt.Errorf("unable to retrieve load balancer config after update: %s", err)
 	}
 
 	return updatedLb, nil
+}
+
+// GetFwGeneralParams retrieves firewall configuration and can be used
+// to alter master configuration options. These are 3 fields only:
+// FwGeneralParamsWithXml.Enabled, FwGeneralParamsWithXml.DefaultPolicy.LoggingEnabled and
+// FwGeneralParamsWithXml.DefaultPolicy.Action
+func (egw *EdgeGateway) GetFwGeneralParams() (*types.FwGeneralParamsWithXml, error) {
+	if !egw.HasAdvancedNetworking() {
+		return nil, fmt.Errorf("only advanced edge gateway support firewall configuration")
+	}
+
+	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeFirewallPath)
+	if err != nil {
+		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
+	}
+
+	firewallConfig := &types.FwGeneralParamsWithXml{}
+	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
+		"unable to read firewall configuration: %s", nil, firewallConfig)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return firewallConfig, nil
+}
+
+// UpdateFwGeneralParams allows to update firewall configuration.
+// It accepts three fields (Enabled, DefaultLoggingEnabled, DefaultAction) and uses
+// them to construct types.FwGeneralParamsWithXml without altering other options to prevent config
+// corruption.
+// They are represented in firewall configuration page in the UI.
+func (egw *EdgeGateway) UpdateFwGeneralParams(enabled, defaultLoggingEnabled bool, defaultAction string) (*types.FwGeneralParamsWithXml, error) {
+	if !egw.HasAdvancedNetworking() {
+		return nil, fmt.Errorf("only advanced edge gateway supports load balancing")
+	}
+
+	if defaultAction != "accept" && defaultAction != "deny" {
+		return nil, fmt.Errorf("default action must be either 'accept' or 'deny'")
+	}
+
+	// Retrieve firewall latest configuration
+	currentFw, err := egw.GetFwGeneralParams()
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve firewall config before update: %s", err)
+	}
+
+	// Check if change is needed. If not - return early.
+	if currentFw.Enabled == enabled && currentFw.DefaultPolicy.LoggingEnabled == defaultLoggingEnabled &&
+		currentFw.DefaultPolicy.Action == defaultAction {
+		return currentFw, nil
+	}
+
+	// Modify only the global configuration settings
+	currentFw.Enabled = enabled
+	currentFw.DefaultPolicy.LoggingEnabled = defaultLoggingEnabled
+	currentFw.DefaultPolicy.Action = defaultAction
+
+	// Omit the version as it is updated automatically with each put
+	currentFw.Version = ""
+
+	// Push updated configuration
+	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeFirewallPath)
+	if err != nil {
+		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
+	}
+	_, err = egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodPut, types.AnyXMLMime,
+		"error while updating firewall configuration : %s", currentFw, &types.NSXError{})
+	if err != nil {
+		return nil, err
+	}
+
+	// Retrieve configuration after update
+	updatedFw, err := egw.GetFwGeneralParams()
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve firewall after update: %s", err)
+	}
+
+	return updatedFw, nil
 }
 
 // validateUpdateLoadBalancer validates mandatory fields for global load balancer configuration

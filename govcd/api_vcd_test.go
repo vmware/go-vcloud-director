@@ -1196,11 +1196,11 @@ func Test_splitParent(t *testing.T) {
 	}
 }
 
-// testGetLBGeneralParamsXML is used for additional validation that modifying load balancer
-// does not change any single field. It returns a string of whole load balancer configuration
-func testGetLBGeneralParamsXML(edge EdgeGateway, check *C) string {
+// testGetEdgeEndpointXML is used for additional validation that modifying edge gateway endpoint
+// does not change any single field. It returns an XML string of whole configuration
+func testGetEdgeEndpointXML(endpoint string, edge EdgeGateway, check *C) string {
 
-	httpPath, err := edge.buildProxiedEdgeEndpointURL(types.LbConfigPath)
+	httpPath, err := edge.buildProxiedEdgeEndpointURL(endpoint)
 	check.Assert(err, IsNil)
 
 	resp, err := edge.client.ExecuteRequestWithCustomError(httpPath, http.MethodGet, types.AnyXMLMime,
@@ -1220,8 +1220,17 @@ func testGetLBGeneralParamsXML(edge EdgeGateway, check *C) string {
 func testCacheLoadBalancer(edge EdgeGateway, check *C) (*types.LbGeneralParamsWithXml, string) {
 	beforeLb, err := edge.GetLBGeneralParams()
 	check.Assert(err, IsNil)
-	beforeLbXml := testGetLBGeneralParamsXML(edge, check)
+	beforeLbXml := testGetEdgeEndpointXML(types.LbConfigPath, edge, check)
 	return beforeLb, beforeLbXml
+}
+
+// testCacheFirewall is meant to store firewall settings before any operations so that all
+// configuration can be checked after manipulation
+func testCacheFirewall(edge EdgeGateway, check *C) (*types.FwGeneralParamsWithXml, string) {
+	beforeFw, err := edge.GetFwGeneralParams()
+	check.Assert(err, IsNil)
+	beforeFwbXml := testGetEdgeEndpointXML(types.EdgeFirewallPath, edge, check)
+	return beforeFw, beforeFwbXml
 }
 
 // testCheckLoadBalancerConfig validates if both raw XML string and load balancer struct remain
@@ -1230,7 +1239,7 @@ func testCheckLoadBalancerConfig(beforeLb *types.LbGeneralParamsWithXml, beforeL
 	afterLb, err := edge.GetLBGeneralParams()
 	check.Assert(err, IsNil)
 
-	afterLbXml := testGetLBGeneralParamsXML(edge, check)
+	afterLbXml := testGetEdgeEndpointXML(types.LbConfigPath, edge, check)
 
 	// remove `<version></version>` tag from both XML represntation and struct for deep comparison
 	// because this version changes with each update and will never be the same after a few
@@ -1245,4 +1254,54 @@ func testCheckLoadBalancerConfig(beforeLb *types.LbGeneralParamsWithXml, beforeL
 
 	check.Assert(beforeLb, DeepEquals, afterLb)
 	check.Assert(beforeLbXml, DeepEquals, afterLbXml)
+}
+
+// testCheckFirewallConfig validates if both raw XML string and firewall struct remain
+// identical after settings manipulation.
+func testCheckFirewallConfig(beforeFw *types.FwGeneralParamsWithXml, beforeFwXml string, edge EdgeGateway, check *C) {
+	afterFw, err := edge.GetFwGeneralParams()
+	check.Assert(err, IsNil)
+
+	afterFwXml := testGetEdgeEndpointXML(types.EdgeFirewallPath, edge, check)
+
+	// remove `<version></version>` tag from both XML represntation and struct for deep comparison
+	// because this version changes with each update and will never be the same after a few
+	// operations
+	reVersion := regexp.MustCompile(`<version>\w*<\/version>`)
+	beforeFwXml = reVersion.ReplaceAllLiteralString(beforeFwXml, "")
+	afterFwXml = reVersion.ReplaceAllLiteralString(afterFwXml, "")
+
+	beforeFw.Version = ""
+	afterFw.Version = ""
+
+	// Because the test enables and disables firewall configuration, main firewall rule has its ID
+	// and ruleTag changed during the test and we must ignore this change while comparing. This is
+	// always the first rule kept at the top so we are replacing `id` and `ruletag` fields in
+	// "before" and "after" values.
+	beforeFw.FirewallRules.Text = replaceFirstMatch(beforeFw.FirewallRules.Text, `<id>\d*</id>`, "<id>99999</id>")
+	beforeFw.FirewallRules.Text = replaceFirstMatch(beforeFw.FirewallRules.Text, `<ruleTag>\d*</ruleTag>`, "<ruleTag>99999</ruleTag>")
+	afterFw.FirewallRules.Text = replaceFirstMatch(afterFw.FirewallRules.Text, `<id>\d*</id>`, "<id>99999</id>")
+	afterFw.FirewallRules.Text = replaceFirstMatch(afterFw.FirewallRules.Text, `<ruleTag>\d*</ruleTag>`, "<ruleTag>99999</ruleTag>")
+
+	beforeFwXml = replaceFirstMatch(beforeFwXml, `<id>\d*</id>`, "<id>99999</id>")
+	beforeFwXml = replaceFirstMatch(beforeFwXml, `<ruleTag>\d*</ruleTag>`, "<ruleTag>99999</ruleTag>")
+	afterFwXml = replaceFirstMatch(afterFwXml, `<id>\d*</id>`, "<id>99999</id>")
+	afterFwXml = replaceFirstMatch(afterFwXml, `<ruleTag>\d*</ruleTag>`, "<ruleTag>99999</ruleTag>")
+
+	check.Assert(beforeFw, DeepEquals, afterFw)
+	check.Assert(beforeFwXml, DeepEquals, afterFwXml)
+}
+
+// replaceFirstMatch replaces first `regex` matched in `text` with `replacement` and returns it
+// It will panic if regex is invalid.
+func replaceFirstMatch(text, regex, replacement string) string {
+
+	re := regexp.MustCompile(regex)
+
+	// Replace leftmost found string
+	found := re.FindString(text)
+	if found != "" {
+		return strings.Replace(text, found, replacement, 1)
+	}
+	return ""
 }

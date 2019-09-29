@@ -20,8 +20,7 @@ func (vcd *TestVCD) Test_NsxvFirewallRule(check *C) {
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
 	firewallRule := &types.EdgeFirewallRule{
-		Name:        "test-firewall",
-		Description: "test-firewall description",
+		Name: "test-firewall",
 		Source: types.EdgeFirewallEndpoint{
 			VnicGroupIds: []string{"vnic-0"},
 		},
@@ -59,7 +58,6 @@ func (vcd *TestVCD) Test_NsxvFirewallRule(check *C) {
 
 	// Set ID and update firewall rule with description
 	firewallRule.ID = gotFwRule.ID
-	firewallRule.Description = "Updated descripion"
 	firewallRule.Source = types.EdgeFirewallEndpoint{
 		IpAddresses: []string{"any"},
 	}
@@ -69,13 +67,11 @@ func (vcd *TestVCD) Test_NsxvFirewallRule(check *C) {
 	updatedFwRule, err := edge.UpdateNsxvFirewall(firewallRule)
 	check.Assert(err, IsNil)
 	check.Assert(updatedFwRule, NotNil)
-	check.Assert(updatedFwRule.Description, Equals, firewallRule.Description)
 
 	// Check that boolean 'exclude' value was set to false during update
 	check.Assert(updatedFwRule.Destination.Exclude, Equals, false)
 
-	// Check if the objects are deeply equal (except updated 'Description' 'Source' and 'Destination')
-	createdFwRule.Description = firewallRule.Description
+	// Check if the objects are deeply equal (except updated 'Source' and 'Destination')
 	createdFwRule.Source = firewallRule.Source
 	createdFwRule.Destination = firewallRule.Destination
 
@@ -84,8 +80,7 @@ func (vcd *TestVCD) Test_NsxvFirewallRule(check *C) {
 	// Add a second rule above the previous one
 
 	firewallRule2 := &types.EdgeFirewallRule{
-		Name:        "test-firewall-above",
-		Description: "test-firewall description",
+		Name: "test-firewall-above",
 		Source: types.EdgeFirewallEndpoint{
 			VnicGroupIds: []string{"vnic-0"},
 		},

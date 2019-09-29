@@ -1662,6 +1662,33 @@ type StaticRoute struct {
 	GatewayInterface *Reference `xml:"GatewayInterface,omitempty"` // Gateway interface to which static route is bound.
 }
 
+// FwGeneralParamsWithXml allows to enable/disable firewall on a specific edge gateway
+// Reference: vCloud Director API for NSX Programming Guide
+// https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
+//
+// Warning. It nests all firewall rules because Edge Gateway API is done so that if this data is not
+// sent while enabling it would wipe all firewall rules. InnerXML type field is used with struct tag
+//`innerxml` to prevent any manipulation of configuration and sending it verbatim
+type FwGeneralParamsWithXml struct {
+	XMLName       xml.Name        `xml:"firewall"`
+	Enabled       bool            `xml:"enabled"`
+	DefaultPolicy FwDefaultPolicy `xml:"defaultPolicy"`
+
+	// Each configuration change has a version number
+	Version string `xml:"version,omitempty"`
+
+	// The below field has `innerxml` tag so that it is not processed but instead
+	// sent verbatim
+	FirewallRules InnerXML `xml:"firewallRules,omitempty"`
+	GlobalConfig  InnerXML `xml:"globalConfig,omitempty"`
+}
+
+// FwDefaultPolicy represent default rule
+type FwDefaultPolicy struct {
+	LoggingEnabled bool   `xml:"loggingEnabled"`
+	Action         string `xml:"action"`
+}
+
 // LbGeneralParamsWithXml allows to enable/disable load balancing capabilities on specific edge gateway
 // Reference: vCloud Director API for NSX Programming Guide
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
@@ -1855,10 +1882,6 @@ type EdgeFirewallRule struct {
 	Action          string                  `xml:"action,omitempty"`
 	Enabled         bool                    `xml:"enabled"`
 	LoggingEnabled  bool                    `xml:"loggingEnabled"`
-	Description     string                  `xml:"description,omitempty"`
-	// InsertAboveRuleId is not sent via API but is used to specify the rule ID above which
-	// new rule should be inserted during Create operation
-	InsertAboveRuleId string
 }
 
 // EdgeFirewallEndpoint can contains slices of objects for source or destination

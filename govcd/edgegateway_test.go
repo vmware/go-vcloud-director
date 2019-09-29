@@ -552,7 +552,7 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 // identical except <version></version> tag which is versioning the configuration
 func (vcd *TestVCD) TestEdgeGateway_UpdateLBGeneralParams(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
-		check.Skip("Skipping test because no edge gatway given")
+		check.Skip("Skipping test because no edge gateway given")
 	}
 	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
@@ -581,6 +581,46 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateLBGeneralParams(check *C) {
 
 	// Validate load balancer configuration against initially cached version
 	testCheckLoadBalancerConfig(beforeLb, beforeLbXml, *edge, check)
+}
+
+// TestEdgeGateway_UpdateFwGeneralParams main point is to test that no firewall configuration
+// xml tags are lost during changes of firewall main settings (enable, logging)
+// The test does following steps:
+// 1. Cache raw XML body and marshaled struct in variables before running the test
+// 2. Toggle the settings of firewall in various ways and ensure no err is returned
+// 3. Set the settings back as they originally were and again get raw XML body and marshaled struct
+// 4. Compare the XML text and structs before configuration and after configuration - they should be
+// identical except <version></version> tag which is versioning the configuration
+func (vcd *TestVCD) TestEdgeGateway_UpdateFwGeneralParams(check *C) {
+	if vcd.config.VCD.EdgeGateway == "" {
+		check.Skip("Skipping test because no edge gateway given")
+	}
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	check.Assert(err, IsNil)
+
+	if !edge.HasAdvancedNetworking() {
+		check.Skip("Skipping test because the edge gateway does not have advanced networking enabled")
+	}
+
+	// Cache current firewall settings for change validation in the end
+	beforeFw, beforeFwXml := testCacheFirewall(*edge, check)
+
+	_, err = edge.UpdateFwGeneralParams(false, false, "deny")
+	check.Assert(err, IsNil)
+
+	_, err = edge.UpdateFwGeneralParams(true, true, "accept")
+	check.Assert(err, IsNil)
+
+	// Try to set invalid loglevel to get validation error
+	_, err = edge.UpdateFwGeneralParams(false, false, "invalid_action")
+	check.Assert(err, ErrorMatches, ".*default action must be either 'accept' or 'deny'.*")
+
+	// Restore to initial settings and validate that it
+	_, err = edge.UpdateFwGeneralParams(beforeFw.Enabled, beforeFw.DefaultPolicy.LoggingEnabled, beforeFw.DefaultPolicy.Action)
+	check.Assert(err, IsNil)
+
+	// Validate configuration against initially cached version
+	testCheckFirewallConfig(beforeFw, beforeFwXml, *edge, check)
 }
 
 func (vcd *TestVCD) TestEdgeGateway_GetVnics(check *C) {
