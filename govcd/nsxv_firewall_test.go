@@ -120,17 +120,17 @@ func (vcd *TestVCD) Test_NsxvFirewallRule(check *C) {
 	check.Assert(foundRule2AboveRule1, Equals, true)
 
 	// Remove both rules
-	err = edge.DeleteNsxvNatRuleById(gotFwRule.ID)
+	err = edge.DeleteNsxvFirewallById(gotFwRule.ID)
 	check.Assert(err, IsNil)
 
-	err = edge.DeleteNsxvNatRuleById(createdFwRule2.ID)
+	err = edge.DeleteNsxvFirewallById(createdFwRule2.ID)
 	check.Assert(err, IsNil)
 
 	// Ensure these rule do not exist anymore
-	_, err = edge.GetNsxvNatRuleById(createdFwRule.ID)
+	_, err = edge.GetNsxvFirewallById(createdFwRule.ID)
 	check.Assert(err, Equals, ErrorEntityNotFound)
 
-	_, err = edge.GetNsxvNatRuleById(createdFwRule2.ID)
+	_, err = edge.GetNsxvFirewallById(createdFwRule2.ID)
 	check.Assert(err, Equals, ErrorEntityNotFound)
 
 }
