@@ -36,7 +36,10 @@ which use the proxied NSX-V API of advanced edge gateway for handling NAT rules 
 * Deprecated methods `Client.FindVMByHREF`, `Vdc.FindVMByName`, `Vdc.FindVAppByID`, and `Vdc.FindVAppByName`
 * Added methods `Vm.GetGuestCustomizationSection` and `Vm.SetGuestCustomizationSection`  
 * Added methods `CreateNsxvFirewall()`, `UpdateNsxvFirewall()`, `GetNsxvFirewallById()`, `DeleteNsxvFirewallById()`
-which use the proxied NSX-V API of advanced edge gateway for handling firewall rules [#xxx](xxx)
+which use the proxied NSX-V API of advanced edge gateway for handling firewall rules [#247](https://github.com/vmware/go-vcloud-director/pull/247)
+* Added methods `GetFwGeneralParams()`, `UpdateFwGeneralParams()` for changing global firewall settings [#247](https://github.com/vmware/go-vcloud-director/pull/247)
+* Added method `GetAnyVnicIndexByNetworkName()` to for easier interface (vNic) lookup in edge gateway [#247](https://github.com/vmware/go-vcloud-director/pull/247)
+* Added method `ExecuteParamRequestWithCustomError()` which adds query parameter support on top of `ExecuteRequestWithCustomError()` [#247](https://github.com/vmware/go-vcloud-director/pull/247)
 
 IMPROVEMENTS:
 
