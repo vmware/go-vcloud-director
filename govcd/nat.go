@@ -131,13 +131,13 @@ func (egw *EdgeGateway) DeleteNsxvNatRuleById(id string) error {
 		return err
 	}
 
-	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeCreateFirewallPath + "/" + id)
+	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeCreateNatPath + "/" + id)
 	if err != nil {
 		return fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
 
 	// check if the rule exists and pass back the error at it may be 'ErrorEntityNotFound'
-	_, err = egw.GetNsxvFirewallById(id)
+	_, err = egw.GetNsxvNatRuleById(id)
 	if err != nil {
 		return err
 	}
