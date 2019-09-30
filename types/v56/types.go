@@ -1867,7 +1867,8 @@ type EdgeNatRule struct {
 	IcmpType          string   `xml:"icmpType,omitempty"`
 }
 
-// EdgeFirewall holds data for creating firewall rule using proxied NSX-V api
+// EdgeFirewall holds data for creating firewall rule using proxied NSX-V API
+// https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 type EdgeFirewallRule struct {
 	XMLName         xml.Name                `xml:"firewallRule" `
 	ID              string                  `xml:"id,omitempty"`
@@ -1884,7 +1885,7 @@ type EdgeFirewallRule struct {
 	LoggingEnabled  bool                    `xml:"loggingEnabled"`
 }
 
-// EdgeFirewallEndpoint can contains slices of objects for source or destination
+// EdgeFirewallEndpoint can contains slices of objects for source or destination in EdgeFirewall
 type EdgeFirewallEndpoint struct {
 	Exclude           bool     `xml:"exclude"`
 	VnicGroupIds      []string `xml:"vnicGroupId,omitempty"`
@@ -1892,11 +1893,13 @@ type EdgeFirewallEndpoint struct {
 	IpAddresses       []string `xml:"ipAddress,omitempty"`
 }
 
+// EdgeFirewallApplication Wraps []EdgeFirewallApplicationService for multiple protocol/port specification
 type EdgeFirewallApplication struct {
 	ID       string                           `xml:"applicationId,omitempty"`
 	Services []EdgeFirewallApplicationService `xml:"service,omitempty"`
 }
 
+// EdgeFirewallApplicationService defines port/protocol details for one service in EdgeFirewallRule
 type EdgeFirewallApplicationService struct {
 	Protocol   string `xml:"protocol,omitempty"`
 	Port       string `xml:"port,omitempty"`

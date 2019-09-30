@@ -1295,9 +1295,7 @@ func testCheckFirewallConfig(beforeFw *types.FwGeneralParamsWithXml, beforeFwXml
 // replaceFirstMatch replaces first `regex` matched in `text` with `replacement` and returns it
 // It will panic if regex is invalid.
 func replaceFirstMatch(text, regex, replacement string) string {
-
 	re := regexp.MustCompile(regex)
-
 	// Replace leftmost found string
 	found := re.FindString(text)
 	if found != "" {
