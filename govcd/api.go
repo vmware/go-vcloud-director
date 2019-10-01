@@ -371,11 +371,19 @@ func (client *Client) ExecuteRequest(pathURL, requestType, contentType, errorMes
 // interface.
 func (client *Client) ExecuteRequestWithCustomError(pathURL, requestType, contentType, errorMessage string,
 	payload interface{}, errType error) (*http.Response, error) {
+	return client.ExecuteParamRequestWithCustomError(pathURL, map[string]string{}, requestType, contentType,
+		errorMessage, payload, errType)
+}
+
+// ExecuteParamRequestWithCustomError behaves exactly like ExecuteRequestWithCustomError but accepts
+// query parameter specification
+func (client *Client) ExecuteParamRequestWithCustomError(pathURL string, params map[string]string,
+	requestType, contentType, errorMessage string, payload interface{}, errType error) (*http.Response, error) {
 	if !isMessageWithPlaceHolder(errorMessage) {
 		return &http.Response{}, fmt.Errorf("error message has to include place holder for error")
 	}
 
-	resp, err := executeRequestCustomErr(pathURL, requestType, contentType, payload, client, errType)
+	resp, err := executeRequestCustomErr(pathURL, params, requestType, contentType, payload, client, errType)
 	if err != nil {
 		return &http.Response{}, fmt.Errorf(errorMessage, err)
 	}
@@ -399,11 +407,11 @@ func (client *Client) ExecuteRequestWithCustomError(pathURL, requestType, conten
 
 // executeRequest does executeRequestCustomErr and checks for vCD errors in API response
 func executeRequest(pathURL, requestType, contentType string, payload interface{}, client *Client) (*http.Response, error) {
-	return executeRequestCustomErr(pathURL, requestType, contentType, payload, client, &types.Error{})
+	return executeRequestCustomErr(pathURL, map[string]string{}, requestType, contentType, payload, client, &types.Error{})
 }
 
 // executeRequestCustomErr performs request and unmarshals API error to errType if not 2xx status was returned
-func executeRequestCustomErr(pathURL, requestType, contentType string, payload interface{}, client *Client, errType error) (*http.Response, error) {
+func executeRequestCustomErr(pathURL string, params map[string]string, requestType, contentType string, payload interface{}, client *Client, errType error) (*http.Response, error) {
 	url, _ := url.ParseRequestURI(pathURL)
 
 	var req *http.Request
@@ -416,19 +424,46 @@ func executeRequestCustomErr(pathURL, requestType, contentType string, payload i
 		}
 		body := bytes.NewBufferString(xml.Header + string(marshaledXml))
 
-		req = client.NewRequest(map[string]string{}, requestType, *url, body)
+		req = client.NewRequest(params, requestType, *url, body)
 
 	default:
-		req = client.NewRequest(map[string]string{}, requestType, *url, nil)
+		req = client.NewRequest(params, requestType, *url, nil)
 	}
 
 	if contentType != "" {
 		req.Header.Add("Content-Type", contentType)
 	}
 
-	resp, err := client.Http.Do(req)
-	if err != nil {
-		return resp, err
+	// This block handles HTTP retry errors
+	httpMaxTries := 5
+	var resp *http.Response
+	var err error
+	for httpTry := 1; httpTry <= httpMaxTries; httpTry++ {
+		// An error is returned if caused by client policy (such as
+		// CheckRedirect), or failure to speak HTTP (such as a network
+		// connectivity problem). A non-2xx status code doesn't cause an
+		// error.
+		resp, err = client.Http.Do(req)
+		// if err == nil - it means we have got real HTTP response and it is safe
+		// to break out from retry mechanism
+		if err == nil {
+			break
+		}
+
+		//if err != nil -  it means we have got some http client error (like timeout)
+		if err != nil {
+			// if it is not our last try - we log the error and let the loop retry
+			if httpTry < httpMaxTries {
+				util.ProcessErrResponseOutput(util.FuncNameCallStack(), req, httpTry, httpMaxTries, err)
+			}
+
+			// If this is our last try and we still have got an error - return it to the caller
+			if httpTry == httpMaxTries {
+				util.ProcessErrResponseOutput(util.FuncNameCallStack(), req, httpTry, httpMaxTries, err)
+				return resp, err
+			}
+		}
+
 	}
 
 	return checkRespWithErrType(resp, err, errType)

@@ -271,6 +271,27 @@ func ProcessResponseOutput(caller string, resp *http.Response, result string) {
 	}
 }
 
+// ProcessErrResponseOutput logs the error when HTTP Do request gets a non nil error
+func ProcessErrResponseOutput(caller string, req *http.Request, httpTry, httpMaxTries int, httpDoErr error) {
+	if !LogHttpResponse {
+		return
+	}
+
+	if !includeFunction(caller) {
+		return
+	}
+
+	Logger.Printf("%s\n", hashLine)
+	Logger.Printf("Response caller %s\n", caller)
+	Logger.Printf("Response error %s\n", httpDoErr.Error())
+	Logger.Printf("Request try %d out of %d\n", httpTry, httpMaxTries)
+	if httpTry == httpMaxTries {
+		Logger.Printf("Giving up after %d retries\n", httpMaxTries)
+	}
+
+	Logger.Printf("%s\n", hashLine)
+}
+
 // Sets the list of tahs to skip
 func SetSkipTags(tags string) {
 	if tags != "" {
