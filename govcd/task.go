@@ -58,7 +58,41 @@ func (task *Task) Refresh() error {
 
 	req := task.client.NewRequest(map[string]string{}, http.MethodGet, *refreshUrl, nil)
 
-	resp, err := checkResp(task.client.Http.Do(req))
+	// This block handles HTTP retry errors
+	httpMaxTries := 5
+	var resp *http.Response
+	var err error
+	for httpTry := 1; httpTry <= httpMaxTries; httpTry++ {
+		// An error is returned if caused by client policy (such as
+		// CheckRedirect), or failure to speak HTTP (such as a network
+		// connectivity problem). A non-2xx status code doesn't cause an
+		// error.
+		util.Logger.Printf("++++ Executing http request (try %d of %d)", httpTry, httpMaxTries)
+		resp, err = task.client.Http.Do(req)
+		// if err == nil - it means we have got real HTTP response and it is safe
+		// to break out from retry mechanism
+		if err == nil {
+			break
+		}
+
+		//if err != nil -  it means we have got some http client error (like timeout)
+		if err != nil {
+			// if it is not our last try - we log the error, sleep 1 second and let the loop retry
+			if httpTry < httpMaxTries {
+				util.ProcessErrResponseOutput(util.FuncNameCallStack(), req, httpTry, httpMaxTries, err)
+				time.Sleep(1 * time.Second)
+			}
+
+			// If this is our last try and we still have got an error - return it to the caller
+			if httpTry == httpMaxTries {
+				util.ProcessErrResponseOutput(util.FuncNameCallStack(), req, httpTry, httpMaxTries, err)
+				return err
+			}
+		}
+
+	}
+
+	resp, err = checkResp(resp, err)
 	if err != nil {
 		return fmt.Errorf("error retrieving task: %s", err)
 	}
