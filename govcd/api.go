@@ -435,6 +435,7 @@ func executeRequestCustomErr(pathURL string, requestType, contentType string, pa
 		// CheckRedirect), or failure to speak HTTP (such as a network
 		// connectivity problem). A non-2xx status code doesn't cause an
 		// error.
+		util.Logger.Printf("++++ Executing http request (try %d of %d", httpTry, httpMaxTries)
 		resp, err = client.Http.Do(req)
 		// if err == nil - it means we have got real HTTP response and it is safe
 		// to break out from retry mechanism
