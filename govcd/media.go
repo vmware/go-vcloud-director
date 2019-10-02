@@ -31,6 +31,18 @@ func NewMediaItem(vdc *Vdc) *MediaItem {
 	}
 }
 
+type Media struct {
+	Media  *types.Media
+	client *Client
+}
+
+func NewMedia(cli *Client) *Media {
+	return &Media{
+		Media:  new(types.Media),
+		client: cli,
+	}
+}
+
 // Uploads an ISO file as media. This method only uploads bits to vCD spool area.
 // Returns errors if any occur during upload from vCD or upload process. On upload fail client may need to
 // remove vCD catalog item which waits for files to be uploaded.
@@ -353,4 +365,81 @@ func (mediaItem *MediaItem) Refresh() error {
 	*mediaItem = *latestMediaItem
 
 	return err
+}
+
+// GetMediaByHref finds a Media by HREF
+// On success, returns a pointer to the Media structure and a nil error
+// On failure, returns a nil pointer and an error
+func (cat *Catalog) GetMediaByHref(mediaItemHref string) (*Media, error) {
+
+	media := NewMedia(cat.client)
+
+	_, err := cat.client.ExecuteRequest(mediaItemHref, http.MethodGet,
+		"", "error retrieving media: %s", nil, media.Media)
+	if err != nil {
+		return nil, err
+	}
+	return media, nil
+}
+
+// GetMediaByName finds a Media by Name
+// On success, returns a pointer to the Media structure and a nil error
+// On failure, returns a nil pointer and an error
+func (cat *Catalog) GetMediaByName(mediaName string, refresh bool) (*Media, error) {
+	if refresh {
+		err := cat.Refresh()
+		if err != nil {
+			return nil, err
+		}
+	}
+	for _, catalogItems := range cat.Catalog.CatalogItems {
+		for _, catalogItem := range catalogItems.CatalogItem {
+			if catalogItem.Name == mediaName && catalogItem.Type == "application/vnd.vmware.vcloud.catalogItem+xml" {
+				catalogItemElement, err := cat.GetCatalogItemByHref(catalogItem.HREF)
+				if err != nil {
+					return nil, err
+				}
+				return cat.GetMediaByHref(catalogItemElement.CatalogItem.Entity.HREF)
+			}
+		}
+	}
+	return nil, ErrorEntityNotFound
+}
+
+// GetMediaById finds a Media by ID
+// On success, returns a pointer to the Media structure and a nil error
+// On failure, returns a nil pointer and an error
+func (cat *Catalog) GetMediaById(mediaId string, refresh bool) (*Media, error) {
+	if refresh {
+		err := cat.Refresh()
+		if err != nil {
+			return nil, err
+		}
+	}
+	mediaHREF := cat.client.VCDHREF
+
+	mediaBareId, err := GetBareEntityUuid(mediaId)
+	if err != nil {
+		util.Logger.Printf("[Error] parsing bareID from mediaId %s: %s", mediaId, err)
+		return nil, ErrorEntityNotFound
+	}
+	if mediaBareId == "" {
+		util.Logger.Printf("[Error] parsing bareID from mediaId %s - empty bareID returned", mediaId)
+		return nil, ErrorEntityNotFound
+	}
+	mediaHREF.Path += fmt.Sprintf("/media/%s", mediaBareId)
+	return cat.GetMediaByHref(mediaHREF.String())
+}
+
+// GetMediaByNameOrId finds a Media by Name or ID
+// On success, returns a pointer to the Media structure and a nil error
+// On failure, returns a nil pointer and an error
+func (cat *Catalog) GetMediaByNameOrId(identifier string, refresh bool) (*Media, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) { return cat.GetMediaByName(name, refresh) }
+	getById := func(id string, refresh bool) (interface{}, error) { return cat.GetMediaById(id, refresh) }
+	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
+	if entity == nil {
+		return nil, err
+	}
+	return entity.(*Media), err
 }

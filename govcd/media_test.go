@@ -196,3 +196,54 @@ func (vcd *TestVCD) Test_RefreshMediaImage(check *C) {
 	check.Assert(oldMediaItem.MediaItem.Name, Equals, mediaItem.MediaItem.Name)
 	check.Assert(oldMediaItem.MediaItem.HREF, Equals, mediaItem.MediaItem.HREF)
 }
+
+// Tests Media retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_GetMedia(check *C) {
+
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_GetMedia: Org name not given.")
+		return
+	}
+	if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("Test_GetMedia: Catalog name not given.")
+		return
+	}
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+
+	itemName := "TestGetMedia"
+	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
+	check.Assert(err, IsNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_GetMedia")
+
+	getByName := func(name string, refresh bool) (genericEntity, error) {
+		err = catalog.Refresh()
+		check.Assert(err, IsNil)
+		return catalog.GetMediaByName(name, refresh)
+	}
+	getById := func(id string, refresh bool) (genericEntity, error) {
+		return catalog.GetMediaById(id, refresh)
+	}
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
+		return catalog.GetMediaByNameOrId(id, refresh)
+	}
+
+	var def = getterTestDefinition{
+		parentType:    "Catalog",
+		parentName:    vcd.config.VCD.Catalog.Name,
+		entityType:    "Media",
+		entityName:    itemName,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
+	}
+	vcd.testFinderGetGenericEntity(def, check)
+}
