@@ -668,10 +668,10 @@ func (vcd *TestVCD) Test_VMChangeRootDiskSize(check *C) {
 
 	currentDiskCapacity := 0
 	// The VM should have at least 1 disk (resource type 17) attached at AddressOnParent 0, indicating the root disk. Fetch the initial capacity from that disk.
-	if vcd.vapp.VApp.Children.VM[0] != nil && vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection != nil && vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection.Item != nil {
-		for _, item := range vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection.Item {
+	if existingVm.VirtualHardwareSection != nil && existingVm.VirtualHardwareSection.Item != nil {
+		for _, item := range existingVm.VirtualHardwareSection.Item {
 			if item.ResourceType == types.ResourceTypeDisk && item.AddressOnParent == 0 {
-				currentDiskCapacity = item.HostResource[0].Capacity
+				currentDiskCapacity = item.VirtualQuantity / (1024 * 1024)
 				break
 			}
 		}
@@ -680,18 +680,22 @@ func (vcd *TestVCD) Test_VMChangeRootDiskSize(check *C) {
 	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
 	check.Assert(err, IsNil)
 
+	// Increase the disk size by 1MB
 	task, err := vm.ChangeDiskSize(0, currentDiskCapacity+1)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 
-	// After changing the disk size, check that the disk at AddressOnParent 0 has a Capacity matching the incremented value.
+	// After changing the disk size, refresh the VM information and check that the disk at AddressOnParent 0 has increased its capacity by 1MB
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+
 	foundItem := false
 	if nil != vm.VM.VirtualHardwareSection.Item {
 		for _, item := range vm.VM.VirtualHardwareSection.Item {
 			if item.ResourceType == types.ResourceTypeDisk && item.AddressOnParent == 0 {
-				check.Assert(item.HostResource[0].Capacity, Equals, currentDiskCapacity+1)
+				check.Assert(item.VirtualQuantity, Equals, (currentDiskCapacity+1)*(1024*1024))
 				foundItem = true
 				break
 			}
