@@ -395,7 +395,7 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 }
 
 // ChangeDiskSize alters the Capacity (in megabytes) of a non-independent disk attached to the VM. Disk sizes may only be increased.
-func (vm *VM) ChangeDiskSize(index int, size int) (Task, error) {
+func (vm *VM) ChangeDiskSize(index int, sizeInMegabytes int) (Task, error) {
 	err := vm.Refresh()
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %s", err)
@@ -415,6 +415,9 @@ func (vm *VM) ChangeDiskSize(index int, size int) (Task, error) {
 			Type: types.MimeRasdItemList,
 		},
 	}
+
+	// Counter for the number of attached disks we've seen
+	diskCount := -1
 
 	for _, item := range vm.VM.VirtualHardwareSection.Item {
 		newItem := &types.OVFItem{
@@ -444,8 +447,11 @@ func (vm *VM) ChangeDiskSize(index int, size int) (Task, error) {
 				StorageProfile:    resource.StorageProfile,
 			}
 
-			if *newItem.AddressOnParent == index && newItem.ResourceType == types.ResourceTypeDisk {
-				newItem.HostResource.Capacity = size
+			if newItem.ResourceType == types.ResourceTypeDisk {
+				diskCount++
+				if diskCount == index {
+					newItem.HostResource.Capacity = sizeInMegabytes
+				}
 			}
 		}
 
