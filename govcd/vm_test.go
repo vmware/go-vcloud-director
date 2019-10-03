@@ -652,6 +652,48 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
 }
 
+func (vcd *TestVCD) Test_VMChangeRootDiskSize(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+	vapp := vcd.findFirstVapp()
+	existingVm, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	currentDisk := 0
+	if nil != vcd.vapp.VApp.Children.VM[0] && nil != vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection && nil != vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection.Item {
+		for _, item := range vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection.Item {
+			if item.ResourceType == types.ResourceTypeDisk && item.AddressOnParent == 0 {
+				currentDisk = item.HostResource[0].Capacity
+				break
+			}
+		}
+	}
+	check.Assert(0, Not(Equals), currentDisk)
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
+	check.Assert(err, IsNil)
+
+	task, err := vm.ChangeDiskSize(0, currentDisk+1)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	foundItem := false
+	if nil != vm.VM.VirtualHardwareSection.Item {
+		for _, item := range vm.VM.VirtualHardwareSection.Item {
+			if item.ResourceType == types.ResourceTypeDisk && item.AddressOnParent == 0 {
+				check.Assert(item.HostResource[0].Capacity, Equals, currentDisk+1)
+				foundItem = true
+				break
+			}
+		}
+		check.Assert(foundItem, Equals, true)
+	}
+}
+
 func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
