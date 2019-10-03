@@ -29,6 +29,7 @@ func (vcd *TestVCD) Test_FindVDCNetwork(check *C) {
 	// find Invalid Network
 	net, err = vcd.vdc.GetOrgVdcNetworkByName("INVALID", false)
 	check.Assert(err, NotNil)
+	check.Assert(net, IsNil)
 }
 
 // Tests Network retrieval by name, by ID, and by a combination of name and ID
