@@ -74,7 +74,7 @@ func CreateOrg(vcdClient *VCDClient, name string, fullName string, description s
 // will return "72fefde7-4fed-45b8-a774-79b72c870325"
 // From "urn:vcloud:catalog:97384890-180c-4563-b9b7-0dc50a2430b0"
 // will return "97384890-180c-4563-b9b7-0dc50a2430b0"
-func GetBareEntityUuid(entityId string) (string, error) {
+func getBareEntityUuid(entityId string) (string, error) {
 	// Regular expression to match an ID:
 	//     3 strings (alphanumeric + "-") separated by a colon (:)
 	//     1 group of 8 hexadecimal digits
@@ -94,7 +94,7 @@ func GetBareEntityUuid(entityId string) (string, error) {
 }
 
 // Returns the UUID part of an HREF
-// Similar to GetBareEntityUuid, but tailored to HREF
+// Similar to getBareEntityUuid, but tailored to HREF
 func getUuidFromHref(href string) (string, error) {
 	// Regular expression to match an ID:
 	//     1 string starting by 'https://' and ending with a '/',
@@ -214,7 +214,7 @@ func CreateAndConfigureEdgeGatewayAsync(vcdClient *VCDClient, orgName, vdcName, 
 
 	egwCreateHREF := vcdClient.Client.VCDHREF
 
-	vdcId, err := GetBareEntityUuid(vdc.Vdc.ID)
+	vdcId, err := getBareEntityUuid(vdc.Vdc.ID)
 	if err != nil {
 		return Task{}, fmt.Errorf("error retrieving ID from Vdc %s: %s", vdcName, err)
 	}
@@ -379,7 +379,7 @@ func getOrgHREFById(vcdClient *VCDClient, orgId string) (string, error) {
 		return "", err
 	}
 
-	orgUuid, err := GetBareEntityUuid(orgId)
+	orgUuid, err := getBareEntityUuid(orgId)
 	if err != nil {
 		return "", err
 	}

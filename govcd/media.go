@@ -418,7 +418,7 @@ func (cat *Catalog) GetMediaById(mediaId string, refresh bool) (*Media, error) {
 	}
 	mediaHREF := cat.client.VCDHREF
 
-	mediaBareId, err := GetBareEntityUuid(mediaId)
+	mediaBareId, err := getBareEntityUuid(mediaId)
 	if err != nil {
 		util.Logger.Printf("[Error] parsing bareID from mediaId %s: %s", mediaId, err)
 		return nil, ErrorEntityNotFound
