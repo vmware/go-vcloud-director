@@ -394,8 +394,22 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 		types.MimeRasdItem, "error changing memory size: %s", newMem)
 }
 
+// GetDiskHardwareItem finds the VirtualHardwareItem for a disk by bus (Address belonging to the Parent item) and unit (AddressOnParent)
+func (vm *VM) GetDiskHardwareItem(busID, unitID int) *types.VirtualHardwareItem {
+	for _, item := range vm.VM.VirtualHardwareSection.Item {
+		if item.ResourceType == types.ResourceTypeDisk && item.AddressOnParent == unitID {
+			for _, possibleParent := range vm.VM.VirtualHardwareSection.Item {
+				if possibleParent.InstanceID == item.Parent {
+					return item
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // ChangeDiskSize alters the Capacity (in megabytes) of a non-independent disk attached to the VM. Disk sizes may only be increased.
-func (vm *VM) ChangeDiskSize(index int, sizeInMegabytes int) (Task, error) {
+func (vm *VM) ChangeDiskSize(bus, unit int, sizeInMegabytes int) (Task, error) {
 	err := vm.Refresh()
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %s", err)
@@ -416,8 +430,10 @@ func (vm *VM) ChangeDiskSize(index int, sizeInMegabytes int) (Task, error) {
 		},
 	}
 
-	// Counter for the number of attached disks we've seen
-	diskCount := -1
+	disk := vm.GetDiskHardwareItem(bus, unit)
+	if disk == nil {
+		return Task{}, fmt.Errorf("error refreshing VM before running customization: couldn't find disk at bus %d unit %d", bus, unit)
+	}
 
 	for _, item := range vm.VM.VirtualHardwareSection.Item {
 		newItem := &types.OVFItem{
@@ -447,11 +463,8 @@ func (vm *VM) ChangeDiskSize(index int, sizeInMegabytes int) (Task, error) {
 				StorageProfile:    resource.StorageProfile,
 			}
 
-			if newItem.ResourceType == types.ResourceTypeDisk {
-				diskCount++
-				if diskCount == index {
-					newItem.HostResource.Capacity = sizeInMegabytes
-				}
+			if newItem.InstanceID == disk.InstanceID {
+				newItem.HostResource.Capacity = sizeInMegabytes
 			}
 		}
 

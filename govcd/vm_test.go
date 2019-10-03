@@ -670,6 +670,7 @@ func (vcd *TestVCD) Test_VMChangeRootDiskSize(check *C) {
 	// The VM should have at least 1 disk (resource type 17) attached at AddressOnParent 0, indicating the root disk. Fetch the initial capacity from that disk.
 	if existingVm.VirtualHardwareSection != nil && existingVm.VirtualHardwareSection.Item != nil {
 		for _, item := range existingVm.VirtualHardwareSection.Item {
+			fmt.Printf("%+v\n", item)
 			if item.ResourceType == types.ResourceTypeDisk && item.AddressOnParent == 0 {
 				currentDiskCapacity = item.VirtualQuantity / (1024 * 1024)
 				break
@@ -681,7 +682,7 @@ func (vcd *TestVCD) Test_VMChangeRootDiskSize(check *C) {
 	check.Assert(err, IsNil)
 
 	// Increase the disk size by 1MB
-	task, err := vm.ChangeDiskSize(0, currentDiskCapacity+1)
+	task, err := vm.ChangeDiskSize(0, 0, currentDiskCapacity+1)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
