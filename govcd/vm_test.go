@@ -652,40 +652,46 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
 }
 
+// Test the ability to change the size of a non-independent disk
 func (vcd *TestVCD) Test_VMChangeRootDiskSize(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
 	vapp := vcd.findFirstVapp()
+	if vapp.VApp.Name == "" {
+		check.Skip("Disabled: No suitable vApp found in vDC")
+	}
 	existingVm, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
 
-	currentDisk := 0
-	if nil != vcd.vapp.VApp.Children.VM[0] && nil != vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection && nil != vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection.Item {
+	currentDiskCapacity := 0
+	// The VM should have at least 1 disk (resource type 17) attached at AddressOnParent 0, indicating the root disk. Fetch the initial capacity from that disk.
+	if vcd.vapp.VApp.Children.VM[0] != nil && vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection != nil && vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection.Item != nil {
 		for _, item := range vcd.vapp.VApp.Children.VM[0].VirtualHardwareSection.Item {
 			if item.ResourceType == types.ResourceTypeDisk && item.AddressOnParent == 0 {
-				currentDisk = item.HostResource[0].Capacity
+				currentDiskCapacity = item.HostResource[0].Capacity
 				break
 			}
 		}
 	}
-	check.Assert(0, Not(Equals), currentDisk)
+	check.Assert(currentDiskCapacity, Not(Equals), 0)
 	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
 	check.Assert(err, IsNil)
 
-	task, err := vm.ChangeDiskSize(0, currentDisk+1)
+	task, err := vm.ChangeDiskSize(0, currentDiskCapacity+1)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 
+	// After changing the disk size, check that the disk at AddressOnParent 0 has a Capacity matching the incremented value.
 	foundItem := false
 	if nil != vm.VM.VirtualHardwareSection.Item {
 		for _, item := range vm.VM.VirtualHardwareSection.Item {
 			if item.ResourceType == types.ResourceTypeDisk && item.AddressOnParent == 0 {
-				check.Assert(item.HostResource[0].Capacity, Equals, currentDisk+1)
+				check.Assert(item.HostResource[0].Capacity, Equals, currentDiskCapacity+1)
 				foundItem = true
 				break
 			}

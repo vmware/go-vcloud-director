@@ -1459,7 +1459,9 @@ type OVFItem struct {
 	Link            *Link `xml:"vcloud:Link"`
 }
 
-// Used to write a list of RASD items, generally for modifying disks attached to a VM
+// Used to write a list of RASD (ResourceAllocationSettingData) items, generally for modifying disks attached to a VM
+// https://pubs.vmware.com/vcd-56/index.jsp?topic=%2Fcom.vmware.vcloud.api.doc_56%2FGUID-E1BA999D-87FA-4E2C-B638-24A211AB8160.html
+// https://www.vmware.com/support/vcd/doc/rest-api-doc-1.5-html/types/RasdItemsListType.html
 type RasdItemsList struct {
 	XMLName     xml.Name `xml:"vcloud:RasdItemsList"`
 	Xmlns       string   `xml:"xmlns,attr"`
