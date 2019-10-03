@@ -1403,12 +1403,13 @@ type VirtualHardwareConnection struct {
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // def8435d-a54a-4923-b26a-e2d1915b09c3/vcloud_sp_api_guide_30_0.pdf
 type VirtualHardwareHostResource struct {
-	BusType           int    `xml:"busType,attr,omitempty"`
-	BusSubType        string `xml:"busSubType,attr,omitempty"`
-	Capacity          int    `xml:"capacity,attr,omitempty"`
-	StorageProfile    string `xml:"storageProfileHref,attr,omitempty"`
-	OverrideVmDefault bool   `xml:"storageProfileOverrideVmDefault,attr,omitempty"`
-	Disk              string `xml:"disk,attr,omitempty"`
+	XmlnsVCloud       string `xml:"xmlns:vcloud,attr,omitempty"`
+	BusType           int    `xml:"vcloud:busType,attr,omitempty"`
+	BusSubType        string `xml:"vcloud:busSubType,attr,omitempty"`
+	Capacity          int    `xml:"vcloud:capacity,attr,omitempty"`
+	StorageProfile    string `xml:"vcloud:storageProfileHref,attr,omitempty"`
+	OverrideVmDefault bool   `xml:"vcloud:storageProfileOverrideVmDefault,attr,omitempty"`
+	Disk              string `xml:"vcloud:disk,attr,omitempty"`
 	//Iops              int    `xml:"iops,attr,omitempty"`
 	//OsType            string `xml:"osType,attr,omitempty"`
 }
@@ -1439,16 +1440,37 @@ type OVFItem struct {
 	XmlnsVmw        string   `xml:"xmlns:vmw,attr,omitempty"`
 	VCloudHREF      string   `xml:"vcloud:href,attr"`
 	VCloudType      string   `xml:"vcloud:type,attr"`
-	AllocationUnits string   `xml:"rasd:AllocationUnits"`
-	Description     string   `xml:"rasd:Description"`
-	ElementName     string   `xml:"rasd:ElementName"`
-	InstanceID      int      `xml:"rasd:InstanceID"`
-	Reservation     int      `xml:"rasd:Reservation"`
-	ResourceType    int      `xml:"rasd:ResourceType"`
-	VirtualQuantity int      `xml:"rasd:VirtualQuantity"`
-	Weight          int      `xml:"rasd:Weight"`
-	CoresPerSocket  *int     `xml:"vmw:CoresPerSocket,omitempty"`
-	Link            *Link    `xml:"vcloud:Link"`
+	Address         string   `xml:"rasd:Address,omitempty"`
+	AddressOnParent *int     `xml:"rasd:AddressOnParent,omitempty"`
+
+	AllocationUnits string                       `xml:"rasd:AllocationUnits"`
+	Description     string                       `xml:"rasd:Description"`
+	ElementName     string                       `xml:"rasd:ElementName"`
+	HostResource    *VirtualHardwareHostResource `xml:"rasd:HostResource,omitempty"`
+	InstanceID      int                          `xml:"rasd:InstanceID"`
+	Parent          *int                         `xml:"rasd:Parent,omitempty"`
+	Reservation     int                          `xml:"rasd:Reservation"`
+	ResourceSubType string                       `xml:"rasd:ResourceSubType,omitempty"`
+	ResourceType    int                          `xml:"rasd:ResourceType"`
+
+	VirtualQuantity int   `xml:"rasd:VirtualQuantity"`
+	Weight          int   `xml:"rasd:Weight"`
+	CoresPerSocket  *int  `xml:"vmw:CoresPerSocket,omitempty"`
+	Link            *Link `xml:"vcloud:Link"`
+}
+
+// Used to write a list of RASD items, generally for modifying disks attached to a VM
+type RasdItemsList struct {
+	XMLName     xml.Name `xml:"vcloud:RasdItemsList"`
+	Xmlns       string   `xml:"xmlns,attr"`
+	XmlnsVCloud string   `xml:"xmlns:vcloud,attr"`
+	XmlnsRasd   string   `xml:"xmlns:rasd,attr"`
+	XmlnsXsi    string   `xml:"xmlns:xsi,attr"`
+	XmlnsVmw    string   `xml:"xmlns:vmw,attr,omitempty"`
+	Type        string   `xml:"type,attr"`
+	HREF        string   `xml:"href,attr"`
+	Link        *Link    `xml:"vcloud:Link"`
+	Items       []*OVFItem
 }
 
 // DeployVAppParams are the parameters to a deploy vApp request

@@ -394,6 +394,70 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 		types.MimeRasdItem, "error changing memory size: %s", newMem)
 }
 
+func (vm *VM) ChangeDiskSize(index int, size int) (Task, error) {
+	err := vm.Refresh()
+	if err != nil {
+		return Task{}, fmt.Errorf("error refreshing VM before running customization: %v", err)
+	}
+
+	items := &types.RasdItemsList{
+		Type:        types.MimeRasdItemList,
+		HREF:        vm.VM.HREF + "/virtualHardwareSection/disks",
+		Xmlns:       types.XMLNamespaceVCloud,
+		XmlnsRasd:   types.XMLNamespaceRASD,
+		XmlnsVCloud: types.XMLNamespaceVCloud,
+		XmlnsXsi:    types.XMLNamespaceXSI,
+		Items:       make([]*types.OVFItem, 0),
+		Link: &types.Link{
+			HREF: vm.VM.HREF + "/virtualHardwareSection/disks",
+			Rel:  "edit",
+			Type: types.MimeRasdItemList,
+		},
+	}
+
+	for _, item := range vm.VM.VirtualHardwareSection.Item {
+		newItem := &types.OVFItem{
+			XmlnsRasd:       types.XMLNamespaceRASD,
+			XmlnsVCloud:     types.XMLNamespaceVCloud,
+			XmlnsXsi:        types.XMLNamespaceXSI,
+			XmlnsVmw:        types.XMLNamespaceVMW,
+			Address:         item.Address,
+			AddressOnParent: &item.AddressOnParent,
+			Description:     item.Description,
+			ElementName:     item.ElementName,
+			InstanceID:      item.InstanceID,
+			Parent:          &item.Parent,
+			ResourceSubType: item.ResourceSubType,
+			ResourceType:    item.ResourceType,
+		}
+
+		if item.HostResource != nil && len(item.HostResource) > 0 {
+			resource := item.HostResource[0]
+			newItem.HostResource = &types.VirtualHardwareHostResource{
+				XmlnsVCloud:       types.XMLNamespaceVCloud,
+				BusSubType:        resource.BusSubType,
+				BusType:           resource.BusType,
+				Capacity:          resource.Capacity,
+				Disk:              resource.Disk,
+				OverrideVmDefault: resource.OverrideVmDefault,
+				StorageProfile:    resource.StorageProfile,
+			}
+
+			if *newItem.AddressOnParent == index && newItem.ResourceType == types.ResourceTypeDisk {
+				newItem.HostResource.Capacity = size
+			}
+		}
+
+		items.Items = append(items.Items, newItem)
+	}
+	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint.Path += "/virtualHardwareSection/disks"
+
+	// Return the task
+	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+		types.MimeRasdItemList, "error changing disk size: %s", items)
+}
+
 func (vm *VM) RunCustomizationScript(computername, script string) (Task, error) {
 	return vm.Customize(computername, script, false)
 }
