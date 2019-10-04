@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -18,6 +19,8 @@ import (
 
 // Tests catalog refresh
 func (vcd *TestVCD) Test_CatalogRefresh(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	catalogName := vcd.config.VCD.Catalog.Name
 	if catalogName == "" {
 		check.Skip("Test_CatalogRefresh: Catalog name not given.")
@@ -51,6 +54,8 @@ func (vcd *TestVCD) Test_CatalogRefresh(check *C) {
 }
 
 func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	// Fetch Catalog
 	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	if err != nil {
@@ -79,6 +84,8 @@ func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
 // Creates a Catalog, updates the description, and checks the changes against the
 // newly updated catalog. Then deletes the catalog
 func (vcd *TestVCD) Test_UpdateCatalog(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
@@ -106,6 +113,8 @@ func (vcd *TestVCD) Test_UpdateCatalog(check *C) {
 // Creates a Catalog, and then deletes the catalog, and checks if
 // the catalog still exists. If it does the assertion fails.
 func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
@@ -130,6 +139,8 @@ func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
 // Tests System function UploadOvf by creating catalog and
 // checking if provided standard ova file uploaded.
 func (vcd *TestVCD) Test_UploadOvf(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	skipWhenOvaPathMissing(vcd, check)
 	checkUploadOvf(vcd, check, vcd.config.OVA.OVAPath, vcd.config.VCD.Catalog.Name, TestUploadOvf)
 }
@@ -137,6 +148,8 @@ func (vcd *TestVCD) Test_UploadOvf(check *C) {
 // Tests System function UploadOvf by creating catalog and
 // checking if provided chunked ova file uploaded.
 func (vcd *TestVCD) Test_UploadOvf_chunked(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	skipWhenOvaPathMissing(vcd, check)
 	checkUploadOvf(vcd, check, vcd.config.OVA.OVAChunkedPath, vcd.config.VCD.Catalog.Name, TestUploadOvf+"2")
 }
@@ -144,6 +157,8 @@ func (vcd *TestVCD) Test_UploadOvf_chunked(check *C) {
 // Tests System function UploadOvf by creating catalog and
 // checking UploadTask.GetUploadProgress returns values of progress.
 func (vcd *TestVCD) Test_UploadOvf_progress_works(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	skipWhenOvaPathMissing(vcd, check)
 	itemName := TestUploadOvf + "3"
 
@@ -171,6 +186,8 @@ func (vcd *TestVCD) Test_UploadOvf_progress_works(check *C) {
 // Tests System function UploadOvf by creating catalog and
 // checking UploadTask.ShowUploadProgress writes values of progress to stdin.
 func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	skipWhenOvaPathMissing(vcd, check)
 	itemName := TestUploadOvf + "4"
 
@@ -207,6 +224,8 @@ func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
 // Tests System function UploadOvf by creating catalog, creating catalog item
 // and expecting specific error then trying to create same catalog item. As vCD returns cryptic error for such case.
 func (vcd *TestVCD) Test_UploadOvf_error_withSameItem(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	skipWhenOvaPathMissing(vcd, check)
 
 	itemName := TestUploadOvf + "5"
@@ -229,6 +248,8 @@ func (vcd *TestVCD) Test_UploadOvf_error_withSameItem(check *C) {
 // Tests System function UploadOvf by creating catalog, uploading file and verifying
 // that extracted files were deleted.s
 func (vcd *TestVCD) Test_UploadOvf_cleaned_extracted_files(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	skipWhenOvaPathMissing(vcd, check)
 
 	itemName := TestUploadOvf + "6"
@@ -313,6 +334,8 @@ func skipWhenOvaPathMissing(vcd *TestVCD, check *C) {
 
 // Tests System function UploadMediaImage by checking if provided standard iso file uploaded.
 func (vcd *TestVCD) Test_CatalogUploadMediaImage(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	skipWhenMediaPathMissing(vcd, check)
 
 	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
@@ -322,7 +345,7 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(TestCatalogUploadMedia, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadCatalogMediaImage")
+	AddToCleanupList(TestCatalogUploadMedia, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage")
 
 	//verifyMediaImageUploaded(vcd.vdc.client, check, TestUploadMedia)
 	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
@@ -333,6 +356,8 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage(check *C) {
 
 // Tests System function UploadMediaImage by checking UploadTask.GetUploadProgress returns values of progress.
 func (vcd *TestVCD) Test_CatalogUploadMediaImage_progress_works(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	skipWhenMediaPathMissing(vcd, check)
 	itemName := TestCatalogUploadMedia + "2"
 
@@ -350,7 +375,7 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_progress_works(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadCatalogMediaImage")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage_progress_works")
 
 	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
@@ -360,6 +385,8 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_progress_works(check *C) {
 
 // Tests System function UploadMediaImage by checking UploadTask.ShowUploadProgress writes values of progress to stdin.
 func (vcd *TestVCD) Test_CatalogUploadMediaImage_ShowUploadProgress_works(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	skipWhenMediaPathMissing(vcd, check)
 	itemName := TestCatalogUploadMedia + "3"
 
@@ -383,7 +410,7 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_ShowUploadProgress_works(check 
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadCatalogMediaImage")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage_ShowUploadProgress_works")
 
 	check.Assert(string(result), Matches, ".*Upload progress 100.00%")
 	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
@@ -395,6 +422,8 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_ShowUploadProgress_works(check 
 // Tests System function UploadMediaImage by creating media item and expecting specific error
 // then trying to create same media item. As vCD returns cryptic error for such case.
 func (vcd *TestVCD) Test_CatalogUploadMediaImage_error_withSameItem(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	skipWhenMediaPathMissing(vcd, check)
 	itemName := TestCatalogUploadMedia + "4"
 
@@ -405,7 +434,7 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_error_withSameItem(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadCatalogMediaImage")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage_error_withSameItem")
 
 	_, err2 := vcd.vdc.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err2, NotNil)
@@ -414,7 +443,9 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_error_withSameItem(check *C) {
 
 // Tests System function Delete by creating media item and
 // deleting it after.
-func (vcd *TestVCD) Test_CatalogDeleteMediaImage(check *C) {
+func (vcd *TestVCD) Test_CatalogDeleteMediaRecord(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	skipWhenMediaPathMissing(vcd, check)
 	itemName := TestCatalogUploadMedia + "5"
 
@@ -425,20 +456,20 @@ func (vcd *TestVCD) Test_CatalogDeleteMediaImage(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadCatalogMediaImage")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogDeleteMediaImage")
 
-	mediaItem, err := vcd.vdc.QueryMediaImage(itemName, vcd.config.VCD.Catalog.Name)
+	mediaRecord, err := catalog.QueryMedia(itemName)
 	check.Assert(err, IsNil)
-	check.Assert(mediaItem, Not(Equals), MediaItem{})
+	check.Assert(mediaRecord, Not(Equals), MediaRecord{})
 
-	task, err := mediaItem.Delete()
+	task, err := mediaRecord.Delete()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	mediaItem, err = vcd.vdc.QueryMediaImage(itemName, vcd.config.VCD.Catalog.Name)
+	mediaRecord, err = catalog.QueryMedia(itemName)
 	check.Assert(err, Equals, ErrorEntityNotFound)
-	check.Assert(mediaItem, IsNil)
+	check.Assert(mediaRecord, IsNil)
 
 	//addition check
 	// check through existing catalogItems
@@ -462,6 +493,7 @@ func init() {
 
 // Tests CatalogItem retrieval by name, by ID, and by a combination of name and ID
 func (vcd *TestVCD) Test_CatalogGetItem(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
 
 	if vcd.config.VCD.Org == "" {
 		check.Skip("Test_CatalogGetItem: Org name not given.")

@@ -202,11 +202,13 @@ func (vAppTemplate *VAppTemplate) DeleteMetadataAsync(key string) (Task, error) 
 
 // GetMetadata() function calls private function getMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
 // which returns a *types.Metadata struct for provided media item input.
+// Deprecated: Use mediaRecord.GetMetadata
 func (mediaItem *MediaItem) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(mediaItem.vdc.client, mediaItem.MediaItem.HREF)
 }
 
 // AddMetadata() function adds metadata key/value pair provided as input.
+// Deprecated: Use mediaRecord.AddMetadata
 func (mediaItem *MediaItem) AddMetadata(key string, value string) (*MediaItem, error) {
 	task, err := mediaItem.AddMetadataAsync(key, value)
 	if err != nil {
@@ -227,11 +229,13 @@ func (mediaItem *MediaItem) AddMetadata(key string, value string) (*MediaItem, e
 
 // AddMetadataAsync() function calls private function addMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
 // which adds metadata key/value pair provided as input.
+// Deprecated: Use mediaRecord.AddMetadataAsync
 func (mediaItem *MediaItem) AddMetadataAsync(key string, value string) (Task, error) {
 	return addMetadata(mediaItem.vdc.client, key, value, mediaItem.MediaItem.HREF)
 }
 
 // DeleteMetadata() function calls deletes metadata depending on key provided as input from media item.
+// Deprecated: Use mediaRecord.DeleteMetadata
 func (mediaItem *MediaItem) DeleteMetadata(key string) error {
 	task, err := mediaItem.DeleteMetadataAsync(key)
 	if err != nil {
@@ -247,6 +251,58 @@ func (mediaItem *MediaItem) DeleteMetadata(key string) error {
 
 // DeleteMetadataAsync() function calls private function deleteMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
 // which deletes metadata depending on key provided as input from media item.
+// Deprecated: Use mediaRecord.DeleteMetadataAsync
 func (mediaItem *MediaItem) DeleteMetadataAsync(key string) (Task, error) {
 	return deleteMetadata(mediaItem.vdc.client, key, mediaItem.MediaItem.HREF)
+}
+
+// GetMetadata() function calls private function getMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
+// which returns a *types.Metadata struct for provided media item input.
+func (mediaRecord *MediaRecord) GetMetadata() (*types.Metadata, error) {
+	return getMetadata(mediaRecord.client, mediaRecord.MediaRecord.HREF)
+}
+
+// AddMetadata() function adds metadata key/value pair provided as input.
+func (mediaRecord *MediaRecord) AddMetadata(key string, value string) (*MediaRecord, error) {
+	task, err := mediaRecord.AddMetadataAsync(key, value)
+	if err != nil {
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("error completing add metadata for media item task: %s", err)
+	}
+
+	err = mediaRecord.Refresh()
+	if err != nil {
+		return nil, fmt.Errorf("error refreshing media item: %s", err)
+	}
+
+	return mediaRecord, nil
+}
+
+// AddMetadataAsync() function calls private function addMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
+// which adds metadata key/value pair provided as input.
+func (mediaRecord *MediaRecord) AddMetadataAsync(key string, value string) (Task, error) {
+	return addMetadata(mediaRecord.client, key, value, mediaRecord.MediaRecord.HREF)
+}
+
+// DeleteMetadata() function calls deletes metadata depending on key provided as input from media item.
+func (mediaRecord *MediaRecord) DeleteMetadata(key string) error {
+	task, err := mediaRecord.DeleteMetadataAsync(key)
+	if err != nil {
+		return err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error completing delete metadata for media item task: %s", err)
+	}
+
+	return nil
+}
+
+// DeleteMetadataAsync() function calls private function deleteMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
+// which deletes metadata depending on key provided as input from media item.
+func (mediaRecord *MediaRecord) DeleteMetadataAsync(key string) (Task, error) {
+	return deleteMetadata(mediaRecord.client, key, mediaRecord.MediaRecord.HREF)
 }

@@ -253,33 +253,6 @@ func (vcd *TestVCD) Test_FindMediaImage(check *C) {
 	check.Assert(mediaImage, Equals, MediaItem{})
 }
 
-func (vcd *TestVCD) Test_QueryMediaImage(check *C) {
-
-	skipWhenMediaPathMissing(vcd, check)
-
-	testQuerydMediaName := "testQuerydMedia"
-	catalog, _ := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
-
-	uploadTask, err := catalog.UploadMediaImage(testQuerydMediaName, "upload from test", vcd.config.Media.MediaPath, 1024)
-	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	AddToCleanupList(testQuerydMediaName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_QueryMediaImage")
-
-	mediaImage, err := vcd.vdc.QueryMediaImage(testQuerydMediaName, catalog.Catalog.Name)
-	check.Assert(err, IsNil)
-	check.Assert(mediaImage, Not(Equals), nil)
-
-	check.Assert(mediaImage.MediaItem.Name, Equals, testQuerydMediaName)
-	check.Assert(mediaImage.MediaItem.HREF, Not(Equals), "")
-
-	// find Invalid media
-	mediaImage, err = vcd.vdc.QueryMediaImage("INVALID", "INVALID")
-	check.Assert(err, Equals, ErrorEntityNotFound)
-	check.Assert(mediaImage, IsNil)
-}
-
 // Tests function QueryVM by searching vm created
 // by test suite
 func (vcd *TestVCD) Test_QueryVM(check *C) {
