@@ -71,8 +71,8 @@ func (vapp *VApp) id() string   { return vapp.VApp.ID }
 func (vm *VM) name() string { return vm.VM.Name }
 func (vm *VM) id() string   { return vm.VM.ID }
 
-func (catItem *Media) name() string { return catItem.Media.Name }
-func (catItem *Media) id() string   { return catItem.Media.ID }
+func (media *Media) name() string { return media.Media.Name }
+func (media *Media) id() string   { return media.Media.ID }
 
 // Semi-generic tests that check the complete set of Get methods for an entity
 // GetEntityByName
