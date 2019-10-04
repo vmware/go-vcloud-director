@@ -396,11 +396,15 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 
 // GetDiskHardwareItem finds the VirtualHardwareItem for a disk by bus (Address belonging to the Parent item) and unit (AddressOnParent)
 func (vm *VM) GetDiskHardwareItem(busID, unitID int) *types.VirtualHardwareItem {
-	for _, item := range vm.VM.VirtualHardwareSection.Item {
-		if item.ResourceType == types.ResourceTypeDisk && item.AddressOnParent == unitID {
+	for _, virtualHardwareItem := range vm.VM.VirtualHardwareSection.Item {
+		if virtualHardwareItem.ResourceType == types.ResourceTypeDisk && virtualHardwareItem.AddressOnParent == unitID {
 			for _, possibleParent := range vm.VM.VirtualHardwareSection.Item {
-				if possibleParent.InstanceID == item.Parent {
-					return item
+				// Address is a string because it can be empty; if it's not empty, perform an int comparison
+				if possibleParent.InstanceID == virtualHardwareItem.Parent && possibleParent.Address != "" {
+					parentAddress, err := strconv.Atoi(possibleParent.Address)
+					if err == nil && parentAddress == busID {
+						return virtualHardwareItem
+					}
 				}
 			}
 		}
@@ -415,12 +419,12 @@ func (vm *VM) ChangeDiskSize(bus, unit int, sizeInMegabytes int) (Task, error) {
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %s", err)
 	}
 
-	items := &types.RasdItemsList{
+	rasdItems := &types.RasdItemsList{
 		Type:        types.MimeRasdItemList,
 		HREF:        vm.VM.HREF + "/virtualHardwareSection/disks",
 		Xmlns:       types.XMLNamespaceVCloud,
-		XmlnsRasd:   types.XMLNamespaceRASD,
 		XmlnsVCloud: types.XMLNamespaceVCloud,
+		XmlnsRasd:   types.XMLNamespaceRASD,
 		XmlnsXsi:    types.XMLNamespaceXSI,
 		Items:       make([]*types.OVFItem, 0),
 		Link: &types.Link{
@@ -436,46 +440,52 @@ func (vm *VM) ChangeDiskSize(bus, unit int, sizeInMegabytes int) (Task, error) {
 	}
 
 	for _, item := range vm.VM.VirtualHardwareSection.Item {
-		newItem := &types.OVFItem{
+		newOvfItem := &types.OVFItem{
 			XmlnsRasd:       types.XMLNamespaceRASD,
 			XmlnsVCloud:     types.XMLNamespaceVCloud,
 			XmlnsXsi:        types.XMLNamespaceXSI,
 			XmlnsVmw:        types.XMLNamespaceVMW,
 			Address:         item.Address,
 			AddressOnParent: &item.AddressOnParent,
+			AllocationUnits: item.AllocationUnits,
 			Description:     item.Description,
 			ElementName:     item.ElementName,
 			InstanceID:      item.InstanceID,
 			Parent:          &item.Parent,
 			ResourceSubType: item.ResourceSubType,
 			ResourceType:    item.ResourceType,
+			Reservation:     item.Reservation,
+			VirtualQuantity: item.VirtualQuantity,
+			Weight:          item.Weight,
+		}
+
+		if item.Link != nil && len(item.Link) > 0 {
+			newOvfItem.Link = item.Link[0]
 		}
 
 		if item.HostResource != nil && len(item.HostResource) > 0 {
 			resource := item.HostResource[0]
-			newItem.HostResource = &types.VirtualHardwareHostResource{
-				XmlnsVCloud:       types.XMLNamespaceVCloud,
-				BusSubType:        resource.BusSubType,
+			newOvfItem.HostResource = &types.VirtualHardwareHostResourceForWrite{
 				BusType:           resource.BusType,
+				BusSubType:        resource.BusSubType,
 				Capacity:          resource.Capacity,
-				Disk:              resource.Disk,
-				OverrideVmDefault: resource.OverrideVmDefault,
 				StorageProfile:    resource.StorageProfile,
-			}
-
-			if newItem.InstanceID == disk.InstanceID {
-				newItem.HostResource.Capacity = sizeInMegabytes
+				OverrideVmDefault: resource.OverrideVmDefault,
+				Disk:              resource.Disk,
 			}
 		}
 
-		items.Items = append(items.Items, newItem)
+		if newOvfItem.HostResource != nil && newOvfItem.InstanceID == disk.InstanceID {
+			newOvfItem.HostResource.Capacity = sizeInMegabytes
+		}
+		rasdItems.Items = append(rasdItems.Items, newOvfItem)
 	}
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/virtualHardwareSection/disks"
 
 	// Return the task
 	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
-		types.MimeRasdItemList, "error changing disk size: %s", items)
+		types.MimeRasdItemList, "error changing disk size: %s", rasdItems)
 }
 
 func (vm *VM) RunCustomizationScript(computername, script string) (Task, error) {

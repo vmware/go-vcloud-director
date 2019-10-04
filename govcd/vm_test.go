@@ -661,25 +661,18 @@ func (vcd *TestVCD) Test_VMChangeRootDiskSize(check *C) {
 	if vapp.VApp.Name == "" {
 		check.Skip("Disabled: No suitable vApp found in vDC")
 	}
-	existingVm, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
+	existingVm, _ := vcd.findFirstVm(vapp)
+	check.Assert(existingVm, Not(IsNil))
 
-	currentDiskCapacity := 0
-	// The VM should have at least 1 disk (resource type 17) attached at AddressOnParent 0, indicating the root disk. Fetch the initial capacity from that disk.
-	if existingVm.VirtualHardwareSection != nil && existingVm.VirtualHardwareSection.Item != nil {
-		for _, item := range existingVm.VirtualHardwareSection.Item {
-			fmt.Printf("%+v\n", item)
-			if item.ResourceType == types.ResourceTypeDisk && item.AddressOnParent == 0 {
-				currentDiskCapacity = item.VirtualQuantity / (1024 * 1024)
-				break
-			}
-		}
-	}
-	check.Assert(currentDiskCapacity, Not(Equals), 0)
 	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
 	check.Assert(err, IsNil)
+
+	// The VM should have at least 1 disk (resource type 17) attached at bus 0, unit 0
+	// Get the existing disk size
+	disk := vm.GetDiskHardwareItem(0, 0)
+	check.Assert(disk, Not(IsNil))
+	currentDiskCapacity := disk.HostResource[0].Capacity
+	check.Assert(currentDiskCapacity, Not(Equals), 0)
 
 	// Increase the disk size by 1MB
 	task, err := vm.ChangeDiskSize(0, 0, currentDiskCapacity+1)
@@ -692,17 +685,9 @@ func (vcd *TestVCD) Test_VMChangeRootDiskSize(check *C) {
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
 
-	foundItem := false
-	if nil != vm.VM.VirtualHardwareSection.Item {
-		for _, item := range vm.VM.VirtualHardwareSection.Item {
-			if item.ResourceType == types.ResourceTypeDisk && item.AddressOnParent == 0 {
-				check.Assert(item.VirtualQuantity, Equals, (currentDiskCapacity+1)*(1024*1024))
-				foundItem = true
-				break
-			}
-		}
-		check.Assert(foundItem, Equals, true)
-	}
+	updatedDisk := vm.GetDiskHardwareItem(0, 0)
+	check.Assert(updatedDisk, Not(IsNil))
+	check.Assert(updatedDisk.HostResource[0].Capacity, Equals, currentDiskCapacity+1)
 }
 
 func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
