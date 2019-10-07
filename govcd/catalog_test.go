@@ -23,12 +23,12 @@ func (vcd *TestVCD) Test_CatalogRefresh(check *C) {
 
 	catalogName := vcd.config.VCD.Catalog.Name
 	if catalogName == "" {
-		check.Skip("Test_CatalogRefresh: Catalog name not given.")
+		check.Skip("Test_CatalogRefresh: Catalog name not given")
 		return
 	}
 	cat, err := vcd.org.GetCatalogByName(catalogName, false)
 	if err != nil {
-		check.Skip("Test_CatalogRefresh: Catalog not found.")
+		check.Skip("Test_CatalogRefresh: Catalog not found")
 		return
 	}
 	catalogId := cat.Catalog.ID
@@ -496,11 +496,11 @@ func (vcd *TestVCD) Test_CatalogGetItem(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	if vcd.config.VCD.Org == "" {
-		check.Skip("Test_CatalogGetItem: Org name not given.")
+		check.Skip("Test_CatalogGetItem: Org name not given")
 		return
 	}
 	if vcd.config.VCD.Catalog.Name == "" {
-		check.Skip("Test_CatalogGetItem: Catalog name not given.")
+		check.Skip("Test_CatalogGetItem: Catalog name not given")
 		return
 	}
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
