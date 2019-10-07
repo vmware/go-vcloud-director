@@ -582,8 +582,9 @@ func (catalog *Catalog) QueryMedia(mediaName string) (*MediaRecord, error) {
 	if len(mediaResults) == 0 {
 		return nil, ErrorEntityNotFound
 	}
+	// this shouldn't happen, but we will check anyways
 	if len(mediaResults) > 1 {
-		return nil, errors.New("found more than one result")
+		return nil, fmt.Errorf("found more than one result %#v with catalog name %s and media name %s ", mediaResults, catalog.Catalog.Name, mediaName)
 	}
 
 	util.Logger.Printf("[TRACE] Found media record by name: %#v \n", mediaResults[0])
