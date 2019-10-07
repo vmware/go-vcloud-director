@@ -306,3 +306,54 @@ func (mediaRecord *MediaRecord) DeleteMetadata(key string) error {
 func (mediaRecord *MediaRecord) DeleteMetadataAsync(key string) (Task, error) {
 	return deleteMetadata(mediaRecord.client, key, mediaRecord.MediaRecord.HREF)
 }
+
+// GetMetadata() function calls private function getMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
+// which returns a *types.Metadata struct for provided media item input.
+func (media *Media) GetMetadata() (*types.Metadata, error) {
+	return getMetadata(media.client, media.Media.HREF)
+}
+
+// AddMetadata() function adds metadata key/value pair provided as input.
+func (media *Media) AddMetadata(key string, value string) (*Media, error) {
+	task, err := media.AddMetadataAsync(key, value)
+	if err != nil {
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("error completing add metadata for media item task: %s", err)
+	}
+
+	err = media.Refresh()
+	if err != nil {
+		return nil, fmt.Errorf("error refreshing media item: %s", err)
+	}
+
+	return media, nil
+}
+
+// AddMetadataAsync() function calls private function addMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
+// which adds metadata key/value pair provided as input.
+func (media *Media) AddMetadataAsync(key string, value string) (Task, error) {
+	return addMetadata(media.client, key, value, media.Media.HREF)
+}
+
+// DeleteMetadata() function calls deletes metadata depending on key provided as input from media item.
+func (media *Media) DeleteMetadata(key string) error {
+	task, err := media.DeleteMetadataAsync(key)
+	if err != nil {
+		return err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error completing delete metadata for media item task: %s", err)
+	}
+
+	return nil
+}
+
+// DeleteMetadataAsync() function calls private function deleteMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
+// which deletes metadata depending on key provided as input from media item.
+func (media *Media) DeleteMetadataAsync(key string) (Task, error) {
+	return deleteMetadata(media.client, key, media.Media.HREF)
+}

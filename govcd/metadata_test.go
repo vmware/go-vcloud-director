@@ -282,7 +282,7 @@ func (vcd *TestVCD) Test_AddMetadataOnVAppTemplate(check *C) {
 	check.Assert(err, IsNil)
 }
 
-func (vcd *TestVCD) Test_DeleteMetadataOnMediaItem(check *C) {
+func (vcd *TestVCD) Test_DeleteMetadataOnMediaRecord(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	//prepare media item
@@ -332,7 +332,7 @@ func (vcd *TestVCD) Test_DeleteMetadataOnMediaItem(check *C) {
 	}
 }
 
-func (vcd *TestVCD) Test_AddMetadataOnMediaItem(check *C) {
+func (vcd *TestVCD) Test_AddMetadataOnMediaRecord(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	//prepare media item
