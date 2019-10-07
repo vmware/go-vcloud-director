@@ -121,7 +121,7 @@ func (vcd *TestVCD) Test_UploadMediaImage_error_withSameItem(check *C) {
 
 // Tests System function Delete by creating media item and
 // deleting it after.
-func (vcd *TestVCD) Test_DeleteMediaImage(check *C) {
+func (vcd *TestVCD) Test_DeleteMedia(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	skipWhenMediaPathMissing(vcd, check)
@@ -141,7 +141,7 @@ func (vcd *TestVCD) Test_DeleteMediaImage(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 
-	itemName := "TestDeleteMediaImage"
+	itemName := "TestDeleteMedia"
 	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
 	err = uploadTask.WaitTaskCompletion()
@@ -337,7 +337,7 @@ func (vcd *TestVCD) Test_GetMedia(check *C) {
 }
 
 // Tests System function Delete by creating media and deleting it after.
-func (vcd *TestVCD) Test_DeleteMedia(check *C) {
+func (vcd *TestVCD) Test_DeleteMediaImage(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	skipWhenMediaPathMissing(vcd, check)
@@ -382,7 +382,7 @@ func (vcd *TestVCD) Test_DeleteMedia(check *C) {
 
 }
 
-func (vcd *TestVCD) Test_QueryMediaImage(check *C) {
+func (vcd *TestVCD) Test_QueryMedia(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	skipWhenMediaPathMissing(vcd, check)
@@ -412,17 +412,17 @@ func (vcd *TestVCD) Test_QueryMediaImage(check *C) {
 
 	AddToCleanupList(testQueryMediaName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_RefreshMediaImage")
 
-	mediaImage, err := catalog.QueryMedia(testQueryMediaName)
+	media, err := catalog.QueryMedia(testQueryMediaName)
 	check.Assert(err, IsNil)
-	check.Assert(mediaImage, Not(Equals), nil)
+	check.Assert(media, Not(Equals), nil)
 
-	check.Assert(mediaImage.MediaRecord.Name, Equals, testQueryMediaName)
-	check.Assert(mediaImage.MediaRecord.HREF, Not(Equals), "")
+	check.Assert(media.MediaRecord.Name, Equals, testQueryMediaName)
+	check.Assert(media.MediaRecord.HREF, Not(Equals), "")
 
 	// find Invalid media
-	mediaImage, err = catalog.QueryMedia("INVALID")
+	media, err = catalog.QueryMedia("INVALID")
 	check.Assert(err, Equals, ErrorEntityNotFound)
-	check.Assert(mediaImage, IsNil)
+	check.Assert(media, IsNil)
 }
 
 // Tests System function Refresh
