@@ -202,13 +202,13 @@ func (vAppTemplate *VAppTemplate) DeleteMetadataAsync(key string) (Task, error) 
 
 // GetMetadata() function calls private function getMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
 // which returns a *types.Metadata struct for provided media item input.
-// Deprecated: Use mediaRecord.GetMetadata
+// Deprecated: Use MediaRecord.GetMetadata
 func (mediaItem *MediaItem) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(mediaItem.vdc.client, mediaItem.MediaItem.HREF)
 }
 
 // AddMetadata() function adds metadata key/value pair provided as input.
-// Deprecated: Use mediaRecord.AddMetadata
+// Deprecated: Use MediaRecord.AddMetadata
 func (mediaItem *MediaItem) AddMetadata(key string, value string) (*MediaItem, error) {
 	task, err := mediaItem.AddMetadataAsync(key, value)
 	if err != nil {
@@ -229,13 +229,13 @@ func (mediaItem *MediaItem) AddMetadata(key string, value string) (*MediaItem, e
 
 // AddMetadataAsync() function calls private function addMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
 // which adds metadata key/value pair provided as input.
-// Deprecated: Use mediaRecord.AddMetadataAsync
+// Deprecated: Use MediaRecord.AddMetadataAsync
 func (mediaItem *MediaItem) AddMetadataAsync(key string, value string) (Task, error) {
 	return addMetadata(mediaItem.vdc.client, key, value, mediaItem.MediaItem.HREF)
 }
 
 // DeleteMetadata() function calls deletes metadata depending on key provided as input from media item.
-// Deprecated: Use mediaRecord.DeleteMetadata
+// Deprecated: Use MediaRecord.DeleteMetadata
 func (mediaItem *MediaItem) DeleteMetadata(key string) error {
 	task, err := mediaItem.DeleteMetadataAsync(key)
 	if err != nil {
@@ -251,7 +251,7 @@ func (mediaItem *MediaItem) DeleteMetadata(key string) error {
 
 // DeleteMetadataAsync() function calls private function deleteMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
 // which deletes metadata depending on key provided as input from media item.
-// Deprecated: Use mediaRecord.DeleteMetadataAsync
+// Deprecated: Use MediaRecord.DeleteMetadataAsync
 func (mediaItem *MediaItem) DeleteMetadataAsync(key string) (Task, error) {
 	return deleteMetadata(mediaItem.vdc.client, key, mediaItem.MediaItem.HREF)
 }

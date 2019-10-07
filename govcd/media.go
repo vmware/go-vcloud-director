@@ -355,7 +355,7 @@ func (adminCatalog *AdminCatalog) RemoveMediaIfExists(mediaName string) error {
 
 // Deletes the Media Item, returning an error if the vCD call fails.
 // Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Media.html
-// Deprecated: Use mediaRecord.Delete
+// Deprecated: Use MediaRecord.Delete
 func (mediaItem *MediaItem) Delete() (Task, error) {
 	util.Logger.Printf("[TRACE] Deleting media item: %#v", mediaItem.MediaItem.Name)
 
@@ -397,7 +397,7 @@ func FindMediaAsCatalogItem(org *Org, catalogName, mediaName string) (CatalogIte
 }
 
 // Refresh refreshes the media item information by href
-// Deprecated: Use mediaRecord.Refresh
+// Deprecated: Use MediaRecord.Refresh
 func (mediaItem *MediaItem) Refresh() error {
 
 	if mediaItem.MediaItem == nil {
