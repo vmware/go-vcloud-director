@@ -35,6 +35,8 @@ which use the proxied NSX-V API of advanced edge gateway for handling NAT rules 
 * Added methods `Client.GetVMByHref` `Vapp.GetVAMByName` and related `GetVMById`, `GetVAMByNameOrId`
 * Deprecated methods `Client.FindVMByHREF`, `Vdc.FindVMByName`, `Vdc.FindVAppByID`, and `Vdc.FindVAppByName`
 * Added methods `Vm.GetGuestCustomizationSection` and `Vm.SetGuestCustomizationSection`  
+* Deprecated methods `VDC.FindDiskByHREF` and `FindDiskByHREF`
+* Added methods `VDC.GetDiskByHref` `VDC.GetDiskByName` and related `GetDiskById`, `GetDiskByNameOrId`
 
 IMPROVEMENTS:
 
