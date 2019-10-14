@@ -304,14 +304,6 @@ func (vcd *TestVCD) Test_GetMedia(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 
-	itemName := "TestGetMedia"
-	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
-	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_GetMedia")
-
 	getByName := func(name string, refresh bool) (genericEntity, error) {
 		err = catalog.Refresh()
 		check.Assert(err, IsNil)
@@ -328,7 +320,7 @@ func (vcd *TestVCD) Test_GetMedia(check *C) {
 		parentType:    "Catalog",
 		parentName:    vcd.config.VCD.Catalog.Name,
 		entityType:    "Media",
-		entityName:    itemName,
+		entityName:    vcd.config.Media.Media,
 		getByName:     getByName,
 		getById:       getById,
 		getByNameOrId: getByNameOrId,
