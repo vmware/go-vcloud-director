@@ -256,7 +256,7 @@ func (mediaItem *MediaItem) DeleteMetadataAsync(key string) (Task, error) {
 	return deleteMetadata(mediaItem.vdc.client, key, mediaItem.MediaItem.HREF)
 }
 
-// GetMetadata() function calls private function getMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
+// GetMetadata() function calls private function getMetadata() with MediaRecord.client and MediaRecord.MediaRecord.HREF
 // which returns a *types.Metadata struct for provided media item input.
 func (mediaRecord *MediaRecord) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(mediaRecord.client, mediaRecord.MediaRecord.HREF)
@@ -281,7 +281,7 @@ func (mediaRecord *MediaRecord) AddMetadata(key string, value string) (*MediaRec
 	return mediaRecord, nil
 }
 
-// AddMetadataAsync() function calls private function addMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
+// AddMetadataAsync() function calls private function addMetadata() with MediaRecord.client and MediaRecord.MediaRecord.HREF
 // which adds metadata key/value pair provided as input.
 func (mediaRecord *MediaRecord) AddMetadataAsync(key string, value string) (Task, error) {
 	return addMetadata(mediaRecord.client, key, value, mediaRecord.MediaRecord.HREF)
@@ -301,13 +301,13 @@ func (mediaRecord *MediaRecord) DeleteMetadata(key string) error {
 	return nil
 }
 
-// DeleteMetadataAsync() function calls private function deleteMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
+// DeleteMetadataAsync() function calls private function deleteMetadata() with MediaRecord.client and MediaRecord.MediaRecord.HREF
 // which deletes metadata depending on key provided as input from media item.
 func (mediaRecord *MediaRecord) DeleteMetadataAsync(key string) (Task, error) {
 	return deleteMetadata(mediaRecord.client, key, mediaRecord.MediaRecord.HREF)
 }
 
-// GetMetadata() function calls private function getMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
+// GetMetadata() function calls private function getMetadata() with Media.client and Media.Media.HREF
 // which returns a *types.Metadata struct for provided media item input.
 func (media *Media) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(media.client, media.Media.HREF)
@@ -332,7 +332,7 @@ func (media *Media) AddMetadata(key string, value string) (*Media, error) {
 	return media, nil
 }
 
-// AddMetadataAsync() function calls private function addMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
+// AddMetadataAsync() function calls private function addMetadata() with Media.client and Media.Media.HREF
 // which adds metadata key/value pair provided as input.
 func (media *Media) AddMetadataAsync(key string, value string) (Task, error) {
 	return addMetadata(media.client, key, value, media.Media.HREF)
@@ -352,7 +352,7 @@ func (media *Media) DeleteMetadata(key string) error {
 	return nil
 }
 
-// DeleteMetadataAsync() function calls private function deleteMetadata() with mediaItem.client and mediaItem.MediaItem.HREF
+// DeleteMetadataAsync() function calls private function deleteMetadata() with Media.client and Media.Media.HREF
 // which deletes metadata depending on key provided as input from media item.
 func (media *Media) DeleteMetadataAsync(key string) (Task, error) {
 	return deleteMetadata(media.client, key, media.Media.HREF)

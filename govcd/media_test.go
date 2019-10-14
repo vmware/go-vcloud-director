@@ -344,11 +344,11 @@ func (vcd *TestVCD) Test_DeleteMediaImage(check *C) {
 	itemName := `Test_DeleteMediaImage`
 
 	if vcd.config.VCD.Org == "" {
-		check.Skip("Test_GetMedia: Org name not given")
+		check.Skip("Test_DeleteMediaImage: Org name not given")
 		return
 	}
 	if vcd.config.VCD.Catalog.Name == "" {
-		check.Skip("Test_GetMedia: Catalog name not given")
+		check.Skip("Test_DeleteMediaImage: Catalog name not given")
 		return
 	}
 
@@ -389,11 +389,11 @@ func (vcd *TestVCD) Test_QueryMedia(check *C) {
 
 	testQueryMediaName := "testQueryMedia"
 	if vcd.config.VCD.Org == "" {
-		check.Skip("Test_GetMedia: Org name not given")
+		check.Skip("Test_QueryMedia: Org name not given")
 		return
 	}
 	if vcd.config.VCD.Catalog.Name == "" {
-		check.Skip("Test_GetMedia: Catalog name not given")
+		check.Skip("Test_QueryMedia: Catalog name not given")
 		return
 	}
 
@@ -431,11 +431,11 @@ func (vcd *TestVCD) Test_RefreshMediaRecord(check *C) {
 
 	skipWhenMediaPathMissing(vcd, check)
 	if vcd.config.VCD.Org == "" {
-		check.Skip("Test_GetMedia: Org name not given")
+		check.Skip("Test_RefreshMediaRecord: Org name not given")
 		return
 	}
 	if vcd.config.VCD.Catalog.Name == "" {
-		check.Skip("Test_GetMedia: Catalog name not given")
+		check.Skip("Test_RefreshMediaRecord: Catalog name not given")
 		return
 	}
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)

@@ -436,11 +436,11 @@ func (media *Media) Refresh() error {
 // GetMediaByHref finds a Media by HREF
 // On success, returns a pointer to the Media structure and a nil error
 // On failure, returns a nil pointer and an error
-func (cat *Catalog) GetMediaByHref(mediaItemHref string) (*Media, error) {
+func (cat *Catalog) GetMediaByHref(mediaHref string) (*Media, error) {
 
 	media := NewMedia(cat.client)
 
-	_, err := cat.client.ExecuteRequest(mediaItemHref, http.MethodGet,
+	_, err := cat.client.ExecuteRequest(mediaHref, http.MethodGet,
 		"", "error retrieving media: %s", nil, media.Media)
 	if err != nil {
 		return nil, err
@@ -513,10 +513,10 @@ func (cat *Catalog) GetMediaByNameOrId(identifier string, refresh bool) (*Media,
 // GetMediaByHref finds a Media by HREF
 // On success, returns a pointer to the Media structure and a nil error
 // On failure, returns a nil pointer and an error
-func (adminCatalog *AdminCatalog) GetMediaByHref(mediaItemHref string) (*Media, error) {
+func (adminCatalog *AdminCatalog) GetMediaByHref(mediaHref string) (*Media, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
-	return catalog.GetMediaByHref(mediaItemHref)
+	return catalog.GetMediaByHref(mediaHref)
 }
 
 // GetMediaByName finds a Media by Name
