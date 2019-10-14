@@ -37,7 +37,7 @@ func skipWhenMediaPathMissing(vcd *TestVCD, check *C) {
 }
 
 func verifyMediaImageUploaded(vdc *Vdc, check *C, itemName string) {
-	results, err := queryMediaItemsWithFilter(vdc, "name=="+itemName)
+	results, err := queryMediaWithFilter(vdc, "name=="+itemName)
 
 	check.Assert(err, Equals, nil)
 	check.Assert(len(results), Equals, 1)
@@ -149,16 +149,16 @@ func (vcd *TestVCD) Test_DeleteMedia(check *C) {
 
 	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_DeleteMediaImage")
 
-	mediaItem, err := catalog.GetMediaByName(itemName, true)
+	media, err := catalog.GetMediaByName(itemName, true)
 	check.Assert(err, IsNil)
-	check.Assert(mediaItem, Not(Equals), MediaItem{})
+	check.Assert(media, Not(Equals), Media{})
 
-	task, err := mediaItem.Delete()
+	task, err := media.Delete()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	mediaItem, err = catalog.GetMediaByName(itemName, true)
+	media, err = catalog.GetMediaByName(itemName, true)
 	check.Assert(err, NotNil)
 	check.Assert(IsNotFound(err), Equals, true)
 }
@@ -449,7 +449,7 @@ func (vcd *TestVCD) Test_RefreshMediaRecord(check *C) {
 	mediaRecord, err := catalog.QueryMedia(itemName)
 	check.Assert(err, IsNil)
 	check.Assert(mediaRecord, NotNil)
-	check.Assert(mediaRecord, Not(Equals), MediaItem{})
+	check.Assert(mediaRecord, Not(Equals), MediaRecord{})
 
 	oldMediaRecord := mediaRecord
 	err = mediaRecord.Refresh()

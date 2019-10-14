@@ -285,7 +285,7 @@ func (vcd *TestVCD) Test_AddMetadataOnVAppTemplate(check *C) {
 func (vcd *TestVCD) Test_DeleteMetadataOnMediaRecord(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	//prepare media item
+	//prepare mediaRecord item
 	skipWhenMediaPathMissing(vcd, check)
 	itemName := "TestDeleteMediaMetaData"
 
@@ -303,26 +303,26 @@ func (vcd *TestVCD) Test_DeleteMetadataOnMediaRecord(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_DeleteMetadataOnMediaItem")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_DeleteMetadataOnMediaRecord")
 
 	err = vcd.org.Refresh()
 	check.Assert(err, IsNil)
 
-	mediaItem, err := catalog.QueryMedia(itemName)
+	mediaRecord, err := catalog.QueryMedia(itemName)
 	check.Assert(err, IsNil)
-	check.Assert(mediaItem, NotNil)
-	check.Assert(mediaItem, Not(Equals), MediaItem{})
-	check.Assert(mediaItem.MediaRecord.Name, Equals, itemName)
+	check.Assert(mediaRecord, NotNil)
+	check.Assert(mediaRecord, Not(Equals), MediaRecord{})
+	check.Assert(mediaRecord.MediaRecord.Name, Equals, itemName)
 
 	// Add metadata
-	_, err = mediaItem.AddMetadata("key2", "value2")
+	_, err = mediaRecord.AddMetadata("key2", "value2")
 	check.Assert(err, IsNil)
 
 	// Remove metadata
-	err = mediaItem.DeleteMetadata("key2")
+	err = mediaRecord.DeleteMetadata("key2")
 	check.Assert(err, IsNil)
 
-	metadata, err := mediaItem.GetMetadata()
+	metadata, err := mediaRecord.GetMetadata()
 	check.Assert(err, IsNil)
 	check.Assert(metadata, NotNil)
 	for _, k := range metadata.MetadataEntry {
@@ -354,7 +354,7 @@ func (vcd *TestVCD) Test_AddMetadataOnMediaRecord(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_AddMetadataOnMediaItem")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_AddMetadataOnMediaRecord")
 
 	err = vcd.org.Refresh()
 	check.Assert(err, IsNil)
@@ -362,7 +362,7 @@ func (vcd *TestVCD) Test_AddMetadataOnMediaRecord(check *C) {
 	mediaRecord, err := catalog.QueryMedia(itemName)
 	check.Assert(err, IsNil)
 	check.Assert(mediaRecord, NotNil)
-	check.Assert(mediaRecord, Not(Equals), MediaItem{})
+	check.Assert(mediaRecord, Not(Equals), MediaRecord{})
 	check.Assert(mediaRecord.MediaRecord.Name, Equals, itemName)
 
 	// Add metadata
