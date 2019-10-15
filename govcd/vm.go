@@ -590,7 +590,7 @@ func (vm *VM) HandleEjectMediaAndAnswer(org *Org, catalogName, mediaName string,
 		return nil, fmt.Errorf("error: %s", err)
 	}
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 10; i++ {
 		err = vm.Refresh()
 		if err != nil {
 			return nil, fmt.Errorf("error: %s", err)
