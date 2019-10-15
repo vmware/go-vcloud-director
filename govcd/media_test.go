@@ -163,83 +163,6 @@ func (vcd *TestVCD) Test_DeleteMedia(check *C) {
 	check.Assert(IsNotFound(err), Equals, true)
 }
 
-// Tests System function FindMediaAsCatalogItem by creating media item and
-// and finding it as catalog item after.
-func (vcd *TestVCD) Test_FindMediaAsCatalogItem(check *C) {
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	skipWhenMediaPathMissing(vcd, check)
-	itemName := TestUploadMedia + "6"
-
-	// Fetching organization
-	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
-	check.Assert(err, IsNil)
-	check.Assert(org, NotNil)
-
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
-	check.Assert(err, IsNil)
-
-	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
-	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadMediaImage")
-
-	err = vcd.org.Refresh()
-	check.Assert(err, IsNil)
-
-	catalogItem, err := FindMediaAsCatalogItem(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
-	check.Assert(err, IsNil)
-	check.Assert(catalogItem, Not(Equals), CatalogItem{})
-	check.Assert(catalogItem.CatalogItem.Name, Equals, itemName)
-
-}
-
-// Tests System function Refresh
-func (vcd *TestVCD) Test_RefreshMediaImage(check *C) {
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	skipWhenMediaPathMissing(vcd, check)
-	if vcd.config.VCD.Org == "" {
-		check.Skip("Test_RefreshMediaImage: Org name not given")
-		return
-	}
-	if vcd.config.VCD.Catalog.Name == "" {
-		check.Skip("Test_RefreshMediaImage: Catalog name not given")
-		return
-	}
-	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
-	check.Assert(err, IsNil)
-	check.Assert(org, NotNil)
-
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
-	check.Assert(err, IsNil)
-	check.Assert(catalog, NotNil)
-
-	itemName := "TestRefreshMediaImage"
-	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
-	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_RefreshMediaImage")
-
-	mediaItem, err := vcd.vdc.FindMediaImage(itemName)
-	check.Assert(err, IsNil)
-	check.Assert(mediaItem, NotNil)
-	check.Assert(mediaItem, Not(Equals), MediaItem{})
-
-	oldMediaItem := mediaItem
-	err = mediaItem.Refresh()
-	check.Assert(err, IsNil)
-
-	check.Assert(mediaItem, NotNil)
-	check.Assert(oldMediaItem.MediaItem.ID, Equals, mediaItem.MediaItem.ID)
-	check.Assert(oldMediaItem.MediaItem.Name, Equals, mediaItem.MediaItem.Name)
-	check.Assert(oldMediaItem.MediaItem.HREF, Equals, mediaItem.MediaItem.HREF)
-}
-
 // Tests System function Refresh
 func (vcd *TestVCD) Test_RefreshMedia(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
@@ -326,52 +249,6 @@ func (vcd *TestVCD) Test_GetMedia(check *C) {
 		getByNameOrId: getByNameOrId,
 	}
 	vcd.testFinderGetGenericEntity(def, check)
-}
-
-// Tests System function Delete by creating media and deleting it after.
-func (vcd *TestVCD) Test_DeleteMediaImage(check *C) {
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	skipWhenMediaPathMissing(vcd, check)
-	itemName := `Test_DeleteMediaImage`
-
-	if vcd.config.VCD.Org == "" {
-		check.Skip("Test_DeleteMediaImage: Org name not given")
-		return
-	}
-	if vcd.config.VCD.Catalog.Name == "" {
-		check.Skip("Test_DeleteMediaImage: Catalog name not given")
-		return
-	}
-
-	// Fetching organization
-	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
-	check.Assert(err, IsNil)
-	check.Assert(org, NotNil)
-
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
-	check.Assert(err, IsNil)
-
-	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
-	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.config.VCD.Catalog.Name+"|"+vcd.vdc.Vdc.Name, "Test_UploadMediaImage")
-
-	mediaItem, err := vcd.vdc.FindMediaImage(itemName)
-	check.Assert(err, IsNil)
-	check.Assert(mediaItem, Not(Equals), MediaItem{})
-
-	task, err := mediaItem.Delete()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	mediaItem, err = vcd.vdc.FindMediaImage(itemName)
-	check.Assert(err, IsNil)
-	check.Assert(mediaItem, Equals, MediaItem{})
-
 }
 
 func (vcd *TestVCD) Test_QueryMedia(check *C) {
