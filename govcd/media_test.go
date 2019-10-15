@@ -151,14 +151,15 @@ func (vcd *TestVCD) Test_DeleteMedia(check *C) {
 
 	media, err := catalog.GetMediaByName(itemName, true)
 	check.Assert(err, IsNil)
-	check.Assert(media, Not(Equals), Media{})
+	check.Assert(media, NotNil)
+	check.Assert(media.Media.Name, Not(Equals), itemName)
 
 	task, err := media.Delete()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	media, err = catalog.GetMediaByName(itemName, true)
+	_, err = catalog.GetMediaByName(itemName, true)
 	check.Assert(err, NotNil)
 	check.Assert(IsNotFound(err), Equals, true)
 }
@@ -195,7 +196,7 @@ func (vcd *TestVCD) Test_RefreshMedia(check *C) {
 	media, err := catalog.GetMediaByName(itemName, true)
 	check.Assert(err, IsNil)
 	check.Assert(media, NotNil)
-	check.Assert(media, Not(Equals), Media{})
+	check.Assert(media.Media.Name, Not(Equals), itemName)
 
 	oldMedia := media
 	err = media.Refresh()
@@ -290,7 +291,7 @@ func (vcd *TestVCD) Test_QueryMedia(check *C) {
 
 	// find Invalid media
 	media, err = catalog.QueryMedia("INVALID")
-	check.Assert(err, Equals, ErrorEntityNotFound)
+	check.Assert(IsNotFound(err), Equals, true)
 	check.Assert(media, IsNil)
 }
 
@@ -326,7 +327,7 @@ func (vcd *TestVCD) Test_RefreshMediaRecord(check *C) {
 	mediaRecord, err := catalog.QueryMedia(itemName)
 	check.Assert(err, IsNil)
 	check.Assert(mediaRecord, NotNil)
-	check.Assert(mediaRecord, Not(Equals), MediaRecord{})
+	check.Assert(mediaRecord.MediaRecord.Name, Not(Equals), itemName)
 
 	oldMediaRecord := mediaRecord
 	err = mediaRecord.Refresh()
