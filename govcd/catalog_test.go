@@ -460,7 +460,7 @@ func (vcd *TestVCD) Test_CatalogDeleteMediaRecord(check *C) {
 
 	mediaRecord, err := catalog.QueryMedia(itemName)
 	check.Assert(err, IsNil)
-	check.Assert(mediaRecord.MediaRecord.Name, Not(Equals), itemName)
+	check.Assert(mediaRecord.MediaRecord.Name, Equals, itemName)
 
 	task, err := mediaRecord.Delete()
 	check.Assert(err, IsNil)

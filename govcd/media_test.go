@@ -152,7 +152,7 @@ func (vcd *TestVCD) Test_DeleteMedia(check *C) {
 	media, err := catalog.GetMediaByName(itemName, true)
 	check.Assert(err, IsNil)
 	check.Assert(media, NotNil)
-	check.Assert(media.Media.Name, Not(Equals), itemName)
+	check.Assert(media.Media.Name, Equals, itemName)
 
 	task, err := media.Delete()
 	check.Assert(err, IsNil)
@@ -177,6 +177,10 @@ func (vcd *TestVCD) Test_RefreshMedia(check *C) {
 		check.Skip("Test_RefreshMedia: Catalog name not given")
 		return
 	}
+	if vcd.config.Media.Media == "" {
+		check.Skip("Test_RefreshMediaRecord: Media name not given")
+		return
+	}
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
@@ -185,18 +189,12 @@ func (vcd *TestVCD) Test_RefreshMedia(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 
-	itemName := "TestRefreshMedia"
-	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
-	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_RefreshMediaImage")
+	itemName := vcd.config.Media.Media
 
 	media, err := catalog.GetMediaByName(itemName, true)
 	check.Assert(err, IsNil)
 	check.Assert(media, NotNil)
-	check.Assert(media.Media.Name, Not(Equals), itemName)
+	check.Assert(media.Media.Name, Equals, itemName)
 
 	oldMedia := media
 	err = media.Refresh()
@@ -257,7 +255,6 @@ func (vcd *TestVCD) Test_QueryMedia(check *C) {
 
 	skipWhenMediaPathMissing(vcd, check)
 
-	testQueryMediaName := "testQueryMedia"
 	if vcd.config.VCD.Org == "" {
 		check.Skip("Test_QueryMedia: Org name not given")
 		return
@@ -266,7 +263,10 @@ func (vcd *TestVCD) Test_QueryMedia(check *C) {
 		check.Skip("Test_QueryMedia: Catalog name not given")
 		return
 	}
-
+	if vcd.config.Media.Media == "" {
+		check.Skip("Test_RefreshMediaRecord: Media name not given")
+		return
+	}
 	// Fetching organization
 	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
@@ -275,12 +275,7 @@ func (vcd *TestVCD) Test_QueryMedia(check *C) {
 	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 
-	uploadTask, err := catalog.UploadMediaImage(testQueryMediaName, "upload from test", vcd.config.Media.MediaPath, 1024)
-	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	AddToCleanupList(testQueryMediaName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_RefreshMediaImage")
+	testQueryMediaName := vcd.config.Media.Media
 
 	media, err := catalog.QueryMedia(testQueryMediaName)
 	check.Assert(err, IsNil)
@@ -308,6 +303,12 @@ func (vcd *TestVCD) Test_RefreshMediaRecord(check *C) {
 		check.Skip("Test_RefreshMediaRecord: Catalog name not given")
 		return
 	}
+
+	if vcd.config.Media.Media == "" {
+		check.Skip("Test_RefreshMediaRecord: Media name not given")
+		return
+	}
+
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
@@ -316,18 +317,12 @@ func (vcd *TestVCD) Test_RefreshMediaRecord(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 
-	itemName := "TestRefreshMediaRecord"
-	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
-	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_RefreshMediaImage")
+	itemName := vcd.config.Media.Media
 
 	mediaRecord, err := catalog.QueryMedia(itemName)
 	check.Assert(err, IsNil)
 	check.Assert(mediaRecord, NotNil)
-	check.Assert(mediaRecord.MediaRecord.Name, Not(Equals), itemName)
+	check.Assert(mediaRecord.MediaRecord.Name, Equals, itemName)
 
 	oldMediaRecord := mediaRecord
 	err = mediaRecord.Refresh()

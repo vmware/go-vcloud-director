@@ -311,7 +311,6 @@ func (vcd *TestVCD) Test_DeleteMetadataOnMediaRecord(check *C) {
 	mediaRecord, err := catalog.QueryMedia(itemName)
 	check.Assert(err, IsNil)
 	check.Assert(mediaRecord, NotNil)
-	check.Assert(mediaRecord, Not(Equals), MediaRecord{})
 	check.Assert(mediaRecord.MediaRecord.Name, Equals, itemName)
 
 	// Add metadata
@@ -362,7 +361,6 @@ func (vcd *TestVCD) Test_AddMetadataOnMediaRecord(check *C) {
 	mediaRecord, err := catalog.QueryMedia(itemName)
 	check.Assert(err, IsNil)
 	check.Assert(mediaRecord, NotNil)
-	check.Assert(mediaRecord, Not(Equals), MediaRecord{})
 	check.Assert(mediaRecord.MediaRecord.Name, Equals, itemName)
 
 	// Add metadata
