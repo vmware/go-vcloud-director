@@ -756,7 +756,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 	case "disk":
 		// Find disk by href rather than find disk by name, because disk name can be duplicated in VDC,
 		// so the unique href is required for finding the disk.
-		disk, err := vcd.vdc.GetDiskByHref(entity.Parent)
+		disk, err := vcd.vdc.GetDiskByHref(entity.Name)
 		if err != nil {
 			// If the disk is not found, we just need to show that it was not found, as
 			// it was likely deleted during the regular tests

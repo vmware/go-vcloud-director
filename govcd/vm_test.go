@@ -206,7 +206,7 @@ func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
 
-	AddToCleanupList(diskCreateParamsDisk.Name, "disk", diskHREF, check.TestName())
+	AddToCleanupList(diskHREF, "disk", "", check.TestName())
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -296,7 +296,7 @@ func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
 
-	AddToCleanupList(diskCreateParamsDisk.Name, "disk", diskHREF, check.TestName())
+	AddToCleanupList(diskHREF, "disk", "", check.TestName())
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -388,7 +388,7 @@ func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
 	diskHREF := task.Task.Owner.HREF
 
 	// Defer prepend the disk info to cleanup list until the function returns
-	AddToCleanupList(diskCreateParamsDisk.Name, "disk", diskHREF, check.TestName())
+	AddToCleanupList(diskHREF, "disk", "", check.TestName())
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()

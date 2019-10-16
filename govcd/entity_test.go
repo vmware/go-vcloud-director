@@ -78,7 +78,7 @@ func (vm *VM) id() string   { return vm.VM.ID }
 // Get invalid name or ID
 // To use this function, the entity must satisfy the interface genericEntity
 // and within the caller it must define the getter functions
-//
+//AddToCleanupList(diskCreateParamsDisk.Name
 // Example usage:
 //
 // func (vcd *TestVCD) Test_OrgGetVdc(check *C) {
