@@ -364,7 +364,7 @@ func (vdc *Vdc) GetDiskByHref(diskHref string) (*Disk, error) {
 	return Disk, nil
 }
 
-// GetDisksByName finds a Disks by Name
+// GetDisksByName finds one or more Disks by Name
 // On success, returns a pointer to the Disk array and a nil error
 // On failure, returns a nil pointer and an error
 func (vdc *Vdc) GetDisksByName(diskName string, refresh bool) (*[]Disk, error) {
