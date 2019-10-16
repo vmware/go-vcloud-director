@@ -609,8 +609,8 @@ func (vcd *TestVCD) Test_QueryDisk(check *C) {
 
 }
 
-// Tests Disk retrieval by name, by ID, and by a combination of name and ID
-func (vcd *TestVCD) Test_GetDisk(check *C) {
+// Tests Disk array retrieval by name, by ID
+func (vcd *TestVCD) Test_GetDisks(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	if vcd.config.VCD.Disk.Size == 0 {
@@ -646,26 +646,32 @@ func (vcd *TestVCD) Test_GetDisk(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	getByName := func(name string, refresh bool) (genericEntity, error) {
-		err = vcd.vdc.Refresh()
-		check.Assert(err, IsNil)
-		return vcd.vdc.GetDiskByName(name, refresh)
-	}
-	getById := func(id string, refresh bool) (genericEntity, error) {
-		return vcd.vdc.GetDiskById(id, refresh)
-	}
-	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
-		return vcd.vdc.GetDiskByNameOrId(id, refresh)
-	}
+	err = vcd.vdc.Refresh()
+	check.Assert(err, IsNil)
+	diskArray, err := vcd.vdc.GetDisksByName(diskName, false)
+	check.Assert(diskArray, NotNil)
+	check.Assert(len(*diskArray), Equals, 1)
+	check.Assert((*diskArray)[0].Disk.Name, Equals, diskName)
+	check.Assert((*diskArray)[0].Disk.Description, Equals, diskName+"Description")
 
-	var def = getterTestDefinition{
-		parentType:    "Catalog",
-		parentName:    vcd.config.VCD.Catalog.Name,
-		entityType:    "Disk",
-		entityName:    diskName,
-		getByName:     getByName,
-		getById:       getById,
-		getByNameOrId: getByNameOrId,
-	}
-	vcd.testFinderGetGenericEntity(def, check)
+	diskArray, err = vcd.vdc.GetDisksByName("INVALID", false)
+	check.Assert(err, NotNil)
+	check.Assert(IsNotFound(err), Equals, true)
+	check.Assert(diskArray, IsNil)
+
+	// test two disk with same name
+	task, err = vcd.vdc.CreateDisk(diskCreateParams)
+	check.Assert(err, IsNil)
+
+	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
+	diskHREF = task.Task.Owner.HREF
+
+	AddToCleanupList(diskCreateParamsDisk.Name, "disk", diskHREF, check.TestName())
+
+	err = vcd.vdc.Refresh()
+	check.Assert(err, IsNil)
+	diskArray, err = vcd.vdc.GetDisksByName(diskName, false)
+	check.Assert(diskArray, NotNil)
+	check.Assert(len(*diskArray), Equals, 2)
+
 }
