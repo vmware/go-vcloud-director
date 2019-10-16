@@ -609,7 +609,7 @@ func (vcd *TestVCD) Test_QueryDisk(check *C) {
 
 }
 
-// Tests Disk array retrieval by name, by ID
+// Tests Disk list retrieval by name, by ID
 func (vcd *TestVCD) Test_GetDisks(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
@@ -648,16 +648,17 @@ func (vcd *TestVCD) Test_GetDisks(check *C) {
 
 	err = vcd.vdc.Refresh()
 	check.Assert(err, IsNil)
-	diskArray, err := vcd.vdc.GetDisksByName(diskName, false)
-	check.Assert(diskArray, NotNil)
-	check.Assert(len(*diskArray), Equals, 1)
-	check.Assert((*diskArray)[0].Disk.Name, Equals, diskName)
-	check.Assert((*diskArray)[0].Disk.Description, Equals, diskName+"Description")
+	diskList, err := vcd.vdc.GetDisksByName(diskName, false)
+	check.Assert(err, IsNil)
+	check.Assert(diskList, NotNil)
+	check.Assert(len(*diskList), Equals, 1)
+	check.Assert((*diskList)[0].Disk.Name, Equals, diskName)
+	check.Assert((*diskList)[0].Disk.Description, Equals, diskName+"Description")
 
-	diskArray, err = vcd.vdc.GetDisksByName("INVALID", false)
+	diskList, err = vcd.vdc.GetDisksByName("INVALID", false)
 	check.Assert(err, NotNil)
 	check.Assert(IsNotFound(err), Equals, true)
-	check.Assert(diskArray, IsNil)
+	check.Assert(diskList, IsNil)
 
 	// test two disk with same name
 	task, err = vcd.vdc.CreateDisk(diskCreateParams)
@@ -670,8 +671,9 @@ func (vcd *TestVCD) Test_GetDisks(check *C) {
 
 	err = vcd.vdc.Refresh()
 	check.Assert(err, IsNil)
-	diskArray, err = vcd.vdc.GetDisksByName(diskName, false)
-	check.Assert(diskArray, NotNil)
-	check.Assert(len(*diskArray), Equals, 2)
+	diskList, err = vcd.vdc.GetDisksByName(diskName, false)
+	check.Assert(err, IsNil)
+	check.Assert(diskList, NotNil)
+	check.Assert(len(*diskList), Equals, 2)
 
 }

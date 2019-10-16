@@ -365,11 +365,11 @@ func (vdc *Vdc) GetDiskByHref(diskHref string) (*Disk, error) {
 }
 
 // GetDisksByName finds one or more Disks by Name
-// On success, returns a pointer to the Disk array and a nil error
+// On success, returns a pointer to the Disk list and a nil error
 // On failure, returns a nil pointer and an error
 func (vdc *Vdc) GetDisksByName(diskName string, refresh bool) (*[]Disk, error) {
 	util.Logger.Printf("[TRACE] Get Disk By Name: %s\n", diskName)
-	var diskArray []Disk
+	var diskList []Disk
 	if refresh {
 		err := vdc.Refresh()
 		if err != nil {
@@ -383,14 +383,14 @@ func (vdc *Vdc) GetDisksByName(diskName string, refresh bool) (*[]Disk, error) {
 				if err != nil {
 					return nil, err
 				}
-				diskArray = append(diskArray, *disk)
+				diskList = append(diskList, *disk)
 			}
 		}
 	}
-	if len(diskArray) == 0 {
+	if len(diskList) == 0 {
 		return nil, ErrorEntityNotFound
 	}
-	return &diskArray, nil
+	return &diskList, nil
 }
 
 // GetDiskById finds a Disk by ID
