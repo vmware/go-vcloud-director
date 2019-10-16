@@ -364,8 +364,8 @@ func (vdc *Vdc) GetDiskByHref(diskHref string) (*Disk, error) {
 	return Disk, nil
 }
 
-// GetDiskByName finds a Disk by Name
-// On success, returns a pointer to the Disk structure and a nil error
+// GetDisksByName finds a Disks by Name
+// On success, returns a pointer to the Disk array and a nil error
 // On failure, returns a nil pointer and an error
 func (vdc *Vdc) GetDisksByName(diskName string, refresh bool) (*[]Disk, error) {
 	util.Logger.Printf("[TRACE] Get Disk By Name: %s\n", diskName)
