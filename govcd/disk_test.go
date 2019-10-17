@@ -655,6 +655,12 @@ func (vcd *TestVCD) Test_GetDisks(check *C) {
 	check.Assert((*diskList)[0].Disk.Name, Equals, diskName)
 	check.Assert((*diskList)[0].Disk.Description, Equals, diskName+"Description")
 
+	disk, err := vcd.vdc.GetDiskById((*diskList)[0].Disk.Id, false)
+	check.Assert(err, IsNil)
+	check.Assert(disk, NotNil)
+	check.Assert(disk.Disk.Name, Equals, diskName)
+	check.Assert(disk.Disk.Description, Equals, diskName+"Description")
+
 	diskList, err = vcd.vdc.GetDisksByName("INVALID", false)
 	check.Assert(err, NotNil)
 	check.Assert(IsNotFound(err), Equals, true)

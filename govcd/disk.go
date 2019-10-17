@@ -227,7 +227,7 @@ func (disk *Disk) Delete() (Task, error) {
 func (disk *Disk) Refresh() error {
 	util.Logger.Printf("[TRACE] Disk refresh, HREF: %s\n", disk.Disk.HREF)
 
-	if *disk == (Disk{}) {
+	if disk.Disk == nil || disk.Disk.HREF == "" {
 		return fmt.Errorf("cannot refresh, Object is empty")
 	}
 
@@ -404,17 +404,17 @@ func (vdc *Vdc) GetDiskById(diskId string, refresh bool) (*Disk, error) {
 			return nil, err
 		}
 	}
-	diskHREF := vdc.client.VCDHREF
 
-	DiskBareId, err := getBareEntityUuid(diskId)
+	diskBareId, err := getBareEntityUuid(diskId)
 	if err != nil {
 		util.Logger.Printf("[Error] parsing bareID from diskId %s: %s", diskId, err)
 		return nil, ErrorEntityNotFound
 	}
-	if DiskBareId == "" {
+	if diskBareId == "" {
 		util.Logger.Printf("[Error] parsing bareID from diskId %s - empty bareID returned", diskId)
 		return nil, ErrorEntityNotFound
 	}
-	diskHREF.Path += fmt.Sprintf("/disk/%s", DiskBareId)
+	diskHREF := vdc.client.VCDHREF
+	diskHREF.Path += fmt.Sprintf("/disk/%s", diskBareId)
 	return vdc.GetDiskByHref(diskHREF.String())
 }
