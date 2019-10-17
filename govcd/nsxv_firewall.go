@@ -26,12 +26,12 @@ type responseEdgeFirewallRules struct {
 	EdgeFirewallRules requestEdgeFirewallRules `xml:"firewallRules"`
 }
 
-// CreateNsxvFirewall creates firewall rule using proxied NSX-V API. It is a synchronuous operation.
+// CreateNsxvFirewallRule creates firewall rule using proxied NSX-V API. It is a synchronuous operation.
 // It returns an object with all fields populated (including ID)
 // If aboveRuleId is not empty, it will send a query parameter aboveRuleId= which instructs NSX to
 // place this rule above the specified rule ID
-func (egw *EdgeGateway) CreateNsxvFirewall(firewallRuleConfig *types.EdgeFirewallRule, aboveRuleId string) (*types.EdgeFirewallRule, error) {
-	if err := validateCreateNsxvFirewall(firewallRuleConfig, egw); err != nil {
+func (egw *EdgeGateway) CreateNsxvFirewallRule(firewallRuleConfig *types.EdgeFirewallRule, aboveRuleId string) (*types.EdgeFirewallRule, error) {
+	if err := validateCreateNsxvFirewallRule(firewallRuleConfig, egw); err != nil {
 		return nil, err
 	}
 
@@ -60,7 +60,6 @@ func (egw *EdgeGateway) CreateNsxvFirewall(firewallRuleConfig *types.EdgeFirewal
 		resp, err = egw.client.ExecuteParamRequestWithCustomError(httpPath, params, http.MethodPost, types.AnyXMLMime,
 			errString, firewallRuleConfig, &types.NSXError{})
 	}
-
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +71,7 @@ func (egw *EdgeGateway) CreateNsxvFirewall(firewallRuleConfig *types.EdgeFirewal
 		return nil, err
 	}
 
-	readFirewallRule, err := egw.GetNsxvFirewallById(firewallRuleId)
+	readFirewallRule, err := egw.GetNsxvFirewallRuleById(firewallRuleId)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve firewall rule with ID (%s) after creation: %s",
 			firewallRuleId, err)
@@ -80,10 +79,10 @@ func (egw *EdgeGateway) CreateNsxvFirewall(firewallRuleConfig *types.EdgeFirewal
 	return readFirewallRule, nil
 }
 
-// UpdateNsxvFirewall updates types.EdgeFirewallRule with all fields using proxied NSX-V API. ID is
+// UpdateNsxvFirewallRule updates types.EdgeFirewallRule with all fields using proxied NSX-V API. ID is
 // mandatory to perform the update.
-func (egw *EdgeGateway) UpdateNsxvFirewall(firewallRuleConfig *types.EdgeFirewallRule) (*types.EdgeFirewallRule, error) {
-	err := validateUpdateNsxvFirewall(firewallRuleConfig, egw)
+func (egw *EdgeGateway) UpdateNsxvFirewallRule(firewallRuleConfig *types.EdgeFirewallRule) (*types.EdgeFirewallRule, error) {
+	err := validateUpdateNsxvFirewallRule(firewallRuleConfig, egw)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +99,7 @@ func (egw *EdgeGateway) UpdateNsxvFirewall(firewallRuleConfig *types.EdgeFirewal
 		return nil, err
 	}
 
-	readFirewallRule, err := egw.GetNsxvFirewallById(firewallRuleConfig.ID)
+	readFirewallRule, err := egw.GetNsxvFirewallRuleById(firewallRuleConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve firewall rule with ID (%s) after update: %s",
 			readFirewallRule.ID, err)
@@ -108,11 +107,11 @@ func (egw *EdgeGateway) UpdateNsxvFirewall(firewallRuleConfig *types.EdgeFirewal
 	return readFirewallRule, nil
 }
 
-// GetNsxvFirewallById retrieves types.EdgeFirewallRule by firewall rule ID as shown in the UI using proxied
+// GetNsxvFirewallRuleById retrieves types.EdgeFirewallRule by firewall rule ID as shown in the UI using proxied
 // NSX-V API.
 // It returns and error `ErrorEntityNotFound` if the firewall rule is not found
-func (egw *EdgeGateway) GetNsxvFirewallById(id string) (*types.EdgeFirewallRule, error) {
-	if err := validateGetNsxvFirewall(id, egw); err != nil {
+func (egw *EdgeGateway) GetNsxvFirewallRuleById(id string) (*types.EdgeFirewallRule, error) {
+	if err := validateGetNsxvFirewallRule(id, egw); err != nil {
 		return nil, err
 	}
 
@@ -125,7 +124,7 @@ func (egw *EdgeGateway) GetNsxvFirewallById(id string) (*types.EdgeFirewallRule,
 
 	// This query returns all application rules as the API does not have filtering options
 	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
-		"unable to read firewall rule: %s", nil, firewallRuleResponse)
+		"unable to read firewall rules: %s", nil, firewallRuleResponse)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +156,7 @@ func (egw *EdgeGateway) GetAllNsxvFirewallRules() ([]*types.EdgeFirewallRule, er
 
 	// This query returns all application rules as the API does not have filtering options
 	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
-		"unable to read firewall rule: %s", nil, firewallRuleResponse)
+		"unable to read firewall rules: %s", nil, firewallRuleResponse)
 	if err != nil {
 		return nil, err
 	}
@@ -169,11 +168,11 @@ func (egw *EdgeGateway) GetAllNsxvFirewallRules() ([]*types.EdgeFirewallRule, er
 	return firewallRuleResponse.EdgeFirewallRules.EdgeFirewallRules, nil
 }
 
-// DeleteNsxvFirewallById deletes types.EdgeFirewallRule by firewall rule ID as shown in the UI using proxied
+// DeleteNsxvFirewallRuleById deletes types.EdgeFirewallRule by firewall rule ID as shown in the UI using proxied
 // NSX-V API.
 // It returns and error `ErrorEntityNotFound` if the firewall rule is not found.
-func (egw *EdgeGateway) DeleteNsxvFirewallById(id string) error {
-	err := validateDeleteNsxvFirewall(id, egw)
+func (egw *EdgeGateway) DeleteNsxvFirewallRuleById(id string) error {
+	err := validateDeleteNsxvFirewallRule(id, egw)
 	if err != nil {
 		return err
 	}
@@ -184,7 +183,7 @@ func (egw *EdgeGateway) DeleteNsxvFirewallById(id string) error {
 	}
 
 	// check if the rule exists and pass back the error at it may be 'ErrorEntityNotFound'
-	_, err = egw.GetNsxvFirewallById(id)
+	_, err = egw.GetNsxvFirewallRuleById(id)
 	if err != nil {
 		return err
 	}
@@ -198,7 +197,7 @@ func (egw *EdgeGateway) DeleteNsxvFirewallById(id string) error {
 	return nil
 }
 
-func validateCreateNsxvFirewall(firewallRuleConfig *types.EdgeFirewallRule, egw *EdgeGateway) error {
+func validateCreateNsxvFirewallRule(firewallRuleConfig *types.EdgeFirewallRule, egw *EdgeGateway) error {
 	if !egw.HasAdvancedNetworking() {
 		return fmt.Errorf("only advanced edge gateways support firewall rules")
 	}
@@ -210,15 +209,15 @@ func validateCreateNsxvFirewall(firewallRuleConfig *types.EdgeFirewallRule, egw 
 	return nil
 }
 
-func validateUpdateNsxvFirewall(firewallRuleConfig *types.EdgeFirewallRule, egw *EdgeGateway) error {
+func validateUpdateNsxvFirewallRule(firewallRuleConfig *types.EdgeFirewallRule, egw *EdgeGateway) error {
 	if firewallRuleConfig.ID == "" {
 		return fmt.Errorf("firewall rule ID must be set for update")
 	}
 
-	return validateCreateNsxvFirewall(firewallRuleConfig, egw)
+	return validateCreateNsxvFirewallRule(firewallRuleConfig, egw)
 }
 
-func validateGetNsxvFirewall(id string, egw *EdgeGateway) error {
+func validateGetNsxvFirewallRule(id string, egw *EdgeGateway) error {
 	if !egw.HasAdvancedNetworking() {
 		return fmt.Errorf("only advanced edge gateways support firewall rules")
 	}
@@ -230,6 +229,6 @@ func validateGetNsxvFirewall(id string, egw *EdgeGateway) error {
 	return nil
 }
 
-func validateDeleteNsxvFirewall(id string, egw *EdgeGateway) error {
-	return validateGetNsxvFirewall(id, egw)
+func validateDeleteNsxvFirewallRule(id string, egw *EdgeGateway) error {
+	return validateGetNsxvFirewallRule(id, egw)
 }

@@ -44,13 +44,13 @@ func (vcd *TestVCD) Test_NsxvFirewallRule(check *C) {
 		Action:         "accept",
 	}
 
-	createdFwRule, err := edge.CreateNsxvFirewall(firewallRule, "")
+	createdFwRule, err := edge.CreateNsxvFirewallRule(firewallRule, "")
 	check.Assert(err, IsNil)
 
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
 	AddToCleanupList(createdFwRule.ID, "nsxvFirewallRule", parentEntity, check.TestName())
 
-	gotFwRule, err := edge.GetNsxvFirewallById(createdFwRule.ID)
+	gotFwRule, err := edge.GetNsxvFirewallRuleById(createdFwRule.ID)
 	check.Assert(err, IsNil)
 	check.Assert(gotFwRule, NotNil)
 	check.Assert(gotFwRule, DeepEquals, createdFwRule)
@@ -64,7 +64,7 @@ func (vcd *TestVCD) Test_NsxvFirewallRule(check *C) {
 	firewallRule.Destination = types.EdgeFirewallEndpoint{
 		IpAddresses: []string{"14.14.14.0/24", "17.17.17.0/24"},
 	}
-	updatedFwRule, err := edge.UpdateNsxvFirewall(firewallRule)
+	updatedFwRule, err := edge.UpdateNsxvFirewallRule(firewallRule)
 	check.Assert(err, IsNil)
 	check.Assert(updatedFwRule, NotNil)
 
@@ -100,7 +100,7 @@ func (vcd *TestVCD) Test_NsxvFirewallRule(check *C) {
 	}
 
 	// Create rule 2 above rule 1
-	createdFwRule2, err := edge.CreateNsxvFirewall(firewallRule2, createdFwRule.ID)
+	createdFwRule2, err := edge.CreateNsxvFirewallRule(firewallRule2, createdFwRule.ID)
 	check.Assert(err, IsNil)
 	AddToCleanupList(createdFwRule2.ID, "nsxvFirewallRule", parentEntity, check.TestName())
 
@@ -120,17 +120,17 @@ func (vcd *TestVCD) Test_NsxvFirewallRule(check *C) {
 	check.Assert(foundRule2AboveRule1, Equals, true)
 
 	// Remove both rules
-	err = edge.DeleteNsxvFirewallById(gotFwRule.ID)
+	err = edge.DeleteNsxvFirewallRuleById(gotFwRule.ID)
 	check.Assert(err, IsNil)
 
-	err = edge.DeleteNsxvFirewallById(createdFwRule2.ID)
+	err = edge.DeleteNsxvFirewallRuleById(createdFwRule2.ID)
 	check.Assert(err, IsNil)
 
 	// Ensure these rule do not exist anymore
-	_, err = edge.GetNsxvFirewallById(createdFwRule.ID)
+	_, err = edge.GetNsxvFirewallRuleById(createdFwRule.ID)
 	check.Assert(err, Equals, ErrorEntityNotFound)
 
-	_, err = edge.GetNsxvFirewallById(createdFwRule2.ID)
+	_, err = edge.GetNsxvFirewallRuleById(createdFwRule2.ID)
 	check.Assert(err, Equals, ErrorEntityNotFound)
 
 }
