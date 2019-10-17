@@ -92,7 +92,7 @@ func (egw *EdgeGateway) UpdateNsxvFirewallRule(firewallRuleConfig *types.EdgeFir
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
 
-	// Result should be 204, if not we expect an error of type types.NSXError
+	// Result is either 204 for success, or an error of type types.NSXError
 	_, err = egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodPut, types.AnyXMLMime,
 		"error while updating firewall rule : %s", firewallRuleConfig, &types.NSXError{})
 	if err != nil {
@@ -115,22 +115,13 @@ func (egw *EdgeGateway) GetNsxvFirewallRuleById(id string) (*types.EdgeFirewallR
 		return nil, err
 	}
 
-	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeFirewallPath)
-	if err != nil {
-		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
-	}
-
-	firewallRuleResponse := &responseEdgeFirewallRules{}
-
-	// This query returns all application rules as the API does not have filtering options
-	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
-		"unable to read firewall rules: %s", nil, firewallRuleResponse)
+	edgeFirewallRules, err := egw.GetAllNsxvFirewallRules()
 	if err != nil {
 		return nil, err
 	}
 
 	util.Logger.Printf("[DEBUG] Searching for firewall rule with ID: %s", id)
-	for _, rule := range firewallRuleResponse.EdgeFirewallRules.EdgeFirewallRules {
+	for _, rule := range edgeFirewallRules {
 		util.Logger.Printf("[DEBUG] Checking rule: %#+v", rule)
 		if rule.ID != "" && rule.ID == id {
 			return rule, nil
