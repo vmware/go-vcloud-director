@@ -232,7 +232,7 @@ func (vcd *TestVCD) Test_GetMedia(check *C) {
 		return catalog.GetMediaByName(name, refresh)
 	}
 	getById := func(id string, refresh bool) (genericEntity, error) {
-		return catalog.GetMediaById(id, refresh)
+		return catalog.GetMediaById(id)
 	}
 	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
 		return catalog.GetMediaByNameOrId(id, refresh)

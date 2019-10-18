@@ -479,15 +479,7 @@ func (cat *Catalog) GetMediaByName(mediaName string, refresh bool) (*Media, erro
 // GetMediaById finds a Media by ID
 // On success, returns a pointer to the Media structure and a nil error
 // On failure, returns a nil pointer and an error
-func (cat *Catalog) GetMediaById(mediaId string, refresh bool) (*Media, error) {
-	if refresh {
-		err := cat.Refresh()
-		if err != nil {
-			return nil, err
-		}
-	}
-	mediaHREF := cat.client.VCDHREF
-
+func (cat *Catalog) GetMediaById(mediaId string) (*Media, error) {
 	mediaBareId, err := getBareEntityUuid(mediaId)
 	if err != nil {
 		util.Logger.Printf("[Error] parsing bareID from mediaId %s: %s", mediaId, err)
@@ -498,6 +490,8 @@ func (cat *Catalog) GetMediaById(mediaId string, refresh bool) (*Media, error) {
 		util.Logger.Printf("[Error] parsing bareID from mediaId %s - empty bareID returned", mediaId)
 		return nil, fmt.Errorf("[Error] parsing bareID from mediaId %s - empty bareID returned", mediaId)
 	}
+
+	mediaHREF := cat.client.VCDHREF
 	mediaHREF.Path += fmt.Sprintf("/media/%s", mediaBareId)
 	return cat.GetMediaByHref(mediaHREF.String())
 }
@@ -507,7 +501,7 @@ func (cat *Catalog) GetMediaById(mediaId string, refresh bool) (*Media, error) {
 // On failure, returns a nil pointer and an error
 func (cat *Catalog) GetMediaByNameOrId(identifier string, refresh bool) (*Media, error) {
 	getByName := func(name string, refresh bool) (interface{}, error) { return cat.GetMediaByName(name, refresh) }
-	getById := func(id string, refresh bool) (interface{}, error) { return cat.GetMediaById(id, refresh) }
+	getById := func(id string, refresh bool) (interface{}, error) { return cat.GetMediaById(id) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
 	if entity == nil {
 		return nil, err
@@ -536,10 +530,10 @@ func (adminCatalog *AdminCatalog) GetMediaByName(mediaName string, refresh bool)
 // GetMediaById finds a Media by ID
 // On success, returns a pointer to the Media structure and a nil error
 // On failure, returns a nil pointer and an error
-func (adminCatalog *AdminCatalog) GetMediaById(mediaId string, refresh bool) (*Media, error) {
+func (adminCatalog *AdminCatalog) GetMediaById(mediaId string) (*Media, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
-	return catalog.GetMediaById(mediaId, refresh)
+	return catalog.GetMediaById(mediaId)
 }
 
 // GetMediaByNameOrId finds a Media by Name or ID
