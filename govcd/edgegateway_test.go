@@ -694,7 +694,7 @@ func testCacheLoadBalancer(edge EdgeGateway, check *C) (*types.LbGeneralParamsWi
 
 // testCacheFirewall is meant to store firewall settings before any operations so that all
 // configuration can be checked after manipulation
-func testCacheFirewall(edge EdgeGateway, check *C) (*types.FwGeneralParamsWithXml, string) {
+func testCacheFirewall(edge EdgeGateway, check *C) (*types.FirewallConfigWithXml, string) {
 	beforeFw, err := edge.GetFirewallConfig()
 	check.Assert(err, IsNil)
 	beforeFwbXml := testGetEdgeEndpointXML(types.EdgeFirewallPath, edge, check)
@@ -726,7 +726,7 @@ func testCheckLoadBalancerConfig(beforeLb *types.LbGeneralParamsWithXml, beforeL
 
 // testCheckFirewallConfig validates if both raw XML string and firewall struct remain
 // identical after settings manipulation.
-func testCheckFirewallConfig(beforeFw *types.FwGeneralParamsWithXml, beforeFwXml string, edge EdgeGateway, check *C) {
+func testCheckFirewallConfig(beforeFw *types.FirewallConfigWithXml, beforeFwXml string, edge EdgeGateway, check *C) {
 	afterFw, err := edge.GetFirewallConfig()
 	check.Assert(err, IsNil)
 
