@@ -212,6 +212,7 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 	ge, err = def.getById(invalidEntityId, false)
 	entity7 := ge.(genericEntity)
 	check.Assert(err, NotNil)
+	check.Assert(IsNotFound(err), Equals, true)
 	check.Assert(entity7, IsNil)
 
 	// 8. Attempting a search by name or ID with an invalid ID
@@ -221,5 +222,6 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 	ge, err = def.getByNameOrId(invalidEntityId, false)
 	entity8 := ge.(genericEntity)
 	check.Assert(err, NotNil)
+	check.Assert(IsNotFound(err), Equals, true)
 	check.Assert(entity8, IsNil)
 }

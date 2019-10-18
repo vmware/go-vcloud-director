@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -441,7 +442,10 @@ func (cat *Catalog) GetMediaByHref(mediaHref string) (*Media, error) {
 	media := NewMedia(cat.client)
 
 	_, err := cat.client.ExecuteRequest(mediaHref, http.MethodGet,
-		"", "error retrieving media: %s", nil, media.Media)
+		"", "error retrieving media: %#v", nil, media.Media)
+	if err != nil && strings.Contains(err.Error(), "MajorErrorCode:403") {
+		return nil, ErrorEntityNotFound
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -487,7 +491,8 @@ func (cat *Catalog) GetMediaById(mediaId string, refresh bool) (*Media, error) {
 	mediaBareId, err := getBareEntityUuid(mediaId)
 	if err != nil {
 		util.Logger.Printf("[Error] parsing bareID from mediaId %s: %s", mediaId, err)
-		return nil, err
+		// this needs for GetByNameOrId - we always send Name here
+		return nil, ErrorEntityNotFound
 	}
 	if mediaBareId == "" {
 		util.Logger.Printf("[Error] parsing bareID from mediaId %s - empty bareID returned", mediaId)
