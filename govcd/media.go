@@ -479,21 +479,28 @@ func (cat *Catalog) GetMediaByName(mediaName string, refresh bool) (*Media, erro
 // GetMediaById finds a Media by ID
 // On success, returns a pointer to the Media structure and a nil error
 // On failure, returns a nil pointer and an error
-func (cat *Catalog) GetMediaById(mediaId string) (*Media, error) {
-	mediaBareId, err := getBareEntityUuid(mediaId)
-	if err != nil {
-		util.Logger.Printf("[Error] parsing bareID from mediaId %s: %s", mediaId, err)
-		// this needs for GetByNameOrId - we always send Name here
-		return nil, ErrorEntityNotFound
-	}
-	if mediaBareId == "" {
-		util.Logger.Printf("[Error] parsing bareID from mediaId %s - empty bareID returned", mediaId)
-		return nil, fmt.Errorf("[Error] parsing bareID from mediaId %s - empty bareID returned", mediaId)
+func (catalog *Catalog) GetMediaById(mediaId string) (*Media, error) {
+	typeMedia := "media"
+	if catalog.client.IsSysAdmin {
+		typeMedia = "adminMedia"
 	}
 
-	mediaHREF := cat.client.VCDHREF
-	mediaHREF.Path += fmt.Sprintf("/media/%s", mediaBareId)
-	return cat.GetMediaByHref(mediaHREF.String())
+	results, err := catalog.client.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia,
+		"filter": fmt.Sprintf("catalogName==%s", url.QueryEscape(catalog.Catalog.Name))})
+	if err != nil {
+		return nil, fmt.Errorf("error querying medias %#v", err)
+	}
+
+	mediaResults := results.Results.MediaRecord
+	if catalog.client.IsSysAdmin {
+		mediaResults = results.Results.AdminMediaRecord
+	}
+	for _, mediaRecord := range mediaResults {
+		if equalIds(mediaId, mediaRecord.ID, mediaRecord.HREF) {
+			return catalog.GetMediaByHref(mediaRecord.HREF)
+		}
+	}
+	return nil, ErrorEntityNotFound
 }
 
 // GetMediaByNameOrId finds a Media by Name or ID
