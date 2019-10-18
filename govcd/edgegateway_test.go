@@ -609,18 +609,18 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateFwGeneralParams(check *C) {
 	// Cache current firewall settings for change validation in the end
 	beforeFw, beforeFwXml := testCacheFirewall(*edge, check)
 
-	_, err = edge.UpdateFwGeneralConfig(false, false, "deny")
+	_, err = edge.UpdateFirewallConfig(false, false, "deny")
 	check.Assert(err, IsNil)
 
-	_, err = edge.UpdateFwGeneralConfig(true, true, "accept")
+	_, err = edge.UpdateFirewallConfig(true, true, "accept")
 	check.Assert(err, IsNil)
 
 	// Try to set invalid loglevel to get validation error
-	_, err = edge.UpdateFwGeneralConfig(false, false, "invalid_action")
+	_, err = edge.UpdateFirewallConfig(false, false, "invalid_action")
 	check.Assert(err, ErrorMatches, ".*default action must be either 'accept' or 'deny'.*")
 
 	// Restore to initial settings and validate that it
-	_, err = edge.UpdateFwGeneralConfig(beforeFw.Enabled, beforeFw.DefaultPolicy.LoggingEnabled, beforeFw.DefaultPolicy.Action)
+	_, err = edge.UpdateFirewallConfig(beforeFw.Enabled, beforeFw.DefaultPolicy.LoggingEnabled, beforeFw.DefaultPolicy.Action)
 	check.Assert(err, IsNil)
 
 	// Validate configuration against initially cached version
@@ -695,7 +695,7 @@ func testCacheLoadBalancer(edge EdgeGateway, check *C) (*types.LbGeneralParamsWi
 // testCacheFirewall is meant to store firewall settings before any operations so that all
 // configuration can be checked after manipulation
 func testCacheFirewall(edge EdgeGateway, check *C) (*types.FwGeneralParamsWithXml, string) {
-	beforeFw, err := edge.GetFwGeneralConfig()
+	beforeFw, err := edge.GetFirewallConfig()
 	check.Assert(err, IsNil)
 	beforeFwbXml := testGetEdgeEndpointXML(types.EdgeFirewallPath, edge, check)
 	return beforeFw, beforeFwbXml
@@ -727,7 +727,7 @@ func testCheckLoadBalancerConfig(beforeLb *types.LbGeneralParamsWithXml, beforeL
 // testCheckFirewallConfig validates if both raw XML string and firewall struct remain
 // identical after settings manipulation.
 func testCheckFirewallConfig(beforeFw *types.FwGeneralParamsWithXml, beforeFwXml string, edge EdgeGateway, check *C) {
-	afterFw, err := edge.GetFwGeneralConfig()
+	afterFw, err := edge.GetFirewallConfig()
 	check.Assert(err, IsNil)
 
 	afterFwXml := testGetEdgeEndpointXML(types.EdgeFirewallPath, edge, check)
