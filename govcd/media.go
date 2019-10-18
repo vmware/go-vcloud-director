@@ -487,11 +487,11 @@ func (cat *Catalog) GetMediaById(mediaId string, refresh bool) (*Media, error) {
 	mediaBareId, err := getBareEntityUuid(mediaId)
 	if err != nil {
 		util.Logger.Printf("[Error] parsing bareID from mediaId %s: %s", mediaId, err)
-		return nil, ErrorEntityNotFound
+		return nil, err
 	}
 	if mediaBareId == "" {
 		util.Logger.Printf("[Error] parsing bareID from mediaId %s - empty bareID returned", mediaId)
-		return nil, ErrorEntityNotFound
+		return nil, fmt.Errorf("[Error] parsing bareID from mediaId %s - empty bareID returned", mediaId)
 	}
 	mediaHREF.Path += fmt.Sprintf("/media/%s", mediaBareId)
 	return cat.GetMediaByHref(mediaHREF.String())
