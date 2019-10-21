@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
@@ -358,6 +359,9 @@ func (vdc *Vdc) GetDiskByHref(diskHref string) (*Disk, error) {
 
 	_, err := vdc.client.ExecuteRequest(diskHref, http.MethodGet,
 		"", "error retrieving Disk: %s", nil, Disk.Disk)
+	if err != nil && strings.Contains(err.Error(), "MajorErrorCode:403") {
+		return nil, ErrorEntityNotFound
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -404,17 +408,12 @@ func (vdc *Vdc) GetDiskById(diskId string, refresh bool) (*Disk, error) {
 			return nil, err
 		}
 	}
-
-	diskBareId, err := getBareEntityUuid(diskId)
-	if err != nil {
-		util.Logger.Printf("[Error] parsing bareID from diskId %s: %s", diskId, err)
-		return nil, ErrorEntityNotFound
+	for _, resourceEntities := range vdc.Vdc.ResourceEntities {
+		for _, resourceEntity := range resourceEntities.ResourceEntity {
+			if equalIds(diskId, resourceEntity.ID, resourceEntity.HREF) && resourceEntity.Type == "application/vnd.vmware.vcloud.disk+xml" {
+				return vdc.GetDiskByHref(resourceEntity.HREF)
+			}
+		}
 	}
-	if diskBareId == "" {
-		util.Logger.Printf("[Error] parsing bareID from diskId %s - empty bareID returned", diskId)
-		return nil, ErrorEntityNotFound
-	}
-	diskHREF := vdc.client.VCDHREF
-	diskHREF.Path += fmt.Sprintf("/disk/%s", diskBareId)
-	return vdc.GetDiskByHref(diskHREF.String())
+	return nil, ErrorEntityNotFound
 }
