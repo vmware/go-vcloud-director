@@ -68,6 +68,8 @@ func (vcd *TestVCD) Test_DeleteMetadataForVdc(check *C) {
 }
 
 func (vcd *TestVCD) Test_AddMetadataOnVapp(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
@@ -87,6 +89,8 @@ func (vcd *TestVCD) Test_AddMetadataOnVapp(check *C) {
 }
 
 func (vcd *TestVCD) Test_DeleteMetadataOnVapp(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
@@ -113,6 +117,8 @@ func (vcd *TestVCD) Test_DeleteMetadataOnVapp(check *C) {
 }
 
 func (vcd *TestVCD) Test_AddMetadataOnVm(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	// Find VApp
 	if vcd.vapp.VApp == nil {
 		check.Skip("skipping test because no vApp is found")
@@ -145,6 +151,8 @@ func (vcd *TestVCD) Test_AddMetadataOnVm(check *C) {
 }
 
 func (vcd *TestVCD) Test_DeleteMetadataOnVm(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	// Find VApp
 	if vcd.vapp.VApp == nil {
 		check.Skip("skipping test because no vApp is found")
@@ -184,7 +192,6 @@ func (vcd *TestVCD) Test_DeleteMetadataOnVm(check *C) {
 }
 
 func (vcd *TestVCD) Test_DeleteMetadataOnVAppTemplate(check *C) {
-
 	fmt.Printf("Running: %s\n", check.TestName())
 	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	if err != nil {
@@ -275,8 +282,10 @@ func (vcd *TestVCD) Test_AddMetadataOnVAppTemplate(check *C) {
 	check.Assert(err, IsNil)
 }
 
-func (vcd *TestVCD) Test_DeleteMetadataOnMediaItem(check *C) {
-	//prepare media item
+func (vcd *TestVCD) Test_DeleteMetadataOnMediaRecord(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	//prepare mediaRecord item
 	skipWhenMediaPathMissing(vcd, check)
 	itemName := "TestDeleteMediaMetaData"
 
@@ -294,26 +303,25 @@ func (vcd *TestVCD) Test_DeleteMetadataOnMediaItem(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_DeleteMetadataOnMediaItem")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_DeleteMetadataOnMediaRecord")
 
 	err = vcd.org.Refresh()
 	check.Assert(err, IsNil)
 
-	mediaItem, err := vcd.vdc.FindMediaImage(itemName)
+	mediaRecord, err := catalog.QueryMedia(itemName)
 	check.Assert(err, IsNil)
-	check.Assert(mediaItem, NotNil)
-	check.Assert(mediaItem, Not(Equals), MediaItem{})
-	check.Assert(mediaItem.MediaItem.Name, Equals, itemName)
+	check.Assert(mediaRecord, NotNil)
+	check.Assert(mediaRecord.MediaRecord.Name, Equals, itemName)
 
 	// Add metadata
-	_, err = mediaItem.AddMetadata("key2", "value2")
+	_, err = mediaRecord.AddMetadata("key2", "value2")
 	check.Assert(err, IsNil)
 
 	// Remove metadata
-	err = mediaItem.DeleteMetadata("key2")
+	err = mediaRecord.DeleteMetadata("key2")
 	check.Assert(err, IsNil)
 
-	metadata, err := mediaItem.GetMetadata()
+	metadata, err := mediaRecord.GetMetadata()
 	check.Assert(err, IsNil)
 	check.Assert(metadata, NotNil)
 	for _, k := range metadata.MetadataEntry {
@@ -323,7 +331,9 @@ func (vcd *TestVCD) Test_DeleteMetadataOnMediaItem(check *C) {
 	}
 }
 
-func (vcd *TestVCD) Test_AddMetadataOnMediaItem(check *C) {
+func (vcd *TestVCD) Test_AddMetadataOnMediaRecord(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	//prepare media item
 	skipWhenMediaPathMissing(vcd, check)
 	itemName := "TestAddMediaMetaData"
@@ -343,23 +353,22 @@ func (vcd *TestVCD) Test_AddMetadataOnMediaItem(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_AddMetadataOnMediaItem")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_AddMetadataOnMediaRecord")
 
 	err = vcd.org.Refresh()
 	check.Assert(err, IsNil)
 
-	mediaItem, err := vcd.vdc.FindMediaImage(itemName)
+	mediaRecord, err := catalog.QueryMedia(itemName)
 	check.Assert(err, IsNil)
-	check.Assert(mediaItem, NotNil)
-	check.Assert(mediaItem, Not(Equals), MediaItem{})
-	check.Assert(mediaItem.MediaItem.Name, Equals, itemName)
+	check.Assert(mediaRecord, NotNil)
+	check.Assert(mediaRecord.MediaRecord.Name, Equals, itemName)
 
 	// Add metadata
-	_, err = mediaItem.AddMetadata("key", "value")
+	_, err = mediaRecord.AddMetadata("key", "value")
 	check.Assert(err, IsNil)
 
 	// Check if metadata was added correctly
-	metadata, err := mediaItem.GetMetadata()
+	metadata, err := mediaRecord.GetMetadata()
 	check.Assert(err, IsNil)
 	check.Assert(metadata, NotNil)
 	check.Assert(len(metadata.MetadataEntry), Equals, 1)
