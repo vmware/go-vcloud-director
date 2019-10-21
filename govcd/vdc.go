@@ -23,9 +23,22 @@ type Vdc struct {
 	VApp   *types.VApp
 }
 
+type OrgVdcRecord struct {
+	OrgVdc *types.QueryResultOrgVdcRecordType
+	client *Client
+}
+
 func NewVdc(cli *Client) *Vdc {
 	return &Vdc{
 		Vdc:    new(types.Vdc),
+		client: cli,
+	}
+}
+
+// create instance with reference to types.OrgVdcRecord
+func NewOrgVdcRecord(cli *Client) *OrgVdcRecord {
+	return &OrgVdcRecord{
+		OrgVdc: new(types.QueryResultOrgVdcRecordType),
 		client: cli,
 	}
 }

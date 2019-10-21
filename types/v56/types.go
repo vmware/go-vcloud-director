@@ -2153,7 +2153,41 @@ type QueryResultRecordsType struct {
 	VirtualCenterRecord             []*QueryResultVirtualCenterRecordType             `xml:"VirtualCenterRecord"`             // A record representing a vSphere server
 	PortGroupRecord                 []*PortGroupRecordType                            `xml:"PortgroupRecord"`                 // A record representing a port group
 	OrgVdcNetworkRecord             []*QueryResultOrgVdcNetworkRecordType             `xml:"OrgVdcNetworkRecord"`             // A record representing a org VDC network
-	AdminCatalogRecord              []*AdminCatalogRecord                             `xml:"AdminCatalogRecord"`              // A record representing a catalog
+	AdminCatalogRecord              []*AdminCatalogRecord                             `xml:"AdminCatalogRecord"`
+	OrgVdcRecord                    []*QueryResultOrgVdcRecordType                    `xml:"OrgVdcRecord"` // A record representing a catalog
+}
+
+// QueryResultOrgVdcRecordType represents list of Org Vdc as query result.
+type QueryResultOrgVdcRecordType struct {
+	HREF                    string `xml:"href,attr,omitempty"` // The URI of the entity.
+	Type                    string `xml:"type,attr,omitempty"` // The MIME type of the entity.
+	Name                    string `xml:"name,attr,omitempty"` // VDC name.
+	IsEnabled               bool   `xml:"isEnabled,attr,omitempty"`
+	CpuAllocationMhz        int64  `xml:"cpuAllocationMhz,attr,omitempty"`
+	CpuLimitMhz             int64  `xml:"cpuLimitMhz,attr,omitempty"`
+	CpuUsedMhz              int64  `xml:"cpuUsedMhz,attr,omitempty"`
+	CpuReservedMhz          int64  `xml:"cpuReservedMhz,attr,omitempty"`
+	MemoryAllocationMB      int64  `xml:"memoryAllocationMB,attr,omitempty"`
+	MemoryLimitMB           int64  `xml:"memoryLimitMB,attr,omitempty"`
+	MemoryUsedMB            int64  `xml:"memoryUsedMB,attr,omitempty"`
+	MemoryReservedMB        int64  `xml:"memoryReservedMB,attr,omitempty"`
+	StorageLimitMB          int64  `xml:"storageLimitMB,attr,omitempty"`
+	StorageUsedMB           int64  `xml:"storageUsedMB,attr,omitempty"`
+	ProviderVdcName         string `xml:"providerVdcName,attr,omitempty"`
+	ProviderVdc             string `xml:"providerVdc,attr,omitempty"`
+	OrgName                 string `xml:"orgName,attr,omitempty"`
+	NumberOfVApps           int    `xml:"numberOfVApps,attr,omitempty"`
+	NumberOfMedia           int    `xml:"numberOfMedia,attr,omitempty"`
+	NumberOfDisks           int    `xml:"numberOfDisks,attr,omitempty"`
+	NumberOfVAppTemplates   int    `xml:"numberOfVAppTemplates,attr,omitempty"`
+	IsBusy                  bool   `xml:"isBusy,attr,omitempty"`
+	Status                  string `xml:"status,attr,omitempty"`
+	NumberOfDatastores      int    `xml:"numberOfDatastores,attr,omitempty"`
+	NumberOfStorageProfiles int    `xml:"numberOfStorageProfiles,attr,omitempty"`
+	NumberOfVMs             int    `xml:"numberOfVMs,attr,omitempty"`
+	NumberOfRunningVMs      int    `xml:"numberOfRunningVMs,attr,omitempty"`
+	NetworkPoolUniversalId  int    `xml:"networkPoolUniversalId,attr,omitempty"`
+	NumberOfDeployedVApps   int    `xml:"numberOfDeployedVApps,attr,omitempty"`
 }
 
 // QueryResultEdgeGatewayRecordType represents an edge gateway record as query result.
