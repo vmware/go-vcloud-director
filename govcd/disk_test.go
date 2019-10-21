@@ -675,6 +675,10 @@ func (vcd *TestVCD) Test_GetDisks(check *C) {
 
 	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
 
+	// Wait for disk creation complete
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
 	err = vcd.vdc.Refresh()
 	check.Assert(err, IsNil)
 	diskList, err = vcd.vdc.GetDisksByName(diskName, false)
@@ -682,4 +686,54 @@ func (vcd *TestVCD) Test_GetDisks(check *C) {
 	check.Assert(diskList, NotNil)
 	check.Assert(len(*diskList), Equals, 2)
 
+}
+
+// Tests Disk list retrieval by name, by ID
+func (vcd *TestVCD) Test_GetDiskByHref(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	if vcd.config.VCD.Disk.Size == 0 {
+		check.Skip("Skipping test because disk size is <= 0")
+	}
+
+	if vcd.config.VCD.Vdc == "" {
+		check.Skip("Test_GetDisk: VDC name not given")
+		return
+	}
+
+	diskName := "TestGetDiskByHref"
+	// Create disk
+	diskCreateParamsDisk := &types.Disk{
+		Name:        diskName,
+		Size:        vcd.config.VCD.Disk.Size,
+		Description: diskName + "Description",
+	}
+
+	diskCreateParams := &types.DiskCreateParams{
+		Disk: diskCreateParamsDisk,
+	}
+
+	task, err := vcd.vdc.CreateDisk(diskCreateParams)
+	check.Assert(err, IsNil)
+
+	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
+	diskHREF := task.Task.Owner.HREF
+
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+
+	// Wait for disk creation complete
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	disk, err := vcd.vdc.GetDiskByHref(diskHREF)
+	check.Assert(err, IsNil)
+	check.Assert(disk, NotNil)
+	check.Assert(disk.Disk.Name, Equals, diskName)
+	check.Assert(disk.Disk.Description, Equals, diskName+"Description")
+
+	invalidDiskHREF := diskHREF + "1"
+	disk, err = vcd.vdc.GetDiskByHref(invalidDiskHREF)
+	check.Assert(err, NotNil)
+	check.Assert(IsNotFound(err), Equals, true)
+	check.Assert(disk, IsNil)
 }

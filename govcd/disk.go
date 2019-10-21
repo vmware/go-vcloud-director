@@ -358,7 +358,7 @@ func (vdc *Vdc) GetDiskByHref(diskHref string) (*Disk, error) {
 	Disk := NewDisk(vdc.client)
 
 	_, err := vdc.client.ExecuteRequest(diskHref, http.MethodGet,
-		"", "error retrieving Disk: %s", nil, Disk.Disk)
+		"", "error retrieving Disk: %#v", nil, Disk.Disk)
 	if err != nil && strings.Contains(err.Error(), "MajorErrorCode:403") {
 		return nil, ErrorEntityNotFound
 	}
