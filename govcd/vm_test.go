@@ -434,6 +434,7 @@ func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
 
 // Test Insert or Eject Media for VM
 func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
 
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
@@ -451,8 +452,6 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 		check.Skip("skipping test because no VM is found")
 	}
 
-	fmt.Printf("Running: %s\n", check.TestName())
-
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
 
@@ -466,11 +465,15 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_HandleInsertOrEjectMedia")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_HandleInsertOrEjectMedia")
 
-	media, err := FindMediaAsCatalogItem(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	catalog, err = vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
-	check.Assert(media, Not(Equals), CatalogItem{})
+	check.Assert(catalog, NotNil)
+
+	media, err := catalog.GetMediaByName(itemName, false)
+	check.Assert(err, IsNil)
+	check.Assert(media, NotNil)
 
 	insertMediaTask, err := vm.HandleInsertMedia(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
@@ -492,6 +495,7 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 
 // Test Insert or Eject Media for VM
 func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
 
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
@@ -530,19 +534,23 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_InsertOrEjectMedia")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_InsertOrEjectMedia")
 
-	media, err := FindMediaAsCatalogItem(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	catalog, err = vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
-	check.Assert(media, Not(Equals), CatalogItem{})
+	check.Assert(catalog, NotNil)
+
+	media, err := catalog.GetMediaByName(itemName, false)
+	check.Assert(err, IsNil)
+	check.Assert(media, NotNil)
 
 	// Insert Media
 	insertMediaTask, err := vm.insertOrEjectMedia(&types.MediaInsertOrEjectParams{
 		Media: &types.Reference{
-			HREF: media.CatalogItem.Entity.HREF,
-			Name: media.CatalogItem.Entity.Name,
-			ID:   media.CatalogItem.Entity.ID,
-			Type: media.CatalogItem.Entity.Type,
+			HREF: media.Media.HREF,
+			Name: media.Media.Name,
+			ID:   media.Media.ID,
+			Type: media.Media.Type,
 		},
 	}, types.RelMediaInsertMedia)
 	check.Assert(err, IsNil)
@@ -559,7 +567,7 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 	// Insert Media
 	ejectMediaTask, err := vm.insertOrEjectMedia(&types.MediaInsertOrEjectParams{
 		Media: &types.Reference{
-			HREF: media.CatalogItem.Entity.HREF,
+			HREF: media.Media.HREF,
 		},
 	}, types.RelMediaEjectMedia)
 	check.Assert(err, IsNil)
@@ -575,6 +583,8 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 
 // Test Insert or Eject Media for VM
 func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
@@ -607,11 +617,15 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaImage", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_AnswerVmQuestion")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_AnswerVmQuestion")
 
-	media, err := FindMediaAsCatalogItem(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	catalog, err = vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
-	check.Assert(media, Not(Equals), CatalogItem{})
+	check.Assert(catalog, NotNil)
+
+	media, err := catalog.GetMediaByName(itemName, false)
+	check.Assert(err, IsNil)
+	check.Assert(media, NotNil)
 
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
