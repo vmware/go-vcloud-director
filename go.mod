@@ -1,4 +1,4 @@
-module github.com/vmware/go-vcloud-director/v2
+module github.com/funky81/go-vcloud-director/v2
 
 require (
 	github.com/hashicorp/go-version v1.1.0
