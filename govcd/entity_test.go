@@ -81,7 +81,6 @@ func (media *Media) id() string   { return media.Media.ID }
 // Get invalid name or ID
 // To use this function, the entity must satisfy the interface genericEntity
 // and within the caller it must define the getter functions
-//
 // Example usage:
 //
 // func (vcd *TestVCD) Test_OrgGetVdc(check *C) {

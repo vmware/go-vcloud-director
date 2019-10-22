@@ -7,6 +7,10 @@
 package govcd
 
 import (
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -552,7 +556,7 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 // identical except <version></version> tag which is versioning the configuration
 func (vcd *TestVCD) TestEdgeGateway_UpdateLBGeneralParams(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
-		check.Skip("Skipping test because no edge gatway given")
+		check.Skip("Skipping test because no edge gateway given")
 	}
 	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
@@ -581,6 +585,46 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateLBGeneralParams(check *C) {
 
 	// Validate load balancer configuration against initially cached version
 	testCheckLoadBalancerConfig(beforeLb, beforeLbXml, *edge, check)
+}
+
+// TestEdgeGateway_UpdateFwGeneralParams main point is to test that no firewall configuration
+// xml tags are lost during changes of firewall main settings (enable, logging)
+// The test does following steps:
+// 1. Cache raw XML body and marshaled struct in variables before running the test
+// 2. Toggle the settings of firewall in various ways and ensure no err is returned
+// 3. Set the settings back as they originally were and again get raw XML body and marshaled struct
+// 4. Compare the XML text and structs before configuration and after configuration - they should be
+// identical except <version></version> tag which is versioning the configuration
+func (vcd *TestVCD) TestEdgeGateway_UpdateFwGeneralParams(check *C) {
+	if vcd.config.VCD.EdgeGateway == "" {
+		check.Skip("Skipping test because no edge gateway given")
+	}
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	check.Assert(err, IsNil)
+
+	if !edge.HasAdvancedNetworking() {
+		check.Skip("Skipping test because the edge gateway does not have advanced networking enabled")
+	}
+
+	// Cache current firewall settings for change validation in the end
+	beforeFw, beforeFwXml := testCacheFirewall(*edge, check)
+
+	_, err = edge.UpdateFirewallConfig(false, false, "deny")
+	check.Assert(err, IsNil)
+
+	_, err = edge.UpdateFirewallConfig(true, true, "accept")
+	check.Assert(err, IsNil)
+
+	// Try to set invalid loglevel to get validation error
+	_, err = edge.UpdateFirewallConfig(false, false, "invalid_action")
+	check.Assert(err, ErrorMatches, ".*default action must be either 'accept' or 'deny'.*")
+
+	// Restore to initial settings and validate that it
+	_, err = edge.UpdateFirewallConfig(beforeFw.Enabled, beforeFw.DefaultPolicy.LoggingEnabled, beforeFw.DefaultPolicy.Action)
+	check.Assert(err, IsNil)
+
+	// Validate configuration against initially cached version
+	testCheckFirewallConfig(beforeFw, beforeFwXml, *edge, check)
 }
 
 func (vcd *TestVCD) TestEdgeGateway_GetVnics(check *C) {
@@ -618,4 +662,112 @@ func (vcd *TestVCD) TestEdgeGateway_GetVnics(check *C) {
 	}
 	check.Assert(foundExtNet, Equals, true)
 	check.Assert(foundOrgNet, Equals, true)
+}
+
+// testGetEdgeEndpointXML is used for additional validation that modifying edge gateway endpoint
+// does not change any single field. It returns an XML string of whole configuration
+func testGetEdgeEndpointXML(endpoint string, edge EdgeGateway, check *C) string {
+
+	httpPath, err := edge.buildProxiedEdgeEndpointURL(endpoint)
+	check.Assert(err, IsNil)
+
+	resp, err := edge.client.ExecuteRequestWithCustomError(httpPath, http.MethodGet, types.AnyXMLMime,
+		fmt.Sprintf("unable to get XML from endpoint %s: %%s", endpoint), nil, &types.NSXError{})
+	check.Assert(err, IsNil)
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	check.Assert(err, IsNil)
+
+	return string(body)
+}
+
+// cacheLoadBalancer is meant to store load balancer settings before any operations so that all
+// configuration can be checked after manipulation
+func testCacheLoadBalancer(edge EdgeGateway, check *C) (*types.LbGeneralParamsWithXml, string) {
+	beforeLb, err := edge.GetLBGeneralParams()
+	check.Assert(err, IsNil)
+	beforeLbXml := testGetEdgeEndpointXML(types.LbConfigPath, edge, check)
+	return beforeLb, beforeLbXml
+}
+
+// testCacheFirewall is meant to store firewall settings before any operations so that all
+// configuration can be checked after manipulation
+func testCacheFirewall(edge EdgeGateway, check *C) (*types.FirewallConfigWithXml, string) {
+	beforeFw, err := edge.GetFirewallConfig()
+	check.Assert(err, IsNil)
+	beforeFwbXml := testGetEdgeEndpointXML(types.EdgeFirewallPath, edge, check)
+	return beforeFw, beforeFwbXml
+}
+
+// testCheckLoadBalancerConfig validates if both raw XML string and load balancer struct remain
+// identical after settings manipulation.
+func testCheckLoadBalancerConfig(beforeLb *types.LbGeneralParamsWithXml, beforeLbXml string, edge EdgeGateway, check *C) {
+	afterLb, err := edge.GetLBGeneralParams()
+	check.Assert(err, IsNil)
+
+	afterLbXml := testGetEdgeEndpointXML(types.LbConfigPath, edge, check)
+
+	// remove `<version></version>` tag from both XML represntation and struct for deep comparison
+	// because this version changes with each update and will never be the same after a few
+	// operations
+
+	reVersion := regexp.MustCompile(`<version>\w*<\/version>`)
+	beforeLbXml = reVersion.ReplaceAllLiteralString(beforeLbXml, "")
+	afterLbXml = reVersion.ReplaceAllLiteralString(afterLbXml, "")
+
+	beforeLb.Version = ""
+	afterLb.Version = ""
+
+	check.Assert(beforeLb, DeepEquals, afterLb)
+	check.Assert(beforeLbXml, DeepEquals, afterLbXml)
+}
+
+// testCheckFirewallConfig validates if both raw XML string and firewall struct remain
+// identical after settings manipulation.
+func testCheckFirewallConfig(beforeFw *types.FirewallConfigWithXml, beforeFwXml string, edge EdgeGateway, check *C) {
+	afterFw, err := edge.GetFirewallConfig()
+	check.Assert(err, IsNil)
+
+	afterFwXml := testGetEdgeEndpointXML(types.EdgeFirewallPath, edge, check)
+
+	// remove `<version></version>` tag from both XML represntation and struct for deep comparison
+	// because this version changes with each update and will never be the same after a few
+	// operations
+	reVersion := regexp.MustCompile(`<version>\w*<\/version>`)
+	beforeFwXml = reVersion.ReplaceAllLiteralString(beforeFwXml, "")
+	afterFwXml = reVersion.ReplaceAllLiteralString(afterFwXml, "")
+
+	beforeFw.Version = ""
+	afterFw.Version = ""
+
+	// Because the test enables and disables firewall configuration, main firewall rule has its ID
+	// and ruleTag changed during the test and we must ignore this change while comparing. This is
+	// always the first rule kept at the top so we are replacing `id` and `ruletag` fields in
+	// "before" and "after" values.
+	beforeFw.FirewallRules.Text = replaceFirstMatch(beforeFw.FirewallRules.Text, `<id>\d*</id>`, "<id>99999</id>")
+	beforeFw.FirewallRules.Text = replaceFirstMatch(beforeFw.FirewallRules.Text, `<ruleTag>\d*</ruleTag>`, "<ruleTag>99999</ruleTag>")
+	afterFw.FirewallRules.Text = replaceFirstMatch(afterFw.FirewallRules.Text, `<id>\d*</id>`, "<id>99999</id>")
+	afterFw.FirewallRules.Text = replaceFirstMatch(afterFw.FirewallRules.Text, `<ruleTag>\d*</ruleTag>`, "<ruleTag>99999</ruleTag>")
+
+	beforeFwXml = replaceFirstMatch(beforeFwXml, `<id>\d*</id>`, "<id>99999</id>")
+	beforeFwXml = replaceFirstMatch(beforeFwXml, `<ruleTag>\d*</ruleTag>`, "<ruleTag>99999</ruleTag>")
+	afterFwXml = replaceFirstMatch(afterFwXml, `<id>\d*</id>`, "<id>99999</id>")
+	afterFwXml = replaceFirstMatch(afterFwXml, `<ruleTag>\d*</ruleTag>`, "<ruleTag>99999</ruleTag>")
+
+	check.Assert(beforeFw, DeepEquals, afterFw)
+	check.Assert(beforeFwXml, DeepEquals, afterFwXml)
+}
+
+// replaceFirstMatch replaces first `regex` matched in `text` with `replacement` and returns it
+// It will panic if regex is invalid.
+func replaceFirstMatch(text, regex, replacement string) string {
+	re := regexp.MustCompile(regex)
+	// Replace leftmost found string
+	found := re.FindString(text)
+	if found != "" {
+		return strings.Replace(text, found, replacement, 1)
+	}
+	return ""
 }

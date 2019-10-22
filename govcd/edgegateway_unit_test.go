@@ -259,11 +259,11 @@ func Test_getVnicIndexFromNetworkNameType(t *testing.T) {
 		hasError          bool
 		expectedError     error
 	}{
-		{"ExtNetwork", "my-ext-network", types.EdgeGatewayVnicTypeUplink, takeAddress(0), false, nil},
-		{"OrgNetwork", "my-vdc-int-net", types.EdgeGatewayVnicTypeInternal, takeAddress(1), false, nil},
-		{"WithSubinterfaces", "with-subinterfaces", types.EdgeGatewayVnicTypeSubinterface, takeAddress(10), false, nil},
-		{"WithSubinterfaces2", "subinterface2", types.EdgeGatewayVnicTypeSubinterface, takeAddress(11), false, nil},
-		{"Trunk", "dvs.VCDVS-Trunk-Portgroup-vdcf9daf2da-b4f9-4921-a2f4-d77a943a381c", types.EdgeGatewayVnicTypeTrunk, takeAddress(2), false, nil},
+		{"ExtNetwork", "my-ext-network", types.EdgeGatewayVnicTypeUplink, takeIntAddress(0), false, nil},
+		{"OrgNetwork", "my-vdc-int-net", types.EdgeGatewayVnicTypeInternal, takeIntAddress(1), false, nil},
+		{"WithSubinterfaces", "with-subinterfaces", types.EdgeGatewayVnicTypeSubinterface, takeIntAddress(10), false, nil},
+		{"WithSubinterfaces2", "subinterface2", types.EdgeGatewayVnicTypeSubinterface, takeIntAddress(11), false, nil},
+		{"Trunk", "dvs.VCDVS-Trunk-Portgroup-vdcf9daf2da-b4f9-4921-a2f4-d77a943a381c", types.EdgeGatewayVnicTypeTrunk, takeIntAddress(2), false, nil},
 		{"NonExistingUplink", "invalid-network-name", types.EdgeGatewayVnicTypeUplink, nil, true, ErrorEntityNotFound},
 		{"NonExistingInternal", "invalid-network-name", types.EdgeGatewayVnicTypeInternal, nil, true, ErrorEntityNotFound},
 		{"NonExistingSubinterface", "invalid-network-name", types.EdgeGatewayVnicTypeSubinterface, nil, true, ErrorEntityNotFound},
@@ -273,7 +273,7 @@ func Test_getVnicIndexFromNetworkNameType(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			vnicIndex, err := GetVnicIndexByNetworkNameAndType(tt.networkName, tt.networkType, vnicObject)
+			vnicIndex, err := getVnicIndexByNetworkNameAndType(tt.networkName, tt.networkType, vnicObject)
 
 			if !tt.hasError && err != nil {
 				t.Errorf("error was not expected: %s", err)
@@ -534,7 +534,7 @@ func Test_getNetworkNameTypeFromVnicIndex(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			networkName, networkType, err := GetNetworkNameAndTypeByVnicIndex(tt.vnicIndex, vnicObject)
+			networkName, networkType, err := getNetworkNameAndTypeByVnicIndex(tt.vnicIndex, vnicObject)
 
 			if !tt.hasError && err != nil {
 				t.Errorf("error was not expected: %s", err)
@@ -556,7 +556,7 @@ func Test_getNetworkNameTypeFromVnicIndex(t *testing.T) {
 	}
 }
 
-// takeAddress is a helper which can gives address of `int`
-func takeAddress(x int) *int {
+// takeIntAddress is a helper which can gives address of `int`
+func takeIntAddress(x int) *int {
 	return &x
 }
