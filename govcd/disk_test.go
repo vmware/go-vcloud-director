@@ -24,7 +24,7 @@ func (vcd *TestVCD) Test_NewDisk(check *C) {
 // Test create independent disk
 func (vcd *TestVCD) Test_CreateDisk(check *C) {
 	if vcd.config.VCD.Disk.Size == 0 {
-		check.Skip("Skipping test because disk size is <= 0")
+		check.Skip("skipping test because disk size is 0")
 	}
 
 	fmt.Printf("Running: %s\n", check.TestName())
@@ -65,7 +65,7 @@ func (vcd *TestVCD) Test_CreateDisk(check *C) {
 // Test update independent disk
 func (vcd *TestVCD) Test_UpdateDisk(check *C) {
 	if vcd.config.VCD.Disk.Size == 0 {
-		check.Skip("skipping test because disk size is <= 0")
+		check.Skip("skipping test because disk size is 0")
 	}
 
 	if vcd.config.VCD.Disk.SizeForUpdate <= 0 {
@@ -129,7 +129,7 @@ func (vcd *TestVCD) Test_UpdateDisk(check *C) {
 // Test delete independent disk
 func (vcd *TestVCD) Test_DeleteDisk(check *C) {
 	if vcd.config.VCD.Disk.Size == 0 {
-		check.Skip("skipping test because disk size is <= 0")
+		check.Skip("skipping test because disk size is 0")
 	}
 
 	fmt.Printf("Running: %s\n", check.TestName())
@@ -178,7 +178,7 @@ func (vcd *TestVCD) Test_DeleteDisk(check *C) {
 // Test refresh independent disk info
 func (vcd *TestVCD) Test_RefreshDisk(check *C) {
 	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("skipping test because disk size is <= 0")
+		check.Skip("skipping test because disk size is 0")
 	}
 
 	if vcd.config.VCD.Disk.SizeForUpdate <= 0 {
@@ -243,7 +243,7 @@ func (vcd *TestVCD) Test_RefreshDisk(check *C) {
 func (vcd *TestVCD) Test_AttachedVMDisk(check *C) {
 
 	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("skipping test because disk size is <= 0")
+		check.Skip("skipping test because disk size is 0")
 	}
 
 	if vcd.skipVappTests {
@@ -358,7 +358,7 @@ func (vcd *TestVCD) detachIndependentDisk(disk Disk) error {
 // Test find Disk by Href in VDC struct
 func (vcd *TestVCD) Test_VdcFindDiskByHREF(check *C) {
 	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("skipping test because disk size is <= 0")
+		check.Skip("skipping test because disk size is 0")
 	}
 
 	fmt.Printf("Running: %s\n", check.TestName())
@@ -400,7 +400,7 @@ func (vcd *TestVCD) Test_VdcFindDiskByHREF(check *C) {
 // Test find disk by href and vdc client
 func (vcd *TestVCD) Test_FindDiskByHREF(check *C) {
 	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("Skipping test because disk size is <= 0")
+		check.Skip("skipping test because disk size is 0")
 	}
 
 	fmt.Printf("Running: %s\n", check.TestName())
@@ -448,7 +448,7 @@ func (vcd *TestVCD) Test_FindDiskByHREF(check *C) {
 // Independent disk integration test
 func (vcd *TestVCD) Test_Disk(check *C) {
 	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("skipping test because disk size is <= 0")
+		check.Skip("skipping test because disk size is 0")
 	}
 
 	if vcd.config.VCD.Disk.SizeForUpdate <= 0 {
@@ -562,7 +562,7 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 func (vcd *TestVCD) Test_QueryDisk(check *C) {
 
 	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("Skipping test because disk size is <= 0")
+		check.Skip("skipping test because disk size is 0")
 	}
 
 	fmt.Printf("Running: %s\n", check.TestName())
@@ -614,7 +614,7 @@ func (vcd *TestVCD) Test_GetDisks(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	if vcd.config.VCD.Disk.Size == 0 {
-		check.Skip("Skipping test because disk size is <= 0")
+		check.Skip("skipping test because disk size is 0")
 	}
 
 	if vcd.config.VCD.Vdc == "" {
@@ -693,7 +693,7 @@ func (vcd *TestVCD) Test_GetDiskByHref(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	if vcd.config.VCD.Disk.Size == 0 {
-		check.Skip("Skipping test because disk size is <= 0")
+		check.Skip("skipping test because disk size is 0")
 	}
 
 	if vcd.config.VCD.Vdc == "" {

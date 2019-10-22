@@ -163,7 +163,7 @@ func (vcd *TestVCD) Test_FindVMByHREF(check *C) {
 // Test attach disk to VM and detach disk from VM
 func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("skipping test because disk size is <= 0")
+		check.Skip("skipping test because disk size is 0")
 	}
 
 	// Find VM
@@ -253,7 +253,7 @@ func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 // Test attach disk to VM
 func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("skipping test because disk size is <= 0")
+		check.Skip("skipping test because disk size is 0")
 	}
 
 	if vcd.skipVappTests {
@@ -344,7 +344,7 @@ func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
 
 	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("skipping test because disk size is <= 0")
+		check.Skip("skipping test because disk size is 0")
 	}
 
 	if vcd.skipVappTests {
