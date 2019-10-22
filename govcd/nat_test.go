@@ -140,5 +140,5 @@ func testNsxvNat(natRule *types.EdgeNatRule, vcd *TestVCD, check *C, edge EdgeGa
 
 	// Ensure the rule does not exist anymore
 	_, err = edge.GetNsxvNatRuleById(createdNatRule.ID)
-	check.Assert(err, Equals, ErrorEntityNotFound)
+	check.Assert(IsNotFound(err), Equals, true)
 }

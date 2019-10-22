@@ -705,6 +705,34 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 		return
+	case "mediaCatalogImage":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No Catalog provided for media '%s'\n", entity.Name)
+			return
+		}
+		orgName, catalogName, _ := splitParent(entity.Parent, "|")
+		if orgName == "" || catalogName == "" {
+			vcd.infoCleanup(splitParentNotFound, entity.Parent)
+		}
+
+		org, err := vcd.client.GetAdminOrgByName(orgName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [INFO] organization '%s' not found\n", entity.Parent)
+			return
+		}
+		adminCatalog, err := org.GetAdminCatalogByName(catalogName, false)
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+
+		err = adminCatalog.RemoveMediaIfExists(entity.Name)
+		if err == nil {
+			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		} else {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+		return
 	case "user":
 		if entity.Parent == "" {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for user '%s'\n", entity.Name)
@@ -755,8 +783,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 	case "disk":
 		// Find disk by href rather than find disk by name, because disk name can be duplicated in VDC,
 		// so the unique href is required for finding the disk.
-		// [0] = disk's entity name, [1] = disk href
-		disk, err := vcd.vdc.FindDiskByHREF(strings.Split(entity.Name, "|")[1])
+		disk, err := vcd.vdc.GetDiskByHref(entity.Name)
 		if err != nil {
 			// If the disk is not found, we just need to show that it was not found, as
 			// it was likely deleted during the regular tests

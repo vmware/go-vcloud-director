@@ -71,6 +71,9 @@ func (vapp *VApp) id() string   { return vapp.VApp.ID }
 func (vm *VM) name() string { return vm.VM.Name }
 func (vm *VM) id() string   { return vm.VM.ID }
 
+func (media *Media) name() string { return media.Media.Name }
+func (media *Media) id() string   { return media.Media.ID }
+
 // Semi-generic tests that check the complete set of Get methods for an entity
 // GetEntityByName
 // GetEntityById
@@ -78,7 +81,6 @@ func (vm *VM) id() string   { return vm.VM.ID }
 // Get invalid name or ID
 // To use this function, the entity must satisfy the interface genericEntity
 // and within the caller it must define the getter functions
-//
 // Example usage:
 //
 // func (vcd *TestVCD) Test_OrgGetVdc(check *C) {
