@@ -317,7 +317,7 @@ func FindDiskByHREF(client *Client, href string) (*Disk, error) {
 
 }
 
-// Find independent disk using disk name. Returns VMRecord query return type
+// QueryDisk find independent disk using disk name. Returns DiskRecord type
 func (vdc *Vdc) QueryDisk(diskName string) (DiskRecord, error) {
 
 	if diskName == "" {
@@ -350,7 +350,7 @@ func (vdc *Vdc) QueryDisk(diskName string) (DiskRecord, error) {
 	return *newDisk, nil
 }
 
-// Find independent disks using disk name. Returns list of VMRecord query type
+// QueryDisks find independent disks using disk name. Returns list of DiskRecordType
 func (vdc *Vdc) QueryDisks(diskName string) (*[]*types.DiskRecordType, error) {
 
 	if diskName == "" {
