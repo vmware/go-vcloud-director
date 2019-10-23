@@ -609,6 +609,63 @@ func (vcd *TestVCD) Test_QueryDisk(check *C) {
 
 }
 
+// Test query disk
+func (vcd *TestVCD) Test_QueryDisks(check *C) {
+
+	if vcd.config.VCD.Disk.Size <= 0 {
+		check.Skip("skipping test because disk size is 0")
+	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	name := "TestQueryDisks"
+
+	// Create disk
+	diskCreateParamsDisk := &types.Disk{
+		Name:        name,
+		Size:        vcd.config.VCD.Disk.Size,
+		Description: name,
+	}
+
+	diskCreateParams := &types.DiskCreateParams{
+		Disk: diskCreateParamsDisk,
+	}
+
+	task, err := vcd.vdc.CreateDisk(diskCreateParams)
+	check.Assert(err, IsNil)
+
+	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
+	diskHREF := task.Task.Owner.HREF
+
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+
+	// Wait for disk creation complete
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	// create second disk with same name
+	task, err = vcd.vdc.CreateDisk(diskCreateParams)
+	check.Assert(err, IsNil)
+
+	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
+	diskHREF = task.Task.Owner.HREF
+
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+
+	// Wait for disk creation complete
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	// Verify created disk
+	check.Assert(diskHREF, Not(Equals), "")
+	diskRecords, err := vcd.vdc.QueryDisks(name)
+
+	check.Assert(err, IsNil)
+	check.Assert(len(*diskRecords), Equals, 2)
+	check.Assert((*diskRecords)[0].Name, Equals, diskCreateParamsDisk.Name)
+	check.Assert((*diskRecords)[0].SizeB, Equals, int64(diskCreateParamsDisk.Size))
+}
+
 // Tests Disk list retrieval by name, by ID
 func (vcd *TestVCD) Test_GetDisks(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
