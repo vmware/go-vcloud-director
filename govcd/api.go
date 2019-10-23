@@ -416,7 +416,7 @@ func executeRequestCustomErr(pathURL, requestType, contentType string, payload i
 
 		marshaledXml, err := xml.MarshalIndent(payload, "  ", "    ")
 		if err != nil {
-			return &http.Response{}, fmt.Errorf("error marshalling xml data %v", err)
+			return &http.Response{}, fmt.Errorf("error marshalling xml data %s", err)
 		}
 		body := bytes.NewBufferString(xml.Header + string(marshaledXml))
 

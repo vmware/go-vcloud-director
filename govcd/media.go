@@ -128,7 +128,7 @@ func executeUpload(client *Client, mediaItem *types.Media, mediaFilePath, mediaN
 func createMedia(client *Client, link, mediaName, mediaDescription string, fileSize int64) (*types.Media, error) {
 	uploadUrl, err := url.ParseRequestURI(link)
 	if err != nil {
-		return nil, fmt.Errorf("error getting vdc href: %v", err)
+		return nil, fmt.Errorf("error getting vdc href: %s", err)
 	}
 
 	reqBody := bytes.NewBufferString(
@@ -302,7 +302,7 @@ func RemoveMediaImageIfExists(vdc Vdc, mediaName string) error {
 			return fmt.Errorf("error deleting media [task] %s", mediaName)
 		}
 	} else {
-		util.Logger.Printf("[TRACE] Media not foun or error: %v - %#v \n", err, mediaItem)
+		util.Logger.Printf("[TRACE] Media not foun or error: %s - %#v \n", err, mediaItem)
 	}
 	return nil
 }

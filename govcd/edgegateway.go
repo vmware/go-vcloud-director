@@ -659,7 +659,7 @@ func (egw *EdgeGateway) AddNATPortMappingWithUplink(network *types.OrgVDCNetwork
 func (egw *EdgeGateway) CreateFirewallRules(defaultAction string, rules []*types.FirewallRule) (Task, error) {
 	err := egw.Refresh()
 	if err != nil {
-		return Task{}, fmt.Errorf("error: %v", err)
+		return Task{}, fmt.Errorf("error: %s", err)
 	}
 
 	newRules := &types.EdgeGatewayServiceConfiguration{
@@ -674,7 +674,7 @@ func (egw *EdgeGateway) CreateFirewallRules(defaultAction string, rules []*types
 
 	output, err := xml.MarshalIndent(newRules, "  ", "    ")
 	if err != nil {
-		return Task{}, fmt.Errorf("error: %v", err)
+		return Task{}, fmt.Errorf("error: %s", err)
 	}
 
 	var resp *http.Response
@@ -734,7 +734,7 @@ func (egw *EdgeGateway) Remove1to1Mapping(internal, external string) (Task, erro
 	// Refresh EdgeGateway rules
 	err := egw.Refresh()
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
+		fmt.Printf("error: %s\n", err)
 	}
 
 	var uplinkif string
@@ -845,7 +845,7 @@ func (egw *EdgeGateway) Create1to1Mapping(internal, external, description string
 	// Refresh EdgeGateway rules
 	err := egw.Refresh()
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
+		fmt.Printf("error: %s\n", err)
 	}
 
 	var uplinkif string
@@ -939,7 +939,7 @@ func (egw *EdgeGateway) AddIpsecVPN(ipsecVPNConfig *types.EdgeGatewayServiceConf
 
 	err := egw.Refresh()
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
+		fmt.Printf("error: %s\n", err)
 	}
 
 	apiEndpoint, _ := url.ParseRequestURI(egw.EdgeGateway.HREF)
@@ -955,7 +955,7 @@ func (egw *EdgeGateway) AddIpsecVPN(ipsecVPNConfig *types.EdgeGatewayServiceConf
 func (egw *EdgeGateway) RemoveIpsecVPN() (Task, error) {
 	err := egw.Refresh()
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
+		fmt.Printf("error: %s\n", err)
 	}
 	ipsecVPNConfig := &types.EdgeGatewayServiceConfiguration{
 		Xmlns: types.XMLNamespaceVCloud,

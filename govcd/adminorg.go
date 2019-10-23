@@ -166,7 +166,7 @@ func (adminOrg *AdminOrg) Delete(force bool, recursive bool) error {
 	// Get admin HREF
 	orgHREF, err := url.ParseRequestURI(adminOrg.AdminOrg.HREF)
 	if err != nil {
-		return fmt.Errorf("error getting AdminOrg HREF %s : %v", adminOrg.AdminOrg.HREF, err)
+		return fmt.Errorf("error getting AdminOrg HREF %s : %s", adminOrg.AdminOrg.HREF, err)
 	}
 	req := adminOrg.client.NewRequest(map[string]string{
 		"force":     strconv.FormatBool(force),
@@ -189,7 +189,7 @@ func (adminOrg *AdminOrg) Delete(force bool, recursive bool) error {
 func (adminOrg *AdminOrg) Disable() error {
 	orgHREF, err := url.ParseRequestURI(adminOrg.AdminOrg.HREF)
 	if err != nil {
-		return fmt.Errorf("error getting AdminOrg HREF %s : %v", adminOrg.AdminOrg.HREF, err)
+		return fmt.Errorf("error getting AdminOrg HREF %s : %s", adminOrg.AdminOrg.HREF, err)
 	}
 	orgHREF.Path += "/action/disable"
 

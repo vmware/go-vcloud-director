@@ -210,7 +210,7 @@ func (vcd *TestVCD) Test_ChangeStorageProfile(check *C) {
 		check.Skip("Skipping test because second storage profile not given")
 	}
 	task, err := vcd.vapp.ChangeStorageProfile(vcd.config.VCD.StorageProfile.SP2)
-	errStr := fmt.Sprintf("%v", err)
+	errStr := fmt.Sprintf("%s", err)
 
 	re := regexp.MustCompile(`error retrieving storage profile`)
 	if re.MatchString(errStr) {
@@ -541,7 +541,20 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 		fmt.Println("Skipping adding another vdc network as network2 was not specified")
 	}
 
-	task, err := vapp.AddNewVM(check.TestName(), vapptemplate, desiredNetConfig, true)
+	var task Task
+	var sp types.Reference
+	var customSP = false
+
+	if vcd.config.VCD.StorageProfile.SP1 != "" {
+		sp, _ = vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
+	}
+
+	if sp.HREF != "" {
+		customSP = true
+		task, err = vapp.AddNewVMWithStorage(check.TestName(), vapptemplate, desiredNetConfig, &sp, true)
+	} else {
+		task, err = vapp.AddNewVM(check.TestName(), vapptemplate, desiredNetConfig, true)
+	}
 
 	check.Assert(err, IsNil)
 
@@ -555,6 +568,10 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 	// Ensure network config was valid
 	actualNetConfig, err := vm.GetNetworkConnectionSection()
 	check.Assert(err, IsNil)
+
+	if customSP {
+		check.Assert(vm.VM.StorageProfile.HREF, Equals, sp.HREF)
+	}
 
 	verifyNetworkConnectionSection(check, actualNetConfig, desiredNetConfig)
 

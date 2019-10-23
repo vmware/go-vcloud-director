@@ -476,7 +476,7 @@ func (vdc *Vdc) ComposeRawVApp(name string) error {
 
 	vdcHref, err := url.ParseRequestURI(vdc.Vdc.HREF)
 	if err != nil {
-		return fmt.Errorf("error getting vdc href: %v", err)
+		return fmt.Errorf("error getting vdc href: %s", err)
 	}
 	vdcHref.Path += "/action/composeVApp"
 
@@ -575,7 +575,7 @@ func (vdc *Vdc) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate 
 
 	vdcHref, err := url.ParseRequestURI(vdc.Vdc.HREF)
 	if err != nil {
-		return Task{}, fmt.Errorf("error getting vdc href: %v", err)
+		return Task{}, fmt.Errorf("error getting vdc href: %s", err)
 	}
 	vdcHref.Path += "/action/composeVApp"
 
