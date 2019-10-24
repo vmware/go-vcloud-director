@@ -23,7 +23,7 @@ you no longer need to use `GOPATH`. You can clone the branch in any directory
 you like and go will fetch dependencies specified in the `go.mod` file:
 ```
 cd ~/Documents/mycode
-git clone https://github.com/vmware/go-vcloud-director.git
+git clone https://github.com/funky81/go-vcloud-director.git
 cd go-vcloud-director/govcd
 go build
 ```
@@ -37,7 +37,7 @@ To show the SDK in action run the example:
 ```
 mkdir ~/govcd_example
 go mod init govcd_example
-go get github.com/vmware/go-vcloud-director/v2@master
+go get github.com/funky81/go-vcloud-director/v2@master
 go build -o example
 ./example user_name "password" org_name vcd_IP vdc_name 
 ```
