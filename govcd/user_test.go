@@ -160,7 +160,7 @@ func (vcd *TestVCD) Test_UserCRUD(check *C) {
 			IsEnabled:       true,
 			IM:              "TextIM",
 			EmailAddress:    "somename@somedomain.com",
-			Telephone:       "TextTelephone",
+			Telephone:       "999 888-7777",
 		}
 
 		user, err := adminOrg.CreateUserSimple(userDefinition)
@@ -176,6 +176,7 @@ func (vcd *TestVCD) Test_UserCRUD(check *C) {
 		check.Assert(user.User.FullName, Equals, userDefinition.FullName)
 		check.Assert(user.User.EmailAddress, Equals, userDefinition.EmailAddress)
 		check.Assert(user.User.IM, Equals, userDefinition.IM)
+		check.Assert(user.User.Telephone, Equals, userDefinition.Telephone)
 		check.Assert(user.User.StoredVmQuota, Equals, userDefinition.StoredVmQuota)
 		check.Assert(user.User.DeployedVmQuota, Equals, userDefinition.DeployedVmQuota)
 

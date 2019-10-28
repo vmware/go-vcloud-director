@@ -59,6 +59,7 @@ BUGS FIXED:
 * Fix bug in VDC creation when name with space caused an error
 * Fix bug in Org Delete, which would remove catalogs shared from other organizations.
 * Fix Vcd.StorageProfiles type from array to single.
+* Fix AdminOrg.CreateUserSimple, where the Telephone field was ignored.
 
 ## 2.3.1 (Jul 29, 2019)
 
