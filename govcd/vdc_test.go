@@ -36,11 +36,11 @@ func (vcd *TestVCD) Test_FindVDCNetwork(check *C) {
 func (vcd *TestVCD) Test_GetOrgVDCNetwork(check *C) {
 
 	if vcd.config.VCD.Org == "" {
-		check.Skip("Test_GetOrgVDCNetwork: Org name not given.")
+		check.Skip("Test_GetOrgVDCNetwork: Org name not given")
 		return
 	}
 	if vcd.config.VCD.Vdc == "" {
-		check.Skip("Test_GetOrgVDCNetwork: VDC name not given.")
+		check.Skip("Test_GetOrgVDCNetwork: VDC name not given")
 		return
 	}
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
@@ -233,27 +233,6 @@ func (vcd *TestVCD) Test_FindVApp(check *C) {
 	check.Assert(secondVapp.VApp.HREF, Equals, firstVapp.VApp.HREF)
 }
 
-func (vcd *TestVCD) Test_FindMediaImage(check *C) {
-
-	if vcd.config.Media.Media == "" {
-		check.Skip("Skipping test because no media name given")
-	}
-	mediaImage, err := vcd.vdc.FindMediaImage(vcd.config.Media.Media)
-	check.Assert(err, IsNil)
-	if mediaImage == (MediaItem{}) {
-		fmt.Printf("Media not found: %s\n", vcd.config.Media.Media)
-	}
-	check.Assert(mediaImage, Not(Equals), MediaItem{})
-
-	check.Assert(mediaImage.MediaItem.Name, Equals, vcd.config.Media.Media)
-	check.Assert(mediaImage.MediaItem.HREF, Not(Equals), "")
-
-	// find Invalid Network
-	mediaImage, err = vcd.vdc.FindMediaImage("INVALID")
-	check.Assert(err, IsNil)
-	check.Assert(mediaImage, Equals, MediaItem{})
-}
-
 // Tests function QueryVM by searching vm created
 // by test suite
 func (vcd *TestVCD) Test_QueryVM(check *C) {
@@ -282,11 +261,11 @@ func init() {
 func (vcd *TestVCD) Test_GetEdgeGateway(check *C) {
 
 	if vcd.config.VCD.Org == "" {
-		check.Skip("Test_GetEdgeGateway: Org name not given.")
+		check.Skip("Test_GetEdgeGateway: Org name not given")
 		return
 	}
 	if vcd.config.VCD.Vdc == "" {
-		check.Skip("Test_GetEdgeGateway: VDC name not given.")
+		check.Skip("Test_GetEdgeGateway: VDC name not given")
 		return
 	}
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
@@ -324,11 +303,11 @@ func (vcd *TestVCD) Test_GetVApp(check *C) {
 		check.Skip("Skipping test because vapp wasn't properly created")
 	}
 	if vcd.config.VCD.Org == "" {
-		check.Skip("Test_GetVapp: Org name not given.")
+		check.Skip("Test_GetVapp: Org name not given")
 		return
 	}
 	if vcd.config.VCD.Vdc == "" {
-		check.Skip("Test_GetVapp: VDC name not given.")
+		check.Skip("Test_GetVapp: VDC name not given")
 		return
 	}
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)

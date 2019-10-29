@@ -17,7 +17,7 @@ func (vcd *TestVCD) Test_NsxvSnatRule(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
@@ -37,13 +37,13 @@ func (vcd *TestVCD) Test_NsxvSnatRule(check *C) {
 		fmt.Printf("# %s %s %s -> %s\n", natRule.Action, natRule.Protocol, natRule.OriginalAddress,
 			natRule.TranslatedAddress)
 	}
-	testNsxvNat(natRule, vcd, check, edge)
+	testNsxvNat(natRule, vcd, check, *edge)
 }
 func (vcd *TestVCD) Test_NsxvDnatRule(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
@@ -67,7 +67,7 @@ func (vcd *TestVCD) Test_NsxvDnatRule(check *C) {
 			natRule.OriginalPort, natRule.TranslatedAddress, natRule.TranslatedPort)
 	}
 
-	testNsxvNat(natRule, vcd, check, edge)
+	testNsxvNat(natRule, vcd, check, *edge)
 
 	natRule = &types.EdgeNatRule{
 		Action:            "dnat",
@@ -84,7 +84,7 @@ func (vcd *TestVCD) Test_NsxvDnatRule(check *C) {
 		fmt.Printf("# %s %s:%s %s -> %s\n", natRule.Action, natRule.Protocol, natRule.IcmpType,
 			natRule.OriginalAddress, natRule.TranslatedAddress)
 	}
-	testNsxvNat(natRule, vcd, check, edge)
+	testNsxvNat(natRule, vcd, check, *edge)
 
 	natRule = &types.EdgeNatRule{
 		Action:            "dnat",
@@ -100,7 +100,7 @@ func (vcd *TestVCD) Test_NsxvDnatRule(check *C) {
 		fmt.Printf("# %s %s %s -> %s\n", natRule.Action, natRule.Protocol, natRule.OriginalAddress,
 			natRule.TranslatedAddress)
 	}
-	testNsxvNat(natRule, vcd, check, edge)
+	testNsxvNat(natRule, vcd, check, *edge)
 }
 
 // testNsxvNat is a helper to test multiple configurations of NAT rules. It does the following
@@ -140,5 +140,5 @@ func testNsxvNat(natRule *types.EdgeNatRule, vcd *TestVCD, check *C, edge EdgeGa
 
 	// Ensure the rule does not exist anymore
 	_, err = edge.GetNsxvNatRuleById(createdNatRule.ID)
-	check.Assert(err, Equals, ErrorEntityNotFound)
+	check.Assert(IsNotFound(err), Equals, true)
 }

@@ -19,7 +19,7 @@ import (
 func (vcd *TestVCD) Test_SystemGetOrg(check *C) {
 
 	if vcd.config.VCD.Org == "" {
-		check.Skip("Test_SystemGetOrg: Org name not given.")
+		check.Skip("Test_SystemGetOrg: Org name not given")
 		return
 	}
 

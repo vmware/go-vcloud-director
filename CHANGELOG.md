@@ -1,4 +1,4 @@
-## 2.4.0 (Unreleased)
+## 2.4.0 (October 28, 2019)
 
 * Deprecated functions `GetOrgByName` and `GetAdminOrgByName`
 * Deprecated methods `AdminOrg.FetchUserByName`, `AdminOrg.FetchUserById`, `AdminOrg.FetchUserByNameOrId`, `AdminOrg.GetRole`.
@@ -35,6 +35,16 @@ which use the proxied NSX-V API of advanced edge gateway for handling NAT rules 
 * Added methods `Client.GetVMByHref` `Vapp.GetVAMByName` and related `GetVMById`, `GetVAMByNameOrId`
 * Deprecated methods `Client.FindVMByHREF`, `Vdc.FindVMByName`, `Vdc.FindVAppByID`, and `Vdc.FindVAppByName`
 * Added methods `Vm.GetGuestCustomizationSection` and `Vm.SetGuestCustomizationSection`  
+* Added methods `CreateNsxvFirewallRule()`, `UpdateNsxvFirewallRule()`, `GetNsxvFirewallRuleById()`, `DeleteNsxvFirewallRuleById()`
+which use the proxied NSX-V API of advanced edge gateway for handling firewall rules [#247](https://github.com/vmware/go-vcloud-director/pull/247)
+* Added methods `GetFirewallParams()`, `UpdateFirewallParams()` for changing global firewall settings [#247](https://github.com/vmware/go-vcloud-director/pull/247)
+* Added method `GetAnyVnicIndexByNetworkName()` to for easier interface (vNic) lookup in edge gateway [#247](https://github.com/vmware/go-vcloud-director/pull/247)
+* Added method `ExecuteParamRequestWithCustomError()` which adds query parameter support on top of `ExecuteRequestWithCustomError()` [#247](https://github.com/vmware/go-vcloud-director/pull/247)
+* Deprecated methods `VDC.FindDiskByHREF` and `FindDiskByHREF`
+* Added methods `VDC.GetDiskByHref` `VDC.GetDisksByName` and related `GetDiskById`
+* Added new methods `Catalog.QueryMedia`, `Catalog.GetMediaByName`, `Catalog.GetMediaById`, `Catalog.GetMediaByNameOrId`, `AdminCatalog.QueryMedia`, `AdminCatalog.GetMediaByName`, `AdminCatalog.GetMediaById`, `AdminCatalog.GetMediaByNameOrId`, `MediaRecord.Refresh`, `MediaRecord.Delete`, `MediaRecord.GetMetadata`, `MediaRecord.AddMetadata`, `MediaRecord.AddMetadataAsync`, `MediaRecord.DeleteMetadata`, `MediaRecord.DeleteMetadataAsync`, `Media.GetMetadata`, `Media.AddMetadata`, `Media.AddMetadataAsync`, `Media.DeleteMetadata`, `Media.DeleteMetadataAsync` [#245](https://github.com/vmware/go-vcloud-director/pull/245)
+* Deprecated methods `Vdc.FindMediaImage`, `MediaItem`, `RemoveMediaImageIfExists`, `MediaItem.Delete`, `FindMediaAsCatalogItem`, `*MediaItem.Refresh`, `MediaItem.GetMetadata`, `MediaItem.AddMetadata`, `MediaItem.AddMetadataAsync`, `MediaItem.DeleteMetadata`, `MediaItem.DeleteMetadataAsync` [#245](https://github.com/vmware/go-vcloud-director/pull/245)
+* Added method `VDC.QueryDisks` [#255](https://github.com/vmware/go-vcloud-director/pull/255)
 
 IMPROVEMENTS:
 
@@ -49,14 +59,15 @@ BUGS FIXED:
 * Fix bug in VDC creation when name with space caused an error
 * Fix bug in Org Delete, which would remove catalogs shared from other organizations.
 * Fix Vcd.StorageProfiles type from array to single.
+* Fix AdminOrg.CreateUserSimple, where the Telephone field was ignored.
 
-## 2.3.1 (Jul 29, 2019)
+## 2.3.1 (July 29, 2019)
 
 BUG FIXES:
 
 * Remove `omitempty` struct tags from load balancer component boolean fields to allow sending `false` values to API [#222](https://github.com/vmware/go-vcloud-director/pull/222)
 
-## 2.3.0 (Jul 26, 2019)
+## 2.3.0 (July 26, 2019)
 
 * Added edge gateway create/delete functions [#130](https://github.com/vmware/go-vcloud-director/issues/130).
 * Added edge gateway global load balancer configuration support (e.g. enable/disable) [#219](https://github.com/vmware/go-vcloud-director/pull/219)

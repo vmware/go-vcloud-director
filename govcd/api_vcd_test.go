@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -706,6 +705,34 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 		return
+	case "mediaCatalogImage":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No Catalog provided for media '%s'\n", entity.Name)
+			return
+		}
+		orgName, catalogName, _ := splitParent(entity.Parent, "|")
+		if orgName == "" || catalogName == "" {
+			vcd.infoCleanup(splitParentNotFound, entity.Parent)
+		}
+
+		org, err := vcd.client.GetAdminOrgByName(orgName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [INFO] organization '%s' not found\n", entity.Parent)
+			return
+		}
+		adminCatalog, err := org.GetAdminCatalogByName(catalogName, false)
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+
+		err = adminCatalog.RemoveMediaIfExists(entity.Name)
+		if err == nil {
+			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		} else {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+		return
 	case "user":
 		if entity.Parent == "" {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for user '%s'\n", entity.Name)
@@ -756,8 +783,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 	case "disk":
 		// Find disk by href rather than find disk by name, because disk name can be duplicated in VDC,
 		// so the unique href is required for finding the disk.
-		// [0] = disk's entity name, [1] = disk href
-		disk, err := vcd.vdc.FindDiskByHREF(strings.Split(entity.Name, "|")[1])
+		disk, err := vcd.vdc.GetDiskByHref(entity.Name)
 		if err != nil {
 			// If the disk is not found, we just need to show that it was not found, as
 			// it was likely deleted during the regular tests
@@ -997,6 +1023,31 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
 
+	case "nsxvFirewallRule":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No parent specified '%s'\n", entity.Name)
+			return
+		}
+
+		orgName, vdcName, edgeName := splitParent(entity.Parent, "|")
+
+		_, _, edge, err := getOrgVdcEdgeByNames(vcd, orgName, vdcName, edgeName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		err = edge.DeleteNsxvFirewallRuleById(entity.Name)
+		if IsNotFound(err) {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+
 	default:
 		// If we reach this point, we are trying to clean up an entity that
 		// we aren't prepared for yet.
@@ -1178,55 +1229,4 @@ func Test_splitParent(t *testing.T) {
 			}
 		})
 	}
-}
-
-// testGetLBGeneralParamsXML is used for additional validation that modifying load balancer
-// does not change any single field. It returns a string of whole load balancer configuration
-func testGetLBGeneralParamsXML(edge EdgeGateway, check *C) string {
-
-	httpPath, err := edge.buildProxiedEdgeEndpointURL(types.LbConfigPath)
-	check.Assert(err, IsNil)
-
-	resp, err := edge.client.ExecuteRequestWithCustomError(httpPath, http.MethodGet, types.AnyXMLMime,
-		"unable to get XML from load balancer %s", nil, &types.NSXError{})
-	check.Assert(err, IsNil)
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	check.Assert(err, IsNil)
-
-	return string(body)
-}
-
-// cacheLoadBalancer is meant to store load balancer settings before any operations so that all
-// configuration can be checked after manipulation
-func testCacheLoadBalancer(edge EdgeGateway, check *C) (*types.LbGeneralParamsWithXml, string) {
-	beforeLb, err := edge.GetLBGeneralParams()
-	check.Assert(err, IsNil)
-	beforeLbXml := testGetLBGeneralParamsXML(edge, check)
-	return beforeLb, beforeLbXml
-}
-
-// testCheckLoadBalancerConfig validates if both raw XML string and load balancer struct remain
-// identical after settings manipulation.
-func testCheckLoadBalancerConfig(beforeLb *types.LbGeneralParamsWithXml, beforeLbXml string, edge EdgeGateway, check *C) {
-	afterLb, err := edge.GetLBGeneralParams()
-	check.Assert(err, IsNil)
-
-	afterLbXml := testGetLBGeneralParamsXML(edge, check)
-
-	// remove `<version></version>` tag from both XML represntation and struct for deep comparison
-	// because this version changes with each update and will never be the same after a few
-	// operations
-
-	reVersion := regexp.MustCompile(`<version>\w*<\/version>`)
-	beforeLbXml = reVersion.ReplaceAllLiteralString(beforeLbXml, "")
-	afterLbXml = reVersion.ReplaceAllLiteralString(afterLbXml, "")
-
-	beforeLb.Version = ""
-	afterLb.Version = ""
-
-	check.Assert(beforeLb, DeepEquals, afterLb)
-	check.Assert(beforeLbXml, DeepEquals, afterLbXml)
 }
