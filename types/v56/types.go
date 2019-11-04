@@ -398,7 +398,7 @@ type AdminVdc struct {
 
 	ResourceGuaranteedMemory *float64   `xml:"ResourceGuaranteedMemory,omitempty"`
 	ResourceGuaranteedCpu    *float64   `xml:"ResourceGuaranteedCpu,omitempty"`
-	VCpuInMhz                int64      `xml:"VCpuInMhz,omitempty"`
+	VCpuInMhz                *int64     `xml:"VCpuInMhz,omitempty"`
 	IsThinProvision          *bool      `xml:"IsThinProvision,omitempty"`
 	NetworkPoolReference     *Reference `xml:"NetworkPoolReference,omitempty"`
 	ProviderVdcReference     *Reference `xml:"ProviderVdcReference"`
