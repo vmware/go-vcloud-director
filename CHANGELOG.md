@@ -1,3 +1,7 @@
+## 2.5.0 
+
+* Change fields ResourceGuaranteedCpu, VCpuInMhz, IsThinProvision, NetworkPoolReference,ProviderVdcReference and UsesFastProvisioning in AdminVdc to pointers
+
 ## 2.4.0 (October 28, 2019)
 
 * Deprecated functions `GetOrgByName` and `GetAdminOrgByName`
