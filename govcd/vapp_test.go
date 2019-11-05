@@ -550,9 +550,15 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 	}
 
 	if sp.HREF != "" {
+		if testVerbose {
+			fmt.Printf("Custom storage profile found. Using AddNewVMWithStorage \n")
+		}
 		customSP = true
 		task, err = vapp.AddNewVMWithStorage(check.TestName(), vapptemplate, desiredNetConfig, &sp, true)
 	} else {
+		if testVerbose {
+			fmt.Printf("Custom storage profile not found. Using AddNewVM\n")
+		}
 		task, err = vapp.AddNewVM(check.TestName(), vapptemplate, desiredNetConfig, true)
 	}
 

@@ -215,7 +215,7 @@ func (vapp *VApp) AddNewVMWithStorage(name string, vappTemplate VAppTemplate,
 }
 
 // ========================= issue#252 ==================================
-// To be refactored, handling networks better. See issue#252 for details
+// TODO: To be refactored, handling networks better. See issue#252 for details
 // https://github.com/vmware/go-vcloud-director/issues/252
 // ======================================================================
 func (vapp *VApp) RemoveVM(vm VM) error {

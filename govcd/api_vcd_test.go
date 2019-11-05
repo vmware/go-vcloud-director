@@ -1107,7 +1107,7 @@ func TestVCDClient_Authenticate(t *testing.T) {
 
 func (vcd *TestVCD) createTestVapp(name string) (*VApp, error) {
 	// ========================= issue#252 ==================================
-	// To be enabled when issue#252 is resolved.
+	// TODO: To be enabled when issue#252 is resolved.
 	// Allows re-using a pre-created vApp
 	// existingVapp, err := vcd.vdc.GetVAppByName(name, false)
 	// if err == nil {
