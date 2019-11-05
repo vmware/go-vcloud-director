@@ -549,12 +549,13 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 		sp, _ = vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
 	}
 
+	// TODO: explore the feasibility of adding a test for either case (with or without storage profile).
 	if sp.HREF != "" {
 		if testVerbose {
 			fmt.Printf("Custom storage profile found. Using AddNewVMWithStorage \n")
 		}
 		customSP = true
-		task, err = vapp.AddNewVMWithStorage(check.TestName(), vapptemplate, desiredNetConfig, &sp, true)
+		task, err = vapp.AddNewVMWithStorageProfile(check.TestName(), vapptemplate, desiredNetConfig, &sp, true)
 	} else {
 		if testVerbose {
 			fmt.Printf("Custom storage profile not found. Using AddNewVM\n")

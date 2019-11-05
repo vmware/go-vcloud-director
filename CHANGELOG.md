@@ -1,6 +1,6 @@
 ## 2.5.0 (Unreleased)
 
-* Added method VApp.AddNewVMWithStorage that adds a VM with custom storage profile.
+* Added method VApp.AddNewVMWithStorageProfile that adds a VM with custom storage profile.
 
 ## 2.4.0 (October 28, 2019)
 
