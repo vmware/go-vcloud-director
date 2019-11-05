@@ -1,5 +1,7 @@
 ## 2.5.0 (Unreleased)
 
+* Change fields ResourceGuaranteedCpu, VCpuInMhz, IsThinProvision, NetworkPoolReference, ProviderVdcReference and UsesFastProvisioning in AdminVdc to pointers
+to allow understand if value was returned or not. 
 * Added method VApp.AddNewVMWithStorageProfile that adds a VM with custom storage profile.
 
 ## 2.4.0 (October 28, 2019)
