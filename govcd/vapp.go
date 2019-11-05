@@ -227,7 +227,7 @@ func (vapp *VApp) RemoveVM(vm VM) error {
 			task.Task = taskItem
 			err := task.WaitTaskCompletion()
 			if err != nil {
-				return fmt.Errorf("error performing task: %#v", err)
+				return fmt.Errorf("error performing task: %s", err)
 			}
 		}
 	}
@@ -252,7 +252,7 @@ func (vapp *VApp) RemoveVM(vm VM) error {
 
 	err = deleteTask.WaitTaskCompletion()
 	if err != nil {
-		return fmt.Errorf("error performing removing VM task: %#v", err)
+		return fmt.Errorf("error performing removing VM task: %s", err)
 	}
 
 	return nil
@@ -722,7 +722,7 @@ func (vapp *VApp) AddRAWNetworkConfig(orgvdcnetworks []*types.OrgVDCNetwork) (Ta
 
 	vAppNetworkConfig, err := vapp.GetNetworkConfig()
 	if err != nil {
-		return Task{}, fmt.Errorf("error getting vApp networks: %#v", err)
+		return Task{}, fmt.Errorf("error getting vApp networks: %s", err)
 	}
 	networkConfigurations := vAppNetworkConfig.NetworkConfig
 

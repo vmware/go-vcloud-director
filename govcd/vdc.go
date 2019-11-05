@@ -97,7 +97,7 @@ func (vdc *Vdc) removeAllVdcVApps() error {
 				}
 				err = task.WaitTaskCompletion()
 				if err != nil {
-					return fmt.Errorf("couldn't finish removing vapp %#v", err)
+					return fmt.Errorf("couldn't finish removing vapp %s", err)
 				}
 			}
 		}
@@ -167,7 +167,7 @@ func (vdc *Vdc) DeleteWait(force bool, recursive bool) error {
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
-		return fmt.Errorf("couldn't finish removing vdc %#v", err)
+		return fmt.Errorf("couldn't finish removing vdc %s", err)
 	}
 	return nil
 }
@@ -483,12 +483,12 @@ func (vdc *Vdc) ComposeRawVApp(name string) error {
 	task, err := vdc.client.ExecuteTaskRequest(vdcHref.String(), http.MethodPost,
 		types.MimeComposeVappParams, "error instantiating a new vApp:: %s", vcomp)
 	if err != nil {
-		return fmt.Errorf("error executing task request: %#v", err)
+		return fmt.Errorf("error executing task request: %s", err)
 	}
 
 	err = task.WaitTaskCompletion()
 	if err != nil {
-		return fmt.Errorf("error performing task: %#v", err)
+		return fmt.Errorf("error performing task: %s", err)
 	}
 
 	return nil
@@ -666,7 +666,7 @@ func (vdc *Vdc) QueryVM(vappName, vmName string) (VMRecord, error) {
 	results, err := vdc.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia,
 		"filter": "(name==" + url.QueryEscape(vmName) + ";containerName==" + url.QueryEscape(vappName) + ")"})
 	if err != nil {
-		return VMRecord{}, fmt.Errorf("error querying vm %#v", err)
+		return VMRecord{}, fmt.Errorf("error querying vm %s", err)
 	}
 
 	vmResults := results.Results.VMRecord

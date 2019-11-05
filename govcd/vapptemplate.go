@@ -44,7 +44,7 @@ func (vdc *Vdc) InstantiateVAppTemplate(template *types.InstantiateVAppTemplateP
 		task.Task = taskItem
 		err = task.WaitTaskCompletion()
 		if err != nil {
-			return fmt.Errorf("error performing task: %#v", err)
+			return fmt.Errorf("error performing task: %s", err)
 		}
 	}
 	return nil

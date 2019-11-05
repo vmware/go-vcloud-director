@@ -206,7 +206,7 @@ func (egw *EdgeGateway) RemoveNATPortMapping(natType, externalIP, externalPort, 
 func (egw *EdgeGateway) RemoveNATRule(id string) error {
 	task, err := egw.RemoveNATRuleAsync(id)
 	if err != nil {
-		return fmt.Errorf("error removing DNAT rule: %#v", err)
+		return fmt.Errorf("error removing DNAT rule: %s", err)
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
@@ -226,7 +226,7 @@ func (egw *EdgeGateway) RemoveNATRuleAsync(id string) (Task, error) {
 
 	err := egw.Refresh()
 	if err != nil {
-		return Task{}, fmt.Errorf("error refreshing edge gateway: %#v", err)
+		return Task{}, fmt.Errorf("error refreshing edge gateway: %s", err)
 	}
 
 	natServiceToUpdate := egw.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService
@@ -282,7 +282,7 @@ func (egw *EdgeGateway) AddDNATRule(ruleDetails NatRule) (*types.NatRule, error)
 	ruleDetails.NatType = "DNAT"
 	task, err := egw.AddNATRuleAsync(ruleDetails)
 	if err != nil {
-		return nil, fmt.Errorf("error creating DNAT rule: %#v", err)
+		return nil, fmt.Errorf("error creating DNAT rule: %s", err)
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
@@ -293,7 +293,7 @@ func (egw *EdgeGateway) AddDNATRule(ruleDetails NatRule) (*types.NatRule, error)
 
 	err = egw.Refresh()
 	if err != nil {
-		return nil, fmt.Errorf("error refreshing edge gateway: %#v", err)
+		return nil, fmt.Errorf("error refreshing edge gateway: %s", err)
 	}
 
 	for _, natRule := range egw.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule {
@@ -332,7 +332,7 @@ func (egw *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, descrip
 		ExternalPort: "any", InternalIP: internalIP, InternalPort: "any",
 		IcmpSubType: "", Protocol: "any", Description: mappingId})
 	if err != nil {
-		return nil, fmt.Errorf("error creating SNAT rule: %#v", err)
+		return nil, fmt.Errorf("error creating SNAT rule: %s", err)
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
@@ -343,7 +343,7 @@ func (egw *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, descrip
 
 	err = egw.Refresh()
 	if err != nil {
-		return nil, fmt.Errorf("error refreshing edge gateway: %#v", err)
+		return nil, fmt.Errorf("error refreshing edge gateway: %s", err)
 	}
 
 	for _, natRule := range egw.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule {
@@ -380,7 +380,7 @@ func getPseudoUuid() (string, error) {
 func (egw *EdgeGateway) UpdateNatRule(natRule *types.NatRule) (*types.NatRule, error) {
 	task, err := egw.UpdateNatRuleAsync(natRule)
 	if err != nil {
-		return nil, fmt.Errorf("error updating NAT rule: %#v", err)
+		return nil, fmt.Errorf("error updating NAT rule: %s", err)
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
@@ -402,7 +402,7 @@ func (egw *EdgeGateway) UpdateNatRuleAsync(natRule *types.NatRule) (Task, error)
 
 	err := egw.Refresh()
 	if err != nil {
-		return Task{}, fmt.Errorf("error refreshing edge gateway: %#v", err)
+		return Task{}, fmt.Errorf("error refreshing edge gateway: %s", err)
 	}
 
 	natServiceToUpdate := egw.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService
@@ -434,7 +434,7 @@ func (egw *EdgeGateway) UpdateNatRuleAsync(natRule *types.NatRule) (Task, error)
 func (egw *EdgeGateway) GetNatRule(id string) (*types.NatRule, error) {
 	err := egw.Refresh()
 	if err != nil {
-		return nil, fmt.Errorf("error refreshing edge gateway: %#v", err)
+		return nil, fmt.Errorf("error refreshing edge gateway: %s", err)
 	}
 
 	if egw.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService != nil {
