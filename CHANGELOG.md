@@ -1,4 +1,9 @@
-## 2.4.0 (Unreleased)
+## 2.5.0 
+
+* Change fields ResourceGuaranteedCpu, VCpuInMhz, IsThinProvision, NetworkPoolReference, ProviderVdcReference and UsesFastProvisioning in AdminVdc to pointers
+to allow understand if value was returned or not. 
+
+## 2.4.0 (October 28, 2019)
 
 * Deprecated functions `GetOrgByName` and `GetAdminOrgByName`
 * Deprecated methods `AdminOrg.FetchUserByName`, `AdminOrg.FetchUserById`, `AdminOrg.FetchUserByNameOrId`, `AdminOrg.GetRole`.
@@ -59,14 +64,15 @@ BUGS FIXED:
 * Fix bug in VDC creation when name with space caused an error
 * Fix bug in Org Delete, which would remove catalogs shared from other organizations.
 * Fix Vcd.StorageProfiles type from array to single.
+* Fix AdminOrg.CreateUserSimple, where the Telephone field was ignored.
 
-## 2.3.1 (Jul 29, 2019)
+## 2.3.1 (July 29, 2019)
 
 BUG FIXES:
 
 * Remove `omitempty` struct tags from load balancer component boolean fields to allow sending `false` values to API [#222](https://github.com/vmware/go-vcloud-director/pull/222)
 
-## 2.3.0 (Jul 26, 2019)
+## 2.3.0 (July 26, 2019)
 
 * Added edge gateway create/delete functions [#130](https://github.com/vmware/go-vcloud-director/issues/130).
 * Added edge gateway global load balancer configuration support (e.g. enable/disable) [#219](https://github.com/vmware/go-vcloud-director/pull/219)
