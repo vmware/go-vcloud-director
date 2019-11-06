@@ -2221,6 +2221,27 @@ type QueryResultRecordsType struct {
 	OrgVdcNetworkRecord             []*QueryResultOrgVdcNetworkRecordType             `xml:"OrgVdcNetworkRecord"`             // A record representing a org VDC network
 	AdminCatalogRecord              []*AdminCatalogRecord                             `xml:"AdminCatalogRecord"`              // A record representing a catalog
 	OrgVdcRecord                    []*QueryResultOrgVdcRecordType                    `xml:"OrgVdcRecord"`                    // A record representing a Vdc
+	TaskRecord                      []*QueryResultTaskRecordType                      `xml:"TaskRecord"`                      // A record representing a Vdc
+}
+
+// QueryResultTaskRecordType represents list of Task as query result.
+type QueryResultTaskRecordType struct {
+	HREF             string `xml:"href,attr,omitempty"`          // The URI of the entity.
+	Id               string `xml:"id,attr,omitempty"`            // The URI of the entity.
+	Type             string `xml:"type,attr,omitempty"`          // The URI of the entity.
+	Org              string `xml:"org,attr,omitempty"`           // The URI of the entity.
+	OrgName          string `xml:"orgName,attr,omitempty"`       // The URI of the entity.
+	Name             string `xml:"name,attr,omitempty"`          // The URI of the entity.
+	OperationFull    string `xml:"operationFull,attr,omitempty"` // The URI of the entity.
+	StartDate        string `xml:"startDate,attr,omitempty"`     // The URI of the entity.
+	EndDate          string `xml:"endDate,attr,omitempty"`       // The URI of the entity.
+	Status           string `xml:"status,attr,omitempty"`        // The URI of the entity.
+	Progress         string `xml:"progress,attr,omitempty"`      // The URI of the entity.
+	OwnerName        string `xml:"ownerName,attr,omitempty"`     // The URI of the entity.
+	Object           string `xml:"object,attr,omitempty"`        // The URI of the entity.
+	ObjectType       string `xml:"objectType,attr,omitempty"`    // The URI of the entity.
+	ObjectName       string `xml:"objectName,attr,omitempty"`    // The URI of the entity.
+	ServiceNamespace string `xml:"serviceName,attr,omitempty"`   // The URI of the entity.
 }
 
 // QueryResultOrgVdcRecordType represents list of Org Vdc as query result.

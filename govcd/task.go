@@ -21,6 +21,11 @@ type Task struct {
 	client *Client
 }
 
+type TaskRecord struct {
+	Task   *types.QueryResultTaskRecordType
+	client *Client
+}
+
 func NewTask(cli *Client) *Task {
 	return &Task{
 		Task:   new(types.Task),
