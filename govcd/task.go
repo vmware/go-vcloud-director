@@ -33,6 +33,14 @@ func NewTask(cli *Client) *Task {
 	}
 }
 
+// create instance with reference to types.OrgVdcRecord
+func NewTaskRecord(cli *Client) *TaskRecord {
+	return &TaskRecord{
+		Task:   new(types.QueryResultTaskRecordType),
+		client: cli,
+	}
+}
+
 // If the error is not nil, composes an error message
 // made of the error itself + the information from the task's Error component.
 // See:
