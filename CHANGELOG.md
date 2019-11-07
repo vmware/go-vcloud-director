@@ -4,6 +4,9 @@
 to allow understand if value was returned or not. 
 * Added method VApp.AddNewVMWithStorageProfile that adds a VM with custom storage profile.
 
+BUGS FIXED:
+* Removed parentheses from filtering which in some env wasn't treated correctly [#256] (https://github.com/vmware/go-vcloud-director/pull/256)
+
 ## 2.4.0 (October 28, 2019)
 
 * Deprecated functions `GetOrgByName` and `GetAdminOrgByName`
