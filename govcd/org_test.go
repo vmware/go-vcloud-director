@@ -652,12 +652,13 @@ func (vcd *TestVCD) Test_UpdateVdc(check *C) {
 	adminVdc.AdminVdc.Description = updateDescription
 	adminVdc.AdminVdc.ComputeCapacity = computeCapacity
 	adminVdc.AdminVdc.IsEnabled = false
-	adminVdc.AdminVdc.IsThinProvision = false
+	falseRef := false
+	adminVdc.AdminVdc.IsThinProvision = &falseRef
 	adminVdc.AdminVdc.NetworkQuota = quota
 	adminVdc.AdminVdc.VMQuota = quota
 	adminVdc.AdminVdc.OverCommitAllowed = false
-	adminVdc.AdminVdc.VCpuInMhz = vCpu
-	adminVdc.AdminVdc.UsesFastProvisioning = false
+	adminVdc.AdminVdc.VCpuInMhz = &vCpu
+	adminVdc.AdminVdc.UsesFastProvisioning = &falseRef
 	adminVdc.AdminVdc.ResourceGuaranteedCpu = &guaranteed
 	adminVdc.AdminVdc.ResourceGuaranteedMemory = &guaranteed
 
@@ -667,12 +668,12 @@ func (vcd *TestVCD) Test_UpdateVdc(check *C) {
 	check.Assert(updatedVdc.AdminVdc.Description, Equals, updateDescription)
 	check.Assert(updatedVdc.AdminVdc.ComputeCapacity[0].CPU.Allocated, Equals, computeCapacity[0].CPU.Allocated)
 	check.Assert(updatedVdc.AdminVdc.IsEnabled, Equals, false)
-	check.Assert(updatedVdc.AdminVdc.IsThinProvision, Equals, false)
+	check.Assert(*updatedVdc.AdminVdc.IsThinProvision, Equals, false)
 	check.Assert(updatedVdc.AdminVdc.NetworkQuota, Equals, quota)
 	check.Assert(updatedVdc.AdminVdc.VMQuota, Equals, quota)
 	check.Assert(updatedVdc.AdminVdc.OverCommitAllowed, Equals, false)
-	check.Assert(updatedVdc.AdminVdc.VCpuInMhz, Equals, vCpu)
-	check.Assert(updatedVdc.AdminVdc.UsesFastProvisioning, Equals, false)
+	check.Assert(*updatedVdc.AdminVdc.VCpuInMhz, Equals, vCpu)
+	check.Assert(*updatedVdc.AdminVdc.UsesFastProvisioning, Equals, false)
 	check.Assert(math.Abs(*updatedVdc.AdminVdc.ResourceGuaranteedCpu-guaranteed) < 0.001, Equals, true)
 	check.Assert(math.Abs(*updatedVdc.AdminVdc.ResourceGuaranteedMemory-guaranteed) < 0.001, Equals, true)
 }
