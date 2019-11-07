@@ -322,7 +322,7 @@ func (vcd *TestVCD) Test_QueryOrgVdcNetworkByNameWithSpace(check *C) {
 	// err = task.WaitTaskCompletion()
 	err = task.WaitInspectTaskCompletion(LogTask, 10)
 	if err != nil {
-		fmt.Printf("error performing task: %#v", err)
+		fmt.Printf("error performing task: %s", err)
 	}
 	check.Assert(err, IsNil)
 
