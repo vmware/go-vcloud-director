@@ -114,8 +114,8 @@ func getUuidFromHref(href string) (string, error) {
 // CreateEdgeGatewayAsync creates an edge gateway using a simplified configuration structure
 // https://code.vmware.com/apis/442/vcloud-director/doc/doc/operations/POST-CreateEdgeGateway.html
 //
-// Note. This function does not allow to pick exact subnet inin external network to use for edge
-// gateway
+// Note. This function does not allow to pick exact subnet in external network to use for edge
+// gateway. It will pick first one instead.
 func CreateEdgeGatewayAsync(vcdClient *VCDClient, egwc EdgeGatewayCreation) (Task, error) {
 
 	distributed := egwc.DistributedRoutingEnabled
