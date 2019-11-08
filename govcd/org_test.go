@@ -255,7 +255,7 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 
 	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":   "providerVdc",
-		"filter": fmt.Sprintf("(name==%s)", vcd.config.VCD.ProviderVdc.Name),
+		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.Name),
 	})
 	check.Assert(err, IsNil)
 	if len(results.Results.VMWProviderVdcRecord) == 0 {
@@ -265,7 +265,7 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 
 	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":   "providerVdcStorageProfile",
-		"filter": fmt.Sprintf("(name==%s)", vcd.config.VCD.ProviderVdc.StorageProfile),
+		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.StorageProfile),
 	})
 	check.Assert(err, IsNil)
 	if len(results.Results.ProviderVdcStorageProfileRecord) == 0 {
@@ -275,7 +275,7 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 
 	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":   "networkPool",
-		"filter": fmt.Sprintf("(name==%s)", vcd.config.VCD.ProviderVdc.NetworkPool),
+		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.NetworkPool),
 	})
 	check.Assert(err, IsNil)
 	if len(results.Results.NetworkPoolRecord) == 0 {
@@ -539,7 +539,7 @@ func setupVDc(vcd *TestVCD, check *C) (AdminOrg, *types.VdcConfiguration, error)
 	check.Assert(adminOrg, NotNil)
 	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":   "providerVdc",
-		"filter": fmt.Sprintf("(name==%s)", vcd.config.VCD.ProviderVdc.Name),
+		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.Name),
 	})
 	check.Assert(err, IsNil)
 	if len(results.Results.VMWProviderVdcRecord) == 0 {
@@ -548,7 +548,7 @@ func setupVDc(vcd *TestVCD, check *C) (AdminOrg, *types.VdcConfiguration, error)
 	providerVdcHref := results.Results.VMWProviderVdcRecord[0].HREF
 	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":   "providerVdcStorageProfile",
-		"filter": fmt.Sprintf("(name==%s)", vcd.config.VCD.ProviderVdc.StorageProfile),
+		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.StorageProfile),
 	})
 	check.Assert(err, IsNil)
 	if len(results.Results.ProviderVdcStorageProfileRecord) == 0 {
@@ -557,7 +557,7 @@ func setupVDc(vcd *TestVCD, check *C) (AdminOrg, *types.VdcConfiguration, error)
 	providerVdcStorageProfileHref := results.Results.ProviderVdcStorageProfileRecord[0].HREF
 	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":   "networkPool",
-		"filter": fmt.Sprintf("(name==%s)", vcd.config.VCD.ProviderVdc.NetworkPool),
+		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.NetworkPool),
 	})
 	check.Assert(err, IsNil)
 	if len(results.Results.NetworkPoolRecord) == 0 {
