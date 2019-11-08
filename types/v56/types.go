@@ -1595,7 +1595,7 @@ type GatewayInterface struct {
 	DisplayName         string                 `xml:"DisplayName,omitempty"`         // Gateway Interface display name.
 	Network             *Reference             `xml:"Network"`                       // A reference to the network connected to the gateway interface.
 	InterfaceType       string                 `xml:"InterfaceType"`                 // The type of interface: One of: Uplink, Internal
-	SubnetParticipation []*SubnetParticipation `xml:"SubnetParticipation,omitempty"` // IP allocation per subnet.
+	SubnetParticipation []*SubnetParticipation `xml:"SubnetParticipation,omitempty"` // Slice of subnets for IP allocations.
 	ApplyRateLimit      bool                   `xml:"ApplyRateLimit,omitempty"`      // True if rate limiting is applied on this interface.
 	InRateLimit         float64                `xml:"InRateLimit,omitempty"`         // Incoming rate limit expressed as Gbps.
 	OutRateLimit        float64                `xml:"OutRateLimit,omitempty"`        // Outgoing rate limit expressed as Gbps.
