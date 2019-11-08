@@ -4,6 +4,9 @@
 to allow understand if value was returned or not. 
 * Added method VApp.AddNewVMWithStorageProfile that adds a VM with custom storage profile.
 
+BUGS FIXED:
+* Added support for multiple subnets in external network configuration [#XXX]()
+
 ## 2.4.0 (October 28, 2019)
 
 * Deprecated functions `GetOrgByName` and `GetAdminOrgByName`
