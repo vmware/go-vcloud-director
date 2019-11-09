@@ -1,7 +1,11 @@
-## 2.5.0 
+## 2.5.0 (Unreleased)
 
 * Change fields ResourceGuaranteedCpu, VCpuInMhz, IsThinProvision, NetworkPoolReference, ProviderVdcReference and UsesFastProvisioning in AdminVdc to pointers
 to allow understand if value was returned or not. 
+* Added method VApp.AddNewVMWithStorageProfile that adds a VM with custom storage profile.
+
+BUGS FIXED:
+* Remove parentheses from filtering since they weren't treated correctly in some environment [#256] (https://github.com/vmware/go-vcloud-director/pull/256)
 
 ## 2.4.0 (October 28, 2019)
 
@@ -14,7 +18,7 @@ to allow understand if value was returned or not.
 * Added method `VCDClient.QueryProviderVdcStorageProfiles` 
 * Added method `VCDClient.QueryNetworkPools` 
 * Added get/add/delete metadata functions for vApp template and media item [#225](https://github.com/vmware/go-vcloud-director/pull/225).
-* Added `UpdateNetworkConnectionSection` for updating VM network configuration [#229](https://github.com/vmware/go-vcloud-director/pull/229)
+* Added `UpdateNetworkConnectionSection` for updating VM network configuration [#229](https://gifiltering which in some env wasn'tthub.com/vmware/go-vcloud-director/pull/229)
 * Added `PowerOnAndForceCustomization`, `GetGuestCustomizationStatus`, `BlockWhileGuestCustomizationStatus` [#229](https://github.com/vmware/go-vcloud-director/pull/229)
 * Deprecated methods `AdminOrg.GetAdminVdcByName`, `AdminOrg.GetVdcByName`, `AdminOrg.FindAdminCatalog`, `AdminOrg.FindCatalog`
 * Deprecated methods `Catalog.FindCatalogItem`, `Org.FindCatalog`, `Org.GetVdcByName`

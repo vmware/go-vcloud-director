@@ -122,7 +122,7 @@ func ContainsNotFound(err error) bool {
 	return err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error())
 }
 
-// Function allow to pass complex values params which shouldn't be encoded like for queries. e.g. /query?filter=(name=foo)
+// NewRequestWitNotEncodedParams allows passing complex values params that shouldn't be encoded like for queries. e.g. /query?filter=name=foo
 func (cli *Client) NewRequestWitNotEncodedParams(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
 	reqValues := url.Values{}
 
@@ -424,7 +424,7 @@ func executeRequestCustomErr(pathURL string, params map[string]string, requestTy
 
 		marshaledXml, err := xml.MarshalIndent(payload, "  ", "    ")
 		if err != nil {
-			return &http.Response{}, fmt.Errorf("error marshalling xml data %v", err)
+			return &http.Response{}, fmt.Errorf("error marshalling xml data %s", err)
 		}
 		body := bytes.NewBufferString(xml.Header + string(marshaledXml))
 

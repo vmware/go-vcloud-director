@@ -52,7 +52,7 @@ func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix s
 		return fmt.Sprintf("%s: Port group type isn't configured. Test can't proceed", testName), externalNetwork, Task{}, nil
 	}
 
-	virtualCenters, err := QueryVirtualCenters(vcd.client, fmt.Sprintf("(name==%s)", vcd.config.VCD.VimServer))
+	virtualCenters, err := QueryVirtualCenters(vcd.client, fmt.Sprintf("name==%s", vcd.config.VCD.VimServer))
 	if err != nil {
 		return "", externalNetwork, Task{}, err
 	}
@@ -62,7 +62,7 @@ func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix s
 	vimServerHref := virtualCenters[0].HREF
 
 	// Resolve port group info
-	portGroups, err := QueryPortGroups(vcd.client, fmt.Sprintf("(name==%s;portgroupType==%s)", url.QueryEscape(vcd.config.VCD.ExternalNetworkPortGroup), vcd.config.VCD.ExternalNetworkPortGroupType))
+	portGroups, err := QueryPortGroups(vcd.client, fmt.Sprintf("name==%s;portgroupType==%s", url.QueryEscape(vcd.config.VCD.ExternalNetworkPortGroup), vcd.config.VCD.ExternalNetworkPortGroupType))
 	if err != nil {
 		return "", externalNetwork, Task{}, err
 	}
