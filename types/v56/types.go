@@ -2223,6 +2223,28 @@ type QueryResultRecordsType struct {
 	OrgVdcRecord                    []*QueryResultOrgVdcRecordType                    `xml:"OrgVdcRecord"`                    // A record representing Org Vdc Record(s)
 	TaskRecord                      []*QueryResultTaskRecordType                      `xml:"TaskRecord"`                      // A record representing Task(s)
 	CatalogRecord                   []*QueryResultCatalogRecordType                   `xml:"CatalogRecord"`                   // A record representing Catalog (s)
+	CatalogItemRecord               []*QueryResultCatalogItemRecordType               `xml:"CatalogItemRecord"`               // A record representing Catalog (s)
+}
+
+type QueryResultCatalogItemRecordType struct {
+	HREF         string `xml:"href,attr,omitempty"` // The URI of the entity.
+	Id           string `xml:"id,attr,omitempty"`
+	Type         string `xml:"type,attr,omitempty"`
+	Entity       string `xml:"entity,attr,omitempty"`
+	EntityName   string `xml:"entityName,attr,omitempty"`
+	EntityType   string `xml:"entityType,attr,omitempty"`
+	Catalog      string `xml:"catalog,attr,omitempty"`
+	CatalogName  string `xml:"catalogName,attr,omitempty"`
+	OwnerName    string `xml:"ownerName,attr,omitempty"`
+	Owner        string `xml:"owner,attr,omitempty"`
+	IsPublished  string `xml:"isPublished,attr,omitempty"`
+	Vdc          string `xml:"vdc,attr,omitempty"`
+	VdcName      string `xml:"vdcName,attr,omitempty"`
+	IsVdcEnabled string `xml:"isVdcEnabled,attr,omitempty"`
+	CreationDate string `xml:"creationDate,attr,omitempty"`
+	IsExpired    string `xml:"isExpired,attr,omitempty"`
+	Status       string `xml:"status,attr,omitempty"`
+	Name         string `xml:"name,attr,omitempty"`
 }
 
 // QueryResultCatalogRecordType represents list of Catalog as query result.

@@ -38,6 +38,11 @@ type CatalogRecord struct {
 	client  *Client
 }
 
+type CatalogItemRecord struct {
+	CatalogItem *types.QueryResultCatalogItemRecordType
+	client      *Client
+}
+
 func NewCatalog(client *Client) *Catalog {
 	return &Catalog{
 		Catalog: new(types.Catalog),
@@ -45,11 +50,19 @@ func NewCatalog(client *Client) *Catalog {
 	}
 }
 
-// create instance with reference to types.OrgVdcRecord
+// create instance with reference to types.CatalogRecord
 func NewCatalogRecord(cli *Client) *CatalogRecord {
 	return &CatalogRecord{
 		Catalog: new(types.QueryResultCatalogRecordType),
 		client:  cli,
+	}
+}
+
+// create instance with reference to types.CatalogItemRecord
+func NewCatalogItemRecord(cli *Client) *CatalogItemRecord {
+	return &CatalogItemRecord{
+		CatalogItem: new(types.QueryResultCatalogItemRecordType),
+		client:      cli,
 	}
 }
 
