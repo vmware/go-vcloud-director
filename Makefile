@@ -2,7 +2,7 @@ TEST?=./...
 GOFMT_FILES?=$$(find . -name '*.go')
 maindir=$(PWD)
 
-default: fmtcheck vet build
+default: fmtcheck vet static build
 
 # test runs the test suite and vets the code
 test: testunit
@@ -48,6 +48,10 @@ testlb:
 vet:
 	@echo "==> Running Go Vet"
 	@cd govcd && go vet ; if [ $$? -ne 0 ] ; then echo "vet error!" ; exit 1 ; fi && cd -
+
+# static runs the source code static analysis tool `staticcheck`
+static: fmtcheck
+	@./scripts/staticcheck.sh
 
 get-deps:
 	@echo "==> Fetching dependencies"
