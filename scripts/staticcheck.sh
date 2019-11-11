@@ -77,7 +77,7 @@ function check_static {
     then
         cd $dir
         echo "## Checking $dir"
-        $static_check -tags functional .
+        $static_check -tags ALL .
         exit_code=$?
         if [ "$exit_code" != "0" ]
         then
