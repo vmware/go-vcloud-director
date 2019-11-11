@@ -3,6 +3,8 @@
 * Change fields ResourceGuaranteedCpu, VCpuInMhz, IsThinProvision, NetworkPoolReference, ProviderVdcReference and UsesFastProvisioning in AdminVdc to pointers
 to allow understand if value was returned or not. 
 * Added method VApp.AddNewVMWithStorageProfile that adds a VM with custom storage profile.
+* Added command `make static` to run staticcheck on all packages
+* Added `make static` to Travis regular checks
 
 BUGS FIXED:
 * Remove parentheses from filtering since they weren't treated correctly in some environment [#256] (https://github.com/vmware/go-vcloud-director/pull/256)
