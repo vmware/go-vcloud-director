@@ -2224,7 +2224,7 @@ type QueryResultRecordsType struct {
 	OrgVdcRecord                    []*QueryResultOrgVdcRecordType                    `xml:"OrgVdcRecord"`                    // A record representing Org Vdc Record(s)
 	TaskRecord                      []*QueryResultTaskRecordType                      `xml:"TaskRecord"`                      // A record representing Task(s)
 	CatalogRecord                   []*QueryResultCatalogRecordType                   `xml:"CatalogRecord"`                   // A record representing Catalog (s)
-	CatalogItemRecord               []*QueryResultCatalogItemRecordType               `xml:"CatalogItemRecord"`               // A record representing Catalog (s)
+	CatalogItemRecord               []*QueryResultCatalogItemRecordType               `xml:"CatalogItemRecord"`               // A record representing Catalog Item(s)
 }
 
 type QueryResultCatalogItemRecordType struct {
