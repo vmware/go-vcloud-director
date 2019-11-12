@@ -21,6 +21,11 @@ type VApp struct {
 	client *Client
 }
 
+type VAppNetworkRecord struct {
+	VAppNetwork *types.QueryResultVAppNetworkRecordType
+	client      *Client
+}
+
 func NewVApp(cli *Client) *VApp {
 	return &VApp{
 		VApp:   new(types.VApp),
@@ -31,6 +36,13 @@ func NewVApp(cli *Client) *VApp {
 func (vcdCli *VCDClient) NewVApp(client *Client) VApp {
 	newvapp := NewVApp(client)
 	return *newvapp
+}
+
+func NewVAppNetworkRecord(cli *Client) *VAppNetworkRecord {
+	return &VAppNetworkRecord{
+		VAppNetwork: new(types.QueryResultVAppNetworkRecordType),
+		client:      cli,
+	}
 }
 
 // struct type used to pass information for vApp network creation

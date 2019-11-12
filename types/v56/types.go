@@ -2225,6 +2225,43 @@ type QueryResultRecordsType struct {
 	TaskRecord                      []*QueryResultTaskRecordType                      `xml:"TaskRecord"`                      // A record representing Task(s)
 	CatalogRecord                   []*QueryResultCatalogRecordType                   `xml:"CatalogRecord"`                   // A record representing Catalog (s)
 	CatalogItemRecord               []*QueryResultCatalogItemRecordType               `xml:"CatalogItemRecord"`               // A record representing Catalog Item(s)
+	OrgNetwork                      []*QueryResultOrgNetworkRecordType                `xml:"OrgNetworkRecord"`                // A record representing Network(s) in Organization
+	VAppNetwork                     []*QueryResultVAppNetworkRecordType               `xml:"VAppNetworkRecord"`               // A record representing Network(s) in VApp
+}
+
+type QueryResultVAppNetworkRecordType struct {
+	HREF               string `xml:"href,attr,omitempty"` // The URI of the entity.
+	Id                 string `xml:"id,attr,omitempty"`
+	Type               string `xml:"type,attr,omitempty"`
+	Name               string `xml:"name,attr,omitempty"`
+	IpScopeId          string `xml:"ipScopeId,attr,omitempty"`
+	IsIpScopeInherited string `xml:"isIpScopeInherited,attr,omitempty"`
+	Gateway            string `xml:"gateway,attr,omitempty"`
+	Netmask            string `xml:"netmask,attr,omitempty"`
+	Dns1               string `xml:"dns1,attr,omitempty"`
+	Dns2               string `xml:"dns2,attr,omitempty"`
+	DnsSuffix          string `xml:"dnsSuffix,attr,omitempty"`
+	VApp               string `xml:"vApp,attr,omitempty"`
+	VAppName           string `xml:"vAppName,attr,omitempty"`
+	IsBusy             string `xml:"isBusy,attr,omitempty"`
+}
+
+type QueryResultOrgNetworkRecordType struct {
+	HREF               string `xml:"href,attr,omitempty"` // The URI of the entity.
+	Id                 string `xml:"id,attr,omitempty"`
+	Type               string `xml:"type,attr,omitempty"`
+	Name               string `xml:"name,attr,omitempty"`
+	NetworkPool        string `xml:"networkPool,attr,omitempty"`
+	NetworkPoolName    string `xml:"networkPoolName,attr,omitempty"`
+	Org                string `xml:"org,attr,omitempty"`
+	IpScopeId          string `xml:"ipScopeId,attr,omitempty"`
+	IsIpScopeInherited string `xml:"isIpScopeInherited,attr,omitempty"`
+	Gateway            string `xml:"gateway,attr,omitempty"`
+	Netmask            string `xml:"netmask,attr,omitempty"`
+	Dns1               string `xml:"dns1,attr,omitempty"`
+	Dns2               string `xml:"dns2,attr,omitempty"`
+	DnsSuffix          string `xml:"dnsSuffix,attr,omitempty"`
+	IsBusy             string `xml:"isBusy,attr,omitempty"`
 }
 
 type QueryResultCatalogItemRecordType struct {
