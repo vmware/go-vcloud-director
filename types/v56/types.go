@@ -2225,8 +2225,8 @@ type QueryResultRecordsType struct {
 	TaskRecord                      []*QueryResultTaskRecordType                      `xml:"TaskRecord"`                      // A record representing Task(s)
 	CatalogRecord                   []*QueryResultCatalogRecordType                   `xml:"CatalogRecord"`                   // A record representing Catalog (s)
 	CatalogItemRecord               []*QueryResultCatalogItemRecordType               `xml:"CatalogItemRecord"`               // A record representing Catalog Item(s)
-	OrgNetwork                      []*QueryResultOrgNetworkRecordType                `xml:"OrgNetworkRecord"`                // A record representing Network(s) in Organization
-	VAppNetwork                     []*QueryResultVAppNetworkRecordType               `xml:"VAppNetworkRecord"`               // A record representing Network(s) in VApp
+	OrgNetworkRecord                []*QueryResultOrgNetworkRecordType                `xml:"OrgNetworkRecord"`                // A record representing Network(s) in Organization
+	VAppNetworkRecord               []*QueryResultVAppNetworkRecordType               `xml:"VAppNetworkRecord"`               // A record representing Network(s) in VApp
 }
 
 type QueryResultVAppNetworkRecordType struct {
