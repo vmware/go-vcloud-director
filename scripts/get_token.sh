@@ -9,7 +9,7 @@ IP=$4
 
 if [ -z "$IP" ]
 then
-    echo "Syntax $0 user password organization hostname_or_IP_address)"
+    echo "Syntax $0 user password organization hostname_or_IP_address"
     exit 1
 fi
 
