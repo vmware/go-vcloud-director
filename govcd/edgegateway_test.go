@@ -743,31 +743,24 @@ func testCheckFirewallConfig(beforeFw *types.FirewallConfigWithXml, beforeFwXml 
 	afterFw.Version = ""
 
 	// Because the test enables and disables firewall configuration, main firewall rule has its ID
-	// and ruleTag changed during the test and we must ignore this change while comparing. This is
-	// always the first rule kept at the top so we are replacing `id` and `ruletag` fields in
-	// "before" and "after" values.
-	beforeFw.FirewallRules.Text = replaceFirstMatch(beforeFw.FirewallRules.Text, `<id>\d*</id>`, "<id>99999</id>")
-	beforeFw.FirewallRules.Text = replaceFirstMatch(beforeFw.FirewallRules.Text, `<ruleTag>\d*</ruleTag>`, "<ruleTag>99999</ruleTag>")
-	afterFw.FirewallRules.Text = replaceFirstMatch(afterFw.FirewallRules.Text, `<id>\d*</id>`, "<id>99999</id>")
-	afterFw.FirewallRules.Text = replaceFirstMatch(afterFw.FirewallRules.Text, `<ruleTag>\d*</ruleTag>`, "<ruleTag>99999</ruleTag>")
+	// and ruleTag changed during the test and we must ignore this change while comparing.
+	beforeFw.FirewallRules.Text = replaceAllMatches(beforeFw.FirewallRules.Text, `<id>\d*</id>`, "<id>99999</id>")
+	beforeFw.FirewallRules.Text = replaceAllMatches(beforeFw.FirewallRules.Text, `<ruleTag>\d*</ruleTag>`, "<ruleTag>99999</ruleTag>")
+	afterFw.FirewallRules.Text = replaceAllMatches(afterFw.FirewallRules.Text, `<id>\d*</id>`, "<id>99999</id>")
+	afterFw.FirewallRules.Text = replaceAllMatches(afterFw.FirewallRules.Text, `<ruleTag>\d*</ruleTag>`, "<ruleTag>99999</ruleTag>")
 
-	beforeFwXml = replaceFirstMatch(beforeFwXml, `<id>\d*</id>`, "<id>99999</id>")
-	beforeFwXml = replaceFirstMatch(beforeFwXml, `<ruleTag>\d*</ruleTag>`, "<ruleTag>99999</ruleTag>")
-	afterFwXml = replaceFirstMatch(afterFwXml, `<id>\d*</id>`, "<id>99999</id>")
-	afterFwXml = replaceFirstMatch(afterFwXml, `<ruleTag>\d*</ruleTag>`, "<ruleTag>99999</ruleTag>")
+	beforeFwXml = replaceAllMatches(beforeFwXml, `<id>\d*</id>`, "<id>99999</id>")
+	beforeFwXml = replaceAllMatches(beforeFwXml, `<ruleTag>\d*</ruleTag>`, "<ruleTag>99999</ruleTag>")
+	afterFwXml = replaceAllMatches(afterFwXml, `<id>\d*</id>`, "<id>99999</id>")
+	afterFwXml = replaceAllMatches(afterFwXml, `<ruleTag>\d*</ruleTag>`, "<ruleTag>99999</ruleTag>")
 
 	check.Assert(beforeFw, DeepEquals, afterFw)
 	check.Assert(beforeFwXml, DeepEquals, afterFwXml)
 }
 
-// replaceFirstMatch replaces first `regex` matched in `text` with `replacement` and returns it
+// replaceAllMatches replaces `regex` matched in `text` with `replacement` and returns it
 // It will panic if regex is invalid.
-func replaceFirstMatch(text, regex, replacement string) string {
+func replaceAllMatches(text, regex, replacement string) string {
 	re := regexp.MustCompile(regex)
-	// Replace leftmost found string
-	found := re.FindString(text)
-	if found != "" {
-		return strings.Replace(text, found, replacement, 1)
-	}
-	return ""
+	return re.ReplaceAllString(text, replacement)
 }
