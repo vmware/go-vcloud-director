@@ -87,7 +87,7 @@ func (vcdCli *VCDClient) vcdauthorize(user, pass, org string) error {
 }
 
 // NewVCDClient initializes VMware vCloud Director client with reasonable defaults.
-// It accepts functions of type VCDClientOption for adjustedgegateway_test.going defaults.
+// It accepts functions of type VCDClientOption for adjusting defaults.
 func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption) *VCDClient {
 	// Setting defaults
 	vcdClient := &VCDClient{
