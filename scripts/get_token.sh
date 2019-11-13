@@ -15,7 +15,7 @@ fi
 
 auth=$(echo -n "$user@$org:$password" |base64)
 
-curl -I -k --header "Accept: application/*;version=27.0" \
+curl -I -k --header "Accept: application/*;version=29.0" \
     --header "Authorization: Basic $auth" \
     --request POST https://$IP/api/sessions
 
