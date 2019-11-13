@@ -327,6 +327,8 @@ While running tests, the following environment variables can be used:
 * `GOVCD_IGNORE_CLEANUP_FILE` Ignore the cleanup file if it is left behind after a test failure.
     This could be useful after running a single test, when we need to check how the test behaves with the resource still
     in place.
+* `VCD_TOKEN` : specifies the authorization token to use instead of username/password
+   (Use `./scripts/get_token.sh` to retrieve one)
 
 # Final Words
 Be careful about using our tests as these tests run on a real vcd. If you don't have 1 gb of ram and 2 vcpus available then you should not be running tests that deploy your vm/change memory and cpu. However everything created will be removed at the end of testing.

@@ -46,9 +46,11 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/vmware/go-vcloud-director/v2/govcd"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+
+	"gopkg.in/yaml.v2"
+
+	"github.com/vmware/go-vcloud-director/v2/govcd"
 )
 
 type Config struct {
@@ -58,6 +60,7 @@ type Config struct {
 	Href     string `json:"href"`
 	VDC      string `json:"vdc"`
 	Insecure bool   `json:"insecure"`
+	Token    string `json:"token"`
 }
 
 // Checks that a configuration structure is complete
@@ -67,12 +70,6 @@ func check_configuration(conf Config) {
 		fmt.Printf("configuration field '%s' empty or missing\n", s)
 		will_exit = true
 	}
-	if conf.User == "" {
-		abort("user")
-	}
-	if conf.Password == "" {
-		abort("password")
-	}
 	if conf.Org == "" {
 		abort("org")
 	}
@@ -81,6 +78,15 @@ func check_configuration(conf Config) {
 	}
 	if conf.VDC == "" {
 		abort("vdc")
+	}
+	if conf.Token != "" {
+		return
+	}
+	if conf.User == "" {
+		abort("user")
+	}
+	if conf.Password == "" {
+		abort("password")
 	}
 	if will_exit {
 		os.Exit(1)
@@ -118,15 +124,20 @@ func getConfig(config_file string) Config {
 func (c *Config) Client() (*govcd.VCDClient, error) {
 	u, err := url.ParseRequestURI(c.Href)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to pass url: %s", err)
+		return nil, fmt.Errorf("unable to pass url: %s", err)
 	}
 
-	vcdclient := govcd.NewVCDClient(*u, c.Insecure)
-	err = vcdclient.Authenticate(c.User, c.Password, c.Org)
-	if err != nil {
-		return nil, fmt.Errorf("Unable to authenticate: %s", err)
+	vcdClient := govcd.NewVCDClient(*u, c.Insecure)
+	if c.Token != "" {
+		_ = vcdClient.SetToken(c.Org, govcd.AuthorizationHeader, c.Token)
+	} else {
+		resp, err := vcdClient.GetAuthResponse(c.User, c.Password, c.Org)
+		if err != nil {
+			return nil, fmt.Errorf("unable to authenticate: %s", err)
+		}
+		fmt.Printf("Token: %s\n", resp.Header[govcd.AuthorizationHeader])
 	}
-	return vcdclient, nil
+	return vcdClient, nil
 }
 
 func main() {
@@ -149,24 +160,24 @@ func main() {
 
 	org, err := client.GetOrgByName(config.Org)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("organization %s not found : %s\n", config.Org, err)
 		os.Exit(1)
 	}
 	vdc, err := org.GetVDCByName(config.VDC, false)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("VDC %s not found : %s\n", config.VDC, err)
 		os.Exit(1)
 	}
 
 	fmt.Printf("Organization items\n")
 	fmt.Printf("Organization '%s' URL: %s\n", config.Org, org.Org.HREF)
 
-	catalog_name := ""
+	catalogName := ""
 	for N, item := range org.Org.Link {
 		fmt.Printf("%3d %-40s %s\n", N, item.Name, item.Type)
 		// Retrieve the first catalog name for further usage
-		if item.Type == "application/vnd.vmware.vcloud.catalog+xml" && catalog_name == "" {
-			catalog_name = item.Name
+		if item.Type == "application/vnd.vmware.vcloud.catalog+xml" && catalogName == "" {
+			catalogName = item.Name
 		}
 	}
 	fmt.Println("")
@@ -179,11 +190,11 @@ func main() {
 	}
 	fmt.Println("")
 
-	if catalog_name != "" {
+	if catalogName != "" {
 		fmt.Printf("\ncatalog items\n")
-		cat, err := org.GetCatalogByName(catalog_name, false)
+		cat, err := org.GetCatalogByName(catalogName, false)
 		if err != nil {
-			fmt.Printf("Error retrieving catalog %s\n%s\n", catalog_name, err)
+			fmt.Printf("Error retrieving catalog %s\n%s\n", catalogName, err)
 			os.Exit(1)
 		}
 		for _, item := range cat.Catalog.CatalogItems {
