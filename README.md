@@ -124,7 +124,7 @@ For the first two methods, you use:
 
 ```go
 	err := vcdClient.Authenticate(User, Password, Org)
-    // or
+	// or
 	resp, err := vcdClient.GetAuthResponse(User, Password, Org)
 ```
 
