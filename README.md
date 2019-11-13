@@ -111,3 +111,28 @@ func main() {
 }
 
 ```
+
+## Authentication
+
+You can authenticate to the vCD in three ways:
+
+* With a system administration user and password (`administrator@system`)
+* With an Organization user and password (`tenant-admin@org_name)
+* With an authorization token
+
+For the first two methods, you use:
+
+```go
+	err := vcdClient.Authenticate(User, Password, Org)
+    // or
+	resp, err := vcdClient.GetAuthResponse(User, Password, Org)
+```
+
+For the token, you use:
+
+```
+	err := vcdClient.SetToken(Org, govcd.AuthorizationHeader, Token)
+```
+
+The file `scripts/get_token.sh` provides a handy method of extracting the token for future use.
+
