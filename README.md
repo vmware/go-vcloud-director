@@ -134,5 +134,5 @@ For the token, you use:
 	err := vcdClient.SetToken(Org, govcd.AuthorizationHeader, Token)
 ```
 
-The file `scripts/get_token.sh` provides a handy method of extracting the token for future use.
+The file `scripts/get_token.sh` provides a handy method of extracting the token (`x-vcloud-authorization` value) for future use.
 
