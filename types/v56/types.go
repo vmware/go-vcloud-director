@@ -1570,10 +1570,19 @@ type GatewayConfiguration struct {
 	GatewayBackingConfig            string             `xml:"GatewayBackingConfig"`                      // Configuration of the vShield edge VM for this gateway. One of: compact, full.
 	GatewayInterfaces               *GatewayInterfaces `xml:"GatewayInterfaces"`                         // List of Gateway interfaces.
 	EdgeGatewayServiceConfiguration *GatewayFeatures   `xml:"EdgeGatewayServiceConfiguration,omitempty"` // Represents Gateway Features.
-	HaEnabled                       bool               `xml:"HaEnabled,omitempty"`                       // True if this gateway is highly available. (Requires two vShield edge VMs.)
-	AdvancedNetworkingEnabled       bool               `xml:"AdvancedNetworkingEnabled,omitempty"`       // True if the gateway uses advanced networking
-	DistributedRoutingEnabled       bool               `xml:"DistributedRoutingEnabled,omitempty"`       // True if gateway is attached to a Distributed Logical Router
-	UseDefaultRouteForDNSRelay      bool               `xml:"UseDefaultRouteForDnsRelay,omitempty"`      // True if the default gateway on the external network selected for default route should be used as the DNS relay.
+	// True if this gateway is highly available. (Requires two vShield edge VMs.)
+	HaEnabled bool `xml:"HaEnabled,omitempty"`
+	// True if the default gateway on the external network selected for default route should be used
+	// as the DNS relay.
+	UseDefaultRouteForDNSRelay bool `xml:"UseDefaultRouteForDnsRelay,omitempty"`
+	AdvancedNetworkingEnabled  bool `xml:"AdvancedNetworkingEnabled,omitempty"` // True if the gateway uses advanced networking
+	//Enable Distributed Routing on the gateway to allow creation of many more organization VDC
+	//networks. Traffic in those networks is optimized for VM-to-VM communication.
+	DistributedRoutingEnabled bool `xml:"DistributedRoutingEnabled,omitempty"`
+	// FipsModeEnabled allows any secure communication to or from the NSX Edge uses cryptographic
+	// algorithms or protocols that are allowed by United States Federal Information Processing
+	// Standards (FIPS). FIPS mode turns on the cipher suites that comply with FIPS.
+	FipsModeEnabled *bool `xml:"FipsModeEnabled,omitempty"`
 }
 
 // GatewayInterfaces is a list of Gateway Interfaces.
@@ -1607,11 +1616,14 @@ type GatewayInterface struct {
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Allows to chose which subnets a gateway can be part of
 // Since: 5.1
+//
+// Note. Field order is important and should not be changed as API returns errors if IPRanges come
+// before Gateway and Netmask
 type SubnetParticipation struct {
 	Gateway            string    `xml:"Gateway"`                      // Gateway for subnet
+	Netmask            string    `xml:"Netmask"`                      // Netmask for the subnet.
 	IPAddress          string    `xml:"IpAddress,omitempty"`          // Ip Address to be assigned. Keep empty or omit element for auto assignment
 	IPRanges           *IPRanges `xml:"IpRanges,omitempty"`           // Range of IP addresses available for external interfaces.
-	Netmask            string    `xml:"Netmask"`                      // Netmask for the subnet
 	UseForDefaultRoute bool      `xml:"UseForDefaultRoute,omitempty"` // True if this network is default route for the gateway.
 }
 

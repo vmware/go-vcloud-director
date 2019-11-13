@@ -468,7 +468,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		}
 	} else {
 		vcd.skipVappTests = true
-		fmt.Printf("Skipping all vapp tests because one of the following wasn't given: Network, StorageProfile, Catalog, Catalogitem")
+		fmt.Println("Skipping all vapp tests because one of the following wasn't given: Network, StorageProfile, Catalog, Catalogitem")
 	}
 }
 

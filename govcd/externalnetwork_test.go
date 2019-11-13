@@ -89,7 +89,33 @@ func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix s
 						IPRange: []*types.IPRange{
 							&types.IPRange{
 								StartAddress: "192.168.201.3",
-								EndAddress:   "192.168.201.250",
+								EndAddress:   "192.168.201.100",
+							},
+							&types.IPRange{
+								StartAddress: "192.168.201.105",
+								EndAddress:   "192.168.201.140",
+							},
+						},
+					},
+				}, &types.IPScope{
+					Gateway:   "192.168.231.1",
+					Netmask:   "255.255.255.0",
+					DNS1:      "192.168.232.253",
+					DNS2:      "192.168.232.254",
+					DNSSuffix: dnsSuffix,
+					IPRanges: &types.IPRanges{
+						IPRange: []*types.IPRange{
+							&types.IPRange{
+								StartAddress: "192.168.231.3",
+								EndAddress:   "192.168.231.100",
+							},
+							&types.IPRange{
+								StartAddress: "192.168.231.105",
+								EndAddress:   "192.168.231.140",
+							},
+							&types.IPRange{
+								StartAddress: "192.168.231.145",
+								EndAddress:   "192.168.231.150",
 							},
 						},
 					},
@@ -183,16 +209,41 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	check.Assert(newExternalNetwork.ExternalNetwork.Name, Equals, TestCreateExternalNetwork)
 
 	ipScope := newExternalNetwork.ExternalNetwork.Configuration.IPScopes.IPScope
+	check.Assert(len(ipScope), Equals, 2)
+	// Check IPScope 1
 	check.Assert(ipScope[0].Gateway, Equals, "192.168.201.1")
 	check.Assert(ipScope[0].Netmask, Equals, "255.255.255.0")
 	check.Assert(ipScope[0].DNS1, Equals, "192.168.202.253")
 	check.Assert(ipScope[0].DNS2, Equals, "192.168.202.254")
 	check.Assert(ipScope[0].DNSSuffix, Equals, dnsSuffix)
+	// Check IPScope 2
+	check.Assert(ipScope[1].Gateway, Equals, "192.168.231.1")
+	check.Assert(ipScope[1].Netmask, Equals, "255.255.255.0")
+	check.Assert(ipScope[1].DNS1, Equals, "192.168.232.253")
+	check.Assert(ipScope[1].DNS2, Equals, "192.168.232.254")
+	check.Assert(ipScope[1].DNSSuffix, Equals, dnsSuffix)
+	// Check IP ranges on IPScope 1
+	check.Assert(len(ipScope[0].IPRanges.IPRange), Equals, 2)
+	ipRange1 := ipScope[0].IPRanges.IPRange[0]
+	check.Assert(ipRange1.StartAddress, Equals, "192.168.201.3")
+	check.Assert(ipRange1.EndAddress, Equals, "192.168.201.100")
 
-	check.Assert(len(ipScope[0].IPRanges.IPRange), Equals, 1)
-	ipRange := ipScope[0].IPRanges.IPRange[0]
-	check.Assert(ipRange.StartAddress, Equals, "192.168.201.3")
-	check.Assert(ipRange.EndAddress, Equals, "192.168.201.250")
+	ipRange2 := ipScope[0].IPRanges.IPRange[1]
+	check.Assert(ipRange2.StartAddress, Equals, "192.168.201.105")
+	check.Assert(ipRange2.EndAddress, Equals, "192.168.201.140")
+
+	// Check IP ranges on IPScope 2
+	ipRange1 = ipScope[1].IPRanges.IPRange[0]
+	check.Assert(ipRange1.StartAddress, Equals, "192.168.231.3")
+	check.Assert(ipRange1.EndAddress, Equals, "192.168.231.100")
+
+	ipRange2 = ipScope[1].IPRanges.IPRange[1]
+	check.Assert(ipRange2.StartAddress, Equals, "192.168.231.105")
+	check.Assert(ipRange2.EndAddress, Equals, "192.168.231.140")
+
+	ipRange3 := ipScope[1].IPRanges.IPRange[2]
+	check.Assert(ipRange3.StartAddress, Equals, "192.168.231.145")
+	check.Assert(ipRange3.EndAddress, Equals, "192.168.231.150")
 
 	check.Assert(newExternalNetwork.ExternalNetwork.Configuration.FenceMode, Equals, "isolated")
 	check.Assert(newExternalNetwork.ExternalNetwork.Description, Equals, "Test Create External Network")

@@ -8,6 +8,7 @@ package govcd
 
 import (
 	"fmt"
+	"time"
 
 	. "gopkg.in/check.v1"
 
@@ -221,9 +222,113 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 
 		// Once deleted, look for the edge gateway again. It should return an error
 		newEdge, err := vcd.vdc.GetEdgeGatewayByName(egc.Name, true)
-		check.Assert(err, NotNil)
+		check.Assert(err, Equals, ErrorEntityNotFound)
 		check.Assert(newEdge, IsNil)
 	}
+}
+
+// Test_CreateDeleteEdgeGatewayAdvanced sets up external network which has multiple IP scopes and IP
+// ranges defined. This helps to test edge gateway capabilities for multiple networks and scopes
+func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
+	// Setup external network with multiple IP scopes and multiple ranges
+	dnsSuffix := "some.net"
+	skippingReason, externalNetwork, task, err := vcd.testCreateExternalNetwork(check.TestName(), check.TestName(), dnsSuffix)
+	if skippingReason != "" {
+		check.Skip(skippingReason)
+	}
+
+	check.Assert(err, IsNil)
+	check.Assert(task.Task, Not(Equals), types.Task{})
+
+	AddToCleanupList(externalNetwork.Name, "externalNetwork", "", check.TestName())
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	// "Refresh" external network to fill in all fields (like HREF)
+	extNet, err := vcd.client.GetExternalNetworkByName(externalNetwork.Name)
+	check.Assert(err, IsNil)
+	externalNetwork = extNet.ExternalNetwork
+
+	edgeName := "Test-Multi-Scope-Gw"
+	// Initialize edge gateway structure
+	edgeGatewayConfig := &types.EdgeGateway{
+		Xmlns:       types.XMLNamespaceVCloud,
+		Name:        edgeName,
+		Description: edgeName,
+		Configuration: &types.GatewayConfiguration{
+			HaEnabled:            false,
+			GatewayBackingConfig: "compact",
+			GatewayInterfaces: &types.GatewayInterfaces{
+				GatewayInterface: []*types.GatewayInterface{},
+			},
+			AdvancedNetworkingEnabled:  true,
+			DistributedRoutingEnabled:  false,
+			FipsModeEnabled:            takeBoolPointer(false),
+			UseDefaultRouteForDNSRelay: true,
+		},
+	}
+
+	// Create subnet participation structure
+	subnetParticipation := make([]*types.SubnetParticipation, len(externalNetwork.Configuration.IPScopes.IPScope))
+	// Loop over IP scopes
+	for ipScopeIndex, ipScope := range externalNetwork.Configuration.IPScopes.IPScope {
+		subnetParticipation[ipScopeIndex] = &types.SubnetParticipation{
+			Gateway: ipScope.Gateway,
+			Netmask: ipScope.Netmask,
+			// IPAddress: string,			// Can be set to specify IP address of edge gateway
+			// UseForDefaultRoute: bool,	// Can be specified to use subnet as default gateway
+			IPRanges: &types.IPRanges{},
+		}
+	}
+
+	// Set static IP assignment
+	subnetParticipation[0].IPAddress = "192.168.201.100"
+
+	// Set default gateway subnet
+	subnetParticipation[1].UseForDefaultRoute = true
+
+	// Inject an IP range (in UI it is called "sub-allocated pools" in separate tab)
+	subnetParticipation[0].IPRanges = &types.IPRanges{
+		IPRange: []*types.IPRange{
+			&types.IPRange{
+				StartAddress: "192.168.201.120",
+				EndAddress:   "192.168.201.130",
+			},
+		},
+	}
+
+	// Setup network interface config
+	networkConf := &types.GatewayInterface{
+		Name:          externalNetwork.Name,
+		DisplayName:   externalNetwork.Name,
+		InterfaceType: "uplink",
+		Network: &types.Reference{
+			HREF: externalNetwork.HREF,
+			ID:   externalNetwork.ID,
+			Type: "application/vnd.vmware.admin.network+xml",
+			Name: externalNetwork.Name,
+		},
+		UseForDefaultRoute:  true,
+		SubnetParticipation: subnetParticipation,
+	}
+
+	edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface =
+		append(edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface, networkConf)
+
+	orgName := vcd.config.VCD.Org
+	vdcName := vcd.config.VCD.Vdc
+
+	edge, err := CreateAndConfigureEdgeGateway(vcd.client, orgName, vdcName, edgeName, edgeGatewayConfig)
+	check.Assert(err, IsNil)
+	PrependToCleanupList(edge.EdgeGateway.Name, "edgegateway", orgName+"|"+vdcName, "Test_CreateDeleteEdgeGateway")
+
+	// validate edge GW stuff
+
+	time.Sleep(3 * time.Minute)
+}
+
+func takeBoolPointer(value bool) *bool {
+	return &value
 }
 
 func (vcd *TestVCD) Test_FindBadlyNamedStorageProfile(check *C) {
