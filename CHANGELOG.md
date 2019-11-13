@@ -6,6 +6,7 @@
 * Added method VApp.AddNewVMWithStorageProfile that adds a VM with custom storage profile.
 * Added command `make static` to run staticcheck on all packages
 * Added `make static` to Travis regular checks
+* Increment vCD API version to 29.0
 
 BUGS FIXED:
 
