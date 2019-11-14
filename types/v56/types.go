@@ -1780,7 +1780,7 @@ type LbPoolMember struct {
 	Port        int    `xml:"port"`
 	MaxConn     int    `xml:"maxConn,omitempty"`
 	MinConn     int    `xml:"minConn,omitempty"`
-	Condition   string `xml:"condition"`
+	Condition   string `xml:"condition,omitempty"`
 }
 
 type LbPoolMembers []LbPoolMember
