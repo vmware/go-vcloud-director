@@ -556,7 +556,6 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 // identical except <version></version> tag which is versioning the configuration
 func (vcd *TestVCD) TestEdgeGateway_UpdateLBGeneralParams(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
-		check.Skip("Skipping test because no edge gatway given")
 		check.Skip("Skipping test because no edge gateway given")
 	}
 	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
