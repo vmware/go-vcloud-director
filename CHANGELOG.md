@@ -12,8 +12,8 @@
 * Added script `scripts/get_token.sh`
 * Increment vCD API version used to 29.0
 ** Removed fields `VdcEnabled`, `VAppParentHREF`, `VAppParentName`, `HighestSupportedVersion`, `VmToolsVersion`, `TaskHREF`, `TaskStatusName`, `TaskDetails`, `TaskStatus` from `QueryResultVMRecordType`
-** Added fields `ID, Type, ContainerName, ContainerID, OwnerName, Owner, NetworkHref, IpAddress, CatalogName, VmToolsStatus, GcStatus, AutoUndeployDate, AutoDeleteDate, AutoUndeployNotified, AutoDeleteNotified, Link, MetaData` to `QueryResultVMRecordType`, `DistributedInterface` to NetworkConfiguration, `RegenerateBiosUuid` to VMGeneralParams
-** Change `DistributedRoutingEnabled` to pointer in GatewayConfiguration and `DistributedInterface` in NetworkConfiguration.
+** Added fields `ID, Type, ContainerName, ContainerID, OwnerName, Owner, NetworkHref, IpAddress, CatalogName, VmToolsStatus, GcStatus, AutoUndeployDate, AutoDeleteDate, AutoUndeployNotified, AutoDeleteNotified, Link, MetaData` to `QueryResultVMRecordType`, `DistributedInterface` to NetworkConfiguration, `RegenerateBiosUuid` to `VMGeneralParams`
+** Change `DistributedRoutingEnabled` to pointer in `GatewayConfiguration` and `DistributedInterface` in `NetworkConfiguration`.
 
 BUGS FIXED:
 
