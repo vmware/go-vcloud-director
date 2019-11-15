@@ -132,7 +132,7 @@ func CreateEdgeGatewayAsync(vcdClient *VCDClient, egwc EdgeGatewayCreation) (Tas
 			HaEnabled:                  egwc.HAEnabled,
 			GatewayBackingConfig:       egwc.BackingConfiguration,
 			AdvancedNetworkingEnabled:  egwc.AdvancedNetworkingEnabled,
-			DistributedRoutingEnabled:  distributed,
+			DistributedRoutingEnabled:  &distributed,
 			GatewayInterfaces: &types.GatewayInterfaces{
 				GatewayInterface: []*types.GatewayInterface{},
 			},
@@ -818,7 +818,7 @@ func (vcdClient *VCDClient) GetOrgByName(orgName string) (*Org, error) {
 	org := NewOrg(&vcdClient.Client)
 
 	_, err = vcdClient.Client.ExecuteRequest(orgUrl, http.MethodGet,
-		"", "error retrieving org list: %s", nil, org.Org)
+		"", "error retrieving org: %s", nil, org.Org)
 	if err != nil {
 		return nil, err
 	}

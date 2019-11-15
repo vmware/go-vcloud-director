@@ -86,6 +86,7 @@ type TestConfig struct {
 	Provider struct {
 		User            string `yaml:"user"`
 		Password        string `yaml:"password"`
+		Token           string `yaml:"token"`
 		Url             string `yaml:"url"`
 		SysOrg          string `yaml:"sysOrg"`
 		MaxRetryTimeout int    `yaml:"maxRetryTimeout,omitempty"`
@@ -401,13 +402,23 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		panic(err)
 	}
 	vcd.client = vcdClient
-	// org and vdc are the test org and vdc that is used in all other test cases
-	err = vcd.client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
+	token := os.Getenv("VCD_TOKEN")
+	if token == "" {
+		token = config.Provider.Token
+	}
+
+	authenticationMode := "password"
+	if token != "" {
+		authenticationMode = "token"
+		err = vcd.client.SetToken(config.Provider.SysOrg, AuthorizationHeader, token)
+	} else {
+		err = vcd.client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
+	}
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Running on vCD %s\nas user %s@%s\n", vcd.config.Provider.Url,
-		vcd.config.Provider.User, vcd.config.Provider.SysOrg)
+	fmt.Printf("Running on vCD %s\nas user %s@%s (using %s)\n", vcd.config.Provider.Url,
+		vcd.config.Provider.User, vcd.config.Provider.SysOrg, authenticationMode)
 	if !vcd.client.Client.IsSysAdmin {
 		vcd.skipAdminTests = true
 	}
@@ -1089,7 +1100,7 @@ func TestClient_getloginurl(t *testing.T) {
 	}
 }
 
-// Tests Authenticate with the vcd credentials given in the config file
+// Tests Authenticate with the vcd credentials (or token) given in the config file
 func TestVCDClient_Authenticate(t *testing.T) {
 	config, err := GetConfigStruct()
 	if err != nil {
@@ -1099,7 +1110,17 @@ func TestVCDClient_Authenticate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	err = client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
+
+	token := os.Getenv("VCD_TOKEN")
+	if token == "" {
+		token = config.Provider.Token
+	}
+	if token != "" {
+		err = client.SetToken(config.Provider.SysOrg, AuthorizationHeader, token)
+	} else {
+		err = client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
+	}
+
 	if err != nil {
 		t.Fatalf("Error authenticating: %s", err)
 	}
