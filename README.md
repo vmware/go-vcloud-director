@@ -96,12 +96,12 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	org, err := govcd.GetOrgByName(client, config.Org)
+	org, err := client.GetOrgByName(config.Org)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	vdc, err := org.GetVdcByName(config.VDC)
+	vdc, err := org.GetVDCByName(config.VDC)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -111,3 +111,28 @@ func main() {
 }
 
 ```
+
+## Authentication
+
+You can authenticate to the vCD in three ways:
+
+* With a System Administration user and password (`administrator@system`)
+* With an Organization user and password (`tenant-admin@org-name`)
+* With an authorization token
+
+For the first two methods, you use:
+
+```go
+	err := vcdClient.Authenticate(User, Password, Org)
+	// or
+	resp, err := vcdClient.GetAuthResponse(User, Password, Org)
+```
+
+For the token, you use:
+
+```go
+	err := vcdClient.SetToken(Org, govcd.AuthorizationHeader, Token)
+```
+
+The file `scripts/get_token.sh` provides a handy method of extracting the token (`x-vcloud-authorization` value) for future use.
+

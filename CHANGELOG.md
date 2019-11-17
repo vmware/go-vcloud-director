@@ -6,6 +6,14 @@
 * Added method VApp.AddNewVMWithStorageProfile that adds a VM with custom storage profile.
 * Added command `make static` to run staticcheck on all packages
 * Added `make static` to Travis regular checks
+* Added ability to connect to the vCD using an authorization token
+* Added method `VCDClient.SetToken`
+* Added method `VCDClient.GetAuthResponse`
+* Added script `scripts/get_token.sh`
+* Increment vCD API version used from 27.0 to 29.0
+    * Remove fields `VdcEnabled`, `VAppParentHREF`, `VAppParentName`, `HighestSupportedVersion`, `VmToolsVersion`, `TaskHREF`, `TaskStatusName`, `TaskDetails`, `TaskStatus` from `QueryResultVMRecordType`
+    * Add fields `ID, Type, ContainerName, ContainerID, OwnerName, Owner, NetworkHref, IpAddress, CatalogName, VmToolsStatus, GcStatus, AutoUndeployDate, AutoDeleteDate, AutoUndeployNotified, AutoDeleteNotified, Link, MetaData` to `QueryResultVMRecordType`, `DistributedInterface` to `NetworkConfiguration` and `RegenerateBiosUuid` to `VMGeneralParams`
+    * Change to pointers `DistributedRoutingEnabled` in `GatewayConfiguration` and `DistributedInterface` in `NetworkConfiguration`
 
 BUGS FIXED:
 
