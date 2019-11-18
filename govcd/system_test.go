@@ -8,7 +8,6 @@ package govcd
 
 import (
 	"fmt"
-	"time"
 
 	. "gopkg.in/check.v1"
 
@@ -256,15 +255,15 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 		Name:        edgeName,
 		Description: edgeName,
 		Configuration: &types.GatewayConfiguration{
-			HaEnabled:            false,
+			HaEnabled:            takeBoolPointer(false),
 			GatewayBackingConfig: "compact",
 			GatewayInterfaces: &types.GatewayInterfaces{
 				GatewayInterface: []*types.GatewayInterface{},
 			},
-			AdvancedNetworkingEnabled:  true,
-			DistributedRoutingEnabled:  false,
+			AdvancedNetworkingEnabled:  takeBoolPointer(true),
+			DistributedRoutingEnabled:  takeBoolPointer(false),
 			FipsModeEnabled:            takeBoolPointer(false),
-			UseDefaultRouteForDNSRelay: true,
+			UseDefaultRouteForDNSRelay: takeBoolPointer(true),
 		},
 	}
 
@@ -322,9 +321,32 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 	check.Assert(err, IsNil)
 	PrependToCleanupList(edge.EdgeGateway.Name, "edgegateway", orgName+"|"+vdcName, "Test_CreateDeleteEdgeGateway")
 
-	// validate edge GW stuff
+	// Patch known differences for comparison deep comparison
+	edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface[0].SubnetParticipation[1].IPAddress = "192.168.231.3"
+	edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface[0].Network.HREF =
+		edge.EdgeGateway.Configuration.GatewayInterfaces.GatewayInterface[0].Network.HREF
 
-	time.Sleep(3 * time.Minute)
+	// Sort gateway interfaces so that comparison is easier
+	edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface[0].SortBySubnetParticipationGateway()
+	edge.EdgeGateway.Configuration.GatewayInterfaces.GatewayInterface[0].SortBySubnetParticipationGateway()
+
+	check.Assert(edge.EdgeGateway.Configuration.GatewayInterfaces.GatewayInterface[0], DeepEquals,
+		edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface[0])
+	check.Assert(edge.EdgeGateway.Configuration.DistributedRoutingEnabled, NotNil)
+	check.Assert(*edge.EdgeGateway.Configuration.DistributedRoutingEnabled, Equals, false)
+
+	// FIPS mode is not being returned from API (neither when it is enabled, nor when disabled), but
+	// does allow to turn it on.
+	// check.Assert(edge.EdgeGateway.Configuration.FipsModeEnabled, NotNil)
+	// check.Assert(*edge.EdgeGateway.Configuration.FipsModeEnabled, Equals, true)
+
+	check.Assert(edge.EdgeGateway.Configuration.AdvancedNetworkingEnabled, NotNil)
+	check.Assert(*edge.EdgeGateway.Configuration.AdvancedNetworkingEnabled, Equals, true)
+	check.Assert(edge.EdgeGateway.Configuration.UseDefaultRouteForDNSRelay, NotNil)
+	check.Assert(*edge.EdgeGateway.Configuration.UseDefaultRouteForDNSRelay, Equals, true)
+	check.Assert(edge.EdgeGateway.Configuration.HaEnabled, NotNil)
+	check.Assert(*edge.EdgeGateway.Configuration.HaEnabled, Equals, false)
+
 }
 
 func takeBoolPointer(value bool) *bool {
