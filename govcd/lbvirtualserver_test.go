@@ -8,7 +8,6 @@ package govcd
 
 import (
 	"fmt"
-
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -99,6 +98,11 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	check.Assert(createdLbVirtualServer.ID, Equals, lbVirtualServerByName.ID)
 	check.Assert(lbVirtualServerById.ID, Equals, lbVirtualServerByName.ID)
 	check.Assert(lbVirtualServerById.Name, Equals, lbVirtualServerByName.Name)
+
+	// GetLbVirtualServers should return at least one vs which is our.
+	servers, err := edge.GetLbVirtualServers()
+	check.Assert(err, IsNil)
+	check.Assert(servers, Not(HasLen), 0)
 
 	// Test updating fields
 	// Update algorithm
