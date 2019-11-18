@@ -68,6 +68,11 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 	check.Assert(lbMonitor.Timeout, Equals, lbMonitorByID.Timeout)
 	check.Assert(lbMonitor.MaxRetries, Equals, lbMonitorByID.MaxRetries)
 
+	// GetLbServiceMonitors should return at least one vs which is ours.
+	lbMonitors, err := edge.GetLbServiceMonitors()
+	check.Assert(err, IsNil)
+	check.Assert(lbMonitors, Not(HasLen), 0)
+
 	// Test updating fields
 	// Update timeout
 	lbMonitorByID.Timeout = 35

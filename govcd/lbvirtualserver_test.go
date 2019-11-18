@@ -99,7 +99,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	check.Assert(lbVirtualServerById.ID, Equals, lbVirtualServerByName.ID)
 	check.Assert(lbVirtualServerById.Name, Equals, lbVirtualServerByName.Name)
 
-	// GetLbVirtualServers should return at least one vs which is our.
+	// GetLbVirtualServers should return at least one vs which is ours.
 	servers, err := edge.GetLbVirtualServers()
 	check.Assert(err, IsNil)
 	check.Assert(servers, Not(HasLen), 0)
