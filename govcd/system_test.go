@@ -281,22 +281,6 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 		}
 	}
 
-	// Set static IP assignment
-	subnetParticipation[0].IPAddress = "192.168.201.100"
-
-	// Set default gateway subnet
-	subnetParticipation[1].UseForDefaultRoute = true
-
-	// Inject an IP range (in UI it is called "sub-allocated pools" in separate tab)
-	subnetParticipation[0].IPRanges = &types.IPRanges{
-		IPRange: []*types.IPRange{
-			&types.IPRange{
-				StartAddress: "192.168.201.120",
-				EndAddress:   "192.168.201.130",
-			},
-		},
-	}
-
 	// Setup network interface config
 	networkConf := &types.GatewayInterface{
 		Name:          externalNetwork.Name,
@@ -310,6 +294,23 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 		},
 		UseForDefaultRoute:  true,
 		SubnetParticipation: subnetParticipation,
+	}
+
+	// Sort by subnet participation gateway so that below injected variables are not being added to
+	// incorrect network
+	networkConf.SortBySubnetParticipationGateway()
+	// Set static IP assignment
+	networkConf.SubnetParticipation[0].IPAddress = "192.168.201.100"
+	// Set default gateway subnet
+	networkConf.SubnetParticipation[1].UseForDefaultRoute = true
+	// Inject an IP range (in UI it is called "sub-allocated pools" in separate tab)
+	networkConf.SubnetParticipation[0].IPRanges = &types.IPRanges{
+		IPRange: []*types.IPRange{
+			&types.IPRange{
+				StartAddress: "192.168.201.120",
+				EndAddress:   "192.168.201.130",
+			},
+		},
 	}
 
 	edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface =
