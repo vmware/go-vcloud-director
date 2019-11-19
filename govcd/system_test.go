@@ -202,7 +202,8 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 		// -1 : creation error
 		check.Assert(edge.EdgeGateway.Status, Equals, 1)
 
-		check.Assert(edge.EdgeGateway.Configuration.AdvancedNetworkingEnabled, Equals, true)
+		check.Assert(edge.EdgeGateway.Configuration.AdvancedNetworkingEnabled, NotNil)
+		check.Assert(*edge.EdgeGateway.Configuration.AdvancedNetworkingEnabled, Equals, true)
 		util.Logger.Printf("Edge Gateway:\n%s\n", prettyEdgeGateway(*edge.EdgeGateway))
 
 		check.Assert(edge.HasDefaultGateway(), Equals, builtWithDefaultGateway)
@@ -347,6 +348,12 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 	check.Assert(edge.EdgeGateway.Configuration.HaEnabled, NotNil)
 	check.Assert(*edge.EdgeGateway.Configuration.HaEnabled, Equals, false)
 
+	// Remove created objects to free them up
+	err = edge.Delete(true, false)
+	check.Assert(err, IsNil)
+
+	err = extNet.DeleteWait()
+	check.Assert(err, IsNil)
 }
 
 func takeBoolPointer(value bool) *bool {
