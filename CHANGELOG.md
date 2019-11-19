@@ -15,7 +15,7 @@
     * Add fields `ID, Type, ContainerName, ContainerID, OwnerName, Owner, NetworkHref, IpAddress, CatalogName, VmToolsStatus, GcStatus, AutoUndeployDate, AutoDeleteDate, AutoUndeployNotified, AutoDeleteNotified, Link, MetaData` to `QueryResultVMRecordType`, `DistributedInterface` to `NetworkConfiguration` and `RegenerateBiosUuid` to `VMGeneralParams`
     * Change to pointers `DistributedRoutingEnabled` in `GatewayConfiguration` and
     `DistributedInterface` in `NetworkConfiguration`
-* Add news fields to type `GatewayConfiguration`: `FipsModeEnabled` -
+* Add new fields to type `GatewayConfiguration`: `FipsModeEnabled` -
   [#267](https://github.com/vmware/go-vcloud-director/pull/267)
 * Change bool to bool pointer for fields in type `GatewayConfiguration`: `HaEnabled`,
   `UseDefaultRouteForDNSRelay`, `AdvancedNetworkingEnabled` -
