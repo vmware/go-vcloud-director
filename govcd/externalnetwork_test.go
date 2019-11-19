@@ -9,6 +9,7 @@ package govcd
 import (
 	"fmt"
 	"net/url"
+	"sort"
 
 	. "gopkg.in/check.v1"
 
@@ -209,6 +210,13 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	check.Assert(newExternalNetwork.ExternalNetwork.Name, Equals, TestCreateExternalNetwork)
 
 	ipScope := newExternalNetwork.ExternalNetwork.Configuration.IPScopes.IPScope
+
+	// Sort returned IP scopes by gateway because API is not guaranteed to return it in the same
+	// order
+	sort.SliceStable(ipScope, func(i, j int) bool {
+		return ipScope[i].Gateway < ipScope[j].Gateway
+	})
+
 	check.Assert(len(ipScope), Equals, 2)
 	// Check IPScope 1
 	check.Assert(ipScope[0].Gateway, Equals, "192.168.201.1")
