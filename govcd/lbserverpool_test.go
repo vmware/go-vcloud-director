@@ -110,6 +110,11 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 
 	check.Assert(createdLbPool.Algorithm, Equals, lbPoolConfig.Algorithm)
 
+	// GetLbServerPools should return at least one pool which is ours.
+	pools, err := edge.GetLbServerPools()
+	check.Assert(err, IsNil)
+	check.Assert(pools, Not(HasLen), 0)
+
 	// Test updating fields
 	// Update algorithm
 	lbPoolByID.Algorithm = "ip-hash"
