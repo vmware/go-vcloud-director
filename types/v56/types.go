@@ -1575,7 +1575,8 @@ type GatewayConfiguration struct {
 	// GatewayBackingConfig defines configuration of the vShield edge VM for this gateway. One of:
 	// compact, full.
 	GatewayBackingConfig string `xml:"GatewayBackingConfig"`
-	// GatewayInterfaces holds configuration for
+	// GatewayInterfaces holds configuration for edge gateway interfaces, ip allocations, traffic
+	// rate limits and ip sub-allocations
 	GatewayInterfaces *GatewayInterfaces `xml:"GatewayInterfaces"`
 	// EdgeGatewayServiceConfiguration represents Gateway Features.
 	EdgeGatewayServiceConfiguration *GatewayFeatures `xml:"EdgeGatewayServiceConfiguration,omitempty"`
