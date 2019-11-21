@@ -2,6 +2,8 @@
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
+// Package types/v56 provider all types which are used by govcd package in order to perform API
+// requests and parse responses
 package types
 
 import (
