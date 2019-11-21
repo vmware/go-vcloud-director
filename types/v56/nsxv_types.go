@@ -258,14 +258,16 @@ type EdgeFirewallApplicationService struct {
 // Note. Only advanced edge gateways support IP sets
 type EdgeIpSet struct {
 	XMLName xml.Name `xml:"ipset"`
-	// ID holds ID of IPset which is formatted as 'f9daf2da-b4f9-4921-a2f4-d77a943a381c:ipset-4'
-	// where the first segment before colon is vDC id and the second one is IP set ID
+	// ID holds composite ID of IPset which is formatted as
+	// 'f9daf2da-b4f9-4921-a2f4-d77a943a381c:ipset-4' where the first segment before colon is vDC id
+	// and the second one is IP set ID
 	ID string `xml:"objectId,omitempty"`
-	// Name must be unique and is mandatory
+	// Name is mandatory and must be unique
 	Name string `xml:"name"`
-	// Description is an optional field
+	// Description - optional
 	Description string `xml:"description,omitempty"`
-	// IPAddresses is a mandatory field with comma separated values
+	// IPAddresses is a mandatory field with comma separated values. The API is known to re-order
+	// data after submiting and may shuffle components
 	// (eg: "192.168.200.1,192.168.200.1/24,192.168.200.1-192.168.200.24")
 	IPAddresses string `xml:"value"`
 	// InheritanceAllowed defines visibility at underlying scopes
