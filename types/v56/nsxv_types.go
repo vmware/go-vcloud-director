@@ -249,3 +249,34 @@ type EdgeFirewallApplicationService struct {
 	Port       string `xml:"port,omitempty"`
 	SourcePort string `xml:"sourcePort,omitempty"`
 }
+
+// EdgeIpSet defines a group of IP addresses that you can add as the source or destination in a
+// firewall rule or in DHCP relay configuration. The object itself has more fields in API response,
+// however vCD UI only uses the below mentioned. It looks as if the other fields are used in NSX
+// internally and are simply proxied back.
+//
+// Note. Only advanced edge gateways support IP sets
+type EdgeIpSet struct {
+	XMLName xml.Name `xml:"ipset"`
+	// ID holds ID of IPset which is formatted as 'f9daf2da-b4f9-4921-a2f4-d77a943a381c:ipset-4'
+	// where the first segment before colon is vDC id and the second one is IP set ID
+	ID string `xml:"objectId,omitempty"`
+	// Name must be unique and is mandatory
+	Name string `xml:"name"`
+	// Description is an optional field
+	Description string `xml:"description,omitempty"`
+	// IPAddresses is a mandatory field with comma separated values
+	// (eg: "192.168.200.1,192.168.200.1/24,192.168.200.1-192.168.200.24")
+	IPAddresses string `xml:"value"`
+	// InheritanceAllowed defines visibility at underlying scopes
+	InheritanceAllowed *bool `xml:"inheritanceAllowed"`
+	// Revision is a "version" of IP set configuration. When update is performed this version must
+	// be sent as it validates if no updates ocurred in between. When not the latest version is
+	// being sent during update one can expect similar error response from API: "The object ipset-27
+	// used in this operation has an older version 0 than the current system version 1. Refresh UI
+	// or fetch the latest copy of the object and retry operation."
+	Revision *int `xml:"revision"`
+}
+
+// EdgeIpSets is a slice of pointers to EdgeIpSet
+type EdgeIpSets []*EdgeIpSet
