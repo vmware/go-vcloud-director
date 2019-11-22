@@ -43,7 +43,7 @@ func (vcd *TestVCD) Test_NsxvIpSet(check *C) {
 		Description: "test-ipset-description",
 		// The below example demonstrates a problem when vCD API shuffles the below list and the
 		// answer becomes ordered differently then it was submitted. If submitted as it was
-		// returned, next time it shuffles it again.
+		// returned, next time it shuffles it again so one can not rely on order of list returned.
 		// IPAddresses: "192.168.200.1-192.168.200.24,192.168.200.1,192.168.200.1/24",
 		IPAddresses:        "192.168.200.1/24",
 		InheritanceAllowed: takeBoolPointer(false),
