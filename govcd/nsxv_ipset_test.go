@@ -11,6 +11,14 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+// Test_NsxvIpSet performes the following actions:
+// 1. Creates an IP set and checks it was created
+// 2. Tries to create duplicate name IP set and expects error
+// 3. Gets all IP sets and ensures there are some
+// 4. Validates GetByName, GetByID, GetByNameOrID
+// 5. Updates IP set and validates only one field is changed
+// 6. Deletes created IP set by ID
+// 7. Deletes created IP set by Name
 func (vcd *TestVCD) Test_NsxvIpSet(check *C) {
 
 	if vcd.config.VCD.Org == "" {
@@ -29,12 +37,14 @@ func (vcd *TestVCD) Test_NsxvIpSet(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 
+	// 1. Create
 	ipSetConfig := &types.EdgeIpSet{
 		Name:        "test-ipset",
 		Description: "test-ipset-description",
 		// The below example demonstrates a problem when vCD API shuffles the below list and the
-		// answer becomes ordered differently then it was submitted
-		// IPAddresses:        "192.168.200.1-192.168.200.24,192.168.200.1,192.168.200.1/24",
+		// answer becomes ordered differently then it was submitted. If submitted as it was
+		// returned, next time it shuffles it again.
+		// IPAddresses: "192.168.200.1-192.168.200.24,192.168.200.1,192.168.200.1/24",
 		IPAddresses:        "192.168.200.1/24",
 		InheritanceAllowed: takeBoolPointer(false),
 	}
@@ -42,18 +52,40 @@ func (vcd *TestVCD) Test_NsxvIpSet(check *C) {
 	createdIpSet, err := vdc.CreateNsxvIpSet(ipSetConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdIpSet.ID, Not(Equals), "") // Validate that ID was set
+
+	// Add to cleanup list
+	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name
+	AddToCleanupList(createdIpSet.Name, "ipSet", parentEntity, check.TestName())
+
 	// Check if the structure after creation is exactly the same, but with ID populated
 	ipSetConfig.ID = createdIpSet.ID
 	ipSetConfig.Revision = createdIpSet.Revision
 	createdIpSet.XMLName.Local = ""
 	check.Assert(createdIpSet, DeepEquals, ipSetConfig)
 
-	// Get all IP sets
+	// 2. Try to create another IP set with the same name and expect error
+	_, err = vdc.CreateNsxvIpSet(ipSetConfig)
+	check.Assert(err, ErrorMatches, ".*Another object with same name.* already exists in the current scope.*")
+
+	// 3. Get all IP sets
 	ipSets, err := vdc.GetAllNsxvIpSets()
 	check.Assert(err, IsNil)
 	check.Assert(len(ipSets) > 0, Equals, true)
 
-	// Update IP set field
+	// 4. Get by Name, Id, NameOrId and check that all results are deeply equal
+	ipSetByName, err := vdc.GetNsxvIpSetByName(createdIpSet.Name)
+	check.Assert(err, IsNil)
+	ipSetById, err := vdc.GetNsxvIpSetById(createdIpSet.ID)
+	check.Assert(err, IsNil)
+	ipSetByName2, err := vdc.GetNsxvIpSetByNameOrId(createdIpSet.Name)
+	check.Assert(err, IsNil)
+	ipSetById2, err := vdc.GetNsxvIpSetByNameOrId(createdIpSet.ID)
+	check.Assert(err, IsNil)
+	check.Assert(ipSetByName, DeepEquals, ipSetById)
+	check.Assert(ipSetByName, DeepEquals, ipSetByName2)
+	check.Assert(ipSetByName, DeepEquals, ipSetById2)
+
+	// 5. Update IP set field
 	createdIpSet.InheritanceAllowed = takeBoolPointer(true)
 	updatedIpSet, err := vcd.vdc.UpdateNsxvIpSet(createdIpSet)
 	check.Assert(err, IsNil)
@@ -64,7 +96,7 @@ func (vcd *TestVCD) Test_NsxvIpSet(check *C) {
 	createdIpSet.Revision = updatedIpSet.Revision
 	check.Assert(updatedIpSet, DeepEquals, createdIpSet)
 
-	// Delete created IP set
+	// 6. Delete created IP set by Id
 	err = vdc.DeleteNsxvIpSetById(createdIpSet.ID)
 	check.Assert(err, IsNil)
 
@@ -74,6 +106,14 @@ func (vcd *TestVCD) Test_NsxvIpSet(check *C) {
 
 	_, err = vdc.GetNsxvIpSetByName(createdIpSet.Name)
 	check.Assert(IsNotFound(err), Equals, true)
+
+	// 7. Create another IP set and try to delete by name
+	ipSet2, err := vdc.CreateNsxvIpSet(ipSetConfig)
+	check.Assert(err, IsNil)
+
+	err = vdc.DeleteNsxvIpSetByName(ipSet2.Name)
+	check.Assert(err, IsNil)
+
 }
 
 func takeBoolPointer(value bool) *bool {

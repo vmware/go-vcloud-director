@@ -120,6 +120,18 @@ func (vdc *Vdc) GetNsxvIpSetById(id string) (*types.EdgeIpSet, error) {
 	return nil, ErrorEntityNotFound
 }
 
+// GetNsxvIpSetByNameOrId uses the same identifier to search by name and by ID. Priority is to try
+// and find the IP set by ID. If it is not found - then a search by name is performed.
+func (vdc *Vdc) GetNsxvIpSetByNameOrId(identifier string) (*types.EdgeIpSet, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) { return vdc.GetNsxvIpSetByName(name) }
+	getById := func(id string, refresh bool) (interface{}, error) { return vdc.GetNsxvIpSetById(id) }
+	entity, err := getEntityByNameOrId(getByName, getById, identifier, true)
+	if entity == nil {
+		return nil, err
+	}
+	return entity.(*types.EdgeIpSet), err
+}
+
 // GetAllNsxvIpSets retrieves all IP sets and returns []*types.EdgeIpSet or an
 // error of type ErrorEntityNotFound if there are no IP sets
 func (vdc *Vdc) GetAllNsxvIpSets() ([]*types.EdgeIpSet, error) {
@@ -182,6 +194,22 @@ func (vdc *Vdc) DeleteNsxvIpSetById(id string) error {
 	return nil
 }
 
+// DeleteNsxvIpSetById deletes IP set by its name
+func (vdc *Vdc) DeleteNsxvIpSetByName(name string) error {
+	err := validateDeleteNsxvIpSet("", name)
+	if err != nil {
+		return err
+	}
+
+	// Get IP set by name
+	ipSet, err := vdc.GetNsxvIpSetByName(name)
+	if err != nil {
+		return err
+	}
+
+	return vdc.DeleteNsxvIpSetById(ipSet.ID)
+}
+
 func validateCreateNsxvIpSet(ipSetConfig *types.EdgeIpSet) error {
 
 	if ipSetConfig.Name == "" {
@@ -216,5 +244,5 @@ func validateGetNsxvIpSet(id, name string) error {
 }
 
 func validateDeleteNsxvIpSet(id, name string) error {
-	return validateGetNsxvIpSet(id, "")
+	return validateGetNsxvIpSet(id, name)
 }

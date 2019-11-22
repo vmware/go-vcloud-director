@@ -258,7 +258,7 @@ type EdgeFirewallApplicationService struct {
 // Note. Only advanced edge gateways support IP sets
 type EdgeIpSet struct {
 	XMLName xml.Name `xml:"ipset"`
-	// ID holds composite ID of IPset which is formatted as
+	// ID holds composite ID of IP set which is formatted as
 	// 'f9daf2da-b4f9-4921-a2f4-d77a943a381c:ipset-4' where the first segment before colon is vDC id
 	// and the second one is IP set ID
 	ID string `xml:"objectId,omitempty"`
@@ -267,17 +267,19 @@ type EdgeIpSet struct {
 	// Description - optional
 	Description string `xml:"description,omitempty"`
 	// IPAddresses is a mandatory field with comma separated values. The API is known to re-order
-	// data after submiting and may shuffle components
+	// data after submiting and may shuffle components even if re-submitted as it was return from
+	// API itself
 	// (eg: "192.168.200.1,192.168.200.1/24,192.168.200.1-192.168.200.24")
 	IPAddresses string `xml:"value"`
 	// InheritanceAllowed defines visibility at underlying scopes
 	InheritanceAllowed *bool `xml:"inheritanceAllowed"`
-	// Revision is a "version" of IP set configuration. When update is performed this version must
-	// be sent as it validates if no updates ocurred in between. When not the latest version is
-	// being sent during update one can expect similar error response from API: "The object ipset-27
-	// used in this operation has an older version 0 than the current system version 1. Refresh UI
-	// or fetch the latest copy of the object and retry operation."
-	Revision *int `xml:"revision"`
+	// Revision is a "version" of IP set configuration. During read current revision is being
+	// returned and when update is performed this latest version must be sent as it validates if no
+	// updates ocurred in between. When not the latest version is being sent during update one can
+	// expect similar error response from API: "The object ipset-27 used in this operation has an
+	// older version 0 than the current system version 1. Refresh UI or fetch the latest copy of the
+	// object and retry operation."
+	Revision *int `xml:"revision,omitempty"`
 }
 
 // EdgeIpSets is a slice of pointers to EdgeIpSet
