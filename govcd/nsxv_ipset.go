@@ -47,12 +47,21 @@ func (vdc *Vdc) CreateNsxvIpSet(ipSetConfig *types.EdgeIpSet) (*types.EdgeIpSet,
 }
 
 // UpdateNsxvIpSet updates all fields ipSetConfig therefore all of them must be set. ID is mandatory
-// to perform update
+// to perform update.
+// Because the API always requires a Revision to be sent - the update fetches latest revision number
+// automatically and embeds into the update structure.
 func (vdc *Vdc) UpdateNsxvIpSet(ipSetConfig *types.EdgeIpSet) (*types.EdgeIpSet, error) {
 	err := validateUpdateNsxvIpSet(ipSetConfig)
 	if err != nil {
 		return nil, err
 	}
+
+	// Inject latest Revision for this IP set so that API accepts change
+	currentIpSet, err := vdc.GetNsxvIpSetById(ipSetConfig.ID)
+	if err != nil {
+		return nil, fmt.Errorf("could not fetch current IP set: %s", err)
+	}
+	ipSetConfig.Revision = currentIpSet.Revision
 
 	httpPath, err := vdc.buildNsxvNetworkServiceEndpointURL(types.NsxvIpSetServicePath + "/" + ipSetConfig.ID)
 	if err != nil {
@@ -224,9 +233,6 @@ func validateCreateNsxvIpSet(ipSetConfig *types.EdgeIpSet) error {
 }
 
 func validateUpdateNsxvIpSet(ipSetConfig *types.EdgeIpSet) error {
-	if ipSetConfig.Revision == nil {
-		return fmt.Errorf("revision can not be empty during update operation")
-	}
 
 	if ipSetConfig.ID == "" {
 		return fmt.Errorf("IP set ID must be set for update")
