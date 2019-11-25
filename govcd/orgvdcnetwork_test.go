@@ -39,11 +39,26 @@ func (vcd *TestVCD) Test_NetRefresh(check *C) {
 
 }
 
-// Tests the creation of an Org VDC network connected to an Edge Gateway
-func (vcd *TestVCD) Test_CreateOrgVdcNetworkEGW(check *C) {
-	fmt.Printf("Running: %s\n", check.TestName())
-	networkName := TestCreateOrgVdcNetworkEGW
+func (vcd *TestVCD) Test_CreateOrgVdcNetworkRouted(check *C) {
+	vcd.testCreateOrgVdcNetworkRouted(check, "10.10.102", false)
+}
 
+func (vcd *TestVCD) Test_CreateOrgVdcNetworkRoutedSubInterface(check *C) {
+	vcd.testCreateOrgVdcNetworkRouted(check, "10.10.103", true)
+}
+
+// Tests the creation of an Org VDC network connected to an Edge Gateway
+func (vcd *TestVCD) testCreateOrgVdcNetworkRouted(check *C, ipSubnet string, subInterface bool) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	networkName := TestCreateOrgVdcNetworkRouted
+
+	gateway := ipSubnet + ".1"
+	startAddress := ipSubnet + ".2"
+	endAddress := ipSubnet + ".3"
+
+	if subInterface {
+		networkName += "-sub"
+	}
 	err := RemoveOrgVdcNetworkIfExists(*vcd.vdc, networkName)
 	if err != nil {
 		check.Skip(fmt.Sprintf("Error deleting network : %s", err))
@@ -58,26 +73,29 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkEGW(check *C) {
 		check.Skip(fmt.Sprintf("Edge Gateway %s not found", edgeGWName))
 	}
 
+	networkDescription := "Created by govcd tests"
 	var networkConfig = types.OrgVDCNetwork{
-		Xmlns: types.XMLNamespaceVCloud,
-		Name:  networkName,
-		// Description: "Created by govcd tests",
+		Xmlns:       types.XMLNamespaceVCloud,
+		Name:        networkName,
+		Description: networkDescription,
 		Configuration: &types.NetworkConfiguration{
 			FenceMode: types.FenceModeNAT,
 			IPScopes: &types.IPScopes{
 				IPScope: []*types.IPScope{&types.IPScope{
 					IsInherited: false,
-					Gateway:     "10.10.102.1",
+					Gateway:     gateway,
 					Netmask:     "255.255.255.0",
 					IPRanges: &types.IPRanges{
 						IPRange: []*types.IPRange{
 							&types.IPRange{
-								StartAddress: "10.10.102.2",
-								EndAddress:   "10.10.102.100"},
+								StartAddress: startAddress,
+								EndAddress:   endAddress,
+							},
 						},
 					},
 				},
-				}},
+				},
+			},
 			BackwardCompatibilityMode: true,
 		},
 		EdgeGateway: &types.Reference{
@@ -88,6 +106,9 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkEGW(check *C) {
 		},
 		IsShared: false,
 	}
+	if subInterface {
+		networkConfig.Configuration.SubInterface = &subInterface
+	}
 
 	LogNetwork(networkConfig)
 	err = vcd.vdc.CreateOrgVDCNetworkWait(&networkConfig)
@@ -95,10 +116,27 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkEGW(check *C) {
 		fmt.Printf("error creating Network <%s>: %s\n", networkName, err)
 	}
 	check.Assert(err, IsNil)
-	AddToCleanupList(TestCreateOrgVdcNetworkEGW,
+	AddToCleanupList(networkName,
 		"network",
 		vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name,
-		"Test_CreateOrgVdcNetworkEGW")
+		"Test_CreateOrgVdcNetworkRouted")
+	network, err := vcd.vdc.GetOrgVdcNetworkByName(networkName, true)
+	check.Assert(err, IsNil)
+	check.Assert(network, NotNil)
+	check.Assert(network.OrgVDCNetwork.Name, Equals, networkName)
+	check.Assert(network.OrgVDCNetwork.Description, Equals, networkDescription)
+	if subInterface {
+		check.Assert(network.OrgVDCNetwork.Configuration.SubInterface, NotNil)
+		check.Assert(*network.OrgVDCNetwork.Configuration.SubInterface, Equals, true)
+	}
+	fmt.Println(prettyNetworkConf(*network.OrgVDCNetwork))
+	err = edgeGateway.Refresh()
+	check.Assert(err, IsNil)
+	fmt.Println(prettyEdgeGateway(*edgeGateway.EdgeGateway))
+	task, err := network.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 // Tests the creation of an isolated Org VDC network

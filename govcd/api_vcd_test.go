@@ -48,7 +48,7 @@ const (
 	TestDeleteCatalogItem         = "TestDeleteCatalogItem"
 	TestCreateOrgVdc              = "TestCreateOrgVdc"
 	TestRefreshOrgVdc             = "TestRefreshOrgVdc"
-	TestCreateOrgVdcNetworkEGW    = "TestCreateOrgVdcNetworkEGW"
+	TestCreateOrgVdcNetworkRouted = "TestCreateOrgVdcNetworkRouted"
 	TestCreateOrgVdcNetworkIso    = "TestCreateOrgVdcNetworkIso"
 	TestCreateOrgVdcNetworkDirect = "TestCreateOrgVdcNetworkDirect"
 	TestUploadMedia               = "TestUploadMedia"
