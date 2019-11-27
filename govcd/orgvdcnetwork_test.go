@@ -158,6 +158,29 @@ func (vcd *TestVCD) testCreateOrgVdcNetworkRouted(check *C, ipSubnet string, sub
 	check.Assert(err, IsNil)
 }
 
+// Tests that we can get a network list, and a known network is retrieved from that list
+func (vcd *TestVCD) Test_GetNetworkList(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	networkName := vcd.config.VCD.Network.Net1
+	if networkName == "" {
+		check.Skip("no network name provided")
+	}
+	networks, err := vcd.vdc.GetNetworkList()
+	check.Assert(err, IsNil)
+	found := false
+	for _, net := range networks {
+		// Check that we don't get invalid fields
+		knownType := net.LinkType == 0 || net.LinkType == 1 || net.LinkType == 2
+		check.Assert(knownType, Equals, true)
+		// Check that the `ConnectTo` field is not empty
+		check.Assert(net.ConnectedTo, Not(Equals), "")
+		if net.Name == networkName {
+			found = true
+		}
+	}
+	check.Assert(found, Equals, true)
+}
+
 // Tests the creation of an isolated Org VDC network
 func (vcd *TestVCD) Test_CreateOrgVdcNetworkIso(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
