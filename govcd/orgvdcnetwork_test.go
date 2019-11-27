@@ -145,8 +145,13 @@ func (vcd *TestVCD) testCreateOrgVdcNetworkRouted(check *C, ipSubnet string, sub
 		check.Assert(network.OrgVDCNetwork.Configuration.SubInterface, NotNil)
 		check.Assert(*network.OrgVDCNetwork.Configuration.SubInterface, Equals, true)
 	}
-	err = edgeGateway.Refresh()
+
+	// Tests FindEdgeGatewayNameByNetwork
+	// Note: is should work without refreshing either VDC or edge gateway
+	connectedGw, err := vcd.vdc.FindEdgeGatewayNameByNetwork(networkName)
 	check.Assert(err, IsNil)
+	check.Assert(connectedGw, Equals, edgeGWName)
+
 	task, err := network.Delete()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
