@@ -40,21 +40,25 @@ func (vcd *TestVCD) Test_NetRefresh(check *C) {
 }
 
 func (vcd *TestVCD) Test_CreateOrgVdcNetworkRouted(check *C) {
-	vcd.testCreateOrgVdcNetworkRouted(check, "10.10.102", false)
+	vcd.testCreateOrgVdcNetworkRouted(check, "10.10.101", false, false)
 }
 
 func (vcd *TestVCD) Test_CreateOrgVdcNetworkRoutedSubInterface(check *C) {
-	vcd.testCreateOrgVdcNetworkRouted(check, "10.10.103", true)
+	vcd.testCreateOrgVdcNetworkRouted(check, "10.10.102", true, false)
+}
+
+func (vcd *TestVCD) Test_CreateOrgVdcNetworkRoutedDistributed(check *C) {
+	vcd.testCreateOrgVdcNetworkRouted(check, "10.10.103", false, true)
 }
 
 // Tests the creation of an Org VDC network connected to an Edge Gateway
-func (vcd *TestVCD) testCreateOrgVdcNetworkRouted(check *C, ipSubnet string, subInterface bool) {
+func (vcd *TestVCD) testCreateOrgVdcNetworkRouted(check *C, ipSubnet string, subInterface, distributed bool) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	networkName := TestCreateOrgVdcNetworkRouted
 
 	gateway := ipSubnet + ".1"
 	startAddress := ipSubnet + ".2"
-	endAddress := ipSubnet + ".3"
+	endAddress := ipSubnet + ".50"
 
 	if subInterface {
 		networkName += "-sub"
@@ -106,8 +110,20 @@ func (vcd *TestVCD) testCreateOrgVdcNetworkRouted(check *C, ipSubnet string, sub
 		},
 		IsShared: false,
 	}
+	if subInterface && distributed {
+		check.Skip("A network can't be at the same time distributed and subInterface")
+	}
 	if subInterface {
 		networkConfig.Configuration.SubInterface = &subInterface
+	}
+
+	if distributed {
+		distributedRoutingEnabled := edgeGateway.EdgeGateway.Configuration.DistributedRoutingEnabled
+		if distributedRoutingEnabled != nil && *distributedRoutingEnabled {
+			networkConfig.Configuration.DistributedInterface = &distributed
+		} else {
+			check.Skip(fmt.Sprintf("edge gateway %s doesn't have distributed routing enabled", edgeGWName))
+		}
 	}
 
 	LogNetwork(networkConfig)
@@ -129,10 +145,8 @@ func (vcd *TestVCD) testCreateOrgVdcNetworkRouted(check *C, ipSubnet string, sub
 		check.Assert(network.OrgVDCNetwork.Configuration.SubInterface, NotNil)
 		check.Assert(*network.OrgVDCNetwork.Configuration.SubInterface, Equals, true)
 	}
-	fmt.Println(prettyNetworkConf(*network.OrgVDCNetwork))
 	err = edgeGateway.Refresh()
 	check.Assert(err, IsNil)
-	fmt.Println(prettyEdgeGateway(*edgeGateway.EdgeGateway))
 	task, err := network.Delete()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
