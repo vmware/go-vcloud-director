@@ -357,10 +357,6 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 	check.Assert(err, IsNil)
 }
 
-func takeBoolPointer(value bool) *bool {
-	return &value
-}
-
 func (vcd *TestVCD) Test_FindBadlyNamedStorageProfile(check *C) {
 	reNotFound := `can't find any VDC Storage_profiles`
 	_, err := vcd.vdc.FindStorageProfileReference("name with spaces")
