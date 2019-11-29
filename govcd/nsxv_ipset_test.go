@@ -115,7 +115,3 @@ func (vcd *TestVCD) Test_NsxvIpSet(check *C) {
 	check.Assert(err, IsNil)
 
 }
-
-func takeBoolPointer(value bool) *bool {
-	return &value
-}
