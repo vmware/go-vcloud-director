@@ -494,7 +494,7 @@ func (vcd *TestVCD) infoCleanup(format string, args ...interface{}) {
 // Gets the two or three components of a "parent" string, as passed to AddToCleanupList
 // If the number of split strings is not 2 or 3 it return 3 empty strings
 // Example input parent: my-org|my-vdc|my-edge-gw, separator: |
-// Output output: first: my-org, second: my-vdc, third: my-edge-gw
+// Output : first: my-org, second: my-vdc, third: my-edge-gw
 func splitParent(parent string, separator string) (first, second, third string) {
 	strList := strings.Split(parent, separator)
 	if len(strList) < 2 || len(strList) > 3 {
@@ -510,20 +510,33 @@ func splitParent(parent string, separator string) (first, second, third string) 
 	return
 }
 
-func getOrgVdcEdgeByNames(vcd *TestVCD, orgName, vdcName, edgeName string) (*Org, *Vdc, *EdgeGateway, error) {
-	if orgName == "" || vdcName == "" || edgeName == "" {
-		return nil, nil, nil, fmt.Errorf("orgName, vdcName, edgeName cant be empty")
+func getOrgVdcByNames(vcd *TestVCD, orgName, vdcName string) (*Org, *Vdc, error) {
+	if orgName == "" || vdcName == "" {
+		return nil, nil, fmt.Errorf("orgName, vdcName cant be empty")
 	}
 
 	org, _ := vcd.client.GetOrgByName(orgName)
 	if org == nil {
 		vcd.infoCleanup("could not find org '%s'", orgName)
-		return nil, nil, nil, fmt.Errorf("can't find org")
+		return nil, nil, fmt.Errorf("can't find org")
 	}
 	vdc, err := org.GetVDCByName(vdcName, false)
 	if err != nil {
 		vcd.infoCleanup("could not find vdc '%s'", vdcName)
-		return nil, nil, nil, fmt.Errorf("can't find org")
+		return nil, nil, fmt.Errorf("can't find vdc")
+	}
+
+	return org, vdc, nil
+}
+
+func getOrgVdcEdgeByNames(vcd *TestVCD, orgName, vdcName, edgeName string) (*Org, *Vdc, *EdgeGateway, error) {
+	if orgName == "" || vdcName == "" || edgeName == "" {
+		return nil, nil, nil, fmt.Errorf("orgName, vdcName, edgeName cant be empty")
+	}
+
+	org, vdc, err := getOrgVdcByNames(vcd, orgName, vdcName)
+	if err != nil {
+		return nil, nil, nil, err
 	}
 
 	edge, err := vdc.GetEdgeGatewayByName(edgeName, false)
@@ -1048,6 +1061,30 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		err = edge.DeleteNsxvFirewallRuleById(entity.Name)
+		if IsNotFound(err) {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+	case "ipSet":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No parent specified '%s'\n", entity.Name)
+			return
+		}
+
+		orgName, vdcName, _ := splitParent(entity.Parent, "|")
+
+		_, vdc, err := getOrgVdcByNames(vcd, orgName, vdcName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		err = vdc.DeleteNsxvIpSetByName(entity.Name)
 		if IsNotFound(err) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return

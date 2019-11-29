@@ -43,6 +43,10 @@ testnetwork:
 testlb:
 	cd govcd && go test -tags "lb" -timeout 15m -check.vv .
 
+# tests only NSXV related features
+testnsxv:
+	cd govcd && go test -tags "nsxv" -timeout 15m -check.vv .
+
 # vet runs the Go source code static analysis tool `vet` to find
 # any common errors.
 vet:
