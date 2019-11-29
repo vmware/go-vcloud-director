@@ -39,11 +39,30 @@ func (vcd *TestVCD) Test_NetRefresh(check *C) {
 
 }
 
-// Tests the creation of an Org VDC network connected to an Edge Gateway
-func (vcd *TestVCD) Test_CreateOrgVdcNetworkEGW(check *C) {
-	fmt.Printf("Running: %s\n", check.TestName())
-	networkName := TestCreateOrgVdcNetworkEGW
+func (vcd *TestVCD) Test_CreateOrgVdcNetworkRouted(check *C) {
+	vcd.testCreateOrgVdcNetworkRouted(check, "10.10.101", false, false)
+}
 
+func (vcd *TestVCD) Test_CreateOrgVdcNetworkRoutedSubInterface(check *C) {
+	vcd.testCreateOrgVdcNetworkRouted(check, "10.10.102", true, false)
+}
+
+func (vcd *TestVCD) Test_CreateOrgVdcNetworkRoutedDistributed(check *C) {
+	vcd.testCreateOrgVdcNetworkRouted(check, "10.10.103", false, true)
+}
+
+// Tests the creation of an Org VDC network connected to an Edge Gateway
+func (vcd *TestVCD) testCreateOrgVdcNetworkRouted(check *C, ipSubnet string, subInterface, distributed bool) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	networkName := TestCreateOrgVdcNetworkRouted
+
+	gateway := ipSubnet + ".1"
+	startAddress := ipSubnet + ".2"
+	endAddress := ipSubnet + ".50"
+
+	if subInterface {
+		networkName += "-sub"
+	}
 	err := RemoveOrgVdcNetworkIfExists(*vcd.vdc, networkName)
 	if err != nil {
 		check.Skip(fmt.Sprintf("Error deleting network : %s", err))
@@ -58,26 +77,29 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkEGW(check *C) {
 		check.Skip(fmt.Sprintf("Edge Gateway %s not found", edgeGWName))
 	}
 
+	networkDescription := "Created by govcd tests"
 	var networkConfig = types.OrgVDCNetwork{
-		Xmlns: types.XMLNamespaceVCloud,
-		Name:  networkName,
-		// Description: "Created by govcd tests",
+		Xmlns:       types.XMLNamespaceVCloud,
+		Name:        networkName,
+		Description: networkDescription,
 		Configuration: &types.NetworkConfiguration{
 			FenceMode: types.FenceModeNAT,
 			IPScopes: &types.IPScopes{
 				IPScope: []*types.IPScope{&types.IPScope{
 					IsInherited: false,
-					Gateway:     "10.10.102.1",
+					Gateway:     gateway,
 					Netmask:     "255.255.255.0",
 					IPRanges: &types.IPRanges{
 						IPRange: []*types.IPRange{
 							&types.IPRange{
-								StartAddress: "10.10.102.2",
-								EndAddress:   "10.10.102.100"},
+								StartAddress: startAddress,
+								EndAddress:   endAddress,
+							},
 						},
 					},
 				},
-				}},
+				},
+			},
 			BackwardCompatibilityMode: true,
 		},
 		EdgeGateway: &types.Reference{
@@ -88,6 +110,21 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkEGW(check *C) {
 		},
 		IsShared: false,
 	}
+	if subInterface && distributed {
+		check.Skip("A network can't be at the same time distributed and subInterface")
+	}
+	if subInterface {
+		networkConfig.Configuration.SubInterface = &subInterface
+	}
+
+	if distributed {
+		distributedRoutingEnabled := edgeGateway.EdgeGateway.Configuration.DistributedRoutingEnabled
+		if distributedRoutingEnabled != nil && *distributedRoutingEnabled {
+			networkConfig.Configuration.DistributedInterface = &distributed
+		} else {
+			check.Skip(fmt.Sprintf("edge gateway %s doesn't have distributed routing enabled", edgeGWName))
+		}
+	}
 
 	LogNetwork(networkConfig)
 	err = vcd.vdc.CreateOrgVDCNetworkWait(&networkConfig)
@@ -95,10 +132,53 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkEGW(check *C) {
 		fmt.Printf("error creating Network <%s>: %s\n", networkName, err)
 	}
 	check.Assert(err, IsNil)
-	AddToCleanupList(TestCreateOrgVdcNetworkEGW,
+	AddToCleanupList(networkName,
 		"network",
 		vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name,
-		"Test_CreateOrgVdcNetworkEGW")
+		"Test_CreateOrgVdcNetworkRouted")
+	network, err := vcd.vdc.GetOrgVdcNetworkByName(networkName, true)
+	check.Assert(err, IsNil)
+	check.Assert(network, NotNil)
+	check.Assert(network.OrgVDCNetwork.Name, Equals, networkName)
+	check.Assert(network.OrgVDCNetwork.Description, Equals, networkDescription)
+	if subInterface {
+		check.Assert(network.OrgVDCNetwork.Configuration.SubInterface, NotNil)
+		check.Assert(*network.OrgVDCNetwork.Configuration.SubInterface, Equals, true)
+	}
+
+	// Tests FindEdgeGatewayNameByNetwork
+	// Note: is should work without refreshing either VDC or edge gateway
+	connectedGw, err := vcd.vdc.FindEdgeGatewayNameByNetwork(networkName)
+	check.Assert(err, IsNil)
+	check.Assert(connectedGw, Equals, edgeGWName)
+
+	task, err := network.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+}
+
+// Tests that we can get a network list, and a known network is retrieved from that list
+func (vcd *TestVCD) Test_GetNetworkList(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	networkName := vcd.config.VCD.Network.Net1
+	if networkName == "" {
+		check.Skip("no network name provided")
+	}
+	networks, err := vcd.vdc.GetNetworkList()
+	check.Assert(err, IsNil)
+	found := false
+	for _, net := range networks {
+		// Check that we don't get invalid fields
+		knownType := net.LinkType == 0 || net.LinkType == 1 || net.LinkType == 2
+		check.Assert(knownType, Equals, true)
+		// Check that the `ConnectTo` field is not empty
+		check.Assert(net.ConnectedTo, Not(Equals), "")
+		if net.Name == networkName {
+			found = true
+		}
+	}
+	check.Assert(found, Equals, true)
 }
 
 // Tests the creation of an isolated Org VDC network
