@@ -130,8 +130,6 @@ func (vcd *TestVCD) Test_AddMetadataOnVm(check *C) {
 		check.Skip("skipping test because no VM is found")
 	}
 
-	fmt.Printf("Running: %s\n", check.TestName())
-
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
 
@@ -163,8 +161,6 @@ func (vcd *TestVCD) Test_DeleteMetadataOnVm(check *C) {
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
-
-	fmt.Printf("Running: %s\n", check.TestName())
 
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType

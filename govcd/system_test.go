@@ -202,7 +202,8 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 		// -1 : creation error
 		check.Assert(edge.EdgeGateway.Status, Equals, 1)
 
-		check.Assert(edge.EdgeGateway.Configuration.AdvancedNetworkingEnabled, Equals, true)
+		check.Assert(edge.EdgeGateway.Configuration.AdvancedNetworkingEnabled, NotNil)
+		check.Assert(*edge.EdgeGateway.Configuration.AdvancedNetworkingEnabled, Equals, true)
 		util.Logger.Printf("Edge Gateway:\n%s\n", prettyEdgeGateway(*edge.EdgeGateway))
 
 		check.Assert(edge.HasDefaultGateway(), Equals, builtWithDefaultGateway)
@@ -221,9 +222,143 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 
 		// Once deleted, look for the edge gateway again. It should return an error
 		newEdge, err := vcd.vdc.GetEdgeGatewayByName(egc.Name, true)
-		check.Assert(err, NotNil)
+		check.Assert(err, Equals, ErrorEntityNotFound)
 		check.Assert(newEdge, IsNil)
 	}
+}
+
+// Test_CreateDeleteEdgeGatewayAdvanced sets up external network which has multiple IP scopes and IP
+// ranges defined. This helps to test edge gateway capabilities for multiple networks and scopes
+func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
+	// Setup external network with multiple IP scopes and multiple ranges
+	dnsSuffix := "some.net"
+	skippingReason, externalNetwork, task, err := vcd.testCreateExternalNetwork(check.TestName(), check.TestName(), dnsSuffix)
+	if skippingReason != "" {
+		check.Skip(skippingReason)
+	}
+
+	check.Assert(err, IsNil)
+	check.Assert(task.Task, Not(Equals), types.Task{})
+
+	AddToCleanupList(externalNetwork.Name, "externalNetwork", "", check.TestName())
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	// "Refresh" external network to fill in all fields (like HREF)
+	extNet, err := vcd.client.GetExternalNetworkByName(externalNetwork.Name)
+	check.Assert(err, IsNil)
+	externalNetwork = extNet.ExternalNetwork
+
+	edgeName := "Test-Multi-Scope-Gw"
+	// Initialize edge gateway structure
+	edgeGatewayConfig := &types.EdgeGateway{
+		Xmlns:       types.XMLNamespaceVCloud,
+		Name:        edgeName,
+		Description: edgeName,
+		Configuration: &types.GatewayConfiguration{
+			HaEnabled:            takeBoolPointer(false),
+			GatewayBackingConfig: "compact",
+			GatewayInterfaces: &types.GatewayInterfaces{
+				GatewayInterface: []*types.GatewayInterface{},
+			},
+			AdvancedNetworkingEnabled:  takeBoolPointer(true),
+			DistributedRoutingEnabled:  takeBoolPointer(false),
+			FipsModeEnabled:            takeBoolPointer(false),
+			UseDefaultRouteForDNSRelay: takeBoolPointer(true),
+		},
+	}
+
+	// Create subnet participation structure
+	subnetParticipation := make([]*types.SubnetParticipation, len(externalNetwork.Configuration.IPScopes.IPScope))
+	// Loop over IP scopes
+	for ipScopeIndex, ipScope := range externalNetwork.Configuration.IPScopes.IPScope {
+		subnetParticipation[ipScopeIndex] = &types.SubnetParticipation{
+			Gateway: ipScope.Gateway,
+			Netmask: ipScope.Netmask,
+			// IPAddress: string,			// Can be set to specify IP address of edge gateway
+			// UseForDefaultRoute: bool,	// Can be specified to use subnet as default gateway
+			IPRanges: &types.IPRanges{},
+		}
+	}
+
+	// Setup network interface config
+	networkConf := &types.GatewayInterface{
+		Name:          externalNetwork.Name,
+		DisplayName:   externalNetwork.Name,
+		InterfaceType: "uplink",
+		Network: &types.Reference{
+			HREF: externalNetwork.HREF,
+			ID:   externalNetwork.ID,
+			Type: "application/vnd.vmware.admin.network+xml",
+			Name: externalNetwork.Name,
+		},
+		UseForDefaultRoute:  true,
+		SubnetParticipation: subnetParticipation,
+	}
+
+	// Sort by subnet participation gateway so that below injected variables are not being added to
+	// incorrect network
+	networkConf.SortBySubnetParticipationGateway()
+	// Set static IP assignment
+	networkConf.SubnetParticipation[0].IPAddress = "192.168.201.100"
+	// Set default gateway subnet
+	networkConf.SubnetParticipation[1].UseForDefaultRoute = true
+	// Inject an IP range (in UI it is called "sub-allocated pools" in separate tab)
+	networkConf.SubnetParticipation[0].IPRanges = &types.IPRanges{
+		IPRange: []*types.IPRange{
+			&types.IPRange{
+				StartAddress: "192.168.201.120",
+				EndAddress:   "192.168.201.130",
+			},
+		},
+	}
+
+	edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface =
+		append(edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface, networkConf)
+
+	orgName := vcd.config.VCD.Org
+	vdcName := vcd.config.VCD.Vdc
+
+	edge, err := CreateAndConfigureEdgeGateway(vcd.client, orgName, vdcName, edgeName, edgeGatewayConfig)
+	check.Assert(err, IsNil)
+	PrependToCleanupList(edge.EdgeGateway.Name, "edgegateway", orgName+"|"+vdcName, "Test_CreateDeleteEdgeGateway")
+
+	// Patch known differences for comparison deep comparison
+	edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface[0].SubnetParticipation[1].IPAddress = "192.168.231.3"
+	edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface[0].Network.HREF =
+		edge.EdgeGateway.Configuration.GatewayInterfaces.GatewayInterface[0].Network.HREF
+
+	// Sort gateway interfaces so that comparison is easier
+	edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface[0].SortBySubnetParticipationGateway()
+	edge.EdgeGateway.Configuration.GatewayInterfaces.GatewayInterface[0].SortBySubnetParticipationGateway()
+
+	check.Assert(edge.EdgeGateway.Configuration.GatewayInterfaces.GatewayInterface[0], DeepEquals,
+		edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface[0])
+	check.Assert(edge.EdgeGateway.Configuration.DistributedRoutingEnabled, NotNil)
+	check.Assert(*edge.EdgeGateway.Configuration.DistributedRoutingEnabled, Equals, false)
+
+	// FIPS mode is not being returned from API (neither when it is enabled, nor when disabled), but
+	// does allow to turn it on.
+	// check.Assert(edge.EdgeGateway.Configuration.FipsModeEnabled, NotNil)
+	// check.Assert(*edge.EdgeGateway.Configuration.FipsModeEnabled, Equals, true)
+
+	check.Assert(edge.EdgeGateway.Configuration.AdvancedNetworkingEnabled, NotNil)
+	check.Assert(*edge.EdgeGateway.Configuration.AdvancedNetworkingEnabled, Equals, true)
+	check.Assert(edge.EdgeGateway.Configuration.UseDefaultRouteForDNSRelay, NotNil)
+	check.Assert(*edge.EdgeGateway.Configuration.UseDefaultRouteForDNSRelay, Equals, true)
+	check.Assert(edge.EdgeGateway.Configuration.HaEnabled, NotNil)
+	check.Assert(*edge.EdgeGateway.Configuration.HaEnabled, Equals, false)
+
+	// Remove created objects to free them up
+	err = edge.Delete(true, false)
+	check.Assert(err, IsNil)
+
+	err = extNet.DeleteWait()
+	check.Assert(err, IsNil)
+}
+
+func takeBoolPointer(value bool) *bool {
+	return &value
 }
 
 func (vcd *TestVCD) Test_FindBadlyNamedStorageProfile(check *C) {
