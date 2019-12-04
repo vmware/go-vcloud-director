@@ -1004,6 +1004,28 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
+	// Edge gateway DHCP relay settings cannot actually be "deleted". They can only be unset and this is
+	// what this cleanup case does.
+	case "dhcpRelayConfig":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No parent specified '%s'\n", entity.Name)
+			return
+		}
+
+		orgName, vdcName, edgeName := splitParent(entity.Parent, "|")
+
+		_, _, edge, err := getOrgVdcEdgeByNames(vcd, orgName, vdcName, edgeName)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		err = edge.ResetDhcpRelay()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
 
 	case "vdcMetaData":
 		if entity.Parent == "" {

@@ -113,5 +113,17 @@ func (vcd *TestVCD) Test_NsxvIpSet(check *C) {
 
 	err = vdc.DeleteNsxvIpSetByName(ipSet2.Name)
 	check.Assert(err, IsNil)
+}
 
+// testCreateIpSet creates an IP set with given name and returns it which is useful in other tests
+// when an IP set is needed to validate inputs.
+func testCreateIpSet(name string, vdc *Vdc) (*types.EdgeIpSet, error) {
+	ipSetConfig := &types.EdgeIpSet{
+		Name:               name,
+		Description:        "test-ipset-description",
+		IPAddresses:        "192.168.200.1/24",
+		InheritanceAllowed: takeBoolPointer(true),
+	}
+
+	return vdc.CreateNsxvIpSet(ipSetConfig)
 }
