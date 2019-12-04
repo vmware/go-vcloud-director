@@ -21,54 +21,6 @@ func init() {
 	testingTags["vm"] = "vm_test.go"
 }
 
-func (vcd *TestVCD) findFirstVm(vapp VApp) (types.VM, string) {
-	for _, vm := range vapp.VApp.Children.VM {
-		if vm.Name != "" {
-			return *vm, vm.Name
-		}
-	}
-	return types.VM{}, ""
-}
-
-func (vcd *TestVCD) findFirstVapp() VApp {
-	client := vcd.client
-	config := vcd.config
-	org, err := client.GetOrgByName(config.VCD.Org)
-	if err != nil {
-		fmt.Println(err)
-		return VApp{}
-	}
-	vdc, err := org.GetVDCByName(config.VCD.Vdc, false)
-	if err != nil {
-		fmt.Println(err)
-		return VApp{}
-	}
-	wantedVapp := vcd.vapp.VApp.Name
-	vappName := ""
-	for _, res := range vdc.Vdc.ResourceEntities {
-		for _, item := range res.ResourceEntity {
-			// Finding a named vApp, if it was defined in config
-			if wantedVapp != "" {
-				if item.Name == wantedVapp {
-					vappName = item.Name
-					break
-				}
-			} else {
-				// Otherwise, we get the first vApp from the vDC list
-				if item.Type == "application/vnd.vmware.vcloud.vApp+xml" {
-					vappName = item.Name
-					break
-				}
-			}
-		}
-	}
-	if wantedVapp == "" {
-		return VApp{}
-	}
-	vapp, _ := vdc.GetVAppByName(vappName, false)
-	return *vapp
-}
-
 // Ensure vApp is suitable for VM test
 // Some VM tests may fail if vApp is not powered on, so VM tests can call this function to ensure the vApp is suitable for VM tests
 func (vcd *TestVCD) ensureVappIsSuitableForVMTest(vapp VApp) error {
