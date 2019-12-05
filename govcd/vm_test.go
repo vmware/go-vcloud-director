@@ -1011,7 +1011,7 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
 
-	disk, err := vm.GetInternalDiskId(diskId, true)
+	disk, err := vm.GetInternalDiskById(diskId, true)
 	check.Assert(err, IsNil)
 
 	check.Assert(disk.StorageProfile.HREF, Equals, storageProfile.HREF)
@@ -1072,7 +1072,7 @@ func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
 	err = vm.DeleteInternalDiskById(diskId)
 	check.Assert(err, IsNil)
 
-	disk, err := vm.GetInternalDiskId(diskId, true)
+	disk, err := vm.GetInternalDiskById(diskId, true)
 	check.Assert(err, Equals, ErrorEntityNotFound)
 	check.Assert(disk, IsNil)
 }
