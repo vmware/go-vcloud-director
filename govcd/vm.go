@@ -856,10 +856,6 @@ func (vm *VM) SetGuestCustomizationSection(guestCustomizationSection *types.Gues
 // Returns new disk ID and error.
 // Runs synchronously, VM is ready for another operation after this function returns.
 func (vm *VM) AddInternalDisk(diskData *types.DiskSettings) (string, error) {
-	if vm.VM.HREF == "" {
-		return "", fmt.Errorf("cannot add internal disks - VM HREF is unset")
-	}
-
 	err := vm.Refresh()
 	if err != nil {
 		return "", fmt.Errorf("error refresing vm: %s", err)
@@ -930,10 +926,6 @@ func (vm *VM) validateInternalDiskInput(diskData *types.DiskSettings) error {
 // GetInternalDiskId returns a valid *types.DiskSettings if it exists.
 // If it doesn't, returns nil and ErrorEntityNotFound or other err.
 func (vm *VM) GetInternalDiskId(diskId string, refresh bool) (*types.DiskSettings, error) {
-	if vm.VM.HREF == "" {
-		return nil, fmt.Errorf("cannot get internal disk - VM HREF is unset")
-	}
-
 	if refresh {
 		err := vm.Refresh()
 		if err != nil {
@@ -962,10 +954,6 @@ func (vm *VM) GetInternalDiskId(diskId string, refresh bool) (*types.DiskSetting
 // DeleteInternalDiskById delete disk using provided disk ID.
 // Runs synchronously, VM is ready for another operation after this function returns.
 func (vm *VM) DeleteInternalDiskById(diskId string) error {
-	if vm.VM.HREF == "" {
-		return fmt.Errorf("cannot delete internal disks - VM HREF is unset")
-	}
-
 	err := vm.Refresh()
 	if err != nil {
 		return fmt.Errorf("error refresing vm: %s", err)
