@@ -892,31 +892,31 @@ func (vm *VM) AddInternalDisk(diskData *types.DiskSettings) (string, error) {
 
 func (vm *VM) validateInternalDiskInput(diskData *types.DiskSettings) error {
 	if diskData.AdapterType == "" {
-		fmt.Errorf("disk settings missing required field: adapter type")
+		return fmt.Errorf("disk settings missing required field: adapter type")
 	}
 
 	if diskData.BusNumber < 0 {
-		fmt.Errorf("disk settings bus number has to be 0 or higher")
+		return fmt.Errorf("disk settings bus number has to be 0 or higher")
 	}
 
 	if diskData.UnitNumber < 0 {
-		fmt.Errorf("disk settings unit number has to be 0 or higher")
+		return fmt.Errorf("disk settings unit number has to be 0 or higher")
 	}
 
 	if diskData.SizeMb < int64(0) {
-		fmt.Errorf("disk settings size MB has to be 0 or higher")
+		return fmt.Errorf("disk settings size MB has to be 0 or higher")
 	}
 
 	if diskData.Iops != nil && *diskData.Iops < int64(0) {
-		fmt.Errorf("disk settings iops has to be 0 or higher")
+		return fmt.Errorf("disk settings iops has to be 0 or higher")
 	}
 
 	if diskData.ThinProvisioned != nil {
-		fmt.Errorf("disk settings missing required field: thin provisioned")
+		return fmt.Errorf("disk settings missing required field: thin provisioned")
 	}
 
 	if diskData.StorageProfile != nil {
-		fmt.Errorf("disk settings missing required field: storage profile")
+		return fmt.Errorf("disk settings missing required field: storage profile")
 	}
 
 	return nil
