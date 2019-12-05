@@ -929,9 +929,16 @@ func (vm *VM) validateInternalDiskInput(diskData *types.DiskSettings) error {
 
 // GetInternalDiskId returns a valid *types.DiskSettings if it exists.
 // If it doesn't, returns nil and ErrorEntityNotFound or other err.
-func (vm *VM) GetInternalDiskId(diskId string) (*types.DiskSettings, error) {
+func (vm *VM) GetInternalDiskId(diskId string, refresh bool) (*types.DiskSettings, error) {
 	if vm.VM.HREF == "" {
 		return nil, fmt.Errorf("cannot get internal disk - VM HREF is unset")
+	}
+
+	if refresh {
+		err := vm.Refresh()
+		if err != nil {
+			return nil, fmt.Errorf("error refresing vm %s: %s", vm.VM.Name, err)
+		}
 	}
 
 	if diskId == "" {
