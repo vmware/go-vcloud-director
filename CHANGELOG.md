@@ -28,7 +28,7 @@
 * Added IP set handling functions `CreateNsxvIpSet`, `UpdateNsxvIpSet`, `GetNsxvIpSetByName`,
   `GetNsxvIpSetById`, `GetNsxvIpSetByNameOrId`, `GetAllNsxvIpSets`, `DeleteNsxvIpSetById`,
   `DeleteNsxvIpSetByName` [#269](https://github.com/vmware/go-vcloud-director/pull/269)
-* Added `UpdateDhcpRelay`, `GetDhcpRelay` and `ResetDhcpRelay()` methods for Edge Gatway DHCP relay
+* Added `UpdateDhcpRelay`, `GetDhcpRelay` and `ResetDhcpRelay` methods for Edge Gatway DHCP relay
   management [#271](https://github.com/vmware/go-vcloud-director/pull/271)
 
 BUGS FIXED:
