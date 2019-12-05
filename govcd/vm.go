@@ -911,20 +911,20 @@ func (vm *VM) validateInternalDiskInput(diskData *types.DiskSettings) error {
 		return fmt.Errorf("disk settings iops has to be 0 or higher")
 	}
 
-	if diskData.ThinProvisioned != nil {
+	if diskData.ThinProvisioned == nil {
 		return fmt.Errorf("disk settings missing required field: thin provisioned")
 	}
 
-	if diskData.StorageProfile != nil {
+	if diskData.StorageProfile == nil {
 		return fmt.Errorf("disk settings missing required field: storage profile")
 	}
 
 	return nil
 }
 
-// GetInternalDisk returns a valid *types.DiskSettings if it exists.
+// GetInternalDiskId returns a valid *types.DiskSettings if it exists.
 // If it doesn't, returns nil and ErrorEntityNotFound or other err.
-func (vm *VM) GetInternalDisk(diskId string) (*types.DiskSettings, error) {
+func (vm *VM) GetInternalDiskId(diskId string) (*types.DiskSettings, error) {
 	if vm.VM.HREF == "" {
 		return nil, fmt.Errorf("cannot get internal disk - VM HREF is unset")
 	}
@@ -935,7 +935,7 @@ func (vm *VM) GetInternalDisk(diskId string) (*types.DiskSettings, error) {
 
 	if vm.VM.VmSpecSection.DiskSection == nil || vm.VM.VmSpecSection.DiskSection.DiskSettings == nil ||
 		len(vm.VM.VmSpecSection.DiskSection.DiskSettings) == 0 {
-		return nil, fmt.Errorf("cannot get internal disk - VM don't have internal disks")
+		return nil, fmt.Errorf("cannot get internal disk - VM doesn't have internal disks")
 	}
 
 	for _, diskSetting := range vm.VM.VmSpecSection.DiskSection.DiskSettings {
@@ -947,9 +947,9 @@ func (vm *VM) GetInternalDisk(diskId string) (*types.DiskSettings, error) {
 	return nil, ErrorEntityNotFound
 }
 
-// DeleteInternalDisk delete disk using provided disk ID.
+// DeleteInternalDiskById delete disk using provided disk ID.
 // Runs synchronously, VM is ready for another operation after this function returns.
-func (vm *VM) DeleteInternalDisk(diskId string) error {
+func (vm *VM) DeleteInternalDiskById(diskId string) error {
 	if vm.VM.HREF == "" {
 		return fmt.Errorf("cannot delete internal disks - VM HREF is unset")
 	}
@@ -967,7 +967,7 @@ func (vm *VM) DeleteInternalDisk(diskId string) error {
 	}
 
 	if diskPlacement == -1 {
-		return fmt.Errorf("cannot find VM internal disk with Id: %s", diskId)
+		return ErrorEntityNotFound
 	}
 
 	// remove disk in slice

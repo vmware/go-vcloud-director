@@ -1367,7 +1367,7 @@ type VM struct {
 	ProductSection *ProductSection `xml:"ProductSection,omitempty"`
 }
 
-// VM represents a virtual machine only with Disk setting update part
+// VMDiskChange represents a virtual machine only with Disk setting update part
 type VMDiskChange struct {
 	// Attributes
 	XMLName xml.Name `xml:"Vm"`
@@ -1454,6 +1454,7 @@ type MemoryResourceMb struct {
 	Shares      *int   `xml:"Shares,omitempty"`      // Custom priority for the resource. This is a read-only, unless the share level is CUSTOM.
 }
 
+// HardwareVersion from VM/VmSpecSection struct
 type HardwareVersion struct {
 	HREF  string `xml:"href,attr"`
 	Type  string `xml:"type,attr,omitempty"`
