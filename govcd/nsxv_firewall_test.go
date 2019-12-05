@@ -11,16 +11,11 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_NsxvFirewallRule(check *C) {
-	if vcd.config.VCD.EdgeGateway == "" {
-		check.Skip("Skipping test because no edge gateway given")
-	}
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
-	check.Assert(err, IsNil)
-	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
-
-	firewallRule := &types.EdgeFirewallRule{
-		Name: "test-firewall",
+// Test_NsxvFirewallRuleGatewayInterfaces tests firewall rule creation based on vNics (gateway
+// interfaces in UI)
+func (vcd *TestVCD) Test_NsxvFirewallRuleGatewayInterfaces(check *C) {
+	firewallRuleConfig := &types.EdgeFirewallRule{
+		Name: "test-firewall-interface",
 		Source: types.EdgeFirewallEndpoint{
 			VnicGroupIds: []string{"vnic-0"},
 		},
@@ -43,6 +38,182 @@ func (vcd *TestVCD) Test_NsxvFirewallRule(check *C) {
 		LoggingEnabled: false,
 		Action:         "accept",
 	}
+
+	test_NsxvFirewallRule(check, vcd, firewallRuleConfig)
+}
+
+// Test_NsxvFirewallRuleIpAddresses tests firewall rule creation based on IP addresses
+func (vcd *TestVCD) Test_NsxvFirewallRuleIpAddresses(check *C) {
+	firewallRuleConfig := &types.EdgeFirewallRule{
+		Name: "test-firewall-ips",
+		Source: types.EdgeFirewallEndpoint{
+			IpAddresses: []string{"1.1.1.1", "2.2.2.2/24"},
+		},
+		Destination: types.EdgeFirewallEndpoint{
+			// Excludes works like a boolean ! (not) for a specified list of objects
+			Exclude:     true,
+			IpAddresses: []string{"any"}, // "any" is a keyword that matches all
+		},
+		Application: types.EdgeFirewallApplication{
+			Services: []types.EdgeFirewallApplicationService{
+				{
+					Protocol:   "tcp",
+					Port:       "55",
+					SourcePort: "44",
+				},
+				{
+					Protocol: "icmp",
+				},
+			},
+		},
+		Enabled:        true,
+		LoggingEnabled: false,
+		Action:         "accept",
+	}
+
+	test_NsxvFirewallRule(check, vcd, firewallRuleConfig)
+}
+
+// Test_NsxvFirewallRuleIpSets tests firewall rule creation based on IP set IDs
+func (vcd *TestVCD) Test_NsxvFirewallRuleIpSets(check *C) {
+	if vcd.config.VCD.Org == "" {
+		check.Skip(check.TestName() + ": Org name not given")
+		return
+	}
+	if vcd.config.VCD.Vdc == "" {
+		check.Skip(check.TestName() + ": VDC name not given")
+		return
+	}
+
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	// IP set based firewall rule
+	// Create two IP sets
+	ipSetConfig1 := &types.EdgeIpSet{
+		Name:               "test-ipset-1",
+		IPAddresses:        "10.10.10.1",
+		InheritanceAllowed: takeBoolPointer(true), // Must be true to allow using it in firewall rule
+	}
+
+	ipSetConfig2 := &types.EdgeIpSet{
+		Name:               "test-ipset-2",
+		IPAddresses:        "192.168.1.1-192.168.1.200",
+		InheritanceAllowed: takeBoolPointer(true), // Must be true to allow using it in firewall rule
+	}
+
+	// Set parent entity and create two IP sets for usage in firewall rule
+	ipSetParentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name
+	ipSet1, err := vdc.CreateNsxvIpSet(ipSetConfig1)
+	check.Assert(err, IsNil)
+	AddToCleanupList(ipSet1.Name, "ipSet", ipSetParentEntity, check.TestName())
+	check.Assert(ipSet1.ID, Matches, `.*:ipset-\d.*`)
+
+	ipSet2, err := vdc.CreateNsxvIpSet(ipSetConfig2)
+	check.Assert(err, IsNil)
+	AddToCleanupList(ipSet2.Name, "ipSet", ipSetParentEntity, check.TestName())
+	check.Assert(ipSet2.ID, Matches, `.*:ipset-\d.*`)
+
+	firewallRuleConfig := &types.EdgeFirewallRule{
+		Name:           "test-firewall-ipsets",
+		Enabled:        true,
+		LoggingEnabled: false,
+		Action:         "deny",
+		Source: types.EdgeFirewallEndpoint{
+			GroupingObjectIds: []string{ipSet1.ID},
+		},
+		Destination: types.EdgeFirewallEndpoint{
+			GroupingObjectIds: []string{ipSet1.ID},
+		},
+	}
+
+	test_NsxvFirewallRule(check, vcd, firewallRuleConfig)
+}
+
+// Test_NsxvFirewallRuleVms tests firewall rule creation based on VM
+func (vcd *TestVCD) Test_NsxvFirewallRuleVms(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp wasn't properly created")
+	}
+
+	vapp := vcd.findFirstVapp()
+	if vapp.VApp.Name == "" {
+		check.Skip("Disabled: No suitable vApp found in vDC")
+	}
+	vm, _ := vcd.findFirstVm(vapp)
+	if vm.Name == "" {
+		check.Skip("Disabled: No suitable VM found in vDC")
+	}
+
+	firewallRuleConfig := &types.EdgeFirewallRule{
+		Name: "test-firewall-vms",
+		Source: types.EdgeFirewallEndpoint{
+			GroupingObjectIds: []string{vm.ID},
+		},
+		Destination: types.EdgeFirewallEndpoint{
+			Exclude:     true,
+			IpAddresses: []string{"any"},
+		},
+		Application: types.EdgeFirewallApplication{
+			Services: []types.EdgeFirewallApplicationService{
+				{
+					Protocol:   "tcp",
+					Port:       "55",
+					SourcePort: "44",
+				},
+				{
+					Protocol: "icmp",
+				},
+			},
+		},
+		Enabled:        true,
+		LoggingEnabled: false,
+		Action:         "accept",
+	}
+
+	test_NsxvFirewallRule(check, vcd, firewallRuleConfig)
+}
+
+// test_NsxvFirewallRule does the test work for a given fwConfig of *types.EdgeFirewallRule
+// The tests performed consist of the following steps:
+// 1. Creates a firewall rule (as per specified config)
+// 2. Retrieve the rule by ID
+// 3. Perform an update for the firewall rule
+// 4. Creates a second firewall rule above the first one
+// 5. Ensures the positions of both rules are correct (second is above first one)
+// 6. Deletes both firewall rules
+// 7. Validates that none are found anymore
+func test_NsxvFirewallRule(check *C, vcd *TestVCD, fwConfig *types.EdgeFirewallRule) {
+	if vcd.config.VCD.EdgeGateway == "" {
+		check.Skip(check.TestName() + ": no edge gateway given")
+	}
+	if vcd.config.VCD.Org == "" {
+		check.Skip(check.TestName() + ": Org name not given")
+		return
+	}
+	if vcd.config.VCD.Vdc == "" {
+		check.Skip(check.TestName() + ": VDC name not given")
+		return
+	}
+
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	check.Assert(err, IsNil)
+	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
+
+	firewallRule := fwConfig
 
 	createdFwRule, err := edge.CreateNsxvFirewallRule(firewallRule, "")
 	check.Assert(err, IsNil)
@@ -119,7 +290,7 @@ func (vcd *TestVCD) Test_NsxvFirewallRule(check *C) {
 	check.Assert(foundRule1BelowRule2, Equals, true)
 	check.Assert(foundRule2AboveRule1, Equals, true)
 
-	// Remove both rules
+	// Remove all rules
 	err = edge.DeleteNsxvFirewallRuleById(gotFwRule.ID)
 	check.Assert(err, IsNil)
 

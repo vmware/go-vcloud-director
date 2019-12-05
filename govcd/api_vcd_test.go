@@ -1,4 +1,4 @@
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user ALL
+// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user nsxv ALL
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -1287,4 +1287,56 @@ func Test_splitParent(t *testing.T) {
 			}
 		})
 	}
+}
+
+func (vcd *TestVCD) findFirstVm(vapp VApp) (types.VM, string) {
+	for _, vm := range vapp.VApp.Children.VM {
+		if vm.Name != "" {
+			return *vm, vm.Name
+		}
+	}
+	return types.VM{}, ""
+}
+
+func (vcd *TestVCD) findFirstVapp() VApp {
+	client := vcd.client
+	config := vcd.config
+	org, err := client.GetOrgByName(config.VCD.Org)
+	if err != nil {
+		fmt.Println(err)
+		return VApp{}
+	}
+	vdc, err := org.GetVDCByName(config.VCD.Vdc, false)
+	if err != nil {
+		fmt.Println(err)
+		return VApp{}
+	}
+	wantedVapp := vcd.vapp.VApp.Name
+	vappName := ""
+	for _, res := range vdc.Vdc.ResourceEntities {
+		for _, item := range res.ResourceEntity {
+			// Finding a named vApp, if it was defined in config
+			if wantedVapp != "" {
+				if item.Name == wantedVapp {
+					vappName = item.Name
+					break
+				}
+			} else {
+				// Otherwise, we get the first vApp from the vDC list
+				if item.Type == "application/vnd.vmware.vcloud.vApp+xml" {
+					vappName = item.Name
+					break
+				}
+			}
+		}
+	}
+	if wantedVapp == "" {
+		return VApp{}
+	}
+	vapp, _ := vdc.GetVAppByName(vappName, false)
+	return *vapp
+}
+
+func takeBoolPointer(value bool) *bool {
+	return &value
 }
