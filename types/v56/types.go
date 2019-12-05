@@ -1375,12 +1375,12 @@ type VMDiskChange struct {
 	Xsi     string   `xml:"xmlns:xsi,attr,omitempty"`
 	Xmlns   string   `xml:"xmlns,attr,omitempty"`
 
-	HREF string `xml:"href,attr,omitempty"`
-	Type string `xml:"type,attr,omitempty"`
-	Name string `xml:"name,attr"`
-	ID   string `xml:"id,attr,omitempty"`
+	HREF string `xml:"href,attr,omitempty"` // The URI of the VM entity.
+	Type string `xml:"type,attr,omitempty"` // The MIME type of the entity - application/vnd.vmware.vcloud.vm+xml
+	Name string `xml:"name,attr"`           // VM name
+	ID   string `xml:"id,attr,omitempty"`   // VM ID. The entity identifier, expressed in URN format. The value of this attribute uniquely identifies the entity, persists for the life of the entity, and is never reused.
 
-	VmSpecSection *VmSpecSection `xml:"VmSpecSection,omitempty"`
+	VmSpecSection *VmSpecSection `xml:"VmSpecSection,omitempty"` // Container for the specification of this virtual machine. This is an alternate to using ovf:VirtualHardwareSection + ovf:OperatingSystemSection
 }
 
 // VmSpecSection from VM struct
