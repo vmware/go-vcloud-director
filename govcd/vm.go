@@ -860,7 +860,12 @@ func (vm *VM) AddInternalDisk(diskData *types.DiskSettings) (string, error) {
 		return "", fmt.Errorf("cannot add internal disks - VM HREF is unset")
 	}
 
-	err := vm.validateInternalDiskInput(diskData)
+	err := vm.Refresh()
+	if err != nil {
+		return "", fmt.Errorf("error refresing vm %s: %s", vm.VM.Name, err)
+	}
+
+	err = vm.validateInternalDiskInput(diskData)
 	if err != nil {
 		return "", err
 	}
@@ -954,6 +959,11 @@ func (vm *VM) DeleteInternalDiskById(diskId string) error {
 		return fmt.Errorf("cannot delete internal disks - VM HREF is unset")
 	}
 
+	err := vm.Refresh()
+	if err != nil {
+		return fmt.Errorf("error refresing vm %s: %s", vm.VM.Name, err)
+	}
+
 	diskSettings := vm.VM.VmSpecSection.DiskSection.DiskSettings
 	if diskSettings == nil {
 		diskSettings = []*types.DiskSettings{}
@@ -976,14 +986,9 @@ func (vm *VM) DeleteInternalDiskById(diskId string) error {
 	vmSpecSection := vm.VM.VmSpecSection
 	vmSpecSection.DiskSection.DiskSettings = diskSettings
 
-	_, err := vm.UpdateInternalDisks(vmSpecSection)
+	_, err = vm.UpdateInternalDisks(vmSpecSection)
 	if err != nil {
-		return err
-	}
-
-	err = vm.Refresh()
-	if err != nil {
-		return fmt.Errorf("error refresing vm %s: %s", vm.VM.Name, err)
+		return fmt.Errorf("error deleting vm  %s internal disk %s: %s", vm.VM.Name, diskId, err)
 	}
 
 	return nil
