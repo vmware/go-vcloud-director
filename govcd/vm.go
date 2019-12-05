@@ -976,7 +976,7 @@ func (vm *VM) DeleteInternalDisk(diskId string) error {
 	vmSpecSection := vm.VM.VmSpecSection
 	vmSpecSection.DiskSection.DiskSettings = diskSettings
 
-	vmSpecSection, err := vm.UpdateInternalDisks(vmSpecSection)
+	_, err := vm.UpdateInternalDisks(vmSpecSection)
 	if err != nil {
 		return err
 	}

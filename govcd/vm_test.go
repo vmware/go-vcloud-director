@@ -1012,6 +1012,8 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	check.Assert(err, IsNil)
 
 	disk, err := vm.GetInternalDisk(diskId)
+	check.Assert(err, IsNil)
+
 	check.Assert(disk.StorageProfile.HREF, Equals, storageProfile.HREF)
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
 	check.Assert(*disk.ThinProvisioned, Equals, *diskSettings.ThinProvisioned)
