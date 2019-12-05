@@ -858,7 +858,7 @@ func (vm *VM) SetGuestCustomizationSection(guestCustomizationSection *types.Gues
 func (vm *VM) AddInternalDisk(diskData *types.DiskSettings) (string, error) {
 	err := vm.Refresh()
 	if err != nil {
-		return "", fmt.Errorf("error refresing vm: %s", err)
+		return "", fmt.Errorf("error refresing VM: %s", err)
 	}
 
 	err = vm.validateInternalDiskInput(diskData)
@@ -929,12 +929,12 @@ func (vm *VM) GetInternalDiskId(diskId string, refresh bool) (*types.DiskSetting
 	if refresh {
 		err := vm.Refresh()
 		if err != nil {
-			return nil, fmt.Errorf("error refresing vm: %s", err)
+			return nil, fmt.Errorf("error refresing VM: %s", err)
 		}
 	}
 
 	if diskId == "" {
-		return nil, fmt.Errorf("cannot get internal disk - provided diskId is empty")
+		return nil, fmt.Errorf("cannot get internal disk - provided disk Id is empty")
 	}
 
 	if vm.VM.VmSpecSection.DiskSection == nil || vm.VM.VmSpecSection.DiskSection.DiskSettings == nil ||
@@ -956,7 +956,7 @@ func (vm *VM) GetInternalDiskId(diskId string, refresh bool) (*types.DiskSetting
 func (vm *VM) DeleteInternalDiskById(diskId string) error {
 	err := vm.Refresh()
 	if err != nil {
-		return fmt.Errorf("error refresing vm: %s", err)
+		return fmt.Errorf("error refresing VM: %s", err)
 	}
 
 	diskSettings := vm.VM.VmSpecSection.DiskSection.DiskSettings
@@ -983,7 +983,7 @@ func (vm *VM) DeleteInternalDiskById(diskId string) error {
 
 	_, err = vm.UpdateInternalDisks(vmSpecSection)
 	if err != nil {
-		return fmt.Errorf("error deleting vm  %s internal disk %s: %s", vm.VM.Name, diskId, err)
+		return fmt.Errorf("error deleting VM %s internal disk %s: %s", vm.VM.Name, diskId, err)
 	}
 
 	return nil
@@ -1004,11 +1004,11 @@ func (vm *VM) UpdateInternalDisks(disksSettingToUpdate *types.VmSpecSection) (*t
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
-		return nil, fmt.Errorf("error waiting for task completion after internal disks update for vm %s: %s", vm.VM.Name, err)
+		return nil, fmt.Errorf("error waiting for task completion after internal disks update for VM %s: %s", vm.VM.Name, err)
 	}
 	err = vm.Refresh()
 	if err != nil {
-		return nil, fmt.Errorf("error refresing vm %s: %s", vm.VM.Name, err)
+		return nil, fmt.Errorf("error refresing VM %s: %s", vm.VM.Name, err)
 	}
 	return vm.VM.VmSpecSection, nil
 }

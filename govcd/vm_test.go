@@ -969,7 +969,7 @@ func (vcd *TestVCD) Test_VMSetGetGuestCustomizationSection(check *C) {
 // Test create internal disk For VM
 func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp wasn't properly created")
+		check.Skip("Skipping test because vApp wasn't properly created")
 	}
 
 	if vcd.config.VCD.ProviderVdc.StorageProfile == "" {
@@ -1027,7 +1027,7 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 // Test delete internal disk For VM
 func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp wasn't properly created")
+		check.Skip("Skipping test because vApp wasn't properly created")
 	}
 
 	if vcd.config.VCD.ProviderVdc.StorageProfile == "" {
