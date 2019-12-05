@@ -862,7 +862,7 @@ func (vm *VM) AddInternalDisk(diskData *types.DiskSettings) (string, error) {
 
 	err := vm.Refresh()
 	if err != nil {
-		return "", fmt.Errorf("error refresing vm %s: %s", vm.VM.Name, err)
+		return "", fmt.Errorf("error refresing vm: %s", err)
 	}
 
 	err = vm.validateInternalDiskInput(diskData)
@@ -937,7 +937,7 @@ func (vm *VM) GetInternalDiskId(diskId string, refresh bool) (*types.DiskSetting
 	if refresh {
 		err := vm.Refresh()
 		if err != nil {
-			return nil, fmt.Errorf("error refresing vm %s: %s", vm.VM.Name, err)
+			return nil, fmt.Errorf("error refresing vm: %s", err)
 		}
 	}
 
@@ -968,7 +968,7 @@ func (vm *VM) DeleteInternalDiskById(diskId string) error {
 
 	err := vm.Refresh()
 	if err != nil {
-		return fmt.Errorf("error refresing vm %s: %s", vm.VM.Name, err)
+		return fmt.Errorf("error refresing vm: %s", err)
 	}
 
 	diskSettings := vm.VM.VmSpecSection.DiskSection.DiskSettings
