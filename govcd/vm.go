@@ -858,7 +858,7 @@ func (vm *VM) SetGuestCustomizationSection(guestCustomizationSection *types.Gues
 func (vm *VM) AddInternalDisk(diskData *types.DiskSettings) (string, error) {
 	err := vm.Refresh()
 	if err != nil {
-		return "", fmt.Errorf("error refresing VM: %s", err)
+		return "", fmt.Errorf("error refreshing VM: %s", err)
 	}
 
 	err = vm.validateInternalDiskInput(diskData)
@@ -866,9 +866,9 @@ func (vm *VM) AddInternalDisk(diskData *types.DiskSettings) (string, error) {
 		return "", err
 	}
 
-	diskSettings := vm.VM.VmSpecSection.DiskSection.DiskSettings
-	if diskSettings == nil {
-		diskSettings = []*types.DiskSettings{}
+	var diskSettings []*types.DiskSettings
+	if vm.VM.VmSpecSection != nil && vm.VM.VmSpecSection.DiskSection != nil && vm.VM.VmSpecSection.DiskSection.DiskSettings != nil {
+		diskSettings = vm.VM.VmSpecSection.DiskSection.DiskSettings
 	}
 
 	diskSettings = append(diskSettings, diskData)
@@ -929,7 +929,7 @@ func (vm *VM) GetInternalDiskId(diskId string, refresh bool) (*types.DiskSetting
 	if refresh {
 		err := vm.Refresh()
 		if err != nil {
-			return nil, fmt.Errorf("error refresing VM: %s", err)
+			return nil, fmt.Errorf("error refreshing VM: %s", err)
 		}
 	}
 
@@ -956,7 +956,7 @@ func (vm *VM) GetInternalDiskId(diskId string, refresh bool) (*types.DiskSetting
 func (vm *VM) DeleteInternalDiskById(diskId string) error {
 	err := vm.Refresh()
 	if err != nil {
-		return fmt.Errorf("error refresing VM: %s", err)
+		return fmt.Errorf("error refreshing VM: %s", err)
 	}
 
 	diskSettings := vm.VM.VmSpecSection.DiskSection.DiskSettings
@@ -1008,7 +1008,7 @@ func (vm *VM) UpdateInternalDisks(disksSettingToUpdate *types.VmSpecSection) (*t
 	}
 	err = vm.Refresh()
 	if err != nil {
-		return nil, fmt.Errorf("error refresing VM %s: %s", vm.VM.Name, err)
+		return nil, fmt.Errorf("error refreshing VM %s: %s", vm.VM.Name, err)
 	}
 	return vm.VM.VmSpecSection, nil
 }
