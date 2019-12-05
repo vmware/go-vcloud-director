@@ -1360,9 +1360,104 @@ type VM struct {
 	// TODO: OVF Sections to be implemented
 	// Environment OVF_Environment `xml:"Environment,omitempty"
 
+	VmSpecSection *VmSpecSection `xml:"VmSpecSection,omitempty"`
+
 	VMCapabilities *VMCapabilities `xml:"VmCapabilities,omitempty"` // Allows you to specify certain capabilities of this virtual machine.
 	StorageProfile *Reference      `xml:"StorageProfile,omitempty"` // A reference to a storage profile to be used for this object. The specified storage profile must exist in the organization vDC that contains the object. If not specified, the default storage profile for the vDC is used.
 	ProductSection *ProductSection `xml:"ProductSection,omitempty"`
+}
+
+// VM represents a virtual machine only with Disk setting update part
+type VMDiskChange struct {
+	// Attributes
+	XMLName xml.Name `xml:"Vm"`
+	Ovf     string   `xml:"xmlns:ovf,attr,omitempty"`
+	Xsi     string   `xml:"xmlns:xsi,attr,omitempty"`
+	Xmlns   string   `xml:"xmlns,attr,omitempty"`
+
+	HREF string `xml:"href,attr,omitempty"`
+	Type string `xml:"type,attr,omitempty"`
+	Name string `xml:"name,attr"`
+	ID   string `xml:"id,attr,omitempty"`
+
+	VmSpecSection *VmSpecSection `xml:"VmSpecSection,omitempty"`
+}
+
+// VmSpecSection from VM struct
+type VmSpecSection struct {
+	Modified          *bool             `xml:"Modified,attr,omitempty"`
+	Info              string            `xml:"ovf:Info"`
+	OsType            string            `xml:"OsType,omitempty"`            // The type of the OS. This parameter may be omitted when using the VmSpec to update the contents of an existing VM.
+	NumCpus           *int              `xml:"NumCpus,omitempty"`           // Number of CPUs. This parameter may be omitted when using the VmSpec to update the contents of an existing VM.
+	NumCoresPerSocket *int              `xml:"NumCoresPerSocket,omitempty"` // Number of cores among which to distribute CPUs in this virtual machine.. This parameter may be omitted when using the VmSpec to update the contents of an existing VM.
+	CpuResourceMhz    *CpuResourceMhz   `xml:"CpuResourceMhz,omitempty"`    // CPU compute resources. This parameter may be omitted when using the VmSpec to update the contents of an existing VM.
+	MemoryResourceMb  *MemoryResourceMb `xml:"MemoryResourceMb"`            // Memory compute resources. This parameter may be omitted when using the VmSpec to update the contents of an existing VM.
+	MediaSection      *MediaSection     `xml:"MediaSection,omitempty"`      // The media devices of this VM.
+	DiskSection       *DiskSection      `xml:"DiskSection,omitempty"`       // virtual disks of this VM.
+	HardwareVersion   *HardwareVersion  `xml:"HardwareVersion"`             // vSphere name of Virtual Hardware Version of this VM. Example: vmx-13 This parameter may be omitted when using the VmSpec to update the contents of an existing VM.
+	VmToolsVersion    string            `xml:"VmToolsVersion,omitempty"`    //	VMware tools version of this VM.
+	VirtualCpuType    string            `xml:"VirtualCpuType,omitempty"`    // The capabilities settings for this VM. This parameter may be omitted when using the VmSpec to update the contents of an existing VM.
+	TimeSyncWithHost  *bool             `xml:"TimeSyncWithHost,omitempty"`  // Synchronize the VM's time with the host.
+}
+
+// DiskSection from VM/VmSpecSection struct
+type DiskSection struct {
+	DiskSettings []*DiskSettings `xml:"DiskSettings"`
+}
+
+// DiskSettings from VM/VmSpecSection/DiskSection struct
+type DiskSettings struct {
+	DiskId              string     `xml:"DiskId,omitempty"`              // Specifies a unique identifier for this disk in the scope of the corresponding VM. This element is optional when creating a VM, but if it is provided it should be unique. This element is mandatory when updating an existing disk.
+	SizeMb              int64      `xml:"SizeMb"`                        // The size of the disk in MB.
+	UnitNumber          int        `xml:"UnitNumber"`                    // The device number on the SCSI or IDE controller of the disk.
+	BusNumber           int        `xml:"BusNumber"`                     //	The number of the SCSI or IDE controller itself.
+	AdapterType         string     `xml:"AdapterType"`                   // The type of disk controller, e.g. IDE vs SCSI and if SCSI bus-logic vs LSI logic.
+	ThinProvisioned     *bool      `xml:"ThinProvisioned,omitempty"`     // Specifies whether the disk storage is pre-allocated or allocated on demand.
+	StorageProfile      *Reference `xml:"StorageProfile,omitempty"`      // Specifies reference to a storage profile to be associated with the disk.
+	OverrideVmDefault   bool       `xml:"overrideVmDefault"`             // Specifies that the disk storage profile overrides the VM's default storage profile.
+	Iops                *int64     `xml:"iops,omitempty"`                // Specifies the IOPS for the disk.
+	VirtualQuantity     *int64     `xml:"VirtualQuantity,omitempty"`     // The actual size of the disk.
+	VirtualQuantityUnit string     `xml:"VirtualQuantityUnit,omitempty"` // The units in which VirtualQuantity is measured.
+}
+
+// MediaSection from VM/VmSpecSection struct
+type MediaSection struct {
+	MediaSettings []*MediaSettings `xml:"MediaSettings"`
+}
+
+// MediaSettings from VM/VmSpecSection/MediaSection struct
+type MediaSettings struct {
+	DeviceId    string     `xml:"DeviceId,omitempty"`    // Describes the media device whose media mount is being specified here. This deviceId must match the RASD.InstanceID attribute in the VirtualHardwareSection of the vApp's OVF description.
+	MediaType   string     `xml:"MediaType,omitempty"`   // Specified the type of media that is mounted onto the device.
+	MediaState  string     `xml:"MediaState,omitempty"`  // Specifies the state of the media device.
+	MediaImage  *Reference `xml:"MediaImage,omitempty"`  // The media image that is mounted onto the device. This property can be 'null' which represents that no media is mounted on the device.
+	UnitNumber  int        `xml:"UnitNumber"`            // Specified the type of media that is mounted onto the device.
+	BusNumber   int        `xml:"BusNumber"`             //	The bus number of the media device controller.
+	AdapterType string     `xml:"AdapterType,omitempty"` // The type of controller, e.g. IDE vs SCSI and if SCSI bus-logic vs LSI logic
+}
+
+// CpuResourceMhz from VM/VmSpecSection struct
+type CpuResourceMhz struct {
+	Configured  int64  `xml:"Configured`             // The amount of resource configured on the virtual machine.
+	Reservation *int64 `xml:"Reservation,omitempty"` // The amount of reservation of this resource on the underlying virtualization infrastructure.
+	Limit       *int64 `xml:"Limit,omitempty"`       // The limit for how much of this resource can be consumed on the underlying virtualization infrastructure. This is only valid when the resource allocation is not unlimited.
+	SharesLevel string `xml:"SharesLevel,omitempty"` //	Pre-determined relative priorities according to which the non-reserved portion of this resource is made available to the virtualized workload.
+	Shares      *int   `xml:"Shares,omitempty"`      // Custom priority for the resource. This is a read-only, unless the share level is CUSTOM.
+}
+
+// MemoryResourceMb from VM/VmSpecSection struct
+type MemoryResourceMb struct {
+	Configured  int64  `xml:"Configured`             // The amount of resource configured on the virtual machine.
+	Reservation *int64 `xml:"Reservation,omitempty"` // The amount of reservation of this resource on the underlying virtualization infrastructure.
+	Limit       *int64 `xml:"Limit,omitempty"`       // The limit for how much of this resource can be consumed on the underlying virtualization infrastructure. This is only valid when the resource allocation is not unlimited.
+	SharesLevel string `xml:"SharesLevel,omitempty"` //	Pre-determined relative priorities according to which the non-reserved portion of this resource is made available to the virtualized workload.
+	Shares      *int   `xml:"Shares,omitempty"`      // Custom priority for the resource. This is a read-only, unless the share level is CUSTOM.
+}
+
+type HardwareVersion struct {
+	HREF  string `xml:"href,attr"`
+	Type  string `xml:"type,attr,omitempty"`
+	Value string `xml:",chardata"`
 }
 
 // ovf:VirtualHardwareSection from VM struct

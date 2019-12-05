@@ -1014,15 +1014,17 @@ func (vcd *TestVCD) Test_VMSetGetGuestCustomizationSection(check *C) {
 	guestCustomizationPropertyTester(vcd, check, vm)
 }
 
-// Test gathering VM virtual hardware items
-func (vcd *TestVCD) Test_GetVirtualHardwareSection(check *C) {
-	itemName := "TestGetVirtualHardwareSection"
-
+// Test create internal disk For VM
+func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp wasn't properly created")
 	}
 
-	fmt.Printf("Running: %s\n", itemName)
+	if vcd.config.VCD.ProviderVdc.StorageProfile == "" {
+		check.Skip("No Storage Profile given for VDC tests")
+	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
 
 	// Find VM
 	vapp := vcd.findFirstVapp()
@@ -1033,23 +1035,90 @@ func (vcd *TestVCD) Test_GetVirtualHardwareSection(check *C) {
 	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
 	check.Assert(err, IsNil)
 
-	// Preform check of virtual hardware section
-	section, err := vm.GetVirtualHardwareSection()
+	storageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.ProviderVdc.StorageProfile)
+	check.Assert(err, IsNil)
+	isThinProvisioned := true
+	iops := int64(0)
+
+	diskSettings := &types.DiskSettings{
+		SizeMb:            1024,
+		UnitNumber:        0,
+		BusNumber:         1,
+		AdapterType:       "6",
+		ThinProvisioned:   &isThinProvisioned,
+		StorageProfile:    &storageProfile,
+		OverrideVmDefault: true,
+		Iops:              &iops,
+	}
+	diskId, err := vm.AddInternalDisk(diskSettings)
+
+	check.Assert(err, IsNil)
+	check.Assert(diskId, NotNil)
+
+	//verify
+	err = vm.Refresh()
 	check.Assert(err, IsNil)
 
-	// Check that section.Info is not Nil, as its the only field that may not be omitted when marshalled
-	check.Assert(section.Info, NotNil)
+	disk, err := vm.GetInternalDisk(diskId)
+	check.Assert(disk.StorageProfile.HREF, Equals, storageProfile.HREF)
+	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
+	check.Assert(*disk.ThinProvisioned, Equals, *diskSettings.ThinProvisioned)
+	check.Assert(*disk.Iops, Equals, *diskSettings.Iops)
+	check.Assert(disk.SizeMb, Equals, diskSettings.SizeMb)
+	check.Assert(disk.UnitNumber, Equals, diskSettings.UnitNumber)
+	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
+	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
+}
 
-	// Check that section.Item is not Nil before looping over it
-	check.Assert(section.Item, NotNil)
-
-	// Loop over the Items to ensure
-	for _, item := range section.Item {
-		check.Assert(item.ResourceType, NotNil)
-		check.Assert(item.ResourceSubType, NotNil)
-
-		if item.ResourceType == 10 {
-			check.Assert(item.Address, Matches, "^[a-fA-F0-9:]{17}|[a-fA-F0-9]{12}$")
-		}
+// Test delete internal disk For VM
+func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp wasn't properly created")
 	}
+
+	if vcd.config.VCD.ProviderVdc.StorageProfile == "" {
+		check.Skip("No Storage Profile given for VDC tests")
+	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	// Find VM
+	vapp := vcd.findFirstVapp()
+	existingVm, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
+	check.Assert(err, IsNil)
+
+	storageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.ProviderVdc.StorageProfile)
+	check.Assert(err, IsNil)
+	isThinProvisioned := true
+	iops := int64(0)
+
+	diskSettings := &types.DiskSettings{
+		SizeMb:            1024,
+		UnitNumber:        0,
+		BusNumber:         2,
+		AdapterType:       "6",
+		ThinProvisioned:   &isThinProvisioned,
+		StorageProfile:    &storageProfile,
+		OverrideVmDefault: true,
+		Iops:              &iops,
+	}
+
+	diskId, err := vm.AddInternalDisk(diskSettings)
+	check.Assert(err, IsNil)
+	check.Assert(diskId, NotNil)
+
+	//verify
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+
+	err = vm.DeleteInternalDisk(diskId)
+	check.Assert(err, IsNil)
+
+	disk, err := vm.GetInternalDisk(diskId)
+	check.Assert(err, Equals, ErrorEntityNotFound)
+	check.Assert(disk, IsNil)
 }
