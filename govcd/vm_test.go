@@ -972,7 +972,7 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 		check.Skip("Skipping test because vApp wasn't properly created")
 	}
 
-	if vcd.config.VCD.ProviderVdc.StorageProfile == "" {
+	if vcd.config.VCD.StorageProfile.SP1 == "" {
 		check.Skip("No Storage Profile given for VDC tests")
 	}
 
@@ -987,7 +987,7 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
 	check.Assert(err, IsNil)
 
-	storageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.ProviderVdc.StorageProfile)
+	storageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
 	check.Assert(err, IsNil)
 	isThinProvisioned := true
 	iops := int64(0)
@@ -1030,7 +1030,7 @@ func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
 		check.Skip("Skipping test because vApp wasn't properly created")
 	}
 
-	if vcd.config.VCD.ProviderVdc.StorageProfile == "" {
+	if vcd.config.VCD.StorageProfile.SP1 == "" {
 		check.Skip("No Storage Profile given for VDC tests")
 	}
 
@@ -1045,7 +1045,7 @@ func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
 	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
 	check.Assert(err, IsNil)
 
-	storageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.ProviderVdc.StorageProfile)
+	storageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
 	check.Assert(err, IsNil)
 	isThinProvisioned := true
 	iops := int64(0)
