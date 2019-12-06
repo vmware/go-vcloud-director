@@ -45,7 +45,7 @@ func (client *Client) QueryWithNotEncodedParams(params map[string]string, notEnc
 	queryUlr := client.VCDHREF
 	queryUlr.Path += "/query"
 
-	req := client.NewRequestWitNotEncodedParams(params, notEncodedParams, http.MethodGet, queryUlr, nil)
+	req := client.NewRequestWitNotEncodedParams(params, notEncodedParams, http.MethodGet, queryUlr, nil, client.APIVersion)
 	req.Header.Add("Accept", "vnd.vmware.vcloud.org+xml;version="+client.APIVersion)
 
 	return getResult(client, req)

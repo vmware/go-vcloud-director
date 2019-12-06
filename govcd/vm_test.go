@@ -454,7 +454,7 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 	}
 
 	// Skipping this test due to a bug in vCD. VM refresh status returns old state, though eject task is finished.
-	if vcd.client.APIVCDMaxVersionIs(">= 32.0, <= 33.0") {
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 32.0, <= 33.0") {
 		check.Skip("Skipping test because this vCD version has a bug")
 	}
 

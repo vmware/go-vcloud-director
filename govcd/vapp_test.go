@@ -376,7 +376,7 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedNetwork(check *C) {
 	}
 
 	// vCD 8.20 does not support sending guestVlanAllowed
-	if vcd.client.APIVCDMaxVersionIs("> 27.0") {
+	if vcd.client.Client.APIVCDMaxVersionIs("> 27.0") {
 		vappNetworkSettings.GuestVLANAllowed = &guestVlanAllowed
 	} else {
 		fmt.Printf("Skipping GuestVLANAllowed parameter as it is not supported on vCD 8.20")
