@@ -201,7 +201,7 @@ func (cli *Client) NewRequest(params map[string]string, method string, reqUrl ur
 	return cli.NewRequestWitNotEncodedParams(params, nil, method, reqUrl, body)
 }
 
-// NewRequest creates a new HTTP request and applies necessary auth headers if set.
+// NewRequestWithApiVersion creates a new HTTP request and applies necessary auth headers if set.
 // Allows to override default request API Version
 func (cli *Client) NewRequestWithApiVersion(params map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string) *http.Request {
 	return cli.NewRequestWitNotEncodedParamsWithApiVersion(params, nil, method, reqUrl, body, apiVersion)
