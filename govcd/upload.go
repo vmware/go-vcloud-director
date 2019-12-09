@@ -119,7 +119,7 @@ func newFileUploadRequest(client *Client, requestUrl string, filePart []byte, of
 		return nil, fmt.Errorf("error decoding vdc response: %s", err)
 	}
 
-	uploadReq := client.NewRequestWitNotEncodedParams(nil, nil, http.MethodPut, *parsedRequestURL, bytes.NewReader(filePart), client.APIVersion)
+	uploadReq := client.NewRequestWitNotEncodedParams(nil, nil, http.MethodPut, *parsedRequestURL, bytes.NewReader(filePart))
 
 	uploadReq.ContentLength = filePartSize
 	uploadReq.Header.Set("Content-Length", strconv.FormatInt(uploadReq.ContentLength, 10))
