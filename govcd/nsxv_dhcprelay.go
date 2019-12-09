@@ -73,9 +73,5 @@ func (egw *EdgeGateway) ResetDhcpRelay() error {
 	// Send a DELETE request to DHCP relay configuration endpoint
 	_, err = egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodDelete, types.AnyXMLMime,
 		"unable to reset edge gateway DHCP relay configuration: %s", nil, &types.NSXError{})
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }

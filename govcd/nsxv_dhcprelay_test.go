@@ -58,6 +58,8 @@ func (vcd *TestVCD) Test_NsxvDhcpRelay(check *C) {
 	check.Assert(err, IsNil)
 
 	parentEntity = vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
+	// DHCP relay config is being prepended (added to beginning) of cleanup list because it must be
+	// delete first so that above created dependent IP sets can be cleaned up when their turn comes
 	PrependToCleanupList(check.TestName(), "dhcpRelayConfig", parentEntity, check.TestName())
 
 	// Cache Gateway auto-assigned address to try specifying it afterwards
