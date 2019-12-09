@@ -133,7 +133,12 @@ func (cli *Client) NewRequestWitNotEncodedParams(params map[string]string, notEn
 }
 
 // NewRequestWitNotEncodedParamsWithApiVersion allows passing complex values params that shouldn't be encoded like for queries. e.g. /query?filter=name=foo
-// Passed Api version allows to you override default values used in request parameters.
+// * params - request parameters
+// * notEncodedParams - request parameters which will be added not encoded
+// * method - request type
+// * reqUrl - request url
+// * body - request body
+// * apiVersion - provided Api version overrides default Api version value used in request parameter
 func (cli *Client) NewRequestWitNotEncodedParamsWithApiVersion(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string) *http.Request {
 	reqValues := url.Values{}
 
