@@ -8,8 +8,11 @@ package govcd
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"testing"
+
+	. "gopkg.in/check.v1"
 )
 
 var testingTags = make(map[string]string)
@@ -94,4 +97,24 @@ func TestTags(t *testing.T) {
 	if os.Getenv("SHOW_TAGS") != "" {
 		showTags()
 	}
+}
+
+// Test_NewRequestWitNotEncodedParamsWithApiVersion verifies that api version override works
+func (vcd *TestVCD) Test_NewRequestWitNotEncodedParamsWithApiVersion(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	queryUlr := vcd.client.Client.VCDHREF
+	queryUlr.Path += "/query"
+
+	apiVersion, err := vcd.client.Client.maxSupportedVersion()
+	check.Assert(err, IsNil)
+
+	req := vcd.client.Client.NewRequestWitNotEncodedParamsWithApiVersion(nil, map[string]string{"type": "media",
+		"filter": "name==any"}, http.MethodGet, queryUlr, nil, apiVersion)
+
+	resp, err := checkResp(vcd.client.Client.Http.Do(req))
+	check.Assert(err, IsNil)
+
+	check.Assert(resp.Header.Get("Content-Type"), Equals, "application/vnd.vmware.vcloud.query.records+xml;version="+apiVersion)
+
+	fmt.Printf("Test: %s run with api Version: %s\n", check.TestName(), apiVersion)
 }
