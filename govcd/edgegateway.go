@@ -1382,17 +1382,6 @@ func getNetworkNameAndTypeByVnicIndex(vNicIndex int, vnics *types.EdgeGatewayInt
 			networkName = vnic.Name
 			networkType = vnic.Type
 		}
-
-		// // Search inside "subinterface tree"
-		// if vnic.Type == types.EdgeGatewayVnicTypeTrunk && len(vnic.SubInterfaces.SubInterface) > 0 {
-		// 	for _, subInterface := range vnic.SubInterfaces.SubInterface {
-		// 		if subInterface.Index != nil && *subInterface.Index == vNicIndex {
-		// 			foundCount++
-		// 			networkName = subInterface.LogicalSwitchName
-		// 			networkType = types.EdgeGatewayVnicTypeSubinterface
-		// 		}
-		// 	}
-		// }
 	}
 
 	if foundCount > 1 {
