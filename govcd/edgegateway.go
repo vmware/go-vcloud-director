@@ -1254,29 +1254,6 @@ func validateUpdateLBGeneralParams(logLevel string) error {
 	return nil
 }
 
-// getVnics retrieves a structure of type EdgeGatewayVnics which contains network interfaces
-// available in Edge Gateway (uses "/vnics" endpoint)
-func (egw *EdgeGateway) getVnics() (*types.EdgeGatewayVnics, error) {
-	if !egw.HasAdvancedNetworking() {
-		return nil, fmt.Errorf("only advanced edge gateway supports vNics")
-	}
-
-	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeVnicConfig)
-	if err != nil {
-		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
-	}
-
-	vnicConfig := &types.EdgeGatewayVnics{}
-	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
-		"unable to edge gateway vnic configuration: %s", nil, vnicConfig)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return vnicConfig, nil
-}
-
 // getVdcNetworks retrieves a structure of type EdgeGatewayInterfaces which contains network
 // interfaces available in Edge Gateway (uses "/vdcNetworks" endpoint)
 func (egw *EdgeGateway) getVdcNetworks() (*types.EdgeGatewayInterfaces, error) {
