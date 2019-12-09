@@ -926,15 +926,15 @@ func (vm *VM) validateInternalDiskInput(diskData *types.DiskSettings) error {
 // GetInternalDiskById returns a valid *types.DiskSettings if it exists.
 // If it doesn't, returns nil and ErrorEntityNotFound or other err.
 func (vm *VM) GetInternalDiskById(diskId string, refresh bool) (*types.DiskSettings, error) {
+	if diskId == "" {
+		return nil, fmt.Errorf("cannot get internal disk - provided disk Id is empty")
+	}
+
 	if refresh {
 		err := vm.Refresh()
 		if err != nil {
 			return nil, fmt.Errorf("error refreshing VM: %s", err)
 		}
-	}
-
-	if diskId == "" {
-		return nil, fmt.Errorf("cannot get internal disk - provided disk Id is empty")
 	}
 
 	if vm.VM.VmSpecSection.DiskSection == nil || vm.VM.VmSpecSection.DiskSection.DiskSettings == nil ||
@@ -975,7 +975,7 @@ func (vm *VM) DeleteInternalDiskById(diskId string) error {
 		return ErrorEntityNotFound
 	}
 
-	// remove disk in slice
+	// remove disk from slice
 	diskSettings = append(diskSettings[:diskPlacement], diskSettings[diskPlacement+1:]...)
 
 	vmSpecSection := vm.VM.VmSpecSection

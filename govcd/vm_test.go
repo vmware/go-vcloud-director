@@ -1008,9 +1008,6 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	check.Assert(diskId, NotNil)
 
 	//verify
-	err = vm.Refresh()
-	check.Assert(err, IsNil)
-
 	disk, err := vm.GetInternalDiskById(diskId, true)
 	check.Assert(err, IsNil)
 
