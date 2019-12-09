@@ -627,7 +627,7 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateFwGeneralParams(check *C) {
 	testCheckFirewallConfig(beforeFw, beforeFwXml, *edge, check)
 }
 
-func (vcd *TestVCD) TestEdgeGateway_GetVnics(check *C) {
+func (vcd *TestVCD) TestEdgeGateway_GetVdcNetworks(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gatway given")
 	}
@@ -638,17 +638,17 @@ func (vcd *TestVCD) TestEdgeGateway_GetVnics(check *C) {
 		check.Skip("Skipping test because the edge gateway does not have advanced networking enabled")
 	}
 
-	vnics, err := edge.getVnics()
+	vnics, err := edge.getVdcNetworks()
 	check.Assert(err, IsNil)
 
 	foundExtNet := false
 	foundOrgNet := false
 
-	check.Assert(len(vnics.Vnic) > 1, Equals, true)
+	check.Assert(len(vnics.EdgeInterface) > 1, Equals, true)
 	// Look for both - external and Org networks in returned edge gateway vNics
-	for _, vnic := range vnics.Vnic {
+	for _, vnic := range vnics.EdgeInterface {
 		// Look for external network attached to Edge gateway
-		if vnic.PortgroupName == vcd.config.VCD.ExternalNetwork {
+		if vnic.Name == vcd.config.VCD.ExternalNetwork && vnic.PortgroupName == vcd.config.VCD.ExternalNetwork {
 			check.Assert(vnic.AddressGroups.AddressGroup.PrimaryAddress, Equals, vcd.config.VCD.ExternalIp)
 			check.Assert(vnic.Type, Equals, "uplink")
 			foundExtNet = true
