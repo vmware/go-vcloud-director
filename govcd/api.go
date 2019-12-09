@@ -127,12 +127,13 @@ func ContainsNotFound(err error) bool {
 	return err != nil && strings.Contains(err.Error(), ErrorEntityNotFound.Error())
 }
 
-// NewRequestWitNotEncodedParamsWithApi allows passing complex values params that shouldn't be encoded like for queries. e.g. /query?filter=name=foo
+// NewRequestWitNotEncodedParams allows passing complex values params that shouldn't be encoded like for queries. e.g. /query?filter=name=foo
 func (cli *Client) NewRequestWitNotEncodedParams(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
 	return cli.NewRequestWitNotEncodedParamsWithApiVersion(params, notEncodedParams, method, reqUrl, body, cli.APIVersion)
 }
 
 // NewRequestWitNotEncodedParamsWithApiVersion allows passing complex values params that shouldn't be encoded like for queries. e.g. /query?filter=name=foo
+// Passed Api version allows to you override default values used in request parameters.
 func (cli *Client) NewRequestWitNotEncodedParamsWithApiVersion(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string) *http.Request {
 	reqValues := url.Values{}
 
