@@ -1066,7 +1066,7 @@ func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
 
-	err = vm.DeleteInternalDiskById(diskId)
+	err = vm.DeleteInternalDisk(diskId)
 	check.Assert(err, IsNil)
 
 	disk, err := vm.GetInternalDiskById(diskId, true)

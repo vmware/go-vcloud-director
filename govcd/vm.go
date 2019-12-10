@@ -951,9 +951,9 @@ func (vm *VM) GetInternalDiskById(diskId string, refresh bool) (*types.DiskSetti
 	return nil, ErrorEntityNotFound
 }
 
-// DeleteInternalDiskById delete disk using provided disk ID.
+// DeleteInternalDisk delete disk using provided disk ID.
 // Runs synchronously, VM is ready for another operation after this function returns.
-func (vm *VM) DeleteInternalDiskById(diskId string) error {
+func (vm *VM) DeleteInternalDisk(diskId string) error {
 	err := vm.Refresh()
 	if err != nil {
 		return fmt.Errorf("error refreshing VM: %s", err)
