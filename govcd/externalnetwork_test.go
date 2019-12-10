@@ -230,26 +230,34 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	check.Assert(ipScope[1].DNS1, Equals, "192.168.232.253")
 	check.Assert(ipScope[1].DNS2, Equals, "192.168.232.254")
 	check.Assert(ipScope[1].DNSSuffix, Equals, dnsSuffix)
-	// Check IP ranges on IPScope 1
+
+	// Sort IP ranges and check them on IPScope 0
+	sort.SliceStable(ipScope[0].IPRanges.IPRange, func(i, j int) bool {
+		return ipScope[0].IPRanges.IPRange[i].StartAddress < ipScope[0].IPRanges.IPRange[j].StartAddress
+	})
+
 	check.Assert(len(ipScope[0].IPRanges.IPRange), Equals, 2)
-	ipRange1 := ipScope[0].IPRanges.IPRange[0]
+	ipRange1 := ipScope[0].IPRanges.IPRange[1]
 	check.Assert(ipRange1.StartAddress, Equals, "192.168.201.3")
 	check.Assert(ipRange1.EndAddress, Equals, "192.168.201.100")
 
-	ipRange2 := ipScope[0].IPRanges.IPRange[1]
+	ipRange2 := ipScope[0].IPRanges.IPRange[0]
 	check.Assert(ipRange2.StartAddress, Equals, "192.168.201.105")
 	check.Assert(ipRange2.EndAddress, Equals, "192.168.201.140")
 
-	// Check IP ranges on IPScope 2
-	ipRange1 = ipScope[1].IPRanges.IPRange[0]
+	// Sort IP ranges and check them on IPScope 1
+	sort.SliceStable(ipScope[1].IPRanges.IPRange, func(i, j int) bool {
+		return ipScope[1].IPRanges.IPRange[i].StartAddress < ipScope[1].IPRanges.IPRange[j].StartAddress
+	})
+	ipRange1 = ipScope[1].IPRanges.IPRange[2]
 	check.Assert(ipRange1.StartAddress, Equals, "192.168.231.3")
 	check.Assert(ipRange1.EndAddress, Equals, "192.168.231.100")
 
-	ipRange2 = ipScope[1].IPRanges.IPRange[1]
+	ipRange2 = ipScope[1].IPRanges.IPRange[0]
 	check.Assert(ipRange2.StartAddress, Equals, "192.168.231.105")
 	check.Assert(ipRange2.EndAddress, Equals, "192.168.231.140")
 
-	ipRange3 := ipScope[1].IPRanges.IPRange[2]
+	ipRange3 := ipScope[1].IPRanges.IPRange[1]
 	check.Assert(ipRange3.StartAddress, Equals, "192.168.231.145")
 	check.Assert(ipRange3.EndAddress, Equals, "192.168.231.150")
 
