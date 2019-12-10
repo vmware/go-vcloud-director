@@ -861,7 +861,7 @@ func (vm *VM) AddInternalDisk(diskData *types.DiskSettings) (string, error) {
 		return "", fmt.Errorf("error refreshing VM: %s", err)
 	}
 
-	err = vm.validateInternalDiskInput(diskData)
+	err = vm.validateInternalDiskInput(diskData, vm.VM.Name, vm.VM.ID)
 	if err != nil {
 		return "", err
 	}
@@ -891,33 +891,33 @@ func (vm *VM) AddInternalDisk(diskData *types.DiskSettings) (string, error) {
 	return "", fmt.Errorf("created disk wasn't in list of returned VM internal disks")
 }
 
-func (vm *VM) validateInternalDiskInput(diskData *types.DiskSettings) error {
+func (vm *VM) validateInternalDiskInput(diskData *types.DiskSettings, vmName, vmId string) error {
 	if diskData.AdapterType == "" {
-		return fmt.Errorf("disk settings missing required field: adapter type")
+		return fmt.Errorf("[VM %s Id %s] disk settings missing required field: adapter type", vmName, vmId)
 	}
 
 	if diskData.BusNumber < 0 {
-		return fmt.Errorf("disk settings bus number has to be 0 or higher")
+		return fmt.Errorf("[VM %s Id %s] disk settings bus number has to be 0 or higher", vmName, vmId)
 	}
 
 	if diskData.UnitNumber < 0 {
-		return fmt.Errorf("disk settings unit number has to be 0 or higher")
+		return fmt.Errorf("[VM %s Id %s] disk settings unit number has to be 0 or higher", vmName, vmId)
 	}
 
 	if diskData.SizeMb < int64(0) {
-		return fmt.Errorf("disk settings size MB has to be 0 or higher")
+		return fmt.Errorf("[VM %s Id %s] disk settings size MB has to be 0 or higher", vmName, vmId)
 	}
 
 	if diskData.Iops != nil && *diskData.Iops < int64(0) {
-		return fmt.Errorf("disk settings iops has to be 0 or higher")
+		return fmt.Errorf("[VM %s Id %s] disk settings iops has to be 0 or higher", vmName, vmId)
 	}
 
 	if diskData.ThinProvisioned == nil {
-		return fmt.Errorf("disk settings missing required field: thin provisioned")
+		return fmt.Errorf("[VM %s Id %s] disk settings missing required field: thin provisioned", vmName, vmId)
 	}
 
 	if diskData.StorageProfile == nil {
-		return fmt.Errorf("disk settings missing required field: storage profile")
+		return fmt.Errorf("[VM %s Id %s]disk settings missing required field: storage profile", vmName, vmId)
 	}
 
 	return nil
