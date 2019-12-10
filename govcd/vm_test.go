@@ -968,44 +968,9 @@ func (vcd *TestVCD) Test_VMSetGetGuestCustomizationSection(check *C) {
 
 // Test create internal disk For VM
 func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vApp wasn't properly created")
-	}
-
-	if vcd.config.VCD.StorageProfile.SP1 == "" {
-		check.Skip("No Storage Profile given for VDC tests")
-	}
-
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	// Find VM
-	vapp := vcd.findFirstVapp()
-	existingVm, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
-	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
-	check.Assert(err, IsNil)
-
-	storageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
-	check.Assert(err, IsNil)
-	isThinProvisioned := true
-	iops := int64(0)
-
-	diskSettings := &types.DiskSettings{
-		SizeMb:            1024,
-		UnitNumber:        0,
-		BusNumber:         1,
-		AdapterType:       "6",
-		ThinProvisioned:   &isThinProvisioned,
-		StorageProfile:    &storageProfile,
-		OverrideVmDefault: true,
-		Iops:              &iops,
-	}
-	diskId, err := vm.AddInternalDisk(diskSettings)
-
-	check.Assert(err, IsNil)
-	check.Assert(diskId, NotNil)
+	vm, err, storageProfile, diskSettings, diskId := vcd.createInternalDisk(check)
 
 	//verify
 	disk, err := vm.GetInternalDiskById(diskId, true)
@@ -1021,17 +986,13 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
 }
 
-// Test delete internal disk For VM
-func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
+func (vcd *TestVCD) createInternalDisk(check *C) (*VM, error, types.Reference, *types.DiskSettings, string) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vApp wasn't properly created")
 	}
-
 	if vcd.config.VCD.StorageProfile.SP1 == "" {
 		check.Skip("No Storage Profile given for VDC tests")
 	}
-
-	fmt.Printf("Running: %s\n", check.TestName())
 
 	// Find VM
 	vapp := vcd.findFirstVapp()
@@ -1041,26 +1002,31 @@ func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
 	}
 	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
 	check.Assert(err, IsNil)
-
 	storageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
 	check.Assert(err, IsNil)
 	isThinProvisioned := true
 	iops := int64(0)
-
 	diskSettings := &types.DiskSettings{
 		SizeMb:            1024,
 		UnitNumber:        0,
-		BusNumber:         2,
+		BusNumber:         1,
 		AdapterType:       "6",
 		ThinProvisioned:   &isThinProvisioned,
 		StorageProfile:    &storageProfile,
 		OverrideVmDefault: true,
 		Iops:              &iops,
 	}
-
 	diskId, err := vm.AddInternalDisk(diskSettings)
 	check.Assert(err, IsNil)
 	check.Assert(diskId, NotNil)
+	return vm, err, storageProfile, diskSettings, diskId
+}
+
+// Test delete internal disk For VM
+func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	vm, err, _, _, diskId := vcd.createInternalDisk(check)
 
 	//verify
 	err = vm.Refresh()
