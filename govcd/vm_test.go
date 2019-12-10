@@ -970,7 +970,8 @@ func (vcd *TestVCD) Test_VMSetGetGuestCustomizationSection(check *C) {
 func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	vm, err, storageProfile, diskSettings, diskId := vcd.createInternalDisk(check)
+	vm, storageProfile, diskSettings, diskId, err := vcd.createInternalDisk(check, 1)
+	check.Assert(err, IsNil)
 
 	//verify
 	disk, err := vm.GetInternalDiskById(diskId, true)
@@ -986,7 +987,7 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
 }
 
-func (vcd *TestVCD) createInternalDisk(check *C) (*VM, error, types.Reference, *types.DiskSettings, string) {
+func (vcd *TestVCD) createInternalDisk(check *C, busNumber int) (*VM, types.Reference, *types.DiskSettings, string, error) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vApp wasn't properly created")
 	}
@@ -1009,7 +1010,7 @@ func (vcd *TestVCD) createInternalDisk(check *C) (*VM, error, types.Reference, *
 	diskSettings := &types.DiskSettings{
 		SizeMb:            1024,
 		UnitNumber:        0,
-		BusNumber:         1,
+		BusNumber:         busNumber,
 		AdapterType:       "6",
 		ThinProvisioned:   &isThinProvisioned,
 		StorageProfile:    &storageProfile,
@@ -1019,14 +1020,15 @@ func (vcd *TestVCD) createInternalDisk(check *C) (*VM, error, types.Reference, *
 	diskId, err := vm.AddInternalDisk(diskSettings)
 	check.Assert(err, IsNil)
 	check.Assert(diskId, NotNil)
-	return vm, err, storageProfile, diskSettings, diskId
+	return vm, storageProfile, diskSettings, diskId, err
 }
 
 // Test delete internal disk For VM
 func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	vm, err, _, _, diskId := vcd.createInternalDisk(check)
+	vm, _, _, diskId, err := vcd.createInternalDisk(check, 2)
+	check.Assert(err, IsNil)
 
 	//verify
 	err = vm.Refresh()
