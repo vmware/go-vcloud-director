@@ -83,7 +83,7 @@ func Test_getVnicIndexFromNetworkNameType(t *testing.T) {
             </addressGroup>
         </addressGroups>
         <portgroupId>f2547dd9-e0f7-4d81-97c1-dd33e5e0fbbf</portgroupId>
-        <portgroupName>my-ext-network</portgroupName>
+        <portgroupName></portgroupName>
         <isConnected>true</isConnected>
     </edgeInterface>
     <edgeInterface>
