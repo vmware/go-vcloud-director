@@ -269,7 +269,7 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 
 	// vCD 9.0 does not support FIPS Mode and fails if XML tag <FipsModeEnabled> is sent therefore
 	// field value must be sent only if user specified its value
-	if vcd.client.APIVCDMaxVersionIs("> 29.0") { // Newer than vCD 9.0
+	if vcd.client.Client.APIVCDMaxVersionIs("> 29.0") { // Newer than vCD 9.0
 		edgeGatewayConfig.Configuration.FipsModeEnabled = takeBoolPointer(false)
 	} else {
 		if testVerbose {
@@ -341,7 +341,7 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 		edge.EdgeGateway.Configuration.GatewayInterfaces.GatewayInterface[0].Network.HREF
 
 	// TODO get rid of this when vCD 9.0 does not return network ID
-	if vcd.client.APIVCDMaxVersionIs("= 29.0") {
+	if vcd.client.Client.APIVCDMaxVersionIs("= 29.0") {
 		edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface[0].Network.ID = ""
 	}
 
