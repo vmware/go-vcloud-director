@@ -71,8 +71,8 @@ func (vm *VM) Refresh() error {
 	// elements in slices.
 	vm.VM = &types.VM{}
 
-	_, err := vm.client.ExecuteRequest(refreshUrl, http.MethodGet,
-		"", "error refreshing VM: %s", nil, vm.VM)
+	_, err := vm.client.ExecuteRequestWithApiVersion(refreshUrl, http.MethodGet,
+		"", "error refreshing VM: %s", nil, vm.VM, vm.client.GetDefaultAPIVersionOrLaterThan32())
 
 	// The request was successful
 	return err
@@ -1025,12 +1025,13 @@ func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection
 	vmSpecSectionModified := true
 	disksSettingToUpdate.Modified = &vmSpecSectionModified
 
-	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
+	return vm.client.ExecuteTaskRequestWithApiVersion(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
 		types.MimeVM, "error updating VM disks: %s", &types.VMDiskChange{
 			XMLName:       xml.Name{},
 			Xmlns:         types.XMLNamespaceVCloud,
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
 			VmSpecSection: disksSettingToUpdate,
-		})
+		}, vm.client.GetDefaultAPIVersionOrLaterThan32())
+
 }
