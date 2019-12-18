@@ -179,7 +179,7 @@ func (cli *Client) validateAPIVersion() error {
 	return nil
 }
 
-// APIVCDMaxVersionIs returns default version or 32 if it is connected to version vCD 9.7 or later
+// GetDefaultAPIVersionOrLaterThan32 returns default version or 32 if it is connected to version vCD 9.7 or later
 func (cli *Client) GetDefaultAPIVersionOrLaterThan32() string {
 	apiVersion := cli.APIVersion
 	if cli.APIVCDMaxVersionIs(">= 32.0") {
