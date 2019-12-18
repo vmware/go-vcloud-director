@@ -454,7 +454,7 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 	}
 
 	// Skipping this test due to a bug in vCD. VM refresh status returns old state, though eject task is finished.
-	if vcd.client.APIVCDMaxVersionIs(">= 32.0, <= 33.0") {
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 32.0, <= 33.0") {
 		check.Skip("Skipping test because this vCD version has a bug")
 	}
 
@@ -884,8 +884,9 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 	// Ensure that VM has the status set to "GC_PENDING" after forced re-customization
 	recustomizedVmStatus, err := vm.GetGuestCustomizationStatus()
 	check.Assert(err, IsNil)
-	check.Assert(recustomizedVmStatus, Equals, types.GuestCustStatusPending)
-
+	if vcd.client.Client.APIVCDMaxVersionIs("> 29.0") { // vCD 9.0 reports types.GuestCustStatusComplete
+		check.Assert(recustomizedVmStatus, Equals, types.GuestCustStatusPending)
+	}
 	// Check that VM is deployed
 	vmIsDeployed, err = vm.IsDeployed()
 	check.Assert(err, IsNil)

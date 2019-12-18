@@ -30,6 +30,10 @@
   `DeleteNsxvIpSetByName` [#269](https://github.com/vmware/go-vcloud-director/pull/269)
 * Added `UpdateDhcpRelay`, `GetDhcpRelay` and `ResetDhcpRelay` methods for Edge Gatway DHCP relay
   management [#271](https://github.com/vmware/go-vcloud-director/pull/271)
+* Added methods which allow override API versions `NewRequestWitNotEncodedParamsWithApiVersion`, 
+   `ExecuteTaskRequestWithApiVersion`, `ExecuteRequestWithoutResponseWithApiVersion`,
+   `ExecuteRequestWithApiVersion` [#274](https://github.com/vmware/go-vcloud-director/pull/274)
+* Moved `VCDClient.supportedVersions` to `VCDClient.Client.supportedVersions` [#274](https://github.com/vmware/go-vcloud-director/pull/274)    
 * Added methods `VM.AddInternalDisk`, `VM.GetInternalDiskById`, `VM.DeleteInternalDisk`, `VM.UpdateInternalDisks` and `VM.UpdateInternalDisksAsync`
 
 BUGS FIXED:
@@ -38,6 +42,9 @@ BUGS FIXED:
 * Take into account all subnets (SubnetParticipation) on edge gateway interface instead of the first
   one [#260](https://github.com/vmware/go-vcloud-director/pull/260)
 * Fix `OrgVdcNetwork` data structure to retrieve description. Previously, the description would not be retrieved because it was misplaced in the sequence.
+* Fix a bug where functions `GetAnyVnicIndexByNetworkName` and `GetVnicIndexByNetworkNameAndType`
+  would not find vNic index when user is authenticated as org admin (not sysadmin)
+  [#275](https://github.com/vmware/go-vcloud-director/pull/275)
 
 ## 2.4.0 (October 28, 2019)
 

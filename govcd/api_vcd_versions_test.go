@@ -19,9 +19,9 @@ func (vcd *TestVCD) Test_APIVCDMaxVersionIs_Unauthenticated(check *C) {
 	vcdClient, err := GetTestVCDFromYaml(config)
 	check.Assert(err, IsNil)
 
-	versionCheck := vcdClient.APIVCDMaxVersionIs(">= 27.0")
+	versionCheck := vcdClient.Client.APIVCDMaxVersionIs(">= 27.0")
 	check.Assert(versionCheck, Equals, true)
-	check.Assert(vcdClient.supportedVersions.VersionInfos, Not(Equals), 0)
+	check.Assert(vcdClient.Client.supportedVersions.VersionInfos, Not(Equals), 0)
 }
 
 func (vcd *TestVCD) Test_APIClientVersionIs_Unauthenticated(check *C) {
@@ -31,16 +31,16 @@ func (vcd *TestVCD) Test_APIClientVersionIs_Unauthenticated(check *C) {
 	vcdClient, err := GetTestVCDFromYaml(config)
 	check.Assert(err, IsNil)
 
-	versionCheck := vcdClient.APIClientVersionIs(">= 27.0")
+	versionCheck := vcdClient.Client.APIClientVersionIs(">= 27.0")
 	check.Assert(versionCheck, Equals, true)
-	check.Assert(vcdClient.supportedVersions.VersionInfos, Not(Equals), 0)
+	check.Assert(vcdClient.Client.supportedVersions.VersionInfos, Not(Equals), 0)
 }
 
 // Test_APIVCDMaxVersionIs uses already authenticated vcdClient (in SetupSuite)
 func (vcd *TestVCD) Test_APIVCDMaxVersionIs(check *C) {
 
 	// Minimum supported vCD 8.20 introduced API version 27.0
-	versionCheck := vcd.client.APIVCDMaxVersionIs(">= 27.0")
+	versionCheck := vcd.client.Client.APIVCDMaxVersionIs(">= 27.0")
 	check.Assert(versionCheck, Equals, true)
 
 	mockVcd := getMockVcdWithAPIVersion("27.0")
@@ -60,7 +60,7 @@ func (vcd *TestVCD) Test_APIVCDMaxVersionIs(check *C) {
 	}
 
 	for _, tt := range versionTests {
-		versionCheck := mockVcd.APIVCDMaxVersionIs(tt.version)
+		versionCheck := mockVcd.Client.APIVCDMaxVersionIs(tt.version)
 		check.Assert(versionCheck, tt.boolChecker, tt.isSupported)
 	}
 }
@@ -69,10 +69,10 @@ func (vcd *TestVCD) Test_APIVCDMaxVersionIs(check *C) {
 func (vcd *TestVCD) Test_APIClientVersionIs(check *C) {
 
 	// Check with currently set version
-	versionCheck := vcd.client.APIClientVersionIs(fmt.Sprintf("= %s", vcd.client.Client.APIVersion))
+	versionCheck := vcd.client.Client.APIClientVersionIs(fmt.Sprintf("= %s", vcd.client.Client.APIVersion))
 	check.Assert(versionCheck, Equals, true)
 
-	versionCheck = vcd.client.APIClientVersionIs(">= 27.0")
+	versionCheck = vcd.client.Client.APIClientVersionIs(">= 27.0")
 	check.Assert(versionCheck, Equals, true)
 
 	mockVcd := getMockVcdWithAPIVersion("27.0")
@@ -92,7 +92,7 @@ func (vcd *TestVCD) Test_APIClientVersionIs(check *C) {
 	}
 
 	for _, tt := range versionTests {
-		versionCheck := mockVcd.APIClientVersionIs(tt.version)
+		versionCheck := mockVcd.Client.APIClientVersionIs(tt.version)
 		check.Assert(versionCheck, tt.boolChecker, tt.isSupported)
 	}
 }
@@ -107,7 +107,7 @@ func (vcd *TestVCD) Test_validateAPIVersion(check *C) {
 
 	vcdClient, err := GetTestVCDFromYaml(config, WithAPIVersion(unsupportedVersion))
 	check.Assert(err, IsNil)
-	err = vcdClient.validateAPIVersion()
+	err = vcdClient.Client.validateAPIVersion()
 	check.Assert(err, ErrorMatches, "API version .* is not supported: version = .* is not supported")
 }
 
@@ -115,11 +115,11 @@ func getMockVcdWithAPIVersion(version string) *VCDClient {
 	return &VCDClient{
 		Client: Client{
 			APIVersion: version,
-		},
-		supportedVersions: SupportedVersions{
-			VersionInfos{
-				VersionInfo{
-					Version: version,
+			supportedVersions: SupportedVersions{
+				VersionInfos{
+					VersionInfo{
+						Version: version,
+					},
 				},
 			},
 		},
