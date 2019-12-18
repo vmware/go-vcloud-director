@@ -850,3 +850,106 @@ func (vm *VM) SetGuestCustomizationSection(guestCustomizationSection *types.Gues
 
 	return vm.GetGuestCustomizationSection()
 }
+
+// getParentVApp find parent vApp for VM by checking its "up" "link".
+//
+// Note. The VM has a parent vApp defined even if it was created as a standalone
+func (vm *VM) getParentVApp() (*VApp, error) {
+	for _, link := range vm.VM.Link {
+		if link.Type == types.MimeVApp && link.Rel == "up" {
+			vapp := NewVApp(vm.client)
+			vapp.VApp.HREF = link.HREF
+
+			err := vapp.Refresh()
+
+			if err != nil {
+				return nil, fmt.Errorf("could not refresh parent vApp: %s", err)
+			}
+
+			return vapp, nil
+		}
+	}
+
+	return nil, fmt.Errorf("could not find parent vApp link")
+}
+
+// getParentVdc returns parent vDC for VM
+func (vm *VM) getParentVdc() (*Vdc, error) {
+	vapp, err := vm.getParentVApp()
+	if err != nil {
+		return nil, fmt.Errorf("could not find parent vApp: %s", err)
+	}
+
+	vdc, err := vapp.getParentVDC()
+	if err != nil {
+		return nil, fmt.Errorf("could not find parent vDC: %s", err)
+	}
+
+	return &vdc, nil
+}
+
+// WaitForDhcpIpByNicIndex tries to get DHCP IP address for specific NIC index and takes up to
+// maxWaitSeconds
+func (vm *VM) WaitForDhcpIpByNicIndex(nicIndex int, maxWaitSeconds int) (string, error) {
+	if nicIndex < 0 {
+		return "", fmt.Errorf("NIC index cannot be negative")
+	}
+
+	networkConnnectionSection, err := vm.GetNetworkConnectionSection()
+	if err != nil {
+		return "", fmt.Errorf("could not get IP address for NIC %d: %s", nicIndex, err)
+	}
+
+	// Find NIC
+	var networkConnection *types.NetworkConnection
+	for _, nic := range networkConnnectionSection.NetworkConnection {
+		if nic.NetworkConnectionIndex == nicIndex {
+			networkConnection = nic
+		}
+	}
+
+	if networkConnection == nil {
+		return "", fmt.Errorf("could not find NIC with index %d", nicIndex)
+	}
+
+	if networkConnection.IPAddressAllocationMode != types.IPAllocationModeDHCP {
+		return "", fmt.Errorf("NIC with index %d is not using DHCP", nicIndex)
+	}
+
+	// IP address is already reported - return it
+	if networkConnection.IPAddress != "" {
+		return networkConnection.IPAddress, nil
+	}
+
+	vdc, err := vm.getParentVdc()
+	if err != nil {
+		return "", fmt.Errorf("could not find parent vDC for VM %s: %s", vm.VM.Name, err)
+	}
+
+	edgeGateway, err = vdc.FindEdgeGatewayNameByNetwork(networkConnection.Network)
+
+	// vm.
+
+	// vm.client.
+
+	// // Check if NIC with defined index exists
+	// for _, nic := range networkConnnectionSection.NetworkConnection {
+	// 	if nic.NetworkConnectionIndex == nicIndex {
+
+	// 		// IP address is already assigned and shown - return it
+	// 		if nic.IPAddress != "" {
+	// 			return nic.IPAddress, nil
+	// 		}
+
+	// 		// If NIC has IP allocation mode of type DHCP - check for available lease
+	// 		if nic.IPAddressAllocationMode == types.IPAllocationModeDHCP && nic.MACAddress != "" {
+	// 			// dhcpLease, err := edgeGateway.GetNsxvActiveDhcpLeaseByMac(nicMacAddress)
+	// 		}
+
+	// 		// if nic.IPAddress == ""
+
+	// 	}
+	// }
+
+	return "", fmt.Errorf("could not find NIC with index %d", nicIndex)
+}

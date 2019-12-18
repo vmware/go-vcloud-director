@@ -49,6 +49,7 @@ const (
 	TestCreateOrgVdc              = "TestCreateOrgVdc"
 	TestRefreshOrgVdc             = "TestRefreshOrgVdc"
 	TestCreateOrgVdcNetworkRouted = "TestCreateOrgVdcNetworkRouted"
+	TestCreateOrgVdcNetworkDhcp   = "TestCreateOrgVdcNetworkDhcp"
 	TestCreateOrgVdcNetworkIso    = "TestCreateOrgVdcNetworkIso"
 	TestCreateOrgVdcNetworkDirect = "TestCreateOrgVdcNetworkDirect"
 	TestUploadMedia               = "TestUploadMedia"
@@ -588,7 +589,12 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		task, _ := vapp.Undeploy()
 		_ = task.WaitTaskCompletion()
+		// Detach all Org networks early because Org network deletion fails if it happens very soon
+		task, _ = vapp.RemoveAllNetworks()
+		_ = task.WaitTaskCompletion()
 		task, err = vapp.Delete()
+		_ = task.WaitTaskCompletion()
+
 		if err != nil {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 			return
