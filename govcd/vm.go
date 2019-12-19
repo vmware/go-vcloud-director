@@ -923,7 +923,7 @@ func (vm *VM) validateInternalDiskInput(diskData *types.DiskSettings, vmName, vm
 	return nil
 }
 
-// GetInternalDiskById returns a valid *types.DiskSettings if it exists.
+// GetInternalDiskById returns a *types.DiskSettings if one exists.
 // If it doesn't, returns nil and ErrorEntityNotFound or other err.
 func (vm *VM) GetInternalDiskById(diskId string, refresh bool) (*types.DiskSettings, error) {
 	if diskId == "" {
@@ -990,8 +990,9 @@ func (vm *VM) DeleteInternalDisk(diskId string) error {
 }
 
 // UpdateInternalDisks applies disks configuration for the VM.
-// types.VmSpecSection requires consist of all disk entities which exist and not updated,
-// as also new ones or changed ones. Returns new disk ID and error.
+// types.VmSpecSection has to have all internal disk state. Disks which don't match provided ones in types.VmSpecSection
+// will be deleted. Matched internal disk will be updated. New internal disk description found
+// in types.VmSpecSection will be created. Returns updated types.VmSpecSection and error.
 // Runs synchronously, VM is ready for another operation after this function returns.
 func (vm *VM) UpdateInternalDisks(disksSettingToUpdate *types.VmSpecSection) (*types.VmSpecSection, error) {
 	if vm.VM.HREF == "" {
@@ -1013,9 +1014,11 @@ func (vm *VM) UpdateInternalDisks(disksSettingToUpdate *types.VmSpecSection) (*t
 	return vm.VM.VmSpecSection, nil
 }
 
-// UpdateInternalDisksAsync applies disks configuration and return task or err
-// types.VmSpecSection requires consist of all disk entities which exist and not updated,
-// as also new ones or changed ones.
+// UpdateInternalDisksAsync applies disks configuration for the VM.
+// types.VmSpecSection has to have all internal disk state. Disks which don't match provided ones in types.VmSpecSection
+// will be deleted. Matched internal disk will be updated. New internal disk description found
+// in types.VmSpecSection will be created.
+// Returns Task and error.
 func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection) (Task, error) {
 	if vm.VM.HREF == "" {
 		return Task{}, fmt.Errorf("cannot update disks, VM HREF is unset")

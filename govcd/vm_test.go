@@ -979,6 +979,7 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	check.Assert(err, IsNil)
 
 	check.Assert(disk.StorageProfile.HREF, Equals, storageProfile.HREF)
+	check.Assert(disk.StorageProfile.ID, Equals, storageProfile.ID)
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
 	check.Assert(*disk.ThinProvisioned, Equals, *diskSettings.ThinProvisioned)
 	check.Assert(*disk.Iops, Equals, *diskSettings.Iops)
@@ -988,6 +989,8 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
 }
 
+// Finds available VM and creates internal Disk in it.
+// returns VM, storage profile, disk settings, disk id and error.
 func (vcd *TestVCD) createInternalDisk(check *C, busNumber int) (*VM, types.Reference, *types.DiskSettings, string, error) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vApp wasn't properly created")
