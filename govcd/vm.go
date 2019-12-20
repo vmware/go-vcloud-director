@@ -1024,7 +1024,6 @@ func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection
 		return Task{}, fmt.Errorf("cannot update disks, VM HREF is unset")
 	}
 
-	disksSettingToUpdate.Info = "Virtual hardware requirements (simplified)"
 	vmSpecSectionModified := true
 	disksSettingToUpdate.Modified = &vmSpecSectionModified
 
