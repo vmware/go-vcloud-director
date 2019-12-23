@@ -888,8 +888,16 @@ func (vm *VM) getParentVdc() (*Vdc, error) {
 	return &vdc, nil
 }
 
-// WaitForDhcpIpByNicIndex tries to get DHCP IP address for specific NIC index and takes up to
+// WaitForDhcpIpByNicIndex tries to get DHCP IP address for specific NIC index and gives up after
 // maxWaitSeconds
+//
+// Getting a DHCP address is complicated because vCD (in UI and in types.NetworkConnectionSection)
+// reports IP addresses when guest tools are present on a VM.
+//
+// For this function to work - at least one the following must be true:
+// * VM has guest tools
+// * VM DHCP interface is connected to routed Org network and is using Edge Gateway DHCP
+// infrastructure (not relay DHCP messages)
 func (vm *VM) WaitForDhcpIpByNicIndex(nicIndex int, maxWaitSeconds int) (string, error) {
 	if nicIndex < 0 {
 		return "", fmt.Errorf("NIC index cannot be negative")
@@ -916,21 +924,44 @@ func (vm *VM) WaitForDhcpIpByNicIndex(nicIndex int, maxWaitSeconds int) (string,
 		return "", fmt.Errorf("NIC with index %d is not using DHCP", nicIndex)
 	}
 
-	// IP address is already reported - return it
+	// IP address is already reported in UI (by guest tools) - return it
 	if networkConnection.IPAddress != "" {
 		return networkConnection.IPAddress, nil
 	}
 
+	// Validate if the VM is attached to routed org vdc network
 	vdc, err := vm.getParentVdc()
 	if err != nil {
 		return "", fmt.Errorf("could not find parent vDC for VM %s: %s", vm.VM.Name, err)
 	}
 
-	edgeGateway, err = vdc.FindEdgeGatewayNameByNetwork(networkConnection.Network)
+	edgeGatewayName, err := vdc.FindEdgeGatewayNameByNetwork(networkConnection.Network)
+	if err != nil {
+		return "", fmt.Errorf("could not find Edge Gateway name for network %s: %s",
+			networkConnection.Network, err)
+	}
 
-	// vm.
+	edgeGateway, err := vdc.GetEdgeGatewayByName(edgeGatewayName, false)
+	if err != nil {
+		return "", fmt.Errorf("could not find Edge Gateway for network %s: %s",
+			networkConnection.Network, err)
+	}
 
-	// vm.client.
+	for poll := 0; poll < 10; poll++ {
+
+		dhcpLease, err := edgeGateway.GetNsxvActiveDhcpLeaseByMac(networkConnection.MACAddress)
+		if err != nil && !IsNotFound(err) {
+			return "", fmt.Errorf("could not find DHCP lease for network %s: %s",
+				networkConnection.Network, err)
+		}
+
+		if dhcpLease.IpAddress != "" {
+			return dhcpLease.IpAddress, nil
+		}
+
+		time.Sleep(10 * time.Second)
+
+	}
 
 	// // Check if NIC with defined index exists
 	// for _, nic := range networkConnnectionSection.NetworkConnection {

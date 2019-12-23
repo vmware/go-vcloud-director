@@ -49,7 +49,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	}
 
 	// Setup Org network with a single IP in DHCP pool
-	network, dhcpSubnet := getOrgVdcNetworkWithDhcp(vcd, check, edgeGateway)
+	network, _ := getOrgVdcNetworkWithDhcp(vcd, check, edgeGateway)
 
 	// Attach Org network to vApp
 	task, err := vapp.AddRAWNetworkConfig([]*types.OrgVDCNetwork{network})
@@ -84,10 +84,10 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	check.Assert(err, IsNil)
 
 	// Get network configuration to have network adapter MAC address
-	netConfigWithMac, err := vm.GetNetworkConnectionSection()
-	check.Assert(err, IsNil)
+	// netConfigWithMac, err := vm.GetNetworkConnectionSection()
+	// check.Assert(err, IsNil)
 
-	nicMacAddress := netConfigWithMac.NetworkConnection[0].MACAddress
+	// nicMacAddress := netConfigWithMac.NetworkConnection[0].MACAddress
 
 	// Power on VM
 	task, err = vm.PowerOn()
@@ -96,7 +96,10 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	check.Assert(err, IsNil)
 
 	// Wait and check DHCP lease acquired
-	waitForDhcpLease(check, vm, edgeGateway, nicMacAddress, dhcpSubnet)
+	// waitForDhcpLease(check, vm, edgeGateway, nicMacAddress, dhcpSubnet)
+	ip, err := vm.WaitForDhcpIpByNicIndex(0, 200)
+	check.Assert(err, IsNil)
+	fmt.Println("Got IP: " + ip)
 
 	// Restore network configuration
 	err = vm.UpdateNetworkConnectionSection(netCfgBackup)
