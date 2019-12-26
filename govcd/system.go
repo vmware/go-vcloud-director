@@ -588,19 +588,49 @@ func CreateExternalNetwork(vcdClient *VCDClient, externalNetworkData *types.Exte
 	// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VimObjectRefsType.html
 	// Description: Represents the Managed Object Reference (MoRef) and the type of a vSphere object.
 	// Since: 0.9
-	type vimObjectRefCreate struct {
+	type vimObjectRef struct {
+		XMLName       xml.Name         `xml:"vmext:VimObjectRef"`
 		VimServerRef  *types.Reference `xml:"vmext:VimServerRef"`
 		MoRef         string           `xml:"vmext:MoRef"`
 		VimObjectType string           `xml:"vmext:VimObjectType"`
 	}
 
-	// Type: VimObjectRefsType
-	// Namespace: http://www.vmware.com/vcloud/extension/v1.5
-	// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VimObjectRefsType.html
-	// Description: List of VimObjectRef elements.
-	// Since: 0.9
-	type vimObjectRefsCreate struct {
-		VimObjectRef []*vimObjectRefCreate `xml:"vmext:VimObjectRef"`
+	type ipAddresses struct {
+		IPAddress string `xml:"vcloud:IpAddress,omitempty"` // An IP address.
+	}
+	type ipRange struct {
+		XMLName      xml.Name `xml:"vcloud:IpRange"`
+		StartAddress string   `xml:"vcloud:StartAddress"` // Start address of the IP range.
+		EndAddress   string   `xml:"vcloud:EndAddress"`   // End address of the IP range.
+	}
+	type subAllocation struct {
+		XMLName     xml.Name         `xml:"vcloud:SubAllocation"`
+		EdgeGateway *types.Reference `xml:"vcloud:EdgeGateway,omitempty"`      // Edge gateway that uses this sub allocation.
+		IPRanges    []ipRange        `xml:"vcloud:IpRanges>IpRange,omitempty"` // IP range sub allocated to the edge gateway.
+	}
+	type ipScope struct {
+		XMLName              xml.Name        `xml:"vcloud:IpScope"`
+		IsInherited          bool            `xml:"vcloud:IsInherited"`                            // True if the IP scope is inherit from parent network.
+		Gateway              string          `xml:"vcloud:Gateway,omitempty"`                      // Gateway of the network.
+		Netmask              string          `xml:"vcloud:Netmask,omitempty"`                      // Network mask.
+		DNS1                 string          `xml:"vcloud:Dns1,omitempty"`                         // Primary DNS server.
+		DNS2                 string          `xml:"vcloud:Dns2,omitempty"`                         // Secondary DNS server.
+		DNSSuffix            string          `xml:"vcloud:DnsSuffix,omitempty"`                    // DNS suffix.
+		IsEnabled            bool            `xml:"vcloud:IsEnabled,omitempty"`                    // Indicates if subnet is enabled or not. Default value is True.
+		IPRanges             []ipRange       `xml:"vcloud:IpRanges>IpRange,omitempty"`             // IP ranges used for static pool allocation in the network.
+		AllocatedIPAddresses *ipAddresses    `xml:"vcloud:AllocatedIpAddresses,omitempty"`         // Read-only list of allocated IP addresses in the network.
+		SubAllocations       []subAllocation `xml:"vcloud:SubAllocations>SubAllocation,omitempty"` // Read-only list of IP addresses that are sub allocated to edge gateways.
+	}
+
+	type networkConfiguration struct {
+		BackwardCompatibilityMode      bool             `xml:"vcloud:BackwardCompatibilityMode"`
+		IPScopes                       []ipScope        `xml:"vcloud:IpScopes>IpScope,omitempty"`
+		ParentNetwork                  *types.Reference `xml:"vcloud:ParentNetwork,omitempty"`
+		FenceMode                      string           `xml:"vcloud:FenceMode"`
+		RetainNetInfoAcrossDeployments bool             `xml:"vcloud:RetainNetInfoAcrossDeployments,omitempty"`
+		GuestVlanAllowed               *bool            `xml:"vcloud:GuestVlanAllowed,omitempty"`
+		SubInterface                   *bool            `xml:"vcloud:SubInterface,omitempty"`
+		DistributedInterface           *bool            `xml:"vcloud:DistributedInterface,omitempty"`
 	}
 
 	// Type: VMWExternalNetworkType
@@ -609,21 +639,20 @@ func CreateExternalNetwork(vcdClient *VCDClient, externalNetworkData *types.Exte
 	// Description: External network type.
 	// Since: 1.0
 	type externalNetworkCreate struct {
-		XMLName          xml.Name                    `xml:"vmext:VMWExternalNetwork"`
-		XmlnsVmext       string                      `xml:"xmlns:vmext,attr,omitempty"`
-		XmlnsVcloud      string                      `xml:"xmlns:vcloud,attr,omitempty"`
-		HREF             string                      `xml:"href,attr,omitempty"`
-		Type             string                      `xml:"type,attr,omitempty"`
-		ID               string                      `xml:"id,attr,omitempty"`
-		OperationKey     string                      `xml:"operationKey,attr,omitempty"`
-		Name             string                      `xml:"name,attr"`
-		Link             []*types.Link               `xml:"Link,omitempty"`
-		Description      string                      `xml:"vcloud:Description,omitempty"`
-		Tasks            *types.TasksInProgress      `xml:"Tasks,omitempty"`
-		Configuration    *types.NetworkConfiguration `xml:"vcloud:Configuration,omitempty"`
-		VimPortGroupRef  *vimObjectRefCreate         `xml:"VimPortGroupRef,omitempty"`
-		VimPortGroupRefs *vimObjectRefsCreate        `xml:"vmext:VimPortGroupRefs,omitempty"`
-		VCloudExtension  *types.VCloudExtension      `xml:"VCloudExtension,omitempty"`
+		XMLName          xml.Name               `xml:"vmext:VMWExternalNetwork"`
+		XmlnsVmext       string                 `xml:"xmlns:vmext,attr,omitempty"`
+		XmlnsVcloud      string                 `xml:"xmlns:vcloud,attr,omitempty"`
+		HREF             string                 `xml:"href,attr,omitempty"`
+		Type             string                 `xml:"type,attr,omitempty"`
+		ID               string                 `xml:"id,attr,omitempty"`
+		OperationKey     string                 `xml:"operationKey,attr,omitempty"`
+		Name             string                 `xml:"name,attr"`
+		Link             []*types.Link          `xml:"Link,omitempty"`
+		Description      string                 `xml:"vcloud:Description,omitempty"`
+		Tasks            *types.TasksInProgress `xml:"Tasks,omitempty"`
+		Configuration    *networkConfiguration  `xml:"vcloud:Configuration,omitempty"`
+		VimPortGroupRefs []vimObjectRef         `xml:"vmext:VimPortGroupRefs>VimObjectRef,omitempty"`
+		VCloudExtension  *types.VCloudExtension `xml:"VCloudExtension,omitempty"`
 	}
 
 	// Specific struct is used as two different name spaces needed for vCD API and return struct has diff name spaces
@@ -635,33 +664,75 @@ func CreateExternalNetwork(vcdClient *VCDClient, externalNetworkData *types.Exte
 	externalNetwork.ID = externalNetworkData.ID
 	externalNetwork.OperationKey = externalNetworkData.OperationKey
 	externalNetwork.Link = externalNetworkData.Link
-	externalNetwork.Configuration = externalNetworkData.Configuration
 	externalNetwork.VCloudExtension = externalNetworkData.VCloudExtension
 	externalNetwork.XmlnsVmext = types.XMLNamespaceExtension
 	externalNetwork.XmlnsVcloud = types.XMLNamespaceVCloud
 	externalNetwork.Type = types.MimeExternalNetwork
 	if externalNetworkData.VimPortGroupRefs != nil {
-		externalNetwork.VimPortGroupRefs = &vimObjectRefsCreate{}
 		for _, vimObjRef := range externalNetworkData.VimPortGroupRefs.VimObjectRef {
-			externalNetwork.VimPortGroupRefs.VimObjectRef = append(externalNetwork.VimPortGroupRefs.VimObjectRef, &vimObjectRefCreate{
+			externalNetwork.VimPortGroupRefs = append(externalNetwork.VimPortGroupRefs, vimObjectRef{
 				VimServerRef:  vimObjRef.VimServerRef,
 				MoRef:         vimObjRef.MoRef,
 				VimObjectType: vimObjRef.VimObjectType,
 			})
 		}
 	}
-	if externalNetworkData.VimPortGroupRef != nil {
-		externalNetwork.VimPortGroupRef = &vimObjectRefCreate{
-			VimServerRef:  externalNetworkData.VimPortGroupRef.VimServerRef,
-			MoRef:         externalNetworkData.VimPortGroupRef.MoRef,
-			VimObjectType: externalNetworkData.VimPortGroupRef.VimObjectType,
-		}
+
+	externalNetwork.Configuration = &networkConfiguration{
+		BackwardCompatibilityMode:      externalNetworkData.Configuration.BackwardCompatibilityMode,
+		ParentNetwork:                  externalNetworkData.Configuration.ParentNetwork,
+		FenceMode:                      externalNetworkData.Configuration.FenceMode,
+		RetainNetInfoAcrossDeployments: externalNetworkData.Configuration.RetainNetInfoAcrossDeployments,
+		GuestVlanAllowed:               externalNetworkData.Configuration.GuestVlanAllowed,
+		SubInterface:                   externalNetworkData.Configuration.SubInterface,
+		DistributedInterface:           externalNetworkData.Configuration.DistributedInterface,
 	}
+	if externalNetworkData.Configuration.IPScopes != nil {
+		ipScopes := make([]ipScope, 0)
+		for _, ipScopeRaw := range externalNetworkData.Configuration.IPScopes.IPScope {
+			ipScopeTmp := ipScope{
+				IsInherited: ipScopeRaw.IsEnabled,
+				Gateway:     ipScopeRaw.Gateway,
+				Netmask:     ipScopeRaw.Netmask,
+				DNS1:        ipScopeRaw.DNS1,
+				DNS2:        ipScopeRaw.DNS2,
+				DNSSuffix:   ipScopeRaw.DNSSuffix,
+				IsEnabled:   ipScopeRaw.IsEnabled,
+			}
+			if ipScopeRaw.IPRanges != nil {
+				for _, ipRangeRaw := range ipScopeRaw.IPRanges.IPRange {
+					ipScopeTmp.IPRanges = append(ipScopeTmp.IPRanges, ipRange{
+						StartAddress: ipRangeRaw.StartAddress,
+						EndAddress:   ipRangeRaw.EndAddress,
+					})
+				}
+			}
+			if ipScopeRaw.AllocatedIPAddresses != nil {
+				ipScopeTmp.AllocatedIPAddresses = &ipAddresses{IPAddress: ipScopeRaw.AllocatedIPAddresses.IPAddress}
+			}
+			if ipScopeRaw.SubAllocations != nil && ipScopeRaw.SubAllocations.SubAllocation != nil {
+				ipRangesSubAlloc := make([]ipRange, 0)
+				if ipScopeRaw.SubAllocations.SubAllocation.IPRanges != nil {
+					for _, ipRangeRaw := range ipScopeRaw.SubAllocations.SubAllocation.IPRanges.IPRange {
+						ipRangesSubAlloc = append(ipRangesSubAlloc, ipRange{
+							StartAddress: ipRangeRaw.StartAddress,
+							EndAddress:   ipRangeRaw.EndAddress,
+						})
+					}
+				}
+				ipScopeTmp.SubAllocations = []subAllocation{{
+					EdgeGateway: ipScopeRaw.SubAllocations.SubAllocation.EdgeGateway,
+					IPRanges:    ipRangesSubAlloc,
+				}}
+			}
+			ipScopes = append(ipScopes, ipScopeTmp)
+		}
+		externalNetwork.Configuration.IPScopes = ipScopes
+	}
+	externalNetwork.Configuration.FenceMode = "isolated"
 
 	externalNetHREF := vcdClient.Client.VCDHREF
 	externalNetHREF.Path += "/admin/extension/externalnets"
-
-	externalNetwork.Configuration.FenceMode = "isolated"
 
 	// Return the task
 	task, err := vcdClient.Client.ExecuteTaskRequest(externalNetHREF.String(), http.MethodPost,
