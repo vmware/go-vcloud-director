@@ -1019,7 +1019,7 @@ func (vcd *TestVCD) createInternalDisk(check *C, busNumber int) (*VM, types.Refe
 		SizeMb:            1024,
 		UnitNumber:        0,
 		BusNumber:         busNumber,
-		AdapterType:       "6",
+		AdapterType:       "4",
 		ThinProvisioned:   &isThinProvisioned,
 		StorageProfile:    &storageProfile,
 		OverrideVmDefault: true,
