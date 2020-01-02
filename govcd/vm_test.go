@@ -987,6 +987,10 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	check.Assert(disk.UnitNumber, Equals, diskSettings.UnitNumber)
 	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
+
+	//cleanup
+	err = vm.DeleteInternalDisk(diskId)
+	check.Assert(err, IsNil)
 }
 
 // Finds available VM and creates internal Disk in it.
