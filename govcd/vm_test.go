@@ -971,7 +971,7 @@ func (vcd *TestVCD) Test_VMSetGetGuestCustomizationSection(check *C) {
 func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	vm, storageProfile, diskSettings, diskId, err := vcd.createInternalDisk(check, 1)
+	vm, storageProfile, diskSettings, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, 1)
 	check.Assert(err, IsNil)
 
 	//verify
@@ -991,11 +991,14 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	//cleanup
 	err = vm.DeleteInternalDisk(diskId)
 	check.Assert(err, IsNil)
+
+	// disable fast provisioning if needed
+	updateVdcFastProvisioning(vcd, check, previousProvisioningValue)
 }
 
-// Finds available VM and creates internal Disk in it.
+// createInternalDisk Finds available VM and creates internal Disk in it.
 // returns VM, storage profile, disk settings, disk id and error.
-func (vcd *TestVCD) createInternalDisk(check *C, busNumber int) (*VM, types.Reference, *types.DiskSettings, string, error) {
+func (vcd *TestVCD) createInternalDisk(check *C, busNumber int) (*VM, types.Reference, *types.DiskSettings, string, string, error) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vApp wasn't properly created")
 	}
@@ -1011,6 +1014,7 @@ func (vcd *TestVCD) createInternalDisk(check *C, busNumber int) (*VM, types.Refe
 	}
 	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
 	check.Assert(err, IsNil)
+
 	storageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
 	check.Assert(err, IsNil)
 	isThinProvisioned := true
@@ -1025,17 +1029,53 @@ func (vcd *TestVCD) createInternalDisk(check *C, busNumber int) (*VM, types.Refe
 		OverrideVmDefault: true,
 		Iops:              &iops,
 	}
+
+	// disables fast provisioning if needed
+	previousVdcFastProvisioningValue := updateVdcFastProvisioning(vcd, check, "disable")
+
 	diskId, err := vm.AddInternalDisk(diskSettings)
 	check.Assert(err, IsNil)
 	check.Assert(diskId, NotNil)
-	return vm, storageProfile, diskSettings, diskId, err
+	return vm, storageProfile, diskSettings, diskId, previousVdcFastProvisioningValue, err
+}
+
+// updateVdcFastProvisioning Enables or Disables fast provisioning if needed
+func updateVdcFastProvisioning(vcd *TestVCD, check *C, enable string) string {
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	adminVdc, err := adminOrg.GetAdminVDCByName(vcd.config.VCD.Vdc, true)
+	check.Assert(err, IsNil)
+	check.Assert(adminVdc, NotNil)
+
+	vdcFastProvisioningValue := "disabled"
+	if *adminVdc.AdminVdc.UsesFastProvisioning {
+		vdcFastProvisioningValue = "enable"
+	}
+
+	if *adminVdc.AdminVdc.UsesFastProvisioning && enable == "enable" {
+		return vdcFastProvisioningValue
+	}
+
+	if !*adminVdc.AdminVdc.UsesFastProvisioning && enable != "enable" {
+		return vdcFastProvisioningValue
+	}
+	valuePt := false
+	if enable == "enable" {
+		valuePt = true
+	}
+	adminVdc.AdminVdc.UsesFastProvisioning = &valuePt
+	_, err = adminVdc.Update()
+	check.Assert(err, IsNil)
+	return vdcFastProvisioningValue
 }
 
 // Test delete internal disk For VM
 func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	vm, _, _, diskId, err := vcd.createInternalDisk(check, 2)
+	vm, _, _, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, 2)
 	check.Assert(err, IsNil)
 
 	//verify
@@ -1048,4 +1088,7 @@ func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
 	disk, err := vm.GetInternalDiskById(diskId, true)
 	check.Assert(err, Equals, ErrorEntityNotFound)
 	check.Assert(disk, IsNil)
+
+	// enable fast provisioning if needed
+	updateVdcFastProvisioning(vcd, check, previousProvisioningValue)
 }
