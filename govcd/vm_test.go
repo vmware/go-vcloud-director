@@ -971,7 +971,7 @@ func (vcd *TestVCD) Test_VMSetGetGuestCustomizationSection(check *C) {
 func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	// In general VM internal works with Org users, but due we need change VDC fast provisioning value, we have to be sys admins
+	// In general VM internal disks works with Org users, but due we need change VDC fast provisioning value, we have to be sys admins
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
@@ -1082,7 +1082,7 @@ func updateVdcFastProvisioning(vcd *TestVCD, check *C, enable string) string {
 func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	// In general VM internal works with Org users, but due we need change VDC fast provisioning value, we have to be sys admins
+	// In general VM internal disks works with Org users, but due we need change VDC fast provisioning value, we have to be sys admins
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
