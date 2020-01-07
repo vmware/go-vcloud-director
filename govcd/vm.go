@@ -903,11 +903,8 @@ func (vm *VM) WaitForDhcpIpByNicIndex(nicIndex int, maxWaitSeconds int) (string,
 		return "", fmt.Errorf("NIC index cannot be negative")
 	}
 
-	// Determine what are the possible checks that can be done:
-	// * Only Guest tools reporting
-	// * DHCP leases reporting
-
-	// Check if DHCP lease verification makes sense
+	// If the NIC network is attached to edge gateway - it is possible to identify IP address via
+	// DHCP leases
 	edgeGatewayName, err := vm.getEdgeGatewayNameForNic(nicIndex)
 	if err != nil && !IsNotFound(err) {
 		return "", fmt.Errorf("could not validate if NIC %d uses routed network attached to edge gateway", nicIndex)
@@ -929,83 +926,44 @@ func (vm *VM) WaitForDhcpIpByNicIndex(nicIndex int, maxWaitSeconds int) (string,
 
 	}
 
-	// Validate if the VM is attached to routed org vdc network
-	// vdc, err := vm.getParentVdc()
-	// if err != nil {
-	// 	return "", fmt.Errorf("could not find parent vDC for VM %s: %s", vm.VM.Name, err)
-	// }
+	// Establish a timer to wait for particular amount of seconds
+	timeoutAfter := time.After(time.Duration(maxWaitSeconds) * time.Second)
+	tick := time.NewTicker(3 * time.Second)
+	for {
+		select {
+		case <-timeoutAfter:
+			return "", fmt.Errorf("could not find NIC with index %d", nicIndex)
+		case <-tick.C:
 
-	// edgeGateway, err := vdc.GetEdgeGatewayByName(edgeGatewayName, false)
-	// if err != nil {
-	// 	return "", fmt.Errorf("could not find Edge Gateway for NIC %d: %s", nicIndex, err)
-	// }
-
-	// networkConnnectionSection, err := vm.GetNetworkConnectionSection()
-	// if err != nil {
-	// 	return "", fmt.Errorf("could not get IP address for NIC %d: %s", nicIndex, err)
-	// }
-
-	// // Find NIC
-	// var networkConnection *types.NetworkConnection
-	// for _, nic := range networkConnnectionSection.NetworkConnection {
-	// 	if nic.NetworkConnectionIndex == nicIndex {
-	// 		networkConnection = nic
-	// 	}
-	// }
-
-	// if networkConnection == nil {
-	// 	return "", fmt.Errorf("could not find NIC with index %d", nicIndex)
-	// }
-
-	// if networkConnection.IPAddressAllocationMode != types.IPAllocationModeDHCP {
-	// 	return "", fmt.Errorf("NIC with index %d is not using DHCP", nicIndex)
-	// }
-
-	// // IP address is already reported in UI (by guest tools) - return it
-	// if networkConnection.IPAddress != "" {
-	// 	return networkConnection.IPAddress, nil
-	// }
-
-	// edgeGatewayName, err := vm.getEdgeGatewayNameForNic(nicIndex)
-	// if err != nil && !IsNotFound(err) {
-	// 	return "", fmt.Errorf("could not validate if NIC %d uses routed network attached to edge gateway", nicIndex)
-	// }
-
-	var dhcpLease *types.EdgeDhcpLeaseInfo
-
-	for poll := 0; poll < 10; poll++ {
-
-		// First try to check if VMware tools reported IP to UI
-		ip, err := vm.getIpByNicIndex(nicIndex)
-		if err != nil && !IsNotFound(err) {
-			return "", fmt.Errorf("could not check IP address for NIC %d: %s", nicIndex, err)
-		}
-
-		if ip != "" {
-			return ip, nil
-		}
-
-		// if this interface has routed network - check for DHCP leases
-		if edgeGateway != nil {
-			mac, err := vm.getMacByNicIndex(nicIndex)
+			// First try to check if VMware tools reported IP to UI
+			ip, err := vm.getIpByNicIndex(nicIndex)
 			if err != nil && !IsNotFound(err) {
-				return "", fmt.Errorf("error checking MAC address for NIC %d", nicIndex)
+				return "", fmt.Errorf("could not check IP address for NIC %d: %s", nicIndex, err)
 			}
 
-			dhcpLease, err = edgeGateway.GetNsxvActiveDhcpLeaseByMac(mac)
-			if err != nil && !IsNotFound(err) {
-				return "", fmt.Errorf("could not find DHCP lease for NIC %d: %s", nicIndex, err)
+			if ip != "" {
+				return ip, nil
 			}
 
-			if dhcpLease != nil && dhcpLease.IpAddress != "" {
-				return dhcpLease.IpAddress, nil
+			// if this interface has routed network - check for DHCP leases
+			if edgeGateway != nil {
+				mac, err := vm.getMacByNicIndex(nicIndex)
+				if err != nil && !IsNotFound(err) {
+					return "", fmt.Errorf("error checking MAC address for NIC %d", nicIndex)
+				}
+
+				dhcpLease, err := edgeGateway.GetNsxvActiveDhcpLeaseByMac(mac)
+				if err != nil && !IsNotFound(err) {
+					return "", fmt.Errorf("could not find DHCP lease for NIC %d: %s", nicIndex, err)
+				}
+
+				if dhcpLease != nil && dhcpLease.IpAddress != "" {
+					return dhcpLease.IpAddress, nil
+				}
 			}
+
 		}
-
-		time.Sleep(10 * time.Second)
 	}
-
-	return "", fmt.Errorf("could not find NIC with index %d", nicIndex)
 }
 
 // getEdgeGatewayNameForNic checks if a network card with specified nicIndex uses routed network and
