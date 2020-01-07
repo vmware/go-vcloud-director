@@ -1033,6 +1033,8 @@ func (vcd *TestVCD) createInternalDisk(check *C, busNumber int) (*VM, types.Refe
 	// disables fast provisioning if needed
 	previousVdcFastProvisioningValue := updateVdcFastProvisioning(vcd, check, "disable")
 
+	AddToCleanupList(previousVdcFastProvisioningValue, "fastProvisioning", vcd.config.VCD.Org+"|"+vcd.config.VCD.Vdc, "createInternalDisk")
+
 	diskId, err := vm.AddInternalDisk(diskSettings)
 	check.Assert(err, IsNil)
 	check.Assert(diskId, NotNil)

@@ -1115,8 +1115,35 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		if err != nil {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
+	case "fastProvisioning":
+		orgName, vdcName, _ := splitParent(entity.Parent, "|")
+		if orgName == "" || vdcName == "" {
+			vcd.infoCleanup(splitParentNotFound, entity.Parent)
+		}
+		org, err := vcd.client.GetAdminOrgByName(orgName)
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, "org", orgName)
+		}
+		adminVdc, err := org.GetAdminVDCByName(vdcName, false)
+		if adminVdc == nil || err != nil {
+			vcd.infoCleanup(notFoundMsg, "vdc", vdcName)
+		}
+		fastProvisioningValue := false
+		if entity.Name == "enable" {
+			fastProvisioningValue = true
+		}
 
-		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		if *adminVdc.AdminVdc.UsesFastProvisioning != fastProvisioningValue {
+			adminVdc.AdminVdc.UsesFastProvisioning = &fastProvisioningValue
+			_, err = adminVdc.Update()
+			if err != nil {
+				vcd.infoCleanup("updateLeftoverEntries: [INFO] revert back VDC fast provisioning value % s failed\n", entity.Name)
+				return
+			}
+			vcd.infoCleanup("updateLeftoverEntries: [INFO] reverted back VDC fast provisioning value %s \n", entity.Name)
+		} else {
+			vcd.infoCleanup("updateLeftoverEntries: [INFO] VDC fast provisioning left as it is %s \n", entity.Name)
+		}
 		return
 
 	default:
