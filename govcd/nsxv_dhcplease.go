@@ -60,7 +60,7 @@ func (egw *EdgeGateway) GetAllNsxvDhcpLeases() ([]*types.EdgeDhcpLeaseInfo, erro
 		return nil, err
 	}
 
-	if len(dhcpLeases.DhcpLease.DhcpLeaseInfos) == 0 {
+	if dhcpLeases != nil && len(dhcpLeases.DhcpLease.DhcpLeaseInfos) == 0 {
 		util.Logger.Printf("[DEBUG] GetAllNsxvDhcpLeases found 0 leases available")
 		return nil, ErrorEntityNotFound
 	}
