@@ -1104,3 +1104,129 @@ func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
 	// enable fast provisioning if needed
 	updateVdcFastProvisioning(vcd, check, previousProvisioningValue)
 }
+
+// Test update internal disk for VM which has independent disk
+func (vcd *TestVCD) Test_UpdateInternalDisk(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	// In general VM internal disks works with Org users, but due we need change VDC fast provisioning value, we have to be sys admins
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	vm, storageProfile, diskSettings, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, 1)
+	check.Assert(err, IsNil)
+
+	//verify
+	disk, err := vm.GetInternalDiskById(diskId, true)
+	check.Assert(err, IsNil)
+	check.Assert(disk, NotNil)
+
+	// increase new disk size
+	vmSpecSection := vm.VM.VmSpecSection
+	changeDiskSettings := vm.VM.VmSpecSection.DiskSection.DiskSettings
+	for _, diskSettings := range changeDiskSettings {
+		if diskSettings.DiskId == diskId {
+			diskSettings.SizeMb = 2048
+		}
+	}
+
+	vmSpecSection.DiskSection.DiskSettings = changeDiskSettings
+
+	vmSpecSection, err = vm.UpdateInternalDisks(vmSpecSection)
+	check.Assert(err, IsNil)
+
+	disk, err = vm.GetInternalDiskById(diskId, true)
+	check.Assert(err, IsNil)
+	check.Assert(disk, NotNil)
+
+	//verify
+	check.Assert(disk.StorageProfile.HREF, Equals, storageProfile.HREF)
+	check.Assert(disk.StorageProfile.ID, Equals, storageProfile.ID)
+	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
+	check.Assert(*disk.ThinProvisioned, Equals, *diskSettings.ThinProvisioned)
+	check.Assert(*disk.Iops, Equals, *diskSettings.Iops)
+	check.Assert(disk.SizeMb, Equals, int64(2048))
+	check.Assert(disk.UnitNumber, Equals, diskSettings.UnitNumber)
+	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
+	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
+
+	// attach independent disk
+	independentDisk, err := attachIndependentDisk(vcd, check)
+	check.Assert(err, IsNil)
+
+	//cleanup
+	err = vm.DeleteInternalDisk(diskId)
+	check.Assert(err, IsNil)
+	detachIndependentDisk(vcd, check, independentDisk)
+
+	// disable fast provisioning if needed
+	updateVdcFastProvisioning(vcd, check, previousProvisioningValue)
+}
+
+func attachIndependentDisk(vcd *TestVCD, check *C) (*Disk, error) {
+	// Find VM
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	vm := NewVM(&vcd.client.Client)
+	vm.VM = &vmType
+
+	// Ensure vApp and VM are suitable for this test
+	// Disk attach and detach operations are not working if VM is suspended
+	err := vcd.ensureVappIsSuitableForVMTest(vapp)
+	check.Assert(err, IsNil)
+	err = vcd.ensureVMIsSuitableForVMTest(vm)
+	check.Assert(err, IsNil)
+
+	// Create disk
+	diskCreateParamsDisk := &types.Disk{
+		Name:        TestAttachedVMDisk,
+		Size:        vcd.config.VCD.Disk.Size,
+		Description: TestAttachedVMDisk,
+	}
+
+	diskCreateParams := &types.DiskCreateParams{
+		Disk: diskCreateParamsDisk,
+	}
+
+	task, err := vcd.vdc.CreateDisk(diskCreateParams)
+	check.Assert(err, IsNil)
+
+	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
+	diskHREF := task.Task.Owner.HREF
+
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+
+	// Wait for disk creation complete
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	// Verify created disk
+	check.Assert(diskHREF, Not(Equals), "")
+	disk, err := vcd.vdc.GetDiskByHref(diskHREF)
+	check.Assert(err, IsNil)
+	check.Assert(disk.Disk.Name, Equals, diskCreateParamsDisk.Name)
+	check.Assert(disk.Disk.Size, Equals, diskCreateParamsDisk.Size)
+	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
+
+	// Attach disk
+	attachDiskTask, err := vm.AttachDisk(&types.DiskAttachOrDetachParams{
+		Disk: &types.Reference{
+			HREF: disk.Disk.HREF,
+		},
+	})
+	check.Assert(err, IsNil)
+
+	err = attachDiskTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	return disk, err
+}
+
+func detachIndependentDisk(vcd *TestVCD, check *C, disk *Disk) {
+	err := vcd.detachIndependentDisk(Disk{disk.Disk, &vcd.client.Client})
+	check.Assert(err, IsNil)
+}
