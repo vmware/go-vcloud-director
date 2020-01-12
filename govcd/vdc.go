@@ -20,7 +20,6 @@ import (
 type Vdc struct {
 	Vdc    *types.Vdc
 	client *Client
-	VApp   *types.VApp
 }
 
 func NewVdc(cli *Client) *Vdc {
@@ -353,10 +352,10 @@ func (vdc *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 
 }
 
-// getEdgeGatewayByHref retrieves an edge gateway from VDC
+// GetEdgeGatewayByHref retrieves an edge gateway from VDC
 // by querying directly its HREF.
 // The name passed as parameter is only used for error reporting
-func (vdc *Vdc) getEdgeGatewayByHref(name, href string) (*EdgeGateway, error) {
+func (vdc *Vdc) GetEdgeGatewayByHref(name, href string) (*EdgeGateway, error) {
 	if href == "" {
 		return nil, fmt.Errorf("empty HREF for edge gateway '%s'", name)
 	}
@@ -426,7 +425,7 @@ func (vdc *Vdc) GetEdgeGatewayByName(name string, refresh bool) (*EdgeGateway, e
 
 	for _, edge := range edgeGatewayRecord.EdgeGatewayRecord {
 		if edge.Name == name {
-			return vdc.getEdgeGatewayByHref(edge.Name, edge.HREF)
+			return vdc.GetEdgeGatewayByHref(edge.Name, edge.HREF)
 		}
 	}
 
@@ -444,7 +443,7 @@ func (vdc *Vdc) GetEdgeGatewayById(id string, refresh bool) (*EdgeGateway, error
 
 	for _, edge := range edgeGatewayRecord.EdgeGatewayRecord {
 		if equalIds(id, "", edge.HREF) {
-			return vdc.getEdgeGatewayByHref(edge.Name, edge.HREF)
+			return vdc.GetEdgeGatewayByHref(edge.Name, edge.HREF)
 		}
 	}
 
@@ -836,4 +835,42 @@ func (vdc *Vdc) buildNsxvNetworkServiceEndpointURL(optionalSuffix string) (strin
 	}
 
 	return hostname, nil
+}
+
+// GetEdgeGatewayReferenceList retrieves a list of edge gateway references.
+// Unlike other entities under Vdc, edge gateway are not listed in the parent entities
+// and therefore we need to get the list using a query.
+func (vdc *Vdc) GetEdgeGatewayReferenceList(refresh bool) ([]*types.Reference, error) {
+
+	if refresh {
+		err := vdc.Refresh()
+		if err != nil {
+			return nil, fmt.Errorf("error refreshing vdc: %s", err)
+		}
+	}
+	for _, av := range vdc.Vdc.Link {
+		if av.Rel == "edgeGateways" && av.Type == "application/vnd.vmware.vcloud.query.records+xml" {
+
+			edgeGatewayRecordsType := new(types.QueryResultEdgeGatewayRecordsType)
+
+			_, err := vdc.client.ExecuteRequest(av.HREF, http.MethodGet,
+				"", "error querying edge gateways: %s", nil, edgeGatewayRecordsType)
+			if err != nil {
+				return nil, err
+			}
+
+			var refList = make([]*types.Reference, len(edgeGatewayRecordsType.EdgeGatewayRecord))
+			for i, egw := range edgeGatewayRecordsType.EdgeGatewayRecord {
+				var ref = types.Reference{
+					Name: egw.Name,
+					Type: egw.Type,
+					ID:   "",
+					HREF: egw.HREF,
+				}
+				refList[i] = &ref
+			}
+			return refList, nil
+		}
+	}
+	return nil, fmt.Errorf("no edge gateway query link found in VDC %s", vdc.Vdc.Name)
 }
