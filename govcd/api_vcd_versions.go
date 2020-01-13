@@ -178,3 +178,14 @@ func (cli *Client) validateAPIVersion() error {
 
 	return nil
 }
+
+// GetSpecificApiVersionOnCondition returns default version or wantedApiVersion if it is connected to version
+// described in vcdApiVersionCondition
+// f.e. values ">= 32.0", "32.0" returns 32.0 if vCD version is above or 9.7
+func (cli *Client) GetSpecificApiVersionOnCondition(vcdApiVersionCondition, wantedApiVersion string) string {
+	apiVersion := cli.APIVersion
+	if cli.APIVCDMaxVersionIs(vcdApiVersionCondition) {
+		apiVersion = wantedApiVersion
+	}
+	return apiVersion
+}

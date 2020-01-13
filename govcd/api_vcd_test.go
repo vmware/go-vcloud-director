@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -1114,8 +1115,35 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		if err != nil {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
+	case "fastProvisioning":
+		orgName, vdcName, _ := splitParent(entity.Parent, "|")
+		if orgName == "" || vdcName == "" {
+			vcd.infoCleanup(splitParentNotFound, entity.Parent)
+		}
+		org, err := vcd.client.GetAdminOrgByName(orgName)
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, "org", orgName)
+		}
+		adminVdc, err := org.GetAdminVDCByName(vdcName, false)
+		if adminVdc == nil || err != nil {
+			vcd.infoCleanup(notFoundMsg, "vdc", vdcName)
+		}
+		fastProvisioningValue := false
+		if entity.Name == "enable" {
+			fastProvisioningValue = true
+		}
 
-		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		if *adminVdc.AdminVdc.UsesFastProvisioning != fastProvisioningValue {
+			adminVdc.AdminVdc.UsesFastProvisioning = &fastProvisioningValue
+			_, err = adminVdc.Update()
+			if err != nil {
+				vcd.infoCleanup("updateLeftoverEntries: [INFO] revert back VDC fast provisioning value % s failed\n", entity.Name)
+				return
+			}
+			vcd.infoCleanup("updateLeftoverEntries: [INFO] reverted back VDC fast provisioning value %s \n", entity.Name)
+		} else {
+			vcd.infoCleanup("updateLeftoverEntries: [INFO] VDC fast provisioning left as it is %s \n", entity.Name)
+		}
 		return
 
 	default:
@@ -1361,4 +1389,34 @@ func (vcd *TestVCD) findFirstVapp() VApp {
 
 func takeBoolPointer(value bool) *bool {
 	return &value
+}
+
+// Test_NewRequestWitNotEncodedParamsWithApiVersion verifies that api version override works
+func (vcd *TestVCD) Test_NewRequestWitNotEncodedParamsWithApiVersion(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	queryUlr := vcd.client.Client.VCDHREF
+	queryUlr.Path += "/query"
+
+	apiVersion, err := vcd.client.Client.maxSupportedVersion()
+	check.Assert(err, IsNil)
+
+	req := vcd.client.Client.NewRequestWitNotEncodedParamsWithApiVersion(nil, map[string]string{"type": "media",
+		"filter": "name==any"}, http.MethodGet, queryUlr, nil, apiVersion)
+
+	resp, err := checkResp(vcd.client.Client.Http.Do(req))
+	check.Assert(err, IsNil)
+
+	check.Assert(resp.Header.Get("Content-Type"), Equals, "application/vnd.vmware.vcloud.query.records+xml;version="+apiVersion)
+
+	// Repeats the call without API version change
+	req = vcd.client.Client.NewRequestWitNotEncodedParams(nil, map[string]string{"type": "media",
+		"filter": "name==any"}, http.MethodGet, queryUlr, nil)
+
+	resp, err = checkResp(vcd.client.Client.Http.Do(req))
+	check.Assert(err, IsNil)
+
+	// Checks that the regularAPI version was not affected by the previous call
+	check.Assert(resp.Header.Get("Content-Type"), Equals, "application/vnd.vmware.vcloud.query.records+xml;version="+vcd.client.Client.APIVersion)
+
+	fmt.Printf("Test: %s run with api Version: %s\n", check.TestName(), apiVersion)
 }
