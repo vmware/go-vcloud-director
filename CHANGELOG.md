@@ -1,4 +1,16 @@
-## 2.5.0 (Unreleased)
+## 2.6.0 (Unreleased)
+
+* Moved `VCDClient.supportedVersions` to `VCDClient.Client.supportedVersions` [#274](https://github.com/vmware/go-vcloud-director/pull/274)    
+* Added methods `VM.AddInternalDisk`, `VM.GetInternalDiskById`, `VM.DeleteInternalDisk`, `VM.UpdateInternalDisks` and `VM.UpdateInternalDisksAsync`
+
+## 2.5.1 (December 12, 2019)
+
+BUGS FIXED:
+* Fix a bug where functions `GetAnyVnicIndexByNetworkName` and `GetVnicIndexByNetworkNameAndType`
+  would not find vNic index when user is authenticated as org admin (not sysadmin)
+  [#275](https://github.com/vmware/go-vcloud-director/pull/275)
+
+## 2.5.0 (December 11, 2019)
 
 * Change fields ResourceGuaranteedCpu, VCpuInMhz, IsThinProvision, NetworkPoolReference,
   ProviderVdcReference and UsesFastProvisioning in AdminVdc to pointers to allow understand if value
@@ -33,7 +45,6 @@
 * Added methods which allow override API versions `NewRequestWitNotEncodedParamsWithApiVersion`, 
    `ExecuteTaskRequestWithApiVersion`, `ExecuteRequestWithoutResponseWithApiVersion`,
    `ExecuteRequestWithApiVersion` [#274](https://github.com/vmware/go-vcloud-director/pull/274)
-* Moved `VCDClient.supportedVersions` to `VCDClient.Client.supportedVersions` [#274](https://github.com/vmware/go-vcloud-director/pull/274)    
 
 BUGS FIXED:
 * Remove parentheses from filtering since they weren't treated correctly in some environment [#256]
@@ -41,9 +52,6 @@ BUGS FIXED:
 * Take into account all subnets (SubnetParticipation) on edge gateway interface instead of the first
   one [#260](https://github.com/vmware/go-vcloud-director/pull/260)
 * Fix `OrgVdcNetwork` data structure to retrieve description. Previously, the description would not be retrieved because it was misplaced in the sequence.
-* Fix a bug where functions `GetAnyVnicIndexByNetworkName` and `GetVnicIndexByNetworkNameAndType`
-  would not find vNic index when user is authenticated as org admin (not sysadmin)
-  [#275](https://github.com/vmware/go-vcloud-director/pull/275)
 
 ## 2.4.0 (October 28, 2019)
 
