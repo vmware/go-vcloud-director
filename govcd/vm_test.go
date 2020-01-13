@@ -1135,6 +1135,7 @@ func (vcd *TestVCD) Test_UpdateInternalDisk(check *C) {
 
 	vmSpecSection, err = vm.UpdateInternalDisks(vmSpecSection)
 	check.Assert(err, IsNil)
+	check.Assert(vmSpecSection, NotNil)
 
 	disk, err = vm.GetInternalDiskById(diskId, true)
 	check.Assert(err, IsNil)
