@@ -972,7 +972,7 @@ func allNicsHaveIps(nicConfigs []nicDhcpConfig) bool {
 // * VM has guest tools (vCD UI shows IP address). (Takes longer time)
 // * VM DHCP interface is connected to routed Org network and is using Edge Gateway DHCP. (Takes
 // less time, but is more constrained)
-func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int) ([]string, error) {
+func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int, useDhcpLeaseCheck bool) ([]string, error) {
 	util.Logger.Printf("[TRACE] VM '%s' - attempting to lookup IP addresses for DHCP NICs %v\n",
 		vm.VM.Name, nicIndexes)
 	// validate NIC indexes
@@ -992,11 +992,13 @@ func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int) ([
 	for index, nicIndex := range nicIndexes {
 		nicStates[index].vmNicIndex = nicIndex
 	}
-
-	// Lookup edge gateways for routed networks and store them
-	nicStates, err := vm.getEdgeGatewaysForRoutedNics(nicStates)
-	if err != nil {
-		return []string{}, fmt.Errorf("unable to validate if NICs are attached to edge gateway: %s", err)
+	var err error
+	if useDhcpLeaseCheck { // Edge gateways have to be looked up when DHCP lease checks are enabled
+		// Lookup edge gateways for routed networks and store them
+		nicStates, err = vm.getEdgeGatewaysForRoutedNics(nicStates)
+		if err != nil {
+			return []string{}, fmt.Errorf("unable to validate if NICs are attached to edge gateway: %s", err)
+		}
 	}
 
 	// Run a timer to wait for IPs being present until maxWaitSeconds
@@ -1030,21 +1032,23 @@ func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int) ([
 			util.Logger.Printf("[DEBUG] VM '%s' NICs with indexes %v did not all report their IPs using guest tools\n",
 				vm.VM.Name, nicIndexes)
 
-			// Step 2 check if DHCP leases in edge gateways can hint IP addresses
-			nicStates, err = vm.getIpsByDhcpLeaseMacs(nicStates)
-			if err != nil {
-				return []string{}, fmt.Errorf("could not check MAC leases for VM '%s': %s",
-					vm.VM.Name, err)
-			}
+			// Step 2 If enabled - check if DHCP leases in edge gateways can hint IP addresses
+			if useDhcpLeaseCheck {
+				nicStates, err = vm.getIpsByDhcpLeaseMacs(nicStates)
+				if err != nil {
+					return []string{}, fmt.Errorf("could not check MAC leases for VM '%s': %s",
+						vm.VM.Name, err)
+				}
 
-			// All IP addresses found - return
-			if allNicsHaveIps(nicStates) {
-				util.Logger.Printf("[TRACE] VM '%s' NICs with indexes %v all reported their IPs after lease check\n",
+				// All IP addresses found - return
+				if allNicsHaveIps(nicStates) {
+					util.Logger.Printf("[TRACE] VM '%s' NICs with indexes %v all reported their IPs after lease check\n",
+						vm.VM.Name, nicIndexes)
+					return getIpsFromNicDhcpConfigs(nicStates), nil
+				}
+				util.Logger.Printf("[DEBUG] VM '%s' NICs with indexes %v did not all report their IPs using DHCP leases\n",
 					vm.VM.Name, nicIndexes)
-				return getIpsFromNicDhcpConfigs(nicStates), nil
 			}
-			util.Logger.Printf("[DEBUG] VM '%s' NICs with indexes %v did not all report their IPs using DHCP leases\n",
-				vm.VM.Name, nicIndexes)
 		}
 	}
 }
