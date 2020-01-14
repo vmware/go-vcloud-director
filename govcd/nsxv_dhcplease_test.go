@@ -79,15 +79,24 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	netCfg.NetworkConnection[0].Network = network.Name
 	netCfg.NetworkConnection[0].IPAddressAllocationMode = types.IPAllocationModeDHCP
 
+	secondNic := &types.NetworkConnection{
+		Network:                 network.Name,
+		IPAddressAllocationMode: types.IPAllocationModeDHCP,
+		NetworkConnectionIndex:  1,
+		IsConnected:             true,
+	}
+	netCfg.NetworkConnection = append(netCfg.NetworkConnection, secondNic)
+
 	// Update network configuration to use DHCP
 	err = vm.UpdateNetworkConnectionSection(netCfg)
 	check.Assert(err, IsNil)
 
-	// Get network configuration to have network adapter MAC address
-	// netConfigWithMac, err := vm.GetNetworkConnectionSection()
-	// check.Assert(err, IsNil)
-
-	// nicMacAddress := netConfigWithMac.NetworkConnection[0].MACAddress
+	// Pretend we are waiting for DHCP addresses when VM is powered off - it must timeout
+	ips, err := vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 10)
+	check.Assert(err, ErrorMatches, `^timeout:.*`)
+	check.Assert(ips, HasLen, 2)
+	check.Assert(ips[0], Equals, "")
+	check.Assert(ips[1], Equals, "")
 
 	// Power on VM
 	task, err = vm.PowerOn()
@@ -98,10 +107,19 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	// Wait and check DHCP lease acquired
 	// waitForDhcpLease(check, vm, edgeGateway, nicMacAddress, dhcpSubnet)
 	// ip, err := vm.WaitForDhcpIpByNicIndex(0, 200)
-	ips, err := vm.WaitForDhcpIpByNicIndexes([]int{0}, 200)
+	ips, err = vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 200)
 	check.Assert(err, IsNil)
-	ip := ips[0]
-	fmt.Println("Got IP: " + ip)
+	check.Assert(ips, HasLen, 2)
+	check.Assert(ips[0], Matches, `^32.32.32.\d{1,3}$`)
+	check.Assert(ips[1], Matches, `^32.32.32.\d{1,3}$`)
+	fmt.Printf("Got IPs: %v", ips)
+
+	// Check for a single NIC
+	ips, err = vm.WaitForDhcpIpByNicIndexes([]int{0}, 200)
+	check.Assert(err, IsNil)
+	check.Assert(ips, HasLen, 1)
+	check.Assert(ips[0], Matches, `^32.32.32.\d{1,3}$`)
+	fmt.Printf("Got IPs #2: %v", ips)
 
 	// Restore network configuration
 	err = vm.UpdateNetworkConnectionSection(netCfgBackup)
