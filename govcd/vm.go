@@ -889,99 +889,21 @@ func (vm *VM) getParentVdc() (*Vdc, error) {
 	return &vdc, nil
 }
 
-// WaitForDhcpIpByNicIndex tries to get DHCP IP address for specific NIC index and gives up after
-// maxWaitSeconds
-//
-// Getting a DHCP address is complicated because vCD (in UI and in types.NetworkConnectionSection)
-// reports IP addresses when guest tools are present on a VM only.
-//
-// For this function to work - at least one the following must be true:
-// * VM has guest tools (vCD UI shows IP address)
-// * VM DHCP interface is connected to routed Org network and is using Edge Gateway DHCP
-// server (does not relay DHCP messages to external DHCP service)
-func (vm *VM) WaitForDhcpIpByNicIndex(nicIndex int, maxWaitSeconds int) (string, error) {
-	if nicIndex < 0 {
-		return "", fmt.Errorf("NIC index cannot be negative")
-	}
-
-	// If the NIC network is attached to edge gateway - it is possible to identify IP address via
-	// DHCP leases
-	edgeGatewayName, err := vm.getEdgeGatewayNameForNic(nicIndex)
-	if err != nil && !IsNotFound(err) {
-		return "", fmt.Errorf("could not validate if NIC %d uses routed network attached to edge gateway", nicIndex)
-	}
-
-	var edgeGateway *EdgeGateway
-	if edgeGatewayName != "" {
-		// Validate if the VM is attached to routed org vdc network
-		vdc, err := vm.getParentVdc()
-		if err != nil {
-			return "", fmt.Errorf("could not find parent vDC for VM %s: %s", vm.VM.Name, err)
-		}
-
-		edgeGateway, err = vdc.GetEdgeGatewayByName(edgeGatewayName, false)
-		if err != nil {
-			return "", fmt.Errorf("could not lookup edge gateway for routed network on NIC %d: %s",
-				nicIndex, err)
-		}
-
-	}
-
-	// Establish a timer to wait for particular amount of seconds
-	timeoutAfter := time.After(time.Duration(maxWaitSeconds) * time.Second)
-	tick := time.NewTicker(3 * time.Second)
-	for {
-		select {
-		case <-timeoutAfter:
-			return "", fmt.Errorf("could not find NIC with index %d", nicIndex)
-		case <-tick.C:
-
-			// First try to check if VMware tools reported IP to UI
-			ip, err := vm.getIpByNicIndex(nicIndex)
-			if err != nil && !IsNotFound(err) {
-				return "", fmt.Errorf("could not check IP address for NIC %d: %s", nicIndex, err)
-			}
-
-			if ip != "" {
-				return ip, nil
-			}
-
-			// if this interface has routed network - check for DHCP leases
-			if edgeGateway != nil {
-				mac, err := vm.getMacByNicIndex(nicIndex)
-				if err != nil && !IsNotFound(err) {
-					return "", fmt.Errorf("error checking MAC address for NIC %d", nicIndex)
-				}
-
-				dhcpLease, err := edgeGateway.GetNsxvActiveDhcpLeaseByMac(mac)
-				if err != nil && !IsNotFound(err) {
-					return "", fmt.Errorf("could not find DHCP lease for NIC %d: %s", nicIndex, err)
-				}
-
-				if dhcpLease != nil && dhcpLease.IpAddress != "" {
-					return dhcpLease.IpAddress, nil
-				}
-			}
-
-		}
-	}
-}
-
-func (vm *VM) getEdgeGatewaysForRoutedNics(nicIndexes []int) ([]*EdgeGateway, error) {
+func (vm *VM) getEdgeGatewaysForRoutedNics(nicDhcpConfigs []nicDhcpConfig) ([]nicDhcpConfig, error) {
 	// Check if any of NICs are using routed networks and attached to edge gateway
-	edgeGatewaysByNicIndex := make([]*EdgeGateway, len(nicIndexes))
+	// edgeGatewaysByNicIndex := make([]*EdgeGateway, len(nicIndexes))
 
-	for index, nicIndex := range nicIndexes {
-		edgeGatewayName, err := vm.getEdgeGatewayNameForNic(nicIndex)
+	for index, nic := range nicDhcpConfigs {
+		edgeGatewayName, err := vm.getEdgeGatewayNameForNic(nic.vmNicIndex)
 
 		if err != nil && !IsNotFound(err) {
-			return nil, fmt.Errorf("could not validate if NIC %d uses routed network attached to edge gateway", nicIndex)
+			return nil, fmt.Errorf("could not validate if NIC %d uses routed network attached to edge gateway", nic.vmNicIndex)
 		}
 
 		// This nicIndex is not attached to routed network, move further
 		if IsNotFound(err) {
 			util.Logger.Printf("[TRACE] VM '%s' NIC with index %d is not attached to edge gateway routed network\n",
-				vm.VM.Name, nicIndex)
+				vm.VM.Name, nic.vmNicIndex)
 			continue
 		}
 
@@ -995,35 +917,63 @@ func (vm *VM) getEdgeGatewaysForRoutedNics(nicIndexes []int) ([]*EdgeGateway, er
 		edgeGateway, err := vdc.GetEdgeGatewayByName(edgeGatewayName, false)
 		if err != nil {
 			return nil, fmt.Errorf("could not lookup edge gateway for routed network on NIC %d: %s",
-				nicIndex, err)
+				nic.vmNicIndex, err)
 		}
 
 		util.Logger.Printf("[TRACE] VM '%s' NIC with index %d is attached to edge gateway routed network\n",
-			vm.VM.Name, nicIndex)
-		edgeGatewaysByNicIndex[index] = edgeGateway
+			vm.VM.Name, nic.vmNicIndex)
+		// edgeGatewaysByNicIndex[index] = edgeGateway
+		// nicDhcpConfigs[index]
+		nicDhcpConfigs[index].routedNetworkEdgeGateway = edgeGateway
 	}
 
-	return edgeGatewaysByNicIndex, nil
+	return nicDhcpConfigs, nil
 }
 
-type nicDhcpResult struct {
-	vmNicIndex               *int
+type nicDhcpConfig struct {
+	vmNicIndex               int
 	ip                       string
 	mac                      string
 	routedNetworkEdgeGateway *EdgeGateway
 }
 
-type nicDhcpResults []nicDhcpResult
+type nicDhcpConfigs []nicDhcpConfig
+
+func getIpsFromNicDhcpConfigs(nicConfigs []nicDhcpConfig) []string {
+	result := make([]string, len(nicConfigs))
+	for index, nicConfig := range nicConfigs {
+		result[index] = nicConfig.ip
+	}
+	return result
+}
+
+func allNicsHaveIps(nicConfigs []nicDhcpConfig) bool {
+	allNicsHaveIps := true
+	for _, nicConfig := range nicConfigs {
+		// result[index] = nicConfig.ip
+		if nicConfig.ip == "" {
+			allNicsHaveIps = false
+		}
+	}
+	return allNicsHaveIps
+}
 
 // WaitForDhcpIpByNicIndexes accepts a slice of NIC indexes in VM, tries to get these IPs up to
 // maxWaitSeconds and the returns a list of these IPs.
 //
 // This function checks a slice of nicIndexes and reuses all possible API calls. It may return a
-// partial result for IP addresses.
+// partial result for IP addresses when the timeout is hit.
+//
+// Getting a DHCP address is complicated because vCD (in UI and in types.NetworkConnectionSection)
+// reports IP addresses when guest tools are present on a VM only. This function also attempts to
+// check if VM NICs are attached to routed network on edge gateway - then there is a chance that
+// built-in DHCP pools are used and active DHCP leases can be found.
+//
+// For this function to work - at least one the following must be true:
+// * VM has guest tools (vCD UI shows IP address). (Takes longer time)
+// * VM DHCP interface is connected to routed Org network and is using Edge Gateway DHCP. (Takes
+// less time, but is more constrained)
 func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int) ([]string, error) {
-	// nicIndexIps holds then end results
-	nicIndexIps := make([]string, len(nicIndexes))
-
 	util.Logger.Printf("[TRACE] VM '%s' - attempting to lookup IP addresses for DHCP NICs %v\n",
 		vm.VM.Name, nicIndexes)
 	// validate NIC indexes
@@ -1036,94 +986,62 @@ func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int) ([
 		}
 	}
 
-	// Lookup edge gateways for routed networks and store them in a slice ordered the same as nicIndexes
-	edgeGatewaysByNicIndex, err := vm.getEdgeGatewaysForRoutedNics(nicIndexes)
+	// inject NIC indexes into structure []nicDhcpConfig as this allows to save API calls when
+	// querying for multiple NICs
+	// This slice is ordered the same as original slice of nicIndexes
+	nicStates := make(nicDhcpConfigs, len(nicIndexes))
+	for index, nicIndex := range nicIndexes {
+		nicStates[index].vmNicIndex = nicIndex
+	}
+
+	// Lookup edge gateways for routed networks and store them
+	nicStates, err := vm.getEdgeGatewaysForRoutedNics(nicStates)
 	if err != nil {
 		return []string{}, fmt.Errorf("unable to validate if NICs are attached to edge gateway: %s", err)
 	}
 
-	// Establish a timer to wait for particular amount of seconds
+	// Run a timer to wait for IPs being present until maxWaitSeconds
 	timeoutAfter := time.After(time.Duration(maxWaitSeconds) * time.Second)
 	tick := time.NewTicker(3 * time.Second)
 	for {
 		select {
 		// If timeout occured - return as much as was found
 		case <-timeoutAfter:
-			return nicIndexIps, fmt.Errorf("timed out")
+			return getIpsFromNicDhcpConfigs(nicStates), fmt.Errorf("timed out")
 		case <-tick.C:
-			// First try to check if VMware tools reported IP to UI
-			result, err := vm.getIpsByNicIndexes(nicIndexes)
-			if err != nil && !IsNotFound(err) {
+			// Step 1 check if VMware tools reported IPs to UI. Also populate MAC addresses into
+			// nicStates structure for later usage.
+			nicStates, err = vm.getIpsMacsByNicIndexes(nicStates)
+			if err != nil {
 				return []string{}, fmt.Errorf("could not check IP addresses assigned to VM %s: %s",
 					vm.VM.Name, err)
 			}
 
-			foundAllNics := true
-			// validate if all IPs are now returned
-			for _, ip := range result {
-				if ip == "" {
-					foundAllNics = false
-				}
-			}
-
-			// foundAllNics = false // Temporary measures
-			// We have found all IP addresses - time to exit
-			if foundAllNics {
+			// All IP addresses found - return
+			if allNicsHaveIps(nicStates) {
 				util.Logger.Printf("[TRACE] VM '%s' NICs with indexes %v all reported their IPs using guest tools\n",
 					vm.VM.Name, nicIndexes)
-				return result, nil
+				return getIpsFromNicDhcpConfigs(nicStates), nil
 			}
 
 			util.Logger.Printf("[TRACE] VM '%s' NICs with indexes %v did not all report their IPs using guest tools\n",
 				vm.VM.Name, nicIndexes)
 
-			// Try to check for active DHCP leases
-			for sliceIndex, nicIndex := range nicIndexes {
-
-				// If this network doesn't have NIC attached to edge gateway
-				if edgeGatewaysByNicIndex[sliceIndex] == nil {
-					continue
-				}
-
-				egw := edgeGatewaysByNicIndex[sliceIndex]
-
-				mac, err := vm.getMacByNicIndex(nicIndex)
-				if err != nil && !IsNotFound(err) {
-					return []string{}, fmt.Errorf("error checking MAC address for NIC %d", nicIndex)
-				}
-
-				dhcpLease, err := egw.GetNsxvActiveDhcpLeaseByMac(mac)
-				if err != nil && !IsNotFound(err) {
-					return []string{}, fmt.Errorf("could not find DHCP lease for NIC %d: %s", nicIndex, err)
-				}
-
-				util.Logger.Printf("[TRACE] VM '%s' NIC with index %d did not report DHCP lease\n",
-					vm.VM.Name, nicIndex)
-
-				if dhcpLease != nil && dhcpLease.IpAddress != "" {
-					result[sliceIndex] = dhcpLease.IpAddress
-					util.Logger.Printf("[TRACE] VM '%s' NIC with index %d reported IPs by DHCP lease\n",
-						vm.VM.Name, nicIndex)
-				}
-
+			// Step 2 check if DHCP leases in edge gateways can hint IP addresses
+			nicStates, err = vm.getIpsByDhcpLeaseMacs(nicStates)
+			if err != nil {
+				return []string{}, fmt.Errorf("could not check MAC leases for VM '%s': %s",
+					vm.VM.Name, err)
 			}
 
-			// validate if all NICs were found
-			foundAllNics = true
-			// validate if all IPs are now returned
-			for _, ip := range result {
-				if ip == "" {
-					foundAllNics = false
-				}
-			}
-			if foundAllNics {
+			// All IP addresses found - return
+			if allNicsHaveIps(nicStates) {
 				util.Logger.Printf("[TRACE] VM '%s' NICs with indexes %v all reported their IPs after lease check\n",
 					vm.VM.Name, nicIndexes)
-				return result, nil
+				return getIpsFromNicDhcpConfigs(nicStates), nil
 			}
 		}
 	}
-
 }
 
 // getEdgeGatewayNameForNic checks if a network card with specified nicIndex uses routed network and
@@ -1169,91 +1087,61 @@ func (vm *VM) getEdgeGatewayNameForNic(nicIndex int) (string, error) {
 	return edgeGatewayName, nil
 }
 
-// getIpByNicIndex returns IP address for NIC specified by nicIndex
-func (vm *VM) getIpByNicIndex(nicIndex int) (string, error) {
-	if nicIndex < 0 {
-		return "", fmt.Errorf("NIC index cannot be negative")
-	}
+func (vm *VM) getIpsByDhcpLeaseMacs(nicConfigs []nicDhcpConfig) ([]nicDhcpConfig, error) {
 
-	networkConnnectionSection, err := vm.GetNetworkConnectionSection()
-	if err != nil {
-		return "", fmt.Errorf("could not get IP address for NIC %d: %s", nicIndex, err)
-	}
+	dhcpLeaseCache := make(map[string][]*types.EdgeDhcpLeaseInfo)
 
-	// Find NIC
-	var networkConnection *types.NetworkConnection
-	for _, nic := range networkConnnectionSection.NetworkConnection {
-		if nic.NetworkConnectionIndex == nicIndex {
-			networkConnection = nic
+	var err error
+
+	for index, nicConfig := range nicConfigs {
+		// If the NIC does not have Edge Gateway defined - skip it
+		if nicConfig.routedNetworkEdgeGateway == nil {
+			continue
 		}
+
+		egw := nicConfig.routedNetworkEdgeGateway
+
+		if dhcpLeaseCache[egw.EdgeGateway.Name] == nil {
+			dhcpLeaseCache[egw.EdgeGateway.Name], err = egw.GetAllNsxvDhcpLeases()
+			if err != nil && !IsNotFound(err) {
+				return nicConfigs, fmt.Errorf("unable to get DHCP leases for Edge Gateway %s: %s",
+					egw.EdgeGateway.Name, err)
+			}
+		}
+
+		for _, lease := range dhcpLeaseCache[egw.EdgeGateway.Name] {
+			util.Logger.Printf("[DEBUG] Checking DHCP lease: %#+v", lease)
+			if lease.BindingState == "active" && lease.MacAddress == nicConfig.mac {
+				nicConfigs[index].mac = lease.IpAddress
+				// return lease, nil
+			}
+		}
+
 	}
 
-	if networkConnection == nil {
-		return "", fmt.Errorf("could not find NIC with index %d", nicIndex)
-	}
-
-	if networkConnection.IPAddress == "" {
-		return "", ErrorEntityNotFound
-	}
-
-	return networkConnection.IPAddress, nil
+	return nicConfigs, nil
 }
 
-func (vm *VM) getIpsByNicIndexes(nicIndexes []int) ([]string, error) {
-	// if nicIndex < 0 {
-	// 	return "", fmt.Errorf("NIC index cannot be negative")
-	// }
-
-	result := make([]string, len(nicIndexes))
-
+// getIpsMacsByNicIndexes searches for NICs attached to VM by vmNicIndex and populated
+// []nicDhcpConfig with IPs and MAC addresses
+func (vm *VM) getIpsMacsByNicIndexes(nicConfigs []nicDhcpConfig) ([]nicDhcpConfig, error) {
 	networkConnnectionSection, err := vm.GetNetworkConnectionSection()
 	if err != nil {
-		return []string{}, fmt.Errorf("could not get IP configuration for VM %s : %s", vm.VM.Name, err)
+		return nil, fmt.Errorf("could not get IP configuration for VM %s : %s", vm.VM.Name, err)
 	}
 
 	// Find NIC
-	// var networkConnection *types.NetworkConnection
-	for sliceIndex, nicIndex := range nicIndexes {
+	for sliceIndex, nicConfig := range nicConfigs {
 		for _, nic := range networkConnnectionSection.NetworkConnection {
-			if nic.NetworkConnectionIndex == nicIndex {
-				result[sliceIndex] = nic.IPAddress
-				// networkConnection = nic
+			if nic.NetworkConnectionIndex == nicConfig.vmNicIndex {
+				nicConfigs[sliceIndex].ip = nic.IPAddress
+				nicConfigs[sliceIndex].mac = nic.MACAddress
 			}
 		}
 	}
 
-	return result, nil
+	return nicConfigs, nil
 
-}
-
-// getIpByNicIndex returns MAC address for NIC specified by nicIndex
-func (vm *VM) getMacByNicIndex(nicIndex int) (string, error) {
-	if nicIndex < 0 {
-		return "", fmt.Errorf("NIC index cannot be negative")
-	}
-
-	networkConnnectionSection, err := vm.GetNetworkConnectionSection()
-	if err != nil {
-		return "", fmt.Errorf("could not get IP address for NIC %d: %s", nicIndex, err)
-	}
-
-	// Find NIC
-	var networkConnection *types.NetworkConnection
-	for _, nic := range networkConnnectionSection.NetworkConnection {
-		if nic.NetworkConnectionIndex == nicIndex {
-			networkConnection = nic
-		}
-	}
-
-	if networkConnection == nil {
-		return "", fmt.Errorf("could not find NIC with index %d", nicIndex)
-	}
-
-	if networkConnection.MACAddress == "" {
-		return "", ErrorEntityNotFound
-	}
-
-	return networkConnection.MACAddress, nil
 }
 
 // AddInternalDisk creates disk type *types.DiskSettings to the VM.
