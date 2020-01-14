@@ -130,7 +130,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 		fmt.Printf("# Got IP for NICs 0: %s\n", ips[0])
 	}
 
-	// Check if VMware tools reported leases
+	// Check if IPs are reported by only using VMware tools
 	ips, err = vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 200, false)
 	check.Assert(err, IsNil)
 	check.Assert(ips, HasLen, 2)
@@ -157,7 +157,6 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 // single IP address to be assigned. Org vDC network and IP address assigned to DHCP pool are
 // returned
 func getOrgVdcNetworkWithDhcp(vcd *TestVCD, check *C, edgeGateway *EdgeGateway) (*types.OrgVDCNetwork, string) {
-	// dhcpPoolIpAddress := "32.32.32.22"
 	var networkConfig = types.OrgVDCNetwork{
 		Xmlns:       types.XMLNamespaceVCloud,
 		Name:        TestCreateOrgVdcNetworkDhcp,
