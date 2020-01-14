@@ -97,8 +97,10 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 
 	// Wait and check DHCP lease acquired
 	// waitForDhcpLease(check, vm, edgeGateway, nicMacAddress, dhcpSubnet)
-	ip, err := vm.WaitForDhcpIpByNicIndex(0, 200)
+	// ip, err := vm.WaitForDhcpIpByNicIndex(0, 200)
+	ips, err := vm.WaitForDhcpIpByNicIndexes([]int{0}, 200)
 	check.Assert(err, IsNil)
+	ip := ips[0]
 	fmt.Println("Got IP: " + ip)
 
 	// Restore network configuration
