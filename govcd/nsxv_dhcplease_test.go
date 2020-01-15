@@ -92,8 +92,9 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	check.Assert(err, IsNil)
 
 	// Pretend we are waiting for DHCP addresses when VM is powered off - it must timeout
-	ips, err := vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 10, true)
-	check.Assert(err, ErrorMatches, `^timeout:.*`)
+	ips, hasTimedOut, err := vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 10, true)
+	check.Assert(err, IsNil)
+	check.Assert(hasTimedOut, Equals, true)
 	check.Assert(ips, HasLen, 2)
 	check.Assert(ips[0], Equals, "")
 	check.Assert(ips[1], Equals, "")
@@ -111,8 +112,9 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	// Wait and check DHCP lease acquired
 	// waitForDhcpLease(check, vm, edgeGateway, nicMacAddress, dhcpSubnet)
 	// ip, err := vm.WaitForDhcpIpByNicIndex(0, 200)
-	ips, err = vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 200, true)
+	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 200, true)
 	check.Assert(err, IsNil)
+	check.Assert(hasTimedOut, Equals, false)
 	check.Assert(ips, HasLen, 2)
 	check.Assert(ips[0], Matches, `^32.32.32.\d{1,3}$`)
 	check.Assert(ips[1], Matches, `^32.32.32.\d{1,3}$`)
@@ -122,8 +124,9 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	}
 
 	// Check for a single NIC
-	ips, err = vm.WaitForDhcpIpByNicIndexes([]int{0}, 200, true)
+	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0}, 200, true)
 	check.Assert(err, IsNil)
+	check.Assert(hasTimedOut, Equals, false)
 	check.Assert(ips, HasLen, 1)
 	check.Assert(ips[0], Matches, `^32.32.32.\d{1,3}$`)
 	if testVerbose {
@@ -131,13 +134,14 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	}
 
 	// Check if IPs are reported by only using VMware tools
-	ips, err = vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 200, false)
+	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 200, false)
 	check.Assert(err, IsNil)
+	check.Assert(hasTimedOut, Equals, false)
 	check.Assert(ips, HasLen, 2)
 	check.Assert(ips[0], Matches, `^32.32.32.\d{1,3}$`)
 	check.Assert(ips[1], Matches, `^32.32.32.\d{1,3}$`)
 	if testVerbose {
-		fmt.Printf("OK: Got IPs for NICs 0 and 1 (only using guest tools): %s, %s", ips[0], ips[1])
+		fmt.Printf("OK: Got IPs for NICs 0 and 1 (only using guest tools): %s, %s\n", ips[0], ips[1])
 	}
 
 	// Restore network configuration

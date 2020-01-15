@@ -958,7 +958,11 @@ func allNicsHaveIps(nicConfigs []nicDhcpConfig) bool {
 }
 
 // WaitForDhcpIpByNicIndexes accepts a slice of NIC indexes in VM, tries to get these IPs up to
-// maxWaitSeconds and the returns a list of these IPs.
+// maxWaitSeconds and the returns:
+// * a list of IPs
+// * whether the function hit timeout (some IP values may be available after timeout)
+// * error
+// guaranteed to return all IP addresses on a certain timeout.
 //
 // This function checks a slice of nicIndexes and reuses all possible API calls. It may return a
 // partial result for IP addresses when the timeout is hit.
@@ -972,16 +976,16 @@ func allNicsHaveIps(nicConfigs []nicDhcpConfig) bool {
 // * VM has guest tools (vCD UI shows IP address). (Takes longer time)
 // * VM DHCP interface is connected to routed Org network and is using Edge Gateway DHCP. (Takes
 // less time, but is more constrained)
-func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int, useDhcpLeaseCheck bool) ([]string, error) {
+func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int, useDhcpLeaseCheck bool) ([]string, bool, error) {
 	util.Logger.Printf("[TRACE] VM '%s' - attempting to lookup IP addresses for DHCP NICs %v\n",
 		vm.VM.Name, nicIndexes)
 	// validate NIC indexes
 	if len(nicIndexes) == 0 {
-		return []string{}, fmt.Errorf("at least one NIC index must be specified")
+		return []string{}, false, fmt.Errorf("at least one NIC index must be specified")
 	}
 	for index, nicIndex := range nicIndexes {
 		if nicIndex < 0 {
-			return []string{}, fmt.Errorf("NIC index %d cannot be negative", index)
+			return []string{}, false, fmt.Errorf("NIC index %d cannot be negative", index)
 		}
 	}
 
@@ -997,7 +1001,7 @@ func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int, us
 		// Lookup edge gateways for routed networks and store them
 		nicStates, err = vm.getEdgeGatewaysForRoutedNics(nicStates)
 		if err != nil {
-			return []string{}, fmt.Errorf("unable to validate if NICs are attached to edge gateway: %s", err)
+			return []string{}, false, fmt.Errorf("unable to validate if NICs are attached to edge gateway: %s", err)
 		}
 	}
 
@@ -1012,13 +1016,13 @@ func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int, us
 			util.Logger.Printf("[DEBUG] VM '%s' NICs with indexes %v did not all report IP "+
 				"addresses after %d seconds. Indexes: %v ,IPs: '%s'\n", vm.VM.Name, nicIndexes,
 				maxWaitSeconds, nicIndexes, strings.Join(ipSlice, ", "))
-			return ipSlice, fmt.Errorf("timeout: giving up after %d seconds", maxWaitSeconds)
+			return ipSlice, true, nil
 		case <-tick.C:
 			// Step 1 check if VMware tools reported IPs to UI. Also populate MAC addresses into
 			// nicStates structure for later usage.
 			nicStates, err = vm.getIpsMacsByNicIndexes(nicStates)
 			if err != nil {
-				return []string{}, fmt.Errorf("could not check IP addresses assigned to VM %s: %s",
+				return []string{}, false, fmt.Errorf("could not check IP addresses assigned to VM %s: %s",
 					vm.VM.Name, err)
 			}
 
@@ -1026,7 +1030,7 @@ func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int, us
 			if allNicsHaveIps(nicStates) {
 				util.Logger.Printf("[TRACE] VM '%s' NICs with indexes %v all reported their IPs using guest tools\n",
 					vm.VM.Name, nicIndexes)
-				return getIpsFromNicDhcpConfigs(nicStates), nil
+				return getIpsFromNicDhcpConfigs(nicStates), false, nil
 			}
 
 			util.Logger.Printf("[DEBUG] VM '%s' NICs with indexes %v did not all report their IPs using guest tools\n",
@@ -1036,7 +1040,7 @@ func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int, us
 			if useDhcpLeaseCheck {
 				nicStates, err = vm.getIpsByDhcpLeaseMacs(nicStates)
 				if err != nil {
-					return []string{}, fmt.Errorf("could not check MAC leases for VM '%s': %s",
+					return []string{}, false, fmt.Errorf("could not check MAC leases for VM '%s': %s",
 						vm.VM.Name, err)
 				}
 
@@ -1044,7 +1048,7 @@ func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int, us
 				if allNicsHaveIps(nicStates) {
 					util.Logger.Printf("[TRACE] VM '%s' NICs with indexes %v all reported their IPs after lease check\n",
 						vm.VM.Name, nicIndexes)
-					return getIpsFromNicDhcpConfigs(nicStates), nil
+					return getIpsFromNicDhcpConfigs(nicStates), false, nil
 				}
 				util.Logger.Printf("[DEBUG] VM '%s' NICs with indexes %v did not all report their IPs using DHCP leases\n",
 					vm.VM.Name, nicIndexes)
@@ -1084,8 +1088,8 @@ func (vm *VM) getEdgeGatewayNameForNic(nicIndex int) (string, error) {
 	}
 
 	edgeGatewayName, err := vdc.FindEdgeGatewayNameByNetwork(networkConnection.Network)
-	if err != nil {
-		return "", fmt.Errorf("could not find Edge Gateway name for network %s: %s",
+	if err != nil && !IsNotFound(err) {
+		return "", fmt.Errorf("could not find edge gateway name for network %s: %s",
 			networkConnection.Network, err)
 	}
 
