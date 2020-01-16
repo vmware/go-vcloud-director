@@ -299,7 +299,7 @@ func (vdc *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 		return EdgeGateway{}, fmt.Errorf("error refreshing vdc: %s", err)
 	}
 	for _, av := range vdc.Vdc.Link {
-		if av.Rel == "edgeGateways" && av.Type == "application/vnd.vmware.vcloud.query.records+xml" {
+		if av.Rel == "edgeGateways" && av.Type == types.MimeQueryRecords {
 
 			query := new(types.QueryResultEdgeGatewayRecordsType)
 
@@ -355,9 +355,9 @@ func (vdc *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 // GetEdgeGatewayByHref retrieves an edge gateway from VDC
 // by querying directly its HREF.
 // The name passed as parameter is only used for error reporting
-func (vdc *Vdc) GetEdgeGatewayByHref(name, href string) (*EdgeGateway, error) {
+func (vdc *Vdc) GetEdgeGatewayByHref(href string) (*EdgeGateway, error) {
 	if href == "" {
-		return nil, fmt.Errorf("empty HREF for edge gateway '%s'", name)
+		return nil, fmt.Errorf("empty edge gateway HREF")
 	}
 
 	edge := NewEdgeGateway(vdc.client)
@@ -372,8 +372,8 @@ func (vdc *Vdc) GetEdgeGatewayByHref(name, href string) (*EdgeGateway, error) {
 	//
 	// GitHUB issue - https://github.com/vmware/go-vcloud-director/issues/218
 	if err != nil {
-		util.Logger.Printf("[DEBUG] vCD 9.7 is known to sometimes respond with error on edge gateway (%s) "+
-			"retrieval. As a workaround this is done a few times before failing. Retrying: ", name)
+		util.Logger.Printf("[DEBUG] vCD 9.7 is known to sometimes respond with error on edge gateway " +
+			"retrieval. As a workaround this is done a few times before failing. Retrying:")
 		for i := 1; i < 4 && err != nil; i++ {
 			time.Sleep(200 * time.Millisecond)
 			util.Logger.Printf("%d ", i)
@@ -399,7 +399,7 @@ func (vdc *Vdc) getEdgeGatewayRecordsType(refresh bool) (*types.QueryResultEdgeG
 		}
 	}
 	for _, av := range vdc.Vdc.Link {
-		if av.Rel == "edgeGateways" && av.Type == "application/vnd.vmware.vcloud.query.records+xml" {
+		if av.Rel == "edgeGateways" && av.Type == types.MimeQueryRecords {
 
 			edgeGatewayRecordsType := new(types.QueryResultEdgeGatewayRecordsType)
 
@@ -425,7 +425,7 @@ func (vdc *Vdc) GetEdgeGatewayByName(name string, refresh bool) (*EdgeGateway, e
 
 	for _, edge := range edgeGatewayRecord.EdgeGatewayRecord {
 		if edge.Name == name {
-			return vdc.GetEdgeGatewayByHref(edge.Name, edge.HREF)
+			return vdc.GetEdgeGatewayByHref(edge.HREF)
 		}
 	}
 
@@ -443,7 +443,7 @@ func (vdc *Vdc) GetEdgeGatewayById(id string, refresh bool) (*EdgeGateway, error
 
 	for _, edge := range edgeGatewayRecord.EdgeGatewayRecord {
 		if equalIds(id, "", edge.HREF) {
-			return vdc.GetEdgeGatewayByHref(edge.Name, edge.HREF)
+			return vdc.GetEdgeGatewayByHref(edge.HREF)
 		}
 	}
 
@@ -849,7 +849,7 @@ func (vdc *Vdc) GetEdgeGatewayReferenceList(refresh bool) ([]*types.Reference, e
 		}
 	}
 	for _, av := range vdc.Vdc.Link {
-		if av.Rel == "edgeGateways" && av.Type == "application/vnd.vmware.vcloud.query.records+xml" {
+		if av.Rel == "edgeGateways" && av.Type == types.MimeQueryRecords {
 
 			edgeGatewayRecordsType := new(types.QueryResultEdgeGatewayRecordsType)
 
