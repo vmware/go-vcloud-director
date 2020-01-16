@@ -1029,6 +1029,7 @@ func (vcd *TestVCD) createInternalDisk(check *C, vmName string, busNumber int) (
 	AddToCleanupList(previousVdcFastProvisioningValue, "fastProvisioning", vcd.config.VCD.Org+"|"+vcd.config.VCD.Vdc, "createInternalDisk")
 
 	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAngGetResourcesForVmCreation(check, vmName)
+	check.Assert(err, IsNil)
 
 	vm, err := spawnVM("FirstNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check)
 	check.Assert(err, IsNil)

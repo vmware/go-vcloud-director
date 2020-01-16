@@ -33,6 +33,7 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	validateTestLbPrerequisites(vcd, check)
 
 	vdc, edge, vappTemplate, vapp, desiredNetConfig, err := vcd.createAngGetResourcesForVmCreation(check, TestLb)
+	check.Assert(err, IsNil)
 
 	vm1, err := spawnVM("FirstNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check)
 	check.Assert(err, IsNil)
