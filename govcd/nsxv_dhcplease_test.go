@@ -15,7 +15,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// Test_VMGetDhcpIp proves that it is possible to wait until DHCP lease is acquired by VM and
+// Test_VMGetDhcpAddress proves that it is possible to wait until DHCP lease is acquired by VM and
 // report the IP even if VM does not have guest tools installed.
 // The test does below actions:
 // 1. Ensures vApp and VM exists or exits early
@@ -23,7 +23,7 @@ import (
 // 3. Backs up network configuration for VM
 // 4. Powers off VM
 // 5. Sets VM network adapter to use DHCP
-// 6. Powers on VM and checks for a DHCP lease assigned to VM (by MAC address)
+// 6. Powers on VM and checks for a DHCP lease assigned to VM
 // 7. If a DHCP lease is found VM network settings are restored and
 func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	if vcd.skipVappTests {
@@ -110,8 +110,6 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	check.Assert(err, IsNil)
 
 	// Wait and check DHCP lease acquired
-	// waitForDhcpLease(check, vm, edgeGateway, nicMacAddress, dhcpSubnet)
-	// ip, err := vm.WaitForDhcpIpByNicIndex(0, 200)
 	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 200, true)
 	check.Assert(err, IsNil)
 	check.Assert(hasTimedOut, Equals, false)
