@@ -8,8 +8,6 @@ package govcd
 
 import (
 	"fmt"
-	"net"
-	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
@@ -121,6 +119,15 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 		fmt.Printf("OK: Got IPs for NICs 0 and 1: %s, %s\n", ips[0], ips[1])
 	}
 
+	// DHCP lease was received so VMs MAC address should have an active lease
+	lease, err := edgeGateway.GetNsxvActiveDhcpLeaseByMac(netCfg.NetworkConnection[0].MACAddress)
+	check.Assert(err, IsNil)
+	check.Assert(lease, NotNil)
+	check.Assert(lease.IpAddress, Matches, `^32.32.32.\d{1,3}$`)
+	if testVerbose {
+		fmt.Printf("OK: Got active lease for NICs with MAC 0: %s\n", ips[0])
+	}
+
 	// Check for a single NIC
 	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0}, 200, true)
 	check.Assert(err, IsNil)
@@ -128,7 +135,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	check.Assert(ips, HasLen, 1)
 	check.Assert(ips[0], Matches, `^32.32.32.\d{1,3}$`)
 	if testVerbose {
-		fmt.Printf("# Got IP for NICs 0: %s\n", ips[0])
+		fmt.Printf("OK: Got IP for NICs 0: %s\n", ips[0])
 	}
 
 	// Check if IPs are reported by only using VMware tools
@@ -217,73 +224,4 @@ func getOrgVdcNetworkWithDhcp(vcd *TestVCD, check *C, edgeGateway *EdgeGateway) 
 	check.Assert(err, IsNil)
 
 	return network.OrgVDCNetwork, "32.32.32.0/24"
-}
-
-// waitForDhcpLease runs a timer for at least 3 minutes and looks for DHCP lease for an active DHCP
-// lease for a provided nicMacAddress and validates that the leased IP belongs to dhcpSubnet subnet
-func waitForDhcpLease(check *C, vm *VM, edgeGateway *EdgeGateway, nicMacAddress, dhcpSubnet string) {
-	// Start operation timer
-	startTime := time.Now()
-	// Loop and wait for the lease to be acquired
-	if testVerbose {
-		fmt.Printf("Waiting for VM \"%s\" to get DHCP lease for NIC 0 with MAC %s (\".\" = 5s): ",
-			vm.VM.Name, nicMacAddress)
-	}
-
-	var dhcpLease *types.EdgeDhcpLeaseInfo
-
-	var stopLoop bool
-	var err error
-	retryTimeout := vm.client.MaxRetryTimeout
-	// due to the VMs taking long time to boot it needs to be at least 3 minutes
-	// may be even more in slower environments
-	if retryTimeout < 3*60 { // 3 minutes
-		retryTimeout = 3 * 60 // 3 minutes
-	}
-	timeOutAfterInterval := time.Duration(retryTimeout) * time.Second
-	timeoutAfter := time.After(timeOutAfterInterval)
-	tick := time.NewTicker(time.Duration(5) * time.Second)
-
-	for !stopLoop {
-		select {
-		case <-timeoutAfter:
-			stopLoop = true
-			check.Errorf("timed out waiting for VM to acquire DHCP lease")
-		case <-tick.C:
-			dhcpLease, err = edgeGateway.GetNsxvActiveDhcpLeaseByMac(nicMacAddress)
-
-			if err == nil {
-				if testVerbose {
-					fmt.Printf(" OK (IP=%s)\n", dhcpLease.IpAddress)
-				}
-				stopLoop = true
-				break
-			}
-
-			if !IsNotFound(err) {
-				stopLoop = true
-				check.Assert(err, IsNil)
-			}
-
-			if IsNotFound(err) {
-				if testVerbose {
-					fmt.Printf(".")
-				}
-				continue
-			}
-		}
-	}
-	if testVerbose {
-		fmt.Println("Time taken to acquire DHCP lease after boot: ", time.Since(startTime))
-	}
-	// Ensure the IP address is in DHCP pool subnet
-	_, ipNet, err := net.ParseCIDR(dhcpSubnet)
-	check.Assert(err, IsNil)
-	check.Assert(ipNet.Contains(net.ParseIP(dhcpLease.IpAddress)), Equals, true)
-
-	// Ensure vCD API itself reports correct IP for
-	time.Sleep(1 * time.Minute)
-	netWorkCfg, err := vm.GetNetworkConnectionSection()
-	check.Assert(err, IsNil)
-	check.Assert(netWorkCfg.NetworkConnection[0].IPAddress, Equals, dhcpLease.IpAddress)
 }

@@ -1252,11 +1252,11 @@ func (vcd *TestVCD) Test_VmGetParentvAppAndVdc(check *C) {
 	check.Assert(newVM.VM.Name, Equals, vmName)
 	check.Assert(newVM.VM.VirtualHardwareSection.Item, NotNil)
 
-	parentvApp, err := newVM.getParentVApp()
+	parentvApp, err := newVM.GetParentVApp()
 	check.Assert(err, IsNil)
 	check.Assert(parentvApp.VApp.HREF, Equals, vapp.VApp.HREF)
 
-	parentVdc, err := newVM.getParentVdc()
+	parentVdc, err := newVM.GetParentVdc()
 	check.Assert(err, IsNil)
 	check.Assert(parentVdc.Vdc.Name, Equals, vcd.config.VCD.Vdc)
 }

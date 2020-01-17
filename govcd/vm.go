@@ -853,10 +853,10 @@ func (vm *VM) SetGuestCustomizationSection(guestCustomizationSection *types.Gues
 	return vm.GetGuestCustomizationSection()
 }
 
-// getParentVApp find parent vApp for VM by checking its "up" "link".
+// GetParentVApp find parent vApp for VM by checking its "up" "link".
 //
 // Note. The VM has a parent vApp defined even if it was created as a standalone
-func (vm *VM) getParentVApp() (*VApp, error) {
+func (vm *VM) GetParentVApp() (*VApp, error) {
 	for _, link := range vm.VM.Link {
 		if link.Type == types.MimeVApp && link.Rel == "up" {
 			vapp := NewVApp(vm.client)
@@ -875,9 +875,9 @@ func (vm *VM) getParentVApp() (*VApp, error) {
 	return nil, fmt.Errorf("could not find parent vApp link")
 }
 
-// getParentVdc returns parent vDC for VM
-func (vm *VM) getParentVdc() (*Vdc, error) {
-	vapp, err := vm.getParentVApp()
+// GetParentVdc returns parent vDC for VM
+func (vm *VM) GetParentVdc() (*Vdc, error) {
+	vapp, err := vm.GetParentVApp()
 	if err != nil {
 		return nil, fmt.Errorf("could not find parent vApp: %s", err)
 	}
@@ -894,7 +894,7 @@ func (vm *VM) getEdgeGatewaysForRoutedNics(nicDhcpConfigs []nicDhcpConfig) ([]ni
 	// Check if any of NICs are using routed networks and attached to edge gateway
 
 	// Lookup parent vDC for VM
-	vdc, err := vm.getParentVdc()
+	vdc, err := vm.GetParentVdc()
 	if err != nil {
 		return nil, fmt.Errorf("could not find parent vDC for VM %s: %s", vm.VM.Name, err)
 	}
@@ -1082,7 +1082,7 @@ func (vm *VM) getEdgeGatewayNameForNic(nicIndex int) (string, error) {
 	}
 
 	// Validate if the VM is attached to routed org vdc network
-	vdc, err := vm.getParentVdc()
+	vdc, err := vm.GetParentVdc()
 	if err != nil {
 		return "", fmt.Errorf("could not find parent vDC for VM %s: %s", vm.VM.Name, err)
 	}
