@@ -52,8 +52,8 @@ func (vcd *TestVCD) createAngGetResourcesForVmCreation(check *C, vmName string) 
 		check.Assert(err, IsNil)
 	}
 	fmt.Printf(". Done\n")
-	fmt.Printf("# Attaching vDC network '%s' to vApp '%s'", vcd.config.VCD.Network.Net1, vmName)
-	// Attach vDC network to vApp so that VMs can use it
+	fmt.Printf("# Attaching VDC network '%s' to vApp '%s'", vcd.config.VCD.Network.Net1, vmName)
+	// Attach VDC network to vApp so that VMs can use it
 	net, err := vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	task, err := vapp.AddRAWNetworkConfig([]*types.OrgVDCNetwork{net.OrgVDCNetwork})
@@ -86,7 +86,7 @@ func spawnVM(name string, vdc Vdc, vapp VApp, net types.NetworkConnectionSection
 	check.Assert(err, IsNil)
 	fmt.Printf(". Done\n")
 
-	if skipCustomization {
+	if !skipCustomization {
 		fmt.Printf("# Applying 2 vCPU and 512MB configuration for VM '%s'", name)
 		task, err = vm.ChangeCPUCount(2)
 		check.Assert(err, IsNil)
@@ -110,7 +110,6 @@ func spawnVM(name string, vdc Vdc, vapp VApp, net types.NetworkConnectionSection
 		err = task.WaitTaskCompletion()
 		check.Assert(err, IsNil)
 		fmt.Printf(". Done\n")
-
 	}
 
 	fmt.Printf("# Powering on VM '%s'", name)
