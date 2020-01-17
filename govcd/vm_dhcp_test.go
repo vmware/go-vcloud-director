@@ -125,7 +125,15 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	check.Assert(lease, NotNil)
 	check.Assert(lease.IpAddress, Matches, `^32.32.32.\d{1,3}$`)
 	if testVerbose {
-		fmt.Printf("OK: Got active lease for NICs with MAC 0: %s\n", ips[0])
+		fmt.Printf("OK: Got active lease for NICs with MAC 0: %s\n", lease.IpAddress)
+	}
+
+	allLeases, err := edgeGateway.GetAllNsxvDhcpLeases()
+	check.Assert(err, IsNil)
+	check.Assert(allLeases, NotNil)
+	check.Assert(len(allLeases) > 0, Equals, true)
+	if testVerbose {
+		fmt.Printf("OK: More than 0 leases are defined on edge gateway: %d\n", len(allLeases))
 	}
 
 	// Check for a single NIC
