@@ -35,9 +35,9 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	vdc, edge, vappTemplate, vapp, desiredNetConfig, err := vcd.createAngGetResourcesForVmCreation(check, TestLb)
 	check.Assert(err, IsNil)
 
-	vm1, err := spawnVM("FirstNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check)
+	vm1, err := spawnVM("FirstNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check, false)
 	check.Assert(err, IsNil)
-	vm2, err := spawnVM("SecondNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check)
+	vm2, err := spawnVM("SecondNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check, false)
 	check.Assert(err, IsNil)
 
 	// Get IPs alocated to the VMs

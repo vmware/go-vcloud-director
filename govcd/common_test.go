@@ -76,7 +76,7 @@ func (vcd *TestVCD) createAngGetResourcesForVmCreation(check *C, vmName string) 
 
 // spawnVM spawns VMs in provided vApp from template and also applies customization script to
 // spawn a Python 3 HTTP server
-func spawnVM(name string, vdc Vdc, vapp VApp, net types.NetworkConnectionSection, vAppTemplate VAppTemplate, check *C) (VM, error) {
+func spawnVM(name string, vdc Vdc, vapp VApp, net types.NetworkConnectionSection, vAppTemplate VAppTemplate, check *C, skipCustomization bool) (VM, error) {
 	fmt.Printf("# Spawning VM '%s'", name)
 	task, err := vapp.AddNewVM(name, vAppTemplate, &net, true)
 	check.Assert(err, IsNil)
@@ -86,29 +86,32 @@ func spawnVM(name string, vdc Vdc, vapp VApp, net types.NetworkConnectionSection
 	check.Assert(err, IsNil)
 	fmt.Printf(". Done\n")
 
-	fmt.Printf("# Applying 2 vCPU and 512MB configuration for VM '%s'", name)
-	task, err = vm.ChangeCPUCount(2)
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
+	if skipCustomization {
+		fmt.Printf("# Applying 2 vCPU and 512MB configuration for VM '%s'", name)
+		task, err = vm.ChangeCPUCount(2)
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
 
-	task, err = vm.ChangeMemorySize(512)
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	fmt.Printf(". Done\n")
+		task, err = vm.ChangeMemorySize(512)
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+		fmt.Printf(". Done\n")
 
-	fmt.Printf("# Applying customization script for VM '%s'", name)
-	// The script below creates a file /tmp/node/server with single value `name` being set in it.
-	// It also disables iptables and spawns simple Python 3 HTTP server listening on port 8000
-	// in background which serves the just created `server` file.
-	task, err = vm.RunCustomizationScript(name,
-		"mkdir /tmp/node && cd /tmp/node && echo -n '"+name+"' > server && "+
-			"/bin/systemctl stop iptables && /usr/bin/python3 -m http.server 8000 &")
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	fmt.Printf(". Done\n")
+		fmt.Printf("# Applying customization script for VM '%s'", name)
+		// The script below creates a file /tmp/node/server with single value `name` being set in it.
+		// It also disables iptables and spawns simple Python 3 HTTP server listening on port 8000
+		// in background which serves the just created `server` file.
+		task, err = vm.RunCustomizationScript(name,
+			"mkdir /tmp/node && cd /tmp/node && echo -n '"+name+"' > server && "+
+				"/bin/systemctl stop iptables && /usr/bin/python3 -m http.server 8000 &")
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+		fmt.Printf(". Done\n")
+
+	}
 
 	fmt.Printf("# Powering on VM '%s'", name)
 	task, err = vm.PowerOn()
