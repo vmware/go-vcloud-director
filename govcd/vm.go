@@ -890,9 +890,9 @@ func (vm *VM) GetParentVdc() (*Vdc, error) {
 	return &vdc, nil
 }
 
+// getEdgeGatewaysForRoutedNics checks if any NICs are using routed networks and are attached to
+// edge gateway
 func (vm *VM) getEdgeGatewaysForRoutedNics(nicDhcpConfigs []nicDhcpConfig) ([]nicDhcpConfig, error) {
-	// Check if any of NICs are using routed networks and attached to edge gateway
-
 	// Lookup parent vDC for VM
 	vdc, err := vm.GetParentVdc()
 	if err != nil {
@@ -929,6 +929,8 @@ func (vm *VM) getEdgeGatewaysForRoutedNics(nicDhcpConfigs []nicDhcpConfig) ([]ni
 	return nicDhcpConfigs, nil
 }
 
+// nicDhcpConfig is used to group data for carrying between multiple functions and optimizing on API
+// calls
 type nicDhcpConfig struct {
 	vmNicIndex               int
 	ip                       string
@@ -936,8 +938,10 @@ type nicDhcpConfig struct {
 	routedNetworkEdgeGateway *EdgeGateway
 }
 
+// nicDhcpConfigs is a slice of nicDhcpConfig
 type nicDhcpConfigs []nicDhcpConfig
 
+// getIpsFromNicDhcpConfigs extracts just IP addresses from nicDhcpConfigs
 func getIpsFromNicDhcpConfigs(nicConfigs []nicDhcpConfig) []string {
 	result := make([]string, len(nicConfigs))
 	for index, nicConfig := range nicConfigs {
@@ -946,10 +950,10 @@ func getIpsFromNicDhcpConfigs(nicConfigs []nicDhcpConfig) []string {
 	return result
 }
 
+// allNicsHaveIps checks if all nicDhcpConfig in slice have not empty IP field
 func allNicsHaveIps(nicConfigs []nicDhcpConfig) bool {
 	allNicsHaveIps := true
 	for _, nicConfig := range nicConfigs {
-		// result[index] = nicConfig.ip
 		if nicConfig.ip == "" {
 			allNicsHaveIps = false
 		}
