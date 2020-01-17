@@ -9,6 +9,9 @@ package govcd
 import (
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"io/ioutil"
+	"net/http"
+	"regexp"
 
 	. "gopkg.in/check.v1"
 )
@@ -140,4 +143,55 @@ func isItemPhotonOs(item CatalogItem) bool {
 	}
 
 	return true
+}
+
+// cacheLoadBalancer is meant to store load balancer settings before any operations so that all
+// configuration can be checked after manipulation
+func testCacheLoadBalancer(edge EdgeGateway, check *C) (*types.LbGeneralParamsWithXml, string) {
+	beforeLb, err := edge.GetLBGeneralParams()
+	check.Assert(err, IsNil)
+	beforeLbXml := testGetEdgeEndpointXML(types.LbConfigPath, edge, check)
+	return beforeLb, beforeLbXml
+}
+
+// testGetEdgeEndpointXML is used for additional validation that modifying edge gateway endpoint
+// does not change any single field. It returns an XML string of whole configuration
+func testGetEdgeEndpointXML(endpoint string, edge EdgeGateway, check *C) string {
+
+	httpPath, err := edge.buildProxiedEdgeEndpointURL(endpoint)
+	check.Assert(err, IsNil)
+
+	resp, err := edge.client.ExecuteRequestWithCustomError(httpPath, http.MethodGet, types.AnyXMLMime,
+		fmt.Sprintf("unable to get XML from endpoint %s: %%s", endpoint), nil, &types.NSXError{})
+	check.Assert(err, IsNil)
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	check.Assert(err, IsNil)
+
+	return string(body)
+}
+
+// testCheckLoadBalancerConfig validates if both raw XML string and load balancer struct remain
+// identical after settings manipulation.
+func testCheckLoadBalancerConfig(beforeLb *types.LbGeneralParamsWithXml, beforeLbXml string, edge EdgeGateway, check *C) {
+	afterLb, err := edge.GetLBGeneralParams()
+	check.Assert(err, IsNil)
+
+	afterLbXml := testGetEdgeEndpointXML(types.LbConfigPath, edge, check)
+
+	// remove `<version></version>` tag from both XML represntation and struct for deep comparison
+	// because this version changes with each update and will never be the same after a few
+	// operations
+
+	reVersion := regexp.MustCompile(`<version>\w*<\/version>`)
+	beforeLbXml = reVersion.ReplaceAllLiteralString(beforeLbXml, "")
+	afterLbXml = reVersion.ReplaceAllLiteralString(afterLbXml, "")
+
+	beforeLb.Version = ""
+	afterLb.Version = ""
+
+	check.Assert(beforeLb, DeepEquals, afterLb)
+	check.Assert(beforeLbXml, DeepEquals, afterLbXml)
 }
