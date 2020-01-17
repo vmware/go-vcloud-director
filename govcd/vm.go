@@ -1104,6 +1104,8 @@ func (vm *VM) getEdgeGatewayNameForNic(nicIndex int) (string, error) {
 	return edgeGatewayName, nil
 }
 
+// getIpsByDhcpLeaseMacs accepts a slice of nicDhcpConfig and tries to find an active DHCP lease for
+// all defined MAC addresses
 func (vm *VM) getIpsByDhcpLeaseMacs(nicConfigs []nicDhcpConfig) ([]nicDhcpConfig, error) {
 	dhcpLeaseCache := make(map[string][]*types.EdgeDhcpLeaseInfo)
 
