@@ -568,4 +568,5 @@ func (vcd *TestVCD) TestGetVappTemplateByHref(check *C) {
 	check.Assert(vappTemplate, NotNil)
 	check.Assert(vappTemplate.VAppTemplate.ID, Not(Equals), catalogItem.CatalogItem.ID)
 	check.Assert(vappTemplate.VAppTemplate.Type, Equals, types.MimeVAppTemplate)
+	check.Assert(vappTemplate.VAppTemplate.Name, Equals, catalogItem.CatalogItem.Name)
 }
