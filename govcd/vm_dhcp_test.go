@@ -63,7 +63,8 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	vmStatus, err := vm.GetStatus()
 	check.Assert(err, IsNil)
 	if vmStatus != "POWERED_OFF" {
-		task, err := vm.PowerOff()
+		// task, err := vm.PowerOff()
+		task, err := vm.Undeploy()
 		check.Assert(err, IsNil)
 		err = task.WaitTaskCompletion()
 		check.Assert(err, IsNil)
@@ -103,6 +104,11 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 
 	// Power on VM and force its customization because the TestSuite VM may already have been booted
 	// a few times during test cycle.
+	// task, err = vm.Undeploy()
+	// check.Assert(err, IsNil)
+	// err = task.WaitTaskCompletion()
+	// check.Assert(err, IsNil)
+
 	err = vm.PowerOnAndForceCustomization()
 	check.Assert(err, IsNil)
 
