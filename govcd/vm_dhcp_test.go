@@ -101,10 +101,9 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 		fmt.Println("OK: Timed out waiting for DHCP IPs on powered off VMs")
 	}
 
-	// Power on VM
-	task, err = vm.PowerOn()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	// Power on VM and force its customization because the TestSuite VM may already have been booted
+	// a few times during test cycle.
+	err = vm.PowerOnAndForceCustomization()
 	check.Assert(err, IsNil)
 
 	// Wait and check DHCP lease acquired
