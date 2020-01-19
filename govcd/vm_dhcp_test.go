@@ -59,17 +59,22 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	netCfgBackup, err := vm.GetNetworkConnectionSection()
 	check.Assert(err, IsNil)
 
-	// Set Network to use DHCP
+	// Ensure the VM is is Undeployed so that PowerOnAndForceCustomization can be triggered. To
+	// trigger vm.Undeploy() it must be powred on at first
 	vmStatus, err := vm.GetStatus()
 	check.Assert(err, IsNil)
-	if vmStatus != "POWERED_OFF" {
-		// task, err := vm.PowerOff()
-		task, err := vm.Undeploy()
+
+	if vmStatus != "POWERED_ON" {
+		task, err := vm.PowerOn()
 		check.Assert(err, IsNil)
 		err = task.WaitTaskCompletion()
 		check.Assert(err, IsNil)
-		check.Assert(task.Task.Status, Equals, "success")
 	}
+	task, err = vm.Undeploy()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
 
 	// Get network config and update it to use DHCP
 	netCfg, err := vm.GetNetworkConnectionSection()
@@ -90,6 +95,9 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	err = vm.UpdateNetworkConnectionSection(netCfg)
 	check.Assert(err, IsNil)
 
+	if testVerbose {
+		fmt.Printf("# Time out waiting for DHCP IPs on powered off VMs: ")
+	}
 	// Pretend we are waiting for DHCP addresses when VM is powered off - it must timeout
 	ips, hasTimedOut, err := vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 10, true)
 	check.Assert(err, IsNil)
@@ -99,19 +107,15 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	check.Assert(ips[1], Equals, "")
 
 	if testVerbose {
-		fmt.Println("OK: Timed out waiting for DHCP IPs on powered off VMs")
+		fmt.Println("OK")
 	}
-
-	// Power on VM and force its customization because the TestSuite VM may already have been booted
-	// a few times during test cycle.
-	// task, err = vm.Undeploy()
-	// check.Assert(err, IsNil)
-	// err = task.WaitTaskCompletion()
-	// check.Assert(err, IsNil)
 
 	err = vm.PowerOnAndForceCustomization()
 	check.Assert(err, IsNil)
 
+	if testVerbose {
+		fmt.Printf("# Get IPs for NICs 0 and 1: ")
+	}
 	// Wait and check DHCP lease acquired
 	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 200, true)
 	check.Assert(err, IsNil)
@@ -121,27 +125,36 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	check.Assert(ips[1], Matches, `^32.32.32.\d{1,3}$`)
 
 	if testVerbose {
-		fmt.Printf("OK: Got IPs for NICs 0 and 1: %s, %s\n", ips[0], ips[1])
+		fmt.Printf("OK:(NICs 0 and 1): %s, %s\n", ips[0], ips[1])
 	}
 
 	// DHCP lease was received so VMs MAC address should have an active lease
+	if testVerbose {
+		fmt.Printf("# Get active lease for NICs with MAC 0: ")
+	}
 	lease, err := edgeGateway.GetNsxvActiveDhcpLeaseByMac(netCfg.NetworkConnection[0].MACAddress)
 	check.Assert(err, IsNil)
 	check.Assert(lease, NotNil)
 	check.Assert(lease.IpAddress, Matches, `^32.32.32.\d{1,3}$`)
 	if testVerbose {
-		fmt.Printf("OK: Got active lease for NICs with MAC 0: %s\n", lease.IpAddress)
+		fmt.Printf("Ok. (Got active lease for MAC 0: %s)\n", lease.IpAddress)
 	}
 
+	if testVerbose {
+		fmt.Printf("# Check number of leases on Edge Gateway: ")
+	}
 	allLeases, err := edgeGateway.GetAllNsxvDhcpLeases()
 	check.Assert(err, IsNil)
 	check.Assert(allLeases, NotNil)
 	check.Assert(len(allLeases) > 0, Equals, true)
 	if testVerbose {
-		fmt.Printf("OK: More than 0 leases are defined on edge gateway: %d\n", len(allLeases))
+		fmt.Printf("OK: (%d leases found)\n", len(allLeases))
 	}
 
 	// Check for a single NIC
+	if testVerbose {
+		fmt.Printf("# Get IP for single NIC 0: ")
+	}
 	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0}, 200, true)
 	check.Assert(err, IsNil)
 	check.Assert(hasTimedOut, Equals, false)
@@ -152,6 +165,9 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	}
 
 	// Check if IPs are reported by only using VMware tools
+	if testVerbose {
+		fmt.Printf("# Get IPs for NICs 0 and 1 (only using guest tools): ")
+	}
 	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 200, false)
 	check.Assert(err, IsNil)
 	check.Assert(hasTimedOut, Equals, false)
@@ -159,7 +175,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	check.Assert(ips[0], Matches, `^32.32.32.\d{1,3}$`)
 	check.Assert(ips[1], Matches, `^32.32.32.\d{1,3}$`)
 	if testVerbose {
-		fmt.Printf("OK: Got IPs for NICs 0 and 1 (only using guest tools): %s, %s\n", ips[0], ips[1])
+		fmt.Printf("OK: IPs for NICs 0 and 1 (via guest tools): %s, %s\n", ips[0], ips[1])
 	}
 
 	// Restore network configuration
@@ -172,6 +188,8 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	// Filter out always differing fields and do deep comparison of objects
 	netCfgBackup.Link = &types.Link{}
 	networkAfter.Link = &types.Link{}
+	// Patch customization status
+	netCfgBackup.NetworkConnection[0].NeedsCustomization = networkAfter.NetworkConnection[0].NeedsCustomization
 	check.Assert(networkAfter, DeepEquals, netCfgBackup)
 }
 
