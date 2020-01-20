@@ -13,6 +13,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
 	. "gopkg.in/check.v1"
 )
@@ -529,4 +530,43 @@ func (vcd *TestVCD) Test_CatalogGetItem(check *C) {
 		getByNameOrId: getByNameOrId,
 	}
 	vcd.testFinderGetGenericEntity(def, check)
+}
+
+// TestGetVappTemplateByHref tests that we can find a vApp template using
+// the HREF from the Entity section of a known Catalog Item
+func (vcd *TestVCD) TestGetVappTemplateByHref(check *C) {
+
+	fmt.Printf("Running: %s\n", check.TestName())
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_CatalogGetItem: Org name not given")
+		return
+	}
+	if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("Test_CatalogGetItem: Catalog name not given")
+		return
+	}
+	if vcd.config.VCD.Catalog.CatalogItem == "" {
+		check.Skip("Test_CatalogGetItem: Catalog item name not given")
+		return
+	}
+
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+
+	catalogItem, err := catalog.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalogItem, NotNil)
+	check.Assert(catalogItem.CatalogItem.Entity, NotNil)
+
+	vappTemplate, err := catalog.GetVappTemplateByHref(catalogItem.CatalogItem.Entity.HREF)
+	check.Assert(err, IsNil)
+	check.Assert(vappTemplate, NotNil)
+	check.Assert(vappTemplate.VAppTemplate.ID, Not(Equals), catalogItem.CatalogItem.ID)
+	check.Assert(vappTemplate.VAppTemplate.Type, Equals, types.MimeVAppTemplate)
+	check.Assert(vappTemplate.VAppTemplate.Name, Equals, catalogItem.CatalogItem.Name)
 }
