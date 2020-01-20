@@ -78,7 +78,6 @@ func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix s
 		Name:        networkName,
 		Description: "Test Create External Network",
 		Configuration: &types.NetworkConfiguration{
-			Xmlns: types.XMLNamespaceVCloud,
 			IPScopes: &types.IPScopes{
 				IPScope: []*types.IPScope{&types.IPScope{
 					Gateway:   "192.168.201.1",

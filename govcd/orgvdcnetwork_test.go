@@ -79,7 +79,6 @@ func (vcd *TestVCD) testCreateOrgVdcNetworkRouted(check *C, ipSubnet string, sub
 
 	networkDescription := "Created by govcd tests"
 	var networkConfig = types.OrgVDCNetwork{
-		Xmlns:       types.XMLNamespaceVCloud,
 		Name:        networkName,
 		Description: networkDescription,
 		Configuration: &types.NetworkConfiguration{
@@ -192,8 +191,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkIso(check *C) {
 	}
 
 	var networkConfig = types.OrgVDCNetwork{
-		Xmlns: types.XMLNamespaceVCloud,
-		Name:  networkName,
+		Name: networkName,
 		// Description: "Created by govcd tests",
 		Configuration: &types.NetworkConfiguration{
 			FenceMode: types.FenceModeIsolated,
@@ -259,8 +257,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkDirect(check *C) {
 	}
 	// Note that there is no IPScope for this type of network
 	var networkConfig = types.OrgVDCNetwork{
-		Xmlns: types.XMLNamespaceVCloud,
-		Name:  networkName,
+		Name: networkName,
 		Configuration: &types.NetworkConfiguration{
 			FenceMode: types.FenceModeBridged,
 			ParentNetwork: &types.Reference{

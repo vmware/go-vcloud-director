@@ -252,7 +252,6 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 	edgeName := "Test-Multi-Scope-Gw"
 	// Initialize edge gateway structure
 	edgeGatewayConfig := &types.EdgeGateway{
-		Xmlns:       types.XMLNamespaceVCloud,
 		Name:        edgeName,
 		Description: edgeName,
 		Configuration: &types.GatewayConfiguration{
@@ -438,8 +437,7 @@ func (vcd *TestVCD) Test_QueryOrgVdcNetworkByNameWithSpace(check *C) {
 	}
 	// Note that there is no IPScope for this type of network
 	var networkConfig = types.OrgVDCNetwork{
-		Xmlns: types.XMLNamespaceVCloud,
-		Name:  networkName,
+		Name: networkName,
 		Configuration: &types.NetworkConfiguration{
 			FenceMode: types.FenceModeBridged,
 			ParentNetwork: &types.Reference{
