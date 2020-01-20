@@ -82,6 +82,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 
 	netCfg.NetworkConnection[0].Network = network.Name
 	netCfg.NetworkConnection[0].IPAddressAllocationMode = types.IPAllocationModeDHCP
+	netCfg.NetworkConnection[0].NeedsCustomization = true
 
 	secondNic := &types.NetworkConnection{
 		Network:                 network.Name,
@@ -117,7 +118,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 		fmt.Printf("# Get IPs for NICs 0 and 1: ")
 	}
 	// Wait and check DHCP lease acquired
-	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 200, true)
+	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 500, true)
 	check.Assert(err, IsNil)
 	check.Assert(hasTimedOut, Equals, false)
 	check.Assert(ips, HasLen, 2)
@@ -155,7 +156,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	if testVerbose {
 		fmt.Printf("# Get IP for single NIC 0: ")
 	}
-	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0}, 200, true)
+	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0}, 500, true)
 	check.Assert(err, IsNil)
 	check.Assert(hasTimedOut, Equals, false)
 	check.Assert(ips, HasLen, 1)
@@ -168,7 +169,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	if testVerbose {
 		fmt.Printf("# Get IPs for NICs 0 and 1 (only using guest tools): ")
 	}
-	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 200, false)
+	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 500, false)
 	check.Assert(err, IsNil)
 	check.Assert(hasTimedOut, Equals, false)
 	check.Assert(ips, HasLen, 2)
