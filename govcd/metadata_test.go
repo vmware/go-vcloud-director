@@ -119,6 +119,10 @@ func (vcd *TestVCD) Test_DeleteMetadataOnVapp(check *C) {
 func (vcd *TestVCD) Test_AddMetadataOnVm(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
 	// Find VApp
 	if vcd.vapp.VApp == nil {
 		check.Skip("skipping test because no vApp is found")
@@ -150,6 +154,10 @@ func (vcd *TestVCD) Test_AddMetadataOnVm(check *C) {
 
 func (vcd *TestVCD) Test_DeleteMetadataOnVm(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
 
 	// Find VApp
 	if vcd.vapp.VApp == nil {
