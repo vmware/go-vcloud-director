@@ -24,22 +24,18 @@ import (
 // 6. Powers on VM and checks for a DHCP lease assigned to VM
 // 7. If a DHCP lease is found VM network settings are restored and
 func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
-	}
-
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
 
-	vapp := vcd.findFirstVapp()
-	existingVm, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
-
-	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
+	// Construct new VM for test
+	vapp, err := vcd.createTestVapp("GetDhcpAddress")
 	check.Assert(err, IsNil)
+	vmType, _ := vcd.findFirstVm(*vapp)
+	vm := &VM{
+		VM:     &vmType,
+		client: vapp.client,
+	}
 
 	edgeGateway, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	if err != nil {
@@ -82,7 +78,8 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 
 	netCfg.NetworkConnection[0].Network = network.Name
 	netCfg.NetworkConnection[0].IPAddressAllocationMode = types.IPAllocationModeDHCP
-	netCfg.NetworkConnection[0].NeedsCustomization = true
+	// netCfg.NetworkConnection[0].NeedsCustomization = true
+	netCfg.NetworkConnection[0].IsConnected = true
 
 	secondNic := &types.NetworkConnection{
 		Network:                 network.Name,
@@ -118,7 +115,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 		fmt.Printf("# Get IPs for NICs 0 and 1: ")
 	}
 	// Wait and check DHCP lease acquired
-	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 500, true)
+	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 300, true)
 	check.Assert(err, IsNil)
 	check.Assert(hasTimedOut, Equals, false)
 	check.Assert(ips, HasLen, 2)
@@ -156,7 +153,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	if testVerbose {
 		fmt.Printf("# Get IP for single NIC 0: ")
 	}
-	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0}, 500, true)
+	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0}, 300, true)
 	check.Assert(err, IsNil)
 	check.Assert(hasTimedOut, Equals, false)
 	check.Assert(ips, HasLen, 1)
@@ -169,7 +166,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	if testVerbose {
 		fmt.Printf("# Get IPs for NICs 0 and 1 (only using guest tools): ")
 	}
-	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 500, false)
+	ips, hasTimedOut, err = vm.WaitForDhcpIpByNicIndexes([]int{0, 1}, 300, false)
 	check.Assert(err, IsNil)
 	check.Assert(hasTimedOut, Equals, false)
 	check.Assert(ips, HasLen, 2)
@@ -192,6 +189,16 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	// Patch customization status
 	netCfgBackup.NetworkConnection[0].NeedsCustomization = networkAfter.NetworkConnection[0].NeedsCustomization
 	check.Assert(networkAfter, DeepEquals, netCfgBackup)
+
+	// Cleanup vApp and VM created for this test
+	task, err = vapp.Undeploy()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 // getOrgVdcNetworkWithDhcp is a helper that creates a routed Org network and a DHCP pool with
