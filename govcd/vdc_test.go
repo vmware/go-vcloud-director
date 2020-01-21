@@ -218,6 +218,10 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 
 func (vcd *TestVCD) Test_FindVApp(check *C) {
 
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
 	if vcd.vapp.VApp == nil {
 		check.Skip("No vApp provided")
 	}
@@ -236,6 +240,10 @@ func (vcd *TestVCD) Test_FindVApp(check *C) {
 // Tests function QueryVM by searching vm created
 // by test suite
 func (vcd *TestVCD) Test_QueryVM(check *C) {
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
 
 	if vcd.vapp.VApp == nil {
 		check.Skip("No Vapp provided")
