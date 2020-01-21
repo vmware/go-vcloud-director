@@ -1,9 +1,9 @@
 ## 2.6.0 (Unreleased)
 
 * Moved `VCDClient.supportedVersions` to `VCDClient.Client.supportedVersions` [#274](https://github.com/vmware/go-vcloud-director/pull/274)    
-* Added methods `VM.AddInternalDisk`, `VM.GetInternalDiskById`, `VM.DeleteInternalDisk`, `VM.UpdateInternalDisks` and `VM.UpdateInternalDisksAsync`
-* Added methods `vdc.GetEdgeGatewayReferenceList` and `catalog.GetVappTemplateByHref`
-* Improved functions to not expect XML namespaces provided in argument structure 
+* Added methods `VM.AddInternalDisk`, `VM.GetInternalDiskById`, `VM.DeleteInternalDisk`, `VM.UpdateInternalDisks` and `VM.UpdateInternalDisksAsync` [#272] https://github.com/vmware/go-vcloud-director/pull/272
+* Added methods `vdc.GetEdgeGatewayReferenceList` and `catalog.GetVappTemplateByHref` [#278] https://github.com/vmware/go-vcloud-director/pull/278
+* Improved functions to not expect XML namespaces provided in argument structure [#284] https://github.com/vmware/go-vcloud-director/pull/284
 
 ## 2.5.1 (December 12, 2019)
 
