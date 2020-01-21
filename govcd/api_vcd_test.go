@@ -590,7 +590,8 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		task, _ := vapp.Undeploy()
 		_ = task.WaitTaskCompletion()
-		// Detach all Org networks early because Org network deletion fails if it happens very soon
+		// Detach all Org networks during vApp removal because network removal errors if it happens
+		// very quickly (as the next task) after vApp removal
 		task, _ = vapp.RemoveAllNetworks()
 		_ = task.WaitTaskCompletion()
 		task, err = vapp.Delete()
