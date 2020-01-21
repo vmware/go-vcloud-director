@@ -157,14 +157,8 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 		fmt.Printf("OK: IPs for NICs 0 and 1 (via guest tools): %s, %s\n", ips[0], ips[1])
 	}
 
-	// Cleanup vApp and VM created for this test
-	task, err = vapp.Undeploy()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	task, err = vapp.Delete()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	// Cleanup vApp
+	err = deleteVapp(vcd, vapp.VApp.Name)
 	check.Assert(err, IsNil)
 }
 
