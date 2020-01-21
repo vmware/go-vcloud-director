@@ -16,13 +16,13 @@ import (
 // Test_VMGetDhcpAddress proves that it is possible to wait until DHCP lease is acquired by VM and
 // report the IP even if VM does not have guest tools installed.
 // The test does below actions:
-// 1. Ensures vApp and VM exists or exits early
+// 1. Creates VM
 // 2. Ensures there is a DHCP configuration for network
 // 3. Backs up network configuration for VM
 // 4. Powers off VM
 // 5. Sets VM network adapter to use DHCP
 // 6. Powers on VM and checks for a DHCP lease assigned to VM
-// 7. If a DHCP lease is found VM network settings are restored and
+// 7. Cleans up
 func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
@@ -50,27 +50,6 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
-
-	// Backup VM network configuration
-	netCfgBackup, err := vm.GetNetworkConnectionSection()
-	check.Assert(err, IsNil)
-
-	// Ensure the VM is is Undeployed so that PowerOnAndForceCustomization can be triggered. To
-	// trigger vm.Undeploy() it must be powred on at first
-	// vmStatus, err := vm.GetStatus()
-	// check.Assert(err, IsNil)
-
-	// if vmStatus != "POWERED_ON" {
-	// 	task, err := vm.PowerOn()
-	// 	check.Assert(err, IsNil)
-	// 	err = task.WaitTaskCompletion()
-	// 	check.Assert(err, IsNil)
-	// }
-	// task, err = vm.Undeploy()
-	// check.Assert(err, IsNil)
-	// err = task.WaitTaskCompletion()
-	// check.Assert(err, IsNil)
-	// check.Assert(task.Task.Status, Equals, "success")
 
 	// Get network config and update it to use DHCP
 	netCfg, err := vm.GetNetworkConnectionSection()
@@ -177,20 +156,6 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	if testVerbose {
 		fmt.Printf("OK: IPs for NICs 0 and 1 (via guest tools): %s, %s\n", ips[0], ips[1])
 	}
-
-	// Restore network configuration
-	err = vm.UpdateNetworkConnectionSection(netCfgBackup)
-	check.Assert(err, IsNil)
-
-	networkAfter, err := vm.GetNetworkConnectionSection()
-	check.Assert(err, IsNil)
-
-	// Filter out always differing fields and do deep comparison of objects
-	netCfgBackup.Link = &types.Link{}
-	networkAfter.Link = &types.Link{}
-	// Patch customization status
-	netCfgBackup.NetworkConnection[0].NeedsCustomization = networkAfter.NetworkConnection[0].NeedsCustomization
-	check.Assert(networkAfter, DeepEquals, netCfgBackup)
 
 	// Cleanup vApp and VM created for this test
 	task, err = vapp.Undeploy()
