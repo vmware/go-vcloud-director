@@ -1396,3 +1396,25 @@ func getNetworkNameAndTypeByVnicIndex(vNicIndex int, vnics *types.EdgeGatewayInt
 
 	return networkName, networkType, nil
 }
+
+func (egw *EdgeGateway) UpdateAsync() (Task, error) {
+
+	egw.EdgeGateway.Xmlns = types.XMLNamespaceVCloud
+	egw.EdgeGateway.Configuration.Xmlns =types.XMLNamespaceVCloud
+	egw.EdgeGateway.Tasks = nil
+
+	// Return the task
+	return egw.client.ExecuteTaskRequest(egw.EdgeGateway.HREF, http.MethodPut,
+		types.MimeEdgeGateway, "error updating Edge Gateway: %s", egw.EdgeGateway)
+}
+
+
+func (egw *EdgeGateway) Update() error {
+
+	task, err := egw.UpdateAsync()
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+
+}

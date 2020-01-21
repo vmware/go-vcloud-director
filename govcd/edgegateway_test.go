@@ -798,3 +798,51 @@ func (vcd *TestVCD) TestListEdgeGateway(check *C) {
 	check.Assert(foundName, Equals, true)
 	check.Assert(foundHref, Equals, true)
 }
+
+func (vcd *TestVCD) Test_UpdateEdgeGateway(check *C) {
+	if vcd.config.VCD.EdgeGateway == "" {
+		check.Skip("Skipping test because no edge gateway given")
+	}
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	check.Assert(err, IsNil)
+	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
+	var saveEGW = types.EdgeGateway{
+		Name:        edge.EdgeGateway.Name,
+		ID:        edge.EdgeGateway.ID,
+		Status:      edge.EdgeGateway.Status,
+		HREF:        edge.EdgeGateway.HREF,
+		Description: edge.EdgeGateway.Description,
+		Configuration:&types.GatewayConfiguration{
+			AdvancedNetworkingEnabled: edge.EdgeGateway.Configuration.AdvancedNetworkingEnabled,
+		},
+	}
+
+	newName := "UpdatedEGWName"
+	newDescription := "Updated description"
+
+	edge.EdgeGateway.Name = newName
+	edge.EdgeGateway.Description = newDescription
+
+	err = edge.Update()
+	check.Assert(err, IsNil)
+
+	edge, err = vcd.vdc.GetEdgeGatewayById(saveEGW.ID, true)
+	check.Assert(err, IsNil)
+
+	check.Assert(edge.EdgeGateway.HREF, Equals, saveEGW.HREF)
+	check.Assert(edge.EdgeGateway.Name, Equals, newName)
+	check.Assert(edge.EdgeGateway.Description, Equals, newDescription)
+
+	edge.EdgeGateway.Name = saveEGW.Name
+	edge.EdgeGateway.Description = saveEGW.Description
+
+	err = edge.Update()
+	check.Assert(err, IsNil)
+
+	edge, err = vcd.vdc.GetEdgeGatewayById(saveEGW.ID, true)
+	check.Assert(err, IsNil)
+
+	check.Assert(saveEGW.Name, Equals, edge.EdgeGateway.Name)
+	check.Assert(saveEGW.Description, Equals, edge.EdgeGateway.Description)
+	check.Assert(saveEGW.HREF, Equals, edge.EdgeGateway.HREF)
+}

@@ -9,8 +9,9 @@ package govcd
 import (
 	"fmt"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 func (vcd *TestVCD) Test_NetRefresh(check *C) {
@@ -313,4 +314,54 @@ func (vcd *TestVCD) Test_CreateOrgVdcNetworkDirect(check *C) {
 	// (4) Attempting a second conditional deletion. It should also return nil, as the network was not found
 	err = RemoveOrgVdcNetworkIfExists(*vcd.vdc, TestCreateOrgVdcNetworkDirect)
 	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_NetUpdate(check *C) {
+	if vcd.config.VCD.Network.Net1 == "" {
+		check.Skip("Skipping test because no network was given")
+	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	network, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+
+	check.Assert(err, IsNil)
+	check.Assert(network.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
+	var saveNetwork = types.OrgVDCNetwork{
+		HREF:            network.OrgVDCNetwork.HREF,
+		Type:            network.OrgVDCNetwork.Type,
+		ID:              network.OrgVDCNetwork.ID,
+		Name:            network.OrgVDCNetwork.Name,
+		Status:          network.OrgVDCNetwork.Status,
+		Description:     network.OrgVDCNetwork.Description,
+	}
+
+	// Change name and description
+	network.OrgVDCNetwork.Name = "UpdatedNetwork"
+	network.OrgVDCNetwork.Description = "updated description"
+	err = network.Update()
+	check.Assert(err, IsNil)
+
+	// Retrieve the network again
+	network, err = vcd.vdc.GetOrgVdcNetworkById(saveNetwork.ID, false)
+	check.Assert(err, IsNil)
+
+	check.Assert(network.OrgVDCNetwork.Name, Equals, "UpdatedNetwork")
+	check.Assert(network.OrgVDCNetwork.Description, Equals, "updated description")
+	check.Assert(network.OrgVDCNetwork.HREF, Equals, saveNetwork.HREF)
+	check.Assert(network.OrgVDCNetwork.Type, Equals, saveNetwork.Type)
+	check.Assert(network.OrgVDCNetwork.ID, Equals, saveNetwork.ID)
+	check.Assert(network.OrgVDCNetwork.EdgeGateway, DeepEquals, saveNetwork.EdgeGateway)
+	check.Assert(network.OrgVDCNetwork.Status, Equals, saveNetwork.Status)
+
+	// Change back name and description to their original values
+	network.OrgVDCNetwork.Description = saveNetwork.Description
+	network.OrgVDCNetwork.Name = saveNetwork.Name
+
+	err = network.Update()
+	check.Assert(err, IsNil)
+	network, err = vcd.vdc.GetOrgVdcNetworkById(saveNetwork.ID, false)
+	check.Assert(err, IsNil)
+	check.Assert(network.OrgVDCNetwork.Description, Equals, saveNetwork.Description)
+	check.Assert(network.OrgVDCNetwork.Name, Equals, saveNetwork.Name)
 }

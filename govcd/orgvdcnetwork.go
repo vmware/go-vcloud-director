@@ -234,3 +234,28 @@ func (vdc *Vdc) FindEdgeGatewayNameByNetwork(networkName string) (string, error)
 	}
 	return "", fmt.Errorf("no edge gateway connection found")
 }
+
+func (orgVdcNet *OrgVDCNetwork) UpdateAsync() (Task, error) {
+	if orgVdcNet.OrgVDCNetwork.HREF == "" {
+		return Task{}, fmt.Errorf("cannot Update, Object is empty")
+	}
+	href := orgVdcNet.OrgVDCNetwork.HREF
+
+	if !strings.Contains(href, "/api/admin/") {
+		href = strings.ReplaceAll(href, "/api/", "/api/admin/")
+	}
+
+	return orgVdcNet.client.ExecuteTaskRequest(href, http.MethodPut,
+		types.MimeOrgVdcNetwork, "error updating Org VDC network: %s", orgVdcNet.OrgVDCNetwork)
+}
+
+func (orgVdcNet *OrgVDCNetwork) Update() error {
+	task, err := orgVdcNet.UpdateAsync()
+	if err != nil {
+		return err
+	}
+	err = task.WaitTaskCompletion()
+
+	return err
+}
+
