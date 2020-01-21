@@ -436,6 +436,11 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedNetwork(check *C) {
 
 // Test_AddNewVMNilNIC creates VM with nil network configuration
 func (vcd *TestVCD) Test_AddNewVMNilNIC(check *C) {
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
 	// Find VApp
 	if vcd.vapp.VApp == nil {
 		check.Skip("skipping test because no vApp is found")
@@ -475,6 +480,11 @@ func (vcd *TestVCD) Test_AddNewVMNilNIC(check *C) {
 
 // Test_AddNewVMMultiNIC creates a new VM in vApp with multiple network cards
 func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
 	config := vcd.config
 	if config.VCD.Network.Net1 == "" {
 		check.Skip("Skipping test because no network was given")

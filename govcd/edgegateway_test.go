@@ -629,7 +629,7 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateFwGeneralParams(check *C) {
 
 func (vcd *TestVCD) TestEdgeGateway_GetVdcNetworks(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
-		check.Skip("Skipping test because no edge gatway given")
+		check.Skip("Skipping test because no edge gateway given")
 	}
 	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
@@ -770,4 +770,31 @@ func replaceFirstMatch(text, regex, replacement string) string {
 		return strings.Replace(text, found, replacement, 1)
 	}
 	return ""
+}
+
+// TestListEdgeGateway tests that at least one edge gateway is found,
+// and the list contains the element defined in the configuration file
+func (vcd *TestVCD) TestListEdgeGateway(check *C) {
+	if vcd.config.VCD.EdgeGateway == "" {
+		check.Skip("Skipping test because no edge gateway given")
+	}
+	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	check.Assert(err, IsNil)
+	check.Assert(edge, NotNil)
+	edgeRec, err := vcd.vdc.GetEdgeGatewayRecordsType(false)
+	check.Assert(err, IsNil)
+	check.Assert(edgeRec, NotNil)
+	check.Assert(len(edgeRec.EdgeGatewayRecord) > 0, Equals, true)
+	foundName := false
+	foundHref := false
+	for _, ref := range edgeRec.EdgeGatewayRecord {
+		if ref.Name == edge.EdgeGateway.Name {
+			foundName = true
+			if ref.HREF == edge.EdgeGateway.HREF {
+				foundHref = true
+			}
+		}
+	}
+	check.Assert(foundName, Equals, true)
+	check.Assert(foundHref, Equals, true)
 }

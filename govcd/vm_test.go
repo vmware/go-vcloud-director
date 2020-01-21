@@ -204,6 +204,11 @@ func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 
 // Test attach disk to VM
 func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
 	if vcd.config.VCD.Disk.Size <= 0 {
 		check.Skip("skipping test because disk size is 0")
 	}
