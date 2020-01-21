@@ -57,20 +57,20 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 
 	// Ensure the VM is is Undeployed so that PowerOnAndForceCustomization can be triggered. To
 	// trigger vm.Undeploy() it must be powred on at first
-	vmStatus, err := vm.GetStatus()
-	check.Assert(err, IsNil)
+	// vmStatus, err := vm.GetStatus()
+	// check.Assert(err, IsNil)
 
-	if vmStatus != "POWERED_ON" {
-		task, err := vm.PowerOn()
-		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
-	}
-	task, err = vm.Undeploy()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(task.Task.Status, Equals, "success")
+	// if vmStatus != "POWERED_ON" {
+	// 	task, err := vm.PowerOn()
+	// 	check.Assert(err, IsNil)
+	// 	err = task.WaitTaskCompletion()
+	// 	check.Assert(err, IsNil)
+	// }
+	// task, err = vm.Undeploy()
+	// check.Assert(err, IsNil)
+	// err = task.WaitTaskCompletion()
+	// check.Assert(err, IsNil)
+	// check.Assert(task.Task.Status, Equals, "success")
 
 	// Get network config and update it to use DHCP
 	netCfg, err := vm.GetNetworkConnectionSection()
@@ -78,7 +78,6 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 
 	netCfg.NetworkConnection[0].Network = network.Name
 	netCfg.NetworkConnection[0].IPAddressAllocationMode = types.IPAllocationModeDHCP
-	// netCfg.NetworkConnection[0].NeedsCustomization = true
 	netCfg.NetworkConnection[0].IsConnected = true
 
 	secondNic := &types.NetworkConnection{
@@ -108,7 +107,10 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 		fmt.Println("OK")
 	}
 
-	err = vm.PowerOnAndForceCustomization()
+	// err = vm.PowerOnAndForceCustomization()
+	task, err = vapp.PowerOn()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
 	if testVerbose {
