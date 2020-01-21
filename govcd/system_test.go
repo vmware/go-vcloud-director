@@ -88,17 +88,20 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 		{"org5", false, true, 100, 100, 100, false},
 	}
 
+	storageLeaseSeconds := 10
+	deploymentLeaseSeconds := 1000000
+	trueVal := true
 	fullSettings := &types.OrgSettings{
 		OrgGeneralSettings: &types.OrgGeneralSettings{},
 		OrgVAppTemplateSettings: &types.VAppTemplateLeaseSettings{
-			DeleteOnStorageLeaseExpiration: true,
-			StorageLeaseSeconds:            10,
+			DeleteOnStorageLeaseExpiration: &trueVal,
+			StorageLeaseSeconds:            &storageLeaseSeconds,
 		},
 		OrgVAppLeaseSettings: &types.VAppLeaseSettings{
-			PowerOffOnRuntimeLeaseExpiration: true,
-			DeploymentLeaseSeconds:           1000000,
-			DeleteOnStorageLeaseExpiration:   true,
-			StorageLeaseSeconds:              1000000,
+			PowerOffOnRuntimeLeaseExpiration: &trueVal,
+			DeploymentLeaseSeconds:           &deploymentLeaseSeconds,
+			DeleteOnStorageLeaseExpiration:   &trueVal,
+			StorageLeaseSeconds:              &storageLeaseSeconds,
 		},
 		OrgLdapSettings: &types.OrgLdapSettingsType{
 			OrgLdapMode: "NONE",
