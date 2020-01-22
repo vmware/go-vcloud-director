@@ -7,6 +7,7 @@ package govcd
 
 import (
 	"fmt"
+
 	. "gopkg.in/check.v1"
 )
 
@@ -35,4 +36,136 @@ func (vcd *TestVCD) Test_FindAdminCatalogRecords(check *C) {
 	check.Assert(len(findRecords), Equals, 1)
 	check.Assert(findRecords[0].Name, Equals, catalogName)
 	check.Assert(findRecords[0].OrgName, Equals, adminOrg.AdminOrg.Name)
+}
+
+// Tests AdminOrg lease settings for vApp and vApp template
+func (vcd *TestVCD) TestAdminOrg_SetLease(check *C) {
+	type leaseParams struct {
+		deploymentLeaseSeconds                     int
+		vappStorageLease                           int
+		vappTemplateStorageLease                   int
+		powerOffOnRuntimeLeaseExpiration           bool
+		vappDeleteOnStorageLeaseExpiration         bool
+		vappTemplateDeleteOnStorageLeaseExpiration bool
+	}
+
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	// Save vApp and vApp template lease parameters
+	var saveParams = leaseParams{
+		deploymentLeaseSeconds:                     *adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.DeploymentLeaseSeconds,
+		vappStorageLease:                           *adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.StorageLeaseSeconds,
+		vappTemplateStorageLease:                   *adminOrg.AdminOrg.OrgSettings.OrgVAppTemplateSettings.StorageLeaseSeconds,
+		powerOffOnRuntimeLeaseExpiration:           *adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.PowerOffOnRuntimeLeaseExpiration,
+		vappDeleteOnStorageLeaseExpiration:         *adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.DeleteOnStorageLeaseExpiration,
+		vappTemplateDeleteOnStorageLeaseExpiration: *adminOrg.AdminOrg.OrgSettings.OrgVAppTemplateSettings.DeleteOnStorageLeaseExpiration,
+	}
+
+	var leaseData = []leaseParams{
+		{
+			deploymentLeaseSeconds:                     0, // never expires
+			vappStorageLease:                           0, // never expires
+			vappTemplateStorageLease:                   0, // never expires
+			powerOffOnRuntimeLeaseExpiration:           true,
+			vappDeleteOnStorageLeaseExpiration:         true,
+			vappTemplateDeleteOnStorageLeaseExpiration: true,
+		},
+		{
+			deploymentLeaseSeconds:                     0, // never expires
+			vappStorageLease:                           0, // never expires
+			vappTemplateStorageLease:                   0, // never expires
+			powerOffOnRuntimeLeaseExpiration:           false,
+			vappDeleteOnStorageLeaseExpiration:         false,
+			vappTemplateDeleteOnStorageLeaseExpiration: false,
+		},
+		{
+			deploymentLeaseSeconds:                     3600,          // 1 hour
+			vappStorageLease:                           3600 * 24,     // 1 day
+			vappTemplateStorageLease:                   3600 * 24 * 7, // 1 week
+			powerOffOnRuntimeLeaseExpiration:           true,
+			vappDeleteOnStorageLeaseExpiration:         true,
+			vappTemplateDeleteOnStorageLeaseExpiration: true,
+		},
+		{
+			deploymentLeaseSeconds:                     3600,          // 1 hour
+			vappStorageLease:                           3600 * 24,     // 1 day
+			vappTemplateStorageLease:                   3600 * 24 * 7, // 1 week
+			powerOffOnRuntimeLeaseExpiration:           false,
+			vappDeleteOnStorageLeaseExpiration:         false,
+			vappTemplateDeleteOnStorageLeaseExpiration: false,
+		},
+		{
+			deploymentLeaseSeconds:                     3600 * 24 * 30,  // 1 month
+			vappStorageLease:                           3600 * 24 * 90,  // 1 quarter
+			vappTemplateStorageLease:                   3600 * 24 * 365, // 1 year
+			powerOffOnRuntimeLeaseExpiration:           true,
+			vappDeleteOnStorageLeaseExpiration:         true,
+			vappTemplateDeleteOnStorageLeaseExpiration: true,
+		},
+		{
+			deploymentLeaseSeconds:                     3600 * 24 * 30,  // 1 month
+			vappStorageLease:                           3600 * 24 * 90,  // 1 quarter
+			vappTemplateStorageLease:                   3600 * 24 * 365, // 1 year
+			powerOffOnRuntimeLeaseExpiration:           false,
+			vappDeleteOnStorageLeaseExpiration:         false,
+			vappTemplateDeleteOnStorageLeaseExpiration: false,
+		},
+	}
+
+	for _, info := range leaseData {
+
+		fmt.Printf("update lease params %v\n", info)
+		// Change the lease parameters for both vapp and vApp template
+		adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.StorageLeaseSeconds = &info.vappStorageLease
+		adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.DeploymentLeaseSeconds = &info.deploymentLeaseSeconds
+		adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.PowerOffOnRuntimeLeaseExpiration = &info.powerOffOnRuntimeLeaseExpiration
+		adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.DeleteOnStorageLeaseExpiration = &info.vappDeleteOnStorageLeaseExpiration
+
+		adminOrg.AdminOrg.OrgSettings.OrgVAppTemplateSettings.StorageLeaseSeconds = &info.vappTemplateStorageLease
+		adminOrg.AdminOrg.OrgSettings.OrgVAppTemplateSettings.DeleteOnStorageLeaseExpiration = &info.vappTemplateDeleteOnStorageLeaseExpiration
+
+		task, err := adminOrg.Update()
+		check.Assert(err, IsNil)
+		check.Assert(task, NotNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+
+		// Check the results
+		check.Assert(*adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.DeploymentLeaseSeconds, Equals, info.deploymentLeaseSeconds)
+		check.Assert(*adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.StorageLeaseSeconds, Equals, info.vappStorageLease)
+		check.Assert(*adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.PowerOffOnRuntimeLeaseExpiration, Equals, info.powerOffOnRuntimeLeaseExpiration)
+		check.Assert(*adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.DeleteOnStorageLeaseExpiration, Equals, info.vappDeleteOnStorageLeaseExpiration)
+		check.Assert(*adminOrg.AdminOrg.OrgSettings.OrgVAppTemplateSettings.DeleteOnStorageLeaseExpiration, Equals, info.vappTemplateDeleteOnStorageLeaseExpiration)
+		check.Assert(*adminOrg.AdminOrg.OrgSettings.OrgVAppTemplateSettings.StorageLeaseSeconds, Equals, info.vappTemplateStorageLease)
+
+	}
+	// Restore the initial parameters
+	adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.StorageLeaseSeconds = &saveParams.vappStorageLease
+	adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.DeploymentLeaseSeconds = &saveParams.deploymentLeaseSeconds
+	adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.PowerOffOnRuntimeLeaseExpiration = &saveParams.powerOffOnRuntimeLeaseExpiration
+	adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.DeleteOnStorageLeaseExpiration = &saveParams.vappDeleteOnStorageLeaseExpiration
+
+	adminOrg.AdminOrg.OrgSettings.OrgVAppTemplateSettings.StorageLeaseSeconds = &saveParams.vappTemplateStorageLease
+	adminOrg.AdminOrg.OrgSettings.OrgVAppTemplateSettings.DeleteOnStorageLeaseExpiration = &saveParams.vappTemplateDeleteOnStorageLeaseExpiration
+
+	fmt.Printf("restore lease params %v\n", saveParams)
+	task, err := adminOrg.Update()
+	check.Assert(err, IsNil)
+	check.Assert(task, NotNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	// Check that the initial parameters were restored
+	check.Assert(*adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.DeploymentLeaseSeconds, Equals, saveParams.deploymentLeaseSeconds)
+	check.Assert(*adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.StorageLeaseSeconds, Equals, saveParams.vappStorageLease)
+	check.Assert(*adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.PowerOffOnRuntimeLeaseExpiration, Equals, saveParams.powerOffOnRuntimeLeaseExpiration)
+	check.Assert(*adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.DeleteOnStorageLeaseExpiration, Equals, saveParams.vappDeleteOnStorageLeaseExpiration)
+	check.Assert(*adminOrg.AdminOrg.OrgSettings.OrgVAppTemplateSettings.DeleteOnStorageLeaseExpiration, Equals, saveParams.vappTemplateDeleteOnStorageLeaseExpiration)
+	check.Assert(*adminOrg.AdminOrg.OrgSettings.OrgVAppTemplateSettings.StorageLeaseSeconds, Equals, saveParams.vappTemplateStorageLease)
+
 }

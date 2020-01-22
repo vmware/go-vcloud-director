@@ -1,11 +1,19 @@
 ## 2.6.0 (Unreleased)
 
-* Moved `VCDClient.supportedVersions` to `VCDClient.Client.supportedVersions` [#274](https://github.com/vmware/go-vcloud-director/pull/274)    
+* Moved `VCDClient.supportedVersions` to `VCDClient.Client.supportedVersions`
+  [#274](https://github.com/vmware/go-vcloud-director/pull/274)    
 * Added methods `VM.AddInternalDisk`, `VM.GetInternalDiskById`, `VM.DeleteInternalDisk`,
   `VM.UpdateInternalDisks` and `VM.UpdateInternalDisksAsync`
   [#272](https://github.com/vmware/go-vcloud-director/pull/272)
 * Added methods `vdc.GetEdgeGatewayReferenceList` and `catalog.GetVappTemplateByHref`
   [#278](https://github.com/vmware/go-vcloud-director/pull/278)
+* Added methods `VM.AddInternalDisk`, `VM.GetInternalDiskById`, `VM.DeleteInternalDisk`,
+  `VM.UpdateInternalDisks` and `VM.UpdateInternalDisksAsync`
+  [#272](https://github.com/vmware/go-vcloud-director/pull/272)
+* Change `int` and `bool` fields from types.VAppTemplateLeaseSettings and VAppLeaseSettings into
+  pointers [#281](https://github.com/vmware/go-vcloud-director/pull/281)
+* Added method `catalog.GetVappTemplateByHref`, and expose methods `vdc.GetEdgeGatewayByHref` and
+  `vdc.GetEdgeGatewayRecordsType` [#278](https://github.com/vmware/go-vcloud-director/pull/278)
 * Added methods `EdgeGateway.GetAllNsxvDhcpLeases()`, `EdgeGateway.GetNsxvActiveDhcpLeaseByMac()`
   `VM.WaitForDhcpIpByNicIndexes()`, `VM.GetParentVApp()`, `VM.GetParentVdc()`
   [#283](https://github.com/vmware/go-vcloud-director/pull/283)
