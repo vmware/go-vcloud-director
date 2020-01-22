@@ -54,6 +54,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	// Get network config and update it to use DHCP
 	netCfg, err := vm.GetNetworkConnectionSection()
 	check.Assert(err, IsNil)
+	check.Assert(netCfg, NotNil)
 
 	netCfg.NetworkConnection[0].Network = network.Name
 	netCfg.NetworkConnection[0].IPAddressAllocationMode = types.IPAllocationModeDHCP
