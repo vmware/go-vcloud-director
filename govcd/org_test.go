@@ -287,7 +287,6 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 	for i, allocationModel := range allocationModels {
 		vdcConfiguration := &types.VdcConfiguration{
 			Name:            fmt.Sprintf("%s%d", TestCreateOrgVdc, i),
-			Xmlns:           types.XMLNamespaceVCloud,
 			AllocationModel: allocationModel,
 			ComputeCapacity: []*types.ComputeCapacity{
 				&types.ComputeCapacity{
@@ -566,7 +565,6 @@ func setupVDc(vcd *TestVCD, check *C) (AdminOrg, *types.VdcConfiguration, error)
 	networkPoolHref := results.Results.NetworkPoolRecord[0].HREF
 	vdcConfiguration := &types.VdcConfiguration{
 		Name:            TestCreateOrgVdc + "ForRefresh",
-		Xmlns:           types.XMLNamespaceVCloud,
 		AllocationModel: "AllocationPool",
 		ComputeCapacity: []*types.ComputeCapacity{
 			&types.ComputeCapacity{
