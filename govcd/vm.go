@@ -1027,8 +1027,8 @@ func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int, us
 				maxWaitSeconds, nicIndexes, strings.Join(ipSlice, ", "))
 			return ipSlice, true, nil
 		case <-tick.C:
-			// Step 1 check if VMware tools reported IPs to UI. Also populate MAC addresses into
-			// nicStates structure for later usage.
+			// Step 1 check if VMware tools reported IPs in NetworkConnectionSection. Also populate
+			// MAC addresses into nicStates structure for later usage.
 			nicStates, err = vm.getIpsMacsByNicIndexes(nicStates)
 			if err != nil {
 				return []string{}, false, fmt.Errorf("could not check IP addresses assigned to VM %s: %s",
