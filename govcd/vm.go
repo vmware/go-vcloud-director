@@ -869,7 +869,7 @@ func (vm *VM) GetParentVApp() (*VApp, error) {
 			err := vapp.Refresh()
 
 			if err != nil {
-				return nil, fmt.Errorf("could not refresh parent vApp: %s", err)
+				return nil, fmt.Errorf("could not refresh parent vApp for VM %s: %s", vm.VM.Name, err)
 			}
 
 			return vapp, nil
@@ -887,12 +887,12 @@ func (vm *VM) GetParentVdc() (*Vdc, error) {
 
 	vapp, err := vm.GetParentVApp()
 	if err != nil {
-		return nil, fmt.Errorf("could not find parent vApp: %s", err)
+		return nil, fmt.Errorf("could not find parent vApp for VM %s: %s", vm.VM.Name, err)
 	}
 
 	vdc, err := vapp.getParentVDC()
 	if err != nil {
-		return nil, fmt.Errorf("could not find parent VDC: %s", err)
+		return nil, fmt.Errorf("could not find parent vApp for VM %s: %s", vm.VM.Name, err)
 	}
 
 	return &vdc, nil
@@ -968,7 +968,7 @@ func allNicsHaveIps(nicConfigs []nicDhcpConfig) bool {
 }
 
 // WaitForDhcpIpByNicIndexes accepts a slice of NIC indexes in VM, tries to get these IPs up to
-// maxWaitSeconds and the returns:
+// maxWaitSeconds and then returns:
 // * a list of IPs
 // * whether the function hit timeout (some IP values may be available after timeout)
 // * error
@@ -977,7 +977,7 @@ func allNicsHaveIps(nicConfigs []nicDhcpConfig) bool {
 // partial result for IP addresses when the timeout is hit.
 //
 // Getting a DHCP address is complicated because vCD (in UI and in types.NetworkConnectionSection)
-// reports IP addresses when guest tools are present on a VM only. This function also attempts to
+// reports IP addresses only when guest tools are present on a VM. This function also attempts to
 // check if VM NICs are attached to routed network on edge gateway - then there is a chance that
 // built-in DHCP pools are used and active DHCP leases can be found.
 //

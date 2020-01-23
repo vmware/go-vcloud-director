@@ -1,7 +1,7 @@
 // +build nsxv vm functional ALL
 
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -42,7 +42,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	}
 
 	// Setup Org network with a single IP in DHCP pool
-	network, _ := getOrgVdcNetworkWithDhcp(vcd, check, edgeGateway)
+	network, _ := makeOrgVdcNetworkWithDhcp(vcd, check, edgeGateway)
 
 	// Attach Org network to vApp
 	task, err := vapp.AddRAWNetworkConfig([]*types.OrgVDCNetwork{network})
@@ -162,10 +162,10 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	check.Assert(err, IsNil)
 }
 
-// getOrgVdcNetworkWithDhcp is a helper that creates a routed Org network and a DHCP pool with
+// makeOrgVdcNetworkWithDhcp is a helper that creates a routed Org network and a DHCP pool with
 // single IP address to be assigned. Org vDC network and IP address assigned to DHCP pool are
 // returned
-func getOrgVdcNetworkWithDhcp(vcd *TestVCD, check *C, edgeGateway *EdgeGateway) (*types.OrgVDCNetwork, string) {
+func makeOrgVdcNetworkWithDhcp(vcd *TestVCD, check *C, edgeGateway *EdgeGateway) (*types.OrgVDCNetwork, string) {
 	var networkConfig = types.OrgVDCNetwork{
 		Xmlns:       types.XMLNamespaceVCloud,
 		Name:        TestCreateOrgVdcNetworkDhcp,
