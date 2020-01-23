@@ -42,7 +42,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	}
 
 	// Setup Org network with a single IP in DHCP pool
-	network, _ := makeOrgVdcNetworkWithDhcp(vcd, check, edgeGateway)
+	network := makeOrgVdcNetworkWithDhcp(vcd, check, edgeGateway)
 
 	// Attach Org network to vApp
 	task, err := vapp.AddRAWNetworkConfig([]*types.OrgVDCNetwork{network})
@@ -165,7 +165,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 // makeOrgVdcNetworkWithDhcp is a helper that creates a routed Org network and a DHCP pool with
 // single IP address to be assigned. Org vDC network and IP address assigned to DHCP pool are
 // returned
-func makeOrgVdcNetworkWithDhcp(vcd *TestVCD, check *C, edgeGateway *EdgeGateway) (*types.OrgVDCNetwork, string) {
+func makeOrgVdcNetworkWithDhcp(vcd *TestVCD, check *C, edgeGateway *EdgeGateway) *types.OrgVDCNetwork {
 	var networkConfig = types.OrgVDCNetwork{
 		Xmlns:       types.XMLNamespaceVCloud,
 		Name:        TestCreateOrgVdcNetworkDhcp,
@@ -223,5 +223,5 @@ func makeOrgVdcNetworkWithDhcp(vcd *TestVCD, check *C, edgeGateway *EdgeGateway)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	return network.OrgVDCNetwork, "32.32.32.0/24"
+	return network.OrgVDCNetwork
 }
