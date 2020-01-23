@@ -857,6 +857,10 @@ func (vm *VM) SetGuestCustomizationSection(guestCustomizationSection *types.Gues
 //
 // Note. The VM has a parent vApp defined even if it was created as a standalone
 func (vm *VM) GetParentVApp() (*VApp, error) {
+	if vm == nil || vm.VM == nil {
+		return nil, fmt.Errorf("vm object cannot be nil to get parent vApp")
+	}
+
 	for _, link := range vm.VM.Link {
 		if link.Type == types.MimeVApp && link.Rel == "up" {
 			vapp := NewVApp(vm.client)
@@ -875,8 +879,12 @@ func (vm *VM) GetParentVApp() (*VApp, error) {
 	return nil, fmt.Errorf("could not find parent vApp link")
 }
 
-// GetParentVdc returns parent vDC for VM
+// GetParentVdc returns parent VDC for VM
 func (vm *VM) GetParentVdc() (*Vdc, error) {
+	if vm == nil || vm.VM == nil {
+		return nil, fmt.Errorf("vm object cannot be nil to get parent vApp")
+	}
+
 	vapp, err := vm.GetParentVApp()
 	if err != nil {
 		return nil, fmt.Errorf("could not find parent vApp: %s", err)
@@ -884,7 +892,7 @@ func (vm *VM) GetParentVdc() (*Vdc, error) {
 
 	vdc, err := vapp.getParentVDC()
 	if err != nil {
-		return nil, fmt.Errorf("could not find parent vDC: %s", err)
+		return nil, fmt.Errorf("could not find parent VDC: %s", err)
 	}
 
 	return &vdc, nil
@@ -901,7 +909,6 @@ func (vm *VM) getEdgeGatewaysForRoutedNics(nicDhcpConfigs []nicDhcpConfig) ([]ni
 
 	for index, nic := range nicDhcpConfigs {
 		edgeGatewayName, err := vm.getEdgeGatewayNameForNic(nic.vmNicIndex)
-
 		if err != nil && !IsNotFound(err) {
 			return nil, fmt.Errorf("could not validate if NIC %d uses routed network attached to edge gateway: %s",
 				nic.vmNicIndex, err)
@@ -911,19 +918,18 @@ func (vm *VM) getEdgeGatewaysForRoutedNics(nicDhcpConfigs []nicDhcpConfig) ([]ni
 		if IsNotFound(err) {
 			util.Logger.Printf("[TRACE] VM '%s' NIC with index %d is not attached to edge gateway routed network\n",
 				vm.VM.Name, nic.vmNicIndex)
-			continue
-		}
+		} else {
+			// Lookup edge gateway
+			edgeGateway, err := vdc.GetEdgeGatewayByName(edgeGatewayName, false)
+			if err != nil {
+				return nil, fmt.Errorf("could not lookup edge gateway for routed network on NIC %d: %s",
+					nic.vmNicIndex, err)
+			}
 
-		// Lookup edge gateway
-		edgeGateway, err := vdc.GetEdgeGatewayByName(edgeGatewayName, false)
-		if err != nil {
-			return nil, fmt.Errorf("could not lookup edge gateway for routed network on NIC %d: %s",
-				nic.vmNicIndex, err)
+			util.Logger.Printf("[TRACE] VM '%s' NIC with index %d is attached to edge gateway routed network\n",
+				vm.VM.Name, nic.vmNicIndex)
+			nicDhcpConfigs[index].routedNetworkEdgeGateway = edgeGateway
 		}
-
-		util.Logger.Printf("[TRACE] VM '%s' NIC with index %d is attached to edge gateway routed network\n",
-			vm.VM.Name, nic.vmNicIndex)
-		nicDhcpConfigs[index].routedNetworkEdgeGateway = edgeGateway
 	}
 
 	return nicDhcpConfigs, nil
@@ -966,7 +972,6 @@ func allNicsHaveIps(nicConfigs []nicDhcpConfig) bool {
 // * a list of IPs
 // * whether the function hit timeout (some IP values may be available after timeout)
 // * error
-// guaranteed to return all IP addresses on a certain timeout.
 //
 // This function checks a slice of nicIndexes and reuses all possible API calls. It may return a
 // partial result for IP addresses when the timeout is hit.

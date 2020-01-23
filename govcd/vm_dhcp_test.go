@@ -18,11 +18,10 @@ import (
 // The test does below actions:
 // 1. Creates VM
 // 2. Ensures there is a DHCP configuration for network
-// 3. Backs up network configuration for VM
-// 4. Powers off VM
-// 5. Sets VM network adapter to use DHCP
-// 6. Powers on VM and checks for a DHCP lease assigned to VM
-// 7. Cleans up
+// 3. Powers off VM
+// 4. Sets VM network adapter to use DHCP
+// 5. Powers on VM and checks for a DHCP lease assigned to VM
+// 6. Cleans up
 func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
