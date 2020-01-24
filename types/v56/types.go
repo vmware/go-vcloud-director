@@ -442,7 +442,7 @@ type VdcConfiguration struct {
 	XMLName                  xml.Name             `xml:"CreateVdcParams"`
 	Xmlns                    string               `xml:"xmlns,attr"`
 	Name                     string               `xml:"name,attr"`
-	Description              string               `xml:"Description,omitempty"`
+	Description              string               `xml:"Description,omitempty"` // Flex supported from 32.0
 	AllocationModel          string               `xml:"AllocationModel"`
 	ComputeCapacity          []*ComputeCapacity   `xml:"ComputeCapacity"`
 	NicQuota                 int                  `xml:"NicQuota,omitempty"`
@@ -459,8 +459,8 @@ type VdcConfiguration struct {
 	UsesFastProvisioning     bool                 `xml:"UsesFastProvisioning,omitempty"`
 	OverCommitAllowed        bool                 `xml:"OverCommitAllowed,omitempty"`
 	VmDiscoveryEnabled       bool                 `xml:"VmDiscoveryEnabled,omitempty"`
-	IsElastic                *bool                `xml:"IsElastic,omitempty"`
-	IncludeMemoryOverhead    *bool                `xml:"IncludeMemoryOverhead,omitempty"`
+	IsElastic                *bool                `xml:"IsElastic,omitempty"`             // supported from 32.0
+	IncludeMemoryOverhead    *bool                `xml:"IncludeMemoryOverhead,omitempty"` // supported from 32.0
 }
 
 // Task represents an asynchronous operation in vCloud Director.

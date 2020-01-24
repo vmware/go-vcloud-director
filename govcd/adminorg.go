@@ -90,7 +90,7 @@ func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
 // CreateVdc creates a VDC with the given params under the given organization.
 // Returns an AdminVdc.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-VdcConfiguration.html
-// Deprecate
+// Deprecated in favor
 func (adminOrg *AdminOrg) CreateVdc(vdcConfiguration *types.VdcConfiguration) (Task, error) {
 	err := validateVdcConfiguration(vdcConfiguration)
 	if err != nil {
@@ -118,7 +118,7 @@ func (adminOrg *AdminOrg) CreateVdc(vdcConfiguration *types.VdcConfiguration) (T
 }
 
 // Creates the vdc and waits for the asynchronous task to complete.
-// Deprecate
+// Deprecated in favor
 func (adminOrg *AdminOrg) CreateVdcWait(vdcDefinition *types.VdcConfiguration) error {
 	task, err := adminOrg.CreateVdc(vdcDefinition)
 	if err != nil {

@@ -85,7 +85,7 @@ func (adminVdc *AdminVdc) Update() (AdminVdc, error) {
 	return *adminVdc, nil
 }
 
-type VdcProducer struct {
+type vdcProducer struct {
 	Type             string
 	SupportedVersion string
 	CreateVdc        func(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*Vdc, error)
@@ -94,42 +94,30 @@ type VdcProducer struct {
 	UpdateVdcAsync   func(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (Task, error)
 }
 
-var VdcCreateV90 = VdcProducer{
+var vdcCrudV90 = vdcProducer{
 	Type:             "VDC",
 	SupportedVersion: "29.0",
 	CreateVdc:        createVdc,
 	CreateVdcAsync:   createVdcAsync,
+	//UpdateVdc:,
+	//UpdateVdcAsync:,
 }
 
-var VdcCreateV97 = VdcProducer{
+var vdcCrudV97 = vdcProducer{
 	Type:             "VDC",
 	SupportedVersion: "32.0",
 	CreateVdc:        createVdcV32,
 	CreateVdcAsync:   createVdcAsyncV97,
+	//UpdateVdc:,
+	//UpdateVdcAsync:,
 }
 
-var VdcProducerByVersion = map[string]VdcProducer{
-	"vdc9.0":  VdcCreateV90,
-	"vdc9.1":  VdcCreateV90,
-	"vdc9.5":  VdcCreateV90,
-	"vdc9.7":  VdcCreateV97,
-	"vdc10.0": VdcCreateV97,
-}
-
-var VcdVersionToApiVersion = map[string]string{
-	"29.0": "9.0",
-	"30.0": "9.1",
-	"31.0": "9.5",
-	"32.0": "9.7",
-	"33.0": "10.0",
-}
-
-var ApiVersionToVcdVersion = map[string]string{
-	"9.0":  "29.0",
-	"9.1":  "30.0",
-	"9.5":  "31.0",
-	"9.7":  "32.0",
-	"10.0": "33.0",
+var vdcProducerByVersion = map[string]vdcProducer{
+	"vdc9.0":  vdcCrudV90,
+	"vdc9.1":  vdcCrudV90,
+	"vdc9.5":  vdcCrudV90,
+	"vdc9.7":  vdcCrudV97,
+	"vdc10.0": vdcCrudV97,
 }
 
 func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration) (*Vdc, error) {
@@ -137,7 +125,8 @@ func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration)
 	if err != nil {
 		return nil, err
 	}
-	realFunction, ok := VdcProducerByVersion["vdcCreate"+VcdVersionToApiVersion[apiVersion]]
+	// add logging
+	realFunction, ok := vdcProducerByVersion["vdcCreate"+vcdVersionToApiVersion[apiVersion]]
 	if !ok {
 		return nil, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
 	}
@@ -152,7 +141,7 @@ func (adminOrg *AdminOrg) CreateOrgVdcAsync(vdcConfiguration *types.VdcConfigura
 	if err != nil {
 		return Task{}, err
 	}
-	realFunction := VdcProducerByVersion["vdc"+VcdVersionToApiVersion[apiVersion]]
+	realFunction := vdcProducerByVersion["vdc"+vcdVersionToApiVersion[apiVersion]]
 	if realFunction.CreateVdcAsync == nil {
 		return Task{}, fmt.Errorf("function CreateVdcAsync is not defined for %s", "vdc"+apiVersion)
 	}

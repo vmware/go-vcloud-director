@@ -3,7 +3,7 @@ language: go
 go:
     - "1.12.x"
 
-install: false
+sudo: false
 
 script:
     - env GO111MODULE=on make
