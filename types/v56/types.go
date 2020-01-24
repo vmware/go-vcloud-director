@@ -459,6 +459,8 @@ type VdcConfiguration struct {
 	UsesFastProvisioning     bool                 `xml:"UsesFastProvisioning,omitempty"`
 	OverCommitAllowed        bool                 `xml:"OverCommitAllowed,omitempty"`
 	VmDiscoveryEnabled       bool                 `xml:"VmDiscoveryEnabled,omitempty"`
+	IsElastic                *bool                `xml:"IsElastic,omitempty"`
+	IncludeMemoryOverhead    *bool                `xml:"IncludeMemoryOverhead,omitempty"`
 }
 
 // Task represents an asynchronous operation in vCloud Director.
