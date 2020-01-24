@@ -981,7 +981,9 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	vm, storageProfile, diskSettings, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, 1)
+	vmName := "Test_AddInternalDisk"
+
+	vm, storageProfile, diskSettings, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, vmName, 1)
 	check.Assert(err, IsNil)
 
 	//verify
@@ -1004,11 +1006,14 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 
 	// disable fast provisioning if needed
 	updateVdcFastProvisioning(vcd, check, previousProvisioningValue)
+
+	// delete Vapp early to avoid env capacity issue
+	deleteVapp(vcd, vmName)
 }
 
 // createInternalDisk Finds available VM and creates internal Disk in it.
 // returns VM, storage profile, disk settings, disk id and error.
-func (vcd *TestVCD) createInternalDisk(check *C, busNumber int) (*VM, types.Reference, *types.DiskSettings, string, string, error) {
+func (vcd *TestVCD) createInternalDisk(check *C, vmName string, busNumber int) (*VM, types.Reference, *types.DiskSettings, string, string, error) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vApp wasn't properly created")
 	}
@@ -1016,13 +1021,22 @@ func (vcd *TestVCD) createInternalDisk(check *C, busNumber int) (*VM, types.Refe
 		check.Skip("No Storage Profile given for VDC tests")
 	}
 
-	// Find VM
-	vapp := vcd.findFirstVapp()
-	existingVm, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
+	if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("No Catalog name given for VDC tests")
 	}
-	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
+
+	if vcd.config.VCD.Catalog.CatalogItem == "" {
+		check.Skip("No Catalog item given for VDC tests")
+	}
+
+	// disables fast provisioning if needed
+	previousVdcFastProvisioningValue := updateVdcFastProvisioning(vcd, check, "disable")
+	AddToCleanupList(previousVdcFastProvisioningValue, "fastProvisioning", vcd.config.VCD.Org+"|"+vcd.config.VCD.Vdc, "createInternalDisk")
+
+	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAngGetResourcesForVmCreation(check, vmName)
+	check.Assert(err, IsNil)
+
+	vm, err := spawnVM("FirstNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check, true)
 	check.Assert(err, IsNil)
 
 	storageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
@@ -1040,15 +1054,10 @@ func (vcd *TestVCD) createInternalDisk(check *C, busNumber int) (*VM, types.Refe
 		Iops:              &iops,
 	}
 
-	// disables fast provisioning if needed
-	previousVdcFastProvisioningValue := updateVdcFastProvisioning(vcd, check, "disable")
-
-	AddToCleanupList(previousVdcFastProvisioningValue, "fastProvisioning", vcd.config.VCD.Org+"|"+vcd.config.VCD.Vdc, "createInternalDisk")
-
 	diskId, err := vm.AddInternalDisk(diskSettings)
 	check.Assert(err, IsNil)
 	check.Assert(diskId, NotNil)
-	return vm, storageProfile, diskSettings, diskId, previousVdcFastProvisioningValue, err
+	return &vm, storageProfile, diskSettings, diskId, previousVdcFastProvisioningValue, err
 }
 
 // updateVdcFastProvisioning Enables or Disables fast provisioning if needed
@@ -1092,7 +1101,9 @@ func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	vm, _, _, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, 2)
+	vmName := "Test_DeleteInternalDisk"
+
+	vm, _, _, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, vmName, 2)
 	check.Assert(err, IsNil)
 
 	//verify
@@ -1108,6 +1119,9 @@ func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
 
 	// enable fast provisioning if needed
 	updateVdcFastProvisioning(vcd, check, previousProvisioningValue)
+
+	// delete Vapp early to avoid env capacity issue
+	deleteVapp(vcd, vmName)
 }
 
 // Test update internal disk for VM which has independent disk
@@ -1118,8 +1132,8 @@ func (vcd *TestVCD) Test_UpdateInternalDisk(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
-
-	vm, storageProfile, diskSettings, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, 1)
+	vmName := "Test_UpdateInternalDisk"
+	vm, storageProfile, diskSettings, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, vmName, 1)
 	check.Assert(err, IsNil)
 
 	//verify
@@ -1168,6 +1182,9 @@ func (vcd *TestVCD) Test_UpdateInternalDisk(check *C) {
 
 	// disable fast provisioning if needed
 	updateVdcFastProvisioning(vcd, check, previousProvisioningValue)
+
+	// delete Vapp early to avoid env capacity issue
+	deleteVapp(vcd, vmName)
 }
 
 func attachIndependentDisk(vcd *TestVCD, check *C) (*Disk, error) {
@@ -1235,4 +1252,18 @@ func attachIndependentDisk(vcd *TestVCD, check *C) (*Disk, error) {
 func detachIndependentDisk(vcd *TestVCD, check *C, disk *Disk) {
 	err := vcd.detachIndependentDisk(Disk{disk.Disk, &vcd.client.Client})
 	check.Assert(err, IsNil)
+}
+
+func deleteVapp(vcd *TestVCD, name string) error {
+	vapp, err := vcd.vdc.GetVAppByName(name, true)
+	if err != nil {
+		return fmt.Errorf("error getting vapp: %s", err)
+	}
+	task, _ := vapp.Undeploy()
+	_ = task.WaitTaskCompletion()
+	task, err = vapp.Delete()
+	if err != nil {
+		return fmt.Errorf("error deleting vapp: %s", err)
+	}
+	return nil
 }
