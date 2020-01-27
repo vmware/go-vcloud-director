@@ -444,8 +444,8 @@ type VdcConfiguration struct {
 	XMLName                  xml.Name             `xml:"CreateVdcParams"`
 	Xmlns                    string               `xml:"xmlns,attr"`
 	Name                     string               `xml:"name,attr"`
-	Description              string               `xml:"Description,omitempty"` // Flex supported from 32.0
-	AllocationModel          string               `xml:"AllocationModel"`
+	Description              string               `xml:"Description,omitempty"`
+	AllocationModel          string               `xml:"AllocationModel"` // Flex supported from 32.0
 	ComputeCapacity          []*ComputeCapacity   `xml:"ComputeCapacity"`
 	NicQuota                 int                  `xml:"NicQuota,omitempty"`
 	NetworkQuota             int                  `xml:"NetworkQuota,omitempty"`
