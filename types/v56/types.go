@@ -416,6 +416,8 @@ type AdminVdc struct {
 	UsesFastProvisioning     *bool          `xml:"UsesFastProvisioning,omitempty"`
 	OverCommitAllowed        bool           `xml:"OverCommitAllowed,omitempty"`
 	VmDiscoveryEnabled       bool           `xml:"VmDiscoveryEnabled,omitempty"`
+	IsElastic                *bool          `xml:"IsElastic,omitempty"`             // supported from 32.0
+	IncludeMemoryOverhead    *bool          `xml:"IncludeMemoryOverhead,omitempty"` // supported from 32.0
 }
 
 // VdcStorageProfile represents the parameters to create a storage profile in an organization vDC.

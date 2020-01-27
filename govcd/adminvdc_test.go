@@ -9,6 +9,7 @@ package govcd
 import (
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"math"
 
 	. "gopkg.in/check.v1"
 )
@@ -150,4 +151,83 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 		check.Assert(err, NotNil)
 		check.Assert(vdc, IsNil)
 	}
+}
+
+// Tests VDC by updating it and then asserting if the
+// variable is updated.
+func (vcd *TestVCD) Test_UpdateVdcFlex(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	// Flex vCD supported from 9.7 vCD
+	if vcd.client.Client.APIVCDMaxVersionIs("< 32.0") {
+		check.Skip(fmt.Sprintf("Test %s requires vCD 9.7 or higher", check.TestName()))
+	}
+
+	adminOrg, vdcConfiguration, err := setupVDc(vcd, check, "Flex")
+	check.Assert(err, IsNil)
+
+	// Refresh so the new VDC shows up in the org's list
+	err = adminOrg.Refresh()
+	check.Assert(err, IsNil)
+
+	adminVdc, err := adminOrg.GetAdminVDCByName(vdcConfiguration.Name, false)
+
+	check.Assert(err, IsNil)
+	check.Assert(adminVdc, NotNil)
+	check.Assert(adminVdc.AdminVdc.Name, Equals, vdcConfiguration.Name)
+	check.Assert(adminVdc.AdminVdc.IsEnabled, Equals, vdcConfiguration.IsEnabled)
+	check.Assert(adminVdc.AdminVdc.AllocationModel, Equals, vdcConfiguration.AllocationModel)
+
+	updateDescription := "updateDescription"
+	computeCapacity := []*types.ComputeCapacity{
+		&types.ComputeCapacity{
+			CPU: &types.CapacityWithUsage{
+				Units:     "MHz",
+				Allocated: 2024,
+				Limit:     2024,
+			},
+			Memory: &types.CapacityWithUsage{
+				Allocated: 2024,
+				Limit:     2024,
+				Units:     "MB",
+			},
+		},
+	}
+	quota := 111
+	vCpu := int64(1000)
+	guaranteed := float64(0.6)
+	adminVdc.AdminVdc.Description = updateDescription
+	adminVdc.AdminVdc.ComputeCapacity = computeCapacity
+	adminVdc.AdminVdc.IsEnabled = false
+	falseRef := false
+	trueRef := true
+	adminVdc.AdminVdc.IsThinProvision = &falseRef
+	adminVdc.AdminVdc.NetworkQuota = quota
+	adminVdc.AdminVdc.VMQuota = quota
+	adminVdc.AdminVdc.OverCommitAllowed = false
+	adminVdc.AdminVdc.VCpuInMhz = &vCpu
+	adminVdc.AdminVdc.UsesFastProvisioning = &falseRef
+	adminVdc.AdminVdc.ResourceGuaranteedCpu = &guaranteed
+	adminVdc.AdminVdc.ResourceGuaranteedMemory = &guaranteed
+	adminVdc.AdminVdc.IsElastic = &trueRef
+	adminVdc.AdminVdc.IncludeMemoryOverhead = &falseRef
+
+	updatedVdc, err := adminVdc.Update()
+	check.Assert(err, IsNil)
+	check.Assert(updatedVdc, Not(IsNil))
+	check.Assert(updatedVdc.AdminVdc.Description, Equals, updateDescription)
+	check.Assert(updatedVdc.AdminVdc.ComputeCapacity[0].CPU.Allocated, Equals, computeCapacity[0].CPU.Allocated)
+	check.Assert(updatedVdc.AdminVdc.IsEnabled, Equals, false)
+	check.Assert(*updatedVdc.AdminVdc.IsThinProvision, Equals, false)
+	check.Assert(updatedVdc.AdminVdc.NetworkQuota, Equals, quota)
+	check.Assert(updatedVdc.AdminVdc.VMQuota, Equals, quota)
+	check.Assert(updatedVdc.AdminVdc.OverCommitAllowed, Equals, false)
+	check.Assert(*updatedVdc.AdminVdc.VCpuInMhz, Equals, vCpu)
+	check.Assert(*updatedVdc.AdminVdc.UsesFastProvisioning, Equals, false)
+	check.Assert(math.Abs(*updatedVdc.AdminVdc.ResourceGuaranteedCpu-guaranteed) < 0.001, Equals, true)
+	check.Assert(math.Abs(*updatedVdc.AdminVdc.ResourceGuaranteedMemory-guaranteed) < 0.001, Equals, true)
+	check.Assert(*updatedVdc.AdminVdc.IsElastic, Equals, true)
+	check.Assert(*updatedVdc.AdminVdc.IncludeMemoryOverhead, Equals, false)
 }

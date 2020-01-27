@@ -495,7 +495,7 @@ func (vcd *TestVCD) Test_GetAdminCatalog(check *C) {
 // variable is updated.
 func (vcd *TestVCD) Test_RefreshVdc(check *C) {
 
-	adminOrg, vdcConfiguration, err := setupVDc(vcd, check)
+	adminOrg, vdcConfiguration, err := setupVDc(vcd, check, "AllocationPool")
 	check.Assert(err, IsNil)
 
 	// Refresh so the new VDC shows up in the org's list
@@ -521,7 +521,7 @@ func (vcd *TestVCD) Test_RefreshVdc(check *C) {
 	check.Assert(adminVdc.AdminVdc.Name, Equals, TestRefreshOrgVdc)
 }
 
-func setupVDc(vcd *TestVCD, check *C) (AdminOrg, *types.VdcConfiguration, error) {
+func setupVDc(vcd *TestVCD, check *C, allocationModel string) (AdminOrg, *types.VdcConfiguration, error) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
@@ -567,7 +567,7 @@ func setupVDc(vcd *TestVCD, check *C) (AdminOrg, *types.VdcConfiguration, error)
 	vdcConfiguration := &types.VdcConfiguration{
 		Name:            TestCreateOrgVdc + "ForRefresh",
 		Xmlns:           types.XMLNamespaceVCloud,
-		AllocationModel: "AllocationPool",
+		AllocationModel: allocationModel,
 		ComputeCapacity: []*types.ComputeCapacity{
 			&types.ComputeCapacity{
 				CPU: &types.CapacityWithUsage{
@@ -602,12 +602,19 @@ func setupVDc(vcd *TestVCD, check *C) (AdminOrg, *types.VdcConfiguration, error)
 		IsThinProvision:      true,
 		UsesFastProvisioning: true,
 	}
+	trueValue := true
+	falseValue := true
+	if allocationModel == "Flex" {
+		vdcConfiguration.IsElastic = &falseValue
+		vdcConfiguration.IncludeMemoryOverhead = &trueValue
+	}
+
 	vdc, _ := adminOrg.GetVDCByName(vdcConfiguration.Name, false)
 	if vdc != nil {
 		err = vdc.DeleteWait(true, true)
 		check.Assert(err, IsNil)
 	}
-	err = adminOrg.CreateVdcWait(vdcConfiguration)
+	_, err = adminOrg.CreateOrgVdc(vdcConfiguration)
 	check.Assert(err, IsNil)
 	AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, check.TestName())
 	return *adminOrg, vdcConfiguration, err
@@ -616,7 +623,7 @@ func setupVDc(vcd *TestVCD, check *C) (AdminOrg, *types.VdcConfiguration, error)
 // Tests VDC by updating it and then asserting if the
 // variable is updated.
 func (vcd *TestVCD) Test_UpdateVdc(check *C) {
-	adminOrg, vdcConfiguration, err := setupVDc(vcd, check)
+	adminOrg, vdcConfiguration, err := setupVDc(vcd, check, "AllocationPool")
 	check.Assert(err, IsNil)
 
 	// Refresh so the new VDC shows up in the org's list

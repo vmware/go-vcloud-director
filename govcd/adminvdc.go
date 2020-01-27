@@ -39,8 +39,8 @@ func (adminVdc *AdminVdc) Refresh() error {
 	// elements in slices.
 	unmarshalledAdminVdc := &types.AdminVdc{}
 
-	_, err := adminVdc.client.ExecuteRequest(adminVdc.AdminVdc.HREF, http.MethodGet,
-		"", "error refreshing VDC: %s", nil, unmarshalledAdminVdc)
+	_, err := adminVdc.client.ExecuteRequestWithApiVersion(adminVdc.AdminVdc.HREF, http.MethodGet,
+		"", "error refreshing VDC: %s", nil, unmarshalledAdminVdc, adminVdc.client.GetSpecificApiVersionOnCondition(">= 32.0", "32.0"))
 	if err != nil {
 		return err
 	}
@@ -54,12 +54,17 @@ func (adminVdc *AdminVdc) Refresh() error {
 // Returns an error if the call to vCD fails.
 // API Documentation: https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/operations/PUT-Vdc.html
 func (adminVdc *AdminVdc) UpdateAsync() (Task, error) {
+	apiVersion, err := adminVdc.client.maxSupportedVersion()
+	if err != nil {
+		return Task{}, err
+	}
+	// add logging
+	realFunction := vdcProducerByVersion["vdc"+vcdVersionToApiVersion[apiVersion]]
+	if realFunction.UpdateVdcAsync == nil {
+		return Task{}, fmt.Errorf("function UpdateVdcAsync is not defined for %s", "vdc"+apiVersion)
+	}
+	return realFunction.UpdateVdcAsync(adminVdc)
 
-	adminVdc.AdminVdc.Xmlns = types.XMLNamespaceVCloud
-
-	// Return the task
-	return adminVdc.client.ExecuteTaskRequest(adminVdc.AdminVdc.HREF, http.MethodPut,
-		types.MimeAdminVDC, "error updating VDC: %s", adminVdc.AdminVdc)
 }
 
 // Update function updates an Admin VDC from current VDC struct contents.
@@ -67,22 +72,24 @@ func (adminVdc *AdminVdc) UpdateAsync() (Task, error) {
 // Returns an empty AdminVdc struct and error if the call to vCD fails.
 // API Documentation: https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/operations/PUT-Vdc.html
 func (adminVdc *AdminVdc) Update() (AdminVdc, error) {
-	task, err := adminVdc.UpdateAsync()
+	apiVersion, err := adminVdc.client.maxSupportedVersion()
 	if err != nil {
 		return AdminVdc{}, err
 	}
 
-	err = task.WaitTaskCompletion()
+	realFunction, ok := vdcProducerByVersion["vdc"+vcdVersionToApiVersion[apiVersion]]
+	if !ok {
+		return AdminVdc{}, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
+	}
+
+	if realFunction.UpdateVdc == nil {
+		return AdminVdc{}, fmt.Errorf("function UpdateVdc is not defined for %s", "vdc"+apiVersion)
+	}
+	updatedAdminVdc, err := realFunction.UpdateVdc(adminVdc)
 	if err != nil {
 		return AdminVdc{}, err
 	}
-
-	err = adminVdc.Refresh()
-	if err != nil {
-		return AdminVdc{}, err
-	}
-
-	return *adminVdc, nil
+	return *updatedAdminVdc, err
 }
 
 type vdcProducer struct {
@@ -90,8 +97,8 @@ type vdcProducer struct {
 	SupportedVersion string
 	CreateVdc        func(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*Vdc, error)
 	CreateVdcAsync   func(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (Task, error)
-	UpdateVdc        func(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*Vdc, error)
-	UpdateVdcAsync   func(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (Task, error)
+	UpdateVdc        func(adminVdc *AdminVdc) (*AdminVdc, error)
+	UpdateVdcAsync   func(adminVdc *AdminVdc) (Task, error)
 }
 
 var vdcCrudV90 = vdcProducer{
@@ -99,17 +106,17 @@ var vdcCrudV90 = vdcProducer{
 	SupportedVersion: "29.0",
 	CreateVdc:        createVdc,
 	CreateVdcAsync:   createVdcAsync,
-	//UpdateVdc:,
-	//UpdateVdcAsync:,
+	UpdateVdc:        updateVdc,
+	UpdateVdcAsync:   updateVdcAsync,
 }
 
 var vdcCrudV97 = vdcProducer{
 	Type:             "VDC",
 	SupportedVersion: "32.0",
-	CreateVdc:        createVdcV32,
+	CreateVdc:        createVdcV97,
 	CreateVdcAsync:   createVdcAsyncV97,
-	//UpdateVdc:,
-	//UpdateVdcAsync:,
+	UpdateVdc:        updateVdcV97,
+	UpdateVdcAsync:   updateVdcAsyncV97,
 }
 
 var vdcProducerByVersion = map[string]vdcProducer{
@@ -126,7 +133,7 @@ func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration)
 		return nil, err
 	}
 	// add logging
-	realFunction, ok := vdcProducerByVersion["vdcCreate"+vcdVersionToApiVersion[apiVersion]]
+	realFunction, ok := vdcProducerByVersion["vdc"+vcdVersionToApiVersion[apiVersion]]
 	if !ok {
 		return nil, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
 	}
@@ -161,11 +168,63 @@ func createVdc(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*V
 	return vdc, nil
 }
 
+func updateVdcAsync(adminVdc *AdminVdc) (Task, error) {
+	adminVdc.AdminVdc.Xmlns = types.XMLNamespaceVCloud
+
+	// Return the task
+	return adminVdc.client.ExecuteTaskRequest(adminVdc.AdminVdc.HREF, http.MethodPut,
+		types.MimeAdminVDC, "error updating VDC: %s", adminVdc.AdminVdc)
+}
+
+func updateVdc(adminVdc *AdminVdc) (*AdminVdc, error) {
+	task, err := updateVdcAsync(adminVdc)
+	if err != nil {
+		return nil, err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, err
+	}
+
+	err = adminVdc.Refresh()
+	if err != nil {
+		return nil, err
+	}
+
+	return adminVdc, nil
+}
+
+func updateVdcAsyncV97(adminVdc *AdminVdc) (Task, error) {
+	adminVdc.AdminVdc.Xmlns = types.XMLNamespaceVCloud
+
+	// Return the task
+	return adminVdc.client.ExecuteTaskRequestWithApiVersion(adminVdc.AdminVdc.HREF, http.MethodPut,
+		types.MimeAdminVDC, "error updating VDC: %s", adminVdc.AdminVdc,
+		adminVdc.client.GetSpecificApiVersionOnCondition(">= 32.0", "32.0"))
+}
+
+func updateVdcV97(adminVdc *AdminVdc) (*AdminVdc, error) {
+	task, err := updateVdcAsyncV97(adminVdc)
+	if err != nil {
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, err
+	}
+	err = adminVdc.Refresh()
+	if err != nil {
+		return nil, err
+	}
+	return adminVdc, nil
+}
+
 func createVdcAsync(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (Task, error) {
 	return adminOrg.CreateVdc(vdcConfiguration)
 }
 
-func createVdcV32(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*Vdc, error) {
+func createVdcV97(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*Vdc, error) {
 	task, err := createVdcAsyncV97(adminOrg, vdcConfiguration)
 	if err != nil {
 		return nil, err
