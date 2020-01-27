@@ -26,6 +26,7 @@ type SupportedVersions struct {
 	VersionInfos `xml:"VersionInfo"`
 }
 
+// map allows you get vCD version from max supported API version
 var vcdVersionToApiVersion = map[string]string{
 	"29.0": "9.0",
 	"30.0": "9.1",
@@ -34,6 +35,7 @@ var vcdVersionToApiVersion = map[string]string{
 	"33.0": "10.0",
 }
 
+// map allows you get max supported API version from vCD version
 var vpiVersionToVcdVersion = map[string]string{
 	"9.0":  "29.0",
 	"9.1":  "30.0",

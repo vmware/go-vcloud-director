@@ -127,6 +127,9 @@ var vdcProducerByVersion = map[string]vdcProducer{
 	"vdc10.0": vdcCrudV97,
 }
 
+// CreateOrgVdc creates a VDC with the given params under the given organization
+// and waits for the asynchronous task to complete.
+// Returns an AdminVdc.
 func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration) (*Vdc, error) {
 	apiVersion, err := adminOrg.client.maxSupportedVersion()
 	if err != nil {
@@ -143,6 +146,8 @@ func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration)
 	return realFunction.CreateVdc(adminOrg, vdcConfiguration)
 }
 
+// CreateOrgVdcAsync creates a VDC with the given params under the given organization.
+// Returns an Task.
 func (adminOrg *AdminOrg) CreateOrgVdcAsync(vdcConfiguration *types.VdcConfiguration) (Task, error) {
 	apiVersion, err := adminOrg.client.maxSupportedVersion()
 	if err != nil {
@@ -155,6 +160,8 @@ func (adminOrg *AdminOrg) CreateOrgVdcAsync(vdcConfiguration *types.VdcConfigura
 	return realFunction.CreateVdcAsync(adminOrg, vdcConfiguration)
 }
 
+// createVdc creates a VDC with the given params under the given organization.
+// Returns an Vdc.
 func createVdc(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*Vdc, error) {
 	err := adminOrg.CreateVdcWait(vdcConfiguration)
 	if err != nil {
@@ -168,6 +175,7 @@ func createVdc(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*V
 	return vdc, nil
 }
 
+// updateVdcAsync updates a VDC with the given params. Returns an Task.
 func updateVdcAsync(adminVdc *AdminVdc) (Task, error) {
 	adminVdc.AdminVdc.Xmlns = types.XMLNamespaceVCloud
 
@@ -176,6 +184,7 @@ func updateVdcAsync(adminVdc *AdminVdc) (Task, error) {
 		types.MimeAdminVDC, "error updating VDC: %s", adminVdc.AdminVdc)
 }
 
+// updateVdc updates a VDC with the given params. Returns an AdminVdc.
 func updateVdc(adminVdc *AdminVdc) (*AdminVdc, error) {
 	task, err := updateVdcAsync(adminVdc)
 	if err != nil {
@@ -195,6 +204,8 @@ func updateVdc(adminVdc *AdminVdc) (*AdminVdc, error) {
 	return adminVdc, nil
 }
 
+// updateVdcAsyncV97 updates a VDC with the given params. Supports Flex type allocation.
+// Needs vCD 9.7 to work. Returns an Task.
 func updateVdcAsyncV97(adminVdc *AdminVdc) (Task, error) {
 	adminVdc.AdminVdc.Xmlns = types.XMLNamespaceVCloud
 
@@ -204,6 +215,9 @@ func updateVdcAsyncV97(adminVdc *AdminVdc) (Task, error) {
 		adminVdc.client.GetSpecificApiVersionOnCondition(">= 32.0", "32.0"))
 }
 
+// updateVdcV97 updates a VDC with the given params
+// and waits for the asynchronous task to complete. Supports Flex type allocation.
+// Needs vCD 9.7 to work. Returns an AdminVdc.
 func updateVdcV97(adminVdc *AdminVdc) (*AdminVdc, error) {
 	task, err := updateVdcAsyncV97(adminVdc)
 	if err != nil {
@@ -220,10 +234,15 @@ func updateVdcV97(adminVdc *AdminVdc) (*AdminVdc, error) {
 	return adminVdc, nil
 }
 
+// createVdcAsync creates a VDC with the given params under the given organization.
+// Returns an Task.
 func createVdcAsync(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (Task, error) {
 	return adminOrg.CreateVdc(vdcConfiguration)
 }
 
+// createVdcAsyncV97 creates a VDC with the given params under the given organization
+// and waits for the asynchronous task to complete. Supports Flex type allocation.
+// Needs vCD 9.7 to work. Returns an Vdc.
 func createVdcV97(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*Vdc, error) {
 	task, err := createVdcAsyncV97(adminOrg, vdcConfiguration)
 	if err != nil {
@@ -241,6 +260,8 @@ func createVdcV97(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) 
 	return vdc, nil
 }
 
+// createVdcAsyncV97 creates a VDC with the given params under the given organization. Supports Flex type allocation.
+// Needs vCD 9.7 to work. Returns an Task.
 func createVdcAsyncV97(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (Task, error) {
 	err := validateVdcConfigurationV97(*vdcConfiguration)
 	if err != nil {
@@ -271,46 +292,9 @@ func createVdcAsyncV97(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfigurat
 	return *task, nil
 }
 
+// validateVdcConfigurationV97 uses validateVdcConfiguration and additionally checks Flex dependent values
 func validateVdcConfigurationV97(vdcDefinition types.VdcConfiguration) error {
-	if vdcDefinition.Name == "" {
-		return errors.New("VdcConfiguration missing required field: Name")
-	}
-	if vdcDefinition.AllocationModel == "" {
-		return errors.New("VdcConfiguration missing required field: AllocationModel")
-	}
-	if vdcDefinition.ComputeCapacity == nil {
-		return errors.New("VdcConfiguration missing required field: ComputeCapacity")
-	}
-	if len(vdcDefinition.ComputeCapacity) != 1 {
-		return errors.New("VdcConfiguration invalid field: ComputeCapacity must only have one element")
-	}
-	if vdcDefinition.ComputeCapacity[0] == nil {
-		return errors.New("VdcConfiguration missing required field: ComputeCapacity[0]")
-	}
-	if vdcDefinition.ComputeCapacity[0].CPU == nil {
-		return errors.New("VdcConfiguration missing required field: ComputeCapacity[0].CPU")
-	}
-	if vdcDefinition.ComputeCapacity[0].CPU.Units == "" {
-		return errors.New("VdcConfiguration missing required field: ComputeCapacity[0].CPU.Units")
-	}
-	if vdcDefinition.ComputeCapacity[0].Memory == nil {
-		return errors.New("VdcConfiguration missing required field: ComputeCapacity[0].Memory")
-	}
-	if vdcDefinition.ComputeCapacity[0].Memory.Units == "" {
-		return errors.New("VdcConfiguration missing required field: ComputeCapacity[0].Memory.Units")
-	}
-	if vdcDefinition.VdcStorageProfile == nil || len(vdcDefinition.VdcStorageProfile) == 0 {
-		return errors.New("VdcConfiguration missing required field: VdcStorageProfile")
-	}
-	if vdcDefinition.VdcStorageProfile[0].Units == "" {
-		return errors.New("VdcConfiguration missing required field: VdcStorageProfile.Units")
-	}
-	if vdcDefinition.ProviderVdcReference == nil {
-		return errors.New("VdcConfiguration missing required field: ProviderVdcReference")
-	}
-	if vdcDefinition.ProviderVdcReference.HREF == "" {
-		return errors.New("VdcConfiguration missing required field: ProviderVdcReference.HREF")
-	}
+	validateVdcConfiguration(&vdcDefinition)
 	if vdcDefinition.AllocationModel == "Flex" && vdcDefinition.IsElastic == nil {
 		return errors.New("VdcConfiguration missing required field: IsElastic")
 	}
