@@ -151,6 +151,57 @@ prior to attempting a search.
 Note: We are in the process of replacing methods that don't adhere to the above principles (for example, return a
 structure instead of a pointer, return a nil error on not-found, etc).
 
+## Implementing functions to support different API versions
+
+Existing or new functions should use matrix structure to identify which functions to call according max API version
+supported by vCD. Example can be found in adminvdc.org.
+
+```
+type vdcProducer struct {
+	Type             string
+	SupportedVersion string
+	CreateVdc        func(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*Vdc, error)
+	CreateVdcAsync   func(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (Task, error)
+	UpdateVdc        func(adminVdc *AdminVdc) (*AdminVdc, error)
+	UpdateVdcAsync   func(adminVdc *AdminVdc) (Task, error)
+}
+
+var vdcCrudV90 = vdcProducer{
+	Type:             "VDC",
+	SupportedVersion: "29.0",
+	CreateVdc:        createVdc,
+	CreateVdcAsync:   createVdcAsync,
+	UpdateVdc:        updateVdc,
+	UpdateVdcAsync:   updateVdcAsync,
+}
+
+var vdcCrudV97 = vdcProducer{
+	Type:             "VDC",
+	SupportedVersion: "32.0",
+	CreateVdc:        createVdcV97,
+	CreateVdcAsync:   createVdcAsyncV97,
+	UpdateVdc:        updateVdcV97,
+	UpdateVdcAsync:   updateVdcAsyncV97,
+}
+
+func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration) (*Vdc, error) {
+	apiVersion, err := adminOrg.client.maxSupportedVersion()
+	if err != nil {
+		return nil, err
+	}
+	realFunction, ok := vdcProducerByVersion["vdc"+vcdVersionToApiVersion[apiVersion]]
+	if !ok {
+		return nil, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
+	}
+	if realFunction.CreateVdc == nil {
+		return nil, fmt.Errorf("function CreateVdc is not defined for %s", "vdc"+apiVersion)
+	}
+	return realFunction.CreateVdc(adminOrg, vdcConfiguration)
+}
+```
+
+ 
+
 ## Testing
 
 Every feature in the library must include testing. See [TESTING.md](https://github.com/vmware/go-vcloud-director/blob/master/TESTING.md) for more info.
