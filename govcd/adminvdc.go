@@ -317,7 +317,10 @@ func createVdcAsyncV97(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfigurat
 
 // validateVdcConfigurationV97 uses validateVdcConfiguration and additionally checks Flex dependent values
 func validateVdcConfigurationV97(vdcDefinition types.VdcConfiguration) error {
-	validateVdcConfiguration(&vdcDefinition)
+	err := validateVdcConfiguration(&vdcDefinition)
+	if err != nil {
+		return err
+	}
 	if vdcDefinition.AllocationModel == "Flex" && vdcDefinition.IsElastic == nil {
 		return errors.New("VdcConfiguration missing required field: IsElastic")
 	}
