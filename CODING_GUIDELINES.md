@@ -153,12 +153,11 @@ structure instead of a pointer, return a nil error on not-found, etc).
 
 ## Implementing functions to support different API versions
 
-Existing or new functions should use matrix structure to identify which functions to call according max API version
-supported by vCD. Example can be found in adminvdc.org.
+Functions dealing with different versions should use a matrix structure to identify which calls to run according to the 
+highest API version supported by vCD. An example can be found in adminvdc.go.
 
 ```
 type vdcProducer struct {
-	Type             string
 	SupportedVersion string
 	CreateVdc        func(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*Vdc, error)
 	CreateVdcAsync   func(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (Task, error)
@@ -167,7 +166,6 @@ type vdcProducer struct {
 }
 
 var vdcCrudV90 = vdcProducer{
-	Type:             "VDC",
 	SupportedVersion: "29.0",
 	CreateVdc:        createVdc,
 	CreateVdcAsync:   createVdcAsync,
@@ -176,7 +174,6 @@ var vdcCrudV90 = vdcProducer{
 }
 
 var vdcCrudV97 = vdcProducer{
-	Type:             "VDC",
 	SupportedVersion: "32.0",
 	CreateVdc:        createVdcV97,
 	CreateVdcAsync:   createVdcAsyncV97,
@@ -196,6 +193,7 @@ func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration)
 	if realFunction.CreateVdc == nil {
 		return nil, fmt.Errorf("function CreateVdc is not defined for %s", "vdc"+apiVersion)
 	}
+    util.Logger.Printf("[DEBUG] CreateOrgVdc call function for version %s", realFunction.SupportedVersion)
 	return realFunction.CreateVdc(adminOrg, vdcConfiguration)
 }
 ```

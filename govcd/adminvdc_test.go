@@ -128,7 +128,11 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 		task, err := adminOrg.CreateOrgVdcAsync(vdcConfiguration)
 		check.Assert(err, Not(IsNil))
 		check.Assert(task, Equals, Task{})
-		check.Assert(err.Error(), Equals, "error retrieving vdc: API Error: 400:  is not a valid unit. Please use MB")
+		if vcd.client.Client.APIVCDMaxVersionIs("> 32.0") {
+			check.Assert(err.Error(), Equals, "error retrieving vdc: API Error: 400:  is not a valid unit. Please use MB")
+		} else {
+			check.Assert(err.Error(), Equals, "VdcConfiguration missing required field: ComputeCapacity[0].Memory.Units")
+		}
 		vdcConfiguration.ComputeCapacity[0].Memory.Units = "MB"
 
 		vdc, err = adminOrg.CreateOrgVdc(vdcConfiguration)
