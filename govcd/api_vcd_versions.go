@@ -44,6 +44,9 @@ var apiVersionToVcdVersion = map[string]string{
 	"10.0": "33.0",
 }
 
+// to make apiVersionToVcdVersion used
+var _ = apiVersionToVcdVersion
+
 // APIVCDMaxVersionIs compares against maximum vCD supported API version from /api/versions (not necessarily
 // the currently used one). This allows to check what is the maximum API version that vCD instance
 // supports and can be used to guess vCD product version. API 31.0 support was first introduced in
