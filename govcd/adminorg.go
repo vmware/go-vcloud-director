@@ -97,6 +97,8 @@ func (adminOrg *AdminOrg) CreateVdc(vdcConfiguration *types.VdcConfiguration) (T
 		return Task{}, err
 	}
 
+	vdcConfiguration.Xmlns = types.XMLNamespaceVCloud
+
 	vdcCreateHREF, err := url.ParseRequestURI(adminOrg.AdminOrg.HREF)
 	if err != nil {
 		return Task{}, fmt.Errorf("error parsing admin org url: %s", err)
