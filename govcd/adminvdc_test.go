@@ -125,9 +125,11 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 			check.Assert(err, IsNil)
 		}
 
+		// expecting fail due missing value
 		task, err := adminOrg.CreateOrgVdcAsync(vdcConfiguration)
 		check.Assert(err, Not(IsNil))
 		check.Assert(task, Equals, Task{})
+		// From vCD 10+ error changed
 		if vcd.client.Client.APIVCDMaxVersionIs("> 32.0") {
 			check.Assert(err.Error(), Equals, "error retrieving vdc: API Error: 400:  is not a valid unit. Please use MB")
 		} else {

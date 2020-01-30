@@ -218,7 +218,7 @@ func updateVdc(adminVdc *AdminVdc) (*AdminVdc, error) {
 }
 
 // updateVdcAsyncV97 updates a VDC with the given params. Supports Flex type allocation.
-// Needs vCD 9.7 to work. Returns an Task.
+// Needs vCD 9.7+ to work. Returns an Task.
 func updateVdcAsyncV97(adminVdc *AdminVdc) (Task, error) {
 	util.Logger.Printf("[TRACE] updateVdcAsyncV97 called %#v", *adminVdc)
 	adminVdc.AdminVdc.Xmlns = types.XMLNamespaceVCloud
@@ -231,7 +231,7 @@ func updateVdcAsyncV97(adminVdc *AdminVdc) (Task, error) {
 
 // updateVdcV97 updates a VDC with the given params
 // and waits for the asynchronous task to complete. Supports Flex type allocation.
-// Needs vCD 9.7 to work. Returns an AdminVdc.
+// Needs vCD 9.7+ to work. Returns an AdminVdc.
 func updateVdcV97(adminVdc *AdminVdc) (*AdminVdc, error) {
 	util.Logger.Printf("[TRACE] updateVdcV97 called %#v", *adminVdc)
 	task, err := updateVdcAsyncV97(adminVdc)
@@ -258,7 +258,7 @@ func createVdcAsync(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration
 
 // createVdcAsyncV97 creates a VDC with the given params under the given organization
 // and waits for the asynchronous task to complete. Supports Flex type allocation.
-// Needs vCD 9.7 to work. Returns an Vdc.
+// Needs vCD 9.7+ to work. Returns an Vdc.
 func createVdcV97(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*Vdc, error) {
 	util.Logger.Printf("[TRACE] createVdcV97 called %#v", *vdcConfiguration)
 	task, err := createVdcAsyncV97(adminOrg, vdcConfiguration)
@@ -278,7 +278,7 @@ func createVdcV97(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) 
 }
 
 // createVdcAsyncV97 creates a VDC with the given params under the given organization. Supports Flex type allocation.
-// Needs vCD 9.7 to work. Returns an Task.
+// Needs vCD 9.7+ to work. Returns an Task.
 func createVdcAsyncV97(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (Task, error) {
 	util.Logger.Printf("[TRACE] createVdcAsyncV97 called %#v", *vdcConfiguration)
 	err := validateVdcConfigurationV97(*vdcConfiguration)

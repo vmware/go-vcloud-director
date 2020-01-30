@@ -36,7 +36,7 @@ var vcdVersionToApiVersion = map[string]string{
 }
 
 // map allows you get max supported API version from vCD version
-var vpiVersionToVcdVersion = map[string]string{
+var apiVersionToVcdVersion = map[string]string{
 	"9.0":  "29.0",
 	"9.1":  "30.0",
 	"9.5":  "31.0",
