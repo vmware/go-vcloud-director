@@ -35,15 +35,19 @@ func (vcdCli *VCDClient) NewVApp(client *Client) VApp {
 
 // struct type used to pass information for vApp network creation
 type VappNetworkSettings struct {
-	Name             string
-	Gateway          string
-	NetMask          string
-	DNS1             string
-	DNS2             string
-	DNSSuffix        string
-	GuestVLANAllowed *bool
-	StaticIPRanges   []*types.IPRange
-	DhcpSettings     *DhcpSettings
+	Name               string
+	Description        string
+	Gateway            string
+	NetMask            string
+	DNS1               string
+	DNS2               string
+	DNSSuffix          string
+	GuestVLANAllowed   *bool
+	StaticIPRanges     []*types.IPRange
+	DhcpSettings       *DhcpSettings
+	NatEnabled         *bool
+	FirewallEnabled    *bool
+	RetainIpMacEnabled *bool
 }
 
 // struct type used to pass information for vApp network DHCP
@@ -718,6 +722,7 @@ func (vapp *VApp) GetNetworkConfig() (*types.NetworkConfigSection, error) {
 }
 
 // AddRAWNetworkConfig adds existing VDC network to vApp
+// Deprecated in favor of TODO
 func (vapp *VApp) AddRAWNetworkConfig(orgvdcnetworks []*types.OrgVDCNetwork) (Task, error) {
 
 	vAppNetworkConfig, err := vapp.GetNetworkConfig()
@@ -778,6 +783,56 @@ func (vapp *VApp) AddIsolatedNetwork(newIsolatedNetworkSettings *VappNetworkSett
 					Netmask: newIsolatedNetworkSettings.NetMask, DNS1: newIsolatedNetworkSettings.DNS1,
 					DNS2: newIsolatedNetworkSettings.DNS2, DNSSuffix: newIsolatedNetworkSettings.DNSSuffix, IsEnabled: true,
 					IPRanges: &types.IPRanges{IPRange: newIsolatedNetworkSettings.StaticIPRanges}}}},
+			},
+			IsDeployed: false,
+		})
+
+	return updateNetworkConfigurations(vapp, networkConfigurations)
+
+}
+
+// Function allows to create isolated network for vApp. This is equivalent to vCD UI function - vApp network creation.
+func (vapp *VApp) AddNatRoutedNetwork(newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (Task, error) {
+
+	err := validateNetworkConfigSettings(newNetworkSettings)
+	if err != nil {
+		return Task{}, err
+	}
+
+	// for case when range is one ip address
+	if newNetworkSettings.DhcpSettings != nil && newNetworkSettings.DhcpSettings.IPRange != nil && newNetworkSettings.DhcpSettings.IPRange.EndAddress == "" {
+		newNetworkSettings.DhcpSettings.IPRange.EndAddress = newNetworkSettings.DhcpSettings.IPRange.StartAddress
+	}
+
+	// explicitly check if to add data, to not send any values
+	var networkFeatures *types.NetworkFeatures
+	if newNetworkSettings.DhcpSettings != nil {
+		networkFeatures = &types.NetworkFeatures{DhcpService: &types.DhcpService{
+			IsEnabled:        newNetworkSettings.DhcpSettings.IsEnabled,
+			DefaultLeaseTime: newNetworkSettings.DhcpSettings.DefaultLeaseTime,
+			MaxLeaseTime:     newNetworkSettings.DhcpSettings.MaxLeaseTime,
+			IPRange:          newNetworkSettings.DhcpSettings.IPRange},
+			FirewallService: &types.FirewallService{IsEnabled: *newNetworkSettings.FirewallEnabled},
+			NatService:      &types.NatService{IsEnabled: *newNetworkSettings.NatEnabled, NatType: "ipTranslation", Policy: "allowTrafficIn"}}
+	}
+
+	networkConfigurations := vapp.VApp.NetworkConfigSection.NetworkConfig
+	networkConfigurations = append(networkConfigurations,
+		types.VAppNetworkConfiguration{
+			NetworkName: newNetworkSettings.Name,
+			Description: newNetworkSettings.Description,
+			Configuration: &types.NetworkConfiguration{
+				FenceMode:        types.FenceModeNAT,
+				GuestVlanAllowed: newNetworkSettings.GuestVLANAllowed,
+				Features:         networkFeatures,
+				IPScopes: &types.IPScopes{IPScope: []*types.IPScope{&types.IPScope{IsInherited: false, Gateway: newNetworkSettings.Gateway,
+					Netmask: newNetworkSettings.NetMask, DNS1: newNetworkSettings.DNS1,
+					DNS2: newNetworkSettings.DNS2, DNSSuffix: newNetworkSettings.DNSSuffix, IsEnabled: true,
+					IPRanges: &types.IPRanges{IPRange: newNetworkSettings.StaticIPRanges}}}},
+				ParentNetwork: &types.Reference{
+					HREF: orgNetwork.HREF,
+				},
+				RetainNetInfoAcrossDeployments: newNetworkSettings.RetainIpMacEnabled,
 			},
 			IsDeployed: false,
 		})
