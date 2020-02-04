@@ -39,6 +39,7 @@ func (adminVdc *AdminVdc) Refresh() error {
 	// elements in slices.
 	unmarshalledAdminVdc := &types.AdminVdc{}
 
+	//new version API additionally returns IncludeMemoryOverhead and IsElastic
 	_, err := adminVdc.client.ExecuteRequestWithApiVersion(adminVdc.AdminVdc.HREF, http.MethodGet,
 		"", "error refreshing VDC: %s", nil, unmarshalledAdminVdc, adminVdc.client.GetSpecificApiVersionOnCondition(">= 32.0", "32.0"))
 	if err != nil {
@@ -58,7 +59,7 @@ func (adminVdc *AdminVdc) UpdateAsync() (Task, error) {
 	if err != nil {
 		return Task{}, err
 	}
-	realFunction, ok := vdcProducerByVersion["vdc"+vcdVersionToApiVersion[apiVersion]]
+	realFunction, ok := vdcProducerByVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
 	if !ok {
 		return Task{}, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
 	}
@@ -81,7 +82,7 @@ func (adminVdc *AdminVdc) Update() (AdminVdc, error) {
 		return AdminVdc{}, err
 	}
 
-	realFunction, ok := vdcProducerByVersion["vdc"+vcdVersionToApiVersion[apiVersion]]
+	realFunction, ok := vdcProducerByVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
 	if !ok {
 		return AdminVdc{}, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
 	}
@@ -138,7 +139,7 @@ func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration)
 	if err != nil {
 		return nil, err
 	}
-	realFunction, ok := vdcProducerByVersion["vdc"+vcdVersionToApiVersion[apiVersion]]
+	realFunction, ok := vdcProducerByVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
 	if !ok {
 		return nil, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
 	}
@@ -157,7 +158,7 @@ func (adminOrg *AdminOrg) CreateOrgVdcAsync(vdcConfiguration *types.VdcConfigura
 	if err != nil {
 		return Task{}, err
 	}
-	realFunction, ok := vdcProducerByVersion["vdc"+vcdVersionToApiVersion[apiVersion]]
+	realFunction, ok := vdcProducerByVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
 	if !ok {
 		return Task{}, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
 	}
