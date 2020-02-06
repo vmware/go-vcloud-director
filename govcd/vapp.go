@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -35,6 +36,7 @@ func (vcdCli *VCDClient) NewVApp(client *Client) VApp {
 
 // struct type used to pass information for vApp network creation
 type VappNetworkSettings struct {
+	Id                 string
 	Name               string
 	Description        string
 	Gateway            string
@@ -48,6 +50,7 @@ type VappNetworkSettings struct {
 	NatEnabled         *bool
 	FirewallEnabled    *bool
 	RetainIpMacEnabled *bool
+	VappFenceEnabled   *bool
 }
 
 // struct type used to pass information for vApp network DHCP
@@ -775,6 +778,7 @@ func (vapp *VApp) AddIsolatedNetwork(newIsolatedNetworkSettings *VappNetworkSett
 	networkConfigurations = append(networkConfigurations,
 		types.VAppNetworkConfiguration{
 			NetworkName: newIsolatedNetworkSettings.Name,
+			Description: newIsolatedNetworkSettings.Description,
 			Configuration: &types.NetworkConfiguration{
 				FenceMode:        types.FenceModeIsolated,
 				GuestVlanAllowed: newIsolatedNetworkSettings.GuestVLANAllowed,
@@ -791,7 +795,7 @@ func (vapp *VApp) AddIsolatedNetwork(newIsolatedNetworkSettings *VappNetworkSett
 
 }
 
-// Function allows to create isolated network for vApp. This is equivalent to vCD UI function - vApp network creation.
+// Function allows to create nat routed network for vApp. This is equivalent to vCD UI function - vApp network creation with org network.
 func (vapp *VApp) AddNatRoutedNetwork(newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (Task, error) {
 
 	err := validateNetworkConfigSettings(newNetworkSettings)
@@ -839,6 +843,115 @@ func (vapp *VApp) AddNatRoutedNetwork(newNetworkSettings *VappNetworkSettings, o
 
 	return updateNetworkConfigurations(vapp, networkConfigurations)
 
+}
+
+// TODO
+// Returns the UUID part of an HREF
+// Similar to getBareEntityUuid, but tailored to HREF
+func GetUuidFromHref(href string) (string, error) {
+	util.Logger.Printf("[TRACE] GetUuidFromHref got href: %s", href)
+	// Regular expression to match an ID:
+	//     1 string starting by 'https://' and ending with a '/',
+	//     followed by
+	//        1 group of 8 hexadecimal digits
+	//        3 groups of 4 hexadecimal digits
+	//        1 group of 12 hexadecimal digits
+	reGetID := regexp.MustCompile(`^https://.+/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/.+/.+$`)
+	matchList := reGetID.FindAllStringSubmatch(href, -1)
+
+	if len(matchList) == 0 || len(matchList[0]) < 2 {
+		reGetID = regexp.MustCompile(`^https://.+/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$`)
+		matchList = reGetID.FindAllStringSubmatch(href, -1)
+	}
+
+	if len(matchList) == 0 || len(matchList[0]) < 2 {
+		return "", fmt.Errorf("error extracting UUID from '%s'", href)
+	}
+	util.Logger.Printf("[TRACE] GetUuidFromHref returns UUID : %s", matchList[0][1])
+	return matchList[0][1], nil
+}
+
+// Function allows to update nat routed network for vApp. This is equivalent to vCD UI function - vApp network creation with org network.
+func (vapp *VApp) UpdateNetworkConfig(networkSettingsToUpdate *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (Task, error) {
+	util.Logger.Printf("[TRACE] UpdateNetworkConfig with values: %#v and connect to org network: %#v", networkSettingsToUpdate, orgNetwork)
+	currentNetworkConfiguration, err := vapp.GetNetworkConfig()
+	if err != nil {
+		return Task{}, err
+	}
+	var networkToUpdate types.VAppNetworkConfiguration
+	var networkToUpdateIndex int
+	for index, networkConfig := range currentNetworkConfiguration.NetworkConfig {
+		uuid, err := GetUuidFromHref(networkConfig.Link.HREF)
+		if err != nil {
+			return Task{}, err
+		}
+
+		if uuid == networkSettingsToUpdate.Id {
+			networkToUpdate = networkConfig
+			networkToUpdateIndex = index
+			break
+		}
+	}
+
+	if networkToUpdate == (types.VAppNetworkConfiguration{}) {
+		return Task{}, fmt.Errorf("not found network to update with Id %s", networkSettingsToUpdate.Id)
+	}
+
+	if networkToUpdate.Configuration.Features.NatService != nil && networkSettingsToUpdate.NatEnabled != nil {
+		networkToUpdate.Configuration.Features.NatService.IsEnabled = *networkSettingsToUpdate.NatEnabled
+	}
+	if networkToUpdate.Configuration.Features.NatService == nil && networkSettingsToUpdate.NatEnabled != nil {
+		networkToUpdate.Configuration.Features.NatService = &types.NatService{IsEnabled: *networkSettingsToUpdate.NatEnabled, NatType: "ipTranslation", Policy: "allowTrafficIn"}
+	}
+
+	networkToUpdate.Configuration.Features.FirewallService.IsEnabled = *networkSettingsToUpdate.FirewallEnabled
+	networkToUpdate.Configuration.RetainNetInfoAcrossDeployments = networkSettingsToUpdate.RetainIpMacEnabled
+	if networkToUpdate.Configuration.ParentNetwork != nil && orgNetwork != nil && networkToUpdate.Configuration.ParentNetwork.HREF != orgNetwork.HREF {
+		networkToUpdate.Configuration.ParentNetwork = &types.Reference{HREF: orgNetwork.HREF}
+	}
+	if networkToUpdate.Configuration.ParentNetwork != nil && orgNetwork == nil {
+		networkToUpdate.Configuration.ParentNetwork = nil
+	}
+	networkToUpdate.Description = networkSettingsToUpdate.Description
+	networkToUpdate.NetworkName = networkSettingsToUpdate.Name
+	networkToUpdate.Configuration.GuestVlanAllowed = networkSettingsToUpdate.GuestVLANAllowed
+	networkToUpdate.Configuration.IPScopes.IPScope[0].Gateway = networkSettingsToUpdate.Gateway
+	networkToUpdate.Configuration.IPScopes.IPScope[0].Netmask = networkSettingsToUpdate.NetMask
+	networkToUpdate.Configuration.IPScopes.IPScope[0].DNS1 = networkSettingsToUpdate.DNS1
+	networkToUpdate.Configuration.IPScopes.IPScope[0].DNS2 = networkSettingsToUpdate.DNS2
+	networkToUpdate.Configuration.IPScopes.IPScope[0].DNSSuffix = networkSettingsToUpdate.DNSSuffix
+	networkToUpdate.Configuration.IPScopes.IPScope[0].IPRanges = &types.IPRanges{IPRange: networkSettingsToUpdate.StaticIPRanges}
+
+	// for case when range is one ip address
+	if networkSettingsToUpdate.DhcpSettings != nil && networkSettingsToUpdate.DhcpSettings.IPRange != nil && networkSettingsToUpdate.DhcpSettings.IPRange.EndAddress == "" {
+		networkSettingsToUpdate.DhcpSettings.IPRange.EndAddress = networkSettingsToUpdate.DhcpSettings.IPRange.StartAddress
+	}
+
+	// remove DHCP config
+	if networkSettingsToUpdate.DhcpSettings == nil {
+		networkToUpdate.Configuration.Features.DhcpService = nil
+	}
+
+	// create DHCP config
+	if networkSettingsToUpdate.DhcpSettings != nil && networkToUpdate.Configuration.Features.DhcpService == nil {
+		networkToUpdate.Configuration.Features.DhcpService = &types.DhcpService{
+			IsEnabled:        networkSettingsToUpdate.DhcpSettings.IsEnabled,
+			DefaultLeaseTime: networkSettingsToUpdate.DhcpSettings.DefaultLeaseTime,
+			MaxLeaseTime:     networkSettingsToUpdate.DhcpSettings.MaxLeaseTime,
+			IPRange:          networkSettingsToUpdate.DhcpSettings.IPRange}
+	}
+
+	// update DHCP config
+	if networkSettingsToUpdate.DhcpSettings != nil && networkToUpdate.Configuration.Features.DhcpService != nil {
+		networkToUpdate.Configuration.Features.DhcpService.IsEnabled = networkSettingsToUpdate.DhcpSettings.IsEnabled
+		networkToUpdate.Configuration.Features.DhcpService.DefaultLeaseTime = networkSettingsToUpdate.DhcpSettings.DefaultLeaseTime
+		networkToUpdate.Configuration.Features.DhcpService.MaxLeaseTime = networkSettingsToUpdate.DhcpSettings.MaxLeaseTime
+		networkToUpdate.Configuration.Features.DhcpService.IPRange = networkSettingsToUpdate.DhcpSettings.IPRange
+	}
+
+	currentNetworkConfiguration.NetworkConfig[networkToUpdateIndex] = networkToUpdate
+
+	return updateNetworkConfigurations(vapp, currentNetworkConfiguration.NetworkConfig)
 }
 
 func validateNetworkConfigSettings(networkSettings *VappNetworkSettings) error {
@@ -897,6 +1010,7 @@ func (vapp *VApp) RemoveIsolatedNetwork(networkName string) (Task, error) {
 // https://opengrok.eng.vmware.com/source/xref/cloud-sp-main.perforce-shark.1700/sp-main/dev-integration/system-tests/SystemTests/src/main/java/com/vmware/cloud/systemtests/util/VAppNetworkUtils.java#createVAppNetwork
 // http://pubs.vmware.com/vcloud-api-1-5/wwhelp/wwhimpl/js/html/wwhelp.htm#href=api_prog/GUID-92622A15-E588-4FA1-92DA-A22A4757F2A0.html#1_14_12_10_1
 func updateNetworkConfigurations(vapp *VApp, networkConfigurations []types.VAppNetworkConfiguration) (Task, error) {
+	util.Logger.Printf("[TRACE] updateNetworkConfigurations for vAPP: %#v and network config: %#v", vapp, networkConfigurations)
 	networkConfig := &types.NetworkConfigSection{
 		Info:          "Configuration parameters for logical networks",
 		Ovf:           types.XMLNamespaceOVF,
