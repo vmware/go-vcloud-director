@@ -1398,3 +1398,12 @@ func getNetworkNameAndTypeByVnicIndex(vNicIndex int, vnics *types.EdgeGatewayInt
 
 	return networkName, networkType, nil
 }
+
+// UpdateProperties updates Edge configuration except Edge Gateway Services (Features)
+// https://code.vmware.com/apis/553/vcloud-director/doc/doc/operations/PUT-GatewayProperties.html
+func (egw *EdgeGateway) UpdateProperties() (Task, error) {
+	apiEndpoint, _ := url.ParseRequestURI(egw.EdgeGateway.HREF)
+	apiEndpoint.Path += "/action/updateProperties"
+	return egw.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+		"application/vnd.vmware.admin.edgeGateway+xml", "error update properties of Edge Gateway: %s", egw.EdgeGateway)
+}
