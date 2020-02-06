@@ -16,8 +16,8 @@ import (
 
 // Tests org function GetVDCByName with the vdc specified
 // in the config file. Then tests with a vdc that doesn't exist.
-// Fails if the config file name doesn't match with the found vdc, or
-// if the invalid vdc is found by the function.  Also tests an vdc
+// Fails if the config file name doesn't match with the found VDC, or
+// if the invalid vdc is found by the function.  Also tests a VDC
 // that doesn't exist. Asserts an error if the function finds it or
 // if the error is not nil.
 func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
@@ -125,16 +125,12 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 			check.Assert(err, IsNil)
 		}
 
-		// expecting fail due missing value
+		// expected to fail due to missing value
 		task, err := adminOrg.CreateOrgVdcAsync(vdcConfiguration)
 		check.Assert(err, Not(IsNil))
 		check.Assert(task, Equals, Task{})
-		// From vCD 10+ error changed
-		if vcd.client.Client.APIVCDMaxVersionIs("> 32.0") {
-			check.Assert(err.Error(), Equals, "error retrieving vdc: API Error: 400:  is not a valid unit. Please use MB")
-		} else {
-			check.Assert(err.Error(), Equals, "VdcConfiguration missing required field: ComputeCapacity[0].Memory.Units")
-		}
+		check.Assert(task.Task.Status, Equals, "error")
+
 		vdcConfiguration.ComputeCapacity[0].Memory.Units = "MB"
 
 		vdc, err = adminOrg.CreateOrgVdc(vdcConfiguration)
@@ -174,11 +170,7 @@ func (vcd *TestVCD) Test_UpdateVdcFlex(check *C) {
 	adminOrg, vdcConfiguration, err := setupVDc(vcd, check, "Flex")
 	check.Assert(err, IsNil)
 
-	// Refresh so the new VDC shows up in the org's list
-	err = adminOrg.Refresh()
-	check.Assert(err, IsNil)
-
-	adminVdc, err := adminOrg.GetAdminVDCByName(vdcConfiguration.Name, false)
+	adminVdc, err := adminOrg.GetAdminVDCByName(vdcConfiguration.Name, true)
 
 	check.Assert(err, IsNil)
 	check.Assert(adminVdc, NotNil)

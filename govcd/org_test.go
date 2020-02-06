@@ -192,8 +192,8 @@ func doesOrgExist(check *C, vcd *TestVCD) {
 
 // Tests org function GetVDCByName with the vdc specified
 // in the config file. Then tests with a vdc that doesn't exist.
-// Fails if the config file name doesn't match with the found vdc, or
-// if the invalid vdc is found by the function.  Also tests an vdc
+// Fails if the config file name doesn't match with the found VDC, or
+// if the invalid vdc is found by the function.  Also tests a VDC
 // that doesn't exist. Asserts an error if the function finds it or
 // if the error is not nil.
 func (vcd *TestVCD) Test_GetVdcByName(check *C) {
@@ -209,7 +209,7 @@ func (vcd *TestVCD) Test_GetVdcByName(check *C) {
 
 // Tests org function Admin version of GetVDCByName with the vdc
 // specified in the config file. Fails if the names don't match
-// or the function returns an error.  Also tests an vdc
+// or the function returns an error.  Also tests a vdc
 // that doesn't exist. Asserts an error if the function finds it or
 // if the error is not nil.
 func (vcd *TestVCD) Test_Admin_GetVdcByName(check *C) {
@@ -231,8 +231,8 @@ func (vcd *TestVCD) Test_Admin_GetVdcByName(check *C) {
 
 // Tests org function GetVDCByName with the vdc specified
 // in the config file. Then tests with a vdc that doesn't exist.
-// Fails if the config file name doesn't match with the found vdc, or
-// if the invalid vdc is found by the function.  Also tests an vdc
+// Fails if the config file name doesn't match with the found VDC, or
+// if the invalid vdc is found by the function.  Also tests a VDC
 // that doesn't exist. Asserts an error if the function finds it or
 // if the error is not nil.
 func (vcd *TestVCD) Test_CreateVdc(check *C) {
@@ -329,7 +329,7 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 		}
 
 		task, err := adminOrg.CreateVdc(vdcConfiguration)
-		check.Assert(err, Not(IsNil))
+		check.Assert(err, NotNil)
 		check.Assert(task, Equals, Task{})
 		check.Assert(err.Error(), Equals, "VdcConfiguration missing required field: ComputeCapacity[0].Memory.Units")
 		vdcConfiguration.ComputeCapacity[0].Memory.Units = "MB"
@@ -686,7 +686,7 @@ func (vcd *TestVCD) Test_UpdateVdc(check *C) {
 // Tests org function GetAdminVdcByName with the vdc specified
 // in the config file. Then tests with a vdc that doesn't exist.
 // Fails if the config file name doesn't match with the found VDC, or
-// if the invalid VDC is found by the function.  Also tests an VDC
+// if the invalid VDC is found by the function.  Also tests a VDC
 // that doesn't exist. Asserts an error if the function finds it or
 // if the error is not nil.
 func (vcd *TestVCD) Test_GetAdminVdcByName(check *C) {

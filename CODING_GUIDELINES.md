@@ -186,15 +186,15 @@ func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration)
 	if err != nil {
 		return nil, err
 	}
-	realFunction, ok := vdcProducerByVersion["vdc"+vcdVersionToApiVersion[apiVersion]]
+	producer, ok := vdcProducerByVersion["vdc"+vcdVersionToApiVersion[apiVersion]]
 	if !ok {
 		return nil, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
 	}
-	if realFunction.CreateVdc == nil {
+	if producer.CreateVdc == nil {
 		return nil, fmt.Errorf("function CreateVdc is not defined for %s", "vdc"+apiVersion)
 	}
-    util.Logger.Printf("[DEBUG] CreateOrgVdc call function for version %s", realFunction.SupportedVersion)
-	return realFunction.CreateVdc(adminOrg, vdcConfiguration)
+    util.Logger.Printf("[DEBUG] CreateOrgVdc call function for version %s", producer.SupportedVersion)
+	return producer.CreateVdc(adminOrg, vdcConfiguration)
 }
 ```
 

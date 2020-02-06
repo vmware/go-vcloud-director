@@ -59,16 +59,16 @@ func (adminVdc *AdminVdc) UpdateAsync() (Task, error) {
 	if err != nil {
 		return Task{}, err
 	}
-	realFunction, ok := vdcProducerByVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
+	producer, ok := vdcProducerByVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
 	if !ok {
 		return Task{}, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
 	}
-	if realFunction.UpdateVdcAsync == nil {
+	if producer.UpdateVdcAsync == nil {
 		return Task{}, fmt.Errorf("function UpdateVdcAsync is not defined for %s", "vdc"+apiVersion)
 	}
-	util.Logger.Printf("[DEBUG] UpdateAsync call function for version %s", realFunction.SupportedVersion)
+	util.Logger.Printf("[DEBUG] UpdateAsync call function for version %s", producer.SupportedVersion)
 
-	return realFunction.UpdateVdcAsync(adminVdc)
+	return producer.UpdateVdcAsync(adminVdc)
 
 }
 
@@ -82,17 +82,17 @@ func (adminVdc *AdminVdc) Update() (AdminVdc, error) {
 		return AdminVdc{}, err
 	}
 
-	realFunction, ok := vdcProducerByVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
+	producer, ok := vdcProducerByVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
 	if !ok {
 		return AdminVdc{}, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
 	}
-	if realFunction.UpdateVdc == nil {
+	if producer.UpdateVdc == nil {
 		return AdminVdc{}, fmt.Errorf("function UpdateVdc is not defined for %s", "vdc"+apiVersion)
 	}
 
-	util.Logger.Printf("[DEBUG] Update call function for version %s", realFunction.SupportedVersion)
+	util.Logger.Printf("[DEBUG] Update call function for version %s", producer.SupportedVersion)
 
-	updatedAdminVdc, err := realFunction.UpdateVdc(adminVdc)
+	updatedAdminVdc, err := producer.UpdateVdc(adminVdc)
 	if err != nil {
 		return AdminVdc{}, err
 	}
@@ -133,46 +133,46 @@ var vdcProducerByVersion = map[string]vdcProducer{
 
 // CreateOrgVdc creates a VDC with the given params under the given organization
 // and waits for the asynchronous task to complete.
-// Returns an AdminVdc.
+// Returns an AdminVdc pointer and an error.
 func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration) (*Vdc, error) {
 	apiVersion, err := adminOrg.client.maxSupportedVersion()
 	if err != nil {
 		return nil, err
 	}
-	realFunction, ok := vdcProducerByVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
+	producer, ok := vdcProducerByVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
 	if !ok {
 		return nil, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
 	}
-	if realFunction.CreateVdc == nil {
+	if producer.CreateVdc == nil {
 		return nil, fmt.Errorf("function CreateVdc is not defined for %s", "vdc"+apiVersion)
 	}
 
-	util.Logger.Printf("[DEBUG] CreateOrgVdc call function for version %s", realFunction.SupportedVersion)
-	return realFunction.CreateVdc(adminOrg, vdcConfiguration)
+	util.Logger.Printf("[DEBUG] CreateOrgVdc call function for version %s", producer.SupportedVersion)
+	return producer.CreateVdc(adminOrg, vdcConfiguration)
 }
 
 // CreateOrgVdcAsync creates a VDC with the given params under the given organization.
-// Returns an Task.
+// Returns a Task and an error.
 func (adminOrg *AdminOrg) CreateOrgVdcAsync(vdcConfiguration *types.VdcConfiguration) (Task, error) {
 	apiVersion, err := adminOrg.client.maxSupportedVersion()
 	if err != nil {
 		return Task{}, err
 	}
-	realFunction, ok := vdcProducerByVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
+	producer, ok := vdcProducerByVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
 	if !ok {
 		return Task{}, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
 	}
-	if realFunction.CreateVdcAsync == nil {
+	if producer.CreateVdcAsync == nil {
 		return Task{}, fmt.Errorf("function CreateVdcAsync is not defined for %s", "vdc"+apiVersion)
 	}
 
-	util.Logger.Printf("[DEBUG] CreateOrgVdcAsync call function for version %s", realFunction.SupportedVersion)
+	util.Logger.Printf("[DEBUG] CreateOrgVdcAsync call function for version %s", producer.SupportedVersion)
 
-	return realFunction.CreateVdcAsync(adminOrg, vdcConfiguration)
+	return producer.CreateVdcAsync(adminOrg, vdcConfiguration)
 }
 
 // createVdc creates a VDC with the given params under the given organization.
-// Returns an Vdc.
+// Returns a Vdc pointer and an error
 func createVdc(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*Vdc, error) {
 	util.Logger.Printf("[TRACE] createVdc called %#v", *vdcConfiguration)
 	err := adminOrg.CreateVdcWait(vdcConfiguration)
@@ -187,7 +187,7 @@ func createVdc(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*V
 	return vdc, nil
 }
 
-// updateVdcAsync updates a VDC with the given params. Returns an Task.
+// updateVdcAsync updates a VDC with the given params. Returns a Task and error
 func updateVdcAsync(adminVdc *AdminVdc) (Task, error) {
 	util.Logger.Printf("[TRACE] updateVdcAsync called %#v", *adminVdc)
 	adminVdc.AdminVdc.Xmlns = types.XMLNamespaceVCloud
@@ -219,7 +219,7 @@ func updateVdc(adminVdc *AdminVdc) (*AdminVdc, error) {
 }
 
 // updateVdcAsyncV97 updates a VDC with the given params. Supports Flex type allocation.
-// Needs vCD 9.7+ to work. Returns an Task.
+// Needs vCD 9.7+ to work. Returns a Task and an error.
 func updateVdcAsyncV97(adminVdc *AdminVdc) (Task, error) {
 	util.Logger.Printf("[TRACE] updateVdcAsyncV97 called %#v", *adminVdc)
 	adminVdc.AdminVdc.Xmlns = types.XMLNamespaceVCloud
@@ -232,7 +232,7 @@ func updateVdcAsyncV97(adminVdc *AdminVdc) (Task, error) {
 
 // updateVdcV97 updates a VDC with the given params
 // and waits for the asynchronous task to complete. Supports Flex type allocation.
-// Needs vCD 9.7+ to work. Returns an AdminVdc.
+// Needs vCD 9.7+ to work. Returns an AdminVdc pointer and an error.
 func updateVdcV97(adminVdc *AdminVdc) (*AdminVdc, error) {
 	util.Logger.Printf("[TRACE] updateVdcV97 called %#v", *adminVdc)
 	task, err := updateVdcAsyncV97(adminVdc)
@@ -251,7 +251,7 @@ func updateVdcV97(adminVdc *AdminVdc) (*AdminVdc, error) {
 }
 
 // createVdcAsync creates a VDC with the given params under the given organization.
-// Returns an Task.
+// Returns a Task and an error
 func createVdcAsync(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (Task, error) {
 	util.Logger.Printf("[TRACE] createVdcAsync called %#v", *vdcConfiguration)
 	return adminOrg.CreateVdc(vdcConfiguration)
@@ -259,7 +259,7 @@ func createVdcAsync(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration
 
 // createVdcAsyncV97 creates a VDC with the given params under the given organization
 // and waits for the asynchronous task to complete. Supports Flex type allocation.
-// Needs vCD 9.7+ to work. Returns an Vdc.
+// Needs vCD 9.7+ to work. Returns a Vdc pointer and error.
 func createVdcV97(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*Vdc, error) {
 	util.Logger.Printf("[TRACE] createVdcV97 called %#v", *vdcConfiguration)
 	task, err := createVdcAsyncV97(adminOrg, vdcConfiguration)
@@ -279,7 +279,7 @@ func createVdcV97(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) 
 }
 
 // createVdcAsyncV97 creates a VDC with the given params under the given organization. Supports Flex type allocation.
-// Needs vCD 9.7+ to work. Returns an Task.
+// Needs vCD 9.7+ to work. Returns a Task and an error
 func createVdcAsyncV97(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (Task, error) {
 	util.Logger.Printf("[TRACE] createVdcAsyncV97 called %#v", *vdcConfiguration)
 	err := validateVdcConfigurationV97(*vdcConfiguration)
