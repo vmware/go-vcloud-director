@@ -108,7 +108,7 @@ func (adminOrg *AdminOrg) CreateVdc(vdcConfiguration *types.VdcConfiguration) (T
 	adminVdc := NewAdminVdc(adminOrg.client)
 
 	_, err = adminOrg.client.ExecuteRequest(vdcCreateHREF.String(), http.MethodPost,
-		"application/vnd.vmware.admin.createVdcParams+xml", "error retrieving vdc: %s", vdcConfiguration, adminVdc.AdminVdc)
+		"application/vnd.vmware.admin.createVdcParams+xml", "error creating VDC: %s", vdcConfiguration, adminVdc.AdminVdc)
 	if err != nil {
 		return Task{}, err
 	}

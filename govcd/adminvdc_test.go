@@ -129,7 +129,8 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 		task, err := adminOrg.CreateOrgVdcAsync(vdcConfiguration)
 		check.Assert(err, Not(IsNil))
 		check.Assert(task, Equals, Task{})
-		check.Assert(task.Task.Status, Equals, "error")
+		// checks function validation
+		check.Assert(err.Error(), Equals, "VdcConfiguration missing required field: ComputeCapacity[0].Memory.Units")
 
 		vdcConfiguration.ComputeCapacity[0].Memory.Units = "MB"
 

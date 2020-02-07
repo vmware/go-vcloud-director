@@ -298,7 +298,7 @@ func createVdcAsyncV97(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfigurat
 	adminVdc := NewAdminVdc(adminOrg.client)
 
 	_, err = adminOrg.client.ExecuteRequestWithApiVersion(vdcCreateHREF.String(), http.MethodPost,
-		"application/vnd.vmware.admin.createVdcParams+xml", "error retrieving vdc: %s",
+		"application/vnd.vmware.admin.createVdcParams+xml", "error creating VDC: %s",
 		vdcConfiguration, adminVdc.AdminVdc,
 		adminOrg.client.GetSpecificApiVersionOnCondition(">= 32.0", "32.0"))
 	if err != nil {
