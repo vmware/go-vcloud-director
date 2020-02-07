@@ -842,6 +842,37 @@ func (vapp *VApp) AddNatRoutedNetwork(newNetworkSettings *VappNetworkSettings, o
 		})
 
 	return updateNetworkConfigurations(vapp, networkConfigurations)
+}
+
+// Function allows to create nat routed network for vApp. This is equivalent to vCD UI function - vApp network creation with org network.
+func (vapp *VApp) AddOrgNetwork(newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork, isFenced bool) (Task, error) {
+
+	//TODO validation
+	/*err := validateNetworkConfigSettings(newNetworkSettings)
+	if err != nil {
+		return Task{}, err
+	}*/
+
+	fenceMode := types.FenceModeBridged
+	if isFenced {
+		fenceMode = types.FenceModeNAT
+	}
+
+	networkConfigurations := vapp.VApp.NetworkConfigSection.NetworkConfig
+	networkConfigurations = append(networkConfigurations,
+		types.VAppNetworkConfiguration{
+			NetworkName: orgNetwork.Name,
+			Configuration: &types.NetworkConfiguration{
+				FenceMode: fenceMode,
+				ParentNetwork: &types.Reference{
+					HREF: orgNetwork.HREF,
+				},
+				RetainNetInfoAcrossDeployments: newNetworkSettings.RetainIpMacEnabled,
+			},
+			IsDeployed: false,
+		})
+
+	return updateNetworkConfigurations(vapp, networkConfigurations)
 
 }
 
@@ -948,6 +979,40 @@ func (vapp *VApp) UpdateNetworkConfig(networkSettingsToUpdate *VappNetworkSettin
 		networkToUpdate.Configuration.Features.DhcpService.MaxLeaseTime = networkSettingsToUpdate.DhcpSettings.MaxLeaseTime
 		networkToUpdate.Configuration.Features.DhcpService.IPRange = networkSettingsToUpdate.DhcpSettings.IPRange
 	}
+
+	currentNetworkConfiguration.NetworkConfig[networkToUpdateIndex] = networkToUpdate
+
+	return updateNetworkConfigurations(vapp, currentNetworkConfiguration.NetworkConfig)
+}
+
+// Function allows to update nat routed network for vApp. This is equivalent to vCD UI function - vApp network creation with org network.
+func (vapp *VApp) UpdateOrgNetworkConfig(networkSettingsToUpdate *VappNetworkSettings) (Task, error) {
+	util.Logger.Printf("[TRACE] UpdateOrgNetworkConfig with values: %#v ", networkSettingsToUpdate)
+	currentNetworkConfiguration, err := vapp.GetNetworkConfig()
+	if err != nil {
+		return Task{}, err
+	}
+	var networkToUpdate types.VAppNetworkConfiguration
+	var networkToUpdateIndex int
+
+	for index, networkConfig := range currentNetworkConfiguration.NetworkConfig {
+		uuid, err := GetUuidFromHref(networkConfig.Link.HREF)
+		if err != nil {
+			return Task{}, err
+		}
+
+		if uuid == networkSettingsToUpdate.Id {
+			networkToUpdate = networkConfig
+			networkToUpdateIndex = index
+			break
+		}
+	}
+
+	if networkToUpdate == (types.VAppNetworkConfiguration{}) {
+		return Task{}, fmt.Errorf("not found network to update with Id %s", networkSettingsToUpdate.Id)
+	}
+
+	networkToUpdate.Configuration.RetainNetInfoAcrossDeployments = networkSettingsToUpdate.RetainIpMacEnabled
 
 	currentNetworkConfiguration.NetworkConfig[networkToUpdateIndex] = networkToUpdate
 
