@@ -197,9 +197,8 @@ func createTaskForVcdImport(client *Client, taskHREF string) (Task, error) {
 	return *task, nil
 }
 
-func getCallBackFunction() (func(int64, int64), *uploadPr) {
-	// var uploadProgress float64
-	uploadProgress := &uploadPr{}
+func getCallBackFunction() (func(int64, int64), *mutexedProgress) {
+	uploadProgress := &mutexedProgress{}
 	callback := func(bytesUploaded, totalSize int64) {
 		uploadProgress.Set((float64(bytesUploaded) / float64(totalSize)) * 100)
 	}

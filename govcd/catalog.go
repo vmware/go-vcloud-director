@@ -103,21 +103,21 @@ func (cat *Catalog) FindCatalogItem(catalogItemName string) (CatalogItem, error)
 	return CatalogItem{}, nil
 }
 
-type uploadPr struct {
+type mutexedProgress struct {
 	progress float64
 	sync.Mutex
 }
 
-func (u *uploadPr) Set(progress float64) {
-	u.Lock()
-	defer u.Unlock()
-	u.progress = progress
+func (p *mutexedProgress) Set(progress float64) {
+	p.Lock()
+	defer p.Unlock()
+	p.progress = progress
 }
 
-func (u *uploadPr) Get() float64 {
-	u.Lock()
-	defer u.Unlock()
-	return u.progress
+func (p *mutexedProgress) Get() float64 {
+	p.Lock()
+	defer p.Unlock()
+	return p.progress
 }
 
 // Uploads an ova file to a catalog. This method only uploads bits to vCD spool area.
