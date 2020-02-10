@@ -864,6 +864,10 @@ func (vapp *VApp) AddOrgNetwork(newNetworkSettings *VappNetworkSettings, orgNetw
 			NetworkName: orgNetwork.Name,
 			Configuration: &types.NetworkConfiguration{
 				FenceMode: fenceMode,
+				Features: &types.NetworkFeatures{
+					FirewallService: &types.FirewallService{IsEnabled: *newNetworkSettings.FirewallEnabled},
+					NatService:      &types.NatService{IsEnabled: *newNetworkSettings.NatEnabled, NatType: "ipTranslation", Policy: "allowTrafficIn"},
+				},
 				ParentNetwork: &types.Reference{
 					HREF: orgNetwork.HREF,
 				},
@@ -986,7 +990,7 @@ func (vapp *VApp) UpdateNetworkConfig(networkSettingsToUpdate *VappNetworkSettin
 }
 
 // Function allows to update nat routed network for vApp. This is equivalent to vCD UI function - vApp network creation with org network.
-func (vapp *VApp) UpdateOrgNetworkConfig(networkSettingsToUpdate *VappNetworkSettings) (Task, error) {
+func (vapp *VApp) UpdateOrgNetworkConfig(networkSettingsToUpdate *VappNetworkSettings, isFenced bool) (Task, error) {
 	util.Logger.Printf("[TRACE] UpdateOrgNetworkConfig with values: %#v ", networkSettingsToUpdate)
 	currentNetworkConfiguration, err := vapp.GetNetworkConfig()
 	if err != nil {
@@ -1012,7 +1016,16 @@ func (vapp *VApp) UpdateOrgNetworkConfig(networkSettingsToUpdate *VappNetworkSet
 		return Task{}, fmt.Errorf("not found network to update with Id %s", networkSettingsToUpdate.Id)
 	}
 
+	fenceMode := types.FenceModeBridged
+	if isFenced {
+		fenceMode = types.FenceModeNAT
+		networkToUpdate.Configuration.Features = &types.NetworkFeatures{
+			FirewallService: &types.FirewallService{IsEnabled: *networkSettingsToUpdate.FirewallEnabled},
+			NatService:      &types.NatService{IsEnabled: *networkSettingsToUpdate.NatEnabled, NatType: "ipTranslation", Policy: "allowTrafficIn"}}
+	}
+
 	networkToUpdate.Configuration.RetainNetInfoAcrossDeployments = networkSettingsToUpdate.RetainIpMacEnabled
+	networkToUpdate.Configuration.FenceMode = fenceMode
 
 	currentNetworkConfiguration.NetworkConfig[networkToUpdateIndex] = networkToUpdate
 
