@@ -43,7 +43,7 @@ func (adminVdc *AdminVdc) Refresh() error {
 	// available fields in AdminVdc which vCD provides, but also which our code understands. As we can't blindly use
 	// the latest version, we're limiting the highest used version to the one we support with
 	// the GetSpecificApiVersionOnCondition(...) function. Specifically, the API version 32 returns
-	// two additional fields: IncludeMemoryOverhead and IsElastic
+	// two additional fields: IncludeMemoryOverhead and IsElastic for Flex allocation
 	_, err := adminVdc.client.ExecuteRequestWithApiVersion(adminVdc.AdminVdc.HREF, http.MethodGet,
 		"", "error refreshing VDC: %s", nil, unmarshalledAdminVdc, adminVdc.client.GetSpecificApiVersionOnCondition(">= 32.0", "32.0"))
 	if err != nil {
