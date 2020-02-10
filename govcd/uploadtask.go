@@ -26,7 +26,7 @@ func NewUploadTask(task *Task, uploadProgress *mutexedProgress, uploadError *err
 }
 
 func (uploadTask *UploadTask) GetUploadProgress() string {
-	return fmt.Sprintf("%.2f", uploadTask.uploadProgress.Get())
+	return fmt.Sprintf("%.2f", uploadTask.uploadProgress.LockedGet())
 }
 
 func (uploadTask *UploadTask) ShowUploadProgress() error {
@@ -37,8 +37,8 @@ func (uploadTask *UploadTask) ShowUploadProgress() error {
 			return *uploadTask.uploadError
 		}
 
-		fmt.Printf("\rUpload progress %.2f%%", uploadTask.uploadProgress.Get())
-		if uploadTask.uploadProgress.progress == 100.00 {
+		fmt.Printf("\rUpload progress %.2f%%", uploadTask.uploadProgress.LockedGet())
+		if uploadTask.uploadProgress.LockedGet() == 100.00 {
 			break
 		}
 		time.Sleep(1 * time.Second)
