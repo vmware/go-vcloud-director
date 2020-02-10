@@ -265,7 +265,7 @@ func createVdcAsync(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration
 	return adminOrg.CreateVdc(vdcConfiguration)
 }
 
-// createVdcAsyncV97 creates a VDC with the given params under the given organization
+// createVdcV97 creates a VDC with the given params under the given organization
 // and waits for the asynchronous task to complete. Supports Flex type allocation.
 // Needs vCD 9.7+ to work. Returns a Vdc pointer and error.
 func createVdcV97(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*Vdc, error) {
