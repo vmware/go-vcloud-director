@@ -27,7 +27,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 
 	// Flex vCD supported from 9.7 vCD
 	if vcd.client.Client.APIVCDMaxVersionIs("< 32.0") {
-		check.Skip(fmt.Sprintf("Test %s requires vCD 9.7 or higher", check.TestName()))
+		check.Skip(fmt.Sprintf("Test %s requires vCD 9.7 (API version 32) or higher", check.TestName()))
 	}
 
 	if vcd.config.VCD.ProviderVdc.Name == "" {
@@ -165,10 +165,10 @@ func (vcd *TestVCD) Test_UpdateVdcFlex(check *C) {
 
 	// Flex vCD supported from 9.7 vCD
 	if vcd.client.Client.APIVCDMaxVersionIs("< 32.0") {
-		check.Skip(fmt.Sprintf("Test %s requires vCD 9.7 or higher", check.TestName()))
+		check.Skip(fmt.Sprintf("Test %s requires vCD 9.7 (API version 32) or higher", check.TestName()))
 	}
 
-	adminOrg, vdcConfiguration, err := setupVDc(vcd, check, "Flex")
+	adminOrg, vdcConfiguration, err := setupVdc(vcd, check, "Flex")
 	check.Assert(err, IsNil)
 
 	adminVdc, err := adminOrg.GetAdminVDCByName(vdcConfiguration.Name, true)

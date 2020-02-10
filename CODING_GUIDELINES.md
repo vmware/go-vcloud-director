@@ -181,12 +181,20 @@ var vdcCrudV97 = vdcProducer{
 	UpdateVdcAsync:   updateVdcAsyncV97,
 }
 
+var vdcProducerByVcdVersion = map[string]vdcProducer{
+	"vdc9.0":  vdcCrudV90,
+	"vdc9.1":  vdcCrudV90,
+	"vdc9.5":  vdcCrudV90,
+	"vdc9.7":  vdcCrudV97,
+	"vdc10.0": vdcCrudV97,
+}
+
 func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration) (*Vdc, error) {
 	apiVersion, err := adminOrg.client.maxSupportedVersion()
 	if err != nil {
 		return nil, err
 	}
-	producer, ok := vdcProducerByVersion["vdc"+vcdVersionToApiVersion[apiVersion]]
+	producer, ok := vdcProducerByVcdVersion["vdc"+vcdVersionToApiVersion[apiVersion]]
 	if !ok {
 		return nil, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
 	}

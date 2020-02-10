@@ -729,6 +729,11 @@ func (adminOrg *AdminOrg) GetAdminVDCByHref(vdcHref string) (*AdminVdc, error) {
 
 	adminVdc := NewAdminVdc(adminOrg.client)
 
+	// We are executing below request with a specific API version in the header, because we want to retrieve the most
+	// available fields in AdminVdc which vCD provides, but also which our code understands. As we can't blindly use
+	// the latest version, we're limiting the highest used version to the one we support with
+	// the GetSpecificApiVersionOnCondition(...) function. Specifically, the API version 32 returns
+	// two additional fields: IncludeMemoryOverhead and IsElastic for Flex allocation
 	_, err := adminOrg.client.ExecuteRequestWithApiVersion(vdcHref, http.MethodGet,
 		"", "error getting vdc: %s", nil, adminVdc.AdminVdc, adminVdc.client.GetSpecificApiVersionOnCondition(">= 32.0", "32.0"))
 
