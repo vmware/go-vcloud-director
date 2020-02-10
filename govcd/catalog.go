@@ -18,6 +18,7 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -100,6 +101,23 @@ func (cat *Catalog) FindCatalogItem(catalogItemName string) (CatalogItem, error)
 	}
 
 	return CatalogItem{}, nil
+}
+
+type uploadPr struct {
+	progress float64
+	sync.Mutex
+}
+
+func (u *uploadPr) Set(progress float64) {
+	u.Lock()
+	defer u.Unlock()
+	u.progress = progress
+}
+
+func (u *uploadPr) Get() float64 {
+	u.Lock()
+	defer u.Unlock()
+	return u.progress
 }
 
 // Uploads an ova file to a catalog. This method only uploads bits to vCD spool area.
