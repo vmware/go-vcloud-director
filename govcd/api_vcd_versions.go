@@ -44,7 +44,7 @@ var vcdVersionToApiVersion = map[string]string{
 	"10.0": "33.0",
 }
 
-// to make apiVersionToVcdVersion used
+// to make vcdVersionToApiVersion used
 var _ = vcdVersionToApiVersion
 
 // APIVCDMaxVersionIs compares against maximum vCD supported API version from /api/versions (not necessarily
