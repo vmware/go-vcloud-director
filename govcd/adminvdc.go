@@ -77,7 +77,7 @@ func (adminOrg *AdminOrg) GetAdminVdcByName(vdcname string) (AdminVdc, error) {
 	return AdminVdc{}, nil
 }
 
-// GetVDCByHref retrieves a VDC using a direct call with the HREF
+// GetAdminVDCByHref retrieves a VDC using a direct call with the HREF
 func (adminOrg *AdminOrg) GetAdminVDCByHref(vdcHref string) (*AdminVdc, error) {
 
 	adminVdc := NewAdminVdc(adminOrg.client)
