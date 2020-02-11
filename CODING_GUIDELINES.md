@@ -157,7 +157,7 @@ Functions dealing with different versions should use a matrix structure to ident
 highest API version supported by vCD. An example can be found in adminvdc.go.
 
 ```
-type vdcProducer struct {
+type vdcVersionedFunc struct {
 	SupportedVersion string
 	CreateVdc        func(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*Vdc, error)
 	CreateVdcAsync   func(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (Task, error)
@@ -165,7 +165,7 @@ type vdcProducer struct {
 	UpdateVdcAsync   func(adminVdc *AdminVdc) (Task, error)
 }
 
-var vdcCrudV90 = vdcProducer{
+var vdcVersionedFuncV90 = vdcVersionedFunc{
 	SupportedVersion: "29.0",
 	CreateVdc:        createVdc,
 	CreateVdcAsync:   createVdcAsync,
@@ -173,7 +173,7 @@ var vdcCrudV90 = vdcProducer{
 	UpdateVdcAsync:   updateVdcAsync,
 }
 
-var vdcCrudV97 = vdcProducer{
+var vdcVersionedFuncV97 = vdcVersionedFunc{
 	SupportedVersion: "32.0",
 	CreateVdc:        createVdcV97,
 	CreateVdcAsync:   createVdcAsyncV97,
@@ -181,7 +181,7 @@ var vdcCrudV97 = vdcProducer{
 	UpdateVdcAsync:   updateVdcAsyncV97,
 }
 
-var vdcProducerByVcdVersion = map[string]vdcProducer{
+var vdcVersionedFuncByVcdVersion = map[string]vdcVersionedFunc{
 	"vdc9.0":  vdcCrudV90,
 	"vdc9.1":  vdcCrudV90,
 	"vdc9.5":  vdcCrudV90,
@@ -194,7 +194,7 @@ func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration)
 	if err != nil {
 		return nil, err
 	}
-	producer, ok := vdcProducerByVcdVersion["vdc"+vcdVersionToApiVersion[apiVersion]]
+	producer, ok := vdcVersionedFuncByVcdVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
 	if !ok {
 		return nil, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
 	}

@@ -25,8 +25,8 @@ func NewAdminVdc(cli *Client) *AdminVdc {
 	}
 }
 
-// vdcProducer holds interface of functions
-type vdcProducer struct {
+// vdcVersionedFunc holds interface of functions
+type vdcVersionedFunc struct {
 	SupportedVersion string
 	CreateVdc        func(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*Vdc, error)
 	CreateVdcAsync   func(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (Task, error)
@@ -35,7 +35,7 @@ type vdcProducer struct {
 }
 
 // VDC function mapping for API version 29.0 (from vCD 9.1)
-var vdcCrudV90 = vdcProducer{
+var vdcVersionedFuncV90 = vdcVersionedFunc{
 	SupportedVersion: "29.0",
 	CreateVdc:        createVdc,
 	CreateVdcAsync:   createVdcAsync,
@@ -44,7 +44,7 @@ var vdcCrudV90 = vdcProducer{
 }
 
 // VDC function mapping for API version 32.0 (from vCD 9.7)
-var vdcCrudV97 = vdcProducer{
+var vdcVersionedFuncV97 = vdcVersionedFunc{
 	SupportedVersion: "32.0",
 	CreateVdc:        createVdcV97,
 	CreateVdcAsync:   createVdcAsyncV97,
@@ -53,12 +53,12 @@ var vdcCrudV97 = vdcProducer{
 }
 
 // VDC function mapping by vDC version
-var vdcProducerByVcdVersion = map[string]vdcProducer{
-	"vdc9.0":  vdcCrudV90,
-	"vdc9.1":  vdcCrudV90,
-	"vdc9.5":  vdcCrudV90,
-	"vdc9.7":  vdcCrudV97,
-	"vdc10.0": vdcCrudV97,
+var vdcVersionedFuncByVcdVersion = map[string]vdcVersionedFunc{
+	"vdc9.0":  vdcVersionedFuncV90,
+	"vdc9.1":  vdcVersionedFuncV90,
+	"vdc9.5":  vdcVersionedFuncV90,
+	"vdc9.7":  vdcVersionedFuncV97,
+	"vdc10.0": vdcVersionedFuncV97,
 }
 
 // GetAdminVdcByName function uses a valid VDC name and returns a admin VDC object.
@@ -231,7 +231,7 @@ func (adminVdc *AdminVdc) UpdateAsync() (Task, error) {
 	if err != nil {
 		return Task{}, err
 	}
-	producer, ok := vdcProducerByVcdVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
+	producer, ok := vdcVersionedFuncByVcdVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
 	if !ok {
 		return Task{}, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
 	}
@@ -254,7 +254,7 @@ func (adminVdc *AdminVdc) Update() (AdminVdc, error) {
 		return AdminVdc{}, err
 	}
 
-	producer, ok := vdcProducerByVcdVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
+	producer, ok := vdcVersionedFuncByVcdVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
 	if !ok {
 		return AdminVdc{}, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
 	}
@@ -279,7 +279,7 @@ func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration)
 	if err != nil {
 		return nil, err
 	}
-	producer, ok := vdcProducerByVcdVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
+	producer, ok := vdcVersionedFuncByVcdVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
 	if !ok {
 		return nil, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
 	}
@@ -298,7 +298,7 @@ func (adminOrg *AdminOrg) CreateOrgVdcAsync(vdcConfiguration *types.VdcConfigura
 	if err != nil {
 		return Task{}, err
 	}
-	producer, ok := vdcProducerByVcdVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
+	producer, ok := vdcVersionedFuncByVcdVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
 	if !ok {
 		return Task{}, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
 	}
