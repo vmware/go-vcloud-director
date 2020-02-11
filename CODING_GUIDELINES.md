@@ -165,7 +165,7 @@ type vdcVersionedFunc struct {
 	UpdateVdcAsync   func(adminVdc *AdminVdc) (Task, error)
 }
 
-var vdcVersionedFuncV90 = vdcVersionedFunc{
+var vdcVersionedFuncsV90 = vdcVersionedFuncs{
 	SupportedVersion: "29.0",
 	CreateVdc:        createVdc,
 	CreateVdcAsync:   createVdcAsync,
@@ -173,7 +173,7 @@ var vdcVersionedFuncV90 = vdcVersionedFunc{
 	UpdateVdcAsync:   updateVdcAsync,
 }
 
-var vdcVersionedFuncV97 = vdcVersionedFunc{
+var vdcVersionedFuncsV97 = vdcVersionedFuncs{
 	SupportedVersion: "32.0",
 	CreateVdc:        createVdcV97,
 	CreateVdcAsync:   createVdcAsyncV97,
@@ -181,7 +181,7 @@ var vdcVersionedFuncV97 = vdcVersionedFunc{
 	UpdateVdcAsync:   updateVdcAsyncV97,
 }
 
-var vdcVersionedFuncByVcdVersion = map[string]vdcVersionedFunc{
+var vdcVersionedFuncsByVcdVersion = map[string]vdcVersionedFuncs{
 	"vdc9.0":  vdcCrudV90,
 	"vdc9.1":  vdcCrudV90,
 	"vdc9.5":  vdcCrudV90,
@@ -194,15 +194,15 @@ func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration)
 	if err != nil {
 		return nil, err
 	}
-	producer, ok := vdcVersionedFuncByVcdVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
+	vdcFunction, ok := vdcVersionedFuncsByVcdVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
 	if !ok {
 		return nil, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
 	}
-	if producer.CreateVdc == nil {
+	if vdcFunction.CreateVdc == nil {
 		return nil, fmt.Errorf("function CreateVdc is not defined for %s", "vdc"+apiVersion)
 	}
-    util.Logger.Printf("[DEBUG] CreateOrgVdc call function for version %s", producer.SupportedVersion)
-	return producer.CreateVdc(adminOrg, vdcConfiguration)
+    util.Logger.Printf("[DEBUG] CreateOrgVdc call function for version %s", vdcFunction.SupportedVersion)
+	return vdcFunction.CreateVdc(adminOrg, vdcConfiguration)
 }
 ```
 
