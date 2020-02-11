@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strconv"
 	"time"
 
@@ -941,27 +940,6 @@ func (vapp *VApp) AddOrgNetworkAsync(newNetworkSettings *VappNetworkSettings, or
 
 	return updateNetworkConfigurations(vapp, networkConfigurations)
 
-}
-
-// Returns the UUID part of an HREF
-// Similar to getBareEntityUuid, but tailored to HREF
-func GetUuidFromHref(href string) (string, error) {
-	util.Logger.Printf("[TRACE] GetUuidFromHref got href: %s", href)
-	// Regular expression to match an ID:
-	//     1 string starting by 'https://' and ending with a '/',
-	//     followed by
-	//        1 group of 8 hexadecimal digits
-	//        3 groups of 4 hexadecimal digits
-	//        1 group of 12 hexadecimal digits
-
-	reGetID := regexp.MustCompile(`^https://.+/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}).*$`)
-	matchList := reGetID.FindAllStringSubmatch(href, -1)
-
-	if len(matchList) == 0 || len(matchList[0]) < 2 {
-		return "", fmt.Errorf("error extracting UUID from '%s'", href)
-	}
-	util.Logger.Printf("[TRACE] GetUuidFromHref returns UUID : %s", matchList[0][1])
-	return matchList[0][1], nil
 }
 
 // UpdateNetwork updates vApp networks(isolated or connected to org VDC network)
