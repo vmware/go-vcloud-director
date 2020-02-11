@@ -151,7 +151,7 @@ prior to attempting a search.
 Note: We are in the process of replacing methods that don't adhere to the above principles (for example, return a
 structure instead of a pointer, return a nil error on not-found, etc).
 
-## Implementing functions to support different API versions
+## Implementing functions to support different vCD API versions
 
 Functions dealing with different versions should use a matrix structure to identify which calls to run according to the 
 highest API version supported by vCD. An example can be found in adminvdc.go.
