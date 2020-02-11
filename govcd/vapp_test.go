@@ -769,3 +769,79 @@ func (vcd *TestVCD) Test_GetVM(check *C) {
 	}
 	vcd.testFinderGetGenericEntity(def, check)
 }
+
+func (vcd *TestVCD) Test_AddAndRemoveVappNetwork(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+	// Add Metadata
+	networkName := "AddAndRemoveVappNetworkTest"
+	const gateway = "192.168.0.1"
+	const netmask = "255.255.255.0"
+	const dns1 = "8.8.8.8"
+	const dns2 = "1.1.1.1"
+	const dnsSuffix = "biz.biz"
+	const startAddress = "192.168.0.10"
+	const endAddress = "192.168.0.20"
+	const dhcpStartAddress = "192.168.0.30"
+	const dhcpEndAddress = "192.168.0.40"
+	const maxLeaseTime = 3500
+	const defaultLeaseTime = 2400
+	var guestVlanAllowed = true
+
+	vappNetworkSettings := &VappNetworkSettings{
+		Name:             networkName,
+		Gateway:          gateway,
+		NetMask:          netmask,
+		DNS1:             dns1,
+		DNS2:             dns2,
+		DNSSuffix:        dnsSuffix,
+		StaticIPRanges:   []*types.IPRange{{StartAddress: startAddress, EndAddress: endAddress}},
+		DhcpSettings:     &DhcpSettings{IsEnabled: true, MaxLeaseTime: maxLeaseTime, DefaultLeaseTime: defaultLeaseTime, IPRange: &types.IPRange{StartAddress: dhcpStartAddress, EndAddress: dhcpEndAddress}},
+		GuestVLANAllowed: &guestVlanAllowed,
+	}
+
+	vappNetworkConfig, err := vcd.vapp.AddNetwork(vappNetworkSettings, nil)
+	check.Assert(err, IsNil)
+	check.Assert(vappNetworkConfig, NotNil)
+
+	networkFound := types.VAppNetworkConfiguration{}
+	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
+		if networkConfig.NetworkName == networkName {
+			networkFound = networkConfig
+		}
+	}
+
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].Gateway, Equals, gateway)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].Netmask, Equals, netmask)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNS1, Equals, dns1)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNS2, Equals, dns2)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNSSuffix, Equals, dnsSuffix)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].StartAddress, Equals, startAddress)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress, Equals, endAddress)
+
+	check.Assert(networkFound.Configuration.Features.DhcpService.IsEnabled, Equals, true)
+	check.Assert(networkFound.Configuration.Features.DhcpService.MaxLeaseTime, Equals, maxLeaseTime)
+	check.Assert(networkFound.Configuration.Features.DhcpService.DefaultLeaseTime, Equals, defaultLeaseTime)
+	check.Assert(networkFound.Configuration.Features.DhcpService.IPRange.StartAddress, Equals, dhcpStartAddress)
+	check.Assert(networkFound.Configuration.Features.DhcpService.IPRange.EndAddress, Equals, dhcpEndAddress)
+
+	err = vcd.vapp.Refresh()
+	check.Assert(err, IsNil)
+	task, err := vcd.vapp.RemoveIsolatedNetwork(networkName)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	networkConfig, err := vcd.vapp.GetNetworkConfig()
+	check.Assert(err, IsNil)
+
+	isExist := false
+	for _, networkConfig := range networkConfig.NetworkConfig {
+		if networkConfig.NetworkName == networkName {
+			isExist = true
+		}
+	}
+	check.Assert(isExist, Equals, false)
+}

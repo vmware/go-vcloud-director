@@ -725,7 +725,7 @@ func (vapp *VApp) GetNetworkConfig() (*types.NetworkConfigSection, error) {
 }
 
 // AddRAWNetworkConfig adds existing VDC network to vApp
-// Deprecated in favor of TODO
+// Deprecated: in favor of vapp.AddOrgNetwork
 func (vapp *VApp) AddRAWNetworkConfig(orgvdcnetworks []*types.OrgVDCNetwork) (Task, error) {
 
 	vAppNetworkConfig, err := vapp.GetNetworkConfig()
@@ -752,6 +752,7 @@ func (vapp *VApp) AddRAWNetworkConfig(orgvdcnetworks []*types.OrgVDCNetwork) (Ta
 }
 
 // Function allows to create isolated network for vApp. This is equivalent to vCD UI function - vApp network creation.
+// Deprecated: in favor of vapp.AddNetwork
 func (vapp *VApp) AddIsolatedNetwork(newIsolatedNetworkSettings *VappNetworkSettings) (Task, error) {
 
 	err := validateNetworkConfigSettings(newIsolatedNetworkSettings)
@@ -795,8 +796,30 @@ func (vapp *VApp) AddIsolatedNetwork(newIsolatedNetworkSettings *VappNetworkSett
 
 }
 
-// Function allows to create nat routed network for vApp. This is equivalent to vCD UI function - vApp network creation with org network.
-func (vapp *VApp) AddNatRoutedNetwork(newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (Task, error) {
+// AddNetwork creates isolated or nat routed(connected to Org VDC network) network for vApp.
+// Returns pointer to types.NetworkConfigSection or error
+// If orgNetwork is nil, then isolated network created.
+func (vapp *VApp) AddNetwork(newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (*types.NetworkConfigSection, error) {
+	task, err := vapp.AddNetworkAsync(newNetworkSettings, orgNetwork)
+	if err != nil {
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
+	}
+
+	vAppNetworkConfig, err := vapp.GetNetworkConfig()
+	if err != nil {
+		return nil, fmt.Errorf("error getting vApp networks: %#v", err)
+	}
+
+	return vAppNetworkConfig, nil
+}
+
+// AddNetworkAsync creates asyncronously isolated or nat routed network for vApp. Returns Task or error
+// If orgNetwork is nil, then isolated network created.
+func (vapp *VApp) AddNetworkAsync(newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (Task, error) {
 
 	err := validateNetworkConfigSettings(newNetworkSettings)
 	if err != nil {
@@ -816,42 +839,73 @@ func (vapp *VApp) AddNatRoutedNetwork(newNetworkSettings *VappNetworkSettings, o
 			DefaultLeaseTime: newNetworkSettings.DhcpSettings.DefaultLeaseTime,
 			MaxLeaseTime:     newNetworkSettings.DhcpSettings.MaxLeaseTime,
 			IPRange:          newNetworkSettings.DhcpSettings.IPRange},
-			FirewallService: &types.FirewallService{IsEnabled: *newNetworkSettings.FirewallEnabled},
-			NatService:      &types.NatService{IsEnabled: *newNetworkSettings.NatEnabled, NatType: "ipTranslation", Policy: "allowTrafficIn"}}
+		}
+	}
+
+	if newNetworkSettings.FirewallEnabled != nil {
+		if networkFeatures == nil {
+			networkFeatures = &types.NetworkFeatures{}
+		}
+		networkFeatures.FirewallService = &types.FirewallService{IsEnabled: *newNetworkSettings.FirewallEnabled}
+	}
+	if newNetworkSettings.FirewallEnabled != nil && newNetworkSettings.NatEnabled != nil {
+		networkFeatures.NatService = &types.NatService{IsEnabled: *newNetworkSettings.NatEnabled, NatType: "ipTranslation", Policy: "allowTrafficIn"}
 	}
 
 	networkConfigurations := vapp.VApp.NetworkConfigSection.NetworkConfig
+	vappConfiguration := types.VAppNetworkConfiguration{
+		NetworkName: newNetworkSettings.Name,
+		Description: newNetworkSettings.Description,
+		Configuration: &types.NetworkConfiguration{
+			FenceMode:        types.FenceModeNAT,
+			GuestVlanAllowed: newNetworkSettings.GuestVLANAllowed,
+			Features:         networkFeatures,
+			IPScopes: &types.IPScopes{IPScope: []*types.IPScope{&types.IPScope{IsInherited: false, Gateway: newNetworkSettings.Gateway,
+				Netmask: newNetworkSettings.NetMask, DNS1: newNetworkSettings.DNS1,
+				DNS2: newNetworkSettings.DNS2, DNSSuffix: newNetworkSettings.DNSSuffix, IsEnabled: true,
+				IPRanges: &types.IPRanges{IPRange: newNetworkSettings.StaticIPRanges}}}},
+			RetainNetInfoAcrossDeployments: newNetworkSettings.RetainIpMacEnabled,
+		},
+		IsDeployed: false,
+	}
+	if orgNetwork != nil {
+		vappConfiguration.Configuration.ParentNetwork = &types.Reference{
+			HREF: orgNetwork.HREF,
+		}
+	}
+
 	networkConfigurations = append(networkConfigurations,
-		types.VAppNetworkConfiguration{
-			NetworkName: newNetworkSettings.Name,
-			Description: newNetworkSettings.Description,
-			Configuration: &types.NetworkConfiguration{
-				FenceMode:        types.FenceModeNAT,
-				GuestVlanAllowed: newNetworkSettings.GuestVLANAllowed,
-				Features:         networkFeatures,
-				IPScopes: &types.IPScopes{IPScope: []*types.IPScope{&types.IPScope{IsInherited: false, Gateway: newNetworkSettings.Gateway,
-					Netmask: newNetworkSettings.NetMask, DNS1: newNetworkSettings.DNS1,
-					DNS2: newNetworkSettings.DNS2, DNSSuffix: newNetworkSettings.DNSSuffix, IsEnabled: true,
-					IPRanges: &types.IPRanges{IPRange: newNetworkSettings.StaticIPRanges}}}},
-				ParentNetwork: &types.Reference{
-					HREF: orgNetwork.HREF,
-				},
-				RetainNetInfoAcrossDeployments: newNetworkSettings.RetainIpMacEnabled,
-			},
-			IsDeployed: false,
-		})
+		vappConfiguration)
 
 	return updateNetworkConfigurations(vapp, networkConfigurations)
 }
 
-// Function allows to create nat routed network for vApp. This is equivalent to vCD UI function - vApp network creation with org network.
-func (vapp *VApp) AddOrgNetwork(newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork, isFenced bool) (Task, error) {
-
-	//TODO validation
-	/*err := validateNetworkConfigSettings(newNetworkSettings)
+// AddOrgNetwork adds Org VDC network as vApp network.
+// Returns pointer to types.NetworkConfigSection or error
+func (vapp *VApp) AddOrgNetwork(newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork, isFenced bool) (*types.NetworkConfigSection, error) {
+	task, err := vapp.AddOrgNetworkAsync(newNetworkSettings, orgNetwork, isFenced)
 	if err != nil {
-		return Task{}, err
-	}*/
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
+	}
+
+	vAppNetworkConfig, err := vapp.GetNetworkConfig()
+	if err != nil {
+		return nil, fmt.Errorf("error getting vApp networks: %#v", err)
+	}
+
+	return vAppNetworkConfig, nil
+}
+
+// AddOrgNetworkAsync adds asyncronously Org VDC network as vApp network. Returns Task or error
+func (vapp *VApp) AddOrgNetworkAsync(newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork, isFenced bool) (Task, error) {
+
+	if orgNetwork == nil {
+		return Task{}, errors.New("org VDC network is missing")
+	}
 
 	fenceMode := types.FenceModeBridged
 	if isFenced {
@@ -859,28 +913,36 @@ func (vapp *VApp) AddOrgNetwork(newNetworkSettings *VappNetworkSettings, orgNetw
 	}
 
 	networkConfigurations := vapp.VApp.NetworkConfigSection.NetworkConfig
-	networkConfigurations = append(networkConfigurations,
-		types.VAppNetworkConfiguration{
-			NetworkName: orgNetwork.Name,
-			Configuration: &types.NetworkConfiguration{
-				FenceMode: fenceMode,
-				Features: &types.NetworkFeatures{
-					FirewallService: &types.FirewallService{IsEnabled: *newNetworkSettings.FirewallEnabled},
-					NatService:      &types.NatService{IsEnabled: *newNetworkSettings.NatEnabled, NatType: "ipTranslation", Policy: "allowTrafficIn"},
-				},
-				ParentNetwork: &types.Reference{
-					HREF: orgNetwork.HREF,
-				},
-				RetainNetInfoAcrossDeployments: newNetworkSettings.RetainIpMacEnabled,
+	var services types.NetworkFeatures
+	var natService types.NatService
+	if newNetworkSettings.NatEnabled != nil {
+		natService = types.NatService{IsEnabled: *newNetworkSettings.NatEnabled, NatType: "ipTranslation", Policy: "allowTrafficIn"}
+	}
+	if newNetworkSettings.FirewallEnabled != nil {
+		services = types.NetworkFeatures{
+			FirewallService: &types.FirewallService{IsEnabled: *newNetworkSettings.FirewallEnabled},
+			NatService:      &natService,
+		}
+	}
+	vappConfiguration := types.VAppNetworkConfiguration{
+		NetworkName: orgNetwork.Name,
+		Configuration: &types.NetworkConfiguration{
+			FenceMode: fenceMode,
+			Features:  &services,
+			ParentNetwork: &types.Reference{
+				HREF: orgNetwork.HREF,
 			},
-			IsDeployed: false,
-		})
+			RetainNetInfoAcrossDeployments: newNetworkSettings.RetainIpMacEnabled,
+		},
+		IsDeployed: false,
+	}
+	networkConfigurations = append(networkConfigurations,
+		vappConfiguration)
 
 	return updateNetworkConfigurations(vapp, networkConfigurations)
 
 }
 
-// TODO
 // Returns the UUID part of an HREF
 // Similar to getBareEntityUuid, but tailored to HREF
 func GetUuidFromHref(href string) (string, error) {
@@ -891,13 +953,9 @@ func GetUuidFromHref(href string) (string, error) {
 	//        1 group of 8 hexadecimal digits
 	//        3 groups of 4 hexadecimal digits
 	//        1 group of 12 hexadecimal digits
-	reGetID := regexp.MustCompile(`^https://.+/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/.+/.+$`)
-	matchList := reGetID.FindAllStringSubmatch(href, -1)
 
-	if len(matchList) == 0 || len(matchList[0]) < 2 {
-		reGetID = regexp.MustCompile(`^https://.+/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$`)
-		matchList = reGetID.FindAllStringSubmatch(href, -1)
-	}
+	reGetID := regexp.MustCompile(`^https://.+/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}).*$`)
+	matchList := reGetID.FindAllStringSubmatch(href, -1)
 
 	if len(matchList) == 0 || len(matchList[0]) < 2 {
 		return "", fmt.Errorf("error extracting UUID from '%s'", href)
@@ -906,9 +964,30 @@ func GetUuidFromHref(href string) (string, error) {
 	return matchList[0][1], nil
 }
 
-// Function allows to update nat routed network for vApp. This is equivalent to vCD UI function - vApp network creation with org network.
-func (vapp *VApp) UpdateNetworkConfig(networkSettingsToUpdate *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (Task, error) {
-	util.Logger.Printf("[TRACE] UpdateNetworkConfig with values: %#v and connect to org network: %#v", networkSettingsToUpdate, orgNetwork)
+// UpdateNetwork updates vApp networks(isolated or connected to org VDC network)
+// Returns pointer to types.NetworkConfigSection or error
+func (vapp *VApp) UpdateNetwork(newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (*types.NetworkConfigSection, error) {
+	task, err := vapp.UpdateNetworkAsync(newNetworkSettings, orgNetwork)
+	if err != nil {
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
+	}
+
+	vAppNetworkConfig, err := vapp.GetNetworkConfig()
+	if err != nil {
+		return nil, fmt.Errorf("error getting vApp networks: %#v", err)
+	}
+
+	return vAppNetworkConfig, nil
+}
+
+// UpdateNetworkAsync asyncronously updates vApp networks(isolated or connected to org VDC network).
+// Returns task or error
+func (vapp *VApp) UpdateNetworkAsync(networkSettingsToUpdate *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (Task, error) {
+	util.Logger.Printf("[TRACE] UpdateNetworkAsync with values: %#v and connect to org network: %#v", networkSettingsToUpdate, orgNetwork)
 	currentNetworkConfiguration, err := vapp.GetNetworkConfig()
 	if err != nil {
 		return Task{}, err
@@ -989,9 +1068,30 @@ func (vapp *VApp) UpdateNetworkConfig(networkSettingsToUpdate *VappNetworkSettin
 	return updateNetworkConfigurations(vapp, currentNetworkConfiguration.NetworkConfig)
 }
 
-// Function allows to update nat routed network for vApp. This is equivalent to vCD UI function - vApp network creation with org network.
-func (vapp *VApp) UpdateOrgNetworkConfig(networkSettingsToUpdate *VappNetworkSettings, isFenced bool) (Task, error) {
-	util.Logger.Printf("[TRACE] UpdateOrgNetworkConfig with values: %#v ", networkSettingsToUpdate)
+// UpdateOrgNetwork updates to vApp added org VDC network
+// Returns pointer to types.NetworkConfigSection or error
+func (vapp *VApp) UpdateOrgNetwork(newNetworkSettings *VappNetworkSettings, isFenced bool) (*types.NetworkConfigSection, error) {
+	task, err := vapp.UpdateOrgNetworkAsync(newNetworkSettings, isFenced)
+	if err != nil {
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
+	}
+
+	vAppNetworkConfig, err := vapp.GetNetworkConfig()
+	if err != nil {
+		return nil, fmt.Errorf("error getting vApp networks: %#v", err)
+	}
+
+	return vAppNetworkConfig, nil
+}
+
+// UpdateOrgNetworkAsync asyncronously updates to vApp added org VDC network
+// Returns task or error
+func (vapp *VApp) UpdateOrgNetworkAsync(networkSettingsToUpdate *VappNetworkSettings, isFenced bool) (Task, error) {
+	util.Logger.Printf("[TRACE] UpdateOrgNetworkAsync with values: %#v ", networkSettingsToUpdate)
 	currentNetworkConfiguration, err := vapp.GetNetworkConfig()
 	if err != nil {
 		return Task{}, err
