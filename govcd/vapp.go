@@ -1160,7 +1160,57 @@ func validateNetworkConfigSettings(networkSettings *VappNetworkSettings) error {
 	return nil
 }
 
+// RemoveNetwork removes any network from vApp
+// Returns pointer to types.NetworkConfigSection or error
+func (vapp *VApp) RemoveNetwork(id string) (*types.NetworkConfigSection, error) {
+	task, err := vapp.RemoveNetworkAsync(id)
+	if err != nil {
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
+	}
+
+	vAppNetworkConfig, err := vapp.GetNetworkConfig()
+	if err != nil {
+		return nil, fmt.Errorf("error getting vApp networks: %#v", err)
+	}
+
+	return vAppNetworkConfig, nil
+}
+
+// RemoveNetworkAsync asyncronously removes vApp any network
+// Accepts network Id or name
+func (vapp *VApp) RemoveNetworkAsync(id string) (Task, error) {
+
+	if id == "" {
+		return Task{}, fmt.Errorf("network id/name can't be empty")
+	}
+
+	networkConfigurations := vapp.VApp.NetworkConfigSection.NetworkConfig
+	isNetworkFound := false
+	for index, networkConfig := range networkConfigurations {
+		networkId, err := GetUuidFromHref(networkConfig.Link.HREF)
+		if err != nil {
+			return Task{}, fmt.Errorf("unable to get network ID from HREF: %s", err)
+		}
+		if networkId == id || networkConfig.NetworkName == id {
+			isNetworkFound = true
+			networkConfigurations = append(networkConfigurations[:index], networkConfigurations[index+1:]...)
+			break
+		}
+	}
+
+	if !isNetworkFound {
+		return Task{}, fmt.Errorf("network to remove %s, wasn't found", id)
+	}
+
+	return updateNetworkConfigurations(vapp, networkConfigurations)
+}
+
 // Removes vApp isolated network
+// Deprecated: in favor vapp.RemoveNetwork
 func (vapp *VApp) RemoveIsolatedNetwork(networkName string) (Task, error) {
 
 	if networkName == "" {
