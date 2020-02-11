@@ -7,6 +7,10 @@
 * Change `int` and `bool` fields from types.VAppTemplateLeaseSettings and VAppLeaseSettings into pointers
 * Added method `catalog.GetVappTemplateByHref`, and expose methods `vdc.GetEdgeGatewayByHref` and `vdc.GetEdgeGatewayRecordsType`
 
+BUGS FIXED:
+* A data race in catalog/media item upload status reporting [#288](https://github.com/vmware/go-vcloud-director/pull/288)
+
+
 ## 2.5.1 (December 12, 2019)
 
 BUGS FIXED:
