@@ -155,6 +155,7 @@ structure instead of a pointer, return a nil error on not-found, etc).
 
 Functions dealing with different versions should use a matrix structure to identify which calls to run according to the 
 highest API version supported by vCD. An example can be found in adminvdc.go.
+
 Note: use this pattern for adding new vCD functionality, which is not available in the earliest API version supported 
 by the code base (as indicated by `Client.APIVersion`).
 
