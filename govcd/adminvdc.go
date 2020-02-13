@@ -25,7 +25,7 @@ func NewAdminVdc(cli *Client) *AdminVdc {
 	}
 }
 
-// vdcVersionedFuncs is a generic representation of a VDC creation across multiple versions
+// vdcVersionedFuncs is a generic representation of VDC CRUD operations across multiple versions
 type vdcVersionedFuncs struct {
 	SupportedVersion string
 	CreateVdc        func(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*Vdc, error)
