@@ -185,11 +185,11 @@ var vdcVersionedFuncsV97 = vdcVersionedFuncs{
 }
 
 var vdcVersionedFuncsByVcdVersion = map[string]vdcVersionedFuncs{
-	"vdc9.0":  vdcCrudV90,
-	"vdc9.1":  vdcCrudV90,
-	"vdc9.5":  vdcCrudV90,
-	"vdc9.7":  vdcCrudV97,
-	"vdc10.0": vdcCrudV97,
+	"vdc9.0":  vdcVersionedFuncsV90,
+	"vdc9.1":  vdcVersionedFuncsV90,
+	"vdc9.5":  vdcVersionedFuncsV90,
+	"vdc9.7":  vdcVersionedFuncsV97,
+	"vdc10.0": vdcVersionedFuncsV97
 }
 
 func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration) (*Vdc, error) {

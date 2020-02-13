@@ -25,7 +25,7 @@ func NewAdminVdc(cli *Client) *AdminVdc {
 	}
 }
 
-// vdcVersionedFuncs holds interface of functions
+// vdcVersionedFuncs is a generic representation of a VDC creation across multiple versions
 type vdcVersionedFuncs struct {
 	SupportedVersion string
 	CreateVdc        func(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*Vdc, error)
@@ -179,7 +179,7 @@ func (adminOrg *AdminOrg) CreateVdc(vdcConfiguration *types.VdcConfiguration) (T
 	return *task, nil
 }
 
-// Creates the vdc and waits for the asynchronous task to complete.
+// Creates the VDC and waits for the asynchronous task to complete.
 // Deprecated in favor of adminOrg.CreateOrgVdc
 func (adminOrg *AdminOrg) CreateVdcWait(vdcDefinition *types.VdcConfiguration) error {
 	task, err := adminOrg.CreateVdc(vdcDefinition)
@@ -188,7 +188,7 @@ func (adminOrg *AdminOrg) CreateVdcWait(vdcDefinition *types.VdcConfiguration) e
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
-		return fmt.Errorf("couldn't finish creating vdc %s", err)
+		return fmt.Errorf("couldn't finish creating VDC %s", err)
 	}
 	return nil
 }
@@ -408,7 +408,7 @@ func createVdcV97(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) 
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
-		return nil, fmt.Errorf("couldn't finish creating vdc %s", err)
+		return nil, fmt.Errorf("couldn't finish creating VDC %s", err)
 	}
 
 	vdc, err := adminOrg.GetVDCByName(vdcConfiguration.Name, true)
