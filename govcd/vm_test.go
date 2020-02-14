@@ -869,7 +869,7 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 
 	// Try to force operation on deployed VM and expect an error
 	err = vm.PowerOnAndForceCustomization()
-	check.Assert(err, Not(IsNil))
+	check.Assert(err, NotNil)
 
 	// VM _must_ be un-deployed because PowerOnAndForceCustomization task will never finish (and
 	// probably not triggered) if it is not un-deployed.
