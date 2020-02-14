@@ -151,6 +151,66 @@ prior to attempting a search.
 Note: We are in the process of replacing methods that don't adhere to the above principles (for example, return a
 structure instead of a pointer, return a nil error on not-found, etc).
 
+## Implementing functions to support different vCD API versions
+
+Functions dealing with different versions should use a matrix structure to identify which calls to run according to the 
+highest API version supported by vCD. An example can be found in adminvdc.go.
+
+Note: use this pattern for adding new vCD functionality, which is not available in the earliest API version supported 
+by the code base (as indicated by `Client.APIVersion`).
+
+```
+type vdcVersionedFunc struct {
+	SupportedVersion string
+	CreateVdc        func(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (*Vdc, error)
+	CreateVdcAsync   func(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfiguration) (Task, error)
+	UpdateVdc        func(adminVdc *AdminVdc) (*AdminVdc, error)
+	UpdateVdcAsync   func(adminVdc *AdminVdc) (Task, error)
+}
+
+var vdcVersionedFuncsV90 = vdcVersionedFuncs{
+	SupportedVersion: "29.0",
+	CreateVdc:        createVdc,
+	CreateVdcAsync:   createVdcAsync,
+	UpdateVdc:        updateVdc,
+	UpdateVdcAsync:   updateVdcAsync,
+}
+
+var vdcVersionedFuncsV97 = vdcVersionedFuncs{
+	SupportedVersion: "32.0",
+	CreateVdc:        createVdcV97,
+	CreateVdcAsync:   createVdcAsyncV97,
+	UpdateVdc:        updateVdcV97,
+	UpdateVdcAsync:   updateVdcAsyncV97,
+}
+
+var vdcVersionedFuncsByVcdVersion = map[string]vdcVersionedFuncs{
+	"vdc9.0":  vdcVersionedFuncsV90,
+	"vdc9.1":  vdcVersionedFuncsV90,
+	"vdc9.5":  vdcVersionedFuncsV90,
+	"vdc9.7":  vdcVersionedFuncsV97,
+	"vdc10.0": vdcVersionedFuncsV97
+}
+
+func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration) (*Vdc, error) {
+	apiVersion, err := adminOrg.client.maxSupportedVersion()
+	if err != nil {
+		return nil, err
+	}
+	vdcFunctions, ok := vdcVersionedFuncsByVcdVersion["vdc"+apiVersionToVcdVersion[apiVersion]]
+	if !ok {
+		return nil, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
+	}
+	if vdcFunctions.CreateVdc == nil {
+		return nil, fmt.Errorf("function CreateVdc is not defined for %s", "vdc"+apiVersion)
+	}
+    util.Logger.Printf("[DEBUG] CreateOrgVdc call function for version %s", vdcFunctions.SupportedVersion)
+	return vdcFunctions.CreateVdc(adminOrg, vdcConfiguration)
+}
+```
+
+ 
+
 ## Testing
 
 Every feature in the library must include testing. See [TESTING.md](https://github.com/vmware/go-vcloud-director/blob/master/TESTING.md) for more info.
