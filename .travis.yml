@@ -9,7 +9,6 @@ script:
     - env GO111MODULE=on make
 
 after_success:
-    - echo "Build Successful!" 
+    - echo "Build Successful!"
 after_failure:
-    - echo "Build Failed!" 
-
+    - echo "Build Failed!"
