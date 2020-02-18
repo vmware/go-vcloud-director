@@ -226,7 +226,10 @@ func (vapp *VApp) AddNewVMWithStorageProfile(name string, vappTemplate VAppTempl
 // ======================================================================
 func (vapp *VApp) RemoveVM(vm VM) error {
 
-	vapp.Refresh()
+	err := vapp.Refresh()
+	if err != nil {
+		return fmt.Errorf("error refreshing vApp before removing VM: %s", err)
+	}
 	task := NewTask(vapp.client)
 	if vapp.VApp.Tasks != nil {
 		for _, taskItem := range vapp.VApp.Tasks.Task {
