@@ -945,7 +945,7 @@ func (vapp *VApp) AddOrgNetworkAsync(newNetworkSettings *VappNetworkSettings, or
 
 }
 
-// UpdateNetwork updates vApp networks(isolated or connected to org VDC network)
+// UpdateNetwork updates vApp networks (isolated or connected to Org VDC network)
 // Returns pointer to types.NetworkConfigSection or error
 func (vapp *VApp) UpdateNetwork(newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (*types.NetworkConfigSection, error) {
 	task, err := vapp.UpdateNetworkAsync(newNetworkSettings, orgNetwork)
@@ -965,7 +965,7 @@ func (vapp *VApp) UpdateNetwork(newNetworkSettings *VappNetworkSettings, orgNetw
 	return vAppNetworkConfig, nil
 }
 
-// UpdateNetworkAsync asyncronously updates vApp networks(isolated or connected to org VDC network).
+// UpdateNetworkAsync asyncronously updates vApp networks (isolated or connected to Org VDC network).
 // Returns task or error
 func (vapp *VApp) UpdateNetworkAsync(networkSettingsToUpdate *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (Task, error) {
 	util.Logger.Printf("[TRACE] UpdateNetworkAsync with values: %#v and connect to org network: %#v", networkSettingsToUpdate, orgNetwork)
@@ -1056,7 +1056,7 @@ func (vapp *VApp) UpdateNetworkAsync(networkSettingsToUpdate *VappNetworkSetting
 	return updateNetworkConfigurations(vapp, currentNetworkConfiguration.NetworkConfig)
 }
 
-// UpdateOrgNetwork updates to vApp added org VDC network
+// UpdateOrgNetwork updates Org VDC network which is part of a vApp
 // Returns pointer to types.NetworkConfigSection or error
 func (vapp *VApp) UpdateOrgNetwork(newNetworkSettings *VappNetworkSettings, isFenced bool) (*types.NetworkConfigSection, error) {
 	task, err := vapp.UpdateOrgNetworkAsync(newNetworkSettings, isFenced)
@@ -1076,7 +1076,7 @@ func (vapp *VApp) UpdateOrgNetwork(newNetworkSettings *VappNetworkSettings, isFe
 	return vAppNetworkConfig, nil
 }
 
-// UpdateOrgNetworkAsync asyncronously updates to vApp added org VDC network
+// UpdateOrgNetworkAsync asyncronously updates Org VDC network which is part of a vApp
 // Returns task or error
 func (vapp *VApp) UpdateOrgNetworkAsync(networkSettingsToUpdate *VappNetworkSettings, isFenced bool) (Task, error) {
 	util.Logger.Printf("[TRACE] UpdateOrgNetworkAsync with values: %#v ", networkSettingsToUpdate)
@@ -1148,7 +1148,7 @@ func validateNetworkConfigSettings(networkSettings *VappNetworkSettings) error {
 	return nil
 }
 
-// RemoveNetwork removes any network from vApp
+// RemoveNetwork removes any network (be it isolated or connected to an Org Network) from vApp
 // Returns pointer to types.NetworkConfigSection or error
 func (vapp *VApp) RemoveNetwork(id string) (*types.NetworkConfigSection, error) {
 	task, err := vapp.RemoveNetworkAsync(id)
@@ -1168,12 +1168,12 @@ func (vapp *VApp) RemoveNetwork(id string) (*types.NetworkConfigSection, error) 
 	return vAppNetworkConfig, nil
 }
 
-// RemoveNetworkAsync asyncronously removes vApp any network
-// Accepts network Id or name
+// RemoveNetworkAsync asyncronously removes any network (be it isolated or connected to an Org Network) from vApp
+// Accepts network ID or name
 func (vapp *VApp) RemoveNetworkAsync(id string) (Task, error) {
 
 	if id == "" {
-		return Task{}, fmt.Errorf("network id/name can't be empty")
+		return Task{}, fmt.Errorf("network ID/name can't be empty")
 	}
 
 	networkConfigurations := vapp.VApp.NetworkConfigSection.NetworkConfig

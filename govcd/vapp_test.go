@@ -629,8 +629,8 @@ func (vcd *TestVCD) Test_RemoveAllNetworks(check *C) {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
 
-	networkName := "AddAndRemoveNetworkTest"
-	networkName2 := "AddAndRemoveNetworkTest2"
+	networkName := "Test_RemoveAllNetworks"
+	networkName2 := "Test_RemoveAllNetworks2"
 	const gateway = "192.168.0.1"
 	const netmask = "255.255.255.0"
 	const dns1 = "8.8.8.8"
@@ -778,7 +778,7 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedVappNetwork(check *C) {
 	}
 
 	// Add Metadata
-	networkName := "AddAndRemoveVappNetworkTest"
+	networkName := "Test_AddAndRemoveIsolatedVappNetwork"
 	description := "Created in test"
 	const gateway = "192.168.0.1"
 	const netmask = "255.255.255.0"
@@ -859,7 +859,7 @@ func (vcd *TestVCD) Test_AddAndRemoveNatVappNetwork(check *C) {
 	}
 
 	// Add Metadata
-	networkName := "AddAndRemoveVappNetworkTest"
+	networkName := "Test_AddAndRemoveNatVappNetwork"
 	description := "Created in test"
 	const gateway = "192.168.0.1"
 	const netmask = "255.255.255.0"
@@ -952,7 +952,7 @@ func (vcd *TestVCD) Test_AddAndRemoveVappNetworkWithMinimumValues(check *C) {
 	}
 
 	// Add Metadata
-	networkName := "AddAndRemoveVappNetworkTest"
+	networkName := "Test_AddAndRemoveVappNetworkWithMinimumValues"
 	const gateway = "192.168.0.1"
 	const netmask = "255.255.255.0"
 
