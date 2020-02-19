@@ -12,4 +12,3 @@ after_success:
     - echo "Build Successful!"
 after_failure:
     - echo "Build Failed!"
-

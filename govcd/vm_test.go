@@ -1254,6 +1254,35 @@ func detachIndependentDisk(vcd *TestVCD, check *C, disk *Disk) {
 	check.Assert(err, IsNil)
 }
 
+func (vcd *TestVCD) Test_VmGetParentvAppAndVdc(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp wasn't properly created")
+	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+	vapp := vcd.findFirstVapp()
+	if vapp.VApp.Name == "" {
+		check.Skip("Disabled: No suitable vApp found in vDC")
+	}
+	vm, vmName := vcd.findFirstVm(vapp)
+	if vm.Name == "" {
+		check.Skip("Disabled: No suitable VM found in vDC")
+	}
+
+	newVM, err := vcd.client.Client.GetVMByHref(vm.HREF)
+	check.Assert(err, IsNil)
+	check.Assert(newVM.VM.Name, Equals, vmName)
+	check.Assert(newVM.VM.VirtualHardwareSection.Item, NotNil)
+
+	parentvApp, err := newVM.GetParentVApp()
+	check.Assert(err, IsNil)
+	check.Assert(parentvApp.VApp.HREF, Equals, vapp.VApp.HREF)
+
+	parentVdc, err := newVM.GetParentVdc()
+	check.Assert(err, IsNil)
+	check.Assert(parentVdc.Vdc.Name, Equals, vcd.config.VCD.Vdc)
+}
+
 func deleteVapp(vcd *TestVCD, name string) error {
 	vapp, err := vcd.vdc.GetVAppByName(name, true)
 	if err != nil {
