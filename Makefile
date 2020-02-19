@@ -7,7 +7,7 @@ default: fmtcheck vet static build
 # test runs the test suite and vets the code
 test: testunit
 	@echo "==> Running Functional Tests"
-	cd govcd && go test -tags "functional" -timeout=90m -check.vv .
+	cd govcd && go test -tags "functional" -timeout=200m -check.vv .
 
 # testunit runs the unit tests
 testunit: fmtcheck
