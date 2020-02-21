@@ -527,17 +527,21 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 			NetworkConnectionIndex:  1,
 		})
 
+	if config.VCD.Network.Net1 != "" {
+		// Attach first vdc network to vApp
+		vdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+		check.Assert(err, IsNil)
+		_, err = vapp.AddOrgNetwork(&VappNetworkSettings{}, vdcNetwork.OrgVDCNetwork, false)
+		check.Assert(err, IsNil)
+	}
+
 	// Test with two different networks if we have them
 	if config.VCD.Network.Net2 != "" {
 		// Attach second vdc network to vApp
 		vdcNetwork2, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net2, false)
 		check.Assert(err, IsNil)
-		orgvdcnetworks := []*types.OrgVDCNetwork{vdcNetwork2.OrgVDCNetwork}
-		task, err := vapp.AddRAWNetworkConfig(orgvdcnetworks)
+		_, err = vapp.AddOrgNetwork(&VappNetworkSettings{}, vdcNetwork2.OrgVDCNetwork, false)
 		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
-		check.Assert(task.Task.Status, Equals, "success")
 
 		desiredNetConfig.NetworkConnection = append(desiredNetConfig.NetworkConnection,
 			&types.NetworkConnection{
@@ -601,6 +605,7 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
+
 }
 
 func verifyNetworkConnectionSection(check *C, actual, desired *types.NetworkConnectionSection) {
@@ -667,17 +672,11 @@ func (vcd *TestVCD) Test_RemoveAllNetworks(check *C) {
 		GuestVLANAllowed: &guestVlanAllowed,
 	}
 
-	task, err := vcd.vapp.AddIsolatedNetwork(vappNetworkSettings)
+	_, err := vcd.vapp.AddNetwork(vappNetworkSettings, nil)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(task.Task.Status, Equals, "success")
 
-	task, err = vcd.vapp.AddIsolatedNetwork(vappNetworkSettings2)
+	_, err = vcd.vapp.AddNetwork(vappNetworkSettings2, nil)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(task.Task.Status, Equals, "success")
 
 	err = vcd.vapp.Refresh()
 	check.Assert(err, IsNil)
@@ -686,7 +685,7 @@ func (vcd *TestVCD) Test_RemoveAllNetworks(check *C) {
 
 	check.Assert(len(networkConfig.NetworkConfig), Equals, 2)
 
-	task, err = vcd.vapp.RemoveAllNetworks()
+	task, err := vcd.vapp.RemoveAllNetworks()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
