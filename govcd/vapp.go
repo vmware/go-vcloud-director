@@ -977,7 +977,7 @@ func (vapp *VApp) UpdateNetworkAsync(networkSettingsToUpdate *VappNetworkSetting
 	var networkToUpdate types.VAppNetworkConfiguration
 	var networkToUpdateIndex int
 	for index, networkConfig := range currentNetworkConfiguration.NetworkConfig {
-		uuid, err := GetUuidFromHref(networkConfig.Link.HREF)
+		uuid, err := GetUuidFromHref(networkConfig.Link.HREF, false)
 		if err != nil {
 			return Task{}, err
 		}
@@ -1089,7 +1089,7 @@ func (vapp *VApp) UpdateOrgNetworkAsync(networkSettingsToUpdate *VappNetworkSett
 	var networkToUpdateIndex int
 
 	for index, networkConfig := range currentNetworkConfiguration.NetworkConfig {
-		uuid, err := GetUuidFromHref(networkConfig.Link.HREF)
+		uuid, err := GetUuidFromHref(networkConfig.Link.HREF, false)
 		if err != nil {
 			return Task{}, err
 		}
@@ -1180,7 +1180,7 @@ func (vapp *VApp) RemoveNetworkAsync(identifier string) (Task, error) {
 	networkConfigurations := vapp.VApp.NetworkConfigSection.NetworkConfig
 	isNetworkFound := false
 	for index, networkConfig := range networkConfigurations {
-		networkId, err := GetUuidFromHref(networkConfig.Link.HREF)
+		networkId, err := GetUuidFromHref(networkConfig.Link.HREF, false)
 		if err != nil {
 			return Task{}, fmt.Errorf("unable to get network ID from HREF: %s", err)
 		}

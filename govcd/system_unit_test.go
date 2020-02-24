@@ -128,9 +128,9 @@ func Test_BareEntityID(t *testing.T) {
 	}
 }
 
-// Tests reliability of getUuidFromHref, which returns a bare UUID from an
-// entity HREF field
-func Test_GetUuidFromHref(t *testing.T) {
+// Tests reliability of GetUuidFromHref, which returns a bare UUID from an
+// entity HREF field when id is at the end of URL
+func Test_GetUuidFromHrefIdAtEnd(t *testing.T) {
 
 	type idTest struct {
 		rawHref  string
@@ -207,7 +207,7 @@ func Test_GetUuidFromHref(t *testing.T) {
 	}
 
 	for _, it := range idTestList {
-		bareId, err := getUuidFromHref(it.rawHref)
+		bareId, err := GetUuidFromHref(it.rawHref, true)
 		if err != nil {
 			t.Logf("error extracting UUID from HREF: %s", err)
 			t.Fail()
@@ -222,7 +222,7 @@ func Test_GetUuidFromHref(t *testing.T) {
 		}
 	}
 	for _, it := range idTestExpectedToFailList {
-		bareId, err := getUuidFromHref(it.rawHref)
+		bareId, err := GetUuidFromHref(it.rawHref, true)
 		if err == nil {
 			t.Logf("unexpected success with raw HREF %s", it.rawHref)
 			t.Fail()
@@ -239,8 +239,8 @@ func Test_GetUuidFromHref(t *testing.T) {
 }
 
 // Tests reliability of GetUuidFromHref, which returns a bare UUID from an
-// entity HREF field
-func Test_PublicGetUuidFromHref(t *testing.T) {
+// entity HREF field when Id is not the end of URL
+func Test_GetUuidFromHref(t *testing.T) {
 
 	type idTest struct {
 		rawHref  string
@@ -313,7 +313,7 @@ func Test_PublicGetUuidFromHref(t *testing.T) {
 	}
 
 	for _, it := range idTestList {
-		bareId, err := GetUuidFromHref(it.rawHref)
+		bareId, err := GetUuidFromHref(it.rawHref, false)
 		if err != nil {
 			t.Logf("error extracting UUID from HREF: %s", err)
 			t.Fail()
@@ -328,7 +328,7 @@ func Test_PublicGetUuidFromHref(t *testing.T) {
 		}
 	}
 	for _, it := range idTestExpectedToFailList {
-		bareId, err := GetUuidFromHref(it.rawHref)
+		bareId, err := GetUuidFromHref(it.rawHref, false)
 		if err == nil {
 			t.Logf("unexpected success with raw HREF %s", it.rawHref)
 			t.Fail()
