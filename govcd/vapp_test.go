@@ -9,6 +9,7 @@ package govcd
 import (
 	"fmt"
 	"regexp"
+	"sort"
 
 	. "gopkg.in/check.v1"
 
@@ -617,9 +618,14 @@ func verifyNetworkConnectionSection(check *C, actual, desired *types.NetworkConn
 	check.Assert(len(actual.NetworkConnection), Equals, len(desired.NetworkConnection))
 	check.Assert(actual.PrimaryNetworkConnectionIndex, Equals, desired.PrimaryNetworkConnectionIndex)
 
-	for index := range actual.NetworkConnection {
-		actualNic := actual.NetworkConnection[index]
-		desiredNic := desired.NetworkConnection[index]
+	sort.SliceStable(actual.NetworkConnection, func(i, j int) bool {
+		return actual.NetworkConnection[i].NetworkConnectionIndex <
+			actual.NetworkConnection[j].NetworkConnectionIndex
+	})
+
+	for _, nic := range actual.NetworkConnection {
+		actualNic := actual.NetworkConnection[nic.NetworkConnectionIndex]
+		desiredNic := desired.NetworkConnection[nic.NetworkConnectionIndex]
 
 		check.Assert(actualNic.MACAddress, Not(Equals), "")
 		check.Assert(actualNic.NetworkAdapterType, Not(Equals), "")
