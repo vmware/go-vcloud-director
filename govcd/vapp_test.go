@@ -460,8 +460,9 @@ func (vcd *TestVCD) Test_AddNewVMNilNIC(check *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	check.Assert(err, IsNil)
 
-	vapp := vcd.findFirstVapp()
-
+	vapp, err := createVappForTest(vcd, "Test_AddNewVMNilNIC")
+	check.Assert(err, IsNil)
+	check.Assert(vapp, NotNil)
 	task, err := vapp.AddNewVM(check.TestName(), vapptemplate, nil, true)
 
 	check.Assert(err, IsNil)
@@ -476,6 +477,11 @@ func (vcd *TestVCD) Test_AddNewVMNilNIC(check *C) {
 	// Cleanup the created VM
 	err = vapp.RemoveVM(*vm)
 	check.Assert(err, IsNil)
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
 }
 
 // Test_AddNewVMMultiNIC creates a new VM in vApp with multiple network cards
@@ -509,7 +515,9 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	check.Assert(err, IsNil)
 
-	vapp := vcd.findFirstVapp()
+	vapp, err := createVappForTest(vcd, "Test_AddNewVMMultiNIC")
+	check.Assert(err, IsNil)
+	check.Assert(vapp, NotNil)
 
 	desiredNetConfig := &types.NetworkConnectionSection{}
 	desiredNetConfig.PrimaryNetworkConnectionIndex = 0
@@ -526,14 +534,6 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 			Network:                 types.NoneNetwork,
 			NetworkConnectionIndex:  1,
 		})
-
-	if config.VCD.Network.Net1 != "" {
-		// Attach first vdc network to vApp
-		vdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
-		check.Assert(err, IsNil)
-		_, err = vapp.AddOrgNetwork(&VappNetworkSettings{}, vdcNetwork.OrgVDCNetwork, false)
-		check.Assert(err, IsNil)
-	}
 
 	// Test with two different networks if we have them
 	if config.VCD.Network.Net2 != "" {
@@ -605,7 +605,11 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
-
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
 }
 
 func verifyNetworkConnectionSection(check *C, actual, desired *types.NetworkConnectionSection) {
@@ -844,6 +848,12 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedVappNetwork(check *C) {
 		}
 	}
 	check.Assert(isExist, Equals, false)
+
+	task, err := vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
 }
 
 func (vcd *TestVCD) Test_AddAndRemoveNatVappNetwork(check *C) {
@@ -941,6 +951,12 @@ func (vcd *TestVCD) Test_AddAndRemoveNatVappNetwork(check *C) {
 		}
 	}
 	check.Assert(isExist, Equals, false)
+
+	task, err := vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
 }
 
 func (vcd *TestVCD) Test_AddAndRemoveVappNetworkWithMinimumValues(check *C) {
@@ -1001,6 +1017,12 @@ func (vcd *TestVCD) Test_AddAndRemoveVappNetworkWithMinimumValues(check *C) {
 		}
 	}
 	check.Assert(isExist, Equals, false)
+
+	task, err := vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
 }
 
 func (vcd *TestVCD) Test_AddAndRemoveOrgVappNetworkWithMinimumValues(check *C) {
@@ -1057,6 +1079,12 @@ func (vcd *TestVCD) Test_AddAndRemoveOrgVappNetworkWithMinimumValues(check *C) {
 		}
 	}
 	check.Assert(isExist, Equals, false)
+
+	task, err := vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
 }
 
 func (vcd *TestVCD) Test_AddAndRemoveOrgVappNetwork(check *C) {
@@ -1120,6 +1148,12 @@ func (vcd *TestVCD) Test_AddAndRemoveOrgVappNetwork(check *C) {
 		}
 	}
 	check.Assert(isExist, Equals, false)
+
+	task, err := vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
 }
 
 func createVappForTest(vcd *TestVCD, vappName string) (*VApp, error) {
