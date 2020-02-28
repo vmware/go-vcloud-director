@@ -682,10 +682,10 @@ func (vcd *TestVCD) Test_RemoveAllNetworks(check *C) {
 		GuestVLANAllowed: &guestVlanAllowed,
 	}
 
-	_, err := vcd.vapp.AddNetwork(vappNetworkSettings, nil)
+	_, err := vcd.vapp.CreateVappNetwork(vappNetworkSettings, nil)
 	check.Assert(err, IsNil)
 
-	_, err = vcd.vapp.AddNetwork(vappNetworkSettings2, nil)
+	_, err = vcd.vapp.CreateVappNetwork(vappNetworkSettings2, nil)
 	check.Assert(err, IsNil)
 
 	err = vcd.vapp.Refresh()
@@ -815,7 +815,7 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedVappNetwork(check *C) {
 		Description:      description,
 	}
 
-	vappNetworkConfig, err := vapp.AddNetwork(vappNetworkSettings, nil)
+	vappNetworkConfig, err := vapp.CreateVappNetwork(vappNetworkSettings, nil)
 	check.Assert(err, IsNil)
 	check.Assert(vappNetworkConfig, NotNil)
 
@@ -912,7 +912,7 @@ func (vcd *TestVCD) Test_AddAndRemoveNatVappNetwork(check *C) {
 		RetainIpMacEnabled: &retainIpMacEnabled,
 	}
 
-	vappNetworkConfig, err := vapp.AddNetwork(vappNetworkSettings, orgVdcNetwork.OrgVDCNetwork)
+	vappNetworkConfig, err := vapp.CreateVappNetwork(vappNetworkSettings, orgVdcNetwork.OrgVDCNetwork)
 	check.Assert(err, IsNil)
 	check.Assert(vappNetworkConfig, NotNil)
 
@@ -983,7 +983,7 @@ func (vcd *TestVCD) Test_AddAndRemoveVappNetworkWithMinimumValues(check *C) {
 		NetMask: netmask,
 	}
 
-	vappNetworkConfig, err := vapp.AddNetwork(vappNetworkSettings, nil)
+	vappNetworkConfig, err := vapp.CreateVappNetwork(vappNetworkSettings, nil)
 	check.Assert(err, IsNil)
 	check.Assert(vappNetworkConfig, NotNil)
 
