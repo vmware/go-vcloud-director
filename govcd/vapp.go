@@ -850,6 +850,7 @@ func (vapp *VApp) AddNetworkAsync(newNetworkSettings *VappNetworkSettings, orgNe
 		}
 		networkFeatures.FirewallService = &types.FirewallService{IsEnabled: *newNetworkSettings.FirewallEnabled}
 	}
+	// NAT can not work without fire wall enabled
 	if newNetworkSettings.FirewallEnabled != nil && newNetworkSettings.NatEnabled != nil {
 		networkFeatures.NatService = &types.NatService{IsEnabled: *newNetworkSettings.NatEnabled, NatType: "ipTranslation", Policy: "allowTrafficIn"}
 	}
