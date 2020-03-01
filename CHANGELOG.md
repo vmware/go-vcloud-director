@@ -11,12 +11,12 @@
 * Added methods `EdgeGateway.GetAllNsxvDhcpLeases()`, `EdgeGateway.GetNsxvActiveDhcpLeaseByMac()`
   `VM.WaitForDhcpIpByNicIndexes()`, `VM.GetParentVApp()`, `VM.GetParentVdc()`
   [#283](https://github.com/vmware/go-vcloud-director/pull/283)
-* `types.GetGuestCustomizationSection` now uses pointers for all bool values to distinguish between empty and false value [#xxx]()
-* Deprecated functions `Vapp.Customize()` and `VM.Customize()` in favor of `vm.SetGuestCustomizationSection` [#xxx]()
+* `types.GetGuestCustomizationSection` now uses pointers for all bool values to distinguish between empty and false value [#291](https://github.com/vmware/go-vcloud-director/pull/291)
+* Deprecated functions `Vapp.Customize()` and `VM.Customize()` in favor of `vm.SetGuestCustomizationSection` [#291](https://github.com/vmware/go-vcloud-director/pull/291)
 
 BUGS FIXED:
 * A data race in catalog/media item upload status reporting [#288](https://github.com/vmware/go-vcloud-director/pull/288)
-* Vapp.Customize() and VM.Customize() ignores `changeSid` value and always set it to true [#xxx]()
+* Vapp.Customize() and VM.Customize() ignores `changeSid` value and always set it to true [#291](https://github.com/vmware/go-vcloud-director/pull/291)
 
 ## 2.5.1 (December 12, 2019)
 
