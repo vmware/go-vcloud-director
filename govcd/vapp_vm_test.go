@@ -103,10 +103,10 @@ type getGuestCustomizationSectionGetSetter interface {
 // out settings on all objects implementing such interface
 func guestCustomizationPropertyTester(vcd *TestVCD, check *C, object getGuestCustomizationSectionGetSetter) {
 	setupedGuestCustomizationSection := &types.GuestCustomizationSection{
-		Enabled: true, JoinDomainEnabled: false, UseOrgSettings: false,
+		Enabled: takeBoolPointer(true), JoinDomainEnabled: takeBoolPointer(false), UseOrgSettings: takeBoolPointer(false),
 		DomainUserName: "", DomainName: "", DomainUserPassword: "",
-		AdminPasswordEnabled: true, AdminPassword: "adminPass", AdminPasswordAuto: false,
-		AdminAutoLogonEnabled: true, AdminAutoLogonCount: 15, ResetPasswordRequired: true,
+		AdminPasswordEnabled: takeBoolPointer(true), AdminPassword: "adminPass", AdminPasswordAuto: takeBoolPointer(false),
+		AdminAutoLogonEnabled: takeBoolPointer(true), AdminAutoLogonCount: 15, ResetPasswordRequired: takeBoolPointer(true),
 		CustomizationScript: "ls", ComputerName: "Cname18"}
 
 	guestCustomizationSection, err := object.SetGuestCustomizationSection(setupedGuestCustomizationSection)

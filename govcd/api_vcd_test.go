@@ -1140,7 +1140,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			fastProvisioningValue = true
 		}
 
-		if *adminVdc.AdminVdc.UsesFastProvisioning != fastProvisioningValue {
+		if adminVdc != nil && *adminVdc.AdminVdc.UsesFastProvisioning != fastProvisioningValue {
 			adminVdc.AdminVdc.UsesFastProvisioning = &fastProvisioningValue
 			_, err = adminVdc.Update()
 			if err != nil {
