@@ -965,6 +965,180 @@ func (vcd *TestVCD) Test_AddAndRemoveNatVappNetwork(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
+func (vcd *TestVCD) Test_UpdateVappNetwork(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	if vcd.config.VCD.Network.Net1 == "" {
+		check.Skip("Skipping test because no network was given")
+	}
+
+	vapp, err := createVappForTest(vcd, "Test_UpdateVappNetwork")
+	check.Assert(err, IsNil)
+	check.Assert(vapp, NotNil)
+
+	// Add
+	networkName := "Test_UpdateVappNetwork"
+	description := "Created in test"
+	const gateway = "192.168.0.1"
+	const netmask = "255.255.255.0"
+	const dns1 = "8.8.8.8"
+	const dns2 = "1.1.1.1"
+	const dnsSuffix = "biz.biz"
+	const startAddress = "192.168.0.10"
+	const endAddress = "192.168.0.20"
+	const dhcpStartAddress = "192.168.0.30"
+	const dhcpEndAddress = "192.168.0.40"
+	const maxLeaseTime = 3500
+	const defaultLeaseTime = 2400
+	var guestVlanAllowed = true
+	var fwEnabled = false
+	var natEnabled = false
+	var retainIpMacEnabled = true
+
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	check.Assert(err, IsNil)
+	check.Assert(orgVdcNetwork, NotNil)
+
+	vappNetworkSettings := &VappNetworkSettings{
+		Name:               networkName,
+		Gateway:            gateway,
+		NetMask:            netmask,
+		DNS1:               dns1,
+		DNS2:               dns2,
+		DNSSuffix:          dnsSuffix,
+		StaticIPRanges:     []*types.IPRange{{StartAddress: startAddress, EndAddress: endAddress}},
+		DhcpSettings:       &DhcpSettings{IsEnabled: true, MaxLeaseTime: maxLeaseTime, DefaultLeaseTime: defaultLeaseTime, IPRange: &types.IPRange{StartAddress: dhcpStartAddress, EndAddress: dhcpEndAddress}},
+		GuestVLANAllowed:   &guestVlanAllowed,
+		Description:        description,
+		FirewallEnabled:    &fwEnabled,
+		NatEnabled:         &natEnabled,
+		RetainIpMacEnabled: &retainIpMacEnabled,
+	}
+
+	vappNetworkConfig, err := vapp.CreateVappNetwork(vappNetworkSettings, nil)
+	check.Assert(err, IsNil)
+	check.Assert(vappNetworkConfig, NotNil)
+
+	networkFound := types.VAppNetworkConfiguration{}
+	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
+		if networkConfig.NetworkName == networkName {
+			networkFound = networkConfig
+		}
+	}
+
+	check.Assert(networkFound.Description, Equals, description)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].Gateway, Equals, gateway)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].Netmask, Equals, netmask)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNS1, Equals, dns1)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNS2, Equals, dns2)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNSSuffix, Equals, dnsSuffix)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].StartAddress, Equals, startAddress)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress, Equals, endAddress)
+
+	check.Assert(networkFound.Configuration.Features.DhcpService.IsEnabled, Equals, true)
+	check.Assert(networkFound.Configuration.Features.DhcpService.MaxLeaseTime, Equals, maxLeaseTime)
+	check.Assert(networkFound.Configuration.Features.DhcpService.DefaultLeaseTime, Equals, defaultLeaseTime)
+	check.Assert(networkFound.Configuration.Features.DhcpService.IPRange.StartAddress, Equals, dhcpStartAddress)
+	check.Assert(networkFound.Configuration.Features.DhcpService.IPRange.EndAddress, Equals, dhcpEndAddress)
+
+	var emptyFirewallService *types.FirewallService
+	check.Assert(networkFound.Configuration.Features.FirewallService, Equals, emptyFirewallService)
+	check.Assert(networkFound.Configuration.Features.NatService.IsEnabled, Equals, natEnabled)
+	check.Assert(*networkFound.Configuration.RetainNetInfoAcrossDeployments, Equals, retainIpMacEnabled)
+
+	// Update
+	updateNetworkName := "Test_UpdateVappNetworkUpdated"
+	updateDescription := "Created in test Updated"
+	const updateGateway = "192.168.0.1"
+	const updateNetmask = "255.255.255.0"
+	const updateDns1 = "8.8.8.7"
+	const updateDns2 = "1.1.1.2"
+	const updateDnsSuffix = "biz.biz2"
+	const updateStartAddress = "192.168.0.11"
+	const updateEndAddress = "192.168.0.21"
+	const updateDhcpStartAddress = "192.168.0.31"
+	const updateDhcpEndAddress = "192.168.0.41"
+	const updateMaxLeaseTime = 3400
+	const updateDefaultLeaseTime = 2300
+	var updateGuestVlanAllowed = false
+	var updateFwEnabled = true
+	var updateNatEnabled = true
+	var updateRetainIpMacEnabled = false
+
+	uuid, err := GetUuidFromHref(networkFound.Link.HREF, false)
+	check.Assert(err, IsNil)
+	check.Assert(uuid, NotNil)
+
+	updateVappNetworkSettings := &VappNetworkSettings{
+		ID:                 uuid,
+		Name:               updateNetworkName,
+		Description:        updateDescription,
+		Gateway:            updateGateway,
+		NetMask:            updateNetmask,
+		DNS1:               updateDns1,
+		DNS2:               updateDns2,
+		DNSSuffix:          updateDnsSuffix,
+		StaticIPRanges:     []*types.IPRange{{StartAddress: updateStartAddress, EndAddress: updateEndAddress}},
+		DhcpSettings:       &DhcpSettings{IsEnabled: true, MaxLeaseTime: updateMaxLeaseTime, DefaultLeaseTime: updateDefaultLeaseTime, IPRange: &types.IPRange{StartAddress: updateDhcpStartAddress, EndAddress: updateDhcpEndAddress}},
+		GuestVLANAllowed:   &updateGuestVlanAllowed,
+		FirewallEnabled:    &updateFwEnabled,
+		NatEnabled:         &updateNatEnabled,
+		RetainIpMacEnabled: &updateRetainIpMacEnabled,
+	}
+
+	vappNetworkConfig, err = vapp.UpdateNetwork(updateVappNetworkSettings, orgVdcNetwork.OrgVDCNetwork)
+	check.Assert(err, IsNil)
+	check.Assert(vappNetworkConfig, NotNil)
+
+	networkFound = types.VAppNetworkConfiguration{}
+	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
+		if networkConfig.NetworkName == updateNetworkName {
+			networkFound = networkConfig
+		}
+	}
+
+	check.Assert(networkFound.Description, Equals, updateDescription)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].Gateway, Equals, updateGateway)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].Netmask, Equals, updateNetmask)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNS1, Equals, updateDns1)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNS2, Equals, updateDns2)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNSSuffix, Equals, updateDnsSuffix)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].StartAddress, Equals, updateStartAddress)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress, Equals, updateEndAddress)
+
+	check.Assert(networkFound.Configuration.Features.DhcpService.IsEnabled, Equals, true)
+	check.Assert(networkFound.Configuration.Features.DhcpService.MaxLeaseTime, Equals, updateMaxLeaseTime)
+	check.Assert(networkFound.Configuration.Features.DhcpService.DefaultLeaseTime, Equals, updateDefaultLeaseTime)
+	check.Assert(networkFound.Configuration.Features.DhcpService.IPRange.StartAddress, Equals, updateDhcpStartAddress)
+	check.Assert(networkFound.Configuration.Features.DhcpService.IPRange.EndAddress, Equals, updateDhcpEndAddress)
+
+	check.Assert(networkFound.Configuration.Features.FirewallService.IsEnabled, Equals, updateFwEnabled)
+	check.Assert(networkFound.Configuration.Features.NatService.IsEnabled, Equals, updateNatEnabled)
+	check.Assert(*networkFound.Configuration.RetainNetInfoAcrossDeployments, Equals, updateRetainIpMacEnabled)
+
+	check.Assert(networkFound.Configuration.ParentNetwork.Name, Equals, orgVdcNetwork.OrgVDCNetwork.Name)
+
+	err = vapp.Refresh()
+	check.Assert(err, IsNil)
+	vappNetworkConfig, err = vapp.RemoveNetwork(updateNetworkName)
+	check.Assert(err, IsNil)
+	check.Assert(vappNetworkConfig, NotNil)
+
+	isExist := false
+	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
+		if networkConfig.NetworkName == networkName {
+			isExist = true
+		}
+	}
+	check.Assert(isExist, Equals, false)
+
+	task, err := vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+}
+
 func (vcd *TestVCD) Test_AddAndRemoveVappNetworkWithMinimumValues(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
@@ -1138,6 +1312,113 @@ func (vcd *TestVCD) Test_AddAndRemoveOrgVappNetwork(check *C) {
 	check.Assert(networkFound.Configuration.Features.FirewallService.IsEnabled, Equals, fwEnabled)
 	check.Assert(networkFound.Configuration.Features.NatService.IsEnabled, Equals, natEnabled)
 	check.Assert(*networkFound.Configuration.RetainNetInfoAcrossDeployments, Equals, retainIpMacEnabled)
+
+	check.Assert(networkFound.Configuration.ParentNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
+
+	err = vcd.vapp.Refresh()
+	check.Assert(err, IsNil)
+	vappNetworkConfig, err = vapp.RemoveNetwork(vcd.config.VCD.Network.Net1)
+	check.Assert(err, IsNil)
+	check.Assert(vappNetworkConfig, NotNil)
+
+	isExist := false
+	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
+		if networkConfig.NetworkName == vcd.config.VCD.Network.Net1 {
+			isExist = true
+		}
+	}
+	check.Assert(isExist, Equals, false)
+
+	task, err := vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+}
+
+func (vcd *TestVCD) Test_UpdateOrgVappNetwork(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	if vcd.config.VCD.Network.Net1 == "" {
+		check.Skip("Skipping test because no network was given")
+	}
+
+	vapp, err := createVappForTest(vcd, "Test_UpdateOrgVappNetwork")
+	check.Assert(err, IsNil)
+	check.Assert(vapp, NotNil)
+
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	check.Assert(err, IsNil)
+	check.Assert(orgVdcNetwork, NotNil)
+
+	var fwEnabled = false
+	var natEnabled = false
+	var retainIpMacEnabled = true
+
+	vappNetworkSettings := &VappNetworkSettings{
+		FirewallEnabled:    &fwEnabled,
+		NatEnabled:         &natEnabled,
+		RetainIpMacEnabled: &retainIpMacEnabled,
+	}
+
+	vappNetworkConfig, err := vapp.AddOrgNetwork(vappNetworkSettings, orgVdcNetwork.OrgVDCNetwork, true)
+	check.Assert(err, IsNil)
+	check.Assert(vappNetworkConfig, NotNil)
+
+	networkFound := types.VAppNetworkConfiguration{}
+	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
+		if networkConfig.NetworkName == vcd.config.VCD.Network.Net1 {
+			networkFound = networkConfig
+		}
+	}
+
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].Gateway, Equals, orgVdcNetwork.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].Gateway)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].Netmask, Equals, orgVdcNetwork.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].Netmask)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNS1, Equals, orgVdcNetwork.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].DNS1)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].StartAddress, Equals, orgVdcNetwork.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].StartAddress)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress, Equals, orgVdcNetwork.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress)
+
+	check.Assert(networkFound.Configuration.Features.FirewallService.IsEnabled, Equals, fwEnabled)
+	check.Assert(networkFound.Configuration.Features.NatService.IsEnabled, Equals, natEnabled)
+	check.Assert(*networkFound.Configuration.RetainNetInfoAcrossDeployments, Equals, retainIpMacEnabled)
+
+	check.Assert(networkFound.Configuration.ParentNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
+
+	uuid, err := GetUuidFromHref(networkFound.Link.HREF, false)
+	check.Assert(err, IsNil)
+	check.Assert(uuid, NotNil)
+
+	var updateFwEnabled = true
+	var updateNatEnabled = true
+	var updateRetainIpMacEnabled = false
+
+	vappNetworkSettings = &VappNetworkSettings{
+		ID:                 uuid,
+		FirewallEnabled:    &updateFwEnabled,
+		NatEnabled:         &updateNatEnabled,
+		RetainIpMacEnabled: &updateRetainIpMacEnabled,
+	}
+
+	vappNetworkConfig, err = vapp.UpdateOrgNetwork(vappNetworkSettings, false)
+	check.Assert(err, IsNil)
+	check.Assert(vappNetworkConfig, NotNil)
+
+	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
+		if networkConfig.NetworkName == vcd.config.VCD.Network.Net1 {
+			networkFound = networkConfig
+		}
+	}
+
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].Gateway, Equals, orgVdcNetwork.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].Gateway)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].Netmask, Equals, orgVdcNetwork.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].Netmask)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNS1, Equals, orgVdcNetwork.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].DNS1)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].StartAddress, Equals, orgVdcNetwork.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].StartAddress)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress, Equals, orgVdcNetwork.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress)
+
+	var emptyFirewallFeatures *types.NetworkFeatures
+	check.Assert(networkFound.Configuration.Features, Equals, emptyFirewallFeatures)
+	check.Assert(networkFound.Configuration.Features, Equals, emptyFirewallFeatures)
+	check.Assert(*networkFound.Configuration.RetainNetInfoAcrossDeployments, Equals, updateRetainIpMacEnabled)
 
 	check.Assert(networkFound.Configuration.ParentNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
