@@ -754,11 +754,11 @@ func (vcd *TestVCD) Test_UpdateEdgeGateway(check *C) {
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 	var saveEGW = types.EdgeGateway{
 		Name:        edge.EdgeGateway.Name,
-		ID:        edge.EdgeGateway.ID,
+		ID:          edge.EdgeGateway.ID,
 		Status:      edge.EdgeGateway.Status,
 		HREF:        edge.EdgeGateway.HREF,
 		Description: edge.EdgeGateway.Description,
-		Configuration:&types.GatewayConfiguration{
+		Configuration: &types.GatewayConfiguration{
 			AdvancedNetworkingEnabled: edge.EdgeGateway.Configuration.AdvancedNetworkingEnabled,
 		},
 	}
