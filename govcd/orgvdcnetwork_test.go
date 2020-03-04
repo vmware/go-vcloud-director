@@ -269,10 +269,10 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkIso(check *C) {
 						},
 					},
 					},
-					BackwardCompatibilityMode: true,
 				},
-				IsShared: false,
+				BackwardCompatibilityMode: true,
 			},
+			IsShared: false,
 		}
 	)
 
@@ -430,6 +430,7 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkDirect(check *C) {
 	// (1) Make sure the network exists
 	newNetwork, err = vcd.vdc.GetOrgVdcNetworkByName(networkName, true)
 	check.Assert(err, IsNil)
+	check.Assert(newNetwork, NotNil)
 
 	// (2) Removing the network. It should return nil, as a successful deletion
 	err = RemoveOrgVdcNetworkIfExists(*vcd.vdc, networkName)
