@@ -12,8 +12,8 @@ test: testunit
 # testunit runs the unit tests
 testunit: fmtcheck
 	@echo "==> Running Unit Tests"
-	cd $(maindir)/govcd && go test -tags unit -v .
-	cd $(maindir)/util && go test -v .
+	cd $(maindir)/govcd && go test -tags unit -v
+	cd $(maindir)/util && go test -v
 
 # testrace runs the race checker
 testrace:
@@ -25,27 +25,27 @@ testconcurrent:
 
 # tests only catalog related features
 testcatalog:
-	cd govcd && go test -tags "catalog" -timeout 15m -check.vv .
+	cd govcd && go test -tags "catalog" -timeout 15m -check.vv
 
 # tests only vapp and vm features
 testvapp:
-	cd govcd && go test -tags "vapp vm" -timeout 25m -check.vv .
+	cd govcd && go test -tags "vapp vm" -timeout 25m -check.vv
 
 # tests only edge gateway features
 testgateway:
-	cd govcd && go test -tags "gateway" -timeout 15m -check.vv .
+	cd govcd && go test -tags "gateway" -timeout 15m -check.vv
 
 # tests only networking features
 testnetwork:
-	cd govcd && go test -tags "network" -timeout 15m -check.vv .
+	cd govcd && go test -tags "network" -timeout 15m -check.vv
 
 # tests only load balancer features
 testlb:
-	cd govcd && go test -tags "lb" -timeout 15m -check.vv .
+	cd govcd && go test -tags "lb" -timeout 15m -check.vv
 
 # tests only NSXV related features
 testnsxv:
-	cd govcd && go test -tags "nsxv" -timeout 15m -check.vv .
+	cd govcd && go test -tags "nsxv" -timeout 15m -check.vv
 
 # vet runs the Go source code static analysis tool `vet` to find
 # any common errors.
@@ -74,5 +74,5 @@ copyright:
 
 build:
 	@echo "==> Building govcd library"
-	cd govcd && go build . && go test -tags ALL -c .
+	cd govcd && go build . && go test -tags ALL -c
 
