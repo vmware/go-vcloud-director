@@ -192,8 +192,8 @@ func doesOrgExist(check *C, vcd *TestVCD) {
 
 // Tests org function GetVDCByName with the vdc specified
 // in the config file. Then tests with a vdc that doesn't exist.
-// Fails if the config file name doesn't match with the found vdc, or
-// if the invalid vdc is found by the function.  Also tests an vdc
+// Fails if the config file name doesn't match with the found VDC, or
+// if the invalid vdc is found by the function.  Also tests a VDC
 // that doesn't exist. Asserts an error if the function finds it or
 // if the error is not nil.
 func (vcd *TestVCD) Test_GetVdcByName(check *C) {
@@ -209,7 +209,7 @@ func (vcd *TestVCD) Test_GetVdcByName(check *C) {
 
 // Tests org function Admin version of GetVDCByName with the vdc
 // specified in the config file. Fails if the names don't match
-// or the function returns an error.  Also tests an vdc
+// or the function returns an error.  Also tests a vdc
 // that doesn't exist. Asserts an error if the function finds it or
 // if the error is not nil.
 func (vcd *TestVCD) Test_Admin_GetVdcByName(check *C) {
@@ -231,8 +231,8 @@ func (vcd *TestVCD) Test_Admin_GetVdcByName(check *C) {
 
 // Tests org function GetVDCByName with the vdc specified
 // in the config file. Then tests with a vdc that doesn't exist.
-// Fails if the config file name doesn't match with the found vdc, or
-// if the invalid vdc is found by the function.  Also tests an vdc
+// Fails if the config file name doesn't match with the found VDC, or
+// if the invalid vdc is found by the function.  Also tests a VDC
 // that doesn't exist. Asserts an error if the function finds it or
 // if the error is not nil.
 func (vcd *TestVCD) Test_CreateVdc(check *C) {
@@ -287,7 +287,6 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 	for i, allocationModel := range allocationModels {
 		vdcConfiguration := &types.VdcConfiguration{
 			Name:            fmt.Sprintf("%s%d", TestCreateOrgVdc, i),
-			Xmlns:           types.XMLNamespaceVCloud,
 			AllocationModel: allocationModel,
 			ComputeCapacity: []*types.ComputeCapacity{
 				&types.ComputeCapacity{
@@ -330,7 +329,7 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 		}
 
 		task, err := adminOrg.CreateVdc(vdcConfiguration)
-		check.Assert(err, Not(IsNil))
+		check.Assert(err, NotNil)
 		check.Assert(task, Equals, Task{})
 		check.Assert(err.Error(), Equals, "VdcConfiguration missing required field: ComputeCapacity[0].Memory.Units")
 		vdcConfiguration.ComputeCapacity[0].Memory.Units = "MB"
@@ -495,7 +494,7 @@ func (vcd *TestVCD) Test_GetAdminCatalog(check *C) {
 // variable is updated.
 func (vcd *TestVCD) Test_RefreshVdc(check *C) {
 
-	adminOrg, vdcConfiguration, err := setupVDc(vcd, check)
+	adminOrg, vdcConfiguration, err := setupVdc(vcd, check, "AllocationPool")
 	check.Assert(err, IsNil)
 
 	// Refresh so the new VDC shows up in the org's list
@@ -521,7 +520,7 @@ func (vcd *TestVCD) Test_RefreshVdc(check *C) {
 	check.Assert(adminVdc.AdminVdc.Name, Equals, TestRefreshOrgVdc)
 }
 
-func setupVDc(vcd *TestVCD, check *C) (AdminOrg, *types.VdcConfiguration, error) {
+func setupVdc(vcd *TestVCD, check *C, allocationModel string) (AdminOrg, *types.VdcConfiguration, error) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
@@ -566,8 +565,7 @@ func setupVDc(vcd *TestVCD, check *C) (AdminOrg, *types.VdcConfiguration, error)
 	networkPoolHref := results.Results.NetworkPoolRecord[0].HREF
 	vdcConfiguration := &types.VdcConfiguration{
 		Name:            TestCreateOrgVdc + "ForRefresh",
-		Xmlns:           types.XMLNamespaceVCloud,
-		AllocationModel: "AllocationPool",
+		AllocationModel: allocationModel,
 		ComputeCapacity: []*types.ComputeCapacity{
 			&types.ComputeCapacity{
 				CPU: &types.CapacityWithUsage{
@@ -602,12 +600,19 @@ func setupVDc(vcd *TestVCD, check *C) (AdminOrg, *types.VdcConfiguration, error)
 		IsThinProvision:      true,
 		UsesFastProvisioning: true,
 	}
+	trueValue := true
+	falseValue := true
+	if allocationModel == "Flex" {
+		vdcConfiguration.IsElastic = &falseValue
+		vdcConfiguration.IncludeMemoryOverhead = &trueValue
+	}
+
 	vdc, _ := adminOrg.GetVDCByName(vdcConfiguration.Name, false)
 	if vdc != nil {
 		err = vdc.DeleteWait(true, true)
 		check.Assert(err, IsNil)
 	}
-	err = adminOrg.CreateVdcWait(vdcConfiguration)
+	_, err = adminOrg.CreateOrgVdc(vdcConfiguration)
 	check.Assert(err, IsNil)
 	AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, check.TestName())
 	return *adminOrg, vdcConfiguration, err
@@ -616,7 +621,7 @@ func setupVDc(vcd *TestVCD, check *C) (AdminOrg, *types.VdcConfiguration, error)
 // Tests VDC by updating it and then asserting if the
 // variable is updated.
 func (vcd *TestVCD) Test_UpdateVdc(check *C) {
-	adminOrg, vdcConfiguration, err := setupVDc(vcd, check)
+	adminOrg, vdcConfiguration, err := setupVdc(vcd, check, "AllocationPool")
 	check.Assert(err, IsNil)
 
 	// Refresh so the new VDC shows up in the org's list
@@ -681,7 +686,7 @@ func (vcd *TestVCD) Test_UpdateVdc(check *C) {
 // Tests org function GetAdminVdcByName with the vdc specified
 // in the config file. Then tests with a vdc that doesn't exist.
 // Fails if the config file name doesn't match with the found VDC, or
-// if the invalid VDC is found by the function.  Also tests an VDC
+// if the invalid VDC is found by the function.  Also tests a VDC
 // that doesn't exist. Asserts an error if the function finds it or
 // if the error is not nil.
 func (vcd *TestVCD) Test_GetAdminVdcByName(check *C) {

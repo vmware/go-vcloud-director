@@ -80,7 +80,6 @@ func (vcd *TestVCD) testCreateUpdateOrgVdcNetworkRouted(check *C, ipSubnet strin
 
 	networkDescription := "Created by govcd tests"
 	var networkConfig = types.OrgVDCNetwork{
-		Xmlns:       types.XMLNamespaceVCloud,
 		Name:        networkName,
 		Description: networkDescription,
 		Configuration: &types.NetworkConfiguration{
@@ -270,10 +269,10 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkIso(check *C) {
 						},
 					},
 					},
+					BackwardCompatibilityMode: true,
 				},
-				BackwardCompatibilityMode: true,
+				IsShared: false,
 			},
-			IsShared: false,
 		}
 	)
 
