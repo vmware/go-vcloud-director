@@ -129,4 +129,19 @@ func guestCustomizationPropertyTester(vcd *TestVCD, check *C, object getGuestCus
 	check.Assert(*guestCustomizationSection.ResetPasswordRequired, Equals, true)
 	check.Assert(guestCustomizationSection.CustomizationScript, Equals, "ls")
 	check.Assert(guestCustomizationSection.ComputerName, Equals, "Cname18")
+
+	// Double check if GuestCustomizationSection retrieved from separate API is the same as the one
+	// embedded directly in the VM
+	vm := object.(*VM)
+
+	// Refresh VM to have the latest structure
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+
+	// Deep compare values retrieved from separate API to the ones embedded into VM
+	guestCustomizationSection.Xmlns = "" // embedded VM structure does not have this field
+	// Links amount may differ between structures
+	guestCustomizationSection.Link = types.LinkList{}
+	vm.VM.GuestCustomizationSection.Link = types.LinkList{}
+	check.Assert(guestCustomizationSection, DeepEquals, vm.VM.GuestCustomizationSection)
 }

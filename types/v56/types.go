@@ -1368,6 +1368,10 @@ type VM struct {
 
 	VmSpecSection *VmSpecSection `xml:"VmSpecSection,omitempty"`
 
+	// GuestCustomizationSection contains settings for VM customization like admin password, SID
+	// changes, domain join configuration, etc
+	GuestCustomizationSection *GuestCustomizationSection `xml:"GuestCustomizationSection,omitempty"`
+
 	VMCapabilities *VMCapabilities `xml:"VmCapabilities,omitempty"` // Allows you to specify certain capabilities of this virtual machine.
 	StorageProfile *Reference      `xml:"StorageProfile,omitempty"` // A reference to a storage profile to be used for this object. The specified storage profile must exist in the organization vDC that contains the object. If not specified, the default storage profile for the vDC is used.
 	ProductSection *ProductSection `xml:"ProductSection,omitempty"`
