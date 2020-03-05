@@ -45,9 +45,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	network := makeOrgVdcNetworkWithDhcp(vcd, check, edgeGateway)
 
 	// Attach Org network to vApp
-	task, err := vapp.AddRAWNetworkConfig([]*types.OrgVDCNetwork{network})
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	_, err = vapp.AddOrgNetwork(&VappNetworkSettings{}, network, false)
 	check.Assert(err, IsNil)
 
 	// Get network config and update it to use DHCP
@@ -87,7 +85,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	}
 
 	// err = vm.PowerOnAndForceCustomization()
-	task, err = vapp.PowerOn()
+	task, err := vapp.PowerOn()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)

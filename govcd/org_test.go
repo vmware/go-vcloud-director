@@ -518,6 +518,13 @@ func (vcd *TestVCD) Test_RefreshVdc(check *C) {
 	err = adminVdc.Refresh()
 	check.Assert(err, IsNil)
 	check.Assert(adminVdc.AdminVdc.Name, Equals, TestRefreshOrgVdc)
+
+	//cleanup
+	vdc, err := adminOrg.GetVDCByName(vdcConfiguration.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+	err = vdc.DeleteWait(true, true)
+	check.Assert(err, IsNil)
 }
 
 func setupVdc(vcd *TestVCD, check *C, allocationModel string) (AdminOrg, *types.VdcConfiguration, error) {
