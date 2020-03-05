@@ -1140,7 +1140,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			fastProvisioningValue = true
 		}
 
-		if *adminVdc.AdminVdc.UsesFastProvisioning != fastProvisioningValue {
+		if adminVdc != nil && *adminVdc.AdminVdc.UsesFastProvisioning != fastProvisioningValue {
 			adminVdc.AdminVdc.UsesFastProvisioning = &fastProvisioningValue
 			_, err = adminVdc.Update()
 			if err != nil {
@@ -1392,10 +1392,6 @@ func (vcd *TestVCD) findFirstVapp() VApp {
 	}
 	vapp, _ := vdc.GetVAppByName(vappName, false)
 	return *vapp
-}
-
-func takeBoolPointer(value bool) *bool {
-	return &value
 }
 
 // Test_NewRequestWitNotEncodedParamsWithApiVersion verifies that api version override works
