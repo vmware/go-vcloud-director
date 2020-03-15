@@ -1394,10 +1394,6 @@ func (vcd *TestVCD) findFirstVapp() VApp {
 	return *vapp
 }
 
-func takeBoolPointer(value bool) *bool {
-	return &value
-}
-
 // Test_NewRequestWitNotEncodedParamsWithApiVersion verifies that api version override works
 func (vcd *TestVCD) Test_NewRequestWitNotEncodedParamsWithApiVersion(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
