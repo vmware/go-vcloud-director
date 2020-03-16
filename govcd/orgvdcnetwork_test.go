@@ -415,6 +415,12 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkDirect(check *C) {
 		"network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name,
 		"Test_CreateOrgVdcNetworkDirect")
 
+	// Check the values of the updated entities. The new values should be available
+	// immediately.
+	check.Assert(newNetwork.OrgVDCNetwork.Name, Equals, updatedNetworkName)
+	check.Assert(newNetwork.OrgVDCNetwork.Description, Equals, updatedDescription)
+
+	// Gets a new copy of the network and check the values.
 	newNetwork, err = vcd.vdc.GetOrgVdcNetworkByName(updatedNetworkName, true)
 	check.Assert(err, IsNil)
 	check.Assert(newNetwork, NotNil)
@@ -425,6 +431,7 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkDirect(check *C) {
 	newNetwork.OrgVDCNetwork.Name = networkName
 	err = newNetwork.Update()
 	check.Assert(err, IsNil)
+	check.Assert(newNetwork.OrgVDCNetwork.Name, Equals, networkName)
 
 	// Testing RemoveOrgVdcNetworkIfExists:
 	// (1) Make sure the network exists

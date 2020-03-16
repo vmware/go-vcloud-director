@@ -771,6 +771,12 @@ func (vcd *TestVCD) Test_UpdateEdgeGateway(check *C) {
 	err = edge.Update()
 	check.Assert(err, IsNil)
 
+	// The edge gateway should be updated in place
+	check.Assert(edge.EdgeGateway.HREF, Equals, saveEGW.HREF)
+	check.Assert(edge.EdgeGateway.Name, Equals, newName)
+	check.Assert(edge.EdgeGateway.Description, Equals, newDescription)
+
+	// Check that a new copy of the edge gateway contains the expected data
 	edge, err = vcd.vdc.GetEdgeGatewayById(saveEGW.ID, true)
 	check.Assert(err, IsNil)
 
@@ -784,6 +790,12 @@ func (vcd *TestVCD) Test_UpdateEdgeGateway(check *C) {
 	err = edge.Update()
 	check.Assert(err, IsNil)
 
+	// checking the in-place values
+	check.Assert(saveEGW.Name, Equals, edge.EdgeGateway.Name)
+	check.Assert(saveEGW.Description, Equals, edge.EdgeGateway.Description)
+	check.Assert(saveEGW.HREF, Equals, edge.EdgeGateway.HREF)
+
+	// Checking values in a fresh copy of the edge gateway
 	edge, err = vcd.vdc.GetEdgeGatewayById(saveEGW.ID, true)
 	check.Assert(err, IsNil)
 
