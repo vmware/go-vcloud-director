@@ -1296,3 +1296,138 @@ func deleteVapp(vcd *TestVCD, name string) error {
 	}
 	return nil
 }
+
+func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
+
+	config := vcd.config
+	if config.VCD.Network.Net1 == "" {
+		check.Skip("Skipping test because no network was given")
+	}
+
+	// Find VApp
+	if vcd.vapp.VApp == nil {
+		check.Skip("skipping test because no vApp is found")
+	}
+
+	vapp, err := createVappForTest(vcd, "Test_AddNewEmptyVMMultiNIC")
+	check.Assert(err, IsNil)
+	check.Assert(vapp, NotNil)
+
+	desiredNetConfig := &types.NetworkConnectionSection{}
+	desiredNetConfig.PrimaryNetworkConnectionIndex = 0
+	desiredNetConfig.NetworkConnection = append(desiredNetConfig.NetworkConnection,
+		&types.NetworkConnection{
+			IsConnected:             true,
+			IPAddressAllocationMode: types.IPAllocationModePool,
+			Network:                 config.VCD.Network.Net1,
+			NetworkConnectionIndex:  0,
+		},
+		&types.NetworkConnection{
+			IsConnected:             true,
+			IPAddressAllocationMode: types.IPAllocationModeNone,
+			Network:                 types.NoneNetwork,
+			NetworkConnectionIndex:  1,
+		})
+
+	// Test with two different networks if we have them
+	if config.VCD.Network.Net2 != "" {
+		// Attach second vdc network to vApp
+		vdcNetwork2, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net2, false)
+		check.Assert(err, IsNil)
+		_, err = vapp.AddOrgNetwork(&VappNetworkSettings{}, vdcNetwork2.OrgVDCNetwork, false)
+		check.Assert(err, IsNil)
+
+		desiredNetConfig.NetworkConnection = append(desiredNetConfig.NetworkConnection,
+			&types.NetworkConnection{
+				IsConnected:             true,
+				IPAddressAllocationMode: types.IPAllocationModePool,
+				Network:                 config.VCD.Network.Net2,
+				NetworkConnectionIndex:  2,
+			},
+		)
+	} else {
+		fmt.Println("Skipping adding another vdc network as network2 was not specified")
+	}
+
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(cat, NotNil)
+
+	//media, err := cat.GetMediaByName("photon-custom-hw11-2.0-304b817.ova", false)
+	media, err := cat.GetMediaByName("vaido2", false)
+	check.Assert(err, IsNil)
+	check.Assert(media, NotNil)
+
+	var task Task
+	var sp types.Reference
+	var customSP = false
+
+	if vcd.config.VCD.StorageProfile.SP1 != "" {
+		sp, _ = vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
+	}
+
+	newDisk := types.DiskSettings{
+		AdapterType:       "5",
+		SizeMb:            int64(16384),
+		BusNumber:         0,
+		UnitNumber:        0,
+		ThinProvisioned:   takeBoolPointer(true),
+		OverrideVmDefault: true}
+
+	requestDetails := &types.RecomposeVAppParamsForEmptyVm{
+		XmlnsVcloud: types.XMLNamespaceVCloud,
+		XmlnsOvf:    types.XMLNamespaceOVF,
+		CreateItem: &types.CreateItem{
+			Name:                      "Test_AddNewEmptyVMMultiNIC",
+			NetworkConnectionSection:  desiredNetConfig,
+			Description:               "created by Test_AddNewEmptyVMMultiNIC",
+			GuestCustomizationSection: nil,
+			VmSpecSection: &types.VmSpecSection{
+				Modified:          takeBoolPointer(true),
+				Info:              "Virtual Machine specification",
+				OsType:            "debian10Guest",
+				NumCpus:           takeIntAddress(2),
+				NumCoresPerSocket: takeIntAddress(1),
+				CpuResourceMhz:    &types.CpuResourceMhz{Configured: 1},
+				MemoryResourceMb:  &types.MemoryResourceMb{Configured: 1024},
+				MediaSection:      nil,
+				DiskSection:       &types.DiskSection{DiskSettings: []*types.DiskSettings{&newDisk}},
+				HardwareVersion:   &types.HardwareVersion{Value: "vmx-13"}, // need support older version vCD
+				VmToolsVersion:    "",
+				VirtualCpuType:    "VM32",
+				TimeSyncWithHost:  nil,
+			},
+			BootImage: &types.Media{HREF: media.Media.HREF, Name: media.Media.Name, ID: media.Media.ID},
+		},
+		AllEULAsAccepted: true,
+	}
+
+	createdVm, err := vapp.AddEmptyVm(requestDetails)
+	check.Assert(err, IsNil)
+	check.Assert(createdVm, NotNil)
+
+	// Ensure network config was valid
+	actualNetConfig, err := createdVm.GetNetworkConnectionSection()
+	check.Assert(err, IsNil)
+
+	if customSP {
+		check.Assert(createdVm.VM.StorageProfile.HREF, Equals, sp.HREF)
+	}
+
+	verifyNetworkConnectionSection(check, actualNetConfig, desiredNetConfig)
+
+	// Cleanup
+	err = vapp.RemoveVM(*createdVm)
+	check.Assert(err, IsNil)
+
+	// Ensure network is detached from vApp to avoid conflicts in other tests
+	task, err = vapp.RemoveAllNetworks()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+}
