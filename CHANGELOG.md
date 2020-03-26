@@ -4,7 +4,7 @@
 * Added methods `EdgeGateway.Update` and `EdgeGateway.UpdateAsync` [#292](https://github.com/vmware/go-vcloud-director/pull/292)
 
 BUGS FIXED:
-* Fix issue in Queries with vCD 10 version, which do not return network pool or provider VDC[#xxx](https://github.com/vmware/go-vcloud-director/pull/xxx)
+* Fix issue in Queries with vCD 10 version, which do not return network pool or provider VDC[#293](https://github.com/vmware/go-vcloud-director/pull/293)
 
 ## 2.6.0 (March 13, 2010)
 
