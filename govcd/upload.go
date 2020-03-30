@@ -186,7 +186,7 @@ func makeEmptyRequest(client *Client) {
 	apiEndpoint.Path += "/query?type=task&format=records&page=1&pageSize=5&"
 
 	_, _ = client.ExecuteRequest(apiEndpoint.String(), http.MethodGet,
-		"", "error fetching versions: %s", nil, nil)
+		"", "error making empty request: %s", nil, nil)
 }
 
 func getUploadLink(files *types.FilesList) (*url.URL, error) {
