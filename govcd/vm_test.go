@@ -1375,8 +1375,6 @@ func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
 		OverrideVmDefault: true}
 
 	requestDetails := &types.RecomposeVAppParamsForEmptyVm{
-		XmlnsVcloud: types.XMLNamespaceVCloud,
-		XmlnsOvf:    types.XMLNamespaceOVF,
 		CreateItem: &types.CreateItem{
 			Name:                      "Test_AddNewEmptyVMMultiNIC",
 			NetworkConnectionSection:  desiredNetConfig,

@@ -1356,8 +1356,8 @@ func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection
 
 }
 
+// AddEmptyVm adds new empty VM (without template) to vApp and returns new created VM or error.
 func (vapp *VApp) AddEmptyVm(reComposeVAppParams *types.RecomposeVAppParamsForEmptyVm) (*VM, error) {
-	// TODO add validation
 	task, err := vapp.AddEmptyVmAsync(reComposeVAppParams)
 	if err != nil {
 		return nil, err
@@ -1377,11 +1377,51 @@ func (vapp *VApp) AddEmptyVm(reComposeVAppParams *types.RecomposeVAppParamsForEm
 
 }
 
+// AddEmptyVmAsync adds new empty VM (without template) to vApp and returns Task or error.
 func (vapp *VApp) AddEmptyVmAsync(reComposeVAppParams *types.RecomposeVAppParamsForEmptyVm) (Task, error) {
+	err := validateEmptyVmParams(reComposeVAppParams)
+	if err != nil {
+		return Task{}, err
+	}
 	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/action/recomposeVApp"
+
+	reComposeVAppParams.XmlnsVcloud = types.XMLNamespaceVCloud
+	reComposeVAppParams.XmlnsOvf = types.XMLNamespaceOVF
 
 	// Return the task
 	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
 		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", reComposeVAppParams)
+}
+
+func validateEmptyVmParams(reComposeVAppParams *types.RecomposeVAppParamsForEmptyVm) error {
+	if reComposeVAppParams.CreateItem == nil {
+		return fmt.Errorf("[AddEmptyVmAsync] CreateItem can't be empty")
+	}
+
+	if reComposeVAppParams.CreateItem.Name == "" {
+		return fmt.Errorf("[AddEmptyVmAsync] CreateItem.Name can't be empty")
+	}
+
+	if reComposeVAppParams.CreateItem.VmSpecSection == nil {
+		return fmt.Errorf("[AddEmptyVmAsync] CreateItem.VmSpecSection can't be empty")
+	}
+
+	if reComposeVAppParams.CreateItem.VmSpecSection.HardwareVersion == nil {
+		return fmt.Errorf("[AddEmptyVmAsync] CreateItem.VmSpecSection.HardwareVersion can't be empty")
+	}
+
+	if reComposeVAppParams.CreateItem.VmSpecSection.HardwareVersion.Value == "" {
+		return fmt.Errorf("[AddEmptyVmAsync] CreateItem.VmSpecSection.HardwareVersion.Value can't be empty")
+	}
+
+	if reComposeVAppParams.CreateItem.VmSpecSection.MemoryResourceMb == nil {
+		return fmt.Errorf("[AddEmptyVmAsync] CreateItem.VmSpecSection.MemoryResourceMb can't be empty")
+	}
+
+	if reComposeVAppParams.CreateItem.VmSpecSection.MemoryResourceMb.Configured <= int64(0) {
+		return fmt.Errorf("[AddEmptyVmAsync] CreateItem.VmSpecSection.MemoryResourceMb.Configured can't be empty")
+	}
+
+	return nil
 }
