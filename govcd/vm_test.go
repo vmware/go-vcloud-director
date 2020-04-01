@@ -1429,3 +1429,52 @@ func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 }
+
+// Test update of VM Spec section
+func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	vmName := "Test_UpdateVmSpecSection"
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp wasn't properly created")
+	}
+
+	if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("No Catalog name given for VDC tests")
+	}
+
+	if vcd.config.VCD.Catalog.CatalogItem == "" {
+		check.Skip("No Catalog item given for VDC tests")
+	}
+
+	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAngGetResourcesForVmCreation(check, vmName)
+	check.Assert(err, IsNil)
+
+	vm, err := spawnVM("FirstNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check, true)
+	check.Assert(err, IsNil)
+
+	task, err := vm.PowerOff()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	vmSpecSection := vm.VM.VmSpecSection
+	osType := "sles10_64Guest"
+	vmSpecSection.OsType = osType
+	vmSpecSection.NumCpus = takeIntAddress(4)
+	vmSpecSection.NumCoresPerSocket = takeIntAddress(2)
+	vmSpecSection.MemoryResourceMb = &types.MemoryResourceMb{Configured: 512}
+
+	updatedVm, err := vm.UpdateVmSpecSection(vmSpecSection)
+	check.Assert(err, IsNil)
+	check.Assert(vmSpecSection, NotNil)
+
+	//verify
+	check.Assert(updatedVm.VM.VmSpecSection.OsType, Equals, osType)
+	check.Assert(*updatedVm.VM.VmSpecSection.NumCpus, Equals, 4)
+	check.Assert(*updatedVm.VM.VmSpecSection.NumCoresPerSocket, Equals, 2)
+	check.Assert(updatedVm.VM.VmSpecSection.MemoryResourceMb.Configured, Equals, int64(512))
+
+	// delete Vapp early to avoid env capacity issue
+	deleteVapp(vcd, vmName)
+}

@@ -1352,6 +1352,7 @@ func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
 			VmSpecSection: disksSettingToUpdate,
+			// API version requirements changes through vCD version to access VmSpecSection
 		}, vm.client.GetSpecificApiVersionOnCondition(">= 32.0", "32.0"))
 
 }
@@ -1424,4 +1425,45 @@ func validateEmptyVmParams(reComposeVAppParams *types.RecomposeVAppParamsForEmpt
 	}
 
 	return nil
+}
+
+// UpdateVmSpecSection updates VM Spec section and returns refreshed VM or error.
+func (vm *VM) UpdateVmSpecSection(vmSettingsToUpdate *types.VmSpecSection) (*VM, error) {
+	task, err := vm.UpdateVmSpecSectionAsync(vmSettingsToUpdate)
+	if err != nil {
+		return nil, err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, err
+	}
+
+	err = vm.Refresh()
+	if err != nil {
+		return nil, err
+	}
+
+	return vm, nil
+
+}
+
+// UpdateVmSpecSectionAsync updates VM Spec section and returns Task and error.
+func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection) (Task, error) {
+	if vm.VM.HREF == "" {
+		return Task{}, fmt.Errorf("cannot update disks, VM HREF is unset")
+	}
+
+	vmSpecSectionModified := true
+	vmSettingsToUpdate.Modified = &vmSpecSectionModified
+
+	return vm.client.ExecuteTaskRequestWithApiVersion(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
+		types.MimeVM, "error updating VM spec section: %s", &types.VM{
+			XMLName:       xml.Name{},
+			Xmlns:         types.XMLNamespaceVCloud,
+			Ovf:           types.XMLNamespaceOVF,
+			Name:          vm.VM.Name,
+			VmSpecSection: vmSettingsToUpdate,
+			// API version requirements changes through vCD version to access VmSpecSection
+		}, vm.client.GetSpecificApiVersionOnCondition(">= 32.0", "32.0"))
 }
