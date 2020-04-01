@@ -1465,7 +1465,7 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	vmSpecSection.NumCoresPerSocket = takeIntAddress(2)
 	vmSpecSection.MemoryResourceMb = &types.MemoryResourceMb{Configured: 512}
 
-	updatedVm, err := vm.UpdateVmSpecSection(vmSpecSection)
+	updatedVm, err := vm.UpdateVmSpecSection(vmSpecSection, "updateDescription")
 	check.Assert(err, IsNil)
 	check.Assert(vmSpecSection, NotNil)
 
@@ -1474,6 +1474,7 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	check.Assert(*updatedVm.VM.VmSpecSection.NumCpus, Equals, 4)
 	check.Assert(*updatedVm.VM.VmSpecSection.NumCoresPerSocket, Equals, 2)
 	check.Assert(updatedVm.VM.VmSpecSection.MemoryResourceMb.Configured, Equals, int64(512))
+	check.Assert(updatedVm.VM.Description, Equals, "updateDescription")
 
 	// delete Vapp early to avoid env capacity issue
 	deleteVapp(vcd, vmName)

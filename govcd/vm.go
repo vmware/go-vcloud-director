@@ -1428,8 +1428,8 @@ func validateEmptyVmParams(reComposeVAppParams *types.RecomposeVAppParamsForEmpt
 }
 
 // UpdateVmSpecSection updates VM Spec section and returns refreshed VM or error.
-func (vm *VM) UpdateVmSpecSection(vmSettingsToUpdate *types.VmSpecSection) (*VM, error) {
-	task, err := vm.UpdateVmSpecSectionAsync(vmSettingsToUpdate)
+func (vm *VM) UpdateVmSpecSection(vmSettingsToUpdate *types.VmSpecSection, description string) (*VM, error) {
+	task, err := vm.UpdateVmSpecSectionAsync(vmSettingsToUpdate, description)
 	if err != nil {
 		return nil, err
 	}
@@ -1449,7 +1449,7 @@ func (vm *VM) UpdateVmSpecSection(vmSettingsToUpdate *types.VmSpecSection) (*VM,
 }
 
 // UpdateVmSpecSectionAsync updates VM Spec section and returns Task and error.
-func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection) (Task, error) {
+func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection, description string) (Task, error) {
 	if vm.VM.HREF == "" {
 		return Task{}, fmt.Errorf("cannot update disks, VM HREF is unset")
 	}
@@ -1457,12 +1457,20 @@ func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection) 
 	vmSpecSectionModified := true
 	vmSettingsToUpdate.Modified = &vmSpecSectionModified
 
+	// `reconfigureVm` updates Vm name, Description, and any or all of the following sections.
+	//    VirtualHardwareSection
+	//    OperatingSystemSection
+	//    NetworkConnectionSection
+	//    GuestCustomizationSection
+	// Sections not included in the request body will not be updated.
+
 	return vm.client.ExecuteTaskRequestWithApiVersion(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
 		types.MimeVM, "error updating VM spec section: %s", &types.VM{
 			XMLName:       xml.Name{},
 			Xmlns:         types.XMLNamespaceVCloud,
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
+			Description:   description,
 			VmSpecSection: vmSettingsToUpdate,
 			// API version requirements changes through vCD version to access VmSpecSection
 		}, vm.client.GetSpecificApiVersionOnCondition(">= 32.0", "32.0"))
