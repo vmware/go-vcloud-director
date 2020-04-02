@@ -8,6 +8,8 @@ NOTES:
 * Improved testinf function `deleteVapp()` to avoid deletion errors during test suite run
   [#297](https://github.com/vmware/go-vcloud-director/pull/297)
 
+BUGS FIXED:
+* Fix issue in Queries with vCD 10 version, which do not return network pool or provider VDC[#293](https://github.com/vmware/go-vcloud-director/pull/293)
 
 ## 2.6.0 (March 13, 2010)
 
