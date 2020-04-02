@@ -1286,13 +1286,26 @@ func (vcd *TestVCD) Test_VmGetParentvAppAndVdc(check *C) {
 func deleteVapp(vcd *TestVCD, name string) error {
 	vapp, err := vcd.vdc.GetVAppByName(name, true)
 	if err != nil {
-		return fmt.Errorf("error getting vapp: %s", err)
+		return fmt.Errorf("error getting vApp: %s", err)
 	}
 	task, _ := vapp.Undeploy()
 	_ = task.WaitTaskCompletion()
+
+	// Detach all Org networks during vApp removal because network removal errors if it happens
+	// very quickly (as the next task) after vApp removal
+	task, _ = vapp.RemoveAllNetworks()
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error removing networks from vApp: %s", err)
+	}
+
 	task, err = vapp.Delete()
 	if err != nil {
-		return fmt.Errorf("error deleting vapp: %s", err)
+		return fmt.Errorf("error deleting vApp: %s", err)
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error waiting for vApp deletion task: %s", err)
 	}
 	return nil
 }
