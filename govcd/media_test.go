@@ -355,15 +355,15 @@ func (vcd *TestVCD) Test_QueryAllMedia(check *C) {
 
 	testQueryMediaName := vcd.config.Media.Media
 
-	mediaSlise, err := vcd.vdc.QueryAllMedia(testQueryMediaName)
+	mediaList, err := vcd.vdc.QueryAllMedia(testQueryMediaName)
 	check.Assert(err, IsNil)
-	check.Assert(mediaSlise, Not(Equals), nil)
+	check.Assert(mediaList, Not(Equals), nil)
 
-	check.Assert(mediaSlise[0].MediaRecord.Name, Equals, testQueryMediaName)
-	check.Assert(mediaSlise[0].MediaRecord.HREF, Not(Equals), "")
+	check.Assert(mediaList[0].MediaRecord.Name, Equals, testQueryMediaName)
+	check.Assert(mediaList[0].MediaRecord.HREF, Not(Equals), "")
 
 	// find Invalid media
-	mediaSlise, err = vcd.vdc.QueryAllMedia("INVALID")
+	mediaList, err = vcd.vdc.QueryAllMedia("INVALID")
 	check.Assert(IsNotFound(err), Equals, true)
-	check.Assert(mediaSlise, IsNil)
+	check.Assert(mediaList, IsNil)
 }

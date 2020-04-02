@@ -640,7 +640,7 @@ func (mediaRecord *MediaRecord) Delete() (Task, error) {
 		"", "error deleting Media item: %s", nil)
 }
 
-// QueryAllMedia returns media image found in system using `name` as query.
+// QueryAllMedia returns all media images found in system using `name` as query.
 func (vdc *Vdc) QueryAllMedia(mediaName string) ([]*MediaRecord, error) {
 	util.Logger.Printf("[TRACE] Querying medias by name\n")
 

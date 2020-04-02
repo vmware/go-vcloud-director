@@ -1366,8 +1366,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(cat, NotNil)
 
-	//media, err := cat.GetMediaByName("photon-custom-hw11-2.0-304b817.ova", false)
-	media, err := cat.GetMediaByName("vaido2", false)
+	media, err := cat.GetMediaByName(vcd.config.Media.Media, false)
 	check.Assert(err, IsNil)
 	check.Assert(media, NotNil)
 
