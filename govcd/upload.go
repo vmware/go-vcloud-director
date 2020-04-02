@@ -162,7 +162,7 @@ func newFileUploadRequest(client *Client, requestUrl string, filePart []byte, of
 // partDataSize - how much bytes will be uploaded
 // uploadDetails - file upload settings and data
 func uploadPartFile(client *Client, part []byte, partDataSize int64, uDetails uploadDetails) error {
-	// allows to avoid session time out, as multi part upload treated as one request
+	// Avoids session time out, as the multi part upload is treated as one request
 	makeEmptyRequest(client)
 	request, err := newFileUploadRequest(client, uDetails.uploadLink, part, uDetails.uploadedBytes, partDataSize, uDetails.fileSizeToUpload)
 	if err != nil {
