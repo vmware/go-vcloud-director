@@ -9,11 +9,10 @@ import (
 	"strings"
 )
 
-
 // MetadataFilter is a definition of a value used to filter metadata.
 // It is made of a Type (such as 'STRING', 'INT', 'BOOL") and a Value, which is the value we want to search for.
 type MetadataFilter struct {
-	Type string
+	Type  string
 	Value string
 }
 
@@ -62,7 +61,7 @@ func queryFieldsOnDemand(queryType string) ([]string, error) {
 func (catalog *Catalog) QueryWithMetadataFields(queryType string, params, notEncodedParams map[string]string,
 	metadataFields []string, isSystem bool) (Results, error) {
 	if notEncodedParams == nil {
-		notEncodedParams=make(map[string]string)
+		notEncodedParams = make(map[string]string)
 	}
 	notEncodedParams["type"] = queryType
 
@@ -107,7 +106,7 @@ func (catalog *Catalog) QueryWithMetadataFilter(params, notEncodedParams map[str
 	metadataFilters map[string]MetadataFilter, isSystem bool) (Results, error) {
 
 	if len(metadataFilters) == 0 {
-		return Results{}, fmt.Errorf("[QueryWithMetadataFilter] no metadata fields provided" )
+		return Results{}, fmt.Errorf("[QueryWithMetadataFilter] no metadata fields provided")
 	}
 
 	metadataFilterText := ""
