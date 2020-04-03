@@ -1462,7 +1462,7 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAngGetResourcesForVmCreation(check, vmName)
 	check.Assert(err, IsNil)
 
-	vm, err := spawnVM("FirstNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check, true)
+	vm, err := spawnVM("FirstNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check, false)
 	check.Assert(err, IsNil)
 
 	task, err := vm.PowerOff()
@@ -1475,7 +1475,7 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	vmSpecSection.OsType = osType
 	vmSpecSection.NumCpus = takeIntAddress(4)
 	vmSpecSection.NumCoresPerSocket = takeIntAddress(2)
-	vmSpecSection.MemoryResourceMb = &types.MemoryResourceMb{Configured: 512}
+	vmSpecSection.MemoryResourceMb = &types.MemoryResourceMb{Configured: 768}
 
 	updatedVm, err := vm.UpdateVmSpecSection(vmSpecSection, "updateDescription")
 	check.Assert(err, IsNil)
@@ -1485,7 +1485,7 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	check.Assert(updatedVm.VM.VmSpecSection.OsType, Equals, osType)
 	check.Assert(*updatedVm.VM.VmSpecSection.NumCpus, Equals, 4)
 	check.Assert(*updatedVm.VM.VmSpecSection.NumCoresPerSocket, Equals, 2)
-	check.Assert(updatedVm.VM.VmSpecSection.MemoryResourceMb.Configured, Equals, int64(512))
+	check.Assert(updatedVm.VM.VmSpecSection.MemoryResourceMb.Configured, Equals, int64(768))
 	check.Assert(updatedVm.VM.Description, Equals, "updateDescription")
 
 	// delete Vapp early to avoid env capacity issue
