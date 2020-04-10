@@ -1,13 +1,16 @@
-## 2.7.0 (Unreleased)
+## 2.8.0 (Unreleased)
+
+* Added methods `catalog.QueryVappTemplateList`, `catalog.QueryCatalogItemList`, `client.QueryWithMetadataFields`, `client.QueryByMetadataFilter`
+* Added query engine based on `client.SearchByFilter`, type `FilterDef`, and interface `QueryItem`
+
+## 2.7.0 (April 10,2020)
 
 * Added methods `OrgVdcNetwork.Update`, `OrgVdcNetwork.UpdateAsync`, and `OrgVdcNetwork.Rename` [#292](https://github.com/vmware/go-vcloud-director/pull/292)
 * Added methods `EdgeGateway.Update` and `EdgeGateway.UpdateAsync` [#292](https://github.com/vmware/go-vcloud-director/pull/292)
-* Added methods  `catalog.QueryVappTemplateList`, `catalog.QueryCatalogItemList`, `client.QueryWithMetadataFields`, `client.QueryByMetadataFilter`
-* Added query engine based on `client.SearchByFilter`, type `FilterDef`, and interface `QueryItem`
 
 NOTES:
 
-* Improved testinf function `deleteVapp()` to avoid deletion errors during test suite run
+* Improved test in function `deleteVapp()` to avoid deletion errors during test suite run
   [#297](https://github.com/vmware/go-vcloud-director/pull/297)
 
 BUGS FIXED:
