@@ -11,6 +11,8 @@ NOTES:
 BUGS FIXED:
 * Fix issue in Queries with vCD 10 version, which do not return network pool or provider VDC[#293](https://github.com/vmware/go-vcloud-director/pull/293)
 * Session timeout for media, catalog item upload  [#294](https://github.com/vmware/go-vcloud-director/pull/294)
+* Fix `vapp.RemoveNetwork`, `vapp.RemoveNetworkAsync` to use `DELETE` API call instead of update
+  which can apply incorrect remaining vApp network configurations [#299](https://github.com/vmware/go-vcloud-director/pull/299)
 
 ## 2.6.0 (March 13, 2010)
 
