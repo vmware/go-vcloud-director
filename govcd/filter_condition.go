@@ -7,8 +7,8 @@ import (
 
 // A conditionDef is the data being carried by the filter engine when performing comparisons
 type conditionDef struct {
-	conditionType string        // it's one of SupportedFilters
-	stored        interface{}   // Any value as handled by the filter being used
+	conditionType string      // it's one of SupportedFilters
+	stored        interface{} // Any value as handled by the filter being used
 }
 
 // A dateCondition can evaluate a date expression

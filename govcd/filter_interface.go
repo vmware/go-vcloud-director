@@ -19,12 +19,12 @@ type QueryItem interface {
 type (
 	// All the Query* types are localizations of Query records that can be returned from a query.
 	// Each one of these implements the QueryItem interface
-	QueryVAppTemplate     types.QueryResultVappTemplateType
-	QueryCatalogItem      types.QueryResultCatalogItemType
-	QueryEdgeGateway      types.QueryResultEdgeGatewayRecordType
-	QueryAdminCatalog     types.AdminCatalogRecord
-	QueryOrgVdcNetwork    types.QueryResultOrgVdcNetworkRecordType
-	QueryMedia            types.MediaRecordType
+	QueryVAppTemplate  types.QueryResultVappTemplateType
+	QueryCatalogItem   types.QueryResultCatalogItemType
+	QueryEdgeGateway   types.QueryResultEdgeGatewayRecordType
+	QueryAdminCatalog  types.AdminCatalogRecord
+	QueryOrgVdcNetwork types.QueryResultOrgVdcNetworkRecordType
+	QueryMedia         types.MediaRecordType
 )
 
 // getMetadataValue is a generic metadata lookup for all query items

@@ -35,10 +35,10 @@ type MetadataDef struct {
 // The definition of all the criteria used by the engine to retrieve data
 type FilterDef struct {
 	// A collection of filters (with keys from SupportedFilters)
-	Filters              map[string]string
+	Filters map[string]string
 
 	// A list of metadata filters
-	Metadata             []MetadataDef
+	Metadata []MetadataDef
 
 	// If true, the query will include metadata fields and search for exact values.
 	// Otherwise, the engine will collect metadata fields and search by regexp
@@ -165,4 +165,3 @@ func conditionText(criteria *FilterDef) string {
 	}
 	return result
 }
-
