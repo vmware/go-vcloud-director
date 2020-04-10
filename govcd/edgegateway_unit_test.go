@@ -423,3 +423,8 @@ func Test_getNetworkNameTypeFromVnicIndex(t *testing.T) {
 		})
 	}
 }
+
+// takeIntAddress is a helper which can gives address of `int`
+func takeIntAddress(x int) *int {
+	return &x
+}
