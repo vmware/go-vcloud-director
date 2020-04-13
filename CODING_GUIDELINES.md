@@ -209,7 +209,91 @@ func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration)
 }
 ```
 
+ ## Query engine
  
+The query engine is a search engine that is based on queries (see `query.go`) with additional filters.
+
+The query runs through the function `client.SearchByFilter` (`filter_engine.go`), which requires a `queryType` (string),
+and a set of criteria (`*FilterDef`).
+
+We can search by one of the types handled by `queryFieldsOnDemand` (`query_metadata.go`), such as 
+
+```go
+const (
+	QtVappTemplate      = "vappTemplate"      // vApp template
+	QtAdminVappTemplate = "adminVAppTemplate" // vApp template as admin
+	QtEdgeGateway       = "edgeGateway"       // edge gateway
+	QtOrgVdcNetwork     = "orgVdcNetwork"     // Org VDC network
+	QtAdminCatalog      = "adminCatalog"      // catalog
+	QtCatalogItem       = "catalogItem"       // catalog item
+	QtAdminCatalogItem  = "adminCatalogItem"  // catalog item as admin
+	QtAdminMedia        = "adminMedia"        // media item as admin
+	QtMedia             = "media"             // media item
+)
+```
+There are two reasons for this limitation:
+
+* If we want to include metadata, we need to add the metadata fields to the list of fields we want the query to fetch.
+* Unfortunately, not all fields defined in the corresponding type is accepted by the `fields` parameter in a query.
+The fields returned by `queryFieldsOnDemand` are the one that have been proven to be accepted.
+
+
+The `FilterDef` type is defined as follows (`filter_utils.go`)
+```go
+type FilterDef struct {
+	// A collection of filters (with keys from SupportedFilters)
+	Filters map[string]string
+
+	// A list of metadata filters
+	Metadata []MetadataDef
+
+	// If true, the query will include metadata fields and search for exact values.
+	// Otherwise, the engine will collect metadata fields and search by regexp
+	UseMetadataApiFilter bool
+}
+```
+
+A `FilterDef` may contain several filters, such as:
+
+```go
+criteria := &govcd.FilterDef{
+    Filters:  {
+        "name":   "^Centos",
+        "date":   "> 2020-02-02",
+        "latest": "true",
+    },
+    Metadata: {
+        {
+            Key:      "dept",
+            Type:     "STRING",
+            Value:    "ST\\w+",
+            IsSystem: false,
+        },
+    },
+    UseMetadataApiFilter: false,
+}
+```
+
+The set of criteria above will find an item with name starting with "Centos", created after February 2nd, 2020, with
+a metadata key "dept" associated with a value starting with "ST". If more than one item is found, the engine will return
+the newest one (because of `"latest": "true"`)
+The argument `UseMetadataApiFilter`, when true, instructs the engine to run the search with metadata values. Meaning that
+the query will contain a clause `filter=metadata:KeyName==TYPE:Value`. If `IsSystem` is true, the clause will become
+`filter=metadata@SYSTEM:KeyName==TYPE:Value`. This search can't evaluate regular expressions, because it goes directly 
+to vCD.
+
+The engine returns a list of `QueryItem`, and interface that defines several methods used to help evaluate the search
+conditions.
+
+### Supporting a new type in the query engine
+
+To add a type to the search engine, we need the following:
+
+1. Add the type to `types.QueryResultRecordsType` (`types.go`), or, if the type exists, make sure it includes `Metadata`
+2. Add the list of supported fields to `queryFieldsOnDemand` (`query_metadata.go`)
+3. Implement the interface `QueryItem` (`filter_interface.go`), which requires a type localization (such as 
+`type QueryMedia  types.MediaRecordType`)
+4. Add a clause to `resultsToQueryItems` (`filter_interface.go`)
 
 ## Testing
 

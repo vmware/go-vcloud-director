@@ -12,6 +12,8 @@ import (
 	"testing"
 )
 
+type stringMap map[string]string
+
 var testingTags = make(map[string]string)
 
 var testVerbose bool = os.Getenv("GOVCD_TEST_VERBOSE") != ""

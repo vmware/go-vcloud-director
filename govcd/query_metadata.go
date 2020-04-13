@@ -126,7 +126,7 @@ func (client *Client) QueryWithMetadataFields(queryType string, params, notEncod
 // on metadata fields
 // Unlike QueryWithMetadataFields, this function does not return the metadata fields, but only uses
 // them to perform the filter.
-// *
+//
 // * params and notEncodedParams are the same ones passed to QueryWithNotEncodedParams
 // * metadataFilter is is a map of conditions to use for filtering
 // * if isSystem is true, metadata fields are requested as 'metadata@SYSTEM:fieldName'

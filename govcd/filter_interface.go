@@ -125,8 +125,11 @@ func (network QueryOrgVdcNetwork) GetMetadataValue(key string) string {
 	return getMetadataValue(network.Metadata, key)
 }
 
-// resultsToQueryItem converts a set of query results into a list of query items
-func resultsToQueryItem(queryType string, results Results) ([]QueryItem, error) {
+// --------------------------------------------------------------
+// result conversion
+// --------------------------------------------------------------
+// resultToQueryItems converts a set of query results into a list of query items
+func resultToQueryItems(queryType string, results Results) ([]QueryItem, error) {
 	resultSize := int64(results.Results.Total)
 	if resultSize < 1 {
 		return nil, nil
