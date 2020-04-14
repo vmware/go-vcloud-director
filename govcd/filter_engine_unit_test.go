@@ -130,55 +130,271 @@ func Test_searchByFilter(t *testing.T) {
 	// Test cases that should succeed
 	testsSuccess := []testDef{
 		// Gets a name by regular expression (finds 1)
-		{"name1", args{dummyQbyM, dummyQwithM, getData, "", makeNameCriteria(`o\w+`)}, []QueryItem{data[0]}, false},
+		{
+			name: "name1",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeNameCriteria(`o\w+`),
+			},
+			want: []QueryItem{data[0]},
+		},
 		// Gets a name by regular expression (finds 2)
-		{"name2", args{dummyQbyM, dummyQwithM, getData, "", makeNameCriteria(`t\w+`)}, []QueryItem{data[1], data[2]}, false},
+		{
+			name: "name2",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeNameCriteria(`t\w+`),
+			},
+			want: []QueryItem{data[1], data[2]},
+		},
 		// Gets a name by full value (finds 1)
-		{"name3", args{dummyQbyM, dummyQwithM, getData, "", makeNameCriteria(`two`)}, []QueryItem{data[1]}, false},
+		{
+			name: "name3",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeNameCriteria(`two`),
+			},
+			want: []QueryItem{data[1]},
+		},
 		// Use date comparison to get an item that's a few hours older than the date referenced (finds 1)
-		{"dateComparison", args{dummyQbyM, dummyQwithM, getData, "", makeDateCriteria("> 2020-02-03", false, false)}, []QueryItem{data[2]}, false},
+		{
+			name: "dateComparison",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeDateCriteria("> 2020-02-03", false, false),
+			},
+			want: []QueryItem{data[2]},
+		},
 		// Gets the newest element (finds 1)
-		{"dateLatest", args{dummyQbyM, dummyQwithM, getData, "", makeDateCriteria("", true, false)}, []QueryItem{data[2]}, false},
+		{
+			name: "dateLatest",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeDateCriteria("", true, false),
+			},
+			want: []QueryItem{data[2]},
+		},
 		// Gets the oldest element (finds 1)
-		{"dateEarliest", args{dummyQbyM, dummyQwithM, getData, "", makeDateCriteria("", false, true)}, []QueryItem{data[0]}, false},
+		{
+			name: "dateEarliest",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeDateCriteria("", false, true),
+			},
+			want: []QueryItem{data[0]},
+		},
 		// Gets the items with IP containing "10" (finds 3)
-		{"ip10", args{dummyQbyM, dummyQwithM, getData, "", makeIpCriteria(`10`)}, []QueryItem{data[0], data[1], data[2]}, false},
+		{
+			name: "ip10",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeIpCriteria(`10`),
+			},
+			want: []QueryItem{data[0], data[1], data[2]},
+		},
 		// Gets the items with IP starting by 10 (finds 2)
-		{"ip^10", args{dummyQbyM, dummyQwithM, getData, "", makeIpCriteria(`^10`)}, []QueryItem{data[1], data[2]}, false},
+		{
+			name: "ip^10",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeIpCriteria(`^10`),
+			},
+			want: []QueryItem{data[1], data[2]},
+		},
 		// Gets the items with IP ending with "10" (finds 1)
-		{"ip10$", args{dummyQbyM, dummyQwithM, getData, "", makeIpCriteria(`10$`)}, []QueryItem{data[0]}, false},
+		{
+			name: "ip10$",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeIpCriteria(`10$`),
+			},
+			want: []QueryItem{data[0]},
+		},
 		// Gets the items with IP starting by 192 (finds 1)
-		{"ip192", args{dummyQbyM, dummyQwithM, getData, "", makeIpCriteria(`^192`)}, []QueryItem{data[0]}, false},
+		{
+			name: "ip192",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeIpCriteria(`^192`),
+			},
+			want: []QueryItem{data[0]},
+		},
 		// Gets the items with IP starting by 10.150 (finds 1)
-		{"ip10.150", args{dummyQbyM, dummyQwithM, getData, "", makeIpCriteria(`10\.150`)}, []QueryItem{data[2]}, false},
+		{
+			name: "ip10.150",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeIpCriteria(`10\.150`),
+			},
+			want: []QueryItem{data[2]},
+		},
 		// Gets the items with metadata "abc" and any value (finds 2)
-		{"metaAbc1", args{dummyQbyM, dummyQwithM, getData, "", makeMDCriteria(false, stringMap{"abc": `\S+`})}, []QueryItem{data[1], data[2]}, false},
+		{
+			name: "metaAbc1",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeMDCriteria(false, stringMap{"abc": `\S+`}),
+			},
+			want: []QueryItem{data[1], data[2]},
+		},
 		// Gets the items with metadata "abc" and alphanumeric value (finds 1)
-		{"metaAbc2", args{dummyQbyM, dummyQwithM, getData, "", makeMDCriteria(false, stringMap{"abc": `\w+`})}, []QueryItem{data[1]}, false},
+		{
+			name: "metaAbc2",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeMDCriteria(false, stringMap{"abc": `\w+`}),
+			},
+			want: []QueryItem{data[1]},
+		},
 		// Gets the items with metadata "xyz" and alphanumeric value (finds 1)
-		{"metaXyz", args{dummyQbyM, dummyQwithM, getData, "", makeMDCriteria(false, stringMap{"xyz": `\w+`})}, []QueryItem{data[0]}, false},
+		{
+			name: "metaXyz",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeMDCriteria(false, stringMap{"xyz": `\w+`}),
+			},
+			want: []QueryItem{data[0]},
+		},
 		// Gets the items with two metadata values (finds 1)
-		{"metaOther", args{dummyQbyM, dummyQwithM, getData, "", makeMDCriteria(false, stringMap{"abc": `\S+`, "other": `\w+`})}, []QueryItem{data[2]}, false},
+		{
+			name: "metaOther",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeMDCriteria(false, stringMap{"abc": `\S+`, "other": `\w+`}),
+			},
+			want: []QueryItem{data[2]},
+		},
 		// Gets the items with metadata "abc" and any value combined with date search (finds 1)
-		{"metaCombined", args{dummyQbyM, dummyQwithM, getData, "", makeDateMDCriteria("> 2020-02-02", false, stringMap{"abc": `\S+`})}, []QueryItem{data[2]}, false},
+		{
+			name: "metaCombined",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeDateMDCriteria("> 2020-02-02", false, stringMap{"abc": `\S+`}),
+			},
+			want: []QueryItem{data[2]},
+		},
 	}
 
 	// Test cases that should fail, i.e. will return an empty list
 	testsFailure := []testDef{
 		// Searches for a date that is one second higher than the highest date in the test set
-		{"failDateHigher", args{dummyQbyM, dummyQwithM, getData, "", makeDateCriteria(">= 2020-02-03 10:00:01", false, false)}, []QueryItem{}, false},
+		{
+			name: "failDateHigher",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeDateCriteria(">= 2020-02-03 10:00:01", false, false),
+			},
+			want: nil,
+		},
 		// Searches for a date that is one second lower than the lowest date in the test set
-		{"failDateLower", args{dummyQbyM, dummyQwithM, getData, "", makeDateCriteria("< 2019-12-31 23:59:59", false, false)}, []QueryItem{}, false},
+		{
+			name: "failDateLower",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeDateCriteria("< 2019-12-31 23:59:59", false, false),
+			},
+			want: nil,
+		},
 		// Searches for an empty name
-		{"failEmptyName", args{dummyQbyM, dummyQwithM, getData, "", makeNameCriteria(`^\s+$`)}, []QueryItem{}, false},
+		{
+			name: "failEmptyName",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeNameCriteria(`^\s+$`),
+			},
+			want: nil,
+		},
 		// Searches for a non existing name
-		{"failWrongName", args{dummyQbyM, dummyQwithM, getData, "", makeNameCriteria(`BilboBaggins`)}, []QueryItem{}, false},
+		{
+			name: "failWrongName",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeNameCriteria(`BilboBaggins`),
+			},
+			want: nil,
+		},
 		// Searches for non-existing IPs
-		{"failWrongIp1", args{dummyQbyM, dummyQwithM, getData, "", makeIpCriteria(`127.0.0.1`)}, []QueryItem{}, false},
-		{"failWrongIp2", args{dummyQbyM, dummyQwithM, getData, "", makeIpCriteria(`0.0.0.0`)}, []QueryItem{}, false},
-		{"failWrongIp3", args{dummyQbyM, dummyQwithM, getData, "", makeIpCriteria(`^255`)}, []QueryItem{}, false},
+		{
+			name: "failWrongIp1",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeIpCriteria(`127.0.0.1`),
+			},
+			want: nil,
+		},
+		{
+			name: "failWrongIp2",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeIpCriteria(`0.0.0.0`),
+			},
+			want: nil,
+		},
+		{
+			name: "failWrongIp3",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeIpCriteria(`^255`),
+			},
+			want: nil,
+		},
 		// Searches for a non-existing metadata key
-		{"failWrongMeta", args{dummyQbyM, dummyQwithM, getData, "", makeMDCriteria(false, stringMap{"OneRing": `ToRuleThemAll`})}, []QueryItem{}, false},
+		{
+			name: "failWrongMeta",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  makeMDCriteria(false, stringMap{"OneRing": `ToRuleThemAll`}),
+			},
+			want: nil,
+		},
 	}
 	for _, tt := range testsSuccess {
 		t.Run(tt.name, func(t *testing.T) {
