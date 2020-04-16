@@ -203,6 +203,7 @@ func (vcd *TestVCD) Test_SearchNetwork(check *C) {
 			queryItems, explanation, err = client.Client.SearchByFilter(QtOrgVdcNetwork, criteria)
 			check.Assert(err, IsNil)
 			check.Assert(len(queryItems), Equals, 1)
+			fmt.Printf("%s\n", explanation)
 			for i, item := range queryItems {
 				fmt.Printf("(II) %2d %-10s %-20s %s\n\n", i, item.GetType(), item.GetName(), item.GetIp())
 			}
