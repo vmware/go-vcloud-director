@@ -3,11 +3,8 @@
 package govcd
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
-
-	"github.com/kr/pretty"
 )
 
 // Test filter engine using dependency injection
@@ -77,7 +74,6 @@ func makeMDCriteria(useApi bool, wanted stringMap) *FilterDef {
 func makeDateMDCriteria(date string, useApi bool, wanted stringMap) *FilterDef {
 	f := makeMDCriteria(useApi, wanted)
 	_ = f.AddFilter(FilterDate, date)
-	fmt.Printf("%# v\n", pretty.Formatter(f))
 	return f
 }
 

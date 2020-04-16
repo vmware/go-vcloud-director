@@ -1,9 +1,6 @@
 # Coding guidelines
 
 
-( **Work in progress** )
-
-
 ## Principles
 
 The functions, entities, and methods in this library have the wide goal of providing access to vCD functionality
@@ -284,6 +281,55 @@ to vCD.
 
 The engine returns a list of `QueryItem`, and interface that defines several methods used to help evaluate the search
 conditions.
+
+### How to use the query engine
+
+Here is an example of how to retrieve a media item.
+The criteria ask for the newest item created after the 2nd of February 2020, containing a metadata field named "abc",
+with a non-empty value.
+
+```go
+            criteria := &govcd.FilterDef{
+                Filters:  {
+                    "date":"> 2020-02-02", 
+                    "latest": "true",
+                 },
+                Metadata: {
+                    {
+                        Key:      "abc",
+                        Type:     "STRING",
+                        Value:    "\\S+",
+                        IsSystem: false,
+                    },
+                },
+                UseMetadataApiFilter: false,
+            }
+			queryType := govcd.QtMedia
+			if vcdClient.Client.IsSysAdmin {
+				queryType = govcd.QtAdminMedia
+			}
+			queryItems, explanation, err := vcdClient.Client.SearchByFilter(queryType, criteria)
+			if err != nil {
+				return err
+			}
+			if len(queryItems) == 0 {
+				return fmt.Errorf("no media found with given criteria (%s)", explanation)
+			}
+			if len(queryItems) > 1 {
+                // deal with several items
+				var itemNames = make([]string, len(queryItems))
+				for i, item := range queryItems {
+					itemNames[i] = item.GetName()
+				}
+				return fmt.Errorf("more than one media item found by given criteria: %v", itemNames)
+			}
+            // retrieve the full entity for the item found
+			media, err = catalog.GetMediaByHref(queryItems[0].GetHref())
+```
+
+The `explanation` returned by `SearchByFilter` contains the details of the criteria as they were understood by the
+engine, and the detail of how each comparison with other items was evaluated. This is useful to create meaningful error
+messages.
 
 ### Supporting a new type in the query engine
 

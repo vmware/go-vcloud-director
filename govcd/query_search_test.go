@@ -88,9 +88,10 @@ func (vcd *TestVCD) Test_SearchVappTemplate(check *C) {
 	}
 
 	for _, item := range data {
-		if !item.created {
+		if !item.created || os.Getenv("GOVCD_KEEP_TEST_OBJECTS") != "" {
 			continue
 		}
+
 		catalogItem, err := catalog.GetCatalogItemByName(item.name, true)
 		check.Assert(err, IsNil)
 		err = catalogItem.Delete()
@@ -139,6 +140,20 @@ func guessMetadataType(value string) string {
 	return fType
 }
 
+func metadataToFilter(client *Client, href string, filter *FilterDef) (*FilterDef, error) {
+	metadata, err := getMetadata(client, href)
+	if err == nil && metadata != nil && len(metadata.MetadataEntry) > 0 {
+		for _, md := range metadata.MetadataEntry {
+			fType := guessMetadataType(md.TypedValue.Value)
+			err = filter.AddMetadataFilter(md.Key, md.TypedValue.Value, fType, false, false)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return filter, nil
+}
+
 // makeFiltersFromNetworks looks at the existing networks and creates a set of criteria to retrieve each of them
 func makeFiltersFromNetworks(vdc *Vdc) ([]*FilterDef, error) {
 	netList, err := vdc.GetNetworkList()
@@ -157,15 +172,9 @@ func makeFiltersFromNetworks(vdc *Vdc) ([]*FilterDef, error) {
 		if err != nil {
 			return nil, err
 		}
-		metadata, err := getMetadata(vdc.client, net.HREF)
-		if err == nil && metadata != nil && len(metadata.MetadataEntry) > 0 {
-			for _, md := range metadata.MetadataEntry {
-				fType := guessMetadataType(md.TypedValue.Value)
-				err = filter.AddMetadataFilter(md.Key, md.TypedValue.Value, fType, false, false)
-				if err != nil {
-					return nil, err
-				}
-			}
+		filter, err = metadataToFilter(vdc.client, net.HREF, filter)
+		if err != nil {
+			return nil, err
 		}
 		filters[i] = filter
 	}
@@ -210,42 +219,6 @@ func (vcd *TestVCD) Test_SearchNetwork(check *C) {
 		}
 	}
 
-	/*
-		for _, value := range []string{"direct", "routed", "isolated"} {
-			var criteria = NewFilterDef()
-			err = criteria.AddMetadataFilter("search", value, "STRING", false, true)
-			queryItems, explanation, err := client.Client.SearchByFilter(QtOrgVdcNetwork, criteria)
-			check.Assert(err, IsNil)
-			fmt.Printf("%s\n\n",explanation)
-			for i, item := range queryItems {
-				fmt.Printf("%2d %-10s %-20s %s\n",i, item.GetType(), item.GetName(), item.GetIp())
-			}
-			//fmt.Printf("%#v\n", queryItems)
-		}
-		//for _, value := range []string{"10.150.191.253", "192.168.2.1", "192.168.3.1"} {
-		for _, value := range []string{`10.150.191.\d+`, `192.168.2.\d+`, `192.168.3.\d+`} {
-			//for _, value := range []string{"10.150.191.250,10.150.191.255", "192.168.2.1,192.168.2.2", "192.168.3.1,192.168.3.5"} {
-			var criteria = NewFilterDef()
-			err = criteria.AddFilter("ip", value)
-			check.Assert(err, IsNil)
-			queryItems, _, err := client.Client.SearchByFilter(QtOrgVdcNetwork, criteria)
-			check.Assert(err, IsNil)
-			fmt.Printf("\nvalue  %s : found %d\n", value, len(queryItems))
-			for _, item := range queryItems {
-				fmt.Printf("%s %s\n", item.GetName(), item.GetIp())
-			}
-		}
-		var criteria = NewFilterDef()
-		err = criteria.AddMetadataFilter("codename", "straight", "STRING", false, true)
-		check.Assert(err, IsNil)
-		queryItems, _, err := client.Client.SearchByFilter(QtOrgVdcNetwork, criteria)
-		check.Assert(err, IsNil)
-		fmt.Printf("\nNETWORK  found %d\n", len(queryItems))
-		for _, item := range queryItems {
-			fmt.Printf("%s %s\n", item.GetName(), item.GetIp())
-		}
-	*/
-
 }
 
 func (vcd *TestVCD) Test_SearchEdgeGateway(check *C) {
@@ -274,8 +247,8 @@ func (vcd *TestVCD) Test_SearchEdgeGateway(check *C) {
 			fmt.Printf("( I) %2d %-10s %-20s %s\n\n", i, item.GetType(), item.GetName(), item.GetIp())
 		}
 	}
-
 }
+
 func makeFiltersFromCatalogs(org *AdminOrg) ([]*FilterDef, error) {
 	if org.AdminOrg.Catalogs == nil || len(org.AdminOrg.Catalogs.Catalog) == 0 {
 		return []*FilterDef{}, nil
@@ -290,7 +263,11 @@ func makeFiltersFromCatalogs(org *AdminOrg) ([]*FilterDef, error) {
 		_ = filter.AddFilter(FilterNameRegex, cat.Catalog.Name)
 		_ = filter.AddFilter(FilterDate, "=="+cat.Catalog.DateCreated)
 
-		// TODO: add metadata
+		filter, err = metadataToFilter(org.client, ref.HREF, filter)
+		if err != nil {
+			return nil, err
+		}
+
 		filters = append(filters, filter)
 	}
 	return filters, nil
@@ -301,7 +278,7 @@ func (vcd *TestVCD) Test_SearchCatalog(check *C) {
 		check.Skip("no org provided. Skipping test")
 	}
 	client := vcd.client
-	// Fetching organization and VDC
+	// Fetching organization
 	org, err := client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
@@ -319,32 +296,61 @@ func (vcd *TestVCD) Test_SearchCatalog(check *C) {
 			fmt.Printf("( I) %2d %-10s %-20s %s\n\n", i, item.GetType(), item.GetName(), item.GetIp())
 		}
 	}
-
 }
 
-// TODO: make test function for media items search
-/*
-	criteria = NewFilterDef()
-	//err = criteria.AddFilter("name_regex", "^test")
-	err = criteria.AddFilter("date", "> 2020-03-08")
-	//err = criteria.AddMetadataFilter("one", "abc", "", false, false )
+func makeFiltersFromMedia(vdc *Vdc) ([]*FilterDef, error) {
+	var filters []*FilterDef
+	items, err := getExistingMedia(vdc)
+	if err != nil {
+		return filters, err
+	}
+	for _, item := range items {
+		filter := NewFilterDef()
+		_ = filter.AddFilter(FilterNameRegex, item.Name)
+		_ = filter.AddFilter(FilterDate, "=="+item.CreationDate)
+
+		filter, err = metadataToFilter(vdc.client, item.HREF, filter)
+		if err != nil {
+			return nil, err
+		}
+
+		filters = append(filters, filter)
+	}
+	return filters, nil
+}
+
+func (vcd *TestVCD) Test_SearchMediaItem(check *C) {
+	if vcd.config.VCD.Vdc == "" {
+		check.Skip("no VDC provided. Skipping test")
+	}
+	client := vcd.client
+	// Fetching organization and VDC
+	org, err := client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
-	queryType = QtMedia
-	if catalog.client.IsSysAdmin {
+	check.Assert(org, NotNil)
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	filters, err := makeFiltersFromMedia(vdc)
+	check.Assert(err, IsNil)
+	check.Assert(filters, NotNil)
+
+	queryType := QtMedia
+
+	if client.Client.IsSysAdmin {
 		queryType = QtAdminMedia
 	}
-	queryItems, _, err = client.SearchByFilter(queryType, criteria)
-	check.Assert(err, IsNil)
-	fmt.Printf("\nmedia found %d\n", len(queryItems))
-	for _, item := range queryItems {
-		fmt.Printf("%s %s\n", item.GetName(), item.GetHref())
+	for _, criteria := range filters {
+		queryItems, explanation, err := client.Client.SearchByFilter(queryType, criteria)
+		check.Assert(err, IsNil)
+		check.Assert(len(queryItems), Equals, 1)
+		fmt.Printf("%s\n", explanation)
+		for i, item := range queryItems {
+			fmt.Printf("( I) %2d %-10s %-20s %s\n\n", i, item.GetType(), item.GetName(), item.GetIp())
+		}
 	}
-	media, ok := queryItems[0].(QueryMedia)
-	check.Assert(ok, Equals, true)
-	check.Assert(media.Name, Not(Equals), "")
-	// fmt.Printf("%# v\n", pretty.Formatter(media))
-
-*/
+}
 
 // createMultipleCatalogItems deploys several catalog items, as defined in requestData
 // Returns a set of vappTemplateData with what was created.
