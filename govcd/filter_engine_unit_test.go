@@ -15,7 +15,7 @@ type TestItem struct {
 	date     string
 	ip       string
 	ttype    string
-	metadata stringMap
+	metadata StringMap
 }
 
 // mock QueryWithMetadataFields function that returns an empty result
@@ -63,7 +63,7 @@ func makeDateCriteria(date string, latest, earliest bool) *FilterDef {
 	return f
 }
 
-func makeMDCriteria(useApi bool, wanted stringMap) *FilterDef {
+func makeMDCriteria(useApi bool, wanted StringMap) *FilterDef {
 	f := NewFilterDef()
 	for key, value := range wanted {
 		_ = f.AddMetadataFilter(key, value, "STRING", false, useApi)
@@ -71,7 +71,7 @@ func makeMDCriteria(useApi bool, wanted stringMap) *FilterDef {
 	return f
 }
 
-func makeDateMDCriteria(date string, useApi bool, wanted stringMap) *FilterDef {
+func makeDateMDCriteria(date string, useApi bool, wanted StringMap) *FilterDef {
 	f := makeMDCriteria(useApi, wanted)
 	_ = f.AddFilter(FilterDate, date)
 	return f
@@ -100,21 +100,21 @@ func Test_searchByFilter(t *testing.T) {
 			ip:       "192.168.1.10",
 			date:     "2020-01-01",
 			ttype:    "test-name",
-			metadata: stringMap{"xyz": "xxx"},
+			metadata: StringMap{"xyz": "xxx"},
 		},
 		TestItem{
 			name:     "two",
 			ip:       "10.10.8.9",
 			date:     "2020-02-01",
 			ttype:    "test-name",
-			metadata: stringMap{"abc": "yyy"},
+			metadata: StringMap{"abc": "yyy"},
 		},
 		TestItem{
 			name:     "three",
 			ip:       "10.150.20.1",
 			date:     "2020-02-03 10:00:00",
 			ttype:    "test-date",
-			metadata: stringMap{"abc": "-+!", "other": "aaa"},
+			metadata: StringMap{"abc": "-+!", "other": "aaa"},
 		},
 	}
 
@@ -125,6 +125,43 @@ func Test_searchByFilter(t *testing.T) {
 
 	// Test cases that should succeed
 	testsSuccess := []testDef{
+		// Empty filter: gets all items
+		{
+			name: "empty-filter1",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria: &FilterDef{
+					Filters:              map[string]string{},
+					Metadata:             []MetadataDef{},
+					UseMetadataApiFilter: false,
+				},
+			},
+			want: data,
+		},
+		// Empty filter: gets all items
+		{
+			name: "empty-filter2",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  &FilterDef{},
+			},
+			want: data,
+		},
+		// Null filter: gets all items
+		{
+			name: "null-filter",
+			args: args{
+				qByM:      dummyQbyM,
+				qWithM:    dummyQwithM,
+				converter: getData,
+				criteria:  nil,
+			},
+			want: data,
+		},
 		// Gets a name by regular expression (finds 1)
 		{
 			name: "name1",
@@ -253,7 +290,7 @@ func Test_searchByFilter(t *testing.T) {
 				qByM:      dummyQbyM,
 				qWithM:    dummyQwithM,
 				converter: getData,
-				criteria:  makeMDCriteria(false, stringMap{"abc": `\S+`}),
+				criteria:  makeMDCriteria(false, StringMap{"abc": `\S+`}),
 			},
 			want: []QueryItem{data[1], data[2]},
 		},
@@ -264,7 +301,7 @@ func Test_searchByFilter(t *testing.T) {
 				qByM:      dummyQbyM,
 				qWithM:    dummyQwithM,
 				converter: getData,
-				criteria:  makeMDCriteria(false, stringMap{"abc": `\w+`}),
+				criteria:  makeMDCriteria(false, StringMap{"abc": `\w+`}),
 			},
 			want: []QueryItem{data[1]},
 		},
@@ -275,7 +312,7 @@ func Test_searchByFilter(t *testing.T) {
 				qByM:      dummyQbyM,
 				qWithM:    dummyQwithM,
 				converter: getData,
-				criteria:  makeMDCriteria(false, stringMap{"xyz": `\w+`}),
+				criteria:  makeMDCriteria(false, StringMap{"xyz": `\w+`}),
 			},
 			want: []QueryItem{data[0]},
 		},
@@ -286,7 +323,7 @@ func Test_searchByFilter(t *testing.T) {
 				qByM:      dummyQbyM,
 				qWithM:    dummyQwithM,
 				converter: getData,
-				criteria:  makeMDCriteria(false, stringMap{"abc": `\S+`, "other": `\w+`}),
+				criteria:  makeMDCriteria(false, StringMap{"abc": `\S+`, "other": `\w+`}),
 			},
 			want: []QueryItem{data[2]},
 		},
@@ -297,7 +334,7 @@ func Test_searchByFilter(t *testing.T) {
 				qByM:      dummyQbyM,
 				qWithM:    dummyQwithM,
 				converter: getData,
-				criteria:  makeDateMDCriteria("> 2020-02-02", false, stringMap{"abc": `\S+`}),
+				criteria:  makeDateMDCriteria("> 2020-02-02", false, StringMap{"abc": `\S+`}),
 			},
 			want: []QueryItem{data[2]},
 		},
@@ -387,7 +424,7 @@ func Test_searchByFilter(t *testing.T) {
 				qByM:      dummyQbyM,
 				qWithM:    dummyQwithM,
 				converter: getData,
-				criteria:  makeMDCriteria(false, stringMap{"OneRing": `ToRuleThemAll`}),
+				criteria:  makeMDCriteria(false, StringMap{"OneRing": `ToRuleThemAll`}),
 			},
 			want: nil,
 		},
@@ -402,7 +439,7 @@ func Test_searchByFilter(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("searchByFilter() got = %v, want %v", got, tt.want)
 			}
-			t.Logf("%s\n", explanation)
+			logVerbose(t, "%s\n", explanation)
 		})
 	}
 	for _, tt := range testsFailure {
@@ -419,7 +456,7 @@ func Test_searchByFilter(t *testing.T) {
 			if !success {
 				t.Errorf("searchByFilter() got = %v, want %v", got, tt.want)
 			}
-			t.Logf("%s\n", explanation)
+			logVerbose(t, "%s\n", explanation)
 		})
 	}
 }
