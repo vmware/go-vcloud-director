@@ -31,7 +31,7 @@ type MetadataFilter struct {
 
 const (
 	// The QT* constants are the names used with Query requests to retrieve the corresponding entities
-	QtVappTemplate      = "vappTemplate"      // vApp template
+	QtVappTemplate      = "vAppTemplate"      // vApp template
 	QtAdminVappTemplate = "adminVAppTemplate" // vApp template as admin
 	QtEdgeGateway       = "edgeGateway"       // edge gateway
 	QtOrgVdcNetwork     = "orgVdcNetwork"     // Org VDC network
@@ -61,6 +61,8 @@ func queryFieldsOnDemand(queryType string) ([]string, error) {
 			"storageProfileName", "taskStatusName", "isInCatalog", "task",
 			"isIso", "isVdcEnabled", "taskStatus", "taskDetails"}
 		// entities for which the fields on demand are supported
+		catalogItemFields = []string{"entity", "entityName", "entityType", "catalog", "catalogName", "ownerName",
+			"owner", "isPublished", "vdc", "vdcName", "isVdcEnabled", "creationDate", "isExpired", "status"}
 		fieldsOnDemand = map[string][]string{
 			QtVappTemplate:      vappTemplatefields,
 			QtAdminVappTemplate: vappTemplatefields,
@@ -69,6 +71,8 @@ func queryFieldsOnDemand(queryType string) ([]string, error) {
 			QtAdminCatalog:      adminCatalogFields,
 			QtMedia:             mediaFields,
 			QtAdminMedia:        mediaFields,
+			QtCatalogItem:       catalogItemFields,
+			QtAdminCatalogItem:  catalogItemFields,
 		}
 	)
 
@@ -119,6 +123,8 @@ func (client *Client) QueryWithMetadataFields(queryType string, params, notEncod
 
 	notEncodedParams["fields"] = strings.Join(fields, ",") + "," + metadataFieldText
 
+	notEncodedParams["pageSize"] = "128" // Temporary workaround. TODO: loop until rows fetched == total
+
 	return client.QueryWithNotEncodedParams(params, notEncodedParams)
 }
 
@@ -158,6 +164,7 @@ func (client *Client) QueryByMetadataFilter(params, notEncodedParams map[string]
 		filter = metadataFilterText
 	}
 	notEncodedParams["filter"] = filter
+	notEncodedParams["pageSize"] = "128" // Temporary workaround. TODO: loop until rows fetched == total
 
 	return client.QueryWithNotEncodedParams(params, notEncodedParams)
 }

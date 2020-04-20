@@ -12,8 +12,6 @@ import (
 	"testing"
 )
 
-type stringMap map[string]string
-
 var testingTags = make(map[string]string)
 
 var testVerbose bool = os.Getenv("GOVCD_TEST_VERBOSE") != ""
@@ -95,5 +93,17 @@ func TestTags(t *testing.T) {
 	}
 	if os.Getenv("SHOW_TAGS") != "" {
 		showTags()
+	}
+}
+
+func printVerbose(format string, args ...interface{}) {
+	if testVerbose {
+		fmt.Printf(format, args...)
+	}
+}
+
+func logVerbose(t *testing.T, format string, args ...interface{}) {
+	if testVerbose {
+		t.Logf(format, args...)
 	}
 }

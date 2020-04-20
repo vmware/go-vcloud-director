@@ -669,3 +669,19 @@ func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
 	}
 	return Vdc{}, nil
 }
+
+// QueryCatalogList returns a list of catalogs for this organization
+func (adminOrg *AdminOrg) QueryCatalogList() ([]*types.AdminCatalogRecord, error) {
+	util.Logger.Printf("[DEBUG] QueryCatalogList with org name %s", adminOrg.AdminOrg.Name)
+	results, err := adminOrg.client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":          QtAdminCatalog,
+		"filter":        fmt.Sprintf("orgName==%s", url.QueryEscape(adminOrg.AdminOrg.Name)),
+		"filterEncoded": "true",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	util.Logger.Printf("[DEBUG] QueryCatalogList returned with : %#v and error: %s", results.Results.AdminCatalogRecord, err)
+	return results.Results.AdminCatalogRecord, nil
+}
