@@ -160,9 +160,9 @@ func HelperMakeFiltersFromCatalogs(org *AdminOrg) ([]FilterMatch, error) {
 
 	var dateInfo []DateItem
 	for _, cat := range catalogs {
-		localizedItem := QueryAdminCatalog(*cat)
+		localizedItem := QueryCatalog(*cat)
 		qItem := QueryItem(localizedItem)
-		filter, dInfo, err := queryItemToFilter(qItem, "QueryAdminCatalog")
+		filter, dInfo, err := queryItemToFilter(qItem, "QueryCatalog")
 		if err != nil {
 			return nil, err
 		}
@@ -174,7 +174,7 @@ func HelperMakeFiltersFromCatalogs(org *AdminOrg) ([]FilterMatch, error) {
 			return nil, err
 		}
 
-		filters = append(filters, FilterMatch{filter, cat.Name, localizedItem, "QueryAdminCatalog"})
+		filters = append(filters, FilterMatch{filter, cat.Name, localizedItem, "QueryCatalog"})
 	}
 	dateFilter, err := makeDateFilter(dateInfo)
 	if err != nil {

@@ -35,7 +35,8 @@ const (
 	QtAdminVappTemplate = "adminVAppTemplate" // vApp template as admin
 	QtEdgeGateway       = "edgeGateway"       // edge gateway
 	QtOrgVdcNetwork     = "orgVdcNetwork"     // Org VDC network
-	QtAdminCatalog      = "adminCatalog"      // catalog
+	QtCatalog           = "catalog"           // catalog
+	QtAdminCatalog      = "adminCatalog"      // catalog as admin
 	QtCatalogItem       = "catalogItem"       // catalog item
 	QtAdminCatalogItem  = "adminCatalogItem"  // catalog item as admin
 	QtAdminMedia        = "adminMedia"        // media item as admin
@@ -54,7 +55,7 @@ func queryFieldsOnDemand(queryType string) ([]string, error) {
 			"gatewayStatus", "haStatus"}
 		orgVdcNetworkFields = []string{"name", "defaultGateway", "netmask", "dns1", "dns2", "dnsSuffix", "linkType",
 			"connectedTo", "vdc", "isBusy", "isShared", "vdcName", "isIpScopeInherited"}
-		adminCatalogFields = []string{"name", "isPublished", "isShared", "creationDate", "orgName", "ownerName",
+		catalogFields = []string{"name", "isPublished", "isShared", "creationDate", "orgName", "ownerName",
 			"numberOfMedia", "owner"}
 		mediaFields = []string{"ownerName", "catalogName", "isPublished", "name", "vdc", "vdcName", "org",
 			"creationDate", "isBusy", "storageB", "owner", "catalog", "catalogItem", "status",
@@ -68,7 +69,8 @@ func queryFieldsOnDemand(queryType string) ([]string, error) {
 			QtAdminVappTemplate: vappTemplatefields,
 			QtEdgeGateway:       edgeGatewayFields,
 			QtOrgVdcNetwork:     orgVdcNetworkFields,
-			QtAdminCatalog:      adminCatalogFields,
+			QtCatalog:           catalogFields,
+			QtAdminCatalog:      catalogFields,
 			QtMedia:             mediaFields,
 			QtAdminMedia:        mediaFields,
 			QtCatalogItem:       catalogItemFields,
@@ -96,6 +98,7 @@ func (client *Client) QueryWithMetadataFields(queryType string, params, notEncod
 		notEncodedParams = make(map[string]string)
 	}
 	notEncodedParams["type"] = queryType
+	notEncodedParams["pageSize"] = "128" // Temporary workaround. TODO: loop until rows fetched == total
 
 	if len(metadataFields) == 0 {
 		return client.QueryWithNotEncodedParams(params, notEncodedParams)
@@ -122,8 +125,6 @@ func (client *Client) QueryWithMetadataFields(queryType string, params, notEncod
 	}
 
 	notEncodedParams["fields"] = strings.Join(fields, ",") + "," + metadataFieldText
-
-	notEncodedParams["pageSize"] = "128" // Temporary workaround. TODO: loop until rows fetched == total
 
 	return client.QueryWithNotEncodedParams(params, notEncodedParams)
 }

@@ -257,8 +257,12 @@ func (vcd *TestVCD) Test_SearchCatalog(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(filters, NotNil)
 
+	queryType := QtCatalog
+	if client.Client.IsSysAdmin {
+		queryType = QtAdminCatalog
+	}
 	for _, fm := range filters {
-		queryItems, explanation, err := client.Client.SearchByFilter(QtAdminCatalog, fm.Criteria)
+		queryItems, explanation, err := client.Client.SearchByFilter(queryType, fm.Criteria)
 		check.Assert(err, IsNil)
 		check.Assert(len(queryItems), Equals, 1)
 		printVerbose("%s\n", explanation)
