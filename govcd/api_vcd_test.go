@@ -1234,7 +1234,7 @@ func (vcd *TestVCD) createTestVapp(name string) (*VApp, error) {
 	var networks []*types.OrgVDCNetwork
 	net, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	if err != nil {
-		return nil, fmt.Errorf("error finding network : %s", err)
+		return nil, fmt.Errorf("error finding network : %s, err: %s", vcd.config.VCD.Network.Net1, err)
 	}
 	networks = append(networks, net.OrgVDCNetwork)
 	// Populate Catalog
