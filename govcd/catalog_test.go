@@ -12,6 +12,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
@@ -132,9 +133,21 @@ func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, TestDeleteCatalog)
 	err = adminCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
-	catalog, err := org.GetAdminCatalogByName(TestDeleteCatalog, true)
+	doesCatalogExist(check, org)
+}
+
+func doesCatalogExist(check *C, org *AdminOrg) {
+	var err error
+	var catalog *AdminCatalog
+	for i := 0; i < 30; i++ {
+		catalog, err = org.GetAdminCatalogByName(TestDeleteCatalog, true)
+		if catalog == nil {
+			break
+		} else {
+			time.Sleep(time.Second)
+		}
+	}
 	check.Assert(err, NotNil)
-	check.Assert(catalog, IsNil)
 }
 
 // Tests System function UploadOvf by creating catalog and
