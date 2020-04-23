@@ -599,14 +599,7 @@ func (vcd *TestVCD) Test_QueryDisk(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(diskRecord.Disk.Name, Equals, diskCreateParamsDisk.Name)
 	check.Assert(diskRecord.Disk.SizeB, Equals, int64(diskCreateParamsDisk.Size))
-
-	// vCD version >= 9.5. Earlier versions don't return Description
-	if vcd.client.Client.APIVCDMaxVersionIs(">= 31.0") {
-		check.Assert(diskRecord.Disk.Description, Equals, diskCreateParamsDisk.Description)
-	} else {
-		fmt.Printf("%s: skipping disk description check (not available in vCD < 9.5) \n", check.TestName())
-	}
-
+	check.Assert(diskRecord.Disk.Description, Equals, diskCreateParamsDisk.Description)
 }
 
 // Test query disk
