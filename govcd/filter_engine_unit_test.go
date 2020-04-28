@@ -16,6 +16,8 @@ type TestItem struct {
 	ip       string
 	ttype    string
 	metadata StringMap
+	parent   string
+	parentId string
 }
 
 // mock QueryWithMetadataFields function that returns an empty result
@@ -34,6 +36,8 @@ func (t TestItem) GetDate() string                    { return t.date }
 func (t TestItem) GetName() string                    { return t.name }
 func (t TestItem) GetType() string                    { return t.ttype }
 func (t TestItem) GetIp() string                      { return t.ip }
+func (t TestItem) GetParentName() string              { return t.parent }
+func (t TestItem) GetParentId() string                { return t.parentId }
 func (t TestItem) GetMetadataValue(key string) string { return t.metadata[key] }
 func (t TestItem) GetHref() string                    { return "" }
 

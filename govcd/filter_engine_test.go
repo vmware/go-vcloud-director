@@ -67,7 +67,7 @@ func (vcd *TestVCD) Test_SearchSpecificVappTemplate(check *C) {
 		var criteria = NewFilterDef()
 		err = criteria.AddMetadataFilter(tc.key, tc.value, "", false, false)
 		check.Assert(err, IsNil)
-		queryItems, _, err := client.SearchByFilter(queryType, criteria)
+		queryItems, _, err := catalog.SearchByFilter(queryType, "catalogName", criteria)
 		check.Assert(err, IsNil)
 		printVerbose("\n%d, %#v\n", n, tc)
 		for i, item := range queryItems {
@@ -116,24 +116,33 @@ func (vcd *TestVCD) Test_SearchVappTemplate(check *C) {
 	if client.IsSysAdmin {
 		queryType = QtAdminVappTemplate
 	}
-	// Test with any catalog items, using mass produced filters
+	// Test with any vApp templates, using mass produced filters
 	filters, err := HelperMakeFiltersFromVappTemplate(catalog)
 	check.Assert(err, IsNil)
 	for _, fm := range filters {
-		queryItems, explanation, err := client.SearchByFilter(queryType, fm.Criteria)
-		check.Assert(err, IsNil)
+		// Tests both the search by metadata through the query and the search offline after fetching the items
+		for _, useApiSearch := range []bool{false, true} {
 
-		convertedMatch, okMatch := fm.Entity.(QueryVAppTemplate)
-		check.Assert(okMatch, Equals, true)
-		check.Assert(convertedMatch.Name, Equals, fm.ExpectedName)
+			if len(fm.Criteria.Metadata) == 0 {
+				continue
+			}
+			fm.Criteria.UseMetadataApiFilter = useApiSearch
+			printVerbose("Use metadata API filter: %v\n", useApiSearch)
+			queryItems, explanation, err := catalog.SearchByFilter(queryType, "catalogName", fm.Criteria)
+			check.Assert(err, IsNil)
 
-		printVerbose("%s\n", explanation)
-		check.Assert(len(queryItems), Equals, 1)
-		check.Assert(queryItems[0].GetName(), Equals, fm.ExpectedName)
+			convertedMatch, okMatch := fm.Entity.(QueryVAppTemplate)
+			check.Assert(okMatch, Equals, true)
+			check.Assert(convertedMatch.Name, Equals, fm.ExpectedName)
 
-		converted, ok := queryItems[0].(QueryVAppTemplate)
-		check.Assert(ok, Equals, true)
-		check.Assert(converted.Name, Equals, fm.ExpectedName)
+			printVerbose("%s\n", explanation)
+			check.Assert(len(queryItems), Equals, 1)
+			check.Assert(queryItems[0].GetName(), Equals, fm.ExpectedName)
+
+			converted, ok := queryItems[0].(QueryVAppTemplate)
+			check.Assert(ok, Equals, true)
+			check.Assert(converted.Name, Equals, fm.ExpectedName)
+		}
 	}
 }
 
@@ -157,7 +166,7 @@ func (vcd *TestVCD) Test_SearchCatalogItem(check *C) {
 	filters, err := HelperMakeFiltersFromCatalogItem(catalog)
 	check.Assert(err, IsNil)
 	for _, fm := range filters {
-		queryItems, explanation, err := client.SearchByFilter(queryType, fm.Criteria)
+		queryItems, explanation, err := catalog.SearchByFilter(queryType, "catalog", fm.Criteria)
 		check.Assert(err, IsNil)
 
 		convertedMatch, okMatch := fm.Entity.(QueryCatalogItem)
@@ -186,12 +195,13 @@ func (vcd *TestVCD) Test_SearchNetwork(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 
+	// Get existing networks, and create sample filters to retrieve them
 	filters, err := HelperMakeFiltersFromNetworks(vdc)
 	check.Assert(err, IsNil)
 	check.Assert(filters, NotNil)
 
 	for _, fm := range filters {
-		queryItems, explanation, err := client.Client.SearchByFilter(QtOrgVdcNetwork, fm.Criteria)
+		queryItems, explanation, err := vdc.SearchByFilter(QtOrgVdcNetwork, "vdc", fm.Criteria)
 		check.Assert(err, IsNil)
 		printVerbose("%s\n", explanation)
 		check.Assert(len(queryItems), Equals, 1)
@@ -201,7 +211,7 @@ func (vcd *TestVCD) Test_SearchNetwork(check *C) {
 		if len(fm.Criteria.Metadata) > 0 {
 			// Search with Metadata API
 			fm.Criteria.UseMetadataApiFilter = true
-			queryItems, explanation, err = client.Client.SearchByFilter(QtOrgVdcNetwork, fm.Criteria)
+			queryItems, explanation, err = vdc.SearchByFilter(QtOrgVdcNetwork, "vdc", fm.Criteria)
 			check.Assert(err, IsNil)
 			check.Assert(len(queryItems), Equals, 1)
 			check.Assert(queryItems[0].GetName(), Equals, fm.ExpectedName)
@@ -227,15 +237,16 @@ func (vcd *TestVCD) Test_SearchEdgeGateway(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 
+	// Get existing edge gateways, and create sample filters to retrieve them
 	filters, err := HelperMakeFiltersFromEdgeGateways(vdc)
 	check.Assert(err, IsNil)
 	check.Assert(filters, NotNil)
 
 	for _, fm := range filters {
-		queryItems, explanation, err := client.Client.SearchByFilter(QtEdgeGateway, fm.Criteria)
+		queryItems, explanation, err := vdc.SearchByFilter(QtEdgeGateway, "vdc", fm.Criteria)
 		check.Assert(err, IsNil)
-		check.Assert(len(queryItems), Equals, 1)
 		printVerbose("%s\n", explanation)
+		check.Assert(len(queryItems), Equals, 1)
 		check.Assert(queryItems[0].GetName(), Equals, fm.ExpectedName)
 		for i, item := range queryItems {
 			printVerbose("( I) %2d %-10s %-20s %s\n\n", i, item.GetType(), item.GetName(), item.GetIp())
@@ -253,6 +264,7 @@ func (vcd *TestVCD) Test_SearchCatalog(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
+	// Get existing catalogs, and create sample filters to retrieve them
 	filters, err := HelperMakeFiltersFromCatalogs(org)
 	check.Assert(err, IsNil)
 	check.Assert(filters, NotNil)
@@ -262,7 +274,7 @@ func (vcd *TestVCD) Test_SearchCatalog(check *C) {
 		queryType = QtAdminCatalog
 	}
 	for _, fm := range filters {
-		queryItems, explanation, err := client.Client.SearchByFilter(queryType, fm.Criteria)
+		queryItems, explanation, err := org.SearchByFilter(queryType, fm.Criteria)
 		check.Assert(err, IsNil)
 		check.Assert(len(queryItems), Equals, 1)
 		printVerbose("%s\n", explanation)
@@ -286,7 +298,12 @@ func (vcd *TestVCD) Test_SearchMediaItem(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 
-	filters, err := HelperMakeFiltersFromMedia(vdc)
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+
+	// Get existing media, and create sample filters to retrieve them
+	filters, err := HelperMakeFiltersFromMedia(vdc, catalog.Catalog.Name)
 	check.Assert(err, IsNil)
 	check.Assert(filters, NotNil)
 
@@ -296,10 +313,10 @@ func (vcd *TestVCD) Test_SearchMediaItem(check *C) {
 		queryType = QtAdminMedia
 	}
 	for _, fm := range filters {
-		queryItems, explanation, err := client.Client.SearchByFilter(queryType, fm.Criteria)
+		queryItems, explanation, err := catalog.SearchByFilter(queryType, "catalog", fm.Criteria)
 		check.Assert(err, IsNil)
-		check.Assert(len(queryItems), Equals, 1)
 		printVerbose("%s\n", explanation)
+		check.Assert(len(queryItems), Equals, 1)
 		check.Assert(queryItems[0].GetName(), Equals, fm.ExpectedName)
 		for i, item := range queryItems {
 			printVerbose("( I) %2d %-10s %-20s %s\n\n", i, item.GetType(), item.GetName(), item.GetIp())
