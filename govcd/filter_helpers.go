@@ -3,7 +3,6 @@ package govcd
 import (
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 )
@@ -186,7 +185,7 @@ func HelperMakeFiltersFromCatalogs(org *AdminOrg) ([]FilterMatch, error) {
 	return filters, nil
 }
 
-func HelperMakeFiltersFromMedia(vdc *Vdc) ([]FilterMatch, error) {
+func HelperMakeFiltersFromMedia(vdc *Vdc, catalogName string) ([]FilterMatch, error) {
 	var filters []FilterMatch
 	items, err := getExistingMedia(vdc)
 	if err != nil {
@@ -195,6 +194,9 @@ func HelperMakeFiltersFromMedia(vdc *Vdc) ([]FilterMatch, error) {
 	var dateInfo []DateItem
 	for _, item := range items {
 
+		if item.CatalogName != catalogName {
+			continue
+		}
 		localizedItem := QueryMedia(*item)
 		qItem := QueryItem(localizedItem)
 		filter, dInfo, err := queryItemToFilter(qItem, "QueryMedia")
@@ -415,23 +417,6 @@ func strToRegex(s string) string {
 	return result.String()
 }
 
-// guessMetadataType guesses the type of a metadata value from its contents
-// We do this because the API doesn't return the metadata type
-// If the value looks like a number, or a true/false value, the corresponding type is returned
-// Otherwise, we assume it's a string.
-func guessMetadataType(value string) string {
-	fType := "STRING"
-	reNumber := regexp.MustCompile(`^[0-9]+$`)
-	reBool := regexp.MustCompile(`^(?:true|false)$`)
-	if reNumber.MatchString(value) {
-		fType = "NUMBER"
-	}
-	if reBool.MatchString(value) {
-		fType = "BOOLEAN"
-	}
-	return fType
-}
-
 // metadataToFilter adds metadata elements to an existing filter
 // href is the address of the entity for which we want to retrieve metadata
 // filter is an existing filter to which we want to add metadata elements
@@ -442,7 +427,10 @@ func (client *Client) metadataToFilter(href string, filter *FilterDef) (*FilterD
 	metadata, err := getMetadata(client, href)
 	if err == nil && metadata != nil && len(metadata.MetadataEntry) > 0 {
 		for _, md := range metadata.MetadataEntry {
-			fType := guessMetadataType(md.TypedValue.Value)
+			fType, ok := retrievedMetadataTypes[md.TypedValue.Value]
+			if !ok {
+				fType = "STRING"
+			}
 			err = filter.AddMetadataFilter(md.Key, md.TypedValue.Value, fType, false, false)
 			if err != nil {
 				return nil, err
