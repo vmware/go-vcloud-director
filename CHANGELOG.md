@@ -3,8 +3,9 @@
 * Added methods `OrgVdcNetwork.Update`, `OrgVdcNetwork.UpdateAsync`, and `OrgVdcNetwork.Rename` [#292](https://github.com/vmware/go-vcloud-director/pull/292)
 * Added methods `EdgeGateway.Update` and `EdgeGateway.UpdateAsync` [#292](https://github.com/vmware/go-vcloud-director/pull/292)
 * Increment vCD API version used from 29.0 to 31.0
-    * Add fields `AdminVdc.UniversalNetworkPoolReference and VM.Media`
-    
+    * Add fields `AdminVdc.UniversalNetworkPoolReference and VM.Media`    
+* Added methods `vapp.AddEmptyVm`, `vapp.AddEmptyVmAsync` and `vdc.QueryAllMedia` [#296](https://github.com/vmware/go-vcloud-director/pull/296)
+
 NOTES:
 
 * Improved testinf function `deleteVapp()` to avoid deletion errors during test suite run
