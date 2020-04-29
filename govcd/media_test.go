@@ -333,3 +333,37 @@ func (vcd *TestVCD) Test_RefreshMediaRecord(check *C) {
 	check.Assert(oldMediaRecord.MediaRecord.Name, Equals, mediaRecord.MediaRecord.Name)
 	check.Assert(oldMediaRecord.MediaRecord.HREF, Equals, mediaRecord.MediaRecord.HREF)
 }
+
+func (vcd *TestVCD) Test_QueryAllMedia(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	skipWhenMediaPathMissing(vcd, check)
+
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_QueryMedia: Org name not given")
+		return
+	}
+
+	if vcd.config.Media.Media == "" {
+		check.Skip("Test_RefreshMediaRecord: Media name not given")
+		return
+	}
+	// Fetching organization
+	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	testQueryMediaName := vcd.config.Media.Media
+
+	mediaList, err := vcd.vdc.QueryAllMedia(testQueryMediaName)
+	check.Assert(err, IsNil)
+	check.Assert(mediaList, Not(Equals), nil)
+
+	check.Assert(mediaList[0].MediaRecord.Name, Equals, testQueryMediaName)
+	check.Assert(mediaList[0].MediaRecord.HREF, Not(Equals), "")
+
+	// find Invalid media
+	mediaList, err = vcd.vdc.QueryAllMedia("INVALID")
+	check.Assert(IsNotFound(err), Equals, true)
+	check.Assert(mediaList, IsNil)
+}
