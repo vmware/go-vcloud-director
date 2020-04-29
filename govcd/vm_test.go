@@ -1366,8 +1366,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(cat, NotNil)
 
-	//media, err := cat.GetMediaByName("photon-custom-hw11-2.0-304b817.ova", false)
-	media, err := cat.GetMediaByName("vaido2", false)
+	media, err := cat.GetMediaByName(vcd.config.Media.Media, false)
 	check.Assert(err, IsNil)
 	check.Assert(media, NotNil)
 
@@ -1388,8 +1387,6 @@ func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
 		OverrideVmDefault: true}
 
 	requestDetails := &types.RecomposeVAppParamsForEmptyVm{
-		XmlnsVcloud: types.XMLNamespaceVCloud,
-		XmlnsOvf:    types.XMLNamespaceOVF,
 		CreateItem: &types.CreateItem{
 			Name:                      "Test_AddNewEmptyVMMultiNIC",
 			NetworkConnectionSection:  desiredNetConfig,
@@ -1443,4 +1440,54 @@ func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
+}
+
+// Test update of VM Spec section
+func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	vmName := "Test_UpdateVmSpecSection"
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp wasn't properly created")
+	}
+
+	if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("No Catalog name given for VDC tests")
+	}
+
+	if vcd.config.VCD.Catalog.CatalogItem == "" {
+		check.Skip("No Catalog item given for VDC tests")
+	}
+
+	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAngGetResourcesForVmCreation(check, vmName)
+	check.Assert(err, IsNil)
+
+	vm, err := spawnVM("FirstNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check, false)
+	check.Assert(err, IsNil)
+
+	task, err := vm.PowerOff()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	vmSpecSection := vm.VM.VmSpecSection
+	osType := "sles10_64Guest"
+	vmSpecSection.OsType = osType
+	vmSpecSection.NumCpus = takeIntAddress(4)
+	vmSpecSection.NumCoresPerSocket = takeIntAddress(2)
+	vmSpecSection.MemoryResourceMb = &types.MemoryResourceMb{Configured: 768}
+
+	updatedVm, err := vm.UpdateVmSpecSection(vmSpecSection, "updateDescription")
+	check.Assert(err, IsNil)
+	check.Assert(vmSpecSection, NotNil)
+
+	//verify
+	check.Assert(updatedVm.VM.VmSpecSection.OsType, Equals, osType)
+	check.Assert(*updatedVm.VM.VmSpecSection.NumCpus, Equals, 4)
+	check.Assert(*updatedVm.VM.VmSpecSection.NumCoresPerSocket, Equals, 2)
+	check.Assert(updatedVm.VM.VmSpecSection.MemoryResourceMb.Configured, Equals, int64(768))
+	check.Assert(updatedVm.VM.Description, Equals, "updateDescription")
+
+	// delete Vapp early to avoid env capacity issue
+	deleteVapp(vcd, vmName)
 }
