@@ -1225,7 +1225,7 @@ type MetadataValue struct {
 }
 
 type TypedValue struct {
-	XsiType string `xml:"type,attr"`
+	XsiType string `xml:"xsi:type,attr"`
 	Value   string `xml:"Value"`
 }
 
