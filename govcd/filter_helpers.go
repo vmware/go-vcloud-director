@@ -427,7 +427,7 @@ func (client *Client) metadataToFilter(href string, filter *FilterDef) (*FilterD
 	metadata, err := getMetadata(client, href)
 	if err == nil && metadata != nil && len(metadata.MetadataEntry) > 0 {
 		for _, md := range metadata.MetadataEntry {
-			fType, ok := retrievedMetadataTypes[md.TypedValue.Value]
+			fType, ok := retrievedMetadataTypes[md.TypedValue.XsiType]
 			if !ok {
 				fType = "STRING"
 			}

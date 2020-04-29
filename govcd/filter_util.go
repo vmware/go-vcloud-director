@@ -37,10 +37,10 @@ var (
 	// retrievedMetadataTypes maps the internal value of metadata type with the
 	// string needed when searching for a metadata field in the API
 	retrievedMetadataTypes = map[string]string{
-		"MetadataBooleanValue":  "BOOL",
+		"MetadataBooleanValue":  "BOOLEAN",
 		"MetadataStringValue":   "STRING",
 		"MetadataNumberValue":   "NUMBER",
-		"MetadataDateTimeValue": "DATETIME",
+		"MetadataDateTimeValue": "STRING", // values for DATETIME can't be passed as such in a query.
 	}
 )
 
