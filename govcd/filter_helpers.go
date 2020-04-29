@@ -3,6 +3,7 @@ package govcd
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -324,7 +325,7 @@ func HelperCreateMultipleCatalogItems(catalog *Catalog, requestData []VappTempla
 	ova := "../test-resources/test_vapp_template.ova"
 	_, err := os.Stat(ova)
 	if os.IsNotExist(err) {
-		return nil, fmt.Errorf("sample OVA %s not found", ova)
+		return nil, fmt.Errorf("[HelperCreateMultipleCatalogItems] sample OVA %s not found", ova)
 	}
 	overallStart := time.Now()
 	for _, requested := range requestData {
@@ -338,7 +339,7 @@ func HelperCreateMultipleCatalogItems(catalog *Catalog, requestData []VappTempla
 			// If the item already exists, we skip the creation, and just retrieve the vapp template
 			vappTemplate, err = item.GetVAppTemplate()
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("[HelperCreateMultipleCatalogItems] error retrieving vApp template from catalog item %s : %s", item.CatalogItem.Name, err)
 			}
 		} else {
 
@@ -348,25 +349,25 @@ func HelperCreateMultipleCatalogItems(catalog *Catalog, requestData []VappTempla
 			}
 			task, err := catalog.UploadOvf(ova, name, "test "+name, 10)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("[HelperCreateMultipleCatalogItems] error uploading OVA: %s", err)
 			}
 			err = task.WaitTaskCompletion()
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("[HelperCreateMultipleCatalogItems] error completing task :%s", err)
 			}
 			item, err = catalog.GetCatalogItemByName(name, true)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("[HelperCreateMultipleCatalogItems] error retrieving item %s: %s", name, err)
 			}
 			vappTemplate, err = item.GetVAppTemplate()
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("[HelperCreateMultipleCatalogItems] error retrieving vApp template: %s", err)
 			}
 
 			for k, v := range requested.Metadata {
 				_, err := vappTemplate.AddMetadata(k, v)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("[HelperCreateMultipleCatalogItems], error adding metadata: %s", err)
 				}
 			}
 			duration := time.Since(start)
@@ -417,6 +418,24 @@ func strToRegex(s string) string {
 	return result.String()
 }
 
+// guessMetadataType guesses the type of a metadata value from its contents
+// If the value looks like a number, or a true/false value, the corresponding type is returned
+// Otherwise, we assume it's a string.
+// We do this because the API doesn't return the metadata type
+// (it would if the field TypedValue.XsiType were defined as `xml:"type,attr"`, but then metadata updates would fail.)
+func guessMetadataType(value string) string {
+	fType := "STRING"
+	reNumber := regexp.MustCompile(`^[0-9]+$`)
+	reBool := regexp.MustCompile(`^(?:true|false)$`)
+	if reNumber.MatchString(value) {
+		fType = "NUMBER"
+	}
+	if reBool.MatchString(value) {
+		fType = "BOOLEAN"
+	}
+	return fType
+}
+
 // metadataToFilter adds metadata elements to an existing filter
 // href is the address of the entity for which we want to retrieve metadata
 // filter is an existing filter to which we want to add metadata elements
@@ -427,9 +446,16 @@ func (client *Client) metadataToFilter(href string, filter *FilterDef) (*FilterD
 	metadata, err := getMetadata(client, href)
 	if err == nil && metadata != nil && len(metadata.MetadataEntry) > 0 {
 		for _, md := range metadata.MetadataEntry {
-			fType, ok := retrievedMetadataTypes[md.TypedValue.XsiType]
-			if !ok {
-				fType = "STRING"
+
+			var fType string
+			var ok bool
+			if md.TypedValue.XsiType == "" {
+				fType = guessMetadataType(md.TypedValue.Value)
+			} else {
+				fType, ok = retrievedMetadataTypes[md.TypedValue.XsiType]
+				if !ok {
+					fType = "STRING"
+				}
 			}
 			err = filter.AddMetadataFilter(md.Key, md.TypedValue.Value, fType, false, false)
 			if err != nil {
