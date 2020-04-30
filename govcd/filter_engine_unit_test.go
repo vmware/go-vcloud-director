@@ -27,7 +27,7 @@ var dummyQwithM = func(queryType string, params, notEncodedParams map[string]str
 }
 
 // mock QueryByMetadataFields function that returns an empty result
-var dummyQbyM = func(params, notEncodedParams map[string]string,
+var dummyQbyM = func(queryType string, params, notEncodedParams map[string]string,
 	metadataFilters map[string]MetadataFilter, isSystem bool) (Results, error) {
 	return Results{}, nil
 }
