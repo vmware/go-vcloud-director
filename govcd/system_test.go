@@ -269,15 +269,7 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 		},
 	}
 
-	// vCD 9.0 does not support FIPS Mode and fails if XML tag <FipsModeEnabled> is sent therefore
-	// field value must be sent only if user specified its value
-	if vcd.client.Client.APIVCDMaxVersionIs("> 29.0") { // Newer than vCD 9.0
-		edgeGatewayConfig.Configuration.FipsModeEnabled = takeBoolPointer(false)
-	} else {
-		if testVerbose {
-			fmt.Println("Skipping field 'FipsModeEnabled' because it is not supported on vCD versions older than 9.1 ")
-		}
-	}
+	edgeGatewayConfig.Configuration.FipsModeEnabled = takeBoolPointer(false)
 
 	// Create subnet participation structure
 	subnetParticipation := make([]*types.SubnetParticipation, len(externalNetwork.Configuration.IPScopes.IPScope))
@@ -342,10 +334,7 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 	edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface[0].Network.HREF =
 		edge.EdgeGateway.Configuration.GatewayInterfaces.GatewayInterface[0].Network.HREF
 
-	// TODO get rid of this when vCD 9.0 does not return network ID
-	if vcd.client.Client.APIVCDMaxVersionIs("= 29.0") {
-		edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface[0].Network.ID = ""
-	}
+	//edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface[0].Network.ID = ""
 
 	// Sort gateway interfaces so that comparison is easier
 	edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface[0].SortBySubnetParticipationGateway()
