@@ -1,6 +1,6 @@
 #!/bin/bash
 # This script will connect to the vCD using username and password,
-# and show the header that cointains an authorization token.
+# and show the header that contains an authorization token.
 #
 user=$1
 password=$2

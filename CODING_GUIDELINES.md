@@ -168,8 +168,8 @@ type vdcVersionedFunc struct {
 	UpdateVdcAsync   func(adminVdc *AdminVdc) (Task, error)
 }
 
-var vdcVersionedFuncsV90 = vdcVersionedFuncs{
-	SupportedVersion: "29.0",
+var vdcVersionedFuncsV95 = vdcVersionedFuncs{
+	SupportedVersion: "31.0",
 	CreateVdc:        createVdc,
 	CreateVdcAsync:   createVdcAsync,
 	UpdateVdc:        updateVdc,
@@ -185,9 +185,7 @@ var vdcVersionedFuncsV97 = vdcVersionedFuncs{
 }
 
 var vdcVersionedFuncsByVcdVersion = map[string]vdcVersionedFuncs{
-	"vdc9.0":  vdcVersionedFuncsV90,
-	"vdc9.1":  vdcVersionedFuncsV90,
-	"vdc9.5":  vdcVersionedFuncsV90,
+	"vdc9.5":  vdcVersionedFuncsV95,
 	"vdc9.7":  vdcVersionedFuncsV97,
 	"vdc10.0": vdcVersionedFuncsV97
 }
