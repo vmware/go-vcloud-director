@@ -33,15 +33,6 @@ var (
 
 	// Metadata types recognized so far. "NONE" is the same as ""
 	SupportedMetadataTypes = []string{"NONE", "STRING", "NUMBER", "BOOLEAN", "DATETIME"}
-
-	// retrievedMetadataTypes maps the internal value of metadata type with the
-	// string needed when searching for a metadata field in the API
-	retrievedMetadataTypes = map[string]string{
-		"MetadataBooleanValue":  "BOOLEAN",
-		"MetadataStringValue":   "STRING",
-		"MetadataNumberValue":   "NUMBER",
-		"MetadataDateTimeValue": "STRING", // values for DATETIME can't be passed as such in a query.
-	}
 )
 
 // Definition of metadata structure

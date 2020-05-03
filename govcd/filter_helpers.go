@@ -11,6 +11,13 @@ import (
 // This file contains functions that help create tests for filtering.
 // It is not in the '*_test.go' namespace because we want to use these functions from tests in other packages.
 // All exported functions from this file have the prefix "Helper"
+//
+// Moreover, this file is not in a separate package for the following reasons:
+//     * getExistingMedia is private
+//     * getMetadata is private
+//     * the 'client' component in all entity objects is private
+//     * the tests that are now in filter_engine_test.go would need to go in a separate package, with consequent
+//       need for configuration file parser duplication.
 
 type StringMap map[string]string
 
@@ -35,6 +42,15 @@ type VappTemplateData struct {
 	VappTemplateCreationDate string
 	Metadata                 StringMap
 	Created                  bool
+}
+
+// retrievedMetadataTypes maps the internal value of metadata type with the
+// string needed when searching for a metadata field in the API
+var retrievedMetadataTypes = map[string]string{
+	"MetadataBooleanValue":  "BOOLEAN",
+	"MetadataStringValue":   "STRING",
+	"MetadataNumberValue":   "NUMBER",
+	"MetadataDateTimeValue": "STRING", // values for DATETIME can't be passed as such in a query when the date contains colons.
 }
 
 // HelperMakeFiltersFromEdgeGateways looks at the existing edge gateways and creates a set of criteria to retrieve each of them
