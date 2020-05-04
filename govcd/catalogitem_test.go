@@ -55,7 +55,7 @@ func (vcd *TestVCD) Test_Delete(check *C) {
 	check.Assert(catalog, NotNil)
 
 	// add catalogItem
-	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OVAPath, TestDeleteCatalogItem, "upload from delete catalog item test", 1024)
+	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OvaPath, TestDeleteCatalogItem, "upload from delete catalog item test", 1024)
 	check.Assert(err, IsNil)
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
