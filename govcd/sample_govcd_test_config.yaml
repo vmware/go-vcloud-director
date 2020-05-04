@@ -143,7 +143,7 @@ ova:
   ovaChunkedPath: ../test-resources/template_with_custom_chunk_size.ova
   #
   # The ova with multi VMs for tests.
-  ovaMultiVmPath: ../test-resources/3VM.ova
+  ovaMultiVmPath: ../test-resources/vapp_with_3_vms.ova
   # The VM name in multi VM OVA
   ovaVmName: thirdVM
 media:

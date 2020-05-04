@@ -140,8 +140,8 @@ type TestConfig struct {
 		VerboseCleanup   bool   `yaml:"verboseCleanup,omitempty"`
 	} `yaml:"logging"`
 	OVA struct {
-		OVAPath        string `yaml:"ovaPath,omitempty"`
-		OVAChunkedPath string `yaml:"ovaChunkedPath,omitempty"`
+		OvaPath        string `yaml:"ovaPath,omitempty"`
+		OvaChunkedPath string `yaml:"ovaChunkedPath,omitempty"`
 		OvaMultiVmPath string `yaml:"ovaMultiVmPath,omitempty"`
 		OvaVmName      string `yaml:"ovaVmName,omitempty"`
 	} `yaml:"ova"`
