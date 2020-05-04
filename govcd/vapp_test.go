@@ -1490,3 +1490,59 @@ func createVappForTest(vcd *TestVCD, vappName string) (*VApp, error) {
 
 	return vapp, nil
 }
+
+// Test_AddNewVMFromMultiVmTemplate creates VM from OVA holding a few VMs
+func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
+	// Find VApp
+	if vcd.vapp.VApp == nil {
+		check.Skip("skipping test because no vApp is found")
+	}
+
+	// Populate Catalog
+	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+
+	itemName := check.TestName()
+	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OvaMultiVmPath, itemName, "upload from test", 1024)
+	check.Assert(err, IsNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
+
+	vmInTempateRecord, err := vcd.vdc.QueryVappVmTemplate(vcd.config.VCD.Catalog.Name, itemName, vcd.config.OVA.OvaVmName)
+	check.Assert(err, IsNil)
+
+	// Get VAppTemplate
+	returnedVappTemplate, err := catalog.GetVappTemplateByHref(vmInTempateRecord.HREF)
+	check.Assert(err, IsNil)
+
+	vapp, err := createVappForTest(vcd, "Test_AddNewVMFromMultiVmTemplate")
+	check.Assert(err, IsNil)
+	check.Assert(vapp, NotNil)
+	task, err := vapp.AddNewVM(check.TestName(), *returnedVappTemplate, nil, true)
+
+	check.Assert(err, IsNil)
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	vm, err := vapp.GetVMByName(check.TestName(), true)
+	check.Assert(err, IsNil)
+
+	// Cleanup the created VM
+	err = vapp.RemoveVM(*vm)
+	check.Assert(err, IsNil)
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+}
