@@ -846,6 +846,7 @@ func (vdc *Vdc) QueryVappVmTemplate(catalogName, vappTemplateName, vmNameInTempl
 		typeVm = "adminVM"
 	}
 
+	// this allows to query fetches deploy and not deployed templates
 	results, err := vdc.QueryWithNotEncodedParams(nil, map[string]string{"type": typeVm,
 		"filter": "catalogName==" + url.QueryEscape(catalogName) + ";containerName==" + url.QueryEscape(vappTemplateName) + ";name==" + url.QueryEscape(vmNameInTemplate) +
 			";isVAppTemplate==true;status!=FAILED_CREATION;status!=UNKNOWN;status!=UNRECOGNIZED;status!=UNRESOLVED&links=true;",
