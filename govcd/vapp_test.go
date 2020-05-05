@@ -1498,8 +1498,12 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
 
-	if vcd.config.OVA.OvaMultiVmPath == "" {
-		check.Skip("skipping test because no OvaMultiVmPath is found")
+	if vcd.config.OVA.OvaMultiVmPath == "" && vcd.config.VCD.Catalog.CatalogItemWithMultiVm == "" {
+		check.Skip("skipping test because ovaMultiVmPath or catalogItemWithMultiVm has to be defined")
+	}
+
+	if vcd.config.VCD.Catalog.VmNameInMultiVmItem == "" {
+		check.Skip("skipping test because vmNameInMultiVmItem is not defined")
 	}
 
 	// Populate Catalog
