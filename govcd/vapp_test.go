@@ -1519,7 +1519,7 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 	}
 
 	var vmInTemplateRecord *types.QueryResultVMRecordType
-	if itemName == "" {
+	if vcd.config.VCD.Catalog.CatalogItemWithMultiVm == "" {
 		vmInTemplateRecord, err = vcd.vdc.QueryVappVmTemplate(vcd.config.VCD.Catalog.Name, itemName, vcd.config.OVA.OvaVmName)
 	} else {
 		vmInTemplateRecord, err = vcd.vdc.QueryVappVmTemplate(vcd.config.VCD.Catalog.Name, itemName, vcd.config.VCD.Catalog.VmNameInMultiVmItem)
