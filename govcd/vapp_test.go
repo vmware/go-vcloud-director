@@ -1518,12 +1518,7 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 		AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
 	}
 
-	var vmInTemplateRecord *types.QueryResultVMRecordType
-	if vcd.config.VCD.Catalog.CatalogItemWithMultiVm == "" {
-		vmInTemplateRecord, err = vcd.vdc.QueryVappVmTemplate(vcd.config.VCD.Catalog.Name, itemName, vcd.config.OVA.OvaVmName)
-	} else {
-		vmInTemplateRecord, err = vcd.vdc.QueryVappVmTemplate(vcd.config.VCD.Catalog.Name, itemName, vcd.config.VCD.Catalog.VmNameInMultiVmItem)
-	}
+	vmInTemplateRecord, err := vcd.vdc.QueryVappVmTemplate(vcd.config.VCD.Catalog.Name, itemName, vcd.config.VCD.Catalog.VmNameInMultiVmItem)
 	check.Assert(err, IsNil)
 
 	// Get VAppTemplate

@@ -57,8 +57,8 @@ vcd:
         #
         # Item in the catalog. If available it will be used to test vApp with multi VMs
         catalogItemWithMultiVm: my item with multi VMs
-        # Name of VM in `catalogItemWithMultiVm` template
-        VmNameInMultiVmItem: VM name in vApp template
+        # Name of VM in `catalogItemWithMultiVm` template or in `ovaMultiVmPath` if `catalogItemWithMultiVm` isn't provided. Default vmName `thirdVM` in default OVA.
+        vmNameInMultiVmItem: VM name in vApp template
     # Existing VDC networks. At least one is needed.
     network:
       # First vdc network (mandatory)
@@ -149,8 +149,6 @@ ova:
   #
   # The ova with multi VMs for tests.
   ovaMultiVmPath: ../test-resources/vapp_with_3_vms.ova
-  # The VM name in multi VM OVA
-  ovaVmName: thirdVM
 media:
   # The iso for uploading media item for tests.
   # Default paths are simple iso provided by project
