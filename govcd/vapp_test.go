@@ -1522,7 +1522,7 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 	if itemName == "" {
 		vmInTemplateRecord, err = vcd.vdc.QueryVappVmTemplate(vcd.config.VCD.Catalog.Name, itemName, vcd.config.OVA.OvaVmName)
 	} else {
-		vmInTemplateRecord, err = vcd.vdc.QueryVappVmTemplate(vcd.config.VCD.Catalog.Name, itemName, vcd.config.VCD.Catalog.VmNameInCatalogItem)
+		vmInTemplateRecord, err = vcd.vdc.QueryVappVmTemplate(vcd.config.VCD.Catalog.Name, itemName, vcd.config.VCD.Catalog.VmNameInMultiVmItem)
 	}
 	check.Assert(err, IsNil)
 
