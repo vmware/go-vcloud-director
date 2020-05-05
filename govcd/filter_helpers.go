@@ -125,7 +125,7 @@ func makeDateFilter(items []DateItem) ([]FilterMatch, error) {
 	earliestFound := false
 	latestFound := false
 	for _, item := range items {
-		greater, err := CompareDate(">"+latestDate, item.Date)
+		greater, err := compareDate(">"+latestDate, item.Date)
 		if err != nil {
 			return nil, err
 		}
@@ -135,7 +135,7 @@ func makeDateFilter(items []DateItem) ([]FilterMatch, error) {
 			latestEntity = item.Entity
 			latestFound = true
 		}
-		greater, err = CompareDate("<"+earliestDate, item.Date)
+		greater, err = compareDate("<"+earliestDate, item.Date)
 		if err != nil {
 			return nil, err
 		}
@@ -462,7 +462,7 @@ func (client *Client) metadataToFilter(href string, filter *FilterDef) (*FilterD
 	metadata, err := getMetadata(client, href)
 	if err == nil && metadata != nil && len(metadata.MetadataEntry) > 0 {
 		for _, md := range metadata.MetadataEntry {
-
+			isSystem := md.Domain == "SYSTEM"
 			var fType string
 			var ok bool
 			if md.TypedValue.XsiType == "" {
@@ -473,7 +473,7 @@ func (client *Client) metadataToFilter(href string, filter *FilterDef) (*FilterD
 					fType = "STRING"
 				}
 			}
-			err = filter.AddMetadataFilter(md.Key, md.TypedValue.Value, fType, false, false)
+			err = filter.AddMetadataFilter(md.Key, md.TypedValue.Value, fType, isSystem, false)
 			if err != nil {
 				return nil, err
 			}

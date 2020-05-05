@@ -20,7 +20,7 @@ const (
 )
 
 var (
-	// Filters currently supported in the engine, available to users
+	// supportedFilters lists the filters currently supported in the engine, available to users
 	supportedFilters = []string{
 		FilterNameRegex,
 		FilterDate,
@@ -31,11 +31,11 @@ var (
 		FilterParentId,
 	}
 
-	// Metadata types recognized so far. "NONE" is the same as ""
+	// SupportedMetadataTypes are the metadata types recognized so far. "NONE" is the same as ""
 	SupportedMetadataTypes = []string{"NONE", "STRING", "NUMBER", "BOOLEAN", "DATETIME"}
 )
 
-// Definition of metadata structure
+// MetadataDef defines a metadata structure
 type MetadataDef struct {
 	Key      string      // name of the field (addressed as metadata:key)
 	Type     string      // Type of the field (one of SupportedMetadataTypes)
@@ -52,7 +52,7 @@ type matchResult struct {
 	Result     bool
 }
 
-// The definition of all the criteria used by the engine to retrieve data
+// FilterDef defines all the criteria used by the engine to retrieve data
 type FilterDef struct {
 	// A collection of filters (with keys from SupportedFilters)
 	Filters map[string]string
@@ -132,7 +132,7 @@ func stringToBool(s string) bool {
 	}
 }
 
-// CompareDate will get a date from string `got`, and will parse `wanted`
+// compareDate will get a date from string `got`, and will parse `wanted`
 // for an expression containing an operator (>, <, >=, <=, ==) and a date
 // (many formats supported, but 'YYYY-MM-DD[ hh:mm[:ss]]' preferred)
 // For example:
@@ -143,7 +143,7 @@ func stringToBool(s string) bool {
 // wanted: "< 02-mar-2020"
 // result: false
 // See https://github.com/araddon/dateparse for more info
-func CompareDate(wanted, got string) (bool, error) {
+func compareDate(wanted, got string) (bool, error) {
 
 	reExpression := regexp.MustCompile(`(>=|<=|==|<|=|>)\s*(.+)`)
 
@@ -190,9 +190,9 @@ func conditionText(criteria *FilterDef) string {
 		result += fmt.Sprintf(`("%s" -> "%s") `, k, v)
 	}
 	for _, m := range criteria.Metadata {
-		marker := "meta"
+		marker := "metadata"
 		if criteria.UseMetadataApiFilter {
-			marker = "metaApi"
+			marker = "metadataApi"
 		}
 		result += fmt.Sprintf(`%s("%s" -> "%s") `, marker, m.Key, m.Value)
 	}

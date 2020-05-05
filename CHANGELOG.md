@@ -1,7 +1,9 @@
 ## 2.8.0 (Unreleased)
 
-* Added methods `catalog.QueryVappTemplateList`, `catalog.QueryCatalogItemList`, `client.QueryWithMetadataFields`, `client.QueryByMetadataFilter`
+* Changed signature for `FindAdminCatalogRecords`, which now returns normalized type `[]*types.CatalogRecord`
+* Added methods `catalog.QueryVappTemplateList`, `catalog.QueryCatalogItemList`, `client.queryWithMetadataFields`, `client.queryByMetadataFilter`
 * Added query engine based on `client.SearchByFilter`, type `FilterDef`, and interface `QueryItem`
+
 
 ## 2.7.0 (April 10,2020)
 

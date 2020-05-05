@@ -20,7 +20,7 @@ type TestItem struct {
 	parentId string
 }
 
-// mock QueryWithMetadataFields function that returns an empty result
+// mock queryWithMetadataFields function that returns an empty result
 var dummyQwithM = func(queryType string, params, notEncodedParams map[string]string,
 	metadataFields []string, isSystem bool) (Results, error) {
 	return Results{}, nil

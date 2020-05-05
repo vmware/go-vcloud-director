@@ -52,12 +52,12 @@ func Test_compareDate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.args.wanted, func(t *testing.T) {
-			got, err := CompareDate(tt.args.wanted, tt.args.got)
+			got, err := compareDate(tt.args.wanted, tt.args.got)
 			if err != nil {
-				t.Errorf("CompareDate() = %v, error: %s", got, err)
+				t.Errorf("compareDate() = %v, error: %s", got, err)
 			}
 			if got != tt.want {
-				t.Errorf("CompareDate() = %v, want %v", got, tt.want)
+				t.Errorf("compareDate() = %v, want %v", got, tt.want)
 			}
 		})
 	}
