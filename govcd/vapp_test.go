@@ -1498,9 +1498,8 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
 
-	// Find VApp
-	if vcd.vapp.VApp == nil {
-		check.Skip("skipping test because no vApp is found")
+	if vcd.config.OVA.OvaMultiVmPath == "" {
+		check.Skip("skipping test because no OvaMultiVmPath is found")
 	}
 
 	// Populate Catalog
@@ -1508,19 +1507,27 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 
-	itemName := check.TestName()
-	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OvaMultiVmPath, itemName, "upload from test", 1024)
-	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
+	itemName := vcd.config.VCD.Catalog.CatalogItemWithMultiVm
+	if itemName == "" {
+		itemName = check.TestName()
+		uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OvaMultiVmPath, itemName, "upload from test", 1024)
+		check.Assert(err, IsNil)
+		err = uploadTask.WaitTaskCompletion()
+		check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
+		AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
+	}
 
-	vmInTempateRecord, err := vcd.vdc.QueryVappVmTemplate(vcd.config.VCD.Catalog.Name, itemName, vcd.config.OVA.OvaVmName)
+	var vmInTemplateRecord *types.QueryResultVMRecordType
+	if itemName == "" {
+		vmInTemplateRecord, err = vcd.vdc.QueryVappVmTemplate(vcd.config.VCD.Catalog.Name, itemName, vcd.config.OVA.OvaVmName)
+	} else {
+		vmInTemplateRecord, err = vcd.vdc.QueryVappVmTemplate(vcd.config.VCD.Catalog.Name, itemName, vcd.config.VCD.Catalog.VmNameInCatalogItem)
+	}
 	check.Assert(err, IsNil)
 
 	// Get VAppTemplate
-	returnedVappTemplate, err := catalog.GetVappTemplateByHref(vmInTempateRecord.HREF)
+	returnedVappTemplate, err := catalog.GetVappTemplateByHref(vmInTemplateRecord.HREF)
 	check.Assert(err, IsNil)
 
 	vapp, err := createVappForTest(vcd, "Test_AddNewVMFromMultiVmTemplate")

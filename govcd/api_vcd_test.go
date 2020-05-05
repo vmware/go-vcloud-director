@@ -107,6 +107,8 @@ type TestConfig struct {
 			Description            string `yaml:"description,omitempty"`
 			CatalogItem            string `yaml:"catalogItem,omitempty"`
 			CatalogItemDescription string `yaml:"catalogItemDescription,omitempty"`
+			CatalogItemWithMultiVm string `yaml:"catalogItemWithMultiVm,omitempty"`
+			VmNameInCatalogItem    string `yaml:"vmNameInCatalogItem,omitempty"`
 		} `yaml:"catalog"`
 		Network struct {
 			Net1 string `yaml:"network1"`
