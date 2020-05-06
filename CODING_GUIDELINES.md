@@ -277,6 +277,17 @@ the query will contain a clause `filter=metadata:KeyName==TYPE:Value`. If `IsSys
 `filter=metadata@SYSTEM:KeyName==TYPE:Value`. This search can't evaluate regular expressions, because it goes directly 
 to vCD.
 
+An example of `SYSTEM` metadata values is the set of annotations that the vCD adds to a vApp template when we save a
+vApp to a catalog.
+
+```
+  "metadata" = {
+    "vapp.origin.id" = "deadbeef-2913-4ed7-b943-79a91620fd52" // vApp ID
+    "vapp.origin.name" = "my_vapp_name"
+    "vapp.origin.type" = "com.vmware.vcloud.entity.vapp"
+  }
+```
+
 The engine returns a list of `QueryItem`, and interface that defines several methods used to help evaluate the search
 conditions.
 
