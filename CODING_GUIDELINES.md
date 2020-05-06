@@ -288,11 +288,11 @@ with a non-empty value.
 
 ```go
             criteria := &govcd.FilterDef{
-                Filters:  {
+                Filters:  map[string]string{
                     "date":"> 2020-02-02", 
                     "latest": "true",
                  },
-                Metadata: {
+                Metadata: []govcd.MetadataDef{
                     {
                         Key:      "abc",
                         Type:     "STRING",
@@ -338,6 +338,21 @@ To add a type to the search engine, we need the following:
 3. Implement the interface `QueryItem` (`filter_interface.go`), which requires a type localization (such as 
 `type QueryMedia  types.MediaRecordType`)
 4. Add a clause to `resultsToQueryItems` (`filter_interface.go`)
+
+## Data inspection checkpoints
+
+Logs should not be cluttered with excessive detail.
+However, sometimes we need to provide such detail when hunting for bugs.
+
+We can introduce data inspection points, regulated by the environment variable `GOVCD_INSPECT`, which uses a convenient
+code to activate the inspection at different points.
+
+For example, we can mark the inspection points in the query engine with labels "QE1", "QE2", etc., in the network creation
+they will be "NET1", "NET2", etc, and then activate them using
+`GOVCD_INSPECT=QE2,NET1`.
+
+In the code, we use the function `dataInspectionRequested(code)` that will check whether the environment variable contains
+the  given code.
 
 ## Testing
 
