@@ -169,3 +169,59 @@ func (vcd *TestVCD) TestAdminOrg_SetLease(check *C) {
 	check.Assert(*adminOrg.AdminOrg.OrgSettings.OrgVAppTemplateSettings.StorageLeaseSeconds, Equals, saveParams.vappTemplateStorageLease)
 
 }
+
+func (vcd *TestVCD) TestOrg_AdminOrg_QueryCatalogList(check *C) {
+	if vcd.config.VCD.Org == "" {
+		check.Skip("no org name provided. test skipped")
+	}
+	if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("no catalog name provided. test skipped")
+	}
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	// gets the catalog list as an adminOrg
+	catalogsInAdminOrg, err := adminOrg.QueryCatalogList()
+	check.Assert(err, IsNil)
+
+	// gets the catalog list as an Org
+	catalogsInOrg, err := org.QueryCatalogList()
+	check.Assert(err, IsNil)
+
+	foundInOrg := false
+	// Searches the org catalogs list for a known catalog
+	for _, catOrg := range catalogsInOrg {
+		if catOrg.Name == vcd.config.VCD.Catalog.Name {
+			foundInOrg = true
+		}
+	}
+	check.Assert(foundInOrg, Equals, true)
+
+	foundInAdminOrg := false
+	// Searches the admin org catalogs list for a known catalog
+	for _, catOrg := range catalogsInAdminOrg {
+		if catOrg.Name == vcd.config.VCD.Catalog.Name {
+			foundInAdminOrg = true
+		}
+	}
+	check.Assert(foundInAdminOrg, Equals, true)
+
+	// both lists should have the same number of items
+	check.Assert(len(catalogsInAdminOrg), Equals, len(catalogsInOrg))
+
+	// Check that every item in one list is also in the other list
+	for _, catA := range catalogsInAdminOrg {
+		foundInBoth := false
+		for _, catO := range catalogsInOrg {
+			if catA.Name == catO.Name {
+				foundInBoth = true
+			}
+		}
+		check.Assert(foundInBoth, Equals, true)
+	}
+}
