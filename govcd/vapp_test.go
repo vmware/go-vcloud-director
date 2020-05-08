@@ -1498,8 +1498,8 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
 
-	if vcd.config.OVA.OvaMultiVmPath == "" && vcd.config.VCD.Catalog.CatalogItemWithMultiVm == "" {
-		check.Skip("skipping test because ovaMultiVmPath or catalogItemWithMultiVm has to be defined")
+	if vcd.config.OVA.OvaMultiVmPath == "" && vcd.config.VCD.Catalog.CatalogItemWithMultiVms == "" {
+		check.Skip("skipping test because ovaMultiVmPath or catalogItemWithMultiVms has to be defined")
 	}
 
 	if vcd.config.VCD.Catalog.VmNameInMultiVmItem == "" {
@@ -1511,8 +1511,9 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 
-	itemName := vcd.config.VCD.Catalog.CatalogItemWithMultiVm
+	itemName := vcd.config.VCD.Catalog.CatalogItemWithMultiVms
 	if itemName == "" {
+		check.Log("Using `OvaMultiVmPath` for test. Will upload to use it.")
 		itemName = check.TestName()
 		uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OvaMultiVmPath, itemName, "upload from test", 1024)
 		check.Assert(err, IsNil)
@@ -1520,6 +1521,8 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 		check.Assert(err, IsNil)
 
 		AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
+	} else {
+		check.Log("Using `CatalogItemWithMultiVms` for test")
 	}
 
 	vmInTemplateRecord, err := vcd.vdc.QueryVappVmTemplate(vcd.config.VCD.Catalog.Name, itemName, vcd.config.VCD.Catalog.VmNameInMultiVmItem)

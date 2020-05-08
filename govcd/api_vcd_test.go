@@ -103,12 +103,12 @@ type TestConfig struct {
 			NetworkPool    string `yaml:"network_pool"`
 		} `yaml:"provider_vdc"`
 		Catalog struct {
-			Name                   string `yaml:"name,omitempty"`
-			Description            string `yaml:"description,omitempty"`
-			CatalogItem            string `yaml:"catalogItem,omitempty"`
-			CatalogItemDescription string `yaml:"catalogItemDescription,omitempty"`
-			CatalogItemWithMultiVm string `yaml:"catalogItemWithMultiVm,omitempty"`
-			VmNameInMultiVmItem    string `yaml:"vmNameInMultiVmItem,omitempty"`
+			Name                    string `yaml:"name,omitempty"`
+			Description             string `yaml:"description,omitempty"`
+			CatalogItem             string `yaml:"catalogItem,omitempty"`
+			CatalogItemDescription  string `yaml:"catalogItemDescription,omitempty"`
+			CatalogItemWithMultiVms string `yaml:"catalogItemWithMultiVms,omitempty"`
+			VmNameInMultiVmItem     string `yaml:"vmNameInMultiVmItem,omitempty"`
 		} `yaml:"catalog"`
 		Network struct {
 			Net1 string `yaml:"network1"`

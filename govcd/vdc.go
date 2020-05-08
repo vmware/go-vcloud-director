@@ -861,7 +861,7 @@ func (vdc *Vdc) QueryVappVmTemplate(catalogName, vappTemplateName, vmNameInTempl
 	}
 
 	if len(vmResults) == 0 {
-		return nil, fmt.Errorf("[QueryVappVmTemplate] did not found any result with catalog name: %s, "+
+		return nil, fmt.Errorf("[QueryVappVmTemplate] did not find any result with catalog name: %s, "+
 			"vApp template name: %s, VM name: %s", catalogName, vappTemplateName, vmNameInTemplate)
 	}
 
