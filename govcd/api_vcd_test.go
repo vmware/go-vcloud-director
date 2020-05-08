@@ -89,6 +89,17 @@ type TestConfig struct {
 		User            string `yaml:"user"`
 		Password        string `yaml:"password"`
 		Token           string `yaml:"token"`
+		UseSamlAdfs     bool   `yaml:"useSamlAdfs"`
+		CustomAdfsRptId string `yaml:"customAdfsRptId"`
+
+		// The below `SamlUser`, `SamlPassword` and `SamlCustomRptId` variables are optional and are
+		// related to additional test run specifically with SAML user/password. It can be useful in
+		// case local user is used for test run (defined by above 'User', 'Password' variables).
+		// SamlUser takes ADFS friendly format ('contoso.com\username' or 'username@contoso.com')
+		SamlUser        string `yaml:"samlUser,omitempty"`
+		SamlPassword    string `yaml:"samlPassword,omitempty"`
+		SamlCustomRptId string `yaml:"samlCustomRptId,omitempty"`
+
 		Url             string `yaml:"url"`
 		SysOrg          string `yaml:"sysOrg"`
 		MaxRetryTimeout int    `yaml:"maxRetryTimeout,omitempty"`
@@ -360,6 +371,10 @@ func GetTestVCDFromYaml(testConfig TestConfig, options ...VCDClientOption) (*VCD
 		options = append(options, WithHttpTimeout(testConfig.Provider.HttpTimeout))
 	}
 
+	if testConfig.Provider.UseSamlAdfs {
+		options = append(options, WithSamlAdfs(true, testConfig.Provider.CustomAdfsRptId))
+	}
+
 	return NewVCDClient(*configUrl, true, options...), nil
 }
 
@@ -415,6 +430,9 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		err = vcd.client.SetToken(config.Provider.SysOrg, AuthorizationHeader, token)
 	} else {
 		err = vcd.client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
+	}
+	if config.Provider.UseSamlAdfs {
+		authenticationMode = "SAML password"
 	}
 	if err != nil {
 		panic(err)

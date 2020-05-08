@@ -1,6 +1,11 @@
 ## 2.8.0 (Unreleased)
 
-*  Removed code that handled specific cases for API 29.0 and 30.0. This library now supports VCD versions from 9.5 to 10.1 included.
+* Removed code that handled specific cases for API 29.0 and 30.0. This library now supports VCD
+   versions from 9.5 to 10.1 included.
+* Add configuration option `WithSamlAdfs` to `NewVCDClient()` to support SAML authentication using
+  Active Directory Federations Services (ADFS) as IdP using WS-TRUST auth endpoint
+  "/adfs/services/trust/13/usernamemixed" [#304](https://github.com/vmware/go-vcloud-director/pull/304)
+
 
 ## 2.7.0 (April 10, 2020)
 
