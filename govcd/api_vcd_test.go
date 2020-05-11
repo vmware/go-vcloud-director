@@ -114,10 +114,12 @@ type TestConfig struct {
 			NetworkPool    string `yaml:"network_pool"`
 		} `yaml:"provider_vdc"`
 		Catalog struct {
-			Name                   string `yaml:"name,omitempty"`
-			Description            string `yaml:"description,omitempty"`
-			CatalogItem            string `yaml:"catalogItem,omitempty"`
-			CatalogItemDescription string `yaml:"catalogItemDescription,omitempty"`
+			Name                    string `yaml:"name,omitempty"`
+			Description             string `yaml:"description,omitempty"`
+			CatalogItem             string `yaml:"catalogItem,omitempty"`
+			CatalogItemDescription  string `yaml:"catalogItemDescription,omitempty"`
+			CatalogItemWithMultiVms string `yaml:"catalogItemWithMultiVms,omitempty"`
+			VmNameInMultiVmItem     string `yaml:"vmNameInMultiVmItem,omitempty"`
 		} `yaml:"catalog"`
 		Network struct {
 			Net1 string `yaml:"network1"`
@@ -151,8 +153,9 @@ type TestConfig struct {
 		VerboseCleanup   bool   `yaml:"verboseCleanup,omitempty"`
 	} `yaml:"logging"`
 	OVA struct {
-		OVAPath        string `yaml:"ovaPath,omitempty"`
-		OVAChunkedPath string `yaml:"ovaChunkedPath,omitempty"`
+		OvaPath        string `yaml:"ovaPath,omitempty"`
+		OvaChunkedPath string `yaml:"ovaChunkedPath,omitempty"`
+		OvaMultiVmPath string `yaml:"ovaMultiVmPath,omitempty"`
 	} `yaml:"ova"`
 	Media struct {
 		MediaPath       string `yaml:"mediaPath,omitempty"`
