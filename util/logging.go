@@ -170,11 +170,22 @@ func isBinary(data string, req *http.Request) bool {
 
 // SanitizedHeader returns a http.Header with sensitive fields masked
 func SanitizedHeader(inputHeader http.Header) http.Header {
+	if LogPasswords {
+		return inputHeader
+	}
+	var sensitiveKeys = []string{
+		"Config-Secret",
+		"Authorization",
+		"X-Vcloud-Authorization",
+		"X-Vmware-Vcloud-Access-Token",
+	}
 	var sanitizedHeader = make(http.Header)
 	for key, value := range inputHeader {
-		if (key == "Config-Secret" || key == "authorization" || key == "Authorization" || key == "X-Vcloud-Authorization" || key == "X-Vmware-Vcloud-Access-Token") &&
-			!LogPasswords {
-			value = []string{"********"}
+		for _, sk := range sensitiveKeys {
+			if strings.EqualFold(sk, key) {
+				value = []string{"********"}
+				break
+			}
 		}
 		sanitizedHeader[key] = value
 	}
