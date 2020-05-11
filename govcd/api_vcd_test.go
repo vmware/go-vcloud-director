@@ -1471,7 +1471,7 @@ func setTestEnv() {
 func init() {
 	testingTags["api"] = "api_vcd_test.go"
 
-	// To list the flags when we run "go test -vcd-help", the flag name must start with "vcd"
+	// To list the flags when we run "go test -tags functional -vcd-help", the flag name must start with "vcd"
 	// They will all appear alongside the native flags when we use an invalid one
 	setBoolFlag(&vcdHelp, "vcd-help", "VCD_HELP", "Show vcd flags")
 	setBoolFlag(&enableDebug, "vcd-debug", "GOVCD_DEBUG", "enables debug output")
