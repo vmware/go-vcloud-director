@@ -1450,7 +1450,6 @@ func (vcd *TestVCD) Test_NewRequestWitNotEncodedParamsWithApiVersion(check *C) {
 func setBoolFlag(variable *bool, name, envVar, help string) {
 	if envVar != "" && os.Getenv(envVar) != "" {
 		*variable = true
-		return
 	}
 	flag.BoolVar(variable, name, *variable, help)
 }
