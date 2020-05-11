@@ -9,6 +9,7 @@ package govcd
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -26,10 +27,6 @@ import (
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v2"
 )
-
-func init() {
-	testingTags["api"] = "api_vcd_test.go"
-}
 
 const (
 	// Names for entities created by the tests
@@ -198,6 +195,15 @@ var persistentCleanupIp string
 
 // Use this value to run a specific test that does not need a pre-created vApp.
 var skipVappCreation bool = os.Getenv("GOVCD_SKIP_VAPP_CREATION") != ""
+
+// vcdHelp shows command line options
+var vcdHelp bool
+
+// enableDebug enables debug output
+var enableDebug bool
+
+// ignoreCleanupFile prevents processing a previous cleanup file
+var ignoreCleanupFile bool
 
 // Makes the name for the cleanup entities persistent file
 // Using a name for each vCD allows us to run tests with different servers
@@ -375,6 +381,20 @@ func Test(t *testing.T) { TestingT(t) }
 // when creating a new vapp. If this method panics, no test
 // case that uses the TestVCD struct is run.
 func (vcd *TestVCD) SetUpSuite(check *C) {
+	flag.Parse()
+	setTestEnv()
+	if vcdHelp {
+		fmt.Println("vcd flags:")
+		fmt.Println()
+		// Prints only the flags defined in this package
+		flag.CommandLine.VisitAll(func(f *flag.Flag) {
+			if strings.Contains(f.Name, "vcd-") {
+				fmt.Printf("  -%-40s %s (%v)\n", f.Name, f.Usage, f.Value)
+			}
+		})
+		fmt.Println()
+		os.Exit(0)
+	}
 	config, err := GetConfigStruct()
 	if config == (TestConfig{}) || err != nil {
 		panic(err)
@@ -457,7 +477,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	// Gets the persistent cleanup list from file, if exists.
 	cleanupList, err := readCleanupList()
 	if len(cleanupList) > 0 && err == nil {
-		if os.Getenv("GOVCD_IGNORE_CLEANUP_FILE") == "" {
+		if ignoreCleanupFile {
 			// If we found a cleanup file and we want to process it (default)
 			// We proceed to cleanup the leftovers before any other operation
 			fmt.Printf("*** Found cleanup file %s\n", makePersistentCleanupFileName())
@@ -1425,4 +1445,40 @@ func (vcd *TestVCD) Test_NewRequestWitNotEncodedParamsWithApiVersion(check *C) {
 	check.Assert(resp.Header.Get("Content-Type"), Equals, types.MimeQueryRecords+";version="+vcd.client.Client.APIVersion)
 
 	fmt.Printf("Test: %s run with api Version: %s\n", check.TestName(), apiVersion)
+}
+
+func setBoolFlag(variable *bool, name, envVar, help string) {
+	if envVar != "" && os.Getenv(envVar) != "" {
+		*variable = true
+		return
+	}
+	flag.BoolVar(variable, name, *variable, help)
+}
+
+// setTestEnv enables environment variables that are also used in non-test code
+func setTestEnv() {
+	if enableDebug {
+		_ = os.Setenv("GOVCD_DEBUG", "1")
+	}
+	if debugShowRequestEnabled {
+		_ = os.Setenv("GOVCD_SHOW_REQ", "1")
+	}
+	if debugShowResponseEnabled {
+		_ = os.Setenv("GOVCD_SHOW_RESP", "1")
+	}
+}
+
+func init() {
+	testingTags["api"] = "api_vcd_test.go"
+
+	// To list the flags when we run "go test -vcd-help", the flag name must start with "vcd"
+	// They will all appear alongside the native flags when we use an invalid one
+	setBoolFlag(&vcdHelp, "vcd-help", "VCD_HELP", "Show vcd flags")
+	setBoolFlag(&enableDebug, "vcd-debug", "GOVCD_DEBUG", "enables debug output")
+	setBoolFlag(&testVerbose, "vcd-verbose", "GOVCD_TEST_VERBOSE", "enables verbose output")
+	setBoolFlag(&skipVappCreation, "vcd-skip-vapp-creation", "GOVCD_SKIP_VAPP_CREATION", "Skips vApp creation")
+	setBoolFlag(&ignoreCleanupFile, "vcd-ignore-cleanup-file", "GOVCD_IGNORE_CLEANUP_FILE", "Does not process previous cleanup file")
+	setBoolFlag(&debugShowRequestEnabled, "vcd-show-request", "GOVCD_SHOW_REQ", "Shows API request")
+	setBoolFlag(&debugShowResponseEnabled, "vcd-show-response", "GOVCD_SHOW_RESP", "Shows API response")
+
 }
