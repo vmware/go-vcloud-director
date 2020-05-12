@@ -141,7 +141,7 @@ func (vcd *TestVCD) TestQueryCatalogItemAndVAppTemplateList(check *C) {
 	for _, qCatalogItem := range queryCatalogItemsByCatalog {
 		itemHref, foundItem := itemMapInCatalog[qCatalogItem.Name]
 		check.Assert(foundItem, Equals, true)
-		if qCatalogItem.EntityType == QtVappTemplate {
+		if qCatalogItem.EntityType == types.QtVappTemplate {
 			// If the item is not "media", compare the HREF
 			check.Assert(itemHref, Equals, qCatalogItem.HREF)
 		}

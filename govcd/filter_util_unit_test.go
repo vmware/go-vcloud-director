@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/kr/pretty"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 func Test_compareDate(t *testing.T) {
@@ -97,7 +99,7 @@ func TestMakeDateFilters(t *testing.T) {
 		want := "==" + iItem.Date
 		for _, oItem := range output {
 			for name, filter := range oItem.Criteria.Filters {
-				if name == FilterDate {
+				if name == types.FilterDate {
 					if filter == want {
 						foundEqual++
 					}

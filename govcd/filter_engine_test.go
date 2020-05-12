@@ -10,6 +10,8 @@ import (
 	"os"
 
 	. "gopkg.in/check.v1"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 func (vcd *TestVCD) Test_SearchSpecificVappTemplate(check *C) {
@@ -43,10 +45,10 @@ func (vcd *TestVCD) Test_SearchSpecificVappTemplate(check *C) {
 		}
 	}
 
-	queryType := QtVappTemplate
+	queryType := types.QtVappTemplate
 
 	if client.IsSysAdmin {
-		queryType = QtAdminVappTemplate
+		queryType = types.QtAdminVappTemplate
 	}
 
 	// metadata filters
@@ -112,9 +114,9 @@ func (vcd *TestVCD) Test_SearchVappTemplate(check *C) {
 	check.Assert(err, IsNil)
 	client := catalog.client
 
-	queryType := QtVappTemplate
+	queryType := types.QtVappTemplate
 	if client.IsSysAdmin {
-		queryType = QtAdminVappTemplate
+		queryType = types.QtAdminVappTemplate
 	}
 	// Test with any vApp templates, using mass produced filters
 	filters, err := HelperMakeFiltersFromVappTemplate(catalog)
@@ -158,9 +160,9 @@ func (vcd *TestVCD) Test_SearchCatalogItem(check *C) {
 	check.Assert(err, IsNil)
 	client := catalog.client
 
-	queryType := QtCatalogItem
+	queryType := types.QtCatalogItem
 	if client.IsSysAdmin {
-		queryType = QtAdminCatalogItem
+		queryType = types.QtAdminCatalogItem
 	}
 	// Test with any catalog items, using mass produced filters
 	filters, err := HelperMakeFiltersFromCatalogItem(catalog)
@@ -201,7 +203,7 @@ func (vcd *TestVCD) Test_SearchNetwork(check *C) {
 	check.Assert(filters, NotNil)
 
 	for _, fm := range filters {
-		queryItems, explanation, err := vdc.SearchByFilter(QtOrgVdcNetwork, "vdc", fm.Criteria)
+		queryItems, explanation, err := vdc.SearchByFilter(types.QtOrgVdcNetwork, "vdc", fm.Criteria)
 		check.Assert(err, IsNil)
 		printVerbose("%s\n", explanation)
 		check.Assert(len(queryItems), Equals, 1)
@@ -211,7 +213,7 @@ func (vcd *TestVCD) Test_SearchNetwork(check *C) {
 		if len(fm.Criteria.Metadata) > 0 {
 			// Search with Metadata API
 			fm.Criteria.UseMetadataApiFilter = true
-			queryItems, explanation, err = vdc.SearchByFilter(QtOrgVdcNetwork, "vdc", fm.Criteria)
+			queryItems, explanation, err = vdc.SearchByFilter(types.QtOrgVdcNetwork, "vdc", fm.Criteria)
 			check.Assert(err, IsNil)
 			check.Assert(len(queryItems), Equals, 1)
 			check.Assert(queryItems[0].GetName(), Equals, fm.ExpectedName)
@@ -243,7 +245,7 @@ func (vcd *TestVCD) Test_SearchEdgeGateway(check *C) {
 	check.Assert(filters, NotNil)
 
 	for _, fm := range filters {
-		queryItems, explanation, err := vdc.SearchByFilter(QtEdgeGateway, "vdc", fm.Criteria)
+		queryItems, explanation, err := vdc.SearchByFilter(types.QtEdgeGateway, "vdc", fm.Criteria)
 		check.Assert(err, IsNil)
 		printVerbose("%s\n", explanation)
 		check.Assert(len(queryItems), Equals, 1)
@@ -269,9 +271,9 @@ func (vcd *TestVCD) Test_SearchCatalog(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(filters, NotNil)
 
-	queryType := QtCatalog
+	queryType := types.QtCatalog
 	if client.Client.IsSysAdmin {
-		queryType = QtAdminCatalog
+		queryType = types.QtAdminCatalog
 	}
 	for _, fm := range filters {
 		queryItems, explanation, err := org.SearchByFilter(queryType, fm.Criteria)
@@ -307,10 +309,10 @@ func (vcd *TestVCD) Test_SearchMediaItem(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(filters, NotNil)
 
-	queryType := QtMedia
+	queryType := types.QtMedia
 
 	if client.Client.IsSysAdmin {
-		queryType = QtAdminMedia
+		queryType = types.QtAdminMedia
 	}
 	for _, fm := range filters {
 		queryItems, explanation, err := catalog.SearchByFilter(queryType, "catalog", fm.Criteria)

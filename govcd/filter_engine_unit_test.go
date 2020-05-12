@@ -5,6 +5,8 @@ package govcd
 import (
 	"reflect"
 	"testing"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 // Test filter engine using dependency injection
@@ -43,26 +45,26 @@ func (t TestItem) GetHref() string                    { return "" }
 
 func makeNameCriteria(name string) *FilterDef {
 	f := NewFilterDef()
-	_ = f.AddFilter(FilterNameRegex, name)
+	_ = f.AddFilter(types.FilterNameRegex, name)
 	return f
 }
 
 func makeIpCriteria(ip string) *FilterDef {
 	f := NewFilterDef()
-	_ = f.AddFilter(FilterIp, ip)
+	_ = f.AddFilter(types.FilterIp, ip)
 	return f
 }
 
 func makeDateCriteria(date string, latest, earliest bool) *FilterDef {
 	f := NewFilterDef()
 	if date != "" {
-		_ = f.AddFilter(FilterDate, date)
+		_ = f.AddFilter(types.FilterDate, date)
 	}
 	if earliest {
-		_ = f.AddFilter(FilterEarliest, "true")
+		_ = f.AddFilter(types.FilterEarliest, "true")
 	}
 	if latest {
-		_ = f.AddFilter(FilterLatest, "true")
+		_ = f.AddFilter(types.FilterLatest, "true")
 	}
 	return f
 }
@@ -77,7 +79,7 @@ func makeMDCriteria(useApi bool, wanted StringMap) *FilterDef {
 
 func makeDateMDCriteria(date string, useApi bool, wanted StringMap) *FilterDef {
 	f := makeMDCriteria(useApi, wanted)
-	_ = f.AddFilter(FilterDate, date)
+	_ = f.AddFilter(types.FilterDate, date)
 	return f
 }
 
