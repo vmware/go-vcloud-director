@@ -309,27 +309,31 @@ func (vcd *TestVCD) Test_ComposeVApp(check *checks.C) {
 }
 ```
 
-# Environment variables
+# Environment variables and corresponding flags
 
 While running tests, the following environment variables can be used:
 
 * `GOVCD_CONFIG=/path/file`: sets an alternative configuration file for the tests.
    e.g.:  `GOVCD_CONFIG=/some/path/govcd_test_config.yaml go test -tags functional -timeout 0 .`
-* `GOVCD_DEBUG=1`: enable debug output on screen.
-* `GOVCD_TEST_VERBOSE=1`: shows execution details in some tests.
-* `GOVCD_SKIP_VAPP_CREATION=1`: will not create the initial vApp. All tests that
+* `GOVCD_DEBUG=1` (`-vcd-debug`): enable debug output on screen.
+* `GOVCD_TEST_VERBOSE=1` (`-vcd-verbose`): shows execution details in some tests.
+* `GOVCD_SKIP_VAPP_CREATION=1` (`-vcd-skip-vapp-creation`): will not create the initial vApp. All tests that
    depend on a vApp availability will be skipped.
 * `GOVCD_TASK_MONITOR=show|log|simple_show|simple|log`: sets a task monitor function when running `task.WaitCompletion`
     * `show` : displays full task details on screen
     * `log` : writes full task details in the log
     * `simple_show` : displays a summary line for the task on screen
     * `simple_log` : writes a summary line for the task in the log
-* `GOVCD_IGNORE_CLEANUP_FILE` Ignore the cleanup file if it is left behind after a test failure.
+* `GOVCD_IGNORE_CLEANUP_FILE` (`-vcd-ignore-cleanup-file`): Ignore the cleanup file if it is left behind after a test failure.
     This could be useful after running a single test, when we need to check how the test behaves with the resource still
     in place.
+* `GOVCD_SHOW_REQ` (`-vcd-show-request`): shows the API request on standard output
+* `GOVCD_SHOW_RESP` (`-vcd-show-response`): shows the API response on standard output
 * `VCD_TOKEN` : specifies the authorization token to use instead of username/password
    (Use `./scripts/get_token.sh` to retrieve one)
 * `GOVCD_KEEP_TEST_OBJECTS` will skip deletion of objects created during tests.
+
+When both the environment variable and the command line option are possible, the environment variable gets evaluated first.
 
 # Final Words
 Be careful about using our tests as these tests run on a real vcd. If you don't have 1 gb of ram and 2 vcpus available then you should not be running tests that deploy your vm/change memory and cpu. However everything created will be removed at the end of testing.
