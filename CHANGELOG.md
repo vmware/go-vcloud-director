@@ -2,10 +2,13 @@
 
 * Removed code that handled specific cases for API 29.0 and 30.0. This library now supports VCD versions from 9.5 to 10.1 included.
 * Added `vdc.QueryVappVmTemplate` and changed `vapp.AddNewVMWithStorageProfile` to allow creating VM from VM template.
+* Enhanced tests command line with flags that can be used instead of environment variables. [#305](https://github.com/vmware/go-vcloud-director/pull/305)
+* Improve logging security of debug output for API requests and responses [#306](https://github.com/vmware/go-vcloud-director/pull/306)
 * Add configuration option `WithSamlAdfs` to `NewVCDClient()` to support SAML authentication using
   Active Directory Federations Services (ADFS) as IdP using WS-TRUST auth endpoint
-  "/adfs/services/trust/13/usernamemixed" [#304](https://github.com/vmware/go-vcloud-director/pull/304)
-
+  "/adfs/services/trust/13/usernamemixed"
+  [#304](https://github.com/vmware/go-vcloud-director/pull/304)
+  
 ## 2.7.0 (April 10, 2020)
 
 * Added methods `OrgVdcNetwork.Update`, `OrgVdcNetwork.UpdateAsync`, and `OrgVdcNetwork.Rename` [#292](https://github.com/vmware/go-vcloud-director/pull/292)
