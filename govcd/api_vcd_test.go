@@ -1447,11 +1447,14 @@ func (vcd *TestVCD) Test_NewRequestWitNotEncodedParamsWithApiVersion(check *C) {
 	fmt.Printf("Test: %s run with api Version: %s\n", check.TestName(), apiVersion)
 }
 
-func setBoolFlag(variable *bool, name, envVar, help string) {
+// setBoolFlag binds a flag to a boolean variable (passed as pointer)
+// it also uses an optional environment variable that, if set, will
+// update the variable before binding it to the flag.
+func setBoolFlag(varPointer *bool, name, envVar, help string) {
 	if envVar != "" && os.Getenv(envVar) != "" {
-		*variable = true
+		*varPointer = true
 	}
-	flag.BoolVar(variable, name, *variable, help)
+	flag.BoolVar(varPointer, name, *varPointer, help)
 }
 
 // setTestEnv enables environment variables that are also used in non-test code
