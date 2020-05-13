@@ -332,8 +332,7 @@ While running tests, the following environment variables can be used:
 * `VCD_TOKEN` : specifies the authorization token to use instead of username/password
    (Use `./scripts/get_token.sh` to retrieve one)
 
-When both the environment variable and the command line option are possible, the environment variable gets evaluated first: is it is set,
-also the flag becomes true.
+When both the environment variable and the command line option are possible, the environment variable gets evaluated first.
 
 # Final Words
 Be careful about using our tests as these tests run on a real vcd. If you don't have 1 gb of ram and 2 vcpus available then you should not be running tests that deploy your vm/change memory and cpu. However everything created will be removed at the end of testing.
