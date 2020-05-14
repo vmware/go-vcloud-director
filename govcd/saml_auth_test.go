@@ -14,7 +14,7 @@ import (
 //  "/adfs/services/trust/13/usernamemixed".
 // Credential variables must be specified in test configuration for it to work
 // The steps of this test are:
-// * Query object using test framework vCD conection
+// * Query object using test framework vCD connection
 // * Create a new client with SAML authentication using specified org and query the same object
 // using it to make sure access is granted
 // * Compare results to ensure that it worked as it should
