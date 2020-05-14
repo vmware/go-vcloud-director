@@ -48,7 +48,7 @@ func (vcd *TestVCD) Test_SamlAdfsAuth(check *C) {
 	// If SamlCustomRptId was not specified - try to feed VCD entity ID manually (this is usually
 	// done automatically, but doing it to test this path is not broken)
 	if cfg.Provider.SamlCustomRptId == "" {
-		samlEntityId, err := vcdAuthorizeSamlGetSamlEntityId(vcd.client, cfg.VCD.Org)
+		samlEntityId, err := getSamlEntityId(vcd.client, cfg.VCD.Org)
 		check.Assert(err, IsNil)
 
 		samlCustomRptVcdCli := NewVCDClient(vcd.client.Client.VCDHREF, true,
