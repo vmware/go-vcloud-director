@@ -107,6 +107,8 @@ const (
 	MimeExternalNetwork = "application/vnd.vmware.admin.vmwexternalnet+xml"
 	// Mime of an Org User
 	MimeAdminUser = "application/vnd.vmware.admin.user+xml"
+	// MimeAdminGroup specifies groups
+	MimeAdminGroup = "application/vnd.vmware.admin.group+xml"
 )
 
 const (

@@ -618,6 +618,10 @@ type OrgUserList struct {
 	User []*Reference `xml:"UserReference,omitempty"`
 }
 
+type OrgGroupList struct {
+	Group []*Reference `xml:"GroupReference,omitempty"`
+}
+
 // List of available roles in the organization
 type OrgRoleType struct {
 	RoleReference []*Reference `xml:"RoleReference,omitempty"`
@@ -648,6 +652,7 @@ type AdminOrg struct {
 	Link            LinkList         `xml:"Link,omitempty"`
 	Tasks           *TasksInProgress `xml:"Tasks,omitempty"`
 	Users           *OrgUserList     `xml:"Users,omitempty"`
+	Groups          *OrgGroupList    `xml:"Groups,omitempty"`
 	Catalogs        *CatalogsList    `xml:"Catalogs,omitempty"`
 	OrgSettings     *OrgSettings     `xml:"Settings,omitempty"`
 	Vdcs            *VDCList         `xml:"Vdcs,omitempty"`
@@ -2629,6 +2634,26 @@ type User struct {
 	GroupReferences *GroupReference  `xml:"GroupReferences,omitempty"`
 	Password        string           `xml:"Password,omitempty"`
 	Tasks           *TasksInProgress `xml:"Tasks"`
+}
+
+// Group represents Org group definitions
+type Group struct {
+	XMLName xml.Name `xml:"Group"`
+	Xmlns   string   `xml:"xmlns,attr"`
+	// Href holds reference to group object
+	Href string `xml:"href,attr,omitempty"`
+	// Type holds mime type for group
+	Type string `xml:"type,attr"`
+	// Name of the group
+	Name string `xml:"name,attr"`
+	// NameInSource is specified in update
+	NameInSource string `xml:"NameInSource,omitempty"`
+	// Description is specified in update
+	Description string `xml:"Description,omitempty"`
+	// ProviderType - 'SAML'
+	ProviderType string `xml:"ProviderType"`
+	// Role - reference to existing role
+	Role *Reference `xml:"Role,omitempty"`
 }
 
 // Type: AdminCatalogRecord
