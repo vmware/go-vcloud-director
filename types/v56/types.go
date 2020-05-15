@@ -2640,16 +2640,16 @@ type User struct {
 type Group struct {
 	XMLName xml.Name `xml:"Group"`
 	Xmlns   string   `xml:"xmlns,attr"`
+	// Id holds ID in format urn:vcloud:group:252fe08e-ae1b-409c-9dda-a531bb1ed69a
+	ID string `xml:"id,attr,omitempty"`
 	// Href holds reference to group object
 	Href string `xml:"href,attr,omitempty"`
 	// Type holds mime type for group
 	Type string `xml:"type,attr"`
-	// Name of the group
+	// Description is a read only field. It cannot be set or updated.
+	Description string `xml:"Description"`
+	// Name of the group. Cannot be updated.
 	Name string `xml:"name,attr"`
-	// NameInSource is specified in update
-	NameInSource string `xml:"NameInSource,omitempty"`
-	// Description is specified in update
-	Description string `xml:"Description,omitempty"`
 	// ProviderType - 'SAML'
 	ProviderType string `xml:"ProviderType"`
 	// Role - reference to existing role

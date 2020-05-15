@@ -16,11 +16,6 @@ func (vcd *TestVCD) Test_GroupCRUD(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	// type groupTestData struct {
-	// 	name     string
-	// 	roleName string
-	// }
-
 	type groupTestData struct {
 		name       string // name of the user. Note: only lowercase letters allowed
 		roleName   string // the role this user is created with
@@ -52,6 +47,11 @@ func (vcd *TestVCD) Test_GroupCRUD(check *C) {
 			roleName:   OrgUserRoleCatalogAuthor,
 			secondRole: OrgUserRoleOrganizationAdministrator,
 		},
+		{
+			name:       "test_group_defered_to_identity_provider",
+			roleName:   OrgUserRoleDeferToIdentityProvider,
+			secondRole: OrgUserRoleOrganizationAdministrator,
+		},
 	}
 
 	for _, gd := range groupData {
@@ -59,109 +59,87 @@ func (vcd *TestVCD) Test_GroupCRUD(check *C) {
 		role, err := adminOrg.GetRoleReference(gd.roleName)
 		check.Assert(err, IsNil)
 
-		g := types.Group{
+		groupDefinition := types.Group{
 			Name:         gd.name,
 			Role:         role,
-			ProviderType: "SAML",
+			ProviderType: OrgUserProviderSAML, // 'SAML' is the only accepted. Others get HTTP 403
 		}
 
 		newGroup := NewGroup(adminOrg.client, adminOrg)
-		newGroup.Group = &g
-		grp, err := adminOrg.CreateGroup(newGroup.Group)
+		newGroup.Group = &groupDefinition
+
+		createdGroup, err := adminOrg.CreateGroup(newGroup.Group)
+		check.Assert(err, IsNil)
+		AddToCleanupList(gd.name, "group", newGroup.AdminOrg.AdminOrg.Name, check.TestName())
+
+		foundGroup, err := adminOrg.GetGroupByName(gd.name, true)
 		check.Assert(err, IsNil)
 
+		check.Assert(foundGroup.Group.Href, Equals, createdGroup.Group.Href)
+		check.Assert(foundGroup.Group.Name, Equals, createdGroup.Group.Name)
+
+		// Setup for update
 		secondRole, err := adminOrg.GetRoleReference(gd.secondRole)
 		check.Assert(err, IsNil)
-		grp.Group.Role = secondRole
-		grp.Group.Description = "adding description"
+		createdGroup.Group.Role = secondRole
 
-		err = grp.Update()
+		err = createdGroup.Update()
 		check.Assert(err, IsNil)
 
-		err = grp.Delete()
+		foundGroup2, err := adminOrg.GetGroupByName(gd.name, true)
 		check.Assert(err, IsNil)
 
+		check.Assert(err, IsNil)
+		check.Assert(foundGroup2.Group.Href, Equals, createdGroup.Group.Href)
+		check.Assert(foundGroup2.Group.Name, Equals, createdGroup.Group.Name)
+
+		err = createdGroup.Delete()
+		check.Assert(err, IsNil)
+	}
+}
+
+// Test_GroupFinderGetGenericEntity uses testFinderGetGenericEntity to validate that ByName, ById
+// ByNameOrId method work properly.
+func (vcd *TestVCD) Test_GroupFinderGetGenericEntity(check *C) {
+	const groupName = "group_generic_entity"
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	role, err := adminOrg.GetRoleReference(OrgUserRoleOrganizationAdministrator)
+	check.Assert(err, IsNil)
+
+	group := NewGroup(adminOrg.client, adminOrg)
+	group.Group = &types.Group{
+		Name:         groupName,
+		Role:         role,
+		ProviderType: OrgUserProviderSAML,
 	}
 
-	// quotaDeployed := 10
-	// quotaStored := 10
-	// for _, ud := range userData {
-	// 	quotaDeployed += 2
-	// 	quotaStored += 2
-	// 	fmt.Printf("# Creating user %s with role %s\n", ud.name, ud.roleName)
-	// 	// Uncomment the following lines to see creation request and response
-	// 	// enableDebugShowRequest()
-	// 	// enableDebugShowResponse()
-	// 	var userDefinition = OrgUserConfiguration{
-	// 		Name:            ud.name,
-	// 		Password:        "user_pass",
-	// 		RoleName:        ud.roleName,
-	// 		ProviderType:    OrgUserProviderIntegrated,
-	// 		DeployedVmQuota: quotaDeployed,
-	// 		StoredVmQuota:   quotaStored,
-	// 		FullName:        strings.ReplaceAll(ud.name, "_", " "),
-	// 		Description:     "user " + strings.ReplaceAll(ud.name, "_", " "),
-	// 		IsEnabled:       true,
-	// 		IM:              "TextIM",
-	// 		EmailAddress:    "somename@somedomain.com",
-	// 		Telephone:       "999 888-7777",
-	// 	}
+	_, err = adminOrg.CreateGroup(group.Group)
+	check.Assert(err, IsNil)
+	AddToCleanupList(groupName, "group", group.AdminOrg.AdminOrg.Name, check.TestName())
 
-	// 	user, err := adminOrg.CreateUserSimple(userDefinition)
-	// 	// disableDebugShowRequest()
-	// 	// disableDebugShowResponse()
-	// 	check.Assert(err, IsNil)
+	getByName := func(name string, refresh bool) (genericEntity, error) {
+		return adminOrg.GetGroupByName(name, refresh)
+	}
+	getById := func(id string, refresh bool) (genericEntity, error) { return adminOrg.GetGroupById(id, refresh) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
+		return adminOrg.GetGroupByNameOrId(id, refresh)
+	}
 
-	// 	AddToCleanupList(ud.name, "user", user.AdminOrg.AdminOrg.Name, check.TestName())
-	// 	check.Assert(user.User, NotNil)
-	// 	check.Assert(user.User.Name, Equals, ud.name)
-	// 	check.Assert(user.GetRoleName(), Equals, ud.roleName)
-	// 	check.Assert(user.User.IsEnabled, Equals, true)
-	// 	check.Assert(user.User.FullName, Equals, userDefinition.FullName)
-	// 	check.Assert(user.User.EmailAddress, Equals, userDefinition.EmailAddress)
-	// 	check.Assert(user.User.IM, Equals, userDefinition.IM)
-	// 	check.Assert(user.User.Telephone, Equals, userDefinition.Telephone)
-	// 	check.Assert(user.User.StoredVmQuota, Equals, userDefinition.StoredVmQuota)
-	// 	check.Assert(user.User.DeployedVmQuota, Equals, userDefinition.DeployedVmQuota)
+	// Refresh adminOrg so that user data is present
+	err = adminOrg.Refresh()
+	check.Assert(err, IsNil)
 
-	// 	err = user.Disable()
-	// 	check.Assert(err, IsNil)
-	// 	check.Assert(user.User.IsEnabled, Equals, false)
-
-	// 	fmt.Printf("# Updating user %s with role %s\n", ud.name, ud.secondRole)
-	// 	err = user.ChangeRole(ud.secondRole)
-	// 	check.Assert(err, IsNil)
-	// 	check.Assert(user.GetRoleName(), Equals, ud.secondRole)
-
-	// 	err = user.Enable()
-	// 	check.Assert(err, IsNil)
-	// 	check.Assert(user.User.IsEnabled, Equals, true)
-	// 	err = user.ChangePassword("new_pass")
-	// 	check.Assert(err, IsNil)
-	// }
-
-	// var enableMap = map[bool]string{
-	// 	true:  "enabled",
-	// 	false: "disabled",
-	// }
-	// for _, ud := range userData {
-	// 	user, err := adminOrg.GetUserByNameOrId(ud.name, true)
-	// 	check.Assert(err, IsNil)
-
-	// 	fmt.Printf("# deleting user %s (%s - %s)\n", ud.name, user.GetRoleName(), enableMap[user.User.IsEnabled])
-	// 	// uncomment the following two lines to see the deletion request and response
-	// 	// enableDebugShowRequest()
-	// 	// enableDebugShowResponse()
-	// 	err = user.Delete(true)
-	// 	// disableDebugShowRequest()
-	// 	// disableDebugShowResponse()
-	// 	check.Assert(err, IsNil)
-	// 	user, err = adminOrg.GetUserByNameOrId(user.User.ID, true)
-	// 	check.Assert(err, NotNil)
-	// 	// Tests both the error directly and the function IsNotFound
-	// 	check.Assert(err, Equals, ErrorEntityNotFound)
-	// 	check.Assert(IsNotFound(err), Equals, true)
-	// 	// Expect a null pointer when user is not found
-	// 	check.Assert(user, IsNil)
-	// }
+	var def = getterTestDefinition{
+		parentType:    "AdminOrg",
+		parentName:    vcd.config.VCD.Org,
+		entityType:    "OrgGroup",
+		entityName:    groupName,
+		getByName:     getByName,
+		getById:       getById,
+		getByNameOrId: getByNameOrId,
+	}
+	vcd.testFinderGetGenericEntity(def, check)
 }

@@ -810,6 +810,28 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 		return
+	case "group":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for group '%s'\n", entity.Name)
+			return
+		}
+		org, err := vcd.client.GetAdminOrgByName(entity.Parent)
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, "org", entity.Parent)
+			return
+		}
+		group, err := org.GetGroupByName(entity.Name, true)
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, "user", entity.Name)
+			return
+		}
+		err = group.Delete()
+		if err == nil {
+			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		} else {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+		return
 	case "vdc":
 		if entity.Parent == "" {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for VDC '%s'\n", entity.Name)
