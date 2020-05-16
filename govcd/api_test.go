@@ -95,3 +95,15 @@ func TestTags(t *testing.T) {
 		showTags()
 	}
 }
+
+func printVerbose(format string, args ...interface{}) {
+	if testVerbose {
+		fmt.Printf(format, args...)
+	}
+}
+
+func logVerbose(t *testing.T, format string, args ...interface{}) {
+	if testVerbose {
+		t.Logf(format, args...)
+	}
+}

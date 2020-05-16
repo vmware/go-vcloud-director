@@ -331,6 +331,7 @@ While running tests, the following environment variables can be used:
 * `GOVCD_SHOW_RESP` (`-vcd-show-response`): shows the API response on standard output
 * `VCD_TOKEN` : specifies the authorization token to use instead of username/password
    (Use `./scripts/get_token.sh` to retrieve one)
+* `GOVCD_KEEP_TEST_OBJECTS` will skip deletion of objects created during tests.
 
 When both the environment variable and the command line option are possible, the environment variable gets evaluated first.
 
