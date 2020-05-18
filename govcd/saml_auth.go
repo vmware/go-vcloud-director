@@ -30,7 +30,9 @@ import (
 // as relaying party trust ID
 //
 // The general concept is to get a SIGN token from ADFS IdP (Identity Provider) and exchange it with
-// regular vCD token for further operations. This is achieved with the following steps:
+// regular vCD token for further operations. It is documented in
+// https://code.vmware.com/docs/10000/vcloud-api-programming-guide-for-service-providers/GUID-335CFC35-7AD8-40E5-91BE-53971937A2BB.html
+// This is achieved with the following steps:
 // 1 - Lookup vCD Entity ID to use for ADFS authentication or use custom value if overrideRptId
 // field is provided
 // 2 - Find ADFS server name by querying vCD SAML URL which responds with HTTP redirect (302)

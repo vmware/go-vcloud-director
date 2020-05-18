@@ -137,7 +137,8 @@ The file `scripts/get_token.sh` provides a handy method of extracting the token
   "/adfs/services/trust/13/usernamemixed"). One must pass `govcd.WithSamlAdfs(true,customAdfsRptId)`
   and username must be formatted so that ADFS understands it('user@contoso.com' or
   'contoso.com\user') You can find usage example in
-  [samples/saml_auth_adfs](/samples/saml_auth_adfs).
+  [samples/saml_auth_adfs](/samples/saml_auth_adfs). More information about this flow can be found
+  in [vCD documentation](https://code.vmware.com/docs/10000/vcloud-api-programming-guide-for-service-providers/GUID-335CFC35-7AD8-40E5-91BE-53971937A2BB.html).
 ```go
 vcdCli := govcd.NewVCDClient(*vcdURL, true, govcd.WithSamlAdfs(true, customAdfsRptId))
 err = vcdCli.Authenticate(username, password, org)
