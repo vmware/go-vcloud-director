@@ -1,15 +1,18 @@
 // +build catalog functional ALL
 
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
 
 import (
 	"fmt"
+	//"strings"
 
 	. "gopkg.in/check.v1"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 func (vcd *TestVCD) Test_GetVAppTemplate(check *C) {
@@ -80,4 +83,112 @@ func (vcd *TestVCD) Test_Delete(check *C) {
 		}
 	}
 	check.Assert(entityFound, Equals, false)
+}
+
+func (vcd *TestVCD) TestQueryCatalogItemAndVAppTemplateList(check *C) {
+	if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("no catalog provided. Skipping test")
+	}
+	if vcd.config.VCD.Vdc == "" {
+		check.Skip("no VDC provided. Skipping test")
+	}
+	// Fetching organization and catalog
+	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	check.Assert(err, IsNil)
+
+	// Fetching VDC
+	vdc, err := org.GetAdminVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	// Get the list of catalog items using a query from catalog
+	queryCatalogItemsByCatalog, err := catalog.QueryCatalogItemList()
+	check.Assert(err, IsNil)
+	check.Assert(queryCatalogItemsByCatalog, NotNil)
+
+	// Get the list of catalog items using a query from VDC
+	queryCatalogItemsByVdc, err := vdc.QueryCatalogItemList()
+	check.Assert(err, IsNil)
+	check.Assert(queryCatalogItemsByVdc, NotNil)
+
+	// Make sure the lists have at least one item
+	hasItemsFromCatalog := len(queryCatalogItemsByCatalog) > 0
+	check.Assert(hasItemsFromCatalog, Equals, true)
+	hasItemsFromVdc := len(queryCatalogItemsByVdc) > 0
+	check.Assert(hasItemsFromVdc, Equals, true)
+
+	// Building up a map of catalog items as they are recorded in the catalog
+	var itemMapInCatalog = make(map[string]string)
+	for _, item := range catalog.Catalog.CatalogItems {
+		for _, catalogItem := range item.CatalogItem {
+			itemMapInCatalog[catalogItem.Name] = catalogItem.HREF
+		}
+	}
+
+	var itemMapInVdc = make(map[string]string)
+	for _, resource := range vdc.AdminVdc.ResourceEntities {
+		for _, item := range resource.ResourceEntity {
+			if item.Type == types.MimeVAppTemplate {
+				itemMapInVdc[item.Name] = item.HREF
+			}
+		}
+	}
+
+	// Compare the items in the query with the catalog list
+	for _, qCatalogItem := range queryCatalogItemsByCatalog {
+		itemHref, foundItem := itemMapInCatalog[qCatalogItem.Name]
+		check.Assert(foundItem, Equals, true)
+		if qCatalogItem.EntityType == types.QtVappTemplate {
+			// If the item is not "media", compare the HREF
+			check.Assert(itemHref, Equals, qCatalogItem.HREF)
+		}
+	}
+
+	// Get the list of vApp templates using a query from catalog
+	queryVappTemplatesByCatalog, err := catalog.QueryVappTemplateList()
+	check.Assert(err, IsNil)
+	check.Assert(queryVappTemplatesByCatalog, NotNil)
+
+	// Get the list of vApp templates using a query from VDC
+	queryVappTemplatesByVdc, err := vdc.QueryVappTemplateList()
+	check.Assert(err, IsNil)
+	check.Assert(queryVappTemplatesByVdc, NotNil)
+
+	// Make sure the lists have at least one item
+	hasItemsFromCatalog = len(queryVappTemplatesByCatalog) > 0
+	check.Assert(hasItemsFromCatalog, Equals, true)
+	hasItemsFromVdc = len(queryVappTemplatesByVdc) > 0
+	check.Assert(hasItemsFromVdc, Equals, true)
+
+	// Compare vApp templates with the list of  catalog items
+	for _, qvAppTemplate := range queryVappTemplatesByCatalog {
+		// Check that catalog item name and vApp template names match
+		itemHref, foundItem := itemMapInCatalog[qvAppTemplate.Name]
+		check.Assert(foundItem, Equals, true)
+
+		// Retrieve the catalog item, and check the internal Entity HREF
+		// against the vApp template HREF
+		catalogItem, err := catalog.GetCatalogItemByHref(itemHref)
+		check.Assert(err, IsNil)
+		check.Assert(catalogItem, NotNil)
+
+		check.Assert(catalogItem.CatalogItem.Entity, NotNil)
+		check.Assert(catalogItem.CatalogItem.Entity.HREF, Equals, qvAppTemplate.HREF)
+	}
+
+	// Compare vApp templates from query with the list of vappTemplates from VDC
+	for _, qvAppTemplate := range queryVappTemplatesByVdc {
+		// Check that catalog item name and vApp template names match
+		itemHref, foundItem := itemMapInVdc[qvAppTemplate.Name]
+		check.Assert(foundItem, Equals, true)
+
+		// Retrieve the vApp template
+		vappTemplate, err := catalog.GetVappTemplateByHref(itemHref)
+		check.Assert(err, IsNil)
+		check.Assert(vappTemplate, NotNil)
+	}
+
 }
