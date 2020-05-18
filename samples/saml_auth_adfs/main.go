@@ -41,7 +41,7 @@ func main() {
 
 	vcdURL, err := url.Parse(apiEndpoint)
 	if err != nil {
-		fmt.Println("Error parsing supplied endpoint %s: %s", apiEndpoint, err)
+		fmt.Printf("Error parsing supplied endpoint %s: %s", apiEndpoint, err)
 		os.Exit(2)
 	}
 
