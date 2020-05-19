@@ -98,10 +98,16 @@ const (
 // specifies
 type TestConfig struct {
 	Provider struct {
-		User            string `yaml:"user"`
-		Password        string `yaml:"password"`
-		Token           string `yaml:"token"`
-		UseSamlAdfs     bool   `yaml:"useSamlAdfs"`
+		User     string `yaml:"user"`
+		Password string `yaml:"password"`
+		Token    string `yaml:"token"`
+
+		// UseSamlAdfs specifies if SAML auth is used for authenticating vCD instead of local login.
+		// The above `User` and `Password` will be used to authenticate against ADFS IdP when true.
+		UseSamlAdfs bool `yaml:"useSamlAdfs"`
+
+		// CustomAdfsRptId allows to set custom Relaying Party Trust identifier if needed. Only has
+		// effect if `UseSamlAdfs` is true.
 		CustomAdfsRptId string `yaml:"customAdfsRptId"`
 
 		// The variables `SamlUser`, `SamlPassword` and `SamlCustomRptId` are optional and are
