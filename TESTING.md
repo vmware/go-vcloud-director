@@ -309,6 +309,16 @@ func (vcd *TestVCD) Test_ComposeVApp(check *checks.C) {
 }
 ```
 
+# Golden test files
+
+In some tests (especially unit) there is a need for data samples (Golden files). There are a few
+helpers in `api_vcd_test_unit.go` - `goldenString` and `goldenBytes`. These helpers are here to
+unify data storage naming formats. All files will be stored in `test-resources/golden/`. File name
+will be formatted as `t.Name() + "custompart" + ".golden"` (e.g.
+"TestSamlAdfsAuthenticate_custompart.golden"). These functions allow to update existing data by
+supplying actual data and setting `update=true`. As an example `TestSamlAdfsAuthenticate` test uses
+golden data.
+
 # Environment variables and corresponding flags
 
 While running tests, the following environment variables can be used:
