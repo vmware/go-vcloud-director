@@ -202,7 +202,7 @@ func getSamlEntityId(vcdCli *VCDClient, org string) (string, error) {
 }
 
 // getSamlAuthToken generates a token request payload using function
-// getSamlTokenRequestBody. This request is submited to ADFS server endpoint
+// getSamlTokenRequestBody. This request is submitted to ADFS server endpoint
 // "/adfs/services/trust/13/usernamemixed" and `RequestedSecurityTokenTxt` is expected in response
 // Sample response body can be found in saml_auth_unit_test.go
 func getSamlAuthToken(vcdCli *VCDClient, user, pass, samlEntityId, authEndpoint, org string) (string, error) {

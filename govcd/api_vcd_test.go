@@ -28,6 +28,21 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+func init() {
+	testingTags["api"] = "api_vcd_test.go"
+
+	// To list the flags when we run "go test -tags functional -vcd-help", the flag name must start with "vcd"
+	// They will all appear alongside the native flags when we use an invalid one
+	setBoolFlag(&vcdHelp, "vcd-help", "VCD_HELP", "Show vcd flags")
+	setBoolFlag(&enableDebug, "vcd-debug", "GOVCD_DEBUG", "enables debug output")
+	setBoolFlag(&testVerbose, "vcd-verbose", "GOVCD_TEST_VERBOSE", "enables verbose output")
+	setBoolFlag(&skipVappCreation, "vcd-skip-vapp-creation", "GOVCD_SKIP_VAPP_CREATION", "Skips vApp creation")
+	setBoolFlag(&ignoreCleanupFile, "vcd-ignore-cleanup-file", "GOVCD_IGNORE_CLEANUP_FILE", "Does not process previous cleanup file")
+	setBoolFlag(&debugShowRequestEnabled, "vcd-show-request", "GOVCD_SHOW_REQ", "Shows API request")
+	setBoolFlag(&debugShowResponseEnabled, "vcd-show-response", "GOVCD_SHOW_RESP", "Shows API response")
+
+}
+
 const (
 	// Names for entities created by the tests
 	TestCreateOrg                 = "TestCreateOrg"
@@ -1486,19 +1501,4 @@ func setTestEnv() {
 	if debugShowResponseEnabled {
 		_ = os.Setenv("GOVCD_SHOW_RESP", "1")
 	}
-}
-
-func init() {
-	testingTags["api"] = "api_vcd_test.go"
-
-	// To list the flags when we run "go test -tags functional -vcd-help", the flag name must start with "vcd"
-	// They will all appear alongside the native flags when we use an invalid one
-	setBoolFlag(&vcdHelp, "vcd-help", "VCD_HELP", "Show vcd flags")
-	setBoolFlag(&enableDebug, "vcd-debug", "GOVCD_DEBUG", "enables debug output")
-	setBoolFlag(&testVerbose, "vcd-verbose", "GOVCD_TEST_VERBOSE", "enables verbose output")
-	setBoolFlag(&skipVappCreation, "vcd-skip-vapp-creation", "GOVCD_SKIP_VAPP_CREATION", "Skips vApp creation")
-	setBoolFlag(&ignoreCleanupFile, "vcd-ignore-cleanup-file", "GOVCD_IGNORE_CLEANUP_FILE", "Does not process previous cleanup file")
-	setBoolFlag(&debugShowRequestEnabled, "vcd-show-request", "GOVCD_SHOW_REQ", "Shows API request")
-	setBoolFlag(&debugShowResponseEnabled, "vcd-show-response", "GOVCD_SHOW_RESP", "Shows API response")
-
 }
