@@ -89,8 +89,8 @@ type TestConfig struct {
 		UseSamlAdfs     bool   `yaml:"useSamlAdfs"`
 		CustomAdfsRptId string `yaml:"customAdfsRptId"`
 
-		// The below `SamlUser`, `SamlPassword` and `SamlCustomRptId` variables are optional and are
-		// related to additional test run specifically with SAML user/password. It can be useful in
+		// The variables `SamlUser`, `SamlPassword` and `SamlCustomRptId` are optional and are
+		// related to an additional test run specifically with SAML user/password. It is useful in
 		// case local user is used for test run (defined by above 'User', 'Password' variables).
 		// SamlUser takes ADFS friendly format ('contoso.com\username' or 'username@contoso.com')
 		SamlUser        string `yaml:"samlUser,omitempty"`

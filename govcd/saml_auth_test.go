@@ -18,6 +18,9 @@ import (
 // * Create a new client with SAML authentication using specified org and query the same object
 // using it to make sure access is granted
 // * Compare results to ensure that it worked as it should
+//
+// Note. This test requires real environment setup to work. Unit testing is also available in
+// `saml_auth_unit_test.go`
 func (vcd *TestVCD) Test_SamlAdfsAuth(check *C) {
 	cfg := vcd.config
 	if cfg.Provider.SamlUser == "" || cfg.Provider.SamlPassword == "" || cfg.VCD.Org == "" {

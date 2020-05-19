@@ -20,6 +20,8 @@ const testVcdMockAuthToken = "e3b02b30b8ff4e87ac38db785b0172b5"
 // TestSamlAdfsAuthenticate is a unit test using mock vCD and ADFS server endpoint to follow
 // complete SAML auth flow. The `testVcdMockAuthToken` is expected as an outcome token because
 // mock servers return static responses.
+//
+// Note. A test using real infrastructure is defined in `saml_auth_test.go`
 func TestSamlAdfsAuthenticate(t *testing.T) {
 	// Spawn mock ADFS server
 	adfsServer := testSpawnAdfsServer()

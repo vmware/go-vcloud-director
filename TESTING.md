@@ -335,6 +335,22 @@ While running tests, the following environment variables can be used:
 
 When both the environment variable and the command line option are possible, the environment variable gets evaluated first.
 
+# SAML auth testing with Active Directory Federation Services (ADFS) as Identity Provider (IdP)
+
+This package supports SAML authentication with ADFS. It can be achieved by supplying
+`WithSamlAdfs()` function to `NewVCDClient`. Testing framework also supports SAML auth and there are
+a few ways to test it:
+* There is a unit test `TestSamlAdfsAuthenticate` which spawns mock servers and does not require
+  ADFS or SAML being configured. It tests the flow based on mock endpoints.
+* Using regular `user` and `password` to supply SAML credentials and `true` for `useSamlAdfs`
+  variable (optionally one can override Relaying Party Trust ID with variable `customAdfsRptId`).
+  That way all tests would run using SAML authentication flow.
+* Using `samlUser`, `samlPassword` and optionally `samlCustomRptId` variables will enable
+  `Test_SamlAdfsAuth` test run. Test_SamlAdfsAuth will test and compare VDC retrieved using main
+  authentication credentials vs the one retrieved using specific SAML credentials.
+
+All these tests can run in combination.
+
 # Final Words
 Be careful about using our tests as these tests run on a real vcd. If you don't have 1 gb of ram and 2 vcpus available then you should not be running tests that deploy your vm/change memory and cpu. However everything created will be removed at the end of testing.
 
