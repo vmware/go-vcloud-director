@@ -15,7 +15,8 @@ import (
 )
 
 func (vcd *TestVCD) Test_UpdateNetworkFirewallRules(check *C) {
-	vapp, err, networkName, vappNetworkConfig := vcd.prepareVappWithVppNetwork(check, "Test_UpdateNetworkFirewallRulesVapp")
+	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVppNetwork(check, "Test_UpdateNetworkFirewallRulesVapp")
+	check.Assert(err, IsNil)
 
 	networkFound := types.VAppNetworkConfiguration{}
 	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
@@ -66,7 +67,7 @@ func (vcd *TestVCD) Test_UpdateNetworkFirewallRules(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
-func (vcd *TestVCD) prepareVappWithVppNetwork(check *C, vappName string) (*VApp, error, string, *types.NetworkConfigSection) {
+func (vcd *TestVCD) prepareVappWithVppNetwork(check *C, vappName string) (*VApp, string, *types.NetworkConfigSection, error) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	vapp, err := createVappForTest(vcd, vappName)
@@ -114,11 +115,12 @@ func (vcd *TestVCD) prepareVappWithVppNetwork(check *C, vappName string) (*VApp,
 	vappNetworkConfig, err := vapp.CreateVappNetwork(vappNetworkSettings, orgVdcNetwork.OrgVDCNetwork)
 	check.Assert(err, IsNil)
 	check.Assert(vappNetworkConfig, NotNil)
-	return vapp, err, networkName, vappNetworkConfig
+	return vapp, networkName, vappNetworkConfig, err
 }
 
 func (vcd *TestVCD) Test_GetVappNetworkByNameOrId(check *C) {
-	vapp, err, networkName, vappNetworkConfig := vcd.prepareVappWithVppNetwork(check, "Test_GetVappNetworkByNameOrId")
+	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVppNetwork(check, "Test_GetVappNetworkByNameOrId")
+	check.Assert(err, IsNil)
 
 	networkFound := types.VAppNetworkConfiguration{}
 	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
