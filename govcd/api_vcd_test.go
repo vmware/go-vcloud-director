@@ -1,4 +1,4 @@
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user nsxv ALL
+// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user search nsxv ALL
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -9,6 +9,7 @@ package govcd
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -26,10 +27,6 @@ import (
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v2"
 )
-
-func init() {
-	testingTags["api"] = "api_vcd_test.go"
-}
 
 const (
 	// Names for entities created by the tests
@@ -103,10 +100,12 @@ type TestConfig struct {
 			NetworkPool    string `yaml:"network_pool"`
 		} `yaml:"provider_vdc"`
 		Catalog struct {
-			Name                   string `yaml:"name,omitempty"`
-			Description            string `yaml:"description,omitempty"`
-			CatalogItem            string `yaml:"catalogItem,omitempty"`
-			CatalogItemDescription string `yaml:"catalogItemDescription,omitempty"`
+			Name                    string `yaml:"name,omitempty"`
+			Description             string `yaml:"description,omitempty"`
+			CatalogItem             string `yaml:"catalogItem,omitempty"`
+			CatalogItemDescription  string `yaml:"catalogItemDescription,omitempty"`
+			CatalogItemWithMultiVms string `yaml:"catalogItemWithMultiVms,omitempty"`
+			VmNameInMultiVmItem     string `yaml:"vmNameInMultiVmItem,omitempty"`
 		} `yaml:"catalog"`
 		Network struct {
 			Net1 string `yaml:"network1"`
@@ -140,8 +139,9 @@ type TestConfig struct {
 		VerboseCleanup   bool   `yaml:"verboseCleanup,omitempty"`
 	} `yaml:"logging"`
 	OVA struct {
-		OVAPath        string `yaml:"ovaPath,omitempty"`
-		OVAChunkedPath string `yaml:"ovaChunkedPath,omitempty"`
+		OvaPath        string `yaml:"ovaPath,omitempty"`
+		OvaChunkedPath string `yaml:"ovaChunkedPath,omitempty"`
+		OvaMultiVmPath string `yaml:"ovaMultiVmPath,omitempty"`
 	} `yaml:"ova"`
 	Media struct {
 		MediaPath       string `yaml:"mediaPath,omitempty"`
@@ -195,6 +195,15 @@ var persistentCleanupIp string
 
 // Use this value to run a specific test that does not need a pre-created vApp.
 var skipVappCreation bool = os.Getenv("GOVCD_SKIP_VAPP_CREATION") != ""
+
+// vcdHelp shows command line options
+var vcdHelp bool
+
+// enableDebug enables debug output
+var enableDebug bool
+
+// ignoreCleanupFile prevents processing a previous cleanup file
+var ignoreCleanupFile bool
 
 // Makes the name for the cleanup entities persistent file
 // Using a name for each vCD allows us to run tests with different servers
@@ -372,6 +381,20 @@ func Test(t *testing.T) { TestingT(t) }
 // when creating a new vapp. If this method panics, no test
 // case that uses the TestVCD struct is run.
 func (vcd *TestVCD) SetUpSuite(check *C) {
+	flag.Parse()
+	setTestEnv()
+	if vcdHelp {
+		fmt.Println("vcd flags:")
+		fmt.Println()
+		// Prints only the flags defined in this package
+		flag.CommandLine.VisitAll(func(f *flag.Flag) {
+			if strings.Contains(f.Name, "vcd-") {
+				fmt.Printf("  -%-40s %s (%v)\n", f.Name, f.Usage, f.Value)
+			}
+		})
+		fmt.Println()
+		os.Exit(0)
+	}
 	config, err := GetConfigStruct()
 	if config == (TestConfig{}) || err != nil {
 		panic(err)
@@ -454,7 +477,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	// Gets the persistent cleanup list from file, if exists.
 	cleanupList, err := readCleanupList()
 	if len(cleanupList) > 0 && err == nil {
-		if os.Getenv("GOVCD_IGNORE_CLEANUP_FILE") == "" {
+		if ignoreCleanupFile {
 			// If we found a cleanup file and we want to process it (default)
 			// We proceed to cleanup the leftovers before any other operation
 			fmt.Printf("*** Found cleanup file %s\n", makePersistentCleanupFileName())
@@ -1422,4 +1445,42 @@ func (vcd *TestVCD) Test_NewRequestWitNotEncodedParamsWithApiVersion(check *C) {
 	check.Assert(resp.Header.Get("Content-Type"), Equals, types.MimeQueryRecords+";version="+vcd.client.Client.APIVersion)
 
 	fmt.Printf("Test: %s run with api Version: %s\n", check.TestName(), apiVersion)
+}
+
+// setBoolFlag binds a flag to a boolean variable (passed as pointer)
+// it also uses an optional environment variable that, if set, will
+// update the variable before binding it to the flag.
+func setBoolFlag(varPointer *bool, name, envVar, help string) {
+	if envVar != "" && os.Getenv(envVar) != "" {
+		*varPointer = true
+	}
+	flag.BoolVar(varPointer, name, *varPointer, help)
+}
+
+// setTestEnv enables environment variables that are also used in non-test code
+func setTestEnv() {
+	if enableDebug {
+		_ = os.Setenv("GOVCD_DEBUG", "1")
+	}
+	if debugShowRequestEnabled {
+		_ = os.Setenv("GOVCD_SHOW_REQ", "1")
+	}
+	if debugShowResponseEnabled {
+		_ = os.Setenv("GOVCD_SHOW_RESP", "1")
+	}
+}
+
+func init() {
+	testingTags["api"] = "api_vcd_test.go"
+
+	// To list the flags when we run "go test -tags functional -vcd-help", the flag name must start with "vcd"
+	// They will all appear alongside the native flags when we use an invalid one
+	setBoolFlag(&vcdHelp, "vcd-help", "VCD_HELP", "Show vcd flags")
+	setBoolFlag(&enableDebug, "vcd-debug", "GOVCD_DEBUG", "enables debug output")
+	setBoolFlag(&testVerbose, "vcd-verbose", "GOVCD_TEST_VERBOSE", "enables verbose output")
+	setBoolFlag(&skipVappCreation, "vcd-skip-vapp-creation", "GOVCD_SKIP_VAPP_CREATION", "Skips vApp creation")
+	setBoolFlag(&ignoreCleanupFile, "vcd-ignore-cleanup-file", "GOVCD_IGNORE_CLEANUP_FILE", "Does not process previous cleanup file")
+	setBoolFlag(&debugShowRequestEnabled, "vcd-show-request", "GOVCD_SHOW_REQ", "Shows API request")
+	setBoolFlag(&debugShowResponseEnabled, "vcd-show-response", "GOVCD_SHOW_RESP", "Shows API response")
+
 }

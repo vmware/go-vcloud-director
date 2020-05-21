@@ -1490,3 +1490,68 @@ func createVappForTest(vcd *TestVCD, vappName string) (*VApp, error) {
 
 	return vapp, nil
 }
+
+// Test_AddNewVMFromMultiVmTemplate creates VM from OVA holding a few VMs
+func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
+	if vcd.config.OVA.OvaMultiVmPath == "" && vcd.config.VCD.Catalog.CatalogItemWithMultiVms == "" {
+		check.Skip("skipping test because ovaMultiVmPath or catalogItemWithMultiVms has to be defined")
+	}
+
+	if vcd.config.VCD.Catalog.VmNameInMultiVmItem == "" {
+		check.Skip("skipping test because vmNameInMultiVmItem is not defined")
+	}
+
+	// Populate Catalog
+	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+
+	itemName := vcd.config.VCD.Catalog.CatalogItemWithMultiVms
+	if itemName == "" {
+		check.Log("Using `OvaMultiVmPath` for test. Will upload to use it.")
+		itemName = check.TestName()
+		uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OvaMultiVmPath, itemName, "upload from test", 1024)
+		check.Assert(err, IsNil)
+		err = uploadTask.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+
+		AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
+	} else {
+		check.Log("Using `CatalogItemWithMultiVms` for test")
+	}
+
+	vmInTemplateRecord, err := vcd.vdc.QueryVappVmTemplate(vcd.config.VCD.Catalog.Name, itemName, vcd.config.VCD.Catalog.VmNameInMultiVmItem)
+	check.Assert(err, IsNil)
+
+	// Get VAppTemplate
+	returnedVappTemplate, err := catalog.GetVappTemplateByHref(vmInTemplateRecord.HREF)
+	check.Assert(err, IsNil)
+
+	vapp, err := createVappForTest(vcd, "Test_AddNewVMFromMultiVmTemplate")
+	check.Assert(err, IsNil)
+	check.Assert(vapp, NotNil)
+	task, err := vapp.AddNewVM(check.TestName(), *returnedVappTemplate, nil, true)
+
+	check.Assert(err, IsNil)
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	vm, err := vapp.GetVMByName(check.TestName(), true)
+	check.Assert(err, IsNil)
+
+	// Cleanup the created VM
+	err = vapp.RemoveVM(*vm)
+	check.Assert(err, IsNil)
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+}
