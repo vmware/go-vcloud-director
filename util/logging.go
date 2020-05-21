@@ -103,7 +103,7 @@ func newLogger(logpath string) *log.Logger {
 	var err error
 	var file *os.File
 	if OverwriteLog {
-		file, err = os.OpenFile(logpath, os.O_RDWR|os.O_CREATE, 0640)
+		file, err = os.OpenFile(logpath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0640)
 	} else {
 		file, err = os.OpenFile(logpath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0640)
 	}
