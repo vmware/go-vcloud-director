@@ -233,12 +233,32 @@ type NetworkConfiguration struct {
 type VAppNetworkConfiguration struct {
 	HREF        string `xml:"href,attr,omitempty"`
 	Type        string `xml:"type,attr,omitempty"`
+	ID          string `xml:"id,attr,omitempty"`
 	NetworkName string `xml:"networkName,attr"`
 
 	Link          *Link                 `xml:"Link,omitempty"`
 	Description   string                `xml:"Description,omitempty"`
 	Configuration *NetworkConfiguration `xml:"Configuration"`
 	IsDeployed    bool                  `xml:"IsDeployed"`
+}
+
+// VAppNetworkType represents a vApp network configuration
+// Type: VAppNetworkType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents a vApp network configuration.
+// Since: 0.9
+type VAppNetwork struct {
+	Xmlns    string `xml:"xmlns,attr,omitempty"`
+	HREF     string `xml:"href,attr,omitempty"`
+	Type     string `xml:"type,attr,omitempty"`
+	ID       string `xml:"id,attr,omitempty"`
+	Name     string `xml:"name,attr"`
+	Deployed bool   `xml:"deployed,attr"`
+
+	Link          *Link                 `xml:"Link,omitempty"`
+	Description   string                `xml:"Description,omitempty"`
+	Tasks         *TasksInProgress      `xml:"Tasks,omitempty"`
+	Configuration *NetworkConfiguration `xml:"Configuration"`
 }
 
 // NetworkConfigSection is container for vApp networks.
