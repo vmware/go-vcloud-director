@@ -34,7 +34,7 @@ func (vdc *Vdc) InstantiateVAppTemplate(template *types.InstantiateVAppTemplateP
 	vapptemplate := NewVAppTemplate(vdc.client)
 
 	_, err = vdc.client.ExecuteRequest(vdcHref.String(), http.MethodPut,
-		types.MimeInstantiateVappTemplateParams, "error instantiating a new template: %s", template, vapptemplate)
+		types.MimeInstantiateVappTemplateParams, "error instantiating a new template: %s", template, vapptemplate.VAppTemplate)
 	if err != nil {
 		return err
 	}
