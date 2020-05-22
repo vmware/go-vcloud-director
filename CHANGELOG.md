@@ -8,12 +8,16 @@
 * Added `vdc.QueryVappVmTemplate` and changed `vapp.AddNewVMWithStorageProfile` to allow creating VM from VM template.
 * Enhanced tests command line with flags that can be used instead of environment variables. [#305](https://github.com/vmware/go-vcloud-director/pull/305)
 * Improve logging security of debug output for API requests and responses [#306](https://github.com/vmware/go-vcloud-director/pull/306)
+* Append log files by default instead of overwriting. `GOVCD_LOG_OVERWRITE=true` environment
+  variable can set to overwrite log file on every initialization
+  [#307](https://github.com/vmware/go-vcloud-director/pull/307)
 * Add configuration option `WithSamlAdfs` to `NewVCDClient()` to support SAML authentication using
   Active Directory Federations Services (ADFS) as IdP using WS-TRUST auth endpoint
   "/adfs/services/trust/13/usernamemixed"
   [#304](https://github.com/vmware/go-vcloud-director/pull/304)
   
-## 2.7.0 (April 10, 2020)
+
+## 2.7.0 (April 10,2020)
 
 * Added methods `OrgVdcNetwork.Update`, `OrgVdcNetwork.UpdateAsync`, and `OrgVdcNetwork.Rename` [#292](https://github.com/vmware/go-vcloud-director/pull/292)
 * Added methods `EdgeGateway.Update` and `EdgeGateway.UpdateAsync` [#292](https://github.com/vmware/go-vcloud-director/pull/292)
