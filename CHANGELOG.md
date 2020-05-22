@@ -8,6 +8,9 @@
 * Added `vdc.QueryVappVmTemplate` and changed `vapp.AddNewVMWithStorageProfile` to allow creating VM from VM template.
 * Enhanced tests command line with flags that can be used instead of environment variables. [#305](https://github.com/vmware/go-vcloud-director/pull/305)
 * Improve logging security of debug output for API requests and responses [#306](https://github.com/vmware/go-vcloud-director/pull/306)
+* Append log files by default instead of overwriting. `GOVCD_LOG_OVERWRITE=true` environment
+  variable can set to overwrite log file on every initialization
+  [#307](https://github.com/vmware/go-vcloud-director/pull/307)
 * Added methods `vapp.UpdateNetworkFirewallRules`, `vapp.UpdateNetworkFirewallRulesAsync`, `vapp.GetVappNetworkById`, `vapp.GetVappNetworkByName` and `vapp.GetVappNetworkByNameOrId` [#308](https://github.com/vmware/go-vcloud-director/pull/308)
 
 ## 2.7.0 (April 10,2020)
