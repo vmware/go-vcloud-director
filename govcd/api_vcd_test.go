@@ -1,4 +1,4 @@
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user search nsxv ALL
+// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user search nsxv auth ALL
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -27,6 +27,21 @@ import (
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v2"
 )
+
+func init() {
+	testingTags["api"] = "api_vcd_test.go"
+
+	// To list the flags when we run "go test -tags functional -vcd-help", the flag name must start with "vcd"
+	// They will all appear alongside the native flags when we use an invalid one
+	setBoolFlag(&vcdHelp, "vcd-help", "VCD_HELP", "Show vcd flags")
+	setBoolFlag(&enableDebug, "vcd-debug", "GOVCD_DEBUG", "enables debug output")
+	setBoolFlag(&testVerbose, "vcd-verbose", "GOVCD_TEST_VERBOSE", "enables verbose output")
+	setBoolFlag(&skipVappCreation, "vcd-skip-vapp-creation", "GOVCD_SKIP_VAPP_CREATION", "Skips vApp creation")
+	setBoolFlag(&ignoreCleanupFile, "vcd-ignore-cleanup-file", "GOVCD_IGNORE_CLEANUP_FILE", "Does not process previous cleanup file")
+	setBoolFlag(&debugShowRequestEnabled, "vcd-show-request", "GOVCD_SHOW_REQ", "Shows API request")
+	setBoolFlag(&debugShowResponseEnabled, "vcd-show-response", "GOVCD_SHOW_RESP", "Shows API response")
+
+}
 
 const (
 	// Names for entities created by the tests
@@ -83,9 +98,26 @@ const (
 // specifies
 type TestConfig struct {
 	Provider struct {
-		User            string `yaml:"user"`
-		Password        string `yaml:"password"`
-		Token           string `yaml:"token"`
+		User     string `yaml:"user"`
+		Password string `yaml:"password"`
+		Token    string `yaml:"token"`
+
+		// UseSamlAdfs specifies if SAML auth is used for authenticating vCD instead of local login.
+		// The above `User` and `Password` will be used to authenticate against ADFS IdP when true.
+		UseSamlAdfs bool `yaml:"useSamlAdfs"`
+
+		// CustomAdfsRptId allows to set custom Relaying Party Trust identifier if needed. Only has
+		// effect if `UseSamlAdfs` is true.
+		CustomAdfsRptId string `yaml:"customAdfsRptId"`
+
+		// The variables `SamlUser`, `SamlPassword` and `SamlCustomRptId` are optional and are
+		// related to an additional test run specifically with SAML user/password. It is useful in
+		// case local user is used for test run (defined by above 'User', 'Password' variables).
+		// SamlUser takes ADFS friendly format ('contoso.com\username' or 'username@contoso.com')
+		SamlUser        string `yaml:"samlUser,omitempty"`
+		SamlPassword    string `yaml:"samlPassword,omitempty"`
+		SamlCustomRptId string `yaml:"samlCustomRptId,omitempty"`
+
 		Url             string `yaml:"url"`
 		SysOrg          string `yaml:"sysOrg"`
 		MaxRetryTimeout int    `yaml:"maxRetryTimeout,omitempty"`
@@ -369,6 +401,10 @@ func GetTestVCDFromYaml(testConfig TestConfig, options ...VCDClientOption) (*VCD
 		options = append(options, WithHttpTimeout(testConfig.Provider.HttpTimeout))
 	}
 
+	if testConfig.Provider.UseSamlAdfs {
+		options = append(options, WithSamlAdfs(true, testConfig.Provider.CustomAdfsRptId))
+	}
+
 	return NewVCDClient(*configUrl, true, options...), nil
 }
 
@@ -438,6 +474,9 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		err = vcd.client.SetToken(config.Provider.SysOrg, AuthorizationHeader, token)
 	} else {
 		err = vcd.client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
+	}
+	if config.Provider.UseSamlAdfs {
+		authenticationMode = "SAML password"
 	}
 	if err != nil {
 		panic(err)
@@ -1468,19 +1507,4 @@ func setTestEnv() {
 	if debugShowResponseEnabled {
 		_ = os.Setenv("GOVCD_SHOW_RESP", "1")
 	}
-}
-
-func init() {
-	testingTags["api"] = "api_vcd_test.go"
-
-	// To list the flags when we run "go test -tags functional -vcd-help", the flag name must start with "vcd"
-	// They will all appear alongside the native flags when we use an invalid one
-	setBoolFlag(&vcdHelp, "vcd-help", "VCD_HELP", "Show vcd flags")
-	setBoolFlag(&enableDebug, "vcd-debug", "GOVCD_DEBUG", "enables debug output")
-	setBoolFlag(&testVerbose, "vcd-verbose", "GOVCD_TEST_VERBOSE", "enables verbose output")
-	setBoolFlag(&skipVappCreation, "vcd-skip-vapp-creation", "GOVCD_SKIP_VAPP_CREATION", "Skips vApp creation")
-	setBoolFlag(&ignoreCleanupFile, "vcd-ignore-cleanup-file", "GOVCD_IGNORE_CLEANUP_FILE", "Does not process previous cleanup file")
-	setBoolFlag(&debugShowRequestEnabled, "vcd-show-request", "GOVCD_SHOW_REQ", "Shows API request")
-	setBoolFlag(&debugShowResponseEnabled, "vcd-show-response", "GOVCD_SHOW_RESP", "Shows API response")
-
 }
