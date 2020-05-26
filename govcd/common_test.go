@@ -211,7 +211,7 @@ func checkIfTcpPortIsOpen(host, port string, timeout int) bool {
 	for {
 		select {
 		case <-timeoutAfter:
-			fmt.Printf("x")
+			fmt.Printf(" Failed\n")
 			return false
 		case <-tick.C:
 			timeout := time.Second * 3
@@ -222,7 +222,7 @@ func checkIfTcpPortIsOpen(host, port string, timeout int) bool {
 			// Connection established - the port is open
 			if conn != nil {
 				defer conn.Close()
-				fmt.Printf(" OK\n")
+				fmt.Printf(" Done\n")
 				return true
 			}
 		}

@@ -1274,9 +1274,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 				entity.Parent, err)
 			return
 		}
-		err = org.ConfigureLdapMode(&types.OrgLdapSettingsType{
-			OrgLdapMode: types.LdapModeNone,
-		})
+		err = org.LdapDisable()
 
 		if err != nil {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not clear LDAP settings for Org '%s': %s",

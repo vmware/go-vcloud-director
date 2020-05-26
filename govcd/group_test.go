@@ -7,51 +7,60 @@
 package govcd
 
 import (
+	"fmt"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
 
 func (vcd *TestVCD) Test_GroupCRUD(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	// LDAP must be configured for this test to work
+	vcd.configureLdap(check)
+
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
 	type groupTestData struct {
-		name       string // name of the user. Note: only lowercase letters allowed
+		name       string
+		secondName string
 		roleName   string // the role this user is created with
 		secondRole string // The role to which we change using Update()
 	}
 	groupData := []groupTestData{
 		{
-			name:       "test_group_admin",
+			name:       "ship_crew",
+			secondName: "admin_staff",
 			roleName:   OrgUserRoleOrganizationAdministrator,
 			secondRole: OrgUserRoleVappAuthor,
 		},
 		{
-			name:       "test_group_vapp_author",
+			name:       "admin_staff",
+			secondName: "ship_crew",
 			roleName:   OrgUserRoleVappAuthor,
 			secondRole: OrgUserRoleVappUser,
 		},
-		{
-			name:       "test_group_vapp_user",
-			roleName:   OrgUserRoleVappUser,
-			secondRole: OrgUserRoleConsoleAccessOnly,
-		},
-		{
-			name:       "test_group_console_access",
-			roleName:   OrgUserRoleConsoleAccessOnly,
-			secondRole: OrgUserRoleCatalogAuthor,
-		},
-		{
-			name:       "test_group_catalog_author",
-			roleName:   OrgUserRoleCatalogAuthor,
-			secondRole: OrgUserRoleOrganizationAdministrator,
-		},
-		{
-			name:       "test_group_defered_to_identity_provider",
-			roleName:   OrgUserRoleDeferToIdentityProvider,
-			secondRole: OrgUserRoleOrganizationAdministrator,
-		},
+		// {
+		// 	name:       "test_group_vapp_user",
+		// 	roleName:   OrgUserRoleVappUser,
+		// 	secondRole: OrgUserRoleConsoleAccessOnly,
+		// },
+		// {
+		// 	name:       "test_group_console_access",
+		// 	roleName:   OrgUserRoleConsoleAccessOnly,
+		// 	secondRole: OrgUserRoleCatalogAuthor,
+		// },
+		// {
+		// 	name:       "test_group_catalog_author",
+		// 	roleName:   OrgUserRoleCatalogAuthor,
+		// 	secondRole: OrgUserRoleOrganizationAdministrator,
+		// },
+		// {
+		// 	name:       "test_group_defered_to_identity_provider",
+		// 	roleName:   OrgUserRoleDeferToIdentityProvider,
+		// 	secondRole: OrgUserRoleOrganizationAdministrator,
+		// },
 	}
 
 	for _, gd := range groupData {
@@ -62,7 +71,7 @@ func (vcd *TestVCD) Test_GroupCRUD(check *C) {
 		groupDefinition := types.Group{
 			Name:         gd.name,
 			Role:         role,
-			ProviderType: OrgUserProviderSAML, // 'SAML' is the only accepted. Others get HTTP 403
+			ProviderType: OrgUserProviderIntegrated, // Integrated covers LDAP
 		}
 
 		newGroup := NewGroup(adminOrg.client, adminOrg)

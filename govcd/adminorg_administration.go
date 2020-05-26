@@ -12,8 +12,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
-// ConfigureLdapMode allows to configure LDAP mode in use by the Org
-func (adminOrg *AdminOrg) ConfigureLdapMode(settings *types.OrgLdapSettingsType) error {
+// LdapConfigure allows to configure LDAP mode in use by the Org
+func (adminOrg *AdminOrg) LdapConfigure(settings *types.OrgLdapSettingsType) error {
 	util.Logger.Printf("[DEBUG] Configuring LDAP mode for Org name %s", adminOrg.AdminOrg.Name)
 
 	settings.Xmlns = types.XMLNamespaceVCloud
@@ -26,4 +26,9 @@ func (adminOrg *AdminOrg) ConfigureLdapMode(settings *types.OrgLdapSettingsType)
 	}
 
 	return nil
+}
+
+// LdapDisable wraps LdapConfigure to disable LDAP configuration for org
+func (adminOrg *AdminOrg) LdapDisable() error {
+	return adminOrg.LdapConfigure(&types.OrgLdapSettingsType{OrgLdapMode: types.LdapModeNone})
 }

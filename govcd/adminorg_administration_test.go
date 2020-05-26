@@ -6,28 +6,51 @@ package govcd
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_Ldap(check *C) {
+// configureLdap creates direct network, spawns Photon OS VM with testing docker image
+func (vcd *TestVCD) configureLdap(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
 
-	// Create direct network to expose external IP
+	// Create direct network to expose LDAP server on external network
 	directNetworkName := createDirectNetwork(vcd, check)
 
-	ldapHostIp := spinUpLdapServer(vcd, check, directNetworkName)
+	// Launch LDAP server on external network
+	ldapHostIp := spawnLdapServer(vcd, check, directNetworkName)
 
-	configureLdapServer(vcd, check, ldapHostIp)
-	fmt.Println("sleeping")
-	time.Sleep(5 * time.Minute)
-
+	// Configure vCD to use new LDAP server
+	vcdConfigureLdap(vcd, check, ldapHostIp)
 }
 
-func configureLdapServer(vcd *TestVCD, check *C, ldapHostIp string) {
+// unconfigureLdap releases resources as soon as possible
+func (vcd *TestVCD) unconfigureLdap(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	// Create direct network to expose LDAP server on external network
+	directNetworkName := createDirectNetwork(vcd, check)
+
+	// Launch LDAP server on external network
+	ldapHostIp := spawnLdapServer(vcd, check, directNetworkName)
+
+	// Configure vCD to use new LDAP server
+	vcdConfigureLdap(vcd, check, ldapHostIp)
+}
+
+// vcdConfigureLdap sets up LDAP configuration in vCD org specified by vcd.config.VCD.Org variable
+func vcdConfigureLdap(vcd *TestVCD, check *C, ldapHostIp string) {
+	fmt.Printf("# Configuring LDAP settings for Org '%s'", vcd.config.VCD.Org)
+
 	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
+	// The below settings are tailored for LDAP docker testing image
+	// https://github.com/rroemhild/docker-test-openldap
 	ldapSettings := &types.OrgLdapSettingsType{
 		OrgLdapMode: types.LdapModeCustom,
 		CustomOrgLdapSettings: &types.CustomOrgLdapSettings{
@@ -60,16 +83,18 @@ func configureLdapServer(vcd *TestVCD, check *C, ldapHostIp string) {
 		},
 	}
 
-	err = org.ConfigureLdapMode(ldapSettings)
+	err = org.LdapConfigure(ldapSettings)
 	check.Assert(err, IsNil)
+
+	fmt.Println(" Done")
 	AddToCleanupList("LDAP-configuration", "orgLdapSettings", org.AdminOrg.Name, check.TestName())
 }
 
-// spinUpLdapServer spawns a vApp and photon OS VM. Using customization script it starts a testing
+// spawnLdapServer spawns a vApp and photon OS VM. Using customization script it starts a testing
 // LDAP server in docker container which has a few users and groups defined.
 // In essence it creates two groups - "admin_staff" and "ship_crew" and
 // More information: https://github.com/rroemhild/docker-test-openldap
-func spinUpLdapServer(vcd *TestVCD, check *C, directNetworkName string) string {
+func spawnLdapServer(vcd *TestVCD, check *C, directNetworkName string) string {
 	vAppName := "ldap"
 	const ldapCustomizationScript = "systemctl enable docker ; systemctl start docker ;" +
 		"docker run --name ldap-server --restart=always --privileged -d -p 389:389 rroemhild/test-openldap"
@@ -101,7 +126,7 @@ func spinUpLdapServer(vcd *TestVCD, check *C, directNetworkName string) string {
 	vapp, err := vdc.GetVAppByName(vAppName, true)
 	check.Assert(err, IsNil)
 	// vApp was created - let's add it to cleanup list
-	AddToCleanupList(vAppName, "vapp", "", check.TestName())
+	PrependToCleanupList(vAppName, "vapp", "", check.TestName())
 	// Wait until vApp becomes configurable
 	initialVappStatus, err := vapp.GetStatus()
 	check.Assert(err, IsNil)
@@ -149,9 +174,10 @@ func spinUpLdapServer(vcd *TestVCD, check *C, directNetworkName string) string {
 	return ldapHostIp
 }
 
+// createDirectNetwork creates a direct network attached to existing external network
 func createDirectNetwork(vcd *TestVCD, check *C) string {
-	fmt.Printf("Running: %s\n", check.TestName())
 	networkName := check.TestName()
+	fmt.Printf("# Creating direct network %s.", networkName)
 
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
@@ -162,11 +188,11 @@ func createDirectNetwork(vcd *TestVCD, check *C) string {
 	}
 
 	if vcd.config.VCD.ExternalNetwork == "" {
-		check.Skip("[Test_CreateOrgVdcNetworkDirect] external network not provided")
+		check.Skip("[" + check.TestName() + "] external network not provided")
 	}
 	externalNetwork, err := vcd.client.GetExternalNetworkByName(vcd.config.VCD.ExternalNetwork)
 	if err != nil {
-		check.Skip("[Test_CreateOrgVdcNetworkDirect] parent network not found")
+		check.Skip("[" + check.TestName() + "] parent network not found")
 		return ""
 	}
 	// Note that there is no IPScope for this type of network
@@ -206,5 +232,6 @@ func createDirectNetwork(vcd *TestVCD, check *C) string {
 		fmt.Printf("error performing task: %s", err)
 	}
 	check.Assert(err, IsNil)
+	fmt.Println(" Done")
 	return networkName
 }
