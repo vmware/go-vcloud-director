@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
@@ -13,11 +14,62 @@ import (
 
 func (vcd *TestVCD) Test_Ldap(check *C) {
 
-	spinUpLdapServer(vcd, check, "direct-network")
+	// Create direct network to expose external IP
+	directNetworkName := createDirectNetwork(vcd, check)
+
+	ldapHostIp := spinUpLdapServer(vcd, check, directNetworkName)
+
+	configureLdapServer(vcd, check, ldapHostIp)
+	fmt.Println("sleeping")
+	time.Sleep(5 * time.Minute)
 
 }
 
-func spinUpLdapServer(vcd *TestVCD, check *C, directNetworkName string) {
+func configureLdapServer(vcd *TestVCD, check *C, ldapHostIp string) {
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	ldapSettings := &types.OrgLdapSettingsType{
+		OrgLdapMode: types.LdapModeCustom,
+		CustomOrgLdapSettings: &types.CustomOrgLdapSettings{
+			HostName:                ldapHostIp,
+			Port:                    389,
+			SearchBase:              "dc=planetexpress,dc=com",
+			AuthenticationMechanism: "SIMPLE",
+			ConnectorType:           "OPEN_LDAP",
+			Username:                "cn=admin,dc=planetexpress,dc=com",
+			Password:                "GoodNewsEveryone",
+			UserAttributes: &types.OrgLdapUserAttributes{
+				ObjectClass:               "user",
+				ObjectIdentifier:          "objectGuid",
+				Username:                  "sAMAccountName",
+				Email:                     "mail",
+				FullName:                  "cn",
+				GivenName:                 "givenName",
+				Surname:                   "sn",
+				Telephone:                 "telephone",
+				GroupMembershipIdentifier: "dn",
+				GroupBackLinkIdentifier:   "tokenGroups",
+			},
+			GroupAttributes: &types.OrgLdapGroupAttributes{
+				ObjectClass:          "group",
+				ObjectIdentifier:     "objectGuid",
+				GroupName:            "cn",
+				Membership:           "member",
+				MembershipIdentifier: "dn",
+			},
+		},
+	}
+
+	err = org.ConfigureLdapMode(ldapSettings)
+	check.Assert(err, IsNil)
+	AddToCleanupList("LDAP-configuration", "orgLdapSettings", org.AdminOrg.Name, check.TestName())
+}
+
+// spinUpLdapServer spawns a vApp and photon OS VM. Using customization script it starts a testing
+// LDAP server in docker container which has a few users and groups defined.
+// In essence it creates two groups - "admin_staff" and "ship_crew" and
+// More information: https://github.com/rroemhild/docker-test-openldap
+func spinUpLdapServer(vcd *TestVCD, check *C, directNetworkName string) string {
 	vAppName := "ldap"
 	const ldapCustomizationScript = "systemctl enable docker ; systemctl start docker ;" +
 		"docker run --name ldap-server --restart=always --privileged -d -p 389:389 rroemhild/test-openldap"
@@ -60,6 +112,7 @@ func spinUpLdapServer(vcd *TestVCD, check *C, directNetworkName string) {
 	fmt.Printf(". Done\n")
 
 	// Attach VDC network to vApp so that VMs can use it
+	fmt.Printf("# Attaching network '%s'", directNetworkName)
 	net, err := vdc.GetOrgVdcNetworkByName(directNetworkName, false)
 	check.Assert(err, IsNil)
 	task, err := vapp.AddRAWNetworkConfig([]*types.OrgVDCNetwork{net.OrgVDCNetwork})
@@ -91,4 +144,66 @@ func spinUpLdapServer(vcd *TestVCD, check *C, directNetworkName string) {
 	ldapHostIp := ldapVm.VM.NetworkConnectionSection.NetworkConnection[0].IPAddress
 	isLdapServiceUp := checkIfTcpPortIsOpen(ldapHostIp, "389", vapp.client.MaxRetryTimeout)
 	check.Assert(isLdapServiceUp, Equals, true)
+
+	return ldapHostIp
+}
+
+func createDirectNetwork(vcd *TestVCD, check *C) string {
+	fmt.Printf("Running: %s\n", check.TestName())
+	networkName := check.TestName()
+
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+	err := RemoveOrgVdcNetworkIfExists(*vcd.vdc, networkName)
+	if err != nil {
+		check.Skip(fmt.Sprintf("Error deleting network : %s", err))
+	}
+
+	if vcd.config.VCD.ExternalNetwork == "" {
+		check.Skip("[Test_CreateOrgVdcNetworkDirect] external network not provided")
+	}
+	externalNetwork, err := vcd.client.GetExternalNetworkByName(vcd.config.VCD.ExternalNetwork)
+	if err != nil {
+		check.Skip("[Test_CreateOrgVdcNetworkDirect] parent network not found")
+		return ""
+	}
+	// Note that there is no IPScope for this type of network
+	description := "Created by govcd test"
+	var networkConfig = types.OrgVDCNetwork{
+		Xmlns:       types.XMLNamespaceVCloud,
+		Name:        networkName,
+		Description: description,
+		Configuration: &types.NetworkConfiguration{
+			FenceMode: types.FenceModeBridged,
+			ParentNetwork: &types.Reference{
+				HREF: externalNetwork.ExternalNetwork.HREF,
+				Name: externalNetwork.ExternalNetwork.Name,
+				Type: externalNetwork.ExternalNetwork.Type,
+			},
+			BackwardCompatibilityMode: true,
+		},
+		IsShared: false,
+	}
+	LogNetwork(networkConfig)
+
+	task, err := vcd.vdc.CreateOrgVDCNetwork(&networkConfig)
+	if err != nil {
+		fmt.Printf("error creating the network: %s", err)
+	}
+	check.Assert(err, IsNil)
+	if task == (Task{}) {
+		fmt.Printf("NULL task retrieved after network creation")
+	}
+	check.Assert(task.Task.HREF, Not(Equals), "")
+
+	AddToCleanupList(networkName,
+		"network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, check.TestName())
+
+	err = task.WaitInspectTaskCompletion(LogTask, 10)
+	if err != nil {
+		fmt.Printf("error performing task: %s", err)
+	}
+	check.Assert(err, IsNil)
+	return networkName
 }

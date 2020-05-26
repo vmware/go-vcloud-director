@@ -1267,6 +1267,24 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("updateLeftoverEntries: [INFO] VDC fast provisioning left as it is %s \n", entity.Name)
 		}
 		return
+	case "orgLdapSettings":
+		org, err := vcd.client.GetAdminOrgByName(entity.Parent)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Clearing LDAP settings for Org '%s': %s",
+				entity.Parent, err)
+			return
+		}
+		err = org.ConfigureLdapMode(&types.OrgLdapSettingsType{
+			OrgLdapMode: types.LdapModeNone,
+		})
+
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not clear LDAP settings for Org '%s': %s",
+				entity.Parent, err)
+			return
+		}
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
 
 	default:
 		// If we reach this point, we are trying to clean up an entity that

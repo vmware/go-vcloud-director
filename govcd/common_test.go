@@ -211,18 +211,18 @@ func checkIfTcpPortIsOpen(host, port string, timeout int) bool {
 	for {
 		select {
 		case <-timeoutAfter:
-			fmt.Println("x")
+			fmt.Printf("x")
 			return false
 		case <-tick.C:
 			timeout := time.Second * 3
 			conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, port), timeout)
 			if err != nil {
-				fmt.Println(".")
+				fmt.Printf(".")
 			}
 			// Connection established - the port is open
 			if conn != nil {
 				defer conn.Close()
-				fmt.Println("OK")
+				fmt.Printf(" OK\n")
 				return true
 			}
 		}

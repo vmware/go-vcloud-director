@@ -735,9 +735,11 @@ type OrgFederationSettings struct {
 // Description: Represents the ldap settings of a vCloud Director organization.
 // Since: 0.9
 type OrgLdapSettingsType struct {
-	HREF string   `xml:"href,attr,omitempty"` // The URI of the entity.
-	Type string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
-	Link LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
+	XMLName xml.Name `xml:"OrgLdapSettings"`
+	Xmlns   string   `xml:"xmlns,attr"`
+	HREF    string   `xml:"href,attr,omitempty"` // The URI of the entity.
+	Type    string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
+	Link    LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
 
 	CustomUsersOu         string                 `xml:"CustomUsersOu,omitempty"`         // If OrgLdapMode is SYSTEM, specifies an LDAP attribute=value pair to use for OU (organizational unit).
 	OrgLdapMode           string                 `xml:"OrgLdapMode,omitempty"`           // LDAP mode you want
@@ -754,22 +756,32 @@ type CustomOrgLdapSettings struct {
 	Type string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
 	Link LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
 
-	AuthenticationMechanism  string                  `xml:"AuthenticationMechanism"`
-	ConnectorType            string                  `xml:"ConnectorType"`   // Defines LDAP service implementation type
-	GroupAttributes          *OrgLdapGroupAttributes `xml:"GroupAttributes"` // Defines how LDAP attributes are used when importing a group.
-	GroupSearchBase          string                  `xml:"GroupSearchBase,omitempty"`
 	HostName                 string                  `xml:"HostName,omitempty"`
-	IsGroupSearchBaseEnabled bool                    `xml:"IsGroupSearchBaseEnabled"`
+	Port                     int                     `xml:"Port"`
 	IsSsl                    bool                    `xml:"IsSsl,omitempty"`
 	IsSslAcceptAll           bool                    `xml:"IsSslAcceptAll,omitempty"`
-	Password                 string                  `xml:"Password,omitempty"`
-	Port                     int                     `xml:"Port"`
-	Realm                    string                  `xml:"Realm,omitempty"`
 	SearchBase               string                  `xml:"SearchBase,omitempty"`
-	UseExternalKerberos      bool                    `xml:"UseExternalKerberos"`
-	UserAttributes           *OrgLdapUserAttributes  `xml:"UserAttributes"` // Defines how LDAP attributes are used when importing a user.
 	Username                 string                  `xml:"UserName,omitempty"`
+	Password                 string                  `xml:"Password,omitempty"`
+	AuthenticationMechanism  string                  `xml:"AuthenticationMechanism"`
+	IsGroupSearchBaseEnabled bool                    `xml:"IsGroupSearchBaseEnabled"`
+	GroupSearchBase          string                  `xml:"GroupSearchBase,omitempty"`
+	ConnectorType            string                  `xml:"ConnectorType"`   // Defines LDAP service implementation type
+	UserAttributes           *OrgLdapUserAttributes  `xml:"UserAttributes"`  // Defines how LDAP attributes are used when importing a user.
+	GroupAttributes          *OrgLdapGroupAttributes `xml:"GroupAttributes"` // Defines how LDAP attributes are used when importing a group.
+	UseExternalKerberos      bool                    `xml:"UseExternalKerberos"`
+
+	Realm string `xml:"Realm,omitempty"`
 }
+
+// <root:HostName>1</root:HostName>
+// <root:Port>389</root:Port>
+// <root:IsSsl>false</root:IsSsl>
+// <root:IsSslAcceptAll>false</root:IsSslAcceptAll>
+// <root:SearchBase>dc=example,dc=com</root:SearchBase>
+// <root:AuthenticationMechanism>SIMPLE</root:AuthenticationMechanism>
+// <root:IsGroupSearchBaseEnabled>false</root:IsGroupSearchBaseEnabled>
+// <root:ConnectorType>OPEN_LDAP</root:ConnectorType>
 
 // OrgLdapGroupAttributesType represents the ldap group attribute settings for a vCloud Director organization.
 // Type: OrgLdapGroupAttributesType
@@ -777,12 +789,12 @@ type CustomOrgLdapSettings struct {
 // Description: Represents the ldap group attribute settings of a vCloud Director organization.
 // Since: 0.9
 type OrgLdapGroupAttributes struct {
-	Membership           string `xml:"Membership"`
-	GroupName            string `xml:"GroupName"`
-	BackLinkIdentifier   string `xml:"BackLinkIdentifier,omitempty"`
-	MempershipIdentifier string `xml:"MempershipIdentifier"`
 	ObjectClass          string `xml:"ObjectClass"`
 	ObjectIdentifier     string `xml:"ObjectIdentifier"`
+	GroupName            string `xml:"GroupName"`
+	Membership           string `xml:"Membership"`
+	BackLinkIdentifier   string `xml:"BackLinkIdentifier,omitempty"`
+	MembershipIdentifier string `xml:"MembershipIdentifier"`
 }
 
 // OrgLdapUserAttributesType represents the ldap user attribute settings for a vCloud Director organization.
@@ -791,16 +803,16 @@ type OrgLdapGroupAttributes struct {
 // Description: Represents the ldap user attribute settings of a vCloud Director organization.
 // Since: 0.9
 type OrgLdapUserAttributes struct {
+	ObjectClass               string `xml:"ObjectClass"`
+	ObjectIdentifier          string `xml:"ObjectIdentifier"`
+	Username                  string `xml:"UserName,omitempty"`
 	Email                     string `xml:"Email"`
 	FullName                  string `xml:"FullName"`
 	GivenName                 string `xml:"GivenName"`
-	GroupBackLinkIdentifier   string `xml:"GroupBackLinkIdentifier,omitempty"`
-	GroupMempershipIdentifier string `xml:"GroupMempershipIdentifier"`
-	ObjectClass               string `xml:"ObjectClass"`
-	ObjectIdentifier          string `xml:"ObjectIdentifier"`
 	Surname                   string `xml:"Surname"`
 	Telephone                 string `xml:"Telephone"`
-	Username                  string `xml:"UserName,omitempty"`
+	GroupMembershipIdentifier string `xml:"GroupMembershipIdentifier"`
+	GroupBackLinkIdentifier   string `xml:"GroupBackLinkIdentifier,omitempty"`
 }
 
 // VDCList contains a list of references to Org VDCs
