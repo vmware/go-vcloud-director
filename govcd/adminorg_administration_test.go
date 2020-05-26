@@ -142,6 +142,7 @@ func spinUpLdapServer(vcd *TestVCD, check *C, directNetworkName string) string {
 
 	// Got VM - ensure that TCP port for ldap service is open and reachable
 	ldapHostIp := ldapVm.VM.NetworkConnectionSection.NetworkConnection[0].IPAddress
+	fmt.Printf("# Waiting for server %s to respond on port 389: ", ldapHostIp)
 	isLdapServiceUp := checkIfTcpPortIsOpen(ldapHostIp, "389", vapp.client.MaxRetryTimeout)
 	check.Assert(isLdapServiceUp, Equals, true)
 
