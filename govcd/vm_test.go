@@ -13,8 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 func init() {
@@ -1489,4 +1490,41 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 
 	// delete Vapp early to avoid env capacity issue
 	deleteVapp(vcd, vmName)
+}
+
+func (vcd *TestVCD) Test_QueryVmList(check *C) {
+
+	if vcd.skipVappTests {
+		check.Skip("Test_QueryVmList needs an existing vApp to run")
+		return
+	}
+
+	// Get the setUp vApp using traditional methods
+	vapp, err := vcd.vdc.GetVAppByName(TestSetUpSuite, true)
+	check.Assert(err, IsNil)
+	vmName := ""
+	for _, vm := range vapp.VApp.Children.VM {
+		vmName = vm.Name
+		break
+	}
+	if vmName == "" {
+		check.Skip("No VM names found")
+		return
+	}
+
+	for filter := range []types.VmQueryFilter{types.VmQueryFilterOnlyDeployed, types.VmQueryFilterAll} {
+		list, err := vcd.client.Client.QueryVmList(types.VmQueryFilter(filter))
+		check.Assert(err, IsNil)
+		check.Assert(list, NotNil)
+		foundVm := false
+
+		// Check the VM list for a known VM name
+		for _, vm := range list {
+			if vm.Name == vmName {
+				foundVm = true
+				break
+			}
+		}
+		check.Assert(foundVm, Equals, true)
+	}
 }

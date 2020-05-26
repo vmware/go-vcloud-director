@@ -74,6 +74,9 @@ func (vm *VM) id() string   { return vm.VM.ID }
 func (media *Media) name() string { return media.Media.Name }
 func (media *Media) id() string   { return media.Media.ID }
 
+func (vmar *VmAffinityRule) name() string { return vmar.VmAffinityRule.Name }
+func (vmar *VmAffinityRule) id() string   { return vmar.VmAffinityRule.ID }
+
 // Semi-generic tests that check the complete set of Get methods for an entity
 // GetEntityByName
 // GetEntityById
@@ -131,11 +134,11 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 		fmt.Printf("#Testing %s.Get%sByName\n", def.parentType, def.getterPrefix)
 	}
 	ge, err := def.getByName(entityName, false)
-	entity1 := ge.(genericEntity)
 	if err != nil {
 		check.Skip(fmt.Sprintf("testFinderGetGenericEntity: %s %s not found.", def.entityType, def.entityName))
 		return
 	}
+	entity1 := ge.(genericEntity)
 
 	wantedType := fmt.Sprintf("*govcd.%s", def.entityType)
 	if testVerbose {
@@ -153,8 +156,9 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 		fmt.Printf("#Testing %s.Get%sById\n", def.parentType, def.getterPrefix)
 	}
 	ge, err = def.getById(entityId, false)
-	entity2 := ge.(genericEntity)
 	check.Assert(err, IsNil)
+	check.Assert(ge, NotNil)
+	entity2 := ge.(genericEntity)
 	check.Assert(entity2, NotNil)
 	check.Assert(entity2.name(), Equals, entityName)
 	check.Assert(entity2.id(), Equals, entityId)
@@ -165,8 +169,9 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 		fmt.Printf("#Testing %s.Get%sByNameOrId\n", def.parentType, def.getterPrefix)
 	}
 	ge, err = def.getByNameOrId(entityId, false)
-	entity3 := ge.(genericEntity)
 	check.Assert(err, IsNil)
+	check.Assert(ge, NotNil)
+	entity3 := ge.(genericEntity)
 	check.Assert(entity3, NotNil)
 	check.Assert(entity3.name(), Equals, entityName)
 	check.Assert(entity3.id(), Equals, entityId)
@@ -177,6 +182,7 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 		fmt.Printf("#Testing %s.Get%sByNameOrId\n", def.parentType, def.getterPrefix)
 	}
 	ge, err = def.getByNameOrId(entityName, false)
+	check.Assert(ge, NotNil)
 	entity4 := ge.(genericEntity)
 	check.Assert(err, IsNil)
 	check.Assert(entity4, NotNil)
@@ -189,8 +195,8 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 		fmt.Printf("#Testing %s.Get%sByName (invalid name)\n", def.parentType, def.getterPrefix)
 	}
 	ge, err = def.getByName(INVALID_NAME, false)
-	entity5 := ge.(genericEntity)
 	check.Assert(err, NotNil)
+	entity5 := ge // this is expected to be nil
 	check.Assert(IsNotFound(err), Equals, true)
 	check.Assert(entity5, IsNil)
 
@@ -199,8 +205,8 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 		fmt.Printf("#Testing %s.Get%sByNameOrId (invalid name)\n", def.parentType, def.getterPrefix)
 	}
 	ge, err = def.getByNameOrId(INVALID_NAME, false)
-	entity6 := ge.(genericEntity)
 	check.Assert(err, NotNil)
+	entity6 := ge // this is expected to be nil
 	check.Assert(IsNotFound(err), Equals, true)
 	check.Assert(entity6, IsNil)
 
@@ -209,8 +215,8 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 		fmt.Printf("#Testing %s.Get%sById (invalid ID)\n", def.parentType, def.getterPrefix)
 	}
 	ge, err = def.getById(invalidEntityId, false)
-	entity7 := ge.(genericEntity)
 	check.Assert(err, NotNil)
+	entity7 := ge // this is expected to be nil
 	check.Assert(IsNotFound(err), Equals, true)
 	check.Assert(entity7, IsNil)
 
@@ -219,8 +225,8 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 		fmt.Printf("#Testing %s.Get%sByNameOrId (invalid ID)\n", def.parentType, def.getterPrefix)
 	}
 	ge, err = def.getByNameOrId(invalidEntityId, false)
-	entity8 := ge.(genericEntity)
 	check.Assert(err, NotNil)
+	entity8 := ge // this is expected to be nil
 	check.Assert(IsNotFound(err), Equals, true)
 	check.Assert(entity8, IsNil)
 }
