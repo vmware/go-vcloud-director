@@ -23,43 +23,51 @@ func (vcd *TestVCD) Test_GroupCRUD(check *C) {
 	check.Assert(adminOrg, NotNil)
 
 	type groupTestData struct {
-		name       string
-		secondName string
-		roleName   string // the role this user is created with
-		secondRole string // The role to which we change using Update()
+		name         string
+		secondName   string
+		roleName     string
+		secondRole   string
+		providerType string
 	}
 	groupData := []groupTestData{
 		{
-			name:       "ship_crew",
-			secondName: "admin_staff",
-			roleName:   OrgUserRoleOrganizationAdministrator,
-			secondRole: OrgUserRoleVappAuthor,
+			name:         "ship_crew",
+			secondName:   "admin_staff",
+			roleName:     OrgUserRoleOrganizationAdministrator,
+			secondRole:   OrgUserRoleVappAuthor,
+			providerType: OrgUserProviderIntegrated,
 		},
 		{
-			name:       "admin_staff",
-			secondName: "ship_crew",
-			roleName:   OrgUserRoleVappAuthor,
-			secondRole: OrgUserRoleVappUser,
+			name:         "admin_staff",
+			secondName:   "ship_crew",
+			roleName:     OrgUserRoleVappAuthor,
+			secondRole:   OrgUserRoleVappUser,
+			providerType: OrgUserProviderIntegrated,
 		},
+		// SAML must be configured on the system to make it work
 		// {
-		// 	name:       "test_group_vapp_user",
-		// 	roleName:   OrgUserRoleVappUser,
-		// 	secondRole: OrgUserRoleConsoleAccessOnly,
+		// 	name:         "test_group_vapp_user",
+		// 	roleName:     OrgUserRoleVappUser,
+		// 	secondRole:   OrgUserRoleConsoleAccessOnly,
+		// 	providerType: OrgUserProviderSAML,
 		// },
 		// {
-		// 	name:       "test_group_console_access",
-		// 	roleName:   OrgUserRoleConsoleAccessOnly,
-		// 	secondRole: OrgUserRoleCatalogAuthor,
+		// 	name:         "test_group_console_access",
+		// 	roleName:     OrgUserRoleConsoleAccessOnly,
+		// 	secondRole:   OrgUserRoleCatalogAuthor,
+		// 	providerType: OrgUserProviderSAML,
 		// },
 		// {
-		// 	name:       "test_group_catalog_author",
-		// 	roleName:   OrgUserRoleCatalogAuthor,
-		// 	secondRole: OrgUserRoleOrganizationAdministrator,
+		// 	name:         "test_group_catalog_author",
+		// 	roleName:     OrgUserRoleCatalogAuthor,
+		// 	secondRole:   OrgUserRoleOrganizationAdministrator,
+		// 	providerType: OrgUserProviderSAML,
 		// },
 		// {
-		// 	name:       "test_group_defered_to_identity_provider",
-		// 	roleName:   OrgUserRoleDeferToIdentityProvider,
-		// 	secondRole: OrgUserRoleOrganizationAdministrator,
+		// 	name:         "test_group_defered_to_identity_provider",
+		// 	roleName:     OrgUserRoleDeferToIdentityProvider,
+		// 	secondRole:   OrgUserRoleOrganizationAdministrator,
+		// 	providerType: OrgUserProviderSAML,
 		// },
 	}
 
