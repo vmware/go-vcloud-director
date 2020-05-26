@@ -15,7 +15,10 @@
   Active Directory Federations Services (ADFS) as IdP using WS-TRUST auth endpoint
   "/adfs/services/trust/13/usernamemixed"
   [#304](https://github.com/vmware/go-vcloud-director/pull/304)
-  
+* Implemented VM affinity rules CRUD: `vdc.CreateVmAffinityRuleAsync`, `vdc. CreateVmAffinityRule`, `vdc.GetAllVmAffinityRuleList`, `vdc.GetVmAffinityRuleList`, `vdc.GetVmAntiAffinityRuleList`
+ `vdc.GetVmAffinityRuleByHref`, `vdc.GetVmAffinityRulesByName`, `vdc.GetVmAffinityRuleById`, `vdc.GetVmAffinityRuleByNameOrId`, `VmAffinityRule.Delete`, `VmAffinityRule.Update`,
+ `VmAffinityRule.SetMandatory`, `VmAffinityRule.SetEnabled`, `VmAffinityRule.Refresh` [#313](https://github.com/vmware/go-vcloud-director/pull/313)
+
 
 ## 2.7.0 (April 10,2020)
 
