@@ -650,6 +650,9 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
+
+		// TODO - before removing vApp it should ensure all child VMs are undeployed as it causes IP
+		// address leak in org networks.
 		task, _ := vapp.Undeploy()
 		_ = task.WaitTaskCompletion()
 		// Detach all Org networks during vApp removal because network removal errors if it happens
@@ -895,7 +898,35 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		return
 	case "vm":
 		// nothing so far
+		vapp, err := vcd.vdc.GetVAppByName(entity.Parent, true)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting VM '%s' in vApp '%s'. Could not find vApp: %s\n",
+				entity.Name, entity.Parent, err)
+			return
+		}
+
+		vm, err := vapp.GetVMByName(entity.Name, false)
+
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not find VM '%s' in vApp '%s': %s\n",
+				entity.Name, vapp.VApp.Name, err)
+			return
+		}
+
+		// Try to undeploy and ignore errors if it doesn't work (VM may already be powered off)
+		task, _ := vm.Undeploy()
+		_ = task.WaitTaskCompletion()
+
+		err = vapp.RemoveVM(*vm)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting VM '%s' in vApp '%s': %s\n",
+				entity.Name, vapp.VApp.Name, err)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
+
 	case "disk":
 		// Find disk by href rather than find disk by name, because disk name can be duplicated in VDC,
 		// so the unique href is required for finding the disk.

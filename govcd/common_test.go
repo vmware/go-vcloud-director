@@ -8,10 +8,14 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"regexp"
+	"strconv"
+	"time"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 
 	. "gopkg.in/check.v1"
 )
@@ -77,9 +81,9 @@ func (vcd *TestVCD) createAngGetResourcesForVmCreation(check *C, vmName string) 
 	return vdc, edge, vappTemplate, vapp, desiredNetConfig, err
 }
 
-// spawnVM spawns VMs in provided vApp from template and also applies customization script to
-// spawn a Python 3 HTTP server
-func spawnVM(name string, vdc Vdc, vapp VApp, net types.NetworkConnectionSection, vAppTemplate VAppTemplate, check *C, skipCustomization bool) (VM, error) {
+// spawnVM spawns VMs in provided vApp from template and can also apply customizationScript if
+// provided
+func spawnVM(name string, memorySize int, vdc Vdc, vapp VApp, net types.NetworkConnectionSection, vAppTemplate VAppTemplate, check *C, customizationScript string) (VM, error) {
 	fmt.Printf("# Spawning VM '%s'", name)
 	task, err := vapp.AddNewVM(name, vAppTemplate, &net, true)
 	check.Assert(err, IsNil)
@@ -89,26 +93,21 @@ func spawnVM(name string, vdc Vdc, vapp VApp, net types.NetworkConnectionSection
 	check.Assert(err, IsNil)
 	fmt.Printf(". Done\n")
 
-	if !skipCustomization {
-		fmt.Printf("# Applying 2 vCPU and 512MB configuration for VM '%s'", name)
+	if customizationScript != "" {
+		fmt.Printf("# Applying 2 vCPU and "+strconv.Itoa(memorySize)+"MB configuration for VM '%s'", name)
 		task, err = vm.ChangeCPUCount(2)
 		check.Assert(err, IsNil)
 		err = task.WaitTaskCompletion()
 		check.Assert(err, IsNil)
 
-		task, err = vm.ChangeMemorySize(512)
+		task, err = vm.ChangeMemorySize(memorySize)
 		check.Assert(err, IsNil)
 		err = task.WaitTaskCompletion()
 		check.Assert(err, IsNil)
 		fmt.Printf(". Done\n")
 
 		fmt.Printf("# Applying customization script for VM '%s'", name)
-		// The script below creates a file /tmp/node/server with single value `name` being set in it.
-		// It also disables iptables and spawns simple Python 3 HTTP server listening on port 8000
-		// in background which serves the just created `server` file.
-		task, err = vm.RunCustomizationScript(name,
-			"mkdir /tmp/node && cd /tmp/node && echo -n '"+name+"' > server && "+
-				"/bin/systemctl stop iptables && /usr/bin/python3 -m http.server 8000 &")
+		task, err = vm.RunCustomizationScript(name, customizationScript)
 		check.Assert(err, IsNil)
 		err = task.WaitTaskCompletion()
 		check.Assert(err, IsNil)
@@ -194,4 +193,39 @@ func testCheckLoadBalancerConfig(beforeLb *types.LbGeneralParamsWithXml, beforeL
 
 	check.Assert(beforeLb, DeepEquals, afterLb)
 	check.Assert(beforeLbXml, DeepEquals, afterLbXml)
+}
+
+// checkIfTcpPortIsOpen checks if remote TCP port is open or closed every 5 seconds until timeout is
+// reached
+func checkIfTcpPortIsOpen(host, port string, timeout int) bool {
+	retryTimeout := timeout
+	// due to the VMs taking long time to boot it needs to be at least 5 minutes
+	// may be even more in slower environments
+	if timeout < 5*60 { // 5 minutes
+		retryTimeout = 5 * 60 // 5 minutes
+	}
+	timeOutAfterInterval := time.Duration(retryTimeout) * time.Second
+	timeoutAfter := time.After(timeOutAfterInterval)
+	tick := time.NewTicker(time.Duration(5) * time.Second)
+
+	for {
+		select {
+		case <-timeoutAfter:
+			fmt.Println("x")
+			return false
+		case <-tick.C:
+			timeout := time.Second * 3
+			conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, port), timeout)
+			if err != nil {
+				fmt.Println(".")
+			}
+			// Connection established - the port is open
+			if conn != nil {
+				defer conn.Close()
+				fmt.Println("OK")
+				return true
+			}
+		}
+	}
+
 }
