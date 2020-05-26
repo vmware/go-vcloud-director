@@ -16,7 +16,11 @@ import (
 func (vcd *TestVCD) Test_GroupCRUD(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	// LDAP must be configured for this test to work
-	vcd.configureLdap(check)
+	networkName, vappName, vmName := vcd.configureLdap(check)
+	defer func() {
+		// Immediately release resources for further tests
+		vcd.unconfigureLdap(check, networkName, vappName, vmName)
+	}()
 
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
@@ -84,7 +88,9 @@ func (vcd *TestVCD) Test_GroupCRUD(check *C) {
 
 		newGroup := NewGroup(adminOrg.client, adminOrg)
 		newGroup.Group = &groupDefinition
-
+		if testVerbose {
+			fmt.Printf("# creating '%s' group '%s' with role '%s'\n", gd.providerType, gd.name, gd.roleName)
+		}
 		createdGroup, err := adminOrg.CreateGroup(newGroup.Group)
 		check.Assert(err, IsNil)
 		AddToCleanupList(gd.name, "group", newGroup.AdminOrg.AdminOrg.Name, check.TestName())
@@ -100,6 +106,9 @@ func (vcd *TestVCD) Test_GroupCRUD(check *C) {
 		check.Assert(err, IsNil)
 		createdGroup.Group.Role = secondRole
 
+		if testVerbose {
+			fmt.Printf("# updating '%s' group '%s' to role '%s'\n", gd.providerType, gd.name, gd.secondRole)
+		}
 		err = createdGroup.Update()
 		check.Assert(err, IsNil)
 
@@ -110,6 +119,9 @@ func (vcd *TestVCD) Test_GroupCRUD(check *C) {
 		check.Assert(foundGroup2.Group.Href, Equals, createdGroup.Group.Href)
 		check.Assert(foundGroup2.Group.Name, Equals, createdGroup.Group.Name)
 
+		if testVerbose {
+			fmt.Printf("# removing '%s' group '%s'\n", gd.providerType, gd.name)
+		}
 		err = createdGroup.Delete()
 		check.Assert(err, IsNil)
 	}
