@@ -897,7 +897,6 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		return
 	case "vm":
-		// nothing so far
 		vapp, err := vcd.vdc.GetVAppByName(entity.Parent, true)
 		if err != nil {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting VM '%s' in vApp '%s'. Could not find vApp: %s\n",

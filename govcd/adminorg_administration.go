@@ -17,7 +17,6 @@ func (adminOrg *AdminOrg) LdapConfigure(settings *types.OrgLdapSettingsType) err
 	util.Logger.Printf("[DEBUG] Configuring LDAP mode for Org name %s", adminOrg.AdminOrg.Name)
 
 	settings.Xmlns = types.XMLNamespaceVCloud
-	// adminOrg.client.supportedVersions
 	href := adminOrg.AdminOrg.HREF + "/settings/ldap"
 	_, err := adminOrg.client.ExecuteRequest(href, http.MethodPut, types.MimeOrgLdapSettings,
 		"error updating Ldap settings: %s", settings, nil)

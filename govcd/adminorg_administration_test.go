@@ -21,10 +21,10 @@ func (vcd *TestVCD) configureLdap(check *C) {
 	directNetworkName := createDirectNetwork(vcd, check)
 
 	// Launch LDAP server on external network
-	ldapHostIp := spawnLdapServer(vcd, check, directNetworkName)
+	ldapHostIp := createLdapServer(vcd, check, directNetworkName)
 
 	// Configure vCD to use new LDAP server
-	vcdConfigureLdap(vcd, check, ldapHostIp)
+	orgConfigureLdap(vcd, check, ldapHostIp)
 }
 
 // unconfigureLdap releases resources as soon as possible
@@ -37,14 +37,14 @@ func (vcd *TestVCD) unconfigureLdap(check *C) {
 	directNetworkName := createDirectNetwork(vcd, check)
 
 	// Launch LDAP server on external network
-	ldapHostIp := spawnLdapServer(vcd, check, directNetworkName)
+	ldapHostIp := createLdapServer(vcd, check, directNetworkName)
 
 	// Configure vCD to use new LDAP server
-	vcdConfigureLdap(vcd, check, ldapHostIp)
+	orgConfigureLdap(vcd, check, ldapHostIp)
 }
 
 // vcdConfigureLdap sets up LDAP configuration in vCD org specified by vcd.config.VCD.Org variable
-func vcdConfigureLdap(vcd *TestVCD, check *C, ldapHostIp string) {
+func orgConfigureLdap(vcd *TestVCD, check *C, ldapHostIp string) {
 	fmt.Printf("# Configuring LDAP settings for Org '%s'", vcd.config.VCD.Org)
 
 	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
@@ -94,7 +94,7 @@ func vcdConfigureLdap(vcd *TestVCD, check *C, ldapHostIp string) {
 // LDAP server in docker container which has a few users and groups defined.
 // In essence it creates two groups - "admin_staff" and "ship_crew" and
 // More information: https://github.com/rroemhild/docker-test-openldap
-func spawnLdapServer(vcd *TestVCD, check *C, directNetworkName string) string {
+func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) string {
 	vAppName := "ldap"
 	const ldapCustomizationScript = "systemctl enable docker ; systemctl start docker ;" +
 		"docker run --name ldap-server --restart=always --privileged -d -p 389:389 rroemhild/test-openldap"

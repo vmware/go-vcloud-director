@@ -774,15 +774,6 @@ type CustomOrgLdapSettings struct {
 	Realm string `xml:"Realm,omitempty"`
 }
 
-// <root:HostName>1</root:HostName>
-// <root:Port>389</root:Port>
-// <root:IsSsl>false</root:IsSsl>
-// <root:IsSslAcceptAll>false</root:IsSslAcceptAll>
-// <root:SearchBase>dc=example,dc=com</root:SearchBase>
-// <root:AuthenticationMechanism>SIMPLE</root:AuthenticationMechanism>
-// <root:IsGroupSearchBaseEnabled>false</root:IsGroupSearchBaseEnabled>
-// <root:ConnectorType>OPEN_LDAP</root:ConnectorType>
-
 // OrgLdapGroupAttributesType represents the ldap group attribute settings for a vCloud Director organization.
 // Type: OrgLdapGroupAttributesType
 // Namespace: http://www.vmware.com/vcloud/v1.5

@@ -15,7 +15,8 @@
   Active Directory Federations Services (ADFS) as IdP using WS-TRUST auth endpoint
   "/adfs/services/trust/13/usernamemixed"
   [#304](https://github.com/vmware/go-vcloud-director/pull/304)
-  
+* Add support for group management using `CreateGroup`, `GetGroupByHref`, `GetGroupById`,
+  `GetGroupByName`, `GetGroupByNameOrId`, `Delete`, `Update`, `NewGroup` functions [#314](https://github.com/vmware/go-vcloud-director/pull/314)
 
 ## 2.7.0 (April 10,2020)
 
