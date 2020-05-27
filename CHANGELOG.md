@@ -17,6 +17,7 @@
   [#304](https://github.com/vmware/go-vcloud-director/pull/304)
 * Add support for group management using `CreateGroup`, `GetGroupByHref`, `GetGroupById`,
   `GetGroupByName`, `GetGroupByNameOrId`, `Delete`, `Update`, `NewGroup` functions [#314](https://github.com/vmware/go-vcloud-director/pull/314)
+* Add LDAP administration functions for Org `LdapConfigure` and `LdapConfigure` [#314](https://github.com/vmware/go-vcloud-director/pull/314)
 
 ## 2.7.0 (April 10,2020)
 
