@@ -751,6 +751,7 @@ type OrgLdapSettingsType struct {
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Represents the custom ldap settings of a vCloud Director organization.
 // Since: 0.9
+// Note. Order of these fields matter and API will error if it is changed
 type CustomOrgLdapSettings struct {
 	HREF string   `xml:"href,attr,omitempty"` // The URI of the entity.
 	Type string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
@@ -774,11 +775,12 @@ type CustomOrgLdapSettings struct {
 	Realm string `xml:"Realm,omitempty"`
 }
 
-// OrgLdapGroupAttributesType represents the ldap group attribute settings for a vCloud Director organization.
+// OrgLdapGroupAttributes	 represents the ldap group attribute settings for a vCloud Director organization.
 // Type: OrgLdapGroupAttributesType
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Represents the ldap group attribute settings of a vCloud Director organization.
 // Since: 0.9
+// Note. Order of these fields matter and API will error if it is changed
 type OrgLdapGroupAttributes struct {
 	ObjectClass          string `xml:"ObjectClass"`
 	ObjectIdentifier     string `xml:"ObjectIdentifier"`
@@ -793,6 +795,7 @@ type OrgLdapGroupAttributes struct {
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Represents the ldap user attribute settings of a vCloud Director organization.
 // Since: 0.9
+// Note. Order of these fields matter and API will error if it is changed.
 type OrgLdapUserAttributes struct {
 	ObjectClass               string `xml:"ObjectClass"`
 	ObjectIdentifier          string `xml:"ObjectIdentifier"`
@@ -2699,7 +2702,7 @@ type User struct {
 	Tasks           *TasksInProgress `xml:"Tasks"`
 }
 
-// Group represents Org group definitions
+// Group represents Org group definition
 type Group struct {
 	XMLName xml.Name `xml:"Group"`
 	Xmlns   string   `xml:"xmlns,attr"`

@@ -13,6 +13,9 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+// test_GroupCRUD tests out CRUD capabilities for Org Groups.
+// Note. Because it requires LDAP to be functional - this test is run from main test "Test_LDAP"
+// which sets up LDAP configuration.
 func (vcd *TestVCD) test_GroupCRUD(check *C) {
 	fmt.Printf("Running: %s\n", "test_GroupCRUD")
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
@@ -122,6 +125,8 @@ func (vcd *TestVCD) test_GroupCRUD(check *C) {
 
 // test_GroupFinderGetGenericEntity uses testFinderGetGenericEntity to validate that ByName, ById
 // ByNameOrId method work properly.
+// Note. Because it requires LDAP to be functional - this test is run from main test "Test_LDAP"
+// which sets up LDAP configuration.
 func (vcd *TestVCD) test_GroupFinderGetGenericEntity(check *C) {
 	fmt.Printf("Running: %s\n", "test_GroupFinderGetGenericEntity")
 

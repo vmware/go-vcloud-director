@@ -15,6 +15,10 @@ import (
 
 // Test_LDAP serves as a "subtest" framework for tests requiring LDAP configuration. It sets up LDAP
 // server and configuration for Org and cleans up this test run.
+//
+// Prerequisites:
+// * External network subnet must have access to internet
+// * Correct DNS servers must be set for external network so that guest VM can resolve DNS records
 func (vcd *TestVCD) Test_LDAP(check *C) {
 	fmt.Println("Setting up LDAP")
 	networkName, vappName, vmName := vcd.configureLdap(check)
@@ -151,9 +155,22 @@ func orgConfigureLdap(vcd *TestVCD, check *C, ldapHostIp string) {
 // More information about users and groups in: https://github.com/rroemhild/docker-test-openldap
 func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) (string, string, string) {
 	vAppName := "ldap"
-	const ldapCustomizationScript = "systemctl enable docker ; systemctl start docker ;" +
-		"docker run --name ldap-server --restart=always --privileged -d -p 389:389 rroemhild/test-openldap"
-
+	// The customization script waits until IP address is set on the NIC because Guest tools run
+	// script and network configuration together. If the script runs too quick - there is a risk
+	// that network card is not yet configured and it will not be able to pull docker image from
+	// remote. It is also run in backround process to avoid guest tools blocking on it.
+	// It waits until "inet" (not "inet6") is set and then runs docker container
+	const ldapCustomizationScript = `
+		{
+			until ip a show eth0 | grep "inet "
+			do
+				sleep 1
+			done
+			systemctl enable docker
+			systemctl start docker
+			docker run --name ldap-server --restart=always --privileged -d -p 389:389 rroemhild/test-openldap
+		} &
+	`
 	// Get Org, Vdc
 	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
