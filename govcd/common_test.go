@@ -195,7 +195,7 @@ func testCheckLoadBalancerConfig(beforeLb *types.LbGeneralParamsWithXml, beforeL
 	check.Assert(beforeLbXml, DeepEquals, afterLbXml)
 }
 
-// isTcpPortOpen checks if remote TCP port is open or closed every 5 seconds until timeout is
+// isTcpPortOpen checks if remote TCP port is open or closed every 8 seconds until timeout is
 // reached
 func isTcpPortOpen(host, port string, timeout int) bool {
 	retryTimeout := timeout
@@ -206,7 +206,7 @@ func isTcpPortOpen(host, port string, timeout int) bool {
 	}
 	timeOutAfterInterval := time.Duration(retryTimeout) * time.Second
 	timeoutAfter := time.After(timeOutAfterInterval)
-	tick := time.NewTicker(time.Duration(5) * time.Second)
+	tick := time.NewTicker(time.Duration(8) * time.Second)
 
 	for {
 		select {

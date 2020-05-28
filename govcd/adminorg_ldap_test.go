@@ -8,6 +8,7 @@ package govcd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
@@ -158,7 +159,8 @@ func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) (string,
 	// The customization script waits until IP address is set on the NIC because Guest tools run
 	// script and network configuration together. If the script runs too quick - there is a risk
 	// that network card is not yet configured and it will not be able to pull docker image from
-	// remote. It is also run in backround process to avoid guest tools blocking on it.
+	// remote. Guest tools could also be interrupted if the script below failed before NICs are
+	// configured therefore it is run in background.
 	// It waits until "inet" (not "inet6") is set and then runs docker container
 	const ldapCustomizationScript = `
 		{
@@ -240,8 +242,10 @@ func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) (string,
 	// Got VM - ensure that TCP port for ldap service is open and reachable
 	ldapHostIp := ldapVm.VM.NetworkConnectionSection.NetworkConnection[0].IPAddress
 	fmt.Printf("# Waiting for server %s to respond on port 389: ", ldapHostIp)
+	timerStart := time.Now()
 	isLdapServiceUp := isTcpPortOpen(ldapHostIp, "389", vapp.client.MaxRetryTimeout)
 	check.Assert(isLdapServiceUp, Equals, true)
+	fmt.Printf("# Time taken to start LDAP container: %s\n", time.Since(timerStart))
 
 	return ldapHostIp, vAppName, ldapVm.VM.Name
 }
