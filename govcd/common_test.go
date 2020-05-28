@@ -93,19 +93,19 @@ func spawnVM(name string, memorySize int, vdc Vdc, vapp VApp, net types.NetworkC
 	check.Assert(err, IsNil)
 	fmt.Printf(". Done\n")
 
+	fmt.Printf("# Applying 2 vCPU and "+strconv.Itoa(memorySize)+"MB configuration for VM '%s'", name)
+	task, err = vm.ChangeCPUCount(2)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	task, err = vm.ChangeMemorySize(memorySize)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	fmt.Printf(". Done\n")
+
 	if customizationScript != "" {
-		fmt.Printf("# Applying 2 vCPU and "+strconv.Itoa(memorySize)+"MB configuration for VM '%s'", name)
-		task, err = vm.ChangeCPUCount(2)
-		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
-
-		task, err = vm.ChangeMemorySize(memorySize)
-		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
-		fmt.Printf(". Done\n")
-
 		fmt.Printf("# Applying customization script for VM '%s'", name)
 		task, err = vm.RunCustomizationScript(name, customizationScript)
 		check.Assert(err, IsNil)

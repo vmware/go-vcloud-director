@@ -13,6 +13,22 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+// Test_LDAP serves as a "subtest" framework for tests requiring LDAP configuration. It sets up LDAP
+// server and configuration for Org and cleans up this test run.
+func (vcd *TestVCD) Test_LDAP(check *C) {
+	fmt.Println("Setting up LDAP")
+	networkName, vappName, vmName := vcd.configureLdap(check)
+	defer func() {
+		fmt.Println("Unconfiguring LDAP")
+		vcd.unconfigureLdap(check, networkName, vappName, vmName)
+	}()
+
+	// LDAP is setup - run LDAP related tests from here
+	vcd.test_GroupCRUD(check)
+	vcd.test_GroupFinderGetGenericEntity(check)
+
+}
+
 // configureLdap creates direct network, spawns Photon OS VM with LDAP server and configures vCD to
 // use LDAP server
 func (vcd *TestVCD) configureLdap(check *C) (string, string, string) {

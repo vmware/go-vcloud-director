@@ -13,15 +13,8 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_GroupCRUD(check *C) {
-	fmt.Printf("Running: %s\n", check.TestName())
-	// LDAP must be configured for this test to work
-	networkName, vappName, vmName := vcd.configureLdap(check)
-	defer func() {
-		// Immediately release resources for further tests
-		vcd.unconfigureLdap(check, networkName, vappName, vmName)
-	}()
-
+func (vcd *TestVCD) test_GroupCRUD(check *C) {
+	fmt.Printf("Running: %s\n", "test_GroupCRUD")
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
@@ -48,7 +41,7 @@ func (vcd *TestVCD) Test_GroupCRUD(check *C) {
 			secondRole:   OrgUserRoleVappUser,
 			providerType: OrgUserProviderIntegrated,
 		},
-		// SAML must be configured on the system to make it work
+		// SAML must be configured in vCD Org to make providerType=OrgUserProviderSAML tests work
 		// {
 		// 	name:         "test_group_vapp_user",
 		// 	roleName:     OrgUserRoleVappUser,
@@ -93,7 +86,7 @@ func (vcd *TestVCD) Test_GroupCRUD(check *C) {
 		}
 		createdGroup, err := adminOrg.CreateGroup(newGroup.Group)
 		check.Assert(err, IsNil)
-		AddToCleanupList(gd.name, "group", newGroup.AdminOrg.AdminOrg.Name, check.TestName())
+		AddToCleanupList(gd.name, "group", newGroup.AdminOrg.AdminOrg.Name, "test_GroupCRUD")
 
 		foundGroup, err := adminOrg.GetGroupByName(gd.name, true)
 		check.Assert(err, IsNil)
@@ -127,10 +120,12 @@ func (vcd *TestVCD) Test_GroupCRUD(check *C) {
 	}
 }
 
-// Test_GroupFinderGetGenericEntity uses testFinderGetGenericEntity to validate that ByName, ById
+// test_GroupFinderGetGenericEntity uses testFinderGetGenericEntity to validate that ByName, ById
 // ByNameOrId method work properly.
-func (vcd *TestVCD) Test_GroupFinderGetGenericEntity(check *C) {
-	const groupName = "group_generic_entity"
+func (vcd *TestVCD) test_GroupFinderGetGenericEntity(check *C) {
+	fmt.Printf("Running: %s\n", "test_GroupFinderGetGenericEntity")
+
+	const groupName = "ship_crew"
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
@@ -142,7 +137,7 @@ func (vcd *TestVCD) Test_GroupFinderGetGenericEntity(check *C) {
 	group.Group = &types.Group{
 		Name:         groupName,
 		Role:         role,
-		ProviderType: OrgUserProviderSAML,
+		ProviderType: OrgUserProviderIntegrated,
 	}
 
 	_, err = adminOrg.CreateGroup(group.Group)
@@ -171,4 +166,10 @@ func (vcd *TestVCD) Test_GroupFinderGetGenericEntity(check *C) {
 		getByNameOrId: getByNameOrId,
 	}
 	vcd.testFinderGetGenericEntity(def, check)
+
+	// Remove group because LDAP cleanup will fail.
+	grp, err := adminOrg.GetGroupByName(group.Group.Name, true)
+	check.Assert(err, IsNil)
+	err = grp.Delete()
+	check.Assert(err, IsNil)
 }

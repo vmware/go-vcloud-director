@@ -736,7 +736,7 @@ type OrgFederationSettings struct {
 // Since: 0.9
 type OrgLdapSettingsType struct {
 	XMLName xml.Name `xml:"OrgLdapSettings"`
-	Xmlns   string   `xml:"xmlns,attr"`
+	Xmlns   string   `xml:"xmlns,attr,omitempty"`
 	HREF    string   `xml:"href,attr,omitempty"` // The URI of the entity.
 	Type    string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
 	Link    LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
