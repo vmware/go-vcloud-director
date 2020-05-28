@@ -45,30 +45,30 @@ func (vcd *TestVCD) test_GroupCRUD(check *C) {
 			providerType: OrgUserProviderIntegrated,
 		},
 		// SAML must be configured in vCD Org to make providerType=OrgUserProviderSAML tests work
-		{
-			name:         "test_group_vapp_user",
-			roleName:     OrgUserRoleVappUser,
-			secondRole:   OrgUserRoleConsoleAccessOnly,
-			providerType: OrgUserProviderSAML,
-		},
-		{
-			name:         "test_group_console_access",
-			roleName:     OrgUserRoleConsoleAccessOnly,
-			secondRole:   OrgUserRoleCatalogAuthor,
-			providerType: OrgUserProviderSAML,
-		},
-		{
-			name:         "test_group_catalog_author",
-			roleName:     OrgUserRoleCatalogAuthor,
-			secondRole:   OrgUserRoleOrganizationAdministrator,
-			providerType: OrgUserProviderSAML,
-		},
-		{
-			name:         "test_group_defered_to_identity_provider",
-			roleName:     OrgUserRoleDeferToIdentityProvider,
-			secondRole:   OrgUserRoleOrganizationAdministrator,
-			providerType: OrgUserProviderSAML,
-		},
+		// {
+		// 	name:         "test_group_vapp_user",
+		// 	roleName:     OrgUserRoleVappUser,
+		// 	secondRole:   OrgUserRoleConsoleAccessOnly,
+		// 	providerType: OrgUserProviderSAML,
+		// },
+		// {
+		// 	name:         "test_group_console_access",
+		// 	roleName:     OrgUserRoleConsoleAccessOnly,
+		// 	secondRole:   OrgUserRoleCatalogAuthor,
+		// 	providerType: OrgUserProviderSAML,
+		// },
+		// {
+		// 	name:         "test_group_catalog_author",
+		// 	roleName:     OrgUserRoleCatalogAuthor,
+		// 	secondRole:   OrgUserRoleOrganizationAdministrator,
+		// 	providerType: OrgUserProviderSAML,
+		// },
+		// {
+		// 	name:         "test_group_defered_to_identity_provider",
+		// 	roleName:     OrgUserRoleDeferToIdentityProvider,
+		// 	secondRole:   OrgUserRoleOrganizationAdministrator,
+		// 	providerType: OrgUserProviderSAML,
+		// },
 	}
 
 	for _, gd := range groupData {
