@@ -16,14 +16,14 @@ import (
 func (adminOrg *AdminOrg) LdapConfigure(settings *types.OrgLdapSettingsType) error {
 	util.Logger.Printf("[DEBUG] Configuring LDAP mode for Org name %s", adminOrg.AdminOrg.Name)
 
-	// Xmlns field is not mandatory when  `types.OrgLdapSettingsType` is set as part of whole
+	// Xmlns field is not mandatory when `types.OrgLdapSettingsType` is set as part of whole
 	// `AdminOrg` structure but it must be set when directly updating LDAP. For that reason
 	// `types.OrgLdapSettingsType` Xmlns struct tag has 'omitempty' set
 	settings.Xmlns = types.XMLNamespaceVCloud
 
 	href := adminOrg.AdminOrg.HREF + "/settings/ldap"
 	_, err := adminOrg.client.ExecuteRequest(href, http.MethodPut, types.MimeOrgLdapSettings,
-		"error updating Ldap settings: %s", settings, nil)
+		"error updating LDAP settings: %s", settings, nil)
 	if err != nil {
 		return fmt.Errorf("error updating LDAP mode for Org name '%s': %s", adminOrg.AdminOrg.Name, err)
 	}

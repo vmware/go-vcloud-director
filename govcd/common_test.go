@@ -81,7 +81,7 @@ func (vcd *TestVCD) createAngGetResourcesForVmCreation(check *C, vmName string) 
 	return vdc, edge, vappTemplate, vapp, desiredNetConfig, err
 }
 
-// spawnVM spawns VMs in provided vApp from template and can also apply customizationScript if
+// spawnVM spawns a VM in provided vApp from template and can also apply customizationScript if
 // provided
 func spawnVM(name string, memorySize int, vdc Vdc, vapp VApp, net types.NetworkConnectionSection, vAppTemplate VAppTemplate, check *C, customizationScript string) (VM, error) {
 	fmt.Printf("# Spawning VM '%s'", name)
@@ -195,9 +195,9 @@ func testCheckLoadBalancerConfig(beforeLb *types.LbGeneralParamsWithXml, beforeL
 	check.Assert(beforeLbXml, DeepEquals, afterLbXml)
 }
 
-// checkIfTcpPortIsOpen checks if remote TCP port is open or closed every 5 seconds until timeout is
+// isTcpPortOpen checks if remote TCP port is open or closed every 5 seconds until timeout is
 // reached
-func checkIfTcpPortIsOpen(host, port string, timeout int) bool {
+func isTcpPortOpen(host, port string, timeout int) bool {
 	retryTimeout := timeout
 	// due to the VMs taking long time to boot it needs to be at least 5 minutes
 	// may be even more in slower environments

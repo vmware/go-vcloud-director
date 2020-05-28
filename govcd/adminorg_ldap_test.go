@@ -23,7 +23,7 @@ func (vcd *TestVCD) Test_LDAP(check *C) {
 		vcd.unconfigureLdap(check, networkName, vappName, vmName)
 	}()
 
-	// LDAP is setup - run LDAP related tests from here
+	// Run tests requiring LDAP from here.
 	vcd.test_GroupCRUD(check)
 	vcd.test_GroupFinderGetGenericEntity(check)
 
@@ -48,8 +48,8 @@ func (vcd *TestVCD) configureLdap(check *C) (string, string, string) {
 	return directNetworkName, vappName, vmName
 }
 
-// unconfigureLdap releases resources as soon as possible to avoid using external IPs or VMs during
-// other test runs
+// unconfigureLdap cleans up LDAP configuration created by `configureLdap` immediately to reduce
+// resource usage
 func (vcd *TestVCD) unconfigureLdap(check *C, networkName, vAppName, vmName string) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
@@ -77,10 +77,6 @@ func (vcd *TestVCD) unconfigureLdap(check *C, networkName, vAppName, vmName stri
 	err = vapp.RemoveVM(*vm)
 	check.Assert(err, IsNil)
 
-	// Wait for vApp to complete task before removing itself
-	// err = vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
-	// check.Assert(err, IsNil)
-
 	// undeploy and remove vApp
 	task, err = vapp.Undeploy()
 	check.Assert(err, IsNil)
@@ -102,7 +98,7 @@ func (vcd *TestVCD) unconfigureLdap(check *C, networkName, vAppName, vmName stri
 
 }
 
-// vcdConfigureLdap sets up LDAP configuration in vCD org specified by vcd.config.VCD.Org variable
+// orgConfigureLdap sets up LDAP configuration in vCD org specified by vcd.config.VCD.Org variable
 func orgConfigureLdap(vcd *TestVCD, check *C, ldapHostIp string) {
 	fmt.Printf("# Configuring LDAP settings for Org '%s'", vcd.config.VCD.Org)
 
@@ -151,8 +147,8 @@ func orgConfigureLdap(vcd *TestVCD, check *C, ldapHostIp string) {
 
 // createLdapServer spawns a vApp and photon OS VM. Using customization script it starts a testing
 // LDAP server in docker container which has a few users and groups defined.
-// In essence it creates two groups - "admin_staff" and "ship_crew" and
-// More information: https://github.com/rroemhild/docker-test-openldap
+// In essence it creates two groups - "admin_staff" and "ship_crew" and a few users.
+// More information about users and groups in: https://github.com/rroemhild/docker-test-openldap
 func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) (string, string, string) {
 	vAppName := "ldap"
 	const ldapCustomizationScript = "systemctl enable docker ; systemctl start docker ;" +
@@ -227,7 +223,7 @@ func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) (string,
 	// Got VM - ensure that TCP port for ldap service is open and reachable
 	ldapHostIp := ldapVm.VM.NetworkConnectionSection.NetworkConnection[0].IPAddress
 	fmt.Printf("# Waiting for server %s to respond on port 389: ", ldapHostIp)
-	isLdapServiceUp := checkIfTcpPortIsOpen(ldapHostIp, "389", vapp.client.MaxRetryTimeout)
+	isLdapServiceUp := isTcpPortOpen(ldapHostIp, "389", vapp.client.MaxRetryTimeout)
 	check.Assert(isLdapServiceUp, Equals, true)
 
 	return ldapHostIp, vAppName, ldapVm.VM.Name

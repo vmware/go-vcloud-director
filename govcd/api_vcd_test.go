@@ -650,9 +650,6 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
-
-		// TODO - before removing vApp it should ensure all child VMs are undeployed as it causes IP
-		// address leak in org networks.
 		task, _ := vapp.Undeploy()
 		_ = task.WaitTaskCompletion()
 		// Detach all Org networks during vApp removal because network removal errors if it happens
