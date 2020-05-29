@@ -134,7 +134,7 @@ func orgConfigureLdap(vcd *TestVCD, check *C, ldapHostIp string) {
 			},
 			GroupAttributes: &types.OrgLdapGroupAttributes{
 				ObjectClass:          "group",
-				ObjectIdentifier:     "objectGuid",
+				ObjectIdentifier:     "cn",
 				GroupName:            "cn",
 				Membership:           "member",
 				MembershipIdentifier: "dn",
