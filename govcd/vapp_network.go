@@ -60,7 +60,7 @@ func (vapp *VApp) UpdateNetworkFirewallRulesAsync(networkId string, firewallRule
 // GetVappNetworkById returns a VApp network reference if the vApp network ID matches an existing one.
 // If no valid VApp network is found, it returns a nil VApp network reference and an error
 func (vapp *VApp) GetVappNetworkById(id string, refresh bool) (*types.VAppNetwork, error) {
-	util.Logger.Printf("[TRACE] [GetVappNetworkById] getting vApp Network: %s", id)
+	util.Logger.Printf("[TRACE] [GetVappNetworkById] getting vApp Network: %s and refresh %t", id, refresh)
 
 	if refresh {
 		err := vapp.Refresh()
@@ -98,6 +98,7 @@ func (vapp *VApp) GetVappNetworkById(id string, refresh bool) (*types.VAppNetwor
 // GetVMByName returns a VM reference if the VM name matches an existing one.
 // If no valid VM is found, it returns a nil VM reference and an error
 func (vapp *VApp) GetVappNetworkByName(vappNetworkName string, refresh bool) (*types.VAppNetwork, error) {
+	util.Logger.Printf("[TRACE] [GetVappNetworkByName] getting vApp Network: %s and refresh %t", vappNetworkName, refresh)
 	if refresh {
 		err := vapp.Refresh()
 		if err != nil {
