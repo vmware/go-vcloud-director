@@ -134,3 +134,52 @@ func (vapp *VApp) GetVappNetworkByNameOrId(identifier string, refresh bool) (*ty
 	}
 	return entity.(*types.VAppNetwork), err
 }
+
+// UpdateNetworkNatRules updates vApp networks NAT rules.
+// Returns pointer to types.VAppNetwork or error
+func (vapp *VApp) UpdateNetworkNatRules(networkId string, natRules []*types.NatRule, natType, policy string) (*types.VAppNetwork, error) {
+	task, err := vapp.UpdateNetworkNatRulesAsync(networkId, natRules, natType, policy)
+	if err != nil {
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
+	}
+
+	return vapp.GetVappNetworkById(networkId, false)
+}
+
+// UpdateNetworkNatRulesAsync asynchronously updates vApp NAT rules.
+// Returns task or error
+func (vapp *VApp) UpdateNetworkNatRulesAsync(networkId string, natRules []*types.NatRule, natType, policy string) (Task, error) {
+	util.Logger.Printf("[TRACE] UpdateNetworkNatRulesAsync with values: id: %s and natRules: %#v", networkId, natRules)
+
+	uuid := extractUuid(networkId)
+	networkToUpdate, err := vapp.GetVappNetworkById(uuid, true)
+	if err != nil {
+		return Task{}, err
+	}
+
+	if networkToUpdate.Configuration.Features == nil {
+		networkToUpdate.Configuration.Features = &types.NetworkFeatures{}
+	}
+	networkToUpdate.Xmlns = types.XMLNamespaceVCloud
+
+	if networkToUpdate.Configuration.Features.NatService == nil {
+		return Task{}, fmt.Errorf("provided network isn't connected to org network or isn't fenced")
+	}
+	networkToUpdate.Configuration.Features.NatService.NatType = natType
+	networkToUpdate.Configuration.Features.NatService.Policy = policy
+	networkToUpdate.Configuration.Features.NatService.NatRule = natRules
+	networkToUpdate.Configuration.Features.NatService.IsEnabled = true
+	networkToUpdate.Configuration.Features.FirewallService.IsEnabled = true
+
+	// here we use `PUT /network/{id}` which allow to change vApp network.
+	// But `GET /network/{id}` can return org VDC network or vApp network.
+	apiEndpoint := vapp.client.VCDHREF
+	apiEndpoint.Path += "/network/" + uuid
+
+	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+		types.MimeVappNetwork, "error updating vApp Network NAT rules: %s", networkToUpdate)
+}
