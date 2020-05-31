@@ -8,6 +8,7 @@ package govcd
 
 import (
 	"fmt"
+	"os"
 
 	. "gopkg.in/check.v1"
 
@@ -212,6 +213,12 @@ func (vcd *TestVCD) Test_VmAffinityRule(check *C) {
 	check.Assert(err, IsNil)
 
 	defer func() {
+		if os.Getenv("GOVCD_KEEP_TEST_OBJECTS") != "" {
+			if testVerbose {
+				fmt.Printf("Skipping vApp removal: GOVCD_KEEP_TEST_OBJECTS was set \n")
+			}
+			return
+		}
 		for _, vapp := range vappList {
 			if testVerbose {
 				fmt.Printf("Removing vApp %s\n", vapp.VApp.Name)
@@ -332,11 +339,21 @@ func makeEmptyVm(vapp *VApp, name string) (*VM, error) {
 	return vm, nil
 }
 
-// makeVappGroup creates multiple of vApp, each with a list of VMs
+// makeVappGroup creates multiple vApps, each with several VMs,
+// as defined in `groupDefinition`.
 // Returns a list of vApps
 func makeVappGroup(label string, vdc *Vdc, groupDefinition map[string][]string) ([]*VApp, error) {
 	var vappList []*VApp
 	for vappName, vmNames := range groupDefinition {
+		existingVapp, err := vdc.GetVAppByName(vappName, false)
+		if err == nil {
+			vappList = append(vappList, existingVapp)
+			if testVerbose {
+				fmt.Printf("Using existing vApp %s\n", vappName)
+			}
+			continue
+		}
+
 		if testVerbose {
 			fmt.Printf("Creating vApp %s\n", vappName)
 		}
@@ -344,7 +361,9 @@ func makeVappGroup(label string, vdc *Vdc, groupDefinition map[string][]string) 
 		if err != nil {
 			return nil, err
 		}
-		AddToCleanupList(vappName, "vapp", vdc.Vdc.Name, label)
+		if os.Getenv("GOVCD_KEEP_TEST_OBJECTS") == "" {
+			AddToCleanupList(vappName, "vapp", vdc.Vdc.Name, label)
+		}
 		for _, vmName := range vmNames {
 			if testVerbose {
 				fmt.Printf("\tCreating VM %s/%s\n", vappName, vmName)
