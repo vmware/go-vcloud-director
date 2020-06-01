@@ -21,6 +21,18 @@ import (
 // * External network subnet must have access to internet
 // * Correct DNS servers must be set for external network so that guest VM can resolve DNS records
 func (vcd *TestVCD) Test_LDAP(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	if !catalogItemIsPhotonOs(vcd) {
+		check.Skip(fmt.Sprintf("Catalog item '%s' is not Photon OS", vcd.config.VCD.Catalog.CatalogItem))
+	}
+
+	if vcd.config.VCD.ExternalNetwork == "" {
+		check.Skip("[" + check.TestName() + "] external network not provided")
+	}
+
 	fmt.Println("Setting up LDAP")
 	networkName, vappName, vmName := vcd.configureLdap(check)
 	defer func() {
@@ -37,9 +49,6 @@ func (vcd *TestVCD) Test_LDAP(check *C) {
 // configureLdap creates direct network, spawns Photon OS VM with LDAP server and configures vCD to
 // use LDAP server
 func (vcd *TestVCD) configureLdap(check *C) (string, string, string) {
-	if vcd.skipAdminTests {
-		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
-	}
 
 	// Create direct network to expose LDAP server on external network
 	directNetworkName := createDirectNetwork(vcd, check)
@@ -48,7 +57,7 @@ func (vcd *TestVCD) configureLdap(check *C) (string, string, string) {
 	ldapHostIp, vappName, vmName := createLdapServer(vcd, check, directNetworkName)
 
 	// Configure vCD to use new LDAP server
-	orgConfigureLdap(vcd, check, ldapHostIp)
+	configureLdapForOrg(vcd, check, ldapHostIp)
 
 	return directNetworkName, vappName, vmName
 }
@@ -56,9 +65,6 @@ func (vcd *TestVCD) configureLdap(check *C) (string, string, string) {
 // unconfigureLdap cleans up LDAP configuration created by `configureLdap` immediately to reduce
 // resource usage
 func (vcd *TestVCD) unconfigureLdap(check *C, networkName, vAppName, vmName string) {
-	if vcd.skipAdminTests {
-		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
-	}
 
 	// Get Org Vdc
 	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
@@ -104,7 +110,7 @@ func (vcd *TestVCD) unconfigureLdap(check *C, networkName, vAppName, vmName stri
 }
 
 // orgConfigureLdap sets up LDAP configuration in vCD org specified by vcd.config.VCD.Org variable
-func orgConfigureLdap(vcd *TestVCD, check *C, ldapHostIp string) {
+func configureLdapForOrg(vcd *TestVCD, check *C, ldapHostIp string) {
 	fmt.Printf("# Configuring LDAP settings for Org '%s'", vcd.config.VCD.Org)
 
 	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
@@ -142,7 +148,7 @@ func orgConfigureLdap(vcd *TestVCD, check *C, ldapHostIp string) {
 		},
 	}
 
-	err = org.LdapConfigure(ldapSettings)
+	_, err = org.LdapConfigure(ldapSettings)
 	check.Assert(err, IsNil)
 
 	fmt.Println(" Done")
@@ -185,11 +191,7 @@ func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) (string,
 	check.Assert(catalog, NotNil)
 	catalogItem, err := catalog.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
-	// Skip the test if catalog item is not Photon OS
-	if !isItemPhotonOs(*catalogItem) {
-		check.Skip(fmt.Sprintf("Skipping test because catalog item %s is not Photon OS",
-			vcd.config.VCD.Catalog.CatalogItem))
-	}
+
 	fmt.Printf("# Creating RAW vApp '%s'", vAppName)
 	vappTemplate, err := catalogItem.GetVAppTemplate()
 	check.Assert(err, IsNil)
@@ -254,22 +256,13 @@ func createDirectNetwork(vcd *TestVCD, check *C) string {
 	networkName := check.TestName()
 	fmt.Printf("# Creating direct network %s.", networkName)
 
-	if vcd.skipAdminTests {
-		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
-	}
 	err := RemoveOrgVdcNetworkIfExists(*vcd.vdc, networkName)
 	if err != nil {
 		check.Skip(fmt.Sprintf("Error deleting network : %s", err))
 	}
 
-	if vcd.config.VCD.ExternalNetwork == "" {
-		check.Skip("[" + check.TestName() + "] external network not provided")
-	}
 	externalNetwork, err := vcd.client.GetExternalNetworkByName(vcd.config.VCD.ExternalNetwork)
-	if err != nil {
-		check.Skip("[" + check.TestName() + "] parent network not found")
-		return ""
-	}
+	check.Assert(err, IsNil)
 	// Note that there is no IPScope for this type of network
 	description := "Created by govcd test"
 	var networkConfig = types.OrgVDCNetwork{

@@ -861,7 +861,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		group, err := org.GetGroupByName(entity.Name, true)
 		if err != nil {
-			vcd.infoCleanup(notFoundMsg, "user", entity.Name)
+			vcd.infoCleanup(notFoundMsg, "group", entity.Name)
 			return
 		}
 		err = group.Delete()

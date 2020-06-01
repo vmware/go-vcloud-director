@@ -144,6 +144,29 @@ func isItemPhotonOs(item CatalogItem) bool {
 	return true
 }
 
+// catalogItemIsPhotonOs returns true if test config  catalog item is Photon OS image
+func catalogItemIsPhotonOs(vcd *TestVCD) bool {
+	// Get Org, Vdc
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	if err != nil {
+		return false
+	}
+	// Find catalog and catalog item
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	if err != nil {
+		return false
+	}
+	catalogItem, err := catalog.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	if err != nil {
+		return false
+	}
+	if !isItemPhotonOs(*catalogItem) {
+		return false
+	}
+
+	return true
+}
+
 // cacheLoadBalancer is meant to store load balancer settings before any operations so that all
 // configuration can be checked after manipulation
 func testCacheLoadBalancer(edge EdgeGateway, check *C) (*types.LbGeneralParamsWithXml, string) {
