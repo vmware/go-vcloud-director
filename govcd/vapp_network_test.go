@@ -15,7 +15,7 @@ import (
 )
 
 func (vcd *TestVCD) Test_UpdateNetworkFirewallRules(check *C) {
-	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVppNetwork(check, "Test_UpdateNetworkFirewallRulesVapp")
+	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_UpdateNetworkFirewallRulesVapp")
 	check.Assert(err, IsNil)
 
 	networkFound := types.VAppNetworkConfiguration{}
@@ -60,14 +60,17 @@ func (vcd *TestVCD) Test_UpdateNetworkFirewallRules(check *C) {
 	check.Assert(result.Configuration.Features.FirewallService.LogDefaultAction, Equals, true)
 
 	//cleanup
-	task, err := vapp.Delete()
+	task, err := vapp.RemoveAllNetworks()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	task, err = vapp.Delete()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
-func (vcd *TestVCD) prepareVappWithVppNetwork(check *C, vappName string) (*VApp, string, *types.NetworkConfigSection, error) {
+func (vcd *TestVCD) prepareVappWithVappNetwork(check *C, vappName string) (*VApp, string, *types.NetworkConfigSection, error) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	vapp, err := createVappForTest(vcd, vappName)
@@ -76,17 +79,6 @@ func (vcd *TestVCD) prepareVappWithVppNetwork(check *C, vappName string) (*VApp,
 
 	networkName := "Test_UpdateNetworkFirewallRules"
 	description := "Created in test"
-	const gateway = "192.168.0.1"
-	const netmask = "255.255.255.0"
-	const dns1 = "8.8.8.8"
-	const dns2 = "1.1.1.1"
-	const dnsSuffix = "biz.biz"
-	const startAddress = "192.168.0.10"
-	const endAddress = "192.168.0.20"
-	const dhcpStartAddress = "192.168.0.30"
-	const dhcpEndAddress = "192.168.0.40"
-	const maxLeaseTime = 3500
-	const defaultLeaseTime = 2400
 	var guestVlanAllowed = true
 	var fwEnabled = false
 	var natEnabled = false
@@ -98,13 +90,13 @@ func (vcd *TestVCD) prepareVappWithVppNetwork(check *C, vappName string) (*VApp,
 
 	vappNetworkSettings := &VappNetworkSettings{
 		Name:               networkName,
-		Gateway:            gateway,
-		NetMask:            netmask,
-		DNS1:               dns1,
-		DNS2:               dns2,
-		DNSSuffix:          dnsSuffix,
-		StaticIPRanges:     []*types.IPRange{{StartAddress: startAddress, EndAddress: endAddress}},
-		DhcpSettings:       &DhcpSettings{IsEnabled: true, MaxLeaseTime: maxLeaseTime, DefaultLeaseTime: defaultLeaseTime, IPRange: &types.IPRange{StartAddress: dhcpStartAddress, EndAddress: dhcpEndAddress}},
+		Gateway:            "192.168.0.1",
+		NetMask:            "255.255.255.0",
+		DNS1:               "8.8.8.8",
+		DNS2:               "1.1.1.1",
+		DNSSuffix:          "biz.biz",
+		StaticIPRanges:     []*types.IPRange{{StartAddress: "192.168.0.10", EndAddress: "192.168.0.20"}},
+		DhcpSettings:       &DhcpSettings{IsEnabled: true, MaxLeaseTime: 3500, DefaultLeaseTime: 2400, IPRange: &types.IPRange{StartAddress: "192.168.0.30", EndAddress: "192.168.0.40"}},
 		GuestVLANAllowed:   &guestVlanAllowed,
 		Description:        description,
 		FirewallEnabled:    &fwEnabled,
@@ -119,7 +111,7 @@ func (vcd *TestVCD) prepareVappWithVppNetwork(check *C, vappName string) (*VApp,
 }
 
 func (vcd *TestVCD) Test_GetVappNetworkByNameOrId(check *C) {
-	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVppNetwork(check, "Test_GetVappNetworkByNameOrId")
+	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_GetVappNetworkByNameOrId")
 	check.Assert(err, IsNil)
 
 	networkFound := types.VAppNetworkConfiguration{}

@@ -244,7 +244,7 @@ type VAppNetworkConfiguration struct {
 	IsDeployed    bool                  `xml:"IsDeployed"`
 }
 
-// VAppNetworkType represents a vApp network configuration
+// VAppNetwork represents a vApp network configuration
 // Used as input PUT /network/{id}
 // Type: VAppNetworkType
 // Namespace: http://www.vmware.com/vcloud/v1.5
