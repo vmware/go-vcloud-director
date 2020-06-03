@@ -43,6 +43,8 @@ func (vapp *VApp) UpdateNetworkFirewallRulesAsync(networkId string, firewallRule
 	}
 	networkToUpdate.Xmlns = types.XMLNamespaceVCloud
 
+	// If API didn't return Firewall service XML part, that means vApp network isn't connected to org network or not fenced.
+	// In other words there isn't firewall when you connected directly or isolated.
 	if networkToUpdate.Configuration.Features.FirewallService == nil {
 		return Task{}, fmt.Errorf("provided network isn't connecd to org network or isn't fenced")
 	}

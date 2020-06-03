@@ -63,6 +63,7 @@ func (vcd *TestVCD) Test_UpdateNetworkFirewallRules(check *C) {
 	task, err := vapp.RemoveAllNetworks()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 	task, err = vapp.Delete()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
