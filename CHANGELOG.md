@@ -16,6 +16,7 @@
   "/adfs/services/trust/13/usernamemixed"
   [#304](https://github.com/vmware/go-vcloud-director/pull/304)  
 * Added methods `vapp.UpdateNetworkFirewallRules`, `vapp.UpdateNetworkFirewallRulesAsync`, `vapp.GetVappNetworkById`, `vapp.GetVappNetworkByName` and `vapp.GetVappNetworkByNameOrId` [#308](https://github.com/vmware/go-vcloud-director/pull/308)
+* Added methods `vapp.UpdateNetworkNatRulesAsync`, `vapp.UpdateNetworkNatRulesAsync` [#316](https://github.com/vmware/go-vcloud-director/pull/316)
 
 ## 2.7.0 (April 10,2020)
 

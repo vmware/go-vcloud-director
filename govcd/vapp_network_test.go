@@ -181,8 +181,10 @@ func (vcd *TestVCD) Test_UpdateNetworkNatRules(check *C) {
 	check.Assert(err, IsNil)
 
 	vm, err := spawnVM("FirstNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check, false, false)
+	check.Assert(err, IsNil)
 
 	vm2, err := spawnVM("SecondNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check, false, false)
+	check.Assert(err, IsNil)
 
 	uuid, err := GetUuidFromHref(networkFound.Link.HREF, false)
 	check.Assert(err, IsNil)
