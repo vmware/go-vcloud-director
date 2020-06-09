@@ -1035,7 +1035,7 @@ func (vcd *TestVCD) createInternalDisk(check *C, vmName string, busNumber int) (
 	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAngGetResourcesForVmCreation(check, vmName)
 	check.Assert(err, IsNil)
 
-	vm, err := spawnVM("FirstNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check, true)
+	vm, err := spawnVM("FirstNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check, true, true)
 	check.Assert(err, IsNil)
 
 	storageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
@@ -1461,7 +1461,7 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAngGetResourcesForVmCreation(check, vmName)
 	check.Assert(err, IsNil)
 
-	vm, err := spawnVM("FirstNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check, false)
+	vm, err := spawnVM("FirstNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check, false, true)
 	check.Assert(err, IsNil)
 
 	task, err := vm.PowerOff()

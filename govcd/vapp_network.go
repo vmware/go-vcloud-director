@@ -80,6 +80,10 @@ func (vapp *VApp) GetVappNetworkById(id string, refresh bool) (*types.VAppNetwor
 
 	util.Logger.Printf("[TRACE] Looking for networks: %s --- %d", id, len(vapp.VApp.NetworkConfigSection.NetworkConfig))
 	for _, vappNetwork := range vapp.VApp.NetworkConfigSection.NetworkConfig {
+		// break early for disconnected network interfaces. They don't have all information
+		if vappNetwork.NetworkName == "none" {
+			continue
+		}
 		util.Logger.Printf("[TRACE] Looking at: %s", vappNetwork.Link.HREF)
 		if equalIds(id, vappNetwork.ID, vappNetwork.Link.HREF) {
 			vappNetwork := &types.VAppNetwork{}
