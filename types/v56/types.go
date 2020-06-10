@@ -225,7 +225,7 @@ type NetworkConfiguration struct {
 	// SyslogServerSettings           SyslogServerSettings `xml:"SyslogServerSettings,omitempty"`
 }
 
-// VAppNetworkConfiguration represents a vApp network configurations
+// VAppNetworkConfiguration represents a vApp network configuration
 // Used in vApp network configuration actions as part of vApp type.
 // VApp.NetworkConfigSection.NetworkConfig or directly as NetworkConfigSection.NetworkConfig for various API calls.
 // Type: VAppNetworkConfigurationType

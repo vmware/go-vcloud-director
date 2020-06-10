@@ -12,7 +12,7 @@ import (
 )
 
 // UpdateNetworkFirewallRules updates vApp networks firewall rules. It will overwrite existing ones as there is
-// no 100 % way identify them separately.
+// no 100% way to identify them separately.
 // Returns pointer to types.VAppNetwork or error
 func (vapp *VApp) UpdateNetworkFirewallRules(networkId string, firewallRules []*types.FirewallRule, defaultAction string, logDefaultAction bool) (*types.VAppNetwork, error) {
 	task, err := vapp.UpdateNetworkFirewallRulesAsync(networkId, firewallRules, defaultAction, logDefaultAction)
@@ -28,7 +28,7 @@ func (vapp *VApp) UpdateNetworkFirewallRules(networkId string, firewallRules []*
 }
 
 // UpdateNetworkFirewallRulesAsync asynchronously updates vApp networks firewall rules. It will overwrite existing ones
-// as there is no 100 % way identify them separately.
+// as there is no 100% way to identify them separately.
 // Returns task or error
 func (vapp *VApp) UpdateNetworkFirewallRulesAsync(networkId string, firewallRules []*types.FirewallRule, defaultAction string, logDefaultAction bool) (Task, error) {
 	util.Logger.Printf("[TRACE] UpdateNetworkFirewallRulesAsync with values: id: %s and firewallServiceConfiguration: %#v", networkId, firewallRules)
