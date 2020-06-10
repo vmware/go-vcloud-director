@@ -60,6 +60,13 @@ func (vcd *TestVCD) Test_UpdateNetworkFirewallRules(check *C) {
 	check.Assert(result.Configuration.Features.FirewallService.DefaultAction, Equals, "drop")
 	check.Assert(result.Configuration.Features.FirewallService.LogDefaultAction, Equals, true)
 
+	err = vapp.RemoveAllNetworkFirewallRules(uuid)
+	check.Assert(err, IsNil)
+
+	vappNetwork, err := vapp.GetVappNetworkById(uuid, true)
+	check.Assert(err, IsNil)
+	check.Assert(len(vappNetwork.Configuration.Features.NatService.NatRule), Equals, 0)
+
 	//cleanup
 	task, err := vapp.RemoveAllNetworks()
 	check.Assert(err, IsNil)
@@ -199,6 +206,7 @@ func (vcd *TestVCD) Test_UpdateNetworkNatRules(check *C) {
 		"portForwarding", "allowTraffic")
 	check.Assert(err, IsNil)
 	check.Assert(result, NotNil)
+	check.Assert(len(result.Configuration.Features.NatService.NatRule), Equals, 2)
 
 	// verify
 	check.Assert(result.Configuration.Features.NatService.Policy, Equals, "allowTraffic")
@@ -224,6 +232,7 @@ func (vcd *TestVCD) Test_UpdateNetworkNatRules(check *C) {
 		"ipTranslation", "allowTrafficIn")
 	check.Assert(err, IsNil)
 	check.Assert(result, NotNil)
+	check.Assert(len(result.Configuration.Features.NatService.NatRule), Equals, 2)
 
 	// verify
 	check.Assert(result.Configuration.Features.NatService.Policy, Equals, "allowTrafficIn")
@@ -237,6 +246,13 @@ func (vcd *TestVCD) Test_UpdateNetworkNatRules(check *C) {
 	check.Assert(result.Configuration.Features.NatService.NatRule[1].OneToOneVMRule.VAppScopedVMID, Equals, vm2.VM.VAppScopedLocalID)
 	check.Assert(result.Configuration.Features.NatService.NatRule[1].OneToOneVMRule.VMNicID, Equals, 0)
 	check.Assert(*result.Configuration.Features.NatService.NatRule[1].OneToOneVMRule.ExternalIPAddress, Equals, "192.168.100.1")
+
+	err = vapp.RemoveAllNetworkNatRules(uuid)
+	check.Assert(err, IsNil)
+
+	vappNetwork, err := vapp.GetVappNetworkById(uuid, true)
+	check.Assert(err, IsNil)
+	check.Assert(len(vappNetwork.Configuration.Features.NatService.NatRule), Equals, 0)
 
 	//cleanup
 	task, err := vapp.RemoveAllNetworks()

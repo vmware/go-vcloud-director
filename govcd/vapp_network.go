@@ -192,3 +192,31 @@ func (vapp *VApp) UpdateNetworkNatRulesAsync(networkId string, natRules []*types
 	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
 		types.MimeVappNetwork, "error updating vApp Network NAT rules: %s", networkToUpdate)
 }
+
+// RemoveAllNetworkNatRules removes vApp network all NAT rules.
+// Returns error
+func (vapp *VApp) RemoveAllNetworkNatRules(networkId string) error {
+	task, err := vapp.UpdateNetworkNatRulesAsync(networkId, []*types.NatRule{}, "ipTranslation", "allowTraffic")
+	if err != nil {
+		return err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
+	}
+	return nil
+}
+
+// RemoveAllNetworkNatRules removes vApp network all firewall rules.
+// Returns error
+func (vapp *VApp) RemoveAllNetworkFirewallRules(networkId string) error {
+	task, err := vapp.UpdateNetworkFirewallRulesAsync(networkId, []*types.FirewallRule{}, "allow", false)
+	if err != nil {
+		return err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
+	}
+	return nil
+}
