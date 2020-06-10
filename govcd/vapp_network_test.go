@@ -35,6 +35,7 @@ func (vcd *TestVCD) Test_UpdateNetworkFirewallRules(check *C) {
 			DestinationIP: "Any", SourcePortRange: "Any", SourceIP: "Any", Protocols: &types.FirewallRuleProtocols{Any: true}}}, "drop", true)
 	check.Assert(err, IsNil)
 	check.Assert(result, NotNil)
+	check.Assert(len(result.Configuration.Features.FirewallService.FirewallRule), Equals, 2)
 
 	// verify
 	check.Assert(result.Configuration.Features.FirewallService.FirewallRule[0].Description, Equals, "myFirstRule1")
