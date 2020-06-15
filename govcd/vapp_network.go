@@ -193,7 +193,7 @@ func (vapp *VApp) UpdateNetworkNatRulesAsync(networkId string, natRules []*types
 		types.MimeVappNetwork, "error updating vApp Network NAT rules: %s", networkToUpdate)
 }
 
-// RemoveAllNetworkNatRules removes vApp network all NAT rules.
+// RemoveAllNetworkNatRules removes all NAT rules from a vApp network
 // Returns error
 func (vapp *VApp) RemoveAllNetworkNatRules(networkId string) error {
 	task, err := vapp.UpdateNetworkNatRulesAsync(networkId, []*types.NatRule{}, "ipTranslation", "allowTraffic")
@@ -207,7 +207,7 @@ func (vapp *VApp) RemoveAllNetworkNatRules(networkId string) error {
 	return nil
 }
 
-// RemoveAllNetworkNatRules removes vApp network all firewall rules.
+// RemoveAllNetworkFirewallRules removes all network all firewall rules from a vApp network.
 // Returns error
 func (vapp *VApp) RemoveAllNetworkFirewallRules(networkId string) error {
 	task, err := vapp.UpdateNetworkFirewallRulesAsync(networkId, []*types.FirewallRule{}, "allow", false)
