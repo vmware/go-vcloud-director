@@ -181,8 +181,6 @@ func (vapp *VApp) UpdateNetworkNatRulesAsync(networkId string, natRules []*types
 	networkToUpdate.Configuration.Features.NatService.NatType = natType
 	networkToUpdate.Configuration.Features.NatService.Policy = policy
 	networkToUpdate.Configuration.Features.NatService.NatRule = natRules
-	networkToUpdate.Configuration.Features.NatService.IsEnabled = true
-	networkToUpdate.Configuration.Features.FirewallService.IsEnabled = true
 
 	// here we use `PUT /network/{id}` which allow to change vApp network.
 	// But `GET /network/{id}` can return org VDC network or vApp network.
