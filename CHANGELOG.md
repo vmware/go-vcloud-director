@@ -14,7 +14,10 @@
 * Add configuration option `WithSamlAdfs` to `NewVCDClient()` to support SAML authentication using
   Active Directory Federations Services (ADFS) as IdP using WS-TRUST auth endpoint
   "/adfs/services/trust/13/usernamemixed"
-  [#304](https://github.com/vmware/go-vcloud-director/pull/304)  
+  [#304](https://github.com/vmware/go-vcloud-director/pull/304)
+* Add support for group management using `CreateGroup`, `GetGroupByHref`, `GetGroupById`,
+  `GetGroupByName`, `GetGroupByNameOrId`, `Delete`, `Update`, `NewGroup` functions [#314](https://github.com/vmware/go-vcloud-director/pull/314)
+* Add LDAP administration functions for Org `LdapConfigure`, `GetLdapConfiguration`, and `LdapDisable` [#314](https://github.com/vmware/go-vcloud-director/pull/314)
 * Added methods `vapp.UpdateNetworkFirewallRules`, `vapp.UpdateNetworkFirewallRulesAsync`, `vapp.GetVappNetworkById`, `vapp.GetVappNetworkByName` and `vapp.GetVappNetworkByNameOrId` [#308](https://github.com/vmware/go-vcloud-director/pull/308)
 
 ## 2.7.0 (April 10,2020)

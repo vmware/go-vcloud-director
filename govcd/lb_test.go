@@ -35,9 +35,17 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	vdc, edge, vappTemplate, vapp, desiredNetConfig, err := vcd.createAngGetResourcesForVmCreation(check, TestLb)
 	check.Assert(err, IsNil)
 
-	vm1, err := spawnVM("FirstNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check, false)
+	// The script below creates a file /tmp/node/server with single value `name` being set in it.
+	// It also disables iptables and spawns simple Python 3 HTTP server listening on port 8000
+	// in background which serves the just created `server` file.
+	vm1CustomizationScript := "mkdir /tmp/node && cd /tmp/node && echo -n 'FirstNode' > server && " +
+		"/bin/systemctl stop iptables && /usr/bin/python3 -m http.server 8000 &"
+	vm2CustomizationScript := "mkdir /tmp/node && cd /tmp/node && echo -n 'SecondNode' > server && " +
+		"/bin/systemctl stop iptables && /usr/bin/python3 -m http.server 8000 &"
+
+	vm1, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, vm1CustomizationScript)
 	check.Assert(err, IsNil)
-	vm2, err := spawnVM("SecondNode", *vdc, *vapp, desiredNetConfig, vappTemplate, check, false)
+	vm2, err := spawnVM("SecondNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, vm2CustomizationScript)
 	check.Assert(err, IsNil)
 
 	// Get IPs alocated to the VMs
