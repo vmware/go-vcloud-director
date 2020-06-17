@@ -265,3 +265,65 @@ func (vcd *TestVCD) Test_UpdateNetworkNatRules(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 }
+
+func (vcd *TestVCD) Test_UpdateNetworkStaticRoutes(check *C) {
+	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_UpdateNetworkStaticRoutes")
+	check.Assert(err, IsNil)
+
+	networkFound := types.VAppNetworkConfiguration{}
+	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
+		if networkConfig.NetworkName == networkName {
+			networkFound = networkConfig
+		}
+	}
+	check.Assert(networkFound, Not(Equals), types.VAppNetworkConfiguration{})
+
+	desiredNetConfig := types.NetworkConnectionSection{}
+	desiredNetConfig.PrimaryNetworkConnectionIndex = 0
+	desiredNetConfig.NetworkConnection = append(desiredNetConfig.NetworkConnection,
+		&types.NetworkConnection{
+			IsConnected:             true,
+			IPAddressAllocationMode: types.IPAllocationModePool,
+			Network:                 "Test_UpdateNetworkStaticRoutes",
+			NetworkConnectionIndex:  0,
+		})
+
+	uuid, err := GetUuidFromHref(networkFound.Link.HREF, false)
+	check.Assert(err, IsNil)
+
+	result, err := vapp.UpdateNetworkStaticRouting(uuid, []*types.StaticRoute{&types.StaticRoute{Name: "test1",
+		Network: "192.168.2.0/24", NextHopIP: "192.168.2.15"}, &types.StaticRoute{Name: "test2",
+		Network: "192.168.3.0/24", NextHopIP: "192.168.2.16"}}, true)
+	check.Assert(err, IsNil)
+	check.Assert(result, NotNil)
+	check.Assert(len(result.Configuration.Features.StaticRoutingService.StaticRoute), Equals, 2)
+
+	// verify
+	check.Assert(result.Configuration.Features.StaticRoutingService.IsEnabled, Equals, true)
+
+	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[0].Name, Equals, "test1")
+	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[0].Network, Equals, "192.168.2.0/24")
+	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[0].NextHopIP, Equals, "192.168.2.15")
+
+	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[1].Name, Equals, "test2")
+	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[1].Network, Equals, "192.168.3.0/24")
+	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[1].NextHopIP, Equals, "192.168.2.16")
+
+	err = vapp.RemoveAllNetworkStaticRoutes(uuid)
+	check.Assert(err, IsNil)
+
+	vappNetwork, err := vapp.GetVappNetworkById(uuid, true)
+	check.Assert(err, IsNil)
+	check.Assert(len(vappNetwork.Configuration.Features.StaticRoutingService.StaticRoute), Equals, 0)
+
+	//cleanup
+	task, err := vapp.RemoveAllNetworks()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+}
