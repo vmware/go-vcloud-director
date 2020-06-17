@@ -56,6 +56,9 @@ func (org *Org) id() string   { return org.Org.ID }
 func (orgUser *OrgUser) name() string { return orgUser.User.Name }
 func (orgUser *OrgUser) id() string   { return orgUser.User.ID }
 
+func (orgGroup *OrgGroup) name() string { return orgGroup.Group.Name }
+func (orgGroup *OrgGroup) id() string   { return orgGroup.Group.ID }
+
 func (vdc *Vdc) name() string { return vdc.Vdc.Name }
 func (vdc *Vdc) id() string   { return vdc.Vdc.ID }
 

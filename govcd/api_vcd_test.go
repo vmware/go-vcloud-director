@@ -871,6 +871,28 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 		return
+	case "group":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for group '%s'\n", entity.Name)
+			return
+		}
+		org, err := vcd.client.GetAdminOrgByName(entity.Parent)
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, "org", entity.Parent)
+			return
+		}
+		group, err := org.GetGroupByName(entity.Name, true)
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, "group", entity.Name)
+			return
+		}
+		err = group.Delete()
+		if err == nil {
+			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		} else {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+		return
 	case "vdc":
 		if entity.Parent == "" {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for VDC '%s'\n", entity.Name)
@@ -894,8 +916,35 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		return
 	case "vm":
-		// nothing so far
+		vapp, err := vcd.vdc.GetVAppByName(entity.Parent, true)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting VM '%s' in vApp '%s'. Could not find vApp: %s\n",
+				entity.Name, entity.Parent, err)
+			return
+		}
+
+		vm, err := vapp.GetVMByName(entity.Name, false)
+
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not find VM '%s' in vApp '%s': %s\n",
+				entity.Name, vapp.VApp.Name, err)
+			return
+		}
+
+		// Try to undeploy and ignore errors if it doesn't work (VM may already be powered off)
+		task, _ := vm.Undeploy()
+		_ = task.WaitTaskCompletion()
+
+		err = vapp.RemoveVM(*vm)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting VM '%s' in vApp '%s': %s\n",
+				entity.Name, vapp.VApp.Name, err)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
+
 	case "disk":
 		// Find disk by href rather than find disk by name, because disk name can be duplicated in VDC,
 		// so the unique href is required for finding the disk.
@@ -1235,6 +1284,22 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		} else {
 			vcd.infoCleanup("updateLeftoverEntries: [INFO] VDC fast provisioning left as it is %s \n", entity.Name)
 		}
+		return
+	case "orgLdapSettings":
+		org, err := vcd.client.GetAdminOrgByName(entity.Parent)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Clearing LDAP settings for Org '%s': %s",
+				entity.Parent, err)
+			return
+		}
+		err = org.LdapDisable()
+
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not clear LDAP settings for Org '%s': %s",
+				entity.Parent, err)
+			return
+		}
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
 
 	default:
