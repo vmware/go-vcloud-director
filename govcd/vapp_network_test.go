@@ -245,6 +245,7 @@ func (vcd *TestVCD) Test_UpdateNetworkNatRules(check *C) {
 	check.Assert(result.Configuration.Features.NatService.NatRule[1].OneToOneVMRule.MappingMode, Equals, "manual")
 	check.Assert(result.Configuration.Features.NatService.NatRule[1].OneToOneVMRule.VAppScopedVMID, Equals, vm2.VM.VAppScopedLocalID)
 	check.Assert(result.Configuration.Features.NatService.NatRule[1].OneToOneVMRule.VMNicID, Equals, 0)
+	check.Assert(result.Configuration.Features.NatService.NatRule[1].OneToOneVMRule.ExternalIPAddress, NotNil)
 	check.Assert(*result.Configuration.Features.NatService.NatRule[1].OneToOneVMRule.ExternalIPAddress, Equals, "192.168.100.1")
 
 	err = vapp.RemoveAllNetworkNatRules(uuid)

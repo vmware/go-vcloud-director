@@ -205,7 +205,7 @@ func (vapp *VApp) RemoveAllNetworkNatRules(networkId string) error {
 	return nil
 }
 
-// RemoveAllNetworkFirewallRules removes all network all firewall rules from a vApp network.
+// RemoveAllNetworkFirewallRules removes all network firewall rules from a vApp network.
 // Returns error
 func (vapp *VApp) RemoveAllNetworkFirewallRules(networkId string) error {
 	networkToUpdate, err := vapp.GetVappNetworkById(networkId, true)
