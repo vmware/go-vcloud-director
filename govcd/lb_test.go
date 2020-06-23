@@ -43,9 +43,9 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	vm2CustomizationScript := "mkdir /tmp/node && cd /tmp/node && echo -n 'SecondNode' > server && " +
 		"/bin/systemctl stop iptables && /usr/bin/python3 -m http.server 8000 &"
 
-	vm1, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, vm1CustomizationScript)
+	vm1, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, vm1CustomizationScript, true)
 	check.Assert(err, IsNil)
-	vm2, err := spawnVM("SecondNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, vm2CustomizationScript)
+	vm2, err := spawnVM("SecondNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, vm2CustomizationScript, true)
 	check.Assert(err, IsNil)
 
 	// Get IPs allocated to the VMs

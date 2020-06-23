@@ -234,7 +234,7 @@ func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) (string,
 		})
 
 	// LDAP docker container does not start if Photon OS VM does not have at least 1024 of RAM
-	ldapVm, err := spawnVM("ldap-vm", 1024, *vdc, *vapp, desiredNetConfig, vappTemplate, check, ldapCustomizationScript)
+	ldapVm, err := spawnVM("ldap-vm", 1024, *vdc, *vapp, desiredNetConfig, vappTemplate, check, ldapCustomizationScript, true)
 	check.Assert(err, IsNil)
 
 	// Must be deleted before vApp to avoid IP leak

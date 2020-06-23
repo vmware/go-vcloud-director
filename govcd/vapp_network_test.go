@@ -60,6 +60,13 @@ func (vcd *TestVCD) Test_UpdateNetworkFirewallRules(check *C) {
 	check.Assert(result.Configuration.Features.FirewallService.DefaultAction, Equals, "drop")
 	check.Assert(result.Configuration.Features.FirewallService.LogDefaultAction, Equals, true)
 
+	err = vapp.RemoveAllNetworkFirewallRules(uuid)
+	check.Assert(err, IsNil)
+
+	vappNetwork, err := vapp.GetVappNetworkById(uuid, true)
+	check.Assert(err, IsNil)
+	check.Assert(len(vappNetwork.Configuration.Features.NatService.NatRule), Equals, 0)
+
 	//cleanup
 	task, err := vapp.RemoveAllNetworks()
 	check.Assert(err, IsNil)
@@ -79,7 +86,7 @@ func (vcd *TestVCD) prepareVappWithVappNetwork(check *C, vappName string) (*VApp
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
-	networkName := "Test_UpdateNetworkFirewallRules"
+	networkName := vappName + "_network"
 	description := "Created in test"
 	var guestVlanAllowed = true
 	var fwEnabled = false
@@ -137,6 +144,173 @@ func (vcd *TestVCD) Test_GetVappNetworkByNameOrId(check *C) {
 
 	//cleanup
 	task, err := vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+}
+
+func (vcd *TestVCD) Test_UpdateNetworkNatRules(check *C) {
+	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_UpdateNetworkNatRules")
+	check.Assert(err, IsNil)
+
+	networkFound := types.VAppNetworkConfiguration{}
+	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
+		if networkConfig.NetworkName == networkName {
+			networkFound = networkConfig
+		}
+	}
+	check.Assert(networkFound, Not(Equals), types.VAppNetworkConfiguration{})
+
+	desiredNetConfig := types.NetworkConnectionSection{}
+	desiredNetConfig.PrimaryNetworkConnectionIndex = 0
+	desiredNetConfig.NetworkConnection = append(desiredNetConfig.NetworkConnection,
+		&types.NetworkConnection{
+			IsConnected:             true,
+			IPAddressAllocationMode: types.IPAllocationModePool,
+			Network:                 "Test_UpdateNetworkNatRules_network",
+			NetworkConnectionIndex:  0,
+		})
+
+	// Get org and vdc
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	// Find catalog and catalog item
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+	catalogItem, err := catalog.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	check.Assert(err, IsNil)
+	vappTemplate, err := catalogItem.GetVAppTemplate()
+	check.Assert(err, IsNil)
+
+	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", false)
+	check.Assert(err, IsNil)
+
+	vm2, err := spawnVM("SecondNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", false)
+	check.Assert(err, IsNil)
+
+	uuid, err := GetUuidFromHref(networkFound.Link.HREF, false)
+	check.Assert(err, IsNil)
+
+	result, err := vapp.UpdateNetworkNatRules(uuid, []*types.NatRule{&types.NatRule{VMRule: &types.NatVMRule{
+		ExternalPort: -1, InternalPort: 22, VMNicID: 0,
+		VAppScopedVMID: vm.VM.VAppScopedLocalID, Protocol: "TCP"}},
+		&types.NatRule{VMRule: &types.NatVMRule{
+			ExternalPort: 80, InternalPort: 22, VMNicID: 0,
+			VAppScopedVMID: vm2.VM.VAppScopedLocalID, Protocol: "UDP"}}},
+		"portForwarding", "allowTraffic")
+	check.Assert(err, IsNil)
+	check.Assert(result, NotNil)
+	check.Assert(len(result.Configuration.Features.NatService.NatRule), Equals, 2)
+
+	// verify
+	check.Assert(result.Configuration.Features.NatService.Policy, Equals, "allowTraffic")
+	check.Assert(result.Configuration.Features.NatService.NatType, Equals, "portForwarding")
+
+	check.Assert(result.Configuration.Features.NatService.NatRule[0].VMRule.InternalPort, Equals, 22)
+	check.Assert(result.Configuration.Features.NatService.NatRule[0].VMRule.ExternalPort, Equals, -1)
+	check.Assert(result.Configuration.Features.NatService.NatRule[0].VMRule.VAppScopedVMID, Equals, vm.VM.VAppScopedLocalID)
+	check.Assert(result.Configuration.Features.NatService.NatRule[0].VMRule.VMNicID, Equals, 0)
+
+	check.Assert(result.Configuration.Features.NatService.NatRule[1].VMRule.InternalPort, Equals, 22)
+	check.Assert(result.Configuration.Features.NatService.NatRule[1].VMRule.ExternalPort, Equals, 80)
+	check.Assert(result.Configuration.Features.NatService.NatRule[1].VMRule.VAppScopedVMID, Equals, vm2.VM.VAppScopedLocalID)
+	check.Assert(result.Configuration.Features.NatService.NatRule[1].VMRule.VMNicID, Equals, 0)
+
+	result, err = vapp.UpdateNetworkNatRules(uuid, []*types.NatRule{&types.NatRule{OneToOneVMRule: &types.NatOneToOneVMRule{
+		MappingMode: "automatic", VMNicID: 0,
+		VAppScopedVMID: vm.VM.VAppScopedLocalID}},
+		&types.NatRule{OneToOneVMRule: &types.NatOneToOneVMRule{
+			MappingMode: "manual", VMNicID: 0,
+			VAppScopedVMID:    vm2.VM.VAppScopedLocalID,
+			ExternalIPAddress: takeStringPointer("192.168.100.1")}}},
+		"ipTranslation", "allowTrafficIn")
+	check.Assert(err, IsNil)
+	check.Assert(result, NotNil)
+	check.Assert(len(result.Configuration.Features.NatService.NatRule), Equals, 2)
+
+	// verify
+	check.Assert(result.Configuration.Features.NatService.Policy, Equals, "allowTrafficIn")
+	check.Assert(result.Configuration.Features.NatService.NatType, Equals, "ipTranslation")
+
+	check.Assert(result.Configuration.Features.NatService.NatRule[0].OneToOneVMRule.MappingMode, Equals, "automatic")
+	check.Assert(result.Configuration.Features.NatService.NatRule[0].OneToOneVMRule.VAppScopedVMID, Equals, vm.VM.VAppScopedLocalID)
+	check.Assert(result.Configuration.Features.NatService.NatRule[0].OneToOneVMRule.VMNicID, Equals, 0)
+
+	check.Assert(result.Configuration.Features.NatService.NatRule[1].OneToOneVMRule.MappingMode, Equals, "manual")
+	check.Assert(result.Configuration.Features.NatService.NatRule[1].OneToOneVMRule.VAppScopedVMID, Equals, vm2.VM.VAppScopedLocalID)
+	check.Assert(result.Configuration.Features.NatService.NatRule[1].OneToOneVMRule.VMNicID, Equals, 0)
+	check.Assert(result.Configuration.Features.NatService.NatRule[1].OneToOneVMRule.ExternalIPAddress, NotNil)
+	check.Assert(*result.Configuration.Features.NatService.NatRule[1].OneToOneVMRule.ExternalIPAddress, Equals, "192.168.100.1")
+
+	// verifies that nat rules still exist after changing settings
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	check.Assert(err, IsNil)
+	check.Assert(orgVdcNetwork, NotNil)
+
+	var fwEnabled = false
+	var natEnabled = false
+	var retainIpMacEnabled = true
+
+	vappNetworkSettings := &VappNetworkSettings{
+		FirewallEnabled:    &fwEnabled,
+		NatEnabled:         &natEnabled,
+		RetainIpMacEnabled: &retainIpMacEnabled,
+	}
+
+	_, err = vapp.AddOrgNetwork(vappNetworkSettings, orgVdcNetwork.OrgVDCNetwork, true)
+	check.Assert(err, IsNil)
+	check.Assert(vappNetworkConfig, NotNil)
+
+	vappNetwork, err := vapp.GetVappNetworkByName(vcd.config.VCD.Network.Net1, true)
+	check.Assert(err, IsNil)
+	check.Assert(len(vappNetwork.Configuration.Features.NatService.NatRule), Equals, 0)
+
+	result, err = vapp.UpdateNetworkNatRules(vappNetwork.ID, []*types.NatRule{&types.NatRule{OneToOneVMRule: &types.NatOneToOneVMRule{
+		MappingMode: "automatic", VMNicID: 0,
+		VAppScopedVMID: vm.VM.VAppScopedLocalID}}},
+		"ipTranslation", "allowTrafficIn")
+	check.Assert(err, IsNil)
+	check.Assert(len(result.Configuration.Features.NatService.NatRule), Equals, 1)
+
+	var updateFwEnabled = true
+	var updateNatEnabled = true
+	var updateRetainIpMacEnabled = false
+
+	vappNetworkSettings = &VappNetworkSettings{
+		ID:                 vappNetwork.ID,
+		FirewallEnabled:    &updateFwEnabled,
+		NatEnabled:         &updateNatEnabled,
+		RetainIpMacEnabled: &updateRetainIpMacEnabled,
+	}
+
+	vappNetworkConfig, err = vapp.UpdateOrgNetwork(vappNetworkSettings, true)
+	check.Assert(err, IsNil)
+	check.Assert(vappNetworkConfig, NotNil)
+
+	result, err = vapp.GetVappNetworkById(vappNetwork.ID, true)
+	check.Assert(err, IsNil)
+	check.Assert(len(result.Configuration.Features.NatService.NatRule), Equals, 1)
+	// end
+
+	err = vapp.RemoveAllNetworkNatRules(uuid)
+	check.Assert(err, IsNil)
+
+	vappNetwork, err = vapp.GetVappNetworkById(uuid, true)
+	check.Assert(err, IsNil)
+	check.Assert(len(vappNetwork.Configuration.Features.NatService.NatRule), Equals, 0)
+
+	//cleanup
+	task, err := vapp.RemoveAllNetworks()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	task, err = vapp.Delete()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)

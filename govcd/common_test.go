@@ -81,9 +81,9 @@ func (vcd *TestVCD) createAngGetResourcesForVmCreation(check *C, vmName string) 
 	return vdc, edge, vappTemplate, vapp, desiredNetConfig, err
 }
 
-// spawnVM spawns a VM in provided vApp from template and can also apply customizationScript if
-// provided
-func spawnVM(name string, memorySize int, vdc Vdc, vapp VApp, net types.NetworkConnectionSection, vAppTemplate VAppTemplate, check *C, customizationScript string) (VM, error) {
+// spawnVM spawns VMs in provided vApp from template and also applies customization script to
+// spawn a Python 3 HTTP server
+func spawnVM(name string, memorySize int, vdc Vdc, vapp VApp, net types.NetworkConnectionSection, vAppTemplate VAppTemplate, check *C, customizationScript string, powerOn bool) (VM, error) {
 	fmt.Printf("# Spawning VM '%s'", name)
 	task, err := vapp.AddNewVM(name, vAppTemplate, &net, true)
 	check.Assert(err, IsNil)
@@ -114,12 +114,14 @@ func spawnVM(name string, memorySize int, vdc Vdc, vapp VApp, net types.NetworkC
 		fmt.Printf(". Done\n")
 	}
 
-	fmt.Printf("# Powering on VM '%s'", name)
-	task, err = vm.PowerOn()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	fmt.Printf(". Done\n")
+	if powerOn {
+		fmt.Printf("# Powering on VM '%s'", name)
+		task, err = vm.PowerOn()
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+		fmt.Printf(". Done\n")
+	}
 
 	return *vm, nil
 }
