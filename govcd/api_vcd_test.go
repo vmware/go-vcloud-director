@@ -1,4 +1,4 @@
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user search nsxv auth ALL
+// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user search nsxv auth affinity ALL
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -770,6 +770,28 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 		return
+	case "affinity_rule":
+		_, vdc, err := vcd.getAdminOrgAndVdcFromCleanupEntity(entity)
+		if err != nil {
+			vcd.infoCleanup("adminOrg + VDC: %s", err)
+			return
+		}
+		affinityRule, err := vdc.GetVmAffinityRuleById(entity.Name)
+		if err != nil {
+			if ContainsNotFound(err) {
+				vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+				return
+			} else {
+				vcd.infoCleanup("retrieving affinity rule %s", err)
+				return
+			}
+		}
+		err = affinityRule.Delete()
+		if err != nil {
+			vcd.infoCleanup("affinity rule deletion: %s", err)
+		}
+		return
+
 	case "externalNetwork":
 		externalNetwork, err := vcd.client.GetExternalNetworkByName(entity.Name)
 		if err != nil {
