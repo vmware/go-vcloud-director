@@ -48,7 +48,7 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	vm2, err := spawnVM("SecondNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, vm2CustomizationScript)
 	check.Assert(err, IsNil)
 
-	// Get IPs alocated to the VMs
+	// Get IPs allocated to the VMs
 	ip1 := vm1.VM.NetworkConnectionSection.NetworkConnection[0].IPAddress
 	ip2 := vm2.VM.NetworkConnectionSection.NetworkConnection[0].IPAddress
 

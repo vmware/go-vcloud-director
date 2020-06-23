@@ -9,8 +9,9 @@ package govcd
 import (
 	"fmt"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 func (vcd *TestVCD) Test_FindVDCNetwork(check *C) {
