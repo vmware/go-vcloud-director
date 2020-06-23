@@ -267,16 +267,6 @@ func (vcd *TestVCD) Test_UpdateNetworkNatRules(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vappNetworkConfig, NotNil)
 
-	/*	var vappOrgUuid string
-		for _, networkConfig := range vappOrgNetwork.NetworkConfig {
-			if networkConfig.NetworkName == vcd.config.VCD.Network.Net1 {
-				vappOrgUuid = networkConfig.ID
-			}
-		}*/
-
-	/*	vappOrgUuid, err := GetUuidFromHref(vappOrgNetwork.HREF, false)
-		check.Assert(err, IsNil)
-	*/
 	vappNetwork, err := vapp.GetVappNetworkByName(vcd.config.VCD.Network.Net1, true)
 	check.Assert(err, IsNil)
 	check.Assert(len(vappNetwork.Configuration.Features.NatService.NatRule), Equals, 0)
