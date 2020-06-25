@@ -239,7 +239,7 @@ func (vapp *VApp) UpdateNetworkStaticRouting(networkId string, staticRoutes []*t
 	return vapp.GetVappNetworkById(networkId, false)
 }
 
-// UpdateNetworkNatRulesAsync asynchronously updates vApp network static routes.
+// UpdateNetworkStaticRoutingAsync asynchronously updates vApp network static routes.
 // Returns task or error
 func (vapp *VApp) UpdateNetworkStaticRoutingAsync(networkId string, staticRoutes []*types.StaticRoute, enabled bool) (Task, error) {
 	util.Logger.Printf("[TRACE] UpdateNetworkStaticRoutingAsync with values: id: %s and staticRoutes: %#v, enable: %t", networkId, staticRoutes, enabled)
@@ -250,7 +250,7 @@ func (vapp *VApp) UpdateNetworkStaticRoutingAsync(networkId string, staticRoutes
 		return Task{}, err
 	}
 
-	if !isVappNetwork(networkToUpdate) {
+	if !IsVappNetwork(networkToUpdate) {
 		return Task{}, fmt.Errorf("network static routing can be applied only for vapp network, not vapp org network")
 	}
 
@@ -270,8 +270,8 @@ func (vapp *VApp) UpdateNetworkStaticRoutingAsync(networkId string, staticRoutes
 		types.MimeVappNetwork, "error updating vApp Network static routes: %s", networkToUpdate)
 }
 
-// Allows to identify if given network config is a vApp network and not a vApp Org network
-func isVappNetwork(networkConfig *types.VAppNetwork) bool {
+// IsVappNetwork allows to identify if given network config is a vApp network and not a vApp Org network
+func IsVappNetwork(networkConfig *types.VAppNetwork) bool {
 	if networkConfig.Configuration.FenceMode == types.FenceModeIsolated ||
 		(networkConfig.Configuration.FenceMode == types.FenceModeNAT && networkConfig.Configuration.IPScopes != nil &&
 			networkConfig.Configuration.IPScopes.IPScope != nil && len(networkConfig.Configuration.IPScopes.IPScope) > 0 &&

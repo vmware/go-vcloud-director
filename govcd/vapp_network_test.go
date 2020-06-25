@@ -15,7 +15,7 @@ import (
 )
 
 func (vcd *TestVCD) Test_UpdateNetworkFirewallRules(check *C) {
-	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_UpdateNetworkFirewallRulesVapp")
+	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_UpdateNetworkFirewallRulesVapp", vcd.config.VCD.Network.Net1)
 	check.Assert(err, IsNil)
 
 	networkFound := types.VAppNetworkConfiguration{}
@@ -79,26 +79,26 @@ func (vcd *TestVCD) Test_UpdateNetworkFirewallRules(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
-func (vcd *TestVCD) prepareVappWithVappNetwork(check *C, vappName string) (*VApp, string, *types.NetworkConfigSection, error) {
+func (vcd *TestVCD) prepareVappWithVappNetwork(check *C, vappName, orgVdcNetworkName string) (*VApp, string, *types.NetworkConfigSection, error) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	vapp, err := createVappForTest(vcd, vappName)
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
-	networkName := vappName + "_network"
+	vappNetworkName := vappName + "_network"
 	description := "Created in test"
 	var guestVlanAllowed = true
 	var fwEnabled = false
 	var natEnabled = false
 	var retainIpMacEnabled = true
 
-	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(orgVdcNetworkName, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork, NotNil)
 
 	vappNetworkSettings := &VappNetworkSettings{
-		Name:               networkName,
+		Name:               vappNetworkName,
 		Gateway:            "192.168.0.1",
 		NetMask:            "255.255.255.0",
 		DNS1:               "8.8.8.8",
@@ -116,11 +116,11 @@ func (vcd *TestVCD) prepareVappWithVappNetwork(check *C, vappName string) (*VApp
 	vappNetworkConfig, err := vapp.CreateVappNetwork(vappNetworkSettings, orgVdcNetwork.OrgVDCNetwork)
 	check.Assert(err, IsNil)
 	check.Assert(vappNetworkConfig, NotNil)
-	return vapp, networkName, vappNetworkConfig, err
+	return vapp, vappNetworkName, vappNetworkConfig, err
 }
 
 func (vcd *TestVCD) Test_GetVappNetworkByNameOrId(check *C) {
-	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_GetVappNetworkByNameOrId")
+	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_GetVappNetworkByNameOrId", vcd.config.VCD.Network.Net1)
 	check.Assert(err, IsNil)
 
 	networkFound := types.VAppNetworkConfiguration{}
@@ -151,7 +151,7 @@ func (vcd *TestVCD) Test_GetVappNetworkByNameOrId(check *C) {
 }
 
 func (vcd *TestVCD) Test_UpdateNetworkNatRules(check *C) {
-	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_UpdateNetworkNatRules")
+	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_UpdateNetworkNatRules", vcd.config.VCD.Network.Net1)
 	check.Assert(err, IsNil)
 
 	networkFound := types.VAppNetworkConfiguration{}
@@ -317,8 +317,56 @@ func (vcd *TestVCD) Test_UpdateNetworkNatRules(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
+func createRoutedNetwork(vcd *TestVCD, check *C, networkName string) {
+	edgeGWName := vcd.config.VCD.EdgeGateway
+	if edgeGWName == "" {
+		check.Skip("Edge Gateway not provided")
+	}
+	edgeGateway, err := vcd.vdc.GetEdgeGatewayByName(edgeGWName, false)
+	if err != nil {
+		check.Skip(fmt.Sprintf("Edge Gateway %s not found", edgeGWName))
+	}
+
+	networkDescription := "Created by govcd tests"
+	var networkConfig = types.OrgVDCNetwork{
+		Name:        networkName,
+		Description: networkDescription,
+		Configuration: &types.NetworkConfiguration{
+			FenceMode: types.FenceModeNAT,
+			IPScopes: &types.IPScopes{
+				IPScope: []*types.IPScope{&types.IPScope{
+					IsInherited: false,
+					Gateway:     "192.168.100.1",
+					Netmask:     "255.255.255.0",
+					IPRanges: &types.IPRanges{
+						IPRange: []*types.IPRange{
+							&types.IPRange{
+								StartAddress: "192.168.100.2",
+								EndAddress:   "192.168.100.50",
+							},
+						},
+					},
+				},
+				},
+			},
+			BackwardCompatibilityMode: true,
+		},
+		EdgeGateway: &types.Reference{
+			HREF: edgeGateway.EdgeGateway.HREF,
+			ID:   edgeGateway.EdgeGateway.ID,
+			Name: edgeGateway.EdgeGateway.Name,
+			Type: edgeGateway.EdgeGateway.Type,
+		},
+		IsShared: false,
+	}
+	err = vcd.vdc.CreateOrgVDCNetworkWait(&networkConfig)
+	check.Assert(err, IsNil)
+	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, networkName)
+}
+
 func (vcd *TestVCD) Test_UpdateNetworkStaticRoutes(check *C) {
-	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_UpdateNetworkStaticRoutes")
+	createRoutedNetwork(vcd, check, "Test_UpdateNetworkStaticRoutes")
+	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_UpdateNetworkStaticRoutes", "Test_UpdateNetworkStaticRoutes")
 	check.Assert(err, IsNil)
 
 	networkFound := types.VAppNetworkConfiguration{}
@@ -343,8 +391,8 @@ func (vcd *TestVCD) Test_UpdateNetworkStaticRoutes(check *C) {
 	check.Assert(err, IsNil)
 
 	result, err := vapp.UpdateNetworkStaticRouting(uuid, []*types.StaticRoute{&types.StaticRoute{Name: "test1",
-		Network: "192.168.2.0/24", NextHopIP: "192.168.2.15"}, &types.StaticRoute{Name: "test2",
-		Network: "192.168.3.0/24", NextHopIP: "192.168.2.16"}}, true)
+		Network: "192.168.2.0/24", NextHopIP: "192.168.100.15"}, &types.StaticRoute{Name: "test2",
+		Network: "192.168.3.0/24", NextHopIP: "192.168.100.16"}}, true)
 	check.Assert(err, IsNil)
 	check.Assert(result, NotNil)
 	check.Assert(len(result.Configuration.Features.StaticRoutingService.StaticRoute), Equals, 2)
@@ -354,11 +402,11 @@ func (vcd *TestVCD) Test_UpdateNetworkStaticRoutes(check *C) {
 
 	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[0].Name, Equals, "test1")
 	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[0].Network, Equals, "192.168.2.0/24")
-	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[0].NextHopIP, Equals, "192.168.2.15")
+	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[0].NextHopIP, Equals, "192.168.100.15")
 
 	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[1].Name, Equals, "test2")
 	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[1].Network, Equals, "192.168.3.0/24")
-	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[1].NextHopIP, Equals, "192.168.2.16")
+	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[1].NextHopIP, Equals, "192.168.100.16")
 
 	err = vapp.RemoveAllNetworkStaticRoutes(uuid)
 	check.Assert(err, IsNil)
