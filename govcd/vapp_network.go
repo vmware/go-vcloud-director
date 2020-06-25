@@ -250,7 +250,7 @@ func (vapp *VApp) UpdateNetworkStaticRoutingAsync(networkId string, staticRoutes
 		return Task{}, err
 	}
 
-	if !IsVappNetwork(networkToUpdate) {
+	if !IsVappNetwork(networkToUpdate.Configuration) {
 		return Task{}, fmt.Errorf("network static routing can be applied only for vapp network, not vapp org network")
 	}
 
@@ -271,11 +271,11 @@ func (vapp *VApp) UpdateNetworkStaticRoutingAsync(networkId string, staticRoutes
 }
 
 // IsVappNetwork allows to identify if given network config is a vApp network and not a vApp Org network
-func IsVappNetwork(networkConfig *types.VAppNetwork) bool {
-	if networkConfig.Configuration.FenceMode == types.FenceModeIsolated ||
-		(networkConfig.Configuration.FenceMode == types.FenceModeNAT && networkConfig.Configuration.IPScopes != nil &&
-			networkConfig.Configuration.IPScopes.IPScope != nil && len(networkConfig.Configuration.IPScopes.IPScope) > 0 &&
-			!networkConfig.Configuration.IPScopes.IPScope[0].IsInherited) {
+func IsVappNetwork(networkConfig *types.NetworkConfiguration) bool {
+	if networkConfig.FenceMode == types.FenceModeIsolated ||
+		(networkConfig.FenceMode == types.FenceModeNAT && networkConfig.IPScopes != nil &&
+			networkConfig.IPScopes.IPScope != nil && len(networkConfig.IPScopes.IPScope) > 0 &&
+			!networkConfig.IPScopes.IPScope[0].IsInherited) {
 		return true
 	}
 	return false
