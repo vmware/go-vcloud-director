@@ -901,8 +901,6 @@ func (vcd *TestVCD) Test_AddAndRemoveNatVappNetwork(check *C) {
 		DhcpSettings:       &DhcpSettings{IsEnabled: true, MaxLeaseTime: maxLeaseTime, DefaultLeaseTime: defaultLeaseTime, IPRange: &types.IPRange{StartAddress: dhcpStartAddress, EndAddress: dhcpEndAddress}},
 		GuestVLANAllowed:   &guestVlanAllowed,
 		Description:        description,
-		FirewallEnabled:    &fwEnabled,
-		NatEnabled:         &natEnabled,
 		RetainIpMacEnabled: &retainIpMacEnabled,
 	}
 
@@ -985,8 +983,6 @@ func (vcd *TestVCD) Test_UpdateVappNetwork(check *C) {
 	const maxLeaseTime = 3500
 	const defaultLeaseTime = 2400
 	var guestVlanAllowed = true
-	var fwEnabled = false
-	var natEnabled = false
 	var retainIpMacEnabled = true
 
 	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
@@ -1004,8 +1000,6 @@ func (vcd *TestVCD) Test_UpdateVappNetwork(check *C) {
 		DhcpSettings:       &DhcpSettings{IsEnabled: true, MaxLeaseTime: maxLeaseTime, DefaultLeaseTime: defaultLeaseTime, IPRange: &types.IPRange{StartAddress: dhcpStartAddress, EndAddress: dhcpEndAddress}},
 		GuestVLANAllowed:   &guestVlanAllowed,
 		Description:        description,
-		FirewallEnabled:    &fwEnabled,
-		NatEnabled:         &natEnabled,
 		RetainIpMacEnabled: &retainIpMacEnabled,
 	}
 
@@ -1037,7 +1031,6 @@ func (vcd *TestVCD) Test_UpdateVappNetwork(check *C) {
 
 	var emptyFirewallService *types.FirewallService
 	check.Assert(networkFound.Configuration.Features.FirewallService, Equals, emptyFirewallService)
-	check.Assert(networkFound.Configuration.Features.NatService.IsEnabled, Equals, natEnabled)
 	check.Assert(*networkFound.Configuration.RetainNetInfoAcrossDeployments, Equals, retainIpMacEnabled)
 
 	// Update
@@ -1055,8 +1048,6 @@ func (vcd *TestVCD) Test_UpdateVappNetwork(check *C) {
 	const updateMaxLeaseTime = 3400
 	const updateDefaultLeaseTime = 2300
 	var updateGuestVlanAllowed = false
-	var updateFwEnabled = true
-	var updateNatEnabled = true
 	var updateRetainIpMacEnabled = false
 
 	uuid, err := GetUuidFromHref(networkFound.Link.HREF, false)
@@ -1075,8 +1066,6 @@ func (vcd *TestVCD) Test_UpdateVappNetwork(check *C) {
 		StaticIPRanges:     []*types.IPRange{{StartAddress: updateStartAddress, EndAddress: updateEndAddress}},
 		DhcpSettings:       &DhcpSettings{IsEnabled: true, MaxLeaseTime: updateMaxLeaseTime, DefaultLeaseTime: updateDefaultLeaseTime, IPRange: &types.IPRange{StartAddress: updateDhcpStartAddress, EndAddress: updateDhcpEndAddress}},
 		GuestVLANAllowed:   &updateGuestVlanAllowed,
-		FirewallEnabled:    &updateFwEnabled,
-		NatEnabled:         &updateNatEnabled,
 		RetainIpMacEnabled: &updateRetainIpMacEnabled,
 	}
 
@@ -1106,8 +1095,6 @@ func (vcd *TestVCD) Test_UpdateVappNetwork(check *C) {
 	check.Assert(networkFound.Configuration.Features.DhcpService.IPRange.StartAddress, Equals, updateDhcpStartAddress)
 	check.Assert(networkFound.Configuration.Features.DhcpService.IPRange.EndAddress, Equals, updateDhcpEndAddress)
 
-	check.Assert(networkFound.Configuration.Features.FirewallService.IsEnabled, Equals, updateFwEnabled)
-	check.Assert(networkFound.Configuration.Features.NatService.IsEnabled, Equals, updateNatEnabled)
 	check.Assert(*networkFound.Configuration.RetainNetInfoAcrossDeployments, Equals, updateRetainIpMacEnabled)
 
 	check.Assert(networkFound.Configuration.ParentNetwork.Name, Equals, orgVdcNetwork.OrgVDCNetwork.Name)
@@ -1276,13 +1263,9 @@ func (vcd *TestVCD) Test_AddAndRemoveOrgVappNetwork(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork, NotNil)
 
-	var fwEnabled = false
-	var natEnabled = false
 	var retainIpMacEnabled = true
 
 	vappNetworkSettings := &VappNetworkSettings{
-		FirewallEnabled:    &fwEnabled,
-		NatEnabled:         &natEnabled,
 		RetainIpMacEnabled: &retainIpMacEnabled,
 	}
 
@@ -1303,8 +1286,6 @@ func (vcd *TestVCD) Test_AddAndRemoveOrgVappNetwork(check *C) {
 	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].StartAddress, Equals, orgVdcNetwork.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].StartAddress)
 	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress, Equals, orgVdcNetwork.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress)
 
-	check.Assert(networkFound.Configuration.Features.FirewallService.IsEnabled, Equals, fwEnabled)
-	check.Assert(networkFound.Configuration.Features.NatService.IsEnabled, Equals, natEnabled)
 	check.Assert(*networkFound.Configuration.RetainNetInfoAcrossDeployments, Equals, retainIpMacEnabled)
 
 	check.Assert(networkFound.Configuration.ParentNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
@@ -1345,13 +1326,9 @@ func (vcd *TestVCD) Test_UpdateOrgVappNetwork(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork, NotNil)
 
-	var fwEnabled = false
-	var natEnabled = false
 	var retainIpMacEnabled = true
 
 	vappNetworkSettings := &VappNetworkSettings{
-		FirewallEnabled:    &fwEnabled,
-		NatEnabled:         &natEnabled,
 		RetainIpMacEnabled: &retainIpMacEnabled,
 	}
 
@@ -1372,8 +1349,6 @@ func (vcd *TestVCD) Test_UpdateOrgVappNetwork(check *C) {
 	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].StartAddress, Equals, orgVdcNetwork.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].StartAddress)
 	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress, Equals, orgVdcNetwork.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress)
 
-	check.Assert(networkFound.Configuration.Features.FirewallService.IsEnabled, Equals, fwEnabled)
-	check.Assert(networkFound.Configuration.Features.NatService.IsEnabled, Equals, natEnabled)
 	check.Assert(*networkFound.Configuration.RetainNetInfoAcrossDeployments, Equals, retainIpMacEnabled)
 
 	check.Assert(networkFound.Configuration.ParentNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
@@ -1382,14 +1357,10 @@ func (vcd *TestVCD) Test_UpdateOrgVappNetwork(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(uuid, NotNil)
 
-	var updateFwEnabled = true
-	var updateNatEnabled = true
 	var updateRetainIpMacEnabled = false
 
 	vappNetworkSettings = &VappNetworkSettings{
 		ID:                 uuid,
-		FirewallEnabled:    &updateFwEnabled,
-		NatEnabled:         &updateNatEnabled,
 		RetainIpMacEnabled: &updateRetainIpMacEnabled,
 	}
 
