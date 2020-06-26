@@ -882,8 +882,6 @@ func (vcd *TestVCD) Test_AddAndRemoveNatVappNetwork(check *C) {
 	const maxLeaseTime = 3500
 	const defaultLeaseTime = 2400
 	var guestVlanAllowed = true
-	var fwEnabled = false
-	var natEnabled = false
 	var retainIpMacEnabled = true
 
 	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
@@ -930,8 +928,6 @@ func (vcd *TestVCD) Test_AddAndRemoveNatVappNetwork(check *C) {
 	check.Assert(networkFound.Configuration.Features.DhcpService.IPRange.StartAddress, Equals, dhcpStartAddress)
 	check.Assert(networkFound.Configuration.Features.DhcpService.IPRange.EndAddress, Equals, dhcpEndAddress)
 
-	check.Assert(networkFound.Configuration.Features.FirewallService.IsEnabled, Equals, fwEnabled)
-	check.Assert(networkFound.Configuration.Features.NatService.IsEnabled, Equals, natEnabled)
 	check.Assert(*networkFound.Configuration.RetainNetInfoAcrossDeployments, Equals, retainIpMacEnabled)
 
 	check.Assert(networkFound.Configuration.ParentNetwork.Name, Equals, orgVdcNetwork.OrgVDCNetwork.Name)
