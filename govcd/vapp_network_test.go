@@ -15,7 +15,7 @@ import (
 )
 
 func (vcd *TestVCD) Test_UpdateNetworkFirewallRules(check *C) {
-	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_UpdateNetworkFirewallRulesVapp")
+	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_UpdateNetworkFirewallRulesVapp", vcd.config.VCD.Network.Net1)
 	check.Assert(err, IsNil)
 
 	networkFound := types.VAppNetworkConfiguration{}
@@ -32,12 +32,13 @@ func (vcd *TestVCD) Test_UpdateNetworkFirewallRules(check *C) {
 	result, err := vapp.UpdateNetworkFirewallRules(uuid, []*types.FirewallRule{&types.FirewallRule{Description: "myFirstRule1", IsEnabled: true, Policy: "allow",
 		DestinationPortRange: "Any", DestinationIP: "Any", SourcePortRange: "Any", SourceIP: "Any", Protocols: &types.FirewallRuleProtocols{TCP: true}},
 		&types.FirewallRule{Description: "myFirstRule2", IsEnabled: false, Policy: "drop", DestinationPortRange: "Any",
-			DestinationIP: "Any", SourcePortRange: "Any", SourceIP: "Any", Protocols: &types.FirewallRuleProtocols{Any: true}}}, "drop", true)
+			DestinationIP: "Any", SourcePortRange: "Any", SourceIP: "Any", Protocols: &types.FirewallRuleProtocols{Any: true}}}, true, "drop", true)
 	check.Assert(err, IsNil)
 	check.Assert(result, NotNil)
 	check.Assert(len(result.Configuration.Features.FirewallService.FirewallRule), Equals, 2)
 
 	// verify
+	check.Assert(result.Configuration.Features.FirewallService.IsEnabled, Equals, true)
 	check.Assert(result.Configuration.Features.FirewallService.FirewallRule[0].Description, Equals, "myFirstRule1")
 	check.Assert(result.Configuration.Features.FirewallService.FirewallRule[0].IsEnabled, Equals, true)
 	check.Assert(result.Configuration.Features.FirewallService.FirewallRule[0].Policy, Equals, "allow")
@@ -65,7 +66,7 @@ func (vcd *TestVCD) Test_UpdateNetworkFirewallRules(check *C) {
 
 	vappNetwork, err := vapp.GetVappNetworkById(uuid, true)
 	check.Assert(err, IsNil)
-	check.Assert(len(vappNetwork.Configuration.Features.NatService.NatRule), Equals, 0)
+	check.Assert(len(vappNetwork.Configuration.Features.FirewallService.FirewallRule), Equals, 0)
 
 	//cleanup
 	task, err := vapp.RemoveAllNetworks()
@@ -79,26 +80,24 @@ func (vcd *TestVCD) Test_UpdateNetworkFirewallRules(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
-func (vcd *TestVCD) prepareVappWithVappNetwork(check *C, vappName string) (*VApp, string, *types.NetworkConfigSection, error) {
+func (vcd *TestVCD) prepareVappWithVappNetwork(check *C, vappName, orgVdcNetworkName string) (*VApp, string, *types.NetworkConfigSection, error) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	vapp, err := createVappForTest(vcd, vappName)
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
-	networkName := vappName + "_network"
+	vappNetworkName := vappName + "_network"
 	description := "Created in test"
 	var guestVlanAllowed = true
-	var fwEnabled = false
-	var natEnabled = false
 	var retainIpMacEnabled = true
 
-	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(orgVdcNetworkName, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork, NotNil)
 
 	vappNetworkSettings := &VappNetworkSettings{
-		Name:               networkName,
+		Name:               vappNetworkName,
 		Gateway:            "192.168.0.1",
 		NetMask:            "255.255.255.0",
 		DNS1:               "8.8.8.8",
@@ -108,19 +107,17 @@ func (vcd *TestVCD) prepareVappWithVappNetwork(check *C, vappName string) (*VApp
 		DhcpSettings:       &DhcpSettings{IsEnabled: true, MaxLeaseTime: 3500, DefaultLeaseTime: 2400, IPRange: &types.IPRange{StartAddress: "192.168.0.30", EndAddress: "192.168.0.40"}},
 		GuestVLANAllowed:   &guestVlanAllowed,
 		Description:        description,
-		FirewallEnabled:    &fwEnabled,
-		NatEnabled:         &natEnabled,
 		RetainIpMacEnabled: &retainIpMacEnabled,
 	}
 
 	vappNetworkConfig, err := vapp.CreateVappNetwork(vappNetworkSettings, orgVdcNetwork.OrgVDCNetwork)
 	check.Assert(err, IsNil)
 	check.Assert(vappNetworkConfig, NotNil)
-	return vapp, networkName, vappNetworkConfig, err
+	return vapp, vappNetworkName, vappNetworkConfig, err
 }
 
 func (vcd *TestVCD) Test_GetVappNetworkByNameOrId(check *C) {
-	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_GetVappNetworkByNameOrId")
+	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_GetVappNetworkByNameOrId", vcd.config.VCD.Network.Net1)
 	check.Assert(err, IsNil)
 
 	networkFound := types.VAppNetworkConfiguration{}
@@ -151,7 +148,7 @@ func (vcd *TestVCD) Test_GetVappNetworkByNameOrId(check *C) {
 }
 
 func (vcd *TestVCD) Test_UpdateNetworkNatRules(check *C) {
-	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_UpdateNetworkNatRules")
+	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_UpdateNetworkNatRules", vcd.config.VCD.Network.Net1)
 	check.Assert(err, IsNil)
 
 	networkFound := types.VAppNetworkConfiguration{}
@@ -203,12 +200,13 @@ func (vcd *TestVCD) Test_UpdateNetworkNatRules(check *C) {
 		&types.NatRule{VMRule: &types.NatVMRule{
 			ExternalPort: 80, InternalPort: 22, VMNicID: 0,
 			VAppScopedVMID: vm2.VM.VAppScopedLocalID, Protocol: "UDP"}}},
-		"portForwarding", "allowTraffic")
+		true, "portForwarding", "allowTraffic")
 	check.Assert(err, IsNil)
 	check.Assert(result, NotNil)
 	check.Assert(len(result.Configuration.Features.NatService.NatRule), Equals, 2)
 
 	// verify
+	check.Assert(result.Configuration.Features.NatService.IsEnabled, Equals, true)
 	check.Assert(result.Configuration.Features.NatService.Policy, Equals, "allowTraffic")
 	check.Assert(result.Configuration.Features.NatService.NatType, Equals, "portForwarding")
 
@@ -229,12 +227,13 @@ func (vcd *TestVCD) Test_UpdateNetworkNatRules(check *C) {
 			MappingMode: "manual", VMNicID: 0,
 			VAppScopedVMID:    vm2.VM.VAppScopedLocalID,
 			ExternalIPAddress: takeStringPointer("192.168.100.1")}}},
-		"ipTranslation", "allowTrafficIn")
+		false, "ipTranslation", "allowTrafficIn")
 	check.Assert(err, IsNil)
 	check.Assert(result, NotNil)
 	check.Assert(len(result.Configuration.Features.NatService.NatRule), Equals, 2)
 
 	// verify
+	check.Assert(result.Configuration.Features.NatService.IsEnabled, Equals, false)
 	check.Assert(result.Configuration.Features.NatService.Policy, Equals, "allowTrafficIn")
 	check.Assert(result.Configuration.Features.NatService.NatType, Equals, "ipTranslation")
 
@@ -248,62 +247,122 @@ func (vcd *TestVCD) Test_UpdateNetworkNatRules(check *C) {
 	check.Assert(result.Configuration.Features.NatService.NatRule[1].OneToOneVMRule.ExternalIPAddress, NotNil)
 	check.Assert(*result.Configuration.Features.NatService.NatRule[1].OneToOneVMRule.ExternalIPAddress, Equals, "192.168.100.1")
 
-	// verifies that nat rules still exist after changing settings
-	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
-	check.Assert(err, IsNil)
-	check.Assert(orgVdcNetwork, NotNil)
-
-	var fwEnabled = false
-	var natEnabled = false
-	var retainIpMacEnabled = true
-
-	vappNetworkSettings := &VappNetworkSettings{
-		FirewallEnabled:    &fwEnabled,
-		NatEnabled:         &natEnabled,
-		RetainIpMacEnabled: &retainIpMacEnabled,
-	}
-
-	_, err = vapp.AddOrgNetwork(vappNetworkSettings, orgVdcNetwork.OrgVDCNetwork, true)
-	check.Assert(err, IsNil)
-	check.Assert(vappNetworkConfig, NotNil)
-
-	vappNetwork, err := vapp.GetVappNetworkByName(vcd.config.VCD.Network.Net1, true)
-	check.Assert(err, IsNil)
-	check.Assert(len(vappNetwork.Configuration.Features.NatService.NatRule), Equals, 0)
-
-	result, err = vapp.UpdateNetworkNatRules(vappNetwork.ID, []*types.NatRule{&types.NatRule{OneToOneVMRule: &types.NatOneToOneVMRule{
-		MappingMode: "automatic", VMNicID: 0,
-		VAppScopedVMID: vm.VM.VAppScopedLocalID}}},
-		"ipTranslation", "allowTrafficIn")
-	check.Assert(err, IsNil)
-	check.Assert(len(result.Configuration.Features.NatService.NatRule), Equals, 1)
-
-	var updateFwEnabled = true
-	var updateNatEnabled = true
-	var updateRetainIpMacEnabled = false
-
-	vappNetworkSettings = &VappNetworkSettings{
-		ID:                 vappNetwork.ID,
-		FirewallEnabled:    &updateFwEnabled,
-		NatEnabled:         &updateNatEnabled,
-		RetainIpMacEnabled: &updateRetainIpMacEnabled,
-	}
-
-	vappNetworkConfig, err = vapp.UpdateOrgNetwork(vappNetworkSettings, true)
-	check.Assert(err, IsNil)
-	check.Assert(vappNetworkConfig, NotNil)
-
-	result, err = vapp.GetVappNetworkById(vappNetwork.ID, true)
-	check.Assert(err, IsNil)
-	check.Assert(len(result.Configuration.Features.NatService.NatRule), Equals, 1)
-	// end
-
 	err = vapp.RemoveAllNetworkNatRules(uuid)
 	check.Assert(err, IsNil)
 
-	vappNetwork, err = vapp.GetVappNetworkById(uuid, true)
+	vappNetwork, err := vapp.GetVappNetworkById(uuid, true)
 	check.Assert(err, IsNil)
 	check.Assert(len(vappNetwork.Configuration.Features.NatService.NatRule), Equals, 0)
+
+	//cleanup
+	task, err := vapp.RemoveAllNetworks()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+}
+
+func createRoutedNetwork(vcd *TestVCD, check *C, networkName string) {
+	edgeGWName := vcd.config.VCD.EdgeGateway
+	if edgeGWName == "" {
+		check.Skip("Edge Gateway not provided")
+	}
+	edgeGateway, err := vcd.vdc.GetEdgeGatewayByName(edgeGWName, false)
+	if err != nil {
+		check.Skip(fmt.Sprintf("Edge Gateway %s not found", edgeGWName))
+	}
+
+	networkDescription := "Created by govcd tests"
+	var networkConfig = types.OrgVDCNetwork{
+		Name:        networkName,
+		Description: networkDescription,
+		Configuration: &types.NetworkConfiguration{
+			FenceMode: types.FenceModeNAT,
+			IPScopes: &types.IPScopes{
+				IPScope: []*types.IPScope{&types.IPScope{
+					IsInherited: false,
+					Gateway:     "192.168.100.1",
+					Netmask:     "255.255.255.0",
+					IPRanges: &types.IPRanges{
+						IPRange: []*types.IPRange{
+							&types.IPRange{
+								StartAddress: "192.168.100.2",
+								EndAddress:   "192.168.100.50",
+							},
+						},
+					},
+				},
+				},
+			},
+			BackwardCompatibilityMode: true,
+		},
+		EdgeGateway: &types.Reference{
+			HREF: edgeGateway.EdgeGateway.HREF,
+			ID:   edgeGateway.EdgeGateway.ID,
+			Name: edgeGateway.EdgeGateway.Name,
+			Type: edgeGateway.EdgeGateway.Type,
+		},
+		IsShared: false,
+	}
+	err = vcd.vdc.CreateOrgVDCNetworkWait(&networkConfig)
+	check.Assert(err, IsNil)
+	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, networkName)
+}
+
+func (vcd *TestVCD) Test_UpdateNetworkStaticRoutes(check *C) {
+	createRoutedNetwork(vcd, check, "Test_UpdateNetworkStaticRoutes")
+	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_UpdateNetworkStaticRoutes", "Test_UpdateNetworkStaticRoutes")
+	check.Assert(err, IsNil)
+
+	networkFound := types.VAppNetworkConfiguration{}
+	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
+		if networkConfig.NetworkName == networkName {
+			networkFound = networkConfig
+		}
+	}
+	check.Assert(networkFound, Not(Equals), types.VAppNetworkConfiguration{})
+
+	desiredNetConfig := types.NetworkConnectionSection{}
+	desiredNetConfig.PrimaryNetworkConnectionIndex = 0
+	desiredNetConfig.NetworkConnection = append(desiredNetConfig.NetworkConnection,
+		&types.NetworkConnection{
+			IsConnected:             true,
+			IPAddressAllocationMode: types.IPAllocationModePool,
+			Network:                 "Test_UpdateNetworkStaticRoutes",
+			NetworkConnectionIndex:  0,
+		})
+
+	uuid, err := GetUuidFromHref(networkFound.Link.HREF, false)
+	check.Assert(err, IsNil)
+
+	result, err := vapp.UpdateNetworkStaticRouting(uuid, []*types.StaticRoute{&types.StaticRoute{Name: "test1",
+		Network: "192.168.2.0/24", NextHopIP: "192.168.100.15"}, &types.StaticRoute{Name: "test2",
+		Network: "192.168.3.0/24", NextHopIP: "192.168.100.16"}}, true)
+	check.Assert(err, IsNil)
+	check.Assert(result, NotNil)
+	check.Assert(len(result.Configuration.Features.StaticRoutingService.StaticRoute), Equals, 2)
+
+	// verify
+	check.Assert(result.Configuration.Features.StaticRoutingService.IsEnabled, Equals, true)
+
+	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[0].Name, Equals, "test1")
+	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[0].Network, Equals, "192.168.2.0/24")
+	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[0].NextHopIP, Equals, "192.168.100.15")
+
+	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[1].Name, Equals, "test2")
+	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[1].Network, Equals, "192.168.3.0/24")
+	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[1].NextHopIP, Equals, "192.168.100.16")
+
+	err = vapp.RemoveAllNetworkStaticRoutes(uuid)
+	check.Assert(err, IsNil)
+
+	vappNetwork, err := vapp.GetVappNetworkById(uuid, true)
+	check.Assert(err, IsNil)
+	check.Assert(len(vappNetwork.Configuration.Features.StaticRoutingService.StaticRoute), Equals, 0)
 
 	//cleanup
 	task, err := vapp.RemoveAllNetworks()
