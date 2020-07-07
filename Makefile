@@ -5,12 +5,12 @@ maindir=$(PWD)
 default: fmtcheck vet static build
 
 # test runs the test suite and vets the code
-test: testunit tag
+test: testunit tagverify
 	@echo "==> Running Functional Tests"
 	cd govcd && go test -tags "functional" -timeout=300m -check.vv
 
-# tags checks that each tag can run independently
-tag: fmtcheck 
+# tagverify checks that each tag can run independently
+tagverify: fmtcheck 
 	@echo "==> Running Tags Tests"
 	@./scripts/test-tags.sh
 
