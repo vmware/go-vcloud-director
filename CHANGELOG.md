@@ -1,4 +1,10 @@
-## 2.8.0 (Unreleased)
+## 2.9.0 (unreleased)
+
+* Improved tags isolation [#320](https://github.com/vmware/go-vcloud-director/pull/320)
+* Added command `make tag` to check tags isolation tests [#320](https://github.com/vmware/go-vcloud-director/pull/320)
+
+
+## 2.8.0 (June 30, 2020)
 
 * Changed signature for `FindAdminCatalogRecords`, which now returns normalized type `[]*types.CatalogRecord` [#298](https://github.com/vmware/go-vcloud-director/pull/298)
 * Added methods `catalog.QueryVappTemplateList`, `catalog.QueryCatalogItemList`, `client.queryWithMetadataFields`, `client.queryByMetadataFilter` [#298](https://github.com/vmware/go-vcloud-director/pull/298)
