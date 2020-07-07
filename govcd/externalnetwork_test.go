@@ -8,7 +8,6 @@ package govcd
 
 import (
 	"fmt"
-	"net/url"
 	"sort"
 
 	. "gopkg.in/check.v1"
@@ -28,115 +27,6 @@ func (vcd *TestVCD) Test_ExternalNetworkGetByName(check *C) {
 	check.Assert(externalNetwork, NotNil)
 
 	check.Assert(externalNetwork.ExternalNetwork.Name, Equals, vcd.config.VCD.ExternalNetwork)
-}
-
-// Helper function that creates an external network to be used in other tests
-func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix string) (skippingReason string, externalNetwork *types.ExternalNetwork, task Task, err error) {
-
-	if vcd.skipAdminTests {
-		return fmt.Sprintf(TestRequiresSysAdminPrivileges, testName), externalNetwork, Task{}, nil
-	}
-
-	if vcd.config.VCD.ExternalNetwork == "" {
-		return fmt.Sprintf("%s: External network isn't configured. Test can't proceed", testName), externalNetwork, Task{}, nil
-	}
-
-	if vcd.config.VCD.VimServer == "" {
-		return fmt.Sprintf("%s: Vim server isn't configured. Test can't proceed", testName), externalNetwork, Task{}, nil
-	}
-
-	if vcd.config.VCD.ExternalNetworkPortGroup == "" {
-		return fmt.Sprintf("%s: Port group isn't configured. Test can't proceed", testName), externalNetwork, Task{}, nil
-	}
-
-	if vcd.config.VCD.ExternalNetworkPortGroupType == "" {
-		return fmt.Sprintf("%s: Port group type isn't configured. Test can't proceed", testName), externalNetwork, Task{}, nil
-	}
-
-	virtualCenters, err := QueryVirtualCenters(vcd.client, fmt.Sprintf("name==%s", vcd.config.VCD.VimServer))
-	if err != nil {
-		return "", externalNetwork, Task{}, err
-	}
-	if len(virtualCenters) == 0 {
-		return fmt.Sprintf("No vSphere server found with name '%s'", vcd.config.VCD.VimServer), externalNetwork, Task{}, nil
-	}
-	vimServerHref := virtualCenters[0].HREF
-
-	// Resolve port group info
-	portGroups, err := QueryPortGroups(vcd.client, fmt.Sprintf("name==%s;portgroupType==%s", url.QueryEscape(vcd.config.VCD.ExternalNetworkPortGroup), vcd.config.VCD.ExternalNetworkPortGroupType))
-	if err != nil {
-		return "", externalNetwork, Task{}, err
-	}
-	if len(portGroups) == 0 {
-		return fmt.Sprintf("No port group found with name '%s'", vcd.config.VCD.ExternalNetworkPortGroup), externalNetwork, Task{}, nil
-	}
-	if len(portGroups) > 1 {
-		return fmt.Sprintf("More than one port group found with name '%s'", vcd.config.VCD.ExternalNetworkPortGroup), externalNetwork, Task{}, nil
-	}
-
-	externalNetwork = &types.ExternalNetwork{
-		Name:        networkName,
-		Description: "Test Create External Network",
-		Configuration: &types.NetworkConfiguration{
-			IPScopes: &types.IPScopes{
-				IPScope: []*types.IPScope{&types.IPScope{
-					Gateway:   "192.168.201.1",
-					Netmask:   "255.255.255.0",
-					DNS1:      "192.168.202.253",
-					DNS2:      "192.168.202.254",
-					DNSSuffix: dnsSuffix,
-					IPRanges: &types.IPRanges{
-						IPRange: []*types.IPRange{
-							&types.IPRange{
-								StartAddress: "192.168.201.3",
-								EndAddress:   "192.168.201.100",
-							},
-							&types.IPRange{
-								StartAddress: "192.168.201.105",
-								EndAddress:   "192.168.201.140",
-							},
-						},
-					},
-				}, &types.IPScope{
-					Gateway:   "192.168.231.1",
-					Netmask:   "255.255.255.0",
-					DNS1:      "192.168.232.253",
-					DNS2:      "192.168.232.254",
-					DNSSuffix: dnsSuffix,
-					IPRanges: &types.IPRanges{
-						IPRange: []*types.IPRange{
-							&types.IPRange{
-								StartAddress: "192.168.231.3",
-								EndAddress:   "192.168.231.100",
-							},
-							&types.IPRange{
-								StartAddress: "192.168.231.105",
-								EndAddress:   "192.168.231.140",
-							},
-							&types.IPRange{
-								StartAddress: "192.168.231.145",
-								EndAddress:   "192.168.231.150",
-							},
-						},
-					},
-				},
-				}},
-			FenceMode: "isolated",
-		},
-		VimPortGroupRefs: &types.VimObjectRefs{
-			VimObjectRef: []*types.VimObjectRef{
-				&types.VimObjectRef{
-					VimServerRef: &types.Reference{
-						HREF: vimServerHref,
-					},
-					MoRef:         portGroups[0].MoRef,
-					VimObjectType: vcd.config.VCD.ExternalNetworkPortGroupType,
-				},
-			},
-		},
-	}
-	task, err = CreateExternalNetwork(vcd.client, externalNetwork)
-	return skippingReason, externalNetwork, task, err
 }
 
 // Tests System function Delete by creating external network and

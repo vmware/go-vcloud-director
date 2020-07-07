@@ -9,8 +9,9 @@ package govcd
 import (
 	"fmt"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 // Test init independent disk struct
@@ -320,39 +321,6 @@ func (vcd *TestVCD) Test_AttachedVMDisk(check *C) {
 	// Detach disk
 	err = vcd.detachIndependentDisk(Disk{disk.Disk, &vcd.client.Client})
 	check.Assert(err, IsNil)
-}
-
-// Checks whether an independent disk is attached to a VM, and detaches it
-func (vcd *TestVCD) detachIndependentDisk(disk Disk) error {
-
-	// See if the disk is attached to the VM
-	vmRef, err := disk.AttachedVM()
-	if err != nil {
-		return err
-	}
-	// If the disk is attached to the VM, detach disk from the VM
-	if vmRef != nil {
-
-		vm, err := vcd.client.Client.GetVMByHref(vmRef.HREF)
-		if err != nil {
-			return err
-		}
-
-		// Detach the disk from VM
-		task, err := vm.DetachDisk(&types.DiskAttachOrDetachParams{
-			Disk: &types.Reference{
-				HREF: disk.Disk.HREF,
-			},
-		})
-		if err != nil {
-			return err
-		}
-		err = task.WaitTaskCompletion()
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // Test find Disk by Href in VDC struct

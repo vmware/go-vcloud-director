@@ -9,7 +9,6 @@ package govcd
 import (
 	"fmt"
 	"regexp"
-	"sort"
 
 	. "gopkg.in/check.v1"
 
@@ -605,32 +604,6 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
-}
-
-func verifyNetworkConnectionSection(check *C, actual, desired *types.NetworkConnectionSection) {
-
-	check.Assert(len(actual.NetworkConnection), Equals, len(desired.NetworkConnection))
-	check.Assert(actual.PrimaryNetworkConnectionIndex, Equals, desired.PrimaryNetworkConnectionIndex)
-
-	sort.SliceStable(actual.NetworkConnection, func(i, j int) bool {
-		return actual.NetworkConnection[i].NetworkConnectionIndex <
-			actual.NetworkConnection[j].NetworkConnectionIndex
-	})
-
-	for _, nic := range actual.NetworkConnection {
-		actualNic := actual.NetworkConnection[nic.NetworkConnectionIndex]
-		desiredNic := desired.NetworkConnection[nic.NetworkConnectionIndex]
-
-		check.Assert(actualNic.MACAddress, Not(Equals), "")
-		check.Assert(actualNic.NetworkAdapterType, Not(Equals), "")
-		check.Assert(actualNic.IPAddressAllocationMode, Equals, desiredNic.IPAddressAllocationMode)
-		check.Assert(actualNic.Network, Equals, desiredNic.Network)
-		check.Assert(actualNic.NetworkConnectionIndex, Equals, desiredNic.NetworkConnectionIndex)
-
-		if actualNic.IPAddressAllocationMode != types.IPAllocationModeNone {
-			check.Assert(actualNic.IPAddress, Not(Equals), "")
-		}
-	}
 }
 
 func (vcd *TestVCD) Test_RemoveAllNetworks(check *C) {
@@ -1435,60 +1408,6 @@ func (vcd *TestVCD) Test_UpdateOrgVappNetwork(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
-}
-
-func createVappForTest(vcd *TestVCD, vappName string) (*VApp, error) {
-	// Populate OrgVDCNetwork
-	var networks []*types.OrgVDCNetwork
-	net, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
-	if err != nil {
-		return nil, fmt.Errorf("error finding network : %s", err)
-	}
-	networks = append(networks, net.OrgVDCNetwork)
-	// Populate Catalog
-	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
-	if err != nil || cat == nil {
-		return nil, fmt.Errorf("error finding catalog : %s", err)
-	}
-	// Populate Catalog Item
-	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
-	if err != nil {
-		return nil, fmt.Errorf("error finding catalog item : %s", err)
-	}
-	// Get VAppTemplate
-	vAppTemplate, err := catitem.GetVAppTemplate()
-	if err != nil {
-		return nil, fmt.Errorf("error finding vapptemplate : %s", err)
-	}
-	// Get StorageProfileReference
-	storageProfileRef, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
-	if err != nil {
-		return nil, fmt.Errorf("error finding storage profile: %s", err)
-	}
-	// Compose VApp
-	task, err := vcd.vdc.ComposeVApp(networks, vAppTemplate, storageProfileRef, vappName, "description", true)
-	if err != nil {
-		return nil, fmt.Errorf("error composing vapp: %s", err)
-	}
-	// After a successful creation, the entity is added to the cleanup list.
-	// If something fails after this point, the entity will be removed
-	AddToCleanupList(vappName, "vapp", "", "createTestVapp")
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return nil, fmt.Errorf("error composing vapp: %s", err)
-	}
-	// Get VApp
-	vapp, err := vcd.vdc.GetVAppByName(vappName, true)
-	if err != nil {
-		return nil, fmt.Errorf("error getting vapp: %s", err)
-	}
-
-	err = vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
-	if err != nil {
-		return nil, fmt.Errorf("error waiting for created test vApp to have working state: %s", err)
-	}
-
-	return vapp, nil
 }
 
 // Test_AddNewVMFromMultiVmTemplate creates VM from OVA holding a few VMs

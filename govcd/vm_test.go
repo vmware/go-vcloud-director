@@ -8,7 +8,6 @@
 package govcd
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -20,76 +19,6 @@ import (
 
 func init() {
 	testingTags["vm"] = "vm_test.go"
-}
-
-// Ensure vApp is suitable for VM test
-// Some VM tests may fail if vApp is not powered on, so VM tests can call this function to ensure the vApp is suitable for VM tests
-func (vcd *TestVCD) ensureVappIsSuitableForVMTest(vapp VApp) error {
-	status, err := vapp.GetStatus()
-
-	if err != nil {
-		return err
-	}
-
-	// If vApp is not powered on (status = 4), power on vApp
-	if status != types.VAppStatuses[4] {
-		task, err := vapp.PowerOn()
-		if err != nil {
-			return err
-		}
-		err = task.WaitTaskCompletion()
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// Ensure VM is suitable for VM test
-// Please call ensureVappAvailableForVMTest first to power on the vApp because this function cannot handle VM in suspension state due to lack of VM APIs (e.g. discard VM suspend API)
-// Some VM tests may fail if VM is not powered on or powered off, so VM tests can call this function to ensure the VM is suitable for VM tests
-func (vcd *TestVCD) ensureVMIsSuitableForVMTest(vm *VM) error {
-	// if the VM is not powered on (status = 4) or not powered off, wait for the VM power on
-	// wait for around 1 min
-	valid := false
-	for i := 0; i < 6; i++ {
-		status, err := vm.GetStatus()
-		if err != nil {
-			return err
-		}
-
-		// If the VM is powered on (status = 4)
-		if status == types.VAppStatuses[4] {
-			// Prevent affect Test_ChangeMemorySize
-			// because TestVCD.Test_AttachedVMDisk is run before Test_ChangeMemorySize and Test_ChangeMemorySize will fail the test if the VM is powered on,
-			task, err := vm.PowerOff()
-			if err != nil {
-				return err
-			}
-			err = task.WaitTaskCompletion()
-			if err != nil {
-				return err
-			}
-		}
-
-		// If the VM is powered on (status = 4) or powered off (status = 8)
-		if status == types.VAppStatuses[4] || status == types.VAppStatuses[8] {
-			valid = true
-		}
-
-		// If 1st to 5th attempt is completed, sleep 10 seconds and try again
-		// The last attempt will exit this for loop immediately, so no need to sleep
-		if i < 5 {
-			time.Sleep(time.Second * 10)
-		}
-	}
-
-	if !valid {
-		return errors.New("the VM is not powered on or powered off")
-	}
-
-	return nil
 }
 
 func (vcd *TestVCD) Test_FindVMByHREF(check *C) {
@@ -1281,33 +1210,6 @@ func (vcd *TestVCD) Test_VmGetParentvAppAndVdc(check *C) {
 	parentVdc, err := newVM.GetParentVdc()
 	check.Assert(err, IsNil)
 	check.Assert(parentVdc.Vdc.Name, Equals, vcd.config.VCD.Vdc)
-}
-
-func deleteVapp(vcd *TestVCD, name string) error {
-	vapp, err := vcd.vdc.GetVAppByName(name, true)
-	if err != nil {
-		return fmt.Errorf("error getting vApp: %s", err)
-	}
-	task, _ := vapp.Undeploy()
-	_ = task.WaitTaskCompletion()
-
-	// Detach all Org networks during vApp removal because network removal errors if it happens
-	// very quickly (as the next task) after vApp removal
-	task, _ = vapp.RemoveAllNetworks()
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return fmt.Errorf("error removing networks from vApp: %s", err)
-	}
-
-	task, err = vapp.Delete()
-	if err != nil {
-		return fmt.Errorf("error deleting vApp: %s", err)
-	}
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return fmt.Errorf("error waiting for vApp deletion task: %s", err)
-	}
-	return nil
 }
 
 func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
