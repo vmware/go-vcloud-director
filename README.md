@@ -101,7 +101,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	vdc, err := org.GetVDCByName(config.VDC)
+	vdc, err := org.GetVDCByName(config.VDC, false)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
