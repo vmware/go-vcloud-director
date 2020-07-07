@@ -5,7 +5,7 @@
 
 if [ ! -d govcd ]
 then
-    echo "./govcvd directory missing"
+    echo "./govcd directory missing"
     exit 1
 fi
 cd govcd
