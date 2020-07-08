@@ -9,7 +9,6 @@ package govcd
 import (
 	"fmt"
 	"math"
-	"time"
 
 	. "gopkg.in/check.v1"
 
@@ -175,19 +174,6 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 		check.Assert(err, IsNil)
 		doesOrgExist(check, vcd)
 	}
-}
-
-func doesOrgExist(check *C, vcd *TestVCD) {
-	var org *AdminOrg
-	for i := 0; i < 30; i++ {
-		org, _ = vcd.client.GetAdminOrgByName(TestDeleteOrg)
-		if org == nil {
-			break
-		} else {
-			time.Sleep(time.Second)
-		}
-	}
-	check.Assert(org, IsNil)
 }
 
 // Tests org function GetVDCByName with the vdc specified

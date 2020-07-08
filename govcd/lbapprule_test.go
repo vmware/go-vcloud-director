@@ -7,10 +7,9 @@
 package govcd
 
 import (
-	"fmt"
+	. "gopkg.in/check.v1"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	. "gopkg.in/check.v1"
 )
 
 // Test_LBAppRule tests CRUD methods for load balancer application rule.
@@ -89,19 +88,4 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 	// Ensure it is deleted
 	_, err = edge.GetLbAppRuleById(createdLbAppRule.ID)
 	check.Assert(IsNotFound(err), Equals, true)
-}
-
-// deleteLbAppRuleIfExists is used to cleanup before creation of component. It returns error only if there was
-// other error than govcd.ErrorEntityNotFound
-func deleteLbAppRuleIfExists(edge EdgeGateway, name string) error {
-	err := edge.DeleteLbAppRuleByName(name)
-	if err != nil && !ContainsNotFound(err) {
-		return err
-	}
-	if err != nil && ContainsNotFound(err) {
-		return nil
-	}
-
-	fmt.Printf("# Removed leftover LB app rule '%s'\n", name)
-	return nil
 }

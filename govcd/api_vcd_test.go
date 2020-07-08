@@ -22,10 +22,11 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	"github.com/vmware/go-vcloud-director/v2/util"
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v2"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 func init() {
@@ -1593,5 +1594,11 @@ func setTestEnv() {
 	}
 	if debugShowResponseEnabled {
 		_ = os.Setenv("GOVCD_SHOW_RESP", "1")
+	}
+}
+
+func skipWhenMediaPathMissing(vcd *TestVCD, check *C) {
+	if vcd.config.Media.MediaPath == "" {
+		check.Skip("Skipping test because no iso path given")
 	}
 }

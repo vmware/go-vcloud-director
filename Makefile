@@ -5,9 +5,14 @@ maindir=$(PWD)
 default: fmtcheck vet static build
 
 # test runs the test suite and vets the code
-test: testunit
+test: testunit tagverify
 	@echo "==> Running Functional Tests"
-	cd govcd && go test -tags "functional" -timeout=300m -check.vv .
+	cd govcd && go test -tags "functional" -timeout=300m -check.vv
+
+# tagverify checks that each tag can run independently
+tagverify: fmtcheck 
+	@echo "==> Running Tags Tests"
+	@./scripts/test-tags.sh
 
 # testunit runs the unit tests
 testunit: fmtcheck
@@ -21,7 +26,7 @@ testrace:
 
 # This will include tests guarded by build tag concurrent with race detector
 testconcurrent:
-	cd govcd && go test -race -tags "api concurrent" -timeout 15m -check.vv -check.f "Test.*Concurrent" .
+	cd govcd && go test -race -tags "api concurrent" -timeout 15m -check.vv -check.f "Test.*Concurrent"
 
 # tests only catalog related features
 testcatalog:

@@ -30,12 +30,6 @@ func (vcd *TestVCD) Test_UploadMediaImage(check *C) {
 	verifyMediaImageUploaded(vcd.vdc, check, TestUploadMedia)
 }
 
-func skipWhenMediaPathMissing(vcd *TestVCD, check *C) {
-	if vcd.config.Media.MediaPath == "" {
-		check.Skip("Skipping test because no iso path given")
-	}
-}
-
 func verifyMediaImageUploaded(vdc *Vdc, check *C, itemName string) {
 	results, err := queryMediaWithFilter(vdc, "name=="+itemName)
 

@@ -7,10 +7,9 @@
 package govcd
 
 import (
-	"fmt"
+	. "gopkg.in/check.v1"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	. "gopkg.in/check.v1"
 )
 
 // Test_LBServiceMonitor tests CRUD methods for load balancer service monitor.
@@ -94,19 +93,4 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 
 	_, err = edge.GetLbServiceMonitorById(lbMonitorByID.ID)
 	check.Assert(IsNotFound(err), Equals, true)
-}
-
-// deleteLbServiceMonitorIfExists is used to cleanup before creation of component. It returns error only if there was
-// other error than govcd.ErrorEntityNotFound
-func deleteLbServiceMonitorIfExists(edge EdgeGateway, name string) error {
-	err := edge.DeleteLbServiceMonitorByName(name)
-	if err != nil && !ContainsNotFound(err) {
-		return err
-	}
-	if err != nil && ContainsNotFound(err) {
-		return nil
-	}
-
-	fmt.Printf("# Removed leftover LB service monitor'%s'\n", name)
-	return nil
 }
