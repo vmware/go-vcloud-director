@@ -284,6 +284,15 @@ func (vcd *TestVCD) Test_UploadOvf_cleaned_extracted_files(check *C) {
 
 }
 
+// Tests System function UploadOvf by creating catalog and
+// checking if provided standard ovf file uploaded.
+func (vcd *TestVCD) Test_UploadOvfFile(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	skipWhenOvaPathMissing(vcd, check)
+	checkUploadOvf(vcd, check, vcd.config.OVA.OvfPath, vcd.config.VCD.Catalog.Name, TestUploadOvf+"7")
+}
+
 func countFolders() int {
 	files, err := ioutil.ReadDir(os.TempDir())
 	if err != nil {
