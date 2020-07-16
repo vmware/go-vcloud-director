@@ -25,6 +25,13 @@ import (
 
 // createAngGetResourcesForVmCreation creates vAPP and two VM for the testing
 func (vcd *TestVCD) createAngGetResourcesForVmCreation(check *C, vmName string) (*Vdc, *EdgeGateway, VAppTemplate, *VApp, types.NetworkConnectionSection, error) {
+	if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("No Catalog name given for VDC tests")
+	}
+
+	if vcd.config.VCD.Catalog.CatalogItem == "" {
+		check.Skip("No Catalog item given for VDC tests")
+	}
 	// Get org and vdc
 	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)

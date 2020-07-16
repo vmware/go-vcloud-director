@@ -1353,14 +1353,6 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 		check.Skip("Skipping test because vApp wasn't properly created")
 	}
 
-	if vcd.config.VCD.Catalog.Name == "" {
-		check.Skip("No Catalog name given for VDC tests")
-	}
-
-	if vcd.config.VCD.Catalog.CatalogItem == "" {
-		check.Skip("No Catalog item given for VDC tests")
-	}
-
 	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAngGetResourcesForVmCreation(check, vmName)
 	check.Assert(err, IsNil)
 
@@ -1381,7 +1373,7 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 
 	updatedVm, err := vm.UpdateVmSpecSection(vmSpecSection, "updateDescription")
 	check.Assert(err, IsNil)
-	check.Assert(vmSpecSection, NotNil)
+	check.Assert(updatedVm, NotNil)
 
 	//verify
 	check.Assert(updatedVm.VM.VmSpecSection.OsType, Equals, osType)
@@ -1429,4 +1421,39 @@ func (vcd *TestVCD) Test_QueryVmList(check *C) {
 		}
 		check.Assert(foundVm, Equals, true)
 	}
+}
+
+// Test update of VM Capabilities
+func (vcd *TestVCD) Test_UpdateVmCapabilities(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	vmName := "Test_UpdateVmCapabilities"
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp wasn't properly created")
+	}
+
+	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAngGetResourcesForVmCreation(check, vmName)
+	check.Assert(err, IsNil)
+
+	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", true)
+	check.Assert(err, IsNil)
+
+	task, err := vm.PowerOff()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	check.Assert(vm.VM.VMCapabilities.MemoryHotAddEnabled, Equals, false)
+	check.Assert(vm.VM.VMCapabilities.CPUHotAddEnabled, Equals, false)
+
+	updatedVm, err := vm.UpdateVmCapabilities(true, true)
+	check.Assert(err, IsNil)
+	check.Assert(updatedVm, NotNil)
+
+	//verify
+	check.Assert(updatedVm.VM.VMCapabilities.MemoryHotAddEnabled, Equals, true)
+	check.Assert(updatedVm.VM.VMCapabilities.CPUHotAddEnabled, Equals, true)
+
+	// delete Vapp early to avoid env capacity issue
+	deleteVapp(vcd, vmName)
 }
