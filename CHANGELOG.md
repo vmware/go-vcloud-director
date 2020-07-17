@@ -2,6 +2,7 @@
 
 * Improved testing tags isolation [#320](https://github.com/vmware/go-vcloud-director/pull/320)
 * Added command `make tagverify` to check tags isolation tests [#320](https://github.com/vmware/go-vcloud-director/pull/320)
+* Added methods `vm.UpdateVmCapabilities` and `vm.UpdateVmCapabilitiesAsyc` [#324](https://github.com/vmware/go-vcloud-director/pull/324)
 
 ## 2.8.0 (June 30, 2020)
 
