@@ -115,6 +115,8 @@ const (
 	MimeOrgLdapSettings = "application/vnd.vmware.admin.organizationldapsettings+xml"
 	// Mime of vApp network
 	MimeVappNetwork = "application/vnd.vmware.vcloud.vAppNetwork+xml"
+	// Mime of access control
+	MimeControlAccess = "application/vnd.vmware.vcloud.controlAccess+xml"
 )
 
 const (
@@ -272,4 +274,11 @@ const (
 	LdapModeNone   = "NONE"
 	LdapModeSystem = "SYSTEM"
 	LdapModeCustom = "CUSTOM"
+)
+
+// Access control modes
+const (
+	ControlAccessReadOnly    = "ReadOnly"
+	ControlAccessReadWrite   = "Change"
+	ControlAccessFullControl = "FullControl"
 )

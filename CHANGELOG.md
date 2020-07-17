@@ -2,6 +2,11 @@
 
 * Improved testing tags isolation [#320](https://github.com/vmware/go-vcloud-director/pull/320)
 * Added command `make tagverify` to check tags isolation tests [#320](https://github.com/vmware/go-vcloud-director/pull/320)
+* Added methods `Client.GetAccessControl`, `Client.SetAccessControl`
+* Added methods `VApp.GetAccessControl`, `VApp.SetAccessControl`, `VApp.RemoveAccessControl`, `VApp.IsShared`
+* Added methods `AdminCatalog.GetAccessControl`, `AdminCatalog.SetAccessControl`, `AdminCatalog.RemoveAccessControl`, `AdminCatalog.IsShared`
+* Added methods `Catalog.GetAccessControl`, `Catalog.SetAccessControl`, `Catalog.RemoveAccessControl`, `Catalog.IsShared`
+* Added methods `Vdc.GetVappControlAccess`, `AdminOrg.GetCatalogControlAccess`, `Org.GetCatalogControlAccess`
 
 ## 2.8.0 (June 30, 2020)
 

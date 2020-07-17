@@ -2804,3 +2804,39 @@ type VmAffinityRules struct {
 	Link           *Link             `xml:"Link,omitempty"` //
 	VmAffinityRule []*VmAffinityRule `xml:"VmAffinityRule,omitempty"`
 }
+
+// ControlAccessParams specifies access controls for a resource.
+type ControlAccessParams struct {
+	XMLName             xml.Name           `xml:"ControlAccessParams"`
+	Xmlns               string             `xml:"xmlns,attr"`
+	IsSharedToEveryone  bool               `xml:"IsSharedToEveryone"`            // If true, the resource is shared with everyone in the organization. Defaults to false.
+	EveryoneAccessLevel *string            `xml:"EveryoneAccessLevel,omitempty"` // If IsSharedToEveryone is true, this element must be present to specify the access level. for all members of the organization. One of: FullControl Change ReadOnly
+	AccessSettings      *AccessSettingList `xml:"AccessSettings,omitempty"`      // The access settings to be applied if IsSharedToEveryone is false. Required on create and modify if IsSharedToEveryone is false.
+}
+
+// AccessSettingList is a tagged list of AccessSetting
+type AccessSettingList struct {
+	AccessSetting []*AccessSetting `xml:"AccessSetting"`
+}
+
+// LocalSubject is the user or group to which control access settings apply.
+type LocalSubject struct {
+	HREF string `xml:"href,attr"`
+	Name string `xml:"name,attr"`
+	Type string `xml:"type,attr"`
+}
+
+// AccessSettings controls access to the resource.
+type AccessSetting struct {
+	XMLName         xml.Name         `xml:"AccessSetting"`
+	Subject         *LocalSubject    `xml:"Subject,omitempty"`         // The user or group to which these settings apply.
+	ExternalSubject *ExternalSubject `xml:"ExternalSubject,omitempty"` // Subject existing external of VCD, to which these settings apply.
+	AccessLevel     string           `xml:"AccessLevel"`               // The access level for the subject. One of: FullControl Change ReadOnly Deny (only for a VDC resource)
+}
+
+// ExternalSubjectType is a reference to a user or group managed by an identity provider configured for use in this organization.
+type ExternalSubject struct {
+	IdpType   string `xml:"IdpType"`   // The type of identity provider for example: OAUTH, SAML, LDAP etc for this SubjectID.
+	IsUser    bool   `xml:"IsUser"`    // If true, SubjectID is a reference to a user defined by this organization's identity provider. If false or empty, SubjectID is a reference to a group defined by this organization's identity provider.
+	SubjectId string `xml:"SubjectId"` // The primary key that your identity provider uses to uniquely identify the user or group referenced in SubjectId.
+}
