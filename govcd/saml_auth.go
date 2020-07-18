@@ -158,7 +158,7 @@ func getSamlAdfsServer(vcdCli *VCDClient, org string) (string, error) {
 		return "", fmt.Errorf("SAML - ADFS server query failed: %s", err)
 	}
 
-	err = decodeBody(httpResponse, nil)
+	err = decodeBody(types.BodyTypeXML, httpResponse, nil)
 	if err != nil {
 		return "", fmt.Errorf("SAML - error decoding body: %s", err)
 	}
@@ -218,13 +218,13 @@ func getSamlAuthToken(vcdCli *VCDClient, user, pass, samlEntityId, authEndpoint,
 	req := vcdCli.Client.NewRequest(nil, http.MethodPost, *authEndpointUrl, samlTokenRequestBody)
 	req.Header.Add("Content-Type", types.SoapXML)
 	resp, err := vcdCli.Client.Http.Do(req)
-	resp, err = checkRespWithErrType(resp, err, &types.AdfsAuthErrorEnvelope{})
+	resp, err = checkRespWithErrType(types.BodyTypeXML, resp, err, &types.AdfsAuthErrorEnvelope{})
 	if err != nil {
 		return "", fmt.Errorf("SAML - ADFS token request query failed for RPT ID ('%s'): %s",
 			samlEntityId, err)
 	}
 
-	err = decodeBody(resp, &tokenRequestResponse)
+	err = decodeBody(types.BodyTypeXML, resp, &tokenRequestResponse)
 	if err != nil {
 		return "", fmt.Errorf("SAML - error decoding ADFS token request response: %s", err)
 	}
@@ -251,7 +251,7 @@ func authorizeSignToken(vcdCli *VCDClient, base64GzippedSignToken, org string) (
 	if err != nil {
 		return "", fmt.Errorf("SAML - error submitting SIGN token for authentication to %s: %s", req.URL.String(), err)
 	}
-	err = decodeBody(resp, nil)
+	err = decodeBody(types.BodyTypeXML, resp, nil)
 	if err != nil {
 		return "", fmt.Errorf("SAML - error decoding body SIGN token auth response: %s", err)
 	}
@@ -266,8 +266,8 @@ func authorizeSignToken(vcdCli *VCDClient, base64GzippedSignToken, org string) (
 // The payload is not configured as a struct and unmarshalled because Go's unmarshalling changes
 // structure so that ADFS does not accept the payload
 func getSamlTokenRequestBody(user, password, samlEntityIdReference, adfsAuthEndpoint string) string {
-	return `<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" 
-	xmlns:a="http://www.w3.org/2005/08/addressing" 
+	return `<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"
+	xmlns:a="http://www.w3.org/2005/08/addressing"
 	xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
 	<s:Header>
 		<a:Action s:mustUnderstand="1">http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue</a:Action>
@@ -275,7 +275,7 @@ func getSamlTokenRequestBody(user, password, samlEntityIdReference, adfsAuthEndp
 			<a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address>
 		</a:ReplyTo>
 		<a:To s:mustUnderstand="1">` + adfsAuthEndpoint + `</a:To>
-		<o:Security s:mustUnderstand="1" 
+		<o:Security s:mustUnderstand="1"
 			xmlns:o="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
 			<u:Timestamp u:Id="_0">
 				<u:Created>` + time.Now().Format(time.RFC3339) + `</u:Created>
@@ -296,7 +296,7 @@ func getSamlTokenRequestBody(user, password, samlEntityIdReference, adfsAuthEndp
 			</wsp:AppliesTo>
 			<trust:KeySize>0</trust:KeySize>
 			<trust:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer</trust:KeyType>
-			<i:RequestDisplayToken xml:lang="en" 
+			<i:RequestDisplayToken xml:lang="en"
 				xmlns:i="http://schemas.xmlsoap.org/ws/2005/05/identity" />
 			<trust:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</trust:RequestType>
 			<trust:TokenType>http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0</trust:TokenType>
