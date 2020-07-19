@@ -1,3 +1,5 @@
+// +build openapi ALL
+
 package govcd
 
 import (
@@ -107,6 +109,7 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructAudiTrail(check *C) {
 // 2.3 Compare struct retrieved by using "Get all" endpoint and FIQL filter with struct retrieved by using "Get By ID"
 // 3. Create a new role and verify it is created as specified by using deep equality
 // 4. Delete created role
+// 5. Test read for deleted item
 func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 	// Step 1 - Get all roles
 	urlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles")

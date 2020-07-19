@@ -35,7 +35,8 @@ import (
 
 // OpenApiIsSupported allows to check whether VCD supports OpenAPI
 func (client *Client) OpenApiIsSupported() bool {
-	return client.APIVCDMaxVersionIs(">= 33")
+	// OpenAPI was introduced in VCD 9.5+ (API version 31.0+)
+	return client.APIVCDMaxVersionIs(">= 31")
 }
 
 // BuildOpenApiEndpoint helps to construct OpenAPI endpoint by using already configured VCD HREF while requiring only

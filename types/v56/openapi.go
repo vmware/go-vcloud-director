@@ -5,10 +5,6 @@ import (
 	"fmt"
 )
 
-// CloudApiPageValues is a slice of json.RawMessage. json.RawMessage itself allows to partially marshal responses and is
-// used to decouple API paging handling from particular returned types.
-type CloudApiPageValues []json.RawMessage
-
 // CloudApiPages unwraps pagination for "Get All" endpoints in CloudAPI. It uses a type "CloudApiPageValues" for values
 // which are kept int []json.RawMessage. json.RawMessage helps to decouple marshalling paging related information from
 // exact type related information. Paging can be handled dynamically this way while values can be marshaled into exact
@@ -28,9 +24,6 @@ type CloudApiPages struct {
 	// specific type as required
 	Values json.RawMessage `json:"values,omitempty"`
 }
-
-// AccumulatePageResponses helps to accumulate Raw JSON objects during a pagination query
-type AccumulatePageResponses []json.RawMessage
 
 // OpenApiError helpes to marshal and provider meaningful `Error` for
 type OpenApiError struct {
