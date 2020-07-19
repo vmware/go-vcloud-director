@@ -2,6 +2,9 @@
 
 * Improved testing tags isolation [#320](https://github.com/vmware/go-vcloud-director/pull/320)
 * Added command `make tagverify` to check tags isolation tests [#320](https://github.com/vmware/go-vcloud-director/pull/320)
+* Introduce low level OpenAPI client functions `OpenApiGetAllItems`, `OpenApiPostItem`, `OpenApiGetItem`,
+ `OpenApiPutItem`, `OpenApiDeleteItem`, `OpenApiIsSupported`, `BuildOpenApiEndpoint`
+ [#325](https://github.com/vmware/go-vcloud-director/pull/325)
 
 ## 2.8.0 (June 30, 2020)
 

@@ -16,7 +16,7 @@ type CloudApiPages struct {
 	PageCount int `json:"pageCount,omitempty"`
 	// Page reports current page of result
 	Page int `json:"page,omitempty"`
-	// PageSize reports pagesize
+	// PageSize reports page size
 	PageSize int `json:"pageSize,omitempty"`
 	// Associations ...
 	Associations interface{} `json:"associations,omitempty"`
@@ -25,7 +25,7 @@ type CloudApiPages struct {
 	Values json.RawMessage `json:"values,omitempty"`
 }
 
-// OpenApiError helpes to marshal and provider meaningful `Error` for
+// OpenApiError helps to marshal and provider meaningful `Error` for
 type OpenApiError struct {
 	MinorErrorCode string `json:"minorErrorCode"`
 	Message        string `json:"message"`
