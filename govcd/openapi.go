@@ -437,7 +437,6 @@ func (client *Client) newOpenApiRequest(params url.Values, method string, reqUrl
 // Returns *url.Url or ErrorEntityNotFound
 func findRelLink(relFieldName string, header http.Header) (*url.URL, error) {
 	headerLinks := link.ParseHeader(header)
-	var foundAddress *link.Link
 
 	for relKeyName, linkAddress := range headerLinks {
 		switch {
@@ -447,21 +446,15 @@ func findRelLink(relFieldName string, header http.Header) (*url.URL, error) {
 			relNameSlice := strings.Split(relKeyName, " ")
 			for _, oneRelName := range relNameSlice {
 				if oneRelName == relFieldName {
-					foundAddress = linkAddress
+					return url.Parse(linkAddress.String())
 				}
 			}
-			break
 		case relKeyName == relFieldName:
-			foundAddress = linkAddress
-			break
+			return url.Parse(linkAddress.String())
 		}
 	}
 
-	if foundAddress == nil {
-		return nil, ErrorEntityNotFound
-	}
-
-	return url.Parse(foundAddress.String())
+	return nil, ErrorEntityNotFound
 }
 
 // jsonRawMessagesToStrings converts []*json.RawMessage to []string

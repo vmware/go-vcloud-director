@@ -1,4 +1,4 @@
-// +build openapi ALL
+// +build functional openapi ALL
 
 package govcd
 
@@ -125,6 +125,7 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 
 	allExistingRoles := []*Roles{{}}
 	err = vcd.vdc.client.OpenApiGetAllItems(urlRef, nil, &allExistingRoles)
+	check.Assert(err, IsNil)
 
 	// Step 2 - Get all roles using query filters
 	for _, oneRole := range allExistingRoles {
@@ -143,6 +144,8 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 
 		// Step 2.2 - retrieve specific role by using endpoint
 		singleRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles/" + oneRole.ID)
+		check.Assert(err, IsNil)
+
 		oneRole := &Roles{}
 		err = vcd.vdc.client.OpenApiGetItem(singleRef, nil, oneRole)
 		check.Assert(err, IsNil)
