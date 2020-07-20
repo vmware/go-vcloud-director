@@ -11,6 +11,8 @@ OpenAPI low level functions consist of the following to match REST API:
 * OpenApiIsSupported
 * BuildOpenApiEndpoint
 
+**Note** The endpoint `1.0.0/auditTrail` requires VCD API to support version 33.0 or bigger. Version 33.0 was introduced
+with VCD 10.0.
 
 ## Using mode 1 (Dump raw JSON message as strings)
 This command will dump JSON for audiTrail endpoint as strings allowing to pipe it and process using

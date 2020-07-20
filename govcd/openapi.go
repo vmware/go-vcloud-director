@@ -28,12 +28,19 @@ import (
 // DELETE /items/URN - deletes an item with specified URN
 //
 // GET endpoints support FIQL for filtering in field `filter`. (FIQL IETF doc - https://tools.ietf.org/html/draft-nottingham-atompub-fiql-00)
-// Not all API fields are supported for FIQL filtering and sometimes they return odd errors when filtering is unsupported.
+// Not all API fields are supported for FIQL filtering and sometimes they return odd errors when filtering is
+// unsupported however no exact documentation exists so far.
 //
 // OpenAPI versioning.
-// Versions in path (e.g. 1.0.0) should guarantee behavior while header versions shouldn't matter in long term.
+// OpenAPI was introduced in VCD 9.5 (with API version 31.0). Endpoints are being added with each VCD iteration.
+// Internally hosted documentation (https://HOSTNAME/docs/) can be used to check which endpoints where introduced in
+// which VCD API version.
+// Additionally each OpenAPI endpoint has a semantic version in its path (e.g.
+// https://HOSTNAME/cloudapi/1.0.0/auditTrail). This versioned endpoint should ensure compatibility as VCD evolves.
 
-// OpenApiIsSupported allows to check whether VCD supports OpenAPI
+// OpenApiIsSupported allows to check whether VCD supports OpenAPI. Each OpenAPI endpoint however is introduced with
+// different VCD API versions so this is just a general check if OpenAPI is supported at all. Particular endpoint
+// introduction version can be checked in self hosted docs (https://HOSTNAME/docs/)
 func (client *Client) OpenApiIsSupported() bool {
 	// OpenAPI was introduced in VCD 9.5+ (API version 31.0+)
 	return client.APIVCDMaxVersionIs(">= 31")
@@ -53,9 +60,9 @@ func (client *Client) BuildOpenApiEndpoint(endpoint ...string) (*url.URL, error)
 
 // OpenApiGetAllItems retrieves and accumulates all pages then parsing them to a single object. It works by at first
 // crawling pages and accumulating all responses into []json.RawMessage (as strings). Because there is no intermediate
-// unmarshalling to exact `outType` for every page it can actually unmarshal into response struct in one go. outType
-// must be a slice of object (e.g. []*types.OpenAPIEdgeGateway) because this response contains slice of structs
-func (client *Client) OpenApiGetAllItems(urlRef *url.URL, queryParams url.Values, outType interface{}) error {
+// unmarshalling to exact `outType` for every page it unmarshals into response struct in one go. outType must be a slice
+// of object (e.g. []*types.OpenAPIEdgeGateway) because this response contains slice of structs.
+func (client *Client) OpenApiGetAllItems(apiVersion string, urlRef *url.URL, queryParams url.Values, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Getting all items from endpoint %s for parsing into %s type\n",
 		urlRef.String(), reflect.TypeOf(outType))
 
@@ -65,7 +72,7 @@ func (client *Client) OpenApiGetAllItems(urlRef *url.URL, queryParams url.Values
 
 	// Perform API call to initial endpoint. The function call recursively follows pages using Link headers "nextPage"
 	// until it crawls all results
-	responses, err := client.openApiGetAllPages(nil, urlRef, queryParams, outType, nil)
+	responses, err := client.openApiGetAllPages(apiVersion, nil, urlRef, queryParams, outType, nil)
 	if err != nil {
 		return fmt.Errorf("error getting all pages for endpoint %s: %s", urlRef.String(), err)
 	}
@@ -89,9 +96,57 @@ func (client *Client) OpenApiGetAllItems(urlRef *url.URL, queryParams url.Values
 	return nil
 }
 
-// OpenApiPostItem is a low level OpenAPI client function to perform any task.
+// OpenApiGetItem is a low level OpenAPI client function to perform GET request for any item.
+// The urlRef must point to ID of exact item (e.g. '/1.0.0/edgeGateways/{EDGE_ID}')
+// It responds with HTTP 403: Forbidden - If the user is not authorized or the entity does not exist. When HTTP 403 is
+// returned this function returns "ErrorEntityNotFound: API_ERROR" so that one can use ContainsNotFound(err) to validate
+// error.
+func (client *Client) OpenApiGetItem(apiVersion string, urlRef *url.URL, params url.Values, outType interface{}) error {
+	util.Logger.Printf("[TRACE] Getting item from endpoint %s with expected response of type %s",
+		urlRef.String(), reflect.TypeOf(outType))
+
+	if !client.OpenApiIsSupported() {
+		return fmt.Errorf("OpenAPI is not supported on this VCD version")
+	}
+
+	req := client.newOpenApiRequest(apiVersion, params, http.MethodGet, urlRef, nil)
+	resp, err := client.Http.Do(req)
+	if err != nil {
+		return fmt.Errorf("error performing GET request to %s: %s", urlRef.String(), err)
+	}
+
+	// Bypassing the regular path using function checkRespWithErrType and returning parsed error directly
+	// HTTP 403: Forbidden - is returned if the user is not authorized or the entity does not exist.
+	if resp.StatusCode == http.StatusForbidden {
+		err := ParseErr(types.BodyTypeJSON, resp, &types.OpenApiError{})
+		resp.Body.Close()
+		return fmt.Errorf("%s: %s", ErrorEntityNotFound, err)
+	}
+
+	// resp is ignored below because it is the same as above
+	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &types.OpenApiError{})
+
+	// Any other error occurred
+	if err != nil {
+		return fmt.Errorf("error in HTTP GET request: %s", err)
+	}
+
+	if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
+		return fmt.Errorf("error decoding JSON response after GET: %s", err)
+	}
+
+	err = resp.Body.Close()
+	if err != nil {
+		return fmt.Errorf("error closing response body: %s", err)
+	}
+
+	return nil
+}
+
+// OpenApiPostItem is a low level OpenAPI client function to perform POST request for any item.
 // The urlRef must point to POST endpoint (e.g. '/1.0.0/edgeGateways')
-func (client *Client) OpenApiPostItem(urlRef *url.URL, params url.Values, payload, outType interface{}) error {
+// It handles synchronous and asynchronous tasks. When a task is synchronous - it will block until it is finished.
+func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params url.Values, payload, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Posting %s item to endpoint %s with expected response of type %s",
 		reflect.TypeOf(payload), urlRef.String(), reflect.TypeOf(outType))
 
@@ -109,7 +164,7 @@ func (client *Client) OpenApiPostItem(urlRef *url.URL, params url.Values, payloa
 		body = bytes.NewBuffer(marshaledJson)
 	}
 
-	req := client.newOpenApiRequest(params, http.MethodPost, urlRef, body, "34.0")
+	req := client.newOpenApiRequest(apiVersion, params, http.MethodPost, urlRef, body)
 
 	resp, err := client.Http.Do(req)
 	if err != nil {
@@ -140,7 +195,7 @@ func (client *Client) OpenApiPostItem(urlRef *url.URL, params url.Values, payloa
 		// old XML API and here we need to pull data from CloudAPI.
 
 		newObjectUrl, _ := url.ParseRequestURI(urlRef.String() + "/" + task.Task.Owner.ID)
-		err = client.OpenApiGetItem(newObjectUrl, nil, outType)
+		err = client.OpenApiGetItem(apiVersion, newObjectUrl, nil, outType)
 		if err != nil {
 			return fmt.Errorf("error retrieving item after creation: %s", err)
 		}
@@ -160,54 +215,10 @@ func (client *Client) OpenApiPostItem(urlRef *url.URL, params url.Values, payloa
 	return nil
 }
 
-// OpenApiGetItem
-// Responds with HTTP 403: Forbidden - If the user is not authorized or the entity does not exist. When HTTP 403 is
-// returned this function returns "ErrorEntityNotFound: API_ERROR" so that one can use ContainsNotFound(err) to validate
-// error
-func (client *Client) OpenApiGetItem(urlRef *url.URL, params url.Values, outType interface{}) error {
-	util.Logger.Printf("[TRACE] Getting item from endpoint %s with expected response of type %s", urlRef.String(), reflect.TypeOf(outType))
-
-	if !client.OpenApiIsSupported() {
-		return fmt.Errorf("OpenAPI is not supported on this VCD version")
-	}
-
-	req := client.newOpenApiRequest(params, http.MethodGet, urlRef, nil, "34.0")
-	resp, err := client.Http.Do(req)
-	if err != nil {
-		return fmt.Errorf("error performing GET request to %s: %s", urlRef.String(), err)
-	}
-
-	// Bypassing the regular path using function checkRespWithErrType and returning parsed error directly
-	// HTTP 403: Forbidden - is returned if the user is not authorized or the entity does not exist.
-	if resp.StatusCode == http.StatusForbidden {
-		err := ParseErr(types.BodyTypeJSON, resp, &types.OpenApiError{})
-		resp.Body.Close()
-		return fmt.Errorf("%s: %s", ErrorEntityNotFound, err)
-	}
-
-	// resp is ignored below because it is the same as above
-	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &types.OpenApiError{})
-
-	// Any other error occured
-	if err != nil {
-		return fmt.Errorf("error in HTTP GET request: %s", err)
-	}
-
-	if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
-		return fmt.Errorf("error decoding JSON response after GET: %s", err)
-	}
-
-	err = resp.Body.Close()
-	if err != nil {
-		return fmt.Errorf("error closing response body: %s", err)
-	}
-
-	return nil
-}
-
-// OpenApiPutItem handles the PUT method for CloudAPI and tracks the task before returning if the response is HTTP 202
-//
-func (client *Client) OpenApiPutItem(urlRef *url.URL, params url.Values, payload, outType interface{}) error {
+// OpenApiPutItem is a low level OpenAPI client function to perform PUT request for any item.
+// The urlRef must point to ID of exact item (e.g. '/1.0.0/edgeGateways/{EDGE_ID}')
+// It handles synchronous and asynchronous tasks. When a task is synchronous - it will block until it is finished.
+func (client *Client) OpenApiPutItem(apiVersion string, urlRef *url.URL, params url.Values, payload, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Performing HTTP PUT request for item of type %s at endpoint %s with expected response of type %s",
 		reflect.TypeOf(payload), urlRef.String(), reflect.TypeOf(outType))
 
@@ -224,7 +235,7 @@ func (client *Client) OpenApiPutItem(urlRef *url.URL, params url.Values, payload
 		body = bytes.NewBuffer(marshaledJson)
 	}
 
-	req := client.newOpenApiRequest(params, http.MethodPut, urlRef, body, "34.0")
+	req := client.newOpenApiRequest(apiVersion, params, http.MethodPut, urlRef, body)
 
 	resp, err := client.Http.Do(req)
 	if err != nil {
@@ -251,7 +262,7 @@ func (client *Client) OpenApiPutItem(urlRef *url.URL, params url.Values, payload
 		}
 
 		// Here we have to find the resource once more to return it populated. Provided params ir ignored for retrieval.
-		err = client.OpenApiGetItem(urlRef, nil, outType)
+		err = client.OpenApiGetItem(apiVersion, urlRef, nil, outType)
 		if err != nil {
 			return fmt.Errorf("error retrieving item after creation: %s", err)
 		}
@@ -271,9 +282,10 @@ func (client *Client) OpenApiPutItem(urlRef *url.URL, params url.Values, payload
 	return nil
 }
 
-// OpenApiDeleteItem performs HTTP DELETE request for a specified endpoint in given urlRef. If the task is asynchronous
-// - it will track the task until it is finished.
-func (client *Client) OpenApiDeleteItem(urlRef *url.URL, params url.Values) error {
+// OpenApiDeleteItem is a low level OpenAPI client function to perform DELETE request for any item.
+// The urlRef must point to ID of exact item (e.g. '/1.0.0/edgeGateways/{EDGE_ID}')
+// It handles synchronous and asynchronous tasks. When a task is synchronous - it will block until it is finished.
+func (client *Client) OpenApiDeleteItem(apiVersion string, urlRef *url.URL, params url.Values) error {
 	util.Logger.Printf("[TRACE] Deleting item at endpoint %s", urlRef.String())
 
 	if !client.OpenApiIsSupported() {
@@ -281,7 +293,7 @@ func (client *Client) OpenApiDeleteItem(urlRef *url.URL, params url.Values) erro
 	}
 
 	// Exec request
-	req := client.newOpenApiRequest(params, http.MethodDelete, urlRef, nil, "34.0")
+	req := client.newOpenApiRequest(apiVersion, params, http.MethodDelete, urlRef, nil)
 
 	resp, err := client.Http.Do(req)
 	if err != nil {
@@ -319,7 +331,7 @@ func (client *Client) OpenApiDeleteItem(urlRef *url.URL, params url.Values) erro
 // works by at first crawling pages and accumulating all responses into []json.RawMessage (as strings). Because there is
 // no intermediate unmarshalling to exact `outType` for every page it can unmarshal into direct `outType` supplied.
 // outType must be a slice of object (e.g. []*types.CloudAPIEdgeGateway) because accumulated responses are in JSON list
-func (client *Client) openApiGetAllPages(pageSize *int, urlRef *url.URL, queryParams url.Values, outType interface{}, responses []json.RawMessage) ([]json.RawMessage, error) {
+func (client *Client) openApiGetAllPages(apiVersion string, pageSize *int, urlRef *url.URL, queryParams url.Values, outType interface{}, responses []json.RawMessage) ([]json.RawMessage, error) {
 	if responses == nil {
 		responses = []json.RawMessage{}
 	}
@@ -335,7 +347,7 @@ func (client *Client) openApiGetAllPages(pageSize *int, urlRef *url.URL, queryPa
 	}
 
 	// Perform request
-	req := client.newOpenApiRequest(queryParams, http.MethodGet, urlRef, nil, "34.0")
+	req := client.newOpenApiRequest(apiVersion, queryParams, http.MethodGet, urlRef, nil)
 
 	resp, err := client.Http.Do(req)
 	if err != nil {
@@ -376,7 +388,7 @@ func (client *Client) openApiGetAllPages(pageSize *int, urlRef *url.URL, queryPa
 	}
 
 	if nextPageUrlRef != nil {
-		responses, err = client.openApiGetAllPages(nil, nextPageUrlRef, url.Values{}, outType, responses)
+		responses, err = client.openApiGetAllPages(apiVersion, nil, nextPageUrlRef, url.Values{}, outType, responses)
 		if err != nil {
 			return nil, fmt.Errorf("got error on page %d: %s", pages.Page, err)
 		}
@@ -387,7 +399,7 @@ func (client *Client) openApiGetAllPages(pageSize *int, urlRef *url.URL, queryPa
 
 // newOpenApiRequest is a low level function used in upstream CloudAPI functions which handles logging and
 // authentication for each API request
-func (client *Client) newOpenApiRequest(params url.Values, method string, reqUrl *url.URL, body io.Reader, apiVersion string) *http.Request {
+func (client *Client) newOpenApiRequest(apiVersion string, params url.Values, method string, reqUrl *url.URL, body io.Reader) *http.Request {
 
 	// Add the params to our URL
 	reqUrl.RawQuery += params.Encode()
@@ -433,7 +445,9 @@ func (client *Client) newOpenApiRequest(params url.Values, method string, reqUrl
 
 // findRelLink looks for link to "nextPage" in "Link" header. It will return when first occurrence is found.
 // Sample Link header:
-// Link: [<https://HOSTNAME/cloudapi/1.0.0/auditTrail?sortAsc=&pageSize=25&sortDesc=&page=7>;rel="lastPage";type="application/json";model="AuditTrailEvents" <https://HOSTNAME/cloudapi/1.0.0/auditTrail?sortAsc=&pageSize=25&sortDesc=&page=2>;rel="nextPage";type="application/json";model="AuditTrailEvents"]
+// Link: [<https://HOSTNAME/cloudapi/1.0.0/auditTrail?sortAsc=&pageSize=25&sortDesc=&page=7>;rel="lastPage";
+// type="application/json";model="AuditTrailEvents" <https://HOSTNAME/cloudapi/1.0.0/auditTrail?sortAsc=&pageSize=25&sortDesc=&page=2>;
+// rel="nextPage";type="application/json";model="AuditTrailEvents"]
 // Returns *url.Url or ErrorEntityNotFound
 func findRelLink(relFieldName string, header http.Header) (*url.URL, error) {
 	headerLinks := link.ParseHeader(header)

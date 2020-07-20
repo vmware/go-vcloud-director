@@ -4,6 +4,7 @@ package govcd
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
@@ -17,6 +18,9 @@ import (
 // Test_CloudAPIAudiTrail uses low level GET function to test out that pagination really works. It is an example how to
 // fetch response from multiple pages in RAW json messages without having defined a clear struct.
 func (vcd *TestVCD) Test_OpenAPIRawJsonAudiTrail(check *C) {
+	minimumRequiredApiVersion := "33.0"
+	skipOpenApiEndpoint(vcd, check, "1.0.0/auditTrail", "< "+minimumRequiredApiVersion)
+
 	urlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/auditTrail")
 	check.Assert(err, IsNil)
 
@@ -28,7 +32,7 @@ func (vcd *TestVCD) Test_OpenAPIRawJsonAudiTrail(check *C) {
 	queryParams.Add("pageSize", "1")
 
 	allResponses := []json.RawMessage{{}}
-	err = vcd.vdc.client.OpenApiGetAllItems(urlRef, queryParams, &allResponses)
+	err = vcd.vdc.client.OpenApiGetAllItems(minimumRequiredApiVersion, urlRef, queryParams, &allResponses)
 
 	check.Assert(err, IsNil)
 	check.Assert(len(allResponses) > 1, Equals, true)
@@ -45,6 +49,9 @@ func (vcd *TestVCD) Test_OpenAPIRawJsonAudiTrail(check *C) {
 // Test_OpenAPIInlineStructAudiTrail uses low level GET function to test out that get function can unmarshal directly
 // to user defined inline type
 func (vcd *TestVCD) Test_OpenAPIInlineStructAudiTrail(check *C) {
+	minimumRequiredApiVersion := "33.0"
+	skipOpenApiEndpoint(vcd, check, "1.0.0/auditTrail", "< "+minimumRequiredApiVersion)
+
 	urlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/auditTrail")
 	check.Assert(err, IsNil)
 
@@ -87,7 +94,7 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructAudiTrail(check *C) {
 	filterTime := time.Now().Add(-24 * time.Hour).Format(types.FiqlQueryTimestampFormat)
 	queryParams.Add("filter", "timestamp=gt="+filterTime)
 
-	err = vcd.vdc.client.OpenApiGetAllItems(urlRef, queryParams, &allResponses)
+	err = vcd.vdc.client.OpenApiGetAllItems(minimumRequiredApiVersion, urlRef, queryParams, &allResponses)
 
 	check.Assert(err, IsNil)
 	check.Assert(len(allResponses) > 1, Equals, true)
@@ -111,6 +118,9 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructAudiTrail(check *C) {
 // 4. Delete created role
 // 5. Test read for deleted item
 func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
+	minimumRequiredApiVersion := "31.0"
+	skipOpenApiEndpoint(vcd, check, "1.0.0/roles", "< "+minimumRequiredApiVersion)
+
 	// Step 1 - Get all roles
 	urlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles")
 	check.Assert(err, IsNil)
@@ -124,7 +134,7 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 	}
 
 	allExistingRoles := []*Roles{{}}
-	err = vcd.vdc.client.OpenApiGetAllItems(urlRef, nil, &allExistingRoles)
+	err = vcd.vdc.client.OpenApiGetAllItems(minimumRequiredApiVersion, urlRef, nil, &allExistingRoles)
 	check.Assert(err, IsNil)
 
 	// Step 2 - Get all roles using query filters
@@ -138,7 +148,7 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 
 		expectOneRoleResultById := []*Roles{{}}
 
-		err = vcd.vdc.client.OpenApiGetAllItems(urlRef2, queryParams, &expectOneRoleResultById)
+		err = vcd.vdc.client.OpenApiGetAllItems(minimumRequiredApiVersion, urlRef2, queryParams, &expectOneRoleResultById)
 		check.Assert(err, IsNil)
 		check.Assert(len(expectOneRoleResultById) == 1, Equals, true)
 
@@ -147,7 +157,7 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 		check.Assert(err, IsNil)
 
 		oneRole := &Roles{}
-		err = vcd.vdc.client.OpenApiGetItem(singleRef, nil, oneRole)
+		err = vcd.vdc.client.OpenApiGetItem(minimumRequiredApiVersion, singleRef, nil, oneRole)
 		check.Assert(err, IsNil)
 		check.Assert(oneRole, NotNil)
 
@@ -167,7 +177,7 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 		ReadOnly:    false,
 	}
 	newRoleResponse := &Roles{}
-	err = vcd.client.Client.OpenApiPostItem(createUrl, nil, newRole, newRoleResponse)
+	err = vcd.client.Client.OpenApiPostItem(minimumRequiredApiVersion, createUrl, nil, newRole, newRoleResponse)
 	check.Assert(err, IsNil)
 
 	// Ensure supplied and created structs differ only by ID
@@ -178,13 +188,26 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 	deleteUrlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles/", newRoleResponse.ID)
 	check.Assert(err, IsNil)
 
-	err = vcd.client.Client.OpenApiDeleteItem(deleteUrlRef, nil)
+	err = vcd.client.Client.OpenApiDeleteItem(minimumRequiredApiVersion, deleteUrlRef, nil)
 	check.Assert(err, IsNil)
 
 	// Step 5 - try to read deleted role and expect error to contain 'ErrorEntityNotFound'
 	// Read is tricky - it throws an error ACCESS_TO_RESOURCE_IS_FORBIDDEN when the resource with ID does not
 	// exist therefore one cannot know what kind of error occurred.
 	lostRole := &Roles{}
-	err = vcd.client.Client.OpenApiGetItem(deleteUrlRef, nil, lostRole)
+	err = vcd.client.Client.OpenApiGetItem(minimumRequiredApiVersion, deleteUrlRef, nil, lostRole)
 	check.Assert(ContainsNotFound(err), Equals, true)
+}
+
+// skipOpenApiEndpoint is a helper to skip tests for particular unsupported OpenAPI endpoints
+func skipOpenApiEndpoint(vcd *TestVCD, check *C, endpoint, skipWhenMaxVersion string) {
+	if vcd.client.Client.APIVCDMaxVersionIs(skipWhenMaxVersion) {
+		maxSupportedVersion, err := vcd.client.Client.maxSupportedVersion()
+		if err != nil {
+			panic(fmt.Sprintf("Could not get maximum supported version: %s", err))
+		}
+		skipText := fmt.Sprintf("Skipping test because OpenAPI endpoint '%s' must satisfy version constraint '%s'. Maximum supported version is %s",
+			endpoint, skipWhenMaxVersion, maxSupportedVersion)
+		check.Skip(skipText)
+	}
 }
