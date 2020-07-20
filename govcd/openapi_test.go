@@ -200,14 +200,15 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 }
 
 // skipOpenApiEndpoint is a helper to skip tests for particular unsupported OpenAPI endpoints
-func skipOpenApiEndpoint(vcd *TestVCD, check *C, endpoint, requiredVersionConstraint string) {
-	if !vcd.client.Client.APIVCDMaxVersionIs(">= " + requiredVersionConstraint) {
+func skipOpenApiEndpoint(vcd *TestVCD, check *C, endpoint, requiredVersion string) {
+	constraint := ">= " + requiredVersion
+	if !vcd.client.Client.APIVCDMaxVersionIs(constraint) {
 		maxSupportedVersion, err := vcd.client.Client.maxSupportedVersion()
 		if err != nil {
 			panic(fmt.Sprintf("Could not get maximum supported version: %s", err))
 		}
 		skipText := fmt.Sprintf("Skipping test because OpenAPI endpoint '%s' must satisfy API version constraint '%s'. Maximum supported version is %s",
-			endpoint, requiredVersionConstraint, maxSupportedVersion)
+			endpoint, constraint, maxSupportedVersion)
 		check.Skip(skipText)
 	}
 }
