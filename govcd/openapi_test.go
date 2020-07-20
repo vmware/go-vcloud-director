@@ -19,7 +19,7 @@ import (
 // fetch response from multiple pages in RAW json messages without having defined a clear struct.
 func (vcd *TestVCD) Test_OpenAPIRawJsonAudiTrail(check *C) {
 	minimumRequiredApiVersion := "33.0"
-	skipOpenApiEndpoint(vcd, check, "1.0.0/auditTrail", "< "+minimumRequiredApiVersion)
+	skipOpenApiEndpoint(vcd, check, "1.0.0/auditTrail", minimumRequiredApiVersion)
 
 	urlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/auditTrail")
 	check.Assert(err, IsNil)
@@ -50,7 +50,7 @@ func (vcd *TestVCD) Test_OpenAPIRawJsonAudiTrail(check *C) {
 // to user defined inline type
 func (vcd *TestVCD) Test_OpenAPIInlineStructAudiTrail(check *C) {
 	minimumRequiredApiVersion := "33.0"
-	skipOpenApiEndpoint(vcd, check, "1.0.0/auditTrail", "< "+minimumRequiredApiVersion)
+	skipOpenApiEndpoint(vcd, check, "1.0.0/auditTrail", minimumRequiredApiVersion)
 
 	urlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/auditTrail")
 	check.Assert(err, IsNil)
@@ -119,7 +119,7 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructAudiTrail(check *C) {
 // 5. Test read for deleted item
 func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 	minimumRequiredApiVersion := "31.0"
-	skipOpenApiEndpoint(vcd, check, "1.0.0/roles", "< "+minimumRequiredApiVersion)
+	skipOpenApiEndpoint(vcd, check, "1.0.0/roles", minimumRequiredApiVersion)
 
 	// Step 1 - Get all roles
 	urlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles")
@@ -200,14 +200,14 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 }
 
 // skipOpenApiEndpoint is a helper to skip tests for particular unsupported OpenAPI endpoints
-func skipOpenApiEndpoint(vcd *TestVCD, check *C, endpoint, skipWhenMaxVersion string) {
-	if vcd.client.Client.APIVCDMaxVersionIs(skipWhenMaxVersion) {
+func skipOpenApiEndpoint(vcd *TestVCD, check *C, endpoint, requiredVersionConstraint string) {
+	if !vcd.client.Client.APIVCDMaxVersionIs(">= " + requiredVersionConstraint) {
 		maxSupportedVersion, err := vcd.client.Client.maxSupportedVersion()
 		if err != nil {
 			panic(fmt.Sprintf("Could not get maximum supported version: %s", err))
 		}
-		skipText := fmt.Sprintf("Skipping test because OpenAPI endpoint '%s' must satisfy version constraint '%s'. Maximum supported version is %s",
-			endpoint, skipWhenMaxVersion, maxSupportedVersion)
+		skipText := fmt.Sprintf("Skipping test because OpenAPI endpoint '%s' must satisfy API version constraint '%s'. Maximum supported version is %s",
+			endpoint, requiredVersionConstraint, maxSupportedVersion)
 		check.Skip(skipText)
 	}
 }

@@ -59,7 +59,7 @@ func main() {
 	}
 
 	if vcdCli.Client.APIVCDMaxVersionIs("< 33.0") {
-		fmt.Println("This example requires VCD API to support at least version 33.0 to use '1.0.0/auditTrail' endpoint")
+		fmt.Println("This example requires VCD API to support at least version 33.0 (VCD 10.0) to use '1.0.0/auditTrail' endpoint")
 		os.Exit(4)
 	}
 
