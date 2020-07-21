@@ -56,19 +56,19 @@ var vdcVersionedFuncsV97 = vdcVersionedFuncs{
 var vdcVersionedFuncsByVcdVersion = map[string]vdcVersionedFuncs{
 	"vdc9.5":  vdcVersionedFuncsV95,
 	"vdc9.7":  vdcVersionedFuncsV97,
-	"vdc10.0": vdcVersionedFuncsV97,
-	"vdc10.1": vdcVersionedFuncsV97,
+
+	// If we add a new function to this list, we also need to update the "default" entry
+	"default": vdcVersionedFuncsV97,
 }
 
 // getVdcVersionedFuncsByVdcVersion is a wrapper function that retrieves the requested versioned VDC function
-// When the wanted version does not exist in the map, it returns the latest available one.
+// When the wanted version does not exist in the map, it returns the highest available one.
 func getVdcVersionedFuncsByVdcVersion(version string) vdcVersionedFuncs {
-	highest := vdcVersionedFuncsV97
 	f, ok := vdcVersionedFuncsByVcdVersion[version]
 	if ok {
 		return f
 	} else {
-		return highest
+		return vdcVersionedFuncsByVcdVersion["default"]
 	}
 }
 
