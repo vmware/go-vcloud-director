@@ -52,8 +52,7 @@ var vdcVersionedFuncsV97 = vdcVersionedFuncs{
 	UpdateVdcAsync:   updateVdcAsyncV97,
 }
 
-// TODO: add a wrapper function to use newest available method when version is higher than currently handled
-// VDC function mapping by vDC version
+// vdcVersionedFuncsByVcdVersion is a map of VDC functions by vCD version
 var vdcVersionedFuncsByVcdVersion = map[string]vdcVersionedFuncs{
 	"vdc9.5":  vdcVersionedFuncsV95,
 	"vdc9.7":  vdcVersionedFuncsV97,
