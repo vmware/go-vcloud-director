@@ -54,10 +54,11 @@ var vdcVersionedFuncsV97 = vdcVersionedFuncs{
 
 // vdcVersionedFuncsByVcdVersion is a map of VDC functions by vCD version
 var vdcVersionedFuncsByVcdVersion = map[string]vdcVersionedFuncs{
-	"vdc9.5":  vdcVersionedFuncsV95,
-	"vdc9.7":  vdcVersionedFuncsV97,
+	"vdc9.5": vdcVersionedFuncsV95,
+	"vdc9.7": vdcVersionedFuncsV97,
 
 	// If we add a new function to this list, we also need to update the "default" entry
+	// The "default" entry will hold the highest currently available function
 	"default": vdcVersionedFuncsV97,
 }
 
