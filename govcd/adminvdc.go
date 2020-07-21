@@ -244,9 +244,6 @@ func (adminVdc *AdminVdc) UpdateAsync() (Task, error) {
 		return Task{}, err
 	}
 	vdcFunctions := getVdcVersionedFuncsByVdcVersion("vdc" + apiVersionToVcdVersion[apiVersion])
-	//if !ok {
-	//	return Task{}, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
-	//}
 	if vdcFunctions.UpdateVdcAsync == nil {
 		return Task{}, fmt.Errorf("function UpdateVdcAsync is not defined for %s", "vdc"+apiVersion)
 	}
@@ -267,9 +264,6 @@ func (adminVdc *AdminVdc) Update() (AdminVdc, error) {
 	}
 
 	vdcFunctions := getVdcVersionedFuncsByVdcVersion("vdc" + apiVersionToVcdVersion[apiVersion])
-	//if !ok {
-	//	return AdminVdc{}, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
-	//}
 	if vdcFunctions.UpdateVdc == nil {
 		return AdminVdc{}, fmt.Errorf("function UpdateVdc is not defined for %s", "vdc"+apiVersion)
 	}
@@ -292,9 +286,6 @@ func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration)
 		return nil, err
 	}
 	vdcFunctions := getVdcVersionedFuncsByVdcVersion("vdc" + apiVersionToVcdVersion[apiVersion])
-	//if !ok {
-	//	return nil, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
-	//}
 	if vdcFunctions.CreateVdc == nil {
 		return nil, fmt.Errorf("function CreateVdc is not defined for %s", "vdc"+apiVersion)
 	}
@@ -311,9 +302,6 @@ func (adminOrg *AdminOrg) CreateOrgVdcAsync(vdcConfiguration *types.VdcConfigura
 		return Task{}, err
 	}
 	vdcFunctions := getVdcVersionedFuncsByVdcVersion("vdc" + apiVersionToVcdVersion[apiVersion])
-	//if !ok {
-	//	return Task{}, fmt.Errorf("no entity type found %s", "vdc"+apiVersion)
-	//}
 	if vdcFunctions.CreateVdcAsync == nil {
 		return Task{}, fmt.Errorf("function CreateVdcAsync is not defined for %s", "vdc"+apiVersion)
 	}
