@@ -7,6 +7,9 @@
 * Added methods `AdminCatalog.GetAccessControl`, `AdminCatalog.SetAccessControl`, `AdminCatalog.RemoveAccessControl`, `AdminCatalog.IsShared`
 * Added methods `Catalog.GetAccessControl`, `Catalog.SetAccessControl`, `Catalog.RemoveAccessControl`, `Catalog.IsShared`
 * Added methods `Vdc.GetVappControlAccess`, `AdminOrg.GetCatalogControlAccess`, `Org.GetCatalogControlAccess`
+* Loosen up `Test_LBAppRule` for invalid application script check to work with different error engine in VCD 10.2
+[#326](https://github.com/vmware/go-vcloud-director/pull/326)
+* Update VDC dynamic func to handle API version 35.0 [#327](https://github.com/vmware/go-vcloud-director/pull/327)
 
 ## 2.8.0 (June 30, 2020)
 
