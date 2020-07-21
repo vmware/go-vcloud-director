@@ -15,8 +15,8 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// Test_CloudAPIAudiTrail uses low level GET function to test out that pagination really works. It is an example how to
-// fetch response from multiple pages in RAW json messages without having defined a clear struct.
+// Test_OpenAPIRawJsonAudiTrail uses low level GET function to test out that pagination really works. It is an example
+// how to fetch response from multiple pages in RAW json messages without having defined as struct.
 func (vcd *TestVCD) Test_OpenAPIRawJsonAudiTrail(check *C) {
 	minimumRequiredApiVersion := "33.0"
 	skipOpenApiEndpoint(vcd, check, "1.0.0/auditTrail", minimumRequiredApiVersion)
@@ -24,8 +24,8 @@ func (vcd *TestVCD) Test_OpenAPIRawJsonAudiTrail(check *C) {
 	urlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/auditTrail")
 	check.Assert(err, IsNil)
 
-	// Limit search of audi trails to the last 12 hours so that it doesn't take too long and set pageSize to be 1 result to
-	// force following pages
+	// Limit search of audits trails to the last 12 hours so that it doesn't take too long and set pageSize to be 1 result
+	// to force following pages
 	queryParams := url.Values{}
 	filterTime := time.Now().Add(-12 * time.Hour).Format(types.FiqlQueryTimestampFormat)
 	queryParams.Add("filter", "timestamp=gt="+filterTime)
@@ -105,18 +105,19 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructAudiTrail(check *C) {
 	}
 }
 
-// Test_OpenAPIInlineStructCRUDRoles test aims to test out low level CloudAPI functions to check if all of them work as
+// Test_OpenAPIInlineStructCRUDRoles test aims to test out low level OpenAPI functions to check if all of them work as
 // expected. It uses a very simple "Roles" endpoint which does not have bigger prerequisites and therefore is not
-// dependent one more deployment specific features. It also supports all of the CloudAPI CRUD endpoints so is a good
+// dependent one more deployment specific features. It also supports all of the OpenAPI CRUD endpoints so is a good
 // endpoint to test on
-// Actions of the test:
-// 1. Get all available roles using "Get all endpoint"
-// 2.1 Use FIQL query filtering to retrieve specific item by ID on "Get All" endpoint
+// This test performs the following:
+// 1. Gets all available roles using "Get all endpoint"
+// 2.1 Uses FIQL query filtering to retrieve specific item by ID on "Get All" endpoint
 // 2.2 Use GET by ID endpoint to check that each of roles retrieved by get all can be found individually
-// 2.3 Compare struct retrieved by using "Get all" endpoint and FIQL filter with struct retrieved by using "Get By ID"
-// 3. Create a new role and verify it is created as specified by using deep equality
-// 4. Delete created role
-// 5. Test read for deleted item
+// 2.3 Compares retrieved struct by using "Get all" endpoint and FIQL filter with struct retrieved by using "Get By ID"
+// endpoint
+// 3. Creates a new role and verifies it is created as specified by using deep equality
+// 4. Deletes created role
+// 5. Tests read for deleted item
 func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 	minimumRequiredApiVersion := "31.0"
 	skipOpenApiEndpoint(vcd, check, "1.0.0/roles", minimumRequiredApiVersion)
@@ -161,7 +162,7 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 		check.Assert(err, IsNil)
 		check.Assert(oneRole, NotNil)
 
-		// Step 2.3 - compare struct retrieve by using filter and the one retrieve by exact endpoint ID
+		// Step 2.3 - compare struct retrieved by using filter and the one retrieved by exact endpoint ID
 		check.Assert(oneRole, DeepEquals, expectOneRoleResultById[0])
 
 	}
@@ -173,8 +174,9 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 	newRole := &Roles{
 		Name:        check.TestName(),
 		Description: "Role created by test",
-		BundleKey:   "com.vmware.vcloud.undefined.key",
-		ReadOnly:    false,
+		// This BundleKey is being set by VCD even if it is not sent
+		BundleKey: "com.vmware.vcloud.undefined.key",
+		ReadOnly:  false,
 	}
 	newRoleResponse := &Roles{}
 	err = vcd.client.Client.OpenApiPostItem(minimumRequiredApiVersion, createUrl, nil, newRole, newRoleResponse)

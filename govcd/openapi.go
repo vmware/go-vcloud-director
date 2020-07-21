@@ -19,17 +19,18 @@ import (
 )
 
 // This file contains generalised low level methods to interact with VCD OpenAPI REST endpoints as documented in
-// https://{VCD_HOST}/api-explorer/tenant/tenant-name and https://{VCD_HOST}/api-explorer/provider documentation. It has
-// functions supporting below methods:
+// https://{VCD_HOST}/docs. In addition to this there are OpenAPI browser endpoints for tenant and provider
+// respectively https://{VCD_HOST}/api-explorer/tenant/tenant-name and https://{VCD_HOST}/api-explorer/provider .
+// OpenAPI has functions supporting below REST smethods:
 // GET /items (gets a slice of types like `[]types.OpenAPIEdgeGateway` or even `[]json.RawMessage` to process JSON as text.
 // POST /items - creates an item
-// GET /items/URN - retrieves an item with specified URN
 // PUT /items/URN - updates an item with specified URN
+// GET /items/URN - retrieves an item with specified URN
 // DELETE /items/URN - deletes an item with specified URN
 //
 // GET endpoints support FIQL for filtering in field `filter`. (FIQL IETF doc - https://tools.ietf.org/html/draft-nottingham-atompub-fiql-00)
 // Not all API fields are supported for FIQL filtering and sometimes they return odd errors when filtering is
-// unsupported however no exact documentation exists so far.
+// unsupported. No exact documentation exists so far.
 //
 // OpenAPI versioning.
 // OpenAPI was introduced in VCD 9.5 (with API version 31.0). Endpoints are being added with each VCD iteration.
@@ -58,10 +59,10 @@ func (client *Client) BuildOpenApiEndpoint(endpoint ...string) (*url.URL, error)
 	return urlRef, nil
 }
 
-// OpenApiGetAllItems retrieves and accumulates all pages then parsing them to a single object. It works by at first
-// crawling pages and accumulating all responses into []json.RawMessage (as strings). Because there is no intermediate
-// unmarshalling to exact `outType` for every page it unmarshals into response struct in one go. outType must be a slice
-// of object (e.g. []*types.OpenAPIEdgeGateway) because this response contains slice of structs.
+// OpenApiGetAllItems retrieves and accumulates all pages then parsing them to a single 'outType' object. It works by at
+// first crawling pages and accumulating all responses into []json.RawMessage (as strings). Because there is no
+// intermediate unmarshalling to exact `outType` for every page it unmarshals into response struct in one go. 'outType'
+// must be a slice of object (e.g. []*types.OpenAPIEdgeGateway) because this response contains slice of structs.
 func (client *Client) OpenApiGetAllItems(apiVersion string, urlRef *url.URL, queryParams url.Values, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Getting all items from endpoint %s for parsing into %s type\n",
 		urlRef.String(), reflect.TypeOf(outType))
@@ -99,8 +100,8 @@ func (client *Client) OpenApiGetAllItems(apiVersion string, urlRef *url.URL, que
 // OpenApiGetItem is a low level OpenAPI client function to perform GET request for any item.
 // The urlRef must point to ID of exact item (e.g. '/1.0.0/edgeGateways/{EDGE_ID}')
 // It responds with HTTP 403: Forbidden - If the user is not authorized or the entity does not exist. When HTTP 403 is
-// returned this function returns "ErrorEntityNotFound: API_ERROR" so that one can use ContainsNotFound(err) to validate
-// error.
+// returned this function returns "ErrorEntityNotFound: API_ERROR" so that one can use ContainsNotFound(err) to
+// differentiate when an objects was not found from any other error.
 func (client *Client) OpenApiGetItem(apiVersion string, urlRef *url.URL, params url.Values, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Getting item from endpoint %s with expected response of type %s",
 		urlRef.String(), reflect.TypeOf(outType))
@@ -192,7 +193,7 @@ func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params
 
 		// Here we have to find the resource once more to return it populated.
 		// Task Owner ID is the ID of created object. ID must be used (although HREF exists in task) because HREF points to
-		// old XML API and here we need to pull data from CloudAPI.
+		// old XML API and here we need to pull data from OpenAPI.
 
 		newObjectUrl, _ := url.ParseRequestURI(urlRef.String() + "/" + task.Task.Owner.ID)
 		err = client.OpenApiGetItem(apiVersion, newObjectUrl, nil, outType)
@@ -292,7 +293,7 @@ func (client *Client) OpenApiDeleteItem(apiVersion string, urlRef *url.URL, para
 		return fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
-	// Exec request
+	// Perform request
 	req := client.newOpenApiRequest(apiVersion, params, http.MethodDelete, urlRef, nil)
 
 	resp, err := client.Http.Do(req)
@@ -311,7 +312,7 @@ func (client *Client) OpenApiDeleteItem(apiVersion string, urlRef *url.URL, para
 		return fmt.Errorf("error closing response body: %s", err)
 	}
 
-	// CloudAPI may work synchronously or asynchronously. When working asynchronously - it will return HTTP 202 and
+	// OpenAPI may work synchronously or asynchronously. When working asynchronously - it will return HTTP 202 and
 	// `Location` header will contain reference to task so that it can be tracked. In DELETE case we do not care about any
 	// ID so if DELETE operation is synchronous (returns HTTP 201) - the request has already succeeded.
 	if resp.StatusCode == http.StatusAccepted {
@@ -361,7 +362,7 @@ func (client *Client) openApiGetAllPages(apiVersion string, pageSize *int, urlRe
 	}
 
 	// Pages will unwrap pagination and keep a slice of raw json message to marshal to specific types
-	pages := &types.CloudApiPages{}
+	pages := &types.OpenApiPages{}
 
 	if err = decodeBody(types.BodyTypeJSON, resp, pages); err != nil {
 		return nil, fmt.Errorf("error decoding JSON page response: %s", err)
@@ -397,7 +398,7 @@ func (client *Client) openApiGetAllPages(apiVersion string, pageSize *int, urlRe
 	return responses, nil
 }
 
-// newOpenApiRequest is a low level function used in upstream CloudAPI functions which handles logging and
+// newOpenApiRequest is a low level function used in upstream OpenAPI functions which handles logging and
 // authentication for each API request
 func (client *Client) newOpenApiRequest(apiVersion string, params url.Values, method string, reqUrl *url.URL, body io.Reader) *http.Request {
 

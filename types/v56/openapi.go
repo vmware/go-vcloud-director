@@ -5,11 +5,10 @@ import (
 	"fmt"
 )
 
-// CloudApiPages unwraps pagination for "Get All" endpoints in CloudAPI. It uses a type "CloudApiPageValues" for values
-// which are kept int []json.RawMessage. json.RawMessage helps to decouple marshalling paging related information from
-// exact type related information. Paging can be handled dynamically this way while values can be marshaled into exact
-// types.
-type CloudApiPages struct {
+// OpenApiPages unwraps pagination for "Get All" endpoints in OpenAPI. Values kept in json.RawMessage helps to decouple
+// marshalling paging related information from exact type related information. Paging can be handled dynamically this
+// way while values can be marshaled into exact types.
+type OpenApiPages struct {
 	// ResultTotal reports total results available
 	ResultTotal int `json:"resultTotal,omitempty"`
 	// PageCount reports total result pages available

@@ -237,11 +237,11 @@ func (cli *Client) NewRequestWithApiVersion(params map[string]string, method str
 	return cli.NewRequestWitNotEncodedParamsWithApiVersion(params, nil, method, reqUrl, body, apiVersion)
 }
 
-// ParseErr takes an error XML resp, error interface for unmarshaling and returns a single string for
+// ParseErr takes an error XML resp, error interface for unmarshalling and returns a single string for
 // use in error messages.
 func ParseErr(bodyType types.BodyType, resp *http.Response, errType error) error {
 	// if there was an error decoding the body, just return that
-	if err := decodeBody(types.BodyTypeXML, resp, errType); err != nil {
+	if err := decodeBody(bodyType, resp, errType); err != nil {
 		util.Logger.Printf("[ParseErr]: unhandled response <--\n%+v\n-->\n", resp)
 		return fmt.Errorf("[ParseErr]: error parsing error body for non-200 request: %s (%+v)", err, resp)
 	}
@@ -252,6 +252,16 @@ func ParseErr(bodyType types.BodyType, resp *http.Response, errType error) error
 // decodeBody is used to decode a response body of types.BodyType
 func decodeBody(bodyType types.BodyType, resp *http.Response, out interface{}) error {
 	body, err := ioutil.ReadAll(resp.Body)
+
+	// In case of JSON, body does not have indents in response therefore it must be indented
+	if bodyType == types.BodyTypeJSON {
+		var prettyJSON bytes.Buffer
+		err := json.Indent(&prettyJSON, body, "", "  ")
+		if err != nil {
+			return fmt.Errorf("error indenting response JSON: %s", err)
+		}
+		body = prettyJSON.Bytes()
+	}
 
 	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, fmt.Sprintf("%s", body))
 	if err != nil {
