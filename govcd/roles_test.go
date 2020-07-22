@@ -14,6 +14,7 @@ func (vcd *TestVCD) Test_Roles(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
+	// Step 1 - Get all roles
 	allExistingRoles, err := adminOrg.GetAllOpenApiRoles(nil)
 	check.Assert(err, IsNil)
 	check.Assert(allExistingRoles, NotNil)
@@ -22,13 +23,9 @@ func (vcd *TestVCD) Test_Roles(check *C) {
 	for _, oneRole := range allExistingRoles {
 
 		// Step 2.1 - retrieve specific role by using FIQL filter
-		// urlRef2, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles")
-		// check.Assert(err, IsNil)
-
 		queryParams := url.Values{}
 		queryParams.Add("filter", "id=="+oneRole.ID)
 
-		// expectOneRoleResultById := []*InlineRoles{{}}
 		expectOneRoleResultById, err := adminOrg.GetAllOpenApiRoles(queryParams)
 		check.Assert(err, IsNil)
 		check.Assert(len(expectOneRoleResultById) == 1, Equals, true)
