@@ -1457,3 +1457,28 @@ func (vcd *TestVCD) Test_UpdateVmCapabilities(check *C) {
 	// delete Vapp early to avoid env capacity issue
 	deleteVapp(vcd, vmName)
 }
+
+// Test update of VM Capabilities
+func (vcd *TestVCD) Test_GetMetrics(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	vmName := "Test_GetMetrics"
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp wasn't properly created")
+	}
+
+	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAngGetResourcesForVmCreation(check, vmName)
+	check.Assert(err, IsNil)
+
+	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", true)
+	check.Assert(err, IsNil)
+
+	metrics, err := vm.GetMetrics()
+	check.Assert(err, IsNil)
+	check.Assert(metrics, NotNil)
+
+	//verify
+
+	// delete Vapp early to avoid env capacity issue
+	deleteVapp(vcd, vmName)
+}
