@@ -341,7 +341,7 @@ func checkRespWithErrType(bodyType types.BodyType, resp *http.Response, err, err
 		http.StatusInternalServerError,         // 500
 		http.StatusServiceUnavailable,          // 503
 		http.StatusGatewayTimeout:              // 504
-		return nil, ParseErr(types.BodyTypeXML, resp, errType)
+		return nil, ParseErr(bodyType, resp, errType)
 	// Unhandled response.
 	default:
 		return nil, fmt.Errorf("unhandled API response, please report this issue, status code: %s", resp.Status)
