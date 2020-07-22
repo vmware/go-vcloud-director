@@ -19,7 +19,7 @@ import (
 // how to fetch response from multiple pages in RAW json messages without having defined as struct.
 func (vcd *TestVCD) Test_OpenAPIRawJsonAudiTrail(check *C) {
 	minimumRequiredApiVersion := "33.0"
-	skipOpenApiEndpoint(vcd, check, "1.0.0/auditTrail", minimumRequiredApiVersion)
+	skipOpenApiEndpointTest(vcd, check, "1.0.0/auditTrail", minimumRequiredApiVersion)
 
 	urlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/auditTrail")
 	check.Assert(err, IsNil)
@@ -50,7 +50,7 @@ func (vcd *TestVCD) Test_OpenAPIRawJsonAudiTrail(check *C) {
 // to user defined inline type
 func (vcd *TestVCD) Test_OpenAPIInlineStructAudiTrail(check *C) {
 	minimumRequiredApiVersion := "33.0"
-	skipOpenApiEndpoint(vcd, check, "1.0.0/auditTrail", minimumRequiredApiVersion)
+	skipOpenApiEndpointTest(vcd, check, "1.0.0/auditTrail", minimumRequiredApiVersion)
 
 	urlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/auditTrail")
 	check.Assert(err, IsNil)
@@ -106,7 +106,7 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructAudiTrail(check *C) {
 }
 
 // Test_OpenAPIInlineStructCRUDRoles test aims to test out low level OpenAPI functions to check if all of them work as
-// expected. It uses a very simple "Roles" endpoint which does not have bigger prerequisites and therefore is not
+// expected. It uses a very simple "InlineRoles" endpoint which does not have bigger prerequisites and therefore is not
 // dependent one more deployment specific features. It also supports all of the OpenAPI CRUD endpoints so is a good
 // endpoint to test on
 // This test performs the following:
@@ -120,13 +120,13 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructAudiTrail(check *C) {
 // 5. Tests read for deleted item
 func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 	minimumRequiredApiVersion := "31.0"
-	skipOpenApiEndpoint(vcd, check, "1.0.0/roles", minimumRequiredApiVersion)
+	skipOpenApiEndpointTest(vcd, check, "1.0.0/roles", minimumRequiredApiVersion)
 
 	// Step 1 - Get all roles
 	urlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles")
 	check.Assert(err, IsNil)
 
-	type Roles struct {
+	type InlineRoles struct {
 		ID          string `json:"id,omitempty"`
 		Name        string `json:"name"`
 		Description string `json:"description"`
@@ -134,7 +134,7 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 		ReadOnly    bool   `json:"readOnly"`
 	}
 
-	allExistingRoles := []*Roles{{}}
+	allExistingRoles := []*InlineRoles{{}}
 	err = vcd.vdc.client.OpenApiGetAllItems(minimumRequiredApiVersion, urlRef, nil, &allExistingRoles)
 	check.Assert(err, IsNil)
 
@@ -147,7 +147,7 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 		queryParams := url.Values{}
 		queryParams.Add("filter", "id=="+oneRole.ID)
 
-		expectOneRoleResultById := []*Roles{{}}
+		expectOneRoleResultById := []*InlineRoles{{}}
 
 		err = vcd.vdc.client.OpenApiGetAllItems(minimumRequiredApiVersion, urlRef2, queryParams, &expectOneRoleResultById)
 		check.Assert(err, IsNil)
@@ -157,7 +157,7 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 		singleRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles/" + oneRole.ID)
 		check.Assert(err, IsNil)
 
-		oneRole := &Roles{}
+		oneRole := &InlineRoles{}
 		err = vcd.vdc.client.OpenApiGetItem(minimumRequiredApiVersion, singleRef, nil, oneRole)
 		check.Assert(err, IsNil)
 		check.Assert(oneRole, NotNil)
@@ -171,14 +171,14 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 	createUrl, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles")
 	check.Assert(err, IsNil)
 
-	newRole := &Roles{
+	newRole := &InlineRoles{
 		Name:        check.TestName(),
 		Description: "Role created by test",
 		// This BundleKey is being set by VCD even if it is not sent
 		BundleKey: "com.vmware.vcloud.undefined.key",
 		ReadOnly:  false,
 	}
-	newRoleResponse := &Roles{}
+	newRoleResponse := &InlineRoles{}
 	err = vcd.client.Client.OpenApiPostItem(minimumRequiredApiVersion, createUrl, nil, newRole, newRoleResponse)
 	check.Assert(err, IsNil)
 
@@ -196,13 +196,13 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 	// Step 5 - try to read deleted role and expect error to contain 'ErrorEntityNotFound'
 	// Read is tricky - it throws an error ACCESS_TO_RESOURCE_IS_FORBIDDEN when the resource with ID does not
 	// exist therefore one cannot know what kind of error occurred.
-	lostRole := &Roles{}
+	lostRole := &InlineRoles{}
 	err = vcd.client.Client.OpenApiGetItem(minimumRequiredApiVersion, deleteUrlRef, nil, lostRole)
 	check.Assert(ContainsNotFound(err), Equals, true)
 }
 
-// skipOpenApiEndpoint is a helper to skip tests for particular unsupported OpenAPI endpoints
-func skipOpenApiEndpoint(vcd *TestVCD, check *C, endpoint, requiredVersion string) {
+// skipOpenApiEndpointTest is a helper to skip tests for particular unsupported OpenAPI endpoints
+func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint, requiredVersion string) {
 	constraint := ">= " + requiredVersion
 	if !vcd.client.Client.APIVCDMaxVersionIs(constraint) {
 		maxSupportedVersion, err := vcd.client.Client.maxSupportedVersion()

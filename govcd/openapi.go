@@ -166,7 +166,6 @@ func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params
 	}
 
 	req := client.newOpenApiRequest(apiVersion, params, http.MethodPost, urlRef, body)
-
 	resp, err := client.Http.Do(req)
 	if err != nil {
 		return err
@@ -237,7 +236,6 @@ func (client *Client) OpenApiPutItem(apiVersion string, urlRef *url.URL, params 
 	}
 
 	req := client.newOpenApiRequest(apiVersion, params, http.MethodPut, urlRef, body)
-
 	resp, err := client.Http.Do(req)
 	if err != nil {
 		return err
@@ -269,7 +267,7 @@ func (client *Client) OpenApiPutItem(apiVersion string, urlRef *url.URL, params 
 		}
 
 		// Synchronous task - new item body is returned in response of HTTP POST request
-	case http.StatusCreated:
+	case http.StatusOK:
 		if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
 			return fmt.Errorf("error decoding JSON response after POST: %s", err)
 		}
@@ -331,7 +329,7 @@ func (client *Client) OpenApiDeleteItem(apiVersion string, urlRef *url.URL, para
 // openApiGetAllPages is a recursive function that helps to accumulate responses from multiple pages for GET query. It
 // works by at first crawling pages and accumulating all responses into []json.RawMessage (as strings). Because there is
 // no intermediate unmarshalling to exact `outType` for every page it can unmarshal into direct `outType` supplied.
-// outType must be a slice of object (e.g. []*types.CloudAPIEdgeGateway) because accumulated responses are in JSON list
+// outType must be a slice of object (e.g. []*types.OpenApiRole) because accumulated responses are in JSON list
 func (client *Client) openApiGetAllPages(apiVersion string, pageSize *int, urlRef *url.URL, queryParams url.Values, outType interface{}, responses []json.RawMessage) ([]json.RawMessage, error) {
 	if responses == nil {
 		responses = []json.RawMessage{}

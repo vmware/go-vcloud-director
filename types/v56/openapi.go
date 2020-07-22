@@ -41,3 +41,12 @@ func (openApiError OpenApiError) ErrorWithStack() string {
 	return fmt.Sprintf("%s - %s. Stack: %s", openApiError.MinorErrorCode, openApiError.Message,
 		openApiError.StackTrace)
 }
+
+// Role defines access roles in VCD
+type Role struct {
+	ID          string `json:"id,omitempty"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	BundleKey   string `json:"bundleKey"`
+	ReadOnly    bool   `json:"readOnly"`
+}
