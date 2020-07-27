@@ -882,3 +882,19 @@ func (vcd *TestVCD) Test_OrgGetVdc(check *C) {
 	}
 	vcd.testFinderGetGenericEntity(def, check)
 }
+
+// Tests VDC retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_GetTaskList(check *C) {
+
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_GetTaskList: Org name not given.")
+		return
+	}
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	taskList, err := org.GetTaskList()
+	check.Assert(err, IsNil)
+	check.Assert(len(taskList.Task), Not(Equals), 0)
+}
