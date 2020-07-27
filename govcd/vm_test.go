@@ -962,7 +962,7 @@ func (vcd *TestVCD) createInternalDisk(check *C, vmName string, busNumber int) (
 	previousVdcFastProvisioningValue := updateVdcFastProvisioning(vcd, check, "disable")
 	AddToCleanupList(previousVdcFastProvisioningValue, "fastProvisioning", vcd.config.VCD.Org+"|"+vcd.config.VCD.Vdc, "createInternalDisk")
 
-	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAngGetResourcesForVmCreation(check, vmName)
+	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAndGetResourcesForVmCreation(check, vmName)
 	check.Assert(err, IsNil)
 
 	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", true)
@@ -1353,7 +1353,7 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 		check.Skip("Skipping test because vApp wasn't properly created")
 	}
 
-	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAngGetResourcesForVmCreation(check, vmName)
+	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAndGetResourcesForVmCreation(check, vmName)
 	check.Assert(err, IsNil)
 
 	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", true)
@@ -1424,15 +1424,15 @@ func (vcd *TestVCD) Test_QueryVmList(check *C) {
 }
 
 // Test update of VM Capabilities
-func (vcd *TestVCD) Test_UpdateVmCapabilities(check *C) {
+func (vcd *TestVCD) Test_UpdateVmCpuAndMemoryHotAdd(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	vmName := "Test_UpdateVmCapabilities"
+	vmName := "Test_UpdateVmCpuAndMemoryHotAdd"
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vApp wasn't properly created")
 	}
 
-	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAngGetResourcesForVmCreation(check, vmName)
+	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAndGetResourcesForVmCreation(check, vmName)
 	check.Assert(err, IsNil)
 
 	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", true)
@@ -1446,7 +1446,7 @@ func (vcd *TestVCD) Test_UpdateVmCapabilities(check *C) {
 	check.Assert(vm.VM.VMCapabilities.MemoryHotAddEnabled, Equals, false)
 	check.Assert(vm.VM.VMCapabilities.CPUHotAddEnabled, Equals, false)
 
-	updatedVm, err := vm.UpdateVmCapabilities(true, true)
+	updatedVm, err := vm.UpdateVmCpuAndMemoryHotAdd(true, true)
 	check.Assert(err, IsNil)
 	check.Assert(updatedVm, NotNil)
 

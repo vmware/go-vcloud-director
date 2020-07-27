@@ -23,8 +23,8 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// createAngGetResourcesForVmCreation creates vAPP and two VM for the testing
-func (vcd *TestVCD) createAngGetResourcesForVmCreation(check *C, vmName string) (*Vdc, *EdgeGateway, VAppTemplate, *VApp, types.NetworkConnectionSection, error) {
+// createAndGetResourcesForVmCreation creates vAPP and two VM for the testing
+func (vcd *TestVCD) createAndGetResourcesForVmCreation(check *C, vmName string) (*Vdc, *EdgeGateway, VAppTemplate, *VApp, types.NetworkConnectionSection, error) {
 	if vcd.config.VCD.Catalog.Name == "" {
 		check.Skip("No Catalog name given for VDC tests")
 	}
