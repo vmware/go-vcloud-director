@@ -890,6 +890,10 @@ func (vcd *TestVCD) Test_GetTaskList(check *C) {
 		check.Skip("Test_GetTaskList: Org name not given.")
 		return
 	}
+	// we need to have Tasks
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp wasn't properly created")
+	}
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
