@@ -901,4 +901,11 @@ func (vcd *TestVCD) Test_GetTaskList(check *C) {
 	taskList, err := org.GetTaskList()
 	check.Assert(err, IsNil)
 	check.Assert(len(taskList.Task), Not(Equals), 0)
+	check.Assert(taskList.Task[0], NotNil)
+	check.Assert(taskList.Task[0].ID, Not(Equals), "")
+	check.Assert(taskList.Task[0].ID, Not(Equals), "")
+	check.Assert(taskList.Task[0].Type, Not(Equals), "")
+	check.Assert(taskList.Task[0].Owner, Not(Equals), "")
+	check.Assert(taskList.Task[0].Status, Not(Equals), "")
+	check.Assert(taskList.Task[0].Progress, Not(Equals), "")
 }
