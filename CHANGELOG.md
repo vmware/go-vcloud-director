@@ -2,6 +2,9 @@
 
 * Improved testing tags isolation [#320](https://github.com/vmware/go-vcloud-director/pull/320)
 * Added command `make tagverify` to check tags isolation tests [#320](https://github.com/vmware/go-vcloud-director/pull/320)
+* Loosen up `Test_LBAppRule` for invalid application script check to work with different error engine in VCD 10.2
+[#326](https://github.com/vmware/go-vcloud-director/pull/326)
+* Update VDC dynamic func to handle API version 35.0 [#327](https://github.com/vmware/go-vcloud-director/pull/327)
 * Introduce low level OpenAPI client functions `OpenApiGetAllItems`, `OpenApiPostItem`, `OpenApiGetItem`,
  `OpenApiPutItem`, `OpenApiDeleteItem`, `OpenApiIsSupported`, `BuildOpenApiEndpoint`
  [#325](https://github.com/vmware/go-vcloud-director/pull/325)
