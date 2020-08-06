@@ -419,8 +419,6 @@ func (client *Client) newOpenApiRequest(apiVersion string, params url.Values, me
 	if client.VCDAuthHeader != "" && client.VCDToken != "" {
 		// Add the authorization header
 		req.Header.Add(client.VCDAuthHeader, client.VCDToken)
-	}
-	if client.VCDAuthHeader != "" && client.VCDToken != "" {
 		// Add the Accept header for VCD
 		acceptMime := types.JSONMime + ";version=" + apiVersion
 		req.Header.Add("Accept", acceptMime)

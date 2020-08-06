@@ -105,7 +105,7 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructAudiTrail(check *C) {
 	}
 }
 
-// Test_OpenAPIInlineStructCRUDRoles test aims to test out low level OpenAPI functions to check if all of them work as
+// Test_OpenApiInlineStructCRUDRoles test aims to test out low level OpenAPI functions to check if all of them work as
 // expected. It uses a very simple "InlineRoles" endpoint which does not have bigger prerequisites and therefore is not
 // dependent one more deployment specific features. It also supports all of the OpenAPI CRUD endpoints so is a good
 // endpoint to test on
@@ -118,7 +118,7 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructAudiTrail(check *C) {
 // 3. Creates a new role and verifies it is created as specified by using deep equality
 // 4. Deletes created role
 // 5. Tests read for deleted item
-func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
+func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	minimumRequiredApiVersion := "31.0"
 	skipOpenApiEndpointTest(vcd, check, "1.0.0/roles", minimumRequiredApiVersion)
 
