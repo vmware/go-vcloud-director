@@ -288,6 +288,7 @@ func decodeBody(bodyType types.BodyType, resp *http.Response, out interface{}) e
 	return nil
 }
 
+// indentJsonBody indents raw JSON body for easier readability
 func indentJsonBody(body []byte) ([]byte, error) {
 	var prettyJSON bytes.Buffer
 	err := json.Indent(&prettyJSON, body, "", "  ")
