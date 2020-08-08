@@ -24,7 +24,7 @@ func (adminOrg *AdminOrg) GetOpenApiRoleById(id string) (*OpenApiRole, error) {
 		return nil, fmt.Errorf("empty role id")
 	}
 
-	urlRef, err := adminOrg.client.BuildOpenApiEndpoint(endpoint, id)
+	urlRef, err := adminOrg.client.OpenApiBuildEndpoint(endpoint, id)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (adminOrg *AdminOrg) GetAllOpenApiRoles(queryParameters url.Values) ([]*typ
 		return nil, err
 	}
 
-	urlRef, err := adminOrg.client.BuildOpenApiEndpoint(endpoint)
+	urlRef, err := adminOrg.client.OpenApiBuildEndpoint(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (role *OpenApiRole) Create(newRole *types.Role) (*OpenApiRole, error) {
 		return nil, err
 	}
 
-	urlRef, err := role.client.BuildOpenApiEndpoint(endpoint)
+	urlRef, err := role.client.OpenApiBuildEndpoint(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (role *OpenApiRole) Update() (*OpenApiRole, error) {
 		return nil, fmt.Errorf("cannot update role without id")
 	}
 
-	urlRef, err := role.client.BuildOpenApiEndpoint(endpoint, role.Role.ID)
+	urlRef, err := role.client.OpenApiBuildEndpoint(endpoint, role.Role.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func (role *OpenApiRole) Delete() error {
 		return fmt.Errorf("cannot delete role without id")
 	}
 
-	urlRef, err := role.client.BuildOpenApiEndpoint(endpoint, role.Role.ID)
+	urlRef, err := role.client.OpenApiBuildEndpoint(endpoint, role.Role.ID)
 	if err != nil {
 		return err
 	}

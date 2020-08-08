@@ -77,7 +77,7 @@ func main() {
 // other tools (for example 'jq' in shell)
 // It also uses FIQL query filter to retrieve auditTrail items only for the last 12 hours
 func openAPIGetRawJsonAuditTrail(vcdClient *govcd.VCDClient) {
-	urlRef, err := vcdClient.Client.BuildOpenApiEndpoint("1.0.0/auditTrail")
+	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint("1.0.0/auditTrail")
 	if err != nil {
 		panic(err)
 	}
@@ -102,7 +102,7 @@ func openAPIGetRawJsonAuditTrail(vcdClient *govcd.VCDClient) {
 // OpenAPI in VCD and marshal responses into custom defined struct with tags.
 // It also uses FIQL query filter to retrieve auditTrail items only for the last 12 hours
 func openAPIGetStructAuditTrail(vcdClient *govcd.VCDClient) {
-	urlRef, err := vcdClient.Client.BuildOpenApiEndpoint("1.0.0/auditTrail")
+	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint("1.0.0/auditTrail")
 	if err != nil {
 		panic(err)
 	}

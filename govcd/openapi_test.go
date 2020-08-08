@@ -21,7 +21,7 @@ func (vcd *TestVCD) Test_OpenAPIRawJsonAudiTrail(check *C) {
 	minimumRequiredApiVersion := "33.0"
 	skipOpenApiEndpointTest(vcd, check, "1.0.0/auditTrail", minimumRequiredApiVersion)
 
-	urlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/auditTrail")
+	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/auditTrail")
 	check.Assert(err, IsNil)
 
 	// Limit search of audits trails to the last 12 hours so that it doesn't take too long and set pageSize to be 1 result
@@ -52,7 +52,7 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructAudiTrail(check *C) {
 	minimumRequiredApiVersion := "33.0"
 	skipOpenApiEndpointTest(vcd, check, "1.0.0/auditTrail", minimumRequiredApiVersion)
 
-	urlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/auditTrail")
+	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/auditTrail")
 	check.Assert(err, IsNil)
 
 	// Inline type
@@ -123,7 +123,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	skipOpenApiEndpointTest(vcd, check, "1.0.0/roles", minimumRequiredApiVersion)
 
 	// Step 1 - Get all roles
-	urlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles")
+	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles")
 	check.Assert(err, IsNil)
 
 	type InlineRoles struct {
@@ -141,7 +141,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	// Step 2 - Get all roles using query filters
 	for _, oneRole := range allExistingRoles {
 		// Step 2.1 - retrieve specific role by using FIQL filter
-		urlRef2, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles")
+		urlRef2, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles")
 		check.Assert(err, IsNil)
 
 		queryParams := url.Values{}
@@ -154,7 +154,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 		check.Assert(len(expectOneRoleResultById) == 1, Equals, true)
 
 		// Step 2.2 - retrieve specific role by using endpoint
-		singleRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles/" + oneRole.ID)
+		singleRef, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles/" + oneRole.ID)
 		check.Assert(err, IsNil)
 
 		oneRole := &InlineRoles{}
@@ -168,7 +168,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	}
 
 	// Step 3 - Create a new role and ensure it is created as specified by doing deep comparison
-	createUrl, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles")
+	createUrl, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles")
 	check.Assert(err, IsNil)
 
 	newRole := &InlineRoles{
@@ -187,7 +187,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	check.Assert(newRoleResponse, DeepEquals, newRole)
 
 	// Step 4 - delete created role
-	deleteUrlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles/", newRoleResponse.ID)
+	deleteUrlRef, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles/", newRoleResponse.ID)
 	check.Assert(err, IsNil)
 
 	err = vcd.client.Client.OpenApiDeleteItem(minimumRequiredApiVersion, deleteUrlRef, nil)

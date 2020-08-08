@@ -21,7 +21,7 @@ import (
 // This file contains generalised low level methods to interact with VCD OpenAPI REST endpoints as documented in
 // https://{VCD_HOST}/docs. In addition to this there are OpenAPI browser endpoints for tenant and provider
 // respectively https://{VCD_HOST}/api-explorer/tenant/tenant-name and https://{VCD_HOST}/api-explorer/provider .
-// OpenAPI has functions supporting below REST smethods:
+// OpenAPI has functions supporting below REST methods:
 // GET /items (gets a slice of types like `[]types.OpenAPIEdgeGateway` or even `[]json.RawMessage` to process JSON as text.
 // POST /items - creates an item
 // PUT /items/URN - updates an item with specified URN
@@ -47,10 +47,11 @@ func (client *Client) OpenApiIsSupported() bool {
 	return client.APIVCDMaxVersionIs(">= 31")
 }
 
-// BuildOpenApiEndpoint helps to construct OpenAPI endpoint by using already configured VCD HREF while requiring only
-// the last bit for endpoint.
+// OpenApiBuildEndpoint helps to construct OpenAPI endpoint by using already configured VCD HREF while requiring only
+// the last bit for endpoint. This is a variadic function and multiple pieces can be supplied for convenience. Leading
+// '/' is added automatically.
 // Sample URL construct: https://HOST/cloudapi/endpoint
-func (client *Client) BuildOpenApiEndpoint(endpoint ...string) (*url.URL, error) {
+func (client *Client) OpenApiBuildEndpoint(endpoint ...string) (*url.URL, error) {
 	endpointString := client.VCDHREF.Scheme + "://" + client.VCDHREF.Host + "/cloudapi/" + strings.Join(endpoint, "")
 	urlRef, err := url.ParseRequestURI(endpointString)
 	if err != nil {
@@ -120,8 +121,8 @@ func (client *Client) OpenApiGetItem(apiVersion string, urlRef *url.URL, params 
 	// HTTP 403: Forbidden - is returned if the user is not authorized or the entity does not exist.
 	if resp.StatusCode == http.StatusForbidden {
 		err := ParseErr(types.BodyTypeJSON, resp, &types.OpenApiError{})
-		resp.Body.Close()
-		return fmt.Errorf("%s: %s", ErrorEntityNotFound, err)
+		closeErr := resp.Body.Close()
+		return fmt.Errorf("%s: %s [body close error: %s]", ErrorEntityNotFound, err, closeErr)
 	}
 
 	// resp is ignored below because it is the same as above
