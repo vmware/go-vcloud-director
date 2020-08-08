@@ -116,8 +116,12 @@ func (vcd *TestVCD) Test_OpenAPIInlineStructAudiTrail(check *C) {
 // 2.3 Compares retrieved struct by using "Get all" endpoint and FIQL filter with struct retrieved by using "Get By ID"
 // endpoint
 // 3. Creates a new role and verifies it is created as specified by using deep equality
-// 4. Deletes created role
-// 5. Tests read for deleted item
+// 4. Updates role description
+// 5. Deletes created role
+// 6. Tests read for deleted item
+// 7. Create role once more using "Sync" version of POST function
+// 8. Update role once more using "Sync" version of PUT function
+// 9. Delete role once again
 func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	minimumRequiredApiVersion := "31.0"
 	skipOpenApiEndpointTest(vcd, check, "1.0.0/roles", minimumRequiredApiVersion)
@@ -186,19 +190,58 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	newRole.ID = newRoleResponse.ID
 	check.Assert(newRoleResponse, DeepEquals, newRole)
 
-	// Step 4 - delete created role
+	// Step 4 - update created role (change description)
+	newRoleResponse.Description = "Updated description created by test"
+	updateUrl, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles/", newRoleResponse.ID)
+
+	updatedRoleResponse := &InlineRoles{}
+	err = vcd.client.Client.OpenApiPutItem(minimumRequiredApiVersion, updateUrl, nil, newRoleResponse, updatedRoleResponse)
+	check.Assert(err, IsNil)
+
+	// Ensure supplied and response objects are identical (update worked)
+	check.Assert(updatedRoleResponse, DeepEquals, newRoleResponse)
+
+	// Step 5 - delete created role
 	deleteUrlRef, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles/", newRoleResponse.ID)
 	check.Assert(err, IsNil)
 
 	err = vcd.client.Client.OpenApiDeleteItem(minimumRequiredApiVersion, deleteUrlRef, nil)
 	check.Assert(err, IsNil)
 
-	// Step 5 - try to read deleted role and expect error to contain 'ErrorEntityNotFound'
+	// Step 6 - try to read deleted role and expect error to contain 'ErrorEntityNotFound'
 	// Read is tricky - it throws an error ACCESS_TO_RESOURCE_IS_FORBIDDEN when the resource with ID does not
 	// exist therefore one cannot know what kind of error occurred.
 	lostRole := &InlineRoles{}
 	err = vcd.client.Client.OpenApiGetItem(minimumRequiredApiVersion, deleteUrlRef, nil, lostRole)
 	check.Assert(ContainsNotFound(err), Equals, true)
+
+	// Step 7 - test synchronous POST and PUT functions (because Roles is a synchronous OpenAPI endpoint)
+	newRole.ID = "" // unset ID as it cannot be set for creation
+	err = vcd.client.Client.OpenApiPostItemSync(minimumRequiredApiVersion, createUrl, nil, newRole, newRoleResponse)
+	check.Assert(err, IsNil)
+
+	// Ensure supplied and created structs differ only by ID
+	newRole.ID = newRoleResponse.ID
+	check.Assert(newRoleResponse, DeepEquals, newRole)
+
+	// Step 8 - update role using synchronous PUT function
+	newRoleResponse.Description = "Updated description created by sync test"
+	updateUrl2, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles/", newRoleResponse.ID)
+
+	updatedRoleResponse2 := &InlineRoles{}
+	err = vcd.client.Client.OpenApiPutItem(minimumRequiredApiVersion, updateUrl2, nil, newRoleResponse, updatedRoleResponse2)
+	check.Assert(err, IsNil)
+
+	// Ensure supplied and response objects are identical (update worked)
+	check.Assert(updatedRoleResponse2, DeepEquals, newRoleResponse)
+
+	// Step 9 - delete role once again
+	deleteUrlRef2, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles/", newRoleResponse.ID)
+	check.Assert(err, IsNil)
+
+	err = vcd.client.Client.OpenApiDeleteItem(minimumRequiredApiVersion, deleteUrlRef2, nil)
+	check.Assert(err, IsNil)
+
 }
 
 // skipOpenApiEndpointTest is a helper to skip tests for particular unsupported OpenAPI endpoints

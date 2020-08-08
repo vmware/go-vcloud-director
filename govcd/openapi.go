@@ -145,9 +145,85 @@ func (client *Client) OpenApiGetItem(apiVersion string, urlRef *url.URL, params 
 	return nil
 }
 
-// OpenApiPostItem is a low level OpenAPI client function to perform POST request for any item.
-// The urlRef must point to POST endpoint (e.g. '/1.0.0/edgeGateways')
-// It handles synchronous and asynchronous tasks. When a task is synchronous - it will block until it is finished.
+// OpenApiPostItemSync is a low level OpenAPI client function to perform POST request for items that support synchronous
+// requests. The urlRef must point to POST endpoint (e.g. '/1.0.0/edgeGateways') that supports synchronous requests. It
+// will return an error when endpoint does not support synchronous requests (HTTP response status code is not 201).
+// Response will be unmarshalled into outType.
+//
+// Note. Even though it may return error if the item does not support synchronous request - the object may still be
+// created. OpenApiPostItem would handle both cases and always return created item.
+func (client *Client) OpenApiPostItemSync(apiVersion string, urlRef *url.URL, params url.Values, payload, outType interface{}) error {
+	util.Logger.Printf("[TRACE] Posting %s item to endpoint %s with expected response of type %s",
+		reflect.TypeOf(payload), urlRef.String(), reflect.TypeOf(outType))
+
+	if !client.OpenApiIsSupported() {
+		return fmt.Errorf("OpenAPI is not supported on this VCD version")
+	}
+
+	resp, err := client.openApiPerformPostPut(http.MethodPost, apiVersion, urlRef, params, payload)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusCreated {
+		util.Logger.Printf("[TRACE] Synchronous task expected (HTTP status code 201). Got %d", resp.StatusCode)
+
+	}
+
+	if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
+		return fmt.Errorf("error decoding JSON response after POST: %s", err)
+	}
+
+	err = resp.Body.Close()
+	if err != nil {
+		return fmt.Errorf("error closing response body: %s", err)
+	}
+
+	return nil
+}
+
+// OpenApiPostItemAsync is a low level OpenAPI client function to perform POST request for items that support
+// asynchronous requests. The urlRef must point to POST endpoint (e.g. '/1.0.0/edgeGateways') that supports asynchronous
+// requests. It will return an error if item does not support asynchronous request (does not respond with HTTP 202).
+//
+// Note. Even though it may return error if the item does not support asynchronous request - the object may still be
+// created. OpenApiPostItem would handle both cases and always return created item.
+func (client *Client) OpenApiPostItemAsync(apiVersion string, urlRef *url.URL, params url.Values, payload interface{}) (Task, error) {
+	util.Logger.Printf("[TRACE] Posting async %s item to endpoint %s with expected task response",
+		reflect.TypeOf(payload), urlRef.String())
+
+	if !client.OpenApiIsSupported() {
+		return Task{}, fmt.Errorf("OpenAPI is not supported on this VCD version")
+	}
+
+	resp, err := client.openApiPerformPostPut(http.MethodPost, apiVersion, urlRef, params, payload)
+	if err != nil {
+		return Task{}, err
+	}
+
+	if resp.StatusCode != http.StatusAccepted {
+		return Task{}, fmt.Errorf("POST request expected async task (HTTP response 202), got %d", resp.StatusCode)
+	}
+
+	err = resp.Body.Close()
+	if err != nil {
+		return Task{}, fmt.Errorf("error closing response body: %s", err)
+	}
+
+	// Asynchronous case returns "Location" header pointing to XML task
+	taskUrl := resp.Header.Get("Location")
+	if taskUrl == "" {
+		return Task{}, fmt.Errorf("unexpected empty task HREF")
+	}
+	task := NewTask(client)
+	task.Task.HREF = taskUrl
+
+	return *task, nil
+}
+
+// OpenApiPostItem is a low level OpenAPI client function to perform POST request for item supporting synchronous or
+// asynchronous requests. The urlRef must point to POST endpoint (e.g. '/1.0.0/edgeGateways'). When a task is
+// synchronous - it will track task until it is finished and pick reference to marshal outType.
 func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params url.Values, payload, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Posting %s item to endpoint %s with expected response of type %s",
 		reflect.TypeOf(payload), urlRef.String(), reflect.TypeOf(outType))
@@ -156,26 +232,9 @@ func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params
 		return fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
-	// Marshal payload if we have one
-	var body *bytes.Buffer
-	if payload != nil {
-		marshaledJson, err := json.MarshalIndent(payload, "", "  ")
-		if err != nil {
-			return fmt.Errorf("error marshalling JSON data for POST request %s", err)
-		}
-		body = bytes.NewBuffer(marshaledJson)
-	}
-
-	req := client.newOpenApiRequest(apiVersion, params, http.MethodPost, urlRef, body)
-	resp, err := client.Http.Do(req)
+	resp, err := client.openApiPerformPostPut(http.MethodPost, apiVersion, urlRef, params, payload)
 	if err != nil {
 		return err
-	}
-
-	// resp is ignored below because it is the same the one above
-	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &types.OpenApiError{})
-	if err != nil {
-		return fmt.Errorf("error in HTTP POST request: %s", err)
 	}
 
 	// Handle two cases of API behaviour - synchronous (response status code is 201) and asynchronous (response status
@@ -184,6 +243,7 @@ func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params
 	// Asynchronous case - must track task and get item HREF from there
 	case http.StatusAccepted:
 		taskUrl := resp.Header.Get("Location")
+		util.Logger.Printf("[TRACE] Asynchronous task detected, tracking task with HREF: %s", taskUrl)
 		task := NewTask(client)
 		task.Task.HREF = taskUrl
 		err = task.WaitTaskCompletion()
@@ -203,6 +263,7 @@ func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params
 
 		// Synchronous task - new item body is returned in response of HTTP POST request
 	case http.StatusCreated:
+		util.Logger.Printf("[TRACE] Synchronous task detected, marshalling outType '%s'", reflect.TypeOf(outType))
 		if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
 			return fmt.Errorf("error decoding JSON response after POST: %s", err)
 		}
@@ -216,36 +277,95 @@ func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params
 	return nil
 }
 
-// OpenApiPutItem is a low level OpenAPI client function to perform PUT request for any item.
-// The urlRef must point to ID of exact item (e.g. '/1.0.0/edgeGateways/{EDGE_ID}')
-// It handles synchronous and asynchronous tasks. When a task is synchronous - it will block until it is finished.
-func (client *Client) OpenApiPutItem(apiVersion string, urlRef *url.URL, params url.Values, payload, outType interface{}) error {
-	util.Logger.Printf("[TRACE] Performing HTTP PUT request for item of type %s at endpoint %s with expected response of type %s",
+// OpenApiPutItemSync is a low level OpenAPI client function to perform PUT request for items that support synchronous
+// requests. The urlRef must point to ID of exact item (e.g. '/1.0.0/edgeGateways/{EDGE_ID}') and support synchronous
+// requests. It will return an error when endpoint does not support synchronous requests (HTTP response status code is not 201).
+// Response will be unmarshalled into outType.
+//
+// Note. Even though it may return error if the item does not support synchronous request - the object may still be
+// updated. OpenApiPutItem would handle both cases and always return updated item.
+func (client *Client) OpenApiPutItemSync(apiVersion string, urlRef *url.URL, params url.Values, payload, outType interface{}) error {
+	util.Logger.Printf("[TRACE] Putting %s item to endpoint %s with expected response of type %s",
 		reflect.TypeOf(payload), urlRef.String(), reflect.TypeOf(outType))
 
 	if !client.OpenApiIsSupported() {
 		return fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
-	var body *bytes.Buffer
-	if payload != nil {
-		marshaledJson, err := json.MarshalIndent(payload, "", "  ")
-		if err != nil {
-			return fmt.Errorf("error marshalling JSON data for PUT request %s", err)
-		}
-		body = bytes.NewBuffer(marshaledJson)
-	}
-
-	req := client.newOpenApiRequest(apiVersion, params, http.MethodPut, urlRef, body)
-	resp, err := client.Http.Do(req)
+	resp, err := client.openApiPerformPostPut(http.MethodPut, apiVersion, urlRef, params, payload)
 	if err != nil {
 		return err
 	}
 
-	// resp is ignored below because it is the same as above
-	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &types.OpenApiError{})
+	if resp.StatusCode != http.StatusCreated {
+		util.Logger.Printf("[TRACE] Synchronous task expected (HTTP status code 201). Got %d", resp.StatusCode)
+
+	}
+
+	if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
+		return fmt.Errorf("error decoding JSON response after PUT: %s", err)
+	}
+
+	err = resp.Body.Close()
 	if err != nil {
-		return fmt.Errorf("error in HTTP PUT request: %s", err)
+		return fmt.Errorf("error closing response body: %s", err)
+	}
+
+	return nil
+}
+
+// OpenApiPutItemAsync is a low level OpenAPI client function to perform PUT request for items that support asynchronous
+// requests. The urlRef must point to ID of exact item (e.g. '/1.0.0/edgeGateways/{EDGE_ID}') that supports asynchronous
+// requests. It will return an error if item does not support asynchronous request (does not respond with HTTP 202).
+//
+// Note. Even though it may return error if the item does not support asynchronous request - the object may still be
+// created. OpenApiPutItem would handle both cases and always return created item.
+func (client *Client) OpenApiPutItemAsync(apiVersion string, urlRef *url.URL, params url.Values, payload interface{}) (Task, error) {
+	util.Logger.Printf("[TRACE] Putting async %s item to endpoint %s with expected task response",
+		reflect.TypeOf(payload), urlRef.String())
+
+	if !client.OpenApiIsSupported() {
+		return Task{}, fmt.Errorf("OpenAPI is not supported on this VCD version")
+	}
+	resp, err := client.openApiPerformPostPut(http.MethodPut, apiVersion, urlRef, params, payload)
+	if err != nil {
+		return Task{}, err
+	}
+
+	if resp.StatusCode != http.StatusAccepted {
+		return Task{}, fmt.Errorf("PUT request expected async task (HTTP response 202), got %d", resp.StatusCode)
+	}
+
+	err = resp.Body.Close()
+	if err != nil {
+		return Task{}, fmt.Errorf("error closing response body: %s", err)
+	}
+
+	// Asynchronous case returns "Location" header pointing to XML task
+	taskUrl := resp.Header.Get("Location")
+	if taskUrl == "" {
+		return Task{}, fmt.Errorf("unexpected empty task HREF")
+	}
+	task := NewTask(client)
+	task.Task.HREF = taskUrl
+
+	return *task, nil
+}
+
+// OpenApiPutItem is a low level OpenAPI client function to perform PUT request for any item.
+// The urlRef must point to ID of exact item (e.g. '/1.0.0/edgeGateways/{EDGE_ID}')
+// It handles synchronous and asynchronous tasks. When a task is synchronous - it will block until it is finished.
+func (client *Client) OpenApiPutItem(apiVersion string, urlRef *url.URL, params url.Values, payload, outType interface{}) error {
+	util.Logger.Printf("[TRACE] Putting %s item to endpoint %s with expected response of type %s",
+		reflect.TypeOf(payload), urlRef.String(), reflect.TypeOf(outType))
+
+	if !client.OpenApiIsSupported() {
+		return fmt.Errorf("OpenAPI is not supported on this VCD version")
+	}
+	resp, err := client.openApiPerformPostPut(http.MethodPut, apiVersion, urlRef, params, payload)
+
+	if err != nil {
+		return err
 	}
 
 	// Handle two cases of API behaviour - synchronous (response status code is 201) and asynchronous (response status
@@ -254,6 +374,7 @@ func (client *Client) OpenApiPutItem(apiVersion string, urlRef *url.URL, params 
 	// Asynchronous case - must track task and get item HREF from there
 	case http.StatusAccepted:
 		taskUrl := resp.Header.Get("Location")
+		util.Logger.Printf("[TRACE] Asynchronous task detected, tracking task with HREF: %s", taskUrl)
 		task := NewTask(client)
 		task.Task.HREF = taskUrl
 		err = task.WaitTaskCompletion()
@@ -264,13 +385,14 @@ func (client *Client) OpenApiPutItem(apiVersion string, urlRef *url.URL, params 
 		// Here we have to find the resource once more to return it populated. Provided params ir ignored for retrieval.
 		err = client.OpenApiGetItem(apiVersion, urlRef, nil, outType)
 		if err != nil {
-			return fmt.Errorf("error retrieving item after creation: %s", err)
+			return fmt.Errorf("error retrieving item after updating: %s", err)
 		}
 
-		// Synchronous task - new item body is returned in response of HTTP POST request
+		// Synchronous task - new item body is returned in response of HTTP PUT request
 	case http.StatusOK:
+		util.Logger.Printf("[TRACE] Synchronous task detected, marshalling outType '%s'", reflect.TypeOf(outType))
 		if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
-			return fmt.Errorf("error decoding JSON response after POST: %s", err)
+			return fmt.Errorf("error decoding JSON response after PUT: %s", err)
 		}
 	}
 
@@ -325,6 +447,33 @@ func (client *Client) OpenApiDeleteItem(apiVersion string, urlRef *url.URL, para
 	}
 
 	return nil
+}
+
+// openApiPerformPostPut is a shared function for all public PUT and POST function parts - OpenApiPostItemSync,
+// OpenApiPostItemAsync, OpenApiPostItem, OpenApiPutItemSync, OpenApiPutItemAsync, OpenApiPutItem
+func (client *Client) openApiPerformPostPut(httpMethod string, apiVersion string, urlRef *url.URL, params url.Values, payload interface{}) (*http.Response, error) {
+	// Marshal payload if we have one
+	var body *bytes.Buffer
+	if payload != nil {
+		marshaledJson, err := json.MarshalIndent(payload, "", "  ")
+		if err != nil {
+			return nil, fmt.Errorf("error marshalling JSON data for %s request %s", httpMethod, err)
+		}
+		body = bytes.NewBuffer(marshaledJson)
+	}
+
+	req := client.newOpenApiRequest(apiVersion, params, httpMethod, urlRef, body)
+	resp, err := client.Http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// resp is ignored below because it is the same the one above
+	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &types.OpenApiError{})
+	if err != nil {
+		return nil, fmt.Errorf("error in HTTP %s request: %s", httpMethod, err)
+	}
+	return resp, nil
 }
 
 // openApiGetAllPages is a recursive function that helps to accumulate responses from multiple pages for GET query. It
