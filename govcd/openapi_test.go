@@ -193,6 +193,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	// Step 4 - update created role (change description)
 	newRoleResponse.Description = "Updated description created by test"
 	updateUrl, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles/", newRoleResponse.ID)
+	check.Assert(err, IsNil)
 
 	updatedRoleResponse := &InlineRoles{}
 	err = vcd.client.Client.OpenApiPutItem(minimumRequiredApiVersion, updateUrl, nil, newRoleResponse, updatedRoleResponse)
@@ -227,6 +228,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	// Step 8 - update role using synchronous PUT function
 	newRoleResponse.Description = "Updated description created by sync test"
 	updateUrl2, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles/", newRoleResponse.ID)
+	check.Assert(err, IsNil)
 
 	updatedRoleResponse2 := &InlineRoles{}
 	err = vcd.client.Client.OpenApiPutItem(minimumRequiredApiVersion, updateUrl2, nil, newRoleResponse, updatedRoleResponse2)
