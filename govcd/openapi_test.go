@@ -15,9 +15,9 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// Test_OpenAPIRawJsonAudiTrail uses low level GET function to test out that pagination really works. It is an example
+// Test_OpenApiRawJsonAudiTrail uses low level GET function to test out that pagination really works. It is an example
 // how to fetch response from multiple pages in RAW json messages without having defined as struct.
-func (vcd *TestVCD) Test_OpenAPIRawJsonAudiTrail(check *C) {
+func (vcd *TestVCD) Test_OpenApiRawJsonAudiTrail(check *C) {
 	minimumRequiredApiVersion := "33.0"
 	skipOpenApiEndpointTest(vcd, check, "1.0.0/auditTrail", minimumRequiredApiVersion)
 
@@ -46,9 +46,9 @@ func (vcd *TestVCD) Test_OpenAPIRawJsonAudiTrail(check *C) {
 	check.Assert(len(matches), Equals, len(allResponses))
 }
 
-// Test_OpenAPIInlineStructAudiTrail uses low level GET function to test out that get function can unmarshal directly
+// Test_OpenApiInlineStructAudiTrail uses low level GET function to test out that get function can unmarshal directly
 // to user defined inline type
-func (vcd *TestVCD) Test_OpenAPIInlineStructAudiTrail(check *C) {
+func (vcd *TestVCD) Test_OpenApiInlineStructAudiTrail(check *C) {
 	minimumRequiredApiVersion := "33.0"
 	skipOpenApiEndpointTest(vcd, check, "1.0.0/auditTrail", minimumRequiredApiVersion)
 
