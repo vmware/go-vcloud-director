@@ -325,7 +325,10 @@ func checkRespWithErrType(bodyType types.BodyType, resp *http.Response, err, err
 		return resp, nil
 	// Invalid request, parse the XML error returned and return it.
 	case
-		http.StatusBadRequest,                  // 400
+		http.StatusBadRequest,                   // 400
+		http.StatusRequestedRangeNotSatisfiable: // 416
+		return resp, fmt.Errorf(resp.Status)
+	case
 		http.StatusUnauthorized,                // 401
 		http.StatusForbidden,                   // 403
 		http.StatusNotFound,                    // 404
