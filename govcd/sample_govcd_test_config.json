@@ -75,6 +75,8 @@
   "ova": {
     "ovaPath": "../test-resources/test_vapp_template.ova",
     "ovaChunkedPath": "../test-resources/template_with_custom_chunk_size.ova",
+    "ovaMultiVmPath": "../test-resources/vapp_with_3_vms.ova",
+    "ovaWithoutSizePath": "../test-resources/template_without_vmdk_size.ova",
     "ovfPath": "../test-resources/test_vapp_template_ovf/descriptor.ovf"
   },
   "media": {
