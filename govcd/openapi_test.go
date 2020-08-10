@@ -15,9 +15,9 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// Test_OpenApiRawJsonAudiTrail uses low level GET function to test out that pagination really works. It is an example
+// Test_OpenAPIRawJsonAudiTrail uses low level GET function to test out that pagination really works. It is an example
 // how to fetch response from multiple pages in RAW json messages without having defined as struct.
-func (vcd *TestVCD) Test_OpenApiRawJsonAudiTrail(check *C) {
+func (vcd *TestVCD) Test_OpenAPIRawJsonAudiTrail(check *C) {
 	minimumRequiredApiVersion := "33.0"
 	skipOpenApiEndpointTest(vcd, check, "1.0.0/auditTrail", minimumRequiredApiVersion)
 
@@ -46,9 +46,9 @@ func (vcd *TestVCD) Test_OpenApiRawJsonAudiTrail(check *C) {
 	check.Assert(len(matches), Equals, len(allResponses))
 }
 
-// Test_OpenApiInlineStructAudiTrail uses low level GET function to test out that get function can unmarshal directly
+// Test_OpenAPIInlineStructAudiTrail uses low level GET function to test out that get function can unmarshal directly
 // to user defined inline type
-func (vcd *TestVCD) Test_OpenApiInlineStructAudiTrail(check *C) {
+func (vcd *TestVCD) Test_OpenAPIInlineStructAudiTrail(check *C) {
 	minimumRequiredApiVersion := "33.0"
 	skipOpenApiEndpointTest(vcd, check, "1.0.0/auditTrail", minimumRequiredApiVersion)
 
@@ -105,9 +105,9 @@ func (vcd *TestVCD) Test_OpenApiInlineStructAudiTrail(check *C) {
 	}
 }
 
-// Test_OpenApiInlineStructCRUDRoles test aims to test out low level OpenApi functions to check if all of them work as
+// Test_OpenApiInlineStructCRUDRoles test aims to test out low level OpenAPI functions to check if all of them work as
 // expected. It uses a very simple "InlineRoles" endpoint which does not have bigger prerequisites and therefore is not
-// dependent one more deployment specific features. It also supports all of the OpenApi CRUD endpoints so is a good
+// dependent one more deployment specific features. It also supports all of the OpenAPI CRUD endpoints so is a good
 // endpoint to test on
 // This test performs the following:
 // 1. Gets all available roles using "Get all endpoint"
@@ -216,7 +216,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	err = vcd.client.Client.OpenApiGetItem(minimumRequiredApiVersion, deleteUrlRef, nil, lostRole)
 	check.Assert(ContainsNotFound(err), Equals, true)
 
-	// Step 7 - test synchronous POST and PUT functions (because Roles is a synchronous OpenApi endpoint)
+	// Step 7 - test synchronous POST and PUT functions (because Roles is a synchronous OpenAPI endpoint)
 	newRole.ID = "" // unset ID as it cannot be set for creation
 	err = vcd.client.Client.OpenApiPostItemSync(minimumRequiredApiVersion, createUrl, nil, newRole, newRoleResponse)
 	check.Assert(err, IsNil)
@@ -246,7 +246,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 
 }
 
-// skipOpenApiEndpointTest is a helper to skip tests for particular unsupported OpenApi endpoints
+// skipOpenApiEndpointTest is a helper to skip tests for particular unsupported OpenAPI endpoints
 func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint, requiredVersion string) {
 	constraint := ">= " + requiredVersion
 	if !vcd.client.Client.APIVCDMaxVersionIs(constraint) {
@@ -254,7 +254,7 @@ func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint, requiredVersion s
 		if err != nil {
 			panic(fmt.Sprintf("Could not get maximum supported version: %s", err))
 		}
-		skipText := fmt.Sprintf("Skipping test because OpenApi endpoint '%s' must satisfy API version constraint '%s'. Maximum supported version is %s",
+		skipText := fmt.Sprintf("Skipping test because OpenAPI endpoint '%s' must satisfy API version constraint '%s'. Maximum supported version is %s",
 			endpoint, constraint, maxSupportedVersion)
 		check.Skip(skipText)
 	}

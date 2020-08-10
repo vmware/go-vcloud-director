@@ -18,11 +18,11 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
-// This file contains generalised low level methods to interact with VCD OpenApi REST endpoints as documented in
-// https://{VCD_HOST}/docs. In addition to this there are OpenApi browser endpoints for tenant and provider
+// This file contains generalised low level methods to interact with VCD OpenAPI REST endpoints as documented in
+// https://{VCD_HOST}/docs. In addition to this there are OpenAPI browser endpoints for tenant and provider
 // respectively https://{VCD_HOST}/api-explorer/tenant/tenant-name and https://{VCD_HOST}/api-explorer/provider .
-// OpenApi has functions supporting below REST methods:
-// GET /items (gets a slice of types like `[]types.OpenApiEdgeGateway` or even `[]json.RawMessage` to process JSON as text.
+// OpenAPI has functions supporting below REST methods:
+// GET /items (gets a slice of types like `[]types.OpenAPIEdgeGateway` or even `[]json.RawMessage` to process JSON as text.
 // POST /items - creates an item
 // PUT /items/URN - updates an item with specified URN
 // GET /items/URN - retrieves an item with specified URN
@@ -32,22 +32,22 @@ import (
 // Not all API fields are supported for FIQL filtering and sometimes they return odd errors when filtering is
 // unsupported. No exact documentation exists so far.
 //
-// OpenApi versioning.
-// OpenApi was introduced in VCD 9.5 (with API version 31.0). Endpoints are being added with each VCD iteration.
+// OpenAPI versioning.
+// OpenAPI was introduced in VCD 9.5 (with API version 31.0). Endpoints are being added with each VCD iteration.
 // Internally hosted documentation (https://HOSTNAME/docs/) can be used to check which endpoints where introduced in
 // which VCD API version.
-// Additionally each OpenApi endpoint has a semantic version in its path (e.g.
+// Additionally each OpenAPI endpoint has a semantic version in its path (e.g.
 // https://HOSTNAME/cloudapi/1.0.0/auditTrail). This versioned endpoint should ensure compatibility as VCD evolves.
 
-// OpenApiIsSupported allows to check whether VCD supports OpenApi. Each OpenApi endpoint however is introduced with
-// different VCD API versions so this is just a general check if OpenApi is supported at all. Particular endpoint
+// OpenApiIsSupported allows to check whether VCD supports OpenAPI. Each OpenAPI endpoint however is introduced with
+// different VCD API versions so this is just a general check if OpenAPI is supported at all. Particular endpoint
 // introduction version can be checked in self hosted docs (https://HOSTNAME/docs/)
 func (client *Client) OpenApiIsSupported() bool {
-	// OpenApi was introduced in VCD 9.5+ (API version 31.0+)
+	// OpenAPI was introduced in VCD 9.5+ (API version 31.0+)
 	return client.APIVCDMaxVersionIs(">= 31")
 }
 
-// OpenApiBuildEndpoint helps to construct OpenApi endpoint by using already configured VCD HREF while requiring only
+// OpenApiBuildEndpoint helps to construct OpenAPI endpoint by using already configured VCD HREF while requiring only
 // the last bit for endpoint. This is a variadic function and multiple pieces can be supplied for convenience. Leading
 // '/' is added automatically.
 // Sample URL construct: https://HOST/cloudapi/endpoint
@@ -55,7 +55,7 @@ func (client *Client) OpenApiBuildEndpoint(endpoint ...string) (*url.URL, error)
 	endpointString := client.VCDHREF.Scheme + "://" + client.VCDHREF.Host + "/cloudapi/" + strings.Join(endpoint, "")
 	urlRef, err := url.ParseRequestURI(endpointString)
 	if err != nil {
-		return nil, fmt.Errorf("error formatting OpenApi endpoint: %s", err)
+		return nil, fmt.Errorf("error formatting OpenAPI endpoint: %s", err)
 	}
 	return urlRef, nil
 }
@@ -63,13 +63,13 @@ func (client *Client) OpenApiBuildEndpoint(endpoint ...string) (*url.URL, error)
 // OpenApiGetAllItems retrieves and accumulates all pages then parsing them to a single 'outType' object. It works by at
 // first crawling pages and accumulating all responses into []json.RawMessage (as strings). Because there is no
 // intermediate unmarshalling to exact `outType` for every page it unmarshals into response struct in one go. 'outType'
-// must be a slice of object (e.g. []*types.OpenApiEdgeGateway) because this response contains slice of structs.
+// must be a slice of object (e.g. []*types.OpenAPIEdgeGateway) because this response contains slice of structs.
 func (client *Client) OpenApiGetAllItems(apiVersion string, urlRef *url.URL, queryParams url.Values, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Getting all items from endpoint %s for parsing into %s type\n",
 		urlRef.String(), reflect.TypeOf(outType))
 
 	if !client.OpenApiIsSupported() {
-		return fmt.Errorf("OpenApi is not supported on this VCD version")
+		return fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
 	// Perform API call to initial endpoint. The function call recursively follows pages using Link headers "nextPage"
@@ -98,7 +98,7 @@ func (client *Client) OpenApiGetAllItems(apiVersion string, urlRef *url.URL, que
 	return nil
 }
 
-// OpenApiGetItem is a low level OpenApi client function to perform GET request for any item.
+// OpenApiGetItem is a low level OpenAPI client function to perform GET request for any item.
 // The urlRef must point to ID of exact item (e.g. '/1.0.0/edgeGateways/{EDGE_ID}')
 // It responds with HTTP 403: Forbidden - If the user is not authorized or the entity does not exist. When HTTP 403 is
 // returned this function returns "ErrorEntityNotFound: API_ERROR" so that one can use ContainsNotFound(err) to
@@ -108,7 +108,7 @@ func (client *Client) OpenApiGetItem(apiVersion string, urlRef *url.URL, params 
 		urlRef.String(), reflect.TypeOf(outType))
 
 	if !client.OpenApiIsSupported() {
-		return fmt.Errorf("OpenApi is not supported on this VCD version")
+		return fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
 	req := client.newOpenApiRequest(apiVersion, params, http.MethodGet, urlRef, nil)
@@ -145,7 +145,7 @@ func (client *Client) OpenApiGetItem(apiVersion string, urlRef *url.URL, params 
 	return nil
 }
 
-// OpenApiPostItemSync is a low level OpenApi client function to perform POST request for items that support synchronous
+// OpenApiPostItemSync is a low level OpenAPI client function to perform POST request for items that support synchronous
 // requests. The urlRef must point to POST endpoint (e.g. '/1.0.0/edgeGateways') that supports synchronous requests. It
 // will return an error when endpoint does not support synchronous requests (HTTP response status code is not 201).
 // Response will be unmarshalled into outType.
@@ -157,7 +157,7 @@ func (client *Client) OpenApiPostItemSync(apiVersion string, urlRef *url.URL, pa
 		reflect.TypeOf(payload), urlRef.String(), reflect.TypeOf(outType))
 
 	if !client.OpenApiIsSupported() {
-		return fmt.Errorf("OpenApi is not supported on this VCD version")
+		return fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
 	resp, err := client.openApiPerformPostPut(http.MethodPost, apiVersion, urlRef, params, payload)
@@ -182,7 +182,7 @@ func (client *Client) OpenApiPostItemSync(apiVersion string, urlRef *url.URL, pa
 	return nil
 }
 
-// OpenApiPostItemAsync is a low level OpenApi client function to perform POST request for items that support
+// OpenApiPostItemAsync is a low level OpenAPI client function to perform POST request for items that support
 // asynchronous requests. The urlRef must point to POST endpoint (e.g. '/1.0.0/edgeGateways') that supports asynchronous
 // requests. It will return an error if item does not support asynchronous request (does not respond with HTTP 202).
 //
@@ -193,7 +193,7 @@ func (client *Client) OpenApiPostItemAsync(apiVersion string, urlRef *url.URL, p
 		reflect.TypeOf(payload), urlRef.String())
 
 	if !client.OpenApiIsSupported() {
-		return Task{}, fmt.Errorf("OpenApi is not supported on this VCD version")
+		return Task{}, fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
 	resp, err := client.openApiPerformPostPut(http.MethodPost, apiVersion, urlRef, params, payload)
@@ -221,7 +221,7 @@ func (client *Client) OpenApiPostItemAsync(apiVersion string, urlRef *url.URL, p
 	return *task, nil
 }
 
-// OpenApiPostItem is a low level OpenApi client function to perform POST request for item supporting synchronous or
+// OpenApiPostItem is a low level OpenAPI client function to perform POST request for item supporting synchronous or
 // asynchronous requests. The urlRef must point to POST endpoint (e.g. '/1.0.0/edgeGateways'). When a task is
 // synchronous - it will track task until it is finished and pick reference to marshal outType.
 func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params url.Values, payload, outType interface{}) error {
@@ -229,7 +229,7 @@ func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params
 		reflect.TypeOf(payload), urlRef.String(), reflect.TypeOf(outType))
 
 	if !client.OpenApiIsSupported() {
-		return fmt.Errorf("OpenApi is not supported on this VCD version")
+		return fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
 	resp, err := client.openApiPerformPostPut(http.MethodPost, apiVersion, urlRef, params, payload)
@@ -253,7 +253,7 @@ func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params
 
 		// Here we have to find the resource once more to return it populated.
 		// Task Owner ID is the ID of created object. ID must be used (although HREF exists in task) because HREF points to
-		// old XML API and here we need to pull data from OpenApi.
+		// old XML API and here we need to pull data from OpenAPI.
 
 		newObjectUrl, _ := url.ParseRequestURI(urlRef.String() + "/" + task.Task.Owner.ID)
 		err = client.OpenApiGetItem(apiVersion, newObjectUrl, nil, outType)
@@ -277,7 +277,7 @@ func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params
 	return nil
 }
 
-// OpenApiPutItemSync is a low level OpenApi client function to perform PUT request for items that support synchronous
+// OpenApiPutItemSync is a low level OpenAPI client function to perform PUT request for items that support synchronous
 // requests. The urlRef must point to ID of exact item (e.g. '/1.0.0/edgeGateways/{EDGE_ID}') and support synchronous
 // requests. It will return an error when endpoint does not support synchronous requests (HTTP response status code is not 201).
 // Response will be unmarshalled into outType.
@@ -289,7 +289,7 @@ func (client *Client) OpenApiPutItemSync(apiVersion string, urlRef *url.URL, par
 		reflect.TypeOf(payload), urlRef.String(), reflect.TypeOf(outType))
 
 	if !client.OpenApiIsSupported() {
-		return fmt.Errorf("OpenApi is not supported on this VCD version")
+		return fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
 	resp, err := client.openApiPerformPostPut(http.MethodPut, apiVersion, urlRef, params, payload)
@@ -314,7 +314,7 @@ func (client *Client) OpenApiPutItemSync(apiVersion string, urlRef *url.URL, par
 	return nil
 }
 
-// OpenApiPutItemAsync is a low level OpenApi client function to perform PUT request for items that support asynchronous
+// OpenApiPutItemAsync is a low level OpenAPI client function to perform PUT request for items that support asynchronous
 // requests. The urlRef must point to ID of exact item (e.g. '/1.0.0/edgeGateways/{EDGE_ID}') that supports asynchronous
 // requests. It will return an error if item does not support asynchronous request (does not respond with HTTP 202).
 //
@@ -325,7 +325,7 @@ func (client *Client) OpenApiPutItemAsync(apiVersion string, urlRef *url.URL, pa
 		reflect.TypeOf(payload), urlRef.String())
 
 	if !client.OpenApiIsSupported() {
-		return Task{}, fmt.Errorf("OpenApi is not supported on this VCD version")
+		return Task{}, fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 	resp, err := client.openApiPerformPostPut(http.MethodPut, apiVersion, urlRef, params, payload)
 	if err != nil {
@@ -352,7 +352,7 @@ func (client *Client) OpenApiPutItemAsync(apiVersion string, urlRef *url.URL, pa
 	return *task, nil
 }
 
-// OpenApiPutItem is a low level OpenApi client function to perform PUT request for any item.
+// OpenApiPutItem is a low level OpenAPI client function to perform PUT request for any item.
 // The urlRef must point to ID of exact item (e.g. '/1.0.0/edgeGateways/{EDGE_ID}')
 // It handles synchronous and asynchronous tasks. When a task is synchronous - it will block until it is finished.
 func (client *Client) OpenApiPutItem(apiVersion string, urlRef *url.URL, params url.Values, payload, outType interface{}) error {
@@ -360,7 +360,7 @@ func (client *Client) OpenApiPutItem(apiVersion string, urlRef *url.URL, params 
 		reflect.TypeOf(payload), urlRef.String(), reflect.TypeOf(outType))
 
 	if !client.OpenApiIsSupported() {
-		return fmt.Errorf("OpenApi is not supported on this VCD version")
+		return fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 	resp, err := client.openApiPerformPostPut(http.MethodPut, apiVersion, urlRef, params, payload)
 
@@ -404,14 +404,14 @@ func (client *Client) OpenApiPutItem(apiVersion string, urlRef *url.URL, params 
 	return nil
 }
 
-// OpenApiDeleteItem is a low level OpenApi client function to perform DELETE request for any item.
+// OpenApiDeleteItem is a low level OpenAPI client function to perform DELETE request for any item.
 // The urlRef must point to ID of exact item (e.g. '/1.0.0/edgeGateways/{EDGE_ID}')
 // It handles synchronous and asynchronous tasks. When a task is synchronous - it will block until it is finished.
 func (client *Client) OpenApiDeleteItem(apiVersion string, urlRef *url.URL, params url.Values) error {
 	util.Logger.Printf("[TRACE] Deleting item at endpoint %s", urlRef.String())
 
 	if !client.OpenApiIsSupported() {
-		return fmt.Errorf("OpenApi is not supported on this VCD version")
+		return fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
 	// Perform request
@@ -433,7 +433,7 @@ func (client *Client) OpenApiDeleteItem(apiVersion string, urlRef *url.URL, para
 		return fmt.Errorf("error closing response body: %s", err)
 	}
 
-	// OpenApi may work synchronously or asynchronously. When working asynchronously - it will return HTTP 202 and
+	// OpenAPI may work synchronously or asynchronously. When working asynchronously - it will return HTTP 202 and
 	// `Location` header will contain reference to task so that it can be tracked. In DELETE case we do not care about any
 	// ID so if DELETE operation is synchronous (returns HTTP 201) - the request has already succeeded.
 	if resp.StatusCode == http.StatusAccepted {
@@ -546,7 +546,7 @@ func (client *Client) openApiGetAllPages(apiVersion string, pageSize *int, urlRe
 	return responses, nil
 }
 
-// newOpenApiRequest is a low level function used in upstream OpenApi functions which handles logging and
+// newOpenApiRequest is a low level function used in upstream OpenAPI functions which handles logging and
 // authentication for each API request
 func (client *Client) newOpenApiRequest(apiVersion string, params url.Values, method string, reqUrl *url.URL, body io.Reader) *http.Request {
 
