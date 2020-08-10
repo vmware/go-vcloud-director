@@ -9,7 +9,7 @@ OpenAPI low level functions consist of the following to match REST API:
 * OpenApiPutItem
 * OpenApiDeleteItem
 * OpenApiIsSupported
-* BuildOpenApiEndpoint
+* OpenApiBuildEndpoint
 
 **Note** The endpoint `1.0.0/auditTrail` requires VCD API to support version 33.0 or higher. Version 33.0 was introduced
 with VCD 10.0.
