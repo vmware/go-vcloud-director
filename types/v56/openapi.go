@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// OpenApiPages unwraps pagination for "Get All" endpoints in OpenAPI. Values kept in json.RawMessage helps to decouple
+// OpenApiPages unwraps pagination for "Get All" endpoints in OpenApi. Values kept in json.RawMessage helps to decouple
 // marshalling paging related information from exact type related information. Paging can be handled dynamically this
 // way while values can be marshaled into exact types.
 type OpenApiPages struct {

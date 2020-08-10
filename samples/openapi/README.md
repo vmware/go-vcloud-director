@@ -1,8 +1,8 @@
 # Open API consumption using low level functions and RAW JSON structures
 
-This example demonstrates how to consume new [OpenAPI](https://vdc-download.vmware.com/vmwb-repository/dcr-public/71f952e6-c14b-417d-8749-dbb5ff2dd48a/9b26a7c0-0cee-40a2-8c01-2f15472324cf/com.vmware.vmware_cloud_director.openapi_34_0.pdf) in VMware Cloud Director. 
+This example demonstrates how to consume new [OpenApi](https://vdc-download.vmware.com/vmwb-repository/dcr-public/71f952e6-c14b-417d-8749-dbb5ff2dd48a/9b26a7c0-0cee-40a2-8c01-2f15472324cf/com.vmware.vmware_cloud_director.openapi_34_0.pdf) in VMware Cloud Director. 
 
-OpenAPI low level functions consist of the following to match REST API:
+OpenApi low level functions consist of the following to match REST API:
 * OpenApiGetAllItems (FIQL filtering can be applied to narrow down results)
 * OpenApiPostItem
 * OpenApiGetItem
@@ -44,7 +44,7 @@ Sample output:
 ```
 
 ## Using mode 2 (Define custom struct with JSON tags and access fields)
-This mode allows to use OpenAPI in regular Go way (by defining a struct with JSON field tags)
+This mode allows to use OpenApi in regular Go way (by defining a struct with JSON field tags)
 
 ```
 ./openapi --username my_user --password my_secret_password --org my-org --endpoint https://192.168.1.160/api --mode 2

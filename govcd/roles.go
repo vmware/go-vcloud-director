@@ -42,7 +42,7 @@ func (adminOrg *AdminOrg) GetOpenApiRoleById(id string) (*OpenApiRole, error) {
 	return role, nil
 }
 
-// GetAllOpenApiRoles retrieves all roles using OpenAPI endpoint. Query parameters can be supplied to perform additional
+// GetAllOpenApiRoles retrieves all roles using OpenApi endpoint. Query parameters can be supplied to perform additional
 // filtering
 func (adminOrg *AdminOrg) GetAllOpenApiRoles(queryParameters url.Values) ([]*types.Role, error) {
 	endpoint := "1.0.0/roles/"
@@ -66,7 +66,7 @@ func (adminOrg *AdminOrg) GetAllOpenApiRoles(queryParameters url.Values) ([]*typ
 	return responses, nil
 }
 
-// Create creates a new role using OpenAPI endpoint
+// Create creates a new role using OpenApi endpoint
 func (role *OpenApiRole) Create(newRole *types.Role) (*OpenApiRole, error) {
 	endpoint := "1.0.0/roles/"
 	minimumApiVersion, err := role.client.checkOpenApiEndpointCompatibility(endpoint)
@@ -92,7 +92,7 @@ func (role *OpenApiRole) Create(newRole *types.Role) (*OpenApiRole, error) {
 	return returnRole, nil
 }
 
-// Update updates existing OpenAPI role
+// Update updates existing OpenApi role
 func (role *OpenApiRole) Update() (*OpenApiRole, error) {
 	endpoint := "1.0.0/roles/"
 	minimumApiVersion, err := role.client.checkOpenApiEndpointCompatibility(endpoint)
@@ -122,7 +122,7 @@ func (role *OpenApiRole) Update() (*OpenApiRole, error) {
 	return returnRole, nil
 }
 
-// Delete deletes OpenAPI role
+// Delete deletes OpenApi role
 func (role *OpenApiRole) Delete() error {
 	endpoint := "1.0.0/roles/"
 	minimumApiVersion, err := role.client.checkOpenApiEndpointCompatibility(endpoint)

@@ -29,7 +29,7 @@ func init() {
 	flag.StringVar(&password, "password", "", "Password")
 	flag.StringVar(&org, "org", "System", "Org name. Default is 'System'")
 	flag.StringVar(&apiEndpoint, "endpoint", "", "API endpoint (e.g. 'https://hostname/api')")
-	flag.StringVar(&mode, "mode", "", "OpenAPI query mode: 1 - RAW json, 2 - inline type")
+	flag.StringVar(&mode, "mode", "", "OpenApi query mode: 1 - RAW json, 2 - inline type")
 }
 
 // Usage:
@@ -73,7 +73,7 @@ func main() {
 }
 
 // openAPIGetRawJsonAuditTrail is an example function how to use low level function to interact
-// with OpenAPI in VCD. This examples dumps to screen valid JSON which can then be processed using
+// with OpenApi in VCD. This examples dumps to screen valid JSON which can then be processed using
 // other tools (for example 'jq' in shell)
 // It also uses FIQL query filter to retrieve auditTrail items only for the last 12 hours
 func openAPIGetRawJsonAuditTrail(vcdClient *govcd.VCDClient) {
@@ -99,7 +99,7 @@ func openAPIGetRawJsonAuditTrail(vcdClient *govcd.VCDClient) {
 }
 
 // openAPIGetStructAuditTrail is an example function how to use low level function to interact with
-// OpenAPI in VCD and marshal responses into custom defined struct with tags.
+// OpenApi in VCD and marshal responses into custom defined struct with tags.
 // It also uses FIQL query filter to retrieve auditTrail items only for the last 12 hours
 func openAPIGetStructAuditTrail(vcdClient *govcd.VCDClient) {
 	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint("1.0.0/auditTrail")
