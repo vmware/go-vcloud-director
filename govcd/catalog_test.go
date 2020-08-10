@@ -293,6 +293,15 @@ func (vcd *TestVCD) Test_UploadOvfFile(check *C) {
 	checkUploadOvf(vcd, check, vcd.config.OVA.OvfPath, vcd.config.VCD.Catalog.Name, TestUploadOvf+"7")
 }
 
+// Tests System function UploadOvf by creating catalog and
+// checking ova file without vmdk size specified can be uploaded.
+func (vcd *TestVCD) Test_UploadOvf_withoutVMDKSize(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	skipWhenOvaPathMissing(vcd.config.OVA.OvaWithoutSizePath, check)
+	checkUploadOvf(vcd, check, vcd.config.OVA.OvaWithoutSizePath, vcd.config.VCD.Catalog.Name, TestUploadOvf+"8")
+}
+
 func countFolders() int {
 	files, err := ioutil.ReadDir(os.TempDir())
 	if err != nil {
@@ -435,7 +444,7 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_ShowUploadProgress_works(check 
 
 	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage_ShowUploadProgress_works")
 
-	check.Assert(string(result), Matches, ".*Upload progress 100.00%")
+	check.Assert(string(result), Matches, ".*Upload progress 100.00%.*")
 	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)

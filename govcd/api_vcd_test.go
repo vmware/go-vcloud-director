@@ -177,10 +177,11 @@ type TestConfig struct {
 		VerboseCleanup   bool   `yaml:"verboseCleanup,omitempty"`
 	} `yaml:"logging"`
 	OVA struct {
-		OvaPath        string `yaml:"ovaPath,omitempty"`
-		OvaChunkedPath string `yaml:"ovaChunkedPath,omitempty"`
-		OvaMultiVmPath string `yaml:"ovaMultiVmPath,omitempty"`
-		OvfPath        string `yaml:"ovfPath,omitempty"`
+		OvaPath            string `yaml:"ovaPath,omitempty"`
+		OvaChunkedPath     string `yaml:"ovaChunkedPath,omitempty"`
+		OvaMultiVmPath     string `yaml:"ovaMultiVmPath,omitempty"`
+		OvaWithoutSizePath string `yaml:"ovaWithoutSizePath,omitempty"`
+		OvfPath            string `yaml:"ovfPath,omitempty"`
 	} `yaml:"ova"`
 	Media struct {
 		MediaPath       string `yaml:"mediaPath,omitempty"`
