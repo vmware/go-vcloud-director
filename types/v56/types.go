@@ -2137,6 +2137,7 @@ type QueryResultRecordsType struct {
 	VMRecord                        []*QueryResultVMRecordType                        `xml:"VMRecord"`                        // A record representing a VM result.
 	AdminVMRecord                   []*QueryResultVMRecordType                        `xml:"AdminVMRecord"`                   // A record representing a Admin VM result.
 	VAppRecord                      []*QueryResultVAppRecordType                      `xml:"VAppRecord"`                      // A record representing a VApp result.
+	AdminVAppRecord                 []*QueryResultVAppRecordType                      `xml:"AdminVAppRecord"`                 // A record representing a VApp result as admin.
 	OrgVdcStorageProfileRecord      []*QueryResultOrgVdcStorageProfileRecordType      `xml:"OrgVdcStorageProfileRecord"`      // A record representing storage profiles
 	MediaRecord                     []*MediaRecordType                                `xml:"MediaRecord"`                     // A record representing media
 	AdminMediaRecord                []*MediaRecordType                                `xml:"AdminMediaRecord"`                // A record representing Admin media
@@ -2225,74 +2226,82 @@ type QueryResultEdgeGatewayRecordType struct {
 // QueryResultVMRecordType represents a VM record as query result.
 type QueryResultVMRecordType struct {
 	// Attributes
-	HREF                 string    `xml:"href,attr,omitempty"` // The URI of the entity.
-	ID                   string    `xml:"id,attr,omitempty"`
-	Name                 string    `xml:"name,attr,omitempty"`          // VM name.
-	Type                 string    `xml:"type,attr,omitempty"`          // Contains the type of the resource.
-	ContainerName        string    `xml:"containerName,attr,omitempty"` // The name of the vApp or vApp template that contains this VM.
-	ContainerID          string    `xml:"container,attr,omitempty"`     // The ID of the vApp or vApp template that contains this VM.
-	OwnerName            string    `xml:"ownerName,attr,omitempty"`
-	Owner                string    `xml:"owner,attr,omitempty"`
-	VdcHREF              string    `xml:"vdc,attr,omitempty"`
-	VAppTemplate         bool      `xml:"isVAppTemplate,attr,omitempty"`
-	Deleted              bool      `xml:"isDeleted,attr,omitempty"`
-	GuestOS              string    `xml:"guestOs,attr,omitempty"`
-	Cpus                 int       `xml:"numberOfCpus,attr,omitempty"`
-	MemoryMB             int       `xml:"memoryMB,attr,omitempty"`
-	Status               string    `xml:"status,attr,omitempty"`
-	NetworkName          string    `xml:"networkName,attr,omitempty"`
-	NetworkHref          string    `xml:"network,attr,omitempty"`
-	IpAddress            string    `xml:"ipAddress,attr,omitempty"` // If configured, the IP Address of the VM on the primary network, otherwise empty.
-	Busy                 bool      `xml:"isBusy,attr,omitempty"`
-	Deployed             bool      `xml:"isDeployed,attr,omitempty"` // True if the virtual machine is deployed.
-	Published            bool      `xml:"isPublished,attr,omitempty"`
-	CatalogName          string    `xml:"catalogName,attr,omitempty"`
-	HardwareVersion      int       `xml:"hardwareVersion,attr,omitempty"`
-	VmToolsStatus        string    `xml:"vmToolsStatus,attr,omitempty"`
-	MaintenanceMode      bool      `xml:"isInMaintenanceMode,attr,omitempty"`
-	AutoNature           bool      `xml:"isAutoNature,attr,omitempty"` //  	True if the parent vApp is a managed vApp
-	StorageProfileName   string    `xml:"storageProfileName,attr,omitempty"`
-	GcStatus             string    `xml:"gcStatus,attr,omitempty"` // GC status of this VM.
-	AutoUndeployDate     string    `xml:"autoUndeployDate,attr,omitempty"`
-	AutoDeleteDate       string    `xml:"autoDeleteDate,attr,omitempty"`
-	AutoUndeployNotified bool      `xml:"isAutoUndeployNotified,attr,omitempty"`
-	AutoDeleteNotified   bool      `xml:"isAutoDeleteNotified,attr,omitempty"`
-	Link                 []*Link   `xml:"Link,omitempty"`
-	MetaData             *Metadata `xml:"Metadata,omitempty"`
+	HREF                     string    `xml:"href,attr,omitempty"` // The URI of the entity.
+	ID                       string    `xml:"id,attr,omitempty"`
+	Name                     string    `xml:"name,attr,omitempty"`          // VM name.
+	Type                     string    `xml:"type,attr,omitempty"`          // Contains the type of the resource.
+	ContainerName            string    `xml:"containerName,attr,omitempty"` // The name of the vApp or vApp template that contains this VM.
+	ContainerID              string    `xml:"container,attr,omitempty"`     // The ID of the vApp or vApp template that contains this VM.
+	OwnerName                string    `xml:"ownerName,attr,omitempty"`
+	Owner                    string    `xml:"owner,attr,omitempty"`
+	VdcHREF                  string    `xml:"vdc,attr,omitempty"`
+	VAppTemplate             bool      `xml:"isVAppTemplate,attr,omitempty"`
+	Deleted                  bool      `xml:"isDeleted,attr,omitempty"`
+	GuestOS                  string    `xml:"guestOs,attr,omitempty"`
+	Cpus                     int       `xml:"numberOfCpus,attr,omitempty"`
+	MemoryMB                 int       `xml:"memoryMB,attr,omitempty"`
+	Status                   string    `xml:"status,attr,omitempty"`
+	NetworkName              string    `xml:"networkName,attr,omitempty"`
+	NetworkHref              string    `xml:"network,attr,omitempty"`
+	IpAddress                string    `xml:"ipAddress,attr,omitempty"` // If configured, the IP Address of the VM on the primary network, otherwise empty.
+	Busy                     bool      `xml:"isBusy,attr,omitempty"`
+	Deployed                 bool      `xml:"isDeployed,attr,omitempty"` // True if the virtual machine is deployed.
+	Published                bool      `xml:"isPublished,attr,omitempty"`
+	CatalogName              string    `xml:"catalogName,attr,omitempty"`
+	HardwareVersion          int       `xml:"hardwareVersion,attr,omitempty"`
+	VmToolsStatus            string    `xml:"vmToolsStatus,attr,omitempty"`
+	MaintenanceMode          bool      `xml:"isInMaintenanceMode,attr,omitempty"`
+	AutoNature               bool      `xml:"isAutoNature,attr,omitempty"` //  	True if the parent vApp is a managed vApp
+	StorageProfileName       string    `xml:"storageProfileName,attr,omitempty"`
+	GcStatus                 string    `xml:"gcStatus,attr,omitempty"` // GC status of this VM.
+	AutoUndeployDate         string    `xml:"autoUndeployDate,attr,omitempty"`
+	AutoDeleteDate           string    `xml:"autoDeleteDate,attr,omitempty"`
+	AutoUndeployNotified     bool      `xml:"isAutoUndeployNotified,attr,omitempty"`
+	AutoDeleteNotified       bool      `xml:"isAutoDeleteNotified,attr,omitempty"`
+	IsComputePolicyCompliant bool      `xml:"isComputePolicyCompliant,attr,omitempty"`
+	VmSizingPolicyId         string    `xml:"vmSizingPolicyId,attr,omitempty"`
+	VmPlacementPolicyId      string    `xml:"vmPlacementPolicyId,attr,omitempty"`
+	Encrypted                bool      `xml:"encrypted,attr,omitempty"`
+	DateCreated              string    `xml:"dateCreated,attr,omitempty"`
+	TotalStorageAllocatedMb  string    `xml:"totalStorageAllocatedMb,attr,omitempty"`
+	IsExpired                bool      `xml:"isExpired,attr,omitempty"`
+	Link                     []*Link   `xml:"Link,omitempty"`
+	MetaData                 *Metadata `xml:"Metadata,omitempty"`
 }
 
 // QueryResultVAppRecordType represents a VM record as query result.
 type QueryResultVAppRecordType struct {
 	// Attributes
-	HREF                    string `xml:"href,attr,omitempty"`         // The URI of the entity.
-	Name                    string `xml:"name,attr"`                   // The name of the entity.
-	CreationDate            string `xml:"creationDate,attr,omitempty"` // Creation date/time of the vApp.
-	Busy                    bool   `xml:"isBusy,attr,omitempty"`
-	Deployed                bool   `xml:"isDeployed,attr,omitempty"` // True if the vApp is deployed.
-	Enabled                 bool   `xml:"isEnabled,attr,omitempty"`
-	Expired                 bool   `xml:"isExpired,attr,omitempty"`
-	MaintenanceMode         bool   `xml:"isInMaintenanceMode,attr,omitempty"`
-	Public                  bool   `xml:"isPublic,attr,omitempty"`
-	OwnerName               string `xml:"ownerName,attr,omitempty"`
-	Status                  string `xml:"status,attr,omitempty"`
-	VdcHREF                 string `xml:"vdc,attr,omitempty"`
-	VdcName                 string `xml:"vdcName,attr,omitempty"`
-	NumberOfVMs             int    `xml:"numberOfVMs,attr,omitempty"`
-	NumberOfCPUs            int    `xml:"numberOfCpus,attr,omitempty"`
-	CpuAllocationMhz        int    `xml:"cpuAllocationMhz,attr,omitempty"`
-	CpuAllocationInMhz      int    `xml:"cpuAllocationInMhz,attr,omitempty"`
-	StorageKB               int    `xml:"storageKB,attr,omitempty"`
-	MemoryAllocationMB      int    `xml:"memoryAllocationMB,attr,omitempty"`
-	AutoDeleteNotified      bool   `xml:"isAutoDeleteNotified,attr,omitempty"`
-	AutoUndeployNotified    bool   `xml:"isAutoUndeployNotified,attr,omitempty"`
-	VdcEnabled              bool   `xml:"isVdcEnabled,attr,omitempty"`
-	HonorBootOrder          bool   `xml:"honorBookOrder,attr,omitempty"`
-	HighestSupportedVersion int    `xml:"pvdcHighestSupportedHardwareVersion,attr,omitempty"`
-	LowestHardwareVersion   int    `xml:"lowestHardwareVersionInVApp,attr,omitempty"`
-	TaskHREF                string `xml:"task,attr,omitempty"`
-	TaskStatusName          string `xml:"taskStatusName,attr,omitempty"`
-	TaskStatus              string `xml:"TaskStatus,attr,omitempty"`
-	TaskDetails             string `xml:"taskDetails,attr,omitempty"`
+	HREF                    string    `xml:"href,attr,omitempty"`         // The URI of the entity.
+	Name                    string    `xml:"name,attr"`                   // The name of the entity.
+	CreationDate            string    `xml:"creationDate,attr,omitempty"` // Creation date/time of the vApp.
+	Busy                    bool      `xml:"isBusy,attr,omitempty"`
+	Deployed                bool      `xml:"isDeployed,attr,omitempty"` // True if the vApp is deployed.
+	Enabled                 bool      `xml:"isEnabled,attr,omitempty"`
+	Expired                 bool      `xml:"isExpired,attr,omitempty"`
+	MaintenanceMode         bool      `xml:"isInMaintenanceMode,attr,omitempty"`
+	Public                  bool      `xml:"isPublic,attr,omitempty"`
+	OwnerName               string    `xml:"ownerName,attr,omitempty"`
+	Status                  string    `xml:"status,attr,omitempty"`
+	VdcHREF                 string    `xml:"vdc,attr,omitempty"`
+	VdcName                 string    `xml:"vdcName,attr,omitempty"`
+	NumberOfVMs             int       `xml:"numberOfVMs,attr,omitempty"`
+	NumberOfCPUs            int       `xml:"numberOfCpus,attr,omitempty"`
+	CpuAllocationMhz        int       `xml:"cpuAllocationMhz,attr,omitempty"`
+	CpuAllocationInMhz      int       `xml:"cpuAllocationInMhz,attr,omitempty"`
+	StorageKB               int       `xml:"storageKB,attr,omitempty"`
+	MemoryAllocationMB      int       `xml:"memoryAllocationMB,attr,omitempty"`
+	AutoDeleteNotified      bool      `xml:"isAutoDeleteNotified,attr,omitempty"`
+	AutoUndeployNotified    bool      `xml:"isAutoUndeployNotified,attr,omitempty"`
+	VdcEnabled              bool      `xml:"isVdcEnabled,attr,omitempty"`
+	HonorBootOrder          bool      `xml:"honorBookOrder,attr,omitempty"`
+	HighestSupportedVersion int       `xml:"pvdcHighestSupportedHardwareVersion,attr,omitempty"`
+	LowestHardwareVersion   int       `xml:"lowestHardwareVersionInVApp,attr,omitempty"`
+	TaskHREF                string    `xml:"task,attr,omitempty"`
+	TaskStatusName          string    `xml:"taskStatusName,attr,omitempty"`
+	TaskStatus              string    `xml:"TaskStatus,attr,omitempty"`
+	TaskDetails             string    `xml:"taskDetails,attr,omitempty"`
+	MetaData                *Metadata `xml:"Metadata,omitempty"`
 }
 
 // QueryResultOrgVdcStorageProfileRecordType represents a storage
