@@ -14,10 +14,12 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+// GetId completes the implementation of interface accessControlType
 func (catalog Catalog) GetId() string {
 	return catalog.Catalog.ID
 }
 
+// GetId completes the implementation of interface accessControlType
 func (catalog AdminCatalog) GetId() string {
 	return catalog.AdminCatalog.ID
 }
@@ -70,19 +72,7 @@ func (vcd *TestVCD) Test_CatalogAccessControl(check *C) {
 	check.Assert(err, IsNil)
 }
 
-func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog controlAccessType, testName, catalogName string, check *C) {
-
-	//if vcd.config.VCD.Org == "" {
-	//	check.Skip("Test_CatalogControlAccess: Org name not given.")
-	//	return
-	//}
-	//org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
-	//check.Assert(err, IsNil)
-	//check.Assert(org, NotNil)
-	//adminorg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
-	//
-	//check.Assert(err, IsNil)
-	//check.Assert(org, NotNil)
+func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessControlType, testName, catalogName string, check *C) {
 
 	var users = []struct {
 		name string
@@ -99,6 +89,7 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog control
 	var err error
 	if vcd.client.Client.IsSysAdmin {
 
+		// Create a new Org
 		task, err := CreateOrg(vcd.client, orgName, orgName, orgName, &types.OrgSettings{}, true)
 		check.Assert(err, IsNil)
 		err = task.WaitTaskCompletion()
@@ -165,15 +156,15 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog control
 	err = testAccessControl(catalogName+" catalog one user", catalog, oneUserSettings, oneUserSettings, true, check)
 	check.Assert(err, IsNil)
 
-	// Check that vapp.GetAccessControl and vdc.GetVappControlAccess return the same data
+	// Check that vapp.GetAccessControl and vdc.GetVappAccessControl return the same data
 	controlAccess, err := catalog.GetAccessControl()
 	check.Assert(err, IsNil)
-	orgControlAccessByName, err := adminOrg.GetCatalogControlAccess(catalogName)
+	orgControlAccessByName, err := adminOrg.GetCatalogAccessControl(catalogName)
 	check.Assert(err, IsNil)
 	check.Assert(controlAccess, DeepEquals, orgControlAccessByName)
 
-	//orgControlAccessById, err := org.GetCatalogControlAccess(catalog.Catalog.ID)
-	orgControlAccessById, err := adminOrg.GetCatalogControlAccess(catalog.GetId())
+	//orgControlAccessById, err := org.GetCatalogAccessControl(catalog.Catalog.ID)
+	orgControlAccessById, err := adminOrg.GetCatalogAccessControl(catalog.GetId())
 	check.Assert(err, IsNil)
 	check.Assert(controlAccess, DeepEquals, orgControlAccessById)
 

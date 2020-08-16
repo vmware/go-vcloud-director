@@ -15,7 +15,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-type controlAccessType interface {
+// accessControlType is an interface used to test access control for all entities that support it
+type accessControlType interface {
 	GetAccessControl() (*types.ControlAccessParams, error)
 	SetAccessControl(params *types.ControlAccessParams) error
 	RemoveAccessControl() error
@@ -39,9 +40,17 @@ func accessSettingsToMap(params types.ControlAccessParams) accessSettingMap {
 	return result
 }
 
-func testAccessControl(label string, accessible controlAccessType, params types.ControlAccessParams, expected types.ControlAccessParams, wantShared bool, check *C) error {
+// testAccessControl runs an access control test on a target type, identified as an interface.
+// * label is a test identifier
+// * accessible is the entity being tested (such as a vApp or a catalog)
+// * params are the access control parameters to be set
+// * expected are the result parameters that we should find in the end result
+// * wantShared is whether the final settings should result in the entity being shared
+func testAccessControl(label string, accessible accessControlType, params types.ControlAccessParams, expected types.ControlAccessParams, wantShared bool, check *C) error {
 
-	fmt.Printf("-- %s\n", label)
+	if testVerbose {
+		fmt.Printf("-- %s\n", label)
+	}
 	err := accessible.SetAccessControl(&params)
 	if err != nil {
 		return err

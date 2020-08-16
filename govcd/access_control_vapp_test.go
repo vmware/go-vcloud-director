@@ -14,6 +14,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+// GetId completes the implementation of interface accessControlType
 func (vapp VApp) GetId() string {
 	return vapp.VApp.ID
 }
@@ -62,20 +63,15 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 
 	// Create three users
 	for i := 0; i < len(users); i++ {
-		//user, err := org.GetUserByName(users[i].name, true)
-		//if err == nil {
-		//	users[i].user = user
-		//	continue
-		//}
-
 		users[i].user, err = org.CreateUserSimple(OrgUserConfiguration{
 			Name: users[i].name, Password: users[i].name, RoleName: users[i].role, IsEnabled: true,
 		})
 		check.Assert(err, IsNil)
 		check.Assert(users[i].user, NotNil)
-		AddToCleanupList(users[i].name, "user", vcd.config.VCD.Org, "Test_GetVappControlAccess")
+		AddToCleanupList(users[i].name, "user", vcd.config.VCD.Org, "Test_VappAccessControl")
 	}
 
+	// Clean up environment
 	defer func() {
 		if testVerbose {
 			fmt.Printf("deleting %s\n", vappName)
@@ -94,11 +90,13 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 	}()
 	checkEmpty()
 
-	// Set control access to every user and group
+	// Set access control to every user and group
 	allUsersSettings := types.ControlAccessParams{
 		EveryoneAccessLevel: takeStringPointer(types.ControlAccessReadOnly),
 		IsSharedToEveryone:  true,
 	}
+
+	// Use generic testAccessControl. Here vapp is passed as accessControlType interface
 	err = testAccessControl("vapp all users RO", vapp, allUsersSettings, allUsersSettings, true, check)
 	check.Assert(err, IsNil)
 
@@ -109,7 +107,7 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 	err = testAccessControl("vapp all users R/W", vapp, allUsersSettings, allUsersSettings, true, check)
 	check.Assert(err, IsNil)
 
-	// Set control access to one user
+	// Set access control to one user
 	oneUserSettings := types.ControlAccessParams{
 		IsSharedToEveryone:  false,
 		EveryoneAccessLevel: nil,
@@ -130,18 +128,18 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 	err = testAccessControl("vapp one user", vapp, oneUserSettings, oneUserSettings, true, check)
 	check.Assert(err, IsNil)
 
-	// Check that vapp.GetAccessControl and vdc.GetVappControlAccess return the same data
+	// Check that vapp.GetAccessControl and vdc.GetVappAccessControl return the same data
 	controlAccess, err := vapp.GetAccessControl()
 	check.Assert(err, IsNil)
-	vdcControlAccessName, err := vdc.GetVappControlAccess(vappName)
+	vdcControlAccessName, err := vdc.GetVappAccessControl(vappName)
 	check.Assert(err, IsNil)
 	check.Assert(controlAccess, DeepEquals, vdcControlAccessName)
 
-	vdcControlAccessId, err := vdc.GetVappControlAccess(vapp.VApp.ID)
+	vdcControlAccessId, err := vdc.GetVappAccessControl(vapp.VApp.ID)
 	check.Assert(err, IsNil)
 	check.Assert(controlAccess, DeepEquals, vdcControlAccessId)
 
-	// Set control access to two users
+	// Set access control to two users
 	twoUserSettings := types.ControlAccessParams{
 		IsSharedToEveryone:  false,
 		EveryoneAccessLevel: nil,
@@ -176,7 +174,7 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 	check.Assert(err, IsNil)
 	checkEmpty()
 
-	// Set control access to three users
+	// Set access control to three users
 	threeUserSettings := types.ControlAccessParams{
 		IsSharedToEveryone:  false,
 		EveryoneAccessLevel: nil,

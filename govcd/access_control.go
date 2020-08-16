@@ -149,10 +149,10 @@ func (catalog AdminCatalog) IsShared() bool {
 	return settings.AccessSettings != nil
 }
 
-// GetVappControlAccess is a convenience method to retrieve access control for a vApp
+// GetVappAccessControl is a convenience method to retrieve access control for a vApp
 // from a VDC.
 // The input variable vappIdentifier can be either the vApp name or its ID
-func (vdc *Vdc) GetVappControlAccess(vappIdentifier string) (*types.ControlAccessParams, error) {
+func (vdc *Vdc) GetVappAccessControl(vappIdentifier string) (*types.ControlAccessParams, error) {
 	vapp, err := vdc.GetVAppByNameOrId(vappIdentifier, true)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving vapp %s: %s", vappIdentifier, err)
@@ -160,10 +160,10 @@ func (vdc *Vdc) GetVappControlAccess(vappIdentifier string) (*types.ControlAcces
 	return vapp.GetAccessControl()
 }
 
-// GetCatalogControlAccess is a convenience method to retrieve access control for a vApp
+// GetCatalogAccessControl is a convenience method to retrieve access control for a vApp
 // from an organization.
 // The input variable catalogIdentifier can be either the catalog name or its ID
-func (org *AdminOrg) GetCatalogControlAccess(catalogIdentifier string) (*types.ControlAccessParams, error) {
+func (org *AdminOrg) GetCatalogAccessControl(catalogIdentifier string) (*types.ControlAccessParams, error) {
 	catalog, err := org.GetAdminCatalogByNameOrId(catalogIdentifier, true)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving catalog %s: %s", catalogIdentifier, err)
@@ -171,10 +171,10 @@ func (org *AdminOrg) GetCatalogControlAccess(catalogIdentifier string) (*types.C
 	return catalog.GetAccessControl()
 }
 
-// GetCatalogControlAccess is a convenience method to retrieve access control for a vApp
+// GetCatalogAccessControl is a convenience method to retrieve access control for a vApp
 // from an organization.
 // The input variable catalogIdentifier can be either the catalog name or its ID
-func (org *Org) GetCatalogControlAccess(catalogIdentifier string) (*types.ControlAccessParams, error) {
+func (org *Org) GetCatalogAccessControl(catalogIdentifier string) (*types.ControlAccessParams, error) {
 	catalog, err := org.GetCatalogByNameOrId(catalogIdentifier, true)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving catalog %s: %s", catalogIdentifier, err)
