@@ -32,7 +32,7 @@ func (vcd *TestVCD) Test_LB(check *C) {
 	// Validate prerequisites
 	validateTestLbPrerequisites(vcd, check)
 
-	vdc, edge, vappTemplate, vapp, desiredNetConfig, err := vcd.createAngGetResourcesForVmCreation(check, TestLb)
+	vdc, edge, vappTemplate, vapp, desiredNetConfig, err := vcd.createAndGetResourcesForVmCreation(check, TestLb)
 	check.Assert(err, IsNil)
 
 	// The script below creates a file /tmp/node/server with single value `name` being set in it.
