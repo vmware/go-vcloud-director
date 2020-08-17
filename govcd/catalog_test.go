@@ -155,7 +155,7 @@ func doesCatalogExist(check *C, org *AdminOrg) {
 func (vcd *TestVCD) Test_UploadOvf(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	skipWhenOvaPathMissing(vcd, check)
+	skipWhenOvaPathMissing(vcd.config.OVA.OvaPath, check)
 	checkUploadOvf(vcd, check, vcd.config.OVA.OvaPath, vcd.config.VCD.Catalog.Name, TestUploadOvf)
 }
 
@@ -164,7 +164,7 @@ func (vcd *TestVCD) Test_UploadOvf(check *C) {
 func (vcd *TestVCD) Test_UploadOvf_chunked(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	skipWhenOvaPathMissing(vcd, check)
+	skipWhenOvaPathMissing(vcd.config.OVA.OvaChunkedPath, check)
 	checkUploadOvf(vcd, check, vcd.config.OVA.OvaChunkedPath, vcd.config.VCD.Catalog.Name, TestUploadOvf+"2")
 }
 
@@ -173,7 +173,7 @@ func (vcd *TestVCD) Test_UploadOvf_chunked(check *C) {
 func (vcd *TestVCD) Test_UploadOvf_progress_works(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	skipWhenOvaPathMissing(vcd, check)
+	skipWhenOvaPathMissing(vcd.config.OVA.OvaPath, check)
 	itemName := TestUploadOvf + "3"
 
 	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
@@ -202,7 +202,7 @@ func (vcd *TestVCD) Test_UploadOvf_progress_works(check *C) {
 func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	skipWhenOvaPathMissing(vcd, check)
+	skipWhenOvaPathMissing(vcd.config.OVA.OvaPath, check)
 	itemName := TestUploadOvf + "4"
 
 	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
@@ -240,7 +240,7 @@ func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
 func (vcd *TestVCD) Test_UploadOvf_error_withSameItem(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	skipWhenOvaPathMissing(vcd, check)
+	skipWhenOvaPathMissing(vcd.config.OVA.OvaPath, check)
 
 	itemName := TestUploadOvf + "5"
 
@@ -264,7 +264,7 @@ func (vcd *TestVCD) Test_UploadOvf_error_withSameItem(check *C) {
 func (vcd *TestVCD) Test_UploadOvf_cleaned_extracted_files(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	skipWhenOvaPathMissing(vcd, check)
+	skipWhenOvaPathMissing(vcd.config.OVA.OvaPath, check)
 
 	itemName := TestUploadOvf + "6"
 
@@ -289,7 +289,7 @@ func (vcd *TestVCD) Test_UploadOvf_cleaned_extracted_files(check *C) {
 func (vcd *TestVCD) Test_UploadOvfFile(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	skipWhenOvaPathMissing(vcd, check)
+	skipWhenOvaPathMissing(vcd.config.OVA.OvfPath, check)
 	checkUploadOvf(vcd, check, vcd.config.OVA.OvfPath, vcd.config.VCD.Catalog.Name, TestUploadOvf+"7")
 }
 
@@ -349,9 +349,9 @@ func getOrg(vcd *TestVCD, check *C) *AdminOrg {
 	return org
 }
 
-func skipWhenOvaPathMissing(vcd *TestVCD, check *C) {
-	if vcd.config.OVA.OvaPath == "" || vcd.config.OVA.OvaChunkedPath == "" {
-		check.Skip("Skipping test because no ova path given")
+func skipWhenOvaPathMissing(ovaPath string, check *C) {
+	if ovaPath == "" {
+		check.Skip("Skipping test because no OVA/OVF path given")
 	}
 }
 
