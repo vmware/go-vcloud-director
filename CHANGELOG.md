@@ -2,13 +2,13 @@
 
 * Improved testing tags isolation [#320](https://github.com/vmware/go-vcloud-director/pull/320)
 * Added command `make tagverify` to check tags isolation tests [#320](https://github.com/vmware/go-vcloud-director/pull/320)
-* Added methods `Client.GetAccessControl`, `Client.SetAccessControl`
-* Added methods `VApp.GetAccessControl`, `VApp.SetAccessControl`, `VApp.RemoveAccessControl`, `VApp.IsShared`
-* Added methods `AdminCatalog.GetAccessControl`, `AdminCatalog.SetAccessControl`, `AdminCatalog.RemoveAccessControl`, `AdminCatalog.IsShared`
-* Added methods `Catalog.GetAccessControl`, `Catalog.SetAccessControl`, `Catalog.RemoveAccessControl`, `Catalog.IsShared`
-* Added methods `Vdc.GetVappAccessControl`, `AdminOrg.GetCatalogAccessControl`, `Org.GetCatalogAccessControl`
-* Added methods `Vdc.QueryVappList`, `Vdc.GetVappList`, `AdminVdc.GetVappList`, `client.GetQueryType`
-* Added VM and vApp tp search query engine
+* Added methods `Client.GetAccessControl`, `Client.SetAccessControl`[#329](https://github.com/vmware/go-vcloud-director/pull/329)
+* Added methods `VApp.GetAccessControl`, `VApp.SetAccessControl`, `VApp.RemoveAccessControl`, `VApp.IsShared` [#329](https://github.com/vmware/go-vcloud-director/pull/329)
+* Added methods `AdminCatalog.GetAccessControl`, `AdminCatalog.SetAccessControl`, `AdminCatalog.RemoveAccessControl`, `AdminCatalog.IsShared` [#329](https://github.com/vmware/go-vcloud-director/pull/329)
+* Added methods `Catalog.GetAccessControl`, `Catalog.SetAccessControl`, `Catalog.RemoveAccessControl`, `Catalog.IsShared` [#329](https://github.com/vmware/go-vcloud-director/pull/329)
+* Added methods `Vdc.GetVappAccessControl`, `AdminOrg.GetCatalogAccessControl`, `Org.GetCatalogAccessControl` [#329](https://github.com/vmware/go-vcloud-director/pull/329)
+* Added methods `Vdc.QueryVappList`, `Vdc.GetVappList`, `AdminVdc.GetVappList`, `client.GetQueryType` [#329](https://github.com/vmware/go-vcloud-director/pull/329)
+* Added VM and vApp to search query engine [#329](https://github.com/vmware/go-vcloud-director/pull/329)
 * Loosen up `Test_LBAppRule` for invalid application script check to work with different error engine in VCD 10.2
 [#326](https://github.com/vmware/go-vcloud-director/pull/326)
 * Update VDC dynamic func to handle API version 35.0 [#327](https://github.com/vmware/go-vcloud-director/pull/327)

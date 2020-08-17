@@ -41,7 +41,7 @@ func (vcd *TestVCD) Test_AdminCatalogAccessControl(check *C) {
 	adminCatalog, err := adminorg.CreateCatalog(catalogName, catalogName)
 	check.Assert(err, IsNil)
 	check.Assert(adminCatalog, NotNil)
-	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, "Test_CatalogControlAccess")
+	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName())
 	vcd.testCatalogAccessControl(adminorg, adminCatalog, check.TestName(), catalogName, check)
 	err = adminCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
@@ -163,7 +163,6 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 	check.Assert(err, IsNil)
 	check.Assert(controlAccess, DeepEquals, orgControlAccessByName)
 
-	//orgControlAccessById, err := org.GetCatalogAccessControl(catalog.Catalog.ID)
 	orgControlAccessById, err := adminOrg.GetCatalogAccessControl(catalog.GetId())
 	check.Assert(err, IsNil)
 	check.Assert(controlAccess, DeepEquals, orgControlAccessById)

@@ -2835,7 +2835,7 @@ type LocalSubject struct {
 	Type string `xml:"type,attr"`
 }
 
-// AccessSettings controls access to the resource.
+// AccessSetting controls access to the resource.
 type AccessSetting struct {
 	XMLName         xml.Name         `xml:"AccessSetting"`
 	Subject         *LocalSubject    `xml:"Subject,omitempty"`         // The user or group to which these settings apply.
