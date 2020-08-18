@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
-	"strconv"
 	"strings"
 
 	"github.com/peterhellberg/link"
@@ -74,7 +73,7 @@ func (client *Client) OpenApiGetAllItems(apiVersion string, urlRef *url.URL, que
 
 	// Perform API call to initial endpoint. The function call recursively follows pages using Link headers "nextPage"
 	// until it crawls all results
-	responses, err := client.openApiGetAllPages(apiVersion, nil, urlRef, queryParams, outType, nil)
+	responses, err := client.openApiGetAllPages(apiVersion, urlRef, queryParams, outType, nil)
 	if err != nil {
 		return fmt.Errorf("error getting all pages for endpoint %s: %s", urlRef.String(), err)
 	}
@@ -480,19 +479,9 @@ func (client *Client) openApiPerformPostPut(httpMethod string, apiVersion string
 // works by at first crawling pages and accumulating all responses into []json.RawMessage (as strings). Because there is
 // no intermediate unmarshalling to exact `outType` for every page it can unmarshal into direct `outType` supplied.
 // outType must be a slice of object (e.g. []*types.OpenApiRole) because accumulated responses are in JSON list
-func (client *Client) openApiGetAllPages(apiVersion string, pageSize *int, urlRef *url.URL, queryParams url.Values, outType interface{}, responses []json.RawMessage) ([]json.RawMessage, error) {
+func (client *Client) openApiGetAllPages(apiVersion string, urlRef *url.URL, queryParams url.Values, outType interface{}, responses []json.RawMessage) ([]json.RawMessage, error) {
 	if responses == nil {
 		responses = []json.RawMessage{}
-	}
-
-	// Reuse existing queryParams struct to fill in pages or create a new one if nil was passed
-	queryParameters := url.Values{}
-	if queryParams != nil {
-		queryParameters = queryParams
-	}
-
-	if pageSize != nil {
-		queryParameters.Set("pageSize", strconv.Itoa(*pageSize))
 	}
 
 	// Perform request
