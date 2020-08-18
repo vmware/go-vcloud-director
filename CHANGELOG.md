@@ -6,6 +6,7 @@
 [#326](https://github.com/vmware/go-vcloud-director/pull/326)
 * Update VDC dynamic func to handle API version 35.0 [#327](https://github.com/vmware/go-vcloud-director/pull/327)
 * Added methods `vm.UpdateVmCpuAndMemoryHotAdd` and `vm.UpdateVmCpuAndMemoryHotAddAsyc` [#324](https://github.com/vmware/go-vcloud-director/pull/324)
+* Drop support for VMware Cloud Director 9.5 [#330](https://github.com/vmware/go-vcloud-director/pull/330)
 
 ## 2.8.0 (June 30, 2020)
 
