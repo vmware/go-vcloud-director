@@ -882,3 +882,30 @@ func (vcd *TestVCD) Test_OrgGetVdc(check *C) {
 	}
 	vcd.testFinderGetGenericEntity(def, check)
 }
+
+// Tests VDC retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_GetTaskList(check *C) {
+
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_GetTaskList: Org name not given.")
+		return
+	}
+	// we need to have Tasks
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp wasn't properly created")
+	}
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	taskList, err := org.GetTaskList()
+	check.Assert(err, IsNil)
+	check.Assert(len(taskList.Task), Not(Equals), 0)
+	check.Assert(taskList.Task[0], NotNil)
+	check.Assert(taskList.Task[0].ID, Not(Equals), "")
+	check.Assert(taskList.Task[0].Type, Not(Equals), "")
+	check.Assert(taskList.Task[0].Owner, NotNil)
+	check.Assert(taskList.Task[0].Owner.HREF, Not(Equals), "")
+	check.Assert(taskList.Task[0].Status, Not(Equals), "")
+	check.Assert(taskList.Task[0].Progress, FitsTypeOf, 0)
+}

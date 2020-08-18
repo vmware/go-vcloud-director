@@ -5,6 +5,7 @@
 * Loosen up `Test_LBAppRule` for invalid application script check to work with different error engine in VCD 10.2
 [#326](https://github.com/vmware/go-vcloud-director/pull/326)
 * Update VDC dynamic func to handle API version 35.0 [#327](https://github.com/vmware/go-vcloud-director/pull/327)
+* Added methods `vm.UpdateVmCpuAndMemoryHotAdd` and `vm.UpdateVmCpuAndMemoryHotAddAsyc` [#324](https://github.com/vmware/go-vcloud-director/pull/324)
 * Introduce low level OpenAPI client functions `OpenApiGetAllItems`,`OpenApiPostItemSync`,`OpenApiPostItemAsync`,
 `OpenApiPostItem`, `OpenApiGetItem`, `OpenApiPutItem`, `OpenApiPutItemSync`, `OpenApiPutItemAsync`,
 `OpenApiDeleteItem`, `OpenApiIsSupported`, `OpenApiBuildEndpoints`
