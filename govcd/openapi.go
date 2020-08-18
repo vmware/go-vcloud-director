@@ -526,7 +526,7 @@ func (client *Client) openApiGetAllPages(apiVersion string, urlRef *url.URL, que
 	}
 
 	if nextPageUrlRef != nil {
-		responses, err = client.openApiGetAllPages(apiVersion, nil, nextPageUrlRef, url.Values{}, outType, responses)
+		responses, err = client.openApiGetAllPages(apiVersion,  nextPageUrlRef, url.Values{}, outType, responses)
 		if err != nil {
 			return nil, fmt.Errorf("got error on page %d: %s", pages.Page, err)
 		}
