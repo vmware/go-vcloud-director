@@ -18,7 +18,7 @@ type OpenApiRole struct {
 
 // GetOpenApiRoleById retrieves role by given ID
 func (adminOrg *AdminOrg) GetOpenApiRoleById(id string) (*OpenApiRole, error) {
-	endpoint := "1.0.0/roles/"
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles
 	minimumApiVersion, err := adminOrg.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func (adminOrg *AdminOrg) GetOpenApiRoleById(id string) (*OpenApiRole, error) {
 // GetAllOpenApiRoles retrieves all roles using OpenAPI endpoint. Query parameters can be supplied to perform additional
 // filtering
 func (adminOrg *AdminOrg) GetAllOpenApiRoles(queryParameters url.Values) ([]*types.Role, error) {
-	endpoint := "1.0.0/roles/"
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles
 	minimumApiVersion, err := adminOrg.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (adminOrg *AdminOrg) GetAllOpenApiRoles(queryParameters url.Values) ([]*typ
 
 // Create creates a new role using OpenAPI endpoint
 func (role *OpenApiRole) Create(newRole *types.Role) (*OpenApiRole, error) {
-	endpoint := "1.0.0/roles/"
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles
 	minimumApiVersion, err := role.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func (role *OpenApiRole) Create(newRole *types.Role) (*OpenApiRole, error) {
 
 // Update updates existing OpenAPI role
 func (role *OpenApiRole) Update() (*OpenApiRole, error) {
-	endpoint := "1.0.0/roles/"
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles
 	minimumApiVersion, err := role.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
@@ -128,7 +128,7 @@ func (role *OpenApiRole) Update() (*OpenApiRole, error) {
 
 // Delete deletes OpenAPI role
 func (role *OpenApiRole) Delete() error {
-	endpoint := "1.0.0/roles/"
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles
 	minimumApiVersion, err := role.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return err

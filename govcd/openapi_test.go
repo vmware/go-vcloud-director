@@ -128,10 +128,11 @@ func (vcd *TestVCD) Test_OpenApiInlineStructAudiTrail(check *C) {
 // 9. Delete role once again
 func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	minimumRequiredApiVersion := "31.0"
-	skipOpenApiEndpointTest(vcd, check, "1.0.0/roles", minimumRequiredApiVersion)
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles
+	skipOpenApiEndpointTest(vcd, check, endpoint, minimumRequiredApiVersion)
 
 	// Step 1 - Get all roles
-	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles")
+	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint)
 	check.Assert(err, IsNil)
 
 	type InlineRoles struct {
@@ -149,7 +150,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	// Step 2 - Get all roles using query filters
 	for _, oneRole := range allExistingRoles {
 		// Step 2.1 - retrieve specific role by using FIQL filter
-		urlRef2, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles")
+		urlRef2, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint)
 		check.Assert(err, IsNil)
 
 		queryParams := url.Values{}
@@ -162,7 +163,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 		check.Assert(len(expectOneRoleResultById) == 1, Equals, true)
 
 		// Step 2.2 - retrieve specific role by using endpoint
-		singleRef, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles/" + oneRole.ID)
+		singleRef, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint + oneRole.ID)
 		check.Assert(err, IsNil)
 
 		oneRole := &InlineRoles{}
@@ -176,7 +177,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	}
 
 	// Step 3 - Create a new role and ensure it is created as specified by doing deep comparison
-	createUrl, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles")
+	createUrl, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint)
 	check.Assert(err, IsNil)
 
 	newRole := &InlineRoles{
@@ -196,7 +197,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 
 	// Step 4 - update created role (change description)
 	newRoleResponse.Description = "Updated description created by test"
-	updateUrl, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles/", newRoleResponse.ID)
+	updateUrl, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint, newRoleResponse.ID)
 	check.Assert(err, IsNil)
 
 	updatedRoleResponse := &InlineRoles{}
@@ -207,7 +208,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	check.Assert(updatedRoleResponse, DeepEquals, newRoleResponse)
 
 	// Step 5 - delete created role
-	deleteUrlRef, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles/", newRoleResponse.ID)
+	deleteUrlRef, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint, newRoleResponse.ID)
 	check.Assert(err, IsNil)
 
 	err = vcd.client.Client.OpenApiDeleteItem(minimumRequiredApiVersion, deleteUrlRef, nil)
@@ -231,7 +232,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 
 	// Step 8 - update role using synchronous PUT function
 	newRoleResponse.Description = "Updated description created by sync test"
-	updateUrl2, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles/", newRoleResponse.ID)
+	updateUrl2, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint, newRoleResponse.ID)
 	check.Assert(err, IsNil)
 
 	updatedRoleResponse2 := &InlineRoles{}
@@ -242,7 +243,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	check.Assert(updatedRoleResponse2, DeepEquals, newRoleResponse)
 
 	// Step 9 - delete role once again
-	deleteUrlRef2, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/roles/", newRoleResponse.ID)
+	deleteUrlRef2, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint, newRoleResponse.ID)
 	check.Assert(err, IsNil)
 
 	err = vcd.client.Client.OpenApiDeleteItem(minimumRequiredApiVersion, deleteUrlRef2, nil)
