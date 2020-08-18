@@ -67,6 +67,14 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 	var count int
 	var pieceSize int64
 
+	// do not allow smaller than 1kb
+	if uDetails.uploadPieceSize > 1024 && uDetails.uploadPieceSize < uDetails.fileSizeToUpload {
+		pieceSize = uDetails.uploadPieceSize
+	} else {
+		pieceSize = defaultPieceSize
+	}
+
+	util.Logger.Printf("[TRACE] Uploading will use piece size: %#v \n", pieceSize)
 	// #nosec G304 - linter does not like 'filePath' to be a variable. However this is necessary for file uploads.
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -84,26 +92,6 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 
 	defer file.Close()
 
-	fileSize := fileInfo.Size()
-	// file size in OVF maybe not exist, use real file size instead
-	if uDetails.fileSizeToUpload == -1 {
-		uDetails.fileSizeToUpload = fileSize
-		uDetails.allFilesSize += fileSize
-	}
-	// TODO: file size in OVF maybe wrong? how to handle that?
-	if uDetails.fileSizeToUpload != fileSize {
-		fmt.Printf("WARNING：file size %d in OVF is not align with real file size %d, upload task may hung.",
-			uDetails.fileSizeToUpload, fileSize)
-	}
-
-	// do not allow smaller than 1kb
-	if uDetails.uploadPieceSize > 1024 && uDetails.uploadPieceSize < uDetails.fileSizeToUpload {
-		pieceSize = uDetails.uploadPieceSize
-	} else {
-		pieceSize = defaultPieceSize
-	}
-
-	util.Logger.Printf("[TRACE] Uploading will use piece size: %#v \n", pieceSize)
 	part = make([]byte, pieceSize)
 
 	for {
@@ -134,7 +122,7 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 		return 0, err
 	}
 
-	return fileSize, nil
+	return fileInfo.Size(), nil
 }
 
 // Create Request with right headers and range settings. Support multi part file upload.

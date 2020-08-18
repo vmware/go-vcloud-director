@@ -39,15 +39,6 @@ func (uploadTask *UploadTask) ShowUploadProgress() error {
 
 		fmt.Printf("\rUpload progress %.2f%%", uploadTask.uploadProgress.LockedGet())
 		if uploadTask.uploadProgress.LockedGet() == 100.00 {
-			fmt.Println()
-			break
-		}
-		// Upload may be cancelled by user on GUI manually, detect task status
-		if err := uploadTask.Refresh(); err != nil {
-			return err
-		}
-		if uploadTask.Task.Task.Status != "queued" && uploadTask.Task.Task.Status != "preRunning" && uploadTask.Task.Task.Status != "running" {
-			fmt.Println()
 			break
 		}
 		time.Sleep(1 * time.Second)
