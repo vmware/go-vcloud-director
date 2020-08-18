@@ -1352,7 +1352,6 @@ func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
 			VmSpecSection: disksSettingToUpdate,
-			// API version requirements changes through vCD version to access VmSpecSection
 		})
 }
 
@@ -1472,7 +1471,6 @@ func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection, 
 			Name:          vm.VM.Name,
 			Description:   description,
 			VmSpecSection: vmSettingsToUpdate,
-			// API version requirements changes through vCD version to access VmSpecSection
 		})
 }
 
