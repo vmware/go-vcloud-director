@@ -11,6 +11,7 @@
 `OpenApiDeleteItem`, `OpenApiIsSupported`, `OpenApiBuildEndpoints`
 [#325](https://github.com/vmware/go-vcloud-director/pull/325)
 * Drop support for VMware Cloud Director 9.5 [#330](https://github.com/vmware/go-vcloud-director/pull/330)
+* Deprecate Vdc.UploadMediaImage because it no longer works with API V32.0+ [#330](https://github.com/vmware/go-vcloud-director/pull/330)
 
 ## 2.8.0 (June 30, 2020)
 
