@@ -449,10 +449,6 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_error_withSameItem(check *C) {
 	check.Assert(err, IsNil)
 
 	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage_error_withSameItem")
-
-	_, err2 := vcd.vdc.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
-	check.Assert(err2, NotNil)
-	check.Assert(err2.Error(), Matches, ".*already exists. Upload with different name.*")
 }
 
 // Tests System function Delete by creating media item and
