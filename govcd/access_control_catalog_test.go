@@ -8,11 +8,16 @@ package govcd
 
 import (
 	"fmt"
+	"os"
 
 	. "gopkg.in/check.v1"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
+
+// catalogTenantContext defines whether we use tenant context during catalog tests.
+// By default is off, unless variable VCD_CATALOG_TENANT_CONTEXT is set
+var catalogTenantContext = os.Getenv("VCD_CATALOG_TENANT_CONTEXT") != ""
 
 // GetId completes the implementation of interface accessControlType
 func (catalog Catalog) GetId() string {
@@ -109,7 +114,7 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 	}
 
 	checkEmpty := func() {
-		settings, err := catalog.GetAccessControl()
+		settings, err := catalog.GetAccessControl(catalogTenantContext)
 		check.Assert(err, IsNil)
 		check.Assert(settings.IsSharedToEveryone, Equals, false) // There should not be a global sharing
 		check.Assert(settings.AccessSettings, IsNil)             // There should not be any explicit sharing
@@ -134,6 +139,13 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 		}
 	}()
 	checkEmpty()
+	//globalSettings := types.ControlAccessParams{
+	//	IsSharedToEveryone:  true,
+	//	EveryoneAccessLevel: takeStringPointer(types.ControlAccessReadWrite),
+	//	AccessSettings: nil,
+	//}
+	//err = testAccessControl(catalogName+" catalog global", catalog, globalSettings, globalSettings, true, check)
+	//check.Assert(err, IsNil)
 
 	// Set control access to one user
 	oneUserSettings := types.ControlAccessParams{
@@ -153,17 +165,17 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 			},
 		},
 	}
-	err = testAccessControl(catalogName+" catalog one user", catalog, oneUserSettings, oneUserSettings, true, check)
+	err = testAccessControl(catalogName+" catalog one user", catalog, oneUserSettings, oneUserSettings, true, catalogTenantContext, check)
 	check.Assert(err, IsNil)
 
 	// Check that vapp.GetAccessControl and vdc.GetVappAccessControl return the same data
-	controlAccess, err := catalog.GetAccessControl()
+	controlAccess, err := catalog.GetAccessControl(catalogTenantContext)
 	check.Assert(err, IsNil)
-	orgControlAccessByName, err := adminOrg.GetCatalogAccessControl(catalogName)
+	orgControlAccessByName, err := adminOrg.GetCatalogAccessControl(catalogName, catalogTenantContext)
 	check.Assert(err, IsNil)
 	check.Assert(controlAccess, DeepEquals, orgControlAccessByName)
 
-	orgControlAccessById, err := adminOrg.GetCatalogAccessControl(catalog.GetId())
+	orgControlAccessById, err := adminOrg.GetCatalogAccessControl(catalog.GetId(), catalogTenantContext)
 	check.Assert(err, IsNil)
 	check.Assert(controlAccess, DeepEquals, orgControlAccessById)
 
@@ -194,11 +206,11 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 			},
 		},
 	}
-	err = testAccessControl(catalogName+" catalog two users", catalog, twoUserSettings, twoUserSettings, true, check)
+	err = testAccessControl(catalogName+" catalog two users", catalog, twoUserSettings, twoUserSettings, true, catalogTenantContext, check)
 	check.Assert(err, IsNil)
 
 	// Check removal of sharing setting
-	err = catalog.RemoveAccessControl()
+	err = catalog.RemoveAccessControl(catalogTenantContext)
 	check.Assert(err, IsNil)
 	checkEmpty()
 
@@ -238,7 +250,7 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 			},
 		},
 	}
-	err = testAccessControl(catalogName+" catalog three users", catalog, threeUserSettings, threeUserSettings, true, check)
+	err = testAccessControl(catalogName+" catalog three users", catalog, threeUserSettings, threeUserSettings, true, catalogTenantContext, check)
 	check.Assert(err, IsNil)
 
 	if vcd.client.Client.IsSysAdmin && newOrg != nil {
@@ -288,10 +300,10 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 				},
 			},
 		}
-		err = testAccessControl(catalogName+" catalog three users and org", catalog, threeUserOrgSettings, threeUserOrgSettings, true, check)
+		err = testAccessControl(catalogName+" catalog three users and org", catalog, threeUserOrgSettings, threeUserOrgSettings, true, catalogTenantContext, check)
 		check.Assert(err, IsNil)
 
-		err = catalog.RemoveAccessControl()
+		err = catalog.RemoveAccessControl(catalogTenantContext)
 		check.Assert(err, IsNil)
 		checkEmpty()
 
@@ -322,7 +334,7 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 				},
 			},
 		}
-		err = testAccessControl(catalogName+" catalog two org", catalog, twoOrgsSettings, twoOrgsSettings, true, check)
+		err = testAccessControl(catalogName+" catalog two org", catalog, twoOrgsSettings, twoOrgsSettings, true, catalogTenantContext, check)
 		check.Assert(err, IsNil)
 	}
 
@@ -330,7 +342,7 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 	emptySettings := types.ControlAccessParams{
 		IsSharedToEveryone: false,
 	}
-	err = testAccessControl(catalogName+" catalog empty", catalog, emptySettings, emptySettings, false, check)
+	err = testAccessControl(catalogName+" catalog empty", catalog, emptySettings, emptySettings, false, catalogTenantContext, check)
 	check.Assert(err, IsNil)
 
 	checkEmpty()

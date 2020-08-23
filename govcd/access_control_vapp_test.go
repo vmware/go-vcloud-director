@@ -8,11 +8,16 @@ package govcd
 
 import (
 	"fmt"
+	"os"
 
 	. "gopkg.in/check.v1"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
+
+// vappTenantContext defines whether we use tenant context during vApp tests.
+// By default is ON. It is disabled if VCD_VAPP_SYSTEM_CONTEXT is set
+var vappTenantContext = os.Getenv("VCD_VAPP_SYSTEM_CONTEXT") == ""
 
 // GetId completes the implementation of interface accessControlType
 func (vapp VApp) GetId() string {
@@ -55,7 +60,7 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 	AddToCleanupList(vappName, "vapp", vcd.config.VCD.Org+"|"+vcd.config.VCD.Vdc, "Test_VappAccessControl")
 
 	checkEmpty := func() {
-		settings, err := vapp.GetAccessControl()
+		settings, err := vapp.GetAccessControl(vappTenantContext)
 		check.Assert(err, IsNil)
 		check.Assert(settings.IsSharedToEveryone, Equals, false) // There should not be a global sharing
 		check.Assert(settings.AccessSettings, IsNil)             // There should not be any explicit sharing
@@ -97,14 +102,14 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 	}
 
 	// Use generic testAccessControl. Here vapp is passed as accessControlType interface
-	err = testAccessControl("vapp all users RO", vapp, allUsersSettings, allUsersSettings, true, check)
+	err = testAccessControl("vapp all users RO", vapp, allUsersSettings, allUsersSettings, true, vappTenantContext, check)
 	check.Assert(err, IsNil)
 
 	allUsersSettings = types.ControlAccessParams{
 		EveryoneAccessLevel: takeStringPointer(types.ControlAccessReadWrite),
 		IsSharedToEveryone:  true,
 	}
-	err = testAccessControl("vapp all users R/W", vapp, allUsersSettings, allUsersSettings, true, check)
+	err = testAccessControl("vapp all users R/W", vapp, allUsersSettings, allUsersSettings, true, vappTenantContext, check)
 	check.Assert(err, IsNil)
 
 	// Set access control to one user
@@ -125,17 +130,17 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 			},
 		},
 	}
-	err = testAccessControl("vapp one user", vapp, oneUserSettings, oneUserSettings, true, check)
+	err = testAccessControl("vapp one user", vapp, oneUserSettings, oneUserSettings, true, vappTenantContext, check)
 	check.Assert(err, IsNil)
 
 	// Check that vapp.GetAccessControl and vdc.GetVappAccessControl return the same data
-	controlAccess, err := vapp.GetAccessControl()
+	controlAccess, err := vapp.GetAccessControl(vappTenantContext)
 	check.Assert(err, IsNil)
-	vdcControlAccessName, err := vdc.GetVappAccessControl(vappName)
+	vdcControlAccessName, err := vdc.GetVappAccessControl(vappName, vappTenantContext)
 	check.Assert(err, IsNil)
 	check.Assert(controlAccess, DeepEquals, vdcControlAccessName)
 
-	vdcControlAccessId, err := vdc.GetVappAccessControl(vapp.VApp.ID)
+	vdcControlAccessId, err := vdc.GetVappAccessControl(vapp.VApp.ID, vappTenantContext)
 	check.Assert(err, IsNil)
 	check.Assert(controlAccess, DeepEquals, vdcControlAccessId)
 
@@ -166,11 +171,11 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 			},
 		},
 	}
-	err = testAccessControl("vapp two users", vapp, twoUserSettings, twoUserSettings, true, check)
+	err = testAccessControl("vapp two users", vapp, twoUserSettings, twoUserSettings, true, vappTenantContext, check)
 	check.Assert(err, IsNil)
 
 	// Check removal of sharing setting
-	err = vapp.RemoveAccessControl()
+	err = vapp.RemoveAccessControl(vappTenantContext)
 	check.Assert(err, IsNil)
 	checkEmpty()
 
@@ -210,14 +215,14 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 			},
 		},
 	}
-	err = testAccessControl("vapp three users", vapp, threeUserSettings, threeUserSettings, true, check)
+	err = testAccessControl("vapp three users", vapp, threeUserSettings, threeUserSettings, true, vappTenantContext, check)
 	check.Assert(err, IsNil)
 
 	// Set empty settings explicitly
 	emptySettings := types.ControlAccessParams{
 		IsSharedToEveryone: false,
 	}
-	err = testAccessControl("vapp empty", vapp, emptySettings, emptySettings, false, check)
+	err = testAccessControl("vapp empty", vapp, emptySettings, emptySettings, false, vappTenantContext, check)
 	check.Assert(err, IsNil)
 
 	checkEmpty()
