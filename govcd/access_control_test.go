@@ -21,7 +21,7 @@ type accessControlType interface {
 	GetAccessControl(useTenantContext bool) (*types.ControlAccessParams, error)
 	SetAccessControl(params *types.ControlAccessParams, useTenantContext bool) error
 	RemoveAccessControl(useTenantContext bool) error
-	IsShared(useTenantContext bool) bool
+	IsShared(useTenantContext bool) (bool,error)
 	GetId() string
 }
 
@@ -98,7 +98,11 @@ func testAccessControl(label string, accessible accessControlType, params types.
 		}
 	}
 
-	check.Assert(accessible.IsShared(useTenantContext), Equals, wantShared)
+	shared, err := accessible.IsShared(useTenantContext)
+	if err != nil {
+		return err
+	}
+	check.Assert(shared, Equals, wantShared)
 
 	return nil
 }
