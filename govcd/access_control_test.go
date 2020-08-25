@@ -21,7 +21,7 @@ type accessControlType interface {
 	GetAccessControl(useTenantContext bool) (*types.ControlAccessParams, error)
 	SetAccessControl(params *types.ControlAccessParams, useTenantContext bool) error
 	RemoveAccessControl(useTenantContext bool) error
-	IsShared(useTenantContext bool) (bool,error)
+	IsShared(useTenantContext bool) (bool, error)
 	GetId() string
 }
 
