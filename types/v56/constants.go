@@ -296,6 +296,7 @@ const (
 
 // These constants allow to construct OpenAPI endpoint paths and avoid strings in code for easy replacement in future.
 const (
-	OpenApiPathVersion1_0_0 = "1.0.0/"
-	OpenApiEndpointRoles    = "roles/"
+	OpenApiPathVersion1_0_0           = "1.0.0/"
+	OpenApiEndpointRoles              = "roles/"
+	OpenApiEndpointVdcComputePolicies = "vdcComputePolicies/"
 )
