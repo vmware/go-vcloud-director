@@ -127,8 +127,9 @@ func (vcd *TestVCD) Test_OpenApiInlineStructAudiTrail(check *C) {
 // 8. Update role once more using "Sync" version of PUT function
 // 9. Delete role once again
 func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
-	minimumRequiredApiVersion := "31.0"
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles
+	minimumRequiredApiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(endpoint)
+	check.Assert(err, IsNil)
 	skipOpenApiEndpointTest(vcd, check, endpoint, minimumRequiredApiVersion)
 
 	// Step 1 - Get all roles
