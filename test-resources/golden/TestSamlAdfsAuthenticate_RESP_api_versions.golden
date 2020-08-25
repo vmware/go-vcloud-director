@@ -48,6 +48,10 @@
 			<Version>31.0</Version>
 			<LoginUrl>https://192.168.1.109/api/sessions</LoginUrl>
 		</VersionInfo>
+		<VersionInfo deprecated="false">
+			<Version>32.0</Version>
+			<LoginUrl>https://192.168.1.109/api/sessions</LoginUrl>
+		</VersionInfo>
 		<VersionInfo deprecated="true">
 			<Version>5.5</Version>
 			<LoginUrl>https://192.168.1.109/api/sessions</LoginUrl>
