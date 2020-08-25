@@ -9,6 +9,7 @@
 * Added methods `Vdc.GetVappAccessControl`, `AdminOrg.GetCatalogAccessControl`, `Org.GetCatalogAccessControl` [#329](https://github.com/vmware/go-vcloud-director/pull/329)
 * Added methods `Vdc.QueryVappList`, `Vdc.GetVappList`, `AdminVdc.GetVappList`, `client.GetQueryType` [#329](https://github.com/vmware/go-vcloud-director/pull/329)
 * Added VM and vApp to search query engine [#329](https://github.com/vmware/go-vcloud-director/pull/329)
+* Added tenant context for access control methods [#329](https://github.com/vmware/go-vcloud-director/pull/329)
 * Loosen up `Test_LBAppRule` for invalid application script check to work with different error engine in VCD 10.2
 [#326](https://github.com/vmware/go-vcloud-director/pull/326)
 * Update VDC dynamic func to handle API version 35.0 [#327](https://github.com/vmware/go-vcloud-director/pull/327)
