@@ -56,8 +56,8 @@ vcd:
     # Provider VDC details for NSX-T testing
     nsxt_provider_vdc:
       name: nsxTPvdc1
-      storage_profile: mystorageprofile
-      network_pool: "NSX-T Overlay"
+      storage_profile: "*"
+      network_pool: "NSX-T Overlay 1"
     # An Org catalog, possibly containing at least one item
     catalog:
         name: mycat
