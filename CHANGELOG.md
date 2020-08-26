@@ -42,7 +42,6 @@
 * Added methods `vapp.UpdateNetworkFirewallRules`, `vapp.UpdateNetworkFirewallRulesAsync`, `vapp.GetVappNetworkById`, `vapp.GetVappNetworkByName` and `vapp.GetVappNetworkByNameOrId` [#308](https://github.com/vmware/go-vcloud-director/pull/308)
 * Added methods `vapp.UpdateNetworkNatRulesAsync`, `vapp.UpdateNetworkNatRulesAsync`, `vapp.RemoveAllNetworkFirewallRules` and `vapp.RemoveAllNetworkNatRules` [#316](https://github.com/vmware/go-vcloud-director/pull/316)
 * Added methods `vapp.UpdateNetworkStaticRouting`, `vapp.UpdateNetworkStaticRoutingAsync` and `vapp.RemoveAllNetworkStaticRoutes` [#318](https://github.com/vmware/go-vcloud-director/pull/318)
-* Add OVF file upload support in UploadOvf function besides OVA. The input should be OVF file path inside the OVF folder. It will check if input file is XML content type, if yes, skip some OVA steps (like unpacking), if not, keep the old logic. [#323](https://github.com/vmware/go-vcloud-director/pull/323)
 
 ## 2.7.0 (April 10,2020)
 
