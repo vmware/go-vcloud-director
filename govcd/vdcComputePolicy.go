@@ -2,9 +2,11 @@ package govcd
 
 import (
 	"fmt"
-	"net/url"
-
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
+	"net/http"
+	"net/url"
+	"strings"
 )
 
 type VdcComputePolicy struct {
@@ -45,7 +47,7 @@ func (org *AdminOrg) GetVdcComputePolicyById(id string) (*VdcComputePolicy, erro
 
 // GetAllVdcComputePolicies retrieves all VDC compute policies using OpenAPI endpoint. Query parameters can be supplied to perform additional
 // filtering
-func (org *AdminOrg) GetAllVdcComputePolicies(queryParameters url.Values) ([]*types.VdcComputePolicy, error) {
+func (org *AdminOrg) GetAllVdcComputePolicies(queryParameters url.Values) ([]*VdcComputePolicy, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies
 	minimumApiVersion, err := org.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
@@ -64,7 +66,16 @@ func (org *AdminOrg) GetAllVdcComputePolicies(queryParameters url.Values) ([]*ty
 		return nil, err
 	}
 
-	return responses, nil
+	var wrappedVcdComputePolicies []*VdcComputePolicy
+	for _, response := range responses {
+		wrappedVcdComputePolicy := &VdcComputePolicy{
+			client:           org.client,
+			VdcComputePolicy: response,
+		}
+		wrappedVcdComputePolicies = append(wrappedVcdComputePolicies, wrappedVcdComputePolicy)
+	}
+
+	return wrappedVcdComputePolicies, nil
 }
 
 // Create creates a new VDC Compute Policy using OpenAPI endpoint
@@ -147,4 +158,67 @@ func (vdcComputePolicy *VdcComputePolicy) Delete() error {
 	}
 
 	return nil
+}
+
+// GetAllAssignedVdcComputePolicies retrieves all VDC assigned compute policies using OpenAPI endpoint. Query parameters can be supplied to perform additional
+// filtering
+func (vdc *Vdc) GetAllAssignedVdcComputePolicies(queryParameters url.Values) ([]*VdcComputePolicy, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcs + vdc.Vdc.ID + types.OpenApiEndpointAssignedComputePolicies
+	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(types.OpenApiEndpointAssignedComputePolicies)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := vdc.client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	responses := []*types.VdcComputePolicy{{}}
+
+	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &responses)
+	if err != nil {
+		return nil, err
+	}
+
+	var wrappedVcdComputePolicies []*VdcComputePolicy
+	for _, response := range responses {
+		wrappedVcdComputePolicy := &VdcComputePolicy{
+			client:           vdc.client,
+			VdcComputePolicy: response,
+		}
+		wrappedVcdComputePolicies = append(wrappedVcdComputePolicies, wrappedVcdComputePolicy)
+	}
+
+	return wrappedVcdComputePolicies, nil
+}
+
+func (vdc *Vdc) SetAssignedComputePolicies(computePolicyReferences types.VdcComputePolicyReferences) (*types.VdcComputePolicyReferences, error) {
+	util.Logger.Printf("[TRACE]Set Compute Policies started")
+
+	if !vdc.client.IsSysAdmin {
+		return nil, fmt.Errorf("functionality requires system administrator privileges")
+	}
+
+	adminVdcPolicyHREF, err := url.ParseRequestURI(vdc.Vdc.HREF)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing vdc url: %s", err)
+	}
+	splitVdcId := strings.Split(vdc.Vdc.HREF, "/api/vdc/")
+	if len(splitVdcId) == 1 {
+		adminVdcPolicyHREF.Path = "/api/admin/vdc/" + strings.Split(vdc.Vdc.HREF, "/api/admin/vdc/")[1] + "/computePolicies"
+	} else {
+		adminVdcPolicyHREF.Path = "/api/admin/vdc/" + splitVdcId[1] + "/computePolicies"
+	}
+
+	returnedVdcComputePolicies := &types.VdcComputePolicyReferences{}
+	computePolicyReferences.Xmlns = types.XMLNamespaceVCloud
+
+	_, err = vdc.client.ExecuteRequest(adminVdcPolicyHREF.String(), http.MethodPut,
+		types.MimeVdcComputePolicyReferences, "error setting compute policies for VDC: %s", computePolicyReferences, returnedVdcComputePolicies)
+	if err != nil {
+		return nil, err
+	}
+
+	return returnedVdcComputePolicies, nil
 }
