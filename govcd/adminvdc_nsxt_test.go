@@ -26,31 +26,26 @@ func (vcd *TestVCD) Test_CreateNsxtOrgVdc(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":   "providerVdc",
-		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.NsxtProviderVdc.Name),
-	})
+	pVdcs, err := QueryProviderVdcByName(vcd.client, vcd.config.VCD.NsxtProviderVdc.Name)
 	check.Assert(err, IsNil)
-	if len(results.Results.VMWProviderVdcRecord) == 0 {
+
+	if len(pVdcs) == 0 {
 		check.Skip(fmt.Sprintf("No NSX-T Provider VDC found with name '%s'", vcd.config.VCD.NsxtProviderVdc.Name))
 	}
-	providerVdcHref := results.Results.VMWProviderVdcRecord[0].HREF
+	providerVdcHref := pVdcs[0].HREF
 
-	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":   "providerVdcStorageProfile",
-		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.NsxtProviderVdc.StorageProfile),
-	})
+	pvdcStorageProfiles, err := QueryProviderVdcStorageProfileByName(vcd.client, vcd.config.VCD.NsxtProviderVdc.StorageProfile)
+
 	check.Assert(err, IsNil)
-	if len(results.Results.ProviderVdcStorageProfileRecord) == 0 {
+	if len(pvdcStorageProfiles) == 0 {
 		check.Skip(fmt.Sprintf("No storage profile found with name '%s'", vcd.config.VCD.NsxtProviderVdc.StorageProfile))
 	}
-	providerVdcStorageProfileHref := results.Results.ProviderVdcStorageProfileRecord[0].HREF
+	providerVdcStorageProfileHref := pvdcStorageProfiles[0].HREF
 
 	networkPools, err := QueryNetworkPoolByName(vcd.client, vcd.config.VCD.NsxtProviderVdc.NetworkPool)
 	check.Assert(err, IsNil)
 	if len(networkPools) == 0 {
 		check.Skip(fmt.Sprintf("No network pool found with name '%s'", vcd.config.VCD.NsxtProviderVdc.NetworkPool))
-
 	}
 
 	networkPoolHref := networkPools[0].HREF
