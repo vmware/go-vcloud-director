@@ -227,4 +227,8 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 
 	checkEmpty()
 
+	orgInfo, err := vapp.getOrgInfo()
+	check.Assert(err, IsNil)
+	check.Assert(orgInfo.id, Equals, extractUuid(org.AdminOrg.ID))
+	check.Assert(orgInfo.name, Equals, org.AdminOrg.Name)
 }

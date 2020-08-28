@@ -48,6 +48,12 @@ func (vcd *TestVCD) Test_AdminCatalogAccessControl(check *C) {
 	check.Assert(adminCatalog, NotNil)
 	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName())
 	vcd.testCatalogAccessControl(adminorg, adminCatalog, check.TestName(), catalogName, check)
+
+	orgInfo, err := adminCatalog.getOrgInfo()
+	check.Assert(err, IsNil)
+	check.Assert(orgInfo.id, Equals, extractUuid(adminorg.AdminOrg.ID))
+	check.Assert(orgInfo.name, Equals, adminorg.AdminOrg.Name)
+
 	err = adminCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
 }
@@ -73,6 +79,12 @@ func (vcd *TestVCD) Test_CatalogAccessControl(check *C) {
 	catalog, err := org.GetCatalogByName(catalogName, true)
 	check.Assert(err, IsNil)
 	vcd.testCatalogAccessControl(adminorg, catalog, check.TestName(), catalogName, check)
+
+	orgInfo, err := catalog.getOrgInfo()
+	check.Assert(err, IsNil)
+	check.Assert(orgInfo.id, Equals, extractUuid(adminorg.AdminOrg.ID))
+	check.Assert(orgInfo.name, Equals, adminorg.AdminOrg.Name)
+
 	err = catalog.Delete(true, true)
 	check.Assert(err, IsNil)
 }
