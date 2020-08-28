@@ -1,4 +1,4 @@
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user nsxv ALL
+// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user nsxv affinity ALL
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -667,4 +667,28 @@ func deleteVapp(vcd *TestVCD, name string) error {
 		return fmt.Errorf("error waiting for vApp deletion task: %s", err)
 	}
 	return nil
+}
+
+// makeEmptyVapp creates a given vApp without any VM
+func makeEmptyVapp(vdc *Vdc, name string) (*VApp, error) {
+
+	err := vdc.ComposeRawVApp(name)
+	if err != nil {
+		return nil, err
+	}
+	vapp, err := vdc.GetVAppByName(name, true)
+	if err != nil {
+		return nil, err
+	}
+	initialVappStatus, err := vapp.GetStatus()
+	if err != nil {
+		return nil, err
+	}
+	if initialVappStatus != "RESOLVED" {
+		err = vapp.BlockWhileStatus(initialVappStatus, vapp.client.MaxRetryTimeout)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return vapp, nil
 }
