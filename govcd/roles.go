@@ -49,7 +49,7 @@ func (adminOrg *AdminOrg) GetOpenApiRoleById(id string) (*Role, error) {
 
 // GetAllOpenApiRoles retrieves all roles using OpenAPI endpoint. Query parameters can be supplied to perform additional
 // filtering
-func (adminOrg *AdminOrg) GetAllOpenApiRoles(queryParameters url.Values) ([]Role, error) {
+func (adminOrg *AdminOrg) GetAllOpenApiRoles(queryParameters url.Values) ([]*Role, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles
 	minimumApiVersion, err := adminOrg.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
@@ -68,9 +68,9 @@ func (adminOrg *AdminOrg) GetAllOpenApiRoles(queryParameters url.Values) ([]Role
 	}
 
 	// Wrap all typeResponses into Role types with client
-	returnRoles := make([]Role, len(typeResponses))
+	returnRoles := make([]*Role, len(typeResponses))
 	for sliceIndex := range typeResponses {
-		returnRoles[sliceIndex] = Role{
+		returnRoles[sliceIndex] = &Role{
 			Role:   typeResponses[sliceIndex],
 			client: adminOrg.client,
 		}
