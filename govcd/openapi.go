@@ -67,6 +67,8 @@ func (client *Client) OpenApiBuildEndpoint(endpoint ...string) (*url.URL, error)
 // first crawling pages and accumulating all responses into []json.RawMessage (as strings). Because there is no
 // intermediate unmarshalling to exact `outType` for every page it unmarshals into response struct in one go. 'outType'
 // must be a slice of object (e.g. []*types.OpenAPIEdgeGateway) because this response contains slice of structs.
+//
+// Note. Query parameter 'pageSize' is defaulted to 128 (maximum supported) unless it is specified in queryParams
 func (client *Client) OpenApiGetAllItems(apiVersion string, urlRef *url.URL, queryParams url.Values, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Getting all items from endpoint %s for parsing into %s type\n",
 		urlRef.String(), reflect.TypeOf(outType))
@@ -75,9 +77,15 @@ func (client *Client) OpenApiGetAllItems(apiVersion string, urlRef *url.URL, que
 		return fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
+	// Page size is defaulted to 128 (maximum supported number) to reduce HTTP calls and improve performance unless caller
+	// provides other value
+	const pageSize = "128"
+	newQueryParams := defaultPageSize(queryParams, pageSize)
+	util.Logger.Printf("[TRACE] Will use 'pageSize' %s", newQueryParams.Get("pageSize"))
+
 	// Perform API call to initial endpoint. The function call recursively follows pages using Link headers "nextPage"
 	// until it crawls all results
-	responses, err := client.openApiGetAllPages(apiVersion, urlRef, queryParams, outType, nil)
+	responses, err := client.openApiGetAllPages(apiVersion, urlRef, newQueryParams, outType, nil)
 	if err != nil {
 		return fmt.Errorf("error getting all pages for endpoint %s: %s", urlRef.String(), err)
 	}
@@ -619,4 +627,19 @@ func jsonRawMessagesToStrings(messages []json.RawMessage) []string {
 	}
 
 	return resultString
+}
+
+// defaultPageSize allows to set 'pageSize' query parameter to defaultPageSize if one is not already specified in
+// url.Values while preserving all other supplied url.Values
+func defaultPageSize(queryParams url.Values, defaultPageSize string) url.Values {
+	newQueryParams := make(map[string][]string)
+	if queryParams != nil {
+		newQueryParams = queryParams
+	}
+
+	if _, ok := newQueryParams["pageSize"]; !ok {
+		newQueryParams["pageSize"] = []string{defaultPageSize}
+	}
+
+	return newQueryParams
 }
