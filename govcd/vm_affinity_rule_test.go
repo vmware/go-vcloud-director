@@ -272,30 +272,6 @@ func (vcd *TestVCD) Test_VmAffinityRule(check *C) {
 
 }
 
-// makeEmptyVapp creates a given vApp without any VM
-func makeEmptyVapp(vdc *Vdc, name string) (*VApp, error) {
-
-	err := vdc.ComposeRawVApp(name)
-	if err != nil {
-		return nil, err
-	}
-	vapp, err := vdc.GetVAppByName(name, true)
-	if err != nil {
-		return nil, err
-	}
-	initialVappStatus, err := vapp.GetStatus()
-	if err != nil {
-		return nil, err
-	}
-	if initialVappStatus != "RESOLVED" {
-		err = vapp.BlockWhileStatus(initialVappStatus, vapp.client.MaxRetryTimeout)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return vapp, nil
-}
-
 // makeEmptyVm creates an empty VM inside a given vApp
 func makeEmptyVm(vapp *VApp, name string) (*VM, error) {
 	newDisk := types.DiskSettings{

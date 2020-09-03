@@ -45,11 +45,7 @@ func (vcd *TestVCD) Test_SearchSpecificVappTemplate(check *C) {
 		}
 	}
 
-	queryType := types.QtVappTemplate
-
-	if client.IsSysAdmin {
-		queryType = types.QtAdminVappTemplate
-	}
+	queryType := client.GetQueryType(types.QtVappTemplate)
 
 	// metadata filters
 	var tests = []struct {
@@ -114,10 +110,7 @@ func (vcd *TestVCD) Test_SearchVappTemplate(check *C) {
 	check.Assert(err, IsNil)
 	client := catalog.client
 
-	queryType := types.QtVappTemplate
-	if client.IsSysAdmin {
-		queryType = types.QtAdminVappTemplate
-	}
+	queryType := client.GetQueryType(types.QtVappTemplate)
 	// Test with any vApp templates, using mass produced filters
 	filters, err := HelperMakeFiltersFromVappTemplate(catalog)
 	check.Assert(err, IsNil)
@@ -160,10 +153,7 @@ func (vcd *TestVCD) Test_SearchCatalogItem(check *C) {
 	check.Assert(err, IsNil)
 	client := catalog.client
 
-	queryType := types.QtCatalogItem
-	if client.IsSysAdmin {
-		queryType = types.QtAdminCatalogItem
-	}
+	queryType := client.GetQueryType(types.QtCatalogItem)
 	// Test with any catalog items, using mass produced filters
 	filters, err := HelperMakeFiltersFromCatalogItem(catalog)
 	check.Assert(err, IsNil)
@@ -271,10 +261,7 @@ func (vcd *TestVCD) Test_SearchCatalog(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(filters, NotNil)
 
-	queryType := types.QtCatalog
-	if client.Client.IsSysAdmin {
-		queryType = types.QtAdminCatalog
-	}
+	queryType := client.Client.GetQueryType(types.QtCatalog)
 	for _, fm := range filters {
 		queryItems, explanation, err := org.SearchByFilter(queryType, fm.Criteria)
 		check.Assert(err, IsNil)
@@ -309,11 +296,8 @@ func (vcd *TestVCD) Test_SearchMediaItem(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(filters, NotNil)
 
-	queryType := types.QtMedia
+	queryType := client.Client.GetQueryType(types.QtMedia)
 
-	if client.Client.IsSysAdmin {
-		queryType = types.QtAdminMedia
-	}
 	for _, fm := range filters {
 		queryItems, explanation, err := catalog.SearchByFilter(queryType, "catalog", fm.Criteria)
 		check.Assert(err, IsNil)

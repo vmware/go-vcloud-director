@@ -346,3 +346,103 @@ func (vcd *TestVCD) Test_GetVApp(check *C) {
 	}
 	vcd.testFinderGetGenericEntity(def, check)
 }
+
+// TestGetVappList tests all methods that retrieve a list of vApps
+// vdc.GetVappList
+// adminVdc.GetVappList
+// client.QueryVappList
+// client.SearchByFilter
+func (vcd *TestVCD) TestGetVappList(check *C) {
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp wasn't properly created")
+	}
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_GetVapp: Org name not given")
+		return
+	}
+	if vcd.config.VCD.Vdc == "" {
+		check.Skip("Test_GetVapp: VDC name not given")
+		return
+	}
+	vapp := vcd.findFirstVapp()
+	if vapp == (VApp{}) {
+		check.Skip("no vApp found")
+		return
+	}
+
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+	adminVdc, err := org.GetAdminVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(adminVdc, NotNil)
+
+	// Get the vApp list from VDC
+	vappList := vdc.GetVappList()
+	check.Assert(vappList, NotNil)
+	check.Assert(len(vappList), Not(Equals), 0)
+
+	// Get the vApp list from admin VDC
+	vappAdminList := adminVdc.GetVappList()
+	check.Assert(vappAdminList, NotNil)
+	check.Assert(len(vappAdminList), Not(Equals), 0)
+	check.Assert(len(vappAdminList), Equals, len(vappList))
+
+	// Check that the known vApp is found in both lists
+	foundVappInList := false
+	foundVappInAdminList := false
+	foundVappInQueryList := false
+	for _, ref := range vappList {
+		if ref.ID == vapp.VApp.ID {
+			foundVappInList = true
+		}
+	}
+	for _, ref := range vappAdminList {
+		if ref.ID == vapp.VApp.ID {
+			foundVappInAdminList = true
+		}
+	}
+	check.Assert(foundVappInList, Equals, true)
+	check.Assert(foundVappInAdminList, Equals, true)
+
+	// Get the vApp list with a query (returns all vApps visible to user, non only the ones withing the current VDC)
+	queryVappList, err := vcd.client.Client.QueryVappList()
+	check.Assert(err, IsNil)
+	check.Assert(queryVappList, NotNil)
+
+	for _, qItem := range queryVappList {
+		if qItem.HREF == vapp.VApp.HREF {
+			foundVappInQueryList = true
+		}
+	}
+	check.Assert(foundVappInQueryList, Equals, true)
+
+	// Use the search engine to find the known vApp
+	criteria := NewFilterDef()
+	criteria.AddFilter(types.FilterNameRegex, TestSetUpSuite)
+	queryType := vcd.client.Client.GetQueryType(types.QtVapp)
+	queryItems, _, err := vcd.client.Client.SearchByFilter(queryType, criteria)
+	check.Assert(err, IsNil)
+	check.Assert(queryItems, NotNil)
+	check.Assert(len(queryItems), Not(Equals), 0)
+	check.Assert(queryItems[0].GetHref(), Equals, vapp.VApp.HREF)
+
+	// Use the search engine to also find the known VM
+	vm, vmName := vcd.findFirstVm(vapp)
+	check.Assert(vmName, Not(Equals), "")
+	check.Assert(vm.HREF, Not(Equals), "")
+	criteria = NewFilterDef()
+	criteria.AddFilter(types.FilterNameRegex, vmName)
+	criteria.AddFilter(types.FilterParent, vapp.VApp.Name)
+	queryType = vcd.client.Client.GetQueryType(types.QtVm)
+	queryItems, _, err = vcd.client.Client.SearchByFilter(queryType, criteria)
+	check.Assert(err, IsNil)
+	check.Assert(queryItems, NotNil)
+	check.Assert(len(queryItems), Not(Equals), 0)
+	check.Assert(vm.HREF, Equals, queryItems[0].GetHref())
+}
