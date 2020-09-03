@@ -1339,7 +1339,7 @@ func (vcd *TestVCD) TearDownSuite(check *C) {
 	// CleanupEntityList. Entities that have already been cleaned up by their
 	// functions will be ignored.
 	for i, cleanupEntity := range cleanupEntityList {
-		fmt.Printf("# %d ", i+1)
+		fmt.Printf("# %d of %d - ", i+1, len(cleanupEntityList))
 		vcd.removeLeftoverEntities(cleanupEntity)
 		removePersistentCleanupList()
 	}
