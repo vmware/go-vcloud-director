@@ -118,14 +118,23 @@ func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
 	check.Assert(deletedPolicy2, IsNil)
 }
 
-func (vcd *TestVCD) Test_SetVdcComputePolicies(check *C) {
+func (vcd *TestVCD) Test_SetAssignedComputePolicies(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	if vcd.client.Client.APIVCDMaxVersionIs("< 33.0") {
+		check.Skip(fmt.Sprintf("Test %s requires vCD 10.0 (API version 33) or higher", check.TestName()))
 	}
 
 	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
+
+	adminVdc, err := org.GetAdminVDCByName(vcd.vdc.Vdc.Name, false)
+	if adminVdc == nil || err != nil {
+		vcd.infoCleanup(notFoundMsg, "vdc", vcd.vdc.Vdc.Name)
+	}
 
 	// Step 1 - Create a new VDC compute policies
 	newComputePolicy := &VdcComputePolicy{
@@ -157,7 +166,7 @@ func (vcd *TestVCD) Test_SetVdcComputePolicies(check *C) {
 	AddToCleanupList(createdPolicy2.VdcComputePolicy.ID, "vcdComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies")
 
 	// Get default compute policy
-	allAssignedComputePolicies, err := vcd.vdc.GetAllAssignedVdcComputePolicies(nil)
+	allAssignedComputePolicies, err := adminVdc.GetAllAssignedVdcComputePolicies(nil)
 	check.Assert(err, IsNil)
 	var defaultPolicyId string
 	for _, assignedPolicy := range allAssignedComputePolicies {
@@ -172,15 +181,15 @@ func (vcd *TestVCD) Test_SetVdcComputePolicies(check *C) {
 		&types.Reference{HREF: vcdComputePolicyHref + createdPolicy2.VdcComputePolicy.ID},
 		{HREF: vcdComputePolicyHref + defaultPolicyId}}}
 
-	assignedVdcComputePolicies, err := vcd.vdc.SetAssignedComputePolicies(policyReferences)
+	assignedVdcComputePolicies, err := adminVdc.SetAssignedComputePolicies(policyReferences)
 	check.Assert(err, IsNil)
 	check.Assert(policyReferences.VdcComputePolicyReference[0].HREF, Equals, assignedVdcComputePolicies.VdcComputePolicyReference[0].HREF)
 	check.Assert(policyReferences.VdcComputePolicyReference[1].HREF, Equals, assignedVdcComputePolicies.VdcComputePolicyReference[1].HREF)
 
 	// cleanup assigned compute policies
 	policyReferences = types.VdcComputePolicyReferences{VdcComputePolicyReference: []*types.Reference{
-		{HREF: "https://192.168.1.202/cloudapi/1.0.0/vdcComputePolicies/" + defaultPolicyId}}}
+		{HREF: vcdComputePolicyHref + defaultPolicyId}}}
 
-	_, err = vcd.vdc.SetAssignedComputePolicies(policyReferences)
+	_, err = adminVdc.SetAssignedComputePolicies(policyReferences)
 	check.Assert(err, IsNil)
 }

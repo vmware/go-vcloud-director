@@ -1380,6 +1380,10 @@ func (vcd *TestVCD) Test_UpdateOrgVappNetwork(check *C) {
 // Test_AddNewVMFromMultiVmTemplate creates VM from OVA holding a few VMs
 func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 
+	if vcd.client.Client.APIVCDMaxVersionIs("< 33.0") {
+		check.Skip(fmt.Sprintf("Test %s requires vCD 10.0 (API version 33) or higher", check.TestName()))
+	}
+
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
@@ -1440,4 +1444,118 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
+}
+
+// Test_AddNewVMWitComputeCapacity creates a new VM in vApp with VM using compute capacity
+func (vcd *TestVCD) Test_AddNewVMWitComputeCapacity(check *C) {
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
+	// Find VApp
+	if vcd.vapp.VApp == nil {
+		check.Skip("skipping test because no vApp is found")
+	}
+
+	// Populate Catalog
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(cat, NotNil)
+
+	// Populate Catalog Item
+	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	check.Assert(err, IsNil)
+	check.Assert(catitem, NotNil)
+
+	// Get VAppTemplate
+	vapptemplate, err := catitem.GetVAppTemplate()
+	check.Assert(err, IsNil)
+
+	vapp, err := createVappForTest(vcd, "Test_AddNewVMMultiNIC")
+	check.Assert(err, IsNil)
+	check.Assert(vapp, NotNil)
+
+	// Crate and assign compute policy
+	newComputePolicy := &VdcComputePolicy{
+		client: vcd.org.client,
+		VdcComputePolicy: &types.VdcComputePolicy{
+			Name:        check.TestName() + "_empty",
+			Description: "Empty policy created by test",
+		},
+	}
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	adminVdc, err := adminOrg.GetAdminVDCByName(vcd.vdc.Vdc.Name, false)
+	if adminVdc == nil || err != nil {
+		vcd.infoCleanup(notFoundMsg, "vdc", vcd.vdc.Vdc.Name)
+	}
+
+	createdPolicy, err := adminOrg.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vcdComputePolicy", vcd.org.Org.Name, "Test_AddNewEmptyVMWithVmComputePolicy")
+
+	vcdComputePolicyHref := vcd.client.Client.VCDHREF.Scheme + "://" + vcd.client.Client.VCDHREF.Host + "/cloudapi/" + types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies
+
+	// Get policy to existing ones (can be only default one)
+	allAssignedComputePolicies, err := adminVdc.GetAllAssignedVdcComputePolicies(nil)
+	check.Assert(err, IsNil)
+	var policyReferences []*types.Reference
+	for _, assignedPolicy := range allAssignedComputePolicies {
+		policyReferences = append(policyReferences, &types.Reference{HREF: vcdComputePolicyHref + assignedPolicy.VdcComputePolicy.ID})
+	}
+	policyReferences = append(policyReferences, &types.Reference{HREF: vcdComputePolicyHref + createdPolicy.VdcComputePolicy.ID})
+
+	assignedVdcComputePolicies, err := adminVdc.SetAssignedComputePolicies(types.VdcComputePolicyReferences{VdcComputePolicyReference: policyReferences})
+	check.Assert(err, IsNil)
+	check.Assert(len(allAssignedComputePolicies)+1, Equals, len(assignedVdcComputePolicies.VdcComputePolicyReference))
+	// end
+
+	var task Task
+
+	if testVerbose {
+		fmt.Printf("Custom storage profile not found. Using AddNewVM\n")
+	}
+	task, err = vapp.AddNewVMWithComputePolicy(check.TestName(), vapptemplate, nil, nil, createdPolicy.VdcComputePolicy, true)
+
+	check.Assert(err, IsNil)
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	createdVm, err := vapp.GetVMByName(check.TestName(), true)
+	check.Assert(err, IsNil)
+
+	check.Assert(createdVm.VM.ComputePolicy, NotNil)
+	check.Assert(createdVm.VM.ComputePolicy.VmSizingPolicy, NotNil)
+	check.Assert(createdVm.VM.ComputePolicy.VmSizingPolicy.ID, Equals, createdPolicy.VdcComputePolicy.ID)
+
+	// Cleanup
+	err = vapp.RemoveVM(*createdVm)
+	check.Assert(err, IsNil)
+
+	// Ensure network is detached from vApp to avoid conflicts in other tests
+	task, err = vapp.RemoveAllNetworks()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	// cleanup assigned compute policy
+	var beforeTestPolicyReferences []*types.Reference
+	for _, assignedPolicy := range allAssignedComputePolicies {
+		beforeTestPolicyReferences = append(beforeTestPolicyReferences, &types.Reference{HREF: vcdComputePolicyHref + assignedPolicy.VdcComputePolicy.ID})
+	}
+
+	_, err = adminVdc.SetAssignedComputePolicies(types.VdcComputePolicyReferences{VdcComputePolicyReference: beforeTestPolicyReferences})
+	check.Assert(err, IsNil)
 }

@@ -1158,6 +1158,7 @@ type SourcedCompositionItemParam struct {
 	NetworkAssignment   []*NetworkAssignment `xml:"NetworkAssignment,omitempty"`   // If Source references a Vm, this element maps a network name specified in the Vm to the network name of a vApp network defined in the composed vApp.
 	StorageProfile      *Reference           `xml:"StorageProfile,omitempty"`      // If Source references a Vm, this element contains a reference to a storage profile to be used for the Vm. The specified storage profile must exist in the organization vDC that contains the composed vApp. If not specified, the default storage profile for the vDC is used.
 	LocalityParams      *LocalityParams      `xml:"LocalityParams,omitempty"`      // Represents locality parameters. Locality parameters provide a hint that may help the placement engine optimize placement of a VM and an independent a Disk so that the VM can make efficient use of the disk.
+	ComputePolicy       *ComputePolicy       `xml:"ComputePolicy,omitempty"`       // accessible only from version API 33.0
 }
 
 // LocalityParams represents locality parameters. Locality parameters provide a hint that may help the placement engine optimize placement of a VM with respect to another VM or an independent disk.
@@ -1362,62 +1363,6 @@ type VAppTemplate struct {
 	CustomizationSection     *CustomizationSection     `xml:"CustomizationSection,omitempty"`
 	// OVF Section needs to be added
 	// Section               Section              `xml:"Section,omitempty"`
-}
-
-// VM represents a virtual machine
-// Type: VmType
-// Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents a virtual machine.
-// Since: 0.9
-type VM struct {
-	// Attributes
-	XMLName xml.Name `xml:"Vm"`
-	Ovf     string   `xml:"xmlns:ovf,attr,omitempty"`
-	Xsi     string   `xml:"xmlns:xsi,attr,omitempty"`
-	Xmlns   string   `xml:"xmlns,attr,omitempty"`
-
-	HREF                    string `xml:"href,attr,omitempty"`                    // The URI of the entity.
-	Type                    string `xml:"type,attr,omitempty"`                    // The MIME type of the entity.
-	ID                      string `xml:"id,attr,omitempty"`                      // The entity identifier, expressed in URN format. The value of this attribute uniquely identifies the entity, persists for the life of the entity, and is never reused
-	OperationKey            string `xml:"operationKey,attr,omitempty"`            // Optional unique identifier to support idempotent semantics for create and delete operations.
-	Name                    string `xml:"name,attr"`                              // The name of the entity.
-	Status                  int    `xml:"status,attr,omitempty"`                  // Creation status of the resource entity.
-	Deployed                bool   `xml:"deployed,attr,omitempty"`                // True if the virtual machine is deployed.
-	NeedsCustomization      bool   `xml:"needsCustomization,attr,omitempty"`      // True if this virtual machine needs customization.
-	NestedHypervisorEnabled bool   `xml:"nestedHypervisorEnabled,attr,omitempty"` // True if hardware-assisted CPU virtualization capabilities in the host should be exposed to the guest operating system.
-	// Elements
-	Link        LinkList         `xml:"Link,omitempty"`        // A reference to an entity or operation associated with this object.
-	Description string           `xml:"Description,omitempty"` // Optional description.
-	Tasks       *TasksInProgress `xml:"Tasks,omitempty"`       // A list of queued, running, or recently completed tasks associated with this entity.
-	Files       *FilesList       `xml:"FilesList,omitempty"`   // Represents a list of files to be transferred (uploaded or downloaded). Each File in the list is part of the ResourceEntity.
-	VAppParent  *Reference       `xml:"VAppParent,omitempty"`  // Reserved. Unimplemented.
-	// TODO: OVF Sections to be implemented
-	// Section OVF_Section `xml:"Section,omitempty"
-	DateCreated string `xml:"DateCreated,omitempty"` // Creation date/time of the vApp.
-
-	// Section ovf:VirtualHardwareSection
-	VirtualHardwareSection *VirtualHardwareSection `xml:"VirtualHardwareSection,omitempty"`
-
-	// FIXME: Upstream bug? Missing NetworkConnectionSection
-	NetworkConnectionSection *NetworkConnectionSection `xml:"NetworkConnectionSection,omitempty"`
-
-	VAppScopedLocalID string `xml:"VAppScopedLocalId,omitempty"` // A unique identifier for the virtual machine in the scope of the vApp.
-
-	Snapshots *SnapshotSection `xml:"SnapshotSection,omitempty"`
-
-	// TODO: OVF Sections to be implemented
-	// Environment OVF_Environment `xml:"Environment,omitempty"
-
-	VmSpecSection *VmSpecSection `xml:"VmSpecSection,omitempty"`
-
-	// GuestCustomizationSection contains settings for VM customization like admin password, SID
-	// changes, domain join configuration, etc
-	GuestCustomizationSection *GuestCustomizationSection `xml:"GuestCustomizationSection,omitempty"`
-
-	VMCapabilities *VmCapabilities `xml:"VmCapabilities,omitempty"` // Allows you to specify certain capabilities of this virtual machine.
-	StorageProfile *Reference      `xml:"StorageProfile,omitempty"` // A reference to a storage profile to be used for this object. The specified storage profile must exist in the organization vDC that contains the object. If not specified, the default storage profile for the vDC is used.
-	ProductSection *ProductSection `xml:"ProductSection,omitempty"`
-	Media          *Reference      `xml:"Media,omitempty"` // Reference to the media object to insert in a new VM.
 }
 
 // VMDiskChange represents a virtual machine only with Disk setting update part
