@@ -1380,10 +1380,6 @@ func (vcd *TestVCD) Test_UpdateOrgVappNetwork(check *C) {
 // Test_AddNewVMFromMultiVmTemplate creates VM from OVA holding a few VMs
 func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 
-	if vcd.client.Client.APIVCDMaxVersionIs("< 33.0") {
-		check.Skip(fmt.Sprintf("Test %s requires vCD 10.0 (API version 33) or higher", check.TestName()))
-	}
-
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
@@ -1446,11 +1442,15 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
-// Test_AddNewVMWitComputeCapacity creates a new VM in vApp with VM using compute capacity
+// Test_AddNewVMWithComputeCapacity creates a new VM in vApp with VM using compute capacity
 func (vcd *TestVCD) Test_AddNewVMWitComputeCapacity(check *C) {
 
+	if vcd.client.Client.APIVCDMaxVersionIs("< 33.0") {
+		check.Skip(fmt.Sprintf("Test %s requires vCD 10.0 (API version 33) or higher", check.TestName()))
+	}
+
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 
 	// Find VApp
@@ -1472,11 +1472,11 @@ func (vcd *TestVCD) Test_AddNewVMWitComputeCapacity(check *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	check.Assert(err, IsNil)
 
-	vapp, err := createVappForTest(vcd, "Test_AddNewVMMultiNIC")
+	vapp, err := createVappForTest(vcd, "Test_AddNewVMWitComputeCapacity")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
-	// Crate and assign compute policy
+	// Create and assign compute policy
 	newComputePolicy := &VdcComputePolicy{
 		client: vcd.org.client,
 		VdcComputePolicy: &types.VdcComputePolicy{
@@ -1499,16 +1499,17 @@ func (vcd *TestVCD) Test_AddNewVMWitComputeCapacity(check *C) {
 
 	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vcdComputePolicy", vcd.org.Org.Name, "Test_AddNewEmptyVMWithVmComputePolicy")
 
-	vcdComputePolicyHref := vcd.client.Client.VCDHREF.Scheme + "://" + vcd.client.Client.VCDHREF.Host + "/cloudapi/" + types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies
+	vcdComputePolicyHref, err := adminOrg.client.OpenApiBuildEndpoint(types.OpenApiPathVersion1_0_0, types.OpenApiEndpointVdcComputePolicies)
+	check.Assert(err, IsNil)
 
 	// Get policy to existing ones (can be only default one)
 	allAssignedComputePolicies, err := adminVdc.GetAllAssignedVdcComputePolicies(nil)
 	check.Assert(err, IsNil)
 	var policyReferences []*types.Reference
 	for _, assignedPolicy := range allAssignedComputePolicies {
-		policyReferences = append(policyReferences, &types.Reference{HREF: vcdComputePolicyHref + assignedPolicy.VdcComputePolicy.ID})
+		policyReferences = append(policyReferences, &types.Reference{HREF: vcdComputePolicyHref.String() + assignedPolicy.VdcComputePolicy.ID})
 	}
-	policyReferences = append(policyReferences, &types.Reference{HREF: vcdComputePolicyHref + createdPolicy.VdcComputePolicy.ID})
+	policyReferences = append(policyReferences, &types.Reference{HREF: vcdComputePolicyHref.String() + createdPolicy.VdcComputePolicy.ID})
 
 	assignedVdcComputePolicies, err := adminVdc.SetAssignedComputePolicies(types.VdcComputePolicyReferences{VdcComputePolicyReference: policyReferences})
 	check.Assert(err, IsNil)
@@ -1553,7 +1554,7 @@ func (vcd *TestVCD) Test_AddNewVMWitComputeCapacity(check *C) {
 	// cleanup assigned compute policy
 	var beforeTestPolicyReferences []*types.Reference
 	for _, assignedPolicy := range allAssignedComputePolicies {
-		beforeTestPolicyReferences = append(beforeTestPolicyReferences, &types.Reference{HREF: vcdComputePolicyHref + assignedPolicy.VdcComputePolicy.ID})
+		beforeTestPolicyReferences = append(beforeTestPolicyReferences, &types.Reference{HREF: vcdComputePolicyHref.String() + assignedPolicy.VdcComputePolicy.ID})
 	}
 
 	_, err = adminVdc.SetAssignedComputePolicies(types.VdcComputePolicyReferences{VdcComputePolicyReference: beforeTestPolicyReferences})

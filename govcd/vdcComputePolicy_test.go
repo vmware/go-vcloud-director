@@ -175,11 +175,13 @@ func (vcd *TestVCD) Test_SetAssignedComputePolicies(check *C) {
 		}
 	}
 
-	vcdComputePolicyHref := vcd.client.Client.VCDHREF.Scheme + "://" + vcd.client.Client.VCDHREF.Host + "/cloudapi/" + types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies
+	vcdComputePolicyHref, err := org.client.OpenApiBuildEndpoint(types.OpenApiPathVersion1_0_0, types.OpenApiEndpointVdcComputePolicies)
+	check.Assert(err, IsNil)
+
 	// Assign compute policies to VDC
-	policyReferences := types.VdcComputePolicyReferences{VdcComputePolicyReference: []*types.Reference{&types.Reference{HREF: vcdComputePolicyHref + createdPolicy.VdcComputePolicy.ID},
-		&types.Reference{HREF: vcdComputePolicyHref + createdPolicy2.VdcComputePolicy.ID},
-		{HREF: vcdComputePolicyHref + defaultPolicyId}}}
+	policyReferences := types.VdcComputePolicyReferences{VdcComputePolicyReference: []*types.Reference{&types.Reference{HREF: vcdComputePolicyHref.String() + createdPolicy.VdcComputePolicy.ID},
+		&types.Reference{HREF: vcdComputePolicyHref.String() + createdPolicy2.VdcComputePolicy.ID},
+		{HREF: vcdComputePolicyHref.String() + defaultPolicyId}}}
 
 	assignedVdcComputePolicies, err := adminVdc.SetAssignedComputePolicies(policyReferences)
 	check.Assert(err, IsNil)
@@ -188,7 +190,7 @@ func (vcd *TestVCD) Test_SetAssignedComputePolicies(check *C) {
 
 	// cleanup assigned compute policies
 	policyReferences = types.VdcComputePolicyReferences{VdcComputePolicyReference: []*types.Reference{
-		{HREF: vcdComputePolicyHref + defaultPolicyId}}}
+		{HREF: vcdComputePolicyHref.String() + defaultPolicyId}}}
 
 	_, err = adminVdc.SetAssignedComputePolicies(policyReferences)
 	check.Assert(err, IsNil)
