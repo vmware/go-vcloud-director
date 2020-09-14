@@ -1472,10 +1472,6 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicy(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(cat, NotNil)
 
-	media, err := cat.GetMediaByName(vcd.config.Media.Media, false)
-	check.Assert(err, IsNil)
-	check.Assert(media, NotNil)
-
 	newComputePolicy := &VdcComputePolicy{
 		client: vcd.org.client,
 		VdcComputePolicy: &types.VdcComputePolicy{
@@ -1552,7 +1548,6 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicy(check *C) {
 				TimeSyncWithHost:  nil,
 			},
 			ComputePolicy: &types.ComputePolicy{VmSizingPolicy: &types.Reference{HREF: vcdComputePolicyHref + createdPolicy.VdcComputePolicy.ID}},
-			BootImage:     &types.Media{HREF: media.Media.HREF, Name: media.Media.Name, ID: media.Media.ID},
 		},
 		AllEULAsAccepted: true,
 	}
