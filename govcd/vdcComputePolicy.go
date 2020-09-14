@@ -185,7 +185,7 @@ func (vdcComputePolicy *VdcComputePolicy) Delete() error {
 // filtering
 func (vdc *AdminVdc) GetAllAssignedVdcComputePolicies(queryParameters url.Values) ([]*VdcComputePolicy, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcs + vdc.AdminVdc.ID + types.OpenApiEndpointAssignedComputePolicies
-	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(types.OpenApiEndpointAssignedComputePolicies)
+	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcs + types.OpenApiEndpointAssignedComputePolicies)
 	if err != nil {
 		return nil, err
 	}
