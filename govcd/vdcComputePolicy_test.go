@@ -13,6 +13,11 @@ func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
+
+	if vcd.client.Client.APIVCDMaxVersionIs("< 33.0") {
+		check.Skip(fmt.Sprintf("Test %s requires vCD 10.0 (API version 33) or higher", check.TestName()))
+	}
+
 	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
