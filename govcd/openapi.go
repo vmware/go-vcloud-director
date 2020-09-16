@@ -79,8 +79,7 @@ func (client *Client) OpenApiGetAllItems(apiVersion string, urlRef *url.URL, que
 
 	// Page size is defaulted to 128 (maximum supported number) to reduce HTTP calls and improve performance unless caller
 	// provides other value
-	const pageSize = "128"
-	newQueryParams := defaultPageSize(queryParams, pageSize)
+	newQueryParams := defaultPageSize(queryParams, "128")
 	util.Logger.Printf("[TRACE] Will use 'pageSize' %s", newQueryParams.Get("pageSize"))
 
 	// Perform API call to initial endpoint. The function call recursively follows pages using Link headers "nextPage"
