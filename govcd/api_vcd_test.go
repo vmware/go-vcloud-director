@@ -167,6 +167,10 @@ type TestConfig struct {
 			SizeForUpdate int64 `yaml:"sizeForUpdate,omitempty"`
 		}
 	} `yaml:"vcd"`
+	Nsxt struct {
+		Manager     string `yaml:"manager"`
+		Tier0router string `yaml:"tier0router"`
+	} `yaml:"nsxt"`
 	Logging struct {
 		Enabled          bool   `yaml:"enabled,omitempty"`
 		LogFileName      string `yaml:"logFileName,omitempty"`
