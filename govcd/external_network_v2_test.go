@@ -14,6 +14,9 @@ import (
 )
 
 func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxT(check *C) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
+	skipOpenApiEndpointTest(vcd, check, endpoint)
+
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	// NSX-T details
@@ -57,6 +60,9 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxT(check *C) {
 }
 
 func (vcd *TestVCD) Test_CreateExternalNetworkV2PortGroup(check *C) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
+	skipOpenApiEndpointTest(vcd, check, endpoint)
+
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	var err error

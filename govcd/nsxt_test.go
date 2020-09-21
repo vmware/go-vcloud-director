@@ -13,6 +13,7 @@ import (
 )
 
 func (vcd *TestVCD) Test_QueryNsxtManagerByName(check *C) {
+	skipNoNsxtConfiguration(vcd, check)
 	nsxtManagers, err := vcd.client.QueryNsxtManagerByName(vcd.config.Nsxt.Manager)
 	check.Assert(err, IsNil)
 	check.Assert(len(nsxtManagers), Equals, 1)
@@ -22,6 +23,7 @@ func (vcd *TestVCD) Test_GetAllNsxtTier0Routers(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
+	skipNoNsxtConfiguration(vcd, check)
 
 	nsxtManagers, err := vcd.client.QueryNsxtManagerByName(vcd.config.Nsxt.Manager)
 	check.Assert(err, IsNil)

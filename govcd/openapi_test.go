@@ -23,7 +23,7 @@ import (
 // how to fetch response from multiple pages in RAW json messages without having defined as struct.
 func (vcd *TestVCD) Test_OpenApiRawJsonAudiTrail(check *C) {
 	minimumRequiredApiVersion := "33.0"
-	skipOpenApiEndpointTest(vcd, check, "1.0.0/auditTrail", minimumRequiredApiVersion)
+	skipOpenApiEndpointTest(vcd, check, "1.0.0/auditTrail")
 
 	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/auditTrail")
 	check.Assert(err, IsNil)
@@ -54,7 +54,7 @@ func (vcd *TestVCD) Test_OpenApiRawJsonAudiTrail(check *C) {
 // to user defined inline type
 func (vcd *TestVCD) Test_OpenApiInlineStructAudiTrail(check *C) {
 	minimumRequiredApiVersion := "33.0"
-	skipOpenApiEndpointTest(vcd, check, "1.0.0/auditTrail", minimumRequiredApiVersion)
+	skipOpenApiEndpointTest(vcd, check, "1.0.0/auditTrail")
 
 	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/auditTrail")
 	check.Assert(err, IsNil)
@@ -130,7 +130,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles
 	minimumRequiredApiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(endpoint)
 	check.Assert(err, IsNil)
-	skipOpenApiEndpointTest(vcd, check, endpoint, minimumRequiredApiVersion)
+	skipOpenApiEndpointTest(vcd, check, endpoint)
 
 	// Step 1 - Get all roles
 	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint)
@@ -253,8 +253,10 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 }
 
 // skipOpenApiEndpointTest is a helper to skip tests for particular unsupported OpenAPI endpoints
-func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint, requiredVersion string) {
-	constraint := ">= " + requiredVersion
+func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint string) {
+	minimumRequiredApiVersion := endpointMinApiVersions[endpoint]
+
+	constraint := ">= " + minimumRequiredApiVersion
 	if !vcd.client.Client.APIVCDMaxVersionIs(constraint) {
 		maxSupportedVersion, err := vcd.client.Client.maxSupportedVersion()
 		if err != nil {
