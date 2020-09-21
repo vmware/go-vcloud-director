@@ -8,7 +8,6 @@ package govcd
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
@@ -250,20 +249,4 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	err = vcd.client.Client.OpenApiDeleteItem(minimumRequiredApiVersion, deleteUrlRef2, nil)
 	check.Assert(err, IsNil)
 
-}
-
-// skipOpenApiEndpointTest is a helper to skip tests for particular unsupported OpenAPI endpoints
-func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint string) {
-	minimumRequiredApiVersion := endpointMinApiVersions[endpoint]
-
-	constraint := ">= " + minimumRequiredApiVersion
-	if !vcd.client.Client.APIVCDMaxVersionIs(constraint) {
-		maxSupportedVersion, err := vcd.client.Client.maxSupportedVersion()
-		if err != nil {
-			panic(fmt.Sprintf("Could not get maximum supported version: %s", err))
-		}
-		skipText := fmt.Sprintf("Skipping test because OpenAPI endpoint '%s' must satisfy API version constraint '%s'. Maximum supported version is %s",
-			endpoint, constraint, maxSupportedVersion)
-		check.Skip(skipText)
-	}
 }
