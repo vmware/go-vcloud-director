@@ -166,11 +166,11 @@ type TestConfig struct {
 			Size          int64 `yaml:"size,omitempty"`
 			SizeForUpdate int64 `yaml:"sizeForUpdate,omitempty"`
 		}
+		Nsxt struct {
+			Manager     string `yaml:"manager"`
+			Tier0router string `yaml:"tier0router"`
+		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
-	Nsxt struct {
-		Manager     string `yaml:"manager"`
-		Tier0router string `yaml:"tier0router"`
-	} `yaml:"nsxt"`
 	Logging struct {
 		Enabled          bool   `yaml:"enabled,omitempty"`
 		LogFileName      string `yaml:"logFileName,omitempty"`
@@ -1624,6 +1624,14 @@ func skipNoNsxtConfiguration(vcd *TestVCD, check *C) {
 
 	if vcd.config.VCD.NsxtProviderVdc.StorageProfile == "" {
 		check.Skip(generalMessage + "No storage profile specified")
+	}
+
+	if vcd.config.VCD.Nsxt.Manager == "" {
+		check.Skip(generalMessage + "No NSX-T manager specified")
+	}
+
+	if vcd.config.VCD.Nsxt.Tier0router == "" {
+		check.Skip(generalMessage + "No NSX-T Tier-0 router specified")
 	}
 
 }

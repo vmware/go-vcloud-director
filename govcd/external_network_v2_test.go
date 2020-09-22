@@ -16,16 +16,17 @@ import (
 func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxT(check *C) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
 	skipOpenApiEndpointTest(vcd, check, endpoint)
+	skipNoNsxtConfiguration(vcd, check)
 
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	// NSX-T details
-	man, err := vcd.client.QueryNsxtManagerByName(vcd.config.Nsxt.Manager)
+	man, err := vcd.client.QueryNsxtManagerByName(vcd.config.VCD.Nsxt.Manager)
 	check.Assert(err, IsNil)
 	nsxtManagerId, err := BuildUrnWithUuid("urn:vcloud:nsxtmanager:", extractUuid(man[0].HREF))
 	check.Assert(err, IsNil)
 
-	tier0Router, err := vcd.client.GetImportableNsxtTier0RouterByName(vcd.config.Nsxt.Tier0router, nsxtManagerId)
+	tier0Router, err := vcd.client.GetImportableNsxtTier0RouterByName(vcd.config.VCD.Nsxt.Tier0router, nsxtManagerId)
 	check.Assert(err, IsNil)
 
 	// Create network and test CRUD capabilities
