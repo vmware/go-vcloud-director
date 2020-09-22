@@ -42,6 +42,10 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxT(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(createdNet.ExternalNetwork.ID, Equals, read1.ExternalNetwork.ID)
 
+	byName, err := GetExternalNetworkV2ByName(vcd.client, read1.ExternalNetwork.Name)
+	check.Assert(err, IsNil)
+	check.Assert(createdNet.ExternalNetwork.ID, Equals, byName.ExternalNetwork.ID)
+
 	readAllNetworks, err := GetAllExternalNetworksV2(vcd.client, nil)
 	check.Assert(err, IsNil)
 	var foundNetwork bool

@@ -73,6 +73,29 @@ func GetExternalNetworkV2ById(vcdClient *VCDClient, id string) (*ExternalNetwork
 	return extNet, nil
 }
 
+// GetExternalNetworkV2ByName retrieves external network by given name using OpenAPI endpoint.
+// Returns an error if not exactly one network is found.
+func GetExternalNetworkV2ByName(vcdClient *VCDClient, name string) (*ExternalNetworkV2, error) {
+
+	if name == "" {
+		return nil, fmt.Errorf("name cannot be empty")
+	}
+
+	queryParams := url.Values{}
+	queryParams.Add("filter", "name=="+name)
+
+	res, err := GetAllExternalNetworksV2(vcdClient, queryParams)
+	if err != nil {
+		return nil, fmt.Errorf("could not find external network by name: %s", err)
+	}
+
+	if len(res) != 1 {
+		return nil, fmt.Errorf("expected exactly one external network with name '%s'. Got %d", name, len(res))
+	}
+
+	return res[1], nil
+}
+
 // GetAllExternalNetworksV2 retrieves all external networks using OpenAPI endpoint. Query parameters can be supplied to
 // perform additional filtering
 func GetAllExternalNetworksV2(vcdClient *VCDClient, queryParameters url.Values) ([]*ExternalNetworkV2, error) {
