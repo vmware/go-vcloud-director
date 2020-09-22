@@ -23,7 +23,7 @@ func init() {
 
 func (vcd *TestVCD) Test_FindVMByHREF(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp wasn't properly created")
+		check.Skip("Skipping test because vApp wasn't properly created")
 	}
 
 	fmt.Printf("Running: %s\n", check.TestName())
@@ -1461,7 +1461,7 @@ func (vcd *TestVCD) Test_UpdateVmCpuAndMemoryHotAdd(check *C) {
 func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicy(check *C) {
 
 	if vcd.client.Client.APIVCDMaxVersionIs("< 33.0") {
-		check.Skip(fmt.Sprintf("Test %s requires vCD 10.0 (API version 33) or higher", check.TestName()))
+		check.Skip(fmt.Sprintf("Test %s requires VCD 10.0 (API version 33) or higher", check.TestName()))
 	}
 
 	vapp, err := createVappForTest(vcd, "Test_AddNewEmptyVMWithVmComputePolicy")
@@ -1493,9 +1493,9 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicy(check *C) {
 	createdPolicy, err := adminOrg.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vcdComputePolicy", vcd.org.Org.Name, "Test_AddNewEmptyVMWithVmComputePolicy")
+	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_AddNewEmptyVMWithVmComputePolicy")
 
-	vcdComputePolicyHref, err := adminOrg.client.OpenApiBuildEndpoint(types.OpenApiPathVersion1_0_0, types.OpenApiEndpointVdcComputePolicies)
+	vdcComputePolicyHref, err := adminOrg.client.OpenApiBuildEndpoint(types.OpenApiPathVersion1_0_0, types.OpenApiEndpointVdcComputePolicies)
 	check.Assert(err, IsNil)
 
 	// Get policy to existing ones (can be only default one)
@@ -1503,9 +1503,9 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicy(check *C) {
 	check.Assert(err, IsNil)
 	var policyReferences []*types.Reference
 	for _, assignedPolicy := range allAssignedComputePolicies {
-		policyReferences = append(policyReferences, &types.Reference{HREF: vcdComputePolicyHref.String() + assignedPolicy.VdcComputePolicy.ID})
+		policyReferences = append(policyReferences, &types.Reference{HREF: vdcComputePolicyHref.String() + assignedPolicy.VdcComputePolicy.ID})
 	}
-	policyReferences = append(policyReferences, &types.Reference{HREF: vcdComputePolicyHref.String() + createdPolicy.VdcComputePolicy.ID})
+	policyReferences = append(policyReferences, &types.Reference{HREF: vdcComputePolicyHref.String() + createdPolicy.VdcComputePolicy.ID})
 
 	assignedVdcComputePolicies, err := adminVdc.SetAssignedComputePolicies(types.VdcComputePolicyReferences{VdcComputePolicyReference: policyReferences})
 	check.Assert(err, IsNil)
@@ -1548,7 +1548,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicy(check *C) {
 				VirtualCpuType:    "VM32",
 				TimeSyncWithHost:  nil,
 			},
-			ComputePolicy: &types.ComputePolicy{VmSizingPolicy: &types.Reference{HREF: vcdComputePolicyHref.String() + createdPolicy.VdcComputePolicy.ID}},
+			ComputePolicy: &types.ComputePolicy{VmSizingPolicy: &types.Reference{HREF: vdcComputePolicyHref.String() + createdPolicy.VdcComputePolicy.ID}},
 		},
 		AllEULAsAccepted: true,
 	}
@@ -1582,7 +1582,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicy(check *C) {
 	// cleanup assigned compute policy
 	var beforeTestPolicyReferences []*types.Reference
 	for _, assignedPolicy := range allAssignedComputePolicies {
-		beforeTestPolicyReferences = append(beforeTestPolicyReferences, &types.Reference{HREF: vcdComputePolicyHref.String() + assignedPolicy.VdcComputePolicy.ID})
+		beforeTestPolicyReferences = append(beforeTestPolicyReferences, &types.Reference{HREF: vdcComputePolicyHref.String() + assignedPolicy.VdcComputePolicy.ID})
 	}
 
 	_, err = adminVdc.SetAssignedComputePolicies(types.VdcComputePolicyReferences{VdcComputePolicyReference: beforeTestPolicyReferences})

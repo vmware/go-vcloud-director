@@ -1303,9 +1303,9 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
-	case "vcdComputePolicy":
+	case "vdcComputePolicy":
 		if entity.Parent == "" {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for vcdComputePolicy '%s'\n", entity.Name)
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for vdcComputePolicy '%s'\n", entity.Name)
 			return
 		}
 		org, err := vcd.client.GetAdminOrgByName(entity.Parent)
@@ -1315,7 +1315,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		policy, err := org.GetVdcComputePolicyById(entity.Name)
 		if policy == nil || err != nil {
-			vcd.infoCleanup(notFoundMsg, "vcdComputePolicy", entity.Name)
+			vcd.infoCleanup(notFoundMsg, "vdcComputePolicy", entity.Name)
 			return
 		}
 		err = policy.Delete()

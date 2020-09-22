@@ -23,7 +23,7 @@ func init() {
 // created at the start of testing
 func (vcd *TestVCD) TestGetParentVDC(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 	vapp, err := vcd.vdc.GetVAppByName(vcd.vapp.VApp.Name, false)
 	check.Assert(err, IsNil)
@@ -38,7 +38,7 @@ func (vcd *TestVCD) TestGetParentVDC(check *C) {
 // of a VApp
 func (vcd *TestVCD) Test_PowerOn(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 	task, err := vcd.vapp.PowerOn()
 	check.Assert(err, IsNil)
@@ -51,7 +51,7 @@ func (vcd *TestVCD) Test_PowerOn(check *C) {
 // powering it on.
 func (vcd *TestVCD) Test_Reboot(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 	task, err := vcd.vapp.PowerOn()
 	check.Assert(err, IsNil)
@@ -67,7 +67,7 @@ func (vcd *TestVCD) Test_Reboot(check *C) {
 
 func (vcd *TestVCD) Test_BlockWhileStatus(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 
 	initialVappStatus, err := vcd.vapp.GetStatus()
@@ -99,7 +99,7 @@ func (vcd *TestVCD) Test_BlockWhileStatus(check *C) {
 // TODO: Add a check checking if the ovf was set properly
 func (vcd *TestVCD) Test_SetOvf(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 	var test = make(map[string]string)
 	test["guestinfo.hostname"] = "testhostname"
@@ -115,7 +115,7 @@ func (vcd *TestVCD) Test_SetOvf(check *C) {
 // TODO: Add a check checking if the customization script ran
 func (vcd *TestVCD) Test_RunCustomizationScript(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 	// Run Script on Test Vapp
 	task, err := vcd.vapp.RunCustomizationScript("computername", "this is my script")
@@ -128,7 +128,7 @@ func (vcd *TestVCD) Test_RunCustomizationScript(check *C) {
 // TODO: Add a check checking if the cpu count did change
 func (vcd *TestVCD) Test_ChangeCPUcount(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 	task, err := vcd.vapp.ChangeCPUCount(1)
 	check.Assert(err, IsNil)
@@ -140,7 +140,7 @@ func (vcd *TestVCD) Test_ChangeCPUcount(check *C) {
 // TODO: Add a check checking if the cpu count and cores did change
 func (vcd *TestVCD) Test_ChangeCPUCountWithCore(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 
 	currentCpus := 0
@@ -1446,7 +1446,7 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 func (vcd *TestVCD) Test_AddNewVMWitComputeCapacity(check *C) {
 
 	if vcd.client.Client.APIVCDMaxVersionIs("< 33.0") {
-		check.Skip(fmt.Sprintf("Test %s requires vCD 10.0 (API version 33) or higher", check.TestName()))
+		check.Skip(fmt.Sprintf("Test %s requires VCD 10.0 (API version 33) or higher", check.TestName()))
 	}
 
 	if vcd.skipVappTests {
@@ -1497,9 +1497,9 @@ func (vcd *TestVCD) Test_AddNewVMWitComputeCapacity(check *C) {
 	createdPolicy, err := adminOrg.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vcdComputePolicy", vcd.org.Org.Name, "Test_AddNewEmptyVMWithVmComputePolicy")
+	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_AddNewEmptyVMWithVmComputePolicy")
 
-	vcdComputePolicyHref, err := adminOrg.client.OpenApiBuildEndpoint(types.OpenApiPathVersion1_0_0, types.OpenApiEndpointVdcComputePolicies)
+	vdcComputePolicyHref, err := adminOrg.client.OpenApiBuildEndpoint(types.OpenApiPathVersion1_0_0, types.OpenApiEndpointVdcComputePolicies)
 	check.Assert(err, IsNil)
 
 	// Get policy to existing ones (can be only default one)
@@ -1507,9 +1507,9 @@ func (vcd *TestVCD) Test_AddNewVMWitComputeCapacity(check *C) {
 	check.Assert(err, IsNil)
 	var policyReferences []*types.Reference
 	for _, assignedPolicy := range allAssignedComputePolicies {
-		policyReferences = append(policyReferences, &types.Reference{HREF: vcdComputePolicyHref.String() + assignedPolicy.VdcComputePolicy.ID})
+		policyReferences = append(policyReferences, &types.Reference{HREF: vdcComputePolicyHref.String() + assignedPolicy.VdcComputePolicy.ID})
 	}
-	policyReferences = append(policyReferences, &types.Reference{HREF: vcdComputePolicyHref.String() + createdPolicy.VdcComputePolicy.ID})
+	policyReferences = append(policyReferences, &types.Reference{HREF: vdcComputePolicyHref.String() + createdPolicy.VdcComputePolicy.ID})
 
 	assignedVdcComputePolicies, err := adminVdc.SetAssignedComputePolicies(types.VdcComputePolicyReferences{VdcComputePolicyReference: policyReferences})
 	check.Assert(err, IsNil)
@@ -1554,7 +1554,7 @@ func (vcd *TestVCD) Test_AddNewVMWitComputeCapacity(check *C) {
 	// cleanup assigned compute policy
 	var beforeTestPolicyReferences []*types.Reference
 	for _, assignedPolicy := range allAssignedComputePolicies {
-		beforeTestPolicyReferences = append(beforeTestPolicyReferences, &types.Reference{HREF: vcdComputePolicyHref.String() + assignedPolicy.VdcComputePolicy.ID})
+		beforeTestPolicyReferences = append(beforeTestPolicyReferences, &types.Reference{HREF: vdcComputePolicyHref.String() + assignedPolicy.VdcComputePolicy.ID})
 	}
 
 	_, err = adminVdc.SetAssignedComputePolicies(types.VdcComputePolicyReferences{VdcComputePolicyReference: beforeTestPolicyReferences})

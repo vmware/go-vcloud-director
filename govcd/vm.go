@@ -1603,7 +1603,7 @@ func addEmptyVmV10(vapp *VApp, reComposeVAppParams *types.RecomposeVAppParamsFor
 
 	err = vapp.Refresh()
 	if err != nil {
-		return nil, fmt.Errorf("error refreshing vapp: %s", err)
+		return nil, fmt.Errorf("error refreshing vApp: %s", err)
 	}
 
 	//vApp Might Not Have Any VMs
@@ -1655,7 +1655,7 @@ func addEmptyVmV97(vapp *VApp, reComposeVAppParams *types.RecomposeVAppParamsFor
 
 	err = vapp.Refresh()
 	if err != nil {
-		return nil, fmt.Errorf("error refreshing vapp: %s", err)
+		return nil, fmt.Errorf("error refreshing vApp: %s", err)
 	}
 
 	//vApp Might Not Have Any VMs

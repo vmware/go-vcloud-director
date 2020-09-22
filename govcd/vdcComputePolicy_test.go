@@ -15,7 +15,7 @@ func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
 	}
 
 	if vcd.client.Client.APIVCDMaxVersionIs("< 33.0") {
-		check.Skip(fmt.Sprintf("Test %s requires vCD 10.0 (API version 33) or higher", check.TestName()))
+		check.Skip(fmt.Sprintf("Test %s requires VCD 10.0 (API version 33) or higher", check.TestName()))
 	}
 
 	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
@@ -34,7 +34,7 @@ func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
 	createdPolicy, err := org.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vcdComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies")
+	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies")
 
 	check.Assert(createdPolicy.VdcComputePolicy.Name, Equals, newComputePolicy.VdcComputePolicy.Name)
 	check.Assert(createdPolicy.VdcComputePolicy.Description, Equals, newComputePolicy.VdcComputePolicy.Description)
@@ -60,7 +60,7 @@ func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
 	createdPolicy2, err := org.CreateVdcComputePolicy(newComputePolicy2.VdcComputePolicy)
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(createdPolicy2.VdcComputePolicy.ID, "vcdComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies")
+	AddToCleanupList(createdPolicy2.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies")
 
 	check.Assert(createdPolicy2.VdcComputePolicy.Name, Equals, newComputePolicy2.VdcComputePolicy.Name)
 	check.Assert(*createdPolicy2.VdcComputePolicy.CPUSpeed, Equals, 100)
@@ -129,7 +129,7 @@ func (vcd *TestVCD) Test_SetAssignedComputePolicies(check *C) {
 	}
 
 	if vcd.client.Client.APIVCDMaxVersionIs("< 33.0") {
-		check.Skip(fmt.Sprintf("Test %s requires vCD 10.0 (API version 33) or higher", check.TestName()))
+		check.Skip(fmt.Sprintf("Test %s requires VCD 10.0 (API version 33) or higher", check.TestName()))
 	}
 
 	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
@@ -154,7 +154,7 @@ func (vcd *TestVCD) Test_SetAssignedComputePolicies(check *C) {
 	}
 	createdPolicy, err := org.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
 	check.Assert(err, IsNil)
-	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vcdComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies")
+	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies")
 
 	newComputePolicy2 := &VdcComputePolicy{
 		client: org.client,
@@ -168,7 +168,7 @@ func (vcd *TestVCD) Test_SetAssignedComputePolicies(check *C) {
 	}
 	createdPolicy2, err := org.CreateVdcComputePolicy(newComputePolicy2.VdcComputePolicy)
 	check.Assert(err, IsNil)
-	AddToCleanupList(createdPolicy2.VdcComputePolicy.ID, "vcdComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies")
+	AddToCleanupList(createdPolicy2.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies")
 
 	// Get default compute policy
 	allAssignedComputePolicies, err := adminVdc.GetAllAssignedVdcComputePolicies(nil)
@@ -180,13 +180,13 @@ func (vcd *TestVCD) Test_SetAssignedComputePolicies(check *C) {
 		}
 	}
 
-	vcdComputePolicyHref, err := org.client.OpenApiBuildEndpoint(types.OpenApiPathVersion1_0_0, types.OpenApiEndpointVdcComputePolicies)
+	vdcComputePolicyHref, err := org.client.OpenApiBuildEndpoint(types.OpenApiPathVersion1_0_0, types.OpenApiEndpointVdcComputePolicies)
 	check.Assert(err, IsNil)
 
 	// Assign compute policies to VDC
-	policyReferences := types.VdcComputePolicyReferences{VdcComputePolicyReference: []*types.Reference{&types.Reference{HREF: vcdComputePolicyHref.String() + createdPolicy.VdcComputePolicy.ID},
-		&types.Reference{HREF: vcdComputePolicyHref.String() + createdPolicy2.VdcComputePolicy.ID},
-		{HREF: vcdComputePolicyHref.String() + defaultPolicyId}}}
+	policyReferences := types.VdcComputePolicyReferences{VdcComputePolicyReference: []*types.Reference{&types.Reference{HREF: vdcComputePolicyHref.String() + createdPolicy.VdcComputePolicy.ID},
+		&types.Reference{HREF: vdcComputePolicyHref.String() + createdPolicy2.VdcComputePolicy.ID},
+		{HREF: vdcComputePolicyHref.String() + defaultPolicyId}}}
 
 	assignedVdcComputePolicies, err := adminVdc.SetAssignedComputePolicies(policyReferences)
 	check.Assert(err, IsNil)
@@ -195,7 +195,7 @@ func (vcd *TestVCD) Test_SetAssignedComputePolicies(check *C) {
 
 	// cleanup assigned compute policies
 	policyReferences = types.VdcComputePolicyReferences{VdcComputePolicyReference: []*types.Reference{
-		{HREF: vcdComputePolicyHref.String() + defaultPolicyId}}}
+		{HREF: vdcComputePolicyHref.String() + defaultPolicyId}}}
 
 	_, err = adminVdc.SetAssignedComputePolicies(policyReferences)
 	check.Assert(err, IsNil)

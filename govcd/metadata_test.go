@@ -71,7 +71,7 @@ func (vcd *TestVCD) Test_AddMetadataOnVapp(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 	// Add metadata
 	task, err := vcd.vapp.AddMetadata("key", "value")
@@ -92,7 +92,7 @@ func (vcd *TestVCD) Test_DeleteMetadataOnVapp(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 	// Add metadata
 	task, err := vcd.vapp.AddMetadata("key2", "value2")
