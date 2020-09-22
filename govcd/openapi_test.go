@@ -21,10 +21,11 @@ import (
 // Test_OpenApiRawJsonAudiTrail uses low level GET function to test out that pagination really works. It is an example
 // how to fetch response from multiple pages in RAW json messages without having defined as struct.
 func (vcd *TestVCD) Test_OpenApiRawJsonAudiTrail(check *C) {
-	minimumRequiredApiVersion := "33.0"
-	skipOpenApiEndpointTest(vcd, check, "1.0.0/auditTrail")
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAuditTrail
+	skipOpenApiEndpointTest(vcd, check, endpoint)
+	apiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(endpoint)
 
-	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/auditTrail")
+	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint)
 	check.Assert(err, IsNil)
 
 	// Limit search of audits trails to the last 12 hours so that it doesn't take too long and set pageSize to be 1 result
@@ -35,7 +36,7 @@ func (vcd *TestVCD) Test_OpenApiRawJsonAudiTrail(check *C) {
 	queryParams.Add("pageSize", "1")
 
 	allResponses := []json.RawMessage{{}}
-	err = vcd.vdc.client.OpenApiGetAllItems(minimumRequiredApiVersion, urlRef, queryParams, &allResponses)
+	err = vcd.vdc.client.OpenApiGetAllItems(apiVersion, urlRef, queryParams, &allResponses)
 
 	check.Assert(err, IsNil)
 	check.Assert(len(allResponses) > 1, Equals, true)
@@ -52,10 +53,13 @@ func (vcd *TestVCD) Test_OpenApiRawJsonAudiTrail(check *C) {
 // Test_OpenApiInlineStructAudiTrail uses low level GET function to test out that get function can unmarshal directly
 // to user defined inline type
 func (vcd *TestVCD) Test_OpenApiInlineStructAudiTrail(check *C) {
-	minimumRequiredApiVersion := "33.0"
-	skipOpenApiEndpointTest(vcd, check, "1.0.0/auditTrail")
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAuditTrail
+	skipOpenApiEndpointTest(vcd, check, endpoint)
+	apiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(endpoint)
 
-	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/auditTrail")
+	skipOpenApiEndpointTest(vcd, check, endpoint)
+
+	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint)
 	check.Assert(err, IsNil)
 
 	// Inline type
@@ -97,7 +101,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructAudiTrail(check *C) {
 	filterTime := time.Now().Add(-24 * time.Hour).Format(types.FiqlQueryTimestampFormat)
 	queryParams.Add("filter", "timestamp=gt="+filterTime)
 
-	err = vcd.vdc.client.OpenApiGetAllItems(minimumRequiredApiVersion, urlRef, queryParams, &allResponses)
+	err = vcd.vdc.client.OpenApiGetAllItems(apiVersion, urlRef, queryParams, &allResponses)
 
 	check.Assert(err, IsNil)
 	check.Assert(len(allResponses) > 1, Equals, true)

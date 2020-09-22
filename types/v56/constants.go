@@ -323,6 +323,7 @@ const (
 const (
 	OpenApiPathVersion1_0_0               = "1.0.0/"
 	OpenApiEndpointRoles                  = "roles/"
+	OpenApiEndpointAuditTrail             = "auditTrail/"
 	OpenApiEndpointImportableTier0Routers = "nsxTResources/importableTier0Routers"
 	OpenApiEndpointExternalNetworks       = "externalNetworks/"
 )
