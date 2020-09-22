@@ -24,6 +24,7 @@ func (vcd *TestVCD) Test_OpenApiRawJsonAudiTrail(check *C) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAuditTrail
 	skipOpenApiEndpointTest(vcd, check, endpoint)
 	apiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(endpoint)
+	check.Assert(err, IsNil)
 
 	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint)
 	check.Assert(err, IsNil)
@@ -56,6 +57,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructAudiTrail(check *C) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAuditTrail
 	skipOpenApiEndpointTest(vcd, check, endpoint)
 	apiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(endpoint)
+	check.Assert(err, IsNil)
 
 	skipOpenApiEndpointTest(vcd, check, endpoint)
 
