@@ -93,7 +93,7 @@ func GetExternalNetworkV2ByName(vcdClient *VCDClient, name string) (*ExternalNet
 		return nil, fmt.Errorf("expected exactly one external network with name '%s'. Got %d", name, len(res))
 	}
 
-	return res[1], nil
+	return res[0], nil
 }
 
 // GetAllExternalNetworksV2 retrieves all external networks using OpenAPI endpoint. Query parameters can be supplied to
