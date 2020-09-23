@@ -220,7 +220,7 @@ func (vdc *AdminVdc) SetAssignedComputePolicies(computePolicyReferences types.Vd
 	util.Logger.Printf("[TRACE] Set Compute Policies started")
 
 	if !vdc.client.IsSysAdmin {
-		return nil, fmt.Errorf("functionality requires System Administratorprivileges")
+		return nil, fmt.Errorf("functionality requires System Administrator privileges")
 	}
 
 	adminVdcPolicyHREF, err := url.ParseRequestURI(vdc.AdminVdc.HREF)
