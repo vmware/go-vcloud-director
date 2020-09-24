@@ -1735,6 +1735,7 @@ func addEmptyVmV97(vapp *VApp, reComposeVAppParams *types.RecomposeVAppParamsFor
 // If no valid VM is found, it returns a nil VM reference and an error
 // Note that the pointer receiver here is a Client instead of a VApp, because
 // there are cases where we know the VM HREF but not which VApp it belongs to.
+// V10 of function overrides API version to allow to access compute policy in VM.
 func getVMByHrefV10(client *Client, vmHref string) (*VM, error) {
 
 	newVm := NewVM(client)
