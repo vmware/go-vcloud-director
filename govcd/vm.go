@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -72,8 +73,9 @@ func (vm *VM) Refresh() error {
 	// elements in slices.
 	vm.VM = &types.VM{}
 
-	_, err := vm.client.ExecuteRequest(refreshUrl, http.MethodGet,
-		"", "error refreshing VM: %s", nil, vm.VM)
+	_, err := vm.client.ExecuteRequestWithApiVersion(refreshUrl, http.MethodGet,
+		"", "error refreshing VM: %s", nil, vm.VM,
+		vm.client.GetSpecificApiVersionOnCondition(">= 33.0", "33.0"))
 
 	// The request was successful
 	return err
@@ -1464,6 +1466,59 @@ func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection, 
 			Name:          vm.VM.Name,
 			Description:   description,
 			VmSpecSection: vmSettingsToUpdate,
+		})
+}
+
+// UpdateComputePolicy updates VM compute policy and returns refreshed VM or error.
+func (vm *VM) UpdateComputePolicy(computePolicy *types.VdcComputePolicy) (*VM, error) {
+	task, err := vm.UpdateComputePolicyAsync(computePolicy)
+	if err != nil {
+		return nil, err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, err
+	}
+
+	err = vm.Refresh()
+	if err != nil {
+		return nil, err
+	}
+
+	return vm, nil
+
+}
+
+// UpdateComputePolicyAsync updates VM Compute policy and returns Task and error.
+func (vm *VM) UpdateComputePolicyAsync(computePolicy *types.VdcComputePolicy) (Task, error) {
+	if vm.VM.HREF == "" {
+		return Task{}, fmt.Errorf("cannot update VM compute policy, VM HREF is unset")
+	}
+
+	// `reconfigureVm` updates Vm name, Description, and any or all of the following sections.
+	//    VirtualHardwareSection
+	//    OperatingSystemSection
+	//    NetworkConnectionSection
+	//    GuestCustomizationSection
+	// Sections not included in the request body will not be updated.
+	if computePolicy != nil && vm.client.APIVCDMaxVersionIs("< 33.0") {
+		return Task{}, errors.New("[Error] compute policy can't be used - VCD version doesn't support it")
+	}
+
+	vcdComputePolicyHref, err := vm.client.OpenApiBuildEndpoint(types.OpenApiPathVersion1_0_0, types.OpenApiEndpointVdcComputePolicies, computePolicy.ID)
+	if err != nil {
+		return Task{}, fmt.Errorf("error constructing HREF for compute policy")
+	}
+
+	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
+		types.MimeVM, "error updating VM spec section: %s", &types.VM{
+			XMLName:       xml.Name{},
+			Xmlns:         types.XMLNamespaceVCloud,
+			Ovf:           types.XMLNamespaceOVF,
+			Name:          vm.VM.Name,
+			Description:   vm.VM.Description,
+			ComputePolicy: &types.ComputePolicy{VmSizingPolicy: &types.Reference{HREF: vcdComputePolicyHref.String()}},
 		})
 }
 
