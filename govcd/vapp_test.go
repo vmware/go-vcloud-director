@@ -1443,7 +1443,7 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 }
 
 // Test_AddNewVMWithComputeCapacity creates a new VM in vApp with VM using compute capacity
-func (vcd *TestVCD) Test_AddNewVMWitComputeCapacity(check *C) {
+func (vcd *TestVCD) Test_AddNewVMWithComputeCapacity(check *C) {
 
 	if vcd.client.Client.APIVCDMaxVersionIs("< 33.0") {
 		check.Skip(fmt.Sprintf("Test %s requires VCD 10.0 (API version 33) or higher", check.TestName()))
