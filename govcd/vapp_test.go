@@ -1518,9 +1518,6 @@ func (vcd *TestVCD) Test_AddNewVMWithComputeCapacity(check *C) {
 
 	var task Task
 
-	if testVerbose {
-		fmt.Printf("Custom storage profile not found. Using AddNewVM\n")
-	}
 	task, err = vapp.AddNewVMWithComputePolicy(check.TestName(), vapptemplate, nil, nil, createdPolicy.VdcComputePolicy, true)
 
 	check.Assert(err, IsNil)
