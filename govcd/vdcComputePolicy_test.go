@@ -7,6 +7,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 	"net/url"
+	"strings"
 )
 
 func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
@@ -190,8 +191,10 @@ func (vcd *TestVCD) Test_SetAssignedComputePolicies(check *C) {
 
 	assignedVdcComputePolicies, err := adminVdc.SetAssignedComputePolicies(policyReferences)
 	check.Assert(err, IsNil)
-	check.Assert(policyReferences.VdcComputePolicyReference[0].HREF, Equals, assignedVdcComputePolicies.VdcComputePolicyReference[0].HREF)
-	check.Assert(policyReferences.VdcComputePolicyReference[1].HREF, Equals, assignedVdcComputePolicies.VdcComputePolicyReference[1].HREF)
+	check.Assert(strings.SplitAfter(policyReferences.VdcComputePolicyReference[0].HREF, "vdcComputePolicy:")[1], Equals,
+		strings.SplitAfter(assignedVdcComputePolicies.VdcComputePolicyReference[0].HREF, "vdcComputePolicy:")[1])
+	check.Assert(strings.SplitAfter(policyReferences.VdcComputePolicyReference[1].HREF, "vdcComputePolicy:")[1], Equals,
+		strings.SplitAfter(assignedVdcComputePolicies.VdcComputePolicyReference[1].HREF, "vdcComputePolicy:")[1])
 
 	// cleanup assigned compute policies
 	policyReferences = types.VdcComputePolicyReferences{VdcComputePolicyReference: []*types.Reference{
