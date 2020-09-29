@@ -167,8 +167,9 @@ type TestConfig struct {
 			SizeForUpdate int64 `yaml:"sizeForUpdate,omitempty"`
 		}
 		Nsxt struct {
-			Manager     string `yaml:"manager"`
-			Tier0router string `yaml:"tier0router"`
+			Manager        string `yaml:"manager"`
+			Tier0router    string `yaml:"tier0router"`
+			Tier0routerVrf string `yaml:"tier0routerVrf"`
 		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
 	Logging struct {
@@ -1632,6 +1633,10 @@ func skipNoNsxtConfiguration(vcd *TestVCD, check *C) {
 
 	if vcd.config.VCD.Nsxt.Tier0router == "" {
 		check.Skip(generalMessage + "No NSX-T Tier-0 router specified")
+	}
+
+	if vcd.config.VCD.Nsxt.Tier0routerVrf == "" {
+		check.Skip(generalMessage + "No VRF NSX-T Tier-0 router specified")
 	}
 
 }

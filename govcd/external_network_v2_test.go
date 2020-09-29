@@ -13,7 +13,19 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxT(check *C) {
+func (vcd *TestVCD) Test_CreateExternalNetworkV2Nsxt(check *C) {
+	vcd.testCreateExternalNetworkV2Nsxt(check, vcd.config.VCD.Nsxt.Tier0router, types.ExternalNetworkBackingTypeNsxtTier0Router)
+}
+
+func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxtVrf(check *C) {
+	// Checking NSX-T VRF router would be expected to require
+	// types.ExternalNetworkBackingTypeNsxtVrfTier0Router but although it is documented - it fails
+	// and required the same types.ExternalNetworkBackingTypeNsxtTier0Router as for regular NSX-T
+	// Tier0 router.
+	vcd.testCreateExternalNetworkV2Nsxt(check, vcd.config.VCD.Nsxt.Tier0routerVrf, types.ExternalNetworkBackingTypeNsxtTier0Router)
+}
+
+func (vcd *TestVCD) testCreateExternalNetworkV2Nsxt(check *C, nsxtTier0Router, backingType string) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
 	skipOpenApiEndpointTest(vcd, check, endpoint)
 	skipNoNsxtConfiguration(vcd, check)
@@ -26,17 +38,18 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxT(check *C) {
 	nsxtManagerId, err := BuildUrnWithUuid("urn:vcloud:nsxtmanager:", extractUuid(man[0].HREF))
 	check.Assert(err, IsNil)
 
-	tier0Router, err := vcd.client.GetImportableNsxtTier0RouterByName(vcd.config.VCD.Nsxt.Tier0router, nsxtManagerId)
+	tier0RouterVrf, err := vcd.client.GetImportableNsxtTier0RouterByName(nsxtTier0Router, nsxtManagerId)
 	check.Assert(err, IsNil)
 
 	// Create network and test CRUD capabilities
-	netNsxt := testExternalNetworkV2(types.ExternalNetworkBackingTypeNsxtTier0Router, tier0Router.NsxtTier0Router.ID, nsxtManagerId)
+	netNsxt := testExternalNetworkV2(backingType, tier0RouterVrf.NsxtTier0Router.ID, nsxtManagerId)
 	createdNet, err := CreateExternalNetworkV2(vcd.client, netNsxt)
 	check.Assert(err, IsNil)
 
 	createdNet.ExternalNetwork.Name = "changed_name"
-	_, err = createdNet.Update()
+	updatedNet, err := createdNet.Update()
 	check.Assert(err, IsNil)
+	check.Assert(updatedNet.ExternalNetwork.Name, Equals, createdNet.ExternalNetwork.Name)
 
 	read1, err := GetExternalNetworkV2ById(vcd.client, createdNet.ExternalNetwork.ID)
 	check.Assert(err, IsNil)
@@ -64,7 +77,7 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxT(check *C) {
 	check.Assert(ContainsNotFound(err), Equals, true)
 }
 
-func (vcd *TestVCD) Test_CreateExternalNetworkV2PortGroup(check *C) {
+func (vcd *TestVCD) Test_CreateExternalNetworkV2Nsxv(check *C) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
 	skipOpenApiEndpointTest(vcd, check, endpoint)
 
@@ -98,8 +111,9 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2PortGroup(check *C) {
 	check.Assert(err, IsNil)
 
 	r.ExternalNetwork.Name = "changed_name"
-	_, err = r.Update()
+	updatedNet, err := r.Update()
 	check.Assert(err, IsNil)
+	check.Assert(updatedNet.ExternalNetwork.Name, Equals, r.ExternalNetwork.Name)
 
 	err = r.Delete()
 	check.Assert(err, IsNil)
@@ -133,7 +147,7 @@ func testExternalNetworkV2(backingType, backingId, NetworkProviderId string) *ty
 				BackingID: backingId,
 				// Name:        tier0Router.NsxtTier0Router.DisplayName,
 				BackingType: backingType,
-				NetworkProvider: types.NetworkProviderProvider{
+				NetworkProvider: types.NetworkProvider{
 					// Name: vcd.config.Nsxt.Manager,
 					ID: NetworkProviderId,
 				},

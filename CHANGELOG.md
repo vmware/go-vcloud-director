@@ -23,8 +23,8 @@
 * Deprecated Vdc.UploadMediaImage because it no longer works with API V32.0+ [#330](https://github.com/vmware/go-vcloud-director/pull/330)
 * Introduce NSX-T support for adminOrg.CreateOrgVdc() [#332](https://github.com/vmware/go-vcloud-director/pull/332)
 * Introduce NSX-T support for external network using OpenAPI endpoint and `ExternalNetworkV2` type methods including `CreateExternalNetworkV2`, 
-`GetExternalNetworkById`, `GetAllExternalNetworks`, `Update`, and `DELETE` [#335](https://github.com/vmware/go-vcloud-director/pull/335)
-* Introduce NSX-T Query functions `QueryNsxtManagerByName` and `GetImportableNsxtTier0RouterByName` [#335](https://github.com/vmware/go-vcloud-director/pull/335)
+`GetExternalNetworkById`, `GetAllExternalNetworks`, `ExternalNetworkV2.Update`, and `ExternalNetworkV2.DELETE` [#335](https://github.com/vmware/go-vcloud-director/pull/335)
+* Introduce NSX-T Query functions `client.QueryNsxtManagerByName` and `client.GetImportableNsxtTier0RouterByName` [#335](https://github.com/vmware/go-vcloud-director/pull/335)
 
 
 ## 2.8.0 (June 30, 2020)
