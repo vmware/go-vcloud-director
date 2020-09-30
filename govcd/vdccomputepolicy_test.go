@@ -1,4 +1,4 @@
-// +build functional openapi ALL
+// +build vdc functional openapi ALL
 
 package govcd
 
