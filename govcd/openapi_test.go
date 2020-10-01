@@ -19,9 +19,9 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// Test_OpenApiRawJsonAudiTrail uses low level GET function to test out that pagination really works. It is an example
+// Test_OpenApiRawJsonAuditTrail uses low level GET function to test out that pagination really works. It is an example
 // how to fetch response from multiple pages in RAW json messages without having defined as struct.
-func (vcd *TestVCD) Test_OpenApiRawJsonAudiTrail(check *C) {
+func (vcd *TestVCD) Test_OpenApiRawJsonAuditTrail(check *C) {
 	minimumRequiredApiVersion := "33.0"
 	skipOpenApiEndpointTest(vcd, check, "1.0.0/auditTrail", minimumRequiredApiVersion)
 
@@ -50,9 +50,9 @@ func (vcd *TestVCD) Test_OpenApiRawJsonAudiTrail(check *C) {
 	check.Assert(len(matches), Equals, len(allResponses))
 }
 
-// Test_OpenApiInlineStructAudiTrail uses low level GET function to test out that get function can unmarshal directly
+// Test_OpenApiInlineStructAuditTrail uses low level GET function to test out that get function can unmarshal directly
 // to user defined inline type
-func (vcd *TestVCD) Test_OpenApiInlineStructAudiTrail(check *C) {
+func (vcd *TestVCD) Test_OpenApiInlineStructAuditTrail(check *C) {
 	minimumRequiredApiVersion := "33.0"
 	skipOpenApiEndpointTest(vcd, check, "1.0.0/auditTrail", minimumRequiredApiVersion)
 
@@ -60,7 +60,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructAudiTrail(check *C) {
 	check.Assert(err, IsNil)
 
 	// Inline type
-	type AudiTrail struct {
+	type AuditTrail struct {
 		EventID      string `json:"eventId"`
 		Description  string `json:"description"`
 		OperatingOrg struct {
@@ -91,7 +91,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructAudiTrail(check *C) {
 		} `json:"additionalProperties"`
 	}
 
-	allResponses := []*AudiTrail{{}}
+	allResponses := []*AuditTrail{{}}
 
 	// Define FIQL query to find events for the last 24 hours
 	queryParams := url.Values{}
