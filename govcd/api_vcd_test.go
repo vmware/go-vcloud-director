@@ -1562,6 +1562,8 @@ func (vcd *TestVCD) Test_NewRequestWitNotEncodedParamsWithApiVersion(check *C) {
 	req := vcd.client.Client.NewRequestWitNotEncodedParamsWithApiVersion(nil, map[string]string{"type": "media",
 		"filter": "name==any"}, http.MethodGet, queryUlr, nil, apiVersion)
 
+	check.Assert(req.Header.Get("User-Agent"), Equals, vcd.client.Client.UserAgent)
+
 	resp, err := checkResp(vcd.client.Client.Http.Do(req))
 	check.Assert(err, IsNil)
 
