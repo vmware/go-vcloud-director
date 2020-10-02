@@ -28,14 +28,14 @@ func (vcd *TestVCD) Test_Roles(check *C) {
 
 		// Step 2.1 - retrieve specific role by using FIQL filter
 		queryParams := url.Values{}
-		queryParams.Add("filter", "id=="+oneRole.ID)
+		queryParams.Add("filter", "id=="+oneRole.Role.ID)
 
 		expectOneRoleResultById, err := adminOrg.GetAllOpenApiRoles(queryParams)
 		check.Assert(err, IsNil)
 		check.Assert(len(expectOneRoleResultById) == 1, Equals, true)
 
 		// Step 2.2 - retrieve specific role by using endpoint
-		exactItem, err := adminOrg.GetOpenApiRoleById(oneRole.ID)
+		exactItem, err := adminOrg.GetOpenApiRoleById(oneRole.Role.ID)
 		check.Assert(err, IsNil)
 
 		check.Assert(err, IsNil)
@@ -46,31 +46,28 @@ func (vcd *TestVCD) Test_Roles(check *C) {
 
 	}
 
-	// Step 3 - Create a new role and ensure it is created as specified by doing deep comparison
+	// Step 3 - CreateRole a new role and ensure it is created as specified by doing deep comparison
 
-	newR := &OpenApiRole{
-		client: adminOrg.client,
-		Role: &types.Role{
-			Name:        check.TestName(),
-			Description: "Role created by test",
-			// This BundleKey is being set by VCD even if it is not sent
-			BundleKey: "com.vmware.vcloud.undefined.key",
-			ReadOnly:  false,
-		},
+	newR := &types.Role{
+		Name:        check.TestName(),
+		Description: "Role created by test",
+		// This BundleKey is being set by VCD even if it is not sent
+		BundleKey: "com.vmware.vcloud.undefined.key",
+		ReadOnly:  false,
 	}
 
-	createdRole, err := newR.Create(newR.Role)
+	createdRole, err := adminOrg.CreateRole(newR)
 	check.Assert(err, IsNil)
 
 	// Ensure supplied and created structs differ only by ID
-	newR.Role.ID = createdRole.Role.ID
-	check.Assert(createdRole.Role, DeepEquals, newR.Role)
+	newR.ID = createdRole.Role.ID
+	check.Assert(createdRole.Role, DeepEquals, newR)
 
 	// Step 4 - updated created role
-	newR.Role.Description = "Updated description"
-	updatedRole, err := newR.Update()
+	createdRole.Role.Description = "Updated description"
+	updatedRole, err := createdRole.Update()
 	check.Assert(err, IsNil)
-	check.Assert(updatedRole.Role, DeepEquals, newR.Role)
+	check.Assert(updatedRole.Role, DeepEquals, createdRole.Role)
 
 	// Step 5 - delete created role
 	err = updatedRole.Delete()

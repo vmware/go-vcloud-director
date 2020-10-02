@@ -17,7 +17,7 @@
 * Introduce low level OpenAPI client functions `OpenApiGetAllItems`,`OpenApiPostItemSync`,`OpenApiPostItemAsync`,
 `OpenApiPostItem`, `OpenApiGetItem`, `OpenApiPutItem`, `OpenApiPutItemSync`, `OpenApiPutItemAsync`,
 `OpenApiDeleteItem`, `OpenApiIsSupported`, `OpenApiBuildEndpoints`
-[#325](https://github.com/vmware/go-vcloud-director/pull/325)
+[#325](https://github.com/vmware/go-vcloud-director/pull/325), [#333](https://github.com/vmware/go-vcloud-director/pull/333)
 * Add OVF file upload support in UploadOvf function besides OVA. The input should be OVF file path inside the OVF folder. It will check if input file is XML content type, if yes, skip some OVA steps (like unpacking), if not, keep the old logic. [#323](https://github.com/vmware/go-vcloud-director/pull/323)
 * Dropped support for VMware Cloud Director 9.5 [#330](https://github.com/vmware/go-vcloud-director/pull/330)
 * Deprecated Vdc.UploadMediaImage because it no longer works with API V32.0+ [#330](https://github.com/vmware/go-vcloud-director/pull/330)
