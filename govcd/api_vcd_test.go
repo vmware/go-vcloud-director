@@ -444,6 +444,12 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	}
 	vcd.config = config
 
+	// This library sets HTTP User-Agent to be `go-vcloud-director` by default and all HTTP calls
+	// expected to contain this header. An explicit test cannot capture future HTTP requests, but
+	// of them should use logging so this should be a good 'gate' to ensure ALL HTTP calls going out
+	// of this library do include HTTP User-Agent.
+	util.TogglePanicEmptyUserAgent(true)
+
 	if vcd.config.Logging.Enabled {
 		util.EnableLogging = true
 		if vcd.config.Logging.LogFileName != "" {
