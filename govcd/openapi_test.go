@@ -29,7 +29,7 @@ func (vcd *TestVCD) Test_OpenApiRawJsonAuditTrail(check *C) {
 	check.Assert(err, IsNil)
 
 	// Get a timestamp after which endpoint contains at least 10 elements
-	filterTimeStamp := getAuditTrailTimestampWithElements(10, check, vcd, minimumRequiredApiVersion, urlRef, err)
+	filterTimeStamp := getAuditTrailTimestampWithElements(10, check, vcd, minimumRequiredApiVersion, urlRef)
 
 	// Limit search of audits trails to the last 12 hours so that it doesn't take too long and set pageSize to be 1 result
 	// to force following pages
@@ -271,7 +271,7 @@ func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint, requiredVersion s
 
 // getAuditTrailTimestampWithElements helps to pick good timestamp filter so that it doesn't take long time to retrieve
 // too many items
-func getAuditTrailTimestampWithElements(elementCount int, check *C, vcd *TestVCD, minimumRequiredApiVersion string, urlRef *url.URL, err error) string {
+func getAuditTrailTimestampWithElements(elementCount int, check *C, vcd *TestVCD, minimumRequiredApiVersion string, urlRef *url.URL) string {
 	client := vcd.client.Client
 	qp := url.Values{}
 	qp.Add("pageSize", "128")
