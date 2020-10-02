@@ -23,7 +23,7 @@ func init() {
 // created at the start of testing
 func (vcd *TestVCD) TestGetParentVDC(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 	vapp, err := vcd.vdc.GetVAppByName(vcd.vapp.VApp.Name, false)
 	check.Assert(err, IsNil)
@@ -38,7 +38,7 @@ func (vcd *TestVCD) TestGetParentVDC(check *C) {
 // of a VApp
 func (vcd *TestVCD) Test_PowerOn(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 	task, err := vcd.vapp.PowerOn()
 	check.Assert(err, IsNil)
@@ -51,7 +51,7 @@ func (vcd *TestVCD) Test_PowerOn(check *C) {
 // powering it on.
 func (vcd *TestVCD) Test_Reboot(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 	task, err := vcd.vapp.PowerOn()
 	check.Assert(err, IsNil)
@@ -67,7 +67,7 @@ func (vcd *TestVCD) Test_Reboot(check *C) {
 
 func (vcd *TestVCD) Test_BlockWhileStatus(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 
 	initialVappStatus, err := vcd.vapp.GetStatus()
@@ -99,7 +99,7 @@ func (vcd *TestVCD) Test_BlockWhileStatus(check *C) {
 // TODO: Add a check checking if the ovf was set properly
 func (vcd *TestVCD) Test_SetOvf(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 	var test = make(map[string]string)
 	test["guestinfo.hostname"] = "testhostname"
@@ -115,7 +115,7 @@ func (vcd *TestVCD) Test_SetOvf(check *C) {
 // TODO: Add a check checking if the customization script ran
 func (vcd *TestVCD) Test_RunCustomizationScript(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 	// Run Script on Test Vapp
 	task, err := vcd.vapp.RunCustomizationScript("computername", "this is my script")
@@ -128,7 +128,7 @@ func (vcd *TestVCD) Test_RunCustomizationScript(check *C) {
 // TODO: Add a check checking if the cpu count did change
 func (vcd *TestVCD) Test_ChangeCPUcount(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 	task, err := vcd.vapp.ChangeCPUCount(1)
 	check.Assert(err, IsNil)
@@ -140,7 +140,7 @@ func (vcd *TestVCD) Test_ChangeCPUcount(check *C) {
 // TODO: Add a check checking if the cpu count and cores did change
 func (vcd *TestVCD) Test_ChangeCPUCountWithCore(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 
 	currentCpus := 0
@@ -1440,4 +1440,120 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
+}
+
+// Test_AddNewVMWithComputeCapacity creates a new VM in vApp with VM using compute capacity
+func (vcd *TestVCD) Test_AddNewVMWithComputeCapacity(check *C) {
+
+	if vcd.client.Client.APIVCDMaxVersionIs("< 33.0") {
+		check.Skip(fmt.Sprintf("Test %s requires VCD 10.0 (API version 33) or higher", check.TestName()))
+	}
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp was not successfully created at setup")
+	}
+
+	// Find VApp
+	if vcd.vapp.VApp == nil {
+		check.Skip("skipping test because no vApp is found")
+	}
+
+	// Populate Catalog
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(cat, NotNil)
+
+	// Populate Catalog Item
+	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	check.Assert(err, IsNil)
+	check.Assert(catitem, NotNil)
+
+	// Get VAppTemplate
+	vapptemplate, err := catitem.GetVAppTemplate()
+	check.Assert(err, IsNil)
+
+	vapp, err := createVappForTest(vcd, "Test_AddNewVMWithComputeCapacity")
+	check.Assert(err, IsNil)
+	check.Assert(vapp, NotNil)
+
+	// Create and assign compute policy
+	newComputePolicy := &VdcComputePolicy{
+		client: vcd.org.client,
+		VdcComputePolicy: &types.VdcComputePolicy{
+			Name:        check.TestName() + "_empty",
+			Description: "Empty policy created by test",
+		},
+	}
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	adminVdc, err := adminOrg.GetAdminVDCByName(vcd.vdc.Vdc.Name, false)
+	if adminVdc == nil || err != nil {
+		vcd.infoCleanup(notFoundMsg, "vdc", vcd.vdc.Vdc.Name)
+	}
+
+	createdPolicy, err := adminOrg.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_AddNewEmptyVMWithVmComputePolicy")
+
+	vdcComputePolicyHref, err := adminOrg.client.OpenApiBuildEndpoint(types.OpenApiPathVersion1_0_0, types.OpenApiEndpointVdcComputePolicies)
+	check.Assert(err, IsNil)
+
+	// Get policy to existing ones (can be only default one)
+	allAssignedComputePolicies, err := adminVdc.GetAllAssignedVdcComputePolicies(nil)
+	check.Assert(err, IsNil)
+	var policyReferences []*types.Reference
+	for _, assignedPolicy := range allAssignedComputePolicies {
+		policyReferences = append(policyReferences, &types.Reference{HREF: vdcComputePolicyHref.String() + assignedPolicy.VdcComputePolicy.ID})
+	}
+	policyReferences = append(policyReferences, &types.Reference{HREF: vdcComputePolicyHref.String() + createdPolicy.VdcComputePolicy.ID})
+
+	assignedVdcComputePolicies, err := adminVdc.SetAssignedComputePolicies(types.VdcComputePolicyReferences{VdcComputePolicyReference: policyReferences})
+	check.Assert(err, IsNil)
+	check.Assert(len(allAssignedComputePolicies)+1, Equals, len(assignedVdcComputePolicies.VdcComputePolicyReference))
+	// end
+
+	var task Task
+
+	task, err = vapp.AddNewVMWithComputePolicy(check.TestName(), vapptemplate, nil, nil, createdPolicy.VdcComputePolicy, true)
+
+	check.Assert(err, IsNil)
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	createdVm, err := vapp.GetVMByName(check.TestName(), true)
+	check.Assert(err, IsNil)
+
+	check.Assert(createdVm.VM.ComputePolicy, NotNil)
+	check.Assert(createdVm.VM.ComputePolicy.VmSizingPolicy, NotNil)
+	check.Assert(createdVm.VM.ComputePolicy.VmSizingPolicy.ID, Equals, createdPolicy.VdcComputePolicy.ID)
+
+	// Cleanup
+	err = vapp.RemoveVM(*createdVm)
+	check.Assert(err, IsNil)
+
+	// Ensure network is detached from vApp to avoid conflicts in other tests
+	task, err = vapp.RemoveAllNetworks()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	// cleanup assigned compute policy
+	var beforeTestPolicyReferences []*types.Reference
+	for _, assignedPolicy := range allAssignedComputePolicies {
+		beforeTestPolicyReferences = append(beforeTestPolicyReferences, &types.Reference{HREF: vdcComputePolicyHref.String() + assignedPolicy.VdcComputePolicy.ID})
+	}
+
+	_, err = adminVdc.SetAssignedComputePolicies(types.VdcComputePolicyReferences{VdcComputePolicyReference: beforeTestPolicyReferences})
+	check.Assert(err, IsNil)
 }
