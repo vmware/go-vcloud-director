@@ -9,6 +9,7 @@ package govcd
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
@@ -24,16 +25,18 @@ import (
 func (vcd *TestVCD) Test_OpenApiRawJsonAuditTrail(check *C) {
 	minimumRequiredApiVersion := "33.0"
 	skipOpenApiEndpointTest(vcd, check, "1.0.0/auditTrail", minimumRequiredApiVersion)
-
 	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/auditTrail")
 	check.Assert(err, IsNil)
+
+	// Get a timestamp after which endpoint contains at least 10 elements
+	filterTimeStamp := getAuditTrailTimestampWithElements(10, check, vcd, minimumRequiredApiVersion, urlRef, err)
 
 	// Limit search of audits trails to the last 12 hours so that it doesn't take too long and set pageSize to be 1 result
 	// to force following pages
 	queryParams := url.Values{}
-	filterTime := time.Now().Add(-12 * time.Hour).Format(types.FiqlQueryTimestampFormat)
-	queryParams.Add("filter", "timestamp=gt="+filterTime)
-	queryParams.Add("pageSize", "1")
+	queryParams.Add("filter", "timestamp=gt="+filterTimeStamp)
+	queryParams.Add("pageSize", "1") // pageSize=1 to enforce internal pagination
+	queryParams.Add("sortDesc", "timestamp")
 
 	allResponses := []json.RawMessage{{}}
 	err = vcd.vdc.client.OpenApiGetAllItems(minimumRequiredApiVersion, urlRef, queryParams, &allResponses)
@@ -93,9 +96,9 @@ func (vcd *TestVCD) Test_OpenApiInlineStructAuditTrail(check *C) {
 
 	allResponses := []*AuditTrail{{}}
 
-	// Define FIQL query to find events for the last 24 hours
+	// Define FIQL query to find events for the last 6 hours. At least login operations will already be here on test run
 	queryParams := url.Values{}
-	filterTime := time.Now().Add(-24 * time.Hour).Format(types.FiqlQueryTimestampFormat)
+	filterTime := time.Now().Add(-6 * time.Hour).Format(types.FiqlQueryTimestampFormat)
 	queryParams.Add("filter", "timestamp=gt="+filterTime)
 
 	err = vcd.vdc.client.OpenApiGetAllItems(minimumRequiredApiVersion, urlRef, queryParams, &allResponses)
@@ -264,4 +267,43 @@ func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint, requiredVersion s
 			endpoint, constraint, maxSupportedVersion)
 		check.Skip(skipText)
 	}
+}
+
+// getAuditTrailTimestampWithElements helps to pick good timestamp filter so that it doesn't take long time to retrieve
+// too many items
+func getAuditTrailTimestampWithElements(elementCount int, check *C, vcd *TestVCD, minimumRequiredApiVersion string, urlRef *url.URL, err error) string {
+	client := vcd.client.Client
+	qp := url.Values{}
+	qp.Add("pageSize", "128")
+	qp.Add("sortDesc", "timestamp") // Need to get the newest
+	req := client.newOpenApiRequest(minimumRequiredApiVersion, qp, http.MethodGet, urlRef, nil)
+
+	resp, err := client.Http.Do(req)
+	check.Assert(err, IsNil)
+
+	type AuditTrailTimestamp struct {
+		Timestamp string `json:"timestamp"`
+	}
+
+	onePageAuditTrail := make([]AuditTrailTimestamp, 1)
+	onePageResponse := &types.OpenApiPages{}
+	err = decodeBody(types.BodyTypeJSON, resp, &onePageResponse)
+	check.Assert(err, IsNil)
+
+	err = resp.Body.Close()
+	check.Assert(err, IsNil)
+
+	err = json.Unmarshal(onePageResponse.Values, &onePageAuditTrail)
+	check.Assert(err, IsNil)
+
+	var singleElement AuditTrailTimestamp
+
+	// Find newest element limited by provided elementCount
+	if len(onePageAuditTrail) < elementCount {
+		singleElement = onePageAuditTrail[(len(onePageAuditTrail) - 1)]
+	} else {
+		singleElement = onePageAuditTrail[(elementCount - 1)]
+	}
+	return singleElement.Timestamp
+
 }
