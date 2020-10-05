@@ -23,7 +23,7 @@ func init() {
 
 func (vcd *TestVCD) Test_FindVMByHREF(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp wasn't properly created")
+		check.Skip("Skipping test because vApp wasn't properly created")
 	}
 
 	fmt.Printf("Running: %s\n", check.TestName())
@@ -1456,4 +1456,158 @@ func (vcd *TestVCD) Test_UpdateVmCpuAndMemoryHotAdd(check *C) {
 
 	// delete Vapp early to avoid env capacity issue
 	deleteVapp(vcd, vmName)
+}
+
+func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
+
+	if vcd.client.Client.APIVCDMaxVersionIs("< 33.0") {
+		check.Skip(fmt.Sprintf("Test %s requires VCD 10.0 (API version 33) or higher", check.TestName()))
+	}
+
+	vapp, err := createVappForTest(vcd, "Test_AddNewEmptyVMWithVmComputePolicy")
+	check.Assert(err, IsNil)
+	check.Assert(vapp, NotNil)
+
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(cat, NotNil)
+
+	newComputePolicy := &VdcComputePolicy{
+		client: vcd.org.client,
+		VdcComputePolicy: &types.VdcComputePolicy{
+			Name:        check.TestName() + "_empty",
+			Description: "Empty policy created by test",
+		},
+	}
+
+	newComputePolicy2 := &VdcComputePolicy{
+		client: vcd.org.client,
+		VdcComputePolicy: &types.VdcComputePolicy{
+			Name:        check.TestName() + "_memory",
+			Description: "Empty policy created by test 2",
+			Memory:      takeIntAddress(2048),
+		},
+	}
+
+	// Create and assign compute policy
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	adminVdc, err := adminOrg.GetAdminVDCByName(vcd.vdc.Vdc.Name, false)
+	if adminVdc == nil || err != nil {
+		vcd.infoCleanup(notFoundMsg, "vdc", vcd.vdc.Vdc.Name)
+	}
+
+	createdPolicy, err := adminOrg.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
+	check.Assert(err, IsNil)
+
+	createdPolicy2, err := adminOrg.CreateVdcComputePolicy(newComputePolicy2.VdcComputePolicy)
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_AddNewEmptyVMWithVmComputePolicyAndUpdate")
+	AddToCleanupList(createdPolicy2.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_AddNewEmptyVMWithVmComputePolicyAndUpdate")
+
+	vdcComputePolicyHref, err := adminOrg.client.OpenApiBuildEndpoint(types.OpenApiPathVersion1_0_0, types.OpenApiEndpointVdcComputePolicies)
+	check.Assert(err, IsNil)
+
+	// Get policy to existing ones (can be only default one)
+	allAssignedComputePolicies, err := adminVdc.GetAllAssignedVdcComputePolicies(nil)
+	check.Assert(err, IsNil)
+	var policyReferences []*types.Reference
+	for _, assignedPolicy := range allAssignedComputePolicies {
+		policyReferences = append(policyReferences, &types.Reference{HREF: vdcComputePolicyHref.String() + assignedPolicy.VdcComputePolicy.ID})
+	}
+	policyReferences = append(policyReferences, &types.Reference{HREF: vdcComputePolicyHref.String() + createdPolicy.VdcComputePolicy.ID})
+	policyReferences = append(policyReferences, &types.Reference{HREF: vdcComputePolicyHref.String() + createdPolicy2.VdcComputePolicy.ID})
+
+	assignedVdcComputePolicies, err := adminVdc.SetAssignedComputePolicies(types.VdcComputePolicyReferences{VdcComputePolicyReference: policyReferences})
+	check.Assert(err, IsNil)
+	check.Assert(len(allAssignedComputePolicies)+2, Equals, len(assignedVdcComputePolicies.VdcComputePolicyReference))
+	// end
+
+	var task Task
+	var sp types.Reference
+	var customSP = false
+
+	if vcd.config.VCD.StorageProfile.SP1 != "" {
+		sp, _ = vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
+	}
+
+	newDisk := types.DiskSettings{
+		AdapterType:       "5",
+		SizeMb:            int64(16384),
+		BusNumber:         0,
+		UnitNumber:        0,
+		ThinProvisioned:   takeBoolPointer(true),
+		OverrideVmDefault: true}
+
+	requestDetails := &types.RecomposeVAppParamsForEmptyVm{
+		CreateItem: &types.CreateItem{
+			Name:                      "Test_AddNewEmptyVMWithVmComputePolicy",
+			Description:               "created by Test_AddNewEmptyVMWithVmComputePolicy",
+			GuestCustomizationSection: nil,
+			VmSpecSection: &types.VmSpecSection{
+				Modified:          takeBoolPointer(true),
+				Info:              "Virtual Machine specification",
+				OsType:            "debian10Guest",
+				NumCpus:           takeIntAddress(2),
+				NumCoresPerSocket: takeIntAddress(1),
+				CpuResourceMhz:    &types.CpuResourceMhz{Configured: 1},
+				MemoryResourceMb:  &types.MemoryResourceMb{Configured: 1024},
+				MediaSection:      nil,
+				DiskSection:       &types.DiskSection{DiskSettings: []*types.DiskSettings{&newDisk}},
+				HardwareVersion:   &types.HardwareVersion{Value: "vmx-13"}, // need support older version vCD
+				VmToolsVersion:    "",
+				VirtualCpuType:    "VM32",
+				TimeSyncWithHost:  nil,
+			},
+			ComputePolicy: &types.ComputePolicy{VmSizingPolicy: &types.Reference{HREF: vdcComputePolicyHref.String() + createdPolicy.VdcComputePolicy.ID}},
+		},
+		AllEULAsAccepted: true,
+	}
+
+	createdVm, err := vapp.AddEmptyVm(requestDetails)
+	check.Assert(err, IsNil)
+	check.Assert(createdVm, NotNil)
+	check.Assert(createdVm.VM.ComputePolicy, NotNil)
+	check.Assert(createdVm.VM.ComputePolicy.VmSizingPolicy, NotNil)
+	check.Assert(createdVm.VM.ComputePolicy.VmSizingPolicy.ID, Equals, createdPolicy.VdcComputePolicy.ID)
+
+	if customSP {
+		check.Assert(createdVm.VM.StorageProfile.HREF, Equals, sp.HREF)
+	}
+
+	updatedVm, err := createdVm.UpdateComputePolicy(createdPolicy2.VdcComputePolicy)
+	check.Assert(err, IsNil)
+	check.Assert(updatedVm, NotNil)
+	check.Assert(updatedVm.VM.ComputePolicy, NotNil)
+	check.Assert(updatedVm.VM.ComputePolicy.VmSizingPolicy, NotNil)
+	check.Assert(updatedVm.VM.ComputePolicy.VmSizingPolicy.ID, Equals, createdPolicy2.VdcComputePolicy.ID)
+	check.Assert(updatedVm.VM.VmSpecSection.MemoryResourceMb, NotNil)
+	check.Assert(updatedVm.VM.VmSpecSection.MemoryResourceMb.Configured, Equals, int64(2048))
+
+	// Cleanup
+	err = vapp.RemoveVM(*createdVm)
+	check.Assert(err, IsNil)
+
+	// Ensure network is detached from vApp to avoid conflicts in other tests
+	task, err = vapp.RemoveAllNetworks()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	// cleanup assigned compute policy
+	var beforeTestPolicyReferences []*types.Reference
+	for _, assignedPolicy := range allAssignedComputePolicies {
+		beforeTestPolicyReferences = append(beforeTestPolicyReferences, &types.Reference{HREF: vdcComputePolicyHref.String() + assignedPolicy.VdcComputePolicy.ID})
+	}
+
+	_, err = adminVdc.SetAssignedComputePolicies(types.VdcComputePolicyReferences{VdcComputePolicyReference: beforeTestPolicyReferences})
+	check.Assert(err, IsNil)
 }

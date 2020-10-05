@@ -8,6 +8,7 @@ package govcd
 
 import (
 	"encoding/json"
+	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
@@ -18,9 +19,9 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// Test_OpenApiRawJsonAudiTrail uses low level GET function to test out that pagination really works. It is an example
+// Test_OpenApiRawJsonAuditTrail uses low level GET function to test out that pagination really works. It is an example
 // how to fetch response from multiple pages in RAW json messages without having defined as struct.
-func (vcd *TestVCD) Test_OpenApiRawJsonAudiTrail(check *C) {
+func (vcd *TestVCD) Test_OpenApiRawJsonAuditTrail(check *C) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAuditTrail
 	skipOpenApiEndpointTest(vcd, check, endpoint)
 	apiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(endpoint)
@@ -29,12 +30,15 @@ func (vcd *TestVCD) Test_OpenApiRawJsonAudiTrail(check *C) {
 	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint)
 	check.Assert(err, IsNil)
 
+	// Get a timestamp after which endpoint contains at least 10 elements
+	filterTimeStamp := getAuditTrailTimestampWithElements(10, check, vcd, apiVersion, urlRef)
+
 	// Limit search of audits trails to the last 12 hours so that it doesn't take too long and set pageSize to be 1 result
 	// to force following pages
 	queryParams := url.Values{}
-	filterTime := time.Now().Add(-12 * time.Hour).Format(types.FiqlQueryTimestampFormat)
-	queryParams.Add("filter", "timestamp=gt="+filterTime)
-	queryParams.Add("pageSize", "1")
+	queryParams.Add("filter", "timestamp=gt="+filterTimeStamp)
+	queryParams.Add("pageSize", "1") // pageSize=1 to enforce internal pagination
+	queryParams.Add("sortDesc", "timestamp")
 
 	allResponses := []json.RawMessage{{}}
 	err = vcd.vdc.client.OpenApiGetAllItems(apiVersion, urlRef, queryParams, &allResponses)
@@ -51,21 +55,19 @@ func (vcd *TestVCD) Test_OpenApiRawJsonAudiTrail(check *C) {
 	check.Assert(len(matches), Equals, len(allResponses))
 }
 
-// Test_OpenApiInlineStructAudiTrail uses low level GET function to test out that get function can unmarshal directly
+// Test_OpenApiInlineStructAuditTrail uses low level GET function to test out that get function can unmarshal directly
 // to user defined inline type
-func (vcd *TestVCD) Test_OpenApiInlineStructAudiTrail(check *C) {
+func (vcd *TestVCD) Test_OpenApiInlineStructAuditTrail(check *C) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAuditTrail
 	skipOpenApiEndpointTest(vcd, check, endpoint)
 	apiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(endpoint)
 	check.Assert(err, IsNil)
 
-	skipOpenApiEndpointTest(vcd, check, endpoint)
-
-	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint)
+	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint("1.0.0/auditTrail")
 	check.Assert(err, IsNil)
 
 	// Inline type
-	type AudiTrail struct {
+	type AuditTrail struct {
 		EventID      string `json:"eventId"`
 		Description  string `json:"description"`
 		OperatingOrg struct {
@@ -96,11 +98,11 @@ func (vcd *TestVCD) Test_OpenApiInlineStructAudiTrail(check *C) {
 		} `json:"additionalProperties"`
 	}
 
-	allResponses := []*AudiTrail{{}}
+	allResponses := []*AuditTrail{{}}
 
-	// Define FIQL query to find events for the last 24 hours
+	// Define FIQL query to find events for the last 6 hours. At least login operations will already be here on test run
 	queryParams := url.Values{}
-	filterTime := time.Now().Add(-24 * time.Hour).Format(types.FiqlQueryTimestampFormat)
+	filterTime := time.Now().Add(-6 * time.Hour).Format(types.FiqlQueryTimestampFormat)
 	queryParams.Add("filter", "timestamp=gt="+filterTime)
 
 	err = vcd.vdc.client.OpenApiGetAllItems(apiVersion, urlRef, queryParams, &allResponses)
@@ -254,5 +256,58 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 
 	err = vcd.client.Client.OpenApiDeleteItem(minimumRequiredApiVersion, deleteUrlRef2, nil)
 	check.Assert(err, IsNil)
+
+}
+
+// skipOpenApiEndpointTest is a helper to skip tests for particular unsupported OpenAPI endpoints
+// func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint, requiredVersion string) {
+// 	constraint := ">= " + requiredVersion
+// 	if !vcd.client.Client.APIVCDMaxVersionIs(constraint) {
+// 		maxSupportedVersion, err := vcd.client.Client.maxSupportedVersion()
+// 		if err != nil {
+// 			panic(fmt.Sprintf("Could not get maximum supported version: %s", err))
+// 		}
+// 		skipText := fmt.Sprintf("Skipping test because OpenAPI endpoint '%s' must satisfy API version constraint '%s'. Maximum supported version is %s",
+// 			endpoint, constraint, maxSupportedVersion)
+// 		check.Skip(skipText)
+// 	}
+// }
+
+// getAuditTrailTimestampWithElements helps to pick good timestamp filter so that it doesn't take long time to retrieve
+// too many items
+func getAuditTrailTimestampWithElements(elementCount int, check *C, vcd *TestVCD, minimumRequiredApiVersion string, urlRef *url.URL) string {
+	client := vcd.client.Client
+	qp := url.Values{}
+	qp.Add("pageSize", "128")
+	qp.Add("sortDesc", "timestamp") // Need to get the newest
+	req := client.newOpenApiRequest(minimumRequiredApiVersion, qp, http.MethodGet, urlRef, nil)
+
+	resp, err := client.Http.Do(req)
+	check.Assert(err, IsNil)
+
+	type AuditTrailTimestamp struct {
+		Timestamp string `json:"timestamp"`
+	}
+
+	onePageAuditTrail := make([]AuditTrailTimestamp, 1)
+	onePageResponse := &types.OpenApiPages{}
+	err = decodeBody(types.BodyTypeJSON, resp, &onePageResponse)
+	check.Assert(err, IsNil)
+
+	err = resp.Body.Close()
+	check.Assert(err, IsNil)
+
+	err = json.Unmarshal(onePageResponse.Values, &onePageAuditTrail)
+	check.Assert(err, IsNil)
+
+	var singleElement AuditTrailTimestamp
+
+	// Find newest element limited by provided elementCount
+	if len(onePageAuditTrail) < elementCount {
+		singleElement = onePageAuditTrail[(len(onePageAuditTrail) - 1)]
+	} else {
+		singleElement = onePageAuditTrail[(elementCount - 1)]
+	}
+	return singleElement.Timestamp
 
 }
