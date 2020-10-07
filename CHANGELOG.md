@@ -26,7 +26,8 @@
 * Introduce NSX-T support for external network using OpenAPI endpoint and `ExternalNetworkV2` type methods including `CreateExternalNetworkV2`, 
 `GetExternalNetworkById`, `GetAllExternalNetworks`, `ExternalNetworkV2.Update`, and `ExternalNetworkV2.DELETE` [#335](https://github.com/vmware/go-vcloud-director/pull/335)
 * Introduce NSX-T Query functions `client.QueryNsxtManagerByName` and `client.GetImportableNsxtTier0RouterByName` [#335](https://github.com/vmware/go-vcloud-director/pull/335)
-
+* Add HTTP User-Agent header `go-vcloud-director` to all API calls and allow to customize it using
+  `WithHttpUserAgent` configuration options function [#336](https://github.com/vmware/go-vcloud-director/pull/336)
 
 ## 2.8.0 (June 30, 2020)
 

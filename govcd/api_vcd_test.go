@@ -449,6 +449,12 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	}
 	vcd.config = config
 
+	// This library sets HTTP User-Agent to be `go-vcloud-director` by default and all HTTP calls
+	// expected to contain this header. An explicit test cannot capture future HTTP requests, but
+	// of them should use logging so this should be a good 'gate' to ensure ALL HTTP calls going out
+	// of this library do include HTTP User-Agent.
+	util.TogglePanicEmptyUserAgent(true)
+
 	if vcd.config.Logging.Enabled {
 		util.EnableLogging = true
 		if vcd.config.Logging.LogFileName != "" {
@@ -1588,6 +1594,8 @@ func (vcd *TestVCD) Test_NewRequestWitNotEncodedParamsWithApiVersion(check *C) {
 
 	req := vcd.client.Client.NewRequestWitNotEncodedParamsWithApiVersion(nil, map[string]string{"type": "media",
 		"filter": "name==any"}, http.MethodGet, queryUlr, nil, apiVersion)
+
+	check.Assert(req.Header.Get("User-Agent"), Equals, vcd.client.Client.UserAgent)
 
 	resp, err := checkResp(vcd.client.Client.Http.Do(req))
 	check.Assert(err, IsNil)
