@@ -18,10 +18,9 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2Nsxt(check *C) {
 }
 
 func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxtVrf(check *C) {
-	// Checking NSX-T VRF router would be expected to require
-	// types.ExternalNetworkBackingTypeNsxtVrfTier0Router but although it is documented - it fails
-	// and required the same types.ExternalNetworkBackingTypeNsxtTier0Router as for regular NSX-T
-	// Tier0 router.
+	// The documented backing type of NSX-T VRF router is "NSXT_VRF_TIER0" (types.ExternalNetworkBackingTypeNsxtVrfTier0Router)
+	// but although it is documented - it fails and requires the same "NSXT_TIER0" (types.ExternalNetworkBackingTypeNsxtTier0Router)
+	// backing type to be specified
 	vcd.testCreateExternalNetworkV2Nsxt(check, vcd.config.VCD.Nsxt.Tier0routerVrf, types.ExternalNetworkBackingTypeNsxtTier0Router)
 }
 
