@@ -7,7 +7,7 @@ default: fmtcheck vet static build
 # test runs the test suite and vets the code
 test: testunit tagverify
 	@echo "==> Running Functional Tests"
-	cd govcd && go test -tags "functional" -timeout=300m -check.vv
+	cd govcd && go test -tags "functional" -timeout=650m -check.vv
 
 # tagverify checks that each tag can run independently
 tagverify: fmtcheck 

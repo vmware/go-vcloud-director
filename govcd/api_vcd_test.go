@@ -166,6 +166,11 @@ type TestConfig struct {
 			Size          int64 `yaml:"size,omitempty"`
 			SizeForUpdate int64 `yaml:"sizeForUpdate,omitempty"`
 		}
+		Nsxt struct {
+			Manager        string `yaml:"manager"`
+			Tier0router    string `yaml:"tier0router"`
+			Tier0routerVrf string `yaml:"tier0routerVrf"`
+		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
 	Logging struct {
 		Enabled          bool   `yaml:"enabled,omitempty"`
@@ -1652,4 +1657,32 @@ func skipNoNsxtConfiguration(vcd *TestVCD, check *C) {
 		check.Skip(generalMessage + "No storage profile specified")
 	}
 
+	if vcd.config.VCD.Nsxt.Manager == "" {
+		check.Skip(generalMessage + "No NSX-T manager specified")
+	}
+
+	if vcd.config.VCD.Nsxt.Tier0router == "" {
+		check.Skip(generalMessage + "No NSX-T Tier-0 router specified")
+	}
+
+	if vcd.config.VCD.Nsxt.Tier0routerVrf == "" {
+		check.Skip(generalMessage + "No VRF NSX-T Tier-0 router specified")
+	}
+
+}
+
+// skipOpenApiEndpointTest is a helper to skip tests for particular unsupported OpenAPI endpoints
+func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint string) {
+	minimumRequiredApiVersion := endpointMinApiVersions[endpoint]
+
+	constraint := ">= " + minimumRequiredApiVersion
+	if !vcd.client.Client.APIVCDMaxVersionIs(constraint) {
+		maxSupportedVersion, err := vcd.client.Client.maxSupportedVersion()
+		if err != nil {
+			panic(fmt.Sprintf("Could not get maximum supported version: %s", err))
+		}
+		skipText := fmt.Sprintf("Skipping test because OpenAPI endpoint '%s' must satisfy API version constraint '%s'. Maximum supported version is %s",
+			endpoint, constraint, maxSupportedVersion)
+		check.Skip(skipText)
+	}
 }
