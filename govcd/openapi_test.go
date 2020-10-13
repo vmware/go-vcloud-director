@@ -259,20 +259,6 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 
 }
 
-// skipOpenApiEndpointTest is a helper to skip tests for particular unsupported OpenAPI endpoints
-// func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint, requiredVersion string) {
-// 	constraint := ">= " + requiredVersion
-// 	if !vcd.client.Client.APIVCDMaxVersionIs(constraint) {
-// 		maxSupportedVersion, err := vcd.client.Client.maxSupportedVersion()
-// 		if err != nil {
-// 			panic(fmt.Sprintf("Could not get maximum supported version: %s", err))
-// 		}
-// 		skipText := fmt.Sprintf("Skipping test because OpenAPI endpoint '%s' must satisfy API version constraint '%s'. Maximum supported version is %s",
-// 			endpoint, constraint, maxSupportedVersion)
-// 		check.Skip(skipText)
-// 	}
-// }
-
 // getAuditTrailTimestampWithElements helps to pick good timestamp filter so that it doesn't take long time to retrieve
 // too many items
 func getAuditTrailTimestampWithElements(elementCount int, check *C, vcd *TestVCD, apiVersion string, urlRef *url.URL) string {
