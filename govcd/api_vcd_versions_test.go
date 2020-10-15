@@ -8,6 +8,8 @@ package govcd
 
 import (
 	"fmt"
+	"regexp"
+	"time"
 
 	. "gopkg.in/check.v1"
 )
@@ -124,4 +126,17 @@ func getMockVcdWithAPIVersion(version string) *VCDClient {
 			},
 		},
 	}
+}
+
+func (vcd *TestVCD) Test_GetVcdVersion(check *C) {
+
+	version, versionTime, err := vcd.client.Client.GetVcdVersion()
+	check.Assert(err, IsNil)
+	check.Assert(version, Not(Equals), "")
+	check.Assert(versionTime, Not(Equals), time.Time{})
+	reVersion := regexp.MustCompile(`^\d+\.\d+\.\d+\.\d+`)
+	check.Assert(reVersion.MatchString(version), Equals, true)
+
+	fmt.Printf("VERSION %s\n",version)
+	fmt.Printf("DATE    %s\n",versionTime)
 }

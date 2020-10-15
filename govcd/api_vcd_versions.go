@@ -5,11 +5,16 @@
 package govcd
 
 import (
+	"encoding/xml"
 	"fmt"
 	"net/http"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
+	"github.com/araddon/dateparse"
 	semver "github.com/hashicorp/go-version"
 
 	"github.com/vmware/go-vcloud-director/v2/util"
@@ -25,6 +30,13 @@ type VersionInfos []VersionInfo
 
 type SupportedVersions struct {
 	VersionInfos `xml:"VersionInfo"`
+}
+
+type VcdVersion struct {
+	Major int
+	Minor int
+	Revision int
+	Build int
 }
 
 // apiVersionToVcdVersion gets the vCD version from max supported API version
@@ -221,4 +233,94 @@ func (cli *Client) GetSpecificApiVersionOnCondition(vcdApiVersionCondition, want
 		apiVersion = wantedApiVersion
 	}
 	return apiVersion
+}
+
+func (cli *Client) GetVcdVersion() (string, time.Time, error) {
+
+	type vCloud struct {
+		XMLName     xml.Name `xml:"VCloud"`
+		Xmlns       string   `xml:"xmlns,attr,omitempty"`
+		Name        string   `xml:"name,attr"`
+		HREF        string   `xml:"href,attr"`
+		Type        string   `xml:"type,attr,omitempty"`
+		Description string   `xml:"Description"`
+	}
+
+	path := cli.VCDHREF
+	path.Path += "/admin"
+	var admin vCloud
+	_, err := cli.ExecuteRequest(path.String(), http.MethodGet,
+		"", "error retrieving admin info: %s", nil, &admin)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	description := admin.Description
+
+	if description == "" {
+		return "", time.Time{}, fmt.Errorf("no version information found")
+	}
+	reVersion := regexp.MustCompile(`^\s*(\S+)\s+(.*)`)
+
+	versionList := reVersion.FindAllStringSubmatch(description, -1)
+
+	if len(versionList) == 0 || len(versionList[0]) < 2 {
+		return "", time.Time{}, fmt.Errorf("error getting version information from description %s", description)
+	}
+	version := versionList[0][1]
+	versionDate := versionList[0][2]
+	versionTime, err := dateparse.ParseStrict(versionDate)
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("[version %s] could not convert date %s to formal date: %s", version, versionDate, err)
+	}
+
+	return version, versionTime, nil
+}
+
+
+func (cli *Client) GetVcdShortVersion() (string, error) {
+
+	vcdVersion, err := cli.GetVcdFullVersion()
+	if err != nil {
+		return "", fmt.Errorf("error getting version digits: %s", err)
+	}
+	return fmt.Sprintf("%d.%d.%d",vcdVersion.Major, vcdVersion.Minor, vcdVersion.Revision ), nil
+}
+
+func (cli *Client) GetVcdSortableVersion() (string, error) {
+
+	vcdVersion, err := cli.GetVcdFullVersion()
+	if err != nil {
+		return "", fmt.Errorf("error getting version digits: %s", err)
+	}
+	return fmt.Sprintf("%03d%03d%03d",vcdVersion.Major, vcdVersion.Minor, vcdVersion.Revision ), nil
+}
+
+func (cli *Client) GetVcdFullVersion() (VcdVersion, error) {
+
+	var vcdVersion VcdVersion
+	version, _, err := cli.GetVcdVersion()
+	if err != nil {
+		return VcdVersion{}, err
+	}
+	versionList := strings.Split(version, ".")
+	if len(versionList) < 3 {
+		return VcdVersion{}, fmt.Errorf("error getting version digits from version %s", version)
+	}
+	vcdVersion.Major, err = strconv.Atoi(versionList[0])
+	if err != nil {
+		return VcdVersion{}, fmt.Errorf("error converting %s to integer", versionList[0])
+	}
+	vcdVersion.Minor, err = strconv.Atoi(versionList[1])
+	if err != nil {
+		return VcdVersion{}, fmt.Errorf("error converting %s to integer", versionList[1])
+	}
+	vcdVersion.Revision, err = strconv.Atoi(versionList[2])
+	if err != nil {
+		return VcdVersion{}, fmt.Errorf("error converting %s to integer", versionList[2])
+	}
+	vcdVersion.Build, err = strconv.Atoi(versionList[3])
+	if err != nil {
+		return VcdVersion{}, fmt.Errorf("error converting %s to integer", versionList[3])
+	}
+	return vcdVersion, nil
 }
