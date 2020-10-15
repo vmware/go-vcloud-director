@@ -1,4 +1,4 @@
-## 2.9.0 (unreleased)
+## 2.9.0 (October 15, 2020)
 
 * Improved testing tags isolation [#320](https://github.com/vmware/go-vcloud-director/pull/320)
 * Added command `make tagverify` to check tags isolation tests [#320](https://github.com/vmware/go-vcloud-director/pull/320)
