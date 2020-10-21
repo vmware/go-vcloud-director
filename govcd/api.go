@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -45,6 +46,10 @@ type Client struct {
 	// CustomAdfsRptId allows to set custom Relaying Party Trust identifier. By default vCD Entity
 	// ID is used as Relaying Party Trust identifier.
 	CustomAdfsRptId string
+
+	// UserAgent to send for API queries. Standard format is described as:
+	// "User-Agent: <product> / <product-version> <comment>"
+	UserAgent string
 
 	supportedVersions SupportedVersions // Versions from /api/versions endpoint
 }
@@ -211,6 +216,8 @@ func (cli *Client) newRequest(params map[string]string, notEncodedParams map[str
 			}
 		}
 	}
+
+	setHttpUserAgent(cli.UserAgent, req)
 
 	// Avoids passing data if the logging of requests is disabled
 	if util.LogHttpRequest {
@@ -537,7 +544,7 @@ func (client *Client) executeRequest(pathURL, requestType, contentType, errorMes
 }
 
 // ExecuteRequestWithCustomError sends the request and checks for 2xx response. If the returned status code
-// was not as expected - the returned error will be unmarshaled to `errType` which implements Go's standard `error`
+// was not as expected - the returned error will be unmarshalled to `errType` which implements Go's standard `error`
 // interface.
 func (client *Client) ExecuteRequestWithCustomError(pathURL, requestType, contentType, errorMessage string,
 	payload interface{}, errType error) (*http.Response, error) {
@@ -604,12 +611,21 @@ func executeRequestCustomErr(pathURL string, params map[string]string, requestTy
 		req.Header.Add("Content-Type", contentType)
 	}
 
+	setHttpUserAgent(client.UserAgent, req)
+
 	resp, err := client.Http.Do(req)
 	if err != nil {
 		return resp, err
 	}
 
 	return checkRespWithErrType(types.BodyTypeXML, resp, err, errType)
+}
+
+// setHttpUserAgent adds User-Agent string to HTTP request. When supplied string is empty - header will not be set
+func setHttpUserAgent(userAgent string, req *http.Request) {
+	if userAgent != "" {
+		req.Header.Set("User-Agent", userAgent)
+	}
 }
 
 func isMessageWithPlaceHolder(message string) bool {
@@ -641,6 +657,49 @@ func takeIntAddress(x int) *int {
 // takeStringPointer is a helper that returns the address of a `string`
 func takeStringPointer(x string) *string {
 	return &x
+}
+
+// IsUuid returns true if the identifier is a bare UUID
+func IsUuid(identifier string) bool {
+	reUuid := regexp.MustCompile(`^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$`)
+	return reUuid.MatchString(identifier)
+}
+
+// isUrn validates if supplied identifier is of URN format (e.g. urn:vcloud:nsxtmanager:09722307-aee0-4623-af95-7f8e577c9ebc)
+// it checks for the following criteria:
+// 1. idenfifier is not empty
+// 2. identifier has 4 elements separated by ':'
+// 3. element 1 is 'urn' and element 4 is valid UUID
+func isUrn(identifier string) bool {
+	if identifier == "" {
+		return false
+	}
+
+	ss := strings.Split(identifier, ":")
+	if len(ss) != 4 {
+		return false
+	}
+
+	if ss[0] != "urn" && !IsUuid(ss[3]) {
+		return false
+	}
+
+	return true
+}
+
+// BuildUrnWithUuid helps to build valid URNs where APIs require URN format, but other API responds with UUID (or
+// extracted from HREF)
+func BuildUrnWithUuid(urnPrefix, uuid string) (string, error) {
+	if !IsUuid(uuid) {
+		return "", fmt.Errorf("supplied uuid '%s' is not valid UUID", uuid)
+	}
+
+	urn := urnPrefix + uuid
+	if !isUrn(urn) {
+		return "", fmt.Errorf("failed building valid URN '%s'", urn)
+	}
+
+	return urn, nil
 }
 
 // takeFloatAddress is a helper that returns the address of an `float64`

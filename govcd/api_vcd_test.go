@@ -166,6 +166,11 @@ type TestConfig struct {
 			Size          int64 `yaml:"size,omitempty"`
 			SizeForUpdate int64 `yaml:"sizeForUpdate,omitempty"`
 		}
+		Nsxt struct {
+			Manager        string `yaml:"manager"`
+			Tier0router    string `yaml:"tier0router"`
+			Tier0routerVrf string `yaml:"tier0routerVrf"`
+		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
 	Logging struct {
 		Enabled          bool   `yaml:"enabled,omitempty"`
@@ -443,6 +448,12 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		panic(err)
 	}
 	vcd.config = config
+
+	// This library sets HTTP User-Agent to be `go-vcloud-director` by default and all HTTP calls
+	// expected to contain this header. An explicit test cannot capture future HTTP requests, but
+	// of them should use logging so this should be a good 'gate' to ensure ALL HTTP calls going out
+	// of this library do include HTTP User-Agent.
+	util.TogglePanicEmptyUserAgent(true)
 
 	if vcd.config.Logging.Enabled {
 		util.EnableLogging = true
@@ -1308,9 +1319,9 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
-	case "vcdComputePolicy":
+	case "vdcComputePolicy":
 		if entity.Parent == "" {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for vcdComputePolicy '%s'\n", entity.Name)
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for vdcComputePolicy '%s'\n", entity.Name)
 			return
 		}
 		org, err := vcd.client.GetAdminOrgByName(entity.Parent)
@@ -1320,7 +1331,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		policy, err := org.GetVdcComputePolicyById(entity.Name)
 		if policy == nil || err != nil {
-			vcd.infoCleanup(notFoundMsg, "vcdComputePolicy", entity.Name)
+			vcd.infoCleanup(notFoundMsg, "vdcComputePolicy", entity.Name)
 			return
 		}
 		err = policy.Delete()
@@ -1584,6 +1595,8 @@ func (vcd *TestVCD) Test_NewRequestWitNotEncodedParamsWithApiVersion(check *C) {
 	req := vcd.client.Client.NewRequestWitNotEncodedParamsWithApiVersion(nil, map[string]string{"type": "media",
 		"filter": "name==any"}, http.MethodGet, queryUlr, nil, apiVersion)
 
+	check.Assert(req.Header.Get("User-Agent"), Equals, vcd.client.Client.UserAgent)
+
 	resp, err := checkResp(vcd.client.Client.Http.Do(req))
 	check.Assert(err, IsNil)
 
@@ -1644,4 +1657,32 @@ func skipNoNsxtConfiguration(vcd *TestVCD, check *C) {
 		check.Skip(generalMessage + "No storage profile specified")
 	}
 
+	if vcd.config.VCD.Nsxt.Manager == "" {
+		check.Skip(generalMessage + "No NSX-T manager specified")
+	}
+
+	if vcd.config.VCD.Nsxt.Tier0router == "" {
+		check.Skip(generalMessage + "No NSX-T Tier-0 router specified")
+	}
+
+	if vcd.config.VCD.Nsxt.Tier0routerVrf == "" {
+		check.Skip(generalMessage + "No VRF NSX-T Tier-0 router specified")
+	}
+
+}
+
+// skipOpenApiEndpointTest is a helper to skip tests for particular unsupported OpenAPI endpoints
+func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint string) {
+	minimumRequiredApiVersion := endpointMinApiVersions[endpoint]
+
+	constraint := ">= " + minimumRequiredApiVersion
+	if !vcd.client.Client.APIVCDMaxVersionIs(constraint) {
+		maxSupportedVersion, err := vcd.client.Client.maxSupportedVersion()
+		if err != nil {
+			panic(fmt.Sprintf("Could not get maximum supported version: %s", err))
+		}
+		skipText := fmt.Sprintf("Skipping test because OpenAPI endpoint '%s' must satisfy API version constraint '%s'. Maximum supported version is %s",
+			endpoint, constraint, maxSupportedVersion)
+		check.Skip(skipText)
+	}
 }

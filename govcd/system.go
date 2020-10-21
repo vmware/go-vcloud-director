@@ -431,7 +431,7 @@ func QueryPortGroups(vcdCli *VCDClient, filter string) ([]*types.PortGroupRecord
 func GetExternalNetwork(vcdClient *VCDClient, networkName string) (*ExternalNetwork, error) {
 
 	if !vcdClient.Client.IsSysAdmin {
-		return &ExternalNetwork{}, fmt.Errorf("functionality requires system administrator privileges")
+		return &ExternalNetwork{}, fmt.Errorf("functionality requires System Administrator privileges")
 	}
 
 	extNetworkHREF, err := getExternalNetworkHref(&vcdClient.Client)
@@ -471,7 +471,7 @@ func GetExternalNetwork(vcdClient *VCDClient, networkName string) (*ExternalNetw
 func (vcdClient *VCDClient) GetExternalNetworks() (*types.ExternalNetworkReferences, error) {
 
 	if !vcdClient.Client.IsSysAdmin {
-		return nil, fmt.Errorf("functionality requires system administrator privileges")
+		return nil, fmt.Errorf("functionality requires System Administrator privileges")
 	}
 
 	extNetworkHREF, err := getExternalNetworkHref(&vcdClient.Client)
@@ -561,7 +561,7 @@ func (vcdClient *VCDClient) GetExternalNetworkByNameOrId(identifier string) (*Ex
 func CreateExternalNetwork(vcdClient *VCDClient, externalNetworkData *types.ExternalNetwork) (Task, error) {
 
 	if !vcdClient.Client.IsSysAdmin {
-		return Task{}, fmt.Errorf("functionality requires system administrator privileges")
+		return Task{}, fmt.Errorf("functionality requires System Administrator privileges")
 	}
 
 	err := validateExternalNetwork(externalNetworkData)
@@ -797,6 +797,20 @@ func QueryOrgVdcNetworkByName(vcdCli *VCDClient, name string) ([]*types.QueryRes
 	}
 
 	return results.Results.OrgVdcNetworkRecord, nil
+}
+
+// QueryNsxtManagerByName searches for NSX-T managers available in VCD
+func (vcdCli *VCDClient) QueryNsxtManagerByName(name string) ([]*types.QueryResultNsxtManagerRecordType, error) {
+	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":          "nsxTManager",
+		"filter":        fmt.Sprintf("name==%s", url.QueryEscape(name)),
+		"filterEncoded": "true",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return results.Results.NsxtManagerRecord, nil
 }
 
 // GetOrgByName finds an Organization by name

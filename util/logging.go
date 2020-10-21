@@ -93,11 +93,21 @@ var (
 	// Flag indicating that a log file is open
 	// logOpen bool = false
 
+	// PanicEmptyUserAgent will panic if Request header does not have HTTP User-Agent set This
+	// is generally useful in tests and is off by default.
+	PanicEmptyUserAgent bool = false
+
 	// Text lines used for logging of http requests and responses
 	lineLength int    = 80
 	dashLine   string = strings.Repeat("-", lineLength)
 	hashLine   string = strings.Repeat("#", lineLength)
 )
+
+// TogglePanicEmptyUserAgent allows to enable Panic in test if HTTP User-Agent is missing. This
+// generally is useful in tests and is off by default.
+func TogglePanicEmptyUserAgent(willPanic bool) {
+	PanicEmptyUserAgent = willPanic
+}
 
 func newLogger(logpath string) *log.Logger {
 	var err error
@@ -266,6 +276,11 @@ func includeFunction(caller string) bool {
 
 // Logs the essentials of a HTTP request
 func ProcessRequestOutput(caller, operation, url, payload string, req *http.Request) {
+	// Special behavior for testing that all requests get HTTP User-Agent set
+	if PanicEmptyUserAgent && req.Header.Get("User-Agent") == "" {
+		panic(fmt.Sprintf("empty User-Agent detected in API call to '%s'", url))
+	}
+
 	if !LogHttpRequest {
 		return
 	}
@@ -282,10 +297,11 @@ func ProcessRequestOutput(caller, operation, url, payload string, req *http.Requ
 		payload = "[binary data]"
 	}
 	if dataSize > 0 {
-		Logger.Printf("Request data: [%d] %s\n", dataSize, hidePasswords(payload, false))
+		Logger.Printf("Request data: [%d]\n%s\n", dataSize, hidePasswords(payload, false))
 	}
 	Logger.Printf("Req header:\n")
 	logSanitizedHeader(req.Header)
+
 }
 
 // Logs the essentials of a HTTP response
@@ -329,9 +345,9 @@ func ProcessResponseOutput(caller string, resp *http.Response, result string) {
 	dataSize := len(result)
 	outTextSize := len(outText)
 	if outTextSize != dataSize {
-		Logger.Printf("Response text: [%d -> %d] %s\n", dataSize, outTextSize, hideTokens(outText, false))
+		Logger.Printf("Response text: [%d -> %d]\n%s\n", dataSize, outTextSize, hideTokens(outText, false))
 	} else {
-		Logger.Printf("Response text: [%d] %s\n", dataSize, hideTokens(outText, false))
+		Logger.Printf("Response text: [%d]\n%s\n", dataSize, hideTokens(outText, false))
 	}
 }
 
