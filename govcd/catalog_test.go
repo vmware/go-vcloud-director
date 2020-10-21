@@ -227,7 +227,7 @@ func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
 	check.Assert(err, IsNil)
 	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
-	check.Assert(string(result), Matches, ".*Upload progress 100.00%")
+	check.Assert(string(result), Matches, "(?s).*Upload progress 100.00%.*")
 
 	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
@@ -444,7 +444,7 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_ShowUploadProgress_works(check 
 
 	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage_ShowUploadProgress_works")
 
-	check.Assert(string(result), Matches, ".*Upload progress 100.00%.*")
+	check.Assert(string(result), Matches, "(?s).*Upload progress 100.00%.*")
 	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
