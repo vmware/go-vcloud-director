@@ -456,6 +456,7 @@ type VdcStorageProfile struct {
 	Units                     string     `xml:"Units"`
 	Limit                     int64      `xml:"Limit"`
 	Default                   bool       `xml:"Default"`
+	StorageUsedMB             int64      `xml:"StorageUsedMB"`
 	ProviderVdcStorageProfile *Reference `xml:"ProviderVdcStorageProfile"`
 }
 
