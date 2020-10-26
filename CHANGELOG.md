@@ -1,3 +1,7 @@
+## 2.10.0 (TBD)
+
+* Added methods `adminVdc.UpdateStorageProfile` [#340](https://github.com/vmware/go-vcloud-director/pull/340)
+
 ## 2.9.0 (October 15, 2020)
 
 * Improved testing tags isolation [#320](https://github.com/vmware/go-vcloud-director/pull/320)
