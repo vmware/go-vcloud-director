@@ -87,7 +87,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 					},
 				},
 			},
-			VdcStorageProfile: []*types.VdcStorageProfile{&types.VdcStorageProfile{
+			VdcStorageProfile: []*types.CreateVdcStorageProfile{&types.CreateVdcStorageProfile{
 				Enabled: true,
 				Units:   "MB",
 				Limit:   1024,
@@ -242,7 +242,7 @@ func (vcd *TestVCD) Test_UpdateStorageProfile(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(storageProfileId, NotNil)
 
-	updatedVdc, err := adminVdc.UpdateStorageProfile(storageProfileId, &types.AdminVdcStorageProfile{
+	updatedVdc, err := adminVdc.UpdateStorageProfile(storageProfileId, &types.VdcStorageProfile{
 		Name:                      foundStorageProfile.ProviderVdcStorageProfile.Name,
 		Default:                   true,
 		Limit:                     9081,
