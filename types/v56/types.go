@@ -467,6 +467,23 @@ type CreateVdcStorageProfile struct {
 type VdcStorageProfile struct {
 	Xmlns                     string                         `xml:"xmlns,attr"`
 	Name                      string                         `xml:"name,attr"`
+	Enabled                   bool                           `xml:"Enabled,omitempty"`
+	Units                     string                         `xml:"Units"`
+	Limit                     int64                          `xml:"Limit"`
+	Default                   bool                           `xml:"Default"`
+	IopsSettings              *VdcStorageProfileIopsSettings `xml:"IopsSettingsint64"`
+	StorageUsedMB             int64                          `xml:"StorageUsedMB"`
+	IopsAllocated             int64                          `xml:"IopsAllocated"`
+	ProviderVdcStorageProfile *Reference                     `xml:"ProviderVdcStorageProfile"`
+}
+
+// AdminVdcStorageProfile represents the parameters for fetched storage profile
+// Type: AdminVdcStorageProfileType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/71e12563-bc11-4d64-821d-92d30f8fcfa1/7424bf8e-aec2-44ad-be7d-b98feda7bae0/doc/doc/types/AdminVdcStorageProfileType.html
+type AdminVdcStorageProfile struct {
+	Xmlns                     string                         `xml:"xmlns,attr"`
+	Name                      string                         `xml:"name,attr"`
 	Enabled                   *bool                          `xml:"Enabled,omitempty"`
 	Units                     string                         `xml:"Units"`
 	Limit                     int64                          `xml:"Limit"`
