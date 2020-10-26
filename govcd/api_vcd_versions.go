@@ -289,9 +289,7 @@ func (cli *Client) GetVcdFullVersion() (VcdVersion, error) {
 	if err != nil {
 		return VcdVersion{}, err
 	}
-	// The version returned is in the format "10.2.0.17008054"
-	versionList := strings.Split(version, ".")
-	if len(versionList) < 4 {
+	if len(vcdVersion.Version.Segments()) < 4 {
 		return VcdVersion{}, fmt.Errorf("error getting version digits from version %s", version)
 	}
 	vcdVersion.Time = versionTime
