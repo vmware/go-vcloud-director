@@ -2823,3 +2823,20 @@ type VdcComputePolicyReferences struct {
 	Link                      *Link        `xml:"Link,omitempty"`
 	VdcComputePolicyReference []*Reference `xml:"VdcComputePolicyReference,omitempty"`
 }
+
+// Structure returned by /api/admin call
+type VCloud struct {
+	XMLName     xml.Name `xml:"VCloud"`
+	Xmlns       string   `xml:"xmlns,attr,omitempty"`
+	Name        string   `xml:"name,attr"`
+	HREF        string   `xml:"href,attr"`
+	Type        string   `xml:"type,attr,omitempty"`
+	Description string   `xml:"Description"` // Contains VCD version, build number and build timestamp
+	Link        *Link    `xml:"Link,omitempty"`
+	// TODO: Add other fields if needed
+	// OrganizationReferences
+	// ProviderVdcReferences
+	// RightReferences
+	// RoleReferences
+	// Networks
+}
