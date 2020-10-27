@@ -1,3 +1,7 @@
+## 3.0.0 (Unreleased)
+
+* Added functions to retrieve and use VCD version `client.GetVcdVersion`, `client.GetVcdShortVersion`, `client.GetVcdFullVersion`, `client.VersionEqualOrGreater` [#339](https://github.com/vmware/go-vcloud-director/pull/339)
+
 ## 2.9.0 (October 15, 2020)
 
 * Improved testing tags isolation [#320](https://github.com/vmware/go-vcloud-director/pull/320)
