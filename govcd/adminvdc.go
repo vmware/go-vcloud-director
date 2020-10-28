@@ -416,7 +416,7 @@ func (vdc *AdminVdc) UpdateStorageProfile(storageProfileId string, storageProfil
 	_, err := vdc.client.ExecuteRequest(queryUrl.String(), http.MethodPut,
 		types.MimeStorageProfile, "error updating VDC storage profile: %s", storageProfile, updateAdminVdcStorageProfile)
 	if err != nil {
-		return nil, fmt.Errorf("cannot update VDC storage profil, error: %s", err)
+		return nil, fmt.Errorf("cannot update VDC storage profile, error: %s", err)
 	}
 
 	return updateAdminVdcStorageProfile, err

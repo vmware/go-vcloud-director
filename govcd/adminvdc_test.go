@@ -221,7 +221,7 @@ func (vcd *TestVCD) Test_UpdateVdcFlex(check *C) {
 }
 
 // Tests VDC storage profile update
-func (vcd *TestVCD) Test_UpdateStorageProfile(check *C) {
+func (vcd *TestVCD) Test_VdcUpdateStorageProfile(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
