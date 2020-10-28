@@ -275,12 +275,12 @@ func (vcd *TestVCD) Test_VmAffinityRule(check *C) {
 // makeEmptyVm creates an empty VM inside a given vApp
 func makeEmptyVm(vapp *VApp, name string) (*VM, error) {
 	newDisk := types.DiskSettings{
-		AdapterType:       "5",
-		SizeMb:            int64(100),
-		BusNumber:         0,
-		UnitNumber:        0,
-		ThinProvisioned:   takeBoolPointer(true),
-		OverrideVmDefault: true}
+		AdapterType:     "5",
+		SizeMb:          int64(100),
+		BusNumber:       0,
+		UnitNumber:      0,
+		ThinProvisioned: takeBoolPointer(true),
+	}
 	requestDetails := &types.RecomposeVAppParamsForEmptyVm{
 		CreateItem: &types.CreateItem{
 			Name:                      name,

@@ -1630,43 +1630,10 @@ func (vcd *TestVCD) Test_VMUpdateStorageProfile(check *C) {
 
 	storageProfile, _ = vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
 
-	newDisk := types.DiskSettings{
-		AdapterType:     "5",
-		SizeMb:          int64(16384),
-		BusNumber:       0,
-		UnitNumber:      0,
-		ThinProvisioned: takeBoolPointer(true),
-	}
-
-	requestDetails := &types.RecomposeVAppParamsForEmptyVm{
-		CreateItem: &types.CreateItem{
-			Name:                      "Test_VMUpdateStorageProfile",
-			Description:               "created by Test_VMUpdateStorageProfile",
-			GuestCustomizationSection: nil,
-			VmSpecSection: &types.VmSpecSection{
-				Modified:          takeBoolPointer(true),
-				Info:              "Virtual Machine specification",
-				OsType:            "debian10Guest",
-				NumCpus:           takeIntAddress(2),
-				NumCoresPerSocket: takeIntAddress(1),
-				CpuResourceMhz:    &types.CpuResourceMhz{Configured: 1},
-				MemoryResourceMb:  &types.MemoryResourceMb{Configured: 1024},
-				MediaSection:      nil,
-				DiskSection:       &types.DiskSection{DiskSettings: []*types.DiskSettings{&newDisk}},
-				HardwareVersion:   &types.HardwareVersion{Value: "vmx-13"}, // need support older version vCD
-				VmToolsVersion:    "",
-				VirtualCpuType:    "VM32",
-				TimeSyncWithHost:  nil,
-			},
-			StorageProfile: &storageProfile,
-		},
-		AllEULAsAccepted: true,
-	}
-
-	createdVm, err := vapp.AddEmptyVm(requestDetails)
+	createdVm, err := makeEmptyVm(vapp, "Test_VMUpdateStorageProfile")
 	check.Assert(err, IsNil)
 	check.Assert(createdVm, NotNil)
-	//AddToCleanupList("Test_VMUpdateStorageProfile", "vm", "", "Test_VMUpdateStorageProfile")
+	AddToCleanupList("Test_VMUpdateStorageProfile", "vm", "", "Test_VMUpdateStorageProfile")
 	check.Assert(createdVm.VM.StorageProfile.HREF, Equals, storageProfile.HREF)
 
 	storageProfile2, _ := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP2)
