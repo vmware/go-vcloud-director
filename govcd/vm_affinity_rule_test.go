@@ -272,49 +272,6 @@ func (vcd *TestVCD) Test_VmAffinityRule(check *C) {
 
 }
 
-// makeEmptyVm creates an empty VM inside a given vApp
-func makeEmptyVm(vapp *VApp, name string) (*VM, error) {
-	newDisk := types.DiskSettings{
-		AdapterType:     "5",
-		SizeMb:          int64(100),
-		BusNumber:       0,
-		UnitNumber:      0,
-		ThinProvisioned: takeBoolPointer(true),
-	}
-	requestDetails := &types.RecomposeVAppParamsForEmptyVm{
-		CreateItem: &types.CreateItem{
-			Name:                      name,
-			NetworkConnectionSection:  &types.NetworkConnectionSection{},
-			Description:               "created by makeEmptyVm",
-			GuestCustomizationSection: nil,
-			VmSpecSection: &types.VmSpecSection{
-				Modified:          takeBoolPointer(true),
-				Info:              "Virtual Machine specification",
-				OsType:            "debian10Guest",
-				NumCpus:           takeIntAddress(1),
-				NumCoresPerSocket: takeIntAddress(1),
-				CpuResourceMhz:    &types.CpuResourceMhz{Configured: 1},
-				MemoryResourceMb:  &types.MemoryResourceMb{Configured: 512},
-				MediaSection:      nil,
-				DiskSection:       &types.DiskSection{DiskSettings: []*types.DiskSettings{&newDisk}},
-				HardwareVersion:   &types.HardwareVersion{Value: "vmx-13"},
-				VmToolsVersion:    "",
-				VirtualCpuType:    "VM32",
-				TimeSyncWithHost:  nil,
-			},
-			BootImage: nil,
-		},
-		AllEULAsAccepted: true,
-	}
-
-	vm, err := vapp.AddEmptyVm(requestDetails)
-	if err != nil {
-		return nil, err
-	}
-
-	return vm, nil
-}
-
 // makeVappGroup creates multiple vApps, each with several VMs,
 // as defined in `groupDefinition`.
 // Returns a list of vApps
