@@ -1636,7 +1636,7 @@ func (vcd *TestVCD) Test_VMUpdateStorageProfile(check *C) {
 	check.Assert(createdVm.VM.StorageProfile.HREF, Equals, storageProfile.HREF)
 
 	storageProfile2, _ := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP2)
-	updatedVm, err := createdVm.UpdateStorageProfile(&storageProfile2)
+	updatedVm, err := createdVm.UpdateStorageProfile(storageProfile2.HREF)
 	check.Assert(err, IsNil)
 	check.Assert(updatedVm, NotNil)
 	check.Assert(createdVm.VM.StorageProfile.HREF, Equals, storageProfile2.HREF)

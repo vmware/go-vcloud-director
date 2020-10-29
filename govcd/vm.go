@@ -1792,8 +1792,8 @@ func (client *Client) GetVMByHref(vmHref string) (*VM, error) {
 }
 
 // UpdateStorageProfile updates VM storage profile and returns refreshed VM or error.
-func (vm *VM) UpdateStorageProfile(storageProfileRef *types.Reference) (*VM, error) {
-	task, err := vm.UpdateStorageProfileAsync(storageProfileRef.HREF)
+func (vm *VM) UpdateStorageProfile(storageProfileHref string) (*VM, error) {
+	task, err := vm.UpdateStorageProfileAsync(storageProfileHref)
 	if err != nil {
 		return nil, err
 	}
