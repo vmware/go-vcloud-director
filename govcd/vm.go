@@ -1793,7 +1793,7 @@ func (client *Client) GetVMByHref(vmHref string) (*VM, error) {
 
 // UpdateStorageProfile updates VM storage profile and returns refreshed VM or error.
 func (vm *VM) UpdateStorageProfile(storageProfileRef *types.Reference) (*VM, error) {
-	task, err := vm.UpdateStorageProfileAsync(storageProfileRef)
+	task, err := vm.UpdateStorageProfileAsync(storageProfileRef.HREF)
 	if err != nil {
 		return nil, err
 	}
@@ -1812,9 +1812,12 @@ func (vm *VM) UpdateStorageProfile(storageProfileRef *types.Reference) (*VM, err
 }
 
 // UpdateStorageProfileAsync updates VM storage profile and returns Task and error.
-func (vm *VM) UpdateStorageProfileAsync(storageProfileRef *types.Reference) (Task, error) {
+func (vm *VM) UpdateStorageProfileAsync(storageProfileHref string) (Task, error) {
 	if vm.VM.HREF == "" {
 		return Task{}, fmt.Errorf("cannot update VM storage profile, VM HREF is unset")
+	}
+	if storageProfileHref == "" {
+		return Task{}, fmt.Errorf("cannot update VM storage profile, storage profile HREF is unset")
 	}
 
 	// `reconfigureVm` updates Vm name, Description, and any or all of the following sections.
@@ -1830,6 +1833,6 @@ func (vm *VM) UpdateStorageProfileAsync(storageProfileRef *types.Reference) (Tas
 			Ovf:            types.XMLNamespaceOVF,
 			Name:           vm.VM.Name,
 			Description:    vm.VM.Description,
-			StorageProfile: &types.Reference{HREF: storageProfileRef.HREF},
+			StorageProfile: &types.Reference{HREF: storageProfileHref},
 		})
 }

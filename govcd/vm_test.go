@@ -1615,7 +1615,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
 func (vcd *TestVCD) Test_VMUpdateStorageProfile(check *C) {
 	config := vcd.config
 	if config.VCD.StorageProfile.SP1 == "" || config.VCD.StorageProfile.SP2 == "" {
-		check.Skip("Skipping test because no both storage profile has to be configured")
+		check.Skip("Skipping test because both storage profiles have to be configured")
 	}
 
 	vapp, err := createVappForTest(vcd, "Test_VMUpdateStorageProfile")
@@ -1633,7 +1633,6 @@ func (vcd *TestVCD) Test_VMUpdateStorageProfile(check *C) {
 	createdVm, err := makeEmptyVm(vapp, "Test_VMUpdateStorageProfile")
 	check.Assert(err, IsNil)
 	check.Assert(createdVm, NotNil)
-	AddToCleanupList("Test_VMUpdateStorageProfile", "vm", "", "Test_VMUpdateStorageProfile")
 	check.Assert(createdVm.VM.StorageProfile.HREF, Equals, storageProfile.HREF)
 
 	storageProfile2, _ := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP2)
