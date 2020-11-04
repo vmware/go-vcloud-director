@@ -445,7 +445,7 @@ type AdminVdc struct {
 	UniversalNetworkPoolReference *Reference     `xml:"UniversalNetworkPoolReference,omitempty"` // Reference to a universal network pool
 }
 
-// VdcStorageProfileConfiguration represents the parameters to assign a storage profile in an organization vDC.
+// VdcStorageProfileConfiguration represents the parameters to assign a storage profile in creation of organization vDC.
 // Type: VdcStorageProfileParamsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Represents the parameters to create a storage profile in an organization vDC.
