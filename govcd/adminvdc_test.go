@@ -87,7 +87,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 					},
 				},
 			},
-			VdcStorageProfile: []*types.CreateVdcStorageProfile{&types.CreateVdcStorageProfile{
+			VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
 				Enabled: true,
 				Units:   "MB",
 				Limit:   1024,

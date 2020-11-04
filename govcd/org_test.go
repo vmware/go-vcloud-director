@@ -287,7 +287,7 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 					},
 				},
 			},
-			VdcStorageProfile: []*types.CreateVdcStorageProfile{&types.CreateVdcStorageProfile{
+			VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
 				Enabled: true,
 				Units:   "MB",
 				Limit:   1024,
@@ -573,7 +573,7 @@ func setupVdc(vcd *TestVCD, check *C, allocationModel string) (AdminOrg, *types.
 				},
 			},
 		},
-		VdcStorageProfile: []*types.CreateVdcStorageProfile{&types.CreateVdcStorageProfile{
+		VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
 			Enabled: true,
 			Units:   "MB",
 			Limit:   1024,
