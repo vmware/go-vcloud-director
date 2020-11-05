@@ -87,7 +87,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 					},
 				},
 			},
-			VdcStorageProfile: []*types.VdcStorageProfile{&types.VdcStorageProfile{
+			VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
 				Enabled: true,
 				Units:   "MB",
 				Limit:   1024,
@@ -218,4 +218,49 @@ func (vcd *TestVCD) Test_UpdateVdcFlex(check *C) {
 	check.Assert(math.Abs(*updatedVdc.AdminVdc.ResourceGuaranteedMemory-guaranteed) < 0.001, Equals, true)
 	check.Assert(*updatedVdc.AdminVdc.IsElastic, Equals, true)
 	check.Assert(*updatedVdc.AdminVdc.IncludeMemoryOverhead, Equals, false)
+}
+
+// Tests VDC storage profile update
+func (vcd *TestVCD) Test_VdcUpdateStorageProfile(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	adminOrg, vdcConfiguration, err := setupVdc(vcd, check, "Flex")
+	check.Assert(err, IsNil)
+
+	adminVdc, err := adminOrg.GetAdminVDCByName(vdcConfiguration.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(adminVdc, NotNil)
+
+	foundStorageProfile, err := GetStorageProfileByHref(vcd.client, adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
+	check.Assert(err, IsNil)
+	check.Assert(foundStorageProfile, Not(Equals), types.VdcStorageProfile{})
+	check.Assert(foundStorageProfile, NotNil)
+
+	storageProfileId, err := GetUuidFromHref(adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF, true)
+	check.Assert(err, IsNil)
+	check.Assert(storageProfileId, NotNil)
+
+	updatedVdc, err := adminVdc.UpdateStorageProfile(storageProfileId, &types.AdminVdcStorageProfile{
+		Name:                      foundStorageProfile.ProviderVdcStorageProfile.Name,
+		Default:                   true,
+		Limit:                     9081,
+		Enabled:                   takeBoolPointer(true),
+		Units:                     "MB",
+		IopsSettings:              nil,
+		ProviderVdcStorageProfile: &types.Reference{HREF: foundStorageProfile.ProviderVdcStorageProfile.HREF},
+	})
+	check.Assert(err, IsNil)
+	check.Assert(updatedVdc, Not(IsNil))
+
+	updatedStorageProfile, err := GetStorageProfileByHref(vcd.client, adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
+	check.Assert(err, IsNil)
+	check.Assert(updatedStorageProfile, Not(Equals), types.VdcStorageProfile{})
+	check.Assert(updatedStorageProfile, NotNil)
+
+	check.Assert(updatedStorageProfile.Enabled, Equals, true)
+	check.Assert(updatedStorageProfile.Limit, Equals, int64(9081))
+	check.Assert(updatedStorageProfile.Default, Equals, true)
+	check.Assert(updatedStorageProfile.Units, Equals, "MB")
 }
