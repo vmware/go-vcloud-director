@@ -1611,3 +1611,49 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
 	_, err = adminVdc.SetAssignedComputePolicies(types.VdcComputePolicyReferences{VdcComputePolicyReference: beforeTestPolicyReferences})
 	check.Assert(err, IsNil)
 }
+
+func (vcd *TestVCD) Test_VMUpdateStorageProfile(check *C) {
+	config := vcd.config
+	if config.VCD.StorageProfile.SP1 == "" || config.VCD.StorageProfile.SP2 == "" {
+		check.Skip("Skipping test because both storage profiles have to be configured")
+	}
+
+	vapp, err := createVappForTest(vcd, "Test_VMUpdateStorageProfile")
+	check.Assert(err, IsNil)
+	check.Assert(vapp, NotNil)
+
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(cat, NotNil)
+
+	var storageProfile types.Reference
+
+	storageProfile, _ = vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
+
+	createdVm, err := makeEmptyVm(vapp, "Test_VMUpdateStorageProfile")
+	check.Assert(err, IsNil)
+	check.Assert(createdVm, NotNil)
+	check.Assert(createdVm.VM.StorageProfile.HREF, Equals, storageProfile.HREF)
+
+	storageProfile2, _ := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP2)
+	updatedVm, err := createdVm.UpdateStorageProfile(storageProfile2.HREF)
+	check.Assert(err, IsNil)
+	check.Assert(updatedVm, NotNil)
+	check.Assert(createdVm.VM.StorageProfile.HREF, Equals, storageProfile2.HREF)
+
+	// Cleanup
+	var task Task
+	err = vapp.RemoveVM(*createdVm)
+	check.Assert(err, IsNil)
+
+	// Ensure network is detached from vApp to avoid conflicts in other tests
+	task, err = vapp.RemoveAllNetworks()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+}
