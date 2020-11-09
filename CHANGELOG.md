@@ -2,6 +2,7 @@
 
 * Added functions to retrieve and use VCD version `client.GetVcdVersion`, `client.GetVcdShortVersion`, `client.GetVcdFullVersion`, `client.VersionEqualOrGreater` [#339](https://github.com/vmware/go-vcloud-director/pull/339)
 * Added methods `VM.UpdateStorageProfile`, `VM.UpdateStorageProfileAsync` [#338](https://github.com/vmware/go-vcloud-director/pull/338)
+* Added support for bearer tokens [#341](https://github.com/vmware/go-vcloud-director/pull/341)
 
 ## 2.9.0 (October 15, 2020)
 
