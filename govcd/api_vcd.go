@@ -74,8 +74,8 @@ func (vcdCli *VCDClient) vcdAuthorize(user, pass, org string) (*http.Response, e
 	}
 	defer resp.Body.Close()
 	// Store the authorization header
-	vcdCli.Client.VCDToken = resp.Header.Get(AuthorizationHeader)
-	vcdCli.Client.VCDAuthHeader = AuthorizationHeader
+	vcdCli.Client.VCDToken = resp.Header.Get(BearerTokenHeader)
+	vcdCli.Client.VCDAuthHeader = BearerTokenHeader
 	vcdCli.Client.IsSysAdmin = strings.EqualFold(org, "system")
 	// Get query href
 	vcdCli.QueryHREF = vcdCli.Client.VCDHREF
@@ -160,7 +160,6 @@ func (vcdCli *VCDClient) GetAuthResponse(username, password, org string) (*http.
 // Up to version 29, token authorization uses the the header key x-vcloud-authorization
 // In version 30+ it also uses X-Vmware-Vcloud-Access-Token:TOKEN coupled with
 // X-Vmware-Vcloud-Token-Type:"bearer"
-// TODO: when enabling version 30+ for SDK, add ability of using bearer token
 func (vcdCli *VCDClient) SetToken(org, authHeader, token string) error {
 	vcdCli.Client.VCDAuthHeader = authHeader
 	vcdCli.Client.VCDToken = token
