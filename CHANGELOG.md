@@ -9,7 +9,6 @@
 BREAKING CHANGES:
 
 * type.VdcConfiguration (used for creation) changed the type for storage profile from `[]*VdcStorageProfile` to `[]*VdcStorageProfileConfiguration`
->>>>>>> master
 
 ## 2.9.0 (October 15, 2020)
 
