@@ -66,27 +66,27 @@ type Config struct {
 // Checks that a configuration structure is complete
 func check_configuration(conf Config) {
 	will_exit := false
-	abort := func(s string) {
+	exit := func(s string) {
 		fmt.Printf("configuration field '%s' empty or missing\n", s)
 		will_exit = true
 	}
 	if conf.Org == "" {
-		abort("org")
+		exit("org")
 	}
 	if conf.Href == "" || conf.Href == "https://YOUR_VCD_IP/api" {
-		abort("href")
+		exit("href")
 	}
 	if conf.VDC == "" {
-		abort("vdc")
+		exit("vdc")
 	}
 	if conf.Token != "" {
 		return
 	}
 	if conf.User == "" {
-		abort("user")
+		exit("user")
 	}
 	if conf.Password == "" {
-		abort("password")
+		exit("password")
 	}
 	if will_exit {
 		os.Exit(1)

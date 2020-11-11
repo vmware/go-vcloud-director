@@ -9,7 +9,7 @@ cd $SRCROOT
 DESTINATION_SRC=/go/src/github.com/vmware/go-vcloud-director
 
 # Build the Docker image using the current uid/gid so
-# repeat iterations of the Jenkins environment can 
+# repeat iterations of the Jenkins environment can
 # properly cleanup the workspace.
 DOCKER_BUILD=`docker build -q \
     --build-arg build_user=${USER} \
@@ -26,7 +26,7 @@ if [ "$GOVCD_CONFIG" != "" ]; then
     echo "$VCD_ARGS"
 else
     # If the GOVCD configuration is not set, we can't run the tests
-    # So we abort as early as possible and then investigate
+    # So we interrupt as early as possible and then investigate
     echo "$0: GOVCD_CONFIG not set"
     exit 1
 fi
