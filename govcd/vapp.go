@@ -417,7 +417,7 @@ func (vapp *VApp) Customize(computername, script string, changeSid bool) (Task, 
 
 	// Check if VApp Children is populated
 	if vapp.VApp.Children == nil {
-		return Task{}, fmt.Errorf("vApp doesn't contain any children, aborting customization")
+		return Task{}, fmt.Errorf("vApp doesn't contain any children, interrupting customization")
 	}
 
 	vu := &types.GuestCustomizationSection{
@@ -521,7 +521,7 @@ func (vapp *VApp) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *in
 
 	// Check if VApp Children is populated
 	if vapp.VApp.Children == nil {
-		return Task{}, fmt.Errorf("vApp doesn't contain any children, aborting customization")
+		return Task{}, fmt.Errorf("vApp doesn't contain any children, interrupting customization")
 	}
 
 	newcpu := &types.OVFItem{
@@ -562,7 +562,7 @@ func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
 	}
 
 	if vapp.VApp.Children == nil || len(vapp.VApp.Children.VM) == 0 {
-		return Task{}, fmt.Errorf("vApp doesn't contain any children, aborting customization")
+		return Task{}, fmt.Errorf("vApp doesn't contain any children, interrupting customization")
 	}
 
 	vdc, err := vapp.getParentVDC()
@@ -593,7 +593,7 @@ func (vapp *VApp) ChangeVMName(name string) (Task, error) {
 	}
 
 	if vapp.VApp.Children == nil {
-		return Task{}, fmt.Errorf("vApp doesn't contain any children, aborting customization")
+		return Task{}, fmt.Errorf("vApp doesn't contain any children, interrupting customization")
 	}
 
 	newName := &types.VM{
@@ -616,11 +616,11 @@ func (vapp *VApp) SetOvf(parameters map[string]string) (Task, error) {
 	}
 
 	if vapp.VApp.Children == nil {
-		return Task{}, fmt.Errorf("vApp doesn't contain any children, aborting customization")
+		return Task{}, fmt.Errorf("vApp doesn't contain any children, interrupting customization")
 	}
 
 	if vapp.VApp.Children.VM[0].ProductSection == nil {
-		return Task{}, fmt.Errorf("vApp doesn't contain any children with ProductSection, aborting customization")
+		return Task{}, fmt.Errorf("vApp doesn't contain any children with ProductSection, interrupting customization")
 	}
 
 	for key, value := range parameters {
@@ -653,7 +653,7 @@ func (vapp *VApp) ChangeNetworkConfig(networks []map[string]interface{}, ip stri
 	}
 
 	if vapp.VApp.Children == nil {
-		return Task{}, fmt.Errorf("vApp doesn't contain any children, aborting customization")
+		return Task{}, fmt.Errorf("vApp doesn't contain any children, interrupting customization")
 	}
 
 	networksection, err := vapp.GetNetworkConnectionSection()
@@ -714,7 +714,7 @@ func (vapp *VApp) ChangeMemorySize(size int) (Task, error) {
 
 	// Check if VApp Children is populated
 	if vapp.VApp.Children == nil {
-		return Task{}, fmt.Errorf("vApp doesn't contain any children, aborting customization")
+		return Task{}, fmt.Errorf("vApp doesn't contain any children, interrupting customization")
 	}
 
 	newMem := &types.OVFItem{

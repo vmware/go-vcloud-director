@@ -79,7 +79,7 @@ var (
 	LogHttpResponse bool = true
 
 	// List of tags to be excluded from logging
-	skipTags = []string{"SupportedVersions", "ovf:License"}
+	skipTags = []string{"ovf:License"}
 
 	// List of functions included in logging
 	// If this variable is filled, only operations from matching function names will be logged

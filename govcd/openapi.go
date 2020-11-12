@@ -604,6 +604,12 @@ func (client *Client) newOpenApiRequest(apiVersion string, params url.Values, me
 	if client.VCDAuthHeader != "" && client.VCDToken != "" {
 		// Add the authorization header
 		req.Header.Add(client.VCDAuthHeader, client.VCDToken)
+		// The deprecated authorization token is 32 characters long
+		// The bearer token is 612 characters long
+		if len(client.VCDToken) > 32 {
+			req.Header.Add("Authorization", "bearer "+client.VCDToken)
+			req.Header.Add("X-Vmware-Vcloud-Token-Type", "Bearer")
+		}
 		// Add the Accept header for VCD
 		acceptMime := types.JSONMime + ";version=" + apiVersion
 		req.Header.Add("Accept", acceptMime)
