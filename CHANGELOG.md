@@ -5,6 +5,7 @@
 * Added methods `adminVdc.UpdateStorageProfile` [#340](https://github.com/vmware/go-vcloud-director/pull/340)
 * Added transparent support for bearer tokens [#341](https://github.com/vmware/go-vcloud-director/pull/341)
 * Added transparent connection using `cloudapi/1.0.0/sessions` when access through `api/sessions` is disabled
+* Added functions `edge.GetLbAppRules`, `edge.GetLbServerPools`, `edge.GetLbAppProfiles`, `edge.GetNsxvNatRules`
 
 BREAKING CHANGES:
 

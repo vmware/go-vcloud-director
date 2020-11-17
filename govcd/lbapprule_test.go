@@ -57,6 +57,17 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 
 	check.Assert(createdLbAppRule.Script, Equals, lbAppRuleConfig.Script)
 
+	// Test that we can extract a list of LB app rules, and that one of them is the rule we have got when searching by name
+	lbAppRules, err := edge.GetLbAppRules()
+	check.Assert(err, IsNil)
+	foundRule := false
+	for _, rule := range lbAppRules {
+		if rule.Name == lbAppRuleByName.Name && rule.ID == lbAppRuleByName.ID {
+			foundRule = true
+		}
+	}
+	check.Assert(foundRule, Equals, true)
+
 	// Test updating fields
 	// Update script to be multi-line
 	lbAppRuleByID.Script = "acl other_page url_beg / other redirect location https://www.other.com/ ifother_page\n" +

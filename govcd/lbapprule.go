@@ -44,13 +44,8 @@ func (egw *EdgeGateway) CreateLbAppRule(lbAppRuleConfig *types.LbAppRule) (*type
 	return readAppRule, nil
 }
 
-// getLbAppRule is able to find the types.LbAppRule type by Name and/or ID.
-// If both - Name and ID are specified it performs a lookup by ID and returns an error if the specified name and found
-// name do not match.
-func (egw *EdgeGateway) getLbAppRule(lbAppRuleConfig *types.LbAppRule) (*types.LbAppRule, error) {
-	if err := validateGetLbAppRule(lbAppRuleConfig, egw); err != nil {
-		return nil, err
-	}
+// GetLbAppRules returns a list of all LB application rules for a given edge gateway
+func (egw *EdgeGateway) GetLbAppRules() ([]*types.LbAppRule, error) {
 
 	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LbAppRulePath)
 	if err != nil {
@@ -68,9 +63,24 @@ func (egw *EdgeGateway) getLbAppRule(lbAppRuleConfig *types.LbAppRule) (*types.L
 	if err != nil {
 		return nil, err
 	}
+	return lbAppRuleResponse.LbAppRules, nil
+}
+
+// getLbAppRule is able to find the types.LbAppRule type by Name and/or ID.
+// If both - Name and ID are specified it performs a lookup by ID and returns an error if the specified name and found
+// name do not match.
+func (egw *EdgeGateway) getLbAppRule(lbAppRuleConfig *types.LbAppRule) (*types.LbAppRule, error) {
+	if err := validateGetLbAppRule(lbAppRuleConfig, egw); err != nil {
+		return nil, err
+	}
+
+	lbAppRules, err := egw.GetLbAppRules()
+	if err != nil {
+		return nil, err
+	}
 
 	// Search for application rule by ID or by Name
-	for _, rule := range lbAppRuleResponse.LbAppRules {
+	for _, rule := range lbAppRules {
 		// If ID was specified for lookup - look for the same ID
 		if lbAppRuleConfig.ID != "" && rule.ID == lbAppRuleConfig.ID {
 			return rule, nil

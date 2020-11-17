@@ -44,14 +44,8 @@ func (egw *EdgeGateway) CreateLbAppProfile(lbAppProfileConfig *types.LbAppProfil
 	return readAppProfile, nil
 }
 
-// getLbAppProfile is able to find the types.LbAppProfile type by Name and/or ID.
-// If both - Name and ID are specified it performs a lookup by ID and returns an error if the specified name and found
-// name do not match.
-func (egw *EdgeGateway) getLbAppProfile(lbAppProfileConfig *types.LbAppProfile) (*types.LbAppProfile, error) {
-	if err := validateGetLbAppProfile(lbAppProfileConfig, egw); err != nil {
-		return nil, err
-	}
-
+// GetLbAppProfiles returns a list of all LB application profiles in a given edge gateway
+func (egw *EdgeGateway) GetLbAppProfiles() ([]*types.LbAppProfile, error) {
 	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LbAppProfilePath)
 	if err != nil {
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
@@ -68,9 +62,24 @@ func (egw *EdgeGateway) getLbAppProfile(lbAppProfileConfig *types.LbAppProfile) 
 	if err != nil {
 		return nil, err
 	}
+	return lbAppProfileResponse.LbAppProfiles, nil
+}
+
+// getLbAppProfile is able to find the types.LbAppProfile type by Name and/or ID.
+// If both - Name and ID are specified it performs a lookup by ID and returns an error if the specified name and found
+// name do not match.
+func (egw *EdgeGateway) getLbAppProfile(lbAppProfileConfig *types.LbAppProfile) (*types.LbAppProfile, error) {
+	if err := validateGetLbAppProfile(lbAppProfileConfig, egw); err != nil {
+		return nil, err
+	}
+
+	lbAppProfiles, err := egw.GetLbAppProfiles()
+	if err != nil {
+		return nil, err
+	}
 
 	// Search for application profile by ID or by Name
-	for _, profile := range lbAppProfileResponse.LbAppProfiles {
+	for _, profile := range lbAppProfiles {
 		// If ID was specified for lookup - look for the same ID
 		if lbAppProfileConfig.ID != "" && profile.ID == lbAppProfileConfig.ID {
 			return profile, nil
