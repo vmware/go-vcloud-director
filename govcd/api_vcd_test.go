@@ -500,7 +500,12 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Running on vCD %s\nas user %s@%s (using %s)\n", vcd.config.Provider.Url,
+	versionInfo := ""
+	version, versionTime, err := vcd.client.Client.GetVcdVersion()
+	if err == nil {
+		versionInfo = fmt.Sprintf("version %s built at %s", version, versionTime)
+	}
+	fmt.Printf("Running on vCD %s (%s)\nas user %s@%s (using %s)\n", vcd.config.Provider.Url, versionInfo,
 		vcd.config.Provider.User, vcd.config.Provider.SysOrg, authenticationMode)
 	if !vcd.client.Client.IsSysAdmin {
 		vcd.skipAdminTests = true

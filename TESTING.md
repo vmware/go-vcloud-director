@@ -11,7 +11,7 @@ If no environmental variable is set it will default to `govcd_test_config.yaml` 
 
 See `./govcd/sample_govcd_test_config.yaml`.
 
-Users must specify their username, password, API endpoint, vcd and org for any tests to run. Otherwise all tests get aborted. For more comprehensive testing the catalog, catalog item, storage profile, network, edge gateway, IP fields can be set using the format in the sample.
+Users must specify their username, password, API endpoint, vcd and org for any tests to run. Otherwise all tests get stopped. For more comprehensive testing the catalog, catalog item, storage profile, network, edge gateway, IP fields can be set using the format in the sample.
 Note that all the entities included in the configuration file must exist already and will not be removed or left altered during the tests. Leaving a field blank will skip one or more corresponding tests.
 
 If you are more comfortable with JSON, you can supply the configuration in that format. The field names are the same. See `./govcd/sample_govcd_test_config.json`.

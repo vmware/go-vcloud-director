@@ -114,7 +114,6 @@ const (
 	RelVimServerDvSwitches = "vimServerDvSwitches"
 
 	RelCollaborationResume    = "resume"
-	RelCollaborationAbort     = "abort"
 	RelCollaborationFail      = "fail"
 	RelEnterMaintenanceMode   = "enterMaintenanceMode"
 	RelExitMaintenanceMode    = "exitMaintenanceMode"

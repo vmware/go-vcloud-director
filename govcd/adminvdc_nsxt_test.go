@@ -70,7 +70,7 @@ func (vcd *TestVCD) Test_CreateNsxtOrgVdc(check *C) {
 					},
 				},
 			},
-			VdcStorageProfile: []*types.VdcStorageProfile{&types.VdcStorageProfile{
+			VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
 				Enabled: true,
 				Units:   "MB",
 				Limit:   1024,

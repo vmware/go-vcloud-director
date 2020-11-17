@@ -445,18 +445,65 @@ type AdminVdc struct {
 	UniversalNetworkPoolReference *Reference     `xml:"UniversalNetworkPoolReference,omitempty"` // Reference to a universal network pool
 }
 
-// VdcStorageProfile represents the parameters to create a storage profile in an organization vDC.
+// VdcStorageProfileConfiguration represents the parameters to assign a storage profile in creation of organization vDC.
 // Type: VdcStorageProfileParamsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Represents the parameters to create a storage profile in an organization vDC.
 // Since: 5.1
 // https://code.vmware.com/apis/220/vcloud#/doc/doc/types/VdcStorageProfileParamsType.html
-type VdcStorageProfile struct {
+type VdcStorageProfileConfiguration struct {
 	Enabled                   bool       `xml:"Enabled,omitempty"`
 	Units                     string     `xml:"Units"`
 	Limit                     int64      `xml:"Limit"`
 	Default                   bool       `xml:"Default"`
 	ProviderVdcStorageProfile *Reference `xml:"ProviderVdcStorageProfile"`
+}
+
+// VdcStorageProfile represents the parameters for fetched storage profile
+// Type: VdcStorageProfileParamsType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VdcStorageProfileType.html
+// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/71e12563-bc11-4d64-821d-92d30f8fcfa1/7424bf8e-aec2-44ad-be7d-b98feda7bae0/doc/doc/types/AdminVdcStorageProfileType.html
+type VdcStorageProfile struct {
+	Xmlns                     string                         `xml:"xmlns,attr"`
+	Name                      string                         `xml:"name,attr"`
+	Enabled                   bool                           `xml:"Enabled,omitempty"`
+	Units                     string                         `xml:"Units"`
+	Limit                     int64                          `xml:"Limit"`
+	Default                   bool                           `xml:"Default"`
+	IopsSettings              *VdcStorageProfileIopsSettings `xml:"IopsSettingsint64"`
+	StorageUsedMB             int64                          `xml:"StorageUsedMB"`
+	IopsAllocated             int64                          `xml:"IopsAllocated"`
+	ProviderVdcStorageProfile *Reference                     `xml:"ProviderVdcStorageProfile"`
+}
+
+// AdminVdcStorageProfile represents the parameters for fetched storage profile
+// Type: AdminVdcStorageProfileType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/71e12563-bc11-4d64-821d-92d30f8fcfa1/7424bf8e-aec2-44ad-be7d-b98feda7bae0/doc/doc/types/AdminVdcStorageProfileType.html
+type AdminVdcStorageProfile struct {
+	Xmlns                     string                         `xml:"xmlns,attr"`
+	Name                      string                         `xml:"name,attr"`
+	Enabled                   *bool                          `xml:"Enabled,omitempty"`
+	Units                     string                         `xml:"Units"`
+	Limit                     int64                          `xml:"Limit"`
+	Default                   bool                           `xml:"Default"`
+	IopsSettings              *VdcStorageProfileIopsSettings `xml:"IopsSettingsint64"`
+	StorageUsedMB             int64                          `xml:"StorageUsedMB"`
+	IopsAllocated             int64                          `xml:"IopsAllocated"`
+	ProviderVdcStorageProfile *Reference                     `xml:"ProviderVdcStorageProfile"`
+}
+
+// VdcStorageProfileIopsSettings represents the parameters for VDC storage profiles Iops settings.
+// Type: VdcStorageProfileIopsSettings
+// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/71e12563-bc11-4d64-821d-92d30f8fcfa1/7424bf8e-aec2-44ad-be7d-b98feda7bae0/doc/doc/types/VdcStorageProfileIopsSettingsType.html
+type VdcStorageProfileIopsSettings struct {
+	Xmlns                   string `xml:"xmlns,attr"`
+	Enabled                 bool   `xml:"enabled"`
+	DiskIopsMax             int64  `xml:"diskIopsMax,"`
+	DiskIopsDefault         int64  `xml:"diskIopsDefault"`
+	StorageProfileIopsLimit int64  `xml:"storageProfileIopsLimit,omitempty"`
+	DiskIopsPerGbMax        int64  `xml:"diskIopsPerGbMax"`
 }
 
 // VdcConfiguration models the payload for creating a VDC.
@@ -466,28 +513,29 @@ type VdcStorageProfile struct {
 // Since: 5.1
 // https://code.vmware.com/apis/220/vcloud#/doc/doc/types/CreateVdcParamsType.html
 type VdcConfiguration struct {
-	XMLName                  xml.Name             `xml:"CreateVdcParams"`
-	Xmlns                    string               `xml:"xmlns,attr"`
-	Name                     string               `xml:"name,attr"`
-	Description              string               `xml:"Description,omitempty"`
-	AllocationModel          string               `xml:"AllocationModel"` // Flex supported from 32.0
-	ComputeCapacity          []*ComputeCapacity   `xml:"ComputeCapacity"`
-	NicQuota                 int                  `xml:"NicQuota,omitempty"`
-	NetworkQuota             int                  `xml:"NetworkQuota,omitempty"`
-	VmQuota                  int                  `xml:"VmQuota,omitempty"`
-	IsEnabled                bool                 `xml:"IsEnabled,omitempty"`
-	VdcStorageProfile        []*VdcStorageProfile `xml:"VdcStorageProfile"`
-	ResourceGuaranteedMemory *float64             `xml:"ResourceGuaranteedMemory,omitempty"`
-	ResourceGuaranteedCpu    *float64             `xml:"ResourceGuaranteedCpu,omitempty"`
-	VCpuInMhz                int64                `xml:"VCpuInMhz,omitempty"`
-	IsThinProvision          bool                 `xml:"IsThinProvision,omitempty"`
-	NetworkPoolReference     *Reference           `xml:"NetworkPoolReference,omitempty"`
-	ProviderVdcReference     *Reference           `xml:"ProviderVdcReference"`
-	UsesFastProvisioning     bool                 `xml:"UsesFastProvisioning,omitempty"`
-	OverCommitAllowed        bool                 `xml:"OverCommitAllowed,omitempty"`
-	VmDiscoveryEnabled       bool                 `xml:"VmDiscoveryEnabled,omitempty"`
-	IsElastic                *bool                `xml:"IsElastic,omitempty"`             // Supported from 32.0 for the Flex model
-	IncludeMemoryOverhead    *bool                `xml:"IncludeMemoryOverhead,omitempty"` // Supported from 32.0 for the Flex model
+	XMLName         xml.Name           `xml:"CreateVdcParams"`
+	Xmlns           string             `xml:"xmlns,attr"`
+	Name            string             `xml:"name,attr"`
+	Description     string             `xml:"Description,omitempty"`
+	AllocationModel string             `xml:"AllocationModel"` // Flex supported from 32.0
+	ComputeCapacity []*ComputeCapacity `xml:"ComputeCapacity"`
+	NicQuota        int                `xml:"NicQuota,omitempty"`
+	NetworkQuota    int                `xml:"NetworkQuota,omitempty"`
+	VmQuota         int                `xml:"VmQuota,omitempty"`
+	IsEnabled       bool               `xml:"IsEnabled,omitempty"`
+	// Create uses VdcStorageProfileConfiguration and fetch AdminVdcStorageProfile or VdcStorageProfile
+	VdcStorageProfile        []*VdcStorageProfileConfiguration `xml:"VdcStorageProfile"`
+	ResourceGuaranteedMemory *float64                          `xml:"ResourceGuaranteedMemory,omitempty"`
+	ResourceGuaranteedCpu    *float64                          `xml:"ResourceGuaranteedCpu,omitempty"`
+	VCpuInMhz                int64                             `xml:"VCpuInMhz,omitempty"`
+	IsThinProvision          bool                              `xml:"IsThinProvision,omitempty"`
+	NetworkPoolReference     *Reference                        `xml:"NetworkPoolReference,omitempty"`
+	ProviderVdcReference     *Reference                        `xml:"ProviderVdcReference"`
+	UsesFastProvisioning     bool                              `xml:"UsesFastProvisioning,omitempty"`
+	OverCommitAllowed        bool                              `xml:"OverCommitAllowed,omitempty"`
+	VmDiscoveryEnabled       bool                              `xml:"VmDiscoveryEnabled,omitempty"`
+	IsElastic                *bool                             `xml:"IsElastic,omitempty"`             // Supported from 32.0 for the Flex model
+	IncludeMemoryOverhead    *bool                             `xml:"IncludeMemoryOverhead,omitempty"` // Supported from 32.0 for the Flex model
 }
 
 // Task represents an asynchronous operation in vCloud Director.
@@ -2822,4 +2870,21 @@ type VdcComputePolicyReferences struct {
 	Type                      string       `xml:"type,attr,omitempty"`
 	Link                      *Link        `xml:"Link,omitempty"`
 	VdcComputePolicyReference []*Reference `xml:"VdcComputePolicyReference,omitempty"`
+}
+
+// Structure returned by /api/admin call
+type VCloud struct {
+	XMLName     xml.Name `xml:"VCloud"`
+	Xmlns       string   `xml:"xmlns,attr,omitempty"`
+	Name        string   `xml:"name,attr"`
+	HREF        string   `xml:"href,attr"`
+	Type        string   `xml:"type,attr,omitempty"`
+	Description string   `xml:"Description"` // Contains VCD version, build number and build timestamp
+	Link        *Link    `xml:"Link,omitempty"`
+	// TODO: Add other fields if needed
+	// OrganizationReferences
+	// ProviderVdcReferences
+	// RightReferences
+	// RoleReferences
+	// Networks
 }

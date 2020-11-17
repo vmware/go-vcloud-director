@@ -57,6 +57,9 @@ type Client struct {
 // AuthorizationHeader header key used by default to set the authorization token.
 const AuthorizationHeader = "X-Vcloud-Authorization"
 
+// BearerTokenHeader is the header key containing a bearer token
+const BearerTokenHeader = "X-Vmware-Vcloud-Access-Token"
+
 // General purpose error to be used whenever an entity is not found from a "GET" request
 // Allows a simpler checking of the call result
 // such as
@@ -205,6 +208,12 @@ func (cli *Client) newRequest(params map[string]string, notEncodedParams map[str
 		(additionalHeader != nil && additionalHeader.Get("Authorization") != "") {
 		// Add the Accept header for VCD
 		req.Header.Add("Accept", "application/*+xml;version="+apiVersion)
+	}
+	// The deprecated authorization token is 32 characters long
+	// The bearer token is 612 characters long
+	if len(cli.VCDToken) > 32 {
+		req.Header.Add("X-Vmware-Vcloud-Token-Type", "Bearer")
+		req.Header.Add("Authorization", "bearer "+cli.VCDToken)
 	}
 
 	// Merge in additional headers before logging if any where specified in additionalHeader

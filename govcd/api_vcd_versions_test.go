@@ -8,7 +8,11 @@ package govcd
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
+	"time"
 
+	"github.com/kr/pretty"
 	. "gopkg.in/check.v1"
 )
 
@@ -124,4 +128,59 @@ func getMockVcdWithAPIVersion(version string) *VCDClient {
 			},
 		},
 	}
+}
+
+func (vcd *TestVCD) Test_GetVcdVersion(check *C) {
+
+	version, versionTime, err := vcd.client.Client.GetVcdVersion()
+	check.Assert(err, IsNil)
+	check.Assert(version, Not(Equals), "")
+	check.Assert(versionTime, Not(Equals), time.Time{})
+	reVersion := regexp.MustCompile(`^\d+\.\d+\.\d+\.\d+`)
+	check.Assert(reVersion.MatchString(version), Equals, true)
+
+	fmt.Printf("VERSION %s\n", version)
+	fmt.Printf("DATE    %s\n", versionTime)
+
+	shortVersion, err := vcd.client.Client.GetVcdShortVersion()
+	check.Assert(err, IsNil)
+	check.Assert(shortVersion, Not(Equals), "")
+	check.Assert(strings.HasPrefix(version, shortVersion), Equals, true)
+	if testVerbose {
+		fmt.Printf("SHORT VERSION %s\n", shortVersion)
+	}
+
+	fullVersion, err := vcd.client.Client.GetVcdFullVersion()
+	check.Assert(err, IsNil)
+	digits := fullVersion.Version.Segments()
+	check.Assert(len(digits), Not(Equals), 0)
+	check.Assert(shortVersion, Equals, fmt.Sprintf("%d.%d.%d", digits[0], digits[1], digits[2]))
+
+	if testVerbose {
+		fmt.Printf("FULL VERSION %# v\n", pretty.Formatter(fullVersion))
+	}
+
+	// Comparing the current version against itself, without build. Expected result: equal
+	result, err := vcd.client.Client.VersionEqualOrGreater(version, 3)
+	check.Assert(err, IsNil)
+	check.Assert(result, Equals, true)
+
+	// Comparing the current version against itself, with build. Expected result: equal
+	result, err = vcd.client.Client.VersionEqualOrGreater(version, 4)
+	check.Assert(err, IsNil)
+	check.Assert(result, Equals, true)
+
+	digits[3] -= 1
+	smallerBuild := intListToVersion(digits, 4)
+	// Comparing the current version against same version, with smaller build. Expected result: greater
+	result, err = vcd.client.Client.VersionEqualOrGreater(smallerBuild, 4)
+	check.Assert(err, IsNil)
+	check.Assert(result, Equals, true)
+
+	// Comparing the current version against same version, with bigger build. Expected result: less
+	digits[3] += 2
+	biggerBuild := intListToVersion(digits, 4)
+	result, err = vcd.client.Client.VersionEqualOrGreater(biggerBuild, 4)
+	check.Assert(err, IsNil)
+	check.Assert(result, Equals, false)
 }

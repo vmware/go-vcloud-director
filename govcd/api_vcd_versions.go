@@ -7,11 +7,15 @@ package govcd
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"sort"
 	"strings"
+	"time"
 
+	"github.com/araddon/dateparse"
 	semver "github.com/hashicorp/go-version"
 
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
@@ -25,6 +29,12 @@ type VersionInfos []VersionInfo
 
 type SupportedVersions struct {
 	VersionInfos `xml:"VersionInfo"`
+}
+
+// VcdVersion contains the full information about a VCD version
+type VcdVersion struct {
+	Version *semver.Version
+	Time    time.Time
 }
 
 // apiVersionToVcdVersion gets the vCD version from max supported API version
@@ -221,4 +231,119 @@ func (cli *Client) GetSpecificApiVersionOnCondition(vcdApiVersionCondition, want
 		apiVersion = wantedApiVersion
 	}
 	return apiVersion
+}
+
+// GetVcdVersion finds the VCD version and the time of build
+func (cli *Client) GetVcdVersion() (string, time.Time, error) {
+
+	path := cli.VCDHREF
+	path.Path += "/admin"
+	var admin types.VCloud
+	_, err := cli.ExecuteRequest(path.String(), http.MethodGet,
+		"", "error retrieving admin info: %s", nil, &admin)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	description := admin.Description
+
+	if description == "" {
+		return "", time.Time{}, fmt.Errorf("no version information found")
+	}
+	reVersion := regexp.MustCompile(`^\s*(\S+)\s+(.*)`)
+
+	versionList := reVersion.FindAllStringSubmatch(description, -1)
+
+	if len(versionList) == 0 || len(versionList[0]) < 2 {
+		return "", time.Time{}, fmt.Errorf("error getting version information from description %s", description)
+	}
+	version := versionList[0][1]
+	versionDate := versionList[0][2]
+	versionTime, err := dateparse.ParseStrict(versionDate)
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("[version %s] could not convert date %s to formal date: %s", version, versionDate, err)
+	}
+
+	return version, versionTime, nil
+}
+
+// GetVcdShortVersion returns the VCD version (three digits, no build info)
+func (cli *Client) GetVcdShortVersion() (string, error) {
+
+	vcdVersion, err := cli.GetVcdFullVersion()
+	if err != nil {
+		return "", fmt.Errorf("error getting version digits: %s", err)
+	}
+	digits := vcdVersion.Version.Segments()
+	return fmt.Sprintf("%d.%d.%d", digits[0], digits[1], digits[2]), nil
+}
+
+// GetVcdFullVersion returns the full VCD version information as a structure
+func (cli *Client) GetVcdFullVersion() (VcdVersion, error) {
+	var vcdVersion VcdVersion
+	version, versionTime, err := cli.GetVcdVersion()
+	if err != nil {
+		return VcdVersion{}, err
+	}
+
+	vcdVersion.Version, err = semver.NewVersion(version)
+	if err != nil {
+		return VcdVersion{}, err
+	}
+	if len(vcdVersion.Version.Segments()) < 4 {
+		return VcdVersion{}, fmt.Errorf("error getting version digits from version %s", version)
+	}
+	vcdVersion.Time = versionTime
+	return vcdVersion, nil
+}
+
+// intListToVersion converts a list of integers into a dot-separated string
+func intListToVersion(digits []int, atMost int) string {
+	result := ""
+	for i, digit := range digits {
+		if result != "" {
+			result += "."
+		}
+		if i >= atMost {
+			result += "0"
+		} else {
+			result += fmt.Sprintf("%d", digit)
+		}
+	}
+	return result
+}
+
+// VersionEqualOrGreater return true if the current version is the same or greater than the one being compared.
+// If howManyDigits is > 3, the comparison includes the build.
+// Examples:
+//  client version is 1.2.3.1234
+//  compare version is 1.2.3.2000
+// function return true if howManyDigits is <= 3, but false if howManyDigits is > 3
+//
+//  client version is 1.2.3.1234
+//  compare version is 1.1.1.0
+// function returns true regardless of value of howManyDigits
+func (cli *Client) VersionEqualOrGreater(compareTo string, howManyDigits int) (bool, error) {
+
+	fullVersion, err := cli.GetVcdFullVersion()
+	if err != nil {
+		return false, err
+	}
+	compareToVersion, err := semver.NewVersion(compareTo)
+	if err != nil {
+		return false, err
+	}
+	if howManyDigits < 4 {
+		currentString := intListToVersion(fullVersion.Version.Segments(), howManyDigits)
+		compareToString := intListToVersion(compareToVersion.Segments(), howManyDigits)
+		fullVersion.Version, err = semver.NewVersion(currentString)
+		if err != nil {
+			return false, err
+		}
+		compareToVersion, err = semver.NewVersion(compareToString)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	return fullVersion.Version.GreaterThanOrEqual(compareToVersion), nil
 }
