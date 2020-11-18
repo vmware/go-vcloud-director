@@ -111,7 +111,7 @@ func (egw *EdgeGateway) GetNsxvNatRules() ([]*types.EdgeNatRule, error) {
 
 // GetNsxvNatRuleById retrieves types.EdgeNatRule by NAT rule ID as shown in the UI using proxied
 // NSX-V API.
-// It returns and error `ErrorEntityNotFound` if the NAT rule is now found.
+// It returns and error `ErrorEntityNotFound` if the NAT rule is not found.
 func (egw *EdgeGateway) GetNsxvNatRuleById(id string) (*types.EdgeNatRule, error) {
 	if err := validateGetNsxvNatRule(id, egw); err != nil {
 		return nil, err
