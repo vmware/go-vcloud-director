@@ -85,7 +85,7 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 	defer file.Close()
 
 	fileSize := fileInfo.Size()
-	// file size in OVF maybe not exist, use real file size instead
+	// when file size in OVF does not exist, use real file size instead
 	if uDetails.fileSizeToUpload == -1 {
 		uDetails.fileSizeToUpload = fileSize
 		uDetails.allFilesSize += fileSize

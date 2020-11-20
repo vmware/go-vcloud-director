@@ -294,7 +294,7 @@ func (vcd *TestVCD) Test_UploadOvfFile(check *C) {
 }
 
 // Tests System function UploadOvf by creating catalog and
-// checking ova file without vmdk size specified can be uploaded.
+// checking that ova file without vmdk size specified can be uploaded.
 func (vcd *TestVCD) Test_UploadOvf_withoutVMDKSize(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
