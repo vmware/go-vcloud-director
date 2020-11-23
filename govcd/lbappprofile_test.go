@@ -74,6 +74,7 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	// Test that we can extract a list of LB app profiles, and that one of them is the profile we have got when searching by name
 	lbAppProfiles, err := edge.GetLbAppProfiles()
 	check.Assert(err, IsNil)
+	check.Assert(lbAppProfiles, NotNil)
 	foundProfile := false
 	for _, profile := range lbAppProfiles {
 		if profile.Name == lbAppProfileByName.Name && profile.ID == lbAppProfileByName.ID {

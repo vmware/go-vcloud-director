@@ -620,6 +620,7 @@ func (vcd *TestVCD) Test_GetOrgList(check *C) {
 
 	orgs, err := vcd.client.GetOrgList()
 	check.Assert(err, IsNil)
+	check.Assert(orgs, NotNil)
 
 	if vcd.config.VCD.Org != "" {
 		foundOrg := false

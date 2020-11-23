@@ -60,6 +60,7 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 	// Test that we can extract a list of LB app rules, and that one of them is the rule we have got when searching by name
 	lbAppRules, err := edge.GetLbAppRules()
 	check.Assert(err, IsNil)
+	check.Assert(lbAppRules, NotNil)
 	foundRule := false
 	for _, rule := range lbAppRules {
 		if rule.Name == lbAppRuleByName.Name && rule.ID == lbAppRuleByName.ID {
