@@ -600,7 +600,7 @@ func checkIfFileMatchesDescription(filesAbsPaths []string, fileDescription struc
 		return fmt.Errorf("file '%s' described in ovf was not found in ova", fileDescription.HREF)
 	}
 	if fileInfo, err := os.Stat(filePath); err == nil {
-		if fileInfo.Size() != int64(fileDescription.Size) {
+		if fileDescription.Size > 0 && (fileInfo.Size() != int64(fileDescription.Size)) {
 			return fmt.Errorf("file size didn't match described in ovf: %s", filePath)
 		}
 	} else {
