@@ -1359,7 +1359,7 @@ func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection
 
 // AddEmptyVm adds an empty VM (without template) to vApp and returns the new created VM or an error.
 func (vapp *VApp) AddEmptyVm(reComposeVAppParams *types.RecomposeVAppParamsForEmptyVm) (*VM, error) {
-	apiVersion, err := vapp.client.maxSupportedVersion()
+	apiVersion, err := vapp.client.MaxSupportedVersion()
 	if err != nil {
 		return nil, err
 	}
@@ -1374,7 +1374,7 @@ func (vapp *VApp) AddEmptyVm(reComposeVAppParams *types.RecomposeVAppParamsForEm
 
 // AddEmptyVmAsync adds an empty VM (without template) to the vApp and returns a Task and an error.
 func (vapp *VApp) AddEmptyVmAsync(reComposeVAppParams *types.RecomposeVAppParamsForEmptyVm) (Task, error) {
-	apiVersion, err := vapp.client.maxSupportedVersion()
+	apiVersion, err := vapp.client.MaxSupportedVersion()
 	if err != nil {
 		return Task{}, err
 	}
@@ -1777,7 +1777,7 @@ func getVMByHrefV97(client *Client, vmHref string) (*VM, error) {
 // there are cases where we know the VM HREF but not which VApp it belongs to.
 func (client *Client) GetVMByHref(vmHref string) (*VM, error) {
 
-	apiVersion, err := client.maxSupportedVersion()
+	apiVersion, err := client.MaxSupportedVersion()
 	if err != nil {
 		return nil, err
 	}

@@ -1594,7 +1594,7 @@ func (vcd *TestVCD) Test_NewRequestWitNotEncodedParamsWithApiVersion(check *C) {
 	queryUlr := vcd.client.Client.VCDHREF
 	queryUlr.Path += "/query"
 
-	apiVersion, err := vcd.client.Client.maxSupportedVersion()
+	apiVersion, err := vcd.client.Client.MaxSupportedVersion()
 	check.Assert(err, IsNil)
 
 	req := vcd.client.Client.NewRequestWitNotEncodedParamsWithApiVersion(nil, map[string]string{"type": "media",
@@ -1682,7 +1682,7 @@ func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint string) {
 
 	constraint := ">= " + minimumRequiredApiVersion
 	if !vcd.client.Client.APIVCDMaxVersionIs(constraint) {
-		maxSupportedVersion, err := vcd.client.Client.maxSupportedVersion()
+		maxSupportedVersion, err := vcd.client.Client.MaxSupportedVersion()
 		if err != nil {
 			panic(fmt.Sprintf("Could not get maximum supported version: %s", err))
 		}

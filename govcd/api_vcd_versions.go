@@ -80,7 +80,7 @@ func (cli *Client) APIVCDMaxVersionIs(versionConstraint string) bool {
 	}
 
 	util.Logger.Printf("[TRACE] checking max API version against constraints '%s'", versionConstraint)
-	maxVersion, err := cli.maxSupportedVersion()
+	maxVersion, err := cli.MaxSupportedVersion()
 	if err != nil {
 		util.Logger.Printf("[ERROR] unable to find max supported version : %s", err)
 		return false
@@ -145,8 +145,8 @@ func (cli *Client) vcdFetchSupportedVersions() error {
 	return err
 }
 
-// maxSupportedVersion parses supported version list and returns the highest version in string format.
-func (cli *Client) maxSupportedVersion() (string, error) {
+// MaxSupportedVersion parses supported version list and returns the highest version in string format.
+func (cli *Client) MaxSupportedVersion() (string, error) {
 	versions := make([]*semver.Version, len(cli.supportedVersions.VersionInfos))
 	for index, versionInfo := range cli.supportedVersions.VersionInfos {
 		version, _ := semver.NewVersion(versionInfo.Version)
