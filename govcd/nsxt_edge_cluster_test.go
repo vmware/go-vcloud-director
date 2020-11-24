@@ -1,0 +1,57 @@
+// +build network functional openapi ALL
+
+/*
+ * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ */
+
+package govcd
+
+import (
+	"fmt"
+
+	. "gopkg.in/check.v1"
+)
+
+func (vcd *TestVCD) Test_GetAllNsxtEdgeClusters(check *C) {
+	if vcd.client.Client.APIVCDMaxVersionIs("< 34") {
+		check.Skip("At least VCD 10.1 is required")
+	}
+
+	skipNoNsxtConfiguration(vcd, check)
+
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	nsxtVdc, err := vcd.org.GetVDCByNameOrId(vcd.config.VCD.Nsxt.Vdc, true)
+	check.Assert(err, IsNil)
+
+	tier0Router, err := nsxtVdc.GetAllNsxtEdgeClusters(nil)
+	check.Assert(err, IsNil)
+	check.Assert(tier0Router, NotNil)
+}
+
+func (vcd *TestVCD) Test_GetNsxtEdgeClusterByName(check *C) {
+	if vcd.client.Client.APIVCDMaxVersionIs("< 34") {
+		check.Skip("At least VCD 10.1 is required")
+	}
+
+	skipNoNsxtConfiguration(vcd, check)
+
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	nsxtVdc, err := vcd.org.GetVDCByNameOrId(vcd.config.VCD.Nsxt.Vdc, true)
+	check.Assert(err, IsNil)
+
+	tier0Router, err := nsxtVdc.GetAllNsxtEdgeClusters(nil)
+	check.Assert(err, IsNil)
+	check.Assert(tier0Router, NotNil)
+
+	ecl, err := nsxtVdc.GetNsxtEdgeClusterByName(tier0Router[0].NsxtEdgeCluster.Name)
+	check.Assert(err, IsNil)
+	check.Assert(tier0Router, NotNil)
+	check.Assert(ecl, DeepEquals, tier0Router[0])
+
+}

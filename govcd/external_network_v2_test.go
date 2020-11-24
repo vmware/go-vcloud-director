@@ -21,6 +21,11 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxtVrf(check *C) {
 	// The documented backing type of NSX-T VRF router is "NSXT_VRF_TIER0" (types.ExternalNetworkBackingTypeNsxtVrfTier0Router)
 	// but although it is documented - it fails and requires the same "NSXT_TIER0" (types.ExternalNetworkBackingTypeNsxtTier0Router)
 	// backing type to be specified
+	// As of 10.1.2 release it is not officially supported (support only introduced in 10.2.0) therefore skipping this test for
+	// 10.1.X
+	if vcd.client.Client.APIVCDMaxVersionIs("< 35") {
+		check.Skip("NSX-T VRF-Lite backed external networks are officially supported only in 10.2.0+")
+	}
 	vcd.testCreateExternalNetworkV2Nsxt(check, vcd.config.VCD.Nsxt.Tier0routerVrf, types.ExternalNetworkBackingTypeNsxtTier0Router)
 }
 

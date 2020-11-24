@@ -47,9 +47,10 @@ func (adminCatalog *AdminCatalog) Update() error {
 		Description: adminCatalog.AdminCatalog.Description,
 	}
 	vcomp := &types.AdminCatalog{
-		Xmlns:       types.XMLNamespaceVCloud,
-		Catalog:     *reqCatalog,
-		IsPublished: adminCatalog.AdminCatalog.IsPublished,
+		Xmlns:                  types.XMLNamespaceVCloud,
+		Catalog:                *reqCatalog,
+		CatalogStorageProfiles: adminCatalog.AdminCatalog.CatalogStorageProfiles,
+		IsPublished:            adminCatalog.AdminCatalog.IsPublished,
 	}
 	catalog := &types.AdminCatalog{}
 	_, err := adminCatalog.client.ExecuteRequest(adminCatalog.AdminCatalog.HREF, http.MethodPut,

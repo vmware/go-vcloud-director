@@ -37,6 +37,7 @@ govcd/govcd_test_config*.yaml
 govcd/govcd_test_config*.json
 govcd/go-vcloud-director*.log
 govcd/test_cleanup_list*.json
+*.log
 
 # editor files
 *~
