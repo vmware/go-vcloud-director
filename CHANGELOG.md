@@ -7,6 +7,7 @@
 * Added transparent connection using `cloudapi/1.0.0/sessions` when access through `api/sessions` is disabled
 * Added functions `edge.GetLbAppRules`, `edge.GetLbServerPools`, `edge.GetLbAppProfiles`, `edge.GetNsxvNatRules`, `client.GetOrgList`
 * Exported private function `client.maxSupportedVersion` to `client.MaxSupportedVersion`
+* Able to upload an OVF without ovf:size defined in File part. Some bug fix for uploading OVA/OVF. [#331](https://github.com/vmware/go-vcloud-director/pull/331)
 
 BREAKING CHANGES:
 
