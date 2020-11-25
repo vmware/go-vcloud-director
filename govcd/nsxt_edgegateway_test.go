@@ -1,4 +1,4 @@
-// +build network functional openapi ALL
+// +build network nsxt functional openapi ALL
 
 package govcd
 
@@ -36,7 +36,7 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 		},
 		EdgeGatewayUplinks: []types.EdgeGatewayUplinks{types.EdgeGatewayUplinks{
 			UplinkID: nsxtExternalNetwork.ExternalNetwork.ID,
-			Subnets: types.EdgeGatewaySubnets{Values: []types.EdgeGatewaySubnetValue{{
+			Subnets: types.OpenAPIEdgeGatewaySubnets{Values: []types.OpenAPIEdgeGatewaySubnetValue{{
 				Gateway:      "1.1.1.1",
 				PrefixLength: 24,
 				Enabled:      true,

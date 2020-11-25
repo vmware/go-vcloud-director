@@ -6,6 +6,9 @@
 * Added transparent support for bearer tokens [#341](https://github.com/vmware/go-vcloud-director/pull/341)
 * Added transparent connection using `cloudapi/1.0.0/sessions` when access through `api/sessions` is disabled
 * Able to upload an OVF without ovf:size defined in File part. Some bug fix for uploading OVA/OVF. [#331](https://github.com/vmware/go-vcloud-director/pull/331)
+* Added ability to set specific catalog storage profile using `func (adminCatalog *AdminCatalog) Update()` [#344](https://github.com/vmware/go-vcloud-director/pull/344)
+* Added functions `(vdc *Vdc) GetNsxtEdgeClusterByName` and `(vdc *Vdc) GetAllNsxtEdgeClusters` for NSX-T Edge Cluster lookup [#344](https://github.com/vmware/go-vcloud-director/pull/344)
+* Added NSX-T Edge Gateway management functions `GetNsxtEdgeGatewayById`, `GetNsxtEdgeGatewayByName`, `GetAllNsxtEdgeGateways`, `CreateNsxtEdgeGateway`, `Update`, `Delete`  [#344](https://github.com/vmware/go-vcloud-director/pull/344)
 
 BREAKING CHANGES:
 

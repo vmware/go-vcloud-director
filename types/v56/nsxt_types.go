@@ -26,11 +26,11 @@ type OpenAPIEdgeGateway struct {
 	//
 	// Note. The value of secondaryEdgeCluster will be set to NULL for NSX-T edge gateways. For NSX-V Edges, this is
 	// read-only and the legacy API must be used for edge specific placement.
-	EdgeClusterConfig *EdgeClusterConfig `json:"edgeClusterConfig,omitempty"`
+	EdgeClusterConfig *OpenAPIEdgeGatewayEdgeClusterConfig `json:"edgeClusterConfig,omitempty"`
 	// OrgVdcNetworkCount holds the number of Org vDC networks connected to the gateway.
 	OrgVdcNetworkCount *int `json:"orgVdcNetworkCount,omitempty"`
 	// GatewayBacking must contain backing details of the edge gateway only if importing an NSX-T router.
-	GatewayBacking *GatewayBacking `json:"gatewayBacking,omitempty"`
+	GatewayBacking *OpenAPIEdgeGatewayBacking `json:"gatewayBacking,omitempty"`
 
 	// ServiceNetworkDefinition holds network definition in CIDR form that DNS and DHCP service on an NSX-T edge will run
 	// on. The subnet prefix length must be 27. This property applies to creating or importing an NSX-T Edge. This is not
@@ -46,8 +46,8 @@ type EdgeGatewayUplinks struct {
 	// UplinkID contains Name of external network
 	UplinkName string `json:"uplinkName,omitempty"`
 	// Subnets contain subnets to be used on edge gateway
-	Subnets   EdgeGatewaySubnets `json:"subnets,omitempty"`
-	Connected bool               `json:"connected,omitempty"`
+	Subnets   OpenAPIEdgeGatewaySubnets `json:"subnets,omitempty"`
+	Connected bool                      `json:"connected,omitempty"`
 	// QuickAddAllocatedIPCount allows to allocate additional IPs during update
 	QuickAddAllocatedIPCount int `json:"quickAddAllocatedIpCount,omitempty"`
 	// Dedicated defines if the external network is dedicated. Dedicating the External Network will enable Route
@@ -61,13 +61,13 @@ type OpenApiIPRanges = ExternalNetworkV2IPRanges
 // OpenApiIPRangeValues is a type alias to reuse the same definitions with appropriate names
 type OpenApiIPRangeValues = ExternalNetworkV2IPRange
 
-// EdgeGatewaySubnets lists slice of EdgeGatewaySubnetValue values
-type EdgeGatewaySubnets struct {
-	Values []EdgeGatewaySubnetValue `json:"values"`
+// OpenAPIEdgeGatewaySubnets lists slice of OpenAPIEdgeGatewaySubnetValue values
+type OpenAPIEdgeGatewaySubnets struct {
+	Values []OpenAPIEdgeGatewaySubnetValue `json:"values"`
 }
 
-// EdgeGatewaySubnetValue holds one subnet definition in external network
-type EdgeGatewaySubnetValue struct {
+// OpenAPIEdgeGatewaySubnetValue holds one subnet definition in external network
+type OpenAPIEdgeGatewaySubnetValue struct {
 	// Gateway specified subnet gateway
 	Gateway string `json:"gateway"`
 	// PrefixLength from CIDR format (e.g. 24 from 192.168.1.1/24)
@@ -88,19 +88,20 @@ type EdgeGatewaySubnetValue struct {
 	AutoAllocateIPRanges bool   `json:"autoAllocateIpRanges,omitempty"`
 }
 
-// GatewayBacking specifies edge gateway backing details
-type GatewayBacking struct {
+// OpenAPIEdgeGatewayBacking specifies edge gateway backing details
+type OpenAPIEdgeGatewayBacking struct {
 	BackingID       string          `json:"backingId,omitempty"`
 	GatewayType     string          `json:"gatewayType,omitempty"`
 	NetworkProvider NetworkProvider `json:"networkProvider"`
 }
 
-type EdgeCluster struct {
+// OpenAPIEdgeGatewayEdgeCluster allows to specify edge cluster reference
+type OpenAPIEdgeGatewayEdgeCluster struct {
 	EdgeClusterRef OpenApiReference `json:"edgeClusterRef"`
 	BackingID      string           `json:"backingId"`
 }
 
-type EdgeClusterConfig struct {
-	PrimaryEdgeCluster   EdgeCluster `json:"primaryEdgeCluster,omitempty"`
-	SecondaryEdgeCluster EdgeCluster `json:"secondaryEdgeCluster,omitempty"`
+type OpenAPIEdgeGatewayEdgeClusterConfig struct {
+	PrimaryEdgeCluster   OpenAPIEdgeGatewayEdgeCluster `json:"primaryEdgeCluster,omitempty"`
+	SecondaryEdgeCluster OpenAPIEdgeGatewayEdgeCluster `json:"secondaryEdgeCluster,omitempty"`
 }
