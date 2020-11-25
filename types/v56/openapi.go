@@ -58,6 +58,7 @@ type NsxtTier0Router struct {
 	DisplayName string `json:"displayName"`
 }
 
+// NsxtEdgeCluster is a struct to represent logical grouping of NSX-T Edge virtual machines.
 type NsxtEdgeCluster struct {
 	// ID contains edge cluster ID (UUID format)
 	ID          string `json:"id"`

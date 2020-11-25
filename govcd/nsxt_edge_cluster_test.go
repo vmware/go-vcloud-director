@@ -1,4 +1,4 @@
-// +build network functional openapi ALL
+// +build network nsxt functional openapi ALL
 
 /*
  * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -45,13 +45,13 @@ func (vcd *TestVCD) Test_GetNsxtEdgeClusterByName(check *C) {
 	nsxtVdc, err := vcd.org.GetVDCByNameOrId(vcd.config.VCD.Nsxt.Vdc, true)
 	check.Assert(err, IsNil)
 
-	tier0Router, err := nsxtVdc.GetAllNsxtEdgeClusters(nil)
+	allEdgeClusters, err := nsxtVdc.GetAllNsxtEdgeClusters(nil)
 	check.Assert(err, IsNil)
-	check.Assert(tier0Router, NotNil)
+	check.Assert(allEdgeClusters, NotNil)
 
-	ecl, err := nsxtVdc.GetNsxtEdgeClusterByName(tier0Router[0].NsxtEdgeCluster.Name)
+	ecl, err := nsxtVdc.GetNsxtEdgeClusterByName(allEdgeClusters[0].NsxtEdgeCluster.Name)
 	check.Assert(err, IsNil)
-	check.Assert(tier0Router, NotNil)
-	check.Assert(ecl, DeepEquals, tier0Router[0])
+	check.Assert(allEdgeClusters, NotNil)
+	check.Assert(ecl, DeepEquals, allEdgeClusters[0])
 
 }

@@ -37,15 +37,7 @@ func (adminOrg *AdminOrg) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGatewa
 		return nil, fmt.Errorf("unable to retrieve edge gateway by name '%s': %s", name, err)
 	}
 
-	if len(allEdges) > 1 {
-		return nil, fmt.Errorf("got more than 1 edge gateway by name '%s' %d", name, len(allEdges))
-	}
-
-	if len(allEdges) < 1 {
-		return nil, fmt.Errorf("got 0 edge gateways by name '%s'", name)
-	}
-
-	return allEdges[0], nil
+	return returnSingleNsxtEdgeGateway(name, allEdges)
 }
 
 // GetNsxtEdgeGatewayByName allows to retrieve NSX-T edge gateway by Name for Org admins
@@ -58,15 +50,7 @@ func (org *Org) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) 
 		return nil, fmt.Errorf("unable to retrieve edge gateway by name '%s': %s", name, err)
 	}
 
-	if len(allEdges) > 1 {
-		return nil, fmt.Errorf("got more than 1 edge gateway by name '%s' %d", name, len(allEdges))
-	}
-
-	if len(allEdges) < 1 {
-		return nil, fmt.Errorf("got 0 edge gateways by name '%s'", name)
-	}
-
-	return allEdges[0], nil
+	return returnSingleNsxtEdgeGateway(name, allEdges)
 }
 
 // GetAllNsxtEdgeGateways allows to retrieve all NSX-T edge gateways for Org Admins
@@ -203,6 +187,20 @@ func getNsxtEdgeGatewayById(client *Client, id string) (*NsxtEdgeGateway, error)
 	}
 
 	return egw, nil
+}
+
+// returnSingleNsxtEdgeGateway helps to reduce code duplication for `GetNsxtEdgeGatewayByName` functions with different
+// receivers
+func returnSingleNsxtEdgeGateway(name string, allEdges []*NsxtEdgeGateway) (*NsxtEdgeGateway, error) {
+	if len(allEdges) > 1 {
+		return nil, fmt.Errorf("got more than 1 edge gateway by name '%s' %d", name, len(allEdges))
+	}
+
+	if len(allEdges) < 1 {
+		return nil, fmt.Errorf("got 0 edge gateways by name '%s'", name)
+	}
+
+	return allEdges[0], nil
 }
 
 // getAllNsxtEdgeGateways is a private parent for wrapped functions:

@@ -1,10 +1,5 @@
 package types
 
-const (
-	gatewayTypeNsxT = "NSXT_BACKED"
-	gatewayTypeNsxV = "NSXV_BACKED"
-)
-
 // OpenAPIEdgeGateway structure can hold both NSX-V and NSX-T edge gateways as returned by OpenAPI endpoint.
 //
 // Note. OpenAPI endpoint only allows to read NSX-V edge gateways.
@@ -60,8 +55,10 @@ type EdgeGatewayUplinks struct {
 	Dedicated bool `json:"dedicated,omitempty"`
 }
 
-// Use type aliases to reuse the same definitions with appropriate names
+// OpenApiIPRanges is a type alias to reuse the same definitions with appropriate names
 type OpenApiIPRanges = ExternalNetworkV2IPRanges
+
+// OpenApiIPRangeValues is a type alias to reuse the same definitions with appropriate names
 type OpenApiIPRangeValues = ExternalNetworkV2IPRange
 
 // EdgeGatewaySubnets lists slice of EdgeGatewaySubnetValue values
