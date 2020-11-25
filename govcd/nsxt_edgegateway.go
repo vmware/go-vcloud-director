@@ -197,7 +197,7 @@ func returnSingleNsxtEdgeGateway(name string, allEdges []*NsxtEdgeGateway) (*Nsx
 	}
 
 	if len(allEdges) < 1 {
-		return nil, fmt.Errorf("got 0 edge gateways by name '%s'", name)
+		return nil, fmt.Errorf("%s: got 0 edge gateways by name '%s'", ErrorEntityNotFound, name)
 	}
 
 	return allEdges[0], nil
