@@ -12,6 +12,7 @@ import (
 
 // endpointMinApiVersions holds mapping of OpenAPI endpoints and API versions they were introduced in.
 var endpointMinApiVersions = map[string]string{
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRights:                 "33.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles:                  "31.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAuditTrail:             "33.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableTier0Routers: "32.0",

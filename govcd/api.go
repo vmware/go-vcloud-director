@@ -52,6 +52,7 @@ type Client struct {
 	UserAgent string
 
 	supportedVersions SupportedVersions // Versions from /api/versions endpoint
+	customHeader      *http.Header
 }
 
 // AuthorizationHeader header key used by default to set the authorization token.
@@ -222,6 +223,13 @@ func (cli *Client) newRequest(params map[string]string, notEncodedParams map[str
 		for headerName, headerValueSlice := range additionalHeader {
 			for _, singleHeaderValue := range headerValueSlice {
 				req.Header.Add(headerName, singleHeaderValue)
+			}
+		}
+	}
+	if cli.customHeader != nil {
+		for k, v := range *cli.customHeader {
+			for _, v1 := range v {
+				req.Header.Add(k, v1)
 			}
 		}
 	}
@@ -715,3 +723,21 @@ func BuildUrnWithUuid(urnPrefix, uuid string) (string, error) {
 func takeFloatAddress(x float64) *float64 {
 	return &x
 }
+
+// SetCustomHeader adds custom HTTP header values to a client
+func (client *Client)SetCustomHeader(values map[string]string) {
+	if client.customHeader == nil {
+		client.customHeader = new(http.Header)
+	}
+	for k, v := range values {
+			client.customHeader.Add(k, v)
+	}
+}
+
+// RemoveCustomHeader remove custom header values from the client
+func (client *Client)RemoveCustomHeader() {
+	if client.customHeader != nil {
+		client.customHeader = nil
+	}
+}
+

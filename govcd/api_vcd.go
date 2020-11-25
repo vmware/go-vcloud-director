@@ -296,3 +296,14 @@ func WithHttpUserAgent(userAgent string) VCDClientOption {
 		return nil
 	}
 }
+
+// WithHttpHeader allows to specify custom HTTP header values
+func WithHttpHeader(options map[string]string) VCDClientOption {
+	return func(vcdClient *VCDClient) error {
+		vcdClient.Client.customHeader = new(http.Header)
+		for k, v := range options {
+			vcdClient.Client.customHeader.Add(k, v)
+		}
+		return nil
+	}
+}

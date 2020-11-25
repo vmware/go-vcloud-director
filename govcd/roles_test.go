@@ -7,10 +7,13 @@
 package govcd
 
 import (
+	"fmt"
 	"net/url"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/kr/pretty"
 	. "gopkg.in/check.v1"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 func (vcd *TestVCD) Test_Roles(check *C) {
@@ -25,6 +28,7 @@ func (vcd *TestVCD) Test_Roles(check *C) {
 
 	// Step 2 - Get all roles using query filters
 	for _, oneRole := range allExistingRoles {
+		fmt.Printf("%# v\n",pretty.Formatter(oneRole.Role))
 
 		// Step 2.1 - retrieve specific role by using FIQL filter
 		queryParams := url.Values{}
