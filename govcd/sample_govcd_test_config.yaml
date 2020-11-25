@@ -66,7 +66,7 @@ vcd:
       # NSX-T tier-0 VRF router used for external network tests
       tier0routerVrf: tier-0-router-vrf
       # Existing External Network with correct configuration
-      ExternalNetwork: tier0-backed-external-network
+      externalNetwork: tier0-backed-external-network
       # Existing NSX-T based VDC
       vdc: nsxt-vdc-name
     # An Org catalog, possibly containing at least one item
