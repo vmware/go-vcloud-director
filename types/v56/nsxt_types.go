@@ -18,7 +18,7 @@ type OpenAPIEdgeGateway struct {
 	// EdgeGatewayUplink defines uplink connections for the edge gateway.
 	EdgeGatewayUplinks []EdgeGatewayUplinks `json:"edgeGatewayUplinks"`
 	// DistributedRoutingEnabled is a flag indicating whether distributed routing is enabled or not. The default is false.
-	DistributedRoutingEnabled bool `json:"distributedRoutingEnabled"`
+	DistributedRoutingEnabled *bool `json:"distributedRoutingEnabled,omitempty"`
 	// EdgeClusterConfig holds Edge Cluster Configuration for the Edge Gateway. Can be specified if a gateway needs to be
 	// placed on a specific set of Edge Clusters. For NSX-T Edges, user should specify the ID of the NSX-T edge cluster as
 	// the value of primaryEdgeCluster's backingId. The gateway defaults to the Edge Cluster of the connected External
