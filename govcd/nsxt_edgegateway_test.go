@@ -21,6 +21,7 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	check.Assert(err, IsNil)
 
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
 
 	nsxvVdc, err := adminOrg.GetVDCByName(vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
