@@ -5,6 +5,8 @@
 * Added methods `adminVdc.UpdateStorageProfile` [#340](https://github.com/vmware/go-vcloud-director/pull/340)
 * Added transparent support for bearer tokens [#341](https://github.com/vmware/go-vcloud-director/pull/341)
 * Added transparent connection using `cloudapi/1.0.0/sessions` when access through `api/sessions` is disabled
+* Added functions `edge.GetLbAppRules`, `edge.GetLbServerPools`, `edge.GetLbAppProfiles`, `edge.GetNsxvNatRules`, `client.GetOrgList`
+* Exported private function `client.maxSupportedVersion` to `client.MaxSupportedVersion`
 * Able to upload an OVF without ovf:size defined in File part. Some bug fix for uploading OVA/OVF. [#331](https://github.com/vmware/go-vcloud-director/pull/331)
 * Added ability to set specific catalog storage profile using `func (adminCatalog *AdminCatalog) Update()` [#344](https://github.com/vmware/go-vcloud-director/pull/344)
 * Added functions `(vdc *Vdc) GetNsxtEdgeClusterByName` and `(vdc *Vdc) GetAllNsxtEdgeClusters` for NSX-T Edge Cluster lookup [#344](https://github.com/vmware/go-vcloud-director/pull/344)

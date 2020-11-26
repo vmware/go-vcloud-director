@@ -35,7 +35,7 @@ func (client *Client) checkOpenApiEndpointCompatibility(endpoint string) (string
 	}
 
 	if client.APIVCDMaxVersionIs("< " + minimumApiVersion) {
-		maxSupportedVersion, err := client.maxSupportedVersion()
+		maxSupportedVersion, err := client.MaxSupportedVersion()
 		if err != nil {
 			return "", fmt.Errorf("error reading maximum supported API version: %s", err)
 		}

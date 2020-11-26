@@ -131,6 +131,18 @@ func testNsxvNat(natRule *types.EdgeNatRule, vcd *TestVCD, check *C, edge EdgeGa
 
 	check.Assert(updatedNatRule.Description, Equals, natRule.Description)
 
+	// Test that we can extract a list of NSXV NAT rules, and that one of them is the rule we have got when searching by ID
+	natRules, err := edge.GetNsxvNatRules()
+	check.Assert(err, IsNil)
+	check.Assert(natRules, NotNil)
+	foundRule := false
+	for _, rule := range natRules {
+		if rule.ID == natRule.ID {
+			foundRule = true
+		}
+	}
+	check.Assert(foundRule, Equals, true)
+
 	// Check if the objects are deeply equal (except updated 'Description' field)
 	createdNatRule.Description = natRule.Description
 	check.Assert(updatedNatRule, DeepEquals, createdNatRule)

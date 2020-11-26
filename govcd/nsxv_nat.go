@@ -91,14 +91,8 @@ func (egw *EdgeGateway) UpdateNsxvNatRule(natRuleConfig *types.EdgeNatRule) (*ty
 	return readNatRule, nil
 }
 
-// GetNsxvNatRuleById retrieves types.EdgeNatRule by NAT rule ID as shown in the UI using proxied
-// NSX-V API.
-// It returns and error `ErrorEntityNotFound` if the NAT rule is now found.
-func (egw *EdgeGateway) GetNsxvNatRuleById(id string) (*types.EdgeNatRule, error) {
-	if err := validateGetNsxvNatRule(id, egw); err != nil {
-		return nil, err
-	}
-
+// GetNsxvNatRules returns a list of all NAT rules in a given edge gateway
+func (egw *EdgeGateway) GetNsxvNatRules() ([]*types.EdgeNatRule, error) {
 	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.EdgeNatPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
@@ -112,8 +106,23 @@ func (egw *EdgeGateway) GetNsxvNatRuleById(id string) (*types.EdgeNatRule, error
 	if err != nil {
 		return nil, err
 	}
+	return natRuleResponse.NatRules.EdgeNatRules, nil
+}
 
-	for _, rule := range natRuleResponse.NatRules.EdgeNatRules {
+// GetNsxvNatRuleById retrieves types.EdgeNatRule by NAT rule ID as shown in the UI using proxied
+// NSX-V API.
+// It returns and error `ErrorEntityNotFound` if the NAT rule is not found.
+func (egw *EdgeGateway) GetNsxvNatRuleById(id string) (*types.EdgeNatRule, error) {
+	if err := validateGetNsxvNatRule(id, egw); err != nil {
+		return nil, err
+	}
+
+	edgeNatRules, err := egw.GetNsxvNatRules()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, rule := range edgeNatRules {
 		if rule.ID != "" && rule.ID == id {
 			return rule, nil
 		}

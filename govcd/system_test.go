@@ -615,3 +615,20 @@ func (vcd *TestVCD) Test_GetStorageProfileByHref(check *C) {
 	check.Assert(foundStorageProfile, Not(Equals), types.VdcStorageProfile{})
 	check.Assert(foundStorageProfile, NotNil)
 }
+
+func (vcd *TestVCD) Test_GetOrgList(check *C) {
+
+	orgs, err := vcd.client.GetOrgList()
+	check.Assert(err, IsNil)
+	check.Assert(orgs, NotNil)
+
+	if vcd.config.VCD.Org != "" {
+		foundOrg := false
+		for _, org := range orgs.Org {
+			if org.Name == vcd.config.VCD.Org {
+				foundOrg = true
+			}
+		}
+		check.Assert(foundOrg, Equals, true)
+	}
+}

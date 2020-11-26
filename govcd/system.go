@@ -949,3 +949,18 @@ func GetUuidFromHref(href string, idAtEnd bool) (string, error) {
 	util.Logger.Printf("[TRACE] GetUuidFromHref returns UUID : %s", matchList[0][1])
 	return matchList[0][1], nil
 }
+
+// GetOrgList returns the list ov available orgs
+func (vcdCli *VCDClient) GetOrgList() (*types.OrgList, error) {
+	orgListHREF := vcdCli.Client.VCDHREF
+	orgListHREF.Path += "/org"
+
+	orgList := new(types.OrgList)
+
+	_, err := vcdCli.Client.ExecuteRequest(orgListHREF.String(), http.MethodGet,
+		"", "error getting list of organizations: %s", nil, orgList)
+	if err != nil {
+		return nil, err
+	}
+	return orgList, nil
+}

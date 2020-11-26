@@ -188,7 +188,7 @@ var vdcVersionedFuncsByVcdVersion = map[string]vdcVersionedFuncs{
 }
 
 func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration) (*Vdc, error) {
-	apiVersion, err := adminOrg.client.maxSupportedVersion()
+	apiVersion, err := adminOrg.client.MaxSupportedVersion()
 	if err != nil {
 		return nil, err
 	}

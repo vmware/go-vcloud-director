@@ -48,7 +48,7 @@ func (egw *EdgeGateway) GetDhcpRelay() (*types.EdgeDhcpRelay, error) {
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
 
-	// This query Edge gaateway DHCP relay using proxied NSX-V API
+	// This query Edge gateway DHCP relay using proxied NSX-V API
 	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
 		"unable to read edge gateway DHCP relay configuration: %s", nil, response)
 	if err != nil {
