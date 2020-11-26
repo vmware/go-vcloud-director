@@ -65,7 +65,7 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	//
 	egws, err := adminOrg.GetAllNsxtEdgeGateways(queryParams)
 	check.Assert(err, IsNil)
-	check.Assert(len(egws) == 1, Equals, true)
+	check.Assert(len(egws) >= 1, Equals, true)
 
 	// Lookup using different available methods
 	e1, err := adminOrg.GetNsxtEdgeGatewayByName(updatedEdge.EdgeGateway.Name)

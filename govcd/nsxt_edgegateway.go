@@ -44,7 +44,9 @@ func (adminOrg *AdminOrg) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGatewa
 		return nil, fmt.Errorf("unable to retrieve edge gateway by name '%s': %s", name, err)
 	}
 
-	return returnSingleNsxtEdgeGateway(name, allEdges)
+	onlyNsxtEdges := filterOnlyNsxtEdges(allEdges)
+
+	return returnSingleNsxtEdgeGateway(name, onlyNsxtEdges)
 }
 
 // GetNsxtEdgeGatewayByName allows to retrieve NSX-T edge gateway by Name for Org admins
@@ -57,7 +59,9 @@ func (org *Org) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) 
 		return nil, fmt.Errorf("unable to retrieve edge gateway by name '%s': %s", name, err)
 	}
 
-	return returnSingleNsxtEdgeGateway(name, allEdges)
+	onlyNsxtEdges := filterOnlyNsxtEdges(allEdges)
+
+	return returnSingleNsxtEdgeGateway(name, onlyNsxtEdges)
 }
 
 // GetNsxtEdgeGatewayByName allows to retrieve NSX-T edge gateway by Name for specifi Vdc
@@ -70,7 +74,9 @@ func (vdc *Vdc) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) 
 		return nil, fmt.Errorf("unable to retrieve edge gateway by name '%s': %s", name, err)
 	}
 
-	return returnSingleNsxtEdgeGateway(name, allEdges)
+	onlyNsxtEdges := filterOnlyNsxtEdges(allEdges)
+
+	return returnSingleNsxtEdgeGateway(name, onlyNsxtEdges)
 }
 
 // GetAllNsxtEdgeGateways allows to retrieve all NSX-T edge gateways for Org Admins
@@ -212,6 +218,10 @@ func getNsxtEdgeGatewayById(client *Client, id string, queryParameters url.Value
 		return nil, err
 	}
 
+	if egw.EdgeGateway.GatewayBacking.GatewayType != "NSXT_BACKED" {
+		return nil, fmt.Errorf("this is not NSX-T edge gateway (%s)", egw.EdgeGateway.GatewayBacking.GatewayType)
+	}
+
 	return egw, nil
 }
 
@@ -259,5 +269,20 @@ func getAllNsxtEdgeGateways(client *Client, queryParameters url.Values) ([]*Nsxt
 		}
 	}
 
-	return wrappedResponses, nil
+	onlyNsxtEdges := filterOnlyNsxtEdges(wrappedResponses)
+
+	return onlyNsxtEdges, nil
+}
+
+// filterOnlyNsxtEdges filters our list of edge gateways only for NSXT_BACKED ones
+func filterOnlyNsxtEdges(allEdges []*NsxtEdgeGateway) []*NsxtEdgeGateway {
+	newSlice := make([]*NsxtEdgeGateway, 1)
+
+	for index := range allEdges {
+		if allEdges[index].EdgeGateway.GatewayBacking.GatewayType == "NSXT_BACKED" {
+			newSlice = append(newSlice, allEdges[index])
+		}
+	}
+
+	return newSlice
 }
