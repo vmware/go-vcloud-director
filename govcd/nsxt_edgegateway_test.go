@@ -16,8 +16,11 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	}
 
 	skipNoNsxtConfiguration(vcd, check)
+
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
+
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 
 	nsxtVdc, err := adminOrg.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
 	if ContainsNotFound(err) {
@@ -63,6 +66,27 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	egws, err := adminOrg.GetAllNsxtEdgeGateways(queryParams)
 	check.Assert(err, IsNil)
 	check.Assert(len(egws) == 1, Equals, true)
+
+	// Lookup using different available methods
+	e1, err := adminOrg.GetNsxtEdgeGatewayByName(updatedEdge.EdgeGateway.Name)
+	check.Assert(err, IsNil)
+	e2, err := org.GetNsxtEdgeGatewayByName(updatedEdge.EdgeGateway.Name)
+	check.Assert(err, IsNil)
+	e3, err := nsxtVdc.GetNsxtEdgeGatewayByName(updatedEdge.EdgeGateway.Name)
+	check.Assert(err, IsNil)
+	e4, err := adminOrg.GetNsxtEdgeGatewayById(updatedEdge.EdgeGateway.ID)
+	check.Assert(err, IsNil)
+	e5, err := org.GetNsxtEdgeGatewayById(updatedEdge.EdgeGateway.ID)
+	check.Assert(err, IsNil)
+	e6, err := nsxtVdc.GetNsxtEdgeGatewayById(updatedEdge.EdgeGateway.ID)
+	check.Assert(err, IsNil)
+
+	// Ensure all methods found the same edge gateway
+	check.Assert(e1.EdgeGateway.ID, Equals, e2.EdgeGateway.ID)
+	check.Assert(e1.EdgeGateway.ID, Equals, e3.EdgeGateway.ID)
+	check.Assert(e1.EdgeGateway.ID, Equals, e4.EdgeGateway.ID)
+	check.Assert(e1.EdgeGateway.ID, Equals, e5.EdgeGateway.ID)
+	check.Assert(e1.EdgeGateway.ID, Equals, e6.EdgeGateway.ID)
 
 	err = updatedEdge.Delete()
 	check.Assert(err, IsNil)
