@@ -31,7 +31,17 @@ func (org *Org) GetNsxtEdgeGatewayById(id string) (*NsxtEdgeGateway, error) {
 func (vdc *Vdc) GetNsxtEdgeGatewayById(id string) (*NsxtEdgeGateway, error) {
 	params := url.Values{}
 	filterParams := queryParameterFilterAnd("orgVdc.id=="+vdc.Vdc.ID, params)
-	return getNsxtEdgeGatewayById(vdc.client, id, filterParams)
+	egw, err := getNsxtEdgeGatewayById(vdc.client, id, filterParams)
+	if err != nil {
+		return nil, err
+	}
+
+	if egw.EdgeGateway.OrgVdc.ID != vdc.Vdc.ID {
+		return nil, fmt.Errorf("%s: no NSX-T edge gateway with ID '%s' found in VDC '%s'",
+			ErrorEntityNotFound, id, vdc.Vdc.ID)
+	}
+
+	return egw, nil
 }
 
 // GetNsxtEdgeGatewayByName allows to retrieve NSX-T edge gateway by Name for Org admins
@@ -219,7 +229,8 @@ func getNsxtEdgeGatewayById(client *Client, id string, queryParameters url.Value
 	}
 
 	if egw.EdgeGateway.GatewayBacking.GatewayType != "NSXT_BACKED" {
-		return nil, fmt.Errorf("this is not NSX-T edge gateway (%s)", egw.EdgeGateway.GatewayBacking.GatewayType)
+		return nil, fmt.Errorf("%s: this is not NSX-T edge gateway (%s)",
+			ErrorEntityNotFound, egw.EdgeGateway.GatewayBacking.GatewayType)
 	}
 
 	return egw, nil
@@ -276,13 +287,15 @@ func getAllNsxtEdgeGateways(client *Client, queryParameters url.Values) ([]*Nsxt
 
 // filterOnlyNsxtEdges filters our list of edge gateways only for NSXT_BACKED ones
 func filterOnlyNsxtEdges(allEdges []*NsxtEdgeGateway) []*NsxtEdgeGateway {
-	newSlice := make([]*NsxtEdgeGateway, 1)
+	filteredEdges := make([]*NsxtEdgeGateway, 0)
 
 	for index := range allEdges {
-		if allEdges[index].EdgeGateway.GatewayBacking.GatewayType == "NSXT_BACKED" {
-			newSlice = append(newSlice, allEdges[index])
+		if allEdges[index] != nil && allEdges[index].EdgeGateway != nil &&
+			allEdges[index].EdgeGateway.GatewayBacking != nil &&
+			allEdges[index].EdgeGateway.GatewayBacking.GatewayType == "NSXT_BACKED" {
+			filteredEdges = append(filteredEdges, allEdges[index])
 		}
 	}
 
-	return newSlice
+	return filteredEdges
 }

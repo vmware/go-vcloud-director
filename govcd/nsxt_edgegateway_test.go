@@ -22,6 +22,8 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 
+	nsxvVdc, err := adminOrg.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
 	nsxtVdc, err := adminOrg.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
 	if ContainsNotFound(err) {
 		check.Skip(fmt.Sprintf("No NSX-T VDC (%s) found - skipping test", vcd.config.VCD.Nsxt.Vdc))
@@ -80,6 +82,14 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	check.Assert(err, IsNil)
 	e6, err := nsxtVdc.GetNsxtEdgeGatewayById(updatedEdge.EdgeGateway.ID)
 	check.Assert(err, IsNil)
+
+	// Try to search for NSX-T edge gateway in NSX-V VDC and expect it to be not found
+	expectNil, err := nsxvVdc.GetNsxtEdgeGatewayByName(updatedEdge.EdgeGateway.Name)
+	check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(expectNil, IsNil)
+	expectNil, err = nsxvVdc.GetNsxtEdgeGatewayById(updatedEdge.EdgeGateway.ID)
+	check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(expectNil, IsNil)
 
 	// Ensure all methods found the same edge gateway
 	check.Assert(e1.EdgeGateway.ID, Equals, e2.EdgeGateway.ID)
