@@ -29,6 +29,7 @@ func (vcd *TestVCD) Test_GetAllNsxtEdgeClusters(check *C) {
 	tier0Router, err := nsxtVdc.GetAllNsxtEdgeClusters(nil)
 	check.Assert(err, IsNil)
 	check.Assert(tier0Router, NotNil)
+	check.Assert(len(tier0Router) > 0, Equals, true)
 }
 
 func (vcd *TestVCD) Test_GetNsxtEdgeClusterByName(check *C) {
@@ -49,9 +50,9 @@ func (vcd *TestVCD) Test_GetNsxtEdgeClusterByName(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(allEdgeClusters, NotNil)
 
-	ecl, err := nsxtVdc.GetNsxtEdgeClusterByName(allEdgeClusters[0].NsxtEdgeCluster.Name)
+	edgeCluster, err := nsxtVdc.GetNsxtEdgeClusterByName(allEdgeClusters[0].NsxtEdgeCluster.Name)
 	check.Assert(err, IsNil)
 	check.Assert(allEdgeClusters, NotNil)
-	check.Assert(ecl, DeepEquals, allEdgeClusters[0])
+	check.Assert(edgeCluster, DeepEquals, allEdgeClusters[0])
 
 }

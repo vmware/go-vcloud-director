@@ -106,9 +106,9 @@ func (vdc *Vdc) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeG
 }
 
 // CreateNsxtEdgeGateway allows to create NSX-T edge gateway for Org admins
-func (adminOrg *AdminOrg) CreateNsxtEdgeGateway(e *types.OpenAPIEdgeGateway) (*NsxtEdgeGateway, error) {
+func (adminOrg *AdminOrg) CreateNsxtEdgeGateway(edgeGatewayConfig *types.OpenAPIEdgeGateway) (*NsxtEdgeGateway, error) {
 	if !adminOrg.client.IsSysAdmin {
-		return nil, fmt.Errorf("only Provider can create Edge Gateway")
+		return nil, fmt.Errorf("only System Administrator can create Edge Gateway")
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
@@ -127,7 +127,7 @@ func (adminOrg *AdminOrg) CreateNsxtEdgeGateway(e *types.OpenAPIEdgeGateway) (*N
 		client:      adminOrg.client,
 	}
 
-	err = adminOrg.client.OpenApiPostItem(minimumApiVersion, urlRef, nil, e, returnEgw.EdgeGateway)
+	err = adminOrg.client.OpenApiPostItem(minimumApiVersion, urlRef, nil, edgeGatewayConfig, returnEgw.EdgeGateway)
 	if err != nil {
 		return nil, fmt.Errorf("error creating Edge Gateway: %s", err)
 	}
@@ -136,9 +136,9 @@ func (adminOrg *AdminOrg) CreateNsxtEdgeGateway(e *types.OpenAPIEdgeGateway) (*N
 }
 
 // Update allows to update NSX-T edge gateway for Org admins
-func (egw *NsxtEdgeGateway) Update(e *types.OpenAPIEdgeGateway) (*NsxtEdgeGateway, error) {
+func (egw *NsxtEdgeGateway) Update(edgeGatewayConfig *types.OpenAPIEdgeGateway) (*NsxtEdgeGateway, error) {
 	if !egw.client.IsSysAdmin {
-		return nil, fmt.Errorf("only Provider can update Edge Gateway")
+		return nil, fmt.Errorf("only System Administrator can update Edge Gateway")
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
@@ -147,11 +147,11 @@ func (egw *NsxtEdgeGateway) Update(e *types.OpenAPIEdgeGateway) (*NsxtEdgeGatewa
 		return nil, err
 	}
 
-	if e.ID == "" {
+	if edgeGatewayConfig.ID == "" {
 		return nil, fmt.Errorf("cannot update Edge Gateway without id")
 	}
 
-	urlRef, err := egw.client.OpenApiBuildEndpoint(endpoint, e.ID)
+	urlRef, err := egw.client.OpenApiBuildEndpoint(endpoint, edgeGatewayConfig.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ func (egw *NsxtEdgeGateway) Update(e *types.OpenAPIEdgeGateway) (*NsxtEdgeGatewa
 		client:      egw.client,
 	}
 
-	err = egw.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, e, returnEgw.EdgeGateway)
+	err = egw.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, edgeGatewayConfig, returnEgw.EdgeGateway)
 	if err != nil {
 		return nil, fmt.Errorf("error updating Edge Gateway: %s", err)
 	}
@@ -271,7 +271,7 @@ func getAllNsxtEdgeGateways(client *Client, queryParameters url.Values) ([]*Nsxt
 		return nil, err
 	}
 
-	// Wrap all typeResponses into Role types with client
+	// Wrap all typeResponses into NsxtEdgeGateway types with client
 	wrappedResponses := make([]*NsxtEdgeGateway, len(typeResponses))
 	for sliceIndex := range typeResponses {
 		wrappedResponses[sliceIndex] = &NsxtEdgeGateway{
@@ -285,7 +285,8 @@ func getAllNsxtEdgeGateways(client *Client, queryParameters url.Values) ([]*Nsxt
 	return onlyNsxtEdges, nil
 }
 
-// filterOnlyNsxtEdges filters our list of edge gateways only for NSXT_BACKED ones
+// filterOnlyNsxtEdges filters our list of edge gateways only for NSXT_BACKED ones because original endpoint can
+// return NSX-V and NSX-T backed edge gateways.
 func filterOnlyNsxtEdges(allEdges []*NsxtEdgeGateway) []*NsxtEdgeGateway {
 	filteredEdges := make([]*NsxtEdgeGateway, 0)
 

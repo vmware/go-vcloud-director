@@ -18,6 +18,8 @@ type NsxtEdgeCluster struct {
 }
 
 // GetNsxtEdgeClusterByName retrieves a particular NSX-T Edge Cluster by name available for that VDC
+//
+// Note. Multiple NSX-T Edge Clusters with the same name may exist.
 func (vdc *Vdc) GetNsxtEdgeClusterByName(name string) (*NsxtEdgeCluster, error) {
 	if name == "" {
 		return nil, fmt.Errorf("empty NSX-T Edge Cluster name specified")
@@ -56,6 +58,8 @@ func (vdc *Vdc) GetNsxtEdgeClusterByName(name string) (*NsxtEdgeCluster, error) 
 	return nsxtEdgeClusters[0], nil
 }
 
+// filterNsxtEdgeClusters is a helper to filter NSX-T Edge Clusters by name because the FIQL filter does not support
+// filtering by name.
 func filterNsxtEdgeClusters(name string, allNnsxtEdgeCluster []*NsxtEdgeCluster) []*NsxtEdgeCluster {
 	filteredNsxtEdgeClusters := make([]*NsxtEdgeCluster, 0)
 	for index, nsxtTier0Router := range allNnsxtEdgeCluster {
