@@ -1,8 +1,7 @@
 package types
 
-// OpenAPIEdgeGateway structure can hold both NSX-V and NSX-T edge gateways as returned by OpenAPI endpoint.
-//
-// Note. OpenAPI endpoint only allows to read NSX-V edge gateways.
+// OpenAPIEdgeGateway structure supports marshalling both - NSX-V and NSX-T edge gateways as returned by OpenAPI
+// endpoint (cloudapi/1.0.0edgeGateways/), but the endpoint only allows to create NSX-T edge gateways.
 type OpenAPIEdgeGateway struct {
 	Status string `json:"status,omitempty"`
 	ID     string `json:"id,omitempty"`
