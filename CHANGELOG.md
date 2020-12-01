@@ -8,7 +8,8 @@
 * Added functions `edge.GetLbAppRules`, `edge.GetLbServerPools`, `edge.GetLbAppProfiles`, `edge.GetNsxvNatRules`, `client.GetOrgList`
 * Exported private function `client.maxSupportedVersion` to `client.MaxSupportedVersion`
 * Able to upload an OVF without ovf:size defined in File part. Some bug fix for uploading OVA/OVF. [#331](https://github.com/vmware/go-vcloud-director/pull/331)
-* Added ability to set specific catalog storage profile using `func (adminCatalog *AdminCatalog) Update()` [#344](https://github.com/vmware/go-vcloud-director/pull/344)
+* Added ability to set specific catalog storage profile using `adminCatalog.Update()`, `adminCatalog.CreateWithStorageProfile()`, 
+`catalog.CreateWithStorageProfile()`  [#344](https://github.com/vmware/go-vcloud-director/pull/344)
 * Added functions `(vdc *Vdc) GetNsxtEdgeClusterByName` and `(vdc *Vdc) GetAllNsxtEdgeClusters` for NSX-T Edge Cluster lookup [#344](https://github.com/vmware/go-vcloud-director/pull/344)
 * Added NSX-T Edge Gateway management functions `GetNsxtEdgeGatewayById`, `GetNsxtEdgeGatewayByName`, `GetAllNsxtEdgeGateways`, `CreateNsxtEdgeGateway`, `Update`, `Delete`  [#344](https://github.com/vmware/go-vcloud-director/pull/344)
 
