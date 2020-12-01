@@ -419,57 +419,6 @@ func (vcd *TestVCD) Test_AdminOrgCreateCatalog(check *C) {
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, copyAdminCatalog.AdminCatalog.Name)
 	check.Assert(adminCatalog.AdminCatalog.Description, Equals, copyAdminCatalog.AdminCatalog.Description)
 	check.Assert(adminCatalog.AdminCatalog.IsPublished, Equals, false)
-	check.Assert(adminCatalog.AdminCatalog.CatalogStorageProfiles, IsNil)
-	err = adminCatalog.Delete(true, true)
-	check.Assert(err, IsNil)
-}
-
-func (vcd *TestVCD) Test_AdminOrgCreateCatalogWithStorageProfile(check *C) {
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
-	check.Assert(err, IsNil)
-	check.Assert(adminOrg, NotNil)
-	oldAdminCatalog, _ := adminOrg.GetAdminCatalogByName(check.TestName(), false)
-	if oldAdminCatalog != nil {
-		err = oldAdminCatalog.Delete(true, true)
-		check.Assert(err, IsNil)
-	}
-
-	// Lookup storage profile to use in catalog
-	storageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
-	check.Assert(err, IsNil)
-	createStorageProfiles := &types.CatalogStorageProfiles{VdcStorageProfile: []*types.Reference{&storageProfile}}
-
-	adminCatalog, err := adminOrg.CreateCatalogWithStorageProfile(check.TestName(), TestCreateCatalogDesc, createStorageProfiles)
-	check.Assert(err, IsNil)
-	AddToCleanupList(check.TestName(), "catalog", vcd.org.Org.Name, check.TestName())
-	check.Assert(adminCatalog.AdminCatalog.Name, Equals, check.TestName())
-	check.Assert(adminCatalog.AdminCatalog.Description, Equals, TestCreateCatalogDesc)
-	task := NewTask(&vcd.client.Client)
-	task.Task = adminCatalog.AdminCatalog.Tasks.Task[0]
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	adminOrg, err = vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
-	check.Assert(err, IsNil)
-	copyAdminCatalog, err := adminOrg.GetAdminCatalogByName(check.TestName(), false)
-	check.Assert(err, IsNil)
-	check.Assert(copyAdminCatalog, NotNil)
-	check.Assert(adminCatalog.AdminCatalog.Name, Equals, copyAdminCatalog.AdminCatalog.Name)
-	check.Assert(adminCatalog.AdminCatalog.Description, Equals, copyAdminCatalog.AdminCatalog.Description)
-	check.Assert(adminCatalog.AdminCatalog.IsPublished, Equals, false)
-
-	// Try to update storage profile for catalog if secondary profile is defined
-	if vcd.config.VCD.StorageProfile.SP2 != "" {
-		updateStorageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP2)
-		check.Assert(err, IsNil)
-		updateStorageProfiles := &types.CatalogStorageProfiles{VdcStorageProfile: []*types.Reference{&updateStorageProfile}}
-		adminCatalog.AdminCatalog.CatalogStorageProfiles = updateStorageProfiles
-		err = adminCatalog.Update()
-		check.Assert(err, IsNil)
-	} else {
-		fmt.Printf("# Skipping storage profile update for %s because secondary storage profile is not provided",
-			adminCatalog.AdminCatalog.Name)
-	}
-
 	err = adminCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
 }
@@ -498,42 +447,6 @@ func (vcd *TestVCD) Test_OrgCreateCatalog(check *C) {
 	org, err = vcd.client.GetOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	copyCatalog, err := org.GetCatalogByName(TestCreateCatalog, false)
-	check.Assert(err, IsNil)
-	check.Assert(copyCatalog, NotNil)
-	check.Assert(catalog.Catalog.Name, Equals, copyCatalog.Catalog.Name)
-	check.Assert(catalog.Catalog.Description, Equals, copyCatalog.Catalog.Description)
-	check.Assert(catalog.Catalog.IsPublished, Equals, false)
-	err = catalog.Delete(true, true)
-	check.Assert(err, IsNil)
-}
-
-func (vcd *TestVCD) Test_OrgCreateCatalogWithStorageProfile(check *C) {
-	org, err := vcd.client.GetOrgByName(vcd.org.Org.Name)
-	check.Assert(err, IsNil)
-	check.Assert(org, NotNil)
-	oldCatalog, _ := org.GetCatalogByName(check.TestName(), false)
-	if oldCatalog != nil {
-		err = oldCatalog.Delete(true, true)
-		check.Assert(err, IsNil)
-	}
-
-	// Lookup storage profile to use in catalog
-	storageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
-	check.Assert(err, IsNil)
-	storageProfiles := &types.CatalogStorageProfiles{VdcStorageProfile: []*types.Reference{&storageProfile}}
-
-	catalog, err := org.CreateCatalogWithStorageProfile(check.TestName(), TestCreateCatalogDesc, storageProfiles)
-	check.Assert(err, IsNil)
-	AddToCleanupList(check.TestName(), "catalog", vcd.org.Org.Name, check.TestName())
-	check.Assert(catalog.Catalog.Name, Equals, check.TestName())
-	check.Assert(catalog.Catalog.Description, Equals, TestCreateCatalogDesc)
-	task := NewTask(&vcd.client.Client)
-	task.Task = catalog.Catalog.Tasks.Task[0]
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	org, err = vcd.client.GetOrgByName(vcd.org.Org.Name)
-	check.Assert(err, IsNil)
-	copyCatalog, err := org.GetCatalogByName(check.TestName(), false)
 	check.Assert(err, IsNil)
 	check.Assert(copyCatalog, NotNil)
 	check.Assert(catalog.Catalog.Name, Equals, copyCatalog.Catalog.Name)

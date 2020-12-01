@@ -42,11 +42,6 @@ func (adminOrg *AdminOrg) CreateCatalog(name, description string) (AdminCatalog,
 	return CreateCatalog(adminOrg.client, adminOrg.AdminOrg.Link, name, description)
 }
 
-// CreateCatalogWithStorageProfile is like CreateCatalog, but allows to specify storage profile
-func (adminOrg *AdminOrg) CreateCatalogWithStorageProfile(name, description string, storageProfiles *types.CatalogStorageProfiles) (AdminCatalog, error) {
-	return CreateCatalogWithStorageProfile(adminOrg.client, adminOrg.AdminOrg.Link, name, description, storageProfiles)
-}
-
 //   Deletes the org, returning an error if the vCD call fails.
 //   API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Organization.html
 func (adminOrg *AdminOrg) Delete(force bool, recursive bool) error {
