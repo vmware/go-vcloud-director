@@ -11,11 +11,8 @@ import (
 )
 
 func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
-	if vcd.client.Client.APIVCDMaxVersionIs("< 34") {
-		check.Skip("At least VCD 10.1 is required to create NSX-T edge gateway")
-	}
-
 	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGateways)
 
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
