@@ -614,6 +614,52 @@ func (adminOrg *AdminOrg) GetVDCByName(vdcName string, refresh bool) (*Vdc, erro
 	return nil, ErrorEntityNotFound
 }
 
+// GetAllVDCs returns all child VDCs
+func (adminOrg *AdminOrg) GetAllVDCs(refresh bool) ([]*Vdc, error) {
+	if refresh {
+		err := adminOrg.Refresh()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	allVdcs := make([]*Vdc, len(adminOrg.AdminOrg.Vdcs.Vdcs))
+	for vdcIndex, vdc := range adminOrg.AdminOrg.Vdcs.Vdcs {
+		vdc, err := adminOrg.GetVDCByHref(vdc.HREF)
+		if err != nil {
+			return nil, fmt.Errorf("error retrieving VDC '%s': %s", vdc.Vdc.Name, err)
+		}
+		allVdcs[vdcIndex] = vdc
+
+	}
+
+	return allVdcs, nil
+}
+
+// GetAllStorageProfileReferences traverses all child VDCs and returns a slice of storage profile references
+func (adminOrg *AdminOrg) GetAllStorageProfileReferences(refresh bool) ([]*types.Reference, error) {
+	if refresh {
+		err := adminOrg.Refresh()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	allVdcs, err := adminOrg.GetAllVDCs(refresh)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve storage profile references: %s", err)
+	}
+
+	allStorageProfileReferences := make([]*types.Reference, 0)
+	for _, vdc := range allVdcs {
+		if len(vdc.Vdc.VdcStorageProfiles.VdcStorageProfile) > 0 {
+			allStorageProfileReferences = append(allStorageProfileReferences, vdc.Vdc.VdcStorageProfiles.VdcStorageProfile...)
+		}
+	}
+
+	return allStorageProfileReferences, nil
+}
+
 // GetVDCById finds a VDC by ID
 // On success, returns a pointer to the Vdc structure and a nil error
 // On failure, returns a nil pointer and an error
