@@ -419,8 +419,7 @@ func (vcd *TestVCD) Test_AdminOrgCreateCatalog(check *C) {
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, copyAdminCatalog.AdminCatalog.Name)
 	check.Assert(adminCatalog.AdminCatalog.Description, Equals, copyAdminCatalog.AdminCatalog.Description)
 	check.Assert(adminCatalog.AdminCatalog.IsPublished, Equals, false)
-	check.Assert(adminCatalog.AdminCatalog.CatalogStorageProfiles, NotNil)
-	check.Assert(adminCatalog.AdminCatalog.CatalogStorageProfiles.VdcStorageProfile, IsNil)
+	check.Assert(adminCatalog.AdminCatalog.CatalogStorageProfiles, IsNil)
 	err = adminCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
 }

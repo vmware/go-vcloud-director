@@ -225,34 +225,3 @@ func (vcd *TestVCD) TestOrg_AdminOrg_QueryCatalogList(check *C) {
 		check.Assert(foundInBoth, Equals, true)
 	}
 }
-
-// Test_GetAllVDCs checks that adminOrg.GetAllVDCs returns at least one VDC
-func (vcd *TestVCD) Test_GetAllVDCs(check *C) {
-	if vcd.skipAdminTests {
-		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
-	}
-
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
-	check.Assert(err, IsNil)
-	check.Assert(adminOrg, NotNil)
-
-	vdcs, err := adminOrg.GetAllVDCs(true)
-	check.Assert(err, IsNil)
-	check.Assert(len(vdcs) > 0, Equals, true)
-}
-
-// Test_GetAllStorageProfileReferences checks that adminOrg.GetAllStorageProfileReferences returns at least one storage
-// profile reference
-func (vcd *TestVCD) Test_GetAllStorageProfileReferences(check *C) {
-	if vcd.skipAdminTests {
-		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
-	}
-
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
-	check.Assert(err, IsNil)
-	check.Assert(adminOrg, NotNil)
-
-	storageProfileReferences, err := adminOrg.GetAllStorageProfileReferences(true)
-	check.Assert(err, IsNil)
-	check.Assert(len(storageProfileReferences) > 0, Equals, true)
-}
