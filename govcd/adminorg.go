@@ -93,6 +93,23 @@ func (adminOrg *AdminOrg) GetAllStorageProfileReferences(refresh bool) ([]*types
 	return allStorageProfileReferences, nil
 }
 
+func (adminOrg *AdminOrg) GetStorageProfileReferenceById(id string, refresh bool) (*types.Reference, error) {
+	allStorageProfiles, err := adminOrg.GetAllStorageProfileReferences(refresh)
+	if err != nil {
+		return nil, fmt.Errorf("error getting all storage profiles: %s", err)
+	}
+
+	for _, storageProfileReference := range allStorageProfiles {
+		if storageProfileReference.ID == id {
+			return storageProfileReference, nil
+		}
+	}
+
+	return nil, fmt.Errorf("%s: storage profile with ID '%s' not found in Org '%s'",
+		ErrorEntityNotFound, id, adminOrg.AdminOrg.Name)
+
+}
+
 //   Deletes the org, returning an error if the vCD call fails.
 //   API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Organization.html
 func (adminOrg *AdminOrg) Delete(force bool, recursive bool) error {
