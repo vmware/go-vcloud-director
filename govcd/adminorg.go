@@ -47,7 +47,7 @@ func (adminOrg *AdminOrg) CreateCatalogWithStorageProfile(name, description stri
 	return CreateCatalogWithStorageProfile(adminOrg.client, adminOrg.AdminOrg.Link, name, description, storageProfiles)
 }
 
-// GetAllVDCs returns all child VDCs
+// GetAllVDCs returns all depending VDCs for a particular Org
 func (adminOrg *AdminOrg) GetAllVDCs(refresh bool) ([]*Vdc, error) {
 	if refresh {
 		err := adminOrg.Refresh()
@@ -69,7 +69,8 @@ func (adminOrg *AdminOrg) GetAllVDCs(refresh bool) ([]*Vdc, error) {
 	return allVdcs, nil
 }
 
-// GetAllStorageProfileReferences traverses all child VDCs and returns a slice of storage profile references
+// GetAllStorageProfileReferences traverses all depending VDCs and returns a slice of storage profile references
+// available in those VDCs
 func (adminOrg *AdminOrg) GetAllStorageProfileReferences(refresh bool) ([]*types.Reference, error) {
 	if refresh {
 		err := adminOrg.Refresh()
@@ -93,6 +94,7 @@ func (adminOrg *AdminOrg) GetAllStorageProfileReferences(refresh bool) ([]*types
 	return allStorageProfileReferences, nil
 }
 
+// GetStorageProfileReferenceById finds storage profile reference by specified ID in Org or returns ErrorEntityNotFound
 func (adminOrg *AdminOrg) GetStorageProfileReferenceById(id string, refresh bool) (*types.Reference, error) {
 	allStorageProfiles, err := adminOrg.GetAllStorageProfileReferences(refresh)
 	if err != nil {
@@ -107,7 +109,6 @@ func (adminOrg *AdminOrg) GetStorageProfileReferenceById(id string, refresh bool
 
 	return nil, fmt.Errorf("%s: storage profile with ID '%s' not found in Org '%s'",
 		ErrorEntityNotFound, id, adminOrg.AdminOrg.Name)
-
 }
 
 //   Deletes the org, returning an error if the vCD call fails.

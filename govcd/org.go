@@ -90,6 +90,7 @@ func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
 	return Vdc{}, nil
 }
 
+// CreateCatalog creates a catalog with specified name and description
 func CreateCatalog(client *Client, links types.LinkList, Name, Description string) (AdminCatalog, error) {
 	return CreateCatalogWithStorageProfile(client, links, Name, Description, nil)
 }

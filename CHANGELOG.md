@@ -8,7 +8,7 @@
 * Added functions `edge.GetLbAppRules`, `edge.GetLbServerPools`, `edge.GetLbAppProfiles`, `edge.GetNsxvNatRules`, `client.GetOrgList`
 * Exported private function `client.maxSupportedVersion` to `client.MaxSupportedVersion`
 * Able to upload an OVF without ovf:size defined in File part. Some bug fix for uploading OVA/OVF. [#331](https://github.com/vmware/go-vcloud-director/pull/331)
-* Add support for handling catalog storage profiles (`adminOrg.CreateCatalogWithStorageProfile`,
+* Add support for handling catalog storage profile (`adminOrg.CreateCatalogWithStorageProfile`,
 `org.CreateCatalogWithStorageProfile`, `adminCatalog.Update`) [#345](https://github.com/vmware/go-vcloud-director/pull/345)
 * Add convenience functions `AdminOrg.GetAllStorageProfileReferences`, `AdminOrg.GetStorageProfileReferenceById`, `AdminOrg.GetAllVDCs`  [#345](https://github.com/vmware/go-vcloud-director/pull/345)
 
