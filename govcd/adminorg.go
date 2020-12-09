@@ -42,6 +42,75 @@ func (adminOrg *AdminOrg) CreateCatalog(name, description string) (AdminCatalog,
 	return CreateCatalog(adminOrg.client, adminOrg.AdminOrg.Link, name, description)
 }
 
+// CreateCatalogWithStorageProfile is like CreateCatalog, but allows to specify storage profile
+func (adminOrg *AdminOrg) CreateCatalogWithStorageProfile(name, description string, storageProfiles *types.CatalogStorageProfiles) (*AdminCatalog, error) {
+	return CreateCatalogWithStorageProfile(adminOrg.client, adminOrg.AdminOrg.Link, name, description, storageProfiles)
+}
+
+// GetAllVDCs returns all depending VDCs for a particular Org
+func (adminOrg *AdminOrg) GetAllVDCs(refresh bool) ([]*Vdc, error) {
+	if refresh {
+		err := adminOrg.Refresh()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	allVdcs := make([]*Vdc, len(adminOrg.AdminOrg.Vdcs.Vdcs))
+	for vdcIndex, vdc := range adminOrg.AdminOrg.Vdcs.Vdcs {
+		vdc, err := adminOrg.GetVDCByHref(vdc.HREF)
+		if err != nil {
+			return nil, fmt.Errorf("error retrieving VDC '%s': %s", vdc.Vdc.Name, err)
+		}
+		allVdcs[vdcIndex] = vdc
+
+	}
+
+	return allVdcs, nil
+}
+
+// GetAllStorageProfileReferences traverses all depending VDCs and returns a slice of storage profile references
+// available in those VDCs
+func (adminOrg *AdminOrg) GetAllStorageProfileReferences(refresh bool) ([]*types.Reference, error) {
+	if refresh {
+		err := adminOrg.Refresh()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	allVdcs, err := adminOrg.GetAllVDCs(refresh)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve storage profile references: %s", err)
+	}
+
+	allStorageProfileReferences := make([]*types.Reference, 0)
+	for _, vdc := range allVdcs {
+		if len(vdc.Vdc.VdcStorageProfiles.VdcStorageProfile) > 0 {
+			allStorageProfileReferences = append(allStorageProfileReferences, vdc.Vdc.VdcStorageProfiles.VdcStorageProfile...)
+		}
+	}
+
+	return allStorageProfileReferences, nil
+}
+
+// GetStorageProfileReferenceById finds storage profile reference by specified ID in Org or returns ErrorEntityNotFound
+func (adminOrg *AdminOrg) GetStorageProfileReferenceById(id string, refresh bool) (*types.Reference, error) {
+	allStorageProfiles, err := adminOrg.GetAllStorageProfileReferences(refresh)
+	if err != nil {
+		return nil, fmt.Errorf("error getting all storage profiles: %s", err)
+	}
+
+	for _, storageProfileReference := range allStorageProfiles {
+		if storageProfileReference.ID == id {
+			return storageProfileReference, nil
+		}
+	}
+
+	return nil, fmt.Errorf("%s: storage profile with ID '%s' not found in Org '%s'",
+		ErrorEntityNotFound, id, adminOrg.AdminOrg.Name)
+}
+
 //   Deletes the org, returning an error if the vCD call fails.
 //   API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Organization.html
 func (adminOrg *AdminOrg) Delete(force bool, recursive bool) error {
