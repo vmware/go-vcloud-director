@@ -603,7 +603,7 @@ type ComputeCapacity struct {
 // Description: A reference to a resource. Contains an href attribute and optional name and type attributes.
 // Since: 0.9
 type Reference struct {
-	HREF string `xml:"href,attr"`
+	HREF string `xml:"href,attr,omitempty"`
 	ID   string `xml:"id,attr,omitempty"`
 	Type string `xml:"type,attr,omitempty"`
 	Name string `xml:"name,attr,omitempty"`

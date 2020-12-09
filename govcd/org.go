@@ -90,14 +90,25 @@ func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
 	return Vdc{}, nil
 }
 
+// CreateCatalog creates a catalog with specified name and description
 func CreateCatalog(client *Client, links types.LinkList, Name, Description string) (AdminCatalog, error) {
+	adminCatalog, err := CreateCatalogWithStorageProfile(client, links, Name, Description, nil)
+	if err != nil {
+		return AdminCatalog{}, nil
+	}
+	return *adminCatalog, nil
+}
+
+// CreateCatalogWithStorageProfile is like CreateCatalog, but allows to specify storage profile
+func CreateCatalogWithStorageProfile(client *Client, links types.LinkList, Name, Description string, storageProfiles *types.CatalogStorageProfiles) (*AdminCatalog, error) {
 	reqCatalog := &types.Catalog{
 		Name:        Name,
 		Description: Description,
 	}
 	vcomp := &types.AdminCatalog{
-		Xmlns:   types.XMLNamespaceVCloud,
-		Catalog: *reqCatalog,
+		Xmlns:                  types.XMLNamespaceVCloud,
+		Catalog:                *reqCatalog,
+		CatalogStorageProfiles: storageProfiles,
 	}
 
 	var createOrgLink *types.Link
@@ -110,14 +121,14 @@ func CreateCatalog(client *Client, links types.LinkList, Name, Description strin
 	}
 
 	if createOrgLink == nil {
-		return AdminCatalog{}, fmt.Errorf("creating catalog failed to find url")
+		return nil, fmt.Errorf("creating catalog failed to find url")
 	}
 
 	catalog := NewAdminCatalog(client)
 	_, err := client.ExecuteRequest(createOrgLink.HREF, http.MethodPost,
 		"application/vnd.vmware.admin.catalog+xml", "error creating catalog: %s", vcomp, catalog.AdminCatalog)
 
-	return *catalog, err
+	return catalog, err
 }
 
 // CreateCatalog creates a catalog with given name and description under
@@ -125,13 +136,22 @@ func CreateCatalog(client *Client, links types.LinkList, Name, Description strin
 // task.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-CreateCatalog.html
 func (org *Org) CreateCatalog(name, description string) (Catalog, error) {
-	catalog := NewCatalog(org.client)
-	adminCatalog, err := CreateCatalog(org.client, org.Org.Link, name, description)
+	catalog, err := org.CreateCatalogWithStorageProfile(name, description, nil)
 	if err != nil {
 		return Catalog{}, err
 	}
-	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
 	return *catalog, nil
+}
+
+// CreateCatalogWithStorageProfile is like CreateCatalog but additionally allows to specify storage profiles
+func (org *Org) CreateCatalogWithStorageProfile(name, description string, storageProfiles *types.CatalogStorageProfiles) (*Catalog, error) {
+	catalog := NewCatalog(org.client)
+	adminCatalog, err := CreateCatalogWithStorageProfile(org.client, org.Org.Link, name, description, storageProfiles)
+	if err != nil {
+		return nil, err
+	}
+	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
+	return catalog, nil
 }
 
 func validateVdcConfiguration(vdcDefinition *types.VdcConfiguration) error {
