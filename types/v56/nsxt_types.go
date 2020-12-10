@@ -9,8 +9,8 @@ type OpenAPIEdgeGateway struct {
 	Name string `json:"name"`
 	// Description of edge gateway
 	Description string `json:"description"`
-	// OrgVdc holds the organization vDC or vDC Group that this edge gateway belongs to. If the ownerRef is set to a vDC
-	// Group, this gateway will be available across all the participating Organization vDCs in the vDC Group.
+	// OrgVdc holds the organization vDC or vDC Group that this edge gateway belongs to. If the ownerRef is set to a VDC
+	// Group, this gateway will be available across all the participating Organization vDCs in the VDC Group.
 	OrgVdc *OpenApiReference `json:"orgVdc,omitempty"`
 	// Org holds the organization to which the gateway belongs.
 	Org *OpenApiReference `json:"orgRef,omitempty"`
@@ -26,7 +26,7 @@ type OpenAPIEdgeGateway struct {
 	// Note. The value of secondaryEdgeCluster will be set to NULL for NSX-T edge gateways. For NSX-V Edges, this is
 	// read-only and the legacy API must be used for edge specific placement.
 	EdgeClusterConfig *OpenAPIEdgeGatewayEdgeClusterConfig `json:"edgeClusterConfig,omitempty"`
-	// OrgVdcNetworkCount holds the number of Org vDC networks connected to the gateway.
+	// OrgVdcNetworkCount holds the number of Org VDC networks connected to the gateway.
 	OrgVdcNetworkCount *int `json:"orgVdcNetworkCount,omitempty"`
 	// GatewayBacking must contain backing details of the edge gateway only if importing an NSX-T router.
 	GatewayBacking *OpenAPIEdgeGatewayBacking `json:"gatewayBacking,omitempty"`

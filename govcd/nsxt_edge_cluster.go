@@ -26,7 +26,7 @@ func (vdc *Vdc) GetNsxtEdgeClusterByName(name string) (*NsxtEdgeCluster, error) 
 
 	// Ideally FIQL filter could be used to filter on server side and get only desired result, but filtering on
 	// 'name' is not yet supported. The only supported field for filtering is
-	// _context==urn:vcloud:vdc:09722307-aee0-4623-af95-7f8e577c9ebc to specify parent Org Vdc (This
+	// _context==urn:vcloud:vdc:09722307-aee0-4623-af95-7f8e577c9ebc to specify parent Org VDC (This
 	// automatically happens in GetAllNsxtEdgeClusters()). The below filter injection is left as documentation.
 	/*
 		queryParameters := copyOrNewUrlValues(nil)
