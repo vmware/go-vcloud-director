@@ -61,9 +61,9 @@ func (vdc *Vdc) GetNsxtEdgeClusterByName(name string) (*NsxtEdgeCluster, error) 
 // filtering by name.
 func filterNsxtEdgeClusters(name string, allNnsxtEdgeCluster []*NsxtEdgeCluster) []*NsxtEdgeCluster {
 	filteredNsxtEdgeClusters := make([]*NsxtEdgeCluster, 0)
-	for index, nsxtTier0Router := range allNnsxtEdgeCluster {
+	for index, nsxtEdgeCluster := range allNnsxtEdgeCluster {
 		if allNnsxtEdgeCluster[index].NsxtEdgeCluster.Name == name {
-			filteredNsxtEdgeClusters = append(filteredNsxtEdgeClusters, nsxtTier0Router)
+			filteredNsxtEdgeClusters = append(filteredNsxtEdgeClusters, nsxtEdgeCluster)
 		}
 	}
 
@@ -89,7 +89,7 @@ func (vdc *Vdc) GetAllNsxtEdgeClusters(queryParameters url.Values) ([]*NsxtEdgeC
 	}
 
 	// Get all NSX-T Edge clusters that are accessible to an organization VDC. The “_context” filter key must be set with
-	// the id of the VDC for which we want to get available Edge Clusters for.
+	// the ID of the VDC for which we want to get available Edge Clusters for.
 	//
 	// _context==urn:vcloud:vdc:09722307-aee0-4623-af95-7f8e577c9ebc
 

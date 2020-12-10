@@ -84,9 +84,7 @@ func (vdc *Vdc) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) 
 		return nil, fmt.Errorf("unable to retrieve Edge Gateway by name '%s': %s", name, err)
 	}
 
-	onlyNsxtEdges := filterOnlyNsxtEdges(allEdges)
-
-	return returnSingleNsxtEdgeGateway(name, onlyNsxtEdges)
+	return returnSingleNsxtEdgeGateway(name, allEdges)
 }
 
 // GetAllNsxtEdgeGateways allows to retrieve all NSX-T edge gateways for Org Admins
@@ -94,12 +92,12 @@ func (adminOrg *AdminOrg) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]
 	return getAllNsxtEdgeGateways(adminOrg.client, queryParameters)
 }
 
-// GetAllNsxtEdgeGateways  allows to retrieve all NSX-T edge gateways for Org users
+// GetAllNsxtEdgeGateways allows to retrieve all NSX-T edge gateways for Org users
 func (org *Org) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
 	return getAllNsxtEdgeGateways(org.client, queryParameters)
 }
 
-// GetAllNsxtEdgeGateways  allows to retrieve all NSX-T edge gateways for Org users
+// GetAllNsxtEdgeGateways allows to retrieve all NSX-T edge gateways for specific VDC
 func (vdc *Vdc) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
 	filteredQueryParams := queryParameterFilterAnd("orgVdc.id=="+vdc.Vdc.ID, queryParameters)
 	return getAllNsxtEdgeGateways(vdc.client, filteredQueryParams)
@@ -202,6 +200,7 @@ func (egw *NsxtEdgeGateway) Delete() error {
 // getNsxtEdgeGatewayById is a private parent for wrapped functions:
 // func (adminOrg *AdminOrg) GetNsxtEdgeGatewayByName(id string) (*NsxtEdgeGateway, error)
 // func (org *Org) GetNsxtEdgeGatewayByName(id string) (*NsxtEdgeGateway, error)
+// func (vdc *Vdc) GetNsxtEdgeGatewayById(id string) (*NsxtEdgeGateway, error)
 func getNsxtEdgeGatewayById(client *Client, id string, queryParameters url.Values) (*NsxtEdgeGateway, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
 	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
@@ -253,6 +252,7 @@ func returnSingleNsxtEdgeGateway(name string, allEdges []*NsxtEdgeGateway) (*Nsx
 // getAllNsxtEdgeGateways is a private parent for wrapped functions:
 // func (adminOrg *AdminOrg) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error)
 // func (org *Org) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error)
+// func (vdc *Vdc) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error)
 func getAllNsxtEdgeGateways(client *Client, queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
 	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
