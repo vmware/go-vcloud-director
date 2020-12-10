@@ -18,8 +18,7 @@ type NsxtEdgeCluster struct {
 }
 
 // GetNsxtEdgeClusterByName retrieves a particular NSX-T Edge Cluster by name available for that VDC
-//
-// Note. Multiple NSX-T Edge Clusters with the same name may exist.
+// Note: Multiple NSX-T Edge Clusters with the same name may exist.
 func (vdc *Vdc) GetNsxtEdgeClusterByName(name string) (*NsxtEdgeCluster, error) {
 	if name == "" {
 		return nil, fmt.Errorf("empty NSX-T Edge Cluster name specified")
@@ -36,7 +35,7 @@ func (vdc *Vdc) GetNsxtEdgeClusterByName(name string) (*NsxtEdgeCluster, error) 
 
 	nsxtEdgeClusters, err := vdc.GetAllNsxtEdgeClusters(nil)
 	if err != nil {
-		return nil, fmt.Errorf("could not find NSX-T Edge Cluster with name '%s' for Org Vdc with id '%s': %s",
+		return nil, fmt.Errorf("could not find NSX-T Edge Cluster with name '%s' for Org VDC with id '%s': %s",
 			name, vdc.Vdc.ID, err)
 	}
 
@@ -46,12 +45,12 @@ func (vdc *Vdc) GetNsxtEdgeClusterByName(name string) (*NsxtEdgeCluster, error) 
 
 	if len(nsxtEdgeClusters) == 0 {
 		// ErrorEntityNotFound is injected here for the ability to validate problem using ContainsNotFound()
-		return nil, fmt.Errorf("%s: no NSX-T Tier-0 Edge Cluster with name '%s' for Org Vdc with id '%s' found",
+		return nil, fmt.Errorf("%s: no NSX-T Tier-0 Edge Cluster with name '%s' for Org VDC with id '%s' found",
 			ErrorEntityNotFound, name, vdc.Vdc.ID)
 	}
 
 	if len(nsxtEdgeClusters) > 1 {
-		return nil, fmt.Errorf("more than one (%d) NSX-T Edge Cluster with name '%s' for Org Vdc with id '%s' found",
+		return nil, fmt.Errorf("more than one (%d) NSX-T Edge Cluster with name '%s' for Org VDC with id '%s' found",
 			len(nsxtEdgeClusters), name, vdc.Vdc.ID)
 	}
 

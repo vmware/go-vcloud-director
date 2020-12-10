@@ -27,7 +27,7 @@ func (org *Org) GetNsxtEdgeGatewayById(id string) (*NsxtEdgeGateway, error) {
 	return getNsxtEdgeGatewayById(org.client, id, nil)
 }
 
-// GetNsxtEdgeGatewayById allows to retrieve NSX-T edge gateway by ID for specific Vdc
+// GetNsxtEdgeGatewayById allows to retrieve NSX-T edge gateway by ID for specific VDC
 func (vdc *Vdc) GetNsxtEdgeGatewayById(id string) (*NsxtEdgeGateway, error) {
 	params := url.Values{}
 	filterParams := queryParameterFilterAnd("orgVdc.id=="+vdc.Vdc.ID, params)
@@ -37,7 +37,7 @@ func (vdc *Vdc) GetNsxtEdgeGatewayById(id string) (*NsxtEdgeGateway, error) {
 	}
 
 	if egw.EdgeGateway.OrgVdc.ID != vdc.Vdc.ID {
-		return nil, fmt.Errorf("%s: no NSX-T edge gateway with ID '%s' found in VDC '%s'",
+		return nil, fmt.Errorf("%s: no NSX-T Edge Gateway with ID '%s' found in VDC '%s'",
 			ErrorEntityNotFound, id, vdc.Vdc.ID)
 	}
 
@@ -51,7 +51,7 @@ func (adminOrg *AdminOrg) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGatewa
 
 	allEdges, err := adminOrg.GetAllNsxtEdgeGateways(queryParameters)
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve edge gateway by name '%s': %s", name, err)
+		return nil, fmt.Errorf("unable to retrieve Edge Gateway by name '%s': %s", name, err)
 	}
 
 	onlyNsxtEdges := filterOnlyNsxtEdges(allEdges)
@@ -66,7 +66,7 @@ func (org *Org) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) 
 
 	allEdges, err := org.GetAllNsxtEdgeGateways(queryParameters)
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve edge gateway by name '%s': %s", name, err)
+		return nil, fmt.Errorf("unable to retrieve Edge Gateway by name '%s': %s", name, err)
 	}
 
 	onlyNsxtEdges := filterOnlyNsxtEdges(allEdges)
@@ -74,14 +74,14 @@ func (org *Org) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) 
 	return returnSingleNsxtEdgeGateway(name, onlyNsxtEdges)
 }
 
-// GetNsxtEdgeGatewayByName allows to retrieve NSX-T edge gateway by Name for specifi Vdc
+// GetNsxtEdgeGatewayByName allows to retrieve NSX-T edge gateway by Name for specific VDC
 func (vdc *Vdc) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) {
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", "name=="+name)
 
 	allEdges, err := vdc.GetAllNsxtEdgeGateways(queryParameters)
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve edge gateway by name '%s': %s", name, err)
+		return nil, fmt.Errorf("unable to retrieve Edge Gateway by name '%s': %s", name, err)
 	}
 
 	onlyNsxtEdges := filterOnlyNsxtEdges(allEdges)
@@ -148,7 +148,7 @@ func (egw *NsxtEdgeGateway) Update(edgeGatewayConfig *types.OpenAPIEdgeGateway) 
 	}
 
 	if edgeGatewayConfig.ID == "" {
-		return nil, fmt.Errorf("cannot update Edge Gateway without id")
+		return nil, fmt.Errorf("cannot update Edge Gateway without ID")
 	}
 
 	urlRef, err := egw.client.OpenApiBuildEndpoint(endpoint, edgeGatewayConfig.ID)
@@ -182,7 +182,7 @@ func (egw *NsxtEdgeGateway) Delete() error {
 	}
 
 	if egw.EdgeGateway.ID == "" {
-		return fmt.Errorf("cannot delete Edge Gateway without id")
+		return fmt.Errorf("cannot delete Edge Gateway without ID")
 	}
 
 	urlRef, err := egw.client.OpenApiBuildEndpoint(endpoint, egw.EdgeGateway.ID)
@@ -210,7 +210,7 @@ func getNsxtEdgeGatewayById(client *Client, id string, queryParameters url.Value
 	}
 
 	if id == "" {
-		return nil, fmt.Errorf("empty Edge Gateway id")
+		return nil, fmt.Errorf("empty Edge Gateway ID")
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(endpoint, id)
@@ -229,7 +229,7 @@ func getNsxtEdgeGatewayById(client *Client, id string, queryParameters url.Value
 	}
 
 	if egw.EdgeGateway.GatewayBacking.GatewayType != "NSXT_BACKED" {
-		return nil, fmt.Errorf("%s: this is not NSX-T edge gateway (%s)",
+		return nil, fmt.Errorf("%s: this is not NSX-T Edge Gateway (%s)",
 			ErrorEntityNotFound, egw.EdgeGateway.GatewayBacking.GatewayType)
 	}
 
@@ -240,11 +240,11 @@ func getNsxtEdgeGatewayById(client *Client, id string, queryParameters url.Value
 // receivers
 func returnSingleNsxtEdgeGateway(name string, allEdges []*NsxtEdgeGateway) (*NsxtEdgeGateway, error) {
 	if len(allEdges) > 1 {
-		return nil, fmt.Errorf("got more than 1 edge gateway by name '%s' %d", name, len(allEdges))
+		return nil, fmt.Errorf("got more than 1 Edge Gateway by name '%s' %d", name, len(allEdges))
 	}
 
 	if len(allEdges) < 1 {
-		return nil, fmt.Errorf("%s: got 0 edge gateways by name '%s'", ErrorEntityNotFound, name)
+		return nil, fmt.Errorf("%s: got 0 Edge Gateways by name '%s'", ErrorEntityNotFound, name)
 	}
 
 	return allEdges[0], nil
