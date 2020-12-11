@@ -20,6 +20,8 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks:           "33.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies:         "32.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies: "33.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeClusters:               "34.0", // VCD 10.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways:               "34.0",
 }
 
 // checkOpenApiEndpointCompatibility checks if VCD version (to which the client is connected) is sufficient to work with

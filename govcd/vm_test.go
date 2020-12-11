@@ -489,8 +489,6 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 		check.Skip("skipping test because no VM is found")
 	}
 
-	fmt.Printf("Running: %s\n", check.TestName())
-
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
 

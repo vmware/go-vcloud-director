@@ -10,7 +10,9 @@
 * Able to upload an OVF without ovf:size defined in File part. Some bug fix for uploading OVA/OVF. [#331](https://github.com/vmware/go-vcloud-director/pull/331)
 * Add support for handling catalog storage profile (`adminOrg.CreateCatalogWithStorageProfile`,
 `org.CreateCatalogWithStorageProfile`, `adminCatalog.Update`) [#345](https://github.com/vmware/go-vcloud-director/pull/345)
-* Add convenience functions `AdminOrg.GetAllStorageProfileReferences`, `AdminOrg.GetStorageProfileReferenceById`, `AdminOrg.GetAllVDCs`  [#345](https://github.com/vmware/go-vcloud-director/pull/345)
+* Add convenience functions `AdminOrg.GetAllStorageProfileReferences`, `AdminOrg.GetStorageProfileReferenceById`, `AdminOrg.GetAllVDCs` [#345](https://github.com/vmware/go-vcloud-director/pull/345)
+* Added VCD 10.1+ functions `(vdc *Vdc) GetNsxtEdgeClusterByName` and `(vdc *Vdc) GetAllNsxtEdgeClusters` for NSX-T Edge Cluster lookup [#344](https://github.com/vmware/go-vcloud-director/pull/344)
+* Added VCD 10.1+ NSX-T Edge Gateway management functions `GetNsxtEdgeGatewayById`, `GetNsxtEdgeGatewayByName`, `GetAllNsxtEdgeGateways`, `CreateNsxtEdgeGateway`, `Update`, `Delete` [#344](https://github.com/vmware/go-vcloud-director/pull/344)
 
 BREAKING CHANGES:
 
