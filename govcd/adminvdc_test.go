@@ -8,9 +8,10 @@ package govcd
 
 import (
 	"fmt"
+	"math"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
-	"math"
 )
 
 // Tests org function GetVDCByName with the vdc specified
@@ -132,7 +133,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 		check.Assert(vdc, NotNil)
 		check.Assert(err, IsNil)
 
-		AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, "Test_CreateVdcWithFlex")
+		AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, "Test_CreateVdcWithFlex", "")
 
 		vdc, err = adminOrg.GetVDCByName(vdcConfiguration.Name, true)
 		check.Assert(err, IsNil)

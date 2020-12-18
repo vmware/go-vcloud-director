@@ -40,7 +40,7 @@ func (vcd *TestVCD) Test_DeleteMedia(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_DeleteMediaImage")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_DeleteMediaImage", "")
 
 	media, err := catalog.GetMediaByName(itemName, true)
 	check.Assert(err, IsNil)

@@ -127,7 +127,7 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 		check.Assert(err, IsNil)
 		// After a successful creation, the entity is added to the cleanup list.
 		// If something fails after this point, the entity will be removed
-		AddToCleanupList(orgName, "org", "", "TestCreateOrg")
+		AddToCleanupList(orgName, "org", "", "TestCreateOrg", "")
 		err = task.WaitTaskCompletion()
 		check.Assert(err, IsNil)
 		// fetch newly created org
@@ -196,7 +196,7 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 			edge = *newEdge
 		}
 
-		AddToCleanupList(egc.Name, "edgegateway", orgName+"|"+vdcName, "Test_CreateDeleteEdgeGateway")
+		AddToCleanupList(egc.Name, "edgegateway", orgName+"|"+vdcName, "Test_CreateDeleteEdgeGateway", "")
 
 		check.Assert(edge.EdgeGateway.Name, Equals, egc.Name)
 		// Edge gateway status:
@@ -243,7 +243,7 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(task.Task, Not(Equals), types.Task{})
 
-	AddToCleanupList(externalNetwork.Name, "externalNetwork", "", check.TestName())
+	AddToCleanupList(externalNetwork.Name, "externalNetwork", "", check.TestName(), "")
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
@@ -324,7 +324,7 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 
 	edge, err := CreateAndConfigureEdgeGateway(vcd.client, orgName, vdcName, edgeName, edgeGatewayConfig)
 	check.Assert(err, IsNil)
-	PrependToCleanupList(edge.EdgeGateway.Name, "edgegateway", orgName+"|"+vdcName, "Test_CreateDeleteEdgeGateway")
+	PrependToCleanupList(edge.EdgeGateway.Name, "edgegateway", orgName+"|"+vdcName, "Test_CreateDeleteEdgeGateway", "")
 
 	// Patch known differences for comparison deep comparison
 	edgeGatewayConfig.Configuration.GatewayInterfaces.GatewayInterface[0].SubnetParticipation[1].IPAddress = "192.168.231.3"
@@ -453,9 +453,7 @@ func (vcd *TestVCD) Test_QueryOrgVdcNetworkByNameWithSpace(check *C) {
 	}
 	check.Assert(task.Task.HREF, Not(Equals), "")
 
-	AddToCleanupList(networkName,
-		"network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name,
-		"Test_CreateOrgVdcNetworkDirect")
+	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkDirect", "")
 
 	// err = task.WaitTaskCompletion()
 	err = task.WaitInspectTaskCompletion(LogTask, 10)

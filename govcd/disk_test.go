@@ -47,7 +47,7 @@ func (vcd *TestVCD) Test_CreateDisk(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
 
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName(), "")
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -92,7 +92,7 @@ func (vcd *TestVCD) Test_UpdateDisk(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
 
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName(), "")
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -154,7 +154,7 @@ func (vcd *TestVCD) Test_DeleteDisk(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
 
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName(), "")
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -205,7 +205,7 @@ func (vcd *TestVCD) Test_RefreshDisk(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
 
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName(), "")
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -287,7 +287,7 @@ func (vcd *TestVCD) Test_AttachedVMDisk(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
 
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName(), "")
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -348,7 +348,7 @@ func (vcd *TestVCD) Test_VdcFindDiskByHREF(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
 
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName(), "")
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -390,7 +390,7 @@ func (vcd *TestVCD) Test_FindDiskByHREF(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
 
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName(), "")
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -463,7 +463,7 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
 
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName(), "")
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -554,7 +554,7 @@ func (vcd *TestVCD) Test_QueryDisk(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
 
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName(), "")
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -598,7 +598,7 @@ func (vcd *TestVCD) Test_QueryDisks(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
 
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName(), "")
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -611,7 +611,7 @@ func (vcd *TestVCD) Test_QueryDisks(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF = task.Task.Owner.HREF
 
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName(), "")
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -658,7 +658,7 @@ func (vcd *TestVCD) Test_GetDisks(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
 
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName(), "")
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -691,7 +691,7 @@ func (vcd *TestVCD) Test_GetDisks(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF = task.Task.Owner.HREF
 
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName(), "")
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -737,7 +737,7 @@ func (vcd *TestVCD) Test_GetDiskByHref(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
 
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName(), "")
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()

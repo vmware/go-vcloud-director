@@ -114,7 +114,7 @@ func testNsxvNat(natRule *types.EdgeNatRule, vcd *TestVCD, check *C, edge EdgeGa
 	check.Assert(err, IsNil)
 
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
-	AddToCleanupList(createdNatRule.ID, "nsxvNatRule", parentEntity, check.TestName())
+	AddToCleanupList(createdNatRule.ID, "nsxvNatRule", parentEntity, check.TestName(), "")
 
 	gotNatRule, err := edge.GetNsxvNatRuleById(createdNatRule.ID)
 	check.Assert(err, IsNil)

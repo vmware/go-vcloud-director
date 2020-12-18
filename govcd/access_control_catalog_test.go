@@ -46,7 +46,7 @@ func (vcd *TestVCD) Test_AdminCatalogAccessControl(check *C) {
 	adminCatalog, err := adminorg.CreateCatalog(catalogName, catalogName)
 	check.Assert(err, IsNil)
 	check.Assert(adminCatalog, NotNil)
-	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName())
+	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName(), "")
 	vcd.testCatalogAccessControl(adminorg, adminCatalog, check.TestName(), catalogName, check)
 
 	orgInfo, err := adminCatalog.getOrgInfo()
@@ -75,7 +75,7 @@ func (vcd *TestVCD) Test_CatalogAccessControl(check *C) {
 	adminCatalog, err := adminorg.CreateCatalog(catalogName, catalogName)
 	check.Assert(err, IsNil)
 	check.Assert(adminCatalog, NotNil)
-	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName())
+	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName(), "")
 	catalog, err := org.GetCatalogByName(catalogName, true)
 	check.Assert(err, IsNil)
 	vcd.testCatalogAccessControl(adminorg, catalog, check.TestName(), catalogName, check)
@@ -113,7 +113,7 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 		check.Assert(err, IsNil)
 		newOrg, err = vcd.client.GetAdminOrgByName(orgName)
 		check.Assert(err, IsNil)
-		AddToCleanupList(orgName, "org", "", testName)
+		AddToCleanupList(orgName, "org", "", testName, "")
 		defer func() {
 			if testVerbose {
 				fmt.Printf("deleting %s\n", orgName)
@@ -139,7 +139,7 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 		})
 		check.Assert(err, IsNil)
 		check.Assert(users[i].user, NotNil)
-		AddToCleanupList(users[i].name, "user", vcd.config.VCD.Org, testName)
+		AddToCleanupList(users[i].name, "user", vcd.config.VCD.Org, testName, "")
 	}
 	defer func() {
 		for i := 0; i < len(users); i++ {

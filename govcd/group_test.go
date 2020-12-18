@@ -89,7 +89,7 @@ func (vcd *TestVCD) test_GroupCRUD(check *C) {
 		}
 		createdGroup, err := adminOrg.CreateGroup(newGroup.Group)
 		check.Assert(err, IsNil)
-		AddToCleanupList(gd.name, "group", newGroup.AdminOrg.AdminOrg.Name, "test_GroupCRUD")
+		AddToCleanupList(gd.name, "group", newGroup.AdminOrg.AdminOrg.Name, "test_GroupCRUD", "")
 
 		foundGroup, err := adminOrg.GetGroupByName(gd.name, true)
 		check.Assert(err, IsNil)
@@ -147,7 +147,7 @@ func (vcd *TestVCD) test_GroupFinderGetGenericEntity(check *C) {
 
 	_, err = adminOrg.CreateGroup(group.Group)
 	check.Assert(err, IsNil)
-	AddToCleanupList(groupName, "group", group.AdminOrg.AdminOrg.Name, check.TestName())
+	AddToCleanupList(groupName, "group", group.AdminOrg.AdminOrg.Name, check.TestName(), "")
 
 	getByName := func(name string, refresh bool) (genericEntity, error) {
 		return adminOrg.GetGroupByName(name, refresh)

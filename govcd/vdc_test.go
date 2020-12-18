@@ -184,7 +184,7 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	check.Assert(err, IsNil)
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
-	AddToCleanupList(TestComposeVapp, "vapp", "", "Test_ComposeVApp")
+	AddToCleanupList(TestComposeVapp, "vapp", "", "Test_ComposeVApp", "")
 	// Once the operation is successful, we won't trigger a failure
 	// until after the vApp deletion
 	check.Check(vapp.VApp.Name, Equals, TestComposeVapp)

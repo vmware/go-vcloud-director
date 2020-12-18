@@ -41,7 +41,7 @@ func (vcd *TestVCD) Test_SearchSpecificVappTemplate(check *C) {
 	check.Assert(len(data), Equals, len(requestData))
 	for _, item := range data {
 		if item.Created && os.Getenv("GOVCD_KEEP_TEST_OBJECTS") == "" {
-			AddToCleanupList(item.Name, "catalogItem", org.AdminOrg.Name+"|"+catalog.Catalog.Name, "Test_SearchVappTemplate")
+			AddToCleanupList(item.Name, "catalogItem", org.AdminOrg.Name+"|"+catalog.Catalog.Name, "Test_SearchVappTemplate", "")
 		}
 	}
 

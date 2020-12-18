@@ -40,7 +40,7 @@ func (vcd *TestVCD) Test_ExternalNetworkDelete(check *C) {
 	}
 
 	check.Assert(err, IsNil)
-	AddToCleanupList(externalNetwork.Name, "externalNetwork", "", "Test_ExternalNetworkDelete")
+	AddToCleanupList(externalNetwork.Name, "externalNetwork", "", "Test_ExternalNetworkDelete", "")
 	check.Assert(task.Task, Not(Equals), types.Task{})
 
 	err = task.WaitTaskCompletion()
@@ -89,7 +89,7 @@ func (vcd *TestVCD) Test_CreateExternalNetwork(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(task.Task, Not(Equals), types.Task{})
 
-	AddToCleanupList(externalNetwork.Name, "externalNetwork", "", "Test_CreateExternalNetwork")
+	AddToCleanupList(externalNetwork.Name, "externalNetwork", "", "Test_CreateExternalNetwork", "")
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 

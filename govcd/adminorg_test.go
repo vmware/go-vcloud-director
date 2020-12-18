@@ -23,7 +23,7 @@ func (vcd *TestVCD) Test_FindAdminCatalogRecords(check *C) {
 	catalogName := "catalogForQuery"
 	adminCatalog, err := adminOrg.CreateCatalog(catalogName, "catalogForQueryDescription")
 	check.Assert(err, IsNil)
-	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName())
+	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName(), "")
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, catalogName)
 
 	// just imitate wait

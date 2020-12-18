@@ -48,7 +48,7 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 
 	// We created monitor successfully therefore let's add it to cleanup list
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
-	AddToCleanupList(check.TestName(), "lbServiceMonitor", parentEntity, check.TestName())
+	AddToCleanupList(check.TestName(), "lbServiceMonitor", parentEntity, check.TestName(), "")
 
 	// Lookup by both name and ID and compare that these are equal values
 	lbMonitorByID, err := edge.getLbServiceMonitor(&types.LbMonitor{ID: lbMonitor.ID})

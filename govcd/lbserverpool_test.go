@@ -47,7 +47,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 
 	// Add service monitor to cleanup
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
-	AddToCleanupList(check.TestName(), "lbServiceMonitor", parentEntity, check.TestName())
+	AddToCleanupList(check.TestName(), "lbServiceMonitor", parentEntity, check.TestName(), "")
 
 	// Configure creation object including reference to service monitor
 	lbPoolConfig := &types.LbPool{
@@ -89,7 +89,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	check.Assert(createdLbPool.Members[1].Name, Equals, "Server_two")
 
 	// We created server pool successfully therefore let's add it to cleanup list
-	AddToCleanupList(TestLbServerPool, "lbServerPool", parentEntity, check.TestName())
+	AddToCleanupList(TestLbServerPool, "lbServerPool", parentEntity, check.TestName(), "")
 
 	// Try to delete used service monitor and expect it to fail with nice error
 	err = edge.DeleteLbServiceMonitor(lbMon)

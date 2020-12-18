@@ -55,7 +55,7 @@ func (vcd *TestVCD) Test_NsxvIpSet(check *C) {
 
 	// Add to cleanup list
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name
-	AddToCleanupList(createdIpSet.Name, "ipSet", parentEntity, check.TestName())
+	AddToCleanupList(createdIpSet.Name, "ipSet", parentEntity, check.TestName(), "")
 
 	// Check if the structure after creation is exactly the same, but with ID populated
 	ipSetConfig.ID = createdIpSet.ID
