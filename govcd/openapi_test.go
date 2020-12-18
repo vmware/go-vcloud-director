@@ -294,6 +294,9 @@ func getAuditTrailTimestampWithElements(elementCount int, check *C, vcd *TestVCD
 	} else {
 		singleElement = onePageAuditTrail[(elementCount - 1)]
 	}
-	return singleElement.Timestamp
 
+	timeFormat, err := time.Parse("2006-01-02T15:04:05.000+0000", singleElement.Timestamp)
+	check.Assert(err, IsNil)
+
+	return timeFormat.Format(types.FiqlQueryTimestampFormat)
 }

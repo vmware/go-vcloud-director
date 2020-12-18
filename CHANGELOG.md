@@ -1,4 +1,4 @@
-## 2.10.0 (Unreleased)
+## 2.10.0 (December 18, 2020)
 
 * Added functions to retrieve and use VCD version `client.GetVcdVersion`, `client.GetVcdShortVersion`, `client.GetVcdFullVersion`, `client.VersionEqualOrGreater` [#339](https://github.com/vmware/go-vcloud-director/pull/339)
 * Added methods `VM.UpdateStorageProfile`, `VM.UpdateStorageProfileAsync` [#338](https://github.com/vmware/go-vcloud-director/pull/338)
