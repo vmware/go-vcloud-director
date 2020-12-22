@@ -135,7 +135,7 @@ type NetworkFeatures struct {
 // Description: A list of IP addresses.
 // Since: 0.9
 type IPAddresses struct {
-	IPAddress string `xml:"IpAddress,omitempty"` // An IP address.
+	IPAddress []string `xml:"IpAddress,omitempty"` // An IP address.
 }
 
 // IPRanges represents a list of IP ranges.
