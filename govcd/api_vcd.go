@@ -297,10 +297,18 @@ func WithHttpUserAgent(userAgent string) VCDClientOption {
 	}
 }
 
-// WithHttpHeader allows to specify custom HTTP header values
+// WithHttpHeader allows to specify custom HTTP header values.
+// Typical usage of this function is to inject a tenant context into the client.
+//
+// WARNING: Using this function in an environment with concurrent operations may result in negative side effects,
+// such as operations as system administrator and as tenant using the same client.
+// This setting is justified when we want to start a session where the additional header is always needed.
+// For cases where we need system administrator and tenant operations in the same environment we can either
+// a) use two separate clients
+// or b) use the `additionalHeader` parameter in *newRequest* functions
 func WithHttpHeader(options map[string]string) VCDClientOption {
 	return func(vcdClient *VCDClient) error {
-		vcdClient.Client.customHeader = new(http.Header)
+		vcdClient.Client.customHeader = make(http.Header)
 		for k, v := range options {
 			vcdClient.Client.customHeader.Add(k, v)
 		}

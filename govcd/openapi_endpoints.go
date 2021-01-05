@@ -24,7 +24,7 @@ var endpointMinApiVersions = map[string]string{
 }
 
 // checkOpenApiEndpointCompatibility checks if VCD version (to which the client is connected) is sufficient to work with
-// specified OpenAPI endpoint and returns either error, either Api version to use for calling that endpoint. This Api
+// specified OpenAPI endpoint and returns either an error or the Api version to use for calling that endpoint. This Api
 // version can then be supplied to low level OpenAPI client functions.
 // If the system default API version is higher than endpoint introduction version - default system one is used.
 func (client *Client) checkOpenApiEndpointCompatibility(endpoint string) (string, error) {

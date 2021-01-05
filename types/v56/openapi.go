@@ -193,3 +193,4 @@ type Right struct {
 	RightType        string         `json:"rightType,omitempty"` // VIEW or MODIFY
 	ImpliedRights    []ImpliedRight `json:"impliedRights,omitempty"`
 }
+

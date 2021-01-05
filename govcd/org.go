@@ -17,6 +17,7 @@ import (
 type Org struct {
 	Org    *types.Org
 	client *Client
+	TenantContext *TenantContext
 }
 
 func NewOrg(client *Client) *Org {
@@ -90,7 +91,7 @@ func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
 	return Vdc{}, nil
 }
 
-func CreateCatalog(client *Client, links types.LinkList, Name, Description string) (AdminCatalog, error) {
+func createCatalog(client *Client, links types.LinkList, Name, Description string) (AdminCatalog, error) {
 	reqCatalog := &types.Catalog{
 		Name:        Name,
 		Description: Description,
@@ -126,11 +127,12 @@ func CreateCatalog(client *Client, links types.LinkList, Name, Description strin
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-CreateCatalog.html
 func (org *Org) CreateCatalog(name, description string) (Catalog, error) {
 	catalog := NewCatalog(org.client)
-	adminCatalog, err := CreateCatalog(org.client, org.Org.Link, name, description)
+	adminCatalog, err := createCatalog(org.client, org.Org.Link, name, description)
 	if err != nil {
 		return Catalog{}, err
 	}
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
+	catalog.parent=org
 	return *catalog, nil
 }
 
@@ -189,6 +191,7 @@ func (org *Org) GetCatalogByHref(catalogHref string) (*Catalog, error) {
 		return nil, err
 	}
 	// The request was successful
+	cat.parent=org
 	return cat, nil
 }
 

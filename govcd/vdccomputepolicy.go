@@ -51,7 +51,7 @@ func getVdcComputePolicyById(client *Client, id string) (*VdcComputePolicy, erro
 		client:           client,
 	}
 
-	err = client.OpenApiGetItem(minimumApiVersion, urlRef, nil, vdcComputePolicy.VdcComputePolicy)
+	err = client.OpenApiGetItem(minimumApiVersion, urlRef, nil, vdcComputePolicy.VdcComputePolicy, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func getAllVdcComputePolicies(client *Client, queryParameters url.Values) ([]*Vd
 
 	responses := []*types.VdcComputePolicy{{}}
 
-	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &responses)
+	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &responses, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (org *AdminOrg) CreateVdcComputePolicy(newVdcComputePolicy *types.VdcComput
 		client:           org.client,
 	}
 
-	err = org.client.OpenApiPostItem(minimumApiVersion, urlRef, nil, newVdcComputePolicy, returnVdcComputePolicy.VdcComputePolicy)
+	err = org.client.OpenApiPostItem(minimumApiVersion, urlRef, nil, newVdcComputePolicy, returnVdcComputePolicy.VdcComputePolicy, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating VDC compute policy: %s", err)
 	}
@@ -152,7 +152,7 @@ func (vdcComputePolicy *VdcComputePolicy) Update() (*VdcComputePolicy, error) {
 		client:           vdcComputePolicy.client,
 	}
 
-	err = vdcComputePolicy.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, vdcComputePolicy.VdcComputePolicy, returnVdcComputePolicy.VdcComputePolicy)
+	err = vdcComputePolicy.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, vdcComputePolicy.VdcComputePolicy, returnVdcComputePolicy.VdcComputePolicy, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error updating VDC compute policy: %s", err)
 	}
@@ -177,7 +177,7 @@ func (vdcComputePolicy *VdcComputePolicy) Delete() error {
 		return err
 	}
 
-	err = vdcComputePolicy.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil)
+	err = vdcComputePolicy.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting VDC compute policy: %s", err)
@@ -202,7 +202,7 @@ func (vdc *AdminVdc) GetAllAssignedVdcComputePolicies(queryParameters url.Values
 
 	responses := []*types.VdcComputePolicy{{}}
 
-	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &responses)
+	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &responses, nil)
 	if err != nil {
 		return nil, err
 	}

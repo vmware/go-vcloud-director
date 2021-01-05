@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -32,6 +32,7 @@ const (
 type Catalog struct {
 	Catalog *types.Catalog
 	client  *Client
+	parent organization
 }
 
 func NewCatalog(client *Client) *Catalog {
@@ -811,8 +812,9 @@ func (catalog *Catalog) QueryMediaList() ([]*types.MediaRecordType, error) {
 	return mediaResults, nil
 }
 
+/*
 // getOrgInfo finds the organization to which the entity belongs, and returns its name and ID
-func getOrgInfo(client *Client, links types.LinkList, id, name, entityType string) (orgInfoType, error) {
+func getOrgInfo(client *Client, links types.LinkList, id, name, entityType string) (TenantContext, error) {
 	previous, exists := orgInfoCache[id]
 	if exists {
 		return previous, nil
@@ -824,30 +826,38 @@ func getOrgInfo(client *Client, links types.LinkList, id, name, entityType strin
 		if link.Rel == "up" && (link.Type == types.MimeOrg || link.Type == types.MimeAdminOrg) {
 			orgId, err = GetUuidFromHref(link.HREF, true)
 			if err != nil {
-				return orgInfoType{}, err
+				return TenantContext{}, err
 			}
 			orgHref = link.HREF
 			break
 		}
 	}
 	if orgHref == "" || orgId == "" {
-		return orgInfoType{}, fmt.Errorf("error retrieving org info for %s %s", entityType, name)
+		return TenantContext{}, fmt.Errorf("error retrieving org info for %s %s", entityType, name)
 	}
 	var org types.Org
 	_, err = client.ExecuteRequest(orgHref, http.MethodGet,
 		"", "error retrieving org: %s", nil, &org)
 	if err != nil {
-		return orgInfoType{}, err
+		return TenantContext{}, err
 	}
 
-	orgInfoCache[id] = orgInfoType{
-		id:   orgId,
-		name: org.Name,
+	orgInfoCache[id] = TenantContext{
+		OrgId:   orgId,
+		OrgName: org.Name,
 	}
-	return orgInfoType{name: org.Name, id: orgId}, nil
+	return TenantContext{OrgName: org.Name, OrgId: orgId}, nil
 }
 
+ */
+
 // getOrgInfo finds the organization to which the catalog belongs, and returns its name and ID
-func (catalog *Catalog) getOrgInfo() (orgInfoType, error) {
-	return getOrgInfo(catalog.client, catalog.Catalog.Link, catalog.Catalog.ID, catalog.Catalog.Name, "Catalog")
+func (catalog *Catalog) getOrgInfo() (*TenantContext, error) {
+	org := catalog.parent
+	if org == nil {
+		return nil, fmt.Errorf("no parent found for catalog %s", catalog.Catalog.Name)
+	}
+
+	return org.tenantContext()
+	//return getOrgInfo(catalog.client, catalog.Catalog.Link, catalog.Catalog.ID, catalog.Catalog.Name, "Catalog")
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -20,6 +20,7 @@ import (
 type Vdc struct {
 	Vdc    *types.Vdc
 	client *Client
+	parent organization
 }
 
 func NewVdc(cli *Client) *Vdc {

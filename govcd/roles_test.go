@@ -17,9 +17,14 @@ import (
 )
 
 func (vcd *TestVCD) Test_Roles(check *C) {
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	//adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
+	fmt.Printf("%s\n",adminOrg.AdminOrg.Name)
+	//orgId, err := GetUuidFromHref(adminOrg.AdminOrg.HREF, true)
+	//check.Assert(err, IsNil)
+	//adminOrg.client.SetCustomHeader(map[string]string{types.HeaderTenantContext: orgId, types.HeaderAuthContext: adminOrg.AdminOrg.Name})
 
 	// Step 1 - Get all roles
 	allExistingRoles, err := adminOrg.GetAllOpenApiRoles(nil)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -19,6 +19,7 @@ import (
 type AdminCatalog struct {
 	AdminCatalog *types.AdminCatalog
 	client       *Client
+	parent       organization
 }
 
 func NewAdminCatalog(client *Client) *AdminCatalog {
@@ -65,6 +66,7 @@ func (adminCatalog *AdminCatalog) Update() error {
 func (adminCatalog *AdminCatalog) UploadOvf(ovaFileName, itemName, description string, uploadPieceSize int64) (UploadTask, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
+	catalog.parent=adminCatalog.parent
 	return catalog.UploadOvf(ovaFileName, itemName, description, uploadPieceSize)
 }
 
@@ -86,6 +88,7 @@ func (adminCatalog *AdminCatalog) Refresh() error {
 }
 
 // getOrgInfo finds the organization to which the admin catalog belongs, and returns its name and ID
-func (adminCatalog *AdminCatalog) getOrgInfo() (orgInfoType, error) {
-	return getOrgInfo(adminCatalog.client, adminCatalog.AdminCatalog.Link, adminCatalog.AdminCatalog.ID, adminCatalog.AdminCatalog.Name, "AdminCatalog")
+func (adminCatalog *AdminCatalog) getOrgInfo() (*TenantContext, error) {
+	return adminCatalog.getTenantContext()
+	//return getOrgInfo(adminCatalog.client, adminCatalog.AdminCatalog.Link, adminCatalog.AdminCatalog.ID, adminCatalog.AdminCatalog.Name, "AdminCatalog")
 }

@@ -1363,16 +1363,16 @@ func (client *Client) QueryVappList() ([]*types.QueryResultVAppRecordType, error
 }
 
 // getOrgInfo finds the organization to which the vApp belongs (through the VDC), and returns its name and ID
-func (vapp *VApp) getOrgInfo() (orgInfoType, error) {
+func (vapp *VApp) getOrgInfo() (*TenantContext, error) {
 	previous, exists := orgInfoCache[vapp.VApp.ID]
 	if exists {
 		return previous, nil
 	}
-	//var orgHref string
 	var err error
 	vdc, err := vapp.getParentVDC()
 	if err != nil {
-		return orgInfoType{}, err
+		return nil, err
 	}
-	return getOrgInfo(vapp.client, vdc.Vdc.Link, vapp.VApp.ID, vapp.VApp.Name, "vApp")
+	return vdc.getTenantContext()
+	//return getOrgInfo(vapp.client, vdc.Vdc.Link, vapp.VApp.ID, vapp.VApp.Name, "vApp")
 }

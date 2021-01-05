@@ -13,8 +13,9 @@ import (
 
 // Role uses OpenAPI endpoint to operate user roles
 type Role struct {
-	Role   *types.Role
-	client *Client
+	Role          *types.Role
+	client        *Client
+	TenantContext *TenantContext
 }
 
 // GetOpenApiRoleById retrieves role by given ID
@@ -34,12 +35,17 @@ func (adminOrg *AdminOrg) GetOpenApiRoleById(id string) (*Role, error) {
 		return nil, err
 	}
 
+	tenantContext, err := adminOrg.getTenantContext()
+	if err != nil {
+		return nil, err
+	}
 	role := &Role{
-		Role:   &types.Role{},
-		client: adminOrg.client,
+		Role:          &types.Role{},
+		client:        adminOrg.client,
+		TenantContext: tenantContext,
 	}
 
-	err = adminOrg.client.OpenApiGetItem(minimumApiVersion, urlRef, nil, role.Role)
+	err = adminOrg.client.OpenApiGetItem(minimumApiVersion, urlRef, nil, role.Role, getTenantContextHeader(tenantContext))
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +67,13 @@ func (adminOrg *AdminOrg) GetAllOpenApiRoles(queryParameters url.Values) ([]*Rol
 		return nil, err
 	}
 
+	tenantContext, err := adminOrg.getTenantContext()
+	if err != nil {
+		return nil, err
+	}
+
 	typeResponses := []*types.Role{{}}
-	err = adminOrg.client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &typeResponses)
+	err = adminOrg.client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &typeResponses, getTenantContextHeader(tenantContext))
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +82,9 @@ func (adminOrg *AdminOrg) GetAllOpenApiRoles(queryParameters url.Values) ([]*Rol
 	returnRoles := make([]*Role, len(typeResponses))
 	for sliceIndex := range typeResponses {
 		returnRoles[sliceIndex] = &Role{
-			Role:   typeResponses[sliceIndex],
-			client: adminOrg.client,
+			Role:          typeResponses[sliceIndex],
+			client:        adminOrg.client,
+			TenantContext: tenantContext,
 		}
 	}
 
@@ -92,12 +104,17 @@ func (adminOrg *AdminOrg) CreateRole(newRole *types.Role) (*Role, error) {
 		return nil, err
 	}
 
+	tenantContext, err := adminOrg.getTenantContext()
+	if err != nil {
+		return nil, err
+	}
 	returnRole := &Role{
-		Role:   &types.Role{},
-		client: adminOrg.client,
+		Role:          &types.Role{},
+		client:        adminOrg.client,
+		TenantContext: tenantContext,
 	}
 
-	err = adminOrg.client.OpenApiPostItem(minimumApiVersion, urlRef, nil, newRole, returnRole.Role)
+	err = adminOrg.client.OpenApiPostItem(minimumApiVersion, urlRef, nil, newRole, returnRole.Role, getTenantContextHeader(tenantContext))
 	if err != nil {
 		return nil, fmt.Errorf("error creating role: %s", err)
 	}
@@ -123,11 +140,12 @@ func (role *Role) Update() (*Role, error) {
 	}
 
 	returnRole := &Role{
-		Role:   &types.Role{},
-		client: role.client,
+		Role:          &types.Role{},
+		client:        role.client,
+		TenantContext: role.TenantContext,
 	}
 
-	err = role.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, role.Role, returnRole.Role)
+	err = role.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, role.Role, returnRole.Role, getTenantContextHeader(role.TenantContext))
 	if err != nil {
 		return nil, fmt.Errorf("error updating role: %s", err)
 	}
@@ -152,7 +170,7 @@ func (role *Role) Delete() error {
 		return err
 	}
 
-	err = role.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil)
+	err = role.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil, getTenantContextHeader(role.TenantContext))
 
 	if err != nil {
 		return fmt.Errorf("error deleting role: %s", err)

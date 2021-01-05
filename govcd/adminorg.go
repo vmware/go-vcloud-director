@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -25,6 +25,7 @@ import (
 type AdminOrg struct {
 	AdminOrg *types.AdminOrg
 	client   *Client
+	TenantContext *TenantContext
 }
 
 func NewAdminOrg(cli *Client) *AdminOrg {
@@ -39,7 +40,12 @@ func NewAdminOrg(cli *Client) *AdminOrg {
 // task.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-CreateCatalog.html
 func (adminOrg *AdminOrg) CreateCatalog(name, description string) (AdminCatalog, error) {
-	return CreateCatalog(adminOrg.client, adminOrg.AdminOrg.Link, name, description)
+	catalog, err := createCatalog(adminOrg.client, adminOrg.AdminOrg.Link, name, description)
+	if err != nil {
+		return AdminCatalog{}, err
+	}
+	catalog.parent=adminOrg
+	return catalog, nil
 }
 
 //   Deletes the org, returning an error if the vCD call fails.
@@ -204,6 +210,8 @@ func (adminOrg *AdminOrg) getVdcByAdminHREF(adminVdcUrl *url.URL) (*Vdc, error) 
 	vdcURL.Path += strings.Split(adminVdcUrl.Path, "/api/admin")[1] //gets id
 
 	vdc := NewVdc(adminOrg.client)
+
+	vdc.parent = adminOrg
 
 	_, err := adminOrg.client.ExecuteRequest(vdcURL.String(), http.MethodGet,
 		"", "error retrieving vdc: %s", nil, vdc.Vdc)
@@ -401,6 +409,7 @@ func (adminOrg *AdminOrg) GetCatalogByHref(catalogHref string) (*Catalog, error)
 	if err != nil {
 		return nil, err
 	}
+	cat.parent = adminOrg
 	// The request was successful
 	return cat, nil
 }
@@ -508,6 +517,7 @@ func (adminOrg *AdminOrg) GetAdminCatalogByHref(catalogHref string) (*AdminCatal
 		return nil, err
 	}
 
+	adminCatalog.parent = adminOrg
 	// The request was successful
 	return adminCatalog, nil
 }
@@ -587,6 +597,7 @@ func (adminOrg *AdminOrg) GetVDCByHref(vdcHref string) (*Vdc, error) {
 	if err != nil {
 		return nil, err
 	}
+	vdc.parent=adminOrg
 
 	return vdc, nil
 }

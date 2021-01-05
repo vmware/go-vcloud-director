@@ -941,16 +941,14 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 	case "vm":
 		vapp, err := vcd.vdc.GetVAppByName(entity.Parent, true)
 		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting VM '%s' in vApp '%s'. Could not find vApp: %s\n",
-				entity.Name, entity.Parent, err)
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
 
 		vm, err := vapp.GetVMByName(entity.Name, false)
 
 		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not find VM '%s' in vApp '%s': %s\n",
-				entity.Name, vapp.VApp.Name, err)
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
 
