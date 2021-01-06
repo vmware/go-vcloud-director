@@ -1,3 +1,8 @@
+## 2.11.0 (Unreleased)
+
+BUGS FIXED:
+* Made IPAddress field for IPAddresses struct to array [#350](https://github.com/vmware/go-vcloud-director/pull/350)
+
 ## 2.10.0 (December 18, 2020)
 
 * Added functions to retrieve and use VCD version `client.GetVcdVersion`, `client.GetVcdShortVersion`, `client.GetVcdFullVersion`, `client.VersionEqualOrGreater` [#339](https://github.com/vmware/go-vcloud-director/pull/339)
