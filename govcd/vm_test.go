@@ -88,7 +88,7 @@ func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
 
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName(), "")
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -183,7 +183,7 @@ func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
 
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName(), "")
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -275,7 +275,7 @@ func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
 	diskHREF := task.Task.Owner.HREF
 
 	// Defer prepend the disk info to cleanup list until the function returns
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName(), "")
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -352,7 +352,7 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_HandleInsertOrEjectMedia", "")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_HandleInsertOrEjectMedia")
 
 	catalog, err = vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
@@ -421,7 +421,7 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_InsertOrEjectMedia", "")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_InsertOrEjectMedia")
 
 	catalog, err = vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
@@ -502,7 +502,7 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_AnswerVmQuestion", "")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_AnswerVmQuestion")
 
 	catalog, err = vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
@@ -958,7 +958,7 @@ func (vcd *TestVCD) createInternalDisk(check *C, vmName string, busNumber int) (
 
 	// disables fast provisioning if needed
 	previousVdcFastProvisioningValue := updateVdcFastProvisioning(vcd, check, "disable")
-	AddToCleanupList(previousVdcFastProvisioningValue, "fastProvisioning", vcd.config.VCD.Org+"|"+vcd.config.VCD.Vdc, "createInternalDisk", "")
+	AddToCleanupList(previousVdcFastProvisioningValue, "fastProvisioning", vcd.config.VCD.Org+"|"+vcd.config.VCD.Vdc, "createInternalDisk")
 
 	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAndGetResourcesForVmCreation(check, vmName)
 	check.Assert(err, IsNil)
@@ -1149,7 +1149,7 @@ func attachIndependentDisk(vcd *TestVCD, check *C) (*Disk, error) {
 	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
 	diskHREF := task.Task.Owner.HREF
 
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName(), "")
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
 
 	// Wait for disk creation complete
 	err = task.WaitTaskCompletion()
@@ -1503,8 +1503,8 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
 	createdPolicy2, err := adminOrg.CreateVdcComputePolicy(newComputePolicy2.VdcComputePolicy)
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_AddNewEmptyVMWithVmComputePolicyAndUpdate", "")
-	AddToCleanupList(createdPolicy2.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_AddNewEmptyVMWithVmComputePolicyAndUpdate", "")
+	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_AddNewEmptyVMWithVmComputePolicyAndUpdate")
+	AddToCleanupList(createdPolicy2.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_AddNewEmptyVMWithVmComputePolicyAndUpdate")
 
 	vdcComputePolicyHref, err := adminOrg.client.OpenApiBuildEndpoint(types.OpenApiPathVersion1_0_0, types.OpenApiEndpointVdcComputePolicies)
 	check.Assert(err, IsNil)

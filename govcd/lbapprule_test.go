@@ -41,7 +41,7 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 
 	// // We created application rule successfully therefore let's add it to cleanup list
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
-	AddToCleanupList(TestLbAppRule, "lbAppRule", parentEntity, check.TestName(), "")
+	AddToCleanupList(TestLbAppRule, "lbAppRule", parentEntity, check.TestName())
 
 	// // Lookup by both name and ID and compare that these are equal values
 	lbAppRuleByID, err := edge.getLbAppRule(&types.LbAppRule{ID: createdLbAppRule.ID})

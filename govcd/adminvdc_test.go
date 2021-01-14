@@ -133,7 +133,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 		check.Assert(vdc, NotNil)
 		check.Assert(err, IsNil)
 
-		AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, "Test_CreateVdcWithFlex", "")
+		AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, "Test_CreateVdcWithFlex")
 
 		vdc, err = adminOrg.GetVDCByName(vdcConfiguration.Name, true)
 		check.Assert(err, IsNil)

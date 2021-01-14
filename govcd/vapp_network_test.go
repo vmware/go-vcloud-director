@@ -310,7 +310,7 @@ func createRoutedNetwork(vcd *TestVCD, check *C, networkName string) {
 	}
 	err = vcd.vdc.CreateOrgVDCNetworkWait(&networkConfig)
 	check.Assert(err, IsNil)
-	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, networkName, "")
+	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, networkName)
 }
 
 func (vcd *TestVCD) Test_UpdateNetworkStaticRoutes(check *C) {

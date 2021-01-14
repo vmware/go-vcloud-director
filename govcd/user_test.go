@@ -168,7 +168,7 @@ func (vcd *TestVCD) Test_UserCRUD(check *C) {
 		// disableDebugShowResponse()
 		check.Assert(err, IsNil)
 
-		AddToCleanupList(ud.name, "user", user.AdminOrg.AdminOrg.Name, check.TestName(), "")
+		AddToCleanupList(ud.name, "user", user.AdminOrg.AdminOrg.Name, check.TestName())
 		check.Assert(user.User, NotNil)
 		check.Assert(user.User.Name, Equals, ud.name)
 		check.Assert(user.GetRoleName(), Equals, ud.roleName)

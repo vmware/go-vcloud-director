@@ -100,7 +100,7 @@ func (vcd *TestVCD) Test_UpdateCatalog(check *C) {
 	check.Assert(err, IsNil)
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
-	AddToCleanupList(TestUpdateCatalog, "catalog", vcd.config.VCD.Org, "Test_UpdateCatalog", "")
+	AddToCleanupList(TestUpdateCatalog, "catalog", vcd.config.VCD.Org, "Test_UpdateCatalog")
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, TestUpdateCatalog)
 
 	adminCatalog.AdminCatalog.Description = TestCreateCatalogDesc
@@ -129,7 +129,7 @@ func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
 	check.Assert(err, IsNil)
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
-	AddToCleanupList(TestDeleteCatalog, "catalog", vcd.config.VCD.Org, "Test_DeleteCatalog", "")
+	AddToCleanupList(TestDeleteCatalog, "catalog", vcd.config.VCD.Org, "Test_DeleteCatalog")
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, TestDeleteCatalog)
 	err = adminCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
@@ -190,7 +190,7 @@ func (vcd *TestVCD) Test_UploadOvf_progress_works(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf", "")
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
 	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
@@ -225,7 +225,7 @@ func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
 
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
-	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf", "")
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
 	check.Assert(string(result), Matches, "(?s).*Upload progress 100.00%.*")
 
@@ -252,7 +252,7 @@ func (vcd *TestVCD) Test_UploadOvf_error_withSameItem(check *C) {
 	err2 = uploadTask.WaitTaskCompletion()
 	check.Assert(err2, IsNil)
 
-	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf", "")
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
 	catalog, _ = findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
 	_, err3 := catalog.UploadOvf(vcd.config.OVA.OvaPath, itemName, "upload from test", 1024)
@@ -278,7 +278,7 @@ func (vcd *TestVCD) Test_UploadOvf_cleaned_extracted_files(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf", "")
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
 	check.Assert(oldFolderCount, Equals, countFolders())
 
@@ -324,7 +324,7 @@ func checkUploadOvf(vcd *TestVCD, check *C, ovaFileName, catalogName, itemName s
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf", "")
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
 	catalog, err = org.GetCatalogByName(catalogName, false)
 	check.Assert(err, IsNil)
@@ -377,7 +377,7 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(TestCatalogUploadMedia, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage", "")
+	AddToCleanupList(TestCatalogUploadMedia, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage")
 
 	//verifyMediaImageUploaded(vcd.vdc.client, check, TestUploadMedia)
 	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
@@ -407,7 +407,7 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_progress_works(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage_progress_works", "")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage_progress_works")
 
 	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
@@ -442,7 +442,7 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_ShowUploadProgress_works(check 
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage_ShowUploadProgress_works", "")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage_ShowUploadProgress_works")
 
 	check.Assert(string(result), Matches, "(?s).*Upload progress 100.00%.*")
 	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
@@ -466,7 +466,7 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_error_withSameItem(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage_error_withSameItem", "")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage_error_withSameItem")
 }
 
 // Tests System function Delete by creating media item and
@@ -484,7 +484,7 @@ func (vcd *TestVCD) Test_CatalogDeleteMediaRecord(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogDeleteMediaImage", "")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogDeleteMediaImage")
 
 	mediaRecord, err := catalog.QueryMedia(itemName)
 	check.Assert(err, IsNil)

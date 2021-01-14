@@ -153,7 +153,7 @@ func buildLb(edge EdgeGateway, node1Ip, node2Ip string, vcd *TestVCD, check *C) 
 	// We created virtual server successfully therefore let's prepend it to cleanup list so that it
 	// is deleted before the child components
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
-	PrependToCleanupList(TestLb, "lbVirtualServer", parentEntity, check.TestName(), "")
+	PrependToCleanupList(TestLb, "lbVirtualServer", parentEntity, check.TestName())
 }
 
 // checkLb queries specified endpoint until it gets all responses in expectedResponses slice

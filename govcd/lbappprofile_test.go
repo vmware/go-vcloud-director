@@ -54,7 +54,7 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 
 	// We created application profile successfully therefore let's add it to cleanup list
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
-	AddToCleanupList(TestLbAppProfile, "lbAppProfile", parentEntity, check.TestName(), "")
+	AddToCleanupList(TestLbAppProfile, "lbAppProfile", parentEntity, check.TestName())
 
 	// Lookup by both name and ID and compare that these are equal values
 	lbAppProfileByID, err := edge.GetLbAppProfileById(createdLbAppProfile.ID)

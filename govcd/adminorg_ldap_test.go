@@ -152,7 +152,7 @@ func configureLdapForOrg(vcd *TestVCD, check *C, ldapHostIp string) {
 	check.Assert(err, IsNil)
 
 	fmt.Println(" Done")
-	AddToCleanupList("LDAP-configuration", "orgLdapSettings", org.AdminOrg.Name, check.TestName(), "")
+	AddToCleanupList("LDAP-configuration", "orgLdapSettings", org.AdminOrg.Name, check.TestName())
 }
 
 // createLdapServer spawns a vApp and photon OS VM. Using customization script it starts a testing
@@ -202,7 +202,7 @@ func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) (string,
 	check.Assert(err, IsNil)
 	// vApp was created - adding it to cleanup list (using prepend to remove it before direct
 	// network removal)
-	PrependToCleanupList(vAppName, "vapp", "", check.TestName(), "")
+	PrependToCleanupList(vAppName, "vapp", "", check.TestName())
 	// Wait until vApp becomes configurable
 	initialVappStatus, err := vapp.GetStatus()
 	check.Assert(err, IsNil)
@@ -238,7 +238,7 @@ func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) (string,
 	check.Assert(err, IsNil)
 
 	// Must be deleted before vApp to avoid IP leak
-	PrependToCleanupList(ldapVm.VM.Name, "vm", vAppName, check.TestName(), "")
+	PrependToCleanupList(ldapVm.VM.Name, "vm", vAppName, check.TestName())
 
 	// Got VM - ensure that TCP port for ldap service is open and reachable
 	ldapHostIp := ldapVm.VM.NetworkConnectionSection.NetworkConnection[0].IPAddress
@@ -292,7 +292,7 @@ func createDirectNetwork(vcd *TestVCD, check *C) string {
 	}
 	check.Assert(task.Task.HREF, Not(Equals), "")
 
-	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, check.TestName(), "")
+	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, check.TestName())
 
 	err = task.WaitInspectTaskCompletion(LogTask, 10)
 	if err != nil {

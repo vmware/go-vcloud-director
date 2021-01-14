@@ -60,7 +60,7 @@ func (vcd *TestVCD) createAndGetResourcesForVmCreation(check *C, vmName string) 
 	vapp, err := vdc.GetVAppByName(vmName, true)
 	check.Assert(err, IsNil)
 	// vApp was created - let's add it to cleanup list
-	AddToCleanupList(vmName, "vapp", "", "createTestVapp", "")
+	AddToCleanupList(vmName, "vapp", "", "createTestVapp")
 	// Wait until vApp becomes configurable
 	initialVappStatus, err := vapp.GetStatus()
 	check.Assert(err, IsNil)
@@ -301,7 +301,7 @@ func createVappForTest(vcd *TestVCD, vappName string) (*VApp, error) {
 	}
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
-	AddToCleanupList(vappName, "vapp", "", "createTestVapp", "")
+	AddToCleanupList(vappName, "vapp", "", "createTestVapp")
 	err = task.WaitTaskCompletion()
 	if err != nil {
 		return nil, fmt.Errorf("error composing vapp: %s", err)

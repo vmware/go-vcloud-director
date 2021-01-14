@@ -111,12 +111,12 @@ func (vcd *TestVCD) Test_NsxvFirewallRuleIpSets(check *C) {
 	ipSetParentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name
 	ipSet1, err := vdc.CreateNsxvIpSet(ipSetConfig1)
 	check.Assert(err, IsNil)
-	AddToCleanupList(ipSet1.Name, "ipSet", ipSetParentEntity, check.TestName(), "")
+	AddToCleanupList(ipSet1.Name, "ipSet", ipSetParentEntity, check.TestName())
 	check.Assert(ipSet1.ID, Matches, `.*:ipset-\d.*`)
 
 	ipSet2, err := vdc.CreateNsxvIpSet(ipSetConfig2)
 	check.Assert(err, IsNil)
-	AddToCleanupList(ipSet2.Name, "ipSet", ipSetParentEntity, check.TestName(), "")
+	AddToCleanupList(ipSet2.Name, "ipSet", ipSetParentEntity, check.TestName())
 	check.Assert(ipSet2.ID, Matches, `.*:ipset-\d.*`)
 
 	firewallRuleConfig := &types.EdgeFirewallRule{
@@ -219,7 +219,7 @@ func test_NsxvFirewallRule(check *C, vcd *TestVCD, fwConfig *types.EdgeFirewallR
 	check.Assert(err, IsNil)
 
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
-	AddToCleanupList(createdFwRule.ID, "nsxvFirewallRule", parentEntity, check.TestName(), "")
+	AddToCleanupList(createdFwRule.ID, "nsxvFirewallRule", parentEntity, check.TestName())
 
 	gotFwRule, err := edge.GetNsxvFirewallRuleById(createdFwRule.ID)
 	check.Assert(err, IsNil)
@@ -273,7 +273,7 @@ func test_NsxvFirewallRule(check *C, vcd *TestVCD, fwConfig *types.EdgeFirewallR
 	// Create rule 2 above rule 1
 	createdFwRule2, err := edge.CreateNsxvFirewallRule(firewallRule2, createdFwRule.ID)
 	check.Assert(err, IsNil)
-	AddToCleanupList(createdFwRule2.ID, "nsxvFirewallRule", parentEntity, check.TestName(), "")
+	AddToCleanupList(createdFwRule2.ID, "nsxvFirewallRule", parentEntity, check.TestName())
 
 	// Check rule order and ensure rule 2 is above rule 1 in the list
 	allFirewallRules, err := edge.GetAllNsxvFirewallRules()

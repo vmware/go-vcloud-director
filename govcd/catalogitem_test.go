@@ -46,7 +46,7 @@ func (vcd *TestVCD) Test_GetVAppTemplate(check *C) {
 // deleting it after.
 func (vcd *TestVCD) Test_Delete(check *C) {
 	skipWhenOvaPathMissing(vcd.config.OVA.OvaPath, check)
-	AddToCleanupList(TestDeleteCatalogItem, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_Delete", "")
+	AddToCleanupList(TestDeleteCatalogItem, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_Delete")
 
 	// Fetching organization
 	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)

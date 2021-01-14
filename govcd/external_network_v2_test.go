@@ -52,7 +52,7 @@ func (vcd *TestVCD) testCreateExternalNetworkV2Nsxt(check *C, nsxtTier0Router, b
 
 	// Use generic "OpenApiEntity" resource cleanup type
 	openApiEndpoint := endpoint + createdNet.ExternalNetwork.ID
-	AddToCleanupList(createdNet.ExternalNetwork.Name, "OpenApiEntity", "", check.TestName(), openApiEndpoint)
+	AddToCleanupListOpenApi(createdNet.ExternalNetwork.Name, "OpenApiEntity", check.TestName(), openApiEndpoint)
 
 	createdNet.ExternalNetwork.Name = check.TestName() + "changed_name"
 	updatedNet, err := createdNet.Update()
@@ -120,7 +120,7 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2Nsxv(check *C) {
 
 	// Use generic "OpenApiEntity" resource cleanup type
 	openApiEndpoint := endpoint + r.ExternalNetwork.ID
-	AddToCleanupList(r.ExternalNetwork.Name, "OpenApiEntity", "", check.TestName(), openApiEndpoint)
+	AddToCleanupListOpenApi(r.ExternalNetwork.Name, "OpenApiEntity", check.TestName(), openApiEndpoint)
 
 	r.ExternalNetwork.Name = check.TestName() + "changed_name"
 	updatedNet, err := r.Update()

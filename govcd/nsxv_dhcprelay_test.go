@@ -33,7 +33,7 @@ func (vcd *TestVCD) Test_NsxvDhcpRelay(check *C) {
 	createdIpSet, err := testCreateIpSet("dhcp-relay-test", vcd.vdc)
 	check.Assert(err, IsNil)
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name
-	AddToCleanupList(createdIpSet.Name, "ipSet", parentEntity, check.TestName(), "")
+	AddToCleanupList(createdIpSet.Name, "ipSet", parentEntity, check.TestName())
 
 	// Lookup vNic index for our org network
 	vNicIndex, _, err := edge.GetAnyVnicIndexByNetworkName(vcd.config.VCD.Network.Net1)
@@ -60,7 +60,7 @@ func (vcd *TestVCD) Test_NsxvDhcpRelay(check *C) {
 	parentEntity = vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
 	// DHCP relay config is being prepended (added to beginning) of cleanup list because it must be
 	// delete first so that above created dependent IP sets can be cleaned up when their turn comes
-	PrependToCleanupList(check.TestName(), "dhcpRelayConfig", parentEntity, check.TestName(), "")
+	PrependToCleanupList(check.TestName(), "dhcpRelayConfig", parentEntity, check.TestName())
 
 	// Cache Gateway auto-assigned address to try specifying it afterwards
 	vNicDefaultGateway := createdRelayConfig.RelayAgents.Agents[0].GatewayInterfaceAddress

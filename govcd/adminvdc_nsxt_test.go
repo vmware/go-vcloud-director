@@ -115,7 +115,7 @@ func (vcd *TestVCD) Test_CreateNsxtOrgVdc(check *C) {
 		check.Assert(vdc, NotNil)
 		check.Assert(err, IsNil)
 
-		AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, check.TestName(), "")
+		AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, check.TestName())
 
 		adminVdc, err := adminOrg.GetAdminVDCByName(vdcConfiguration.Name, true)
 		check.Assert(err, IsNil)

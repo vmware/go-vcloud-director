@@ -86,7 +86,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	// We created virtual server successfully therefore let's prepend it to cleanup list so that it
 	// is deleted before the child components
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
-	PrependToCleanupList(TestLbVirtualServer, "lbVirtualServer", parentEntity, check.TestName(), "")
+	PrependToCleanupList(TestLbVirtualServer, "lbVirtualServer", parentEntity, check.TestName())
 
 	// Lookup by both name and ID and compare that these are equal values
 	lbVirtualServerById, err := edge.getLbVirtualServer(&types.LbVirtualServer{ID: createdLbVirtualServer.ID})
@@ -212,10 +212,10 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 	check.Assert(err, IsNil)
 
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
-	AddToCleanupList(lbAppRule.Name, "lbAppRule", parentEntity, check.TestName(), "")
-	AddToCleanupList(lbAppProfile.Name, "lbAppProfile", parentEntity, check.TestName(), "")
-	AddToCleanupList(lbPool.Name, "lbServerPool", parentEntity, check.TestName(), "")
-	AddToCleanupList(lbMon.Name, "lbServiceMonitor", parentEntity, check.TestName(), "")
+	AddToCleanupList(lbAppRule.Name, "lbAppRule", parentEntity, check.TestName())
+	AddToCleanupList(lbAppProfile.Name, "lbAppProfile", parentEntity, check.TestName())
+	AddToCleanupList(lbPool.Name, "lbServerPool", parentEntity, check.TestName())
+	AddToCleanupList(lbMon.Name, "lbServiceMonitor", parentEntity, check.TestName())
 
 	return lbMonitor.ID, lbPool.ID, lbAppProfile.ID, lbAppRule.ID
 }

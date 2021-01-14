@@ -110,7 +110,7 @@ func (vcd *TestVCD) testCRUDVmAffinityRule(orgName string, vdc *Vdc, data affini
 	}
 	vmAffinityRule, err := vdc.CreateVmAffinityRule(affinityRuleDef)
 	check.Assert(err, IsNil)
-	AddToCleanupList(vmAffinityRule.VmAffinityRule.ID, "affinity_rule", orgName+"|"+vdc.Vdc.Name, "testCRUDVmAffinityRule", "")
+	AddToCleanupList(vmAffinityRule.VmAffinityRule.ID, "affinity_rule", orgName+"|"+vdc.Vdc.Name, "testCRUDVmAffinityRule")
 
 	// Update with VM replacement
 	for i, vm := range data.updateVms {
@@ -311,7 +311,7 @@ func makeVappGroup(label string, vdc *Vdc, groupDefinition map[string][]string) 
 			return nil, err
 		}
 		if os.Getenv("GOVCD_KEEP_TEST_OBJECTS") == "" {
-			AddToCleanupList(vappName, "vapp", vdc.Vdc.Name, label, "")
+			AddToCleanupList(vappName, "vapp", vdc.Vdc.Name, label)
 		}
 		for _, vmName := range vmNames {
 			if testVerbose {

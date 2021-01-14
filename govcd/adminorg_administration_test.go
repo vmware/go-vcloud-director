@@ -55,7 +55,7 @@ func (vcd *TestVCD) Test_LDAP_Configuration(check *C) {
 	gotSettings, err := org.LdapConfigure(ldapSettings)
 	check.Assert(err, IsNil)
 
-	AddToCleanupList("LDAP-configuration", "orgLdapSettings", org.AdminOrg.Name, check.TestName(), "")
+	AddToCleanupList("LDAP-configuration", "orgLdapSettings", org.AdminOrg.Name, check.TestName())
 
 	check.Assert(ldapSettings.CustomOrgLdapSettings.GroupAttributes, DeepEquals, gotSettings.CustomOrgLdapSettings.GroupAttributes)
 	check.Assert(ldapSettings.CustomOrgLdapSettings.UserAttributes, DeepEquals, gotSettings.CustomOrgLdapSettings.UserAttributes)

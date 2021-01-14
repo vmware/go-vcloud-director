@@ -40,7 +40,7 @@ func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
 	createdPolicy, err := org.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies", "")
+	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies")
 
 	check.Assert(createdPolicy.VdcComputePolicy.Name, Equals, newComputePolicy.VdcComputePolicy.Name)
 	check.Assert(createdPolicy.VdcComputePolicy.Description, Equals, newComputePolicy.VdcComputePolicy.Description)
@@ -66,7 +66,7 @@ func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
 	createdPolicy2, err := org.CreateVdcComputePolicy(newComputePolicy2.VdcComputePolicy)
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(createdPolicy2.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies", "")
+	AddToCleanupList(createdPolicy2.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies")
 
 	check.Assert(createdPolicy2.VdcComputePolicy.Name, Equals, newComputePolicy2.VdcComputePolicy.Name)
 	check.Assert(*createdPolicy2.VdcComputePolicy.CPUSpeed, Equals, 100)
@@ -160,7 +160,7 @@ func (vcd *TestVCD) Test_SetAssignedComputePolicies(check *C) {
 	}
 	createdPolicy, err := org.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
 	check.Assert(err, IsNil)
-	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies", "")
+	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies")
 
 	newComputePolicy2 := &VdcComputePolicy{
 		client: org.client,
@@ -174,7 +174,7 @@ func (vcd *TestVCD) Test_SetAssignedComputePolicies(check *C) {
 	}
 	createdPolicy2, err := org.CreateVdcComputePolicy(newComputePolicy2.VdcComputePolicy)
 	check.Assert(err, IsNil)
-	AddToCleanupList(createdPolicy2.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies", "")
+	AddToCleanupList(createdPolicy2.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies")
 
 	// Get default compute policy
 	allAssignedComputePolicies, err := adminVdc.GetAllAssignedVdcComputePolicies(nil)

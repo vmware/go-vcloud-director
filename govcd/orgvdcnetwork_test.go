@@ -132,7 +132,7 @@ func (vcd *TestVCD) testCreateUpdateOrgVdcNetworkRouted(check *C, ipSubnet strin
 		fmt.Printf("error creating Network <%s>: %s\n", networkName, err)
 	}
 	check.Assert(err, IsNil)
-	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkRouted", "")
+	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkRouted")
 	network, err := vcd.vdc.GetOrgVdcNetworkByName(networkName, true)
 	check.Assert(err, IsNil)
 	check.Assert(network, NotNil)
@@ -168,7 +168,7 @@ func (vcd *TestVCD) testCreateUpdateOrgVdcNetworkRouted(check *C, ipSubnet strin
 
 	err = network.Update()
 	check.Assert(err, IsNil)
-	AddToCleanupList(updatedNetworkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkRouted", "")
+	AddToCleanupList(updatedNetworkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkRouted")
 
 	network, err = vcd.vdc.GetOrgVdcNetworkById(networkId, true)
 	check.Assert(err, IsNil)
@@ -276,7 +276,7 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkIso(check *C) {
 		fmt.Printf("error creating Network <%s>: %s\n", networkName, err)
 	}
 	check.Assert(err, IsNil)
-	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkIso", "")
+	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkIso")
 
 	network, err := vcd.vdc.GetOrgVdcNetworkByName(networkName, true)
 	check.Assert(err, IsNil)
@@ -301,7 +301,7 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkIso(check *C) {
 	network.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress = updatedEndAddress
 	err = network.Update()
 	check.Assert(err, IsNil)
-	AddToCleanupList(updatedNetworkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkIso", "")
+	AddToCleanupList(updatedNetworkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkIso")
 
 	network, err = vcd.vdc.GetOrgVdcNetworkById(networkId, true)
 	check.Assert(err, IsNil)
@@ -369,7 +369,7 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkDirect(check *C) {
 	}
 	check.Assert(task.Task.HREF, Not(Equals), "")
 
-	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkDirect", "")
+	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkDirect")
 
 	// err = task.WaitTaskCompletion()
 	err = task.WaitInspectTaskCompletion(LogTask, 10)
@@ -397,7 +397,7 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkDirect(check *C) {
 	err = newNetwork.Update()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(updatedNetworkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkDirect", "")
+	AddToCleanupList(updatedNetworkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkDirect")
 
 	// Check the values of the updated entities. The new values should be available
 	// immediately.
