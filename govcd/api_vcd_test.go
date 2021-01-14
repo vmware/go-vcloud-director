@@ -373,14 +373,14 @@ func PrependToCleanupList(name, entityType, parent, createdBy string) {
 
 // AddToCleanupListOpenApi adds an OpenAPI entity OpenApi objects `entityType=OpenApiEntity` and `openApiEndpoint`should
 // be set in format "types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + ID"
-func AddToCleanupListOpenApi(name, entityType, createdBy, openApiEndpoint string) {
+func AddToCleanupListOpenApi(name, createdBy, openApiEndpoint string) {
 	for _, item := range cleanupEntityList {
 		// avoid adding the same item twice
-		if item.Name == name && item.EntityType == entityType {
+		if item.OpenApiEndpoint == openApiEndpoint {
 			return
 		}
 	}
-	cleanupEntityList = append(cleanupEntityList, CleanupEntity{Name: name, EntityType: entityType, CreatedBy: createdBy, OpenApiEndpoint: openApiEndpoint})
+	cleanupEntityList = append(cleanupEntityList, CleanupEntity{Name: name, EntityType: "OpenApiEntity", CreatedBy: createdBy, OpenApiEndpoint: openApiEndpoint})
 	err := writeCleanupList(cleanupEntityList)
 	if err != nil {
 		fmt.Printf("################ error writing cleanup list %s\n", err)
@@ -389,14 +389,14 @@ func AddToCleanupListOpenApi(name, entityType, createdBy, openApiEndpoint string
 
 // PrependToCleanupListOpenApi prepends an OpenAPI entity OpenApi objects `entityType=OpenApiEntity` and
 // `openApiEndpoint`should be set in format "types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + ID"
-func PrependToCleanupListOpenApi(name, entityType, createdBy, openApiEndpoint string) {
+func PrependToCleanupListOpenApi(name, createdBy, openApiEndpoint string) {
 	for _, item := range cleanupEntityList {
 		// avoid adding the same item twice
-		if item.Name == name && item.EntityType == entityType {
+		if item.OpenApiEndpoint == openApiEndpoint {
 			return
 		}
 	}
-	cleanupEntityList = append([]CleanupEntity{{Name: name, EntityType: entityType, CreatedBy: createdBy, OpenApiEndpoint: openApiEndpoint}}, cleanupEntityList...)
+	cleanupEntityList = append([]CleanupEntity{{Name: name, EntityType: "OpenApiEntity", CreatedBy: createdBy, OpenApiEndpoint: openApiEndpoint}}, cleanupEntityList...)
 	err := writeCleanupList(cleanupEntityList)
 	if err != nil {
 		fmt.Printf("################ error writing cleanup list %s\n", err)
