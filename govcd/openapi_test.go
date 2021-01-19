@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/araddon/dateparse"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 
 	. "gopkg.in/check.v1"
@@ -295,8 +296,7 @@ func getAuditTrailTimestampWithElements(elementCount int, check *C, vcd *TestVCD
 		singleElement = onePageAuditTrail[(elementCount - 1)]
 	}
 
-	timeFormat, err := time.Parse("2006-01-02T15:04:05.000+0000", singleElement.Timestamp)
-	check.Assert(err, IsNil)
+	timeFormat := dateparse.MustParse(singleElement.Timestamp)
 
 	return timeFormat.Format(types.FiqlQueryTimestampFormat)
 }

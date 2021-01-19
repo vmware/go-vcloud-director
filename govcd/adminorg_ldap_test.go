@@ -292,8 +292,7 @@ func createDirectNetwork(vcd *TestVCD, check *C) string {
 	}
 	check.Assert(task.Task.HREF, Not(Equals), "")
 
-	AddToCleanupList(networkName,
-		"network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, check.TestName())
+	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, check.TestName())
 
 	err = task.WaitInspectTaskCompletion(LogTask, 10)
 	if err != nil {
