@@ -2132,6 +2132,7 @@ type QueryResultRecordsType struct {
 	VMRecord                        []*QueryResultVMRecordType                        `xml:"VMRecord"`                        // A record representing a VM result.
 	AdminVMRecord                   []*QueryResultVMRecordType                        `xml:"AdminVMRecord"`                   // A record representing a Admin VM result.
 	VAppRecord                      []*QueryResultVAppRecordType                      `xml:"VAppRecord"`                      // A record representing a VApp result.
+	OrgVdcRecord                    []*QueryResultOrgVdcRecordType                    `xml:"OrgVdcRecord"`                    // A record representing VDC
 	AdminVAppRecord                 []*QueryResultVAppRecordType                      `xml:"AdminVAppRecord"`                 // A record representing a VApp result as admin.
 	OrgVdcStorageProfileRecord      []*QueryResultOrgVdcStorageProfileRecordType      `xml:"OrgVdcStorageProfileRecord"`      // A record representing storage profiles
 	MediaRecord                     []*MediaRecordType                                `xml:"MediaRecord"`                     // A record representing media
@@ -2179,29 +2180,44 @@ type QueryResultCatalogItemType struct {
 
 // QueryResultVappTemplateType represents a vApp template as query result
 type QueryResultVappTemplateType struct {
-	HREF               string    `xml:"href,attr,omitempty"`               // The URI of the entity.
-	ID                 string    `xml:"id,attr,omitempty"`                 // vApp template ID.
-	Type               string    `xml:"type,attr,omitempty"`               // The MIME type of the entity.
-	OwnerName          string    `xml:"ownerName,attr,omitempty"`          // Owner name
-	CatalogName        string    `xml:"catalogName,attr,omitempty"`        // Catalog name
-	IsPublished        bool      `xml:"isPublished,attr,omitempty"`        // True if this entity is in a published catalog
-	Name               string    `xml:"name,attr,omitempty"`               // vApp template name.
-	Description        string    `xml:"description,attr,omitempty"`        // vApp template description.
-	Vdc                string    `xml:"vdc,attr,omitempty"`                // VDC reference or ID
-	VdcName            string    `xml:"vdcName,attr,omitempty"`            // VDC name
-	Org                string    `xml:"org,attr,omitempty"`                // Organization reference or ID
-	CreationDate       string    `xml:"creationDate,attr,omitempty"`       // Creation date
-	IsBusy             bool      `xml:"isBusy,attr,omitempty"`             // True if the vApp template is busy
-	IsGoldMaster       bool      `xml:"isGoldMaster,attr,omitempty"`       // True if the vApp template is a gold master
-	IsEnabled          bool      `xml:"isEnabled,attr,omitempty"`          // True if the vApp template is enabled
-	Status             string    `xml:"status,attr,omitempty"`             // Status
-	IsDeployed         bool      `xml:"isDeployed,attr,omitempty"`         // True if this entity is deployed
-	IsExpired          bool      `xml:"isExpired,attr,omitempty"`          // True if this entity is expired
-	StorageProfileName string    `xml:"storageProfileName,attr,omitempty"` // Storage profile name
-	Version            string    `xml:"version,attr,omitempty"`            // Storage profile name
-	LastSuccessfulSync string    `xml:"lastSuccessfulSync,attr,omitempty"` // Date of last successful sync
-	Link               *Link     `xml:"Link,omitempty"`
-	Metadata           *Metadata `xml:"Metadata,omitempty"`
+	HREF                   string    `xml:"href,attr,omitempty"`               // The URI of the entity.
+	ID                     string    `xml:"id,attr,omitempty"`                 // vApp template ID.
+	Type                   string    `xml:"type,attr,omitempty"`               // The MIME type of the entity.
+	OwnerName              string    `xml:"ownerName,attr,omitempty"`          // Owner name
+	CatalogName            string    `xml:"catalogName,attr,omitempty"`        // Catalog name
+	IsPublished            bool      `xml:"isPublished,attr,omitempty"`        // True if this entity is in a published catalog
+	Name                   string    `xml:"name,attr,omitempty"`               // vApp template name.
+	Description            string    `xml:"description,attr,omitempty"`        // vApp template description.
+	Vdc                    string    `xml:"vdc,attr,omitempty"`                // VDC reference or ID
+	VdcName                string    `xml:"vdcName,attr,omitempty"`            // VDC name
+	Org                    string    `xml:"org,attr,omitempty"`                // Organization reference or ID
+	CreationDate           string    `xml:"creationDate,attr,omitempty"`       // Creation date
+	IsBusy                 bool      `xml:"isBusy,attr,omitempty"`             // True if the vApp template is busy
+	IsGoldMaster           bool      `xml:"isGoldMaster,attr,omitempty"`       // True if the vApp template is a gold master
+	IsEnabled              bool      `xml:"isEnabled,attr,omitempty"`          // True if the vApp template is enabled
+	Status                 string    `xml:"status,attr,omitempty"`             // Status
+	IsDeployed             bool      `xml:"isDeployed,attr,omitempty"`         // True if this entity is deployed
+	IsExpired              bool      `xml:"isExpired,attr,omitempty"`          // True if this entity is expired
+	StorageProfileName     string    `xml:"storageProfileName,attr,omitempty"` // Storage profile name
+	Version                string    `xml:"version,attr,omitempty"`            // Storage profile name
+	LastSuccessfulSync     string    `xml:"lastSuccessfulSync,attr,omitempty"` // Date of last successful sync
+	Link                   *Link     `xml:"Link,omitempty"`
+	Metadata               *Metadata `xml:"Metadata,omitempty"`
+	NumberOfShadowVMs      int       `xml:"numberOfShadowVMs,attr,omitempty"`
+	TaskStatusName         string    `xml:"taskStatusName,attr,omitempty"`
+	IsInCatalog            bool      `xml:"isInCatalog,attr,omitempty"`
+	IsAutoDeleteNotified   bool      `xml:"isAutoDeleteNotified,attr,omitempty"`
+	IsVdcEnabled           bool      `xml:"isVdcEnabled,attr,omitempty"`
+	NumberOfVMs            int       `xml:"numberOfVMs,attr,omitempty"`
+	CpuAllocationInMhz     int       `xml:"cpuAllocationInMhz,attr,omitempty"`
+	NumberOfCpus           int       `xml:"numberOfCpus,attr,omitempty"`
+	CpuAllocationMhz       int       `xml:"cpuAllocationMhz,attr,omitempty"`
+	Task                   string    `xml:"task,attr,omitempty"`
+	MemoryAllocationMB     int       `xml:"memoryAllocationMB,attr,omitempty"`
+	StorageKB              int       `xml:"storageKB,attr,omitempty"`
+	TaskStatus             string    `xml:"taskStatus,attr,omitempty"`
+	IsAutoUndeployNotified bool      `xml:"isAutoUndeployNotified,attr,omitempty"`
+	TaskDetails            string    `xml:"taskDetails,attr,omitempty"`
 }
 
 // QueryResultEdgeGatewayRecordType represents an edge gateway record as query result.
@@ -2340,6 +2356,50 @@ type QueryResultVMWProviderVdcRecordType struct {
 	CpuOverheadMhz          int64  `xml:"cpuOverheadMhz,attr,omitempty"`
 	StorageOverheadMB       int64  `xml:"storageOverheadMB,attr,omitempty"`
 	MemoryOverheadMB        int64  `xml:"memoryOverheadMB,attr,omitempty"`
+}
+
+// QueryResultOrgVdcRecordType represents all VDC in organization
+// Type: QueryResultOrgVdcRecordType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Since: 1.5
+type QueryResultOrgVdcRecordType struct {
+	// Attributes
+	HREF                    string `xml:"href,attr,omitempty"`    // The URI of the entity.
+	Name                    string `xml:"name,attr,omitempty"`    // VDC name.
+	OrgName                 string `xml:"orgName,attr,omitempty"` // org name.
+	Description             string `xml:"description,attr,omitempty"`
+	ComputeProviderScope    string `xml:"computeProviderScope,attr,omitempty"`
+	NetworkProviderScope    string `xml:"networkProviderScope,attr,omitempty"`
+	ProviderVdc             string `xml:"providerVdc,attr,omitempty"`
+	NetworkPoolUniversalId  string `xml:"networkPoolUniversalId,attr,omitempty"`
+	CpuAllocationMhz        int    `xml:"cpuAllocationMhz,attr,omitempty"`
+	CpuLimitMhz             int    `xml:"cpuLimitMhz,attr,omitempty"`
+	CpuUsedMhz              int    `xml:"cpuUsedMhz,attr,omitempty"`
+	CpuReservedMhz          int    `xml:"cpuReservedMhz,attr,omitempty"`
+	MemoryAllocationMB      int    `xml:"memoryAllocationMB,attr,omitempty"`
+	MemoryLimitMB           int    `xml:"memoryLimitMB,attr,omitempty"`
+	MemoryUsedMB            int    `xml:"memoryUsedMB,attr,omitempty"`
+	MemoryReservedMB        int    `xml:"memoryReservedMB,attr,omitempty"`
+	NumberOfDatastores      int    `xml:"numberOfDatastores,attr,omitempty"`
+	NumberOfDisks           int    `xml:"numberOfDisks,attr,omitempty"`
+	NumberOfMedia           int    `xml:"numberOfMedia,attr,omitempty"`
+	NumberOfStorageProfiles int    `xml:"numberOfStorageProfiles,attr,omitempty"`
+	// Deprecated: since 30.0
+	NumberOfVAppTemplates          int    `xml:"numberOfVAppTemplates,attr,omitempty"`
+	NumberOfVApps                  int    `xml:"numberOfVApps,attr,omitempty"`
+	NumberOfUnmanagedVApps         int    `xml:"numberOfUnmanagedVApps,attr,omitempty"`
+	NumberOfVMs                    int    `xml:"numberOfVMs,attr,omitempty"`
+	NumberOfRunningVMs             int    `xml:"numberOfRunningVMs,attr,omitempty"`
+	NumberOfDeployedVApps          int    `xml:"numberOfDeployedVApps,attr,omitempty"`
+	NumberOfDeployedUnmanagedVApps int    `xml:"numberOfDeployedUnmanagedVApps,attr,omitempty"`
+	StorageLimitMB                 int    `xml:"storageLimitMB,attr,omitempty"`
+	StorageUsedMB                  int    `xml:"storageUsedMB,attr,omitempty"`
+	Status                         string `xml:"status,attr,omitempty"`
+	IsBusy                         bool   `xml:"isBusy,attr,omitempty"`
+	IsEnabled                      bool   `xml:"isEnabled,attr,omitempty"`
+	IsSystemVdc                    bool   `xml:"isSystemVdc,attr,omitempty"`
+	IsThinProvisioned              bool   `xml:"isThinProvisioned,attr,omitempty"`
+	IsFastProvisioned              bool   `xml:"isFastProvisioned,attr,omitempty"`
 }
 
 // QueryResultProviderVdcStorageProfileRecordType represents a Provider VDC storage profile as query result.
