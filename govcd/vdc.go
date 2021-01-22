@@ -900,3 +900,17 @@ func (vdc *Vdc) GetVappList() []*types.ResourceReference {
 	}
 	return list
 }
+
+// QueryVDCList returns a list of all Virtual Data Center in all the organizations available to the caller
+func (client *Client) QueryVDCList() ([]*types.QueryResultOrgVdcRecordType, error) {
+	queryType := types.QtOrgVdc
+	params := map[string]string{
+		"type":          queryType,
+		"filterEncoded": "true",
+	}
+	result, err := client.cumulativeQuery(queryType, nil, params)
+	if err != nil {
+		return nil, fmt.Errorf("error getting vApp list : %s", err)
+	}
+	return result.Results.OrgVdcRecord, nil
+}

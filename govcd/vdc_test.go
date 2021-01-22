@@ -446,3 +446,20 @@ func (vcd *TestVCD) TestGetVappList(check *C) {
 	check.Assert(len(queryItems), Not(Equals), 0)
 	check.Assert(vm.HREF, Equals, queryItems[0].GetHref())
 }
+
+// Test_QueryOrgVDCList tests method QueryVDCList that retrieve a list of Virtual Data Centers
+func (vcd *TestVCD) Test_QueryOrgVDCList(check *C) {
+	if vcd.config.VCD.Vdc == "" {
+		check.Skip("Skipping test because no vdc was given")
+	}
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	list, err := vcd.client.Client.QueryVDCList()
+
+	check.Assert(err, IsNil)
+	check.Assert(list, NotNil)
+	check.Assert(len(list), Equals, 1)
+	vdc := list[0]
+	check.Assert(vdc.Name, Equals, vcd.config.VCD.Vdc)
+	check.Assert(vdc.HREF, Not(Equals), "")
+}

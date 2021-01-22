@@ -235,6 +235,7 @@ const (
 	QtVappTemplate      = "vAppTemplate"      // vApp template
 	QtAdminVappTemplate = "adminVAppTemplate" // vApp template as admin
 	QtEdgeGateway       = "edgeGateway"       // edge gateway
+	QtOrgVdc            = "orgVdc"            // Org VDC
 	QtOrgVdcNetwork     = "orgVdcNetwork"     // Org VDC network
 	QtCatalog           = "catalog"           // catalog
 	QtAdminCatalog      = "adminCatalog"      // catalog as admin

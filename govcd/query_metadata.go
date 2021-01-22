@@ -123,6 +123,9 @@ func addResults(queryType string, cumulativeResults, newResults Results) (Result
 	case types.QtAdminCatalog:
 		cumulativeResults.Results.AdminCatalogRecord = append(cumulativeResults.Results.AdminCatalogRecord, newResults.Results.AdminCatalogRecord...)
 		size = len(newResults.Results.AdminCatalogRecord)
+	case types.QtOrgVdc:
+		cumulativeResults.Results.OrgVdcRecord = append(cumulativeResults.Results.OrgVdcRecord, newResults.Results.OrgVdcRecord...)
+		size = len(newResults.Results.OrgVdcNetworkRecord)
 	case types.QtOrgVdcNetwork:
 		cumulativeResults.Results.OrgVdcNetworkRecord = append(cumulativeResults.Results.OrgVdcNetworkRecord, newResults.Results.OrgVdcNetworkRecord...)
 		size = len(newResults.Results.OrgVdcNetworkRecord)
@@ -155,6 +158,7 @@ func (client *Client) cumulativeQuery(queryType string, params, notEncodedParams
 		types.QtVappTemplate,
 		types.QtAdminVappTemplate,
 		types.QtEdgeGateway,
+		types.QtOrgVdc,
 		types.QtOrgVdcNetwork,
 		types.QtCatalog,
 		types.QtAdminCatalog,
