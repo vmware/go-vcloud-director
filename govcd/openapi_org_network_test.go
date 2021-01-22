@@ -347,17 +347,6 @@ func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.
 	}
 	check.Assert(foundNetInVdc, Equals, true)
 
-	// Retrieve all networks in Org and expect newly created network to be there
-	// var foundNetInOrg bool
-	// allOrgNets, err := vcd.org.GetAllOpenApiOrgVdcNetworks(nil)
-	// check.Assert(err, IsNil)
-	// for _, net := range allOrgNets {
-	// 	if net.OpenApiOrgVdcNetwork.ID == orgVdcNet.OpenApiOrgVdcNetwork.ID {
-	// 		foundNetInOrg = true
-	// 	}
-	// }
-	// check.Assert(foundNetInOrg, Equals, true)
-
 	// Update
 	orgVdcNet.OpenApiOrgVdcNetwork.Description = check.TestName() + "updated description"
 	updatedOrgVdcNet, err := orgVdcNet.Update(orgVdcNet.OpenApiOrgVdcNetwork)
