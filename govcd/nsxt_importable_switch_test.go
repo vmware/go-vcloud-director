@@ -27,9 +27,7 @@ func (vcd *TestVCD) Test_GetAllNsxtImportableSwitches(check *C) {
 
 	allSwitches, err := nsxtVdc.GetAllNsxtImportableSwitches()
 	check.Assert(err, IsNil)
-	check.Assert(len(allSwitches) > 1, Equals, true)
-	// spew.Dump(allSwitches)
-
+	check.Assert(len(allSwitches) > 0, Equals, true)
 }
 
 func (vcd *TestVCD) Test_GetNsxtImportableSwitchByName(check *C) {
