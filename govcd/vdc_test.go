@@ -446,3 +446,19 @@ func (vcd *TestVCD) TestGetVappList(check *C) {
 	check.Assert(len(queryItems), Not(Equals), 0)
 	check.Assert(vm.HREF, Equals, queryItems[0].GetHref())
 }
+
+// TestGetVdcCapabilities attempts to get a list of VDC capabilities
+func (vcd *TestVCD) TestGetVdcCapabilities(check *C) {
+	vdcCapabilities, err := vcd.nsxtVdc.GetCapabilities()
+	check.Assert(err, IsNil)
+	check.Assert(vdcCapabilities, NotNil)
+}
+
+func (vcd *TestVCD) TestVdcIsNsxt(check *C) {
+	skipNoNsxtConfiguration(vcd, check)
+	check.Assert(vcd.nsxtVdc.IsNsxt(), Equals, true)
+}
+
+func (vcd *TestVCD) TestVdcIsNsxv(check *C) {
+	check.Assert(vcd.nsxtVdc.IsNsxt(), Equals, true)
+}

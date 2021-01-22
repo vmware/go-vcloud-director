@@ -172,6 +172,8 @@ type TestConfig struct {
 			Tier0routerVrf  string `yaml:"tier0routerVrf"`
 			Vdc             string `yaml:"vdc"`
 			ExternalNetwork string `yaml:"externalNetwork"`
+			EdgeGateway     string `yaml:"edgeGateway"`
+			UnusedSegment   string `yaml:"unusedSegment"`
 		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
 	Logging struct {
@@ -205,6 +207,7 @@ type TestVCD struct {
 	client         *VCDClient
 	org            *Org
 	vdc            *Vdc
+	nsxtVdc        *Vdc
 	vapp           *VApp
 	config         TestConfig
 	skipVappTests  bool
@@ -564,6 +567,14 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	vcd.vdc, err = vcd.org.GetVDCByName(config.VCD.Vdc, false)
 	if err != nil || vcd.vdc == nil {
 		panic(err)
+	}
+
+	// configure NSX-T VDC for convenience if it is specified in configuration
+	if config.VCD.Nsxt.Vdc != "" {
+		vcd.nsxtVdc, err = vcd.org.GetVDCByName(config.VCD.Nsxt.Vdc, false)
+		if err != nil {
+			panic(fmt.Errorf("error geting NSX-T Vdc '%s': %s", config.VCD.Nsxt.Vdc, err))
+		}
 	}
 
 	// This is set explicitly to make sure that catalog is using storage profile from correct VDC

@@ -1,0 +1,380 @@
+// +build network nsxt functional openapi ALL
+
+/*
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ */
+
+package govcd
+
+import (
+	"fmt"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	. "gopkg.in/check.v1"
+)
+
+func (vcd *TestVCD) Test_NsxtOrgVdcNetworkIsolated(check *C) {
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
+	skipNoNsxtConfiguration(vcd, check)
+
+	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
+		Name:        check.TestName(),
+		Description: check.TestName() + "-description",
+		OrgVdc:      &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
+
+		NetworkType: types.OrgVdcNetworkTypeIsolated,
+		Subnets: types.OrgVdcNetworkSubnets{
+			Values: []types.OrgVdcNetworkSubnetValues{
+				{
+					Gateway:      "4.1.1.1",
+					PrefixLength: 25,
+					DNSServer1:   "8.8.8.8",
+					DNSServer2:   "8.8.4.4",
+					DNSSuffix:    "bar.foo",
+					IPRanges: types.OrgVdcNetworkSubnetIPRanges{
+						Values: []types.OrgVdcNetworkSubnetIPRangeValues{
+							{
+								StartAddress: "4.1.1.20",
+								EndAddress:   "4.1.1.30",
+							},
+							{
+								StartAddress: "4.1.1.40",
+								EndAddress:   "4.1.1.50",
+							},
+							{
+								StartAddress: "4.1.1.88",
+								EndAddress:   "4.1.1.92",
+							},
+						}},
+				},
+			},
+		},
+	}
+
+	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated)
+}
+
+func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
+	skipNoNsxtConfiguration(vcd, check)
+
+	egw, err := vcd.org.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
+	check.Assert(err, IsNil)
+
+	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
+		Name:        check.TestName(),
+		Description: check.TestName() + "-description",
+		OrgVdc:      &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
+
+		NetworkType: types.OrgVdcNetworkTypeRouted,
+
+		// Connection is used for "routed" network
+		Connection: &types.Connection{
+			RouterRef: types.OpenApiReference{
+				ID: egw.EdgeGateway.ID,
+			},
+			ConnectionType: "INTERNAL",
+		},
+		Subnets: types.OrgVdcNetworkSubnets{
+			Values: []types.OrgVdcNetworkSubnetValues{
+				{
+					Gateway:      "2.1.1.1",
+					PrefixLength: 24,
+					DNSServer1:   "8.8.8.8",
+					DNSServer2:   "8.8.4.4",
+					DNSSuffix:    "foo.bar",
+					IPRanges: types.OrgVdcNetworkSubnetIPRanges{
+						Values: []types.OrgVdcNetworkSubnetIPRangeValues{
+							{
+								StartAddress: "2.1.1.20",
+								EndAddress:   "2.1.1.30",
+							},
+							{
+								StartAddress: "2.1.1.40",
+								EndAddress:   "2.1.1.50",
+							},
+							{
+								StartAddress: "2.1.1.60",
+								EndAddress:   "2.1.1.62",
+							}, {
+								StartAddress: "2.1.1.72",
+								EndAddress:   "2.1.1.74",
+							}, {
+								StartAddress: "2.1.1.84",
+								EndAddress:   "2.1.1.85",
+							},
+						}},
+				},
+			},
+		},
+	}
+
+	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted)
+}
+
+func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
+	skipNoNsxtConfiguration(vcd, check)
+
+	if vcd.config.VCD.Nsxt.UnusedSegment == "" {
+		check.Skip("Unused NSX-T segment was not provided")
+	}
+
+	logicalSwitch, err := vcd.nsxtVdc.GetNsxtImportableSwitchByName(vcd.config.VCD.Nsxt.UnusedSegment)
+	check.Assert(err, IsNil)
+
+	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
+		Name:        check.TestName(),
+		Description: check.TestName() + "-description",
+		OrgVdc:      &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
+
+		NetworkType: types.OrgVdcNetworkTypeOpaque,
+		// BackingNetworkId contains NSX-T logical switch ID for Imported networks
+		BackingNetworkId: logicalSwitch.NsxtImportableSwitch.ID,
+
+		Subnets: types.OrgVdcNetworkSubnets{
+			Values: []types.OrgVdcNetworkSubnetValues{
+				{
+					Gateway:      "3.1.1.1",
+					PrefixLength: 24,
+					DNSServer1:   "8.8.8.8",
+					DNSServer2:   "8.8.4.4",
+					DNSSuffix:    "foo.bar",
+					IPRanges: types.OrgVdcNetworkSubnetIPRanges{
+						Values: []types.OrgVdcNetworkSubnetIPRangeValues{
+							{
+								StartAddress: "3.1.1.20",
+								EndAddress:   "3.1.1.30",
+							},
+							{
+								StartAddress: "3.1.1.40",
+								EndAddress:   "3.1.1.50",
+							},
+						}},
+				},
+			},
+		},
+	}
+
+	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque)
+
+}
+
+func (vcd *TestVCD) Test_NsxvOrgVdcNetworkIsolated(check *C) {
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
+
+	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
+		Name:        check.TestName(),
+		Description: check.TestName() + "-description",
+		OrgVdc:      &types.OpenApiReference{ID: vcd.vdc.Vdc.ID},
+
+		NetworkType: types.OrgVdcNetworkTypeIsolated,
+		Subnets: types.OrgVdcNetworkSubnets{
+			Values: []types.OrgVdcNetworkSubnetValues{
+				{
+					Gateway:      "4.1.1.1",
+					PrefixLength: 25,
+					DNSServer1:   "8.8.8.8",
+					DNSServer2:   "8.8.4.4",
+					DNSSuffix:    "bar.foo",
+					IPRanges: types.OrgVdcNetworkSubnetIPRanges{
+						Values: []types.OrgVdcNetworkSubnetIPRangeValues{
+							{
+								StartAddress: "4.1.1.20",
+								EndAddress:   "4.1.1.30",
+							},
+							{
+								StartAddress: "4.1.1.40",
+								EndAddress:   "4.1.1.50",
+							},
+							{
+								StartAddress: "4.1.1.88",
+								EndAddress:   "4.1.1.92",
+							},
+						}},
+				},
+			},
+		},
+	}
+
+	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated)
+}
+
+func (vcd *TestVCD) Test_NsxvOrgVdcNetworkRouted(check *C) {
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
+	// skipNoNsxtConfiguration(vcd, check)
+
+	nsxvEdgeGateway, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, true)
+	check.Assert(err, IsNil)
+
+	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
+		Name:        check.TestName(),
+		Description: check.TestName() + "-description",
+		OrgVdc:      &types.OpenApiReference{ID: vcd.vdc.Vdc.ID},
+
+		NetworkType: types.OrgVdcNetworkTypeRouted,
+
+		// Connection is used for "routed" network
+		Connection: &types.Connection{
+			RouterRef: types.OpenApiReference{
+				ID: nsxvEdgeGateway.EdgeGateway.ID,
+			},
+			ConnectionType: "INTERNAL",
+		},
+		Subnets: types.OrgVdcNetworkSubnets{
+			Values: []types.OrgVdcNetworkSubnetValues{
+				{
+					Gateway:      "2.1.1.1",
+					PrefixLength: 24,
+					DNSServer1:   "8.8.8.8",
+					DNSServer2:   "8.8.4.4",
+					DNSSuffix:    "foo.bar",
+					IPRanges: types.OrgVdcNetworkSubnetIPRanges{
+						Values: []types.OrgVdcNetworkSubnetIPRangeValues{
+							{
+								StartAddress: "2.1.1.20",
+								EndAddress:   "2.1.1.30",
+							},
+							{
+								StartAddress: "2.1.1.40",
+								EndAddress:   "2.1.1.50",
+							},
+							{
+								StartAddress: "2.1.1.60",
+								EndAddress:   "2.1.1.62",
+							}, {
+								StartAddress: "2.1.1.72",
+								EndAddress:   "2.1.1.74",
+							}, {
+								StartAddress: "2.1.1.84",
+								EndAddress:   "2.1.1.85",
+							},
+						}},
+				},
+			},
+		},
+	}
+
+	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted)
+}
+
+func (vcd *TestVCD) Test_NsxvOrgVdcNetworkDirect(check *C) {
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	// Using legacy API lookup function because GetExternalNetworkV2ByName does not support VCD 9.7
+	externalNetwork, err := vcd.client.GetExternalNetworkByName(vcd.config.VCD.ExternalNetwork)
+
+	check.Assert(err, IsNil)
+
+	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
+		Name:        check.TestName(),
+		Description: check.TestName() + "-description",
+		OrgVdc:      &types.OpenApiReference{ID: vcd.vdc.Vdc.ID},
+
+		NetworkType:   types.OrgVdcNetworkTypeDirect,
+		ParentNetwork: &types.OpenApiReference{ID: externalNetwork.ExternalNetwork.ID},
+
+		Subnets: types.OrgVdcNetworkSubnets{
+			Values: []types.OrgVdcNetworkSubnetValues{
+				{
+					Gateway:      "2.1.1.1",
+					PrefixLength: 24,
+					DNSServer1:   "8.8.8.8",
+					DNSServer2:   "8.8.4.4",
+					DNSSuffix:    "foo.bar",
+					IPRanges: types.OrgVdcNetworkSubnetIPRanges{
+						Values: []types.OrgVdcNetworkSubnetIPRangeValues{
+							{
+								StartAddress: "2.1.1.20",
+								EndAddress:   "2.1.1.30",
+							},
+							{
+								StartAddress: "2.1.1.40",
+								EndAddress:   "2.1.1.50",
+							},
+							{
+								StartAddress: "2.1.1.60",
+								EndAddress:   "2.1.1.62",
+							}, {
+								StartAddress: "2.1.1.72",
+								EndAddress:   "2.1.1.74",
+							}, {
+								StartAddress: "2.1.1.84",
+								EndAddress:   "2.1.1.85",
+							},
+						}},
+				},
+			},
+		},
+	}
+
+	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeDirect)
+}
+
+func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, extpectNetworkType string) {
+	orgVdcNet, err := vdc.CreateOpenApiOrgVdcNetwork(orgVdcNetworkConfig)
+	check.Assert(err, IsNil)
+
+	// Use generic "OpenApiEntity" resource cleanup type
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + orgVdcNet.OpenApiOrgVdcNetwork.ID
+	AddToCleanupListOpenApi(orgVdcNet.OpenApiOrgVdcNetwork.Name, check.TestName(), openApiEndpoint)
+
+	check.Assert(orgVdcNet.GetType(), Equals, extpectNetworkType)
+
+	// Check it can be found
+	orgVdcNetByIdInVdc, err := vdc.GetOpenApiOrgVdcNetworkById(orgVdcNet.OpenApiOrgVdcNetwork.ID)
+	check.Assert(err, IsNil)
+	orgVdcNetByName, err := vdc.GetOpenApiOrgVdcNetworkByName(orgVdcNet.OpenApiOrgVdcNetwork.Name)
+	check.Assert(err, IsNil)
+
+	check.Assert(orgVdcNetByIdInVdc.OpenApiOrgVdcNetwork.ID, Equals, orgVdcNet.OpenApiOrgVdcNetwork.ID)
+	check.Assert(orgVdcNetByName.OpenApiOrgVdcNetwork.ID, Equals, orgVdcNet.OpenApiOrgVdcNetwork.ID)
+
+	// Retrieve all networks in VDC and expect newly created network to be there
+	var foundNetInVdc bool
+	allOrgVdcNets, err := vdc.GetAllOpenApiOrgVdcNetworks(nil)
+	check.Assert(err, IsNil)
+	for _, net := range allOrgVdcNets {
+		if net.OpenApiOrgVdcNetwork.ID == orgVdcNet.OpenApiOrgVdcNetwork.ID {
+			foundNetInVdc = true
+		}
+	}
+	check.Assert(foundNetInVdc, Equals, true)
+
+	// Retrieve all networks in Org and expect newly created network to be there
+	// var foundNetInOrg bool
+	// allOrgNets, err := vcd.org.GetAllOpenApiOrgVdcNetworks(nil)
+	// check.Assert(err, IsNil)
+	// for _, net := range allOrgNets {
+	// 	if net.OpenApiOrgVdcNetwork.ID == orgVdcNet.OpenApiOrgVdcNetwork.ID {
+	// 		foundNetInOrg = true
+	// 	}
+	// }
+	// check.Assert(foundNetInOrg, Equals, true)
+
+	// Update
+	orgVdcNet.OpenApiOrgVdcNetwork.Description = check.TestName() + "updated description"
+	updatedOrgVdcNet, err := orgVdcNet.Update(orgVdcNet.OpenApiOrgVdcNetwork)
+	check.Assert(err, IsNil)
+
+	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.Name, Equals, orgVdcNet.OpenApiOrgVdcNetwork.Name)
+	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID, Equals, orgVdcNet.OpenApiOrgVdcNetwork.ID)
+	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.Description, Equals, orgVdcNet.OpenApiOrgVdcNetwork.Description)
+
+	// Delete
+	err = orgVdcNet.Delete()
+	check.Assert(err, IsNil)
+
+	// Test again if it was deleted and expect it to contain ErrorEntityNotFound
+	_, err = vdc.GetOpenApiOrgVdcNetworkByName(orgVdcNet.OpenApiOrgVdcNetwork.Name)
+	check.Assert(ContainsNotFound(err), Equals, true)
+
+	_, err = vdc.GetOpenApiOrgVdcNetworkById(orgVdcNet.OpenApiOrgVdcNetwork.ID)
+	check.Assert(ContainsNotFound(err), Equals, true)
+}

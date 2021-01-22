@@ -329,11 +329,14 @@ const (
 	OpenApiEndpointRoles                      = "roles/"
 	OpenApiEndpointAuditTrail                 = "auditTrail/"
 	OpenApiEndpointImportableTier0Routers     = "nsxTResources/importableTier0Routers"
+	OpenApiEndpointImportableSwitches         = "/network/orgvdcnetworks/importableswitches"
 	OpenApiEndpointEdgeClusters               = "nsxTResources/edgeClusters"
 	OpenApiEndpointExternalNetworks           = "externalNetworks/"
 	OpenApiEndpointVdcComputePolicies         = "vdcComputePolicies/"
 	OpenApiEndpointVdcAssignedComputePolicies = "vdcs/%s/computePolicies"
+	OpenApiEndpointVdcCapabilities            = "vdcs/%s/capabilities"
 	OpenApiEndpointEdgeGateways               = "edgeGateways/"
+	OpenApiEndpointOrgVdcNetworks             = "orgVdcNetworks/"
 )
 
 // Header keys to run operations in tenant context
@@ -353,4 +356,22 @@ const (
 	ExternalNetworkBackingTypeNetwork = "NETWORK"
 	// ExternalNetworkBackingDvPortgroup refers distributed switch portgroup
 	ExternalNetworkBackingDvPortgroup = "DV_PORTGROUP"
+)
+
+const (
+	// OrgVdcNetworkTypeRouted can be used to create NSX-T or NSX-V routed Org Vdc network
+	OrgVdcNetworkTypeRouted = "NAT_ROUTED"
+	// OrgVdcNetworkTypeIsolated can be used to creaate NSX-T or NSX-V isolated Org Vdc network
+	OrgVdcNetworkTypeIsolated = "ISOLATED"
+	// OrgVdcNetworkTypeOpaque type is used to create NSX-T imported Org Vdc network
+	OrgVdcNetworkTypeOpaque = "OPAQUE"
+	// OrgVdcNetworkTypeDirect can be used to create NSX-V direct Org Vdc network
+	OrgVdcNetworkTypeDirect = "DIRECT"
+)
+
+const (
+	// VdcCapabilityNetworkProviderNsxv is a convenience constant to match VDC capability
+	VdcCapabilityNetworkProviderNsxv = "NSX_V"
+	// VdcCapabilityNetworkProviderNsxt is a convenience constant to match VDC capability
+	VdcCapabilityNetworkProviderNsxt = "NSX_T"
 )

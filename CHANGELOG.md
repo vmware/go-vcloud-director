@@ -1,5 +1,11 @@
 ## 2.11.0 (Unreleased)
 
+* Added structure and methods to handle Org VDC networks using OpenAPI - `OpenApiOrgVdcNetwork`. It supportes VCD 9.7+
+for all networks types for NSX-V and NSX-T backed VDCs [#354](https://github.com/vmware/go-vcloud-director/pull/354)
+* Added `NsxtImportableSwitch` structure with `GetNsxtImportableSwitchByName` and `GetAllNsxtImportableSwitches` to 
+lookup NSX-T segments for use in NSX-T Imported networks [#354](https://github.com/vmware/go-vcloud-director/pull/354)
+* Added `vdc.IsNsxt` and `vdc.IsNsxv` methods to verify if VDC is backed by NSX-T or NSX-V [#352](https://github.com/vmware/go-vcloud-director/pull/354)
+
 BUGS FIXED:
 * Made IPAddress field for IPAddresses struct to array [#350](https://github.com/vmware/go-vcloud-director/pull/350)
 

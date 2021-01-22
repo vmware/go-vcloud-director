@@ -197,3 +197,34 @@ type OpenApiReference struct {
 	Name string `json:"name,omitempty"`
 	ID   string `json:"id,omitempty"`
 }
+
+type OpenApiReferences []OpenApiReference
+
+// VdcCapability can be used to determine VDC capabilities, including such:
+// * Is it backed by NSX-T or NSX-V pVdc
+// * Does it support BGP routing
+type VdcCapability struct {
+	// Name of capability
+	Name string `json:"name"`
+	// Description of capability
+	Description string `json:"description"`
+	// Value can be any value. Sometimes it is a JSON bool (true, false), sometimes it is a JSON array (["custom", "default"])
+	// and sometimes just a string ("NSX_V"). It is up for the consumer to handle values as per the Type field.
+	Value interface{} `json:"value"`
+	// Type of field (e.g. "Boolean", "String", "List")
+	Type string `json:"type"`
+	// Category of capability (e.g. "Security", "EdgeGateway", "OrgVdcNetwork")
+	Category string `json:"category"`
+}
+
+type VdcCapabilities []VdcCapability
+
+func (vdcCaps VdcCapabilities) GetFieldStringValue(fieldName string) string {
+	for _, field := range vdcCaps {
+		if field.Name == fieldName {
+			return field.Value.(string)
+		}
+	}
+
+	return ""
+}
