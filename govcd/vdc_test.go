@@ -460,5 +460,5 @@ func (vcd *TestVCD) TestVdcIsNsxt(check *C) {
 }
 
 func (vcd *TestVCD) TestVdcIsNsxv(check *C) {
-	check.Assert(vcd.nsxtVdc.IsNsxt(), Equals, true)
+	check.Assert(vcd.vdc.IsNsxv(), Equals, true)
 }
