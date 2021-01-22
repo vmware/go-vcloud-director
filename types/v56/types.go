@@ -1505,7 +1505,7 @@ type VirtualHardwareSection struct {
 // Each ovf:Item parsed from the ovf:VirtualHardwareSection
 type VirtualHardwareItem struct {
 	XMLName             xml.Name                       `xml:"Item"`
-	ResourceType        int                            `xml:"ResourceType,omitempty"`
+	ResourceType        int64                          `xml:"ResourceType,omitempty"`
 	ResourceSubType     string                         `xml:"ResourceSubType,omitempty"`
 	ElementName         string                         `xml:"ElementName,omitempty"`
 	Description         string                         `xml:"Description,omitempty"`
