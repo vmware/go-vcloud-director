@@ -449,7 +449,7 @@ func (vcd *TestVCD) TestGetVappList(check *C) {
 
 // TestGetVdcCapabilities attempts to get a list of VDC capabilities
 func (vcd *TestVCD) TestGetVdcCapabilities(check *C) {
-	vdcCapabilities, err := vcd.nsxtVdc.GetCapabilities()
+	vdcCapabilities, err := vcd.vdc.GetCapabilities()
 	check.Assert(err, IsNil)
 	check.Assert(vdcCapabilities, NotNil)
 }
