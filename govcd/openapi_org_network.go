@@ -148,18 +148,22 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) GetType() string {
 	return orgVdcNet.OpenApiOrgVdcNetwork.NetworkType
 }
 
+// IsIsolated returns true if the network type is isolated (NSX-V and NSX-T)
 func (orgVdcNet *OpenApiOrgVdcNetwork) IsIsolated() bool {
 	return orgVdcNet.GetType() == types.OrgVdcNetworkTypeIsolated
 }
 
+// IsRouted returns true if the network type is isolated (NSX-V and NSX-T)
 func (orgVdcNet *OpenApiOrgVdcNetwork) IsRouted() bool {
 	return orgVdcNet.GetType() == types.OrgVdcNetworkTypeRouted
 }
 
+// IsImported returns true if the network type is imported (NSX-T only)
 func (orgVdcNet *OpenApiOrgVdcNetwork) IsImported() bool {
 	return orgVdcNet.GetType() == types.OrgVdcNetworkTypeOpaque
 }
 
+// IsDirect returns true if the network type is direct (NSX-V only)
 func (orgVdcNet *OpenApiOrgVdcNetwork) IsDirect() bool {
 	return orgVdcNet.GetType() == types.OrgVdcNetworkTypeDirect
 }
