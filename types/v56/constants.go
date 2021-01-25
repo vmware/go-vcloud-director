@@ -137,7 +137,7 @@ const (
 
 const (
 	ResourceTypeOther     int = 0
-	ResourceTypeProcessor int = 3
+	ResourceTypeProcessor int64 = 3
 	ResourceTypeMemory    int = 4
 	ResourceTypeIDE       int = 5
 	ResourceTypeSCSI      int = 6
