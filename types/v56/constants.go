@@ -136,17 +136,17 @@ const (
 // https://blogs.vmware.com/vapp/2009/11/virtual-hardware-in-ovf-part-1.html
 
 const (
-	ResourceTypeOther     int = 0
+	ResourceTypeOther     int   = 0
 	ResourceTypeProcessor int64 = 3
-	ResourceTypeMemory    int = 4
-	ResourceTypeIDE       int = 5
-	ResourceTypeSCSI      int = 6
-	ResourceTypeEthernet  int = 10
-	ResourceTypeFloppy    int = 14
-	ResourceTypeCD        int = 15
-	ResourceTypeDVD       int = 16
-	ResourceTypeDisk      int = 17
-	ResourceTypeUSB       int = 23
+	ResourceTypeMemory    int   = 4
+	ResourceTypeIDE       int   = 5
+	ResourceTypeSCSI      int   = 6
+	ResourceTypeEthernet  int   = 10
+	ResourceTypeFloppy    int   = 14
+	ResourceTypeCD        int   = 15
+	ResourceTypeDVD       int   = 16
+	ResourceTypeDisk      int   = 17
+	ResourceTypeUSB       int   = 23
 )
 
 const (
@@ -287,7 +287,7 @@ func (qf VmQueryFilter) String() string {
 		return ""
 	}
 	return [...]string{
-		"",                      // No filter: will not remove any items
+		"", // No filter: will not remove any items
 		"isVAppTemplate==false", // Will find only the deployed VMs
 		"isVAppTemplate==true",  // Will find only those VM that are inside a template
 	}[qf]
