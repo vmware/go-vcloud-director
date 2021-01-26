@@ -30,6 +30,7 @@ import (
 // network
 // externalNetwork
 // vapp
+// vm
 // task
 // Edge Gateway service configuration
 
