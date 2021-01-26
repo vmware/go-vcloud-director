@@ -5,7 +5,6 @@
 package govcd
 
 import (
-	"encoding/xml"
 	"errors"
 	"fmt"
 	"net"
@@ -1349,7 +1348,7 @@ func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection
 
 	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
 		types.MimeVM, "error updating VM disks: %s", &types.VMDiskChange{
-			XMLName:       xml.Name{},
+			//XMLName:       xml.Name{},
 			Xmlns:         types.XMLNamespaceVCloud,
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
@@ -1460,7 +1459,7 @@ func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection, 
 
 	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
 		types.MimeVM, "error updating VM spec section: %s", &types.VM{
-			XMLName:       xml.Name{},
+			//XMLName:       xml.Name{},
 			Xmlns:         types.XMLNamespaceVCloud,
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
@@ -1513,7 +1512,7 @@ func (vm *VM) UpdateComputePolicyAsync(computePolicy *types.VdcComputePolicy) (T
 
 	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
 		types.MimeVM, "error updating VM spec section: %s", &types.VM{
-			XMLName:       xml.Name{},
+			//XMLName:       xml.Name{},
 			Xmlns:         types.XMLNamespaceVCloud,
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
@@ -1828,11 +1827,36 @@ func (vm *VM) UpdateStorageProfileAsync(storageProfileHref string) (Task, error)
 	// Sections not included in the request body will not be updated.
 	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
 		types.MimeVM, "error updating VM spec section: %s", &types.VM{
-			XMLName:        xml.Name{},
+			//XMLName:        xml.Name{},
 			Xmlns:          types.XMLNamespaceVCloud,
 			Ovf:            types.XMLNamespaceOVF,
 			Name:           vm.VM.Name,
 			Description:    vm.VM.Description,
 			StorageProfile: &types.Reference{HREF: storageProfileHref},
 		})
+}
+
+func (vm *VM) DeleteAsync() (Task, error) {
+	if vm.VM.HREF == "" {
+		return Task{}, fmt.Errorf("no HREF found for this VM")
+	}
+
+	task, err := vm.PowerOff()
+	if err == nil {
+		err = task.WaitTaskCompletion()
+		if err != nil {
+			return Task{}, err
+		}
+	}
+	return vm.client.ExecuteTaskRequest(vm.VM.HREF, http.MethodDelete,
+		"", "error deleting VM: %s", nil)
+}
+
+
+func (vm *VM) Delete()  error {
+	task, err  := vm.DeleteAsync()
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
 }
