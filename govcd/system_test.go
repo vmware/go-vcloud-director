@@ -453,9 +453,7 @@ func (vcd *TestVCD) Test_QueryOrgVdcNetworkByNameWithSpace(check *C) {
 	}
 	check.Assert(task.Task.HREF, Not(Equals), "")
 
-	AddToCleanupList(networkName,
-		"network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name,
-		"Test_CreateOrgVdcNetworkDirect")
+	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkDirect")
 
 	// err = task.WaitTaskCompletion()
 	err = task.WaitInspectTaskCompletion(LogTask, 10)

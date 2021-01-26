@@ -8,10 +8,11 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	. "gopkg.in/check.v1"
 	"net/url"
 	"strings"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	. "gopkg.in/check.v1"
 )
 
 func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {

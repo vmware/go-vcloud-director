@@ -8,9 +8,10 @@ package govcd
 
 import (
 	"fmt"
+	"math"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
-	"math"
 )
 
 // Tests org function GetVDCByName with the vdc specified

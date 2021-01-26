@@ -4,7 +4,7 @@ This repo contains the `go-vcloud-director` package which implements
 an SDK for vCloud Director. The project serves the needs of Golang
 developers who need to integrate with vCloud Director. It is also the
 basis of the [vCD Terraform
-Provider](https://github.com/terraform-providers/terraform-provider-vcd).
+Provider](https://github.com/vmware/terraform-provider-vcd).
 
 ## Contributions ##
 
