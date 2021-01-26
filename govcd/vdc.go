@@ -900,3 +900,158 @@ func (vdc *Vdc) GetVappList() []*types.ResourceReference {
 	}
 	return list
 }
+
+func (vdc *Vdc) CreateStandaloneVmAsync(params *types.CreateVmParams) (Task, error) {
+	util.Logger.Printf("[TRACE] Vdc.CreateStandaloneVmAsync - Creating VM ")
+
+	if vdc.Vdc.HREF == "" {
+		return Task{}, fmt.Errorf("cannot create VM, Object VDC is empty")
+	}
+
+	href := ""
+	for _, link := range vdc.Vdc.Link {
+		if link.Type == types.MimeCreateVmParams && link.Rel == "add" {
+			href = link.HREF
+			break
+		}
+	}
+	if href == "" {
+		return Task{}, fmt.Errorf("error retrieving VM creation link from VDC %s", vdc.Vdc.Name)
+	}
+	if params == nil {
+		return Task{}, fmt.Errorf("empty parameters passed to standalone VM creation")
+	}
+	params.XmlnsOvf = types.XMLNamespaceOVF
+	//fmt.Printf("%# v\n",pretty.Formatter(params))
+
+	return vdc.client.ExecuteTaskRequest(href, http.MethodPost, types.MimeCreateVmParams, "error creating standalone VM: %s", params)
+}
+
+func (vdc *Vdc) getVmFromTask(task Task, name string) (*VM, error) {
+	owner := task.Task.Owner.HREF
+	if owner == "" {
+		return nil, fmt.Errorf("task owner is null for VM %s", name)
+	}
+	vapp, err := vdc.GetVAppByHref(owner)
+	if err != nil {
+		return nil, err
+	}
+	if vapp.VApp.Children == nil {
+		return nil, ErrorEntityNotFound
+	}
+	if len(vapp.VApp.Children.VM) == 0 {
+		return nil, fmt.Errorf("vApp %s contains no VMs", vapp.VApp.Name)
+	}
+	if len(vapp.VApp.Children.VM) > 1 {
+		return nil, fmt.Errorf("vApp %s contains more than one VM", vapp.VApp.Name)
+	}
+	for _, child := range vapp.VApp.Children.VM {
+		util.Logger.Printf("[TRACE] Looking at: %s", child.Name)
+		return vapp.client.GetVMByHref(child.HREF)
+		break
+	}
+	return nil, ErrorEntityNotFound
+}
+
+func (vdc *Vdc) CreateStandaloneVm(params *types.CreateVmParams) (*VM, error) {
+
+	task, err := vdc.CreateStandaloneVmAsync(params)
+	if err != nil {
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, err
+	}
+	return vdc.getVmFromTask(task, params.Name)
+}
+
+func (vdc *Vdc) QueryVmByName(name string) (*VM, error) {
+	vmList, err := vdc.client.QueryVmList(types.VmQueryFilterOnlyDeployed)
+	if err != nil {
+		return nil, err
+	}
+	var foundVM []*types.QueryResultVMRecordType
+	for _, vm := range vmList {
+		if vm.Name == name {
+			foundVM = append(foundVM, vm)
+		}
+	}
+	if len(foundVM) == 0 {
+		return nil, ErrorEntityNotFound
+	}
+	if len(foundVM) > 1 {
+		return nil, fmt.Errorf("more than one VM found with name %s", name)
+	}
+	return vdc.client.GetVMByHref(foundVM[0].HREF)
+}
+
+func (vdc *Vdc) QueryVmById(id string) (*VM, error) {
+	vmList, err := vdc.client.QueryVmList(types.VmQueryFilterOnlyDeployed)
+	if err != nil {
+		return nil, err
+	}
+	var foundVM []*types.QueryResultVMRecordType
+	for _, vm := range vmList {
+		if equalIds(id, vm.ID, vm.HREF) {
+			foundVM = append(foundVM, vm)
+		}
+	}
+	if len(foundVM) == 0 {
+		return nil, ErrorEntityNotFound
+	}
+	if len(foundVM) > 1 {
+		return nil, fmt.Errorf("more than one VM found with ID %s", id)
+	}
+	return vdc.client.GetVMByHref(foundVM[0].HREF)
+}
+
+func (vdc *Vdc)CreateStandaloneVMFromTemplateAsync(params *types.InstantiateVmTemplateParams ) (Task, error) {
+
+	util.Logger.Printf("[TRACE] Vdc.CreateStandaloneVmAsync - Creating VM ")
+
+	if vdc.Vdc.HREF == "" {
+		return Task{}, fmt.Errorf("cannot create VM, Object VDC is empty")
+	}
+
+	href := ""
+	for _, link := range vdc.Vdc.Link {
+		if link.Type == types.MimeInstantiateVmTemplateParams && link.Rel == "add" {
+			href = link.HREF
+			break
+		}
+	}
+	if href == "" {
+		return Task{}, fmt.Errorf("error retrieving VM instantiate from template link from VDC %s", vdc.Vdc.Name)
+	}
+
+	if params.Name == "" {
+		return Task{}, fmt.Errorf("[CreateStandaloneVMFromTemplateAsync] missing VM name")
+	}
+	if params.SourcedVmTemplateItem == nil {
+		return Task{}, fmt.Errorf("[CreateStandaloneVMFromTemplateAsync] missing SourcedVmTemplateItem")
+	}
+	if params.SourcedVmTemplateItem.Source == nil {
+		return Task{}, fmt.Errorf("[CreateStandaloneVMFromTemplateAsync] missing vApp template Source")
+	}
+	if params.SourcedVmTemplateItem.Source.HREF == "" {
+		return Task{}, fmt.Errorf("[CreateStandaloneVMFromTemplateAsync] empty HREF in vApp template Source")
+	}
+	params.XmlnsOvf = types.XMLNamespaceOVF
+	//fmt.Printf("%# v\n",pretty.Formatter(params))
+
+	return vdc.client.ExecuteTaskRequest(href, http.MethodPost, types.MimeInstantiateVmTemplateParams, "error creating standalone VM from template: %s", params)
+}
+
+func (vdc *Vdc)CreateStandaloneVMFromTemplate( params *types.InstantiateVmTemplateParams ) (*VM, error) {
+
+	task, err := vdc.CreateStandaloneVMFromTemplateAsync(params)
+	if err != nil {
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, err
+	}
+	return vdc.getVmFromTask(task, params.Name)
+}
