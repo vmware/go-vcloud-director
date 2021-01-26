@@ -127,6 +127,10 @@ const (
 	MimeVdcComputePolicyReferences = "application/vnd.vmware.vcloud.vdcComputePolicyReferences+xml"
 	// Mime for Storage profile
 	MimeStorageProfile = "application/vnd.vmware.admin.vdcStorageProfile+xml "
+	// Mime for create VM Params
+	MimeCreateVmParams = "application/vnd.vmware.vcloud.CreateVmParams+xml"
+	// Mime for instantiate VM Params from template
+	MimeInstantiateVmTemplateParams = "application/vnd.vmware.vcloud.instantiateVmTemplateParams+xml"
 )
 
 const (
