@@ -53,6 +53,15 @@ func prettyVapp(vapp types.VApp) string {
 	return ""
 }
 
+// Returns a VM structure as JSON
+func prettyVM(vm types.VM) string {
+	byteBuf, err := json.MarshalIndent(vm, " ", " ")
+	if err == nil {
+		return fmt.Sprintf("%s\n", string(byteBuf))
+	}
+	return ""
+}
+
 // Returns an OrgUser structure as JSON
 func prettyUser(user types.User) string {
 	byteBuf, err := json.MarshalIndent(user, " ", " ")
