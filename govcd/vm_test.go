@@ -560,7 +560,7 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 		check.Skip("skipping test because no VM is found")
 	}
 
-	currentCpus := 0
+	currentCpus := int64(0)
 	currentCores := 0
 
 	// save current values
@@ -583,7 +583,7 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 	cores := 2
 	cpuCount := 4
 
-	task, err := vm.ChangeCPUCountWithCore(cpuCount, &cores)
+	task, err := vm.ChangeCPUCountWithCore(int(cpuCount), &cores)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
@@ -605,7 +605,7 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 	}
 
 	// return to previous value
-	task, err = vm.ChangeCPUCountWithCore(currentCpus, &currentCores)
+	task, err = vm.ChangeCPUCountWithCore(int(currentCpus), &currentCores)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
