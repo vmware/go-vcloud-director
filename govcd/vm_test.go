@@ -581,7 +581,7 @@ func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
 	check.Assert(err, IsNil)
 
 	cores := 2
-	cpuCount := 4
+	cpuCount := int64(4)
 
 	task, err := vm.ChangeCPUCountWithCore(int(cpuCount), &cores)
 	check.Assert(err, IsNil)
