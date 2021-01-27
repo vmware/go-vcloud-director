@@ -1778,6 +1778,14 @@ func skipNoNsxtConfiguration(vcd *TestVCD, check *C) {
 		check.Skip(generalMessage + "No network pool specified")
 	}
 
+	if vcd.config.VCD.Nsxt.Vdc == "" {
+		check.Skip(generalMessage + "No NSX-T VDC specified")
+	}
+
+	if vcd.config.VCD.Nsxt.UnusedSegment == "" {
+		check.Skip(generalMessage + "No NSX-T Unused segment (for imported Org VDC network) specified")
+	}
+
 	if vcd.config.VCD.NsxtProviderVdc.StorageProfile == "" {
 		check.Skip(generalMessage + "No storage profile specified")
 	}
@@ -1794,6 +1802,9 @@ func skipNoNsxtConfiguration(vcd *TestVCD, check *C) {
 		check.Skip(generalMessage + "No VRF NSX-T Tier-0 router specified")
 	}
 
+	if vcd.config.VCD.Nsxt.EdgeGateway == "" {
+		check.Skip(generalMessage + "No NSX-T Edge Gateway specified in configuration")
+	}
 }
 
 // skipOpenApiEndpointTest is a helper to skip tests for particular unsupported OpenAPI endpoints
