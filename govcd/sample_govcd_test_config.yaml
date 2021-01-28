@@ -72,7 +72,7 @@ vcd:
       # Existing NSX-T edge gateway
       edgeGateway: nsxt-gw-name
       # Existing NSX-T segment to test NSX-T Imported Org Vdc network
-      unusedSegment: vcd-org-vdc-imported-network-backing
+      nsxtImportSegment: vcd-org-vdc-imported-network-backing
     # An Org catalog, possibly containing at least one item
     catalog:
         name: mycat

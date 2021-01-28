@@ -43,7 +43,7 @@ func (vcd *TestVCD) Test_GetNsxtImportableSwitchByName(check *C) {
 	nsxtVdc, err := vcd.org.GetVDCByNameOrId(vcd.config.VCD.Nsxt.Vdc, true)
 	check.Assert(err, IsNil)
 
-	logicalSwitch, err := nsxtVdc.GetNsxtImportableSwitchByName(vcd.config.VCD.Nsxt.UnusedSegment)
+	logicalSwitch, err := nsxtVdc.GetNsxtImportableSwitchByName(vcd.config.VCD.Nsxt.NsxtImportSegment)
 	check.Assert(err, IsNil)
-	check.Assert(logicalSwitch.NsxtImportableSwitch.Name, Equals, vcd.config.VCD.Nsxt.UnusedSegment)
+	check.Assert(logicalSwitch.NsxtImportableSwitch.Name, Equals, vcd.config.VCD.Nsxt.NsxtImportSegment)
 }
