@@ -904,7 +904,7 @@ func (vdc *Vdc) GetVappList() []*types.ResourceReference {
 // GetCapabilities allows to retrieve a list of VDC capabilities. It has a list of values. Some particularly useful are:
 // * networkProvider - overlay stack responsible for providing network functionality. (NSX_V or NSX_T)
 // * crossVdc - supports cross vDC network creation
-func (vdc *Vdc) GetCapabilities() (*types.VdcCapabilities, error) {
+func (vdc *Vdc) GetCapabilities() ([]types.VdcCapability, error) {
 	if vdc.Vdc.ID == "" {
 		return nil, fmt.Errorf("VDC ID must be set to get capabilities")
 	}
@@ -920,8 +920,8 @@ func (vdc *Vdc) GetCapabilities() (*types.VdcCapabilities, error) {
 		return nil, err
 	}
 
-	capabilities := &types.VdcCapabilities{}
-	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, nil, capabilities)
+	capabilities := make([]types.VdcCapability, 0)
+	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, nil, &capabilities)
 	if err != nil {
 		return nil, err
 	}
@@ -936,7 +936,7 @@ func (vdc *Vdc) IsNsxt() bool {
 		return false
 	}
 
-	networkProviderCapability := vdcCapabilities.GetFieldStringValue("networkProvider")
+	networkProviderCapability := getCapabilityValue(vdcCapabilities, "networkProvider")
 	return networkProviderCapability == types.VdcCapabilityNetworkProviderNsxt
 }
 
@@ -948,6 +948,17 @@ func (vdc *Vdc) IsNsxv() bool {
 		return false
 	}
 
-	networkProviderCapability := vdcCapabilities.GetFieldStringValue("networkProvider")
+	networkProviderCapability := getCapabilityValue(vdcCapabilities, "networkProvider")
 	return networkProviderCapability == types.VdcCapabilityNetworkProviderNsxv
+}
+
+// getCapabilityValue helps to lookup a specific capability in []types.VdcCapability by provided fieldName
+func getCapabilityValue(capabilities []types.VdcCapability, fieldName string) string {
+	for _, field := range capabilities {
+		if field.Name == fieldName {
+			return field.Value.(string)
+		}
+	}
+
+	return ""
 }

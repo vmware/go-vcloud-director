@@ -216,15 +216,3 @@ type VdcCapability struct {
 	// Category of capability (e.g. "Security", "EdgeGateway", "OrgVdcNetwork")
 	Category string `json:"category"`
 }
-
-type VdcCapabilities []VdcCapability
-
-func (vdcCaps VdcCapabilities) GetFieldStringValue(fieldName string) string {
-	for _, field := range vdcCaps {
-		if field.Name == fieldName {
-			return field.Value.(string)
-		}
-	}
-
-	return ""
-}

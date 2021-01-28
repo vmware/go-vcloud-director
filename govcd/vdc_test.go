@@ -452,6 +452,7 @@ func (vcd *TestVCD) TestGetVdcCapabilities(check *C) {
 	vdcCapabilities, err := vcd.vdc.GetCapabilities()
 	check.Assert(err, IsNil)
 	check.Assert(vdcCapabilities, NotNil)
+	check.Assert(len(vdcCapabilities) > 0, Equals, true)
 }
 
 func (vcd *TestVCD) TestVdcIsNsxt(check *C) {
