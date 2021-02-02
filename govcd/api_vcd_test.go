@@ -573,7 +573,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	if config.VCD.Nsxt.Vdc != "" {
 		vcd.nsxtVdc, err = vcd.org.GetVDCByName(config.VCD.Nsxt.Vdc, false)
 		if err != nil {
-			panic(fmt.Errorf("error geting NSX-T Vdc '%s': %s", config.VCD.Nsxt.Vdc, err))
+			panic(fmt.Errorf("error geting NSX-T VDC '%s': %s", config.VCD.Nsxt.Vdc, err))
 		}
 	}
 

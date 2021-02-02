@@ -46,7 +46,7 @@ func (vdc *Vdc) GetOpenApiOrgVdcNetworkByName(name string) (*OpenApiOrgVdcNetwor
 
 	allEdges, err := vdc.GetAllOpenApiOrgVdcNetworks(queryParameters)
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve Org Vdc network by name '%s': %s", name, err)
+		return nil, fmt.Errorf("unable to retrieve Org VDC network by name '%s': %s", name, err)
 	}
 
 	return returnSingleOpenApiOrgVdcNetwork(name, allEdges)
@@ -81,7 +81,7 @@ func (vdc *Vdc) CreateOpenApiOrgVdcNetwork(OrgVdcNetworkConfig *types.OpenApiOrg
 
 	err = vdc.client.OpenApiPostItem(minimumApiVersion, urlRef, nil, OrgVdcNetworkConfig, returnEgw.OpenApiOrgVdcNetwork)
 	if err != nil {
-		return nil, fmt.Errorf("error creating Org Vdc network: %s", err)
+		return nil, fmt.Errorf("error creating Org VDC network: %s", err)
 	}
 
 	return returnEgw, nil
@@ -96,7 +96,7 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) Update(OrgVdcNetworkConfig *types.OpenApi
 	}
 
 	if OrgVdcNetworkConfig.ID == "" {
-		return nil, fmt.Errorf("cannot update Org Vdc network without id")
+		return nil, fmt.Errorf("cannot update Org VDC network without ID")
 	}
 
 	urlRef, err := orgVdcNet.client.OpenApiBuildEndpoint(endpoint, OrgVdcNetworkConfig.ID)
@@ -111,13 +111,13 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) Update(OrgVdcNetworkConfig *types.OpenApi
 
 	err = orgVdcNet.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, OrgVdcNetworkConfig, returnEgw.OpenApiOrgVdcNetwork)
 	if err != nil {
-		return nil, fmt.Errorf("error updating Org Vdc network: %s", err)
+		return nil, fmt.Errorf("error updating Org VDC network: %s", err)
 	}
 
 	return returnEgw, nil
 }
 
-// Delete allows to delete Org VDC  network
+// Delete allows to delete Org VDC network
 func (orgVdcNet *OpenApiOrgVdcNetwork) Delete() error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
 	minimumApiVersion, err := orgVdcNet.client.checkOpenApiEndpointCompatibility(endpoint)
@@ -126,7 +126,7 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) Delete() error {
 	}
 
 	if orgVdcNet.OpenApiOrgVdcNetwork.ID == "" {
-		return fmt.Errorf("cannot delete Org Vdc network without id")
+		return fmt.Errorf("cannot delete Org VDC network without ID")
 	}
 
 	urlRef, err := orgVdcNet.client.OpenApiBuildEndpoint(endpoint, orgVdcNet.OpenApiOrgVdcNetwork.ID)
@@ -137,7 +137,7 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) Delete() error {
 	err = orgVdcNet.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil)
 
 	if err != nil {
-		return fmt.Errorf("error deleting Org Vdc: %s", err)
+		return fmt.Errorf("error deleting Org VDC network: %s", err)
 	}
 
 	return nil
@@ -179,7 +179,7 @@ func getOpenApiOrgVdcNetworkById(client *Client, id string, queryParameters url.
 	}
 
 	if id == "" {
-		return nil, fmt.Errorf("empty Org VDC network id")
+		return nil, fmt.Errorf("empty Org VDC network ID")
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(endpoint, id)
@@ -204,11 +204,11 @@ func getOpenApiOrgVdcNetworkById(client *Client, id string, queryParameters url.
 // receivers
 func returnSingleOpenApiOrgVdcNetwork(name string, allEdges []*OpenApiOrgVdcNetwork) (*OpenApiOrgVdcNetwork, error) {
 	if len(allEdges) > 1 {
-		return nil, fmt.Errorf("got more than 1 Org Vdc network by name '%s' %d", name, len(allEdges))
+		return nil, fmt.Errorf("got more than one Org VDC network by name '%s' %d", name, len(allEdges))
 	}
 
 	if len(allEdges) < 1 {
-		return nil, fmt.Errorf("%s: got 0 Org Vdc network by name '%s'", ErrorEntityNotFound, name)
+		return nil, fmt.Errorf("%s: got zero Org VDC networks by name '%s'", ErrorEntityNotFound, name)
 	}
 
 	return allEdges[0], nil
