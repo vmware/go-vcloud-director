@@ -158,6 +158,9 @@ type OpenApiOrgVdcNetwork struct {
 
 	// UsedIpCount is a read only attribute reporting number of used IPs in network
 	UsedIpCount *int `json:"usedIpCount"`
+
+	// Shared shares network with other VDCs in the organization
+	Shared *bool `json:"shared,omitempty"`
 }
 
 // OrgVdcNetworkSubnetIPRanges is a type alias to reuse the same definitions with appropriate names
