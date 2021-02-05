@@ -229,7 +229,7 @@ func getAllOpenApiOrgVdcNetworks(client *Client, queryParameters url.Values) ([]
 	case "":
 		queryParameters.Set("pageSize", "32")
 
-		// If pageSize is specified ensure it is not >32
+	// If pageSize is specified ensure it is not >32
 	default:
 		pageSizeValue, err := strconv.Atoi(pageSizeString)
 		if err != nil {
