@@ -81,8 +81,8 @@ func (vcd *TestVCD) testGetVmAffinityRule(vdc *Vdc, check *C) {
 type affinityRuleData struct {
 	name        string
 	polarity    string
-	creationVms []*types.VM
-	updateVms   []*types.VM
+	creationVms []*types.Vm
+	updateVms   []*types.Vm
 }
 
 // testCRUDVmAffinityRule tests creation, update, deletion, and read for VM affinity rules
@@ -234,11 +234,11 @@ func (vcd *TestVCD) Test_VmAffinityRule(check *C) {
 	vcd.testCRUDVmAffinityRule(org.Org.Name, vdc, affinityRuleData{
 		name:     "Test_VmAffinityRule1",
 		polarity: types.PolarityAffinity,
-		creationVms: []*types.VM{
+		creationVms: []*types.Vm{
 			vappList[0].VApp.Children.VM[0],
 			vappList[0].VApp.Children.VM[1],
 		},
-		updateVms: []*types.VM{
+		updateVms: []*types.Vm{
 			vappList[1].VApp.Children.VM[0],
 			vappList[1].VApp.Children.VM[1],
 		},
@@ -247,12 +247,12 @@ func (vcd *TestVCD) Test_VmAffinityRule(check *C) {
 	vcd.testCRUDVmAffinityRule(org.Org.Name, vdc, affinityRuleData{
 		name:     "Test_VmAffinityRule2",
 		polarity: types.PolarityAffinity,
-		creationVms: []*types.VM{
+		creationVms: []*types.Vm{
 			vappList[0].VApp.Children.VM[0],
 			vappList[0].VApp.Children.VM[1],
 			vappList[1].VApp.Children.VM[0],
 		},
-		updateVms: []*types.VM{
+		updateVms: []*types.Vm{
 			vappList[2].VApp.Children.VM[0],
 			vappList[2].VApp.Children.VM[1],
 		},
@@ -261,11 +261,11 @@ func (vcd *TestVCD) Test_VmAffinityRule(check *C) {
 	vcd.testCRUDVmAffinityRule(org.Org.Name, vdc, affinityRuleData{
 		name:     "Test_VmAffinityRule3",
 		polarity: types.PolarityAntiAffinity,
-		creationVms: []*types.VM{
+		creationVms: []*types.Vm{
 			vappList[0].VApp.Children.VM[0],
 			vappList[1].VApp.Children.VM[0],
 		},
-		updateVms: []*types.VM{
+		updateVms: []*types.Vm{
 			vappList[2].VApp.Children.VM[0],
 		},
 	}, check)
