@@ -176,7 +176,7 @@ func (vapp QueryVapp) GetMetadataValue(key string) string {
 // --------------------------------------------------------------
 func (vm QueryVm) GetHref() string       { return vm.HREF }
 func (vm QueryVm) GetName() string       { return vm.Name }
-func (vm QueryVm) GetType() string       { return "VM" }
+func (vm QueryVm) GetType() string       { return "Vm" }
 func (vm QueryVm) GetIp() string         { return vm.IpAddress }
 func (vm QueryVm) GetDate() string       { return vm.DateCreated }
 func (vm QueryVm) GetParentName() string { return vm.ContainerName }
