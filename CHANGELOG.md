@@ -1,7 +1,7 @@
 ## 2.11.0 (Unreleased)
 
 * Added types `types.CreateVmParams` and `types.InstantiateVmTemplateParams`
-* Added methods Vdc methods `CreateStandaloneVMFromTemplate`, `CreateStandaloneVMFromTemplateAsync` `CreateStandaloneVm`, `CreateStandaloneVmAsync`
+* Added Vdc methods `CreateStandaloneVMFromTemplate`, `CreateStandaloneVMFromTemplateAsync` `CreateStandaloneVm`, `CreateStandaloneVmAsync`
 * Added Vdc methods `QueryVmByName`, `QueryVmById`
 * Added VM methods `Delete`, `DeleteAsync`
 
