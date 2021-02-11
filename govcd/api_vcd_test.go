@@ -1047,6 +1047,24 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 		return
+	case "standaloneVm":
+		vm, err := vcd.vdc.QueryVmById(entity.Name) // The VM ID must be passed as Name
+		if IsNotFound(err) {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] retrieving standalone VM '%s''. %s\n",
+				entity.Name, err)
+			return
+		}
+		err = vm.Delete()
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting VM '%s' : %s\n",
+				entity.Name, err)
+			return
+		}
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 	case "vm":
 		vapp, err := vcd.vdc.GetVAppByName(entity.Parent, true)
 		if err != nil {
@@ -1649,13 +1667,13 @@ func Test_splitParent(t *testing.T) {
 	}
 }
 
-func (vcd *TestVCD) findFirstVm(vapp VApp) (types.VM, string) {
+func (vcd *TestVCD) findFirstVm(vapp VApp) (types.Vm, string) {
 	for _, vm := range vapp.VApp.Children.VM {
 		if vm.Name != "" {
 			return *vm, vm.Name
 		}
 	}
-	return types.VM{}, ""
+	return types.Vm{}, ""
 }
 
 func (vcd *TestVCD) findFirstVapp() VApp {
