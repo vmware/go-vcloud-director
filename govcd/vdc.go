@@ -901,6 +901,7 @@ func (vdc *Vdc) GetVappList() []*types.ResourceReference {
 	return list
 }
 
+// CreateStandaloneVmAsync starts a standalone VM creation without a template, returning a task
 func (vdc *Vdc) CreateStandaloneVmAsync(params *types.CreateVmParams) (Task, error) {
 	util.Logger.Printf("[TRACE] Vdc.CreateStandaloneVmAsync - Creating VM ")
 
@@ -927,6 +928,8 @@ func (vdc *Vdc) CreateStandaloneVmAsync(params *types.CreateVmParams) (Task, err
 	return vdc.client.ExecuteTaskRequest(href, http.MethodPost, types.MimeCreateVmParams, "error creating standalone VM: %s", params)
 }
 
+// getVmFromTask finds a VM from a running standalone VM creation task
+// It retrieves the VM owner (the hidden vApp), and from that one finds the new VM
 func (vdc *Vdc) getVmFromTask(task Task, name string) (*VM, error) {
 	owner := task.Task.Owner.HREF
 	if owner == "" {
@@ -948,11 +951,11 @@ func (vdc *Vdc) getVmFromTask(task Task, name string) (*VM, error) {
 	for _, child := range vapp.VApp.Children.VM {
 		util.Logger.Printf("[TRACE] Looking at: %s", child.Name)
 		return vapp.client.GetVMByHref(child.HREF)
-		break
 	}
 	return nil, ErrorEntityNotFound
 }
 
+// CreateStandaloneVm creates a standalone VM without a template
 func (vdc *Vdc) CreateStandaloneVm(params *types.CreateVmParams) (*VM, error) {
 
 	task, err := vdc.CreateStandaloneVmAsync(params)
@@ -966,6 +969,8 @@ func (vdc *Vdc) CreateStandaloneVm(params *types.CreateVmParams) (*VM, error) {
 	return vdc.getVmFromTask(task, params.Name)
 }
 
+// QueryVmByName finds a standalone VM by name
+// The search fails either if there are more VMs with the wanted name, or if there are none
 func (vdc *Vdc) QueryVmByName(name string) (*VM, error) {
 	vmList, err := vdc.client.QueryVmList(types.VmQueryFilterOnlyDeployed)
 	if err != nil {
@@ -986,6 +991,8 @@ func (vdc *Vdc) QueryVmByName(name string) (*VM, error) {
 	return vdc.client.GetVMByHref(foundVM[0].HREF)
 }
 
+// QueryVmById retrieves a standalone VM by ID
+// It can also retrieve a standard VM (created from vApp)
 func (vdc *Vdc) QueryVmById(id string) (*VM, error) {
 	vmList, err := vdc.client.QueryVmList(types.VmQueryFilterOnlyDeployed)
 	if err != nil {
@@ -1006,7 +1013,8 @@ func (vdc *Vdc) QueryVmById(id string) (*VM, error) {
 	return vdc.client.GetVMByHref(foundVM[0].HREF)
 }
 
-func (vdc *Vdc)CreateStandaloneVMFromTemplateAsync(params *types.InstantiateVmTemplateParams ) (Task, error) {
+// CreateStandaloneVMFromTemplateAsync starts a standalone VM creation using a template
+func (vdc *Vdc) CreateStandaloneVMFromTemplateAsync(params *types.InstantiateVmTemplateParams) (Task, error) {
 
 	util.Logger.Printf("[TRACE] Vdc.CreateStandaloneVmAsync - Creating VM ")
 
@@ -1043,7 +1051,8 @@ func (vdc *Vdc)CreateStandaloneVMFromTemplateAsync(params *types.InstantiateVmTe
 	return vdc.client.ExecuteTaskRequest(href, http.MethodPost, types.MimeInstantiateVmTemplateParams, "error creating standalone VM from template: %s", params)
 }
 
-func (vdc *Vdc)CreateStandaloneVMFromTemplate( params *types.InstantiateVmTemplateParams ) (*VM, error) {
+// CreateStandaloneVMFromTemplate creates a standalone VM from a template
+func (vdc *Vdc) CreateStandaloneVMFromTemplate(params *types.InstantiateVmTemplateParams) (*VM, error) {
 
 	task, err := vdc.CreateStandaloneVMFromTemplateAsync(params)
 	if err != nil {

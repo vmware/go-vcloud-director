@@ -12,9 +12,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kr/pretty"
 	. "gopkg.in/check.v1"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 func init() {
@@ -1686,29 +1688,15 @@ func (vcd *TestVCD) Test_CreateStandaloneVM(check *C) {
 	vdc, err := adminOrg.GetVDCByName(vcd.vdc.Vdc.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
+	description := "created by " + check.TestName()
 	params := types.CreateVmParams{
-		Name:    "testStandaloneVm",
-		PowerOn: true,
-		CreateVm: &types.InnerVM{
-			HREF:                     "",
-			Type:                     "",
-			ID:                       "",
-			OperationKey:             "",
+		Name:        "testStandaloneVm",
+		PowerOn:     false,
+		Description: description,
+		CreateVm: &types.Vm{
 			Name:                     "testStandaloneVm",
-			Status:                   0,
-			Deployed:                 false,
-			NeedsCustomization:       false,
-			NestedHypervisorEnabled:  false,
-			Link:                     nil,
-			Description:              "",
-			Tasks:                    nil,
-			Files:                    nil,
-			VAppParent:               nil,
-			DateCreated:              "",
 			VirtualHardwareSection:   nil,
 			NetworkConnectionSection: vcd.getNetworkConnection(),
-			VAppScopedLocalID:        "",
-			Snapshots:                nil,
 			VmSpecSection: &types.VmSpecSection{
 				Modified:          takeBoolPointer(true),
 				Info:              "Virtual Machine specification",
@@ -1742,77 +1730,29 @@ func (vcd *TestVCD) Test_CreateStandaloneVM(check *C) {
 				Info:         "Specifies Guest OS Customization Settings",
 				ComputerName: "standalone1",
 			},
-			VMCapabilities: nil,
-			StorageProfile: nil,
-
-			ProductSection: nil,
-			ComputePolicy:  nil,
-			Media:          nil,
 		},
-		Media: nil,
 		Xmlns: types.XMLNamespaceVCloud,
 	}
+	vappList := vdc.GetVappList()
+	vappNum := len(vappList)
 	vm, err := vdc.CreateStandaloneVm(&params)
 	check.Assert(err, IsNil)
 	check.Assert(vm, NotNil)
+	AddToCleanupList(vm.VM.ID, "standaloneVm", "", check.TestName())
+	check.Assert(vm.VM.Description, Equals, description)
 
+	_ = vdc.Refresh()
+	vappList = vdc.GetVappList()
+	check.Assert(len(vappList), Equals, vappNum+1)
+	for _, vapp := range vappList {
+		printVerbose("vapp: %s\n", vapp.Name)
+	}
 	err = vm.Delete()
 	check.Assert(err, IsNil)
+	_ = vdc.Refresh()
+	vappList = vdc.GetVappList()
+	check.Assert(len(vappList), Equals, vappNum)
 }
-
-const sample1 = `
-
-<root:CreateVmParams
-	xmlns:root="http://www.vmware.com/vcloud/v1.5"
-	xmlns:ns4="http://schemas.dmtf.org/ovf/envelope/1" powerOn="true">
-	<root:Description/>
-	<root:CreateVm name="standalone">
-		<root:GuestCustomizationSection>
-			<ns4:Info>Specifies Guest OS Customization Settings</ns4:Info>
-			<root:ComputerName>standalone</root:ComputerName>
-		</root:GuestCustomizationSection>
-		<root:NetworkConnectionSection>
-			<ns4:Info>Network Configuration for VM</ns4:Info>
-			<root:PrimaryNetworkConnectionIndex>0</root:PrimaryNetworkConnectionIndex>
-			<root:NetworkConnection network="net-datacloud-d">
-				<root:NetworkConnectionIndex>0</root:NetworkConnectionIndex>
-				<root:IpAddress>any</root:IpAddress>
-				<root:IsConnected>true</root:IsConnected>
-				<root:IpAddressAllocationMode>DHCP</root:IpAddressAllocationMode>
-				<root:NetworkAdapterType>VMXNET3</root:NetworkAdapterType>
-			</root:NetworkConnection>
-		</root:NetworkConnectionSection>
-		<root:VmSpecSection Modified="true">
-			<ns4:Info>Virtual Machine specification</ns4:Info>
-			<root:OsType>debian10_64Guest</root:OsType>
-			<root:NumCpus>1</root:NumCpus>
-			<root:NumCoresPerSocket>1</root:NumCoresPerSocket>
-			<root:CpuResourceMhz>
-				<root:Configured>0</root:Configured>
-			</root:CpuResourceMhz>
-			<root:MemoryResourceMb>
-				<root:Configured>512</root:Configured>
-			</root:MemoryResourceMb>
-			<root:DiskSection>
-				<root:DiskSettings>
-					<root:SizeMb>1024</root:SizeMb>
-					<root:UnitNumber>0</root:UnitNumber>
-					<root:BusNumber>0</root:BusNumber>
-					<root:AdapterType>5</root:AdapterType>
-					<root:ThinProvisioned>true</root:ThinProvisioned>
-					<root:overrideVmDefault>false</root:overrideVmDefault>
-				</root:DiskSettings>
-			</root:DiskSection>
-			<root:HardwareVersion>vmx-14</root:HardwareVersion>
-			<root:VirtualCpuType>VM64</root:VirtualCpuType>
-		</root:VmSpecSection>
-		<root:ComputePolicy>
-			<root:VmSizingPolicy href="https://bos1-vcloud-static-170-143.eng.vmware.com/cloudapi/1.0.0/vdcComputePolicies/urn:vcloud:vdcComputePolicy:095f9f44-c84e-4332-9c10-c4c1c2be98d8"/>
-		</root:ComputePolicy>
-	</root:CreateVm>
-</root:CreateVmParams>
-
-`
 
 func (vcd *TestVCD) Test_CreateStandaloneVMFromTemplate(check *C) {
 
@@ -1850,37 +1790,11 @@ func (vcd *TestVCD) Test_CreateStandaloneVMFromTemplate(check *C) {
 	check.Assert(vmTemplate.Type, Not(Equals), "")
 	check.Assert(vmTemplate.Name, Not(Equals), "")
 
-	computePolicyEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies
-	//minimumApiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(computePolicyEndpoint)
-	//if err != nil {
-	//	check.Skip("unable to get client minimum version")
-	//}
-
-	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(computePolicyEndpoint)
-	if err != nil {
-		check.Skip("unable to get computePolicy URL")
-	}
-	var computePolicyHref string
-	policies, err := getAllVdcComputePolicies(&vcd.client.Client, nil)
-	check.Assert(err, IsNil)
-	for _, policy := range policies {
-		if strings.HasPrefix(policy.VdcComputePolicy.Description, vdc.Vdc.Name) && policy.VdcComputePolicy.Name == "System Default" {
-			computePolicyHref = urlRef.String() + "/" + policy.VdcComputePolicy.ID
-		}
-		//fmt.Printf("%# v\n",pretty.Formatter(policy.VdcComputePolicy))
-	}
-	if computePolicyHref == "" {
-		check.Skip("unable to find a suitable computePolicy")
-	}
 	params := types.InstantiateVmTemplateParams{
 		Xmlns:            types.XMLNamespaceVCloud,
 		Name:             "testStandaloneTemplate",
 		PowerOn:          true,
 		AllEULAsAccepted: true,
-		ComputePolicy: &types.ComputePolicy{
-			VmSizingPolicy: &types.Reference{HREF: computePolicyHref},
-		},
-		Description: "",
 		SourcedVmTemplateItem: &types.SourcedVmTemplateParams{
 			LocalityParams: nil,
 			Source: &types.Reference{
@@ -1895,60 +1809,24 @@ func (vcd *TestVCD) Test_CreateStandaloneVMFromTemplate(check *C) {
 			VmTemplateInstantiationParams: nil,
 		},
 	}
+	vappList := vdc.GetVappList()
+	vappNum := len(vappList)
+	util.Logger.Printf("%# v", pretty.Formatter(params))
 	vm, err := vdc.CreateStandaloneVMFromTemplate(&params)
 	check.Assert(err, IsNil)
 	check.Assert(vm, NotNil)
+	AddToCleanupList(vm.VM.ID, "standaloneVm", "", check.TestName())
+
+	_ = vdc.Refresh()
+	vappList = vdc.GetVappList()
+	check.Assert(len(vappList), Equals, vappNum+1)
+	for _, vapp := range vappList {
+		printVerbose("vapp: %s\n", vapp.Name)
+	}
 
 	err = vm.Delete()
 	check.Assert(err, IsNil)
+	_ = vdc.Refresh()
+	vappList = vdc.GetVappList()
+	check.Assert(len(vappList), Equals, vappNum)
 }
-
-const sample2 = `
-<InstantiateVmTemplateParams
-	xmlns:root="http://www.vmware.com/vcloud/v1.5"
-	xmlns:ns1="http://schemas.dmtf.org/ovf/envelope/1" name="standalone-template" powerOn="true">
-	<Description/>
-	<SourcedVmTemplateItem>
-		<Source href="https://bos1-vcloud-static-170-143.eng.vmware.com/api/vAppTemplate/vm-a0d193e4-dbaa-4315-bf34-7041e85d06cd" id="vm-a0d193e4-dbaa-4315-bf34-7041e85d06cd" name="Photon OS" type="application/vnd.vmware.vcloud.vm+xml"/>
-		<VmTemplateInstantiationParams>
-			<NetworkConnectionSection>
-				<ns1:Info/>
-				<PrimaryNetworkConnectionIndex>0</root:PrimaryNetworkConnectionIndex>
-				<NetworkConnection network="none">
-					<NetworkConnectionIndex>0</root:NetworkConnectionIndex>
-					<IsConnected>false</root:IsConnected>
-					<IpAddressAllocationMode>NONE</root:IpAddressAllocationMode>
-					<NetworkAdapterType>VMXNET3</root:NetworkAdapterType>
-				</NetworkConnection>
-			</NetworkConnectionSection>
-			<GuestCustomizationSection>
-				<ns1:Info>Specifies Guest OS Customization Settings</ns1:Info>
-				<Enabled>true</root:Enabled>
-				<ChangeSid>false</root:ChangeSid>
-				<JoinDomainEnabled>false</root:JoinDomainEnabled>
-				<UseOrgSettings>false</root:UseOrgSettings>
-				<AdminPasswordEnabled>true</root:AdminPasswordEnabled>
-				<AdminPasswordAuto>true</root:AdminPasswordAuto>
-				<AdminAutoLogonEnabled>false</root:AdminAutoLogonEnabled>
-				<AdminAutoLogonCount>0</root:AdminAutoLogonCount>
-				<ResetPasswordRequired>false</root:ResetPasswordRequired>
-				<ComputerName>standalonetmpl</root:ComputerName>
-			</GuestCustomizationSection>
-			<ns1:ProductSection ns1:class="" ns1:instance="" ns1:required="true">
-				<ns1:Info>Information about the installed software</ns1:Info>
-				<ns1:Product>Photon OS</ns1:Product>
-				<ns1:Vendor>VMware Inc.</ns1:Vendor>
-				<ns1:Version>3.0</ns1:Version>
-				<ns1:FullVersion>3.0</ns1:FullVersion>
-			</ns1:ProductSection>
-		</VmTemplateInstantiationParams>
-		<StorageProfile href="https://bos1-vcloud-static-170-143.eng.vmware.com/api/vdcStorageProfile/675d9c39-fec5-4c66-996e-e3ec84a60406" type="application/vnd.vmware.vcloud.vdcStorageProfile+xml"/>
-	</SourcedVmTemplateItem>
-	<AllEULAsAccepted>true</root:AllEULAsAccepted>
-	<ComputePolicy>
-		<VmSizingPolicy href="https://bos1-vcloud-static-170-143.eng.vmware.com/cloudapi/1.0.0/vdcComputePolicies/urn:vcloud:vdcComputePolicy:095f9f44-c84e-4332-9c10-c4c1c2be98d8" id="urn:vcloud:vdcComputePolicy:095f9f44-c84e-4332-9c10-c4c1c2be98d8"/>
-	</ComputePolicy>
-</InstantiateVmTemplateParams>
-
-
-`

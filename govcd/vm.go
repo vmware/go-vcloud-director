@@ -19,7 +19,7 @@ import (
 )
 
 type VM struct {
-	VM     *types.VM
+	VM     *types.Vm
 	client *Client
 }
 
@@ -30,7 +30,7 @@ type VMRecord struct {
 
 func NewVM(cli *Client) *VM {
 	return &VM{
-		VM:     new(types.VM),
+		VM:     new(types.Vm),
 		client: cli,
 	}
 }
@@ -70,7 +70,7 @@ func (vm *VM) Refresh() error {
 
 	// Empty struct before a new unmarshal, otherwise we end up with duplicate
 	// elements in slices.
-	vm.VM = &types.VM{}
+	vm.VM = &types.Vm{}
 
 	_, err := vm.client.ExecuteRequestWithApiVersion(refreshUrl, http.MethodGet,
 		"", "error refreshing VM: %s", nil, vm.VM,
@@ -494,7 +494,7 @@ func (vm *VM) Undeploy() (Task, error) {
 }
 
 // Attach or detach an independent disk
-// Use the disk/action/attach or disk/action/detach links in a Vm to attach or detach an independent disk.
+// Use the disk/action/attach or disk/action/detach links in a VM to attach or detach an independent disk.
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 164 - 165,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
@@ -685,7 +685,7 @@ func validateMediaParams(mediaParams *types.MediaInsertOrEjectParams) error {
 }
 
 // Insert or eject a media for VM
-// Use the vm/action/insert or vm/action/eject links in a Vm to insert or eject media.
+// Use the vm/action/insert or vm/action/eject links in a VM to insert or eject media.
 // Reference:
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/POST-InsertCdRom.html
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/POST-EjectCdRom.html
@@ -1348,7 +1348,6 @@ func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection
 
 	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
 		types.MimeVM, "error updating VM disks: %s", &types.VMDiskChange{
-			//XMLName:       xml.Name{},
 			Xmlns:         types.XMLNamespaceVCloud,
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
@@ -1450,7 +1449,7 @@ func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection, 
 	vmSpecSectionModified := true
 	vmSettingsToUpdate.Modified = &vmSpecSectionModified
 
-	// `reconfigureVm` updates Vm name, Description, and any or all of the following sections.
+	// `reconfigureVm` updates VM name, Description, and any or all of the following sections.
 	//    VirtualHardwareSection
 	//    OperatingSystemSection
 	//    NetworkConnectionSection
@@ -1458,8 +1457,7 @@ func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection, 
 	// Sections not included in the request body will not be updated.
 
 	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
-		types.MimeVM, "error updating VM spec section: %s", &types.VM{
-			//XMLName:       xml.Name{},
+		types.MimeVM, "error updating VM spec section: %s", &types.Vm{
 			Xmlns:         types.XMLNamespaceVCloud,
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
@@ -1495,7 +1493,7 @@ func (vm *VM) UpdateComputePolicyAsync(computePolicy *types.VdcComputePolicy) (T
 		return Task{}, fmt.Errorf("cannot update VM compute policy, VM HREF is unset")
 	}
 
-	// `reconfigureVm` updates Vm name, Description, and any or all of the following sections.
+	// `reconfigureVm` updates VM name, Description, and any or all of the following sections.
 	//    VirtualHardwareSection
 	//    OperatingSystemSection
 	//    NetworkConnectionSection
@@ -1511,8 +1509,7 @@ func (vm *VM) UpdateComputePolicyAsync(computePolicy *types.VdcComputePolicy) (T
 	}
 
 	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
-		types.MimeVM, "error updating VM spec section: %s", &types.VM{
-			//XMLName:       xml.Name{},
+		types.MimeVM, "error updating VM spec section: %s", &types.Vm{
 			Xmlns:         types.XMLNamespaceVCloud,
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
@@ -1819,15 +1816,14 @@ func (vm *VM) UpdateStorageProfileAsync(storageProfileHref string) (Task, error)
 		return Task{}, fmt.Errorf("cannot update VM storage profile, storage profile HREF is unset")
 	}
 
-	// `reconfigureVm` updates Vm name, Description, and any or all of the following sections.
+	// `reconfigureVm` updates VM name, Description, and any or all of the following sections.
 	//    VirtualHardwareSection
 	//    OperatingSystemSection
 	//    NetworkConnectionSection
 	//    GuestCustomizationSection
 	// Sections not included in the request body will not be updated.
 	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
-		types.MimeVM, "error updating VM spec section: %s", &types.VM{
-			//XMLName:        xml.Name{},
+		types.MimeVM, "error updating VM spec section: %s", &types.Vm{
 			Xmlns:          types.XMLNamespaceVCloud,
 			Ovf:            types.XMLNamespaceOVF,
 			Name:           vm.VM.Name,
@@ -1836,6 +1832,7 @@ func (vm *VM) UpdateStorageProfileAsync(storageProfileHref string) (Task, error)
 		})
 }
 
+// DeleteAsync starts a standalone VM deletion, returning a task
 func (vm *VM) DeleteAsync() (Task, error) {
 	if vm.VM.HREF == "" {
 		return Task{}, fmt.Errorf("no HREF found for this VM")
@@ -1852,9 +1849,9 @@ func (vm *VM) DeleteAsync() (Task, error) {
 		"", "error deleting VM: %s", nil)
 }
 
-
-func (vm *VM) Delete()  error {
-	task, err  := vm.DeleteAsync()
+// Delete deletes a standalone VM
+func (vm *VM) Delete() error {
+	task, err := vm.DeleteAsync()
 	if err != nil {
 		return err
 	}

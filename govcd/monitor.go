@@ -55,7 +55,7 @@ func prettyVapp(vapp types.VApp) string {
 }
 
 // Returns a VM structure as JSON
-func prettyVM(vm types.VM) string {
+func prettyVm(vm types.Vm) string {
 	byteBuf, err := json.MarshalIndent(vm, " ", " ")
 	if err == nil {
 		return fmt.Sprintf("%s\n", string(byteBuf))
@@ -197,6 +197,13 @@ func ShowVapp(vapp types.VApp) {
 	out("screen", prettyVapp(vapp))
 }
 
+func LogVm(vm types.Vm) {
+	out("log", prettyVm(vm))
+}
+
+func ShowVm(vm types.Vm) {
+	out("screen", prettyVm(vm))
+}
 func ShowOrg(org types.Org) {
 	out("screen", prettyOrg(org))
 }

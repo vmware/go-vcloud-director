@@ -1,5 +1,13 @@
 ## 2.11.0 (Unreleased)
 
+* Added types `types.CreateVmParams` and `types.InstantiateVmTemplateParams`
+* Added methods Vdc methods `CreateStandaloneVMFromTemplate`, `CreateStandaloneVMFromTemplateAsync` `CreateStandaloneVm`, `CreateStandaloneVmAsync`
+* Added Vdc methods `QueryVmByName`, `QueryVmById`
+* Added VM methods `Delete`, `DeleteAsync`
+
+BREAKING CHANGES:
+* Renamed `types.VM` to `types.Vm` to facilitate implementation of standalone VM
+
 BUGS FIXED:
 * Made IPAddress field for IPAddresses struct to array [#350](https://github.com/vmware/go-vcloud-director/pull/350)
 
