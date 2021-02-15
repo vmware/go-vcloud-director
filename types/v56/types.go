@@ -1516,7 +1516,7 @@ type VirtualHardwareItem struct {
 	AddressOnParent     int                            `xml:"AddressOnParent,omitempty"`
 	AllocationUnits     string                         `xml:"AllocationUnits,omitempty"`
 	Reservation         int                            `xml:"Reservation,omitempty"`
-	VirtualQuantity     int                            `xml:"VirtualQuantity,omitempty"`
+	VirtualQuantity     int64                          `xml:"VirtualQuantity,omitempty"`
 	Weight              int                            `xml:"Weight,omitempty"`
 	CoresPerSocket      int                            `xml:"CoresPerSocket,omitempty"`
 	Connection          []*VirtualHardwareConnection   `xml:"Connection,omitempty"`
@@ -1581,7 +1581,7 @@ type OVFItem struct {
 	InstanceID      int      `xml:"rasd:InstanceID"`
 	Reservation     int      `xml:"rasd:Reservation"`
 	ResourceType    int      `xml:"rasd:ResourceType"`
-	VirtualQuantity int      `xml:"rasd:VirtualQuantity"`
+	VirtualQuantity int64    `xml:"rasd:VirtualQuantity"`
 	Weight          int      `xml:"rasd:Weight"`
 	CoresPerSocket  *int     `xml:"vmw:CoresPerSocket,omitempty"`
 	Link            *Link    `xml:"vcloud:Link"`

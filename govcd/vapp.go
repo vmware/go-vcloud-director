@@ -541,7 +541,7 @@ func (vapp *VApp) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *in
 		InstanceID:      4,
 		Reservation:     0,
 		ResourceType:    types.ResourceTypeProcessor,
-		VirtualQuantity: virtualCpuCount,
+		VirtualQuantity: int64(virtualCpuCount),
 		Weight:          0,
 		CoresPerSocket:  coresPerSocket,
 		Link: &types.Link{
@@ -733,7 +733,7 @@ func (vapp *VApp) ChangeMemorySize(size int) (Task, error) {
 		InstanceID:      5,
 		Reservation:     0,
 		ResourceType:    types.ResourceTypeMemory,
-		VirtualQuantity: size,
+		VirtualQuantity: int64(size),
 		Weight:          0,
 		Link: &types.Link{
 			HREF: vapp.VApp.Children.VM[0].HREF + "/virtualHardwareSection/memory",

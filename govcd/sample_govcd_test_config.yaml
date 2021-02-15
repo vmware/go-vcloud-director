@@ -69,6 +69,10 @@ vcd:
       externalNetwork: tier0-backed-external-network
       # Existing NSX-T based VDC
       vdc: nsxt-vdc-name
+      # Existing NSX-T edge gateway
+      edgeGateway: nsxt-gw-name
+      # Existing NSX-T segment to test NSX-T Imported Org Vdc network
+      nsxtImportSegment: vcd-org-vdc-imported-network-backing
     # An Org catalog, possibly containing at least one item
     catalog:
         name: mycat
