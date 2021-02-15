@@ -143,7 +143,7 @@ func (vcd *TestVCD) Test_ChangeCPUCountWithCore(check *C) {
 		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 
-	currentCpus := 0
+	currentCpus := int64(0)
 	currentCores := 0
 
 	// save current values
@@ -158,8 +158,8 @@ func (vcd *TestVCD) Test_ChangeCPUCountWithCore(check *C) {
 	}
 
 	cores := 2
-	cpuCount := 4
-	task, err := vcd.vapp.ChangeCPUCountWithCore(cpuCount, &cores)
+	cpuCount := int64(4)
+	task, err := vcd.vapp.ChangeCPUCountWithCore(int(cpuCount), &cores)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
@@ -181,7 +181,7 @@ func (vcd *TestVCD) Test_ChangeCPUCountWithCore(check *C) {
 	}
 
 	// return tu previous value
-	task, err = vcd.vapp.ChangeCPUCountWithCore(currentCpus, &currentCores)
+	task, err = vcd.vapp.ChangeCPUCountWithCore(int(currentCpus), &currentCores)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
