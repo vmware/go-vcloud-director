@@ -1838,7 +1838,7 @@ func (vm *VM) DeleteAsync() (Task, error) {
 		return Task{}, fmt.Errorf("no HREF found for this VM")
 	}
 
-	task, err := vm.PowerOff()
+	task, err := vm.Undeploy()
 	if err == nil {
 		err = task.WaitTaskCompletion()
 		if err != nil {
