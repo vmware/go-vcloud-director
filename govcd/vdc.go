@@ -972,7 +972,7 @@ func (vdc *Vdc) CreateStandaloneVm(params *types.CreateVmParams) (*VM, error) {
 // The search fails either if there are more VMs with the wanted name, or if there are none
 // It can also retrieve a standard VM (created from vApp)
 func (vdc *Vdc) QueryVmByName(name string) (*VM, error) {
-	vmList, err := vdc.client.QueryVmList(types.VmQueryFilterOnlyDeployed)
+	vmList, err := vdc.QueryVmList(types.VmQueryFilterOnlyDeployed)
 	if err != nil {
 		return nil, err
 	}
@@ -994,7 +994,7 @@ func (vdc *Vdc) QueryVmByName(name string) (*VM, error) {
 // QueryVmById retrieves a standalone VM by ID
 // It can also retrieve a standard VM (created from vApp)
 func (vdc *Vdc) QueryVmById(id string) (*VM, error) {
-	vmList, err := vdc.client.QueryVmList(types.VmQueryFilterOnlyDeployed)
+	vmList, err := vdc.QueryVmList(types.VmQueryFilterOnlyDeployed)
 	if err != nil {
 		return nil, err
 	}

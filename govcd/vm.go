@@ -1540,6 +1540,35 @@ func (client *Client) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryRes
 	return vmList, nil
 }
 
+// QueryVmList returns a list of all VMs in a given VDC
+func (vdc *Vdc) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryResultVMRecordType, error) {
+	var vmList []*types.QueryResultVMRecordType
+	queryType := vdc.client.GetQueryType(types.QtVm)
+	params := map[string]string{
+		"type":          queryType,
+		"filterEncoded": "true",
+	}
+	filterText := ""
+	if filter.String() != "" {
+		filterText = filter.String()
+	}
+	if filterText == "" {
+		filterText = fmt.Sprintf("vdc==%s", vdc.Vdc.HREF)
+	} else {
+		filterText = fmt.Sprintf("%s;vdc==%s", filterText, vdc.Vdc.HREF)
+	}
+	params["filter"] = filterText
+	vmResult, err := vdc.client.cumulativeQuery(queryType, nil, params)
+	if err != nil {
+		return nil, fmt.Errorf("error getting VM list : %s", err)
+	}
+	vmList = vmResult.Results.VMRecord
+	if vdc.client.IsSysAdmin {
+		vmList = vmResult.Results.AdminVMRecord
+	}
+	return vmList, nil
+}
+
 // UpdateVmCpuAndMemoryHotAdd updates VM Capabilities and returns refreshed VM or error.
 func (vm *VM) UpdateVmCpuAndMemoryHotAdd(cpuAdd, memoryAdd bool) (*VM, error) {
 	task, err := vm.UpdateVmCpuAndMemoryHotAddAsync(cpuAdd, memoryAdd)

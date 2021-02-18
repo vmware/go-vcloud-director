@@ -1406,7 +1406,7 @@ func (vcd *TestVCD) Test_QueryVmList(check *C) {
 	}
 
 	for filter := range []types.VmQueryFilter{types.VmQueryFilterOnlyDeployed, types.VmQueryFilterAll} {
-		list, err := vcd.client.Client.QueryVmList(types.VmQueryFilter(filter))
+		list, err := vcd.vdc.QueryVmList(types.VmQueryFilter(filter))
 		check.Assert(err, IsNil)
 		check.Assert(list, NotNil)
 		foundVm := false

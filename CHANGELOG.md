@@ -7,7 +7,7 @@ lookup NSX-T segments for use in NSX-T Imported networks [#354](https://github.c
 * Added `vdc.IsNsxt` and `vdc.IsNsxv` methods to verify if VDC is backed by NSX-T or NSX-V [#354](https://github.com/vmware/go-vcloud-director/pull/354)
 * Added types `types.CreateVmParams` and `types.InstantiateVmTemplateParams`
 * Added Vdc methods `CreateStandaloneVMFromTemplate`, `CreateStandaloneVMFromTemplateAsync` `CreateStandaloneVm`, `CreateStandaloneVmAsync`
-* Added Vdc methods `QueryVmByName`, `QueryVmById`
+* Added Vdc methods `QueryVmByName`, `QueryVmById`, `QueryVmList`
 * Added VM methods `Delete`, `DeleteAsync`
 
 BREAKING CHANGES:
