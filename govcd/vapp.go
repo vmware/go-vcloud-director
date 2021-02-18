@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"time"
 
@@ -254,10 +253,6 @@ func addNewVMW(vapp *VApp, name string, vappTemplate VAppTemplate,
 // https://github.com/vmware/go-vcloud-director/issues/252
 // ======================================================================
 func (vapp *VApp) RemoveVM(vm VM) error {
-
-	if os.Getenv("VCD_REMOVE_VM_DELETE") != "" {
-		return vm.Delete()
-	}
 	err := vapp.Refresh()
 	if err != nil {
 		return fmt.Errorf("error refreshing vApp before removing VM: %s", err)
