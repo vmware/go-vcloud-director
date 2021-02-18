@@ -923,7 +923,6 @@ func (vdc *Vdc) CreateStandaloneVmAsync(params *types.CreateVmParams) (Task, err
 		return Task{}, fmt.Errorf("empty parameters passed to standalone VM creation")
 	}
 	params.XmlnsOvf = types.XMLNamespaceOVF
-	//fmt.Printf("%# v\n",pretty.Formatter(params))
 
 	return vdc.client.ExecuteTaskRequest(href, http.MethodPost, types.MimeCreateVmParams, "error creating standalone VM: %s", params)
 }
@@ -971,6 +970,7 @@ func (vdc *Vdc) CreateStandaloneVm(params *types.CreateVmParams) (*VM, error) {
 
 // QueryVmByName finds a standalone VM by name
 // The search fails either if there are more VMs with the wanted name, or if there are none
+// It can also retrieve a standard VM (created from vApp)
 func (vdc *Vdc) QueryVmByName(name string) (*VM, error) {
 	vmList, err := vdc.client.QueryVmList(types.VmQueryFilterOnlyDeployed)
 	if err != nil {
@@ -1016,7 +1016,7 @@ func (vdc *Vdc) QueryVmById(id string) (*VM, error) {
 // CreateStandaloneVMFromTemplateAsync starts a standalone VM creation using a template
 func (vdc *Vdc) CreateStandaloneVMFromTemplateAsync(params *types.InstantiateVmTemplateParams) (Task, error) {
 
-	util.Logger.Printf("[TRACE] Vdc.CreateStandaloneVmAsync - Creating VM ")
+	util.Logger.Printf("[TRACE] Vdc.CreateStandaloneVMFromTemplateAsync - Creating VM ")
 
 	if vdc.Vdc.HREF == "" {
 		return Task{}, fmt.Errorf("cannot create VM, Object VDC is empty")
@@ -1046,7 +1046,6 @@ func (vdc *Vdc) CreateStandaloneVMFromTemplateAsync(params *types.InstantiateVmT
 		return Task{}, fmt.Errorf("[CreateStandaloneVMFromTemplateAsync] empty HREF in vApp template Source")
 	}
 	params.XmlnsOvf = types.XMLNamespaceOVF
-	//fmt.Printf("%# v\n",pretty.Formatter(params))
 
 	return vdc.client.ExecuteTaskRequest(href, http.MethodPost, types.MimeInstantiateVmTemplateParams, "error creating standalone VM from template: %s", params)
 }
