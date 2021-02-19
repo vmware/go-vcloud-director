@@ -1016,10 +1016,10 @@ func (vdc *Vdc) QueryVmById(id string) (*VM, error) {
 // CreateStandaloneVMFromTemplateAsync starts a standalone VM creation using a template
 func (vdc *Vdc) CreateStandaloneVMFromTemplateAsync(params *types.InstantiateVmTemplateParams) (Task, error) {
 
-	util.Logger.Printf("[TRACE] Vdc.CreateStandaloneVMFromTemplateAsync - Creating VM ")
+	util.Logger.Printf("[TRACE] Vdc.CreateStandaloneVMFromTemplateAsync - Creating VM")
 
 	if vdc.Vdc.HREF == "" {
-		return Task{}, fmt.Errorf("cannot create VM, Object VDC is empty")
+		return Task{}, fmt.Errorf("cannot create VM, provided VDC is empty")
 	}
 
 	href := ""

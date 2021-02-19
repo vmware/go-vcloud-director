@@ -1040,13 +1040,13 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			return
 		}
 		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] retrieving standalone VM '%s''. %s\n",
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] retrieving standalone VM '%s'. %s\n",
 				entity.Name, err)
 			return
 		}
 		err = vm.Delete()
 		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting VM '%s' : %s\n",
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] deleting VM '%s' : %s\n",
 				entity.Name, err)
 			return
 		}

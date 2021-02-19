@@ -10,9 +10,12 @@ import "encoding/xml"
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Represents a virtual machine.
 // Since: 0.9
+// This structure used to be called `VM`, and needed an XMLName to adjust the XML entity name upon marshalling.
+// We have renamed it to `Vm` to remove the ambiguity and avoid XMLName conflicts when embedding this type
+// into another structure.
+// Now, there is no need for XMLName, as the name of the structure is the same as the XML entity
 type Vm struct {
 	// Attributes
-	//XMLName xml.Name `xml:"Vm"`
 	Ovf   string `xml:"xmlns:ovf,attr,omitempty"`
 	Xsi   string `xml:"xmlns:xsi,attr,omitempty"`
 	Xmlns string `xml:"xmlns,attr,omitempty"`
@@ -111,6 +114,7 @@ type ComputePolicy struct {
 	VmSizingPolicyFinal    *bool      `xml:"VmSizingPolicyFinal,omitempty"`    // True indicates that the sizing policy cannot be removed from a VM that is instantiated with it. This value defaults to false.
 }
 
+// CreateVmParams is used to create a standalone VM without a template
 type CreateVmParams struct {
 	XMLName     xml.Name   `xml:"CreateVmParams"`
 	XmlnsOvf    string     `xml:"xmlns:ovf,attr"`
@@ -122,6 +126,7 @@ type CreateVmParams struct {
 	Media       *Reference `xml:"Media,omitempty"`        // Reference to the media object to insert in the new VM.
 }
 
+// InstantiateVmTemplateParams is used to create a standalone VM with a template
 type InstantiateVmTemplateParams struct {
 	XMLName               xml.Name                 `xml:"InstantiateVmTemplateParams"`
 	XmlnsOvf              string                   `xml:"xmlns:ovf,attr"`
@@ -134,6 +139,7 @@ type InstantiateVmTemplateParams struct {
 	ComputePolicy         *ComputePolicy           `xml:"ComputePolicy,omitempty"`         // A reference to a vdc compute policy. This contains VM's actual vdc compute policy reference and also optionally an add-on policy which always defines VM's sizing.
 }
 
+// SourcedVmTemplateParams represents the standalone VM instantiation parameters
 type SourcedVmTemplateParams struct {
 	LocalityParams                *LocalityParams      `xml:"LocalityParams,omitempty"`                // Locality parameters provide a hint that may help optimize placement of a VM and an independent a Disk so that the VM can make efficient use of the disk.
 	Source                        *Reference           `xml:"Source"`                                  // A reference to an existing VM template
