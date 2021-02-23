@@ -1,7 +1,7 @@
 // +build vm functional ALL
 
 /*
-* Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+* Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
 * Copyright 2016 Skyscape Cloud Services.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
@@ -12,9 +12,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kr/pretty"
 	. "gopkg.in/check.v1"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 func init() {
@@ -1300,7 +1302,6 @@ func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
 				NumCoresPerSocket: takeIntAddress(1),
 				CpuResourceMhz:    &types.CpuResourceMhz{Configured: 1},
 				MemoryResourceMb:  &types.MemoryResourceMb{Configured: 1024},
-				MediaSection:      nil,
 				DiskSection:       &types.DiskSection{DiskSettings: []*types.DiskSettings{&newDisk}},
 				HardwareVersion:   &types.HardwareVersion{Value: "vmx-13"}, // need support older version vCD
 				VmToolsVersion:    "",
@@ -1405,7 +1406,7 @@ func (vcd *TestVCD) Test_QueryVmList(check *C) {
 	}
 
 	for filter := range []types.VmQueryFilter{types.VmQueryFilterOnlyDeployed, types.VmQueryFilterAll} {
-		list, err := vcd.client.Client.QueryVmList(types.VmQueryFilter(filter))
+		list, err := vcd.vdc.QueryVmList(types.VmQueryFilter(filter))
 		check.Assert(err, IsNil)
 		check.Assert(list, NotNil)
 		foundVm := false
@@ -1654,4 +1655,178 @@ func (vcd *TestVCD) Test_VMUpdateStorageProfile(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
+}
+
+func (vcd *TestVCD) getNetworkConnection() *types.NetworkConnectionSection {
+
+	if vcd.config.VCD.Network.Net1 == "" {
+		return nil
+	}
+	return &types.NetworkConnectionSection{
+		Info:                          "Network Configuration for VM",
+		PrimaryNetworkConnectionIndex: 0,
+		NetworkConnection: []*types.NetworkConnection{
+			&types.NetworkConnection{
+				Network:                 vcd.config.VCD.Network.Net1,
+				NeedsCustomization:      false,
+				NetworkConnectionIndex:  0,
+				IPAddress:               "any",
+				IsConnected:             true,
+				IPAddressAllocationMode: "DHCP",
+				NetworkAdapterType:      "VMXNET3",
+			},
+		},
+		Link: nil,
+	}
+}
+
+func (vcd *TestVCD) Test_CreateStandaloneVM(check *C) {
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	vdc, err := adminOrg.GetVDCByName(vcd.vdc.Vdc.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+	description := "created by " + check.TestName()
+	params := types.CreateVmParams{
+		Name:        "testStandaloneVm",
+		PowerOn:     false,
+		Description: description,
+		CreateVm: &types.Vm{
+			Name:                     "testStandaloneVm",
+			VirtualHardwareSection:   nil,
+			NetworkConnectionSection: vcd.getNetworkConnection(),
+			VmSpecSection: &types.VmSpecSection{
+				Modified:          takeBoolPointer(true),
+				Info:              "Virtual Machine specification",
+				OsType:            "debian10Guest",
+				NumCpus:           takeIntAddress(1),
+				NumCoresPerSocket: takeIntAddress(1),
+				CpuResourceMhz: &types.CpuResourceMhz{
+					Configured: 0,
+				},
+				MemoryResourceMb: &types.MemoryResourceMb{
+					Configured: 512,
+				},
+				DiskSection: &types.DiskSection{
+					DiskSettings: []*types.DiskSettings{
+						&types.DiskSettings{
+							SizeMb:            1024,
+							UnitNumber:        0,
+							BusNumber:         0,
+							AdapterType:       "5",
+							ThinProvisioned:   takeBoolPointer(true),
+							OverrideVmDefault: false,
+						},
+					},
+				},
+
+				HardwareVersion: &types.HardwareVersion{Value: "vmx-14"},
+				VmToolsVersion:  "",
+				VirtualCpuType:  "VM32",
+			},
+			GuestCustomizationSection: &types.GuestCustomizationSection{
+				Info:         "Specifies Guest OS Customization Settings",
+				ComputerName: "standalone1",
+			},
+		},
+		Xmlns: types.XMLNamespaceVCloud,
+	}
+	vappList := vdc.GetVappList()
+	vappNum := len(vappList)
+	vm, err := vdc.CreateStandaloneVm(&params)
+	check.Assert(err, IsNil)
+	check.Assert(vm, NotNil)
+	AddToCleanupList(vm.VM.ID, "standaloneVm", "", check.TestName())
+	check.Assert(vm.VM.Description, Equals, description)
+
+	_ = vdc.Refresh()
+	vappList = vdc.GetVappList()
+	check.Assert(len(vappList), Equals, vappNum+1)
+	for _, vapp := range vappList {
+		printVerbose("vapp: %s\n", vapp.Name)
+	}
+	err = vm.Delete()
+	check.Assert(err, IsNil)
+	_ = vdc.Refresh()
+	vappList = vdc.GetVappList()
+	check.Assert(len(vappList), Equals, vappNum)
+}
+
+func (vcd *TestVCD) Test_CreateStandaloneVMFromTemplate(check *C) {
+
+	if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("no catalog was defined")
+	}
+	if vcd.config.VCD.Catalog.CatalogItem == "" {
+		check.Skip("no catalog item was defined")
+	}
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	vdc, err := adminOrg.GetVDCByName(vcd.vdc.Vdc.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	catalog, err := adminOrg.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+
+	catalogItem, err := catalog.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalogItem, NotNil)
+
+	vappTemplate, err := catalog.GetVappTemplateByHref(catalogItem.CatalogItem.Entity.HREF)
+	check.Assert(err, IsNil)
+	check.Assert(vappTemplate, NotNil)
+	check.Assert(vappTemplate.VAppTemplate.Children, NotNil)
+	check.Assert(len(vappTemplate.VAppTemplate.Children.VM), Not(Equals), 0)
+
+	vmTemplate := vappTemplate.VAppTemplate.Children.VM[0]
+	check.Assert(vmTemplate.HREF, Not(Equals), "")
+	check.Assert(vmTemplate.ID, Not(Equals), "")
+	check.Assert(vmTemplate.Type, Not(Equals), "")
+	check.Assert(vmTemplate.Name, Not(Equals), "")
+
+	params := types.InstantiateVmTemplateParams{
+		Xmlns:            types.XMLNamespaceVCloud,
+		Name:             "testStandaloneTemplate",
+		PowerOn:          true,
+		AllEULAsAccepted: true,
+		SourcedVmTemplateItem: &types.SourcedVmTemplateParams{
+			LocalityParams: nil,
+			Source: &types.Reference{
+				HREF: vmTemplate.HREF,
+				ID:   vmTemplate.ID,
+				Type: vmTemplate.Type,
+				Name: vmTemplate.Name,
+			},
+			StorageProfile:                nil,
+			VmCapabilities:                nil,
+			VmGeneralParams:               nil,
+			VmTemplateInstantiationParams: nil,
+		},
+	}
+	vappList := vdc.GetVappList()
+	vappNum := len(vappList)
+	util.Logger.Printf("%# v", pretty.Formatter(params))
+	vm, err := vdc.CreateStandaloneVMFromTemplate(&params)
+	check.Assert(err, IsNil)
+	check.Assert(vm, NotNil)
+	AddToCleanupList(vm.VM.ID, "standaloneVm", "", check.TestName())
+
+	_ = vdc.Refresh()
+	vappList = vdc.GetVappList()
+	check.Assert(len(vappList), Equals, vappNum+1)
+	for _, vapp := range vappList {
+		printVerbose("vapp: %s\n", vapp.Name)
+	}
+
+	err = vm.Delete()
+	check.Assert(err, IsNil)
+	_ = vdc.Refresh()
+	vappList = vdc.GetVappList()
+	check.Assert(len(vappList), Equals, vappNum)
 }

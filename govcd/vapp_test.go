@@ -737,7 +737,7 @@ func (vcd *TestVCD) Test_GetVM(check *C) {
 	var def = getterTestDefinition{
 		parentType:    "VApp",
 		parentName:    vapp.VApp.Name,
-		entityType:    "VM",
+		entityType:    "Vm",
 		entityName:    vmName,
 		getByName:     getByName,
 		getById:       getById,

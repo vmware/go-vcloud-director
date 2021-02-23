@@ -5,6 +5,13 @@ for all networks types for NSX-V and NSX-T backed VDCs [#354](https://github.com
 * Added `NsxtImportableSwitch` structure with `GetNsxtImportableSwitchByName` and `GetAllNsxtImportableSwitches` to 
 lookup NSX-T segments for use in NSX-T Imported networks [#354](https://github.com/vmware/go-vcloud-director/pull/354)
 * Added `vdc.IsNsxt` and `vdc.IsNsxv` methods to verify if VDC is backed by NSX-T or NSX-V [#354](https://github.com/vmware/go-vcloud-director/pull/354)
+* Added types `types.CreateVmParams` and `types.InstantiateVmTemplateParams`
+* Added Vdc methods `CreateStandaloneVMFromTemplate`, `CreateStandaloneVMFromTemplateAsync` `CreateStandaloneVm`, `CreateStandaloneVmAsync`
+* Added Vdc methods `QueryVmByName`, `QueryVmById`, `QueryVmList`
+* Added VM methods `Delete`, `DeleteAsync`
+
+BREAKING CHANGES:
+* Renamed `types.VM` to `types.Vm` to facilitate implementation of standalone VM
 
 BUGS FIXED:
 * Made IPAddress field for IPAddresses struct to array [#350](https://github.com/vmware/go-vcloud-director/pull/350)

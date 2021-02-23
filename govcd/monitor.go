@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 // Contains auxiliary functions to show library entities structure.
@@ -30,6 +30,7 @@ import (
 // network
 // externalNetwork
 // vapp
+// vm
 // task
 // Edge Gateway service configuration
 
@@ -47,6 +48,15 @@ func out(destination, format string, args ...interface{}) {
 // Returns a vApp structure as JSON
 func prettyVapp(vapp types.VApp) string {
 	byteBuf, err := json.MarshalIndent(vapp, " ", " ")
+	if err == nil {
+		return fmt.Sprintf("%s\n", string(byteBuf))
+	}
+	return ""
+}
+
+// Returns a VM structure as JSON
+func prettyVm(vm types.Vm) string {
+	byteBuf, err := json.MarshalIndent(vm, " ", " ")
 	if err == nil {
 		return fmt.Sprintf("%s\n", string(byteBuf))
 	}
@@ -187,6 +197,13 @@ func ShowVapp(vapp types.VApp) {
 	out("screen", prettyVapp(vapp))
 }
 
+func LogVm(vm types.Vm) {
+	out("log", prettyVm(vm))
+}
+
+func ShowVm(vm types.Vm) {
+	out("screen", prettyVm(vm))
+}
 func ShowOrg(org types.Org) {
 	out("screen", prettyOrg(org))
 }

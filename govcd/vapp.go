@@ -253,7 +253,6 @@ func addNewVMW(vapp *VApp, name string, vappTemplate VAppTemplate,
 // https://github.com/vmware/go-vcloud-director/issues/252
 // ======================================================================
 func (vapp *VApp) RemoveVM(vm VM) error {
-
 	err := vapp.Refresh()
 	if err != nil {
 		return fmt.Errorf("error refreshing vApp before removing VM: %s", err)
@@ -574,7 +573,7 @@ func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
 		return Task{}, fmt.Errorf("error retrieving storage profile %s for vApp %s", name, vapp.VApp.Name)
 	}
 
-	newProfile := &types.VM{
+	newProfile := &types.Vm{
 		Name:           vapp.VApp.Children.VM[0].Name,
 		StorageProfile: &storageProfileRef,
 		Xmlns:          types.XMLNamespaceVCloud,
@@ -596,7 +595,7 @@ func (vapp *VApp) ChangeVMName(name string) (Task, error) {
 		return Task{}, fmt.Errorf("vApp doesn't contain any children, interrupting customization")
 	}
 
-	newName := &types.VM{
+	newName := &types.Vm{
 		Name:  name,
 		Xmlns: types.XMLNamespaceVCloud,
 	}
