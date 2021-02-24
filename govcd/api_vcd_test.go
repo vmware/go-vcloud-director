@@ -481,7 +481,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 			}
 		})
 		fmt.Println()
-		os.Exit(0)
+		check.Skip("Exiting after help print")
 	}
 	config, err := GetConfigStruct()
 	if config == (TestConfig{}) || err != nil {
