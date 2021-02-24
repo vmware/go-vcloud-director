@@ -23,7 +23,7 @@ echo "=== RUN TagsTest"
 for tag in $tags
 do
 
-    go test -tags $tag -timeout 0 -count=0 -check.vv
+    go test -tags $tag -timeout 0 -count=0 -check.vv > /dev/null
 
     if [ "$?" == "0" ]
     then
