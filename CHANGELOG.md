@@ -9,6 +9,8 @@ lookup NSX-T segments for use in NSX-T Imported networks [#354](https://github.c
 * Added Vdc methods `CreateStandaloneVMFromTemplate`, `CreateStandaloneVMFromTemplateAsync` `CreateStandaloneVm`, `CreateStandaloneVmAsync`
 * Added Vdc methods `QueryVmByName`, `QueryVmById`, `QueryVmList`
 * Added VM methods `Delete`, `DeleteAsync`
+* Added NSX-V DHCP pool management functions `UpdateDhcpPools`, `GetDhcpPools`, `RemoveDhcpPools`,
+ `ResetDhcpPoolsAndBindings` [#XXX]
 
 BREAKING CHANGES:
 * Renamed `types.VM` to `types.Vm` to facilitate implementation of standalone VM
