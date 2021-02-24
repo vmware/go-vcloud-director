@@ -205,7 +205,6 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkIsolated(check *C) {
 
 func (vcd *TestVCD) Test_NsxvOrgVdcNetworkRouted(check *C) {
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
-	// skipNoNsxtConfiguration(vcd, check)
 
 	nsxvEdgeGateway, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, true)
 	check.Assert(err, IsNil)

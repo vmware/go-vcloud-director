@@ -448,3 +448,46 @@ type EdgeDhcpLeaseInfo struct {
 	// HardwareType holds type of hardware, usually "ethernet"
 	HardwareType string `xml:"hardwareType"`
 }
+
+// EdgeDhcp allows to manage advanced NSX-V Edge Gateway DHCP pools and static bindings by using proxied NSX-V API.
+// The endpoint does not allow to handle DHCP pools and static bindings separately (which are two tabs in UI). This
+// struct is created for handling DHCP pools therefore StaticBindings are kept as
+type EdgeDhcp struct {
+	XMLName xml.Name `xml:"dhcp"`
+	// Enabled specifies if the DHCP service is enabled or disabled on Edge Gateway.
+	// Note. If there are no DHCP pools defined on Edge Gateway - even after enabling it will report the service as
+	// disabled
+	Enabled bool `xml:"enabled"`
+	// StaticBindings have `innerxml` tag so that they are not processed but instead
+	// sent/received verbatim to avoid overriding it while
+	StaticBindings InnerXML `xml:"staticBindings"`
+	// EdgeDhcpIpPools contains a slice of EdgeDhcpIpPool definitions
+	EdgeDhcpIpPools *EdgeDhcpIpPools `xml:"ipPools"`
+	// Logging allows to set logging settings
+	Logging *LbLogging `xml:"logging"`
+}
+
+// EdgeDhcpIpPools unwraps many EdgeDhcpIpPool in API structure
+type EdgeDhcpIpPools struct {
+	EdgeDhcpIpPool []EdgeDhcpIpPool `xml:"ipPool"`
+}
+
+// EdgeDhcpIpPool is one definition of DHCP pool
+type EdgeDhcpIpPool struct {
+	// AutoConfigureDNS allows to inherit DNS settings from Edge Gateway
+	AutoConfigureDNS bool `xml:"autoConfigureDNS"`
+	// DefaultGateway must contain IP address to be set for DHCP clients
+	DefaultGateway string `xml:"defaultGateway"`
+	// LeaseTime can be set to 'infinite' or time in seconds. If it is left empty - default is set 86400 and reported back
+	LeaseTime string `xml:"leaseTime,omitempty"`
+	// Subnet mask of the network
+	SubnetMask string `xml:"subnetMask"`
+	// IpRange
+	IpRange string `xml:"ipRange"`
+	// DomainName allows to set domain name for DHCP clients
+	DomainName string `xml:"domainName,omitempty"`
+	// PrimaryNameServer allows to set primary DNS server for DHCP clients
+	PrimaryNameServer string `xml:"primaryNameServer,omitempty"`
+	// SecondaryNameServer allows to set primary DNS server for DHCP clients
+	SecondaryNameServer string `xml:"secondaryNameServer,omitempty"`
+}
