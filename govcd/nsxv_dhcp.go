@@ -87,10 +87,10 @@ func (egw *EdgeGateway) UpdateDhcpPools(dhcpPoolConfig *types.EdgeDhcp) (*types.
 	return egw.GetDhcpPoolsAndBindings()
 }
 
-// RemoveDhcpPools internally performs an update with empty DHCP pool definition while persisting DHCP bindings
+// ResetDhcpPools internally performs an update with empty DHCP pool definition while persisting DHCP bindings
 //
 // Note. It will disable DHCP service as well because that is how native ResetDhcpPoolsAndBindings() works
-func (egw *EdgeGateway) RemoveDhcpPools() error {
+func (egw *EdgeGateway) ResetDhcpPools() error {
 	dhcpConfig, err := egw.GetDhcpPoolsAndBindings()
 	if err != nil {
 		return fmt.Errorf("error getting DHCP pools: %s", err)

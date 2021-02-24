@@ -54,7 +54,8 @@ type NatRule struct {
 }
 
 // AddDhcpPool adds (or updates) the DHCP pool connected to a specific network.
-// TODO: this is legacy code from 2015, which requires a Terraform structure to work. It may need some re-thinking.
+//
+// Deprecated: Use EdgeGateway.UpdateDhcpPools instead.
 func (egw *EdgeGateway) AddDhcpPool(network *types.OrgVDCNetwork, dhcppool []interface{}) (Task, error) {
 	newEdgeConfig := egw.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration
 	util.Logger.Printf("[DEBUG] EDGE GATEWAY: %#v", newEdgeConfig)

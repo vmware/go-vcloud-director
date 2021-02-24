@@ -10,7 +10,9 @@ lookup NSX-T segments for use in NSX-T Imported networks [#354](https://github.c
 * Added Vdc methods `QueryVmByName`, `QueryVmById`, `QueryVmList`
 * Added VM methods `Delete`, `DeleteAsync`
 * Added NSX-V DHCP pool management functions `UpdateDhcpPools`, `GetDhcpPools`, `RemoveDhcpPools`,
- `ResetDhcpPoolsAndBindings` [#XXX]
+ `ResetDhcpPoolsAndBindings` [#358](https://github.com/vmware/go-vcloud-director/pull/358)
+* Deprecated EdgeGateway.AddDhcpPool in favor of `EdgeGateway.AddDhcpPool`
+[#358](https://github.com/vmware/go-vcloud-director/pull/358)
 
 BREAKING CHANGES:
 * Renamed `types.VM` to `types.Vm` to facilitate implementation of standalone VM

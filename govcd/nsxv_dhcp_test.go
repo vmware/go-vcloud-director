@@ -96,7 +96,7 @@ func (vcd *TestVCD) Test_NsxvDhcp(check *C) {
 	check.Assert(findDhcpPoolByIpRange(returnedDhcpPool2.EdgeDhcpIpPools.EdgeDhcpIpPool, poolDef1.IpRange), Equals, poolDef1)
 	check.Assert(findDhcpPoolByIpRange(returnedDhcpPool2.EdgeDhcpIpPools.EdgeDhcpIpPool, poolDef2.IpRange), Equals, poolDef2)
 
-	err = edge.RemoveDhcpPools()
+	err = edge.ResetDhcpPools()
 	check.Assert(err, IsNil)
 }
 
