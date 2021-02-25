@@ -341,6 +341,7 @@ const (
 	OpenApiEndpointVdcCapabilities            = "vdcs/%s/capabilities"
 	OpenApiEndpointEdgeGateways               = "edgeGateways/"
 	OpenApiEndpointOrgVdcNetworks             = "orgVdcNetworks/"
+	OpenApiEndpointOrgVdcNetworksDhcp         = "orgVdcNetworks/%s/dhcp"
 )
 
 // Header keys to run operations in tenant context

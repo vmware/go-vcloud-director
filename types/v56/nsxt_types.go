@@ -192,3 +192,20 @@ type Connection struct {
 // NsxtImportableSwitch is a type alias with better name for holding NSX-T Segments (Logical Switches) which can be used
 // to back NSX-T imported Org VDC network
 type NsxtImportableSwitch = OpenApiReference
+
+type OpenApiOrgVdcNetworkDhcp struct {
+	Enabled   bool                            `json:"enabled"`
+	LeaseTime int                             `json:"leaseTime"`
+	DhcpPools []OpenApiOrgVdcNetworkDhcpPools `json:"dhcpPools"`
+	Mode      string                          `json:"mode"`
+	IPAddress string                          `json:"ipAddress"`
+}
+
+type OpenApiOrgVdcNetworkDhcpIpRange = ExternalNetworkV2IPRange
+
+type OpenApiOrgVdcNetworkDhcpPools struct {
+	Enabled          bool                            `json:"enabled"`
+	IPRange          OpenApiOrgVdcNetworkDhcpIpRange `json:"ipRange"`
+	MaxLeaseTime     int                             `json:"maxLeaseTime"`
+	DefaultLeaseTime int                             `json:"defaultLeaseTime"`
+}
