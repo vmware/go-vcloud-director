@@ -51,7 +51,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkIsolated(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated, dhcpConfig)
+	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated, nil)
 }
 
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
@@ -159,7 +159,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque, dhcpConfig)
+	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque, nil)
 
 }
 
@@ -205,7 +205,6 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkIsolated(check *C) {
 
 func (vcd *TestVCD) Test_NsxvOrgVdcNetworkRouted(check *C) {
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
-	// skipNoNsxtConfiguration(vcd, check)
 
 	nsxvEdgeGateway, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, true)
 	check.Assert(err, IsNil)
@@ -383,24 +382,6 @@ func dhcpConfig(check *C, vdc *Vdc, orgNetId string) {
 		LeaseTime: 90000,
 		DhcpPools: []types.OpenApiOrgVdcNetworkDhcpPools{
 			{
-				Enabled: false,
-				IPRange: types.OpenApiOrgVdcNetworkDhcpIpRange{
-					StartAddress: "2.1.1.100",
-					EndAddress:   "2.1.1.101",
-				},
-				MaxLeaseTime:     0,
-				DefaultLeaseTime: 0,
-			},
-			{
-				Enabled: true,
-				IPRange: types.OpenApiOrgVdcNetworkDhcpIpRange{
-					StartAddress: "2.1.1.110",
-					EndAddress:   "2.1.1.111",
-				},
-				MaxLeaseTime:     0,
-				DefaultLeaseTime: 0,
-			},
-			{
 				Enabled: true,
 				IPRange: types.OpenApiOrgVdcNetworkDhcpIpRange{
 					StartAddress: "2.1.1.200",
@@ -410,8 +391,8 @@ func dhcpConfig(check *C, vdc *Vdc, orgNetId string) {
 				DefaultLeaseTime: 9000,
 			},
 		},
-		// Mode:      "",
-		// IPAddress: "",
+		// Mode:      "NETWORK",
+		// IPAddress: "2.1.1.199",
 	}
 	_, err := vdc.UpdateOpenApiOrgVdcNetworkDhcp(orgNetId, t)
 	check.Assert(err, IsNil)

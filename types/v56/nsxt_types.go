@@ -194,18 +194,37 @@ type Connection struct {
 type NsxtImportableSwitch = OpenApiReference
 
 type OpenApiOrgVdcNetworkDhcp struct {
-	Enabled   bool                            `json:"enabled"`
+	Enabled bool `json:"enabled"`
+	// LeaseTime applies for
 	LeaseTime int                             `json:"leaseTime"`
-	DhcpPools []OpenApiOrgVdcNetworkDhcpPools `json:"dhcpPools"`
-	Mode      string                          `json:"mode"`
-	IPAddress string                          `json:"ipAddress"`
+	DhcpPools []OpenApiOrgVdcNetworkDhcpPools `json:"dhcpPools,omitempty"`
+	// Mode describes how the DHCP service is configured for this network. Once a DHCP service has been created, the mode
+	// attribute cannot be changed. The mode field will default to 'EDGE' if it is not provided. This field only applies
+	// to networks backed by an NSX-T network provider.
+	//
+	// The supported values are EDGE (default) and NETWORK.
+	// * If EDGE is specified, the DHCP service of the edge is used to obtain DHCP IPs.
+	// * If NETWORK is specified, a DHCP server is created for use by this network. (To use NETWORK
+	//
+	// In order to use DHCP for IPV6, NETWORK mode must be used. Routed networks which are using NETWORK DHCP services can
+	// be disconnected from the edge gateway and still retain their DHCP configuration, however network using EDGE DHCP
+	// cannot be disconnected from the gateway until DHCP has been disabled.
+	Mode string `json:"mode,omitempty"`
+	// IPAddress is only applicable when mode=NETWORK. This will specify IP address of DHCP server in network.
+	IPAddress string `json:"ipAddress,omitempty"`
 }
 
 type OpenApiOrgVdcNetworkDhcpIpRange = ExternalNetworkV2IPRange
 
 type OpenApiOrgVdcNetworkDhcpPools struct {
-	Enabled          bool                            `json:"enabled"`
-	IPRange          OpenApiOrgVdcNetworkDhcpIpRange `json:"ipRange"`
-	MaxLeaseTime     int                             `json:"maxLeaseTime"`
-	DefaultLeaseTime int                             `json:"defaultLeaseTime"`
+	// Enabled defines if the DHCP pool is enabled or not
+	Enabled bool `json:"enabled"`
+	// IPRange holds IP ranges
+	IPRange OpenApiOrgVdcNetworkDhcpIpRange `json:"ipRange"`
+	// MaxLeaseTime is the maximum lease time that can be accepted on clients request
+	// This applies for NSX-V Isolated network
+	MaxLeaseTime int `json:"maxLeaseTime"`
+	// DefaultLeaseTime is the lease time that clients get if they do not specify particular lease time
+	// This applies for NSX-V Isolated network
+	DefaultLeaseTime int `json:"defaultLeaseTime"`
 }
