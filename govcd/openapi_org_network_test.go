@@ -109,7 +109,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted, dhcpConfig)
+	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted, nsxtRoutedDhcpConfig)
 }
 
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
@@ -357,11 +357,8 @@ func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.
 
 	// Configure DHCP if specified
 	if dhcpFunc != nil {
-		dhcpConfig(check, vdc, updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID)
+		nsxtRoutedDhcpConfig(check, vdc, updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID)
 	}
-	// fmt.Println("sleep")
-	// time.Sleep(3 * time.Minute)
-
 	// Delete
 	err = orgVdcNet.Delete()
 	check.Assert(err, IsNil)
@@ -376,25 +373,28 @@ func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.
 
 type dhcpConfigFunc func(check *C, vdc *Vdc, orgNetId string)
 
-func dhcpConfig(check *C, vdc *Vdc, orgNetId string) {
-	t := &types.OpenApiOrgVdcNetworkDhcp{
-		Enabled:   true,
-		LeaseTime: 90000,
+func nsxtRoutedDhcpConfig(check *C, vdc *Vdc, orgNetId string) {
+	dhcpDefinition := &types.OpenApiOrgVdcNetworkDhcp{
+		Enabled: takeBoolPointer(true),
 		DhcpPools: []types.OpenApiOrgVdcNetworkDhcpPools{
 			{
-				Enabled: true,
+				Enabled: takeBoolPointer(true),
 				IPRange: types.OpenApiOrgVdcNetworkDhcpIpRange{
 					StartAddress: "2.1.1.200",
 					EndAddress:   "2.1.1.201",
 				},
-				MaxLeaseTime:     10000,
-				DefaultLeaseTime: 9000,
 			},
 		},
-		// Mode:      "NETWORK",
-		// IPAddress: "2.1.1.199",
 	}
-	_, err := vdc.UpdateOpenApiOrgVdcNetworkDhcp(orgNetId, t)
+	updatedDhcp, err := vdc.UpdateOpenApiOrgVdcNetworkDhcp(orgNetId, dhcpDefinition)
 	check.Assert(err, IsNil)
-	// spew.Dump(updatedDhcpPools.OpenApiOrgVdcNetworkDhcp)
+
+	check.Assert(dhcpDefinition, DeepEquals, updatedDhcp.OpenApiOrgVdcNetworkDhcp)
+
+	// VCD Versions before 10.2 do not allow to perform "DELETE" on DHCP pool
+	// To remove DHCP configuration one must remove Org VDC network itself.
+	if vdc.client.APIVCDMaxVersionIs(">= 35.0") {
+		err = vdc.DeleteOpenApiOrgVdcNetworkDhcp(orgNetId)
+		check.Assert(err, IsNil)
+	}
 }

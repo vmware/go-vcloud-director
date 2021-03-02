@@ -6,12 +6,16 @@ for all networks types for NSX-V and NSX-T backed VDCs [#354](https://github.com
 lookup NSX-T segments for use in NSX-T Imported networks [#354](https://github.com/vmware/go-vcloud-director/pull/354)
 * Added `vdc.IsNsxt` and `vdc.IsNsxv` methods to verify if VDC is backed by NSX-T or NSX-V [#354](https://github.com/vmware/go-vcloud-director/pull/354)
 * Added types `types.CreateVmParams` and `types.InstantiateVmTemplateParams`
-* Added Vdc methods `CreateStandaloneVMFromTemplate`, `CreateStandaloneVMFromTemplateAsync` `CreateStandaloneVm`, `CreateStandaloneVmAsync`
-* Added Vdc methods `QueryVmByName`, `QueryVmById`, `QueryVmList`
-* Added VM methods `Delete`, `DeleteAsync`
+* Added Vdc methods `CreateStandaloneVMFromTemplate`, `CreateStandaloneVMFromTemplateAsync` `CreateStandaloneVm`, 
+`CreateStandaloneVmAsync` [#356](https://github.com/vmware/go-vcloud-director/pull/356)
+* Added Vdc methods `QueryVmByName`, `QueryVmById`, `QueryVmList` [#356](https://github.com/vmware/go-vcloud-director/pull/356)
+* Added VM methods `Delete`, `DeleteAsync` [#356](https://github.com/vmware/go-vcloud-director/pull/356)
+* Added Vdc methods `GetOpenApiOrgVdcNetworkDhcp`, `UpdateOpenApiOrgVdcNetworkDhcp` and `DeleteOpenApiOrgVdcNetworkDhcp`
+for OpenAPI management of Org Network DHCP configurations [#357](https://github.com/vmware/go-vcloud-director/pull/357)
 
 BREAKING CHANGES:
-* Renamed `types.VM` to `types.Vm` to facilitate implementation of standalone VM
+* Renamed `types.VM` to `types.Vm` to facilitate implementation of standalone VM 
+[#356](https://github.com/vmware/go-vcloud-director/pull/356)
 
 BUGS FIXED:
 * Made IPAddress field for IPAddresses struct to array [#350](https://github.com/vmware/go-vcloud-director/pull/350)

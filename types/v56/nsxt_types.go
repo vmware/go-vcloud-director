@@ -193,10 +193,10 @@ type Connection struct {
 // to back NSX-T imported Org VDC network
 type NsxtImportableSwitch = OpenApiReference
 
+// OpenApiOrgVdcNetworkDhcp allows to manage DHCP configuration for Org VDC networks by using OpenAPI endpoint
 type OpenApiOrgVdcNetworkDhcp struct {
-	Enabled bool `json:"enabled"`
-	// LeaseTime applies for
-	LeaseTime int                             `json:"leaseTime"`
+	Enabled   *bool                           `json:"enabled,omitempty"`
+	LeaseTime *int                            `json:"leaseTime,omitempty"`
 	DhcpPools []OpenApiOrgVdcNetworkDhcpPools `json:"dhcpPools,omitempty"`
 	// Mode describes how the DHCP service is configured for this network. Once a DHCP service has been created, the mode
 	// attribute cannot be changed. The mode field will default to 'EDGE' if it is not provided. This field only applies
@@ -214,17 +214,18 @@ type OpenApiOrgVdcNetworkDhcp struct {
 	IPAddress string `json:"ipAddress,omitempty"`
 }
 
+// OpenApiOrgVdcNetworkDhcpIpRange is a type alias to fit naming
 type OpenApiOrgVdcNetworkDhcpIpRange = ExternalNetworkV2IPRange
 
 type OpenApiOrgVdcNetworkDhcpPools struct {
 	// Enabled defines if the DHCP pool is enabled or not
-	Enabled bool `json:"enabled"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// IPRange holds IP ranges
 	IPRange OpenApiOrgVdcNetworkDhcpIpRange `json:"ipRange"`
 	// MaxLeaseTime is the maximum lease time that can be accepted on clients request
 	// This applies for NSX-V Isolated network
-	MaxLeaseTime int `json:"maxLeaseTime"`
+	MaxLeaseTime *int `json:"maxLeaseTime,omitempty"`
 	// DefaultLeaseTime is the lease time that clients get if they do not specify particular lease time
 	// This applies for NSX-V Isolated network
-	DefaultLeaseTime int `json:"defaultLeaseTime"`
+	DefaultLeaseTime *int `json:"defaultLeaseTime,omitempty"`
 }
