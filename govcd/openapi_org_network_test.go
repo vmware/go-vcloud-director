@@ -357,7 +357,7 @@ func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.
 
 	// Configure DHCP if specified
 	if dhcpFunc != nil {
-		nsxtRoutedDhcpConfig(check, vdc, updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID)
+		dhcpFunc(check, vdc, updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID)
 	}
 	// Delete
 	err = orgVdcNet.Delete()
