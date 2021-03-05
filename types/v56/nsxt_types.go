@@ -192,3 +192,40 @@ type Connection struct {
 // NsxtImportableSwitch is a type alias with better name for holding NSX-T Segments (Logical Switches) which can be used
 // to back NSX-T imported Org VDC network
 type NsxtImportableSwitch = OpenApiReference
+
+// OpenApiOrgVdcNetworkDhcp allows to manage DHCP configuration for Org VDC networks by using OpenAPI endpoint
+type OpenApiOrgVdcNetworkDhcp struct {
+	Enabled   *bool                           `json:"enabled,omitempty"`
+	LeaseTime *int                            `json:"leaseTime,omitempty"`
+	DhcpPools []OpenApiOrgVdcNetworkDhcpPools `json:"dhcpPools,omitempty"`
+	// Mode describes how the DHCP service is configured for this network. Once a DHCP service has been created, the mode
+	// attribute cannot be changed. The mode field will default to 'EDGE' if it is not provided. This field only applies
+	// to networks backed by an NSX-T network provider.
+	//
+	// The supported values are EDGE (default) and NETWORK.
+	// * If EDGE is specified, the DHCP service of the edge is used to obtain DHCP IPs.
+	// * If NETWORK is specified, a DHCP server is created for use by this network. (To use NETWORK
+	//
+	// In order to use DHCP for IPV6, NETWORK mode must be used. Routed networks which are using NETWORK DHCP services can
+	// be disconnected from the edge gateway and still retain their DHCP configuration, however network using EDGE DHCP
+	// cannot be disconnected from the gateway until DHCP has been disabled.
+	Mode string `json:"mode,omitempty"`
+	// IPAddress is only applicable when mode=NETWORK. This will specify IP address of DHCP server in network.
+	IPAddress string `json:"ipAddress,omitempty"`
+}
+
+// OpenApiOrgVdcNetworkDhcpIpRange is a type alias to fit naming
+type OpenApiOrgVdcNetworkDhcpIpRange = ExternalNetworkV2IPRange
+
+type OpenApiOrgVdcNetworkDhcpPools struct {
+	// Enabled defines if the DHCP pool is enabled or not
+	Enabled *bool `json:"enabled,omitempty"`
+	// IPRange holds IP ranges
+	IPRange OpenApiOrgVdcNetworkDhcpIpRange `json:"ipRange"`
+	// MaxLeaseTime is the maximum lease time that can be accepted on clients request
+	// This applies for NSX-V Isolated network
+	MaxLeaseTime *int `json:"maxLeaseTime,omitempty"`
+	// DefaultLeaseTime is the lease time that clients get if they do not specify particular lease time
+	// This applies for NSX-V Isolated network
+	DefaultLeaseTime *int `json:"defaultLeaseTime,omitempty"`
+}
