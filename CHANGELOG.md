@@ -1,4 +1,4 @@
-## 2.11.0 (Unreleased)
+## 2.11.0 (March 10, 2021)
 
 * Added structure and methods to handle Org VDC networks using OpenAPI - `OpenApiOrgVdcNetwork`. It supports VCD 9.7+
 for all networks types for NSX-V and NSX-T backed VDCs [#354](https://github.com/vmware/go-vcloud-director/pull/354)
