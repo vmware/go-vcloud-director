@@ -42,6 +42,7 @@ In Goland:
 */
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"os"
@@ -121,7 +122,7 @@ func getConfig(config_file string) Config {
 }
 
 // Creates a vCD client
-func (c *Config) Client() (*govcd.VCDClient, error) {
+func (c *Config) Client(ctx context.Context) (*govcd.VCDClient, error) {
 	u, err := url.ParseRequestURI(c.Href)
 	if err != nil {
 		return nil, fmt.Errorf("unable to pass url: %s", err)
@@ -129,9 +130,9 @@ func (c *Config) Client() (*govcd.VCDClient, error) {
 
 	vcdClient := govcd.NewVCDClient(*u, c.Insecure)
 	if c.Token != "" {
-		_ = vcdClient.SetToken(c.Org, govcd.AuthorizationHeader, c.Token)
+		_ = vcdClient.SetToken(ctx, c.Org, govcd.AuthorizationHeader, c.Token)
 	} else {
-		resp, err := vcdClient.GetAuthResponse(c.User, c.Password, c.Org)
+		resp, err := vcdClient.GetAuthResponse(ctx, c.User, c.Password, c.Org)
 		if err != nil {
 			return nil, fmt.Errorf("unable to authenticate: %s", err)
 		}
@@ -151,19 +152,21 @@ func main() {
 	// Reads the configuration file
 	config := getConfig(os.Args[1])
 
+	ctx := context.Background()
+
 	// Instantiates the client
-	client, err := config.Client() // We now have a client
+	client, err := config.Client(ctx) // We now have a client
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	org, err := client.GetOrgByName(config.Org)
+	org, err := client.GetOrgByName(ctx, config.Org)
 	if err != nil {
 		fmt.Printf("organization %s not found : %s\n", config.Org, err)
 		os.Exit(1)
 	}
-	vdc, err := org.GetVDCByName(config.VDC, false)
+	vdc, err := org.GetVDCByName(ctx, config.VDC, false)
 	if err != nil {
 		fmt.Printf("VDC %s not found : %s\n", config.VDC, err)
 		os.Exit(1)
@@ -192,7 +195,7 @@ func main() {
 
 	if catalogName != "" {
 		fmt.Printf("\ncatalog items\n")
-		cat, err := org.GetCatalogByName(catalogName, false)
+		cat, err := org.GetCatalogByName(ctx, catalogName, false)
 		if err != nil {
 			fmt.Printf("Error retrieving catalog %s\n%s\n", catalogName, err)
 			os.Exit(1)

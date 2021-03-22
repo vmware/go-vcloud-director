@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -25,6 +26,7 @@ func (vapp VApp) GetId() string {
 }
 
 func (vcd *TestVCD) Test_VappAccessControl(check *C) {
+	ctx := context.Background()
 
 	if vcd.config.VCD.Org == "" {
 		check.Skip("Test_VappAccessControl: Org name not given.")
@@ -34,11 +36,11 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 		check.Skip("Test_VappAccessControl: VDC name not given.")
 		return
 	}
-	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	org, err := vcd.client.GetAdminOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	vdc, err := org.GetVDCByName(ctx, vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 
@@ -54,13 +56,13 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 	}
 
 	// Create a new vApp
-	vapp, err := makeEmptyVapp(vdc, vappName)
+	vapp, err := makeEmptyVapp(ctx, vdc, vappName)
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 	AddToCleanupList(vappName, "vapp", vcd.config.VCD.Org+"|"+vcd.config.VCD.Vdc, "Test_VappAccessControl")
 
 	checkEmpty := func() {
-		settings, err := vapp.GetAccessControl(vappTenantContext)
+		settings, err := vapp.GetAccessControl(ctx, vappTenantContext)
 		check.Assert(err, IsNil)
 		check.Assert(settings.IsSharedToEveryone, Equals, false) // There should not be a global sharing
 		check.Assert(settings.AccessSettings, IsNil)             // There should not be any explicit sharing
@@ -68,7 +70,7 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 
 	// Create three users
 	for i := 0; i < len(users); i++ {
-		users[i].user, err = org.CreateUserSimple(OrgUserConfiguration{
+		users[i].user, err = org.CreateUserSimple(ctx, OrgUserConfiguration{
 			Name: users[i].name, Password: users[i].name, RoleName: users[i].role, IsEnabled: true,
 		})
 		check.Assert(err, IsNil)
@@ -81,15 +83,15 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 		if testVerbose {
 			fmt.Printf("deleting %s\n", vappName)
 		}
-		task, err := vapp.Delete()
+		task, err := vapp.Delete(ctx)
 		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
+		err = task.WaitTaskCompletion(ctx)
 		check.Assert(err, IsNil)
 		for i := 0; i < len(users); i++ {
 			if testVerbose {
 				fmt.Printf("deleting %s\n", users[i].name)
 			}
-			err = users[i].user.Delete(false)
+			err = users[i].user.Delete(ctx, false)
 			check.Assert(err, IsNil)
 		}
 	}()
@@ -102,14 +104,14 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 	}
 
 	// Use generic testAccessControl. Here vapp is passed as accessControlType interface
-	err = testAccessControl("vapp all users RO", vapp, allUsersSettings, allUsersSettings, true, vappTenantContext, check)
+	err = testAccessControl(ctx, "vapp all users RO", vapp, allUsersSettings, allUsersSettings, true, vappTenantContext, check)
 	check.Assert(err, IsNil)
 
 	allUsersSettings = types.ControlAccessParams{
 		EveryoneAccessLevel: takeStringPointer(types.ControlAccessReadWrite),
 		IsSharedToEveryone:  true,
 	}
-	err = testAccessControl("vapp all users R/W", vapp, allUsersSettings, allUsersSettings, true, vappTenantContext, check)
+	err = testAccessControl(ctx, "vapp all users R/W", vapp, allUsersSettings, allUsersSettings, true, vappTenantContext, check)
 	check.Assert(err, IsNil)
 
 	// Set access control to one user
@@ -130,17 +132,17 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 			},
 		},
 	}
-	err = testAccessControl("vapp one user", vapp, oneUserSettings, oneUserSettings, true, vappTenantContext, check)
+	err = testAccessControl(ctx, "vapp one user", vapp, oneUserSettings, oneUserSettings, true, vappTenantContext, check)
 	check.Assert(err, IsNil)
 
 	// Check that vapp.GetAccessControl and vdc.GetVappAccessControl return the same data
-	controlAccess, err := vapp.GetAccessControl(vappTenantContext)
+	controlAccess, err := vapp.GetAccessControl(ctx, vappTenantContext)
 	check.Assert(err, IsNil)
-	vdcControlAccessName, err := vdc.GetVappAccessControl(vappName, vappTenantContext)
+	vdcControlAccessName, err := vdc.GetVappAccessControl(ctx, vappName, vappTenantContext)
 	check.Assert(err, IsNil)
 	check.Assert(controlAccess, DeepEquals, vdcControlAccessName)
 
-	vdcControlAccessId, err := vdc.GetVappAccessControl(vapp.VApp.ID, vappTenantContext)
+	vdcControlAccessId, err := vdc.GetVappAccessControl(ctx, vapp.VApp.ID, vappTenantContext)
 	check.Assert(err, IsNil)
 	check.Assert(controlAccess, DeepEquals, vdcControlAccessId)
 
@@ -171,11 +173,11 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 			},
 		},
 	}
-	err = testAccessControl("vapp two users", vapp, twoUserSettings, twoUserSettings, true, vappTenantContext, check)
+	err = testAccessControl(ctx, "vapp two users", vapp, twoUserSettings, twoUserSettings, true, vappTenantContext, check)
 	check.Assert(err, IsNil)
 
 	// Check removal of sharing setting
-	err = vapp.RemoveAccessControl(vappTenantContext)
+	err = vapp.RemoveAccessControl(ctx, vappTenantContext)
 	check.Assert(err, IsNil)
 	checkEmpty()
 
@@ -215,19 +217,19 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 			},
 		},
 	}
-	err = testAccessControl("vapp three users", vapp, threeUserSettings, threeUserSettings, true, vappTenantContext, check)
+	err = testAccessControl(ctx, "vapp three users", vapp, threeUserSettings, threeUserSettings, true, vappTenantContext, check)
 	check.Assert(err, IsNil)
 
 	// Set empty settings explicitly
 	emptySettings := types.ControlAccessParams{
 		IsSharedToEveryone: false,
 	}
-	err = testAccessControl("vapp empty", vapp, emptySettings, emptySettings, false, vappTenantContext, check)
+	err = testAccessControl(ctx, "vapp empty", vapp, emptySettings, emptySettings, false, vappTenantContext, check)
 	check.Assert(err, IsNil)
 
 	checkEmpty()
 
-	orgInfo, err := vapp.getOrgInfo()
+	orgInfo, err := vapp.getOrgInfo(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(orgInfo.id, Equals, extractUuid(org.AdminOrg.ID))
 	check.Assert(orgInfo.name, Equals, org.AdminOrg.Name)

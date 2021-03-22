@@ -9,6 +9,7 @@ package govcd
 // This file tests out NSX-T related Org VDC capabilities
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -22,11 +23,13 @@ func (vcd *TestVCD) Test_CreateNsxtOrgVdc(check *C) {
 
 	skipNoNsxtConfiguration(vcd, check)
 
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	ctx := context.Background()
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	pVdcs, err := QueryProviderVdcByName(vcd.client, vcd.config.VCD.NsxtProviderVdc.Name)
+	pVdcs, err := QueryProviderVdcByName(ctx, vcd.client, vcd.config.VCD.NsxtProviderVdc.Name)
 	check.Assert(err, IsNil)
 
 	if len(pVdcs) == 0 {
@@ -34,7 +37,7 @@ func (vcd *TestVCD) Test_CreateNsxtOrgVdc(check *C) {
 	}
 	providerVdcHref := pVdcs[0].HREF
 
-	pvdcStorageProfiles, err := QueryProviderVdcStorageProfileByName(vcd.client, vcd.config.VCD.NsxtProviderVdc.StorageProfile)
+	pvdcStorageProfiles, err := QueryProviderVdcStorageProfileByName(ctx, vcd.client, vcd.config.VCD.NsxtProviderVdc.StorageProfile)
 
 	check.Assert(err, IsNil)
 	if len(pvdcStorageProfiles) == 0 {
@@ -42,7 +45,7 @@ func (vcd *TestVCD) Test_CreateNsxtOrgVdc(check *C) {
 	}
 	providerVdcStorageProfileHref := pvdcStorageProfiles[0].HREF
 
-	networkPools, err := QueryNetworkPoolByName(vcd.client, vcd.config.VCD.NsxtProviderVdc.NetworkPool)
+	networkPools, err := QueryNetworkPoolByName(ctx, vcd.client, vcd.config.VCD.NsxtProviderVdc.NetworkPool)
 	check.Assert(err, IsNil)
 	if len(networkPools) == 0 {
 		check.Skip(fmt.Sprintf("No network pool found with name '%s'", vcd.config.VCD.NsxtProviderVdc.NetworkPool))
@@ -96,14 +99,14 @@ func (vcd *TestVCD) Test_CreateNsxtOrgVdc(check *C) {
 			vdcConfiguration.IncludeMemoryOverhead = &trueValue
 		}
 
-		vdc, _ := adminOrg.GetVDCByName(vdcConfiguration.Name, false)
+		vdc, _ := adminOrg.GetVDCByName(ctx, vdcConfiguration.Name, false)
 		if vdc != nil {
-			err = vdc.DeleteWait(true, true)
+			err = vdc.DeleteWait(ctx, true, true)
 			check.Assert(err, IsNil)
 		}
 
 		// expected to fail due to missing value
-		task, err := adminOrg.CreateOrgVdcAsync(vdcConfiguration)
+		task, err := adminOrg.CreateOrgVdcAsync(ctx, vdcConfiguration)
 		check.Assert(err, Not(IsNil))
 		check.Assert(task, Equals, Task{})
 		// checks function validation
@@ -111,13 +114,13 @@ func (vcd *TestVCD) Test_CreateNsxtOrgVdc(check *C) {
 
 		vdcConfiguration.ComputeCapacity[0].Memory.Units = "MB"
 
-		vdc, err = adminOrg.CreateOrgVdc(vdcConfiguration)
+		vdc, err = adminOrg.CreateOrgVdc(ctx, vdcConfiguration)
 		check.Assert(vdc, NotNil)
 		check.Assert(err, IsNil)
 
 		AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, check.TestName())
 
-		adminVdc, err := adminOrg.GetAdminVDCByName(vdcConfiguration.Name, true)
+		adminVdc, err := adminOrg.GetAdminVDCByName(ctx, vdcConfiguration.Name, true)
 		check.Assert(err, IsNil)
 		check.Assert(vdc, NotNil)
 		check.Assert(vdc.Vdc.Name, Equals, vdcConfiguration.Name)
@@ -126,14 +129,14 @@ func (vcd *TestVCD) Test_CreateNsxtOrgVdc(check *C) {
 
 		// Test  update
 		adminVdc.AdminVdc.Description = "updated-description" + check.TestName()
-		updatedAdminVdc, err := adminVdc.Update()
+		updatedAdminVdc, err := adminVdc.Update(ctx)
 		check.Assert(err, IsNil)
 		check.Assert(updatedAdminVdc.AdminVdc, Equals, adminVdc.AdminVdc)
 
-		err = vdc.DeleteWait(true, true)
+		err = vdc.DeleteWait(ctx, true, true)
 		check.Assert(err, IsNil)
 
-		vdc, err = adminOrg.GetVDCByName(vdcConfiguration.Name, true)
+		vdc, err = adminOrg.GetVDCByName(ctx, vdcConfiguration.Name, true)
 		check.Assert(err, NotNil)
 		check.Assert(vdc, IsNil)
 	}

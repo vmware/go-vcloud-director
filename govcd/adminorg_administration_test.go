@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -19,7 +20,9 @@ func (vcd *TestVCD) Test_LDAP_Configuration(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	ctx := context.Background()
+
+	org, err := vcd.client.GetAdminOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 
 	ldapSettings := &types.OrgLdapSettingsType{
@@ -52,7 +55,7 @@ func (vcd *TestVCD) Test_LDAP_Configuration(check *C) {
 			},
 		},
 	}
-	gotSettings, err := org.LdapConfigure(ldapSettings)
+	gotSettings, err := org.LdapConfigure(ctx, ldapSettings)
 	check.Assert(err, IsNil)
 
 	AddToCleanupList("LDAP-configuration", "orgLdapSettings", org.AdminOrg.Name, check.TestName())
@@ -64,10 +67,10 @@ func (vcd *TestVCD) Test_LDAP_Configuration(check *C) {
 	check.Assert(ldapSettings.CustomOrgLdapSettings.AuthenticationMechanism, DeepEquals, gotSettings.CustomOrgLdapSettings.AuthenticationMechanism)
 	check.Assert(ldapSettings.CustomOrgLdapSettings.ConnectorType, DeepEquals, gotSettings.CustomOrgLdapSettings.ConnectorType)
 
-	err = org.LdapDisable()
+	err = org.LdapDisable(ctx)
 	check.Assert(err, IsNil)
 
-	ldapConfig, err := org.GetLdapConfiguration()
+	ldapConfig, err := org.GetLdapConfiguration(ctx)
 	check.Assert(err, IsNil)
 
 	check.Assert(ldapConfig.OrgLdapMode, Equals, types.LdapModeNone)

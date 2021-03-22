@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -24,7 +25,7 @@ import (
 )
 
 // createAndGetResourcesForVmCreation creates vAPP and two VM for the testing
-func (vcd *TestVCD) createAndGetResourcesForVmCreation(check *C, vmName string) (*Vdc, *EdgeGateway, VAppTemplate, *VApp, types.NetworkConnectionSection, error) {
+func (vcd *TestVCD) createAndGetResourcesForVmCreation(ctx context.Context, check *C, vmName string) (*Vdc, *EdgeGateway, VAppTemplate, *VApp, types.NetworkConnectionSection, error) {
 	if vcd.config.VCD.Catalog.Name == "" {
 		check.Skip("No Catalog name given for VDC tests")
 	}
@@ -33,49 +34,49 @@ func (vcd *TestVCD) createAndGetResourcesForVmCreation(check *C, vmName string) 
 		check.Skip("No Catalog item given for VDC tests")
 	}
 	// Get org and vdc
-	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	org, err := vcd.client.GetAdminOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
-	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	vdc, err := org.GetVDCByName(ctx, vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	// Find catalog and catalog item
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err := org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
-	catalogItem, err := catalog.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	catalogItem, err := catalog.GetCatalogItemByName(ctx, vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
 	// Skip the test if catalog item is not Photon OS
-	if !isItemPhotonOs(*catalogItem) {
+	if !isItemPhotonOs(ctx, *catalogItem) {
 		check.Skip(fmt.Sprintf("Skipping test because catalog item %s is not Photon OS",
 			vcd.config.VCD.Catalog.CatalogItem))
 	}
 	fmt.Printf("# Creating RAW vApp '%s'", vmName)
-	vappTemplate, err := catalogItem.GetVAppTemplate()
+	vappTemplate, err := catalogItem.GetVAppTemplate(ctx)
 	check.Assert(err, IsNil)
 	// Compose Raw vApp
-	err = vdc.ComposeRawVApp(vmName)
+	err = vdc.ComposeRawVApp(ctx, vmName)
 	check.Assert(err, IsNil)
-	vapp, err := vdc.GetVAppByName(vmName, true)
+	vapp, err := vdc.GetVAppByName(ctx, vmName, true)
 	check.Assert(err, IsNil)
 	// vApp was created - let's add it to cleanup list
 	AddToCleanupList(vmName, "vapp", "", "createTestVapp")
 	// Wait until vApp becomes configurable
-	initialVappStatus, err := vapp.GetStatus()
+	initialVappStatus, err := vapp.GetStatus(ctx)
 	check.Assert(err, IsNil)
 	if initialVappStatus != "RESOLVED" { // RESOLVED vApp is ready to accept operations
-		err = vapp.BlockWhileStatus(initialVappStatus, vapp.client.MaxRetryTimeout)
+		err = vapp.BlockWhileStatus(ctx, initialVappStatus, vapp.client.MaxRetryTimeout)
 		check.Assert(err, IsNil)
 	}
 	fmt.Printf(". Done\n")
 	fmt.Printf("# Attaching VDC network '%s' to vApp '%s'", vcd.config.VCD.Network.Net1, vmName)
 	// Attach VDC network to vApp so that VMs can use it
-	net, err := vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	net, err := vdc.GetOrgVdcNetworkByName(ctx, vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
-	task, err := vapp.AddRAWNetworkConfig([]*types.OrgVDCNetwork{net.OrgVDCNetwork})
+	task, err := vapp.AddRAWNetworkConfig(ctx, []*types.OrgVDCNetwork{net.OrgVDCNetwork})
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 	fmt.Printf(". Done\n")
 	// Spawn 2 VMs with python servers in the newly created vApp
@@ -93,42 +94,42 @@ func (vcd *TestVCD) createAndGetResourcesForVmCreation(check *C, vmName string) 
 
 // spawnVM spawns VMs in provided vApp from template and also applies customization script to
 // spawn a Python 3 HTTP server
-func spawnVM(name string, memorySize int, vdc Vdc, vapp VApp, net types.NetworkConnectionSection, vAppTemplate VAppTemplate, check *C, customizationScript string, powerOn bool) (VM, error) {
+func spawnVM(ctx context.Context, name string, memorySize int, vdc Vdc, vapp VApp, net types.NetworkConnectionSection, vAppTemplate VAppTemplate, check *C, customizationScript string, powerOn bool) (VM, error) {
 	fmt.Printf("# Spawning VM '%s'", name)
-	task, err := vapp.AddNewVM(name, vAppTemplate, &net, true)
+	task, err := vapp.AddNewVM(ctx, name, vAppTemplate, &net, true)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
-	vm, err := vapp.GetVMByName(name, true)
+	vm, err := vapp.GetVMByName(ctx, name, true)
 	check.Assert(err, IsNil)
 	fmt.Printf(". Done\n")
 
 	fmt.Printf("# Applying 2 vCPU and "+strconv.Itoa(memorySize)+"MB configuration for VM '%s'", name)
-	task, err = vm.ChangeCPUCount(2)
+	task, err = vm.ChangeCPUCount(ctx, 2)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
-	task, err = vm.ChangeMemorySize(memorySize)
+	task, err = vm.ChangeMemorySize(ctx, memorySize)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 	fmt.Printf(". Done\n")
 
 	if customizationScript != "" {
 		fmt.Printf("# Applying customization script for VM '%s'", name)
-		task, err = vm.RunCustomizationScript(name, customizationScript)
+		task, err = vm.RunCustomizationScript(ctx, name, customizationScript)
 		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
+		err = task.WaitTaskCompletion(ctx)
 		check.Assert(err, IsNil)
 		fmt.Printf(". Done\n")
 	}
 
 	if powerOn {
 		fmt.Printf("# Powering on VM '%s'", name)
-		task, err = vm.PowerOn()
+		task, err = vm.PowerOn(ctx)
 		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
+		err = task.WaitTaskCompletion(ctx)
 		check.Assert(err, IsNil)
 		fmt.Printf(". Done\n")
 	}
@@ -137,8 +138,8 @@ func spawnVM(name string, memorySize int, vdc Vdc, vapp VApp, net types.NetworkC
 }
 
 // isItemPhotonOs checks if a catalog item is Photon OS
-func isItemPhotonOs(item CatalogItem) bool {
-	vappTemplate, err := item.GetVAppTemplate()
+func isItemPhotonOs(ctx context.Context, item CatalogItem) bool {
+	vappTemplate, err := item.GetVAppTemplate(ctx)
 	// Unable to get template - can validate it's Photon OS
 	if err != nil {
 		return false
@@ -157,22 +158,22 @@ func isItemPhotonOs(item CatalogItem) bool {
 }
 
 // catalogItemIsPhotonOs returns true if test config  catalog item is Photon OS image
-func catalogItemIsPhotonOs(vcd *TestVCD) bool {
+func catalogItemIsPhotonOs(ctx context.Context, vcd *TestVCD) bool {
 	// Get Org, Vdc
-	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	org, err := vcd.client.GetAdminOrgByName(ctx, vcd.config.VCD.Org)
 	if err != nil {
 		return false
 	}
 	// Find catalog and catalog item
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err := org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	if err != nil {
 		return false
 	}
-	catalogItem, err := catalog.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	catalogItem, err := catalog.GetCatalogItemByName(ctx, vcd.config.VCD.Catalog.CatalogItem, false)
 	if err != nil {
 		return false
 	}
-	if !isItemPhotonOs(*catalogItem) {
+	if !isItemPhotonOs(ctx, *catalogItem) {
 		return false
 	}
 
@@ -181,21 +182,21 @@ func catalogItemIsPhotonOs(vcd *TestVCD) bool {
 
 // cacheLoadBalancer is meant to store load balancer settings before any operations so that all
 // configuration can be checked after manipulation
-func testCacheLoadBalancer(edge EdgeGateway, check *C) (*types.LbGeneralParamsWithXml, string) {
-	beforeLb, err := edge.GetLBGeneralParams()
+func testCacheLoadBalancer(ctx context.Context, edge EdgeGateway, check *C) (*types.LbGeneralParamsWithXml, string) {
+	beforeLb, err := edge.GetLBGeneralParams(ctx)
 	check.Assert(err, IsNil)
-	beforeLbXml := testGetEdgeEndpointXML(types.LbConfigPath, edge, check)
+	beforeLbXml := testGetEdgeEndpointXML(ctx, types.LbConfigPath, edge, check)
 	return beforeLb, beforeLbXml
 }
 
 // testGetEdgeEndpointXML is used for additional validation that modifying edge gateway endpoint
 // does not change any single field. It returns an XML string of whole configuration
-func testGetEdgeEndpointXML(endpoint string, edge EdgeGateway, check *C) string {
+func testGetEdgeEndpointXML(ctx context.Context, endpoint string, edge EdgeGateway, check *C) string {
 
 	httpPath, err := edge.buildProxiedEdgeEndpointURL(endpoint)
 	check.Assert(err, IsNil)
 
-	resp, err := edge.client.ExecuteRequestWithCustomError(httpPath, http.MethodGet, types.AnyXMLMime,
+	resp, err := edge.client.ExecuteRequestWithCustomError(ctx, httpPath, http.MethodGet, types.AnyXMLMime,
 		fmt.Sprintf("unable to get XML from endpoint %s: %%s", endpoint), nil, &types.NSXError{})
 	check.Assert(err, IsNil)
 
@@ -209,11 +210,11 @@ func testGetEdgeEndpointXML(endpoint string, edge EdgeGateway, check *C) string 
 
 // testCheckLoadBalancerConfig validates if both raw XML string and load balancer struct remain
 // identical after settings manipulation.
-func testCheckLoadBalancerConfig(beforeLb *types.LbGeneralParamsWithXml, beforeLbXml string, edge EdgeGateway, check *C) {
-	afterLb, err := edge.GetLBGeneralParams()
+func testCheckLoadBalancerConfig(ctx context.Context, beforeLb *types.LbGeneralParamsWithXml, beforeLbXml string, edge EdgeGateway, check *C) {
+	afterLb, err := edge.GetLBGeneralParams(ctx)
 	check.Assert(err, IsNil)
 
-	afterLbXml := testGetEdgeEndpointXML(types.LbConfigPath, edge, check)
+	afterLbXml := testGetEdgeEndpointXML(ctx, types.LbConfigPath, edge, check)
 
 	// remove `<version></version>` tag from both XML represntation and struct for deep comparison
 	// because this version changes with each update and will never be the same after a few
@@ -266,53 +267,53 @@ func isTcpPortOpen(host, port string, timeout int) bool {
 }
 
 // moved from vapp_test.go
-func createVappForTest(vcd *TestVCD, vappName string) (*VApp, error) {
+func createVappForTest(ctx context.Context, vcd *TestVCD, vappName string) (*VApp, error) {
 	// Populate OrgVDCNetwork
 	var networks []*types.OrgVDCNetwork
-	net, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	net, err := vcd.vdc.GetOrgVdcNetworkByName(ctx, vcd.config.VCD.Network.Net1, false)
 	if err != nil {
 		return nil, fmt.Errorf("error finding network : %s", err)
 	}
 	networks = append(networks, net.OrgVDCNetwork)
 	// Populate Catalog
-	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	cat, err := vcd.org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	if err != nil || cat == nil {
 		return nil, fmt.Errorf("error finding catalog : %s", err)
 	}
 	// Populate Catalog Item
-	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	catitem, err := cat.GetCatalogItemByName(ctx, vcd.config.VCD.Catalog.CatalogItem, false)
 	if err != nil {
 		return nil, fmt.Errorf("error finding catalog item : %s", err)
 	}
 	// Get VAppTemplate
-	vAppTemplate, err := catitem.GetVAppTemplate()
+	vAppTemplate, err := catitem.GetVAppTemplate(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error finding vapptemplate : %s", err)
 	}
 	// Get StorageProfileReference
-	storageProfileRef, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
+	storageProfileRef, err := vcd.vdc.FindStorageProfileReference(ctx, vcd.config.VCD.StorageProfile.SP1)
 	if err != nil {
 		return nil, fmt.Errorf("error finding storage profile: %s", err)
 	}
 	// Compose VApp
-	task, err := vcd.vdc.ComposeVApp(networks, vAppTemplate, storageProfileRef, vappName, "description", true)
+	task, err := vcd.vdc.ComposeVApp(ctx, networks, vAppTemplate, storageProfileRef, vappName, "description", true)
 	if err != nil {
 		return nil, fmt.Errorf("error composing vapp: %s", err)
 	}
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
 	AddToCleanupList(vappName, "vapp", "", "createTestVapp")
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error composing vapp: %s", err)
 	}
 	// Get VApp
-	vapp, err := vcd.vdc.GetVAppByName(vappName, true)
+	vapp, err := vcd.vdc.GetVAppByName(ctx, vappName, true)
 	if err != nil {
 		return nil, fmt.Errorf("error getting vapp: %s", err)
 	}
 
-	err = vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
+	err = vapp.BlockWhileStatus(ctx, "UNRESOLVED", vapp.client.MaxRetryTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("error waiting for created test vApp to have working state: %s", err)
 	}
@@ -322,23 +323,23 @@ func createVappForTest(vcd *TestVCD, vappName string) (*VApp, error) {
 
 // Checks whether an independent disk is attached to a VM, and detaches it
 // moved from disk_test.go
-func (vcd *TestVCD) detachIndependentDisk(disk Disk) error {
+func (vcd *TestVCD) detachIndependentDisk(ctx context.Context, disk Disk) error {
 
 	// See if the disk is attached to the VM
-	vmRef, err := disk.AttachedVM()
+	vmRef, err := disk.AttachedVM(ctx)
 	if err != nil {
 		return err
 	}
 	// If the disk is attached to the VM, detach disk from the VM
 	if vmRef != nil {
 
-		vm, err := vcd.client.Client.GetVMByHref(vmRef.HREF)
+		vm, err := vcd.client.Client.GetVMByHref(ctx, vmRef.HREF)
 		if err != nil {
 			return err
 		}
 
 		// Detach the disk from VM
-		task, err := vm.DetachDisk(&types.DiskAttachOrDetachParams{
+		task, err := vm.DetachDisk(ctx, &types.DiskAttachOrDetachParams{
 			Disk: &types.Reference{
 				HREF: disk.Disk.HREF,
 			},
@@ -346,7 +347,7 @@ func (vcd *TestVCD) detachIndependentDisk(disk Disk) error {
 		if err != nil {
 			return err
 		}
-		err = task.WaitTaskCompletion()
+		err = task.WaitTaskCompletion(ctx)
 		if err != nil {
 			return err
 		}
@@ -384,8 +385,8 @@ func verifyNetworkConnectionSection(check *C, actual, desired *types.NetworkConn
 // Ensure vApp is suitable for VM test
 // Some VM tests may fail if vApp is not powered on, so VM tests can call this function to ensure the vApp is suitable for VM tests
 // moved from vm_test.go
-func (vcd *TestVCD) ensureVappIsSuitableForVMTest(vapp VApp) error {
-	status, err := vapp.GetStatus()
+func (vcd *TestVCD) ensureVappIsSuitableForVMTest(ctx context.Context, vapp VApp) error {
+	status, err := vapp.GetStatus(ctx)
 
 	if err != nil {
 		return err
@@ -393,11 +394,11 @@ func (vcd *TestVCD) ensureVappIsSuitableForVMTest(vapp VApp) error {
 
 	// If vApp is not powered on (status = 4), power on vApp
 	if status != types.VAppStatuses[4] {
-		task, err := vapp.PowerOn()
+		task, err := vapp.PowerOn(ctx)
 		if err != nil {
 			return err
 		}
-		err = task.WaitTaskCompletion()
+		err = task.WaitTaskCompletion(ctx)
 		if err != nil {
 			return err
 		}
@@ -410,12 +411,12 @@ func (vcd *TestVCD) ensureVappIsSuitableForVMTest(vapp VApp) error {
 // Please call ensureVappAvailableForVMTest first to power on the vApp because this function cannot handle VM in suspension state due to lack of VM APIs (e.g. discard VM suspend API)
 // Some VM tests may fail if VM is not powered on or powered off, so VM tests can call this function to ensure the VM is suitable for VM tests
 // moved from vm_test.go
-func (vcd *TestVCD) ensureVMIsSuitableForVMTest(vm *VM) error {
+func (vcd *TestVCD) ensureVMIsSuitableForVMTest(ctx context.Context, vm *VM) error {
 	// if the VM is not powered on (status = 4) or not powered off, wait for the VM power on
 	// wait for around 1 min
 	valid := false
 	for i := 0; i < 6; i++ {
-		status, err := vm.GetStatus()
+		status, err := vm.GetStatus(ctx)
 		if err != nil {
 			return err
 		}
@@ -424,11 +425,11 @@ func (vcd *TestVCD) ensureVMIsSuitableForVMTest(vm *VM) error {
 		if status == types.VAppStatuses[4] {
 			// Prevent affect Test_ChangeMemorySize
 			// because TestVCD.Test_AttachedVMDisk is run before Test_ChangeMemorySize and Test_ChangeMemorySize will fail the test if the VM is powered on,
-			task, err := vm.PowerOff()
+			task, err := vm.PowerOff(ctx)
 			if err != nil {
 				return err
 			}
-			err = task.WaitTaskCompletion()
+			err = task.WaitTaskCompletion(ctx)
 			if err != nil {
 				return err
 			}
@@ -454,10 +455,10 @@ func (vcd *TestVCD) ensureVMIsSuitableForVMTest(vm *VM) error {
 }
 
 // moved from org_test.go
-func doesOrgExist(check *C, vcd *TestVCD) {
+func doesOrgExist(ctx context.Context, check *C, vcd *TestVCD) {
 	var org *AdminOrg
 	for i := 0; i < 30; i++ {
-		org, _ = vcd.client.GetAdminOrgByName(TestDeleteOrg)
+		org, _ = vcd.client.GetAdminOrgByName(ctx, TestDeleteOrg)
 		if org == nil {
 			break
 		} else {
@@ -469,7 +470,7 @@ func doesOrgExist(check *C, vcd *TestVCD) {
 
 // Helper function that creates an external network to be used in other tests
 // moved from externalnetwork_test.go
-func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix string) (skippingReason string, externalNetwork *types.ExternalNetwork, task Task, err error) {
+func (vcd *TestVCD) testCreateExternalNetwork(ctx context.Context, testName, networkName, dnsSuffix string) (skippingReason string, externalNetwork *types.ExternalNetwork, task Task, err error) {
 
 	if vcd.skipAdminTests {
 		return fmt.Sprintf(TestRequiresSysAdminPrivileges, testName), externalNetwork, Task{}, nil
@@ -491,7 +492,7 @@ func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix s
 		return fmt.Sprintf("%s: Port group type isn't configured. Test can't proceed", testName), externalNetwork, Task{}, nil
 	}
 
-	virtualCenters, err := QueryVirtualCenters(vcd.client, fmt.Sprintf("name==%s", vcd.config.VCD.VimServer))
+	virtualCenters, err := QueryVirtualCenters(ctx, vcd.client, fmt.Sprintf("name==%s", vcd.config.VCD.VimServer))
 	if err != nil {
 		return "", externalNetwork, Task{}, err
 	}
@@ -501,7 +502,7 @@ func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix s
 	vimServerHref := virtualCenters[0].HREF
 
 	// Resolve port group info
-	portGroups, err := QueryPortGroups(vcd.client, fmt.Sprintf("name==%s;portgroupType==%s", url.QueryEscape(vcd.config.VCD.ExternalNetworkPortGroup), vcd.config.VCD.ExternalNetworkPortGroupType))
+	portGroups, err := QueryPortGroups(ctx, vcd.client, fmt.Sprintf("name==%s;portgroupType==%s", url.QueryEscape(vcd.config.VCD.ExternalNetworkPortGroup), vcd.config.VCD.ExternalNetworkPortGroupType))
 	if err != nil {
 		return "", externalNetwork, Task{}, err
 	}
@@ -573,15 +574,15 @@ func (vcd *TestVCD) testCreateExternalNetwork(testName, networkName, dnsSuffix s
 			},
 		},
 	}
-	task, err = CreateExternalNetwork(vcd.client, externalNetwork)
+	task, err = CreateExternalNetwork(ctx, vcd.client, externalNetwork)
 	return skippingReason, externalNetwork, task, err
 }
 
 // deleteLbServerPoolIfExists is used to cleanup before creation of component. It returns error only if there was
 // other error than govcd.ErrorEntityNotFound
 // moved from lbserverpool_test.go
-func deleteLbServerPoolIfExists(edge EdgeGateway, name string) error {
-	err := edge.DeleteLbServerPoolByName(name)
+func deleteLbServerPoolIfExists(ctx context.Context, edge EdgeGateway, name string) error {
+	err := edge.DeleteLbServerPoolByName(ctx, name)
 	if err != nil && !ContainsNotFound(err) {
 		return err
 	}
@@ -596,8 +597,8 @@ func deleteLbServerPoolIfExists(edge EdgeGateway, name string) error {
 // deleteLbServiceMonitorIfExists is used to cleanup before creation of component. It returns error only if there was
 // other error than govcd.ErrorEntityNotFound
 // moved from lbservicemonitor_test.go
-func deleteLbServiceMonitorIfExists(edge EdgeGateway, name string) error {
-	err := edge.DeleteLbServiceMonitorByName(name)
+func deleteLbServiceMonitorIfExists(ctx context.Context, edge EdgeGateway, name string) error {
+	err := edge.DeleteLbServiceMonitorByName(ctx, name)
 	if err != nil && !ContainsNotFound(err) {
 		return err
 	}
@@ -612,8 +613,8 @@ func deleteLbServiceMonitorIfExists(edge EdgeGateway, name string) error {
 // deleteLbAppProfileIfExists is used to cleanup before creation of component. It returns error only if there was
 // other error than govcd.ErrorEntityNotFound
 // moved from lbappprofile_test.go
-func deleteLbAppProfileIfExists(edge EdgeGateway, name string) error {
-	err := edge.DeleteLbAppProfileByName(name)
+func deleteLbAppProfileIfExists(ctx context.Context, edge EdgeGateway, name string) error {
+	err := edge.DeleteLbAppProfileByName(ctx, name)
 	if err != nil && !ContainsNotFound(err) {
 		return err
 	}
@@ -628,8 +629,8 @@ func deleteLbAppProfileIfExists(edge EdgeGateway, name string) error {
 // deleteLbAppRuleIfExists is used to cleanup before creation of component. It returns error only if there was
 // other error than govcd.ErrorEntityNotFound
 // moved from lbapprule_test.go
-func deleteLbAppRuleIfExists(edge EdgeGateway, name string) error {
-	err := edge.DeleteLbAppRuleByName(name)
+func deleteLbAppRuleIfExists(ctx context.Context, edge EdgeGateway, name string) error {
+	err := edge.DeleteLbAppRuleByName(ctx, name)
 	if err != nil && !ContainsNotFound(err) {
 		return err
 	}
@@ -642,27 +643,27 @@ func deleteLbAppRuleIfExists(edge EdgeGateway, name string) error {
 }
 
 // moved from vm_test.go
-func deleteVapp(vcd *TestVCD, name string) error {
-	vapp, err := vcd.vdc.GetVAppByName(name, true)
+func deleteVapp(ctx context.Context, vcd *TestVCD, name string) error {
+	vapp, err := vcd.vdc.GetVAppByName(ctx, name, true)
 	if err != nil {
 		return fmt.Errorf("error getting vApp: %s", err)
 	}
-	task, _ := vapp.Undeploy()
-	_ = task.WaitTaskCompletion()
+	task, _ := vapp.Undeploy(ctx)
+	_ = task.WaitTaskCompletion(ctx)
 
 	// Detach all Org networks during vApp removal because network removal errors if it happens
 	// very quickly (as the next task) after vApp removal
-	task, _ = vapp.RemoveAllNetworks()
-	err = task.WaitTaskCompletion()
+	task, _ = vapp.RemoveAllNetworks(ctx)
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return fmt.Errorf("error removing networks from vApp: %s", err)
 	}
 
-	task, err = vapp.Delete()
+	task, err = vapp.Delete(ctx)
 	if err != nil {
 		return fmt.Errorf("error deleting vApp: %s", err)
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return fmt.Errorf("error waiting for vApp deletion task: %s", err)
 	}
@@ -670,22 +671,22 @@ func deleteVapp(vcd *TestVCD, name string) error {
 }
 
 // makeEmptyVapp creates a given vApp without any VM
-func makeEmptyVapp(vdc *Vdc, name string) (*VApp, error) {
+func makeEmptyVapp(ctx context.Context, vdc *Vdc, name string) (*VApp, error) {
 
-	err := vdc.ComposeRawVApp(name)
+	err := vdc.ComposeRawVApp(ctx, name)
 	if err != nil {
 		return nil, err
 	}
-	vapp, err := vdc.GetVAppByName(name, true)
+	vapp, err := vdc.GetVAppByName(ctx, name, true)
 	if err != nil {
 		return nil, err
 	}
-	initialVappStatus, err := vapp.GetStatus()
+	initialVappStatus, err := vapp.GetStatus(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if initialVappStatus != "RESOLVED" {
-		err = vapp.BlockWhileStatus(initialVappStatus, vapp.client.MaxRetryTimeout)
+		err = vapp.BlockWhileStatus(ctx, initialVappStatus, vapp.client.MaxRetryTimeout)
 		if err != nil {
 			return nil, err
 		}
@@ -694,7 +695,7 @@ func makeEmptyVapp(vdc *Vdc, name string) (*VApp, error) {
 }
 
 // makeEmptyVm creates an empty VM inside a given vApp
-func makeEmptyVm(vapp *VApp, name string) (*VM, error) {
+func makeEmptyVm(ctx context.Context, vapp *VApp, name string) (*VM, error) {
 	newDisk := types.DiskSettings{
 		AdapterType:     "5",
 		SizeMb:          int64(100),
@@ -728,7 +729,7 @@ func makeEmptyVm(vapp *VApp, name string) (*VM, error) {
 		AllEULAsAccepted: true,
 	}
 
-	vm, err := vapp.AddEmptyVm(requestDetails)
+	vm, err := vapp.AddEmptyVm(ctx, requestDetails)
 	if err != nil {
 		return nil, err
 	}

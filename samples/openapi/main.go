@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -50,24 +51,26 @@ func main() {
 		os.Exit(2)
 	}
 
+	ctx := context.Background()
+
 	vcdCli := govcd.NewVCDClient(*vcdURL, true)
-	err = vcdCli.Authenticate(username, password, org)
+	err = vcdCli.Authenticate(ctx, username, password, org)
 	if err != nil {
 
 		fmt.Println(err)
 		os.Exit(3)
 	}
 
-	if vcdCli.Client.APIVCDMaxVersionIs("< 33.0") {
+	if vcdCli.Client.APIVCDMaxVersionIs(ctx, "< 33.0") {
 		fmt.Println("This example requires VCD API to support at least version 33.0 (VCD 10.0) to use '1.0.0/auditTrail' endpoint")
 		os.Exit(4)
 	}
 
 	switch mode {
 	case "1":
-		openAPIGetRawJsonAuditTrail(vcdCli)
+		openAPIGetRawJsonAuditTrail(ctx, vcdCli)
 	case "2":
-		openAPIGetStructAuditTrail(vcdCli)
+		openAPIGetStructAuditTrail(ctx, vcdCli)
 	}
 
 }
@@ -76,7 +79,7 @@ func main() {
 // with OpenAPI in VCD. This examples dumps to screen valid JSON which can then be processed using
 // other tools (for example 'jq' in shell)
 // It also uses FIQL query filter to retrieve auditTrail items only for the last 12 hours
-func openAPIGetRawJsonAuditTrail(vcdClient *govcd.VCDClient) {
+func openAPIGetRawJsonAuditTrail(ctx context.Context, vcdClient *govcd.VCDClient) {
 	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint("1.0.0/auditTrail")
 	if err != nil {
 		panic(err)
@@ -87,7 +90,7 @@ func openAPIGetRawJsonAuditTrail(vcdClient *govcd.VCDClient) {
 	queryParams.Add("filter", "timestamp=gt="+filterTime)
 
 	allResponses := []json.RawMessage{{}}
-	err = vcdClient.Client.OpenApiGetAllItems("33.0", urlRef, queryParams, &allResponses)
+	err = vcdClient.Client.OpenApiGetAllItems(ctx, "33.0", urlRef, queryParams, &allResponses)
 	if err != nil {
 		panic(err)
 	}
@@ -101,7 +104,7 @@ func openAPIGetRawJsonAuditTrail(vcdClient *govcd.VCDClient) {
 // openAPIGetStructAuditTrail is an example function how to use low level function to interact with
 // OpenAPI in VCD and marshal responses into custom defined struct with tags.
 // It also uses FIQL query filter to retrieve auditTrail items only for the last 12 hours
-func openAPIGetStructAuditTrail(vcdClient *govcd.VCDClient) {
+func openAPIGetStructAuditTrail(ctx context.Context, vcdClient *govcd.VCDClient) {
 	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint("1.0.0/auditTrail")
 	if err != nil {
 		panic(err)
@@ -145,7 +148,7 @@ func openAPIGetStructAuditTrail(vcdClient *govcd.VCDClient) {
 	filterTime := time.Now().Add(-12 * time.Hour).Format(types.FiqlQueryTimestampFormat)
 	queryParams.Add("filter", "timestamp=gt="+filterTime)
 
-	err = vcdClient.Client.OpenApiGetAllItems("33.0", urlRef, queryParams, &response)
+	err = vcdClient.Client.OpenApiGetAllItems(ctx, "33.0", urlRef, queryParams, &response)
 	if err != nil {
 		panic(err)
 	}

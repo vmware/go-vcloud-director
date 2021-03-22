@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"math"
 
@@ -24,7 +25,6 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
-
 	if vcd.config.VCD.ProviderVdc.Name == "" {
 		check.Skip("No Provider VDC name given for VDC tests")
 	}
@@ -34,11 +34,13 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 	if vcd.config.VCD.ProviderVdc.NetworkPool == "" {
 		check.Skip("No Network Pool given for VDC tests")
 	}
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	ctx := context.Background()
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
+	results, err := vcd.client.QueryWithNotEncodedParams(ctx, nil, map[string]string{
 		"type":   "providerVdc",
 		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.Name),
 	})
@@ -48,7 +50,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 	}
 	providerVdcHref := results.Results.VMWProviderVdcRecord[0].HREF
 
-	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
+	results, err = vcd.client.QueryWithNotEncodedParams(ctx, nil, map[string]string{
 		"type":   "providerVdcStorageProfile",
 		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.StorageProfile),
 	})
@@ -58,7 +60,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 	}
 	providerVdcStorageProfileHref := results.Results.ProviderVdcStorageProfileRecord[0].HREF
 
-	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
+	results, err = vcd.client.QueryWithNotEncodedParams(ctx, nil, map[string]string{
 		"type":   "networkPool",
 		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.NetworkPool),
 	})
@@ -114,14 +116,14 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 			vdcConfiguration.IncludeMemoryOverhead = &trueValue
 		}
 
-		vdc, _ := adminOrg.GetVDCByName(vdcConfiguration.Name, false)
+		vdc, _ := adminOrg.GetVDCByName(ctx, vdcConfiguration.Name, false)
 		if vdc != nil {
-			err = vdc.DeleteWait(true, true)
+			err = vdc.DeleteWait(ctx, true, true)
 			check.Assert(err, IsNil)
 		}
 
 		// expected to fail due to missing value
-		task, err := adminOrg.CreateOrgVdcAsync(vdcConfiguration)
+		task, err := adminOrg.CreateOrgVdcAsync(ctx, vdcConfiguration)
 		check.Assert(err, Not(IsNil))
 		check.Assert(task, Equals, Task{})
 		// checks function validation
@@ -129,23 +131,23 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 
 		vdcConfiguration.ComputeCapacity[0].Memory.Units = "MB"
 
-		vdc, err = adminOrg.CreateOrgVdc(vdcConfiguration)
+		vdc, err = adminOrg.CreateOrgVdc(ctx, vdcConfiguration)
 		check.Assert(vdc, NotNil)
 		check.Assert(err, IsNil)
 
 		AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, "Test_CreateVdcWithFlex")
 
-		vdc, err = adminOrg.GetVDCByName(vdcConfiguration.Name, true)
+		vdc, err = adminOrg.GetVDCByName(ctx, vdcConfiguration.Name, true)
 		check.Assert(err, IsNil)
 		check.Assert(vdc, NotNil)
 		check.Assert(vdc.Vdc.Name, Equals, vdcConfiguration.Name)
 		check.Assert(vdc.Vdc.IsEnabled, Equals, vdcConfiguration.IsEnabled)
 		check.Assert(vdc.Vdc.AllocationModel, Equals, vdcConfiguration.AllocationModel)
 
-		err = vdc.DeleteWait(true, true)
+		err = vdc.DeleteWait(ctx, true, true)
 		check.Assert(err, IsNil)
 
-		vdc, err = adminOrg.GetVDCByName(vdcConfiguration.Name, true)
+		vdc, err = adminOrg.GetVDCByName(ctx, vdcConfiguration.Name, true)
 		check.Assert(err, NotNil)
 		check.Assert(vdc, IsNil)
 	}
@@ -157,11 +159,12 @@ func (vcd *TestVCD) Test_UpdateVdcFlex(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
+	ctx := context.Background()
 
 	adminOrg, vdcConfiguration, err := setupVdc(vcd, check, "Flex")
 	check.Assert(err, IsNil)
 
-	adminVdc, err := adminOrg.GetAdminVDCByName(vdcConfiguration.Name, true)
+	adminVdc, err := adminOrg.GetAdminVDCByName(ctx, vdcConfiguration.Name, true)
 
 	check.Assert(err, IsNil)
 	check.Assert(adminVdc, NotNil)
@@ -203,7 +206,7 @@ func (vcd *TestVCD) Test_UpdateVdcFlex(check *C) {
 	adminVdc.AdminVdc.IsElastic = &trueRef
 	adminVdc.AdminVdc.IncludeMemoryOverhead = &falseRef
 
-	updatedVdc, err := adminVdc.Update()
+	updatedVdc, err := adminVdc.Update(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(updatedVdc, Not(IsNil))
 	check.Assert(updatedVdc.AdminVdc.Description, Equals, updateDescription)
@@ -226,15 +229,16 @@ func (vcd *TestVCD) Test_VdcUpdateStorageProfile(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
+	ctx := context.Background()
 
 	adminOrg, vdcConfiguration, err := setupVdc(vcd, check, "Flex")
 	check.Assert(err, IsNil)
 
-	adminVdc, err := adminOrg.GetAdminVDCByName(vdcConfiguration.Name, true)
+	adminVdc, err := adminOrg.GetAdminVDCByName(ctx, vdcConfiguration.Name, true)
 	check.Assert(err, IsNil)
 	check.Assert(adminVdc, NotNil)
 
-	foundStorageProfile, err := GetStorageProfileByHref(vcd.client, adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
+	foundStorageProfile, err := GetStorageProfileByHref(ctx, vcd.client, adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
 	check.Assert(err, IsNil)
 	check.Assert(foundStorageProfile, Not(Equals), types.VdcStorageProfile{})
 	check.Assert(foundStorageProfile, NotNil)
@@ -243,7 +247,7 @@ func (vcd *TestVCD) Test_VdcUpdateStorageProfile(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(storageProfileId, NotNil)
 
-	updatedVdc, err := adminVdc.UpdateStorageProfile(storageProfileId, &types.AdminVdcStorageProfile{
+	updatedVdc, err := adminVdc.UpdateStorageProfile(ctx, storageProfileId, &types.AdminVdcStorageProfile{
 		Name:                      foundStorageProfile.ProviderVdcStorageProfile.Name,
 		Default:                   true,
 		Limit:                     9081,
@@ -255,7 +259,7 @@ func (vcd *TestVCD) Test_VdcUpdateStorageProfile(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(updatedVdc, Not(IsNil))
 
-	updatedStorageProfile, err := GetStorageProfileByHref(vcd.client, adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
+	updatedStorageProfile, err := GetStorageProfileByHref(ctx, vcd.client, adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
 	check.Assert(err, IsNil)
 	check.Assert(updatedStorageProfile, Not(Equals), types.VdcStorageProfile{})
 	check.Assert(updatedStorageProfile, NotNil)
