@@ -270,7 +270,7 @@ func uploadFiles(ctx context.Context, client *Client, vappTemplate *types.VAppTe
 					callBack:                 progressCallBack,
 					uploadError:              uploadError,
 				}
-				tempVar, err := uploadMultiPartFile(client, chunkFilePaths, details)
+				tempVar, err := uploadMultiPartFile(ctx, client, chunkFilePaths, details)
 				if err != nil {
 					util.Logger.Printf("[Error] Error uploading files: %#v", err)
 					*uploadError = err

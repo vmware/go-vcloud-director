@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -29,7 +30,7 @@ func (uploadTask *UploadTask) GetUploadProgress() string {
 	return fmt.Sprintf("%.2f", uploadTask.uploadProgress.LockedGet())
 }
 
-func (uploadTask *UploadTask) ShowUploadProgress() error {
+func (uploadTask *UploadTask) ShowUploadProgress(ctx context.Context) error {
 	fmt.Printf("Waiting...")
 
 	for {
@@ -43,7 +44,7 @@ func (uploadTask *UploadTask) ShowUploadProgress() error {
 			break
 		}
 		// Upload may be cancelled by user on GUI manually, detect task status
-		if err := uploadTask.Refresh(); err != nil {
+		if err := uploadTask.Refresh(ctx); err != nil {
 			return err
 		}
 		if uploadTask.Task.Task.Status != "queued" && uploadTask.Task.Task.Status != "preRunning" && uploadTask.Task.Task.Status != "running" {

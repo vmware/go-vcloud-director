@@ -269,7 +269,7 @@ func createEdgeGateway(ctx context.Context, vcdClient *VCDClient, egwc EdgeGatew
 	if err != nil {
 		return EdgeGateway{}, err
 	}
-	egw, err := vdc.GetEdgeGatewayByName(egwc.Name, false)
+	egw, err := vdc.GetEdgeGatewayByName(ctx, egwc.Name, false)
 	if err != nil {
 		return EdgeGateway{}, err
 	}

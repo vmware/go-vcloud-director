@@ -90,7 +90,7 @@ func (orgVdcNet *OrgVDCNetwork) Delete(ctx context.Context) (Task, error) {
 
 // RemoveOrgVdcNetworkIfExists looks for an Org Vdc network and, if found, will delete it.
 func RemoveOrgVdcNetworkIfExists(ctx context.Context, vdc Vdc, networkName string) error {
-	network, err := vdc.GetOrgVdcNetworkByName(networkName, true)
+	network, err := vdc.GetOrgVdcNetworkByName(ctx, networkName, true)
 
 	if IsNotFound(err) {
 		// Network not found. No action needed
@@ -273,7 +273,7 @@ func (orgVdcNet *OrgVDCNetwork) getEdgeGateway(ctx context.Context) (*EdgeGatewa
 	// Since this function can be called from Update(), we must take into account the
 	// possibility of a name change. If this is happening, we need to retrieve the original
 	// name, which is still stored in the VDC.
-	oldNetwork, err := vdc.GetOrgVdcNetworkById(orgVdcNet.OrgVDCNetwork.ID, false)
+	oldNetwork, err := vdc.GetOrgVdcNetworkById(ctx, orgVdcNet.OrgVDCNetwork.ID, false)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +284,7 @@ func (orgVdcNet *OrgVDCNetwork) getEdgeGateway(ctx context.Context) (*EdgeGatewa
 		return nil, err
 	}
 
-	return vdc.GetEdgeGatewayByName(edgeGatewayName, false)
+	return vdc.GetEdgeGatewayByName(ctx, edgeGatewayName, false)
 }
 
 // UpdateAsync will change the contents of a network using the information in the

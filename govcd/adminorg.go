@@ -39,13 +39,13 @@ func NewAdminOrg(cli *Client) *AdminOrg {
 // the given organization. Returns an AdminCatalog that contains a creation
 // task.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-CreateCatalog.html
-func (adminOrg *AdminOrg) CreateCatalog(name, description string) (AdminCatalog, error) {
-	return CreateCatalog(adminOrg.client, adminOrg.AdminOrg.Link, name, description)
+func (adminOrg *AdminOrg) CreateCatalog(ctx context.Context, name, description string) (AdminCatalog, error) {
+	return CreateCatalog(ctx, adminOrg.client, adminOrg.AdminOrg.Link, name, description)
 }
 
 // CreateCatalogWithStorageProfile is like CreateCatalog, but allows to specify storage profile
-func (adminOrg *AdminOrg) CreateCatalogWithStorageProfile(name, description string, storageProfiles *types.CatalogStorageProfiles) (*AdminCatalog, error) {
-	return CreateCatalogWithStorageProfile(adminOrg.client, adminOrg.AdminOrg.Link, name, description, storageProfiles)
+func (adminOrg *AdminOrg) CreateCatalogWithStorageProfile(ctx context.Context, name, description string, storageProfiles *types.CatalogStorageProfiles) (*AdminCatalog, error) {
+	return CreateCatalogWithStorageProfile(ctx, adminOrg.client, adminOrg.AdminOrg.Link, name, description, storageProfiles)
 }
 
 // GetAllVDCs returns all depending VDCs for a particular Org
@@ -216,7 +216,7 @@ func (adminOrg *AdminOrg) undeployAllVApps(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("error retrieving vapp with url: %s and with error %s", adminVdcHREF.Path, err)
 		}
-		err = vdc.undeployAllVdcVApps()
+		err = vdc.undeployAllVdcVApps(ctx)
 		if err != nil {
 			return fmt.Errorf("error deleting vapp: %s", err)
 		}
@@ -235,7 +235,7 @@ func (adminOrg *AdminOrg) removeAllVApps(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("error retrieving vapp with url: %s and with error %s", adminVdcHREF.Path, err)
 		}
-		err = vdc.removeAllVdcVApps()
+		err = vdc.removeAllVdcVApps(ctx)
 		if err != nil {
 			return fmt.Errorf("error deleting vapp: %s", err)
 		}
@@ -352,7 +352,7 @@ func (adminOrg *AdminOrg) removeAllOrgNetworks(ctx context.Context) error {
 // removeCatalogs force removal of all organization catalogs
 func (adminOrg *AdminOrg) removeCatalogs(ctx context.Context) error {
 	for _, catalog := range adminOrg.AdminOrg.Catalogs.Catalog {
-		isCatalogFromSameOrg, err := isCatalogFromSameOrg(adminOrg, catalog.Name)
+		isCatalogFromSameOrg, err := isCatalogFromSameOrg(ctx, adminOrg, catalog.Name)
 		if err != nil {
 			return fmt.Errorf("error deleting catalog: %s", err)
 		}
@@ -376,8 +376,8 @@ func (adminOrg *AdminOrg) removeCatalogs(ctx context.Context) error {
 
 // isCatalogFromSameOrg checks if catalog is in same Org. Shared catalogs from other Org are showed as normal one
 // in some API responses.
-func isCatalogFromSameOrg(adminOrg *AdminOrg, catalogName string) (bool, error) {
-	foundCatalogs, err := adminOrg.FindAdminCatalogRecords(catalogName)
+func isCatalogFromSameOrg(ctx context.Context, adminOrg *AdminOrg, catalogName string) (bool, error) {
+	foundCatalogs, err := adminOrg.FindAdminCatalogRecords(ctx, catalogName)
 	if err != nil {
 		return false, err
 	}
@@ -389,9 +389,9 @@ func isCatalogFromSameOrg(adminOrg *AdminOrg, catalogName string) (bool, error) 
 }
 
 // FindAdminCatalogRecords uses catalog name to return AdminCatalogRecord information.
-func (adminOrg *AdminOrg) FindAdminCatalogRecords(name string) ([]*types.CatalogRecord, error) {
+func (adminOrg *AdminOrg) FindAdminCatalogRecords(ctx context.Context, name string) ([]*types.CatalogRecord, error) {
 	util.Logger.Printf("[DEBUG] FindAdminCatalogRecords with name: %s and org name: %s", name, adminOrg.AdminOrg.Name)
-	results, err := adminOrg.client.QueryWithNotEncodedParams(nil, map[string]string{
+	results, err := adminOrg.client.QueryWithNotEncodedParams(ctx, nil, map[string]string{
 		"type":          "adminCatalog",
 		"filter":        fmt.Sprintf("name==%s;orgName==%s", url.QueryEscape(name), url.QueryEscape(adminOrg.AdminOrg.Name)),
 		"filterEncoded": "true",
@@ -742,13 +742,13 @@ func (adminOrg *AdminOrg) GetVdcByName(ctx context.Context, vdcname string) (Vdc
 }
 
 // QueryCatalogList returns a list of catalogs for this organization
-func (adminOrg *AdminOrg) QueryCatalogList() ([]*types.CatalogRecord, error) {
+func (adminOrg *AdminOrg) QueryCatalogList(ctx context.Context) ([]*types.CatalogRecord, error) {
 	util.Logger.Printf("[DEBUG] QueryCatalogList with org name %s", adminOrg.AdminOrg.Name)
 	queryType := types.QtCatalog
 	if adminOrg.client.IsSysAdmin {
 		queryType = types.QtAdminCatalog
 	}
-	results, err := adminOrg.client.cumulativeQuery(queryType, nil, map[string]string{
+	results, err := adminOrg.client.cumulativeQuery(ctx, queryType, nil, map[string]string{
 		"type":          queryType,
 		"filter":        fmt.Sprintf("orgName==%s", url.QueryEscape(adminOrg.AdminOrg.Name)),
 		"filterEncoded": "true",

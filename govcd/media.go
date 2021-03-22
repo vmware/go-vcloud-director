@@ -324,7 +324,7 @@ func queryMediaWithFilter(ctx context.Context, vdc *Vdc, filter string) ([]*type
 // Looks for media and, if found, will delete it.
 // Deprecated: Use catalog.RemoveMediaIfExist
 func RemoveMediaImageIfExists(ctx context.Context, vdc Vdc, mediaName string) error {
-	mediaItem, err := vdc.FindMediaImage(mediaName)
+	mediaItem, err := vdc.FindMediaImage(ctx, mediaName)
 	if err == nil && mediaItem != (MediaItem{}) {
 		task, err := mediaItem.Delete(ctx)
 		if err != nil {
@@ -403,7 +403,7 @@ func FindMediaAsCatalogItem(ctx context.Context, org *Org, catalogName, mediaNam
 
 // Refresh refreshes the media item information by href
 // Deprecated: Use MediaRecord.Refresh
-func (mediaItem *MediaItem) Refresh() error {
+func (mediaItem *MediaItem) Refresh(ctx context.Context) error {
 
 	if mediaItem.MediaItem == nil {
 		return fmt.Errorf("cannot refresh, Object is empty")
@@ -413,7 +413,7 @@ func (mediaItem *MediaItem) Refresh() error {
 		return fmt.Errorf("cannot refresh, Name is empty")
 	}
 
-	latestMediaItem, err := mediaItem.vdc.FindMediaImage(mediaItem.MediaItem.Name)
+	latestMediaItem, err := mediaItem.vdc.FindMediaImage(ctx, mediaItem.MediaItem.Name)
 	*mediaItem = latestMediaItem
 
 	return err

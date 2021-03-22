@@ -61,8 +61,8 @@ var retrievedMetadataTypes = map[string]string{
 }
 
 // HelperMakeFiltersFromEdgeGateways looks at the existing edge gateways and creates a set of criteria to retrieve each of them
-func HelperMakeFiltersFromEdgeGateways(vdc *Vdc) ([]FilterMatch, error) {
-	egwResult, err := vdc.GetEdgeGatewayRecordsType(false)
+func HelperMakeFiltersFromEdgeGateways(ctx context.Context, vdc *Vdc) ([]FilterMatch, error) {
+	egwResult, err := vdc.GetEdgeGatewayRecordsType(ctx, false)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func makeDateFilter(items []DateItem) ([]FilterMatch, error) {
 }
 
 func HelperMakeFiltersFromCatalogs(ctx context.Context, org *AdminOrg) ([]FilterMatch, error) {
-	catalogs, err := org.QueryCatalogList()
+	catalogs, err := org.QueryCatalogList(ctx)
 	if err != nil {
 		return []FilterMatch{}, err
 	}

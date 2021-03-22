@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
@@ -14,26 +15,26 @@ import (
 // UpdateNetworkFirewallRules updates vApp networks firewall rules. It will overwrite existing ones as there is
 // no 100% way to identify them separately.
 // Returns pointer to types.VAppNetwork or error
-func (vapp *VApp) UpdateNetworkFirewallRules(networkId string, firewallRules []*types.FirewallRule, enabled bool, defaultAction string, logDefaultAction bool) (*types.VAppNetwork, error) {
-	task, err := vapp.UpdateNetworkFirewallRulesAsync(networkId, firewallRules, enabled, defaultAction, logDefaultAction)
+func (vapp *VApp) UpdateNetworkFirewallRules(ctx context.Context, networkId string, firewallRules []*types.FirewallRule, enabled bool, defaultAction string, logDefaultAction bool) (*types.VAppNetwork, error) {
+	task, err := vapp.UpdateNetworkFirewallRulesAsync(ctx, networkId, firewallRules, enabled, defaultAction, logDefaultAction)
 	if err != nil {
 		return nil, err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
 	}
 
-	return vapp.GetVappNetworkById(networkId, false)
+	return vapp.GetVappNetworkById(ctx, networkId, false)
 }
 
 // UpdateNetworkFirewallRulesAsync asynchronously updates vApp networks firewall rules. It will overwrite existing ones
 // as there is no 100% way to identify them separately.
 // Returns task or error
-func (vapp *VApp) UpdateNetworkFirewallRulesAsync(networkId string, firewallRules []*types.FirewallRule, enabled bool, defaultAction string, logDefaultAction bool) (Task, error) {
+func (vapp *VApp) UpdateNetworkFirewallRulesAsync(ctx context.Context, networkId string, firewallRules []*types.FirewallRule, enabled bool, defaultAction string, logDefaultAction bool) (Task, error) {
 	util.Logger.Printf("[TRACE] UpdateNetworkFirewallRulesAsync with values: id: %s and firewallServiceConfiguration: %#v", networkId, firewallRules)
 	uuid := extractUuid(networkId)
-	networkToUpdate, err := vapp.GetVappNetworkById(uuid, true)
+	networkToUpdate, err := vapp.GetVappNetworkById(ctx, uuid, true)
 	if err != nil {
 		return Task{}, err
 	}
@@ -58,17 +59,17 @@ func (vapp *VApp) UpdateNetworkFirewallRulesAsync(networkId string, firewallRule
 	apiEndpoint := vapp.client.VCDHREF
 	apiEndpoint.Path += "/network/" + uuid
 
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+	return vapp.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPut,
 		types.MimeVappNetwork, "error updating vApp Network firewall rules: %s", networkToUpdate)
 }
 
 // GetVappNetworkById returns a VApp network reference if the vApp network ID matches an existing one.
 // If no valid VApp network is found, it returns a nil VApp network reference and an error
-func (vapp *VApp) GetVappNetworkById(id string, refresh bool) (*types.VAppNetwork, error) {
+func (vapp *VApp) GetVappNetworkById(ctx context.Context, id string, refresh bool) (*types.VAppNetwork, error) {
 	util.Logger.Printf("[TRACE] [GetVappNetworkById] getting vApp Network: %s and refresh %t", id, refresh)
 
 	if refresh {
-		err := vapp.Refresh()
+		err := vapp.Refresh(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("error refreshing vApp: %s", err)
 		}
@@ -92,7 +93,7 @@ func (vapp *VApp) GetVappNetworkById(id string, refresh bool) (*types.VAppNetwor
 			apiEndpoint := vapp.client.VCDHREF
 			apiEndpoint.Path += "/network/" + extractUuid(id)
 
-			_, err := vapp.client.ExecuteRequest(apiEndpoint.String(), http.MethodGet,
+			_, err := vapp.client.ExecuteRequest(ctx, apiEndpoint.String(), http.MethodGet,
 				types.MimeVappNetwork, "error getting vApp network: %s", nil, vappNetwork)
 			if err != nil {
 				return nil, err
@@ -106,10 +107,10 @@ func (vapp *VApp) GetVappNetworkById(id string, refresh bool) (*types.VAppNetwor
 
 // GetVappNetworkByName returns a VAppNetwork reference if the vApp network name matches an existing one.
 // If no valid vApp network is found, it returns a nil VAppNetwork reference and an error
-func (vapp *VApp) GetVappNetworkByName(vappNetworkName string, refresh bool) (*types.VAppNetwork, error) {
+func (vapp *VApp) GetVappNetworkByName(ctx context.Context, vappNetworkName string, refresh bool) (*types.VAppNetwork, error) {
 	util.Logger.Printf("[TRACE] [GetVappNetworkByName] getting vApp Network: %s and refresh %t", vappNetworkName, refresh)
 	if refresh {
-		err := vapp.Refresh()
+		err := vapp.Refresh(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("error refreshing vApp: %s", err)
 		}
@@ -125,7 +126,7 @@ func (vapp *VApp) GetVappNetworkByName(vappNetworkName string, refresh bool) (*t
 
 		util.Logger.Printf("[TRACE] Looking at: %s", vappNetwork.NetworkName)
 		if vappNetwork.NetworkName == vappNetworkName {
-			return vapp.GetVappNetworkById(extractUuid(vappNetwork.Link.HREF), refresh)
+			return vapp.GetVappNetworkById(ctx, extractUuid(vappNetwork.Link.HREF), refresh)
 		}
 
 	}
@@ -135,9 +136,11 @@ func (vapp *VApp) GetVappNetworkByName(vappNetworkName string, refresh bool) (*t
 
 // GetVappNetworkByNameOrId returns a types.VAppNetwork reference if either the vApp network name or ID matches an existing one.
 // If no valid vApp network is found, it returns a nil types.VAppNetwork reference and an error
-func (vapp *VApp) GetVappNetworkByNameOrId(identifier string, refresh bool) (*types.VAppNetwork, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return vapp.GetVappNetworkByName(name, refresh) }
-	getById := func(id string, refresh bool) (interface{}, error) { return vapp.GetVappNetworkById(id, refresh) }
+func (vapp *VApp) GetVappNetworkByNameOrId(ctx context.Context, identifier string, refresh bool) (*types.VAppNetwork, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) {
+		return vapp.GetVappNetworkByName(ctx, name, refresh)
+	}
+	getById := func(id string, refresh bool) (interface{}, error) { return vapp.GetVappNetworkById(ctx, id, refresh) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, false)
 	if entity == nil {
 		return nil, err
@@ -147,26 +150,26 @@ func (vapp *VApp) GetVappNetworkByNameOrId(identifier string, refresh bool) (*ty
 
 // UpdateNetworkNatRules updates vApp networks NAT rules.
 // Returns pointer to types.VAppNetwork or error
-func (vapp *VApp) UpdateNetworkNatRules(networkId string, natRules []*types.NatRule, enabled bool, natType, policy string) (*types.VAppNetwork, error) {
-	task, err := vapp.UpdateNetworkNatRulesAsync(networkId, natRules, enabled, natType, policy)
+func (vapp *VApp) UpdateNetworkNatRules(ctx context.Context, networkId string, natRules []*types.NatRule, enabled bool, natType, policy string) (*types.VAppNetwork, error) {
+	task, err := vapp.UpdateNetworkNatRulesAsync(ctx, networkId, natRules, enabled, natType, policy)
 	if err != nil {
 		return nil, err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
 	}
 
-	return vapp.GetVappNetworkById(networkId, false)
+	return vapp.GetVappNetworkById(ctx, networkId, false)
 }
 
 // UpdateNetworkNatRulesAsync asynchronously updates vApp NAT rules.
 // Returns task or error
-func (vapp *VApp) UpdateNetworkNatRulesAsync(networkId string, natRules []*types.NatRule, enabled bool, natType, policy string) (Task, error) {
+func (vapp *VApp) UpdateNetworkNatRulesAsync(ctx context.Context, networkId string, natRules []*types.NatRule, enabled bool, natType, policy string) (Task, error) {
 	util.Logger.Printf("[TRACE] UpdateNetworkNatRulesAsync with values: id: %s and natRules: %#v", networkId, natRules)
 
 	uuid := extractUuid(networkId)
-	networkToUpdate, err := vapp.GetVappNetworkById(uuid, true)
+	networkToUpdate, err := vapp.GetVappNetworkById(ctx, uuid, true)
 	if err != nil {
 		return Task{}, err
 	}
@@ -193,18 +196,18 @@ func (vapp *VApp) UpdateNetworkNatRulesAsync(networkId string, natRules []*types
 	apiEndpoint := vapp.client.VCDHREF
 	apiEndpoint.Path += "/network/" + uuid
 
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+	return vapp.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPut,
 		types.MimeVappNetwork, "error updating vApp Network NAT rules: %s", networkToUpdate)
 }
 
 // RemoveAllNetworkNatRules removes all NAT rules from a vApp network
 // Returns error
-func (vapp *VApp) RemoveAllNetworkNatRules(networkId string) error {
-	task, err := vapp.UpdateNetworkNatRulesAsync(networkId, []*types.NatRule{}, false, "ipTranslation", "allowTraffic")
+func (vapp *VApp) RemoveAllNetworkNatRules(ctx context.Context, networkId string) error {
+	task, err := vapp.UpdateNetworkNatRulesAsync(ctx, networkId, []*types.NatRule{}, false, "ipTranslation", "allowTraffic")
 	if err != nil {
 		return err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
 	}
@@ -213,17 +216,17 @@ func (vapp *VApp) RemoveAllNetworkNatRules(networkId string) error {
 
 // RemoveAllNetworkFirewallRules removes all network firewall rules from a vApp network.
 // Returns error
-func (vapp *VApp) RemoveAllNetworkFirewallRules(networkId string) error {
-	networkToUpdate, err := vapp.GetVappNetworkById(networkId, true)
+func (vapp *VApp) RemoveAllNetworkFirewallRules(ctx context.Context, networkId string) error {
+	networkToUpdate, err := vapp.GetVappNetworkById(ctx, networkId, true)
 	if err != nil {
 		return err
 	}
-	task, err := vapp.UpdateNetworkFirewallRulesAsync(networkId, []*types.FirewallRule{}, false,
+	task, err := vapp.UpdateNetworkFirewallRulesAsync(ctx, networkId, []*types.FirewallRule{}, false,
 		networkToUpdate.Configuration.Features.FirewallService.DefaultAction, networkToUpdate.Configuration.Features.FirewallService.LogDefaultAction)
 	if err != nil {
 		return err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
 	}
@@ -232,26 +235,26 @@ func (vapp *VApp) RemoveAllNetworkFirewallRules(networkId string) error {
 
 // UpdateNetworkStaticRouting updates vApp network static routes.
 // Returns pointer to types.VAppNetwork or error
-func (vapp *VApp) UpdateNetworkStaticRouting(networkId string, staticRoutes []*types.StaticRoute, enabled bool) (*types.VAppNetwork, error) {
-	task, err := vapp.UpdateNetworkStaticRoutingAsync(networkId, staticRoutes, enabled)
+func (vapp *VApp) UpdateNetworkStaticRouting(ctx context.Context, networkId string, staticRoutes []*types.StaticRoute, enabled bool) (*types.VAppNetwork, error) {
+	task, err := vapp.UpdateNetworkStaticRoutingAsync(ctx, networkId, staticRoutes, enabled)
 	if err != nil {
 		return nil, err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
 	}
 
-	return vapp.GetVappNetworkById(networkId, false)
+	return vapp.GetVappNetworkById(ctx, networkId, false)
 }
 
 // UpdateNetworkStaticRoutingAsync asynchronously updates vApp network static routes.
 // Returns task or error
-func (vapp *VApp) UpdateNetworkStaticRoutingAsync(networkId string, staticRoutes []*types.StaticRoute, enabled bool) (Task, error) {
+func (vapp *VApp) UpdateNetworkStaticRoutingAsync(ctx context.Context, networkId string, staticRoutes []*types.StaticRoute, enabled bool) (Task, error) {
 	util.Logger.Printf("[TRACE] UpdateNetworkStaticRoutingAsync with values: id: %s and staticRoutes: %#v, enable: %t", networkId, staticRoutes, enabled)
 
 	uuid := extractUuid(networkId)
-	networkToUpdate, err := vapp.GetVappNetworkById(uuid, true)
+	networkToUpdate, err := vapp.GetVappNetworkById(ctx, uuid, true)
 	if err != nil {
 		return Task{}, err
 	}
@@ -272,7 +275,7 @@ func (vapp *VApp) UpdateNetworkStaticRoutingAsync(networkId string, staticRoutes
 	apiEndpoint := vapp.client.VCDHREF
 	apiEndpoint.Path += "/network/" + uuid
 
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+	return vapp.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPut,
 		types.MimeVappNetwork, "error updating vApp Network static routes: %s", networkToUpdate)
 }
 
@@ -289,12 +292,12 @@ func IsVappNetwork(networkConfig *types.NetworkConfiguration) bool {
 
 // RemoveAllNetworkStaticRoutes removes all static routes from a vApp network
 // Returns error
-func (vapp *VApp) RemoveAllNetworkStaticRoutes(networkId string) error {
-	task, err := vapp.UpdateNetworkStaticRoutingAsync(networkId, []*types.StaticRoute{}, false)
+func (vapp *VApp) RemoveAllNetworkStaticRoutes(ctx context.Context, networkId string) error {
+	task, err := vapp.UpdateNetworkStaticRoutingAsync(ctx, networkId, []*types.StaticRoute{}, false)
 	if err != nil {
 		return err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
 	}

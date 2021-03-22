@@ -49,7 +49,7 @@ func (vdc *Vdc) DeleteMetadata(ctx context.Context, key string) (Vdc, error) {
 		return Vdc{}, err
 	}
 
-	err = vdc.Refresh()
+	err = vdc.Refresh(ctx)
 	if err != nil {
 		return Vdc{}, err
 	}
@@ -69,7 +69,7 @@ func (vdc *Vdc) AddMetadata(ctx context.Context, key string, value string) (Vdc,
 		return Vdc{}, err
 	}
 
-	err = vdc.Refresh()
+	err = vdc.Refresh(ctx)
 	if err != nil {
 		return Vdc{}, err
 	}
@@ -168,7 +168,7 @@ func (vAppTemplate *VAppTemplate) AddMetadata(ctx context.Context, key string, v
 		return nil, fmt.Errorf("error completing add metadata for vApp template task: %s", err)
 	}
 
-	err = vAppTemplate.Refresh()
+	err = vAppTemplate.Refresh(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error refreshing vApp template: %s", err)
 	}
@@ -221,7 +221,7 @@ func (mediaItem *MediaItem) AddMetadata(ctx context.Context, key string, value s
 		return nil, fmt.Errorf("error completing add metadata for media item task: %s", err)
 	}
 
-	err = mediaItem.Refresh()
+	err = mediaItem.Refresh(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error refreshing media item: %s", err)
 	}

@@ -146,7 +146,7 @@ func (vapp VApp) GetAccessControl(ctx context.Context, useTenantContext bool) (*
 	}
 	// if useTenantContext is false, we use an empty header (= default behavior)
 	// if it is true, we use a header populated with tenant context values
-	accessControlHeader, err := vapp.getAccessControlHeader(useTenantContext)
+	accessControlHeader, err := vapp.getAccessControlHeader(ctx, useTenantContext)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +162,7 @@ func (vapp VApp) SetAccessControl(ctx context.Context, accessControl *types.Cont
 
 	// if useTenantContext is false, we use an empty header (= default behavior)
 	// if it is true, we use a header populated with tenant context values
-	accessControlHeader, err := vapp.getAccessControlHeader(useTenantContext)
+	accessControlHeader, err := vapp.getAccessControlHeader(ctx, useTenantContext)
 	if err != nil {
 		return err
 	}
@@ -197,7 +197,7 @@ func (adminCatalog AdminCatalog) GetAccessControl(ctx context.Context, useTenant
 
 	// if useTenantContext is false, we use an empty header (= default behavior)
 	// if it is true, we use a header populated with tenant context values
-	accessControlHeader, err := adminCatalog.getAccessControlHeader(useTenantContext)
+	accessControlHeader, err := adminCatalog.getAccessControlHeader(ctx, useTenantContext)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +214,7 @@ func (adminCatalog AdminCatalog) SetAccessControl(ctx context.Context, accessCon
 
 	// if useTenantContext is false, we use an empty header (= default behavior)
 	// if it is true, we use a header populated with tenant context values
-	accessControlHeader, err := adminCatalog.getAccessControlHeader(useTenantContext)
+	accessControlHeader, err := adminCatalog.getAccessControlHeader(ctx, useTenantContext)
 	if err != nil {
 		return err
 	}
@@ -242,7 +242,7 @@ func (adminCatalog AdminCatalog) IsShared(ctx context.Context, useTenantContext 
 // from a VDC.
 // The input variable vappIdentifier can be either the vApp name or its ID
 func (vdc *Vdc) GetVappAccessControl(ctx context.Context, vappIdentifier string, useTenantContext bool) (*types.ControlAccessParams, error) {
-	vapp, err := vdc.GetVAppByNameOrId(vappIdentifier, true)
+	vapp, err := vdc.GetVAppByNameOrId(ctx, vappIdentifier, true)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving vApp %s: %s", vappIdentifier, err)
 	}
@@ -264,7 +264,7 @@ func (org *AdminOrg) GetCatalogAccessControl(ctx context.Context, catalogIdentif
 // from an organization.
 // The input variable catalogIdentifier can be either the catalog name or its ID
 func (org *Org) GetCatalogAccessControl(ctx context.Context, catalogIdentifier string, useTenantContext bool) (*types.ControlAccessParams, error) {
-	catalog, err := org.GetCatalogByNameOrId(catalogIdentifier, true)
+	catalog, err := org.GetCatalogByNameOrId(ctx, catalogIdentifier, true)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving catalog %s: %s", catalogIdentifier, err)
 	}
@@ -324,11 +324,11 @@ func (catalog Catalog) IsShared(ctx context.Context, useTenantContext bool) (boo
 // If useTenantContext is false, it returns an empty map.
 // Otherwise, it finds the Org ID and name (going up in the hierarchy through the VDC)
 // and creates the header data
-func (vapp *VApp) getAccessControlHeader(useTenantContext bool) (map[string]string, error) {
+func (vapp *VApp) getAccessControlHeader(ctx context.Context, useTenantContext bool) (map[string]string, error) {
 	if !useTenantContext {
 		return map[string]string{}, nil
 	}
-	orgInfo, err := vapp.getOrgInfo()
+	orgInfo, err := vapp.getOrgInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -352,11 +352,11 @@ func (catalog *Catalog) getAccessControlHeader(ctx context.Context, useTenantCon
 // getAccessControlHeader builds the data needed to set the header when tenant context is required.
 // If useTenantContext is false, it returns an empty map.
 // Otherwise, it finds the Org ID and name and creates the header data
-func (adminCatalog *AdminCatalog) getAccessControlHeader(useTenantContext bool) (map[string]string, error) {
+func (adminCatalog *AdminCatalog) getAccessControlHeader(ctx context.Context, useTenantContext bool) (map[string]string, error) {
 	if !useTenantContext {
 		return map[string]string{}, nil
 	}
-	orgInfo, err := adminCatalog.getOrgInfo()
+	orgInfo, err := adminCatalog.getOrgInfo(ctx)
 
 	if err != nil {
 		return nil, err

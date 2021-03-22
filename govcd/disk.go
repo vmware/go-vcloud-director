@@ -401,7 +401,7 @@ func (vdc *Vdc) GetDisksByName(ctx context.Context, diskName string, refresh boo
 	util.Logger.Printf("[TRACE] Get Disk By Name: %s\n", diskName)
 	var diskList []Disk
 	if refresh {
-		err := vdc.Refresh()
+		err := vdc.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -429,7 +429,7 @@ func (vdc *Vdc) GetDisksByName(ctx context.Context, diskName string, refresh boo
 func (vdc *Vdc) GetDiskById(ctx context.Context, diskId string, refresh bool) (*Disk, error) {
 	util.Logger.Printf("[TRACE] Get Disk By Id: %s\n", diskId)
 	if refresh {
-		err := vdc.Refresh()
+		err := vdc.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
