@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -30,10 +31,10 @@ func NewAdminCatalog(client *Client) *AdminCatalog {
 
 // Deletes the Catalog, returning an error if the vCD call fails.
 // Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Catalog.html
-func (adminCatalog *AdminCatalog) Delete(force, recursive bool) error {
+func (adminCatalog *AdminCatalog) Delete(ctx context.Context, force, recursive bool) error {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
-	return catalog.Delete(force, recursive)
+	return catalog.Delete(ctx, force, recursive)
 }
 
 // Updates the Catalog definition from current Catalog struct contents.
@@ -41,7 +42,7 @@ func (adminCatalog *AdminCatalog) Delete(force, recursive bool) error {
 // Returns an error if the call to vCD fails. Update automatically performs
 // a refresh with the admin catalog it gets back from the rest api
 // Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/PUT-Catalog.html
-func (adminCatalog *AdminCatalog) Update() error {
+func (adminCatalog *AdminCatalog) Update(ctx context.Context) error {
 	reqCatalog := &types.Catalog{
 		Name:        adminCatalog.AdminCatalog.Catalog.Name,
 		Description: adminCatalog.AdminCatalog.Description,
@@ -53,7 +54,7 @@ func (adminCatalog *AdminCatalog) Update() error {
 		IsPublished:            adminCatalog.AdminCatalog.IsPublished,
 	}
 	catalog := &types.AdminCatalog{}
-	_, err := adminCatalog.client.ExecuteRequest(adminCatalog.AdminCatalog.HREF, http.MethodPut,
+	_, err := adminCatalog.client.ExecuteRequest(ctx, adminCatalog.AdminCatalog.HREF, http.MethodPut,
 		"application/vnd.vmware.admin.catalog+xml", "error updating catalog: %s", vcomp, catalog)
 	adminCatalog.AdminCatalog = catalog
 	return err
@@ -63,20 +64,20 @@ func (adminCatalog *AdminCatalog) Update() error {
 // Returns errors if any occur during upload from vCD or upload process. On upload fail client may need to
 // remove vCD catalog item which waits for files to be uploaded. Files from ova are extracted to system
 // temp folder "govcd+random number" and left for inspection on error.
-func (adminCatalog *AdminCatalog) UploadOvf(ovaFileName, itemName, description string, uploadPieceSize int64) (UploadTask, error) {
+func (adminCatalog *AdminCatalog) UploadOvf(ctx context.Context, ovaFileName, itemName, description string, uploadPieceSize int64) (UploadTask, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
-	return catalog.UploadOvf(ovaFileName, itemName, description, uploadPieceSize)
+	return catalog.UploadOvf(ctx, ovaFileName, itemName, description, uploadPieceSize)
 }
 
-func (adminCatalog *AdminCatalog) Refresh() error {
+func (adminCatalog *AdminCatalog) Refresh(ctx context.Context) error {
 	if *adminCatalog == (AdminCatalog{}) || adminCatalog.AdminCatalog.HREF == "" {
 		return fmt.Errorf("cannot refresh, Object is empty or HREF is empty")
 	}
 
 	refreshedCatalog := &types.AdminCatalog{}
 
-	_, err := adminCatalog.client.ExecuteRequest(adminCatalog.AdminCatalog.HREF, http.MethodGet,
+	_, err := adminCatalog.client.ExecuteRequest(ctx, adminCatalog.AdminCatalog.HREF, http.MethodGet,
 		"", "error refreshing VDC: %s", nil, refreshedCatalog)
 	if err != nil {
 		return err
@@ -87,6 +88,6 @@ func (adminCatalog *AdminCatalog) Refresh() error {
 }
 
 // getOrgInfo finds the organization to which the admin catalog belongs, and returns its name and ID
-func (adminCatalog *AdminCatalog) getOrgInfo() (orgInfoType, error) {
-	return getOrgInfo(adminCatalog.client, adminCatalog.AdminCatalog.Link, adminCatalog.AdminCatalog.ID, adminCatalog.AdminCatalog.Name, "AdminCatalog")
+func (adminCatalog *AdminCatalog) getOrgInfo(ctx context.Context) (orgInfoType, error) {
+	return getOrgInfo(ctx, adminCatalog.client, adminCatalog.AdminCatalog.Link, adminCatalog.AdminCatalog.ID, adminCatalog.AdminCatalog.Name, "AdminCatalog")
 }

@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"encoding/xml"
 	"fmt"
 	"net/http"
@@ -20,11 +21,11 @@ type responseEdgeDhcpLeases struct {
 }
 
 // GetNsxvActiveDhcpLeaseByMac finds active DHCP lease for a given hardware address (MAC)
-func (egw *EdgeGateway) GetNsxvActiveDhcpLeaseByMac(mac string) (*types.EdgeDhcpLeaseInfo, error) {
+func (egw *EdgeGateway) GetNsxvActiveDhcpLeaseByMac(ctx context.Context, mac string) (*types.EdgeDhcpLeaseInfo, error) {
 	if mac == "" {
 		return nil, fmt.Errorf("MAC address must be provided to lookup DHCP lease")
 	}
-	dhcpLeases, err := egw.GetAllNsxvDhcpLeases()
+	dhcpLeases, err := egw.GetAllNsxvDhcpLeases(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +42,7 @@ func (egw *EdgeGateway) GetNsxvActiveDhcpLeaseByMac(mac string) (*types.EdgeDhcp
 }
 
 // GetAllNsxvDhcpLeases retrieves all DHCP leases defined in NSX-V edge gateway
-func (egw *EdgeGateway) GetAllNsxvDhcpLeases() ([]*types.EdgeDhcpLeaseInfo, error) {
+func (egw *EdgeGateway) GetAllNsxvDhcpLeases(ctx context.Context) ([]*types.EdgeDhcpLeaseInfo, error) {
 	if !egw.HasAdvancedNetworking() {
 		return nil, fmt.Errorf("only advanced edge gateways support DHCP")
 	}
@@ -54,7 +55,7 @@ func (egw *EdgeGateway) GetAllNsxvDhcpLeases() ([]*types.EdgeDhcpLeaseInfo, erro
 	dhcpLeases := &responseEdgeDhcpLeases{}
 
 	// This query returns all DHCP leases
-	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
+	_, err = egw.client.ExecuteRequest(ctx, httpPath, http.MethodGet, types.AnyXMLMime,
 		"unable to read DHCP leases: %s", nil, dhcpLeases)
 	if err != nil {
 		return nil, err

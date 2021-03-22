@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 
@@ -21,9 +22,9 @@ type ExternalNetworkV2 struct {
 // CreateExternalNetworkV2 creates a new external network using OpenAPI endpoint. It can create
 // NSX-V and NSX-T backed networks based on what ExternalNetworkV2.NetworkBackings is
 // provided. types.ExternalNetworkV2 has documented fields.
-func CreateExternalNetworkV2(vcdClient *VCDClient, newExtNet *types.ExternalNetworkV2) (*ExternalNetworkV2, error) {
+func CreateExternalNetworkV2(ctx context.Context, vcdClient *VCDClient, newExtNet *types.ExternalNetworkV2) (*ExternalNetworkV2, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
-	minimumApiVersion, err := vcdClient.Client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := vcdClient.Client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +39,7 @@ func CreateExternalNetworkV2(vcdClient *VCDClient, newExtNet *types.ExternalNetw
 		client:          &vcdClient.Client,
 	}
 
-	err = vcdClient.Client.OpenApiPostItem(minimumApiVersion, urlRef, nil, newExtNet, returnExtNet.ExternalNetwork)
+	err = vcdClient.Client.OpenApiPostItem(ctx, minimumApiVersion, urlRef, nil, newExtNet, returnExtNet.ExternalNetwork)
 	if err != nil {
 		return nil, fmt.Errorf("error creating external network: %s", err)
 	}
@@ -47,9 +48,9 @@ func CreateExternalNetworkV2(vcdClient *VCDClient, newExtNet *types.ExternalNetw
 }
 
 // GetExternalNetworkV2ById retrieves external network by given ID using OpenAPI endpoint
-func GetExternalNetworkV2ById(vcdClient *VCDClient, id string) (*ExternalNetworkV2, error) {
+func GetExternalNetworkV2ById(ctx context.Context, vcdClient *VCDClient, id string) (*ExternalNetworkV2, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
-	minimumApiVersion, err := vcdClient.Client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := vcdClient.Client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +69,7 @@ func GetExternalNetworkV2ById(vcdClient *VCDClient, id string) (*ExternalNetwork
 		client:          &vcdClient.Client,
 	}
 
-	err = vcdClient.Client.OpenApiGetItem(minimumApiVersion, urlRef, nil, extNet.ExternalNetwork)
+	err = vcdClient.Client.OpenApiGetItem(ctx, minimumApiVersion, urlRef, nil, extNet.ExternalNetwork)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +79,7 @@ func GetExternalNetworkV2ById(vcdClient *VCDClient, id string) (*ExternalNetwork
 
 // GetExternalNetworkV2ByName retrieves external network by given name using OpenAPI endpoint.
 // Returns an error if not exactly one network is found.
-func GetExternalNetworkV2ByName(vcdClient *VCDClient, name string) (*ExternalNetworkV2, error) {
+func GetExternalNetworkV2ByName(ctx context.Context, vcdClient *VCDClient, name string) (*ExternalNetworkV2, error) {
 
 	if name == "" {
 		return nil, fmt.Errorf("name cannot be empty")
@@ -87,7 +88,7 @@ func GetExternalNetworkV2ByName(vcdClient *VCDClient, name string) (*ExternalNet
 	queryParams := url.Values{}
 	queryParams.Add("filter", "name=="+name)
 
-	res, err := GetAllExternalNetworksV2(vcdClient, queryParams)
+	res, err := GetAllExternalNetworksV2(ctx, vcdClient, queryParams)
 	if err != nil {
 		return nil, fmt.Errorf("could not find external network by name: %s", err)
 	}
@@ -105,9 +106,9 @@ func GetExternalNetworkV2ByName(vcdClient *VCDClient, name string) (*ExternalNet
 
 // GetAllExternalNetworksV2 retrieves all external networks using OpenAPI endpoint. Query parameters can be supplied to
 // perform additional filtering
-func GetAllExternalNetworksV2(vcdClient *VCDClient, queryParameters url.Values) ([]*ExternalNetworkV2, error) {
+func GetAllExternalNetworksV2(ctx context.Context, vcdClient *VCDClient, queryParameters url.Values) ([]*ExternalNetworkV2, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
-	minimumApiVersion, err := vcdClient.Client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := vcdClient.Client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +119,7 @@ func GetAllExternalNetworksV2(vcdClient *VCDClient, queryParameters url.Values) 
 	}
 
 	typeResponses := []*types.ExternalNetworkV2{{}}
-	err = vcdClient.Client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &typeResponses)
+	err = vcdClient.Client.OpenApiGetAllItems(ctx, minimumApiVersion, urlRef, queryParameters, &typeResponses)
 	if err != nil {
 		return nil, err
 	}
@@ -136,9 +137,9 @@ func GetAllExternalNetworksV2(vcdClient *VCDClient, queryParameters url.Values) 
 }
 
 // Update updates existing external network using OpenAPI endpoint
-func (extNet *ExternalNetworkV2) Update() (*ExternalNetworkV2, error) {
+func (extNet *ExternalNetworkV2) Update(ctx context.Context) (*ExternalNetworkV2, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
-	minimumApiVersion, err := extNet.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := extNet.client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +158,7 @@ func (extNet *ExternalNetworkV2) Update() (*ExternalNetworkV2, error) {
 		client:          extNet.client,
 	}
 
-	err = extNet.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, extNet.ExternalNetwork, returnExtNet.ExternalNetwork)
+	err = extNet.client.OpenApiPutItem(ctx, minimumApiVersion, urlRef, nil, extNet.ExternalNetwork, returnExtNet.ExternalNetwork)
 	if err != nil {
 		return nil, fmt.Errorf("error updating external network: %s", err)
 	}
@@ -166,9 +167,9 @@ func (extNet *ExternalNetworkV2) Update() (*ExternalNetworkV2, error) {
 }
 
 // Delete deletes external network using OpenAPI endpoint
-func (extNet *ExternalNetworkV2) Delete() error {
+func (extNet *ExternalNetworkV2) Delete(ctx context.Context) error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
-	minimumApiVersion, err := extNet.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := extNet.client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return err
 	}
@@ -182,7 +183,7 @@ func (extNet *ExternalNetworkV2) Delete() error {
 		return err
 	}
 
-	err = extNet.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil)
+	err = extNet.client.OpenApiDeleteItem(ctx, minimumApiVersion, urlRef, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting extNet: %s", err)

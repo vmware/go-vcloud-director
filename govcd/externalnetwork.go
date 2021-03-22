@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -24,8 +25,8 @@ func NewExternalNetwork(cli *Client) *ExternalNetwork {
 	}
 }
 
-func getExternalNetworkHref(client *Client) (string, error) {
-	extensions, err := getExtension(client)
+func getExternalNetworkHref(ctx context.Context, client *Client) (string, error) {
+	extensions, err := getExtension(ctx, client)
 	if err != nil {
 		return "", err
 	}
@@ -39,13 +40,13 @@ func getExternalNetworkHref(client *Client) (string, error) {
 	return "", errors.New("external network link wasn't found")
 }
 
-func (externalNetwork ExternalNetwork) Refresh() error {
+func (externalNetwork ExternalNetwork) Refresh(ctx context.Context) error {
 
 	if !externalNetwork.client.IsSysAdmin {
 		return fmt.Errorf("functionality requires System Administrator privileges")
 	}
 
-	_, err := externalNetwork.client.ExecuteRequest(externalNetwork.ExternalNetwork.HREF, http.MethodGet,
+	_, err := externalNetwork.client.ExecuteRequest(ctx, externalNetwork.ExternalNetwork.HREF, http.MethodGet,
 		"", "error refreshing external network: %s", nil, externalNetwork.ExternalNetwork)
 
 	return err
@@ -58,7 +59,7 @@ func validateExternalNetwork(externalNetwork *types.ExternalNetwork) error {
 	return nil
 }
 
-func (externalNetwork *ExternalNetwork) Delete() (Task, error) {
+func (externalNetwork *ExternalNetwork) Delete(ctx context.Context) (Task, error) {
 	util.Logger.Printf("[TRACE] ExternalNetwork.Delete")
 
 	if !externalNetwork.client.IsSysAdmin {
@@ -66,16 +67,16 @@ func (externalNetwork *ExternalNetwork) Delete() (Task, error) {
 	}
 
 	// Return the task
-	return externalNetwork.client.ExecuteTaskRequest(externalNetwork.ExternalNetwork.HREF, http.MethodDelete,
+	return externalNetwork.client.ExecuteTaskRequest(ctx, externalNetwork.ExternalNetwork.HREF, http.MethodDelete,
 		"", "error deleting external network: %s", nil)
 }
 
-func (externalNetwork *ExternalNetwork) DeleteWait() error {
-	task, err := externalNetwork.Delete()
+func (externalNetwork *ExternalNetwork) DeleteWait(ctx context.Context) error {
+	task, err := externalNetwork.Delete(ctx)
 	if err != nil {
 		return err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return fmt.Errorf("couldn't finish removing external network %#v", err)
 	}

@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -43,8 +44,8 @@ func NewVMRecord(cli *Client) *VMRecord {
 	}
 }
 
-func (vm *VM) GetStatus() (string, error) {
-	err := vm.Refresh()
+func (vm *VM) GetStatus(ctx context.Context) (string, error) {
+	err := vm.Refresh(ctx)
 	if err != nil {
 		return "", fmt.Errorf("error refreshing VM: %s", err)
 	}
@@ -52,15 +53,15 @@ func (vm *VM) GetStatus() (string, error) {
 }
 
 // IsDeployed checks if the VM is deployed or not
-func (vm *VM) IsDeployed() (bool, error) {
-	err := vm.Refresh()
+func (vm *VM) IsDeployed(ctx context.Context) (bool, error) {
+	err := vm.Refresh(ctx)
 	if err != nil {
 		return false, fmt.Errorf("error refreshing VM: %s", err)
 	}
 	return vm.VM.Deployed, nil
 }
 
-func (vm *VM) Refresh() error {
+func (vm *VM) Refresh(ctx context.Context) error {
 
 	if vm.VM.HREF == "" {
 		return fmt.Errorf("cannot refresh VM, Object is empty")
@@ -72,16 +73,16 @@ func (vm *VM) Refresh() error {
 	// elements in slices.
 	vm.VM = &types.Vm{}
 
-	_, err := vm.client.ExecuteRequestWithApiVersion(refreshUrl, http.MethodGet,
+	_, err := vm.client.ExecuteRequestWithApiVersion(ctx, refreshUrl, http.MethodGet,
 		"", "error refreshing VM: %s", nil, vm.VM,
-		vm.client.GetSpecificApiVersionOnCondition(">= 33.0", "33.0"))
+		vm.client.GetSpecificApiVersionOnCondition(ctx, ">= 33.0", "33.0"))
 
 	// The request was successful
 	return err
 }
 
 // GetVirtualHardwareSection returns the virtual hardware items attached to a VM
-func (vm *VM) GetVirtualHardwareSection() (*types.VirtualHardwareSection, error) {
+func (vm *VM) GetVirtualHardwareSection(ctx context.Context) (*types.VirtualHardwareSection, error) {
 
 	virtualHardwareSection := &types.VirtualHardwareSection{}
 
@@ -89,7 +90,7 @@ func (vm *VM) GetVirtualHardwareSection() (*types.VirtualHardwareSection, error)
 		return nil, fmt.Errorf("cannot refresh, invalid reference url")
 	}
 
-	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/virtualHardwareSection/", http.MethodGet,
+	_, err := vm.client.ExecuteRequest(ctx, vm.VM.HREF+"/virtualHardwareSection/", http.MethodGet,
 		types.MimeVirtualHardwareSection, "error retrieving virtual hardware: %s", nil, virtualHardwareSection)
 
 	// The request was successful
@@ -99,7 +100,7 @@ func (vm *VM) GetVirtualHardwareSection() (*types.VirtualHardwareSection, error)
 // GetNetworkConnectionSection returns current networks attached to VM
 //
 // The slice of NICs is not necessarily ordered by NIC index
-func (vm *VM) GetNetworkConnectionSection() (*types.NetworkConnectionSection, error) {
+func (vm *VM) GetNetworkConnectionSection(ctx context.Context) (*types.NetworkConnectionSection, error) {
 
 	networkConnectionSection := &types.NetworkConnectionSection{}
 
@@ -107,7 +108,7 @@ func (vm *VM) GetNetworkConnectionSection() (*types.NetworkConnectionSection, er
 		return networkConnectionSection, fmt.Errorf("cannot retrieve network when VM HREF is unset")
 	}
 
-	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/networkConnectionSection/", http.MethodGet,
+	_, err := vm.client.ExecuteRequest(ctx, vm.VM.HREF+"/networkConnectionSection/", http.MethodGet,
 		types.MimeNetworkConnectionSection, "error retrieving network connection: %s", nil, networkConnectionSection)
 
 	// The request was successful
@@ -116,13 +117,13 @@ func (vm *VM) GetNetworkConnectionSection() (*types.NetworkConnectionSection, er
 
 // UpdateNetworkConnectionSection applies network configuration of types.NetworkConnectionSection for the VM
 // Runs synchronously, VM is ready for another operation after this function returns.
-func (vm *VM) UpdateNetworkConnectionSection(networks *types.NetworkConnectionSection) error {
+func (vm *VM) UpdateNetworkConnectionSection(ctx context.Context, networks *types.NetworkConnectionSection) error {
 	if vm.VM.HREF == "" {
 		return fmt.Errorf("cannot update network connection when VM HREF is unset")
 	}
 
 	// Retrieve current network configuration so that we are not altering any other internal fields
-	updateNetwork, err := vm.GetNetworkConnectionSection()
+	updateNetwork, err := vm.GetNetworkConnectionSection(ctx)
 	if err != nil {
 		return fmt.Errorf("cannot read network section for update: %s", err)
 	}
@@ -130,12 +131,12 @@ func (vm *VM) UpdateNetworkConnectionSection(networks *types.NetworkConnectionSe
 	updateNetwork.NetworkConnection = networks.NetworkConnection
 	updateNetwork.Ovf = types.XMLNamespaceOVF
 
-	task, err := vm.client.ExecuteTaskRequest(vm.VM.HREF+"/networkConnectionSection/", http.MethodPut,
+	task, err := vm.client.ExecuteTaskRequest(ctx, vm.VM.HREF+"/networkConnectionSection/", http.MethodPut,
 		types.MimeNetworkConnectionSection, "error updating network connection: %s", updateNetwork)
 	if err != nil {
 		return err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return fmt.Errorf("error waiting for task completion after network update for vm %s: %s", vm.VM.Name, err)
 	}
@@ -144,24 +145,24 @@ func (vm *VM) UpdateNetworkConnectionSection(networks *types.NetworkConnectionSe
 }
 
 // Deprecated: use client.GetVMByHref instead
-func (cli *Client) FindVMByHREF(vmHREF string) (VM, error) {
+func (cli *Client) FindVMByHREF(ctx context.Context, vmHREF string) (VM, error) {
 
 	newVm := NewVM(cli)
 
-	_, err := cli.ExecuteRequest(vmHREF, http.MethodGet,
+	_, err := cli.ExecuteRequest(ctx, vmHREF, http.MethodGet,
 		"", "error retrieving VM: %s", nil, newVm.VM)
 
 	return *newVm, err
 
 }
 
-func (vm *VM) PowerOn() (Task, error) {
+func (vm *VM) PowerOn(ctx context.Context) (Task, error) {
 
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/power/action/powerOn"
 
 	// Return the task
-	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	return vm.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		"", "error powering on VM: %s", nil)
 
 }
@@ -170,9 +171,9 @@ func (vm *VM) PowerOn() (Task, error) {
 // one has in UI. It triggers customization which may be useful in some cases (like altering NICs)
 //
 // The VM _must_ be un-deployed for this action to actually work.
-func (vm *VM) PowerOnAndForceCustomization() error {
+func (vm *VM) PowerOnAndForceCustomization(ctx context.Context) error {
 	// PowerOnAndForceCustomization only works if the VM was previously un-deployed
-	vmIsDeployed, err := vm.IsDeployed()
+	vmIsDeployed, err := vm.IsDeployed(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to check if VM %s is un-deployed forcing customization: %s",
 			vm.VM.Name, err)
@@ -191,14 +192,14 @@ func (vm *VM) PowerOnAndForceCustomization() error {
 		ForceCustomization: true,
 	}
 
-	task, err := vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	task, err := vm.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		"", "error powering on VM with customization: %s", powerOnAndCustomize)
 
 	if err != nil {
 		return err
 	}
 
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return fmt.Errorf("error waiting for task completion after power on with customization %s: %s", vm.VM.Name, err)
 	}
@@ -206,13 +207,13 @@ func (vm *VM) PowerOnAndForceCustomization() error {
 	return nil
 }
 
-func (vm *VM) PowerOff() (Task, error) {
+func (vm *VM) PowerOff(ctx context.Context) (Task, error) {
 
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/power/action/powerOff"
 
 	// Return the task
-	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	return vm.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		"", "error powering off VM: %s", nil)
 }
 
@@ -220,17 +221,17 @@ func (vm *VM) PowerOff() (Task, error) {
 // (i.e. CPUs x cores per socket)
 // Cpu cores count is inherited from template.
 // https://communities.vmware.com/thread/576209
-func (vm *VM) ChangeCPUCount(virtualCpuCount int) (Task, error) {
-	return vm.ChangeCPUCountWithCore(virtualCpuCount, nil)
+func (vm *VM) ChangeCPUCount(ctx context.Context, virtualCpuCount int) (Task, error) {
+	return vm.ChangeCPUCountWithCore(ctx, virtualCpuCount, nil)
 }
 
 // Sets number of available virtual logical processors
 // (i.e. CPUs x cores per socket) and cores per socket.
 // Socket count is a result of: virtual logical processors/cores per socket
 // https://communities.vmware.com/thread/576209
-func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (Task, error) {
+func (vm *VM) ChangeCPUCountWithCore(ctx context.Context, virtualCpuCount int, coresPerSocket *int) (Task, error) {
 
-	err := vm.Refresh()
+	err := vm.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %s", err)
 	}
@@ -262,7 +263,7 @@ func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (
 	apiEndpoint.Path += "/virtualHardwareSection/cpu"
 
 	// Return the task
-	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+	return vm.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPut,
 		types.MimeRasdItem, "error changing CPU count: %s", newCpu)
 
 }
@@ -333,13 +334,13 @@ func (vm *VM) updateNicParameters(networks []map[string]interface{}, networkSect
 }
 
 // ChangeNetworkConfig allows to update existing VM NIC configuration.f
-func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, error) {
-	err := vm.Refresh()
+func (vm *VM) ChangeNetworkConfig(ctx context.Context, networks []map[string]interface{}) (Task, error) {
+	err := vm.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %s", err)
 	}
 
-	networkSection, err := vm.GetNetworkConnectionSection()
+	networkSection, err := vm.GetNetworkConnectionSection(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("could not retrieve network connection for VM: %s", err)
 	}
@@ -357,13 +358,13 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, erro
 	apiEndpoint.Path += "/networkConnectionSection/"
 
 	// Return the task
-	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+	return vm.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPut,
 		types.MimeNetworkConnectionSection, "error changing network config: %s", networkSection)
 }
 
-func (vm *VM) ChangeMemorySize(size int) (Task, error) {
+func (vm *VM) ChangeMemorySize(ctx context.Context, size int) (Task, error) {
 
-	err := vm.Refresh()
+	err := vm.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %s", err)
 	}
@@ -393,24 +394,24 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 	apiEndpoint.Path += "/virtualHardwareSection/memory"
 
 	// Return the task
-	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+	return vm.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPut,
 		types.MimeRasdItem, "error changing memory size: %s", newMem)
 }
 
-func (vm *VM) RunCustomizationScript(computername, script string) (Task, error) {
-	return vm.Customize(computername, script, false)
+func (vm *VM) RunCustomizationScript(ctx context.Context, computername, script string) (Task, error) {
+	return vm.Customize(ctx, computername, script, false)
 }
 
 // GetGuestCustomizationStatus retrieves guest customization status.
 // It can be one of "GC_PENDING", "REBOOT_PENDING", "GC_FAILED", "POST_GC_PENDING", "GC_COMPLETE"
-func (vm *VM) GetGuestCustomizationStatus() (string, error) {
+func (vm *VM) GetGuestCustomizationStatus(ctx context.Context) (string, error) {
 	guestCustomizationStatus := &types.GuestCustomizationStatusSection{}
 
 	if vm.VM.HREF == "" {
 		return "", fmt.Errorf("cannot retrieve guest customization, VM HREF is empty")
 	}
 
-	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/guestcustomizationstatus", http.MethodGet,
+	_, err := vm.client.ExecuteRequest(ctx, vm.VM.HREF+"/guestcustomizationstatus", http.MethodGet,
 		types.MimeGuestCustomizationStatus, "error retrieving guest customization status: %s", nil, guestCustomizationStatus)
 
 	// The request was successful
@@ -421,7 +422,7 @@ func (vm *VM) GetGuestCustomizationStatus() (string, error) {
 // It sleeps 3 seconds between iterations and times out after timeOutAfterSeconds of seconds.
 //
 // timeOutAfterSeconds must be more than 4 and less than 2 hours (60s*120)
-func (vm *VM) BlockWhileGuestCustomizationStatus(unwantedStatus string, timeOutAfterSeconds int) error {
+func (vm *VM) BlockWhileGuestCustomizationStatus(ctx context.Context, unwantedStatus string, timeOutAfterSeconds int) error {
 	if timeOutAfterSeconds < 5 || timeOutAfterSeconds > 60*120 {
 		return fmt.Errorf("timeOutAfterSeconds must be in range 4<X<7200")
 	}
@@ -435,7 +436,7 @@ func (vm *VM) BlockWhileGuestCustomizationStatus(unwantedStatus string, timeOutA
 			return fmt.Errorf("timed out waiting for VM guest customization status to exit state %s after %d seconds",
 				unwantedStatus, timeOutAfterSeconds)
 		case <-tick.C:
-			currentStatus, err := vm.GetGuestCustomizationStatus()
+			currentStatus, err := vm.GetGuestCustomizationStatus(ctx)
 			if err != nil {
 				return fmt.Errorf("could not get VM customization status %s", err)
 			}
@@ -449,8 +450,8 @@ func (vm *VM) BlockWhileGuestCustomizationStatus(unwantedStatus string, timeOutA
 // Customize function allows to set ComputerName, apply customization script and enable or disable the changeSid option
 //
 // Deprecated: Use vm.SetGuestCustomizationSection()
-func (vm *VM) Customize(computername, script string, changeSid bool) (Task, error) {
-	err := vm.Refresh()
+func (vm *VM) Customize(ctx context.Context, computername, script string, changeSid bool) (Task, error) {
+	err := vm.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %s", err)
 	}
@@ -473,12 +474,12 @@ func (vm *VM) Customize(computername, script string, changeSid bool) (Task, erro
 	apiEndpoint.Path += "/guestCustomizationSection/"
 
 	// Return the task
-	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+	return vm.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPut,
 		types.MimeGuestCustomizationSection, "error customizing VM: %s", vu)
 }
 
 // Undeploy triggers a VM undeploy and power off action. "Power off" action in UI behaves this way.
-func (vm *VM) Undeploy() (Task, error) {
+func (vm *VM) Undeploy(ctx context.Context) (Task, error) {
 
 	vu := &types.UndeployVAppParams{
 		Xmlns:               types.XMLNamespaceVCloud,
@@ -489,7 +490,7 @@ func (vm *VM) Undeploy() (Task, error) {
 	apiEndpoint.Path += "/action/undeploy"
 
 	// Return the task
-	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	return vm.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		types.MimeUndeployVappParams, "error undeploy VM: %s", vu)
 }
 
@@ -498,7 +499,7 @@ func (vm *VM) Undeploy() (Task, error) {
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 164 - 165,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
-func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel string) (Task, error) {
+func (vm *VM) attachOrDetachDisk(ctx context.Context, diskParams *types.DiskAttachOrDetachParams, rel string) (Task, error) {
 	util.Logger.Printf("[TRACE] Attach or detach disk, href: %s, rel: %s \n", diskParams.Disk.HREF, rel)
 
 	var attachOrDetachDiskLink *types.Link
@@ -521,7 +522,7 @@ func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel
 	diskParams.Xmlns = types.XMLNamespaceVCloud
 
 	// Return the task
-	return vm.client.ExecuteTaskRequest(attachOrDetachDiskLink.HREF, http.MethodPost,
+	return vm.client.ExecuteTaskRequest(ctx, attachOrDetachDiskLink.HREF, http.MethodPost,
 		attachOrDetachDiskLink.Type, "error attach or detach disk: %s", diskParams)
 }
 
@@ -532,14 +533,14 @@ func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 164 - 165,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
-func (vm *VM) AttachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, error) {
+func (vm *VM) AttachDisk(ctx context.Context, diskParams *types.DiskAttachOrDetachParams) (Task, error) {
 	util.Logger.Printf("[TRACE] Attach disk, HREF: %s\n", diskParams.Disk.HREF)
 
 	if diskParams.Disk == nil {
 		return Task{}, fmt.Errorf("could not find disk info for attach")
 	}
 
-	return vm.attachOrDetachDisk(diskParams, types.RelDiskAttach)
+	return vm.attachOrDetachDisk(ctx, diskParams, types.RelDiskAttach)
 }
 
 // Detach an independent disk
@@ -549,30 +550,30 @@ func (vm *VM) AttachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, erro
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 164 - 165,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
-func (vm *VM) DetachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, error) {
+func (vm *VM) DetachDisk(ctx context.Context, diskParams *types.DiskAttachOrDetachParams) (Task, error) {
 	util.Logger.Printf("[TRACE] Detach disk, HREF: %s\n", diskParams.Disk.HREF)
 
 	if diskParams.Disk == nil {
 		return Task{}, fmt.Errorf("could not find disk info for detach")
 	}
 
-	return vm.attachOrDetachDisk(diskParams, types.RelDiskDetach)
+	return vm.attachOrDetachDisk(ctx, diskParams, types.RelDiskDetach)
 }
 
 // Helper function which finds media and calls InsertMedia
-func (vm *VM) HandleInsertMedia(org *Org, catalogName, mediaName string) (Task, error) {
+func (vm *VM) HandleInsertMedia(ctx context.Context, org *Org, catalogName, mediaName string) (Task, error) {
 
 	catalog, err := org.GetCatalogByName(catalogName, false)
 	if err != nil {
 		return Task{}, err
 	}
 
-	media, err := catalog.GetMediaByName(mediaName, false)
+	media, err := catalog.GetMediaByName(ctx, mediaName, false)
 	if err != nil {
 		return Task{}, err
 	}
 
-	return vm.InsertMedia(&types.MediaInsertOrEjectParams{
+	return vm.InsertMedia(ctx, &types.MediaInsertOrEjectParams{
 		Media: &types.Reference{
 			HREF: media.Media.HREF,
 			Name: media.Media.Name,
@@ -585,8 +586,8 @@ func (vm *VM) HandleInsertMedia(org *Org, catalogName, mediaName string) (Task, 
 // HandleEjectMediaAndAnswer helper function which finds media, calls EjectMedia, waits for task to complete and answer question.
 // Also waits until VM status refreshes - this added as 9.7-10.0 vCD versions has lag in status update.
 // answerYes - handles question risen when VM is running. True value enforces ejection.
-func (vm *VM) HandleEjectMediaAndAnswer(org *Org, catalogName, mediaName string, answerYes bool) (*VM, error) {
-	task, err := vm.HandleEjectMedia(org, catalogName, mediaName)
+func (vm *VM) HandleEjectMediaAndAnswer(ctx context.Context, org *Org, catalogName, mediaName string, answerYes bool) (*VM, error) {
+	task, err := vm.HandleEjectMedia(ctx, org, catalogName, mediaName)
 	if err != nil {
 		return nil, fmt.Errorf("error: %s", err)
 	}
@@ -597,7 +598,7 @@ func (vm *VM) HandleEjectMediaAndAnswer(org *Org, catalogName, mediaName string,
 	}
 
 	for i := 0; i < 10; i++ {
-		err = vm.Refresh()
+		err = vm.Refresh(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("error: %s", err)
 		}
@@ -621,18 +622,18 @@ func isMediaInjected(items []*types.VirtualHardwareItem) bool {
 }
 
 // Helper function which finds media and calls EjectMedia
-func (vm *VM) HandleEjectMedia(org *Org, catalogName, mediaName string) (EjectTask, error) {
+func (vm *VM) HandleEjectMedia(ctx context.Context, org *Org, catalogName, mediaName string) (EjectTask, error) {
 	catalog, err := org.GetCatalogByName(catalogName, false)
 	if err != nil {
 		return EjectTask{}, err
 	}
 
-	media, err := catalog.GetMediaByName(mediaName, false)
+	media, err := catalog.GetMediaByName(ctx, mediaName, false)
 	if err != nil {
 		return EjectTask{}, err
 	}
 
-	task, err := vm.EjectMedia(&types.MediaInsertOrEjectParams{
+	task, err := vm.EjectMedia(ctx, &types.MediaInsertOrEjectParams{
 		Media: &types.Reference{
 			HREF: media.Media.HREF,
 		},
@@ -643,7 +644,7 @@ func (vm *VM) HandleEjectMedia(org *Org, catalogName, mediaName string) (EjectTa
 
 // Insert media for VM
 // Call insertOrEjectMedia with media and types.RelMediaInsertMedia to insert media from VM.
-func (vm *VM) InsertMedia(mediaParams *types.MediaInsertOrEjectParams) (Task, error) {
+func (vm *VM) InsertMedia(ctx context.Context, mediaParams *types.MediaInsertOrEjectParams) (Task, error) {
 	util.Logger.Printf("[TRACE] Insert media, HREF: %s\n", mediaParams.Media.HREF)
 
 	err := validateMediaParams(mediaParams)
@@ -651,13 +652,13 @@ func (vm *VM) InsertMedia(mediaParams *types.MediaInsertOrEjectParams) (Task, er
 		return Task{}, err
 	}
 
-	return vm.insertOrEjectMedia(mediaParams, types.RelMediaInsertMedia)
+	return vm.insertOrEjectMedia(ctx, mediaParams, types.RelMediaInsertMedia)
 }
 
 // Eject media from VM
 // Call insertOrEjectMedia with media and types.RelMediaEjectMedia to eject media from VM.
 // If media isn't inserted then task still will be successful.
-func (vm *VM) EjectMedia(mediaParams *types.MediaInsertOrEjectParams) (EjectTask, error) {
+func (vm *VM) EjectMedia(ctx context.Context, mediaParams *types.MediaInsertOrEjectParams) (EjectTask, error) {
 	util.Logger.Printf("[TRACE] Detach disk, HREF: %s\n", mediaParams.Media.HREF)
 
 	err := validateMediaParams(mediaParams)
@@ -665,7 +666,7 @@ func (vm *VM) EjectMedia(mediaParams *types.MediaInsertOrEjectParams) (EjectTask
 		return EjectTask{}, err
 	}
 
-	task, err := vm.insertOrEjectMedia(mediaParams, types.RelMediaEjectMedia)
+	task, err := vm.insertOrEjectMedia(ctx, mediaParams, types.RelMediaEjectMedia)
 	if err != nil {
 		return EjectTask{}, err
 	}
@@ -689,7 +690,7 @@ func validateMediaParams(mediaParams *types.MediaInsertOrEjectParams) error {
 // Reference:
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/POST-InsertCdRom.html
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/POST-EjectCdRom.html
-func (vm *VM) insertOrEjectMedia(mediaParams *types.MediaInsertOrEjectParams, linkRel string) (Task, error) {
+func (vm *VM) insertOrEjectMedia(ctx context.Context, mediaParams *types.MediaInsertOrEjectParams, linkRel string) (Task, error) {
 	util.Logger.Printf("[TRACE] Insert or eject media, href: %s, name: %s, , linkRel: %s \n", mediaParams.Media.HREF, mediaParams.Media.Name, linkRel)
 
 	var insertOrEjectMediaLink *types.Link
@@ -708,19 +709,19 @@ func (vm *VM) insertOrEjectMedia(mediaParams *types.MediaInsertOrEjectParams, li
 	mediaParams.Xmlns = types.XMLNamespaceVCloud
 
 	// Return the task
-	return vm.client.ExecuteTaskRequest(insertOrEjectMediaLink.HREF, http.MethodPost,
+	return vm.client.ExecuteTaskRequest(ctx, insertOrEjectMediaLink.HREF, http.MethodPost,
 		insertOrEjectMediaLink.Type, "error insert or eject media: %s", mediaParams)
 }
 
 // Use the get existing VM question for operation which need additional response
 // Reference:
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/GET-VmPendingQuestion.html
-func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
+func (vm *VM) GetQuestion(ctx context.Context) (types.VmPendingQuestion, error) {
 
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/question"
 
-	req := vm.client.NewRequest(map[string]string{}, http.MethodGet, *apiEndpoint, nil)
+	req := vm.client.NewRequest(ctx, map[string]string{}, http.MethodGet, *apiEndpoint, nil)
 
 	resp, err := vm.client.Http.Do(req)
 
@@ -752,7 +753,7 @@ func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
 // Use the provide answer to existing VM question for operation which need additional response
 // Reference:
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/POST-AnswerVmPendingQuestion.html
-func (vm *VM) AnswerQuestion(questionId string, choiceId int) error {
+func (vm *VM) AnswerQuestion(ctx context.Context, questionId string, choiceId int) error {
 
 	//validate input
 	if questionId == "" {
@@ -768,15 +769,15 @@ func (vm *VM) AnswerQuestion(questionId string, choiceId int) error {
 	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/question/action/answer"
 
-	return vm.client.ExecuteRequestWithoutResponse(apiEndpoint.String(), http.MethodPost,
+	return vm.client.ExecuteRequestWithoutResponse(ctx, apiEndpoint.String(), http.MethodPost,
 		"", "error asnwering question: %s", answer)
 }
 
 // ToggleHardwareVirtualization allows to either enable or disable hardware assisted
 // CPU virtualization for the VM. It can only be performed on a powered off VM and
 // will return an error otherwise. This is mainly useful for hypervisor nesting.
-func (vm *VM) ToggleHardwareVirtualization(isEnabled bool) (Task, error) {
-	vmStatus, err := vm.GetStatus()
+func (vm *VM) ToggleHardwareVirtualization(ctx context.Context, isEnabled bool) (Task, error) {
+	vmStatus, err := vm.GetStatus(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("unable to toggle hardware virtualization: %s", err)
 	}
@@ -791,7 +792,7 @@ func (vm *VM) ToggleHardwareVirtualization(isEnabled bool) (Task, error) {
 		apiEndpoint.Path += "/action/disableNestedHypervisor"
 	}
 	errMessage := fmt.Sprintf("error toggling hypervisor nesting feature to %t for VM: %%s", isEnabled)
-	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	return vm.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		"", errMessage, nil)
 }
 
@@ -817,13 +818,13 @@ func (vm *VM) GetProductSectionList() (*types.ProductSectionList, error) {
 }
 
 // GetGuestCustomizationSection retrieves guest customization section for a VM. It allows to read VM guest customization properties.
-func (vm *VM) GetGuestCustomizationSection() (*types.GuestCustomizationSection, error) {
+func (vm *VM) GetGuestCustomizationSection(ctx context.Context) (*types.GuestCustomizationSection, error) {
 	if vm == nil || vm.VM.HREF == "" {
 		return nil, fmt.Errorf("vm or href cannot be empty to get  guest customization section")
 	}
 	guestCustomizationSection := &types.GuestCustomizationSection{}
 
-	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/guestCustomizationSection", http.MethodGet,
+	_, err := vm.client.ExecuteRequest(ctx, vm.VM.HREF+"/guestCustomizationSection", http.MethodGet,
 		types.MimeGuestCustomizationSection, "error retrieving guest customization section : %s", nil, guestCustomizationSection)
 
 	if err != nil {
@@ -834,7 +835,7 @@ func (vm *VM) GetGuestCustomizationSection() (*types.GuestCustomizationSection, 
 }
 
 // SetGuestCustomizationSection sets guest customization section for a VM. It allows to change VM guest customization properties.
-func (vm *VM) SetGuestCustomizationSection(guestCustomizationSection *types.GuestCustomizationSection) (*types.GuestCustomizationSection, error) {
+func (vm *VM) SetGuestCustomizationSection(ctx context.Context, guestCustomizationSection *types.GuestCustomizationSection) (*types.GuestCustomizationSection, error) {
 	if vm == nil || vm.VM.HREF == "" {
 		return nil, fmt.Errorf("vm or href cannot be empty to get  guest customization section")
 	}
@@ -842,7 +843,7 @@ func (vm *VM) SetGuestCustomizationSection(guestCustomizationSection *types.Gues
 	guestCustomizationSection.Xmlns = types.XMLNamespaceVCloud
 	guestCustomizationSection.Ovf = types.XMLNamespaceOVF
 
-	task, err := vm.client.ExecuteTaskRequest(vm.VM.HREF+"/guestCustomizationSection", http.MethodPut,
+	task, err := vm.client.ExecuteTaskRequest(ctx, vm.VM.HREF+"/guestCustomizationSection", http.MethodPut,
 		types.MimeGuestCustomizationSection, "error setting product section: %s", guestCustomizationSection)
 
 	if err != nil {
@@ -1072,12 +1073,12 @@ func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int, us
 
 // getEdgeGatewayNameForNic checks if a network card with specified nicIndex uses routed network and
 // is attached to particular edge gateway. Edge gateway name is returned if so.
-func (vm *VM) getEdgeGatewayNameForNic(nicIndex int) (string, error) {
+func (vm *VM) getEdgeGatewayNameForNic(ctx context.Context, nicIndex int) (string, error) {
 	if nicIndex < 0 {
 		return "", fmt.Errorf("NIC index cannot be negative")
 	}
 
-	networkConnnectionSection, err := vm.GetNetworkConnectionSection()
+	networkConnnectionSection, err := vm.GetNetworkConnectionSection(ctx)
 	if err != nil {
 		return "", fmt.Errorf("could not get IP address for NIC %d: %s", nicIndex, err)
 	}

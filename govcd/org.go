@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -31,7 +32,7 @@ func NewOrg(client *Client) *Org {
 // it returns an error. Users should use refresh whenever they have
 // a stale org due to the creation/update/deletion of a resource
 // within the org or the org itself.
-func (org *Org) Refresh() error {
+func (org *Org) Refresh(ctx context.Context) error {
 	if *org == (Org{}) {
 		return fmt.Errorf("cannot refresh, Object is empty")
 	}
@@ -40,7 +41,7 @@ func (org *Org) Refresh() error {
 	// elements in slices.
 	unmarshalledOrg := &types.Org{}
 
-	_, err := org.client.ExecuteRequest(org.Org.HREF, http.MethodGet,
+	_, err := org.client.ExecuteRequest(ctx, org.Org.HREF, http.MethodGet,
 		"", "error refreshing organization: %s", nil, unmarshalledOrg)
 	if err != nil {
 		return err
@@ -55,14 +56,14 @@ func (org *Org) Refresh() error {
 // If no catalog is found, then returns an empty catalog and no error.
 // Otherwise it returns an error.
 // Deprecated: use org.GetCatalogByName instead
-func (org *Org) FindCatalog(catalogName string) (Catalog, error) {
+func (org *Org) FindCatalog(ctx context.Context, catalogName string) (Catalog, error) {
 
 	for _, link := range org.Org.Link {
 		if link.Rel == "down" && link.Type == "application/vnd.vmware.vcloud.catalog+xml" && link.Name == catalogName {
 
 			cat := NewCatalog(org.client)
 
-			_, err := org.client.ExecuteRequest(link.HREF, http.MethodGet,
+			_, err := org.client.ExecuteRequest(ctx, link.HREF, http.MethodGet,
 				"", "error retrieving catalog: %s", nil, cat.Catalog)
 
 			return *cat, err
@@ -76,12 +77,12 @@ func (org *Org) FindCatalog(catalogName string) (Catalog, error) {
 // If no vdc is found, then it returns an empty vdc and no error.
 // Otherwise it returns an empty vdc and an error.
 // Deprecated: use org.GetVDCByName instead
-func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
+func (org *Org) GetVdcByName(ctx context.Context, vdcname string) (Vdc, error) {
 	for _, link := range org.Org.Link {
 		if link.Name == vdcname {
 			vdc := NewVdc(org.client)
 
-			_, err := org.client.ExecuteRequest(link.HREF, http.MethodGet,
+			_, err := org.client.ExecuteRequest(ctx, link.HREF, http.MethodGet,
 				"", "error retrieving vdc: %s", nil, vdc.Vdc)
 
 			return *vdc, err
@@ -91,8 +92,8 @@ func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
 }
 
 // CreateCatalog creates a catalog with specified name and description
-func CreateCatalog(client *Client, links types.LinkList, Name, Description string) (AdminCatalog, error) {
-	adminCatalog, err := CreateCatalogWithStorageProfile(client, links, Name, Description, nil)
+func CreateCatalog(ctx context.Context, client *Client, links types.LinkList, Name, Description string) (AdminCatalog, error) {
+	adminCatalog, err := CreateCatalogWithStorageProfile(ctx, client, links, Name, Description, nil)
 	if err != nil {
 		return AdminCatalog{}, nil
 	}
@@ -100,7 +101,7 @@ func CreateCatalog(client *Client, links types.LinkList, Name, Description strin
 }
 
 // CreateCatalogWithStorageProfile is like CreateCatalog, but allows to specify storage profile
-func CreateCatalogWithStorageProfile(client *Client, links types.LinkList, Name, Description string, storageProfiles *types.CatalogStorageProfiles) (*AdminCatalog, error) {
+func CreateCatalogWithStorageProfile(ctx context.Context, client *Client, links types.LinkList, Name, Description string, storageProfiles *types.CatalogStorageProfiles) (*AdminCatalog, error) {
 	reqCatalog := &types.Catalog{
 		Name:        Name,
 		Description: Description,
@@ -125,7 +126,7 @@ func CreateCatalogWithStorageProfile(client *Client, links types.LinkList, Name,
 	}
 
 	catalog := NewAdminCatalog(client)
-	_, err := client.ExecuteRequest(createOrgLink.HREF, http.MethodPost,
+	_, err := client.ExecuteRequest(ctx, createOrgLink.HREF, http.MethodPost,
 		"application/vnd.vmware.admin.catalog+xml", "error creating catalog: %s", vcomp, catalog.AdminCatalog)
 
 	return catalog, err
@@ -135,8 +136,8 @@ func CreateCatalogWithStorageProfile(client *Client, links types.LinkList, Name,
 // the given organization. Returns an Catalog that contains a creation
 // task.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-CreateCatalog.html
-func (org *Org) CreateCatalog(name, description string) (Catalog, error) {
-	catalog, err := org.CreateCatalogWithStorageProfile(name, description, nil)
+func (org *Org) CreateCatalog(ctx context.Context, name, description string) (Catalog, error) {
+	catalog, err := org.CreateCatalogWithStorageProfile(ctx, name, description, nil)
 	if err != nil {
 		return Catalog{}, err
 	}
@@ -144,9 +145,9 @@ func (org *Org) CreateCatalog(name, description string) (Catalog, error) {
 }
 
 // CreateCatalogWithStorageProfile is like CreateCatalog but additionally allows to specify storage profiles
-func (org *Org) CreateCatalogWithStorageProfile(name, description string, storageProfiles *types.CatalogStorageProfiles) (*Catalog, error) {
+func (org *Org) CreateCatalogWithStorageProfile(ctx context.Context, name, description string, storageProfiles *types.CatalogStorageProfiles) (*Catalog, error) {
 	catalog := NewCatalog(org.client)
-	adminCatalog, err := CreateCatalogWithStorageProfile(org.client, org.Org.Link, name, description, storageProfiles)
+	adminCatalog, err := CreateCatalogWithStorageProfile(ctx, org.client, org.Org.Link, name, description, storageProfiles)
 	if err != nil {
 		return nil, err
 	}
@@ -200,10 +201,10 @@ func validateVdcConfiguration(vdcDefinition *types.VdcConfiguration) error {
 // GetCatalogByHref  finds a Catalog by HREF
 // On success, returns a pointer to the Catalog structure and a nil error
 // On failure, returns a nil pointer and an error
-func (org *Org) GetCatalogByHref(catalogHref string) (*Catalog, error) {
+func (org *Org) GetCatalogByHref(ctx context.Context, catalogHref string) (*Catalog, error) {
 	cat := NewCatalog(org.client)
 
-	_, err := org.client.ExecuteRequest(catalogHref, http.MethodGet,
+	_, err := org.client.ExecuteRequest(ctx, catalogHref, http.MethodGet,
 		"", "error retrieving catalog: %s", nil, cat.Catalog)
 	if err != nil {
 		return nil, err
@@ -215,9 +216,9 @@ func (org *Org) GetCatalogByHref(catalogHref string) (*Catalog, error) {
 // GetCatalogByName  finds a Catalog by Name
 // On success, returns a pointer to the Catalog structure and a nil error
 // On failure, returns a nil pointer and an error
-func (org *Org) GetCatalogByName(catalogName string, refresh bool) (*Catalog, error) {
+func (org *Org) GetCatalogByName(ctx context.Context, catalogName string, refresh bool) (*Catalog, error) {
 	if refresh {
-		err := org.Refresh()
+		err := org.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -225,7 +226,7 @@ func (org *Org) GetCatalogByName(catalogName string, refresh bool) (*Catalog, er
 	for _, catalog := range org.Org.Link {
 		// Get Catalog HREF
 		if catalog.Name == catalogName && catalog.Type == types.MimeCatalog {
-			return org.GetCatalogByHref(catalog.HREF)
+			return org.GetCatalogByHref(ctx, catalog.HREF)
 		}
 	}
 	return nil, ErrorEntityNotFound
@@ -234,9 +235,9 @@ func (org *Org) GetCatalogByName(catalogName string, refresh bool) (*Catalog, er
 // GetCatalogById finds a Catalog by ID
 // On success, returns a pointer to the Catalog structure and a nil error
 // On failure, returns a nil pointer and an error
-func (org *Org) GetCatalogById(catalogId string, refresh bool) (*Catalog, error) {
+func (org *Org) GetCatalogById(ctx context.Context, catalogId string, refresh bool) (*Catalog, error) {
 	if refresh {
-		err := org.Refresh()
+		err := org.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -244,7 +245,7 @@ func (org *Org) GetCatalogById(catalogId string, refresh bool) (*Catalog, error)
 	for _, catalog := range org.Org.Link {
 		// Get Catalog HREF
 		if equalIds(catalogId, catalog.ID, catalog.HREF) {
-			return org.GetCatalogByHref(catalog.HREF)
+			return org.GetCatalogByHref(ctx, catalog.HREF)
 		}
 	}
 	return nil, ErrorEntityNotFound
@@ -253,9 +254,9 @@ func (org *Org) GetCatalogById(catalogId string, refresh bool) (*Catalog, error)
 // GetCatalogByNameOrId finds a Catalog by name or ID
 // On success, returns a pointer to the Catalog structure and a nil error
 // On failure, returns a nil pointer and an error
-func (org *Org) GetCatalogByNameOrId(identifier string, refresh bool) (*Catalog, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return org.GetCatalogByName(name, refresh) }
-	getById := func(id string, refresh bool) (interface{}, error) { return org.GetCatalogById(id, refresh) }
+func (org *Org) GetCatalogByNameOrId(ctx context.Context, identifier string, refresh bool) (*Catalog, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) { return org.GetCatalogByName(ctx, name, refresh) }
+	getById := func(id string, refresh bool) (interface{}, error) { return org.GetCatalogById(ctx, id, refresh) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
 	if entity == nil {
 		return nil, err
@@ -266,9 +267,9 @@ func (org *Org) GetCatalogByNameOrId(identifier string, refresh bool) (*Catalog,
 // GetVDCByHref finds a VDC by HREF
 // On success, returns a pointer to the VDC structure and a nil error
 // On failure, returns a nil pointer and an error
-func (org *Org) GetVDCByHref(vdcHref string) (*Vdc, error) {
+func (org *Org) GetVDCByHref(ctx context.Context, vdcHref string) (*Vdc, error) {
 	vdc := NewVdc(org.client)
-	_, err := org.client.ExecuteRequest(vdcHref, http.MethodGet,
+	_, err := org.client.ExecuteRequest(ctx, vdcHref, http.MethodGet,
 		"", "error retrieving VDC: %s", nil, vdc.Vdc)
 	if err != nil {
 		return nil, err
@@ -280,16 +281,16 @@ func (org *Org) GetVDCByHref(vdcHref string) (*Vdc, error) {
 // GetVDCByName finds a VDC by Name
 // On success, returns a pointer to the VDC structure and a nil error
 // On failure, returns a nil pointer and an error
-func (org *Org) GetVDCByName(vdcName string, refresh bool) (*Vdc, error) {
+func (org *Org) GetVDCByName(ctx context.Context, vdcName string, refresh bool) (*Vdc, error) {
 	if refresh {
-		err := org.Refresh()
+		err := org.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
 	}
 	for _, link := range org.Org.Link {
 		if link.Name == vdcName && link.Type == types.MimeVDC {
-			return org.GetVDCByHref(link.HREF)
+			return org.GetVDCByHref(ctx, link.HREF)
 		}
 	}
 	return nil, ErrorEntityNotFound
@@ -298,16 +299,16 @@ func (org *Org) GetVDCByName(vdcName string, refresh bool) (*Vdc, error) {
 // GetVDCById finds a VDC by ID
 // On success, returns a pointer to the VDC structure and a nil error
 // On failure, returns a nil pointer and an error
-func (org *Org) GetVDCById(vdcId string, refresh bool) (*Vdc, error) {
+func (org *Org) GetVDCById(ctx context.Context, vdcId string, refresh bool) (*Vdc, error) {
 	if refresh {
-		err := org.Refresh()
+		err := org.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
 	}
 	for _, link := range org.Org.Link {
 		if equalIds(vdcId, link.ID, link.HREF) {
-			return org.GetVDCByHref(link.HREF)
+			return org.GetVDCByHref(ctx, link.HREF)
 		}
 	}
 	return nil, ErrorEntityNotFound
@@ -316,9 +317,9 @@ func (org *Org) GetVDCById(vdcId string, refresh bool) (*Vdc, error) {
 // GetVDCByNameOrId finds a VDC by name or ID
 // On success, returns a pointer to the VDC structure and a nil error
 // On failure, returns a nil pointer and an error
-func (org *Org) GetVDCByNameOrId(identifier string, refresh bool) (*Vdc, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return org.GetVDCByName(name, refresh) }
-	getById := func(id string, refresh bool) (interface{}, error) { return org.GetVDCById(id, refresh) }
+func (org *Org) GetVDCByNameOrId(ctx context.Context, identifier string, refresh bool) (*Vdc, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) { return org.GetVDCByName(ctx, name, refresh) }
+	getById := func(id string, refresh bool) (interface{}, error) { return org.GetVDCById(ctx, id, refresh) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
 	if entity == nil {
 		return nil, err
@@ -327,10 +328,10 @@ func (org *Org) GetVDCByNameOrId(identifier string, refresh bool) (*Vdc, error) 
 }
 
 // QueryCatalogList returns a list of catalogs for this organization
-func (org *Org) QueryCatalogList() ([]*types.CatalogRecord, error) {
+func (org *Org) QueryCatalogList(ctx context.Context) ([]*types.CatalogRecord, error) {
 	util.Logger.Printf("[DEBUG] QueryCatalogList with org name %s", org.Org.Name)
 	queryType := org.client.GetQueryType(types.QtCatalog)
-	results, err := org.client.cumulativeQuery(queryType, nil, map[string]string{
+	results, err := org.client.cumulativeQuery(ctx, queryType, nil, map[string]string{
 		"type":          queryType,
 		"filter":        fmt.Sprintf("orgName==%s", url.QueryEscape(org.Org.Name)),
 		"filterEncoded": "true",
@@ -351,14 +352,14 @@ func (org *Org) QueryCatalogList() ([]*types.CatalogRecord, error) {
 }
 
 // GetTaskList returns Tasks for Organization and error.
-func (org *Org) GetTaskList() (*types.TasksList, error) {
+func (org *Org) GetTaskList(ctx context.Context) (*types.TasksList, error) {
 
 	for _, link := range org.Org.Link {
 		if link.Rel == "down" && link.Type == "application/vnd.vmware.vcloud.tasksList+xml" {
 
 			tasksList := &types.TasksList{}
 
-			_, err := org.client.ExecuteRequest(link.HREF, http.MethodGet, "",
+			_, err := org.client.ExecuteRequest(ctx, link.HREF, http.MethodGet, "",
 				"error getting taskList: %s", nil, tasksList)
 			if err != nil {
 				return nil, err

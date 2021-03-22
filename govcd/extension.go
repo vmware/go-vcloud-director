@@ -5,20 +5,21 @@
 package govcd
 
 import (
+	"context"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/http"
 )
 
 // Deprecated: please use GetExternalNetwork function instead
-func GetExternalNetworkByName(vcdClient *VCDClient, networkName string) (*types.ExternalNetworkReference, error) {
+func GetExternalNetworkByName(ctx context.Context, vcdClient *VCDClient, networkName string) (*types.ExternalNetworkReference, error) {
 	extNetworkRefs := &types.ExternalNetworkReferences{}
 
-	extNetworkHREF, err := getExternalNetworkHref(&vcdClient.Client)
+	extNetworkHREF, err := getExternalNetworkHref(ctx, &vcdClient.Client)
 	if err != nil {
 		return &types.ExternalNetworkReference{}, err
 	}
 
-	_, err = vcdClient.Client.ExecuteRequest(extNetworkHREF, http.MethodGet,
+	_, err = vcdClient.Client.ExecuteRequest(ctx, extNetworkHREF, http.MethodGet,
 		"", "error retrieving external networks: %s", nil, extNetworkRefs)
 	if err != nil {
 		return &types.ExternalNetworkReference{}, err

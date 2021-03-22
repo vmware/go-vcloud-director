@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"encoding/xml"
 	"fmt"
 	"net/http"
@@ -15,7 +16,7 @@ import (
 
 // CreateNsxvIpSet creates an IP set from *types.EdgeIpSet. IP set defines a group of IP addresses
 // that you can add as the source or destination in a firewall rule or in DHCP relay configuration.
-func (vdc *Vdc) CreateNsxvIpSet(ipSetConfig *types.EdgeIpSet) (*types.EdgeIpSet, error) {
+func (vdc *Vdc) CreateNsxvIpSet(ctx context.Context, ipSetConfig *types.EdgeIpSet) (*types.EdgeIpSet, error) {
 	if err := validateCreateNsxvIpSet(ipSetConfig); err != nil {
 		return nil, err
 	}
@@ -34,13 +35,13 @@ func (vdc *Vdc) CreateNsxvIpSet(ipSetConfig *types.EdgeIpSet) (*types.EdgeIpSet,
 	}
 
 	// Success or an error of type types.NSXError is expected
-	_, err = vdc.client.ExecuteParamRequestWithCustomError(httpPath, nil, http.MethodPost, types.AnyXMLMime,
+	_, err = vdc.client.ExecuteParamRequestWithCustomError(ctx, httpPath, nil, http.MethodPost, types.AnyXMLMime,
 		"error creating IP set: %s", ipSetConfig, &types.NSXError{})
 	if err != nil {
 		return nil, err
 	}
 
-	createdIpSet, err := vdc.GetNsxvIpSetByName(ipSetConfig.Name)
+	createdIpSet, err := vdc.GetNsxvIpSetByName(ctx, ipSetConfig.Name)
 	if err != nil {
 		return nil, fmt.Errorf("could not lookup newly created IP set with name %s: %s", ipSetConfig.Name, err)
 	}
@@ -52,14 +53,14 @@ func (vdc *Vdc) CreateNsxvIpSet(ipSetConfig *types.EdgeIpSet) (*types.EdgeIpSet,
 // perform update.
 // Because the API always requires a Revision to be sent - the update fetches latest revision number
 // automatically and embeds into the update structure.
-func (vdc *Vdc) UpdateNsxvIpSet(ipSetConfig *types.EdgeIpSet) (*types.EdgeIpSet, error) {
+func (vdc *Vdc) UpdateNsxvIpSet(ctx context.Context, ipSetConfig *types.EdgeIpSet) (*types.EdgeIpSet, error) {
 	err := validateUpdateNsxvIpSet(ipSetConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	// Inject latest Revision for this IP set so that API accepts change
-	currentIpSet, err := vdc.GetNsxvIpSetById(ipSetConfig.ID)
+	currentIpSet, err := vdc.GetNsxvIpSetById(ctx, ipSetConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("could not fetch current IP set: %s", err)
 	}
@@ -72,13 +73,13 @@ func (vdc *Vdc) UpdateNsxvIpSet(ipSetConfig *types.EdgeIpSet) (*types.EdgeIpSet,
 
 	// Result is either 204 for success, or an error of type types.NSXError
 	errString := fmt.Sprintf("error while updating IP set with ID %s :%%s", ipSetConfig.ID)
-	_, err = vdc.client.ExecuteRequestWithCustomError(httpPath, http.MethodPut, types.AnyXMLMime,
+	_, err = vdc.client.ExecuteRequestWithCustomError(ctx, httpPath, http.MethodPut, types.AnyXMLMime,
 		errString, ipSetConfig, &types.NSXError{})
 	if err != nil {
 		return nil, err
 	}
 
-	updatedIpSet, err := vdc.GetNsxvIpSetById(ipSetConfig.ID)
+	updatedIpSet, err := vdc.GetNsxvIpSetById(ctx, ipSetConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("could not lookup updated IP set with ID %s: %s", ipSetConfig.ID, err)
 	}
@@ -88,12 +89,12 @@ func (vdc *Vdc) UpdateNsxvIpSet(ipSetConfig *types.EdgeIpSet) (*types.EdgeIpSet,
 
 // GetNsxvIpSetByName searches for IP set by name. Names are unique therefore it can find only one.
 // Returns ErrorEntityNotFound if an IP set is not found
-func (vdc *Vdc) GetNsxvIpSetByName(name string) (*types.EdgeIpSet, error) {
+func (vdc *Vdc) GetNsxvIpSetByName(ctx context.Context, name string) (*types.EdgeIpSet, error) {
 	if err := validateGetNsxvIpSet("", name); err != nil {
 		return nil, err
 	}
 
-	allIpSets, err := vdc.GetAllNsxvIpSets()
+	allIpSets, err := vdc.GetAllNsxvIpSets(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -110,12 +111,12 @@ func (vdc *Vdc) GetNsxvIpSetByName(name string) (*types.EdgeIpSet, error) {
 }
 
 // GetNsxvIpSetById searches for IP set by ID. Returns ErrorEntityNotFound if an IP set is not found
-func (vdc *Vdc) GetNsxvIpSetById(id string) (*types.EdgeIpSet, error) {
+func (vdc *Vdc) GetNsxvIpSetById(ctx context.Context, id string) (*types.EdgeIpSet, error) {
 	if err := validateGetNsxvIpSet(id, ""); err != nil {
 		return nil, err
 	}
 
-	allIpSets, err := vdc.GetAllNsxvIpSets()
+	allIpSets, err := vdc.GetAllNsxvIpSets(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -133,9 +134,9 @@ func (vdc *Vdc) GetNsxvIpSetById(id string) (*types.EdgeIpSet, error) {
 
 // GetNsxvIpSetByNameOrId uses the same identifier to search by name and by ID. Priority is to try
 // and find the IP set by ID. If it is not found - then a search by name is performed.
-func (vdc *Vdc) GetNsxvIpSetByNameOrId(identifier string) (*types.EdgeIpSet, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return vdc.GetNsxvIpSetByName(name) }
-	getById := func(id string, refresh bool) (interface{}, error) { return vdc.GetNsxvIpSetById(id) }
+func (vdc *Vdc) GetNsxvIpSetByNameOrId(ctx context.Context, identifier string) (*types.EdgeIpSet, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) { return vdc.GetNsxvIpSetByName(ctx, name) }
+	getById := func(id string, refresh bool) (interface{}, error) { return vdc.GetNsxvIpSetById(ctx, id) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, true)
 	if entity == nil {
 		return nil, err
@@ -145,7 +146,7 @@ func (vdc *Vdc) GetNsxvIpSetByNameOrId(identifier string) (*types.EdgeIpSet, err
 
 // GetAllNsxvIpSets retrieves all IP sets and returns []*types.EdgeIpSet or an
 // error of type ErrorEntityNotFound if there are no IP sets
-func (vdc *Vdc) GetAllNsxvIpSets() ([]*types.EdgeIpSet, error) {
+func (vdc *Vdc) GetAllNsxvIpSets(ctx context.Context) ([]*types.EdgeIpSet, error) {
 	vdcId, err := GetUuidFromHref(vdc.Vdc.HREF, true)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get vdc ID from HREF: %s", err)
@@ -168,7 +169,7 @@ func (vdc *Vdc) GetAllNsxvIpSets() ([]*types.EdgeIpSet, error) {
 
 	// This query returns all IP sets on the scope (scoped by vDC ID)
 	errString := fmt.Sprintf("unable to read IP sets for scope %s: %%s", vdcId)
-	_, err = vdc.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime, errString, nil, ipSetsResponse)
+	_, err = vdc.client.ExecuteRequest(ctx, httpPath, http.MethodGet, types.AnyXMLMime, errString, nil, ipSetsResponse)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +183,7 @@ func (vdc *Vdc) GetAllNsxvIpSets() ([]*types.EdgeIpSet, error) {
 
 // DeleteNsxvIpSetById deletes IP set by its ID which is formatted as
 // f9daf2da-b4f9-4921-a2f4-d77a943a381c:ipset-9
-func (vdc *Vdc) DeleteNsxvIpSetById(id string) error {
+func (vdc *Vdc) DeleteNsxvIpSetById(ctx context.Context, id string) error {
 	err := validateDeleteNsxvIpSet(id, "")
 	if err != nil {
 		return err
@@ -196,7 +197,7 @@ func (vdc *Vdc) DeleteNsxvIpSetById(id string) error {
 	}
 
 	errString := fmt.Sprintf("unable to delete IP set with ID %s: %%s", id)
-	_, err = vdc.client.ExecuteRequestWithCustomError(httpPath, http.MethodDelete, types.AnyXMLMime,
+	_, err = vdc.client.ExecuteRequestWithCustomError(ctx, httpPath, http.MethodDelete, types.AnyXMLMime,
 		errString, nil, &types.NSXError{})
 	if err != nil {
 		return err
@@ -206,19 +207,19 @@ func (vdc *Vdc) DeleteNsxvIpSetById(id string) error {
 }
 
 // DeleteNsxvIpSetById deletes IP set by its name
-func (vdc *Vdc) DeleteNsxvIpSetByName(name string) error {
+func (vdc *Vdc) DeleteNsxvIpSetByName(ctx context.Context, name string) error {
 	err := validateDeleteNsxvIpSet("", name)
 	if err != nil {
 		return err
 	}
 
 	// Get IP set by name
-	ipSet, err := vdc.GetNsxvIpSetByName(name)
+	ipSet, err := vdc.GetNsxvIpSetByName(ctx, name)
 	if err != nil {
 		return err
 	}
 
-	return vdc.DeleteNsxvIpSetById(ipSet.ID)
+	return vdc.DeleteNsxvIpSetById(ctx, ipSet.ID)
 }
 
 func validateCreateNsxvIpSet(ipSetConfig *types.EdgeIpSet) error {

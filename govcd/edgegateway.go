@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/xml"
 	"fmt"
@@ -55,7 +56,7 @@ type NatRule struct {
 
 // AddDhcpPool adds (or updates) the DHCP pool connected to a specific network.
 // TODO: this is legacy code from 2015, which requires a Terraform structure to work. It may need some re-thinking.
-func (egw *EdgeGateway) AddDhcpPool(network *types.OrgVDCNetwork, dhcppool []interface{}) (Task, error) {
+func (egw *EdgeGateway) AddDhcpPool(ctx context.Context, network *types.OrgVDCNetwork, dhcppool []interface{}) (Task, error) {
 	newEdgeConfig := egw.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration
 	util.Logger.Printf("[DEBUG] EDGE GATEWAY: %#v", newEdgeConfig)
 	util.Logger.Printf("[DEBUG] EDGE GATEWAY SERVICE: %#v", newEdgeConfig.GatewayDhcpService)
@@ -123,7 +124,7 @@ func (egw *EdgeGateway) AddDhcpPool(network *types.OrgVDCNetwork, dhcppool []int
 		apiEndpoint, _ := url.ParseRequestURI(egw.EdgeGateway.HREF)
 		apiEndpoint.Path += "/action/configureServices"
 
-		req := egw.client.NewRequest(map[string]string{}, http.MethodPost, *apiEndpoint, buffer)
+		req := egw.client.NewRequest(ctx, map[string]string{}, http.MethodPost, *apiEndpoint, buffer)
 		util.Logger.Printf("[DEBUG] POSTING TO URL: %s", apiEndpoint.Path)
 		util.Logger.Printf("[DEBUG] XML TO SEND:\n%s", buffer)
 
@@ -152,12 +153,12 @@ func (egw *EdgeGateway) AddDhcpPool(network *types.OrgVDCNetwork, dhcppool []int
 }
 
 // Deprecated: use one of RemoveNATRuleAsync, RemoveNATRule
-func (egw *EdgeGateway) RemoveNATMapping(natType, externalIP, internalIP, port string) (Task, error) {
-	return egw.RemoveNATPortMapping(natType, externalIP, port, internalIP, port)
+func (egw *EdgeGateway) RemoveNATMapping(ctx context.Context, natType, externalIP, internalIP, port string) (Task, error) {
+	return egw.RemoveNATPortMapping(ctx, natType, externalIP, port, internalIP, port)
 }
 
 // Deprecated: use one of RemoveNATRuleAsync, RemoveNATRule
-func (egw *EdgeGateway) RemoveNATPortMapping(natType, externalIP, externalPort, internalIP, internalPort string) (Task, error) {
+func (egw *EdgeGateway) RemoveNATPortMapping(ctx context.Context, natType, externalIP, externalPort, internalIP, internalPort string) (Task, error) {
 	// Find uplink interface
 	var uplink types.Reference
 	for _, gi := range egw.EdgeGateway.Configuration.GatewayInterfaces.GatewayInterface {
@@ -201,7 +202,7 @@ func (egw *EdgeGateway) RemoveNATPortMapping(natType, externalIP, externalPort, 
 	apiEndpoint.Path += "/action/configureServices"
 
 	// Return the task
-	return egw.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	return egw.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		"application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml", "error reconfiguring Edge Gateway: %s", newRules)
 
 }
@@ -209,12 +210,12 @@ func (egw *EdgeGateway) RemoveNATPortMapping(natType, externalIP, externalPort, 
 // RemoveNATRule removes NAT removes NAT rule identified by ID and handles task. Returns error if issues rise.
 // Old functions RemoveNATPortMapping and RemoveNATMapping removed using rule details
 // and expected interface to be of external network type.
-func (egw *EdgeGateway) RemoveNATRule(id string) error {
-	task, err := egw.RemoveNATRuleAsync(id)
+func (egw *EdgeGateway) RemoveNATRule(ctx context.Context, id string) error {
+	task, err := egw.RemoveNATRuleAsync(ctx, id)
 	if err != nil {
 		return fmt.Errorf("error removing DNAT rule: %s", err)
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
 	}
@@ -225,12 +226,12 @@ func (egw *EdgeGateway) RemoveNATRule(id string) error {
 // RemoveNATRuleAsync removes NAT rule or returns an error.
 // Old functions RemoveNATPortMapping and RemoveNATMapping removed using rule details
 // and expected interface to be of external network type.
-func (egw *EdgeGateway) RemoveNATRuleAsync(id string) (Task, error) {
+func (egw *EdgeGateway) RemoveNATRuleAsync(ctx context.Context, id string) (Task, error) {
 	if id == "" {
 		return Task{}, fmt.Errorf("provided id is empty")
 	}
 
-	err := egw.Refresh()
+	err := egw.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing edge gateway: %s", err)
 	}
@@ -267,7 +268,7 @@ func (egw *EdgeGateway) RemoveNATRuleAsync(id string) (Task, error) {
 	egwConfigureHref.Path += "/action/configureServices"
 
 	// Return the task
-	return egw.client.ExecuteTaskRequest(egwConfigureHref.String(), http.MethodPost,
+	return egw.client.ExecuteTaskRequest(ctx, egwConfigureHref.String(), http.MethodPost,
 		"application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml", "error reconfiguring Edge Gateway: %s", newRules)
 }
 
@@ -277,7 +278,7 @@ func (egw *EdgeGateway) RemoveNATRuleAsync(id string) (Task, error) {
 // that updating rule using User interface resets <tag> and as result mapping is lost.
 // Getting using NatRule.ID won't be valid anymore.
 // Old functions AddNATPortMapping and AddNATMapping assigned rule only to first external network
-func (egw *EdgeGateway) AddDNATRule(ruleDetails NatRule) (*types.NatRule, error) {
+func (egw *EdgeGateway) AddDNATRule(ctx context.Context, ruleDetails NatRule) (*types.NatRule, error) {
 	mappingId, err := getPseudoUuid()
 	if err != nil {
 		return nil, err
@@ -286,18 +287,18 @@ func (egw *EdgeGateway) AddDNATRule(ruleDetails NatRule) (*types.NatRule, error)
 	ruleDetails.Description = mappingId
 
 	ruleDetails.NatType = "DNAT"
-	task, err := egw.AddNATRuleAsync(ruleDetails)
+	task, err := egw.AddNATRuleAsync(ctx, ruleDetails)
 	if err != nil {
 		return nil, fmt.Errorf("error creating DNAT rule: %s", err)
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
 	}
 
 	var createdNatRule *types.NatRule
 
-	err = egw.Refresh()
+	err = egw.Refresh(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error refreshing edge gateway: %s", err)
 	}
@@ -315,13 +316,13 @@ func (egw *EdgeGateway) AddDNATRule(ruleDetails NatRule) (*types.NatRule, error)
 
 	createdNatRule.Description = originalDescription
 
-	return egw.UpdateNatRule(createdNatRule)
+	return egw.UpdateNatRule(ctx, createdNatRule)
 }
 
 // AddSNATRule creates SNAT rule and returns created NAT rule or error.
 // Allows assigning a specific Org VDC or an external network.
 // Old functions AddNATPortMapping and AddNATMapping aren't correct as assigned rule only to first external network
-func (egw *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, description string) (*types.NatRule, error) {
+func (egw *EdgeGateway) AddSNATRule(ctx context.Context, networkHref, externalIP, internalIP, description string) (*types.NatRule, error) {
 
 	// As vCD API doesn't return rule ID we get it manually:
 	//  * create rule with description which value is our generated ID
@@ -334,20 +335,20 @@ func (egw *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, descrip
 		return nil, err
 	}
 
-	task, err := egw.AddNATRuleAsync(NatRule{NetworkHref: networkHref, NatType: "SNAT", ExternalIP: externalIP,
+	task, err := egw.AddNATRuleAsync(ctx, NatRule{NetworkHref: networkHref, NatType: "SNAT", ExternalIP: externalIP,
 		ExternalPort: "any", InternalIP: internalIP, InternalPort: "any",
 		IcmpSubType: "", Protocol: "any", Description: mappingId})
 	if err != nil {
 		return nil, fmt.Errorf("error creating SNAT rule: %s", err)
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
 	}
 
 	var createdNatRule *types.NatRule
 
-	err = egw.Refresh()
+	err = egw.Refresh(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error refreshing edge gateway: %s", err)
 	}
@@ -365,7 +366,7 @@ func (egw *EdgeGateway) AddSNATRule(networkHref, externalIP, internalIP, descrip
 
 	createdNatRule.Description = description
 
-	return egw.UpdateNatRule(createdNatRule)
+	return egw.UpdateNatRule(ctx, createdNatRule)
 }
 
 // getPseudoUuid creates unique ID/UUID
@@ -383,21 +384,21 @@ func getPseudoUuid() (string, error) {
 }
 
 // UpdateNatRule updates NAT rule and handles task. Returns updated NAT rule or error.
-func (egw *EdgeGateway) UpdateNatRule(natRule *types.NatRule) (*types.NatRule, error) {
-	task, err := egw.UpdateNatRuleAsync(natRule)
+func (egw *EdgeGateway) UpdateNatRule(ctx context.Context, natRule *types.NatRule) (*types.NatRule, error) {
+	task, err := egw.UpdateNatRuleAsync(ctx, natRule)
 	if err != nil {
 		return nil, fmt.Errorf("error updating NAT rule: %s", err)
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
 	}
 
-	return egw.GetNatRule(natRule.ID)
+	return egw.GetNatRule(ctx, natRule.ID)
 }
 
 // UpdateNatRuleAsync updates NAT rule and returns task or error.
-func (egw *EdgeGateway) UpdateNatRuleAsync(natRule *types.NatRule) (Task, error) {
+func (egw *EdgeGateway) UpdateNatRuleAsync(ctx context.Context, natRule *types.NatRule) (Task, error) {
 	if natRule.GatewayNatRule.Protocol != "" && !isValidProtocol(natRule.GatewayNatRule.Protocol) {
 		return Task{}, fmt.Errorf("provided protocol is not one of TCP, UDP, TCPUDP, ICMP, ANY")
 	}
@@ -406,7 +407,7 @@ func (egw *EdgeGateway) UpdateNatRuleAsync(natRule *types.NatRule) (Task, error)
 		return Task{}, fmt.Errorf("provided icmp sub type is not correct")
 	}
 
-	err := egw.Refresh()
+	err := egw.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing edge gateway: %s", err)
 	}
@@ -432,13 +433,13 @@ func (egw *EdgeGateway) UpdateNatRuleAsync(natRule *types.NatRule) (Task, error)
 	egwConfigureHref.Path += "/action/configureServices"
 
 	// Return the task
-	return egw.client.ExecuteTaskRequest(egwConfigureHref.String(), http.MethodPost,
+	return egw.client.ExecuteTaskRequest(ctx, egwConfigureHref.String(), http.MethodPost,
 		"application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml", "error reconfiguring Edge Gateway: %s", newRules)
 }
 
 // GetNatRule returns NAT rule or error.
-func (egw *EdgeGateway) GetNatRule(id string) (*types.NatRule, error) {
-	err := egw.Refresh()
+func (egw *EdgeGateway) GetNatRule(ctx context.Context, id string) (*types.NatRule, error) {
+	err := egw.Refresh(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error refreshing edge gateway: %s", err)
 	}
@@ -457,7 +458,7 @@ func (egw *EdgeGateway) GetNatRule(id string) (*types.NatRule, error) {
 // AddNATRuleAsync creates NAT rule and return task or err
 // Allows assigning specific network Org VDC or external. Old function AddNATPortMapping and
 // AddNATMapping function shouldn't be used because assigns rule to first external network
-func (egw *EdgeGateway) AddNATRuleAsync(ruleDetails NatRule) (Task, error) {
+func (egw *EdgeGateway) AddNATRuleAsync(ctx context.Context, ruleDetails NatRule) (Task, error) {
 	if !isValidProtocol(ruleDetails.Protocol) {
 		return Task{}, fmt.Errorf("provided protocol is not one of TCP, UDP, TCPUDP, ICMP, ANY")
 	}
@@ -510,23 +511,23 @@ func (egw *EdgeGateway) AddNATRuleAsync(ruleDetails NatRule) (Task, error) {
 	egwConfigureHref.Path += "/action/configureServices"
 
 	// Return the task
-	return egw.client.ExecuteTaskRequest(egwConfigureHref.String(), http.MethodPost,
+	return egw.client.ExecuteTaskRequest(ctx, egwConfigureHref.String(), http.MethodPost,
 		"application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml", "error reconfiguring Edge Gateway: %s", newRules)
 }
 
 // Deprecated: Use eGW.AddSNATRule() or eGW.AddDNATRule()
-func (egw *EdgeGateway) AddNATRule(network *types.OrgVDCNetwork, natType, externalIP, internalIP string) (Task, error) {
-	return egw.AddNATPortMappingWithUplink(network, natType, externalIP, "any", internalIP, "any", "any", "")
+func (egw *EdgeGateway) AddNATRule(ctx context.Context, network *types.OrgVDCNetwork, natType, externalIP, internalIP string) (Task, error) {
+	return egw.AddNATPortMappingWithUplink(ctx, network, natType, externalIP, "any", internalIP, "any", "any", "")
 }
 
 // Deprecated: Use eGW.AddNATRule()
-func (egw *EdgeGateway) AddNATMapping(natType, externalIP, internalIP string) (Task, error) {
-	return egw.AddNATPortMapping(natType, externalIP, "any", internalIP, "any", "any", "")
+func (egw *EdgeGateway) AddNATMapping(ctx context.Context, natType, externalIP, internalIP string) (Task, error) {
+	return egw.AddNATPortMapping(ctx, natType, externalIP, "any", internalIP, "any", "any", "")
 }
 
 // Deprecated: Use eGW.AddNATPortMappingWithUplink()
-func (egw *EdgeGateway) AddNATPortMapping(natType, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType string) (Task, error) {
-	return egw.AddNATPortMappingWithUplink(nil, natType, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType)
+func (egw *EdgeGateway) AddNATPortMapping(ctx context.Context, natType, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType string) (Task, error) {
+	return egw.AddNATPortMappingWithUplink(ctx, nil, natType, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType)
 }
 
 // Deprecated: creates not good behaviour of functionality
@@ -580,7 +581,7 @@ func isValidIcmpSubType(protocol string) bool {
 }
 
 // Deprecated: Use eGW.AddDNATRule() or eGW.CreateNsxvNatRule() for NSX-V
-func (egw *EdgeGateway) AddNATPortMappingWithUplink(network *types.OrgVDCNetwork, natType, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType string) (Task, error) {
+func (egw *EdgeGateway) AddNATPortMappingWithUplink(ctx context.Context, network *types.OrgVDCNetwork, natType, externalIP, externalPort, internalIP, internalPort, protocol, icmpSubType string) (Task, error) {
 	// if a network is provided take it, otherwise find first uplink on the edge gateway
 	var uplinkRef string
 
@@ -658,12 +659,12 @@ func (egw *EdgeGateway) AddNATPortMappingWithUplink(network *types.OrgVDCNetwork
 	apiEndpoint.Path += "/action/configureServices"
 
 	// Return the task
-	return egw.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	return egw.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		"application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml", "error reconfiguring Edge Gateway: %s", newRules)
 }
 
-func (egw *EdgeGateway) CreateFirewallRules(defaultAction string, rules []*types.FirewallRule) (Task, error) {
-	err := egw.Refresh()
+func (egw *EdgeGateway) CreateFirewallRules(ctx context.Context, defaultAction string, rules []*types.FirewallRule) (Task, error) {
+	err := egw.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error: %s", err)
 	}
@@ -690,7 +691,7 @@ func (egw *EdgeGateway) CreateFirewallRules(defaultAction string, rules []*types
 		apiEndpoint, _ := url.ParseRequestURI(egw.EdgeGateway.HREF)
 		apiEndpoint.Path += "/action/configureServices"
 
-		req := egw.client.NewRequest(map[string]string{}, http.MethodPost, *apiEndpoint, buffer)
+		req := egw.client.NewRequest(ctx, map[string]string{}, http.MethodPost, *apiEndpoint, buffer)
 		util.Logger.Printf("[DEBUG] POSTING TO URL: %s", apiEndpoint.Path)
 		util.Logger.Printf("[DEBUG] XML TO SEND:\n%s", buffer)
 
@@ -717,7 +718,7 @@ func (egw *EdgeGateway) CreateFirewallRules(defaultAction string, rules []*types
 	return *task, nil
 }
 
-func (egw *EdgeGateway) Refresh() error {
+func (egw *EdgeGateway) Refresh(ctx context.Context) error {
 
 	if egw.EdgeGateway == nil {
 		return fmt.Errorf("cannot refresh, Object is empty")
@@ -729,16 +730,16 @@ func (egw *EdgeGateway) Refresh() error {
 	// elements in slices.
 	egw.EdgeGateway = &types.EdgeGateway{}
 
-	_, err := egw.client.ExecuteRequest(url, http.MethodGet,
+	_, err := egw.client.ExecuteRequest(ctx, url, http.MethodGet,
 		"", "error retrieving Edge Gateway: %s", nil, egw.EdgeGateway)
 
 	return err
 }
 
-func (egw *EdgeGateway) Remove1to1Mapping(internal, external string) (Task, error) {
+func (egw *EdgeGateway) Remove1to1Mapping(ctx context.Context, internal, external string) (Task, error) {
 
 	// Refresh EdgeGateway rules
-	err := egw.Refresh()
+	err := egw.Refresh(ctx)
 	if err != nil {
 		fmt.Printf("error: %s\n", err)
 	}
@@ -841,15 +842,15 @@ func (egw *EdgeGateway) Remove1to1Mapping(internal, external string) (Task, erro
 	apiEndpoint.Path += "/action/configureServices"
 
 	// Return the task
-	return egw.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	return egw.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		"application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml", "error reconfiguring Edge Gateway: %s", newEdgeConfig)
 
 }
 
-func (egw *EdgeGateway) Create1to1Mapping(internal, external, description string) (Task, error) {
+func (egw *EdgeGateway) Create1to1Mapping(ctx context.Context, internal, external, description string) (Task, error) {
 
 	// Refresh EdgeGateway rules
-	err := egw.Refresh()
+	err := egw.Refresh(ctx)
 	if err != nil {
 		fmt.Printf("error: %s\n", err)
 	}
@@ -936,14 +937,14 @@ func (egw *EdgeGateway) Create1to1Mapping(internal, external, description string
 	apiEndpoint.Path += "/action/configureServices"
 
 	// Return the task
-	return egw.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	return egw.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		"application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml", "error reconfiguring Edge Gateway: %s", newEdgeConfig)
 
 }
 
-func (egw *EdgeGateway) AddIpsecVPN(ipsecVPNConfig *types.EdgeGatewayServiceConfiguration) (Task, error) {
+func (egw *EdgeGateway) AddIpsecVPN(ctx context.Context, ipsecVPNConfig *types.EdgeGatewayServiceConfiguration) (Task, error) {
 
-	err := egw.Refresh()
+	err := egw.Refresh(ctx)
 	if err != nil {
 		fmt.Printf("error: %s\n", err)
 	}
@@ -954,14 +955,14 @@ func (egw *EdgeGateway) AddIpsecVPN(ipsecVPNConfig *types.EdgeGatewayServiceConf
 	apiEndpoint.Path += "/action/configureServices"
 
 	// Return the task
-	return egw.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	return egw.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		"application/vnd.vmware.admin.edgeGatewayServiceConfiguration+xml", "error reconfiguring Edge Gateway: %s", ipsecVPNConfig)
 
 }
 
 // Removes an Edge Gateway VPN, by passing an empty configuration
-func (egw *EdgeGateway) RemoveIpsecVPN() (Task, error) {
-	err := egw.Refresh()
+func (egw *EdgeGateway) RemoveIpsecVPN(ctx context.Context) (Task, error) {
+	err := egw.Refresh(ctx)
 	if err != nil {
 		fmt.Printf("error: %s\n", err)
 	}
@@ -971,12 +972,12 @@ func (egw *EdgeGateway) RemoveIpsecVPN() (Task, error) {
 			IsEnabled: false,
 		},
 	}
-	return egw.AddIpsecVPN(ipsecVPNConfig)
+	return egw.AddIpsecVPN(ctx, ipsecVPNConfig)
 }
 
 // Deletes the edge gateway, returning a task and an error with the operation result.
 // https://code.vmware.com/apis/442/vcloud-director/doc/doc/operations/DELETE-EdgeGateway.html
-func (egw *EdgeGateway) DeleteAsync(force bool, recursive bool) (Task, error) {
+func (egw *EdgeGateway) DeleteAsync(ctx context.Context, force bool, recursive bool) (Task, error) {
 	util.Logger.Printf("[TRACE] EdgeGateway.Delete - deleting edge gateway with force: %t, recursive: %t", force, recursive)
 
 	if egw.EdgeGateway.HREF == "" {
@@ -988,7 +989,7 @@ func (egw *EdgeGateway) DeleteAsync(force bool, recursive bool) (Task, error) {
 		return Task{}, fmt.Errorf("error parsing edge gateway url: %s", err)
 	}
 
-	req := egw.client.NewRequest(map[string]string{
+	req := egw.client.NewRequest(ctx, map[string]string{
 		"force":     strconv.FormatBool(force),
 		"recursive": strconv.FormatBool(recursive),
 	}, http.MethodDelete, *egwUrl, nil)
@@ -1005,9 +1006,9 @@ func (egw *EdgeGateway) DeleteAsync(force bool, recursive bool) (Task, error) {
 
 // Deletes the edge gateway, returning an error with the operation result.
 // https://code.vmware.com/apis/442/vcloud-director/doc/doc/operations/DELETE-EdgeGateway.html
-func (egw *EdgeGateway) Delete(force bool, recursive bool) error {
+func (egw *EdgeGateway) Delete(ctx context.Context, force bool, recursive bool) error {
 
-	task, err := egw.DeleteAsync(force, recursive)
+	task, err := egw.DeleteAsync(ctx, force, recursive)
 	if err != nil {
 		return err
 	}
@@ -1015,7 +1016,7 @@ func (egw *EdgeGateway) Delete(force bool, recursive bool) error {
 		return fmt.Errorf(combinedTaskErrorMessage(task.Task, fmt.Errorf("edge gateway not properly destroyed")))
 	}
 
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return fmt.Errorf(combinedTaskErrorMessage(task.Task, err))
 	}
@@ -1026,9 +1027,9 @@ func (egw *EdgeGateway) Delete(force bool, recursive bool) error {
 // GetNetworks returns the list of networks associated with an edge gateway
 // In the return structure, an interfaceType of "uplink" indicates an external network,
 // while "internal" is for Org VDC routed networks
-func (egw *EdgeGateway) GetNetworks() ([]SimpleNetworkIdentifier, error) {
+func (egw *EdgeGateway) GetNetworks(ctx context.Context) ([]SimpleNetworkIdentifier, error) {
 	var networks []SimpleNetworkIdentifier
-	err := egw.Refresh()
+	err := egw.Refresh(ctx)
 	if err != nil {
 		return networks, err
 	}
@@ -1096,7 +1097,7 @@ func (egw *EdgeGateway) buildProxiedEdgeEndpointURL(optionalSuffix string) (stri
 // to access global configuration options. These are 4 fields only:
 // LoadBalancer.Enabled, LoadBalancer.AccelerationEnabled, LoadBalancer.Logging.Enable,
 // LoadBalancer.Logging.LogLevel
-func (egw *EdgeGateway) GetLBGeneralParams() (*types.LbGeneralParamsWithXml, error) {
+func (egw *EdgeGateway) GetLBGeneralParams(ctx context.Context) (*types.LbGeneralParamsWithXml, error) {
 	if !egw.HasAdvancedNetworking() {
 		return nil, fmt.Errorf("only advanced edge gateway supports load balancing")
 	}
@@ -1107,7 +1108,7 @@ func (egw *EdgeGateway) GetLBGeneralParams() (*types.LbGeneralParamsWithXml, err
 	}
 
 	loadBalancerConfig := &types.LbGeneralParamsWithXml{}
-	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
+	_, err = egw.client.ExecuteRequest(ctx, httpPath, http.MethodGet, types.AnyXMLMime,
 		"unable to read load balancer configuration: %s", nil, loadBalancerConfig)
 
 	if err != nil {
@@ -1122,7 +1123,7 @@ func (egw *EdgeGateway) GetLBGeneralParams() (*types.LbGeneralParamsWithXml, err
 // them to construct types.LbGeneralParamsWithXml without altering other options to prevent config
 // corruption.
 // They are represented in load balancer global configuration tab in the UI.
-func (egw *EdgeGateway) UpdateLBGeneralParams(enabled, accelerationEnabled, loggingEnabled bool, logLevel string) (*types.LbGeneralParamsWithXml, error) {
+func (egw *EdgeGateway) UpdateLBGeneralParams(ctx context.Context, enabled, accelerationEnabled, loggingEnabled bool, logLevel string) (*types.LbGeneralParamsWithXml, error) {
 	if !egw.HasAdvancedNetworking() {
 		return nil, fmt.Errorf("only advanced edge gateway supports load balancing")
 	}
@@ -1131,7 +1132,7 @@ func (egw *EdgeGateway) UpdateLBGeneralParams(enabled, accelerationEnabled, logg
 		return nil, err
 	}
 	// Retrieve load balancer to work on latest configuration
-	currentLb, err := egw.GetLBGeneralParams()
+	currentLb, err := egw.GetLBGeneralParams(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve load balancer before update: %s", err)
 	}
@@ -1158,14 +1159,14 @@ func (egw *EdgeGateway) UpdateLBGeneralParams(enabled, accelerationEnabled, logg
 	if err != nil {
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
-	_, err = egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodPut, types.AnyXMLMime,
+	_, err = egw.client.ExecuteRequestWithCustomError(ctx, httpPath, http.MethodPut, types.AnyXMLMime,
 		"error while updating load balancer config: %s", currentLb, &types.NSXError{})
 	if err != nil {
 		return nil, err
 	}
 
 	// Retrieve configuration after update
-	updatedLb, err := egw.GetLBGeneralParams()
+	updatedLb, err := egw.GetLBGeneralParams(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve load balancer config after update: %s", err)
 	}
@@ -1177,7 +1178,7 @@ func (egw *EdgeGateway) UpdateLBGeneralParams(enabled, accelerationEnabled, logg
 // to alter master configuration options. These are 3 fields only:
 // FirewallConfigWithXml.Enabled, FirewallConfigWithXml.DefaultPolicy.LoggingEnabled and
 // FirewallConfigWithXml.DefaultPolicy.Action
-func (egw *EdgeGateway) GetFirewallConfig() (*types.FirewallConfigWithXml, error) {
+func (egw *EdgeGateway) GetFirewallConfig(ctx context.Context) (*types.FirewallConfigWithXml, error) {
 	if !egw.HasAdvancedNetworking() {
 		return nil, fmt.Errorf("only advanced edge gateway support firewall configuration")
 	}
@@ -1188,7 +1189,7 @@ func (egw *EdgeGateway) GetFirewallConfig() (*types.FirewallConfigWithXml, error
 	}
 
 	firewallConfig := &types.FirewallConfigWithXml{}
-	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
+	_, err = egw.client.ExecuteRequest(ctx, httpPath, http.MethodGet, types.AnyXMLMime,
 		"unable to read firewall configuration: %s", nil, firewallConfig)
 
 	if err != nil {
@@ -1203,7 +1204,7 @@ func (egw *EdgeGateway) GetFirewallConfig() (*types.FirewallConfigWithXml, error
 // them to construct types.FirewallConfigWithXml without altering other options to prevent config
 // corruption.
 // They are represented in firewall configuration page in the UI.
-func (egw *EdgeGateway) UpdateFirewallConfig(enabled, defaultLoggingEnabled bool, defaultAction string) (*types.FirewallConfigWithXml, error) {
+func (egw *EdgeGateway) UpdateFirewallConfig(ctx context.Context, enabled, defaultLoggingEnabled bool, defaultAction string) (*types.FirewallConfigWithXml, error) {
 	if !egw.HasAdvancedNetworking() {
 		return nil, fmt.Errorf("only advanced edge gateway supports load balancing")
 	}
@@ -1213,7 +1214,7 @@ func (egw *EdgeGateway) UpdateFirewallConfig(enabled, defaultLoggingEnabled bool
 	}
 
 	// Retrieve firewall latest configuration
-	currentFw, err := egw.GetFirewallConfig()
+	currentFw, err := egw.GetFirewallConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve firewall config before update: %s", err)
 	}
@@ -1237,14 +1238,14 @@ func (egw *EdgeGateway) UpdateFirewallConfig(enabled, defaultLoggingEnabled bool
 	if err != nil {
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
-	_, err = egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodPut, types.AnyXMLMime,
+	_, err = egw.client.ExecuteRequestWithCustomError(ctx, httpPath, http.MethodPut, types.AnyXMLMime,
 		"error while updating firewall configuration : %s", currentFw, &types.NSXError{})
 	if err != nil {
 		return nil, err
 	}
 
 	// Retrieve configuration after update
-	updatedFw, err := egw.GetFirewallConfig()
+	updatedFw, err := egw.GetFirewallConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve firewall after update: %s", err)
 	}
@@ -1264,7 +1265,7 @@ func validateUpdateLBGeneralParams(logLevel string) error {
 
 // getVdcNetworks retrieves a structure of type EdgeGatewayInterfaces which contains network
 // interfaces available in Edge Gateway (uses "/vdcNetworks" endpoint)
-func (egw *EdgeGateway) getVdcNetworks() (*types.EdgeGatewayInterfaces, error) {
+func (egw *EdgeGateway) getVdcNetworks(ctx context.Context) (*types.EdgeGatewayInterfaces, error) {
 	if !egw.HasAdvancedNetworking() {
 		return nil, fmt.Errorf("only advanced edge gateway supports vNics")
 	}
@@ -1275,7 +1276,7 @@ func (egw *EdgeGateway) getVdcNetworks() (*types.EdgeGatewayInterfaces, error) {
 	}
 
 	vnicConfig := &types.EdgeGatewayInterfaces{}
-	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
+	_, err = egw.client.ExecuteRequest(ctx, httpPath, http.MethodGet, types.AnyXMLMime,
 		"unable to edge gateway vnic configuration: %s", nil, vnicConfig)
 
 	if err != nil {
@@ -1288,8 +1289,8 @@ func (egw *EdgeGateway) getVdcNetworks() (*types.EdgeGatewayInterfaces, error) {
 // GetVnicIndexByNetworkNameAndType returns *int of vNic index for specified network name and network type
 // networkType one of: 'internal', 'uplink', 'trunk', 'subinterface'
 // networkName cannot be empty
-func (egw *EdgeGateway) GetVnicIndexByNetworkNameAndType(networkName, networkType string) (*int, error) {
-	vnics, err := egw.getVdcNetworks()
+func (egw *EdgeGateway) GetVnicIndexByNetworkNameAndType(ctx context.Context, networkName, networkType string) (*int, error) {
+	vnics, err := egw.getVdcNetworks(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("cannot retrieve vNic configuration: %s", err)
 	}
@@ -1303,8 +1304,8 @@ func (egw *EdgeGateway) GetVnicIndexByNetworkNameAndType(networkName, networkTyp
 //
 // Warning: this function assumes that there are no duplicate network names attached. If it is so
 // this function will return the first network
-func (egw *EdgeGateway) GetAnyVnicIndexByNetworkName(networkName string) (*int, string, error) {
-	vnics, err := egw.getVdcNetworks()
+func (egw *EdgeGateway) GetAnyVnicIndexByNetworkName(ctx context.Context, networkName string) (*int, string, error) {
+	vnics, err := egw.getVdcNetworks(ctx)
 	if err != nil {
 		return nil, "", fmt.Errorf("cannot retrieve vNic configuration: %s", err)
 	}
@@ -1332,8 +1333,8 @@ func (egw *EdgeGateway) GetAnyVnicIndexByNetworkName(networkName string) (*int, 
 
 // GetNetworkNameAndTypeByVnicIndex returns network name and network type for given vNic index
 // returned networkType can be one of: 'internal', 'uplink', 'trunk', 'subinterface'
-func (egw *EdgeGateway) GetNetworkNameAndTypeByVnicIndex(vNicIndex int) (string, string, error) {
-	vnics, err := egw.getVdcNetworks()
+func (egw *EdgeGateway) GetNetworkNameAndTypeByVnicIndex(ctx context.Context, vNicIndex int) (string, string, error) {
+	vnics, err := egw.getVdcNetworks(ctx)
 	if err != nil {
 		return "", "", fmt.Errorf("cannot retrieve vNic configuration: %s", err)
 	}
@@ -1406,28 +1407,28 @@ func getNetworkNameAndTypeByVnicIndex(vNicIndex int, vnics *types.EdgeGatewayInt
 }
 
 // UpdateAsync updates the edge gateway in place with the information contained in the internal structure
-func (egw *EdgeGateway) UpdateAsync() (Task, error) {
+func (egw *EdgeGateway) UpdateAsync(ctx context.Context) (Task, error) {
 
 	egw.EdgeGateway.Xmlns = types.XMLNamespaceVCloud
 	egw.EdgeGateway.Configuration.Xmlns = types.XMLNamespaceVCloud
 	egw.EdgeGateway.Tasks = nil
 
 	// Return the task
-	return egw.client.ExecuteTaskRequest(egw.EdgeGateway.HREF, http.MethodPut,
+	return egw.client.ExecuteTaskRequest(ctx, egw.EdgeGateway.HREF, http.MethodPut,
 		types.MimeEdgeGateway, "error updating Edge Gateway: %s", egw.EdgeGateway)
 }
 
 // Update is a wrapper around UpdateAsync
 // The pointer receiver is refreshed after update
-func (egw *EdgeGateway) Update() error {
+func (egw *EdgeGateway) Update(ctx context.Context) error {
 
-	task, err := egw.UpdateAsync()
+	task, err := egw.UpdateAsync(ctx)
 	if err != nil {
 		return err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return err
 	}
-	return egw.Refresh()
+	return egw.Refresh(ctx)
 }

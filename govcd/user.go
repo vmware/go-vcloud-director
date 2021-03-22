@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -73,34 +74,34 @@ func NewUser(cli *Client, org *AdminOrg) *OrgUser {
 
 // FetchUserByHref returns a user by its HREF
 // Deprecated: use GetUserByHref instead
-func (adminOrg *AdminOrg) FetchUserByHref(href string) (*OrgUser, error) {
-	return adminOrg.GetUserByHref(href)
+func (adminOrg *AdminOrg) FetchUserByHref(ctx context.Context, href string) (*OrgUser, error) {
+	return adminOrg.GetUserByHref(ctx, href)
 }
 
 // FetchUserByName returns a user by its Name
 // Deprecated: use GetUserByName instead
-func (adminOrg *AdminOrg) FetchUserByName(name string, refresh bool) (*OrgUser, error) {
-	return adminOrg.GetUserByName(name, refresh)
+func (adminOrg *AdminOrg) FetchUserByName(ctx context.Context, name string, refresh bool) (*OrgUser, error) {
+	return adminOrg.GetUserByName(ctx, name, refresh)
 }
 
 // FetchUserById returns a user by its ID
 // Deprecated: use GetUserById instead
-func (adminOrg *AdminOrg) FetchUserById(id string, refresh bool) (*OrgUser, error) {
-	return adminOrg.GetUserById(id, refresh)
+func (adminOrg *AdminOrg) FetchUserById(ctx context.Context, id string, refresh bool) (*OrgUser, error) {
+	return adminOrg.GetUserById(ctx, id, refresh)
 }
 
 // FetchUserById returns a user by its Name or ID
 // Deprecated: use GetUserByNameOrId instead
-func (adminOrg *AdminOrg) FetchUserByNameOrId(identifier string, refresh bool) (*OrgUser, error) {
-	return adminOrg.GetUserByNameOrId(identifier, refresh)
+func (adminOrg *AdminOrg) FetchUserByNameOrId(ctx context.Context, identifier string, refresh bool) (*OrgUser, error) {
+	return adminOrg.GetUserByNameOrId(ctx, identifier, refresh)
 }
 
 // GetUserByHref returns a user by its HREF, without need for
 // searching in the adminOrg user list
-func (adminOrg *AdminOrg) GetUserByHref(href string) (*OrgUser, error) {
+func (adminOrg *AdminOrg) GetUserByHref(ctx context.Context, href string) (*OrgUser, error) {
 	orgUser := NewUser(adminOrg.client, adminOrg)
 
-	_, err := adminOrg.client.ExecuteRequest(href, http.MethodGet,
+	_, err := adminOrg.client.ExecuteRequest(ctx, href, http.MethodGet,
 		types.MimeAdminUser, "error getting user: %s", nil, orgUser.User)
 
 	if err != nil {
@@ -115,9 +116,9 @@ func (adminOrg *AdminOrg) GetUserByHref(href string) (*OrgUser, error) {
 // This is usually done after creating, modifying, or deleting users.
 // If it is false, it will search within the data already in memory (useful when
 // looping through the users and we know that no changes have occurred in the meantime)
-func (adminOrg *AdminOrg) GetUserByName(name string, refresh bool) (*OrgUser, error) {
+func (adminOrg *AdminOrg) GetUserByName(ctx context.Context, name string, refresh bool) (*OrgUser, error) {
 	if refresh {
-		err := adminOrg.Refresh()
+		err := adminOrg.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -125,7 +126,7 @@ func (adminOrg *AdminOrg) GetUserByName(name string, refresh bool) (*OrgUser, er
 
 	for _, user := range adminOrg.AdminOrg.Users.User {
 		if user.Name == name {
-			return adminOrg.GetUserByHref(user.HREF)
+			return adminOrg.GetUserByHref(ctx, user.HREF)
 		}
 	}
 	return nil, ErrorEntityNotFound
@@ -137,9 +138,9 @@ func (adminOrg *AdminOrg) GetUserByName(name string, refresh bool) (*OrgUser, er
 // This is usually done after creating, modifying, or deleting users.
 // If it is false, it will search within the data already in memory (useful when
 // looping through the users and we know that no changes have occurred in the meantime)
-func (adminOrg *AdminOrg) GetUserById(id string, refresh bool) (*OrgUser, error) {
+func (adminOrg *AdminOrg) GetUserById(ctx context.Context, id string, refresh bool) (*OrgUser, error) {
 	if refresh {
-		err := adminOrg.Refresh()
+		err := adminOrg.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -147,7 +148,7 @@ func (adminOrg *AdminOrg) GetUserById(id string, refresh bool) (*OrgUser, error)
 
 	for _, user := range adminOrg.AdminOrg.Users.User {
 		if equalIds(id, user.ID, user.HREF) {
-			return adminOrg.GetUserByHref(user.HREF)
+			return adminOrg.GetUserByHref(ctx, user.HREF)
 		}
 	}
 	return nil, ErrorEntityNotFound
@@ -160,9 +161,11 @@ func (adminOrg *AdminOrg) GetUserById(id string, refresh bool) (*OrgUser, error)
 // This is usually done after creating, modifying, or deleting users.
 // If it is false, it will search within the data already in memory (useful when
 // looping through the users and we know that no changes have occurred in the meantime)
-func (adminOrg *AdminOrg) GetUserByNameOrId(identifier string, refresh bool) (*OrgUser, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetUserByName(name, refresh) }
-	getById := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetUserById(name, refresh) }
+func (adminOrg *AdminOrg) GetUserByNameOrId(ctx context.Context, identifier string, refresh bool) (*OrgUser, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) {
+		return adminOrg.GetUserByName(ctx, name, refresh)
+	}
+	getById := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetUserById(ctx, name, refresh) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
 	if entity == nil {
 		return nil, err
@@ -190,7 +193,7 @@ func (adminOrg *AdminOrg) GetRoleReference(roleName string) (*types.Reference, e
 }
 
 // Retrieves a user within the boundaries of MaxRetryTimeout
-func retrieveUserWithTimeout(adminOrg *AdminOrg, userName string) (*OrgUser, error) {
+func retrieveUserWithTimeout(ctx context.Context, adminOrg *AdminOrg, userName string) (*OrgUser, error) {
 
 	// Attempting to retrieve the user
 	delayPerAttempt := 200 * time.Millisecond
@@ -213,7 +216,7 @@ func retrieveUserWithTimeout(adminOrg *AdminOrg, userName string) (*OrgUser, err
 	var newUser *OrgUser
 	var err error
 	for elapsed < maxOperationTimeout {
-		newUser, err = adminOrg.GetUserByName(userName, true)
+		newUser, err = adminOrg.GetUserByName(ctx, userName, true)
 		if err == nil {
 			break
 		}
@@ -239,7 +242,7 @@ func retrieveUserWithTimeout(adminOrg *AdminOrg, userName string) (*OrgUser, err
 // little as 200ms or as much as Client.MaxRetryTimeout
 // Mandatory fields are: Name, Role, Password.
 // https://code.vmware.com/apis/442/vcloud-director#/doc/doc/operations/POST-CreateUser.html
-func (adminOrg *AdminOrg) CreateUser(userConfiguration *types.User) (*OrgUser, error) {
+func (adminOrg *AdminOrg) CreateUser(ctx context.Context, userConfiguration *types.User) (*OrgUser, error) {
 	err := validateUserForCreation(userConfiguration)
 	if err != nil {
 		return nil, err
@@ -253,7 +256,7 @@ func (adminOrg *AdminOrg) CreateUser(userConfiguration *types.User) (*OrgUser, e
 
 	user := NewUser(adminOrg.client, adminOrg)
 
-	_, err = adminOrg.client.ExecuteRequest(userCreateHREF.String(), http.MethodPost,
+	_, err = adminOrg.client.ExecuteRequest(ctx, userCreateHREF.String(), http.MethodPost,
 		types.MimeAdminUser, "error creating user: %s", userConfiguration, user.User)
 	if err != nil {
 		return nil, err
@@ -265,18 +268,18 @@ func (adminOrg *AdminOrg) CreateUser(userConfiguration *types.User) (*OrgUser, e
 	if user.User.Tasks != nil && len(user.User.Tasks.Task) > 0 {
 		task := NewTask(adminOrg.client)
 		task.Task = user.User.Tasks.Task[0]
-		err = task.WaitTaskCompletion()
+		err = task.WaitTaskCompletion(ctx)
 
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return retrieveUserWithTimeout(adminOrg, userConfiguration.Name)
+	return retrieveUserWithTimeout(ctx, adminOrg, userConfiguration.Name)
 }
 
 // CreateUserSimple creates an org user from a simplified structure
-func (adminOrg *AdminOrg) CreateUserSimple(userData OrgUserConfiguration) (*OrgUser, error) {
+func (adminOrg *AdminOrg) CreateUserSimple(ctx context.Context, userData OrgUserConfiguration) (*OrgUser, error) {
 
 	if userData.Name == "" {
 		return nil, fmt.Errorf("name is mandatory to create a user")
@@ -310,7 +313,7 @@ func (adminOrg *AdminOrg) CreateUserSimple(userData OrgUserConfiguration) (*OrgU
 	}
 
 	// ShowUser(userConfiguration)
-	return adminOrg.CreateUser(&userConfiguration)
+	return adminOrg.CreateUser(ctx, &userConfiguration)
 }
 
 // GetRoleName retrieves the name of the role currently assigned to the user
@@ -332,11 +335,11 @@ func (user *OrgUser) GetRoleName() string {
 // with takeOwnership = false, if the user own catalogs, networks, or running VMs/vApps, the call will fail.
 //                             If the user owns only powered-off VMs/vApps, the call will succeeds and the
 //                             VMs/vApps will be removed.
-func (user *OrgUser) Delete(takeOwnership bool) error {
+func (user *OrgUser) Delete(ctx context.Context, takeOwnership bool) error {
 	util.Logger.Printf("[TRACE] Deleting user: %#v (take ownership: %v)", user.User.Name, takeOwnership)
 
 	if takeOwnership {
-		err := user.TakeOwnership()
+		err := user.TakeOwnership(ctx)
 		if err != nil {
 			return err
 		}
@@ -348,14 +351,14 @@ func (user *OrgUser) Delete(takeOwnership bool) error {
 	}
 	util.Logger.Printf("[TRACE] Url for deleting user : %#v and name: %s", userHREF, user.User.Name)
 
-	return user.client.ExecuteRequestWithoutResponse(userHREF.String(), http.MethodDelete,
+	return user.client.ExecuteRequestWithoutResponse(ctx, userHREF.String(), http.MethodDelete,
 		types.MimeAdminUser, "error deleting user : %s", nil)
 }
 
 // UpdateSimple updates the user, using ALL the fields in userData structure
 // returning an error if the call fails.
 // Careful: DeployedVmQuota and StoredVmQuota use a `0` value to mean "unlimited"
-func (user *OrgUser) UpdateSimple(userData OrgUserConfiguration) error {
+func (user *OrgUser) UpdateSimple(ctx context.Context, userData OrgUserConfiguration) error {
 	util.Logger.Printf("[TRACE] Updating user: %#v", user.User.Name)
 
 	if userData.Name != "" {
@@ -391,13 +394,13 @@ func (user *OrgUser) UpdateSimple(userData OrgUserConfiguration) error {
 		}
 		user.User.Role = newRole
 	}
-	return user.Update()
+	return user.Update(ctx)
 }
 
 // Update updates the user, using its own configuration data
 // returning an error if the call fails.
 // API Documentation: https://code.vmware.com/apis/442/vcloud-director#/doc/doc/operations/PUT-User.html
-func (user *OrgUser) Update() error {
+func (user *OrgUser) Update(ctx context.Context) error {
 	util.Logger.Printf("[TRACE] Updating user: %s", user.User.Name)
 
 	// Makes sure that GroupReferences is either properly filled or nil,
@@ -415,13 +418,13 @@ func (user *OrgUser) Update() error {
 	}
 	util.Logger.Printf("[TRACE] Url for updating user : %#v and name: %s", userHREF, user.User.Name)
 
-	_, err = user.client.ExecuteRequest(userHREF.String(), http.MethodPut,
+	_, err = user.client.ExecuteRequest(ctx, userHREF.String(), http.MethodPut,
 		types.MimeAdminUser, "error updating user : %s", user.User, nil)
 	return err
 }
 
 // Disable disables a user, if it is enabled. Fails otherwise.
-func (user *OrgUser) Disable() error {
+func (user *OrgUser) Disable(ctx context.Context) error {
 	util.Logger.Printf("[TRACE] Disabling user: %s", user.User.Name)
 
 	if !user.User.IsEnabled {
@@ -429,21 +432,21 @@ func (user *OrgUser) Disable() error {
 	}
 	user.User.IsEnabled = false
 
-	return user.Update()
+	return user.Update(ctx)
 }
 
 // ChangePassword changes user's password
 // Constraints: the password must be non-empty, with a minimum of 6 characters
-func (user *OrgUser) ChangePassword(newPass string) error {
+func (user *OrgUser) ChangePassword(ctx context.Context, newPass string) error {
 	util.Logger.Printf("[TRACE] Changing user's password user: %s", user.User.Name)
 
 	user.User.Password = newPass
 
-	return user.Update()
+	return user.Update(ctx)
 }
 
 // Enable enables a user if it was disabled. Fails otherwise.
-func (user *OrgUser) Enable() error {
+func (user *OrgUser) Enable(ctx context.Context) error {
 	util.Logger.Printf("[TRACE] Enabling user: %s", user.User.Name)
 
 	if user.User.IsEnabled {
@@ -451,13 +454,13 @@ func (user *OrgUser) Enable() error {
 	}
 	user.User.IsEnabled = true
 
-	return user.Update()
+	return user.Update(ctx)
 }
 
 // Unlock unlocks a user that was locked out by the system.
 // Note that there is no procedure to LOCK a user: it is locked by the system when it exceeds the number of
 // unauthorized access attempts
-func (user *OrgUser) Unlock() error {
+func (user *OrgUser) Unlock(ctx context.Context) error {
 	util.Logger.Printf("[TRACE] Unlocking user: %s", user.User.Name)
 
 	if !user.User.IsLocked {
@@ -465,13 +468,13 @@ func (user *OrgUser) Unlock() error {
 	}
 	user.User.IsLocked = false
 
-	return user.Update()
+	return user.Update(ctx)
 }
 
 // ChangeRole changes a user's role
 // Fails is we try to set the same role as the current one.
 // Also fails if the provided role name is not found.
-func (user *OrgUser) ChangeRole(roleName string) error {
+func (user *OrgUser) ChangeRole(ctx context.Context, roleName string) error {
 	util.Logger.Printf("[TRACE] Changing user's role: %s", user.User.Name)
 
 	if roleName == "" {
@@ -488,7 +491,7 @@ func (user *OrgUser) ChangeRole(roleName string) error {
 	}
 	user.User.Role = newRole
 
-	return user.Update()
+	return user.Update(ctx)
 }
 
 // TakeOwnership takes ownership of the user's objects.
@@ -496,7 +499,7 @@ func (user *OrgUser) ChangeRole(roleName string) error {
 // This is a call to make before deleting. Calling user.DeleteTakeOwnership() will
 // run TakeOwnership before the actual user removal.
 // API Documentation: https://code.vmware.com/apis/442/vcloud-director#/doc/doc/operations/POST-TakeOwnership.html
-func (user *OrgUser) TakeOwnership() error {
+func (user *OrgUser) TakeOwnership(ctx context.Context) error {
 	util.Logger.Printf("[TRACE] Taking ownership from user: %s", user.User.Name)
 
 	userHREF, err := url.ParseRequestURI(user.User.Href + "/action/takeOwnership")
@@ -505,7 +508,7 @@ func (user *OrgUser) TakeOwnership() error {
 	}
 	util.Logger.Printf("[TRACE] Url for taking ownership from user : %#v and name: %s", userHREF, user.User.Name)
 
-	return user.client.ExecuteRequestWithoutResponse(userHREF.String(), http.MethodPost,
+	return user.client.ExecuteRequestWithoutResponse(ctx, userHREF.String(), http.MethodPost,
 		types.MimeAdminUser, "error taking ownership from user : %s", nil)
 }
 

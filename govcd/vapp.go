@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -59,13 +60,13 @@ type DhcpSettings struct {
 }
 
 // Returns the vdc where the vapp resides in.
-func (vapp *VApp) getParentVDC() (Vdc, error) {
+func (vapp *VApp) getParentVDC(ctx context.Context) (Vdc, error) {
 	for _, link := range vapp.VApp.Link {
 		if link.Type == "application/vnd.vmware.vcloud.vdc+xml" {
 
 			vdc := NewVdc(vapp.client)
 
-			_, err := vapp.client.ExecuteRequest(link.HREF, http.MethodGet,
+			_, err := vapp.client.ExecuteRequest(ctx, link.HREF, http.MethodGet,
 				"", "error retrieving parent vdc: %s", nil, vdc.Vdc)
 			if err != nil {
 				return Vdc{}, err
@@ -77,7 +78,7 @@ func (vapp *VApp) getParentVDC() (Vdc, error) {
 	return Vdc{}, fmt.Errorf("could not find a parent Vdc")
 }
 
-func (vapp *VApp) Refresh() error {
+func (vapp *VApp) Refresh(ctx context.Context) error {
 
 	if vapp.VApp.HREF == "" {
 		return fmt.Errorf("cannot refresh, Object is empty")
@@ -103,7 +104,7 @@ func (vapp *VApp) Refresh() error {
 // acceptAllEulas - setting allows to automatically accept or not Eulas.
 //
 // Deprecated: Use vapp.AddNewVM instead for more sophisticated network handling
-func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName string, vappTemplate VAppTemplate, name string, acceptAllEulas bool) (Task, error) {
+func (vapp *VApp) AddVM(ctx context.Context, orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName string, vappTemplate VAppTemplate, name string, acceptAllEulas bool) (Task, error) {
 	util.Logger.Printf("[INFO] vapp.AddVM() is deprecated in favor of vapp.AddNewVM()")
 	if vappTemplate == (VAppTemplate{}) || vappTemplate.VAppTemplate == nil {
 		return Task{}, fmt.Errorf("vApp Template can not be empty")
@@ -144,32 +145,32 @@ func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName s
 		)
 	}
 
-	return vapp.AddNewVM(name, vappTemplate, &networkConnectionSection, acceptAllEulas)
+	return vapp.AddNewVM(ctx, name, vappTemplate, &networkConnectionSection, acceptAllEulas)
 }
 
 // AddNewVM adds VM from vApp template with custom NetworkConnectionSection
-func (vapp *VApp) AddNewVM(name string, vappTemplate VAppTemplate, network *types.NetworkConnectionSection, acceptAllEulas bool) (Task, error) {
-	return vapp.AddNewVMWithStorageProfile(name, vappTemplate, network, nil, acceptAllEulas)
+func (vapp *VApp) AddNewVM(ctx context.Context, name string, vappTemplate VAppTemplate, network *types.NetworkConnectionSection, acceptAllEulas bool) (Task, error) {
+	return vapp.AddNewVMWithStorageProfile(ctx, name, vappTemplate, network, nil, acceptAllEulas)
 }
 
 // AddNewVMWithStorageProfile adds VM from vApp template with custom NetworkConnectionSection and optional storage profile
-func (vapp *VApp) AddNewVMWithStorageProfile(name string, vappTemplate VAppTemplate,
+func (vapp *VApp) AddNewVMWithStorageProfile(ctx context.Context, name string, vappTemplate VAppTemplate,
 	network *types.NetworkConnectionSection,
 	storageProfileRef *types.Reference, acceptAllEulas bool) (Task, error) {
-	return addNewVMW(vapp, name, vappTemplate, network, storageProfileRef, nil, acceptAllEulas)
+	return addNewVMW(ctx, vapp, name, vappTemplate, network, storageProfileRef, nil, acceptAllEulas)
 }
 
 // AddNewVMWithComputePolicy adds VM from vApp template with custom NetworkConnectionSection and optional storage profile
 // and compute policy
-func (vapp *VApp) AddNewVMWithComputePolicy(name string, vappTemplate VAppTemplate,
+func (vapp *VApp) AddNewVMWithComputePolicy(ctx context.Context, name string, vappTemplate VAppTemplate,
 	network *types.NetworkConnectionSection,
 	storageProfileRef *types.Reference, computePolicy *types.VdcComputePolicy, acceptAllEulas bool) (Task, error) {
-	return addNewVMW(vapp, name, vappTemplate, network, storageProfileRef, computePolicy, acceptAllEulas)
+	return addNewVMW(ctx, vapp, name, vappTemplate, network, storageProfileRef, computePolicy, acceptAllEulas)
 }
 
 // addNewVMW adds VM from vApp template with custom NetworkConnectionSection and optional storage profile
 // and optional compute policy
-func addNewVMW(vapp *VApp, name string, vappTemplate VAppTemplate,
+func addNewVMW(ctx context.Context, vapp *VApp, name string, vappTemplate VAppTemplate,
 	network *types.NetworkConnectionSection,
 	storageProfileRef *types.Reference, computePolicy *types.VdcComputePolicy, acceptAllEulas bool) (Task, error) {
 
@@ -223,11 +224,11 @@ func addNewVMW(vapp *VApp, name string, vappTemplate VAppTemplate,
 		vAppComposition.SourcedItem.StorageProfile = storageProfileRef
 	}
 
-	if computePolicy != nil && vapp.client.APIVCDMaxVersionIs("< 33.0") {
+	if computePolicy != nil && vapp.client.APIVCDMaxVersionIs(ctx, "< 33.0") {
 		util.Logger.Printf("[Warning] compute policy is ignored because VCD version doesn't support it")
 	}
 	// Add compute policy
-	if computePolicy != nil && computePolicy.ID != "" && vapp.client.APIVCDMaxVersionIs("> 32.0") {
+	if computePolicy != nil && computePolicy.ID != "" && vapp.client.APIVCDMaxVersionIs(ctx, "> 32.0") {
 		vdcComputePolicyHref, err := vapp.client.OpenApiBuildEndpoint(types.OpenApiPathVersion1_0_0, types.OpenApiEndpointVdcComputePolicies, computePolicy.ID)
 		if err != nil {
 			return Task{}, fmt.Errorf("error constructing HREF for compute policy")
@@ -242,7 +243,7 @@ func addNewVMW(vapp *VApp, name string, vappTemplate VAppTemplate,
 	apiEndpoint.Path += "/action/recomposeVApp"
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequestWithApiVersion(apiEndpoint.String(), http.MethodPost,
+	return vapp.client.ExecuteTaskRequestWithApiVersion(ctx, apiEndpoint.String(), http.MethodPost,
 		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", vAppComposition,
 		vapp.client.GetSpecificApiVersionOnCondition(">= 33.0", "33.0"))
 
@@ -252,8 +253,8 @@ func addNewVMW(vapp *VApp, name string, vappTemplate VAppTemplate,
 // TODO: To be refactored, handling networks better. See issue#252 for details
 // https://github.com/vmware/go-vcloud-director/issues/252
 // ======================================================================
-func (vapp *VApp) RemoveVM(vm VM) error {
-	err := vapp.Refresh()
+func (vapp *VApp) RemoveVM(ctx context.Context, vm VM) error {
+	err := vapp.Refresh(ctx)
 	if err != nil {
 		return fmt.Errorf("error refreshing vApp before removing VM: %s", err)
 	}
@@ -409,7 +410,7 @@ func (vapp *VApp) RunCustomizationScript(computername, script string) (Task, err
 //
 // Deprecated: Use vm.SetGuestCustomizationSection()
 func (vapp *VApp) Customize(computername, script string, changeSid bool) (Task, error) {
-	err := vapp.Refresh()
+	err := vapp.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %s", err)
 	}
@@ -442,7 +443,7 @@ func (vapp *VApp) Customize(computername, script string, changeSid bool) (Task, 
 }
 
 func (vapp *VApp) GetStatus() (string, error) {
-	err := vapp.Refresh()
+	err := vapp.Refresh(ctx)
 	if err != nil {
 		return "", fmt.Errorf("error refreshing vApp: %s", err)
 	}
@@ -513,7 +514,7 @@ func (vapp *VApp) ChangeCPUCount(virtualCpuCount int) (Task, error) {
 // Deprecated: Use vm.ChangeCPUCountWithCore()
 func (vapp *VApp) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (Task, error) {
 
-	err := vapp.Refresh()
+	err := vapp.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %s", err)
 	}
@@ -555,7 +556,7 @@ func (vapp *VApp) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *in
 }
 
 func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
-	err := vapp.Refresh()
+	err := vapp.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %s", err)
 	}
@@ -586,7 +587,7 @@ func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
 
 // Deprecated as it changes only first VM's name
 func (vapp *VApp) ChangeVMName(name string) (Task, error) {
-	err := vapp.Refresh()
+	err := vapp.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %s", err)
 	}
@@ -609,7 +610,7 @@ func (vapp *VApp) ChangeVMName(name string) (Task, error) {
 //
 // Deprecated: Use vm.SetProductSectionList()
 func (vapp *VApp) SetOvf(parameters map[string]string) (Task, error) {
-	err := vapp.Refresh()
+	err := vapp.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %s", err)
 	}
@@ -646,7 +647,7 @@ func (vapp *VApp) SetOvf(parameters map[string]string) (Task, error) {
 }
 
 func (vapp *VApp) ChangeNetworkConfig(networks []map[string]interface{}, ip string) (Task, error) {
-	err := vapp.Refresh()
+	err := vapp.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %s", err)
 	}
@@ -706,7 +707,7 @@ func (vapp *VApp) ChangeNetworkConfig(networks []map[string]interface{}, ip stri
 // Deprecated as it changes only first VM's memory
 func (vapp *VApp) ChangeMemorySize(size int) (Task, error) {
 
-	err := vapp.Refresh()
+	err := vapp.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %s", err)
 	}
@@ -1279,7 +1280,7 @@ func (vapp *VApp) GetProductSectionList() (*types.ProductSectionList, error) {
 // If no valid VM is found, it returns a nil VM reference and an error
 func (vapp *VApp) GetVMByName(vmName string, refresh bool) (*VM, error) {
 	if refresh {
-		err := vapp.Refresh()
+		err := vapp.Refresh(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("error refreshing vApp: %s", err)
 		}
@@ -1307,7 +1308,7 @@ func (vapp *VApp) GetVMByName(vmName string, refresh bool) (*VM, error) {
 // If no valid VM is found, it returns a nil VM reference and an error
 func (vapp *VApp) GetVMById(id string, refresh bool) (*VM, error) {
 	if refresh {
-		err := vapp.Refresh()
+		err := vapp.Refresh(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("error refreshing vApp: %s", err)
 		}
