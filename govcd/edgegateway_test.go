@@ -726,13 +726,13 @@ func (vcd *TestVCD) TestListEdgeGateway(check *C) {
 	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge, NotNil)
-	edgeRec, err := vcd.vdc.GetEdgeGatewayRecordsType(false)
+	edgeGatewayList, err := vcd.vdc.QueryEdgeGatewayList()
 	check.Assert(err, IsNil)
-	check.Assert(edgeRec, NotNil)
-	check.Assert(len(edgeRec.EdgeGatewayRecord) > 0, Equals, true)
+	check.Assert(edgeGatewayList, NotNil)
+	check.Assert(len(edgeGatewayList) > 0, Equals, true)
 	foundName := false
 	foundHref := false
-	for _, ref := range edgeRec.EdgeGatewayRecord {
+	for _, ref := range edgeGatewayList {
 		if ref.Name == edge.EdgeGateway.Name {
 			foundName = true
 			if ref.HREF == edge.EdgeGateway.HREF {
