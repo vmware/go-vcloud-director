@@ -389,41 +389,42 @@ func (vdc *Vdc) GetEdgeGatewayByHref(href string) (*EdgeGateway, error) {
 	return edge, nil
 }
 
+// QueryEdgeGatewayList returns a list of all the edge gateways in a VDC
+func (vdc *Vdc) QueryEdgeGatewayList() ([]*types.QueryResultEdgeGatewayRecordType, error) {
+	results, err := vdc.client.cumulativeQuery(types.QtEdgeGateway, nil, map[string]string{
+		"type":          types.QtEdgeGateway,
+		"filter":        fmt.Sprintf("orgVdcName==%s", url.QueryEscape(vdc.Vdc.Name)),
+		"filterEncoded": "true",
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results.Results.EdgeGatewayRecord, nil
+}
+
 // GetEdgeGatewayRecordsType retrieves a list of edge gateways from VDC
+// Deprecated: use QueryEdgeGatewayList instead
 func (vdc *Vdc) GetEdgeGatewayRecordsType(refresh bool) (*types.QueryResultEdgeGatewayRecordsType, error) {
-
-	if refresh {
-		err := vdc.Refresh()
-		if err != nil {
-			return nil, fmt.Errorf("error refreshing vdc: %s", err)
-		}
+	items, err := vdc.QueryEdgeGatewayList()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving edge gateway list: %s", err)
 	}
-	for _, av := range vdc.Vdc.Link {
-		if av.Rel == "edgeGateways" && av.Type == types.MimeQueryRecords {
-
-			edgeGatewayRecordsType := new(types.QueryResultEdgeGatewayRecordsType)
-
-			_, err := vdc.client.ExecuteRequest(av.HREF, http.MethodGet,
-				"", "error querying edge gateways: %s", nil, edgeGatewayRecordsType)
-			if err != nil {
-				return nil, err
-			}
-			return edgeGatewayRecordsType, nil
-		}
-	}
-	return nil, fmt.Errorf("no edge gateway query link found in VDC %s", vdc.Vdc.Name)
+	return &types.QueryResultEdgeGatewayRecordsType{
+		Total:             float64(len(items)),
+		EdgeGatewayRecord: items,
+	}, nil
 }
 
 // GetEdgeGatewayByName search the VDC list of edge gateways for a given name.
 // If the name matches, it returns a pointer to an edge gateway object.
 // On failure, it returns a nil object and an error
 func (vdc *Vdc) GetEdgeGatewayByName(name string, refresh bool) (*EdgeGateway, error) {
-	edgeGatewayRecord, err := vdc.GetEdgeGatewayRecordsType(refresh)
+	edgeGatewayList, err := vdc.QueryEdgeGatewayList()
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving edge gateways list: %s", err)
 	}
 
-	for _, edge := range edgeGatewayRecord.EdgeGatewayRecord {
+	for _, edge := range edgeGatewayList {
 		if edge.Name == name {
 			return vdc.GetEdgeGatewayByHref(edge.HREF)
 		}
@@ -436,12 +437,12 @@ func (vdc *Vdc) GetEdgeGatewayByName(name string, refresh bool) (*EdgeGateway, e
 // If the id matches, it returns a pointer to an edge gateway object.
 // On failure, it returns a nil object and an error
 func (vdc *Vdc) GetEdgeGatewayById(id string, refresh bool) (*EdgeGateway, error) {
-	edgeGatewayRecord, err := vdc.GetEdgeGatewayRecordsType(refresh)
+	edgeGatewayList, err := vdc.QueryEdgeGatewayList()
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving edge gateways list: %s", err)
 	}
 
-	for _, edge := range edgeGatewayRecord.EdgeGatewayRecord {
+	for _, edge := range edgeGatewayList {
 		if equalIds(id, "", edge.HREF) {
 			return vdc.GetEdgeGatewayByHref(edge.HREF)
 		}
