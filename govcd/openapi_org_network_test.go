@@ -26,24 +26,24 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkIsolated(check *C) {
 		Subnets: types.OrgVdcNetworkSubnets{
 			Values: []types.OrgVdcNetworkSubnetValues{
 				{
-					Gateway:      "4.1.1.1",
-					PrefixLength: 25,
+					Gateway:      "2.1.1.1",
+					PrefixLength: 24,
 					DNSServer1:   "8.8.8.8",
 					DNSServer2:   "8.8.4.4",
 					DNSSuffix:    "bar.foo",
 					IPRanges: types.OrgVdcNetworkSubnetIPRanges{
 						Values: []types.OrgVdcNetworkSubnetIPRangeValues{
 							{
-								StartAddress: "4.1.1.20",
-								EndAddress:   "4.1.1.30",
+								StartAddress: "2.1.1.20",
+								EndAddress:   "2.1.1.30",
 							},
 							{
-								StartAddress: "4.1.1.40",
-								EndAddress:   "4.1.1.50",
+								StartAddress: "2.1.1.40",
+								EndAddress:   "2.1.1.50",
 							},
 							{
-								StartAddress: "4.1.1.88",
-								EndAddress:   "4.1.1.92",
+								StartAddress: "2.1.1.88",
+								EndAddress:   "2.1.1.92",
 							},
 						}},
 				},
@@ -51,7 +51,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkIsolated(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated)
+	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated, nil)
 }
 
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
@@ -109,7 +109,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted)
+	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted, nsxtRoutedDhcpConfig)
 }
 
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
@@ -138,7 +138,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 		Subnets: types.OrgVdcNetworkSubnets{
 			Values: []types.OrgVdcNetworkSubnetValues{
 				{
-					Gateway:      "3.1.1.1",
+					Gateway:      "2.1.1.1",
 					PrefixLength: 24,
 					DNSServer1:   "8.8.8.8",
 					DNSServer2:   "8.8.4.4",
@@ -146,12 +146,12 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 					IPRanges: types.OrgVdcNetworkSubnetIPRanges{
 						Values: []types.OrgVdcNetworkSubnetIPRangeValues{
 							{
-								StartAddress: "3.1.1.20",
-								EndAddress:   "3.1.1.30",
+								StartAddress: "2.1.1.20",
+								EndAddress:   "2.1.1.30",
 							},
 							{
-								StartAddress: "3.1.1.40",
-								EndAddress:   "3.1.1.50",
+								StartAddress: "2.1.1.40",
+								EndAddress:   "2.1.1.50",
 							},
 						}},
 				},
@@ -159,7 +159,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque)
+	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque, nil)
 
 }
 
@@ -200,12 +200,11 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkIsolated(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated)
+	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated, nil)
 }
 
 func (vcd *TestVCD) Test_NsxvOrgVdcNetworkRouted(check *C) {
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
-	// skipNoNsxtConfiguration(vcd, check)
 
 	nsxvEdgeGateway, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, true)
 	check.Assert(err, IsNil)
@@ -258,7 +257,7 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkRouted(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted)
+	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted, nil)
 }
 
 func (vcd *TestVCD) Test_NsxvOrgVdcNetworkDirect(check *C) {
@@ -314,10 +313,10 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkDirect(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeDirect)
+	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeDirect, nil)
 }
 
-func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, extpectNetworkType string) {
+func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, extpectNetworkType string, dhcpFunc dhcpConfigFunc) {
 	orgVdcNet, err := vdc.CreateOpenApiOrgVdcNetwork(orgVdcNetworkConfig)
 	check.Assert(err, IsNil)
 
@@ -356,6 +355,10 @@ func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.
 	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID, Equals, orgVdcNet.OpenApiOrgVdcNetwork.ID)
 	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.Description, Equals, orgVdcNet.OpenApiOrgVdcNetwork.Description)
 
+	// Configure DHCP if specified
+	if dhcpFunc != nil {
+		dhcpFunc(check, vdc, updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID)
+	}
 	// Delete
 	err = orgVdcNet.Delete()
 	check.Assert(err, IsNil)
@@ -366,4 +369,32 @@ func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.
 
 	_, err = vdc.GetOpenApiOrgVdcNetworkById(orgVdcNet.OpenApiOrgVdcNetwork.ID)
 	check.Assert(ContainsNotFound(err), Equals, true)
+}
+
+type dhcpConfigFunc func(check *C, vdc *Vdc, orgNetId string)
+
+func nsxtRoutedDhcpConfig(check *C, vdc *Vdc, orgNetId string) {
+	dhcpDefinition := &types.OpenApiOrgVdcNetworkDhcp{
+		Enabled: takeBoolPointer(true),
+		DhcpPools: []types.OpenApiOrgVdcNetworkDhcpPools{
+			{
+				Enabled: takeBoolPointer(true),
+				IPRange: types.OpenApiOrgVdcNetworkDhcpIpRange{
+					StartAddress: "2.1.1.200",
+					EndAddress:   "2.1.1.201",
+				},
+			},
+		},
+	}
+	updatedDhcp, err := vdc.UpdateOpenApiOrgVdcNetworkDhcp(orgNetId, dhcpDefinition)
+	check.Assert(err, IsNil)
+
+	check.Assert(dhcpDefinition, DeepEquals, updatedDhcp.OpenApiOrgVdcNetworkDhcp)
+
+	// VCD Versions before 10.2 do not allow to perform "DELETE" on DHCP pool
+	// To remove DHCP configuration one must remove Org VDC network itself.
+	if vdc.client.APIVCDMaxVersionIs(">= 35.0") {
+		err = vdc.DeleteOpenApiOrgVdcNetworkDhcp(orgNetId)
+		check.Assert(err, IsNil)
+	}
 }
