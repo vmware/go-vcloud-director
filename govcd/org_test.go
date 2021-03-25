@@ -7,7 +7,6 @@
 package govcd
 
 import (
-	"context"
 	"fmt"
 	"math"
 
@@ -15,8 +14,6 @@ import (
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
-
-var ctx = context.Background()
 
 // Tests Refresh for Org by updating the org and then asserting if the
 // variable is updated.

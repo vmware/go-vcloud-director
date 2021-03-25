@@ -895,7 +895,7 @@ func (vcd *TestVCD) Test_VMSetProductSectionList(check *C) {
 	}
 	vm, err := vcd.client.Client.GetVMByHref(ctx, existingVm.HREF)
 	check.Assert(err, IsNil)
-	propertyTester(vcd, check, vm)
+	propertyTester(ctx, vcd, check, vm)
 }
 
 // Test_VMSetGetGuestCustomizationSection sets and when retrieves guest customization and checks if properties are right.
@@ -911,7 +911,7 @@ func (vcd *TestVCD) Test_VMSetGetGuestCustomizationSection(check *C) {
 	}
 	vm, err := vcd.client.Client.GetVMByHref(ctx, existingVm.HREF)
 	check.Assert(err, IsNil)
-	guestCustomizationPropertyTester(vcd, check, vm)
+	guestCustomizationPropertyTester(ctx, vcd, check, vm)
 }
 
 // Test create internal disk For VM
