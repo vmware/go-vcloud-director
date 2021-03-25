@@ -25,7 +25,7 @@ func (vcd *TestVCD) Test_NsxvDhcpRelay(check *C) {
 		check.Skip("Skipping test because no edge gateway given")
 	}
 
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
@@ -36,7 +36,7 @@ func (vcd *TestVCD) Test_NsxvDhcpRelay(check *C) {
 	AddToCleanupList(createdIpSet.Name, "ipSet", parentEntity, check.TestName())
 
 	// Lookup vNic index for our org network
-	vNicIndex, _, err := edge.GetAnyVnicIndexByNetworkName(vcd.config.VCD.Network.Net1)
+	vNicIndex, _, err := edge.GetAnyVnicIndexByNetworkName(ctx, vcd.config.VCD.Network.Net1)
 	check.Assert(err, IsNil)
 
 	dhcpRelayConfig := &types.EdgeDhcpRelay{
@@ -54,7 +54,7 @@ func (vcd *TestVCD) Test_NsxvDhcpRelay(check *C) {
 		},
 	}
 
-	createdRelayConfig, err := edge.UpdateDhcpRelay(dhcpRelayConfig)
+	createdRelayConfig, err := edge.UpdateDhcpRelay(ctx, dhcpRelayConfig)
 	check.Assert(err, IsNil)
 
 	parentEntity = vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
@@ -65,7 +65,7 @@ func (vcd *TestVCD) Test_NsxvDhcpRelay(check *C) {
 	// Cache Gateway auto-assigned address to try specifying it afterwards
 	vNicDefaultGateway := createdRelayConfig.RelayAgents.Agents[0].GatewayInterfaceAddress
 
-	readRelayConfig, err := edge.GetDhcpRelay()
+	readRelayConfig, err := edge.GetDhcpRelay(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(readRelayConfig, DeepEquals, createdRelayConfig)
 
@@ -75,9 +75,9 @@ func (vcd *TestVCD) Test_NsxvDhcpRelay(check *C) {
 	check.Assert(readRelayConfig.RelayAgents, DeepEquals, dhcpRelayConfig.RelayAgents)
 
 	// Reset DHCP relay and ensure no settings are present
-	err = edge.ResetDhcpRelay()
+	err = edge.ResetDhcpRelay(ctx)
 	check.Assert(err, IsNil)
-	read, err := edge.GetDhcpRelay()
+	read, err := edge.GetDhcpRelay(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(read.RelayServer, IsNil)
 	check.Assert(read.RelayAgents, IsNil)
@@ -89,16 +89,16 @@ func (vcd *TestVCD) Test_NsxvDhcpRelay(check *C) {
 	dhcpRelayConfig.RelayServer.IpAddress = nil
 	dhcpRelayConfig.RelayServer.Fqdns = nil
 
-	createdRelayConfig2, err := edge.UpdateDhcpRelay(dhcpRelayConfig)
+	createdRelayConfig2, err := edge.UpdateDhcpRelay(ctx, dhcpRelayConfig)
 	check.Assert(err, IsNil)
-	readRelayConfig2, err := edge.GetDhcpRelay()
+	readRelayConfig2, err := edge.GetDhcpRelay(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(readRelayConfig2, DeepEquals, createdRelayConfig2)
 
 	// Reset DHCP relay and ensure no settings are present
-	err = edge.ResetDhcpRelay()
+	err = edge.ResetDhcpRelay(ctx)
 	check.Assert(err, IsNil)
-	read, err = edge.GetDhcpRelay()
+	read, err = edge.GetDhcpRelay(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(read.RelayServer, IsNil)
 	check.Assert(read.RelayAgents, IsNil)

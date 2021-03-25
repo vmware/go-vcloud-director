@@ -21,13 +21,13 @@ func (vcd *TestVCD) Test_NetRefresh(check *C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	network, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	network, err := vcd.vdc.GetOrgVdcNetworkByName(ctx, vcd.config.VCD.Network.Net1, false)
 
 	check.Assert(err, IsNil)
 	check.Assert(network.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 	save_network := network
 
-	err = network.Refresh()
+	err = network.Refresh(ctx)
 
 	check.Assert(err, IsNil)
 	check.Assert(network.OrgVDCNetwork.Name, Equals, save_network.OrgVDCNetwork.Name)
@@ -64,7 +64,7 @@ func (vcd *TestVCD) testCreateUpdateOrgVdcNetworkRouted(check *C, ipSubnet strin
 	if subInterface {
 		networkName += "-sub"
 	}
-	err := RemoveOrgVdcNetworkIfExists(*vcd.vdc, networkName)
+	err := RemoveOrgVdcNetworkIfExists(ctx, *vcd.vdc, networkName)
 	if err != nil {
 		check.Skip(fmt.Sprintf("Error deleting network : %s", err))
 	}
@@ -73,7 +73,7 @@ func (vcd *TestVCD) testCreateUpdateOrgVdcNetworkRouted(check *C, ipSubnet strin
 	if edgeGWName == "" {
 		check.Skip("Edge Gateway not provided")
 	}
-	edgeGateway, err := vcd.vdc.GetEdgeGatewayByName(edgeGWName, false)
+	edgeGateway, err := vcd.vdc.GetEdgeGatewayByName(ctx, edgeGWName, false)
 	if err != nil {
 		check.Skip(fmt.Sprintf("Edge Gateway %s not found", edgeGWName))
 	}
@@ -127,13 +127,13 @@ func (vcd *TestVCD) testCreateUpdateOrgVdcNetworkRouted(check *C, ipSubnet strin
 	}
 
 	LogNetwork(networkConfig)
-	err = vcd.vdc.CreateOrgVDCNetworkWait(&networkConfig)
+	err = vcd.vdc.CreateOrgVDCNetworkWait(ctx, &networkConfig)
 	if err != nil {
 		fmt.Printf("error creating Network <%s>: %s\n", networkName, err)
 	}
 	check.Assert(err, IsNil)
 	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkRouted")
-	network, err := vcd.vdc.GetOrgVdcNetworkByName(networkName, true)
+	network, err := vcd.vdc.GetOrgVdcNetworkByName(ctx, networkName, true)
 	check.Assert(err, IsNil)
 	check.Assert(network, NotNil)
 	check.Assert(network.OrgVDCNetwork.Name, Equals, networkName)
@@ -152,7 +152,7 @@ func (vcd *TestVCD) testCreateUpdateOrgVdcNetworkRouted(check *C, ipSubnet strin
 
 	// Tests FindEdgeGatewayNameByNetwork
 	// Note: is should work without refreshing either VDC or edge gateway
-	connectedGw, err := vcd.vdc.FindEdgeGatewayNameByNetwork(networkName)
+	connectedGw, err := vcd.vdc.FindEdgeGatewayNameByNetwork(ctx, networkName)
 	check.Assert(err, IsNil)
 	check.Assert(connectedGw, Equals, edgeGWName)
 
@@ -166,11 +166,11 @@ func (vcd *TestVCD) testCreateUpdateOrgVdcNetworkRouted(check *C, ipSubnet strin
 	network.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].StartAddress = updatedStartAddress
 	network.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress = updatedEndAddress
 
-	err = network.Update()
+	err = network.Update(ctx)
 	check.Assert(err, IsNil)
 	AddToCleanupList(updatedNetworkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkRouted")
 
-	network, err = vcd.vdc.GetOrgVdcNetworkById(networkId, true)
+	network, err = vcd.vdc.GetOrgVdcNetworkById(ctx, networkId, true)
 	check.Assert(err, IsNil)
 	check.Assert(network.OrgVDCNetwork.Name, Equals, updatedNetworkName)
 	check.Assert(network.OrgVDCNetwork.Description, Equals, updatedNetworkDescription)
@@ -181,9 +181,9 @@ func (vcd *TestVCD) testCreateUpdateOrgVdcNetworkRouted(check *C, ipSubnet strin
 	check.Assert(network.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].StartAddress, Equals, updatedStartAddress)
 	check.Assert(network.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress, Equals, updatedEndAddress)
 
-	task, err := network.Delete()
+	task, err := network.Delete(ctx)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 }
 
@@ -194,7 +194,7 @@ func (vcd *TestVCD) Test_GetNetworkList(check *C) {
 	if networkName == "" {
 		check.Skip("no network name provided")
 	}
-	networks, err := vcd.vdc.GetNetworkList()
+	networks, err := vcd.vdc.GetNetworkList(ctx)
 	check.Assert(err, IsNil)
 	found := false
 	for _, net := range networks {
@@ -215,7 +215,7 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkIso(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	networkName := TestCreateOrgVdcNetworkIso
 
-	err := RemoveOrgVdcNetworkIfExists(*vcd.vdc, networkName)
+	err := RemoveOrgVdcNetworkIfExists(ctx, *vcd.vdc, networkName)
 	if err != nil {
 		check.Skip(fmt.Sprintf("Error deleting network : %s", err))
 	}
@@ -271,14 +271,14 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkIso(check *C) {
 	)
 
 	LogNetwork(networkConfig)
-	err = vcd.vdc.CreateOrgVDCNetworkWait(&networkConfig)
+	err = vcd.vdc.CreateOrgVDCNetworkWait(ctx, &networkConfig)
 	if err != nil {
 		fmt.Printf("error creating Network <%s>: %s\n", networkName, err)
 	}
 	check.Assert(err, IsNil)
 	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkIso")
 
-	network, err := vcd.vdc.GetOrgVdcNetworkByName(networkName, true)
+	network, err := vcd.vdc.GetOrgVdcNetworkByName(ctx, networkName, true)
 	check.Assert(err, IsNil)
 	check.Assert(network.OrgVDCNetwork.Description, Equals, description)
 	check.Assert(network.OrgVDCNetwork.Configuration.FenceMode, Equals, types.FenceModeIsolated)
@@ -299,11 +299,11 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkIso(check *C) {
 	network.OrgVDCNetwork.Name = updatedNetworkName
 	network.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].StartAddress = updatedStartAddress
 	network.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress = updatedEndAddress
-	err = network.Update()
+	err = network.Update(ctx)
 	check.Assert(err, IsNil)
 	AddToCleanupList(updatedNetworkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkIso")
 
-	network, err = vcd.vdc.GetOrgVdcNetworkById(networkId, true)
+	network, err = vcd.vdc.GetOrgVdcNetworkById(ctx, networkId, true)
 	check.Assert(err, IsNil)
 	check.Assert(network.OrgVDCNetwork.Name, Equals, updatedNetworkName)
 	check.Assert(network.OrgVDCNetwork.Description, Equals, updatedDescription)
@@ -327,7 +327,7 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkDirect(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
-	err := RemoveOrgVdcNetworkIfExists(*vcd.vdc, networkName)
+	err := RemoveOrgVdcNetworkIfExists(ctx, *vcd.vdc, networkName)
 	if err != nil {
 		check.Skip(fmt.Sprintf("Error deleting network : %s", err))
 	}
@@ -335,7 +335,7 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkDirect(check *C) {
 	if vcd.config.VCD.ExternalNetwork == "" {
 		check.Skip("[Test_CreateOrgVdcNetworkDirect] external network not provided")
 	}
-	externalNetwork, err := vcd.client.GetExternalNetworkByName(vcd.config.VCD.ExternalNetwork)
+	externalNetwork, err := vcd.client.GetExternalNetworkByName(ctx, vcd.config.VCD.ExternalNetwork)
 	if err != nil {
 		check.Skip("[Test_CreateOrgVdcNetworkDirect] parent network not found")
 		return
@@ -359,7 +359,7 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkDirect(check *C) {
 	}
 	LogNetwork(networkConfig)
 
-	task, err := vcd.vdc.CreateOrgVDCNetwork(&networkConfig)
+	task, err := vcd.vdc.CreateOrgVDCNetwork(ctx, &networkConfig)
 	if err != nil {
 		fmt.Printf("error creating the network: %s", err)
 	}
@@ -372,14 +372,14 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkDirect(check *C) {
 	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkDirect")
 
 	// err = task.WaitTaskCompletion()
-	err = task.WaitInspectTaskCompletion(LogTask, 10)
+	err = task.WaitInspectTaskCompletion(ctx, LogTask, 10)
 	if err != nil {
 		fmt.Printf("error performing task: %s", err)
 	}
 	check.Assert(err, IsNil)
 
 	// Retrieving the network
-	newNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(networkName, true)
+	newNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(ctx, networkName, true)
 	check.Assert(err, IsNil)
 	check.Assert(newNetwork, NotNil)
 	check.Assert(newNetwork.OrgVDCNetwork.Name, Equals, networkName)
@@ -394,7 +394,7 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkDirect(check *C) {
 	updatedDescription := "Updated by govcd tests"
 	newNetwork.OrgVDCNetwork.Description = updatedDescription
 	newNetwork.OrgVDCNetwork.Name = updatedNetworkName
-	err = newNetwork.Update()
+	err = newNetwork.Update(ctx)
 	check.Assert(err, IsNil)
 
 	AddToCleanupList(updatedNetworkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkDirect")
@@ -405,7 +405,7 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkDirect(check *C) {
 	check.Assert(newNetwork.OrgVDCNetwork.Description, Equals, updatedDescription)
 
 	// Gets a new copy of the network and check the values.
-	newNetwork, err = vcd.vdc.GetOrgVdcNetworkByName(updatedNetworkName, true)
+	newNetwork, err = vcd.vdc.GetOrgVdcNetworkByName(ctx, updatedNetworkName, true)
 	check.Assert(err, IsNil)
 	check.Assert(newNetwork, NotNil)
 	check.Assert(newNetwork.OrgVDCNetwork.Name, Equals, updatedNetworkName)
@@ -413,27 +413,27 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkDirect(check *C) {
 
 	// restoring original name
 	newNetwork.OrgVDCNetwork.Name = networkName
-	err = newNetwork.Update()
+	err = newNetwork.Update(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(newNetwork.OrgVDCNetwork.Name, Equals, networkName)
 
 	// Testing RemoveOrgVdcNetworkIfExists:
 	// (1) Make sure the network exists
-	newNetwork, err = vcd.vdc.GetOrgVdcNetworkByName(networkName, true)
+	newNetwork, err = vcd.vdc.GetOrgVdcNetworkByName(ctx, networkName, true)
 	check.Assert(err, IsNil)
 	check.Assert(newNetwork, NotNil)
 
 	// (2) Removing the network. It should return nil, as a successful deletion
-	err = RemoveOrgVdcNetworkIfExists(*vcd.vdc, networkName)
+	err = RemoveOrgVdcNetworkIfExists(ctx, *vcd.vdc, networkName)
 	check.Assert(err, IsNil)
 
 	// (3) Look for the network again. It should be deleted
-	_, err = vcd.vdc.GetOrgVdcNetworkByName(networkName, true)
+	_, err = vcd.vdc.GetOrgVdcNetworkByName(ctx, networkName, true)
 	check.Assert(err, NotNil)
 	check.Assert(IsNotFound(err), Equals, true)
 
 	// (4) Attempting a second conditional deletion. It should also return nil, as the network was not found
-	err = RemoveOrgVdcNetworkIfExists(*vcd.vdc, networkName)
+	err = RemoveOrgVdcNetworkIfExists(ctx, *vcd.vdc, networkName)
 	check.Assert(err, IsNil)
 }
 
@@ -444,7 +444,7 @@ func (vcd *TestVCD) Test_NetworkUpdateRename(check *C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	network, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	network, err := vcd.vdc.GetOrgVdcNetworkByName(ctx, vcd.config.VCD.Network.Net1, false)
 
 	check.Assert(err, IsNil)
 	check.Assert(network.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
@@ -462,11 +462,11 @@ func (vcd *TestVCD) Test_NetworkUpdateRename(check *C) {
 	updatedDescription := "Updated description"
 	network.OrgVDCNetwork.Description = updatedDescription
 	network.OrgVDCNetwork.Name = updatedNetworkName
-	err = network.Update()
+	err = network.Update(ctx)
 	check.Assert(err, IsNil)
 
 	// Retrieve the network again
-	network, err = vcd.vdc.GetOrgVdcNetworkById(saveNetwork.ID, false)
+	network, err = vcd.vdc.GetOrgVdcNetworkById(ctx, saveNetwork.ID, false)
 	check.Assert(err, IsNil)
 
 	check.Assert(network.OrgVDCNetwork.Name, Equals, updatedNetworkName)
@@ -481,36 +481,36 @@ func (vcd *TestVCD) Test_NetworkUpdateRename(check *C) {
 	network.OrgVDCNetwork.Description = saveNetwork.Description
 	network.OrgVDCNetwork.Name = saveNetwork.Name
 
-	err = network.Update()
+	err = network.Update(ctx)
 	check.Assert(err, IsNil)
-	network, err = vcd.vdc.GetOrgVdcNetworkById(saveNetwork.ID, false)
+	network, err = vcd.vdc.GetOrgVdcNetworkById(ctx, saveNetwork.ID, false)
 	check.Assert(err, IsNil)
 	check.Assert(network.OrgVDCNetwork.Description, Equals, saveNetwork.Description)
 	check.Assert(network.OrgVDCNetwork.Name, Equals, saveNetwork.Name)
 
 	// An update without any changes should run without producing side effects
-	err = network.Update()
+	err = network.Update(ctx)
 	check.Assert(err, IsNil)
-	network, err = vcd.vdc.GetOrgVdcNetworkById(saveNetwork.ID, false)
+	network, err = vcd.vdc.GetOrgVdcNetworkById(ctx, saveNetwork.ID, false)
 	check.Assert(err, IsNil)
 	check.Assert(network.OrgVDCNetwork.Description, Equals, saveNetwork.Description)
 	check.Assert(network.OrgVDCNetwork.Name, Equals, saveNetwork.Name)
 
 	// We run some of the above operations using Rename instead of Update
-	err = network.Rename(updatedNetworkName)
+	err = network.Rename(ctx, updatedNetworkName)
 	check.Assert(err, IsNil)
-	network, err = vcd.vdc.GetOrgVdcNetworkById(saveNetwork.ID, false)
+	network, err = vcd.vdc.GetOrgVdcNetworkById(ctx, saveNetwork.ID, false)
 	check.Assert(err, IsNil)
 	check.Assert(network.OrgVDCNetwork.Name, Equals, updatedNetworkName)
 
 	// Trying to rename with the same name should give an error
-	err = network.Rename(updatedNetworkName)
+	err = network.Rename(ctx, updatedNetworkName)
 	check.Assert(err, NotNil)
 
 	// Setting the original name again
-	err = network.Rename(saveNetwork.Name)
+	err = network.Rename(ctx, saveNetwork.Name)
 	check.Assert(err, IsNil)
-	network, err = vcd.vdc.GetOrgVdcNetworkById(saveNetwork.ID, false)
+	network, err = vcd.vdc.GetOrgVdcNetworkById(ctx, saveNetwork.ID, false)
 	check.Assert(err, IsNil)
 	check.Assert(network.OrgVDCNetwork.Name, Equals, saveNetwork.Name)
 

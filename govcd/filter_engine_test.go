@@ -19,10 +19,10 @@ func (vcd *TestVCD) Test_SearchSpecificVappTemplate(check *C) {
 		check.Skip("no catalog provided. Skipping test")
 	}
 	// Fetching organization and catalog
-	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	org, err := vcd.client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	catalog, err := org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
 	client := catalog.client
 
@@ -36,7 +36,7 @@ func (vcd *TestVCD) Test_SearchSpecificVappTemplate(check *C) {
 	}
 
 	// Upload several vApp templates (will skip if they already exist)
-	data, err := HelperCreateMultipleCatalogItems(catalog, requestData, testVerbose)
+	data, err := HelperCreateMultipleCatalogItems(ctx, catalog, requestData, testVerbose)
 	check.Assert(err, IsNil)
 	check.Assert(len(data), Equals, len(requestData))
 	for _, item := range data {
@@ -65,7 +65,7 @@ func (vcd *TestVCD) Test_SearchSpecificVappTemplate(check *C) {
 		var criteria = NewFilterDef()
 		err = criteria.AddMetadataFilter(tc.key, tc.value, "", false, false)
 		check.Assert(err, IsNil)
-		queryItems, _, err := catalog.SearchByFilter(queryType, "catalogName", criteria)
+		queryItems, _, err := catalog.SearchByFilter(ctx, queryType, "catalogName", criteria)
 		check.Assert(err, IsNil)
 		printVerbose("\n%d, %#v\n", n, tc)
 		for i, item := range queryItems {
@@ -90,9 +90,9 @@ func (vcd *TestVCD) Test_SearchSpecificVappTemplate(check *C) {
 			continue
 		}
 
-		catalogItem, err := catalog.GetCatalogItemByName(item.Name, true)
+		catalogItem, err := catalog.GetCatalogItemByName(ctx, item.Name, true)
 		check.Assert(err, IsNil)
-		err = catalogItem.Delete()
+		err = catalogItem.Delete(ctx)
 		check.Assert(err, IsNil)
 		printVerbose("deleted %s\n", item.Name)
 	}
@@ -103,16 +103,16 @@ func (vcd *TestVCD) Test_SearchVappTemplate(check *C) {
 		check.Skip("no catalog provided. Skipping test")
 	}
 	// Fetching organization and catalog
-	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	org, err := vcd.client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	catalog, err := org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
 	client := catalog.client
 
 	queryType := client.GetQueryType(types.QtVappTemplate)
 	// Test with any vApp templates, using mass produced filters
-	filters, err := HelperMakeFiltersFromVappTemplate(catalog)
+	filters, err := HelperMakeFiltersFromVappTemplate(ctx, catalog)
 	check.Assert(err, IsNil)
 	for _, fm := range filters {
 		// Tests both the search by metadata through the query and the search offline after fetching the items
@@ -123,7 +123,7 @@ func (vcd *TestVCD) Test_SearchVappTemplate(check *C) {
 			}
 			fm.Criteria.UseMetadataApiFilter = useApiSearch
 			printVerbose("Use metadata API filter: %v\n", useApiSearch)
-			queryItems, explanation, err := catalog.SearchByFilter(queryType, "catalogName", fm.Criteria)
+			queryItems, explanation, err := catalog.SearchByFilter(ctx, queryType, "catalogName", fm.Criteria)
 			check.Assert(err, IsNil)
 
 			convertedMatch, okMatch := fm.Entity.(QueryVAppTemplate)
@@ -146,19 +146,19 @@ func (vcd *TestVCD) Test_SearchCatalogItem(check *C) {
 		check.Skip("no catalog provided. Skipping test")
 	}
 	// Fetching organization and catalog
-	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	org, err := vcd.client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	catalog, err := org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
 	client := catalog.client
 
 	queryType := client.GetQueryType(types.QtCatalogItem)
 	// Test with any catalog items, using mass produced filters
-	filters, err := HelperMakeFiltersFromCatalogItem(catalog)
+	filters, err := HelperMakeFiltersFromCatalogItem(ctx, catalog)
 	check.Assert(err, IsNil)
 	for _, fm := range filters {
-		queryItems, explanation, err := catalog.SearchByFilter(queryType, "catalog", fm.Criteria)
+		queryItems, explanation, err := catalog.SearchByFilter(ctx, queryType, "catalog", fm.Criteria)
 		check.Assert(err, IsNil)
 
 		convertedMatch, okMatch := fm.Entity.(QueryCatalogItem)
@@ -180,20 +180,20 @@ func (vcd *TestVCD) Test_SearchNetwork(check *C) {
 	}
 	client := vcd.client
 	// Fetching organization and VDC
-	org, err := client.GetAdminOrgByName(vcd.org.Org.Name)
+	org, err := client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
-	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	vdc, err := org.GetVDCByName(ctx, vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 
 	// Get existing networks, and create sample filters to retrieve them
-	filters, err := HelperMakeFiltersFromNetworks(vdc)
+	filters, err := HelperMakeFiltersFromNetworks(ctx, vdc)
 	check.Assert(err, IsNil)
 	check.Assert(filters, NotNil)
 
 	for _, fm := range filters {
-		queryItems, explanation, err := vdc.SearchByFilter(types.QtOrgVdcNetwork, "vdc", fm.Criteria)
+		queryItems, explanation, err := vdc.SearchByFilter(ctx, types.QtOrgVdcNetwork, "vdc", fm.Criteria)
 		check.Assert(err, IsNil)
 		printVerbose("%s\n", explanation)
 		check.Assert(len(queryItems), Equals, 1)
@@ -203,7 +203,7 @@ func (vcd *TestVCD) Test_SearchNetwork(check *C) {
 		if len(fm.Criteria.Metadata) > 0 {
 			// Search with Metadata API
 			fm.Criteria.UseMetadataApiFilter = true
-			queryItems, explanation, err = vdc.SearchByFilter(types.QtOrgVdcNetwork, "vdc", fm.Criteria)
+			queryItems, explanation, err = vdc.SearchByFilter(ctx, types.QtOrgVdcNetwork, "vdc", fm.Criteria)
 			check.Assert(err, IsNil)
 			check.Assert(len(queryItems), Equals, 1)
 			check.Assert(queryItems[0].GetName(), Equals, fm.ExpectedName)
@@ -222,20 +222,20 @@ func (vcd *TestVCD) Test_SearchEdgeGateway(check *C) {
 	}
 	client := vcd.client
 	// Fetching organization and VDC
-	org, err := client.GetAdminOrgByName(vcd.org.Org.Name)
+	org, err := client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
-	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	vdc, err := org.GetVDCByName(ctx, vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 
 	// Get existing edge gateways, and create sample filters to retrieve them
-	filters, err := HelperMakeFiltersFromEdgeGateways(vdc)
+	filters, err := HelperMakeFiltersFromEdgeGateways(ctx, vdc)
 	check.Assert(err, IsNil)
 	check.Assert(filters, NotNil)
 
 	for _, fm := range filters {
-		queryItems, explanation, err := vdc.SearchByFilter(types.QtEdgeGateway, "vdc", fm.Criteria)
+		queryItems, explanation, err := vdc.SearchByFilter(ctx, types.QtEdgeGateway, "vdc", fm.Criteria)
 		check.Assert(err, IsNil)
 		printVerbose("%s\n", explanation)
 		check.Assert(len(queryItems), Equals, 1)
@@ -252,18 +252,18 @@ func (vcd *TestVCD) Test_SearchCatalog(check *C) {
 	}
 	client := vcd.client
 	// Fetching organization
-	org, err := client.GetAdminOrgByName(vcd.org.Org.Name)
+	org, err := client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
 	// Get existing catalogs, and create sample filters to retrieve them
-	filters, err := HelperMakeFiltersFromCatalogs(org)
+	filters, err := HelperMakeFiltersFromCatalogs(ctx, org)
 	check.Assert(err, IsNil)
 	check.Assert(filters, NotNil)
 
 	queryType := client.Client.GetQueryType(types.QtCatalog)
 	for _, fm := range filters {
-		queryItems, explanation, err := org.SearchByFilter(queryType, fm.Criteria)
+		queryItems, explanation, err := org.SearchByFilter(ctx, queryType, fm.Criteria)
 		check.Assert(err, IsNil)
 		check.Assert(len(queryItems), Equals, 1)
 		printVerbose("%s\n", explanation)
@@ -280,26 +280,26 @@ func (vcd *TestVCD) Test_SearchMediaItem(check *C) {
 	}
 	client := vcd.client
 	// Fetching organization and VDC
-	org, err := client.GetAdminOrgByName(vcd.org.Org.Name)
+	org, err := client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
-	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	vdc, err := org.GetVDCByName(ctx, vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err := org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 
 	// Get existing media, and create sample filters to retrieve them
-	filters, err := HelperMakeFiltersFromMedia(vdc, catalog.Catalog.Name)
+	filters, err := HelperMakeFiltersFromMedia(ctx, vdc, catalog.Catalog.Name)
 	check.Assert(err, IsNil)
 	check.Assert(filters, NotNil)
 
 	queryType := client.Client.GetQueryType(types.QtMedia)
 
 	for _, fm := range filters {
-		queryItems, explanation, err := catalog.SearchByFilter(queryType, "catalog", fm.Criteria)
+		queryItems, explanation, err := catalog.SearchByFilter(ctx, queryType, "catalog", fm.Criteria)
 		check.Assert(err, IsNil)
 		printVerbose("%s\n", explanation)
 		check.Assert(len(queryItems), Equals, 1)

@@ -26,33 +26,33 @@ func (vcd *TestVCD) Test_DeleteMedia(check *C) {
 		check.Skip("Test_DeleteMedia: Catalog name not given")
 		return
 	}
-	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	org, err := vcd.client.GetOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err := org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 
 	itemName := "TestDeleteMedia"
-	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
+	uploadTask, err := catalog.UploadMediaImage(ctx, itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
+	err = uploadTask.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
 	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_DeleteMediaImage")
 
-	media, err := catalog.GetMediaByName(itemName, true)
+	media, err := catalog.GetMediaByName(ctx, itemName, true)
 	check.Assert(err, IsNil)
 	check.Assert(media, NotNil)
 	check.Assert(media.Media.Name, Equals, itemName)
 
-	task, err := media.Delete()
+	task, err := media.Delete(ctx)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
-	_, err = catalog.GetMediaByName(itemName, true)
+	_, err = catalog.GetMediaByName(ctx, itemName, true)
 	check.Assert(err, NotNil)
 	check.Assert(IsNotFound(err), Equals, true)
 }
@@ -74,23 +74,23 @@ func (vcd *TestVCD) Test_RefreshMedia(check *C) {
 		check.Skip("Test_RefreshMediaRecord: Media name not given")
 		return
 	}
-	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	org, err := vcd.client.GetOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err := org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 
 	itemName := vcd.config.Media.Media
 
-	media, err := catalog.GetMediaByName(itemName, true)
+	media, err := catalog.GetMediaByName(ctx, itemName, true)
 	check.Assert(err, IsNil)
 	check.Assert(media, NotNil)
 	check.Assert(media.Media.Name, Equals, itemName)
 
 	oldMedia := media
-	err = media.Refresh()
+	err = media.Refresh(ctx)
 	check.Assert(err, IsNil)
 
 	check.Assert(media, NotNil)
@@ -111,24 +111,24 @@ func (vcd *TestVCD) Test_GetMedia(check *C) {
 		check.Skip("Test_GetMedia: Catalog name not given")
 		return
 	}
-	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	org, err := vcd.client.GetOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err := org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 
 	getByName := func(name string, refresh bool) (genericEntity, error) {
-		err = catalog.Refresh()
+		err = catalog.Refresh(ctx)
 		check.Assert(err, IsNil)
-		return catalog.GetMediaByName(name, refresh)
+		return catalog.GetMediaByName(ctx, name, refresh)
 	}
 	getById := func(id string, refresh bool) (genericEntity, error) {
-		return catalog.GetMediaById(id)
+		return catalog.GetMediaById(ctx, id)
 	}
 	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
-		return catalog.GetMediaByNameOrId(id, refresh)
+		return catalog.GetMediaByNameOrId(ctx, id, refresh)
 	}
 
 	var def = getterTestDefinition{
@@ -161,16 +161,16 @@ func (vcd *TestVCD) Test_QueryMedia(check *C) {
 		return
 	}
 	// Fetching organization
-	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	org, err := vcd.client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err := org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 
 	testQueryMediaName := vcd.config.Media.Media
 
-	media, err := catalog.QueryMedia(testQueryMediaName)
+	media, err := catalog.QueryMedia(ctx, testQueryMediaName)
 	check.Assert(err, IsNil)
 	check.Assert(media, Not(Equals), nil)
 
@@ -178,7 +178,7 @@ func (vcd *TestVCD) Test_QueryMedia(check *C) {
 	check.Assert(media.MediaRecord.HREF, Not(Equals), "")
 
 	// find Invalid media
-	media, err = catalog.QueryMedia("INVALID")
+	media, err = catalog.QueryMedia(ctx, "INVALID")
 	check.Assert(IsNotFound(err), Equals, true)
 	check.Assert(media, IsNil)
 }
@@ -202,23 +202,23 @@ func (vcd *TestVCD) Test_RefreshMediaRecord(check *C) {
 		return
 	}
 
-	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	org, err := vcd.client.GetOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err := org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 
 	itemName := vcd.config.Media.Media
 
-	mediaRecord, err := catalog.QueryMedia(itemName)
+	mediaRecord, err := catalog.QueryMedia(ctx, itemName)
 	check.Assert(err, IsNil)
 	check.Assert(mediaRecord, NotNil)
 	check.Assert(mediaRecord.MediaRecord.Name, Equals, itemName)
 
 	oldMediaRecord := mediaRecord
-	err = mediaRecord.Refresh()
+	err = mediaRecord.Refresh(ctx)
 	check.Assert(err, IsNil)
 
 	check.Assert(mediaRecord, NotNil)
@@ -242,13 +242,13 @@ func (vcd *TestVCD) Test_QueryAllMedia(check *C) {
 		return
 	}
 	// Fetching organization
-	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	org, err := vcd.client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
 	testQueryMediaName := vcd.config.Media.Media
 
-	mediaList, err := vcd.vdc.QueryAllMedia(testQueryMediaName)
+	mediaList, err := vcd.vdc.QueryAllMedia(ctx, testQueryMediaName)
 	check.Assert(err, IsNil)
 	check.Assert(mediaList, Not(Equals), nil)
 
@@ -256,7 +256,7 @@ func (vcd *TestVCD) Test_QueryAllMedia(check *C) {
 	check.Assert(mediaList[0].MediaRecord.HREF, Not(Equals), "")
 
 	// find Invalid media
-	mediaList, err = vcd.vdc.QueryAllMedia("INVALID")
+	mediaList, err = vcd.vdc.QueryAllMedia(ctx, "INVALID")
 	check.Assert(IsNotFound(err), Equals, true)
 	check.Assert(mediaList, IsNil)
 }

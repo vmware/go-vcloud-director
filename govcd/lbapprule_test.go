@@ -23,7 +23,7 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
@@ -33,9 +33,9 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 		Script: "acl vmware_page url_beg / vmware redirect location https://www.vmware.com/ ifvmware_page",
 	}
 
-	err = deleteLbAppRuleIfExists(*edge, lbAppRuleConfig.Name)
+	err = deleteLbAppRuleIfExists(ctx, *edge, lbAppRuleConfig.Name)
 	check.Assert(err, IsNil)
-	createdLbAppRule, err := edge.CreateLbAppRule(lbAppRuleConfig)
+	createdLbAppRule, err := edge.CreateLbAppRule(ctx, lbAppRuleConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdLbAppRule.ID, Not(IsNil))
 
@@ -44,11 +44,11 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 	AddToCleanupList(TestLbAppRule, "lbAppRule", parentEntity, check.TestName())
 
 	// // Lookup by both name and ID and compare that these are equal values
-	lbAppRuleByID, err := edge.getLbAppRule(&types.LbAppRule{ID: createdLbAppRule.ID})
+	lbAppRuleByID, err := edge.getLbAppRule(ctx, &types.LbAppRule{ID: createdLbAppRule.ID})
 	check.Assert(err, IsNil)
 	check.Assert(lbAppRuleByID, Not(IsNil))
 
-	lbAppRuleByName, err := edge.getLbAppRule(&types.LbAppRule{Name: createdLbAppRule.Name})
+	lbAppRuleByName, err := edge.getLbAppRule(ctx, &types.LbAppRule{Name: createdLbAppRule.Name})
 	check.Assert(err, IsNil)
 	check.Assert(lbAppRuleByName, Not(IsNil))
 	check.Assert(createdLbAppRule.ID, Equals, lbAppRuleByName.ID)
@@ -58,7 +58,7 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 	check.Assert(createdLbAppRule.Script, Equals, lbAppRuleConfig.Script)
 
 	// Test that we can extract a list of LB app rules, and that one of them is the rule we have got when searching by name
-	lbAppRules, err := edge.GetLbAppRules()
+	lbAppRules, err := edge.GetLbAppRules(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(lbAppRules, NotNil)
 	foundRule := false
@@ -73,7 +73,7 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 	// Update script to be multi-line
 	lbAppRuleByID.Script = "acl other_page url_beg / other redirect location https://www.other.com/ ifother_page\n" +
 		"acl other_page2 url_beg / other2 redirect location https://www.other2.com/ ifother_page2"
-	updatedAppProfile, err := edge.UpdateLbAppRule(lbAppRuleByID)
+	updatedAppProfile, err := edge.UpdateLbAppRule(ctx, lbAppRuleByID)
 	check.Assert(err, IsNil)
 	check.Assert(updatedAppProfile.Script, Equals, lbAppRuleByID.Script)
 
@@ -84,20 +84,20 @@ func (vcd *TestVCD) Test_LBAppRule(check *C) {
 	// invalid applicationRule script, invalid script line : invalid_script, error details :
 	// Unknown keyword 'invalid_script'
 	lbAppRuleByID.Script = "invalid_script"
-	updatedAppProfile, err = edge.UpdateLbAppRule(lbAppRuleByID)
+	updatedAppProfile, err = edge.UpdateLbAppRule(ctx, lbAppRuleByID)
 	check.Assert(updatedAppProfile, IsNil)
 	check.Assert(err, NotNil)
 
 	// Update should fail without name
 	lbAppRuleByID.Name = ""
-	_, err = edge.UpdateLbAppRule(lbAppRuleByID)
+	_, err = edge.UpdateLbAppRule(ctx, lbAppRuleByID)
 	check.Assert(err.Error(), Equals, "load balancer application rule Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLbAppRule(&types.LbAppRule{ID: createdLbAppRule.ID})
+	err = edge.DeleteLbAppRule(ctx, &types.LbAppRule{ID: createdLbAppRule.ID})
 	check.Assert(err, IsNil)
 
 	// Ensure it is deleted
-	_, err = edge.GetLbAppRuleById(createdLbAppRule.ID)
+	_, err = edge.GetLbAppRuleById(ctx, createdLbAppRule.ID)
 	check.Assert(IsNotFound(err), Equals, true)
 }

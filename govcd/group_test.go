@@ -18,7 +18,7 @@ import (
 // which sets up LDAP configuration.
 func (vcd *TestVCD) test_GroupCRUD(check *C) {
 	fmt.Printf("Running: %s\n", "test_GroupCRUD")
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	adminOrg, err := vcd.client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
@@ -87,11 +87,11 @@ func (vcd *TestVCD) test_GroupCRUD(check *C) {
 		if testVerbose {
 			fmt.Printf("# creating '%s' group '%s' with role '%s'\n", gd.providerType, gd.name, gd.roleName)
 		}
-		createdGroup, err := adminOrg.CreateGroup(newGroup.Group)
+		createdGroup, err := adminOrg.CreateGroup(ctx, newGroup.Group)
 		check.Assert(err, IsNil)
 		AddToCleanupList(gd.name, "group", newGroup.AdminOrg.AdminOrg.Name, "test_GroupCRUD")
 
-		foundGroup, err := adminOrg.GetGroupByName(gd.name, true)
+		foundGroup, err := adminOrg.GetGroupByName(ctx, gd.name, true)
 		check.Assert(err, IsNil)
 
 		check.Assert(foundGroup.Group.Href, Equals, createdGroup.Group.Href)
@@ -105,10 +105,10 @@ func (vcd *TestVCD) test_GroupCRUD(check *C) {
 		if testVerbose {
 			fmt.Printf("# updating '%s' group '%s' to role '%s'\n", gd.providerType, gd.name, gd.secondRole)
 		}
-		err = createdGroup.Update()
+		err = createdGroup.Update(ctx)
 		check.Assert(err, IsNil)
 
-		foundGroup2, err := adminOrg.GetGroupByName(gd.name, true)
+		foundGroup2, err := adminOrg.GetGroupByName(ctx, gd.name, true)
 		check.Assert(err, IsNil)
 
 		check.Assert(err, IsNil)
@@ -118,7 +118,7 @@ func (vcd *TestVCD) test_GroupCRUD(check *C) {
 		if testVerbose {
 			fmt.Printf("# removing '%s' group '%s'\n", gd.providerType, gd.name)
 		}
-		err = createdGroup.Delete()
+		err = createdGroup.Delete(ctx)
 		check.Assert(err, IsNil)
 	}
 }
@@ -131,7 +131,7 @@ func (vcd *TestVCD) test_GroupFinderGetGenericEntity(check *C) {
 	fmt.Printf("Running: %s\n", "test_GroupFinderGetGenericEntity")
 
 	const groupName = "ship_crew"
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	adminOrg, err := vcd.client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
@@ -145,20 +145,20 @@ func (vcd *TestVCD) test_GroupFinderGetGenericEntity(check *C) {
 		ProviderType: OrgUserProviderIntegrated,
 	}
 
-	_, err = adminOrg.CreateGroup(group.Group)
+	_, err = adminOrg.CreateGroup(ctx, group.Group)
 	check.Assert(err, IsNil)
 	AddToCleanupList(groupName, "group", group.AdminOrg.AdminOrg.Name, check.TestName())
 
 	getByName := func(name string, refresh bool) (genericEntity, error) {
-		return adminOrg.GetGroupByName(name, refresh)
+		return adminOrg.GetGroupByName(ctx, name, refresh)
 	}
-	getById := func(id string, refresh bool) (genericEntity, error) { return adminOrg.GetGroupById(id, refresh) }
+	getById := func(id string, refresh bool) (genericEntity, error) { return adminOrg.GetGroupById(ctx, id, refresh) }
 	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
-		return adminOrg.GetGroupByNameOrId(id, refresh)
+		return adminOrg.GetGroupByNameOrId(ctx, id, refresh)
 	}
 
 	// Refresh adminOrg so that user data is present
-	err = adminOrg.Refresh()
+	err = adminOrg.Refresh(ctx)
 	check.Assert(err, IsNil)
 
 	var def = getterTestDefinition{
@@ -173,8 +173,8 @@ func (vcd *TestVCD) test_GroupFinderGetGenericEntity(check *C) {
 	vcd.testFinderGetGenericEntity(def, check)
 
 	// Remove group because LDAP cleanup will fail.
-	grp, err := adminOrg.GetGroupByName(group.Group.Name, true)
+	grp, err := adminOrg.GetGroupByName(ctx, group.Group.Name, true)
 	check.Assert(err, IsNil)
-	err = grp.Delete()
+	err = grp.Delete(ctx)
 	check.Assert(err, IsNil)
 }

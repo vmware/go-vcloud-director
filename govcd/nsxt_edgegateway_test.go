@@ -12,23 +12,23 @@ import (
 
 func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
-	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGateways)
+	skipOpenApiEndpointTest(ctx, vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGateways)
 
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	adminOrg, err := vcd.client.GetAdminOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 
-	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	org, err := vcd.client.GetOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 
-	nsxvVdc, err := adminOrg.GetVDCByName(vcd.config.VCD.Vdc, false)
+	nsxvVdc, err := adminOrg.GetVDCByName(ctx, vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
-	nsxtVdc, err := adminOrg.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+	nsxtVdc, err := adminOrg.GetVDCByName(ctx, vcd.config.VCD.Nsxt.Vdc, false)
 	if ContainsNotFound(err) {
 		check.Skip(fmt.Sprintf("No NSX-T VDC (%s) found - skipping test", vcd.config.VCD.Nsxt.Vdc))
 	}
 	check.Assert(err, IsNil)
 
-	nsxtExternalNetwork, err := GetExternalNetworkV2ByName(vcd.client, vcd.config.VCD.Nsxt.ExternalNetwork)
+	nsxtExternalNetwork, err := GetExternalNetworkV2ByName(ctx, vcd.client, vcd.config.VCD.Nsxt.ExternalNetwork)
 	check.Assert(err, IsNil)
 
 	egwDefinition := &types.OpenAPIEdgeGateway{
@@ -49,13 +49,13 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 		}},
 	}
 
-	createdEdge, err := adminOrg.CreateNsxtEdgeGateway(egwDefinition)
+	createdEdge, err := adminOrg.CreateNsxtEdgeGateway(ctx, egwDefinition)
 
 	check.Assert(err, IsNil)
 	check.Assert(createdEdge.EdgeGateway.Name, Equals, egwDefinition.Name)
 
 	createdEdge.EdgeGateway.Name = "renamed-edge"
-	updatedEdge, err := createdEdge.Update(createdEdge.EdgeGateway)
+	updatedEdge, err := createdEdge.Update(ctx, createdEdge.EdgeGateway)
 	check.Assert(err, IsNil)
 	check.Assert(updatedEdge.EdgeGateway.Name, Equals, "renamed-edge")
 
@@ -63,29 +63,29 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	queryParams := url.Values{}
 	queryParams.Add("filter", "name==renamed-edge")
 	//
-	egws, err := adminOrg.GetAllNsxtEdgeGateways(queryParams)
+	egws, err := adminOrg.GetAllNsxtEdgeGateways(ctx, queryParams)
 	check.Assert(err, IsNil)
 	check.Assert(len(egws) >= 1, Equals, true)
 
 	// Lookup using different available methods
-	e1, err := adminOrg.GetNsxtEdgeGatewayByName(updatedEdge.EdgeGateway.Name)
+	e1, err := adminOrg.GetNsxtEdgeGatewayByName(ctx, updatedEdge.EdgeGateway.Name)
 	check.Assert(err, IsNil)
-	e2, err := org.GetNsxtEdgeGatewayByName(updatedEdge.EdgeGateway.Name)
+	e2, err := org.GetNsxtEdgeGatewayByName(ctx, updatedEdge.EdgeGateway.Name)
 	check.Assert(err, IsNil)
-	e3, err := nsxtVdc.GetNsxtEdgeGatewayByName(updatedEdge.EdgeGateway.Name)
+	e3, err := nsxtVdc.GetNsxtEdgeGatewayByName(ctx, updatedEdge.EdgeGateway.Name)
 	check.Assert(err, IsNil)
-	e4, err := adminOrg.GetNsxtEdgeGatewayById(updatedEdge.EdgeGateway.ID)
+	e4, err := adminOrg.GetNsxtEdgeGatewayById(ctx, updatedEdge.EdgeGateway.ID)
 	check.Assert(err, IsNil)
-	e5, err := org.GetNsxtEdgeGatewayById(updatedEdge.EdgeGateway.ID)
+	e5, err := org.GetNsxtEdgeGatewayById(ctx, updatedEdge.EdgeGateway.ID)
 	check.Assert(err, IsNil)
-	e6, err := nsxtVdc.GetNsxtEdgeGatewayById(updatedEdge.EdgeGateway.ID)
+	e6, err := nsxtVdc.GetNsxtEdgeGatewayById(ctx, updatedEdge.EdgeGateway.ID)
 	check.Assert(err, IsNil)
 
 	// Try to search for NSX-T edge gateway in NSX-V VDC and expect it to be not found
-	expectNil, err := nsxvVdc.GetNsxtEdgeGatewayByName(updatedEdge.EdgeGateway.Name)
+	expectNil, err := nsxvVdc.GetNsxtEdgeGatewayByName(ctx, updatedEdge.EdgeGateway.Name)
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(expectNil, IsNil)
-	expectNil, err = nsxvVdc.GetNsxtEdgeGatewayById(updatedEdge.EdgeGateway.ID)
+	expectNil, err = nsxvVdc.GetNsxtEdgeGatewayById(ctx, updatedEdge.EdgeGateway.ID)
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(expectNil, IsNil)
 
@@ -96,6 +96,6 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	check.Assert(e1.EdgeGateway.ID, Equals, e5.EdgeGateway.ID)
 	check.Assert(e1.EdgeGateway.ID, Equals, e6.EdgeGateway.ID)
 
-	err = updatedEdge.Delete()
+	err = updatedEdge.Delete(ctx)
 	check.Assert(err, IsNil)
 }

@@ -41,7 +41,7 @@ OR
 
 // Checks that the default roles are available from the organization
 func (vcd *TestVCD) Test_GetRoleReference(check *C) {
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	adminOrg, err := vcd.client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 	Roles := []string{
@@ -61,7 +61,7 @@ func (vcd *TestVCD) Test_GetRoleReference(check *C) {
 
 // Checks that we can retrieve a user by name or ID
 func (vcd *TestVCD) Test_GetUserByNameOrId(check *C) {
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	adminOrg, err := vcd.client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
@@ -73,24 +73,24 @@ func (vcd *TestVCD) Test_GetUserByNameOrId(check *C) {
 
 	// Using the list above, we first try to get each user by name
 	for _, userRef := range userRefs {
-		user, err := adminOrg.GetUserByName(userRef.Name, false)
+		user, err := adminOrg.GetUserByName(ctx, userRef.Name, false)
 		check.Assert(err, IsNil)
 		check.Assert(user, NotNil)
 		check.Assert(user.User.Name, Equals, userRef.Name)
 
 		// Then we try to get the same user by ID
-		user, err = adminOrg.GetUserById(userRef.ID, false)
+		user, err = adminOrg.GetUserById(ctx, userRef.ID, false)
 		check.Assert(err, IsNil)
 		check.Assert(user, NotNil)
 		check.Assert(user.User.Name, Equals, userRef.Name)
 
 		// Then we try to get the same user by Name or ID combined
-		user, err = adminOrg.GetUserByNameOrId(userRef.ID, true)
+		user, err = adminOrg.GetUserByNameOrId(ctx, userRef.ID, true)
 		check.Assert(err, IsNil)
 		check.Assert(user, NotNil)
 		check.Assert(user.User.Name, Equals, userRef.Name)
 
-		user, err = adminOrg.GetUserByNameOrId(userRef.Name, false)
+		user, err = adminOrg.GetUserByNameOrId(ctx, userRef.Name, false)
 		check.Assert(err, IsNil)
 		check.Assert(user, NotNil)
 		check.Assert(user.User.Name, Equals, userRef.Name)
@@ -102,7 +102,7 @@ func (vcd *TestVCD) Test_GetUserByNameOrId(check *C) {
 // Furthermore, disables, and then enables the users again
 // and finally deletes all of them
 func (vcd *TestVCD) Test_UserCRUD(check *C) {
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	adminOrg, err := vcd.client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
@@ -163,7 +163,7 @@ func (vcd *TestVCD) Test_UserCRUD(check *C) {
 			Telephone:       "999 888-7777",
 		}
 
-		user, err := adminOrg.CreateUserSimple(userDefinition)
+		user, err := adminOrg.CreateUserSimple(ctx, userDefinition)
 		// disableDebugShowRequest()
 		// disableDebugShowResponse()
 		check.Assert(err, IsNil)
@@ -180,19 +180,19 @@ func (vcd *TestVCD) Test_UserCRUD(check *C) {
 		check.Assert(user.User.StoredVmQuota, Equals, userDefinition.StoredVmQuota)
 		check.Assert(user.User.DeployedVmQuota, Equals, userDefinition.DeployedVmQuota)
 
-		err = user.Disable()
+		err = user.Disable(ctx)
 		check.Assert(err, IsNil)
 		check.Assert(user.User.IsEnabled, Equals, false)
 
 		fmt.Printf("# Updating user %s with role %s\n", ud.name, ud.secondRole)
-		err = user.ChangeRole(ud.secondRole)
+		err = user.ChangeRole(ctx, ud.secondRole)
 		check.Assert(err, IsNil)
 		check.Assert(user.GetRoleName(), Equals, ud.secondRole)
 
-		err = user.Enable()
+		err = user.Enable(ctx)
 		check.Assert(err, IsNil)
 		check.Assert(user.User.IsEnabled, Equals, true)
-		err = user.ChangePassword("new_pass")
+		err = user.ChangePassword(ctx, "new_pass")
 		check.Assert(err, IsNil)
 	}
 
@@ -201,18 +201,18 @@ func (vcd *TestVCD) Test_UserCRUD(check *C) {
 		false: "disabled",
 	}
 	for _, ud := range userData {
-		user, err := adminOrg.GetUserByNameOrId(ud.name, true)
+		user, err := adminOrg.GetUserByNameOrId(ctx, ud.name, true)
 		check.Assert(err, IsNil)
 
 		fmt.Printf("# deleting user %s (%s - %s)\n", ud.name, user.GetRoleName(), enableMap[user.User.IsEnabled])
 		// uncomment the following two lines to see the deletion request and response
 		// enableDebugShowRequest()
 		// enableDebugShowResponse()
-		err = user.Delete(true)
+		err = user.Delete(ctx, true)
 		// disableDebugShowRequest()
 		// disableDebugShowResponse()
 		check.Assert(err, IsNil)
-		user, err = adminOrg.GetUserByNameOrId(user.User.ID, true)
+		user, err = adminOrg.GetUserByNameOrId(ctx, user.User.ID, true)
 		check.Assert(err, NotNil)
 		// Tests both the error directly and the function IsNotFound
 		check.Assert(err, Equals, ErrorEntityNotFound)

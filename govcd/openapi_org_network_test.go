@@ -14,7 +14,7 @@ import (
 )
 
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkIsolated(check *C) {
-	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
+	skipOpenApiEndpointTest(ctx, vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
 	skipNoNsxtConfiguration(vcd, check)
 
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
@@ -55,10 +55,10 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkIsolated(check *C) {
 }
 
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
-	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
+	skipOpenApiEndpointTest(ctx, vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
 	skipNoNsxtConfiguration(vcd, check)
 
-	egw, err := vcd.org.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
+	egw, err := vcd.org.GetNsxtEdgeGatewayByName(ctx, vcd.config.VCD.Nsxt.EdgeGateway)
 	check.Assert(err, IsNil)
 
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
@@ -116,14 +116,14 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
-	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
+	skipOpenApiEndpointTest(ctx, vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
 	skipNoNsxtConfiguration(vcd, check)
 
 	if vcd.config.VCD.Nsxt.NsxtImportSegment == "" {
 		check.Skip("Unused NSX-T segment was not provided")
 	}
 
-	logicalSwitch, err := vcd.nsxtVdc.GetNsxtImportableSwitchByName(vcd.config.VCD.Nsxt.NsxtImportSegment)
+	logicalSwitch, err := vcd.nsxtVdc.GetNsxtImportableSwitchByName(ctx, vcd.config.VCD.Nsxt.NsxtImportSegment)
 	check.Assert(err, IsNil)
 
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
@@ -164,7 +164,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 }
 
 func (vcd *TestVCD) Test_NsxvOrgVdcNetworkIsolated(check *C) {
-	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
+	skipOpenApiEndpointTest(ctx, vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
 
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
 		Name:        check.TestName(),
@@ -204,9 +204,9 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkIsolated(check *C) {
 }
 
 func (vcd *TestVCD) Test_NsxvOrgVdcNetworkRouted(check *C) {
-	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
+	skipOpenApiEndpointTest(ctx, vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
 
-	nsxvEdgeGateway, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, true)
+	nsxvEdgeGateway, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, true)
 	check.Assert(err, IsNil)
 
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
@@ -261,13 +261,13 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkRouted(check *C) {
 }
 
 func (vcd *TestVCD) Test_NsxvOrgVdcNetworkDirect(check *C) {
-	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
+	skipOpenApiEndpointTest(ctx, vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
 	// Using legacy API lookup function because GetExternalNetworkV2ByName does not support VCD 9.7
-	externalNetwork, err := vcd.client.GetExternalNetworkByName(vcd.config.VCD.ExternalNetwork)
+	externalNetwork, err := vcd.client.GetExternalNetworkByName(ctx, vcd.config.VCD.ExternalNetwork)
 
 	check.Assert(err, IsNil)
 
@@ -317,7 +317,7 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkDirect(check *C) {
 }
 
 func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, extpectNetworkType string, dhcpFunc dhcpConfigFunc) {
-	orgVdcNet, err := vdc.CreateOpenApiOrgVdcNetwork(orgVdcNetworkConfig)
+	orgVdcNet, err := vdc.CreateOpenApiOrgVdcNetwork(ctx, orgVdcNetworkConfig)
 	check.Assert(err, IsNil)
 
 	// Use generic "OpenApiEntity" resource cleanup type
@@ -327,9 +327,9 @@ func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.
 	check.Assert(orgVdcNet.GetType(), Equals, extpectNetworkType)
 
 	// Check it can be found
-	orgVdcNetByIdInVdc, err := vdc.GetOpenApiOrgVdcNetworkById(orgVdcNet.OpenApiOrgVdcNetwork.ID)
+	orgVdcNetByIdInVdc, err := vdc.GetOpenApiOrgVdcNetworkById(ctx, orgVdcNet.OpenApiOrgVdcNetwork.ID)
 	check.Assert(err, IsNil)
-	orgVdcNetByName, err := vdc.GetOpenApiOrgVdcNetworkByName(orgVdcNet.OpenApiOrgVdcNetwork.Name)
+	orgVdcNetByName, err := vdc.GetOpenApiOrgVdcNetworkByName(ctx, orgVdcNet.OpenApiOrgVdcNetwork.Name)
 	check.Assert(err, IsNil)
 
 	check.Assert(orgVdcNetByIdInVdc.OpenApiOrgVdcNetwork.ID, Equals, orgVdcNet.OpenApiOrgVdcNetwork.ID)
@@ -337,7 +337,7 @@ func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.
 
 	// Retrieve all networks in VDC and expect newly created network to be there
 	var foundNetInVdc bool
-	allOrgVdcNets, err := vdc.GetAllOpenApiOrgVdcNetworks(nil)
+	allOrgVdcNets, err := vdc.GetAllOpenApiOrgVdcNetworks(ctx, nil)
 	check.Assert(err, IsNil)
 	for _, net := range allOrgVdcNets {
 		if net.OpenApiOrgVdcNetwork.ID == orgVdcNet.OpenApiOrgVdcNetwork.ID {
@@ -348,7 +348,7 @@ func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.
 
 	// Update
 	orgVdcNet.OpenApiOrgVdcNetwork.Description = check.TestName() + "updated description"
-	updatedOrgVdcNet, err := orgVdcNet.Update(orgVdcNet.OpenApiOrgVdcNetwork)
+	updatedOrgVdcNet, err := orgVdcNet.Update(ctx, orgVdcNet.OpenApiOrgVdcNetwork)
 	check.Assert(err, IsNil)
 
 	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.Name, Equals, orgVdcNet.OpenApiOrgVdcNetwork.Name)
@@ -360,14 +360,14 @@ func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.
 		dhcpFunc(check, vdc, updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID)
 	}
 	// Delete
-	err = orgVdcNet.Delete()
+	err = orgVdcNet.Delete(ctx)
 	check.Assert(err, IsNil)
 
 	// Test again if it was deleted and expect it to contain ErrorEntityNotFound
-	_, err = vdc.GetOpenApiOrgVdcNetworkByName(orgVdcNet.OpenApiOrgVdcNetwork.Name)
+	_, err = vdc.GetOpenApiOrgVdcNetworkByName(ctx, orgVdcNet.OpenApiOrgVdcNetwork.Name)
 	check.Assert(ContainsNotFound(err), Equals, true)
 
-	_, err = vdc.GetOpenApiOrgVdcNetworkById(orgVdcNet.OpenApiOrgVdcNetwork.ID)
+	_, err = vdc.GetOpenApiOrgVdcNetworkById(ctx, orgVdcNet.OpenApiOrgVdcNetwork.ID)
 	check.Assert(ContainsNotFound(err), Equals, true)
 }
 
@@ -386,15 +386,15 @@ func nsxtRoutedDhcpConfig(check *C, vdc *Vdc, orgNetId string) {
 			},
 		},
 	}
-	updatedDhcp, err := vdc.UpdateOpenApiOrgVdcNetworkDhcp(orgNetId, dhcpDefinition)
+	updatedDhcp, err := vdc.UpdateOpenApiOrgVdcNetworkDhcp(ctx, orgNetId, dhcpDefinition)
 	check.Assert(err, IsNil)
 
 	check.Assert(dhcpDefinition, DeepEquals, updatedDhcp.OpenApiOrgVdcNetworkDhcp)
 
 	// VCD Versions before 10.2 do not allow to perform "DELETE" on DHCP pool
 	// To remove DHCP configuration one must remove Org VDC network itself.
-	if vdc.client.APIVCDMaxVersionIs(">= 35.0") {
-		err = vdc.DeleteOpenApiOrgVdcNetworkDhcp(orgNetId)
+	if vdc.client.APIVCDMaxVersionIs(ctx, ">= 35.0") {
+		err = vdc.DeleteOpenApiOrgVdcNetworkDhcp(ctx, orgNetId)
 		check.Assert(err, IsNil)
 	}
 }

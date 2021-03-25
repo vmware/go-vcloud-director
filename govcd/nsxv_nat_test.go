@@ -17,11 +17,11 @@ func (vcd *TestVCD) Test_NsxvSnatRule(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	vnicIndex, err := edge.GetVnicIndexByNetworkNameAndType(vcd.config.VCD.Network.Net1, "internal")
+	vnicIndex, err := edge.GetVnicIndexByNetworkNameAndType(ctx, vcd.config.VCD.Network.Net1, "internal")
 	check.Assert(err, IsNil)
 
 	natRule := &types.EdgeNatRule{
@@ -43,11 +43,11 @@ func (vcd *TestVCD) Test_NsxvDnatRule(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	vnicIndex, err := edge.GetVnicIndexByNetworkNameAndType(vcd.config.VCD.ExternalNetwork, "uplink")
+	vnicIndex, err := edge.GetVnicIndexByNetworkNameAndType(ctx, vcd.config.VCD.ExternalNetwork, "uplink")
 	check.Assert(err, IsNil)
 
 	natRule := &types.EdgeNatRule{
@@ -110,13 +110,13 @@ func (vcd *TestVCD) Test_NsxvDnatRule(check *C) {
 // 4. Deletes the rule
 // 5. Validates that the rule was deleted
 func testNsxvNat(natRule *types.EdgeNatRule, vcd *TestVCD, check *C, edge EdgeGateway) {
-	createdNatRule, err := edge.CreateNsxvNatRule(natRule)
+	createdNatRule, err := edge.CreateNsxvNatRule(ctx, natRule)
 	check.Assert(err, IsNil)
 
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
 	AddToCleanupList(createdNatRule.ID, "nsxvNatRule", parentEntity, check.TestName())
 
-	gotNatRule, err := edge.GetNsxvNatRuleById(createdNatRule.ID)
+	gotNatRule, err := edge.GetNsxvNatRuleById(ctx, createdNatRule.ID)
 	check.Assert(err, IsNil)
 	check.Assert(gotNatRule, NotNil)
 	check.Assert(gotNatRule, DeepEquals, createdNatRule)
@@ -125,14 +125,14 @@ func testNsxvNat(natRule *types.EdgeNatRule, vcd *TestVCD, check *C, edge EdgeGa
 	// Set ID and update nat rule with description
 	natRule.ID = gotNatRule.ID
 	natRule.Description = "Description for NAT rule"
-	updatedNatRule, err := edge.UpdateNsxvNatRule(natRule)
+	updatedNatRule, err := edge.UpdateNsxvNatRule(ctx, natRule)
 	check.Assert(err, IsNil)
 	check.Assert(updatedNatRule, NotNil)
 
 	check.Assert(updatedNatRule.Description, Equals, natRule.Description)
 
 	// Test that we can extract a list of NSXV NAT rules, and that one of them is the rule we have got when searching by ID
-	natRules, err := edge.GetNsxvNatRules()
+	natRules, err := edge.GetNsxvNatRules(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(natRules, NotNil)
 	foundRule := false
@@ -147,10 +147,10 @@ func testNsxvNat(natRule *types.EdgeNatRule, vcd *TestVCD, check *C, edge EdgeGa
 	createdNatRule.Description = natRule.Description
 	check.Assert(updatedNatRule, DeepEquals, createdNatRule)
 
-	err = edge.DeleteNsxvNatRuleById(gotNatRule.ID)
+	err = edge.DeleteNsxvNatRuleById(ctx, gotNatRule.ID)
 	check.Assert(err, IsNil)
 
 	// Ensure the rule does not exist anymore
-	_, err = edge.GetNsxvNatRuleById(createdNatRule.ID)
+	_, err = edge.GetNsxvNatRuleById(ctx, createdNatRule.ID)
 	check.Assert(IsNotFound(err), Equals, true)
 }

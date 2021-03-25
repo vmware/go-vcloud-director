@@ -28,22 +28,22 @@ func (vcd *TestVCD) Test_SamlAdfsAuth(check *C) {
 	}
 
 	// Get vDC details using existing vCD client
-	org, err := vcd.client.GetOrgByName(cfg.VCD.Org)
+	org, err := vcd.client.GetOrgByName(ctx, cfg.VCD.Org)
 	check.Assert(err, IsNil)
 
-	vdc, err := org.GetVDCByName(cfg.VCD.Vdc, true)
+	vdc, err := org.GetVDCByName(ctx, cfg.VCD.Vdc, true)
 	check.Assert(err, IsNil)
 
 	// Get new vCD session and client using specifically SAML credentials
 	samlVcdCli := NewVCDClient(vcd.client.Client.VCDHREF, true,
 		WithSamlAdfs(true, cfg.Provider.SamlCustomRptId))
-	err = samlVcdCli.Authenticate(cfg.Provider.SamlUser, cfg.Provider.SamlPassword, cfg.VCD.Org)
+	err = samlVcdCli.Authenticate(ctx, cfg.Provider.SamlUser, cfg.Provider.SamlPassword, cfg.VCD.Org)
 	check.Assert(err, IsNil)
 
-	samlOrg, err := vcd.client.GetOrgByName(cfg.VCD.Org)
+	samlOrg, err := vcd.client.GetOrgByName(ctx, cfg.VCD.Org)
 	check.Assert(err, IsNil)
 
-	samlVdc, err := samlOrg.GetVDCByName(cfg.VCD.Vdc, true)
+	samlVdc, err := samlOrg.GetVDCByName(ctx, cfg.VCD.Vdc, true)
 	check.Assert(err, IsNil)
 
 	check.Assert(samlVdc, DeepEquals, vdc)
@@ -51,18 +51,18 @@ func (vcd *TestVCD) Test_SamlAdfsAuth(check *C) {
 	// If SamlCustomRptId was not specified - try to feed VCD entity ID manually (this is usually
 	// done automatically, but doing it to test this path is not broken)
 	if cfg.Provider.SamlCustomRptId == "" {
-		samlEntityId, err := getSamlEntityId(vcd.client, cfg.VCD.Org)
+		samlEntityId, err := getSamlEntityId(ctx, vcd.client, cfg.VCD.Org)
 		check.Assert(err, IsNil)
 
 		samlCustomRptVcdCli := NewVCDClient(vcd.client.Client.VCDHREF, true,
 			WithSamlAdfs(true, samlEntityId))
-		err = samlCustomRptVcdCli.Authenticate(cfg.Provider.SamlUser, cfg.Provider.SamlPassword, cfg.VCD.Org)
+		err = samlCustomRptVcdCli.Authenticate(ctx, cfg.Provider.SamlUser, cfg.Provider.SamlPassword, cfg.VCD.Org)
 		check.Assert(err, IsNil)
 
-		samlCustomRptOrg, err := vcd.client.GetOrgByName(cfg.VCD.Org)
+		samlCustomRptOrg, err := vcd.client.GetOrgByName(ctx, cfg.VCD.Org)
 		check.Assert(err, IsNil)
 
-		samlCustomRptVdc, err := samlCustomRptOrg.GetVDCByName(cfg.VCD.Vdc, true)
+		samlCustomRptVdc, err := samlCustomRptOrg.GetVDCByName(ctx, cfg.VCD.Vdc, true)
 		check.Assert(err, IsNil)
 
 		check.Assert(samlCustomRptVdc, DeepEquals, samlVdc)

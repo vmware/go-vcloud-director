@@ -14,7 +14,7 @@ import (
 
 func (vcd *TestVCD) Test_QueryNsxtManagerByName(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
-	nsxtManagers, err := vcd.client.QueryNsxtManagerByName(vcd.config.VCD.Nsxt.Manager)
+	nsxtManagers, err := vcd.client.QueryNsxtManagerByName(ctx, vcd.config.VCD.Nsxt.Manager)
 	check.Assert(err, IsNil)
 	check.Assert(len(nsxtManagers), Equals, 1)
 }
@@ -25,7 +25,7 @@ func (vcd *TestVCD) Test_GetAllNsxtTier0Routers(check *C) {
 	}
 	skipNoNsxtConfiguration(vcd, check)
 
-	nsxtManagers, err := vcd.client.QueryNsxtManagerByName(vcd.config.VCD.Nsxt.Manager)
+	nsxtManagers, err := vcd.client.QueryNsxtManagerByName(ctx, vcd.config.VCD.Nsxt.Manager)
 	check.Assert(err, IsNil)
 	check.Assert(len(nsxtManagers), Equals, 1)
 
@@ -34,7 +34,7 @@ func (vcd *TestVCD) Test_GetAllNsxtTier0Routers(check *C) {
 	urn, err := BuildUrnWithUuid("urn:vcloud:nsxtmanager:", uuid)
 	check.Assert(err, IsNil)
 
-	tier0Router, err := vcd.client.GetImportableNsxtTier0RouterByName(vcd.config.VCD.Nsxt.Tier0router, urn)
+	tier0Router, err := vcd.client.GetImportableNsxtTier0RouterByName(ctx, vcd.config.VCD.Nsxt.Tier0router, urn)
 	check.Assert(err, IsNil)
 	check.Assert(tier0Router, NotNil)
 }

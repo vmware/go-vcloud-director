@@ -29,7 +29,7 @@ func (vcd *TestVCD) Test_UpdateNetworkFirewallRules(check *C) {
 	uuid, err := GetUuidFromHref(networkFound.Link.HREF, false)
 	check.Assert(err, IsNil)
 
-	result, err := vapp.UpdateNetworkFirewallRules(uuid, []*types.FirewallRule{&types.FirewallRule{Description: "myFirstRule1", IsEnabled: true, Policy: "allow",
+	result, err := vapp.UpdateNetworkFirewallRules(ctx, uuid, []*types.FirewallRule{&types.FirewallRule{Description: "myFirstRule1", IsEnabled: true, Policy: "allow",
 		DestinationPortRange: "Any", DestinationIP: "Any", SourcePortRange: "Any", SourceIP: "Any", Protocols: &types.FirewallRuleProtocols{TCP: true}},
 		&types.FirewallRule{Description: "myFirstRule2", IsEnabled: false, Policy: "drop", DestinationPortRange: "Any",
 			DestinationIP: "Any", SourcePortRange: "Any", SourceIP: "Any", Protocols: &types.FirewallRuleProtocols{Any: true}}}, true, "drop", true)
@@ -61,21 +61,21 @@ func (vcd *TestVCD) Test_UpdateNetworkFirewallRules(check *C) {
 	check.Assert(result.Configuration.Features.FirewallService.DefaultAction, Equals, "drop")
 	check.Assert(result.Configuration.Features.FirewallService.LogDefaultAction, Equals, true)
 
-	err = vapp.RemoveAllNetworkFirewallRules(uuid)
+	err = vapp.RemoveAllNetworkFirewallRules(ctx, uuid)
 	check.Assert(err, IsNil)
 
-	vappNetwork, err := vapp.GetVappNetworkById(uuid, true)
+	vappNetwork, err := vapp.GetVappNetworkById(ctx, uuid, true)
 	check.Assert(err, IsNil)
 	check.Assert(len(vappNetwork.Configuration.Features.FirewallService.FirewallRule), Equals, 0)
 
 	//cleanup
-	task, err := vapp.RemoveAllNetworks()
+	task, err := vapp.RemoveAllNetworks(ctx)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
-	task, err = vapp.Delete()
+	task, err = vapp.Delete(ctx)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 }
@@ -83,7 +83,7 @@ func (vcd *TestVCD) Test_UpdateNetworkFirewallRules(check *C) {
 func (vcd *TestVCD) prepareVappWithVappNetwork(check *C, vappName, orgVdcNetworkName string) (*VApp, string, *types.NetworkConfigSection, error) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	vapp, err := createVappForTest(vcd, vappName)
+	vapp, err := createVappForTest(ctx, vcd, vappName)
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
@@ -92,7 +92,7 @@ func (vcd *TestVCD) prepareVappWithVappNetwork(check *C, vappName, orgVdcNetwork
 	var guestVlanAllowed = true
 	var retainIpMacEnabled = true
 
-	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(orgVdcNetworkName, false)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(ctx, orgVdcNetworkName, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork, NotNil)
 
@@ -110,7 +110,7 @@ func (vcd *TestVCD) prepareVappWithVappNetwork(check *C, vappName, orgVdcNetwork
 		RetainIpMacEnabled: &retainIpMacEnabled,
 	}
 
-	vappNetworkConfig, err := vapp.CreateVappNetwork(vappNetworkSettings, orgVdcNetwork.OrgVDCNetwork)
+	vappNetworkConfig, err := vapp.CreateVappNetwork(ctx, vappNetworkSettings, orgVdcNetwork.OrgVDCNetwork)
 	check.Assert(err, IsNil)
 	check.Assert(vappNetworkConfig, NotNil)
 	return vapp, vappNetworkName, vappNetworkConfig, err
@@ -131,18 +131,18 @@ func (vcd *TestVCD) Test_GetVappNetworkByNameOrId(check *C) {
 	uuid, err := GetUuidFromHref(networkFound.Link.HREF, false)
 	check.Assert(err, IsNil)
 
-	vappNetwork, err := vapp.GetVappNetworkById(uuid, true)
+	vappNetwork, err := vapp.GetVappNetworkById(ctx, uuid, true)
 	check.Assert(err, IsNil)
 	check.Assert(vappNetwork, NotNil)
 
-	vappNetwork, err = vapp.GetVappNetworkByName(networkName, false)
+	vappNetwork, err = vapp.GetVappNetworkByName(ctx, networkName, false)
 	check.Assert(err, IsNil)
 	check.Assert(vappNetwork, NotNil)
 
 	//cleanup
-	task, err := vapp.Delete()
+	task, err := vapp.Delete(ctx)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 }
@@ -170,31 +170,31 @@ func (vcd *TestVCD) Test_UpdateNetworkNatRules(check *C) {
 		})
 
 	// Get org and vdc
-	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	org, err := vcd.client.GetAdminOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
-	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	vdc, err := org.GetVDCByName(ctx, vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 
 	// Find catalog and catalog item
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err := org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
-	catalogItem, err := catalog.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	catalogItem, err := catalog.GetCatalogItemByName(ctx, vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
-	vappTemplate, err := catalogItem.GetVAppTemplate()
-	check.Assert(err, IsNil)
-
-	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", false)
+	vappTemplate, err := catalogItem.GetVAppTemplate(ctx)
 	check.Assert(err, IsNil)
 
-	vm2, err := spawnVM("SecondNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", false)
+	vm, err := spawnVM(ctx, "FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", false)
+	check.Assert(err, IsNil)
+
+	vm2, err := spawnVM(ctx, "SecondNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", false)
 	check.Assert(err, IsNil)
 
 	uuid, err := GetUuidFromHref(networkFound.Link.HREF, false)
 	check.Assert(err, IsNil)
 
-	result, err := vapp.UpdateNetworkNatRules(uuid, []*types.NatRule{&types.NatRule{VMRule: &types.NatVMRule{
+	result, err := vapp.UpdateNetworkNatRules(ctx, uuid, []*types.NatRule{&types.NatRule{VMRule: &types.NatVMRule{
 		ExternalPort: -1, InternalPort: 22, VMNicID: 0,
 		VAppScopedVMID: vm.VM.VAppScopedLocalID, Protocol: "TCP"}},
 		&types.NatRule{VMRule: &types.NatVMRule{
@@ -220,7 +220,7 @@ func (vcd *TestVCD) Test_UpdateNetworkNatRules(check *C) {
 	check.Assert(result.Configuration.Features.NatService.NatRule[1].VMRule.VAppScopedVMID, Equals, vm2.VM.VAppScopedLocalID)
 	check.Assert(result.Configuration.Features.NatService.NatRule[1].VMRule.VMNicID, Equals, 0)
 
-	result, err = vapp.UpdateNetworkNatRules(uuid, []*types.NatRule{&types.NatRule{OneToOneVMRule: &types.NatOneToOneVMRule{
+	result, err = vapp.UpdateNetworkNatRules(ctx, uuid, []*types.NatRule{&types.NatRule{OneToOneVMRule: &types.NatOneToOneVMRule{
 		MappingMode: "automatic", VMNicID: 0,
 		VAppScopedVMID: vm.VM.VAppScopedLocalID}},
 		&types.NatRule{OneToOneVMRule: &types.NatOneToOneVMRule{
@@ -247,21 +247,21 @@ func (vcd *TestVCD) Test_UpdateNetworkNatRules(check *C) {
 	check.Assert(result.Configuration.Features.NatService.NatRule[1].OneToOneVMRule.ExternalIPAddress, NotNil)
 	check.Assert(*result.Configuration.Features.NatService.NatRule[1].OneToOneVMRule.ExternalIPAddress, Equals, "192.168.100.1")
 
-	err = vapp.RemoveAllNetworkNatRules(uuid)
+	err = vapp.RemoveAllNetworkNatRules(ctx, uuid)
 	check.Assert(err, IsNil)
 
-	vappNetwork, err := vapp.GetVappNetworkById(uuid, true)
+	vappNetwork, err := vapp.GetVappNetworkById(ctx, uuid, true)
 	check.Assert(err, IsNil)
 	check.Assert(len(vappNetwork.Configuration.Features.NatService.NatRule), Equals, 0)
 
 	//cleanup
-	task, err := vapp.RemoveAllNetworks()
+	task, err := vapp.RemoveAllNetworks(ctx)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
-	task, err = vapp.Delete()
+	task, err = vapp.Delete(ctx)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 }
@@ -271,7 +271,7 @@ func createRoutedNetwork(vcd *TestVCD, check *C, networkName string) {
 	if edgeGWName == "" {
 		check.Skip("Edge Gateway not provided")
 	}
-	edgeGateway, err := vcd.vdc.GetEdgeGatewayByName(edgeGWName, false)
+	edgeGateway, err := vcd.vdc.GetEdgeGatewayByName(ctx, edgeGWName, false)
 	if err != nil {
 		check.Skip(fmt.Sprintf("Edge Gateway %s not found", edgeGWName))
 	}
@@ -308,7 +308,7 @@ func createRoutedNetwork(vcd *TestVCD, check *C, networkName string) {
 		},
 		IsShared: false,
 	}
-	err = vcd.vdc.CreateOrgVDCNetworkWait(&networkConfig)
+	err = vcd.vdc.CreateOrgVDCNetworkWait(ctx, &networkConfig)
 	check.Assert(err, IsNil)
 	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, networkName)
 }
@@ -339,7 +339,7 @@ func (vcd *TestVCD) Test_UpdateNetworkStaticRoutes(check *C) {
 	uuid, err := GetUuidFromHref(networkFound.Link.HREF, false)
 	check.Assert(err, IsNil)
 
-	result, err := vapp.UpdateNetworkStaticRouting(uuid, []*types.StaticRoute{&types.StaticRoute{Name: "test1",
+	result, err := vapp.UpdateNetworkStaticRouting(ctx, uuid, []*types.StaticRoute{&types.StaticRoute{Name: "test1",
 		Network: "192.168.2.0/24", NextHopIP: "192.168.100.15"}, &types.StaticRoute{Name: "test2",
 		Network: "192.168.3.0/24", NextHopIP: "192.168.100.16"}}, true)
 	check.Assert(err, IsNil)
@@ -357,21 +357,21 @@ func (vcd *TestVCD) Test_UpdateNetworkStaticRoutes(check *C) {
 	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[1].Network, Equals, "192.168.3.0/24")
 	check.Assert(result.Configuration.Features.StaticRoutingService.StaticRoute[1].NextHopIP, Equals, "192.168.100.16")
 
-	err = vapp.RemoveAllNetworkStaticRoutes(uuid)
+	err = vapp.RemoveAllNetworkStaticRoutes(ctx, uuid)
 	check.Assert(err, IsNil)
 
-	vappNetwork, err := vapp.GetVappNetworkById(uuid, true)
+	vappNetwork, err := vapp.GetVappNetworkById(ctx, uuid, true)
 	check.Assert(err, IsNil)
 	check.Assert(len(vappNetwork.Configuration.Features.StaticRoutingService.StaticRoute), Equals, 0)
 
 	//cleanup
-	task, err := vapp.RemoveAllNetworks()
+	task, err := vapp.RemoveAllNetworks(ctx)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
-	task, err = vapp.Delete()
+	task, err = vapp.Delete(ctx)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 }

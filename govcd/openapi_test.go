@@ -24,8 +24,8 @@ import (
 // how to fetch response from multiple pages in RAW json messages without having defined as struct.
 func (vcd *TestVCD) Test_OpenApiRawJsonAuditTrail(check *C) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAuditTrail
-	skipOpenApiEndpointTest(vcd, check, endpoint)
-	apiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(endpoint)
+	skipOpenApiEndpointTest(ctx, vcd, check, endpoint)
+	apiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	check.Assert(err, IsNil)
 
 	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint)
@@ -42,7 +42,7 @@ func (vcd *TestVCD) Test_OpenApiRawJsonAuditTrail(check *C) {
 	queryParams.Add("sortDesc", "timestamp")
 
 	allResponses := []json.RawMessage{{}}
-	err = vcd.vdc.client.OpenApiGetAllItems(apiVersion, urlRef, queryParams, &allResponses)
+	err = vcd.vdc.client.OpenApiGetAllItems(ctx, apiVersion, urlRef, queryParams, &allResponses)
 
 	check.Assert(err, IsNil)
 	check.Assert(len(allResponses) > 1, Equals, true)
@@ -60,8 +60,8 @@ func (vcd *TestVCD) Test_OpenApiRawJsonAuditTrail(check *C) {
 // to user defined inline type
 func (vcd *TestVCD) Test_OpenApiInlineStructAuditTrail(check *C) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAuditTrail
-	skipOpenApiEndpointTest(vcd, check, endpoint)
-	apiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(endpoint)
+	skipOpenApiEndpointTest(ctx, vcd, check, endpoint)
+	apiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	check.Assert(err, IsNil)
 
 	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint)
@@ -106,7 +106,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructAuditTrail(check *C) {
 	filterTime := time.Now().Add(-6 * time.Hour).Format(types.FiqlQueryTimestampFormat)
 	queryParams.Add("filter", "timestamp=gt="+filterTime)
 
-	err = vcd.vdc.client.OpenApiGetAllItems(apiVersion, urlRef, queryParams, &allResponses)
+	err = vcd.vdc.client.OpenApiGetAllItems(ctx, apiVersion, urlRef, queryParams, &allResponses)
 
 	check.Assert(err, IsNil)
 	check.Assert(len(allResponses) > 1, Equals, true)
@@ -136,9 +136,9 @@ func (vcd *TestVCD) Test_OpenApiInlineStructAuditTrail(check *C) {
 // 9. Delete role once again
 func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles
-	apiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	check.Assert(err, IsNil)
-	skipOpenApiEndpointTest(vcd, check, endpoint)
+	skipOpenApiEndpointTest(ctx, vcd, check, endpoint)
 
 	// Step 1 - Get all roles
 	urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint)
@@ -153,7 +153,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	}
 
 	allExistingRoles := []*InlineRoles{{}}
-	err = vcd.vdc.client.OpenApiGetAllItems(apiVersion, urlRef, nil, &allExistingRoles)
+	err = vcd.vdc.client.OpenApiGetAllItems(ctx, apiVersion, urlRef, nil, &allExistingRoles)
 	check.Assert(err, IsNil)
 
 	// Step 2 - Get all roles using query filters
@@ -167,7 +167,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 
 		expectOneRoleResultById := []*InlineRoles{{}}
 
-		err = vcd.vdc.client.OpenApiGetAllItems(apiVersion, urlRef2, queryParams, &expectOneRoleResultById)
+		err = vcd.vdc.client.OpenApiGetAllItems(ctx, apiVersion, urlRef2, queryParams, &expectOneRoleResultById)
 		check.Assert(err, IsNil)
 		check.Assert(len(expectOneRoleResultById) == 1, Equals, true)
 
@@ -176,7 +176,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 		check.Assert(err, IsNil)
 
 		oneRole := &InlineRoles{}
-		err = vcd.vdc.client.OpenApiGetItem(apiVersion, singleRef, nil, oneRole)
+		err = vcd.vdc.client.OpenApiGetItem(ctx, apiVersion, singleRef, nil, oneRole)
 		check.Assert(err, IsNil)
 		check.Assert(oneRole, NotNil)
 
@@ -197,7 +197,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 		ReadOnly:  false,
 	}
 	newRoleResponse := &InlineRoles{}
-	err = vcd.client.Client.OpenApiPostItem(apiVersion, createUrl, nil, newRole, newRoleResponse)
+	err = vcd.client.Client.OpenApiPostItem(ctx, apiVersion, createUrl, nil, newRole, newRoleResponse)
 	check.Assert(err, IsNil)
 
 	// Ensure supplied and created structs differ only by ID
@@ -210,7 +210,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	check.Assert(err, IsNil)
 
 	updatedRoleResponse := &InlineRoles{}
-	err = vcd.client.Client.OpenApiPutItem(apiVersion, updateUrl, nil, newRoleResponse, updatedRoleResponse)
+	err = vcd.client.Client.OpenApiPutItem(ctx, apiVersion, updateUrl, nil, newRoleResponse, updatedRoleResponse)
 	check.Assert(err, IsNil)
 
 	// Ensure supplied and response objects are identical (update worked)
@@ -220,19 +220,19 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	deleteUrlRef, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint, newRoleResponse.ID)
 	check.Assert(err, IsNil)
 
-	err = vcd.client.Client.OpenApiDeleteItem(apiVersion, deleteUrlRef, nil)
+	err = vcd.client.Client.OpenApiDeleteItem(ctx, apiVersion, deleteUrlRef, nil)
 	check.Assert(err, IsNil)
 
 	// Step 6 - try to read deleted role and expect error to contain 'ErrorEntityNotFound'
 	// Read is tricky - it throws an error ACCESS_TO_RESOURCE_IS_FORBIDDEN when the resource with ID does not
 	// exist therefore one cannot know what kind of error occurred.
 	lostRole := &InlineRoles{}
-	err = vcd.client.Client.OpenApiGetItem(apiVersion, deleteUrlRef, nil, lostRole)
+	err = vcd.client.Client.OpenApiGetItem(ctx, apiVersion, deleteUrlRef, nil, lostRole)
 	check.Assert(ContainsNotFound(err), Equals, true)
 
 	// Step 7 - test synchronous POST and PUT functions (because Roles is a synchronous OpenAPI endpoint)
 	newRole.ID = "" // unset ID as it cannot be set for creation
-	err = vcd.client.Client.OpenApiPostItemSync(apiVersion, createUrl, nil, newRole, newRoleResponse)
+	err = vcd.client.Client.OpenApiPostItemSync(ctx, apiVersion, createUrl, nil, newRole, newRoleResponse)
 	check.Assert(err, IsNil)
 
 	// Ensure supplied and created structs differ only by ID
@@ -245,7 +245,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	check.Assert(err, IsNil)
 
 	updatedRoleResponse2 := &InlineRoles{}
-	err = vcd.client.Client.OpenApiPutItem(apiVersion, updateUrl2, nil, newRoleResponse, updatedRoleResponse2)
+	err = vcd.client.Client.OpenApiPutItem(ctx, apiVersion, updateUrl2, nil, newRoleResponse, updatedRoleResponse2)
 	check.Assert(err, IsNil)
 
 	// Ensure supplied and response objects are identical (update worked)
@@ -255,7 +255,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	deleteUrlRef2, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint, newRoleResponse.ID)
 	check.Assert(err, IsNil)
 
-	err = vcd.client.Client.OpenApiDeleteItem(apiVersion, deleteUrlRef2, nil)
+	err = vcd.client.Client.OpenApiDeleteItem(ctx, apiVersion, deleteUrlRef2, nil)
 	check.Assert(err, IsNil)
 
 }
@@ -267,7 +267,7 @@ func getAuditTrailTimestampWithElements(elementCount int, check *C, vcd *TestVCD
 	qp := url.Values{}
 	qp.Add("pageSize", "128")
 	qp.Add("sortDesc", "timestamp") // Need to get the newest
-	req := client.newOpenApiRequest(apiVersion, qp, http.MethodGet, urlRef, nil)
+	req := client.newOpenApiRequest(ctx, apiVersion, qp, http.MethodGet, urlRef, nil)
 
 	resp, err := client.Http.Do(req)
 	check.Assert(err, IsNil)
