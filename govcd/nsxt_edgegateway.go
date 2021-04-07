@@ -167,10 +167,10 @@ func (egw *NsxtEdgeGateway) Update(edgeGatewayConfig *types.OpenAPIEdgeGateway) 
 	return returnEgw, nil
 }
 
-// Update allows to delete NSX-T edge gateway for Org admins
+// Delete allows to delete NSX-T edge gateway for sysadmins
 func (egw *NsxtEdgeGateway) Delete() error {
 	if !egw.client.IsSysAdmin {
-		return fmt.Errorf("only Provider can update Edge Gateway")
+		return fmt.Errorf("only Provider can delete Edge Gateway")
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways

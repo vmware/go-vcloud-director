@@ -229,3 +229,64 @@ type OpenApiOrgVdcNetworkDhcpPools struct {
 	// This applies for NSX-V Isolated network
 	DefaultLeaseTime *int `json:"defaultLeaseTime,omitempty"`
 }
+
+// NsxtFirewallGroup allows to set either SECURITY_GROUP or IP_SET which is defined by Type field.
+// SECURITY_GROUP (constant types.FirewallGroupTypeSecurityGroup) is a dynamic structure which
+// allows to add Routed Org VDC networks
+//
+// IP_SET (constant FirewallGroupTypeIpSet) allows to enter static IPs and later on firewall rules
+// can be created both of these objects
+//
+// When the type is SECURITY_GROUP 'Members' field is used to specify Org VDC networks
+// When the type is IP_SET 'IpAddresses' field is used to specify IP addresses or ranges
+// field is used
+type NsxtFirewallGroup struct {
+	// ID contains Firewall Group ID (URN format)
+	// e.g. urn:vcloud:firewallGroup:d7f4e0b4-b83f-4a07-9f22-d242c9c0987a
+	ID string `json:"id"`
+	// Name of Firewall Group. Name are unique per 'Type'. There cannot be two SECURITY_GROUP or two
+	// IP_SET objects with the same name, but there can be one object of Type SECURITY_GROUP and one
+	// of Type IP_SET named the same.
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	// IP Addresses included in the group. This is only applicable for IP_SET Firewall Groups. This
+	// can support IPv4 and IPv6 addresses in single, range, and CIDR formats.
+	// E.g [
+	//     "12.12.12.1",
+	//     "10.10.10.0/24",
+	//     "11.11.11.1-11.11.11.2",
+	//     "2001:db8::/48",
+	//	   "2001:db6:0:0:0:0:0:0-2001:db6:0:ffff:ffff:ffff:ffff:ffff",
+	// ],
+	IpAddresses []string `json:"ipAddresses,omitempty"`
+
+	// Members define list of Org VDC networks belonging to this Firewall Group (only for Security
+	// groups )
+	Members []OpenApiReference `json:"members,omitempty"`
+
+	// OwnerRef replaces EdgeGatewayRef in API V35.0+ and can accept both - NSX-T Edge Gateway or a
+	// VDC group ID
+	// Sample VDC Group URN - urn:vcloud:vdcGroup:89a53000-ef41-474d-80dc-82431ff8a020
+	// Sample Edge Gateway URN - urn:vcloud:gateway:71df3e4b-6da9-404d-8e44-0865751c1c38
+	//
+	// Note. Using API V34.0 Firewall Groups can be created for VDC groups, but on a GET operation
+	// there will be no VDC group ID returned.
+	OwnerRef *OpenApiReference `json:"ownerRef,omitempty"`
+
+	// EdgeGatewayRef is a deprecated field (use OwnerRef) for setting value, but during read the
+	// value is only populated in this field (not OwnerRef)
+	EdgeGatewayRef *OpenApiReference `json:"edgeGatewayRef,omitempty"`
+
+	// Type is either SECURITY_GROUP or IP_SET
+	Type string `json:"type"`
+}
+
+// NsxtFirewallGroupMemberVms is a structure to read NsxtFirewallGroup associated VMs when its type
+// is SECURITY_GROUP
+type NsxtFirewallGroupMemberVms struct {
+	VmRef *OpenApiReference `json:"vmRef"`
+	// VappRef will be empty if it is a standalone VM (although hidden vApp exists)
+	VappRef *OpenApiReference `json:"vappRef"`
+	VdcRef  *OpenApiReference `json:"vdcRef"`
+	OrgRef  *OpenApiReference `json:"orgRef"`
+}

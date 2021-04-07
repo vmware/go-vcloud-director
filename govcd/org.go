@@ -370,3 +370,28 @@ func (org *Org) GetTaskList() (*types.TasksList, error) {
 
 	return nil, fmt.Errorf("link not found")
 }
+
+// GetAllVDCs returns all depending VDCs for a particular Org
+func (org *Org) GetAllVDCs(refresh bool) ([]*Vdc, error) {
+	if refresh {
+		err := org.Refresh()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	allVdcs := make([]*Vdc, 0)
+	for _, link := range org.Org.Link {
+		if link.Type == types.MimeVDC {
+			vdc, err := org.GetVDCByHref(link.HREF)
+			if err != nil {
+				return nil, fmt.Errorf("error retrieving VDC '%s': %s", vdc.Vdc.Name, err)
+			}
+			allVdcs = append(allVdcs, vdc)
+
+		}
+
+	}
+
+	return allVdcs, nil
+}

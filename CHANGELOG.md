@@ -2,7 +2,27 @@
 
 * Added method `vdc.QueryEdgeGateway` [#364](https://github.com/vmware/go-vcloud-director/pull/364)
 * Deprecated `vdc.GetEdgeGatewayRecordsType` [#364](https://github.com/vmware/go-vcloud-director/pull/364)
+* Added NSX-T Firewall Group (Security Groups and IP Set) support by using structures
+  `NsxtFirewallGroup` and `NsxtFirewallGroupMemberVms`. The following methods are introduced for
+  managing Security Groups and IpP Sets: `Vdc.CreateNsxtFirewallGroup`,
+  `NsxtEdgeGateway.CreateNsxtFirewallGroup`, `Org.GetAllNsxtFirewallGroups`,
+  `Vdc.GetAllNsxtFirewallGroups`, `Org.GetNsxtFirewallGroupByName`,
+  `Vdc.GetNsxtFirewallGroupByName`, `NsxtEdgeGateway.GetNsxtFirewallGroupByName`,
+  `Org.GetNsxtFirewallGroupById`, `Vdc.GetNsxtFirewallGroupById`,
+  `NsxtEdgeGateway.GetNsxtFirewallGroupById`, `NsxtFirewallGroup.Update`,
+  `NsxtFirewallGroup.Delete`, `NsxtFirewallGroup.GetAssociatedVms`,
+  `NsxtFirewallGroup.IsSecurityGroup`, `NsxtFirewallGroup.IsIpSet`
+  [#368](https://github.com/vmware/go-vcloud-director/pull/368)
+* Added method Org.GetAllVDCs to get a list of all VDCs in Org
+  [#368](https://github.com/vmware/go-vcloud-director/pull/368)
+* Added methods Org.QueryVmList and Org.QueryVmById to find VM by ID in an Org
+  [#368](https://github.com/vmware/go-vcloud-director/pull/368)
 
+IMPROVEMENTS:
+* Improved test entity cleanup to find standalone VMs in any VDC (not only default NSX-V one)
+  [#368](https://github.com/vmware/go-vcloud-director/pull/368)
+* Improved test entity cleanup to allow specifying parent VDC for vApp removals
+  [#368](https://github.com/vmware/go-vcloud-director/pull/368)
 ## 2.11.0 (March 10, 2021)
 
 * Added structure and methods to handle Org VDC networks using OpenAPI - `OpenApiOrgVdcNetwork`. It supports VCD 9.7+

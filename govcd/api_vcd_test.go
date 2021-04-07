@@ -763,11 +763,24 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 
 	case "vapp":
-		vapp, err := vcd.vdc.GetVAppByName(entity.Name, true)
+		vdc := vcd.vdc
+		var err error
+
+		// Check if parent VDC was specified. If not - use the default NSX-V VDC
+		if entity.Parent != "" {
+			vdc, err = vcd.org.GetVDCByName(entity.Parent, true)
+			if err != nil {
+				vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+				return
+			}
+		}
+
+		vapp, err := vdc.GetVAppByName(entity.Name, true)
 		if err != nil {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
+
 		task, _ := vapp.Undeploy()
 		_ = task.WaitTaskCompletion()
 		// Detach all Org networks during vApp removal because network removal errors if it happens
@@ -1034,7 +1047,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		return
 	case "standaloneVm":
-		vm, err := vcd.vdc.QueryVmById(entity.Name) // The VM ID must be passed as Name
+		vm, err := vcd.org.QueryVmById(entity.Name) // The VM ID must be passed as Name
 		if IsNotFound(err) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
