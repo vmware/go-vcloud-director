@@ -3,6 +3,8 @@
 package govcd
 
 import (
+	"time"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -24,10 +26,10 @@ func (vcd *TestVCD) Test_NsxtSecurityGroup(check *C) {
 	check.Assert(err, IsNil)
 
 	fwGroupDefinition := &types.NsxtFirewallGroup{
-		Name:        check.TestName(),
-		Description: check.TestName() + "-Description",
-		Type:        types.FirewallGroupTypeSecurityGroup,
-		OwnerRef:    &types.OpenApiReference{ID: edge.EdgeGateway.ID},
+		Name:           check.TestName(),
+		Description:    check.TestName() + "-Description",
+		Type:           types.FirewallGroupTypeSecurityGroup,
+		EdgeGatewayRef: &types.OpenApiReference{ID: edge.EdgeGateway.ID},
 	}
 
 	// Create firewall group and add to cleanup if it was created
@@ -39,9 +41,6 @@ func (vcd *TestVCD) Test_NsxtSecurityGroup(check *C) {
 	check.Assert(createdSecGroup.NsxtFirewallGroup.ID, Not(Equals), "")
 	check.Assert(createdSecGroup.NsxtFirewallGroup.EdgeGatewayRef.Name, Equals, vcd.config.VCD.Nsxt.EdgeGateway)
 
-	// On creation one sets OwnerRef field, but in GET Edge Gateway is returned in EdgeGatewayRef
-	// field
-	check.Assert(createdSecGroup.NsxtFirewallGroup.EdgeGatewayRef.ID, Equals, fwGroupDefinition.OwnerRef.ID)
 	check.Assert(createdSecGroup.NsxtFirewallGroup.Description, Equals, fwGroupDefinition.Description)
 	check.Assert(createdSecGroup.NsxtFirewallGroup.Name, Equals, fwGroupDefinition.Name)
 	check.Assert(createdSecGroup.NsxtFirewallGroup.Type, Equals, fwGroupDefinition.Type)
@@ -123,18 +122,20 @@ func (vcd *TestVCD) Test_NsxtSecurityGroupGetAssociatedVms(check *C) {
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + routedNet.OpenApiOrgVdcNetwork.ID
 	AddToCleanupListOpenApi(routedNet.OpenApiOrgVdcNetwork.Name, check.TestName(), openApiEndpoint)
 
+	// In some cases VCD was not able to attach network straight after it is created.
+	time.Sleep(10 * time.Second)
+
 	// VMs are prependend to cleanup list to make sure they are removed before routed network
 	standaloneVm := createStandaloneVm(check, vcd, nsxtVdc, routedNet)
-	PrependToCleanupList(standaloneVm.VM.ID, "standaloneVm", "", check.TestName())
 
 	vapp, vappVm := createVappVm(check, vcd, nsxtVdc, routedNet)
 	PrependToCleanupList(vapp.VApp.Name, "vapp", vcd.nsxtVdc.Vdc.Name, check.TestName())
 
 	secGroupDefinition := &types.NsxtFirewallGroup{
-		Name:        check.TestName(),
-		Description: check.TestName() + "-Description",
-		Type:        types.FirewallGroupTypeSecurityGroup,
-		OwnerRef:    &types.OpenApiReference{ID: edge.EdgeGateway.ID},
+		Name:           check.TestName(),
+		Description:    check.TestName() + "-Description",
+		Type:           types.FirewallGroupTypeSecurityGroup,
+		EdgeGatewayRef: &types.OpenApiReference{ID: edge.EdgeGateway.ID},
 		Members: []types.OpenApiReference{
 			{ID: routedNet.OpenApiOrgVdcNetwork.ID},
 		},
@@ -268,6 +269,8 @@ func createStandaloneVm(check *C, vcd *TestVCD, vdc *Vdc, net *OpenApiOrgVdcNetw
 	}
 
 	vm, err := vdc.CreateStandaloneVm(&params)
+	// There are cases where even if error is returned - VM still remains and needs to be cleaned up
+	PrependToCleanupList(vm.VM.ID, "standaloneVm", "", check.TestName())
 	check.Assert(err, IsNil)
 	check.Assert(vm, NotNil)
 

@@ -22,10 +22,11 @@ func (vcd *TestVCD) Test_NsxtIpSet(check *C) {
 	check.Assert(err, IsNil)
 
 	ipSetDefinition := &types.NsxtFirewallGroup{
-		Name:        check.TestName(),
-		Description: check.TestName() + "-Description",
-		Type:        types.FirewallGroupTypeIpSet,
-		OwnerRef:    &types.OpenApiReference{ID: edge.EdgeGateway.ID},
+		Name:           check.TestName(),
+		Description:    check.TestName() + "-Description",
+		Type:           types.FirewallGroupTypeIpSet,
+		EdgeGatewayRef: &types.OpenApiReference{ID: edge.EdgeGateway.ID},
+
 		IpAddresses: []string{
 			"12.12.12.1",
 			"10.10.10.0/24",
@@ -45,9 +46,6 @@ func (vcd *TestVCD) Test_NsxtIpSet(check *C) {
 	check.Assert(createdIpSet.NsxtFirewallGroup.ID, Not(Equals), "")
 	check.Assert(createdIpSet.NsxtFirewallGroup.EdgeGatewayRef.Name, Equals, vcd.config.VCD.Nsxt.EdgeGateway)
 
-	// On creation one sets OwnerRef field, but in GET Edge Gateway is returned in EdgeGatewayRef
-	// field
-	check.Assert(createdIpSet.NsxtFirewallGroup.EdgeGatewayRef.ID, Equals, ipSetDefinition.OwnerRef.ID)
 	check.Assert(createdIpSet.NsxtFirewallGroup.Description, Equals, ipSetDefinition.Description)
 	check.Assert(createdIpSet.NsxtFirewallGroup.Name, Equals, ipSetDefinition.Name)
 	check.Assert(createdIpSet.NsxtFirewallGroup.Type, Equals, ipSetDefinition.Type)
@@ -84,7 +82,7 @@ func (vcd *TestVCD) Test_NsxtIpSet(check *C) {
 	// Get Firewall Group using VDC
 	vdcIpSetByName, err := nsxtVdc.GetNsxtFirewallGroupByName(updatedIpSet.NsxtFirewallGroup.Name, types.FirewallGroupTypeIpSet)
 	check.Assert(err, IsNil)
-	vdcIpSetById, err := nsxtVdc.GetNsxtFirewallGroupById(updatedIpSet.NsxtFirewallGroup.Name)
+	vdcIpSetById, err := nsxtVdc.GetNsxtFirewallGroupById(updatedIpSet.NsxtFirewallGroup.ID)
 	check.Assert(err, IsNil)
 	check.Assert(vdcIpSetByName.NsxtFirewallGroup, DeepEquals, vdcIpSetById.NsxtFirewallGroup)
 	check.Assert(vdcIpSetById.NsxtFirewallGroup, DeepEquals, orgIpSetById.NsxtFirewallGroup)
@@ -92,7 +90,7 @@ func (vcd *TestVCD) Test_NsxtIpSet(check *C) {
 	// Get Firewall Group using Edge Gateway
 	edgeIpSetByName, err := edge.GetNsxtFirewallGroupByName(updatedIpSet.NsxtFirewallGroup.Name, types.FirewallGroupTypeIpSet)
 	check.Assert(err, IsNil)
-	edgeIpSetById, err := edge.GetNsxtFirewallGroupById(updatedIpSet.NsxtFirewallGroup.Name)
+	edgeIpSetById, err := edge.GetNsxtFirewallGroupById(updatedIpSet.NsxtFirewallGroup.ID)
 	check.Assert(err, IsNil)
 	check.Assert(edgeIpSetByName.NsxtFirewallGroup, DeepEquals, orgIpSetByName.NsxtFirewallGroup)
 	check.Assert(edgeIpSetById.NsxtFirewallGroup, DeepEquals, edgeIpSetByName.NsxtFirewallGroup)
