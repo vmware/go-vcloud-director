@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strings"
@@ -150,7 +151,7 @@ func addResults(queryType string, cumulativeResults, newResults Results) (Result
 }
 
 // cumulativeQuery runs a paginated query and collects all elements until the total number of records is retrieved
-func (client *Client) cumulativeQuery(queryType string, params, notEncodedParams map[string]string) (Results, error) {
+func (client *Client) cumulativeQuery(ctx context.Context, queryType string, params, notEncodedParams map[string]string) (Results, error) {
 	var supportedQueryTypes = []string{
 		types.QtVappTemplate,
 		types.QtAdminVappTemplate,
@@ -181,7 +182,7 @@ func (client *Client) cumulativeQuery(queryType string, params, notEncodedParams
 		return Results{}, fmt.Errorf("[cumulativeQuery] query type %s not supported", queryType)
 	}
 
-	result, err := client.QueryWithNotEncodedParams(params, notEncodedParams)
+	result, err := client.QueryWithNotEncodedParams(ctx, params, notEncodedParams)
 	if err != nil {
 		return Results{}, err
 	}
@@ -204,7 +205,7 @@ func (client *Client) cumulativeQuery(queryType string, params, notEncodedParams
 		page++
 		notEncodedParams["page"] = fmt.Sprintf("%d", page)
 		var size int
-		newResult, err := client.QueryWithNotEncodedParams(params, notEncodedParams)
+		newResult, err := client.QueryWithNotEncodedParams(ctx, params, notEncodedParams)
 		if err != nil {
 			return Results{}, err
 		}
@@ -225,7 +226,7 @@ func (client *Client) cumulativeQuery(queryType string, params, notEncodedParams
 // * params and notEncodedParams are the same ones passed to QueryWithNotEncodedParams
 // * metadataFields is the list of fields to be included in the query results
 // * if isSystem is true, metadata fields are requested as 'metadata@SYSTEM:fieldName'
-func (client *Client) queryWithMetadataFields(queryType string, params, notEncodedParams map[string]string,
+func (client *Client) queryWithMetadataFields(ctx context.Context, queryType string, params, notEncodedParams map[string]string,
 	metadataFields []string, isSystem bool) (Results, error) {
 	if notEncodedParams == nil {
 		notEncodedParams = make(map[string]string)
@@ -233,7 +234,7 @@ func (client *Client) queryWithMetadataFields(queryType string, params, notEncod
 	notEncodedParams["type"] = queryType
 
 	if len(metadataFields) == 0 {
-		return client.cumulativeQuery(queryType, params, notEncodedParams)
+		return client.cumulativeQuery(ctx, queryType, params, notEncodedParams)
 	}
 
 	fields, err := queryFieldsOnDemand(queryType)
@@ -258,7 +259,7 @@ func (client *Client) queryWithMetadataFields(queryType string, params, notEncod
 
 	notEncodedParams["fields"] = strings.Join(fields, ",") + "," + metadataFieldText
 
-	return client.cumulativeQuery(queryType, params, notEncodedParams)
+	return client.cumulativeQuery(ctx, queryType, params, notEncodedParams)
 }
 
 // queryByMetadataFilter is a wrapper around QueryWithNotEncodedParams with additional filtering
@@ -269,7 +270,7 @@ func (client *Client) queryWithMetadataFields(queryType string, params, notEncod
 // * params and notEncodedParams are the same ones passed to QueryWithNotEncodedParams
 // * metadataFilter is is a map of conditions to use for filtering
 // * if isSystem is true, metadata fields are requested as 'metadata@SYSTEM:fieldName'
-func (client *Client) queryByMetadataFilter(queryType string, params, notEncodedParams map[string]string,
+func (client *Client) queryByMetadataFilter(ctx context.Context, queryType string, params, notEncodedParams map[string]string,
 	metadataFilters map[string]MetadataFilter, isSystem bool) (Results, error) {
 
 	if len(metadataFilters) == 0 {
@@ -302,5 +303,5 @@ func (client *Client) queryByMetadataFilter(queryType string, params, notEncoded
 	}
 	notEncodedParams["filter"] = filter
 
-	return client.cumulativeQuery(queryType, params, notEncodedParams)
+	return client.cumulativeQuery(ctx, queryType, params, notEncodedParams)
 }

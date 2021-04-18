@@ -23,7 +23,7 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
@@ -40,9 +40,9 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 		Type:       "http",
 	}
 
-	err = deleteLbServiceMonitorIfExists(*edge, lbMon.Name)
+	err = deleteLbServiceMonitorIfExists(ctx, *edge, lbMon.Name)
 	check.Assert(err, IsNil)
-	lbMonitor, err := edge.CreateLbServiceMonitor(lbMon)
+	lbMonitor, err := edge.CreateLbServiceMonitor(ctx, lbMon)
 	check.Assert(err, IsNil)
 	check.Assert(lbMonitor.ID, Not(IsNil))
 
@@ -51,11 +51,11 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 	AddToCleanupList(check.TestName(), "lbServiceMonitor", parentEntity, check.TestName())
 
 	// Lookup by both name and ID and compare that these are equal values
-	lbMonitorByID, err := edge.getLbServiceMonitor(&types.LbMonitor{ID: lbMonitor.ID})
+	lbMonitorByID, err := edge.getLbServiceMonitor(ctx, &types.LbMonitor{ID: lbMonitor.ID})
 	check.Assert(err, IsNil)
 	check.Assert(lbMonitorByID, Not(IsNil))
 
-	lbMonitorByName, err := edge.getLbServiceMonitor(&types.LbMonitor{Name: lbMonitor.Name})
+	lbMonitorByName, err := edge.getLbServiceMonitor(ctx, &types.LbMonitor{Name: lbMonitor.Name})
 	check.Assert(err, IsNil)
 	check.Assert(lbMonitorByName, Not(IsNil))
 	check.Assert(lbMonitor.ID, Equals, lbMonitorByName.ID)
@@ -68,14 +68,14 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 	check.Assert(lbMonitor.MaxRetries, Equals, lbMonitorByID.MaxRetries)
 
 	// GetLbServiceMonitors should return at least one vs which is ours.
-	lbMonitors, err := edge.GetLbServiceMonitors()
+	lbMonitors, err := edge.GetLbServiceMonitors(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(lbMonitors, Not(HasLen), 0)
 
 	// Test updating fields
 	// Update timeout
 	lbMonitorByID.Timeout = 35
-	updatedLBMonitor, err := edge.UpdateLbServiceMonitor(lbMonitorByID)
+	updatedLBMonitor, err := edge.UpdateLbServiceMonitor(ctx, lbMonitorByID)
 	check.Assert(err, IsNil)
 	check.Assert(updatedLBMonitor.Timeout, Equals, 35)
 
@@ -84,13 +84,13 @@ func (vcd *TestVCD) Test_LBServiceMonitor(check *C) {
 
 	// Update should fail without name
 	lbMonitorByID.Name = ""
-	_, err = edge.UpdateLbServiceMonitor(lbMonitorByID)
+	_, err = edge.UpdateLbServiceMonitor(ctx, lbMonitorByID)
 	check.Assert(err.Error(), Equals, "load balancer monitor Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLbServiceMonitor(&types.LbMonitor{ID: lbMonitorByID.ID})
+	err = edge.DeleteLbServiceMonitor(ctx, &types.LbMonitor{ID: lbMonitorByID.ID})
 	check.Assert(err, IsNil)
 
-	_, err = edge.GetLbServiceMonitorById(lbMonitorByID.ID)
+	_, err = edge.GetLbServiceMonitorById(ctx, lbMonitorByID.ID)
 	check.Assert(IsNotFound(err), Equals, true)
 }

@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -51,7 +52,7 @@ const MinimumDiskSize int64 = 1048576 // = 1Mb
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 102 - 103,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
-func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (Task, error) {
+func (vdc *Vdc) CreateDisk(ctx context.Context, diskCreateParams *types.DiskCreateParams) (Task, error) {
 	util.Logger.Printf("[TRACE] Create disk, name: %s, size: %d \n",
 		diskCreateParams.Disk.Name,
 		diskCreateParams.Disk.Size,
@@ -91,7 +92,7 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (Task, erro
 
 	disk := NewDisk(vdc.client)
 
-	_, err = vdc.client.ExecuteRequest(createDiskLink.HREF, http.MethodPost,
+	_, err = vdc.client.ExecuteRequest(ctx, createDiskLink.HREF, http.MethodPost,
 		createDiskLink.Type, "error create disk: %s", diskCreateParams, disk.Disk)
 	if err != nil {
 		return Task{}, err
@@ -116,7 +117,7 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (Task, erro
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 104 - 106,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
-func (disk *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
+func (disk *Disk) Update(ctx context.Context, newDiskInfo *types.Disk) (Task, error) {
 	util.Logger.Printf("[TRACE] Update disk, name: %s, size: %d, HREF: %s \n",
 		newDiskInfo.Name,
 		newDiskInfo.Size,
@@ -134,7 +135,7 @@ func (disk *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 	}
 
 	// Verify the independent disk is not connected to any VM
-	vmRef, err := disk.AttachedVM()
+	vmRef, err := disk.AttachedVM(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error find attached VM: %s", err)
 	}
@@ -173,7 +174,7 @@ func (disk *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 	}
 
 	// Return the task
-	return disk.client.ExecuteTaskRequest(updateDiskLink.HREF, http.MethodPut,
+	return disk.client.ExecuteTaskRequest(ctx, updateDiskLink.HREF, http.MethodPut,
 		updateDiskLink.Type, "error updating disk: %s", xmlPayload)
 }
 
@@ -185,13 +186,13 @@ func (disk *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 106 - 107,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
-func (disk *Disk) Delete() (Task, error) {
+func (disk *Disk) Delete(ctx context.Context) (Task, error) {
 	util.Logger.Printf("[TRACE] Delete disk, HREF: %s \n", disk.Disk.HREF)
 
 	var err error
 
 	// Verify the independent disk is not connected to any VM
-	vmRef, err := disk.AttachedVM()
+	vmRef, err := disk.AttachedVM(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error find attached VM: %s", err)
 	}
@@ -220,12 +221,12 @@ func (disk *Disk) Delete() (Task, error) {
 	}
 
 	// Return the task
-	return disk.client.ExecuteTaskRequest(deleteDiskLink.HREF, http.MethodDelete,
+	return disk.client.ExecuteTaskRequest(ctx, deleteDiskLink.HREF, http.MethodDelete,
 		"", "error delete disk: %s", nil)
 }
 
 // Refresh the disk information by disk href
-func (disk *Disk) Refresh() error {
+func (disk *Disk) Refresh(ctx context.Context) error {
 	util.Logger.Printf("[TRACE] Disk refresh, HREF: %s\n", disk.Disk.HREF)
 
 	if disk.Disk == nil || disk.Disk.HREF == "" {
@@ -234,7 +235,7 @@ func (disk *Disk) Refresh() error {
 
 	unmarshalledDisk := &types.Disk{}
 
-	_, err := disk.client.ExecuteRequest(disk.Disk.HREF, http.MethodGet,
+	_, err := disk.client.ExecuteRequest(ctx, disk.Disk.HREF, http.MethodGet,
 		"", "error refreshing independent disk: %s", nil, unmarshalledDisk)
 	if err != nil {
 		return err
@@ -252,7 +253,7 @@ func (disk *Disk) Refresh() error {
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 107,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
-func (disk *Disk) AttachedVM() (*types.Reference, error) {
+func (disk *Disk) AttachedVM(ctx context.Context) (*types.Reference, error) {
 	util.Logger.Printf("[TRACE] Disk attached VM, HREF: %s\n", disk.Disk.HREF)
 
 	var attachedVMLink *types.Link
@@ -279,7 +280,7 @@ func (disk *Disk) AttachedVM() (*types.Reference, error) {
 	// Decode request
 	var vms = new(types.Vms)
 
-	_, err := disk.client.ExecuteRequest(attachedVMLink.HREF, http.MethodGet,
+	_, err := disk.client.ExecuteRequest(ctx, attachedVMLink.HREF, http.MethodGet,
 		attachedVMLink.Type, "error getting attached vms: %s", nil, vms)
 	if err != nil {
 		return nil, err
@@ -296,20 +297,20 @@ func (disk *Disk) AttachedVM() (*types.Reference, error) {
 
 // Find an independent disk by disk href in VDC
 // Deprecated: Use VDC.GetDiskByHref()
-func (vdc *Vdc) FindDiskByHREF(href string) (*Disk, error) {
+func (vdc *Vdc) FindDiskByHREF(ctx context.Context, href string) (*Disk, error) {
 	util.Logger.Printf("[TRACE] VDC find disk By HREF: %s\n", href)
 
-	return FindDiskByHREF(vdc.client, href)
+	return FindDiskByHREF(ctx, vdc.client, href)
 }
 
 // Find an independent disk by VDC client and disk href
 // Deprecated: Use VDC.GetDiskByHref()
-func FindDiskByHREF(client *Client, href string) (*Disk, error) {
+func FindDiskByHREF(ctx context.Context, client *Client, href string) (*Disk, error) {
 	util.Logger.Printf("[TRACE] Find disk By HREF: %s\n", href)
 
 	disk := NewDisk(client)
 
-	_, err := client.ExecuteRequest(href, http.MethodGet,
+	_, err := client.ExecuteRequest(ctx, href, http.MethodGet,
 		"", "error finding disk: %s", nil, disk.Disk)
 
 	// Return the disk
@@ -318,7 +319,7 @@ func FindDiskByHREF(client *Client, href string) (*Disk, error) {
 }
 
 // QueryDisk find independent disk using disk name. Returns DiskRecord type
-func (vdc *Vdc) QueryDisk(diskName string) (DiskRecord, error) {
+func (vdc *Vdc) QueryDisk(ctx context.Context, diskName string) (DiskRecord, error) {
 
 	if diskName == "" {
 		return DiskRecord{}, fmt.Errorf("disk name can not be empty")
@@ -329,7 +330,7 @@ func (vdc *Vdc) QueryDisk(diskName string) (DiskRecord, error) {
 		typeMedia = "adminDisk"
 	}
 
-	results, err := vdc.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia, "filter": "name==" + url.QueryEscape(diskName), "filterEncoded": "true"})
+	results, err := vdc.QueryWithNotEncodedParams(ctx, nil, map[string]string{"type": typeMedia, "filter": "name==" + url.QueryEscape(diskName), "filterEncoded": "true"})
 	if err != nil {
 		return DiskRecord{}, fmt.Errorf("error querying disk %s", err)
 	}
@@ -351,7 +352,7 @@ func (vdc *Vdc) QueryDisk(diskName string) (DiskRecord, error) {
 }
 
 // QueryDisks find independent disks using disk name. Returns list of DiskRecordType
-func (vdc *Vdc) QueryDisks(diskName string) (*[]*types.DiskRecordType, error) {
+func (vdc *Vdc) QueryDisks(ctx context.Context, diskName string) (*[]*types.DiskRecordType, error) {
 
 	if diskName == "" {
 		return nil, fmt.Errorf("disk name can't be empty")
@@ -362,7 +363,7 @@ func (vdc *Vdc) QueryDisks(diskName string) (*[]*types.DiskRecordType, error) {
 		typeMedia = "adminDisk"
 	}
 
-	results, err := vdc.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia, "filter": "name==" + url.QueryEscape(diskName), "filterEncoded": "true"})
+	results, err := vdc.QueryWithNotEncodedParams(ctx, nil, map[string]string{"type": typeMedia, "filter": "name==" + url.QueryEscape(diskName), "filterEncoded": "true"})
 	if err != nil {
 		return nil, fmt.Errorf("error querying disks %s", err)
 	}
@@ -378,11 +379,11 @@ func (vdc *Vdc) QueryDisks(diskName string) (*[]*types.DiskRecordType, error) {
 // GetDiskByHref finds a Disk by HREF
 // On success, returns a pointer to the Disk structure and a nil error
 // On failure, returns a nil pointer and an error
-func (vdc *Vdc) GetDiskByHref(diskHref string) (*Disk, error) {
+func (vdc *Vdc) GetDiskByHref(ctx context.Context, diskHref string) (*Disk, error) {
 	util.Logger.Printf("[TRACE] Get Disk By Href: %s\n", diskHref)
 	Disk := NewDisk(vdc.client)
 
-	_, err := vdc.client.ExecuteRequest(diskHref, http.MethodGet,
+	_, err := vdc.client.ExecuteRequest(ctx, diskHref, http.MethodGet,
 		"", "error retrieving Disk: %#v", nil, Disk.Disk)
 	if err != nil && strings.Contains(err.Error(), "MajorErrorCode:403") {
 		return nil, ErrorEntityNotFound
@@ -396,11 +397,11 @@ func (vdc *Vdc) GetDiskByHref(diskHref string) (*Disk, error) {
 // GetDisksByName finds one or more Disks by Name
 // On success, returns a pointer to the Disk list and a nil error
 // On failure, returns a nil pointer and an error
-func (vdc *Vdc) GetDisksByName(diskName string, refresh bool) (*[]Disk, error) {
+func (vdc *Vdc) GetDisksByName(ctx context.Context, diskName string, refresh bool) (*[]Disk, error) {
 	util.Logger.Printf("[TRACE] Get Disk By Name: %s\n", diskName)
 	var diskList []Disk
 	if refresh {
-		err := vdc.Refresh()
+		err := vdc.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -408,7 +409,7 @@ func (vdc *Vdc) GetDisksByName(diskName string, refresh bool) (*[]Disk, error) {
 	for _, resourceEntities := range vdc.Vdc.ResourceEntities {
 		for _, resourceEntity := range resourceEntities.ResourceEntity {
 			if resourceEntity.Name == diskName && resourceEntity.Type == "application/vnd.vmware.vcloud.disk+xml" {
-				disk, err := vdc.GetDiskByHref(resourceEntity.HREF)
+				disk, err := vdc.GetDiskByHref(ctx, resourceEntity.HREF)
 				if err != nil {
 					return nil, err
 				}
@@ -425,10 +426,10 @@ func (vdc *Vdc) GetDisksByName(diskName string, refresh bool) (*[]Disk, error) {
 // GetDiskById finds a Disk by ID
 // On success, returns a pointer to the Disk structure and a nil error
 // On failure, returns a nil pointer and an error
-func (vdc *Vdc) GetDiskById(diskId string, refresh bool) (*Disk, error) {
+func (vdc *Vdc) GetDiskById(ctx context.Context, diskId string, refresh bool) (*Disk, error) {
 	util.Logger.Printf("[TRACE] Get Disk By Id: %s\n", diskId)
 	if refresh {
-		err := vdc.Refresh()
+		err := vdc.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -436,7 +437,7 @@ func (vdc *Vdc) GetDiskById(diskId string, refresh bool) (*Disk, error) {
 	for _, resourceEntities := range vdc.Vdc.ResourceEntities {
 		for _, resourceEntity := range resourceEntities.ResourceEntity {
 			if equalIds(diskId, resourceEntity.ID, resourceEntity.HREF) && resourceEntity.Type == "application/vnd.vmware.vcloud.disk+xml" {
-				return vdc.GetDiskByHref(resourceEntity.HREF)
+				return vdc.GetDiskByHref(ctx, resourceEntity.HREF)
 			}
 		}
 	}

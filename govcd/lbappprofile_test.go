@@ -23,7 +23,7 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
@@ -40,9 +40,9 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 		ServerSslEnabled:              false,
 	}
 
-	err = deleteLbAppProfileIfExists(*edge, lbAppProfileConfig.Name)
+	err = deleteLbAppProfileIfExists(ctx, *edge, lbAppProfileConfig.Name)
 	check.Assert(err, IsNil)
-	createdLbAppProfile, err := edge.CreateLbAppProfile(lbAppProfileConfig)
+	createdLbAppProfile, err := edge.CreateLbAppProfile(ctx, lbAppProfileConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdLbAppProfile.ID, Not(IsNil))
 	check.Assert(createdLbAppProfile.Persistence.Method, Equals, lbAppProfileConfig.Persistence.Method)
@@ -57,11 +57,11 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	AddToCleanupList(TestLbAppProfile, "lbAppProfile", parentEntity, check.TestName())
 
 	// Lookup by both name and ID and compare that these are equal values
-	lbAppProfileByID, err := edge.GetLbAppProfileById(createdLbAppProfile.ID)
+	lbAppProfileByID, err := edge.GetLbAppProfileById(ctx, createdLbAppProfile.ID)
 	check.Assert(err, IsNil)
 	check.Assert(lbAppProfileByID, Not(IsNil))
 
-	lbAppProfileByName, err := edge.GetLbAppProfileByName(createdLbAppProfile.Name)
+	lbAppProfileByName, err := edge.GetLbAppProfileByName(ctx, createdLbAppProfile.Name)
 	check.Assert(err, IsNil)
 	check.Assert(lbAppProfileByName, Not(IsNil))
 	check.Assert(createdLbAppProfile.ID, Equals, lbAppProfileByName.ID)
@@ -72,7 +72,7 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	check.Assert(createdLbAppProfile.Template, Equals, lbAppProfileConfig.Template)
 
 	// Test that we can extract a list of LB app profiles, and that one of them is the profile we have got when searching by name
-	lbAppProfiles, err := edge.GetLbAppProfiles()
+	lbAppProfiles, err := edge.GetLbAppProfiles(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(lbAppProfiles, NotNil)
 	foundProfile := false
@@ -86,7 +86,7 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	// Test updating fields
 	// Update persistence method
 	lbAppProfileByID.Persistence.Method = "sourceip"
-	updatedAppProfile, err := edge.UpdateLbAppProfile(lbAppProfileByID)
+	updatedAppProfile, err := edge.UpdateLbAppProfile(ctx, lbAppProfileByID)
 	check.Assert(err, IsNil)
 	check.Assert(updatedAppProfile.Persistence.Method, Equals, lbAppProfileByID.Persistence.Method)
 
@@ -94,7 +94,7 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	lbAppProfileByID.SslPassthrough = true
 	lbAppProfileByID.InsertXForwardedForHttpHeader = true
 	lbAppProfileByID.ServerSslEnabled = true
-	updatedAppProfile, err = edge.UpdateLbAppProfile(lbAppProfileByID)
+	updatedAppProfile, err = edge.UpdateLbAppProfile(ctx, lbAppProfileByID)
 	check.Assert(err, IsNil)
 	check.Assert(updatedAppProfile.SslPassthrough, Equals, lbAppProfileByID.SslPassthrough)
 	check.Assert(updatedAppProfile.InsertXForwardedForHttpHeader, Equals, lbAppProfileByID.InsertXForwardedForHttpHeader)
@@ -106,20 +106,20 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	// Try to set invalid algorithm hash and expect API to return error
 	// Invalid persistence method invalid_method. Valid methods are: COOKIE|SSL-SESSIONID|SOURCEIP.
 	lbAppProfileByID.Persistence.Method = "invalid_method"
-	updatedAppProfile, err = edge.UpdateLbAppProfile(lbAppProfileByID)
+	updatedAppProfile, err = edge.UpdateLbAppProfile(ctx, lbAppProfileByID)
 	check.Assert(updatedAppProfile, IsNil)
 	check.Assert(err, ErrorMatches, ".*Invalid persistence method .*Valid methods are:.*")
 
 	// Update should fail without name
 	lbAppProfileByID.Name = ""
-	_, err = edge.UpdateLbAppProfile(lbAppProfileByID)
+	_, err = edge.UpdateLbAppProfile(ctx, lbAppProfileByID)
 	check.Assert(err.Error(), Equals, "load balancer application profile Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLbAppProfile(&types.LbAppProfile{ID: createdLbAppProfile.ID})
+	err = edge.DeleteLbAppProfile(ctx, &types.LbAppProfile{ID: createdLbAppProfile.ID})
 	check.Assert(err, IsNil)
 
 	// Ensure it is deleted
-	_, err = edge.GetLbAppProfileById(createdLbAppProfile.ID)
+	_, err = edge.GetLbAppProfileById(ctx, createdLbAppProfile.ID)
 	check.Assert(IsNotFound(err), Equals, true)
 }

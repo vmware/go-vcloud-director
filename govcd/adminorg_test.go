@@ -6,6 +6,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 
 	. "gopkg.in/check.v1"
@@ -17,20 +18,22 @@ func (vcd *TestVCD) Test_FindAdminCatalogRecords(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	ctx := context.Background()
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 	catalogName := "catalogForQuery"
-	adminCatalog, err := adminOrg.CreateCatalog(catalogName, "catalogForQueryDescription")
+	adminCatalog, err := adminOrg.CreateCatalog(ctx, catalogName, "catalogForQueryDescription")
 	check.Assert(err, IsNil)
 	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName())
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, catalogName)
 
 	// just imitate wait
-	err = adminOrg.Refresh()
+	err = adminOrg.Refresh(ctx)
 	check.Assert(err, IsNil)
 
-	findRecords, err := adminOrg.FindAdminCatalogRecords(catalogName)
+	findRecords, err := adminOrg.FindAdminCatalogRecords(ctx, catalogName)
 	check.Assert(err, IsNil)
 	check.Assert(findRecords, NotNil)
 	check.Assert(len(findRecords), Equals, 1)
@@ -39,7 +42,7 @@ func (vcd *TestVCD) Test_FindAdminCatalogRecords(check *C) {
 }
 
 // Tests AdminOrg lease settings for vApp and vApp template
-func (vcd *TestVCD) TestAdminOrg_SetLease(check *C) {
+func (vcd *TestVCD) TestAdminOrg_SetLease(ctx context.Context, check *C) {
 	type leaseParams struct {
 		deploymentLeaseSeconds                     int
 		vappStorageLease                           int
@@ -52,7 +55,7 @@ func (vcd *TestVCD) TestAdminOrg_SetLease(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	adminOrg, err := vcd.client.GetAdminOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
@@ -129,10 +132,10 @@ func (vcd *TestVCD) TestAdminOrg_SetLease(check *C) {
 		adminOrg.AdminOrg.OrgSettings.OrgVAppTemplateSettings.StorageLeaseSeconds = &info.vappTemplateStorageLease
 		adminOrg.AdminOrg.OrgSettings.OrgVAppTemplateSettings.DeleteOnStorageLeaseExpiration = &info.vappTemplateDeleteOnStorageLeaseExpiration
 
-		task, err := adminOrg.Update()
+		task, err := adminOrg.Update(ctx)
 		check.Assert(err, IsNil)
 		check.Assert(task, NotNil)
-		err = task.WaitTaskCompletion()
+		err = task.WaitTaskCompletion(ctx)
 		check.Assert(err, IsNil)
 
 		// Check the results
@@ -154,10 +157,10 @@ func (vcd *TestVCD) TestAdminOrg_SetLease(check *C) {
 	adminOrg.AdminOrg.OrgSettings.OrgVAppTemplateSettings.DeleteOnStorageLeaseExpiration = &saveParams.vappTemplateDeleteOnStorageLeaseExpiration
 
 	fmt.Printf("restore lease params %v\n", saveParams)
-	task, err := adminOrg.Update()
+	task, err := adminOrg.Update(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(task, NotNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
 	// Check that the initial parameters were restored
@@ -177,20 +180,22 @@ func (vcd *TestVCD) TestOrg_AdminOrg_QueryCatalogList(check *C) {
 	if vcd.config.VCD.Catalog.Name == "" {
 		check.Skip("no catalog name provided. test skipped")
 	}
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	ctx := context.Background()
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	org, err := vcd.client.GetOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
 	// gets the catalog list as an adminOrg
-	catalogsInAdminOrg, err := adminOrg.QueryCatalogList()
+	catalogsInAdminOrg, err := adminOrg.QueryCatalogList(ctx)
 	check.Assert(err, IsNil)
 
 	// gets the catalog list as an Org
-	catalogsInOrg, err := org.QueryCatalogList()
+	catalogsInOrg, err := org.QueryCatalogList(ctx)
 	check.Assert(err, IsNil)
 
 	foundInOrg := false
@@ -232,11 +237,13 @@ func (vcd *TestVCD) Test_GetAllVDCs(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	ctx := context.Background()
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	vdcs, err := adminOrg.GetAllVDCs(true)
+	vdcs, err := adminOrg.GetAllVDCs(ctx, true)
 	check.Assert(err, IsNil)
 	check.Assert(len(vdcs) > 0, Equals, true)
 }
@@ -248,11 +255,13 @@ func (vcd *TestVCD) Test_GetAllStorageProfileReferences(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	ctx := context.Background()
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	storageProfileReferences, err := adminOrg.GetAllStorageProfileReferences(true)
+	storageProfileReferences, err := adminOrg.GetAllStorageProfileReferences(ctx, true)
 	check.Assert(err, IsNil)
 	check.Assert(len(storageProfileReferences) > 0, Equals, true)
 }

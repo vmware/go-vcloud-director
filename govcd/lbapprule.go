@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -13,7 +14,7 @@ import (
 
 // CreateLbAppRule creates a load balancer application rule based on mandatory fields. It is a
 // synchronous operation. It returns created object with all fields (including ID) populated or an error.
-func (egw *EdgeGateway) CreateLbAppRule(lbAppRuleConfig *types.LbAppRule) (*types.LbAppRule, error) {
+func (egw *EdgeGateway) CreateLbAppRule(ctx context.Context, lbAppRuleConfig *types.LbAppRule) (*types.LbAppRule, error) {
 	if err := validateCreateLbAppRule(lbAppRuleConfig, egw); err != nil {
 		return nil, err
 	}
@@ -23,7 +24,7 @@ func (egw *EdgeGateway) CreateLbAppRule(lbAppRuleConfig *types.LbAppRule) (*type
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
 	// We expect to get http.StatusCreated or if not an error of type types.NSXError
-	resp, err := egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodPost, types.AnyXMLMime,
+	resp, err := egw.client.ExecuteRequestWithCustomError(ctx, httpPath, http.MethodPost, types.AnyXMLMime,
 		"error creating load balancer application rule: %s", lbAppRuleConfig, &types.NSXError{})
 	if err != nil {
 		return nil, err
@@ -36,7 +37,7 @@ func (egw *EdgeGateway) CreateLbAppRule(lbAppRuleConfig *types.LbAppRule) (*type
 		return nil, err
 	}
 
-	readAppRule, err := egw.GetLbAppRuleById(lbAppRuleId)
+	readAppRule, err := egw.GetLbAppRuleById(ctx, lbAppRuleId)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve application rule with ID (%s) after creation: %s",
 			lbAppRuleId, err)
@@ -45,7 +46,7 @@ func (egw *EdgeGateway) CreateLbAppRule(lbAppRuleConfig *types.LbAppRule) (*type
 }
 
 // GetLbAppRules returns a list of all LB application rules for a given edge gateway
-func (egw *EdgeGateway) GetLbAppRules() ([]*types.LbAppRule, error) {
+func (egw *EdgeGateway) GetLbAppRules(ctx context.Context) ([]*types.LbAppRule, error) {
 
 	httpPath, err := egw.buildProxiedEdgeEndpointURL(types.LbAppRulePath)
 	if err != nil {
@@ -58,7 +59,7 @@ func (egw *EdgeGateway) GetLbAppRules() ([]*types.LbAppRule, error) {
 	}{}
 
 	// This query returns all application rules as the API does not have filtering options
-	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
+	_, err = egw.client.ExecuteRequest(ctx, httpPath, http.MethodGet, types.AnyXMLMime,
 		"unable to read load balancer application rule: %s", nil, lbAppRuleResponse)
 	if err != nil {
 		return nil, err
@@ -69,12 +70,12 @@ func (egw *EdgeGateway) GetLbAppRules() ([]*types.LbAppRule, error) {
 // getLbAppRule is able to find the types.LbAppRule type by Name and/or ID.
 // If both - Name and ID are specified it performs a lookup by ID and returns an error if the specified name and found
 // name do not match.
-func (egw *EdgeGateway) getLbAppRule(lbAppRuleConfig *types.LbAppRule) (*types.LbAppRule, error) {
+func (egw *EdgeGateway) getLbAppRule(ctx context.Context, lbAppRuleConfig *types.LbAppRule) (*types.LbAppRule, error) {
 	if err := validateGetLbAppRule(lbAppRuleConfig, egw); err != nil {
 		return nil, err
 	}
 
-	lbAppRules, err := egw.GetLbAppRules()
+	lbAppRules, err := egw.GetLbAppRules(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -102,25 +103,25 @@ func (egw *EdgeGateway) getLbAppRule(lbAppRuleConfig *types.LbAppRule) (*types.L
 }
 
 // ReadLBAppRuleById wraps getLbAppRule and needs only an ID for lookup
-func (egw *EdgeGateway) GetLbAppRuleById(id string) (*types.LbAppRule, error) {
-	return egw.getLbAppRule(&types.LbAppRule{ID: id})
+func (egw *EdgeGateway) GetLbAppRuleById(ctx context.Context, id string) (*types.LbAppRule, error) {
+	return egw.getLbAppRule(ctx, &types.LbAppRule{ID: id})
 }
 
 // GetLbAppRuleByName wraps getLbAppRule and needs only a Name for lookup
-func (egw *EdgeGateway) GetLbAppRuleByName(name string) (*types.LbAppRule, error) {
-	return egw.getLbAppRule(&types.LbAppRule{Name: name})
+func (egw *EdgeGateway) GetLbAppRuleByName(ctx context.Context, name string) (*types.LbAppRule, error) {
+	return egw.getLbAppRule(ctx, &types.LbAppRule{Name: name})
 }
 
 // UpdateLbAppRule updates types.LbAppRule with all fields. At least name or ID must be specified.
 // If both - Name and ID are specified it performs a lookup by ID and returns an error if the specified name and found
 // name do not match.
-func (egw *EdgeGateway) UpdateLbAppRule(lbAppRuleConfig *types.LbAppRule) (*types.LbAppRule, error) {
+func (egw *EdgeGateway) UpdateLbAppRule(ctx context.Context, lbAppRuleConfig *types.LbAppRule) (*types.LbAppRule, error) {
 	err := validateUpdateLbAppRule(lbAppRuleConfig, egw)
 	if err != nil {
 		return nil, err
 	}
 
-	lbAppRuleConfig.ID, err = egw.getLbAppRuleIdByNameId(lbAppRuleConfig.Name, lbAppRuleConfig.ID)
+	lbAppRuleConfig.ID, err = egw.getLbAppRuleIdByNameId(ctx, lbAppRuleConfig.Name, lbAppRuleConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("cannot update load balancer application rule: %s", err)
 	}
@@ -131,13 +132,13 @@ func (egw *EdgeGateway) UpdateLbAppRule(lbAppRuleConfig *types.LbAppRule) (*type
 	}
 
 	// Result should be 204, if not we expect an error of type types.NSXError
-	_, err = egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodPut, types.AnyXMLMime,
+	_, err = egw.client.ExecuteRequestWithCustomError(ctx, httpPath, http.MethodPut, types.AnyXMLMime,
 		"error while updating load balancer application rule : %s", lbAppRuleConfig, &types.NSXError{})
 	if err != nil {
 		return nil, err
 	}
 
-	readAppRule, err := egw.getLbAppRule(&types.LbAppRule{ID: lbAppRuleConfig.ID})
+	readAppRule, err := egw.getLbAppRule(ctx, &types.LbAppRule{ID: lbAppRuleConfig.ID})
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve application rule with ID (%s) after update: %s",
 			lbAppRuleConfig.ID, err)
@@ -148,13 +149,13 @@ func (egw *EdgeGateway) UpdateLbAppRule(lbAppRuleConfig *types.LbAppRule) (*type
 // DeleteLbAppRule is able to delete the types.LbAppRule type by Name and/or ID.
 // If both - Name and ID are specified it performs a lookup by ID and returns an error if the specified name and found
 // name do not match.
-func (egw *EdgeGateway) DeleteLbAppRule(lbAppRuleConfig *types.LbAppRule) error {
+func (egw *EdgeGateway) DeleteLbAppRule(ctx context.Context, lbAppRuleConfig *types.LbAppRule) error {
 	err := validateDeleteLbAppRule(lbAppRuleConfig, egw)
 	if err != nil {
 		return err
 	}
 
-	lbAppRuleConfig.ID, err = egw.getLbAppRuleIdByNameId(lbAppRuleConfig.Name, lbAppRuleConfig.ID)
+	lbAppRuleConfig.ID, err = egw.getLbAppRuleIdByNameId(ctx, lbAppRuleConfig.Name, lbAppRuleConfig.ID)
 	if err != nil {
 		return fmt.Errorf("cannot update load balancer application rule: %s", err)
 	}
@@ -164,7 +165,7 @@ func (egw *EdgeGateway) DeleteLbAppRule(lbAppRuleConfig *types.LbAppRule) error 
 		return fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
 
-	_, err = egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodDelete, types.AnyXMLMime,
+	_, err = egw.client.ExecuteRequestWithCustomError(ctx, httpPath, http.MethodDelete, types.AnyXMLMime,
 		"unable to delete application rule: %s", nil, &types.NSXError{})
 	if err != nil {
 		return err
@@ -174,13 +175,13 @@ func (egw *EdgeGateway) DeleteLbAppRule(lbAppRuleConfig *types.LbAppRule) error 
 }
 
 // DeleteLBAppRuleById wraps DeleteLbAppRule and requires only ID for deletion
-func (egw *EdgeGateway) DeleteLbAppRuleById(id string) error {
-	return egw.DeleteLbAppRule(&types.LbAppRule{ID: id})
+func (egw *EdgeGateway) DeleteLbAppRuleById(ctx context.Context, id string) error {
+	return egw.DeleteLbAppRule(ctx, &types.LbAppRule{ID: id})
 }
 
 // DeleteLbAppRuleByName wraps DeleteLbAppRule and requires only Name for deletion
-func (egw *EdgeGateway) DeleteLbAppRuleByName(name string) error {
-	return egw.DeleteLbAppRule(&types.LbAppRule{Name: name})
+func (egw *EdgeGateway) DeleteLbAppRuleByName(ctx context.Context, name string) error {
+	return egw.DeleteLbAppRule(ctx, &types.LbAppRule{Name: name})
 }
 
 func validateCreateLbAppRule(lbAppRuleConfig *types.LbAppRule, egw *EdgeGateway) error {
@@ -221,7 +222,7 @@ func validateDeleteLbAppRule(lbAppRuleConfig *types.LbAppRule, egw *EdgeGateway)
 // getLbAppRuleIdByNameId checks if at least name or ID is set and returns the ID.
 // If the ID is specified - it passes through the ID. If only name was specified
 // it will lookup the object by name and return the ID.
-func (egw *EdgeGateway) getLbAppRuleIdByNameId(name, id string) (string, error) {
+func (egw *EdgeGateway) getLbAppRuleIdByNameId(ctx context.Context, name, id string) (string, error) {
 	if name == "" && id == "" {
 		return "", fmt.Errorf("at least Name or ID must be specific to find load balancer "+
 			"application rule got name (%s) ID (%s)", name, id)
@@ -231,7 +232,7 @@ func (egw *EdgeGateway) getLbAppRuleIdByNameId(name, id string) (string, error) 
 	}
 
 	// if only name was specified, ID must be found, because only ID can be used in request path
-	readlbAppRule, err := egw.GetLbAppRuleByName(name)
+	readlbAppRule, err := egw.GetLbAppRuleByName(ctx, name)
 	if err != nil {
 		return "", fmt.Errorf("unable to find load balancer application rule by name: %s", err)
 	}

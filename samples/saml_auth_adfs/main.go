@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/url"
@@ -45,6 +46,8 @@ func main() {
 		os.Exit(2)
 	}
 
+	ctx := context.Background()
+
 	// Create VCD client allowing insecure TLS connection and using SAML auth.
 	// WithSamlAdfs() allows SAML authentication when vCD uses Microsoft Active Directory
 	// Federation Services (ADFS) as SAML IdP. The code below allows to authenticate ADFS using
@@ -56,7 +59,7 @@ func main() {
 	// customAdfsRptId - override relaying party trust ID. If it is empty - vCD Entity ID will be used
 	// as Relaying Party Trust ID.
 	vcdCli := govcd.NewVCDClient(*vcdURL, true, govcd.WithSamlAdfs(true, customAdfsRptId))
-	err = vcdCli.Authenticate(username, password, org)
+	err = vcdCli.Authenticate(ctx, username, password, org)
 	if err != nil {
 
 		fmt.Println(err)
@@ -64,7 +67,7 @@ func main() {
 	}
 
 	// To prove authentication worked - just fetch all edge gateways and dump them on the screen
-	edgeGatewayResults, err := vcdCli.Query(map[string]string{"type": "edgeGateway"})
+	edgeGatewayResults, err := vcdCli.Query(ctx, map[string]string{"type": "edgeGateway"})
 	if err != nil {
 		fmt.Printf("Error retrieving Edge Gateways: %s\n", err)
 		os.Exit(4)

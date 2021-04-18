@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -33,19 +34,19 @@ func NewEjectTask(task *Task, vm *VM) *EjectTask {
 
 // Checks the status of the task every 3 seconds and returns when the
 // eject task is either completed or failed
-func (ejectTask *EjectTask) WaitTaskCompletion(isAnswerYes bool) error {
-	return ejectTask.WaitInspectTaskCompletion(isAnswerYes, timeBetweenRefresh)
+func (ejectTask *EjectTask) WaitTaskCompletion(ctx context.Context, isAnswerYes bool) error {
+	return ejectTask.WaitInspectTaskCompletion(ctx, isAnswerYes, timeBetweenRefresh)
 }
 
 // function which handles answers for ejecting
-func (ejectTask *EjectTask) WaitInspectTaskCompletion(isAnswerYes bool, delay time.Duration) error {
+func (ejectTask *EjectTask) WaitInspectTaskCompletion(ctx context.Context, isAnswerYes bool, delay time.Duration) error {
 
 	if ejectTask.Task == nil {
 		return fmt.Errorf("cannot refresh, Object is empty")
 	}
 
 	for {
-		err := ejectTask.Refresh()
+		err := ejectTask.Refresh(ctx)
 		if err != nil {
 			return fmt.Errorf("error retrieving task: %s", err)
 		}
@@ -58,7 +59,7 @@ func (ejectTask *EjectTask) WaitInspectTaskCompletion(isAnswerYes bool, delay ti
 			return nil
 		}
 
-		question, err := ejectTask.vm.GetQuestion()
+		question, err := ejectTask.vm.GetQuestion(ctx)
 		if err != nil {
 			return fmt.Errorf("task did not complete succesfully: %s, quering question for VM failed: %s", ejectTask.Task.Task.Description, err.Error())
 		}
@@ -78,7 +79,7 @@ func (ejectTask *EjectTask) WaitInspectTaskCompletion(isAnswerYes bool, delay ti
 			}
 
 			if choiceToUse != nil {
-				err = ejectTask.vm.AnswerQuestion(question.QuestionId, choiceToUse.Id)
+				err = ejectTask.vm.AnswerQuestion(ctx, question.QuestionId, choiceToUse.Id)
 				if err != nil {
 					return fmt.Errorf("task did not complete succesfully: %s, answering question for eject in VM failed: %s", ejectTask.Task.Task.Description, err.Error())
 				}

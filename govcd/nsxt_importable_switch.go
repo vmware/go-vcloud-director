@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -24,12 +25,12 @@ type NsxtImportableSwitch struct {
 // Note. OpenAPI endpoint does not exist for this resource and by default endpoint
 // "/network/orgvdcnetworks/importableswitches" returns only unused NSX-T importable switches (the ones that are not
 // already consumed in Org VDC networks) and there is no way to get them all (including the used ones).
-func (vdc *Vdc) GetNsxtImportableSwitchByName(name string) (*NsxtImportableSwitch, error) {
+func (vdc *Vdc) GetNsxtImportableSwitchByName(ctx context.Context, name string) (*NsxtImportableSwitch, error) {
 	if name == "" {
 		return nil, fmt.Errorf("empty NSX-T Importable Switch name specified")
 	}
 
-	allNsxtImportableSwitches, err := vdc.GetAllNsxtImportableSwitches()
+	allNsxtImportableSwitches, err := vdc.GetAllNsxtImportableSwitches(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error getting all NSX-T Importable Switches for VDC '%s': %s", vdc.Vdc.Name, err)
 	}
@@ -61,7 +62,7 @@ func (vdc *Vdc) GetNsxtImportableSwitchByName(name string) (*NsxtImportableSwitc
 // Note. OpenAPI endpoint does not exist for this resource and by default endpoint
 // "/network/orgvdcnetworks/importableswitches" returns only unused NSX-T importable switches (the ones that are not
 // already consumed in Org VDC networks) and there is no way to get them all.
-func (vdc *Vdc) GetAllNsxtImportableSwitches() ([]*NsxtImportableSwitch, error) {
+func (vdc *Vdc) GetAllNsxtImportableSwitches(ctx context.Context) ([]*NsxtImportableSwitch, error) {
 	if vdc.Vdc.ID == "" {
 		return nil, fmt.Errorf("VDC must have ID populated to retrieve NSX-T importable switches")
 	}
@@ -79,7 +80,7 @@ func (vdc *Vdc) GetAllNsxtImportableSwitches() ([]*NsxtImportableSwitch, error) 
 
 	headAccept := http.Header{}
 	headAccept.Set("Accept", types.JSONMime)
-	request := vdc.client.newRequest(map[string]string{"orgVdc": orgVdcId}, nil, http.MethodGet, *urlRef, nil, vdc.client.APIVersion, headAccept)
+	request := vdc.client.newRequest(ctx, map[string]string{"orgVdc": orgVdcId}, nil, http.MethodGet, *urlRef, nil, vdc.client.APIVersion, headAccept)
 	request.Header.Set("Accept", types.JSONMime)
 
 	response, err := checkResp(vdc.client.Http.Do(request))

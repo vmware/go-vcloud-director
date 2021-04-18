@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	//"strings"
 
@@ -16,9 +17,10 @@ import (
 )
 
 func (vcd *TestVCD) Test_GetVAppTemplate(check *C) {
+	ctx := context.Background()
 
 	fmt.Printf("Running: %s\n", check.TestName())
-	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	cat, err := vcd.org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	if err != nil {
 		check.Skip("Test_GetVAppTemplate: Catalog not found. Test can't proceed")
 		return
@@ -29,11 +31,11 @@ func (vcd *TestVCD) Test_GetVAppTemplate(check *C) {
 		check.Skip("Test_GetVAppTemplate: Catalog Item not given. Test can't proceed")
 	}
 
-	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	catitem, err := cat.GetCatalogItemByName(ctx, vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
 
 	// Get VAppTemplate
-	vapptemplate, err := catitem.GetVAppTemplate()
+	vapptemplate, err := catitem.GetVAppTemplate(ctx)
 
 	check.Assert(err, IsNil)
 	check.Assert(vapptemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
@@ -47,32 +49,33 @@ func (vcd *TestVCD) Test_GetVAppTemplate(check *C) {
 func (vcd *TestVCD) Test_Delete(check *C) {
 	skipWhenOvaPathMissing(vcd.config.OVA.OvaPath, check)
 	AddToCleanupList(TestDeleteCatalogItem, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_Delete")
+	ctx := context.Background()
 
 	// Fetching organization
-	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	org, err := vcd.client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err := org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 
 	// add catalogItem
-	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OvaPath, TestDeleteCatalogItem, "upload from delete catalog item test", 1024)
+	uploadTask, err := catalog.UploadOvf(ctx, vcd.config.OVA.OvaPath, TestDeleteCatalogItem, "upload from delete catalog item test", 1024)
 	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
-	check.Assert(err, IsNil)
-	catalogItem, err := catalog.GetCatalogItemByName(TestDeleteCatalogItem, false)
+	err = uploadTask.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
-	err = catalogItem.Delete()
+	catalog, err = org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	catalogItem, err := catalog.GetCatalogItemByName(ctx, TestDeleteCatalogItem, false)
+	check.Assert(err, IsNil)
+
+	err = catalogItem.Delete(ctx)
 	check.Assert(err, IsNil)
 
 	// check through existing catalogItems
-	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err = org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	entityFound := false
 	for _, catalogItems := range catalog.Catalog.CatalogItems {
@@ -92,25 +95,26 @@ func (vcd *TestVCD) TestQueryCatalogItemAndVAppTemplateList(check *C) {
 	if vcd.config.VCD.Vdc == "" {
 		check.Skip("no VDC provided. Skipping test")
 	}
+	ctx := context.Background()
 	// Fetching organization and catalog
-	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	org, err := vcd.client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	catalog, err := org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
 
 	// Fetching VDC
-	vdc, err := org.GetAdminVDCByName(vcd.config.VCD.Vdc, false)
+	vdc, err := org.GetAdminVDCByName(ctx, vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 
 	// Get the list of catalog items using a query from catalog
-	queryCatalogItemsByCatalog, err := catalog.QueryCatalogItemList()
+	queryCatalogItemsByCatalog, err := catalog.QueryCatalogItemList(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(queryCatalogItemsByCatalog, NotNil)
 
 	// Get the list of catalog items using a query from VDC
-	queryCatalogItemsByVdc, err := vdc.QueryCatalogItemList()
+	queryCatalogItemsByVdc, err := vdc.QueryCatalogItemList(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(queryCatalogItemsByVdc, NotNil)
 
@@ -148,12 +152,12 @@ func (vcd *TestVCD) TestQueryCatalogItemAndVAppTemplateList(check *C) {
 	}
 
 	// Get the list of vApp templates using a query from catalog
-	queryVappTemplatesByCatalog, err := catalog.QueryVappTemplateList()
+	queryVappTemplatesByCatalog, err := catalog.QueryVappTemplateList(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(queryVappTemplatesByCatalog, NotNil)
 
 	// Get the list of vApp templates using a query from VDC
-	queryVappTemplatesByVdc, err := vdc.QueryVappTemplateList()
+	queryVappTemplatesByVdc, err := vdc.QueryVappTemplateList(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(queryVappTemplatesByVdc, NotNil)
 
@@ -171,7 +175,7 @@ func (vcd *TestVCD) TestQueryCatalogItemAndVAppTemplateList(check *C) {
 
 		// Retrieve the catalog item, and check the internal Entity HREF
 		// against the vApp template HREF
-		catalogItem, err := catalog.GetCatalogItemByHref(itemHref)
+		catalogItem, err := catalog.GetCatalogItemByHref(ctx, itemHref)
 		check.Assert(err, IsNil)
 		check.Assert(catalogItem, NotNil)
 
@@ -186,7 +190,7 @@ func (vcd *TestVCD) TestQueryCatalogItemAndVAppTemplateList(check *C) {
 		check.Assert(foundItem, Equals, true)
 
 		// Retrieve the vApp template
-		vappTemplate, err := catalog.GetVappTemplateByHref(itemHref)
+		vappTemplate, err := catalog.GetVappTemplateByHref(ctx, itemHref)
 		check.Assert(err, IsNil)
 		check.Assert(vappTemplate, NotNil)
 	}

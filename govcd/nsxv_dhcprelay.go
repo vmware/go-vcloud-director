@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -16,7 +17,7 @@ import (
 // any interruption to the IP address management in your environment. DHCP messages are relayed from
 // virtual machine(s) to the designated DHCP server(s) in the physical world. This enables IP
 // addresses within NSX to continue to be in sync with IP addresses in other environments.
-func (egw *EdgeGateway) UpdateDhcpRelay(dhcpRelayConfig *types.EdgeDhcpRelay) (*types.EdgeDhcpRelay, error) {
+func (egw *EdgeGateway) UpdateDhcpRelay(ctx context.Context, dhcpRelayConfig *types.EdgeDhcpRelay) (*types.EdgeDhcpRelay, error) {
 	if !egw.HasAdvancedNetworking() {
 		return nil, fmt.Errorf("only advanced edge gateways support DHCP relay")
 	}
@@ -26,18 +27,18 @@ func (egw *EdgeGateway) UpdateDhcpRelay(dhcpRelayConfig *types.EdgeDhcpRelay) (*
 		return nil, fmt.Errorf("could not get Edge Gateway API endpoint: %s", err)
 	}
 	// We expect to get http.StatusNoContent or if not an error of type types.NSXError
-	_, err = egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodPut, types.AnyXMLMime,
+	_, err = egw.client.ExecuteRequestWithCustomError(ctx, httpPath, http.MethodPut, types.AnyXMLMime,
 		"error setting DHCP relay settings: %s", dhcpRelayConfig, &types.NSXError{})
 	if err != nil {
 		return nil, err
 	}
 
-	return egw.GetDhcpRelay()
+	return egw.GetDhcpRelay(ctx)
 }
 
 // GetDhcpRelay retrieves a structure of *types.EdgeDhcpRelay with all DHCP relay settings present
 // on a particular edge gateway.
-func (egw *EdgeGateway) GetDhcpRelay() (*types.EdgeDhcpRelay, error) {
+func (egw *EdgeGateway) GetDhcpRelay(ctx context.Context) (*types.EdgeDhcpRelay, error) {
 	if !egw.HasAdvancedNetworking() {
 		return nil, fmt.Errorf("only advanced edge gateways support DHCP relay")
 	}
@@ -49,7 +50,7 @@ func (egw *EdgeGateway) GetDhcpRelay() (*types.EdgeDhcpRelay, error) {
 	}
 
 	// This query Edge gateway DHCP relay using proxied NSX-V API
-	_, err = egw.client.ExecuteRequest(httpPath, http.MethodGet, types.AnyXMLMime,
+	_, err = egw.client.ExecuteRequest(ctx, httpPath, http.MethodGet, types.AnyXMLMime,
 		"unable to read edge gateway DHCP relay configuration: %s", nil, response)
 	if err != nil {
 		return nil, err
@@ -60,7 +61,7 @@ func (egw *EdgeGateway) GetDhcpRelay() (*types.EdgeDhcpRelay, error) {
 
 // ResetDhcpRelay removes all configuration by sending a DELETE request for DHCP relay configuration
 // endpoint
-func (egw *EdgeGateway) ResetDhcpRelay() error {
+func (egw *EdgeGateway) ResetDhcpRelay(ctx context.Context) error {
 	if !egw.HasAdvancedNetworking() {
 		return fmt.Errorf("only advanced edge gateways support DHCP relay")
 	}
@@ -71,7 +72,7 @@ func (egw *EdgeGateway) ResetDhcpRelay() error {
 	}
 
 	// Send a DELETE request to DHCP relay configuration endpoint
-	_, err = egw.client.ExecuteRequestWithCustomError(httpPath, http.MethodDelete, types.AnyXMLMime,
+	_, err = egw.client.ExecuteRequestWithCustomError(ctx, httpPath, http.MethodDelete, types.AnyXMLMime,
 		"unable to reset edge gateway DHCP relay configuration: %s", nil, &types.NSXError{})
 	return err
 }

@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"encoding/xml"
 	"fmt"
 	"net/http"
@@ -42,7 +43,7 @@ type EdgeGatewayCreation struct {
 // should be set when providing generalOrgSettings.
 // If either VAppLeaseSettings or VAppTemplateLeaseSettings is provided then all elements need to have values, otherwise don't provide them at all.
 // Overall elements must be in the correct order.
-func CreateOrg(vcdClient *VCDClient, name string, fullName string, description string, settings *types.OrgSettings, isEnabled bool) (Task, error) {
+func CreateOrg(ctx context.Context, vcdClient *VCDClient, name string, fullName string, description string, settings *types.OrgSettings, isEnabled bool) (Task, error) {
 	vcomp := &types.AdminOrg{
 		Xmlns:       types.XMLNamespaceVCloud,
 		Name:        name,
@@ -64,7 +65,7 @@ func CreateOrg(vcdClient *VCDClient, name string, fullName string, description s
 	orgCreateHREF.Path += "/admin/orgs"
 
 	// Return the task
-	return vcdClient.Client.ExecuteTaskRequest(orgCreateHREF.String(), http.MethodPost,
+	return vcdClient.Client.ExecuteTaskRequest(ctx, orgCreateHREF.String(), http.MethodPost,
 		"application/vnd.vmware.admin.organization+xml", "error instantiating a new Org: %s", vcomp)
 
 }
@@ -98,7 +99,7 @@ func getBareEntityUuid(entityId string) (string, error) {
 //
 // Note. This function does not allow to pick exact subnet in external network to use for edge
 // gateway. It will pick first one instead.
-func CreateEdgeGatewayAsync(vcdClient *VCDClient, egwc EdgeGatewayCreation) (Task, error) {
+func CreateEdgeGatewayAsync(ctx context.Context, vcdClient *VCDClient, egwc EdgeGatewayCreation) (Task, error) {
 
 	distributed := egwc.DistributedRoutingEnabled
 	if !egwc.AdvancedNetworkingEnabled {
@@ -141,7 +142,7 @@ func CreateEdgeGatewayAsync(vcdClient *VCDClient, egwc EdgeGatewayCreation) (Tas
 	}
 	// Add external networks inside the configuration structure
 	for _, extNetName := range egwc.ExternalNetworks {
-		extNet, err := vcdClient.GetExternalNetworkByName(extNetName)
+		extNet, err := vcdClient.GetExternalNetworkByName(ctx, extNetName)
 		if err != nil {
 			return Task{}, err
 		}
@@ -179,11 +180,11 @@ func CreateEdgeGatewayAsync(vcdClient *VCDClient, egwc EdgeGatewayCreation) (Tas
 
 	// Once the configuration structure has been filled using the simplified data, we delegate
 	// the edge gateway creation to the main configuration function.
-	return CreateAndConfigureEdgeGatewayAsync(vcdClient, egwc.OrgName, egwc.VdcName, egwc.Name, egwConfiguration)
+	return CreateAndConfigureEdgeGatewayAsync(ctx, vcdClient, egwc.OrgName, egwc.VdcName, egwc.Name, egwConfiguration)
 }
 
 // CreateAndConfigureEdgeGatewayAsync creates an edge gateway using a full configuration structure
-func CreateAndConfigureEdgeGatewayAsync(vcdClient *VCDClient, orgName, vdcName, egwName string, egwConfiguration *types.EdgeGateway) (Task, error) {
+func CreateAndConfigureEdgeGatewayAsync(ctx context.Context, vcdClient *VCDClient, orgName, vdcName, egwName string, egwConfiguration *types.EdgeGateway) (Task, error) {
 
 	if egwConfiguration.Name != egwName {
 		return Task{}, fmt.Errorf("name mismatch: '%s' used as parameter but '%s' in the configuration structure", egwName, egwConfiguration.Name)
@@ -191,11 +192,11 @@ func CreateAndConfigureEdgeGatewayAsync(vcdClient *VCDClient, orgName, vdcName, 
 
 	egwConfiguration.Xmlns = types.XMLNamespaceVCloud
 
-	adminOrg, err := vcdClient.GetAdminOrgByName(orgName)
+	adminOrg, err := vcdClient.GetAdminOrgByName(ctx, orgName)
 	if err != nil {
 		return Task{}, err
 	}
-	vdc, err := adminOrg.GetVDCByName(vdcName, false)
+	vdc, err := adminOrg.GetVDCByName(ctx, vdcName, false)
 	if err != nil {
 		return Task{}, err
 	}
@@ -213,14 +214,14 @@ func CreateAndConfigureEdgeGatewayAsync(vcdClient *VCDClient, orgName, vdcName, 
 
 	// The first task is the creation task. It is quick, and does only create the vCD entity,
 	// but not yet deploy the underlying VM
-	creationTask, err := vcdClient.Client.ExecuteTaskRequest(egwCreateHREF.String(), http.MethodPost,
+	creationTask, err := vcdClient.Client.ExecuteTaskRequest(ctx, egwCreateHREF.String(), http.MethodPost,
 		"application/vnd.vmware.admin.edgeGateway+xml", "error instantiating a new Edge Gateway: %s", egwConfiguration)
 
 	if err != nil {
 		return Task{}, err
 	}
 
-	err = creationTask.WaitTaskCompletion()
+	err = creationTask.WaitTaskCompletion(ctx)
 
 	if err != nil {
 		return Task{}, err
@@ -242,33 +243,33 @@ func CreateAndConfigureEdgeGatewayAsync(vcdClient *VCDClient, orgName, vdcName, 
 // Private convenience function used by CreateAndConfigureEdgeGateway and CreateEdgeGateway to
 // process the task and return the object that was created.
 // It should not be invoked directly.
-func createEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation, egwConfiguration *types.EdgeGateway) (EdgeGateway, error) {
+func createEdgeGateway(ctx context.Context, vcdClient *VCDClient, egwc EdgeGatewayCreation, egwConfiguration *types.EdgeGateway) (EdgeGateway, error) {
 	var task Task
 	var err error
 	if egwConfiguration != nil {
-		task, err = CreateAndConfigureEdgeGatewayAsync(vcdClient, egwc.OrgName, egwc.VdcName, egwc.Name, egwConfiguration)
+		task, err = CreateAndConfigureEdgeGatewayAsync(ctx, vcdClient, egwc.OrgName, egwc.VdcName, egwc.Name, egwConfiguration)
 	} else {
-		task, err = CreateEdgeGatewayAsync(vcdClient, egwc)
+		task, err = CreateEdgeGatewayAsync(ctx, vcdClient, egwc)
 	}
 
 	if err != nil {
 		return EdgeGateway{}, err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return EdgeGateway{}, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
 	}
 
 	// The edge gateway is created. Now we retrieve it from the server
-	org, err := vcdClient.GetAdminOrgByName(egwc.OrgName)
+	org, err := vcdClient.GetAdminOrgByName(ctx, egwc.OrgName)
 	if err != nil {
 		return EdgeGateway{}, err
 	}
-	vdc, err := org.GetVDCByName(egwc.VdcName, false)
+	vdc, err := org.GetVDCByName(ctx, egwc.VdcName, false)
 	if err != nil {
 		return EdgeGateway{}, err
 	}
-	egw, err := vdc.GetEdgeGatewayByName(egwc.Name, false)
+	egw, err := vdc.GetEdgeGatewayByName(ctx, egwc.Name, false)
 	if err != nil {
 		return EdgeGateway{}, err
 	}
@@ -276,13 +277,13 @@ func createEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation, egwConfig
 }
 
 // CreateAndConfigureEdgeGateway creates an edge gateway using a full configuration structure
-func CreateAndConfigureEdgeGateway(vcdClient *VCDClient, orgName, vdcName, egwName string, egwConfiguration *types.EdgeGateway) (EdgeGateway, error) {
-	return createEdgeGateway(vcdClient, EdgeGatewayCreation{OrgName: orgName, VdcName: vdcName, Name: egwName}, egwConfiguration)
+func CreateAndConfigureEdgeGateway(ctx context.Context, vcdClient *VCDClient, orgName, vdcName, egwName string, egwConfiguration *types.EdgeGateway) (EdgeGateway, error) {
+	return createEdgeGateway(ctx, vcdClient, EdgeGatewayCreation{OrgName: orgName, VdcName: vdcName, Name: egwName}, egwConfiguration)
 }
 
 // CreateEdgeGateway creates an edge gateway using a simplified configuration structure
-func CreateEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation) (EdgeGateway, error) {
-	return createEdgeGateway(vcdClient, egwc, nil)
+func CreateEdgeGateway(ctx context.Context, vcdClient *VCDClient, egwc EdgeGatewayCreation) (EdgeGateway, error) {
+	return createEdgeGateway(ctx, vcdClient, egwc, nil)
 }
 
 // If user specifies a valid organization name, then this returns a
@@ -290,14 +291,14 @@ func CreateEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation) (EdgeGate
 // org and no error. Otherwise it returns an error and an empty
 // Org object
 // Deprecated: Use vcdClient.GetOrgByName instead
-func GetOrgByName(vcdClient *VCDClient, orgName string) (Org, error) {
-	orgUrl, err := getOrgHREF(vcdClient, orgName)
+func GetOrgByName(ctx context.Context, vcdClient *VCDClient, orgName string) (Org, error) {
+	orgUrl, err := getOrgHREF(ctx, vcdClient, orgName)
 	if err != nil {
 		return Org{}, fmt.Errorf("organization '%s' fetch failed: %s", orgName, err)
 	}
 	org := NewOrg(&vcdClient.Client)
 
-	_, err = vcdClient.Client.ExecuteRequest(orgUrl, http.MethodGet,
+	_, err = vcdClient.Client.ExecuteRequest(ctx, orgUrl, http.MethodGet,
 		"", "error retrieving org list: %s", nil, org.Org)
 	if err != nil {
 		return Org{}, err
@@ -313,8 +314,8 @@ func GetOrgByName(vcdClient *VCDClient, orgName string) (Org, error) {
 // and an error.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/GET-Organization-AdminView.html
 // Deprecated: Use vcdClient.GetAdminOrgByName instead
-func GetAdminOrgByName(vcdClient *VCDClient, orgName string) (AdminOrg, error) {
-	orgUrl, err := getOrgHREF(vcdClient, orgName)
+func GetAdminOrgByName(ctx context.Context, vcdClient *VCDClient, orgName string) (AdminOrg, error) {
+	orgUrl, err := getOrgHREF(ctx, vcdClient, orgName)
 	if err != nil {
 		return AdminOrg{}, err
 	}
@@ -323,7 +324,7 @@ func GetAdminOrgByName(vcdClient *VCDClient, orgName string) (AdminOrg, error) {
 
 	org := NewAdminOrg(&vcdClient.Client)
 
-	_, err = vcdClient.Client.ExecuteRequest(orgHREF.String(), http.MethodGet,
+	_, err = vcdClient.Client.ExecuteRequest(ctx, orgHREF.String(), http.MethodGet,
 		"", "error retrieving org: %s", nil, org.AdminOrg)
 	if err != nil {
 		return AdminOrg{}, err
@@ -333,13 +334,13 @@ func GetAdminOrgByName(vcdClient *VCDClient, orgName string) (AdminOrg, error) {
 }
 
 // Returns the HREF of the org with the name orgName
-func getOrgHREF(vcdClient *VCDClient, orgName string) (string, error) {
+func getOrgHREF(ctx context.Context, vcdClient *VCDClient, orgName string) (string, error) {
 	orgListHREF := vcdClient.Client.VCDHREF
 	orgListHREF.Path += "/org"
 
 	orgList := new(types.OrgList)
 
-	_, err := vcdClient.Client.ExecuteRequest(orgListHREF.String(), http.MethodGet,
+	_, err := vcdClient.Client.ExecuteRequest(ctx, orgListHREF.String(), http.MethodGet,
 		"", "error retrieving org list: %s", nil, orgList)
 	if err != nil {
 		return "", err
@@ -355,13 +356,13 @@ func getOrgHREF(vcdClient *VCDClient, orgName string) (string, error) {
 }
 
 // Returns the HREF of the org from the org ID
-func getOrgHREFById(vcdClient *VCDClient, orgId string) (string, error) {
+func getOrgHREFById(ctx context.Context, vcdClient *VCDClient, orgId string) (string, error) {
 	orgListHREF := vcdClient.Client.VCDHREF
 	orgListHREF.Path += "/org"
 
 	orgList := new(types.OrgList)
 
-	_, err := vcdClient.Client.ExecuteRequest(orgListHREF.String(), http.MethodGet,
+	_, err := vcdClient.Client.ExecuteRequest(ctx, orgListHREF.String(), http.MethodGet,
 		"", "error retrieving org list: %s", nil, orgList)
 	if err != nil {
 		return "", err
@@ -389,8 +390,8 @@ func getOrgHREFById(vcdClient *VCDClient, orgId string) (string, error) {
 // Filter constructing guide: https://pubs.vmware.com/vcloud-api-1-5/wwhelp/wwhimpl/js/html/wwhelp.htm#href=api_prog/GUID-CDF04296-5EB5-47E1-9BEC-228837C584CE.html
 // Possible parameters are any attribute from QueryResultVirtualCenterRecordType struct
 // E.g. filter could look like: name==vC1
-func QueryVirtualCenters(vcdClient *VCDClient, filter string) ([]*types.QueryResultVirtualCenterRecordType, error) {
-	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
+func QueryVirtualCenters(ctx context.Context, vcdClient *VCDClient, filter string) ([]*types.QueryResultVirtualCenterRecordType, error) {
+	results, err := vcdClient.QueryWithNotEncodedParams(ctx, nil, map[string]string{
 		"type":   "virtualCenter",
 		"filter": filter,
 	})
@@ -402,18 +403,18 @@ func QueryVirtualCenters(vcdClient *VCDClient, filter string) ([]*types.QueryRes
 }
 
 // Find a Network port group by name
-func QueryNetworkPortGroup(vcdCli *VCDClient, name string) ([]*types.PortGroupRecordType, error) {
-	return QueryPortGroups(vcdCli, fmt.Sprintf("name==%s;portgroupType==%s", url.QueryEscape(name), "NETWORK"))
+func QueryNetworkPortGroup(ctx context.Context, vcdCli *VCDClient, name string) ([]*types.PortGroupRecordType, error) {
+	return QueryPortGroups(ctx, vcdCli, fmt.Sprintf("name==%s;portgroupType==%s", url.QueryEscape(name), "NETWORK"))
 }
 
 // Find a Distributed port group by name
-func QueryDistributedPortGroup(vcdCli *VCDClient, name string) ([]*types.PortGroupRecordType, error) {
-	return QueryPortGroups(vcdCli, fmt.Sprintf("name==%s;portgroupType==%s", url.QueryEscape(name), "DV_PORTGROUP"))
+func QueryDistributedPortGroup(ctx context.Context, vcdCli *VCDClient, name string) ([]*types.PortGroupRecordType, error) {
+	return QueryPortGroups(ctx, vcdCli, fmt.Sprintf("name==%s;portgroupType==%s", url.QueryEscape(name), "DV_PORTGROUP"))
 }
 
 // Find a list of Port groups matching the filter parameter.
-func QueryPortGroups(vcdCli *VCDClient, filter string) ([]*types.PortGroupRecordType, error) {
-	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
+func QueryPortGroups(ctx context.Context, vcdCli *VCDClient, filter string) ([]*types.PortGroupRecordType, error) {
+	results, err := vcdCli.QueryWithNotEncodedParams(ctx, nil, map[string]string{
 		"type":          "portgroup",
 		"filter":        filter,
 		"filterEncoded": "true",
@@ -428,19 +429,19 @@ func QueryPortGroups(vcdCli *VCDClient, filter string) ([]*types.PortGroupRecord
 // GetExternalNetwork returns an ExternalNetwork reference if the network name matches an existing one.
 // If no valid external network is found, it returns an empty ExternalNetwork reference and an error
 // Deprecated: use vcdClient.GetExternalNetworkByName instead
-func GetExternalNetwork(vcdClient *VCDClient, networkName string) (*ExternalNetwork, error) {
+func GetExternalNetwork(ctx context.Context, vcdClient *VCDClient, networkName string) (*ExternalNetwork, error) {
 
 	if !vcdClient.Client.IsSysAdmin {
 		return &ExternalNetwork{}, fmt.Errorf("functionality requires System Administrator privileges")
 	}
 
-	extNetworkHREF, err := getExternalNetworkHref(&vcdClient.Client)
+	extNetworkHREF, err := getExternalNetworkHref(ctx, &vcdClient.Client)
 	if err != nil {
 		return &ExternalNetwork{}, err
 	}
 
 	extNetworkRefs := &types.ExternalNetworkReferences{}
-	_, err = vcdClient.Client.ExecuteRequest(extNetworkHREF, http.MethodGet,
+	_, err = vcdClient.Client.ExecuteRequest(ctx, extNetworkHREF, http.MethodGet,
 		types.MimeNetworkConnectionSection, "error retrieving external networks: %s", nil, extNetworkRefs)
 	if err != nil {
 		return &ExternalNetwork{}, err
@@ -452,7 +453,7 @@ func GetExternalNetwork(vcdClient *VCDClient, networkName string) (*ExternalNetw
 	for _, netRef := range extNetworkRefs.ExternalNetworkReference {
 		if netRef.Name == networkName {
 			externalNetwork.ExternalNetwork.HREF = netRef.HREF
-			err = externalNetwork.Refresh()
+			err = externalNetwork.Refresh(ctx)
 			found = true
 			if err != nil {
 				return &ExternalNetwork{}, err
@@ -468,19 +469,19 @@ func GetExternalNetwork(vcdClient *VCDClient, networkName string) (*ExternalNetw
 }
 
 // GetExternalNetworks returns a list of available external networks
-func (vcdClient *VCDClient) GetExternalNetworks() (*types.ExternalNetworkReferences, error) {
+func (vcdClient *VCDClient) GetExternalNetworks(ctx context.Context) (*types.ExternalNetworkReferences, error) {
 
 	if !vcdClient.Client.IsSysAdmin {
 		return nil, fmt.Errorf("functionality requires System Administrator privileges")
 	}
 
-	extNetworkHREF, err := getExternalNetworkHref(&vcdClient.Client)
+	extNetworkHREF, err := getExternalNetworkHref(ctx, &vcdClient.Client)
 	if err != nil {
 		return nil, err
 	}
 
 	extNetworkRefs := &types.ExternalNetworkReferences{}
-	_, err = vcdClient.Client.ExecuteRequest(extNetworkHREF, http.MethodGet,
+	_, err = vcdClient.Client.ExecuteRequest(ctx, extNetworkHREF, http.MethodGet,
 		types.MimeNetworkConnectionSection, "error retrieving external networks: %s", nil, extNetworkRefs)
 	if err != nil {
 		return nil, err
@@ -491,9 +492,9 @@ func (vcdClient *VCDClient) GetExternalNetworks() (*types.ExternalNetworkReferen
 
 // GetExternalNetworkByName returns an ExternalNetwork reference if the network name matches an existing one.
 // If no valid external network is found, it returns a nil ExternalNetwork reference and an error
-func (vcdClient *VCDClient) GetExternalNetworkByName(networkName string) (*ExternalNetwork, error) {
+func (vcdClient *VCDClient) GetExternalNetworkByName(ctx context.Context, networkName string) (*ExternalNetwork, error) {
 
-	extNetworkRefs, err := vcdClient.GetExternalNetworks()
+	extNetworkRefs, err := vcdClient.GetExternalNetworks(ctx)
 
 	if err != nil {
 		return nil, err
@@ -504,7 +505,7 @@ func (vcdClient *VCDClient) GetExternalNetworkByName(networkName string) (*Exter
 	for _, netRef := range extNetworkRefs.ExternalNetworkReference {
 		if netRef.Name == networkName {
 			externalNetwork.ExternalNetwork.HREF = netRef.HREF
-			err = externalNetwork.Refresh()
+			err = externalNetwork.Refresh(ctx)
 			if err != nil {
 				return nil, err
 			}
@@ -517,9 +518,9 @@ func (vcdClient *VCDClient) GetExternalNetworkByName(networkName string) (*Exter
 
 // GetExternalNetworkById returns an ExternalNetwork reference if the network ID matches an existing one.
 // If no valid external network is found, it returns a nil ExternalNetwork reference and an error
-func (vcdClient *VCDClient) GetExternalNetworkById(id string) (*ExternalNetwork, error) {
+func (vcdClient *VCDClient) GetExternalNetworkById(ctx context.Context, id string) (*ExternalNetwork, error) {
 
-	extNetworkRefs, err := vcdClient.GetExternalNetworks()
+	extNetworkRefs, err := vcdClient.GetExternalNetworks(ctx)
 
 	if err != nil {
 		return nil, err
@@ -532,7 +533,7 @@ func (vcdClient *VCDClient) GetExternalNetworkById(id string) (*ExternalNetwork,
 		// We compare using the UUID from HREF
 		if equalIds(id, "", netRef.HREF) {
 			externalNetwork.ExternalNetwork.HREF = netRef.HREF
-			err = externalNetwork.Refresh()
+			err = externalNetwork.Refresh(ctx)
 			if err != nil {
 				return nil, err
 			}
@@ -545,9 +546,11 @@ func (vcdClient *VCDClient) GetExternalNetworkById(id string) (*ExternalNetwork,
 
 // GetExternalNetworkByNameOrId returns an ExternalNetwork reference if either the network name or ID matches an existing one.
 // If no valid external network is found, it returns a nil ExternalNetwork reference and an error
-func (vcdClient *VCDClient) GetExternalNetworkByNameOrId(identifier string) (*ExternalNetwork, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return vcdClient.GetExternalNetworkByName(name) }
-	getById := func(id string, refresh bool) (interface{}, error) { return vcdClient.GetExternalNetworkById(id) }
+func (vcdClient *VCDClient) GetExternalNetworkByNameOrId(ctx context.Context, identifier string) (*ExternalNetwork, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) {
+		return vcdClient.GetExternalNetworkByName(ctx, name)
+	}
+	getById := func(id string, refresh bool) (interface{}, error) { return vcdClient.GetExternalNetworkById(ctx, id) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, false)
 	if entity == nil {
 		return nil, err
@@ -558,7 +561,7 @@ func (vcdClient *VCDClient) GetExternalNetworkByNameOrId(identifier string) (*Ex
 // CreateExternalNetwork allows create external network and returns Task or error.
 // types.ExternalNetwork struct is general and used for various types of networks. But for external network
 // fence mode is always isolated, isInherited is false, parentNetwork is empty.
-func CreateExternalNetwork(vcdClient *VCDClient, externalNetworkData *types.ExternalNetwork) (Task, error) {
+func CreateExternalNetwork(ctx context.Context, vcdClient *VCDClient, externalNetworkData *types.ExternalNetwork) (Task, error) {
 
 	if !vcdClient.Client.IsSysAdmin {
 		return Task{}, fmt.Errorf("functionality requires System Administrator privileges")
@@ -653,7 +656,7 @@ func CreateExternalNetwork(vcdClient *VCDClient, externalNetworkData *types.Exte
 	externalNetwork.Configuration.FenceMode = "isolated"
 
 	// Return the task
-	task, err := vcdClient.Client.ExecuteTaskRequest(externalNetHREF.String(), http.MethodPost,
+	task, err := vcdClient.Client.ExecuteTaskRequest(ctx, externalNetHREF.String(), http.MethodPost,
 		types.MimeExternalNetwork, "error instantiating a new ExternalNetwork: %s", externalNetwork)
 
 	// Real task in task array
@@ -667,24 +670,24 @@ func CreateExternalNetwork(vcdClient *VCDClient, externalNetworkData *types.Exte
 	return task, err
 }
 
-func getExtension(client *Client) (*types.Extension, error) {
+func getExtension(ctx context.Context, client *Client) (*types.Extension, error) {
 	extensions := &types.Extension{}
 
 	extensionHREF := client.VCDHREF
 	extensionHREF.Path += "/admin/extension/"
 
-	_, err := client.ExecuteRequest(extensionHREF.String(), http.MethodGet,
+	_, err := client.ExecuteRequest(ctx, extensionHREF.String(), http.MethodGet,
 		"", "error retrieving extension: %s", nil, extensions)
 
 	return extensions, err
 }
 
 // GetStorageProfileByHref fetches storage profile using provided HREF.
-func GetStorageProfileByHref(vcdClient *VCDClient, url string) (*types.VdcStorageProfile, error) {
+func GetStorageProfileByHref(ctx context.Context, vcdClient *VCDClient, url string) (*types.VdcStorageProfile, error) {
 
 	vdcStorageProfile := &types.VdcStorageProfile{}
 
-	_, err := vcdClient.Client.ExecuteRequest(url, http.MethodGet,
+	_, err := vcdClient.Client.ExecuteRequest(ctx, url, http.MethodGet,
 		"", "error retrieving storage profile: %s", nil, vdcStorageProfile)
 	if err != nil {
 		return nil, err
@@ -694,8 +697,8 @@ func GetStorageProfileByHref(vcdClient *VCDClient, url string) (*types.VdcStorag
 }
 
 // QueryProviderVdcStorageProfileByName finds a provider VDC storage profile by name
-func QueryProviderVdcStorageProfileByName(vcdCli *VCDClient, name string) ([]*types.QueryResultProviderVdcStorageProfileRecordType, error) {
-	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
+func QueryProviderVdcStorageProfileByName(ctx context.Context, vcdCli *VCDClient, name string) ([]*types.QueryResultProviderVdcStorageProfileRecordType, error) {
+	results, err := vcdCli.QueryWithNotEncodedParams(ctx, nil, map[string]string{
 		"type":          "providerVdcStorageProfile",
 		"filter":        fmt.Sprintf("name==%s", url.QueryEscape(name)),
 		"filterEncoded": "true",
@@ -708,8 +711,8 @@ func QueryProviderVdcStorageProfileByName(vcdCli *VCDClient, name string) ([]*ty
 }
 
 // QueryNetworkPoolByName finds a network pool by name
-func QueryNetworkPoolByName(vcdCli *VCDClient, name string) ([]*types.QueryResultNetworkPoolRecordType, error) {
-	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
+func QueryNetworkPoolByName(ctx context.Context, vcdCli *VCDClient, name string) ([]*types.QueryResultNetworkPoolRecordType, error) {
+	results, err := vcdCli.QueryWithNotEncodedParams(ctx, nil, map[string]string{
 		"type":          "networkPool",
 		"filter":        fmt.Sprintf("name==%s", url.QueryEscape(name)),
 		"filterEncoded": "true",
@@ -722,8 +725,8 @@ func QueryNetworkPoolByName(vcdCli *VCDClient, name string) ([]*types.QueryResul
 }
 
 // QueryProviderVdcByName finds a provider VDC by name
-func QueryProviderVdcByName(vcdCli *VCDClient, name string) ([]*types.QueryResultVMWProviderVdcRecordType, error) {
-	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
+func QueryProviderVdcByName(ctx context.Context, vcdCli *VCDClient, name string) ([]*types.QueryResultVMWProviderVdcRecordType, error) {
+	results, err := vcdCli.QueryWithNotEncodedParams(ctx, nil, map[string]string{
 		"type":          "providerVdc",
 		"filter":        fmt.Sprintf("name==%s", url.QueryEscape(name)),
 		"filterEncoded": "true",
@@ -736,8 +739,8 @@ func QueryProviderVdcByName(vcdCli *VCDClient, name string) ([]*types.QueryResul
 }
 
 // QueryProviderVdcs gets the list of available provider VDCs
-func (vcdClient *VCDClient) QueryProviderVdcs() ([]*types.QueryResultVMWProviderVdcRecordType, error) {
-	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
+func (vcdClient *VCDClient) QueryProviderVdcs(ctx context.Context) ([]*types.QueryResultVMWProviderVdcRecordType, error) {
+	results, err := vcdClient.QueryWithNotEncodedParams(ctx, nil, map[string]string{
 		"type": "providerVdc",
 	})
 	if err != nil {
@@ -748,8 +751,8 @@ func (vcdClient *VCDClient) QueryProviderVdcs() ([]*types.QueryResultVMWProvider
 }
 
 // QueryNetworkPools gets the list of network pools
-func (vcdClient *VCDClient) QueryNetworkPools() ([]*types.QueryResultNetworkPoolRecordType, error) {
-	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
+func (vcdClient *VCDClient) QueryNetworkPools(ctx context.Context) ([]*types.QueryResultNetworkPoolRecordType, error) {
+	results, err := vcdClient.QueryWithNotEncodedParams(ctx, nil, map[string]string{
 		"type": "networkPool",
 	})
 	if err != nil {
@@ -760,8 +763,8 @@ func (vcdClient *VCDClient) QueryNetworkPools() ([]*types.QueryResultNetworkPool
 }
 
 // QueryProviderVdcStorageProfiles gets the list of provider VDC storage profiles
-func (vcdClient *VCDClient) QueryProviderVdcStorageProfiles() ([]*types.QueryResultProviderVdcStorageProfileRecordType, error) {
-	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
+func (vcdClient *VCDClient) QueryProviderVdcStorageProfiles(ctx context.Context) ([]*types.QueryResultProviderVdcStorageProfileRecordType, error) {
+	results, err := vcdClient.QueryWithNotEncodedParams(ctx, nil, map[string]string{
 		"type": "providerVdcStorageProfile",
 	})
 	if err != nil {
@@ -772,12 +775,12 @@ func (vcdClient *VCDClient) QueryProviderVdcStorageProfiles() ([]*types.QueryRes
 }
 
 // GetNetworkPoolByHREF functions fetches an network pool using VDC client and network pool href
-func GetNetworkPoolByHREF(client *VCDClient, href string) (*types.VMWNetworkPool, error) {
+func GetNetworkPoolByHREF(ctx context.Context, client *VCDClient, href string) (*types.VMWNetworkPool, error) {
 	util.Logger.Printf("[TRACE] Get network pool by HREF: %s\n", href)
 
 	networkPool := &types.VMWNetworkPool{}
 
-	_, err := client.Client.ExecuteRequest(href, http.MethodGet,
+	_, err := client.Client.ExecuteRequest(ctx, href, http.MethodGet,
 		"", "error fetching network pool: %s", nil, networkPool)
 
 	// Return the disk
@@ -786,8 +789,8 @@ func GetNetworkPoolByHREF(client *VCDClient, href string) (*types.VMWNetworkPool
 }
 
 // QueryOrgVdcNetworkByName finds a org VDC network by name which has edge gateway as reference
-func QueryOrgVdcNetworkByName(vcdCli *VCDClient, name string) ([]*types.QueryResultOrgVdcNetworkRecordType, error) {
-	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
+func QueryOrgVdcNetworkByName(ctx context.Context, vcdCli *VCDClient, name string) ([]*types.QueryResultOrgVdcNetworkRecordType, error) {
+	results, err := vcdCli.QueryWithNotEncodedParams(ctx, nil, map[string]string{
 		"type":          "orgVdcNetwork",
 		"filter":        fmt.Sprintf("name==%s", url.QueryEscape(name)),
 		"filterEncoded": "true",
@@ -800,8 +803,8 @@ func QueryOrgVdcNetworkByName(vcdCli *VCDClient, name string) ([]*types.QueryRes
 }
 
 // QueryNsxtManagerByName searches for NSX-T managers available in VCD
-func (vcdCli *VCDClient) QueryNsxtManagerByName(name string) ([]*types.QueryResultNsxtManagerRecordType, error) {
-	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
+func (vcdCli *VCDClient) QueryNsxtManagerByName(ctx context.Context, name string) ([]*types.QueryResultNsxtManagerRecordType, error) {
+	results, err := vcdCli.QueryWithNotEncodedParams(ctx, nil, map[string]string{
 		"type":          "nsxTManager",
 		"filter":        fmt.Sprintf("name==%s", url.QueryEscape(name)),
 		"filterEncoded": "true",
@@ -816,15 +819,15 @@ func (vcdCli *VCDClient) QueryNsxtManagerByName(name string) ([]*types.QueryResu
 // GetOrgByName finds an Organization by name
 // On success, returns a pointer to the Org structure and a nil error
 // On failure, returns a nil pointer and an error
-func (vcdClient *VCDClient) GetOrgByName(orgName string) (*Org, error) {
-	orgUrl, err := getOrgHREF(vcdClient, orgName)
+func (vcdClient *VCDClient) GetOrgByName(ctx context.Context, orgName string) (*Org, error) {
+	orgUrl, err := getOrgHREF(ctx, vcdClient, orgName)
 	if err != nil {
 		// Since this operation is a lookup from a list, we return the standard ErrorEntityNotFound
 		return nil, ErrorEntityNotFound
 	}
 	org := NewOrg(&vcdClient.Client)
 
-	_, err = vcdClient.Client.ExecuteRequest(orgUrl, http.MethodGet,
+	_, err = vcdClient.Client.ExecuteRequest(ctx, orgUrl, http.MethodGet,
 		"", "error retrieving org: %s", nil, org.Org)
 	if err != nil {
 		return nil, err
@@ -836,15 +839,15 @@ func (vcdClient *VCDClient) GetOrgByName(orgName string) (*Org, error) {
 // GetOrgById finds an Organization by ID
 // On success, returns a pointer to the Org structure and a nil error
 // On failure, returns a nil pointer and an error
-func (vcdClient *VCDClient) GetOrgById(orgId string) (*Org, error) {
-	orgUrl, err := getOrgHREFById(vcdClient, orgId)
+func (vcdClient *VCDClient) GetOrgById(ctx context.Context, orgId string) (*Org, error) {
+	orgUrl, err := getOrgHREFById(ctx, vcdClient, orgId)
 	if err != nil {
 		// Since this operation is a lookup from a list, we return the standard ErrorEntityNotFound
 		return nil, ErrorEntityNotFound
 	}
 	org := NewOrg(&vcdClient.Client)
 
-	_, err = vcdClient.Client.ExecuteRequest(orgUrl, http.MethodGet,
+	_, err = vcdClient.Client.ExecuteRequest(ctx, orgUrl, http.MethodGet,
 		"", "error retrieving org list: %s", nil, org.Org)
 	if err != nil {
 		return nil, err
@@ -856,9 +859,9 @@ func (vcdClient *VCDClient) GetOrgById(orgId string) (*Org, error) {
 // GetOrgByNameOrId finds an Organization by name or ID
 // On success, returns a pointer to the Org structure and a nil error
 // On failure, returns a nil pointer and an error
-func (vcdClient *VCDClient) GetOrgByNameOrId(identifier string) (*Org, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return vcdClient.GetOrgByName(name) }
-	getById := func(id string, refresh bool) (interface{}, error) { return vcdClient.GetOrgById(id) }
+func (vcdClient *VCDClient) GetOrgByNameOrId(ctx context.Context, identifier string) (*Org, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) { return vcdClient.GetOrgByName(ctx, name) }
+	getById := func(id string, refresh bool) (interface{}, error) { return vcdClient.GetOrgById(ctx, id) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, false)
 	if entity == nil {
 		return nil, err
@@ -869,8 +872,8 @@ func (vcdClient *VCDClient) GetOrgByNameOrId(identifier string) (*Org, error) {
 // GetAdminOrgByName finds an Admin Organization by name
 // On success, returns a pointer to the Admin Org structure and a nil error
 // On failure, returns a nil pointer and an error
-func (vcdClient *VCDClient) GetAdminOrgByName(orgName string) (*AdminOrg, error) {
-	orgUrl, err := getOrgHREF(vcdClient, orgName)
+func (vcdClient *VCDClient) GetAdminOrgByName(ctx context.Context, orgName string) (*AdminOrg, error) {
+	orgUrl, err := getOrgHREF(ctx, vcdClient, orgName)
 	if err != nil {
 		return nil, ErrorEntityNotFound
 	}
@@ -879,7 +882,7 @@ func (vcdClient *VCDClient) GetAdminOrgByName(orgName string) (*AdminOrg, error)
 
 	adminOrg := NewAdminOrg(&vcdClient.Client)
 
-	_, err = vcdClient.Client.ExecuteRequest(orgHREF.String(), http.MethodGet,
+	_, err = vcdClient.Client.ExecuteRequest(ctx, orgHREF.String(), http.MethodGet,
 		"", "error retrieving org: %s", nil, adminOrg.AdminOrg)
 	if err != nil {
 		return nil, err
@@ -891,8 +894,8 @@ func (vcdClient *VCDClient) GetAdminOrgByName(orgName string) (*AdminOrg, error)
 // GetAdminOrgById finds an Admin Organization by ID
 // On success, returns a pointer to the Admin Org structure and a nil error
 // On failure, returns a nil pointer and an error
-func (vcdClient *VCDClient) GetAdminOrgById(orgId string) (*AdminOrg, error) {
-	orgUrl, err := getOrgHREFById(vcdClient, orgId)
+func (vcdClient *VCDClient) GetAdminOrgById(ctx context.Context, orgId string) (*AdminOrg, error) {
+	orgUrl, err := getOrgHREFById(ctx, vcdClient, orgId)
 	if err != nil {
 		return nil, ErrorEntityNotFound
 	}
@@ -901,7 +904,7 @@ func (vcdClient *VCDClient) GetAdminOrgById(orgId string) (*AdminOrg, error) {
 
 	adminOrg := NewAdminOrg(&vcdClient.Client)
 
-	_, err = vcdClient.Client.ExecuteRequest(orgHREF.String(), http.MethodGet,
+	_, err = vcdClient.Client.ExecuteRequest(ctx, orgHREF.String(), http.MethodGet,
 		"", "error retrieving org: %s", nil, adminOrg.AdminOrg)
 	if err != nil {
 		return nil, err
@@ -913,9 +916,9 @@ func (vcdClient *VCDClient) GetAdminOrgById(orgId string) (*AdminOrg, error) {
 // GetAdminOrgByNameOrId finds an Admin Organization by name or ID
 // On success, returns a pointer to the Admin Org structure and a nil error
 // On failure, returns a nil pointer and an error
-func (vcdClient *VCDClient) GetAdminOrgByNameOrId(identifier string) (*AdminOrg, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return vcdClient.GetAdminOrgByName(name) }
-	getById := func(id string, refresh bool) (interface{}, error) { return vcdClient.GetAdminOrgById(id) }
+func (vcdClient *VCDClient) GetAdminOrgByNameOrId(ctx context.Context, identifier string) (*AdminOrg, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) { return vcdClient.GetAdminOrgByName(ctx, name) }
+	getById := func(id string, refresh bool) (interface{}, error) { return vcdClient.GetAdminOrgById(ctx, id) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, false)
 	if entity == nil {
 		return nil, err
@@ -951,13 +954,13 @@ func GetUuidFromHref(href string, idAtEnd bool) (string, error) {
 }
 
 // GetOrgList returns the list ov available orgs
-func (vcdCli *VCDClient) GetOrgList() (*types.OrgList, error) {
+func (vcdCli *VCDClient) GetOrgList(ctx context.Context) (*types.OrgList, error) {
 	orgListHREF := vcdCli.Client.VCDHREF
 	orgListHREF.Path += "/org"
 
 	orgList := new(types.OrgList)
 
-	_, err := vcdCli.Client.ExecuteRequest(orgListHREF.String(), http.MethodGet,
+	_, err := vcdCli.Client.ExecuteRequest(ctx, orgListHREF.String(), http.MethodGet,
 		"", "error getting list of organizations: %s", nil, orgList)
 	if err != nil {
 		return nil, err

@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -24,25 +25,25 @@ func NewVAppTemplate(cli *Client) *VAppTemplate {
 	}
 }
 
-func (vdc *Vdc) InstantiateVAppTemplate(template *types.InstantiateVAppTemplateParams) error {
+func (vdc *Vdc) InstantiateVAppTemplate(ctx context.Context, template *types.InstantiateVAppTemplateParams) error {
 	vdcHref, err := url.ParseRequestURI(vdc.Vdc.HREF)
 	if err != nil {
 		return fmt.Errorf("error getting vdc href: %s", err)
 	}
 	vdcHref.Path += "/action/instantiateVAppTemplate"
 
-	vapptemplate := NewVAppTemplate(vdc.client)
+	var vapp types.VApp
 
-	_, err = vdc.client.ExecuteRequest(vdcHref.String(), http.MethodPut,
-		types.MimeInstantiateVappTemplateParams, "error instantiating a new template: %s", template, vapptemplate)
+	_, err = vdc.client.ExecuteRequest(ctx, vdcHref.String(), http.MethodPost,
+		types.MimeInstantiateVappTemplateParams, "error instantiating a new template: %s", template, &vapp)
 	if err != nil {
 		return err
 	}
 
 	task := NewTask(vdc.client)
-	for _, taskItem := range vapptemplate.VAppTemplate.Tasks.Task {
+	for _, taskItem := range vapp.Tasks.Task {
 		task.Task = taskItem
-		err = task.WaitTaskCompletion()
+		err = task.WaitTaskCompletion(ctx)
 		if err != nil {
 			return fmt.Errorf("error performing task: %s", err)
 		}
@@ -51,7 +52,7 @@ func (vdc *Vdc) InstantiateVAppTemplate(template *types.InstantiateVAppTemplateP
 }
 
 // Refresh refreshes the vApp template item information by href
-func (vAppTemplate *VAppTemplate) Refresh() error {
+func (vAppTemplate *VAppTemplate) Refresh(ctx context.Context) error {
 
 	if vAppTemplate.VAppTemplate == nil {
 		return fmt.Errorf("cannot refresh, Object is empty")
@@ -64,7 +65,7 @@ func (vAppTemplate *VAppTemplate) Refresh() error {
 
 	vAppTemplate.VAppTemplate = &types.VAppTemplate{}
 
-	_, err := vAppTemplate.client.ExecuteRequest(url, http.MethodGet,
+	_, err := vAppTemplate.client.ExecuteRequest(ctx, url, http.MethodGet,
 		"", "error retrieving vApp template item: %s", nil, vAppTemplate.VAppTemplate)
 
 	return err

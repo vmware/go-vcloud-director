@@ -7,19 +7,20 @@
 package govcd
 
 import (
+	"context"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
 
 // guestPropertyGetSetter interface is used for covering tests in both VM and vApp guest property
 type productSectionListGetSetter interface {
-	GetProductSectionList() (*types.ProductSectionList, error)
-	SetProductSectionList(productSection *types.ProductSectionList) (*types.ProductSectionList, error)
+	GetProductSectionList(ctx context.Context) (*types.ProductSectionList, error)
+	SetProductSectionList(ctx context.Context, productSection *types.ProductSectionList) (*types.ProductSectionList, error)
 }
 
 // propertyTester is a guest property setter accepting guestPropertyGetSetter interface for trying
 // out settings on all objects implementing such interface
-func propertyTester(vcd *TestVCD, check *C, object productSectionListGetSetter) {
+func propertyTester(ctx context.Context, vcd *TestVCD, check *C, object productSectionListGetSetter) {
 	productSection := &types.ProductSectionList{
 		ProductSection: &types.ProductSection{
 			Info: "Custom properties",
@@ -54,11 +55,11 @@ func propertyTester(vcd *TestVCD, check *C, object productSectionListGetSetter) 
 
 	productSection.SortByPropertyKeyName()
 
-	gotproductSection, err := object.SetProductSectionList(productSection)
+	gotproductSection, err := object.SetProductSectionList(ctx, productSection)
 	check.Assert(err, IsNil)
 	gotproductSection.SortByPropertyKeyName()
 
-	getproductSection, err := object.GetProductSectionList()
+	getproductSection, err := object.GetProductSectionList(ctx)
 	check.Assert(err, IsNil)
 	getproductSection.SortByPropertyKeyName()
 
@@ -95,13 +96,13 @@ func propertyTester(vcd *TestVCD, check *C, object productSectionListGetSetter) 
 
 // guestPropertyGetSetter interface is used for covering tests
 type getGuestCustomizationSectionGetSetter interface {
-	GetGuestCustomizationSection() (*types.GuestCustomizationSection, error)
-	SetGuestCustomizationSection(guestCustomizationSection *types.GuestCustomizationSection) (*types.GuestCustomizationSection, error)
+	GetGuestCustomizationSection(ctx context.Context) (*types.GuestCustomizationSection, error)
+	SetGuestCustomizationSection(ctx context.Context, guestCustomizationSection *types.GuestCustomizationSection) (*types.GuestCustomizationSection, error)
 }
 
 // guestCustomizationPropertyTester is a guest customization property get and setter accepting guestPropertyGetSetter interface for trying
 // out settings on all objects implementing such interface
-func guestCustomizationPropertyTester(vcd *TestVCD, check *C, object getGuestCustomizationSectionGetSetter) {
+func guestCustomizationPropertyTester(ctx context.Context, vcd *TestVCD, check *C, object getGuestCustomizationSectionGetSetter) {
 	setupedGuestCustomizationSection := &types.GuestCustomizationSection{
 		Enabled: takeBoolPointer(true), JoinDomainEnabled: takeBoolPointer(false), UseOrgSettings: takeBoolPointer(false),
 		DomainUserName: "", DomainName: "", DomainUserPassword: "",
@@ -109,7 +110,7 @@ func guestCustomizationPropertyTester(vcd *TestVCD, check *C, object getGuestCus
 		AdminAutoLogonEnabled: takeBoolPointer(true), AdminAutoLogonCount: 15, ResetPasswordRequired: takeBoolPointer(true),
 		CustomizationScript: "ls", ComputerName: "Cname18"}
 
-	guestCustomizationSection, err := object.SetGuestCustomizationSection(setupedGuestCustomizationSection)
+	guestCustomizationSection, err := object.SetGuestCustomizationSection(ctx, setupedGuestCustomizationSection)
 	check.Assert(err, IsNil)
 
 	// Check that values were set from API
@@ -135,7 +136,7 @@ func guestCustomizationPropertyTester(vcd *TestVCD, check *C, object getGuestCus
 	vm := object.(*VM)
 
 	// Refresh VM to have the latest structure
-	err = vm.Refresh()
+	err = vm.Refresh(ctx)
 	check.Assert(err, IsNil)
 
 	// Deep compare values retrieved from separate API to the ones embedded into VM

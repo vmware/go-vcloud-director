@@ -23,9 +23,9 @@ func (vcd *TestVCD) Test_SystemGetOrg(check *C) {
 		return
 	}
 
-	getByName := func(name string, refresh bool) (genericEntity, error) { return vcd.client.GetOrgByName(name) }
-	getById := func(id string, refresh bool) (genericEntity, error) { return vcd.client.GetOrgById(id) }
-	getByNameOrId := func(id string, refresh bool) (genericEntity, error) { return vcd.client.GetOrgByNameOrId(id) }
+	getByName := func(name string, refresh bool) (genericEntity, error) { return vcd.client.GetOrgByName(ctx, name) }
+	getById := func(id string, refresh bool) (genericEntity, error) { return vcd.client.GetOrgById(ctx, id) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) { return vcd.client.GetOrgByNameOrId(ctx, id) }
 
 	var def = getterTestDefinition{
 		parentType:    "VCDClient",
@@ -47,9 +47,9 @@ func (vcd *TestVCD) Test_SystemGetAdminOrg(check *C) {
 		return
 	}
 
-	getByName := func(name string, refresh bool) (genericEntity, error) { return vcd.client.GetAdminOrgByName(name) }
-	getById := func(id string, refresh bool) (genericEntity, error) { return vcd.client.GetAdminOrgById(id) }
-	getByNameOrId := func(id string, refresh bool) (genericEntity, error) { return vcd.client.GetAdminOrgByNameOrId(id) }
+	getByName := func(name string, refresh bool) (genericEntity, error) { return vcd.client.GetAdminOrgByName(ctx, name) }
+	getById := func(id string, refresh bool) (genericEntity, error) { return vcd.client.GetAdminOrgById(ctx, id) }
+	getByNameOrId := func(id string, refresh bool) (genericEntity, error) { return vcd.client.GetAdminOrgByNameOrId(ctx, id) }
 
 	var def = getterTestDefinition{
 		parentType:    "VCDClient",
@@ -123,15 +123,15 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 		settings.OrgGeneralSettings.DeployedVMQuota = od.deployedVmQuota
 		settings.OrgGeneralSettings.StoredVMQuota = od.storedVmQuota
 		settings.OrgGeneralSettings.DelayAfterPowerOnSeconds = od.delayAfterPowerOnSeconds
-		task, err := CreateOrg(vcd.client, orgName, TestCreateOrg, TestCreateOrg, settings, od.enabled)
+		task, err := CreateOrg(ctx, vcd.client, orgName, TestCreateOrg, TestCreateOrg, settings, od.enabled)
 		check.Assert(err, IsNil)
 		// After a successful creation, the entity is added to the cleanup list.
 		// If something fails after this point, the entity will be removed
 		AddToCleanupList(orgName, "org", "", "TestCreateOrg")
-		err = task.WaitTaskCompletion()
+		err = task.WaitTaskCompletion(ctx)
 		check.Assert(err, IsNil)
 		// fetch newly created org
-		adminOrg, err := vcd.client.GetAdminOrgByName(orgName)
+		adminOrg, err := vcd.client.GetAdminOrgByName(ctx, orgName)
 		check.Assert(err, IsNil)
 		check.Assert(adminOrg, NotNil)
 		check.Assert(adminOrg.AdminOrg.Name, Equals, orgName)
@@ -143,9 +143,9 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 		check.Assert(adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.StoredVMQuota, Equals, od.storedVmQuota)
 		check.Assert(adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.DelayAfterPowerOnSeconds, Equals, od.delayAfterPowerOnSeconds)
 		// Delete, with force and recursive true
-		err = adminOrg.Delete(true, true)
+		err = adminOrg.Delete(ctx, true, true)
 		check.Assert(err, IsNil)
-		doesOrgExist(check, vcd)
+		doesOrgExist(ctx, check, vcd)
 	}
 }
 
@@ -180,17 +180,17 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 		// Also tests two different functions to create the gateway
 		if backingConf == "full" {
 			egc.DefaultGateway = vcd.config.VCD.ExternalNetwork
-			edge, err = CreateEdgeGateway(vcd.client, egc)
+			edge, err = CreateEdgeGateway(ctx, vcd.client, egc)
 			check.Assert(err, IsNil)
 		} else {
 			// The "compact" edge gateway is created without default gateway
 			egc.DefaultGateway = ""
 			builtWithDefaultGateway = false
-			task, err = CreateEdgeGatewayAsync(vcd.client, egc)
+			task, err = CreateEdgeGatewayAsync(ctx, vcd.client, egc)
 			check.Assert(err, IsNil)
-			err = task.WaitTaskCompletion()
+			err = task.WaitTaskCompletion(ctx)
 			check.Assert(err, IsNil)
-			newEdge, err := vcd.vdc.GetEdgeGatewayByName(egc.Name, true)
+			newEdge, err := vcd.vdc.GetEdgeGatewayByName(ctx, egc.Name, true)
 			check.Assert(err, IsNil)
 			check.Assert(newEdge, NotNil)
 			edge = *newEdge
@@ -214,17 +214,17 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 
 		// testing both delete methods
 		if backingConf == "full" {
-			err = edge.Delete(true, true)
+			err = edge.Delete(ctx, true, true)
 			check.Assert(err, IsNil)
 		} else {
-			task, err := edge.DeleteAsync(true, true)
+			task, err := edge.DeleteAsync(ctx, true, true)
 			check.Assert(err, IsNil)
-			err = task.WaitTaskCompletion()
+			err = task.WaitTaskCompletion(ctx)
 			check.Assert(err, IsNil)
 		}
 
 		// Once deleted, look for the edge gateway again. It should return an error
-		newEdge, err := vcd.vdc.GetEdgeGatewayByName(egc.Name, true)
+		newEdge, err := vcd.vdc.GetEdgeGatewayByName(ctx, egc.Name, true)
 		check.Assert(err, Equals, ErrorEntityNotFound)
 		check.Assert(newEdge, IsNil)
 	}
@@ -235,7 +235,7 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
 func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 	// Setup external network with multiple IP scopes and multiple ranges
 	dnsSuffix := "some.net"
-	skippingReason, externalNetwork, task, err := vcd.testCreateExternalNetwork(check.TestName(), check.TestName(), dnsSuffix)
+	skippingReason, externalNetwork, task, err := vcd.testCreateExternalNetwork(ctx, check.TestName(), check.TestName(), dnsSuffix)
 	if skippingReason != "" {
 		check.Skip(skippingReason)
 	}
@@ -244,11 +244,11 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 	check.Assert(task.Task, Not(Equals), types.Task{})
 
 	AddToCleanupList(externalNetwork.Name, "externalNetwork", "", check.TestName())
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
 	// "Refresh" external network to fill in all fields (like HREF)
-	extNet, err := vcd.client.GetExternalNetworkByName(externalNetwork.Name)
+	extNet, err := vcd.client.GetExternalNetworkByName(ctx, externalNetwork.Name)
 	check.Assert(err, IsNil)
 	externalNetwork = extNet.ExternalNetwork
 
@@ -322,7 +322,7 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 	orgName := vcd.config.VCD.Org
 	vdcName := vcd.config.VCD.Vdc
 
-	edge, err := CreateAndConfigureEdgeGateway(vcd.client, orgName, vdcName, edgeName, edgeGatewayConfig)
+	edge, err := CreateAndConfigureEdgeGateway(ctx, vcd.client, orgName, vdcName, edgeName, edgeGatewayConfig)
 	check.Assert(err, IsNil)
 	PrependToCleanupList(edge.EdgeGateway.Name, "edgegateway", orgName+"|"+vdcName, "Test_CreateDeleteEdgeGateway")
 
@@ -358,16 +358,16 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 	check.Assert(*edge.EdgeGateway.Configuration.HaEnabled, Equals, false)
 
 	// Remove created objects to free them up
-	err = edge.Delete(true, false)
+	err = edge.Delete(ctx, true, false)
 	check.Assert(err, IsNil)
 
-	err = extNet.DeleteWait()
+	err = extNet.DeleteWait(ctx)
 	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_FindBadlyNamedStorageProfile(check *C) {
 	reNotFound := `can't find any VDC Storage_profiles`
-	_, err := vcd.vdc.FindStorageProfileReference("name with spaces")
+	_, err := vcd.vdc.FindStorageProfileReference(ctx, "name with spaces")
 	check.Assert(err, NotNil)
 	check.Assert(err.Error(), Matches, reNotFound)
 }
@@ -380,16 +380,16 @@ func (vcd *TestVCD) Test_GetNetworkPoolByHREF(check *C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	adminOrg, err := vcd.client.GetAdminOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	adminVdc, err := adminOrg.GetAdminVDCByName(vcd.config.VCD.Vdc, false)
+	adminVdc, err := adminOrg.GetAdminVDCByName(ctx, vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
 	check.Assert(adminVdc, NotNil)
 
 	// Get network pool by href
-	foundNetworkPool, err := GetNetworkPoolByHREF(vcd.client, adminVdc.AdminVdc.NetworkPoolReference.HREF)
+	foundNetworkPool, err := GetNetworkPoolByHREF(ctx, vcd.client, adminVdc.AdminVdc.NetworkPoolReference.HREF)
 	check.Assert(err, IsNil)
 	check.Assert(foundNetworkPool, Not(Equals), types.VMWNetworkPool{})
 }
@@ -405,7 +405,7 @@ func (vcd *TestVCD) Test_QueryOrgVdcNetworkByName(check *C) {
 		check.Skip("Skipping test because no network was given")
 	}
 
-	orgVdcNetwork, err := QueryOrgVdcNetworkByName(vcd.client, vcd.config.VCD.Network.Net1)
+	orgVdcNetwork, err := QueryOrgVdcNetworkByName(ctx, vcd.client, vcd.config.VCD.Network.Net1)
 	check.Assert(err, IsNil)
 	check.Assert(len(orgVdcNetwork), Not(Equals), 0)
 	check.Assert(orgVdcNetwork[0].Name, Equals, vcd.config.VCD.Network.Net1)
@@ -423,7 +423,7 @@ func (vcd *TestVCD) Test_QueryOrgVdcNetworkByNameWithSpace(check *C) {
 	if vcd.config.VCD.ExternalNetwork == "" {
 		check.Skip("[Test_CreateOrgVdcNetworkDirect] external network not provided")
 	}
-	externalNetwork, err := vcd.client.GetExternalNetworkByName(vcd.config.VCD.ExternalNetwork)
+	externalNetwork, err := vcd.client.GetExternalNetworkByName(ctx, vcd.config.VCD.ExternalNetwork)
 	if err != nil {
 		check.Skip("[Test_CreateOrgVdcNetworkDirect] parent external network not found")
 	}
@@ -443,7 +443,7 @@ func (vcd *TestVCD) Test_QueryOrgVdcNetworkByNameWithSpace(check *C) {
 	}
 	LogNetwork(networkConfig)
 
-	task, err := vcd.vdc.CreateOrgVDCNetwork(&networkConfig)
+	task, err := vcd.vdc.CreateOrgVDCNetwork(ctx, &networkConfig)
 	if err != nil {
 		fmt.Printf("error creating the network: %s", err)
 	}
@@ -456,13 +456,13 @@ func (vcd *TestVCD) Test_QueryOrgVdcNetworkByNameWithSpace(check *C) {
 	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkDirect")
 
 	// err = task.WaitTaskCompletion()
-	err = task.WaitInspectTaskCompletion(LogTask, 10)
+	err = task.WaitInspectTaskCompletion(ctx, LogTask, 10)
 	if err != nil {
 		fmt.Printf("error performing task: %s", err)
 	}
 	check.Assert(err, IsNil)
 
-	orgVdcNetwork, err := QueryOrgVdcNetworkByName(vcd.client, networkName)
+	orgVdcNetwork, err := QueryOrgVdcNetworkByName(ctx, vcd.client, networkName)
 	check.Assert(err, IsNil)
 	check.Assert(len(orgVdcNetwork), Not(Equals), 0)
 	check.Assert(orgVdcNetwork[0].Name, Equals, networkName)
@@ -476,7 +476,7 @@ func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {
 	if providerVdcName == "" {
 		check.Skip("Skipping Provider VDC query: no provider VDC was given")
 	}
-	providerVdcs, err := vcd.client.QueryProviderVdcs()
+	providerVdcs, err := vcd.client.QueryProviderVdcs(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(len(providerVdcName) > 0, Equals, true)
 
@@ -499,7 +499,7 @@ func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {
 	if networkPoolName == "" {
 		check.Skip("Skipping Network pool query: no network pool was given")
 	}
-	netPools, err := vcd.client.QueryNetworkPools()
+	netPools, err := vcd.client.QueryNetworkPools(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(len(netPools) > 0, Equals, true)
 	networkPoolFound := false
@@ -519,7 +519,7 @@ func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {
 	if storageProfileName == "" {
 		check.Skip("Skipping storage profile query: no storage profile was given")
 	}
-	storageProfiles, err := vcd.client.QueryProviderVdcStorageProfiles()
+	storageProfiles, err := vcd.client.QueryProviderVdcStorageProfiles(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(len(storageProfiles) > 0, Equals, true)
 	storageProfileFound := false
@@ -545,7 +545,7 @@ func (vcd *TestVCD) Test_QueryProviderVdcByName(check *C) {
 	if vcd.config.VCD.ProviderVdc.Name == "" {
 		check.Skip("Skipping Provider VDC query: no provider VDC was given")
 	}
-	providerVdcs, err := QueryProviderVdcByName(vcd.client, vcd.config.VCD.ProviderVdc.Name)
+	providerVdcs, err := QueryProviderVdcByName(ctx, vcd.client, vcd.config.VCD.ProviderVdc.Name)
 	check.Assert(err, IsNil)
 	check.Assert(len(providerVdcs) > 0, Equals, true)
 
@@ -571,7 +571,7 @@ func (vcd *TestVCD) Test_QueryNetworkPoolByName(check *C) {
 	if vcd.config.VCD.ProviderVdc.NetworkPool == "" {
 		check.Skip("Skipping Provider VDC network pool query: no provider VDC network pool was given")
 	}
-	netPools, err := QueryNetworkPoolByName(vcd.client, vcd.config.VCD.ProviderVdc.NetworkPool)
+	netPools, err := QueryNetworkPoolByName(ctx, vcd.client, vcd.config.VCD.ProviderVdc.NetworkPool)
 	check.Assert(err, IsNil)
 	check.Assert(len(netPools) > 0, Equals, true)
 
@@ -599,16 +599,16 @@ func (vcd *TestVCD) Test_GetStorageProfileByHref(check *C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	adminOrg, err := vcd.client.GetAdminOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	adminVdc, err := adminOrg.GetAdminVDCByName(vcd.config.VCD.Vdc, false)
+	adminVdc, err := adminOrg.GetAdminVDCByName(ctx, vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
 	check.Assert(adminVdc, NotNil)
 
 	// Get storage profile by href
-	foundStorageProfile, err := GetStorageProfileByHref(vcd.client, adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
+	foundStorageProfile, err := GetStorageProfileByHref(ctx, vcd.client, adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
 	check.Assert(err, IsNil)
 	check.Assert(foundStorageProfile, Not(Equals), types.VdcStorageProfile{})
 	check.Assert(foundStorageProfile, NotNil)
@@ -616,7 +616,7 @@ func (vcd *TestVCD) Test_GetStorageProfileByHref(check *C) {
 
 func (vcd *TestVCD) Test_GetOrgList(check *C) {
 
-	orgs, err := vcd.client.GetOrgList()
+	orgs, err := vcd.client.GetOrgList(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(orgs, NotNil)
 

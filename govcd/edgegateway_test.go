@@ -18,11 +18,11 @@ func (vcd *TestVCD) Test_RefreshEdgeGateway(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 	copyEdge := edge
-	err = edge.Refresh()
+	err = edge.Refresh(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(copyEdge.EdgeGateway.Name, Equals, edge.EdgeGateway.Name)
 	check.Assert(copyEdge.EdgeGateway.HREF, Equals, edge.EdgeGateway.HREF)
@@ -40,20 +40,20 @@ func (vcd *TestVCD) Test_NATMapping(check *C) {
 		check.Skip("Skipping test because no network was given")
 	}
 
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(ctx, vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
-	task, err := edge.AddNATRule(orgVdcNetwork.OrgVDCNetwork, "DNAT", vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp)
+	task, err := edge.AddNATRule(ctx, orgVdcNetwork.OrgVDCNetwork, "DNAT", vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
-	err = edge.Refresh()
+	err = edge.Refresh(ctx)
 	check.Assert(err, IsNil)
 	found := false
 	var rule *types.NatRule
@@ -70,9 +70,9 @@ func (vcd *TestVCD) Test_NATMapping(check *C) {
 
 	//task, err = edge.Remove1to1Mapping(vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp)
 	// Cause Remove1to1Mapping isn't working correctly we will use new function
-	err = edge.RemoveNATRule(rule.ID)
+	err = edge.RemoveNATRule(ctx, rule.ID)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 }
 
@@ -88,20 +88,20 @@ func (vcd *TestVCD) Test_NATPortMapping(check *C) {
 		check.Skip("Skipping test because no network was given")
 	}
 
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(ctx, vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
-	task, err := edge.AddNATPortMappingWithUplink(orgVdcNetwork.OrgVDCNetwork, "DNAT", vcd.config.VCD.ExternalIp, "1177", vcd.config.VCD.InternalIp, "77", "TCP", "")
+	task, err := edge.AddNATPortMappingWithUplink(ctx, orgVdcNetwork.OrgVDCNetwork, "DNAT", vcd.config.VCD.ExternalIp, "1177", vcd.config.VCD.InternalIp, "77", "TCP", "")
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
-	err = edge.Refresh()
+	err = edge.Refresh(ctx)
 	check.Assert(err, IsNil)
 	found := false
 	var rule *types.NatRule
@@ -122,10 +122,10 @@ func (vcd *TestVCD) Test_NATPortMapping(check *C) {
 
 	//task, err = edge.Remove1to1Mapping(vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp)
 	// Cause Remove1to1Mapping isn't working correctly we will use new function
-	err = edge.RemoveNATRule(rule.ID)
+	err = edge.RemoveNATRule(ctx, rule.ID)
 
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 }
 
@@ -137,16 +137,16 @@ func (vcd *TestVCD) Test_1to1Mappings(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edgegatway given")
 	}
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
-	task, err := edge.Create1to1Mapping(vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp, "description")
+	task, err := edge.Create1to1Mapping(ctx, vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp, "description")
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
-	task, err = edge.Remove1to1Mapping(vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp)
+	task, err = edge.Remove1to1Mapping(ctx, vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 }
 
@@ -157,7 +157,7 @@ func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edgegatway given")
 	}
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
@@ -202,13 +202,13 @@ func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
 	}
 
 	// Configures VPN service
-	task, err := edge.AddIpsecVPN(ipsecVPNConfig)
+	task, err := edge.AddIpsecVPN(ctx, ipsecVPNConfig)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
 	// To check the effects of service configuration, we need to reload the edge gateway entity
-	err = edge.Refresh()
+	err = edge.Refresh(ctx)
 	check.Assert(err, IsNil)
 
 	// We expect an enabled service, and non-null tunnel and endpoint
@@ -224,13 +224,13 @@ func (vcd *TestVCD) Test_AddIpsecVPN(check *C) {
 	// check.Assert(newConfEndpoint, NotNil)
 
 	// Removes VPN service
-	task, err = edge.RemoveIpsecVPN()
+	task, err = edge.RemoveIpsecVPN(ctx)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
 	// To check the effects of service configuration, we need to reload the edge gateway entity
-	err = edge.Refresh()
+	err = edge.Refresh(ctx)
 	check.Assert(err, IsNil)
 
 	// We expect a disabled service, and null tunnel and endpoint
@@ -253,10 +253,10 @@ func (vcd *TestVCD) TestEdgeGateway_GetNetworks(check *C) {
 	if vcd.config.VCD.Network.Net1 == "" {
 		check.Skip("Skipping test because no network given")
 	}
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
-	network, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	network, err := vcd.vdc.GetOrgVdcNetworkByName(ctx, vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	isRouted := false
 	// If the network is not linked to the edge gateway, we won't check for its name in the network list
@@ -265,7 +265,7 @@ func (vcd *TestVCD) TestEdgeGateway_GetNetworks(check *C) {
 	}
 
 	var networkList []SimpleNetworkIdentifier
-	networkList, err = edge.GetNetworks()
+	networkList, err = edge.GetNetworks(ctx)
 	check.Assert(err, IsNil)
 	foundExternalNetwork := false
 	foundNetwork := false
@@ -301,22 +301,22 @@ func (vcd *TestVCD) Test_AddSNATRule(check *C) {
 	description1 := "my Description 1"
 	description2 := "my Description 2"
 
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(ctx, vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
-	externalNetwork, err := vcd.client.GetExternalNetworkByName(vcd.config.VCD.ExternalNetwork)
+	externalNetwork, err := vcd.client.GetExternalNetworkByName(ctx, vcd.config.VCD.ExternalNetwork)
 	check.Assert(err, IsNil)
 	check.Assert(externalNetwork, NotNil)
 	check.Assert(externalNetwork.ExternalNetwork.Name, Equals, vcd.config.VCD.ExternalNetwork)
 
 	beforeChangeNatRulesNumber := len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule)
 
-	natRule, err := edge.AddSNATRule(orgVdcNetwork.OrgVDCNetwork.HREF, vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp, description1)
+	natRule, err := edge.AddSNATRule(ctx, orgVdcNetwork.OrgVDCNetwork.HREF, vcd.config.VCD.ExternalIp, vcd.config.VCD.InternalIp, description1)
 	check.Assert(err, IsNil)
 
 	check.Assert(natRule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.InternalIp)
@@ -325,17 +325,17 @@ func (vcd *TestVCD) Test_AddSNATRule(check *C) {
 	check.Assert(natRule.RuleType, Equals, "SNAT")
 	check.Assert(strings.Split(natRule.GatewayNatRule.Interface.HREF, "network/")[1], Equals, strings.Split(orgVdcNetwork.OrgVDCNetwork.HREF, "network/")[1])
 
-	err = edge.RemoveNATRule(natRule.ID)
+	err = edge.RemoveNATRule(ctx, natRule.ID)
 	check.Assert(err, IsNil)
 
 	// verify delete
-	err = edge.Refresh()
+	err = edge.Refresh(ctx)
 	check.Assert(err, IsNil)
 
 	check.Assert(len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule), Equals, beforeChangeNatRulesNumber)
 
 	// check with external network
-	natRule, err = edge.AddSNATRule(externalNetwork.ExternalNetwork.HREF, vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp, description2)
+	natRule, err = edge.AddSNATRule(ctx, externalNetwork.ExternalNetwork.HREF, vcd.config.VCD.InternalIp, vcd.config.VCD.ExternalIp, description2)
 	check.Assert(err, IsNil)
 
 	check.Assert(natRule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.ExternalIp)
@@ -344,11 +344,11 @@ func (vcd *TestVCD) Test_AddSNATRule(check *C) {
 	check.Assert(natRule.RuleType, Equals, "SNAT")
 	check.Assert(strings.Split(natRule.GatewayNatRule.Interface.HREF, "network/")[1], Equals, strings.Split(externalNetwork.ExternalNetwork.HREF, "externalnet/")[1])
 
-	err = edge.RemoveNATRule(natRule.ID)
+	err = edge.RemoveNATRule(ctx, natRule.ID)
 	check.Assert(err, IsNil)
 
 	// verify delete
-	err = edge.Refresh()
+	err = edge.Refresh(ctx)
 	check.Assert(err, IsNil)
 
 	check.Assert(len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule), Equals, beforeChangeNatRulesNumber)
@@ -369,15 +369,15 @@ func (vcd *TestVCD) Test_AddDNATRule(check *C) {
 		check.Skip("Skipping test because no network was given")
 	}
 
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(ctx, vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
-	externalNetwork, err := vcd.client.GetExternalNetworkByName(vcd.config.VCD.ExternalNetwork)
+	externalNetwork, err := vcd.client.GetExternalNetworkByName(ctx, vcd.config.VCD.ExternalNetwork)
 	check.Assert(err, IsNil)
 	check.Assert(externalNetwork, NotNil)
 	check.Assert(externalNetwork.ExternalNetwork.Name, Equals, vcd.config.VCD.ExternalNetwork)
@@ -387,7 +387,7 @@ func (vcd *TestVCD) Test_AddDNATRule(check *C) {
 	description1 := "my Dnat Description 1"
 	description2 := "my Dnatt Description 2"
 
-	natRule, err := edge.AddDNATRule(NatRule{NetworkHref: orgVdcNetwork.OrgVDCNetwork.HREF, ExternalIP: vcd.config.VCD.ExternalIp,
+	natRule, err := edge.AddDNATRule(ctx, NatRule{NetworkHref: orgVdcNetwork.OrgVDCNetwork.HREF, ExternalIP: vcd.config.VCD.ExternalIp,
 		ExternalPort: "1177", InternalIP: vcd.config.VCD.InternalIp, InternalPort: "77", Protocol: "TCP", Description: description1})
 	check.Assert(err, IsNil)
 
@@ -401,17 +401,17 @@ func (vcd *TestVCD) Test_AddDNATRule(check *C) {
 	check.Assert(natRule.RuleType, Equals, "DNAT")
 	check.Assert(strings.Split(natRule.GatewayNatRule.Interface.HREF, "network/")[1], Equals, strings.Split(orgVdcNetwork.OrgVDCNetwork.HREF, "network/")[1])
 
-	err = edge.RemoveNATRule(natRule.ID)
+	err = edge.RemoveNATRule(ctx, natRule.ID)
 	check.Assert(err, IsNil)
 
 	// verify delete
-	err = edge.Refresh()
+	err = edge.Refresh(ctx)
 	check.Assert(err, IsNil)
 
 	check.Assert(len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule), Equals, beforeChangeNatRulesNumber)
 
 	// check with external network
-	natRule, err = edge.AddDNATRule(NatRule{NetworkHref: externalNetwork.ExternalNetwork.HREF, ExternalIP: vcd.config.VCD.ExternalIp,
+	natRule, err = edge.AddDNATRule(ctx, NatRule{NetworkHref: externalNetwork.ExternalNetwork.HREF, ExternalIP: vcd.config.VCD.ExternalIp,
 		ExternalPort: "1188", InternalIP: vcd.config.VCD.InternalIp, InternalPort: "88", Protocol: "TCP", Description: description2})
 	check.Assert(err, IsNil)
 
@@ -425,11 +425,11 @@ func (vcd *TestVCD) Test_AddDNATRule(check *C) {
 	check.Assert(natRule.RuleType, Equals, "DNAT")
 	check.Assert(strings.Split(natRule.GatewayNatRule.Interface.HREF, "network/")[1], Equals, strings.Split(externalNetwork.ExternalNetwork.HREF, "externalnet/")[1])
 
-	err = edge.RemoveNATRule(natRule.ID)
+	err = edge.RemoveNATRule(ctx, natRule.ID)
 	check.Assert(err, IsNil)
 
 	// verify delete
-	err = edge.Refresh()
+	err = edge.Refresh(ctx)
 	check.Assert(err, IsNil)
 
 	check.Assert(len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule), Equals, beforeChangeNatRulesNumber)
@@ -449,15 +449,15 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 		check.Skip("Skipping test because no network was given")
 	}
 
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
-	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(ctx, vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork.OrgVDCNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
-	externalNetwork, err := vcd.client.GetExternalNetworkByName(vcd.config.VCD.ExternalNetwork)
+	externalNetwork, err := vcd.client.GetExternalNetworkByName(ctx, vcd.config.VCD.ExternalNetwork)
 	check.Assert(err, IsNil)
 	check.Assert(externalNetwork, NotNil)
 	check.Assert(externalNetwork.ExternalNetwork.Name, Equals, vcd.config.VCD.ExternalNetwork)
@@ -467,7 +467,7 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 	description1 := "my Dnat Description 1"
 	description2 := "my Dnatt Description 2"
 
-	natRule, err := edge.AddDNATRule(NatRule{NetworkHref: orgVdcNetwork.OrgVDCNetwork.HREF, ExternalIP: vcd.config.VCD.ExternalIp,
+	natRule, err := edge.AddDNATRule(ctx, NatRule{NetworkHref: orgVdcNetwork.OrgVDCNetwork.HREF, ExternalIP: vcd.config.VCD.ExternalIp,
 		ExternalPort: "1177", InternalIP: vcd.config.VCD.InternalIp, InternalPort: "77", Protocol: "TCP", Description: description1})
 	check.Assert(err, IsNil)
 
@@ -481,17 +481,17 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 	check.Assert(natRule.RuleType, Equals, "DNAT")
 	check.Assert(strings.Split(natRule.GatewayNatRule.Interface.HREF, "network/")[1], Equals, strings.Split(orgVdcNetwork.OrgVDCNetwork.HREF, "network/")[1])
 
-	err = edge.RemoveNATRule(natRule.ID)
+	err = edge.RemoveNATRule(ctx, natRule.ID)
 	check.Assert(err, IsNil)
 
 	// verify delete
-	err = edge.Refresh()
+	err = edge.Refresh(ctx)
 	check.Assert(err, IsNil)
 
 	check.Assert(len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule), Equals, beforeChangeNatRulesNumber)
 
 	// check with external network
-	natRule, err = edge.AddDNATRule(NatRule{NetworkHref: externalNetwork.ExternalNetwork.HREF, ExternalIP: vcd.config.VCD.ExternalIp,
+	natRule, err = edge.AddDNATRule(ctx, NatRule{NetworkHref: externalNetwork.ExternalNetwork.HREF, ExternalIP: vcd.config.VCD.ExternalIp,
 		ExternalPort: "1188", InternalIP: vcd.config.VCD.InternalIp, InternalPort: "88", Protocol: "TCP", Description: description2})
 	check.Assert(err, IsNil)
 
@@ -505,11 +505,11 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 	check.Assert(natRule.RuleType, Equals, "DNAT")
 	check.Assert(strings.Split(natRule.GatewayNatRule.Interface.HREF, "network/")[1], Equals, strings.Split(externalNetwork.ExternalNetwork.HREF, "externalnet/")[1])
 
-	err = edge.RemoveNATRule(natRule.ID)
+	err = edge.RemoveNATRule(ctx, natRule.ID)
 	check.Assert(err, IsNil)
 
 	// update test
-	natRule, err = edge.AddDNATRule(NatRule{NetworkHref: orgVdcNetwork.OrgVDCNetwork.HREF, ExternalIP: vcd.config.VCD.ExternalIp,
+	natRule, err = edge.AddDNATRule(ctx, NatRule{NetworkHref: orgVdcNetwork.OrgVDCNetwork.HREF, ExternalIP: vcd.config.VCD.ExternalIp,
 		ExternalPort: "1177", InternalIP: vcd.config.VCD.InternalIp, InternalPort: "77", Protocol: "TCP", Description: description1})
 	check.Assert(err, IsNil)
 
@@ -519,7 +519,7 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 	natRule.Description = description2
 	natRule.GatewayNatRule.Interface.HREF = externalNetwork.ExternalNetwork.HREF
 
-	updateNatRule, err := edge.UpdateNatRule(natRule)
+	updateNatRule, err := edge.UpdateNatRule(ctx, natRule)
 
 	check.Assert(err, IsNil)
 	check.Assert(updateNatRule.GatewayNatRule.TranslatedIP, Equals, vcd.config.VCD.InternalIp)
@@ -532,11 +532,11 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 	check.Assert(updateNatRule.RuleType, Equals, "DNAT")
 	check.Assert(strings.Split(updateNatRule.GatewayNatRule.Interface.HREF, "network/")[1], Equals, strings.Split(externalNetwork.ExternalNetwork.HREF, "externalnet/")[1])
 
-	err = edge.RemoveNATRule(updateNatRule.ID)
+	err = edge.RemoveNATRule(ctx, updateNatRule.ID)
 	check.Assert(err, IsNil)
 
 	// verify delete
-	err = edge.Refresh()
+	err = edge.Refresh(ctx)
 	check.Assert(err, IsNil)
 
 	check.Assert(len(edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration.NatService.NatRule), Equals, beforeChangeNatRulesNumber)
@@ -554,7 +554,7 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateLBGeneralParams(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 
 	if !edge.HasAdvancedNetworking() {
@@ -562,25 +562,25 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateLBGeneralParams(check *C) {
 	}
 
 	// Cache current load balancer settings for change validation in the end
-	beforeLb, beforeLbXml := testCacheLoadBalancer(*edge, check)
+	beforeLb, beforeLbXml := testCacheLoadBalancer(ctx, *edge, check)
 
-	_, err = edge.UpdateLBGeneralParams(true, true, true, "critical")
+	_, err = edge.UpdateLBGeneralParams(ctx, true, true, true, "critical")
 	check.Assert(err, IsNil)
 
-	_, err = edge.UpdateLBGeneralParams(false, false, false, "emergency")
+	_, err = edge.UpdateLBGeneralParams(ctx, false, false, false, "emergency")
 	check.Assert(err, IsNil)
 
 	// Try to set invalid loglevel to get validation error
-	_, err = edge.UpdateLBGeneralParams(false, false, false, "invalid_loglevel")
+	_, err = edge.UpdateLBGeneralParams(ctx, false, false, false, "invalid_loglevel")
 	check.Assert(err, ErrorMatches, ".*Valid log levels are.*")
 
 	// Restore to initial settings and validate that it
-	_, err = edge.UpdateLBGeneralParams(beforeLb.Enabled, beforeLb.AccelerationEnabled,
+	_, err = edge.UpdateLBGeneralParams(ctx, beforeLb.Enabled, beforeLb.AccelerationEnabled,
 		beforeLb.Logging.Enable, beforeLb.Logging.LogLevel)
 	check.Assert(err, IsNil)
 
 	// Validate load balancer configuration against initially cached version
-	testCheckLoadBalancerConfig(beforeLb, beforeLbXml, *edge, check)
+	testCheckLoadBalancerConfig(ctx, beforeLb, beforeLbXml, *edge, check)
 }
 
 // TestEdgeGateway_UpdateFwGeneralParams main point is to test that no firewall configuration
@@ -595,7 +595,7 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateFwGeneralParams(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 
 	if !edge.HasAdvancedNetworking() {
@@ -605,18 +605,18 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateFwGeneralParams(check *C) {
 	// Cache current firewall settings for change validation in the end
 	beforeFw, beforeFwXml := testCacheFirewall(*edge, check)
 
-	_, err = edge.UpdateFirewallConfig(false, false, "deny")
+	_, err = edge.UpdateFirewallConfig(ctx, false, false, "deny")
 	check.Assert(err, IsNil)
 
-	_, err = edge.UpdateFirewallConfig(true, true, "accept")
+	_, err = edge.UpdateFirewallConfig(ctx, true, true, "accept")
 	check.Assert(err, IsNil)
 
 	// Try to set invalid loglevel to get validation error
-	_, err = edge.UpdateFirewallConfig(false, false, "invalid_action")
+	_, err = edge.UpdateFirewallConfig(ctx, false, false, "invalid_action")
 	check.Assert(err, ErrorMatches, ".*default action must be either 'accept' or 'deny'.*")
 
 	// Restore to initial settings and validate that it
-	_, err = edge.UpdateFirewallConfig(beforeFw.Enabled, beforeFw.DefaultPolicy.LoggingEnabled, beforeFw.DefaultPolicy.Action)
+	_, err = edge.UpdateFirewallConfig(ctx, beforeFw.Enabled, beforeFw.DefaultPolicy.LoggingEnabled, beforeFw.DefaultPolicy.Action)
 	check.Assert(err, IsNil)
 
 	// Validate configuration against initially cached version
@@ -627,14 +627,14 @@ func (vcd *TestVCD) TestEdgeGateway_GetVdcNetworks(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
-	edge, err := vcd.vdc.FindEdgeGateway(vcd.config.VCD.EdgeGateway)
+	edge, err := vcd.vdc.FindEdgeGateway(ctx, vcd.config.VCD.EdgeGateway)
 	check.Assert(err, IsNil)
 
 	if !edge.HasAdvancedNetworking() {
 		check.Skip("Skipping test because the edge gateway does not have advanced networking enabled")
 	}
 
-	vnics, err := edge.getVdcNetworks()
+	vnics, err := edge.getVdcNetworks(ctx)
 	check.Assert(err, IsNil)
 
 	foundExtNet := false
@@ -663,19 +663,19 @@ func (vcd *TestVCD) TestEdgeGateway_GetVdcNetworks(check *C) {
 // testCacheFirewall is meant to store firewall settings before any operations so that all
 // configuration can be checked after manipulation
 func testCacheFirewall(edge EdgeGateway, check *C) (*types.FirewallConfigWithXml, string) {
-	beforeFw, err := edge.GetFirewallConfig()
+	beforeFw, err := edge.GetFirewallConfig(ctx)
 	check.Assert(err, IsNil)
-	beforeFwbXml := testGetEdgeEndpointXML(types.EdgeFirewallPath, edge, check)
+	beforeFwbXml := testGetEdgeEndpointXML(ctx, types.EdgeFirewallPath, edge, check)
 	return beforeFw, beforeFwbXml
 }
 
 // testCheckFirewallConfig validates if both raw XML string and firewall struct remain
 // identical after settings manipulation.
 func testCheckFirewallConfig(beforeFw *types.FirewallConfigWithXml, beforeFwXml string, edge EdgeGateway, check *C) {
-	afterFw, err := edge.GetFirewallConfig()
+	afterFw, err := edge.GetFirewallConfig(ctx)
 	check.Assert(err, IsNil)
 
-	afterFwXml := testGetEdgeEndpointXML(types.EdgeFirewallPath, edge, check)
+	afterFwXml := testGetEdgeEndpointXML(ctx, types.EdgeFirewallPath, edge, check)
 
 	// remove `<version></version>` tag from both XML represntation and struct for deep comparison
 	// because this version changes with each update and will never be the same after a few
@@ -723,10 +723,10 @@ func (vcd *TestVCD) TestListEdgeGateway(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge, NotNil)
-	edgeGatewayList, err := vcd.vdc.QueryEdgeGatewayList()
+	edgeGatewayList, err := vcd.vdc.QueryEdgeGatewayList(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(edgeGatewayList, NotNil)
 	check.Assert(len(edgeGatewayList) > 0, Equals, true)
@@ -748,7 +748,7 @@ func (vcd *TestVCD) Test_UpdateEdgeGateway(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 	var saveEGW = types.EdgeGateway{
@@ -768,7 +768,7 @@ func (vcd *TestVCD) Test_UpdateEdgeGateway(check *C) {
 	edge.EdgeGateway.Name = newName
 	edge.EdgeGateway.Description = newDescription
 
-	err = edge.Update()
+	err = edge.Update(ctx)
 	check.Assert(err, IsNil)
 
 	// The edge gateway should be updated in place
@@ -777,7 +777,7 @@ func (vcd *TestVCD) Test_UpdateEdgeGateway(check *C) {
 	check.Assert(edge.EdgeGateway.Description, Equals, newDescription)
 
 	// Check that a new copy of the edge gateway contains the expected data
-	edge, err = vcd.vdc.GetEdgeGatewayById(saveEGW.ID, true)
+	edge, err = vcd.vdc.GetEdgeGatewayById(ctx, saveEGW.ID, true)
 	check.Assert(err, IsNil)
 
 	check.Assert(edge.EdgeGateway.HREF, Equals, saveEGW.HREF)
@@ -787,7 +787,7 @@ func (vcd *TestVCD) Test_UpdateEdgeGateway(check *C) {
 	edge.EdgeGateway.Name = saveEGW.Name
 	edge.EdgeGateway.Description = saveEGW.Description
 
-	err = edge.Update()
+	err = edge.Update(ctx)
 	check.Assert(err, IsNil)
 
 	// checking the in-place values
@@ -796,7 +796,7 @@ func (vcd *TestVCD) Test_UpdateEdgeGateway(check *C) {
 	check.Assert(saveEGW.HREF, Equals, edge.EdgeGateway.HREF)
 
 	// Checking values in a fresh copy of the edge gateway
-	edge, err = vcd.vdc.GetEdgeGatewayById(saveEGW.ID, true)
+	edge, err = vcd.vdc.GetEdgeGatewayById(ctx, saveEGW.ID, true)
 	check.Assert(err, IsNil)
 
 	check.Assert(saveEGW.Name, Equals, edge.EdgeGateway.Name)

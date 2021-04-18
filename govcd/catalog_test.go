@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -28,7 +29,9 @@ func (vcd *TestVCD) Test_CatalogRefresh(check *C) {
 		check.Skip("Test_CatalogRefresh: Catalog name not given")
 		return
 	}
-	cat, err := vcd.org.GetCatalogByName(catalogName, false)
+	ctx := context.Background()
+
+	cat, err := vcd.org.GetCatalogByName(ctx, catalogName, false)
 	if err != nil {
 		check.Skip("Test_CatalogRefresh: Catalog not found")
 		return
@@ -46,7 +49,7 @@ func (vcd *TestVCD) Test_CatalogRefresh(check *C) {
 	cat.Catalog.DateCreated = ""
 
 	// Get the catalog again from vCD
-	err = cat.Refresh()
+	err = cat.Refresh(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(cat, NotNil)
 	check.Assert(cat.Catalog.Name, Equals, catalogName)
@@ -57,9 +60,10 @@ func (vcd *TestVCD) Test_CatalogRefresh(check *C) {
 
 func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
+	ctx := context.Background()
 
 	// Fetch Catalog
-	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	cat, err := vcd.org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	if err != nil {
 		check.Skip("Test_FindCatalogItem: Catalog not found. Test can't proceed")
 		return
@@ -69,7 +73,7 @@ func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
 	if vcd.config.VCD.Catalog.CatalogItem == "" {
 		check.Skip("Test_FindCatalogItem: Catalog Item not given. Test can't proceed")
 	}
-	catalogItem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	catalogItem, err := cat.GetCatalogItemByName(ctx, vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalogItem.CatalogItem.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
 	// If given a description in config file then it checks if the descriptions match
@@ -78,7 +82,7 @@ func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
 		check.Assert(catalogItem.CatalogItem.Description, Equals, vcd.config.VCD.Catalog.CatalogItemDescription)
 	}
 	// Test non-existent catalog item
-	catalogItem, err = cat.GetCatalogItemByName("INVALID", false)
+	catalogItem, err = cat.GetCatalogItemByName(ctx, "INVALID", false)
 	check.Assert(err, NotNil)
 	check.Assert(catalogItem, IsNil)
 }
@@ -87,16 +91,17 @@ func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
 // newly updated catalog. Then deletes the catalog
 func (vcd *TestVCD) Test_UpdateCatalog(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
+	ctx := context.Background()
 
-	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	org, err := vcd.client.GetAdminOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
-	catalog, _ := org.GetAdminCatalogByName(TestUpdateCatalog, false)
+	catalog, _ := org.GetAdminCatalogByName(ctx, TestUpdateCatalog, false)
 	if catalog != nil {
-		err = catalog.Delete(true, true)
+		err = catalog.Delete(ctx, true, true)
 		check.Assert(err, IsNil)
 	}
-	adminCatalog, err := org.CreateCatalog(TestUpdateCatalog, TestUpdateCatalog)
+	adminCatalog, err := org.CreateCatalog(ctx, TestUpdateCatalog, TestUpdateCatalog)
 	check.Assert(err, IsNil)
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
@@ -104,11 +109,11 @@ func (vcd *TestVCD) Test_UpdateCatalog(check *C) {
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, TestUpdateCatalog)
 
 	adminCatalog.AdminCatalog.Description = TestCreateCatalogDesc
-	err = adminCatalog.Update()
+	err = adminCatalog.Update(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(adminCatalog.AdminCatalog.Description, Equals, TestCreateCatalogDesc)
 
-	err = adminCatalog.Delete(true, true)
+	err = adminCatalog.Delete(ctx, true, true)
 	check.Assert(err, IsNil)
 }
 
@@ -116,31 +121,32 @@ func (vcd *TestVCD) Test_UpdateCatalog(check *C) {
 // the catalog still exists. If it does the assertion fails.
 func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
+	ctx := context.Background()
 
-	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	org, err := vcd.client.GetAdminOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
-	oldCatalog, _ := org.GetAdminCatalogByName(TestDeleteCatalog, false)
+	oldCatalog, _ := org.GetAdminCatalogByName(ctx, TestDeleteCatalog, false)
 	if oldCatalog != nil {
-		err = oldCatalog.Delete(true, true)
+		err = oldCatalog.Delete(ctx, true, true)
 		check.Assert(err, IsNil)
 	}
-	adminCatalog, err := org.CreateCatalog(TestDeleteCatalog, TestDeleteCatalog)
+	adminCatalog, err := org.CreateCatalog(ctx, TestDeleteCatalog, TestDeleteCatalog)
 	check.Assert(err, IsNil)
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
 	AddToCleanupList(TestDeleteCatalog, "catalog", vcd.config.VCD.Org, "Test_DeleteCatalog")
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, TestDeleteCatalog)
-	err = adminCatalog.Delete(true, true)
+	err = adminCatalog.Delete(ctx, true, true)
 	check.Assert(err, IsNil)
-	doesCatalogExist(check, org)
+	doesCatalogExist(ctx, check, org)
 }
 
-func doesCatalogExist(check *C, org *AdminOrg) {
+func doesCatalogExist(ctx context.Context, check *C, org *AdminOrg) {
 	var err error
 	var catalog *AdminCatalog
 	for i := 0; i < 30; i++ {
-		catalog, err = org.GetAdminCatalogByName(TestDeleteCatalog, true)
+		catalog, err = org.GetAdminCatalogByName(ctx, TestDeleteCatalog, true)
 		if catalog == nil {
 			break
 		} else {
@@ -156,7 +162,7 @@ func (vcd *TestVCD) Test_UploadOvf(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	skipWhenOvaPathMissing(vcd.config.OVA.OvaPath, check)
-	checkUploadOvf(vcd, check, vcd.config.OVA.OvaPath, vcd.config.VCD.Catalog.Name, TestUploadOvf)
+	checkUploadOvf(context.Background(), vcd, check, vcd.config.OVA.OvaPath, vcd.config.VCD.Catalog.Name, TestUploadOvf)
 }
 
 // Tests System function UploadOvf by creating catalog and
@@ -165,20 +171,21 @@ func (vcd *TestVCD) Test_UploadOvf_chunked(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	skipWhenOvaPathMissing(vcd.config.OVA.OvaChunkedPath, check)
-	checkUploadOvf(vcd, check, vcd.config.OVA.OvaChunkedPath, vcd.config.VCD.Catalog.Name, TestUploadOvf+"2")
+	checkUploadOvf(context.Background(), vcd, check, vcd.config.OVA.OvaChunkedPath, vcd.config.VCD.Catalog.Name, TestUploadOvf+"2")
 }
 
 // Tests System function UploadOvf by creating catalog and
 // checking UploadTask.GetUploadProgress returns values of progress.
 func (vcd *TestVCD) Test_UploadOvf_progress_works(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
+	ctx := context.Background()
 
 	skipWhenOvaPathMissing(vcd.config.OVA.OvaPath, check)
 	itemName := TestUploadOvf + "3"
 
-	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+	catalog, org := findCatalog(ctx, vcd, check, vcd.config.VCD.Catalog.Name)
 
-	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OvaPath, itemName, "upload from test", 1024)
+	uploadTask, err := catalog.UploadOvf(ctx, vcd.config.OVA.OvaPath, itemName, "upload from test", 1024)
 	check.Assert(err, IsNil)
 	for {
 		if value := uploadTask.GetUploadProgress(); value == "100.00" {
@@ -187,12 +194,12 @@ func (vcd *TestVCD) Test_UploadOvf_progress_works(check *C) {
 			check.Assert(value, Not(Equals), "")
 		}
 	}
-	err = uploadTask.WaitTaskCompletion()
+	err = uploadTask.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
 	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
-	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	catalog, err = org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
 	verifyCatalogItemUploaded(check, catalog, itemName)
 }
@@ -201,14 +208,15 @@ func (vcd *TestVCD) Test_UploadOvf_progress_works(check *C) {
 // checking UploadTask.ShowUploadProgress writes values of progress to stdin.
 func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
+	ctx := context.Background()
 
 	skipWhenOvaPathMissing(vcd.config.OVA.OvaPath, check)
 	itemName := TestUploadOvf + "4"
 
-	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+	catalog, org := findCatalog(ctx, vcd, check, vcd.config.VCD.Catalog.Name)
 
 	//execute
-	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OvaPath, itemName, "upload from test", 1024)
+	uploadTask, err := catalog.UploadOvf(ctx, vcd.config.OVA.OvaPath, itemName, "upload from test", 1024)
 	check.Assert(err, IsNil)
 
 	//take control of stdout
@@ -216,20 +224,20 @@ func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	err = uploadTask.ShowUploadProgress()
+	err = uploadTask.ShowUploadProgress(ctx)
 	check.Assert(err, IsNil)
 	w.Close()
 	//read stdin
 	result, _ := ioutil.ReadAll(r)
 	os.Stdout = oldStdout
 
-	err = uploadTask.WaitTaskCompletion()
+	err = uploadTask.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
 	check.Assert(string(result), Matches, "(?s).*Upload progress 100.00%.*")
 
-	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	catalog, err = org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 	verifyCatalogItemUploaded(check, catalog, itemName)
@@ -239,23 +247,24 @@ func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
 // and expecting specific error then trying to create same catalog item. As vCD returns cryptic error for such case.
 func (vcd *TestVCD) Test_UploadOvf_error_withSameItem(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
+	ctx := context.Background()
 
 	skipWhenOvaPathMissing(vcd.config.OVA.OvaPath, check)
 
 	itemName := TestUploadOvf + "5"
 
-	catalog, _ := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+	catalog, _ := findCatalog(ctx, vcd, check, vcd.config.VCD.Catalog.Name)
 
 	//add item
-	uploadTask, err2 := catalog.UploadOvf(vcd.config.OVA.OvaPath, itemName, "upload from test", 1024)
+	uploadTask, err2 := catalog.UploadOvf(ctx, vcd.config.OVA.OvaPath, itemName, "upload from test", 1024)
 	check.Assert(err2, IsNil)
-	err2 = uploadTask.WaitTaskCompletion()
+	err2 = uploadTask.WaitTaskCompletion(ctx)
 	check.Assert(err2, IsNil)
 
 	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
-	catalog, _ = findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
-	_, err3 := catalog.UploadOvf(vcd.config.OVA.OvaPath, itemName, "upload from test", 1024)
+	catalog, _ = findCatalog(ctx, vcd, check, vcd.config.VCD.Catalog.Name)
+	_, err3 := catalog.UploadOvf(ctx, vcd.config.OVA.OvaPath, itemName, "upload from test", 1024)
 	check.Assert(err3.Error(), Matches, ".*already exists. Upload with different name.*")
 }
 
@@ -263,6 +272,7 @@ func (vcd *TestVCD) Test_UploadOvf_error_withSameItem(check *C) {
 // that extracted files were deleted.s
 func (vcd *TestVCD) Test_UploadOvf_cleaned_extracted_files(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
+	ctx := context.Background()
 
 	skipWhenOvaPathMissing(vcd.config.OVA.OvaPath, check)
 
@@ -271,11 +281,11 @@ func (vcd *TestVCD) Test_UploadOvf_cleaned_extracted_files(check *C) {
 	//check existing count of folders
 	oldFolderCount := countFolders()
 
-	catalog, _ := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+	catalog, _ := findCatalog(ctx, vcd, check, vcd.config.VCD.Catalog.Name)
 
-	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OvaPath, itemName, "upload from test", 1024)
+	uploadTask, err := catalog.UploadOvf(ctx, vcd.config.OVA.OvaPath, itemName, "upload from test", 1024)
 	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
+	err = uploadTask.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
 	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
@@ -290,7 +300,7 @@ func (vcd *TestVCD) Test_UploadOvfFile(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	skipWhenOvaPathMissing(vcd.config.OVA.OvfPath, check)
-	checkUploadOvf(vcd, check, vcd.config.OVA.OvfPath, vcd.config.VCD.Catalog.Name, TestUploadOvf+"7")
+	checkUploadOvf(context.Background(), vcd, check, vcd.config.OVA.OvfPath, vcd.config.VCD.Catalog.Name, TestUploadOvf+"7")
 }
 
 // Tests System function UploadOvf by creating catalog and
@@ -299,7 +309,7 @@ func (vcd *TestVCD) Test_UploadOvf_withoutVMDKSize(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	skipWhenOvaPathMissing(vcd.config.OVA.OvaWithoutSizePath, check)
-	checkUploadOvf(vcd, check, vcd.config.OVA.OvaWithoutSizePath, vcd.config.VCD.Catalog.Name, TestUploadOvf+"8")
+	checkUploadOvf(context.Background(), vcd, check, vcd.config.OVA.OvaWithoutSizePath, vcd.config.VCD.Catalog.Name, TestUploadOvf+"8")
 }
 
 func countFolders() int {
@@ -316,17 +326,17 @@ func countFolders() int {
 	return count
 }
 
-func checkUploadOvf(vcd *TestVCD, check *C, ovaFileName, catalogName, itemName string) {
-	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+func checkUploadOvf(ctx context.Context, vcd *TestVCD, check *C, ovaFileName, catalogName, itemName string) {
+	catalog, org := findCatalog(ctx, vcd, check, vcd.config.VCD.Catalog.Name)
 
-	uploadTask, err := catalog.UploadOvf(ovaFileName, itemName, "upload from test", 1024)
+	uploadTask, err := catalog.UploadOvf(ctx, ovaFileName, itemName, "upload from test", 1024)
 	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
+	err = uploadTask.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
 	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
-	catalog, err = org.GetCatalogByName(catalogName, false)
+	catalog, err = org.GetCatalogByName(ctx, catalogName, false)
 	check.Assert(err, IsNil)
 	verifyCatalogItemUploaded(check, catalog, itemName)
 }
@@ -343,16 +353,16 @@ func verifyCatalogItemUploaded(check *C, catalog *Catalog, itemName string) {
 	check.Assert(entityFound, Equals, true)
 }
 
-func findCatalog(vcd *TestVCD, check *C, catalogName string) (*Catalog, *AdminOrg) {
-	org := getOrg(vcd, check)
-	catalog, err := org.GetCatalogByName(catalogName, false)
+func findCatalog(ctx context.Context, vcd *TestVCD, check *C, catalogName string) (*Catalog, *AdminOrg) {
+	org := getOrg(ctx, vcd, check)
+	catalog, err := org.GetCatalogByName(ctx, catalogName, false)
 	check.Assert(err, IsNil)
 	return catalog, org
 }
 
-func getOrg(vcd *TestVCD, check *C) *AdminOrg {
+func getOrg(ctx context.Context, vcd *TestVCD, check *C) *AdminOrg {
 	// Fetching organization
-	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	org, err := vcd.client.GetAdminOrgByName(ctx, vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 	return org
@@ -370,17 +380,18 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage(check *C) {
 
 	skipWhenMediaPathMissing(vcd, check)
 
-	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+	ctx := context.Background()
+	catalog, org := findCatalog(ctx, vcd, check, vcd.config.VCD.Catalog.Name)
 
-	uploadTask, err := catalog.UploadMediaImage(TestCatalogUploadMedia, "upload from test", vcd.config.Media.MediaPath, 1024)
+	uploadTask, err := catalog.UploadMediaImage(ctx, TestCatalogUploadMedia, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
+	err = uploadTask.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
 	AddToCleanupList(TestCatalogUploadMedia, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage")
 
 	//verifyMediaImageUploaded(vcd.vdc.client, check, TestUploadMedia)
-	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err = org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 	verifyCatalogItemUploaded(check, catalog, TestCatalogUploadMedia)
@@ -393,9 +404,10 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_progress_works(check *C) {
 	skipWhenMediaPathMissing(vcd, check)
 	itemName := TestCatalogUploadMedia + "2"
 
-	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+	ctx := context.Background()
+	catalog, org := findCatalog(ctx, vcd, check, vcd.config.VCD.Catalog.Name)
 
-	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
+	uploadTask, err := catalog.UploadMediaImage(ctx, itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
 	for {
 		if value := uploadTask.GetUploadProgress(); value == "100.00" {
@@ -404,12 +416,12 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_progress_works(check *C) {
 			check.Assert(value, Not(Equals), "")
 		}
 	}
-	err = uploadTask.WaitTaskCompletion()
+	err = uploadTask.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
 	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage_progress_works")
 
-	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err = org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 	verifyCatalogItemUploaded(check, catalog, itemName)
@@ -422,9 +434,10 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_ShowUploadProgress_works(check 
 	skipWhenMediaPathMissing(vcd, check)
 	itemName := TestCatalogUploadMedia + "3"
 
-	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+	ctx := context.Background()
+	catalog, org := findCatalog(ctx, vcd, check, vcd.config.VCD.Catalog.Name)
 
-	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
+	uploadTask, err := catalog.UploadMediaImage(ctx, itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
 
 	//take control of stdout
@@ -432,20 +445,20 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_ShowUploadProgress_works(check 
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	err = uploadTask.ShowUploadProgress()
+	err = uploadTask.ShowUploadProgress(ctx)
 	check.Assert(err, IsNil)
 	w.Close()
 	//read stdin
 	result, _ := ioutil.ReadAll(r)
 	os.Stdout = oldStdout
 
-	err = uploadTask.WaitTaskCompletion()
+	err = uploadTask.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
 	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage_ShowUploadProgress_works")
 
 	check.Assert(string(result), Matches, "(?s).*Upload progress 100.00%.*")
-	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err = org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 	verifyCatalogItemUploaded(check, catalog, itemName)
@@ -459,11 +472,12 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_error_withSameItem(check *C) {
 	skipWhenMediaPathMissing(vcd, check)
 	itemName := TestCatalogUploadMedia + "4"
 
-	catalog, _ := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+	ctx := context.Background()
+	catalog, _ := findCatalog(ctx, vcd, check, vcd.config.VCD.Catalog.Name)
 
-	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
+	uploadTask, err := catalog.UploadMediaImage(ctx, itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
+	err = uploadTask.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
 	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage_error_withSameItem")
@@ -477,31 +491,32 @@ func (vcd *TestVCD) Test_CatalogDeleteMediaRecord(check *C) {
 	skipWhenMediaPathMissing(vcd, check)
 	itemName := TestCatalogUploadMedia + "5"
 
-	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+	ctx := context.Background()
+	catalog, org := findCatalog(ctx, vcd, check, vcd.config.VCD.Catalog.Name)
 
-	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
+	uploadTask, err := catalog.UploadMediaImage(ctx, itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
 	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
+	err = uploadTask.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
 	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogDeleteMediaImage")
 
-	mediaRecord, err := catalog.QueryMedia(itemName)
+	mediaRecord, err := catalog.QueryMedia(ctx, itemName)
 	check.Assert(err, IsNil)
 	check.Assert(mediaRecord.MediaRecord.Name, Equals, itemName)
 
-	task, err := mediaRecord.Delete()
+	task, err := mediaRecord.Delete(ctx)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	check.Assert(err, IsNil)
 
-	mediaRecord, err = catalog.QueryMedia(itemName)
+	mediaRecord, err = catalog.QueryMedia(ctx, itemName)
 	check.Assert(IsNotFound(err), Equals, true)
 	check.Assert(mediaRecord, IsNil)
 
 	//addition check
 	// check through existing catalogItems
-	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err = org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 	entityFound := false
@@ -531,20 +546,23 @@ func (vcd *TestVCD) Test_CatalogGetItem(check *C) {
 		check.Skip("Test_CatalogGetItem: Catalog name not given")
 		return
 	}
-	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	ctx := context.Background()
+	org, err := vcd.client.GetOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err := org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 
 	getByName := func(name string, refresh bool) (genericEntity, error) {
-		return catalog.GetCatalogItemByName(name, refresh)
+		return catalog.GetCatalogItemByName(ctx, name, refresh)
 	}
-	getById := func(id string, refresh bool) (genericEntity, error) { return catalog.GetCatalogItemById(id, refresh) }
+	getById := func(id string, refresh bool) (genericEntity, error) {
+		return catalog.GetCatalogItemById(ctx, id, refresh)
+	}
 	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
-		return catalog.GetCatalogItemByNameOrId(id, refresh)
+		return catalog.GetCatalogItemByNameOrId(ctx, id, refresh)
 	}
 
 	var def = getterTestDefinition{
@@ -577,20 +595,21 @@ func (vcd *TestVCD) TestGetVappTemplateByHref(check *C) {
 		return
 	}
 
-	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	ctx := context.Background()
+	org, err := vcd.client.GetOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err := org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 
-	catalogItem, err := catalog.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	catalogItem, err := catalog.GetCatalogItemByName(ctx, vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalogItem, NotNil)
 	check.Assert(catalogItem.CatalogItem.Entity, NotNil)
 
-	vappTemplate, err := catalog.GetVappTemplateByHref(catalogItem.CatalogItem.Entity.HREF)
+	vappTemplate, err := catalog.GetVappTemplateByHref(ctx, catalogItem.CatalogItem.Entity.HREF)
 	check.Assert(err, IsNil)
 	check.Assert(vappTemplate, NotNil)
 	check.Assert(vappTemplate.VAppTemplate.ID, Not(Equals), catalogItem.CatalogItem.ID)

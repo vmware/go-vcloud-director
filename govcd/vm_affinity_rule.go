@@ -5,6 +5,7 @@ package govcd
  */
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -32,7 +33,7 @@ func validPolarity(polarity string) bool {
 }
 
 // GetAllVmAffinityRuleList retrieves all VM affinity and anti-affinity rules
-func (vdc *Vdc) GetAllVmAffinityRuleList() ([]*types.VmAffinityRule, error) {
+func (vdc *Vdc) GetAllVmAffinityRuleList(ctx context.Context) ([]*types.VmAffinityRule, error) {
 
 	affinityRules := new(types.VmAffinityRules)
 
@@ -40,7 +41,7 @@ func (vdc *Vdc) GetAllVmAffinityRuleList() ([]*types.VmAffinityRule, error) {
 	if href == "" {
 		return nil, fmt.Errorf("no link with VM affinity rule found in VDC %s", vdc.Vdc.Name)
 	}
-	_, err := vdc.client.ExecuteRequest(href, http.MethodGet,
+	_, err := vdc.client.ExecuteRequest(ctx, href, http.MethodGet,
 		"", "error retrieving list of affinity rules: %s", nil, affinityRules)
 	if err != nil {
 		return nil, err
@@ -50,18 +51,18 @@ func (vdc *Vdc) GetAllVmAffinityRuleList() ([]*types.VmAffinityRule, error) {
 }
 
 // GetVmAffinityRuleList retrieves VM affinity rules
-func (vdc *Vdc) GetVmAffinityRuleList() ([]*types.VmAffinityRule, error) {
-	return vdc.getSpecificVmAffinityRuleList(types.PolarityAffinity)
+func (vdc *Vdc) GetVmAffinityRuleList(ctx context.Context) ([]*types.VmAffinityRule, error) {
+	return vdc.getSpecificVmAffinityRuleList(ctx, types.PolarityAffinity)
 }
 
 // GetVmAntiAffinityRuleList retrieves VM anti-affinity rules
-func (vdc *Vdc) GetVmAntiAffinityRuleList() ([]*types.VmAffinityRule, error) {
-	return vdc.getSpecificVmAffinityRuleList(types.PolarityAntiAffinity)
+func (vdc *Vdc) GetVmAntiAffinityRuleList(ctx context.Context) ([]*types.VmAffinityRule, error) {
+	return vdc.getSpecificVmAffinityRuleList(ctx, types.PolarityAntiAffinity)
 }
 
 // getSpecificVmAffinityRuleList retrieves specific VM affinity rules
-func (vdc *Vdc) getSpecificVmAffinityRuleList(polarity string) ([]*types.VmAffinityRule, error) {
-	fullList, err := vdc.GetAllVmAffinityRuleList()
+func (vdc *Vdc) getSpecificVmAffinityRuleList(ctx context.Context, polarity string) ([]*types.VmAffinityRule, error) {
+	fullList, err := vdc.GetAllVmAffinityRuleList(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -77,11 +78,11 @@ func (vdc *Vdc) getSpecificVmAffinityRuleList(polarity string) ([]*types.VmAffin
 }
 
 // GetVmAffinityRuleByHref finds a VM affinity or anti-affinity rule by HREF
-func (vdc *Vdc) GetVmAffinityRuleByHref(href string) (*VmAffinityRule, error) {
+func (vdc *Vdc) GetVmAffinityRuleByHref(ctx context.Context, href string) (*VmAffinityRule, error) {
 
 	affinityRule := NewVmAffinityRule(vdc.client)
 
-	_, err := vdc.client.ExecuteRequest(href, http.MethodGet,
+	_, err := vdc.client.ExecuteRequest(ctx, href, http.MethodGet,
 		"", "error retrieving affinity rule: %s", nil, affinityRule.VmAffinityRule)
 	if err != nil {
 		return nil, err
@@ -93,16 +94,16 @@ func (vdc *Vdc) GetVmAffinityRuleByHref(href string) (*VmAffinityRule, error) {
 // GetVmAffinityRulesByName finds the rules with the given name
 // Note that name does not have to be unique, so a search by name can match several items
 // If polarity is indicated, the function retrieves only the rules with the given polarity
-func (vdc *Vdc) GetVmAffinityRulesByName(name string, polarity string) ([]*VmAffinityRule, error) {
+func (vdc *Vdc) GetVmAffinityRulesByName(ctx context.Context, name string, polarity string) ([]*VmAffinityRule, error) {
 
 	var returnList []*VmAffinityRule
-	ruleList, err := vdc.GetAllVmAffinityRuleList()
+	ruleList, err := vdc.GetAllVmAffinityRuleList(ctx)
 	if err != nil {
 		return nil, err
 	}
 	for _, rule := range ruleList {
 		if rule.Name == name {
-			fullRule, err := vdc.GetVmAffinityRuleByHref(rule.HREF)
+			fullRule, err := vdc.GetVmAffinityRuleByHref(ctx, rule.HREF)
 			if err != nil {
 				return returnList, err
 			}
@@ -115,15 +116,15 @@ func (vdc *Vdc) GetVmAffinityRulesByName(name string, polarity string) ([]*VmAff
 }
 
 // GetVmAffinityRuleById retrieves a VM affinity or anti-affinity rule by ID
-func (vdc *Vdc) GetVmAffinityRuleById(id string) (*VmAffinityRule, error) {
+func (vdc *Vdc) GetVmAffinityRuleById(ctx context.Context, id string) (*VmAffinityRule, error) {
 
-	list, err := vdc.GetAllVmAffinityRuleList()
+	list, err := vdc.GetAllVmAffinityRuleList(ctx)
 	if err != nil {
 		return nil, err
 	}
 	for _, rule := range list {
 		if equalIds(id, rule.ID, rule.HREF) {
-			return vdc.GetVmAffinityRuleByHref(rule.HREF)
+			return vdc.GetVmAffinityRuleByHref(ctx, rule.HREF)
 		}
 	}
 	return nil, ErrorEntityNotFound
@@ -132,9 +133,9 @@ func (vdc *Vdc) GetVmAffinityRuleById(id string) (*VmAffinityRule, error) {
 // GetVmAffinityRuleByNameOrId retrieves an affinity or anti-affinity rule by name or ID
 // Given the possibility of a name identifying multiple items, this function may also fail
 // when the search by name returns more than one item.
-func (vdc *Vdc) GetVmAffinityRuleByNameOrId(identifier string) (*VmAffinityRule, error) {
+func (vdc *Vdc) GetVmAffinityRuleByNameOrId(ctx context.Context, identifier string) (*VmAffinityRule, error) {
 	getByName := func(name string, refresh bool) (interface{}, error) {
-		list, err := vdc.GetVmAffinityRulesByName(name, "")
+		list, err := vdc.GetVmAffinityRulesByName(ctx, name, "")
 		if err != nil {
 			return nil, err
 		}
@@ -146,7 +147,7 @@ func (vdc *Vdc) GetVmAffinityRuleByNameOrId(identifier string) (*VmAffinityRule,
 		}
 		return nil, fmt.Errorf("more than one item matches the name '%s'", name)
 	}
-	getById := func(id string, refresh bool) (interface{}, error) { return vdc.GetVmAffinityRuleById(id) }
+	getById := func(id string, refresh bool) (interface{}, error) { return vdc.GetVmAffinityRuleById(ctx, id) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, false)
 	if entity == nil {
 		return nil, err
@@ -163,7 +164,7 @@ func (vdc *Vdc) GetVmAffinityRuleByNameOrId(identifier string) (*VmAffinityRule,
 // 4. if error, validation with VM checks
 //    4a. if validation error, it was a VM issue: return combined original error + validation error
 //    4b. if no validation error, the failure was due to something else: return only original error
-func validateAffinityRule(client *Client, affinityRuleDef *types.VmAffinityRule, checkVMs bool) (*types.VmAffinityRule, error) {
+func validateAffinityRule(ctx context.Context, client *Client, affinityRuleDef *types.VmAffinityRule, checkVMs bool) (*types.VmAffinityRule, error) {
 	if affinityRuleDef == nil {
 		return nil, fmt.Errorf("empty definition given for a VM affinity rule")
 	}
@@ -180,7 +181,7 @@ func validateAffinityRule(client *Client, affinityRuleDef *types.VmAffinityRule,
 	var seenVms = make(map[string]bool)
 	var allVmMap = make(map[string]bool)
 	if checkVMs {
-		vmList, err := client.QueryVmList(types.VmQueryFilterOnlyDeployed)
+		vmList, err := client.QueryVmList(ctx, types.VmQueryFilterOnlyDeployed)
 		if err != nil {
 			return nil, fmt.Errorf("error getting VM list : %s", err)
 		}
@@ -228,11 +229,11 @@ func validateAffinityRule(client *Client, affinityRuleDef *types.VmAffinityRule,
 }
 
 // CreateVmAffinityRuleAsync creates a new VM affinity rule, and returns a task that handles the operation
-func (vdc *Vdc) CreateVmAffinityRuleAsync(affinityRuleDef *types.VmAffinityRule) (Task, error) {
+func (vdc *Vdc) CreateVmAffinityRuleAsync(ctx context.Context, affinityRuleDef *types.VmAffinityRule) (Task, error) {
 
 	var err error
 	// We validate the input, without a strict check on the VMs
-	affinityRuleDef, err = validateAffinityRule(vdc.client, affinityRuleDef, false)
+	affinityRuleDef, err = validateAffinityRule(ctx, vdc.client, affinityRuleDef, false)
 	if err != nil {
 		return Task{}, fmt.Errorf("[CreateVmAffinityRuleAsync] %s", err)
 	}
@@ -244,12 +245,12 @@ func (vdc *Vdc) CreateVmAffinityRuleAsync(affinityRuleDef *types.VmAffinityRule)
 		return Task{}, fmt.Errorf("no link with VM affinity rule found in VDC %s", vdc.Vdc.Name)
 	}
 
-	task, err := vdc.client.ExecuteTaskRequest(href, http.MethodPost,
+	task, err := vdc.client.ExecuteTaskRequest(ctx, href, http.MethodPost,
 		"application/vnd.vmware.vcloud.vmaffinityrule+xml", "error instantiating a new VM affinity rule: %s", affinityRuleDef)
 	if err != nil {
 		// if we get any error, we repeat the validation
 		// with a strict check on VM existence.
-		_, validationErr := validateAffinityRule(vdc.client, affinityRuleDef, true)
+		_, validationErr := validateAffinityRule(ctx, vdc.client, affinityRuleDef, true)
 		if validationErr != nil {
 			// If we get any error from the validation now, it should be an invalid VM,
 			// so we combine the original error with the validation error
@@ -262,22 +263,22 @@ func (vdc *Vdc) CreateVmAffinityRuleAsync(affinityRuleDef *types.VmAffinityRule)
 }
 
 // CreateVmAffinityRule is a wrap around CreateVmAffinityRuleAsync that handles the task and returns the finished object
-func (vdc *Vdc) CreateVmAffinityRule(affinityRuleDef *types.VmAffinityRule) (*VmAffinityRule, error) {
+func (vdc *Vdc) CreateVmAffinityRule(ctx context.Context, affinityRuleDef *types.VmAffinityRule) (*VmAffinityRule, error) {
 
-	task, err := vdc.CreateVmAffinityRuleAsync(affinityRuleDef)
+	task, err := vdc.CreateVmAffinityRuleAsync(ctx, affinityRuleDef)
 	if err != nil {
 		return nil, err
 	}
 	// The rule ID is the ID of the task owner (see Task definition in types.go)
 	ruleId := task.Task.Owner.ID
 
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// Retrieving the newly created rule using the ID from the task
-	vmAffinityRule, err := vdc.GetVmAffinityRuleById(ruleId)
+	vmAffinityRule, err := vdc.GetVmAffinityRuleById(ctx, ruleId)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving VmAffinityRule %s using ID %s: %s", affinityRuleDef.Name, ruleId, err)
 	}
@@ -285,7 +286,7 @@ func (vdc *Vdc) CreateVmAffinityRule(affinityRuleDef *types.VmAffinityRule) (*Vm
 }
 
 // Delete removes a VM affinity rule from vCD
-func (vmar *VmAffinityRule) Delete() error {
+func (vmar *VmAffinityRule) Delete(ctx context.Context) error {
 
 	if vmar == nil || vmar.VmAffinityRule == nil {
 		return fmt.Errorf("nil VM Affinity Rule passed for deletion")
@@ -301,12 +302,12 @@ func (vmar *VmAffinityRule) Delete() error {
 		deleteHref = linkHref
 	}
 
-	deleteTask, err := vmar.client.ExecuteTaskRequest(deleteHref, http.MethodDelete,
+	deleteTask, err := vmar.client.ExecuteTaskRequest(ctx, deleteHref, http.MethodDelete,
 		"", "error removing VM Affinity Rule : %s", nil)
 	if err != nil {
 		return err
 	}
-	return deleteTask.WaitTaskCompletion()
+	return deleteTask.WaitTaskCompletion(ctx)
 }
 
 // getLinkHref returns an HREF for a given value of Rel
@@ -323,7 +324,7 @@ func (vmar *VmAffinityRule) getLinkHref(rel string) string {
 
 // Update modifies a VM affinity rule using as input
 // the entity's internal data.
-func (vmar *VmAffinityRule) Update() error {
+func (vmar *VmAffinityRule) Update(ctx context.Context) error {
 	var err error
 	var affinityRuleDef *types.VmAffinityRule
 
@@ -335,7 +336,7 @@ func (vmar *VmAffinityRule) Update() error {
 	}
 
 	// We validate the input, without a strict check on the VMs
-	affinityRuleDef, err = validateAffinityRule(vmar.client, vmar.VmAffinityRule, false)
+	affinityRuleDef, err = validateAffinityRule(ctx, vmar.client, vmar.VmAffinityRule, false)
 	if err != nil {
 		return fmt.Errorf("[Update] %s", err)
 	}
@@ -349,12 +350,12 @@ func (vmar *VmAffinityRule) Update() error {
 
 	vmar.VmAffinityRule.Link = nil
 	vmar.VmAffinityRule.VCloudExtension = nil
-	updateTask, err := vmar.client.ExecuteTaskRequest(updateRef, http.MethodPut,
+	updateTask, err := vmar.client.ExecuteTaskRequest(ctx, updateRef, http.MethodPut,
 		"", "error updating VM Affinity Rule : %s", vmar.VmAffinityRule)
 	if err != nil {
 		// if we get any error, we repeat the validation
 		// with a strict check on VM existence.
-		_, validationErr := validateAffinityRule(vmar.client, affinityRuleDef, true)
+		_, validationErr := validateAffinityRule(ctx, vmar.client, affinityRuleDef, true)
 		// If we get any error from the validation now, it should be an invalid VM,
 		// so we combine the original error with the validation error
 		if validationErr != nil {
@@ -363,17 +364,17 @@ func (vmar *VmAffinityRule) Update() error {
 		// If the validation error is nil, we return just the original error
 		return err
 	}
-	err = updateTask.WaitTaskCompletion()
+	err = updateTask.WaitTaskCompletion(ctx)
 	if err != nil {
 		return err
 	}
-	return vmar.Refresh()
+	return vmar.Refresh(ctx)
 }
 
 // Refresh gets a fresh copy of the VM affinity rule from vCD
-func (vmar *VmAffinityRule) Refresh() error {
+func (vmar *VmAffinityRule) Refresh(ctx context.Context) error {
 	var newVmAffinityRule types.VmAffinityRule
-	_, err := vmar.client.ExecuteRequest(vmar.VmAffinityRule.HREF, http.MethodGet,
+	_, err := vmar.client.ExecuteRequest(ctx, vmar.VmAffinityRule.HREF, http.MethodGet,
 		"", "error retrieving affinity rule: %v", nil, &newVmAffinityRule)
 	if err != nil {
 		return err
@@ -383,7 +384,7 @@ func (vmar *VmAffinityRule) Refresh() error {
 }
 
 // SetEnabled is a shortcut to update only the IsEnabled property of a VM affinity rule
-func (vmar *VmAffinityRule) SetEnabled(value bool) error {
+func (vmar *VmAffinityRule) SetEnabled(ctx context.Context, value bool) error {
 	if vmar.VmAffinityRule.IsEnabled != nil {
 		currentValue := *vmar.VmAffinityRule.IsEnabled
 		if currentValue == value {
@@ -391,11 +392,11 @@ func (vmar *VmAffinityRule) SetEnabled(value bool) error {
 		}
 	}
 	vmar.VmAffinityRule.IsEnabled = takeBoolPointer(value)
-	return vmar.Update()
+	return vmar.Update(ctx)
 }
 
 // SetMandatory is a shortcut to update only the IsMandatory property of a VM affinity rule
-func (vmar *VmAffinityRule) SetMandatory(value bool) error {
+func (vmar *VmAffinityRule) SetMandatory(ctx context.Context, value bool) error {
 	if vmar.VmAffinityRule.IsMandatory != nil {
 		currentValue := *vmar.VmAffinityRule.IsMandatory
 		if currentValue == value {
@@ -403,5 +404,5 @@ func (vmar *VmAffinityRule) SetMandatory(value bool) error {
 		}
 	}
 	vmar.VmAffinityRule.IsMandatory = takeBoolPointer(value)
-	return vmar.Update()
+	return vmar.Update(ctx)
 }

@@ -5,6 +5,7 @@ package govcd
  */
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -60,8 +61,8 @@ var retrievedMetadataTypes = map[string]string{
 }
 
 // HelperMakeFiltersFromEdgeGateways looks at the existing edge gateways and creates a set of criteria to retrieve each of them
-func HelperMakeFiltersFromEdgeGateways(vdc *Vdc) ([]FilterMatch, error) {
-	egwList, err := vdc.QueryEdgeGatewayList()
+func HelperMakeFiltersFromEdgeGateways(ctx context.Context, vdc *Vdc) ([]FilterMatch, error) {
+	egwList, err := vdc.QueryEdgeGatewayList(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -83,8 +84,8 @@ func HelperMakeFiltersFromEdgeGateways(vdc *Vdc) ([]FilterMatch, error) {
 }
 
 // HelperMakeFiltersFromNetworks looks at the existing networks and creates a set of criteria to retrieve each of them
-func HelperMakeFiltersFromNetworks(vdc *Vdc) ([]FilterMatch, error) {
-	netList, err := vdc.GetNetworkList()
+func HelperMakeFiltersFromNetworks(ctx context.Context, vdc *Vdc) ([]FilterMatch, error) {
+	netList, err := vdc.GetNetworkList(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +99,7 @@ func HelperMakeFiltersFromNetworks(vdc *Vdc) ([]FilterMatch, error) {
 			return nil, err
 		}
 
-		filter, err = vdc.client.metadataToFilter(net.HREF, filter)
+		filter, err = vdc.client.metadataToFilter(ctx, net.HREF, filter)
 		if err != nil {
 			return nil, err
 		}
@@ -172,8 +173,8 @@ func makeDateFilter(items []DateItem) ([]FilterMatch, error) {
 	return filters, nil
 }
 
-func HelperMakeFiltersFromCatalogs(org *AdminOrg) ([]FilterMatch, error) {
-	catalogs, err := org.QueryCatalogList()
+func HelperMakeFiltersFromCatalogs(ctx context.Context, org *AdminOrg) ([]FilterMatch, error) {
+	catalogs, err := org.QueryCatalogList(ctx)
 	if err != nil {
 		return []FilterMatch{}, err
 	}
@@ -191,7 +192,7 @@ func HelperMakeFiltersFromCatalogs(org *AdminOrg) ([]FilterMatch, error) {
 
 		dateInfo = append(dateInfo, dInfo...)
 
-		filter, err = org.client.metadataToFilter(cat.HREF, filter)
+		filter, err = org.client.metadataToFilter(ctx, cat.HREF, filter)
 		if err != nil {
 			return nil, err
 		}
@@ -208,9 +209,9 @@ func HelperMakeFiltersFromCatalogs(org *AdminOrg) ([]FilterMatch, error) {
 	return filters, nil
 }
 
-func HelperMakeFiltersFromMedia(vdc *Vdc, catalogName string) ([]FilterMatch, error) {
+func HelperMakeFiltersFromMedia(ctx context.Context, vdc *Vdc, catalogName string) ([]FilterMatch, error) {
 	var filters []FilterMatch
-	items, err := getExistingMedia(vdc)
+	items, err := getExistingMedia(ctx, vdc)
 	if err != nil {
 		return filters, err
 	}
@@ -229,7 +230,7 @@ func HelperMakeFiltersFromMedia(vdc *Vdc, catalogName string) ([]FilterMatch, er
 
 		dateInfo = append(dateInfo, dInfo...)
 
-		filter, err = vdc.client.metadataToFilter(item.HREF, filter)
+		filter, err = vdc.client.metadataToFilter(ctx, item.HREF, filter)
 		if err != nil {
 			return nil, err
 		}
@@ -267,9 +268,9 @@ func queryItemToFilter(item QueryItem, entityType string) (*FilterDef, []DateIte
 	return filter, dateInfo, nil
 }
 
-func HelperMakeFiltersFromCatalogItem(catalog *Catalog) ([]FilterMatch, error) {
+func HelperMakeFiltersFromCatalogItem(ctx context.Context, catalog *Catalog) ([]FilterMatch, error) {
 	var filters []FilterMatch
-	items, err := catalog.QueryCatalogItemList()
+	items, err := catalog.QueryCatalogItemList(ctx)
 	if err != nil {
 		return filters, err
 	}
@@ -286,7 +287,7 @@ func HelperMakeFiltersFromCatalogItem(catalog *Catalog) ([]FilterMatch, error) {
 
 		dateInfo = append(dateInfo, dInfo...)
 
-		filter, err = catalog.client.metadataToFilter(item.HREF, filter)
+		filter, err = catalog.client.metadataToFilter(ctx, item.HREF, filter)
 		if err != nil {
 			return nil, err
 		}
@@ -303,9 +304,9 @@ func HelperMakeFiltersFromCatalogItem(catalog *Catalog) ([]FilterMatch, error) {
 	return filters, nil
 }
 
-func HelperMakeFiltersFromVappTemplate(catalog *Catalog) ([]FilterMatch, error) {
+func HelperMakeFiltersFromVappTemplate(ctx context.Context, catalog *Catalog) ([]FilterMatch, error) {
 	var filters []FilterMatch
-	items, err := catalog.QueryVappTemplateList()
+	items, err := catalog.QueryVappTemplateList(ctx)
 	if err != nil {
 		return filters, err
 	}
@@ -322,7 +323,7 @@ func HelperMakeFiltersFromVappTemplate(catalog *Catalog) ([]FilterMatch, error) 
 
 		dateInfo = append(dateInfo, dInfo...)
 
-		filter, err = catalog.client.metadataToFilter(item.HREF, filter)
+		filter, err = catalog.client.metadataToFilter(ctx, item.HREF, filter)
 		if err != nil {
 			return nil, err
 		}
@@ -342,7 +343,7 @@ func HelperMakeFiltersFromVappTemplate(catalog *Catalog) ([]FilterMatch, error) 
 // HelperCreateMultipleCatalogItems deploys several catalog items, as defined in requestData
 // Returns a set of VappTemplateData with what was created.
 // If the requested objects exist already, returns updated information about the existing items.
-func HelperCreateMultipleCatalogItems(catalog *Catalog, requestData []VappTemplateData, verbose bool) ([]VappTemplateData, error) {
+func HelperCreateMultipleCatalogItems(ctx context.Context, catalog *Catalog, requestData []VappTemplateData, verbose bool) ([]VappTemplateData, error) {
 	var data []VappTemplateData
 	ova := "../test-resources/test_vapp_template.ova"
 	_, err := os.Stat(ova)
@@ -356,10 +357,10 @@ func HelperCreateMultipleCatalogItems(catalog *Catalog, requestData []VappTempla
 		var item *CatalogItem
 		var vappTemplate VAppTemplate
 		created := false
-		item, err := catalog.GetCatalogItemByName(name, false)
+		item, err := catalog.GetCatalogItemByName(ctx, name, false)
 		if err == nil {
 			// If the item already exists, we skip the creation, and just retrieve the vapp template
-			vappTemplate, err = item.GetVAppTemplate()
+			vappTemplate, err = item.GetVAppTemplate(ctx)
 			if err != nil {
 				return nil, fmt.Errorf("[HelperCreateMultipleCatalogItems] error retrieving vApp template from catalog item %s : %s", item.CatalogItem.Name, err)
 			}
@@ -369,25 +370,25 @@ func HelperCreateMultipleCatalogItems(catalog *Catalog, requestData []VappTempla
 			if verbose {
 				fmt.Printf("%-55s %s ", start, name)
 			}
-			task, err := catalog.UploadOvf(ova, name, "test "+name, 10)
+			task, err := catalog.UploadOvf(ctx, ova, name, "test "+name, 10)
 			if err != nil {
 				return nil, fmt.Errorf("[HelperCreateMultipleCatalogItems] error uploading OVA: %s", err)
 			}
-			err = task.WaitTaskCompletion()
+			err = task.WaitTaskCompletion(ctx)
 			if err != nil {
 				return nil, fmt.Errorf("[HelperCreateMultipleCatalogItems] error completing task :%s", err)
 			}
-			item, err = catalog.GetCatalogItemByName(name, true)
+			item, err = catalog.GetCatalogItemByName(ctx, name, true)
 			if err != nil {
 				return nil, fmt.Errorf("[HelperCreateMultipleCatalogItems] error retrieving item %s: %s", name, err)
 			}
-			vappTemplate, err = item.GetVAppTemplate()
+			vappTemplate, err = item.GetVAppTemplate(ctx)
 			if err != nil {
 				return nil, fmt.Errorf("[HelperCreateMultipleCatalogItems] error retrieving vApp template: %s", err)
 			}
 
 			for k, v := range requested.Metadata {
-				_, err := vappTemplate.AddMetadata(k, v)
+				_, err := vappTemplate.AddMetadata(ctx, k, v)
 				if err != nil {
 					return nil, fmt.Errorf("[HelperCreateMultipleCatalogItems], error adding metadata: %s", err)
 				}
@@ -461,11 +462,11 @@ func guessMetadataType(value string) string {
 // metadataToFilter adds metadata elements to an existing filter
 // href is the address of the entity for which we want to retrieve metadata
 // filter is an existing filter to which we want to add metadata elements
-func (client *Client) metadataToFilter(href string, filter *FilterDef) (*FilterDef, error) {
+func (client *Client) metadataToFilter(ctx context.Context, href string, filter *FilterDef) (*FilterDef, error) {
 	if filter == nil {
 		filter = &FilterDef{}
 	}
-	metadata, err := getMetadata(client, href)
+	metadata, err := getMetadata(ctx, client, href)
 	if err == nil && metadata != nil && len(metadata.MetadataEntry) > 0 {
 		for _, md := range metadata.MetadataEntry {
 			isSystem := md.Domain == "SYSTEM"

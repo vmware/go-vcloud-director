@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"bytes"
+	"context"
 	"encoding/xml"
 	"fmt"
 	"net/http"
@@ -35,7 +36,7 @@ func NewOrgVDCNetwork(cli *Client) *OrgVDCNetwork {
 	}
 }
 
-func (orgVdcNet *OrgVDCNetwork) Refresh() error {
+func (orgVdcNet *OrgVDCNetwork) Refresh(ctx context.Context) error {
 	if orgVdcNet.OrgVDCNetwork.HREF == "" {
 		return fmt.Errorf("cannot refresh, Object is empty")
 	}
@@ -46,7 +47,7 @@ func (orgVdcNet *OrgVDCNetwork) Refresh() error {
 	// elements in slices.
 	orgVdcNet.OrgVDCNetwork = &types.OrgVDCNetwork{}
 
-	_, err := orgVdcNet.client.ExecuteRequest(refreshUrl, http.MethodGet,
+	_, err := orgVdcNet.client.ExecuteRequest(ctx, refreshUrl, http.MethodGet,
 		"", "error retrieving vDC network: %s", nil, orgVdcNet.OrgVDCNetwork)
 
 	return err
@@ -54,8 +55,8 @@ func (orgVdcNet *OrgVDCNetwork) Refresh() error {
 
 // Delete a network. Fails if the network is busy.
 // Returns a task to monitor the deletion.
-func (orgVdcNet *OrgVDCNetwork) Delete() (Task, error) {
-	err := orgVdcNet.Refresh()
+func (orgVdcNet *OrgVDCNetwork) Delete(ctx context.Context) (Task, error) {
+	err := orgVdcNet.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing network: %s", err)
 	}
@@ -65,7 +66,7 @@ func (orgVdcNet *OrgVDCNetwork) Delete() (Task, error) {
 
 	var resp *http.Response
 	for {
-		req := orgVdcNet.client.NewRequest(map[string]string{}, http.MethodDelete, *apiEndpoint, nil)
+		req := orgVdcNet.client.NewRequest(ctx, map[string]string{}, http.MethodDelete, *apiEndpoint, nil)
 		resp, err = checkResp(orgVdcNet.client.Http.Do(req))
 		if err != nil {
 			if reErrorBusy2.MatchString(err.Error()) {
@@ -88,8 +89,8 @@ func (orgVdcNet *OrgVDCNetwork) Delete() (Task, error) {
 }
 
 // RemoveOrgVdcNetworkIfExists looks for an Org Vdc network and, if found, will delete it.
-func RemoveOrgVdcNetworkIfExists(vdc Vdc, networkName string) error {
-	network, err := vdc.GetOrgVdcNetworkByName(networkName, true)
+func RemoveOrgVdcNetworkIfExists(ctx context.Context, vdc Vdc, networkName string) error {
+	network, err := vdc.GetOrgVdcNetworkByName(ctx, networkName, true)
 
 	if IsNotFound(err) {
 		// Network not found. No action needed
@@ -100,11 +101,11 @@ func RemoveOrgVdcNetworkIfExists(vdc Vdc, networkName string) error {
 		return err
 	}
 	// The network was found. We attempt deletion
-	task, err := network.Delete()
+	task, err := network.Delete(ctx)
 	if err != nil {
 		return fmt.Errorf("error deleting network '%s' [phase 1]: %s", networkName, err)
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return fmt.Errorf("error deleting network '%s' [task]: %s", networkName, err)
 	}
@@ -113,9 +114,9 @@ func RemoveOrgVdcNetworkIfExists(vdc Vdc, networkName string) error {
 
 // A wrapper call around CreateOrgVDCNetwork.
 // Creates a network and then uses the associated task to monitor its configuration
-func (vdc *Vdc) CreateOrgVDCNetworkWait(networkConfig *types.OrgVDCNetwork) error {
+func (vdc *Vdc) CreateOrgVDCNetworkWait(ctx context.Context, networkConfig *types.OrgVDCNetwork) error {
 
-	task, err := vdc.CreateOrgVDCNetwork(networkConfig)
+	task, err := vdc.CreateOrgVDCNetwork(ctx, networkConfig)
 	if err != nil {
 		return fmt.Errorf("error creating the network: %s", err)
 	}
@@ -123,7 +124,7 @@ func (vdc *Vdc) CreateOrgVDCNetworkWait(networkConfig *types.OrgVDCNetwork) erro
 		return fmt.Errorf("NULL task retrieved after network creation")
 
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	// err = task.WaitInspectTaskCompletion(InspectTask, 10)
 	if err != nil {
 		return fmt.Errorf("error performing task: %s", err)
@@ -136,7 +137,7 @@ func (vdc *Vdc) CreateOrgVDCNetworkWait(networkConfig *types.OrgVDCNetwork) erro
 // the network configuration)
 // This function can create any type of Org Vdc network. The exact type is determined by
 // the combination of properties given with the network configuration structure.
-func (vdc *Vdc) CreateOrgVDCNetwork(networkConfig *types.OrgVDCNetwork) (Task, error) {
+func (vdc *Vdc) CreateOrgVDCNetwork(ctx context.Context, networkConfig *types.OrgVDCNetwork) (Task, error) {
 	for _, av := range vdc.Vdc.Link {
 		if av.Rel == "add" && av.Type == "application/vnd.vmware.vcloud.orgVdcNetwork+xml" {
 			createUrl, err := url.ParseRequestURI(av.HREF)
@@ -156,7 +157,7 @@ func (vdc *Vdc) CreateOrgVDCNetwork(networkConfig *types.OrgVDCNetwork) (Task, e
 			for {
 				b := bytes.NewBufferString(xml.Header + string(output))
 				util.Logger.Printf("[DEBUG] VCD Client configuration: %s", b)
-				req := vdc.client.NewRequest(map[string]string{}, http.MethodPost, *createUrl, b)
+				req := vdc.client.NewRequest(ctx, map[string]string{}, http.MethodPost, *createUrl, b)
 				req.Header.Add("Content-Type", av.Type)
 				resp, err = checkResp(vdc.client.Http.Do(req))
 				if err != nil {
@@ -197,9 +198,9 @@ func (vdc *Vdc) CreateOrgVDCNetwork(networkConfig *types.OrgVDCNetwork) (Task, e
 }
 
 // GetNetworkList returns a list of networks for the VDC
-func (vdc *Vdc) GetNetworkList() ([]*types.QueryResultOrgVdcNetworkRecordType, error) {
+func (vdc *Vdc) GetNetworkList(ctx context.Context) ([]*types.QueryResultOrgVdcNetworkRecordType, error) {
 	// Find the list of networks with the wanted name
-	result, err := vdc.client.QueryWithNotEncodedParams(nil, map[string]string{
+	result, err := vdc.client.QueryWithNotEncodedParams(ctx, nil, map[string]string{
 		"type":          "orgVdcNetwork",
 		"filter":        fmt.Sprintf("vdc==%s", url.QueryEscape(vdc.Vdc.ID)),
 		"filterEncoded": "true",
@@ -212,10 +213,10 @@ func (vdc *Vdc) GetNetworkList() ([]*types.QueryResultOrgVdcNetworkRecordType, e
 
 // FindEdgeGatewayNameByNetwork searches the VDC for a connection between an edge gateway and a given network.
 // On success, returns the name of the edge gateway
-func (vdc *Vdc) FindEdgeGatewayNameByNetwork(networkName string) (string, error) {
+func (vdc *Vdc) FindEdgeGatewayNameByNetwork(ctx context.Context, networkName string) (string, error) {
 
 	// Find the list of networks with the wanted name
-	result, err := vdc.client.QueryWithNotEncodedParams(nil, map[string]string{
+	result, err := vdc.client.QueryWithNotEncodedParams(ctx, nil, map[string]string{
 		"type":          "orgVdcNetwork",
 		"filter":        fmt.Sprintf("name==%s;vdc==%s", url.QueryEscape(networkName), url.QueryEscape(vdc.Vdc.ID)),
 		"filterEncoded": "true",
@@ -240,13 +241,13 @@ func (vdc *Vdc) FindEdgeGatewayNameByNetwork(networkName string) (string, error)
 }
 
 // getParentVdc retrieves the VDC to which the network is attached
-func (orgVdcNet *OrgVDCNetwork) getParentVdc() (*Vdc, error) {
+func (orgVdcNet *OrgVDCNetwork) getParentVdc(ctx context.Context) (*Vdc, error) {
 	for _, link := range orgVdcNet.OrgVDCNetwork.Link {
 		if link.Type == "application/vnd.vmware.vcloud.vdc+xml" {
 
 			vdc := NewVdc(orgVdcNet.client)
 
-			_, err := orgVdcNet.client.ExecuteRequest(link.HREF, http.MethodGet,
+			_, err := orgVdcNet.client.ExecuteRequest(ctx, link.HREF, http.MethodGet,
 				"", "error retrieving parent vdc: %s", nil, vdc.Vdc)
 			if err != nil {
 				return nil, err
@@ -259,12 +260,12 @@ func (orgVdcNet *OrgVDCNetwork) getParentVdc() (*Vdc, error) {
 }
 
 // getEdgeGateway retrieves the edge gateway connected to a routed network
-func (orgVdcNet *OrgVDCNetwork) getEdgeGateway() (*EdgeGateway, error) {
+func (orgVdcNet *OrgVDCNetwork) getEdgeGateway(ctx context.Context) (*EdgeGateway, error) {
 	// If it is not routed, returns an error
 	if orgVdcNet.OrgVDCNetwork.Configuration.FenceMode != types.FenceModeNAT {
 		return nil, fmt.Errorf("network %s is not routed", orgVdcNet.OrgVDCNetwork.Name)
 	}
-	vdc, err := orgVdcNet.getParentVdc()
+	vdc, err := orgVdcNet.getParentVdc(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -272,23 +273,23 @@ func (orgVdcNet *OrgVDCNetwork) getEdgeGateway() (*EdgeGateway, error) {
 	// Since this function can be called from Update(), we must take into account the
 	// possibility of a name change. If this is happening, we need to retrieve the original
 	// name, which is still stored in the VDC.
-	oldNetwork, err := vdc.GetOrgVdcNetworkById(orgVdcNet.OrgVDCNetwork.ID, false)
+	oldNetwork, err := vdc.GetOrgVdcNetworkById(ctx, orgVdcNet.OrgVDCNetwork.ID, false)
 	if err != nil {
 		return nil, err
 	}
 	networkName := oldNetwork.OrgVDCNetwork.Name
 
-	edgeGatewayName, err := vdc.FindEdgeGatewayNameByNetwork(networkName)
+	edgeGatewayName, err := vdc.FindEdgeGatewayNameByNetwork(ctx, networkName)
 	if err != nil {
 		return nil, err
 	}
 
-	return vdc.GetEdgeGatewayByName(edgeGatewayName, false)
+	return vdc.GetEdgeGatewayByName(ctx, edgeGatewayName, false)
 }
 
 // UpdateAsync will change the contents of a network using the information in the
 // receiver data structure.
-func (orgVdcNet *OrgVDCNetwork) UpdateAsync() (Task, error) {
+func (orgVdcNet *OrgVDCNetwork) UpdateAsync(ctx context.Context) (Task, error) {
 	if orgVdcNet.OrgVDCNetwork.HREF == "" {
 		return Task{}, fmt.Errorf("cannot update Org VDC network: HREF is empty")
 	}
@@ -309,7 +310,7 @@ func (orgVdcNet *OrgVDCNetwork) UpdateAsync() (Task, error) {
 	// Since the network data structure doesn't return edge gateway information,
 	// we fetch it explicitly.
 	if orgVdcNet.OrgVDCNetwork.Configuration.FenceMode == types.FenceModeNAT {
-		edgeGateway, err := orgVdcNet.getEdgeGateway()
+		edgeGateway, err := orgVdcNet.getEdgeGateway(ctx)
 		if err != nil {
 			return Task{}, fmt.Errorf("error retrieving edge gateway for Org VDC network %s : %s", orgVdcNet.OrgVDCNetwork.Name, err)
 		}
@@ -320,33 +321,33 @@ func (orgVdcNet *OrgVDCNetwork) UpdateAsync() (Task, error) {
 			Name: edgeGateway.EdgeGateway.Name,
 		}
 	}
-	return orgVdcNet.client.ExecuteTaskRequest(href, http.MethodPut,
+	return orgVdcNet.client.ExecuteTaskRequest(ctx, href, http.MethodPut,
 		types.MimeOrgVdcNetwork, "error updating Org VDC network: %s", orgVdcNet.OrgVDCNetwork)
 }
 
 // Update is a wrapper around UpdateAsync, where we
 // explicitly wait for the task to finish.
 // The pointer receiver is refreshed after update
-func (orgVdcNet *OrgVDCNetwork) Update() error {
-	task, err := orgVdcNet.UpdateAsync()
+func (orgVdcNet *OrgVDCNetwork) Update(ctx context.Context) error {
+	task, err := orgVdcNet.UpdateAsync(ctx)
 	if err != nil {
 		return err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return err
 	}
 
-	return orgVdcNet.Refresh()
+	return orgVdcNet.Refresh(ctx)
 }
 
 // Rename is a wrapper around Update(), where we only change the name of the network
 // Since the purpose is explicitly changing the name, the function will fail if the new name
 // is not different from the existing one
-func (orgVdcNet *OrgVDCNetwork) Rename(newName string) error {
+func (orgVdcNet *OrgVDCNetwork) Rename(ctx context.Context, newName string) error {
 	if orgVdcNet.OrgVDCNetwork.Name == newName {
 		return fmt.Errorf("new name is the same ase the existing name")
 	}
 	orgVdcNet.OrgVDCNetwork.Name = newName
-	return orgVdcNet.Update()
+	return orgVdcNet.Update(ctx)
 }

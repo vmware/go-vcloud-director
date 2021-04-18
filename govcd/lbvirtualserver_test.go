@@ -32,7 +32,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 		check.Skip("Skipping test because no edge gateway external IP given")
 	}
 
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
@@ -60,7 +60,7 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 
 	err = deleteLbVirtualServerIfExists(*edge, lbVirtualServerConfig.Name)
 	check.Assert(err, IsNil)
-	createdLbVirtualServer, err := edge.CreateLbVirtualServer(lbVirtualServerConfig)
+	createdLbVirtualServer, err := edge.CreateLbVirtualServer(ctx, lbVirtualServerConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdLbVirtualServer.ID, Not(IsNil))
 	check.Assert(createdLbVirtualServer.IpAddress, Equals, lbVirtualServerConfig.IpAddress)
@@ -74,13 +74,13 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	check.Assert(createdLbVirtualServer.DefaultPoolId, Equals, lbVirtualServerConfig.DefaultPoolId)
 
 	// Try to delete child components and expect a well parsed NSX error
-	err = edge.DeleteLbServiceMonitorById(serviceMonitorId)
+	err = edge.DeleteLbServiceMonitorById(ctx, serviceMonitorId)
 	check.Assert(err, ErrorMatches, `.*Fail to delete objectId .*\S+.* for it is used by .*`)
-	err = edge.DeleteLbServerPoolById(serverPoolId)
+	err = edge.DeleteLbServerPoolById(ctx, serverPoolId)
 	check.Assert(err, ErrorMatches, `.*Fail to delete objectId .*\S+.* for it is used by .*`)
-	err = edge.DeleteLbAppProfileById(appProfileId)
+	err = edge.DeleteLbAppProfileById(ctx, appProfileId)
 	check.Assert(err, ErrorMatches, `.*Fail to delete objectId .*\S+.* for it is used by .*`)
-	err = edge.DeleteLbAppRuleById(appRuleId)
+	err = edge.DeleteLbAppRuleById(ctx, appRuleId)
 	check.Assert(err, ErrorMatches, `.*Fail to delete objectId .*\S+.* for it is used by .*`)
 
 	// We created virtual server successfully therefore let's prepend it to cleanup list so that it
@@ -89,11 +89,11 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	PrependToCleanupList(TestLbVirtualServer, "lbVirtualServer", parentEntity, check.TestName())
 
 	// Lookup by both name and ID and compare that these are equal values
-	lbVirtualServerById, err := edge.getLbVirtualServer(&types.LbVirtualServer{ID: createdLbVirtualServer.ID})
+	lbVirtualServerById, err := edge.getLbVirtualServer(ctx, &types.LbVirtualServer{ID: createdLbVirtualServer.ID})
 	check.Assert(err, IsNil)
 	check.Assert(lbVirtualServerById, Not(IsNil))
 
-	lbVirtualServerByName, err := edge.getLbVirtualServer(&types.LbVirtualServer{Name: createdLbVirtualServer.Name})
+	lbVirtualServerByName, err := edge.getLbVirtualServer(ctx, &types.LbVirtualServer{Name: createdLbVirtualServer.Name})
 	check.Assert(err, IsNil)
 	check.Assert(lbVirtualServerByName, Not(IsNil))
 	check.Assert(createdLbVirtualServer.ID, Equals, lbVirtualServerByName.ID)
@@ -101,21 +101,21 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	check.Assert(lbVirtualServerById.Name, Equals, lbVirtualServerByName.Name)
 
 	// GetLbVirtualServers should return at least one vs which is ours.
-	servers, err := edge.GetLbVirtualServers()
+	servers, err := edge.GetLbVirtualServers(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(servers, Not(HasLen), 0)
 
 	// Test updating fields
 	// Update algorithm
 	lbVirtualServerById.Port = 8889
-	updatedLBPool, err := edge.UpdateLbVirtualServer(lbVirtualServerById)
+	updatedLBPool, err := edge.UpdateLbVirtualServer(ctx, lbVirtualServerById)
 	check.Assert(err, IsNil)
 	check.Assert(updatedLBPool.Port, Equals, lbVirtualServerById.Port)
 
 	// Update boolean value fields
 	lbVirtualServerById.Enabled = true
 	lbVirtualServerById.AccelerationEnabled = true
-	updatedLBPool, err = edge.UpdateLbVirtualServer(lbVirtualServerById)
+	updatedLBPool, err = edge.UpdateLbVirtualServer(ctx, lbVirtualServerById)
 	check.Assert(err, IsNil)
 	check.Assert(updatedLBPool.Enabled, Equals, lbVirtualServerById.Enabled)
 	check.Assert(updatedLBPool.AccelerationEnabled, Equals, lbVirtualServerById.AccelerationEnabled)
@@ -126,21 +126,21 @@ func (vcd *TestVCD) Test_LBVirtualServer(check *C) {
 	// Try to set invalid protocol and expect API to return error:
 	// vShield Edge [LoadBalancer] Invalid protocol invalid_protocol. Valid protocols are: HTTP|HTTPS|TCP|UDP. (API error: 14542)
 	lbVirtualServerById.Protocol = "invalid_protocol"
-	updatedLBPool, err = edge.UpdateLbVirtualServer(lbVirtualServerById)
+	updatedLBPool, err = edge.UpdateLbVirtualServer(ctx, lbVirtualServerById)
 	check.Assert(updatedLBPool, IsNil)
 	check.Assert(err, ErrorMatches, ".*Invalid protocol.*Valid protocols are:.*")
 
 	// Update should fail without name
 	lbVirtualServerById.Name = ""
-	_, err = edge.UpdateLbVirtualServer(lbVirtualServerById)
+	_, err = edge.UpdateLbVirtualServer(ctx, lbVirtualServerById)
 	check.Assert(err.Error(), Equals, "load balancer virtual server Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLbVirtualServer(&types.LbVirtualServer{ID: createdLbVirtualServer.ID})
+	err = edge.DeleteLbVirtualServer(ctx, &types.LbVirtualServer{ID: createdLbVirtualServer.ID})
 	check.Assert(err, IsNil)
 
 	// Ensure it is deleted
-	_, err = edge.GetLbVirtualServerById(createdLbVirtualServer.ID)
+	_, err = edge.GetLbVirtualServerById(ctx, createdLbVirtualServer.ID)
 	check.Assert(IsNotFound(err), Equals, true)
 }
 
@@ -156,9 +156,9 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 		MaxRetries: 3,
 		Type:       "http",
 	}
-	err := deleteLbServiceMonitorIfExists(edge, lbMon.Name)
+	err := deleteLbServiceMonitorIfExists(ctx, edge, lbMon.Name)
 	check.Assert(err, IsNil)
-	lbMonitor, err := edge.CreateLbServiceMonitor(lbMon)
+	lbMonitor, err := edge.CreateLbServiceMonitor(ctx, lbMon)
 	check.Assert(err, IsNil)
 
 	// Create prerequisites - server pool
@@ -184,9 +184,9 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 		},
 	}
 
-	err = deleteLbServerPoolIfExists(edge, lbPoolConfig.Name)
+	err = deleteLbServerPoolIfExists(ctx, edge, lbPoolConfig.Name)
 	check.Assert(err, IsNil)
-	lbPool, err := edge.CreateLbServerPool(lbPoolConfig)
+	lbPool, err := edge.CreateLbServerPool(ctx, lbPoolConfig)
 	check.Assert(err, IsNil)
 
 	// Create prerequisites - application profile
@@ -195,9 +195,9 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 		Template: "HTTP",
 	}
 
-	err = deleteLbAppProfileIfExists(edge, lbAppProfileConfig.Name)
+	err = deleteLbAppProfileIfExists(ctx, edge, lbAppProfileConfig.Name)
 	check.Assert(err, IsNil)
-	lbAppProfile, err := edge.CreateLbAppProfile(lbAppProfileConfig)
+	lbAppProfile, err := edge.CreateLbAppProfile(ctx, lbAppProfileConfig)
 	check.Assert(err, IsNil)
 
 	lbAppRuleConfig := &types.LbAppRule{
@@ -206,9 +206,9 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 	}
 
 	// Create prerequisites - application rule
-	err = deleteLbAppRuleIfExists(edge, lbAppRuleConfig.Name)
+	err = deleteLbAppRuleIfExists(ctx, edge, lbAppRuleConfig.Name)
 	check.Assert(err, IsNil)
-	lbAppRule, err := edge.CreateLbAppRule(lbAppRuleConfig)
+	lbAppRule, err := edge.CreateLbAppRule(ctx, lbAppRuleConfig)
 	check.Assert(err, IsNil)
 
 	parentEntity := vcd.org.Org.Name + "|" + vcd.vdc.Vdc.Name + "|" + vcd.config.VCD.EdgeGateway
@@ -223,7 +223,7 @@ func buildTestLBVirtualServerPrereqs(node1Ip, node2Ip, componentsName string, ch
 // deleteLbVirtualServerIfExists is used to cleanup before creation of component. It returns error only if there was
 // other error than govcd.ErrorEntityNotFound
 func deleteLbVirtualServerIfExists(edge EdgeGateway, name string) error {
-	err := edge.DeleteLbVirtualServerByName(name)
+	err := edge.DeleteLbVirtualServerByName(ctx, name)
 	if err != nil && !ContainsNotFound(err) {
 		return err
 	}

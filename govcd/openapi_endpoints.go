@@ -5,6 +5,7 @@ package govcd
  */
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -31,13 +32,13 @@ var endpointMinApiVersions = map[string]string{
 // specified OpenAPI endpoint and returns either error, either Api version to use for calling that endpoint. This Api
 // version can then be supplied to low level OpenAPI client functions.
 // If the system default API version is higher than endpoint introduction version - default system one is used.
-func (client *Client) checkOpenApiEndpointCompatibility(endpoint string) (string, error) {
+func (client *Client) checkOpenApiEndpointCompatibility(ctx context.Context, endpoint string) (string, error) {
 	minimumApiVersion, ok := endpointMinApiVersions[endpoint]
 	if !ok {
 		return "", fmt.Errorf("minimum API version for endopoint '%s' is not defined", endpoint)
 	}
 
-	if client.APIVCDMaxVersionIs("< " + minimumApiVersion) {
+	if client.APIVCDMaxVersionIs(ctx, "< "+minimumApiVersion) {
 		maxSupportedVersion, err := client.MaxSupportedVersion()
 		if err != nil {
 			return "", fmt.Errorf("error reading maximum supported API version: %s", err)

@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 
@@ -19,7 +20,7 @@ type NsxtEdgeCluster struct {
 
 // GetNsxtEdgeClusterByName retrieves a particular NSX-T Edge Cluster by name available for that VDC
 // Note: Multiple NSX-T Edge Clusters with the same name may exist.
-func (vdc *Vdc) GetNsxtEdgeClusterByName(name string) (*NsxtEdgeCluster, error) {
+func (vdc *Vdc) GetNsxtEdgeClusterByName(ctx context.Context, name string) (*NsxtEdgeCluster, error) {
 	if name == "" {
 		return nil, fmt.Errorf("empty NSX-T Edge Cluster name specified")
 	}
@@ -33,7 +34,7 @@ func (vdc *Vdc) GetNsxtEdgeClusterByName(name string) (*NsxtEdgeCluster, error) 
 		queryParameters.Add("filter", "name=="+name)
 	*/
 
-	nsxtEdgeClusters, err := vdc.GetAllNsxtEdgeClusters(nil)
+	nsxtEdgeClusters, err := vdc.GetAllNsxtEdgeClusters(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not find NSX-T Edge Cluster with name '%s' for Org VDC with id '%s': %s",
 			name, vdc.Vdc.ID, err)
@@ -72,13 +73,13 @@ func filterNsxtEdgeClusters(name string, allNnsxtEdgeCluster []*NsxtEdgeCluster)
 }
 
 // GetAllNsxtEdgeClusters retrieves all available Edge Clusters for a particular VDC
-func (vdc *Vdc) GetAllNsxtEdgeClusters(queryParameters url.Values) ([]*NsxtEdgeCluster, error) {
+func (vdc *Vdc) GetAllNsxtEdgeClusters(ctx context.Context, queryParameters url.Values) ([]*NsxtEdgeCluster, error) {
 	if vdc.Vdc.ID == "" {
 		return nil, fmt.Errorf("VDC must have ID populated to retrieve NSX-T edge clusters")
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeClusters
-	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +99,7 @@ func (vdc *Vdc) GetAllNsxtEdgeClusters(queryParameters url.Values) ([]*NsxtEdgeC
 	queryParams := queryParameterFilterAnd("_context=="+vdc.Vdc.ID, queryParameters)
 
 	typeResponses := []*types.NsxtEdgeCluster{{}}
-	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParams, &typeResponses)
+	err = vdc.client.OpenApiGetAllItems(ctx, minimumApiVersion, urlRef, queryParams, &typeResponses)
 	if err != nil {
 		return nil, err
 	}

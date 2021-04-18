@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -38,19 +39,19 @@ func NewAdminOrg(cli *Client) *AdminOrg {
 // the given organization. Returns an AdminCatalog that contains a creation
 // task.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-CreateCatalog.html
-func (adminOrg *AdminOrg) CreateCatalog(name, description string) (AdminCatalog, error) {
-	return CreateCatalog(adminOrg.client, adminOrg.AdminOrg.Link, name, description)
+func (adminOrg *AdminOrg) CreateCatalog(ctx context.Context, name, description string) (AdminCatalog, error) {
+	return CreateCatalog(ctx, adminOrg.client, adminOrg.AdminOrg.Link, name, description)
 }
 
 // CreateCatalogWithStorageProfile is like CreateCatalog, but allows to specify storage profile
-func (adminOrg *AdminOrg) CreateCatalogWithStorageProfile(name, description string, storageProfiles *types.CatalogStorageProfiles) (*AdminCatalog, error) {
-	return CreateCatalogWithStorageProfile(adminOrg.client, adminOrg.AdminOrg.Link, name, description, storageProfiles)
+func (adminOrg *AdminOrg) CreateCatalogWithStorageProfile(ctx context.Context, name, description string, storageProfiles *types.CatalogStorageProfiles) (*AdminCatalog, error) {
+	return CreateCatalogWithStorageProfile(ctx, adminOrg.client, adminOrg.AdminOrg.Link, name, description, storageProfiles)
 }
 
 // GetAllVDCs returns all depending VDCs for a particular Org
-func (adminOrg *AdminOrg) GetAllVDCs(refresh bool) ([]*Vdc, error) {
+func (adminOrg *AdminOrg) GetAllVDCs(ctx context.Context, refresh bool) ([]*Vdc, error) {
 	if refresh {
-		err := adminOrg.Refresh()
+		err := adminOrg.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -58,7 +59,7 @@ func (adminOrg *AdminOrg) GetAllVDCs(refresh bool) ([]*Vdc, error) {
 
 	allVdcs := make([]*Vdc, len(adminOrg.AdminOrg.Vdcs.Vdcs))
 	for vdcIndex, vdc := range adminOrg.AdminOrg.Vdcs.Vdcs {
-		vdc, err := adminOrg.GetVDCByHref(vdc.HREF)
+		vdc, err := adminOrg.GetVDCByHref(ctx, vdc.HREF)
 		if err != nil {
 			return nil, fmt.Errorf("error retrieving VDC '%s': %s", vdc.Vdc.Name, err)
 		}
@@ -71,15 +72,15 @@ func (adminOrg *AdminOrg) GetAllVDCs(refresh bool) ([]*Vdc, error) {
 
 // GetAllStorageProfileReferences traverses all depending VDCs and returns a slice of storage profile references
 // available in those VDCs
-func (adminOrg *AdminOrg) GetAllStorageProfileReferences(refresh bool) ([]*types.Reference, error) {
+func (adminOrg *AdminOrg) GetAllStorageProfileReferences(ctx context.Context, refresh bool) ([]*types.Reference, error) {
 	if refresh {
-		err := adminOrg.Refresh()
+		err := adminOrg.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	allVdcs, err := adminOrg.GetAllVDCs(refresh)
+	allVdcs, err := adminOrg.GetAllVDCs(ctx, refresh)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve storage profile references: %s", err)
 	}
@@ -95,8 +96,8 @@ func (adminOrg *AdminOrg) GetAllStorageProfileReferences(refresh bool) ([]*types
 }
 
 // GetStorageProfileReferenceById finds storage profile reference by specified ID in Org or returns ErrorEntityNotFound
-func (adminOrg *AdminOrg) GetStorageProfileReferenceById(id string, refresh bool) (*types.Reference, error) {
-	allStorageProfiles, err := adminOrg.GetAllStorageProfileReferences(refresh)
+func (adminOrg *AdminOrg) GetStorageProfileReferenceById(ctx context.Context, id string, refresh bool) (*types.Reference, error) {
+	allStorageProfiles, err := adminOrg.GetAllStorageProfileReferences(ctx, refresh)
 	if err != nil {
 		return nil, fmt.Errorf("error getting all storage profiles: %s", err)
 	}
@@ -113,36 +114,36 @@ func (adminOrg *AdminOrg) GetStorageProfileReferenceById(id string, refresh bool
 
 //   Deletes the org, returning an error if the vCD call fails.
 //   API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Organization.html
-func (adminOrg *AdminOrg) Delete(force bool, recursive bool) error {
+func (adminOrg *AdminOrg) Delete(ctx context.Context, force bool, recursive bool) error {
 	if force && recursive {
 		//undeploys vapps
-		err := adminOrg.undeployAllVApps()
+		err := adminOrg.undeployAllVApps(ctx)
 		if err != nil {
 			return fmt.Errorf("error could not undeploy: %s", err)
 		}
 		//removes vapps
-		err = adminOrg.removeAllVApps()
+		err = adminOrg.removeAllVApps(ctx)
 		if err != nil {
 			return fmt.Errorf("error could not remove vapp: %s", err)
 		}
 		//removes catalogs
-		err = adminOrg.removeCatalogs()
+		err = adminOrg.removeCatalogs(ctx)
 		if err != nil {
 			return fmt.Errorf("error could not remove all catalogs: %s", err)
 		}
 		//removes networks
-		err = adminOrg.removeAllOrgNetworks()
+		err = adminOrg.removeAllOrgNetworks(ctx)
 		if err != nil {
 			return fmt.Errorf("error could not remove all networks: %s", err)
 		}
 		//removes org vdcs
-		err = adminOrg.removeAllOrgVDCs()
+		err = adminOrg.removeAllOrgVDCs(ctx)
 		if err != nil {
 			return fmt.Errorf("error could not remove all vdcs: %s", err)
 		}
 	}
 	// Disable org
-	err := adminOrg.Disable()
+	err := adminOrg.Disable(ctx)
 	if err != nil {
 		return fmt.Errorf("error disabling Org %s: %s", adminOrg.AdminOrg.Name, err)
 	}
@@ -151,7 +152,7 @@ func (adminOrg *AdminOrg) Delete(force bool, recursive bool) error {
 	if err != nil {
 		return fmt.Errorf("error getting AdminOrg HREF %s : %s", adminOrg.AdminOrg.HREF, err)
 	}
-	req := adminOrg.client.NewRequest(map[string]string{
+	req := adminOrg.client.NewRequest(ctx, map[string]string{
 		"force":     strconv.FormatBool(force),
 		"recursive": strconv.FormatBool(recursive),
 	}, http.MethodDelete, *orgHREF, nil)
@@ -164,26 +165,26 @@ func (adminOrg *AdminOrg) Delete(force bool, recursive bool) error {
 	if err = decodeBody(types.BodyTypeXML, resp, task.Task); err != nil {
 		return fmt.Errorf("error decoding task response: %s", err)
 	}
-	return task.WaitTaskCompletion()
+	return task.WaitTaskCompletion(ctx)
 }
 
 // Disables the org. Returns an error if the call to vCD fails.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-DisableOrg.html
-func (adminOrg *AdminOrg) Disable() error {
+func (adminOrg *AdminOrg) Disable(ctx context.Context) error {
 	orgHREF, err := url.ParseRequestURI(adminOrg.AdminOrg.HREF)
 	if err != nil {
 		return fmt.Errorf("error getting AdminOrg HREF %s : %s", adminOrg.AdminOrg.HREF, err)
 	}
 	orgHREF.Path += "/action/disable"
 
-	return adminOrg.client.ExecuteRequestWithoutResponse(orgHREF.String(), http.MethodPost, "", "error disabling organization: %s", nil)
+	return adminOrg.client.ExecuteRequestWithoutResponse(ctx, orgHREF.String(), http.MethodPost, "", "error disabling organization: %s", nil)
 }
 
 //   Updates the Org definition from current org struct contents.
 //   Any differences that may be legally applied will be updated.
 //   Returns an error if the call to vCD fails.
 //   API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/PUT-Organization.html
-func (adminOrg *AdminOrg) Update() (Task, error) {
+func (adminOrg *AdminOrg) Update(ctx context.Context) (Task, error) {
 	vcomp := &types.AdminOrg{
 		Xmlns:       types.XMLNamespaceVCloud,
 		Name:        adminOrg.AdminOrg.Name,
@@ -200,22 +201,22 @@ func (adminOrg *AdminOrg) Update() (Task, error) {
 	}
 
 	// Return the task
-	return adminOrg.client.ExecuteTaskRequest(adminOrg.AdminOrg.HREF, http.MethodPut,
+	return adminOrg.client.ExecuteTaskRequest(ctx, adminOrg.AdminOrg.HREF, http.MethodPut,
 		"application/vnd.vmware.admin.organization+xml", "error updating Org: %s", vcomp)
 }
 
 // Undeploys every vapp within an organization
-func (adminOrg *AdminOrg) undeployAllVApps() error {
+func (adminOrg *AdminOrg) undeployAllVApps(ctx context.Context) error {
 	for _, vdcs := range adminOrg.AdminOrg.Vdcs.Vdcs {
 		adminVdcHREF, err := url.Parse(vdcs.HREF)
 		if err != nil {
 			return err
 		}
-		vdc, err := adminOrg.getVdcByAdminHREF(adminVdcHREF)
+		vdc, err := adminOrg.getVdcByAdminHREF(ctx, adminVdcHREF)
 		if err != nil {
 			return fmt.Errorf("error retrieving vapp with url: %s and with error %s", adminVdcHREF.Path, err)
 		}
-		err = vdc.undeployAllVdcVApps()
+		err = vdc.undeployAllVdcVApps(ctx)
 		if err != nil {
 			return fmt.Errorf("error deleting vapp: %s", err)
 		}
@@ -224,17 +225,17 @@ func (adminOrg *AdminOrg) undeployAllVApps() error {
 }
 
 // Deletes every vapp within an organization
-func (adminOrg *AdminOrg) removeAllVApps() error {
+func (adminOrg *AdminOrg) removeAllVApps(ctx context.Context) error {
 	for _, vdcs := range adminOrg.AdminOrg.Vdcs.Vdcs {
 		adminVdcHREF, err := url.Parse(vdcs.HREF)
 		if err != nil {
 			return err
 		}
-		vdc, err := adminOrg.getVdcByAdminHREF(adminVdcHREF)
+		vdc, err := adminOrg.getVdcByAdminHREF(ctx, adminVdcHREF)
 		if err != nil {
 			return fmt.Errorf("error retrieving vapp with url: %s and with error %s", adminVdcHREF.Path, err)
 		}
-		err = vdc.removeAllVdcVApps()
+		err = vdc.removeAllVdcVApps(ctx)
 		if err != nil {
 			return fmt.Errorf("error deleting vapp: %s", err)
 		}
@@ -247,7 +248,7 @@ func (adminOrg *AdminOrg) removeAllVApps() error {
 // it returns an error.  Users should use refresh whenever they have
 // a stale org due to the creation/update/deletion of a resource
 // within the org or the org itself.
-func (adminOrg *AdminOrg) Refresh() error {
+func (adminOrg *AdminOrg) Refresh(ctx context.Context) error {
 	if *adminOrg == (AdminOrg{}) {
 		return fmt.Errorf("cannot refresh, Object is empty")
 	}
@@ -256,7 +257,7 @@ func (adminOrg *AdminOrg) Refresh() error {
 	// elements in slices.
 	unmarshalledAdminOrg := &types.AdminOrg{}
 
-	_, err := adminOrg.client.ExecuteRequest(adminOrg.AdminOrg.HREF, http.MethodGet,
+	_, err := adminOrg.client.ExecuteRequest(ctx, adminOrg.AdminOrg.HREF, http.MethodGet,
 		"", "error refreshing organization: %s", nil, unmarshalledAdminOrg)
 	if err != nil {
 		return err
@@ -267,21 +268,21 @@ func (adminOrg *AdminOrg) Refresh() error {
 }
 
 // Gets a vdc within org associated with an admin vdc url
-func (adminOrg *AdminOrg) getVdcByAdminHREF(adminVdcUrl *url.URL) (*Vdc, error) {
+func (adminOrg *AdminOrg) getVdcByAdminHREF(ctx context.Context, adminVdcUrl *url.URL) (*Vdc, error) {
 	// get non admin vdc path
 	vdcURL := adminOrg.client.VCDHREF
 	vdcURL.Path += strings.Split(adminVdcUrl.Path, "/api/admin")[1] //gets id
 
 	vdc := NewVdc(adminOrg.client)
 
-	_, err := adminOrg.client.ExecuteRequest(vdcURL.String(), http.MethodGet,
+	_, err := adminOrg.client.ExecuteRequest(ctx, vdcURL.String(), http.MethodGet,
 		"", "error retrieving vdc: %s", nil, vdc.Vdc)
 
 	return vdc, err
 }
 
 // Removes all vdcs in a org
-func (adminOrg *AdminOrg) removeAllOrgVDCs() error {
+func (adminOrg *AdminOrg) removeAllOrgVDCs(ctx context.Context) error {
 	for _, vdcs := range adminOrg.AdminOrg.Vdcs.Vdcs {
 
 		adminVdcUrl := adminOrg.client.VCDHREF
@@ -292,14 +293,14 @@ func (adminOrg *AdminOrg) removeAllOrgVDCs() error {
 			adminVdcUrl.Path += "/admin/vdc/" + splitVdcId[1] + "/action/disable"
 		}
 
-		req := adminOrg.client.NewRequest(map[string]string{}, http.MethodPost, adminVdcUrl, nil)
+		req := adminOrg.client.NewRequest(ctx, map[string]string{}, http.MethodPost, adminVdcUrl, nil)
 		_, err := checkResp(adminOrg.client.Http.Do(req))
 		if err != nil {
 			return fmt.Errorf("error disabling vdc: %s", err)
 		}
 		// Get admin vdc HREF for normal deletion
 		adminVdcUrl.Path = strings.Split(adminVdcUrl.Path, "/action/disable")[0]
-		req = adminOrg.client.NewRequest(map[string]string{
+		req = adminOrg.client.NewRequest(ctx, map[string]string{
 			"recursive": "true",
 			"force":     "true",
 		}, http.MethodDelete, adminVdcUrl, nil)
@@ -314,7 +315,7 @@ func (adminOrg *AdminOrg) removeAllOrgVDCs() error {
 		if task.Task.Status == "error" {
 			return fmt.Errorf("vdc not properly destroyed")
 		}
-		err = task.WaitTaskCompletion()
+		err = task.WaitTaskCompletion(ctx)
 		if err != nil {
 			return fmt.Errorf("couldn't finish removing vdc %s", err)
 		}
@@ -325,13 +326,13 @@ func (adminOrg *AdminOrg) removeAllOrgVDCs() error {
 }
 
 // Removes All networks in the org
-func (adminOrg *AdminOrg) removeAllOrgNetworks() error {
+func (adminOrg *AdminOrg) removeAllOrgNetworks(ctx context.Context) error {
 	for _, networks := range adminOrg.AdminOrg.Networks.Networks {
 		// Get Network HREF
 		networkHREF := adminOrg.client.VCDHREF
 		networkHREF.Path += "/admin/network/" + strings.Split(networks.HREF, "/api/admin/network/")[1] //gets id
 
-		task, err := adminOrg.client.ExecuteTaskRequest(networkHREF.String(), http.MethodDelete,
+		task, err := adminOrg.client.ExecuteTaskRequest(ctx, networkHREF.String(), http.MethodDelete,
 			"", "error deleting network: %s", nil)
 		if err != nil {
 			return err
@@ -340,7 +341,7 @@ func (adminOrg *AdminOrg) removeAllOrgNetworks() error {
 		if task.Task.Status == "error" {
 			return fmt.Errorf("network not properly destroyed")
 		}
-		err = task.WaitTaskCompletion()
+		err = task.WaitTaskCompletion(ctx)
 		if err != nil {
 			return fmt.Errorf("couldn't finish removing network %s", err)
 		}
@@ -349,9 +350,9 @@ func (adminOrg *AdminOrg) removeAllOrgNetworks() error {
 }
 
 // removeCatalogs force removal of all organization catalogs
-func (adminOrg *AdminOrg) removeCatalogs() error {
+func (adminOrg *AdminOrg) removeCatalogs(ctx context.Context) error {
 	for _, catalog := range adminOrg.AdminOrg.Catalogs.Catalog {
-		isCatalogFromSameOrg, err := isCatalogFromSameOrg(adminOrg, catalog.Name)
+		isCatalogFromSameOrg, err := isCatalogFromSameOrg(ctx, adminOrg, catalog.Name)
 		if err != nil {
 			return fmt.Errorf("error deleting catalog: %s", err)
 		}
@@ -359,7 +360,7 @@ func (adminOrg *AdminOrg) removeCatalogs() error {
 			// Get Catalog HREF
 			catalogHREF := adminOrg.client.VCDHREF
 			catalogHREF.Path += "/admin/catalog/" + strings.Split(catalog.HREF, "/api/admin/catalog/")[1] //gets id
-			req := adminOrg.client.NewRequest(map[string]string{
+			req := adminOrg.client.NewRequest(ctx, map[string]string{
 				"force":     "true",
 				"recursive": "true",
 			}, http.MethodDelete, catalogHREF, nil)
@@ -375,8 +376,8 @@ func (adminOrg *AdminOrg) removeCatalogs() error {
 
 // isCatalogFromSameOrg checks if catalog is in same Org. Shared catalogs from other Org are showed as normal one
 // in some API responses.
-func isCatalogFromSameOrg(adminOrg *AdminOrg, catalogName string) (bool, error) {
-	foundCatalogs, err := adminOrg.FindAdminCatalogRecords(catalogName)
+func isCatalogFromSameOrg(ctx context.Context, adminOrg *AdminOrg, catalogName string) (bool, error) {
+	foundCatalogs, err := adminOrg.FindAdminCatalogRecords(ctx, catalogName)
 	if err != nil {
 		return false, err
 	}
@@ -388,9 +389,9 @@ func isCatalogFromSameOrg(adminOrg *AdminOrg, catalogName string) (bool, error) 
 }
 
 // FindAdminCatalogRecords uses catalog name to return AdminCatalogRecord information.
-func (adminOrg *AdminOrg) FindAdminCatalogRecords(name string) ([]*types.CatalogRecord, error) {
+func (adminOrg *AdminOrg) FindAdminCatalogRecords(ctx context.Context, name string) ([]*types.CatalogRecord, error) {
 	util.Logger.Printf("[DEBUG] FindAdminCatalogRecords with name: %s and org name: %s", name, adminOrg.AdminOrg.Name)
-	results, err := adminOrg.client.QueryWithNotEncodedParams(nil, map[string]string{
+	results, err := adminOrg.client.QueryWithNotEncodedParams(ctx, nil, map[string]string{
 		"type":          "adminCatalog",
 		"filter":        fmt.Sprintf("name==%s;orgName==%s", url.QueryEscape(name), url.QueryEscape(adminOrg.AdminOrg.Name)),
 		"filterEncoded": "true",
@@ -410,12 +411,12 @@ func (adminOrg *AdminOrg) FindAdminCatalogRecords(name string) ([]*types.Catalog
 // perform administrator tasks then function returns an error.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/GET-Catalog-AdminView.html
 // Deprecated: Use adminOrg.GetAdminCatalog instead
-func (adminOrg *AdminOrg) FindAdminCatalog(catalogName string) (AdminCatalog, error) {
+func (adminOrg *AdminOrg) FindAdminCatalog(ctx context.Context, catalogName string) (AdminCatalog, error) {
 	for _, catalog := range adminOrg.AdminOrg.Catalogs.Catalog {
 		// Get Catalog HREF
 		if catalog.Name == catalogName {
 			adminCatalog := NewAdminCatalog(adminOrg.client)
-			_, err := adminOrg.client.ExecuteRequest(catalog.HREF, http.MethodGet,
+			_, err := adminOrg.client.ExecuteRequest(ctx, catalog.HREF, http.MethodGet,
 				"", "error retrieving catalog: %s", nil, adminCatalog.AdminCatalog)
 			// The request was successful
 			return *adminCatalog, err
@@ -429,7 +430,7 @@ func (adminOrg *AdminOrg) FindAdminCatalog(catalogName string) (AdminCatalog, er
 // Otherwise it returns an error. Function allows user to use an AdminOrg
 // to also fetch a Catalog.
 // Deprecated: Use adminOrg.GetCatalogByName instead
-func (adminOrg *AdminOrg) FindCatalog(catalogName string) (Catalog, error) {
+func (adminOrg *AdminOrg) FindCatalog(ctx context.Context, catalogName string) (Catalog, error) {
 	for _, catalog := range adminOrg.AdminOrg.Catalogs.Catalog {
 		// Get Catalog HREF
 		if catalog.Name == catalogName {
@@ -438,7 +439,7 @@ func (adminOrg *AdminOrg) FindCatalog(catalogName string) (Catalog, error) {
 
 			cat := NewCatalog(adminOrg.client)
 
-			_, err := adminOrg.client.ExecuteRequest(catalogURL.String(), http.MethodGet,
+			_, err := adminOrg.client.ExecuteRequest(ctx, catalogURL.String(), http.MethodGet,
 				"", "error retrieving catalog: %s", nil, cat.Catalog)
 
 			// The request was successful
@@ -451,7 +452,7 @@ func (adminOrg *AdminOrg) FindCatalog(catalogName string) (Catalog, error) {
 // GetCatalogByHref  finds a Catalog by HREF
 // On success, returns a pointer to the Catalog structure and a nil error
 // On failure, returns a nil pointer and an error
-func (adminOrg *AdminOrg) GetCatalogByHref(catalogHref string) (*Catalog, error) {
+func (adminOrg *AdminOrg) GetCatalogByHref(ctx context.Context, catalogHref string) (*Catalog, error) {
 	splitByAdminHREF := strings.Split(catalogHref, "/api/admin")
 
 	// admin user and normal user will have different urls
@@ -464,7 +465,7 @@ func (adminOrg *AdminOrg) GetCatalogByHref(catalogHref string) (*Catalog, error)
 
 	cat := NewCatalog(adminOrg.client)
 
-	_, err := adminOrg.client.ExecuteRequest(catalogHREF, http.MethodGet,
+	_, err := adminOrg.client.ExecuteRequest(ctx, catalogHREF, http.MethodGet,
 		"", "error retrieving catalog: %s", nil, cat.Catalog)
 
 	if err != nil {
@@ -477,10 +478,10 @@ func (adminOrg *AdminOrg) GetCatalogByHref(catalogHref string) (*Catalog, error)
 // GetCatalogByName  finds a Catalog by Name
 // On success, returns a pointer to the Catalog structure and a nil error
 // On failure, returns a nil pointer and an error
-func (adminOrg *AdminOrg) GetCatalogByName(catalogName string, refresh bool) (*Catalog, error) {
+func (adminOrg *AdminOrg) GetCatalogByName(ctx context.Context, catalogName string, refresh bool) (*Catalog, error) {
 
 	if refresh {
-		err := adminOrg.Refresh()
+		err := adminOrg.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -488,7 +489,7 @@ func (adminOrg *AdminOrg) GetCatalogByName(catalogName string, refresh bool) (*C
 
 	for _, catalog := range adminOrg.AdminOrg.Catalogs.Catalog {
 		if catalog.Name == catalogName {
-			return adminOrg.GetCatalogByHref(catalog.HREF)
+			return adminOrg.GetCatalogByHref(ctx, catalog.HREF)
 		}
 	}
 	return nil, ErrorEntityNotFound
@@ -536,16 +537,16 @@ func equalIds(wantedId, foundId, foundHref string) bool {
 // GetCatalogById finds a Catalog by ID
 // On success, returns a pointer to the Catalog structure and a nil error
 // On failure, returns a nil pointer and an error
-func (adminOrg *AdminOrg) GetCatalogById(catalogId string, refresh bool) (*Catalog, error) {
+func (adminOrg *AdminOrg) GetCatalogById(ctx context.Context, catalogId string, refresh bool) (*Catalog, error) {
 	if refresh {
-		err := adminOrg.Refresh()
+		err := adminOrg.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
 	}
 	for _, catalog := range adminOrg.AdminOrg.Catalogs.Catalog {
 		if equalIds(catalogId, catalog.ID, catalog.HREF) {
-			return adminOrg.GetCatalogByHref(catalog.HREF)
+			return adminOrg.GetCatalogByHref(ctx, catalog.HREF)
 		}
 	}
 	return nil, ErrorEntityNotFound
@@ -554,9 +555,11 @@ func (adminOrg *AdminOrg) GetCatalogById(catalogId string, refresh bool) (*Catal
 // GetCatalogByNameOrId finds a Catalog by name or ID
 // On success, returns a pointer to the Catalog structure and a nil error
 // On failure, returns a nil pointer and an error
-func (adminOrg *AdminOrg) GetCatalogByNameOrId(identifier string, refresh bool) (*Catalog, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetCatalogByName(name, refresh) }
-	getById := func(id string, refresh bool) (interface{}, error) { return adminOrg.GetCatalogById(id, refresh) }
+func (adminOrg *AdminOrg) GetCatalogByNameOrId(ctx context.Context, identifier string, refresh bool) (*Catalog, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) {
+		return adminOrg.GetCatalogByName(ctx, name, refresh)
+	}
+	getById := func(id string, refresh bool) (interface{}, error) { return adminOrg.GetCatalogById(ctx, id, refresh) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
 	if entity == nil {
 		return nil, err
@@ -567,10 +570,10 @@ func (adminOrg *AdminOrg) GetCatalogByNameOrId(identifier string, refresh bool) 
 // GetAdminCatalogByHref  finds an AdminCatalog by HREF
 // On success, returns a pointer to the Catalog structure and a nil error
 // On failure, returns a nil pointer and an error
-func (adminOrg *AdminOrg) GetAdminCatalogByHref(catalogHref string) (*AdminCatalog, error) {
+func (adminOrg *AdminOrg) GetAdminCatalogByHref(ctx context.Context, catalogHref string) (*AdminCatalog, error) {
 	adminCatalog := NewAdminCatalog(adminOrg.client)
 
-	_, err := adminOrg.client.ExecuteRequest(catalogHref, http.MethodGet,
+	_, err := adminOrg.client.ExecuteRequest(ctx, catalogHref, http.MethodGet,
 		"", "error retrieving catalog: %s", nil, adminCatalog.AdminCatalog)
 
 	if err != nil {
@@ -584,9 +587,9 @@ func (adminOrg *AdminOrg) GetAdminCatalogByHref(catalogHref string) (*AdminCatal
 // GetCatalogByName finds an AdminCatalog by Name
 // On success, returns a pointer to the AdminCatalog structure and a nil error
 // On failure, returns a nil pointer and an error
-func (adminOrg *AdminOrg) GetAdminCatalogByName(catalogName string, refresh bool) (*AdminCatalog, error) {
+func (adminOrg *AdminOrg) GetAdminCatalogByName(ctx context.Context, catalogName string, refresh bool) (*AdminCatalog, error) {
 	if refresh {
-		err := adminOrg.Refresh()
+		err := adminOrg.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -594,7 +597,7 @@ func (adminOrg *AdminOrg) GetAdminCatalogByName(catalogName string, refresh bool
 	for _, catalog := range adminOrg.AdminOrg.Catalogs.Catalog {
 		// Get Catalog HREF
 		if catalog.Name == catalogName {
-			return adminOrg.GetAdminCatalogByHref(catalog.HREF)
+			return adminOrg.GetAdminCatalogByHref(ctx, catalog.HREF)
 		}
 	}
 	return nil, ErrorEntityNotFound
@@ -603,9 +606,9 @@ func (adminOrg *AdminOrg) GetAdminCatalogByName(catalogName string, refresh bool
 // GetCatalogById finds an AdminCatalog by ID
 // On success, returns a pointer to the AdminCatalog structure and a nil error
 // On failure, returns a nil pointer and an error
-func (adminOrg *AdminOrg) GetAdminCatalogById(catalogId string, refresh bool) (*AdminCatalog, error) {
+func (adminOrg *AdminOrg) GetAdminCatalogById(ctx context.Context, catalogId string, refresh bool) (*AdminCatalog, error) {
 	if refresh {
-		err := adminOrg.Refresh()
+		err := adminOrg.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -613,7 +616,7 @@ func (adminOrg *AdminOrg) GetAdminCatalogById(catalogId string, refresh bool) (*
 	for _, catalog := range adminOrg.AdminOrg.Catalogs.Catalog {
 		// Get Catalog HREF
 		if equalIds(catalogId, catalog.ID, catalog.HREF) {
-			return adminOrg.GetAdminCatalogByHref(catalog.HREF)
+			return adminOrg.GetAdminCatalogByHref(ctx, catalog.HREF)
 		}
 	}
 	return nil, ErrorEntityNotFound
@@ -622,12 +625,12 @@ func (adminOrg *AdminOrg) GetAdminCatalogById(catalogId string, refresh bool) (*
 // GetAdminCatalogByNameOrId finds an AdminCatalog by name or ID
 // On success, returns a pointer to the AdminCatalog structure and a nil error
 // On failure, returns a nil pointer and an error
-func (adminOrg *AdminOrg) GetAdminCatalogByNameOrId(identifier string, refresh bool) (*AdminCatalog, error) {
+func (adminOrg *AdminOrg) GetAdminCatalogByNameOrId(ctx context.Context, identifier string, refresh bool) (*AdminCatalog, error) {
 	getByName := func(name string, refresh bool) (interface{}, error) {
-		return adminOrg.GetAdminCatalogByName(name, refresh)
+		return adminOrg.GetAdminCatalogByName(ctx, name, refresh)
 	}
 	getById := func(id string, refresh bool) (interface{}, error) {
-		return adminOrg.GetAdminCatalogById(id, refresh)
+		return adminOrg.GetAdminCatalogById(ctx, id, refresh)
 	}
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
 	if entity == nil {
@@ -637,7 +640,7 @@ func (adminOrg *AdminOrg) GetAdminCatalogByNameOrId(identifier string, refresh b
 }
 
 // GetVDCByHref retrieves a VDC using a direct call with the HREF
-func (adminOrg *AdminOrg) GetVDCByHref(vdcHref string) (*Vdc, error) {
+func (adminOrg *AdminOrg) GetVDCByHref(ctx context.Context, vdcHref string) (*Vdc, error) {
 	splitByAdminHREF := strings.Split(vdcHref, "/api/admin")
 
 	// admin user and normal user will have different urls
@@ -650,7 +653,7 @@ func (adminOrg *AdminOrg) GetVDCByHref(vdcHref string) (*Vdc, error) {
 
 	vdc := NewVdc(adminOrg.client)
 
-	_, err := adminOrg.client.ExecuteRequest(vdcHREF, http.MethodGet,
+	_, err := adminOrg.client.ExecuteRequest(ctx, vdcHREF, http.MethodGet,
 		"", "error getting vdc: %s", nil, vdc.Vdc)
 
 	if err != nil {
@@ -663,16 +666,16 @@ func (adminOrg *AdminOrg) GetVDCByHref(vdcHref string) (*Vdc, error) {
 // GetVDCByName finds a VDC by Name
 // On success, returns a pointer to the Vdc structure and a nil error
 // On failure, returns a nil pointer and an error
-func (adminOrg *AdminOrg) GetVDCByName(vdcName string, refresh bool) (*Vdc, error) {
+func (adminOrg *AdminOrg) GetVDCByName(ctx context.Context, vdcName string, refresh bool) (*Vdc, error) {
 	if refresh {
-		err := adminOrg.Refresh()
+		err := adminOrg.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
 	}
 	for _, vdc := range adminOrg.AdminOrg.Vdcs.Vdcs {
 		if vdc.Name == vdcName {
-			return adminOrg.GetVDCByHref(vdc.HREF)
+			return adminOrg.GetVDCByHref(ctx, vdc.HREF)
 		}
 	}
 	return nil, ErrorEntityNotFound
@@ -681,16 +684,16 @@ func (adminOrg *AdminOrg) GetVDCByName(vdcName string, refresh bool) (*Vdc, erro
 // GetVDCById finds a VDC by ID
 // On success, returns a pointer to the Vdc structure and a nil error
 // On failure, returns a nil pointer and an error
-func (adminOrg *AdminOrg) GetVDCById(vdcId string, refresh bool) (*Vdc, error) {
+func (adminOrg *AdminOrg) GetVDCById(ctx context.Context, vdcId string, refresh bool) (*Vdc, error) {
 	if refresh {
-		err := adminOrg.Refresh()
+		err := adminOrg.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
 	}
 	for _, vdc := range adminOrg.AdminOrg.Vdcs.Vdcs {
 		if equalIds(vdcId, vdc.ID, vdc.HREF) {
-			return adminOrg.GetVDCByHref(vdc.HREF)
+			return adminOrg.GetVDCByHref(ctx, vdc.HREF)
 		}
 	}
 	return nil, ErrorEntityNotFound
@@ -699,9 +702,9 @@ func (adminOrg *AdminOrg) GetVDCById(vdcId string, refresh bool) (*Vdc, error) {
 // GetVDCByNameOrId finds a VDC by name or ID
 // On success, returns a pointer to the VDC structure and a nil error
 // On failure, returns a nil pointer and an error
-func (adminOrg *AdminOrg) GetVDCByNameOrId(identifier string, refresh bool) (*Vdc, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetVDCByName(name, refresh) }
-	getById := func(id string, refresh bool) (interface{}, error) { return adminOrg.GetVDCById(id, refresh) }
+func (adminOrg *AdminOrg) GetVDCByNameOrId(ctx context.Context, identifier string, refresh bool) (*Vdc, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetVDCByName(ctx, name, refresh) }
+	getById := func(id string, refresh bool) (interface{}, error) { return adminOrg.GetVDCById(ctx, id, refresh) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
 	if entity == nil {
 		return nil, err
@@ -714,7 +717,7 @@ func (adminOrg *AdminOrg) GetVDCByNameOrId(identifier string, refresh bool) (*Vd
 // Otherwise it returns an empty vdc and an error. This function
 // allows users to use an AdminOrg to fetch a vdc as well.
 // Deprecated: Use adminOrg.GetVDCByName instead
-func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
+func (adminOrg *AdminOrg) GetVdcByName(ctx context.Context, vdcname string) (Vdc, error) {
 	for _, vdcs := range adminOrg.AdminOrg.Vdcs.Vdcs {
 		if vdcs.Name == vdcname {
 			splitByAdminHREF := strings.Split(vdcs.HREF, "/api/admin")
@@ -729,7 +732,7 @@ func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
 
 			vdc := NewVdc(adminOrg.client)
 
-			_, err := adminOrg.client.ExecuteRequest(vdcHREF, http.MethodGet,
+			_, err := adminOrg.client.ExecuteRequest(ctx, vdcHREF, http.MethodGet,
 				"", "error getting vdc: %s", nil, vdc.Vdc)
 
 			return *vdc, err
@@ -739,13 +742,13 @@ func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
 }
 
 // QueryCatalogList returns a list of catalogs for this organization
-func (adminOrg *AdminOrg) QueryCatalogList() ([]*types.CatalogRecord, error) {
+func (adminOrg *AdminOrg) QueryCatalogList(ctx context.Context) ([]*types.CatalogRecord, error) {
 	util.Logger.Printf("[DEBUG] QueryCatalogList with org name %s", adminOrg.AdminOrg.Name)
 	queryType := types.QtCatalog
 	if adminOrg.client.IsSysAdmin {
 		queryType = types.QtAdminCatalog
 	}
-	results, err := adminOrg.client.cumulativeQuery(queryType, nil, map[string]string{
+	results, err := adminOrg.client.cumulativeQuery(ctx, queryType, nil, map[string]string{
 		"type":          queryType,
 		"filter":        fmt.Sprintf("orgName==%s", url.QueryEscape(adminOrg.AdminOrg.Name)),
 		"filterEncoded": "true",

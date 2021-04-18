@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -60,7 +61,7 @@ type uploadDetails struct {
 // client - client for requests
 // filePath - file path to file which will be uploaded
 // uploadDetails - file upload settings and data
-func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64, error) {
+func uploadFile(ctx context.Context, client *Client, filePath string, uDetails uploadDetails) (int64, error) {
 	util.Logger.Printf("[TRACE] Starting uploading: %s, offset: %v, fileze: %v, toLink: %s \n", filePath, uDetails.uploadedBytes, uDetails.fileSizeToUpload, uDetails.uploadLink)
 
 	var part []byte
@@ -110,7 +111,7 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 		if count, err = io.ReadFull(file, part); err != nil {
 			break
 		}
-		err = uploadPartFile(client, part, int64(count), uDetails)
+		err = uploadPartFile(ctx, client, part, int64(count), uDetails)
 		uDetails.uploadedBytes += int64(count)
 		uDetails.uploadedBytesForCallback += int64(count)
 		if err != nil {
@@ -122,7 +123,7 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 
 	// upload last part as ReadFull returns io.ErrUnexpectedEOF when reaches end of file.
 	if err == io.ErrUnexpectedEOF {
-		err = uploadPartFile(client, part[:count], int64(count), uDetails)
+		err = uploadPartFile(ctx, client, part[:count], int64(count), uDetails)
 		if err != nil {
 			util.Logger.Printf("[ERROR] during upload process: %s, error %s ", filePath, err)
 			*uDetails.uploadError = err
@@ -144,7 +145,7 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 // offset - how much is uploaded
 // filePartSize - how much bytes will be uploaded
 // fileSizeToUpload - final file size
-func newFileUploadRequest(client *Client, requestUrl string, filePart []byte, offset, filePartSize, fileSizeToUpload int64) (*http.Request, error) {
+func newFileUploadRequest(ctx context.Context, client *Client, requestUrl string, filePart []byte, offset, filePartSize, fileSizeToUpload int64) (*http.Request, error) {
 	util.Logger.Printf("[TRACE] Creating file upload request: %s, %v, %v, %v \n", requestUrl, offset, filePartSize, fileSizeToUpload)
 
 	parsedRequestURL, err := url.ParseRequestURI(requestUrl)
@@ -152,7 +153,7 @@ func newFileUploadRequest(client *Client, requestUrl string, filePart []byte, of
 		return nil, fmt.Errorf("error decoding vdc response: %s", err)
 	}
 
-	uploadReq := client.NewRequestWitNotEncodedParams(nil, nil, http.MethodPut, *parsedRequestURL, bytes.NewReader(filePart))
+	uploadReq := client.NewRequestWitNotEncodedParams(ctx, nil, nil, http.MethodPut, *parsedRequestURL, bytes.NewReader(filePart))
 
 	uploadReq.ContentLength = filePartSize
 	uploadReq.Header.Set("Content-Length", strconv.FormatInt(uploadReq.ContentLength, 10))
@@ -173,10 +174,10 @@ func newFileUploadRequest(client *Client, requestUrl string, filePart []byte, of
 // part - bytes of file part
 // partDataSize - how much bytes will be uploaded
 // uploadDetails - file upload settings and data
-func uploadPartFile(client *Client, part []byte, partDataSize int64, uDetails uploadDetails) error {
+func uploadPartFile(ctx context.Context, client *Client, part []byte, partDataSize int64, uDetails uploadDetails) error {
 	// Avoids session time out, as the multi part upload is treated as one request
-	makeEmptyRequest(client)
-	request, err := newFileUploadRequest(client, uDetails.uploadLink, part, uDetails.uploadedBytes, partDataSize, uDetails.fileSizeToUpload)
+	makeEmptyRequest(ctx, client)
+	request, err := newFileUploadRequest(ctx, client, uDetails.uploadLink, part, uDetails.uploadedBytes, partDataSize, uDetails.fileSizeToUpload)
 	if err != nil {
 		return err
 	}
@@ -193,11 +194,11 @@ func uploadPartFile(client *Client, part []byte, partDataSize int64, uDetails up
 }
 
 // call query for task which are very fast and optimised as UI calls it very often
-func makeEmptyRequest(client *Client) {
+func makeEmptyRequest(ctx context.Context, client *Client) {
 	apiEndpoint := client.VCDHREF
 	apiEndpoint.Path += "/query?type=task&format=records&page=1&pageSize=5&"
 
-	_, _ = client.ExecuteRequest(apiEndpoint.String(), http.MethodGet,
+	_, _ = client.ExecuteRequest(ctx, apiEndpoint.String(), http.MethodGet,
 		"", "error making empty request: %s", nil, nil)
 }
 
@@ -217,7 +218,7 @@ func getUploadLink(files *types.FilesList) (*url.URL, error) {
 	return ovfUploadHref, nil
 }
 
-func createTaskForVcdImport(client *Client, taskHREF string) (Task, error) {
+func createTaskForVcdImport(ctx context.Context, client *Client, taskHREF string) (Task, error) {
 	util.Logger.Printf("[TRACE] Create task for vcd with HREF: %s\n", taskHREF)
 
 	taskURL, err := url.ParseRequestURI(taskHREF)
@@ -225,7 +226,7 @@ func createTaskForVcdImport(client *Client, taskHREF string) (Task, error) {
 		return Task{}, err
 	}
 
-	request := client.NewRequest(map[string]string{}, http.MethodGet, *taskURL, nil)
+	request := client.NewRequest(ctx, map[string]string{}, http.MethodGet, *taskURL, nil)
 	response, err := checkResp(client.Http.Do(request))
 	if err != nil {
 		return Task{}, err

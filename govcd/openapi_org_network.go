@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -19,19 +20,19 @@ type OpenApiOrgVdcNetwork struct {
 }
 
 // GetOpenApiOrgVdcNetworkById allows to retrieve both - NSX-T and NSX-V Org VDC networks
-func (org *Org) GetOpenApiOrgVdcNetworkById(id string) (*OpenApiOrgVdcNetwork, error) {
+func (org *Org) GetOpenApiOrgVdcNetworkById(ctx context.Context, id string) (*OpenApiOrgVdcNetwork, error) {
 	// Inject Org ID filter to perform filtering on server side
 	params := url.Values{}
 	filterParams := queryParameterFilterAnd("orgRef.id=="+org.Org.ID, params)
-	return getOpenApiOrgVdcNetworkById(org.client, id, filterParams)
+	return getOpenApiOrgVdcNetworkById(ctx, org.client, id, filterParams)
 }
 
 // GetOpenApiOrgVdcNetworkById allows to retrieve both - NSX-T and NSX-V Org VDC networks
-func (vdc *Vdc) GetOpenApiOrgVdcNetworkById(id string) (*OpenApiOrgVdcNetwork, error) {
+func (vdc *Vdc) GetOpenApiOrgVdcNetworkById(ctx context.Context, id string) (*OpenApiOrgVdcNetwork, error) {
 	// Inject Vdc ID filter to perform filtering on server side
 	params := url.Values{}
 	filterParams := queryParameterFilterAnd("orgVdc.id=="+vdc.Vdc.ID, params)
-	egw, err := getOpenApiOrgVdcNetworkById(vdc.client, id, filterParams)
+	egw, err := getOpenApiOrgVdcNetworkById(ctx, vdc.client, id, filterParams)
 	if err != nil {
 		return nil, err
 	}
@@ -40,11 +41,11 @@ func (vdc *Vdc) GetOpenApiOrgVdcNetworkById(id string) (*OpenApiOrgVdcNetwork, e
 }
 
 // GetOpenApiOrgVdcNetworkByName allows to retrieve both - NSX-T and NSX-V Org VDC networks
-func (vdc *Vdc) GetOpenApiOrgVdcNetworkByName(name string) (*OpenApiOrgVdcNetwork, error) {
+func (vdc *Vdc) GetOpenApiOrgVdcNetworkByName(ctx context.Context, name string) (*OpenApiOrgVdcNetwork, error) {
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", "name=="+name)
 
-	allEdges, err := vdc.GetAllOpenApiOrgVdcNetworks(queryParameters)
+	allEdges, err := vdc.GetAllOpenApiOrgVdcNetworks(ctx, queryParameters)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve Org VDC network by name '%s': %s", name, err)
 	}
@@ -56,15 +57,15 @@ func (vdc *Vdc) GetOpenApiOrgVdcNetworkByName(name string) (*OpenApiOrgVdcNetwor
 //
 // Note. If pageSize > 32 it will be limited to maximum of 32 in this function because API validation does not allow for
 // higher number
-func (vdc *Vdc) GetAllOpenApiOrgVdcNetworks(queryParameters url.Values) ([]*OpenApiOrgVdcNetwork, error) {
+func (vdc *Vdc) GetAllOpenApiOrgVdcNetworks(ctx context.Context, queryParameters url.Values) ([]*OpenApiOrgVdcNetwork, error) {
 	filteredQueryParams := queryParameterFilterAnd("orgVdc.id=="+vdc.Vdc.ID, queryParameters)
-	return getAllOpenApiOrgVdcNetworks(vdc.client, filteredQueryParams)
+	return getAllOpenApiOrgVdcNetworks(ctx, vdc.client, filteredQueryParams)
 }
 
 // CreateOpenApiOrgVdcNetwork allows to create NSX-T or NSX-V Org VDC network
-func (vdc *Vdc) CreateOpenApiOrgVdcNetwork(OrgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) (*OpenApiOrgVdcNetwork, error) {
+func (vdc *Vdc) CreateOpenApiOrgVdcNetwork(ctx context.Context, OrgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) (*OpenApiOrgVdcNetwork, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
-	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +80,7 @@ func (vdc *Vdc) CreateOpenApiOrgVdcNetwork(OrgVdcNetworkConfig *types.OpenApiOrg
 		client:               vdc.client,
 	}
 
-	err = vdc.client.OpenApiPostItem(minimumApiVersion, urlRef, nil, OrgVdcNetworkConfig, returnEgw.OpenApiOrgVdcNetwork)
+	err = vdc.client.OpenApiPostItem(ctx, minimumApiVersion, urlRef, nil, OrgVdcNetworkConfig, returnEgw.OpenApiOrgVdcNetwork)
 	if err != nil {
 		return nil, fmt.Errorf("error creating Org VDC network: %s", err)
 	}
@@ -88,9 +89,9 @@ func (vdc *Vdc) CreateOpenApiOrgVdcNetwork(OrgVdcNetworkConfig *types.OpenApiOrg
 }
 
 // Update allows to update Org VDC network
-func (orgVdcNet *OpenApiOrgVdcNetwork) Update(OrgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) (*OpenApiOrgVdcNetwork, error) {
+func (orgVdcNet *OpenApiOrgVdcNetwork) Update(ctx context.Context, OrgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) (*OpenApiOrgVdcNetwork, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
-	minimumApiVersion, err := orgVdcNet.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := orgVdcNet.client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +110,7 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) Update(OrgVdcNetworkConfig *types.OpenApi
 		client:               orgVdcNet.client,
 	}
 
-	err = orgVdcNet.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, OrgVdcNetworkConfig, returnEgw.OpenApiOrgVdcNetwork)
+	err = orgVdcNet.client.OpenApiPutItem(ctx, minimumApiVersion, urlRef, nil, OrgVdcNetworkConfig, returnEgw.OpenApiOrgVdcNetwork)
 	if err != nil {
 		return nil, fmt.Errorf("error updating Org VDC network: %s", err)
 	}
@@ -118,9 +119,9 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) Update(OrgVdcNetworkConfig *types.OpenApi
 }
 
 // Delete allows to delete Org VDC network
-func (orgVdcNet *OpenApiOrgVdcNetwork) Delete() error {
+func (orgVdcNet *OpenApiOrgVdcNetwork) Delete(ctx context.Context) error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
-	minimumApiVersion, err := orgVdcNet.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := orgVdcNet.client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return err
 	}
@@ -134,7 +135,7 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) Delete() error {
 		return err
 	}
 
-	err = orgVdcNet.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil)
+	err = orgVdcNet.client.OpenApiDeleteItem(ctx, minimumApiVersion, urlRef, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting Org VDC network: %s", err)
@@ -171,9 +172,9 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) IsDirect() bool {
 // getOpenApiOrgVdcNetworkById is a private parent for wrapped functions:
 // func (org *Org) GetOpenApiOrgVdcNetworkById(id string) (*OpenApiOrgVdcNetwork, error)
 // func (vdc *Vdc) GetOpenApiOrgVdcNetworkById(id string) (*OpenApiOrgVdcNetwork, error)
-func getOpenApiOrgVdcNetworkById(client *Client, id string, queryParameters url.Values) (*OpenApiOrgVdcNetwork, error) {
+func getOpenApiOrgVdcNetworkById(ctx context.Context, client *Client, id string, queryParameters url.Values) (*OpenApiOrgVdcNetwork, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +193,7 @@ func getOpenApiOrgVdcNetworkById(client *Client, id string, queryParameters url.
 		client:               client,
 	}
 
-	err = client.OpenApiGetItem(minimumApiVersion, urlRef, queryParameters, egw.OpenApiOrgVdcNetwork)
+	err = client.OpenApiGetItem(ctx, minimumApiVersion, urlRef, queryParameters, egw.OpenApiOrgVdcNetwork)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +220,7 @@ func returnSingleOpenApiOrgVdcNetwork(name string, allEdges []*OpenApiOrgVdcNetw
 //
 // Note. If pageSize > 32 it will be limited to maximum of 32 in this function because API validation does not allow
 // higher number
-func getAllOpenApiOrgVdcNetworks(client *Client, queryParameters url.Values) ([]*OpenApiOrgVdcNetwork, error) {
+func getAllOpenApiOrgVdcNetworks(ctx context.Context, client *Client, queryParameters url.Values) ([]*OpenApiOrgVdcNetwork, error) {
 
 	// Enforce maximum pageSize to be 32 as API endpoint throws error if it is > 32
 	pageSizeString := queryParameters.Get("pageSize")
@@ -241,7 +242,7 @@ func getAllOpenApiOrgVdcNetworks(client *Client, queryParameters url.Values) ([]
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +253,7 @@ func getAllOpenApiOrgVdcNetworks(client *Client, queryParameters url.Values) ([]
 	}
 
 	typeResponses := []*types.OpenApiOrgVdcNetwork{{}}
-	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &typeResponses)
+	err = client.OpenApiGetAllItems(ctx, minimumApiVersion, urlRef, queryParameters, &typeResponses)
 	if err != nil {
 		return nil, err
 	}

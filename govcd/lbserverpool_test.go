@@ -23,7 +23,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
-	edge, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, false)
+	edge, err := vcd.vdc.GetEdgeGatewayByName(ctx, vcd.config.VCD.EdgeGateway, false)
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, vcd.config.VCD.EdgeGateway)
 
@@ -39,9 +39,9 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 		MaxRetries: 3,
 		Type:       "http",
 	}
-	err = deleteLbServiceMonitorIfExists(*edge, lbMon.Name)
+	err = deleteLbServiceMonitorIfExists(ctx, *edge, lbMon.Name)
 	check.Assert(err, IsNil)
-	lbMonitor, err := edge.CreateLbServiceMonitor(lbMon)
+	lbMonitor, err := edge.CreateLbServiceMonitor(ctx, lbMon)
 	check.Assert(err, IsNil)
 	check.Assert(lbMonitor.ID, NotNil)
 
@@ -73,9 +73,9 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 		},
 	}
 
-	err = deleteLbServerPoolIfExists(*edge, lbMon.Name)
+	err = deleteLbServerPoolIfExists(ctx, *edge, lbMon.Name)
 	check.Assert(err, IsNil)
-	createdLbPool, err := edge.CreateLbServerPool(lbPoolConfig)
+	createdLbPool, err := edge.CreateLbServerPool(ctx, lbPoolConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdLbPool.ID, Not(IsNil))
 	check.Assert(createdLbPool.Transparent, Equals, lbPoolConfig.Transparent)
@@ -92,15 +92,15 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	AddToCleanupList(TestLbServerPool, "lbServerPool", parentEntity, check.TestName())
 
 	// Try to delete used service monitor and expect it to fail with nice error
-	err = edge.DeleteLbServiceMonitor(lbMon)
+	err = edge.DeleteLbServiceMonitor(ctx, lbMon)
 	check.Assert(err, ErrorMatches, `.*Fail to delete objectId .*\S+.* for it is used by .*`)
 
 	// Lookup by both name and ID and compare that these are equal values
-	lbPoolByID, err := edge.getLbServerPool(&types.LbPool{ID: createdLbPool.ID})
+	lbPoolByID, err := edge.getLbServerPool(ctx, &types.LbPool{ID: createdLbPool.ID})
 	check.Assert(err, IsNil)
 	check.Assert(lbPoolByID, Not(IsNil))
 
-	lbPoolByName, err := edge.getLbServerPool(&types.LbPool{Name: createdLbPool.Name})
+	lbPoolByName, err := edge.getLbServerPool(ctx, &types.LbPool{Name: createdLbPool.Name})
 	check.Assert(err, IsNil)
 	check.Assert(lbPoolByName, Not(IsNil))
 	check.Assert(createdLbPool.ID, Equals, lbPoolByName.ID)
@@ -110,20 +110,20 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	check.Assert(createdLbPool.Algorithm, Equals, lbPoolConfig.Algorithm)
 
 	// GetLbServerPools should return at least one pool which is ours.
-	pools, err := edge.GetLbServerPools()
+	pools, err := edge.GetLbServerPools(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(pools, Not(HasLen), 0)
 
 	// Test updating fields
 	// Update algorithm
 	lbPoolByID.Algorithm = "ip-hash"
-	updatedLBPool, err := edge.UpdateLbServerPool(lbPoolByID)
+	updatedLBPool, err := edge.UpdateLbServerPool(ctx, lbPoolByID)
 	check.Assert(err, IsNil)
 	check.Assert(updatedLBPool.Algorithm, Equals, lbPoolByID.Algorithm)
 
 	// Update boolean value fields
 	lbPoolByID.Transparent = true
-	updatedLBPool, err = edge.UpdateLbServerPool(lbPoolByID)
+	updatedLBPool, err = edge.UpdateLbServerPool(ctx, lbPoolByID)
 	check.Assert(err, IsNil)
 	check.Assert(updatedLBPool.Transparent, Equals, lbPoolByID.Transparent)
 
@@ -133,19 +133,19 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	// Try to set invalid algorithm hash and expect API to return error
 	// Invalid algorithm hash. Valid algorithms are: IP-HASH|ROUND-ROBIN|URI|LEASTCONN|URL|HTTP-HEADER.
 	lbPoolByID.Algorithm = "invalid_algorithm"
-	updatedLBPool, err = edge.UpdateLbServerPool(lbPoolByID)
+	updatedLBPool, err = edge.UpdateLbServerPool(ctx, lbPoolByID)
 	check.Assert(updatedLBPool, IsNil)
 	check.Assert(err, ErrorMatches, ".*Invalid algorithm.*Valid algorithms are:.*")
 
 	// Update should fail without name
 	lbPoolByID.Name = ""
-	_, err = edge.UpdateLbServerPool(lbPoolByID)
+	_, err = edge.UpdateLbServerPool(ctx, lbPoolByID)
 	check.Assert(err.Error(), Equals, "load balancer server pool Name cannot be empty")
 
 	// Delete / cleanup
-	err = edge.DeleteLbServerPool(&types.LbPool{ID: createdLbPool.ID})
+	err = edge.DeleteLbServerPool(ctx, &types.LbPool{ID: createdLbPool.ID})
 	check.Assert(err, IsNil)
 
-	_, err = edge.GetLbServerPoolById(createdLbPool.ID)
+	_, err = edge.GetLbServerPoolById(ctx, createdLbPool.ID)
 	check.Assert(IsNotFound(err), Equals, true)
 }

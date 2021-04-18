@@ -49,7 +49,7 @@ func TestSamlAdfsAuthenticate(t *testing.T) {
 		t.Errorf("got errors: %s", err)
 	}
 	vcdCli := NewVCDClient(*vcdUrl, true, WithSamlAdfs(true, ""))
-	err = vcdCli.Authenticate("fakeUser", "fakePass", "my-org")
+	err = vcdCli.Authenticate(ctx, "fakeUser", "fakePass", "my-org")
 	if err != nil {
 		t.Errorf("got errors: %s", err)
 	}

@@ -5,6 +5,7 @@ package govcd
  */
 
 import (
+	"context"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
@@ -20,19 +21,19 @@ type VdcComputePolicy struct {
 }
 
 // GetVdcComputePolicyById retrieves VDC compute policy by given ID
-func (org *AdminOrg) GetVdcComputePolicyById(id string) (*VdcComputePolicy, error) {
-	return getVdcComputePolicyById(org.client, id)
+func (org *AdminOrg) GetVdcComputePolicyById(ctx context.Context, id string) (*VdcComputePolicy, error) {
+	return getVdcComputePolicyById(ctx, org.client, id)
 }
 
 // GetVdcComputePolicyById retrieves VDC compute policy by given ID
-func (org *Org) GetVdcComputePolicyById(id string) (*VdcComputePolicy, error) {
-	return getVdcComputePolicyById(org.client, id)
+func (org *Org) GetVdcComputePolicyById(ctx context.Context, id string) (*VdcComputePolicy, error) {
+	return getVdcComputePolicyById(ctx, org.client, id)
 }
 
 // getVdcComputePolicyById retrieves VDC compute policy by given ID
-func getVdcComputePolicyById(client *Client, id string) (*VdcComputePolicy, error) {
+func getVdcComputePolicyById(ctx context.Context, client *Client, id string) (*VdcComputePolicy, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +54,7 @@ func getVdcComputePolicyById(client *Client, id string) (*VdcComputePolicy, erro
 		client:           client,
 	}
 
-	err = client.OpenApiGetItem(minimumApiVersion, urlRef, nil, vdcComputePolicy.VdcComputePolicy)
+	err = client.OpenApiGetItem(ctx, minimumApiVersion, urlRef, nil, vdcComputePolicy.VdcComputePolicy)
 	if err != nil {
 		return nil, err
 	}
@@ -63,21 +64,21 @@ func getVdcComputePolicyById(client *Client, id string) (*VdcComputePolicy, erro
 
 // GetAllVdcComputePolicies retrieves all VDC compute policies using OpenAPI endpoint. Query parameters can be supplied to perform additional
 // filtering
-func (org *AdminOrg) GetAllVdcComputePolicies(queryParameters url.Values) ([]*VdcComputePolicy, error) {
-	return getAllVdcComputePolicies(org.client, queryParameters)
+func (org *AdminOrg) GetAllVdcComputePolicies(ctx context.Context, queryParameters url.Values) ([]*VdcComputePolicy, error) {
+	return getAllVdcComputePolicies(ctx, org.client, queryParameters)
 }
 
 // GetAllVdcComputePolicies retrieves all VDC compute policies using OpenAPI endpoint. Query parameters can be supplied to perform additional
 // filtering
-func (org *Org) GetAllVdcComputePolicies(queryParameters url.Values) ([]*VdcComputePolicy, error) {
-	return getAllVdcComputePolicies(org.client, queryParameters)
+func (org *Org) GetAllVdcComputePolicies(ctx context.Context, queryParameters url.Values) ([]*VdcComputePolicy, error) {
+	return getAllVdcComputePolicies(ctx, org.client, queryParameters)
 }
 
 // getAllVdcComputePolicies retrieves all VDC compute policies using OpenAPI endpoint. Query parameters can be supplied to perform additional
 // filtering
-func getAllVdcComputePolicies(client *Client, queryParameters url.Values) ([]*VdcComputePolicy, error) {
+func getAllVdcComputePolicies(ctx context.Context, client *Client, queryParameters url.Values) ([]*VdcComputePolicy, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +90,7 @@ func getAllVdcComputePolicies(client *Client, queryParameters url.Values) ([]*Vd
 
 	responses := []*types.VdcComputePolicy{{}}
 
-	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &responses)
+	err = client.OpenApiGetAllItems(ctx, minimumApiVersion, urlRef, queryParameters, &responses)
 	if err != nil {
 		return nil, err
 	}
@@ -107,9 +108,9 @@ func getAllVdcComputePolicies(client *Client, queryParameters url.Values) ([]*Vd
 }
 
 // CreateVdcComputePolicy creates a new VDC Compute Policy using OpenAPI endpoint
-func (org *AdminOrg) CreateVdcComputePolicy(newVdcComputePolicy *types.VdcComputePolicy) (*VdcComputePolicy, error) {
+func (org *AdminOrg) CreateVdcComputePolicy(ctx context.Context, newVdcComputePolicy *types.VdcComputePolicy) (*VdcComputePolicy, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies
-	minimumApiVersion, err := org.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := org.client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +125,7 @@ func (org *AdminOrg) CreateVdcComputePolicy(newVdcComputePolicy *types.VdcComput
 		client:           org.client,
 	}
 
-	err = org.client.OpenApiPostItem(minimumApiVersion, urlRef, nil, newVdcComputePolicy, returnVdcComputePolicy.VdcComputePolicy)
+	err = org.client.OpenApiPostItem(ctx, minimumApiVersion, urlRef, nil, newVdcComputePolicy, returnVdcComputePolicy.VdcComputePolicy)
 	if err != nil {
 		return nil, fmt.Errorf("error creating VDC compute policy: %s", err)
 	}
@@ -133,9 +134,9 @@ func (org *AdminOrg) CreateVdcComputePolicy(newVdcComputePolicy *types.VdcComput
 }
 
 // Update existing VDC compute policy
-func (vdcComputePolicy *VdcComputePolicy) Update() (*VdcComputePolicy, error) {
+func (vdcComputePolicy *VdcComputePolicy) Update(ctx context.Context) (*VdcComputePolicy, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies
-	minimumApiVersion, err := vdcComputePolicy.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := vdcComputePolicy.client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +155,7 @@ func (vdcComputePolicy *VdcComputePolicy) Update() (*VdcComputePolicy, error) {
 		client:           vdcComputePolicy.client,
 	}
 
-	err = vdcComputePolicy.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, vdcComputePolicy.VdcComputePolicy, returnVdcComputePolicy.VdcComputePolicy)
+	err = vdcComputePolicy.client.OpenApiPutItem(ctx, minimumApiVersion, urlRef, nil, vdcComputePolicy.VdcComputePolicy, returnVdcComputePolicy.VdcComputePolicy)
 	if err != nil {
 		return nil, fmt.Errorf("error updating VDC compute policy: %s", err)
 	}
@@ -163,9 +164,9 @@ func (vdcComputePolicy *VdcComputePolicy) Update() (*VdcComputePolicy, error) {
 }
 
 // Delete deletes VDC compute policy
-func (vdcComputePolicy *VdcComputePolicy) Delete() error {
+func (vdcComputePolicy *VdcComputePolicy) Delete(ctx context.Context) error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies
-	minimumApiVersion, err := vdcComputePolicy.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := vdcComputePolicy.client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return err
 	}
@@ -179,7 +180,7 @@ func (vdcComputePolicy *VdcComputePolicy) Delete() error {
 		return err
 	}
 
-	err = vdcComputePolicy.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil)
+	err = vdcComputePolicy.client.OpenApiDeleteItem(ctx, minimumApiVersion, urlRef, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting VDC compute policy: %s", err)
@@ -190,9 +191,9 @@ func (vdcComputePolicy *VdcComputePolicy) Delete() error {
 
 // GetAllAssignedVdcComputePolicies retrieves all VDC assigned compute policies using OpenAPI endpoint. Query parameters can be supplied to perform additional
 // filtering
-func (vdc *AdminVdc) GetAllAssignedVdcComputePolicies(queryParameters url.Values) ([]*VdcComputePolicy, error) {
+func (vdc *AdminVdc) GetAllAssignedVdcComputePolicies(ctx context.Context, queryParameters url.Values) ([]*VdcComputePolicy, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies
-	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +205,7 @@ func (vdc *AdminVdc) GetAllAssignedVdcComputePolicies(queryParameters url.Values
 
 	responses := []*types.VdcComputePolicy{{}}
 
-	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &responses)
+	err = vdc.client.OpenApiGetAllItems(ctx, minimumApiVersion, urlRef, queryParameters, &responses)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +223,7 @@ func (vdc *AdminVdc) GetAllAssignedVdcComputePolicies(queryParameters url.Values
 }
 
 // SetAssignedComputePolicies assign(set) compute policies.
-func (vdc *AdminVdc) SetAssignedComputePolicies(computePolicyReferences types.VdcComputePolicyReferences) (*types.VdcComputePolicyReferences, error) {
+func (vdc *AdminVdc) SetAssignedComputePolicies(ctx context.Context, computePolicyReferences types.VdcComputePolicyReferences) (*types.VdcComputePolicyReferences, error) {
 	util.Logger.Printf("[TRACE] Set Compute Policies started")
 
 	if !vdc.client.IsSysAdmin {
@@ -243,7 +244,7 @@ func (vdc *AdminVdc) SetAssignedComputePolicies(computePolicyReferences types.Vd
 	returnedVdcComputePolicies := &types.VdcComputePolicyReferences{}
 	computePolicyReferences.Xmlns = types.XMLNamespaceVCloud
 
-	_, err = vdc.client.ExecuteRequest(adminVdcPolicyHREF.String(), http.MethodPut,
+	_, err = vdc.client.ExecuteRequest(ctx, adminVdcPolicyHREF.String(), http.MethodPut,
 		types.MimeVdcComputePolicyReferences, "error setting compute policies for VDC: %s", computePolicyReferences, returnedVdcComputePolicies)
 	if err != nil {
 		return nil, err

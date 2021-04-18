@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"bytes"
+	"context"
 	"encoding/xml"
 	"fmt"
 	"net/http"
@@ -26,7 +27,7 @@ type orgInfoType struct {
 var orgInfoCache = make(map[string]orgInfoType)
 
 // GetAccessControl retrieves the access control information for the requested entity
-func (client Client) GetAccessControl(href, entityType, entityName string, headerValues map[string]string) (*types.ControlAccessParams, error) {
+func (client Client) GetAccessControl(ctx context.Context, href, entityType, entityName string, headerValues map[string]string) (*types.ControlAccessParams, error) {
 
 	href += "/controlAccess"
 	var controlAccess types.ControlAccessParams
@@ -43,6 +44,7 @@ func (client Client) GetAccessControl(href, entityType, entityName string, heade
 		}
 	}
 	req := client.newRequest(
+		ctx,
 		nil,               // params
 		nil,               // notEncodedParams
 		http.MethodGet,    // method
@@ -73,7 +75,7 @@ func (client Client) GetAccessControl(href, entityType, entityName string, heade
 // For each setting we must provide:
 // * The subject (HREF and Type are mandatory)
 // * The access level (one of ReadOnly, Change, FullControl)
-func (client *Client) SetAccessControl(accessControl *types.ControlAccessParams, href, entityType, entityName string, headerValues map[string]string) error {
+func (client *Client) SetAccessControl(ctx context.Context, accessControl *types.ControlAccessParams, href, entityType, entityName string, headerValues map[string]string) error {
 
 	href += "/action/controlAccess"
 	// Make sure that subjects in the setting list are used only once
@@ -114,6 +116,7 @@ func (client *Client) SetAccessControl(accessControl *types.ControlAccessParams,
 	body := bytes.NewBufferString(xml.Header + string(marshaledXml))
 
 	req := client.newRequest(
+		ctx,
 		nil,               // params
 		nil,               // notEncodedParams
 		http.MethodPost,   // method
@@ -136,22 +139,22 @@ func (client *Client) SetAccessControl(accessControl *types.ControlAccessParams,
 }
 
 // GetAccessControl retrieves the access control information for this vApp
-func (vapp VApp) GetAccessControl(useTenantContext bool) (*types.ControlAccessParams, error) {
+func (vapp VApp) GetAccessControl(ctx context.Context, useTenantContext bool) (*types.ControlAccessParams, error) {
 
 	if vapp.VApp.HREF == "" {
 		return nil, fmt.Errorf("vApp HREF is empty")
 	}
 	// if useTenantContext is false, we use an empty header (= default behavior)
 	// if it is true, we use a header populated with tenant context values
-	accessControlHeader, err := vapp.getAccessControlHeader(useTenantContext)
+	accessControlHeader, err := vapp.getAccessControlHeader(ctx, useTenantContext)
 	if err != nil {
 		return nil, err
 	}
-	return vapp.client.GetAccessControl(vapp.VApp.HREF, "vApp", vapp.VApp.Name, accessControlHeader)
+	return vapp.client.GetAccessControl(ctx, vapp.VApp.HREF, "vApp", vapp.VApp.Name, accessControlHeader)
 }
 
 // SetAccessControl changes the access control information for this vApp
-func (vapp VApp) SetAccessControl(accessControl *types.ControlAccessParams, useTenantContext bool) error {
+func (vapp VApp) SetAccessControl(ctx context.Context, accessControl *types.ControlAccessParams, useTenantContext bool) error {
 
 	if vapp.VApp.HREF == "" {
 		return fmt.Errorf("vApp HREF is empty")
@@ -159,22 +162,22 @@ func (vapp VApp) SetAccessControl(accessControl *types.ControlAccessParams, useT
 
 	// if useTenantContext is false, we use an empty header (= default behavior)
 	// if it is true, we use a header populated with tenant context values
-	accessControlHeader, err := vapp.getAccessControlHeader(useTenantContext)
+	accessControlHeader, err := vapp.getAccessControlHeader(ctx, useTenantContext)
 	if err != nil {
 		return err
 	}
-	return vapp.client.SetAccessControl(accessControl, vapp.VApp.HREF, "vApp", vapp.VApp.Name, accessControlHeader)
+	return vapp.client.SetAccessControl(ctx, accessControl, vapp.VApp.HREF, "vApp", vapp.VApp.Name, accessControlHeader)
 
 }
 
 // RemoveAccessControl is a shortcut to SetAccessControl with all access disabled
-func (vapp VApp) RemoveAccessControl(useTenantContext bool) error {
-	return vapp.SetAccessControl(&types.ControlAccessParams{IsSharedToEveryone: false}, useTenantContext)
+func (vapp VApp) RemoveAccessControl(ctx context.Context, useTenantContext bool) error {
+	return vapp.SetAccessControl(ctx, &types.ControlAccessParams{IsSharedToEveryone: false}, useTenantContext)
 }
 
 // IsShared shows whether a vApp is shared or not, regardless of the number of subjects sharing it
-func (vapp VApp) IsShared(useTenantContext bool) (bool, error) {
-	settings, err := vapp.GetAccessControl(useTenantContext)
+func (vapp VApp) IsShared(ctx context.Context, useTenantContext bool) (bool, error) {
+	settings, err := vapp.GetAccessControl(ctx, useTenantContext)
 	if err != nil {
 		return false, err
 	}
@@ -185,7 +188,7 @@ func (vapp VApp) IsShared(useTenantContext bool) (bool, error) {
 }
 
 // GetAccessControl retrieves the access control information for this catalog
-func (adminCatalog AdminCatalog) GetAccessControl(useTenantContext bool) (*types.ControlAccessParams, error) {
+func (adminCatalog AdminCatalog) GetAccessControl(ctx context.Context, useTenantContext bool) (*types.ControlAccessParams, error) {
 
 	if adminCatalog.AdminCatalog.HREF == "" {
 		return nil, fmt.Errorf("catalog HREF is empty")
@@ -194,15 +197,15 @@ func (adminCatalog AdminCatalog) GetAccessControl(useTenantContext bool) (*types
 
 	// if useTenantContext is false, we use an empty header (= default behavior)
 	// if it is true, we use a header populated with tenant context values
-	accessControlHeader, err := adminCatalog.getAccessControlHeader(useTenantContext)
+	accessControlHeader, err := adminCatalog.getAccessControlHeader(ctx, useTenantContext)
 	if err != nil {
 		return nil, err
 	}
-	return adminCatalog.client.GetAccessControl(href, "catalog", adminCatalog.AdminCatalog.Name, accessControlHeader)
+	return adminCatalog.client.GetAccessControl(ctx, href, "catalog", adminCatalog.AdminCatalog.Name, accessControlHeader)
 }
 
 // SetAccessControl changes the access control information for this catalog
-func (adminCatalog AdminCatalog) SetAccessControl(accessControl *types.ControlAccessParams, useTenantContext bool) error {
+func (adminCatalog AdminCatalog) SetAccessControl(ctx context.Context, accessControl *types.ControlAccessParams, useTenantContext bool) error {
 
 	if adminCatalog.AdminCatalog.HREF == "" {
 		return fmt.Errorf("catalog HREF is empty")
@@ -211,21 +214,21 @@ func (adminCatalog AdminCatalog) SetAccessControl(accessControl *types.ControlAc
 
 	// if useTenantContext is false, we use an empty header (= default behavior)
 	// if it is true, we use a header populated with tenant context values
-	accessControlHeader, err := adminCatalog.getAccessControlHeader(useTenantContext)
+	accessControlHeader, err := adminCatalog.getAccessControlHeader(ctx, useTenantContext)
 	if err != nil {
 		return err
 	}
-	return adminCatalog.client.SetAccessControl(accessControl, href, "catalog", adminCatalog.AdminCatalog.Name, accessControlHeader)
+	return adminCatalog.client.SetAccessControl(ctx, accessControl, href, "catalog", adminCatalog.AdminCatalog.Name, accessControlHeader)
 }
 
 // RemoveAccessControl is a shortcut to SetAccessControl with all access disabled
-func (adminCatalog AdminCatalog) RemoveAccessControl(useTenantContext bool) error {
-	return adminCatalog.SetAccessControl(&types.ControlAccessParams{IsSharedToEveryone: false}, useTenantContext)
+func (adminCatalog AdminCatalog) RemoveAccessControl(ctx context.Context, useTenantContext bool) error {
+	return adminCatalog.SetAccessControl(ctx, &types.ControlAccessParams{IsSharedToEveryone: false}, useTenantContext)
 }
 
 // IsShared shows whether a catalog is shared or not, regardless of the number of subjects sharing it
-func (adminCatalog AdminCatalog) IsShared(useTenantContext bool) (bool, error) {
-	settings, err := adminCatalog.GetAccessControl(useTenantContext)
+func (adminCatalog AdminCatalog) IsShared(ctx context.Context, useTenantContext bool) (bool, error) {
+	settings, err := adminCatalog.GetAccessControl(ctx, useTenantContext)
 	if err != nil {
 		return false, err
 	}
@@ -238,52 +241,52 @@ func (adminCatalog AdminCatalog) IsShared(useTenantContext bool) (bool, error) {
 // GetVappAccessControl is a convenience method to retrieve access control for a vApp
 // from a VDC.
 // The input variable vappIdentifier can be either the vApp name or its ID
-func (vdc *Vdc) GetVappAccessControl(vappIdentifier string, useTenantContext bool) (*types.ControlAccessParams, error) {
-	vapp, err := vdc.GetVAppByNameOrId(vappIdentifier, true)
+func (vdc *Vdc) GetVappAccessControl(ctx context.Context, vappIdentifier string, useTenantContext bool) (*types.ControlAccessParams, error) {
+	vapp, err := vdc.GetVAppByNameOrId(ctx, vappIdentifier, true)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving vApp %s: %s", vappIdentifier, err)
 	}
-	return vapp.GetAccessControl(useTenantContext)
+	return vapp.GetAccessControl(ctx, useTenantContext)
 }
 
 // GetCatalogAccessControl is a convenience method to retrieve access control for a catalog
 // from an organization.
 // The input variable catalogIdentifier can be either the catalog name or its ID
-func (org *AdminOrg) GetCatalogAccessControl(catalogIdentifier string, useTenantContext bool) (*types.ControlAccessParams, error) {
-	catalog, err := org.GetAdminCatalogByNameOrId(catalogIdentifier, true)
+func (org *AdminOrg) GetCatalogAccessControl(ctx context.Context, catalogIdentifier string, useTenantContext bool) (*types.ControlAccessParams, error) {
+	catalog, err := org.GetAdminCatalogByNameOrId(ctx, catalogIdentifier, true)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving catalog %s: %s", catalogIdentifier, err)
 	}
-	return catalog.GetAccessControl(useTenantContext)
+	return catalog.GetAccessControl(ctx, useTenantContext)
 }
 
 // GetCatalogAccessControl is a convenience method to retrieve access control for a catalog
 // from an organization.
 // The input variable catalogIdentifier can be either the catalog name or its ID
-func (org *Org) GetCatalogAccessControl(catalogIdentifier string, useTenantContext bool) (*types.ControlAccessParams, error) {
-	catalog, err := org.GetCatalogByNameOrId(catalogIdentifier, true)
+func (org *Org) GetCatalogAccessControl(ctx context.Context, catalogIdentifier string, useTenantContext bool) (*types.ControlAccessParams, error) {
+	catalog, err := org.GetCatalogByNameOrId(ctx, catalogIdentifier, true)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving catalog %s: %s", catalogIdentifier, err)
 	}
-	return catalog.GetAccessControl(useTenantContext)
+	return catalog.GetAccessControl(ctx, useTenantContext)
 }
 
 // GetAccessControl retrieves the access control information for this catalog
-func (catalog Catalog) GetAccessControl(useTenantContext bool) (*types.ControlAccessParams, error) {
+func (catalog Catalog) GetAccessControl(ctx context.Context, useTenantContext bool) (*types.ControlAccessParams, error) {
 
 	if catalog.Catalog.HREF == "" {
 		return nil, fmt.Errorf("catalog HREF is empty")
 	}
 	href := strings.Replace(catalog.Catalog.HREF, "/admin/", "/", 1)
-	accessControlHeader, err := catalog.getAccessControlHeader(useTenantContext)
+	accessControlHeader, err := catalog.getAccessControlHeader(ctx, useTenantContext)
 	if err != nil {
 		return nil, err
 	}
-	return catalog.client.GetAccessControl(href, "catalog", catalog.Catalog.Name, accessControlHeader)
+	return catalog.client.GetAccessControl(ctx, href, "catalog", catalog.Catalog.Name, accessControlHeader)
 }
 
 // SetAccessControl changes the access control information for this catalog
-func (catalog Catalog) SetAccessControl(accessControl *types.ControlAccessParams, useTenantContext bool) error {
+func (catalog Catalog) SetAccessControl(ctx context.Context, accessControl *types.ControlAccessParams, useTenantContext bool) error {
 
 	if catalog.Catalog.HREF == "" {
 		return fmt.Errorf("catalog HREF is empty")
@@ -293,21 +296,21 @@ func (catalog Catalog) SetAccessControl(accessControl *types.ControlAccessParams
 
 	// if useTenantContext is false, we use an empty header (= default behavior)
 	// if it is true, we use a header populated with tenant context values
-	accessControlHeader, err := catalog.getAccessControlHeader(useTenantContext)
+	accessControlHeader, err := catalog.getAccessControlHeader(ctx, useTenantContext)
 	if err != nil {
 		return err
 	}
-	return catalog.client.SetAccessControl(accessControl, href, "catalog", catalog.Catalog.Name, accessControlHeader)
+	return catalog.client.SetAccessControl(ctx, accessControl, href, "catalog", catalog.Catalog.Name, accessControlHeader)
 }
 
 // RemoveAccessControl is a shortcut to SetAccessControl with all access disabled
-func (catalog Catalog) RemoveAccessControl(useTenantContext bool) error {
-	return catalog.SetAccessControl(&types.ControlAccessParams{IsSharedToEveryone: false}, useTenantContext)
+func (catalog Catalog) RemoveAccessControl(ctx context.Context, useTenantContext bool) error {
+	return catalog.SetAccessControl(ctx, &types.ControlAccessParams{IsSharedToEveryone: false}, useTenantContext)
 }
 
 // IsShared shows whether a catalog is shared or not, regardless of the number of subjects sharing it
-func (catalog Catalog) IsShared(useTenantContext bool) (bool, error) {
-	settings, err := catalog.GetAccessControl(useTenantContext)
+func (catalog Catalog) IsShared(ctx context.Context, useTenantContext bool) (bool, error) {
+	settings, err := catalog.GetAccessControl(ctx, useTenantContext)
 	if err != nil {
 		return false, err
 	}
@@ -321,11 +324,11 @@ func (catalog Catalog) IsShared(useTenantContext bool) (bool, error) {
 // If useTenantContext is false, it returns an empty map.
 // Otherwise, it finds the Org ID and name (going up in the hierarchy through the VDC)
 // and creates the header data
-func (vapp *VApp) getAccessControlHeader(useTenantContext bool) (map[string]string, error) {
+func (vapp *VApp) getAccessControlHeader(ctx context.Context, useTenantContext bool) (map[string]string, error) {
 	if !useTenantContext {
 		return map[string]string{}, nil
 	}
-	orgInfo, err := vapp.getOrgInfo()
+	orgInfo, err := vapp.getOrgInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -335,11 +338,11 @@ func (vapp *VApp) getAccessControlHeader(useTenantContext bool) (map[string]stri
 // getAccessControlHeader builds the data needed to set the header when tenant context is required.
 // If useTenantContext is false, it returns an empty map.
 // Otherwise, it finds the Org ID and name and creates the header data
-func (catalog *Catalog) getAccessControlHeader(useTenantContext bool) (map[string]string, error) {
+func (catalog *Catalog) getAccessControlHeader(ctx context.Context, useTenantContext bool) (map[string]string, error) {
 	if !useTenantContext {
 		return map[string]string{}, nil
 	}
-	orgInfo, err := catalog.getOrgInfo()
+	orgInfo, err := catalog.getOrgInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -349,11 +352,11 @@ func (catalog *Catalog) getAccessControlHeader(useTenantContext bool) (map[strin
 // getAccessControlHeader builds the data needed to set the header when tenant context is required.
 // If useTenantContext is false, it returns an empty map.
 // Otherwise, it finds the Org ID and name and creates the header data
-func (adminCatalog *AdminCatalog) getAccessControlHeader(useTenantContext bool) (map[string]string, error) {
+func (adminCatalog *AdminCatalog) getAccessControlHeader(ctx context.Context, useTenantContext bool) (map[string]string, error) {
 	if !useTenantContext {
 		return map[string]string{}, nil
 	}
-	orgInfo, err := adminCatalog.getOrgInfo()
+	orgInfo, err := adminCatalog.getOrgInfo(ctx)
 
 	if err != nil {
 		return nil, err

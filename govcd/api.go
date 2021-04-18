@@ -7,6 +7,7 @@ package govcd
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -153,8 +154,8 @@ func ContainsNotFound(err error) bool {
 }
 
 // NewRequestWitNotEncodedParams allows passing complex values params that shouldn't be encoded like for queries. e.g. /query?filter=name=foo
-func (cli *Client) NewRequestWitNotEncodedParams(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
-	return cli.NewRequestWitNotEncodedParamsWithApiVersion(params, notEncodedParams, method, reqUrl, body, cli.APIVersion)
+func (cli *Client) NewRequestWitNotEncodedParams(ctx context.Context, params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
+	return cli.NewRequestWitNotEncodedParamsWithApiVersion(ctx, params, notEncodedParams, method, reqUrl, body, cli.APIVersion)
 }
 
 // NewRequestWitNotEncodedParamsWithApiVersion allows passing complex values params that shouldn't be encoded like for queries. e.g. /query?filter=name=foo
@@ -164,13 +165,13 @@ func (cli *Client) NewRequestWitNotEncodedParams(params map[string]string, notEn
 // * reqUrl - request url
 // * body - request body
 // * apiVersion - provided Api version overrides default Api version value used in request parameter
-func (cli *Client) NewRequestWitNotEncodedParamsWithApiVersion(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string) *http.Request {
-	return cli.newRequest(params, notEncodedParams, method, reqUrl, body, apiVersion, nil)
+func (cli *Client) NewRequestWitNotEncodedParamsWithApiVersion(ctx context.Context, params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string) *http.Request {
+	return cli.newRequest(ctx, params, notEncodedParams, method, reqUrl, body, apiVersion, nil)
 }
 
 // newRequest is the parent of many "specific" "NewRequest" functions.
 // Note. It is kept private to avoid breaking public API on every new field addition.
-func (cli *Client) newRequest(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string, additionalHeader http.Header) *http.Request {
+func (cli *Client) newRequest(ctx context.Context, params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string, additionalHeader http.Header) *http.Request {
 	reqValues := url.Values{}
 
 	// Build up our request parameters
@@ -198,7 +199,7 @@ func (cli *Client) newRequest(params map[string]string, notEncodedParams map[str
 	// Build the request, no point in checking for errors here as we're just
 	// passing a string version of an url.URL struct and http.NewRequest returns
 	// error only if can't process an url.ParseRequestURI().
-	req, _ := http.NewRequest(method, reqUrl.String(), body)
+	req, _ := http.NewRequestWithContext(ctx, method, reqUrl.String(), body)
 
 	if cli.VCDAuthHeader != "" && cli.VCDToken != "" {
 		// Add the authorization header
@@ -243,14 +244,14 @@ func (cli *Client) newRequest(params map[string]string, notEncodedParams map[str
 }
 
 // NewRequest creates a new HTTP request and applies necessary auth headers if set.
-func (cli *Client) NewRequest(params map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
-	return cli.NewRequestWitNotEncodedParams(params, nil, method, reqUrl, body)
+func (cli *Client) NewRequest(ctx context.Context, params map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
+	return cli.NewRequestWitNotEncodedParams(ctx, params, nil, method, reqUrl, body)
 }
 
 // NewRequestWithApiVersion creates a new HTTP request and applies necessary auth headers if set.
 // Allows to override default request API Version
-func (cli *Client) NewRequestWithApiVersion(params map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string) *http.Request {
-	return cli.NewRequestWitNotEncodedParamsWithApiVersion(params, nil, method, reqUrl, body, apiVersion)
+func (cli *Client) NewRequestWithApiVersion(ctx context.Context, params map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string) *http.Request {
+	return cli.NewRequestWitNotEncodedParamsWithApiVersion(ctx, params, nil, method, reqUrl, body, apiVersion)
 }
 
 // ParseErr takes an error XML resp, error interface for unmarshalling and returns a single string for
@@ -386,8 +387,8 @@ func checkRespWithErrType(bodyType types.BodyType, resp *http.Response, err, err
 // errorMessage - error message to return when error happens
 // payload - XML struct which will be marshalled and added as body/payload
 // E.g. client.ExecuteTaskRequest(updateDiskLink.HREF, http.MethodPut, updateDiskLink.Type, "error updating disk: %s", xmlPayload)
-func (client *Client) ExecuteTaskRequest(pathURL, requestType, contentType, errorMessage string, payload interface{}) (Task, error) {
-	return client.executeTaskRequest(pathURL, requestType, contentType, errorMessage, payload, client.APIVersion)
+func (client *Client) ExecuteTaskRequest(ctx context.Context, pathURL, requestType, contentType, errorMessage string, payload interface{}) (Task, error) {
+	return client.executeTaskRequest(ctx, pathURL, requestType, contentType, errorMessage, payload, client.APIVersion)
 }
 
 // Helper function creates request, runs it, checks response and parses task from response.
@@ -398,8 +399,8 @@ func (client *Client) ExecuteTaskRequest(pathURL, requestType, contentType, erro
 // payload - XML struct which will be marshalled and added as body/payload
 // apiVersion - api version which will be used in request
 // E.g. client.ExecuteTaskRequest(updateDiskLink.HREF, http.MethodPut, updateDiskLink.Type, "error updating disk: %s", xmlPayload)
-func (client *Client) ExecuteTaskRequestWithApiVersion(pathURL, requestType, contentType, errorMessage string, payload interface{}, apiVersion string) (Task, error) {
-	return client.executeTaskRequest(pathURL, requestType, contentType, errorMessage, payload, apiVersion)
+func (client *Client) ExecuteTaskRequestWithApiVersion(ctx context.Context, pathURL, requestType, contentType, errorMessage string, payload interface{}, apiVersion string) (Task, error) {
+	return client.executeTaskRequest(ctx, pathURL, requestType, contentType, errorMessage, payload, apiVersion)
 }
 
 // Helper function creates request, runs it, checks response and parses task from response.
@@ -410,13 +411,13 @@ func (client *Client) ExecuteTaskRequestWithApiVersion(pathURL, requestType, con
 // payload - XML struct which will be marshalled and added as body/payload
 // apiVersion - api version which will be used in request
 // E.g. client.ExecuteTaskRequest(updateDiskLink.HREF, http.MethodPut, updateDiskLink.Type, "error updating disk: %s", xmlPayload)
-func (client *Client) executeTaskRequest(pathURL, requestType, contentType, errorMessage string, payload interface{}, apiVersion string) (Task, error) {
+func (client *Client) executeTaskRequest(ctx context.Context, pathURL, requestType, contentType, errorMessage string, payload interface{}, apiVersion string) (Task, error) {
 
 	if !isMessageWithPlaceHolder(errorMessage) {
 		return Task{}, fmt.Errorf("error message has to include place holder for error")
 	}
 
-	resp, err := executeRequestWithApiVersion(pathURL, requestType, contentType, payload, client, apiVersion)
+	resp, err := executeRequestWithApiVersion(ctx, pathURL, requestType, contentType, payload, client, apiVersion)
 	if err != nil {
 		return Task{}, fmt.Errorf(errorMessage, err)
 	}
@@ -443,8 +444,8 @@ func (client *Client) executeTaskRequest(pathURL, requestType, contentType, erro
 // errorMessage - error message to return when error happens
 // payload - XML struct which will be marshalled and added as body/payload
 // E.g. client.ExecuteRequestWithoutResponse(catalogItemHREF.String(), http.MethodDelete, "", "error deleting Catalog item: %s", nil)
-func (client *Client) ExecuteRequestWithoutResponse(pathURL, requestType, contentType, errorMessage string, payload interface{}) error {
-	return client.executeRequestWithoutResponse(pathURL, requestType, contentType, errorMessage, payload, client.APIVersion)
+func (client *Client) ExecuteRequestWithoutResponse(ctx context.Context, pathURL, requestType, contentType, errorMessage string, payload interface{}) error {
+	return client.executeRequestWithoutResponse(ctx, pathURL, requestType, contentType, errorMessage, payload, client.APIVersion)
 }
 
 // Helper function creates request, runs it, checks response and do not expect any values from it.
@@ -455,8 +456,8 @@ func (client *Client) ExecuteRequestWithoutResponse(pathURL, requestType, conten
 // payload - XML struct which will be marshalled and added as body/payload
 // apiVersion - api version which will be used in request
 // E.g. client.ExecuteRequestWithoutResponse(catalogItemHREF.String(), http.MethodDelete, "", "error deleting Catalog item: %s", nil)
-func (client *Client) ExecuteRequestWithoutResponseWithApiVersion(pathURL, requestType, contentType, errorMessage string, payload interface{}, apiVersion string) error {
-	return client.executeRequestWithoutResponse(pathURL, requestType, contentType, errorMessage, payload, apiVersion)
+func (client *Client) ExecuteRequestWithoutResponseWithApiVersion(ctx context.Context, pathURL, requestType, contentType, errorMessage string, payload interface{}, apiVersion string) error {
+	return client.executeRequestWithoutResponse(ctx, pathURL, requestType, contentType, errorMessage, payload, apiVersion)
 }
 
 // Helper function creates request, runs it, checks response and do not expect any values from it.
@@ -467,13 +468,13 @@ func (client *Client) ExecuteRequestWithoutResponseWithApiVersion(pathURL, reque
 // payload - XML struct which will be marshalled and added as body/payload
 // apiVersion - api version which will be used in request
 // E.g. client.ExecuteRequestWithoutResponse(catalogItemHREF.String(), http.MethodDelete, "", "error deleting Catalog item: %s", nil)
-func (client *Client) executeRequestWithoutResponse(pathURL, requestType, contentType, errorMessage string, payload interface{}, apiVersion string) error {
+func (client *Client) executeRequestWithoutResponse(ctx context.Context, pathURL, requestType, contentType, errorMessage string, payload interface{}, apiVersion string) error {
 
 	if !isMessageWithPlaceHolder(errorMessage) {
 		return fmt.Errorf("error message has to include place holder for error")
 	}
 
-	resp, err := executeRequestWithApiVersion(pathURL, requestType, contentType, payload, client, apiVersion)
+	resp, err := executeRequestWithApiVersion(ctx, pathURL, requestType, contentType, payload, client, apiVersion)
 	if err != nil {
 		return fmt.Errorf(errorMessage, err)
 	}
@@ -500,8 +501,8 @@ func (client *Client) executeRequestWithoutResponse(pathURL, requestType, conten
 // out - structure to be used for unmarshalling xml
 // E.g. 	unmarshalledAdminOrg := &types.AdminOrg{}
 // client.ExecuteRequest(adminOrg.AdminOrg.HREF, http.MethodGet, "", "error refreshing organization: %s", nil, unmarshalledAdminOrg)
-func (client *Client) ExecuteRequest(pathURL, requestType, contentType, errorMessage string, payload, out interface{}) (*http.Response, error) {
-	return client.executeRequest(pathURL, requestType, contentType, errorMessage, payload, out, client.APIVersion)
+func (client *Client) ExecuteRequest(ctx context.Context, pathURL, requestType, contentType, errorMessage string, payload, out interface{}) (*http.Response, error) {
+	return client.executeRequest(ctx, pathURL, requestType, contentType, errorMessage, payload, out, client.APIVersion)
 }
 
 // Helper function creates request, runs it, check responses and parses out interface from response.
@@ -514,8 +515,8 @@ func (client *Client) ExecuteRequest(pathURL, requestType, contentType, errorMes
 // apiVersion - api version which will be used in request
 // E.g. 	unmarshalledAdminOrg := &types.AdminOrg{}
 // client.ExecuteRequest(adminOrg.AdminOrg.HREF, http.MethodGet, "", "error refreshing organization: %s", nil, unmarshalledAdminOrg)
-func (client *Client) ExecuteRequestWithApiVersion(pathURL, requestType, contentType, errorMessage string, payload, out interface{}, apiVersion string) (*http.Response, error) {
-	return client.executeRequest(pathURL, requestType, contentType, errorMessage, payload, out, apiVersion)
+func (client *Client) ExecuteRequestWithApiVersion(ctx context.Context, pathURL, requestType, contentType, errorMessage string, payload, out interface{}, apiVersion string) (*http.Response, error) {
+	return client.executeRequest(ctx, pathURL, requestType, contentType, errorMessage, payload, out, apiVersion)
 }
 
 // Helper function creates request, runs it, check responses and parses out interface from response.
@@ -528,13 +529,13 @@ func (client *Client) ExecuteRequestWithApiVersion(pathURL, requestType, content
 // apiVersion - api version which will be used in request
 // E.g. 	unmarshalledAdminOrg := &types.AdminOrg{}
 // client.ExecuteRequest(adminOrg.AdminOrg.HREF, http.MethodGet, "", "error refreshing organization: %s", nil, unmarshalledAdminOrg)
-func (client *Client) executeRequest(pathURL, requestType, contentType, errorMessage string, payload, out interface{}, apiVersion string) (*http.Response, error) {
+func (client *Client) executeRequest(ctx context.Context, pathURL, requestType, contentType, errorMessage string, payload, out interface{}, apiVersion string) (*http.Response, error) {
 
 	if !isMessageWithPlaceHolder(errorMessage) {
 		return &http.Response{}, fmt.Errorf("error message has to include place holder for error")
 	}
 
-	resp, err := executeRequestWithApiVersion(pathURL, requestType, contentType, payload, client, apiVersion)
+	resp, err := executeRequestWithApiVersion(ctx, pathURL, requestType, contentType, payload, client, apiVersion)
 	if err != nil {
 		return resp, fmt.Errorf(errorMessage, err)
 	}
@@ -555,21 +556,21 @@ func (client *Client) executeRequest(pathURL, requestType, contentType, errorMes
 // ExecuteRequestWithCustomError sends the request and checks for 2xx response. If the returned status code
 // was not as expected - the returned error will be unmarshalled to `errType` which implements Go's standard `error`
 // interface.
-func (client *Client) ExecuteRequestWithCustomError(pathURL, requestType, contentType, errorMessage string,
+func (client *Client) ExecuteRequestWithCustomError(ctx context.Context, pathURL, requestType, contentType, errorMessage string,
 	payload interface{}, errType error) (*http.Response, error) {
-	return client.ExecuteParamRequestWithCustomError(pathURL, map[string]string{}, requestType, contentType,
+	return client.ExecuteParamRequestWithCustomError(ctx, pathURL, map[string]string{}, requestType, contentType,
 		errorMessage, payload, errType)
 }
 
 // ExecuteParamRequestWithCustomError behaves exactly like ExecuteRequestWithCustomError but accepts
 // query parameter specification
-func (client *Client) ExecuteParamRequestWithCustomError(pathURL string, params map[string]string,
+func (client *Client) ExecuteParamRequestWithCustomError(ctx context.Context, pathURL string, params map[string]string,
 	requestType, contentType, errorMessage string, payload interface{}, errType error) (*http.Response, error) {
 	if !isMessageWithPlaceHolder(errorMessage) {
 		return &http.Response{}, fmt.Errorf("error message has to include place holder for error")
 	}
 
-	resp, err := executeRequestCustomErr(pathURL, params, requestType, contentType, payload, client, errType, client.APIVersion)
+	resp, err := executeRequestCustomErr(ctx, pathURL, params, requestType, contentType, payload, client, errType, client.APIVersion)
 	if err != nil {
 		return &http.Response{}, fmt.Errorf(errorMessage, err)
 	}
@@ -592,12 +593,12 @@ func (client *Client) ExecuteParamRequestWithCustomError(pathURL string, params 
 }
 
 // executeRequest does executeRequestCustomErr and checks for vCD errors in API response
-func executeRequestWithApiVersion(pathURL, requestType, contentType string, payload interface{}, client *Client, apiVersion string) (*http.Response, error) {
-	return executeRequestCustomErr(pathURL, map[string]string{}, requestType, contentType, payload, client, &types.Error{}, apiVersion)
+func executeRequestWithApiVersion(ctx context.Context, pathURL, requestType, contentType string, payload interface{}, client *Client, apiVersion string) (*http.Response, error) {
+	return executeRequestCustomErr(ctx, pathURL, map[string]string{}, requestType, contentType, payload, client, &types.Error{}, apiVersion)
 }
 
 // executeRequestCustomErr performs request and unmarshals API error to errType if not 2xx status was returned
-func executeRequestCustomErr(pathURL string, params map[string]string, requestType, contentType string, payload interface{}, client *Client, errType error, apiVersion string) (*http.Response, error) {
+func executeRequestCustomErr(ctx context.Context, pathURL string, params map[string]string, requestType, contentType string, payload interface{}, client *Client, errType error, apiVersion string) (*http.Response, error) {
 	url, _ := url.ParseRequestURI(pathURL)
 
 	var req *http.Request
@@ -610,10 +611,10 @@ func executeRequestCustomErr(pathURL string, params map[string]string, requestTy
 		}
 		body := bytes.NewBufferString(xml.Header + string(marshaledXml))
 
-		req = client.NewRequestWithApiVersion(params, requestType, *url, body, apiVersion)
+		req = client.NewRequestWithApiVersion(ctx, params, requestType, *url, body, apiVersion)
 
 	default:
-		req = client.NewRequestWithApiVersion(params, requestType, *url, nil, apiVersion)
+		req = client.NewRequestWithApiVersion(ctx, params, requestType, *url, nil, apiVersion)
 	}
 
 	if contentType != "" {

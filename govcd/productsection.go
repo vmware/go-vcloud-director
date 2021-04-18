@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -12,7 +13,7 @@ import (
 )
 
 // setProductSectionList is a shared function for both vApp and VM
-func setProductSectionList(client *Client, href string, productSection *types.ProductSectionList) error {
+func setProductSectionList(ctx context.Context, client *Client, href string, productSection *types.ProductSectionList) error {
 	if href == "" {
 		return fmt.Errorf("href cannot be empty to set product section")
 	}
@@ -20,14 +21,14 @@ func setProductSectionList(client *Client, href string, productSection *types.Pr
 	productSection.Xmlns = types.XMLNamespaceVCloud
 	productSection.Ovf = types.XMLNamespaceOVF
 
-	task, err := client.ExecuteTaskRequest(href+"/productSections", http.MethodPut,
+	task, err := client.ExecuteTaskRequest(ctx, href+"/productSections", http.MethodPut,
 		types.MimeProductSection, "error setting product section: %s", productSection)
 
 	if err != nil {
 		return fmt.Errorf("unable to set product section: %s", err)
 	}
 
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return fmt.Errorf("task for setting product section failed: %s", err)
 	}
@@ -36,13 +37,13 @@ func setProductSectionList(client *Client, href string, productSection *types.Pr
 }
 
 // getProductSectionList is a shared function for both vApp and VM
-func getProductSectionList(client *Client, href string) (*types.ProductSectionList, error) {
+func getProductSectionList(ctx context.Context, client *Client, href string) (*types.ProductSectionList, error) {
 	if href == "" {
 		return nil, fmt.Errorf("href cannot be empty to get product section")
 	}
 	productSection := &types.ProductSectionList{}
 
-	_, err := client.ExecuteRequest(href+"/productSections", http.MethodGet,
+	_, err := client.ExecuteRequest(ctx, href+"/productSections", http.MethodGet,
 		types.MimeProductSection, "error retrieving product section : %s", nil, productSection)
 
 	if err != nil {

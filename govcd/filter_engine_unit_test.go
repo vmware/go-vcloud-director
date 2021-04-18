@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -27,13 +28,13 @@ type TestItem struct {
 }
 
 // mock queryWithMetadataFields function that returns an empty result
-var dummyQwithM = func(queryType string, params, notEncodedParams map[string]string,
+var dummyQwithM = func(ctx context.Context, queryType string, params, notEncodedParams map[string]string,
 	metadataFields []string, isSystem bool) (Results, error) {
 	return Results{}, nil
 }
 
 // mock QueryByMetadataFields function that returns an empty result
-var dummyQbyM = func(queryType string, params, notEncodedParams map[string]string,
+var dummyQbyM = func(ctx context.Context, queryType string, params, notEncodedParams map[string]string,
 	metadataFilters map[string]MetadataFilter, isSystem bool) (Results, error) {
 	return Results{}, nil
 }
@@ -441,7 +442,7 @@ func Test_searchByFilter(t *testing.T) {
 	}
 	for _, tt := range testsSuccess {
 		t.Run(tt.name, func(t *testing.T) {
-			got, explanation, err := searchByFilter(tt.args.qByM, tt.args.qWithM, tt.args.converter, tt.args.queryType, tt.args.criteria)
+			got, explanation, err := searchByFilter(ctx, tt.args.qByM, tt.args.qWithM, tt.args.converter, tt.args.queryType, tt.args.criteria)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("searchByFilter() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -454,7 +455,7 @@ func Test_searchByFilter(t *testing.T) {
 	}
 	for _, tt := range testsFailure {
 		t.Run(tt.name, func(t *testing.T) {
-			got, explanation, err := searchByFilter(tt.args.qByM, tt.args.qWithM, tt.args.converter, tt.args.queryType, tt.args.criteria)
+			got, explanation, err := searchByFilter(ctx, tt.args.qByM, tt.args.qWithM, tt.args.converter, tt.args.queryType, tt.args.criteria)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("searchByFilter() error = %v, wantErr %v", err, tt.wantErr)
 				return

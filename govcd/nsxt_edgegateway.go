@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 
@@ -18,20 +19,20 @@ type NsxtEdgeGateway struct {
 }
 
 // GetNsxtEdgeGatewayById allows to retrieve NSX-T edge gateway by ID for Org admins
-func (adminOrg *AdminOrg) GetNsxtEdgeGatewayById(id string) (*NsxtEdgeGateway, error) {
-	return getNsxtEdgeGatewayById(adminOrg.client, id, nil)
+func (adminOrg *AdminOrg) GetNsxtEdgeGatewayById(ctx context.Context, id string) (*NsxtEdgeGateway, error) {
+	return getNsxtEdgeGatewayById(ctx, adminOrg.client, id, nil)
 }
 
 // GetNsxtEdgeGatewayById allows to retrieve NSX-T edge gateway by ID for Org users
-func (org *Org) GetNsxtEdgeGatewayById(id string) (*NsxtEdgeGateway, error) {
-	return getNsxtEdgeGatewayById(org.client, id, nil)
+func (org *Org) GetNsxtEdgeGatewayById(ctx context.Context, id string) (*NsxtEdgeGateway, error) {
+	return getNsxtEdgeGatewayById(ctx, org.client, id, nil)
 }
 
 // GetNsxtEdgeGatewayById allows to retrieve NSX-T edge gateway by ID for specific VDC
-func (vdc *Vdc) GetNsxtEdgeGatewayById(id string) (*NsxtEdgeGateway, error) {
+func (vdc *Vdc) GetNsxtEdgeGatewayById(ctx context.Context, id string) (*NsxtEdgeGateway, error) {
 	params := url.Values{}
 	filterParams := queryParameterFilterAnd("orgVdc.id=="+vdc.Vdc.ID, params)
-	egw, err := getNsxtEdgeGatewayById(vdc.client, id, filterParams)
+	egw, err := getNsxtEdgeGatewayById(ctx, vdc.client, id, filterParams)
 	if err != nil {
 		return nil, err
 	}
@@ -45,11 +46,11 @@ func (vdc *Vdc) GetNsxtEdgeGatewayById(id string) (*NsxtEdgeGateway, error) {
 }
 
 // GetNsxtEdgeGatewayByName allows to retrieve NSX-T edge gateway by Name for Org admins
-func (adminOrg *AdminOrg) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) {
+func (adminOrg *AdminOrg) GetNsxtEdgeGatewayByName(ctx context.Context, name string) (*NsxtEdgeGateway, error) {
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", "name=="+name)
 
-	allEdges, err := adminOrg.GetAllNsxtEdgeGateways(queryParameters)
+	allEdges, err := adminOrg.GetAllNsxtEdgeGateways(ctx, queryParameters)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve Edge Gateway by name '%s': %s", name, err)
 	}
@@ -60,11 +61,11 @@ func (adminOrg *AdminOrg) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGatewa
 }
 
 // GetNsxtEdgeGatewayByName allows to retrieve NSX-T edge gateway by Name for Org admins
-func (org *Org) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) {
+func (org *Org) GetNsxtEdgeGatewayByName(ctx context.Context, name string) (*NsxtEdgeGateway, error) {
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", "name=="+name)
 
-	allEdges, err := org.GetAllNsxtEdgeGateways(queryParameters)
+	allEdges, err := org.GetAllNsxtEdgeGateways(ctx, queryParameters)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve Edge Gateway by name '%s': %s", name, err)
 	}
@@ -75,11 +76,11 @@ func (org *Org) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) 
 }
 
 // GetNsxtEdgeGatewayByName allows to retrieve NSX-T edge gateway by Name for specific VDC
-func (vdc *Vdc) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) {
+func (vdc *Vdc) GetNsxtEdgeGatewayByName(ctx context.Context, name string) (*NsxtEdgeGateway, error) {
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", "name=="+name)
 
-	allEdges, err := vdc.GetAllNsxtEdgeGateways(queryParameters)
+	allEdges, err := vdc.GetAllNsxtEdgeGateways(ctx, queryParameters)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve Edge Gateway by name '%s': %s", name, err)
 	}
@@ -88,29 +89,29 @@ func (vdc *Vdc) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) 
 }
 
 // GetAllNsxtEdgeGateways allows to retrieve all NSX-T edge gateways for Org Admins
-func (adminOrg *AdminOrg) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
-	return getAllNsxtEdgeGateways(adminOrg.client, queryParameters)
+func (adminOrg *AdminOrg) GetAllNsxtEdgeGateways(ctx context.Context, queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
+	return getAllNsxtEdgeGateways(ctx, adminOrg.client, queryParameters)
 }
 
 // GetAllNsxtEdgeGateways allows to retrieve all NSX-T edge gateways for Org users
-func (org *Org) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
-	return getAllNsxtEdgeGateways(org.client, queryParameters)
+func (org *Org) GetAllNsxtEdgeGateways(ctx context.Context, queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
+	return getAllNsxtEdgeGateways(ctx, org.client, queryParameters)
 }
 
 // GetAllNsxtEdgeGateways allows to retrieve all NSX-T edge gateways for specific VDC
-func (vdc *Vdc) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
+func (vdc *Vdc) GetAllNsxtEdgeGateways(ctx context.Context, queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
 	filteredQueryParams := queryParameterFilterAnd("orgVdc.id=="+vdc.Vdc.ID, queryParameters)
-	return getAllNsxtEdgeGateways(vdc.client, filteredQueryParams)
+	return getAllNsxtEdgeGateways(ctx, vdc.client, filteredQueryParams)
 }
 
 // CreateNsxtEdgeGateway allows to create NSX-T edge gateway for Org admins
-func (adminOrg *AdminOrg) CreateNsxtEdgeGateway(edgeGatewayConfig *types.OpenAPIEdgeGateway) (*NsxtEdgeGateway, error) {
+func (adminOrg *AdminOrg) CreateNsxtEdgeGateway(ctx context.Context, edgeGatewayConfig *types.OpenAPIEdgeGateway) (*NsxtEdgeGateway, error) {
 	if !adminOrg.client.IsSysAdmin {
 		return nil, fmt.Errorf("only System Administrator can create Edge Gateway")
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
-	minimumApiVersion, err := adminOrg.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := adminOrg.client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +126,7 @@ func (adminOrg *AdminOrg) CreateNsxtEdgeGateway(edgeGatewayConfig *types.OpenAPI
 		client:      adminOrg.client,
 	}
 
-	err = adminOrg.client.OpenApiPostItem(minimumApiVersion, urlRef, nil, edgeGatewayConfig, returnEgw.EdgeGateway)
+	err = adminOrg.client.OpenApiPostItem(ctx, minimumApiVersion, urlRef, nil, edgeGatewayConfig, returnEgw.EdgeGateway)
 	if err != nil {
 		return nil, fmt.Errorf("error creating Edge Gateway: %s", err)
 	}
@@ -134,13 +135,13 @@ func (adminOrg *AdminOrg) CreateNsxtEdgeGateway(edgeGatewayConfig *types.OpenAPI
 }
 
 // Update allows to update NSX-T edge gateway for Org admins
-func (egw *NsxtEdgeGateway) Update(edgeGatewayConfig *types.OpenAPIEdgeGateway) (*NsxtEdgeGateway, error) {
+func (egw *NsxtEdgeGateway) Update(ctx context.Context, edgeGatewayConfig *types.OpenAPIEdgeGateway) (*NsxtEdgeGateway, error) {
 	if !egw.client.IsSysAdmin {
 		return nil, fmt.Errorf("only System Administrator can update Edge Gateway")
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
-	minimumApiVersion, err := egw.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := egw.client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +160,7 @@ func (egw *NsxtEdgeGateway) Update(edgeGatewayConfig *types.OpenAPIEdgeGateway) 
 		client:      egw.client,
 	}
 
-	err = egw.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, edgeGatewayConfig, returnEgw.EdgeGateway)
+	err = egw.client.OpenApiPutItem(ctx, minimumApiVersion, urlRef, nil, edgeGatewayConfig, returnEgw.EdgeGateway)
 	if err != nil {
 		return nil, fmt.Errorf("error updating Edge Gateway: %s", err)
 	}
@@ -168,13 +169,13 @@ func (egw *NsxtEdgeGateway) Update(edgeGatewayConfig *types.OpenAPIEdgeGateway) 
 }
 
 // Update allows to delete NSX-T edge gateway for Org admins
-func (egw *NsxtEdgeGateway) Delete() error {
+func (egw *NsxtEdgeGateway) Delete(ctx context.Context) error {
 	if !egw.client.IsSysAdmin {
 		return fmt.Errorf("only Provider can update Edge Gateway")
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
-	minimumApiVersion, err := egw.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := egw.client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return err
 	}
@@ -188,7 +189,7 @@ func (egw *NsxtEdgeGateway) Delete() error {
 		return err
 	}
 
-	err = egw.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil)
+	err = egw.client.OpenApiDeleteItem(ctx, minimumApiVersion, urlRef, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting Edge Gateway: %s", err)
@@ -201,9 +202,9 @@ func (egw *NsxtEdgeGateway) Delete() error {
 // func (adminOrg *AdminOrg) GetNsxtEdgeGatewayByName(id string) (*NsxtEdgeGateway, error)
 // func (org *Org) GetNsxtEdgeGatewayByName(id string) (*NsxtEdgeGateway, error)
 // func (vdc *Vdc) GetNsxtEdgeGatewayById(id string) (*NsxtEdgeGateway, error)
-func getNsxtEdgeGatewayById(client *Client, id string, queryParameters url.Values) (*NsxtEdgeGateway, error) {
+func getNsxtEdgeGatewayById(ctx context.Context, client *Client, id string, queryParameters url.Values) (*NsxtEdgeGateway, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +223,7 @@ func getNsxtEdgeGatewayById(client *Client, id string, queryParameters url.Value
 		client:      client,
 	}
 
-	err = client.OpenApiGetItem(minimumApiVersion, urlRef, queryParameters, egw.EdgeGateway)
+	err = client.OpenApiGetItem(ctx, minimumApiVersion, urlRef, queryParameters, egw.EdgeGateway)
 	if err != nil {
 		return nil, err
 	}
@@ -253,9 +254,9 @@ func returnSingleNsxtEdgeGateway(name string, allEdges []*NsxtEdgeGateway) (*Nsx
 // func (adminOrg *AdminOrg) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error)
 // func (org *Org) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error)
 // func (vdc *Vdc) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error)
-func getAllNsxtEdgeGateways(client *Client, queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
+func getAllNsxtEdgeGateways(ctx context.Context, client *Client, queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +267,7 @@ func getAllNsxtEdgeGateways(client *Client, queryParameters url.Values) ([]*Nsxt
 	}
 
 	typeResponses := []*types.OpenAPIEdgeGateway{{}}
-	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &typeResponses)
+	err = client.OpenApiGetAllItems(ctx, minimumApiVersion, urlRef, queryParameters, &typeResponses)
 	if err != nil {
 		return nil, err
 	}

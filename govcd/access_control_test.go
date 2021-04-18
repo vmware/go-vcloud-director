@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -18,10 +19,10 @@ import (
 
 // accessControlType is an interface used to test access control for all entities that support it
 type accessControlType interface {
-	GetAccessControl(useTenantContext bool) (*types.ControlAccessParams, error)
-	SetAccessControl(params *types.ControlAccessParams, useTenantContext bool) error
-	RemoveAccessControl(useTenantContext bool) error
-	IsShared(useTenantContext bool) (bool, error)
+	GetAccessControl(ctx context.Context, useTenantContext bool) (*types.ControlAccessParams, error)
+	SetAccessControl(ctx context.Context, params *types.ControlAccessParams, useTenantContext bool) error
+	RemoveAccessControl(ctx context.Context, useTenantContext bool) error
+	IsShared(ctx context.Context, useTenantContext bool) (bool, error)
 	GetId() string
 }
 
@@ -47,17 +48,17 @@ func accessSettingsToMap(params types.ControlAccessParams) accessSettingMap {
 // * params are the access control parameters to be set
 // * expected are the result parameters that we should find in the end result
 // * wantShared is whether the final settings should result in the entity being shared
-func testAccessControl(label string, accessible accessControlType, params types.ControlAccessParams, expected types.ControlAccessParams, wantShared bool, useTenantContext bool, check *C) error {
+func testAccessControl(ctx context.Context, label string, accessible accessControlType, params types.ControlAccessParams, expected types.ControlAccessParams, wantShared bool, useTenantContext bool, check *C) error {
 
 	if testVerbose {
 		fmt.Printf("-- %s\n", label)
 	}
-	err := accessible.SetAccessControl(&params, useTenantContext)
+	err := accessible.SetAccessControl(ctx, &params, useTenantContext)
 	if err != nil {
 		return err
 	}
 
-	foundParams, err := accessible.GetAccessControl(useTenantContext)
+	foundParams, err := accessible.GetAccessControl(ctx, useTenantContext)
 	if err != nil {
 		return err
 	}
@@ -98,7 +99,7 @@ func testAccessControl(label string, accessible accessControlType, params types.
 		}
 	}
 
-	shared, err := accessible.IsShared(useTenantContext)
+	shared, err := accessible.IsShared(ctx, useTenantContext)
 	if err != nil {
 		return err
 	}

@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -30,18 +31,18 @@ func NewVdc(cli *Client) *Vdc {
 }
 
 // Gets a vapp with a specific url vappHREF
-func (vdc *Vdc) getVdcVAppbyHREF(vappHREF *url.URL) (*VApp, error) {
+func (vdc *Vdc) getVdcVAppbyHREF(ctx context.Context, vappHREF *url.URL) (*VApp, error) {
 	vapp := NewVApp(vdc.client)
 
-	_, err := vdc.client.ExecuteRequest(vappHREF.String(), http.MethodGet,
+	_, err := vdc.client.ExecuteRequest(ctx, vappHREF.String(), http.MethodGet,
 		"", "error retrieving VApp: %s", nil, vapp.VApp)
 
 	return vapp, err
 }
 
 // Undeploys every vapp in the vdc
-func (vdc *Vdc) undeployAllVdcVApps() error {
-	err := vdc.Refresh()
+func (vdc *Vdc) undeployAllVdcVApps(ctx context.Context) error {
+	err := vdc.Refresh(ctx)
 	if err != nil {
 		return fmt.Errorf("error refreshing vdc: %s", err)
 	}
@@ -52,18 +53,18 @@ func (vdc *Vdc) undeployAllVdcVApps() error {
 				if err != nil {
 					return err
 				}
-				vapp, err := vdc.getVdcVAppbyHREF(vappHREF)
+				vapp, err := vdc.getVdcVAppbyHREF(ctx, vappHREF)
 				if err != nil {
 					return fmt.Errorf("error retrieving vapp with url: %s and with error %s", vappHREF.Path, err)
 				}
-				task, err := vapp.Undeploy()
+				task, err := vapp.Undeploy(ctx)
 				if err != nil {
 					return err
 				}
 				if task == (Task{}) {
 					continue
 				}
-				err = task.WaitTaskCompletion()
+				err = task.WaitTaskCompletion(ctx)
 				if err != nil {
 					return err
 				}
@@ -74,8 +75,8 @@ func (vdc *Vdc) undeployAllVdcVApps() error {
 }
 
 // Removes all vapps in the vdc
-func (vdc *Vdc) removeAllVdcVApps() error {
-	err := vdc.Refresh()
+func (vdc *Vdc) removeAllVdcVApps(ctx context.Context) error {
+	err := vdc.Refresh(ctx)
 	if err != nil {
 		return fmt.Errorf("error refreshing vdc: %s", err)
 	}
@@ -86,15 +87,15 @@ func (vdc *Vdc) removeAllVdcVApps() error {
 				if err != nil {
 					return err
 				}
-				vapp, err := vdc.getVdcVAppbyHREF(vappHREF)
+				vapp, err := vdc.getVdcVAppbyHREF(ctx, vappHREF)
 				if err != nil {
 					return fmt.Errorf("error retrieving vapp with url: %s and with error %s", vappHREF.Path, err)
 				}
-				task, err := vapp.Delete()
+				task, err := vapp.Delete(ctx)
 				if err != nil {
 					return fmt.Errorf("error deleting vapp: %s", err)
 				}
-				err = task.WaitTaskCompletion()
+				err = task.WaitTaskCompletion(ctx)
 				if err != nil {
 					return fmt.Errorf("couldn't finish removing vapp %s", err)
 				}
@@ -104,7 +105,7 @@ func (vdc *Vdc) removeAllVdcVApps() error {
 	return nil
 }
 
-func (vdc *Vdc) Refresh() error {
+func (vdc *Vdc) Refresh(ctx context.Context) error {
 
 	if vdc.Vdc.HREF == "" {
 		return fmt.Errorf("cannot refresh, Object is empty")
@@ -114,7 +115,7 @@ func (vdc *Vdc) Refresh() error {
 	// elements in slices.
 	unmarshalledVdc := &types.Vdc{}
 
-	_, err := vdc.client.ExecuteRequest(vdc.Vdc.HREF, http.MethodGet,
+	_, err := vdc.client.ExecuteRequest(ctx, vdc.Vdc.HREF, http.MethodGet,
 		"", "error refreshing vDC: %s", nil, unmarshalledVdc)
 	if err != nil {
 		return err
@@ -128,7 +129,7 @@ func (vdc *Vdc) Refresh() error {
 
 // Deletes the vdc, returning an error of the vCD call fails.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Vdc.html
-func (vdc *Vdc) Delete(force bool, recursive bool) (Task, error) {
+func (vdc *Vdc) Delete(ctx context.Context, force bool, recursive bool) (Task, error) {
 	util.Logger.Printf("[TRACE] Vdc.Delete - deleting VDC with force: %t, recursive: %t", force, recursive)
 
 	if vdc.Vdc.HREF == "" {
@@ -140,7 +141,7 @@ func (vdc *Vdc) Delete(force bool, recursive bool) (Task, error) {
 		return Task{}, fmt.Errorf("error parsing vdc url: %s", err)
 	}
 
-	req := vdc.client.NewRequest(map[string]string{
+	req := vdc.client.NewRequest(ctx, map[string]string{
 		"force":     strconv.FormatBool(force),
 		"recursive": strconv.FormatBool(recursive),
 	}, http.MethodDelete, *vdcUrl, nil)
@@ -159,12 +160,12 @@ func (vdc *Vdc) Delete(force bool, recursive bool) (Task, error) {
 }
 
 // Deletes the vdc and waits for the asynchronous task to complete.
-func (vdc *Vdc) DeleteWait(force bool, recursive bool) error {
-	task, err := vdc.Delete(force, recursive)
+func (vdc *Vdc) DeleteWait(ctx context.Context, force bool, recursive bool) error {
+	task, err := vdc.Delete(ctx, force, recursive)
 	if err != nil {
 		return err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return fmt.Errorf("couldn't finish removing vdc %s", err)
 	}
@@ -172,9 +173,9 @@ func (vdc *Vdc) DeleteWait(force bool, recursive bool) error {
 }
 
 // Deprecated: use GetOrgVdcNetworkByName
-func (vdc *Vdc) FindVDCNetwork(network string) (OrgVDCNetwork, error) {
+func (vdc *Vdc) FindVDCNetwork(ctx context.Context, network string) (OrgVDCNetwork, error) {
 
-	err := vdc.Refresh()
+	err := vdc.Refresh(ctx)
 	if err != nil {
 		return OrgVDCNetwork{}, fmt.Errorf("error refreshing vdc: %s", err)
 	}
@@ -183,7 +184,7 @@ func (vdc *Vdc) FindVDCNetwork(network string) (OrgVDCNetwork, error) {
 			if reference.Name == network {
 				orgNet := NewOrgVDCNetwork(vdc.client)
 
-				_, err := vdc.client.ExecuteRequest(reference.HREF, http.MethodGet,
+				_, err := vdc.client.ExecuteRequest(ctx, reference.HREF, http.MethodGet,
 					"", "error retrieving org vdc network: %s", nil, orgNet.OrgVDCNetwork)
 
 				// The request was successful
@@ -198,11 +199,11 @@ func (vdc *Vdc) FindVDCNetwork(network string) (OrgVDCNetwork, error) {
 
 // GetOrgVdcNetworkByHref returns an Org VDC Network reference if the network HREF matches an existing one.
 // If no valid external network is found, it returns a nil Network reference and an error
-func (vdc *Vdc) GetOrgVdcNetworkByHref(href string) (*OrgVDCNetwork, error) {
+func (vdc *Vdc) GetOrgVdcNetworkByHref(ctx context.Context, href string) (*OrgVDCNetwork, error) {
 
 	orgNet := NewOrgVDCNetwork(vdc.client)
 
-	_, err := vdc.client.ExecuteRequest(href, http.MethodGet,
+	_, err := vdc.client.ExecuteRequest(ctx, href, http.MethodGet,
 		"", "error retrieving org vdc network: %s", nil, orgNet.OrgVDCNetwork)
 
 	// The request was successful
@@ -211,9 +212,9 @@ func (vdc *Vdc) GetOrgVdcNetworkByHref(href string) (*OrgVDCNetwork, error) {
 
 // GetOrgVdcNetworkByName returns an Org VDC Network reference if the network name matches an existing one.
 // If no valid external network is found, it returns a nil Network reference and an error
-func (vdc *Vdc) GetOrgVdcNetworkByName(name string, refresh bool) (*OrgVDCNetwork, error) {
+func (vdc *Vdc) GetOrgVdcNetworkByName(ctx context.Context, name string, refresh bool) (*OrgVDCNetwork, error) {
 	if refresh {
-		err := vdc.Refresh()
+		err := vdc.Refresh(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("error refreshing vdc: %s", err)
 		}
@@ -221,7 +222,7 @@ func (vdc *Vdc) GetOrgVdcNetworkByName(name string, refresh bool) (*OrgVDCNetwor
 	for _, an := range vdc.Vdc.AvailableNetworks {
 		for _, reference := range an.Network {
 			if reference.Name == name {
-				return vdc.GetOrgVdcNetworkByHref(reference.HREF)
+				return vdc.GetOrgVdcNetworkByHref(ctx, reference.HREF)
 			}
 		}
 	}
@@ -231,9 +232,9 @@ func (vdc *Vdc) GetOrgVdcNetworkByName(name string, refresh bool) (*OrgVDCNetwor
 
 // GetOrgVdcNetworkById returns an Org VDC Network reference if the network ID matches an existing one.
 // If no valid external network is found, it returns a nil Network reference and an error
-func (vdc *Vdc) GetOrgVdcNetworkById(id string, refresh bool) (*OrgVDCNetwork, error) {
+func (vdc *Vdc) GetOrgVdcNetworkById(ctx context.Context, id string, refresh bool) (*OrgVDCNetwork, error) {
 	if refresh {
-		err := vdc.Refresh()
+		err := vdc.Refresh(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("error refreshing vdc: %s", err)
 		}
@@ -243,7 +244,7 @@ func (vdc *Vdc) GetOrgVdcNetworkById(id string, refresh bool) (*OrgVDCNetwork, e
 			// Some versions of vCD do not return an ID in the network reference
 			// We use equalIds to overcome this issue
 			if equalIds(id, reference.ID, reference.HREF) {
-				return vdc.GetOrgVdcNetworkByHref(reference.HREF)
+				return vdc.GetOrgVdcNetworkByHref(ctx, reference.HREF)
 			}
 		}
 	}
@@ -253,9 +254,11 @@ func (vdc *Vdc) GetOrgVdcNetworkById(id string, refresh bool) (*OrgVDCNetwork, e
 
 // GetOrgVdcNetworkByNameOrId returns a VDC Network reference if either the network name or ID matches an existing one.
 // If no valid external network is found, it returns a nil ExternalNetwork reference and an error
-func (vdc *Vdc) GetOrgVdcNetworkByNameOrId(identifier string, refresh bool) (*OrgVDCNetwork, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return vdc.GetOrgVdcNetworkByName(name, refresh) }
-	getById := func(id string, refresh bool) (interface{}, error) { return vdc.GetOrgVdcNetworkById(id, refresh) }
+func (vdc *Vdc) GetOrgVdcNetworkByNameOrId(ctx context.Context, identifier string, refresh bool) (*OrgVDCNetwork, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) {
+		return vdc.GetOrgVdcNetworkByName(ctx, name, refresh)
+	}
+	getById := func(id string, refresh bool) (interface{}, error) { return vdc.GetOrgVdcNetworkById(ctx, id, refresh) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, false)
 	if entity == nil {
 		return nil, err
@@ -263,9 +266,9 @@ func (vdc *Vdc) GetOrgVdcNetworkByNameOrId(identifier string, refresh bool) (*Or
 	return entity.(*OrgVDCNetwork), err
 }
 
-func (vdc *Vdc) FindStorageProfileReference(name string) (types.Reference, error) {
+func (vdc *Vdc) FindStorageProfileReference(ctx context.Context, name string) (types.Reference, error) {
 
-	err := vdc.Refresh()
+	err := vdc.Refresh(ctx)
 	if err != nil {
 		return types.Reference{}, fmt.Errorf("error refreshing vdc: %s", err)
 	}
@@ -277,9 +280,9 @@ func (vdc *Vdc) FindStorageProfileReference(name string) (types.Reference, error
 	return types.Reference{}, fmt.Errorf("can't find any VDC Storage_profiles")
 }
 
-func (vdc *Vdc) GetDefaultStorageProfileReference(storageprofiles *types.QueryResultRecordsType) (types.Reference, error) {
+func (vdc *Vdc) GetDefaultStorageProfileReference(ctx context.Context, storageprofiles *types.QueryResultRecordsType) (types.Reference, error) {
 
-	err := vdc.Refresh()
+	err := vdc.Refresh(ctx)
 	if err != nil {
 		return types.Reference{}, fmt.Errorf("error refreshing vdc: %s", err)
 	}
@@ -292,9 +295,9 @@ func (vdc *Vdc) GetDefaultStorageProfileReference(storageprofiles *types.QueryRe
 }
 
 // Deprecated: use GetEdgeGatewayByName
-func (vdc *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
+func (vdc *Vdc) FindEdgeGateway(ctx context.Context, edgegateway string) (EdgeGateway, error) {
 
-	err := vdc.Refresh()
+	err := vdc.Refresh(ctx)
 	if err != nil {
 		return EdgeGateway{}, fmt.Errorf("error refreshing vdc: %s", err)
 	}
@@ -303,7 +306,7 @@ func (vdc *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 
 			query := new(types.QueryResultEdgeGatewayRecordsType)
 
-			_, err := vdc.client.ExecuteRequest(av.HREF, http.MethodGet,
+			_, err := vdc.client.ExecuteRequest(ctx, av.HREF, http.MethodGet,
 				"", "error querying edge gateways: %s", nil, query)
 			if err != nil {
 				return EdgeGateway{}, err
@@ -323,7 +326,7 @@ func (vdc *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 
 			edge := NewEdgeGateway(vdc.client)
 
-			_, err = vdc.client.ExecuteRequest(href, http.MethodGet,
+			_, err = vdc.client.ExecuteRequest(ctx, href, http.MethodGet,
 				"", "error retrieving edge gateway: %s", nil, edge.EdgeGateway)
 
 			// TODO - remove this if a solution is found or once 9.7 is deprecated
@@ -338,7 +341,7 @@ func (vdc *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 				for i := 1; i < 4 && err != nil; i++ {
 					time.Sleep(200 * time.Millisecond)
 					util.Logger.Printf("%d ", i)
-					_, err = vdc.client.ExecuteRequest(href, http.MethodGet,
+					_, err = vdc.client.ExecuteRequest(ctx, href, http.MethodGet,
 						"", "error retrieving edge gateway: %s", nil, edge.EdgeGateway)
 				}
 				util.Logger.Printf("\n")
@@ -355,14 +358,14 @@ func (vdc *Vdc) FindEdgeGateway(edgegateway string) (EdgeGateway, error) {
 // GetEdgeGatewayByHref retrieves an edge gateway from VDC
 // by querying directly its HREF.
 // The name passed as parameter is only used for error reporting
-func (vdc *Vdc) GetEdgeGatewayByHref(href string) (*EdgeGateway, error) {
+func (vdc *Vdc) GetEdgeGatewayByHref(ctx context.Context, href string) (*EdgeGateway, error) {
 	if href == "" {
 		return nil, fmt.Errorf("empty edge gateway HREF")
 	}
 
 	edge := NewEdgeGateway(vdc.client)
 
-	_, err := vdc.client.ExecuteRequest(href, http.MethodGet,
+	_, err := vdc.client.ExecuteRequest(ctx, href, http.MethodGet,
 		"", "error retrieving edge gateway: %s", nil, edge.EdgeGateway)
 
 	// TODO - remove this if a solution is found or once 9.7 is deprecated
@@ -377,7 +380,7 @@ func (vdc *Vdc) GetEdgeGatewayByHref(href string) (*EdgeGateway, error) {
 		for i := 1; i < 4 && err != nil; i++ {
 			time.Sleep(200 * time.Millisecond)
 			util.Logger.Printf("%d ", i)
-			_, err = vdc.client.ExecuteRequest(href, http.MethodGet,
+			_, err = vdc.client.ExecuteRequest(ctx, href, http.MethodGet,
 				"", "error retrieving edge gateway: %s", nil, edge.EdgeGateway)
 		}
 		util.Logger.Printf("\n")
@@ -390,8 +393,8 @@ func (vdc *Vdc) GetEdgeGatewayByHref(href string) (*EdgeGateway, error) {
 }
 
 // QueryEdgeGatewayList returns a list of all the edge gateways in a VDC
-func (vdc *Vdc) QueryEdgeGatewayList() ([]*types.QueryResultEdgeGatewayRecordType, error) {
-	results, err := vdc.client.cumulativeQuery(types.QtEdgeGateway, nil, map[string]string{
+func (vdc *Vdc) QueryEdgeGatewayList(ctx context.Context) ([]*types.QueryResultEdgeGatewayRecordType, error) {
+	results, err := vdc.client.cumulativeQuery(ctx, types.QtEdgeGateway, nil, map[string]string{
 		"type":          types.QtEdgeGateway,
 		"filter":        fmt.Sprintf("orgVdcName==%s", url.QueryEscape(vdc.Vdc.Name)),
 		"filterEncoded": "true",
@@ -404,8 +407,8 @@ func (vdc *Vdc) QueryEdgeGatewayList() ([]*types.QueryResultEdgeGatewayRecordTyp
 
 // GetEdgeGatewayRecordsType retrieves a list of edge gateways from VDC
 // Deprecated: use QueryEdgeGatewayList instead
-func (vdc *Vdc) GetEdgeGatewayRecordsType(refresh bool) (*types.QueryResultEdgeGatewayRecordsType, error) {
-	items, err := vdc.QueryEdgeGatewayList()
+func (vdc *Vdc) GetEdgeGatewayRecordsType(ctx context.Context, refresh bool) (*types.QueryResultEdgeGatewayRecordsType, error) {
+	items, err := vdc.QueryEdgeGatewayList(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving edge gateway list: %s", err)
 	}
@@ -418,15 +421,15 @@ func (vdc *Vdc) GetEdgeGatewayRecordsType(refresh bool) (*types.QueryResultEdgeG
 // GetEdgeGatewayByName search the VDC list of edge gateways for a given name.
 // If the name matches, it returns a pointer to an edge gateway object.
 // On failure, it returns a nil object and an error
-func (vdc *Vdc) GetEdgeGatewayByName(name string, refresh bool) (*EdgeGateway, error) {
-	edgeGatewayList, err := vdc.QueryEdgeGatewayList()
+func (vdc *Vdc) GetEdgeGatewayByName(ctx context.Context, name string, refresh bool) (*EdgeGateway, error) {
+	edgeGatewayList, err := vdc.QueryEdgeGatewayList(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving edge gateways list: %s", err)
 	}
 
 	for _, edge := range edgeGatewayList {
 		if edge.Name == name {
-			return vdc.GetEdgeGatewayByHref(edge.HREF)
+			return vdc.GetEdgeGatewayByHref(ctx, edge.HREF)
 		}
 	}
 
@@ -436,15 +439,15 @@ func (vdc *Vdc) GetEdgeGatewayByName(name string, refresh bool) (*EdgeGateway, e
 // GetEdgeGatewayById search VDC list of edge gateways for a given ID.
 // If the id matches, it returns a pointer to an edge gateway object.
 // On failure, it returns a nil object and an error
-func (vdc *Vdc) GetEdgeGatewayById(id string, refresh bool) (*EdgeGateway, error) {
-	edgeGatewayList, err := vdc.QueryEdgeGatewayList()
+func (vdc *Vdc) GetEdgeGatewayById(ctx context.Context, id string, refresh bool) (*EdgeGateway, error) {
+	edgeGatewayList, err := vdc.QueryEdgeGatewayList(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving edge gateways list: %s", err)
 	}
 
 	for _, edge := range edgeGatewayList {
 		if equalIds(id, "", edge.HREF) {
-			return vdc.GetEdgeGatewayByHref(edge.HREF)
+			return vdc.GetEdgeGatewayByHref(ctx, edge.HREF)
 		}
 	}
 
@@ -454,9 +457,11 @@ func (vdc *Vdc) GetEdgeGatewayById(id string, refresh bool) (*EdgeGateway, error
 // GetEdgeGatewayByNameOrId search the VDC list of edge gateways for a given name or ID.
 // If the name or the ID match, it returns a pointer to an edge gateway object.
 // On failure, it returns a nil object and an error
-func (vdc *Vdc) GetEdgeGatewayByNameOrId(identifier string, refresh bool) (*EdgeGateway, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return vdc.GetEdgeGatewayByName(name, refresh) }
-	getById := func(id string, refresh bool) (interface{}, error) { return vdc.GetEdgeGatewayById(id, refresh) }
+func (vdc *Vdc) GetEdgeGatewayByNameOrId(ctx context.Context, identifier string, refresh bool) (*EdgeGateway, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) {
+		return vdc.GetEdgeGatewayByName(ctx, name, refresh)
+	}
+	getById := func(id string, refresh bool) (interface{}, error) { return vdc.GetEdgeGatewayById(ctx, id, refresh) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, false)
 	if entity == nil {
 		return nil, err
@@ -464,7 +469,7 @@ func (vdc *Vdc) GetEdgeGatewayByNameOrId(identifier string, refresh bool) (*Edge
 	return entity.(*EdgeGateway), err
 }
 
-func (vdc *Vdc) ComposeRawVApp(name string) error {
+func (vdc *Vdc) ComposeRawVApp(ctx context.Context, name string) error {
 	vcomp := &types.ComposeVAppParams{
 		Ovf:     types.XMLNamespaceOVF,
 		Xsi:     types.XMLNamespaceXSI,
@@ -480,13 +485,13 @@ func (vdc *Vdc) ComposeRawVApp(name string) error {
 	}
 	vdcHref.Path += "/action/composeVApp"
 
-	task, err := vdc.client.ExecuteTaskRequest(vdcHref.String(), http.MethodPost,
+	task, err := vdc.client.ExecuteTaskRequest(ctx, vdcHref.String(), http.MethodPost,
 		types.MimeComposeVappParams, "error instantiating a new vApp:: %s", vcomp)
 	if err != nil {
 		return fmt.Errorf("error executing task request: %s", err)
 	}
 
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return fmt.Errorf("error performing task: %s", err)
 	}
@@ -498,7 +503,7 @@ func (vdc *Vdc) ComposeRawVApp(name string) error {
 // that uses the storageprofile and networks given. If you want all eulas
 // to be accepted set acceptalleulas to true. Returns a successful task
 // if completed successfully, otherwise returns an error and an empty task.
-func (vdc *Vdc) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate VAppTemplate, storageprofileref types.Reference, name string, description string, acceptalleulas bool) (Task, error) {
+func (vdc *Vdc) ComposeVApp(ctx context.Context, orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate VAppTemplate, storageprofileref types.Reference, name string, description string, acceptalleulas bool) (Task, error) {
 	if vapptemplate.VAppTemplate.Children == nil || orgvdcnetworks == nil {
 		return Task{}, fmt.Errorf("can't compose a new vApp, objects passed are not valid")
 	}
@@ -579,14 +584,14 @@ func (vdc *Vdc) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate 
 	}
 	vdcHref.Path += "/action/composeVApp"
 
-	return vdc.client.ExecuteTaskRequest(vdcHref.String(), http.MethodPost,
+	return vdc.client.ExecuteTaskRequest(ctx, vdcHref.String(), http.MethodPost,
 		types.MimeComposeVappParams, "error instantiating a new vApp: %s", vcomp)
 }
 
 // Deprecated: use vdc.GetVAppByName instead
-func (vdc *Vdc) FindVAppByName(vapp string) (VApp, error) {
+func (vdc *Vdc) FindVAppByName(ctx context.Context, vapp string) (VApp, error) {
 
-	err := vdc.Refresh()
+	err := vdc.Refresh(ctx)
 	if err != nil {
 		return VApp{}, fmt.Errorf("error refreshing vdc: %s", err)
 	}
@@ -598,7 +603,7 @@ func (vdc *Vdc) FindVAppByName(vapp string) (VApp, error) {
 
 				newVapp := NewVApp(vdc.client)
 
-				_, err := vdc.client.ExecuteRequest(resent.HREF, http.MethodGet,
+				_, err := vdc.client.ExecuteRequest(ctx, resent.HREF, http.MethodGet,
 					"", "error retrieving vApp: %s", nil, newVapp.VApp)
 
 				return *newVapp, err
@@ -610,14 +615,14 @@ func (vdc *Vdc) FindVAppByName(vapp string) (VApp, error) {
 }
 
 // Deprecated: use vapp.GetVMByName instead
-func (vdc *Vdc) FindVMByName(vapp VApp, vm string) (VM, error) {
+func (vdc *Vdc) FindVMByName(ctx context.Context, vapp VApp, vm string) (VM, error) {
 
-	err := vdc.Refresh()
+	err := vdc.Refresh(ctx)
 	if err != nil {
 		return VM{}, fmt.Errorf("error refreshing vdc: %s", err)
 	}
 
-	err = vapp.Refresh()
+	err = vapp.Refresh(ctx)
 	if err != nil {
 		return VM{}, fmt.Errorf("error refreshing vApp: %s", err)
 	}
@@ -636,7 +641,7 @@ func (vdc *Vdc) FindVMByName(vapp VApp, vm string) (VM, error) {
 
 			newVm := NewVM(vdc.client)
 
-			_, err := vdc.client.ExecuteRequest(child.HREF, http.MethodGet,
+			_, err := vdc.client.ExecuteRequest(ctx, child.HREF, http.MethodGet,
 				"", "error retrieving vm: %s", nil, newVm.VM)
 
 			return *newVm, err
@@ -648,7 +653,7 @@ func (vdc *Vdc) FindVMByName(vapp VApp, vm string) (VM, error) {
 }
 
 // Find vm using vApp name and VM name. Returns VMRecord query return type
-func (vdc *Vdc) QueryVM(vappName, vmName string) (VMRecord, error) {
+func (vdc *Vdc) QueryVM(ctx context.Context, vappName, vmName string) (VMRecord, error) {
 
 	if vmName == "" {
 		return VMRecord{}, errors.New("error querying vm name is empty")
@@ -663,7 +668,7 @@ func (vdc *Vdc) QueryVM(vappName, vmName string) (VMRecord, error) {
 		typeMedia = "adminVM"
 	}
 
-	results, err := vdc.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia,
+	results, err := vdc.QueryWithNotEncodedParams(ctx, nil, map[string]string{"type": typeMedia,
 		"filter":        "name==" + url.QueryEscape(vmName) + ";containerName==" + url.QueryEscape(vappName),
 		"filterEncoded": "true"})
 	if err != nil {
@@ -687,12 +692,12 @@ func (vdc *Vdc) QueryVM(vappName, vmName string) (VMRecord, error) {
 }
 
 // Deprecated: use vdc.GetVAppById instead
-func (vdc *Vdc) FindVAppByID(vappid string) (VApp, error) {
+func (vdc *Vdc) FindVAppByID(ctx context.Context, vappid string) (VApp, error) {
 
 	// Horrible hack to fetch a vapp with its id.
 	// urn:vcloud:vapp:00000000-0000-0000-0000-000000000000
 
-	err := vdc.Refresh()
+	err := vdc.Refresh(ctx)
 	if err != nil {
 		return VApp{}, fmt.Errorf("error refreshing vdc: %s", err)
 	}
@@ -711,7 +716,7 @@ func (vdc *Vdc) FindVAppByID(vappid string) (VApp, error) {
 
 				newVapp := NewVApp(vdc.client)
 
-				_, err := vdc.client.ExecuteRequest(resent.HREF, http.MethodGet,
+				_, err := vdc.client.ExecuteRequest(ctx, resent.HREF, http.MethodGet,
 					"", "error retrieving vApp: %s", nil, newVapp.VApp)
 
 				return *newVapp, err
@@ -726,10 +731,10 @@ func (vdc *Vdc) FindVAppByID(vappid string) (VApp, error) {
 // FindMediaImage returns media image found in system using `name` as query.
 // Can find a few of them if media with same name exist in different catalogs.
 // Deprecated: Use catalog.GetMediaByName()
-func (vdc *Vdc) FindMediaImage(mediaName string) (MediaItem, error) {
+func (vdc *Vdc) FindMediaImage(ctx context.Context, mediaName string) (MediaItem, error) {
 	util.Logger.Printf("[TRACE] Querying medias by name\n")
 
-	mediaResults, err := queryMediaWithFilter(vdc,
+	mediaResults, err := queryMediaWithFilter(ctx, vdc,
 		fmt.Sprintf("name==%s", url.QueryEscape(mediaName)))
 	if err != nil {
 		return MediaItem{}, err
@@ -755,11 +760,11 @@ func (vdc *Vdc) FindMediaImage(mediaName string) (MediaItem, error) {
 
 // GetVappByHref returns a vApp reference by running a vCD API call
 // If no valid vApp is found, it returns a nil VApp reference and an error
-func (vdc *Vdc) GetVAppByHref(vappHref string) (*VApp, error) {
+func (vdc *Vdc) GetVAppByHref(ctx context.Context, vappHref string) (*VApp, error) {
 
 	newVapp := NewVApp(vdc.client)
 
-	_, err := vdc.client.ExecuteRequest(vappHref, http.MethodGet,
+	_, err := vdc.client.ExecuteRequest(ctx, vappHref, http.MethodGet,
 		"", "error retrieving vApp: %s", nil, newVapp.VApp)
 
 	if err != nil {
@@ -770,10 +775,10 @@ func (vdc *Vdc) GetVAppByHref(vappHref string) (*VApp, error) {
 
 // GetVappByName returns a vApp reference if the vApp Name matches an existing one.
 // If no valid vApp is found, it returns a nil VApp reference and an error
-func (vdc *Vdc) GetVAppByName(vappName string, refresh bool) (*VApp, error) {
+func (vdc *Vdc) GetVAppByName(ctx context.Context, vappName string, refresh bool) (*VApp, error) {
 
 	if refresh {
-		err := vdc.Refresh()
+		err := vdc.Refresh(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("error refreshing VDC: %s", err)
 		}
@@ -782,7 +787,7 @@ func (vdc *Vdc) GetVAppByName(vappName string, refresh bool) (*VApp, error) {
 	for _, resourceEntities := range vdc.Vdc.ResourceEntities {
 		for _, resourceReference := range resourceEntities.ResourceEntity {
 			if resourceReference.Name == vappName && resourceReference.Type == "application/vnd.vmware.vcloud.vApp+xml" {
-				return vdc.GetVAppByHref(resourceReference.HREF)
+				return vdc.GetVAppByHref(ctx, resourceReference.HREF)
 			}
 		}
 	}
@@ -791,10 +796,10 @@ func (vdc *Vdc) GetVAppByName(vappName string, refresh bool) (*VApp, error) {
 
 // GetVappById returns a vApp reference if the vApp ID matches an existing one.
 // If no valid vApp is found, it returns a nil VApp reference and an error
-func (vdc *Vdc) GetVAppById(id string, refresh bool) (*VApp, error) {
+func (vdc *Vdc) GetVAppById(ctx context.Context, id string, refresh bool) (*VApp, error) {
 
 	if refresh {
-		err := vdc.Refresh()
+		err := vdc.Refresh(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("error refreshing VDC: %s", err)
 		}
@@ -803,7 +808,7 @@ func (vdc *Vdc) GetVAppById(id string, refresh bool) (*VApp, error) {
 	for _, resourceEntities := range vdc.Vdc.ResourceEntities {
 		for _, resourceReference := range resourceEntities.ResourceEntity {
 			if equalIds(id, resourceReference.ID, resourceReference.HREF) {
-				return vdc.GetVAppByHref(resourceReference.HREF)
+				return vdc.GetVAppByHref(ctx, resourceReference.HREF)
 			}
 		}
 	}
@@ -812,9 +817,9 @@ func (vdc *Vdc) GetVAppById(id string, refresh bool) (*VApp, error) {
 
 // GetVappByNameOrId returns a vApp reference if either the vApp name or ID matches an existing one.
 // If no valid vApp is found, it returns a nil VApp reference and an error
-func (vdc *Vdc) GetVAppByNameOrId(identifier string, refresh bool) (*VApp, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return vdc.GetVAppByName(name, refresh) }
-	getById := func(id string, refresh bool) (interface{}, error) { return vdc.GetVAppById(id, refresh) }
+func (vdc *Vdc) GetVAppByNameOrId(ctx context.Context, identifier string, refresh bool) (*VApp, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) { return vdc.GetVAppByName(ctx, name, refresh) }
+	getById := func(id string, refresh bool) (interface{}, error) { return vdc.GetVAppById(ctx, id, refresh) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, false)
 	if entity == nil {
 		return nil, err
@@ -840,12 +845,12 @@ func (vdc *Vdc) buildNsxvNetworkServiceEndpointURL(optionalSuffix string) (strin
 }
 
 // QueryMediaList retrieves a list of media items for the VDC
-func (vdc *Vdc) QueryMediaList() ([]*types.MediaRecordType, error) {
-	return getExistingMedia(vdc)
+func (vdc *Vdc) QueryMediaList(ctx context.Context) ([]*types.MediaRecordType, error) {
+	return getExistingMedia(ctx, vdc)
 }
 
 // QueryVappVmTemplate Finds VM template using catalog name, vApp template name, VN name in template. Returns types.QueryResultVMRecordType
-func (vdc *Vdc) QueryVappVmTemplate(catalogName, vappTemplateName, vmNameInTemplate string) (*types.QueryResultVMRecordType, error) {
+func (vdc *Vdc) QueryVappVmTemplate(ctx context.Context, catalogName, vappTemplateName, vmNameInTemplate string) (*types.QueryResultVMRecordType, error) {
 
 	queryType := "vm"
 	if vdc.client.IsSysAdmin {
@@ -853,7 +858,7 @@ func (vdc *Vdc) QueryVappVmTemplate(catalogName, vappTemplateName, vmNameInTempl
 	}
 
 	// this allows to query deployed and not deployed templates
-	results, err := vdc.QueryWithNotEncodedParams(nil, map[string]string{"type": queryType,
+	results, err := vdc.QueryWithNotEncodedParams(ctx, nil, map[string]string{"type": queryType,
 		"filter": "catalogName==" + url.QueryEscape(catalogName) + ";containerName==" + url.QueryEscape(vappTemplateName) + ";name==" + url.QueryEscape(vmNameInTemplate) +
 			";isVAppTemplate==true;status!=FAILED_CREATION;status!=UNKNOWN;status!=UNRECOGNIZED;status!=UNRESOLVED&links=true;",
 		"filterEncoded": "true"})
@@ -903,7 +908,7 @@ func (vdc *Vdc) GetVappList() []*types.ResourceReference {
 }
 
 // CreateStandaloneVmAsync starts a standalone VM creation without a template, returning a task
-func (vdc *Vdc) CreateStandaloneVmAsync(params *types.CreateVmParams) (Task, error) {
+func (vdc *Vdc) CreateStandaloneVmAsync(ctx context.Context, params *types.CreateVmParams) (Task, error) {
 	util.Logger.Printf("[TRACE] Vdc.CreateStandaloneVmAsync - Creating VM ")
 
 	if vdc.Vdc.HREF == "" {
@@ -925,17 +930,17 @@ func (vdc *Vdc) CreateStandaloneVmAsync(params *types.CreateVmParams) (Task, err
 	}
 	params.XmlnsOvf = types.XMLNamespaceOVF
 
-	return vdc.client.ExecuteTaskRequest(href, http.MethodPost, types.MimeCreateVmParams, "error creating standalone VM: %s", params)
+	return vdc.client.ExecuteTaskRequest(ctx, href, http.MethodPost, types.MimeCreateVmParams, "error creating standalone VM: %s", params)
 }
 
 // getVmFromTask finds a VM from a running standalone VM creation task
 // It retrieves the VM owner (the hidden vApp), and from that one finds the new VM
-func (vdc *Vdc) getVmFromTask(task Task, name string) (*VM, error) {
+func (vdc *Vdc) getVmFromTask(ctx context.Context, task Task, name string) (*VM, error) {
 	owner := task.Task.Owner.HREF
 	if owner == "" {
 		return nil, fmt.Errorf("task owner is null for VM %s", name)
 	}
-	vapp, err := vdc.GetVAppByHref(owner)
+	vapp, err := vdc.GetVAppByHref(ctx, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -950,30 +955,30 @@ func (vdc *Vdc) getVmFromTask(task Task, name string) (*VM, error) {
 	}
 	for _, child := range vapp.VApp.Children.VM {
 		util.Logger.Printf("[TRACE] Looking at: %s", child.Name)
-		return vapp.client.GetVMByHref(child.HREF)
+		return vapp.client.GetVMByHref(ctx, child.HREF)
 	}
 	return nil, ErrorEntityNotFound
 }
 
 // CreateStandaloneVm creates a standalone VM without a template
-func (vdc *Vdc) CreateStandaloneVm(params *types.CreateVmParams) (*VM, error) {
+func (vdc *Vdc) CreateStandaloneVm(ctx context.Context, params *types.CreateVmParams) (*VM, error) {
 
-	task, err := vdc.CreateStandaloneVmAsync(params)
+	task, err := vdc.CreateStandaloneVmAsync(ctx, params)
 	if err != nil {
 		return nil, err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return vdc.getVmFromTask(task, params.Name)
+	return vdc.getVmFromTask(ctx, task, params.Name)
 }
 
 // QueryVmByName finds a standalone VM by name
 // The search fails either if there are more VMs with the wanted name, or if there are none
 // It can also retrieve a standard VM (created from vApp)
-func (vdc *Vdc) QueryVmByName(name string) (*VM, error) {
-	vmList, err := vdc.QueryVmList(types.VmQueryFilterOnlyDeployed)
+func (vdc *Vdc) QueryVmByName(ctx context.Context, name string) (*VM, error) {
+	vmList, err := vdc.QueryVmList(ctx, types.VmQueryFilterOnlyDeployed)
 	if err != nil {
 		return nil, err
 	}
@@ -989,13 +994,13 @@ func (vdc *Vdc) QueryVmByName(name string) (*VM, error) {
 	if len(foundVM) > 1 {
 		return nil, fmt.Errorf("more than one VM found with name %s", name)
 	}
-	return vdc.client.GetVMByHref(foundVM[0].HREF)
+	return vdc.client.GetVMByHref(ctx, foundVM[0].HREF)
 }
 
 // QueryVmById retrieves a standalone VM by ID
 // It can also retrieve a standard VM (created from vApp)
-func (vdc *Vdc) QueryVmById(id string) (*VM, error) {
-	vmList, err := vdc.QueryVmList(types.VmQueryFilterOnlyDeployed)
+func (vdc *Vdc) QueryVmById(ctx context.Context, id string) (*VM, error) {
+	vmList, err := vdc.QueryVmList(ctx, types.VmQueryFilterOnlyDeployed)
 	if err != nil {
 		return nil, err
 	}
@@ -1011,11 +1016,11 @@ func (vdc *Vdc) QueryVmById(id string) (*VM, error) {
 	if len(foundVM) > 1 {
 		return nil, fmt.Errorf("more than one VM found with ID %s", id)
 	}
-	return vdc.client.GetVMByHref(foundVM[0].HREF)
+	return vdc.client.GetVMByHref(ctx, foundVM[0].HREF)
 }
 
 // CreateStandaloneVMFromTemplateAsync starts a standalone VM creation using a template
-func (vdc *Vdc) CreateStandaloneVMFromTemplateAsync(params *types.InstantiateVmTemplateParams) (Task, error) {
+func (vdc *Vdc) CreateStandaloneVMFromTemplateAsync(ctx context.Context, params *types.InstantiateVmTemplateParams) (Task, error) {
 
 	util.Logger.Printf("[TRACE] Vdc.CreateStandaloneVMFromTemplateAsync - Creating VM")
 
@@ -1048,33 +1053,33 @@ func (vdc *Vdc) CreateStandaloneVMFromTemplateAsync(params *types.InstantiateVmT
 	}
 	params.XmlnsOvf = types.XMLNamespaceOVF
 
-	return vdc.client.ExecuteTaskRequest(href, http.MethodPost, types.MimeInstantiateVmTemplateParams, "error creating standalone VM from template: %s", params)
+	return vdc.client.ExecuteTaskRequest(ctx, href, http.MethodPost, types.MimeInstantiateVmTemplateParams, "error creating standalone VM from template: %s", params)
 }
 
 // CreateStandaloneVMFromTemplate creates a standalone VM from a template
-func (vdc *Vdc) CreateStandaloneVMFromTemplate(params *types.InstantiateVmTemplateParams) (*VM, error) {
+func (vdc *Vdc) CreateStandaloneVMFromTemplate(ctx context.Context, params *types.InstantiateVmTemplateParams) (*VM, error) {
 
-	task, err := vdc.CreateStandaloneVMFromTemplateAsync(params)
+	task, err := vdc.CreateStandaloneVMFromTemplateAsync(ctx, params)
 	if err != nil {
 		return nil, err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return vdc.getVmFromTask(task, params.Name)
+	return vdc.getVmFromTask(ctx, task, params.Name)
 }
 
 // GetCapabilities allows to retrieve a list of VDC capabilities. It has a list of values. Some particularly useful are:
 // * networkProvider - overlay stack responsible for providing network functionality. (NSX_V or NSX_T)
 // * crossVdc - supports cross vDC network creation
-func (vdc *Vdc) GetCapabilities() ([]types.VdcCapability, error) {
+func (vdc *Vdc) GetCapabilities(ctx context.Context) ([]types.VdcCapability, error) {
 	if vdc.Vdc.ID == "" {
 		return nil, fmt.Errorf("VDC ID must be set to get capabilities")
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcCapabilities
-	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -1085,7 +1090,7 @@ func (vdc *Vdc) GetCapabilities() ([]types.VdcCapability, error) {
 	}
 
 	capabilities := make([]types.VdcCapability, 0)
-	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, nil, &capabilities)
+	err = vdc.client.OpenApiGetAllItems(ctx, minimumApiVersion, urlRef, nil, &capabilities)
 	if err != nil {
 		return nil, err
 	}
@@ -1094,8 +1099,8 @@ func (vdc *Vdc) GetCapabilities() ([]types.VdcCapability, error) {
 
 // IsNsxt is a convenience function to check if VDC is backed by NSX-T pVdc
 // If error occurs - it returns false
-func (vdc *Vdc) IsNsxt() bool {
-	vdcCapabilities, err := vdc.GetCapabilities()
+func (vdc *Vdc) IsNsxt(ctx context.Context) bool {
+	vdcCapabilities, err := vdc.GetCapabilities(ctx)
 	if err != nil {
 		return false
 	}
@@ -1106,8 +1111,8 @@ func (vdc *Vdc) IsNsxt() bool {
 
 // IsNsxv is a convenience function to check if VDC is backed by NSX-V pVdc
 // If error occurs - it returns false
-func (vdc *Vdc) IsNsxv() bool {
-	vdcCapabilities, err := vdc.GetCapabilities()
+func (vdc *Vdc) IsNsxv(ctx context.Context) bool {
+	vdcCapabilities, err := vdc.GetCapabilities(ctx)
 	if err != nil {
 		return false
 	}

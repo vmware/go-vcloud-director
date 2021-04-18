@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -33,7 +34,7 @@ func NewGroup(cli *Client, org *AdminOrg) *OrgGroup {
 // `OrgUserProviderSAML`.
 //
 // Note. This request will return HTTP 403 if Org is not configured for SAML or LDAP usage.
-func (adminOrg *AdminOrg) CreateGroup(group *types.Group) (*OrgGroup, error) {
+func (adminOrg *AdminOrg) CreateGroup(ctx context.Context, group *types.Group) (*OrgGroup, error) {
 	if err := validateCreateUpdateGroup(group); err != nil {
 		return nil, err
 	}
@@ -49,7 +50,7 @@ func (adminOrg *AdminOrg) CreateGroup(group *types.Group) (*OrgGroup, error) {
 	group.Xmlns = types.XMLNamespaceVCloud
 	group.Type = types.MimeAdminGroup
 
-	_, err = adminOrg.client.ExecuteRequest(groupCreateHREF.String(), http.MethodPost,
+	_, err = adminOrg.client.ExecuteRequest(ctx, groupCreateHREF.String(), http.MethodPost,
 		types.MimeAdminGroup, "error creating group: %s", group, grpgroup.Group)
 	if err != nil {
 		return nil, err
@@ -59,10 +60,10 @@ func (adminOrg *AdminOrg) CreateGroup(group *types.Group) (*OrgGroup, error) {
 }
 
 // GetGroupByHref retrieves group by HREF
-func (adminOrg *AdminOrg) GetGroupByHref(href string) (*OrgGroup, error) {
+func (adminOrg *AdminOrg) GetGroupByHref(ctx context.Context, href string) (*OrgGroup, error) {
 	orgGroup := NewGroup(adminOrg.client, adminOrg)
 
-	_, err := adminOrg.client.ExecuteRequest(href, http.MethodGet,
+	_, err := adminOrg.client.ExecuteRequest(ctx, href, http.MethodGet,
 		types.MimeAdminUser, "error getting group: %s", nil, orgGroup.Group)
 
 	if err != nil {
@@ -72,9 +73,9 @@ func (adminOrg *AdminOrg) GetGroupByHref(href string) (*OrgGroup, error) {
 }
 
 // GetGroupByName retrieves group by Name
-func (adminOrg *AdminOrg) GetGroupByName(name string, refresh bool) (*OrgGroup, error) {
+func (adminOrg *AdminOrg) GetGroupByName(ctx context.Context, name string, refresh bool) (*OrgGroup, error) {
 	if refresh {
-		err := adminOrg.Refresh()
+		err := adminOrg.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -82,16 +83,16 @@ func (adminOrg *AdminOrg) GetGroupByName(name string, refresh bool) (*OrgGroup, 
 
 	for _, group := range adminOrg.AdminOrg.Groups.Group {
 		if group.Name == name {
-			return adminOrg.GetGroupByHref(group.HREF)
+			return adminOrg.GetGroupByHref(ctx, group.HREF)
 		}
 	}
 	return nil, ErrorEntityNotFound
 }
 
 // GetGroupById retrieves group by Id
-func (adminOrg *AdminOrg) GetGroupById(id string, refresh bool) (*OrgGroup, error) {
+func (adminOrg *AdminOrg) GetGroupById(ctx context.Context, id string, refresh bool) (*OrgGroup, error) {
 	if refresh {
-		err := adminOrg.Refresh()
+		err := adminOrg.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -99,16 +100,18 @@ func (adminOrg *AdminOrg) GetGroupById(id string, refresh bool) (*OrgGroup, erro
 
 	for _, group := range adminOrg.AdminOrg.Groups.Group {
 		if equalIds(id, group.ID, group.HREF) {
-			return adminOrg.GetGroupByHref(group.HREF)
+			return adminOrg.GetGroupByHref(ctx, group.HREF)
 		}
 	}
 	return nil, ErrorEntityNotFound
 }
 
 // GetGroupByNameOrId retrieves group by Name or Id. Id is prioritized for search
-func (adminOrg *AdminOrg) GetGroupByNameOrId(identifier string, refresh bool) (*OrgGroup, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetGroupByName(name, refresh) }
-	getById := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetGroupById(name, refresh) }
+func (adminOrg *AdminOrg) GetGroupByNameOrId(ctx context.Context, identifier string, refresh bool) (*OrgGroup, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) {
+		return adminOrg.GetGroupByName(ctx, name, refresh)
+	}
+	getById := func(name string, refresh bool) (interface{}, error) { return adminOrg.GetGroupById(ctx, name, refresh) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
 	if entity == nil {
 		return nil, err
@@ -117,7 +120,7 @@ func (adminOrg *AdminOrg) GetGroupByNameOrId(identifier string, refresh bool) (*
 }
 
 // Update allows to update group. vCD API allows to update only role
-func (group *OrgGroup) Update() error {
+func (group *OrgGroup) Update(ctx context.Context) error {
 	util.Logger.Printf("[TRACE] Updating group: %s", group.Group.Name)
 
 	if err := validateCreateUpdateGroup(group.Group); err != nil {
@@ -130,13 +133,13 @@ func (group *OrgGroup) Update() error {
 	}
 	util.Logger.Printf("[TRACE] Url for updating group : %s and name: %s", groupHREF.String(), group.Group.Name)
 
-	_, err = group.client.ExecuteRequest(groupHREF.String(), http.MethodPut,
+	_, err = group.client.ExecuteRequest(ctx, groupHREF.String(), http.MethodPut,
 		types.MimeAdminGroup, "error updating group : %s", group.Group, nil)
 	return err
 }
 
 // Delete removes a group
-func (group *OrgGroup) Delete() error {
+func (group *OrgGroup) Delete(ctx context.Context) error {
 	if err := validateDeleteGroup(group.Group); err != nil {
 		return err
 	}
@@ -147,7 +150,7 @@ func (group *OrgGroup) Delete() error {
 	}
 	util.Logger.Printf("[TRACE] Url for deleting group : %s and name: %s", groupHREF, group.Group.Name)
 
-	return group.client.ExecuteRequestWithoutResponse(groupHREF.String(), http.MethodDelete,
+	return group.client.ExecuteRequestWithoutResponse(ctx, groupHREF.String(), http.MethodDelete,
 		types.MimeAdminGroup, "error deleting group : %s", nil)
 }
 

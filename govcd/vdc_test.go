@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 
 	. "gopkg.in/check.v1"
@@ -20,7 +21,8 @@ func (vcd *TestVCD) Test_FindVDCNetwork(check *C) {
 	}
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	net, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, true)
+	ctx := context.Background()
+	net, err := vcd.vdc.GetOrgVdcNetworkByName(ctx, vcd.config.VCD.Network.Net1, true)
 
 	check.Assert(err, IsNil)
 	check.Assert(net, NotNil)
@@ -28,7 +30,7 @@ func (vcd *TestVCD) Test_FindVDCNetwork(check *C) {
 	check.Assert(net.OrgVDCNetwork.HREF, Not(Equals), "")
 
 	// find Invalid Network
-	net, err = vcd.vdc.GetOrgVdcNetworkByName("INVALID", false)
+	net, err = vcd.vdc.GetOrgVdcNetworkByName(ctx, "INVALID", false)
 	check.Assert(err, NotNil)
 	check.Assert(net, IsNil)
 }
@@ -44,20 +46,23 @@ func (vcd *TestVCD) Test_GetOrgVDCNetwork(check *C) {
 		check.Skip("Test_GetOrgVDCNetwork: VDC name not given")
 		return
 	}
-	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	ctx := context.Background()
+	org, err := vcd.client.GetOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	vdc, err := org.GetVDCByName(ctx, vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 
 	getByName := func(name string, refresh bool) (genericEntity, error) {
-		return vdc.GetOrgVdcNetworkByName(name, refresh)
+		return vdc.GetOrgVdcNetworkByName(ctx, name, refresh)
 	}
-	getById := func(id string, refresh bool) (genericEntity, error) { return vdc.GetOrgVdcNetworkById(id, refresh) }
+	getById := func(id string, refresh bool) (genericEntity, error) {
+		return vdc.GetOrgVdcNetworkById(ctx, id, refresh)
+	}
 	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
-		return vdc.GetOrgVdcNetworkByNameOrId(id, refresh)
+		return vdc.GetOrgVdcNetworkByNameOrId(ctx, id, refresh)
 	}
 
 	var def = getterTestDefinition{
@@ -73,9 +78,9 @@ func (vcd *TestVCD) Test_GetOrgVDCNetwork(check *C) {
 }
 
 func (vcd *TestVCD) Test_NewVdc(check *C) {
-
+	ctx := context.Background()
 	fmt.Printf("Running: %s\n", check.TestName())
-	err := vcd.vdc.Refresh()
+	err := vcd.vdc.Refresh(ctx)
 	check.Assert(err, IsNil)
 
 	check.Assert(vcd.vdc.Vdc.Link[0].Rel, Equals, "up")
@@ -154,33 +159,33 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 		check.Skip("Skipping test because vapp wasn't properly created")
 	}
 	fmt.Printf("Running: %s\n", check.TestName())
-
+	ctx := context.Background()
 	// Populate OrgVDCNetwork
 	networks := []*types.OrgVDCNetwork{}
-	net, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	net, err := vcd.vdc.GetOrgVdcNetworkByName(ctx, vcd.config.VCD.Network.Net1, false)
 	check.Assert(err, IsNil)
 	networks = append(networks, net.OrgVDCNetwork)
 	check.Assert(err, IsNil)
 	// Populate Catalog
-	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	cat, err := vcd.org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(cat, NotNil)
 	// Populate Catalog Item
-	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	catitem, err := cat.GetCatalogItemByName(ctx, vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
 	check.Assert(catitem, NotNil)
 	// Get VAppTemplate
-	vapptemplate, err := catitem.GetVAppTemplate()
+	vapptemplate, err := catitem.GetVAppTemplate(ctx)
 	check.Assert(err, IsNil)
 	// Get StorageProfileReference
-	storageprofileref, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
+	storageprofileref, err := vcd.vdc.FindStorageProfileReference(ctx, vcd.config.VCD.StorageProfile.SP1)
 	check.Assert(err, IsNil)
 	// Compose VApp
-	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, TestComposeVapp, TestComposeVappDesc, true)
+	task, err := vcd.vdc.ComposeVApp(ctx, networks, vapptemplate, storageprofileref, TestComposeVapp, TestComposeVappDesc, true)
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Tasks.Task[0].OperationName, Equals, "vdcComposeVapp")
 	// Get VApp
-	vapp, err := vcd.vdc.GetVAppByName(TestComposeVapp, true)
+	vapp, err := vcd.vdc.GetVAppByName(ctx, TestComposeVapp, true)
 	check.Assert(err, IsNil)
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
@@ -190,28 +195,28 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	check.Check(vapp.VApp.Name, Equals, TestComposeVapp)
 	check.Check(vapp.VApp.Description, Equals, TestComposeVappDesc)
 
-	vapp_status, err := vapp.GetStatus()
+	vapp_status, err := vapp.GetStatus(ctx)
 	check.Check(err, IsNil)
 	check.Check(vapp_status, Equals, "UNRESOLVED")
 	// Let the VApp creation complete
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		panic(err)
 	}
-	err = vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
+	err = vapp.BlockWhileStatus(ctx, "UNRESOLVED", vapp.client.MaxRetryTimeout)
 	check.Check(err, IsNil)
-	vapp_status, err = vapp.GetStatus()
+	vapp_status, err = vapp.GetStatus(ctx)
 	check.Check(err, IsNil)
 	check.Check(vapp_status, Equals, "POWERED_OFF")
 	// Deleting VApp
-	task, err = vapp.Delete()
+	task, err = vapp.Delete(ctx)
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		panic(err)
 	}
 	check.Assert(err, IsNil)
-	noSuchVapp, err := vcd.vdc.GetVAppByName(TestComposeVapp, true)
+	noSuchVapp, err := vcd.vdc.GetVAppByName(ctx, TestComposeVapp, true)
 	check.Assert(err, NotNil)
 	check.Assert(noSuchVapp, IsNil)
 
@@ -226,11 +231,12 @@ func (vcd *TestVCD) Test_FindVApp(check *C) {
 	if vcd.vapp.VApp == nil {
 		check.Skip("No vApp provided")
 	}
-	firstVapp, err := vcd.vdc.GetVAppByName(vcd.vapp.VApp.Name, false)
+	ctx := context.Background()
+	firstVapp, err := vcd.vdc.GetVAppByName(ctx, vcd.vapp.VApp.Name, false)
 
 	check.Assert(err, IsNil)
 
-	secondVapp, err := vcd.vdc.GetVAppById(firstVapp.VApp.ID, false)
+	secondVapp, err := vcd.vdc.GetVAppById(ctx, firstVapp.VApp.ID, false)
 
 	check.Assert(err, IsNil)
 
@@ -249,14 +255,15 @@ func (vcd *TestVCD) Test_QueryVM(check *C) {
 	if vcd.vapp.VApp == nil {
 		check.Skip("No Vapp provided")
 	}
+	ctx := context.Background()
 
 	// Find VM
-	vapp := vcd.findFirstVapp()
+	vapp := vcd.findFirstVapp(ctx)
 	_, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
 	}
-	vm, err := vcd.vdc.QueryVM(vcd.vapp.VApp.Name, vmName)
+	vm, err := vcd.vdc.QueryVM(ctx, vcd.vapp.VApp.Name, vmName)
 	check.Assert(err, IsNil)
 
 	check.Assert(vm.VM.Name, Equals, vmName)
@@ -277,20 +284,21 @@ func (vcd *TestVCD) Test_GetEdgeGateway(check *C) {
 		check.Skip("Test_GetEdgeGateway: VDC name not given")
 		return
 	}
-	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	ctx := context.Background()
+	org, err := vcd.client.GetOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	vdc, err := org.GetVDCByName(ctx, vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 
 	getByName := func(name string, refresh bool) (genericEntity, error) {
-		return vdc.GetEdgeGatewayByName(name, refresh)
+		return vdc.GetEdgeGatewayByName(ctx, name, refresh)
 	}
-	getById := func(id string, refresh bool) (genericEntity, error) { return vdc.GetEdgeGatewayById(id, refresh) }
+	getById := func(id string, refresh bool) (genericEntity, error) { return vdc.GetEdgeGatewayById(ctx, id, refresh) }
 	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
-		return vdc.GetEdgeGatewayByNameOrId(id, refresh)
+		return vdc.GetEdgeGatewayByNameOrId(ctx, id, refresh)
 	}
 
 	var def = getterTestDefinition{
@@ -319,20 +327,21 @@ func (vcd *TestVCD) Test_GetVApp(check *C) {
 		check.Skip("Test_GetVapp: VDC name not given")
 		return
 	}
-	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	ctx := context.Background()
+	org, err := vcd.client.GetOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	vdc, err := org.GetVDCByName(ctx, vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 
 	getByName := func(name string, refresh bool) (genericEntity, error) {
-		return vdc.GetVAppByName(name, refresh)
+		return vdc.GetVAppByName(ctx, name, refresh)
 	}
-	getById := func(id string, refresh bool) (genericEntity, error) { return vdc.GetVAppById(id, refresh) }
+	getById := func(id string, refresh bool) (genericEntity, error) { return vdc.GetVAppById(ctx, id, refresh) }
 	getByNameOrId := func(id string, refresh bool) (genericEntity, error) {
-		return vdc.GetVAppByNameOrId(id, refresh)
+		return vdc.GetVAppByNameOrId(ctx, id, refresh)
 	}
 
 	var def = getterTestDefinition{
@@ -365,20 +374,21 @@ func (vcd *TestVCD) TestGetVappList(check *C) {
 		check.Skip("Test_GetVapp: VDC name not given")
 		return
 	}
-	vapp := vcd.findFirstVapp()
+	ctx := context.Background()
+	vapp := vcd.findFirstVapp(ctx)
 	if vapp == (VApp{}) {
 		check.Skip("no vApp found")
 		return
 	}
 
-	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	org, err := vcd.client.GetAdminOrgByName(ctx, vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	vdc, err := org.GetVDCByName(ctx, vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
-	adminVdc, err := org.GetAdminVDCByName(vcd.config.VCD.Vdc, false)
+	adminVdc, err := org.GetAdminVDCByName(ctx, vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
 	check.Assert(adminVdc, NotNil)
 
@@ -411,7 +421,7 @@ func (vcd *TestVCD) TestGetVappList(check *C) {
 	check.Assert(foundVappInAdminList, Equals, true)
 
 	// Get the vApp list with a query (returns all vApps visible to user, non only the ones withing the current VDC)
-	queryVappList, err := vcd.client.Client.QueryVappList()
+	queryVappList, err := vcd.client.Client.QueryVappList(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(queryVappList, NotNil)
 
@@ -426,7 +436,7 @@ func (vcd *TestVCD) TestGetVappList(check *C) {
 	criteria := NewFilterDef()
 	criteria.AddFilter(types.FilterNameRegex, TestSetUpSuite)
 	queryType := vcd.client.Client.GetQueryType(types.QtVapp)
-	queryItems, _, err := vcd.client.Client.SearchByFilter(queryType, criteria)
+	queryItems, _, err := vcd.client.Client.SearchByFilter(ctx, queryType, criteria)
 	check.Assert(err, IsNil)
 	check.Assert(queryItems, NotNil)
 	check.Assert(len(queryItems), Not(Equals), 0)
@@ -440,7 +450,7 @@ func (vcd *TestVCD) TestGetVappList(check *C) {
 	criteria.AddFilter(types.FilterNameRegex, vmName)
 	criteria.AddFilter(types.FilterParent, vapp.VApp.Name)
 	queryType = vcd.client.Client.GetQueryType(types.QtVm)
-	queryItems, _, err = vcd.client.Client.SearchByFilter(queryType, criteria)
+	queryItems, _, err = vcd.client.Client.SearchByFilter(ctx, queryType, criteria)
 	check.Assert(err, IsNil)
 	check.Assert(queryItems, NotNil)
 	check.Assert(len(queryItems), Not(Equals), 0)
@@ -449,7 +459,7 @@ func (vcd *TestVCD) TestGetVappList(check *C) {
 
 // TestGetVdcCapabilities attempts to get a list of VDC capabilities
 func (vcd *TestVCD) TestGetVdcCapabilities(check *C) {
-	vdcCapabilities, err := vcd.vdc.GetCapabilities()
+	vdcCapabilities, err := vcd.vdc.GetCapabilities(context.Background())
 	check.Assert(err, IsNil)
 	check.Assert(vdcCapabilities, NotNil)
 	check.Assert(len(vdcCapabilities) > 0, Equals, true)
@@ -457,9 +467,9 @@ func (vcd *TestVCD) TestGetVdcCapabilities(check *C) {
 
 func (vcd *TestVCD) TestVdcIsNsxt(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
-	check.Assert(vcd.nsxtVdc.IsNsxt(), Equals, true)
+	check.Assert(vcd.nsxtVdc.IsNsxt(context.Background()), Equals, true)
 }
 
 func (vcd *TestVCD) TestVdcIsNsxv(check *C) {
-	check.Assert(vcd.vdc.IsNsxv(), Equals, true)
+	check.Assert(vcd.vdc.IsNsxv(context.Background()), Equals, true)
 }

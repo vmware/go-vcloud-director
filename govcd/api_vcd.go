@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net/http"
@@ -26,8 +27,8 @@ type VCDClient struct {
 	QueryHREF   url.URL // HREF for the query API
 }
 
-func (vcdCli *VCDClient) vcdloginurl() error {
-	if err := vcdCli.Client.validateAPIVersion(); err != nil {
+func (vcdCli *VCDClient) vcdloginurl(ctx context.Context) error {
+	if err := vcdCli.Client.validateAPIVersion(ctx); err != nil {
 		return fmt.Errorf("could not find valid version for login: %s", err)
 	}
 
@@ -49,7 +50,7 @@ func (vcdCli *VCDClient) vcdloginurl() error {
 }
 
 // vcdCloudApiAuthorize performs the authorization to VCD using open API
-func (vcdCli *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.Response, error) {
+func (vcdCli *VCDClient) vcdCloudApiAuthorize(ctx context.Context, user, pass, org string) (*http.Response, error) {
 
 	util.Logger.Println("[TRACE] Connecting to VCD using cloudapi")
 	// This call can only be used by tenants
@@ -65,7 +66,7 @@ func (vcdCli *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.Res
 		return nil, fmt.Errorf("error parsing URL %s", rawUrl)
 	}
 	vcdCli.sessionHREF = *loginUrl
-	req := vcdCli.Client.NewRequest(map[string]string{}, http.MethodPost, *loginUrl, nil)
+	req := vcdCli.Client.NewRequest(ctx, map[string]string{}, http.MethodPost, *loginUrl, nil)
 	// Set Basic Authentication Header
 	req.SetBasicAuth(user+"@"+org, pass)
 	// Add the Accept header. The version must be at least 33.0 for cloudapi to work
@@ -74,7 +75,7 @@ func (vcdCli *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.Res
 }
 
 // vcdAuthorize authorizes the client and returns a http response
-func (vcdCli *VCDClient) vcdAuthorize(user, pass, org string) (*http.Response, error) {
+func (vcdCli *VCDClient) vcdAuthorize(ctx context.Context, user, pass, org string) (*http.Response, error) {
 	var missingItems []string
 	if user == "" {
 		missingItems = append(missingItems, "user")
@@ -89,7 +90,7 @@ func (vcdCli *VCDClient) vcdAuthorize(user, pass, org string) (*http.Response, e
 		return nil, fmt.Errorf("authorization is not possible because of these missing items: %v", missingItems)
 	}
 	// No point in checking for errors here
-	req := vcdCli.Client.NewRequest(map[string]string{}, http.MethodPost, vcdCli.sessionHREF, nil)
+	req := vcdCli.Client.NewRequest(ctx, map[string]string{}, http.MethodPost, vcdCli.sessionHREF, nil)
 	// Set Basic Authentication Header
 	req.SetBasicAuth(user+"@"+org, pass)
 	// Add the Accept header for vCA
@@ -100,7 +101,7 @@ func (vcdCli *VCDClient) vcdAuthorize(user, pass, org string) (*http.Response, e
 	// https://docs.vmware.com/en/VMware-Cloud-Director/10.0/com.vmware.vcloud.install.doc/GUID-84390C8F-E8C5-4137-A1A5-53EC27FE0024.html
 	// TODO: convert this method to main once we drop support for 9.7
 	if resp.StatusCode == 401 {
-		resp, err = vcdCli.vcdCloudApiAuthorize(user, pass, org)
+		resp, err = vcdCli.vcdCloudApiAuthorize(ctx, user, pass, org)
 		if err != nil {
 			return nil, err
 		}
@@ -161,17 +162,17 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 }
 
 // Authenticate is a helper function that performs a login in vCloud Director.
-func (vcdCli *VCDClient) Authenticate(username, password, org string) error {
-	_, err := vcdCli.GetAuthResponse(username, password, org)
+func (vcdCli *VCDClient) Authenticate(ctx context.Context, username, password, org string) error {
+	_, err := vcdCli.GetAuthResponse(ctx, username, password, org)
 	return err
 }
 
 // GetAuthResponse performs authentication and returns the full HTTP response
 // The purpose of this function is to preserve information that is useful
 // for token-based authentication
-func (vcdCli *VCDClient) GetAuthResponse(username, password, org string) (*http.Response, error) {
+func (vcdCli *VCDClient) GetAuthResponse(ctx context.Context, username, password, org string) (*http.Response, error) {
 	// LoginUrl
-	err := vcdCli.vcdloginurl()
+	err := vcdCli.vcdloginurl(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error finding LoginUrl: %s", err)
 	}
@@ -181,13 +182,13 @@ func (vcdCli *VCDClient) GetAuthResponse(username, password, org string) (*http.
 	var resp *http.Response
 	switch {
 	case vcdCli.Client.UseSamlAdfs:
-		err = vcdCli.authorizeSamlAdfs(username, password, org, vcdCli.Client.CustomAdfsRptId)
+		err = vcdCli.authorizeSamlAdfs(ctx, username, password, org, vcdCli.Client.CustomAdfsRptId)
 		if err != nil {
 			return nil, fmt.Errorf("error authorizing SAML: %s", err)
 		}
 	default:
 		// Authorize
-		resp, err = vcdCli.vcdAuthorize(username, password, org)
+		resp, err = vcdCli.vcdAuthorize(ctx, username, password, org)
 		if err != nil {
 			return nil, fmt.Errorf("error authorizing: %s", err)
 		}
@@ -200,11 +201,11 @@ func (vcdCli *VCDClient) GetAuthResponse(username, password, org string) (*http.
 // Up to version 29, token authorization uses the the header key x-vcloud-authorization
 // In version 30+ it also uses X-Vmware-Vcloud-Access-Token:TOKEN coupled with
 // X-Vmware-Vcloud-Token-Type:"bearer"
-func (vcdCli *VCDClient) SetToken(org, authHeader, token string) error {
+func (vcdCli *VCDClient) SetToken(ctx context.Context, org, authHeader, token string) error {
 	vcdCli.Client.VCDAuthHeader = authHeader
 	vcdCli.Client.VCDToken = token
 
-	err := vcdCli.vcdloginurl()
+	err := vcdCli.vcdloginurl(ctx)
 	if err != nil {
 		return fmt.Errorf("error finding LoginUrl: %s", err)
 	}
@@ -224,7 +225,7 @@ func (vcdCli *VCDClient) SetToken(org, authHeader, token string) error {
 
 	orgList := new(types.OrgList)
 
-	_, err = vcdCli.Client.ExecuteRequest(orgListHREF.String(), http.MethodGet,
+	_, err = vcdCli.Client.ExecuteRequest(ctx, orgListHREF.String(), http.MethodGet,
 		"", "error connecting to vCD using token: %s", nil, orgList)
 	if err != nil {
 		return err
@@ -233,11 +234,11 @@ func (vcdCli *VCDClient) SetToken(org, authHeader, token string) error {
 }
 
 // Disconnect performs a disconnection from the vCloud Director API endpoint.
-func (vcdCli *VCDClient) Disconnect() error {
+func (vcdCli *VCDClient) Disconnect(ctx context.Context) error {
 	if vcdCli.Client.VCDToken == "" && vcdCli.Client.VCDAuthHeader == "" {
 		return fmt.Errorf("cannot disconnect, client is not authenticated")
 	}
-	req := vcdCli.Client.NewRequest(map[string]string{}, http.MethodDelete, vcdCli.sessionHREF, nil)
+	req := vcdCli.Client.NewRequest(ctx, map[string]string{}, http.MethodDelete, vcdCli.sessionHREF, nil)
 	// Add the Accept header for vCA
 	req.Header.Add("Accept", "application/xml;version="+vcdCli.Client.APIVersion)
 	// Set Authorization Header

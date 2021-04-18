@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 
 	. "gopkg.in/check.v1"
@@ -15,9 +16,9 @@ import (
 // TODO: Write test for InstantiateVAppTemplate
 
 func (vcd *TestVCD) Test_RefreshVAppTemplate(check *C) {
-
+	ctx := context.Background()
 	fmt.Printf("Running: %s\n", check.TestName())
-	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	cat, err := vcd.org.GetCatalogByName(ctx, vcd.config.VCD.Catalog.Name, false)
 	if err != nil {
 		check.Skip("Test_GetVAppTemplate: Catalog not found. Test can't proceed")
 		return
@@ -28,20 +29,20 @@ func (vcd *TestVCD) Test_RefreshVAppTemplate(check *C) {
 		check.Skip("Test_GetVAppTemplate: Catalog Item not given. Test can't proceed")
 	}
 
-	catItem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	catItem, err := cat.GetCatalogItemByName(ctx, vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
 	check.Assert(catItem, NotNil)
 	check.Assert(catItem.CatalogItem.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
 
 	// Get VAppTemplate
-	vAppTemplate, err := catItem.GetVAppTemplate()
+	vAppTemplate, err := catItem.GetVAppTemplate(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(vAppTemplate, NotNil)
 	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
 
 	oldVAppTemplate := vAppTemplate
 
-	err = vAppTemplate.Refresh()
+	err = vAppTemplate.Refresh(ctx)
 	check.Assert(err, IsNil)
 	check.Assert(oldVAppTemplate.VAppTemplate.ID, Equals, vAppTemplate.VAppTemplate.ID)
 	check.Assert(oldVAppTemplate.VAppTemplate.Name, Equals, vAppTemplate.VAppTemplate.Name)

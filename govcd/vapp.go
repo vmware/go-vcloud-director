@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -59,13 +60,13 @@ type DhcpSettings struct {
 }
 
 // Returns the vdc where the vapp resides in.
-func (vapp *VApp) getParentVDC() (Vdc, error) {
+func (vapp *VApp) getParentVDC(ctx context.Context) (Vdc, error) {
 	for _, link := range vapp.VApp.Link {
 		if link.Type == "application/vnd.vmware.vcloud.vdc+xml" {
 
 			vdc := NewVdc(vapp.client)
 
-			_, err := vapp.client.ExecuteRequest(link.HREF, http.MethodGet,
+			_, err := vapp.client.ExecuteRequest(ctx, link.HREF, http.MethodGet,
 				"", "error retrieving parent vdc: %s", nil, vdc.Vdc)
 			if err != nil {
 				return Vdc{}, err
@@ -77,7 +78,7 @@ func (vapp *VApp) getParentVDC() (Vdc, error) {
 	return Vdc{}, fmt.Errorf("could not find a parent Vdc")
 }
 
-func (vapp *VApp) Refresh() error {
+func (vapp *VApp) Refresh(ctx context.Context) error {
 
 	if vapp.VApp.HREF == "" {
 		return fmt.Errorf("cannot refresh, Object is empty")
@@ -88,7 +89,7 @@ func (vapp *VApp) Refresh() error {
 	// elements in slices.
 	vapp.VApp = &types.VApp{}
 
-	_, err := vapp.client.ExecuteRequest(url, http.MethodGet,
+	_, err := vapp.client.ExecuteRequest(ctx, url, http.MethodGet,
 		"", "error refreshing vApp: %s", nil, vapp.VApp)
 
 	// The request was successful
@@ -103,7 +104,7 @@ func (vapp *VApp) Refresh() error {
 // acceptAllEulas - setting allows to automatically accept or not Eulas.
 //
 // Deprecated: Use vapp.AddNewVM instead for more sophisticated network handling
-func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName string, vappTemplate VAppTemplate, name string, acceptAllEulas bool) (Task, error) {
+func (vapp *VApp) AddVM(ctx context.Context, orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName string, vappTemplate VAppTemplate, name string, acceptAllEulas bool) (Task, error) {
 	util.Logger.Printf("[INFO] vapp.AddVM() is deprecated in favor of vapp.AddNewVM()")
 	if vappTemplate == (VAppTemplate{}) || vappTemplate.VAppTemplate == nil {
 		return Task{}, fmt.Errorf("vApp Template can not be empty")
@@ -144,32 +145,32 @@ func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName s
 		)
 	}
 
-	return vapp.AddNewVM(name, vappTemplate, &networkConnectionSection, acceptAllEulas)
+	return vapp.AddNewVM(ctx, name, vappTemplate, &networkConnectionSection, acceptAllEulas)
 }
 
 // AddNewVM adds VM from vApp template with custom NetworkConnectionSection
-func (vapp *VApp) AddNewVM(name string, vappTemplate VAppTemplate, network *types.NetworkConnectionSection, acceptAllEulas bool) (Task, error) {
-	return vapp.AddNewVMWithStorageProfile(name, vappTemplate, network, nil, acceptAllEulas)
+func (vapp *VApp) AddNewVM(ctx context.Context, name string, vappTemplate VAppTemplate, network *types.NetworkConnectionSection, acceptAllEulas bool) (Task, error) {
+	return vapp.AddNewVMWithStorageProfile(ctx, name, vappTemplate, network, nil, acceptAllEulas)
 }
 
 // AddNewVMWithStorageProfile adds VM from vApp template with custom NetworkConnectionSection and optional storage profile
-func (vapp *VApp) AddNewVMWithStorageProfile(name string, vappTemplate VAppTemplate,
+func (vapp *VApp) AddNewVMWithStorageProfile(ctx context.Context, name string, vappTemplate VAppTemplate,
 	network *types.NetworkConnectionSection,
 	storageProfileRef *types.Reference, acceptAllEulas bool) (Task, error) {
-	return addNewVMW(vapp, name, vappTemplate, network, storageProfileRef, nil, acceptAllEulas)
+	return addNewVMW(ctx, vapp, name, vappTemplate, network, storageProfileRef, nil, acceptAllEulas)
 }
 
 // AddNewVMWithComputePolicy adds VM from vApp template with custom NetworkConnectionSection and optional storage profile
 // and compute policy
-func (vapp *VApp) AddNewVMWithComputePolicy(name string, vappTemplate VAppTemplate,
+func (vapp *VApp) AddNewVMWithComputePolicy(ctx context.Context, name string, vappTemplate VAppTemplate,
 	network *types.NetworkConnectionSection,
 	storageProfileRef *types.Reference, computePolicy *types.VdcComputePolicy, acceptAllEulas bool) (Task, error) {
-	return addNewVMW(vapp, name, vappTemplate, network, storageProfileRef, computePolicy, acceptAllEulas)
+	return addNewVMW(ctx, vapp, name, vappTemplate, network, storageProfileRef, computePolicy, acceptAllEulas)
 }
 
 // addNewVMW adds VM from vApp template with custom NetworkConnectionSection and optional storage profile
 // and optional compute policy
-func addNewVMW(vapp *VApp, name string, vappTemplate VAppTemplate,
+func addNewVMW(ctx context.Context, vapp *VApp, name string, vappTemplate VAppTemplate,
 	network *types.NetworkConnectionSection,
 	storageProfileRef *types.Reference, computePolicy *types.VdcComputePolicy, acceptAllEulas bool) (Task, error) {
 
@@ -223,11 +224,11 @@ func addNewVMW(vapp *VApp, name string, vappTemplate VAppTemplate,
 		vAppComposition.SourcedItem.StorageProfile = storageProfileRef
 	}
 
-	if computePolicy != nil && vapp.client.APIVCDMaxVersionIs("< 33.0") {
+	if computePolicy != nil && vapp.client.APIVCDMaxVersionIs(ctx, "< 33.0") {
 		util.Logger.Printf("[Warning] compute policy is ignored because VCD version doesn't support it")
 	}
 	// Add compute policy
-	if computePolicy != nil && computePolicy.ID != "" && vapp.client.APIVCDMaxVersionIs("> 32.0") {
+	if computePolicy != nil && computePolicy.ID != "" && vapp.client.APIVCDMaxVersionIs(ctx, "> 32.0") {
 		vdcComputePolicyHref, err := vapp.client.OpenApiBuildEndpoint(types.OpenApiPathVersion1_0_0, types.OpenApiEndpointVdcComputePolicies, computePolicy.ID)
 		if err != nil {
 			return Task{}, fmt.Errorf("error constructing HREF for compute policy")
@@ -242,9 +243,9 @@ func addNewVMW(vapp *VApp, name string, vappTemplate VAppTemplate,
 	apiEndpoint.Path += "/action/recomposeVApp"
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequestWithApiVersion(apiEndpoint.String(), http.MethodPost,
+	return vapp.client.ExecuteTaskRequestWithApiVersion(ctx, apiEndpoint.String(), http.MethodPost,
 		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", vAppComposition,
-		vapp.client.GetSpecificApiVersionOnCondition(">= 33.0", "33.0"))
+		vapp.client.GetSpecificApiVersionOnCondition(ctx, ">= 33.0", "33.0"))
 
 }
 
@@ -252,8 +253,8 @@ func addNewVMW(vapp *VApp, name string, vappTemplate VAppTemplate,
 // TODO: To be refactored, handling networks better. See issue#252 for details
 // https://github.com/vmware/go-vcloud-director/issues/252
 // ======================================================================
-func (vapp *VApp) RemoveVM(vm VM) error {
-	err := vapp.Refresh()
+func (vapp *VApp) RemoveVM(ctx context.Context, vm VM) error {
+	err := vapp.Refresh(ctx)
 	if err != nil {
 		return fmt.Errorf("error refreshing vApp before removing VM: %s", err)
 	}
@@ -264,7 +265,7 @@ func (vapp *VApp) RemoveVM(vm VM) error {
 			// Leftover tasks may have unhandled errors that can be dismissed at this stage
 			// we complete any incomplete tasks at this stage, to finish the refresh.
 			if task.Task.Status != "error" && task.Task.Status != "success" {
-				err := task.WaitTaskCompletion()
+				err := task.WaitTaskCompletion(ctx)
 				if err != nil {
 					return fmt.Errorf("error performing task: %s", err)
 				}
@@ -284,13 +285,13 @@ func (vapp *VApp) RemoveVM(vm VM) error {
 	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/action/recomposeVApp"
 
-	deleteTask, err := vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	deleteTask, err := vapp.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		types.MimeRecomposeVappParams, "error removing VM: %s", vcomp)
 	if err != nil {
 		return err
 	}
 
-	err = deleteTask.WaitTaskCompletion()
+	err = deleteTask.WaitTaskCompletion(ctx)
 	if err != nil {
 		return fmt.Errorf("error performing removing VM task: %s", err)
 	}
@@ -298,9 +299,9 @@ func (vapp *VApp) RemoveVM(vm VM) error {
 	return nil
 }
 
-func (vapp *VApp) PowerOn() (Task, error) {
+func (vapp *VApp) PowerOn(ctx context.Context) (Task, error) {
 
-	err := vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
+	err := vapp.BlockWhileStatus(ctx, "UNRESOLVED", vapp.client.MaxRetryTimeout)
 	if err != nil {
 		return Task{}, fmt.Errorf("error powering on vApp: %s", err)
 	}
@@ -309,62 +310,62 @@ func (vapp *VApp) PowerOn() (Task, error) {
 	apiEndpoint.Path += "/power/action/powerOn"
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	return vapp.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		"", "error powering on vApp: %s", nil)
 }
 
-func (vapp *VApp) PowerOff() (Task, error) {
+func (vapp *VApp) PowerOff(ctx context.Context) (Task, error) {
 
 	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/power/action/powerOff"
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	return vapp.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		"", "error powering off vApp: %s", nil)
 
 }
 
-func (vapp *VApp) Reboot() (Task, error) {
+func (vapp *VApp) Reboot(ctx context.Context) (Task, error) {
 
 	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/power/action/reboot"
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	return vapp.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		"", "error rebooting vApp: %s", nil)
 }
 
-func (vapp *VApp) Reset() (Task, error) {
+func (vapp *VApp) Reset(ctx context.Context) (Task, error) {
 
 	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/power/action/reset"
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	return vapp.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		"", "error resetting vApp: %s", nil)
 }
 
-func (vapp *VApp) Suspend() (Task, error) {
+func (vapp *VApp) Suspend(ctx context.Context) (Task, error) {
 
 	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/power/action/suspend"
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	return vapp.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		"", "error suspending vApp: %s", nil)
 }
 
-func (vapp *VApp) Shutdown() (Task, error) {
+func (vapp *VApp) Shutdown(ctx context.Context) (Task, error) {
 
 	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/power/action/shutdown"
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	return vapp.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		"", "error shutting down vApp: %s", nil)
 }
 
-func (vapp *VApp) Undeploy() (Task, error) {
+func (vapp *VApp) Undeploy(ctx context.Context) (Task, error) {
 
 	vu := &types.UndeployVAppParams{
 		Xmlns:               types.XMLNamespaceVCloud,
@@ -375,11 +376,11 @@ func (vapp *VApp) Undeploy() (Task, error) {
 	apiEndpoint.Path += "/action/undeploy"
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	return vapp.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		types.MimeUndeployVappParams, "error undeploy vApp: %s", vu)
 }
 
-func (vapp *VApp) Deploy() (Task, error) {
+func (vapp *VApp) Deploy(ctx context.Context) (Task, error) {
 
 	vu := &types.DeployVAppParams{
 		Xmlns:   types.XMLNamespaceVCloud,
@@ -390,26 +391,26 @@ func (vapp *VApp) Deploy() (Task, error) {
 	apiEndpoint.Path += "/action/deploy"
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+	return vapp.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPost,
 		types.MimeDeployVappParams, "error deploy vApp: %s", vu)
 }
 
-func (vapp *VApp) Delete() (Task, error) {
+func (vapp *VApp) Delete(ctx context.Context) (Task, error) {
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequest(vapp.VApp.HREF, http.MethodDelete,
+	return vapp.client.ExecuteTaskRequest(ctx, vapp.VApp.HREF, http.MethodDelete,
 		"", "error deleting vApp: %s", nil)
 }
 
-func (vapp *VApp) RunCustomizationScript(computername, script string) (Task, error) {
-	return vapp.Customize(computername, script, false)
+func (vapp *VApp) RunCustomizationScript(ctx context.Context, computername, script string) (Task, error) {
+	return vapp.Customize(ctx, computername, script, false)
 }
 
 // Customize applies customization to first child VM
 //
 // Deprecated: Use vm.SetGuestCustomizationSection()
-func (vapp *VApp) Customize(computername, script string, changeSid bool) (Task, error) {
-	err := vapp.Refresh()
+func (vapp *VApp) Customize(ctx context.Context, computername, script string, changeSid bool) (Task, error) {
+	err := vapp.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %s", err)
 	}
@@ -437,12 +438,12 @@ func (vapp *VApp) Customize(computername, script string, changeSid bool) (Task, 
 	apiEndpoint.Path += "/guestCustomizationSection/"
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+	return vapp.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPut,
 		types.MimeGuestCustomizationSection, "error customizing VM: %s", vu)
 }
 
-func (vapp *VApp) GetStatus() (string, error) {
-	err := vapp.Refresh()
+func (vapp *VApp) GetStatus(ctx context.Context) (string, error) {
+	err := vapp.Refresh(ctx)
 	if err != nil {
 		return "", fmt.Errorf("error refreshing vApp: %s", err)
 	}
@@ -461,7 +462,7 @@ func (vapp *VApp) GetStatus() (string, error) {
 // BlockWhileStatus blocks until the status of vApp exits unwantedStatus.
 // It sleeps 200 milliseconds between iterations and times out after timeOutAfterSeconds
 // of seconds.
-func (vapp *VApp) BlockWhileStatus(unwantedStatus string, timeOutAfterSeconds int) error {
+func (vapp *VApp) BlockWhileStatus(ctx context.Context, unwantedStatus string, timeOutAfterSeconds int) error {
 	timeoutAfter := time.After(time.Duration(timeOutAfterSeconds) * time.Second)
 	tick := time.NewTicker(200 * time.Millisecond)
 
@@ -471,7 +472,7 @@ func (vapp *VApp) BlockWhileStatus(unwantedStatus string, timeOutAfterSeconds in
 			return fmt.Errorf("timed out waiting for vApp to exit state %s after %d seconds",
 				unwantedStatus, timeOutAfterSeconds)
 		case <-tick.C:
-			currentStatus, err := vapp.GetStatus()
+			currentStatus, err := vapp.GetStatus(ctx)
 
 			if err != nil {
 				return fmt.Errorf("could not get vApp status %s", err)
@@ -483,7 +484,7 @@ func (vapp *VApp) BlockWhileStatus(unwantedStatus string, timeOutAfterSeconds in
 	}
 }
 
-func (vapp *VApp) GetNetworkConnectionSection() (*types.NetworkConnectionSection, error) {
+func (vapp *VApp) GetNetworkConnectionSection(ctx context.Context) (*types.NetworkConnectionSection, error) {
 
 	networkConnectionSection := &types.NetworkConnectionSection{}
 
@@ -491,7 +492,7 @@ func (vapp *VApp) GetNetworkConnectionSection() (*types.NetworkConnectionSection
 		return networkConnectionSection, fmt.Errorf("cannot refresh, Object is empty")
 	}
 
-	_, err := vapp.client.ExecuteRequest(vapp.VApp.Children.VM[0].HREF+"/networkConnectionSection/", http.MethodGet,
+	_, err := vapp.client.ExecuteRequest(ctx, vapp.VApp.Children.VM[0].HREF+"/networkConnectionSection/", http.MethodGet,
 		types.MimeNetworkConnectionSection, "error retrieving network connection: %s", nil, networkConnectionSection)
 
 	// The request was successful
@@ -502,8 +503,8 @@ func (vapp *VApp) GetNetworkConnectionSection() (*types.NetworkConnectionSection
 // (i.e. CPUs x cores per socket)
 // https://communities.vmware.com/thread/576209
 // Deprecated: Use vm.ChangeCPUcount()
-func (vapp *VApp) ChangeCPUCount(virtualCpuCount int) (Task, error) {
-	return vapp.ChangeCPUCountWithCore(virtualCpuCount, nil)
+func (vapp *VApp) ChangeCPUCount(ctx context.Context, virtualCpuCount int) (Task, error) {
+	return vapp.ChangeCPUCountWithCore(ctx, virtualCpuCount, nil)
 }
 
 // Sets number of available virtual logical processors
@@ -511,9 +512,9 @@ func (vapp *VApp) ChangeCPUCount(virtualCpuCount int) (Task, error) {
 // Socket count is a result of: virtual logical processors/cores per socket
 // https://communities.vmware.com/thread/576209
 // Deprecated: Use vm.ChangeCPUCountWithCore()
-func (vapp *VApp) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (Task, error) {
+func (vapp *VApp) ChangeCPUCountWithCore(ctx context.Context, virtualCpuCount int, coresPerSocket *int) (Task, error) {
 
-	err := vapp.Refresh()
+	err := vapp.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %s", err)
 	}
@@ -550,12 +551,12 @@ func (vapp *VApp) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *in
 	apiEndpoint.Path += "/virtualHardwareSection/cpu"
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+	return vapp.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPut,
 		types.MimeRasdItem, "error changing CPU count: %s", newcpu)
 }
 
-func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
-	err := vapp.Refresh()
+func (vapp *VApp) ChangeStorageProfile(ctx context.Context, name string) (Task, error) {
+	err := vapp.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %s", err)
 	}
@@ -564,11 +565,11 @@ func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
 		return Task{}, fmt.Errorf("vApp doesn't contain any children, interrupting customization")
 	}
 
-	vdc, err := vapp.getParentVDC()
+	vdc, err := vapp.getParentVDC(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error retrieving parent VDC for vApp %s", vapp.VApp.Name)
 	}
-	storageProfileRef, err := vdc.FindStorageProfileReference(name)
+	storageProfileRef, err := vdc.FindStorageProfileReference(ctx, name)
 	if err != nil {
 		return Task{}, fmt.Errorf("error retrieving storage profile %s for vApp %s", name, vapp.VApp.Name)
 	}
@@ -580,13 +581,13 @@ func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
 	}
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequest(vapp.VApp.Children.VM[0].HREF, http.MethodPut,
+	return vapp.client.ExecuteTaskRequest(ctx, vapp.VApp.Children.VM[0].HREF, http.MethodPut,
 		types.MimeVM, "error changing CPU count: %s", newProfile)
 }
 
 // Deprecated as it changes only first VM's name
-func (vapp *VApp) ChangeVMName(name string) (Task, error) {
-	err := vapp.Refresh()
+func (vapp *VApp) ChangeVMName(ctx context.Context, name string) (Task, error) {
+	err := vapp.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %s", err)
 	}
@@ -601,15 +602,15 @@ func (vapp *VApp) ChangeVMName(name string) (Task, error) {
 	}
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequest(vapp.VApp.Children.VM[0].HREF, http.MethodPut,
+	return vapp.client.ExecuteTaskRequest(ctx, vapp.VApp.Children.VM[0].HREF, http.MethodPut,
 		types.MimeVM, "error changing VM name: %s", newName)
 }
 
 // SetOvf sets guest properties for the first child VM in vApp
 //
 // Deprecated: Use vm.SetProductSectionList()
-func (vapp *VApp) SetOvf(parameters map[string]string) (Task, error) {
-	err := vapp.Refresh()
+func (vapp *VApp) SetOvf(ctx context.Context, parameters map[string]string) (Task, error) {
+	err := vapp.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %s", err)
 	}
@@ -641,12 +642,12 @@ func (vapp *VApp) SetOvf(parameters map[string]string) (Task, error) {
 	apiEndpoint.Path += "/productSections"
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+	return vapp.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPut,
 		types.MimeProductSection, "error setting ovf: %s", ovf)
 }
 
-func (vapp *VApp) ChangeNetworkConfig(networks []map[string]interface{}, ip string) (Task, error) {
-	err := vapp.Refresh()
+func (vapp *VApp) ChangeNetworkConfig(ctx context.Context, networks []map[string]interface{}, ip string) (Task, error) {
+	err := vapp.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %s", err)
 	}
@@ -655,7 +656,7 @@ func (vapp *VApp) ChangeNetworkConfig(networks []map[string]interface{}, ip stri
 		return Task{}, fmt.Errorf("vApp doesn't contain any children, interrupting customization")
 	}
 
-	networksection, err := vapp.GetNetworkConnectionSection()
+	networksection, err := vapp.GetNetworkConnectionSection(ctx)
 	if err != nil {
 		return Task{}, err
 	}
@@ -699,14 +700,14 @@ func (vapp *VApp) ChangeNetworkConfig(networks []map[string]interface{}, ip stri
 	apiEndpoint.Path += "/networkConnectionSection/"
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+	return vapp.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPut,
 		types.MimeNetworkConnectionSection, "error changing network config: %s", networksection)
 }
 
 // Deprecated as it changes only first VM's memory
-func (vapp *VApp) ChangeMemorySize(size int) (Task, error) {
+func (vapp *VApp) ChangeMemorySize(ctx context.Context, size int) (Task, error) {
 
-	err := vapp.Refresh()
+	err := vapp.Refresh(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing vApp before running customization: %s", err)
 	}
@@ -741,11 +742,11 @@ func (vapp *VApp) ChangeMemorySize(size int) (Task, error) {
 	apiEndpoint.Path += "/virtualHardwareSection/memory"
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+	return vapp.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPut,
 		types.MimeRasdItem, "error changing memory size: %s", newMem)
 }
 
-func (vapp *VApp) GetNetworkConfig() (*types.NetworkConfigSection, error) {
+func (vapp *VApp) GetNetworkConfig(ctx context.Context) (*types.NetworkConfigSection, error) {
 
 	networkConfig := &types.NetworkConfigSection{}
 
@@ -753,7 +754,7 @@ func (vapp *VApp) GetNetworkConfig() (*types.NetworkConfigSection, error) {
 		return networkConfig, fmt.Errorf("cannot refresh, Object is empty")
 	}
 
-	_, err := vapp.client.ExecuteRequest(vapp.VApp.HREF+"/networkConfigSection/", http.MethodGet,
+	_, err := vapp.client.ExecuteRequest(ctx, vapp.VApp.HREF+"/networkConfigSection/", http.MethodGet,
 		types.MimeNetworkConfigSection, "error retrieving network config: %s", nil, networkConfig)
 
 	// The request was successful
@@ -762,9 +763,9 @@ func (vapp *VApp) GetNetworkConfig() (*types.NetworkConfigSection, error) {
 
 // AddRAWNetworkConfig adds existing VDC network to vApp
 // Deprecated: in favor of vapp.AddOrgNetwork
-func (vapp *VApp) AddRAWNetworkConfig(orgvdcnetworks []*types.OrgVDCNetwork) (Task, error) {
+func (vapp *VApp) AddRAWNetworkConfig(ctx context.Context, orgvdcnetworks []*types.OrgVDCNetwork) (Task, error) {
 
-	vAppNetworkConfig, err := vapp.GetNetworkConfig()
+	vAppNetworkConfig, err := vapp.GetNetworkConfig(ctx)
 	if err != nil {
 		return Task{}, fmt.Errorf("error getting vApp networks: %s", err)
 	}
@@ -784,12 +785,12 @@ func (vapp *VApp) AddRAWNetworkConfig(orgvdcnetworks []*types.OrgVDCNetwork) (Ta
 		)
 	}
 
-	return updateNetworkConfigurations(vapp, networkConfigurations)
+	return updateNetworkConfigurations(ctx, vapp, networkConfigurations)
 }
 
 // Function allows to create isolated network for vApp. This is equivalent to vCD UI function - vApp network creation.
 // Deprecated: in favor of vapp.CreateVappNetwork
-func (vapp *VApp) AddIsolatedNetwork(newIsolatedNetworkSettings *VappNetworkSettings) (Task, error) {
+func (vapp *VApp) AddIsolatedNetwork(ctx context.Context, newIsolatedNetworkSettings *VappNetworkSettings) (Task, error) {
 
 	err := validateNetworkConfigSettings(newIsolatedNetworkSettings)
 	if err != nil {
@@ -828,24 +829,24 @@ func (vapp *VApp) AddIsolatedNetwork(newIsolatedNetworkSettings *VappNetworkSett
 			IsDeployed: false,
 		})
 
-	return updateNetworkConfigurations(vapp, networkConfigurations)
+	return updateNetworkConfigurations(ctx, vapp, networkConfigurations)
 
 }
 
 // CreateVappNetwork creates isolated or nat routed(connected to Org VDC network) network for vApp.
 // Returns pointer to types.NetworkConfigSection or error
 // If orgNetwork is nil, then isolated network created.
-func (vapp *VApp) CreateVappNetwork(newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (*types.NetworkConfigSection, error) {
-	task, err := vapp.CreateVappNetworkAsync(newNetworkSettings, orgNetwork)
+func (vapp *VApp) CreateVappNetwork(ctx context.Context, newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (*types.NetworkConfigSection, error) {
+	task, err := vapp.CreateVappNetworkAsync(ctx, newNetworkSettings, orgNetwork)
 	if err != nil {
 		return nil, err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
 	}
 
-	vAppNetworkConfig, err := vapp.GetNetworkConfig()
+	vAppNetworkConfig, err := vapp.GetNetworkConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error getting vApp networks: %#v", err)
 	}
@@ -855,7 +856,7 @@ func (vapp *VApp) CreateVappNetwork(newNetworkSettings *VappNetworkSettings, org
 
 // CreateVappNetworkAsync creates asynchronously isolated or nat routed network for vApp. Returns Task or error
 // If orgNetwork is nil, then isolated network created.
-func (vapp *VApp) CreateVappNetworkAsync(newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (Task, error) {
+func (vapp *VApp) CreateVappNetworkAsync(ctx context.Context, newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (Task, error) {
 
 	err := validateNetworkConfigSettings(newNetworkSettings)
 	if err != nil {
@@ -904,22 +905,22 @@ func (vapp *VApp) CreateVappNetworkAsync(newNetworkSettings *VappNetworkSettings
 	networkConfigurations = append(networkConfigurations,
 		vappConfiguration)
 
-	return updateNetworkConfigurations(vapp, networkConfigurations)
+	return updateNetworkConfigurations(ctx, vapp, networkConfigurations)
 }
 
 // AddOrgNetwork adds Org VDC network as vApp network.
 // Returns pointer to types.NetworkConfigSection or error
-func (vapp *VApp) AddOrgNetwork(newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork, isFenced bool) (*types.NetworkConfigSection, error) {
-	task, err := vapp.AddOrgNetworkAsync(newNetworkSettings, orgNetwork, isFenced)
+func (vapp *VApp) AddOrgNetwork(ctx context.Context, newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork, isFenced bool) (*types.NetworkConfigSection, error) {
+	task, err := vapp.AddOrgNetworkAsync(ctx, newNetworkSettings, orgNetwork, isFenced)
 	if err != nil {
 		return nil, err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
 	}
 
-	vAppNetworkConfig, err := vapp.GetNetworkConfig()
+	vAppNetworkConfig, err := vapp.GetNetworkConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error getting vApp networks: %#v", err)
 	}
@@ -928,7 +929,7 @@ func (vapp *VApp) AddOrgNetwork(newNetworkSettings *VappNetworkSettings, orgNetw
 }
 
 // AddOrgNetworkAsync adds asynchronously Org VDC network as vApp network. Returns Task or error
-func (vapp *VApp) AddOrgNetworkAsync(newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork, isFenced bool) (Task, error) {
+func (vapp *VApp) AddOrgNetworkAsync(ctx context.Context, newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork, isFenced bool) (Task, error) {
 
 	if orgNetwork == nil {
 		return Task{}, errors.New("org VDC network is missing")
@@ -954,23 +955,23 @@ func (vapp *VApp) AddOrgNetworkAsync(newNetworkSettings *VappNetworkSettings, or
 	networkConfigurations = append(networkConfigurations,
 		vappConfiguration)
 
-	return updateNetworkConfigurations(vapp, networkConfigurations)
+	return updateNetworkConfigurations(ctx, vapp, networkConfigurations)
 
 }
 
 // UpdateNetwork updates vApp networks (isolated or connected to Org VDC network)
 // Returns pointer to types.NetworkConfigSection or error
-func (vapp *VApp) UpdateNetwork(newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (*types.NetworkConfigSection, error) {
-	task, err := vapp.UpdateNetworkAsync(newNetworkSettings, orgNetwork)
+func (vapp *VApp) UpdateNetwork(ctx context.Context, newNetworkSettings *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (*types.NetworkConfigSection, error) {
+	task, err := vapp.UpdateNetworkAsync(ctx, newNetworkSettings, orgNetwork)
 	if err != nil {
 		return nil, err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
 	}
 
-	vAppNetworkConfig, err := vapp.GetNetworkConfig()
+	vAppNetworkConfig, err := vapp.GetNetworkConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error getting vApp networks: %#v", err)
 	}
@@ -980,9 +981,9 @@ func (vapp *VApp) UpdateNetwork(newNetworkSettings *VappNetworkSettings, orgNetw
 
 // UpdateNetworkAsync asynchronously updates vApp networks (isolated or connected to Org VDC network).
 // Returns task or error
-func (vapp *VApp) UpdateNetworkAsync(networkSettingsToUpdate *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (Task, error) {
+func (vapp *VApp) UpdateNetworkAsync(ctx context.Context, networkSettingsToUpdate *VappNetworkSettings, orgNetwork *types.OrgVDCNetwork) (Task, error) {
 	util.Logger.Printf("[TRACE] UpdateNetworkAsync with values: %#v and connect to org network: %#v", networkSettingsToUpdate, orgNetwork)
-	currentNetworkConfiguration, err := vapp.GetNetworkConfig()
+	currentNetworkConfiguration, err := vapp.GetNetworkConfig(ctx)
 	if err != nil {
 		return Task{}, err
 	}
@@ -1059,22 +1060,22 @@ func (vapp *VApp) UpdateNetworkAsync(networkSettingsToUpdate *VappNetworkSetting
 
 	currentNetworkConfiguration.NetworkConfig[networkToUpdateIndex] = networkToUpdate
 
-	return updateNetworkConfigurations(vapp, currentNetworkConfiguration.NetworkConfig)
+	return updateNetworkConfigurations(ctx, vapp, currentNetworkConfiguration.NetworkConfig)
 }
 
 // UpdateOrgNetwork updates Org VDC network which is part of a vApp
 // Returns pointer to types.NetworkConfigSection or error
-func (vapp *VApp) UpdateOrgNetwork(newNetworkSettings *VappNetworkSettings, isFenced bool) (*types.NetworkConfigSection, error) {
-	task, err := vapp.UpdateOrgNetworkAsync(newNetworkSettings, isFenced)
+func (vapp *VApp) UpdateOrgNetwork(ctx context.Context, newNetworkSettings *VappNetworkSettings, isFenced bool) (*types.NetworkConfigSection, error) {
+	task, err := vapp.UpdateOrgNetworkAsync(ctx, newNetworkSettings, isFenced)
 	if err != nil {
 		return nil, err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
 	}
 
-	vAppNetworkConfig, err := vapp.GetNetworkConfig()
+	vAppNetworkConfig, err := vapp.GetNetworkConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error getting vApp networks: %#v", err)
 	}
@@ -1084,9 +1085,9 @@ func (vapp *VApp) UpdateOrgNetwork(newNetworkSettings *VappNetworkSettings, isFe
 
 // UpdateOrgNetworkAsync asynchronously updates Org VDC network which is part of a vApp
 // Returns task or error
-func (vapp *VApp) UpdateOrgNetworkAsync(networkSettingsToUpdate *VappNetworkSettings, isFenced bool) (Task, error) {
+func (vapp *VApp) UpdateOrgNetworkAsync(ctx context.Context, networkSettingsToUpdate *VappNetworkSettings, isFenced bool) (Task, error) {
 	util.Logger.Printf("[TRACE] UpdateOrgNetworkAsync with values: %#v ", networkSettingsToUpdate)
-	currentNetworkConfiguration, err := vapp.GetNetworkConfig()
+	currentNetworkConfiguration, err := vapp.GetNetworkConfig(ctx)
 	if err != nil {
 		return Task{}, err
 	}
@@ -1122,7 +1123,7 @@ func (vapp *VApp) UpdateOrgNetworkAsync(networkSettingsToUpdate *VappNetworkSett
 
 	currentNetworkConfiguration.NetworkConfig[networkToUpdateIndex] = networkToUpdate
 
-	return updateNetworkConfigurations(vapp, currentNetworkConfiguration.NetworkConfig)
+	return updateNetworkConfigurations(ctx, vapp, currentNetworkConfiguration.NetworkConfig)
 }
 
 func validateNetworkConfigSettings(networkSettings *VappNetworkSettings) error {
@@ -1155,17 +1156,17 @@ func validateNetworkConfigSettings(networkSettings *VappNetworkSettings) error {
 
 // RemoveNetwork removes any network (be it isolated or connected to an Org Network) from vApp
 // Returns pointer to types.NetworkConfigSection or error
-func (vapp *VApp) RemoveNetwork(identifier string) (*types.NetworkConfigSection, error) {
-	task, err := vapp.RemoveNetworkAsync(identifier)
+func (vapp *VApp) RemoveNetwork(ctx context.Context, identifier string) (*types.NetworkConfigSection, error) {
+	task, err := vapp.RemoveNetworkAsync(ctx, identifier)
 	if err != nil {
 		return nil, err
 	}
-	err = task.WaitTaskCompletion()
+	err = task.WaitTaskCompletion(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
 	}
 
-	vAppNetworkConfig, err := vapp.GetNetworkConfig()
+	vAppNetworkConfig, err := vapp.GetNetworkConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error getting vApp networks: %#v", err)
 	}
@@ -1175,7 +1176,7 @@ func (vapp *VApp) RemoveNetwork(identifier string) (*types.NetworkConfigSection,
 
 // RemoveNetworkAsync asynchronously removes any network (be it isolated or connected to an Org Network) from vApp
 // Accepts network ID or name
-func (vapp *VApp) RemoveNetworkAsync(identifier string) (Task, error) {
+func (vapp *VApp) RemoveNetworkAsync(ctx context.Context, identifier string) (Task, error) {
 
 	if identifier == "" {
 		return Task{}, fmt.Errorf("network ID/name can't be empty")
@@ -1190,7 +1191,7 @@ func (vapp *VApp) RemoveNetworkAsync(identifier string) (Task, error) {
 		if networkId == extractUuid(identifier) || networkConfig.NetworkName == identifier {
 			deleteUrl := vapp.client.VCDHREF.String() + "/network/" + networkId
 			errMessage := fmt.Sprintf("detaching vApp network %s (id '%s'): %%s", networkConfig.NetworkName, networkId)
-			task, err := vapp.client.ExecuteTaskRequest(deleteUrl, http.MethodDelete, types.AnyXMLMime, errMessage, nil)
+			task, err := vapp.client.ExecuteTaskRequest(ctx, deleteUrl, http.MethodDelete, types.AnyXMLMime, errMessage, nil)
 			if err != nil {
 				return Task{}, err
 			}
@@ -1205,7 +1206,7 @@ func (vapp *VApp) RemoveNetworkAsync(identifier string) (Task, error) {
 
 // Removes vApp isolated network
 // Deprecated: in favor vapp.RemoveNetwork
-func (vapp *VApp) RemoveIsolatedNetwork(networkName string) (Task, error) {
+func (vapp *VApp) RemoveIsolatedNetwork(ctx context.Context, networkName string) (Task, error) {
 
 	if networkName == "" {
 		return Task{}, fmt.Errorf("network name can't be empty")
@@ -1224,14 +1225,14 @@ func (vapp *VApp) RemoveIsolatedNetwork(networkName string) (Task, error) {
 		return Task{}, fmt.Errorf("network to remove %s, wasn't found", networkName)
 	}
 
-	return updateNetworkConfigurations(vapp, networkConfigurations)
+	return updateNetworkConfigurations(ctx, vapp, networkConfigurations)
 }
 
 // Function allows to update vApp network configuration. This works for updating, deleting and adding.
 // Network configuration has to be full with new, changed elements and unchanged.
 // https://opengrok.eng.vmware.com/source/xref/cloud-sp-main.perforce-shark.1700/sp-main/dev-integration/system-tests/SystemTests/src/main/java/com/vmware/cloud/systemtests/util/VAppNetworkUtils.java#createVAppNetwork
 // http://pubs.vmware.com/vcloud-api-1-5/wwhelp/wwhimpl/js/html/wwhelp.htm#href=api_prog/GUID-92622A15-E588-4FA1-92DA-A22A4757F2A0.html#1_14_12_10_1
-func updateNetworkConfigurations(vapp *VApp, networkConfigurations []types.VAppNetworkConfiguration) (Task, error) {
+func updateNetworkConfigurations(ctx context.Context, vapp *VApp, networkConfigurations []types.VAppNetworkConfiguration) (Task, error) {
 	util.Logger.Printf("[TRACE] updateNetworkConfigurations for vAPP: %#v and network config: %#v", vapp, networkConfigurations)
 	networkConfig := &types.NetworkConfigSection{
 		Info:          "Configuration parameters for logical networks",
@@ -1245,41 +1246,41 @@ func updateNetworkConfigurations(vapp *VApp, networkConfigurations []types.VAppN
 	apiEndpoint.Path += "/networkConfigSection/"
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+	return vapp.client.ExecuteTaskRequest(ctx, apiEndpoint.String(), http.MethodPut,
 		types.MimeNetworkConfigSection, "error updating vApp Network: %s", networkConfig)
 }
 
 // RemoveAllNetworks detaches all networks from vApp
-func (vapp *VApp) RemoveAllNetworks() (Task, error) {
-	return updateNetworkConfigurations(vapp, []types.VAppNetworkConfiguration{})
+func (vapp *VApp) RemoveAllNetworks(ctx context.Context) (Task, error) {
+	return updateNetworkConfigurations(ctx, vapp, []types.VAppNetworkConfiguration{})
 }
 
 // SetProductSectionList sets product section for a vApp. It allows to change vApp guest properties.
 //
 // The slice of properties "ProductSectionList.ProductSection.Property" is not necessarily ordered
 // or returned as set before
-func (vapp *VApp) SetProductSectionList(productSection *types.ProductSectionList) (*types.ProductSectionList, error) {
-	err := setProductSectionList(vapp.client, vapp.VApp.HREF, productSection)
+func (vapp *VApp) SetProductSectionList(ctx context.Context, productSection *types.ProductSectionList) (*types.ProductSectionList, error) {
+	err := setProductSectionList(ctx, vapp.client, vapp.VApp.HREF, productSection)
 	if err != nil {
 		return nil, fmt.Errorf("unable to set vApp product section: %s", err)
 	}
 
-	return vapp.GetProductSectionList()
+	return vapp.GetProductSectionList(ctx)
 }
 
 // GetProductSectionList retrieves product section for a vApp. It allows to read vApp guest properties.
 //
 // The slice of properties "ProductSectionList.ProductSection.Property" is not necessarily ordered
 // or returned as set before
-func (vapp *VApp) GetProductSectionList() (*types.ProductSectionList, error) {
-	return getProductSectionList(vapp.client, vapp.VApp.HREF)
+func (vapp *VApp) GetProductSectionList(ctx context.Context) (*types.ProductSectionList, error) {
+	return getProductSectionList(ctx, vapp.client, vapp.VApp.HREF)
 }
 
 // GetVMByName returns a VM reference if the VM name matches an existing one.
 // If no valid VM is found, it returns a nil VM reference and an error
-func (vapp *VApp) GetVMByName(vmName string, refresh bool) (*VM, error) {
+func (vapp *VApp) GetVMByName(ctx context.Context, vmName string, refresh bool) (*VM, error) {
 	if refresh {
-		err := vapp.Refresh()
+		err := vapp.Refresh(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("error refreshing vApp: %s", err)
 		}
@@ -1295,7 +1296,7 @@ func (vapp *VApp) GetVMByName(vmName string, refresh bool) (*VM, error) {
 
 		util.Logger.Printf("[TRACE] Looking at: %s", child.Name)
 		if child.Name == vmName {
-			return vapp.client.GetVMByHref(child.HREF)
+			return vapp.client.GetVMByHref(ctx, child.HREF)
 		}
 
 	}
@@ -1305,9 +1306,9 @@ func (vapp *VApp) GetVMByName(vmName string, refresh bool) (*VM, error) {
 
 // GetVMById returns a VM reference if the VM ID matches an existing one.
 // If no valid VM is found, it returns a nil VM reference and an error
-func (vapp *VApp) GetVMById(id string, refresh bool) (*VM, error) {
+func (vapp *VApp) GetVMById(ctx context.Context, id string, refresh bool) (*VM, error) {
 	if refresh {
-		err := vapp.Refresh()
+		err := vapp.Refresh(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("error refreshing vApp: %s", err)
 		}
@@ -1323,7 +1324,7 @@ func (vapp *VApp) GetVMById(id string, refresh bool) (*VM, error) {
 
 		util.Logger.Printf("[TRACE] Looking at: %s", child.Name)
 		if equalIds(id, child.ID, child.HREF) {
-			return vapp.client.GetVMByHref(child.HREF)
+			return vapp.client.GetVMByHref(ctx, child.HREF)
 		}
 	}
 	util.Logger.Printf("[TRACE] Couldn't find VM: %s", id)
@@ -1332,9 +1333,9 @@ func (vapp *VApp) GetVMById(id string, refresh bool) (*VM, error) {
 
 // GetVMByNameOrId returns a VM reference if either the VM name or ID matches an existing one.
 // If no valid VM is found, it returns a nil VM reference and an error
-func (vapp *VApp) GetVMByNameOrId(identifier string, refresh bool) (*VM, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return vapp.GetVMByName(name, refresh) }
-	getById := func(id string, refresh bool) (interface{}, error) { return vapp.GetVMById(id, refresh) }
+func (vapp *VApp) GetVMByNameOrId(ctx context.Context, identifier string, refresh bool) (*VM, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) { return vapp.GetVMByName(ctx, name, refresh) }
+	getById := func(id string, refresh bool) (interface{}, error) { return vapp.GetVMById(ctx, id, refresh) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, false)
 	if entity == nil {
 		return nil, err
@@ -1343,14 +1344,14 @@ func (vapp *VApp) GetVMByNameOrId(identifier string, refresh bool) (*VM, error) 
 }
 
 // QueryVappList returns a list of all vApps in all the organizations available to the caller
-func (client *Client) QueryVappList() ([]*types.QueryResultVAppRecordType, error) {
+func (client *Client) QueryVappList(ctx context.Context) ([]*types.QueryResultVAppRecordType, error) {
 	var vappList []*types.QueryResultVAppRecordType
 	queryType := client.GetQueryType(types.QtVapp)
 	params := map[string]string{
 		"type":          queryType,
 		"filterEncoded": "true",
 	}
-	vappResult, err := client.cumulativeQuery(queryType, nil, params)
+	vappResult, err := client.cumulativeQuery(ctx, queryType, nil, params)
 	if err != nil {
 		return nil, fmt.Errorf("error getting vApp list : %s", err)
 	}
@@ -1362,16 +1363,16 @@ func (client *Client) QueryVappList() ([]*types.QueryResultVAppRecordType, error
 }
 
 // getOrgInfo finds the organization to which the vApp belongs (through the VDC), and returns its name and ID
-func (vapp *VApp) getOrgInfo() (orgInfoType, error) {
+func (vapp *VApp) getOrgInfo(ctx context.Context) (orgInfoType, error) {
 	previous, exists := orgInfoCache[vapp.VApp.ID]
 	if exists {
 		return previous, nil
 	}
 	//var orgHref string
 	var err error
-	vdc, err := vapp.getParentVDC()
+	vdc, err := vapp.getParentVDC(ctx)
 	if err != nil {
 		return orgInfoType{}, err
 	}
-	return getOrgInfo(vapp.client, vdc.Vdc.Link, vapp.VApp.ID, vapp.VApp.Name, "vApp")
+	return getOrgInfo(ctx, vapp.client, vdc.Vdc.Link, vapp.VApp.ID, vapp.VApp.Name, "vApp")
 }

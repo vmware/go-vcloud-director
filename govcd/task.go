@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -48,7 +49,7 @@ func (task *Task) getErrorMessage(err error) string {
 	return errorMessage
 }
 
-func (task *Task) Refresh() error {
+func (task *Task) Refresh(ctx context.Context) error {
 
 	if task.Task == nil {
 		return fmt.Errorf("cannot refresh, Object is empty")
@@ -56,7 +57,7 @@ func (task *Task) Refresh() error {
 
 	refreshUrl, _ := url.ParseRequestURI(task.Task.HREF)
 
-	req := task.client.NewRequest(map[string]string{}, http.MethodGet, *refreshUrl, nil)
+	req := task.client.NewRequest(ctx, map[string]string{}, http.MethodGet, *refreshUrl, nil)
 
 	resp, err := checkResp(task.client.Http.Do(req))
 	if err != nil {
@@ -87,7 +88,7 @@ type InspectionFunc func(task *types.Task, howManyTimes int, elapsed time.Durati
 // Customizable version of WaitTaskCompletion.
 // Users can define the sleeping duration and an optional callback function for
 // extra monitoring.
-func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay time.Duration) error {
+func (task *Task) WaitInspectTaskCompletion(ctx context.Context, inspectionFunc InspectionFunc, delay time.Duration) error {
 
 	if task.Task == nil {
 		return fmt.Errorf("cannot refresh, Object is empty")
@@ -99,7 +100,7 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 	for {
 		howManyTimesRefreshed++
 		elapsed := time.Since(startTime)
-		err := task.Refresh()
+		err := task.Refresh(ctx)
 		if err != nil {
 			return fmt.Errorf("error retrieving task: %s", err)
 		}
@@ -160,16 +161,16 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 
 // Checks the status of the task every 3 seconds and returns when the
 // task is either completed or failed
-func (task *Task) WaitTaskCompletion() error {
-	return task.WaitInspectTaskCompletion(nil, 3*time.Second)
+func (task *Task) WaitTaskCompletion(ctx context.Context) error {
+	return task.WaitInspectTaskCompletion(ctx, nil, 3*time.Second)
 }
 
-func (task *Task) GetTaskProgress() (string, error) {
+func (task *Task) GetTaskProgress(ctx context.Context) (string, error) {
 	if task.Task == nil {
 		return "", fmt.Errorf("cannot refresh, Object is empty")
 	}
 
-	err := task.Refresh()
+	err := task.Refresh(ctx)
 	if err != nil {
 		return "", fmt.Errorf("error retreiving task: %s", err)
 	}
@@ -181,14 +182,14 @@ func (task *Task) GetTaskProgress() (string, error) {
 	return strconv.Itoa(task.Task.Progress), nil
 }
 
-func (task *Task) CancelTask() error {
+func (task *Task) CancelTask(ctx context.Context) error {
 	cancelTaskURL, err := url.ParseRequestURI(task.Task.HREF + "/action/cancel")
 	if err != nil {
 		util.Logger.Printf("[Error] Error cancelling task %v: %s", cancelTaskURL.String(), err)
 		return err
 	}
 
-	request := task.client.NewRequest(map[string]string{}, http.MethodPost, *cancelTaskURL, nil)
+	request := task.client.NewRequest(ctx, map[string]string{}, http.MethodPost, *cancelTaskURL, nil)
 	_, err = checkResp(task.client.Http.Do(request))
 	if err != nil {
 		util.Logger.Printf("[Error] Error cancelling task  %v: %s", cancelTaskURL.String(), err)

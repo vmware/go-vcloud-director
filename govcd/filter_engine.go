@@ -5,6 +5,7 @@ package govcd
  */
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -17,10 +18,10 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
-type queryWithMetadataFunc func(queryType string, params, notEncodedParams map[string]string,
+type queryWithMetadataFunc func(ctx context.Context, queryType string, params, notEncodedParams map[string]string,
 	metadataFields []string, isSystem bool) (Results, error)
 
-type queryByMetadataFunc func(queryType string, params, notEncodedParams map[string]string,
+type queryByMetadataFunc func(ctx context.Context, queryType string, params, notEncodedParams map[string]string,
 	metadataFilters map[string]MetadataFilter, isSystem bool) (Results, error)
 
 type resultsConverterFunc func(queryType string, results Results) ([]QueryItem, error)
@@ -29,7 +30,7 @@ type resultsConverterFunc func(queryType string, results Results) ([]QueryItem, 
 // It requires a queryType and a set of criteria.
 // Returns a list of QueryItem interface elements, which can be cast back to the wanted real type
 // Also returns a human readable text of the conditions being passed and how they matched the data found
-func searchByFilter(queryByMetadata queryByMetadataFunc, queryWithMetadataFields queryWithMetadataFunc,
+func searchByFilter(ctx context.Context, queryByMetadata queryByMetadataFunc, queryWithMetadataFields queryWithMetadataFunc,
 	converter resultsConverterFunc, queryType string, criteria *FilterDef) ([]QueryItem, string, error) {
 
 	// Set of conditions to be evaluated (will be filled from criteria)
@@ -155,10 +156,10 @@ func searchByFilter(queryByMetadata queryByMetadataFunc, queryWithMetadataFields
 
 	if criteria.UseMetadataApiFilter {
 		// This result will not include metadata fields. The query will use metadata parameters to restrict the search
-		itemResult, err = queryByMetadata(queryType, nil, params, metadataFilter, isSystem)
+		itemResult, err = queryByMetadata(ctx, queryType, nil, params, metadataFilter, isSystem)
 	} else {
 		// This result includes metadata fields, if they exist.
-		itemResult, err = queryWithMetadataFields(queryType, nil, params, metadataFields, isSystem)
+		itemResult, err = queryWithMetadataFields(ctx, queryType, nil, params, metadataFields, isSystem)
 	}
 
 	if err != nil {
@@ -323,15 +324,15 @@ func conditionMatches(conditionType string, stored, item interface{}) (bool, str
 // Returns a list of QueryItem interface elements, which can be cast back to the wanted real type
 // Also returns a human readable text of the conditions being passed and how they matched the data found
 // See "## Query engine" in CODING_GUIDELINES.md for more info
-func (client *Client) SearchByFilter(queryType string, criteria *FilterDef) ([]QueryItem, string, error) {
-	return searchByFilter(client.queryByMetadataFilter, client.queryWithMetadataFields, resultToQueryItems, queryType, criteria)
+func (client *Client) SearchByFilter(ctx context.Context, queryType string, criteria *FilterDef) ([]QueryItem, string, error) {
+	return searchByFilter(ctx, client.queryByMetadataFilter, client.queryWithMetadataFields, resultToQueryItems, queryType, criteria)
 }
 
 // SearchByFilter runs the search for a specific catalog
 // The 'parentField' argument defines which filter will be added, depending on the items we search for:
 //   - 'catalog' contains the catalog HREF or ID
 //   - 'catalogName' contains the catalog name
-func (catalog *Catalog) SearchByFilter(queryType, parentField string, criteria *FilterDef) ([]QueryItem, string, error) {
+func (catalog *Catalog) SearchByFilter(ctx context.Context, queryType, parentField string, criteria *FilterDef) ([]QueryItem, string, error) {
 	var err error
 	switch parentField {
 	case "catalog":
@@ -344,14 +345,14 @@ func (catalog *Catalog) SearchByFilter(queryType, parentField string, criteria *
 	if err != nil {
 		return nil, "", fmt.Errorf("error setting parent filter for catalog %s with fieldName '%s'", catalog.Catalog.Name, parentField)
 	}
-	return catalog.client.SearchByFilter(queryType, criteria)
+	return catalog.client.SearchByFilter(ctx, queryType, criteria)
 }
 
 // SearchByFilter runs the search for a specific VDC
 // The 'parentField' argument defines which filter will be added, depending on the items we search for:
 //   - 'vdc' contains the VDC HREF or ID
 //   - 'vdcName' contains the VDC name
-func (vdc *Vdc) SearchByFilter(queryType, parentField string, criteria *FilterDef) ([]QueryItem, string, error) {
+func (vdc *Vdc) SearchByFilter(ctx context.Context, queryType, parentField string, criteria *FilterDef) ([]QueryItem, string, error) {
 	var err error
 	switch parentField {
 	case "vdc":
@@ -364,25 +365,25 @@ func (vdc *Vdc) SearchByFilter(queryType, parentField string, criteria *FilterDe
 	if err != nil {
 		return nil, "", fmt.Errorf("error setting parent filter for VDC %s with fieldName '%s'", vdc.Vdc.Name, parentField)
 	}
-	return vdc.client.SearchByFilter(queryType, criteria)
+	return vdc.client.SearchByFilter(ctx, queryType, criteria)
 }
 
 // SearchByFilter runs the search for a specific Org
-func (org *AdminOrg) SearchByFilter(queryType string, criteria *FilterDef) ([]QueryItem, string, error) {
+func (org *AdminOrg) SearchByFilter(ctx context.Context, queryType string, criteria *FilterDef) ([]QueryItem, string, error) {
 	err := criteria.AddFilter(types.FilterParent, org.AdminOrg.Name)
 	if err != nil {
 		return nil, "", fmt.Errorf("error setting parent filter for Org %s with fieldName 'orgName'", org.AdminOrg.Name)
 	}
-	return org.client.SearchByFilter(queryType, criteria)
+	return org.client.SearchByFilter(ctx, queryType, criteria)
 }
 
 // SearchByFilter runs the search for a specific Org
-func (org *Org) SearchByFilter(queryType string, criteria *FilterDef) ([]QueryItem, string, error) {
+func (org *Org) SearchByFilter(ctx context.Context, queryType string, criteria *FilterDef) ([]QueryItem, string, error) {
 	err := criteria.AddFilter(types.FilterParent, org.Org.Name)
 	if err != nil {
 		return nil, "", fmt.Errorf("error setting parent filter for Org %s with fieldName 'orgName'", org.Org.Name)
 	}
-	return org.client.SearchByFilter(queryType, criteria)
+	return org.client.SearchByFilter(ctx, queryType, criteria)
 }
 
 // dataInspectionRequested checks if the given code was found in the inspection environment variable.

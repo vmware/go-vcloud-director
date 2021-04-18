@@ -26,7 +26,7 @@ func (vcd *TestVCD) Test_VMRefreshConcurrent(check *C) {
 		check.Skip("skipping test because no vApp is found")
 	}
 
-	vapp := vcd.findFirstVapp()
+	vapp := vcd.findFirstVapp(ctx)
 	vmType, vmName := vcd.findFirstVm(vapp)
 	if vmName == "" {
 		check.Skip("skipping test because no VM is found")
@@ -37,7 +37,7 @@ func (vcd *TestVCD) Test_VMRefreshConcurrent(check *C) {
 	for counter := 0; counter < 5; counter++ {
 		waitgroup.Add(1)
 		go func() {
-			_ = vm.Refresh()
+			_ = vm.Refresh(ctx)
 			waitgroup.Done()
 			// check.Assert(err, IsNil)
 		}()

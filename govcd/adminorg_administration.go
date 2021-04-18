@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -13,7 +14,7 @@ import (
 )
 
 // LdapConfigure allows to configure LDAP mode in use by the Org
-func (adminOrg *AdminOrg) LdapConfigure(settings *types.OrgLdapSettingsType) (*types.OrgLdapSettingsType, error) {
+func (adminOrg *AdminOrg) LdapConfigure(ctx context.Context, settings *types.OrgLdapSettingsType) (*types.OrgLdapSettingsType, error) {
 	util.Logger.Printf("[DEBUG] Configuring LDAP mode for Org name %s", adminOrg.AdminOrg.Name)
 
 	// Xmlns field is not mandatory when `types.OrgLdapSettingsType` is set as part of whole
@@ -22,13 +23,13 @@ func (adminOrg *AdminOrg) LdapConfigure(settings *types.OrgLdapSettingsType) (*t
 	settings.Xmlns = types.XMLNamespaceVCloud
 
 	href := adminOrg.AdminOrg.HREF + "/settings/ldap"
-	_, err := adminOrg.client.ExecuteRequest(href, http.MethodPut, types.MimeOrgLdapSettings,
+	_, err := adminOrg.client.ExecuteRequest(ctx, href, http.MethodPut, types.MimeOrgLdapSettings,
 		"error updating LDAP settings: %s", settings, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error updating LDAP mode for Org name '%s': %s", adminOrg.AdminOrg.Name, err)
 	}
 
-	ldapSettings, err := adminOrg.GetLdapConfiguration()
+	ldapSettings, err := adminOrg.GetLdapConfiguration(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving LDAP configuration:  %s", err)
 	}
@@ -37,20 +38,20 @@ func (adminOrg *AdminOrg) LdapConfigure(settings *types.OrgLdapSettingsType) (*t
 }
 
 // LdapDisable wraps LdapConfigure to disable LDAP configuration for org
-func (adminOrg *AdminOrg) LdapDisable() error {
-	_, err := adminOrg.LdapConfigure(&types.OrgLdapSettingsType{OrgLdapMode: types.LdapModeNone})
+func (adminOrg *AdminOrg) LdapDisable(ctx context.Context) error {
+	_, err := adminOrg.LdapConfigure(ctx, &types.OrgLdapSettingsType{OrgLdapMode: types.LdapModeNone})
 	return err
 }
 
 // GetLdapConfiguration retrieves LDAP configuration structure
-func (adminOrg *AdminOrg) GetLdapConfiguration() (*types.OrgLdapSettingsType, error) {
+func (adminOrg *AdminOrg) GetLdapConfiguration(ctx context.Context) (*types.OrgLdapSettingsType, error) {
 	util.Logger.Printf("[DEBUG] Reading LDAP configuration for Org name %s", adminOrg.AdminOrg.Name)
 
 	ldapSettings := &types.OrgLdapSettingsType{}
 
 	href := adminOrg.AdminOrg.HREF + "/settings/ldap"
 
-	_, err := adminOrg.client.ExecuteRequest(href, http.MethodGet, types.MimeOrgLdapSettings,
+	_, err := adminOrg.client.ExecuteRequest(ctx, href, http.MethodGet, types.MimeOrgLdapSettings,
 		"error getting LDAP settings: %s", nil, ldapSettings)
 
 	if err != nil {

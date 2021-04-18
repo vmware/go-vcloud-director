@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -64,7 +65,7 @@ func NewMediaRecord(cli *Client) *MediaRecord {
 //
 // Deprecated: This method is broken in API V32.0+. Please use catalog.UploadMediaImage because VCD does not support
 // uploading directly to VDC anymore.
-func (vdc *Vdc) UploadMediaImage(mediaName, mediaDescription, filePath string, uploadPieceSize int64) (UploadTask, error) {
+func (vdc *Vdc) UploadMediaImage(ctx context.Context, mediaName, mediaDescription, filePath string, uploadPieceSize int64) (UploadTask, error) {
 	util.Logger.Printf("[TRACE] UploadImage: %s, image name: %v \n", mediaName, mediaDescription)
 
 	//	On a very high level the flow is as follows
@@ -86,7 +87,7 @@ func (vdc *Vdc) UploadMediaImage(mediaName, mediaDescription, filePath string, u
 		return UploadTask{}, fmt.Errorf("[ERROR] File %s isn't correct iso file: %s", mediaFilePath, err)
 	}
 
-	mediaList, err := getExistingMedia(vdc)
+	mediaList, err := getExistingMedia(ctx, vdc)
 	if err != nil {
 		return UploadTask{}, fmt.Errorf("[ERROR] Checking existing media files failed: %s", err)
 	}
@@ -103,15 +104,15 @@ func (vdc *Vdc) UploadMediaImage(mediaName, mediaDescription, filePath string, u
 	}
 	fileSize := file.Size()
 
-	media, err := createMedia(vdc.client, vdc.Vdc.HREF+"/media", mediaName, mediaDescription, fileSize)
+	media, err := createMedia(ctx, vdc.client, vdc.Vdc.HREF+"/media", mediaName, mediaDescription, fileSize)
 	if err != nil {
 		return UploadTask{}, fmt.Errorf("[ERROR] Issue creating media: %s", err)
 	}
 
-	return executeUpload(vdc.client, media, mediaFilePath, mediaName, fileSize, uploadPieceSize)
+	return executeUpload(ctx, vdc.client, media, mediaFilePath, mediaName, fileSize, uploadPieceSize)
 }
 
-func executeUpload(client *Client, media *types.Media, mediaFilePath, mediaName string, fileSize, uploadPieceSize int64) (UploadTask, error) {
+func executeUpload(ctx context.Context, client *Client, media *types.Media, mediaFilePath, mediaName string, fileSize, uploadPieceSize int64) (UploadTask, error) {
 	uploadLink, err := getUploadLink(media.Files)
 	if err != nil {
 		return UploadTask{}, fmt.Errorf("[ERROR] Issue getting upload link: %s", err)
@@ -132,17 +133,17 @@ func executeUpload(client *Client, media *types.Media, mediaFilePath, mediaName 
 		uploadError:              &uploadError,
 	}
 
-	go uploadFile(client, mediaFilePath, details)
+	go uploadFile(ctx, client, mediaFilePath, details)
 
 	var task Task
 	for _, item := range media.Tasks.Task {
-		task, err = createTaskForVcdImport(client, item.HREF)
+		task, err = createTaskForVcdImport(ctx, client, item.HREF)
 		if err != nil {
-			removeImageOnError(client, media, mediaName)
+			removeImageOnError(ctx, client, media, mediaName)
 			return UploadTask{}, err
 		}
 		if task.Task.Status == "error" {
-			removeImageOnError(client, media, mediaName)
+			removeImageOnError(ctx, client, media, mediaName)
 			return UploadTask{}, fmt.Errorf("task did not complete succesfully: %s", task.Task.Description)
 		}
 	}
@@ -155,7 +156,7 @@ func executeUpload(client *Client, media *types.Media, mediaFilePath, mediaName 
 }
 
 // Initiates creation of media item and returns temporary upload URL.
-func createMedia(client *Client, link, mediaName, mediaDescription string, fileSize int64) (*types.Media, error) {
+func createMedia(ctx context.Context, client *Client, link, mediaName, mediaDescription string, fileSize int64) (*types.Media, error) {
 	uploadUrl, err := url.ParseRequestURI(link)
 	if err != nil {
 		return nil, fmt.Errorf("error getting vdc href: %s", err)
@@ -166,7 +167,7 @@ func createMedia(client *Client, link, mediaName, mediaDescription string, fileS
 			"<Description>" + mediaDescription + "</Description>" +
 			"</Media>")
 
-	request := client.NewRequest(map[string]string{}, http.MethodPost, *uploadUrl, reqBody)
+	request := client.NewRequest(ctx, map[string]string{}, http.MethodPost, *uploadUrl, reqBody)
 	request.Header.Add("Content-Type", "application/vnd.vmware.vcloud.media+xml")
 
 	response, err := checkResp(client.Http.Do(request))
@@ -194,7 +195,7 @@ func createMedia(client *Client, link, mediaName, mediaDescription string, fileS
 	return mediaForUpload, nil
 }
 
-func removeImageOnError(client *Client, media *types.Media, itemName string) {
+func removeImageOnError(ctx context.Context, client *Client, media *types.Media, itemName string) {
 	if media != nil {
 		util.Logger.Printf("[TRACE] Deleting media item %#v", media)
 
@@ -203,7 +204,7 @@ func removeImageOnError(client *Client, media *types.Media, itemName string) {
 		for {
 			util.Logger.Printf("[TRACE] Sleep... for 5 seconds.\n")
 			time.Sleep(time.Second * 5)
-			media, err = queryMedia(client, media.HREF, itemName)
+			media, err = queryMedia(ctx, client, media.HREF, itemName)
 			if err != nil {
 				util.Logger.Printf("[Error] Error deleting media item %v: %s", media, err)
 			}
@@ -217,7 +218,7 @@ func removeImageOnError(client *Client, media *types.Media, itemName string) {
 			if itemName == taskItem.Owner.Name {
 				task := NewTask(client)
 				task.Task = taskItem
-				err = task.CancelTask()
+				err = task.CancelTask(ctx)
 				if err != nil {
 					util.Logger.Printf("[ERROR] Error canceling task for media upload %s", err)
 				}
@@ -228,12 +229,12 @@ func removeImageOnError(client *Client, media *types.Media, itemName string) {
 	}
 }
 
-func queryMedia(client *Client, mediaUrl string, newItemName string) (*types.Media, error) {
+func queryMedia(ctx context.Context, client *Client, mediaUrl string, newItemName string) (*types.Media, error) {
 	util.Logger.Printf("[TRACE] Querying media: %s\n", mediaUrl)
 
 	mediaParsed := &types.Media{}
 
-	_, err := client.ExecuteRequest(mediaUrl, http.MethodGet,
+	_, err := client.ExecuteRequest(ctx, mediaUrl, http.MethodGet,
 		"", "error quering media: %s", nil, mediaParsed)
 	if err != nil {
 		return nil, err
@@ -293,22 +294,22 @@ func verifyHeader(buf []byte) bool {
 
 // Reference for API usage http://pubs.vmware.com/vcloud-api-1-5/wwhelp/wwhimpl/js/html/wwhelp.htm#href=api_prog/GUID-9356B99B-E414-474A-853C-1411692AF84C.html
 // http://pubs.vmware.com/vcloud-api-1-5/wwhelp/wwhimpl/js/html/wwhelp.htm#href=api_prog/GUID-43DFF30E-391F-42DC-87B3-5923ABCEB366.html
-func getExistingMedia(vdc *Vdc) ([]*types.MediaRecordType, error) {
+func getExistingMedia(ctx context.Context, vdc *Vdc) ([]*types.MediaRecordType, error) {
 	util.Logger.Printf("[TRACE] Querying medias \n")
 
-	mediaResults, err := queryMediaWithFilter(vdc, "vdc=="+url.QueryEscape(vdc.Vdc.HREF))
+	mediaResults, err := queryMediaWithFilter(ctx, vdc, "vdc=="+url.QueryEscape(vdc.Vdc.HREF))
 
 	util.Logger.Printf("[TRACE] Found media records: %d \n", len(mediaResults))
 	return mediaResults, err
 }
 
-func queryMediaWithFilter(vdc *Vdc, filter string) ([]*types.MediaRecordType, error) {
+func queryMediaWithFilter(ctx context.Context, vdc *Vdc, filter string) ([]*types.MediaRecordType, error) {
 	typeMedia := "media"
 	if vdc.client.IsSysAdmin {
 		typeMedia = "adminMedia"
 	}
 
-	results, err := vdc.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia, "filter": filter, "filterEncoded": "true"})
+	results, err := vdc.QueryWithNotEncodedParams(ctx, nil, map[string]string{"type": typeMedia, "filter": filter, "filterEncoded": "true"})
 	if err != nil {
 		return nil, fmt.Errorf("error querying medias %s", err)
 	}
@@ -322,14 +323,14 @@ func queryMediaWithFilter(vdc *Vdc, filter string) ([]*types.MediaRecordType, er
 
 // Looks for media and, if found, will delete it.
 // Deprecated: Use catalog.RemoveMediaIfExist
-func RemoveMediaImageIfExists(vdc Vdc, mediaName string) error {
-	mediaItem, err := vdc.FindMediaImage(mediaName)
+func RemoveMediaImageIfExists(ctx context.Context, vdc Vdc, mediaName string) error {
+	mediaItem, err := vdc.FindMediaImage(ctx, mediaName)
 	if err == nil && mediaItem != (MediaItem{}) {
-		task, err := mediaItem.Delete()
+		task, err := mediaItem.Delete(ctx)
 		if err != nil {
 			return fmt.Errorf("error deleting media [phase 1] %s", mediaName)
 		}
-		err = task.WaitTaskCompletion()
+		err = task.WaitTaskCompletion(ctx)
 		if err != nil {
 			return fmt.Errorf("error deleting media [task] %s", mediaName)
 		}
@@ -340,14 +341,14 @@ func RemoveMediaImageIfExists(vdc Vdc, mediaName string) error {
 }
 
 // Looks for media and, if found, will delete it.
-func (adminCatalog *AdminCatalog) RemoveMediaIfExists(mediaName string) error {
-	media, err := adminCatalog.GetMediaByName(mediaName, true)
+func (adminCatalog *AdminCatalog) RemoveMediaIfExists(ctx context.Context, mediaName string) error {
+	media, err := adminCatalog.GetMediaByName(ctx, mediaName, true)
 	if err == nil {
-		task, err := media.Delete()
+		task, err := media.Delete(ctx)
 		if err != nil {
 			return fmt.Errorf("error deleting media [phase 1] %s", mediaName)
 		}
-		err = task.WaitTaskCompletion()
+		err = task.WaitTaskCompletion(ctx)
 		if err != nil {
 			return fmt.Errorf("error deleting media [task] %s", mediaName)
 		}
@@ -360,27 +361,27 @@ func (adminCatalog *AdminCatalog) RemoveMediaIfExists(mediaName string) error {
 // Deletes the Media Item, returning an error if the vCD call fails.
 // Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Media.html
 // Deprecated: Use MediaRecord.Delete
-func (mediaItem *MediaItem) Delete() (Task, error) {
+func (mediaItem *MediaItem) Delete(ctx context.Context) (Task, error) {
 	util.Logger.Printf("[TRACE] Deleting media item: %#v", mediaItem.MediaItem.Name)
 
 	// Return the task
-	return mediaItem.vdc.client.ExecuteTaskRequest(mediaItem.MediaItem.HREF, http.MethodDelete,
+	return mediaItem.vdc.client.ExecuteTaskRequest(ctx, mediaItem.MediaItem.HREF, http.MethodDelete,
 		"", "error deleting Media item: %s", nil)
 }
 
 // Deletes the Media Item, returning an error if the vCD call fails.
 // Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Media.html
-func (media *Media) Delete() (Task, error) {
+func (media *Media) Delete(ctx context.Context) (Task, error) {
 	util.Logger.Printf("[TRACE] Deleting media item: %#v", media.Media.Name)
 
 	// Return the task
-	return media.client.ExecuteTaskRequest(media.Media.HREF, http.MethodDelete,
+	return media.client.ExecuteTaskRequest(ctx, media.Media.HREF, http.MethodDelete,
 		"", "error deleting Media item: %s", nil)
 }
 
 // Finds media in catalog and returns catalog item
 // Deprecated: Use catalog.GetMediaByName()
-func FindMediaAsCatalogItem(org *Org, catalogName, mediaName string) (CatalogItem, error) {
+func FindMediaAsCatalogItem(ctx context.Context, org *Org, catalogName, mediaName string) (CatalogItem, error) {
 	if catalogName == "" {
 		return CatalogItem{}, errors.New("catalog name is empty")
 	}
@@ -388,12 +389,12 @@ func FindMediaAsCatalogItem(org *Org, catalogName, mediaName string) (CatalogIte
 		return CatalogItem{}, errors.New("media name is empty")
 	}
 
-	catalog, err := org.FindCatalog(catalogName)
+	catalog, err := org.FindCatalog(ctx, catalogName)
 	if err != nil || catalog == (Catalog{}) {
 		return CatalogItem{}, fmt.Errorf("catalog not found or error %s", err)
 	}
 
-	media, err := catalog.FindCatalogItem(mediaName)
+	media, err := catalog.FindCatalogItem(ctx, mediaName)
 	if err != nil || media == (CatalogItem{}) {
 		return CatalogItem{}, fmt.Errorf("media not found or error %s", err)
 	}
@@ -402,7 +403,7 @@ func FindMediaAsCatalogItem(org *Org, catalogName, mediaName string) (CatalogIte
 
 // Refresh refreshes the media item information by href
 // Deprecated: Use MediaRecord.Refresh
-func (mediaItem *MediaItem) Refresh() error {
+func (mediaItem *MediaItem) Refresh(ctx context.Context) error {
 
 	if mediaItem.MediaItem == nil {
 		return fmt.Errorf("cannot refresh, Object is empty")
@@ -412,14 +413,14 @@ func (mediaItem *MediaItem) Refresh() error {
 		return fmt.Errorf("cannot refresh, Name is empty")
 	}
 
-	latestMediaItem, err := mediaItem.vdc.FindMediaImage(mediaItem.MediaItem.Name)
+	latestMediaItem, err := mediaItem.vdc.FindMediaImage(ctx, mediaItem.MediaItem.Name)
 	*mediaItem = latestMediaItem
 
 	return err
 }
 
 // Refresh refreshes the media information by href
-func (media *Media) Refresh() error {
+func (media *Media) Refresh(ctx context.Context) error {
 
 	if media.Media == nil {
 		return fmt.Errorf("cannot refresh, Object is empty")
@@ -431,7 +432,7 @@ func (media *Media) Refresh() error {
 	// elements in slices.
 	media.Media = &types.Media{}
 
-	_, err := media.client.ExecuteRequest(url, http.MethodGet,
+	_, err := media.client.ExecuteRequest(ctx, url, http.MethodGet,
 		"", "error retrieving media: %s", nil, media.Media)
 
 	return err
@@ -440,11 +441,11 @@ func (media *Media) Refresh() error {
 // GetMediaByHref finds a Media by HREF
 // On success, returns a pointer to the Media structure and a nil error
 // On failure, returns a nil pointer and an error
-func (cat *Catalog) GetMediaByHref(mediaHref string) (*Media, error) {
+func (cat *Catalog) GetMediaByHref(ctx context.Context, mediaHref string) (*Media, error) {
 
 	media := NewMedia(cat.client)
 
-	_, err := cat.client.ExecuteRequest(mediaHref, http.MethodGet,
+	_, err := cat.client.ExecuteRequest(ctx, mediaHref, http.MethodGet,
 		"", "error retrieving media: %#v", nil, media.Media)
 	if err != nil && strings.Contains(err.Error(), "MajorErrorCode:403") {
 		return nil, ErrorEntityNotFound
@@ -458,9 +459,9 @@ func (cat *Catalog) GetMediaByHref(mediaHref string) (*Media, error) {
 // GetMediaByName finds a Media by Name
 // On success, returns a pointer to the Media structure and a nil error
 // On failure, returns a nil pointer and an error
-func (cat *Catalog) GetMediaByName(mediaName string, refresh bool) (*Media, error) {
+func (cat *Catalog) GetMediaByName(ctx context.Context, mediaName string, refresh bool) (*Media, error) {
 	if refresh {
-		err := cat.Refresh()
+		err := cat.Refresh(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -468,11 +469,11 @@ func (cat *Catalog) GetMediaByName(mediaName string, refresh bool) (*Media, erro
 	for _, catalogItems := range cat.Catalog.CatalogItems {
 		for _, catalogItem := range catalogItems.CatalogItem {
 			if catalogItem.Name == mediaName && catalogItem.Type == "application/vnd.vmware.vcloud.catalogItem+xml" {
-				catalogItemElement, err := cat.GetCatalogItemByHref(catalogItem.HREF)
+				catalogItemElement, err := cat.GetCatalogItemByHref(ctx, catalogItem.HREF)
 				if err != nil {
 					return nil, err
 				}
-				return cat.GetMediaByHref(catalogItemElement.CatalogItem.Entity.HREF)
+				return cat.GetMediaByHref(ctx, catalogItemElement.CatalogItem.Entity.HREF)
 			}
 		}
 	}
@@ -482,13 +483,13 @@ func (cat *Catalog) GetMediaByName(mediaName string, refresh bool) (*Media, erro
 // GetMediaById finds a Media by ID
 // On success, returns a pointer to the Media structure and a nil error
 // On failure, returns a nil pointer and an error
-func (catalog *Catalog) GetMediaById(mediaId string) (*Media, error) {
+func (catalog *Catalog) GetMediaById(ctx context.Context, mediaId string) (*Media, error) {
 	typeMedia := "media"
 	if catalog.client.IsSysAdmin {
 		typeMedia = "adminMedia"
 	}
 
-	results, err := catalog.client.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia,
+	results, err := catalog.client.QueryWithNotEncodedParams(ctx, nil, map[string]string{"type": typeMedia,
 		"filter":        fmt.Sprintf("catalogName==%s", url.QueryEscape(catalog.Catalog.Name)),
 		"filterEncoded": "true"})
 	if err != nil {
@@ -501,7 +502,7 @@ func (catalog *Catalog) GetMediaById(mediaId string) (*Media, error) {
 	}
 	for _, mediaRecord := range mediaResults {
 		if equalIds(mediaId, mediaRecord.ID, mediaRecord.HREF) {
-			return catalog.GetMediaByHref(mediaRecord.HREF)
+			return catalog.GetMediaByHref(ctx, mediaRecord.HREF)
 		}
 	}
 	return nil, ErrorEntityNotFound
@@ -510,9 +511,9 @@ func (catalog *Catalog) GetMediaById(mediaId string) (*Media, error) {
 // GetMediaByNameOrId finds a Media by Name or ID
 // On success, returns a pointer to the Media structure and a nil error
 // On failure, returns a nil pointer and an error
-func (cat *Catalog) GetMediaByNameOrId(identifier string, refresh bool) (*Media, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return cat.GetMediaByName(name, refresh) }
-	getById := func(id string, refresh bool) (interface{}, error) { return cat.GetMediaById(id) }
+func (cat *Catalog) GetMediaByNameOrId(ctx context.Context, identifier string, refresh bool) (*Media, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) { return cat.GetMediaByName(ctx, name, refresh) }
+	getById := func(id string, refresh bool) (interface{}, error) { return cat.GetMediaById(ctx, id) }
 	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
 	if entity == nil {
 		return nil, err
@@ -523,41 +524,41 @@ func (cat *Catalog) GetMediaByNameOrId(identifier string, refresh bool) (*Media,
 // GetMediaByHref finds a Media by HREF
 // On success, returns a pointer to the Media structure and a nil error
 // On failure, returns a nil pointer and an error
-func (adminCatalog *AdminCatalog) GetMediaByHref(mediaHref string) (*Media, error) {
+func (adminCatalog *AdminCatalog) GetMediaByHref(ctx context.Context, mediaHref string) (*Media, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
-	return catalog.GetMediaByHref(mediaHref)
+	return catalog.GetMediaByHref(ctx, mediaHref)
 }
 
 // GetMediaByName finds a Media by Name
 // On success, returns a pointer to the Media structure and a nil error
 // On failure, returns a nil pointer and an error
-func (adminCatalog *AdminCatalog) GetMediaByName(mediaName string, refresh bool) (*Media, error) {
+func (adminCatalog *AdminCatalog) GetMediaByName(ctx context.Context, mediaName string, refresh bool) (*Media, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
-	return catalog.GetMediaByName(mediaName, refresh)
+	return catalog.GetMediaByName(ctx, mediaName, refresh)
 }
 
 // GetMediaById finds a Media by ID
 // On success, returns a pointer to the Media structure and a nil error
 // On failure, returns a nil pointer and an error
-func (adminCatalog *AdminCatalog) GetMediaById(mediaId string) (*Media, error) {
+func (adminCatalog *AdminCatalog) GetMediaById(ctx context.Context, mediaId string) (*Media, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
-	return catalog.GetMediaById(mediaId)
+	return catalog.GetMediaById(ctx, mediaId)
 }
 
 // GetMediaByNameOrId finds a Media by Name or ID
 // On success, returns a pointer to the Media structure and a nil error
 // On failure, returns a nil pointer and an error
-func (adminCatalog *AdminCatalog) GetMediaByNameOrId(identifier string, refresh bool) (*Media, error) {
+func (adminCatalog *AdminCatalog) GetMediaByNameOrId(ctx context.Context, identifier string, refresh bool) (*Media, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
-	return catalog.GetMediaByNameOrId(identifier, refresh)
+	return catalog.GetMediaByNameOrId(ctx, identifier, refresh)
 }
 
 // QueryMedia returns media image found in system using `name` and `catalog name` as query.
-func (catalog *Catalog) QueryMedia(mediaName string) (*MediaRecord, error) {
+func (catalog *Catalog) QueryMedia(ctx context.Context, mediaName string) (*MediaRecord, error) {
 	util.Logger.Printf("[TRACE] Querying medias by name and catalog\n")
 
 	if catalog == nil || catalog.Catalog == nil || catalog.Catalog.Name == "" {
@@ -572,7 +573,7 @@ func (catalog *Catalog) QueryMedia(mediaName string) (*MediaRecord, error) {
 		typeMedia = "adminMedia"
 	}
 
-	results, err := catalog.client.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia,
+	results, err := catalog.client.QueryWithNotEncodedParams(ctx, nil, map[string]string{"type": typeMedia,
 		"filter": fmt.Sprintf("name==%s;catalogName==%s",
 			url.QueryEscape(mediaName),
 			url.QueryEscape(catalog.Catalog.Name)),
@@ -603,14 +604,14 @@ func (catalog *Catalog) QueryMedia(mediaName string) (*MediaRecord, error) {
 }
 
 // QueryMedia returns media image found in system using `name` and `catalog name` as query.
-func (adminCatalog *AdminCatalog) QueryMedia(mediaName string) (*MediaRecord, error) {
+func (adminCatalog *AdminCatalog) QueryMedia(ctx context.Context, mediaName string) (*MediaRecord, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
-	return catalog.QueryMedia(mediaName)
+	return catalog.QueryMedia(ctx, mediaName)
 }
 
 // Refresh refreshes the media information by href
-func (mediaRecord *MediaRecord) Refresh() error {
+func (mediaRecord *MediaRecord) Refresh(ctx context.Context) error {
 
 	if mediaRecord.MediaRecord == nil {
 		return fmt.Errorf("cannot refresh, Object is empty")
@@ -626,7 +627,7 @@ func (mediaRecord *MediaRecord) Refresh() error {
 	// elements in slices.
 	mediaRecord.MediaRecord = &types.MediaRecordType{}
 
-	_, err := mediaRecord.client.ExecuteRequest(url, http.MethodGet,
+	_, err := mediaRecord.client.ExecuteRequest(ctx, url, http.MethodGet,
 		"", "error retrieving media: %s", nil, mediaRecord.MediaRecord)
 
 	return err
@@ -634,16 +635,16 @@ func (mediaRecord *MediaRecord) Refresh() error {
 
 // Deletes the Media Item, returning an error if the vCD call fails.
 // Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Media.html
-func (mediaRecord *MediaRecord) Delete() (Task, error) {
+func (mediaRecord *MediaRecord) Delete(ctx context.Context) (Task, error) {
 	util.Logger.Printf("[TRACE] Deleting media item: %#v", mediaRecord.MediaRecord.Name)
 
 	// Return the task
-	return mediaRecord.client.ExecuteTaskRequest(mediaRecord.MediaRecord.HREF, http.MethodDelete,
+	return mediaRecord.client.ExecuteTaskRequest(ctx, mediaRecord.MediaRecord.HREF, http.MethodDelete,
 		"", "error deleting Media item: %s", nil)
 }
 
 // QueryAllMedia returns all media images found in system using `name` as query.
-func (vdc *Vdc) QueryAllMedia(mediaName string) ([]*MediaRecord, error) {
+func (vdc *Vdc) QueryAllMedia(ctx context.Context, mediaName string) ([]*MediaRecord, error) {
 	util.Logger.Printf("[TRACE] Querying medias by name\n")
 
 	if mediaName == "" {
@@ -655,7 +656,7 @@ func (vdc *Vdc) QueryAllMedia(mediaName string) ([]*MediaRecord, error) {
 		typeMedia = "adminMedia"
 	}
 
-	results, err := vdc.client.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia,
+	results, err := vdc.client.QueryWithNotEncodedParams(ctx, nil, map[string]string{"type": typeMedia,
 		"filter": fmt.Sprintf("name==%s", url.QueryEscape(mediaName))})
 	if err != nil {
 		return nil, fmt.Errorf("error querying medias %s", err)
