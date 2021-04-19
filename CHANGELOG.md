@@ -2,9 +2,9 @@
 
 * Added method `vdc.QueryEdgeGateway` [#364](https://github.com/vmware/go-vcloud-director/pull/364)
 * Deprecated `vdc.GetEdgeGatewayRecordsType` [#364](https://github.com/vmware/go-vcloud-director/pull/364)
-* Added NSX-T Firewall Group (Security Groups and IP Set) support by using structures
-  `NsxtFirewallGroup` and `NsxtFirewallGroupMemberVms`. The following methods are introduced for
-  managing Security Groups and IpP Sets: `Vdc.CreateNsxtFirewallGroup`,
+* Added NSX-T Firewall Group type (which represents a Security Group or an IP Set) support by using
+  structures `NsxtFirewallGroup` and `NsxtFirewallGroupMemberVms`. The following methods are
+  introduced for managing Security Groups and IpP Sets: `Vdc.CreateNsxtFirewallGroup`,
   `NsxtEdgeGateway.CreateNsxtFirewallGroup`, `Org.GetAllNsxtFirewallGroups`,
   `Vdc.GetAllNsxtFirewallGroups`, `Org.GetNsxtFirewallGroupByName`,
   `Vdc.GetNsxtFirewallGroupByName`, `NsxtEdgeGateway.GetNsxtFirewallGroupByName`,

@@ -228,7 +228,7 @@ func (firewallGroup *NsxtFirewallGroup) GetAssociatedVms() ([]*types.NsxtFirewal
 	}
 
 	if firewallGroup.NsxtFirewallGroup.ID == "" {
-		return nil, fmt.Errorf("cannot retrieve associated VMs for  NSX-T Firewall Group without ID")
+		return nil, fmt.Errorf("cannot retrieve associated VMs for NSX-T Firewall Group without ID")
 	}
 
 	if !firewallGroup.IsSecurityGroup() {
