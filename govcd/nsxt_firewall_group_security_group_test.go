@@ -3,8 +3,6 @@
 package govcd
 
 import (
-	"time"
-
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -123,7 +121,7 @@ func (vcd *TestVCD) Test_NsxtSecurityGroupGetAssociatedVms(check *C) {
 	AddToCleanupListOpenApi(routedNet.OpenApiOrgVdcNetwork.Name, check.TestName(), openApiEndpoint)
 
 	// In some cases VCD was not able to attach network straight after it is created.
-	time.Sleep(10 * time.Second)
+	// time.Sleep(10 * time.Second)
 
 	// VMs are prependend to cleanup list to make sure they are removed before routed network
 	standaloneVm := createStandaloneVm(check, vcd, nsxtVdc, routedNet)
