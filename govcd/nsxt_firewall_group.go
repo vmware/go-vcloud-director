@@ -26,17 +26,17 @@ type NsxtFirewallGroup struct {
 	client            *Client
 }
 
-// CreateNsxtFirewallGroup allows to create NSX-T Firewall Group
+// CreateNsxtFirewallGroup allows users to create NSX-T Firewall Group
 func (vdc *Vdc) CreateNsxtFirewallGroup(firewallGroupConfig *types.NsxtFirewallGroup) (*NsxtFirewallGroup, error) {
 	return createNsxtFirewallGroup(vdc.client, firewallGroupConfig)
 }
 
-// CreateNsxtFirewallGroup allows to create NSX-T Firewall Group
+// CreateNsxtFirewallGroup allows users to create NSX-T Firewall Group
 func (egw *NsxtEdgeGateway) CreateNsxtFirewallGroup(firewallGroupConfig *types.NsxtFirewallGroup) (*NsxtFirewallGroup, error) {
 	return createNsxtFirewallGroup(egw.client, firewallGroupConfig)
 }
 
-// GetAllNsxtFirewallGroups allows to retrieve all Firewall Groups for Org
+// GetAllNsxtFirewallGroups allows users to retrieve all Firewall Groups for Org
 // firewallGroupType can be one of the following:
 // * types.FirewallGroupTypeSecurityGroup - for NSX-T Security Groups
 // * types.FirewallGroupTypeIpSet - for NSX-T IP Sets
@@ -64,7 +64,7 @@ func (org *Org) GetAllNsxtFirewallGroups(queryParameters url.Values, firewallGro
 	return getAllNsxtFirewallGroups(org.client, queryParams)
 }
 
-// GetAllNsxtFirewallGroups allows to retrieve all NSX-T Firewall Groups
+// GetAllNsxtFirewallGroups allows users to retrieve all NSX-T Firewall Groups
 func (vdc *Vdc) GetAllNsxtFirewallGroups(queryParameters url.Values, firewallGroupType string) ([]*NsxtFirewallGroup, error) {
 	if vdc.IsNsxv() {
 		return nil, errors.New("only NSX-T VDCs support Firewall Groups")
@@ -72,7 +72,7 @@ func (vdc *Vdc) GetAllNsxtFirewallGroups(queryParameters url.Values, firewallGro
 	return getAllNsxtFirewallGroups(vdc.client, queryParameters)
 }
 
-// GetAllNsxtFirewallGroups allows to retrieve all NSX-T Firewall Groups in a particular Edge Gateway
+// GetAllNsxtFirewallGroups allows users to retrieve all NSX-T Firewall Groups in a particular Edge Gateway
 // firewallGroupType can be one of the following:
 // * types.FirewallGroupTypeSecurityGroup - for NSX-T Security Groups
 // * types.FirewallGroupTypeIpSet - for NSX-T IP Sets
@@ -90,7 +90,7 @@ func (egw *NsxtEdgeGateway) GetAllNsxtFirewallGroups(queryParameters url.Values,
 	return getAllNsxtFirewallGroups(egw.client, queryParams)
 }
 
-// GetNsxtFirewallGroupByName allows to retrieve Firewall Group by Name
+// GetNsxtFirewallGroupByName allows users to retrieve Firewall Group by Name
 // firewallGroupType can be one of the following:
 // * types.FirewallGroupTypeSecurityGroup - for NSX-T Security Groups
 // * types.FirewallGroupTypeIpSet - for NSX-T IP Sets
@@ -107,7 +107,7 @@ func (org *Org) GetNsxtFirewallGroupByName(name, firewallGroupType string) (*Nsx
 	return getNsxtFirewallGroupByName(org.client, name, queryParameters)
 }
 
-// GetNsxtFirewallGroupByName allows to retrieve Firewall Group by Name
+// GetNsxtFirewallGroupByName allows users to retrieve Firewall Group by Name
 // firewallGroupType can be one of the following:
 // * types.FirewallGroupTypeSecurityGroup - for NSX-T Security Groups
 // * types.FirewallGroupTypeIpSet - for NSX-T IP Sets
@@ -124,7 +124,7 @@ func (vdc *Vdc) GetNsxtFirewallGroupByName(name, firewallGroupType string) (*Nsx
 	return getNsxtFirewallGroupByName(vdc.client, name, queryParameters)
 }
 
-// GetNsxtFirewallGroupByName allows to retrieve Firewall Group by Name in a particular Edge Gateway
+// GetNsxtFirewallGroupByName allows users to retrieve Firewall Group by Name in a particular Edge Gateway
 // firewallGroupType can be one of the following:
 // * types.FirewallGroupTypeSecurityGroup - for NSX-T Security Groups
 // * types.FirewallGroupTypeIpSet - for NSX-T IP Sets
@@ -160,7 +160,7 @@ func (egw *NsxtEdgeGateway) GetNsxtFirewallGroupById(id string) (*NsxtFirewallGr
 	return getNsxtFirewallGroupById(egw.client, id)
 }
 
-// Update allows to update NSX-T Firewall Group
+// Update allows users to update NSX-T Firewall Group
 func (firewallGroup *NsxtFirewallGroup) Update(firewallGroupConfig *types.NsxtFirewallGroup) (*NsxtFirewallGroup, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups
 	minimumApiVersion, err := firewallGroup.client.checkOpenApiEndpointCompatibility(endpoint)
@@ -190,7 +190,7 @@ func (firewallGroup *NsxtFirewallGroup) Update(firewallGroupConfig *types.NsxtFi
 	return returnObject, nil
 }
 
-// Delete allows to delete NSX-T Firewall Group
+// Delete allows users to delete NSX-T Firewall Group
 func (firewallGroup *NsxtFirewallGroup) Delete() error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups
 	minimumApiVersion, err := firewallGroup.client.checkOpenApiEndpointCompatibility(endpoint)
@@ -216,7 +216,7 @@ func (firewallGroup *NsxtFirewallGroup) Delete() error {
 	return nil
 }
 
-// GetAssociatedVms allows to retrieve a list of references to child VMs (with vApps when they exist).
+// GetAssociatedVms allows users to retrieve a list of references to child VMs (with vApps when they exist).
 //
 // Note. Only Security Groups have associated VMs. Executing it on an IP Set will return an error
 // similar to: "only Security Groups have associated VMs. This Firewall Group has type 'IP_SET'"
@@ -252,12 +252,12 @@ func (firewallGroup *NsxtFirewallGroup) GetAssociatedVms() ([]*types.NsxtFirewal
 	return associatedVms, nil
 }
 
-// IsSecurityGroup allows to check if Firewall Group is a Security Group
+// IsSecurityGroup allows users to check if Firewall Group is a Security Group
 func (firewallGroup *NsxtFirewallGroup) IsSecurityGroup() bool {
 	return firewallGroup.NsxtFirewallGroup.Type == types.FirewallGroupTypeSecurityGroup
 }
 
-// IsIpSet allows to check if Firewall Group is an IP Set
+// IsIpSet allows users to check if Firewall Group is an IP Set
 func (firewallGroup *NsxtFirewallGroup) IsIpSet() bool {
 	return firewallGroup.NsxtFirewallGroup.Type == types.FirewallGroupTypeIpSet
 }
