@@ -1,7 +1,7 @@
 package types
 
 // OpenAPIEdgeGateway structure supports marshalling both - NSX-V and NSX-T edge gateways as returned by OpenAPI
-// endpoint (cloudapi/1.0.0edgeGateways/), but the endpoint only allows to create NSX-T edge gateways.
+// endpoint (cloudapi/1.0.0edgeGateways/), but the endpoint only allows users to create NSX-T edge gateways.
 type OpenAPIEdgeGateway struct {
 	Status string `json:"status,omitempty"`
 	ID     string `json:"id,omitempty"`
@@ -47,7 +47,7 @@ type EdgeGatewayUplinks struct {
 	// Subnets contain subnets to be used on edge gateway
 	Subnets   OpenAPIEdgeGatewaySubnets `json:"subnets,omitempty"`
 	Connected bool                      `json:"connected,omitempty"`
-	// QuickAddAllocatedIPCount allows to allocate additional IPs during update
+	// QuickAddAllocatedIPCount allows users to allocate additional IPs during update
 	QuickAddAllocatedIPCount int `json:"quickAddAllocatedIpCount,omitempty"`
 	// Dedicated defines if the external network is dedicated. Dedicating the External Network will enable Route
 	// Advertisement for this Edge Gateway
@@ -94,7 +94,7 @@ type OpenAPIEdgeGatewayBacking struct {
 	NetworkProvider NetworkProvider `json:"networkProvider"`
 }
 
-// OpenAPIEdgeGatewayEdgeCluster allows to specify edge cluster reference
+// OpenAPIEdgeGatewayEdgeCluster allows users to specify edge cluster reference
 type OpenAPIEdgeGatewayEdgeCluster struct {
 	EdgeClusterRef OpenApiReference `json:"edgeClusterRef"`
 	BackingID      string           `json:"backingId"`
@@ -105,7 +105,7 @@ type OpenAPIEdgeGatewayEdgeClusterConfig struct {
 	SecondaryEdgeCluster OpenAPIEdgeGatewayEdgeCluster `json:"secondaryEdgeCluster,omitempty"`
 }
 
-// OpenApiOrgVdcNetwork allows to manage Org Vdc networks
+// OpenApiOrgVdcNetwork allows users to manage Org Vdc networks
 type OpenApiOrgVdcNetwork struct {
 	ID          string `json:"id,omitempty"`
 	Name        string `json:"name"`
@@ -193,7 +193,7 @@ type Connection struct {
 // to back NSX-T imported Org VDC network
 type NsxtImportableSwitch = OpenApiReference
 
-// OpenApiOrgVdcNetworkDhcp allows to manage DHCP configuration for Org VDC networks by using OpenAPI endpoint
+// OpenApiOrgVdcNetworkDhcp allows users to manage DHCP configuration for Org VDC networks by using OpenAPI endpoint
 type OpenApiOrgVdcNetworkDhcp struct {
 	Enabled   *bool                           `json:"enabled,omitempty"`
 	LeaseTime *int                            `json:"leaseTime,omitempty"`
@@ -230,11 +230,11 @@ type OpenApiOrgVdcNetworkDhcpPools struct {
 	DefaultLeaseTime *int `json:"defaultLeaseTime,omitempty"`
 }
 
-// NsxtFirewallGroup allows to set either SECURITY_GROUP or IP_SET which is defined by Type field.
+// NsxtFirewallGroup allows users to set either SECURITY_GROUP or IP_SET which is defined by Type field.
 // SECURITY_GROUP (constant types.FirewallGroupTypeSecurityGroup) is a dynamic structure which
-// allows to add Routed Org VDC networks
+// allows users to add Routed Org VDC networks
 //
-// IP_SET (constant FirewallGroupTypeIpSet) allows to enter static IPs and later on firewall rules
+// IP_SET (constant FirewallGroupTypeIpSet) allows users to enter static IPs and later on firewall rules
 // can be created both of these objects
 //
 // When the type is SECURITY_GROUP 'Members' field is used to specify Org VDC networks
