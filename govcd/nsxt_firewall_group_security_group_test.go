@@ -128,7 +128,6 @@ func (vcd *TestVCD) Test_NsxtSecurityGroupGetAssociatedVms(check *C) {
 	vapp, vappVm := createVappVm(check, vcd, nsxtVdc, routedNet)
 	PrependToCleanupList(vapp.VApp.Name, "vapp", vcd.nsxtVdc.Vdc.Name, check.TestName())
 
-
 	// VMs are prependend to cleanup list to make sure they are removed before routed network
 	standaloneVm := createStandaloneVm(check, vcd, nsxtVdc, routedNet)
 	PrependToCleanupList(standaloneVm.VM.ID, "standaloneVm", "", check.TestName())
