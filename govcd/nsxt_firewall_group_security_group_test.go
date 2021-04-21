@@ -5,6 +5,7 @@ package govcd
 import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
+	"time"
 )
 
 // Test_NsxtSecurityGroup tests out CRUD of NSX-T Security Group
@@ -120,14 +121,17 @@ func (vcd *TestVCD) Test_NsxtSecurityGroupGetAssociatedVms(check *C) {
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + routedNet.OpenApiOrgVdcNetwork.ID
 	AddToCleanupListOpenApi(routedNet.OpenApiOrgVdcNetwork.Name, check.TestName(), openApiEndpoint)
 
-	// In some cases VCD was not able to attach network straight after it is created.
-	// time.Sleep(10 * time.Second)
-
-	// VMs are prependend to cleanup list to make sure they are removed before routed network
-	standaloneVm := createStandaloneVm(check, vcd, nsxtVdc, routedNet)
+	// In some cases VCD was not able to attach network to VM  straight after it is created even though its creation task
+	// has already completed.
+	time.Sleep(10 * time.Second)
 
 	vapp, vappVm := createVappVm(check, vcd, nsxtVdc, routedNet)
 	PrependToCleanupList(vapp.VApp.Name, "vapp", vcd.nsxtVdc.Vdc.Name, check.TestName())
+
+
+	// VMs are prependend to cleanup list to make sure they are removed before routed network
+	standaloneVm := createStandaloneVm(check, vcd, nsxtVdc, routedNet)
+	PrependToCleanupList(standaloneVm.VM.ID, "standaloneVm", "", check.TestName())
 
 	secGroupDefinition := &types.NsxtFirewallGroup{
 		Name:           check.TestName(),
@@ -267,11 +271,8 @@ func createStandaloneVm(check *C, vcd *TestVCD, vdc *Vdc, net *OpenApiOrgVdcNetw
 	}
 
 	vm, err := vdc.CreateStandaloneVm(&params)
-	// There are cases where even if error is returned - VM still remains and needs to be cleaned up
-	PrependToCleanupList(vm.VM.ID, "standaloneVm", "", check.TestName())
 	check.Assert(err, IsNil)
 	check.Assert(vm, NotNil)
-
 	return vm
 }
 
