@@ -166,6 +166,7 @@ func (client *Client) cumulativeQuery(queryType string, params, notEncodedParams
 		types.QtAdminVm,
 		types.QtVapp,
 		types.QtAdminVapp,
+		types.QtOrgVdc,
 	}
 	// Make sure the query type is supported
 	// We need to check early, as queries that would return less than 25 items (default page size) would succeed,

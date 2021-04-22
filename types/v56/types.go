@@ -2152,6 +2152,59 @@ type QueryResultRecordsType struct {
 	VappTemplateRecord              []*QueryResultVappTemplateType                    `xml:"VAppTemplateRecord"`              // A record representing a vApp template
 	AdminVappTemplateRecord         []*QueryResultVappTemplateType                    `xml:"AdminVAppTemplateRecord"`         // A record representing an admin vApp template
 	NsxtManagerRecord               []*QueryResultNsxtManagerRecordType               `xml:"NsxTManagerRecord"`               // A record representing NSX-T manager
+	OrgVdcRecord                    []*QueryResultOrgVdcRecordType                    `xml:"OrgVdcRecord"`                    // A record representing Org VDC
+}
+
+// QueryResultOrgVdcRecordType represents an Org VDC record
+type QueryResultOrgVdcRecordType struct {
+	HREF                           string `xml:"href,attr,omitempty"`
+	Name                           string `xml:"name,attr,omitempty"`
+	ComputeProviderScope           string `xml:"computeProviderScope,attr,omitempty"`
+	CpuAllocationMhz               string `xml:"cpuAllocationMhz,attr,omitempty"`
+	CpuLimitMhz                    string `xml:"cpuLimitMhz,attr,omitempty"`
+	CpuReservedMhz                 string `xml:"cpuReservedMhz,attr,omitempty"`
+	CpuUsedMhz                     string `xml:"cpuUsedMhz,attr,omitempty"`
+	IsBusy                         string `xml:"isBusy,attr,omitempty"`
+	IsEnabled                      string `xml:"isEnabled,attr,omitempty"`
+	IsFastProvisioned              string `xml:"isFastProvisioned,attr,omitempty"`
+	IsThinProvisioned              string `xml:"isThinProvisioned,attr,omitempty"`
+	MemoryAllocationMB             string `xml:"memoryAllocationMB,attr,omitempty"`
+	MemoryLimitMB                  string `xml:"memoryLimitMB,attr,omitempty"`
+	MemoryReservedMB               string `xml:"memoryReservedMB,attr,omitempty"`
+	MemoryUsedMB                   string `xml:"memoryUsedMB,attr,omitempty"`
+	NetworkProviderScope           string `xml:"networkProviderScope,attr,omitempty"`
+	NumberOfDatastores             string `xml:"numberOfDatastores,attr,omitempty"`
+	NumberOfDeployedUnmanagedVApps string `xml:"numberOfDeployedUnmanagedVApps,attr,omitempty"`
+	NumberOfDeployedVApps          string `xml:"numberOfDeployedVApps,attr,omitempty"`
+	NumberOfDisks                  string `xml:"numberOfDisks,attr,omitempty"`
+	NumberOfMedia                  string `xml:"numberOfMedia,attr,omitempty"`
+	NumberOfRunningVMs             string `xml:"numberOfRunningVMs,attr,omitempty"`
+	NumberOfStorageProfiles        string `xml:"numberOfStorageProfiles,attr,omitempty"`
+	NumberOfUnmanagedVApps         string `xml:"numberOfUnmanagedVApps,attr,omitempty"`
+	NumberOfVAppTemplates          string `xml:"numberOfVAppTemplates,attr,omitempty"`
+	NumberOfVApps                  string `xml:"numberOfVApps,attr,omitempty"`
+	NumberOfVMs                    string `xml:"numberOfVMs,attr,omitempty"`
+	OrgName                        string `xml:"orgName,attr,omitempty"`
+	ProviderVdc                    string `xml:"providerVdc,attr,omitempty"`
+	ProviderVdcName                string `xml:"providerVdcName,attr,omitempty"`
+	Status                         string `xml:"status,attr,omitempty"`
+	StorageLimitMB                 string `xml:"storageLimitMB,attr,omitempty"`
+	StorageUsedMB                  string `xml:"storageUsedMB,attr,omitempty"`
+	CpuOverheadMhz                 string `xml:"cpuOverheadMhz,attr,omitempty"`
+	PvdcHardwareVersion            string `xml:"pvdcHardwareVersion,attr,omitempty"`
+	TaskStatusName                 string `xml:"taskStatusName,attr,omitempty"`
+	NumberOfResourcePools          string `xml:"numberOfResourcePools,attr,omitempty"`
+	SiteName                       string `xml:"siteName,attr,omitempty"`
+	StorageOverheadMB              string `xml:"storageOverheadMB,attr,omitempty"`
+	VcName                         string `xml:"vcName,attr,omitempty"`
+	MemoryOverheadMB               string `xml:"memoryOverheadMB,attr,omitempty"`
+	Site                           string `xml:"site,attr,omitempty"`
+	Task                           string `xml:"task,attr,omitempty"`
+	LocationId                     string `xml:"locationId,attr,omitempty"`
+	AllocationModel                string `xml:"allocationModel,attr,omitempty"`
+	NetworkPool                    string `xml:"networkPool,attr,omitempty"`
+	TaskStatus                     string `xml:"taskStatus,attr,omitempty"`
+	TaskDetails                    string `xml:"taskDetails,attr,omitempty"`
 }
 
 // QueryResultCatalogItemType represents a catalog item as query result

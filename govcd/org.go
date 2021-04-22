@@ -287,11 +287,19 @@ func (org *Org) GetVDCByName(vdcName string, refresh bool) (*Vdc, error) {
 			return nil, err
 		}
 	}
-	for _, link := range org.Org.Link {
-		if link.Name == vdcName && link.Type == types.MimeVDC {
+
+	orgVdcList, err := org.QueryOrgVdcList()
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve VDC list for Org '%s': %s", org.Org.Name, err)
+	}
+
+	//
+	for _, link := range orgVdcList {
+		if link.Name == vdcName {
 			return org.GetVDCByHref(link.HREF)
 		}
 	}
+
 	return nil, ErrorEntityNotFound
 }
 
@@ -328,7 +336,7 @@ func (org *Org) GetVDCByNameOrId(identifier string, refresh bool) (*Vdc, error) 
 
 // QueryCatalogList returns a list of catalogs for this organization
 func (org *Org) QueryCatalogList() ([]*types.CatalogRecord, error) {
-	util.Logger.Printf("[DEBUG] QueryCatalogList with org name %s", org.Org.Name)
+	util.Logger.Printf("[DEBUG] QueryCatalogList with Org name %s", org.Org.Name)
 	queryType := org.client.GetQueryType(types.QtCatalog)
 	results, err := org.client.cumulativeQuery(queryType, nil, map[string]string{
 		"type":          queryType,
@@ -348,6 +356,23 @@ func (org *Org) QueryCatalogList() ([]*types.CatalogRecord, error) {
 	}
 	util.Logger.Printf("[DEBUG] QueryCatalogList returned with : %#v and error: %s", catalogs, err)
 	return catalogs, nil
+}
+
+// QueryOrgVdcList returns a list of catalogs for this organization
+func (org *Org) QueryOrgVdcList() ([]*types.QueryResultOrgVdcRecordType, error) {
+	util.Logger.Printf("[DEBUG] QueryOrgVdcList with Org name %s", org.Org.Name)
+	queryType := org.client.GetQueryType(types.QtOrgVdc)
+	results, err := org.client.cumulativeQuery(queryType, nil, map[string]string{
+		"type": queryType,
+		//"filter":        fmt.Sprintf("orgName==%s", url.QueryEscape(org.Org.Name)),
+		"format": "records",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	util.Logger.Printf("[DEBUG] QueryOrgVdcList returned with : %#v and error: %s", results.Results.OrgVdcRecord, err)
+	return results.Results.OrgVdcRecord, nil
 }
 
 // GetTaskList returns Tasks for Organization and error.
