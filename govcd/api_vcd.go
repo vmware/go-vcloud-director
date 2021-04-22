@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -88,26 +88,12 @@ func (vcdCli *VCDClient) vcdAuthorize(user, pass, org string) (*http.Response, e
 	if len(missingItems) > 0 {
 		return nil, fmt.Errorf("authorization is not possible because of these missing items: %v", missingItems)
 	}
-	// No point in checking for errors here
-	req := vcdCli.Client.NewRequest(map[string]string{}, http.MethodPost, vcdCli.sessionHREF, nil)
-	// Set Basic Authentication Header
-	req.SetBasicAuth(user+"@"+org, pass)
-	// Add the Accept header for vCA
-	req.Header.Add("Accept", "application/*+xml;version="+vcdCli.Client.APIVersion)
-	resp, err := vcdCli.Client.Http.Do(req)
 
-	// If the VCD has disabled the call to /api/sessions, the attempt will fail with error 401 (unauthorized)
-	// https://docs.vmware.com/en/VMware-Cloud-Director/10.0/com.vmware.vcloud.install.doc/GUID-84390C8F-E8C5-4137-A1A5-53EC27FE0024.html
-	// TODO: convert this method to main once we drop support for 9.7
-	if resp.StatusCode == 401 {
-		resp, err = vcdCli.vcdCloudApiAuthorize(user, pass, org)
-		if err != nil {
-			return nil, err
-		}
-		resp, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &types.Error{})
-	} else {
-		resp, err = checkResp(resp, err)
+	resp, err := vcdCli.vcdCloudApiAuthorize(user, pass, org)
+	if err != nil {
+		return nil, err
 	}
+	resp, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &types.Error{})
 
 	if err != nil {
 		return nil, err
@@ -129,7 +115,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 	// Setting defaults
 	vcdClient := &VCDClient{
 		Client: Client{
-			APIVersion: "32.0", // supported by 9.7+
+			APIVersion: "33.0", // supported by 10.0+
 			// UserAgent cannot embed exact version by default because this is source code and is supposed to be used by programs,
 			// but any client can customize or disable it at all using WithHttpUserAgent() configuration options function.
 			UserAgent: "go-vcloud-director",

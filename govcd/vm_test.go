@@ -1458,11 +1458,6 @@ func (vcd *TestVCD) Test_UpdateVmCpuAndMemoryHotAdd(check *C) {
 }
 
 func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
-
-	if vcd.client.Client.APIVCDMaxVersionIs("< 33.0") {
-		check.Skip(fmt.Sprintf("Test %s requires VCD 10.0 (API version 33) or higher", check.TestName()))
-	}
-
 	vapp, err := createVappForTest(vcd, "Test_AddNewEmptyVMWithVmComputePolicy")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
@@ -1483,7 +1478,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
 		client: vcd.org.client,
 		VdcComputePolicy: &types.VdcComputePolicy{
 			Name:        check.TestName() + "_memory",
-			Description: "Empty policy created by test 2",
+			Description: "Empty polivm_test.go:394cy created by test 2",
 			Memory:      takeIntAddress(2048),
 		},
 	}

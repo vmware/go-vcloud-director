@@ -2,6 +2,7 @@
 
 * Added method `vdc.QueryEdgeGateway` [#364](https://github.com/vmware/go-vcloud-director/pull/364)
 * Deprecated `vdc.GetEdgeGatewayRecordsType` [#364](https://github.com/vmware/go-vcloud-director/pull/364)
+* Dropped support for VCD 9.7 which is EOL now [#xxx](https://github.com/vmware/go-vcloud-director/pull/xxx)
 
 ## 2.11.0 (March 10, 2021)
 

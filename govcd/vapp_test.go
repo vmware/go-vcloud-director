@@ -1,7 +1,7 @@
 // +build vapp functional ALL
 
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -1444,11 +1444,6 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 
 // Test_AddNewVMWithComputeCapacity creates a new VM in vApp with VM using compute capacity
 func (vcd *TestVCD) Test_AddNewVMWithComputeCapacity(check *C) {
-
-	if vcd.client.Client.APIVCDMaxVersionIs("< 33.0") {
-		check.Skip(fmt.Sprintf("Test %s requires VCD 10.0 (API version 33) or higher", check.TestName()))
-	}
-
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
