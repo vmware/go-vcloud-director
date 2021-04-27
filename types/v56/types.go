@@ -2581,15 +2581,18 @@ type DiskCreateParams struct {
 // Reference: vCloud API 30.0 - DiskType
 // https://code.vmware.com/apis/287/vcloud?h=Director#/doc/doc/types/DiskType.html
 type Disk struct {
-	XMLName         xml.Name         `xml:"Disk"`
-	Xmlns           string           `xml:"xmlns,attr,omitempty"`
-	HREF            string           `xml:"href,attr,omitempty"`
-	Type            string           `xml:"type,attr,omitempty"`
-	Id              string           `xml:"id,attr,omitempty"`
-	OperationKey    string           `xml:"operationKey,attr,omitempty"`
-	Name            string           `xml:"name,attr"`
-	Status          int              `xml:"status,attr,omitempty"`
-	Size            int64            `xml:"size,attr"`
+	XMLName      xml.Name `xml:"Disk"`
+	Xmlns        string   `xml:"xmlns,attr,omitempty"`
+	HREF         string   `xml:"href,attr,omitempty"`
+	Type         string   `xml:"type,attr,omitempty"`
+	Id           string   `xml:"id,attr,omitempty"`
+	OperationKey string   `xml:"operationKey,attr,omitempty"`
+	Name         string   `xml:"name,attr"`
+	Status       int      `xml:"status,attr,omitempty"`
+	// Size of the disk in bytes. No longer supported in API V33.0+.
+	// Size            int64            `xml:"size,attr"`
+	// SizeMb is the size of disk in MB. It has replaced Size field as of API V33.0
+	SizeMb          int64            `xml:"sizeMb,attr"`
 	Iops            *int             `xml:"iops,attr,omitempty"`
 	BusType         string           `xml:"busType,attr,omitempty"`
 	BusSubType      string           `xml:"busSubType,attr,omitempty"`

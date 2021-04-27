@@ -372,7 +372,7 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 		VCloudHREF:      vm.VM.HREF + "/virtualHardwareSection/memory",
 		VCloudType:      types.MimeRasdItem,
 		AllocationUnits: "byte * 2^20",
-		Description:     "Memory Size",
+		Description:     "Memory SizeMb",
 		ElementName:     strconv.Itoa(size) + " MB of memory",
 		InstanceID:      5,
 		Reservation:     0,

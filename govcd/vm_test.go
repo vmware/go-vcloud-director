@@ -46,10 +46,6 @@ func (vcd *TestVCD) Test_FindVMByHREF(check *C) {
 
 // Test attach disk to VM and detach disk from VM
 func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
-	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("skipping test because disk size is 0")
-	}
-
 	// Find VM
 	if vcd.vapp.VApp == nil {
 		check.Skip("skipping test because no vApp is found")
@@ -76,7 +72,7 @@ func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestVMAttachOrDetachDisk,
-		Size:        vcd.config.VCD.Disk.Size,
+		SizeMb:      1,
 		Description: TestVMAttachOrDetachDisk,
 	}
 
@@ -101,7 +97,7 @@ func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 	disk, err := vcd.vdc.GetDiskByHref(diskHREF)
 	check.Assert(err, IsNil)
 	check.Assert(disk.Disk.Name, Equals, diskCreateParamsDisk.Name)
-	check.Assert(disk.Disk.Size, Equals, diskCreateParamsDisk.Size)
+	check.Assert(disk.Disk.SizeMb, Equals, diskCreateParamsDisk.SizeMb)
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
 
 	// Attach disk
@@ -140,11 +136,6 @@ func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
-
-	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("skipping test because disk size is 0")
-	}
-
 	if vcd.skipVappTests {
 		check.Skip("skipping test because vApp wasn't properly created")
 	}
@@ -171,7 +162,7 @@ func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestVMAttachDisk,
-		Size:        vcd.config.VCD.Disk.Size,
+		SizeMb:      1,
 		Description: TestVMAttachDisk,
 	}
 
@@ -196,7 +187,7 @@ func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 	disk, err := vcd.vdc.GetDiskByHref(diskHREF)
 	check.Assert(err, IsNil)
 	check.Assert(disk.Disk.Name, Equals, diskCreateParamsDisk.Name)
-	check.Assert(disk.Disk.Size, Equals, diskCreateParamsDisk.Size)
+	check.Assert(disk.Disk.SizeMb, Equals, diskCreateParamsDisk.SizeMb)
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
 
 	// Attach disk
@@ -231,11 +222,6 @@ func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
 
 // Test detach disk from VM
 func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
-
-	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("skipping test because disk size is 0")
-	}
-
 	if vcd.skipVappTests {
 		check.Skip("skipping test because vApp wasn't properly created")
 	}
@@ -262,7 +248,7 @@ func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestVMDetachDisk,
-		Size:        vcd.config.VCD.Disk.Size,
+		SizeMb:      1,
 		Description: TestVMDetachDisk,
 	}
 
@@ -288,7 +274,7 @@ func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
 	disk, err := vcd.vdc.GetDiskByHref(diskHREF)
 	check.Assert(err, IsNil)
 	check.Assert(disk.Disk.Name, Equals, diskCreateParamsDisk.Name)
-	check.Assert(disk.Disk.Size, Equals, diskCreateParamsDisk.Size)
+	check.Assert(disk.Disk.SizeMb, Equals, diskCreateParamsDisk.SizeMb)
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
 
 	// Attach disk
@@ -1137,7 +1123,7 @@ func attachIndependentDisk(vcd *TestVCD, check *C) (*Disk, error) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestAttachedVMDisk,
-		Size:        vcd.config.VCD.Disk.Size,
+		SizeMb:      1,
 		Description: TestAttachedVMDisk,
 	}
 
@@ -1162,7 +1148,7 @@ func attachIndependentDisk(vcd *TestVCD, check *C) (*Disk, error) {
 	disk, err := vcd.vdc.GetDiskByHref(diskHREF)
 	check.Assert(err, IsNil)
 	check.Assert(disk.Disk.Name, Equals, diskCreateParamsDisk.Name)
-	check.Assert(disk.Disk.Size, Equals, diskCreateParamsDisk.Size)
+	check.Assert(disk.Disk.SizeMb, Equals, diskCreateParamsDisk.SizeMb)
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
 
 	// Attach disk

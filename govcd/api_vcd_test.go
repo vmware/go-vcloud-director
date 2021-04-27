@@ -162,11 +162,7 @@ type TestConfig struct {
 		ExternalNetworkPortGroup     string `yaml:"externalNetworkPortGroup,omitempty"`
 		ExternalNetworkPortGroupType string `yaml:"externalNetworkPortGroupType,omitempty"`
 		VimServer                    string `yaml:"vimServer,omitempty"`
-		Disk                         struct {
-			Size          int64 `yaml:"size,omitempty"`
-			SizeForUpdate int64 `yaml:"sizeForUpdate,omitempty"`
-		}
-		Nsxt struct {
+		Nsxt                         struct {
 			Manager           string `yaml:"manager"`
 			Tier0router       string `yaml:"tier0router"`
 			Tier0routerVrf    string `yaml:"tier0routerVrf"`
@@ -1814,4 +1810,13 @@ func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint string) {
 			endpoint, constraint, maxSupportedVersion)
 		check.Skip(skipText)
 	}
+}
+
+// bytesToMegabytes helps to convert disk sizes from Bytes to Megabytes
+func bytesToMegabytes(sizeInBytes int64) int64 {
+	if sizeInBytes == 0 {
+		return sizeInBytes
+	}
+
+	return sizeInBytes / 1024 / 1024
 }

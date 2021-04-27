@@ -54,14 +54,14 @@ const MinimumDiskSize int64 = 1048576 // = 1Mb
 func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (Task, error) {
 	util.Logger.Printf("[TRACE] Create disk, name: %s, size: %d \n",
 		diskCreateParams.Disk.Name,
-		diskCreateParams.Disk.Size,
+		diskCreateParams.Disk.SizeMb,
 	)
 
 	if diskCreateParams.Disk.Name == "" {
 		return Task{}, fmt.Errorf("disk name is required")
 	}
 
-	if diskCreateParams.Disk.Size < MinimumDiskSize {
+	if diskCreateParams.Disk.SizeMb < MinimumDiskSize {
 		return Task{}, fmt.Errorf("disk size should be greater than or equal to 1Mb")
 	}
 
@@ -119,7 +119,7 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (Task, erro
 func (disk *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 	util.Logger.Printf("[TRACE] Update disk, name: %s, size: %d, HREF: %s \n",
 		newDiskInfo.Name,
-		newDiskInfo.Size,
+		newDiskInfo.SizeMb,
 		disk.Disk.HREF,
 	)
 
@@ -129,7 +129,7 @@ func (disk *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 		return Task{}, fmt.Errorf("disk name is required")
 	}
 
-	if newDiskInfo.Size < MinimumDiskSize {
+	if newDiskInfo.SizeMb < MinimumDiskSize {
 		return Task{}, fmt.Errorf("disk size should be greater than or equal to 1Mb")
 	}
 
@@ -166,7 +166,7 @@ func (disk *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 	xmlPayload := &types.Disk{
 		Xmlns:          types.XMLNamespaceVCloud,
 		Description:    newDiskInfo.Description,
-		Size:           newDiskInfo.Size,
+		SizeMb:         newDiskInfo.SizeMb,
 		Name:           newDiskInfo.Name,
 		StorageProfile: newDiskInfo.StorageProfile,
 		Owner:          newDiskInfo.Owner,
