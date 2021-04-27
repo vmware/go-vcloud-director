@@ -277,10 +277,10 @@ func createVappVmAndAttachNetwork(check *C, vcd *TestVCD, vdc *Vdc, net *OpenApi
 	vapp, err := vdc.GetVAppByName(check.TestName(), true)
 	check.Assert(err, IsNil)
 
+	// Attach network to vApp
 	orgVdcNetworkWithHREF, err := vdc.GetOrgVdcNetworkById(net.OpenApiOrgVdcNetwork.ID, true)
 	check.Assert(err, IsNil)
 
-	// Attach network to vApp
 	networkConfigurations := vapp.VApp.NetworkConfigSection.NetworkConfig
 	vappConfiguration := types.VAppNetworkConfiguration{
 		NetworkName: net.OpenApiOrgVdcNetwork.Name,
