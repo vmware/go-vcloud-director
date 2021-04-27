@@ -207,7 +207,6 @@ func createStandaloneVm(check *C, vcd *TestVCD, vdc *Vdc, net *OpenApiOrgVdcNetw
 	params := types.CreateVmParams{
 		Name:    check.TestName(),
 		PowerOn: false,
-		// Description: description,
 		CreateVm: &types.Vm{
 			Name:                   check.TestName(),
 			VirtualHardwareSection: nil,
@@ -318,7 +317,6 @@ func createVappVmAndAttachNetwork(check *C, vcd *TestVCD, vdc *Vdc, net *OpenApi
 	emptyVmDefinition := &types.RecomposeVAppParamsForEmptyVm{
 		CreateItem: &types.CreateItem{
 			Name:                      check.TestName(),
-			NetworkConnectionSection:  desiredNetConfig,
 			Description:               "created by " + check.TestName(),
 			GuestCustomizationSection: nil,
 			VmSpecSection: &types.VmSpecSection{
@@ -349,6 +347,14 @@ func createVappVmAndAttachNetwork(check *C, vcd *TestVCD, vdc *Vdc, net *OpenApi
 	}
 
 	createdVm, err := vapp.AddEmptyVm(emptyVmDefinition)
+	check.Assert(err, IsNil)
+
+	// Network could have been configured while creating VM, but on some slow systems
+	// the network is not yet found just after creating it so creating a VM without network and
+	// adding it later buys some time
+	err = createdVm.UpdateNetworkConnectionSection(desiredNetConfig)
+	check.Assert(err, IsNil)
+
 	check.Assert(err, IsNil)
 	check.Assert(createdVm, NotNil)
 
