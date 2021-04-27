@@ -55,7 +55,7 @@ func (vcd *TestVCD) createAndGetResourcesForVmCreation(check *C, vmName string) 
 	vappTemplate, err := catalogItem.GetVAppTemplate()
 	check.Assert(err, IsNil)
 	// Compose Raw vApp
-	err = vdc.ComposeRawVApp(vmName)
+	err = vdc.ComposeRawVApp(vmName, "")
 	check.Assert(err, IsNil)
 	vapp, err := vdc.GetVAppByName(vmName, true)
 	check.Assert(err, IsNil)
@@ -672,7 +672,7 @@ func deleteVapp(vcd *TestVCD, name string) error {
 // makeEmptyVapp creates a given vApp without any VM
 func makeEmptyVapp(vdc *Vdc, name string) (*VApp, error) {
 
-	err := vdc.ComposeRawVApp(name)
+	err := vdc.ComposeRawVApp(name, "")
 	if err != nil {
 		return nil, err
 	}

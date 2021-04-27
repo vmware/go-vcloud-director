@@ -217,6 +217,22 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 
 }
 
+func (vcd *TestVCD) Test_ComposeRawVApp(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	vappName := check.TestName()
+	vappDescription := vappName + " desc"
+	// Compose VApp
+	err := vcd.vdc.ComposeRawVApp(vappName, vappDescription)
+	check.Assert(err, IsNil)
+	// Get VApp
+	vapp, err := vcd.vdc.GetVAppByName(vappName, true)
+	check.Assert(err, IsNil)
+	AddToCleanupList(vappName, "vapp", "", "Test_ComposeRawVApp")
+	check.Assert(vapp.VApp.Name, Equals, vappName)
+	check.Assert(vapp.VApp.Description, Equals, vappDescription)
+}
+
 func (vcd *TestVCD) Test_FindVApp(check *C) {
 
 	if vcd.skipVappTests {
