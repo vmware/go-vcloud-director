@@ -115,7 +115,7 @@ func (vcd *TestVCD) Test_NsxtSecurityGroupGetAssociatedVms(check *C) {
 	edge, err := nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
 	check.Assert(err, IsNil)
 
-	// Setup prerequisites - Routed Org VDC and add 2 VMs. With vApp and stadalone
+	// Setup prerequisites - Routed Org VDC and add 2 VMs. With vApp and standalone
 	routedNet := createNsxtRoutedNetwork(check, vcd, nsxtVdc, edge.EdgeGateway.ID)
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + routedNet.OpenApiOrgVdcNetwork.ID
 	AddToCleanupListOpenApi(routedNet.OpenApiOrgVdcNetwork.Name, check.TestName(), openApiEndpoint)
