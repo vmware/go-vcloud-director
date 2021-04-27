@@ -40,6 +40,16 @@ func (vdc *Vdc) Query(params map[string]string) (Results, error) {
 	return getResult(vdc.client, req)
 }
 
+// HeaderQueryWithNotEncodedParams uses Query API to search for requested data
+func (client *Client) HeaderQueryWithNotEncodedParams(params map[string]string, notEncodedParams map[string]string, headers http.Header) (Results, error) {
+	queryUrl := client.VCDHREF
+	queryUrl.Path += "/query"
+
+	req := client.newRequest(params, notEncodedParams, http.MethodGet, queryUrl, nil, client.APIVersion, headers)
+
+	return getResult(client, req)
+}
+
 // QueryWithNotEncodedParams uses Query API to search for requested data
 func (client *Client) QueryWithNotEncodedParams(params map[string]string, notEncodedParams map[string]string) (Results, error) {
 	return client.QueryWithNotEncodedParamsWithApiVersion(params, notEncodedParams, client.APIVersion)

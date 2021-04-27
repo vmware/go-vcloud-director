@@ -215,16 +215,18 @@ func (org *Org) GetCatalogByHref(catalogHref string) (*Catalog, error) {
 // GetCatalogByName  finds a Catalog by Name
 // On success, returns a pointer to the Catalog structure and a nil error
 // On failure, returns a nil pointer and an error
+//
+// refresh has no effect here, but is kept to preserve signature
 func (org *Org) GetCatalogByName(catalogName string, refresh bool) (*Catalog, error) {
-	if refresh {
-		err := org.Refresh()
-		if err != nil {
-			return nil, err
-		}
+
+	orgCatalogs, err := org.QueryCatalogList()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving Catalog list for Org '%s': %s", org.Org.Name, err)
 	}
-	for _, catalog := range org.Org.Link {
+
+	for _, catalog := range orgCatalogs {
 		// Get Catalog HREF
-		if catalog.Name == catalogName && catalog.Type == types.MimeCatalog {
+		if catalog.Name == catalogName {
 			return org.GetCatalogByHref(catalog.HREF)
 		}
 	}
@@ -342,7 +344,7 @@ func (org *Org) QueryCatalogList() ([]*types.CatalogRecord, error) {
 		"type":          queryType,
 		"filter":        fmt.Sprintf("orgName==%s", url.QueryEscape(org.Org.Name)),
 		"filterEncoded": "true",
-	})
+	}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -362,11 +364,17 @@ func (org *Org) QueryCatalogList() ([]*types.CatalogRecord, error) {
 func (org *Org) QueryOrgVdcList() ([]*types.QueryResultOrgVdcRecordType, error) {
 	util.Logger.Printf("[DEBUG] QueryOrgVdcList with Org name %s", org.Org.Name)
 	queryType := org.client.GetQueryType(types.QtOrgVdc)
+
+	headers := http.Header{}
+	headers.Add("X-VMWARE-VCLOUD-AUTH-CONTEXT", org.Org.Name)
+	uuid, _ := getBareEntityUuid(org.Org.ID)
+	headers.Add("X-VMWARE-VCLOUD-TENANT-CONTEXT", uuid)
+
 	results, err := org.client.cumulativeQuery(queryType, nil, map[string]string{
 		"type": queryType,
 		//"filter":        fmt.Sprintf("orgName==%s", url.QueryEscape(org.Org.Name)),
 		"format": "records",
-	})
+	}, headers)
 	if err != nil {
 		return nil, err
 	}

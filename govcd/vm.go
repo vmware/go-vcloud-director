@@ -1523,7 +1523,7 @@ func (client *Client) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryRes
 	if filter.String() != "" {
 		params["filter"] = filter.String()
 	}
-	vmResult, err := client.cumulativeQuery(queryType, nil, params)
+	vmResult, err := client.cumulativeQuery(queryType, nil, params, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error getting VM list : %s", err)
 	}
@@ -1552,7 +1552,7 @@ func (vdc *Vdc) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryResultVMR
 		filterText = fmt.Sprintf("%s;vdc==%s", filterText, vdc.Vdc.HREF)
 	}
 	params["filter"] = filterText
-	vmResult, err := vdc.client.cumulativeQuery(queryType, nil, params)
+	vmResult, err := vdc.client.cumulativeQuery(queryType, nil, params, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error getting VM list : %s", err)
 	}
