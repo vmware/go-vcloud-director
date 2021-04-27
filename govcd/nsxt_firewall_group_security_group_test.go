@@ -5,7 +5,6 @@ package govcd
 import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
-	"time"
 )
 
 // Test_NsxtSecurityGroup tests out CRUD of NSX-T Security Group
@@ -121,11 +120,7 @@ func (vcd *TestVCD) Test_NsxtSecurityGroupGetAssociatedVms(check *C) {
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + routedNet.OpenApiOrgVdcNetwork.ID
 	AddToCleanupListOpenApi(routedNet.OpenApiOrgVdcNetwork.Name, check.TestName(), openApiEndpoint)
 
-	// In some cases VCD was not able to attach network to VM  straight after it is created even though its creation task
-	// has already completed.
-	time.Sleep(10 * time.Second)
-
-	vapp, vappVm := createVappVm(check, vcd, nsxtVdc, routedNet)
+	vapp, vappVm := createVappVmAndAttachNetwork(check, vcd, nsxtVdc, routedNet)
 	PrependToCleanupList(vapp.VApp.Name, "vapp", vcd.nsxtVdc.Vdc.Name, check.TestName())
 
 	// VMs are prependend to cleanup list to make sure they are removed before routed network
@@ -275,12 +270,39 @@ func createStandaloneVm(check *C, vcd *TestVCD, vdc *Vdc, net *OpenApiOrgVdcNetw
 	return vm
 }
 
-func createVappVm(check *C, vcd *TestVCD, vdc *Vdc, net *OpenApiOrgVdcNetwork) (*VApp, *VM) {
+func createVappVmAndAttachNetwork(check *C, vcd *TestVCD, vdc *Vdc, net *OpenApiOrgVdcNetwork) (*VApp, *VM) {
 	err := vdc.ComposeRawVApp(check.TestName())
 	check.Assert(err, IsNil)
 
 	vapp, err := vdc.GetVAppByName(check.TestName(), true)
 	check.Assert(err, IsNil)
+
+	orgVdcNetworkWithHREF, err := vdc.GetOrgVdcNetworkById(net.OpenApiOrgVdcNetwork.ID, true)
+	check.Assert(err, IsNil)
+
+	// Attach network to vApp
+	networkConfigurations := vapp.VApp.NetworkConfigSection.NetworkConfig
+	vappConfiguration := types.VAppNetworkConfiguration{
+		NetworkName: net.OpenApiOrgVdcNetwork.Name,
+		Configuration: &types.NetworkConfiguration{
+			ParentNetwork: &types.Reference{
+				HREF: orgVdcNetworkWithHREF.OrgVDCNetwork.HREF,
+			},
+			RetainNetInfoAcrossDeployments: takeBoolPointer(false),
+			FenceMode:                      types.FenceModeBridged,
+		},
+		IsDeployed: false,
+	}
+
+	networkConfigurations = append(networkConfigurations,
+		vappConfiguration)
+
+	task, err := updateNetworkConfigurations(vapp, networkConfigurations)
+	check.Assert(err, IsNil)
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	// EOF Attach network to vApp
 
 	desiredNetConfig := &types.NetworkConnectionSection{}
 	desiredNetConfig.PrimaryNetworkConnectionIndex = 0
@@ -295,9 +317,9 @@ func createVappVm(check *C, vcd *TestVCD, vdc *Vdc, net *OpenApiOrgVdcNetwork) (
 
 	emptyVmDefinition := &types.RecomposeVAppParamsForEmptyVm{
 		CreateItem: &types.CreateItem{
-			Name:                      "Test_AddNewEmptyVMMultiNIC",
+			Name:                      check.TestName(),
 			NetworkConnectionSection:  desiredNetConfig,
-			Description:               "created by Test_AddNewEmptyVMMultiNIC",
+			Description:               "created by " + check.TestName(),
 			GuestCustomizationSection: nil,
 			VmSpecSection: &types.VmSpecSection{
 				Modified:          takeBoolPointer(true),
