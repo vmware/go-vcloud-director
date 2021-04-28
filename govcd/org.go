@@ -282,20 +282,14 @@ func (org *Org) GetVDCByHref(vdcHref string) (*Vdc, error) {
 // GetVDCByName finds a VDC by Name
 // On success, returns a pointer to the VDC structure and a nil error
 // On failure, returns a nil pointer and an error
+//
+// refresh has no effect and is kept to preserve signature
 func (org *Org) GetVDCByName(vdcName string, refresh bool) (*Vdc, error) {
-	if refresh {
-		err := org.Refresh()
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	orgVdcList, err := org.QueryOrgVdcList()
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve VDC list for Org '%s': %s", org.Org.Name, err)
 	}
 
-	//
 	for _, link := range orgVdcList {
 		if link.Name == vdcName {
 			return org.GetVDCByHref(link.HREF)
@@ -308,18 +302,20 @@ func (org *Org) GetVDCByName(vdcName string, refresh bool) (*Vdc, error) {
 // GetVDCById finds a VDC by ID
 // On success, returns a pointer to the VDC structure and a nil error
 // On failure, returns a nil pointer and an error
+//
+// refresh has no effect and is kept to preserve signature
 func (org *Org) GetVDCById(vdcId string, refresh bool) (*Vdc, error) {
-	if refresh {
-		err := org.Refresh()
-		if err != nil {
-			return nil, err
+	orgVdcList, err := org.QueryOrgVdcList()
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve VDC list for Org '%s': %s", org.Org.Name, err)
+	}
+
+	for _, orgVdc := range orgVdcList {
+		if orgVdc.ID == vdcId {
+			return org.GetVDCByHref(orgVdc.HREF)
 		}
 	}
-	for _, link := range org.Org.Link {
-		if equalIds(vdcId, link.ID, link.HREF) {
-			return org.GetVDCByHref(link.HREF)
-		}
-	}
+
 	return nil, ErrorEntityNotFound
 }
 
@@ -362,21 +358,25 @@ func (org *Org) QueryCatalogList() ([]*types.CatalogRecord, error) {
 
 // QueryOrgVdcList returns a list of catalogs for this organization
 func (org *Org) QueryOrgVdcList() ([]*types.QueryResultOrgVdcRecordType, error) {
-	util.Logger.Printf("[DEBUG] QueryOrgVdcList with Org name %s", org.Org.Name)
-	queryType := org.client.GetQueryType(types.QtOrgVdc)
+	return queryOrgVdcList(org.client, org.Org.ID, org.Org.Name)
+}
+
+func queryOrgVdcList(client *Client, orgId, orgName string) ([]*types.QueryResultOrgVdcRecordType, error) {
+	util.Logger.Printf("[DEBUG] QueryOrgVdcList with Org name %s", orgName)
+	queryType := client.GetQueryType(types.QtOrgVdc)
 
 	headers := http.Header{}
-	headers.Add("X-VMWARE-VCLOUD-AUTH-CONTEXT", org.Org.Name)
+	headers.Add("X-VMWARE-VCLOUD-AUTH-CONTEXT", orgName)
 
 	// X-VMWARE-VCLOUD-TENANT-CONTEXT must have bare UUID specified as it errors otherwise
-	uuid, err := getBareEntityUuid(org.Org.ID)
+	uuid, err := getBareEntityUuid(orgId)
 	if err != nil {
 		return nil, fmt.Errorf("unable to extract bare UUID from URN '%s' for Org '%s': %s",
-			org.Org.ID, org.Org.Name, err)
+			orgId, orgName, err)
 	}
 	headers.Add("X-VMWARE-VCLOUD-TENANT-CONTEXT", uuid)
 
-	results, err := org.client.cumulativeQuery(queryType, nil, map[string]string{
+	results, err := client.cumulativeQuery(queryType, nil, map[string]string{
 		"type":   queryType,
 		"format": "records",
 	}, headers)

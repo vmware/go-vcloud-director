@@ -516,7 +516,7 @@ func (vcd *TestVCD) Test_QueryDisk(check *C) {
 
 	check.Assert(err, IsNil)
 	check.Assert(diskRecord.Disk.Name, Equals, diskCreateParamsDisk.Name)
-	check.Assert(diskRecord.Disk.SizeB, Equals, int64(diskCreateParamsDisk.SizeMb))
+	check.Assert(diskRecord.Disk.SizeMb, Equals, int64(diskCreateParamsDisk.SizeMb))
 	check.Assert(diskRecord.Disk.Description, Equals, diskCreateParamsDisk.Description)
 }
 
@@ -569,7 +569,7 @@ func (vcd *TestVCD) Test_QueryDisks(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(*diskRecords), Equals, 2)
 	check.Assert((*diskRecords)[0].Name, Equals, diskCreateParamsDisk.Name)
-	check.Assert((*diskRecords)[0].SizeB, Equals, int64(diskCreateParamsDisk.SizeMb))
+	check.Assert((*diskRecords)[0].SizeMb, Equals, int64(diskCreateParamsDisk.SizeMb))
 }
 
 // Tests Disk list retrieval by name, by ID

@@ -2157,6 +2157,7 @@ type QueryResultRecordsType struct {
 
 // QueryResultOrgVdcRecordType represents an Org VDC record
 type QueryResultOrgVdcRecordType struct {
+	ID                             string `xml:"id,attr,omitempty"`
 	HREF                           string `xml:"href,attr,omitempty"`
 	Name                           string `xml:"name,attr,omitempty"`
 	ComputeProviderScope           string `xml:"computeProviderScope,attr,omitempty"`
@@ -2682,13 +2683,15 @@ type VmQuestionAnswer struct {
 // Reference: vCloud API 27.0 - DiskType
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/types/QueryResultDiskRecordType.html
 type DiskRecordType struct {
-	Xmlns              string  `xml:"xmlns,attr,omitempty"`
-	HREF               string  `xml:"href,attr,omitempty"`
-	Id                 string  `xml:"id,attr,omitempty"`
-	Type               string  `xml:"type,attr,omitempty"`
-	Name               string  `xml:"name,attr,omitempty"`
-	Vdc                string  `xml:"vdc,attr,omitempty"`
-	SizeB              int64   `xml:"sizeB,attr,omitempty"`
+	Xmlns string `xml:"xmlns,attr,omitempty"`
+	HREF  string `xml:"href,attr,omitempty"`
+	Id    string `xml:"id,attr,omitempty"`
+	Type  string `xml:"type,attr,omitempty"`
+	Name  string `xml:"name,attr,omitempty"`
+	Vdc   string `xml:"vdc,attr,omitempty"`
+	// SizeB is not available in API V33.0
+	//SizeB              int64   `xml:"sizeB,attr,omitempty"`
+	SizeMb             int64   `xml:"sizeMb,attr,omitempty"`
 	DataStore          string  `xml:"dataStore,attr,omitempty"`
 	DataStoreName      string  `xml:"datastoreName,attr,omitempty"`
 	OwnerName          string  `xml:"ownerName,attr,omitempty"`

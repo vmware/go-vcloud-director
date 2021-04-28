@@ -660,21 +660,26 @@ func (adminOrg *AdminOrg) GetVDCByHref(vdcHref string) (*Vdc, error) {
 	return vdc, nil
 }
 
+// QueryOrgVdcList returns a list of catalogs for this organization
+func (adminOrg *AdminOrg) QueryOrgVdcList() ([]*types.QueryResultOrgVdcRecordType, error) {
+	return queryOrgVdcList(adminOrg.client, adminOrg.AdminOrg.ID, adminOrg.AdminOrg.Name)
+}
+
 // GetVDCByName finds a VDC by Name
 // On success, returns a pointer to the Vdc structure and a nil error
 // On failure, returns a nil pointer and an error
 func (adminOrg *AdminOrg) GetVDCByName(vdcName string, refresh bool) (*Vdc, error) {
-	if refresh {
-		err := adminOrg.Refresh()
-		if err != nil {
-			return nil, err
+	orgVdcList, err := adminOrg.QueryOrgVdcList()
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve VDC list for Org '%s': %s", adminOrg.AdminOrg.Name, err)
+	}
+
+	for _, link := range orgVdcList {
+		if link.Name == vdcName {
+			return adminOrg.GetVDCByHref(link.HREF)
 		}
 	}
-	for _, vdc := range adminOrg.AdminOrg.Vdcs.Vdcs {
-		if vdc.Name == vdcName {
-			return adminOrg.GetVDCByHref(vdc.HREF)
-		}
-	}
+
 	return nil, ErrorEntityNotFound
 }
 
@@ -682,17 +687,17 @@ func (adminOrg *AdminOrg) GetVDCByName(vdcName string, refresh bool) (*Vdc, erro
 // On success, returns a pointer to the Vdc structure and a nil error
 // On failure, returns a nil pointer and an error
 func (adminOrg *AdminOrg) GetVDCById(vdcId string, refresh bool) (*Vdc, error) {
-	if refresh {
-		err := adminOrg.Refresh()
-		if err != nil {
-			return nil, err
+	orgVdcList, err := adminOrg.QueryOrgVdcList()
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve VDC list for Org '%s': %s", adminOrg.AdminOrg.Name, err)
+	}
+
+	for _, orgVdc := range orgVdcList {
+		if orgVdc.ID == vdcId {
+			return adminOrg.GetVDCByHref(orgVdc.HREF)
 		}
 	}
-	for _, vdc := range adminOrg.AdminOrg.Vdcs.Vdcs {
-		if equalIds(vdcId, vdc.ID, vdc.HREF) {
-			return adminOrg.GetVDCByHref(vdc.HREF)
-		}
-	}
+
 	return nil, ErrorEntityNotFound
 }
 
