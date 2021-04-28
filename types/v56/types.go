@@ -2592,7 +2592,7 @@ type Disk struct {
 	// Size of the disk in bytes. No longer supported in API V33.0+.
 	// Size            int64            `xml:"size,attr"`
 	// SizeMb is the size of disk in MB. It has replaced Size field as of API V33.0
-	SizeMb          int64            `xml:"sizeMb,attr"`
+	SizeMb          int64            `xml:"sizeMb,attr,omitempty"`
 	Iops            *int             `xml:"iops,attr,omitempty"`
 	BusType         string           `xml:"busType,attr,omitempty"`
 	BusSubType      string           `xml:"busSubType,attr,omitempty"`

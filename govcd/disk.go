@@ -43,10 +43,6 @@ func NewDiskRecord(cli *Client) *DiskRecord {
 	}
 }
 
-// While theoretically we can use smaller amounts, there is an issue when updating
-// disks with size < 1MB
-const MinimumDiskSize int64 = 1048576 // = 1Mb
-
 // Create an independent disk in VDC
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 102 - 103,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
@@ -59,10 +55,6 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (Task, erro
 
 	if diskCreateParams.Disk.Name == "" {
 		return Task{}, fmt.Errorf("disk name is required")
-	}
-
-	if diskCreateParams.Disk.SizeMb < MinimumDiskSize {
-		return Task{}, fmt.Errorf("disk size should be greater than or equal to 1Mb")
 	}
 
 	var err error
@@ -127,10 +119,6 @@ func (disk *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 
 	if newDiskInfo.Name == "" {
 		return Task{}, fmt.Errorf("disk name is required")
-	}
-
-	if newDiskInfo.SizeMb < MinimumDiskSize {
-		return Task{}, fmt.Errorf("disk size should be greater than or equal to 1Mb")
 	}
 
 	// Verify the independent disk is not connected to any VM
