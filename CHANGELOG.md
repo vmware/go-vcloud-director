@@ -2,6 +2,8 @@
 
 * Added method `vdc.QueryEdgeGateway` [#364](https://github.com/vmware/go-vcloud-director/pull/364)
 * Deprecated `vdc.GetEdgeGatewayRecordsType` [#364](https://github.com/vmware/go-vcloud-director/pull/364)
+* Added parameter `description` to method `vdc.ComposeRawVapp`
+* Added methods `vapp.Rename`, `vapp.UpdateDescription`, `vapp.UpdateNameDescription`
 
 ## 2.11.0 (March 10, 2021)
 

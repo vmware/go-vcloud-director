@@ -1,10 +1,11 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
 
 import (
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"net/http"
@@ -1374,4 +1375,72 @@ func (vapp *VApp) getOrgInfo() (orgInfoType, error) {
 		return orgInfoType{}, err
 	}
 	return getOrgInfo(vapp.client, vdc.Vdc.Link, vapp.VApp.ID, vapp.VApp.Name, "vApp")
+}
+
+// UpdateNameDescription can change the name and the description of a vApp
+// If name or description are empty, they are not changed.
+func (vapp *VApp) UpdateNameDescription(newName, newDescription string) error {
+	if vapp == nil || vapp.VApp.HREF == "" {
+		return fmt.Errorf("vapp or href cannot be empty")
+	}
+
+	// Skip update if we are using the original values
+	if (newName == vapp.VApp.Name || newName == "") && (newDescription == vapp.VApp.Description || newDescription == "") {
+		return nil
+	}
+
+	opType := "application/vnd.vmware.vcloud.recomposeVAppParams+xml"
+
+	href := ""
+	for _, link := range vapp.VApp.Link {
+		if link.Type == opType && link.Rel == "recompose" {
+			href = link.HREF
+			break
+		}
+	}
+
+	if href == "" {
+		return fmt.Errorf("no appropriate link for update found for vApp %s", vapp.VApp.Name)
+	}
+
+	if newName == "" {
+		newName = vapp.VApp.Name
+	}
+	if newDescription == "" {
+		newDescription = vapp.VApp.Description
+	}
+
+	recomposeParams := &types.ReComposeVAppParams{
+		XMLName:     xml.Name{},
+		Ovf:         types.XMLNamespaceOVF,
+		Xsi:         types.XMLNamespaceXSI,
+		Xmlns:       types.XMLNamespaceVCloud,
+		Name:        newName,
+		Description: newDescription,
+		Deploy:      vapp.VApp.Deployed,
+		VAppParent:  vapp.VApp.VAppParent,
+	}
+
+	task, err := vapp.client.ExecuteTaskRequest(href, http.MethodPost,
+		opType, "error updating vapp: %s", recomposeParams)
+
+	if err != nil {
+		return fmt.Errorf("unable to update vApp: %s", err)
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("task for updating vApp failed: %s", err)
+	}
+	return vapp.Refresh()
+}
+
+// UpdateDescription changes the description of a vApp
+func (vapp *VApp) UpdateDescription(newDescription string) error {
+	return vapp.UpdateNameDescription("", newDescription)
+}
+
+// Rename changes the name of a vApp
+func (vapp *VApp) Rename(newName string) error {
+	return vapp.UpdateNameDescription(newName, "")
 }

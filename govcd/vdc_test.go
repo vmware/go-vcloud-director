@@ -1,13 +1,14 @@
 // +build vdc functional ALL
 
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
 
 import (
 	"fmt"
+	"time"
 
 	. "gopkg.in/check.v1"
 
@@ -225,12 +226,26 @@ func (vcd *TestVCD) Test_ComposeRawVApp(check *C) {
 	// Compose VApp
 	err := vcd.vdc.ComposeRawVApp(vappName, vappDescription)
 	check.Assert(err, IsNil)
+
+	// Need a slight delay for the vApp to get the links that are needed for renaming
+	time.Sleep(time.Second)
 	// Get VApp
 	vapp, err := vcd.vdc.GetVAppByName(vappName, true)
 	check.Assert(err, IsNil)
 	AddToCleanupList(vappName, "vapp", "", "Test_ComposeRawVApp")
 	check.Assert(vapp.VApp.Name, Equals, vappName)
 	check.Assert(vapp.VApp.Description, Equals, vappDescription)
+	newVappName := vappName + "_new"
+	newVappDescription := vappDescription + " description"
+
+	err = vapp.UpdateNameDescription(newVappName, newVappDescription)
+	check.Assert(err, IsNil)
+	AddToCleanupList(newVappName, "vapp", "", "Test_ComposeRawVApp")
+	check.Assert(vapp.VApp.Name, Equals, newVappName)
+	check.Assert(vapp.VApp.Description, Equals, newVappDescription)
+
+	err = deleteVapp(vcd, newVappName)
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_FindVApp(check *C) {
