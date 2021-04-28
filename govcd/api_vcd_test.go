@@ -1811,12 +1811,3 @@ func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint string) {
 		check.Skip(skipText)
 	}
 }
-
-// bytesToMegabytes helps to convert disk sizes from Bytes to Megabytes
-func bytesToMegabytes(sizeInBytes int64) int64 {
-	if sizeInBytes == 0 {
-		return sizeInBytes
-	}
-
-	return sizeInBytes / 1024 / 1024
-}

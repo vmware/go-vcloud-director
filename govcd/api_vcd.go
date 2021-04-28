@@ -89,7 +89,7 @@ func (vcdCli *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.Res
 	}
 
 	defer resp.Body.Close()
-
+	// Store the authorization header
 	vcdCli.Client.VCDToken = resp.Header.Get(BearerTokenHeader)
 	vcdCli.Client.VCDAuthHeader = BearerTokenHeader
 	vcdCli.Client.IsSysAdmin = strings.EqualFold(org, "system")

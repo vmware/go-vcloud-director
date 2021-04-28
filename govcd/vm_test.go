@@ -1464,7 +1464,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
 		client: vcd.org.client,
 		VdcComputePolicy: &types.VdcComputePolicy{
 			Name:        check.TestName() + "_memory",
-			Description: "Empty polivm_test.go:394cy created by test 2",
+			Description: "Empty policy created by test 2",
 			Memory:      takeIntAddress(2048),
 		},
 	}

@@ -367,12 +367,17 @@ func (org *Org) QueryOrgVdcList() ([]*types.QueryResultOrgVdcRecordType, error) 
 
 	headers := http.Header{}
 	headers.Add("X-VMWARE-VCLOUD-AUTH-CONTEXT", org.Org.Name)
-	uuid, _ := getBareEntityUuid(org.Org.ID)
+
+	// X-VMWARE-VCLOUD-TENANT-CONTEXT must have bare UUID specified as it errors otherwise
+	uuid, err := getBareEntityUuid(org.Org.ID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to extract bare UUID from URN '%s' for Org '%s': %s",
+			org.Org.ID, org.Org.Name, err)
+	}
 	headers.Add("X-VMWARE-VCLOUD-TENANT-CONTEXT", uuid)
 
 	results, err := org.client.cumulativeQuery(queryType, nil, map[string]string{
-		"type": queryType,
-		//"filter":        fmt.Sprintf("orgName==%s", url.QueryEscape(org.Org.Name)),
+		"type":   queryType,
 		"format": "records",
 	}, headers)
 	if err != nil {

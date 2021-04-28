@@ -719,7 +719,7 @@ func (vapp *VApp) ChangeMemorySize(size int) (Task, error) {
 		VCloudHREF:      vapp.VApp.Children.VM[0].HREF + "/virtualHardwareSection/memory",
 		VCloudType:      types.MimeRasdItem,
 		AllocationUnits: "byte * 2^20",
-		Description:     "Memory SizeMb",
+		Description:     "Memory Size",
 		ElementName:     strconv.Itoa(size) + " MB of memory",
 		InstanceID:      5,
 		Reservation:     0,
