@@ -5,6 +5,11 @@
 * Dropped support for VCD 9.7 which is EOL now [#xxx](https://github.com/vmware/go-vcloud-director/pull/xxx)
 * Bumped Default API Version to V33.0  [#xxx](https://github.com/vmware/go-vcloud-director/pull/xxx)
 * Field `types.Disk.Size` is replaced with `types.Disk.SizeMb` as size in Kilobytes is not supported in V33.0  [#xxx](https://github.com/vmware/go-vcloud-director/pull/xxx)
+* Methods `GetVDCById` and `GetVDCByName` for `Org` and `AdminOrg` now use queries behind the scenes because Org 
+  structure does not list child VDCs anymore  [#xxx](https://github.com/vmware/go-vcloud-director/pull/xxx)
+* Methods `GetCatalogById` for   for `Org` and `AdminOrg` now use queries behind the scenes because Org
+  structure does not list child Catalogs anymore  [#xxx](https://github.com/vmware/go-vcloud-director/pull/xxx)
+
 
 ## 2.11.0 (March 10, 2021)
 

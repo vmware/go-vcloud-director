@@ -237,18 +237,25 @@ func (org *Org) GetCatalogByName(catalogName string, refresh bool) (*Catalog, er
 // On success, returns a pointer to the Catalog structure and a nil error
 // On failure, returns a nil pointer and an error
 func (org *Org) GetCatalogById(catalogId string, refresh bool) (*Catalog, error) {
-	if refresh {
-		err := org.Refresh()
-		if err != nil {
-			return nil, err
-		}
+	bareCatalogId, _ := getBareEntityUuid(catalogId)
+
+	catalogs, err := org.QueryCatalogList()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving Catalog List for Org '%s': %s", org.Org.Name, err)
 	}
-	for _, catalog := range org.Org.Link {
-		// Get Catalog HREF
-		if equalIds(catalogId, catalog.ID, catalog.HREF) {
+
+	for _, catalog := range catalogs {
+		//Org VDC ID does not exist in the record therefore it must be extracted from HREF
+		catalogId, err := GetUuidFromHref(catalog.HREF, true)
+		if err != nil {
+			return nil, fmt.Errorf("error extracting Catalog ID from HREF '%s': %s", catalog.ID, err)
+		}
+
+		if catalogId == bareCatalogId {
 			return org.GetCatalogByHref(catalog.HREF)
 		}
 	}
+
 	return nil, ErrorEntityNotFound
 }
 
@@ -305,13 +312,22 @@ func (org *Org) GetVDCByName(vdcName string, refresh bool) (*Vdc, error) {
 //
 // refresh has no effect and is kept to preserve signature
 func (org *Org) GetVDCById(vdcId string, refresh bool) (*Vdc, error) {
+	// Supplied ID might not even be valid (especially when GetVDCByNameOrId is used) therefore the error is ignored
+	bareVdcId, _ := getBareEntityUuid(vdcId)
+
 	orgVdcList, err := org.QueryOrgVdcList()
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve VDC list for Org '%s': %s", org.Org.Name, err)
 	}
 
 	for _, orgVdc := range orgVdcList {
-		if orgVdc.ID == vdcId {
+		// Org VDC ID does not exist in the record therefore it must be extracted from HREF
+		orgVdcId, err := GetUuidFromHref(orgVdc.HREF, true)
+		if err != nil {
+			return nil, fmt.Errorf("error extracting VDC ID from HREF '%s': %s", orgVdc.HREF, err)
+		}
+
+		if orgVdcId == bareVdcId {
 			return org.GetVDCByHref(orgVdc.HREF)
 		}
 	}

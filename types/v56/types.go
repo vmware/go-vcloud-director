@@ -2157,7 +2157,6 @@ type QueryResultRecordsType struct {
 
 // QueryResultOrgVdcRecordType represents an Org VDC record
 type QueryResultOrgVdcRecordType struct {
-	ID                             string `xml:"id,attr,omitempty"`
 	HREF                           string `xml:"href,attr,omitempty"`
 	Name                           string `xml:"name,attr,omitempty"`
 	ComputeProviderScope           string `xml:"computeProviderScope,attr,omitempty"`
