@@ -1652,7 +1652,7 @@ func (vcd *TestVCD) Test_UpdateVappNameDescription(check *C) {
 	// restore original
 	vcd.testUpdateVapp(check, vapp, vappName, vappDescription, vms)
 
-	// Remove VM
+	// Remove vApp
 	err = deleteVapp(vcd, vappName)
 	check.Assert(err, IsNil)
 }
