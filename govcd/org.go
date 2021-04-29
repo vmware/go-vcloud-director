@@ -237,6 +237,7 @@ func (org *Org) GetCatalogByName(catalogName string, refresh bool) (*Catalog, er
 // On success, returns a pointer to the Catalog structure and a nil error
 // On failure, returns a nil pointer and an error
 func (org *Org) GetCatalogById(catalogId string, refresh bool) (*Catalog, error) {
+	// ignoring error as the Uuid might be invalid when GetCatalogByNameOrId is used
 	bareCatalogId, _ := getBareEntityUuid(catalogId)
 
 	catalogs, err := org.QueryCatalogList()
@@ -245,7 +246,7 @@ func (org *Org) GetCatalogById(catalogId string, refresh bool) (*Catalog, error)
 	}
 
 	for _, catalog := range catalogs {
-		//Org VDC ID does not exist in the record therefore it must be extracted from HREF
+		// Catalog record does not have ID field therefore it must be extracted from HREF
 		catalogId, err := GetUuidFromHref(catalog.HREF, true)
 		if err != nil {
 			return nil, fmt.Errorf("error extracting Catalog ID from HREF '%s': %s", catalog.ID, err)

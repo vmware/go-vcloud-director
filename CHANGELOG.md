@@ -2,14 +2,16 @@
 
 * Added method `vdc.QueryEdgeGateway` [#364](https://github.com/vmware/go-vcloud-director/pull/364)
 * Deprecated `vdc.GetEdgeGatewayRecordsType` [#364](https://github.com/vmware/go-vcloud-director/pull/364)
-* Dropped support for VCD 9.7 which is EOL now [#xxx](https://github.com/vmware/go-vcloud-director/pull/xxx)
-* Bumped Default API Version to V33.0  [#xxx](https://github.com/vmware/go-vcloud-director/pull/xxx)
-* Field `types.Disk.Size` is replaced with `types.Disk.SizeMb` as size in Kilobytes is not supported in V33.0  [#xxx](https://github.com/vmware/go-vcloud-director/pull/xxx)
-* Methods `GetVDCById` and `GetVDCByName` for `Org` and `AdminOrg` now use queries behind the scenes because Org 
-  structure does not list child VDCs anymore  [#xxx](https://github.com/vmware/go-vcloud-director/pull/xxx)
-* Methods `GetCatalogById` for   for `Org` and `AdminOrg` now use queries behind the scenes because Org
-  structure does not list child Catalogs anymore  [#xxx](https://github.com/vmware/go-vcloud-director/pull/xxx)
-
+* Dropped support for VCD 9.7 which is EOL now [#371](https://github.com/vmware/go-vcloud-director/pull/371)
+* Bumped Default API Version to V33.0  [#371](https://github.com/vmware/go-vcloud-director/pull/371)
+* Field `types.Disk.Size` is replaced with `types.Disk.SizeMb` as size in Kilobytes is not supported in V33.0
+  [#371](https://github.com/vmware/go-vcloud-director/pull/371)
+* Methods `GetVDCById` and `GetVDCByName` for `Org` now use queries behind the scenes because Org 
+  structure does not list child VDCs anymore  [#371](https://github.com/vmware/go-vcloud-director/pull/371)
+* Methods `GetCatalogById` and `GetCatalogByName` for `Org`  now use queries behind the scenes because Org
+  structure does not list child Catalogs anymore  [#371](https://github.com/vmware/go-vcloud-director/pull/371)
+* Drop legacy authentication mechanism (vcdAuthorize) and use only new Cloud API provided (vcdCloudApiAuthorize) as
+  API V33.0 is sufficient for it [#371](https://github.com/vmware/go-vcloud-director/pull/371)
 
 ## 2.11.0 (March 10, 2021)
 
