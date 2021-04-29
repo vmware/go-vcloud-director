@@ -1602,17 +1602,17 @@ func (vcd *TestVCD) Test_UpdateVappNameDescription(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	vappName := check.TestName()
-	vappDescription := vappName
+	vappDescription := vappName + " description"
 	newVappName := vappName + "_new"
 
 	newVappDescription := vappName + " desc"
-	// Compose VApp (the description, by default, is the vapp name)
-	vapp, err := makeEmptyVapp(vcd.vdc, vappName)
+	// Compose VApp
+	vapp, err := makeEmptyVapp(vcd.vdc, vappName, vappDescription)
 	check.Assert(err, IsNil)
 	AddToCleanupList(vappName, "vapp", "", "Test_RenameVapp")
 
 	check.Assert(vapp.VApp.Name, Equals, vappName)
-	check.Assert(vapp.VApp.Description, Equals, vappName)
+	check.Assert(vapp.VApp.Description, Equals, vappDescription)
 
 	// Need a slight delay for the vApp to get the links that are needed for renaming
 	time.Sleep(time.Second)

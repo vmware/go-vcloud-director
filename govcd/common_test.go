@@ -670,9 +670,9 @@ func deleteVapp(vcd *TestVCD, name string) error {
 }
 
 // makeEmptyVapp creates a given vApp without any VM
-func makeEmptyVapp(vdc *Vdc, name string) (*VApp, error) {
+func makeEmptyVapp(vdc *Vdc, name string, description string) (*VApp, error) {
 
-	err := vdc.ComposeRawVApp(name, "description of "+name)
+	err := vdc.ComposeRawVApp(name, description)
 	if err != nil {
 		return nil, err
 	}
