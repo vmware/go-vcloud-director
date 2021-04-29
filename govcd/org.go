@@ -365,7 +365,7 @@ func queryOrgVdcList(client *Client, orgId, orgName string) ([]*types.QueryResul
 	queryType := client.GetQueryType(types.QtOrgVdc)
 
 	headers := http.Header{}
-	headers.Add("X-VMWARE-VCLOUD-AUTH-CONTEXT", orgName)
+	headers.Add(types.HeaderAuthContext, orgName)
 
 	// X-VMWARE-VCLOUD-TENANT-CONTEXT must have bare UUID specified as it errors otherwise
 	uuid, err := getBareEntityUuid(orgId)
@@ -373,7 +373,7 @@ func queryOrgVdcList(client *Client, orgId, orgName string) ([]*types.QueryResul
 		return nil, fmt.Errorf("unable to extract bare UUID from URN '%s' for Org '%s': %s",
 			orgId, orgName, err)
 	}
-	headers.Add("X-VMWARE-VCLOUD-TENANT-CONTEXT", uuid)
+	headers.Add(types.HeaderTenantContext, uuid)
 
 	results, err := client.cumulativeQuery(queryType, nil, map[string]string{
 		"type":   queryType,
