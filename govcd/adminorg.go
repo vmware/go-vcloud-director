@@ -478,13 +478,15 @@ func (adminOrg *AdminOrg) GetCatalogByHref(catalogHref string) (*Catalog, error)
 // On success, returns a pointer to the Catalog structure and a nil error
 // On failure, returns a nil pointer and an error
 func (adminOrg *AdminOrg) GetCatalogByName(catalogName string, refresh bool) (*Catalog, error) {
-	orgCatalogs, err := adminOrg.QueryCatalogList()
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving Catalog list for Org '%s': %s", adminOrg.AdminOrg.Name, err)
+
+	if refresh {
+		err := adminOrg.Refresh()
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	for _, catalog := range orgCatalogs {
-		// Get Catalog HREF
+	for _, catalog := range adminOrg.AdminOrg.Catalogs.Catalog {
 		if catalog.Name == catalogName {
 			return adminOrg.GetCatalogByHref(catalog.HREF)
 		}
@@ -535,25 +537,17 @@ func equalIds(wantedId, foundId, foundHref string) bool {
 // On success, returns a pointer to the Catalog structure and a nil error
 // On failure, returns a nil pointer and an error
 func (adminOrg *AdminOrg) GetCatalogById(catalogId string, refresh bool) (*Catalog, error) {
-	bareCatalogId, _ := getBareEntityUuid(catalogId)
-
-	catalogs, err := adminOrg.QueryCatalogList()
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving Catalog List for Org '%s': %s", adminOrg.AdminOrg.Name, err)
-	}
-
-	for _, catalog := range catalogs {
-		//Org VDC ID does not exist in the record therefore it must be extracted from HREF
-		catalogId, err := GetUuidFromHref(catalog.HREF, true)
+	if refresh {
+		err := adminOrg.Refresh()
 		if err != nil {
-			return nil, fmt.Errorf("error extracting Catalog ID from HREF '%s': %s", catalog.ID, err)
+			return nil, err
 		}
-
-		if catalogId == bareCatalogId {
+	}
+	for _, catalog := range adminOrg.AdminOrg.Catalogs.Catalog {
+		if equalIds(catalogId, catalog.ID, catalog.HREF) {
 			return adminOrg.GetCatalogByHref(catalog.HREF)
 		}
 	}
-
 	return nil, ErrorEntityNotFound
 }
 
@@ -666,26 +660,21 @@ func (adminOrg *AdminOrg) GetVDCByHref(vdcHref string) (*Vdc, error) {
 	return vdc, nil
 }
 
-// QueryOrgVdcList returns a list of catalogs for this organization
-func (adminOrg *AdminOrg) QueryOrgVdcList() ([]*types.QueryResultOrgVdcRecordType, error) {
-	return queryOrgVdcList(adminOrg.client, adminOrg.AdminOrg.ID, adminOrg.AdminOrg.Name)
-}
-
 // GetVDCByName finds a VDC by Name
 // On success, returns a pointer to the Vdc structure and a nil error
 // On failure, returns a nil pointer and an error
 func (adminOrg *AdminOrg) GetVDCByName(vdcName string, refresh bool) (*Vdc, error) {
-	orgVdcList, err := adminOrg.QueryOrgVdcList()
-	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve VDC list for Org '%s': %s", adminOrg.AdminOrg.Name, err)
-	}
-
-	for _, orgVdc := range orgVdcList {
-		if orgVdc.Name == vdcName {
-			return adminOrg.GetVDCByHref(orgVdc.HREF)
+	if refresh {
+		err := adminOrg.Refresh()
+		if err != nil {
+			return nil, err
 		}
 	}
-
+	for _, vdc := range adminOrg.AdminOrg.Vdcs.Vdcs {
+		if vdc.Name == vdcName {
+			return adminOrg.GetVDCByHref(vdc.HREF)
+		}
+	}
 	return nil, ErrorEntityNotFound
 }
 
@@ -693,26 +682,17 @@ func (adminOrg *AdminOrg) GetVDCByName(vdcName string, refresh bool) (*Vdc, erro
 // On success, returns a pointer to the Vdc structure and a nil error
 // On failure, returns a nil pointer and an error
 func (adminOrg *AdminOrg) GetVDCById(vdcId string, refresh bool) (*Vdc, error) {
-	// Supplied ID might not even be valid (especially when GetVDCByNameOrId is used) therefore the error is ignored
-	bareVdcId, _ := getBareEntityUuid(vdcId)
-
-	orgVdcList, err := adminOrg.QueryOrgVdcList()
-	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve VDC list for Org '%s': %s", adminOrg.AdminOrg.Name, err)
-	}
-
-	for _, orgVdc := range orgVdcList {
-		// Org VDC ID does not exist in the record therefore it must be extracted from HREF
-		orgVdcId, err := GetUuidFromHref(orgVdc.HREF, true)
+	if refresh {
+		err := adminOrg.Refresh()
 		if err != nil {
-			return nil, fmt.Errorf("error extracting VDC ID from HREF '%s': %s", orgVdc.HREF, err)
-		}
-
-		if orgVdcId == bareVdcId {
-			return adminOrg.GetVDCByHref(orgVdc.HREF)
+			return nil, err
 		}
 	}
-
+	for _, vdc := range adminOrg.AdminOrg.Vdcs.Vdcs {
+		if equalIds(vdcId, vdc.ID, vdc.HREF) {
+			return adminOrg.GetVDCByHref(vdc.HREF)
+		}
+	}
 	return nil, ErrorEntityNotFound
 }
 
