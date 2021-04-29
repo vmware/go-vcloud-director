@@ -1378,14 +1378,14 @@ func (vapp *VApp) getOrgInfo() (orgInfoType, error) {
 }
 
 // UpdateNameDescription can change the name and the description of a vApp
-// If name or description are empty, they are not changed.
+// If name is empty, it is left unchanged.
 func (vapp *VApp) UpdateNameDescription(newName, newDescription string) error {
 	if vapp == nil || vapp.VApp.HREF == "" {
 		return fmt.Errorf("vapp or href cannot be empty")
 	}
 
 	// Skip update if we are using the original values
-	if (newName == vapp.VApp.Name || newName == "") && (newDescription == vapp.VApp.Description || newDescription == "") {
+	if (newName == vapp.VApp.Name || newName == "") && (newDescription == vapp.VApp.Description) {
 		return nil
 	}
 
@@ -1406,11 +1406,8 @@ func (vapp *VApp) UpdateNameDescription(newName, newDescription string) error {
 	if newName == "" {
 		newName = vapp.VApp.Name
 	}
-	if newDescription == "" {
-		newDescription = vapp.VApp.Description
-	}
 
-	recomposeParams := &types.ReComposeVAppParams{
+	recomposeParams := &types.SmallRecomposeVappParams{
 		XMLName:     xml.Name{},
 		Ovf:         types.XMLNamespaceOVF,
 		Xsi:         types.XMLNamespaceXSI,
@@ -1418,7 +1415,6 @@ func (vapp *VApp) UpdateNameDescription(newName, newDescription string) error {
 		Name:        newName,
 		Description: newDescription,
 		Deploy:      vapp.VApp.Deployed,
-		VAppParent:  vapp.VApp.VAppParent,
 	}
 
 	task, err := vapp.client.ExecuteTaskRequest(href, http.MethodPost,
@@ -1442,5 +1438,5 @@ func (vapp *VApp) UpdateDescription(newDescription string) error {
 
 // Rename changes the name of a vApp
 func (vapp *VApp) Rename(newName string) error {
-	return vapp.UpdateNameDescription(newName, "")
+	return vapp.UpdateNameDescription(newName, vapp.VApp.Description)
 }

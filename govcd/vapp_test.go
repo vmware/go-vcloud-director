@@ -1559,35 +1559,28 @@ func (vcd *TestVCD) Test_AddNewVMWithComputeCapacity(check *C) {
 	check.Assert(err, IsNil)
 }
 
-func (vcd *TestVCD) testUpdateVapp(check *C, vapp *VApp, name, description string, vms []string) {
+func (vcd *TestVCD) testUpdateVapp(op string, check *C, vapp *VApp, name, description string, vms []string) {
 
 	var err error
-
-	// Make sure that at least one value was set
-	bothEmpty := description == "" && name == ""
-	check.Assert(bothEmpty, Equals, false)
-
-	if name == "" && description != "" {
-		printVerbose("testing vapp.UpdateDescription(%s)\n", description)
+	switch op {
+	case "update_desc", "remove_desc":
+		printVerbose("[%s] testing vapp.UpdateDescription(\"%s\")\n", op, description)
 		err = vapp.UpdateDescription(description)
 		check.Assert(err, IsNil)
-	}
-	if description == "" && name != "" {
-		printVerbose("testing vapp.Rename(%s)\n", name)
-		err = vapp.Rename(name)
-		check.Assert(err, IsNil)
-	}
-	if description != "" && name != "" {
-		printVerbose("testing vapp.UpdateNameDescription(%s, %s)\n", name, description)
+	case "update_both":
+		printVerbose("[%s] testing vapp.UpdateNameDescription(\"%s\", \"%s\")\n", op, name, description)
 		err = vapp.UpdateNameDescription(name, description)
 		check.Assert(err, IsNil)
+	case "rename":
+		printVerbose("[%s] testing vapp.Rename(\"%s\")\n", op, name)
+		err = vapp.Rename(name)
+		check.Assert(err, IsNil)
+	default:
+		check.Assert("unhandled operation", Equals, "true")
 	}
 
 	if name == "" {
 		name = vapp.VApp.Name
-	}
-	if description == "" {
-		description = vapp.VApp.Description
 	}
 
 	// Get a fresh copy of the vApp
@@ -1625,15 +1618,19 @@ func (vcd *TestVCD) Test_UpdateVappNameDescription(check *C) {
 	time.Sleep(time.Second)
 
 	// change description
-	vcd.testUpdateVapp(check, vapp, "", newVappDescription, nil)
+	vcd.testUpdateVapp("update_desc", check, vapp, "", newVappDescription, nil)
+
+	// remove description
+	vcd.testUpdateVapp("remove_desc", check, vapp, vappName, "", nil)
+
 	// restore original
-	vcd.testUpdateVapp(check, vapp, vappName, vappDescription, nil)
+	vcd.testUpdateVapp("update_both", check, vapp, vappName, vappDescription, nil)
 
 	// change name
-	vcd.testUpdateVapp(check, vapp, newVappName, "", nil)
+	vcd.testUpdateVapp("rename", check, vapp, newVappName, vappDescription, nil)
 	AddToCleanupList(newVappName, "vapp", "", "Test_RenameVapp")
 	// restore original
-	vcd.testUpdateVapp(check, vapp, vappName, vappDescription, nil)
+	vcd.testUpdateVapp("update_both", check, vapp, vappName, vappDescription, nil)
 
 	// Add two VMs
 	_, err = makeEmptyVm(vapp, "vm1")
@@ -1643,14 +1640,15 @@ func (vcd *TestVCD) Test_UpdateVappNameDescription(check *C) {
 
 	vms := []string{"vm1", "vm2"}
 	// change description after adding VMs
-	vcd.testUpdateVapp(check, vapp, "", newVappDescription, vms)
+	vcd.testUpdateVapp("update_desc", check, vapp, "", newVappDescription, vms)
+	vcd.testUpdateVapp("remove_desc", check, vapp, vappName, "", nil)
 	// restore original
-	vcd.testUpdateVapp(check, vapp, vappName, vappDescription, vms)
+	vcd.testUpdateVapp("update_both", check, vapp, vappName, vappDescription, vms)
 
 	// change name after adding VMs
-	vcd.testUpdateVapp(check, vapp, newVappName, "", vms)
+	vcd.testUpdateVapp("rename", check, vapp, newVappName, vappDescription, vms)
 	// restore original
-	vcd.testUpdateVapp(check, vapp, vappName, vappDescription, vms)
+	vcd.testUpdateVapp("update_both", check, vapp, vappName, vappDescription, vms)
 
 	// Remove vApp
 	err = deleteVapp(vcd, vappName)
