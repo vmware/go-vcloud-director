@@ -1381,7 +1381,7 @@ func (vapp *VApp) getOrgInfo() (orgInfoType, error) {
 // If name is empty, it is left unchanged.
 func (vapp *VApp) UpdateNameDescription(newName, newDescription string) error {
 	if vapp == nil || vapp.VApp.HREF == "" {
-		return fmt.Errorf("vapp or href cannot be empty")
+		return fmt.Errorf("vApp or href cannot be empty")
 	}
 
 	// Skip update if we are using the original values
@@ -1389,7 +1389,7 @@ func (vapp *VApp) UpdateNameDescription(newName, newDescription string) error {
 		return nil
 	}
 
-	opType := "application/vnd.vmware.vcloud.recomposeVAppParams+xml"
+	opType := types.MimeRecomposeVappParams
 
 	href := ""
 	for _, link := range vapp.VApp.Link {
