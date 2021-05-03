@@ -1,11 +1,10 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
 
 import (
-	"encoding/xml"
 	"errors"
 	"fmt"
 	"net"
@@ -20,7 +19,7 @@ import (
 )
 
 type VM struct {
-	VM     *types.VM
+	VM     *types.Vm
 	client *Client
 }
 
@@ -31,7 +30,7 @@ type VMRecord struct {
 
 func NewVM(cli *Client) *VM {
 	return &VM{
-		VM:     new(types.VM),
+		VM:     new(types.Vm),
 		client: cli,
 	}
 }
@@ -71,7 +70,7 @@ func (vm *VM) Refresh() error {
 
 	// Empty struct before a new unmarshal, otherwise we end up with duplicate
 	// elements in slices.
-	vm.VM = &types.VM{}
+	vm.VM = &types.Vm{}
 
 	_, err := vm.client.ExecuteRequestWithApiVersion(refreshUrl, http.MethodGet,
 		"", "error refreshing VM: %s", nil, vm.VM,
@@ -249,7 +248,7 @@ func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (
 		InstanceID:      4,
 		Reservation:     0,
 		ResourceType:    types.ResourceTypeProcessor,
-		VirtualQuantity: virtualCpuCount,
+		VirtualQuantity: int64(virtualCpuCount),
 		Weight:          0,
 		CoresPerSocket:  coresPerSocket,
 		Link: &types.Link{
@@ -381,7 +380,7 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 		InstanceID:      5,
 		Reservation:     0,
 		ResourceType:    types.ResourceTypeMemory,
-		VirtualQuantity: size,
+		VirtualQuantity: int64(size),
 		Weight:          0,
 		Link: &types.Link{
 			HREF: vm.VM.HREF + "/virtualHardwareSection/memory",
@@ -495,7 +494,7 @@ func (vm *VM) Undeploy() (Task, error) {
 }
 
 // Attach or detach an independent disk
-// Use the disk/action/attach or disk/action/detach links in a Vm to attach or detach an independent disk.
+// Use the disk/action/attach or disk/action/detach links in a VM to attach or detach an independent disk.
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 164 - 165,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
@@ -686,7 +685,7 @@ func validateMediaParams(mediaParams *types.MediaInsertOrEjectParams) error {
 }
 
 // Insert or eject a media for VM
-// Use the vm/action/insert or vm/action/eject links in a Vm to insert or eject media.
+// Use the vm/action/insert or vm/action/eject links in a VM to insert or eject media.
 // Reference:
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/POST-InsertCdRom.html
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/POST-EjectCdRom.html
@@ -988,9 +987,9 @@ func allNicsHaveIps(nicConfigs []nicDhcpConfig) bool {
 //
 // For this function to work - at least one the following must be true:
 // * VM has guest tools (vCD UI shows IP address). (Takes longer time)
-// * VM DHCP interface is connected to routed Org network and is using Edge Gateway DHCP. (Takes
+// * VM DHCP interface is connected to routed Org network and is using NSX-V Edge Gateway DHCP. (Takes
 // less time, but is more constrained)
-func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int, useDhcpLeaseCheck bool) ([]string, bool, error) {
+func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int, useNsxvDhcpLeaseCheck bool) ([]string, bool, error) {
 	util.Logger.Printf("[TRACE] [DHCP IP Lookup] VM '%s' attempting to lookup IP addresses for DHCP NICs %v\n",
 		vm.VM.Name, nicIndexes)
 	// validate NIC indexes
@@ -1011,7 +1010,7 @@ func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int, us
 		nicStates[index].vmNicIndex = nicIndex
 	}
 	var err error
-	if useDhcpLeaseCheck { // Edge gateways have to be looked up when DHCP lease checks are enabled
+	if useNsxvDhcpLeaseCheck { // Edge gateways have to be looked up when DHCP lease checks are enabled
 		// Lookup edge gateways for routed networks and store them
 		nicStates, err = vm.getEdgeGatewaysForRoutedNics(nicStates)
 		if err != nil {
@@ -1051,7 +1050,7 @@ func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int, us
 				vm.VM.Name, nicIndexes)
 
 			// Step 2 If enabled - check if DHCP leases in edge gateways can hint IP addresses
-			if useDhcpLeaseCheck {
+			if useNsxvDhcpLeaseCheck {
 				nicStates, err = vm.getIpsByDhcpLeaseMacs(nicStates)
 				if err != nil {
 					return []string{}, false, fmt.Errorf("could not check MAC leases for VM '%s': %s",
@@ -1349,7 +1348,6 @@ func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection
 
 	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
 		types.MimeVM, "error updating VM disks: %s", &types.VMDiskChange{
-			XMLName:       xml.Name{},
 			Xmlns:         types.XMLNamespaceVCloud,
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
@@ -1359,7 +1357,7 @@ func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection
 
 // AddEmptyVm adds an empty VM (without template) to vApp and returns the new created VM or an error.
 func (vapp *VApp) AddEmptyVm(reComposeVAppParams *types.RecomposeVAppParamsForEmptyVm) (*VM, error) {
-	apiVersion, err := vapp.client.maxSupportedVersion()
+	apiVersion, err := vapp.client.MaxSupportedVersion()
 	if err != nil {
 		return nil, err
 	}
@@ -1374,7 +1372,7 @@ func (vapp *VApp) AddEmptyVm(reComposeVAppParams *types.RecomposeVAppParamsForEm
 
 // AddEmptyVmAsync adds an empty VM (without template) to the vApp and returns a Task and an error.
 func (vapp *VApp) AddEmptyVmAsync(reComposeVAppParams *types.RecomposeVAppParamsForEmptyVm) (Task, error) {
-	apiVersion, err := vapp.client.maxSupportedVersion()
+	apiVersion, err := vapp.client.MaxSupportedVersion()
 	if err != nil {
 		return Task{}, err
 	}
@@ -1451,7 +1449,7 @@ func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection, 
 	vmSpecSectionModified := true
 	vmSettingsToUpdate.Modified = &vmSpecSectionModified
 
-	// `reconfigureVm` updates Vm name, Description, and any or all of the following sections.
+	// `reconfigureVm` updates VM name, Description, and any or all of the following sections.
 	//    VirtualHardwareSection
 	//    OperatingSystemSection
 	//    NetworkConnectionSection
@@ -1459,8 +1457,7 @@ func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection, 
 	// Sections not included in the request body will not be updated.
 
 	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
-		types.MimeVM, "error updating VM spec section: %s", &types.VM{
-			XMLName:       xml.Name{},
+		types.MimeVM, "error updating VM spec section: %s", &types.Vm{
 			Xmlns:         types.XMLNamespaceVCloud,
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
@@ -1496,7 +1493,7 @@ func (vm *VM) UpdateComputePolicyAsync(computePolicy *types.VdcComputePolicy) (T
 		return Task{}, fmt.Errorf("cannot update VM compute policy, VM HREF is unset")
 	}
 
-	// `reconfigureVm` updates Vm name, Description, and any or all of the following sections.
+	// `reconfigureVm` updates VM name, Description, and any or all of the following sections.
 	//    VirtualHardwareSection
 	//    OperatingSystemSection
 	//    NetworkConnectionSection
@@ -1512,8 +1509,7 @@ func (vm *VM) UpdateComputePolicyAsync(computePolicy *types.VdcComputePolicy) (T
 	}
 
 	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
-		types.MimeVM, "error updating VM spec section: %s", &types.VM{
-			XMLName:       xml.Name{},
+		types.MimeVM, "error updating VM spec section: %s", &types.Vm{
 			Xmlns:         types.XMLNamespaceVCloud,
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
@@ -1539,6 +1535,35 @@ func (client *Client) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryRes
 	}
 	vmList = vmResult.Results.VMRecord
 	if client.IsSysAdmin {
+		vmList = vmResult.Results.AdminVMRecord
+	}
+	return vmList, nil
+}
+
+// QueryVmList returns a list of all VMs in a given VDC
+func (vdc *Vdc) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryResultVMRecordType, error) {
+	var vmList []*types.QueryResultVMRecordType
+	queryType := vdc.client.GetQueryType(types.QtVm)
+	params := map[string]string{
+		"type":          queryType,
+		"filterEncoded": "true",
+	}
+	filterText := ""
+	if filter.String() != "" {
+		filterText = filter.String()
+	}
+	if filterText == "" {
+		filterText = fmt.Sprintf("vdc==%s", vdc.Vdc.HREF)
+	} else {
+		filterText = fmt.Sprintf("%s;vdc==%s", filterText, vdc.Vdc.HREF)
+	}
+	params["filter"] = filterText
+	vmResult, err := vdc.client.cumulativeQuery(queryType, nil, params)
+	if err != nil {
+		return nil, fmt.Errorf("error getting VM list : %s", err)
+	}
+	vmList = vmResult.Results.VMRecord
+	if vdc.client.IsSysAdmin {
 		vmList = vmResult.Results.AdminVMRecord
 	}
 	return vmList, nil
@@ -1777,7 +1802,7 @@ func getVMByHrefV97(client *Client, vmHref string) (*VM, error) {
 // there are cases where we know the VM HREF but not which VApp it belongs to.
 func (client *Client) GetVMByHref(vmHref string) (*VM, error) {
 
-	apiVersion, err := client.maxSupportedVersion()
+	apiVersion, err := client.MaxSupportedVersion()
 	if err != nil {
 		return nil, err
 	}
@@ -1820,19 +1845,44 @@ func (vm *VM) UpdateStorageProfileAsync(storageProfileHref string) (Task, error)
 		return Task{}, fmt.Errorf("cannot update VM storage profile, storage profile HREF is unset")
 	}
 
-	// `reconfigureVm` updates Vm name, Description, and any or all of the following sections.
+	// `reconfigureVm` updates VM name, Description, and any or all of the following sections.
 	//    VirtualHardwareSection
 	//    OperatingSystemSection
 	//    NetworkConnectionSection
 	//    GuestCustomizationSection
 	// Sections not included in the request body will not be updated.
 	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
-		types.MimeVM, "error updating VM spec section: %s", &types.VM{
-			XMLName:        xml.Name{},
+		types.MimeVM, "error updating VM spec section: %s", &types.Vm{
 			Xmlns:          types.XMLNamespaceVCloud,
 			Ovf:            types.XMLNamespaceOVF,
 			Name:           vm.VM.Name,
 			Description:    vm.VM.Description,
 			StorageProfile: &types.Reference{HREF: storageProfileHref},
 		})
+}
+
+// DeleteAsync starts a standalone VM deletion, returning a task
+func (vm *VM) DeleteAsync() (Task, error) {
+	if vm.VM.HREF == "" {
+		return Task{}, fmt.Errorf("no HREF found for this VM")
+	}
+
+	task, err := vm.Undeploy()
+	if err == nil {
+		err = task.WaitTaskCompletion()
+		if err != nil {
+			return Task{}, err
+		}
+	}
+	return vm.client.ExecuteTaskRequest(vm.VM.HREF, http.MethodDelete,
+		"", "error deleting VM: %s", nil)
+}
+
+// Delete deletes a standalone VM
+func (vm *VM) Delete() error {
+	task, err := vm.DeleteAsync()
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
 }

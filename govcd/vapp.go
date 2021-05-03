@@ -1,10 +1,11 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
 
 import (
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"net/http"
@@ -253,7 +254,6 @@ func addNewVMW(vapp *VApp, name string, vappTemplate VAppTemplate,
 // https://github.com/vmware/go-vcloud-director/issues/252
 // ======================================================================
 func (vapp *VApp) RemoveVM(vm VM) error {
-
 	err := vapp.Refresh()
 	if err != nil {
 		return fmt.Errorf("error refreshing vApp before removing VM: %s", err)
@@ -537,7 +537,7 @@ func (vapp *VApp) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *in
 		InstanceID:      4,
 		Reservation:     0,
 		ResourceType:    types.ResourceTypeProcessor,
-		VirtualQuantity: virtualCpuCount,
+		VirtualQuantity: int64(virtualCpuCount),
 		Weight:          0,
 		CoresPerSocket:  coresPerSocket,
 		Link: &types.Link{
@@ -574,7 +574,7 @@ func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
 		return Task{}, fmt.Errorf("error retrieving storage profile %s for vApp %s", name, vapp.VApp.Name)
 	}
 
-	newProfile := &types.VM{
+	newProfile := &types.Vm{
 		Name:           vapp.VApp.Children.VM[0].Name,
 		StorageProfile: &storageProfileRef,
 		Xmlns:          types.XMLNamespaceVCloud,
@@ -596,7 +596,7 @@ func (vapp *VApp) ChangeVMName(name string) (Task, error) {
 		return Task{}, fmt.Errorf("vApp doesn't contain any children, interrupting customization")
 	}
 
-	newName := &types.VM{
+	newName := &types.Vm{
 		Name:  name,
 		Xmlns: types.XMLNamespaceVCloud,
 	}
@@ -729,7 +729,7 @@ func (vapp *VApp) ChangeMemorySize(size int) (Task, error) {
 		InstanceID:      5,
 		Reservation:     0,
 		ResourceType:    types.ResourceTypeMemory,
-		VirtualQuantity: size,
+		VirtualQuantity: int64(size),
 		Weight:          0,
 		Link: &types.Link{
 			HREF: vapp.VApp.Children.VM[0].HREF + "/virtualHardwareSection/memory",
@@ -1375,4 +1375,68 @@ func (vapp *VApp) getOrgInfo() (*TenantContext, error) {
 	}
 	return vdc.getTenantContext()
 	//return getOrgInfo(vapp.client, vdc.Vdc.Link, vapp.VApp.ID, vapp.VApp.Name, "vApp")
+}
+
+// UpdateNameDescription can change the name and the description of a vApp
+// If name is empty, it is left unchanged.
+func (vapp *VApp) UpdateNameDescription(newName, newDescription string) error {
+	if vapp == nil || vapp.VApp.HREF == "" {
+		return fmt.Errorf("vApp or href cannot be empty")
+	}
+
+	// Skip update if we are using the original values
+	if (newName == vapp.VApp.Name || newName == "") && (newDescription == vapp.VApp.Description) {
+		return nil
+	}
+
+	opType := types.MimeRecomposeVappParams
+
+	href := ""
+	for _, link := range vapp.VApp.Link {
+		if link.Type == opType && link.Rel == "recompose" {
+			href = link.HREF
+			break
+		}
+	}
+
+	if href == "" {
+		return fmt.Errorf("no appropriate link for update found for vApp %s", vapp.VApp.Name)
+	}
+
+	if newName == "" {
+		newName = vapp.VApp.Name
+	}
+
+	recomposeParams := &types.SmallRecomposeVappParams{
+		XMLName:     xml.Name{},
+		Ovf:         types.XMLNamespaceOVF,
+		Xsi:         types.XMLNamespaceXSI,
+		Xmlns:       types.XMLNamespaceVCloud,
+		Name:        newName,
+		Description: newDescription,
+		Deploy:      vapp.VApp.Deployed,
+	}
+
+	task, err := vapp.client.ExecuteTaskRequest(href, http.MethodPost,
+		opType, "error updating vapp: %s", recomposeParams)
+
+	if err != nil {
+		return fmt.Errorf("unable to update vApp: %s", err)
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("task for updating vApp failed: %s", err)
+	}
+	return vapp.Refresh()
+}
+
+// UpdateDescription changes the description of a vApp
+func (vapp *VApp) UpdateDescription(newDescription string) error {
+	return vapp.UpdateNameDescription("", newDescription)
+}
+
+// Rename changes the name of a vApp
+func (vapp *VApp) Rename(newName string) error {
+	return vapp.UpdateNameDescription(newName, vapp.VApp.Description)
 }

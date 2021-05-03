@@ -1,4 +1,5 @@
 // +build user functional ALL
+// +build !skipLong
 
 /*
  * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -196,7 +197,7 @@ func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) (string,
 	vappTemplate, err := catalogItem.GetVAppTemplate()
 	check.Assert(err, IsNil)
 	// Compose Raw vApp
-	err = vdc.ComposeRawVApp(vAppName)
+	err = vdc.ComposeRawVApp(vAppName, "")
 	check.Assert(err, IsNil)
 	vapp, err := vdc.GetVAppByName(vAppName, true)
 	check.Assert(err, IsNil)
@@ -292,8 +293,7 @@ func createDirectNetwork(vcd *TestVCD, check *C) string {
 	}
 	check.Assert(task.Task.HREF, Not(Equals), "")
 
-	AddToCleanupList(networkName,
-		"network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, check.TestName())
+	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, check.TestName())
 
 	err = task.WaitInspectTaskCompletion(LogTask, 10)
 	if err != nil {

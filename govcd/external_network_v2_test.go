@@ -21,6 +21,11 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxtVrf(check *C) {
 	// The documented backing type of NSX-T VRF router is "NSXT_VRF_TIER0" (types.ExternalNetworkBackingTypeNsxtVrfTier0Router)
 	// but although it is documented - it fails and requires the same "NSXT_TIER0" (types.ExternalNetworkBackingTypeNsxtTier0Router)
 	// backing type to be specified
+	// As of 10.1.2 release it is not officially supported (support only introduced in 10.2.0) therefore skipping this test for
+	// 10.1.X. 10.1.1 allowed to create it, but 10.1.2 introduced a validator and throws error.
+	if vcd.client.Client.APIVCDMaxVersionIs("< 35") {
+		check.Skip("NSX-T VRF-Lite backed external networks are officially supported only in 10.2.0+")
+	}
 	vcd.testCreateExternalNetworkV2Nsxt(check, vcd.config.VCD.Nsxt.Tier0routerVrf, types.ExternalNetworkBackingTypeNsxtTier0Router)
 }
 
@@ -41,11 +46,15 @@ func (vcd *TestVCD) testCreateExternalNetworkV2Nsxt(check *C, nsxtTier0Router, b
 	check.Assert(err, IsNil)
 
 	// Create network and test CRUD capabilities
-	netNsxt := testExternalNetworkV2(backingType, tier0RouterVrf.NsxtTier0Router.ID, nsxtManagerId)
+	netNsxt := testExternalNetworkV2(check.TestName(), backingType, tier0RouterVrf.NsxtTier0Router.ID, nsxtManagerId)
 	createdNet, err := CreateExternalNetworkV2(vcd.client, netNsxt)
 	check.Assert(err, IsNil)
 
-	createdNet.ExternalNetwork.Name = "changed_name"
+	// Use generic "OpenApiEntity" resource cleanup type
+	openApiEndpoint := endpoint + createdNet.ExternalNetwork.ID
+	AddToCleanupListOpenApi(createdNet.ExternalNetwork.Name, check.TestName(), openApiEndpoint)
+
+	createdNet.ExternalNetwork.Name = check.TestName() + "changed_name"
 	updatedNet, err := createdNet.Update()
 	check.Assert(err, IsNil)
 	check.Assert(updatedNet.ExternalNetwork.Name, Equals, createdNet.ExternalNetwork.Name)
@@ -104,12 +113,16 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2Nsxv(check *C) {
 	vcUrn, err := BuildUrnWithUuid("urn:vcloud:vimserver:", vcuuid)
 	check.Assert(err, IsNil)
 
-	neT := testExternalNetworkV2(vcd.config.VCD.ExternalNetworkPortGroupType, pgs[0].MoRef, vcUrn)
+	neT := testExternalNetworkV2(check.TestName(), vcd.config.VCD.ExternalNetworkPortGroupType, pgs[0].MoRef, vcUrn)
 
 	r, err := CreateExternalNetworkV2(vcd.client, neT)
 	check.Assert(err, IsNil)
 
-	r.ExternalNetwork.Name = "changed_name"
+	// Use generic "OpenApiEntity" resource cleanup type
+	openApiEndpoint := endpoint + r.ExternalNetwork.ID
+	AddToCleanupListOpenApi(r.ExternalNetwork.Name, check.TestName(), openApiEndpoint)
+
+	r.ExternalNetwork.Name = check.TestName() + "changed_name"
 	updatedNet, err := r.Update()
 	check.Assert(err, IsNil)
 	check.Assert(updatedNet.ExternalNetwork.Name, Equals, r.ExternalNetwork.Name)
@@ -118,10 +131,10 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2Nsxv(check *C) {
 	check.Assert(err, IsNil)
 }
 
-func testExternalNetworkV2(backingType, backingId, NetworkProviderId string) *types.ExternalNetworkV2 {
+func testExternalNetworkV2(name, backingType, backingId, NetworkProviderId string) *types.ExternalNetworkV2 {
 	neT := &types.ExternalNetworkV2{
 		ID:          "",
-		Name:        "testNet",
+		Name:        name,
 		Description: "",
 		Subnets: types.ExternalNetworkV2Subnets{[]types.ExternalNetworkV2Subnet{
 			{

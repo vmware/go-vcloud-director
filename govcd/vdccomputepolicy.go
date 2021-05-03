@@ -15,6 +15,7 @@ import (
 // In UI called VM sizing policy. In API VDC compute policy
 type VdcComputePolicy struct {
 	VdcComputePolicy *types.VdcComputePolicy
+	Href             string
 	client           *Client
 }
 
@@ -48,6 +49,7 @@ func getVdcComputePolicyById(client *Client, id string) (*VdcComputePolicy, erro
 
 	vdcComputePolicy := &VdcComputePolicy{
 		VdcComputePolicy: &types.VdcComputePolicy{},
+		Href:             urlRef.String(),
 		client:           client,
 	}
 

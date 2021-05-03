@@ -1,7 +1,7 @@
 // +build api openapi functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user search nsxv nsxt auth affinity ALL
 
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -167,9 +167,13 @@ type TestConfig struct {
 			SizeForUpdate int64 `yaml:"sizeForUpdate,omitempty"`
 		}
 		Nsxt struct {
-			Manager        string `yaml:"manager"`
-			Tier0router    string `yaml:"tier0router"`
-			Tier0routerVrf string `yaml:"tier0routerVrf"`
+			Manager           string `yaml:"manager"`
+			Tier0router       string `yaml:"tier0router"`
+			Tier0routerVrf    string `yaml:"tier0routerVrf"`
+			Vdc               string `yaml:"vdc"`
+			ExternalNetwork   string `yaml:"externalNetwork"`
+			EdgeGateway       string `yaml:"edgeGateway"`
+			NsxtImportSegment string `yaml:"nsxtImportSegment"`
 		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
 	Logging struct {
@@ -182,10 +186,11 @@ type TestConfig struct {
 		VerboseCleanup   bool   `yaml:"verboseCleanup,omitempty"`
 	} `yaml:"logging"`
 	OVA struct {
-		OvaPath        string `yaml:"ovaPath,omitempty"`
-		OvaChunkedPath string `yaml:"ovaChunkedPath,omitempty"`
-		OvaMultiVmPath string `yaml:"ovaMultiVmPath,omitempty"`
-		OvfPath        string `yaml:"ovfPath,omitempty"`
+		OvaPath            string `yaml:"ovaPath,omitempty"`
+		OvaChunkedPath     string `yaml:"ovaChunkedPath,omitempty"`
+		OvaMultiVmPath     string `yaml:"ovaMultiVmPath,omitempty"`
+		OvaWithoutSizePath string `yaml:"ovaWithoutSizePath,omitempty"`
+		OvfPath            string `yaml:"ovfPath,omitempty"`
 	} `yaml:"ova"`
 	Media struct {
 		MediaPath       string `yaml:"mediaPath,omitempty"`
@@ -202,6 +207,7 @@ type TestVCD struct {
 	client         *VCDClient
 	org            *Org
 	vdc            *Vdc
+	nsxtVdc        *Vdc
 	vapp           *VApp
 	config         TestConfig
 	skipVappTests  bool
@@ -211,10 +217,11 @@ type TestVCD struct {
 // Cleanup entity structure used by the tear-down procedure
 // at the end of the tests to remove leftover entities
 type CleanupEntity struct {
-	Name       string
-	EntityType string
-	Parent     string
-	CreatedBy  string
+	Name            string
+	EntityType      string
+	Parent          string
+	CreatedBy       string
+	OpenApiEndpoint string
 }
 
 // CleanupInfo is the data used to persist an entity list in a file
@@ -331,7 +338,7 @@ func writeCleanupList(cleanupList []CleanupEntity) error {
 	return file.Close()
 }
 
-// Adds an entity to the cleanup list.
+// AddToCleanupList adds an entity to the cleanup list.
 // To be called by all tests when a new entity has been created, before
 // running any other operation.
 // Items in the list will be deleted at the end of the tests if they still exist.
@@ -349,7 +356,7 @@ func AddToCleanupList(name, entityType, parent, createdBy string) {
 	}
 }
 
-// Prepend an entity to the cleanup list.
+// PrependToCleanupList prepends an entity to the cleanup list.
 // To be called by all tests when a new entity has been created, before
 // running any other operation.
 // Items in the list will be deleted at the end of the tests if they still exist.
@@ -361,6 +368,39 @@ func PrependToCleanupList(name, entityType, parent, createdBy string) {
 		}
 	}
 	cleanupEntityList = append([]CleanupEntity{{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy}}, cleanupEntityList...)
+	err := writeCleanupList(cleanupEntityList)
+	if err != nil {
+		fmt.Printf("################ error writing cleanup list %s\n", err)
+	}
+}
+
+// AddToCleanupListOpenApi adds an OpenAPI entity OpenApi objects `entityType=OpenApiEntity` and `openApiEndpoint`should
+// be set in format "types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + ID"
+func AddToCleanupListOpenApi(name, createdBy, openApiEndpoint string) {
+	for _, item := range cleanupEntityList {
+		// avoid adding the same item twice
+		if item.OpenApiEndpoint == openApiEndpoint {
+			return
+		}
+	}
+	cleanupEntityList = append(cleanupEntityList, CleanupEntity{Name: name, EntityType: "OpenApiEntity", CreatedBy: createdBy, OpenApiEndpoint: openApiEndpoint})
+	err := writeCleanupList(cleanupEntityList)
+	if err != nil {
+		fmt.Printf("################ error writing cleanup list %s\n", err)
+	}
+}
+
+// PrependToCleanupListOpenApi prepends an OpenAPI entity OpenApi objects `entityType=OpenApiEntity` and
+// `openApiEndpoint`should be set in format "types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + ID"
+//lint:ignore U1000 Not yet used
+func PrependToCleanupListOpenApi(name, createdBy, openApiEndpoint string) {
+	for _, item := range cleanupEntityList {
+		// avoid adding the same item twice
+		if item.OpenApiEndpoint == openApiEndpoint {
+			return
+		}
+	}
+	cleanupEntityList = append([]CleanupEntity{{Name: name, EntityType: "OpenApiEntity", CreatedBy: createdBy, OpenApiEndpoint: openApiEndpoint}}, cleanupEntityList...)
 	err := writeCleanupList(cleanupEntityList)
 	if err != nil {
 		fmt.Printf("################ error writing cleanup list %s\n", err)
@@ -529,6 +569,14 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		panic(err)
 	}
 
+	// configure NSX-T VDC for convenience if it is specified in configuration
+	if config.VCD.Nsxt.Vdc != "" {
+		vcd.nsxtVdc, err = vcd.org.GetVDCByName(config.VCD.Nsxt.Vdc, false)
+		if err != nil {
+			panic(fmt.Errorf("error geting NSX-T VDC '%s': %s", config.VCD.Nsxt.Vdc, err))
+		}
+	}
+
 	// If neither the vApp or VM tags are set, we also skip the
 	// creation of the default vApp
 	if !isTagSet("vapp") && !isTagSet("vm") {
@@ -667,6 +715,53 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 	// For this reason, the [ERROR] messages won't be followed by a program termination
 	vcd.infoCleanup(introMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 	switch entity.EntityType {
+
+	// openApiEntity can be used to delete any OpenAPI entity due to the API being uniform and allowing the same
+	// low level OpenApiDeleteItem()
+	case "OpenApiEntity":
+
+		// entity.OpenApiEndpoint contains "endpoint/{ID}"
+		// (in format types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + ID) but
+		// to lookup used API version this ID must not be present therefore below we remove suffix ID.
+		// This is done by splitting whole path by "/" and rebuilding path again without last element in slice (which is
+		// expected to be the ID)
+		endpointSlice := strings.Split(entity.OpenApiEndpoint, "/")
+		endpoint := strings.Join(endpointSlice[:len(endpointSlice)-1], "/") + "/"
+		apiVersion, _ := vcd.client.Client.checkOpenApiEndpointCompatibility(endpoint)
+
+		// Build UP complete endpoint address
+		urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(entity.OpenApiEndpoint)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		// Validate if the resource still exists
+		err = vcd.client.Client.OpenApiGetItem(apiVersion, urlRef, nil, nil)
+		if ContainsNotFound(err) {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		// Attempt to use supplied path in entity.Parent for element deletion
+		err = vcd.client.Client.OpenApiDeleteItem(apiVersion, urlRef, nil)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+
 	case "vapp":
 		vapp, err := vcd.vdc.GetVAppByName(entity.Name, true)
 		if err != nil {
@@ -938,6 +1033,24 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 		return
+	case "standaloneVm":
+		vm, err := vcd.vdc.QueryVmById(entity.Name) // The VM ID must be passed as Name
+		if IsNotFound(err) {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] retrieving standalone VM '%s'. %s\n",
+				entity.Name, err)
+			return
+		}
+		err = vm.Delete()
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] deleting VM '%s' : %s\n",
+				entity.Name, err)
+			return
+		}
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 	case "vm":
 		vapp, err := vcd.vdc.GetVAppByName(entity.Parent, true)
 		if err != nil {
@@ -1538,13 +1651,13 @@ func Test_splitParent(t *testing.T) {
 	}
 }
 
-func (vcd *TestVCD) findFirstVm(vapp VApp) (types.VM, string) {
+func (vcd *TestVCD) findFirstVm(vapp VApp) (types.Vm, string) {
 	for _, vm := range vapp.VApp.Children.VM {
 		if vm.Name != "" {
 			return *vm, vm.Name
 		}
 	}
-	return types.VM{}, ""
+	return types.Vm{}, ""
 }
 
 func (vcd *TestVCD) findFirstVapp() VApp {
@@ -1592,7 +1705,7 @@ func (vcd *TestVCD) Test_NewRequestWitNotEncodedParamsWithApiVersion(check *C) {
 	queryUlr := vcd.client.Client.VCDHREF
 	queryUlr.Path += "/query"
 
-	apiVersion, err := vcd.client.Client.maxSupportedVersion()
+	apiVersion, err := vcd.client.Client.MaxSupportedVersion()
 	check.Assert(err, IsNil)
 
 	req := vcd.client.Client.NewRequestWitNotEncodedParamsWithApiVersion(nil, map[string]string{"type": "media",
@@ -1656,6 +1769,14 @@ func skipNoNsxtConfiguration(vcd *TestVCD, check *C) {
 		check.Skip(generalMessage + "No network pool specified")
 	}
 
+	if vcd.config.VCD.Nsxt.Vdc == "" {
+		check.Skip(generalMessage + "No NSX-T VDC specified")
+	}
+
+	if vcd.config.VCD.Nsxt.NsxtImportSegment == "" {
+		check.Skip(generalMessage + "No NSX-T Unused segment (for imported Org VDC network) specified")
+	}
+
 	if vcd.config.VCD.NsxtProviderVdc.StorageProfile == "" {
 		check.Skip(generalMessage + "No storage profile specified")
 	}
@@ -1672,6 +1793,9 @@ func skipNoNsxtConfiguration(vcd *TestVCD, check *C) {
 		check.Skip(generalMessage + "No VRF NSX-T Tier-0 router specified")
 	}
 
+	if vcd.config.VCD.Nsxt.EdgeGateway == "" {
+		check.Skip(generalMessage + "No NSX-T Edge Gateway specified in configuration")
+	}
 }
 
 // skipOpenApiEndpointTest is a helper to skip tests for particular unsupported OpenAPI endpoints
@@ -1680,7 +1804,7 @@ func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint string) {
 
 	constraint := ">= " + minimumRequiredApiVersion
 	if !vcd.client.Client.APIVCDMaxVersionIs(constraint) {
-		maxSupportedVersion, err := vcd.client.Client.maxSupportedVersion()
+		maxSupportedVersion, err := vcd.client.Client.MaxSupportedVersion()
 		if err != nil {
 			panic(fmt.Sprintf("Could not get maximum supported version: %s", err))
 		}

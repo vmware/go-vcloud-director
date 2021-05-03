@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -390,41 +390,42 @@ func (vdc *Vdc) GetEdgeGatewayByHref(href string) (*EdgeGateway, error) {
 	return edge, nil
 }
 
+// QueryEdgeGatewayList returns a list of all the edge gateways in a VDC
+func (vdc *Vdc) QueryEdgeGatewayList() ([]*types.QueryResultEdgeGatewayRecordType, error) {
+	results, err := vdc.client.cumulativeQuery(types.QtEdgeGateway, nil, map[string]string{
+		"type":          types.QtEdgeGateway,
+		"filter":        fmt.Sprintf("orgVdcName==%s", url.QueryEscape(vdc.Vdc.Name)),
+		"filterEncoded": "true",
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results.Results.EdgeGatewayRecord, nil
+}
+
 // GetEdgeGatewayRecordsType retrieves a list of edge gateways from VDC
+// Deprecated: use QueryEdgeGatewayList instead
 func (vdc *Vdc) GetEdgeGatewayRecordsType(refresh bool) (*types.QueryResultEdgeGatewayRecordsType, error) {
-
-	if refresh {
-		err := vdc.Refresh()
-		if err != nil {
-			return nil, fmt.Errorf("error refreshing vdc: %s", err)
-		}
+	items, err := vdc.QueryEdgeGatewayList()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving edge gateway list: %s", err)
 	}
-	for _, av := range vdc.Vdc.Link {
-		if av.Rel == "edgeGateways" && av.Type == types.MimeQueryRecords {
-
-			edgeGatewayRecordsType := new(types.QueryResultEdgeGatewayRecordsType)
-
-			_, err := vdc.client.ExecuteRequest(av.HREF, http.MethodGet,
-				"", "error querying edge gateways: %s", nil, edgeGatewayRecordsType)
-			if err != nil {
-				return nil, err
-			}
-			return edgeGatewayRecordsType, nil
-		}
-	}
-	return nil, fmt.Errorf("no edge gateway query link found in VDC %s", vdc.Vdc.Name)
+	return &types.QueryResultEdgeGatewayRecordsType{
+		Total:             float64(len(items)),
+		EdgeGatewayRecord: items,
+	}, nil
 }
 
 // GetEdgeGatewayByName search the VDC list of edge gateways for a given name.
 // If the name matches, it returns a pointer to an edge gateway object.
 // On failure, it returns a nil object and an error
 func (vdc *Vdc) GetEdgeGatewayByName(name string, refresh bool) (*EdgeGateway, error) {
-	edgeGatewayRecord, err := vdc.GetEdgeGatewayRecordsType(refresh)
+	edgeGatewayList, err := vdc.QueryEdgeGatewayList()
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving edge gateways list: %s", err)
 	}
 
-	for _, edge := range edgeGatewayRecord.EdgeGatewayRecord {
+	for _, edge := range edgeGatewayList {
 		if edge.Name == name {
 			return vdc.GetEdgeGatewayByHref(edge.HREF)
 		}
@@ -437,12 +438,12 @@ func (vdc *Vdc) GetEdgeGatewayByName(name string, refresh bool) (*EdgeGateway, e
 // If the id matches, it returns a pointer to an edge gateway object.
 // On failure, it returns a nil object and an error
 func (vdc *Vdc) GetEdgeGatewayById(id string, refresh bool) (*EdgeGateway, error) {
-	edgeGatewayRecord, err := vdc.GetEdgeGatewayRecordsType(refresh)
+	edgeGatewayList, err := vdc.QueryEdgeGatewayList()
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving edge gateways list: %s", err)
 	}
 
-	for _, edge := range edgeGatewayRecord.EdgeGatewayRecord {
+	for _, edge := range edgeGatewayList {
 		if equalIds(id, "", edge.HREF) {
 			return vdc.GetEdgeGatewayByHref(edge.HREF)
 		}
@@ -464,14 +465,15 @@ func (vdc *Vdc) GetEdgeGatewayByNameOrId(identifier string, refresh bool) (*Edge
 	return entity.(*EdgeGateway), err
 }
 
-func (vdc *Vdc) ComposeRawVApp(name string) error {
+func (vdc *Vdc) ComposeRawVApp(name string, description string) error {
 	vcomp := &types.ComposeVAppParams{
-		Ovf:     types.XMLNamespaceOVF,
-		Xsi:     types.XMLNamespaceXSI,
-		Xmlns:   types.XMLNamespaceVCloud,
-		Deploy:  false,
-		Name:    name,
-		PowerOn: false,
+		Ovf:         types.XMLNamespaceOVF,
+		Xsi:         types.XMLNamespaceXSI,
+		Xmlns:       types.XMLNamespaceVCloud,
+		Deploy:      false,
+		Name:        name,
+		PowerOn:     false,
+		Description: description,
 	}
 
 	vdcHref, err := url.ParseRequestURI(vdc.Vdc.HREF)
@@ -900,4 +902,229 @@ func (vdc *Vdc) GetVappList() []*types.ResourceReference {
 		}
 	}
 	return list
+}
+
+// CreateStandaloneVmAsync starts a standalone VM creation without a template, returning a task
+func (vdc *Vdc) CreateStandaloneVmAsync(params *types.CreateVmParams) (Task, error) {
+	util.Logger.Printf("[TRACE] Vdc.CreateStandaloneVmAsync - Creating VM ")
+
+	if vdc.Vdc.HREF == "" {
+		return Task{}, fmt.Errorf("cannot create VM, Object VDC is empty")
+	}
+
+	href := ""
+	for _, link := range vdc.Vdc.Link {
+		if link.Type == types.MimeCreateVmParams && link.Rel == "add" {
+			href = link.HREF
+			break
+		}
+	}
+	if href == "" {
+		return Task{}, fmt.Errorf("error retrieving VM creation link from VDC %s", vdc.Vdc.Name)
+	}
+	if params == nil {
+		return Task{}, fmt.Errorf("empty parameters passed to standalone VM creation")
+	}
+	params.XmlnsOvf = types.XMLNamespaceOVF
+
+	return vdc.client.ExecuteTaskRequest(href, http.MethodPost, types.MimeCreateVmParams, "error creating standalone VM: %s", params)
+}
+
+// getVmFromTask finds a VM from a running standalone VM creation task
+// It retrieves the VM owner (the hidden vApp), and from that one finds the new VM
+func (vdc *Vdc) getVmFromTask(task Task, name string) (*VM, error) {
+	owner := task.Task.Owner.HREF
+	if owner == "" {
+		return nil, fmt.Errorf("task owner is null for VM %s", name)
+	}
+	vapp, err := vdc.GetVAppByHref(owner)
+	if err != nil {
+		return nil, err
+	}
+	if vapp.VApp.Children == nil {
+		return nil, ErrorEntityNotFound
+	}
+	if len(vapp.VApp.Children.VM) == 0 {
+		return nil, fmt.Errorf("vApp %s contains no VMs", vapp.VApp.Name)
+	}
+	if len(vapp.VApp.Children.VM) > 1 {
+		return nil, fmt.Errorf("vApp %s contains more than one VM", vapp.VApp.Name)
+	}
+	for _, child := range vapp.VApp.Children.VM {
+		util.Logger.Printf("[TRACE] Looking at: %s", child.Name)
+		return vapp.client.GetVMByHref(child.HREF)
+	}
+	return nil, ErrorEntityNotFound
+}
+
+// CreateStandaloneVm creates a standalone VM without a template
+func (vdc *Vdc) CreateStandaloneVm(params *types.CreateVmParams) (*VM, error) {
+
+	task, err := vdc.CreateStandaloneVmAsync(params)
+	if err != nil {
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, err
+	}
+	return vdc.getVmFromTask(task, params.Name)
+}
+
+// QueryVmByName finds a standalone VM by name
+// The search fails either if there are more VMs with the wanted name, or if there are none
+// It can also retrieve a standard VM (created from vApp)
+func (vdc *Vdc) QueryVmByName(name string) (*VM, error) {
+	vmList, err := vdc.QueryVmList(types.VmQueryFilterOnlyDeployed)
+	if err != nil {
+		return nil, err
+	}
+	var foundVM []*types.QueryResultVMRecordType
+	for _, vm := range vmList {
+		if vm.Name == name {
+			foundVM = append(foundVM, vm)
+		}
+	}
+	if len(foundVM) == 0 {
+		return nil, ErrorEntityNotFound
+	}
+	if len(foundVM) > 1 {
+		return nil, fmt.Errorf("more than one VM found with name %s", name)
+	}
+	return vdc.client.GetVMByHref(foundVM[0].HREF)
+}
+
+// QueryVmById retrieves a standalone VM by ID
+// It can also retrieve a standard VM (created from vApp)
+func (vdc *Vdc) QueryVmById(id string) (*VM, error) {
+	vmList, err := vdc.QueryVmList(types.VmQueryFilterOnlyDeployed)
+	if err != nil {
+		return nil, err
+	}
+	var foundVM []*types.QueryResultVMRecordType
+	for _, vm := range vmList {
+		if equalIds(id, vm.ID, vm.HREF) {
+			foundVM = append(foundVM, vm)
+		}
+	}
+	if len(foundVM) == 0 {
+		return nil, ErrorEntityNotFound
+	}
+	if len(foundVM) > 1 {
+		return nil, fmt.Errorf("more than one VM found with ID %s", id)
+	}
+	return vdc.client.GetVMByHref(foundVM[0].HREF)
+}
+
+// CreateStandaloneVMFromTemplateAsync starts a standalone VM creation using a template
+func (vdc *Vdc) CreateStandaloneVMFromTemplateAsync(params *types.InstantiateVmTemplateParams) (Task, error) {
+
+	util.Logger.Printf("[TRACE] Vdc.CreateStandaloneVMFromTemplateAsync - Creating VM")
+
+	if vdc.Vdc.HREF == "" {
+		return Task{}, fmt.Errorf("cannot create VM, provided VDC is empty")
+	}
+
+	href := ""
+	for _, link := range vdc.Vdc.Link {
+		if link.Type == types.MimeInstantiateVmTemplateParams && link.Rel == "add" {
+			href = link.HREF
+			break
+		}
+	}
+	if href == "" {
+		return Task{}, fmt.Errorf("error retrieving VM instantiate from template link from VDC %s", vdc.Vdc.Name)
+	}
+
+	if params.Name == "" {
+		return Task{}, fmt.Errorf("[CreateStandaloneVMFromTemplateAsync] missing VM name")
+	}
+	if params.SourcedVmTemplateItem == nil {
+		return Task{}, fmt.Errorf("[CreateStandaloneVMFromTemplateAsync] missing SourcedVmTemplateItem")
+	}
+	if params.SourcedVmTemplateItem.Source == nil {
+		return Task{}, fmt.Errorf("[CreateStandaloneVMFromTemplateAsync] missing vApp template Source")
+	}
+	if params.SourcedVmTemplateItem.Source.HREF == "" {
+		return Task{}, fmt.Errorf("[CreateStandaloneVMFromTemplateAsync] empty HREF in vApp template Source")
+	}
+	params.XmlnsOvf = types.XMLNamespaceOVF
+
+	return vdc.client.ExecuteTaskRequest(href, http.MethodPost, types.MimeInstantiateVmTemplateParams, "error creating standalone VM from template: %s", params)
+}
+
+// CreateStandaloneVMFromTemplate creates a standalone VM from a template
+func (vdc *Vdc) CreateStandaloneVMFromTemplate(params *types.InstantiateVmTemplateParams) (*VM, error) {
+
+	task, err := vdc.CreateStandaloneVMFromTemplateAsync(params)
+	if err != nil {
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, err
+	}
+	return vdc.getVmFromTask(task, params.Name)
+}
+
+// GetCapabilities allows to retrieve a list of VDC capabilities. It has a list of values. Some particularly useful are:
+// * networkProvider - overlay stack responsible for providing network functionality. (NSX_V or NSX_T)
+// * crossVdc - supports cross vDC network creation
+func (vdc *Vdc) GetCapabilities() ([]types.VdcCapability, error) {
+	if vdc.Vdc.ID == "" {
+		return nil, fmt.Errorf("VDC ID must be set to get capabilities")
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcCapabilities
+	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := vdc.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, url.QueryEscape(vdc.Vdc.ID)))
+	if err != nil {
+		return nil, err
+	}
+
+	capabilities := make([]types.VdcCapability, 0)
+	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, nil, &capabilities, nil)
+	if err != nil {
+		return nil, err
+	}
+	return capabilities, nil
+}
+
+// IsNsxt is a convenience function to check if VDC is backed by NSX-T pVdc
+// If error occurs - it returns false
+func (vdc *Vdc) IsNsxt() bool {
+	vdcCapabilities, err := vdc.GetCapabilities()
+	if err != nil {
+		return false
+	}
+
+	networkProviderCapability := getCapabilityValue(vdcCapabilities, "networkProvider")
+	return networkProviderCapability == types.VdcCapabilityNetworkProviderNsxt
+}
+
+// IsNsxv is a convenience function to check if VDC is backed by NSX-V pVdc
+// If error occurs - it returns false
+func (vdc *Vdc) IsNsxv() bool {
+	vdcCapabilities, err := vdc.GetCapabilities()
+	if err != nil {
+		return false
+	}
+
+	networkProviderCapability := getCapabilityValue(vdcCapabilities, "networkProvider")
+	return networkProviderCapability == types.VdcCapabilityNetworkProviderNsxv
+}
+
+// getCapabilityValue helps to lookup a specific capability in []types.VdcCapability by provided fieldName
+func getCapabilityValue(capabilities []types.VdcCapability, fieldName string) string {
+	for _, field := range capabilities {
+		if field.Name == fieldName {
+			return field.Value.(string)
+		}
+	}
+
+	return ""
 }

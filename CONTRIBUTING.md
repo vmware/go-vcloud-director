@@ -16,7 +16,7 @@ https://vmwarecode.slack.com, vcd-terraform-dev#
 Anyone can log a bug using the GitHub 'New Issue' button.  Please use
 a short title and give as much information as you can about what the
 problem is, relevant software versions, and how to reproduce it.  If you
-know the fix or a workaround include that too.
+know of a fix or a workaround include that too.
 
 ## Code Contribution Flow
 

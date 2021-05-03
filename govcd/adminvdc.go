@@ -219,7 +219,7 @@ func (adminVdc *AdminVdc) Refresh() error {
 // Returns an error if the call to vCD fails.
 // API Documentation: https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/operations/PUT-Vdc.html
 func (adminVdc *AdminVdc) UpdateAsync() (Task, error) {
-	apiVersion, err := adminVdc.client.maxSupportedVersion()
+	apiVersion, err := adminVdc.client.MaxSupportedVersion()
 	if err != nil {
 		return Task{}, err
 	}
@@ -238,7 +238,7 @@ func (adminVdc *AdminVdc) UpdateAsync() (Task, error) {
 // Returns an empty AdminVdc struct and error if the call to vCD fails.
 // API Documentation: https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/operations/PUT-Vdc.html
 func (adminVdc *AdminVdc) Update() (AdminVdc, error) {
-	apiVersion, err := adminVdc.client.maxSupportedVersion()
+	apiVersion, err := adminVdc.client.MaxSupportedVersion()
 	if err != nil {
 		return AdminVdc{}, err
 	}
@@ -261,7 +261,7 @@ func (adminVdc *AdminVdc) Update() (AdminVdc, error) {
 // and waits for the asynchronous task to complete.
 // Returns an AdminVdc pointer and an error.
 func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration) (*Vdc, error) {
-	apiVersion, err := adminOrg.client.maxSupportedVersion()
+	apiVersion, err := adminOrg.client.MaxSupportedVersion()
 	if err != nil {
 		return nil, err
 	}
@@ -277,7 +277,7 @@ func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration)
 // CreateOrgVdcAsync creates a VDC with the given params under the given organization.
 // Returns a Task and an error.
 func (adminOrg *AdminOrg) CreateOrgVdcAsync(vdcConfiguration *types.VdcConfiguration) (Task, error) {
-	apiVersion, err := adminOrg.client.maxSupportedVersion()
+	apiVersion, err := adminOrg.client.MaxSupportedVersion()
 	if err != nil {
 		return Task{}, err
 	}

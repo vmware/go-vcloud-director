@@ -59,12 +59,20 @@ vcd:
       storage_profile: "*"
       network_pool: "NSX-T Overlay 1"
     nsxt:
-      # NSX-T manager to be used
+      # NSX-T manager name to be used as defined in VCD
       manager: nsxManager1
-      # NSX-T tier-0 router used for external network
+      # NSX-T tier-0 router used for external network tests
       tier0router: tier-0-router
-      # NSX-T tier-0 VRF router used for external network
+      # NSX-T tier-0 VRF router used for external network tests
       tier0routerVrf: tier-0-router-vrf
+      # Existing External Network with correct configuration
+      externalNetwork: tier0-backed-external-network
+      # Existing NSX-T based VDC
+      vdc: nsxt-vdc-name
+      # Existing NSX-T edge gateway
+      edgeGateway: nsxt-gw-name
+      # Existing NSX-T segment to test NSX-T Imported Org Vdc network
+      nsxtImportSegment: vcd-org-vdc-imported-network-backing
     # An Org catalog, possibly containing at least one item
     catalog:
         name: mycat
@@ -173,6 +181,9 @@ ova:
   #
   # The ova with multi VMs for tests.
   ovaMultiVmPath: ../test-resources/vapp_with_3_vms.ova
+  #
+  # The ova with no VMDK size in ovf for tests.
+  ovaWithoutSizePath: ../test-resources/template_without_vmdk_size.ova
   #
   # The ovf for uploading catalog item for tests.
   ovfPath: ../test-resources/test_vapp_template_ovf/descriptor.ovf
