@@ -360,10 +360,9 @@ func (org *Org) QueryOrgVdcList() ([]*types.QueryResultOrgVdcRecordType, error) 
 	return queryOrgVdcList(org.client, org.Org.ID, org.Org.Name)
 }
 
-func queryOrgVdcList(client *Client, orgId, orgName string) ([]*types.QueryResultOrgVdcRecordType, error) {
-	util.Logger.Printf("[DEBUG] QueryOrgVdcList with Org name %s", orgName)
-	queryType := client.GetQueryType(types.QtOrgVdc)
-
+// getContextHeaders creates http headers with VCD required headers for setting tenant
+// context - X-VMWARE-VCLOUD-AUTH-CONTEXT, X-VMWARE-VCLOUD-TENANT-CONTEXT
+func getContextHeaders(orgName, orgId string) (http.Header, error) {
 	headers := http.Header{}
 	headers.Add(types.HeaderAuthContext, orgName)
 
@@ -375,16 +374,37 @@ func queryOrgVdcList(client *Client, orgId, orgName string) ([]*types.QueryResul
 	}
 	headers.Add(types.HeaderTenantContext, uuid)
 
+	return headers, nil
+}
+
+func queryOrgVdcList(client *Client, orgId, orgName string) ([]*types.QueryResultOrgVdcRecordType, error) {
+	util.Logger.Printf("[DEBUG] QueryOrgVdcList with Org name %s", orgName)
+	queryType := client.GetQueryType(types.QtOrgVdc)
+
+	contextHeaders, err := getContextHeaders(orgName, orgId)
+	if err != nil {
+		return nil, fmt.Errorf("error getting context headers: %s", err)
+	}
+
 	results, err := client.cumulativeQuery(queryType, nil, map[string]string{
 		"type":   queryType,
 		"format": "records",
-	}, headers)
+	}, contextHeaders)
 	if err != nil {
 		return nil, err
 	}
 
 	util.Logger.Printf("[DEBUG] QueryOrgVdcList returned with : %#v and error: %s", results.Results.OrgVdcRecord, err)
-	return results.Results.OrgVdcRecord, nil
+
+	if results.Results.OrgVdcRecord != nil {
+		return results.Results.OrgVdcRecord, nil
+	}
+
+	if results.Results.OrgVdcAdminRecord != nil {
+		return results.Results.OrgVdcAdminRecord, nil
+	}
+
+	return nil, ErrorEntityNotFound
 }
 
 // GetTaskList returns Tasks for Organization and error.

@@ -997,3 +997,32 @@ func (vcd *TestVCD) Test_GetTaskList(check *C) {
 	check.Assert(taskList.Task[0].Status, Not(Equals), "")
 	check.Assert(taskList.Task[0].Progress, FitsTypeOf, 0)
 }
+
+func (vcd *TestVCD) TestQueryOrgVdcList(check *C) {
+	if vcd.config.VCD.Org == "" {
+		check.Skip("TestQueryOrgVdcList: Org name not given.")
+		return
+	}
+
+	queryOrgList := []string{vcd.config.VCD.Org}
+	if vcd.client.Client.IsSysAdmin {
+		queryOrgList = append(queryOrgList, "System")
+	}
+
+	for _, orgName := range queryOrgList {
+		org, err := vcd.client.GetOrgByName(orgName)
+		check.Assert(err, IsNil)
+		check.Assert(org, NotNil)
+
+		vdcs, err := org.QueryOrgVdcList()
+		check.Assert(err, IsNil)
+		if testVerbose {
+			fmt.Println()
+			fmt.Printf("VDCs for %s\n", orgName)
+			for i, vdc := range vdcs {
+				fmt.Printf("%d %s\n", i+1, vdc.Name)
+			}
+			fmt.Println()
+		}
+	}
+}
