@@ -464,14 +464,15 @@ func (vdc *Vdc) GetEdgeGatewayByNameOrId(identifier string, refresh bool) (*Edge
 	return entity.(*EdgeGateway), err
 }
 
-func (vdc *Vdc) ComposeRawVApp(name string) error {
+func (vdc *Vdc) ComposeRawVApp(name string, description string) error {
 	vcomp := &types.ComposeVAppParams{
-		Ovf:     types.XMLNamespaceOVF,
-		Xsi:     types.XMLNamespaceXSI,
-		Xmlns:   types.XMLNamespaceVCloud,
-		Deploy:  false,
-		Name:    name,
-		PowerOn: false,
+		Ovf:         types.XMLNamespaceOVF,
+		Xsi:         types.XMLNamespaceXSI,
+		Xmlns:       types.XMLNamespaceVCloud,
+		Deploy:      false,
+		Name:        name,
+		PowerOn:     false,
+		Description: description,
 	}
 
 	vdcHref, err := url.ParseRequestURI(vdc.Vdc.HREF)

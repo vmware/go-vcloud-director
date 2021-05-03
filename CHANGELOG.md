@@ -12,6 +12,8 @@
   API V33.0 is sufficient for it [#371](https://github.com/vmware/go-vcloud-director/pull/371)
   
 BREAKING CHANGES:
+* Added parameter `description` to method `vdc.ComposeRawVapp` [#372](https://github.com/vmware/go-vcloud-director/pull/372)
+* Added methods `vapp.Rename`, `vapp.UpdateDescription`, `vapp.UpdateNameDescription` [#372](https://github.com/vmware/go-vcloud-director/pull/372)
 * Field `types.Disk.Size` is replaced with `types.Disk.SizeMb` as size in Kilobytes is not supported in V33.0
   [#371](https://github.com/vmware/go-vcloud-director/pull/371)
 * Field `types.DiskRecordType.SizeB` is replaced with `types.DiskRecordType.SizeMb` as size in Kilobytes is not

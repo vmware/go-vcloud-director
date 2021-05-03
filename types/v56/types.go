@@ -1186,6 +1186,18 @@ type ReComposeVAppParams struct {
 	DeleteItem          *DeleteItem                  `xml:"DeleteItem,omitempty"`
 }
 
+// SmallRecomposeVappParams is used to update name and description of a vApp
+// Using the full definition (ReComposeVAppParams), the description can be changed but not removed
+type SmallRecomposeVappParams struct {
+	XMLName     xml.Name `xml:"RecomposeVAppParams"`
+	Ovf         string   `xml:"xmlns:ovf,attr"`
+	Xsi         string   `xml:"xmlns:xsi,attr"`
+	Xmlns       string   `xml:"xmlns,attr"`
+	Name        string   `xml:"name,attr"`
+	Deploy      bool     `xml:"deploy,attr"`
+	Description string   `xml:"Description"`
+}
+
 type DeleteItem struct {
 	HREF string `xml:"href,attr,omitempty"`
 }
