@@ -284,24 +284,15 @@ func (org *Org) GetVDCByHref(vdcHref string) (*Vdc, error) {
 //
 // refresh has no effect and is kept to preserve signature
 func (org *Org) GetVDCByName(vdcName string, refresh bool) (*Vdc, error) {
-	filter := fmt.Sprintf("name==%s", url.QueryEscape(vdcName))
-	orgVdcList, err := org.QueryOrgVdcList(filter)
-
+	vdcQuery, err := org.QueryOrgVdcByName(vdcName)
 	if ContainsNotFound(err) {
 		return nil, ErrorEntityNotFound
 	}
-
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve VDC list for Org '%s': %s", org.Org.Name, err)
+		return nil, fmt.Errorf("error querying VDC: %s", err)
 	}
 
-	for _, link := range orgVdcList {
-		if link.Name == vdcName {
-			return org.GetVDCByHref(link.HREF)
-		}
-	}
-
-	return nil, ErrorEntityNotFound
+	return org.GetVDCByHref(vdcQuery.HREF)
 }
 
 // GetVDCById finds a VDC by ID
@@ -310,22 +301,15 @@ func (org *Org) GetVDCByName(vdcName string, refresh bool) (*Vdc, error) {
 //
 // refresh has no effect and is kept to preserve signature
 func (org *Org) GetVDCById(vdcId string, refresh bool) (*Vdc, error) {
-	filter := fmt.Sprintf("id==%s", url.QueryEscape(vdcId))
-	orgVdcList, err := org.QueryOrgVdcList(filter)
+	vdcQuery, err := org.QueryOrgVdcById(vdcId)
 	if ContainsNotFound(err) {
 		return nil, ErrorEntityNotFound
 	}
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve VDC list for Org '%s': %s", org.Org.Name, err)
+		return nil, fmt.Errorf("error queryin VDC: %s", err)
 	}
 
-	for _, orgVdc := range orgVdcList {
-		if equalIds(vdcId, "", orgVdc.HREF) {
-			return org.GetVDCByHref(orgVdc.HREF)
-		}
-	}
-
-	return nil, ErrorEntityNotFound
+	return org.GetVDCByHref(vdcQuery.HREF)
 }
 
 // GetVDCByNameOrId finds a VDC by name or ID
@@ -377,26 +361,47 @@ func (org *Org) QueryCatalogList() ([]*types.CatalogRecord, error) {
 	return catalogs, nil
 }
 
-// QueryOrgVdcList returns a list of catalogs for this organization
-func (org *Org) QueryOrgVdcList(filter string) ([]*types.QueryResultOrgVdcRecordType, error) {
-	return queryOrgVdcList(org.client, org.Org.ID, org.Org.Name, filter)
+// QueryOrgVdcByName returns a list of catalogs for this organization
+func (org *Org) QueryOrgVdcByName(vdcName string) (*types.QueryResultOrgVdcRecordType, error) {
+	filter := fmt.Sprintf("name==%s", url.QueryEscape(vdcName))
+	allVdcs, err := queryOrgVdcList(org.client, org.Org.ID, org.Org.Name, filter)
+
+	// Return real error if it is not the ErrorEntityNotFound
+	if err != nil && !ContainsNotFound(err) {
+		return nil, err
+	}
+
+	if allVdcs == nil || len(allVdcs) < 1 {
+		return nil, ErrorEntityNotFound
+	}
+
+	if len(allVdcs) > 1 {
+		return nil, fmt.Errorf("found more than 1 VDC with Name '%s'", vdcName)
+	}
+
+	return allVdcs[0], nil
 }
 
-// buildContextHeaders creates http headers with VCD required headers for setting tenant
-// context - X-VMWARE-VCLOUD-AUTH-CONTEXT, X-VMWARE-VCLOUD-TENANT-CONTEXT
-func buildContextHeaders(orgName, orgId string) (http.Header, error) {
-	headers := http.Header{}
-	headers.Add(types.HeaderAuthContext, orgName)
+// QueryOrgVdcById returns a list of catalogs for this organization
+func (org *Org) QueryOrgVdcById(vdcId string) (*types.QueryResultOrgVdcRecordType, error) {
+	filter := fmt.Sprintf("id==%s", url.QueryEscape(vdcId))
+	allVdcs, err := queryOrgVdcList(org.client, org.Org.ID, org.Org.Name, filter)
 
-	// X-VMWARE-VCLOUD-TENANT-CONTEXT must have bare UUID specified as it errors otherwise
-	uuid, err := getBareEntityUuid(orgId)
-	if err != nil {
-		return nil, fmt.Errorf("unable to extract bare UUID from URN '%s' for Org '%s': %s",
-			orgId, orgName, err)
+	// Return real error if it is not the ErrorEntityNotFound
+	if err != nil && !ContainsNotFound(err) {
+		return nil, err
 	}
-	headers.Add(types.HeaderTenantContext, uuid)
 
-	return headers, nil
+	if ContainsNotFound(err) {
+		return nil, ErrorEntityNotFound
+	}
+
+	return allVdcs[0], nil
+}
+
+// QueryOrgVdcList returns all Org VDCs using query endpoint
+func (org *Org) QueryOrgVdcList() ([]*types.QueryResultOrgVdcRecordType, error) {
+	return queryOrgVdcList(org.client, org.Org.ID, org.Org.Name, "")
 }
 
 func queryOrgVdcList(client *Client, orgId, orgName, filter string) ([]*types.QueryResultOrgVdcRecordType, error) {
@@ -408,12 +413,17 @@ func queryOrgVdcList(client *Client, orgId, orgName, filter string) ([]*types.Qu
 		return nil, fmt.Errorf("error getting context headers: %s", err)
 	}
 
-	results, err := client.cumulativeQuery(queryType, nil, map[string]string{
-		"type":          queryType,
-		"format":        "records",
-		"filter":        filter,
-		"filterEncoded": "true",
-	}, contextHeaders)
+	notEncodedParams := map[string]string{
+		"type":   queryType,
+		"format": "records",
+	}
+
+	if filter != "" {
+		notEncodedParams["filterEncoded"] = "true"
+		notEncodedParams["filter"] = filter
+	}
+
+	results, err := client.cumulativeQuery(queryType, nil, notEncodedParams, contextHeaders)
 	if err != nil {
 		return nil, err
 	}
@@ -450,4 +460,21 @@ func (org *Org) GetTaskList() (*types.TasksList, error) {
 	}
 
 	return nil, fmt.Errorf("link not found")
+}
+
+// buildContextHeaders creates http headers with VCD required headers for setting tenant
+// context - X-VMWARE-VCLOUD-AUTH-CONTEXT, X-VMWARE-VCLOUD-TENANT-CONTEXT
+func buildContextHeaders(orgName, orgId string) (http.Header, error) {
+	headers := http.Header{}
+	headers.Add(types.HeaderAuthContext, orgName)
+
+	// X-VMWARE-VCLOUD-TENANT-CONTEXT must have bare UUID specified as it errors otherwise
+	uuid, err := getBareEntityUuid(orgId)
+	if err != nil {
+		return nil, fmt.Errorf("unable to extract bare UUID from URN '%s' for Org '%s': %s",
+			orgId, orgName, err)
+	}
+	headers.Add(types.HeaderTenantContext, uuid)
+
+	return headers, nil
 }
