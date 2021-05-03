@@ -1014,7 +1014,7 @@ func (vcd *TestVCD) TestQueryOrgVdcList(check *C) {
 		check.Assert(err, IsNil)
 		check.Assert(org, NotNil)
 
-		vdcs, err := org.QueryOrgVdcList()
+		vdcs, err := org.QueryOrgVdcList("")
 		check.Assert(err, IsNil)
 		if testVerbose {
 			fmt.Println()

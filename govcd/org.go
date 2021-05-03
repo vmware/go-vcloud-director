@@ -284,7 +284,13 @@ func (org *Org) GetVDCByHref(vdcHref string) (*Vdc, error) {
 //
 // refresh has no effect and is kept to preserve signature
 func (org *Org) GetVDCByName(vdcName string, refresh bool) (*Vdc, error) {
-	orgVdcList, err := org.QueryOrgVdcList()
+	filter := fmt.Sprintf("name==%s", url.QueryEscape(vdcName))
+	orgVdcList, err := org.QueryOrgVdcList(filter)
+
+	if ContainsNotFound(err) {
+		return nil, ErrorEntityNotFound
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve VDC list for Org '%s': %s", org.Org.Name, err)
 	}
@@ -304,7 +310,11 @@ func (org *Org) GetVDCByName(vdcName string, refresh bool) (*Vdc, error) {
 //
 // refresh has no effect and is kept to preserve signature
 func (org *Org) GetVDCById(vdcId string, refresh bool) (*Vdc, error) {
-	orgVdcList, err := org.QueryOrgVdcList()
+	filter := fmt.Sprintf("id==%s", url.QueryEscape(vdcId))
+	orgVdcList, err := org.QueryOrgVdcList(filter)
+	if ContainsNotFound(err) {
+		return nil, ErrorEntityNotFound
+	}
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve VDC list for Org '%s': %s", org.Org.Name, err)
 	}
@@ -322,13 +332,25 @@ func (org *Org) GetVDCById(vdcId string, refresh bool) (*Vdc, error) {
 // On success, returns a pointer to the VDC structure and a nil error
 // On failure, returns a nil pointer and an error
 func (org *Org) GetVDCByNameOrId(identifier string, refresh bool) (*Vdc, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return org.GetVDCByName(name, refresh) }
-	getById := func(id string, refresh bool) (interface{}, error) { return org.GetVDCById(id, refresh) }
-	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
-	if entity == nil {
-		return nil, err
+	// This function cannot directly use shorthand getEntityByNameOrId because org.GetVDCById API throws an error when the
+	// supplied identified is not UUID or URN. Therefore this function does not even try to to find by ID when supplied
+	// identifier does not look like an ID
+	if isUrn(identifier) || IsUuid(identifier) {
+		vdcById, byIdErr := org.GetVDCById(identifier, refresh)
+		if byIdErr == nil {
+			// Found by ID = return it
+			return vdcById, nil
+		}
+
+		// Return real error if it is not 'ErrorEntityNotFound'
+		if byIdErr != nil && !ContainsNotFound(byIdErr) {
+			return nil, byIdErr
+		}
 	}
-	return entity.(*Vdc), err
+
+	// Not found by ID, try by name
+	vdcByName, byNameErr := org.GetVDCByName(identifier, false)
+	return vdcByName, byNameErr
 }
 
 // QueryCatalogList returns a list of catalogs for this organization
@@ -356,13 +378,13 @@ func (org *Org) QueryCatalogList() ([]*types.CatalogRecord, error) {
 }
 
 // QueryOrgVdcList returns a list of catalogs for this organization
-func (org *Org) QueryOrgVdcList() ([]*types.QueryResultOrgVdcRecordType, error) {
-	return queryOrgVdcList(org.client, org.Org.ID, org.Org.Name)
+func (org *Org) QueryOrgVdcList(filter string) ([]*types.QueryResultOrgVdcRecordType, error) {
+	return queryOrgVdcList(org.client, org.Org.ID, org.Org.Name, filter)
 }
 
-// getContextHeaders creates http headers with VCD required headers for setting tenant
+// buildContextHeaders creates http headers with VCD required headers for setting tenant
 // context - X-VMWARE-VCLOUD-AUTH-CONTEXT, X-VMWARE-VCLOUD-TENANT-CONTEXT
-func getContextHeaders(orgName, orgId string) (http.Header, error) {
+func buildContextHeaders(orgName, orgId string) (http.Header, error) {
 	headers := http.Header{}
 	headers.Add(types.HeaderAuthContext, orgName)
 
@@ -377,18 +399,20 @@ func getContextHeaders(orgName, orgId string) (http.Header, error) {
 	return headers, nil
 }
 
-func queryOrgVdcList(client *Client, orgId, orgName string) ([]*types.QueryResultOrgVdcRecordType, error) {
+func queryOrgVdcList(client *Client, orgId, orgName, filter string) ([]*types.QueryResultOrgVdcRecordType, error) {
 	util.Logger.Printf("[DEBUG] QueryOrgVdcList with Org name %s", orgName)
 	queryType := client.GetQueryType(types.QtOrgVdc)
 
-	contextHeaders, err := getContextHeaders(orgName, orgId)
+	contextHeaders, err := buildContextHeaders(orgName, orgId)
 	if err != nil {
 		return nil, fmt.Errorf("error getting context headers: %s", err)
 	}
 
 	results, err := client.cumulativeQuery(queryType, nil, map[string]string{
-		"type":   queryType,
-		"format": "records",
+		"type":          queryType,
+		"format":        "records",
+		"filter":        filter,
+		"filterEncoded": "true",
 	}, contextHeaders)
 	if err != nil {
 		return nil, err
