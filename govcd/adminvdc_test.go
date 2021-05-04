@@ -38,35 +38,9 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":   "providerVdc",
-		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.Name),
-	})
-	check.Assert(err, IsNil)
-	if len(results.Results.VMWProviderVdcRecord) == 0 {
-		check.Skip(fmt.Sprintf("No Provider VDC found with name '%s'", vcd.config.VCD.ProviderVdc.Name))
-	}
-	providerVdcHref := results.Results.VMWProviderVdcRecord[0].HREF
-
-	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":   "providerVdcStorageProfile",
-		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.StorageProfile),
-	})
-	check.Assert(err, IsNil)
-	if len(results.Results.ProviderVdcStorageProfileRecord) == 0 {
-		check.Skip(fmt.Sprintf("No storage profile found with name '%s'", vcd.config.VCD.ProviderVdc.StorageProfile))
-	}
-	providerVdcStorageProfileHref := results.Results.ProviderVdcStorageProfileRecord[0].HREF
-
-	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":   "networkPool",
-		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.NetworkPool),
-	})
-	check.Assert(err, IsNil)
-	if len(results.Results.NetworkPoolRecord) == 0 {
-		check.Skip(fmt.Sprintf("No network pool found with name '%s'", vcd.config.VCD.ProviderVdc.NetworkPool))
-	}
-	networkPoolHref := results.Results.NetworkPoolRecord[0].HREF
+	providerVdcHref := getVdcProviderVdcHref(vcd, check)
+	providerVdcStorageProfileHref := getVdcProviderVdcStorageProfileHref(vcd, check)
+	networkPoolHref := getVdcNetworkPoolHref(vcd, check)
 
 	allocationModels := []string{"AllocationVApp", "AllocationPool", "ReservationPool", "Flex"}
 	trueValue := true
@@ -264,4 +238,46 @@ func (vcd *TestVCD) Test_VdcUpdateStorageProfile(check *C) {
 	check.Assert(updatedStorageProfile.Limit, Equals, int64(9081))
 	check.Assert(updatedStorageProfile.Default, Equals, true)
 	check.Assert(updatedStorageProfile.Units, Equals, "MB")
+}
+
+func getVdcProviderVdcHref(vcd *TestVCD, check *C) string {
+	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "providerVdc",
+		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.Name),
+	})
+	check.Assert(err, IsNil)
+	if len(results.Results.VMWProviderVdcRecord) == 0 {
+		check.Skip(fmt.Sprintf("No Provider VDC found with name '%s'", vcd.config.VCD.ProviderVdc.Name))
+	}
+	providerVdcHref := results.Results.VMWProviderVdcRecord[0].HREF
+
+	return providerVdcHref
+}
+
+func getVdcProviderVdcStorageProfileHref(vcd *TestVCD, check *C) string {
+	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "providerVdcStorageProfile",
+		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.StorageProfile),
+	})
+	check.Assert(err, IsNil)
+	if len(results.Results.ProviderVdcStorageProfileRecord) == 0 {
+		check.Skip(fmt.Sprintf("No storage profile found with name '%s'", vcd.config.VCD.ProviderVdc.StorageProfile))
+	}
+	providerVdcStorageProfileHref := results.Results.ProviderVdcStorageProfileRecord[0].HREF
+
+	return providerVdcStorageProfileHref
+}
+
+func getVdcNetworkPoolHref(vcd *TestVCD, check *C) string {
+	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "networkPool",
+		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.NetworkPool),
+	})
+	check.Assert(err, IsNil)
+	if len(results.Results.NetworkPoolRecord) == 0 {
+		check.Skip(fmt.Sprintf("No network pool found with name '%s'", vcd.config.VCD.ProviderVdc.NetworkPool))
+	}
+	networkPoolHref := results.Results.NetworkPoolRecord[0].HREF
+
+	return networkPoolHref
 }

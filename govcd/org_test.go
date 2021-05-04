@@ -999,30 +999,183 @@ func (vcd *TestVCD) Test_GetTaskList(check *C) {
 }
 
 func (vcd *TestVCD) TestQueryOrgVdcList(check *C) {
+	if !vcd.client.Client.IsSysAdmin {
+		check.Skip("TestQueryOrgVdcList: requires admin user")
+		return
+	}
 	if vcd.config.VCD.Org == "" {
 		check.Skip("TestQueryOrgVdcList: Org name not given.")
 		return
 	}
 
-	queryOrgList := []string{vcd.config.VCD.Org}
-	if vcd.client.Client.IsSysAdmin {
-		queryOrgList = append(queryOrgList, "System")
+	if testVerbose {
+		fmt.Println("# Setting up 2 additional Orgs and 1 additional VDC")
 	}
 
-	for _, orgName := range queryOrgList {
-		org, err := vcd.client.GetOrgByName(orgName)
-		check.Assert(err, IsNil)
-		check.Assert(org, NotNil)
+	// Pre-create two more Orgs and one VDC to test that filtering behaves correctly
+	newOrgName1 := spawnTestOrg(vcd, check, "org1")
+	newOrgName2 := spawnTestOrg(vcd, check, "org2")
+	vdc := spawnTestVdc(vcd, check, newOrgName1)
 
-		vdcs, err := org.QueryOrgVdcList()
-		check.Assert(err, IsNil)
-		if testVerbose {
-			fmt.Println()
-			fmt.Printf("VDCs for %s\n", orgName)
-			for i, vdc := range vdcs {
-				fmt.Printf("%d %s\n", i+1, vdc.Name)
+	// Dump structure
+	if testVerbose {
+		fmt.Println("# Org and VDC structure layout")
+		queryOrgList := []string{"System", vcd.config.VCD.Org, newOrgName1, newOrgName2}
+		for _, orgName := range queryOrgList {
+			org, err := vcd.client.GetOrgByName(orgName)
+			check.Assert(err, IsNil)
+			check.Assert(org, NotNil)
+
+			vdcs, err := org.queryOrgVdcList()
+			check.Assert(err, IsNil)
+			if testVerbose {
+				fmt.Printf("VDCs for Org '%s'\n", orgName)
+				for i, vdc := range vdcs {
+					fmt.Printf("%d %s -> %s\n", i+1, vdc.OrgName, vdc.Name)
+				}
+				fmt.Println()
 			}
-			fmt.Println()
+		}
+		fmt.Println("")
+	}
+
+	// expectedVdcCountInSystem = 1 NSX-V VDC
+	expectedVdcCountInSystem := 1
+	// If an NSX-T VDC exists - then expected count of VDCs is at least 2
+	if vcd.config.VCD.Nsxt.Vdc != "" {
+		expectedVdcCountInSystem++
+	}
+
+	// System Org does not directly report any child VDCs
+	validateQueryOrgVdcResults(vcd, check, "Org should have no VDCs", "System", takeIntAddress(0), nil)
+	validateQueryOrgVdcResults(vcd, check, fmt.Sprintf("Should have 1 VDC %s", vdc), newOrgName1, takeIntAddress(1), nil)
+	validateQueryOrgVdcResults(vcd, check, "Should have 0 VDCs", newOrgName2, takeIntAddress(0), nil)
+	// Main Org 'vcd.config.VCD.Org' is expected to have at least (expectedVdcCountInSystem). Might be more if there are
+	// more VDCs created manually
+	validateQueryOrgVdcResults(vcd, check, fmt.Sprintf("Should have %d VDCs or more", expectedVdcCountInSystem), vcd.config.VCD.Org, nil, takeIntAddress(expectedVdcCountInSystem))
+}
+
+func validateQueryOrgVdcResults(vcd *TestVCD, check *C, name, orgName string, expectedVdcCount, expectedVdcCountOrMore *int) {
+	if testVerbose {
+		fmt.Printf("# Checking VDCs in Org '%s' (%s):\n", orgName, name)
+	}
+
+	org, err := vcd.client.GetOrgByName(orgName)
+	check.Assert(err, IsNil)
+	orgList, err := org.queryOrgVdcList()
+	check.Assert(err, IsNil)
+
+	// Number of components should be equal to the one returned by 'adminOrg.GetAllVDCs' which looks up VDCs in
+	// <AdminOrg> structure
+	adminOrg, err := vcd.client.GetAdminOrgByName(orgName)
+	check.Assert(err, IsNil)
+	allVdcs, err := adminOrg.GetAllVDCs(true)
+	check.Assert(len(orgList), Equals, len(allVdcs))
+
+	// Ensure the expected count of VDCs is found
+	if expectedVdcCount != nil {
+		check.Assert(len(orgList), Equals, *expectedVdcCount)
+	}
+	// Ensure that no less than 'expectedVdcCountOrMore' VDCs found in object. This validation allows to have more than
+	if expectedVdcCountOrMore != nil {
+		check.Assert(len(orgList) >= *expectedVdcCountOrMore, Equals, true)
+	}
+
+	if testVerbose {
+		if expectedVdcCount != nil {
+			fmt.Printf("Got %d VDCs in Org '%s'. Expected (%d)\n", len(orgList), orgName, *expectedVdcCount)
+		}
+
+		if expectedVdcCountOrMore != nil {
+			fmt.Printf("Got %d VDCs in Org '%s'. Expected (%d) or more\n", len(orgList), orgName, *expectedVdcCountOrMore)
 		}
 	}
+
+	// Ensure that all VDCs have the same parent (or different if a query was performed for 'System')
+	for index := range orgList {
+		if orgName == "System" {
+			check.Assert(orgList[index].OrgName, Not(Equals), orgName)
+		} else {
+			check.Assert(orgList[index].OrgName, Equals, orgName)
+
+		}
+
+	}
+	if testVerbose {
+		fmt.Printf("%d VDC(s) in Org '%s' have correct parent set\n", len(orgList), orgName)
+		fmt.Println()
+	}
+}
+
+// spawnTestOrg spawns an Org to be used in tests
+func spawnTestOrg(vcd *TestVCD, check *C, nameSuffix string) string {
+	newOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	newOrgName := check.TestName() + "-" + nameSuffix
+	task, err := CreateOrg(vcd.client, newOrgName, newOrgName, newOrgName, newOrg.AdminOrg.OrgSettings, true)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	AddToCleanupList(newOrgName, "org", "", check.TestName())
+
+	return newOrgName
+}
+
+// spawnTestVdc spawns a VDC in a given adminOrgName to be used in tests
+func spawnTestVdc(vcd *TestVCD, check *C, adminOrgName string) string {
+	adminOrg, err := vcd.client.GetAdminOrgByName(adminOrgName)
+	check.Assert(err, IsNil)
+
+	providerVdcHref := getVdcProviderVdcHref(vcd, check)
+	providerVdcStorageProfileHref := getVdcProviderVdcStorageProfileHref(vcd, check)
+	networkPoolHref := getVdcNetworkPoolHref(vcd, check)
+
+	vdcConfiguration := &types.VdcConfiguration{
+		Name:            check.TestName() + "-VDC",
+		Xmlns:           types.XMLNamespaceVCloud,
+		AllocationModel: "Flex",
+		ComputeCapacity: []*types.ComputeCapacity{
+			&types.ComputeCapacity{
+				CPU: &types.CapacityWithUsage{
+					Units:     "MHz",
+					Allocated: 1024,
+					Limit:     1024,
+				},
+				Memory: &types.CapacityWithUsage{
+					Allocated: 1024,
+					Limit:     1024,
+					Units:     "MB",
+				},
+			},
+		},
+		VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
+			Enabled: true,
+			Units:   "MB",
+			Limit:   1024,
+			Default: true,
+			ProviderVdcStorageProfile: &types.Reference{
+				HREF: providerVdcStorageProfileHref,
+			},
+		},
+		},
+		NetworkPoolReference: &types.Reference{
+			HREF: networkPoolHref,
+		},
+		ProviderVdcReference: &types.Reference{
+			HREF: providerVdcHref,
+		},
+		IsEnabled:             true,
+		IsThinProvision:       true,
+		UsesFastProvisioning:  true,
+		IsElastic:             takeBoolPointer(true),
+		IncludeMemoryOverhead: takeBoolPointer(true),
+	}
+
+	vdc, err := adminOrg.CreateOrgVdc(vdcConfiguration)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, check.TestName())
+
+	return vdc.Vdc.Name
 }

@@ -29,7 +29,7 @@ func (vcd *TestVCD) Test_CreateDisk(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestCreateDisk,
-		SizeMb:      1,
+		SizeMb:      11,
 		Description: TestCreateDisk,
 	}
 
@@ -66,7 +66,7 @@ func (vcd *TestVCD) Test_UpdateDisk(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestUpdateDisk,
-		SizeMb:      1,
+		SizeMb:      99,
 		Description: TestUpdateDisk,
 	}
 
@@ -97,7 +97,7 @@ func (vcd *TestVCD) Test_UpdateDisk(check *C) {
 	// Update disk
 	newDiskInfo := &types.Disk{
 		Name:        TestUpdateDisk,
-		SizeMb:      2,
+		SizeMb:      102,
 		Description: TestUpdateDisk + "_Update",
 	}
 
@@ -167,7 +167,7 @@ func (vcd *TestVCD) Test_RefreshDisk(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestRefreshDisk,
-		SizeMb:      1,
+		SizeMb:      43,
 		Description: TestRefreshDisk,
 	}
 
@@ -198,7 +198,7 @@ func (vcd *TestVCD) Test_RefreshDisk(check *C) {
 	// Update disk
 	newDiskInfo := &types.Disk{
 		Name:        TestRefreshDisk,
-		SizeMb:      2,
+		SizeMb:      43,
 		Description: TestRefreshDisk + "_Update",
 	}
 
@@ -244,7 +244,7 @@ func (vcd *TestVCD) Test_AttachedVMDisk(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestAttachedVMDisk,
-		SizeMb:      1,
+		SizeMb:      210,
 		Description: TestAttachedVMDisk,
 	}
 
@@ -301,7 +301,7 @@ func (vcd *TestVCD) Test_VdcFindDiskByHREF(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestVdcFindDiskByHREF,
-		SizeMb:      1,
+		SizeMb:      2,
 		Description: TestVdcFindDiskByHREF,
 	}
 
@@ -339,7 +339,7 @@ func (vcd *TestVCD) Test_FindDiskByHREF(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestFindDiskByHREF,
-		SizeMb:      1,
+		SizeMb:      3,
 		Description: TestFindDiskByHREF,
 	}
 
@@ -404,7 +404,7 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestDisk,
-		SizeMb:      1,
+		SizeMb:      14,
 		Description: TestDisk,
 	}
 
@@ -463,7 +463,7 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 	// Update disk
 	newDiskInfo := &types.Disk{
 		Name:        TestDisk,
-		SizeMb:      2,
+		SizeMb:      41,
 		Description: TestDisk + "_Update",
 	}
 
@@ -529,7 +529,7 @@ func (vcd *TestVCD) Test_QueryDisks(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        name,
-		SizeMb:      1,
+		SizeMb:      22,
 		Description: name,
 	}
 
@@ -584,7 +584,7 @@ func (vcd *TestVCD) Test_GetDisks(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        diskName,
-		SizeMb:      1,
+		SizeMb:      12,
 		Description: diskName + "Description",
 	}
 
@@ -659,7 +659,7 @@ func (vcd *TestVCD) Test_GetDiskByHref(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        diskName,
-		SizeMb:      1,
+		SizeMb:      2048,
 		Description: diskName + "Description",
 	}
 
