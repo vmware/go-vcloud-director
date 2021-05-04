@@ -395,7 +395,7 @@ func (vdc *Vdc) QueryEdgeGatewayList() ([]*types.QueryResultEdgeGatewayRecordTyp
 		"type":          types.QtEdgeGateway,
 		"filter":        fmt.Sprintf("orgVdcName==%s", url.QueryEscape(vdc.Vdc.Name)),
 		"filterEncoded": "true",
-	}, nil)
+	})
 	if err != nil {
 		return nil, err
 	}

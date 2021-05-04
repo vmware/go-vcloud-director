@@ -6,7 +6,6 @@ package govcd
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 	"strings"
 
@@ -157,7 +156,7 @@ func addResults(queryType string, cumulativeResults, newResults Results) (Result
 }
 
 // cumulativeQuery runs a paginated query and collects all elements until the total number of records is retrieved
-func (client *Client) cumulativeQuery(queryType string, params, notEncodedParams map[string]string, additionalHeaders http.Header) (Results, error) {
+func (client *Client) cumulativeQuery(queryType string, params, notEncodedParams map[string]string) (Results, error) {
 	var supportedQueryTypes = []string{
 		types.QtVappTemplate,
 		types.QtAdminVappTemplate,
@@ -190,7 +189,7 @@ func (client *Client) cumulativeQuery(queryType string, params, notEncodedParams
 		return Results{}, fmt.Errorf("[cumulativeQuery] query type %s not supported", queryType)
 	}
 
-	result, err := client.QueryWithNotEncodedParamsHeaders(params, notEncodedParams, additionalHeaders)
+	result, err := client.QueryWithNotEncodedParams(params, notEncodedParams)
 	if err != nil {
 		return Results{}, err
 	}
@@ -213,7 +212,7 @@ func (client *Client) cumulativeQuery(queryType string, params, notEncodedParams
 		page++
 		notEncodedParams["page"] = fmt.Sprintf("%d", page)
 		var size int
-		newResult, err := client.QueryWithNotEncodedParamsHeaders(params, notEncodedParams, additionalHeaders)
+		newResult, err := client.QueryWithNotEncodedParams(params, notEncodedParams)
 		if err != nil {
 			return Results{}, err
 		}
@@ -242,7 +241,7 @@ func (client *Client) queryWithMetadataFields(queryType string, params, notEncod
 	notEncodedParams["type"] = queryType
 
 	if len(metadataFields) == 0 {
-		return client.cumulativeQuery(queryType, params, notEncodedParams, nil)
+		return client.cumulativeQuery(queryType, params, notEncodedParams)
 	}
 
 	fields, err := queryFieldsOnDemand(queryType)
@@ -267,7 +266,7 @@ func (client *Client) queryWithMetadataFields(queryType string, params, notEncod
 
 	notEncodedParams["fields"] = strings.Join(fields, ",") + "," + metadataFieldText
 
-	return client.cumulativeQuery(queryType, params, notEncodedParams, nil)
+	return client.cumulativeQuery(queryType, params, notEncodedParams)
 }
 
 // queryByMetadataFilter is a wrapper around QueryWithNotEncodedParams with additional filtering
@@ -311,5 +310,5 @@ func (client *Client) queryByMetadataFilter(queryType string, params, notEncoded
 	}
 	notEncodedParams["filter"] = filter
 
-	return client.cumulativeQuery(queryType, params, notEncodedParams, nil)
+	return client.cumulativeQuery(queryType, params, notEncodedParams)
 }

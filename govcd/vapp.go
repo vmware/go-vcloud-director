@@ -1347,7 +1347,7 @@ func (client *Client) QueryVappList() ([]*types.QueryResultVAppRecordType, error
 		"type":          queryType,
 		"filterEncoded": "true",
 	}
-	vappResult, err := client.cumulativeQuery(queryType, nil, params, nil)
+	vappResult, err := client.cumulativeQuery(queryType, nil, params)
 	if err != nil {
 		return nil, fmt.Errorf("error getting vApp list : %s", err)
 	}

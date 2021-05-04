@@ -749,7 +749,7 @@ func (adminOrg *AdminOrg) QueryCatalogList() ([]*types.CatalogRecord, error) {
 		"type":          queryType,
 		"filter":        fmt.Sprintf("orgName==%s", url.QueryEscape(adminOrg.AdminOrg.Name)),
 		"filterEncoded": "true",
-	}, nil)
+	})
 	if err != nil {
 		return nil, err
 	}

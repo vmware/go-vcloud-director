@@ -349,7 +349,7 @@ func (org *Org) QueryCatalogList() ([]*types.CatalogRecord, error) {
 		"type":          queryType,
 		"filter":        fmt.Sprintf("orgName==%s", url.QueryEscape(org.Org.Name)),
 		"filterEncoded": "true",
-	}, nil)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -405,29 +405,13 @@ func (org *Org) queryOrgVdcList() ([]*types.QueryResultOrgVdcRecordType, error) 
 
 func queryOrgVdcList(client *Client, filterFieldName, filterFieldValue, orgId string) ([]*types.QueryResultOrgVdcRecordType, error) {
 	queryType := client.GetQueryType(types.QtOrgVdc)
-	//queryType := types.QtOrgVdc
-
-	//var filterText string
-
-	// Filter with 'orgName==System' does not return anything, but we want to get all VDCs when using System Org therefore
-	// the filter is not set at all
-	//if !(filterFieldName == "orgName" && filterFieldValue == "System") {
 	filterText := fmt.Sprintf("%s==%s", filterFieldName, url.QueryEscape(filterFieldValue))
-	//}
-
-	//orgName := filterFieldValue
-	//orgId,_ := client.Vcd
-
-	//contextHeader, err := buildContextHeaders(orgName, orgId)
-	//if err != nil {
-	//	return nil, fmt.Errorf("error getting context headers: %s", err)
-	//}
 
 	results, err := client.cumulativeQuery(queryType, nil, map[string]string{
 		"type":          queryType,
 		"filter":        filterText,
 		"filterEncoded": "true",
-	}, nil)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error querying Org VDCs %s", err)
 	}
@@ -458,21 +442,4 @@ func (org *Org) GetTaskList() (*types.TasksList, error) {
 	}
 
 	return nil, fmt.Errorf("link not found")
-}
-
-// buildContextHeaders creates http headers with VCD required headers for setting tenant
-// context - X-VMWARE-VCLOUD-AUTH-CONTEXT, X-VMWARE-VCLOUD-TENANT-CONTEXT
-func buildContextHeaders(orgName, orgId string) (http.Header, error) {
-	headers := http.Header{}
-	headers.Add(types.HeaderAuthContext, orgName)
-
-	// X-VMWARE-VCLOUD-TENANT-CONTEXT must have bare UUID specified as it errors otherwise
-	uuid, err := getBareEntityUuid(orgId)
-	if err != nil {
-		return nil, fmt.Errorf("unable to extract bare UUID from URN '%s' for Org '%s': %s",
-			orgId, orgName, err)
-	}
-	headers.Add(types.HeaderTenantContext, uuid)
-
-	return headers, nil
 }

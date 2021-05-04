@@ -40,17 +40,6 @@ func (vdc *Vdc) Query(params map[string]string) (Results, error) {
 	return getResult(vdc.client, req)
 }
 
-// QueryWithNotEncodedParamsHeaders uses Query API to search for requested data and allows to provider `additionalHeaders`
-// which can be useful when headers such as `X-VMWARE-VCLOUD-AUTH-CONTEXT` and `X-VMWARE-VCLOUD-TENANT-CONTEXT` are required
-func (client *Client) QueryWithNotEncodedParamsHeaders(params map[string]string, notEncodedParams map[string]string, additionalHeaders http.Header) (Results, error) {
-	queryUrl := client.VCDHREF
-	queryUrl.Path += "/query"
-
-	req := client.newRequest(params, notEncodedParams, http.MethodGet, queryUrl, nil, client.APIVersion, additionalHeaders)
-
-	return getResult(client, req)
-}
-
 // QueryWithNotEncodedParams uses Query API to search for requested data
 func (client *Client) QueryWithNotEncodedParams(params map[string]string, notEncodedParams map[string]string) (Results, error) {
 	return client.QueryWithNotEncodedParamsWithApiVersion(params, notEncodedParams, client.APIVersion)

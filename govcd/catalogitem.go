@@ -63,7 +63,7 @@ func queryCatalogItemList(client *Client, parentField, parentValue string) ([]*t
 	results, err := client.cumulativeQuery(catalogItemType, nil, map[string]string{
 		"type":   catalogItemType,
 		"filter": filterText,
-	}, nil)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error querying catalog items %s", err)
 	}
@@ -100,7 +100,7 @@ func queryVappTemplateList(client *Client, parentField, parentValue string) ([]*
 	results, err := client.cumulativeQuery(vappTemplateType, nil, map[string]string{
 		"type":   vappTemplateType,
 		"filter": fmt.Sprintf("%s==%s", parentField, url.QueryEscape(parentValue)),
-	}, nil)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error querying vApp templates %s", err)
 	}
