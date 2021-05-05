@@ -1,7 +1,7 @@
 // +build vapp functional ALL
 
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -9,6 +9,7 @@ package govcd
 import (
 	"fmt"
 	"regexp"
+	"time"
 
 	. "gopkg.in/check.v1"
 
@@ -1555,5 +1556,101 @@ func (vcd *TestVCD) Test_AddNewVMWithComputeCapacity(check *C) {
 	}
 
 	_, err = adminVdc.SetAssignedComputePolicies(types.VdcComputePolicyReferences{VdcComputePolicyReference: beforeTestPolicyReferences})
+	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) testUpdateVapp(op string, check *C, vapp *VApp, name, description string, vms []string) {
+
+	var err error
+	switch op {
+	case "update_desc", "remove_desc":
+		printVerbose("[%s] testing vapp.UpdateDescription(\"%s\")\n", op, description)
+		err = vapp.UpdateDescription(description)
+		check.Assert(err, IsNil)
+	case "update_both":
+		printVerbose("[%s] testing vapp.UpdateNameDescription(\"%s\", \"%s\")\n", op, name, description)
+		err = vapp.UpdateNameDescription(name, description)
+		check.Assert(err, IsNil)
+	case "rename":
+		printVerbose("[%s] testing vapp.Rename(\"%s\")\n", op, name)
+		err = vapp.Rename(name)
+		check.Assert(err, IsNil)
+	default:
+		check.Assert("unhandled operation", Equals, "true")
+	}
+
+	if name == "" {
+		name = vapp.VApp.Name
+	}
+
+	// Get a fresh copy of the vApp
+	vapp, err = vcd.vdc.GetVAppByName(name, true)
+	check.Assert(err, IsNil)
+
+	check.Assert(vapp.VApp.Name, Equals, name)
+	check.Assert(vapp.VApp.Description, Equals, description)
+	// check that the VMs still exist after vApp update
+	for _, vm := range vms {
+		printVerbose("checking VM %s\n", vm)
+		_, err = vapp.GetVMByName(vm, true)
+		check.Assert(err, IsNil)
+	}
+}
+
+func (vcd *TestVCD) Test_UpdateVappNameDescription(check *C) {
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	vappName := check.TestName()
+	vappDescription := vappName + " description"
+	newVappName := vappName + "_new"
+
+	newVappDescription := vappName + " desc"
+	// Compose VApp
+	vapp, err := makeEmptyVapp(vcd.vdc, vappName, vappDescription)
+	check.Assert(err, IsNil)
+	AddToCleanupList(vappName, "vapp", "", "Test_RenameVapp")
+
+	check.Assert(vapp.VApp.Name, Equals, vappName)
+	check.Assert(vapp.VApp.Description, Equals, vappDescription)
+
+	// Need a slight delay for the vApp to get the links that are needed for renaming
+	time.Sleep(time.Second)
+
+	// change description
+	vcd.testUpdateVapp("update_desc", check, vapp, "", newVappDescription, nil)
+
+	// remove description
+	vcd.testUpdateVapp("remove_desc", check, vapp, vappName, "", nil)
+
+	// restore original
+	vcd.testUpdateVapp("update_both", check, vapp, vappName, vappDescription, nil)
+
+	// change name
+	vcd.testUpdateVapp("rename", check, vapp, newVappName, vappDescription, nil)
+	AddToCleanupList(newVappName, "vapp", "", "Test_RenameVapp")
+	// restore original
+	vcd.testUpdateVapp("update_both", check, vapp, vappName, vappDescription, nil)
+
+	// Add two VMs
+	_, err = makeEmptyVm(vapp, "vm1")
+	check.Assert(err, IsNil)
+	_, err = makeEmptyVm(vapp, "vm2")
+	check.Assert(err, IsNil)
+
+	vms := []string{"vm1", "vm2"}
+	// change description after adding VMs
+	vcd.testUpdateVapp("update_desc", check, vapp, "", newVappDescription, vms)
+	vcd.testUpdateVapp("remove_desc", check, vapp, vappName, "", nil)
+	// restore original
+	vcd.testUpdateVapp("update_both", check, vapp, vappName, vappDescription, vms)
+
+	// change name after adding VMs
+	vcd.testUpdateVapp("rename", check, vapp, newVappName, vappDescription, vms)
+	// restore original
+	vcd.testUpdateVapp("update_both", check, vapp, vappName, vappDescription, vms)
+
+	// Remove vApp
+	err = deleteVapp(vcd, vappName)
 	check.Assert(err, IsNil)
 }

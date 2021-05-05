@@ -306,7 +306,7 @@ func makeVappGroup(label string, vdc *Vdc, groupDefinition map[string][]string) 
 		if testVerbose {
 			fmt.Printf("Creating vApp %s\n", vappName)
 		}
-		vapp, err := makeEmptyVapp(vdc, vappName)
+		vapp, err := makeEmptyVapp(vdc, vappName, "")
 		if err != nil {
 			return nil, err
 		}

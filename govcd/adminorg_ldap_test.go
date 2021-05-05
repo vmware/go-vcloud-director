@@ -197,7 +197,7 @@ func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) (string,
 	vappTemplate, err := catalogItem.GetVAppTemplate()
 	check.Assert(err, IsNil)
 	// Compose Raw vApp
-	err = vdc.ComposeRawVApp(vAppName)
+	err = vdc.ComposeRawVApp(vAppName, "")
 	check.Assert(err, IsNil)
 	vapp, err := vdc.GetVAppByName(vAppName, true)
 	check.Assert(err, IsNil)

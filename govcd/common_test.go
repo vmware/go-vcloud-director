@@ -1,7 +1,7 @@
 // +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user nsxv affinity ALL
 
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -55,7 +55,7 @@ func (vcd *TestVCD) createAndGetResourcesForVmCreation(check *C, vmName string) 
 	vappTemplate, err := catalogItem.GetVAppTemplate()
 	check.Assert(err, IsNil)
 	// Compose Raw vApp
-	err = vdc.ComposeRawVApp(vmName)
+	err = vdc.ComposeRawVApp(vmName, "")
 	check.Assert(err, IsNil)
 	vapp, err := vdc.GetVAppByName(vmName, true)
 	check.Assert(err, IsNil)
@@ -670,9 +670,9 @@ func deleteVapp(vcd *TestVCD, name string) error {
 }
 
 // makeEmptyVapp creates a given vApp without any VM
-func makeEmptyVapp(vdc *Vdc, name string) (*VApp, error) {
+func makeEmptyVapp(vdc *Vdc, name string, description string) (*VApp, error) {
 
-	err := vdc.ComposeRawVApp(name)
+	err := vdc.ComposeRawVApp(name, description)
 	if err != nil {
 		return nil, err
 	}
