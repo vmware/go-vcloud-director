@@ -228,7 +228,9 @@ func (org *Org) GetCatalogByName(catalogName string, refresh bool) (*Catalog, er
 	for _, catalog := range orgCatalogs {
 		// Get Catalog HREF
 		if catalog.Name == catalogName {
-			return org.GetCatalogByHref(catalog.HREF)
+			// Ensure there is no `admin` part in the catalog HREF
+			href := strings.Replace(catalog.HREF, "/api/admin", "/api", 1)
+			return org.GetCatalogByHref(href)
 		}
 	}
 	return nil, ErrorEntityNotFound
@@ -321,8 +323,8 @@ func (org *Org) GetVDCById(vdcId string, refresh bool) (*Vdc, error) {
 // On failure, returns a nil pointer and an error
 func (org *Org) GetVDCByNameOrId(identifier string, refresh bool) (*Vdc, error) {
 	// This function cannot directly use shorthand getEntityByNameOrId because org.GetVDCById API throws an error when the
-	// supplied identified is not UUID or URN. Therefore this function does not even try to to find by ID when supplied
-	// identifier does not look like an ID
+	// supplied identifier is not UUID or URN. Therefore this function does not even try to to find by ID when supplied
+	// identifier does not look like an ID and only tries to lookup by Name.
 	if isUrn(identifier) || IsUuid(identifier) {
 		vdcById, byIdErr := org.GetVDCById(identifier, refresh)
 		if byIdErr == nil {
