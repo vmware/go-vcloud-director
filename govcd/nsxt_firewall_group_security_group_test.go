@@ -270,7 +270,7 @@ func createStandaloneVm(check *C, vcd *TestVCD, vdc *Vdc, net *OpenApiOrgVdcNetw
 }
 
 func createVappVmAndAttachNetwork(check *C, vcd *TestVCD, vdc *Vdc, net *OpenApiOrgVdcNetwork) (*VApp, *VM) {
-	err := vdc.ComposeRawVApp(check.TestName())
+	err := vdc.ComposeRawVApp(check.TestName(), check.TestName()+"description")
 	check.Assert(err, IsNil)
 
 	vapp, err := vdc.GetVAppByName(check.TestName(), true)
