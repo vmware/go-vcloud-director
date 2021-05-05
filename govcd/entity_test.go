@@ -187,9 +187,9 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 			def.parentType, def.getterPrefix, entityName, entityId)
 	}
 	ge, err = def.getByNameOrId(entityName, false)
+	check.Assert(err, IsNil)
 	check.Assert(ge, NotNil)
 	entity4 := ge.(genericEntity)
-	check.Assert(err, IsNil)
 	check.Assert(entity4, NotNil)
 	check.Assert(entity4.name(), Equals, entityName)
 	check.Assert(entity4.id(), Equals, entityId)

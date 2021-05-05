@@ -219,52 +219,58 @@ func (org *Org) GetCatalogByHref(catalogHref string) (*Catalog, error) {
 //
 // refresh has no effect here, but is kept to preserve signature
 func (org *Org) GetCatalogByName(catalogName string, refresh bool) (*Catalog, error) {
-
-	orgCatalogs, err := org.QueryCatalogList()
+	vdcQuery, err := org.queryCatalogByName(catalogName)
+	if ContainsNotFound(err) {
+		return nil, ErrorEntityNotFound
+	}
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving Catalog list for Org '%s': %s", org.Org.Name, err)
+		return nil, fmt.Errorf("error querying Catalog: %s", err)
 	}
-
-	for _, catalog := range orgCatalogs {
-		// Get Catalog HREF
-		if catalog.Name == catalogName {
-			// Ensure there is no `admin` part in the catalog HREF
-			href := strings.Replace(catalog.HREF, "/api/admin", "/api", 1)
-			return org.GetCatalogByHref(href)
-		}
-	}
-	return nil, ErrorEntityNotFound
+	// This is not an AdminOrg and admin HREF must be removed if it exists
+	href := strings.Replace(vdcQuery.HREF, "/api/admin", "/api", 1)
+	return org.GetCatalogByHref(href)
 }
 
 // GetCatalogById finds a Catalog by ID
 // On success, returns a pointer to the Catalog structure and a nil error
 // On failure, returns a nil pointer and an error
 func (org *Org) GetCatalogById(catalogId string, refresh bool) (*Catalog, error) {
-	catalogs, err := org.QueryCatalogList()
+	vdcQuery, err := org.queryCatalogById(catalogId)
+	if ContainsNotFound(err) {
+		return nil, ErrorEntityNotFound
+	}
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving Catalog List for Org '%s': %s", org.Org.Name, err)
+		return nil, fmt.Errorf("error querying Catalog: %s", err)
 	}
 
-	for _, catalog := range catalogs {
-		if equalIds(catalogId, catalog.ID, catalog.HREF) {
-			return org.GetCatalogByHref(catalog.HREF)
-		}
-	}
-
-	return nil, ErrorEntityNotFound
+	// This is not an AdminOrg and admin HREF must be removed if it exists
+	href := strings.Replace(vdcQuery.HREF, "/api/admin", "/api", 1)
+	return org.GetCatalogByHref(href)
 }
 
 // GetCatalogByNameOrId finds a Catalog by name or ID
 // On success, returns a pointer to the Catalog structure and a nil error
 // On failure, returns a nil pointer and an error
 func (org *Org) GetCatalogByNameOrId(identifier string, refresh bool) (*Catalog, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return org.GetCatalogByName(name, refresh) }
-	getById := func(id string, refresh bool) (interface{}, error) { return org.GetCatalogById(id, refresh) }
-	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
-	if entity == nil {
-		return nil, err
+	// This function cannot directly use shorthand getEntityByNameOrId because org.GetVDCById API throws an error when the
+	// supplied identifier is not UUID or URN. Therefore this function does not even try to to find by ID when supplied
+	// identifier does not look like an ID and only tries to lookup by Name.
+	if isUrn(identifier) || IsUuid(identifier) {
+		catalogById, byIdErr := org.GetCatalogById(identifier, refresh)
+		if byIdErr == nil {
+			// Found by ID = return it
+			return catalogById, nil
+		}
+
+		// Return real error if it is not 'ErrorEntityNotFound'
+		if byIdErr != nil && !ContainsNotFound(byIdErr) {
+			return nil, byIdErr
+		}
 	}
-	return entity.(*Catalog), err
+
+	// Not found by ID, try by name
+	catalogByName, byNameErr := org.GetCatalogByName(identifier, false)
+	return catalogByName, byNameErr
 }
 
 // GetVDCByHref finds a VDC by HREF
@@ -367,64 +373,6 @@ func (org *Org) QueryCatalogList() ([]*types.CatalogRecord, error) {
 	return catalogs, nil
 }
 
-// queryOrgVdcByName returns a single QueryResultOrgVdcRecordType
-func (org *Org) queryOrgVdcByName(vdcName string) (*types.QueryResultOrgVdcRecordType, error) {
-	allVdcs, err := queryOrgVdcList(org.client, "name", vdcName, org.Org.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	if allVdcs == nil || len(allVdcs) < 1 {
-		return nil, ErrorEntityNotFound
-	}
-
-	if len(allVdcs) > 1 {
-		return nil, fmt.Errorf("found more than 1 VDC with Name '%s'", vdcName)
-	}
-
-	return allVdcs[0], nil
-}
-
-// queryOrgVdcById returns a single Org VDC query result
-func (org *Org) queryOrgVdcById(vdcId string) (*types.QueryResultOrgVdcRecordType, error) {
-	allVdcs, err := queryOrgVdcList(org.client, "id", vdcId, org.Org.ID)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if len(allVdcs) < 1 {
-		return nil, ErrorEntityNotFound
-	}
-
-	return allVdcs[0], nil
-}
-
-// queryOrgVdcList returns all Org VDCs using query endpoint
-func (org *Org) queryOrgVdcList() ([]*types.QueryResultOrgVdcRecordType, error) {
-	return queryOrgVdcList(org.client, "orgName", org.Org.Name, org.Org.ID)
-}
-
-func queryOrgVdcList(client *Client, filterFieldName, filterFieldValue, orgId string) ([]*types.QueryResultOrgVdcRecordType, error) {
-	queryType := client.GetQueryType(types.QtOrgVdc)
-	filterText := fmt.Sprintf("%s==%s", filterFieldName, url.QueryEscape(filterFieldValue))
-
-	results, err := client.cumulativeQuery(queryType, nil, map[string]string{
-		"type":          queryType,
-		"filter":        filterText,
-		"filterEncoded": "true",
-	})
-	if err != nil {
-		return nil, fmt.Errorf("error querying Org VDCs %s", err)
-	}
-
-	if client.IsSysAdmin {
-		return results.Results.OrgVdcAdminRecord, nil
-	} else {
-		return results.Results.OrgVdcRecord, nil
-	}
-}
-
 // GetTaskList returns Tasks for Organization and error.
 func (org *Org) GetTaskList() (*types.TasksList, error) {
 
@@ -444,4 +392,122 @@ func (org *Org) GetTaskList() (*types.TasksList, error) {
 	}
 
 	return nil, fmt.Errorf("link not found")
+}
+
+// queryOrgVdcByName returns a single QueryResultOrgVdcRecordType
+func (org *Org) queryOrgVdcByName(vdcName string) (*types.QueryResultOrgVdcRecordType, error) {
+	allVdcs, err := queryOrgVdcList(org.client, "name", vdcName)
+	if err != nil {
+		return nil, err
+	}
+
+	if allVdcs == nil || len(allVdcs) < 1 {
+		return nil, ErrorEntityNotFound
+	}
+
+	if len(allVdcs) > 1 {
+		return nil, fmt.Errorf("found more than 1 VDC with Name '%s'", vdcName)
+	}
+
+	return allVdcs[0], nil
+}
+
+// queryOrgVdcById returns a single Org VDC query result
+func (org *Org) queryOrgVdcById(vdcId string) (*types.QueryResultOrgVdcRecordType, error) {
+	allVdcs, err := queryOrgVdcList(org.client, "id", vdcId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(allVdcs) < 1 {
+		return nil, ErrorEntityNotFound
+	}
+
+	return allVdcs[0], nil
+}
+
+// queryCatalogByName returns a single QueryResultOrgVdcRecordType
+func (org *Org) queryCatalogByName(catalogName string) (*types.CatalogRecord, error) {
+	allCatalogs, err := queryCatalogList(org.client, org.Org.Name, "name", catalogName)
+	if err != nil {
+		return nil, err
+	}
+
+	if allCatalogs == nil || len(allCatalogs) < 1 {
+		return nil, ErrorEntityNotFound
+	}
+
+	if len(allCatalogs) > 1 {
+		return nil, fmt.Errorf("found more than 1 VDC with Name '%s'", catalogName)
+	}
+
+	return allCatalogs[0], nil
+}
+
+// queryCatalogById returns a single Org VDC query result
+func (org *Org) queryCatalogById(catalogId string) (*types.CatalogRecord, error) {
+	allCatalogs, err := queryCatalogList(org.client, org.Org.Name, "id", catalogId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(allCatalogs) < 1 {
+		return nil, ErrorEntityNotFound
+	}
+
+	return allCatalogs[0], nil
+}
+
+// QueryOrgVdcList returns all Org VDCs using query endpoint
+func (org *Org) QueryOrgVdcList() ([]*types.QueryResultOrgVdcRecordType, error) {
+	return queryOrgVdcList(org.client, "orgName", org.Org.Name)
+}
+
+func queryOrgVdcList(client *Client, filterFieldName, filterFieldValue string) ([]*types.QueryResultOrgVdcRecordType, error) {
+	queryType := client.GetQueryType(types.QtOrgVdc)
+	filterText := fmt.Sprintf("%s==%s", filterFieldName, url.QueryEscape(filterFieldValue))
+
+	results, err := client.cumulativeQuery(queryType, nil, map[string]string{
+		"type":          queryType,
+		"filter":        filterText,
+		"filterEncoded": "true",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error querying Org VDCs %s", err)
+	}
+
+	if client.IsSysAdmin {
+		return results.Results.OrgVdcAdminRecord, nil
+	} else {
+		return results.Results.OrgVdcRecord, nil
+	}
+}
+
+func queryCatalogList(client *Client, orgName, filterFieldName, filterFieldValue string) ([]*types.CatalogRecord, error) {
+	util.Logger.Printf("[DEBUG] queryCatalogList with Org name %s and filter %s==%s", orgName, filterFieldName, filterFieldValue)
+	queryType := client.GetQueryType(types.QtCatalog)
+	filter := fmt.Sprintf("orgName==%s", url.QueryEscape(orgName))
+	if filterFieldName != "" && filterFieldValue != "" {
+		filter = filter + fmt.Sprintf(";%s==%s", filterFieldName, url.QueryEscape(filterFieldValue))
+	}
+	results, err := client.cumulativeQuery(queryType, nil, map[string]string{
+		"type":          queryType,
+		"filter":        filter,
+		"filterEncoded": "true",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var catalogs []*types.CatalogRecord
+
+	if client.IsSysAdmin {
+		catalogs = results.Results.AdminCatalogRecord
+	} else {
+		catalogs = results.Results.CatalogRecord
+	}
+	util.Logger.Printf("[DEBUG] QueryCatalogList returned with : %#v and error: %s", catalogs, err)
+	return catalogs, nil
 }

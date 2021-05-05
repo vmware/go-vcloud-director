@@ -1026,7 +1026,7 @@ func (vcd *TestVCD) TestQueryOrgVdcList(check *C) {
 			check.Assert(err, IsNil)
 			check.Assert(org, NotNil)
 
-			vdcs, err := org.queryOrgVdcList()
+			vdcs, err := org.QueryOrgVdcList()
 			check.Assert(err, IsNil)
 			if testVerbose {
 				fmt.Printf("VDCs for Org '%s'\n", orgName)
@@ -1062,7 +1062,7 @@ func validateQueryOrgVdcResults(vcd *TestVCD, check *C, name, orgName string, ex
 
 	org, err := vcd.client.GetOrgByName(orgName)
 	check.Assert(err, IsNil)
-	orgList, err := org.queryOrgVdcList()
+	orgList, err := org.QueryOrgVdcList()
 	check.Assert(err, IsNil)
 
 	// Number of components should be equal to the one returned by 'adminOrg.GetAllVDCs' which looks up VDCs in
