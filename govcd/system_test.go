@@ -637,7 +637,7 @@ func (vcd *TestVCD) TestQueryAllVdcs(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	allVdcs, err := vcd.client.QueryAllVdcs()
+	allVdcs, err := vcd.client.Client.QueryAllVdcs()
 	check.Assert(err, IsNil)
 
 	// Check for at least that many VDCs in VCD

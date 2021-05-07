@@ -1048,7 +1048,7 @@ func (vcd *TestVCD) TestQueryOrgVdcList(check *C) {
 
 	// System Org does not directly report any child VDCs
 	validateQueryOrgVdcResults(vcd, check, "Org should have no VDCs", "System", takeIntAddress(0), nil)
-	validateQueryOrgVdcResults(vcd, check, fmt.Sprintf("Should have 1 VDC %s", vdc), newOrgName1, takeIntAddress(1), nil)
+	validateQueryOrgVdcResults(vcd, check, fmt.Sprintf("Should have 1 VDC %s", vdc.Vdc.Name), newOrgName1, takeIntAddress(1), nil)
 	validateQueryOrgVdcResults(vcd, check, "Should have 0 VDCs", newOrgName2, takeIntAddress(0), nil)
 	// Main Org 'vcd.config.VCD.Org' is expected to have at least (expectedVdcCountInSystem). Might be more if there are
 	// more VDCs created manually
@@ -1120,63 +1120,4 @@ func spawnTestOrg(vcd *TestVCD, check *C, nameSuffix string) string {
 	AddToCleanupList(newOrgName, "org", "", check.TestName())
 
 	return newOrgName
-}
-
-// spawnTestVdc spawns a VDC in a given adminOrgName to be used in tests
-func spawnTestVdc(vcd *TestVCD, check *C, adminOrgName string) string {
-	adminOrg, err := vcd.client.GetAdminOrgByName(adminOrgName)
-	check.Assert(err, IsNil)
-
-	providerVdcHref := getVdcProviderVdcHref(vcd, check)
-	providerVdcStorageProfileHref := getVdcProviderVdcStorageProfileHref(vcd, check)
-	networkPoolHref := getVdcNetworkPoolHref(vcd, check)
-
-	vdcConfiguration := &types.VdcConfiguration{
-		Name:            check.TestName() + "-VDC",
-		Xmlns:           types.XMLNamespaceVCloud,
-		AllocationModel: "Flex",
-		ComputeCapacity: []*types.ComputeCapacity{
-			&types.ComputeCapacity{
-				CPU: &types.CapacityWithUsage{
-					Units:     "MHz",
-					Allocated: 1024,
-					Limit:     1024,
-				},
-				Memory: &types.CapacityWithUsage{
-					Allocated: 1024,
-					Limit:     1024,
-					Units:     "MB",
-				},
-			},
-		},
-		VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
-			Enabled: true,
-			Units:   "MB",
-			Limit:   1024,
-			Default: true,
-			ProviderVdcStorageProfile: &types.Reference{
-				HREF: providerVdcStorageProfileHref,
-			},
-		},
-		},
-		NetworkPoolReference: &types.Reference{
-			HREF: networkPoolHref,
-		},
-		ProviderVdcReference: &types.Reference{
-			HREF: providerVdcHref,
-		},
-		IsEnabled:             true,
-		IsThinProvision:       true,
-		UsesFastProvisioning:  true,
-		IsElastic:             takeBoolPointer(true),
-		IncludeMemoryOverhead: takeBoolPointer(true),
-	}
-
-	vdc, err := adminOrg.CreateOrgVdc(vdcConfiguration)
-	check.Assert(err, IsNil)
-	check.Assert(vdc, NotNil)
-
-	AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, check.TestName())
-
-	return vdc.Vdc.Name
 }

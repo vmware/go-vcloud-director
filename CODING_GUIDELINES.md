@@ -348,7 +348,7 @@ To add a type to the search engine, we need the following:
 2. Add the list of supported fields to `queryFieldsOnDemand` (`query_metadata.go`)
 3. Implement the interface `QueryItem` (`filter_interface.go`), which requires a type localization (such as 
 `type QueryMedia  types.MediaRecordType`)
-4. Add a clause to `resultsToQueryItems` (`filter_interface.go`)
+4. Add a clause to `resultToQueryItems` (`filter_interface.go`)
 
 ## Data inspection checkpoints
 

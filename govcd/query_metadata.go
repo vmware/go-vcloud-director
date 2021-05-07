@@ -69,6 +69,13 @@ func queryFieldsOnDemand(queryType string) ([]string, error) {
 			"ownerName", "status", "vdc", "vdcName", "numberOfVMs", "numberOfCpus", "cpuAllocationMhz", "cpuAllocationInMhz",
 			"storageKB", "memoryAllocationMB", "isAutoDeleteNotified", "isAutoUndeployNotified", "isVdcEnabled", "honorBookOrder",
 			"pvdcHighestSupportedHardwareVersion", "lowestHardwareVersionInVApp"}
+		orgVdcFields = []string{"name", "description", "isEnabled", "cpuAllocationMhz", "cpuLimitMhz", "cpuUsedMhz",
+			"memoryAllocationMB", "memoryLimitMB", "memoryUsedMB", "storageLimitMB", "storageUsedMB", "providerVdcName",
+			"providerVdc", "orgName", "org", "allocationModel", "numberOfVApps", "numberOfUnmanagedVApps", "numberOfMedia",
+			"numberOfDisks", "numberOfVAppTemplates", "vcName", "isBusy", "status", "networkPool", "numberOfResourcePools",
+			"numberOfStorageProfiles", "usedNetworksInVdc", "numberOfVMs", "numberOfRunningVMs", "numberOfDeployedVApps",
+			"numberOfDeployedUnmanagedVApps", "isThinProvisioned", "isFastProvisioned", "networkProviderType",
+			"cpuOverheadMhz", "isVCEnabled", "memoryReservedMB", "cpuReservedMhz", "storageOverheadMB", "memoryOverheadMB", "vc"}
 		fieldsOnDemand = map[string][]string{
 			types.QtVappTemplate:      vappTemplatefields,
 			types.QtAdminVappTemplate: vappTemplatefields,
@@ -84,6 +91,8 @@ func queryFieldsOnDemand(queryType string) ([]string, error) {
 			types.QtAdminVm:           vmFields,
 			types.QtVapp:              vappFields,
 			types.QtAdminVapp:         vappFields,
+			types.QtOrgVdc:            orgVdcFields,
+			types.QtAdminOrgVdc:       orgVdcFields,
 		}
 	)
 

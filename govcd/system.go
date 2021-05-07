@@ -803,11 +803,11 @@ func QueryOrgVdcNetworkByName(vcdCli *VCDClient, name string) ([]*types.QueryRes
 // QueryAllVdcs returns all Org VDCs in a VCD instance
 //
 // This function requires "System" user or returns an error
-func (vcdCli *VCDClient) QueryAllVdcs() ([]*types.QueryResultOrgVdcRecordType, error) {
-	if !vcdCli.Client.IsSysAdmin {
+func (client *Client) QueryAllVdcs() ([]*types.QueryResultOrgVdcRecordType, error) {
+	if !client.IsSysAdmin {
 		return nil, errors.New("this function only works with 'System' user")
 	}
-	return queryOrgVdcList(&vcdCli.Client, nil)
+	return queryOrgVdcList(client, nil)
 }
 
 // QueryNsxtManagerByName searches for NSX-T managers available in VCD
