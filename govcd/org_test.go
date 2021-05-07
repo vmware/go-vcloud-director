@@ -1070,6 +1070,7 @@ func validateQueryOrgVdcResults(vcd *TestVCD, check *C, name, orgName string, ex
 	adminOrg, err := vcd.client.GetAdminOrgByName(orgName)
 	check.Assert(err, IsNil)
 	allVdcs, err := adminOrg.GetAllVDCs(true)
+	check.Assert(err, IsNil)
 	check.Assert(len(orgList), Equals, len(allVdcs))
 
 	// Ensure the expected count of VDCs is found
