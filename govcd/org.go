@@ -337,8 +337,11 @@ func (org *Org) GetVDCByNameOrId(identifier string, refresh bool) (*Vdc, error) 
 
 // QueryCatalogList returns a list of catalogs for this organization
 func (org *Org) QueryCatalogList() ([]*types.CatalogRecord, error) {
-	util.Logger.Printf("[DEBUG] QueryCatalogList with Org name %s", org.Org.Name)
-	return queryCatalogList(org.client, org.Org.Name, "", "")
+	util.Logger.Printf("[DEBUG] QueryCatalogList with Org HREF %s", org.Org.HREF)
+	filter := map[string]string{
+		"org": org.Org.HREF,
+	}
+	return queryCatalogList(org.client, filter)
 }
 
 // GetTaskList returns Tasks for Organization and error.
@@ -405,7 +408,11 @@ func (org *Org) queryOrgVdcById(vdcId string) (*types.QueryResultOrgVdcRecordTyp
 
 // queryCatalogByName returns a single QueryResultOrgVdcRecordType
 func (org *Org) queryCatalogByName(catalogName string) (*types.CatalogRecord, error) {
-	allCatalogs, err := queryCatalogList(org.client, org.Org.Name, "name", catalogName)
+	filterMap := map[string]string{
+		"org":  org.Org.HREF,
+		"name": catalogName,
+	}
+	allCatalogs, err := queryCatalogList(org.client, filterMap)
 	if err != nil {
 		return nil, err
 	}
@@ -423,7 +430,11 @@ func (org *Org) queryCatalogByName(catalogName string) (*types.CatalogRecord, er
 
 // queryCatalogById returns a single Org VDC query result
 func (org *Org) queryCatalogById(catalogId string) (*types.CatalogRecord, error) {
-	allCatalogs, err := queryCatalogList(org.client, org.Org.Name, "id", catalogId)
+	filterMap := map[string]string{
+		"org": org.Org.HREF,
+		"id":  catalogId,
+	}
+	allCatalogs, err := queryCatalogList(org.client, filterMap)
 
 	if err != nil {
 		return nil, err
@@ -444,7 +455,7 @@ func (org *Org) QueryOrgVdcList() ([]*types.QueryResultOrgVdcRecordType, error) 
 		"org": org.Org.HREF,
 	}
 
-	return queryOrgVdcList(org.client, filter) // To check on this
+	return queryOrgVdcList(org.client, filter)
 }
 
 // queryOrgVdcList performs an `orgVdc` or `adminOrgVdc` (for System user) and optionally applies filterFields
@@ -486,18 +497,33 @@ func queryOrgVdcList(client *Client, filterFields map[string]string) ([]*types.Q
 	}
 }
 
-func queryCatalogList(client *Client, orgName, filterFieldName, filterFieldValue string) ([]*types.CatalogRecord, error) {
-	util.Logger.Printf("[DEBUG] queryCatalogList with Org name %s and filter %s==%s", orgName, filterFieldName, filterFieldValue)
+func queryCatalogList(client *Client, filterFields map[string]string) ([]*types.CatalogRecord, error) {
+	util.Logger.Printf("[DEBUG] queryCatalogList with filter %#v", filterFields)
 	queryType := client.GetQueryType(types.QtCatalog)
-	filter := fmt.Sprintf("orgName==%s", url.QueryEscape(orgName))
-	if filterFieldName != "" && filterFieldValue != "" {
-		filter = filter + fmt.Sprintf(";%s==%s", filterFieldName, url.QueryEscape(filterFieldValue))
+
+	filter := map[string]string{
+		"type": queryType,
 	}
-	results, err := client.cumulativeQuery(queryType, nil, map[string]string{
-		"type":          queryType,
-		"filter":        filter,
-		"filterEncoded": "true",
-	})
+
+	// When a map of filters with non empty keys and values is supplied - apply it
+	if filterFields != nil {
+		filterSlice := make([]string, 0)
+
+		for filterFieldName, filterFieldValue := range filterFields {
+			if filterFieldName != "" && filterFieldValue != "" {
+				filterText := fmt.Sprintf("%s==%s", filterFieldName, url.QueryEscape(filterFieldValue))
+				filterSlice = append(filterSlice, filterText)
+			}
+
+		}
+
+		if len(filterSlice) > 0 {
+			filter["filter"] = strings.Join(filterSlice, ";")
+			filter["filterEncoded"] = "true"
+		}
+	}
+
+	results, err := client.cumulativeQuery(queryType, nil, filter)
 	if err != nil {
 		return nil, err
 	}
