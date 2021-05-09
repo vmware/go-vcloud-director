@@ -40,12 +40,12 @@ func NewAdminOrg(cli *Client) *AdminOrg {
 // task.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-CreateCatalog.html
 func (adminOrg *AdminOrg) CreateCatalog(name, description string) (AdminCatalog, error) {
-	catalog, err := createCatalog(adminOrg.client, adminOrg.AdminOrg.Link, name, description)
+	catalog, err := adminOrg.CreateCatalogWithStorageProfile(name, description, nil)
 	if err != nil {
 		return AdminCatalog{}, err
 	}
 	catalog.parent=adminOrg
-	return catalog, nil
+	return *catalog, nil
 }
 
 // CreateCatalogWithStorageProfile is like CreateCatalog, but allows to specify storage profile

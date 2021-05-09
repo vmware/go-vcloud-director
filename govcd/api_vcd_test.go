@@ -737,7 +737,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		// Validate if the resource still exists
-		err = vcd.client.Client.OpenApiGetItem(apiVersion, urlRef, nil, nil)
+		err = vcd.client.Client.OpenApiGetItem(apiVersion, urlRef, nil, nil, nil)
 		if ContainsNotFound(err) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
@@ -754,7 +754,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		// Attempt to use supplied path in entity.Parent for element deletion
-		err = vcd.client.Client.OpenApiDeleteItem(apiVersion, urlRef, nil)
+		err = vcd.client.Client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
 		if err != nil {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 			return

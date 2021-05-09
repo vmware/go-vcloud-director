@@ -46,7 +46,7 @@ func (vdc *Vdc) GetOpenApiOrgVdcNetworkDhcp(orgNetworkId string) (*OpenApiOrgVdc
 		client:                   client,
 	}
 
-	err = client.OpenApiGetItem(minimumApiVersion, urlRef, queryParameters, orgNetDhcp.OpenApiOrgVdcNetworkDhcp)
+	err = client.OpenApiGetItem(minimumApiVersion, urlRef, queryParameters, orgNetDhcp.OpenApiOrgVdcNetworkDhcp, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (vdc *Vdc) UpdateOpenApiOrgVdcNetworkDhcp(orgNetworkId string, orgVdcNetwor
 		client:                   vdc.client,
 	}
 
-	err = vdc.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, orgVdcNetworkDhcpConfig, orgNetDhcpResponse.OpenApiOrgVdcNetworkDhcp)
+	err = vdc.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, orgVdcNetworkDhcpConfig, orgNetDhcpResponse.OpenApiOrgVdcNetworkDhcp, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error updating Org VDC network DHCP configuration: %s", err)
 	}
@@ -102,7 +102,7 @@ func (vdc *Vdc) DeleteOpenApiOrgVdcNetworkDhcp(orgNetworkId string) error {
 		return err
 	}
 
-	err = vdc.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil)
+	err = vdc.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting Org VDC network DHCP configuration: %s", err)

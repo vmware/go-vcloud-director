@@ -98,7 +98,7 @@ func (vdc *Vdc) GetAllNsxtEdgeClusters(queryParameters url.Values) ([]*NsxtEdgeC
 	queryParams := queryParameterFilterAnd("_context=="+vdc.Vdc.ID, queryParameters)
 
 	typeResponses := []*types.NsxtEdgeCluster{{}}
-	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParams, &typeResponses)
+	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParams, &typeResponses, nil)
 	if err != nil {
 		return nil, err
 	}
