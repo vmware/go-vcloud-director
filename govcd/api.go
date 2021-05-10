@@ -603,7 +603,7 @@ func executeRequestCustomErr(pathURL string, params map[string]string, requestTy
 	var req *http.Request
 	switch {
 	// Only send data (and xml.Header) if the payload is actually provided to avoid sending empty body with XML header
-	//(some Web Application Firewalls block requests when empty XML header is set but not body provided)
+	// (some Web Application Firewalls block requests when empty XML header is set but not body provided)
 	case payload != nil:
 		marshaledXml, err := xml.MarshalIndent(payload, "  ", "    ")
 		if err != nil {
