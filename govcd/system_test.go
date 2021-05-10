@@ -8,6 +8,7 @@ package govcd
 
 import (
 	"fmt"
+	"strings"
 
 	. "gopkg.in/check.v1"
 
@@ -629,4 +630,53 @@ func (vcd *TestVCD) Test_GetOrgList(check *C) {
 		}
 		check.Assert(foundOrg, Equals, true)
 	}
+}
+
+func (vcd *TestVCD) TestQueryAllVdcs(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	allVdcs, err := vcd.client.Client.QueryAllVdcs()
+	check.Assert(err, IsNil)
+
+	// Check for at least that many VDCs in VCD
+	// expectedVdcCountInSystem = 1 NSX-V VDC
+	expectedVdcCountInSystem := 1
+	// If an NSX-T VDC exists - then expected count of VDCs is at least 2
+	if vcd.config.VCD.Nsxt.Vdc != "" {
+		expectedVdcCountInSystem++
+	}
+
+	if testVerbose {
+		fmt.Printf("# List contains at least %d VDCs.", expectedVdcCountInSystem)
+	}
+	check.Assert(len(allVdcs) >= expectedVdcCountInSystem, Equals, true)
+	// Check that known VDCs are inside the list
+
+	knownVdcs := []string{vcd.config.VCD.Vdc}
+	if vcd.config.VCD.Nsxt.Vdc != "" {
+		knownVdcs = append(knownVdcs, vcd.config.VCD.Nsxt.Vdc)
+	}
+
+	foundVdcNames := make([]string, len(allVdcs))
+	for vdcIndex, vdc := range allVdcs {
+		foundVdcNames[vdcIndex] = vdc.Name
+	}
+
+	if testVerbose {
+		fmt.Printf("# Checking result contains all known VDCs (%s).", strings.Join((knownVdcs), ", "))
+	}
+	for _, knownVdcName := range knownVdcs {
+		check.Assert(contains(foundVdcNames, knownVdcName), Equals, true)
+	}
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }

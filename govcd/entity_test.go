@@ -157,7 +157,7 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 
 	// 2. Get the entity by ID
 	if testVerbose {
-		fmt.Printf("#Testing %s.Get%sById\n", def.parentType, def.getterPrefix)
+		fmt.Printf("#Testing %s.Get%sById (using ID '%s')\n", def.parentType, def.getterPrefix, entityId)
 	}
 	ge, err = def.getById(entityId, false)
 	check.Assert(err, IsNil)
@@ -183,12 +183,13 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 
 	// 4. Get the entity by Name or ID, using the entity name
 	if testVerbose {
-		fmt.Printf("#Testing %s.Get%sByNameOrId\n", def.parentType, def.getterPrefix)
+		fmt.Printf("#Testing %s.Get%sByNameOrId (name '%s', ID '%s')\n",
+			def.parentType, def.getterPrefix, entityName, entityId)
 	}
 	ge, err = def.getByNameOrId(entityName, false)
+	check.Assert(err, IsNil)
 	check.Assert(ge, NotNil)
 	entity4 := ge.(genericEntity)
-	check.Assert(err, IsNil)
 	check.Assert(entity4, NotNil)
 	check.Assert(entity4.name(), Equals, entityName)
 	check.Assert(entity4.id(), Equals, entityId)

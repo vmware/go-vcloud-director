@@ -22,7 +22,7 @@ var INVALID_NAME = `*******************************************INVALID
 					************************`
 
 // This ID won't be found by lookup in any entity
-var invalidEntityId = "one:two:three:aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+var invalidEntityId = "urn:vcloud:three:aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 
 func tagsHelp(t *testing.T) {
 

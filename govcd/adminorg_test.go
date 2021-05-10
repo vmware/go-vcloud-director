@@ -246,21 +246,6 @@ func (vcd *TestVCD) Test_AdminOrgGetAllVDCs(check *C) {
 	}
 }
 
-func (vcd *TestVCD) Test_OrgGetAllVDCs(check *C) {
-	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
-	check.Assert(err, IsNil)
-	check.Assert(org, NotNil)
-
-	vdcs, err := org.GetAllVDCs(true)
-	check.Assert(err, IsNil)
-	check.Assert(len(vdcs) > 0, Equals, true)
-
-	// If NSX-T VDC is configured we expect to see at least 2 VDCs (NSX-V and NSX-T)
-	if vcd.config.VCD.Nsxt.Vdc != "" {
-		check.Assert(len(vdcs) >= 2, Equals, true)
-	}
-}
-
 // Test_GetAllStorageProfileReferences checks that adminOrg.GetAllStorageProfileReferences returns at least one storage
 // profile reference
 func (vcd *TestVCD) Test_GetAllStorageProfileReferences(check *C) {

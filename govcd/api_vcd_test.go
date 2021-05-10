@@ -162,11 +162,7 @@ type TestConfig struct {
 		ExternalNetworkPortGroup     string `yaml:"externalNetworkPortGroup,omitempty"`
 		ExternalNetworkPortGroupType string `yaml:"externalNetworkPortGroupType,omitempty"`
 		VimServer                    string `yaml:"vimServer,omitempty"`
-		Disk                         struct {
-			Size          int64 `yaml:"size,omitempty"`
-			SizeForUpdate int64 `yaml:"sizeForUpdate,omitempty"`
-		}
-		Nsxt struct {
+		Nsxt                         struct {
 			Manager           string `yaml:"manager"`
 			Tier0router       string `yaml:"tier0router"`
 			Tier0routerVrf    string `yaml:"tier0routerVrf"`
@@ -544,7 +540,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	if err == nil {
 		versionInfo = fmt.Sprintf("version %s built at %s", version, versionTime)
 	}
-	fmt.Printf("Running on vCD %s (%s)\nas user %s@%s (using %s)\n", vcd.config.Provider.Url, versionInfo,
+	fmt.Printf("Running on VCD %s (%s)\nas user %s@%s (using %s)\n", vcd.config.Provider.Url, versionInfo,
 		vcd.config.Provider.User, vcd.config.Provider.SysOrg, authenticationMode)
 	if !vcd.client.Client.IsSysAdmin {
 		vcd.skipAdminTests = true

@@ -2,8 +2,14 @@
 
 * Added method `vdc.QueryEdgeGateway` [#364](https://github.com/vmware/go-vcloud-director/pull/364)
 * Deprecated `vdc.GetEdgeGatewayRecordsType` [#364](https://github.com/vmware/go-vcloud-director/pull/364)
-* Added parameter `description` to method `vdc.ComposeRawVapp` [#372](https://github.com/vmware/go-vcloud-director/pull/372)
-* Added methods `vapp.Rename`, `vapp.UpdateDescription`, `vapp.UpdateNameDescription` [#372](https://github.com/vmware/go-vcloud-director/pull/372)
+* Dropped support for VCD 9.7 which is EOL now [#371](https://github.com/vmware/go-vcloud-director/pull/371)
+* Bumped Default API Version to V33.0  [#371](https://github.com/vmware/go-vcloud-director/pull/371)
+* Methods `GetVDCById` and `GetVDCByName` for `Org` now use queries behind the scenes because Org 
+  structure does not list child VDCs anymore  [#371](https://github.com/vmware/go-vcloud-director/pull/371)
+* Methods `GetCatalogById` and `GetCatalogByName` for `Org`  now use queries behind the scenes because Org
+  structure does not list child Catalogs anymore  [#371](https://github.com/vmware/go-vcloud-director/pull/371)
+* Drop legacy authentication mechanism (vcdAuthorize) and use only new Cloud API provided (vcdCloudApiAuthorize) as
+  API V33.0 is sufficient for it [#371](https://github.com/vmware/go-vcloud-director/pull/371)
 * Added NSX-T Firewall Group type (which represents a Security Group or an IP Set) support by using
   structures `NsxtFirewallGroup` and `NsxtFirewallGroupMemberVms`. The following methods are
   introduced for managing Security Groups and IpP Sets: `Vdc.CreateNsxtFirewallGroup`,
@@ -19,6 +25,18 @@
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
 * Added methods Org.QueryVmList and Org.QueryVmById to find VM by ID in an Org
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
+  
+BREAKING CHANGES:
+* Added parameter `description` to method `vdc.ComposeRawVapp` [#372](https://github.com/vmware/go-vcloud-director/pull/372)
+* Added methods `vapp.Rename`, `vapp.UpdateDescription`, `vapp.UpdateNameDescription` [#372](https://github.com/vmware/go-vcloud-director/pull/372)
+* Field `types.Disk.Size` is replaced with `types.Disk.SizeMb` as size in Kilobytes is not supported in V33.0
+  [#371](https://github.com/vmware/go-vcloud-director/pull/371)
+* Field `types.DiskRecordType.SizeB` is replaced with `types.DiskRecordType.SizeMb` as size in Kilobytes is not
+  supported in V33.0 [#371](https://github.com/vmware/go-vcloud-director/pull/371)
+
+IMPROVEMENTS:
+* Only send xml.Header when payload is not empty (some WAFs block empty requests with XML header) 
+  [#367](https://github.com/vmware/go-vcloud-director/pull/367)
 
 IMPROVEMENTS:
 * Improved test entity cleanup to find standalone VMs in any VDC (not only default NSX-V one)

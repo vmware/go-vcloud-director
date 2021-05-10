@@ -415,6 +415,32 @@ func HelperCreateMultipleCatalogItems(catalog *Catalog, requestData []VappTempla
 	return data, nil
 }
 
+func HelperMakeFiltersFromOrgVdc(org *Org) ([]FilterMatch, error) {
+	var filters []FilterMatch
+	items, err := org.QueryOrgVdcList()
+	if err != nil {
+		return filters, err
+	}
+	for _, item := range items {
+		localItem := QueryOrgVdc(*item)
+		qItem := QueryItem(localItem)
+
+		filter, _, err := queryItemToFilter(qItem, "QueryOrgVdc")
+		if err != nil {
+			return nil, err
+		}
+
+		filter, err = org.client.metadataToFilter(item.HREF, filter)
+		if err != nil {
+			return nil, err
+		}
+
+		filters = append(filters, FilterMatch{filter, item.Name, localItem, "QueryOrgVdc"})
+	}
+
+	return filters, nil
+}
+
 // ipToRegex creates a regular expression that matches an IP without the last element
 func ipToRegex(ip string) string {
 	elements := strings.Split(ip, ".")
