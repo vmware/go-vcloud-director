@@ -43,3 +43,29 @@ func getEntityByNameOrId(getByName, getById genericGetter, identifier string, re
 		return nil, byIdErr
 	}
 }
+
+// getEntityByNameOrIdSkipNonId is like getEntityByNameOrId, but it does not even attempt to lookup "ById" if the
+// identifier does not look like URN or UUID
+func getEntityByNameOrIdSkipNonId(getByName, getById genericGetter, identifier string, refresh bool) (interface{}, error) {
+
+	var byNameErr, byIdErr error
+	var entity interface{}
+
+	// Only check by Id if it is an ID or an URN
+	if isUrn(identifier) || IsUuid(identifier) {
+		entity, byIdErr = getById(identifier, refresh)
+		if byIdErr == nil {
+			// Found by ID
+			return entity, nil
+		}
+	}
+
+	if IsNotFound(byIdErr) || byIdErr == nil {
+		// Not found by ID, try by name
+		entity, byNameErr = getByName(identifier, false)
+		return entity, byNameErr
+	} else {
+		// On any other error, we return it
+		return nil, byIdErr
+	}
+}

@@ -132,16 +132,6 @@ vcd:
     # A vSphere server name for creating an external network
     vimServer: vc9
     #
-    # Independent disk parameters for testing
-    disk:
-      #
-      # Disk size (bytes) for create disk, skip disk tests if it is less than or equal to 0
-      size: 1048576
-      #
-      # Disk size (bytes) for update disk, skip some disk tests if it is less than or equal to 0
-      # The minimum size is 1048576 (1 MB). While theoretically smaller amounts are allowed,
-      # there is an issue when using < 1MB during updates
-      sizeForUpdate: 1048576
 logging:
     # All items in this section are optional
     # Logging is disabled by default.

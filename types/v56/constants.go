@@ -250,6 +250,8 @@ const (
 	QtAdminVm           = "adminVM"           // Virtual machine as admin
 	QtVapp              = "vApp"              // vApp
 	QtAdminVapp         = "adminVApp"         // vApp as admin
+	QtOrgVdc            = "orgVdc"            // Org VDC
+	QtAdminOrgVdc       = "adminOrgVdc"       // Org VDC as admin
 )
 
 // AdminQueryTypes returns the corresponding "admin" query type for each regular type
@@ -262,6 +264,7 @@ var AdminQueryTypes = map[string]string{
 	QtMedia:         QtAdminMedia,
 	QtVm:            QtAdminVm,
 	QtVapp:          QtAdminVapp,
+	QtOrgVdc:        QtAdminOrgVdc,
 }
 
 const (
