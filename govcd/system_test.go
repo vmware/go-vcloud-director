@@ -652,7 +652,6 @@ func (vcd *TestVCD) TestQueryAllVdcs(check *C) {
 		fmt.Printf("# List contains at least %d VDCs.", expectedVdcCountInSystem)
 	}
 	check.Assert(len(allVdcs) >= expectedVdcCountInSystem, Equals, true)
-	fmt.Println(" OK.")
 	// Check that known VDCs are inside the list
 
 	knownVdcs := []string{vcd.config.VCD.Vdc}
@@ -671,7 +670,6 @@ func (vcd *TestVCD) TestQueryAllVdcs(check *C) {
 	for _, knownVdcName := range knownVdcs {
 		check.Assert(contains(foundVdcNames, knownVdcName), Equals, true)
 	}
-	fmt.Println(" OK.")
 }
 
 func contains(s []string, e string) bool {

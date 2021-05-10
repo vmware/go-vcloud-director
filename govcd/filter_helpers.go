@@ -422,8 +422,6 @@ func HelperMakeFiltersFromOrgVdc(org *Org) ([]FilterMatch, error) {
 		return filters, err
 	}
 	for _, item := range items {
-		fmt.Println(item.OrgName)
-
 		localItem := QueryOrgVdc(*item)
 		qItem := QueryItem(localItem)
 

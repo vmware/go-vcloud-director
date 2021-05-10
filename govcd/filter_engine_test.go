@@ -329,7 +329,7 @@ func (vcd *TestVCD) Test_SearchOrgVdc(check *C) {
 	_, err = anotherVdc.AddMetadata("key3", "value3")
 	check.Assert(err, IsNil)
 
-	// Get existing media, and create sample filters to retrieve them
+	// Get existing vdc, and create sample filters to retrieve them
 	filters, err := HelperMakeFiltersFromOrgVdc(org)
 	check.Assert(err, IsNil)
 	check.Assert(filters, NotNil)
