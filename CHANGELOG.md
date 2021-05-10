@@ -19,6 +19,10 @@ BREAKING CHANGES:
 * Field `types.DiskRecordType.SizeB` is replaced with `types.DiskRecordType.SizeMb` as size in Kilobytes is not
   supported in V33.0 [#371](https://github.com/vmware/go-vcloud-director/pull/371)
 
+IMPROVEMENTS:
+* Only send xml.Header when payload is not empty (some WAFs block empty requests with XML header) 
+  [#367](https://github.com/vmware/go-vcloud-director/pull/367)
+
 ## 2.11.0 (March 10, 2021)
 
 * Added structure and methods to handle Org VDC networks using OpenAPI - `OpenApiOrgVdcNetwork`. It supports VCD 9.7+
