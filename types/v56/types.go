@@ -1186,6 +1186,18 @@ type ReComposeVAppParams struct {
 	DeleteItem          *DeleteItem                  `xml:"DeleteItem,omitempty"`
 }
 
+// SmallRecomposeVappParams is used to update name and description of a vApp
+// Using the full definition (ReComposeVAppParams), the description can be changed but not removed
+type SmallRecomposeVappParams struct {
+	XMLName     xml.Name `xml:"RecomposeVAppParams"`
+	Ovf         string   `xml:"xmlns:ovf,attr"`
+	Xsi         string   `xml:"xmlns:xsi,attr"`
+	Xmlns       string   `xml:"xmlns,attr"`
+	Name        string   `xml:"name,attr"`
+	Deploy      bool     `xml:"deploy,attr"`
+	Description string   `xml:"Description"`
+}
+
 type DeleteItem struct {
 	HREF string `xml:"href,attr,omitempty"`
 }
@@ -2152,6 +2164,63 @@ type QueryResultRecordsType struct {
 	VappTemplateRecord              []*QueryResultVappTemplateType                    `xml:"VAppTemplateRecord"`              // A record representing a vApp template
 	AdminVappTemplateRecord         []*QueryResultVappTemplateType                    `xml:"AdminVAppTemplateRecord"`         // A record representing an admin vApp template
 	NsxtManagerRecord               []*QueryResultNsxtManagerRecordType               `xml:"NsxTManagerRecord"`               // A record representing NSX-T manager
+	OrgVdcRecord                    []*QueryResultOrgVdcRecordType                    `xml:"OrgVdcRecord"`                    // A record representing Org VDC
+	OrgVdcAdminRecord               []*QueryResultOrgVdcRecordType                    `xml:"AdminVdcRecord"`                  // A record representing Org VDC
+}
+
+// QueryResultOrgVdcRecordType represents an Org VDC record
+type QueryResultOrgVdcRecordType struct {
+	HREF                           string    `xml:"href,attr,omitempty"`
+	Name                           string    `xml:"name,attr,omitempty"`
+	ComputeProviderScope           string    `xml:"computeProviderScope,attr,omitempty"`
+	NetworkProviderScope           string    `xml:"networkProviderScope,attr,omitempty"`
+	IsEnabled                      string    `xml:"isEnabled,attr,omitempty"`
+	CpuAllocationMhz               *int      `xml:"cpuAllocationMhz,attr,omitempty"`
+	CpuLimitMhz                    *int      `xml:"cpuLimitMhz,attr,omitempty"`
+	CpuUsedMhz                     *int      `xml:"cpuUsedMhz,attr,omitempty"`
+	MemoryAllocationMB             *int      `xml:"memoryAllocationMB,attr,omitempty"`
+	MemoryLimitMB                  *int      `xml:"memoryLimitMB,attr,omitempty"`
+	MemoryUsedMB                   *int      `xml:"memoryUsedMB,attr,omitempty"`
+	StorageLimitMB                 *int      `xml:"storageLimitMB,attr,omitempty"`
+	StorageUsedMB                  *int      `xml:"storageUsedMB,attr,omitempty"`
+	StorageOverheadMB              *int      `xml:"storageOverheadMB,attr,omitempty"`
+	MemoryOverheadMB               *int      `xml:"memoryOverheadMB,attr,omitempty"`
+	NumberOfVApps                  *int      `xml:"numberOfVApps,attr,omitempty"`
+	NumberOfUnmanagedVApps         *int      `xml:"numberOfUnmanagedVApps,attr,omitempty"`
+	NumberOfMedia                  *int      `xml:"numberOfMedia,attr,omitempty"`
+	NumberOfDisks                  *int      `xml:"numberOfDisks,attr,omitempty"`
+	NumberOfVAppTemplates          *int      `xml:"numberOfVAppTemplates,attr,omitempty"`
+	NumberOfStorageProfiles        *int      `xml:"numberOfStorageProfiles,attr,omitempty"`
+	NumberOfVMs                    *int      `xml:"numberOfVMs,attr,omitempty"`
+	NumberOfRunningVMs             *int      `xml:"numberOfRunningVMs,attr,omitempty"`
+	NumberOfDeployedVApps          *int      `xml:"numberOfDeployedVApps,attr,omitempty"`
+	NumberOfDeployedUnmanagedVApps *int      `xml:"numberOfDeployedUnmanagedVApps,attr,omitempty"`
+	CpuOverheadMhz                 *int      `xml:"cpuOverheadMhz,attr,omitempty"`
+	OrgName                        string    `xml:"orgName,attr,omitempty"`
+	AllocationModel                string    `xml:"allocationModel,attr,omitempty"`
+	VcName                         string    `xml:"vcName,attr,omitempty"`
+	IsBusy                         string    `xml:"isBusy,attr,omitempty"`
+	Status                         string    `xml:"status,attr,omitempty"`
+	TaskStatusName                 string    `xml:"taskStatusName,attr,omitempty"`
+	Task                           string    `xml:"task,attr,omitempty"`
+	TaskStatus                     string    `xml:"taskStatus,attr,omitempty"`
+	TaskDetails                    string    `xml:"taskDetails,attr,omitempty"`
+	Metadata                       *Metadata `xml:"Metadata,omitempty"`
+
+	// Admin Org VDC fields
+	ProviderVdcName       string `xml:"providerVdcName,attr,omitempty"`
+	ProviderVdc           string `xml:"providerVdc,attr,omitempty"`
+	Org                   string `xml:"org,attr,omitempty"`
+	NetworkPool           string `xml:"networkPool,attr,omitempty"`
+	NumberOfResourcePools *int   `xml:"numberOfResourcePools,attr,omitempty"`
+	UsedNetworksInVdc     string `xml:"usedNetworksInVdc,attr,omitempty"`
+	IsThinProvisioned     string `xml:"isThinProvisioned,attr,omitempty"`
+	IsFastProvisioned     string `xml:"isFastProvisioned,attr,omitempty"`
+	NetworkProviderType   string `xml:"networkProviderType,attr,omitempty"`
+	IsVCEnabled           string `xml:"isVCEnabled,attr,omitempty"`
+	MemoryReservedMB      *int   `xml:"memoryReservedMB,attr,omitempty"`
+	CpuReservedMhz        *int   `xml:"cpuReservedMhz,attr,omitempty"`
+	Vc                    string `xml:"vc,attr,omitempty"`
 }
 
 // QueryResultCatalogItemType represents a catalog item as query result
@@ -2528,15 +2597,18 @@ type DiskCreateParams struct {
 // Reference: vCloud API 30.0 - DiskType
 // https://code.vmware.com/apis/287/vcloud?h=Director#/doc/doc/types/DiskType.html
 type Disk struct {
-	XMLName         xml.Name         `xml:"Disk"`
-	Xmlns           string           `xml:"xmlns,attr,omitempty"`
-	HREF            string           `xml:"href,attr,omitempty"`
-	Type            string           `xml:"type,attr,omitempty"`
-	Id              string           `xml:"id,attr,omitempty"`
-	OperationKey    string           `xml:"operationKey,attr,omitempty"`
-	Name            string           `xml:"name,attr"`
-	Status          int              `xml:"status,attr,omitempty"`
-	Size            int64            `xml:"size,attr"`
+	XMLName      xml.Name `xml:"Disk"`
+	Xmlns        string   `xml:"xmlns,attr,omitempty"`
+	HREF         string   `xml:"href,attr,omitempty"`
+	Type         string   `xml:"type,attr,omitempty"`
+	Id           string   `xml:"id,attr,omitempty"`
+	OperationKey string   `xml:"operationKey,attr,omitempty"`
+	Name         string   `xml:"name,attr"`
+	Status       int      `xml:"status,attr,omitempty"`
+	// Size of the disk in bytes. No longer supported in API V33.0+.
+	// Size            int64            `xml:"size,attr"`
+	// SizeMb is the size of disk in MB. It has replaced Size (in bytes) field as of API V33.0
+	SizeMb          int64            `xml:"sizeMb,attr,omitempty"`
 	Iops            *int             `xml:"iops,attr,omitempty"`
 	BusType         string           `xml:"busType,attr,omitempty"`
 	BusSubType      string           `xml:"busSubType,attr,omitempty"`
@@ -2626,13 +2698,15 @@ type VmQuestionAnswer struct {
 // Reference: vCloud API 27.0 - DiskType
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/types/QueryResultDiskRecordType.html
 type DiskRecordType struct {
-	Xmlns              string  `xml:"xmlns,attr,omitempty"`
-	HREF               string  `xml:"href,attr,omitempty"`
-	Id                 string  `xml:"id,attr,omitempty"`
-	Type               string  `xml:"type,attr,omitempty"`
-	Name               string  `xml:"name,attr,omitempty"`
-	Vdc                string  `xml:"vdc,attr,omitempty"`
-	SizeB              int64   `xml:"sizeB,attr,omitempty"`
+	Xmlns string `xml:"xmlns,attr,omitempty"`
+	HREF  string `xml:"href,attr,omitempty"`
+	Id    string `xml:"id,attr,omitempty"`
+	Type  string `xml:"type,attr,omitempty"`
+	Name  string `xml:"name,attr,omitempty"`
+	Vdc   string `xml:"vdc,attr,omitempty"`
+	// SizeB is not available in API V33.0. It is replaced by SizeMb
+	//SizeB              int64   `xml:"sizeB,attr,omitempty"`
+	SizeMb             int64   `xml:"sizeMb,attr,omitempty"`
 	DataStore          string  `xml:"dataStore,attr,omitempty"`
 	DataStoreName      string  `xml:"datastoreName,attr,omitempty"`
 	OwnerName          string  `xml:"ownerName,attr,omitempty"`

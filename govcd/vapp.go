@@ -1,10 +1,11 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
 
 import (
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"net/http"
@@ -223,11 +224,8 @@ func addNewVMW(vapp *VApp, name string, vappTemplate VAppTemplate,
 		vAppComposition.SourcedItem.StorageProfile = storageProfileRef
 	}
 
-	if computePolicy != nil && vapp.client.APIVCDMaxVersionIs("< 33.0") {
-		util.Logger.Printf("[Warning] compute policy is ignored because VCD version doesn't support it")
-	}
 	// Add compute policy
-	if computePolicy != nil && computePolicy.ID != "" && vapp.client.APIVCDMaxVersionIs("> 32.0") {
+	if computePolicy != nil && computePolicy.ID != "" {
 		vdcComputePolicyHref, err := vapp.client.OpenApiBuildEndpoint(types.OpenApiPathVersion1_0_0, types.OpenApiEndpointVdcComputePolicies, computePolicy.ID)
 		if err != nil {
 			return Task{}, fmt.Errorf("error constructing HREF for compute policy")
@@ -242,9 +240,8 @@ func addNewVMW(vapp *VApp, name string, vappTemplate VAppTemplate,
 	apiEndpoint.Path += "/action/recomposeVApp"
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequestWithApiVersion(apiEndpoint.String(), http.MethodPost,
-		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", vAppComposition,
-		vapp.client.GetSpecificApiVersionOnCondition(">= 33.0", "33.0"))
+	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", vAppComposition)
 
 }
 
@@ -1374,4 +1371,68 @@ func (vapp *VApp) getOrgInfo() (orgInfoType, error) {
 		return orgInfoType{}, err
 	}
 	return getOrgInfo(vapp.client, vdc.Vdc.Link, vapp.VApp.ID, vapp.VApp.Name, "vApp")
+}
+
+// UpdateNameDescription can change the name and the description of a vApp
+// If name is empty, it is left unchanged.
+func (vapp *VApp) UpdateNameDescription(newName, newDescription string) error {
+	if vapp == nil || vapp.VApp.HREF == "" {
+		return fmt.Errorf("vApp or href cannot be empty")
+	}
+
+	// Skip update if we are using the original values
+	if (newName == vapp.VApp.Name || newName == "") && (newDescription == vapp.VApp.Description) {
+		return nil
+	}
+
+	opType := types.MimeRecomposeVappParams
+
+	href := ""
+	for _, link := range vapp.VApp.Link {
+		if link.Type == opType && link.Rel == "recompose" {
+			href = link.HREF
+			break
+		}
+	}
+
+	if href == "" {
+		return fmt.Errorf("no appropriate link for update found for vApp %s", vapp.VApp.Name)
+	}
+
+	if newName == "" {
+		newName = vapp.VApp.Name
+	}
+
+	recomposeParams := &types.SmallRecomposeVappParams{
+		XMLName:     xml.Name{},
+		Ovf:         types.XMLNamespaceOVF,
+		Xsi:         types.XMLNamespaceXSI,
+		Xmlns:       types.XMLNamespaceVCloud,
+		Name:        newName,
+		Description: newDescription,
+		Deploy:      vapp.VApp.Deployed,
+	}
+
+	task, err := vapp.client.ExecuteTaskRequest(href, http.MethodPost,
+		opType, "error updating vapp: %s", recomposeParams)
+
+	if err != nil {
+		return fmt.Errorf("unable to update vApp: %s", err)
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("task for updating vApp failed: %s", err)
+	}
+	return vapp.Refresh()
+}
+
+// UpdateDescription changes the description of a vApp
+func (vapp *VApp) UpdateDescription(newDescription string) error {
+	return vapp.UpdateNameDescription("", newDescription)
+}
+
+// Rename changes the name of a vApp
+func (vapp *VApp) Rename(newName string) error {
+	return vapp.UpdateNameDescription(newName, vapp.VApp.Description)
 }

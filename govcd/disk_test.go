@@ -24,16 +24,12 @@ func (vcd *TestVCD) Test_NewDisk(check *C) {
 
 // Test create independent disk
 func (vcd *TestVCD) Test_CreateDisk(check *C) {
-	if vcd.config.VCD.Disk.Size == 0 {
-		check.Skip("skipping test because disk size is 0")
-	}
-
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestCreateDisk,
-		Size:        vcd.config.VCD.Disk.Size,
+		SizeMb:      11,
 		Description: TestCreateDisk,
 	}
 
@@ -58,27 +54,19 @@ func (vcd *TestVCD) Test_CreateDisk(check *C) {
 	disk, err := vcd.vdc.GetDiskByHref(diskHREF)
 	check.Assert(err, IsNil)
 	check.Assert(disk.Disk.Name, Equals, diskCreateParamsDisk.Name)
-	check.Assert(disk.Disk.Size, Equals, diskCreateParamsDisk.Size)
+	check.Assert(disk.Disk.SizeMb, Equals, diskCreateParamsDisk.SizeMb)
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
 
 }
 
 // Test update independent disk
 func (vcd *TestVCD) Test_UpdateDisk(check *C) {
-	if vcd.config.VCD.Disk.Size == 0 {
-		check.Skip("skipping test because disk size is 0")
-	}
-
-	if vcd.config.VCD.Disk.SizeForUpdate <= 0 {
-		check.Skip("skipping test because disk update size is <= 0")
-	}
-
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestUpdateDisk,
-		Size:        vcd.config.VCD.Disk.Size,
+		SizeMb:      99,
 		Description: TestUpdateDisk,
 	}
 
@@ -103,13 +91,13 @@ func (vcd *TestVCD) Test_UpdateDisk(check *C) {
 	disk, err := vcd.vdc.GetDiskByHref(diskHREF)
 	check.Assert(err, IsNil)
 	check.Assert(disk.Disk.Name, Equals, diskCreateParamsDisk.Name)
-	check.Assert(disk.Disk.Size, Equals, diskCreateParamsDisk.Size)
+	check.Assert(disk.Disk.SizeMb, Equals, diskCreateParamsDisk.SizeMb)
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
 
 	// Update disk
 	newDiskInfo := &types.Disk{
 		Name:        TestUpdateDisk,
-		Size:        vcd.config.VCD.Disk.SizeForUpdate,
+		SizeMb:      102,
 		Description: TestUpdateDisk + "_Update",
 	}
 
@@ -122,17 +110,13 @@ func (vcd *TestVCD) Test_UpdateDisk(check *C) {
 	err = disk.Refresh()
 	check.Assert(err, IsNil)
 	check.Assert(disk.Disk.Name, Equals, newDiskInfo.Name)
-	check.Assert(disk.Disk.Size, Equals, newDiskInfo.Size)
+	check.Assert(disk.Disk.SizeMb, Equals, newDiskInfo.SizeMb)
 	check.Assert(disk.Disk.Description, Equals, newDiskInfo.Description)
 
 }
 
 // Test delete independent disk
 func (vcd *TestVCD) Test_DeleteDisk(check *C) {
-	if vcd.config.VCD.Disk.Size == 0 {
-		check.Skip("skipping test because disk size is 0")
-	}
-
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	var err error
@@ -140,7 +124,7 @@ func (vcd *TestVCD) Test_DeleteDisk(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestDeleteDisk,
-		Size:        vcd.config.VCD.Disk.Size,
+		SizeMb:      1,
 		Description: TestDeleteDisk,
 	}
 
@@ -165,7 +149,7 @@ func (vcd *TestVCD) Test_DeleteDisk(check *C) {
 	disk, err := vcd.vdc.GetDiskByHref(diskHREF)
 	check.Assert(err, IsNil)
 	check.Assert(disk.Disk.Name, Equals, diskCreateParamsDisk.Name)
-	check.Assert(disk.Disk.Size, Equals, diskCreateParamsDisk.Size)
+	check.Assert(disk.Disk.SizeMb, Equals, diskCreateParamsDisk.SizeMb)
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
 
 	// Delete disk
@@ -178,20 +162,12 @@ func (vcd *TestVCD) Test_DeleteDisk(check *C) {
 
 // Test refresh independent disk info
 func (vcd *TestVCD) Test_RefreshDisk(check *C) {
-	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("skipping test because disk size is 0")
-	}
-
-	if vcd.config.VCD.Disk.SizeForUpdate <= 0 {
-		check.Skip("skipping test because disk update size is <= 0")
-	}
-
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestRefreshDisk,
-		Size:        vcd.config.VCD.Disk.Size,
+		SizeMb:      43,
 		Description: TestRefreshDisk,
 	}
 
@@ -216,13 +192,13 @@ func (vcd *TestVCD) Test_RefreshDisk(check *C) {
 	disk, err := vcd.vdc.GetDiskByHref(diskHREF)
 	check.Assert(err, IsNil)
 	check.Assert(disk.Disk.Name, Equals, diskCreateParamsDisk.Name)
-	check.Assert(disk.Disk.Size, Equals, diskCreateParamsDisk.Size)
+	check.Assert(disk.Disk.SizeMb, Equals, diskCreateParamsDisk.SizeMb)
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
 
 	// Update disk
 	newDiskInfo := &types.Disk{
 		Name:        TestRefreshDisk,
-		Size:        vcd.config.VCD.Disk.SizeForUpdate,
+		SizeMb:      43,
 		Description: TestRefreshDisk + "_Update",
 	}
 
@@ -235,18 +211,13 @@ func (vcd *TestVCD) Test_RefreshDisk(check *C) {
 	err = disk.Refresh()
 	check.Assert(err, IsNil)
 	check.Assert(disk.Disk.Name, Equals, newDiskInfo.Name)
-	check.Assert(disk.Disk.Size, Equals, newDiskInfo.Size)
+	check.Assert(disk.Disk.SizeMb, Equals, newDiskInfo.SizeMb)
 	check.Assert(disk.Disk.Description, Equals, newDiskInfo.Description)
 
 }
 
 // Test find disk attached VM
 func (vcd *TestVCD) Test_AttachedVMDisk(check *C) {
-
-	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("skipping test because disk size is 0")
-	}
-
 	if vcd.skipVappTests {
 		check.Skip("skipping test because vApp wasn't properly created")
 	}
@@ -273,7 +244,7 @@ func (vcd *TestVCD) Test_AttachedVMDisk(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestAttachedVMDisk,
-		Size:        vcd.config.VCD.Disk.Size,
+		SizeMb:      210,
 		Description: TestAttachedVMDisk,
 	}
 
@@ -298,7 +269,7 @@ func (vcd *TestVCD) Test_AttachedVMDisk(check *C) {
 	disk, err := vcd.vdc.GetDiskByHref(diskHREF)
 	check.Assert(err, IsNil)
 	check.Assert(disk.Disk.Name, Equals, diskCreateParamsDisk.Name)
-	check.Assert(disk.Disk.Size, Equals, diskCreateParamsDisk.Size)
+	check.Assert(disk.Disk.SizeMb, Equals, diskCreateParamsDisk.SizeMb)
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
 
 	// Attach disk
@@ -325,16 +296,12 @@ func (vcd *TestVCD) Test_AttachedVMDisk(check *C) {
 
 // Test find Disk by Href in VDC struct
 func (vcd *TestVCD) Test_VdcFindDiskByHREF(check *C) {
-	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("skipping test because disk size is 0")
-	}
-
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestVdcFindDiskByHREF,
-		Size:        vcd.config.VCD.Disk.Size,
+		SizeMb:      2,
 		Description: TestVdcFindDiskByHREF,
 	}
 
@@ -360,23 +327,19 @@ func (vcd *TestVCD) Test_VdcFindDiskByHREF(check *C) {
 
 	check.Assert(err, IsNil)
 	check.Assert(disk.Disk.Name, Equals, diskCreateParamsDisk.Name)
-	check.Assert(disk.Disk.Size, Equals, diskCreateParamsDisk.Size)
+	check.Assert(disk.Disk.SizeMb, Equals, diskCreateParamsDisk.SizeMb)
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
 
 }
 
 // Test find disk by href and vdc client
 func (vcd *TestVCD) Test_FindDiskByHREF(check *C) {
-	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("skipping test because disk size is 0")
-	}
-
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestFindDiskByHREF,
-		Size:        vcd.config.VCD.Disk.Size,
+		SizeMb:      3,
 		Description: TestFindDiskByHREF,
 	}
 
@@ -402,7 +365,7 @@ func (vcd *TestVCD) Test_FindDiskByHREF(check *C) {
 
 	check.Assert(err, IsNil)
 	check.Assert(disk.Disk.Name, Equals, diskCreateParamsDisk.Name)
-	check.Assert(disk.Disk.Size, Equals, diskCreateParamsDisk.Size)
+	check.Assert(disk.Disk.SizeMb, Equals, diskCreateParamsDisk.SizeMb)
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
 
 	// Find disk by href
@@ -415,14 +378,6 @@ func (vcd *TestVCD) Test_FindDiskByHREF(check *C) {
 
 // Independent disk integration test
 func (vcd *TestVCD) Test_Disk(check *C) {
-	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("skipping test because disk size is 0")
-	}
-
-	if vcd.config.VCD.Disk.SizeForUpdate <= 0 {
-		check.Skip("skipping test because disk update size is <= 0")
-	}
-
 	if vcd.skipVappTests {
 		check.Skip("skipping test because vApp wasn't properly created")
 	}
@@ -449,7 +404,7 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        TestDisk,
-		Size:        vcd.config.VCD.Disk.Size,
+		SizeMb:      14,
 		Description: TestDisk,
 	}
 
@@ -474,7 +429,7 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 	disk, err := vcd.vdc.GetDiskByHref(diskHREF)
 	check.Assert(err, IsNil)
 	check.Assert(disk.Disk.Name, Equals, diskCreateParamsDisk.Name)
-	check.Assert(disk.Disk.Size, Equals, diskCreateParamsDisk.Size)
+	check.Assert(disk.Disk.SizeMb, Equals, diskCreateParamsDisk.SizeMb)
 	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
 
 	// Attach disk
@@ -508,7 +463,7 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 	// Update disk
 	newDiskInfo := &types.Disk{
 		Name:        TestDisk,
-		Size:        vcd.config.VCD.Disk.SizeForUpdate,
+		SizeMb:      41,
 		Description: TestDisk + "_Update",
 	}
 
@@ -528,11 +483,6 @@ func (vcd *TestVCD) Test_Disk(check *C) {
 
 // Test query disk
 func (vcd *TestVCD) Test_QueryDisk(check *C) {
-
-	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("skipping test because disk size is 0")
-	}
-
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	name := "TestQueryDisk"
@@ -540,7 +490,7 @@ func (vcd *TestVCD) Test_QueryDisk(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        name,
-		Size:        vcd.config.VCD.Disk.Size,
+		SizeMb:      1,
 		Description: name,
 	}
 
@@ -566,17 +516,12 @@ func (vcd *TestVCD) Test_QueryDisk(check *C) {
 
 	check.Assert(err, IsNil)
 	check.Assert(diskRecord.Disk.Name, Equals, diskCreateParamsDisk.Name)
-	check.Assert(diskRecord.Disk.SizeB, Equals, int64(diskCreateParamsDisk.Size))
+	check.Assert(diskRecord.Disk.SizeMb, Equals, int64(diskCreateParamsDisk.SizeMb))
 	check.Assert(diskRecord.Disk.Description, Equals, diskCreateParamsDisk.Description)
 }
 
 // Test query disk
 func (vcd *TestVCD) Test_QueryDisks(check *C) {
-
-	if vcd.config.VCD.Disk.Size <= 0 {
-		check.Skip("skipping test because disk size is 0")
-	}
-
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	name := "TestQueryDisks"
@@ -584,7 +529,7 @@ func (vcd *TestVCD) Test_QueryDisks(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        name,
-		Size:        vcd.config.VCD.Disk.Size,
+		SizeMb:      22,
 		Description: name,
 	}
 
@@ -624,17 +569,12 @@ func (vcd *TestVCD) Test_QueryDisks(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(*diskRecords), Equals, 2)
 	check.Assert((*diskRecords)[0].Name, Equals, diskCreateParamsDisk.Name)
-	check.Assert((*diskRecords)[0].SizeB, Equals, int64(diskCreateParamsDisk.Size))
+	check.Assert((*diskRecords)[0].SizeMb, Equals, int64(diskCreateParamsDisk.SizeMb))
 }
 
 // Tests Disk list retrieval by name, by ID
 func (vcd *TestVCD) Test_GetDisks(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
-
-	if vcd.config.VCD.Disk.Size == 0 {
-		check.Skip("skipping test because disk size is 0")
-	}
-
 	if vcd.config.VCD.Vdc == "" {
 		check.Skip("Test_GetDisk: VDC name not given")
 		return
@@ -644,7 +584,7 @@ func (vcd *TestVCD) Test_GetDisks(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        diskName,
-		Size:        vcd.config.VCD.Disk.Size,
+		SizeMb:      12,
 		Description: diskName + "Description",
 	}
 
@@ -710,10 +650,6 @@ func (vcd *TestVCD) Test_GetDisks(check *C) {
 func (vcd *TestVCD) Test_GetDiskByHref(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	if vcd.config.VCD.Disk.Size == 0 {
-		check.Skip("skipping test because disk size is 0")
-	}
-
 	if vcd.config.VCD.Vdc == "" {
 		check.Skip("Test_GetDisk: VDC name not given")
 		return
@@ -723,7 +659,7 @@ func (vcd *TestVCD) Test_GetDiskByHref(check *C) {
 	// Create disk
 	diskCreateParamsDisk := &types.Disk{
 		Name:        diskName,
-		Size:        vcd.config.VCD.Disk.Size,
+		SizeMb:      2048,
 		Description: diskName + "Description",
 	}
 

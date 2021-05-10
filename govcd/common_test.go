@@ -1,7 +1,7 @@
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user nsxv affinity ALL
+// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user nsxv affinity search ALL
 
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -55,7 +55,7 @@ func (vcd *TestVCD) createAndGetResourcesForVmCreation(check *C, vmName string) 
 	vappTemplate, err := catalogItem.GetVAppTemplate()
 	check.Assert(err, IsNil)
 	// Compose Raw vApp
-	err = vdc.ComposeRawVApp(vmName)
+	err = vdc.ComposeRawVApp(vmName, "")
 	check.Assert(err, IsNil)
 	vapp, err := vdc.GetVAppByName(vmName, true)
 	check.Assert(err, IsNil)
@@ -670,9 +670,9 @@ func deleteVapp(vcd *TestVCD, name string) error {
 }
 
 // makeEmptyVapp creates a given vApp without any VM
-func makeEmptyVapp(vdc *Vdc, name string) (*VApp, error) {
+func makeEmptyVapp(vdc *Vdc, name string, description string) (*VApp, error) {
 
-	err := vdc.ComposeRawVApp(name)
+	err := vdc.ComposeRawVApp(name, description)
 	if err != nil {
 		return nil, err
 	}
@@ -734,4 +734,105 @@ func makeEmptyVm(vapp *VApp, name string) (*VM, error) {
 	}
 
 	return vm, nil
+}
+
+// spawnTestVdc spawns a VDC in a given adminOrgName to be used in tests
+func spawnTestVdc(vcd *TestVCD, check *C, adminOrgName string) *Vdc {
+	adminOrg, err := vcd.client.GetAdminOrgByName(adminOrgName)
+	check.Assert(err, IsNil)
+
+	providerVdcHref := getVdcProviderVdcHref(vcd, check)
+	providerVdcStorageProfileHref := getVdcProviderVdcStorageProfileHref(vcd, check)
+	networkPoolHref := getVdcNetworkPoolHref(vcd, check)
+
+	vdcConfiguration := &types.VdcConfiguration{
+		Name:            check.TestName() + "-VDC",
+		Xmlns:           types.XMLNamespaceVCloud,
+		AllocationModel: "Flex",
+		ComputeCapacity: []*types.ComputeCapacity{
+			&types.ComputeCapacity{
+				CPU: &types.CapacityWithUsage{
+					Units:     "MHz",
+					Allocated: 1024,
+					Limit:     1024,
+				},
+				Memory: &types.CapacityWithUsage{
+					Allocated: 1024,
+					Limit:     1024,
+					Units:     "MB",
+				},
+			},
+		},
+		VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
+			Enabled: true,
+			Units:   "MB",
+			Limit:   1024,
+			Default: true,
+			ProviderVdcStorageProfile: &types.Reference{
+				HREF: providerVdcStorageProfileHref,
+			},
+		},
+		},
+		NetworkPoolReference: &types.Reference{
+			HREF: networkPoolHref,
+		},
+		ProviderVdcReference: &types.Reference{
+			HREF: providerVdcHref,
+		},
+		IsEnabled:             true,
+		IsThinProvision:       true,
+		UsesFastProvisioning:  true,
+		IsElastic:             takeBoolPointer(true),
+		IncludeMemoryOverhead: takeBoolPointer(true),
+	}
+
+	vdc, err := adminOrg.CreateOrgVdc(vdcConfiguration)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, check.TestName())
+
+	return vdc
+}
+
+func getVdcProviderVdcHref(vcd *TestVCD, check *C) string {
+	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "providerVdc",
+		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.Name),
+	})
+	check.Assert(err, IsNil)
+	if len(results.Results.VMWProviderVdcRecord) == 0 {
+		check.Skip(fmt.Sprintf("No Provider VDC found with name '%s'", vcd.config.VCD.ProviderVdc.Name))
+	}
+	providerVdcHref := results.Results.VMWProviderVdcRecord[0].HREF
+
+	return providerVdcHref
+}
+
+func getVdcProviderVdcStorageProfileHref(vcd *TestVCD, check *C) string {
+	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "providerVdcStorageProfile",
+		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.StorageProfile),
+	})
+	check.Assert(err, IsNil)
+	if len(results.Results.ProviderVdcStorageProfileRecord) == 0 {
+		check.Skip(fmt.Sprintf("No storage profile found with name '%s'", vcd.config.VCD.ProviderVdc.StorageProfile))
+	}
+	providerVdcStorageProfileHref := results.Results.ProviderVdcStorageProfileRecord[0].HREF
+
+	return providerVdcStorageProfileHref
+}
+
+func getVdcNetworkPoolHref(vcd *TestVCD, check *C) string {
+	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "networkPool",
+		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.NetworkPool),
+	})
+	check.Assert(err, IsNil)
+	if len(results.Results.NetworkPoolRecord) == 0 {
+		check.Skip(fmt.Sprintf("No network pool found with name '%s'", vcd.config.VCD.ProviderVdc.NetworkPool))
+	}
+	networkPoolHref := results.Results.NetworkPoolRecord[0].HREF
+
+	return networkPoolHref
 }

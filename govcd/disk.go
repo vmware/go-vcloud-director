@@ -43,10 +43,6 @@ func NewDiskRecord(cli *Client) *DiskRecord {
 	}
 }
 
-// While theoretically we can use smaller amounts, there is an issue when updating
-// disks with size < 1MB
-const MinimumDiskSize int64 = 1048576 // = 1Mb
-
 // Create an independent disk in VDC
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 102 - 103,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
@@ -54,15 +50,11 @@ const MinimumDiskSize int64 = 1048576 // = 1Mb
 func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (Task, error) {
 	util.Logger.Printf("[TRACE] Create disk, name: %s, size: %d \n",
 		diskCreateParams.Disk.Name,
-		diskCreateParams.Disk.Size,
+		diskCreateParams.Disk.SizeMb,
 	)
 
 	if diskCreateParams.Disk.Name == "" {
 		return Task{}, fmt.Errorf("disk name is required")
-	}
-
-	if diskCreateParams.Disk.Size < MinimumDiskSize {
-		return Task{}, fmt.Errorf("disk size should be greater than or equal to 1Mb")
 	}
 
 	var err error
@@ -119,7 +111,7 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (Task, erro
 func (disk *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 	util.Logger.Printf("[TRACE] Update disk, name: %s, size: %d, HREF: %s \n",
 		newDiskInfo.Name,
-		newDiskInfo.Size,
+		newDiskInfo.SizeMb,
 		disk.Disk.HREF,
 	)
 
@@ -127,10 +119,6 @@ func (disk *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 
 	if newDiskInfo.Name == "" {
 		return Task{}, fmt.Errorf("disk name is required")
-	}
-
-	if newDiskInfo.Size < MinimumDiskSize {
-		return Task{}, fmt.Errorf("disk size should be greater than or equal to 1Mb")
 	}
 
 	// Verify the independent disk is not connected to any VM
@@ -166,7 +154,7 @@ func (disk *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 	xmlPayload := &types.Disk{
 		Xmlns:          types.XMLNamespaceVCloud,
 		Description:    newDiskInfo.Description,
-		Size:           newDiskInfo.Size,
+		SizeMb:         newDiskInfo.SizeMb,
 		Name:           newDiskInfo.Name,
 		StorageProfile: newDiskInfo.StorageProfile,
 		Owner:          newDiskInfo.Owner,
