@@ -1534,10 +1534,20 @@ func (client *Client) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryRes
 	return vmList, nil
 }
 
+// QueryVmList returns a list of all VMs in a given Org
+func (org *Org) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryResultVMRecordType, error) {
+	return queryVmList(filter, org.client, "org", org.Org.HREF)
+}
+
 // QueryVmList returns a list of all VMs in a given VDC
 func (vdc *Vdc) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryResultVMRecordType, error) {
+	return queryVmList(filter, vdc.client, "vdc", vdc.Vdc.HREF)
+}
+
+// queryVmList is extracted and used by org.QueryVmList and vdc.QueryVmList to adjust filtering scope
+func queryVmList(filter types.VmQueryFilter, client *Client, filterParent, filterParentHref string) ([]*types.QueryResultVMRecordType, error) {
 	var vmList []*types.QueryResultVMRecordType
-	queryType := vdc.client.GetQueryType(types.QtVm)
+	queryType := client.GetQueryType(types.QtVm)
 	params := map[string]string{
 		"type":          queryType,
 		"filterEncoded": "true",
@@ -1547,17 +1557,17 @@ func (vdc *Vdc) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryResultVMR
 		filterText = filter.String()
 	}
 	if filterText == "" {
-		filterText = fmt.Sprintf("vdc==%s", vdc.Vdc.HREF)
+		filterText = fmt.Sprintf("%s==%s", filterParent, filterParentHref)
 	} else {
-		filterText = fmt.Sprintf("%s;vdc==%s", filterText, vdc.Vdc.HREF)
+		filterText = fmt.Sprintf("%s;%s==%s", filterText, filterParent, filterParentHref)
 	}
 	params["filter"] = filterText
-	vmResult, err := vdc.client.cumulativeQuery(queryType, nil, params)
+	vmResult, err := client.cumulativeQuery(queryType, nil, params)
 	if err != nil {
 		return nil, fmt.Errorf("error getting VM list : %s", err)
 	}
 	vmList = vmResult.Results.VMRecord
-	if vdc.client.IsSysAdmin {
+	if client.IsSysAdmin {
 		vmList = vmResult.Results.AdminVMRecord
 	}
 	return vmList, nil

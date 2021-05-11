@@ -993,10 +993,25 @@ func (vdc *Vdc) QueryVmByName(name string) (*VM, error) {
 	return vdc.client.GetVMByHref(foundVM[0].HREF)
 }
 
-// QueryVmById retrieves a standalone VM by ID
+// QueryVmById retrieves a standalone VM by ID in an Org
+// It can also retrieve a standard VM (created from vApp)
+func (org *Org) QueryVmById(id string) (*VM, error) {
+	return queryVmById(id, org.client, org.QueryVmList)
+}
+
+// QueryVmById retrieves a standalone VM by ID in a Vdc
 // It can also retrieve a standard VM (created from vApp)
 func (vdc *Vdc) QueryVmById(id string) (*VM, error) {
-	vmList, err := vdc.QueryVmList(types.VmQueryFilterOnlyDeployed)
+	return queryVmById(id, vdc.client, vdc.QueryVmList)
+}
+
+// queryVmListFunc
+type queryVmListFunc func(filter types.VmQueryFilter) ([]*types.QueryResultVMRecordType, error)
+
+// queryVmById is shared between org.QueryVmById and vdc.QueryVmById which allow to search for VM
+// in different scope (Org or VDC)
+func queryVmById(id string, client *Client, queryFunc queryVmListFunc) (*VM, error) {
+	vmList, err := queryFunc(types.VmQueryFilterOnlyDeployed)
 	if err != nil {
 		return nil, err
 	}
@@ -1012,7 +1027,7 @@ func (vdc *Vdc) QueryVmById(id string) (*VM, error) {
 	if len(foundVM) > 1 {
 		return nil, fmt.Errorf("more than one VM found with ID %s", id)
 	}
-	return vdc.client.GetVMByHref(foundVM[0].HREF)
+	return client.GetVMByHref(foundVM[0].HREF)
 }
 
 // CreateStandaloneVMFromTemplateAsync starts a standalone VM creation using a template
