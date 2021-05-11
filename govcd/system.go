@@ -975,3 +975,29 @@ func (vcdCli *VCDClient) GetOrgList() (*types.OrgList, error) {
 	}
 	return orgList, nil
 }
+
+// QueryAdminOrgVdcStorageProfileByID finds a StorageProfile of VDC by ID as admin
+func QueryAdminOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) ([]*types.QueryResultAdminOrgVdcStorageProfileRecordType, error) {
+	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":          types.QtAdminOrgVdcStorageProfile,
+		"filter":        fmt.Sprintf("id==%s", url.QueryEscape(id)),
+		"filterEncoded": "true",
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results.Results.AdminOrgVdcStorageProfileRecord, nil
+}
+
+// QueryOrgVdcStorageProfileByID finds a StorageProfile of VDC by ID
+func QueryOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) ([]*types.QueryResultOrgVdcStorageProfileRecordType, error) {
+	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":          types.QtOrgVdcStorageProfile,
+		"filter":        fmt.Sprintf("id==%s", url.QueryEscape(id)),
+		"filterEncoded": "true",
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results.Results.OrgVdcStorageProfileRecord, nil
+}
