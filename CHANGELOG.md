@@ -5,9 +5,11 @@
 * Dropped support for VCD 9.7 which is EOL now [#371](https://github.com/vmware/go-vcloud-director/pull/371)
 * Bumped Default API Version to V33.0  [#371](https://github.com/vmware/go-vcloud-director/pull/371)
 * Methods `GetVDCById` and `GetVDCByName` for `Org` now use queries behind the scenes because Org 
-  structure does not list child VDCs anymore  [#371](https://github.com/vmware/go-vcloud-director/pull/371)
+  structure does not list child VDCs anymore  [#371](https://github.com/vmware/go-vcloud-director/pull/371), 
+  [#376](https://github.com/vmware/go-vcloud-director/pull/376)
 * Methods `GetCatalogById` and `GetCatalogByName` for `Org`  now use queries behind the scenes because Org
-  structure does not list child Catalogs anymore  [#371](https://github.com/vmware/go-vcloud-director/pull/371)
+  structure does not list child Catalogs anymore  [#371](https://github.com/vmware/go-vcloud-director/pull/371), 
+  [#376](https://github.com/vmware/go-vcloud-director/pull/376)
 * Drop legacy authentication mechanism (vcdAuthorize) and use only new Cloud API provided (vcdCloudApiAuthorize) as
   API V33.0 is sufficient for it [#371](https://github.com/vmware/go-vcloud-director/pull/371)
 * Added NSX-T Firewall Group type (which represents a Security Group or an IP Set) support by using
