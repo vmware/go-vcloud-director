@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -797,6 +798,16 @@ func QueryOrgVdcNetworkByName(vcdCli *VCDClient, name string) ([]*types.QueryRes
 	}
 
 	return results.Results.OrgVdcNetworkRecord, nil
+}
+
+// QueryAllVdcs returns all Org VDCs in a VCD instance
+//
+// This function requires "System" user or returns an error
+func (client *Client) QueryAllVdcs() ([]*types.QueryResultOrgVdcRecordType, error) {
+	if !client.IsSysAdmin {
+		return nil, errors.New("this function only works with 'System' user")
+	}
+	return queryOrgVdcList(client, nil)
 }
 
 // QueryNsxtManagerByName searches for NSX-T managers available in VCD

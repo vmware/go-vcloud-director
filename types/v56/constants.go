@@ -250,6 +250,8 @@ const (
 	QtAdminVm           = "adminVM"           // Virtual machine as admin
 	QtVapp              = "vApp"              // vApp
 	QtAdminVapp         = "adminVApp"         // vApp as admin
+	QtOrgVdc            = "orgVdc"            // Org VDC
+	QtAdminOrgVdc       = "adminOrgVdc"       // Org VDC as admin
 )
 
 // AdminQueryTypes returns the corresponding "admin" query type for each regular type
@@ -262,6 +264,7 @@ var AdminQueryTypes = map[string]string{
 	QtMedia:         QtAdminMedia,
 	QtVm:            QtAdminVm,
 	QtVapp:          QtAdminVapp,
+	QtOrgVdc:        QtAdminOrgVdc,
 }
 
 const (
@@ -341,6 +344,7 @@ const (
 	OpenApiEndpointVdcAssignedComputePolicies = "vdcs/%s/computePolicies"
 	OpenApiEndpointVdcCapabilities            = "vdcs/%s/capabilities"
 	OpenApiEndpointEdgeGateways               = "edgeGateways/"
+	OpenApiEndpointFirewallGroups             = "firewallGroups/"
 	OpenApiEndpointOrgVdcNetworks             = "orgVdcNetworks/"
 	OpenApiEndpointOrgVdcNetworksDhcp         = "orgVdcNetworks/%s/dhcp"
 )
@@ -380,4 +384,13 @@ const (
 	VdcCapabilityNetworkProviderNsxv = "NSX_V"
 	// VdcCapabilityNetworkProviderNsxt is a convenience constant to match VDC capability
 	VdcCapabilityNetworkProviderNsxt = "NSX_T"
+)
+
+const (
+	// FirewallGroupTypeSecurityGroup can be used in types.NsxtFirewallGroup for 'type' field to
+	// create Security Group
+	FirewallGroupTypeSecurityGroup = "SECURITY_GROUP"
+	// FirewallGroupTypeIpSet can be used in types.NsxtFirewallGroup for 'type' field to create IP
+	// Set
+	FirewallGroupTypeIpSet = "IP_SET"
 )

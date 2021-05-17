@@ -36,7 +36,7 @@
 			<Version>28.0</Version>
 			<LoginUrl>https://192.168.1.109/api/sessions</LoginUrl>
 		</VersionInfo>
-		<VersionInfo deprecated="false">
+		<VersionInfo deprecated="true">
 			<Version>29.0</Version>
 			<LoginUrl>https://192.168.1.109/api/sessions</LoginUrl>
 		</VersionInfo>
@@ -50,6 +50,10 @@
 		</VersionInfo>
 		<VersionInfo deprecated="false">
 			<Version>32.0</Version>
+			<LoginUrl>https://192.168.1.109/api/sessions</LoginUrl>
+		</VersionInfo>
+		<VersionInfo deprecated="false">
+			<Version>33.0</Version>
 			<LoginUrl>https://192.168.1.109/api/sessions</LoginUrl>
 		</VersionInfo>
 		<VersionInfo deprecated="true">

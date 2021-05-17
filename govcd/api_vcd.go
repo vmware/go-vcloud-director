@@ -50,6 +50,19 @@ func (vcdCli *VCDClient) vcdloginurl() error {
 
 // vcdCloudApiAuthorize performs the authorization to VCD using open API
 func (vcdCli *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.Response, error) {
+	var missingItems []string
+	if user == "" {
+		missingItems = append(missingItems, "user")
+	}
+	if pass == "" {
+		missingItems = append(missingItems, "password")
+	}
+	if org == "" {
+		missingItems = append(missingItems, "org")
+	}
+	if len(missingItems) > 0 {
+		return nil, fmt.Errorf("authorization is not possible because of these missing items: %v", missingItems)
+	}
 
 	util.Logger.Println("[TRACE] Connecting to VCD using cloudapi")
 	// This call can only be used by tenants
@@ -69,49 +82,12 @@ func (vcdCli *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.Res
 	// Set Basic Authentication Header
 	req.SetBasicAuth(user+"@"+org, pass)
 	// Add the Accept header. The version must be at least 33.0 for cloudapi to work
-	req.Header.Add("Accept", "application/*;version=33.0")
-	return vcdCli.Client.Http.Do(req)
-}
-
-// vcdAuthorize authorizes the client and returns a http response
-func (vcdCli *VCDClient) vcdAuthorize(user, pass, org string) (*http.Response, error) {
-	var missingItems []string
-	if user == "" {
-		missingItems = append(missingItems, "user")
-	}
-	if pass == "" {
-		missingItems = append(missingItems, "password")
-	}
-	if org == "" {
-		missingItems = append(missingItems, "org")
-	}
-	if len(missingItems) > 0 {
-		return nil, fmt.Errorf("authorization is not possible because of these missing items: %v", missingItems)
-	}
-	// No point in checking for errors here
-	req := vcdCli.Client.NewRequest(map[string]string{}, http.MethodPost, vcdCli.sessionHREF, nil)
-	// Set Basic Authentication Header
-	req.SetBasicAuth(user+"@"+org, pass)
-	// Add the Accept header for vCA
-	req.Header.Add("Accept", "application/*+xml;version="+vcdCli.Client.APIVersion)
+	req.Header.Add("Accept", "application/*;version="+vcdCli.Client.APIVersion)
 	resp, err := vcdCli.Client.Http.Do(req)
-
-	// If the VCD has disabled the call to /api/sessions, the attempt will fail with error 401 (unauthorized)
-	// https://docs.vmware.com/en/VMware-Cloud-Director/10.0/com.vmware.vcloud.install.doc/GUID-84390C8F-E8C5-4137-A1A5-53EC27FE0024.html
-	// TODO: convert this method to main once we drop support for 9.7
-	if resp.StatusCode == 401 {
-		resp, err = vcdCli.vcdCloudApiAuthorize(user, pass, org)
-		if err != nil {
-			return nil, err
-		}
-		resp, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &types.Error{})
-	} else {
-		resp, err = checkResp(resp, err)
-	}
-
 	if err != nil {
 		return nil, err
 	}
+
 	defer resp.Body.Close()
 	// Store the authorization header
 	vcdCli.Client.VCDToken = resp.Header.Get(BearerTokenHeader)
@@ -129,7 +105,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 	// Setting defaults
 	vcdClient := &VCDClient{
 		Client: Client{
-			APIVersion: "32.0", // supported by 9.7+
+			APIVersion: "33.0", // supported by 10.0+
 			// UserAgent cannot embed exact version by default because this is source code and is supposed to be used by programs,
 			// but any client can customize or disable it at all using WithHttpUserAgent() configuration options function.
 			UserAgent: "go-vcloud-director",
@@ -187,7 +163,7 @@ func (vcdCli *VCDClient) GetAuthResponse(username, password, org string) (*http.
 		}
 	default:
 		// Authorize
-		resp, err = vcdCli.vcdAuthorize(username, password, org)
+		resp, err = vcdCli.vcdCloudApiAuthorize(username, password, org)
 		if err != nil {
 			return nil, fmt.Errorf("error authorizing: %s", err)
 		}

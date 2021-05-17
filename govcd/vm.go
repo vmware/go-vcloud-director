@@ -5,7 +5,6 @@
 package govcd
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -72,9 +71,7 @@ func (vm *VM) Refresh() error {
 	// elements in slices.
 	vm.VM = &types.Vm{}
 
-	_, err := vm.client.ExecuteRequestWithApiVersion(refreshUrl, http.MethodGet,
-		"", "error refreshing VM: %s", nil, vm.VM,
-		vm.client.GetSpecificApiVersionOnCondition(">= 33.0", "33.0"))
+	_, err := vm.client.ExecuteRequest(refreshUrl, http.MethodGet, "", "error refreshing VM: %s", nil, vm.VM)
 
 	// The request was successful
 	return err
@@ -375,7 +372,7 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 		VCloudHREF:      vm.VM.HREF + "/virtualHardwareSection/memory",
 		VCloudType:      types.MimeRasdItem,
 		AllocationUnits: "byte * 2^20",
-		Description:     "Memory Size",
+		Description:     "Memory SizeMb",
 		ElementName:     strconv.Itoa(size) + " MB of memory",
 		InstanceID:      5,
 		Reservation:     0,
@@ -1499,9 +1496,6 @@ func (vm *VM) UpdateComputePolicyAsync(computePolicy *types.VdcComputePolicy) (T
 	//    NetworkConnectionSection
 	//    GuestCustomizationSection
 	// Sections not included in the request body will not be updated.
-	if computePolicy != nil && vm.client.APIVCDMaxVersionIs("< 33.0") {
-		return Task{}, errors.New("[Error] compute policy can't be used - VCD version doesn't support it")
-	}
 
 	vcdComputePolicyHref, err := vm.client.OpenApiBuildEndpoint(types.OpenApiPathVersion1_0_0, types.OpenApiEndpointVdcComputePolicies, computePolicy.ID)
 	if err != nil {
@@ -1540,10 +1534,20 @@ func (client *Client) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryRes
 	return vmList, nil
 }
 
+// QueryVmList returns a list of all VMs in a given Org
+func (org *Org) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryResultVMRecordType, error) {
+	return queryVmList(filter, org.client, "org", org.Org.HREF)
+}
+
 // QueryVmList returns a list of all VMs in a given VDC
 func (vdc *Vdc) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryResultVMRecordType, error) {
+	return queryVmList(filter, vdc.client, "vdc", vdc.Vdc.HREF)
+}
+
+// queryVmList is extracted and used by org.QueryVmList and vdc.QueryVmList to adjust filtering scope
+func queryVmList(filter types.VmQueryFilter, client *Client, filterParent, filterParentHref string) ([]*types.QueryResultVMRecordType, error) {
 	var vmList []*types.QueryResultVMRecordType
-	queryType := vdc.client.GetQueryType(types.QtVm)
+	queryType := client.GetQueryType(types.QtVm)
 	params := map[string]string{
 		"type":          queryType,
 		"filterEncoded": "true",
@@ -1553,17 +1557,17 @@ func (vdc *Vdc) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryResultVMR
 		filterText = filter.String()
 	}
 	if filterText == "" {
-		filterText = fmt.Sprintf("vdc==%s", vdc.Vdc.HREF)
+		filterText = fmt.Sprintf("%s==%s", filterParent, filterParentHref)
 	} else {
-		filterText = fmt.Sprintf("%s;vdc==%s", filterText, vdc.Vdc.HREF)
+		filterText = fmt.Sprintf("%s;%s==%s", filterText, filterParent, filterParentHref)
 	}
 	params["filter"] = filterText
-	vmResult, err := vdc.client.cumulativeQuery(queryType, nil, params)
+	vmResult, err := client.cumulativeQuery(queryType, nil, params)
 	if err != nil {
 		return nil, fmt.Errorf("error getting VM list : %s", err)
 	}
 	vmList = vmResult.Results.VMRecord
-	if vdc.client.IsSysAdmin {
+	if client.IsSysAdmin {
 		vmList = vmResult.Results.AdminVMRecord
 	}
 	return vmList, nil
@@ -1620,21 +1624,11 @@ var vmVersionedFuncsV10 = vmVersionedFuncs{
 	AddEmptyVmAsync:  addEmptyVmAsyncV10,
 }
 
-// VM function mapping for API version 32.0 (from vCD 9.7)
-var vmVersionedFuncsV97 = vmVersionedFuncs{
-	SupportedVersion: "32.0",
-	GetVMByHref:      getVMByHrefV97,
-	AddEmptyVm:       addEmptyVmV97,
-	AddEmptyVmAsync:  addEmptyVmAsyncV97,
-}
-
 // vmVersionedFuncsByVcdVersion is a map of VDC functions by vCD version
 var vmVersionedFuncsByVcdVersion = map[string]vmVersionedFuncs{
 	"vm10.2": vmVersionedFuncsV10,
 	"vm10.1": vmVersionedFuncsV10,
 	"vm10.0": vmVersionedFuncsV10,
-	"vm9.7":  vmVersionedFuncsV97,
-
 	// If we add a new function to this list, we also need to update the "default" entry
 	// The "default" entry will hold the highest currently available function
 	"default": vmVersionedFuncsV10,
@@ -1664,9 +1658,8 @@ func addEmptyVmAsyncV10(vapp *VApp, reComposeVAppParams *types.RecomposeVAppPara
 	reComposeVAppParams.XmlnsOvf = types.XMLNamespaceOVF
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequestWithApiVersion(apiEndpoint.String(), http.MethodPost,
-		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", reComposeVAppParams,
-		vapp.client.GetSpecificApiVersionOnCondition(">= 33.0", "33.0"))
+	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", reComposeVAppParams)
 }
 
 // addEmptyVmV10 adds an empty VM (without template) to vApp and returns the new created VM or an error.
@@ -1704,84 +1697,12 @@ func addEmptyVmV10(vapp *VApp, reComposeVAppParams *types.RecomposeVAppParamsFor
 	return nil, ErrorEntityNotFound
 }
 
-// addEmptyVmAsyncV97 adds an empty VM (without template) to the vApp and returns a Task and an error.
-func addEmptyVmAsyncV97(vapp *VApp, reComposeVAppParams *types.RecomposeVAppParamsForEmptyVm) (Task, error) {
-	err := validateEmptyVmParams(reComposeVAppParams)
-	if err != nil {
-		return Task{}, err
-	}
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
-	apiEndpoint.Path += "/action/recomposeVApp"
-
-	reComposeVAppParams.XmlnsVcloud = types.XMLNamespaceVCloud
-	reComposeVAppParams.XmlnsOvf = types.XMLNamespaceOVF
-
-	// Return the task
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
-		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", reComposeVAppParams)
-}
-
-// addEmptyVmV97 adds an empty VM (without template) to vApp and returns the new created VM or an error.
-func addEmptyVmV97(vapp *VApp, reComposeVAppParams *types.RecomposeVAppParamsForEmptyVm) (*VM, error) {
-	task, err := addEmptyVmAsyncV97(vapp, reComposeVAppParams)
-	if err != nil {
-		return nil, err
-	}
-
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return nil, err
-	}
-
-	err = vapp.Refresh()
-	if err != nil {
-		return nil, fmt.Errorf("error refreshing vApp: %s", err)
-	}
-
-	//vApp Might Not Have Any VMs
-	if vapp.VApp.Children == nil {
-		return nil, ErrorEntityNotFound
-	}
-
-	util.Logger.Printf("[TRACE] Looking for VM: %s", reComposeVAppParams.CreateItem.Name)
-	for _, child := range vapp.VApp.Children.VM {
-
-		util.Logger.Printf("[TRACE] Looking at: %s", child.Name)
-		if child.Name == reComposeVAppParams.CreateItem.Name {
-			return getVMByHrefV97(vapp.client, child.HREF)
-		}
-
-	}
-	util.Logger.Printf("[TRACE] Couldn't find VM: %s", reComposeVAppParams.CreateItem.Name)
-	return nil, ErrorEntityNotFound
-}
-
 // getVMByHrefV10 returns a VM reference by running a vCD API call
 // If no valid VM is found, it returns a nil VM reference and an error
 // Note that the pointer receiver here is a Client instead of a VApp, because
 // there are cases where we know the VM HREF but not which VApp it belongs to.
 // V10 of function overrides API version to allow to access compute policy in VM.
 func getVMByHrefV10(client *Client, vmHref string) (*VM, error) {
-
-	newVm := NewVM(client)
-
-	_, err := client.ExecuteRequestWithApiVersion(vmHref, http.MethodGet,
-		"", "error retrieving vm: %s", nil, newVm.VM,
-		client.GetSpecificApiVersionOnCondition(">= 33.0", "33.0"))
-
-	if err != nil {
-
-		return nil, err
-	}
-
-	return newVm, nil
-}
-
-// getVMByHrefV97 returns a VM reference by running a vCD API call
-// If no valid VM is found, it returns a nil VM reference and an error
-// Note that the pointer receiver here is a Client instead of a VApp, because
-// there are cases where we know the VM HREF but not which VApp it belongs to.
-func getVMByHrefV97(client *Client, vmHref string) (*VM, error) {
 
 	newVm := NewVM(client)
 
