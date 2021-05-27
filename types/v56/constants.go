@@ -254,7 +254,6 @@ const (
 	QtAdminOrgVdc               = "adminOrgVdc"               // Org VDC as admin
 	QtOrgVdcStorageProfile      = "orgVdcStorageProfile"      // StorageProfile of VDC
 	QtAdminOrgVdcStorageProfile = "adminOrgVdcStorageProfile" // StorageProfile of VDC as admin
-
 )
 
 // AdminQueryTypes returns the corresponding "admin" query type for each regular type

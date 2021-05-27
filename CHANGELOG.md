@@ -23,6 +23,11 @@
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
 * Added methods Org.QueryVmList and Org.QueryVmById to find VM by ID in an Org
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
+* Added support for querying VdcStorageProfile:  
+  - functions `QueryAdminOrgVdcStorageProfileByID` and `QueryOrgVdcStorageProfileByID`  
+  - query types `QtOrgVdcStorageProfile` and `QtAdminOrgVdcStorageProfile`  
+  - data struct `QueryResultAdminOrgVdcStorageProfileRecordType` (non admin struct already was here)  
+  [#373](https://github.com/vmware/go-vcloud-director/issues/373)
   
 BREAKING CHANGES:
 * Added parameter `description` to method `vdc.ComposeRawVapp` [#372](https://github.com/vmware/go-vcloud-director/pull/372)

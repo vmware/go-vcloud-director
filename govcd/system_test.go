@@ -568,6 +568,32 @@ func (vcd *TestVCD) Test_QueryProviderVdcByName(check *C) {
 
 }
 
+func (vcd *TestVCD) Test_QueryAdminOrgVdcStorageProfileByID(check *C) {
+	if vcd.config.VCD.StorageProfile.SP1ID == "" {
+		check.Skip("Skipping VDC StorageProfile query: no StorageProfile ID was given")
+	}
+	vdcStorageProfiles, err := QueryAdminOrgVdcStorageProfileByID(vcd.client, vcd.config.VCD.StorageProfile.SP1ID)
+	check.Assert(err, IsNil)
+	check.Assert(len(vdcStorageProfiles) > 0, Equals, true)
+
+	storageProfileFound := false
+	href := vcd.client.Client.VCDHREF
+	href.Path += "/admin/vdcStorageProfile/" + vcd.config.VCD.StorageProfile.SP1ID
+	for _, vdcStorageProfile := range vdcStorageProfiles {
+		if href.String() == vdcStorageProfile.HREF {
+			storageProfileFound = true
+		}
+
+		if testVerbose {
+			fmt.Printf("StorageProfile %s\n", vdcStorageProfile.Name)
+			fmt.Printf("\t href    %s\n", vdcStorageProfile.HREF)
+			fmt.Printf("\t enabled %v\n", vdcStorageProfile.IsEnabled)
+			fmt.Println("")
+		}
+	}
+	check.Assert(storageProfileFound, Equals, true)
+}
+
 func (vcd *TestVCD) Test_QueryNetworkPoolByName(check *C) {
 	if vcd.config.VCD.ProviderVdc.NetworkPool == "" {
 		check.Skip("Skipping Provider VDC network pool query: no provider VDC network pool was given")

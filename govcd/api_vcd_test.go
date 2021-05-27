@@ -150,8 +150,9 @@ type TestConfig struct {
 			Net2 string `yaml:"network2,omitempty"`
 		} `yaml:"network"`
 		StorageProfile struct {
-			SP1 string `yaml:"storageProfile1"`
-			SP2 string `yaml:"storageProfile2,omitempty"`
+			SP1   string `yaml:"storageProfile1"`
+			SP1ID string `yaml:"storageProfile1ID"`
+			SP2   string `yaml:"storageProfile2,omitempty"`
 		} `yaml:"storageProfile"`
 		ExternalIp                   string `yaml:"externalIp,omitempty"`
 		ExternalNetmask              string `yaml:"externalNetmask,omitempty"`
