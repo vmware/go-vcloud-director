@@ -221,7 +221,7 @@ func (vm *VM) ChangeCPUCount(virtualCpuCount int) (Task, error) {
 	return vm.ChangeCPUCountWithCore(virtualCpuCount, nil)
 }
 
-// ChangeCPUCountWithCore Sets number of available virtual logical processors
+// ChangeCPUCountWithCore sets number of available virtual logical processors
 // (i.e. CPUs x cores per socket) and cores per socket.
 // Socket count is a result of: virtual logical processors/cores per socket
 // https://communities.vmware.com/thread/576209
