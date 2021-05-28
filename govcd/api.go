@@ -491,7 +491,7 @@ func (client *Client) executeRequestWithoutResponse(pathURL, requestType, conten
 	return nil
 }
 
-// ExecuteRequest Helper function creates request, runs it, check responses and parses out interface from response.
+// ExecuteRequest helper function creates request, runs it, check responses and parses out interface from response.
 // pathURL - request URL
 // requestType - HTTP method type
 // contentType - value to set for "Content-Type"
