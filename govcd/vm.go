@@ -34,7 +34,7 @@ func NewVM(cli *Client) *VM {
 	}
 }
 
-// create instance with reference to types.QueryResultVMRecordType
+// NewVMRecord create instance with reference to types.QueryResultVMRecordType
 func NewVMRecord(cli *Client) *VMRecord {
 	return &VMRecord{
 		VM:     new(types.QueryResultVMRecordType),
@@ -141,11 +141,11 @@ func (vm *VM) UpdateNetworkConnectionSection(networks *types.NetworkConnectionSe
 }
 
 // Deprecated: use client.GetVMByHref instead
-func (cli *Client) FindVMByHREF(vmHREF string) (VM, error) {
+func (client *Client) FindVMByHREF(vmHREF string) (VM, error) {
 
-	newVm := NewVM(cli)
+	newVm := NewVM(client)
 
-	_, err := cli.ExecuteRequest(vmHREF, http.MethodGet,
+	_, err := client.ExecuteRequest(vmHREF, http.MethodGet,
 		"", "error retrieving VM: %s", nil, newVm.VM)
 
 	return *newVm, err
@@ -213,7 +213,7 @@ func (vm *VM) PowerOff() (Task, error) {
 		"", "error powering off VM: %s", nil)
 }
 
-// Sets number of available virtual logical processors
+// ChangeCPUCount Sets number of available virtual logical processors
 // (i.e. CPUs x cores per socket)
 // Cpu cores count is inherited from template.
 // https://communities.vmware.com/thread/576209
@@ -221,7 +221,7 @@ func (vm *VM) ChangeCPUCount(virtualCpuCount int) (Task, error) {
 	return vm.ChangeCPUCountWithCore(virtualCpuCount, nil)
 }
 
-// Sets number of available virtual logical processors
+// ChangeCPUCountWithCore Sets number of available virtual logical processors
 // (i.e. CPUs x cores per socket) and cores per socket.
 // Socket count is a result of: virtual logical processors/cores per socket
 // https://communities.vmware.com/thread/576209
@@ -394,8 +394,8 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 		types.MimeRasdItem, "error changing memory size: %s", newMem)
 }
 
-func (vm *VM) RunCustomizationScript(computername, script string) (Task, error) {
-	return vm.Customize(computername, script, false)
+func (vm *VM) RunCustomizationScript(computerName, script string) (Task, error) {
+	return vm.Customize(computerName, script, false)
 }
 
 // GetGuestCustomizationStatus retrieves guest customization status.
@@ -446,7 +446,7 @@ func (vm *VM) BlockWhileGuestCustomizationStatus(unwantedStatus string, timeOutA
 // Customize function allows to set ComputerName, apply customization script and enable or disable the changeSid option
 //
 // Deprecated: Use vm.SetGuestCustomizationSection()
-func (vm *VM) Customize(computername, script string, changeSid bool) (Task, error) {
+func (vm *VM) Customize(computerName, script string, changeSid bool) (Task, error) {
 	err := vm.Refresh()
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %s", err)
@@ -461,7 +461,7 @@ func (vm *VM) Customize(computername, script string, changeSid bool) (Task, erro
 		Type:                types.MimeGuestCustomizationSection,
 		Info:                "Specifies Guest OS Customization Settings",
 		Enabled:             takeBoolPointer(true),
-		ComputerName:        computername,
+		ComputerName:        computerName,
 		CustomizationScript: script,
 		ChangeSid:           takeBoolPointer(changeSid),
 	}
@@ -522,7 +522,7 @@ func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel
 		attachOrDetachDiskLink.Type, "error attach or detach disk: %s", diskParams)
 }
 
-// Attach an independent disk
+// AttachDisk Attach an independent disk
 // Call attachOrDetachDisk with disk and types.RelDiskAttach to attach an independent disk.
 // Please verify the independent disk is not connected to any VM before calling this function.
 // If the independent disk is connected to a VM, the task will be failed.
@@ -539,7 +539,7 @@ func (vm *VM) AttachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, erro
 	return vm.attachOrDetachDisk(diskParams, types.RelDiskAttach)
 }
 
-// Detach an independent disk
+// DetachDisk Detach an independent disk
 // Call attachOrDetachDisk with disk and types.RelDiskDetach to detach an independent disk.
 // Please verify the independent disk is connected the VM before calling this function.
 // If the independent disk is not connected to the VM, the task will be failed.
@@ -556,7 +556,7 @@ func (vm *VM) DetachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, erro
 	return vm.attachOrDetachDisk(diskParams, types.RelDiskDetach)
 }
 
-// Helper function which finds media and calls InsertMedia
+// HandleInsertMedia Helper function which finds media and calls InsertMedia
 func (vm *VM) HandleInsertMedia(org *Org, catalogName, mediaName string) (Task, error) {
 
 	catalog, err := org.GetCatalogByName(catalogName, false)
@@ -617,7 +617,7 @@ func isMediaInjected(items []*types.VirtualHardwareItem) bool {
 	return false
 }
 
-// Helper function which finds media and calls EjectMedia
+// HandleEjectMedia Helper function which finds media and calls EjectMedia
 func (vm *VM) HandleEjectMedia(org *Org, catalogName, mediaName string) (EjectTask, error) {
 	catalog, err := org.GetCatalogByName(catalogName, false)
 	if err != nil {
@@ -638,7 +638,7 @@ func (vm *VM) HandleEjectMedia(org *Org, catalogName, mediaName string) (EjectTa
 	return task, err
 }
 
-// Insert media for VM
+// InsertMedia Insert media for VM
 // Call insertOrEjectMedia with media and types.RelMediaInsertMedia to insert media from VM.
 func (vm *VM) InsertMedia(mediaParams *types.MediaInsertOrEjectParams) (Task, error) {
 	util.Logger.Printf("[TRACE] Insert media, HREF: %s\n", mediaParams.Media.HREF)
@@ -651,7 +651,7 @@ func (vm *VM) InsertMedia(mediaParams *types.MediaInsertOrEjectParams) (Task, er
 	return vm.insertOrEjectMedia(mediaParams, types.RelMediaInsertMedia)
 }
 
-// Eject media from VM
+// EjectMedia Eject media from VM
 // Call insertOrEjectMedia with media and types.RelMediaEjectMedia to eject media from VM.
 // If media isn't inserted then task still will be successful.
 func (vm *VM) EjectMedia(mediaParams *types.MediaInsertOrEjectParams) (EjectTask, error) {
@@ -709,7 +709,7 @@ func (vm *VM) insertOrEjectMedia(mediaParams *types.MediaInsertOrEjectParams, li
 		insertOrEjectMediaLink.Type, "error insert or eject media: %s", mediaParams)
 }
 
-// Use the get existing VM question for operation which need additional response
+// GetQuestion Use the get existing VM question for operation which need additional response
 // Reference:
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/GET-VmPendingQuestion.html
 func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
@@ -720,15 +720,14 @@ func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
 	req := vm.client.NewRequest(map[string]string{}, http.MethodGet, *apiEndpoint, nil)
 
 	resp, err := vm.client.Http.Do(req)
+	if err != nil {
+		return types.VmPendingQuestion{}, fmt.Errorf("error getting question: %s", err)
+	}
 
 	// vCD security feature - on no question return 403 access error
 	if http.StatusForbidden == resp.StatusCode {
 		util.Logger.Printf("No question found for VM: %s\n", vm.VM.ID)
 		return types.VmPendingQuestion{}, nil
-	}
-
-	if err != nil {
-		return types.VmPendingQuestion{}, fmt.Errorf("error getting question: %s", err)
 	}
 
 	if http.StatusOK != resp.StatusCode {
@@ -746,7 +745,7 @@ func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
 
 }
 
-// Use the provide answer to existing VM question for operation which need additional response
+// AnswerQuestion Use the provide answer to existing VM question for operation which need additional response
 // Reference:
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/POST-AnswerVmPendingQuestion.html
 func (vm *VM) AnswerQuestion(questionId string, choiceId int) error {
