@@ -504,7 +504,7 @@ func (client *Client) ExecuteRequest(pathURL, requestType, contentType, errorMes
 	return client.executeRequest(pathURL, requestType, contentType, errorMessage, payload, out, client.APIVersion)
 }
 
-// ExecuteRequestWithApiVersion Helper function creates request, runs it, check responses and parses out interface from response.
+// ExecuteRequestWithApiVersion helper function creates request, runs it, check responses and parses out interface from response.
 // pathURL - request URL
 // requestType - HTTP method type
 // contentType - value to set for "Content-Type"
