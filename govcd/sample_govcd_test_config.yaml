@@ -102,8 +102,6 @@ vcd:
     storageProfile:
         # First storage profile (mandatory)
         storageProfile1: Development
-        # ID of storage profile. If omitted, some tests will be skipped.
-        storageProfile1ID: 8263c1b5-6a40-404f-84a3-72343fce7c20
         # Second storage profile. If omitted, some tests will be skipped.
         storageProfile2: "*"
     # An edge gateway

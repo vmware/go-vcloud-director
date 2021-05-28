@@ -569,18 +569,22 @@ func (vcd *TestVCD) Test_QueryProviderVdcByName(check *C) {
 }
 
 func (vcd *TestVCD) Test_QueryAdminOrgVdcStorageProfileByID(check *C) {
-	if vcd.config.VCD.StorageProfile.SP1ID == "" {
+	if vcd.config.VCD.StorageProfile.SP1 == "" {
 		check.Skip("Skipping VDC StorageProfile query: no StorageProfile ID was given")
 	}
-	vdcStorageProfiles, err := QueryAdminOrgVdcStorageProfileByID(vcd.client, vcd.config.VCD.StorageProfile.SP1ID)
+	ref, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
+	check.Assert(err, IsNil)
+	expectedStorageProfileID, err := GetUuidFromHref(ref.HREF, true)
+	check.Assert(err, IsNil)
+	vdcStorageProfiles, err := QueryAdminOrgVdcStorageProfileByID(vcd.client, ref.ID)
 	check.Assert(err, IsNil)
 	check.Assert(len(vdcStorageProfiles) > 0, Equals, true)
 
 	storageProfileFound := false
-	href := vcd.client.Client.VCDHREF
-	href.Path += "/admin/vdcStorageProfile/" + vcd.config.VCD.StorageProfile.SP1ID
 	for _, vdcStorageProfile := range vdcStorageProfiles {
-		if href.String() == vdcStorageProfile.HREF {
+		storageProfileID, err := GetUuidFromHref(vdcStorageProfile.HREF, true)
+		check.Assert(err, IsNil)
+		if storageProfileID == expectedStorageProfileID {
 			storageProfileFound = true
 		}
 
