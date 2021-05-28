@@ -522,7 +522,7 @@ func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel
 		attachOrDetachDiskLink.Type, "error attach or detach disk: %s", diskParams)
 }
 
-// AttachDisk Attach an independent disk
+// AttachDisk attaches an independent disk
 // Call attachOrDetachDisk with disk and types.RelDiskAttach to attach an independent disk.
 // Please verify the independent disk is not connected to any VM before calling this function.
 // If the independent disk is connected to a VM, the task will be failed.
@@ -539,7 +539,7 @@ func (vm *VM) AttachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, erro
 	return vm.attachOrDetachDisk(diskParams, types.RelDiskAttach)
 }
 
-// DetachDisk Detach an independent disk
+// DetachDisk detaches an independent disk
 // Call attachOrDetachDisk with disk and types.RelDiskDetach to detach an independent disk.
 // Please verify the independent disk is connected the VM before calling this function.
 // If the independent disk is not connected to the VM, the task will be failed.
@@ -556,7 +556,7 @@ func (vm *VM) DetachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, erro
 	return vm.attachOrDetachDisk(diskParams, types.RelDiskDetach)
 }
 
-// HandleInsertMedia Helper function which finds media and calls InsertMedia
+// HandleInsertMedia helper function finds media and calls InsertMedia
 func (vm *VM) HandleInsertMedia(org *Org, catalogName, mediaName string) (Task, error) {
 
 	catalog, err := org.GetCatalogByName(catalogName, false)
