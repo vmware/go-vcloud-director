@@ -34,7 +34,7 @@ func NewVM(cli *Client) *VM {
 	}
 }
 
-// NewVMRecord create instance with reference to types.QueryResultVMRecordType
+// NewVMRecord creates an instance with reference to types.QueryResultVMRecordType
 func NewVMRecord(cli *Client) *VMRecord {
 	return &VMRecord{
 		VM:     new(types.QueryResultVMRecordType),
