@@ -28,7 +28,7 @@ func NewAdminCatalog(client *Client) *AdminCatalog {
 	}
 }
 
-// Delete Deletes the Catalog, returning an error if the vCD call fails.
+// Delete deletes the Catalog, returning an error if the vCD call fails.
 // Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Catalog.html
 func (adminCatalog *AdminCatalog) Delete(force, recursive bool) error {
 	catalog := NewCatalog(adminCatalog.client)
@@ -36,7 +36,7 @@ func (adminCatalog *AdminCatalog) Delete(force, recursive bool) error {
 	return catalog.Delete(force, recursive)
 }
 
-// Update Updates the Catalog definition from current Catalog struct contents.
+// Update updates the Catalog definition from current Catalog struct contents.
 // Any differences that may be legally applied will be updated.
 // Returns an error if the call to vCD fails. Update automatically performs
 // a refresh with the admin catalog it gets back from the rest api
@@ -59,7 +59,7 @@ func (adminCatalog *AdminCatalog) Update() error {
 	return err
 }
 
-// UploadOvf Uploads an ova file to a catalog. This method only uploads bits to vCD spool area.
+// UploadOvf uploads an ova file to a catalog. This method only uploads bits to vCD spool area.
 // Returns errors if any occur during upload from vCD or upload process. On upload fail client may need to
 // remove vCD catalog item which waits for files to be uploaded. Files from ova are extracted to system
 // temp folder "govcd+random number" and left for inspection on error.

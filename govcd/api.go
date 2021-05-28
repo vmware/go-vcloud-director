@@ -136,7 +136,7 @@ func debugShowResponse(resp *http.Response, body []byte) {
 	}
 }
 
-// IsNotFound Convenience function, similar to os.IsNotExist that checks whether a given error
+// IsNotFound is a convenience function, similar to os.IsNotExist that checks whether a given error
 // is a "Not found" error, such as
 // if isNotFound(err) {
 //    // do what is needed in case of not found
@@ -379,7 +379,7 @@ func checkRespWithErrType(bodyType types.BodyType, resp *http.Response, err, err
 	}
 }
 
-// ExecuteTaskRequest Helper function creates request, runs it, checks response and parses task from response.
+// ExecuteTaskRequest helper function creates request, runs it, checks response and parses task from response.
 // pathURL - request URL
 // requestType - HTTP method type
 // contentType - value to set for "Content-Type"
@@ -390,7 +390,7 @@ func (client *Client) ExecuteTaskRequest(pathURL, requestType, contentType, erro
 	return client.executeTaskRequest(pathURL, requestType, contentType, errorMessage, payload, client.APIVersion)
 }
 
-// ExecuteTaskRequestWithApiVersion Helper function creates request, runs it, checks response and parses task from response.
+// ExecuteTaskRequestWithApiVersion helper function creates request, runs it, checks response and parses task from response.
 // pathURL - request URL
 // requestType - HTTP method type
 // contentType - value to set for "Content-Type"
@@ -436,7 +436,7 @@ func (client *Client) executeTaskRequest(pathURL, requestType, contentType, erro
 	return *task, nil
 }
 
-// ExecuteRequestWithoutResponse Helper function creates request, runs it, checks response and do not expect any values from it.
+// ExecuteRequestWithoutResponse helper function creates request, runs it, checks response and do not expect any values from it.
 // pathURL - request URL
 // requestType - HTTP method type
 // contentType - value to set for "Content-Type"
