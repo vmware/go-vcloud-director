@@ -447,7 +447,7 @@ func (client *Client) ExecuteRequestWithoutResponse(pathURL, requestType, conten
 	return client.executeRequestWithoutResponse(pathURL, requestType, contentType, errorMessage, payload, client.APIVersion)
 }
 
-// ExecuteRequestWithoutResponseWithApiVersion Helper function creates request, runs it, checks response and do not expect any values from it.
+// ExecuteRequestWithoutResponseWithApiVersion helper function creates request, runs it, checks response and do not expect any values from it.
 // pathURL - request URL
 // requestType - HTTP method type
 // contentType - value to set for "Content-Type"
