@@ -977,7 +977,7 @@ func (vcdCli *VCDClient) GetOrgList() (*types.OrgList, error) {
 }
 
 // QueryAdminOrgVdcStorageProfileByID finds a StorageProfile of VDC by ID as admin
-func QueryAdminOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) ([]*types.QueryResultAdminOrgVdcStorageProfileRecordType, error) {
+func QueryAdminOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) (*types.QueryResultAdminOrgVdcStorageProfileRecordType, error) {
 	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":          types.QtAdminOrgVdcStorageProfile,
 		"filter":        fmt.Sprintf("id==%s", url.QueryEscape(id)),
@@ -986,11 +986,14 @@ func QueryAdminOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) ([]*types.
 	if err != nil {
 		return nil, err
 	}
-	return results.Results.AdminOrgVdcStorageProfileRecord, nil
+	if len(results.Results.AdminOrgVdcStorageProfileRecord) != 1 {
+		return nil, errors.New("error querying storage profile")
+	}
+	return results.Results.AdminOrgVdcStorageProfileRecord[0], nil
 }
 
 // QueryOrgVdcStorageProfileByID finds a StorageProfile of VDC by ID
-func QueryOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) ([]*types.QueryResultOrgVdcStorageProfileRecordType, error) {
+func QueryOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) (*types.QueryResultOrgVdcStorageProfileRecordType, error) {
 	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":          types.QtOrgVdcStorageProfile,
 		"filter":        fmt.Sprintf("id==%s", url.QueryEscape(id)),
@@ -999,5 +1002,8 @@ func QueryOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) ([]*types.Query
 	if err != nil {
 		return nil, err
 	}
-	return results.Results.OrgVdcStorageProfileRecord, nil
+	if len(results.Results.OrgVdcStorageProfileRecord) != 1 {
+		return nil, errors.New("error querying storage profile")
+	}
+	return results.Results.OrgVdcStorageProfileRecord[0], nil
 }

@@ -576,25 +576,24 @@ func (vcd *TestVCD) Test_QueryAdminOrgVdcStorageProfileByID(check *C) {
 	check.Assert(err, IsNil)
 	expectedStorageProfileID, err := GetUuidFromHref(ref.HREF, true)
 	check.Assert(err, IsNil)
-	vdcStorageProfiles, err := QueryAdminOrgVdcStorageProfileByID(vcd.client, ref.ID)
+	vdcStorageProfile, err := QueryAdminOrgVdcStorageProfileByID(vcd.client, ref.ID)
 	check.Assert(err, IsNil)
-	check.Assert(len(vdcStorageProfiles) > 0, Equals, true)
 
 	storageProfileFound := false
-	for _, vdcStorageProfile := range vdcStorageProfiles {
-		storageProfileID, err := GetUuidFromHref(vdcStorageProfile.HREF, true)
-		check.Assert(err, IsNil)
-		if storageProfileID == expectedStorageProfileID {
-			storageProfileFound = true
-		}
 
-		if testVerbose {
-			fmt.Printf("StorageProfile %s\n", vdcStorageProfile.Name)
-			fmt.Printf("\t href    %s\n", vdcStorageProfile.HREF)
-			fmt.Printf("\t enabled %v\n", vdcStorageProfile.IsEnabled)
-			fmt.Println("")
-		}
+	storageProfileID, err := GetUuidFromHref(vdcStorageProfile.HREF, true)
+	check.Assert(err, IsNil)
+	if storageProfileID == expectedStorageProfileID {
+		storageProfileFound = true
 	}
+
+	if testVerbose {
+		fmt.Printf("StorageProfile %s\n", vdcStorageProfile.Name)
+		fmt.Printf("\t href    %s\n", vdcStorageProfile.HREF)
+		fmt.Printf("\t enabled %v\n", vdcStorageProfile.IsEnabled)
+		fmt.Println("")
+	}
+
 	check.Assert(storageProfileFound, Equals, true)
 }
 
