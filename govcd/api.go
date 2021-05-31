@@ -447,7 +447,7 @@ func (client *Client) ExecuteRequestWithoutResponse(pathURL, requestType, conten
 	return client.executeRequestWithoutResponse(pathURL, requestType, contentType, errorMessage, payload, client.APIVersion)
 }
 
-// ExecuteRequestWithoutResponseWithApiVersion Helper function creates request, runs it, checks response and do not expect any values from it.
+// ExecuteRequestWithoutResponseWithApiVersion helper function creates request, runs it, checks response and do not expect any values from it.
 // pathURL - request URL
 // requestType - HTTP method type
 // contentType - value to set for "Content-Type"
@@ -491,7 +491,7 @@ func (client *Client) executeRequestWithoutResponse(pathURL, requestType, conten
 	return nil
 }
 
-// ExecuteRequest Helper function creates request, runs it, check responses and parses out interface from response.
+// ExecuteRequest helper function creates request, runs it, check responses and parses out interface from response.
 // pathURL - request URL
 // requestType - HTTP method type
 // contentType - value to set for "Content-Type"
@@ -504,7 +504,7 @@ func (client *Client) ExecuteRequest(pathURL, requestType, contentType, errorMes
 	return client.executeRequest(pathURL, requestType, contentType, errorMessage, payload, out, client.APIVersion)
 }
 
-// ExecuteRequestWithApiVersion Helper function creates request, runs it, check responses and parses out interface from response.
+// ExecuteRequestWithApiVersion helper function creates request, runs it, check responses and parses out interface from response.
 // pathURL - request URL
 // requestType - HTTP method type
 // contentType - value to set for "Content-Type"
@@ -600,7 +600,7 @@ func executeRequestWithApiVersion(pathURL, requestType, contentType string, payl
 func executeRequestCustomErr(pathURL string, params map[string]string, requestType, contentType string, payload interface{}, client *Client, errType error, apiVersion string) (*http.Response, error) {
 	requestURI, err := url.ParseRequestURI(pathURL)
 	if err != nil {
-		return nil, fmt.Errorf("could parse path requestURI %s", err)
+		return nil, fmt.Errorf("could parse path request URI '%s': %s", pathURL, err)
 	}
 
 	var req *http.Request
