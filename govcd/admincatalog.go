@@ -67,7 +67,7 @@ func (adminCatalog *AdminCatalog) Update() error {
 func (adminCatalog *AdminCatalog) UploadOvf(ovaFileName, itemName, description string, uploadPieceSize int64) (UploadTask, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
-	catalog.parent=adminCatalog.parent
+	catalog.parent = adminCatalog.parent
 	return catalog.UploadOvf(ovaFileName, itemName, description, uploadPieceSize)
 }
 

@@ -1,4 +1,4 @@
-// +build api openapi functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user search nsxv nsxt auth affinity ALL
+// +build api openapi functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user search nsxv nsxt auth affinity role ALL
 
 /*
  * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -1821,4 +1821,39 @@ func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint string) {
 			endpoint, constraint, maxSupportedVersion)
 		check.Skip(skipText)
 	}
+}
+
+// newOrgUserConnection creates a new Org User and returns a connection to it
+func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, insecure bool) (*VCDClient, error) {
+	u, err := url.ParseRequestURI(href)
+	if err != nil {
+		return nil, fmt.Errorf("[newOrgUserConnection] unable to pass url: %s", err)
+	}
+
+	_, err = adminOrg.GetUserByName(userName, false)
+	if err == nil {
+		// user exists
+		return nil, fmt.Errorf("user %s already exists", userName)
+	}
+	_, err = adminOrg.CreateUserSimple(OrgUserConfiguration{
+		Name:            userName,
+		Password:        password,
+		RoleName:        OrgUserRoleOrganizationAdministrator,
+		ProviderType:    OrgUserProviderIntegrated,
+		IsEnabled:       true,
+		DeployedVmQuota: 0,
+		StoredVmQuota:   0,
+		FullName:        userName,
+		Description:     "Test user created by newOrgUserConnection",
+	})
+	if err != nil {
+		return nil, err
+	}
+	_ = adminOrg.Refresh()
+	vcdClient := NewVCDClient(*u, insecure)
+	err = vcdClient.Authenticate(userName, password, adminOrg.AdminOrg.Name)
+	if err != nil {
+		return nil, fmt.Errorf("[newOrgUserConnection] unable to authenticate: %s", err)
+	}
+	return vcdClient, nil
 }

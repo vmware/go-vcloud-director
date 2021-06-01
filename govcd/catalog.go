@@ -32,7 +32,7 @@ const (
 type Catalog struct {
 	Catalog *types.Catalog
 	client  *Client
-	parent organization
+	parent  organization
 }
 
 func NewCatalog(client *Client) *Catalog {
@@ -849,7 +849,7 @@ func getOrgInfo(client *Client, links types.LinkList, id, name, entityType strin
 	return TenantContext{OrgName: org.Name, OrgId: orgId}, nil
 }
 
- */
+*/
 
 // getOrgInfo finds the organization to which the catalog belongs, and returns its name and ID
 func (catalog *Catalog) getOrgInfo() (*TenantContext, error) {

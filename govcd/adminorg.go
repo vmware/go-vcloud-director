@@ -23,8 +23,8 @@ import (
 // elements that can be viewed and modified only by system administrators.
 // Definition: https://code.vmware.com/apis/220/vcloud#/doc/doc/types/AdminOrgType.html
 type AdminOrg struct {
-	AdminOrg *types.AdminOrg
-	client   *Client
+	AdminOrg      *types.AdminOrg
+	client        *Client
 	TenantContext *TenantContext
 }
 
@@ -44,7 +44,7 @@ func (adminOrg *AdminOrg) CreateCatalog(name, description string) (AdminCatalog,
 	if err != nil {
 		return AdminCatalog{}, err
 	}
-	catalog.parent=adminOrg
+	catalog.parent = adminOrg
 	return *catalog, nil
 }
 
@@ -666,7 +666,7 @@ func (adminOrg *AdminOrg) GetVDCByHref(vdcHref string) (*Vdc, error) {
 	if err != nil {
 		return nil, err
 	}
-	vdc.parent=adminOrg
+	vdc.parent = adminOrg
 
 	return vdc, nil
 }

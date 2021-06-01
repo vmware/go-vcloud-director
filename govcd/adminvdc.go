@@ -17,7 +17,7 @@ import (
 type AdminVdc struct {
 	AdminVdc *types.AdminVdc
 	client   *Client
-	parent organization
+	parent   organization
 }
 
 func NewAdminVdc(cli *Client) *AdminVdc {
