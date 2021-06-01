@@ -170,16 +170,15 @@ func (adminOrg *AdminOrg) GetUserByNameOrId(identifier string, refresh bool) (*O
 	return entity.(*OrgUser), err
 }
 
-// GetRole finds a role within the organization
-// Deprecated: use GetRoleReference
-func (adminOrg *AdminOrg) GetRole(roleName string) (*types.Reference, error) {
-	return adminOrg.GetRoleReference(roleName)
-}
-
 // GetRoleReference finds a role within the organization
-func (adminOrg *AdminOrg) GetRoleReference(roleName string) (*types.Reference, error) {
+func (adminOrg *AdminOrg) GetRoleReference(roleName string, refresh bool) (*types.Reference, error) {
 
-	// There is no need to refresh the AdminOrg, until we implement CRUD for roles
+	if refresh {
+		err := adminOrg.Refresh()
+		if err != nil {
+			return nil, err
+		}
+	}
 	for _, role := range adminOrg.AdminOrg.RoleReferences.RoleReference {
 		if role.Name == roleName {
 			return role, nil
@@ -287,7 +286,7 @@ func (adminOrg *AdminOrg) CreateUserSimple(userData OrgUserConfiguration) (*OrgU
 	if userData.RoleName == "" {
 		return nil, fmt.Errorf("role is mandatory to create a user")
 	}
-	role, err := adminOrg.GetRoleReference(userData.RoleName)
+	role, err := adminOrg.GetRoleReference(userData.RoleName, true)
 	if err != nil {
 		return nil, fmt.Errorf("error finding a role named %s", userData.RoleName)
 	}
@@ -385,7 +384,7 @@ func (user *OrgUser) UpdateSimple(userData OrgUserConfiguration) error {
 	user.User.IsLocked = userData.IsLocked
 
 	if userData.RoleName != "" && user.User.Role != nil && user.User.Role.Name != userData.RoleName {
-		newRole, err := user.AdminOrg.GetRoleReference(userData.RoleName)
+		newRole, err := user.AdminOrg.GetRoleReference(userData.RoleName, true)
 		if err != nil {
 			return err
 		}
@@ -482,7 +481,7 @@ func (user *OrgUser) ChangeRole(roleName string) error {
 		return fmt.Errorf("new role is the same as current role")
 	}
 
-	newRole, err := user.AdminOrg.GetRoleReference(roleName)
+	newRole, err := user.AdminOrg.GetRoleReference(roleName, true)
 	if err != nil {
 		return err
 	}

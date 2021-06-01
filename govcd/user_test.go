@@ -51,7 +51,7 @@ func (vcd *TestVCD) Test_GetRoleReference(check *C) {
 		OrgUserRoleConsoleAccessOnly,
 	}
 	for _, roleName := range Roles {
-		roleReference, err := adminOrg.GetRoleReference(roleName)
+		roleReference, err := adminOrg.GetRoleReference(roleName, false)
 		check.Assert(err, IsNil)
 		check.Assert(roleReference, NotNil)
 		check.Assert(roleReference.Name, Equals, roleName)
