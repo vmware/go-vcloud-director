@@ -990,7 +990,7 @@ func QueryAdminOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) (*types.Qu
 		return nil, ErrorEntityNotFound
 	}
 	if len(results.Results.AdminOrgVdcStorageProfileRecord) > 1 {
-		return nil, fmt.Errorf("more than one Storage Profil found with ID %s", id)
+		return nil, fmt.Errorf("more than one Storage Profile found with ID %s", id)
 	}
 	return results.Results.AdminOrgVdcStorageProfileRecord[0], nil
 }
@@ -1009,7 +1009,7 @@ func QueryOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) (*types.QueryRe
 		return nil, ErrorEntityNotFound
 	}
 	if len(results.Results.OrgVdcStorageProfileRecord) > 1 {
-		return nil, fmt.Errorf("more than one Storage Profil found with ID %s", id)
+		return nil, fmt.Errorf("more than one Storage Profile found with ID %s", id)
 	}
 	return results.Results.OrgVdcStorageProfileRecord[0], nil
 }
