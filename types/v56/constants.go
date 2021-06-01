@@ -334,7 +334,10 @@ const (
 const (
 	OpenApiPathVersion1_0_0                   = "1.0.0/"
 	OpenApiEndpointRoles                      = "roles/"
+	OpenApiEndpointGlobalRoles                = "globalRoles/"
 	OpenApiEndpointRights                     = "rights/"
+	OpenApiEndpointRightsCategories           = "rightsCategories/"
+	OpenApiEndpointRightsBundles              = "rightsBundles/"
 	OpenApiEndpointAuditTrail                 = "auditTrail/"
 	OpenApiEndpointImportableTier0Routers     = "nsxTResources/importableTier0Routers"
 	OpenApiEndpointImportableSwitches         = "/network/orgvdcnetworks/importableswitches"

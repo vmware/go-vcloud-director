@@ -217,11 +217,16 @@ type VdcCapability struct {
 	Category string `json:"category"`
 }
 
+// An ImpliedRight is a Right that is added to a given Right automatically
+// For example, the Right "Catalog: Create / Delete a Catalog", has ImpliedRights "Catalog: Edit Properties"
+// and "Catalog: View Private and Shared Catalogs"
 type ImpliedRight struct {
 	Name string `json:"name,omitempty"`
 	ID   string `json:"id,omitempty"`
 }
 
+// A Right is a component of a Role. In this view, a Role is a collection of rights for a user.
+// Note that the rights are not stored in a Role structure, but retrieved separately
 type Right struct {
 	Name             string         `json:"name"`
 	ID               string         `json:"id"`
@@ -231,4 +236,54 @@ type Right struct {
 	ServiceNamespace string         `json:"serviceNamespace,omitempty"`
 	RightType        string         `json:"rightType,omitempty"` // VIEW or MODIFY
 	ImpliedRights    []ImpliedRight `json:"impliedRights,omitempty"`
+}
+
+// RightsCategory defines the category to which the Right belongs
+type RightsCategory struct {
+	Name        string `json:"name"`
+	Id          string `json:"id"`
+	BundleKey   string `json:"bundleKey"`
+	Parent      string `json:"parent"`
+	RightsCount struct {
+		View   int `json:"view"`
+		Modify int `json:"modify"`
+	} `json:"rightsCount"`
+	SubCategories []string `json:"subCategories"`
+}
+
+// RightsBundle is an collection of Rights to be assigned to a tenant(= organization).
+// Changing a rights bundle and publishing it for a given tenant will limit
+// the rights that the global roles implement in such tenant.
+type RightsBundle struct {
+	Name        string `json:"name"`
+	Id          string `json:"id"`
+	Description string `json:"description,omitempty"`
+	BundleKey   string `json:"bundleKey,omitempty"`
+	ReadOnly    bool   `json:"readOnly"`
+	PublishAll  bool   `json:"publishAll"`
+}
+
+// GlobalRole is a Role definition implemented in the provider that is passed on to tenants (=organizations)
+// Modifying an existing global role has immediate effect on the corresponding roles in the tenants (no need
+// to re-publish) while creating a new GlobalRole is only passed to the tenants if it is published.
+type GlobalRole struct {
+	Name        string `json:"name"`
+	Id          string `json:"id"`
+	Description string `json:"description"`
+	BundleKey   string `json:"bundleKey"`
+	ReadOnly    bool   `json:"readOnly"`
+	PublishAll  bool   `json:"publishAll"`
+}
+
+// OpenApiItems defines the input when multiple items need to be passed to a POST or PUT operation
+// All the fields are optional, except Values
+// This structure is the same as OpenApiPages, except for the type of Values, which is explicitly
+// defined as a collection of name+ID structures
+type OpenApiItems struct {
+	ResultTotal  int                `json:"resultTotal,omitempty"`
+	PageCount    int                `json:"pageCount,omitempty"`
+	Page         int                `json:"page,omitempty"`
+	PageSize     int                `json:"pageSize,omitempty"`
+	Associations interface{}        `json:"associations,omitempty"`
+	Values       []OpenApiReference `json:"values"` // a collection of items defined by an ID + a name
 }
