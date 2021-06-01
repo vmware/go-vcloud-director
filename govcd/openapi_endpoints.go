@@ -12,10 +12,14 @@ import (
 
 // endpointMinApiVersions holds mapping of OpenAPI endpoints and API versions they were introduced in.
 var endpointMinApiVersions = map[string]string{
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRights:                 "33.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles:                  "31.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAuditTrail:             "33.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableTier0Routers: "32.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRights:                              "31.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRightsBundles:                       "31.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRightsCategories:                    "31.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles:                               "31.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointGlobalRoles:                         "31.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles + types.OpenApiEndpointRights: "31.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAuditTrail:                          "33.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableTier0Routers:              "32.0",
 	// OpenApiEndpointExternalNetworks endpoint support was introduced with version 32.0 however it was still not stable
 	// enough to be used. (i.e. it did not support update "PUT")
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks:           "33.0",
