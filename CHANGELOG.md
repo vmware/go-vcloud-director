@@ -25,6 +25,7 @@
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
 * Added methods Org.QueryVmList and Org.QueryVmById to find VM by ID in an Org
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
+* Removed deprecated method `adminOrg.GetRole`  
   
 BREAKING CHANGES:
 * Added parameter `description` to method `vdc.ComposeRawVapp` [#372](https://github.com/vmware/go-vcloud-director/pull/372)
@@ -33,6 +34,7 @@ BREAKING CHANGES:
   [#371](https://github.com/vmware/go-vcloud-director/pull/371)
 * Field `types.DiskRecordType.SizeB` is replaced with `types.DiskRecordType.SizeMb` as size in Kilobytes is not
   supported in V33.0 [#371](https://github.com/vmware/go-vcloud-director/pull/371)
+* Added parameter `refresh` to `adminOrg.GetRoleReference`
 
 IMPROVEMENTS:
 * Only send xml.Header when payload is not empty (some WAFs block empty requests with XML header) 

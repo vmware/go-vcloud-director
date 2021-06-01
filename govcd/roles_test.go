@@ -1,4 +1,4 @@
-// +build functional openapi ALL
+// +build functional openapi role ALL
 
 /*
  * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -7,44 +7,36 @@
 package govcd
 
 import (
-	"fmt"
 	"net/url"
 
-	"github.com/kr/pretty"
 	. "gopkg.in/check.v1"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 func (vcd *TestVCD) Test_Roles(check *C) {
-	//adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
-	fmt.Printf("%s\n",adminOrg.AdminOrg.Name)
-	//orgId, err := GetUuidFromHref(adminOrg.AdminOrg.HREF, true)
-	//check.Assert(err, IsNil)
-	//adminOrg.client.SetCustomHeader(map[string]string{types.HeaderTenantContext: orgId, types.HeaderAuthContext: adminOrg.AdminOrg.Name})
 
 	// Step 1 - Get all roles
-	allExistingRoles, err := adminOrg.GetAllOpenApiRoles(nil)
+	allExistingRoles, err := adminOrg.GetAllRoles(nil)
 	check.Assert(err, IsNil)
 	check.Assert(allExistingRoles, NotNil)
 
 	// Step 2 - Get all roles using query filters
 	for _, oneRole := range allExistingRoles {
-		fmt.Printf("%# v\n",pretty.Formatter(oneRole.Role))
 
 		// Step 2.1 - retrieve specific role by using FIQL filter
 		queryParams := url.Values{}
 		queryParams.Add("filter", "id=="+oneRole.Role.ID)
 
-		expectOneRoleResultById, err := adminOrg.GetAllOpenApiRoles(queryParams)
+		expectOneRoleResultById, err := adminOrg.GetAllRoles(queryParams)
 		check.Assert(err, IsNil)
 		check.Assert(len(expectOneRoleResultById) == 1, Equals, true)
 
 		// Step 2.2 - retrieve specific role by using endpoint
-		exactItem, err := adminOrg.GetOpenApiRoleById(oneRole.Role.ID)
+		exactItem, err := adminOrg.GetRoleById(oneRole.Role.ID)
 		check.Assert(err, IsNil)
 
 		check.Assert(err, IsNil)
@@ -55,7 +47,7 @@ func (vcd *TestVCD) Test_Roles(check *C) {
 
 	}
 
-	// Step 3 - CreateRole a new role and ensure it is created as specified by doing deep comparison
+	// Step 3 - Create a new role and ensure it is created as specified by doing deep comparison
 
 	newR := &types.Role{
 		Name:        check.TestName(),
@@ -67,10 +59,18 @@ func (vcd *TestVCD) Test_Roles(check *C) {
 
 	createdRole, err := adminOrg.CreateRole(newR)
 	check.Assert(err, IsNil)
+	AddToCleanupListOpenApi(createdRole.Role.Name, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRoles+createdRole.Role.ID)
 
 	// Ensure supplied and created structs differ only by ID
 	newR.ID = createdRole.Role.ID
 	check.Assert(createdRole.Role, DeepEquals, newR)
+
+	// Check that the new role is found in the Organization structure
+	roleRef, err := adminOrg.GetRoleReference(createdRole.Role.Name, false)
+	check.Assert(err, NotNil)
+	check.Assert(roleRef, IsNil)
+	roleRef, err = adminOrg.GetRoleReference(createdRole.Role.Name, true)
+	check.Assert(err, IsNil)
 
 	// Step 4 - updated created role
 	createdRole.Role.Description = "Updated description"
@@ -78,13 +78,64 @@ func (vcd *TestVCD) Test_Roles(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(updatedRole.Role, DeepEquals, createdRole.Role)
 
-	// Step 5 - delete created role
+	// Step 5 - add rights to role
+
+	// These rights include 5 implied rights, which will be added by role.AddRights
+	rightName1 := "Catalog: Add vApp from My Cloud"
+	rightName2 := "Catalog: Edit Properties"
+
+	right1, err := adminOrg.GetRightByName(rightName1)
+	check.Assert(err, IsNil)
+	right2, err := adminOrg.GetRightByName(rightName2)
+	check.Assert(err, IsNil)
+	err = updatedRole.AddRights([]types.OpenApiReference{
+		{Name: rightName1, ID: right1.ID},
+		{Name: rightName2, ID: right2.ID},
+	})
+	check.Assert(err, IsNil)
+
+	// Calculate the total amount of rights we should expect to be added to the role
+	var unique = make(map[string]bool)
+	for _, r := range []*types.Right{right1, right2} {
+		_, seen := unique[r.ID]
+		if !seen {
+			unique[r.ID] = true
+		}
+		for _, implied := range r.ImpliedRights {
+			_, seen := unique[implied.ID]
+			if !seen {
+				unique[implied.ID] = true
+			}
+		}
+	}
+	rights, err := updatedRole.GetRoleRights(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(rights), Equals, len(unique))
+
+	// Step 6 - remove 1 right from role
+
+	err = updatedRole.RemoveRights([]types.OpenApiReference{{Name: right1.Name, ID: right1.ID}})
+	check.Assert(err, IsNil)
+	rights, err = updatedRole.GetRoleRights(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(rights), Equals, len(unique)-1)
+
+	// Step 7 - remove all rights from role
+	err = updatedRole.RemoveAllRights()
+	check.Assert(err, IsNil)
+
+	rights, err = updatedRole.GetRoleRights(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(rights), Equals, 0)
+
+	// Step 8 - delete created role
 	err = updatedRole.Delete()
 	check.Assert(err, IsNil)
-	// Step 5 - try to read deleted role and expect error to contain 'ErrorEntityNotFound'
+
+	// Step 9 - try to read deleted role and expect error to contain 'ErrorEntityNotFound'
 	// Read is tricky - it throws an error ACCESS_TO_RESOURCE_IS_FORBIDDEN when the resource with ID does not
 	// exist therefore one cannot know what kind of error occurred.
-	deletedRole, err := adminOrg.GetOpenApiRoleById(createdRole.Role.ID)
+	deletedRole, err := adminOrg.GetRoleById(createdRole.Role.ID)
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(deletedRole, IsNil)
 }

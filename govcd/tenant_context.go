@@ -58,7 +58,6 @@ func (adminVdc *AdminVdc) vdcId() string          { return adminVdc.AdminVdc.ID 
 func (adminVdc *AdminVdc) vdcName() string        { return adminVdc.AdminVdc.Name }
 func (adminVdc *AdminVdc) vdcParent() interface{} { return adminVdc.parent }
 
-
 // Implementation of genericCatalog interface for AdminCatalog
 func (adminCatalog *AdminCatalog) catalogId() string          { return adminCatalog.AdminCatalog.ID }
 func (adminCatalog *AdminCatalog) catalogName() string        { return adminCatalog.AdminCatalog.Name }
@@ -154,4 +153,19 @@ func getTenantContextHeader(tenantContext *TenantContext) map[string]string {
 		types.HeaderTenantContext: tenantContext.OrgId,
 		types.HeaderAuthContext:   tenantContext.OrgName,
 	}
+}
+
+func getTenantContextFromHeader(header map[string]string) *TenantContext {
+	if len(header) == 0 {
+		return nil
+	}
+	tenantContext, okTenant := header[types.HeaderTenantContext]
+	AuthContext, okAuth := header[types.HeaderAuthContext]
+	if okTenant && okAuth {
+		return &TenantContext{
+			OrgId:   tenantContext,
+			OrgName: AuthContext,
+		}
+	}
+	return nil
 }
