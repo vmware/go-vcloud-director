@@ -13,6 +13,14 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+type rightsProviderCollection interface {
+	PublishAllTenants() error
+	UnpublishAllTenants() error
+	PublishTenants([]types.OpenApiReference) error
+	UnpublishTenants([]types.OpenApiReference) error
+	GetTenants(queryParameters url.Values) ([]types.OpenApiReference, error)
+}
+
 func (vcd *TestVCD) Test_GlobalRoles(check *C) {
 	client := vcd.client.Client
 	if !client.IsSysAdmin {
@@ -102,7 +110,7 @@ func (vcd *TestVCD) Test_GlobalRoles(check *C) {
 			}
 		}
 	}
-	rights, err := updatedGlobalRole.GetGlobalRoleRights(nil)
+	rights, err := updatedGlobalRole.GetRights(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(rights), Equals, len(unique))
 
@@ -110,15 +118,17 @@ func (vcd *TestVCD) Test_GlobalRoles(check *C) {
 
 	err = updatedGlobalRole.RemoveRights([]types.OpenApiReference{{Name: right1.Name, ID: right1.ID}})
 	check.Assert(err, IsNil)
-	rights, err = updatedGlobalRole.GetGlobalRoleRights(nil)
+	rights, err = updatedGlobalRole.GetRights(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(rights), Equals, len(unique)-1)
+
+	testRightsContainerTenants(vcd, check, updatedGlobalRole)
 
 	// Step 7 - remove all rights from global role
 	err = updatedGlobalRole.RemoveAllRights()
 	check.Assert(err, IsNil)
 
-	rights, err = updatedGlobalRole.GetGlobalRoleRights(nil)
+	rights, err = updatedGlobalRole.GetRights(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(rights), Equals, 0)
 
@@ -132,4 +142,61 @@ func (vcd *TestVCD) Test_GlobalRoles(check *C) {
 	deletedGlobalRole, err := client.GetGlobalRoleById(createdGlobalRole.GlobalRole.Id)
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(deletedGlobalRole, IsNil)
+}
+
+func foundOrg(name, id string, items []types.OpenApiReference) bool {
+	for _, item := range items {
+		if item.ID == id && item.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func testRightsContainerTenants(vcd *TestVCD, check *C, rpc rightsProviderCollection) {
+
+	newOrgName := check.TestName() + "-org"
+	task, err := CreateOrg(vcd.client, newOrgName, newOrgName, newOrgName, &types.OrgSettings{}, true)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	newOrg, err := vcd.client.GetAdminOrgByName(newOrgName)
+	check.Assert(err, IsNil)
+	AddToCleanupList(newOrgName, "org", "", "testRightsContainerTenants")
+
+	err = rpc.PublishTenants([]types.OpenApiReference{
+		{ID: vcd.org.Org.ID, Name: vcd.org.Org.Name},
+		{ID: newOrg.AdminOrg.ID, Name: newOrg.AdminOrg.Name},
+	})
+	check.Assert(err, IsNil)
+
+	tenants, err := rpc.GetTenants(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(tenants), Equals, 2)
+
+	check.Assert(foundOrg(vcd.org.Org.Name, vcd.org.Org.ID, tenants), Equals, true)
+	check.Assert(foundOrg(newOrg.AdminOrg.Name, newOrg.AdminOrg.ID, tenants), Equals, true)
+
+	err = rpc.UnpublishTenants(tenants)
+	check.Assert(err, IsNil)
+	tenants, err = rpc.GetTenants(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(tenants), Equals, 0)
+
+	err = rpc.PublishAllTenants()
+	check.Assert(err, IsNil)
+
+	tenants, err = rpc.GetTenants(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(tenants), Not(Equals), 0)
+
+	check.Assert(foundOrg(vcd.org.Org.Name, vcd.org.Org.ID, tenants), Equals, true)
+	check.Assert(foundOrg(newOrg.AdminOrg.Name, newOrg.AdminOrg.ID, tenants), Equals, true)
+
+	err = rpc.UnpublishAllTenants()
+	check.Assert(err, IsNil)
+	tenants, err = rpc.GetTenants(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(tenants), Equals, 0)
 }

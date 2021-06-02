@@ -116,7 +116,14 @@ func (client *Client) GetAllRightsBundles(queryParameters url.Values) ([]*Rights
 	return getAllRightsBundles(client, queryParameters, nil)
 }
 
-func (rb *RightsBundle) GetRightsBundleRights(queryParameters url.Values) ([]*types.Right, error) {
+// GetTenants retrieves all tenants associated to a given Rights Bundle.
+// Query parameters can be supplied to perform additional filtering
+func (rb *RightsBundle) GetTenants(queryParameters url.Values) ([]types.OpenApiReference, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRightsBundles
+	return getContainerTenants(rb.client, rb.RightsBundle.Id, endpoint, queryParameters)
+}
+
+func (rb *RightsBundle) GetRights(queryParameters url.Values) ([]*types.Right, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRightsBundles
 	return getRoleRights(rb.client, rb.RightsBundle.Id, endpoint, queryParameters, nil)
 }
@@ -143,6 +150,30 @@ func (rb *RightsBundle) RemoveRights(newRights []types.OpenApiReference) error {
 func (rb *RightsBundle) RemoveAllRights() error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRightsBundles
 	return removeAllRightsFromRole(rb.client, "RightsBundle", rb.RightsBundle.Name, rb.RightsBundle.Id, endpoint, nil)
+}
+
+// PublishTenants publishes a rights bundle to one or more tenants
+func (rb *RightsBundle) PublishTenants(tenants []types.OpenApiReference) error {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRightsBundles
+	return publishContainerToTenants(rb.client, "RightsBundle", rb.RightsBundle.Name, rb.RightsBundle.Id, endpoint, tenants, true)
+}
+
+// UnpublishTenants removes publication status in rights bundle from one or more tenants
+func (rb *RightsBundle) UnpublishTenants(tenants []types.OpenApiReference) error {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRightsBundles
+	return publishContainerToTenants(rb.client, "RightsBundle", rb.RightsBundle.Name, rb.RightsBundle.Id, endpoint, tenants, false)
+}
+
+// PublishAllTenants removes publication status in rights bundle from one or more tenants
+func (rb *RightsBundle) PublishAllTenants() error {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRightsBundles
+	return publishContainerToAllTenants(rb.client, "RightsBundle", rb.RightsBundle.Name, rb.RightsBundle.Id, endpoint, true)
+}
+
+// UnpublishAllTenants removes publication status in rights bundle from one or more tenants
+func (rb *RightsBundle) UnpublishAllTenants() error {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRightsBundles
+	return publishContainerToAllTenants(rb.client, "RightsBundle", rb.RightsBundle.Name, rb.RightsBundle.Id, endpoint, false)
 }
 
 // GetRightsBundleByName retrieves rights bundle by given name

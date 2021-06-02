@@ -49,8 +49,8 @@ func (adminOrg *AdminOrg) GetAllRights(queryParameters url.Values) ([]*types.Rig
 	return getAllRights(adminOrg.client, queryParameters, getTenantContextHeader(tenantContext))
 }
 
-// GetRoleRights retrieves all rights belonging to a given Role. Query parameters can be supplied to perform additional
-// filtering
+// getRoleRights retrieves all rights belonging to a given Role or similar container (global role, rights bundle).
+// Query parameters can be supplied to perform additional filtering
 func getRoleRights(client *Client, roleId, endpoint string, queryParameters url.Values, additionalHeader map[string]string) ([]*types.Right, error) {
 	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {

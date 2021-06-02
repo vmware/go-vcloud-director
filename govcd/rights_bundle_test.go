@@ -59,8 +59,8 @@ func (vcd *TestVCD) Test_RightsBundle(check *C) {
 
 	createdRightsBundle, err := client.CreateRightsBundle(newGR)
 	check.Assert(err, IsNil)
-	//AddToCleanupListOpenApi(createdRightsBundle.RightsBundle.Name, check.TestName(),
-	//	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRightsBundles + createdRightsBundle.RightsBundle.Id)
+	AddToCleanupListOpenApi(createdRightsBundle.RightsBundle.Name, check.TestName(),
+		types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRightsBundles+createdRightsBundle.RightsBundle.Id)
 
 	// Ensure supplied and created structs differ only by ID
 	newGR.Id = createdRightsBundle.RightsBundle.Id
@@ -102,7 +102,7 @@ func (vcd *TestVCD) Test_RightsBundle(check *C) {
 			}
 		}
 	}
-	rights, err := updatedRightsBundle.GetRightsBundleRights(nil)
+	rights, err := updatedRightsBundle.GetRights(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(rights), Equals, len(unique))
 
@@ -110,15 +110,17 @@ func (vcd *TestVCD) Test_RightsBundle(check *C) {
 
 	err = updatedRightsBundle.RemoveRights([]types.OpenApiReference{{Name: right1.Name, ID: right1.ID}})
 	check.Assert(err, IsNil)
-	rights, err = updatedRightsBundle.GetRightsBundleRights(nil)
+	rights, err = updatedRightsBundle.GetRights(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(rights), Equals, len(unique)-1)
+
+	testRightsContainerTenants(vcd, check, updatedRightsBundle)
 
 	// Step 7 - remove all rights from rights bundle
 	err = updatedRightsBundle.RemoveAllRights()
 	check.Assert(err, IsNil)
 
-	rights, err = updatedRightsBundle.GetRightsBundleRights(nil)
+	rights, err = updatedRightsBundle.GetRights(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(rights), Equals, 0)
 
