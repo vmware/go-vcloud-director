@@ -282,7 +282,7 @@ func decodeBody(bodyType types.BodyType, resp *http.Response, out interface{}) e
 		}
 	}
 
-	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, fmt.Sprintf("%s", body))
+	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, string(body))
 	if err != nil {
 		return err
 	}

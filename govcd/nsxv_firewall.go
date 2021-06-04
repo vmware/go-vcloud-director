@@ -26,7 +26,7 @@ type responseEdgeFirewallRules struct {
 	EdgeFirewallRules requestEdgeFirewallRules `xml:"firewallRules"`
 }
 
-// CreateNsxvFirewallRule creates firewall rule using proxied NSX-V API. It is a synchronuous operation.
+// CreateNsxvFirewallRule creates firewall rule using proxied NSX-V API. It is a synchronous operation.
 // It returns an object with all fields populated (including ID)
 // If aboveRuleId is not empty, it will send a query parameter aboveRuleId= which instructs NSX to
 // place this rule above the specified rule ID

@@ -25,7 +25,9 @@
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
 * Added methods Org.QueryVmList and Org.QueryVmById to find VM by ID in an Org
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
-  
+* Added methods `NsxtEdgeGateway.UpdateNsxtFirewall()`, `NsxtEdgeGateway.GetNsxtFirewall()`, `nsxtFirewall.DeleteAll()`,
+  `nsxtFirewall.DeleteById` [#381](https://github.com/vmware/go-vcloud-director/pull/381)
+
 BREAKING CHANGES:
 * Added parameter `description` to method `vdc.ComposeRawVapp` [#372](https://github.com/vmware/go-vcloud-director/pull/372)
 * Added methods `vapp.Rename`, `vapp.UpdateDescription`, `vapp.UpdateNameDescription` [#372](https://github.com/vmware/go-vcloud-director/pull/372)
@@ -41,6 +43,9 @@ IMPROVEMENTS:
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
 * Improved test entity cleanup to allow specifying parent VDC for vApp removals
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
+* Cleanup a few unnecessary type conversions detected by new staticcheck version 
+  [#381](https://github.com/vmware/go-vcloud-director/pull/381)
+
 
 ## 2.11.0 (March 10, 2021)
 

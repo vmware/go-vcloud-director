@@ -757,7 +757,28 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+	// 	OpenApiEntityFirewall has different API structure therefore generic `OpenApiEntity` case does not fit cleanup
+	case "OpenApiEntityFirewall":
+		apiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtFirewallRules)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
 
+		urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(entity.Name)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		// Attempt to use supplied path in entity.Parent for element deletion
+		err = vcd.client.Client.OpenApiDeleteItem(apiVersion, urlRef, nil)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 	case "vapp":
 		vdc := vcd.vdc
 		var err error
