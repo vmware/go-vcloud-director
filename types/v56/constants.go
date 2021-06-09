@@ -346,6 +346,7 @@ const (
 	OpenApiEndpointFirewallGroups             = "firewallGroups/"
 	OpenApiEndpointOrgVdcNetworks             = "orgVdcNetworks/"
 	OpenApiEndpointOrgVdcNetworksDhcp         = "orgVdcNetworks/%s/dhcp"
+	OpenApiEndpointNsxtNatRules               = "edgeGateways/%s/nat/rules/"
 )
 
 // Header keys to run operations in tenant context
@@ -392,4 +393,16 @@ const (
 	// FirewallGroupTypeIpSet can be used in types.NsxtFirewallGroup for 'type' field to create IP
 	// Set
 	FirewallGroupTypeIpSet = "IP_SET"
+)
+
+// These constants can be used to pick type of NSX-T NAT Rule and FirewallMatch (for VCD 10.2.2+)
+const (
+	NsxtNatRuleTypeDnat   = "DNAT"
+	NsxtNatRuleTypeNoDnat = "NO_DNAT"
+	NsxtNatRuleTypeSnat   = "SNAT"
+	NsxtNatRuleTypeNoSnat = "NO_SNAT"
+
+	NsxtNatRuleFirewallMatchInternalAddress = "MATCH_INTERNAL_ADDRESS"
+	NsxtNatRuleFirewallMatchExternalAddress = "MATCH_EXTERNAL_ADDRESS"
+	NsxtNatRuleFirewallMatchBypass          = "BYPASS"
 )
