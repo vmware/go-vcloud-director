@@ -332,3 +332,44 @@ type NsxtFirewallRuleContainer struct {
 	// rules in the order in which they are returned.
 	UserDefinedRules []*NsxtFirewallRule `json:"userDefinedRules"`
 }
+
+// NsxtAppPortProfile allows user to set custom application port definitions so that these can later be used
+// in NSX-T Firewall rules in combination with IP Sets and Security Groups.
+type NsxtAppPortProfile struct {
+	ID string `json:"id,omitempty"`
+	// Name must be unique per Scope
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+	// ApplicationPorts contains one or more protocol and port definitions
+	ApplicationPorts []NsxtAppPortProfilePort `json:"applicationPorts,omitempty"`
+	// OrgRef must contain at least Org ID when SCOPE==TENANT
+	OrgRef *OpenApiReference `json:"orgRef,omitempty"`
+	// ContextEntityId must contain:
+	// * NSX-T Manager URN (when scope==PROVIDER)
+	// * VDC or VDC Group ID (when scope==TENANT)
+	ContextEntityId string `json:"contextEntityId,omitempty"`
+	// Scope can be one of the following:
+	// * SYSTEM - Read-only (The ones that are provided by SYSTEM). Constant `types.ApplicationPortProfileScopeSystem`
+	// * PROVIDER - Created by Provider on a particular network provider (NSX-T manager). Constant `types.ApplicationPortProfileScopeProvider`
+	// * TENANT (Created by Tenant at Org VDC level). Constant `types.ApplicationPortProfileScopeTenant`
+	//
+	// When scope==PROVIDER:
+	//   OrgRef is not required
+	//   ContextEntityId must have NSX-T Managers URN
+	// When scope==TENANT
+	//   OrgRef ID must be specified
+	//   ContextEntityId must be set to VDC or VDC group URN
+	Scope string `json:"scope,omitempty"`
+}
+
+// NsxtAppPortProfilePort allows user to set protocol and one or more ports
+type NsxtAppPortProfilePort struct {
+	// Protocol can be one of the following:
+	// * "ICMPv4"
+	// * "ICMPv6"
+	// * "TCP"
+	// * "UDP"
+	Protocol string `json:"protocol"`
+	// DestinationPorts is optional, but can define list of ports ("1000", "1500") or port ranges ("1200-1400")
+	DestinationPorts []string `json:"destinationPorts,omitempty"`
+}

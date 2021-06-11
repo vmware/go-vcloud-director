@@ -161,6 +161,15 @@ func configureLdapForOrg(vcd *TestVCD, check *C, ldapHostIp string) {
 // In essence it creates two groups - "admin_staff" and "ship_crew" and a few users.
 // More information about users and groups in: https://github.com/rroemhild/docker-test-openldap
 func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) (string, string, string) {
+	// LDAP configuration is tailored for this testing LDAP container. However it may make sense to host it in custom
+	// docker registry because docker throttles container downloads and this might cause test failures.
+	// Config vcd.config.Misc.LdapContainer can be set to pull this container from custom registry.
+	ldapContainerName := "rroemhild/test-openldap"
+	if vcd.config.Misc.LdapContainer != "" {
+		ldapContainerName = vcd.config.Misc.LdapContainer
+	}
+	fmt.Printf("# Using docker LDAP image '%s'\n", ldapContainerName)
+
 	vAppName := "ldap"
 	// The customization script waits until IP address is set on the NIC because Guest tools run
 	// script and network configuration together. If the script runs too quick - there is a risk
@@ -168,7 +177,7 @@ func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) (string,
 	// remote. Guest tools could also be interrupted if the script below failed before NICs are
 	// configured therefore it is run in background.
 	// It waits until "inet" (not "inet6") is set and then runs docker container
-	const ldapCustomizationScript = `
+	ldapCustomizationScript := `
 		{
 			until ip a show eth0 | grep "inet "
 			do
@@ -176,7 +185,7 @@ func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) (string,
 			done
 			systemctl enable docker
 			systemctl start docker
-			docker run --name ldap-server --restart=always --privileged -d -p 389:389 rroemhild/test-openldap
+			docker run --name ldap-server --restart=always -d -p 389:10389 ` + ldapContainerName + `
 		} &
 	`
 	// Get Org, Vdc

@@ -25,6 +25,8 @@
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
 * Added methods Org.QueryVmList and Org.QueryVmById to find VM by ID in an Org
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
+* Added `NsxtAppPortProfile` and `types.NsxtAppPortProfile` for NSX-T Application Port Profile management 
+  [#378](https://github.com/vmware/go-vcloud-director/pull/378)  
 * Added methods `NsxtEdgeGateway.UpdateNsxtFirewall()`, `NsxtEdgeGateway.GetNsxtFirewall()`, `nsxtFirewall.DeleteAll()`,
   `nsxtFirewall.DeleteById` [#381](https://github.com/vmware/go-vcloud-director/pull/381)
 
@@ -45,6 +47,10 @@ IMPROVEMENTS:
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
 * Cleanup a few unnecessary type conversions detected by new staticcheck version 
   [#381](https://github.com/vmware/go-vcloud-director/pull/381)
+* Improved `OpenApiGetAllItems` to still follow pages in VCD endpoints with BUG which don't return 'nextPage' link for
+  pagination [#378](https://github.com/vmware/go-vcloud-director/pull/378)
+* Improved LDAP container related tests to use correct port mapping for latest LDAP container version 
+  [#378](https://github.com/vmware/go-vcloud-director/pull/378)
 
 
 ## 2.11.0 (March 10, 2021)
