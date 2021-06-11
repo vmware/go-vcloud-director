@@ -224,11 +224,6 @@ func getRandomListOfAppPortProfiles(check *C, vcd *TestVCD) []types.OpenApiRefer
 		openApiRefs[index].Name = appPortProfile.NsxtAppPortProfile.Name
 	}
 
-	// Make a subslice
-
-	//subSetLength := rand.Intn(len(openApiRefs))
-	//subOpenApiRefs := make([]types.OpenApiReference, subSetLength)
-
 	return openApiRefs
 }
 
