@@ -47,7 +47,7 @@ func (vcd *TestVCD) Test_FindVMByHREF(check *C) {
 // Test attach disk to VM and detach disk from VM
 func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 	// Find VM
-	if vcd.vapp.VApp == nil {
+	if vcd.vapp != nil && vcd.vapp.VApp == nil {
 		check.Skip("skipping test because no vApp is found")
 	}
 
@@ -317,7 +317,7 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 	itemName := "TestHandleInsertOrEjectMedia"
 
 	// Find VApp
-	if vcd.vapp.VApp == nil {
+	if vcd.vapp != nil && vcd.vapp.VApp == nil {
 		check.Skip("skipping test because no vApp is found")
 	}
 
@@ -384,7 +384,7 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 	itemName := "TestInsertOrEjectMedia"
 
 	// Find VApp
-	if vcd.vapp.VApp == nil {
+	if vcd.vapp != nil && vcd.vapp.VApp == nil {
 		check.Skip("skipping test because no vApp is found")
 	}
 
@@ -467,7 +467,7 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 	itemName := "TestAnswerVmQuestion"
 
 	// Find VApp
-	if vcd.vapp.VApp == nil {
+	if vcd.vapp != nil && vcd.vapp.VApp == nil {
 		check.Skip("skipping test because no vApp is found")
 	}
 
@@ -1206,7 +1206,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
 	}
 
 	// Find VApp
-	if vcd.vapp.VApp == nil {
+	if vcd.vapp != nil && vcd.vapp.VApp == nil {
 		check.Skip("skipping test because no vApp is found")
 	}
 

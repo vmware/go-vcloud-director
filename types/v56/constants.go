@@ -347,6 +347,7 @@ const (
 	OpenApiEndpointOrgVdcNetworks             = "orgVdcNetworks/"
 	OpenApiEndpointOrgVdcNetworksDhcp         = "orgVdcNetworks/%s/dhcp"
 	OpenApiEndpointNsxtNatRules               = "edgeGateways/%s/nat/rules/"
+	OpenApiEndpointAppPortProfiles            = "applicationPortProfiles/"
 )
 
 // Header keys to run operations in tenant context
@@ -395,14 +396,34 @@ const (
 	FirewallGroupTypeIpSet = "IP_SET"
 )
 
-// These constants can be used to pick type of NSX-T NAT Rule and FirewallMatch (for VCD 10.2.2+)
+// These constants can be used to pick type of NSX-T NAT Rule
 const (
 	NsxtNatRuleTypeDnat   = "DNAT"
 	NsxtNatRuleTypeNoDnat = "NO_DNAT"
 	NsxtNatRuleTypeSnat   = "SNAT"
 	NsxtNatRuleTypeNoSnat = "NO_SNAT"
+)
 
+// In VCD versions 10.2.2+ (API V35.2+) there is a FirewallMatch field in NAT rule with these
+// options
+const (
+	// NsxtNatRuleFirewallMatchInternalAddress will match firewall rules based on NAT rules internal
+	// address (DEFAULT)
 	NsxtNatRuleFirewallMatchInternalAddress = "MATCH_INTERNAL_ADDRESS"
+	// NsxtNatRuleFirewallMatchExternalAddress will match firewall rules based on NAT rule external
+	// address
 	NsxtNatRuleFirewallMatchExternalAddress = "MATCH_EXTERNAL_ADDRESS"
-	NsxtNatRuleFirewallMatchBypass          = "BYPASS"
+	// NsxtNatRuleFirewallMatchBypass will skip evaluating NAT rules in firewall
+	NsxtNatRuleFirewallMatchBypass = "BYPASS"
+)
+
+const (
+	// ApplicationPortProfileScopeSystem is a defined scope which allows user to only read (no write capability) system
+	// predefined Application Port Profiles
+	ApplicationPortProfileScopeSystem = "SYSTEM"
+	// ApplicationPortProfileScopeProvider allows user to read and set Application Port Profiles at provider level. In
+	// reality Network Provider (NSX-T Manager) must be specified while creating.
+	ApplicationPortProfileScopeProvider = "PROVIDER"
+	// ApplicationPortProfileScopeTenant allows user to read and set Application Port Profiles at Org VDC level.
+	ApplicationPortProfileScopeTenant = "TENANT"
 )
