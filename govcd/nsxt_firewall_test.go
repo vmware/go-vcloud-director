@@ -134,11 +134,10 @@ func createFirewallDefinitions(check *C, vcd *TestVCD) []*types.NsxtFirewallRule
 			Enabled:                   a%2 == 0,
 			SourceFirewallGroups:      srcValue,
 			DestinationFirewallGroups: dstValue,
-			// TODO when app port profiles are in master
-			ApplicationPortProfiles: appPortProfileReferences[0:a],
-			IpProtocol:              pickRandomString([]string{"IPV6", "IPV4", "IPV4_IPV6"}),
-			Logging:                 a%2 == 1,
-			Direction:               pickRandomString([]string{"IN", "OUT", "IN_OUT"}),
+			ApplicationPortProfiles:   appPortProfileReferences[0:a],
+			IpProtocol:                pickRandomString([]string{"IPV6", "IPV4", "IPV4_IPV6"}),
+			Logging:                   a%2 == 1,
+			Direction:                 pickRandomString([]string{"IN", "OUT", "IN_OUT"}),
 		}
 	}
 
