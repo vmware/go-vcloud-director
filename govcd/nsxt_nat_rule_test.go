@@ -22,6 +22,9 @@ func (vcd *TestVCD) Test_NsxtNatDnat(check *C) {
 	edge, err := nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
 	check.Assert(err, IsNil)
 
+	appPortProfiles, err := org.GetAllNsxtAppPortProfiles(nil, types.ApplicationPortProfileScopeSystem)
+	check.Assert(err, IsNil)
+
 	natRuleDefinition := &types.NsxtNatRule{
 		Name:              check.TestName() + "dnat",
 		Description:       "description",
@@ -29,8 +32,9 @@ func (vcd *TestVCD) Test_NsxtNatDnat(check *C) {
 		RuleType:          types.NsxtNatRuleTypeDnat,
 		ExternalAddresses: edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
 		InternalAddresses: "11.11.11.2",
-		// To fill once it is in master
-		//ApplicationPortProfile:   &types.OpenApiReference{ID: "urn:vcloud:applicationPortProfile:c03eef76-9f6b-4758-9281-b9b21e0aeb08"},
+		ApplicationPortProfile: &types.OpenApiReference{
+			ID:   appPortProfiles[0].NsxtAppPortProfile.ID,
+			Name: appPortProfiles[0].NsxtAppPortProfile.Name},
 		SnatDestinationAddresses: "",
 		Logging:                  true,
 		DnatExternalPort:         "",
@@ -58,8 +62,6 @@ func (vcd *TestVCD) Test_NsxtNatNoDnat(check *C) {
 		Enabled:           true,
 		RuleType:          types.NsxtNatRuleTypeNoDnat,
 		ExternalAddresses: edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
-		// To fill once it is in master
-		//ApplicationPortProfile:   &types.OpenApiReference{ID: "urn:vcloud:applicationPortProfile:c03eef76-9f6b-4758-9281-b9b21e0aeb08"},
 	}
 
 	nsxtNatRuleChecks(natRuleDefinition, edge, check)
@@ -78,6 +80,9 @@ func (vcd *TestVCD) Test_NsxtNatSnat(check *C) {
 	edge, err := nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
 	check.Assert(err, IsNil)
 
+	appPortProfiles, err := org.GetAllNsxtAppPortProfiles(nil, types.ApplicationPortProfileScopeSystem)
+	check.Assert(err, IsNil)
+
 	natRuleDefinition := &types.NsxtNatRule{
 		Name:                     check.TestName() + "snat",
 		Description:              "description",
@@ -86,8 +91,9 @@ func (vcd *TestVCD) Test_NsxtNatSnat(check *C) {
 		ExternalAddresses:        edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
 		InternalAddresses:        "11.11.11.2",
 		SnatDestinationAddresses: "11.11.11.4",
-		// To fill once it is in master
-		//ApplicationPortProfile:   &types.OpenApiReference{ID: "urn:vcloud:applicationPortProfile:c03eef76-9f6b-4758-9281-b9b21e0aeb08"},
+		ApplicationPortProfile: &types.OpenApiReference{
+			ID:   appPortProfiles[1].NsxtAppPortProfile.ID,
+			Name: appPortProfiles[1].NsxtAppPortProfile.Name},
 	}
 
 	nsxtNatRuleChecks(natRuleDefinition, edge, check)
@@ -136,14 +142,12 @@ func (vcd *TestVCD) Test_NsxtNatPriorityAndFirewallMatch(check *C) {
 	check.Assert(err, IsNil)
 
 	natRuleDefinition := &types.NsxtNatRule{
-		Name:              check.TestName() + "dnat",
-		Description:       "description",
-		Enabled:           true,
-		RuleType:          types.NsxtNatRuleTypeDnat,
-		ExternalAddresses: edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
-		InternalAddresses: "11.11.11.2",
-		// To fill once it is in master
-		//ApplicationPortProfile:   &types.OpenApiReference{ID: "urn:vcloud:applicationPortProfile:c03eef76-9f6b-4758-9281-b9b21e0aeb08"},
+		Name:                     check.TestName() + "dnat",
+		Description:              "description",
+		Enabled:                  true,
+		RuleType:                 types.NsxtNatRuleTypeDnat,
+		ExternalAddresses:        edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
+		InternalAddresses:        "11.11.11.2",
 		SnatDestinationAddresses: "",
 		Logging:                  true,
 		DnatExternalPort:         "",
