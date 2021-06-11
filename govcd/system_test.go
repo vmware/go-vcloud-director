@@ -671,12 +671,3 @@ func (vcd *TestVCD) TestQueryAllVdcs(check *C) {
 		check.Assert(contains(foundVdcNames, knownVdcName), Equals, true)
 	}
 }
-
-func contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
-}

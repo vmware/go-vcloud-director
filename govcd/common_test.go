@@ -857,3 +857,13 @@ func extractIdsFromOpenApiReferences(refs []types.OpenApiReference) []string {
 
 	return resultStrings
 }
+
+// contains checks if a slice contains element
+func contains(s []string, element string) bool {
+	for _, a := range s {
+		if a == element {
+			return true
+		}
+	}
+	return false
+}
