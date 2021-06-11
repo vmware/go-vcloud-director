@@ -66,8 +66,11 @@ func (vcd *TestVCD) Test_NsxtFirewall(check *C) {
 			check.Assert(fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[index].DestinationFirewallGroups[fwGroupIndex].ID, Equals, randomizedFwRuleDefs[index].DestinationFirewallGroups[fwGroupIndex].ID)
 		}
 
-		for fwGroupIndex := range fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[index].ApplicationPortProfiles {
-			check.Assert(fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[index].ApplicationPortProfiles[fwGroupIndex].ID, Equals, randomizedFwRuleDefs[index].ApplicationPortProfiles[fwGroupIndex].ID)
+		// Ensure the same amount of Application Port Profiles are assigned and created
+		check.Assert(len(fwCreated.NsxtFirewallRuleContainer.UserDefinedRules), Equals, len(randomizedFwRuleDefs))
+		definedAppPortProfileIds := extractIdsFromOpenApiReferences(randomizedFwRuleDefs[index].ApplicationPortProfiles)
+		for _, appPortProfile := range fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[index].ApplicationPortProfiles {
+			check.Assert(contains(definedAppPortProfileIds, appPortProfile.ID), Equals, true)
 		}
 	}
 
@@ -108,6 +111,7 @@ func createFirewallDefinitions(check *C, vcd *TestVCD) []*types.NsxtFirewallRule
 	secGroup := preCreateSecurityGroup(check, vcd)
 	fwGroupIds := []string{ipSet.NsxtFirewallGroup.ID, secGroup.NsxtFirewallGroup.ID}
 	fwGroupRefs := convertSliceOfStringsToOpenApiReferenceIds(fwGroupIds)
+	appPortProfileReferences := getRandomListOfAppPortProfiles(check, vcd)
 
 	firewallRules := make([]*types.NsxtFirewallRule, numberOfRules)
 	for a := 0; a < numberOfRules; a++ {
@@ -131,7 +135,7 @@ func createFirewallDefinitions(check *C, vcd *TestVCD) []*types.NsxtFirewallRule
 			SourceFirewallGroups:      srcValue,
 			DestinationFirewallGroups: dstValue,
 			// TODO when app port profiles are in master
-			ApplicationPortProfiles: nil,
+			ApplicationPortProfiles: appPortProfileReferences[0:a],
 			IpProtocol:              pickRandomString([]string{"IPV6", "IPV4", "IPV4_IPV6"}),
 			Logging:                 a%2 == 1,
 			Direction:               pickRandomString([]string{"IN", "OUT", "IN_OUT"}),
@@ -205,6 +209,27 @@ func preCreateSecurityGroup(check *C, vcd *TestVCD) *NsxtFirewallGroup {
 	AddToCleanupListOpenApi(check.TestName()+"sec-group", check.TestName(), openApiEndpoint)
 
 	return createdSecGroup
+}
+
+func getRandomListOfAppPortProfiles(check *C, vcd *TestVCD) []types.OpenApiReference {
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	appProfileSlice, err := org.GetAllNsxtAppPortProfiles(nil, types.ApplicationPortProfileScopeSystem)
+	check.Assert(err, IsNil)
+
+	openApiRefs := make([]types.OpenApiReference, len(appProfileSlice))
+	for index, appPortProfile := range appProfileSlice {
+		openApiRefs[index].ID = appPortProfile.NsxtAppPortProfile.ID
+		openApiRefs[index].Name = appPortProfile.NsxtAppPortProfile.Name
+	}
+
+	// Make a subslice
+
+	//subSetLength := rand.Intn(len(openApiRefs))
+	//subOpenApiRefs := make([]types.OpenApiReference, subSetLength)
+
+	return openApiRefs
 }
 
 func dumpFirewallRulesToScreen(rules []*types.NsxtFirewallRule) {
