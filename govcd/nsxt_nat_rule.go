@@ -9,6 +9,7 @@ import (
 	"net/url"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 // NsxtNatRule describes a single NAT rule of 4 different RuleTypes - DNAT`, `NO_DNAT`, `SNAT`, `NO_SNAT`.
@@ -241,8 +242,14 @@ func (nsxtNat *NsxtNatRule) IsEqualTo(rule *types.NsxtNatRule) bool {
 
 // natRulesEqual is a helper to check if first and second supplied rules are exactly the same (except ID)
 func natRulesEqual(first, second *types.NsxtNatRule) bool {
+	util.Logger.Println("comparing NAT rule:")
+	util.Logger.Printf("%+v\n", first)
+	util.Logger.Println("against:")
+	util.Logger.Printf("%+v\n", second)
+
 	if first.Name == second.Name &&
-		first.Logging == second.Logging &&
+		// Being an org user always returns logging as false - therefore cannot compare it.
+		//first.Logging == second.Logging &&
 		first.Enabled == second.Enabled &&
 		first.Description == second.Description &&
 		first.DnatExternalPort == second.DnatExternalPort &&
@@ -250,8 +257,8 @@ func natRulesEqual(first, second *types.NsxtNatRule) bool {
 		first.ExternalAddresses == second.ExternalAddresses &&
 		first.InternalAddresses == second.InternalAddresses &&
 		// Match either both application profiles being empty/nil, or both having the same value
-		(first.ApplicationPortProfile == second.ApplicationPortProfile) ||
-		(first.ApplicationPortProfile != nil && second.ApplicationPortProfile != nil && first.ApplicationPortProfile.ID == second.ApplicationPortProfile.ID) {
+		((first.ApplicationPortProfile == second.ApplicationPortProfile) ||
+			(first.ApplicationPortProfile != nil && second.ApplicationPortProfile != nil && first.ApplicationPortProfile.ID == second.ApplicationPortProfile.ID)) {
 
 		return true
 	}

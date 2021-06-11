@@ -6,7 +6,7 @@
 * Bumped Default API Version to V33.0  [#371](https://github.com/vmware/go-vcloud-director/pull/371)
 * Methods `GetVDCById` and `GetVDCByName` for `Org` now use queries behind the scenes because Org 
   structure does not list child VDCs anymore  [#371](https://github.com/vmware/go-vcloud-director/pull/371), 
-  [#376](https://github.com/vmware/go-vcloud-director/pull/376)
+  [#376](https://github.com/vmware/go-vcloud-director/pull/376), [#382](https://github.com/vmware/go-vcloud-director/pull/382)
 * Methods `GetCatalogById` and `GetCatalogByName` for `Org`  now use queries behind the scenes because Org
   structure does not list child Catalogs anymore  [#371](https://github.com/vmware/go-vcloud-director/pull/371), 
   [#376](https://github.com/vmware/go-vcloud-director/pull/376)
