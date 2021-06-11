@@ -8,6 +8,7 @@ package govcd
 
 import (
 	"fmt"
+	"strings"
 
 	. "gopkg.in/check.v1"
 
@@ -685,7 +686,10 @@ func (vcd *TestVCD) Test_GetDiskByHref(check *C) {
 	check.Assert(disk.Disk.Name, Equals, diskName)
 	check.Assert(disk.Disk.Description, Equals, diskName+"Description")
 
-	invalidDiskHREF := diskHREF + "1"
+	// Creating HREF with fake UUID
+	uuid, err := GetUuidFromHref(diskHREF, true)
+	check.Assert(err, IsNil)
+	invalidDiskHREF := strings.ReplaceAll(diskHREF, uuid, "1abcbdb3-1111-1111-a1c2-85d261e22fcf")
 	disk, err = vcd.vdc.GetDiskByHref(invalidDiskHREF)
 	check.Assert(err, NotNil)
 	check.Assert(IsNotFound(err), Equals, true)

@@ -185,3 +185,8 @@ media:
   mediaPath: ../test-resources/test.iso
   # Existing media in test system
   mediaName: uploadedMediaName
+misc:
+  # By default tests in this repository pick LDAP container 'rroemhild/test-openldap'. As docker throttles downloads
+  # it can help to host the image on local registry and pull it from there. This variable overrides default container
+  # location when set.
+  #ldapContainer: custom-registry.yyy/directory/test-openldap:latest
