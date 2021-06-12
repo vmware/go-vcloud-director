@@ -236,6 +236,14 @@ func (nsxtNat *NsxtNatRule) Delete() error {
 }
 
 // IsEqualTo allows to check if a rule has exactly the same fields (except ID) to the supplied rule
+// This validation is very tricky because minor version changes impact how fields are return.
+// This function relies on most common and stable fields:
+// * Name
+// * Enabled
+// * Description
+// * ExternalAddresses
+// * InternalAddresses
+// * ApplicationPortProfile.ID
 func (nsxtNat *NsxtNatRule) IsEqualTo(rule *types.NsxtNatRule) bool {
 	return natRulesEqual(nsxtNat.NsxtNatRule, rule)
 }
@@ -247,13 +255,18 @@ func natRulesEqual(first, second *types.NsxtNatRule) bool {
 	util.Logger.Println("against:")
 	util.Logger.Printf("%+v\n", second)
 
+	// Being an org user always returns logging as false - therefore cannot compare it.
+	// first.Logging == second.Logging &&
+
+	// These fields are returned or not returned depending on version and it is impossible to be 100% sure a minor
+	// patch does not break such comparison
+	// first.DnatExternalPort == second.DnatExternalPort &&
+	// first.SnatDestinationAddresses == second.SnatDestinationAddresses &&
+	//
 	if first.Name == second.Name &&
-		// Being an org user always returns logging as false - therefore cannot compare it.
-		//first.Logging == second.Logging &&
 		first.Enabled == second.Enabled &&
 		first.Description == second.Description &&
-		first.DnatExternalPort == second.DnatExternalPort &&
-		first.SnatDestinationAddresses == second.SnatDestinationAddresses &&
+
 		first.ExternalAddresses == second.ExternalAddresses &&
 		first.InternalAddresses == second.InternalAddresses &&
 		// Match either both application profiles being empty/nil, or both having the same value
