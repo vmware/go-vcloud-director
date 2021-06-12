@@ -5,9 +5,11 @@
 * Dropped support for VCD 9.7 which is EOL now [#371](https://github.com/vmware/go-vcloud-director/pull/371)
 * Bumped Default API Version to V33.0  [#371](https://github.com/vmware/go-vcloud-director/pull/371)
 * Methods `GetVDCById` and `GetVDCByName` for `Org` now use queries behind the scenes because Org 
-  structure does not list child VDCs anymore  [#371](https://github.com/vmware/go-vcloud-director/pull/371)
+  structure does not list child VDCs anymore  [#371](https://github.com/vmware/go-vcloud-director/pull/371), 
+  [#376](https://github.com/vmware/go-vcloud-director/pull/376)
 * Methods `GetCatalogById` and `GetCatalogByName` for `Org`  now use queries behind the scenes because Org
-  structure does not list child Catalogs anymore  [#371](https://github.com/vmware/go-vcloud-director/pull/371)
+  structure does not list child Catalogs anymore  [#371](https://github.com/vmware/go-vcloud-director/pull/371), 
+  [#376](https://github.com/vmware/go-vcloud-director/pull/376)
 * Drop legacy authentication mechanism (vcdAuthorize) and use only new Cloud API provided (vcdCloudApiAuthorize) as
   API V33.0 is sufficient for it [#371](https://github.com/vmware/go-vcloud-director/pull/371)
 * Added NSX-T Firewall Group type (which represents a Security Group or an IP Set) support by using
@@ -23,6 +25,8 @@
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
 * Added methods Org.QueryVmList and Org.QueryVmById to find VM by ID in an Org
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
+* Added `NsxtAppPortProfile` and `types.NsxtAppPortProfile` for NSX-T Application Port Profile management 
+  [#378](https://github.com/vmware/go-vcloud-director/pull/378)
 * Added support for querying VdcStorageProfile:  
   - functions `QueryAdminOrgVdcStorageProfileByID` and `QueryOrgVdcStorageProfileByID`  
   - query types `QtOrgVdcStorageProfile` and `QtAdminOrgVdcStorageProfile`  
@@ -44,6 +48,11 @@ IMPROVEMENTS:
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
 * Improved test entity cleanup to allow specifying parent VDC for vApp removals
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
+* Improved `OpenApiGetAllItems` to still follow pages in VCD endpoints with BUG which don't return 'nextPage' link for
+  pagination [#378](https://github.com/vmware/go-vcloud-director/pull/378)
+* Improved LDAP container related tests to use correct port mapping for latest LDAP container version 
+  [#378](https://github.com/vmware/go-vcloud-director/pull/378)
+
 
 ## 2.11.0 (March 10, 2021)
 

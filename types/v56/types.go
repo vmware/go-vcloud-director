@@ -35,6 +35,8 @@ var VAppStatuses = map[int]string{
 	17: "TRANSFER_TIMEOUT",
 	18: "VAPP_UNDEPLOYED",
 	19: "VAPP_PARTIALLY_DEPLOYED",
+	20: "PARTIALLY_POWERED_OFF",
+	21: "PARTIALLY_SUSPENDED",
 }
 
 // Maps status Attribute Values for VDC Objects

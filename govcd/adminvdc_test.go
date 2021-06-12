@@ -218,7 +218,7 @@ func (vcd *TestVCD) Test_VdcUpdateStorageProfile(check *C) {
 	check.Assert(storageProfileId, NotNil)
 
 	updatedVdc, err := adminVdc.UpdateStorageProfile(storageProfileId, &types.AdminVdcStorageProfile{
-		Name:                      foundStorageProfile.ProviderVdcStorageProfile.Name,
+		Name:                      foundStorageProfile.Name,
 		Default:                   true,
 		Limit:                     9081,
 		Enabled:                   takeBoolPointer(true),

@@ -472,11 +472,15 @@ func queryOrgVdcList(client *Client, filterFields map[string]string) ([]*types.Q
 		filterSlice := make([]string, 0)
 
 		for filterFieldName, filterFieldValue := range filterFields {
+			// Do not inject 'org' filter for System user as API returns an error
+			if !client.IsSysAdmin && filterFieldName == "org" {
+				continue
+			}
+
 			if filterFieldName != "" && filterFieldValue != "" {
 				filterText := fmt.Sprintf("%s==%s", filterFieldName, url.QueryEscape(filterFieldValue))
 				filterSlice = append(filterSlice, filterText)
 			}
-
 		}
 
 		if len(filterSlice) > 0 {
@@ -510,11 +514,15 @@ func queryCatalogList(client *Client, filterFields map[string]string) ([]*types.
 		filterSlice := make([]string, 0)
 
 		for filterFieldName, filterFieldValue := range filterFields {
+			// Do not inject 'org' filter for System user as API returns an error
+			if !client.IsSysAdmin && filterFieldName == "org" {
+				continue
+			}
+
 			if filterFieldName != "" && filterFieldValue != "" {
 				filterText := fmt.Sprintf("%s==%s", filterFieldName, url.QueryEscape(filterFieldValue))
 				filterSlice = append(filterSlice, filterText)
 			}
-
 		}
 
 		if len(filterSlice) > 0 {
