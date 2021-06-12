@@ -341,11 +341,11 @@ type NsxtAppPortProfilePort struct {
 // More docs in https://docs.vmware.com/en/VMware-Cloud-Director/10.2/VMware-Cloud-Director-Tenant-Portal-Guide/GUID-9E43E3DC-C028-47B3-B7CA-59F0ED40E0A6.html
 type NsxtNatRule struct {
 	ID string `json:"id,omitempty"`
-	// Name holds a meaningful name for the rule
+	// Name holds a meaningful name for the rule. (API does not enforce uniqueness)
 	Name string `json:"name"`
 	// Description holds optional description for the rule
 	Description string `json:"description"`
-	// Enabled sets if the rule is active
+	// Enabled defines if the rule is active
 	Enabled bool `json:"enabled"`
 
 	// RuleType - one of the following: `DNAT`, `NO_DNAT`, `SNAT`, `NO_SNAT`
@@ -355,7 +355,7 @@ type NsxtNatRule struct {
 	// * A DNAT rule translates the external IP to an internal IP and is used for inbound traffic.
 	// * A NO DNAT rule prevents the translation of the external IP address of packets received by an organization VDC
 	// from an external network or from another organization VDC network.
-	RuleType string `json:"ruleType,omitempty"`
+	RuleType string `json:"ruleType"`
 
 	// ExternalAddresses
 	// * SNAT - enter the public IP address of the edge gateway for which you are configuring the SNAT rule.
