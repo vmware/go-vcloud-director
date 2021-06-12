@@ -2375,18 +2375,26 @@ type QueryResultVAppRecordType struct {
 
 // QueryResultOrgVdcStorageProfileRecordType represents a storage
 // profile as query result.
+// https://code.vmware.com/apis/722/vmware-cloud-director/doc/doc/types/QueryResultOrgVdcStorageProfileRecordType.html
 type QueryResultOrgVdcStorageProfileRecordType struct {
 	// Attributes
-	HREF                    string `xml:"href,attr,omitempty"` // The URI of the entity.
-	Name                    string `xml:"name,attr,omitempty"` // Storage Profile name.
-	VdcHREF                 string `xml:"vdc,attr,omitempty"`
-	VdcName                 string `xml:"vdcName,attr,omitempty"`
-	IsDefaultStorageProfile bool   `xml:"isDefaultStorageProfile,attr,omitempty"`
-	IsEnabled               bool   `xml:"isEnabled,attr,omitempty"`
-	IsVdcBusy               bool   `xml:"isVdcBusy,attr,omitempty"`
-	NumberOfConditions      int    `xml:"numberOfConditions,attr,omitempty"`
-	StorageUsedMB           int    `xml:"storageUsedMB,attr,omitempty"`
-	StorageLimitMB          int    `xml:"storageLimitMB,attr,omitempty"`
+	HREF                    string `xml:"href,attr,omitempty"`                    // The URI of the entity.
+	ID                      string `xml:"id,attr,omitempty"`                      // The ID of the entity.
+	Type                    string `xml:"type,attr,omitempty"`                    // Contains the type of the resource.
+	Name                    string `xml:"name,attr,omitempty"`                    // Name of the storage profile.
+	IsEnabled               bool   `xml:"isEnabled,attr,omitempty"`               // True if this entity is enabled.
+	IsDefaultStorageProfile bool   `xml:"isDefaultStorageProfile,attr,omitempty"` // True if this is the default storage profile for a VDC.
+	StorageUsedMB           uint64 `xml:"storageUsedMB,attr,omitempty"`           // Storage used in MB.
+	StorageLimitMB          uint64 `xml:"storageLimitMB,attr,omitempty"`          // Storage limit in MB.
+	IopsAllocated           uint64 `xml:"iopsAllocated,attr,omitempty"`           // Total currently allocated IOPS on the storage profile.
+	IopsLimit               uint64 `xml:"iopsLimit,attr,omitempty"`               // IOPS limit for the storage profile.
+	NumberOfConditions      int    `xml:"numberOfConditions,attr,omitempty"`      // Number of conditions on the storage profile.
+	Vdc                     string `xml:"vdc,attr,omitempty"`                     // VDC reference or id.
+	VdcName                 string `xml:"vdcName,attr,omitempty"`                 // VDC name.
+	IsVdcBusy               bool   `xml:"isVdcBusy,attr,omitempty"`               // True if the associated VDC is busy.
+	// Elements
+	Link          []*Link          `xml:"Link,omitempty"`
+	MetadataEntry []*MetadataEntry `xml:"MetadataEntry,omitempty"`
 }
 
 // QueryResultAdminOrgVdcStorageProfileRecordType represents a storage
@@ -2407,8 +2415,9 @@ type QueryResultAdminOrgVdcStorageProfileRecordType struct {
 	NumberOfConditions      int    `xml:"numberOfConditions,attr,omitempty"`      // Number of conditions on the storage profile.
 	Vdc                     string `xml:"vdc,attr,omitempty"`                     // VDC reference or id.
 	VdcName                 string `xml:"vdcName,attr,omitempty"`                 // VDC name.
-	Org                     string `xml:"isVdcBusy,attr,omitempty"`               // Organization reference or id.
+	Org                     string `xml:"org,attr,omitempty"`                     // Organization reference or id.
 	VC                      string `xml:"vc,attr,omitempty"`                      // Virtual center reference or id.
+	StorageProfileMoref     string `xml:"storageProfileMoref,omitempty"`
 	// Elements
 	Link          []*Link          `xml:"Link,omitempty"`
 	MetadataEntry []*MetadataEntry `xml:"MetadataEntry,omitempty"`

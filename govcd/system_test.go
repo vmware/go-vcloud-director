@@ -569,6 +569,9 @@ func (vcd *TestVCD) Test_QueryProviderVdcByName(check *C) {
 }
 
 func (vcd *TestVCD) Test_QueryAdminOrgVdcStorageProfileByID(check *C) {
+	if !vcd.client.Client.IsSysAdmin {
+		check.Skip("Skipping Admin VDC StorageProfile query: can't query as tenant user")
+	}
 	if vcd.config.VCD.StorageProfile.SP1 == "" {
 		check.Skip("Skipping VDC StorageProfile query: no StorageProfile ID was given")
 	}
@@ -577,6 +580,38 @@ func (vcd *TestVCD) Test_QueryAdminOrgVdcStorageProfileByID(check *C) {
 	expectedStorageProfileID, err := GetUuidFromHref(ref.HREF, true)
 	check.Assert(err, IsNil)
 	vdcStorageProfile, err := QueryAdminOrgVdcStorageProfileByID(vcd.client, ref.ID)
+	check.Assert(err, IsNil)
+
+	storageProfileFound := false
+
+	storageProfileID, err := GetUuidFromHref(vdcStorageProfile.HREF, true)
+	check.Assert(err, IsNil)
+	if storageProfileID == expectedStorageProfileID {
+		storageProfileFound = true
+	}
+
+	if testVerbose {
+		fmt.Printf("StorageProfile %s\n", vdcStorageProfile.Name)
+		fmt.Printf("\t href    %s\n", vdcStorageProfile.HREF)
+		fmt.Printf("\t enabled %v\n", vdcStorageProfile.IsEnabled)
+		fmt.Println("")
+	}
+
+	check.Assert(storageProfileFound, Equals, true)
+}
+
+func (vcd *TestVCD) Test_QueryOrgVdcStorageProfileByID(check *C) {
+	if vcd.client.Client.IsSysAdmin {
+		check.Skip("Skipping VDC StorageProfile query: can't query as provider user")
+	}
+	if vcd.config.VCD.StorageProfile.SP1 == "" {
+		check.Skip("Skipping VDC StorageProfile query: no StorageProfile ID was given")
+	}
+	ref, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
+	check.Assert(err, IsNil)
+	expectedStorageProfileID, err := GetUuidFromHref(ref.HREF, true)
+	check.Assert(err, IsNil)
+	vdcStorageProfile, err := QueryOrgVdcStorageProfileByID(vcd.client, ref.ID)
 	check.Assert(err, IsNil)
 
 	storageProfileFound := false
