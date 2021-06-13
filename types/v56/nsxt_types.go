@@ -376,6 +376,11 @@ type NsxtNatRule struct {
 	InternalAddresses      string            `json:"internalAddresses"`
 	ApplicationPortProfile *OpenApiReference `json:"applicationPortProfile,omitempty"`
 
+	// InternalPort specifies port number or port range for incoming network traffic. If Any Traffic is selected for the
+	// Application Port Profile, the default internal port is "ANY".
+	// Deprecated since API V35.0 and is replaced by DnatExternalPort
+	InternalPort string `json:"internalPort,omitempty"`
+
 	// DnatExternalPort can set a port into which the DNAT rule is translating for the packets inbound to the virtual
 	// machines.
 	DnatExternalPort string `json:"dnatExternalPort,omitempty"`
