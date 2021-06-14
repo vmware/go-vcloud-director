@@ -415,4 +415,10 @@ type NsxtNatRule struct {
 	// Priority helps to select rule with highest priority if an address has multiple NAT rules. A lower value means a
 	// higher precedence for this rule. Maximum value 2147481599
 	Priority *int `json:"priority,omitempty"`
+
+	// Version of NAT rule. Must not be set when creating.
+	Version *struct {
+		// Version is incremented after each update
+		Version *int `json:"version,omitempty"`
+	} `json:"version,omitempty"`
 }

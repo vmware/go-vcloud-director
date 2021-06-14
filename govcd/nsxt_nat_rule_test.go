@@ -319,6 +319,7 @@ func nsxtNatRuleChecks(natRuleDefinition *types.NsxtNatRule, edge *NsxtEdgeGatew
 	natRuleDefinition.ID = createdNatRule.NsxtNatRule.ID                       // ID is always the difference
 	natRuleDefinition.Priority = createdNatRule.NsxtNatRule.Priority           // Priority returns default value (0) for VCD 10.2.2+
 	natRuleDefinition.FirewallMatch = createdNatRule.NsxtNatRule.FirewallMatch // FirewallMatch returns default value (MATCH_INTERNAL_ADDRESS) for VCD 10.2.2+
+	natRuleDefinition.Version = createdNatRule.NsxtNatRule.Version             // Version will always be populated afterwards
 
 	// In API V36.0 expect the Type field to have the same value as specified RuleType
 	if vcd.client.Client.APIVCDMaxVersionIs(">= 36.0") {
