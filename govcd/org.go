@@ -388,7 +388,7 @@ func (org *Org) queryOrgVdcByName(vdcName string) (*types.QueryResultOrgVdcRecor
 	return allVdcs[0], nil
 }
 
-// queryOrgVdcById returns a single Org VDC query result
+// queryOrgVdcById returns a single QueryResultOrgVdcRecordType
 func (org *Org) queryOrgVdcById(vdcId string) (*types.QueryResultOrgVdcRecordType, error) {
 	filterMap := map[string]string{
 		"org":     org.Org.HREF,
@@ -408,7 +408,7 @@ func (org *Org) queryOrgVdcById(vdcId string) (*types.QueryResultOrgVdcRecordTyp
 	return allVdcs[0], nil
 }
 
-// queryCatalogByName returns a single QueryResultOrgVdcRecordType
+// queryCatalogByName returns a single CatalogRecord
 func (org *Org) queryCatalogByName(catalogName string) (*types.CatalogRecord, error) {
 	filterMap := map[string]string{
 		"org":     org.Org.HREF, // Org ID is not allowed for non System
