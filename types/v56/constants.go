@@ -398,10 +398,11 @@ const (
 
 // These constants can be used to pick type of NSX-T NAT Rule
 const (
-	NsxtNatRuleTypeDnat   = "DNAT"
-	NsxtNatRuleTypeNoDnat = "NO_DNAT"
-	NsxtNatRuleTypeSnat   = "SNAT"
-	NsxtNatRuleTypeNoSnat = "NO_SNAT"
+	NsxtNatRuleTypeDnat      = "DNAT"
+	NsxtNatRuleTypeNoDnat    = "NO_DNAT"
+	NsxtNatRuleTypeSnat      = "SNAT"
+	NsxtNatRuleTypeNoSnat    = "NO_SNAT"
+	NsxtNatRuleTypeReflexive = "REFLEXIVE" // Only in VCD 10.3+ (API V36.0)
 )
 
 // In VCD versions 10.2.2+ (API V35.2+) there is a FirewallMatch field in NAT rule with these

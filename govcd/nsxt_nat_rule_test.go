@@ -40,7 +40,7 @@ func (vcd *TestVCD) Test_NsxtNatDnat(check *C) {
 		DnatExternalPort:         "",
 	}
 
-	nsxtNatRuleChecks(natRuleDefinition, edge, check)
+	nsxtNatRuleChecks(natRuleDefinition, edge, check, vcd)
 }
 
 func (vcd *TestVCD) Test_NsxtNatDnatInternalPort(check *C) {
@@ -48,7 +48,7 @@ func (vcd *TestVCD) Test_NsxtNatDnatInternalPort(check *C) {
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointFirewallGroups)
 
 	if vcd.client.Client.APIVCDMaxVersionIs(">= 35.2") {
-		check.Skip("InternalPort field is only used in older API versions (replaced by 'DnatExternalPort' field)")
+		check.Skip("InternalPort field is only used in older API versions (< 35.2) and is replaced by 'DnatExternalPort' field")
 	}
 
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
@@ -78,7 +78,7 @@ func (vcd *TestVCD) Test_NsxtNatDnatInternalPort(check *C) {
 		InternalPort:             "9898",
 	}
 
-	nsxtNatRuleChecks(natRuleDefinition, edge, check)
+	nsxtNatRuleChecks(natRuleDefinition, edge, check, vcd)
 }
 
 func (vcd *TestVCD) Test_NsxtNatDnatExternalPortPort(check *C) {
@@ -116,7 +116,7 @@ func (vcd *TestVCD) Test_NsxtNatDnatExternalPortPort(check *C) {
 		DnatExternalPort:         "9898",
 	}
 
-	nsxtNatRuleChecks(natRuleDefinition, edge, check)
+	nsxtNatRuleChecks(natRuleDefinition, edge, check, vcd)
 }
 
 func (vcd *TestVCD) Test_NsxtNatDnatFirewallMatchPriority(check *C) {
@@ -155,7 +155,7 @@ func (vcd *TestVCD) Test_NsxtNatDnatFirewallMatchPriority(check *C) {
 		Priority:                 takeIntAddress(248),
 	}
 
-	nsxtNatRuleChecks(natRuleDefinition, edge, check)
+	nsxtNatRuleChecks(natRuleDefinition, edge, check, vcd)
 }
 
 func (vcd *TestVCD) Test_NsxtNatNoDnat(check *C) {
@@ -179,7 +179,7 @@ func (vcd *TestVCD) Test_NsxtNatNoDnat(check *C) {
 		ExternalAddresses: edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
 	}
 
-	nsxtNatRuleChecks(natRuleDefinition, edge, check)
+	nsxtNatRuleChecks(natRuleDefinition, edge, check, vcd)
 }
 
 func (vcd *TestVCD) Test_NsxtNatSnat(check *C) {
@@ -211,7 +211,7 @@ func (vcd *TestVCD) Test_NsxtNatSnat(check *C) {
 			Name: appPortProfiles[1].NsxtAppPortProfile.Name},
 	}
 
-	nsxtNatRuleChecks(natRuleDefinition, edge, check)
+	nsxtNatRuleChecks(natRuleDefinition, edge, check, vcd)
 }
 
 func (vcd *TestVCD) Test_NsxtNatNoSnat(check *C) {
@@ -236,7 +236,7 @@ func (vcd *TestVCD) Test_NsxtNatNoSnat(check *C) {
 		InternalAddresses: "11.11.11.2",
 	}
 
-	nsxtNatRuleChecks(natRuleDefinition, edge, check)
+	nsxtNatRuleChecks(natRuleDefinition, edge, check, vcd)
 }
 
 func (vcd *TestVCD) Test_NsxtNatPriorityAndFirewallMatch(check *C) {
@@ -270,10 +270,43 @@ func (vcd *TestVCD) Test_NsxtNatPriorityAndFirewallMatch(check *C) {
 		FirewallMatch:            types.NsxtNatRuleFirewallMatchExternalAddress,
 	}
 
-	nsxtNatRuleChecks(natRuleDefinition, edge, check)
+	nsxtNatRuleChecks(natRuleDefinition, edge, check, vcd)
 }
 
-func nsxtNatRuleChecks(natRuleDefinition *types.NsxtNatRule, edge *NsxtEdgeGateway, check *C) {
+// Test_NsxtNatReflexive tests out REFLEXIVE rule type. This is only available in VCD 10.3 (API V36.0)
+func (vcd *TestVCD) Test_NsxtNatReflexive(check *C) {
+	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointFirewallGroups)
+
+	if vcd.client.Client.APIVCDMaxVersionIs("< 36.0") {
+		check.Skip("REFLEXIVE NAT rules require at least VCD 10.3")
+	}
+
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	nsxtVdc, err := org.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+	check.Assert(err, IsNil)
+
+	edge, err := nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
+	check.Assert(err, IsNil)
+
+	natRuleDefinition := &types.NsxtNatRule{
+		Name:        check.TestName() + "reflexive",
+		Description: "description",
+		Enabled:     true,
+		//RuleType:          types.NsxtNatRuleTypeReflexive,
+		Type:              types.NsxtNatRuleTypeReflexive,
+		ExternalAddresses: edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
+		InternalAddresses: "11.11.11.2",
+		Priority:          takeIntAddress(100),
+		FirewallMatch:     types.NsxtNatRuleFirewallMatchExternalAddress,
+	}
+
+	nsxtNatRuleChecks(natRuleDefinition, edge, check, vcd)
+}
+
+func nsxtNatRuleChecks(natRuleDefinition *types.NsxtNatRule, edge *NsxtEdgeGateway, check *C, vcd *TestVCD) {
 	createdNatRule, err := edge.CreateNatRule(natRuleDefinition)
 	check.Assert(err, IsNil)
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + fmt.Sprintf(types.OpenApiEndpointNsxtNatRules, edge.EdgeGateway.ID) + createdNatRule.NsxtNatRule.ID
@@ -286,6 +319,12 @@ func nsxtNatRuleChecks(natRuleDefinition *types.NsxtNatRule, edge *NsxtEdgeGatew
 	natRuleDefinition.ID = createdNatRule.NsxtNatRule.ID                       // ID is always the difference
 	natRuleDefinition.Priority = createdNatRule.NsxtNatRule.Priority           // Priority returns default value (0) for VCD 10.2.2+
 	natRuleDefinition.FirewallMatch = createdNatRule.NsxtNatRule.FirewallMatch // FirewallMatch returns default value (MATCH_INTERNAL_ADDRESS) for VCD 10.2.2+
+
+	// In API V36.0 expect the Type field to have the same value as specified RuleType
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 36.0") {
+		natRuleDefinition.Type = createdNatRule.NsxtNatRule.Type
+	}
+
 	check.Assert(createdNatRule.NsxtNatRule, DeepEquals, natRuleDefinition)
 
 	// Try to get NAT rules by name and by ID

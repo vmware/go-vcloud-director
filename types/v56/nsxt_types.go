@@ -355,7 +355,10 @@ type NsxtNatRule struct {
 	// * A DNAT rule translates the external IP to an internal IP and is used for inbound traffic.
 	// * A NO DNAT rule prevents the translation of the external IP address of packets received by an organization VDC
 	// from an external network or from another organization VDC network.
-	RuleType string `json:"ruleType"`
+	// Deprecated in API V36.0
+	RuleType string `json:"ruleType,omitempty"`
+	// Type replaces RuleType in V36.0 and adds a new Rule - REFLEXIVE
+	Type string `json:"type,omitempty"`
 
 	// ExternalAddresses
 	// * SNAT - enter the public IP address of the edge gateway for which you are configuring the SNAT rule.

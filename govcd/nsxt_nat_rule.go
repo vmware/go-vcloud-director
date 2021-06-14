@@ -38,10 +38,7 @@ func (egw *NsxtEdgeGateway) GetAllNatRules(queryParameters url.Values) ([]*NsxtN
 		return nil, err
 	}
 
-	// Fields FirewallMatch and Priority require API version 35.2 to be set therefore version is elevated if API supports
-	if client.APIVCDMaxVersionIs(">= 35.2") {
-		apiVersion = "35.2"
-	}
+	apiVersion = elevateNsxtNatRuleApiVersion(apiVersion, client)
 
 	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
 	if err != nil {
@@ -128,10 +125,7 @@ func (egw *NsxtEdgeGateway) CreateNatRule(natRuleConfig *types.NsxtNatRule) (*Ns
 		return nil, err
 	}
 
-	// Fields FirewallMatch and Priority require API version 35.2 to be set therefore version is elevated if API supports
-	if client.APIVCDMaxVersionIs(">= 35.2") {
-		apiVersion = "35.2"
-	}
+	apiVersion = elevateNsxtNatRuleApiVersion(apiVersion, client)
 
 	// Insert Edge Gateway ID into endpoint path edgeGateways/%s/nat/rules
 	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
@@ -175,10 +169,7 @@ func (nsxtNat *NsxtNatRule) Update(natRuleConfig *types.NsxtNatRule) (*NsxtNatRu
 		return nil, err
 	}
 
-	// Fields FirewallMatch and Priority require API version 35.2 to be set therefore version is elevated if API supports
-	if client.APIVCDMaxVersionIs(">= 35.2") {
-		apiVersion = "35.2"
-	}
+	apiVersion = elevateNsxtNatRuleApiVersion(apiVersion, client)
 
 	if nsxtNat.NsxtNatRule.ID == "" {
 		return nil, fmt.Errorf("cannot update NSX-T NAT Rule without ID")
@@ -212,10 +203,7 @@ func (nsxtNat *NsxtNatRule) Delete() error {
 		return err
 	}
 
-	// Fields FirewallMatch and Priority require API version 35.2 to be set therefore version is elevated if API supports
-	if client.APIVCDMaxVersionIs(">= 35.2") {
-		apiVersion = "35.2"
-	}
+	apiVersion = elevateNsxtNatRuleApiVersion(apiVersion, client)
 
 	if nsxtNat.NsxtNatRule.ID == "" {
 		return fmt.Errorf("cannot delete NSX-T NAT rule without ID")
@@ -277,4 +265,22 @@ func natRulesEqual(first, second *types.NsxtNatRule) bool {
 	}
 
 	return false
+}
+
+// elevateNsxtNatRuleApiVersion helps to elevate API version to consume newer NSX-T NAT Rule features
+// API V35.2+ support new fields FirewallMatch and Priority
+// API V36.0+ supports new RuleType - REFLEXIVE
+func elevateNsxtNatRuleApiVersion(apiVersion string, client *Client) string {
+
+	// Fields FirewallMatch and Priority require API version 35.2 to be set therefore version is elevated if API supports
+	if client.APIVCDMaxVersionIs(">= 35.2") {
+		apiVersion = "35.2"
+	}
+
+	// RuleType REFLEXIVE requires API V36.0
+	if client.APIVCDMaxVersionIs(">= 36.0") {
+		apiVersion = "36.0"
+	}
+
+	return apiVersion
 }
