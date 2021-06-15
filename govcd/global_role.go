@@ -52,6 +52,23 @@ func (client *Client) GetAllGlobalRoles(queryParameters url.Values) ([]*GlobalRo
 	return returnGlobalRoles, nil
 }
 
+// GetGlobalRoleByName retrieves a global role by given name
+func (client *Client) GetGlobalRoleByName(name string) (*GlobalRole, error) {
+	queryParams := url.Values{}
+	queryParams.Add("filter", "name=="+name)
+	globalRoles, err := client.GetAllGlobalRoles(queryParams)
+	if err != nil {
+		return nil, err
+	}
+	if len(globalRoles) == 0 {
+		return nil, ErrorEntityNotFound
+	}
+	if len(globalRoles) > 1 {
+		return nil, fmt.Errorf("more than one global role found with name '%s'", name)
+	}
+	return globalRoles[0], nil
+}
+
 // GetGlobalRoleById retrieves global role by given ID
 func (client *Client) GetGlobalRoleById(id string) (*GlobalRole, error) {
 	if !client.IsSysAdmin {
@@ -86,7 +103,7 @@ func (client *Client) GetGlobalRoleById(id string) (*GlobalRole, error) {
 }
 
 // CreateGlobalRole creates a new global role as a system administrator
-func (client *Client) CreateGlobalRole(newRole *types.GlobalRole) (*GlobalRole, error) {
+func (client *Client) CreateGlobalRole(newGlobalRole *types.GlobalRole) (*GlobalRole, error) {
 	if !client.IsSysAdmin {
 		return nil, fmt.Errorf("only system administrator can handle global roles")
 	}
@@ -101,12 +118,15 @@ func (client *Client) CreateGlobalRole(newRole *types.GlobalRole) (*GlobalRole, 
 		return nil, err
 	}
 
+	if newGlobalRole.PublishAll == nil {
+		newGlobalRole.PublishAll = takeBoolPointer(false)
+	}
 	returnGlobalRole := &GlobalRole{
 		GlobalRole: &types.GlobalRole{},
 		client:     client,
 	}
 
-	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, newRole, returnGlobalRole.GlobalRole, nil)
+	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, newGlobalRole, returnGlobalRole.GlobalRole, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating global role: %s", err)
 	}
@@ -200,7 +220,8 @@ func getContainerTenants(client *Client, containerId, endpoint string, queryPara
 // name and id are the name and ID of the collection
 // endpoint is the API endpoint used as a basis for the POST operation
 // tenants is a collection of tenants (ID+name) to be added
-func publishContainerToTenants(client *Client, containerType, name, id, endpoint string, tenants []types.OpenApiReference, publish bool) error {
+// publishType can be one of "add", "remove", "replace"
+func publishContainerToTenants(client *Client, containerType, name, id, endpoint string, tenants []types.OpenApiReference, publishType string) error {
 	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return err
@@ -213,9 +234,20 @@ func publishContainerToTenants(client *Client, containerType, name, id, endpoint
 		return fmt.Errorf("empty name given for %s %s", containerType, id)
 	}
 
-	operation := "/tenants/publish"
-	if !publish {
+	var operation string
+
+	var action func(apiVersion string, urlRef *url.URL, params url.Values, payload, outType interface{}, additionalHeader map[string]string) error
+
+	switch publishType {
+	case "add":
+		operation = "/tenants/publish"
+		action = client.OpenApiPostItem
+	case "replace":
+		operation = "/tenants/publish"
+		action = client.OpenApiPutItem
+	case "remove":
 		operation = "/tenants/unpublish"
+		action = client.OpenApiPostItem
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(endpoint, id, operation)
@@ -233,7 +265,8 @@ func publishContainerToTenants(client *Client, containerType, name, id, endpoint
 	}
 	var pages types.OpenApiPages
 
-	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, &input, &pages, nil)
+	//err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, &input, &pages, nil)
+	err = action(minimumApiVersion, urlRef, nil, &input, &pages, nil)
 
 	if err != nil {
 		return fmt.Errorf("error publishing %s %s to tenants: %s", containerType, name, err)
@@ -308,7 +341,7 @@ func (globalRole *GlobalRole) RemoveAllRights() error {
 // filtering
 func (globalRole *GlobalRole) GetRights(queryParameters url.Values) ([]*types.Right, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointGlobalRoles
-	return getRoleRights(globalRole.client, globalRole.GlobalRole.Id, endpoint, queryParameters, nil)
+	return getRights(globalRole.client, globalRole.GlobalRole.Id, endpoint, queryParameters, nil)
 }
 
 // GetTenants retrieves all tenants associated to a given Global Role. Query parameters can be supplied to perform additional
@@ -318,16 +351,22 @@ func (globalRole *GlobalRole) GetTenants(queryParameters url.Values) ([]types.Op
 	return getContainerTenants(globalRole.client, globalRole.GlobalRole.Id, endpoint, queryParameters)
 }
 
-// PublishTenants publishes a global role to one or more tenants
+// PublishTenants publishes a global role to one or more tenants, adding to tenants that may already been there
 func (globalRole *GlobalRole) PublishTenants(tenants []types.OpenApiReference) error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointGlobalRoles
-	return publishContainerToTenants(globalRole.client, "GlobalRole", globalRole.GlobalRole.Name, globalRole.GlobalRole.Id, endpoint, tenants, true)
+	return publishContainerToTenants(globalRole.client, "GlobalRole", globalRole.GlobalRole.Name, globalRole.GlobalRole.Id, endpoint, tenants, "add")
 }
 
-// UnpublishTenants publishes a global role to one or more tenants
+// ReplacePublishedTenants publishes a global role to one or more tenants, removing the tenants already present
+func (globalRole *GlobalRole) ReplacePublishedTenants(tenants []types.OpenApiReference) error {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointGlobalRoles
+	return publishContainerToTenants(globalRole.client, "GlobalRole", globalRole.GlobalRole.Name, globalRole.GlobalRole.Id, endpoint, tenants, "replace")
+}
+
+// UnpublishTenants remove tenats from a global role
 func (globalRole *GlobalRole) UnpublishTenants(tenants []types.OpenApiReference) error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointGlobalRoles
-	return publishContainerToTenants(globalRole.client, "GlobalRole", globalRole.GlobalRole.Name, globalRole.GlobalRole.Id, endpoint, tenants, false)
+	return publishContainerToTenants(globalRole.client, "GlobalRole", globalRole.GlobalRole.Name, globalRole.GlobalRole.Id, endpoint, tenants, "remove")
 }
 
 // PublishAllTenants publishes a global role to all tenants
