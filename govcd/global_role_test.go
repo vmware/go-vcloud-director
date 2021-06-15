@@ -61,7 +61,7 @@ func (vcd *TestVCD) Test_GlobalRoles(check *C) {
 		Name:        check.TestName(),
 		Description: "Global Role created by test",
 		// This BundleKey is being set by VCD even if it is not sent
-		BundleKey: "com.vmware.vcloud.undefined.key",
+		BundleKey: types.VcloudUndefinedKey,
 		ReadOnly:  false,
 	}
 
@@ -82,45 +82,32 @@ func (vcd *TestVCD) Test_GlobalRoles(check *C) {
 
 	// Step 5 - add rights to global role
 
-	// These rights include 5 implied rights, which will be added by globalRole.AddRights
-	rightName1 := "Catalog: Add vApp from My Cloud"
-	rightName2 := "Catalog: Edit Properties"
+	// These rights include 5 implied rights
+	rightNames := []string{
+		"Catalog: Add vApp from My Cloud",
+		"Catalog: Edit Properties",
+	}
+	// Add an intentional duplicate to test the validity of getRightsSet and FindMissingImpliedRights
+	rightNames = append(rightNames, rightNames[1])
 
-	right1, err := client.GetRightByName(rightName1)
+	rightSet, err := getRightsSet(&client, rightNames)
 	check.Assert(err, IsNil)
-	right2, err := client.GetRightByName(rightName2)
-	check.Assert(err, IsNil)
-	err = updatedGlobalRole.AddRights([]types.OpenApiReference{
-		{Name: rightName1, ID: right1.ID},
-		{Name: rightName2, ID: right2.ID},
-	})
+
+	err = updatedGlobalRole.AddRights(rightSet)
 	check.Assert(err, IsNil)
 
 	// Calculate the total amount of rights we should expect to be added to the global role
-	var unique = make(map[string]bool)
-	for _, r := range []*types.Right{right1, right2} {
-		_, seen := unique[r.ID]
-		if !seen {
-			unique[r.ID] = true
-		}
-		for _, implied := range r.ImpliedRights {
-			_, seen := unique[implied.ID]
-			if !seen {
-				unique[implied.ID] = true
-			}
-		}
-	}
 	rights, err := updatedGlobalRole.GetRights(nil)
 	check.Assert(err, IsNil)
-	check.Assert(len(rights), Equals, len(unique))
+	check.Assert(len(rights), Equals, len(rightSet))
 
 	// Step 6 - remove 1 right from global role
 
-	err = updatedGlobalRole.RemoveRights([]types.OpenApiReference{{Name: right1.Name, ID: right1.ID}})
+	err = updatedGlobalRole.RemoveRights([]types.OpenApiReference{rightSet[0]})
 	check.Assert(err, IsNil)
 	rights, err = updatedGlobalRole.GetRights(nil)
 	check.Assert(err, IsNil)
-	check.Assert(len(rights), Equals, len(unique)-1)
+	check.Assert(len(rights), Equals, len(rightSet)-1)
 
 	testRightsContainerTenants(vcd, check, updatedGlobalRole)
 
@@ -153,6 +140,8 @@ func foundOrg(name, id string, items []types.OpenApiReference) bool {
 	return false
 }
 
+// testRightsContainerTenants is a sub-test that checks the validity of the tenants
+// registered to the container
 func testRightsContainerTenants(vcd *TestVCD, check *C, rpc rightsProviderCollection) {
 
 	newOrgName := check.TestName() + "-org"
@@ -199,4 +188,39 @@ func testRightsContainerTenants(vcd *TestVCD, check *C, rpc rightsProviderCollec
 	tenants, err = rpc.GetTenants(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(tenants), Equals, 0)
+}
+
+// getRightsSet is a convenience function that retrieves a list of rights
+// from a list of right names, and adds the implied rights
+func getRightsSet(client *Client, rightNames []string) ([]types.OpenApiReference, error) {
+	var rightList []types.OpenApiReference
+	var uniqueNames = make(map[string]bool)
+
+	for _, name := range rightNames {
+		_, seen := uniqueNames[name]
+		if seen {
+			continue
+		}
+		right, err := client.GetRightByName(name)
+		if err != nil {
+			return nil, err
+		}
+		rightList = append(rightList, types.OpenApiReference{
+			Name: right.Name,
+			ID:   right.ID,
+		})
+		uniqueNames[name] = true
+	}
+	implied, err := FindMissingImpliedRights(client, rightList)
+	if err != nil {
+		return nil, err
+	}
+	for _, ir := range implied {
+		_, seen := uniqueNames[ir.Name]
+		if seen {
+			continue
+		}
+		rightList = append(rightList, ir)
+	}
+	return rightList, nil
 }
