@@ -171,13 +171,14 @@ func (adminOrg *AdminOrg) GetUserByNameOrId(identifier string, refresh bool) (*O
 }
 
 // GetRoleReference finds a role within the organization
-func (adminOrg *AdminOrg) GetRoleReference(roleName string, refresh bool) (*types.Reference, error) {
+func (adminOrg *AdminOrg) GetRoleReference(roleName string) (*types.Reference, error) {
 
-	if refresh {
-		err := adminOrg.Refresh()
-		if err != nil {
-			return nil, err
-		}
+	// We force refresh of the organization, to make sure that roles recently created
+	// are taken into account.
+	// This will become unnecessary when we refactor the User management with OpenAPI
+	err := adminOrg.Refresh()
+	if err != nil {
+		return nil, err
 	}
 	for _, role := range adminOrg.AdminOrg.RoleReferences.RoleReference {
 		if role.Name == roleName {
@@ -286,7 +287,7 @@ func (adminOrg *AdminOrg) CreateUserSimple(userData OrgUserConfiguration) (*OrgU
 	if userData.RoleName == "" {
 		return nil, fmt.Errorf("role is mandatory to create a user")
 	}
-	role, err := adminOrg.GetRoleReference(userData.RoleName, true)
+	role, err := adminOrg.GetRoleReference(userData.RoleName)
 	if err != nil {
 		return nil, fmt.Errorf("error finding a role named %s", userData.RoleName)
 	}
@@ -384,7 +385,7 @@ func (user *OrgUser) UpdateSimple(userData OrgUserConfiguration) error {
 	user.User.IsLocked = userData.IsLocked
 
 	if userData.RoleName != "" && user.User.Role != nil && user.User.Role.Name != userData.RoleName {
-		newRole, err := user.AdminOrg.GetRoleReference(userData.RoleName, true)
+		newRole, err := user.AdminOrg.GetRoleReference(userData.RoleName)
 		if err != nil {
 			return err
 		}
@@ -481,7 +482,7 @@ func (user *OrgUser) ChangeRole(roleName string) error {
 		return fmt.Errorf("new role is the same as current role")
 	}
 
-	newRole, err := user.AdminOrg.GetRoleReference(roleName, true)
+	newRole, err := user.AdminOrg.GetRoleReference(roleName)
 	if err != nil {
 		return err
 	}

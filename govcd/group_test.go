@@ -73,7 +73,7 @@ func (vcd *TestVCD) test_GroupCRUD(check *C) {
 
 	for _, gd := range groupData {
 
-		role, err := adminOrg.GetRoleReference(gd.roleName, false)
+		role, err := adminOrg.GetRoleReference(gd.roleName)
 		check.Assert(err, IsNil)
 
 		groupDefinition := types.Group{
@@ -98,7 +98,7 @@ func (vcd *TestVCD) test_GroupCRUD(check *C) {
 		check.Assert(foundGroup.Group.Name, Equals, createdGroup.Group.Name)
 
 		// Setup for update
-		secondRole, err := adminOrg.GetRoleReference(gd.secondRole, false)
+		secondRole, err := adminOrg.GetRoleReference(gd.secondRole)
 		check.Assert(err, IsNil)
 		createdGroup.Group.Role = secondRole
 
@@ -135,7 +135,7 @@ func (vcd *TestVCD) test_GroupFinderGetGenericEntity(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	role, err := adminOrg.GetRoleReference(OrgUserRoleOrganizationAdministrator, false)
+	role, err := adminOrg.GetRoleReference(OrgUserRoleOrganizationAdministrator)
 	check.Assert(err, IsNil)
 
 	group := NewGroup(adminOrg.client, adminOrg)
