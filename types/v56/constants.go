@@ -397,3 +397,8 @@ const (
 	// Set
 	FirewallGroupTypeIpSet = "IP_SET"
 )
+
+const (
+	// VcloudUndefinedKey is the bundles key automatically added to new role related objects
+	VcloudUndefinedKey = "com.vmware.vcloud.undefined.key"
+)

@@ -217,25 +217,18 @@ type VdcCapability struct {
 	Category string `json:"category"`
 }
 
-// An ImpliedRight is a Right that is added to a given Right automatically
-// For example, the Right "Catalog: Create / Delete a Catalog", has ImpliedRights "Catalog: Edit Properties"
-// and "Catalog: View Private and Shared Catalogs"
-type ImpliedRight struct {
-	Name string `json:"name,omitempty"`
-	ID   string `json:"id,omitempty"`
-}
-
-// A Right is a component of a Role. In this view, a Role is a collection of rights for a user.
-// Note that the rights are not stored in a Role structure, but retrieved separately
+// A Right is a component of a role, a global role, or a rights bundle.
+// In this view, roles, global roles, and rights bundles are collections of rights.
+// Note that the rights are not stored in the above collection structures, but retrieved separately
 type Right struct {
-	Name             string         `json:"name"`
-	ID               string         `json:"id"`
-	Description      string         `json:"description,omitempty"`
-	BundleKey        string         `json:"bundleKey,omitempty"`
-	Category         string         `json:"category,omitempty"`
-	ServiceNamespace string         `json:"serviceNamespace,omitempty"`
-	RightType        string         `json:"rightType,omitempty"` // VIEW or MODIFY
-	ImpliedRights    []ImpliedRight `json:"impliedRights,omitempty"`
+	Name             string             `json:"name"`
+	ID               string             `json:"id"`
+	Description      string             `json:"description,omitempty"`
+	BundleKey        string             `json:"bundleKey,omitempty"`
+	Category         string             `json:"category,omitempty"`         // Category ID
+	ServiceNamespace string             `json:"serviceNamespace,omitempty"` // Not used
+	RightType        string             `json:"rightType,omitempty"`        // VIEW or MODIFY
+	ImpliedRights    []OpenApiReference `json:"impliedRights,omitempty"`
 }
 
 // RightsCategory defines the category to which the Right belongs
@@ -251,7 +244,7 @@ type RightsCategory struct {
 	SubCategories []string `json:"subCategories"`
 }
 
-// RightsBundle is an collection of Rights to be assigned to a tenant(= organization).
+// RightsBundle is a collection of Rights to be assigned to a tenant(= organization).
 // Changing a rights bundle and publishing it for a given tenant will limit
 // the rights that the global roles implement in such tenant.
 type RightsBundle struct {
@@ -260,7 +253,7 @@ type RightsBundle struct {
 	Description string `json:"description,omitempty"`
 	BundleKey   string `json:"bundleKey,omitempty"`
 	ReadOnly    bool   `json:"readOnly"`
-	PublishAll  bool   `json:"publishAll"`
+	PublishAll  *bool  `json:"publishAll"`
 }
 
 // GlobalRole is a Role definition implemented in the provider that is passed on to tenants (=organizations)
@@ -269,10 +262,10 @@ type RightsBundle struct {
 type GlobalRole struct {
 	Name        string `json:"name"`
 	Id          string `json:"id"`
-	Description string `json:"description"`
-	BundleKey   string `json:"bundleKey"`
+	Description string `json:"description,omitempty"`
+	BundleKey   string `json:"bundleKey,omitempty"`
 	ReadOnly    bool   `json:"readOnly"`
-	PublishAll  bool   `json:"publishAll"`
+	PublishAll  *bool  `json:"publishAll"`
 }
 
 // OpenApiItems defines the input when multiple items need to be passed to a POST or PUT operation
