@@ -350,6 +350,7 @@ const (
 	OpenApiEndpointFirewallGroups             = "firewallGroups/"
 	OpenApiEndpointOrgVdcNetworks             = "orgVdcNetworks/"
 	OpenApiEndpointOrgVdcNetworksDhcp         = "orgVdcNetworks/%s/dhcp"
+	OpenApiEndpointAppPortProfiles            = "applicationPortProfiles/"
 )
 
 // Header keys to run operations in tenant context
@@ -396,6 +397,17 @@ const (
 	// FirewallGroupTypeIpSet can be used in types.NsxtFirewallGroup for 'type' field to create IP
 	// Set
 	FirewallGroupTypeIpSet = "IP_SET"
+)
+
+const (
+	// ApplicationPortProfileScopeSystem is a defined scope which allows user to only read (no write capability) system
+	// predefined Application Port Profiles
+	ApplicationPortProfileScopeSystem = "SYSTEM"
+	// ApplicationPortProfileScopeProvider allows user to read and set Application Port Profiles at provider level. In
+	// reality Network Provider (NSX-T Manager) must be specified while creating.
+	ApplicationPortProfileScopeProvider = "PROVIDER"
+	// ApplicationPortProfileScopeTenant allows user to read and set Application Port Profiles at Org VDC level.
+	ApplicationPortProfileScopeTenant = "TENANT"
 )
 
 const (

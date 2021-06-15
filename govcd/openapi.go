@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/peterhellberg/link"
@@ -520,6 +521,18 @@ func (client *Client) openApiPerformPostPut(httpMethod string, apiVersion string
 // works by at first crawling pages and accumulating all responses into []json.RawMessage (as strings). Because there is
 // no intermediate unmarshalling to exact `outType` for every page it can unmarshal into direct `outType` supplied.
 // outType must be a slice of object (e.g. []*types.OpenApiRole) because accumulated responses are in JSON list
+//
+// It follows pages in two ways:
+// * Finds a 'nextPage' link and uses it to recursively crawl all pages (default for all, except for API bug)
+// * Uses fields 'resultTotal', 'page', and 'pageSize' to calculate if it should crawl further on. It is only done
+// because there is a BUG in API and in some endpoints it does not return 'nextPage' link as well as null 'pageCount'
+//
+// In general 'nextPage' header is preferred because some endpoints
+// (like cloudapi/1.0.0/nsxTResources/importableTier0Routers) do not contain pagination details and nextPage header
+// contains a base64 encoded data chunk via a supplied `cursor` field
+// (e.g. ...importableTier0Routers?filter=_context==urn:vcloud:nsxtmanager:85aa2514-6a6f-4a32-8904-9695dc0f0298&
+// cursor=eyJORVRXT1JLSU5HX0NVUlNPUl9PRkZTRVQiOiIwIiwicGFnZVNpemUiOjEsIk5FVFdPUktJTkdfQ1VSU09SIjoiMDAwMTMifQ==)
+// The 'cursor' in example contains such values {"NETWORKING_CURSOR_OFFSET":"0","pageSize":1,"NETWORKING_CURSOR":"00013"}
 func (client *Client) openApiGetAllPages(apiVersion string, urlRef *url.URL, queryParams url.Values, outType interface{}, responses []json.RawMessage, additionalHeader map[string]string) ([]json.RawMessage, error) {
 	// copy passed in URL ref so that it is not mutated
 	urlRefCopy := copyUrlRef(urlRef)
@@ -574,6 +587,35 @@ func (client *Client) openApiGetAllPages(apiVersion string, urlRef *url.URL, que
 		if err != nil {
 			return nil, fmt.Errorf("got error on page %d: %s", pages.Page, err)
 		}
+	}
+
+	// If nextPage header was not found, but we are not at the last page - the query URL should be forged manually to
+	// overcome OpenAPI BUG when it does not return 'nextPage' header
+	// Some API calls do not return `OpenApiPages` results at all (just values)
+	if nextPageUrlRef == nil && pages.PageSize != 0 {
+		// Next URL page ref was not found therefore one must double check if it is not an API BUG. There are endpoints which
+		// return only Total results and pageSize (not 'pageCount' and not 'nextPage' header)
+		pageCount := pages.ResultTotal / pages.PageSize // This division returns number of "full pages" (containing 'pageSize' amount of results)
+		if pages.ResultTotal%pages.PageSize > 0 {       // Check if is an incomplete page (containing less than 'pageSize' results)
+			pageCount++ // Total pageCount is "number of complete pages + 1 incomplete" if it exists)
+		}
+		if pages.Page < pageCount {
+			// Clone all originally supplied query parameters to avoid overwriting them
+			urlQueryString := queryParams.Encode()
+			urlQuery, err := url.ParseQuery(urlQueryString)
+			if err != nil {
+				return nil, fmt.Errorf("error cloning queryParams: %s", err)
+			}
+
+			// Increase page query by one to fetch "next" page
+			urlQuery.Set("page", strconv.Itoa(pages.Page+1))
+
+			responses, err = client.openApiGetAllPages(apiVersion, urlRefCopy, urlQuery, outType, responses)
+			if err != nil {
+				return nil, fmt.Errorf("got error on page %d: %s", pages.Page, err)
+			}
+		}
+
 	}
 
 	return responses, nil
