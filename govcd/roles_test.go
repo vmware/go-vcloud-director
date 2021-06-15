@@ -53,7 +53,7 @@ func (vcd *TestVCD) Test_Roles(check *C) {
 		Name:        check.TestName(),
 		Description: "Role created by test",
 		// This BundleKey is being set by VCD even if it is not sent
-		BundleKey: "com.vmware.vcloud.undefined.key",
+		BundleKey: types.VcloudUndefinedKey,
 		ReadOnly:  false,
 	}
 
@@ -81,50 +81,31 @@ func (vcd *TestVCD) Test_Roles(check *C) {
 	// Step 5 - add rights to role
 
 	// These rights include 5 implied rights, which will be added by role.AddRights
-	rightName1 := "Catalog: Add vApp from My Cloud"
-	rightName2 := "Catalog: Edit Properties"
+	rightNames := []string{"Catalog: Add vApp from My Cloud", "Catalog: Edit Properties"}
 
-	right1, err := adminOrg.GetRightByName(rightName1)
-	check.Assert(err, IsNil)
-	right2, err := adminOrg.GetRightByName(rightName2)
-	check.Assert(err, IsNil)
-	err = updatedRole.AddRights([]types.OpenApiReference{
-		{Name: rightName1, ID: right1.ID},
-		{Name: rightName2, ID: right2.ID},
-	})
+	rightSet, err := getRightsSet(adminOrg.client, rightNames)
 	check.Assert(err, IsNil)
 
-	// Calculate the total amount of rights we should expect to be added to the role
-	var unique = make(map[string]bool)
-	for _, r := range []*types.Right{right1, right2} {
-		_, seen := unique[r.ID]
-		if !seen {
-			unique[r.ID] = true
-		}
-		for _, implied := range r.ImpliedRights {
-			_, seen := unique[implied.ID]
-			if !seen {
-				unique[implied.ID] = true
-			}
-		}
-	}
-	rights, err := updatedRole.GetRoleRights(nil)
+	err = updatedRole.AddRights(rightSet)
 	check.Assert(err, IsNil)
-	check.Assert(len(rights), Equals, len(unique))
+
+	rights, err := updatedRole.GetRights(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(rights), Equals, len(rightSet))
 
 	// Step 6 - remove 1 right from role
 
-	err = updatedRole.RemoveRights([]types.OpenApiReference{{Name: right1.Name, ID: right1.ID}})
+	err = updatedRole.RemoveRights([]types.OpenApiReference{rightSet[0]})
 	check.Assert(err, IsNil)
-	rights, err = updatedRole.GetRoleRights(nil)
+	rights, err = updatedRole.GetRights(nil)
 	check.Assert(err, IsNil)
-	check.Assert(len(rights), Equals, len(unique)-1)
+	check.Assert(len(rights), Equals, len(rightSet)-1)
 
 	// Step 7 - remove all rights from role
 	err = updatedRole.RemoveAllRights()
 	check.Assert(err, IsNil)
 
-	rights, err = updatedRole.GetRoleRights(nil)
+	rights, err = updatedRole.GetRights(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(rights), Equals, 0)
 
