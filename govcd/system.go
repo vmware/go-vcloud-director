@@ -286,6 +286,42 @@ func CreateEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation) (EdgeGate
 	return createEdgeGateway(vcdClient, egwc, nil)
 }
 
+func getOrgByHref(vcdClient *Client, href string) (*Org, error) {
+	org := NewOrg(vcdClient)
+
+	_, err := vcdClient.ExecuteRequest(href, http.MethodGet,
+		"", "error retrieving org list: %s", nil, org.Org)
+	if err != nil {
+		return nil, err
+	}
+
+	tenantContext, err := org.getTenantContext()
+	if err != nil {
+		return nil, err
+	}
+	org.TenantContext = tenantContext
+
+	return org, nil
+}
+
+func getAdminOrgByHref(vcdClient *Client, href string) (*AdminOrg, error) {
+	adminOrg := NewAdminOrg(vcdClient)
+
+	_, err := vcdClient.ExecuteRequest(href, http.MethodGet,
+		"", "error retrieving org list: %s", nil, adminOrg.AdminOrg)
+	if err != nil {
+		return nil, err
+	}
+
+	tenantContext, err := adminOrg.getTenantContext()
+	if err != nil {
+		return nil, err
+	}
+	adminOrg.TenantContext = tenantContext
+
+	return adminOrg, nil
+}
+
 // If user specifies a valid organization name, then this returns a
 // organization object. If no valid org is found, it returns an empty
 // org and no error. Otherwise it returns an error and an empty
