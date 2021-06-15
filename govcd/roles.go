@@ -264,17 +264,6 @@ func addRightsToRole(client *Client, roleType, name, id, endpoint string, newRig
 			Name: right.Name,
 			ID:   right.ID,
 		})
-		// Add the implied rights to the explicit ones
-		fullRight, err := client.GetRightById(right.ID)
-		if err != nil {
-			return err
-		}
-		for _, implied := range fullRight.ImpliedRights {
-			input.Values = append(input.Values, types.OpenApiReference{
-				Name: implied.Name,
-				ID:   implied.ID,
-			})
-		}
 	}
 	var pages types.OpenApiPages
 
@@ -319,17 +308,6 @@ func updateRightsInRole(client *Client, roleType, name, id, endpoint string, new
 			Name: right.Name,
 			ID:   right.ID,
 		})
-		// Add the implied rights to the explicit ones
-		fullRight, err := client.GetRightById(right.ID)
-		if err != nil {
-			return err
-		}
-		for _, implied := range fullRight.ImpliedRights {
-			input.Values = append(input.Values, types.OpenApiReference{
-				Name: implied.Name,
-				ID:   implied.ID,
-			})
-		}
 	}
 	var pages types.OpenApiPages
 
@@ -370,7 +348,7 @@ func removeRightsFromRole(client *Client, roleType, name, id, endpoint string, r
 	}
 	var pages types.OpenApiPages
 
-	currentRights, err := getRoleRights(client, id, endpoint, nil, additionalHeader)
+	currentRights, err := getRights(client, id, endpoint, nil, additionalHeader)
 	if err != nil {
 		return err
 	}
@@ -421,4 +399,49 @@ func removeRightsFromRole(client *Client, roleType, name, id, endpoint string, r
 // removeAllRightsFromRole removes all rights from the given role
 func removeAllRightsFromRole(client *Client, roleType, name, id, endpoint string, additionalHeader map[string]string) error {
 	return updateRightsInRole(client, roleType, name, id, endpoint, []types.OpenApiReference{}, additionalHeader)
+}
+
+// FindMissingImpliedRights returns a list of the rights that are implied in the rights provided as input
+func FindMissingImpliedRights(client *Client, rights []types.OpenApiReference) ([]types.OpenApiReference, error) {
+	var (
+		impliedRights       []types.OpenApiReference
+		uniqueInputRights   = make(map[string]types.OpenApiReference)
+		uniqueImpliedRights = make(map[string]types.OpenApiReference)
+	)
+
+	// Make a searchable collection of unique rights from the input
+	// This operation removes duplicates from the list
+	for _, right := range rights {
+		uniqueInputRights[right.Name] = right
+	}
+
+	// Find the implied rights
+	for _, right := range rights {
+		fullRight, err := client.GetRightByName(right.Name)
+		if err != nil {
+			return nil, err
+		}
+		for _, ir := range fullRight.ImpliedRights {
+			_, seenAsInput := uniqueInputRights[ir.Name]
+			_, seenAsImplied := uniqueImpliedRights[ir.Name]
+			// If the right has already been added either as explicit ro as implied right, we skip it
+			if seenAsInput || seenAsImplied {
+				continue
+			}
+			// Add to the unique collection of implied rights
+			uniqueImpliedRights[ir.Name] = types.OpenApiReference{
+				Name: ir.Name,
+				ID:   ir.ID,
+			}
+		}
+	}
+
+	// Create the output list from the implied rights collection
+	if len(uniqueImpliedRights) > 0 {
+		for _, right := range uniqueImpliedRights {
+			impliedRights = append(impliedRights, right)
+		}
+	}
+
+	return impliedRights, nil
 }
