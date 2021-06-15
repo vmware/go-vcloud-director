@@ -67,10 +67,8 @@ func (vcd *TestVCD) Test_Roles(check *C) {
 
 	// Check that the new role is found in the Organization structure
 	roleRef, err := adminOrg.GetRoleReference(createdRole.Role.Name)
-	check.Assert(err, NotNil)
-	check.Assert(roleRef, IsNil)
-	roleRef, err = adminOrg.GetRoleReference(createdRole.Role.Name)
 	check.Assert(err, IsNil)
+	check.Assert(roleRef, NotNil)
 
 	// Step 4 - updated created role
 	createdRole.Role.Description = "Updated description"

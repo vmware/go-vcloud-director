@@ -610,7 +610,7 @@ func (client *Client) openApiGetAllPages(apiVersion string, urlRef *url.URL, que
 			// Increase page query by one to fetch "next" page
 			urlQuery.Set("page", strconv.Itoa(pages.Page+1))
 
-			responses, err = client.openApiGetAllPages(apiVersion, urlRefCopy, urlQuery, outType, responses)
+			responses, err = client.openApiGetAllPages(apiVersion, urlRefCopy, urlQuery, outType, responses, additionalHeader)
 			if err != nil {
 				return nil, fmt.Errorf("got error on page %d: %s", pages.Page, err)
 			}
