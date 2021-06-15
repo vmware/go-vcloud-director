@@ -62,7 +62,7 @@ type DhcpSettings struct {
 // Returns the vdc where the vapp resides in.
 func (vapp *VApp) getParentVDC() (Vdc, error) {
 	for _, link := range vapp.VApp.Link {
-		if link.Type == "application/vnd.vmware.vcloud.vdc+xml" {
+		if (link.Type == types.MimeVDC || link.Type == types.MimeAdminVDC) && link.Rel == "up" {
 
 			vdc := NewVdc(vapp.client)
 
@@ -72,6 +72,11 @@ func (vapp *VApp) getParentVDC() (Vdc, error) {
 				return Vdc{}, err
 			}
 
+			parent, err := vdc.getParentOrg()
+			if err != nil {
+				return Vdc{}, err
+			}
+			vdc.parent = parent
 			return *vdc, nil
 		}
 	}

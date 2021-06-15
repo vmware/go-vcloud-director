@@ -424,3 +424,29 @@ func (vdc *AdminVdc) UpdateStorageProfile(storageProfileId string, storageProfil
 
 	return updateAdminVdcStorageProfile, err
 }
+
+func (vdc *AdminVdc) getParentOrg() (organization, error) {
+	for _, vdcLink := range vdc.AdminVdc.Link {
+		if vdcLink.Rel != "up" {
+			continue
+		}
+		switch vdcLink.Type {
+		case types.MimeOrg:
+			org, err := getOrgByHref(vdc.client, vdcLink.HREF)
+			if err != nil {
+				return nil, err
+			}
+			return org, nil
+		case types.MimeAdminOrg:
+			adminOrg, err := getAdminOrgByHref(vdc.client, vdcLink.HREF)
+			if err != nil {
+				return nil, err
+			}
+			return adminOrg, nil
+
+		default:
+			continue
+		}
+	}
+	return nil, fmt.Errorf("no parent found for Admin VDC %s", vdc.AdminVdc.Name)
+}

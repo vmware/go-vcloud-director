@@ -1143,3 +1143,29 @@ func getCapabilityValue(capabilities []types.VdcCapability, fieldName string) st
 
 	return ""
 }
+
+func (vdc *Vdc) getParentOrg() (organization, error) {
+	for _, vdcLink := range vdc.Vdc.Link {
+		if vdcLink.Rel != "up" {
+			continue
+		}
+		switch vdcLink.Type {
+		case types.MimeOrg:
+			org, err := getOrgByHref(vdc.client, vdcLink.HREF)
+			if err != nil {
+				return nil, err
+			}
+			return org, nil
+		case types.MimeAdminOrg:
+			adminOrg, err := getAdminOrgByHref(vdc.client, vdcLink.HREF)
+			if err != nil {
+				return nil, err
+			}
+			return adminOrg, nil
+
+		default:
+			continue
+		}
+	}
+	return nil, fmt.Errorf("no parent found for VDC %s", vdc.Vdc.Name)
+}
