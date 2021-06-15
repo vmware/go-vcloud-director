@@ -31,6 +31,9 @@ func (client *Client) CreateRightsBundle(newRightsBundle *types.RightsBundle) (*
 		return nil, err
 	}
 
+	if newRightsBundle.PublishAll == nil {
+		newRightsBundle.PublishAll = takeBoolPointer(false)
+	}
 	returnBundle := &RightsBundle{
 		RightsBundle: &types.RightsBundle{},
 		client:       client,
@@ -125,7 +128,7 @@ func (rb *RightsBundle) GetTenants(queryParameters url.Values) ([]types.OpenApiR
 
 func (rb *RightsBundle) GetRights(queryParameters url.Values) ([]*types.Right, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRightsBundles
-	return getRoleRights(rb.client, rb.RightsBundle.Id, endpoint, queryParameters, nil)
+	return getRights(rb.client, rb.RightsBundle.Id, endpoint, queryParameters, nil)
 }
 
 // AddRights adds a collection of rights to a rights bundle
@@ -155,13 +158,19 @@ func (rb *RightsBundle) RemoveAllRights() error {
 // PublishTenants publishes a rights bundle to one or more tenants
 func (rb *RightsBundle) PublishTenants(tenants []types.OpenApiReference) error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRightsBundles
-	return publishContainerToTenants(rb.client, "RightsBundle", rb.RightsBundle.Name, rb.RightsBundle.Id, endpoint, tenants, true)
+	return publishContainerToTenants(rb.client, "RightsBundle", rb.RightsBundle.Name, rb.RightsBundle.Id, endpoint, tenants, "add")
 }
 
 // UnpublishTenants removes publication status in rights bundle from one or more tenants
 func (rb *RightsBundle) UnpublishTenants(tenants []types.OpenApiReference) error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRightsBundles
-	return publishContainerToTenants(rb.client, "RightsBundle", rb.RightsBundle.Name, rb.RightsBundle.Id, endpoint, tenants, false)
+	return publishContainerToTenants(rb.client, "RightsBundle", rb.RightsBundle.Name, rb.RightsBundle.Id, endpoint, tenants, "remove")
+}
+
+// ReplacePublishedTenants publishes a rights bundle to one or more tenants, removing the tenants already present
+func (rb *RightsBundle) ReplacePublishedTenants(tenants []types.OpenApiReference) error {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointGlobalRoles
+	return publishContainerToTenants(rb.client, "RightsBundle", rb.RightsBundle.Name, rb.RightsBundle.Id, endpoint, tenants, "replace")
 }
 
 // PublishAllTenants removes publication status in rights bundle from one or more tenants
