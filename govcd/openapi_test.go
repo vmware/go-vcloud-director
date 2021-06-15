@@ -193,7 +193,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 		Name:        check.TestName(),
 		Description: "Role created by test",
 		// This BundleKey is being set by VCD even if it is not sent
-		BundleKey: "com.vmware.vcloud.undefined.key",
+		BundleKey: types.VcloudUndefinedKey,
 		ReadOnly:  false,
 	}
 	newRoleResponse := &InlineRoles{}
