@@ -27,7 +27,8 @@
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
 * Added `NsxtAppPortProfile` and `types.NsxtAppPortProfile` for NSX-T Application Port Profile management 
   [#378](https://github.com/vmware/go-vcloud-director/pull/378)  
-
+* Added `NsxtIpSecVpnTunnel` and `types.NsxtIpSecVpnTunnel` for NSX-T IPsec VPN Tunnel configuration
+  [#385](https://github.com/vmware/go-vcloud-director/pull/385)
   
 BREAKING CHANGES:
 * Added parameter `description` to method `vdc.ComposeRawVapp` [#372](https://github.com/vmware/go-vcloud-director/pull/372)

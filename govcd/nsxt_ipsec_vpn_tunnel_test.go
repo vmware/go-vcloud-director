@@ -75,54 +75,64 @@ func (vcd *TestVCD) Test_NsxtIpSecVpnCustomSecurityProfile(check *C) {
 		Logging:      false,
 	}
 
-	createdIpSecVpn, err := edge.CreateIpSecVpn(ipSecDef)
+	createdIpSecVpn, err := edge.CreateIpSecVpnTunnel(ipSecDef)
 	check.Assert(err, IsNil)
-	openApiEndpoint := types.OpenApiPathVersion1_0_0 + fmt.Sprintf(types.OpenApiEndpointIpSecVpn, createdIpSecVpn.edgeGatewayId) + createdIpSecVpn.NsxtIpSecVpn.ID
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + fmt.Sprintf(types.OpenApiEndpointIpSecVpnTunnel, createdIpSecVpn.edgeGatewayId) + createdIpSecVpn.NsxtIpSecVpn.ID
 	AddToCleanupListOpenApi(createdIpSecVpn.NsxtIpSecVpn.Name, check.TestName(), openApiEndpoint)
 
-	foundIpSecVpnById, err := edge.GetIpSecVpnById(createdIpSecVpn.NsxtIpSecVpn.ID)
-	check.Assert(err, IsNil)
-	check.Assert(foundIpSecVpnById.NsxtIpSecVpn, DeepEquals, createdIpSecVpn.NsxtIpSecVpn)
-
-	foundIpSecVpnByName, err := edge.GetIpSecVpnByName(createdIpSecVpn.NsxtIpSecVpn.Name)
-	check.Assert(err, IsNil)
-	check.Assert(foundIpSecVpnByName.NsxtIpSecVpn, DeepEquals, createdIpSecVpn.NsxtIpSecVpn)
-	check.Assert(foundIpSecVpnByName.NsxtIpSecVpn, DeepEquals, foundIpSecVpnById.NsxtIpSecVpn)
-
-	check.Assert(createdIpSecVpn.NsxtIpSecVpn.ID, Not(Equals), "")
-
-	ipSecDef.Name = check.TestName() + "-updated"
-	ipSecDef.RemoteEndpoint.RemoteAddress = "192.168.40.1"
-	ipSecDef.ID = createdIpSecVpn.NsxtIpSecVpn.ID
-
-	updatedIpSecVpn, err := createdIpSecVpn.Update(ipSecDef)
-	check.Assert(updatedIpSecVpn.NsxtIpSecVpn.Name, Equals, ipSecDef.Name)
-	check.Assert(updatedIpSecVpn.NsxtIpSecVpn.ID, Equals, ipSecDef.ID)
-	check.Assert(updatedIpSecVpn.NsxtIpSecVpn.RemoteEndpoint.RemoteAddress, Equals, ipSecDef.RemoteEndpoint.RemoteAddress)
-
-	err = createdIpSecVpn.Delete()
-	check.Assert(err, IsNil)
-
-	// Ensure rule does not exist in the list
-	allVpnConfigs, err := edge.GetAllIpSecVpns(nil)
-	check.Assert(err, IsNil)
-	for _, vpnConfig := range allVpnConfigs {
-		check.Assert(vpnConfig.IsEqualTo(updatedIpSecVpn.NsxtIpSecVpn), Equals, false)
+	// Customize Security Profile
+	secProfile := &types.NsxtIpSecVpnTunnelSecurityProfile{
+		SecurityType: "CUSTOM",
+		IkeConfiguration: types.NsxtIpSecVpnTunnelProfileIkeConfiguration{
+			IkeVersion:           "IKE_V2",
+			EncryptionAlgorithms: []string{"AES_128"},
+			DigestAlgorithms:     []string{"SHA2_256"},
+			DhGroups:             []string{"GROUP14"},
+			SaLifeTime:           takeIntAddress(86400),
+		},
+		TunnelConfiguration: types.NsxtIpSecVpnTunnelProfileTunnelConfiguration{
+			PerfectForwardSecrecyEnabled: true,
+			DfPolicy:                     "CLEAR",
+			EncryptionAlgorithms:         []string{"AES_256"},
+			DigestAlgorithms:             []string{"SHA2_256"},
+			DhGroups:                     []string{"GROUP14"},
+			SaLifeTime:                   takeIntAddress(3600),
+		},
+		DpdConfiguration: types.NsxtIpSecVpnTunnelProfileDpdConfiguration{ProbeInterval: 3},
 	}
+	setSecProfile, err := createdIpSecVpn.UpdateTunnelConnectionProperties(secProfile)
+	check.Assert(err, IsNil)
+	check.Assert(setSecProfile, DeepEquals, secProfile)
 
+	// Check if status endpoint works properly, but cannot rely on returned status as it is not immediately returned and
+	// it can hold on for a long time before available. At least validate that this function does not return error.
+	_, err = createdIpSecVpn.GetStatus()
+	check.Assert(err, IsNil)
+
+	//Latest Version
+	latestSecProfile, err := edge.GetIpSecVpnTunnelById(createdIpSecVpn.NsxtIpSecVpn.ID)
+	check.Assert(err, IsNil)
+
+	// Reset security profile to default
+	latestSecProfile.NsxtIpSecVpn.SecurityType = "DEFAULT"
+	updatedIpSecVpn, err := createdIpSecVpn.Update(latestSecProfile.NsxtIpSecVpn)
+	check.Assert(err, IsNil)
+	// All fields should be the same, except version
+	latestSecProfile.NsxtIpSecVpn.Version = updatedIpSecVpn.NsxtIpSecVpn.Version
+	check.Assert(updatedIpSecVpn.NsxtIpSecVpn, DeepEquals, latestSecProfile.NsxtIpSecVpn)
 }
 
 func runIpSecVpnTests(check *C, edge *NsxtEdgeGateway, ipSecDef *types.NsxtIpSecVpnTunnel) {
-	createdIpSecVpn, err := edge.CreateIpSecVpn(ipSecDef)
+	createdIpSecVpn, err := edge.CreateIpSecVpnTunnel(ipSecDef)
 	check.Assert(err, IsNil)
-	openApiEndpoint := types.OpenApiPathVersion1_0_0 + fmt.Sprintf(types.OpenApiEndpointIpSecVpn, createdIpSecVpn.edgeGatewayId) + createdIpSecVpn.NsxtIpSecVpn.ID
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + fmt.Sprintf(types.OpenApiEndpointIpSecVpnTunnel, createdIpSecVpn.edgeGatewayId) + createdIpSecVpn.NsxtIpSecVpn.ID
 	AddToCleanupListOpenApi(createdIpSecVpn.NsxtIpSecVpn.Name, check.TestName(), openApiEndpoint)
 
-	foundIpSecVpnById, err := edge.GetIpSecVpnById(createdIpSecVpn.NsxtIpSecVpn.ID)
+	foundIpSecVpnById, err := edge.GetIpSecVpnTunnelById(createdIpSecVpn.NsxtIpSecVpn.ID)
 	check.Assert(err, IsNil)
 	check.Assert(foundIpSecVpnById.NsxtIpSecVpn, DeepEquals, createdIpSecVpn.NsxtIpSecVpn)
 
-	foundIpSecVpnByName, err := edge.GetIpSecVpnByName(createdIpSecVpn.NsxtIpSecVpn.Name)
+	foundIpSecVpnByName, err := edge.GetIpSecVpnTunnelByName(createdIpSecVpn.NsxtIpSecVpn.Name)
 	check.Assert(err, IsNil)
 	check.Assert(foundIpSecVpnByName.NsxtIpSecVpn, DeepEquals, createdIpSecVpn.NsxtIpSecVpn)
 	check.Assert(foundIpSecVpnByName.NsxtIpSecVpn, DeepEquals, foundIpSecVpnById.NsxtIpSecVpn)
@@ -143,7 +153,7 @@ func runIpSecVpnTests(check *C, edge *NsxtEdgeGateway, ipSecDef *types.NsxtIpSec
 	check.Assert(err, IsNil)
 
 	// Ensure rule does not exist in the list
-	allVpnConfigs, err := edge.GetAllIpSecVpns(nil)
+	allVpnConfigs, err := edge.GetAllIpSecVpnTunnels(nil)
 	check.Assert(err, IsNil)
 	for _, vpnConfig := range allVpnConfigs {
 		check.Assert(vpnConfig.IsEqualTo(updatedIpSecVpn.NsxtIpSecVpn), Equals, false)
