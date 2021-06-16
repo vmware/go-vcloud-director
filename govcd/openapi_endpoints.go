@@ -17,16 +17,19 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableTier0Routers: "32.0",
 	// OpenApiEndpointExternalNetworks endpoint support was introduced with version 32.0 however it was still not stable
 	// enough to be used. (i.e. it did not support update "PUT")
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks:           "33.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies:         "32.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies: "33.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeClusters:               "34.0", // VCD 10.1+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways:               "34.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups:             "34.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks:             "32.0", // VCD 9.7+ for NSX-V, 10.1+ for NSX-T
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworksDhcp:         "32.0", // VCD 9.7+ for NSX-V, 10.1+ for NSX-T
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcCapabilities:            "32.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAppPortProfiles:            "34.0", // VCD 10.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks:             "33.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies:           "32.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies:   "33.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeClusters:                 "34.0", // VCD 10.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways:                 "34.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups:               "34.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks:               "32.0", // VCD 9.7+ for NSX-V, 10.1+ for NSX-T
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworksDhcp:           "32.0", // VCD 9.7+ for NSX-V, 10.1+ for NSX-T
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcCapabilities:              "32.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAppPortProfiles:              "34.0", // VCD 10.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSecVpn:                     "34.0", // VCD 10.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSecVpnConnectionProperties: "34.0", // VCD 10.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSecVpnStatus:               "34.0", // VCD 10.1+
 }
 
 // checkOpenApiEndpointCompatibility checks if VCD version (to which the client is connected) is sufficient to work with

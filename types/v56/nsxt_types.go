@@ -331,3 +331,209 @@ type NsxtAppPortProfilePort struct {
 	// DestinationPorts is optional, but can define list of ports ("1000", "1500") or port ranges ("1200-1400")
 	DestinationPorts []string `json:"destinationPorts,omitempty"`
 }
+
+// NsxtIpSecVpnTunnel specifies the IPsec VPN tunnel configuration
+type NsxtIpSecVpnTunnel struct {
+	// ID unique for IPsec VPN tunnel. On updates, the id is required for the tunnel, while for create a new id will be
+	// generated.
+	ID string `json:"id,omitempty"`
+	// Name for the tunnel
+	Name string `json:"name"`
+	// Description for the tunnel
+	Description string `json:"description,omitempty"`
+	// Enabled describes whether the tunnel is enabled or not. The default is true.
+	Enabled bool `json:"enabled"`
+	// LocalEndpoint which corresponds to the Edge Gateway the tunnel is being configured on. Local Endpoint requires an
+	// IP. That IP must be suballocated to the edge gateway
+	LocalEndpoint NsxtIpSecVpnTunnelLocalEndpoint `json:"localEndpoint"`
+	// RemoteEndpoint corresponds to the device on the remote site terminating the VPN tunnel
+	RemoteEndpoint NsxtIpSecVpnTunnelRemoteEndpoint `json:"remoteEndpoint"`
+	// PreSharedKey is key used for authentication. It must be the same on the other end of IPsec VPN tunnel
+	PreSharedKey string `json:"preSharedKey"`
+	// SecurityType is the security type used for the IPsec Tunnel. If nothing is specified, this will be set to
+	// ‘DEFAULT’ in which the default settings in NSX will be used. For custom settings, one should use the
+	// connectionProperties endpoint to specify custom settings. The security type will then appropriately reflect
+	// itself as ‘CUSTOM’.
+	SecurityType string `json:"securityType,omitempty"`
+	// Logging sets whether logging for the tunnel is enabled or not. The default is false.
+	Logging bool `json:"logging"`
+
+	// AuthenticationMode is authentication mode this IPsec tunnel will use to authenticate with the peer endpoint. The
+	// default is a pre-shared key (PSK).
+	// * PSK - A known key is shared between each site before the tunnel is established.
+	// * CERTIFICATE ? Incoming connections are required to present an identifying digital certificate, which VCD verifies
+	// has been signed by a trusted certificate authority.
+	//
+	// Note. Up to version 10.3 VCD only supports PSK
+	AuthenticationMode string `json:"authenticationMode,omitempty"`
+
+	// ConnectorInitiationMode is the mode used by the local endpoint to establish an IKE Connection with the remote site.
+	// The default is INITIATOR.
+	// Possible values are: INITIATOR , RESPOND_ONLY , ON_DEMAND
+	//
+	// Note. Up to version 10.3 VCD only supports INITIATOR
+	ConnectorInitiationMode string `json:"connectorInitiationMode,omitempty"`
+
+	// Version of IPsec configuration. Must not be set when creating.
+	Version *struct {
+		// Version is incremented after each update
+		Version *int `json:"version,omitempty"`
+	} `json:"version,omitempty"`
+}
+
+// NsxtIpSecVpnTunnelLocalEndpoint which corresponds to the Edge Gateway the tunnel is being configured on. Local
+// Endpoint requires an IP. That IP must be suballocated to the edge gateway
+type NsxtIpSecVpnTunnelLocalEndpoint struct {
+	// LocalId is the optional local identifier for the endpoint
+	LocalId string `json:"localId,omitempty"`
+	// LocalAddress is the IPv4 Address for the endpoint. This has to be a suballocated IP on the Edge Gateway. This is
+	// required
+	LocalAddress string `json:"localAddress"`
+	// LocalNetworks is the list of local networks. These must be specified in normal Network CIDR format. At least one is
+	// required
+	LocalNetworks []string `json:"localNetworks,omitempty"`
+}
+
+// NsxtIpSecVpnTunnelRemoteEndpoint corresponds to the device on the remote site terminating the VPN tunnel
+type NsxtIpSecVpnTunnelRemoteEndpoint struct {
+	// RemoteId is This Remote ID is needed to uniquely identify the peer site. If this tunnel is using PSK authentication,
+	// the Remote ID is the public IP Address of the remote device terminating the VPN Tunnel. When NAT is configured on
+	// the Remote ID, enter the private IP Address of the Remote Site. If the remote ID is not set, VCD will set the
+	// remote id to the remote address. If this tunnel is using certificate authentication, enter the distinguished
+	// name of the certificate used to secure the
+	// remote endpoint (for example, C=US,ST=Massachusetts,O=VMware,OU=VCD,CN=Edge1). The remote id must be provided in
+	// this case
+	RemoteId string `json:"remoteId,omitempty"`
+	// RemoteAddress is IPv4 Address of the remote endpoint on the remote site. This is the Public IPv4 Address of the
+	// remote device terminating the VPN connection. This is required
+	RemoteAddress string `json:"remoteAddress"`
+	// RemoteNetworks is the list of remote networks. These must be specified in normal Network CIDR format.
+	// Specifying no value is interpreted as 0.0.0.0/0
+	RemoteNetworks []string `json:"remoteNetworks,omitempty"`
+}
+
+// NsxtIpSecVpnTunnelStatus helps to read IPsec VPN Tunnel Status
+type NsxtIpSecVpnTunnelStatus struct {
+	// TunnelStatus gives the overall IPsec VPN Tunnel Status. If IKE is properly set and the tunnel is up, the tunnel
+	// status will be UP
+	TunnelStatus string `json:"tunnelStatus"`
+	IkeStatus    struct {
+		// IkeServiceStatus status for the actual IKE Session for the given tunnel.
+		IkeServiceStatus string `json:"ikeServiceStatus"`
+		// FailReason contains more details of failure if the IKE service is not UP
+		FailReason string `json:"failReason"`
+	} `json:"ikeStatus"`
+}
+
+// NsxtIpSecVpnTunnelSecurityProfile specifies the given security profile/connection properties of a given IP Sec VPN Tunnel,
+// such as Dead Probe Interval and IKE settings. If a security type is set to 'CUSTOM', then ike, tunnel, and/or dpd
+// configurations can be specified. Otherwise, those fields are read only and are set to the values based on the
+// specific security type.
+type NsxtIpSecVpnTunnelSecurityProfile struct {
+	// SecurityType is the security type used for the IPSec Tunnel. If nothing is specified, this will be set to ‘DEFAULT’
+	// in which the default settings in NSX will be used. If ‘CUSTOM’ is specified, then IKE, Tunnel, and DPD
+	// configurations can be set.
+	// To "RESET" configuration to DEFAULT, the NsxtIpSecVpnTunnel.SecurityType field should be changed instead of this
+	SecurityType string `json:"securityType"`
+	// IkeConfiguration is the IKE Configuration to be used for the tunnel. If nothing is explicitly set, the system
+	// defaults will be used.
+	IkeConfiguration NsxtIpSecVpnTunnelProfileIkeConfiguration `json:"ikeConfiguration"`
+	// TunnelConfiguration contains parameters such as encryption algorithm to be used. If nothing is explicitly set,
+	// the system defaults will be used.
+	TunnelConfiguration NsxtIpSecVpnTunnelProfileTunnelConfiguration `json:"tunnelConfiguration"`
+	// DpdConfiguration contains Dead Peer Detection configuration. If nothing is explicitly set, the system defaults
+	// will be used.
+	DpdConfiguration NsxtIpSecVpnTunnelProfileDpdConfiguration `json:"dpdConfiguration"`
+}
+
+// NsxtIpSecVpnTunnelProfileIkeConfiguration is the Internet Key Exchange (IKE) profiles provide information about the
+// algorithms that are used to authenticate, encrypt, and establish a shared secret between network sites when you
+// establish an IKE tunnel.
+type NsxtIpSecVpnTunnelProfileIkeConfiguration struct {
+	// IkeVersion IKE Protocol Version to use.
+	// The default is IKE_V2.
+	//
+	// Possible values are: IKE_V1 , IKE_V2 , IKE_FLEX
+	IkeVersion string `json:"ikeVersion"`
+	// EncryptionAlgorithms contains list of Encryption algorithms for IKE. This is used during IKE negotiation.
+	// Default is AES_128.
+	//
+	// Possible values are: AES_128 , AES_256 , AES_GCM_128 , AES_GCM_192 , AES_GCM_256
+	// Note. Only one value can be set inside the slice
+	EncryptionAlgorithms []string `json:"encryptionAlgorithms"`
+	// DigestAlgorithms contains list of Digest algorithms - secure hashing algorithms to use during the IKE negotiation.
+	//
+	// Default is SHA2_256.
+	//
+	// Possible values are: SHA1 , SHA2_256 , SHA2_384 , SHA2_512
+	// Note. Only one value can be set inside the slice
+	DigestAlgorithms []string `json:"digestAlgorithms"`
+	// DhGroups contains list of Diffie-Hellman groups to be used if Perfect Forward Secrecy is enabled. These are
+	// cryptography schemes that allows the peer site and the edge gateway to establish a shared secret over an insecure
+	// communications channel
+	//
+	// Default is GROUP14.
+	//
+	// Possible values are: GROUP2, GROUP5, GROUP14, GROUP15, GROUP16, GROUP19, GROUP20, GROUP21
+	// Note. Only one value can be set inside the slice
+	DhGroups []string `json:"dhGroups"`
+	// SaLifeTime is the Security Association life time in seconds. It is number of seconds before the IPsec tunnel needs
+	// to reestablish
+	//
+	// Default is 86400 seconds (1 day).
+	SaLifeTime int `json:"saLifeTime"`
+}
+
+type NsxtIpSecVpnTunnelProfileTunnelConfiguration struct {
+	// PerfectForwardSecrecyEnabled enabled or disabled. PFS (Perfect Forward Secrecy) ensures the same key will not be
+	// generated and used again, and because of this, the VPN peers negotiate a new Diffie-Hellman key exchange. This
+	// would ensure if a hacker\criminal was to compromise the private key, they would only be able to access data in
+	// transit protected by that key. Any future data will not be compromised, as future data would not be associated
+	// with that compromised key. Both sides of the VPN must be able to support PFS in order for PFS to work.
+	//
+	// The default value is true.
+	PerfectForwardSecrecyEnabled bool `json:"perfectForwardSecrecyEnabled"`
+	// DfPolicy Policy for handling defragmentation bit. The default is COPY.
+	//
+	// Possible values are: COPY, CLEAR
+	// * COPY Copies the defragmentation bit from the inner IP packet to the outer packet.
+	// * CLEAR Ignores the defragmentation bit present in the inner packet.
+	DfPolicy string `json:"dfPolicy"`
+
+	// EncryptionAlgorithms contains list of Encryption algorithms to use in IPSec tunnel establishment.
+	// Default is AES_GCM_128.
+	// * NO_ENCRYPTION_AUTH_AES_GMAC_XX (XX is 128, 192, 256) enables authentication on input data without encryption.
+	// If one of these options is used, digest algorithm should be empty.
+	//
+	// Possible values are: AES_128, AES_256, AES_GCM_128, AES_GCM_192, AES_GCM_256, NO_ENCRYPTION_AUTH_AES_GMAC_128,
+	// NO_ENCRYPTION_AUTH_AES_GMAC_192, NO_ENCRYPTION_AUTH_AES_GMAC_256, NO_ENCRYPTION
+	// Note. Only one value can be set inside the slice
+	EncryptionAlgorithms []string `json:"encryptionAlgorithms"`
+
+	// DigestAlgorithms contains list of Digest algorithms to be used for message digest. The default digest algorithm is
+	// implicitly covered by default encryption algorithm AES_GCM_128.
+	//
+	// Possible values are: SHA1 , SHA2_256 , SHA2_384 , SHA2_512
+	// Note. Only one value can be set inside the slice
+	DigestAlgorithms []string `json:"digestAlgorithms"`
+
+	// DhGroups contains list of Diffie-Hellman groups to be used is PFS is enabled. Default is GROUP14.
+	//
+	// Possible values are: GROUP2, GROUP5, GROUP14, GROUP15, GROUP16, GROUP19, GROUP20, GROUP21
+	// Note. Only one value can be set inside the slice
+	DhGroups []string `json:"dhGroups"`
+
+	// SaLifeTime is the Security Association life time in seconds.
+	//
+	// Default is 3600 seconds.
+	SaLifeTime int `json:"saLifeTime"`
+}
+
+// NsxtIpSecVpnTunnelProfileDpdConfiguration specifies the Dead Peer Detection Profile. This configurations determines
+// the number of seconds to wait in time between probes to detect if an IPSec peer is alive or not. The default value
+// for the DPD probe interval is 60 seconds.
+type NsxtIpSecVpnTunnelProfileDpdConfiguration struct {
+	// ProbeInternal is value of the probe interval in seconds. This defines a periodic interval for DPD probes. The
+	// minimum is 3 seconds and the maximum is 60 seconds.
+	ProbeInterval int `json:"probeInterval"`
+}

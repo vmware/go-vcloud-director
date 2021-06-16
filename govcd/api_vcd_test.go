@@ -718,15 +718,19 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 	// openApiEntity can be used to delete any OpenAPI entity due to the API being uniform and allowing the same
 	// low level OpenApiDeleteItem()
 	case "OpenApiEntity":
-
 		// entity.OpenApiEndpoint contains "endpoint/{ID}"
 		// (in format types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + ID) but
 		// to lookup used API version this ID must not be present therefore below we remove suffix ID.
 		// This is done by splitting whole path by "/" and rebuilding path again without last element in slice (which is
 		// expected to be the ID)
+		// Sometimes API endpoint path might contain URNs in the middle (e.g. OpenApiEndpointNsxtNatRules). They are
+		// replaced back to string placeholder %s to match original definitions
 		endpointSlice := strings.Split(entity.OpenApiEndpoint, "/")
-		endpoint := strings.Join(endpointSlice[:len(endpointSlice)-1], "/") + "/"
-		apiVersion, _ := vcd.client.Client.checkOpenApiEndpointCompatibility(endpoint)
+		endpointWithUuid := strings.Join(endpointSlice[:len(endpointSlice)-1], "/") + "/"
+		// replace any "urns" (e.g. 'urn:vcloud:gateway:64966c36-e805-44e2-980b-c1077ab54956') with '%s' to match API definitions
+		re := regexp.MustCompile(`urn[^\/]+`) // Regexp matches from 'urn' up to next '/' in the path
+		endpointRemovedUuids := re.ReplaceAllString(endpointWithUuid, "%s")
+		apiVersion, _ := vcd.client.Client.checkOpenApiEndpointCompatibility(endpointRemovedUuids)
 
 		// Build UP complete endpoint address
 		urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(entity.OpenApiEndpoint)

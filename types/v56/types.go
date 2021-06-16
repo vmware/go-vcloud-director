@@ -1861,24 +1861,24 @@ type VendorTemplate struct {
 // Since: 5.1
 type GatewayIpsecVpnService struct {
 	IsEnabled bool                     `xml:"IsEnabled"`          // Enable or disable the service using this flag
-	Endpoint  *GatewayIpsecVpnEndpoint `xml:"Endpoint,omitempty"` // List of IPSec VPN Service Endpoints.
-	Tunnel    []*GatewayIpsecVpnTunnel `xml:"Tunnel"`             // List of IPSec VPN tunnels.
+	Endpoint  *GatewayIpsecVpnEndpoint `xml:"Endpoint,omitempty"` // List of IPsec VPN Service Endpoints.
+	Tunnel    []*GatewayIpsecVpnTunnel `xml:"Tunnel"`             // List of IPsec VPN tunnels.
 }
 
-// GatewayIpsecVpnEndpoint represents an IPSec VPN endpoint.
+// GatewayIpsecVpnEndpoint represents an IPsec VPN endpoint.
 // Type: GatewayIpsecVpnEndpointType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents an IPSec VPN endpoint.
+// Description: Represents an IPsec VPN endpoint.
 // Since: 5.1
 type GatewayIpsecVpnEndpoint struct {
 	Network  *Reference `xml:"Network"`            // External network reference.
-	PublicIP string     `xml:"PublicIp,omitempty"` // Public IP for IPSec endpoint.
+	PublicIP string     `xml:"PublicIp,omitempty"` // Public IP for IPsec endpoint.
 }
 
-// GatewayIpsecVpnTunnel represents an IPSec VPN tunnel.
+// GatewayIpsecVpnTunnel represents an IPsec VPN tunnel.
 // Type: GatewayIpsecVpnTunnelType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents an IPSec VPN tunnel.
+// Description: Represents an IPsec VPN tunnel.
 // Since: 5.1
 type GatewayIpsecVpnTunnel struct {
 	Name        string `xml:"Name"`                  // The name of the tunnel.
