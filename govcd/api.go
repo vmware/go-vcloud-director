@@ -600,7 +600,7 @@ func executeRequestWithApiVersion(pathURL, requestType, contentType string, payl
 func executeRequestCustomErr(pathURL string, params map[string]string, requestType, contentType string, payload interface{}, client *Client, errType error, apiVersion string) (*http.Response, error) {
 	requestURI, err := url.ParseRequestURI(pathURL)
 	if err != nil {
-		return nil, fmt.Errorf("could parse path request URI '%s': %s", pathURL, err)
+		return nil, fmt.Errorf("couldn't parse path request URI '%s': %s", pathURL, err)
 	}
 
 	var req *http.Request
