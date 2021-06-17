@@ -721,7 +721,7 @@ func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
 
 	resp, err := vm.client.Http.Do(req)
 	if err != nil {
-		return types.VmPendingQuestion{}, fmt.Errorf("error getting question: %s", err)
+		return types.VmPendingQuestion{}, fmt.Errorf("error getting VM question: %s", err)
 	}
 
 	// vCD security feature - on no question return 403 access error
