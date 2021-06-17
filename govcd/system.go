@@ -876,7 +876,10 @@ func (vcdClient *VCDClient) GetOrgByName(orgName string) (*Org, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	org.TenantContext = &TenantContext{
+		OrgId:   extractUuid(org.Org.ID),
+		OrgName: org.Org.Name,
+	}
 	return org, nil
 }
 
@@ -896,7 +899,10 @@ func (vcdClient *VCDClient) GetOrgById(orgId string) (*Org, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	org.TenantContext = &TenantContext{
+		OrgId:   extractUuid(org.Org.ID),
+		OrgName: org.Org.Name,
+	}
 	return org, nil
 }
 
@@ -931,6 +937,10 @@ func (vcdClient *VCDClient) GetAdminOrgByName(orgName string) (*AdminOrg, error)
 	if err != nil {
 		return nil, err
 	}
+	adminOrg.TenantContext = &TenantContext{
+		OrgId:   extractUuid(adminOrg.AdminOrg.ID),
+		OrgName: adminOrg.AdminOrg.Name,
+	}
 
 	return adminOrg, nil
 }
@@ -953,7 +963,10 @@ func (vcdClient *VCDClient) GetAdminOrgById(orgId string) (*AdminOrg, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	adminOrg.TenantContext = &TenantContext{
+		OrgId:   extractUuid(adminOrg.AdminOrg.ID),
+		OrgName: adminOrg.AdminOrg.Name,
+	}
 	return adminOrg, nil
 }
 

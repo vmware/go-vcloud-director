@@ -82,6 +82,7 @@ func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
 	for _, link := range org.Org.Link {
 		if link.Name == vdcname {
 			vdc := NewVdc(org.client)
+			vdc.parent = org
 
 			_, err := org.client.ExecuteRequest(link.HREF, http.MethodGet,
 				"", "error retrieving vdc: %s", nil, vdc.Vdc)
@@ -278,6 +279,7 @@ func (org *Org) GetVDCByHref(vdcHref string) (*Vdc, error) {
 		return nil, err
 	}
 	// The request was successful
+	vdc.parent = org
 	return vdc, nil
 }
 

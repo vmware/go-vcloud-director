@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 package govcd
 
@@ -155,6 +155,8 @@ func getTenantContextHeader(tenantContext *TenantContext) map[string]string {
 	}
 }
 
+// getTenantContextFromHeader does the opposite of getTenantContextHeader:
+// given a header, returns a TenantContext
 func getTenantContextFromHeader(header map[string]string) *TenantContext {
 	if len(header) == 0 {
 		return nil

@@ -1441,3 +1441,11 @@ func (vapp *VApp) UpdateDescription(newDescription string) error {
 func (vapp *VApp) Rename(newName string) error {
 	return vapp.UpdateNameDescription(newName, vapp.VApp.Description)
 }
+
+func (vapp *VApp) getTenantContext() (*TenantContext, error) {
+	parentVdc, err := vapp.getParentVDC()
+	if err != nil {
+		return nil, err
+	}
+	return parentVdc.getTenantContext()
+}
