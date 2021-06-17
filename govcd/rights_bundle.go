@@ -31,6 +31,9 @@ func (client *Client) CreateRightsBundle(newRightsBundle *types.RightsBundle) (*
 		return nil, err
 	}
 
+	if newRightsBundle.BundleKey == "" {
+		newRightsBundle.BundleKey = types.VcloudUndefinedKey
+	}
 	if newRightsBundle.PublishAll == nil {
 		newRightsBundle.PublishAll = takeBoolPointer(false)
 	}

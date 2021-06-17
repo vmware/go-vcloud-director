@@ -224,7 +224,7 @@ type Right struct {
 	Name             string             `json:"name"`
 	ID               string             `json:"id"`
 	Description      string             `json:"description,omitempty"`
-	BundleKey        string             `json:"bundleKey,omitempty"`
+	BundleKey        string             `json:"bundleKey,omitempty"`        // key used for internationalization
 	Category         string             `json:"category,omitempty"`         // Category ID
 	ServiceNamespace string             `json:"serviceNamespace,omitempty"` // Not used
 	RightType        string             `json:"rightType,omitempty"`        // VIEW or MODIFY
@@ -235,7 +235,7 @@ type Right struct {
 type RightsCategory struct {
 	Name        string `json:"name"`
 	Id          string `json:"id"`
-	BundleKey   string `json:"bundleKey"`
+	BundleKey   string `json:"bundleKey"` // key used for internationalization
 	Parent      string `json:"parent"`
 	RightsCount struct {
 		View   int `json:"view"`
@@ -251,7 +251,7 @@ type RightsBundle struct {
 	Name        string `json:"name"`
 	Id          string `json:"id"`
 	Description string `json:"description,omitempty"`
-	BundleKey   string `json:"bundleKey,omitempty"`
+	BundleKey   string `json:"bundleKey,omitempty"` // key used for internationalization
 	ReadOnly    bool   `json:"readOnly"`
 	PublishAll  *bool  `json:"publishAll"`
 }
@@ -263,7 +263,7 @@ type GlobalRole struct {
 	Name        string `json:"name"`
 	Id          string `json:"id"`
 	Description string `json:"description,omitempty"`
-	BundleKey   string `json:"bundleKey,omitempty"`
+	BundleKey   string `json:"bundleKey,omitempty"` // key used for internationalization
 	ReadOnly    bool   `json:"readOnly"`
 	PublishAll  *bool  `json:"publishAll"`
 }

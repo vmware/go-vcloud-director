@@ -1,7 +1,7 @@
 package govcd
 
 /*
- * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 import (
@@ -126,6 +126,10 @@ func (adminOrg *AdminOrg) CreateRole(newRole *types.Role) (*Role, error) {
 	minimumApiVersion, err := adminOrg.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
+	}
+
+	if newRole.BundleKey == "" {
+		newRole.BundleKey = types.VcloudUndefinedKey
 	}
 
 	urlRef, err := adminOrg.client.OpenApiBuildEndpoint(endpoint)

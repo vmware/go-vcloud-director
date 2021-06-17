@@ -118,6 +118,9 @@ func (client *Client) CreateGlobalRole(newGlobalRole *types.GlobalRole) (*Global
 		return nil, err
 	}
 
+	if newGlobalRole.BundleKey == "" {
+		newGlobalRole.BundleKey = types.VcloudUndefinedKey
+	}
 	if newGlobalRole.PublishAll == nil {
 		newGlobalRole.PublishAll = takeBoolPointer(false)
 	}
