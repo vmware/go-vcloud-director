@@ -60,6 +60,8 @@ BREAKING CHANGES:
 * Added parameter `additionalHeader map[string]string` to functions `Client.OpenApiDeleteItem`, `Client.OpenApiGetAllItems`,
   `Client.OpenApiGetItem`, `Client.OpenApiPostItem`, `Client.OpenApiPutItem`, `Client.OpenApiPutItemAsync`,
   `Client.OpenApiPutItemSync` [#380](https://github.com/vmware/go-vcloud-director/pull/380)
+* Renamed functions `GetOpenApiRoleById` -> `GetRoleById`, `GetOpenApiRoleByName` -> `GetRoleByName`, 
+  `GetAllOpenApiRoles` -> `GetAllRoles` [#380](https://github.com/vmware/go-vcloud-director/pull/380)
 
 IMPROVEMENTS:
 * Only send xml.Header when payload is not empty (some WAFs block empty requests with XML header) 
