@@ -475,7 +475,7 @@ func (vcd *TestVCD) Test_AdminOrgCreateCatalogWithStorageProfile(check *C) {
 	check.Assert(err, IsNil)
 }
 
-// Tests createCatalog by creating a catalog using an Org and
+// Tests CreateCatalog by creating a catalog using an Org and
 // asserts that the catalog returned contains the right contents or if it fails.
 // Then Deletes the catalog.
 func (vcd *TestVCD) Test_OrgCreateCatalog(check *C) {

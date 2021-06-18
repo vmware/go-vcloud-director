@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -91,5 +91,4 @@ func (adminCatalog *AdminCatalog) Refresh() error {
 // getOrgInfo finds the organization to which the admin catalog belongs, and returns its name and ID
 func (adminCatalog *AdminCatalog) getOrgInfo() (*TenantContext, error) {
 	return adminCatalog.getTenantContext()
-	//return getOrgInfo(adminCatalog.client, adminCatalog.AdminCatalog.Link, adminCatalog.AdminCatalog.ID, adminCatalog.AdminCatalog.Name, "AdminCatalog")
 }

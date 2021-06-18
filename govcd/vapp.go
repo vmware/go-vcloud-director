@@ -1375,7 +1375,6 @@ func (vapp *VApp) getOrgInfo() (*TenantContext, error) {
 		return nil, err
 	}
 	return vdc.getTenantContext()
-	//return getOrgInfo(vapp.client, vdc.Vdc.Link, vapp.VApp.ID, vapp.VApp.Name, "vApp")
 }
 
 // UpdateNameDescription can change the name and the description of a vApp

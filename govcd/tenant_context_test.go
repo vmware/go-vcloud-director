@@ -203,7 +203,6 @@ func (vcd *TestVCD) Test_TenantContext(check *C) {
 	role, err := adminOrg.GetRoleByName("vApp Author")
 	check.Assert(err, IsNil)
 	check.Assert(role, NotNil)
-	//roleTenantContext := role.TenantContext
 	checkTenantContext(check, "role by name", role.TenantContext, adminOrgTenantContext)
 
 	roleById, err := adminOrg.GetRoleById(role.Role.ID)

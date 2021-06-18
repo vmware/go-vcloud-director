@@ -659,7 +659,7 @@ func (client *Client) newOpenApiRequest(apiVersion string, params url.Values, me
 
 	for k, v := range client.customHeader {
 		for _, v1 := range v {
-			req.Header.Add(k, v1)
+			req.Header.Set(k, v1)
 		}
 	}
 	for k, v := range additionalHeader {
