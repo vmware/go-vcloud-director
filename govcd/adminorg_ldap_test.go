@@ -206,7 +206,7 @@ func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) (string,
 	vappTemplate, err := catalogItem.GetVAppTemplate()
 	check.Assert(err, IsNil)
 	// Compose Raw vApp
-	vapp, err := vdc.CreateRawVApp(vAppName, "", false, false)
+	vapp, err := vdc.CreateRawVApp(vAppName, "")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 	// vApp was created - adding it to cleanup list (using prepend to remove it before direct
