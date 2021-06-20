@@ -8,7 +8,6 @@ package govcd
 
 import (
 	"fmt"
-	"time"
 
 	. "gopkg.in/check.v1"
 
@@ -216,36 +215,6 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	check.Assert(err, NotNil)
 	check.Assert(noSuchVapp, IsNil)
 
-}
-
-func (vcd *TestVCD) Test_ComposeRawVApp(check *C) {
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	vappName := check.TestName()
-	vappDescription := vappName + " desc"
-	// Compose VApp
-	err := vcd.vdc.ComposeRawVApp(vappName, vappDescription)
-	check.Assert(err, IsNil)
-
-	// Need a slight delay for the vApp to get the links that are needed for renaming
-	time.Sleep(time.Second)
-	// Get VApp
-	vapp, err := vcd.vdc.GetVAppByName(vappName, true)
-	check.Assert(err, IsNil)
-	AddToCleanupList(vappName, "vapp", "", "Test_ComposeRawVApp")
-	check.Assert(vapp.VApp.Name, Equals, vappName)
-	check.Assert(vapp.VApp.Description, Equals, vappDescription)
-	newVappName := vappName + "_new"
-	newVappDescription := vappDescription + " description"
-
-	err = vapp.UpdateNameDescription(newVappName, newVappDescription)
-	check.Assert(err, IsNil)
-	AddToCleanupList(newVappName, "vapp", "", "Test_ComposeRawVApp")
-	check.Assert(vapp.VApp.Name, Equals, newVappName)
-	check.Assert(vapp.VApp.Description, Equals, newVappDescription)
-
-	err = deleteVapp(vcd, newVappName)
-	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_FindVApp(check *C) {
@@ -493,4 +462,23 @@ func (vcd *TestVCD) TestVdcIsNsxt(check *C) {
 
 func (vcd *TestVCD) TestVdcIsNsxv(check *C) {
 	check.Assert(vcd.vdc.IsNsxv(), Equals, true)
+}
+
+func (vcd *TestVCD) TestCreateRawVapp(check *C) {
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	name := check.TestName()
+	description := "test compose raw app"
+	vapp, err := vdc.CreateRawVApp(name, description)
+	check.Assert(err, IsNil)
+	AddToCleanupList(name, "vapp", vdc.Vdc.Name, name)
+
+	check.Assert(vapp.VApp.Name, Equals, name)
+	check.Assert(vapp.VApp.Description, Equals, description)
 }

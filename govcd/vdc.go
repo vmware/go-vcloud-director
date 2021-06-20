@@ -464,6 +464,8 @@ func (vdc *Vdc) GetEdgeGatewayByNameOrId(identifier string, refresh bool) (*Edge
 	return entity.(*EdgeGateway), err
 }
 
+// ComposeRawVApp creates an empty vApp
+// Deprecated: use CreateRawVApp instead
 func (vdc *Vdc) ComposeRawVApp(name string, description string) error {
 	vcomp := &types.ComposeVAppParams{
 		Ovf:         types.XMLNamespaceOVF,
@@ -481,6 +483,7 @@ func (vdc *Vdc) ComposeRawVApp(name string, description string) error {
 	}
 	vdcHref.Path += "/action/composeVApp"
 
+	// This call is wrong: /action/composeVApp returns a vApp, not a task
 	task, err := vdc.client.ExecuteTaskRequest(vdcHref.String(), http.MethodPost,
 		types.MimeComposeVappParams, "error instantiating a new vApp:: %s", vcomp)
 	if err != nil {
@@ -493,6 +496,61 @@ func (vdc *Vdc) ComposeRawVApp(name string, description string) error {
 	}
 
 	return nil
+}
+
+// CreateRawVApp creates an empty vApp
+func (vdc *Vdc) CreateRawVApp(name string, description string) (*VApp, error) {
+	vcomp := &types.ComposeVAppParams{
+		Ovf:         types.XMLNamespaceOVF,
+		Xsi:         types.XMLNamespaceXSI,
+		Xmlns:       types.XMLNamespaceVCloud,
+		Deploy:      false,
+		Name:        name,
+		PowerOn:     false,
+		Description: description,
+	}
+
+	vdcHref, err := url.ParseRequestURI(vdc.Vdc.HREF)
+	if err != nil {
+		return nil, fmt.Errorf("error getting vdc href: %s", err)
+	}
+	vdcHref.Path += "/action/composeVApp"
+
+	var vAppContents types.VApp
+
+	_, err = vdc.client.ExecuteRequest(vdcHref.String(), http.MethodPost,
+		types.MimeComposeVappParams, "error instantiating a new vApp:: %s", vcomp, &vAppContents)
+	if err != nil {
+		return nil, fmt.Errorf("error executing task request: %s", err)
+	}
+
+	if vAppContents.Tasks != nil {
+		for _, innerTask := range vAppContents.Tasks.Task {
+			if innerTask != nil {
+
+				task := NewTask(vdc.client)
+				task.Task = innerTask
+				err = task.WaitTaskCompletion()
+				if err != nil {
+					return nil, fmt.Errorf("error performing task: %s", err)
+				}
+			}
+		}
+	}
+
+	vapp := NewVApp(vdc.client)
+	vapp.VApp = &vAppContents
+
+	err = vapp.Refresh()
+	if err != nil {
+		return nil, err
+	}
+
+	err = vdc.Refresh()
+	if err != nil {
+		return nil, err
+	}
+	return vapp, nil
 }
 
 // ComposeVApp creates a vapp with the given template, name, and description
