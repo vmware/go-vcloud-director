@@ -557,6 +557,7 @@ func (vdc *Vdc) CreateRawVApp(name string, description string) (*VApp, error) {
 // that uses the storageprofile and networks given. If you want all eulas
 // to be accepted set acceptalleulas to true. Returns a successful task
 // if completed successfully, otherwise returns an error and an empty task.
+// Deprecated: bad implementation
 func (vdc *Vdc) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate VAppTemplate, storageprofileref types.Reference, name string, description string, acceptalleulas bool) (Task, error) {
 	if vapptemplate.VAppTemplate.Children == nil || orgvdcnetworks == nil {
 		return Task{}, fmt.Errorf("can't compose a new vApp, objects passed are not valid")
@@ -638,6 +639,9 @@ func (vdc *Vdc) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate 
 	}
 	vdcHref.Path += "/action/composeVApp"
 
+	// Like ComposeRawVApp, this function returns a task, while it should be returning a vApp
+	// Since we don't use this function in terraform-provider-vcd, we are not going to
+	// replace it.
 	return vdc.client.ExecuteTaskRequest(vdcHref.String(), http.MethodPost,
 		types.MimeComposeVappParams, "error instantiating a new vApp: %s", vcomp)
 }
