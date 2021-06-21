@@ -14,7 +14,6 @@ import (
 type GlobalRole struct {
 	GlobalRole *types.GlobalRole
 	client     *Client
-	rights     []*types.Right
 }
 
 // GetAllGlobalRoles retrieves all global roles. Query parameters can be supplied to perform additional filtering
@@ -246,7 +245,7 @@ func publishContainerToTenants(client *Client, containerType, name, id, endpoint
 		operation = "/tenants/publish"
 		action = client.OpenApiPostItem
 	case "replace":
-		operation = "/tenants/publish"
+		operation = "/tenants"
 		action = client.OpenApiPutItem
 	case "remove":
 		operation = "/tenants/unpublish"

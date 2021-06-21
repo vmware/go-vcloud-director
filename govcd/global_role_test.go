@@ -19,6 +19,7 @@ type rightsProviderCollection interface {
 	PublishTenants([]types.OpenApiReference) error
 	UnpublishTenants([]types.OpenApiReference) error
 	GetTenants(queryParameters url.Values) ([]types.OpenApiReference, error)
+	ReplacePublishedTenants([]types.OpenApiReference) error
 }
 
 func (vcd *TestVCD) Test_GlobalRoles(check *C) {
@@ -161,6 +162,35 @@ func testRightsContainerTenants(vcd *TestVCD, check *C, rpc rightsProviderCollec
 	check.Assert(err, IsNil)
 
 	tenants, err := rpc.GetTenants(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(tenants), Equals, 2)
+
+	check.Assert(foundOrg(vcd.org.Org.Name, vcd.org.Org.ID, tenants), Equals, true)
+	check.Assert(foundOrg(newOrg.AdminOrg.Name, newOrg.AdminOrg.ID, tenants), Equals, true)
+
+	err = rpc.UnpublishTenants(tenants)
+	check.Assert(err, IsNil)
+	tenants, err = rpc.GetTenants(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(tenants), Equals, 0)
+
+	err = rpc.PublishTenants([]types.OpenApiReference{
+		{ID: vcd.org.Org.ID, Name: vcd.org.Org.Name},
+	})
+	check.Assert(err, IsNil)
+
+	tenants, err = rpc.GetTenants(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(tenants), Equals, 1)
+
+	check.Assert(foundOrg(vcd.org.Org.Name, vcd.org.Org.ID, tenants), Equals, true)
+
+	err = rpc.ReplacePublishedTenants([]types.OpenApiReference{
+		{ID: vcd.org.Org.ID, Name: vcd.org.Org.Name},
+		{ID: newOrg.AdminOrg.ID, Name: newOrg.AdminOrg.Name},
+	})
+	check.Assert(err, IsNil)
+	tenants, err = rpc.GetTenants(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(tenants), Equals, 2)
 

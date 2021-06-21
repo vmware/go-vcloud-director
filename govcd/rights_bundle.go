@@ -18,7 +18,7 @@ type RightsBundle struct {
 // CreateRightsBundle creates a new rights bundle as a system administrator
 func (client *Client) CreateRightsBundle(newRightsBundle *types.RightsBundle) (*RightsBundle, error) {
 	if !client.IsSysAdmin {
-		return nil, fmt.Errorf("only system administrator can handle global roles")
+		return nil, fmt.Errorf("only system administrator can handle rights bundles")
 	}
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRightsBundles
 	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
@@ -84,7 +84,7 @@ func (rb *RightsBundle) Update() (*RightsBundle, error) {
 // filtering
 func getAllRightsBundles(client *Client, queryParameters url.Values, additionalHeader map[string]string) ([]*RightsBundle, error) {
 	if !client.IsSysAdmin {
-		return nil, fmt.Errorf("only system administrator can handle global roles")
+		return nil, fmt.Errorf("only system administrator can handle rights bundles")
 	}
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRightsBundles
 	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
@@ -172,7 +172,7 @@ func (rb *RightsBundle) UnpublishTenants(tenants []types.OpenApiReference) error
 
 // ReplacePublishedTenants publishes a rights bundle to one or more tenants, removing the tenants already present
 func (rb *RightsBundle) ReplacePublishedTenants(tenants []types.OpenApiReference) error {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointGlobalRoles
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRightsBundles
 	return publishContainerToTenants(rb.client, "RightsBundle", rb.RightsBundle.Name, rb.RightsBundle.Id, endpoint, tenants, "replace")
 }
 

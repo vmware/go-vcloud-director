@@ -15,7 +15,6 @@ import (
 type Role struct {
 	Role          *types.Role
 	client        *Client
-	rights        []*types.Right
 	TenantContext *TenantContext
 }
 
