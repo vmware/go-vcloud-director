@@ -199,7 +199,7 @@ func (client *Client) GetAllRightsCategories(queryParameters url.Values) ([]*typ
 	return getAllRightsCategories(client, queryParameters, nil)
 }
 
-// GetAllRightsCategories retrieves all rights. Query parameters can be supplied to perform additional
+// GetAllRightsCategories retrieves all rights categories. Query parameters can be supplied to perform additional
 // filtering
 func (adminOrg *AdminOrg) GetAllRightsCategories(queryParameters url.Values) ([]*types.RightsCategory, error) {
 	tenantContext, err := adminOrg.getTenantContext()
@@ -217,7 +217,7 @@ func getRightCategoryById(client *Client, id string, additionalHeader map[string
 	}
 
 	if id == "" {
-		return nil, fmt.Errorf("empty role id")
+		return nil, fmt.Errorf("empty category id")
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(endpoint, id)
@@ -233,4 +233,18 @@ func getRightCategoryById(client *Client, id string, additionalHeader map[string
 	}
 
 	return rightsCategory, nil
+}
+
+// GetRightsCategoryById retrieves a rights category from its ID
+func (adminOrg *AdminOrg) GetRightsCategoryById(id string) (*types.RightsCategory, error) {
+	tenantContext, err := adminOrg.getTenantContext()
+	if err != nil {
+		return nil, err
+	}
+	return getRightCategoryById(adminOrg.client, id, getTenantContextHeader(tenantContext))
+}
+
+// GetRightsCategoryById retrieves a rights category from its ID
+func (client *Client) GetRightsCategoryById(id string) (*types.RightsCategory, error) {
+	return getRightCategoryById(client, id, nil)
 }

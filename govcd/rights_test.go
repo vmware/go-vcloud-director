@@ -100,6 +100,9 @@ func (vcd *TestVCD) Test_Rights(check *C) {
 		searchRight(adminOrg.client, name, "", check)
 	}
 
+	rightsCategories, err := adminOrg.client.GetAllRightsCategories(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(rightsCategories) > 0, Equals, true)
 }
 
 func searchRight(client *Client, name, id string, check *C) {
@@ -110,5 +113,8 @@ func searchRight(client *Client, name, id string, check *C) {
 		fullRightById, err := client.GetRightById(id)
 		check.Assert(err, IsNil)
 		check.Assert(fullRightById, NotNil)
+		category, err := client.GetRightsCategoryById(fullRightById.Category)
+		check.Assert(err, IsNil)
+		check.Assert(fullRightById.Category, Equals, category.Id)
 	}
 }
