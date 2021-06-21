@@ -1827,7 +1827,7 @@ func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint string) {
 }
 
 // newOrgUserConnection creates a new Org User and returns a connection to it
-// For future usage: Allows writing tests that require multiple users
+//lint:ignore U1000 For future usage - Allows writing tests that require multiple users
 func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, insecure bool) (*VCDClient, error) {
 	u, err := url.ParseRequestURI(href)
 	if err != nil {

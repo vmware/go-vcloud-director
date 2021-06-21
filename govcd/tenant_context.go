@@ -24,12 +24,14 @@ type organization interface {
 	fullObject() interface{}
 }
 
+//lint:ignore U1000 for future usage
 type genericVdc interface {
 	vdcId() string
 	vdcName() string
 	vdcParent() interface{}
 }
 
+//lint:ignore U1000 for future usage
 type genericCatalog interface {
 	catalogId() string
 	catalogName() string
