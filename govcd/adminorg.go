@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -23,8 +23,9 @@ import (
 // elements that can be viewed and modified only by system administrators.
 // Definition: https://code.vmware.com/apis/220/vcloud#/doc/doc/types/AdminOrgType.html
 type AdminOrg struct {
-	AdminOrg *types.AdminOrg
-	client   *Client
+	AdminOrg      *types.AdminOrg
+	client        *Client
+	TenantContext *TenantContext
 }
 
 func NewAdminOrg(cli *Client) *AdminOrg {
@@ -39,7 +40,12 @@ func NewAdminOrg(cli *Client) *AdminOrg {
 // task.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-CreateCatalog.html
 func (adminOrg *AdminOrg) CreateCatalog(name, description string) (AdminCatalog, error) {
-	return CreateCatalog(adminOrg.client, adminOrg.AdminOrg.Link, name, description)
+	catalog, err := adminOrg.CreateCatalogWithStorageProfile(name, description, nil)
+	if err != nil {
+		return AdminCatalog{}, err
+	}
+	catalog.parent = adminOrg
+	return *catalog, nil
 }
 
 // CreateCatalogWithStorageProfile is like CreateCatalog, but allows to specify storage profile
@@ -274,6 +280,8 @@ func (adminOrg *AdminOrg) getVdcByAdminHREF(adminVdcUrl *url.URL) (*Vdc, error) 
 
 	vdc := NewVdc(adminOrg.client)
 
+	vdc.parent = adminOrg
+
 	_, err := adminOrg.client.ExecuteRequest(vdcURL.String(), http.MethodGet,
 		"", "error retrieving vdc: %s", nil, vdc.Vdc)
 
@@ -470,6 +478,7 @@ func (adminOrg *AdminOrg) GetCatalogByHref(catalogHref string) (*Catalog, error)
 	if err != nil {
 		return nil, err
 	}
+	cat.parent = adminOrg
 	// The request was successful
 	return cat, nil
 }
@@ -577,6 +586,7 @@ func (adminOrg *AdminOrg) GetAdminCatalogByHref(catalogHref string) (*AdminCatal
 		return nil, err
 	}
 
+	adminCatalog.parent = adminOrg
 	// The request was successful
 	return adminCatalog, nil
 }
@@ -656,6 +666,7 @@ func (adminOrg *AdminOrg) GetVDCByHref(vdcHref string) (*Vdc, error) {
 	if err != nil {
 		return nil, err
 	}
+	vdc.parent = adminOrg
 
 	return vdc, nil
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -16,8 +16,9 @@ import (
 )
 
 type Org struct {
-	Org    *types.Org
-	client *Client
+	Org           *types.Org
+	client        *Client
+	TenantContext *TenantContext
 }
 
 func NewOrg(client *Client) *Org {
@@ -81,6 +82,7 @@ func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
 	for _, link := range org.Org.Link {
 		if link.Name == vdcname {
 			vdc := NewVdc(org.client)
+			vdc.parent = org
 
 			_, err := org.client.ExecuteRequest(link.HREF, http.MethodGet,
 				"", "error retrieving vdc: %s", nil, vdc.Vdc)
@@ -210,6 +212,7 @@ func (org *Org) GetCatalogByHref(catalogHref string) (*Catalog, error) {
 		return nil, err
 	}
 	// The request was successful
+	cat.parent = org
 	return cat, nil
 }
 
@@ -276,6 +279,7 @@ func (org *Org) GetVDCByHref(vdcHref string) (*Vdc, error) {
 		return nil, err
 	}
 	// The request was successful
+	vdc.parent = org
 	return vdc, nil
 }
 

@@ -334,6 +334,10 @@ const (
 const (
 	OpenApiPathVersion1_0_0                   = "1.0.0/"
 	OpenApiEndpointRoles                      = "roles/"
+	OpenApiEndpointGlobalRoles                = "globalRoles/"
+	OpenApiEndpointRights                     = "rights/"
+	OpenApiEndpointRightsCategories           = "rightsCategories/"
+	OpenApiEndpointRightsBundles              = "rightsBundles/"
 	OpenApiEndpointAuditTrail                 = "auditTrail/"
 	OpenApiEndpointImportableTier0Routers     = "nsxTResources/importableTier0Routers"
 	OpenApiEndpointImportableSwitches         = "/network/orgvdcnetworks/importableswitches"
@@ -427,4 +431,9 @@ const (
 	ApplicationPortProfileScopeProvider = "PROVIDER"
 	// ApplicationPortProfileScopeTenant allows user to read and set Application Port Profiles at Org VDC level.
 	ApplicationPortProfileScopeTenant = "TENANT"
+)
+
+const (
+	// VcloudUndefinedKey is the bundles key automatically added to new role related objects
+	VcloudUndefinedKey = "com.vmware.vcloud.undefined.key"
 )

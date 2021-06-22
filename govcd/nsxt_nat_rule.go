@@ -46,7 +46,7 @@ func (egw *NsxtEdgeGateway) GetAllNatRules(queryParameters url.Values) ([]*NsxtN
 	}
 
 	typeResponses := []*types.NsxtNatRule{{}}
-	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses)
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +186,7 @@ func (nsxtNat *NsxtNatRule) Update(natRuleConfig *types.NsxtNatRule) (*NsxtNatRu
 		edgeGatewayId: nsxtNat.edgeGatewayId,
 	}
 
-	err = client.OpenApiPutItem(apiVersion, urlRef, nil, natRuleConfig, returnObject.NsxtNatRule)
+	err = client.OpenApiPutItem(apiVersion, urlRef, nil, natRuleConfig, returnObject.NsxtNatRule, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error updating NSX-T NAT Rule: %s", err)
 	}
@@ -214,7 +214,7 @@ func (nsxtNat *NsxtNatRule) Delete() error {
 		return err
 	}
 
-	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil)
+	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting NSX-T NAT Rule: %s", err)

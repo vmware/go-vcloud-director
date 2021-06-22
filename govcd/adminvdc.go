@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -17,6 +17,7 @@ import (
 type AdminVdc struct {
 	AdminVdc *types.AdminVdc
 	client   *Client
+	parent   organization
 }
 
 func NewAdminVdc(cli *Client) *AdminVdc {
@@ -83,6 +84,7 @@ func (adminOrg *AdminOrg) GetAdminVdcByName(vdcname string) (AdminVdc, error) {
 // GetAdminVDCByHref retrieves a VDC using a direct call with the HREF
 func (adminOrg *AdminOrg) GetAdminVDCByHref(vdcHref string) (*AdminVdc, error) {
 	adminVdc := NewAdminVdc(adminOrg.client)
+	adminVdc.parent = adminOrg
 	_, err := adminOrg.client.ExecuteRequest(vdcHref, http.MethodGet,
 		"", "error getting vdc: %s", nil, adminVdc.AdminVdc)
 
