@@ -42,7 +42,7 @@ func (egw *NsxtEdgeGateway) UpdateNsxtFirewall(firewallRules *types.NsxtFirewall
 		edgeGatewayId:             egw.EdgeGateway.ID,
 	}
 
-	err = client.OpenApiPutItem(minimumApiVersion, urlRef, nil, firewallRules, returnObject.NsxtFirewallRuleContainer)
+	err = client.OpenApiPutItem(minimumApiVersion, urlRef, nil, firewallRules, returnObject.NsxtFirewallRuleContainer, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error setting NSX-T Firewall: %s", err)
 	}
@@ -71,7 +71,7 @@ func (egw *NsxtEdgeGateway) GetNsxtFirewall() (*NsxtFirewall, error) {
 		edgeGatewayId:             egw.EdgeGateway.ID,
 	}
 
-	err = client.OpenApiGetItem(minimumApiVersion, urlRef, nil, returnObject.NsxtFirewallRuleContainer)
+	err = client.OpenApiGetItem(minimumApiVersion, urlRef, nil, returnObject.NsxtFirewallRuleContainer, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving NSX-T Firewall rules: %s", err)
 	}
@@ -100,7 +100,7 @@ func (firewall *NsxtFirewall) DeleteAll() error {
 		return err
 	}
 
-	err = firewall.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil)
+	err = firewall.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting all NSX-T Firewall Rules: %s", err)
@@ -126,7 +126,7 @@ func (firewall *NsxtFirewall) DeleteById(id string) error {
 		return err
 	}
 
-	err = firewall.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil)
+	err = firewall.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting NSX-T Firewall Rule with ID '%s': %s", id, err)
