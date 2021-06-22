@@ -20,6 +20,7 @@ import (
 type Vdc struct {
 	Vdc    *types.Vdc
 	client *Client
+	parent organization
 }
 
 func NewVdc(cli *Client) *Vdc {
@@ -1101,7 +1102,7 @@ func (vdc *Vdc) GetCapabilities() ([]types.VdcCapability, error) {
 	}
 
 	capabilities := make([]types.VdcCapability, 0)
-	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, nil, &capabilities)
+	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, nil, &capabilities, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1141,4 +1142,30 @@ func getCapabilityValue(capabilities []types.VdcCapability, fieldName string) st
 	}
 
 	return ""
+}
+
+func (vdc *Vdc) getParentOrg() (organization, error) {
+	for _, vdcLink := range vdc.Vdc.Link {
+		if vdcLink.Rel != "up" {
+			continue
+		}
+		switch vdcLink.Type {
+		case types.MimeOrg:
+			org, err := getOrgByHref(vdc.client, vdcLink.HREF)
+			if err != nil {
+				return nil, err
+			}
+			return org, nil
+		case types.MimeAdminOrg:
+			adminOrg, err := getAdminOrgByHref(vdc.client, vdcLink.HREF)
+			if err != nil {
+				return nil, err
+			}
+			return adminOrg, nil
+
+		default:
+			continue
+		}
+	}
+	return nil, fmt.Errorf("no parent found for VDC %s", vdc.Vdc.Name)
 }

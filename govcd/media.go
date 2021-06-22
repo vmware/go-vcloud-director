@@ -526,6 +526,7 @@ func (cat *Catalog) GetMediaByNameOrId(identifier string, refresh bool) (*Media,
 func (adminCatalog *AdminCatalog) GetMediaByHref(mediaHref string) (*Media, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
+	catalog.parent = adminCatalog.parent
 	return catalog.GetMediaByHref(mediaHref)
 }
 
@@ -535,6 +536,7 @@ func (adminCatalog *AdminCatalog) GetMediaByHref(mediaHref string) (*Media, erro
 func (adminCatalog *AdminCatalog) GetMediaByName(mediaName string, refresh bool) (*Media, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
+	catalog.parent = adminCatalog.parent
 	return catalog.GetMediaByName(mediaName, refresh)
 }
 
@@ -544,6 +546,7 @@ func (adminCatalog *AdminCatalog) GetMediaByName(mediaName string, refresh bool)
 func (adminCatalog *AdminCatalog) GetMediaById(mediaId string) (*Media, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
+	catalog.parent = adminCatalog.parent
 	return catalog.GetMediaById(mediaId)
 }
 
@@ -553,6 +556,7 @@ func (adminCatalog *AdminCatalog) GetMediaById(mediaId string) (*Media, error) {
 func (adminCatalog *AdminCatalog) GetMediaByNameOrId(identifier string, refresh bool) (*Media, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
+	catalog.parent = adminCatalog.parent
 	return catalog.GetMediaByNameOrId(identifier, refresh)
 }
 
@@ -606,6 +610,7 @@ func (catalog *Catalog) QueryMedia(mediaName string) (*MediaRecord, error) {
 func (adminCatalog *AdminCatalog) QueryMedia(mediaName string) (*MediaRecord, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
+	catalog.parent = adminCatalog.parent
 	return catalog.QueryMedia(mediaName)
 }
 

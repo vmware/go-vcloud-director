@@ -182,7 +182,7 @@ func (firewallGroup *NsxtFirewallGroup) Update(firewallGroupConfig *types.NsxtFi
 		client:            firewallGroup.client,
 	}
 
-	err = firewallGroup.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, firewallGroupConfig, returnObject.NsxtFirewallGroup)
+	err = firewallGroup.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, firewallGroupConfig, returnObject.NsxtFirewallGroup, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error updating NSX-T firewall group: %s", err)
 	}
@@ -207,7 +207,7 @@ func (firewallGroup *NsxtFirewallGroup) Delete() error {
 		return err
 	}
 
-	err = firewallGroup.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil)
+	err = firewallGroup.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting NSX-T Firewall Group: %s", err)
@@ -243,7 +243,7 @@ func (firewallGroup *NsxtFirewallGroup) GetAssociatedVms() ([]*types.NsxtFirewal
 
 	associatedVms := []*types.NsxtFirewallGroupMemberVms{{}}
 
-	err = firewallGroup.client.OpenApiGetAllItems(minimumApiVersion, urlRef, nil, &associatedVms)
+	err = firewallGroup.client.OpenApiGetAllItems(minimumApiVersion, urlRef, nil, &associatedVms, nil)
 
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving associated VMs: %s", err)
@@ -310,7 +310,7 @@ func getNsxtFirewallGroupById(client *Client, id string) (*NsxtFirewallGroup, er
 		client:            client,
 	}
 
-	err = client.OpenApiGetItem(minimumApiVersion, urlRef, nil, fwGroup.NsxtFirewallGroup)
+	err = client.OpenApiGetItem(minimumApiVersion, urlRef, nil, fwGroup.NsxtFirewallGroup, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -333,7 +333,7 @@ func getAllNsxtFirewallGroups(client *Client, queryParameters url.Values) ([]*Ns
 	}
 
 	typeResponses := []*types.NsxtFirewallGroup{{}}
-	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &typeResponses)
+	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &typeResponses, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -367,7 +367,7 @@ func createNsxtFirewallGroup(client *Client, firewallGroupConfig *types.NsxtFire
 		client:            client,
 	}
 
-	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, firewallGroupConfig, returnObject.NsxtFirewallGroup)
+	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, firewallGroupConfig, returnObject.NsxtFirewallGroup, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating NSX-T Firewall Group: %s", err)
 	}
