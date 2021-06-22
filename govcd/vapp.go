@@ -62,7 +62,7 @@ type DhcpSettings struct {
 // Returns the vdc where the vapp resides in.
 func (vapp *VApp) getParentVDC() (Vdc, error) {
 	for _, link := range vapp.VApp.Link {
-		if link.Type == "application/vnd.vmware.vcloud.vdc+xml" {
+		if (link.Type == types.MimeVDC || link.Type == types.MimeAdminVDC) && link.Rel == "up" {
 
 			vdc := NewVdc(vapp.client)
 
@@ -72,6 +72,11 @@ func (vapp *VApp) getParentVDC() (Vdc, error) {
 				return Vdc{}, err
 			}
 
+			parent, err := vdc.getParentOrg()
+			if err != nil {
+				return Vdc{}, err
+			}
+			vdc.parent = parent
 			return *vdc, nil
 		}
 	}
@@ -1359,18 +1364,17 @@ func (client *Client) QueryVappList() ([]*types.QueryResultVAppRecordType, error
 }
 
 // getOrgInfo finds the organization to which the vApp belongs (through the VDC), and returns its name and ID
-func (vapp *VApp) getOrgInfo() (orgInfoType, error) {
+func (vapp *VApp) getOrgInfo() (*TenantContext, error) {
 	previous, exists := orgInfoCache[vapp.VApp.ID]
 	if exists {
 		return previous, nil
 	}
-	//var orgHref string
 	var err error
 	vdc, err := vapp.getParentVDC()
 	if err != nil {
-		return orgInfoType{}, err
+		return nil, err
 	}
-	return getOrgInfo(vapp.client, vdc.Vdc.Link, vapp.VApp.ID, vapp.VApp.Name, "vApp")
+	return vdc.getTenantContext()
 }
 
 // UpdateNameDescription can change the name and the description of a vApp
@@ -1435,4 +1439,12 @@ func (vapp *VApp) UpdateDescription(newDescription string) error {
 // Rename changes the name of a vApp
 func (vapp *VApp) Rename(newName string) error {
 	return vapp.UpdateNameDescription(newName, vapp.VApp.Description)
+}
+
+func (vapp *VApp) getTenantContext() (*TenantContext, error) {
+	parentVdc, err := vapp.getParentVDC()
+	if err != nil {
+		return nil, err
+	}
+	return parentVdc.getTenantContext()
 }
