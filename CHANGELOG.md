@@ -30,7 +30,8 @@
 * Removed deprecated method `adminOrg.GetRole`  
 
 * Added Tenant Context management functions `Client.RemoveCustomHeader`, `Client.SetCustomHeader`, `WithHttpHeader`, 
-  and many private methods to retrieve tenant context down the hierarchy. [#380](https://github.com/vmware/go-vcloud-director/pull/380)
+  and many private methods to retrieve tenant context down the hierarchy. More details in `CODING_GUIDELINES.md`
+  [#380](https://github.com/vmware/go-vcloud-director/pull/380)
 * Added Rights management methods `AdminOrg.GetAllRights`, `AdminOrg.GetAllRightsCategories`, `AdminOrg.GetRightById`, 
   `AdminOrg.GetRightByName`, `Client.GetAllRights`, `Client.GetAllRightsCategories`, `Client.GetRightById`, 
   `Client.GetRightByName`, `client.GetRightsCategoryById`, `AdminOrg.GetRightsCategoryById` [#380](https://github.com/vmware/go-vcloud-director/pull/380)

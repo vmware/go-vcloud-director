@@ -194,13 +194,13 @@ func (globalRole *GlobalRole) Delete() error {
 
 // getContainerTenants retrieves all tenants associated with a given rights container (Global Role, Rights Bundle).
 // Query parameters can be supplied to perform additional filtering
-func getContainerTenants(client *Client, containerId, endpoint string, queryParameters url.Values) ([]types.OpenApiReference, error) {
+func getContainerTenants(client *Client, rightsContainerId, endpoint string, queryParameters url.Values) ([]types.OpenApiReference, error) {
 	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint + containerId + "/tenants")
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint + rightsContainerId + "/tenants")
 	if err != nil {
 		return nil, err
 	}
@@ -267,7 +267,6 @@ func publishContainerToTenants(client *Client, containerType, name, id, endpoint
 	}
 	var pages types.OpenApiPages
 
-	//err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, &input, &pages, nil)
 	err = action(minimumApiVersion, urlRef, nil, &input, &pages, nil)
 
 	if err != nil {
@@ -328,12 +327,12 @@ func (globalRole *GlobalRole) UpdateRights(newRights []types.OpenApiReference) e
 }
 
 // RemoveRights removes specific rights from a global role
-func (globalRole *GlobalRole) RemoveRights(newRights []types.OpenApiReference) error {
+func (globalRole *GlobalRole) RemoveRights(removeRights []types.OpenApiReference) error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointGlobalRoles
-	return removeRightsFromRole(globalRole.client, "GlobalRole", globalRole.GlobalRole.Name, globalRole.GlobalRole.Id, endpoint, newRights, nil)
+	return removeRightsFromRole(globalRole.client, "GlobalRole", globalRole.GlobalRole.Name, globalRole.GlobalRole.Id, endpoint, removeRights, nil)
 }
 
-// RemoveAllRights removes specific rights from a global role
+// RemoveAllRights removes all rights from a global role
 func (globalRole *GlobalRole) RemoveAllRights() error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointGlobalRoles
 	return removeAllRightsFromRole(globalRole.client, "GlobalRole", globalRole.GlobalRole.Name, globalRole.GlobalRole.Id, endpoint, nil)

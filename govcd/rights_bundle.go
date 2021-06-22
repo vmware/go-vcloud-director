@@ -147,12 +147,12 @@ func (rb *RightsBundle) UpdateRights(newRights []types.OpenApiReference) error {
 }
 
 // RemoveRights removes specific rights from a rights bundle
-func (rb *RightsBundle) RemoveRights(newRights []types.OpenApiReference) error {
+func (rb *RightsBundle) RemoveRights(removeRights []types.OpenApiReference) error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRightsBundles
-	return removeRightsFromRole(rb.client, "RightsBundle", rb.RightsBundle.Name, rb.RightsBundle.Id, endpoint, newRights, nil)
+	return removeRightsFromRole(rb.client, "RightsBundle", rb.RightsBundle.Name, rb.RightsBundle.Id, endpoint, removeRights, nil)
 }
 
-// RemoveAllRights removes specific rights from a rights bundle
+// RemoveAllRights removes all rights from a rights bundle
 func (rb *RightsBundle) RemoveAllRights() error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRightsBundles
 	return removeAllRightsFromRole(rb.client, "RightsBundle", rb.RightsBundle.Name, rb.RightsBundle.Id, endpoint, nil)

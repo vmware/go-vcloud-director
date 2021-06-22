@@ -224,12 +224,12 @@ func (role *Role) UpdateRights(newRights []types.OpenApiReference) error {
 }
 
 // RemoveRights removes specific rights from a role
-func (role *Role) RemoveRights(newRights []types.OpenApiReference) error {
+func (role *Role) RemoveRights(removeRights []types.OpenApiReference) error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles
-	return removeRightsFromRole(role.client, "Role", role.Role.Name, role.Role.ID, endpoint, newRights, getTenantContextHeader(role.TenantContext))
+	return removeRightsFromRole(role.client, "Role", role.Role.Name, role.Role.ID, endpoint, removeRights, getTenantContextHeader(role.TenantContext))
 }
 
-// RemoveAllRights removes specific rights from a role
+// RemoveAllRights removes all rights from a role
 func (role *Role) RemoveAllRights() error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles
 	return removeAllRightsFromRole(role.client, "Role", role.Role.Name, role.Role.ID, endpoint, getTenantContextHeader(role.TenantContext))
