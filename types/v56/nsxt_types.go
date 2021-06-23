@@ -439,7 +439,7 @@ type NsxtNatRule struct {
 	// Logging enabled or disabled logging of that rule
 	Logging bool `json:"logging"`
 
-	// Below two fields are only supported in VCD 10.2.2+
+	// Below two fields are only supported in VCD 10.2.2+ (API v35.2)
 
 	// FirewallMatch determines how the firewall matches the address during NATing if firewall stage is not skipped.
 	// * MATCH_INTERNAL_ADDRESS indicates the firewall will be applied to internal address of a NAT rule. For SNAT, the

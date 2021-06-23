@@ -25,12 +25,18 @@ func (vcd *TestVCD) Test_NsxtNatDnat(check *C) {
 	appPortProfiles, err := org.GetAllNsxtAppPortProfiles(nil, types.ApplicationPortProfileScopeSystem)
 	check.Assert(err, IsNil)
 
+	edgeGatewayPrimaryIp := ""
+	if edge.EdgeGateway != nil && len(edge.EdgeGateway.EdgeGatewayUplinks) > 0 && len(edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values) > 0 {
+		edgeGatewayPrimaryIp = edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP
+	}
+	check.Assert(edgeGatewayPrimaryIp, Not(Equals), "")
+
 	natRuleDefinition := &types.NsxtNatRule{
 		Name:              check.TestName() + "dnat",
 		Description:       "description",
 		Enabled:           true,
 		RuleType:          types.NsxtNatRuleTypeDnat,
-		ExternalAddresses: edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
+		ExternalAddresses: edgeGatewayPrimaryIp,
 		InternalAddresses: "11.11.11.2",
 		ApplicationPortProfile: &types.OpenApiReference{
 			ID:   appPortProfiles[0].NsxtAppPortProfile.ID,
@@ -63,12 +69,18 @@ func (vcd *TestVCD) Test_NsxtNatDnatInternalPort(check *C) {
 	appPortProfiles, err := org.GetAllNsxtAppPortProfiles(nil, types.ApplicationPortProfileScopeSystem)
 	check.Assert(err, IsNil)
 
+	edgeGatewayPrimaryIp := ""
+	if edge.EdgeGateway != nil && len(edge.EdgeGateway.EdgeGatewayUplinks) > 0 && len(edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values) > 0 {
+		edgeGatewayPrimaryIp = edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP
+	}
+	check.Assert(edgeGatewayPrimaryIp, Not(Equals), "")
+
 	natRuleDefinition := &types.NsxtNatRule{
 		Name:              check.TestName() + "dnat",
 		Description:       "description",
 		Enabled:           true,
 		RuleType:          types.NsxtNatRuleTypeDnat,
-		ExternalAddresses: edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
+		ExternalAddresses: edgeGatewayPrimaryIp,
 		InternalAddresses: "11.11.11.2",
 		ApplicationPortProfile: &types.OpenApiReference{
 			ID:   appPortProfiles[0].NsxtAppPortProfile.ID,
@@ -101,12 +113,18 @@ func (vcd *TestVCD) Test_NsxtNatDnatExternalPortPort(check *C) {
 	appPortProfiles, err := org.GetAllNsxtAppPortProfiles(nil, types.ApplicationPortProfileScopeSystem)
 	check.Assert(err, IsNil)
 
+	edgeGatewayPrimaryIp := ""
+	if edge.EdgeGateway != nil && len(edge.EdgeGateway.EdgeGatewayUplinks) > 0 && len(edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values) > 0 {
+		edgeGatewayPrimaryIp = edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP
+	}
+	check.Assert(edgeGatewayPrimaryIp, Not(Equals), "")
+
 	natRuleDefinition := &types.NsxtNatRule{
 		Name:              check.TestName() + "dnat",
 		Description:       "description",
 		Enabled:           true,
 		RuleType:          types.NsxtNatRuleTypeDnat,
-		ExternalAddresses: edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
+		ExternalAddresses: edgeGatewayPrimaryIp,
 		InternalAddresses: "11.11.11.2",
 		ApplicationPortProfile: &types.OpenApiReference{
 			ID:   appPortProfiles[0].NsxtAppPortProfile.ID,
@@ -139,12 +157,18 @@ func (vcd *TestVCD) Test_NsxtNatDnatFirewallMatchPriority(check *C) {
 	appPortProfiles, err := org.GetAllNsxtAppPortProfiles(nil, types.ApplicationPortProfileScopeSystem)
 	check.Assert(err, IsNil)
 
+	edgeGatewayPrimaryIp := ""
+	if edge.EdgeGateway != nil && len(edge.EdgeGateway.EdgeGatewayUplinks) > 0 && len(edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values) > 0 {
+		edgeGatewayPrimaryIp = edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP
+	}
+	check.Assert(edgeGatewayPrimaryIp, Not(Equals), "")
+
 	natRuleDefinition := &types.NsxtNatRule{
 		Name:              check.TestName() + "dnat",
 		Description:       "description",
 		Enabled:           true,
 		RuleType:          types.NsxtNatRuleTypeDnat,
-		ExternalAddresses: edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
+		ExternalAddresses: edgeGatewayPrimaryIp,
 		InternalAddresses: "11.11.11.2",
 		ApplicationPortProfile: &types.OpenApiReference{
 			ID:   appPortProfiles[0].NsxtAppPortProfile.ID,
@@ -171,12 +195,18 @@ func (vcd *TestVCD) Test_NsxtNatNoDnat(check *C) {
 	edge, err := nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
 	check.Assert(err, IsNil)
 
+	edgeGatewayPrimaryIp := ""
+	if edge.EdgeGateway != nil && len(edge.EdgeGateway.EdgeGatewayUplinks) > 0 && len(edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values) > 0 {
+		edgeGatewayPrimaryIp = edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP
+	}
+	check.Assert(edgeGatewayPrimaryIp, Not(Equals), "")
+
 	natRuleDefinition := &types.NsxtNatRule{
 		Name:              check.TestName() + "no-dnat",
 		Description:       "description",
 		Enabled:           true,
 		RuleType:          types.NsxtNatRuleTypeNoDnat,
-		ExternalAddresses: edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
+		ExternalAddresses: edgeGatewayPrimaryIp,
 	}
 
 	nsxtNatRuleChecks(natRuleDefinition, edge, check, vcd)
@@ -198,12 +228,18 @@ func (vcd *TestVCD) Test_NsxtNatSnat(check *C) {
 	appPortProfiles, err := org.GetAllNsxtAppPortProfiles(nil, types.ApplicationPortProfileScopeSystem)
 	check.Assert(err, IsNil)
 
+	edgeGatewayPrimaryIp := ""
+	if edge.EdgeGateway != nil && len(edge.EdgeGateway.EdgeGatewayUplinks) > 0 && len(edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values) > 0 {
+		edgeGatewayPrimaryIp = edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP
+	}
+	check.Assert(edgeGatewayPrimaryIp, Not(Equals), "")
+
 	natRuleDefinition := &types.NsxtNatRule{
 		Name:                     check.TestName() + "snat",
 		Description:              "description",
 		Enabled:                  true,
 		RuleType:                 types.NsxtNatRuleTypeSnat,
-		ExternalAddresses:        edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
+		ExternalAddresses:        edgeGatewayPrimaryIp,
 		InternalAddresses:        "11.11.11.2",
 		SnatDestinationAddresses: "11.11.11.4",
 		ApplicationPortProfile: &types.OpenApiReference{
@@ -256,12 +292,18 @@ func (vcd *TestVCD) Test_NsxtNatPriorityAndFirewallMatch(check *C) {
 	edge, err := nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
 	check.Assert(err, IsNil)
 
+	edgeGatewayPrimaryIp := ""
+	if edge.EdgeGateway != nil && len(edge.EdgeGateway.EdgeGatewayUplinks) > 0 && len(edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values) > 0 {
+		edgeGatewayPrimaryIp = edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP
+	}
+	check.Assert(edgeGatewayPrimaryIp, Not(Equals), "")
+
 	natRuleDefinition := &types.NsxtNatRule{
 		Name:                     check.TestName() + "dnat",
 		Description:              "description",
 		Enabled:                  true,
 		RuleType:                 types.NsxtNatRuleTypeDnat,
-		ExternalAddresses:        edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
+		ExternalAddresses:        edgeGatewayPrimaryIp,
 		InternalAddresses:        "11.11.11.2",
 		SnatDestinationAddresses: "",
 		Logging:                  true,
@@ -291,13 +333,19 @@ func (vcd *TestVCD) Test_NsxtNatReflexive(check *C) {
 	edge, err := nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
 	check.Assert(err, IsNil)
 
+	edgeGatewayPrimaryIp := ""
+	if edge.EdgeGateway != nil && len(edge.EdgeGateway.EdgeGatewayUplinks) > 0 && len(edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values) > 0 {
+		edgeGatewayPrimaryIp = edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP
+	}
+	check.Assert(edgeGatewayPrimaryIp, Not(Equals), "")
+
 	natRuleDefinition := &types.NsxtNatRule{
 		Name:        check.TestName() + "reflexive",
 		Description: "description",
 		Enabled:     true,
 		//RuleType:          types.NsxtNatRuleTypeReflexive,
 		Type:              types.NsxtNatRuleTypeReflexive,
-		ExternalAddresses: edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
+		ExternalAddresses: edgeGatewayPrimaryIp,
 		InternalAddresses: "11.11.11.2",
 		Priority:          takeIntAddress(100),
 		FirewallMatch:     types.NsxtNatRuleFirewallMatchExternalAddress,

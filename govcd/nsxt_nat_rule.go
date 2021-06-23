@@ -12,7 +12,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
-// NsxtNatRule describes a single NAT rule of 4 different RuleTypes - DNAT`, `NO_DNAT`, `SNAT`, `NO_SNAT`.
+// NsxtNatRule describes a single NAT rule of 5 different Rule Types - DNAT`, `NO_DNAT`, `SNAT`, `NO_SNAT`, 'REFLEXIVE'
+// 'REFLEXIVE' is only supported in API 35.2 (VCD 10.2.2+)
 //
 // A SNAT or a DNAT rule on an Edge Gateway in the VMware Cloud Director environment is always configured from the
 // perspective of your organization VDC.
@@ -33,12 +34,10 @@ type NsxtNatRule struct {
 func (egw *NsxtEdgeGateway) GetAllNatRules(queryParameters url.Values) ([]*NsxtNatRule, error) {
 	client := egw.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtNatRules
-	apiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
-
-	apiVersion = elevateNsxtNatRuleApiVersion(apiVersion, client)
 
 	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
 	if err != nil {
@@ -120,12 +119,10 @@ func (egw *NsxtEdgeGateway) GetNatRuleById(id string) (*NsxtNatRule, error) {
 func (egw *NsxtEdgeGateway) CreateNatRule(natRuleConfig *types.NsxtNatRule) (*NsxtNatRule, error) {
 	client := egw.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtNatRules
-	apiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
-
-	apiVersion = elevateNsxtNatRuleApiVersion(apiVersion, client)
 
 	// Insert Edge Gateway ID into endpoint path edgeGateways/%s/nat/rules
 	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
@@ -167,12 +164,10 @@ func (egw *NsxtEdgeGateway) CreateNatRule(natRuleConfig *types.NsxtNatRule) (*Ns
 func (nsxtNat *NsxtNatRule) Update(natRuleConfig *types.NsxtNatRule) (*NsxtNatRule, error) {
 	client := nsxtNat.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtNatRules
-	apiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
-
-	apiVersion = elevateNsxtNatRuleApiVersion(apiVersion, client)
 
 	if nsxtNat.NsxtNatRule.ID == "" {
 		return nil, fmt.Errorf("cannot update NSX-T NAT Rule without ID")
@@ -201,12 +196,10 @@ func (nsxtNat *NsxtNatRule) Update(natRuleConfig *types.NsxtNatRule) (*NsxtNatRu
 func (nsxtNat *NsxtNatRule) Delete() error {
 	client := nsxtNat.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtNatRules
-	apiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
 	}
-
-	apiVersion = elevateNsxtNatRuleApiVersion(apiVersion, client)
 
 	if nsxtNat.NsxtNatRule.ID == "" {
 		return fmt.Errorf("cannot delete NSX-T NAT rule without ID")
@@ -247,17 +240,23 @@ func natRulesEqual(first, second *types.NsxtNatRule) bool {
 	util.Logger.Printf("%+v\n", second)
 
 	// Being an org user always returns logging as false - therefore cannot compare it.
-	// first.Logging == second.Logging &&
+	// first.Logging == second.Logging
 
 	// These fields are returned or not returned depending on version and it is impossible to be 100% sure a minor
 	// patch does not break such comparison
-	// first.DnatExternalPort == second.DnatExternalPort &&
-	// first.SnatDestinationAddresses == second.SnatDestinationAddresses &&
-	//
+	// DnatExternalPort
+	// SnatDestinationAddresses
+	// RuleType - would work up to 35.2+, but then there is another field Type
+	// Type only available since 35.2+. Must be explicitly used for REFLEXIVE type in API v36.0+
+	// FirewallMatch - it exists only since API 35.2+ and has a default starting this version
+	// InternalPort - is deprecated since API V35.0+ and is replaced by DnatExternalPort
+	// Priority - is available only in API V35.2+
+	// Version - it is something that is automatically handled by API. When creating - you must specify none, but it sets
+	// version to 0. When updating one must specify the last version read, and again it will automatically increment this
+	// value after update. (probably it is meant to avoid concurrent updates)
 	if first.Name == second.Name &&
 		first.Enabled == second.Enabled &&
 		first.Description == second.Description &&
-
 		first.ExternalAddresses == second.ExternalAddresses &&
 		first.InternalAddresses == second.InternalAddresses &&
 		// Match either both application profiles being empty/nil, or both having the same value
@@ -273,17 +272,17 @@ func natRulesEqual(first, second *types.NsxtNatRule) bool {
 // elevateNsxtNatRuleApiVersion helps to elevate API version to consume newer NSX-T NAT Rule features
 // API V35.2+ support new fields FirewallMatch and Priority
 // API V36.0+ supports new RuleType - REFLEXIVE
-func elevateNsxtNatRuleApiVersion(apiVersion string, client *Client) string {
-
-	// Fields FirewallMatch and Priority require API version 35.2 to be set therefore version is elevated if API supports
-	if client.APIVCDMaxVersionIs(">= 35.2") {
-		apiVersion = "35.2"
-	}
-
-	// RuleType REFLEXIVE requires API V36.0
-	if client.APIVCDMaxVersionIs(">= 36.0") {
-		apiVersion = "36.0"
-	}
-
-	return apiVersion
-}
+//func elevateNsxtNatRuleApiVersion(apiVersion string, client *Client) string {
+//
+//	// Fields FirewallMatch and Priority require API version 35.2 to be set therefore version is elevated if API supports
+//	if client.APIVCDMaxVersionIs(">= 35.2") {
+//		apiVersion = "35.2"
+//	}
+//
+//	// RuleType REFLEXIVE requires API V36.0
+//	if client.APIVCDMaxVersionIs(">= 36.0") {
+//		apiVersion = "36.0"
+//	}
+//
+//	return apiVersion
+//}
