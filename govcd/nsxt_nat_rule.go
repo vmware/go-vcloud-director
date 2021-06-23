@@ -259,9 +259,15 @@ func natRulesEqual(first, second *types.NsxtNatRule) bool {
 		first.Description == second.Description &&
 		first.ExternalAddresses == second.ExternalAddresses &&
 		first.InternalAddresses == second.InternalAddresses &&
-		// Match either both application profiles being empty/nil, or both having the same value
-		((first.ApplicationPortProfile == second.ApplicationPortProfile) ||
-			(first.ApplicationPortProfile != nil && second.ApplicationPortProfile != nil && first.ApplicationPortProfile.ID == second.ApplicationPortProfile.ID)) {
+
+		// Match both application profiles being nil (types cannot be equal as they are pointers, not values)
+		((first.ApplicationPortProfile == nil && second.ApplicationPortProfile == nil) ||
+			// Or both being not nil and having the same IDs
+			(first.ApplicationPortProfile != nil && second.ApplicationPortProfile != nil && first.ApplicationPortProfile.ID == second.ApplicationPortProfile.ID) ||
+			// Or first Application profile is nil and second is not nil, but has empty ID
+			(first.ApplicationPortProfile == nil && second.ApplicationPortProfile != nil && second.ApplicationPortProfile.ID == "") ||
+			// Or first Application Profile  is not nil, but has empty ID, while second application port profile is nil
+			(first.ApplicationPortProfile != nil && first.ApplicationPortProfile.ID == "" && second.ApplicationPortProfile == nil)) {
 
 		return true
 	}
