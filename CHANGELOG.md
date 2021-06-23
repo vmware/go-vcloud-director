@@ -49,9 +49,11 @@
   `Client.GetAllRoles`, `Role.AddRights`, `Role.GetRights`, `Role.RemoveAllRights`, `Role.RemoveRights`, `Role.UpdateRights`
   [#380](https://github.com/vmware/go-vcloud-director/pull/380)
 * Added convenience function `FindMissingImpliedRights` [#380](https://github.com/vmware/go-vcloud-director/pull/380)
+* Added methods `NsxtEdgeGateway.UpdateNsxtFirewall()`, `NsxtEdgeGateway.GetNsxtFirewall()`, `nsxtFirewall.DeleteAllRules()`,
+  `nsxtFirewall.DeleteRuleById` [#381](https://github.com/vmware/go-vcloud-director/pull/381)
 * Added `NsxtIpSecVpnTunnel` and `types.NsxtIpSecVpnTunnel` for NSX-T IPsec VPN Tunnel configuration
   [#385](https://github.com/vmware/go-vcloud-director/pull/385)
-
+  
 BREAKING CHANGES:
 * Added parameter `description` to method `vdc.ComposeRawVapp` [#372](https://github.com/vmware/go-vcloud-director/pull/372)
 * Added methods `vapp.Rename`, `vapp.UpdateDescription`, `vapp.UpdateNameDescription` [#372](https://github.com/vmware/go-vcloud-director/pull/372)
@@ -72,6 +74,8 @@ IMPROVEMENTS:
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
 * Improved test entity cleanup to allow specifying parent VDC for vApp removals
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
+* Cleanup a few unnecessary type conversions detected by new staticcheck version 
+  [#381](https://github.com/vmware/go-vcloud-director/pull/381)
 * Improved `OpenApiGetAllItems` to still follow pages in VCD endpoints with BUG which don't return 'nextPage' link for
   pagination [#378](https://github.com/vmware/go-vcloud-director/pull/378)
 * Improved LDAP container related tests to use correct port mapping for latest LDAP container version 

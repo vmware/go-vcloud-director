@@ -291,6 +291,48 @@ type NsxtFirewallGroupMemberVms struct {
 	OrgRef  *OpenApiReference `json:"orgRef"`
 }
 
+// NsxtFirewallRule defines single NSX-T Firewall Rule
+type NsxtFirewallRule struct {
+	// ID contains UUID (e.g. d0bf5d51-f83a-489a-9323-1661024874b8)
+	ID string `json:"id,omitempty"`
+	// Name - API does not enforce uniqueness
+	Name string `json:"name"`
+	// Action 'ALLOW', 'DROP'
+	Action string `json:"action"`
+	// Enabled allows to enable or disable the rule
+	Enabled bool `json:"enabled"`
+	// SourceFirewallGroups contains a list of references to Firewall Groups. Empty list means 'Any'
+	SourceFirewallGroups []OpenApiReference `json:"sourceFirewallGroups,omitempty"`
+	// DestinationFirewallGroups contains a list of references to Firewall Groups. Empty list means 'Any'
+	DestinationFirewallGroups []OpenApiReference `json:"destinationFirewallGroups,omitempty"`
+	// ApplicationPortProfiles contains a list of references to Application Port Profiles. Empty list means 'Any'
+	ApplicationPortProfiles []OpenApiReference `json:"applicationPortProfiles,omitempty"`
+	// IpProtocol 'IPV4', 'IPV6', 'IPV4_IPV6'
+	IpProtocol string `json:"ipProtocol"`
+	Logging    bool   `json:"logging"`
+	// Direction 'IN_OUT', 'OUT', 'IN'
+	Direction string `json:"direction"`
+	// Version of firewall rule. Must not be set when creating.
+	Version *struct {
+		// Version is incremented after each update
+		Version *int `json:"version,omitempty"`
+	} `json:"version,omitempty"`
+}
+
+// NsxtFirewallRuleContainer wraps NsxtFirewallRule for user-defined and default and system Firewall Rules suitable for
+// API. Only UserDefinedRules are writeable. Others are read-only.
+type NsxtFirewallRuleContainer struct {
+	// SystemRules contain ordered list of system defined edge firewall rules. System rules are applied before user
+	// defined rules in the order in which they are returned.
+	SystemRules []*NsxtFirewallRule `json:"systemRules"`
+	// DefaultRules contain ordered list of user defined edge firewall rules. Users are allowed to add/modify/delete rules
+	// only to this list.
+	DefaultRules []*NsxtFirewallRule `json:"defaultRules"`
+	// UserDefinedRules ordered list of default edge firewall rules. Default rules are applied after the user defined
+	// rules in the order in which they are returned.
+	UserDefinedRules []*NsxtFirewallRule `json:"userDefinedRules"`
+}
+
 // NsxtAppPortProfile allows user to set custom application port definitions so that these can later be used
 // in NSX-T Firewall rules in combination with IP Sets and Security Groups.
 type NsxtAppPortProfile struct {

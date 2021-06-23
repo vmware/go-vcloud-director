@@ -1,4 +1,4 @@
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user nsxv affinity search ALL
+// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user nsxv nsxt openapi affinity search ALL
 
 /*
  * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -835,4 +835,35 @@ func getVdcNetworkPoolHref(vcd *TestVCD, check *C) string {
 	networkPoolHref := results.Results.NetworkPoolRecord[0].HREF
 
 	return networkPoolHref
+}
+
+// convertSliceOfStringsToOpenApiReferenceIds converts []string to []types.OpenApiReference by filling
+// types.OpenApiReference.ID fields
+func convertSliceOfStringsToOpenApiReferenceIds(ids []string) []types.OpenApiReference {
+	resultReferences := make([]types.OpenApiReference, len(ids))
+	for i, v := range ids {
+		resultReferences[i].ID = v
+	}
+
+	return resultReferences
+}
+
+// extractIdsFromOpenApiReferences extracts []string with IDs from []types.OpenApiReference which contains ID and Names
+func extractIdsFromOpenApiReferences(refs []types.OpenApiReference) []string {
+	resultStrings := make([]string, len(refs))
+	for index := range refs {
+		resultStrings[index] = refs[index].ID
+	}
+
+	return resultStrings
+}
+
+// contains checks if a slice contains element
+func contains(s []string, element string) bool {
+	for _, a := range s {
+		if a == element {
+			return true
+		}
+	}
+	return false
 }
