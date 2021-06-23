@@ -149,6 +149,9 @@ func (egw *NsxtEdgeGateway) CreateNatRule(natRuleConfig *types.NsxtNatRule) (*Ns
 	// queryParameters (API side filtering) are not used because pretty much nothing is accepted as filter (such fields as
 	// name, description, ruleType and even ID are not allowed
 	allNatRules, err := egw.GetAllNatRules(nil)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching all NAT rules: %s", err)
+	}
 
 	for index, singleRule := range allNatRules {
 		// Look for a matching rule
