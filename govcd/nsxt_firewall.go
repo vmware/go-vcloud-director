@@ -82,8 +82,8 @@ func (egw *NsxtEdgeGateway) GetNsxtFirewall() (*NsxtFirewall, error) {
 	return returnObject, nil
 }
 
-// DeleteAll allows users to delete all NSX-T Firewall rules in a particular Edge Gateway
-func (firewall *NsxtFirewall) DeleteAll() error {
+// DeleteAllRules allows users to delete all NSX-T Firewall rules in a particular Edge Gateway
+func (firewall *NsxtFirewall) DeleteAllRules() error {
 
 	if firewall.edgeGatewayId == "" {
 		return fmt.Errorf("missing Edge Gateway ID")
@@ -109,8 +109,8 @@ func (firewall *NsxtFirewall) DeleteAll() error {
 	return nil
 }
 
-// DeleteById allows users to delete NSX-T Firewall Rule By ID
-func (firewall *NsxtFirewall) DeleteById(id string) error {
+// DeleteRuleById allows users to delete NSX-T Firewall Rule By ID
+func (firewall *NsxtFirewall) DeleteRuleById(id string) error {
 	if id == "" {
 		return fmt.Errorf("empty ID specified")
 	}

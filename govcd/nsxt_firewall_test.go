@@ -78,7 +78,7 @@ func (vcd *TestVCD) Test_NsxtFirewall(check *C) {
 	// * Rule with deleted ID should not be found in list post deletion
 	// * There should be one less rule in the list
 	deleteRuleId := fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[3].ID
-	err = fwCreated.DeleteById(deleteRuleId)
+	err = fwCreated.DeleteRuleById(deleteRuleId)
 	check.Assert(err, IsNil)
 
 	allRulesPostDeletion, err := edge.GetNsxtFirewall()
@@ -89,7 +89,7 @@ func (vcd *TestVCD) Test_NsxtFirewall(check *C) {
 		check.Assert(rule.ID, Not(Equals), deleteRuleId)
 	}
 
-	err = fwRules.DeleteAll()
+	err = fwRules.DeleteAllRules()
 	check.Assert(err, IsNil)
 
 	// Ensure no firewall rules left in user space post deletion, but the same amount of default and system rules still exist
