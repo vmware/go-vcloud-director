@@ -120,6 +120,10 @@ func (vcd *TestVCD) Test_NsxtIpSecVpnCustomSecurityProfile(check *C) {
 	// All fields should be the same, except version
 	latestSecProfile.NsxtIpSecVpn.Version = updatedIpSecVpn.NsxtIpSecVpn.Version
 	check.Assert(updatedIpSecVpn.NsxtIpSecVpn, DeepEquals, latestSecProfile.NsxtIpSecVpn)
+
+	// Remove object
+	err = createdIpSecVpn.Delete()
+	check.Assert(err, IsNil)
 }
 
 // Test_NsxtIpSecVpnUniqueness checks that uniqueness is enforced at API level on LocalAddress+RemoteAddress by creating
@@ -147,8 +151,8 @@ func (vcd *TestVCD) Test_NsxtIpSecVpnUniqueness(check *C) {
 			LocalNetworks: []string{"10.10.10.0/24"},
 		},
 		RemoteEndpoint: types.NsxtIpSecVpnTunnelRemoteEndpoint{
-			RemoteId:       "192.168.140.1",
-			RemoteAddress:  "192.168.140.1",
+			RemoteId:       "192.168.170.1",
+			RemoteAddress:  "192.168.170.1",
 			RemoteNetworks: []string{"20.20.20.0/24"},
 		},
 		PreSharedKey: "PSK-Sec",
@@ -172,8 +176,8 @@ func (vcd *TestVCD) Test_NsxtIpSecVpnUniqueness(check *C) {
 			LocalNetworks: []string{"40.10.10.0/24"},
 		},
 		RemoteEndpoint: types.NsxtIpSecVpnTunnelRemoteEndpoint{
-			RemoteId:       "192.168.140.1",
-			RemoteAddress:  "192.168.140.1",
+			RemoteId:       "192.168.170.1",
+			RemoteAddress:  "192.168.170.1",
 			RemoteNetworks: []string{"50.20.20.0/24"},
 		},
 		PreSharedKey: "PSK-Sec",
