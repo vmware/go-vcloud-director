@@ -481,4 +481,8 @@ func (vcd *TestVCD) TestCreateRawVapp(check *C) {
 
 	check.Assert(vapp.VApp.Name, Equals, name)
 	check.Assert(vapp.VApp.Description, Equals, description)
+	task, err := vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }

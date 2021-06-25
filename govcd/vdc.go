@@ -528,7 +528,6 @@ func (vdc *Vdc) CreateRawVApp(name string, description string) (*VApp, error) {
 	if vAppContents.Tasks != nil {
 		for _, innerTask := range vAppContents.Tasks.Task {
 			if innerTask != nil {
-
 				task := NewTask(vdc.client)
 				task.Task = innerTask
 				err = task.WaitTaskCompletion()
