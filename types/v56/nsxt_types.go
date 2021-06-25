@@ -373,3 +373,94 @@ type NsxtAppPortProfilePort struct {
 	// DestinationPorts is optional, but can define list of ports ("1000", "1500") or port ranges ("1200-1400")
 	DestinationPorts []string `json:"destinationPorts,omitempty"`
 }
+
+// NsxtNatRule describes a single NAT rule of 4 diferent RuleTypes - DNAT`, `NO_DNAT`, `SNAT`, `NO_SNAT`.
+//
+// A SNAT or a DNAT rule on an Edge Gateway in the VMware Cloud Director environment, you always configure the rule
+// from the perspective of your organization VDC.
+// DNAT and NO_DNAT - outside traffic going inside
+// SNAT and NO_SNAT - inside traffic going outside
+// More docs in https://docs.vmware.com/en/VMware-Cloud-Director/10.2/VMware-Cloud-Director-Tenant-Portal-Guide/GUID-9E43E3DC-C028-47B3-B7CA-59F0ED40E0A6.html
+type NsxtNatRule struct {
+	ID string `json:"id,omitempty"`
+	// Name holds a meaningful name for the rule. (API does not enforce uniqueness)
+	Name string `json:"name"`
+	// Description holds optional description for the rule
+	Description string `json:"description"`
+	// Enabled defines if the rule is active
+	Enabled bool `json:"enabled"`
+
+	// RuleType - one of the following: `DNAT`, `NO_DNAT`, `SNAT`, `NO_SNAT`
+	// * An SNAT rule translates an internal IP to an external IP and is used for outbound traffic
+	// * A NO SNAT rule prevents the translation of the internal IP address of packets sent from an organization VDC out
+	// to an external network or to another organization VDC network.
+	// * A DNAT rule translates the external IP to an internal IP and is used for inbound traffic.
+	// * A NO DNAT rule prevents the translation of the external IP address of packets received by an organization VDC
+	// from an external network or from another organization VDC network.
+	// Deprecated in API V36.0
+	RuleType string `json:"ruleType,omitempty"`
+	// Type replaces RuleType in V36.0 and adds a new Rule - REFLEXIVE
+	Type string `json:"type,omitempty"`
+
+	// ExternalAddresses
+	// * SNAT - enter the public IP address of the edge gateway for which you are configuring the SNAT rule.
+	// * NO_SNAT - leave empty (but field cannot be skipped at all, therefore it does not have 'omitempty' tag)
+	//
+	// * DNAT - public IP address of the edge gateway for which you are configuring the DNAT rule. The IP
+	// addresses that you enter must belong to the suballocated IP range of the edge gateway.
+	// * NO_DNAT - leave empty
+	ExternalAddresses string `json:"externalAddresses"`
+
+	// InternalAddresses
+	// * SNAT - the IP address or a range of IP addresses of the virtual machines for which you are configuring SNAT, so
+	// that they can send traffic to the external network.
+	//
+	// * DNAT - enter the IP address or a range of IP addresses of the virtual machines for which you are configuring
+	// DNAT, so that they can receive traffic from the external network.
+	// * NO_DNAT - leave empty
+	InternalAddresses      string            `json:"internalAddresses"`
+	ApplicationPortProfile *OpenApiReference `json:"applicationPortProfile,omitempty"`
+
+	// InternalPort specifies port number or port range for incoming network traffic. If Any Traffic is selected for the
+	// Application Port Profile, the default internal port is "ANY".
+	// Deprecated since API V35.0 and is replaced by DnatExternalPort
+	InternalPort string `json:"internalPort,omitempty"`
+
+	// DnatExternalPort can set a port into which the DNAT rule is translating for the packets inbound to the virtual
+	// machines.
+	DnatExternalPort string `json:"dnatExternalPort,omitempty"`
+
+	// SnatDestinationAddresses applies only for RuleTypes `SNAT`, `NO_SNAT`
+	// If you want the rule to apply only for traffic to a specific domain, enter an IP address for this domain or an IP
+	// address range in CIDR format. If you leave this text box blank, the SNAT rule applies to all destinations outside
+	// of the local subnet.
+	SnatDestinationAddresses string `json:"snatDestinationAddresses,omitempty"`
+
+	// Logging enabled or disabled logging of that rule
+	Logging bool `json:"logging"`
+
+	// Below two fields are only supported in VCD 10.2.2+ (API v35.2)
+
+	// FirewallMatch determines how the firewall matches the address during NATing if firewall stage is not skipped.
+	// * MATCH_INTERNAL_ADDRESS indicates the firewall will be applied to internal address of a NAT rule. For SNAT, the
+	// internal address is the original source address before NAT is done. For DNAT, the internal address is the translated
+	// destination address after NAT is done. For REFLEXIVE, to egress traffic, the internal address is the original
+	// source address before NAT is done; to ingress traffic, the internal address is the translated destination address
+	// after NAT is done.
+	// * MATCH_EXTERNAL_ADDRESS indicates the firewall will be applied to external address of a NAT rule. For SNAT, the
+	// external address is the translated source address after NAT is done. For DNAT, the external address is the original
+	// destination address before NAT is done. For REFLEXIVE, to egress traffic, the external address is the translated
+	// internal address after NAT is done; to ingress traffic, the external address is the original destination address
+	// before NAT is done.
+	// * BYPASS firewall stage will be skipped.
+	FirewallMatch string `json:"firewallMatch,omitempty"`
+	// Priority helps to select rule with highest priority if an address has multiple NAT rules. A lower value means a
+	// higher precedence for this rule. Maximum value 2147481599
+	Priority *int `json:"priority,omitempty"`
+
+	// Version of NAT rule. Must not be set when creating.
+	Version *struct {
+		// Version is incremented after each update
+		Version *int `json:"version,omitempty"`
+	} `json:"version,omitempty"`
+}
