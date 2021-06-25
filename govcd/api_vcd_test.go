@@ -718,7 +718,6 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 	// openApiEntity can be used to delete any OpenAPI entity due to the API being uniform and allowing the same
 	// low level OpenApiDeleteItem()
 	case "OpenApiEntity":
-
 		// entity.OpenApiEndpoint contains "endpoint/{ID}"
 		// (in format types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + ID) but
 		// to lookup used API version this ID must not be present therefore below we remove suffix ID.
