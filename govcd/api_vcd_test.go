@@ -1,4 +1,4 @@
-// +build api openapi functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user search nsxv nsxt auth affinity ALL
+// +build api openapi functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user search nsxv nsxt auth affinity role ALL
 
 /*
  * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -718,15 +718,19 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 	// openApiEntity can be used to delete any OpenAPI entity due to the API being uniform and allowing the same
 	// low level OpenApiDeleteItem()
 	case "OpenApiEntity":
-
 		// entity.OpenApiEndpoint contains "endpoint/{ID}"
 		// (in format types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + ID) but
 		// to lookup used API version this ID must not be present therefore below we remove suffix ID.
 		// This is done by splitting whole path by "/" and rebuilding path again without last element in slice (which is
 		// expected to be the ID)
+		// Sometimes API endpoint path might contain URNs in the middle (e.g. OpenApiEndpointNsxtNatRules). They are
+		// replaced back to string placeholder %s to match original definitions
 		endpointSlice := strings.Split(entity.OpenApiEndpoint, "/")
-		endpoint := strings.Join(endpointSlice[:len(endpointSlice)-1], "/") + "/"
-		apiVersion, _ := vcd.client.Client.checkOpenApiEndpointCompatibility(endpoint)
+		endpointWithUuid := strings.Join(endpointSlice[:len(endpointSlice)-1], "/") + "/"
+		// replace any "urns" (e.g. 'urn:vcloud:gateway:64966c36-e805-44e2-980b-c1077ab54956') with '%s' to match API definitions
+		re := regexp.MustCompile(`urn[^\/]+`) // Regexp matches from 'urn' up to next '/' in the path
+		endpointRemovedUuids := re.ReplaceAllString(endpointWithUuid, "%s")
+		apiVersion, _ := vcd.client.Client.checkOpenApiEndpointCompatibility(endpointRemovedUuids)
 
 		// Build UP complete endpoint address
 		urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(entity.OpenApiEndpoint)
@@ -736,7 +740,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		// Validate if the resource still exists
-		err = vcd.client.Client.OpenApiGetItem(apiVersion, urlRef, nil, nil)
+		err = vcd.client.Client.OpenApiGetItem(apiVersion, urlRef, nil, nil, nil)
 		if ContainsNotFound(err) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
@@ -753,14 +757,35 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		// Attempt to use supplied path in entity.Parent for element deletion
-		err = vcd.client.Client.OpenApiDeleteItem(apiVersion, urlRef, nil)
+		err = vcd.client.Client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
 		if err != nil {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 			return
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+	// 	OpenApiEntityFirewall has different API structure therefore generic `OpenApiEntity` case does not fit cleanup
+	case "OpenApiEntityFirewall":
+		apiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtFirewallRules)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
 
+		urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(entity.Name)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		// Attempt to use supplied path in entity.Parent for element deletion
+		err = vcd.client.Client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 	case "vapp":
 		vdc := vcd.vdc
 		var err error
@@ -1066,16 +1091,14 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 	case "vm":
 		vapp, err := vcd.vdc.GetVAppByName(entity.Parent, true)
 		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting VM '%s' in vApp '%s'. Could not find vApp: %s\n",
-				entity.Name, entity.Parent, err)
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
 
 		vm, err := vapp.GetVMByName(entity.Name, false)
 
 		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not find VM '%s' in vApp '%s': %s\n",
-				entity.Name, vapp.VApp.Name, err)
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
 
@@ -1826,4 +1849,41 @@ func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint string) {
 			endpoint, constraint, maxSupportedVersion)
 		check.Skip(skipText)
 	}
+}
+
+// newOrgUserConnection creates a new Org User and returns a connection to it
+//lint:ignore U1000 For future usage - Allows writing tests that require multiple users
+func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, insecure bool) (*VCDClient, error) {
+	u, err := url.ParseRequestURI(href)
+	if err != nil {
+		return nil, fmt.Errorf("[newOrgUserConnection] unable to pass url: %s", err)
+	}
+
+	_, err = adminOrg.GetUserByName(userName, false)
+	if err == nil {
+		// user exists
+		return nil, fmt.Errorf("user %s already exists", userName)
+	}
+	_, err = adminOrg.CreateUserSimple(OrgUserConfiguration{
+		Name:            userName,
+		Password:        password,
+		RoleName:        OrgUserRoleOrganizationAdministrator,
+		ProviderType:    OrgUserProviderIntegrated,
+		IsEnabled:       true,
+		DeployedVmQuota: 0,
+		StoredVmQuota:   0,
+		FullName:        userName,
+		Description:     "Test user created by newOrgUserConnection",
+	})
+	if err != nil {
+		return nil, err
+	}
+	AddToCleanupList(userName, "user", adminOrg.AdminOrg.Name, "newOrgUserConnection")
+	_ = adminOrg.Refresh()
+	vcdClient := NewVCDClient(*u, insecure)
+	err = vcdClient.Authenticate(userName, password, adminOrg.AdminOrg.Name)
+	if err != nil {
+		return nil, fmt.Errorf("[newOrgUserConnection] unable to authenticate: %s", err)
+	}
+	return vcdClient, nil
 }

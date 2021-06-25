@@ -170,16 +170,16 @@ func (adminOrg *AdminOrg) GetUserByNameOrId(identifier string, refresh bool) (*O
 	return entity.(*OrgUser), err
 }
 
-// GetRole finds a role within the organization
-// Deprecated: use GetRoleReference
-func (adminOrg *AdminOrg) GetRole(roleName string) (*types.Reference, error) {
-	return adminOrg.GetRoleReference(roleName)
-}
-
 // GetRoleReference finds a role within the organization
 func (adminOrg *AdminOrg) GetRoleReference(roleName string) (*types.Reference, error) {
 
-	// There is no need to refresh the AdminOrg, until we implement CRUD for roles
+	// We force refresh of the organization, to make sure that roles recently created
+	// are taken into account.
+	// This will become unnecessary when we refactor the User management with OpenAPI
+	err := adminOrg.Refresh()
+	if err != nil {
+		return nil, err
+	}
 	for _, role := range adminOrg.AdminOrg.RoleReferences.RoleReference {
 		if role.Name == roleName {
 			return role, nil

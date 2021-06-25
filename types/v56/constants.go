@@ -332,21 +332,30 @@ const (
 
 // These constants allow to construct OpenAPI endpoint paths and avoid strings in code for easy replacement in future.
 const (
-	OpenApiPathVersion1_0_0                   = "1.0.0/"
-	OpenApiEndpointRoles                      = "roles/"
-	OpenApiEndpointAuditTrail                 = "auditTrail/"
-	OpenApiEndpointImportableTier0Routers     = "nsxTResources/importableTier0Routers"
-	OpenApiEndpointImportableSwitches         = "/network/orgvdcnetworks/importableswitches"
-	OpenApiEndpointEdgeClusters               = "nsxTResources/edgeClusters"
-	OpenApiEndpointExternalNetworks           = "externalNetworks/"
-	OpenApiEndpointVdcComputePolicies         = "vdcComputePolicies/"
-	OpenApiEndpointVdcAssignedComputePolicies = "vdcs/%s/computePolicies"
-	OpenApiEndpointVdcCapabilities            = "vdcs/%s/capabilities"
-	OpenApiEndpointEdgeGateways               = "edgeGateways/"
-	OpenApiEndpointFirewallGroups             = "firewallGroups/"
-	OpenApiEndpointOrgVdcNetworks             = "orgVdcNetworks/"
-	OpenApiEndpointOrgVdcNetworksDhcp         = "orgVdcNetworks/%s/dhcp"
-	OpenApiEndpointAppPortProfiles            = "applicationPortProfiles/"
+	OpenApiPathVersion1_0_0                           = "1.0.0/"
+	OpenApiEndpointRoles                              = "roles/"
+	OpenApiEndpointGlobalRoles                        = "globalRoles/"
+	OpenApiEndpointRights                             = "rights/"
+	OpenApiEndpointRightsCategories                   = "rightsCategories/"
+	OpenApiEndpointRightsBundles                      = "rightsBundles/"
+	OpenApiEndpointAuditTrail                         = "auditTrail/"
+	OpenApiEndpointImportableTier0Routers             = "nsxTResources/importableTier0Routers"
+	OpenApiEndpointImportableSwitches                 = "/network/orgvdcnetworks/importableswitches"
+	OpenApiEndpointEdgeClusters                       = "nsxTResources/edgeClusters"
+	OpenApiEndpointExternalNetworks                   = "externalNetworks/"
+	OpenApiEndpointVdcComputePolicies                 = "vdcComputePolicies/"
+	OpenApiEndpointVdcAssignedComputePolicies         = "vdcs/%s/computePolicies"
+	OpenApiEndpointVdcCapabilities                    = "vdcs/%s/capabilities"
+	OpenApiEndpointEdgeGateways                       = "edgeGateways/"
+	OpenApiEndpointNsxtFirewallRules                  = "edgeGateways/%s/firewall/rules"
+	OpenApiEndpointFirewallGroups                     = "firewallGroups/"
+	OpenApiEndpointOrgVdcNetworks                     = "orgVdcNetworks/"
+	OpenApiEndpointOrgVdcNetworksDhcp                 = "orgVdcNetworks/%s/dhcp"
+	OpenApiEndpointNsxtNatRules                       = "edgeGateways/%s/nat/rules/"
+	OpenApiEndpointAppPortProfiles                    = "applicationPortProfiles/"
+	OpenApiEndpointIpSecVpnTunnel                     = "edgeGateways/%s/ipsec/tunnels/"
+	OpenApiEndpointIpSecVpnTunnelConnectionProperties = "edgeGateways/%s/ipsec/tunnels/%s/connectionProperties"
+	OpenApiEndpointIpSecVpnTunnelStatus               = "edgeGateways/%s/ipsec/tunnels/%s/status"
 )
 
 // Header keys to run operations in tenant context
@@ -395,6 +404,28 @@ const (
 	FirewallGroupTypeIpSet = "IP_SET"
 )
 
+// These constants can be used to pick type of NSX-T NAT Rule
+const (
+	NsxtNatRuleTypeDnat      = "DNAT"
+	NsxtNatRuleTypeNoDnat    = "NO_DNAT"
+	NsxtNatRuleTypeSnat      = "SNAT"
+	NsxtNatRuleTypeNoSnat    = "NO_SNAT"
+	NsxtNatRuleTypeReflexive = "REFLEXIVE" // Only in VCD 10.3+ (API V36.0)
+)
+
+// In VCD versions 10.2.2+ (API V35.2+) there is a FirewallMatch field in NAT rule with these
+// options
+const (
+	// NsxtNatRuleFirewallMatchInternalAddress will match firewall rules based on NAT rules internal
+	// address (DEFAULT)
+	NsxtNatRuleFirewallMatchInternalAddress = "MATCH_INTERNAL_ADDRESS"
+	// NsxtNatRuleFirewallMatchExternalAddress will match firewall rules based on NAT rule external
+	// address
+	NsxtNatRuleFirewallMatchExternalAddress = "MATCH_EXTERNAL_ADDRESS"
+	// NsxtNatRuleFirewallMatchBypass will skip evaluating NAT rules in firewall
+	NsxtNatRuleFirewallMatchBypass = "BYPASS"
+)
+
 const (
 	// ApplicationPortProfileScopeSystem is a defined scope which allows user to only read (no write capability) system
 	// predefined Application Port Profiles
@@ -404,4 +435,9 @@ const (
 	ApplicationPortProfileScopeProvider = "PROVIDER"
 	// ApplicationPortProfileScopeTenant allows user to read and set Application Port Profiles at Org VDC level.
 	ApplicationPortProfileScopeTenant = "TENANT"
+)
+
+const (
+	// VcloudUndefinedKey is the bundles key automatically added to new role related objects
+	VcloudUndefinedKey = "com.vmware.vcloud.undefined.key"
 )

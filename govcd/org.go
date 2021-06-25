@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -16,8 +16,9 @@ import (
 )
 
 type Org struct {
-	Org    *types.Org
-	client *Client
+	Org           *types.Org
+	client        *Client
+	TenantContext *TenantContext
 }
 
 func NewOrg(client *Client) *Org {
@@ -81,6 +82,7 @@ func (org *Org) GetVdcByName(vdcname string) (Vdc, error) {
 	for _, link := range org.Org.Link {
 		if link.Name == vdcname {
 			vdc := NewVdc(org.client)
+			vdc.parent = org
 
 			_, err := org.client.ExecuteRequest(link.HREF, http.MethodGet,
 				"", "error retrieving vdc: %s", nil, vdc.Vdc)
@@ -210,6 +212,7 @@ func (org *Org) GetCatalogByHref(catalogHref string) (*Catalog, error) {
 		return nil, err
 	}
 	// The request was successful
+	cat.parent = org
 	return cat, nil
 }
 
@@ -276,6 +279,7 @@ func (org *Org) GetVDCByHref(vdcHref string) (*Vdc, error) {
 		return nil, err
 	}
 	// The request was successful
+	vdc.parent = org
 	return vdc, nil
 }
 
@@ -368,8 +372,9 @@ func (org *Org) GetTaskList() (*types.TasksList, error) {
 // queryOrgVdcByName returns a single QueryResultOrgVdcRecordType
 func (org *Org) queryOrgVdcByName(vdcName string) (*types.QueryResultOrgVdcRecordType, error) {
 	filterFields := map[string]string{
-		"org":  org.Org.HREF,
-		"name": vdcName,
+		"org":     org.Org.HREF,
+		"orgName": org.Org.Name,
+		"name":    vdcName,
 	}
 	allVdcs, err := queryOrgVdcList(org.client, filterFields)
 	if err != nil {
@@ -387,11 +392,12 @@ func (org *Org) queryOrgVdcByName(vdcName string) (*types.QueryResultOrgVdcRecor
 	return allVdcs[0], nil
 }
 
-// queryOrgVdcById returns a single Org VDC query result
+// queryOrgVdcById returns a single QueryResultOrgVdcRecordType
 func (org *Org) queryOrgVdcById(vdcId string) (*types.QueryResultOrgVdcRecordType, error) {
 	filterMap := map[string]string{
-		"org": org.Org.HREF,
-		"id":  vdcId,
+		"org":     org.Org.HREF,
+		"orgName": org.Org.Name,
+		"id":      vdcId,
 	}
 	allVdcs, err := queryOrgVdcList(org.client, filterMap)
 
@@ -406,11 +412,12 @@ func (org *Org) queryOrgVdcById(vdcId string) (*types.QueryResultOrgVdcRecordTyp
 	return allVdcs[0], nil
 }
 
-// queryCatalogByName returns a single QueryResultOrgVdcRecordType
+// queryCatalogByName returns a single CatalogRecord
 func (org *Org) queryCatalogByName(catalogName string) (*types.CatalogRecord, error) {
 	filterMap := map[string]string{
-		"org":  org.Org.HREF,
-		"name": catalogName,
+		"org":     org.Org.HREF, // Org ID is not allowed for non System
+		"orgName": org.Org.Name,
+		"name":    catalogName,
 	}
 	allCatalogs, err := queryCatalogList(org.client, filterMap)
 	if err != nil {
@@ -428,11 +435,12 @@ func (org *Org) queryCatalogByName(catalogName string) (*types.CatalogRecord, er
 	return allCatalogs[0], nil
 }
 
-// queryCatalogById returns a single Org VDC query result
+// queryCatalogById returns a single QueryResultOrgVdcRecordType
 func (org *Org) queryCatalogById(catalogId string) (*types.CatalogRecord, error) {
 	filterMap := map[string]string{
-		"org": org.Org.HREF,
-		"id":  catalogId,
+		"org":     org.Org.HREF,
+		"orgName": org.Org.Name,
+		"id":      catalogId,
 	}
 	allCatalogs, err := queryCatalogList(org.client, filterMap)
 

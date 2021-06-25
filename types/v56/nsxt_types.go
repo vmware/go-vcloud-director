@@ -291,6 +291,48 @@ type NsxtFirewallGroupMemberVms struct {
 	OrgRef  *OpenApiReference `json:"orgRef"`
 }
 
+// NsxtFirewallRule defines single NSX-T Firewall Rule
+type NsxtFirewallRule struct {
+	// ID contains UUID (e.g. d0bf5d51-f83a-489a-9323-1661024874b8)
+	ID string `json:"id,omitempty"`
+	// Name - API does not enforce uniqueness
+	Name string `json:"name"`
+	// Action 'ALLOW', 'DROP'
+	Action string `json:"action"`
+	// Enabled allows to enable or disable the rule
+	Enabled bool `json:"enabled"`
+	// SourceFirewallGroups contains a list of references to Firewall Groups. Empty list means 'Any'
+	SourceFirewallGroups []OpenApiReference `json:"sourceFirewallGroups,omitempty"`
+	// DestinationFirewallGroups contains a list of references to Firewall Groups. Empty list means 'Any'
+	DestinationFirewallGroups []OpenApiReference `json:"destinationFirewallGroups,omitempty"`
+	// ApplicationPortProfiles contains a list of references to Application Port Profiles. Empty list means 'Any'
+	ApplicationPortProfiles []OpenApiReference `json:"applicationPortProfiles,omitempty"`
+	// IpProtocol 'IPV4', 'IPV6', 'IPV4_IPV6'
+	IpProtocol string `json:"ipProtocol"`
+	Logging    bool   `json:"logging"`
+	// Direction 'IN_OUT', 'OUT', 'IN'
+	Direction string `json:"direction"`
+	// Version of firewall rule. Must not be set when creating.
+	Version *struct {
+		// Version is incremented after each update
+		Version *int `json:"version,omitempty"`
+	} `json:"version,omitempty"`
+}
+
+// NsxtFirewallRuleContainer wraps NsxtFirewallRule for user-defined and default and system Firewall Rules suitable for
+// API. Only UserDefinedRules are writeable. Others are read-only.
+type NsxtFirewallRuleContainer struct {
+	// SystemRules contain ordered list of system defined edge firewall rules. System rules are applied before user
+	// defined rules in the order in which they are returned.
+	SystemRules []*NsxtFirewallRule `json:"systemRules"`
+	// DefaultRules contain ordered list of user defined edge firewall rules. Users are allowed to add/modify/delete rules
+	// only to this list.
+	DefaultRules []*NsxtFirewallRule `json:"defaultRules"`
+	// UserDefinedRules ordered list of default edge firewall rules. Default rules are applied after the user defined
+	// rules in the order in which they are returned.
+	UserDefinedRules []*NsxtFirewallRule `json:"userDefinedRules"`
+}
+
 // NsxtAppPortProfile allows user to set custom application port definitions so that these can later be used
 // in NSX-T Firewall rules in combination with IP Sets and Security Groups.
 type NsxtAppPortProfile struct {
@@ -330,4 +372,302 @@ type NsxtAppPortProfilePort struct {
 	Protocol string `json:"protocol"`
 	// DestinationPorts is optional, but can define list of ports ("1000", "1500") or port ranges ("1200-1400")
 	DestinationPorts []string `json:"destinationPorts,omitempty"`
+}
+
+// NsxtNatRule describes a single NAT rule of 4 diferent RuleTypes - DNAT`, `NO_DNAT`, `SNAT`, `NO_SNAT`.
+//
+// A SNAT or a DNAT rule on an Edge Gateway in the VMware Cloud Director environment, you always configure the rule
+// from the perspective of your organization VDC.
+// DNAT and NO_DNAT - outside traffic going inside
+// SNAT and NO_SNAT - inside traffic going outside
+// More docs in https://docs.vmware.com/en/VMware-Cloud-Director/10.2/VMware-Cloud-Director-Tenant-Portal-Guide/GUID-9E43E3DC-C028-47B3-B7CA-59F0ED40E0A6.html
+type NsxtNatRule struct {
+	ID string `json:"id,omitempty"`
+	// Name holds a meaningful name for the rule. (API does not enforce uniqueness)
+	Name string `json:"name"`
+	// Description holds optional description for the rule
+	Description string `json:"description"`
+	// Enabled defines if the rule is active
+	Enabled bool `json:"enabled"`
+
+	// RuleType - one of the following: `DNAT`, `NO_DNAT`, `SNAT`, `NO_SNAT`
+	// * An SNAT rule translates an internal IP to an external IP and is used for outbound traffic
+	// * A NO SNAT rule prevents the translation of the internal IP address of packets sent from an organization VDC out
+	// to an external network or to another organization VDC network.
+	// * A DNAT rule translates the external IP to an internal IP and is used for inbound traffic.
+	// * A NO DNAT rule prevents the translation of the external IP address of packets received by an organization VDC
+	// from an external network or from another organization VDC network.
+	// Deprecated in API V36.0
+	RuleType string `json:"ruleType,omitempty"`
+	// Type replaces RuleType in V36.0 and adds a new Rule - REFLEXIVE
+	Type string `json:"type,omitempty"`
+
+	// ExternalAddresses
+	// * SNAT - enter the public IP address of the edge gateway for which you are configuring the SNAT rule.
+	// * NO_SNAT - leave empty (but field cannot be skipped at all, therefore it does not have 'omitempty' tag)
+	//
+	// * DNAT - public IP address of the edge gateway for which you are configuring the DNAT rule. The IP
+	// addresses that you enter must belong to the suballocated IP range of the edge gateway.
+	// * NO_DNAT - leave empty
+	ExternalAddresses string `json:"externalAddresses"`
+
+	// InternalAddresses
+	// * SNAT - the IP address or a range of IP addresses of the virtual machines for which you are configuring SNAT, so
+	// that they can send traffic to the external network.
+	//
+	// * DNAT - enter the IP address or a range of IP addresses of the virtual machines for which you are configuring
+	// DNAT, so that they can receive traffic from the external network.
+	// * NO_DNAT - leave empty
+	InternalAddresses      string            `json:"internalAddresses"`
+	ApplicationPortProfile *OpenApiReference `json:"applicationPortProfile,omitempty"`
+
+	// InternalPort specifies port number or port range for incoming network traffic. If Any Traffic is selected for the
+	// Application Port Profile, the default internal port is "ANY".
+	// Deprecated since API V35.0 and is replaced by DnatExternalPort
+	InternalPort string `json:"internalPort,omitempty"`
+
+	// DnatExternalPort can set a port into which the DNAT rule is translating for the packets inbound to the virtual
+	// machines.
+	DnatExternalPort string `json:"dnatExternalPort,omitempty"`
+
+	// SnatDestinationAddresses applies only for RuleTypes `SNAT`, `NO_SNAT`
+	// If you want the rule to apply only for traffic to a specific domain, enter an IP address for this domain or an IP
+	// address range in CIDR format. If you leave this text box blank, the SNAT rule applies to all destinations outside
+	// of the local subnet.
+	SnatDestinationAddresses string `json:"snatDestinationAddresses,omitempty"`
+
+	// Logging enabled or disabled logging of that rule
+	Logging bool `json:"logging"`
+
+	// Below two fields are only supported in VCD 10.2.2+ (API v35.2)
+
+	// FirewallMatch determines how the firewall matches the address during NATing if firewall stage is not skipped.
+	// * MATCH_INTERNAL_ADDRESS indicates the firewall will be applied to internal address of a NAT rule. For SNAT, the
+	// internal address is the original source address before NAT is done. For DNAT, the internal address is the translated
+	// destination address after NAT is done. For REFLEXIVE, to egress traffic, the internal address is the original
+	// source address before NAT is done; to ingress traffic, the internal address is the translated destination address
+	// after NAT is done.
+	// * MATCH_EXTERNAL_ADDRESS indicates the firewall will be applied to external address of a NAT rule. For SNAT, the
+	// external address is the translated source address after NAT is done. For DNAT, the external address is the original
+	// destination address before NAT is done. For REFLEXIVE, to egress traffic, the external address is the translated
+	// internal address after NAT is done; to ingress traffic, the external address is the original destination address
+	// before NAT is done.
+	// * BYPASS firewall stage will be skipped.
+	FirewallMatch string `json:"firewallMatch,omitempty"`
+	// Priority helps to select rule with highest priority if an address has multiple NAT rules. A lower value means a
+	// higher precedence for this rule. Maximum value 2147481599
+	Priority *int `json:"priority,omitempty"`
+
+	// Version of NAT rule. Must not be set when creating.
+	Version *struct {
+		// Version is incremented after each update
+		Version *int `json:"version,omitempty"`
+	} `json:"version,omitempty"`
+}
+
+// NsxtIpSecVpnTunnel defines the IPsec VPN Tunnel configuration
+// Some of the fields like AuthenticationMode and ConnectorInitiationMode are meant for future, because they have only
+// one default value at the moment.
+type NsxtIpSecVpnTunnel struct {
+	// ID unique for IPsec VPN tunnel. On updates, the ID is required for the tunnel, while for create a new ID will be
+	// generated.
+	ID string `json:"id,omitempty"`
+	// Name for the IPsec VPN Tunnel
+	Name string `json:"name"`
+	// Description for the IPsec VPN Tunnel
+	Description string `json:"description,omitempty"`
+	// Enabled describes whether the IPsec VPN Tunnel is enabled or not. The default is true.
+	Enabled bool `json:"enabled"`
+	// LocalEndpoint which corresponds to the Edge Gateway the IPsec VPN Tunnel is being configured on. Local Endpoint
+	// requires an IP. That IP must be sub-allocated to the edge gateway
+	LocalEndpoint NsxtIpSecVpnTunnelLocalEndpoint `json:"localEndpoint"`
+	// RemoteEndpoint corresponds to the device on the remote site terminating the VPN tunnel
+	RemoteEndpoint NsxtIpSecVpnTunnelRemoteEndpoint `json:"remoteEndpoint"`
+	// PreSharedKey is key used for authentication. It must be the same on the other end of IPsec VPN Tunnel
+	PreSharedKey string `json:"preSharedKey"`
+	// SecurityType is the security type used for the IPsec VPN Tunnel. If nothing is specified, this will be set to
+	// DEFAULT in which the default settings in NSX will be used. For custom settings, one should use the
+	// NsxtIpSecVpnTunnelSecurityProfile and UpdateTunnelConnectionProperties(), GetTunnelConnectionProperties() endpoint to
+	// specify custom settings. The security type will then appropriately reflect itself as CUSTOM.
+	// To revert back to system default, this field must be set to "DEFAULT"
+	SecurityType string `json:"securityType,omitempty"`
+	// Logging sets whether logging for the tunnel is enabled or not. The default is false.
+	Logging bool `json:"logging"`
+
+	// AuthenticationMode is authentication mode this IPsec tunnel will use to authenticate with the peer endpoint. The
+	// default is a pre-shared key (PSK).
+	// * PSK - A known key is shared between each site before the tunnel is established.
+	// * CERTIFICATE - Incoming connections are required to present an identifying digital certificate, which VCD verifies
+	// has been signed by a trusted certificate authority.
+	//
+	// Note. Up to version 10.3 VCD only supports PSK
+	AuthenticationMode string `json:"authenticationMode,omitempty"`
+
+	// ConnectorInitiationMode is the mode used by the local endpoint to establish an IKE Connection with the remote site.
+	// The default is INITIATOR.
+	// Possible values are: INITIATOR , RESPOND_ONLY , ON_DEMAND
+	//
+	// Note. Up to version 10.3 VCD only supports INITIATOR
+	ConnectorInitiationMode string `json:"connectorInitiationMode,omitempty"`
+
+	// Version of IPsec VPN Tunnel configuration. Must not be set when creating, but required for updates
+	Version *struct {
+		// Version is incremented after each update
+		Version *int `json:"version,omitempty"`
+	} `json:"version,omitempty"`
+}
+
+// NsxtIpSecVpnTunnelLocalEndpoint which corresponds to the Edge Gateway the IPsec VPN Tunnel is being configured on.
+// Local Endpoint requires an IP. That IP must be sub-allocated to the edge gateway
+type NsxtIpSecVpnTunnelLocalEndpoint struct {
+	// LocalId is the optional local identifier for the endpoint. It is usually the same as LocalAddress
+	LocalId string `json:"localId,omitempty"`
+	// LocalAddress is the IPv4 Address for the endpoint. This has to be a sub-allocated IP on the Edge Gateway. This is
+	// required
+	LocalAddress string `json:"localAddress"`
+	// LocalNetworks is the list of local networks. These must be specified in normal Network CIDR format. At least one is
+	// required
+	LocalNetworks []string `json:"localNetworks,omitempty"`
+}
+
+// NsxtIpSecVpnTunnelRemoteEndpoint corresponds to the device on the remote site terminating the VPN tunnel
+type NsxtIpSecVpnTunnelRemoteEndpoint struct {
+	// RemoteId is needed to uniquely identify the peer site. If this tunnel is using PSK authentication,
+	// the Remote ID is the public IP Address of the remote device terminating the VPN Tunnel. When NAT is configured on
+	// the Remote ID, enter the private IP Address of the Remote Site. If the remote ID is not set, VCD will set the
+	// remote ID to the remote address.
+	RemoteId string `json:"remoteId,omitempty"`
+	// RemoteAddress is IPv4 Address of the remote endpoint on the remote site. This is the Public IPv4 Address of the
+	// remote device terminating the IPsec VPN Tunnel connection. This is required
+	RemoteAddress string `json:"remoteAddress"`
+	// RemoteNetworks is the list of remote networks. These must be specified in normal Network CIDR format.
+	// Specifying no value is interpreted as 0.0.0.0/0
+	RemoteNetworks []string `json:"remoteNetworks,omitempty"`
+}
+
+// NsxtIpSecVpnTunnelStatus helps to read IPsec VPN Tunnel Status
+type NsxtIpSecVpnTunnelStatus struct {
+	// TunnelStatus gives the overall IPsec VPN Tunnel Status. If IKE is properly set and the tunnel is up, the tunnel
+	// status will be UP
+	TunnelStatus string `json:"tunnelStatus"`
+	IkeStatus    struct {
+		// IkeServiceStatus status for the actual IKE Session for the given tunnel.
+		IkeServiceStatus string `json:"ikeServiceStatus"`
+		// FailReason contains more details of failure if the IKE service is not UP
+		FailReason string `json:"failReason"`
+	} `json:"ikeStatus"`
+}
+
+// NsxtIpSecVpnTunnelSecurityProfile specifies the given security profile/connection properties of a given IP Sec VPN
+// Tunnel, such as Dead Probe Interval and IKE settings. If a security type is set to 'CUSTOM', then ike, tunnel, and/or
+// dpd configurations can be specified. Otherwise, those fields are read only and are set to the values based on the
+// specific security type.
+type NsxtIpSecVpnTunnelSecurityProfile struct {
+	// SecurityType is the security type used for the IPSec Tunnel. If nothing is specified, this will be set to ‘DEFAULT’
+	// in which the default settings in NSX will be used. If ‘CUSTOM’ is specified, then IKE, Tunnel, and DPD
+	// configurations can be set.
+	// To "RESET" configuration to DEFAULT, the NsxtIpSecVpnTunnel.SecurityType field should be changed instead of this
+	SecurityType string `json:"securityType,omitempty"`
+	// IkeConfiguration is the IKE Configuration to be used for the tunnel. If nothing is explicitly set, the system
+	// defaults will be used.
+	IkeConfiguration NsxtIpSecVpnTunnelProfileIkeConfiguration `json:"ikeConfiguration,omitempty"`
+	// TunnelConfiguration contains parameters such as encryption algorithm to be used. If nothing is explicitly set,
+	// the system defaults will be used.
+	TunnelConfiguration NsxtIpSecVpnTunnelProfileTunnelConfiguration `json:"tunnelConfiguration,omitempty"`
+	// DpdConfiguration contains Dead Peer Detection configuration. If nothing is explicitly set, the system defaults
+	// will be used.
+	DpdConfiguration NsxtIpSecVpnTunnelProfileDpdConfiguration `json:"dpdConfiguration,omitempty"`
+}
+
+// NsxtIpSecVpnTunnelProfileIkeConfiguration is the Internet Key Exchange (IKE) profiles provide information about the
+// algorithms that are used to authenticate, encrypt, and establish a shared secret between network sites when you
+// establish an IKE tunnel.
+//
+// Note. While quite a few fields accepts a []string it actually supports single values only.
+type NsxtIpSecVpnTunnelProfileIkeConfiguration struct {
+	// IkeVersion IKE Protocol Version to use.
+	// The default is IKE_V2.
+	//
+	// Possible values are: IKE_V1 , IKE_V2 , IKE_FLEX
+	IkeVersion string `json:"ikeVersion"`
+	// EncryptionAlgorithms contains list of Encryption algorithms for IKE. This is used during IKE negotiation.
+	// Default is AES_128.
+	//
+	// Possible values are: AES_128 , AES_256 , AES_GCM_128 , AES_GCM_192 , AES_GCM_256
+	EncryptionAlgorithms []string `json:"encryptionAlgorithms"`
+	// DigestAlgorithms contains list of Digest algorithms - secure hashing algorithms to use during the IKE negotiation.
+	//
+	// Default is SHA2_256.
+	//
+	// Possible values are: SHA1 , SHA2_256 , SHA2_384 , SHA2_512
+	DigestAlgorithms []string `json:"digestAlgorithms"`
+	// DhGroups contains list of Diffie-Hellman groups to be used if Perfect Forward Secrecy is enabled. These are
+	// cryptography schemes that allows the peer site and the edge gateway to establish a shared secret over an insecure
+	// communications channel
+	//
+	// Default is GROUP14.
+	//
+	// Possible values are: GROUP2, GROUP5, GROUP14, GROUP15, GROUP16, GROUP19, GROUP20, GROUP21
+	DhGroups []string `json:"dhGroups"`
+	// SaLifeTime is the Security Association life time in seconds. It is number of seconds before the IPsec tunnel needs
+	// to reestablish
+	//
+	// Default is 86400 seconds (1 day).
+	SaLifeTime *int `json:"saLifeTime"`
+}
+
+// NsxtIpSecVpnTunnelProfileTunnelConfiguration adjusts IPsec VPN Tunnel settings
+//
+// Note. While quite a few fields accepts a []string it actually supports single values only.
+type NsxtIpSecVpnTunnelProfileTunnelConfiguration struct {
+	// PerfectForwardSecrecyEnabled enabled or disabled. PFS (Perfect Forward Secrecy) ensures the same key will not be
+	// generated and used again, and because of this, the VPN peers negotiate a new Diffie-Hellman key exchange. This
+	// would ensure if a hacker\criminal was to compromise the private key, they would only be able to access data in
+	// transit protected by that key. Any future data will not be compromised, as future data would not be associated
+	// with that compromised key. Both sides of the VPN must be able to support PFS in order for PFS to work.
+	//
+	// The default value is true.
+	PerfectForwardSecrecyEnabled bool `json:"perfectForwardSecrecyEnabled"`
+	// DfPolicy Policy for handling defragmentation bit. The default is COPY.
+	//
+	// Possible values are: COPY, CLEAR
+	// * COPY Copies the defragmentation bit from the inner IP packet to the outer packet.
+	// * CLEAR Ignores the defragmentation bit present in the inner packet.
+	DfPolicy string `json:"dfPolicy"`
+
+	// EncryptionAlgorithms contains list of Encryption algorithms to use in IPSec tunnel establishment.
+	// Default is AES_GCM_128.
+	// * NO_ENCRYPTION_AUTH_AES_GMAC_XX (XX is 128, 192, 256) enables authentication on input data without encryption.
+	// If one of these options is used, digest algorithm should be empty.
+	//
+	// Possible values are: AES_128, AES_256, AES_GCM_128, AES_GCM_192, AES_GCM_256, NO_ENCRYPTION_AUTH_AES_GMAC_128,
+	// NO_ENCRYPTION_AUTH_AES_GMAC_192, NO_ENCRYPTION_AUTH_AES_GMAC_256, NO_ENCRYPTION
+	EncryptionAlgorithms []string `json:"encryptionAlgorithms"`
+
+	// DigestAlgorithms contains list of Digest algorithms to be used for message digest. The default digest algorithm is
+	// implicitly covered by default encryption algorithm AES_GCM_128.
+	//
+	// Possible values are: SHA1 , SHA2_256 , SHA2_384 , SHA2_512
+	// Note. Only one value can be set inside the slice
+	DigestAlgorithms []string `json:"digestAlgorithms"`
+
+	// DhGroups contains list of Diffie-Hellman groups to be used is PFS is enabled. Default is GROUP14.
+	//
+	// Possible values are: GROUP2, GROUP5, GROUP14, GROUP15, GROUP16, GROUP19, GROUP20, GROUP21
+	// Note. Only one value can be set inside the slice
+	DhGroups []string `json:"dhGroups"`
+
+	// SaLifeTime is the Security Association life time in seconds.
+	//
+	// Default is 3600 seconds.
+	SaLifeTime *int `json:"saLifeTime"`
+}
+
+// NsxtIpSecVpnTunnelProfileDpdConfiguration specifies the Dead Peer Detection Profile. This configurations determines
+// the number of seconds to wait in time between probes to detect if an IPSec peer is alive or not. The default value
+// for the DPD probe interval is 60 seconds.
+type NsxtIpSecVpnTunnelProfileDpdConfiguration struct {
+	// ProbeInternal is value of the probe interval in seconds. This defines a periodic interval for DPD probes. The
+	// minimum is 3 seconds and the maximum is 60 seconds.
+	ProbeInterval int `json:"probeInterval"`
 }
