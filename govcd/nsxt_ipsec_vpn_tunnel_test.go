@@ -122,6 +122,77 @@ func (vcd *TestVCD) Test_NsxtIpSecVpnCustomSecurityProfile(check *C) {
 	check.Assert(updatedIpSecVpn.NsxtIpSecVpn, DeepEquals, latestSecProfile.NsxtIpSecVpn)
 }
 
+// Test_NsxtIpSecVpnUniqueness checks that uniqueness is enforced at API level on LocalAddress+RemoteAddress by creating
+// two IPsec VPN tunnels with different field values but the same LocalAddress and RemoteAddress without any other
+// fields clashing.
+func (vcd *TestVCD) Test_NsxtIpSecVpnUniqueness(check *C) {
+	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointFirewallGroups)
+
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	nsxtVdc, err := org.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+	check.Assert(err, IsNil)
+
+	edge, err := nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
+	check.Assert(err, IsNil)
+
+	ipSecDef := &types.NsxtIpSecVpnTunnel{
+		Name:        check.TestName(),
+		Description: check.TestName() + "-description",
+		Enabled:     true,
+		LocalEndpoint: types.NsxtIpSecVpnTunnelLocalEndpoint{
+			LocalAddress:  edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
+			LocalNetworks: []string{"10.10.10.0/24"},
+		},
+		RemoteEndpoint: types.NsxtIpSecVpnTunnelRemoteEndpoint{
+			RemoteId:       "192.168.140.1",
+			RemoteAddress:  "192.168.140.1",
+			RemoteNetworks: []string{"20.20.20.0/24"},
+		},
+		PreSharedKey: "PSK-Sec",
+		SecurityType: "DEFAULT",
+		Logging:      true,
+	}
+
+	// Create first IPsec VPN Tunnel
+	createdIpSecVpn, err := edge.CreateIpSecVpnTunnel(ipSecDef)
+	check.Assert(err, IsNil)
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + fmt.Sprintf(types.OpenApiEndpointIpSecVpnTunnel, createdIpSecVpn.edgeGatewayId) + createdIpSecVpn.NsxtIpSecVpn.ID
+	AddToCleanupListOpenApi(createdIpSecVpn.NsxtIpSecVpn.Name, check.TestName(), openApiEndpoint)
+
+	// Try to create second IPsec VPN Tunnel with the same localAddress and RemoteAddress and expect an error
+	ipSecDef2 := &types.NsxtIpSecVpnTunnel{
+		Name:        check.TestName() + "2",
+		Description: check.TestName() + "-description2",
+		Enabled:     true,
+		LocalEndpoint: types.NsxtIpSecVpnTunnelLocalEndpoint{
+			LocalAddress:  edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
+			LocalNetworks: []string{"40.10.10.0/24"},
+		},
+		RemoteEndpoint: types.NsxtIpSecVpnTunnelRemoteEndpoint{
+			RemoteId:       "192.168.140.1",
+			RemoteAddress:  "192.168.140.1",
+			RemoteNetworks: []string{"50.20.20.0/24"},
+		},
+		PreSharedKey: "PSK-Sec",
+		SecurityType: "DEFAULT",
+		Logging:      true,
+	}
+
+	// Ensure that the IsEqual matches those definitions as equal ones
+	check.Assert(createdIpSecVpn.IsEqualTo(ipSecDef2), Equals, true)
+
+	createdIpSecVpn2, err := edge.CreateIpSecVpnTunnel(ipSecDef2)
+	check.Assert(err.Error(), Matches, ".*IPSec VPN Tunnel with local address .* and remote address .* is already in use.*")
+	check.Assert(createdIpSecVpn2, IsNil)
+
+	// Removing the first IPsec VPN tunnel
+	err = createdIpSecVpn.Delete()
+	check.Assert(err, IsNil)
+}
+
 func runIpSecVpnTests(check *C, edge *NsxtEdgeGateway, ipSecDef *types.NsxtIpSecVpnTunnel) {
 	createdIpSecVpn, err := edge.CreateIpSecVpnTunnel(ipSecDef)
 	check.Assert(err, IsNil)

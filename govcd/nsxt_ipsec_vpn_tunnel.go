@@ -317,9 +317,6 @@ func (ipSecVpn *NsxtIpSecVpnTunnel) GetTunnelConnectionProperties() (*types.Nsxt
 
 // IsEqualTo helps to find NSX-T IPsec VPN Tunnel Configuration
 // Combination of LocalAddress and RemoteAddress has to be unique (enforced by API). This is a list of fields compared:
-// * Name
-// * Description
-// * Enabled
 // * LocalEndpoint.LocalAddress
 // * RemoteEndpoint.RemoteAddress
 func (ipSecVpn *NsxtIpSecVpnTunnel) IsEqualTo(vpnConfig *types.NsxtIpSecVpnTunnel) bool {
@@ -327,9 +324,6 @@ func (ipSecVpn *NsxtIpSecVpnTunnel) IsEqualTo(vpnConfig *types.NsxtIpSecVpnTunne
 }
 
 // ipSetVpnRulesEqual performs comparison of two NSX-T IPsec VPN Tunnels to ease lookup. This is a list of fields compared:
-// * Name
-// * Description
-// * Enabled
 // * LocalEndpoint.LocalAddress
 // * RemoteEndpoint.RemoteAddress
 func ipSetVpnRulesEqual(first, second *types.NsxtIpSecVpnTunnel) bool {
@@ -339,10 +333,7 @@ func ipSetVpnRulesEqual(first, second *types.NsxtIpSecVpnTunnel) bool {
 	util.Logger.Printf("%+v\n", second)
 
 	// These fields should be enough to cover uniqueness
-	if first.Name == second.Name &&
-		first.Description == second.Description &&
-		first.Enabled == second.Enabled &&
-		first.LocalEndpoint.LocalAddress == second.LocalEndpoint.LocalAddress &&
+	if first.LocalEndpoint.LocalAddress == second.LocalEndpoint.LocalAddress &&
 		first.RemoteEndpoint.RemoteAddress == second.RemoteEndpoint.RemoteAddress {
 		return true
 	}
