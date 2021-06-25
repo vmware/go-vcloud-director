@@ -6,7 +6,7 @@
 * Bumped Default API Version to V33.0  [#371](https://github.com/vmware/go-vcloud-director/pull/371)
 * Methods `GetVDCById` and `GetVDCByName` for `Org` now use queries behind the scenes because Org 
   structure does not list child VDCs anymore  [#371](https://github.com/vmware/go-vcloud-director/pull/371), 
-  [#376](https://github.com/vmware/go-vcloud-director/pull/376)
+  [#376](https://github.com/vmware/go-vcloud-director/pull/376), [#382](https://github.com/vmware/go-vcloud-director/pull/382)
 * Methods `GetCatalogById` and `GetCatalogByName` for `Org`  now use queries behind the scenes because Org
   structure does not list child Catalogs anymore  [#371](https://github.com/vmware/go-vcloud-director/pull/371), 
   [#376](https://github.com/vmware/go-vcloud-director/pull/376)
@@ -51,9 +51,12 @@
 * Added convenience function `FindMissingImpliedRights` [#380](https://github.com/vmware/go-vcloud-director/pull/380)
 * Added methods `NsxtEdgeGateway.UpdateNsxtFirewall()`, `NsxtEdgeGateway.GetNsxtFirewall()`, `nsxtFirewall.DeleteAllRules()`,
   `nsxtFirewall.DeleteRuleById` [#381](https://github.com/vmware/go-vcloud-director/pull/381)
+* Added NSX-T NAT support with types `NsxtNatRule` and `types.NsxtNatRule` as well as methods `edge.GetAllNsxtNatRules`,
+  `edge.GetNsxtNatRuleByName`, `edge.GetNsxtNatRuleById`, `edge.CreateNatRule`, `nsxtNatRule.Update`, `nsxtNatRule.Delete`,
+  `nsxtNatRule.IsEqualTo` [#382](https://github.com/vmware/go-vcloud-director/pull/382)
 * Added `NsxtIpSecVpnTunnel` and `types.NsxtIpSecVpnTunnel` for NSX-T IPsec VPN Tunnel configuration
   [#385](https://github.com/vmware/go-vcloud-director/pull/385)
-  
+
 BREAKING CHANGES:
 * Added parameter `description` to method `vdc.ComposeRawVapp` [#372](https://github.com/vmware/go-vcloud-director/pull/372)
 * Added methods `vapp.Rename`, `vapp.UpdateDescription`, `vapp.UpdateNameDescription` [#372](https://github.com/vmware/go-vcloud-director/pull/372)

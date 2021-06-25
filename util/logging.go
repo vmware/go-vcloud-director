@@ -296,12 +296,13 @@ func ProcessRequestOutput(caller, operation, url, payload string, req *http.Requ
 	if isBinary(payload, req) {
 		payload = "[binary data]"
 	}
-	if dataSize > 0 {
-		Logger.Printf("Request data: [%d]\n%s\n", dataSize, hidePasswords(payload, false))
-	}
+	// Request header should be shown before Request data
 	Logger.Printf("Req header:\n")
 	logSanitizedHeader(req.Header)
 
+	if dataSize > 0 {
+		Logger.Printf("Request data: [%d]\n%s\n", dataSize, hidePasswords(payload, false))
+	}
 }
 
 // Logs the essentials of a HTTP response
