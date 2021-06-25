@@ -254,7 +254,7 @@ func (ipSecVpn *NsxtIpSecVpnTunnel) GetStatus() (*types.NsxtIpSecVpnTunnelStatus
 
 	err = ipSecVpn.client.OpenApiGetItem(minimumApiVersion, urlRef, nil, ipSecVpnTunnelStatus, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error deleting NSX-T IPsec VPN Tunnel configuration: %s", err)
+		return nil, fmt.Errorf("error getting NSX-T IPsec VPN Tunnel status: %s", err)
 	}
 
 	return ipSecVpnTunnelStatus, nil
@@ -309,7 +309,7 @@ func (ipSecVpn *NsxtIpSecVpnTunnel) GetTunnelConnectionProperties() (*types.Nsxt
 	ipSecVpnTunnelProfile := &types.NsxtIpSecVpnTunnelSecurityProfile{}
 	err = ipSecVpn.client.OpenApiGetItem(minimumApiVersion, urlRef, nil, ipSecVpnTunnelProfile, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error removing NSX-T IPsec VPN Connection Properties: %s", err)
+		return nil, fmt.Errorf("error retrieving NSX-T IPsec VPN Connection Properties: %s", err)
 	}
 
 	return ipSecVpnTunnelProfile, nil
