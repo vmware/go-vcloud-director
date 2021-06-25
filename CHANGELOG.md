@@ -27,6 +27,8 @@
   [#368](https://github.com/vmware/go-vcloud-director/pull/368)
 * Added `NsxtAppPortProfile` and `types.NsxtAppPortProfile` for NSX-T Application Port Profile management 
   [#378](https://github.com/vmware/go-vcloud-director/pull/378)  
+* Deprecated methods `vdc.ComposeRawVApp` and `vdc.ComposeVApp` [#387](https://github.com/vmware/go-vcloud-director/pull/387)
+* Added method `vdc.CreateRawVApp` [#387](https://github.com/vmware/go-vcloud-director/pull/387)
 * Removed deprecated method `adminOrg.GetRole`  
 * Added Tenant Context management functions `Client.RemoveCustomHeader`, `Client.SetCustomHeader`, `WithHttpHeader`, 
   and many private methods to retrieve tenant context down the hierarchy. More details in `CODING_GUIDELINES.md`
