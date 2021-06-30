@@ -1,4 +1,4 @@
-## 2.12.0 (unreleased)
+## 2.12.0 (June 30, 2021)
 
 * Added method `vdc.QueryEdgeGateway` [#364](https://github.com/vmware/go-vcloud-director/pull/364)
 * Deprecated `vdc.GetEdgeGatewayRecordsType` [#364](https://github.com/vmware/go-vcloud-director/pull/364)
