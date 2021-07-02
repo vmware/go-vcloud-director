@@ -415,7 +415,7 @@ func (org *Org) queryOrgVdcById(vdcId string) (*types.QueryResultOrgVdcRecordTyp
 // queryCatalogByName returns a single CatalogRecord
 func (org *Org) queryCatalogByName(catalogName string) (*types.CatalogRecord, error) {
 	filterMap := map[string]string{
-		// Not injecting `org` or `orgName` here because shared catalogs may also appear here and they would have org
+		// Not injecting `org` or `orgName` here because shared catalogs may also appear here and they would have different
 		// parent Org
 		//"org":     org.Org.HREF,
 		//"orgName": org.Org.Name,
@@ -463,7 +463,7 @@ func (org *Org) queryCatalogByName(catalogName string) (*types.CatalogRecord, er
 // queryCatalogById returns a single QueryResultOrgVdcRecordType
 func (org *Org) queryCatalogById(catalogId string) (*types.CatalogRecord, error) {
 	filterMap := map[string]string{
-		// Not injecting `org` or `orgName` here because shared catalogs may also appear here and they would have org
+		// Not injecting `org` or `orgName` here because shared catalogs may also appear here and they would have different
 		// parent Org
 		//"org":     org.Org.HREF,
 		//"orgName": org.Org.Name,
