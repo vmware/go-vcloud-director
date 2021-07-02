@@ -1,3 +1,10 @@
+## 2.12.1 (TBC)
+
+BUGS FIXED:
+* org.GetCatalogByName and org.GetCatalogById could not retrieve shared catalogs from different Orgs 
+  [#389](https://github.com/vmware/go-vcloud-director/pull/389)
+
+
 ## 2.12.0 (June 30, 2021)
 
 * Added method `vdc.QueryEdgeGateway` [#364](https://github.com/vmware/go-vcloud-director/pull/364)

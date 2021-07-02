@@ -659,6 +659,79 @@ func (vcd *TestVCD) Test_GetCatalogByNamePrefersLocal(check *C) {
 	cleanupCatalogOrgVdc(check, err, sharedCatalog, vdc, vcd, newOrg1)
 }
 
+// Test_GetCatalogByNameSharedCatalogOrgUser additionally tests GetOrgByName and GetOrgById using a custom created Org
+// Admin user. It tests the following cases:
+// * System user must be able to retrieve any catalog - shared or unshared from another Org
+// * Org Admin user must be able to retrieve catalog in his own Org
+// * Org Admin user must be able to retrieve shared catalog from another Org
+// * Org admin user must not be able to retrieve unshared catalog from another Org
+func (vcd *TestVCD) Test_GetCatalogByXSharedCatalogOrgUser(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	newOrg1, vdc, sharedCatalog := createSharedCatalogInNewOrg(vcd, check, check.TestName())
+
+	// Create one more additional catalog which is not shared
+	unsharedCatalog, err := newOrg1.CreateCatalog("unshared-catalog", check.TestName())
+	check.Assert(err, IsNil)
+	AddToCleanupList(unsharedCatalog.Catalog.Name, "catalog", newOrg1.Org.Name, check.TestName())
+
+	// Try to find the catalog inside Org which owns it - newOrg1
+	catalogByName, err := newOrg1.GetCatalogByName(sharedCatalog.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(catalogByName.Catalog.Name, Equals, sharedCatalog.Catalog.Name)
+
+	// Try to find the catalog in another Org with which this catalog is shared (vcd.Org)
+	sharedCatalogByName, err := vcd.org.GetCatalogByName(sharedCatalog.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(sharedCatalogByName.Catalog.Name, Equals, sharedCatalog.Catalog.Name)
+
+	// Try to find unshared catalog from another Org with System user
+	systemUnsharedCatalogByName, err := vcd.org.GetCatalogByName(unsharedCatalog.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(systemUnsharedCatalogByName.Catalog.ID, Equals, unsharedCatalog.Catalog.ID)
+
+	// Create an Org Admin user and test that it can find catalog as well
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	orgAdminClient, err := newOrgUserConnection(adminOrg, "test-user", "CHANGE-ME", vcd.config.Provider.Url, true)
+	check.Assert(err, IsNil)
+	orgAsOrgUser, err := orgAdminClient.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	// Find a catalog in the same Org using Org Admin user
+	orgAdminCatalogByNameSameOrg, err := orgAsOrgUser.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(orgAdminCatalogByNameSameOrg.Catalog.Name, Equals, vcd.config.VCD.Catalog.Name)
+
+	orgAdminCatalogByIdSameOrg, err := orgAsOrgUser.GetCatalogById(orgAdminCatalogByNameSameOrg.Catalog.ID, false)
+	check.Assert(err, IsNil)
+	check.Assert(orgAdminCatalogByIdSameOrg.Catalog.Name, Equals, orgAdminCatalogByNameSameOrg.Catalog.Name)
+	check.Assert(orgAdminCatalogByIdSameOrg.Catalog.ID, Equals, orgAdminCatalogByNameSameOrg.Catalog.ID)
+
+	// Find a shared catalog from another Org using Org Admin user
+	orgAdminCatalogByName, err := orgAsOrgUser.GetCatalogByName(sharedCatalog.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(orgAdminCatalogByName.Catalog.Name, Equals, sharedCatalog.Catalog.Name)
+	check.Assert(orgAdminCatalogByName.Catalog.ID, Equals, sharedCatalog.Catalog.ID)
+
+	orgAdminCatalogById, err := orgAsOrgUser.GetCatalogById(sharedCatalog.Catalog.ID, false)
+	check.Assert(err, IsNil)
+	check.Assert(orgAdminCatalogById.Catalog.Name, Equals, sharedCatalog.Catalog.Name)
+	check.Assert(orgAdminCatalogById.Catalog.ID, Equals, sharedCatalog.Catalog.ID)
+
+	// Try to find unshared catalog from another Org with Org admin user and expect an ErrorEntityNotFound
+	_, err = orgAsOrgUser.GetCatalogByName(unsharedCatalog.Catalog.Name, true)
+	check.Assert(ContainsNotFound(err), Equals, true)
+
+	_, err = orgAsOrgUser.GetCatalogById(unsharedCatalog.Catalog.ID, true)
+	check.Assert(ContainsNotFound(err), Equals, true)
+
+	// Cleanup
+	err = unsharedCatalog.Delete(true, true)
+	check.Assert(err, IsNil)
+
+	cleanupCatalogOrgVdc(check, err, sharedCatalog, vdc, vcd, newOrg1)
+}
+
 func createSharedCatalogInNewOrg(vcd *TestVCD, check *C, newCatalogName string) (*Org, *Vdc, Catalog) {
 	newOrgName1 := spawnTestOrg(vcd, check, "org")
 
