@@ -428,10 +428,33 @@ func (org *Org) queryCatalogByName(catalogName string) (*types.CatalogRecord, er
 		return nil, ErrorEntityNotFound
 	}
 
+	// To conform with this API standard it would be best to return an error if more than 1 item is found, but because
+	// previous method of getting Catalog by Name returned the first result we are doing the same here
+	//if len(allCatalogs) > 1 {
+	//	return nil, fmt.Errorf("found more than 1 Catalog with Name '%s'", catalogName)
+	//}
+
+	var localCatalog *types.CatalogRecord
+	// if multiple results are found - return the one defined in `org` (local)
 	if len(allCatalogs) > 1 {
-		return nil, fmt.Errorf("found more than 1 VDC with Name '%s'", catalogName)
+		util.Logger.Printf("[DEBUG] org.queryCatalogByName found %d Catalogs by name '%s'", len(allCatalogs), catalogName)
+		for _, catalog := range allCatalogs {
+			util.Logger.Printf("[DEBUG] org.queryCatalogByName found a Catalog by name '%s' in Org '%s'", catalogName, catalog.OrgName)
+			if catalog.OrgName == org.Org.Name {
+				util.Logger.Printf("[DEBUG] org.queryCatalogByName Catalog '%s' is local for Org '%s'. Prioritising it",
+					catalogName, org.Org.Name)
+				// Not interrupting the loop here to still dump all results to logs
+				localCatalog = catalog
+			}
+		}
 	}
 
+	// local catalog was found - return it
+	if localCatalog != nil {
+		return localCatalog, nil
+	}
+
+	// If only one catalog is found or multiple catalogs with no local ones - return the first one
 	return allCatalogs[0], nil
 }
 

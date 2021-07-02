@@ -1107,17 +1107,3 @@ func validateQueryOrgVdcResults(vcd *TestVCD, check *C, name, orgName string, ex
 		fmt.Println()
 	}
 }
-
-// spawnTestOrg spawns an Org to be used in tests
-func spawnTestOrg(vcd *TestVCD, check *C, nameSuffix string) string {
-	newOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
-	check.Assert(err, IsNil)
-	newOrgName := check.TestName() + "-" + nameSuffix
-	task, err := CreateOrg(vcd.client, newOrgName, newOrgName, newOrgName, newOrg.AdminOrg.OrgSettings, true)
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	AddToCleanupList(newOrgName, "org", "", check.TestName())
-
-	return newOrgName
-}

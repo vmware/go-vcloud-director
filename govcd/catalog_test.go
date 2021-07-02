@@ -597,3 +597,116 @@ func (vcd *TestVCD) TestGetVappTemplateByHref(check *C) {
 	check.Assert(vappTemplate.VAppTemplate.Type, Equals, types.MimeVAppTemplate)
 	check.Assert(vappTemplate.VAppTemplate.Name, Equals, catalogItem.CatalogItem.Name)
 }
+
+// Test_GetCatalogByNameSharedCatalog creates a separate Org and VDC just to create Catalog and share it with main Org
+// One should be able to find shared catalogs from different Organizations
+func (vcd *TestVCD) Test_GetCatalogByNameSharedCatalog(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	newOrg1, vdc, sharedCatalog := createSharedCatalogInNewOrg(vcd, check, check.TestName())
+
+	// Try to find the catalog inside Org which owns it - newOrg1
+	catalogByName, err := newOrg1.GetCatalogByName(sharedCatalog.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(catalogByName.Catalog.Name, Equals, sharedCatalog.Catalog.Name)
+
+	// Try to find the catalog in another Org with which this catalog is shared (vcd.Org)
+	sharedCatalogByName, err := vcd.org.GetCatalogByName(sharedCatalog.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(sharedCatalogByName.Catalog.Name, Equals, sharedCatalog.Catalog.Name)
+
+	cleanupCatalogOrgVdc(check, err, sharedCatalog, vdc, vcd, newOrg1)
+}
+
+// Test_GetCatalogByIdSharedCatalog creates a separate Org and VDC just to create Catalog and share it with main Org
+// One should be able to find shared catalogs from different Organizations
+func (vcd *TestVCD) Test_GetCatalogByIdSharedCatalog(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	newOrg1, vdc, sharedCatalog := createSharedCatalogInNewOrg(vcd, check, check.TestName())
+
+	// Try to find the sharedCatalog inside Org which owns it - newOrg1
+	catalogById, err := newOrg1.GetCatalogById(sharedCatalog.Catalog.ID, true)
+	check.Assert(err, IsNil)
+	check.Assert(catalogById.Catalog.Name, Equals, sharedCatalog.Catalog.Name)
+
+	// Try to find the sharedCatalog in another Org with which this sharedCatalog is shared (vcd.Org)
+	sharedCatalogById, err := vcd.org.GetCatalogById(sharedCatalog.Catalog.ID, false)
+	check.Assert(err, IsNil)
+	check.Assert(sharedCatalogById.Catalog.Name, Equals, sharedCatalog.Catalog.Name)
+
+	cleanupCatalogOrgVdc(check, err, sharedCatalog, vdc, vcd, newOrg1)
+}
+
+// Test_GetCatalogByNamePrefersLocal tests that local catalog (in the same Org) is prioritised against shared catalogs
+// in other Orgs. It does so by creating another Org with shared Catalog named just like the one in testing catalog
+func (vcd *TestVCD) Test_GetCatalogByNamePrefersLocal(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	// Create a catalog  in new org with exactly the same name as in vcd.Org
+	newOrg1, vdc, sharedCatalog := createSharedCatalogInNewOrg(vcd, check, vcd.config.VCD.Catalog.Name)
+
+	// Make sure that the Owner Org HREF is the local one for vcd.Org catalog named vcd.config.VCD.Catalog.Name
+	catalogByNameInTestOrg, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(catalogByNameInTestOrg.parent.orgName(), Equals, vcd.org.Org.Name)
+
+	// Make sure that the Owner Org HREF is the local one for vcd.Org catalog named vcd.config.VCD.Catalog.Name
+	catalogByNameInNewOrg, err := newOrg1.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(catalogByNameInNewOrg.parent.orgName(), Equals, newOrg1.Org.Name)
+
+	cleanupCatalogOrgVdc(check, err, sharedCatalog, vdc, vcd, newOrg1)
+}
+
+func createSharedCatalogInNewOrg(vcd *TestVCD, check *C, newCatalogName string) (*Org, *Vdc, Catalog) {
+	newOrgName1 := spawnTestOrg(vcd, check, "org")
+
+	newOrg1, err := vcd.client.GetOrgByName(newOrgName1)
+	check.Assert(err, IsNil)
+
+	// Spawn a VDC inside newly created Org so that there is storage to create new catalog
+	vdc := spawnTestVdc(vcd, check, newOrgName1)
+
+	catalog, err := newOrg1.CreateCatalog(newCatalogName, "Catalog for testing")
+	check.Assert(err, IsNil)
+	AddToCleanupList(newCatalogName, "catalog", newOrgName1, check.TestName())
+
+	// Share new Catalog in newOrgName1 with default test Org vcd.Org
+	readOnly := "ReadOnly"
+	accessControl := &types.ControlAccessParams{
+		IsSharedToEveryone:  false,
+		EveryoneAccessLevel: &readOnly,
+		AccessSettings: &types.AccessSettingList{
+			AccessSetting: []*types.AccessSetting{&types.AccessSetting{
+				Subject: &types.LocalSubject{
+					HREF: vcd.org.Org.HREF,
+					Name: vcd.org.Org.Name,
+					Type: types.MimeOrg,
+				},
+				AccessLevel: "ReadOnly",
+			}},
+		},
+	}
+	err = catalog.SetAccessControl(accessControl, false)
+	check.Assert(err, IsNil)
+
+	return newOrg1, vdc, catalog
+}
+
+func cleanupCatalogOrgVdc(check *C, err error, sharedCatalog Catalog, vdc *Vdc, vcd *TestVCD, newOrg1 *Org) {
+	// Cleanup catalog, vdc and org
+	err = sharedCatalog.Delete(true, true)
+	check.Assert(err, IsNil)
+
+	// There are cases where it just takes a a few seconds after catalog deletion when one can delete VDC
+	time.Sleep(2 * time.Second)
+
+	err = vdc.DeleteWait(true, true)
+	check.Assert(err, IsNil)
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(newOrg1.Org.Name)
+	check.Assert(err, IsNil)
+	err = adminOrg.Delete(true, true)
+	check.Assert(err, IsNil)
+}
