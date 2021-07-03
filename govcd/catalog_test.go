@@ -615,7 +615,7 @@ func (vcd *TestVCD) Test_GetCatalogByNameSharedCatalog(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(sharedCatalogByName.Catalog.Name, Equals, sharedCatalog.Catalog.Name)
 
-	cleanupCatalogOrgVdc(check, err, sharedCatalog, vdc, vcd, newOrg1)
+	cleanupCatalogOrgVdc(check, sharedCatalog, vdc, vcd, newOrg1)
 }
 
 // Test_GetCatalogByIdSharedCatalog creates a separate Org and VDC just to create Catalog and share it with main Org
@@ -635,7 +635,7 @@ func (vcd *TestVCD) Test_GetCatalogByIdSharedCatalog(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(sharedCatalogById.Catalog.Name, Equals, sharedCatalog.Catalog.Name)
 
-	cleanupCatalogOrgVdc(check, err, sharedCatalog, vdc, vcd, newOrg1)
+	cleanupCatalogOrgVdc(check, sharedCatalog, vdc, vcd, newOrg1)
 }
 
 // Test_GetCatalogByNamePrefersLocal tests that local catalog (in the same Org) is prioritised against shared catalogs
@@ -656,7 +656,7 @@ func (vcd *TestVCD) Test_GetCatalogByNamePrefersLocal(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(catalogByNameInNewOrg.parent.orgName(), Equals, newOrg1.Org.Name)
 
-	cleanupCatalogOrgVdc(check, err, sharedCatalog, vdc, vcd, newOrg1)
+	cleanupCatalogOrgVdc(check, sharedCatalog, vdc, vcd, newOrg1)
 }
 
 // Test_GetCatalogByNameSharedCatalogOrgUser additionally tests GetOrgByName and GetOrgById using a custom created Org
@@ -729,7 +729,7 @@ func (vcd *TestVCD) Test_GetCatalogByXSharedCatalogOrgUser(check *C) {
 	err = unsharedCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
 
-	cleanupCatalogOrgVdc(check, err, sharedCatalog, vdc, vcd, newOrg1)
+	cleanupCatalogOrgVdc(check, sharedCatalog, vdc, vcd, newOrg1)
 }
 
 func createSharedCatalogInNewOrg(vcd *TestVCD, check *C, newCatalogName string) (*Org, *Vdc, Catalog) {
@@ -767,9 +767,9 @@ func createSharedCatalogInNewOrg(vcd *TestVCD, check *C, newCatalogName string) 
 	return newOrg1, vdc, catalog
 }
 
-func cleanupCatalogOrgVdc(check *C, err error, sharedCatalog Catalog, vdc *Vdc, vcd *TestVCD, newOrg1 *Org) {
+func cleanupCatalogOrgVdc(check *C, sharedCatalog Catalog, vdc *Vdc, vcd *TestVCD, newOrg1 *Org) {
 	// Cleanup catalog, vdc and org
-	err = sharedCatalog.Delete(true, true)
+	err := sharedCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
 
 	// There are cases where it just takes a a few seconds after catalog deletion when one can delete VDC

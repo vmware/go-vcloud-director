@@ -417,8 +417,8 @@ func (org *Org) queryCatalogByName(catalogName string) (*types.CatalogRecord, er
 	filterMap := map[string]string{
 		// Not injecting `org` or `orgName` here because shared catalogs may also appear here and they would have different
 		// parent Org
-		//"org":     org.Org.HREF,
-		//"orgName": org.Org.Name,
+		// "org":     org.Org.HREF,
+		// "orgName": org.Org.Name,
 		"name": catalogName,
 	}
 	allCatalogs, err := queryCatalogList(org.client, filterMap)
@@ -432,9 +432,9 @@ func (org *Org) queryCatalogByName(catalogName string) (*types.CatalogRecord, er
 
 	// To conform with this API standard it would be best to return an error if more than 1 item is found, but because
 	// previous method of getting Catalog by Name returned the first result we are doing the same here
-	//if len(allCatalogs) > 1 {
-	//	return nil, fmt.Errorf("found more than 1 Catalog with Name '%s'", catalogName)
-	//}
+	// if len(allCatalogs) > 1 {
+	// 	return nil, fmt.Errorf("found more than 1 Catalog with Name '%s'", catalogName)
+	// }
 
 	var localCatalog *types.CatalogRecord
 	// if multiple results are found - return the one defined in `org` (local)
@@ -465,8 +465,8 @@ func (org *Org) queryCatalogById(catalogId string) (*types.CatalogRecord, error)
 	filterMap := map[string]string{
 		// Not injecting `org` or `orgName` here because shared catalogs may also appear here and they would have different
 		// parent Org
-		//"org":     org.Org.HREF,
-		//"orgName": org.Org.Name,
+		// "org":     org.Org.HREF,
+		// "orgName": org.Org.Name,
 		"id": catalogId,
 	}
 	allCatalogs, err := queryCatalogList(org.client, filterMap)
