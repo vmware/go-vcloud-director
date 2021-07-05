@@ -772,9 +772,6 @@ func cleanupCatalogOrgVdc(check *C, sharedCatalog Catalog, vdc *Vdc, vcd *TestVC
 	err := sharedCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
 
-	// There are cases where it just takes a a few seconds after catalog deletion when one can delete VDC
-	time.Sleep(2 * time.Second)
-
 	err = vdc.DeleteWait(true, true)
 	check.Assert(err, IsNil)
 
