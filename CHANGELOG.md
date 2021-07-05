@@ -1,4 +1,4 @@
-## 2.12.1 (TBC)
+## 2.12.1 (5 July, 2021)
 
 BUGS FIXED:
 * org.GetCatalogByName and org.GetCatalogById could not retrieve shared catalogs from different Orgs 
