@@ -70,7 +70,7 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 		return fmt.Errorf("error decoding task response: %s", err)
 	}
 	if task.Task.Status == "error" {
-		return fmt.Errorf("catalog not properly destroyed")
+		return fmt.Errorf(combinedTaskErrorMessage(task.Task, fmt.Errorf("catalog %s not properly destroyed", catalog.Catalog.Name)))
 	}
 	return task.WaitTaskCompletion()
 }

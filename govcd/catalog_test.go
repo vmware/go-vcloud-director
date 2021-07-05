@@ -131,6 +131,13 @@ func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
 	// If something fails after this point, the entity will be removed
 	AddToCleanupList(TestDeleteCatalog, "catalog", vcd.config.VCD.Org, "Test_DeleteCatalog")
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, TestDeleteCatalog)
+
+	checkUploadOvf(vcd, check, vcd.config.OVA.OvaPath, TestDeleteCatalog, TestUploadOvf)
+	err = adminCatalog.Delete(false, false)
+	check.Assert(err, NotNil)
+	// Catalog is not empty. An attempt to delete without recursion will fail
+	check.Assert(strings.Contains(err.Error(), "You must remove"), Equals, true)
+
 	err = adminCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
 	doesCatalogExist(check, org)
@@ -317,14 +324,14 @@ func countFolders() int {
 }
 
 func checkUploadOvf(vcd *TestVCD, check *C, ovaFileName, catalogName, itemName string) {
-	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+	catalog, org := findCatalog(vcd, check, catalogName)
 
 	uploadTask, err := catalog.UploadOvf(ovaFileName, itemName, "upload from test", 1024)
 	check.Assert(err, IsNil)
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+catalogName, "checkUploadOvf")
 
 	catalog, err = org.GetCatalogByName(catalogName, false)
 	check.Assert(err, IsNil)
