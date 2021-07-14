@@ -9,6 +9,7 @@ package govcd
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -1810,4 +1811,502 @@ func (vcd *TestVCD) Test_CreateStandaloneVMFromTemplate(check *C) {
 	_ = vdc.Refresh()
 	vappList = vdc.GetVappList()
 	check.Assert(len(vappList), Equals, vappNum)
+}
+
+func (vcd *TestVCD) Test_VmMoveToVapp(check *C) {
+
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Org not found in configuration")
+	}
+	if vcd.config.VCD.Vdc == "" {
+		check.Skip("VDC not found in configuration")
+	}
+	if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("Catalog not found in configuration")
+	}
+	if vcd.config.VCD.Catalog.CatalogItem == "" {
+		check.Skip("Catalog item not found in configuration")
+	}
+	// Retrieve Org, VDC, and Catalog
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+
+	// Upload a small catalog item
+	startTime := time.Now()
+	catalogItemName := check.TestName()
+	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OvaPath, catalogItemName, "upload from VM move test", 1024)
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(catalogItemName, "catalogItem", vcd.org.Org.Name+"|"+catalog.Catalog.Name, check.TestName())
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	elapsed := time.Since(startTime)
+	verbosePrintf("upload vApp template %s\n", elapsed)
+
+	// Create vApps
+	vappName1 := check.TestName() + "-1"
+	vappDescription1 := "test compose raw vAppV2 - 1"
+	vappName2 := check.TestName() + "-2"
+	vappDescription2 := "test compose raw vAppV2 - 2"
+	vappName3 := check.TestName() + "-3"
+	vappDescription3 := "test compose raw vAppV2 - 3"
+	vappName4 := check.TestName() + "-4"
+	vappDescription4 := "test compose raw vAppV2 - 4"
+
+	startTimeVapps := time.Now()
+	vapp1, err := makeEmptyVapp(vdc, vappName1, vappDescription1)
+	check.Assert(err, IsNil)
+	AddToCleanupList(vappName1, "vapp", vdc.Vdc.Name, check.TestName())
+
+	vapp2, err := makeEmptyVapp(vdc, vappName2, vappDescription2)
+	check.Assert(err, IsNil)
+	AddToCleanupList(vappName2, "vapp", vdc.Vdc.Name, check.TestName())
+
+	vapp3, err := makeEmptyVapp(vdc, vappName3, vappDescription3)
+	check.Assert(err, IsNil)
+	AddToCleanupList(vappName3, "vapp", vdc.Vdc.Name, check.TestName())
+
+	vapp4, err := makeEmptyVapp(vdc, vappName4, vappDescription4)
+	check.Assert(err, IsNil)
+	AddToCleanupList(vappName4, "vapp", vdc.Vdc.Name, check.TestName())
+
+	elapsed = time.Since(startTimeVapps)
+	verbosePrintf("vApps created %s\n", elapsed)
+
+	// Create VM from internal catalog in vApp2
+	startTimeVm2 := time.Now()
+	vm2, err := makeEmptyVm(vapp2, vappName2)
+	check.Assert(err, IsNil)
+
+	elapsed = time.Since(startTimeVm2)
+	verbosePrintf("empty VM created %s\n", elapsed)
+
+	// Create VM from small template in vApp3
+	startTimeVm3 := time.Now()
+	item, err := catalog.GetCatalogItemByName(catalogItemName, true)
+	check.Assert(err, IsNil)
+	template, err := item.GetVAppTemplate()
+	check.Assert(err, IsNil)
+	task, err := vapp3.AddNewVM(vappName3, template, nil, true)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	vm3, err := vapp3.GetVMByName(vappName3, true)
+	check.Assert(err, IsNil)
+
+	elapsed = time.Since(startTimeVm3)
+	verbosePrintf("VM from small template created %s\n", elapsed)
+
+	templateName := vcd.config.VCD.Catalog.CatalogItem
+	// Create VM from larger template in vApp4
+	startTimeVm4 := time.Now()
+	existingItem, err := catalog.GetCatalogItemByName(templateName, true)
+	check.Assert(err, IsNil)
+	existingTemplate, err := existingItem.GetVAppTemplate()
+	check.Assert(err, IsNil)
+	task, err = vapp4.AddNewVM(vappName4, existingTemplate, nil, true)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	vm4, err := vapp4.GetVMByName(vappName4, true)
+	check.Assert(err, IsNil)
+
+	// Save VM IDs, to be checked back after moving
+	vm2Id := vm2.VM.ID
+	vm3Id := vm3.VM.ID
+	vm4Id := vm4.VM.ID
+
+	elapsed = time.Since(startTimeVm4)
+	verbosePrintf("VM from larger template created %s\n", elapsed)
+
+	// Check that each vApp has the initially expected number of VMs
+	numOfVms := func(vapp *VApp) int {
+		if vapp.VApp.Children != nil {
+			return len(vapp.VApp.Children.VM)
+		}
+		return 0
+	}
+
+	check.Assert(numOfVms(vapp1), Equals, 0)
+	check.Assert(numOfVms(vapp2), Equals, 1)
+	check.Assert(numOfVms(vapp3), Equals, 1)
+	check.Assert(numOfVms(vapp4), Equals, 1)
+
+	// Move VM from vApp2 to vApp1
+	startTimeMoveVm2 := time.Now()
+	err = vm2.MoveToVapp(vapp1)
+	check.Assert(err, IsNil)
+
+	elapsed = time.Since(startTimeMoveVm2)
+	verbosePrintf("moved empty VM %s\n", elapsed)
+
+	// Move VM from vApp3 to vApp1
+	startTimeMoveVm3 := time.Now()
+	err = vm3.MoveToVapp(vapp1)
+	check.Assert(err, IsNil)
+
+	elapsed = time.Since(startTimeMoveVm3)
+	verbosePrintf("Moved VM 3 (small template) %s\n", elapsed)
+
+	// Move VM from vApp4 to vApp1
+	startTimeMoveVm4 := time.Now()
+	err = vm4.MoveToVapp(vapp1)
+	check.Assert(err, IsNil)
+
+	elapsed = time.Since(startTimeMoveVm4)
+	verbosePrintf("Moved VM 4 (larger template) %s\n", elapsed)
+
+	// Refresh the vApps after moving
+	// vapp1 gets refreshed implicitly during the move.
+	for _, vapp := range []*VApp{vapp2, vapp3, vapp4} {
+		err = vapp.Refresh()
+		check.Assert(err, IsNil)
+	}
+
+	// Make sure the destination vApp has all the VMs, while the source vApps are empty
+	check.Assert(numOfVms(vapp1), Equals, 3)
+	check.Assert(numOfVms(vapp2), Equals, 0)
+	check.Assert(numOfVms(vapp3), Equals, 0)
+	check.Assert(numOfVms(vapp4), Equals, 0)
+
+	// Retrieve the moved VMs from the destination vApp
+	newVm2, err := vapp1.GetVMByName(vappName2, false)
+	check.Assert(err, IsNil)
+	newVm3, err := vapp1.GetVMByName(vappName3, false)
+	check.Assert(err, IsNil)
+	newVm4, err := vapp1.GetVMByName(vappName4, false)
+	check.Assert(err, IsNil)
+
+	// Make sure that the VMs keep their IDs after moving
+	check.Assert(vm2Id, Equals, newVm2.VM.ID)
+	check.Assert(vm3Id, Equals, newVm3.VM.ID)
+	check.Assert(vm4Id, Equals, newVm4.VM.ID)
+
+	// Remove all vApps
+	var tasks = make([]Task, 4)
+	for i, vapp := range []*VApp{vapp1, vapp2, vapp3, vapp4} {
+		tasks[i], err = vapp.Delete()
+		check.Assert(err, IsNil)
+	}
+	for _, task := range tasks {
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+	}
+
+	// Remove catalog  item
+	err = item.Delete()
+	check.Assert(err, IsNil)
+}
+
+/*
+func (vcd *TestVCD) Test_VmParallelVapp(check *C) {
+
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Org not found in configuration")
+	}
+	if vcd.config.VCD.Vdc == "" {
+		check.Skip("VDC not found in configuration")
+	}
+	if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("Catalog not found in configuration")
+	}
+	if vcd.config.VCD.Catalog.CatalogItem == "" {
+		check.Skip("Catalog item not found in configuration")
+	}
+	// Retrieve Org, VDC, and Catalog
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+
+	baseVappName := check.TestName()
+	baseVappDescription := "test parallel vApp"
+	baseVmName := check.TestName() + "-vm"
+
+	// Create vApps
+	const numVapps = 10
+	var vApps [numVapps]*VApp
+	startTimeVapps := time.Now()
+	for i := 0; i < numVapps; i++ {
+		vappName := fmt.Sprintf("%s - %d", baseVappName, i)
+		vappDescription := fmt.Sprintf("%s - %d", baseVappDescription, i)
+		vApps[i], err = makeEmptyVapp(vdc, vappName, vappDescription)
+		check.Assert(err, IsNil)
+		AddToCleanupList(vappName, "vapp", vdc.Vdc.Name, check.TestName())
+	}
+
+	elapsed := time.Since(startTimeVapps)
+	verbosePrintf("vApps created %s\n", elapsed)
+
+	templateName := vcd.config.VCD.Catalog.CatalogItem
+	if os.Getenv("vcd_template_name") != "" {
+		templateName = os.Getenv("vcd_template_name")
+	}
+
+	var tasks [numVapps]Task
+
+	startTimeVms := time.Now()
+	existingItem, err := catalog.GetCatalogItemByName(templateName, true)
+	check.Assert(err, IsNil)
+	existingTemplate, err := existingItem.GetVAppTemplate()
+	check.Assert(err, IsNil)
+
+	for i := 1; i < numVapps; i++ {
+		vmName := fmt.Sprintf("%s - %d", baseVmName, i)
+		tasks[i], err = vApps[i].AddNewVM(vmName, existingTemplate, nil, true)
+		check.Assert(err, IsNil)
+	}
+
+	elapsed = time.Since(startTimeVms)
+	verbosePrintf("VM tasks started %s\n", elapsed)
+
+	startTimeTaskCompletion := time.Now()
+
+	for i := 1; i < numVapps; i++ {
+		err = tasks[i].WaitTaskCompletion()
+		check.Assert(err, IsNil)
+	}
+	elapsed = time.Since(startTimeTaskCompletion)
+	verbosePrintf("VM tasks completed %s\n", elapsed)
+
+	// Move all VMs to vApp1
+	startTimeMoveVms := time.Now()
+	var vms = make([]*VM, numVapps -1)
+	for i := 1; i < numVapps; i++ {
+		vmName := fmt.Sprintf("%s - %d", baseVmName, i)
+		vm, err := vApps[i].GetVMByName(vmName, true)
+		check.Assert(err, IsNil)
+		vms[i-1] = vm
+		//err = vm.MoveToVapp(vApps[0])
+		//check.Assert(err, IsNil)
+	}
+
+	err = MoveVmsToVapp(vms, vApps[0])
+	check.Assert(err, IsNil)
+	elapsed = time.Since(startTimeMoveVms)
+	verbosePrintf("moved VMs %s\n", elapsed)
+
+	numOfVms := func(vapp *VApp) int {
+		if vapp.VApp.Children != nil {
+			return len(vapp.VApp.Children.VM)
+		}
+		return 0
+	}
+	// Refresh the vApps after moving
+	// Make sure the destination vApp has all the VMs
+	for i := 0; i < numVapps; i++ {
+		err = vApps[i].Refresh()
+		check.Assert(err, IsNil)
+	}
+	check.Assert(numOfVms(vApps[0]), Equals, numVapps-1)
+
+	// Remove all vApps
+	for i := 0; i < numVapps; i++ {
+		tasks[i], err = vApps[i].Delete()
+		check.Assert(err, IsNil)
+	}
+	for _, task := range tasks {
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+	}
+}
+*/
+
+func (vcd *TestVCD) Test_VmSerialVapp(check *C) {
+
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Org not found in configuration")
+	}
+	if vcd.config.VCD.Vdc == "" {
+		check.Skip("VDC not found in configuration")
+	}
+	if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("Catalog not found in configuration")
+	}
+	if vcd.config.VCD.Catalog.CatalogItem == "" {
+		check.Skip("Catalog item not found in configuration")
+	}
+	// Retrieve Org, VDC, and Catalog
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+
+	vappName := check.TestName()
+	vappDescription := "test parallel vApp"
+	baseVmName := check.TestName() + "-vm"
+
+	// Create vApp
+	const numVms = 9
+	startTimeVapp := time.Now()
+	vapp, err := makeEmptyVapp(vdc, vappName, vappDescription)
+	check.Assert(err, IsNil)
+	AddToCleanupList(vappName, "vapp", vdc.Vdc.Name, check.TestName())
+
+	elapsed := time.Since(startTimeVapp)
+	verbosePrintf("vApp created %s\n", elapsed)
+	templateName := vcd.config.VCD.Catalog.CatalogItem
+	if os.Getenv("vcd_template_name") != "" {
+		templateName = os.Getenv("vcd_template_name")
+	}
+
+	startTimeVms := time.Now()
+	existingItem, err := catalog.GetCatalogItemByName(templateName, true)
+	check.Assert(err, IsNil)
+	existingTemplate, err := existingItem.GetVAppTemplate()
+	check.Assert(err, IsNil)
+
+	for i := 0; i < numVms; i++ {
+		vmName := fmt.Sprintf("%s - %d", baseVmName, i)
+		task, err := vapp.AddNewVM(vmName, existingTemplate, nil, true)
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+	}
+
+	elapsed = time.Since(startTimeVms)
+	verbosePrintf("VM tasks completed %s\n", elapsed)
+
+	// Remove vApp
+	task, err := vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_ParallelVm(check *C) {
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Org not found in configuration")
+	}
+	if vcd.config.VCD.Vdc == "" {
+		check.Skip("VDC not found in configuration")
+	}
+	if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("Catalog not found in configuration")
+	}
+	if vcd.config.VCD.Catalog.CatalogItem == "" {
+		check.Skip("Catalog item not found in configuration")
+	}
+	// Retrieve Org, VDC, and Catalog
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+
+	baseVmName := check.TestName() + "-vm"
+	templateName := vcd.config.VCD.Catalog.CatalogItem
+	if os.Getenv("vcd_template_name") != "" {
+		templateName = os.Getenv("vcd_template_name")
+	}
+	existingItem, err := catalog.GetCatalogItemByName(templateName, true)
+	check.Assert(err, IsNil)
+
+	vappTemplate, err := catalog.GetVappTemplateByHref(existingItem.CatalogItem.Entity.HREF)
+	check.Assert(err, IsNil)
+	check.Assert(vappTemplate, NotNil)
+	check.Assert(vappTemplate.VAppTemplate.Children, NotNil)
+	check.Assert(len(vappTemplate.VAppTemplate.Children.VM), Not(Equals), 0)
+
+	vmTemplate := vappTemplate.VAppTemplate.Children.VM[0]
+	check.Assert(vmTemplate.HREF, Not(Equals), "")
+	check.Assert(vmTemplate.ID, Not(Equals), "")
+	check.Assert(vmTemplate.Type, Not(Equals), "")
+	check.Assert(vmTemplate.Name, Not(Equals), "")
+
+	// Create VMs
+	const numVms = 9
+	var VMs = make([]*VM, numVms)
+	var tasks [numVms]Task
+	startTimeVms := time.Now()
+	for i := 0; i < numVms; i++ {
+		vmName := fmt.Sprintf("%s - %d", baseVmName, i)
+		vmDescription := fmt.Sprintf(" standalone VM %s - %d", baseVmName, i)
+
+		params := types.InstantiateVmTemplateParams{
+			Xmlns:            types.XMLNamespaceVCloud,
+			Name:             vmName,
+			PowerOn:          false,
+			Description:      vmDescription,
+			AllEULAsAccepted: true,
+			SourcedVmTemplateItem: &types.SourcedVmTemplateParams{
+				LocalityParams: nil,
+				Source: &types.Reference{
+					HREF: vmTemplate.HREF,
+					ID:   vmTemplate.ID,
+					Type: vmTemplate.Type,
+					Name: vmTemplate.Name,
+				},
+				StorageProfile:                nil,
+				VmCapabilities:                nil,
+				VmGeneralParams:               nil,
+				VmTemplateInstantiationParams: nil,
+			},
+		}
+		tasks[i], err = vdc.CreateStandaloneVMFromTemplateAsync(&params)
+		check.Assert(err, IsNil)
+
+		check.Assert(err, IsNil)
+		AddToCleanupList(vmName, "standaloneVm", "", check.TestName())
+	}
+
+	elapsed := time.Since(startTimeVms)
+	verbosePrintf("VM tasks started %s\n", elapsed)
+
+	startTimeVmTasks := time.Now()
+	for i := 0; i < numVms; i++ {
+		vmName := fmt.Sprintf("%s - %d", baseVmName, i)
+		err = tasks[i].WaitTaskCompletion()
+		check.Assert(err, IsNil)
+		VMs[i], err = vdc.QueryVmByName(vmName)
+		check.Assert(err, IsNil)
+	}
+
+	elapsed = time.Since(startTimeVmTasks)
+	verbosePrintf("VMs created %s\n", elapsed)
+
+	startTimeMoveVms := time.Now()
+	// Move all VMs to vApp
+	vapp, err := makeEmptyVapp(vdc, check.TestName(), "destination vApp")
+	check.Assert(err, IsNil)
+
+	err = MoveVmsToVapp(VMs, vapp)
+	check.Assert(err, IsNil)
+	elapsed = time.Since(startTimeMoveVms)
+	verbosePrintf("moved VMs %s\n", elapsed)
+
+	numOfVms := func(vapp *VApp) int {
+		if vapp.VApp.Children != nil {
+			return len(vapp.VApp.Children.VM)
+		}
+		return 0
+	}
+	// Refresh the vApp after moving
+	err = vapp.Refresh()
+	check.Assert(err, IsNil)
+	check.Assert(numOfVms(vapp), Equals, numVms)
+
+	// Remove vApp
+	task, err := vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }

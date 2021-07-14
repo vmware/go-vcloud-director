@@ -1815,3 +1815,113 @@ func (vm *VM) getTenantContext() (*TenantContext, error) {
 	}
 	return parentVdc.getTenantContext()
 }
+
+func (vm *VM) MoveToVapp(destination *VApp) error {
+	if destination == nil || destination.VApp == nil {
+		return fmt.Errorf("[MoveToVapp] null destination provided")
+	}
+	if destination.VApp.HREF == "" || destination.VApp.ID == "" {
+		return fmt.Errorf("[MoveToVapp] destination lacks HREF or ID")
+	}
+	if vm == nil || vm.VM == nil {
+		return fmt.Errorf("[MoveToVapp] null source provided")
+	}
+	if vm.VM.HREF == "" {
+		return fmt.Errorf("[MoveToVapp] source VM lacks HREF")
+	}
+	payload := &types.MoveVmParams{
+		Ovf:         types.XMLNamespaceOVF,
+		Xsi:         types.XMLNamespaceXSI,
+		Xmlns:       types.XMLNamespaceVCloud,
+		Name:        destination.VApp.Name,
+		Description: destination.VApp.Description,
+		SourcedItem: []*types.SourcedCompositionItemParam{
+			&types.SourcedCompositionItemParam{
+				SourceDelete: true,
+				Source: &types.Reference{
+					HREF: vm.VM.HREF,
+					Name: vm.VM.Name,
+				},
+				InstantiationParams: &types.InstantiationParams{
+					GuestCustomizationSection: vm.VM.GuestCustomizationSection,
+					NetworkConnectionSection:  vm.VM.NetworkConnectionSection,
+				},
+				StorageProfile: &types.Reference{
+					HREF: vm.VM.StorageProfile.HREF,
+				},
+			},
+		},
+	}
+
+	requestHref := destination.VApp.HREF + "/action/recomposeVApp"
+
+	task := NewTask(vm.client)
+	_, err := vm.client.ExecuteRequest(requestHref, http.MethodPost,
+		types.MimeRecomposeVappParams, "error moving VM to vApp: %s", &payload, task.Task)
+	if err != nil {
+		return fmt.Errorf("error executing task request: %s", err)
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error completing VM move to vApp %s: %s", destination.VApp.Name, err)
+	}
+	return destination.Refresh()
+}
+
+func MoveVmsToVapp(vms []*VM, destination *VApp) error {
+	if destination == nil || destination.VApp == nil {
+		return fmt.Errorf("[MoveToVapp] null destination provided")
+	}
+	if destination.VApp.HREF == "" || destination.VApp.ID == "" {
+		return fmt.Errorf("[MoveToVapp] destination lacks HREF or ID")
+	}
+	for _, vm := range vms {
+		if vm == nil || vm.VM == nil {
+			return fmt.Errorf("[MoveToVapp] null source provided")
+		}
+		if vm.VM.HREF == "" {
+			return fmt.Errorf("[MoveToVapp] source VM lacks HREF")
+		}
+		if vm.VM.Name == "" {
+			return fmt.Errorf("[MoveToVapp] source VM lacks Name")
+		}
+	}
+	payload := &types.MoveVmParams{
+		Ovf:         types.XMLNamespaceOVF,
+		Xsi:         types.XMLNamespaceXSI,
+		Xmlns:       types.XMLNamespaceVCloud,
+		Name:        destination.VApp.Name,
+		Description: destination.VApp.Description,
+		SourcedItem: []*types.SourcedCompositionItemParam{},
+	}
+
+	for _, vm := range vms {
+		payload.SourcedItem = append(payload.SourcedItem, &types.SourcedCompositionItemParam{
+			SourceDelete: true,
+			Source: &types.Reference{
+				HREF: vm.VM.HREF,
+				Name: vm.VM.Name,
+			},
+			InstantiationParams: &types.InstantiationParams{
+				GuestCustomizationSection: vm.VM.GuestCustomizationSection,
+				NetworkConnectionSection:  vm.VM.NetworkConnectionSection,
+			},
+			StorageProfile: &types.Reference{
+				HREF: vm.VM.StorageProfile.HREF,
+			},
+		})
+	}
+	requestHref := destination.VApp.HREF + "/action/recomposeVApp"
+
+	task := NewTask(destination.client)
+	_, err := destination.client.ExecuteRequest(requestHref, http.MethodPost,
+		types.MimeRecomposeVappParams, "error moving VM to vApp: %s", &payload, task.Task)
+	if err != nil {
+		return fmt.Errorf("error executing task request: %s", err)
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error completing VM move to vApp %s: %s", destination.VApp.Name, err)
+	}
+	return destination.Refresh()
+}
