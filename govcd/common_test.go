@@ -879,3 +879,9 @@ func contains(s []string, element string) bool {
 	}
 	return false
 }
+
+func verbosePrintf(format string, args ...interface{}) {
+	if testVerbose {
+		fmt.Printf(format, args...)
+	}
+}
