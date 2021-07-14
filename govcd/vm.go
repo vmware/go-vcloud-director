@@ -1817,55 +1817,22 @@ func (vm *VM) getTenantContext() (*TenantContext, error) {
 }
 
 func (vm *VM) MoveToVapp(destination *VApp) error {
-	if destination == nil || destination.VApp == nil {
-		return fmt.Errorf("[MoveToVapp] null destination provided")
-	}
-	if destination.VApp.HREF == "" || destination.VApp.ID == "" {
-		return fmt.Errorf("[MoveToVapp] destination lacks HREF or ID")
-	}
-	if vm == nil || vm.VM == nil {
-		return fmt.Errorf("[MoveToVapp] null source provided")
-	}
-	if vm.VM.HREF == "" {
-		return fmt.Errorf("[MoveToVapp] source VM lacks HREF")
-	}
-	payload := &types.MoveVmParams{
-		Ovf:         types.XMLNamespaceOVF,
-		Xsi:         types.XMLNamespaceXSI,
-		Xmlns:       types.XMLNamespaceVCloud,
-		Name:        destination.VApp.Name,
-		Description: destination.VApp.Description,
-		SourcedItem: []*types.SourcedCompositionItemParam{
-			&types.SourcedCompositionItemParam{
-				SourceDelete: true,
-				Source: &types.Reference{
-					HREF: vm.VM.HREF,
-					Name: vm.VM.Name,
-				},
-				InstantiationParams: &types.InstantiationParams{
-					GuestCustomizationSection: vm.VM.GuestCustomizationSection,
-					NetworkConnectionSection:  vm.VM.NetworkConnectionSection,
-				},
-				StorageProfile: &types.Reference{
-					HREF: vm.VM.StorageProfile.HREF,
-				},
-			},
-		},
-	}
+	return MoveVmsToVapp([]*VM{vm}, destination)
+}
 
-	requestHref := destination.VApp.HREF + "/action/recomposeVApp"
-
-	task := NewTask(vm.client)
-	_, err := vm.client.ExecuteRequest(requestHref, http.MethodPost,
-		types.MimeRecomposeVappParams, "error moving VM to vApp: %s", &payload, task.Task)
-	if err != nil {
-		return fmt.Errorf("error executing task request: %s", err)
+func (vapp *VApp) TransferAllVms(destination *VApp) error {
+	var vms []*VM
+	if vapp.VApp.Children == nil || len(vapp.VApp.Children.VM) == 0 {
+		return fmt.Errorf("no VMs to transfer from vApp %s", vapp.VApp.Name)
 	}
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return fmt.Errorf("error completing VM move to vApp %s: %s", destination.VApp.Name, err)
+	for _, vm := range vapp.VApp.Children.VM {
+		vms = append(vms, &VM{VM: vm, client: vapp.client})
 	}
-	return destination.Refresh()
+	err := MoveVmsToVapp(vms, destination)
+	if err != nil {
+		return err
+	}
+	return vapp.Refresh()
 }
 
 func MoveVmsToVapp(vms []*VM, destination *VApp) error {
@@ -1873,17 +1840,20 @@ func MoveVmsToVapp(vms []*VM, destination *VApp) error {
 		return fmt.Errorf("[MoveToVapp] null destination provided")
 	}
 	if destination.VApp.HREF == "" || destination.VApp.ID == "" {
-		return fmt.Errorf("[MoveToVapp] destination lacks HREF or ID")
+		return fmt.Errorf("[MoveVmsToVapp] destination lacks HREF or ID")
+	}
+	if len(vms) == 0 {
+		return fmt.Errorf("[MoveVmsToVapp] no VMs defined for transfer")
 	}
 	for _, vm := range vms {
 		if vm == nil || vm.VM == nil {
-			return fmt.Errorf("[MoveToVapp] null source provided")
+			return fmt.Errorf("[MoveVmsToVapp] null source provided")
 		}
 		if vm.VM.HREF == "" {
-			return fmt.Errorf("[MoveToVapp] source VM lacks HREF")
+			return fmt.Errorf("[MoveVmsToVapp] source VM lacks HREF")
 		}
 		if vm.VM.Name == "" {
-			return fmt.Errorf("[MoveToVapp] source VM lacks Name")
+			return fmt.Errorf("[MoveVmsToVapp] source VM lacks Name")
 		}
 	}
 	payload := &types.MoveVmParams{
@@ -1915,13 +1885,13 @@ func MoveVmsToVapp(vms []*VM, destination *VApp) error {
 
 	task := NewTask(destination.client)
 	_, err := destination.client.ExecuteRequest(requestHref, http.MethodPost,
-		types.MimeRecomposeVappParams, "error moving VM to vApp: %s", &payload, task.Task)
+		types.MimeRecomposeVappParams, "[MoveVmsToVapp] error moving VM to vApp: %s", &payload, task.Task)
 	if err != nil {
-		return fmt.Errorf("error executing task request: %s", err)
+		return fmt.Errorf("[MoveVmsToVapp] error executing task request: %s", err)
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
-		return fmt.Errorf("error completing VM move to vApp %s: %s", destination.VApp.Name, err)
+		return fmt.Errorf("[MoveVmsToVapp] error completing VM move to vApp %s: %s", destination.VApp.Name, err)
 	}
 	return destination.Refresh()
 }
