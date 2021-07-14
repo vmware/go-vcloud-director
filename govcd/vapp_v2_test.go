@@ -50,7 +50,7 @@ func (vcd *TestVCD) TestComposeVappV2(check *C) {
 			NetworkConnectionSection:     nil,
 			ProductSection:               nil,
 		},
-		SourcedItem: []*types.SourcedCompositionItemParamV2{
+		SourcedItem: []*types.SourcedCompositionItemParam{
 			{
 				Source: &types.Reference{
 					HREF: vmTemplate.HREF,
@@ -94,10 +94,8 @@ func (vcd *TestVCD) TestComposeVappV2(check *C) {
 					CpuResourceMhz: &types.CpuResourceMhz{
 						Configured: 0,
 					},
-					MemoryResourceMb: &types.MemoryResourceMb{
-						Configured: 1024,
-					},
-					MediaSection: nil,
+					MemoryResourceMb: &types.MemoryResourceMb{Configured: 1024},
+					MediaSection:     nil,
 					DiskSection: &types.DiskSection{
 						DiskSettings: []*types.DiskSettings{
 							&types.DiskSettings{
@@ -110,10 +108,8 @@ func (vcd *TestVCD) TestComposeVappV2(check *C) {
 							},
 						},
 					},
-					HardwareVersion: &types.HardwareVersion{
-						Value: "vmx-14",
-					},
-					VirtualCpuType: "VM32",
+					HardwareVersion: &types.HardwareVersion{Value: "vmx-14"},
+					VirtualCpuType:  "VM32",
 				},
 			},
 		},
@@ -129,7 +125,7 @@ func (vcd *TestVCD) TestComposeVappV2(check *C) {
 	check.Assert(vapp.VAppV2.Name, Equals, name)
 	check.Assert(vapp.VAppV2.Description, Equals, description)
 
-	check.Assert(len(vapp.VAppV2.Children.VM), Equals, len(def.SourcedItem) +1 )
+	check.Assert(len(vapp.VAppV2.Children.VM), Equals, len(def.SourcedItem)+1)
 
 	task, err = vapp.Undeploy()
 	check.Assert(err, IsNil)

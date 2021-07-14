@@ -9,13 +9,13 @@ import (
 )
 
 type VAppV2 struct {
-	VAppV2   *types.VAppV2
+	VAppV2 *types.VAppV2
 	client *Client
 }
 
 func NewVAppV2(cli *Client) *VAppV2 {
 	return &VAppV2{
-		VAppV2:   new(types.VAppV2),
+		VAppV2: new(types.VAppV2),
 		client: cli,
 	}
 }
@@ -72,15 +72,14 @@ func (vdc *Vdc) ComposeVAppV2(vAppDef *types.ComposeVAppParamsV2) (*VAppV2, erro
 	return vapp, nil
 }
 
-
-func vappV2ToVapp( vappV2 *VAppV2) *VApp {
+func vappV2ToVapp(vappV2 *VAppV2) *VApp {
 	var convertedVapp types.VApp = types.VApp(*vappV2.VAppV2)
 	vapp := NewVApp(vappV2.client)
 	vapp.VApp = &convertedVapp
 	return vapp
 }
 
-func (vappV2 *VAppV2) Refresh() error{
+func (vappV2 *VAppV2) Refresh() error {
 	return vappV2ToVapp(vappV2).Refresh()
 }
 
