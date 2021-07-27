@@ -42,8 +42,8 @@ func NewCatalog(client *Client) *Catalog {
 	}
 }
 
-// Deletes the Catalog, returning an error if the vCD call fails.
-// Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Catalog.html
+// Delete deletes the Catalog, returning an error if the vCD call fails.
+// Link to API call: https://code.vmware.com/apis/1046/vmware-cloud-director/doc/doc/operations/DELETE-Catalog.html
 func (catalog *Catalog) Delete(force, recursive bool) error {
 
 	adminCatalogHREF := catalog.client.VCDHREF
@@ -61,13 +61,18 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 		"recursive": strconv.FormatBool(recursive),
 	}, http.MethodDelete, adminCatalogHREF, nil)
 
-	_, err = checkResp(catalog.client.Http.Do(req))
-
+	resp, err := catalog.client.Http.Do(req)
 	if err != nil {
-		return fmt.Errorf("error deleting Catalog %s: %s", catalog.Catalog.ID, err)
+		return fmt.Errorf("error deleting catalog %s: %s", catalog.Catalog.Name, err)
 	}
+	task := NewTask(catalog.client)
 
-	return nil
+	if err = decodeBody(types.BodyTypeXML, resp, task.Task); err != nil {
+		return fmt.Errorf("error decoding Task response: %s", err)
+	}
+	defer resp.Body.Close()
+
+	return task.WaitTaskCompletion()
 }
 
 // Envelope is a ovf description root element. File contains information for vmdk files.
