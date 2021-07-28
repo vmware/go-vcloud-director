@@ -7,5 +7,5 @@
 * Added method `VCDClient.GetStorageProfileByHref` [GH-393]
 * Added method `Client.GetStorageProfileByHref` [GH-393]
 * Added method `VCDClient.QueryProviderVdcStorageProfileByName` [GH-393]
-* Added method `ClientQueryAllProviderVdcStorageProfiles` [GH-393]
+* Added method `Client.QueryAllProviderVdcStorageProfiles` [GH-393]
 * Added method `Client.QueryProviderVdcStorageProfiles` [GH-393]

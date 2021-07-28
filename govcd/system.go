@@ -749,15 +749,14 @@ func (client *Client) GetStorageProfileByHref(url string) (*types.VdcStorageProf
 // 4. [NOT FOUND] The name does not match any of the storage profiles
 func (vcdCli *VCDClient) QueryProviderVdcStorageProfileByName(name, providerVDCHref string) (*types.QueryResultProviderVdcStorageProfileRecordType, error) {
 	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":          "providerVdcStorageProfile",
-		"pageSize":      "128",
-		"filterEncoded": "true",
+		"type":     "providerVdcStorageProfile",
+		"pageSize": "128",
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	// Note: pageSize of 128 should be enough to get all storage profiles.
+	// Note: pageSize of 128 (the maximum page size allowed) should be enough to get all storage profiles.
 	// In case this is not true, we trap the error, so that we become aware that this assumption is incorrect.
 	// TODO: convert this query into a cumulativeQuery
 	if results.Results.Total > 128.0 {
@@ -766,17 +765,19 @@ func (vcdCli *VCDClient) QueryProviderVdcStorageProfileByName(name, providerVDCH
 
 	var recs []*types.QueryResultProviderVdcStorageProfileRecordType
 	for _, rec := range results.Results.ProviderVdcStorageProfileRecord {
-		if rec.Name == name && providerVDCHref != "" && providerVDCHref == rec.ProviderVdcHREF {
-			return rec, nil
+		if rec.Name == name {
+			if providerVDCHref != "" && providerVDCHref == rec.ProviderVdcHREF {
+				return rec, nil
+			}
+			recs = append(recs, rec)
 		}
-		recs = append(recs, rec)
 	}
 
 	if len(recs) == 0 {
-		return nil, fmt.Errorf("no records found for storage profile %s", name)
+		return nil, fmt.Errorf("no records found for storage profile '%s'", name)
 	}
 	if len(recs) > 1 {
-		return nil, fmt.Errorf("more than 1 record found for storage profile %s. Add Provider VDC HREF in the search to disambiguate", name)
+		return nil, fmt.Errorf("more than 1 record found for storage profile '%s'. Add Provider VDC HREF in the search to disambiguate", name)
 	}
 	return recs[0], nil
 }

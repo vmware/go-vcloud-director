@@ -485,8 +485,8 @@ func (vdc *AdminVdc) RemoveStorageProfile(storageProfileName string) (Task, erro
 	}
 	if vdcStorageProfileDetails.Enabled {
 		_, err = vdc.UpdateStorageProfile(extractUuid(storageProfile.HREF), &types.AdminVdcStorageProfile{
-			Name:    storageProfile.Name,
-			Units:   "MB",
+			Name:    vdcStorageProfileDetails.Name,
+			Units:   vdcStorageProfileDetails.Units,
 			Limit:   vdcStorageProfileDetails.Limit,
 			Default: false,
 			Enabled: takeBoolPointer(false),
@@ -504,7 +504,7 @@ func (vdc *AdminVdc) RemoveStorageProfile(storageProfileName string) (Task, erro
 
 	var updateStorageProfile = types.UpdateVdcStorageProfiles{
 		Xmlns:                types.XMLNamespaceVCloud,
-		Name:                 storageProfile.Name,
+		Name:                 vdcStorageProfileDetails.Name,
 		Description:          "",
 		RemoveStorageProfile: storageProfile,
 	}
@@ -553,8 +553,8 @@ func (vdc *AdminVdc) SetDefaultStorageProfile(storageProfileName string) error {
 		return fmt.Errorf("cannot retrieve VDC storage profile '%s' details: %s", storageProfileName, err)
 	}
 	_, err = vdc.UpdateStorageProfile(extractUuid(storageProfile.HREF), &types.AdminVdcStorageProfile{
-		Name:    storageProfile.Name,
-		Units:   "MB",
+		Name:    vdcStorageProfileDetails.Name,
+		Units:   vdcStorageProfileDetails.Units,
 		Limit:   vdcStorageProfileDetails.Limit,
 		Default: true,
 		Enabled: takeBoolPointer(true),
