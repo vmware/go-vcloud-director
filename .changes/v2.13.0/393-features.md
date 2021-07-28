@@ -1,11 +1,11 @@
-* Added method `AdminVdc.AddStorageProfile`
-* Added method `AdminVdc.AddStorageProfileWait`
-* Added method `AdminVdc.RemoveStorageProfile`
-* Added method `AdminVdc.RemoveStorageProfileWait`
-* Added method `AdminVdc.SetDefaultStorageProfile`
-* Added method `AdminVdc.GetDefaultStorageProfileReference`
-* Added method `VCDClient.GetStorageProfileByHref`
-* Added method `Client.GetStorageProfileByHref`
-* Added method `VCDClient.QueryProviderVdcStorageProfileByName`
-* Added method `ClientQueryAllProviderVdcStorageProfiles`
-* Added method `Client.QueryProviderVdcStorageProfiles`
+* Added method `AdminVdc.AddStorageProfile` [GH-393]
+* Added method `AdminVdc.AddStorageProfileWait` [GH-393]
+* Added method `AdminVdc.RemoveStorageProfile` [GH-393]
+* Added method `AdminVdc.RemoveStorageProfileWait` [GH-393]
+* Added method `AdminVdc.SetDefaultStorageProfile` [GH-393]
+* Added method `AdminVdc.GetDefaultStorageProfileReference` [GH-393]
+* Added method `VCDClient.GetStorageProfileByHref` [GH-393]
+* Added method `Client.GetStorageProfileByHref` [GH-393]
+* Added method `VCDClient.QueryProviderVdcStorageProfileByName` [GH-393]
+* Added method `ClientQueryAllProviderVdcStorageProfiles` [GH-393]
+* Added method `Client.QueryProviderVdcStorageProfiles` [GH-393]
