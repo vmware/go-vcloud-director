@@ -535,7 +535,7 @@ func (vdc *AdminVdc) RemoveStorageProfileWait(storageProfileName string) error {
 // This operation will automatically unset the previous default storage profile.
 func (vdc *AdminVdc) SetDefaultStorageProfile(storageProfileName string) error {
 	if vdc.client.VCDHREF.String() == "" {
-		return fmt.Errorf("cannot Set VDC default storage profile: VCD HREF is unset")
+		return fmt.Errorf("cannot set VDC default storage profile: VCD HREF is unset")
 	}
 
 	var storageProfile *types.Reference
@@ -564,7 +564,7 @@ func (vdc *AdminVdc) SetDefaultStorageProfile(storageProfileName string) error {
 	},
 	)
 	if err != nil {
-		return fmt.Errorf("cannot Set VDC default storage profile '%s': %s", storageProfileName, err)
+		return fmt.Errorf("cannot set VDC default storage profile '%s': %s", storageProfileName, err)
 	}
 	return vdc.Refresh()
 }
