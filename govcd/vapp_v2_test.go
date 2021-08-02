@@ -11,6 +11,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+// TestComposeVappV2 creates a vAppV2 with 4 VMs at once
 func (vcd *TestVCD) TestComposeVappV2(check *C) {
 	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
@@ -76,7 +77,7 @@ func (vcd *TestVCD) TestComposeVappV2(check *C) {
 				},
 			},
 		},
-		CreateItem: []*types.CreateItem{
+		CreateItem: []*types.VmType{
 			{
 				Name:        "vm4",
 				Description: "VM 4 descr",
@@ -125,6 +126,8 @@ func (vcd *TestVCD) TestComposeVappV2(check *C) {
 	check.Assert(vapp.VAppV2.Name, Equals, name)
 	check.Assert(vapp.VAppV2.Description, Equals, description)
 
+	check.Assert(vapp.VAppV2.Children, NotNil)
+	check.Assert(vapp.VAppV2.Children.VM, NotNil)
 	check.Assert(len(vapp.VAppV2.Children.VM), Equals, len(def.SourcedItem)+1)
 
 	task, err = vapp.Undeploy()
@@ -132,6 +135,159 @@ func (vcd *TestVCD) TestComposeVappV2(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
+	task, err = vapp.RemoveAllNetworks()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) TestRecomposeVappV2(check *C) {
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	name := check.TestName()
+	description := "test compose raw vAppV2"
+
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	catalogItem, err := catalog.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	check.Assert(err, IsNil)
+	vappTemplate, err := catalogItem.GetVAppTemplate()
+	check.Assert(err, IsNil)
+	check.Assert(vappTemplate.VAppTemplate.Children, NotNil)
+	check.Assert(vappTemplate.VAppTemplate.Children.VM, NotNil)
+
+	computePolicies, err := org.GetAllVdcComputePolicies(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(computePolicies), Not(Equals), 0)
+	vmTemplate := vappTemplate.VAppTemplate.Children.VM[0]
+
+	vapp, err := vdc.ComposeVAppV2(&types.ComposeVAppParamsV2{
+		Name:        name,
+		Deploy:      false,
+		PowerOn:     false,
+		LinkedClone: false,
+		Description: description,
+	})
+	check.Assert(err, IsNil)
+	AddToCleanupList(name, "vapp", vdc.Vdc.Name, name)
+
+	powerOn := true
+	var def = types.ReComposeVAppParamsV2{
+		Name:             name,
+		Description:      description,
+		PowerOn:          powerOn,
+		AllEULAsAccepted: true,
+		InstantiationParams: &types.InstantiationParams{
+			CustomizationSection:         nil,
+			DefaultStorageProfileSection: nil,
+			GuestCustomizationSection:    nil,
+			LeaseSettingsSection:         nil,
+			NetworkConfigSection:         nil,
+			NetworkConnectionSection:     nil,
+			ProductSection:               nil,
+		},
+		SourcedItem: []*types.SourcedCompositionItemParam{
+			{
+				Source: &types.Reference{
+					HREF: vmTemplate.HREF,
+					ID:   vmTemplate.ID,
+					Type: vmTemplate.Type,
+					Name: "vm1",
+				},
+			},
+			{
+				Source: &types.Reference{
+					HREF: vmTemplate.HREF,
+					ID:   vmTemplate.ID,
+					Type: vmTemplate.Type,
+					Name: "vm2",
+				},
+			},
+			{
+				Source: &types.Reference{
+					HREF: vmTemplate.HREF,
+					ID:   vmTemplate.ID,
+					Type: vmTemplate.Type,
+					Name: "vm3",
+				},
+			},
+		},
+		CreateItem: []*types.VmType{
+			{
+				Name:        "vm4",
+				Description: "VM 4 descr",
+				GuestCustomizationSection: &types.GuestCustomizationSection{
+					Info:         "Specifies Guest OS Customization Settings",
+					ComputerName: "vm4",
+				},
+				NetworkConnectionSection: nil,
+				VmSpecSection: &types.VmSpecSection{
+					Modified:          takeBoolPointer(true),
+					Info:              "Virtual Machine specification",
+					OsType:            "debian10Guest",
+					NumCpus:           takeIntAddress(2),
+					NumCoresPerSocket: takeIntAddress(1),
+					CpuResourceMhz: &types.CpuResourceMhz{
+						Configured: 0,
+					},
+					MemoryResourceMb: &types.MemoryResourceMb{Configured: 1024},
+					MediaSection:     nil,
+					DiskSection: &types.DiskSection{
+						DiskSettings: []*types.DiskSettings{
+							&types.DiskSettings{
+								SizeMb:            1024,
+								UnitNumber:        0,
+								BusNumber:         0,
+								AdapterType:       "5",
+								ThinProvisioned:   takeBoolPointer(true),
+								OverrideVmDefault: true,
+							},
+						},
+					},
+					HardwareVersion: &types.HardwareVersion{Value: "vmx-14"},
+					VirtualCpuType:  "VM32",
+				},
+			},
+		},
+	}
+
+	err = vapp.RecomposeVAppV2(&def)
+	check.Assert(err, IsNil)
+
+	err = vapp.Refresh()
+	check.Assert(err, IsNil)
+
+	readVapp, err := vdc.GetVAppByName(name, true)
+	check.Assert(err, IsNil)
+	check.Assert(readVapp.VApp.Name, Equals, name)
+	check.Assert(readVapp.VApp.Description, Equals, description)
+
+	check.Assert(readVapp.VApp.Children, NotNil)
+	check.Assert(readVapp.VApp.Children.VM, NotNil)
+	check.Assert(len(readVapp.VApp.Children.VM), Equals, len(def.SourcedItem)+1)
+
+	check.Assert(vapp.VAppV2.Children, NotNil)
+	check.Assert(vapp.VAppV2.Children.VM, NotNil)
+	check.Assert(len(vapp.VAppV2.Children.VM), Equals, len(def.SourcedItem)+1)
+
+	var task Task
+	if powerOn {
+		task, err = vapp.Undeploy()
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+	}
 	task, err = vapp.RemoveAllNetworks()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
