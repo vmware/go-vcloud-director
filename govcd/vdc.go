@@ -816,7 +816,7 @@ func (vdc *Vdc) FindMediaImage(mediaName string) (MediaItem, error) {
 	return *newMediaItem, nil
 }
 
-// GetVappByHref returns a vApp reference by running a vCD API call
+// GetVAppByHref returns a vApp by running a vCD API call
 // If no valid vApp is found, it returns a nil VApp reference and an error
 func (vdc *Vdc) GetVAppByHref(vappHref string) (*VApp, error) {
 
@@ -831,7 +831,7 @@ func (vdc *Vdc) GetVAppByHref(vappHref string) (*VApp, error) {
 	return newVapp, nil
 }
 
-// GetVappByName returns a vApp reference if the vApp Name matches an existing one.
+// GetVAppByName returns a vApp reference if the vApp Name matches an existing one.
 // If no valid vApp is found, it returns a nil VApp reference and an error
 func (vdc *Vdc) GetVAppByName(vappName string, refresh bool) (*VApp, error) {
 
@@ -852,7 +852,7 @@ func (vdc *Vdc) GetVAppByName(vappName string, refresh bool) (*VApp, error) {
 	return nil, ErrorEntityNotFound
 }
 
-// GetVappById returns a vApp reference if the vApp ID matches an existing one.
+// GetVAppById returns a vApp reference if the vApp ID matches an existing one.
 // If no valid vApp is found, it returns a nil VApp reference and an error
 func (vdc *Vdc) GetVAppById(id string, refresh bool) (*VApp, error) {
 
@@ -873,7 +873,7 @@ func (vdc *Vdc) GetVAppById(id string, refresh bool) (*VApp, error) {
 	return nil, ErrorEntityNotFound
 }
 
-// GetVappByNameOrId returns a vApp reference if either the vApp name or ID matches an existing one.
+// GetVAppByNameOrId returns a vApp reference if either the vApp name or ID matches an existing one.
 // If no valid vApp is found, it returns a nil VApp reference and an error
 func (vdc *Vdc) GetVAppByNameOrId(identifier string, refresh bool) (*VApp, error) {
 	getByName := func(name string, refresh bool) (interface{}, error) { return vdc.GetVAppByName(name, refresh) }
