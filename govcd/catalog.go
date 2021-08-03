@@ -42,7 +42,7 @@ func NewCatalog(client *Client) *Catalog {
 	}
 }
 
-// Deletes the Catalog, returning an error if the vCD call fails.
+// Delete deletes the Catalog, returning an error if the vCD call fails.
 // Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Catalog.html
 func (catalog *Catalog) Delete(force, recursive bool) error {
 
@@ -52,7 +52,7 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 		return err
 	}
 	if catalogID == "" {
-		return fmt.Errorf("empty ID returned for catalog ID %s", catalog.Catalog.ID)
+		return fmt.Errorf("empty ID returned for catalog %s", catalog.Catalog.Name)
 	}
 	adminCatalogHREF.Path += "/admin/catalog/" + catalogID
 
@@ -61,13 +61,18 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 		"recursive": strconv.FormatBool(recursive),
 	}, http.MethodDelete, adminCatalogHREF, nil)
 
-	_, err = checkResp(catalog.client.Http.Do(req))
-
+	resp, err := checkResp(catalog.client.Http.Do(req))
 	if err != nil {
-		return fmt.Errorf("error deleting Catalog %s: %s", catalog.Catalog.ID, err)
+		return fmt.Errorf("error deleting Catalog %s: %s", catalog.Catalog.Name, err)
 	}
-
-	return nil
+	task := NewTask(catalog.client)
+	if err = decodeBody(types.BodyTypeXML, resp, task.Task); err != nil {
+		return fmt.Errorf("error decoding task response: %s", err)
+	}
+	if task.Task.Status == "error" {
+		return fmt.Errorf(combinedTaskErrorMessage(task.Task, fmt.Errorf("catalog %s not properly destroyed", catalog.Catalog.Name)))
+	}
+	return task.WaitTaskCompletion()
 }
 
 // Envelope is a ovf description root element. File contains information for vmdk files.
