@@ -12,7 +12,7 @@ func runUntilDone(input ParallelInput) (ResultOutcome, interface{}, error) {
 	outcome := OutcomeWaiting
 	var result interface{}
 	var err error
-	for outcome != OutcomeDone && outcome != OutcomeRunTimeout && outcome != OutcomeCollectionTimeout {
+	for outcome != OutcomeDone && outcome != OutcomeRunTimeout && outcome != OutcomeCollectionTimeout && outcome != OutcomeFail {
 		outcome, result, err = RunWhenReady(input)
 		debugPrintf("[runUntilDone] item %s - %s\n", input.ItemId, outcome)
 		if err != nil {
