@@ -21,7 +21,7 @@ type parallelInfo struct {
 
 // ParallelInput is what each client needs to pass to the scheduler to run a parallel task
 type ParallelInput struct {
-	Client            interface{}
+	Client            interface{}        // valid connection
 	GlobalId          string             // identification of the job, such as the object to create from all the parts
 	ItemId            string             // identification of the Client, such as the definition of a part of the final object
 	HowMany           int                // how many objects must be created. The scheduler will wait until as many requests arrive

@@ -13,6 +13,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+// TestRecomposeParallelVappV2 tests the deployment of several VMs in parallel
 func (vcd *TestVCD) TestRecomposeParallelVappV2(check *C) {
 	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
@@ -114,6 +115,7 @@ func (vcd *TestVCD) TestRecomposeParallelVappV2(check *C) {
 		}},
 	}
 
+	// The VM deployments are called simultaneously using goroutines
 	for _, vm := range vms {
 		go func(name string, creation interface{}) {
 			defer wg.Done()

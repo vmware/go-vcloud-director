@@ -27,7 +27,7 @@ resource "vcd_vapp_vm_v2" "test_vm" {
 	name         = "test_vm"
 	vapp_id      = data.vcd_vapp_v2.my-vapp.id
 	template_id  = data.vcd_catalogitem.my_template.id
-    parallel_vms = 3
+  parallel_vms = 3
 }
 */
 

@@ -35,11 +35,11 @@ func addTemplateVmToRecomposeVapp(vappRecompose *types.ReComposeVAppParamsV2, vm
 	return vappRecomposeParams
 }
 
-// AddToRecomposeVapp adds multiple VM definitions to the vApp recompose params.
+// addToRecomposeVapp adds multiple VM definitions to the vApp recompose params.
 // The input items type is not known in advance. It is determined by probing the expected types
 // and assigning them to the appropriate list
 // This function is designed to interact with util.RunAfterCollection
-func AddToRecomposeVapp(vappRecompose *types.ReComposeVAppParamsV2, items map[string]interface{}) (*types.ReComposeVAppParamsV2, error) {
+func addToRecomposeVapp(vappRecompose *types.ReComposeVAppParamsV2, items map[string]interface{}) (*types.ReComposeVAppParamsV2, error) {
 	var vappRecomposeParams *types.ReComposeVAppParamsV2 = vappRecompose
 
 	for key, value := range items {
@@ -58,16 +58,32 @@ func AddToRecomposeVapp(vappRecompose *types.ReComposeVAppParamsV2, items map[st
 	return vappRecomposeParams, nil
 }
 
-func ReconfigureParallelVapp(meta interface{}, vappHref string, vms map[string]interface{}) (interface{}, error) {
+// getClient returns the client connection from an interface{}
+// It can get the client from either a *Client or *VCDClient input
+func getClient(meta interface{}) (*Client, error) {
 	client, ok := meta.(*Client)
-	if !ok {
-		return nil, fmt.Errorf("parameter client is not of type %T - found type %T", &Client{}, meta)
+	if ok {
+		return client, nil
+	}
+	vcdClient, ok := meta.(*VCDClient)
+	if ok {
+		return &vcdClient.Client, nil
+	}
+	return nil, fmt.Errorf("parameter client is not of type %T - found type %T", &Client{}, meta)
+}
+
+// reconfigureParallelVapp is the main operator of a parallel VM deployment
+// This function is called after the scheduler (util.RunWhenReady) has finished collecting input
+func reconfigureParallelVapp(meta interface{}, vappHref string, vms map[string]interface{}) (interface{}, error) {
+	client, err := getClient(meta)
+	if err != nil {
+		return nil, err
 	}
 	vapp, err := client.GetVappV2ByHref(vappHref)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving vApp %s: %s", vappHref, err)
 	}
-	recomposeParams, err := AddToRecomposeVapp(&types.ReComposeVAppParamsV2{
+	recomposeParams, err := addToRecomposeVapp(&types.ReComposeVAppParamsV2{
 		Name:             vapp.VAppV2.Name,
 		Description:      vapp.VAppV2.Description,
 		PowerOn:          false,
@@ -83,27 +99,36 @@ func ReconfigureParallelVapp(meta interface{}, vappHref string, vms map[string]i
 	return vapp, nil
 }
 
-func CreateParallelVMs(input util.ParallelInput) (util.ResultOutcome, interface{}, error) {
+// createParallelVMs is an auxiliary function that keeps calling util.RunWhenReady
+// until the input is collected and the result is available.
+// Returns util.ResultOutcome (the result of the scheduler), and interface{} (the result of the VM deployment, containing a vApp)
+func createParallelVMs(input util.ParallelInput) (util.ResultOutcome, interface{}, error) {
 	outcome := util.OutcomeWaiting
 	var result interface{}
 	var err error
 	for outcome != util.OutcomeDone && outcome != util.OutcomeRunTimeout && outcome != util.OutcomeCollectionTimeout {
 		outcome, result, err = util.RunWhenReady(input)
 		if err != nil {
-			return outcome, nil, fmt.Errorf("[CreateParallelVMs] error returned %s", err)
+			return outcome, nil, fmt.Errorf("[createParallelVMs] error returned %s", err)
 		}
 	}
 	return outcome, result, err
 }
 
-func CreateParallelVm(client interface{}, vappId, vmName string, creation interface{}, howMany int) (*VAppV2, error) {
-	outcome, result, err := CreateParallelVMs(util.ParallelInput{
+// CreateParallelVm creates a VM by scheduling its deployment with the parallel scheduler
+// client can be either *Client or *VCDClient
+// vAppHref is the HREF of an already existing vApp
+// vmName is the unique name of the VM within the vApp
+// creation can be either a *types.Reference (for a VM created from a template) or *types.VMtype
+// howMany is the number of VMs to be created with the parallel deployment. It must be the same for all the VMs in the group
+func CreateParallelVm(client interface{}, vappHref, vmName string, creation interface{}, howMany int) (*VAppV2, error) {
+	outcome, result, err := createParallelVMs(util.ParallelInput{
 		Client:            client,
-		GlobalId:          vappId,
+		GlobalId:          vappHref,
 		ItemId:            vmName,
 		HowMany:           howMany,
 		Item:              creation,
-		Run:               ReconfigureParallelVapp,
+		Run:               reconfigureParallelVapp,
 		CollectionTimeout: 10 * time.Second,
 		RunTimeout:        100 * time.Second,
 	})
