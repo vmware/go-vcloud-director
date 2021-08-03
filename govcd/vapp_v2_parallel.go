@@ -106,10 +106,20 @@ func createParallelVMs(input util.ParallelInput) (util.ResultOutcome, interface{
 	outcome := util.OutcomeWaiting
 	var result interface{}
 	var err error
-	for outcome != util.OutcomeDone && outcome != util.OutcomeRunTimeout && outcome != util.OutcomeCollectionTimeout {
+	for outcome != util.OutcomeDone && outcome != util.OutcomeRunTimeout &&
+		outcome != util.OutcomeCollectionTimeout && outcome != util.OutcomeFail {
 		outcome, result, err = util.RunWhenReady(input)
 		if err != nil {
 			return outcome, nil, fmt.Errorf("[createParallelVMs] error returned %s", err)
+		}
+		if outcome == util.OutcomeFail {
+			if err != nil {
+				err = fmt.Errorf("[createParallelVMs] unknown failure detected")
+			}
+			return outcome, nil, fmt.Errorf("[createParallelVMs] - outcome %s - failed %s", outcome, err)
+		}
+		if outcome == util.OutcomeCollectionTimeout {
+			return outcome, nil, fmt.Errorf("[createParallelVMs] timeout of %s exceeded ", input.CollectionTimeout)
 		}
 	}
 	return outcome, result, err
@@ -129,8 +139,8 @@ func CreateParallelVm(client interface{}, vappHref, vmName string, creation inte
 		HowMany:           howMany,
 		Item:              creation,
 		Run:               reconfigureParallelVapp,
-		CollectionTimeout: 10 * time.Second,
-		RunTimeout:        100 * time.Second,
+		CollectionTimeout: 1 * time.Minute, // 1 minute to collect all inputs
+		RunTimeout:        0,               // No run timeout
 	})
 	if err != nil {
 		return nil, err
