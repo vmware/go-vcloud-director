@@ -148,15 +148,3 @@ type SourcedVmTemplateParams struct {
 	VmTemplateInstantiationParams *InstantiationParams `xml:"VmTemplateInstantiationParams,omitempty"` // Same as InstantiationParams used for VMs within a vApp
 	StorageProfile                *Reference           `xml:"StorageProfile,omitempty"`                // A reference to a storage profile to be used for the VM. The specified storage profile must exist in the organization vDC that contains the composed vApp. If not specified, the default storage profile for the vDC is used.
 }
-
-// MoveVmParams is used to move a VM from a vApp to another
-type MoveVmParams struct {
-	XMLName     xml.Name                       `xml:"RecomposeVAppParams"`
-	Ovf         string                         `xml:"xmlns:ovf,attr"`
-	Xsi         string                         `xml:"xmlns:xsi,attr"`
-	Xmlns       string                         `xml:"xmlns,attr"`
-	Name        string                         `xml:"name,attr,omitempty"`   // Typically used to name or identify the subject of the request. For example, the name of the object being created or modified.
-	Description string                         `xml:"Description,omitempty"` // Optional description.
-	SourcedItem []*SourcedCompositionItemParam `xml:"SourcedItem,omitempty"` // Composition item. One of: vApp vAppTemplate VM.
-	DeleteItem  *DeleteItem                    `xml:"DeleteItem,omitempty"`
-}

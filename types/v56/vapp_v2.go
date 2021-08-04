@@ -2,10 +2,15 @@ package types
 
 import "encoding/xml"
 
+// VAppV2 is functionally identical to a vApp. This type is the basis for a more capable vApp
 type VAppV2 VApp
 
+// VmType is an alias to CreateItem. This is used here to make easier the relationship with the API docs, where it is
+// always referred to as VmType
 type VmType CreateItem
 
+// ComposeVAppParamsV2 is an enhanced and revised version of ComposeVAppParams
+// This structure can handle multiple VMs at the same time, while the old one can't
 type ComposeVAppParamsV2 struct {
 	XMLName xml.Name `xml:"ComposeVAppParams"`
 	Ovf     string   `xml:"xmlns:ovf,attr"`
@@ -25,6 +30,8 @@ type ComposeVAppParamsV2 struct {
 	AllEULAsAccepted    bool                           `xml:"AllEULAsAccepted,omitempty"`    // True confirms acceptance of all EULAs in a vApp template. Instantiation fails if this element is missing, empty, or set to false and one or more EulaSection elements are present.
 }
 
+// ReComposeVAppParamsV2 is an enhanced and revised version of ReComposeVAppParams
+// This structure can handle multiple VMs at the same time, while the old one can't
 type ReComposeVAppParamsV2 struct {
 	XMLName xml.Name `xml:"RecomposeVAppParams"`
 	Ovf     string   `xml:"xmlns:ovf,attr"`
