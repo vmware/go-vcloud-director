@@ -6,6 +6,7 @@
 package govcd
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -51,39 +52,18 @@ func (vcd *TestVCD) TestRecomposeParallelVappV2(check *C) {
 	check.Assert(err, IsNil)
 	AddToCleanupList(name, "vapp", vdc.Vdc.Name, name)
 
-	wg := sync.WaitGroup{}
-	wg.Add(4)
-
 	type vmDef struct {
 		name       string
 		definition interface{}
 	}
 
 	var vms = []vmDef{
-		{"vm1", &types.Reference{
-			HREF: vmTemplate.HREF,
-			ID:   vmTemplate.ID,
-			Type: vmTemplate.Type,
-			Name: "vm1",
-		}},
-		{"vm2", &types.Reference{
-			HREF: vmTemplate.HREF,
-			ID:   vmTemplate.ID,
-			Type: vmTemplate.Type,
-			Name: "vm2",
-		}},
-		{"vm3", &types.Reference{
-			HREF: vmTemplate.HREF,
-			ID:   vmTemplate.ID,
-			Type: vmTemplate.Type,
-			Name: "vm3",
-		}},
-		{"vm4", &types.VmType{
-			Name:        "vm4",
-			Description: "VM 4 descr",
+		{"vm9", &types.VmType{
+			Name:        "vm9",
+			Description: "VM 9 descr",
 			GuestCustomizationSection: &types.GuestCustomizationSection{
 				Info:         "Specifies Guest OS Customization Settings",
-				ComputerName: "vm4",
+				ComputerName: "vm9",
 			},
 			NetworkConnectionSection: nil,
 			VmSpecSection: &types.VmSpecSection{
@@ -115,11 +95,24 @@ func (vcd *TestVCD) TestRecomposeParallelVappV2(check *C) {
 		}},
 	}
 
+	for i := 1; i < 9; i++ {
+		name := fmt.Sprintf("vm%d", i)
+		vms = append(vms, vmDef{name, &types.Reference{
+			HREF: vmTemplate.HREF,
+			ID:   vmTemplate.ID,
+			Type: vmTemplate.Type,
+			Name: name,
+		}})
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(vms))
+
 	// The VM deployments are called simultaneously using goroutines
 	for _, vm := range vms {
 		go func(name string, creation interface{}) {
 			defer wg.Done()
-			reconfiguredVapp, err := CreateParallelVm(&vcd.client.Client, vapp.VAppV2.HREF, name, creation, 4)
+			reconfiguredVapp, err := CreateParallelVm(&vcd.client.Client, vapp.VAppV2.HREF, name, creation, len(vms))
 			check.Assert(err, IsNil)
 			check.Assert(reconfiguredVapp, NotNil)
 			vapp = reconfiguredVapp
@@ -138,11 +131,11 @@ func (vcd *TestVCD) TestRecomposeParallelVappV2(check *C) {
 
 	check.Assert(readVapp.VApp.Children, NotNil)
 	check.Assert(readVapp.VApp.Children.VM, NotNil)
-	check.Assert(len(readVapp.VApp.Children.VM), Equals, 4)
+	check.Assert(len(readVapp.VApp.Children.VM), Equals, len(vms))
 
 	check.Assert(vapp.VAppV2.Children, NotNil)
 	check.Assert(vapp.VAppV2.Children.VM, NotNil)
-	check.Assert(len(vapp.VAppV2.Children.VM), Equals, 4)
+	check.Assert(len(vapp.VAppV2.Children.VM), Equals, len(vms))
 
 	var task Task
 	task, err = vapp.RemoveAllNetworks()

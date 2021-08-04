@@ -2071,7 +2071,7 @@ func (vcd *TestVCD) Test_VmSerialVapp(check *C) {
 	check.Assert(err, IsNil)
 }
 
-func (vcd *TestVCD) Test_ParallelVm(check *C) {
+func (vcd *TestVCD) Test_ParallelMoveVm(check *C) {
 	if vcd.config.VCD.Org == "" {
 		check.Skip("Org not found in configuration")
 	}

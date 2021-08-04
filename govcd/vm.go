@@ -1816,10 +1816,12 @@ func (vm *VM) getTenantContext() (*TenantContext, error) {
 	return parentVdc.getTenantContext()
 }
 
+// MoveToVapp moves a VM to another vApp
 func (vm *VM) MoveToVapp(destination *VApp) error {
 	return MoveVmsToVapp([]*VM{vm}, destination)
 }
 
+// TransferAllVms moves all VMs from one vApp to another
 func (vapp *VApp) TransferAllVms(destination *VApp) error {
 	var vms []*VM
 	if vapp.VApp.Children == nil || len(vapp.VApp.Children.VM) == 0 {
@@ -1835,9 +1837,10 @@ func (vapp *VApp) TransferAllVms(destination *VApp) error {
 	return vapp.Refresh()
 }
 
+// MoveVmsToVapp moves a group of VMs to a vApp
 func MoveVmsToVapp(vms []*VM, destination *VApp) error {
 	if destination == nil || destination.VApp == nil {
-		return fmt.Errorf("[MoveToVapp] null destination provided")
+		return fmt.Errorf("[MoveVmsToVapp] null destination provided")
 	}
 	if destination.VApp.HREF == "" || destination.VApp.ID == "" {
 		return fmt.Errorf("[MoveVmsToVapp] destination lacks HREF or ID")
@@ -1856,7 +1859,7 @@ func MoveVmsToVapp(vms []*VM, destination *VApp) error {
 			return fmt.Errorf("[MoveVmsToVapp] source VM lacks Name")
 		}
 	}
-	payload := &types.MoveVmParams{
+	payload := &types.ReComposeVAppParamsV2{
 		Ovf:         types.XMLNamespaceOVF,
 		Xsi:         types.XMLNamespaceXSI,
 		Xmlns:       types.XMLNamespaceVCloud,
