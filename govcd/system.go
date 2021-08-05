@@ -766,15 +766,23 @@ func (vcdCli *VCDClient) QueryProviderVdcStorageProfileByName(name, providerVDCH
 	var recs []*types.QueryResultProviderVdcStorageProfileRecordType
 	for _, rec := range results.Results.ProviderVdcStorageProfileRecord {
 		if rec.Name == name {
+			// Double match: both the name and the provider VDC match: we can return the result
 			if providerVDCHref != "" && providerVDCHref == rec.ProviderVdcHREF {
 				return rec, nil
 			}
-			recs = append(recs, rec)
+			// if there is a name match, but no provider VDC was given, we add to the result, and we will check later.
+			if providerVDCHref == "" {
+				recs = append(recs, rec)
+			}
 		}
 	}
 
+	providerVDCMessage := ""
+	if providerVDCHref != "" {
+		providerVDCMessage = fmt.Sprintf("in provider VDC '%s'", providerVDCHref)
+	}
 	if len(recs) == 0 {
-		return nil, fmt.Errorf("no records found for storage profile '%s'", name)
+		return nil, fmt.Errorf("no records found for storage profile '%s' %s", name, providerVDCMessage)
 	}
 	if len(recs) > 1 {
 		return nil, fmt.Errorf("more than 1 record found for storage profile '%s'. Add Provider VDC HREF in the search to disambiguate", name)

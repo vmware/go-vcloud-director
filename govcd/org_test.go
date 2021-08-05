@@ -708,6 +708,7 @@ func (vcd *TestVCD) Test_QueryStorageProfiles(check *C) {
 	// Manually select the storage profiles that belong to the current provider VDC
 	var spList []*types.QueryResultProviderVdcStorageProfileRecordType
 	var duplicateNames = make(map[string]bool)
+	var notLocalStorageProfile string
 	var used = make(map[string]bool)
 	for _, sp := range rawSpList {
 		if sp.ProviderVdcHREF == providerVdcHref {
@@ -718,6 +719,15 @@ func (vcd *TestVCD) Test_QueryStorageProfiles(check *C) {
 			duplicateNames[sp.Name] = true
 		}
 		used[sp.Name] = true
+	}
+	// Find a storage profile from a different provider VDC
+	for _, sp := range rawSpList {
+		if sp.ProviderVdcHREF != providerVdcHref {
+			_, isDuplicate := duplicateNames[sp.Name]
+			if !isDuplicate {
+				notLocalStorageProfile = sp.Name
+			}
+		}
 	}
 
 	// Get the list of local storage profiles (belonging to the Provider VDC that the adminVdc depends on)
@@ -748,6 +758,13 @@ func (vcd *TestVCD) Test_QueryStorageProfiles(check *C) {
 		faultySp, err := vcd.client.QueryProviderVdcStorageProfileByName(name, "")
 		check.Assert(err, NotNil)
 		check.Assert(faultySp, IsNil)
+	}
+
+	// Search explicitly for a storage profile not present in current provider VDC
+	if notLocalStorageProfile != "" {
+		fullSp, err := vcd.client.QueryProviderVdcStorageProfileByName(notLocalStorageProfile, providerVdcHref)
+		check.Assert(err, NotNil)
+		check.Assert(fullSp, IsNil)
 	}
 }
 
