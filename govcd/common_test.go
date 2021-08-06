@@ -740,7 +740,8 @@ func spawnTestVdc(vcd *TestVCD, check *C, adminOrgName string) *Vdc {
 	check.Assert(err, IsNil)
 
 	providerVdcHref := getVdcProviderVdcHref(vcd, check)
-	providerVdcStorageProfileHref := getVdcProviderVdcStorageProfileHref(vcd, check)
+	storageProfile, err := vcd.client.QueryProviderVdcStorageProfileByName(vcd.config.VCD.ProviderVdc.StorageProfile, providerVdcHref)
+	check.Assert(err, IsNil)
 	networkPoolHref := getVdcNetworkPoolHref(vcd, check)
 
 	vdcConfiguration := &types.VdcConfiguration{
@@ -767,7 +768,7 @@ func spawnTestVdc(vcd *TestVCD, check *C, adminOrgName string) *Vdc {
 			Limit:   1024,
 			Default: true,
 			ProviderVdcStorageProfile: &types.Reference{
-				HREF: providerVdcStorageProfileHref,
+				HREF: storageProfile.HREF,
 			},
 		},
 		},
@@ -819,20 +820,6 @@ func getVdcProviderVdcHref(vcd *TestVCD, check *C) string {
 	providerVdcHref := results.Results.VMWProviderVdcRecord[0].HREF
 
 	return providerVdcHref
-}
-
-func getVdcProviderVdcStorageProfileHref(vcd *TestVCD, check *C) string {
-	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":   "providerVdcStorageProfile",
-		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.StorageProfile),
-	})
-	check.Assert(err, IsNil)
-	if len(results.Results.ProviderVdcStorageProfileRecord) == 0 {
-		check.Skip(fmt.Sprintf("No storage profile found with name '%s'", vcd.config.VCD.ProviderVdc.StorageProfile))
-	}
-	providerVdcStorageProfileHref := results.Results.ProviderVdcStorageProfileRecord[0].HREF
-
-	return providerVdcStorageProfileHref
 }
 
 func getVdcNetworkPoolHref(vcd *TestVCD, check *C) string {

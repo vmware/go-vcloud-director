@@ -278,6 +278,8 @@ func (vdc *Vdc) FindStorageProfileReference(name string) (types.Reference, error
 	return types.Reference{}, fmt.Errorf("can't find any VDC Storage_profiles")
 }
 
+// GetDefaultStorageProfileReference should find the default storage profile for a VDC
+// Deprecated: unused and implemented in the wrong way. Use adminVdc.GetDefaultStorageProfileReference instead
 func (vdc *Vdc) GetDefaultStorageProfileReference(storageprofiles *types.QueryResultRecordsType) (types.Reference, error) {
 
 	err := vdc.Refresh()
