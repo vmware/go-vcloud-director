@@ -2965,3 +2965,13 @@ type VCloud struct {
 	// RoleReferences
 	// Networks
 }
+
+// UpdateVdcStorageProfiles is used to add a storage profile to an Org VDC or to remove one
+type UpdateVdcStorageProfiles struct {
+	XMLName              xml.Name                        `xml:"UpdateVdcStorageProfiles"`
+	Xmlns                string                          `xml:"xmlns,attr,omitempty"`
+	Name                 string                          `xml:"name,attr"`
+	Description          string                          `xml:"Description,omitempty"`
+	AddStorageProfile    *VdcStorageProfileConfiguration `xml:"AddStorageProfile,omitempty"`
+	RemoveStorageProfile *Reference                      `xml:"RemoveStorageProfile,omitempty"`
+}

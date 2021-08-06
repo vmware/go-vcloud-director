@@ -43,7 +43,7 @@ func NewCatalog(client *Client) *Catalog {
 }
 
 // Delete deletes the Catalog, returning an error if the vCD call fails.
-// Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Catalog.html
+// Link to API call: https://code.vmware.com/apis/1046/vmware-cloud-director/doc/doc/operations/DELETE-Catalog.html
 func (catalog *Catalog) Delete(force, recursive bool) error {
 
 	adminCatalogHREF := catalog.client.VCDHREF

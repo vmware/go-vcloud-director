@@ -520,7 +520,7 @@ func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {
 	if storageProfileName == "" {
 		check.Skip("Skipping storage profile query: no storage profile was given")
 	}
-	storageProfiles, err := vcd.client.QueryProviderVdcStorageProfiles()
+	storageProfiles, err := vcd.client.Client.QueryAllProviderVdcStorageProfiles()
 	check.Assert(err, IsNil)
 	check.Assert(len(storageProfiles) > 0, Equals, true)
 	storageProfileFound := false
@@ -609,7 +609,7 @@ func (vcd *TestVCD) Test_GetStorageProfileByHref(check *C) {
 	check.Assert(adminVdc, NotNil)
 
 	// Get storage profile by href
-	foundStorageProfile, err := GetStorageProfileByHref(vcd.client, adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
+	foundStorageProfile, err := vcd.client.Client.GetStorageProfileByHref(adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
 	check.Assert(err, IsNil)
 	check.Assert(foundStorageProfile, Not(Equals), types.VdcStorageProfile{})
 	check.Assert(foundStorageProfile, NotNil)

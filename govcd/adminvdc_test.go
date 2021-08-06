@@ -39,7 +39,10 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 	check.Assert(adminOrg, NotNil)
 
 	providerVdcHref := getVdcProviderVdcHref(vcd, check)
-	providerVdcStorageProfileHref := getVdcProviderVdcStorageProfileHref(vcd, check)
+
+	storageProfile, err := vcd.client.QueryProviderVdcStorageProfileByName(vcd.config.VCD.ProviderVdc.StorageProfile, providerVdcHref)
+	check.Assert(err, IsNil)
+	providerVdcStorageProfileHref := storageProfile.HREF
 	networkPoolHref := getVdcNetworkPoolHref(vcd, check)
 
 	allocationModels := []string{"AllocationVApp", "AllocationPool", "ReservationPool", "Flex"}
@@ -208,7 +211,7 @@ func (vcd *TestVCD) Test_VdcUpdateStorageProfile(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminVdc, NotNil)
 
-	foundStorageProfile, err := GetStorageProfileByHref(vcd.client, adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
+	foundStorageProfile, err := vcd.client.Client.GetStorageProfileByHref(adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
 	check.Assert(err, IsNil)
 	check.Assert(foundStorageProfile, Not(Equals), types.VdcStorageProfile{})
 	check.Assert(foundStorageProfile, NotNil)
@@ -229,7 +232,7 @@ func (vcd *TestVCD) Test_VdcUpdateStorageProfile(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(updatedVdc, Not(IsNil))
 
-	updatedStorageProfile, err := GetStorageProfileByHref(vcd.client, adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
+	updatedStorageProfile, err := vcd.client.Client.GetStorageProfileByHref(adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
 	check.Assert(err, IsNil)
 	check.Assert(updatedStorageProfile, Not(Equals), types.VdcStorageProfile{})
 	check.Assert(updatedStorageProfile, NotNil)

@@ -131,6 +131,8 @@ const (
 	MimeCreateVmParams = "application/vnd.vmware.vcloud.CreateVmParams+xml"
 	// Mime for instantiate VM Params from template
 	MimeInstantiateVmTemplateParams = "application/vnd.vmware.vcloud.instantiateVmTemplateParams+xml"
+	// Mime for adding or removing VDC storage profiles
+	MimeUpdateVdcStorageProfiles = "application/vnd.vmware.admin.updateVdcStorageProfiles+xml"
 )
 
 const (
