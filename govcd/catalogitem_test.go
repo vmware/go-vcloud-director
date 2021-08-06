@@ -177,6 +177,15 @@ func (vcd *TestVCD) TestQueryCatalogItemAndVAppTemplateList(check *C) {
 
 		check.Assert(catalogItem.CatalogItem.Entity, NotNil)
 		check.Assert(catalogItem.CatalogItem.Entity.HREF, Equals, qvAppTemplate.HREF)
+
+		// Retrieve the catalog item from a client
+		catalogItemFromClient, err := vcd.client.Client.GetCatalogItemByHref(itemHref)
+		check.Assert(err, IsNil)
+		check.Assert(catalogItem.CatalogItem.HREF, Equals, catalogItemFromClient.CatalogItem.HREF)
+		catalogItemFromClientById, err := vcd.client.Client.GetCatalogItemById(catalogItem.CatalogItem.ID)
+		check.Assert(err, IsNil)
+		check.Assert(catalogItem.CatalogItem.HREF, Equals, catalogItemFromClientById.CatalogItem.HREF)
+
 	}
 
 	// Compare vApp templates from query with the list of vappTemplates from VDC

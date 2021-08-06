@@ -126,3 +126,24 @@ func (vdc *AdminVdc) QueryVappTemplateList() ([]*types.QueryResultVappTemplateTy
 func (catalog *Catalog) QueryVappTemplateList() ([]*types.QueryResultVappTemplateType, error) {
 	return queryVappTemplateList(catalog.client, "catalogName", catalog.Catalog.Name)
 }
+
+// GetCatalogItemByHref retrieves a catalogItem from its HREF
+func (client *Client) GetCatalogItemByHref(catalogItemHref string) (*CatalogItem, error) {
+
+	catItem := NewCatalogItem(client)
+
+	_, err := client.ExecuteRequest(catalogItemHref, http.MethodGet,
+		"", "error retrieving catalog item: %s", nil, catItem.CatalogItem)
+	if err != nil {
+		return nil, err
+	}
+	return catItem, nil
+}
+
+// GetCatalogItemById retrieves a catalogItem from its ID
+func (client *Client) GetCatalogItemById(id string) (*CatalogItem, error) {
+	// Builds the HREF from the client's VCDHREF
+	catalogItemUrl := client.VCDHREF
+	catalogItemUrl.Path += "/catalogItem/" + extractUuid(id)
+	return client.GetCatalogItemByHref(catalogItemUrl.String())
+}
