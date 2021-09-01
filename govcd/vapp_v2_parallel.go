@@ -101,26 +101,47 @@ func reconfigureParallelVapp(meta interface{}, vappHref string, vms map[string]i
 
 // createParallelVMs is an auxiliary function that keeps calling util.RunWhenReady
 // until the input is collected and the result is available.
-// Returns util.ResultOutcome (the result of the scheduler), and interface{} (the result of the VM deployment, containing a vApp)
-func createParallelVMs(input util.ParallelInput) (util.ResultOutcome, interface{}, error) {
-	outcome := util.OutcomeWaiting
+// Returns util.ParallelOpState (the result of the scheduler), and interface{} (the result of the VM deployment, containing a vApp)
+func createParallelVMs(input util.ParallelInput) (util.ParallelOpState, interface{}, error) {
+	outcome := util.ParallelOpStateWaiting
 	var result interface{}
 	var err error
-	for outcome != util.OutcomeDone && outcome != util.OutcomeRunTimeout &&
-		outcome != util.OutcomeCollectionTimeout && outcome != util.OutcomeFail {
+	runningDelay := 200 * time.Millisecond
+	waitingDelay := 10 * time.Millisecond
+	otherDelay := 100 * time.Millisecond
+	// The loop ends when a final state (either error or completion) is returned.
+	for outcome != util.ParallelOpStateDone &&
+		outcome != util.ParallelOpStateRunTimeout &&
+		outcome != util.ParallelOpStateCollectionTimeout &&
+		outcome != util.ParallelOpStateFail {
 		outcome, result, err = util.RunWhenReady(input)
 		if err != nil {
 			return outcome, nil, fmt.Errorf("[createParallelVMs] error returned %s", err)
 		}
-		if outcome == util.OutcomeFail {
-			if err != nil {
+		if outcome == util.ParallelOpStateFail {
+			if err == nil {
 				err = fmt.Errorf("[createParallelVMs] unknown failure detected")
 			}
 			return outcome, nil, fmt.Errorf("[createParallelVMs] - outcome %s - failed %s", outcome, err)
 		}
-		if outcome == util.OutcomeCollectionTimeout {
+		if outcome == util.ParallelOpStateCollectionTimeout {
 			return outcome, nil, fmt.Errorf("[createParallelVMs] timeout of %s exceeded ", input.CollectionTimeout)
 		}
+		if outcome == util.ParallelOpStateRunTimeout {
+			return outcome, nil, fmt.Errorf("[createParallelVMs] timeout of %s exceeded ", input.RunTimeout)
+		}
+		// Reduce the amount of state polling, making the logging more manageable.
+		// For a run that takes 1 minute, this sleep reduces the number of events from 14 million to 3,000
+		delay := waitingDelay
+		switch outcome {
+		case util.ParallelOpStateRunning:
+			delay = runningDelay
+		case util.ParallelOpStateWaiting:
+			delay = waitingDelay
+		default:
+			delay = otherDelay
+		}
+		time.Sleep(delay)
 	}
 	return outcome, result, err
 }
@@ -136,7 +157,7 @@ func CreateParallelVm(client interface{}, vappHref, vmName string, creation inte
 		Client:            client,
 		GlobalId:          vappHref,
 		ItemId:            vmName,
-		HowMany:           howMany,
+		NumExpectedItems:  howMany,
 		Item:              creation,
 		Run:               reconfigureParallelVapp,
 		CollectionTimeout: 1 * time.Minute, // 1 minute to collect all inputs
@@ -145,7 +166,7 @@ func CreateParallelVm(client interface{}, vappHref, vmName string, creation inte
 	if err != nil {
 		return nil, err
 	}
-	if outcome != util.OutcomeDone {
+	if outcome != util.ParallelOpStateDone {
 		return nil, fmt.Errorf("received outcome %s", outcome)
 	}
 	vapp, ok := result.(*VAppV2)

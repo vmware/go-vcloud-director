@@ -1,4 +1,4 @@
-// +build vapp functional ALL
+//go:build vapp || functional || ALL
 
 /*
  * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -57,13 +57,16 @@ func (vcd *TestVCD) TestRecomposeParallelVappV2(check *C) {
 		definition interface{}
 	}
 
+	numOfVms := 10
+
+	// The first VM is built from VCD internal catalog
 	var vms = []vmDef{
-		{"vm9", &types.VmType{
-			Name:        "vm9",
-			Description: "VM 9 descr",
+		{"vm1", &types.VmType{
+			Name:        "vm1",
+			Description: "VM 1 descr",
 			GuestCustomizationSection: &types.GuestCustomizationSection{
 				Info:         "Specifies Guest OS Customization Settings",
-				ComputerName: "vm9",
+				ComputerName: "vm1",
 			},
 			NetworkConnectionSection: nil,
 			VmSpecSection: &types.VmSpecSection{
@@ -95,7 +98,8 @@ func (vcd *TestVCD) TestRecomposeParallelVappV2(check *C) {
 		}},
 	}
 
-	for i := 1; i < 9; i++ {
+	// All the other VM definitions are built from the same VM template
+	for i := 2; i <= numOfVms; i++ {
 		name := fmt.Sprintf("vm%d", i)
 		vms = append(vms, vmDef{name, &types.Reference{
 			HREF: vmTemplate.HREF,
