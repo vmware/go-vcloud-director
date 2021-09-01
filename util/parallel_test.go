@@ -8,11 +8,12 @@ import (
 	"time"
 )
 
-func runUntilDone(input ParallelInput) (ResultOutcome, interface{}, error) {
-	outcome := OutcomeWaiting
+func runUntilDone(input ParallelInput) (ParallelOpState, interface{}, error) {
+	outcome := ParallelOpStateWaiting
 	var result interface{}
 	var err error
-	for outcome != OutcomeDone && outcome != OutcomeRunTimeout && outcome != OutcomeCollectionTimeout && outcome != OutcomeFail {
+	for outcome != ParallelOpStateDone && outcome != ParallelOpStateRunTimeout &&
+		outcome != ParallelOpStateCollectionTimeout && outcome != ParallelOpStateFail {
 		outcome, result, err = RunWhenReady(input)
 		debugPrintf("[runUntilDone] item %s - %s\n", input.ItemId, outcome)
 		if err != nil {
@@ -46,7 +47,7 @@ func TestRunWhenReady(t *testing.T) {
 				ParallelInput{
 					GlobalId:          "TESTGLOBAL",
 					ItemId:            fmt.Sprintf("item%d", count),
-					HowMany:           10,
+					NumExpectedItems:  10,
 					Item:              fmt.Sprintf("<ITEM %d>", count),
 					Run:               run,
 					CollectionTimeout: 10 * time.Second,

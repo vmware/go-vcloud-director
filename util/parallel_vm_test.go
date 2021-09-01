@@ -33,9 +33,9 @@ resource "vcd_vapp_vm_v2" "test_vm" {
 
 func createMockVm(vappId, vmName, templateId string, howMany int) error {
 	outcome, result, err := createParallelVMs(ParallelInput{
-		GlobalId: vappId,
-		ItemId:   vmName,
-		HowMany:  howMany,
+		GlobalId:         vappId,
+		ItemId:           vmName,
+		NumExpectedItems: howMany,
 		Item: mockVm{
 			name:       vmName,
 			vappId:     vappId,
@@ -48,7 +48,7 @@ func createMockVm(vappId, vmName, templateId string, howMany int) error {
 	if err != nil {
 		return err
 	}
-	if outcome != OutcomeDone {
+	if outcome != ParallelOpStateDone {
 		return fmt.Errorf("received outcome %s", outcome)
 	}
 	vapp, ok := result.(mockVapp)
@@ -106,11 +106,11 @@ func TestCreateVMs(t *testing.T) {
 	wg.Wait()
 }
 
-func createParallelVMs(input ParallelInput) (ResultOutcome, interface{}, error) {
-	outcome := OutcomeWaiting
+func createParallelVMs(input ParallelInput) (ParallelOpState, interface{}, error) {
+	outcome := ParallelOpStateWaiting
 	var result interface{}
 	var err error
-	for outcome != OutcomeDone && outcome != OutcomeRunTimeout && outcome != OutcomeCollectionTimeout && outcome != OutcomeFail {
+	for outcome != ParallelOpStateDone && outcome != ParallelOpStateRunTimeout && outcome != ParallelOpStateCollectionTimeout && outcome != ParallelOpStateFail {
 		outcome, result, err = RunWhenReady(input)
 		debugPrintf("[createParallelVMs] item %s - %s\n", input.ItemId, outcome)
 		if err != nil {

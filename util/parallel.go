@@ -11,22 +11,23 @@ var parallelDebugOutput = os.Getenv("parallel_debug_output")
 
 // parallelInfo is the information needed to run a parallel operation
 type parallelInfo struct {
-	data                map[string]interface{} // collection of input from all requesters
-	details             map[string]ParallelInput
-	isRunning           bool        // has started running
-	finished            bool        // has finished running
-	result              interface{} // The result returned by the wanted function
-	err                 error       // error returned by the wanted function
-	runStartTime        time.Time   // when the run started
-	collectionStartTime time.Time   // when the data collection started
+	data                map[string]interface{}   // collection of input from all requesters
+	details             map[string]ParallelInput // the input that was passed from each requester
+	isRunning           bool                     // has started running
+	runningOn           string                   // which node has activated the running
+	finished            bool                     // has finished running
+	result              interface{}              // The result returned by the wanted function
+	err                 error                    // error returned by the wanted function
+	runStartTime        time.Time                // when the run started
+	collectionStartTime time.Time                // when the data collection started
 }
 
 // ParallelInput is what each client needs to pass to the scheduler to run a parallel task
 type ParallelInput struct {
 	Client            interface{}        // valid connection
 	GlobalId          string             // identification of the job, such as the object to create from all the parts
-	ItemId            string             // identification of the Client, such as the definition of a part of the final object
-	HowMany           int                // how many objects must be created. The scheduler will wait until as many requests arrive
+	ItemId            string             // identification of the component, such as the definition of a part of the final object
+	NumExpectedItems  int                // how many objects must be created. The scheduler will wait until as many requests arrive
 	Item              interface{}        // the portion of data being passed to the run function
 	Run               RunAfterCollection // The function that will ultimately do the work
 	CollectionTimeout time.Duration      // how long to wait for data collection (0 = forever)
@@ -36,27 +37,43 @@ type ParallelInput struct {
 // parallelMutexKV is a lock mutex that will prevent clients from overriding each other requests
 var parallelMutexKV = NewMutexKVSilent()
 
-// ResultOutcome is a type that defines the standard outcomes of a scheduler request
-type ResultOutcome string
+// ParallelOpState is a type that defines the standard outcome of a scheduler request
+type ParallelOpState string
 
 // RunAfterCollection is a type of function that, given a collection of items, will perform an operation and return an object
 type RunAfterCollection func(client interface{}, globalId string, data map[string]interface{}) (interface{}, error)
 
 // Standard outcome from RunWhenReady
 const (
-	OutcomeDone              ResultOutcome = "done"
-	OutcomeWaiting           ResultOutcome = "waiting"
-	OutcomeRunTimeout        ResultOutcome = "run-timeout"
-	OutcomeCollectionTimeout ResultOutcome = "collection-timeout"
-	OutcomeFail              ResultOutcome = "fail"
-	OutcomeRunning           ResultOutcome = "running"
+	ParallelOpStateDone              ParallelOpState = "done"
+	ParallelOpStateWaiting           ParallelOpState = "waiting"
+	ParallelOpStateRunTimeout        ParallelOpState = "run-timeout"
+	ParallelOpStateCollectionTimeout ParallelOpState = "collection-timeout"
+	ParallelOpStateFail              ParallelOpState = "fail"
+	ParallelOpStateRunning           ParallelOpState = "running"
 )
 
 // concurrentData is the private repository of the data requests
 var concurrentData = make(map[string]parallelInfo)
 
+// stateCounters collects the number of times a state appears for a given group identifier
+var stateCounters = make(map[string]uint64)
+
+// incrementedCounter provides a counter for each state within a given group ID
+func incrementedCounter(id string, outcome ParallelOpState) uint64 {
+	key := id + string(outcome)
+	parallelMutexKV.Lock(key)
+	defer parallelMutexKV.Unlock(key)
+	_, exists := stateCounters[key]
+	if !exists {
+		stateCounters[key] = 0
+	}
+	stateCounters[key]++
+	return stateCounters[key]
+}
+
 // RunWhenReady is the scheduler that collects the data from clients, and runs the request when all the items have been collected
-func RunWhenReady(input ParallelInput) (ResultOutcome, interface{}, error) {
+func RunWhenReady(input ParallelInput) (ParallelOpState, interface{}, error) {
 	parallelMutexKV.Lock(input.GlobalId)
 	isLocked := true
 	defer func() {
@@ -67,25 +84,30 @@ func RunWhenReady(input ParallelInput) (ResultOutcome, interface{}, error) {
 	info := concurrentData[input.GlobalId]
 	err := validateParallelData(input, info)
 	if err != nil {
-		debugPrintf("exiting RunWhenReady: %s - %s - outcome: %s (%s)\n", input.GlobalId, input.ItemId, OutcomeFail, time.Since(info.collectionStartTime))
-		return OutcomeFail, nil, err
+		debugPrintf("exiting RunWhenReady: %s - %s - outcome: %s [%d] (%s)\n", input.GlobalId, input.ItemId,
+			ParallelOpStateFail, incrementedCounter(input.GlobalId, ParallelOpStateFail), time.Since(info.collectionStartTime))
+		return ParallelOpStateFail, nil, err
 	}
 
 	debugPrintf("entering RunWhenReady: %s - %s (%d)\n", input.GlobalId, input.ItemId, len(info.data))
-	if len(info.data) == input.HowMany {
+	if len(info.data) == input.NumExpectedItems {
 		if info.finished {
-			debugPrintf("exiting RunWhenReady: %s - %s - outcome: %s (%s)\n", input.GlobalId, input.ItemId, OutcomeDone, time.Since(info.runStartTime))
-			return OutcomeDone, info.result, info.err
+			debugPrintf("exiting RunWhenReady: %s - %s - outcome: %s [%d] (%s)\n", input.GlobalId, input.ItemId,
+				ParallelOpStateDone, incrementedCounter(input.GlobalId, ParallelOpStateDone), time.Since(info.runStartTime))
+			return ParallelOpStateDone, info.result, info.err
 		}
 		if info.isRunning {
 			if input.RunTimeout > 0 && time.Since(info.runStartTime) > input.RunTimeout {
-				debugPrintf("exiting RunWhenReady: %s - %s - outcome: %s (%s)\n", input.GlobalId, input.ItemId, OutcomeRunTimeout, time.Since(info.runStartTime))
-				return OutcomeRunTimeout, nil, nil
+				debugPrintf("exiting RunWhenReady: %s - %s - outcome: %s [%d] (%s)\n", input.GlobalId, input.ItemId,
+					ParallelOpStateRunTimeout, incrementedCounter(input.GlobalId, ParallelOpStateRunTimeout), time.Since(info.runStartTime))
+				return ParallelOpStateRunTimeout, nil, nil
 			}
-			debugPrintf("exiting RunWhenReady: %s - %s - outcome: %s (%s)\n", input.GlobalId, input.ItemId, OutcomeRunning, time.Since(info.runStartTime))
-			return OutcomeRunning, nil, nil
+			debugPrintf("exiting RunWhenReady: %s - %s - outcome: %s on %s [%d] (%s)\n", input.GlobalId, input.ItemId,
+				ParallelOpStateRunning, info.runningOn, incrementedCounter(input.GlobalId, ParallelOpStateRunning), time.Since(info.runStartTime))
+			return ParallelOpStateRunning, nil, nil
 		}
 		info.isRunning = true
+		info.runningOn = input.ItemId
 		info.runStartTime = time.Now()
 		concurrentData[input.GlobalId] = info
 
@@ -101,7 +123,7 @@ func RunWhenReady(input ParallelInput) (ResultOutcome, interface{}, error) {
 		info.result = result
 		info.err = err
 		concurrentData[input.GlobalId] = info
-		return OutcomeDone, result, err
+		return ParallelOpStateDone, result, err
 	} else {
 		if len(info.data) == 0 {
 			info.collectionStartTime = time.Now()
@@ -110,8 +132,8 @@ func RunWhenReady(input ParallelInput) (ResultOutcome, interface{}, error) {
 			debugPrintf("initializing map %s - %s \n", input.GlobalId, input.ItemId)
 		}
 		if input.CollectionTimeout > 0 && time.Since(info.collectionStartTime) > input.CollectionTimeout {
-			debugPrintf("exiting RunWhenReady: %s - %s - outcome: %s\n", input.GlobalId, input.ItemId, OutcomeCollectionTimeout)
-			return OutcomeCollectionTimeout, nil, nil
+			debugPrintf("exiting RunWhenReady: %s - %s - outcome: [%d] %s\n", input.GlobalId, input.ItemId, incrementedCounter(input.GlobalId, ParallelOpStateCollectionTimeout), ParallelOpStateCollectionTimeout)
+			return ParallelOpStateCollectionTimeout, nil, nil
 		}
 		_, exists := info.data[input.ItemId]
 		if !exists {
@@ -121,8 +143,9 @@ func RunWhenReady(input ParallelInput) (ResultOutcome, interface{}, error) {
 			debugPrintf("adding item: %s - %s  (%d)\n", input.GlobalId, input.ItemId, len(info.data))
 		}
 	}
-	debugPrintf("exiting RunWhenReady: %s - %s - outcome: %s (%s)\n", input.GlobalId, input.ItemId, OutcomeWaiting, time.Since(info.collectionStartTime))
-	return OutcomeWaiting, nil, nil
+	debugPrintf("exiting RunWhenReady: %s - %s - outcome: %s [%d] (%s)\n", input.GlobalId, input.ItemId,
+		ParallelOpStateWaiting, incrementedCounter(input.GlobalId, ParallelOpStateWaiting), time.Since(info.collectionStartTime))
+	return ParallelOpStateWaiting, nil, nil
 }
 
 // debugPrintf logs the messages from the parallel engine when `debugging` is enabled
@@ -142,12 +165,12 @@ func debugPrintf(format string, args ...interface{}) {
 }
 
 func validateParallelData(latestInput ParallelInput, info parallelInfo) error {
-	if latestInput.HowMany == 0 {
+	if latestInput.NumExpectedItems == 0 {
 		return fmt.Errorf("latest input has no number of expected items")
 	}
 	for _, item := range info.details {
-		if item.HowMany != latestInput.HowMany {
-			return fmt.Errorf("inconsistent number of expected item detected. Previous was %d. - Current is %d", item.HowMany, latestInput.HowMany)
+		if item.NumExpectedItems != latestInput.NumExpectedItems {
+			return fmt.Errorf("inconsistent number of expected item detected. Previous was %d. - Current is %d", item.NumExpectedItems, latestInput.NumExpectedItems)
 		}
 		if item.CollectionTimeout != 0 && item.CollectionTimeout != latestInput.CollectionTimeout {
 			return fmt.Errorf("inconsistent collection timeout detected. Previous was %s - Current is %s", item.CollectionTimeout, latestInput.CollectionTimeout)
