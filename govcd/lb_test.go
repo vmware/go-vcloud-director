@@ -1,3 +1,4 @@
+//go:build (lb || functional || integration || ALL) && !skipLong
 // +build lb functional integration ALL
 // +build !skipLong
 

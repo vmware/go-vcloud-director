@@ -1,3 +1,4 @@
+//go:build network || nsxt || functional || ALL
 // +build network nsxt functional ALL
 
 /*

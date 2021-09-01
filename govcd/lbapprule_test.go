@@ -1,3 +1,4 @@
+//go:build lb || lbAppRule || nsxv || functional || ALL
 // +build lb lbAppRule nsxv functional ALL
 
 /*

@@ -1,3 +1,4 @@
+//go:build concurrent
 // +build concurrent
 
 /*

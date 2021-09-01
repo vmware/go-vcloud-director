@@ -1,3 +1,4 @@
+//go:build functional || openapi || ALL
 // +build functional openapi ALL
 
 package govcd

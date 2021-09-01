@@ -1,3 +1,4 @@
+//go:build disk || functional || ALL
 // +build disk functional ALL
 
 /*
