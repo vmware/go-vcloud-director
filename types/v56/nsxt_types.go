@@ -9,6 +9,12 @@ type OpenAPIEdgeGateway struct {
 	Name string `json:"name"`
 	// Description of edge gateway
 	Description string `json:"description"`
+	// OwnerRef defines Org VDC or VDC Group that this network belongs to. If the ownerRef is set to a VDC Group, this
+	// network will be available across all the VDCs in the vDC Group. If the VDC Group is backed by a NSX-V network
+	// provider, the Org VDC network is automatically connected to the distributed router associated with the VDC Group
+	// and the "connection" field does not need to be set. For API version 35.0 and above, this field should be set for
+	// network creation.
+	OwnerRef *OpenApiReference `json:"ownerRef,omitempty"`
 	// OrgVdc holds the organization vDC or vDC Group that this edge gateway belongs to. If the ownerRef is set to a VDC
 	// Group, this gateway will be available across all the participating Organization vDCs in the VDC Group.
 	OrgVdc *OpenApiReference `json:"orgVdc,omitempty"`
