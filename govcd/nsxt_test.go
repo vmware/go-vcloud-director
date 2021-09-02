@@ -1,3 +1,4 @@
+//go:build ALL || openapi || functional || nsxt
 // +build ALL openapi functional nsxt
 
 /*

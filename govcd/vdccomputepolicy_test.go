@@ -1,3 +1,4 @@
+//go:build vdc || functional || openapi || ALL
 // +build vdc functional openapi ALL
 
 /*

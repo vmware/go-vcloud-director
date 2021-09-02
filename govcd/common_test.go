@@ -1,3 +1,4 @@
+//go:build api || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || nsxv || nsxt || openapi || affinity || search || ALL
 // +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user nsxv nsxt openapi affinity search ALL
 
 /*

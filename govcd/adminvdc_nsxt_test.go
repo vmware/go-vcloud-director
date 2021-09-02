@@ -1,3 +1,4 @@
+//go:build org || functional || nsxt || ALL
 // +build org functional nsxt ALL
 
 /*

@@ -1,3 +1,4 @@
+//go:build system || functional || ALL
 // +build system functional ALL
 
 /*

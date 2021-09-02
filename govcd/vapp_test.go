@@ -1,3 +1,4 @@
+//go:build vapp || functional || ALL
 // +build vapp functional ALL
 
 /*

@@ -1,3 +1,4 @@
+//go:build vm || functional || ALL
 // +build vm functional ALL
 
 /*

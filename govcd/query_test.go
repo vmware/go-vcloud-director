@@ -1,3 +1,4 @@
+//go:build query || functional || ALL
 // +build query functional ALL
 
 /*

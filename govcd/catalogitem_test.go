@@ -1,3 +1,4 @@
+//go:build catalog || functional || ALL
 // +build catalog functional ALL
 
 /*

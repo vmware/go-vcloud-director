@@ -1,3 +1,4 @@
+//go:build edge || nat || nsxv || functional || ALL
 // +build edge nat nsxv functional ALL
 
 /*

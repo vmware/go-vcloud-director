@@ -1,3 +1,4 @@
+//go:build nsxv || edge || firewall || functional || ALL
 // +build nsxv edge firewall functional ALL
 
 /*

@@ -1,3 +1,4 @@
+//go:build lb || lbServiceMonitor || nsxv || functional || ALL
 // +build lb lbServiceMonitor nsxv functional ALL
 
 /*

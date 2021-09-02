@@ -1,3 +1,4 @@
+//go:build functional || openapi || role || ALL
 // +build functional openapi role ALL
 
 /*
