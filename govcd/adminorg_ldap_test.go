@@ -1,3 +1,4 @@
+//go:build (user || functional || ALL) && !skipLong
 // +build user functional ALL
 // +build !skipLong
 

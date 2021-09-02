@@ -1,3 +1,4 @@
+//go:build vdc || functional || ALL
 // +build vdc functional ALL
 
 /*

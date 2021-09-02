@@ -17,7 +17,7 @@ then
 fi
 
 start=$(date +%s)
-tags=$(head -n 1 api_vcd_test.go | sed -e 's/^.*build //')
+tags=$(head -n 1 api_vcd_test.go | sed -e 's/^.*build //;s/|| //g')
 
 echo "=== RUN TagsTest"
 for tag in $tags

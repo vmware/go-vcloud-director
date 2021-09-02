@@ -1,3 +1,4 @@
+//go:build org || functional || ALL
 // +build org functional ALL
 
 /*

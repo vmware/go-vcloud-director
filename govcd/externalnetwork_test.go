@@ -1,3 +1,4 @@
+//go:build extnetwork || network || functional || ALL
 // +build extnetwork network functional ALL
 
 /*

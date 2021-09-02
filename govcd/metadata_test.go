@@ -1,3 +1,4 @@
+//go:build vapp || vdc || metadata || functional || ALL
 // +build vapp vdc metadata functional ALL
 
 /*

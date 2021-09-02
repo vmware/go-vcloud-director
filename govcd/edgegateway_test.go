@@ -1,3 +1,4 @@
+//go:build gateway || functional || ALL
 // +build gateway functional ALL
 
 /*

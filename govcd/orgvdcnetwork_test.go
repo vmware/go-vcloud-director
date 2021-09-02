@@ -1,3 +1,4 @@
+//go:build network || functional || ALL
 // +build network functional ALL
 
 /*

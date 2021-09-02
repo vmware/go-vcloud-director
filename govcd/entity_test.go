@@ -1,3 +1,4 @@
+//go:build api || functional || catalog || org || extnetwork || vm || vdc || system || user || nsxv || network || vapp || vm || affinity || ALL
 // +build api functional catalog org extnetwork vm vdc system user nsxv network vapp vm affinity ALL
 
 /*

@@ -1,3 +1,4 @@
+//go:build nsxv || vm || functional || ALL
 // +build nsxv vm functional ALL
 
 /*
