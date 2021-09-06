@@ -761,18 +761,42 @@ type NsxtAlbCloudBacking struct {
 	LoadBalancerControllerRef OpenApiReference `json:"loadBalancerControllerRef"`
 }
 
+// NsxtAlbServiceEngineGroup allows users to provide virtual service management capabilities to your tenants, import
+// service engine groups to your VMware Cloud Director deployment.
+// A service engine group is an isolation domain that also defines shared service engine properties, such as size,
+// network access, and failover. Resources in a service engine group can be used for different virtual services,
+// depending on your tenant needs. These resources cannot be shared between different service engine groups.
 type NsxtAlbServiceEngineGroup struct {
-	Status                     string                    `json:"status,omitempty"`
-	ID                         string                    `json:"id,omitempty"`
-	Name                       string                    `json:"name"`
-	Description                string                    `json:"description"`
-	ServiceEngineGroupBacking  ServiceEngineGroupBacking `json:"serviceEngineGroupBacking"`
-	HaMode                     string                    `json:"haMode,omitempty"`
-	ReservationType            string                    `json:"reservationType"`
-	MaxVirtualServices         int                       `json:"maxVirtualServices,omitempty"`
-	NumDeployedVirtualServices int                       `json:"numDeployedVirtualServices,omitempty"`
-	ReservedVirtualServices    int                       `json:"reservedVirtualServices,omitempty"`
-	OverAllocated              bool                      `json:"overAllocated,omitempty"`
+	// ID of the Service Engine Group
+	ID string `json:"id,omitempty"`
+	// Name of the Service Engine Group
+	Name string `json:"name"`
+	// Description of the Service Engine Group
+	Description string `json:"description"`
+	// ServiceEngineGroupBacking holds backing details that uniquely identifies a Load Balancer Service Engine Group
+	// configured within a load balancer cloud.
+	ServiceEngineGroupBacking ServiceEngineGroupBacking `json:"serviceEngineGroupBacking"`
+	// HaMode defines High Availability Mode for Service Engine Group
+	// * ELASTIC_N_PLUS_M_BUFFER - Service Engines will scale out to N active nodes with M nodes as buffer.
+	// * ELASTIC_ACTIVE_ACTIVE - Active-Active with scale out.
+	// * LEGACY_ACTIVE_STANDBY - Traditional single Active-Standby configuration
+	HaMode string `json:"haMode,omitempty"`
+	// ReservationType can be `DEDICATED` or `SHARED`
+	// * DEDICATED - Dedicated to a single Edge Gateway and can only be assigned to a single Edge Gateway
+	// * SHARED - Shared between multiple Edge Gateways. Can be assigned to multiple Edge Gateways
+	ReservationType string `json:"reservationType"`
+	// MaxVirtualServices holds  maximum number of virtual services supported on the Load Balancer Service Engine Group
+	MaxVirtualServices *int `json:"maxVirtualServices,omitempty"`
+	// NumDeployedVirtualServices shows number of virtual services currently deployed on the Load Balancer Service Engine
+	// Group
+	NumDeployedVirtualServices *int `json:"numDeployedVirtualServices,omitempty"`
+	// ReservedVirtualServices holds number of virtual services already reserved on the Load Balancer Service Engine Group.
+	// This value is the sum of the guaranteed virtual services given to Edge Gateways assigned to the Load Balancer
+	// Service Engine Group.
+	ReservedVirtualServices *int `json:"reservedVirtualServices,omitempty"`
+	// OverAllocated indicates whether the maximum number of virtual services supported on the Load Balancer Service
+	// Engine Group has been surpassed by the current number of reserved virtual services.
+	OverAllocated *bool `json:"overAllocated,omitempty"`
 }
 
 type ServiceEngineGroupBacking struct {
@@ -781,6 +805,7 @@ type ServiceEngineGroupBacking struct {
 	LoadBalancerCloudRef *OpenApiReference `json:"loadBalancerCloudRef"`
 }
 
+// NsxtAlbImportableServiceEngineGroups is used to get Importable Service Engine Groups
 type NsxtAlbImportableServiceEngineGroups struct {
 	// ID (e.g. 'serviceenginegroup-b633f16f-2733-4bf5-b552-3a6c4949caa4')
 	ID string `json:"id"`

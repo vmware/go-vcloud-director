@@ -58,7 +58,6 @@ func (vcdClient *VCDClient) GetAllAlbControllers(queryParameters url.Values) ([]
 
 // GetAlbControllerByName returns NSX-T ALB Controller by Name
 func (vcdClient *VCDClient) GetAlbControllerByName(name string) (*NsxtAlbController, error) {
-
 	queryParameters := copyOrNewUrlValues(nil)
 	queryParameters.Add("filter", "name=="+name)
 
@@ -119,7 +118,6 @@ func (vcdClient *VCDClient) GetAlbControllerById(id string) (*NsxtAlbController,
 // Note. Filtering is performed on client side.
 func (vcdClient *VCDClient) GetAlbControllerByUrl(url string) (*NsxtAlbController, error) {
 	// Ideally this function could filter on VCD side, but API does not support filtering on URL
-
 	controllers, err := vcdClient.GetAllAlbControllers(nil)
 	if err != nil {
 		return nil, fmt.Errorf("error reading ALB Controller with Url '%s': %s", url, err)

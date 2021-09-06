@@ -86,7 +86,10 @@ func (vcd *TestVCD) Test_NsxtAlbController(check *C) {
 	check.Assert(ContainsNotFound(err), Equals, true)
 }
 
+// spawnAlbController is a helper function to spawn NSX-T ALB Controller instance from defined config
 func spawnAlbController(vcd *TestVCD, check *C) *NsxtAlbController {
+	skipNoNsxtAlbConfiguration(vcd, check)
+
 	newControllerDef := &types.NsxtAlbController{
 		Name:        "aviController1",
 		Url:         vcd.config.VCD.Nsxt.NsxtAlbControllerUrl,
@@ -99,7 +102,6 @@ func spawnAlbController(vcd *TestVCD, check *C) *NsxtAlbController {
 	check.Assert(err, IsNil)
 	check.Assert(newController.NsxtAlbController.ID, Not(Equals), "")
 
-	// The ALB Controller was not present during this test run therefore it is going to be cleaned up in the end of tests
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController + newController.NsxtAlbController.ID
 	AddToCleanupListOpenApi(newController.NsxtAlbController.Name, check.TestName(), openApiEndpoint)
 

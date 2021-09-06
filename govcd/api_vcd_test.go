@@ -175,6 +175,7 @@ type TestConfig struct {
 			NsxtAlbControllerUrl      string `yaml:"nsxtAlbControllerUrl"`
 			NsxtAlbControllerUser     string `yaml:"nsxtAlbControllerUser"`
 			NsxtAlbControllerPassword string `yaml:"nsxtAlbControllerPassword"`
+			NsxtAlbImportableCloud    string `yaml:"nsxtAlbImportableCloud"`
 		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
 	Logging struct {
@@ -1854,6 +1855,10 @@ func skipNoNsxtAlbConfiguration(vcd *TestVCD, check *C) {
 
 	if vcd.config.VCD.Nsxt.NsxtAlbControllerPassword == "" {
 		check.Skip(generalMessage + "No NSX-T ALB Controller Password specified in configuration")
+	}
+
+	if vcd.config.VCD.Nsxt.NsxtAlbImportableCloud == "" {
+		check.Skip(generalMessage + "No NSX-T ALB Controller Importable Cloud Name")
 	}
 }
 

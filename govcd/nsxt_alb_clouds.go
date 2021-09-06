@@ -84,8 +84,8 @@ func (vcdClient *VCDClient) GetAlbCloudByName(name string) (*NsxtAlbCloud, error
 
 // GetAlbCloudById returns NSX-T ALB Cloud by ID
 //
-// Note. This function uses server side filtering instead of directly querying endpoint with specified ID. Such ID does
-// not exist.
+// Note. This function uses server side filtering instead of directly querying endpoint with specified ID because such
+// endpoint does not exist
 func (vcdClient *VCDClient) GetAlbCloudById(id string) (*NsxtAlbCloud, error) {
 
 	queryParameters := copyOrNewUrlValues(nil)
@@ -97,7 +97,7 @@ func (vcdClient *VCDClient) GetAlbCloudById(id string) (*NsxtAlbCloud, error) {
 	}
 
 	if len(albCloud) == 0 {
-		return nil, fmt.Errorf("%s could not find NSX-T ALB Cloud by Name '%s'", ErrorEntityNotFound, id)
+		return nil, fmt.Errorf("%s could not find NSX-T ALB Cloud by ID '%s'", ErrorEntityNotFound, id)
 	}
 
 	return albCloud[0], nil

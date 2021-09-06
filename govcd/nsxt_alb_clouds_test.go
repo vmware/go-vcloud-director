@@ -21,22 +21,21 @@ func (vcd *TestVCD) Test_AlbClouds(check *C) {
 	albController := spawnAlbController(vcd, check)
 	check.Assert(albController, NotNil)
 
-	importableClouds, err := albController.GetAllAlbImportableClouds(nil)
+	importableCloud, err := albController.GetAlbImportableCloudByName(vcd.config.VCD.Nsxt.NsxtAlbImportableCloud)
 	check.Assert(err, IsNil)
-	check.Assert(len(importableClouds) > 0, Equals, true)
 
 	albCloudConfig := &types.NsxtAlbCloud{
 		Name:        check.TestName(),
 		Description: "alb-cloud-description",
 		LoadBalancerCloudBacking: types.NsxtAlbCloudBacking{
-			BackingId:   importableClouds[0].NsxtAlbImportableCloud.ID,
+			BackingId:   importableCloud.NsxtAlbImportableCloud.ID,
 			BackingType: types.NsxtAlbCloudBackingTypeNsxtAlb,
 			LoadBalancerControllerRef: types.OpenApiReference{
 				ID: albController.NsxtAlbController.ID,
 			},
 		},
 		NetworkPoolRef: &types.OpenApiReference{
-			ID: importableClouds[0].NsxtAlbImportableCloud.NetworkPoolRef.ID,
+			ID: importableCloud.NsxtAlbImportableCloud.NetworkPoolRef.ID,
 		},
 	}
 
@@ -45,7 +44,7 @@ func (vcd *TestVCD) Test_AlbClouds(check *C) {
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbCloud + createdAlbCloud.NsxtAlbCloud.ID
 	AddToCleanupListOpenApi(createdAlbCloud.NsxtAlbCloud.Name, check.TestName(), openApiEndpoint)
 
-	// Get all clouds and ensure the needed on is found
+	// Get all clouds and ensure the needed one is found
 	allClouds, err := vcd.client.GetAllAlbClouds(nil)
 	check.Assert(err, IsNil)
 	var foundCreatedCloud bool
@@ -86,7 +85,11 @@ func (vcd *TestVCD) Test_AlbClouds(check *C) {
 	check.Assert(err, IsNil)
 }
 
+// spawnAlbControllerAndCloud is a helper function to spawn NSX-T ALB Controller and Cloud
+// It automatically adds these artefacts to clean up list
 func spawnAlbControllerAndCloud(vcd *TestVCD, check *C) (*NsxtAlbController, *NsxtAlbCloud) {
+	skipNoNsxtAlbConfiguration(vcd, check)
+
 	albController := spawnAlbController(vcd, check)
 	check.Assert(albController, NotNil)
 

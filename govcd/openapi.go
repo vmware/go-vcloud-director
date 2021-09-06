@@ -494,7 +494,7 @@ func (client *Client) OpenApiDeleteItem(apiVersion string, urlRef *url.URL, para
 // OpenApiPostItemAsync, OpenApiPostItem, OpenApiPutItemSync, OpenApiPutItemAsync, OpenApiPutItem
 func (client *Client) openApiPerformPostPut(httpMethod string, apiVersion string, urlRef *url.URL, params url.Values, payload interface{}, additionalHeader map[string]string) (*http.Response, error) {
 	// Marshal payload if we have one
-	var body *bytes.Buffer
+	body := new(bytes.Buffer)
 	if payload != nil {
 		marshaledJson, err := json.MarshalIndent(payload, "", "  ")
 		if err != nil {

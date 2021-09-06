@@ -44,13 +44,19 @@ func (vcd *TestVCD) Test_GetAllAlbServiceEngineGroups(check *C) {
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroups + createdSeGroup.NsxtAlbServiceEngineGroup.ID
 	AddToCleanupListOpenApi(createdSeGroup.NsxtAlbServiceEngineGroup.Name, check.TestName(), openApiEndpoint)
 
+	// Sync
+	err = createdSeGroup.Sync()
+	check.Assert(err, IsNil)
+
 	// Find by Name
 	seGroupByName, err := vcd.client.GetAlbServiceEngineGroupByName("", createdSeGroup.NsxtAlbServiceEngineGroup.Name)
 	check.Assert(err, IsNil)
+	check.Assert(seGroupByName, NotNil)
 
 	// Find by ID
-	seGroupById, err := vcd.client.GetAlbServiceEngineGroupById("", createdSeGroup.NsxtAlbServiceEngineGroup.ID)
+	seGroupById, err := vcd.client.GetAlbServiceEngineGroupById(createdSeGroup.NsxtAlbServiceEngineGroup.ID)
 	check.Assert(err, IsNil)
+	check.Assert(seGroupById, NotNil)
 
 	check.Assert(seGroupByName.NsxtAlbServiceEngineGroup.ID, Equals, createdSeGroup.NsxtAlbServiceEngineGroup.ID)
 	check.Assert(seGroupById.NsxtAlbServiceEngineGroup.ID, Equals, createdSeGroup.NsxtAlbServiceEngineGroup.ID)

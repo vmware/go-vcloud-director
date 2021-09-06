@@ -22,6 +22,25 @@ func (vcd *TestVCD) Test_GetAllAlbImportableServiceEngineGroups(check *C) {
 	check.Assert(importableSeGroups[0].NsxtAlbImportableServiceEngineGroups.DisplayName != "", Equals, true)
 	check.Assert(importableSeGroups[0].NsxtAlbImportableServiceEngineGroups.HaMode != "", Equals, true)
 
+	// Get By Name
+	impSeGrpByName, err := vcd.client.GetAlbImportableServiceEngineGroupByName(createdAlbCloud.NsxtAlbCloud.ID, importableSeGroups[0].NsxtAlbImportableServiceEngineGroups.DisplayName)
+	check.Assert(err, IsNil)
+	// Get By ID
+	impSeGrpById, err := vcd.client.GetAlbImportableServiceEngineGroupById(createdAlbCloud.NsxtAlbCloud.ID, importableSeGroups[0].NsxtAlbImportableServiceEngineGroups.ID)
+	check.Assert(err, IsNil)
+
+	// Get By Name on parent Cloud
+	cldImpSeGrpByName, err := createdAlbCloud.GetAlbImportableServiceEngineGroupByName(createdAlbCloud.NsxtAlbCloud.ID, importableSeGroups[0].NsxtAlbImportableServiceEngineGroups.DisplayName)
+	check.Assert(err, IsNil)
+	// Get By ID on parent Cloud
+	cldImpSeGrpById, err := createdAlbCloud.GetAlbImportableServiceEngineGroupById(createdAlbCloud.NsxtAlbCloud.ID, importableSeGroups[0].NsxtAlbImportableServiceEngineGroups.ID)
+	check.Assert(err, IsNil)
+
+	check.Assert(impSeGrpByName.NsxtAlbImportableServiceEngineGroups, DeepEquals, importableSeGroups[0].NsxtAlbImportableServiceEngineGroups)
+	check.Assert(impSeGrpByName.NsxtAlbImportableServiceEngineGroups, DeepEquals, impSeGrpById.NsxtAlbImportableServiceEngineGroups)
+	check.Assert(impSeGrpByName.NsxtAlbImportableServiceEngineGroups, DeepEquals, cldImpSeGrpByName.NsxtAlbImportableServiceEngineGroups)
+	check.Assert(impSeGrpByName.NsxtAlbImportableServiceEngineGroups, DeepEquals, cldImpSeGrpById.NsxtAlbImportableServiceEngineGroups)
+
 	// Cleanup
 	err = createdAlbCloud.Delete()
 	check.Assert(err, IsNil)

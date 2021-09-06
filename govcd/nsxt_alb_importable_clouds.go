@@ -20,11 +20,11 @@ type NsxtAlbImportableCloud struct {
 }
 
 // GetAllAlbImportableClouds returns importable NSX-T ALB Clouds.
-// ID of parentAlbControllerUrn is mandatory
+// ID (URN format) of parent ALB Controller is mandatory
 func (vcdClient *VCDClient) GetAllAlbImportableClouds(parentAlbControllerUrn string, queryParameters url.Values) ([]*NsxtAlbImportableCloud, error) {
 	client := vcdClient.Client
 	if parentAlbControllerUrn == "" {
-		return nil, fmt.Errorf("parentAlbControllerUrn is required")
+		return nil, fmt.Errorf("parent ALB Controller ID is required")
 	}
 	if !client.IsSysAdmin {
 		return nil, errors.New("handling NSX-T ALB Importable Clouds require System user")
@@ -67,7 +67,7 @@ func (vcdClient *VCDClient) GetAlbImportableCloudByName(parentAlbControllerUrn, 
 		return nil, fmt.Errorf("error finding NSX-T ALB Importable Cloud by Name '%s': %s", name, err)
 	}
 
-	// Filtering by ID is not supported therefore it must be filtered on client side
+	// Filtering by Name is not supported therefore it must be filtered on client side
 	var foundResult bool
 	var foundAlbImportableCloud *NsxtAlbImportableCloud
 	for i, value := range albImportableClouds {
@@ -113,4 +113,9 @@ func (vcdClient *VCDClient) GetAlbImportableCloudById(parentAlbControllerUrn, id
 // GetAllAlbImportableClouds is attached to NsxtAlbController type for a convenient parent/child relationship
 func (nsxtAlbController *NsxtAlbController) GetAllAlbImportableClouds(queryParameters url.Values) ([]*NsxtAlbImportableCloud, error) {
 	return nsxtAlbController.vcdClient.GetAllAlbImportableClouds(nsxtAlbController.NsxtAlbController.ID, queryParameters)
+}
+
+// GetAlbImportableCloudByName is attached to NsxtAlbController type for a convenient parent/child relationship
+func (nsxtAlbController *NsxtAlbController) GetAlbImportableCloudByName(name string) (*NsxtAlbImportableCloud, error) {
+	return nsxtAlbController.vcdClient.GetAlbImportableCloudByName(nsxtAlbController.NsxtAlbController.ID, name)
 }
