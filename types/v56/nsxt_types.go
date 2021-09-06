@@ -677,3 +677,115 @@ type NsxtIpSecVpnTunnelProfileDpdConfiguration struct {
 	// minimum is 3 seconds and the maximum is 60 seconds.
 	ProbeInterval int `json:"probeInterval"`
 }
+
+// NsxtAlbController helps to integrate VMware Cloud Director with NSX-T Advanced Load Balancer deployment.
+// Controller instances are registered with VMware Cloud Director instance. Controller instances serve as a central
+// control plane for the load-balancing services provided by NSX-T Advanced Load Balancer.
+type NsxtAlbController struct {
+	// ID holds URN for load balancer controller (e.g. urn:vcloud:loadBalancerController:aa23ef66-ba32-48b2-892f-7acdffe4587e)
+	ID string `json:"id,omitempty"`
+	// Name as shown in VCD
+	Name string `json:"name"`
+	// Description as shown in VCD
+	Description string `json:"description,omitempty"`
+	// Url of ALB controller
+	Url string `json:"url"`
+	// Username of user
+	Username string `json:"username"`
+	// Password (will not be returned on read)
+	Password string `json:"password,omitempty"`
+	// LicenseType By enabling this feature, the provider acknowledges that they have independently licensed the
+	// enterprise version of the NSX AVI LB.
+	// Possible options: 'BASIC', 'ENTERPRISE'
+	LicenseType string `json:"licenseType,omitempty"`
+	// Version of ALB (e.g. 20.1.3). Read-only
+	Version string `json:"version,omitempty"`
+}
+
+// NsxtAlbImportableCloud allows user to list importable NSX-T ALB Clouds. Each importable cloud can only be imported
+// once. It has a flag AlreadyImported which hints if it is already consumed or not.
+type NsxtAlbImportableCloud struct {
+	// ID (e.g. 'cloud-43726181-f73e-41f2-bf1d-8a9609502586')
+	ID string `json:"id"`
+
+	DisplayName string `json:"displayName"`
+	// AlreadyImported shows if this ALB Cloud is already imported
+	AlreadyImported bool `json:"alreadyImported"`
+
+	// NetworkPoolRef contains a reference to NSX-T network pool
+	NetworkPoolRef OpenApiReference `json:"networkPoolRef"`
+
+	// TransportZoneName contains transport zone name
+	TransportZoneName string `json:"transportZoneName"`
+}
+
+// NsxtAlbCloud allows users to use the virtual infrastructure provided by NSX Advanced Load Balancer, register your
+// NSX-T Cloud instances with VMware Cloud Director. An NSX-T Cloud is a service provider-level construct that consists
+// of an NSX-T Manager and an NSX-T Data Center transport zone. NSX-T Manager provides a system view and is the
+// management component of NSX-T Data Center. An NSX-T Data Center transport zone dictates which hosts and virtual
+// machines can participate in the use of a particular network. If there are multiple transport zones managed by the
+// same NSX-T Manager, then a separate NSX-T Cloud encapsulates each pair of NSX-T Manager and NSX-T Data Center
+// transport zone instances. An NSX-T Cloud has a one-to-one relationship with a network pool backed by an NSX-T Data
+// Center transport zone.
+type NsxtAlbCloud struct {
+	// ID (e.g. 'urn:vcloud:loadBalancerCloud:947ea2ba-e448-4249-91f7-1432b3d2fcbf')
+	ID     string `json:"id,omitempty"`
+	Status string `json:"status,omitempty"`
+	// Name of NSX-T ALB Cloud
+	Name string `json:"name"`
+	// Description of NSX-T ALB Cloud
+	Description string `json:"description,omitempty"`
+	// LoadBalancerCloudBacking uniquely identifies a Load Balancer Cloud configured within a Load Balancer Controller. At
+	// the present, VCD only supports NSX-T Clouds configured within an NSX-ALB Controller deployment.
+	LoadBalancerCloudBacking NsxtAlbCloudBacking `json:"loadBalancerCloudBacking"`
+	// NetworkPoolRef for the Network Pool associated with this Cloud
+	NetworkPoolRef *OpenApiReference `json:"networkPoolRef"`
+	// HealthStatus contains status of the Load Balancer Cloud. Possible values are:
+	// UP - The cloud is healthy and ready to enable Load Balancer for an Edge Gateway.
+	// DOWN - The cloud is in a failure state. Enabling Load balancer on an Edge Gateway may not be possible.
+	// RUNNING - The cloud is currently processing. An example is if it's enabling a Load Balancer for an Edge Gateway.
+	// UNAVAILABLE - The cloud is unavailable.
+	// UNKNOWN - The cloud state is unknown.
+	HealthStatus string `json:"healthStatus,omitempty"`
+	// DetailedHealthMessage contains detailed message on the health of the Cloud.
+	DetailedHealthMessage string `json:"detailedHealthMessage,omitempty"`
+}
+
+// NsxtAlbCloudBacking is embedded into NsxtAlbCloud
+type NsxtAlbCloudBacking struct {
+	// BackingId is the ID of NsxtAlbImportableCloud
+	BackingId string `json:"backingId"`
+	// BackingType contains type of ALB (The only supported now is 'NSXALB_NSXT')
+	BackingType string `json:"backingType,omitempty"`
+	// LoadBalancerControllerRef contains reference to NSX-T ALB Controller
+	LoadBalancerControllerRef OpenApiReference `json:"loadBalancerControllerRef"`
+}
+
+type NsxtAlbServiceEngineGroup struct {
+	Status                     string                    `json:"status,omitempty"`
+	ID                         string                    `json:"id,omitempty"`
+	Name                       string                    `json:"name"`
+	Description                string                    `json:"description"`
+	ServiceEngineGroupBacking  ServiceEngineGroupBacking `json:"serviceEngineGroupBacking"`
+	HaMode                     string                    `json:"haMode,omitempty"`
+	ReservationType            string                    `json:"reservationType"`
+	MaxVirtualServices         int                       `json:"maxVirtualServices,omitempty"`
+	NumDeployedVirtualServices int                       `json:"numDeployedVirtualServices,omitempty"`
+	ReservedVirtualServices    int                       `json:"reservedVirtualServices,omitempty"`
+	OverAllocated              bool                      `json:"overAllocated,omitempty"`
+}
+
+type ServiceEngineGroupBacking struct {
+	BackingId            string            `json:"backingId"`
+	BackingType          string            `json:"backingType,omitempty"`
+	LoadBalancerCloudRef *OpenApiReference `json:"loadBalancerCloudRef"`
+}
+
+type NsxtAlbImportableServiceEngineGroups struct {
+	// ID (e.g. 'serviceenginegroup-b633f16f-2733-4bf5-b552-3a6c4949caa4')
+	ID string `json:"id"`
+	// DisplayName is the name of
+	DisplayName string `json:"displayName"`
+	// HaMode (e.g. 'ELASTIC_N_PLUS_M_BUFFER')
+	HaMode string `json:"haMode"`
+}

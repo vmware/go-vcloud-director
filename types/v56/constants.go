@@ -358,6 +358,14 @@ const (
 	OpenApiEndpointIpSecVpnTunnel                     = "edgeGateways/%s/ipsec/tunnels/"
 	OpenApiEndpointIpSecVpnTunnelConnectionProperties = "edgeGateways/%s/ipsec/tunnels/%s/connectionProperties"
 	OpenApiEndpointIpSecVpnTunnelStatus               = "edgeGateways/%s/ipsec/tunnels/%s/status"
+
+	// NSX-T ALB related endpoints
+	OpenApiEndpointAlbController = "loadBalancer/controllers/"
+	// OpenApiEndpointAlbImportableClouds endpoint requires a filter _context==urn:vcloud:loadBalancerController:aa23ef66-ba32-48b2-892f-7acdffe4587e
+	OpenApiEndpointAlbImportableClouds              = "nsxAlbResources/importableClouds/"
+	OpenApiEndpointAlbImportableServiceEngineGroups = "nsxAlbResources/importableServiceEngineGroups"
+	OpenApiEndpointAlbCloud                         = "loadBalancer/clouds/"
+	OpenApiEndpointAlbServiceEngineGroups           = "loadBalancer/serviceEngineGroups/"
 )
 
 // Header keys to run operations in tenant context
@@ -442,4 +450,9 @@ const (
 const (
 	// VcloudUndefinedKey is the bundles key automatically added to new role related objects
 	VcloudUndefinedKey = "com.vmware.vcloud.undefined.key"
+)
+
+const (
+	// NsxtAlbCloudBackingTypeNsxtAlb is a backing type for NSX-T ALB used in types.NsxtAlbCloudBacking
+	NsxtAlbCloudBackingTypeNsxtAlb = "NSXALB_NSXT"
 )
