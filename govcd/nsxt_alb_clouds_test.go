@@ -93,22 +93,21 @@ func spawnAlbControllerAndCloud(vcd *TestVCD, check *C) (*NsxtAlbController, *Ns
 	albController := spawnAlbController(vcd, check)
 	check.Assert(albController, NotNil)
 
-	importableClouds, err := albController.GetAllAlbImportableClouds(nil)
+	importableCloud, err := albController.GetAlbImportableCloudByName(vcd.config.VCD.Nsxt.NsxtAlbImportableCloud)
 	check.Assert(err, IsNil)
-	check.Assert(len(importableClouds) > 0, Equals, true)
 
 	albCloudConfig := &types.NsxtAlbCloud{
 		Name:        check.TestName(),
 		Description: "alb-cloud-description",
 		LoadBalancerCloudBacking: types.NsxtAlbCloudBacking{
-			BackingId:   importableClouds[0].NsxtAlbImportableCloud.ID,
-			BackingType: types.NsxtAlbCloudBackingTypeNsxtAlb,
+			BackingId: importableCloud.NsxtAlbImportableCloud.ID,
+			//BackingType: types.NsxtAlbCloudBackingTypeNsxtAlb,
 			LoadBalancerControllerRef: types.OpenApiReference{
 				ID: albController.NsxtAlbController.ID,
 			},
 		},
 		NetworkPoolRef: &types.OpenApiReference{
-			ID: importableClouds[0].NsxtAlbImportableCloud.NetworkPoolRef.ID,
+			ID: importableCloud.NsxtAlbImportableCloud.NetworkPoolRef.ID,
 		},
 	}
 

@@ -107,7 +107,7 @@ func (vcdClient *VCDClient) GetAlbControllerById(id string) (*NsxtAlbController,
 
 	wrappedResponse := &NsxtAlbController{
 		NsxtAlbController: typeResponse,
-		vcdClient:         nil,
+		vcdClient:         vcdClient,
 	}
 
 	return wrappedResponse, nil

@@ -71,10 +71,16 @@ func (vcdClient *VCDClient) GetAllAlbServiceEngineGroups(context string, queryPa
 }
 
 // GetAlbServiceEngineGroupByName returns NSX-T ALB Service Engine by Name
-func (vcdClient *VCDClient) GetAlbServiceEngineGroupByName(context, name string) (*NsxtAlbServiceEngineGroup, error) {
+// Context is not mandatory for this resource. Supported contexts are:
+// * Gateway ID (_context==gatewayId) - returns all Load Balancer Service Engine Groups that are accessible to the
+// gateway.
+// * Assignable Gateway ID (_context=gatewayId;_context==assignable) returns all Load Balancer Service Engine Groups
+// that are assignable to the gateway. This filters out any Load Balancer Service Engine groups that are already
+// assigned to the gateway or assigned to another gateway if the reservation type is 'DEDICATED’.
+func (vcdClient *VCDClient) GetAlbServiceEngineGroupByName(optionalContext, name string) (*NsxtAlbServiceEngineGroup, error) {
 	queryParams := copyOrNewUrlValues(nil)
-	if context != "" {
-		queryParams = queryParameterFilterAnd(fmt.Sprintf("_context==%s", context), queryParams)
+	if optionalContext != "" {
+		queryParams = queryParameterFilterAnd(fmt.Sprintf("_context==%s", optionalContext), queryParams)
 	}
 	queryParams.Add("filter", fmt.Sprintf("name==%s", name))
 
@@ -215,9 +221,9 @@ func (nsxtAlbServiceEngineGroup *NsxtAlbServiceEngineGroup) Delete() error {
 	return nil
 }
 
-// Sync syncs a specified Load Balancer Service Engine Group. Requests the HA mode and the maximum number of supported
-// Virtual Services for this Service Engine Group from the Load Balancer, and updates vCD's local record of these
-// properties.
+// Sync syncs a specified Load Balancer Service Engine Group. It requests the HA mode and the maximum number of
+// supported Virtual Services for this Service Engine Group from the Load Balancer, and updates vCD's local record of
+// these properties.
 func (nsxtAlbServiceEngineGroup *NsxtAlbServiceEngineGroup) Sync() error {
 	client := nsxtAlbServiceEngineGroup.vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroups
