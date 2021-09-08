@@ -134,7 +134,7 @@ func (vcdClient *VCDClient) CreateAlbCloud(albCloudConfig *types.NsxtAlbCloud) (
 	return returnObject, nil
 }
 
-// Update is not supported up to at least VCD 10.3 therefore this function remains commented
+// Update is not supported in VCD 10.3 and older therefore this function remains commented
 //
 // Update updates existing NSX-T ALB Cloud with new supplied albCloudConfig configuration
 //func (nsxtAlbCloud *NsxtAlbCloud) Update(albCloudConfig *types.NsxtAlbCloud) (*NsxtAlbCloud, error) {

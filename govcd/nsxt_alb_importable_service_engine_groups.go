@@ -65,7 +65,7 @@ func (vcdClient *VCDClient) GetAlbImportableServiceEngineGroupByName(parentAlbCl
 		return nil, fmt.Errorf("error finding NSX-T ALB Importable Service Engine Group by Name '%s': %s", name, err)
 	}
 
-	// Filtering by ID is not supported therefore it must be filtered on client side
+	// Filtering by Name is not supported by API therefore it must be filtered on client side
 	var foundResult bool
 	var foundAlbCloud *NsxtAlbImportableServiceEngineGroups
 	for i, value := range albClouds {
@@ -91,7 +91,7 @@ func (vcdClient *VCDClient) GetAlbImportableServiceEngineGroupById(parentAlbClou
 		return nil, fmt.Errorf("error finding NSX-T ALB Importable Service Engine Group by ID '%s': %s", id, err)
 	}
 
-	// Filtering by ID is not supported therefore it must be filtered on client side
+	// Filtering by ID is not supported by API therefore it must be filtered on client side
 	var foundResult bool
 	var foundImportableSEGroups *NsxtAlbImportableServiceEngineGroups
 	for i, value := range albClouds {
@@ -155,7 +155,7 @@ func (nsxtAlbCloud *NsxtAlbCloud) GetAlbImportableServiceEngineGroupByName(paren
 		return nil, fmt.Errorf("error finding NSX-T ALB Importable Service Engine Group by Name '%s': %s", name, err)
 	}
 
-	// Filtering by ID is not supported therefore it must be filtered on client side
+	// Filtering by ID is not supported by API therefore it must be filtered on client side
 	var foundResult bool
 	var foundAlbCloud *NsxtAlbImportableServiceEngineGroups
 	for i, value := range albClouds {
@@ -181,7 +181,7 @@ func (nsxtAlbCloud *NsxtAlbCloud) GetAlbImportableServiceEngineGroupById(parentA
 		return nil, fmt.Errorf("error finding NSX-T ALB Importable Service Engine Group by ID '%s': %s", id, err)
 	}
 
-	// Filtering by ID is not supported therefore it must be filtered on client side
+	// Filtering by ID is not supported by API therefore it must be filtered on client side
 	var foundResult bool
 	var foundImportableSEGroups *NsxtAlbImportableServiceEngineGroups
 	for i, value := range albClouds {
