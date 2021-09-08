@@ -91,7 +91,7 @@ func spawnAlbController(vcd *TestVCD, check *C) *NsxtAlbController {
 	skipNoNsxtAlbConfiguration(vcd, check)
 
 	newControllerDef := &types.NsxtAlbController{
-		Name:        "aviController1",
+		Name:        check.TestName(),
 		Url:         vcd.config.VCD.Nsxt.NsxtAlbControllerUrl,
 		Username:    vcd.config.VCD.Nsxt.NsxtAlbControllerUser,
 		Password:    vcd.config.VCD.Nsxt.NsxtAlbControllerPassword,
