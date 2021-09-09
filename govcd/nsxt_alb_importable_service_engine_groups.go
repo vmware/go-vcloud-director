@@ -12,7 +12,10 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// NsxtAlbImportableServiceEngineGroups provides capability to list all Importable Service Engine Groups available in ALB Controller
+// NsxtAlbImportableServiceEngineGroups provides capability to list all Importable Service Engine Groups available in
+// ALB Controller so that they can be consumed by NsxtAlbServiceEngineGroup
+//
+// Note. The API does not return Importable Service Engine Group once it is consumed.
 type NsxtAlbImportableServiceEngineGroups struct {
 	NsxtAlbImportableServiceEngineGroups *types.NsxtAlbImportableServiceEngineGroups
 	vcdClient                            *VCDClient

@@ -1,5 +1,5 @@
-//go:build alb || functional || ALL
-// +build alb functional ALL
+//go:build nsxt || alb || functional || ALL
+// +build nsxt alb functional ALL
 
 package govcd
 

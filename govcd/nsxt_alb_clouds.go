@@ -12,14 +12,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// NsxtAlbCloud allows users to use the virtual infrastructure provided by NSX Advanced Load Balancer, register your
-// NSX-T Cloud instances with VMware Cloud Director. An NSX-T Cloud is a service provider-level construct that consists
-// of an NSX-T Manager and an NSX-T Data Center transport zone. NSX-T Manager provides a system view and is the
-// management component of NSX-T Data Center. An NSX-T Data Center transport zone dictates which hosts and virtual
-// machines can participate in the use of a particular network. If there are multiple transport zones managed by the
-// same NSX-T Manager, then a separate NSX-T Cloud encapsulates each pair of NSX-T Manager and NSX-T Data Center
-// transport zone instances. An NSX-T Cloud has a one-to-one relationship with a network pool backed by an NSX-T Data
-// Center transport zone.
+// NsxtAlbCloud helps to use the virtual infrastructure provided by NSX Advanced Load Balancer, register NSX-T Cloud
+// instances with VMware Cloud Director by consuming NsxtAlbImportableCloud.
 type NsxtAlbCloud struct {
 	NsxtAlbCloud *types.NsxtAlbCloud
 	vcdClient    *VCDClient

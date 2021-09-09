@@ -15,6 +15,7 @@ import (
 // NsxtAlbController helps to integrate VMware Cloud Director with NSX-T Advanced Load Balancer deployment.
 // Controller instances are registered with VMware Cloud Director instance. Controller instances serve as a central
 // control plane for the load-balancing services provided by NSX-T Advanced Load Balancer.
+// To configure an NSX-T ALB one needs to supply AVI Controller endpoint, credentials and license to be used.
 type NsxtAlbController struct {
 	NsxtAlbController *types.NsxtAlbController
 	vcdClient         *VCDClient

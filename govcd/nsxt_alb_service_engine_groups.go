@@ -12,8 +12,9 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// NsxtAlbServiceEngineGroup allows users to provide virtual service management capabilities to your tenants, import
-// service engine groups to your VMware Cloud Director deployment.
+// NsxtAlbServiceEngineGroup provides virtual service management capabilities for tenants. This entity can be created
+// by referencing a backing importable service engine group - NsxtAlbImportableServiceEngineGroups.
+//
 // A service engine group is an isolation domain that also defines shared service engine properties, such as size,
 // network access, and failover. Resources in a service engine group can be used for different virtual services,
 // depending on your tenant needs. These resources cannot be shared between different service engine groups.

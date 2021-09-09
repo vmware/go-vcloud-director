@@ -13,7 +13,7 @@ import (
 )
 
 // NsxtAlbImportableCloud allows user to list importable NSX-T ALB Clouds. Each importable cloud can only be imported
-// once. It has a flag AlreadyImported which hints if it is already consumed or not.
+// once by using NsxtAlbCloud construct. It has a flag AlreadyImported which hints if it is already consumed or not.
 type NsxtAlbImportableCloud struct {
 	NsxtAlbImportableCloud *types.NsxtAlbImportableCloud
 	vcdClient              *VCDClient

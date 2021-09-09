@@ -681,6 +681,7 @@ type NsxtIpSecVpnTunnelProfileDpdConfiguration struct {
 // NsxtAlbController helps to integrate VMware Cloud Director with NSX-T Advanced Load Balancer deployment.
 // Controller instances are registered with VMware Cloud Director instance. Controller instances serve as a central
 // control plane for the load-balancing services provided by NSX-T Advanced Load Balancer.
+// To configure an NSX-T ALB one needs to supply AVI Controller endpoint, credentials and license to be used.
 type NsxtAlbController struct {
 	// ID holds URN for load balancer controller (e.g. urn:vcloud:loadBalancerController:aa23ef66-ba32-48b2-892f-7acdffe4587e)
 	ID string `json:"id,omitempty"`
@@ -719,14 +720,8 @@ type NsxtAlbImportableCloud struct {
 	TransportZoneName string `json:"transportZoneName"`
 }
 
-// NsxtAlbCloud allows users to use the virtual infrastructure provided by NSX Advanced Load Balancer, register your
-// NSX-T Cloud instances with VMware Cloud Director. An NSX-T Cloud is a service provider-level construct that consists
-// of an NSX-T Manager and an NSX-T Data Center transport zone. NSX-T Manager provides a system view and is the
-// management component of NSX-T Data Center. An NSX-T Data Center transport zone dictates which hosts and virtual
-// machines can participate in the use of a particular network. If there are multiple transport zones managed by the
-// same NSX-T Manager, then a separate NSX-T Cloud encapsulates each pair of NSX-T Manager and NSX-T Data Center
-// transport zone instances. An NSX-T Cloud has a one-to-one relationship with a network pool backed by an NSX-T Data
-// Center transport zone.
+// NsxtAlbCloud helps to use the virtual infrastructure provided by NSX Advanced Load Balancer, register NSX-T Cloud
+// instances with VMware Cloud Director by consuming NsxtAlbImportableCloud.
 type NsxtAlbCloud struct {
 	// ID (e.g. 'urn:vcloud:loadBalancerCloud:947ea2ba-e448-4249-91f7-1432b3d2fcbf')
 	ID     string `json:"id,omitempty"`
@@ -761,8 +756,9 @@ type NsxtAlbCloudBacking struct {
 	LoadBalancerControllerRef OpenApiReference `json:"loadBalancerControllerRef"`
 }
 
-// NsxtAlbServiceEngineGroup allows users to provide virtual service management capabilities to your tenants, import
-// service engine groups to your VMware Cloud Director deployment.
+// NsxtAlbServiceEngineGroup provides virtual service management capabilities for tenants. This entity can be created
+// by referencing a backing importable service engine group - NsxtAlbImportableServiceEngineGroups.
+//
 // A service engine group is an isolation domain that also defines shared service engine properties, such as size,
 // network access, and failover. Resources in a service engine group can be used for different virtual services,
 // depending on your tenant needs. These resources cannot be shared between different service engine groups.
@@ -805,7 +801,10 @@ type ServiceEngineGroupBacking struct {
 	LoadBalancerCloudRef *OpenApiReference `json:"loadBalancerCloudRef"`
 }
 
-// NsxtAlbImportableServiceEngineGroups is used to get Importable Service Engine Groups
+// NsxtAlbImportableServiceEngineGroups provides capability to list all Importable Service Engine Groups available in
+// ALB Controller so that they can be consumed by NsxtAlbServiceEngineGroup
+//
+// Note. The API does not return Importable Service Engine Group once it is consumed.
 type NsxtAlbImportableServiceEngineGroups struct {
 	// ID (e.g. 'serviceenginegroup-b633f16f-2733-4bf5-b552-3a6c4949caa4')
 	ID string `json:"id"`
