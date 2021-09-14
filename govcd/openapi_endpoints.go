@@ -43,10 +43,17 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSecVpnTunnel:                     "34.0", // VCD 10.1+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSecVpnTunnelConnectionProperties: "34.0", // VCD 10.1+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSecVpnTunnelStatus:               "34.0", // VCD 10.1+
+
+	// NSX-T ALB (Advanced/AVI Load Balancer) support was introduced in 10.2
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController:                    "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbImportableClouds:              "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbImportableServiceEngineGroups: "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbCloud:                         "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroups:           "35.0", // VCD 10.2+
 }
 
 // elevateNsxtNatRuleApiVersion helps to elevate API version to consume newer NSX-T NAT Rule features
-// API V35.2+ support new fields FirewallMatch and Priority
+// API V35.2+ supports new fields FirewallMatch and Priority
 // API V36.0+ supports new RuleType - REFLEXIVE
 
 // endpointElevatedApiVersions endpoint elevated API versions

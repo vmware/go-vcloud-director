@@ -677,3 +677,139 @@ type NsxtIpSecVpnTunnelProfileDpdConfiguration struct {
 	// minimum is 3 seconds and the maximum is 60 seconds.
 	ProbeInterval int `json:"probeInterval"`
 }
+
+// NsxtAlbController helps to integrate VMware Cloud Director with NSX-T Advanced Load Balancer deployment.
+// Controller instances are registered with VMware Cloud Director instance. Controller instances serve as a central
+// control plane for the load-balancing services provided by NSX-T Advanced Load Balancer.
+// To configure an NSX-T ALB one needs to supply AVI Controller endpoint, credentials and license to be used.
+type NsxtAlbController struct {
+	// ID holds URN for load balancer controller (e.g. urn:vcloud:loadBalancerController:aa23ef66-ba32-48b2-892f-7acdffe4587e)
+	ID string `json:"id,omitempty"`
+	// Name as shown in VCD
+	Name string `json:"name"`
+	// Description as shown in VCD
+	Description string `json:"description,omitempty"`
+	// Url of ALB controller
+	Url string `json:"url"`
+	// Username of user
+	Username string `json:"username"`
+	// Password (will not be returned on read)
+	Password string `json:"password,omitempty"`
+	// LicenseType By enabling this feature, the provider acknowledges that they have independently licensed the
+	// enterprise version of the NSX AVI LB.
+	// Possible options: 'BASIC', 'ENTERPRISE'
+	LicenseType string `json:"licenseType,omitempty"`
+	// Version of ALB (e.g. 20.1.3). Read-only
+	Version string `json:"version,omitempty"`
+}
+
+// NsxtAlbImportableCloud allows user to list importable NSX-T ALB Clouds. Each importable cloud can only be imported
+// once. It has a flag AlreadyImported which hints if it is already consumed or not.
+type NsxtAlbImportableCloud struct {
+	// ID (e.g. 'cloud-43726181-f73e-41f2-bf1d-8a9609502586')
+	ID string `json:"id"`
+
+	DisplayName string `json:"displayName"`
+	// AlreadyImported shows if this ALB Cloud is already imported
+	AlreadyImported bool `json:"alreadyImported"`
+
+	// NetworkPoolRef contains a reference to NSX-T network pool
+	NetworkPoolRef OpenApiReference `json:"networkPoolRef"`
+
+	// TransportZoneName contains transport zone name
+	TransportZoneName string `json:"transportZoneName"`
+}
+
+// NsxtAlbCloud helps to use the virtual infrastructure provided by NSX Advanced Load Balancer, register NSX-T Cloud
+// instances with VMware Cloud Director by consuming NsxtAlbImportableCloud.
+type NsxtAlbCloud struct {
+	// ID (e.g. 'urn:vcloud:loadBalancerCloud:947ea2ba-e448-4249-91f7-1432b3d2fcbf')
+	ID     string `json:"id,omitempty"`
+	Status string `json:"status,omitempty"`
+	// Name of NSX-T ALB Cloud
+	Name string `json:"name"`
+	// Description of NSX-T ALB Cloud
+	Description string `json:"description,omitempty"`
+	// LoadBalancerCloudBacking uniquely identifies a Load Balancer Cloud configured within a Load Balancer Controller. At
+	// the present, VCD only supports NSX-T Clouds configured within an NSX-ALB Controller deployment.
+	LoadBalancerCloudBacking NsxtAlbCloudBacking `json:"loadBalancerCloudBacking"`
+	// NetworkPoolRef for the Network Pool associated with this Cloud
+	NetworkPoolRef *OpenApiReference `json:"networkPoolRef"`
+	// HealthStatus contains status of the Load Balancer Cloud. Possible values are:
+	// UP - The cloud is healthy and ready to enable Load Balancer for an Edge Gateway.
+	// DOWN - The cloud is in a failure state. Enabling Load balancer on an Edge Gateway may not be possible.
+	// RUNNING - The cloud is currently processing. An example is if it's enabling a Load Balancer for an Edge Gateway.
+	// UNAVAILABLE - The cloud is unavailable.
+	// UNKNOWN - The cloud state is unknown.
+	HealthStatus string `json:"healthStatus,omitempty"`
+	// DetailedHealthMessage contains detailed message on the health of the Cloud.
+	DetailedHealthMessage string `json:"detailedHealthMessage,omitempty"`
+}
+
+// NsxtAlbCloudBacking is embedded into NsxtAlbCloud
+type NsxtAlbCloudBacking struct {
+	// BackingId is the ID of NsxtAlbImportableCloud
+	BackingId string `json:"backingId"`
+	// BackingType contains type of ALB (The only supported now is 'NSXALB_NSXT')
+	BackingType string `json:"backingType,omitempty"`
+	// LoadBalancerControllerRef contains reference to NSX-T ALB Controller
+	LoadBalancerControllerRef OpenApiReference `json:"loadBalancerControllerRef"`
+}
+
+// NsxtAlbServiceEngineGroup provides virtual service management capabilities for tenants. This entity can be created
+// by referencing a backing importable service engine group - NsxtAlbImportableServiceEngineGroups.
+//
+// A service engine group is an isolation domain that also defines shared service engine properties, such as size,
+// network access, and failover. Resources in a service engine group can be used for different virtual services,
+// depending on your tenant needs. These resources cannot be shared between different service engine groups.
+type NsxtAlbServiceEngineGroup struct {
+	// ID of the Service Engine Group
+	ID string `json:"id,omitempty"`
+	// Name of the Service Engine Group
+	Name string `json:"name"`
+	// Description of the Service Engine Group
+	Description string `json:"description"`
+	// ServiceEngineGroupBacking holds backing details that uniquely identifies a Load Balancer Service Engine Group
+	// configured within a load balancer cloud.
+	ServiceEngineGroupBacking ServiceEngineGroupBacking `json:"serviceEngineGroupBacking"`
+	// HaMode defines High Availability Mode for Service Engine Group
+	// * ELASTIC_N_PLUS_M_BUFFER - Service Engines will scale out to N active nodes with M nodes as buffer.
+	// * ELASTIC_ACTIVE_ACTIVE - Active-Active with scale out.
+	// * LEGACY_ACTIVE_STANDBY - Traditional single Active-Standby configuration
+	HaMode string `json:"haMode,omitempty"`
+	// ReservationType can be `DEDICATED` or `SHARED`
+	// * DEDICATED - Dedicated to a single Edge Gateway and can only be assigned to a single Edge Gateway
+	// * SHARED - Shared between multiple Edge Gateways. Can be assigned to multiple Edge Gateways
+	ReservationType string `json:"reservationType"`
+	// MaxVirtualServices holds  maximum number of virtual services supported on the Load Balancer Service Engine Group
+	MaxVirtualServices *int `json:"maxVirtualServices,omitempty"`
+	// NumDeployedVirtualServices shows number of virtual services currently deployed on the Load Balancer Service Engine
+	// Group
+	NumDeployedVirtualServices *int `json:"numDeployedVirtualServices,omitempty"`
+	// ReservedVirtualServices holds number of virtual services already reserved on the Load Balancer Service Engine Group.
+	// This value is the sum of the guaranteed virtual services given to Edge Gateways assigned to the Load Balancer
+	// Service Engine Group.
+	ReservedVirtualServices *int `json:"reservedVirtualServices,omitempty"`
+	// OverAllocated indicates whether the maximum number of virtual services supported on the Load Balancer Service
+	// Engine Group has been surpassed by the current number of reserved virtual services.
+	OverAllocated *bool `json:"overAllocated,omitempty"`
+}
+
+type ServiceEngineGroupBacking struct {
+	BackingId            string            `json:"backingId"`
+	BackingType          string            `json:"backingType,omitempty"`
+	LoadBalancerCloudRef *OpenApiReference `json:"loadBalancerCloudRef"`
+}
+
+// NsxtAlbImportableServiceEngineGroups provides capability to list all Importable Service Engine Groups available in
+// ALB Controller so that they can be consumed by NsxtAlbServiceEngineGroup
+//
+// Note. The API does not return Importable Service Engine Group once it is consumed.
+type NsxtAlbImportableServiceEngineGroups struct {
+	// ID (e.g. 'serviceenginegroup-b633f16f-2733-4bf5-b552-3a6c4949caa4')
+	ID string `json:"id"`
+	// DisplayName is the name of
+	DisplayName string `json:"displayName"`
+	// HaMode (e.g. 'ELASTIC_N_PLUS_M_BUFFER')
+	HaMode string `json:"haMode"`
+}
