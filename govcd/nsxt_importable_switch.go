@@ -65,30 +65,76 @@ func (vdc *Vdc) GetAllNsxtImportableSwitches() ([]*NsxtImportableSwitch, error) 
 	if vdc.Vdc.ID == "" {
 		return nil, fmt.Errorf("VDC must have ID populated to retrieve NSX-T importable switches")
 	}
-
-	apiEndpoint := vdc.client.VCDHREF
-	endpoint := apiEndpoint.Scheme + "://" + apiEndpoint.Host + "/network/orgvdcnetworks/importableswitches"
-	// error below is ignored because it is a static endpoint
-	urlRef, _ := url.Parse(endpoint)
-
 	// request requires Org VDC ID to be specified as UUID, not as URN
 	orgVdcId, err := getBareEntityUuid(vdc.Vdc.ID)
 	if err != nil {
 		return nil, fmt.Errorf("could not get UUID from URN '%s': %s", vdc.Vdc.ID, err)
 	}
+	filter := map[string]string{"orgVdc": orgVdcId}
+
+	return getFilteredNsxtImportableSwitches(filter, vdc.client)
+}
+
+// GetFilteredNsxtImportableSwitches returns all available importable switches.
+// One of filters is required (requires plain UUID - not URN):
+// * orgVdc
+// * nsxTManager (only in VCD 10.3.0+)
+//
+// Note. OpenAPI endpoint does not exist for this resource and by default endpoint
+// "/network/orgvdcnetworks/importableswitches" returns only unused NSX-T importable switches (the ones that are not
+// already consumed in Org VDC networks) and there is no way to get them all.
+func (vcdClient *VCDClient) GetFilteredNsxtImportableSwitches(filter map[string]string) ([]*NsxtImportableSwitch, error) {
+	return getFilteredNsxtImportableSwitches(filter, &vcdClient.Client)
+}
+
+// GetFilteredNsxtImportableSwitchesByName builds on top of GetFilteredNsxtImportableSwitches and additionally performs
+// client side filtering by Name
+func (vcdClient *VCDClient) GetFilteredNsxtImportableSwitchesByName(filter map[string]string, name string) (*NsxtImportableSwitch, error) {
+	importableSwitches, err := getFilteredNsxtImportableSwitches(filter, &vcdClient.Client)
+	if err != nil {
+		return nil, fmt.Errorf("error getting list of filtered Importable Switches: %s", err)
+	}
+
+	var foundImportableSwitch bool
+	var foundSwitches []*NsxtImportableSwitch
+
+	for index, impSwitch := range importableSwitches {
+		if importableSwitches[index].NsxtImportableSwitch.Name == name {
+			foundImportableSwitch = true
+			foundSwitches = append(foundSwitches, impSwitch)
+		}
+	}
+
+	if !foundImportableSwitch {
+		return nil, fmt.Errorf("%s: Importable Switch with name '%s' not found", ErrorEntityNotFound, name)
+	}
+
+	if len(foundSwitches) > 1 {
+		return nil, fmt.Errorf("found multiple Importable Switches with name '%s'", name)
+	}
+
+	return foundSwitches[0], nil
+}
+
+// getFilteredNsxtImportableSwitches is extracted so that it can be reused across multiple functions
+func getFilteredNsxtImportableSwitches(filter map[string]string, client *Client) ([]*NsxtImportableSwitch, error) {
+	apiEndpoint := client.VCDHREF
+	endpoint := apiEndpoint.Scheme + "://" + apiEndpoint.Host + "/network/orgvdcnetworks/importableswitches/"
+	// error below is ignored because it is a static endpoint
+	urlRef, _ := url.Parse(endpoint)
 
 	headAccept := http.Header{}
 	headAccept.Set("Accept", types.JSONMime)
-	request := vdc.client.newRequest(map[string]string{"orgVdc": orgVdcId}, nil, http.MethodGet, *urlRef, nil, vdc.client.APIVersion, headAccept)
+	request := client.newRequest(filter, nil, http.MethodGet, *urlRef, nil, client.APIVersion, headAccept)
 	request.Header.Set("Accept", types.JSONMime)
 
-	response, err := checkResp(vdc.client.Http.Do(request))
+	response, err := checkResp(client.Http.Do(request))
 	if err != nil {
 		return nil, err
 	}
 	defer response.Body.Close()
 
-	nsxtImportableSwitches := []*types.NsxtImportableSwitch{}
+	var nsxtImportableSwitches []*types.NsxtImportableSwitch
 	if err = decodeBody(types.BodyTypeJSON, response, &nsxtImportableSwitches); err != nil {
 		return nil, err
 	}
@@ -97,7 +143,7 @@ func (vdc *Vdc) GetAllNsxtImportableSwitches() ([]*NsxtImportableSwitch, error) 
 	for sliceIndex := range nsxtImportableSwitches {
 		wrappedNsxtImportableSwitches[sliceIndex] = &NsxtImportableSwitch{
 			NsxtImportableSwitch: nsxtImportableSwitches[sliceIndex],
-			client:               vdc.client,
+			client:               client,
 		}
 	}
 

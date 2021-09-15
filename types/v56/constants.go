@@ -381,6 +381,8 @@ const (
 	ExternalNetworkBackingTypeNsxtTier0Router = "NSXT_TIER0"
 	// ExternalNetworkBackingTypeNsxtVrfTier0Router defines backing type of NSX-T Tier-0 VRF router
 	ExternalNetworkBackingTypeNsxtVrfTier0Router = "NSXT_VRF_TIER0"
+	// ExternalNetworkBackingTypeNsxtSegment defines backing type of NSX-T Segment (supported in VCD 10.3+)
+	ExternalNetworkBackingTypeNsxtSegment = "IMPORTED_T_LOGICAL_SWITCH"
 	// ExternalNetworkBackingTypeNetwork defines vSwitch portgroup
 	ExternalNetworkBackingTypeNetwork = "NETWORK"
 	// ExternalNetworkBackingDvPortgroup refers distributed switch portgroup

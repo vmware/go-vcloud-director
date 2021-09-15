@@ -139,7 +139,12 @@ type ExternalNetworkV2Backing struct {
 	Name      string `json:"name,omitempty"`
 	// BackingType can be either ExternalNetworkBackingTypeNsxtTier0Router in case of NSX-T or one
 	// of ExternalNetworkBackingTypeNetwork or ExternalNetworkBackingDvPortgroup in case of NSX-V
-	BackingType string `json:"backingType"`
+	// Deprecated in favor of BackingTypeValue in API V35.0
+	BackingType string `json:"backingType,omitempty"`
+
+	// BackingTypeValue replaces BackingType in API V35.0 and adds support for additional network backing type
+	// ExternalNetworkBackingTypeNsxtSegment
+	BackingTypeValue string `json:"backingTypeValue,omitempty"`
 	// NetworkProvider defines backing network manager
 	NetworkProvider NetworkProvider `json:"networkProvider"`
 }
