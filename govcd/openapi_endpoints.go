@@ -134,7 +134,7 @@ func (client *Client) getOpenApiHighestElevatedVersion(endpoint string) (string,
 	sort.Sort(sort.Reverse(version.Collection(versions)))
 
 	var supportedElevatedVersion string
-	// Loop highest to lowest elevated versions and try to find highest from the list of supported ones
+	// Loop highest to the lowest elevated versions and try to find highest from the list of supported ones
 	for _, elevatedVersion := range versions {
 
 		util.Logger.Printf("[DEBUG] Checking if elevated version '%s' is supported by VCD instance for endpoint '%s'",
