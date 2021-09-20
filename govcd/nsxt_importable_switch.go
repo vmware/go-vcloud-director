@@ -76,7 +76,7 @@ func (vdc *Vdc) GetAllNsxtImportableSwitches() ([]*NsxtImportableSwitch, error) 
 }
 
 // GetFilteredNsxtImportableSwitches returns all available importable switches.
-// One of filters is required (requires plain UUID - not URN):
+// One of the filters below is required (using plain UUID - not URN):
 // * orgVdc
 // * nsxTManager (only in VCD 10.3.0+)
 //

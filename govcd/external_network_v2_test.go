@@ -191,7 +191,7 @@ func testExternalNetworkV2(vcd *TestVCD, name, backingType, backingId, NetworkPr
 		}},
 	}
 
-	// Starting with VCD 10.2 field BackingType is deprecated in favor of BackingTypeValue, and only it accepts new values
+	// Starting with VCD 10.2 field BackingType is deprecated in favor of BackingTypeValue, and it only accepts new values
 	if vcd.client.Client.APIVCDMaxVersionIs(">= 35.0") {
 		net.NetworkBackings.Values[0].BackingTypeValue = backingType
 	} else {
