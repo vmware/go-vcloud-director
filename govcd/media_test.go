@@ -239,7 +239,7 @@ func (vcd *TestVCD) Test_QueryAllMedia(check *C) {
 	}
 
 	if vcd.config.Media.Media == "" {
-		check.Skip("Test_RefreshMediaRecord: Media name not given")
+		check.Skip("Test_QueryMedia: Media name not given")
 		return
 	}
 	// Fetching organization
@@ -260,4 +260,52 @@ func (vcd *TestVCD) Test_QueryAllMedia(check *C) {
 	mediaList, err = vcd.vdc.QueryAllMedia("INVALID")
 	check.Assert(IsNotFound(err), Equals, true)
 	check.Assert(mediaList, IsNil)
+}
+
+func (vcd *TestVCD) Test_GetMediaItemByHREFOrId(check *C) {
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	skipWhenMediaPathMissing(vcd, check)
+
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_GetMediaItemByHREFOrId: Org name not given")
+		return
+	}
+	if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("Test_GetMediaItemByHREFOrId: Catalog name not given")
+		return
+	}
+
+	if vcd.config.Media.Media == "" {
+		check.Skip("Test_GetMediaItemByHREFOrId: Media name not given")
+		return
+	}
+	// Fetching organization
+	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+
+	testQueryMediaName := vcd.config.Media.Media
+
+	media, err := catalog.GetMediaByName(testQueryMediaName, false)
+	check.Assert(err, IsNil)
+	check.Assert(media, NotNil)
+
+	mediaByHref, err := vcd.client.Client.GetMediaByHref(media.Media.HREF)
+	check.Assert(err, IsNil)
+	check.Assert(mediaByHref, NotNil)
+	check.Assert(mediaByHref.Media.Name, Equals, media.Media.Name)
+	check.Assert(mediaByHref.Media.ID, Equals, media.Media.ID)
+
+	mediaById, err := vcd.client.Client.GetMediaById(media.Media.ID)
+	check.Assert(err, IsNil)
+	check.Assert(mediaById, NotNil)
+	check.Assert(mediaById.Media.Name, Equals, media.Media.Name)
+	check.Assert(mediaById.Media.ID, Equals, media.Media.ID)
+
 }

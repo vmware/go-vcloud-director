@@ -441,10 +441,17 @@ func (media *Media) Refresh() error {
 // On success, returns a pointer to the Media structure and a nil error
 // On failure, returns a nil pointer and an error
 func (cat *Catalog) GetMediaByHref(mediaHref string) (*Media, error) {
+	return cat.client.GetMediaByHref(mediaHref)
+}
 
-	media := NewMedia(cat.client)
+// GetMediaByHref finds a Media by HREF
+// On success, returns a pointer to the Media structure and a nil error
+// On failure, returns a nil pointer and an error
+func (client *Client) GetMediaByHref(mediaHref string) (*Media, error) {
 
-	_, err := cat.client.ExecuteRequest(mediaHref, http.MethodGet,
+	media := NewMedia(client)
+
+	_, err := client.ExecuteRequest(mediaHref, http.MethodGet,
 		"", "error retrieving media: %#v", nil, media.Media)
 	if err != nil && strings.Contains(err.Error(), "MajorErrorCode:403") {
 		return nil, ErrorEntityNotFound
@@ -453,6 +460,15 @@ func (cat *Catalog) GetMediaByHref(mediaHref string) (*Media, error) {
 		return nil, err
 	}
 	return media, nil
+}
+
+// GetMediaById retrieves a media item by ID
+func (client *Client) GetMediaById(id string) (*Media, error) {
+	// builds the HREF of the media item by combining the VCD HREF and the ID
+	apiEndpoint := client.VCDHREF
+	apiEndpoint.Path += "/media/" + extractUuid(id)
+
+	return client.GetMediaByHref(apiEndpoint.String())
 }
 
 // GetMediaByName finds a Media by Name
