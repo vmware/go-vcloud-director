@@ -238,3 +238,30 @@ func (vcd *TestVCD) Test_DeleteNonEmptyCatalog(check *C) {
 	check.Assert(err, NotNil)
 	check.Assert(retrievedCatalog, IsNil)
 }
+
+func (vcd *TestVCD) Test_GetParentCatalog(check *C) {
+
+	catalogName := vcd.config.VCD.Catalog.Name
+	catalogItemName := vcd.config.VCD.Catalog.CatalogItem
+
+	if catalogItemName == "" || catalogName == "" {
+		check.Skip("catalog name or catalog item name not set")
+	}
+
+	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+	catalog, err := org.GetCatalogByName(catalogName, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+
+	catalogItem, err := catalog.GetCatalogItemByName(catalogItemName, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalogItem, NotNil)
+
+	retrievedCatalog, err := catalogItem.GetParentCatalog()
+	check.Assert(err, IsNil)
+	check.Assert(retrievedCatalog, NotNil)
+	check.Assert(retrievedCatalog.Catalog.Name, Equals, catalogName)
+	check.Assert(catalog.Catalog, DeepEquals, retrievedCatalog.Catalog)
+}

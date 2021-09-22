@@ -147,3 +147,23 @@ func (client *Client) GetCatalogItemById(id string) (*CatalogItem, error) {
 	catalogItemUrl.Path += "/catalogItem/" + extractUuid(id)
 	return client.GetCatalogItemByHref(catalogItemUrl.String())
 }
+
+// GetParentCatalog retrieves the catalog to which the item belongs
+func (catalogItem *CatalogItem) GetParentCatalog() (*Catalog, error) {
+
+	for _, link := range catalogItem.CatalogItem.Link {
+		if link.Type == types.MimeCatalog && link.Rel == "up" {
+
+			catalog := NewCatalog(catalogItem.client)
+
+			_, err := catalogItem.client.ExecuteRequest(link.HREF, http.MethodGet,
+				"", "error retrieving parent catalog: %s", nil, catalog.Catalog)
+			if err != nil {
+				return nil, err
+			}
+
+			return catalog, nil
+		}
+	}
+	return nil, fmt.Errorf("could not find a parent catalog for catalog item %s", catalogItem.CatalogItem.Name)
+}
