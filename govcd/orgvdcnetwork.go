@@ -242,7 +242,7 @@ func (vdc *Vdc) FindEdgeGatewayNameByNetwork(networkName string) (string, error)
 // getParentVdc retrieves the VDC to which the network is attached
 func (orgVdcNet *OrgVDCNetwork) getParentVdc() (*Vdc, error) {
 	for _, link := range orgVdcNet.OrgVDCNetwork.Link {
-		if link.Type == "application/vnd.vmware.vcloud.vdc+xml" {
+		if link.Type == types.MimeVDC && link.Rel == "up" {
 
 			vdc := NewVdc(orgVdcNet.client)
 
