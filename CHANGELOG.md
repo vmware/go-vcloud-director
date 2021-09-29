@@ -1,8 +1,52 @@
-## 2.13.0 (Unreleased)
+## 2.13.0 (September 29, 2021)
 
-Changes in progress for v2.13.0 are available at [.changes/v2.13.0](https://github.com/vmware/go-vcloud-director/tree/master/.changes/v2.13.0) until the release.
+## FEATURES
+* Added method `AdminVdc.AddStorageProfile` ([#393](https://github.com/vmware/go-vcloud-director/pull/393))
+* Added method `AdminVdc.AddStorageProfileWait` ([#393](https://github.com/vmware/go-vcloud-director/pull/393))
+* Added method `AdminVdc.RemoveStorageProfile` ([#393](https://github.com/vmware/go-vcloud-director/pull/393))
+* Added method `AdminVdc.RemoveStorageProfileWait` ([#393](https://github.com/vmware/go-vcloud-director/pull/393))
+* Added method `AdminVdc.SetDefaultStorageProfile` ([#393](https://github.com/vmware/go-vcloud-director/pull/393))
+* Added method `AdminVdc.GetDefaultStorageProfileReference` ([#393](https://github.com/vmware/go-vcloud-director/pull/393))
+* Added method `VCDClient.GetStorageProfileByHref` ([#393](https://github.com/vmware/go-vcloud-director/pull/393))
+* Added method `Client.GetStorageProfileByHref` ([#393](https://github.com/vmware/go-vcloud-director/pull/393))
+* Added method `VCDClient.QueryProviderVdcStorageProfileByName` ([#393](https://github.com/vmware/go-vcloud-director/pull/393))
+* Added method `Client.QueryAllProviderVdcStorageProfiles` ([#393](https://github.com/vmware/go-vcloud-director/pull/393))
+* Added method `Client.QueryProviderVdcStorageProfiles` ([#393](https://github.com/vmware/go-vcloud-director/pull/393))
+* Added types `NsxtAlbController` and `types.NsxtAlbController` for handling NSX-T ALB Controllers with corresponding
+  functions `GetAllAlbControllers`, `GetAlbControllerByName`, `GetAlbControllerById`, `GetAlbControllerByUrl`,
+  `CreateNsxtAlbController`, `Update`, `Delete` ([#398](https://github.com/vmware/go-vcloud-director/pull/398))
+* Added types `NsxtAlbCloud` and `types.NsxtAlbCloud` for handling NSX-T ALB Clouds with corresponding functions
+  `GetAllAlbClouds`, `GetAlbCloudByName`, `GetAlbCloudById`, `CreateAlbCloud`, `Delete` ([#398](https://github.com/vmware/go-vcloud-director/pull/398))
+* Added type `NsxtAlbImportableCloud` and `types.NsxtAlbImportableCloud` for listing NSX-T ALB Importable Clouds with
+  corresponding functions `GetAllAlbImportableClouds`, `GetAlbImportableCloudByName`, `GetAlbImportableCloudById`
+  ([#398](https://github.com/vmware/go-vcloud-director/pull/398))
+* Added types `NsxtAlbServiceEngineGroup` and `types.NsxtAlbServiceEngineGroup` for handling NSX-T ALB Service Engine
+  Groups with corresponding functions `GetAllNsxtAlbServiceEngineGroups`, `GetAlbServiceEngineGroupByName`,
+  `GetAlbServiceEngineGroupById`, `CreateNsxtAlbServiceEngineGroup`, `Update`, `Delete`, `Sync` ([#398](https://github.com/vmware/go-vcloud-director/pull/398))
+* Added types `NsxtAlbImportableServiceEngineGroups` and `types.NsxtAlbImportableServiceEngineGroups` for listing NSX-T
+  ALB Importable Service Engine Groups with corresponding functions `GetAllAlbImportableServiceEngineGroups`,
+  `GetAlbImportableServiceEngineGroupByName`, `GetAlbImportableServiceEngineGroupById` ([#398](https://github.com/vmware/go-vcloud-director/pull/398))
 
-## 2.12.1 (5 July, 2021)
+## IMPROVEMENTS
+* Add `.changes` directory for changelog items ([#391](https://github.com/vmware/go-vcloud-director/pull/391))
+
+* Align build tags to match go fmt with Go 1.17 ([#396](https://github.com/vmware/go-vcloud-director/pull/396))
+* Improve `test-tags.sh` script to handle new build tag format ([#396](https://github.com/vmware/go-vcloud-director/pull/396))
+
+## BUG FIXES
+* Fix handling of `staticcheck` in GitGub Actions ([#391](https://github.com/vmware/go-vcloud-director/pull/391))
+
+* Fix Issue #390: `catalog.Delete()` ignores returned task and responds immediately which could have caused failures ([#392](https://github.com/vmware/go-vcloud-director/pull/392))
+
+* Fixes Issue #395 "BUG: can't update EGW - there is no ownerRef field" ([#397](https://github.com/vmware/go-vcloud-director/pull/397))
+
+## DEPRECATIONS
+* Deprecated `GetStorageProfileByHref`  in favor of either `client.GetStorageProfileByHref` or `vcdClient.GetStorageProfileByHref` ([#393](https://github.com/vmware/go-vcloud-director/pull/393))
+* Deprecated `QueryProviderVdcStorageProfileByName` in favor of `VCDClient.QueryProviderVdcStorageProfileByName` ([#393](https://github.com/vmware/go-vcloud-director/pull/393))
+* Deprecated `VCDClient.QueryProviderVdcStorageProfiles` in favor of either `client.QueryProviderVdcStorageProfiles` or `client.QueryAllProviderVdcStorageProfiles` ([#393](https://github.com/vmware/go-vcloud-director/pull/393))
+* Deprecated `Vdc.GetDefaultStorageProfileReference` in favor of `adminVdc.GetDefaultStorageProfileReference` ([#393](https://github.com/vmware/go-vcloud-director/pull/393))
+
+## 2.12.1 (July 5, 2021)
 
 BUGS FIXED:
 * org.GetCatalogByName and org.GetCatalogById could not retrieve shared catalogs from different Orgs 
