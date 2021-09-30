@@ -1,4 +1,4 @@
-## 2.13.0 (September 29, 2021)
+## 2.13.0 (September 30, 2021)
 
 ## FEATURES
 * Added method `AdminVdc.AddStorageProfile` ([#393](https://github.com/vmware/go-vcloud-director/pull/393))
@@ -28,6 +28,12 @@
   `GetAlbImportableServiceEngineGroupByName`, `GetAlbImportableServiceEngineGroupById` ([#398](https://github.com/vmware/go-vcloud-director/pull/398))
 
 ## IMPROVEMENTS
+* External network type ExternalNetworkV2 automatically elevates API version to maximum available out of 33.0, 35.0 and
+  36.0, so that new functionality can be consumed. It uses a controlled version elevation mechanism to consume the newer
+  features, but at the same time remain tested by not choosing the latest untested version blindly (more information in
+  openapi_endpoints.go) ([#339](https://github.com/vmware/go-vcloud-director/pull/339))
+* Added new field BackingTypeValue in favor of deprecated BackingType to types.ExternalNetworkV2Backing ([#339](https://github.com/vmware/go-vcloud-director/pull/339))
+* Add new function `GetFilteredNsxtImportableSwitches` to query NSX-T Importable Switches (Segments) ([#339](https://github.com/vmware/go-vcloud-director/pull/339))
 * Add `.changes` directory for changelog items ([#391](https://github.com/vmware/go-vcloud-director/pull/391))
 
 * Align build tags to match go fmt with Go 1.17 ([#396](https://github.com/vmware/go-vcloud-director/pull/396))
