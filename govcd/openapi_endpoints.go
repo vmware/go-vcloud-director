@@ -63,6 +63,11 @@ var endpointElevatedApiVersions = map[string][]string{
 		"35.2", // Introduces support for new fields FirewallMatch and Priority
 		"36.0", // Adds support for new NAT Rule Type - REFLEXIVE (field Type must be used instead of RuleType)
 	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks: {
+		//"33.0", // Basic minimum required version
+		"35.0", // Deprecates field BackingType in favor of BackingTypeValue
+		"36.0", // Adds support new type of BackingTypeValue - IMPORTED_T_LOGICAL_SWITCH (backed by NSX-T segment)
+	},
 }
 
 // checkOpenApiEndpointCompatibility checks if VCD version (to which the client is connected) is sufficient to work with
@@ -129,7 +134,7 @@ func (client *Client) getOpenApiHighestElevatedVersion(endpoint string) (string,
 	sort.Sort(sort.Reverse(version.Collection(versions)))
 
 	var supportedElevatedVersion string
-	// Loop highest to lowest elevated versions and try to find highest from the list of supported ones
+	// Loop highest to the lowest elevated versions and try to find highest from the list of supported ones
 	for _, elevatedVersion := range versions {
 
 		util.Logger.Printf("[DEBUG] Checking if elevated version '%s' is supported by VCD instance for endpoint '%s'",
