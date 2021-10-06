@@ -226,8 +226,8 @@ func (client *Client) newRequest(params map[string]string, notEncodedParams map[
 			}
 		}
 	}
-	if cli.customHeader != nil {
-		for k, v := range cli.customHeader {
+	if client.customHeader != nil {
+		for k, v := range client.customHeader {
 			for _, v1 := range v {
 				req.Header.Add(k, v1)
 			}
