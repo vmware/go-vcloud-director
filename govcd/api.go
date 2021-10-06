@@ -137,7 +137,7 @@ func debugShowResponse(resp *http.Response, body []byte) {
 	}
 }
 
-// Convenience function, similar to os.IsNotExist that checks whether a given error
+// IsNotFound is a convenience function, similar to os.IsNotExist that checks whether a given error
 // is a "Not found" error, such as
 // if isNotFound(err) {
 //    // do what is needed in case of not found
@@ -154,8 +154,8 @@ func ContainsNotFound(err error) bool {
 }
 
 // NewRequestWitNotEncodedParams allows passing complex values params that shouldn't be encoded like for queries. e.g. /query?filter=name=foo
-func (cli *Client) NewRequestWitNotEncodedParams(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
-	return cli.NewRequestWitNotEncodedParamsWithApiVersion(params, notEncodedParams, method, reqUrl, body, cli.APIVersion)
+func (client *Client) NewRequestWitNotEncodedParams(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
+	return client.NewRequestWitNotEncodedParamsWithApiVersion(params, notEncodedParams, method, reqUrl, body, client.APIVersion)
 }
 
 // NewRequestWitNotEncodedParamsWithApiVersion allows passing complex values params that shouldn't be encoded like for queries. e.g. /query?filter=name=foo
@@ -165,13 +165,13 @@ func (cli *Client) NewRequestWitNotEncodedParams(params map[string]string, notEn
 // * reqUrl - request url
 // * body - request body
 // * apiVersion - provided Api version overrides default Api version value used in request parameter
-func (cli *Client) NewRequestWitNotEncodedParamsWithApiVersion(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string) *http.Request {
-	return cli.newRequest(params, notEncodedParams, method, reqUrl, body, apiVersion, nil)
+func (client *Client) NewRequestWitNotEncodedParamsWithApiVersion(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string) *http.Request {
+	return client.newRequest(params, notEncodedParams, method, reqUrl, body, apiVersion, nil)
 }
 
 // newRequest is the parent of many "specific" "NewRequest" functions.
 // Note. It is kept private to avoid breaking public API on every new field addition.
-func (cli *Client) newRequest(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string, additionalHeader http.Header) *http.Request {
+func (client *Client) newRequest(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string, additionalHeader http.Header) *http.Request {
 	reqValues := url.Values{}
 
 	// Build up our request parameters
@@ -201,20 +201,20 @@ func (cli *Client) newRequest(params map[string]string, notEncodedParams map[str
 	// error only if can't process an url.ParseRequestURI().
 	req, _ := http.NewRequest(method, reqUrl.String(), body)
 
-	if cli.VCDAuthHeader != "" && cli.VCDToken != "" {
+	if client.VCDAuthHeader != "" && client.VCDToken != "" {
 		// Add the authorization header
-		req.Header.Add(cli.VCDAuthHeader, cli.VCDToken)
+		req.Header.Add(client.VCDAuthHeader, client.VCDToken)
 	}
-	if (cli.VCDAuthHeader != "" && cli.VCDToken != "") ||
+	if (client.VCDAuthHeader != "" && client.VCDToken != "") ||
 		(additionalHeader != nil && additionalHeader.Get("Authorization") != "") {
 		// Add the Accept header for VCD
 		req.Header.Add("Accept", "application/*+xml;version="+apiVersion)
 	}
 	// The deprecated authorization token is 32 characters long
 	// The bearer token is 612 characters long
-	if len(cli.VCDToken) > 32 {
+	if len(client.VCDToken) > 32 {
 		req.Header.Add("X-Vmware-Vcloud-Token-Type", "Bearer")
-		req.Header.Add("Authorization", "bearer "+cli.VCDToken)
+		req.Header.Add("Authorization", "bearer "+client.VCDToken)
 	}
 
 	// Merge in additional headers before logging if any where specified in additionalHeader
@@ -234,7 +234,7 @@ func (cli *Client) newRequest(params map[string]string, notEncodedParams map[str
 		}
 	}
 
-	setHttpUserAgent(cli.UserAgent, req)
+	setHttpUserAgent(client.UserAgent, req)
 
 	// Avoids passing data if the logging of requests is disabled
 	if util.LogHttpRequest {
@@ -251,14 +251,14 @@ func (cli *Client) newRequest(params map[string]string, notEncodedParams map[str
 }
 
 // NewRequest creates a new HTTP request and applies necessary auth headers if set.
-func (cli *Client) NewRequest(params map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
-	return cli.NewRequestWitNotEncodedParams(params, nil, method, reqUrl, body)
+func (client *Client) NewRequest(params map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
+	return client.NewRequestWitNotEncodedParams(params, nil, method, reqUrl, body)
 }
 
 // NewRequestWithApiVersion creates a new HTTP request and applies necessary auth headers if set.
 // Allows to override default request API Version
-func (cli *Client) NewRequestWithApiVersion(params map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string) *http.Request {
-	return cli.NewRequestWitNotEncodedParamsWithApiVersion(params, nil, method, reqUrl, body, apiVersion)
+func (client *Client) NewRequestWithApiVersion(params map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string) *http.Request {
+	return client.NewRequestWitNotEncodedParamsWithApiVersion(params, nil, method, reqUrl, body, apiVersion)
 }
 
 // ParseErr takes an error XML resp, error interface for unmarshalling and returns a single string for
@@ -387,7 +387,7 @@ func checkRespWithErrType(bodyType types.BodyType, resp *http.Response, err, err
 	}
 }
 
-// Helper function creates request, runs it, checks response and parses task from response.
+// ExecuteTaskRequest helper function creates request, runs it, checks response and parses task from response.
 // pathURL - request URL
 // requestType - HTTP method type
 // contentType - value to set for "Content-Type"
@@ -398,7 +398,7 @@ func (client *Client) ExecuteTaskRequest(pathURL, requestType, contentType, erro
 	return client.executeTaskRequest(pathURL, requestType, contentType, errorMessage, payload, client.APIVersion)
 }
 
-// Helper function creates request, runs it, checks response and parses task from response.
+// ExecuteTaskRequestWithApiVersion helper function creates request, runs it, checks response and parses task from response.
 // pathURL - request URL
 // requestType - HTTP method type
 // contentType - value to set for "Content-Type"
@@ -444,7 +444,7 @@ func (client *Client) executeTaskRequest(pathURL, requestType, contentType, erro
 	return *task, nil
 }
 
-// Helper function creates request, runs it, checks response and do not expect any values from it.
+// ExecuteRequestWithoutResponse helper function creates request, runs it, checks response and do not expect any values from it.
 // pathURL - request URL
 // requestType - HTTP method type
 // contentType - value to set for "Content-Type"
@@ -455,7 +455,7 @@ func (client *Client) ExecuteRequestWithoutResponse(pathURL, requestType, conten
 	return client.executeRequestWithoutResponse(pathURL, requestType, contentType, errorMessage, payload, client.APIVersion)
 }
 
-// Helper function creates request, runs it, checks response and do not expect any values from it.
+// ExecuteRequestWithoutResponseWithApiVersion helper function creates request, runs it, checks response and do not expect any values from it.
 // pathURL - request URL
 // requestType - HTTP method type
 // contentType - value to set for "Content-Type"
@@ -499,7 +499,7 @@ func (client *Client) executeRequestWithoutResponse(pathURL, requestType, conten
 	return nil
 }
 
-// Helper function creates request, runs it, check responses and parses out interface from response.
+// ExecuteRequest helper function creates request, runs it, check responses and parses out interface from response.
 // pathURL - request URL
 // requestType - HTTP method type
 // contentType - value to set for "Content-Type"
@@ -512,7 +512,7 @@ func (client *Client) ExecuteRequest(pathURL, requestType, contentType, errorMes
 	return client.executeRequest(pathURL, requestType, contentType, errorMessage, payload, out, client.APIVersion)
 }
 
-// Helper function creates request, runs it, check responses and parses out interface from response.
+// ExecuteRequestWithApiVersion helper function creates request, runs it, check responses and parses out interface from response.
 // pathURL - request URL
 // requestType - HTTP method type
 // contentType - value to set for "Content-Type"
@@ -606,7 +606,10 @@ func executeRequestWithApiVersion(pathURL, requestType, contentType string, payl
 
 // executeRequestCustomErr performs request and unmarshals API error to errType if not 2xx status was returned
 func executeRequestCustomErr(pathURL string, params map[string]string, requestType, contentType string, payload interface{}, client *Client, errType error, apiVersion string) (*http.Response, error) {
-	url, _ := url.ParseRequestURI(pathURL)
+	requestURI, err := url.ParseRequestURI(pathURL)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't parse path request URI '%s': %s", pathURL, err)
+	}
 
 	var req *http.Request
 	switch {
@@ -619,10 +622,10 @@ func executeRequestCustomErr(pathURL string, params map[string]string, requestTy
 		}
 		body := bytes.NewBufferString(xml.Header + string(marshaledXml))
 
-		req = client.NewRequestWithApiVersion(params, requestType, *url, body, apiVersion)
+		req = client.NewRequestWithApiVersion(params, requestType, *requestURI, body, apiVersion)
 
 	default:
-		req = client.NewRequestWithApiVersion(params, requestType, *url, nil, apiVersion)
+		req = client.NewRequestWithApiVersion(params, requestType, *requestURI, nil, apiVersion)
 	}
 
 	if contentType != "" {
