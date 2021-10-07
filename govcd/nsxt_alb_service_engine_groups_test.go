@@ -78,3 +78,34 @@ func (vcd *TestVCD) Test_GetAllAlbServiceEngineGroups(check *C) {
 	err = controller.Delete()
 	check.Assert(err, IsNil)
 }
+
+// spawnAlbControllerCloudServiceEngineGroup is a helper function to spawn NSX-T ALB Controller,ALB Cloud, and ALB
+// Service Engine Group
+func spawnAlbControllerCloudServiceEngineGroup(vcd *TestVCD, check *C) (*NsxtAlbController, *NsxtAlbCloud, *NsxtAlbServiceEngineGroup) {
+	skipNoNsxtAlbConfiguration(vcd, check)
+
+	albController, createdAlbCloud := spawnAlbControllerAndCloud(vcd, check)
+
+	importableSeGroups, err := vcd.client.GetAllAlbImportableServiceEngineGroups(createdAlbCloud.NsxtAlbCloud.ID, nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(importableSeGroups) > 0, Equals, true)
+	albSeGroup := &types.NsxtAlbServiceEngineGroup{
+		Name:            check.TestName() + "SE-group",
+		Description:     "Service Engine Group created by " + check.TestName(),
+		ReservationType: "DEDICATED",
+		ServiceEngineGroupBacking: types.ServiceEngineGroupBacking{
+			BackingId: importableSeGroups[0].NsxtAlbImportableServiceEngineGroups.ID,
+			LoadBalancerCloudRef: &types.OpenApiReference{
+				ID: createdAlbCloud.NsxtAlbCloud.ID,
+			},
+		},
+	}
+
+	createdSeGroup, err := vcd.client.CreateNsxtAlbServiceEngineGroup(albSeGroup)
+	check.Assert(err, IsNil)
+
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroups + createdSeGroup.NsxtAlbServiceEngineGroup.ID
+	PrependToCleanupListOpenApi(createdSeGroup.NsxtAlbServiceEngineGroup.Name, check.TestName(), openApiEndpoint)
+
+	return albController, createdAlbCloud, createdSeGroup
+}
