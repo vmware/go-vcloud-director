@@ -6,8 +6,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// GetAlbGeneralSettings retrieves NSX-T ALB settings for a particular Edge Gateway
-func (egw *NsxtEdgeGateway) GetAlbGeneralSettings() (*types.NsxtAlbConfig, error) {
+// GetAlbSettings retrieves NSX-T ALB settings for a particular Edge Gateway
+func (egw *NsxtEdgeGateway) GetAlbSettings() (*types.NsxtAlbConfig, error) {
 	client := egw.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayAlb
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
@@ -29,8 +29,8 @@ func (egw *NsxtEdgeGateway) GetAlbGeneralSettings() (*types.NsxtAlbConfig, error
 	return typeResponse, nil
 }
 
-// UpdateAlbGeneralSettings updates NSX-T ALB settings for a particular Edge Gateway
-func (egw *NsxtEdgeGateway) UpdateAlbGeneralSettings(config *types.NsxtAlbConfig) (*types.NsxtAlbConfig, error) {
+// UpdateAlbSettings updates NSX-T ALB settings for a particular Edge Gateway
+func (egw *NsxtEdgeGateway) UpdateAlbSettings(config *types.NsxtAlbConfig) (*types.NsxtAlbConfig, error) {
 	client := egw.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayAlb
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
@@ -52,12 +52,12 @@ func (egw *NsxtEdgeGateway) UpdateAlbGeneralSettings(config *types.NsxtAlbConfig
 	return typeResponse, nil
 }
 
-// DisableAlb is a shortcut wrapping UpdateAlbGeneralSettings which disables ALB configuration
+// DisableAlb is a shortcut wrapping UpdateAlbSettings which disables ALB configuration
 func (egw *NsxtEdgeGateway) DisableAlb() error {
 	config := &types.NsxtAlbConfig{
 		Enabled: false,
 	}
-	_, err := egw.UpdateAlbGeneralSettings(config)
+	_, err := egw.UpdateAlbSettings(config)
 	if err != nil {
 		return fmt.Errorf("error disabling NSX-T ALB: %s", err)
 	}

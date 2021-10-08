@@ -1,2 +1,2 @@
-* Added type `NsxtAlbConfig` and functions `NsxtEdgeGateway.UpdateAlbGeneralSettings`,
-  `NsxtEdgeGateway.GetAlbGeneralSettings`, `NsxtEdgeGateway.DisableAlb` [GH-403]
+* Added type `NsxtAlbConfig` and functions `NsxtEdgeGateway.UpdateAlbSettings`, `NsxtEdgeGateway.GetAlbSettings`,
+  `NsxtEdgeGateway.DisableAlb` [GH-403]
