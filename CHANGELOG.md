@@ -66,6 +66,8 @@ BUGS FIXED:
 
 ## 2.12.0 (June 30, 2021)
 
+* Improved error handling and function receiver name in client
+  [#379](https://github.com/vmware/go-vcloud-director/pull/379)
 * Added method `vdc.QueryEdgeGateway` [#364](https://github.com/vmware/go-vcloud-director/pull/364)
 * Deprecated `vdc.GetEdgeGatewayRecordsType` [#364](https://github.com/vmware/go-vcloud-director/pull/364)
 * Dropped support for VCD 9.7 which is EOL now [#371](https://github.com/vmware/go-vcloud-director/pull/371)
