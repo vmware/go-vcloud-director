@@ -1,3 +1,4 @@
+//go:build lb || lbAppProfile || nsxv || functional || ALL
 // +build lb lbAppProfile nsxv functional ALL
 
 /*
@@ -70,6 +71,18 @@ func (vcd *TestVCD) Test_LBAppProfile(check *C) {
 	check.Assert(lbAppProfileByID.Persistence.Expire, Equals, lbAppProfileByName.Persistence.Expire)
 
 	check.Assert(createdLbAppProfile.Template, Equals, lbAppProfileConfig.Template)
+
+	// Test that we can extract a list of LB app profiles, and that one of them is the profile we have got when searching by name
+	lbAppProfiles, err := edge.GetLbAppProfiles()
+	check.Assert(err, IsNil)
+	check.Assert(lbAppProfiles, NotNil)
+	foundProfile := false
+	for _, profile := range lbAppProfiles {
+		if profile.Name == lbAppProfileByName.Name && profile.ID == lbAppProfileByName.ID {
+			foundProfile = true
+		}
+	}
+	check.Assert(foundProfile, Equals, true)
 
 	// Test updating fields
 	// Update persistence method

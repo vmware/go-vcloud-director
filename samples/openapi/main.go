@@ -87,7 +87,7 @@ func openAPIGetRawJsonAuditTrail(vcdClient *govcd.VCDClient) {
 	queryParams.Add("filter", "timestamp=gt="+filterTime)
 
 	allResponses := []json.RawMessage{{}}
-	err = vcdClient.Client.OpenApiGetAllItems("33.0", urlRef, queryParams, &allResponses)
+	err = vcdClient.Client.OpenApiGetAllItems("33.0", urlRef, queryParams, &allResponses, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -145,7 +145,7 @@ func openAPIGetStructAuditTrail(vcdClient *govcd.VCDClient) {
 	filterTime := time.Now().Add(-12 * time.Hour).Format(types.FiqlQueryTimestampFormat)
 	queryParams.Add("filter", "timestamp=gt="+filterTime)
 
-	err = vcdClient.Client.OpenApiGetAllItems("33.0", urlRef, queryParams, &response)
+	err = vcdClient.Client.OpenApiGetAllItems("33.0", urlRef, queryParams, &response, nil)
 	if err != nil {
 		panic(err)
 	}

@@ -61,16 +61,16 @@ var retrievedMetadataTypes = map[string]string{
 
 // HelperMakeFiltersFromEdgeGateways looks at the existing edge gateways and creates a set of criteria to retrieve each of them
 func HelperMakeFiltersFromEdgeGateways(vdc *Vdc) ([]FilterMatch, error) {
-	egwResult, err := vdc.GetEdgeGatewayRecordsType(false)
+	egwList, err := vdc.QueryEdgeGatewayList()
 	if err != nil {
 		return nil, err
 	}
 
-	if egwResult.EdgeGatewayRecord == nil || len(egwResult.EdgeGatewayRecord) == 0 {
+	if len(egwList) == 0 {
 		return []FilterMatch{}, nil
 	}
-	var filters = make([]FilterMatch, len(egwResult.EdgeGatewayRecord))
-	for i, egw := range egwResult.EdgeGatewayRecord {
+	var filters = make([]FilterMatch, len(egwList))
+	for i, egw := range egwList {
 
 		filter := NewFilterDef()
 		err = filter.AddFilter(types.FilterNameRegex, strToRegex(egw.Name))
@@ -413,6 +413,32 @@ func HelperCreateMultipleCatalogItems(catalog *Catalog, requestData []VappTempla
 	}
 
 	return data, nil
+}
+
+func HelperMakeFiltersFromOrgVdc(org *Org) ([]FilterMatch, error) {
+	var filters []FilterMatch
+	items, err := org.QueryOrgVdcList()
+	if err != nil {
+		return filters, err
+	}
+	for _, item := range items {
+		localItem := QueryOrgVdc(*item)
+		qItem := QueryItem(localItem)
+
+		filter, _, err := queryItemToFilter(qItem, "QueryOrgVdc")
+		if err != nil {
+			return nil, err
+		}
+
+		filter, err = org.client.metadataToFilter(item.HREF, filter)
+		if err != nil {
+			return nil, err
+		}
+
+		filters = append(filters, FilterMatch{filter, item.Name, localItem, "QueryOrgVdc"})
+	}
+
+	return filters, nil
 }
 
 // ipToRegex creates a regular expression that matches an IP without the last element

@@ -1,3 +1,4 @@
+//go:build org || functional || ALL
 // +build org functional ALL
 
 /*
@@ -8,9 +9,10 @@ package govcd
 
 import (
 	"fmt"
+	"math"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
-	"math"
 )
 
 // Tests org function GetVDCByName with the vdc specified
@@ -37,35 +39,12 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	results, err := vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":   "providerVdc",
-		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.Name),
-	})
-	check.Assert(err, IsNil)
-	if len(results.Results.VMWProviderVdcRecord) == 0 {
-		check.Skip(fmt.Sprintf("No Provider VDC found with name '%s'", vcd.config.VCD.ProviderVdc.Name))
-	}
-	providerVdcHref := results.Results.VMWProviderVdcRecord[0].HREF
+	providerVdcHref := getVdcProviderVdcHref(vcd, check)
 
-	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":   "providerVdcStorageProfile",
-		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.StorageProfile),
-	})
+	storageProfile, err := vcd.client.QueryProviderVdcStorageProfileByName(vcd.config.VCD.ProviderVdc.StorageProfile, providerVdcHref)
 	check.Assert(err, IsNil)
-	if len(results.Results.ProviderVdcStorageProfileRecord) == 0 {
-		check.Skip(fmt.Sprintf("No storage profile found with name '%s'", vcd.config.VCD.ProviderVdc.StorageProfile))
-	}
-	providerVdcStorageProfileHref := results.Results.ProviderVdcStorageProfileRecord[0].HREF
-
-	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":   "networkPool",
-		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.NetworkPool),
-	})
-	check.Assert(err, IsNil)
-	if len(results.Results.NetworkPoolRecord) == 0 {
-		check.Skip(fmt.Sprintf("No network pool found with name '%s'", vcd.config.VCD.ProviderVdc.NetworkPool))
-	}
-	networkPoolHref := results.Results.NetworkPoolRecord[0].HREF
+	providerVdcStorageProfileHref := storageProfile.HREF
+	networkPoolHref := getVdcNetworkPoolHref(vcd, check)
 
 	allocationModels := []string{"AllocationVApp", "AllocationPool", "ReservationPool", "Flex"}
 	trueValue := true
@@ -233,7 +212,7 @@ func (vcd *TestVCD) Test_VdcUpdateStorageProfile(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminVdc, NotNil)
 
-	foundStorageProfile, err := GetStorageProfileByHref(vcd.client, adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
+	foundStorageProfile, err := vcd.client.Client.GetStorageProfileByHref(adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
 	check.Assert(err, IsNil)
 	check.Assert(foundStorageProfile, Not(Equals), types.VdcStorageProfile{})
 	check.Assert(foundStorageProfile, NotNil)
@@ -243,7 +222,7 @@ func (vcd *TestVCD) Test_VdcUpdateStorageProfile(check *C) {
 	check.Assert(storageProfileId, NotNil)
 
 	updatedVdc, err := adminVdc.UpdateStorageProfile(storageProfileId, &types.AdminVdcStorageProfile{
-		Name:                      foundStorageProfile.ProviderVdcStorageProfile.Name,
+		Name:                      foundStorageProfile.Name,
 		Default:                   true,
 		Limit:                     9081,
 		Enabled:                   takeBoolPointer(true),
@@ -254,7 +233,7 @@ func (vcd *TestVCD) Test_VdcUpdateStorageProfile(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(updatedVdc, Not(IsNil))
 
-	updatedStorageProfile, err := GetStorageProfileByHref(vcd.client, adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
+	updatedStorageProfile, err := vcd.client.Client.GetStorageProfileByHref(adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
 	check.Assert(err, IsNil)
 	check.Assert(updatedStorageProfile, Not(Equals), types.VdcStorageProfile{})
 	check.Assert(updatedStorageProfile, NotNil)

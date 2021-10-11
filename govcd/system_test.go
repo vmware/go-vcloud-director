@@ -1,3 +1,4 @@
+//go:build system || functional || ALL
 // +build system functional ALL
 
 /*
@@ -8,6 +9,7 @@ package govcd
 
 import (
 	"fmt"
+	"strings"
 
 	. "gopkg.in/check.v1"
 
@@ -453,9 +455,7 @@ func (vcd *TestVCD) Test_QueryOrgVdcNetworkByNameWithSpace(check *C) {
 	}
 	check.Assert(task.Task.HREF, Not(Equals), "")
 
-	AddToCleanupList(networkName,
-		"network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name,
-		"Test_CreateOrgVdcNetworkDirect")
+	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkDirect")
 
 	// err = task.WaitTaskCompletion()
 	err = task.WaitInspectTaskCompletion(LogTask, 10)
@@ -521,7 +521,7 @@ func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {
 	if storageProfileName == "" {
 		check.Skip("Skipping storage profile query: no storage profile was given")
 	}
-	storageProfiles, err := vcd.client.QueryProviderVdcStorageProfiles()
+	storageProfiles, err := vcd.client.Client.QueryAllProviderVdcStorageProfiles()
 	check.Assert(err, IsNil)
 	check.Assert(len(storageProfiles) > 0, Equals, true)
 	storageProfileFound := false
@@ -610,8 +610,65 @@ func (vcd *TestVCD) Test_GetStorageProfileByHref(check *C) {
 	check.Assert(adminVdc, NotNil)
 
 	// Get storage profile by href
-	foundStorageProfile, err := GetStorageProfileByHref(vcd.client, adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
+	foundStorageProfile, err := vcd.client.Client.GetStorageProfileByHref(adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
 	check.Assert(err, IsNil)
 	check.Assert(foundStorageProfile, Not(Equals), types.VdcStorageProfile{})
 	check.Assert(foundStorageProfile, NotNil)
+}
+
+func (vcd *TestVCD) Test_GetOrgList(check *C) {
+
+	orgs, err := vcd.client.GetOrgList()
+	check.Assert(err, IsNil)
+	check.Assert(orgs, NotNil)
+
+	if vcd.config.VCD.Org != "" {
+		foundOrg := false
+		for _, org := range orgs.Org {
+			if org.Name == vcd.config.VCD.Org {
+				foundOrg = true
+			}
+		}
+		check.Assert(foundOrg, Equals, true)
+	}
+}
+
+func (vcd *TestVCD) TestQueryAllVdcs(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	allVdcs, err := vcd.client.Client.QueryAllVdcs()
+	check.Assert(err, IsNil)
+
+	// Check for at least that many VDCs in VCD
+	// expectedVdcCountInSystem = 1 NSX-V VDC
+	expectedVdcCountInSystem := 1
+	// If an NSX-T VDC exists - then expected count of VDCs is at least 2
+	if vcd.config.VCD.Nsxt.Vdc != "" {
+		expectedVdcCountInSystem++
+	}
+
+	if testVerbose {
+		fmt.Printf("# List contains at least %d VDCs.", expectedVdcCountInSystem)
+	}
+	check.Assert(len(allVdcs) >= expectedVdcCountInSystem, Equals, true)
+	// Check that known VDCs are inside the list
+
+	knownVdcs := []string{vcd.config.VCD.Vdc}
+	if vcd.config.VCD.Nsxt.Vdc != "" {
+		knownVdcs = append(knownVdcs, vcd.config.VCD.Nsxt.Vdc)
+	}
+
+	foundVdcNames := make([]string, len(allVdcs))
+	for vdcIndex, vdc := range allVdcs {
+		foundVdcNames[vdcIndex] = vdc.Name
+	}
+
+	if testVerbose {
+		fmt.Printf("# Checking result contains all known VDCs (%s).", strings.Join((knownVdcs), ", "))
+	}
+	for _, knownVdcName := range knownVdcs {
+		check.Assert(contains(foundVdcNames, knownVdcName), Equals, true)
+	}
 }

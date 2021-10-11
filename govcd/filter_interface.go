@@ -34,6 +34,7 @@ type (
 	QueryMedia         types.MediaRecordType
 	QueryVapp          types.QueryResultVAppRecordType
 	QueryVm            types.QueryResultVMRecordType
+	QueryOrgVdc        types.QueryResultOrgVdcRecordType
 )
 
 // getMetadataValue is a generic metadata lookup for all query items
@@ -47,6 +48,20 @@ func getMetadataValue(metadata *types.Metadata, key string) string {
 		}
 	}
 	return ""
+}
+
+// --------------------------------------------------------------
+// Org VDC
+// --------------------------------------------------------------
+func (orgVdc QueryOrgVdc) GetHref() string       { return orgVdc.HREF }
+func (orgVdc QueryOrgVdc) GetName() string       { return orgVdc.Name }
+func (orgVdc QueryOrgVdc) GetType() string       { return "org_vdc" }
+func (orgVdc QueryOrgVdc) GetIp() string         { return "" } // IP does not apply to VDC
+func (orgVdc QueryOrgVdc) GetDate() string       { return "" } // Date does not aply to VDC
+func (orgVdc QueryOrgVdc) GetParentName() string { return orgVdc.OrgName }
+func (orgVdc QueryOrgVdc) GetParentId() string   { return orgVdc.Org }
+func (orgVdc QueryOrgVdc) GetMetadataValue(key string) string {
+	return getMetadataValue(orgVdc.Metadata, key)
 }
 
 // --------------------------------------------------------------
@@ -176,7 +191,7 @@ func (vapp QueryVapp) GetMetadataValue(key string) string {
 // --------------------------------------------------------------
 func (vm QueryVm) GetHref() string       { return vm.HREF }
 func (vm QueryVm) GetName() string       { return vm.Name }
-func (vm QueryVm) GetType() string       { return "VM" }
+func (vm QueryVm) GetType() string       { return "Vm" }
 func (vm QueryVm) GetIp() string         { return vm.IpAddress }
 func (vm QueryVm) GetDate() string       { return vm.DateCreated }
 func (vm QueryVm) GetParentName() string { return vm.ContainerName }
@@ -251,6 +266,14 @@ func resultToQueryItems(queryType string, results Results) ([]QueryItem, error) 
 	case types.QtAdminVapp:
 		for i, item := range results.Results.AdminVAppRecord {
 			items[i] = QueryVapp(*item)
+		}
+	case types.QtOrgVdc:
+		for i, item := range results.Results.OrgVdcRecord {
+			items[i] = QueryOrgVdc(*item)
+		}
+	case types.QtAdminOrgVdc:
+		for i, item := range results.Results.OrgVdcAdminRecord {
+			items[i] = QueryOrgVdc(*item)
 		}
 	}
 	if len(items) > 0 {

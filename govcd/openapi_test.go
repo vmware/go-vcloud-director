@@ -1,3 +1,4 @@
+//go:build functional || openapi || ALL
 // +build functional openapi ALL
 
 /*
@@ -14,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/araddon/dateparse"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 
 	. "gopkg.in/check.v1"
@@ -41,7 +43,7 @@ func (vcd *TestVCD) Test_OpenApiRawJsonAuditTrail(check *C) {
 	queryParams.Add("sortDesc", "timestamp")
 
 	allResponses := []json.RawMessage{{}}
-	err = vcd.vdc.client.OpenApiGetAllItems(apiVersion, urlRef, queryParams, &allResponses)
+	err = vcd.vdc.client.OpenApiGetAllItems(apiVersion, urlRef, queryParams, &allResponses, nil)
 
 	check.Assert(err, IsNil)
 	check.Assert(len(allResponses) > 1, Equals, true)
@@ -105,7 +107,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructAuditTrail(check *C) {
 	filterTime := time.Now().Add(-6 * time.Hour).Format(types.FiqlQueryTimestampFormat)
 	queryParams.Add("filter", "timestamp=gt="+filterTime)
 
-	err = vcd.vdc.client.OpenApiGetAllItems(apiVersion, urlRef, queryParams, &allResponses)
+	err = vcd.vdc.client.OpenApiGetAllItems(apiVersion, urlRef, queryParams, &allResponses, nil)
 
 	check.Assert(err, IsNil)
 	check.Assert(len(allResponses) > 1, Equals, true)
@@ -152,7 +154,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	}
 
 	allExistingRoles := []*InlineRoles{{}}
-	err = vcd.vdc.client.OpenApiGetAllItems(apiVersion, urlRef, nil, &allExistingRoles)
+	err = vcd.vdc.client.OpenApiGetAllItems(apiVersion, urlRef, nil, &allExistingRoles, nil)
 	check.Assert(err, IsNil)
 
 	// Step 2 - Get all roles using query filters
@@ -166,7 +168,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 
 		expectOneRoleResultById := []*InlineRoles{{}}
 
-		err = vcd.vdc.client.OpenApiGetAllItems(apiVersion, urlRef2, queryParams, &expectOneRoleResultById)
+		err = vcd.vdc.client.OpenApiGetAllItems(apiVersion, urlRef2, queryParams, &expectOneRoleResultById, nil)
 		check.Assert(err, IsNil)
 		check.Assert(len(expectOneRoleResultById) == 1, Equals, true)
 
@@ -175,7 +177,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 		check.Assert(err, IsNil)
 
 		oneRole := &InlineRoles{}
-		err = vcd.vdc.client.OpenApiGetItem(apiVersion, singleRef, nil, oneRole)
+		err = vcd.vdc.client.OpenApiGetItem(apiVersion, singleRef, nil, oneRole, nil)
 		check.Assert(err, IsNil)
 		check.Assert(oneRole, NotNil)
 
@@ -192,11 +194,11 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 		Name:        check.TestName(),
 		Description: "Role created by test",
 		// This BundleKey is being set by VCD even if it is not sent
-		BundleKey: "com.vmware.vcloud.undefined.key",
+		BundleKey: types.VcloudUndefinedKey,
 		ReadOnly:  false,
 	}
 	newRoleResponse := &InlineRoles{}
-	err = vcd.client.Client.OpenApiPostItem(apiVersion, createUrl, nil, newRole, newRoleResponse)
+	err = vcd.client.Client.OpenApiPostItem(apiVersion, createUrl, nil, newRole, newRoleResponse, nil)
 	check.Assert(err, IsNil)
 
 	// Ensure supplied and created structs differ only by ID
@@ -209,7 +211,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	check.Assert(err, IsNil)
 
 	updatedRoleResponse := &InlineRoles{}
-	err = vcd.client.Client.OpenApiPutItem(apiVersion, updateUrl, nil, newRoleResponse, updatedRoleResponse)
+	err = vcd.client.Client.OpenApiPutItem(apiVersion, updateUrl, nil, newRoleResponse, updatedRoleResponse, nil)
 	check.Assert(err, IsNil)
 
 	// Ensure supplied and response objects are identical (update worked)
@@ -219,14 +221,14 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	deleteUrlRef, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint, newRoleResponse.ID)
 	check.Assert(err, IsNil)
 
-	err = vcd.client.Client.OpenApiDeleteItem(apiVersion, deleteUrlRef, nil)
+	err = vcd.client.Client.OpenApiDeleteItem(apiVersion, deleteUrlRef, nil, nil)
 	check.Assert(err, IsNil)
 
 	// Step 6 - try to read deleted role and expect error to contain 'ErrorEntityNotFound'
 	// Read is tricky - it throws an error ACCESS_TO_RESOURCE_IS_FORBIDDEN when the resource with ID does not
 	// exist therefore one cannot know what kind of error occurred.
 	lostRole := &InlineRoles{}
-	err = vcd.client.Client.OpenApiGetItem(apiVersion, deleteUrlRef, nil, lostRole)
+	err = vcd.client.Client.OpenApiGetItem(apiVersion, deleteUrlRef, nil, lostRole, nil)
 	check.Assert(ContainsNotFound(err), Equals, true)
 
 	// Step 7 - test synchronous POST and PUT functions (because Roles is a synchronous OpenAPI endpoint)
@@ -244,7 +246,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	check.Assert(err, IsNil)
 
 	updatedRoleResponse2 := &InlineRoles{}
-	err = vcd.client.Client.OpenApiPutItem(apiVersion, updateUrl2, nil, newRoleResponse, updatedRoleResponse2)
+	err = vcd.client.Client.OpenApiPutItem(apiVersion, updateUrl2, nil, newRoleResponse, updatedRoleResponse2, nil)
 	check.Assert(err, IsNil)
 
 	// Ensure supplied and response objects are identical (update worked)
@@ -254,7 +256,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	deleteUrlRef2, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint, newRoleResponse.ID)
 	check.Assert(err, IsNil)
 
-	err = vcd.client.Client.OpenApiDeleteItem(apiVersion, deleteUrlRef2, nil)
+	err = vcd.client.Client.OpenApiDeleteItem(apiVersion, deleteUrlRef2, nil, nil)
 	check.Assert(err, IsNil)
 
 }
@@ -266,7 +268,7 @@ func getAuditTrailTimestampWithElements(elementCount int, check *C, vcd *TestVCD
 	qp := url.Values{}
 	qp.Add("pageSize", "128")
 	qp.Add("sortDesc", "timestamp") // Need to get the newest
-	req := client.newOpenApiRequest(apiVersion, qp, http.MethodGet, urlRef, nil)
+	req := client.newOpenApiRequest(apiVersion, qp, http.MethodGet, urlRef, nil, nil)
 
 	resp, err := client.Http.Do(req)
 	check.Assert(err, IsNil)
@@ -294,6 +296,8 @@ func getAuditTrailTimestampWithElements(elementCount int, check *C, vcd *TestVCD
 	} else {
 		singleElement = onePageAuditTrail[(elementCount - 1)]
 	}
-	return singleElement.Timestamp
 
+	timeFormat := dateparse.MustParse(singleElement.Timestamp)
+
+	return timeFormat.Format(types.FiqlQueryTimestampFormat)
 }

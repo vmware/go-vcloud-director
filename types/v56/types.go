@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 // Package types/v56 provider all types which are used by govcd package in order to perform API
@@ -12,7 +12,7 @@ import (
 	"sort"
 )
 
-// Maps status Attribute Values for VAppTemplate, VApp, Vm, and Media Objects
+// Maps status Attribute Values for VAppTemplate, VApp, VM, and Media Objects
 var VAppStatuses = map[int]string{
 	-1: "FAILED_CREATION",
 	0:  "UNRESOLVED",
@@ -35,6 +35,8 @@ var VAppStatuses = map[int]string{
 	17: "TRANSFER_TIMEOUT",
 	18: "VAPP_UNDEPLOYED",
 	19: "VAPP_PARTIALLY_DEPLOYED",
+	20: "PARTIALLY_POWERED_OFF",
+	21: "PARTIALLY_SUSPENDED",
 }
 
 // Maps status Attribute Values for VDC Objects
@@ -135,7 +137,7 @@ type NetworkFeatures struct {
 // Description: A list of IP addresses.
 // Since: 0.9
 type IPAddresses struct {
-	IPAddress string `xml:"IpAddress,omitempty"` // An IP address.
+	IPAddress []string `xml:"IpAddress,omitempty"` // A list of IP addresses.
 }
 
 // IPRanges represents a list of IP ranges.
@@ -603,7 +605,7 @@ type ComputeCapacity struct {
 // Description: A reference to a resource. Contains an href attribute and optional name and type attributes.
 // Since: 0.9
 type Reference struct {
-	HREF string `xml:"href,attr"`
+	HREF string `xml:"href,attr,omitempty"`
 	ID   string `xml:"id,attr,omitempty"`
 	Type string `xml:"type,attr,omitempty"`
 	Name string `xml:"name,attr,omitempty"`
@@ -1163,7 +1165,7 @@ type ComposeVAppParams struct {
 	Description         string                       `xml:"Description,omitempty"`         // Optional description.
 	VAppParent          *Reference                   `xml:"VAppParent,omitempty"`          // Reserved. Unimplemented.
 	InstantiationParams *InstantiationParams         `xml:"InstantiationParams,omitempty"` // Instantiation parameters for the composed vApp.
-	SourcedItem         *SourcedCompositionItemParam `xml:"SourcedItem,omitempty"`         // Composition item. One of: vApp vAppTemplate Vm.
+	SourcedItem         *SourcedCompositionItemParam `xml:"SourcedItem,omitempty"`         // Composition item. One of: vApp vAppTemplate VM.
 	AllEULAsAccepted    bool                         `xml:"AllEULAsAccepted,omitempty"`    // True confirms acceptance of all EULAs in a vApp template. Instantiation fails if this element is missing, empty, or set to false and one or more EulaSection elements are present.
 }
 
@@ -1181,19 +1183,31 @@ type ReComposeVAppParams struct {
 	Description         string                       `xml:"Description,omitempty"`         // Optional description.
 	VAppParent          *Reference                   `xml:"VAppParent,omitempty"`          // Reserved. Unimplemented.
 	InstantiationParams *InstantiationParams         `xml:"InstantiationParams,omitempty"` // Instantiation parameters for the composed vApp.
-	SourcedItem         *SourcedCompositionItemParam `xml:"SourcedItem,omitempty"`         // Composition item. One of: vApp vAppTemplate Vm.
+	SourcedItem         *SourcedCompositionItemParam `xml:"SourcedItem,omitempty"`         // Composition item. One of: vApp vAppTemplate VM.
 	AllEULAsAccepted    bool                         `xml:"AllEULAsAccepted,omitempty"`
 	DeleteItem          *DeleteItem                  `xml:"DeleteItem,omitempty"`
+}
+
+// SmallRecomposeVappParams is used to update name and description of a vApp
+// Using the full definition (ReComposeVAppParams), the description can be changed but not removed
+type SmallRecomposeVappParams struct {
+	XMLName     xml.Name `xml:"RecomposeVAppParams"`
+	Ovf         string   `xml:"xmlns:ovf,attr"`
+	Xsi         string   `xml:"xmlns:xsi,attr"`
+	Xmlns       string   `xml:"xmlns,attr"`
+	Name        string   `xml:"name,attr"`
+	Deploy      bool     `xml:"deploy,attr"`
+	Description string   `xml:"Description"`
 }
 
 type DeleteItem struct {
 	HREF string `xml:"href,attr,omitempty"`
 }
 
-// SourcedCompositionItemParam represents a vApp, vApp template or Vm to include in a composed vApp.
+// SourcedCompositionItemParam represents a vApp, vApp template or VM to include in a composed vApp.
 // Type: SourcedCompositionItemParamType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents a vApp, vApp template or Vm to include in a composed vApp.
+// Description: Represents a vApp, vApp template or VM to include in a composed vApp.
 // Since: 0.9
 type SourcedCompositionItemParam struct {
 	// Attributes
@@ -1201,10 +1215,10 @@ type SourcedCompositionItemParam struct {
 	// Elements
 	Source              *Reference           `xml:"Source"`                        // Reference to a vApp, vApp template or virtual machine to include in the composition. Changing the name of the newly created VM by specifying name attribute is deprecated. Include VmGeneralParams element instead.
 	VMGeneralParams     *VMGeneralParams     `xml:"VmGeneralParams,omitempty"`     // Specify name, description, and other properties of a VM during instantiation.
-	VAppScopedLocalID   string               `xml:"VAppScopedLocalId,omitempty"`   // If Source references a Vm, this value provides a unique identifier for the Vm in the scope of the composed vApp.
-	InstantiationParams *InstantiationParams `xml:"InstantiationParams,omitempty"` // If Source references a Vm this can include any of the following OVF sections: VirtualHardwareSection OperatingSystemSection NetworkConnectionSection GuestCustomizationSection.
-	NetworkAssignment   []*NetworkAssignment `xml:"NetworkAssignment,omitempty"`   // If Source references a Vm, this element maps a network name specified in the Vm to the network name of a vApp network defined in the composed vApp.
-	StorageProfile      *Reference           `xml:"StorageProfile,omitempty"`      // If Source references a Vm, this element contains a reference to a storage profile to be used for the Vm. The specified storage profile must exist in the organization vDC that contains the composed vApp. If not specified, the default storage profile for the vDC is used.
+	VAppScopedLocalID   string               `xml:"VAppScopedLocalId,omitempty"`   // If Source references a VM, this value provides a unique identifier for the VM in the scope of the composed vApp.
+	InstantiationParams *InstantiationParams `xml:"InstantiationParams,omitempty"` // If Source references a VM this can include any of the following OVF sections: VirtualHardwareSection OperatingSystemSection NetworkConnectionSection GuestCustomizationSection.
+	NetworkAssignment   []*NetworkAssignment `xml:"NetworkAssignment,omitempty"`   // If Source references a VM, this element maps a network name specified in the VM to the network name of a vApp network defined in the composed vApp.
+	StorageProfile      *Reference           `xml:"StorageProfile,omitempty"`      // If Source references a VM, this element contains a reference to a storage profile to be used for the VM. The specified storage profile must exist in the organization vDC that contains the composed vApp. If not specified, the default storage profile for the vDC is used.
 	LocalityParams      *LocalityParams      `xml:"LocalityParams,omitempty"`      // Represents locality parameters. Locality parameters provide a hint that may help the placement engine optimize placement of a VM and an independent a Disk so that the VM can make efficient use of the disk.
 	ComputePolicy       *ComputePolicy       `xml:"ComputePolicy,omitempty"`       // accessible only from version API 33.0
 }
@@ -1219,14 +1233,14 @@ type LocalityParams struct {
 	ResourceEntity *Reference `xml:"ResourceEntity,omitempty"` // Reference to a Disk, or a VM.
 }
 
-// NetworkAssignment maps a network name specified in a Vm to the network name of a vApp network defined in the VApp that contains the Vm
+// NetworkAssignment maps a network name specified in a VM to the network name of a vApp network defined in the VApp that contains the VM
 // Type: NetworkAssignmentType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Maps a network name specified in a Vm to the network name of a vApp network defined in the VApp that contains the Vm
+// Description: Maps a network name specified in a VM to the network name of a vApp network defined in the VApp that contains the VM
 // Since: 0.9
 type NetworkAssignment struct {
 	// Attributes
-	InnerNetwork     string `xml:"innerNetwork,attr"`     // Name of the network as specified in the Vm.
+	InnerNetwork     string `xml:"innerNetwork,attr"`     // Name of the network as specified in the VM.
 	ContainerNetwork string `xml:"containerNetwork,attr"` // Name of the vApp network to map to.
 }
 
@@ -1269,6 +1283,7 @@ type VApp struct {
 	// Section OVF_Section `xml:"Section"`
 	DateCreated       string          `xml:"DateCreated,omitempty"`       // Creation date/time of the vApp.
 	Owner             *Owner          `xml:"Owner,omitempty"`             // vApp owner.
+	IsAutoNature      bool            `xml:"autoNature,omitempty"`        // True if the vApp is auto generated with a standalone VM
 	InMaintenanceMode bool            `xml:"InMaintenanceMode,omitempty"` // True if this vApp is in maintenance mode. Prevents users from changing vApp metadata.
 	Children          *VAppChildren   `xml:"Children,omitempty"`          // Container for virtual machines included in this vApp.
 	ProductSection    *ProductSection `xml:"ProductSection,omitempty"`
@@ -1353,7 +1368,7 @@ type MetadataEntry struct {
 // Description: Container for virtual machines included in this vApp.
 // Since: 0.9
 type VAppChildren struct {
-	VM []*VM `xml:"Vm,omitempty"` // Represents a virtual machine.
+	VM []*Vm `xml:"Vm,omitempty"` // Represents a virtual machine.
 }
 
 // TasksInProgress is a list of queued, running, or recently completed tasks.
@@ -1398,7 +1413,7 @@ type VAppTemplate struct {
 	Files                 *FilesList            `xml:"Files,omitempty"`                 // Represents a list of files to be transferred (uploaded or downloaded). Each File in the list is part of the ResourceEntity.
 	Owner                 *Owner                `xml:"Owner,omitempty"`                 // vAppTemplate owner.
 	Children              *VAppTemplateChildren `xml:"Children,omitempty"`              // Container for virtual machines included in this vApp template.
-	VAppScopedLocalID     string                `xml:"VAppScopedLocalId"`               // A unique identifier for the Vm in the scope of the vApp template.
+	VAppScopedLocalID     string                `xml:"VAppScopedLocalId"`               // A unique identifier for the VM in the scope of the vApp template.
 	DefaultStorageProfile string                `xml:"DefaultStorageProfile,omitempty"` // The name of the storage profile to be used for this object. The named storage profile must exist in the organization vDC that contains the object. If not specified, the default storage profile for the vDC is used.
 	DateCreated           string                `xml:"DateCreated,omitempty"`           // Creation date/time of the template.
 	// FIXME: Upstream bug? Missing NetworkConfigSection, LeaseSettingSection and
@@ -1428,12 +1443,12 @@ type VMDiskChange struct {
 	VmSpecSection *VmSpecSection `xml:"VmSpecSection,omitempty"` // Container for the specification of this virtual machine. This is an alternative to using ovf:VirtualHardwareSection + ovf:OperatingSystemSection
 }
 
-// DiskSection from VM/VmSpecSection struct
+// DiskSection from Vm/VmSpecSection struct
 type DiskSection struct {
 	DiskSettings []*DiskSettings `xml:"DiskSettings"`
 }
 
-// DiskSettings from VM/VmSpecSection/DiskSection struct
+// DiskSettings from Vm/VmSpecSection/DiskSection struct
 type DiskSettings struct {
 	DiskId              string     `xml:"DiskId,omitempty"`              // Specifies a unique identifier for this disk in the scope of the corresponding VM. This element is optional when creating a VM, but if it is provided it should be unique. This element is mandatory when updating an existing disk.
 	SizeMb              int64      `xml:"SizeMb"`                        // The size of the disk in MB.
@@ -1449,12 +1464,12 @@ type DiskSettings struct {
 	VirtualQuantityUnit string     `xml:"VirtualQuantityUnit,omitempty"` // The units in which VirtualQuantity is measured.
 }
 
-// MediaSection from VM/VmSpecSection struct
+// MediaSection from Vm/VmSpecSection struct
 type MediaSection struct {
 	MediaSettings []*MediaSettings `xml:"MediaSettings"`
 }
 
-// MediaSettings from VM/VmSpecSection/MediaSection struct
+// MediaSettings from Vm/VmSpecSection/MediaSection struct
 type MediaSettings struct {
 	DeviceId    string     `xml:"DeviceId,omitempty"`    // Describes the media device whose media mount is being specified here. This deviceId must match the RASD.InstanceID attribute in the VirtualHardwareSection of the vApp's OVF description.
 	MediaImage  *Reference `xml:"MediaImage,omitempty"`  // The media image that is mounted onto the device. This property can be 'null' which represents that no media is mounted on the device.
@@ -1465,7 +1480,7 @@ type MediaSettings struct {
 	AdapterType string     `xml:"AdapterType,omitempty"` // The type of controller, e.g. IDE vs SCSI and if SCSI bus-logic vs LSI logic
 }
 
-// CpuResourceMhz from VM/VmSpecSection struct
+// CpuResourceMhz from Vm/VmSpecSection struct
 type CpuResourceMhz struct {
 	Configured  int64  `xml:"Configured"`            // The amount of resource configured on the virtual machine.
 	Reservation *int64 `xml:"Reservation,omitempty"` // The amount of reservation of this resource on the underlying virtualization infrastructure.
@@ -1474,7 +1489,7 @@ type CpuResourceMhz struct {
 	Shares      *int   `xml:"Shares,omitempty"`      // Custom priority for the resource. This field is read-only, unless the shares level is CUSTOM.
 }
 
-// MemoryResourceMb from VM/VmSpecSection struct
+// MemoryResourceMb from Vm/VmSpecSection struct
 type MemoryResourceMb struct {
 	Configured  int64  `xml:"Configured"`            // The amount of resource configured on the virtual machine.
 	Reservation *int64 `xml:"Reservation,omitempty"` // The amount of reservation of this resource on the underlying virtualization infrastructure.
@@ -1483,14 +1498,14 @@ type MemoryResourceMb struct {
 	Shares      *int   `xml:"Shares,omitempty"`      // Custom priority for the resource. This is a read-only, unless the share level is CUSTOM.
 }
 
-// HardwareVersion from VM/VmSpecSection struct
+// HardwareVersion from Vm/VmSpecSection struct
 type HardwareVersion struct {
 	HREF  string `xml:"href,attr"`
 	Type  string `xml:"type,attr,omitempty"`
 	Value string `xml:",chardata"`
 }
 
-// ovf:VirtualHardwareSection from VM struct
+// ovf:VirtualHardwareSection from Vm struct
 type VirtualHardwareSection struct {
 	// Extends OVF Section_Type
 	XMLName xml.Name `xml:"VirtualHardwareSection"`
@@ -1515,7 +1530,7 @@ type VirtualHardwareItem struct {
 	AddressOnParent     int                            `xml:"AddressOnParent,omitempty"`
 	AllocationUnits     string                         `xml:"AllocationUnits,omitempty"`
 	Reservation         int                            `xml:"Reservation,omitempty"`
-	VirtualQuantity     int                            `xml:"VirtualQuantity,omitempty"`
+	VirtualQuantity     int64                          `xml:"VirtualQuantity,omitempty"`
 	Weight              int                            `xml:"Weight,omitempty"`
 	CoresPerSocket      int                            `xml:"CoresPerSocket,omitempty"`
 	Connection          []*VirtualHardwareConnection   `xml:"Connection,omitempty"`
@@ -1548,7 +1563,7 @@ type VirtualHardwareHostResource struct {
 	//OsType            string `xml:"osType,attr,omitempty"`
 }
 
-// SnapshotSection from VM struct
+// SnapshotSection from Vm struct
 type SnapshotSection struct {
 	// Extends OVF Section_Type
 	XMLName  xml.Name        `xml:"SnapshotSection"`
@@ -1580,7 +1595,7 @@ type OVFItem struct {
 	InstanceID      int      `xml:"rasd:InstanceID"`
 	Reservation     int      `xml:"rasd:Reservation"`
 	ResourceType    int      `xml:"rasd:ResourceType"`
-	VirtualQuantity int      `xml:"rasd:VirtualQuantity"`
+	VirtualQuantity int64    `xml:"rasd:VirtualQuantity"`
 	Weight          int      `xml:"rasd:Weight"`
 	CoresPerSocket  *int     `xml:"vmw:CoresPerSocket,omitempty"`
 	Link            *Link    `xml:"vcloud:Link"`
@@ -1667,7 +1682,7 @@ type InstantiateVAppTemplateParams struct {
 	InstantiationParams *InstantiationParams         `xml:"InstantiationParams,omitempty"` // Instantiation parameters for the composed vApp.
 	Source              *Reference                   `xml:"Source"`                        // A reference to a source object such as a vApp or vApp template.
 	IsSourceDelete      bool                         `xml:"IsSourceDelete,omitempty"`      // Set to true to delete the source object after the operation completes.
-	SourcedItem         *SourcedCompositionItemParam `xml:"SourcedItem,omitempty"`         // Composition item. One of: vApp vAppTemplate Vm.
+	SourcedItem         *SourcedCompositionItemParam `xml:"SourcedItem,omitempty"`         // Composition item. One of: vApp vAppTemplate VM.
 	AllEULAsAccepted    bool                         `xml:"AllEULAsAccepted,omitempty"`    // True confirms acceptance of all EULAs in a vApp template. Instantiation fails if this element is missing, empty, or set to false and one or more EulaSection elements are present.
 }
 
@@ -1846,24 +1861,24 @@ type VendorTemplate struct {
 // Since: 5.1
 type GatewayIpsecVpnService struct {
 	IsEnabled bool                     `xml:"IsEnabled"`          // Enable or disable the service using this flag
-	Endpoint  *GatewayIpsecVpnEndpoint `xml:"Endpoint,omitempty"` // List of IPSec VPN Service Endpoints.
-	Tunnel    []*GatewayIpsecVpnTunnel `xml:"Tunnel"`             // List of IPSec VPN tunnels.
+	Endpoint  *GatewayIpsecVpnEndpoint `xml:"Endpoint,omitempty"` // List of IPsec VPN Service Endpoints.
+	Tunnel    []*GatewayIpsecVpnTunnel `xml:"Tunnel"`             // List of IPsec VPN tunnels.
 }
 
-// GatewayIpsecVpnEndpoint represents an IPSec VPN endpoint.
+// GatewayIpsecVpnEndpoint represents an IPsec VPN endpoint.
 // Type: GatewayIpsecVpnEndpointType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents an IPSec VPN endpoint.
+// Description: Represents an IPsec VPN endpoint.
 // Since: 5.1
 type GatewayIpsecVpnEndpoint struct {
 	Network  *Reference `xml:"Network"`            // External network reference.
-	PublicIP string     `xml:"PublicIp,omitempty"` // Public IP for IPSec endpoint.
+	PublicIP string     `xml:"PublicIp,omitempty"` // Public IP for IPsec endpoint.
 }
 
-// GatewayIpsecVpnTunnel represents an IPSec VPN tunnel.
+// GatewayIpsecVpnTunnel represents an IPsec VPN tunnel.
 // Type: GatewayIpsecVpnTunnelType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents an IPSec VPN tunnel.
+// Description: Represents an IPsec VPN tunnel.
 // Since: 5.1
 type GatewayIpsecVpnTunnel struct {
 	Name        string `xml:"Name"`                  // The name of the tunnel.
@@ -1977,7 +1992,7 @@ type FirewallRule struct {
 	SourcePort           int                    `xml:"SourcePort,omitempty"`           // Destination port to which this rule applies. A value of -1 matches any port.
 	SourcePortRange      string                 `xml:"SourcePortRange,omitempty"`      // Source port range to which this rule applies.
 	SourceIP             string                 `xml:"SourceIp,omitempty"`             // Source IP address to which the rule applies. A value of Any matches any IP address.
-	SourceVM             *VMSelection           `xml:"SourceVm,omitempty"`             // Details of the source Vm
+	SourceVM             *VMSelection           `xml:"SourceVm,omitempty"`             // Details of the source VM
 	Direction            string                 `xml:"Direction,omitempty"`            // Direction of traffic to which rule applies. One of: in (rule applies to incoming traffic. This is the default value), out (rule applies to outgoing traffic).
 	EnableLogging        bool                   `xml:"EnableLogging"`                  // Used to enable or disable firewall rule logging. Default value is false.
 }
@@ -2151,6 +2166,63 @@ type QueryResultRecordsType struct {
 	VappTemplateRecord              []*QueryResultVappTemplateType                    `xml:"VAppTemplateRecord"`              // A record representing a vApp template
 	AdminVappTemplateRecord         []*QueryResultVappTemplateType                    `xml:"AdminVAppTemplateRecord"`         // A record representing an admin vApp template
 	NsxtManagerRecord               []*QueryResultNsxtManagerRecordType               `xml:"NsxTManagerRecord"`               // A record representing NSX-T manager
+	OrgVdcRecord                    []*QueryResultOrgVdcRecordType                    `xml:"OrgVdcRecord"`                    // A record representing Org VDC
+	OrgVdcAdminRecord               []*QueryResultOrgVdcRecordType                    `xml:"AdminVdcRecord"`                  // A record representing Org VDC
+}
+
+// QueryResultOrgVdcRecordType represents an Org VDC record
+type QueryResultOrgVdcRecordType struct {
+	HREF                           string    `xml:"href,attr,omitempty"`
+	Name                           string    `xml:"name,attr,omitempty"`
+	ComputeProviderScope           string    `xml:"computeProviderScope,attr,omitempty"`
+	NetworkProviderScope           string    `xml:"networkProviderScope,attr,omitempty"`
+	IsEnabled                      string    `xml:"isEnabled,attr,omitempty"`
+	CpuAllocationMhz               *int      `xml:"cpuAllocationMhz,attr,omitempty"`
+	CpuLimitMhz                    *int      `xml:"cpuLimitMhz,attr,omitempty"`
+	CpuUsedMhz                     *int      `xml:"cpuUsedMhz,attr,omitempty"`
+	MemoryAllocationMB             *int      `xml:"memoryAllocationMB,attr,omitempty"`
+	MemoryLimitMB                  *int      `xml:"memoryLimitMB,attr,omitempty"`
+	MemoryUsedMB                   *int      `xml:"memoryUsedMB,attr,omitempty"`
+	StorageLimitMB                 *int      `xml:"storageLimitMB,attr,omitempty"`
+	StorageUsedMB                  *int      `xml:"storageUsedMB,attr,omitempty"`
+	StorageOverheadMB              *int      `xml:"storageOverheadMB,attr,omitempty"`
+	MemoryOverheadMB               *int      `xml:"memoryOverheadMB,attr,omitempty"`
+	NumberOfVApps                  *int      `xml:"numberOfVApps,attr,omitempty"`
+	NumberOfUnmanagedVApps         *int      `xml:"numberOfUnmanagedVApps,attr,omitempty"`
+	NumberOfMedia                  *int      `xml:"numberOfMedia,attr,omitempty"`
+	NumberOfDisks                  *int      `xml:"numberOfDisks,attr,omitempty"`
+	NumberOfVAppTemplates          *int      `xml:"numberOfVAppTemplates,attr,omitempty"`
+	NumberOfStorageProfiles        *int      `xml:"numberOfStorageProfiles,attr,omitempty"`
+	NumberOfVMs                    *int      `xml:"numberOfVMs,attr,omitempty"`
+	NumberOfRunningVMs             *int      `xml:"numberOfRunningVMs,attr,omitempty"`
+	NumberOfDeployedVApps          *int      `xml:"numberOfDeployedVApps,attr,omitempty"`
+	NumberOfDeployedUnmanagedVApps *int      `xml:"numberOfDeployedUnmanagedVApps,attr,omitempty"`
+	CpuOverheadMhz                 *int      `xml:"cpuOverheadMhz,attr,omitempty"`
+	OrgName                        string    `xml:"orgName,attr,omitempty"`
+	AllocationModel                string    `xml:"allocationModel,attr,omitempty"`
+	VcName                         string    `xml:"vcName,attr,omitempty"`
+	IsBusy                         string    `xml:"isBusy,attr,omitempty"`
+	Status                         string    `xml:"status,attr,omitempty"`
+	TaskStatusName                 string    `xml:"taskStatusName,attr,omitempty"`
+	Task                           string    `xml:"task,attr,omitempty"`
+	TaskStatus                     string    `xml:"taskStatus,attr,omitempty"`
+	TaskDetails                    string    `xml:"taskDetails,attr,omitempty"`
+	Metadata                       *Metadata `xml:"Metadata,omitempty"`
+
+	// Admin Org VDC fields
+	ProviderVdcName       string `xml:"providerVdcName,attr,omitempty"`
+	ProviderVdc           string `xml:"providerVdc,attr,omitempty"`
+	Org                   string `xml:"org,attr,omitempty"`
+	NetworkPool           string `xml:"networkPool,attr,omitempty"`
+	NumberOfResourcePools *int   `xml:"numberOfResourcePools,attr,omitempty"`
+	UsedNetworksInVdc     string `xml:"usedNetworksInVdc,attr,omitempty"`
+	IsThinProvisioned     string `xml:"isThinProvisioned,attr,omitempty"`
+	IsFastProvisioned     string `xml:"isFastProvisioned,attr,omitempty"`
+	NetworkProviderType   string `xml:"networkProviderType,attr,omitempty"`
+	IsVCEnabled           string `xml:"isVCEnabled,attr,omitempty"`
+	MemoryReservedMB      *int   `xml:"memoryReservedMB,attr,omitempty"`
+	CpuReservedMhz        *int   `xml:"cpuReservedMhz,attr,omitempty"`
+	Vc                    string `xml:"vc,attr,omitempty"`
 }
 
 // QueryResultCatalogItemType represents a catalog item as query result
@@ -2527,15 +2599,18 @@ type DiskCreateParams struct {
 // Reference: vCloud API 30.0 - DiskType
 // https://code.vmware.com/apis/287/vcloud?h=Director#/doc/doc/types/DiskType.html
 type Disk struct {
-	XMLName         xml.Name         `xml:"Disk"`
-	Xmlns           string           `xml:"xmlns,attr,omitempty"`
-	HREF            string           `xml:"href,attr,omitempty"`
-	Type            string           `xml:"type,attr,omitempty"`
-	Id              string           `xml:"id,attr,omitempty"`
-	OperationKey    string           `xml:"operationKey,attr,omitempty"`
-	Name            string           `xml:"name,attr"`
-	Status          int              `xml:"status,attr,omitempty"`
-	Size            int64            `xml:"size,attr"`
+	XMLName      xml.Name `xml:"Disk"`
+	Xmlns        string   `xml:"xmlns,attr,omitempty"`
+	HREF         string   `xml:"href,attr,omitempty"`
+	Type         string   `xml:"type,attr,omitempty"`
+	Id           string   `xml:"id,attr,omitempty"`
+	OperationKey string   `xml:"operationKey,attr,omitempty"`
+	Name         string   `xml:"name,attr"`
+	Status       int      `xml:"status,attr,omitempty"`
+	// Size of the disk in bytes. No longer supported in API V33.0+.
+	// Size            int64            `xml:"size,attr"`
+	// SizeMb is the size of disk in MB. It has replaced Size (in bytes) field as of API V33.0
+	SizeMb          int64            `xml:"sizeMb,attr,omitempty"`
 	Iops            *int             `xml:"iops,attr,omitempty"`
 	BusType         string           `xml:"busType,attr,omitempty"`
 	BusSubType      string           `xml:"busSubType,attr,omitempty"`
@@ -2625,13 +2700,15 @@ type VmQuestionAnswer struct {
 // Reference: vCloud API 27.0 - DiskType
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/types/QueryResultDiskRecordType.html
 type DiskRecordType struct {
-	Xmlns              string  `xml:"xmlns,attr,omitempty"`
-	HREF               string  `xml:"href,attr,omitempty"`
-	Id                 string  `xml:"id,attr,omitempty"`
-	Type               string  `xml:"type,attr,omitempty"`
-	Name               string  `xml:"name,attr,omitempty"`
-	Vdc                string  `xml:"vdc,attr,omitempty"`
-	SizeB              int64   `xml:"sizeB,attr,omitempty"`
+	Xmlns string `xml:"xmlns,attr,omitempty"`
+	HREF  string `xml:"href,attr,omitempty"`
+	Id    string `xml:"id,attr,omitempty"`
+	Type  string `xml:"type,attr,omitempty"`
+	Name  string `xml:"name,attr,omitempty"`
+	Vdc   string `xml:"vdc,attr,omitempty"`
+	// SizeB is not available in API V33.0. It is replaced by SizeMb
+	//SizeB              int64   `xml:"sizeB,attr,omitempty"`
+	SizeMb             int64   `xml:"sizeMb,attr,omitempty"`
 	DataStore          string  `xml:"dataStore,attr,omitempty"`
 	DataStoreName      string  `xml:"datastoreName,attr,omitempty"`
 	OwnerName          string  `xml:"ownerName,attr,omitempty"`
@@ -2887,4 +2964,14 @@ type VCloud struct {
 	// RightReferences
 	// RoleReferences
 	// Networks
+}
+
+// UpdateVdcStorageProfiles is used to add a storage profile to an Org VDC or to remove one
+type UpdateVdcStorageProfiles struct {
+	XMLName              xml.Name                        `xml:"UpdateVdcStorageProfiles"`
+	Xmlns                string                          `xml:"xmlns,attr,omitempty"`
+	Name                 string                          `xml:"name,attr"`
+	Description          string                          `xml:"Description,omitempty"`
+	AddStorageProfile    *VdcStorageProfileConfiguration `xml:"AddStorageProfile,omitempty"`
+	RemoveStorageProfile *Reference                      `xml:"RemoveStorageProfile,omitempty"`
 }

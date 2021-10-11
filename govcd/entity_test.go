@@ -1,3 +1,4 @@
+//go:build api || functional || catalog || org || extnetwork || vm || vdc || system || user || nsxv || network || vapp || vm || affinity || ALL
 // +build api functional catalog org extnetwork vm vdc system user nsxv network vapp vm affinity ALL
 
 /*
@@ -9,6 +10,7 @@ package govcd
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	. "gopkg.in/check.v1"
 )
@@ -141,14 +143,14 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 		check.Skip(fmt.Sprintf("testFinderGetGenericEntity: %s %s not found.", def.entityType, def.entityName))
 		return
 	}
-	entity1 := ge.(genericEntity)
+	entity1 := ge
 
 	wantedType := fmt.Sprintf("*govcd.%s", def.entityType)
 	if testVerbose {
 		fmt.Printf("# Detected entity type %s\n", reflect.TypeOf(entity1))
 	}
 
-	check.Assert(reflect.TypeOf(entity1).String(), Equals, wantedType)
+	check.Assert(strings.ToLower(reflect.TypeOf(entity1).String()), Equals, strings.ToLower(wantedType))
 
 	check.Assert(entity1, NotNil)
 	check.Assert(entity1.name(), Equals, entityName)
@@ -156,16 +158,16 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 
 	// 2. Get the entity by ID
 	if testVerbose {
-		fmt.Printf("#Testing %s.Get%sById\n", def.parentType, def.getterPrefix)
+		fmt.Printf("#Testing %s.Get%sById (using ID '%s')\n", def.parentType, def.getterPrefix, entityId)
 	}
 	ge, err = def.getById(entityId, false)
 	check.Assert(err, IsNil)
 	check.Assert(ge, NotNil)
-	entity2 := ge.(genericEntity)
+	entity2 := ge
 	check.Assert(entity2, NotNil)
 	check.Assert(entity2.name(), Equals, entityName)
 	check.Assert(entity2.id(), Equals, entityId)
-	check.Assert(reflect.TypeOf(entity2).String(), Equals, wantedType)
+	check.Assert(strings.ToLower(reflect.TypeOf(entity2).String()), Equals, strings.ToLower(wantedType))
 
 	// 3. Get the entity by Name or ID, using a known ID
 	if testVerbose {
@@ -174,24 +176,25 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 	ge, err = def.getByNameOrId(entityId, false)
 	check.Assert(err, IsNil)
 	check.Assert(ge, NotNil)
-	entity3 := ge.(genericEntity)
+	entity3 := ge
 	check.Assert(entity3, NotNil)
 	check.Assert(entity3.name(), Equals, entityName)
 	check.Assert(entity3.id(), Equals, entityId)
-	check.Assert(reflect.TypeOf(entity3).String(), Equals, wantedType)
+	check.Assert(strings.ToLower(reflect.TypeOf(entity3).String()), Equals, strings.ToLower(wantedType))
 
 	// 4. Get the entity by Name or ID, using the entity name
 	if testVerbose {
-		fmt.Printf("#Testing %s.Get%sByNameOrId\n", def.parentType, def.getterPrefix)
+		fmt.Printf("#Testing %s.Get%sByNameOrId (name '%s', ID '%s')\n",
+			def.parentType, def.getterPrefix, entityName, entityId)
 	}
 	ge, err = def.getByNameOrId(entityName, false)
-	check.Assert(ge, NotNil)
-	entity4 := ge.(genericEntity)
 	check.Assert(err, IsNil)
+	check.Assert(ge, NotNil)
+	entity4 := ge
 	check.Assert(entity4, NotNil)
 	check.Assert(entity4.name(), Equals, entityName)
 	check.Assert(entity4.id(), Equals, entityId)
-	check.Assert(reflect.TypeOf(entity4).String(), Equals, wantedType)
+	check.Assert(strings.ToLower(reflect.TypeOf(entity4).String()), Equals, strings.ToLower(wantedType))
 
 	// 5. Attempting a search by name with an invalid name
 	if testVerbose {

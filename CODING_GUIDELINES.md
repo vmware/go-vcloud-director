@@ -188,7 +188,7 @@ var vdcVersionedFuncsByVcdVersion = map[string]vdcVersionedFuncs{
 }
 
 func (adminOrg *AdminOrg) CreateOrgVdc(vdcConfiguration *types.VdcConfiguration) (*Vdc, error) {
-	apiVersion, err := adminOrg.client.maxSupportedVersion()
+	apiVersion, err := adminOrg.client.MaxSupportedVersion()
 	if err != nil {
 		return nil, err
 	}
@@ -348,7 +348,7 @@ To add a type to the search engine, we need the following:
 2. Add the list of supported fields to `queryFieldsOnDemand` (`query_metadata.go`)
 3. Implement the interface `QueryItem` (`filter_interface.go`), which requires a type localization (such as 
 `type QueryMedia  types.MediaRecordType`)
-4. Add a clause to `resultsToQueryItems` (`filter_interface.go`)
+4. Add a clause to `resultToQueryItems` (`filter_interface.go`)
 
 ## Data inspection checkpoints
 
@@ -364,6 +364,118 @@ they will be "NET1", "NET2", etc, and then activate them using
 
 In the code, we use the function `dataInspectionRequested(code)` that will check whether the environment variable contains
 the  given code.
+
+## Tenant Context
+
+Tenant context is a mechanism in the VCD API to run calls as a tenant when connected as a system administrator.
+It is used, for example, in the UI, to start a session as tenant administrator without having credentials for such a user,
+or even when there is no such user yet.
+The context change works by adding a header to the API call, containing these fields:
+
+```
+X-Vmware-Vcloud-Tenant-Context: [604cf889-b01e-408b-95ae-67b02a0ecf33]
+X-Vmware-Vcloud-Auth-Context:   [org-name]
+```
+
+The field `X-Vmware-Vcloud-Tenant-Context` contains the bare ID of the organization (it's just the UUID, without the
+prefix `urn:vcloud:org:`).
+The field `X-Vmware-Vcloud-Auth-Context` contains the organization name.
+
+### tenant context: data availability
+
+From the SDK standpoint, finding the data needed to put together the tenant context is relatively easy when the originator
+of the API call is the organization itself (such as `org.GetSomeEntityByName`).
+When we deal with objects down the hierarchy, however, things are more difficult. Running a call from a VDC means that
+we need to retrieve the parent organization, and extract ID and name. The ID is available through the `Link` structure
+of the VDC, but for the name we need to retrieve the organization itself.
+
+The approach taken in the SDK is to save the tenant context (or a pointer to the parent) in the object that we have just
+created. For example, when we create a VDC, we save the organization as a pointer in the `parent` field, and the organization 
+itself has a field `TenantContext` with the needed information.
+
+Here are the types that are needed for tenant context manipulation
+```go
+
+// tenant_context.go
+type TenantContext struct {
+	OrgId   string // The bare ID (without prefix) of an organization
+	OrgName string // The organization name
+}
+
+// tenant_context.go
+type organization interface {
+	orgId() string
+	orgName() string
+	tenantContext() (*TenantContext, error)
+	fullObject() interface{}
+}
+
+// org.go
+type Org struct {
+	Org           *types.Org
+	client        *Client
+	TenantContext *TenantContext
+}
+
+// adminorg.go
+type AdminOrg struct {
+	AdminOrg      *types.AdminOrg
+	client        *Client
+	TenantContext *TenantContext
+}
+
+// vdc.go
+type Vdc struct {
+	Vdc    *types.Vdc
+	client *Client
+	parent organization
+}
+```
+
+The `organization` type is an abstraction to include both `Org` and `AdminOrg`. Thus, the VDC object has a pointer to its
+parent that is only needed to get the tenant context quickly.
+
+Each object has a way to get the tenant context by means of a `entity.getTenantContext()`. The information
+trickles down from the hierarchy:
+
+* a VDC gets the tenant context directly from its `parent` field, which has a method `tenantContext()`
+* similarly, a Catalog has a `parent` field with the same functionality.
+* a vApp will get the tenant context by first retrieving its parent (`vapp.getParentVdc()`) and then asking the parent
+for the tenant context.
+
+### tenant context: usage
+
+Once we have the tenant context, we need to pass the information along to the HTTP request that builds the request header,
+so that our API call will run in the desired context.
+
+The basic OpenAPI methods (`Client.OpenApiDeleteItem`, `Client.OpenApiGetAllItems`, `Client.OpenApiGetItem`,
+`Client.OpenApiPostItem`, `Client.OpenApiPutItem`, `Client.OpenApiPutItemAsync`, `Client.OpenApiPutItemSync`)  all include
+a parameter `additionalHeader map[string]string` containing the information needed to build the tenant context header elements.
+
+Inside the function where we want to use tenant context, we do these two steps:
+
+1. retrieve the tenant context
+2. add the additional header to the API call.
+
+For example:
+
+```go
+func (adminOrg *AdminOrg) GetAllRoles(queryParameters url.Values) ([]*Role, error) {
+	tenantContext, err := adminOrg.getTenantContext()
+	if err != nil {
+		return nil, err
+	}
+	return getAllRoles(adminOrg.client, queryParameters, getTenantContextHeader(tenantContext))
+}
+```
+The function `getTenantContextHeader` takes a tenant context and returns a map of strings containing the right header
+keys. In the example above, the header is passed to `getAllRoles`, which in turn calls `Client.OpenApiGetAllItems`,
+which passes the additional header until it reaches `newOpenApiRequest`, where the tenent context data is inserted in
+the request header.
+
+When the tenant context is not needed (system administration calls), we just pass `nil` as `additionalHeader`.
+
+
 
 ## Testing
 

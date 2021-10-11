@@ -1,7 +1,8 @@
+//go:build vdc || functional || ALL
 // +build vdc functional ALL
 
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -445,4 +446,44 @@ func (vcd *TestVCD) TestGetVappList(check *C) {
 	check.Assert(queryItems, NotNil)
 	check.Assert(len(queryItems), Not(Equals), 0)
 	check.Assert(vm.HREF, Equals, queryItems[0].GetHref())
+}
+
+// TestGetVdcCapabilities attempts to get a list of VDC capabilities
+func (vcd *TestVCD) TestGetVdcCapabilities(check *C) {
+	vdcCapabilities, err := vcd.vdc.GetCapabilities()
+	check.Assert(err, IsNil)
+	check.Assert(vdcCapabilities, NotNil)
+	check.Assert(len(vdcCapabilities) > 0, Equals, true)
+}
+
+func (vcd *TestVCD) TestVdcIsNsxt(check *C) {
+	skipNoNsxtConfiguration(vcd, check)
+	check.Assert(vcd.nsxtVdc.IsNsxt(), Equals, true)
+}
+
+func (vcd *TestVCD) TestVdcIsNsxv(check *C) {
+	check.Assert(vcd.vdc.IsNsxv(), Equals, true)
+}
+
+func (vcd *TestVCD) TestCreateRawVapp(check *C) {
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	name := check.TestName()
+	description := "test compose raw app"
+	vapp, err := vdc.CreateRawVApp(name, description)
+	check.Assert(err, IsNil)
+	AddToCleanupList(name, "vapp", vdc.Vdc.Name, name)
+
+	check.Assert(vapp.VApp.Name, Equals, name)
+	check.Assert(vapp.VApp.Description, Equals, description)
+	task, err := vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }

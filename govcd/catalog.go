@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -32,6 +32,7 @@ const (
 type Catalog struct {
 	Catalog *types.Catalog
 	client  *Client
+	parent  organization
 }
 
 func NewCatalog(client *Client) *Catalog {
@@ -41,8 +42,8 @@ func NewCatalog(client *Client) *Catalog {
 	}
 }
 
-// Deletes the Catalog, returning an error if the vCD call fails.
-// Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Catalog.html
+// Delete deletes the Catalog, returning an error if the vCD call fails.
+// Link to API call: https://code.vmware.com/apis/1046/vmware-cloud-director/doc/doc/operations/DELETE-Catalog.html
 func (catalog *Catalog) Delete(force, recursive bool) error {
 
 	adminCatalogHREF := catalog.client.VCDHREF
@@ -51,7 +52,7 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 		return err
 	}
 	if catalogID == "" {
-		return fmt.Errorf("empty ID returned for catalog ID %s", catalog.Catalog.ID)
+		return fmt.Errorf("empty ID returned for catalog %s", catalog.Catalog.Name)
 	}
 	adminCatalogHREF.Path += "/admin/catalog/" + catalogID
 
@@ -60,13 +61,18 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 		"recursive": strconv.FormatBool(recursive),
 	}, http.MethodDelete, adminCatalogHREF, nil)
 
-	_, err = checkResp(catalog.client.Http.Do(req))
-
+	resp, err := checkResp(catalog.client.Http.Do(req))
 	if err != nil {
-		return fmt.Errorf("error deleting Catalog %s: %s", catalog.Catalog.ID, err)
+		return fmt.Errorf("error deleting Catalog %s: %s", catalog.Catalog.Name, err)
 	}
-
-	return nil
+	task := NewTask(catalog.client)
+	if err = decodeBody(types.BodyTypeXML, resp, task.Task); err != nil {
+		return fmt.Errorf("error decoding task response: %s", err)
+	}
+	if task.Task.Status == "error" {
+		return fmt.Errorf(combinedTaskErrorMessage(task.Task, fmt.Errorf("catalog %s not properly destroyed", catalog.Catalog.Name)))
+	}
+	return task.WaitTaskCompletion()
 }
 
 // Envelope is a ovf description root element. File contains information for vmdk files.
@@ -600,7 +606,7 @@ func checkIfFileMatchesDescription(filesAbsPaths []string, fileDescription struc
 		return fmt.Errorf("file '%s' described in ovf was not found in ova", fileDescription.HREF)
 	}
 	if fileInfo, err := os.Stat(filePath); err == nil {
-		if fileInfo.Size() != int64(fileDescription.Size) {
+		if fileDescription.Size > 0 && (fileInfo.Size() != int64(fileDescription.Size)) {
 			return fmt.Errorf("file size didn't match described in ovf: %s", filePath)
 		}
 	} else {
@@ -811,43 +817,12 @@ func (catalog *Catalog) QueryMediaList() ([]*types.MediaRecordType, error) {
 	return mediaResults, nil
 }
 
-// getOrgInfo finds the organization to which the entity belongs, and returns its name and ID
-func getOrgInfo(client *Client, links types.LinkList, id, name, entityType string) (orgInfoType, error) {
-	previous, exists := orgInfoCache[id]
-	if exists {
-		return previous, nil
-	}
-	var orgId string
-	var orgHref string
-	var err error
-	for _, link := range links {
-		if link.Rel == "up" && (link.Type == types.MimeOrg || link.Type == types.MimeAdminOrg) {
-			orgId, err = GetUuidFromHref(link.HREF, true)
-			if err != nil {
-				return orgInfoType{}, err
-			}
-			orgHref = link.HREF
-			break
-		}
-	}
-	if orgHref == "" || orgId == "" {
-		return orgInfoType{}, fmt.Errorf("error retrieving org info for %s %s", entityType, name)
-	}
-	var org types.Org
-	_, err = client.ExecuteRequest(orgHref, http.MethodGet,
-		"", "error retrieving org: %s", nil, &org)
-	if err != nil {
-		return orgInfoType{}, err
-	}
-
-	orgInfoCache[id] = orgInfoType{
-		id:   orgId,
-		name: org.Name,
-	}
-	return orgInfoType{name: org.Name, id: orgId}, nil
-}
-
 // getOrgInfo finds the organization to which the catalog belongs, and returns its name and ID
-func (catalog *Catalog) getOrgInfo() (orgInfoType, error) {
-	return getOrgInfo(catalog.client, catalog.Catalog.Link, catalog.Catalog.ID, catalog.Catalog.Name, "Catalog")
+func (catalog *Catalog) getOrgInfo() (*TenantContext, error) {
+	org := catalog.parent
+	if org == nil {
+		return nil, fmt.Errorf("no parent found for catalog %s", catalog.Catalog.Name)
+	}
+
+	return org.tenantContext()
 }

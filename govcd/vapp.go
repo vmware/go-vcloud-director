@@ -1,10 +1,11 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
 
 import (
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"net/http"
@@ -61,7 +62,7 @@ type DhcpSettings struct {
 // Returns the vdc where the vapp resides in.
 func (vapp *VApp) getParentVDC() (Vdc, error) {
 	for _, link := range vapp.VApp.Link {
-		if link.Type == "application/vnd.vmware.vcloud.vdc+xml" {
+		if (link.Type == types.MimeVDC || link.Type == types.MimeAdminVDC) && link.Rel == "up" {
 
 			vdc := NewVdc(vapp.client)
 
@@ -71,6 +72,11 @@ func (vapp *VApp) getParentVDC() (Vdc, error) {
 				return Vdc{}, err
 			}
 
+			parent, err := vdc.getParentOrg()
+			if err != nil {
+				return Vdc{}, err
+			}
+			vdc.parent = parent
 			return *vdc, nil
 		}
 	}
@@ -223,11 +229,8 @@ func addNewVMW(vapp *VApp, name string, vappTemplate VAppTemplate,
 		vAppComposition.SourcedItem.StorageProfile = storageProfileRef
 	}
 
-	if computePolicy != nil && vapp.client.APIVCDMaxVersionIs("< 33.0") {
-		util.Logger.Printf("[Warning] compute policy is ignored because VCD version doesn't support it")
-	}
 	// Add compute policy
-	if computePolicy != nil && computePolicy.ID != "" && vapp.client.APIVCDMaxVersionIs("> 32.0") {
+	if computePolicy != nil && computePolicy.ID != "" {
 		vdcComputePolicyHref, err := vapp.client.OpenApiBuildEndpoint(types.OpenApiPathVersion1_0_0, types.OpenApiEndpointVdcComputePolicies, computePolicy.ID)
 		if err != nil {
 			return Task{}, fmt.Errorf("error constructing HREF for compute policy")
@@ -242,9 +245,8 @@ func addNewVMW(vapp *VApp, name string, vappTemplate VAppTemplate,
 	apiEndpoint.Path += "/action/recomposeVApp"
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequestWithApiVersion(apiEndpoint.String(), http.MethodPost,
-		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", vAppComposition,
-		vapp.client.GetSpecificApiVersionOnCondition(">= 33.0", "33.0"))
+	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", vAppComposition)
 
 }
 
@@ -253,7 +255,6 @@ func addNewVMW(vapp *VApp, name string, vappTemplate VAppTemplate,
 // https://github.com/vmware/go-vcloud-director/issues/252
 // ======================================================================
 func (vapp *VApp) RemoveVM(vm VM) error {
-
 	err := vapp.Refresh()
 	if err != nil {
 		return fmt.Errorf("error refreshing vApp before removing VM: %s", err)
@@ -537,7 +538,7 @@ func (vapp *VApp) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *in
 		InstanceID:      4,
 		Reservation:     0,
 		ResourceType:    types.ResourceTypeProcessor,
-		VirtualQuantity: virtualCpuCount,
+		VirtualQuantity: int64(virtualCpuCount),
 		Weight:          0,
 		CoresPerSocket:  coresPerSocket,
 		Link: &types.Link{
@@ -574,7 +575,7 @@ func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
 		return Task{}, fmt.Errorf("error retrieving storage profile %s for vApp %s", name, vapp.VApp.Name)
 	}
 
-	newProfile := &types.VM{
+	newProfile := &types.Vm{
 		Name:           vapp.VApp.Children.VM[0].Name,
 		StorageProfile: &storageProfileRef,
 		Xmlns:          types.XMLNamespaceVCloud,
@@ -596,7 +597,7 @@ func (vapp *VApp) ChangeVMName(name string) (Task, error) {
 		return Task{}, fmt.Errorf("vApp doesn't contain any children, interrupting customization")
 	}
 
-	newName := &types.VM{
+	newName := &types.Vm{
 		Name:  name,
 		Xmlns: types.XMLNamespaceVCloud,
 	}
@@ -729,7 +730,7 @@ func (vapp *VApp) ChangeMemorySize(size int) (Task, error) {
 		InstanceID:      5,
 		Reservation:     0,
 		ResourceType:    types.ResourceTypeMemory,
-		VirtualQuantity: size,
+		VirtualQuantity: int64(size),
 		Weight:          0,
 		Link: &types.Link{
 			HREF: vapp.VApp.Children.VM[0].HREF + "/virtualHardwareSection/memory",
@@ -1363,16 +1364,87 @@ func (client *Client) QueryVappList() ([]*types.QueryResultVAppRecordType, error
 }
 
 // getOrgInfo finds the organization to which the vApp belongs (through the VDC), and returns its name and ID
-func (vapp *VApp) getOrgInfo() (orgInfoType, error) {
+func (vapp *VApp) getOrgInfo() (*TenantContext, error) {
 	previous, exists := orgInfoCache[vapp.VApp.ID]
 	if exists {
 		return previous, nil
 	}
-	//var orgHref string
 	var err error
 	vdc, err := vapp.getParentVDC()
 	if err != nil {
-		return orgInfoType{}, err
+		return nil, err
 	}
-	return getOrgInfo(vapp.client, vdc.Vdc.Link, vapp.VApp.ID, vapp.VApp.Name, "vApp")
+	return vdc.getTenantContext()
+}
+
+// UpdateNameDescription can change the name and the description of a vApp
+// If name is empty, it is left unchanged.
+func (vapp *VApp) UpdateNameDescription(newName, newDescription string) error {
+	if vapp == nil || vapp.VApp.HREF == "" {
+		return fmt.Errorf("vApp or href cannot be empty")
+	}
+
+	// Skip update if we are using the original values
+	if (newName == vapp.VApp.Name || newName == "") && (newDescription == vapp.VApp.Description) {
+		return nil
+	}
+
+	opType := types.MimeRecomposeVappParams
+
+	href := ""
+	for _, link := range vapp.VApp.Link {
+		if link.Type == opType && link.Rel == "recompose" {
+			href = link.HREF
+			break
+		}
+	}
+
+	if href == "" {
+		return fmt.Errorf("no appropriate link for update found for vApp %s", vapp.VApp.Name)
+	}
+
+	if newName == "" {
+		newName = vapp.VApp.Name
+	}
+
+	recomposeParams := &types.SmallRecomposeVappParams{
+		XMLName:     xml.Name{},
+		Ovf:         types.XMLNamespaceOVF,
+		Xsi:         types.XMLNamespaceXSI,
+		Xmlns:       types.XMLNamespaceVCloud,
+		Name:        newName,
+		Description: newDescription,
+		Deploy:      vapp.VApp.Deployed,
+	}
+
+	task, err := vapp.client.ExecuteTaskRequest(href, http.MethodPost,
+		opType, "error updating vapp: %s", recomposeParams)
+
+	if err != nil {
+		return fmt.Errorf("unable to update vApp: %s", err)
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("task for updating vApp failed: %s", err)
+	}
+	return vapp.Refresh()
+}
+
+// UpdateDescription changes the description of a vApp
+func (vapp *VApp) UpdateDescription(newDescription string) error {
+	return vapp.UpdateNameDescription("", newDescription)
+}
+
+// Rename changes the name of a vApp
+func (vapp *VApp) Rename(newName string) error {
+	return vapp.UpdateNameDescription(newName, vapp.VApp.Description)
+}
+
+func (vapp *VApp) getTenantContext() (*TenantContext, error) {
+	parentVdc, err := vapp.getParentVDC()
+	if err != nil {
+		return nil, err
+	}
+	return parentVdc.getTenantContext()
 }

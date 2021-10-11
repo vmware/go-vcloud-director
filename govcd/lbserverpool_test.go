@@ -1,3 +1,4 @@
+//go:build lb || lbServerPool || nsxv || functional || ALL
 // +build lb lbServerPool nsxv functional ALL
 
 /*

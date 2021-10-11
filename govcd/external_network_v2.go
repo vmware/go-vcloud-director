@@ -23,7 +23,7 @@ type ExternalNetworkV2 struct {
 // provided. types.ExternalNetworkV2 has documented fields.
 func CreateExternalNetworkV2(vcdClient *VCDClient, newExtNet *types.ExternalNetworkV2) (*ExternalNetworkV2, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
-	minimumApiVersion, err := vcdClient.Client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func CreateExternalNetworkV2(vcdClient *VCDClient, newExtNet *types.ExternalNetw
 		client:          &vcdClient.Client,
 	}
 
-	err = vcdClient.Client.OpenApiPostItem(minimumApiVersion, urlRef, nil, newExtNet, returnExtNet.ExternalNetwork)
+	err = vcdClient.Client.OpenApiPostItem(apiVersion, urlRef, nil, newExtNet, returnExtNet.ExternalNetwork, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating external network: %s", err)
 	}
@@ -49,7 +49,7 @@ func CreateExternalNetworkV2(vcdClient *VCDClient, newExtNet *types.ExternalNetw
 // GetExternalNetworkV2ById retrieves external network by given ID using OpenAPI endpoint
 func GetExternalNetworkV2ById(vcdClient *VCDClient, id string) (*ExternalNetworkV2, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
-	minimumApiVersion, err := vcdClient.Client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func GetExternalNetworkV2ById(vcdClient *VCDClient, id string) (*ExternalNetwork
 		client:          &vcdClient.Client,
 	}
 
-	err = vcdClient.Client.OpenApiGetItem(minimumApiVersion, urlRef, nil, extNet.ExternalNetwork)
+	err = vcdClient.Client.OpenApiGetItem(apiVersion, urlRef, nil, extNet.ExternalNetwork, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func GetExternalNetworkV2ByName(vcdClient *VCDClient, name string) (*ExternalNet
 // perform additional filtering
 func GetAllExternalNetworksV2(vcdClient *VCDClient, queryParameters url.Values) ([]*ExternalNetworkV2, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
-	minimumApiVersion, err := vcdClient.Client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func GetAllExternalNetworksV2(vcdClient *VCDClient, queryParameters url.Values) 
 	}
 
 	typeResponses := []*types.ExternalNetworkV2{{}}
-	err = vcdClient.Client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &typeResponses)
+	err = vcdClient.Client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func GetAllExternalNetworksV2(vcdClient *VCDClient, queryParameters url.Values) 
 // Update updates existing external network using OpenAPI endpoint
 func (extNet *ExternalNetworkV2) Update() (*ExternalNetworkV2, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
-	minimumApiVersion, err := extNet.client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := extNet.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +157,7 @@ func (extNet *ExternalNetworkV2) Update() (*ExternalNetworkV2, error) {
 		client:          extNet.client,
 	}
 
-	err = extNet.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, extNet.ExternalNetwork, returnExtNet.ExternalNetwork)
+	err = extNet.client.OpenApiPutItem(apiVersion, urlRef, nil, extNet.ExternalNetwork, returnExtNet.ExternalNetwork, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error updating external network: %s", err)
 	}
@@ -168,7 +168,7 @@ func (extNet *ExternalNetworkV2) Update() (*ExternalNetworkV2, error) {
 // Delete deletes external network using OpenAPI endpoint
 func (extNet *ExternalNetworkV2) Delete() error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
-	minimumApiVersion, err := extNet.client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := extNet.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ func (extNet *ExternalNetworkV2) Delete() error {
 		return err
 	}
 
-	err = extNet.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil)
+	err = extNet.client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting extNet: %s", err)

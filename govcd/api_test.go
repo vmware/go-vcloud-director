@@ -22,7 +22,7 @@ var INVALID_NAME = `*******************************************INVALID
 					************************`
 
 // This ID won't be found by lookup in any entity
-var invalidEntityId = "one:two:three:aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+var invalidEntityId = "urn:vcloud:three:aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 
 func tagsHelp(t *testing.T) {
 
@@ -102,6 +102,7 @@ func printVerbose(format string, args ...interface{}) {
 	}
 }
 
+//lint:ignore U1000 this function is used on request for debugging purposes
 func logVerbose(t *testing.T, format string, args ...interface{}) {
 	if testVerbose {
 		t.Logf(format, args...)

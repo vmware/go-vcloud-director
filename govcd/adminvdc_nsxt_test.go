@@ -1,3 +1,4 @@
+//go:build org || functional || nsxt || ALL
 // +build org functional nsxt ALL
 
 /*
@@ -34,13 +35,10 @@ func (vcd *TestVCD) Test_CreateNsxtOrgVdc(check *C) {
 	}
 	providerVdcHref := pVdcs[0].HREF
 
-	pvdcStorageProfiles, err := QueryProviderVdcStorageProfileByName(vcd.client, vcd.config.VCD.NsxtProviderVdc.StorageProfile)
+	pvdcStorageProfile, err := vcd.client.QueryProviderVdcStorageProfileByName(vcd.config.VCD.NsxtProviderVdc.StorageProfile, providerVdcHref)
 
 	check.Assert(err, IsNil)
-	if len(pvdcStorageProfiles) == 0 {
-		check.Skip(fmt.Sprintf("No storage profile found with name '%s'", vcd.config.VCD.NsxtProviderVdc.StorageProfile))
-	}
-	providerVdcStorageProfileHref := pvdcStorageProfiles[0].HREF
+	providerVdcStorageProfileHref := pvdcStorageProfile.HREF
 
 	networkPools, err := QueryNetworkPoolByName(vcd.client, vcd.config.VCD.NsxtProviderVdc.NetworkPool)
 	check.Assert(err, IsNil)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -23,8 +23,9 @@ import (
 // elements that can be viewed and modified only by system administrators.
 // Definition: https://code.vmware.com/apis/220/vcloud#/doc/doc/types/AdminOrgType.html
 type AdminOrg struct {
-	AdminOrg *types.AdminOrg
-	client   *Client
+	AdminOrg      *types.AdminOrg
+	client        *Client
+	TenantContext *TenantContext
 }
 
 func NewAdminOrg(cli *Client) *AdminOrg {
@@ -39,7 +40,81 @@ func NewAdminOrg(cli *Client) *AdminOrg {
 // task.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-CreateCatalog.html
 func (adminOrg *AdminOrg) CreateCatalog(name, description string) (AdminCatalog, error) {
-	return CreateCatalog(adminOrg.client, adminOrg.AdminOrg.Link, name, description)
+	catalog, err := adminOrg.CreateCatalogWithStorageProfile(name, description, nil)
+	if err != nil {
+		return AdminCatalog{}, err
+	}
+	catalog.parent = adminOrg
+	return *catalog, nil
+}
+
+// CreateCatalogWithStorageProfile is like CreateCatalog, but allows to specify storage profile
+func (adminOrg *AdminOrg) CreateCatalogWithStorageProfile(name, description string, storageProfiles *types.CatalogStorageProfiles) (*AdminCatalog, error) {
+	return CreateCatalogWithStorageProfile(adminOrg.client, adminOrg.AdminOrg.Link, name, description, storageProfiles)
+}
+
+// GetAllVDCs returns all depending VDCs for a particular Org
+func (adminOrg *AdminOrg) GetAllVDCs(refresh bool) ([]*Vdc, error) {
+	if refresh {
+		err := adminOrg.Refresh()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	allVdcs := make([]*Vdc, len(adminOrg.AdminOrg.Vdcs.Vdcs))
+	for vdcIndex, vdc := range adminOrg.AdminOrg.Vdcs.Vdcs {
+		vdc, err := adminOrg.GetVDCByHref(vdc.HREF)
+		if err != nil {
+			return nil, fmt.Errorf("error retrieving VDC '%s': %s", vdc.Vdc.Name, err)
+		}
+		allVdcs[vdcIndex] = vdc
+
+	}
+
+	return allVdcs, nil
+}
+
+// GetAllStorageProfileReferences traverses all depending VDCs and returns a slice of storage profile references
+// available in those VDCs
+func (adminOrg *AdminOrg) GetAllStorageProfileReferences(refresh bool) ([]*types.Reference, error) {
+	if refresh {
+		err := adminOrg.Refresh()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	allVdcs, err := adminOrg.GetAllVDCs(refresh)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve storage profile references: %s", err)
+	}
+
+	allStorageProfileReferences := make([]*types.Reference, 0)
+	for _, vdc := range allVdcs {
+		if len(vdc.Vdc.VdcStorageProfiles.VdcStorageProfile) > 0 {
+			allStorageProfileReferences = append(allStorageProfileReferences, vdc.Vdc.VdcStorageProfiles.VdcStorageProfile...)
+		}
+	}
+
+	return allStorageProfileReferences, nil
+}
+
+// GetStorageProfileReferenceById finds storage profile reference by specified ID in Org or returns ErrorEntityNotFound
+func (adminOrg *AdminOrg) GetStorageProfileReferenceById(id string, refresh bool) (*types.Reference, error) {
+	allStorageProfiles, err := adminOrg.GetAllStorageProfileReferences(refresh)
+	if err != nil {
+		return nil, fmt.Errorf("error getting all storage profiles: %s", err)
+	}
+
+	for _, storageProfileReference := range allStorageProfiles {
+		if storageProfileReference.ID == id {
+			return storageProfileReference, nil
+		}
+	}
+
+	return nil, fmt.Errorf("%s: storage profile with ID '%s' not found in Org '%s'",
+		ErrorEntityNotFound, id, adminOrg.AdminOrg.Name)
 }
 
 //   Deletes the org, returning an error if the vCD call fails.
@@ -204,6 +279,8 @@ func (adminOrg *AdminOrg) getVdcByAdminHREF(adminVdcUrl *url.URL) (*Vdc, error) 
 	vdcURL.Path += strings.Split(adminVdcUrl.Path, "/api/admin")[1] //gets id
 
 	vdc := NewVdc(adminOrg.client)
+
+	vdc.parent = adminOrg
 
 	_, err := adminOrg.client.ExecuteRequest(vdcURL.String(), http.MethodGet,
 		"", "error retrieving vdc: %s", nil, vdc.Vdc)
@@ -401,6 +478,7 @@ func (adminOrg *AdminOrg) GetCatalogByHref(catalogHref string) (*Catalog, error)
 	if err != nil {
 		return nil, err
 	}
+	cat.parent = adminOrg
 	// The request was successful
 	return cat, nil
 }
@@ -508,6 +586,7 @@ func (adminOrg *AdminOrg) GetAdminCatalogByHref(catalogHref string) (*AdminCatal
 		return nil, err
 	}
 
+	adminCatalog.parent = adminOrg
 	// The request was successful
 	return adminCatalog, nil
 }
@@ -587,6 +666,7 @@ func (adminOrg *AdminOrg) GetVDCByHref(vdcHref string) (*Vdc, error) {
 	if err != nil {
 		return nil, err
 	}
+	vdc.parent = adminOrg
 
 	return vdc, nil
 }

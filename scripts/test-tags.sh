@@ -17,13 +17,13 @@ then
 fi
 
 start=$(date +%s)
-tags=$(head -n 1 api_vcd_test.go | sed -e 's/^.*build //')
+tags=$(head -n 1 api_vcd_test.go | sed -e 's/^.*build //;s/|| //g')
 
 echo "=== RUN TagsTest"
 for tag in $tags
 do
     
-    go test -tags $tag -timeout 0 -check.vv -vcd-help > /dev/null
+    go test -tags $tag -timeout 0 -count=0 -check.vv > /dev/null
 
     if [ "$?" == "0" ]
     then

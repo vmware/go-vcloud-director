@@ -1,3 +1,4 @@
+//go:build auth || functional || ALL
 // +build auth functional ALL
 
 /*

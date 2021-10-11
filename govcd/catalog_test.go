@@ -1,3 +1,4 @@
+//go:build catalog || functional || ALL
 // +build catalog functional ALL
 
 /*
@@ -131,6 +132,13 @@ func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
 	// If something fails after this point, the entity will be removed
 	AddToCleanupList(TestDeleteCatalog, "catalog", vcd.config.VCD.Org, "Test_DeleteCatalog")
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, TestDeleteCatalog)
+
+	checkUploadOvf(vcd, check, vcd.config.OVA.OvaPath, TestDeleteCatalog, TestUploadOvf)
+	err = adminCatalog.Delete(false, false)
+	check.Assert(err, NotNil)
+	// Catalog is not empty. An attempt to delete without recursion will fail
+	check.Assert(strings.Contains(err.Error(), "You must remove"), Equals, true)
+
 	err = adminCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
 	doesCatalogExist(check, org)
@@ -227,7 +235,7 @@ func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
 	check.Assert(err, IsNil)
 	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
 
-	check.Assert(string(result), Matches, ".*Upload progress 100.00%")
+	check.Assert(string(result), Matches, "(?s).*Upload progress 100.00%.*")
 
 	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
@@ -293,6 +301,15 @@ func (vcd *TestVCD) Test_UploadOvfFile(check *C) {
 	checkUploadOvf(vcd, check, vcd.config.OVA.OvfPath, vcd.config.VCD.Catalog.Name, TestUploadOvf+"7")
 }
 
+// Tests System function UploadOvf by creating catalog and
+// checking that ova file without vmdk size specified can be uploaded.
+func (vcd *TestVCD) Test_UploadOvf_withoutVMDKSize(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	skipWhenOvaPathMissing(vcd.config.OVA.OvaWithoutSizePath, check)
+	checkUploadOvf(vcd, check, vcd.config.OVA.OvaWithoutSizePath, vcd.config.VCD.Catalog.Name, TestUploadOvf+"8")
+}
+
 func countFolders() int {
 	files, err := ioutil.ReadDir(os.TempDir())
 	if err != nil {
@@ -308,14 +325,14 @@ func countFolders() int {
 }
 
 func checkUploadOvf(vcd *TestVCD, check *C, ovaFileName, catalogName, itemName string) {
-	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+	catalog, org := findCatalog(vcd, check, catalogName)
 
 	uploadTask, err := catalog.UploadOvf(ovaFileName, itemName, "upload from test", 1024)
 	check.Assert(err, IsNil)
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvf")
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+catalogName, "checkUploadOvf")
 
 	catalog, err = org.GetCatalogByName(catalogName, false)
 	check.Assert(err, IsNil)
@@ -435,7 +452,7 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_ShowUploadProgress_works(check 
 
 	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage_ShowUploadProgress_works")
 
-	check.Assert(string(result), Matches, ".*Upload progress 100.00%")
+	check.Assert(string(result), Matches, "(?s).*Upload progress 100.00%.*")
 	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
@@ -587,4 +604,187 @@ func (vcd *TestVCD) TestGetVappTemplateByHref(check *C) {
 	check.Assert(vappTemplate.VAppTemplate.ID, Not(Equals), catalogItem.CatalogItem.ID)
 	check.Assert(vappTemplate.VAppTemplate.Type, Equals, types.MimeVAppTemplate)
 	check.Assert(vappTemplate.VAppTemplate.Name, Equals, catalogItem.CatalogItem.Name)
+}
+
+// Test_GetCatalogByNameSharedCatalog creates a separate Org and VDC just to create Catalog and share it with main Org
+// One should be able to find shared catalogs from different Organizations
+func (vcd *TestVCD) Test_GetCatalogByNameSharedCatalog(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	newOrg1, vdc, sharedCatalog := createSharedCatalogInNewOrg(vcd, check, check.TestName())
+
+	// Try to find the catalog inside Org which owns it - newOrg1
+	catalogByName, err := newOrg1.GetCatalogByName(sharedCatalog.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(catalogByName.Catalog.Name, Equals, sharedCatalog.Catalog.Name)
+
+	// Try to find the catalog in another Org with which this catalog is shared (vcd.Org)
+	sharedCatalogByName, err := vcd.org.GetCatalogByName(sharedCatalog.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(sharedCatalogByName.Catalog.Name, Equals, sharedCatalog.Catalog.Name)
+
+	cleanupCatalogOrgVdc(check, sharedCatalog, vdc, vcd, newOrg1)
+}
+
+// Test_GetCatalogByIdSharedCatalog creates a separate Org and VDC just to create Catalog and share it with main Org
+// One should be able to find shared catalogs from different Organizations
+func (vcd *TestVCD) Test_GetCatalogByIdSharedCatalog(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	newOrg1, vdc, sharedCatalog := createSharedCatalogInNewOrg(vcd, check, check.TestName())
+
+	// Try to find the sharedCatalog inside Org which owns it - newOrg1
+	catalogById, err := newOrg1.GetCatalogById(sharedCatalog.Catalog.ID, true)
+	check.Assert(err, IsNil)
+	check.Assert(catalogById.Catalog.Name, Equals, sharedCatalog.Catalog.Name)
+
+	// Try to find the sharedCatalog in another Org with which this sharedCatalog is shared (vcd.Org)
+	sharedCatalogById, err := vcd.org.GetCatalogById(sharedCatalog.Catalog.ID, false)
+	check.Assert(err, IsNil)
+	check.Assert(sharedCatalogById.Catalog.Name, Equals, sharedCatalog.Catalog.Name)
+
+	cleanupCatalogOrgVdc(check, sharedCatalog, vdc, vcd, newOrg1)
+}
+
+// Test_GetCatalogByNamePrefersLocal tests that local catalog (in the same Org) is prioritised against shared catalogs
+// in other Orgs. It does so by creating another Org with shared Catalog named just like the one in testing catalog
+func (vcd *TestVCD) Test_GetCatalogByNamePrefersLocal(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	// Create a catalog  in new org with exactly the same name as in vcd.Org
+	newOrg1, vdc, sharedCatalog := createSharedCatalogInNewOrg(vcd, check, vcd.config.VCD.Catalog.Name)
+
+	// Make sure that the Owner Org HREF is the local one for vcd.Org catalog named vcd.config.VCD.Catalog.Name
+	catalogByNameInTestOrg, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(catalogByNameInTestOrg.parent.orgName(), Equals, vcd.org.Org.Name)
+
+	// Make sure that the Owner Org HREF is the local one for vcd.Org catalog named vcd.config.VCD.Catalog.Name
+	catalogByNameInNewOrg, err := newOrg1.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(catalogByNameInNewOrg.parent.orgName(), Equals, newOrg1.Org.Name)
+
+	cleanupCatalogOrgVdc(check, sharedCatalog, vdc, vcd, newOrg1)
+}
+
+// Test_GetCatalogByNameSharedCatalogOrgUser additionally tests GetOrgByName and GetOrgById using a custom created Org
+// Admin user. It tests the following cases:
+// * System user must be able to retrieve any catalog - shared or unshared from another Org
+// * Org Admin user must be able to retrieve catalog in his own Org
+// * Org Admin user must be able to retrieve shared catalog from another Org
+// * Org admin user must not be able to retrieve unshared catalog from another Org
+func (vcd *TestVCD) Test_GetCatalogByXSharedCatalogOrgUser(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	newOrg1, vdc, sharedCatalog := createSharedCatalogInNewOrg(vcd, check, check.TestName())
+
+	// Create one more additional catalog which is not shared
+	unsharedCatalog, err := newOrg1.CreateCatalog("unshared-catalog", check.TestName())
+	check.Assert(err, IsNil)
+	AddToCleanupList(unsharedCatalog.Catalog.Name, "catalog", newOrg1.Org.Name, check.TestName())
+
+	// Try to find the catalog inside Org which owns it - newOrg1
+	catalogByName, err := newOrg1.GetCatalogByName(sharedCatalog.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(catalogByName.Catalog.Name, Equals, sharedCatalog.Catalog.Name)
+
+	// Try to find the catalog in another Org with which this catalog is shared (vcd.Org)
+	sharedCatalogByName, err := vcd.org.GetCatalogByName(sharedCatalog.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(sharedCatalogByName.Catalog.Name, Equals, sharedCatalog.Catalog.Name)
+
+	// Try to find unshared catalog from another Org with System user
+	systemUnsharedCatalogByName, err := vcd.org.GetCatalogByName(unsharedCatalog.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(systemUnsharedCatalogByName.Catalog.ID, Equals, unsharedCatalog.Catalog.ID)
+
+	// Create an Org Admin user and test that it can find catalog as well
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	orgAdminClient, err := newOrgUserConnection(adminOrg, "test-user", "CHANGE-ME", vcd.config.Provider.Url, true)
+	check.Assert(err, IsNil)
+	orgAsOrgUser, err := orgAdminClient.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	// Find a catalog in the same Org using Org Admin user
+	orgAdminCatalogByNameSameOrg, err := orgAsOrgUser.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(orgAdminCatalogByNameSameOrg.Catalog.Name, Equals, vcd.config.VCD.Catalog.Name)
+
+	orgAdminCatalogByIdSameOrg, err := orgAsOrgUser.GetCatalogById(orgAdminCatalogByNameSameOrg.Catalog.ID, false)
+	check.Assert(err, IsNil)
+	check.Assert(orgAdminCatalogByIdSameOrg.Catalog.Name, Equals, orgAdminCatalogByNameSameOrg.Catalog.Name)
+	check.Assert(orgAdminCatalogByIdSameOrg.Catalog.ID, Equals, orgAdminCatalogByNameSameOrg.Catalog.ID)
+
+	// Find a shared catalog from another Org using Org Admin user
+	orgAdminCatalogByName, err := orgAsOrgUser.GetCatalogByName(sharedCatalog.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(orgAdminCatalogByName.Catalog.Name, Equals, sharedCatalog.Catalog.Name)
+	check.Assert(orgAdminCatalogByName.Catalog.ID, Equals, sharedCatalog.Catalog.ID)
+
+	orgAdminCatalogById, err := orgAsOrgUser.GetCatalogById(sharedCatalog.Catalog.ID, false)
+	check.Assert(err, IsNil)
+	check.Assert(orgAdminCatalogById.Catalog.Name, Equals, sharedCatalog.Catalog.Name)
+	check.Assert(orgAdminCatalogById.Catalog.ID, Equals, sharedCatalog.Catalog.ID)
+
+	// Try to find unshared catalog from another Org with Org admin user and expect an ErrorEntityNotFound
+	_, err = orgAsOrgUser.GetCatalogByName(unsharedCatalog.Catalog.Name, true)
+	check.Assert(ContainsNotFound(err), Equals, true)
+
+	_, err = orgAsOrgUser.GetCatalogById(unsharedCatalog.Catalog.ID, true)
+	check.Assert(ContainsNotFound(err), Equals, true)
+
+	// Cleanup
+	err = unsharedCatalog.Delete(true, true)
+	check.Assert(err, IsNil)
+
+	cleanupCatalogOrgVdc(check, sharedCatalog, vdc, vcd, newOrg1)
+}
+
+func createSharedCatalogInNewOrg(vcd *TestVCD, check *C, newCatalogName string) (*Org, *Vdc, Catalog) {
+	newOrgName1 := spawnTestOrg(vcd, check, "org")
+
+	newOrg1, err := vcd.client.GetOrgByName(newOrgName1)
+	check.Assert(err, IsNil)
+
+	// Spawn a VDC inside newly created Org so that there is storage to create new catalog
+	vdc := spawnTestVdc(vcd, check, newOrgName1)
+
+	catalog, err := newOrg1.CreateCatalog(newCatalogName, "Catalog for testing")
+	check.Assert(err, IsNil)
+	AddToCleanupList(newCatalogName, "catalog", newOrgName1, check.TestName())
+
+	// Share new Catalog in newOrgName1 with default test Org vcd.Org
+	readOnly := "ReadOnly"
+	accessControl := &types.ControlAccessParams{
+		IsSharedToEveryone:  false,
+		EveryoneAccessLevel: &readOnly,
+		AccessSettings: &types.AccessSettingList{
+			AccessSetting: []*types.AccessSetting{&types.AccessSetting{
+				Subject: &types.LocalSubject{
+					HREF: vcd.org.Org.HREF,
+					Name: vcd.org.Org.Name,
+					Type: types.MimeOrg,
+				},
+				AccessLevel: "ReadOnly",
+			}},
+		},
+	}
+	err = catalog.SetAccessControl(accessControl, false)
+	check.Assert(err, IsNil)
+
+	return newOrg1, vdc, catalog
+}
+
+func cleanupCatalogOrgVdc(check *C, sharedCatalog Catalog, vdc *Vdc, vcd *TestVCD, newOrg1 *Org) {
+	// Cleanup catalog, vdc and org
+	err := sharedCatalog.Delete(true, true)
+	check.Assert(err, IsNil)
+
+	err = vdc.DeleteWait(true, true)
+	check.Assert(err, IsNil)
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(newOrg1.Org.Name)
+	check.Assert(err, IsNil)
+	err = adminOrg.Delete(true, true)
+	check.Assert(err, IsNil)
 }

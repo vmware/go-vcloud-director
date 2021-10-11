@@ -1,12 +1,10 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
 
 import (
-	"encoding/xml"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -20,7 +18,7 @@ import (
 )
 
 type VM struct {
-	VM     *types.VM
+	VM     *types.Vm
 	client *Client
 }
 
@@ -31,12 +29,12 @@ type VMRecord struct {
 
 func NewVM(cli *Client) *VM {
 	return &VM{
-		VM:     new(types.VM),
+		VM:     new(types.Vm),
 		client: cli,
 	}
 }
 
-// create instance with reference to types.QueryResultVMRecordType
+// NewVMRecord creates an instance with reference to types.QueryResultVMRecordType
 func NewVMRecord(cli *Client) *VMRecord {
 	return &VMRecord{
 		VM:     new(types.QueryResultVMRecordType),
@@ -71,11 +69,9 @@ func (vm *VM) Refresh() error {
 
 	// Empty struct before a new unmarshal, otherwise we end up with duplicate
 	// elements in slices.
-	vm.VM = &types.VM{}
+	vm.VM = &types.Vm{}
 
-	_, err := vm.client.ExecuteRequestWithApiVersion(refreshUrl, http.MethodGet,
-		"", "error refreshing VM: %s", nil, vm.VM,
-		vm.client.GetSpecificApiVersionOnCondition(">= 33.0", "33.0"))
+	_, err := vm.client.ExecuteRequest(refreshUrl, http.MethodGet, "", "error refreshing VM: %s", nil, vm.VM)
 
 	// The request was successful
 	return err
@@ -145,11 +141,11 @@ func (vm *VM) UpdateNetworkConnectionSection(networks *types.NetworkConnectionSe
 }
 
 // Deprecated: use client.GetVMByHref instead
-func (cli *Client) FindVMByHREF(vmHREF string) (VM, error) {
+func (client *Client) FindVMByHREF(vmHREF string) (VM, error) {
 
-	newVm := NewVM(cli)
+	newVm := NewVM(client)
 
-	_, err := cli.ExecuteRequest(vmHREF, http.MethodGet,
+	_, err := client.ExecuteRequest(vmHREF, http.MethodGet,
 		"", "error retrieving VM: %s", nil, newVm.VM)
 
 	return *newVm, err
@@ -217,7 +213,7 @@ func (vm *VM) PowerOff() (Task, error) {
 		"", "error powering off VM: %s", nil)
 }
 
-// Sets number of available virtual logical processors
+// ChangeCPUCount sets number of available virtual logical processors
 // (i.e. CPUs x cores per socket)
 // Cpu cores count is inherited from template.
 // https://communities.vmware.com/thread/576209
@@ -225,7 +221,7 @@ func (vm *VM) ChangeCPUCount(virtualCpuCount int) (Task, error) {
 	return vm.ChangeCPUCountWithCore(virtualCpuCount, nil)
 }
 
-// Sets number of available virtual logical processors
+// ChangeCPUCountWithCore sets number of available virtual logical processors
 // (i.e. CPUs x cores per socket) and cores per socket.
 // Socket count is a result of: virtual logical processors/cores per socket
 // https://communities.vmware.com/thread/576209
@@ -249,7 +245,7 @@ func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (
 		InstanceID:      4,
 		Reservation:     0,
 		ResourceType:    types.ResourceTypeProcessor,
-		VirtualQuantity: virtualCpuCount,
+		VirtualQuantity: int64(virtualCpuCount),
 		Weight:          0,
 		CoresPerSocket:  coresPerSocket,
 		Link: &types.Link{
@@ -376,12 +372,12 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 		VCloudHREF:      vm.VM.HREF + "/virtualHardwareSection/memory",
 		VCloudType:      types.MimeRasdItem,
 		AllocationUnits: "byte * 2^20",
-		Description:     "Memory Size",
+		Description:     "Memory SizeMb",
 		ElementName:     strconv.Itoa(size) + " MB of memory",
 		InstanceID:      5,
 		Reservation:     0,
 		ResourceType:    types.ResourceTypeMemory,
-		VirtualQuantity: size,
+		VirtualQuantity: int64(size),
 		Weight:          0,
 		Link: &types.Link{
 			HREF: vm.VM.HREF + "/virtualHardwareSection/memory",
@@ -398,8 +394,8 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 		types.MimeRasdItem, "error changing memory size: %s", newMem)
 }
 
-func (vm *VM) RunCustomizationScript(computername, script string) (Task, error) {
-	return vm.Customize(computername, script, false)
+func (vm *VM) RunCustomizationScript(computerName, script string) (Task, error) {
+	return vm.Customize(computerName, script, false)
 }
 
 // GetGuestCustomizationStatus retrieves guest customization status.
@@ -450,7 +446,7 @@ func (vm *VM) BlockWhileGuestCustomizationStatus(unwantedStatus string, timeOutA
 // Customize function allows to set ComputerName, apply customization script and enable or disable the changeSid option
 //
 // Deprecated: Use vm.SetGuestCustomizationSection()
-func (vm *VM) Customize(computername, script string, changeSid bool) (Task, error) {
+func (vm *VM) Customize(computerName, script string, changeSid bool) (Task, error) {
 	err := vm.Refresh()
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %s", err)
@@ -465,7 +461,7 @@ func (vm *VM) Customize(computername, script string, changeSid bool) (Task, erro
 		Type:                types.MimeGuestCustomizationSection,
 		Info:                "Specifies Guest OS Customization Settings",
 		Enabled:             takeBoolPointer(true),
-		ComputerName:        computername,
+		ComputerName:        computerName,
 		CustomizationScript: script,
 		ChangeSid:           takeBoolPointer(changeSid),
 	}
@@ -495,7 +491,7 @@ func (vm *VM) Undeploy() (Task, error) {
 }
 
 // Attach or detach an independent disk
-// Use the disk/action/attach or disk/action/detach links in a Vm to attach or detach an independent disk.
+// Use the disk/action/attach or disk/action/detach links in a VM to attach or detach an independent disk.
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 164 - 165,
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
@@ -526,7 +522,7 @@ func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel
 		attachOrDetachDiskLink.Type, "error attach or detach disk: %s", diskParams)
 }
 
-// Attach an independent disk
+// AttachDisk attaches an independent disk
 // Call attachOrDetachDisk with disk and types.RelDiskAttach to attach an independent disk.
 // Please verify the independent disk is not connected to any VM before calling this function.
 // If the independent disk is connected to a VM, the task will be failed.
@@ -543,7 +539,7 @@ func (vm *VM) AttachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, erro
 	return vm.attachOrDetachDisk(diskParams, types.RelDiskAttach)
 }
 
-// Detach an independent disk
+// DetachDisk detaches an independent disk
 // Call attachOrDetachDisk with disk and types.RelDiskDetach to detach an independent disk.
 // Please verify the independent disk is connected the VM before calling this function.
 // If the independent disk is not connected to the VM, the task will be failed.
@@ -560,7 +556,7 @@ func (vm *VM) DetachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, erro
 	return vm.attachOrDetachDisk(diskParams, types.RelDiskDetach)
 }
 
-// Helper function which finds media and calls InsertMedia
+// HandleInsertMedia helper function finds media and calls InsertMedia
 func (vm *VM) HandleInsertMedia(org *Org, catalogName, mediaName string) (Task, error) {
 
 	catalog, err := org.GetCatalogByName(catalogName, false)
@@ -621,7 +617,7 @@ func isMediaInjected(items []*types.VirtualHardwareItem) bool {
 	return false
 }
 
-// Helper function which finds media and calls EjectMedia
+// HandleEjectMedia is a helper function which finds media and calls EjectMedia
 func (vm *VM) HandleEjectMedia(org *Org, catalogName, mediaName string) (EjectTask, error) {
 	catalog, err := org.GetCatalogByName(catalogName, false)
 	if err != nil {
@@ -642,7 +638,7 @@ func (vm *VM) HandleEjectMedia(org *Org, catalogName, mediaName string) (EjectTa
 	return task, err
 }
 
-// Insert media for VM
+// InsertMedia insert media for a VM
 // Call insertOrEjectMedia with media and types.RelMediaInsertMedia to insert media from VM.
 func (vm *VM) InsertMedia(mediaParams *types.MediaInsertOrEjectParams) (Task, error) {
 	util.Logger.Printf("[TRACE] Insert media, HREF: %s\n", mediaParams.Media.HREF)
@@ -655,7 +651,7 @@ func (vm *VM) InsertMedia(mediaParams *types.MediaInsertOrEjectParams) (Task, er
 	return vm.insertOrEjectMedia(mediaParams, types.RelMediaInsertMedia)
 }
 
-// Eject media from VM
+// EjectMedia ejects media from VM
 // Call insertOrEjectMedia with media and types.RelMediaEjectMedia to eject media from VM.
 // If media isn't inserted then task still will be successful.
 func (vm *VM) EjectMedia(mediaParams *types.MediaInsertOrEjectParams) (EjectTask, error) {
@@ -686,7 +682,7 @@ func validateMediaParams(mediaParams *types.MediaInsertOrEjectParams) error {
 }
 
 // Insert or eject a media for VM
-// Use the vm/action/insert or vm/action/eject links in a Vm to insert or eject media.
+// Use the vm/action/insert or vm/action/eject links in a VM to insert or eject media.
 // Reference:
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/POST-InsertCdRom.html
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/POST-EjectCdRom.html
@@ -713,7 +709,7 @@ func (vm *VM) insertOrEjectMedia(mediaParams *types.MediaInsertOrEjectParams, li
 		insertOrEjectMediaLink.Type, "error insert or eject media: %s", mediaParams)
 }
 
-// Use the get existing VM question for operation which need additional response
+// GetQuestion uses the get existing VM question for operation which need additional response
 // Reference:
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/GET-VmPendingQuestion.html
 func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
@@ -724,15 +720,14 @@ func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
 	req := vm.client.NewRequest(map[string]string{}, http.MethodGet, *apiEndpoint, nil)
 
 	resp, err := vm.client.Http.Do(req)
+	if err != nil {
+		return types.VmPendingQuestion{}, fmt.Errorf("error getting VM question: %s", err)
+	}
 
 	// vCD security feature - on no question return 403 access error
 	if http.StatusForbidden == resp.StatusCode {
 		util.Logger.Printf("No question found for VM: %s\n", vm.VM.ID)
 		return types.VmPendingQuestion{}, nil
-	}
-
-	if err != nil {
-		return types.VmPendingQuestion{}, fmt.Errorf("error getting question: %s", err)
 	}
 
 	if http.StatusOK != resp.StatusCode {
@@ -750,7 +745,7 @@ func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
 
 }
 
-// Use the provide answer to existing VM question for operation which need additional response
+// AnswerQuestion uses the provided answer to existing VM question for operation which need additional response
 // Reference:
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/POST-AnswerVmPendingQuestion.html
 func (vm *VM) AnswerQuestion(questionId string, choiceId int) error {
@@ -988,9 +983,9 @@ func allNicsHaveIps(nicConfigs []nicDhcpConfig) bool {
 //
 // For this function to work - at least one the following must be true:
 // * VM has guest tools (vCD UI shows IP address). (Takes longer time)
-// * VM DHCP interface is connected to routed Org network and is using Edge Gateway DHCP. (Takes
+// * VM DHCP interface is connected to routed Org network and is using NSX-V Edge Gateway DHCP. (Takes
 // less time, but is more constrained)
-func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int, useDhcpLeaseCheck bool) ([]string, bool, error) {
+func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int, useNsxvDhcpLeaseCheck bool) ([]string, bool, error) {
 	util.Logger.Printf("[TRACE] [DHCP IP Lookup] VM '%s' attempting to lookup IP addresses for DHCP NICs %v\n",
 		vm.VM.Name, nicIndexes)
 	// validate NIC indexes
@@ -1011,7 +1006,7 @@ func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int, us
 		nicStates[index].vmNicIndex = nicIndex
 	}
 	var err error
-	if useDhcpLeaseCheck { // Edge gateways have to be looked up when DHCP lease checks are enabled
+	if useNsxvDhcpLeaseCheck { // Edge gateways have to be looked up when DHCP lease checks are enabled
 		// Lookup edge gateways for routed networks and store them
 		nicStates, err = vm.getEdgeGatewaysForRoutedNics(nicStates)
 		if err != nil {
@@ -1051,7 +1046,7 @@ func (vm *VM) WaitForDhcpIpByNicIndexes(nicIndexes []int, maxWaitSeconds int, us
 				vm.VM.Name, nicIndexes)
 
 			// Step 2 If enabled - check if DHCP leases in edge gateways can hint IP addresses
-			if useDhcpLeaseCheck {
+			if useNsxvDhcpLeaseCheck {
 				nicStates, err = vm.getIpsByDhcpLeaseMacs(nicStates)
 				if err != nil {
 					return []string{}, false, fmt.Errorf("could not check MAC leases for VM '%s': %s",
@@ -1349,7 +1344,6 @@ func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection
 
 	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
 		types.MimeVM, "error updating VM disks: %s", &types.VMDiskChange{
-			XMLName:       xml.Name{},
 			Xmlns:         types.XMLNamespaceVCloud,
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
@@ -1359,7 +1353,7 @@ func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection
 
 // AddEmptyVm adds an empty VM (without template) to vApp and returns the new created VM or an error.
 func (vapp *VApp) AddEmptyVm(reComposeVAppParams *types.RecomposeVAppParamsForEmptyVm) (*VM, error) {
-	apiVersion, err := vapp.client.maxSupportedVersion()
+	apiVersion, err := vapp.client.MaxSupportedVersion()
 	if err != nil {
 		return nil, err
 	}
@@ -1374,7 +1368,7 @@ func (vapp *VApp) AddEmptyVm(reComposeVAppParams *types.RecomposeVAppParamsForEm
 
 // AddEmptyVmAsync adds an empty VM (without template) to the vApp and returns a Task and an error.
 func (vapp *VApp) AddEmptyVmAsync(reComposeVAppParams *types.RecomposeVAppParamsForEmptyVm) (Task, error) {
-	apiVersion, err := vapp.client.maxSupportedVersion()
+	apiVersion, err := vapp.client.MaxSupportedVersion()
 	if err != nil {
 		return Task{}, err
 	}
@@ -1451,7 +1445,7 @@ func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection, 
 	vmSpecSectionModified := true
 	vmSettingsToUpdate.Modified = &vmSpecSectionModified
 
-	// `reconfigureVm` updates Vm name, Description, and any or all of the following sections.
+	// `reconfigureVm` updates VM name, Description, and any or all of the following sections.
 	//    VirtualHardwareSection
 	//    OperatingSystemSection
 	//    NetworkConnectionSection
@@ -1459,8 +1453,7 @@ func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection, 
 	// Sections not included in the request body will not be updated.
 
 	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
-		types.MimeVM, "error updating VM spec section: %s", &types.VM{
-			XMLName:       xml.Name{},
+		types.MimeVM, "error updating VM spec section: %s", &types.Vm{
 			Xmlns:         types.XMLNamespaceVCloud,
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
@@ -1496,15 +1489,12 @@ func (vm *VM) UpdateComputePolicyAsync(computePolicy *types.VdcComputePolicy) (T
 		return Task{}, fmt.Errorf("cannot update VM compute policy, VM HREF is unset")
 	}
 
-	// `reconfigureVm` updates Vm name, Description, and any or all of the following sections.
+	// `reconfigureVm` updates VM name, Description, and any or all of the following sections.
 	//    VirtualHardwareSection
 	//    OperatingSystemSection
 	//    NetworkConnectionSection
 	//    GuestCustomizationSection
 	// Sections not included in the request body will not be updated.
-	if computePolicy != nil && vm.client.APIVCDMaxVersionIs("< 33.0") {
-		return Task{}, errors.New("[Error] compute policy can't be used - VCD version doesn't support it")
-	}
 
 	vcdComputePolicyHref, err := vm.client.OpenApiBuildEndpoint(types.OpenApiPathVersion1_0_0, types.OpenApiEndpointVdcComputePolicies, computePolicy.ID)
 	if err != nil {
@@ -1512,8 +1502,7 @@ func (vm *VM) UpdateComputePolicyAsync(computePolicy *types.VdcComputePolicy) (T
 	}
 
 	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
-		types.MimeVM, "error updating VM spec section: %s", &types.VM{
-			XMLName:       xml.Name{},
+		types.MimeVM, "error updating VM spec section: %s", &types.Vm{
 			Xmlns:         types.XMLNamespaceVCloud,
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
@@ -1533,6 +1522,45 @@ func (client *Client) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryRes
 	if filter.String() != "" {
 		params["filter"] = filter.String()
 	}
+	vmResult, err := client.cumulativeQuery(queryType, nil, params)
+	if err != nil {
+		return nil, fmt.Errorf("error getting VM list : %s", err)
+	}
+	vmList = vmResult.Results.VMRecord
+	if client.IsSysAdmin {
+		vmList = vmResult.Results.AdminVMRecord
+	}
+	return vmList, nil
+}
+
+// QueryVmList returns a list of all VMs in a given Org
+func (org *Org) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryResultVMRecordType, error) {
+	return queryVmList(filter, org.client, "org", org.Org.HREF)
+}
+
+// QueryVmList returns a list of all VMs in a given VDC
+func (vdc *Vdc) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryResultVMRecordType, error) {
+	return queryVmList(filter, vdc.client, "vdc", vdc.Vdc.HREF)
+}
+
+// queryVmList is extracted and used by org.QueryVmList and vdc.QueryVmList to adjust filtering scope
+func queryVmList(filter types.VmQueryFilter, client *Client, filterParent, filterParentHref string) ([]*types.QueryResultVMRecordType, error) {
+	var vmList []*types.QueryResultVMRecordType
+	queryType := client.GetQueryType(types.QtVm)
+	params := map[string]string{
+		"type":          queryType,
+		"filterEncoded": "true",
+	}
+	filterText := ""
+	if filter.String() != "" {
+		filterText = filter.String()
+	}
+	if filterText == "" {
+		filterText = fmt.Sprintf("%s==%s", filterParent, filterParentHref)
+	} else {
+		filterText = fmt.Sprintf("%s;%s==%s", filterText, filterParent, filterParentHref)
+	}
+	params["filter"] = filterText
 	vmResult, err := client.cumulativeQuery(queryType, nil, params)
 	if err != nil {
 		return nil, fmt.Errorf("error getting VM list : %s", err)
@@ -1595,21 +1623,11 @@ var vmVersionedFuncsV10 = vmVersionedFuncs{
 	AddEmptyVmAsync:  addEmptyVmAsyncV10,
 }
 
-// VM function mapping for API version 32.0 (from vCD 9.7)
-var vmVersionedFuncsV97 = vmVersionedFuncs{
-	SupportedVersion: "32.0",
-	GetVMByHref:      getVMByHrefV97,
-	AddEmptyVm:       addEmptyVmV97,
-	AddEmptyVmAsync:  addEmptyVmAsyncV97,
-}
-
 // vmVersionedFuncsByVcdVersion is a map of VDC functions by vCD version
 var vmVersionedFuncsByVcdVersion = map[string]vmVersionedFuncs{
 	"vm10.2": vmVersionedFuncsV10,
 	"vm10.1": vmVersionedFuncsV10,
 	"vm10.0": vmVersionedFuncsV10,
-	"vm9.7":  vmVersionedFuncsV97,
-
 	// If we add a new function to this list, we also need to update the "default" entry
 	// The "default" entry will hold the highest currently available function
 	"default": vmVersionedFuncsV10,
@@ -1639,9 +1657,8 @@ func addEmptyVmAsyncV10(vapp *VApp, reComposeVAppParams *types.RecomposeVAppPara
 	reComposeVAppParams.XmlnsOvf = types.XMLNamespaceOVF
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequestWithApiVersion(apiEndpoint.String(), http.MethodPost,
-		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", reComposeVAppParams,
-		vapp.client.GetSpecificApiVersionOnCondition(">= 33.0", "33.0"))
+	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", reComposeVAppParams)
 }
 
 // addEmptyVmV10 adds an empty VM (without template) to vApp and returns the new created VM or an error.
@@ -1679,84 +1696,12 @@ func addEmptyVmV10(vapp *VApp, reComposeVAppParams *types.RecomposeVAppParamsFor
 	return nil, ErrorEntityNotFound
 }
 
-// addEmptyVmAsyncV97 adds an empty VM (without template) to the vApp and returns a Task and an error.
-func addEmptyVmAsyncV97(vapp *VApp, reComposeVAppParams *types.RecomposeVAppParamsForEmptyVm) (Task, error) {
-	err := validateEmptyVmParams(reComposeVAppParams)
-	if err != nil {
-		return Task{}, err
-	}
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
-	apiEndpoint.Path += "/action/recomposeVApp"
-
-	reComposeVAppParams.XmlnsVcloud = types.XMLNamespaceVCloud
-	reComposeVAppParams.XmlnsOvf = types.XMLNamespaceOVF
-
-	// Return the task
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
-		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", reComposeVAppParams)
-}
-
-// addEmptyVmV97 adds an empty VM (without template) to vApp and returns the new created VM or an error.
-func addEmptyVmV97(vapp *VApp, reComposeVAppParams *types.RecomposeVAppParamsForEmptyVm) (*VM, error) {
-	task, err := addEmptyVmAsyncV97(vapp, reComposeVAppParams)
-	if err != nil {
-		return nil, err
-	}
-
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return nil, err
-	}
-
-	err = vapp.Refresh()
-	if err != nil {
-		return nil, fmt.Errorf("error refreshing vApp: %s", err)
-	}
-
-	//vApp Might Not Have Any VMs
-	if vapp.VApp.Children == nil {
-		return nil, ErrorEntityNotFound
-	}
-
-	util.Logger.Printf("[TRACE] Looking for VM: %s", reComposeVAppParams.CreateItem.Name)
-	for _, child := range vapp.VApp.Children.VM {
-
-		util.Logger.Printf("[TRACE] Looking at: %s", child.Name)
-		if child.Name == reComposeVAppParams.CreateItem.Name {
-			return getVMByHrefV97(vapp.client, child.HREF)
-		}
-
-	}
-	util.Logger.Printf("[TRACE] Couldn't find VM: %s", reComposeVAppParams.CreateItem.Name)
-	return nil, ErrorEntityNotFound
-}
-
 // getVMByHrefV10 returns a VM reference by running a vCD API call
 // If no valid VM is found, it returns a nil VM reference and an error
 // Note that the pointer receiver here is a Client instead of a VApp, because
 // there are cases where we know the VM HREF but not which VApp it belongs to.
 // V10 of function overrides API version to allow to access compute policy in VM.
 func getVMByHrefV10(client *Client, vmHref string) (*VM, error) {
-
-	newVm := NewVM(client)
-
-	_, err := client.ExecuteRequestWithApiVersion(vmHref, http.MethodGet,
-		"", "error retrieving vm: %s", nil, newVm.VM,
-		client.GetSpecificApiVersionOnCondition(">= 33.0", "33.0"))
-
-	if err != nil {
-
-		return nil, err
-	}
-
-	return newVm, nil
-}
-
-// getVMByHrefV97 returns a VM reference by running a vCD API call
-// If no valid VM is found, it returns a nil VM reference and an error
-// Note that the pointer receiver here is a Client instead of a VApp, because
-// there are cases where we know the VM HREF but not which VApp it belongs to.
-func getVMByHrefV97(client *Client, vmHref string) (*VM, error) {
 
 	newVm := NewVM(client)
 
@@ -1777,7 +1722,7 @@ func getVMByHrefV97(client *Client, vmHref string) (*VM, error) {
 // there are cases where we know the VM HREF but not which VApp it belongs to.
 func (client *Client) GetVMByHref(vmHref string) (*VM, error) {
 
-	apiVersion, err := client.maxSupportedVersion()
+	apiVersion, err := client.MaxSupportedVersion()
 	if err != nil {
 		return nil, err
 	}
@@ -1820,19 +1765,52 @@ func (vm *VM) UpdateStorageProfileAsync(storageProfileHref string) (Task, error)
 		return Task{}, fmt.Errorf("cannot update VM storage profile, storage profile HREF is unset")
 	}
 
-	// `reconfigureVm` updates Vm name, Description, and any or all of the following sections.
+	// `reconfigureVm` updates VM name, Description, and any or all of the following sections.
 	//    VirtualHardwareSection
 	//    OperatingSystemSection
 	//    NetworkConnectionSection
 	//    GuestCustomizationSection
 	// Sections not included in the request body will not be updated.
 	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
-		types.MimeVM, "error updating VM spec section: %s", &types.VM{
-			XMLName:        xml.Name{},
+		types.MimeVM, "error updating VM spec section: %s", &types.Vm{
 			Xmlns:          types.XMLNamespaceVCloud,
 			Ovf:            types.XMLNamespaceOVF,
 			Name:           vm.VM.Name,
 			Description:    vm.VM.Description,
 			StorageProfile: &types.Reference{HREF: storageProfileHref},
 		})
+}
+
+// DeleteAsync starts a standalone VM deletion, returning a task
+func (vm *VM) DeleteAsync() (Task, error) {
+	if vm.VM.HREF == "" {
+		return Task{}, fmt.Errorf("no HREF found for this VM")
+	}
+
+	task, err := vm.Undeploy()
+	if err == nil {
+		err = task.WaitTaskCompletion()
+		if err != nil {
+			return Task{}, err
+		}
+	}
+	return vm.client.ExecuteTaskRequest(vm.VM.HREF, http.MethodDelete,
+		"", "error deleting VM: %s", nil)
+}
+
+// Delete deletes a standalone VM
+func (vm *VM) Delete() error {
+	task, err := vm.DeleteAsync()
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+func (vm *VM) getTenantContext() (*TenantContext, error) {
+	parentVdc, err := vm.GetParentVdc()
+	if err != nil {
+		return nil, err
+	}
+	return parentVdc.getTenantContext()
 }

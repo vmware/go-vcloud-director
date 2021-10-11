@@ -1,3 +1,4 @@
+//go:build lb || lbVirtualServer || nsxv || functional || ALL
 // +build lb lbVirtualServer nsxv functional ALL
 
 /*
@@ -8,6 +9,7 @@ package govcd
 
 import (
 	"fmt"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )

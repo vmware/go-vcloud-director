@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -283,6 +284,42 @@ func CreateAndConfigureEdgeGateway(vcdClient *VCDClient, orgName, vdcName, egwNa
 // CreateEdgeGateway creates an edge gateway using a simplified configuration structure
 func CreateEdgeGateway(vcdClient *VCDClient, egwc EdgeGatewayCreation) (EdgeGateway, error) {
 	return createEdgeGateway(vcdClient, egwc, nil)
+}
+
+func getOrgByHref(vcdClient *Client, href string) (*Org, error) {
+	org := NewOrg(vcdClient)
+
+	_, err := vcdClient.ExecuteRequest(href, http.MethodGet,
+		"", "error retrieving org list: %s", nil, org.Org)
+	if err != nil {
+		return nil, err
+	}
+
+	tenantContext, err := org.getTenantContext()
+	if err != nil {
+		return nil, err
+	}
+	org.TenantContext = tenantContext
+
+	return org, nil
+}
+
+func getAdminOrgByHref(vcdClient *Client, href string) (*AdminOrg, error) {
+	adminOrg := NewAdminOrg(vcdClient)
+
+	_, err := vcdClient.ExecuteRequest(href, http.MethodGet,
+		"", "error retrieving org list: %s", nil, adminOrg.AdminOrg)
+	if err != nil {
+		return nil, err
+	}
+
+	tenantContext, err := adminOrg.getTenantContext()
+	if err != nil {
+		return nil, err
+	}
+	adminOrg.TenantContext = tenantContext
+
+	return adminOrg, nil
 }
 
 // If user specifies a valid organization name, then this returns a
@@ -680,11 +717,22 @@ func getExtension(client *Client) (*types.Extension, error) {
 }
 
 // GetStorageProfileByHref fetches storage profile using provided HREF.
+// Deprecated: use client.GetStorageProfileByHref or vcdClient.GetStorageProfileByHref
 func GetStorageProfileByHref(vcdClient *VCDClient, url string) (*types.VdcStorageProfile, error) {
+	return vcdClient.Client.GetStorageProfileByHref(url)
+}
+
+// GetStorageProfileByHref fetches a storage profile using its HREF.
+func (vcdClient *VCDClient) GetStorageProfileByHref(url string) (*types.VdcStorageProfile, error) {
+	return vcdClient.Client.GetStorageProfileByHref(url)
+}
+
+// GetStorageProfileByHref fetches a storage profile using its HREF.
+func (client *Client) GetStorageProfileByHref(url string) (*types.VdcStorageProfile, error) {
 
 	vdcStorageProfile := &types.VdcStorageProfile{}
 
-	_, err := vcdClient.Client.ExecuteRequest(url, http.MethodGet,
+	_, err := client.ExecuteRequest(url, http.MethodGet,
 		"", "error retrieving storage profile: %s", nil, vdcStorageProfile)
 	if err != nil {
 		return nil, err
@@ -694,6 +742,56 @@ func GetStorageProfileByHref(vcdClient *VCDClient, url string) (*types.VdcStorag
 }
 
 // QueryProviderVdcStorageProfileByName finds a provider VDC storage profile by name
+// There are four cases:
+// 1. [FOUND] The name matches and is unique among all the storage profiles
+// 2. [FOUND] The name matches, it is not unique, and it is disambiguated by the provider VDC HREF
+// 3. [NOT FOUND] The name matches, is not unique, but no Provider HREF was given: the search will fail
+// 4. [NOT FOUND] The name does not match any of the storage profiles
+func (vcdCli *VCDClient) QueryProviderVdcStorageProfileByName(name, providerVDCHref string) (*types.QueryResultProviderVdcStorageProfileRecordType, error) {
+	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":     "providerVdcStorageProfile",
+		"pageSize": "128",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Note: pageSize of 128 (the maximum page size allowed) should be enough to get all storage profiles.
+	// In case this is not true, we trap the error, so that we become aware that this assumption is incorrect.
+	// TODO: convert this query into a cumulativeQuery
+	if results.Results.Total > 128.0 {
+		return nil, fmt.Errorf("[QueryWithNotEncodedParams] FATAL - more than 128 storage profiles found. Refactory needed")
+	}
+
+	var recs []*types.QueryResultProviderVdcStorageProfileRecordType
+	for _, rec := range results.Results.ProviderVdcStorageProfileRecord {
+		if rec.Name == name {
+			// Double match: both the name and the provider VDC match: we can return the result
+			if providerVDCHref != "" && providerVDCHref == rec.ProviderVdcHREF {
+				return rec, nil
+			}
+			// if there is a name match, but no provider VDC was given, we add to the result, and we will check later.
+			if providerVDCHref == "" {
+				recs = append(recs, rec)
+			}
+		}
+	}
+
+	providerVDCMessage := ""
+	if providerVDCHref != "" {
+		providerVDCMessage = fmt.Sprintf("in provider VDC '%s'", providerVDCHref)
+	}
+	if len(recs) == 0 {
+		return nil, fmt.Errorf("no records found for storage profile '%s' %s", name, providerVDCMessage)
+	}
+	if len(recs) > 1 {
+		return nil, fmt.Errorf("more than 1 record found for storage profile '%s'. Add Provider VDC HREF in the search to disambiguate", name)
+	}
+	return recs[0], nil
+}
+
+// QueryProviderVdcStorageProfileByName finds a provider VDC storage profile by name
+// Deprecated: wrong implementation. Use VCDClient.QueryProviderVdcStorageProfileByName
 func QueryProviderVdcStorageProfileByName(vcdCli *VCDClient, name string) ([]*types.QueryResultProviderVdcStorageProfileRecordType, error) {
 	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":          "providerVdcStorageProfile",
@@ -759,9 +857,15 @@ func (vcdClient *VCDClient) QueryNetworkPools() ([]*types.QueryResultNetworkPool
 	return results.Results.NetworkPoolRecord, nil
 }
 
-// QueryProviderVdcStorageProfiles gets the list of provider VDC storage profiles
+// QueryProviderVdcStorageProfiles gets the list of provider VDC storage profiles from ALL provider VDCs
+// Deprecated: use either client.QueryProviderVdcStorageProfiles or client.QueryAllProviderVdcStorageProfiles
 func (vcdClient *VCDClient) QueryProviderVdcStorageProfiles() ([]*types.QueryResultProviderVdcStorageProfileRecordType, error) {
-	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
+	return vcdClient.Client.QueryAllProviderVdcStorageProfiles()
+}
+
+// QueryAllProviderVdcStorageProfiles gets the list of provider VDC storage profiles from ALL provider VDCs
+func (client *Client) QueryAllProviderVdcStorageProfiles() ([]*types.QueryResultProviderVdcStorageProfileRecordType, error) {
+	results, err := client.QueryWithNotEncodedParams(nil, map[string]string{
 		"type": "providerVdcStorageProfile",
 	})
 	if err != nil {
@@ -769,6 +873,25 @@ func (vcdClient *VCDClient) QueryProviderVdcStorageProfiles() ([]*types.QueryRes
 	}
 
 	return results.Results.ProviderVdcStorageProfileRecord, nil
+}
+
+// QueryProviderVdcStorageProfiles gets the list of provider VDC storage profiles for a given Provider VDC
+func (client *Client) QueryProviderVdcStorageProfiles(providerVdcHref string) ([]*types.QueryResultProviderVdcStorageProfileRecordType, error) {
+	results, err := client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":   "providerVdcStorageProfile",
+		"filter": fmt.Sprintf("providerVdc==%s", providerVdcHref),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return results.Results.ProviderVdcStorageProfileRecord, nil
+}
+
+// QueryCompatibleStorageProfiles retrieves all storage profiles belonging to the same provider VDC to which
+// the Org VDC belongs
+func (adminVdc *AdminVdc) QueryCompatibleStorageProfiles() ([]*types.QueryResultProviderVdcStorageProfileRecordType, error) {
+	return adminVdc.client.QueryProviderVdcStorageProfiles(adminVdc.AdminVdc.ProviderVdcReference.HREF)
 }
 
 // GetNetworkPoolByHREF functions fetches an network pool using VDC client and network pool href
@@ -797,6 +920,16 @@ func QueryOrgVdcNetworkByName(vcdCli *VCDClient, name string) ([]*types.QueryRes
 	}
 
 	return results.Results.OrgVdcNetworkRecord, nil
+}
+
+// QueryAllVdcs returns all Org VDCs in a VCD instance
+//
+// This function requires "System" user or returns an error
+func (client *Client) QueryAllVdcs() ([]*types.QueryResultOrgVdcRecordType, error) {
+	if !client.IsSysAdmin {
+		return nil, errors.New("this function only works with 'System' user")
+	}
+	return queryOrgVdcList(client, nil)
 }
 
 // QueryNsxtManagerByName searches for NSX-T managers available in VCD
@@ -829,7 +962,10 @@ func (vcdClient *VCDClient) GetOrgByName(orgName string) (*Org, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	org.TenantContext = &TenantContext{
+		OrgId:   extractUuid(org.Org.ID),
+		OrgName: org.Org.Name,
+	}
 	return org, nil
 }
 
@@ -849,7 +985,10 @@ func (vcdClient *VCDClient) GetOrgById(orgId string) (*Org, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	org.TenantContext = &TenantContext{
+		OrgId:   extractUuid(org.Org.ID),
+		OrgName: org.Org.Name,
+	}
 	return org, nil
 }
 
@@ -884,6 +1023,10 @@ func (vcdClient *VCDClient) GetAdminOrgByName(orgName string) (*AdminOrg, error)
 	if err != nil {
 		return nil, err
 	}
+	adminOrg.TenantContext = &TenantContext{
+		OrgId:   extractUuid(adminOrg.AdminOrg.ID),
+		OrgName: adminOrg.AdminOrg.Name,
+	}
 
 	return adminOrg, nil
 }
@@ -906,7 +1049,10 @@ func (vcdClient *VCDClient) GetAdminOrgById(orgId string) (*AdminOrg, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	adminOrg.TenantContext = &TenantContext{
+		OrgId:   extractUuid(adminOrg.AdminOrg.ID),
+		OrgName: adminOrg.AdminOrg.Name,
+	}
 	return adminOrg, nil
 }
 
@@ -948,4 +1094,19 @@ func GetUuidFromHref(href string, idAtEnd bool) (string, error) {
 	}
 	util.Logger.Printf("[TRACE] GetUuidFromHref returns UUID : %s", matchList[0][1])
 	return matchList[0][1], nil
+}
+
+// GetOrgList returns the list ov available orgs
+func (vcdCli *VCDClient) GetOrgList() (*types.OrgList, error) {
+	orgListHREF := vcdCli.Client.VCDHREF
+	orgListHREF.Path += "/org"
+
+	orgList := new(types.OrgList)
+
+	_, err := vcdCli.Client.ExecuteRequest(orgListHREF.String(), http.MethodGet,
+		"", "error getting list of organizations: %s", nil, orgList)
+	if err != nil {
+		return nil, err
+	}
+	return orgList, nil
 }

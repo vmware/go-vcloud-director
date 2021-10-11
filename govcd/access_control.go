@@ -15,15 +15,9 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// orgInfoType is the basic information about an organization (needed for tenant context)
-type orgInfoType struct {
-	id   string
-	name string
-}
-
 // orgInfoCache is a cache to save org information, avoid repeated calls to compute the same result.
 // The keys to this map are the requesting objects IDs.
-var orgInfoCache = make(map[string]orgInfoType)
+var orgInfoCache = make(map[string]*TenantContext)
 
 // GetAccessControl retrieves the access control information for the requested entity
 func (client Client) GetAccessControl(href, entityType, entityName string, headerValues map[string]string) (*types.ControlAccessParams, error) {
@@ -329,7 +323,7 @@ func (vapp *VApp) getAccessControlHeader(useTenantContext bool) (map[string]stri
 	if err != nil {
 		return nil, err
 	}
-	return map[string]string{types.HeaderTenantContext: orgInfo.id, types.HeaderAuthContext: orgInfo.name}, nil
+	return map[string]string{types.HeaderTenantContext: orgInfo.OrgId, types.HeaderAuthContext: orgInfo.OrgName}, nil
 }
 
 // getAccessControlHeader builds the data needed to set the header when tenant context is required.
@@ -343,7 +337,7 @@ func (catalog *Catalog) getAccessControlHeader(useTenantContext bool) (map[strin
 	if err != nil {
 		return nil, err
 	}
-	return map[string]string{types.HeaderTenantContext: orgInfo.id, types.HeaderAuthContext: orgInfo.name}, nil
+	return map[string]string{types.HeaderTenantContext: orgInfo.OrgId, types.HeaderAuthContext: orgInfo.OrgName}, nil
 }
 
 // getAccessControlHeader builds the data needed to set the header when tenant context is required.
@@ -358,5 +352,5 @@ func (adminCatalog *AdminCatalog) getAccessControlHeader(useTenantContext bool) 
 	if err != nil {
 		return nil, err
 	}
-	return map[string]string{types.HeaderTenantContext: orgInfo.id, types.HeaderAuthContext: orgInfo.name}, nil
+	return map[string]string{types.HeaderTenantContext: orgInfo.OrgId, types.HeaderAuthContext: orgInfo.OrgName}, nil
 }

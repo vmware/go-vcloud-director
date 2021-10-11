@@ -1,3 +1,4 @@
+//go:build nsxv || vm || functional || ALL
 // +build nsxv vm functional ALL
 
 /*
@@ -208,8 +209,7 @@ func makeOrgVdcNetworkWithDhcp(vcd *TestVCD, check *C, edgeGateway *EdgeGateway)
 		fmt.Printf("error creating Network <%s>: %s\n", TestCreateOrgVdcNetworkDhcp, err)
 	}
 	check.Assert(err, IsNil)
-	AddToCleanupList(TestCreateOrgVdcNetworkDhcp, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name,
-		"TestCreateOrgVdcNetworkDhcp")
+	AddToCleanupList(TestCreateOrgVdcNetworkDhcp, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "TestCreateOrgVdcNetworkDhcp")
 	network, err := vcd.vdc.GetOrgVdcNetworkByName(TestCreateOrgVdcNetworkDhcp, true)
 	check.Assert(err, IsNil)
 
