@@ -38,6 +38,7 @@ func (vcd *TestVCD) Test_CertificateInLibrary(check *C) {
 	check.Assert(createdCertificate.CertificateLibrary.Certificate, Equals, certificate)
 
 	fetchedCertificate, err := vcd.client.Client.GetCertificateFromLibraryById(createdCertificate.CertificateLibrary.Id)
+	check.Assert(err, IsNil)
 	check.Assert(fetchedCertificate, NotNil)
 	check.Assert(fetchedCertificate.CertificateLibrary.Alias, Equals, alias)
 	check.Assert(fetchedCertificate.CertificateLibrary.Certificate, Equals, certificate)
@@ -70,6 +71,7 @@ func (vcd *TestVCD) Test_CertificateInLibrary(check *C) {
 	check.Assert(createdCertificateWithPrivateKeyConfig.CertificateLibrary.Certificate, Equals, certificate)
 
 	fetchedCertificateWithPrivateKey, err := vcd.client.Client.GetCertificateFromLibraryById(createdCertificateWithPrivateKeyConfig.CertificateLibrary.Id)
+	check.Assert(err, IsNil)
 	check.Assert(fetchedCertificateWithPrivateKey, NotNil)
 	check.Assert(fetchedCertificateWithPrivateKey.CertificateLibrary.Alias, Equals, aliasForPrivateKey)
 	check.Assert(fetchedCertificateWithPrivateKey.CertificateLibrary.Certificate, Equals, certificate)
