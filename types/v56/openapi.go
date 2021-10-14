@@ -285,3 +285,13 @@ type OpenApiItems struct {
 	Associations interface{}        `json:"associations,omitempty"`
 	Values       []OpenApiReference `json:"values"` // a collection of items defined by an ID + a name
 }
+
+// CertificateLibraryItem is a Certificate Library definition of stored Certificate details
+type CertificateLibraryItem struct {
+	Alias                string `json:"alias"`
+	Id                   string `json:"id,omitempty"`
+	Certificate          string `json:"certificate"` // PEM encoded certificate
+	Description          string `json:"description,omitempty"`
+	PrivateKey           string `json:"privateKey,omitempty"`           //PEM encoded private key. Required if providing a certificate chain
+	PrivateKeyPassphrase string `json:"privateKeyPassphrase,omitempty"` //passphrase for the private key. Required if the private key is encrypted
+}
