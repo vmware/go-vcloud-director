@@ -77,7 +77,7 @@ func (vcd *TestVCD) Test_CertificateInLibrary(check *C) {
 	check.Assert(fetchedCertificateWithPrivateKey.CertificateLibrary.Certificate, Equals, certificate)
 
 	// check fetching all certificates
-	allOrgCertificates, err := adminOrg.GetAllCertificateFromLibrary(nil)
+	allOrgCertificates, err := adminOrg.GetAllCertificatesFromLibrary(nil)
 	check.Assert(err, IsNil)
 	check.Assert(allOrgCertificates, NotNil)
 

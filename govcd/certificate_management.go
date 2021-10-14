@@ -148,9 +148,9 @@ func (client *Client) GetAllCertificateFromLibrary(queryParameters url.Values) (
 	return getAllCertificateFromLibrary(client, queryParameters, nil)
 }
 
-// GetAllCertificateFromLibrary r retrieves all available certificates from certificate library.
+// GetAllCertificatesFromLibrary r retrieves all available certificates from certificate library.
 // Query parameters can be supplied to perform additional filtering
-func (adminOrg *AdminOrg) GetAllCertificateFromLibrary(queryParameters url.Values) ([]*Certificate, error) {
+func (adminOrg *AdminOrg) GetAllCertificatesFromLibrary(queryParameters url.Values) ([]*Certificate, error) {
 	tenantContext, err := adminOrg.getTenantContext()
 	if err != nil {
 		return nil, err
