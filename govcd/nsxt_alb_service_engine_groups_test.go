@@ -79,7 +79,7 @@ func (vcd *TestVCD) Test_GetAllAlbServiceEngineGroups(check *C) {
 	check.Assert(err, IsNil)
 }
 
-// spawnAlbControllerCloudServiceEngineGroup is a helper function to spawn NSX-T ALB Controller,ALB Cloud, and ALB
+// spawnAlbControllerCloudServiceEngineGroup is a helper function to spawn NSX-T ALB Controller, ALB Cloud, and ALB
 // Service Engine Group
 func spawnAlbControllerCloudServiceEngineGroup(vcd *TestVCD, check *C) (*NsxtAlbController, *NsxtAlbCloud, *NsxtAlbServiceEngineGroup) {
 	skipNoNsxtAlbConfiguration(vcd, check)
