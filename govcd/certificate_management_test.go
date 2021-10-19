@@ -177,11 +177,31 @@ func (vcd *TestVCD) Test_GetCertificateFromLibraryByName_ValidatesSymbolsInName(
 	check.Assert(createdCertificate.CertificateLibrary.Alias, Equals, alias)
 	check.Assert(createdCertificate.CertificateLibrary.Certificate, Equals, certificate)
 
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	foundCertificate, err := vcd.client.Client.GetCertificateFromLibraryByName(alias)
 	check.Assert(err, IsNil)
-	check.Assert(adminOrg, NotNil)
+	check.Assert(foundCertificate, NotNil)
+	check.Assert(foundCertificate.CertificateLibrary.Alias, Equals, alias)
 
-	foundCertificate, err := adminOrg.client.GetCertificateFromLibraryByName(alias)
+	err = foundCertificate.Delete()
+	check.Assert(err, IsNil)
+
+	// validate alias with space works
+	alias = "Test Certificate empty line"
+	certificateConfig = &types.CertificateLibraryItem{
+		Alias:       alias,
+		Certificate: certificate,
+	}
+	createdCertificate, err = vcd.client.Client.AddCertificateToLibrary(certificateConfig)
+	check.Assert(err, IsNil)
+	openApiEndpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibrary + createdCertificate.CertificateLibrary.Id
+	PrependToCleanupListOpenApi(createdCertificate.CertificateLibrary.Alias, check.TestName(), openApiEndpoint)
+
+	check.Assert(createdCertificate, NotNil)
+	check.Assert(createdCertificate.CertificateLibrary.Id, NotNil)
+	check.Assert(createdCertificate.CertificateLibrary.Alias, Equals, alias)
+	check.Assert(createdCertificate.CertificateLibrary.Certificate, Equals, certificate)
+
+	foundCertificate, err = vcd.client.Client.GetCertificateFromLibraryByName(alias)
 	check.Assert(err, IsNil)
 	check.Assert(foundCertificate, NotNil)
 	check.Assert(foundCertificate.CertificateLibrary.Alias, Equals, alias)
