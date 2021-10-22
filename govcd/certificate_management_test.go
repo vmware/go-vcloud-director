@@ -88,7 +88,7 @@ func (vcd *TestVCD) Test_CertificateInLibrary(check *C) {
 				oneCertificate.CertificateLibrary.Id, oneCertificate.CertificateLibrary.Description)
 		}
 	}
-	allExistingCertificates, err := adminOrg.client.GetAllCertificateFromLibrary(nil)
+	allExistingCertificates, err := adminOrg.client.GetAllCertificatesFromLibrary(nil)
 	check.Assert(err, IsNil)
 	check.Assert(allExistingCertificates, NotNil)
 

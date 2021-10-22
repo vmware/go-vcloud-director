@@ -142,9 +142,9 @@ func getAllCertificateFromLibrary(client *Client, queryParameters url.Values, ad
 	return wrappedCertificates, nil
 }
 
-// GetAllCertificateFromLibrary retrieves all available certificates from certificate library.
+// GetAllCertificatesFromLibrary retrieves all available certificates from certificate library.
 // Query parameters can be supplied to perform additional filtering
-func (client *Client) GetAllCertificateFromLibrary(queryParameters url.Values) ([]*Certificate, error) {
+func (client *Client) GetAllCertificatesFromLibrary(queryParameters url.Values) ([]*Certificate, error) {
 	return getAllCertificateFromLibrary(client, queryParameters, nil)
 }
 
