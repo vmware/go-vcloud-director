@@ -10,7 +10,8 @@ import (
 	"net/url"
 )
 
-// Certificate In UI called menu Certificate Library. In API Certificate Library item
+// Certificate is a structure defining a certificate in VCD
+// It is called "Certificate Library" in the UI, and "Certificate Library item" in the API
 type Certificate struct {
 	CertificateLibrary *types.CertificateLibraryItem
 	Href               string
