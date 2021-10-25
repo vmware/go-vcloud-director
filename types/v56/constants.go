@@ -366,6 +366,8 @@ const (
 	OpenApiEndpointAlbImportableServiceEngineGroups = "nsxAlbResources/importableServiceEngineGroups"
 	OpenApiEndpointAlbCloud                         = "loadBalancer/clouds/"
 	OpenApiEndpointAlbServiceEngineGroups           = "loadBalancer/serviceEngineGroups/"
+	OpenApiEndpointAlbServiceEngineGroupAssignments = "loadBalancer/serviceEngineGroups/assignments/"
+	OpenApiEndpointEdgeGatewayAlb                   = "edgeGateways/%s/loadBalancer"
 )
 
 // Header keys to run operations in tenant context

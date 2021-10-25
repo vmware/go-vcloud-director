@@ -115,7 +115,7 @@ func spawnAlbControllerAndCloud(vcd *TestVCD, check *C) (*NsxtAlbController, *Ns
 	check.Assert(err, IsNil)
 
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbCloud + createdAlbCloud.NsxtAlbCloud.ID
-	AddToCleanupListOpenApi(createdAlbCloud.NsxtAlbCloud.Name, check.TestName(), openApiEndpoint)
+	PrependToCleanupListOpenApi(createdAlbCloud.NsxtAlbCloud.Name, check.TestName(), openApiEndpoint)
 
 	return albController, createdAlbCloud
 }

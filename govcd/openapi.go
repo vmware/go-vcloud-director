@@ -592,7 +592,8 @@ func (client *Client) openApiGetAllPages(apiVersion string, urlRef *url.URL, que
 	// If nextPage header was not found, but we are not at the last page - the query URL should be forged manually to
 	// overcome OpenAPI BUG when it does not return 'nextPage' header
 	// Some API calls do not return `OpenApiPages` results at all (just values)
-	if nextPageUrlRef == nil && pages.PageSize != 0 {
+	// In some endpoints the page field is returned as `null`
+	if nextPageUrlRef == nil && pages.PageSize != 0 && pages.Page != 0 {
 		// Next URL page ref was not found therefore one must double check if it is not an API BUG. There are endpoints which
 		// return only Total results and pageSize (not 'pageCount' and not 'nextPage' header)
 		pageCount := pages.ResultTotal / pages.PageSize // This division returns number of "full pages" (containing 'pageSize' amount of results)
