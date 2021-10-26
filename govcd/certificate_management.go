@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/url"
+	"strings"
 )
 
 // Certificate is a structure defining a certificate in VCD
@@ -20,7 +21,10 @@ type Certificate struct {
 
 // GetCertificateFromLibraryById Returns certificate from library of certificates
 func getCertificateFromLibraryById(client *Client, id string, additionalHeader map[string]string) (*Certificate, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibrary
+	endpoint, err := getEndpointByVersion(client)
+	if err != nil {
+		return nil, err
+	}
 	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
@@ -47,6 +51,19 @@ func getCertificateFromLibraryById(client *Client, id string, additionalHeader m
 	}
 
 	return certificate, nil
+}
+
+func getEndpointByVersion(client *Client) (string, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibrary
+	newerApiVersion, err := client.VersionEqualOrGreater("10.3", 3)
+	if err != nil {
+		return "", err
+	}
+	if !newerApiVersion {
+		// in previous version exist only API with mistype in name
+		endpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibraryOld
+	}
+	return endpoint, err
 }
 
 // GetCertificateFromLibraryById Returns certificate from library of certificates
@@ -163,13 +180,37 @@ func (adminOrg *AdminOrg) GetAllCertificatesFromLibrary(queryParameters url.Valu
 func getCertificateFromLibraryByName(client *Client, name string, additionalHeader map[string]string) (*Certificate, error) {
 	var params = url.Values{}
 
-	params.Set("filterEncoded", "true")
-	params.Set("filter", fmt.Sprintf("alias==%s", url.QueryEscape(name)))
+	slowSearch := false
+
+	// When the right name contains commas or semicolons, the encoding is rejected by the API in VCD 10.2 version.
+	// For this reason, when one or more commas or semicolons are present we run the search brute force,
+	// by fetching all certificates and comparing the alias.
+	// This not needed in 10.3 version
+	versionWithNoBug, err := client.VersionEqualOrGreater("10.3", 3)
+	if err != nil {
+		return nil, err
+	}
+	if !versionWithNoBug && (strings.Contains(name, ",") || strings.Contains(name, ";")) {
+		slowSearch = true
+	} else {
+		params.Set("filter", fmt.Sprintf("alias==%s", url.QueryEscape(name)))
+		params.Set("filterEncoded", "true")
+	}
+
 	certificates, err := getAllCertificateFromLibrary(client, params, additionalHeader)
 	if err != nil {
 		return nil, err
 	}
 	if len(certificates) == 0 {
+		return nil, ErrorEntityNotFound
+	}
+
+	if slowSearch {
+		for _, certificate := range certificates {
+			if certificate.CertificateLibrary.Alias == name {
+				return certificate, nil
+			}
+		}
 		return nil, ErrorEntityNotFound
 	}
 
@@ -195,7 +236,10 @@ func (adminOrg *AdminOrg) GetCertificateFromLibraryByName(name string) (*Certifi
 
 // Update updates existing Certificate. Allows changing only alias and description
 func (certificate *Certificate) Update() (*Certificate, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibrary
+	endpoint, err := getEndpointByVersion(certificate.client)
+	if err != nil {
+		return nil, err
+	}
 	minimumApiVersion, err := certificate.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
@@ -226,7 +270,10 @@ func (certificate *Certificate) Update() (*Certificate, error) {
 
 // Delete deletes certificate from Certificate library
 func (certificate *Certificate) Delete() error {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibrary
+	endpoint, err := getEndpointByVersion(certificate.client)
+	if err != nil {
+		return err
+	}
 	minimumApiVersion, err := certificate.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return err
