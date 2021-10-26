@@ -27,7 +27,7 @@ func getCertificateFromLibraryById(client *Client, id string, additionalHeader m
 	}
 
 	if id == "" {
-		return nil, fmt.Errorf("empty certificate id")
+		return nil, fmt.Errorf("empty certificate ID")
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(endpoint, id)
@@ -67,7 +67,7 @@ func (adminOrg *AdminOrg) GetCertificateFromLibraryById(id string) (*Certificate
 func addCertificateToLibrary(client *Client, certificateConfig *types.CertificateLibraryItem,
 	additionalHeader map[string]string) (*Certificate, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibrary
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	apiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
 	}

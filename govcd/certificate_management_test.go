@@ -41,7 +41,7 @@ func (vcd *TestVCD) Test_CertificateInLibrary(check *C) {
 	PrependToCleanupListOpenApi(createdCertificate.CertificateLibrary.Alias, check.TestName(), openApiEndpoint)
 
 	check.Assert(createdCertificate, NotNil)
-	check.Assert(createdCertificate.CertificateLibrary.Id, NotNil)
+	check.Assert(createdCertificate.CertificateLibrary.Id, Not(Equals), "")
 	check.Assert(createdCertificate.CertificateLibrary.Alias, Equals, alias)
 	check.Assert(createdCertificate.CertificateLibrary.Certificate, Equals, certificate)
 
@@ -74,7 +74,7 @@ func (vcd *TestVCD) Test_CertificateInLibrary(check *C) {
 	PrependToCleanupListOpenApi(createdCertificateWithPrivateKeyConfig.CertificateLibrary.Alias, check.TestName(), openApiEndpoint)
 
 	check.Assert(createdCertificateWithPrivateKeyConfig, NotNil)
-	check.Assert(createdCertificateWithPrivateKeyConfig.CertificateLibrary.Id, NotNil)
+	check.Assert(createdCertificateWithPrivateKeyConfig.CertificateLibrary.Id, Not(Equals), "")
 	check.Assert(createdCertificateWithPrivateKeyConfig.CertificateLibrary.Alias, Equals, aliasForPrivateKey)
 	check.Assert(createdCertificateWithPrivateKeyConfig.CertificateLibrary.Certificate, Equals, certificate)
 
@@ -129,7 +129,7 @@ func (vcd *TestVCD) Test_CertificateInLibrary(check *C) {
 	check.Assert(updateCertificateWithPrivateKey, NotNil)
 	check.Assert(updateCertificateWithPrivateKey.CertificateLibrary.Alias, Equals, newAlias)
 	check.Assert(updateCertificateWithPrivateKey.CertificateLibrary.Description, Equals, newDescription)
-	check.Assert(updateCertificateWithPrivateKey.CertificateLibrary.Id, NotNil)
+	check.Assert(updateCertificateWithPrivateKey.CertificateLibrary.Id, Not(Equals), "")
 	check.Assert(updateCertificateWithPrivateKey.CertificateLibrary.Certificate, Equals, certificate)
 	check.Assert(updateCertificateWithPrivateKey.CertificateLibrary.PrivateKey, NotNil)           // isn't returned
 	check.Assert(updateCertificateWithPrivateKey.CertificateLibrary.PrivateKeyPassphrase, NotNil) // isn't returned
@@ -141,7 +141,7 @@ func (vcd *TestVCD) Test_CertificateInLibrary(check *C) {
 	check.Assert(updateCertificate, NotNil)
 	check.Assert(updateCertificate.CertificateLibrary.Alias, Equals, newAlias)
 	check.Assert(updateCertificate.CertificateLibrary.Description, Equals, newDescription)
-	check.Assert(updateCertificate.CertificateLibrary.Id, NotNil)
+	check.Assert(updateCertificate.CertificateLibrary.Id, Not(Equals), "")
 	check.Assert(updateCertificate.CertificateLibrary.Certificate, Equals, certificate)
 	check.Assert(updateCertificate.CertificateLibrary.PrivateKey, NotNil)           // isn't returned
 	check.Assert(updateCertificate.CertificateLibrary.PrivateKeyPassphrase, NotNil) // isn't returned
@@ -180,7 +180,7 @@ func (vcd *TestVCD) Test_GetCertificateFromLibraryByName_ValidatesSymbolsInName(
 	PrependToCleanupListOpenApi(createdCertificate.CertificateLibrary.Alias, check.TestName(), openApiEndpoint)
 
 	check.Assert(createdCertificate, NotNil)
-	check.Assert(createdCertificate.CertificateLibrary.Id, NotNil)
+	check.Assert(createdCertificate.CertificateLibrary.Id, Not(Equals), "")
 	check.Assert(createdCertificate.CertificateLibrary.Alias, Equals, alias)
 	check.Assert(createdCertificate.CertificateLibrary.Certificate, Equals, certificate)
 
@@ -204,7 +204,7 @@ func (vcd *TestVCD) Test_GetCertificateFromLibraryByName_ValidatesSymbolsInName(
 	PrependToCleanupListOpenApi(createdCertificate.CertificateLibrary.Alias, check.TestName(), openApiEndpoint)
 
 	check.Assert(createdCertificate, NotNil)
-	check.Assert(createdCertificate.CertificateLibrary.Id, NotNil)
+	check.Assert(createdCertificate.CertificateLibrary.Id, Not(Equals), "")
 	check.Assert(createdCertificate.CertificateLibrary.Alias, Equals, alias)
 	check.Assert(createdCertificate.CertificateLibrary.Certificate, Equals, certificate)
 

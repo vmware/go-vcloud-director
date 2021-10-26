@@ -292,6 +292,6 @@ type CertificateLibraryItem struct {
 	Id                   string `json:"id,omitempty"`
 	Certificate          string `json:"certificate"` // PEM encoded certificate
 	Description          string `json:"description,omitempty"`
-	PrivateKey           string `json:"privateKey,omitempty"`           //PEM encoded private key. Required if providing a certificate chain
-	PrivateKeyPassphrase string `json:"privateKeyPassphrase,omitempty"` //passphrase for the private key. Required if the private key is encrypted
+	PrivateKey           string `json:"privateKey,omitempty"`           // PEM encoded private key. Required if providing a certificate chain
+	PrivateKeyPassphrase string `json:"privateKeyPassphrase,omitempty"` // passphrase for the private key. Required if the private key is encrypted
 }
