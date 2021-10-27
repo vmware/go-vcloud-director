@@ -66,12 +66,12 @@ func getEndpointByVersion(client *Client) (string, error) {
 	return endpoint, err
 }
 
-// GetCertificateFromLibraryById Returns certificate from library of certificates
+// GetCertificateFromLibraryById Returns certificate from library of certificates from System Context
 func (client *Client) GetCertificateFromLibraryById(id string) (*Certificate, error) {
 	return getCertificateFromLibraryById(client, id, nil)
 }
 
-// GetCertificateFromLibraryById Returns certificate from library of certificates
+// GetCertificateFromLibraryById Returns certificate from library of certificates from Org context
 func (adminOrg *AdminOrg) GetCertificateFromLibraryById(id string) (*Certificate, error) {
 	tenantContext, err := adminOrg.getTenantContext()
 	if err != nil {
