@@ -813,3 +813,21 @@ type NsxtAlbImportableServiceEngineGroups struct {
 	// HaMode (e.g. 'ELASTIC_N_PLUS_M_BUFFER')
 	HaMode string `json:"haMode"`
 }
+
+// NsxtAlbConfig describes Load Balancer Service configuration on an NSX-T Edge Gateway
+type NsxtAlbConfig struct {
+	// Enabled is a mandatory flag indicating whether Load Balancer Service is enabled or not
+	Enabled bool `json:"enabled"`
+	// LicenseType of the backing Load Balancer Cloud.
+	// * BASIC - Basic edition of the NSX Advanced Load Balancer.
+	// * ENTERPRISE - Full featured edition of the NSX Advanced Load Balancer.
+	LicenseType string `json:"licenseType,omitempty"`
+	// LoadBalancerCloudRef
+	LoadBalancerCloudRef *OpenApiReference `json:"loadBalancerCloudRef,omitempty"`
+
+	// ServiceNetworkDefinition in Gateway CIDR format which will be used by Load Balancer service. All the load balancer
+	// service engines associated with the Service Engine Group will be attached to this network. The subnet prefix length
+	// must be 25. If nothing is set, the default is 192.168.255.1/25. Default CIDR can be configured. This field cannot
+	// be updated.
+	ServiceNetworkDefinition string `json:"serviceNetworkDefinition,omitempty"`
+}
