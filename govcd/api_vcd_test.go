@@ -801,14 +801,18 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		edgeAlbSettingsConfig, err := edge.GetAlbSettings()
-		if edgeAlbSettingsConfig.Enabled == false {
+		if err != nil {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+		if edgeAlbSettingsConfig.Enabled == false {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
 
 		err = edge.DisableAlb()
 		if err != nil {
-			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
 

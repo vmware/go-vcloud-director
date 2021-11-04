@@ -63,13 +63,13 @@ auth.
 // 5 - Authenticate to vCD using SIGN token in order to receive back regular
 // X-Vcloud-Authorization token
 // 6 - Set the received X-Vcloud-Authorization for further usage
-func (vcdCli *VCDClient) authorizeSamlAdfs(user, pass, org, overrideRptId string) error {
+func (vcdClient *VCDClient) authorizeSamlAdfs(user, pass, org, overrideRptId string) error {
 	// Step 1 - find SAML entity ID configured in vCD metadata URL unless overrideRptId is provided
 	// Example URL: url.Scheme + "://" + url.Host + "/cloud/org/" + org + "/saml/metadata/alias/vcd"
 	samlEntityId := overrideRptId
 	var err error
 	if overrideRptId == "" {
-		samlEntityId, err = getSamlEntityId(vcdCli, org)
+		samlEntityId, err = getSamlEntityId(vcdClient, org)
 		if err != nil {
 			return fmt.Errorf("SAML - error getting vCD SAML Entity ID: %s", err)
 		}
@@ -78,13 +78,13 @@ func (vcdCli *VCDClient) authorizeSamlAdfs(user, pass, org, overrideRptId string
 	// Step 2 - find ADFS server used for SAML by calling vCD SAML endpoint and hoping for a
 	// redirect to ADFS server. Example URL:
 	// url.Scheme + "://" + url.Host + "/login/my-org/saml/login/alias/vcd?service=tenant:" + org
-	adfsAuthEndPoint, err := getSamlAdfsServer(vcdCli, org)
+	adfsAuthEndPoint, err := getSamlAdfsServer(vcdClient, org)
 	if err != nil {
 		return fmt.Errorf("SAML - error getting IdP (ADFS): %s", err)
 	}
 
 	// Step 3 - authenticate to ADFS to receive SIGN token which can be used for vCD authentication
-	signToken, err := getSamlAuthToken(vcdCli, user, pass, samlEntityId, adfsAuthEndPoint, org)
+	signToken, err := getSamlAuthToken(vcdClient, user, pass, samlEntityId, adfsAuthEndPoint, org)
 	if err != nil {
 		return fmt.Errorf("SAML - could not get auth token from IdP (ADFS). Did you specify "+
 			"username in ADFS format ('user@contoso.com' or 'contoso.com\\user')? : %s", err)
@@ -99,13 +99,13 @@ func (vcdCli *VCDClient) authorizeSamlAdfs(user, pass, org, overrideRptId string
 		adfsAuthEndPoint, samlEntityId)
 
 	// Step 5 - authenticate to vCD with SIGN token and receive vCD regular token in exchange
-	accessToken, err := authorizeSignToken(vcdCli, base64GzippedSignToken, org)
+	accessToken, err := authorizeSignToken(vcdClient, base64GzippedSignToken, org)
 	if err != nil {
 		return fmt.Errorf("SAML - error submitting SIGN token to vCD: %s", err)
 	}
 
 	// Step 6 - set regular vCD auth token X-Vcloud-Authorization
-	err = vcdCli.SetToken(org, AuthorizationHeader, accessToken)
+	err = vcdClient.SetToken(org, AuthorizationHeader, accessToken)
 	if err != nil {
 		return fmt.Errorf("error during token-based authentication: %s", err)
 	}
@@ -266,8 +266,8 @@ func authorizeSignToken(vcdCli *VCDClient, base64GzippedSignToken, org string) (
 // The payload is not configured as a struct and unmarshalled because Go's unmarshalling changes
 // structure so that ADFS does not accept the payload
 func getSamlTokenRequestBody(user, password, samlEntityIdReference, adfsAuthEndpoint string) string {
-	return `<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" 
-	xmlns:a="http://www.w3.org/2005/08/addressing" 
+	return `<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"
+	xmlns:a="http://www.w3.org/2005/08/addressing"
 	xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
 	<s:Header>
 		<a:Action s:mustUnderstand="1">http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue</a:Action>
@@ -275,7 +275,7 @@ func getSamlTokenRequestBody(user, password, samlEntityIdReference, adfsAuthEndp
 			<a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address>
 		</a:ReplyTo>
 		<a:To s:mustUnderstand="1">` + adfsAuthEndpoint + `</a:To>
-		<o:Security s:mustUnderstand="1" 
+		<o:Security s:mustUnderstand="1"
 			xmlns:o="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
 			<u:Timestamp u:Id="_0">
 				<u:Created>` + time.Now().Format(time.RFC3339) + `</u:Created>
@@ -296,7 +296,7 @@ func getSamlTokenRequestBody(user, password, samlEntityIdReference, adfsAuthEndp
 			</wsp:AppliesTo>
 			<trust:KeySize>0</trust:KeySize>
 			<trust:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer</trust:KeyType>
-			<i:RequestDisplayToken xml:lang="en" 
+			<i:RequestDisplayToken xml:lang="en"
 				xmlns:i="http://schemas.xmlsoap.org/ws/2005/05/identity" />
 			<trust:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</trust:RequestType>
 			<trust:TokenType>http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0</trust:TokenType>

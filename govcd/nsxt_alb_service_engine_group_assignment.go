@@ -14,8 +14,8 @@ import (
 
 // NsxtAlbServiceEngineGroupAssignment handles Service Engine Group Assignment to NSX-T Edge Gateways
 type NsxtAlbServiceEngineGroupAssignment struct {
-	NsxtEdgeAlbServiceEngineGroupAssignment *types.NsxtAlbServiceEngineGroupAssignment
-	vcdClient                               *VCDClient
+	NsxtAlbServiceEngineGroupAssignment *types.NsxtAlbServiceEngineGroupAssignment
+	vcdClient                           *VCDClient
 }
 
 func (vcdClient *VCDClient) GetAllAlbServiceEngineGroupAssignments(queryParameters url.Values) ([]*NsxtAlbServiceEngineGroupAssignment, error) {
@@ -45,8 +45,8 @@ func (vcdClient *VCDClient) GetAllAlbServiceEngineGroupAssignments(queryParamete
 	wrappedResponses := make([]*NsxtAlbServiceEngineGroupAssignment, len(typeResponses))
 	for sliceIndex := range typeResponses {
 		wrappedResponses[sliceIndex] = &NsxtAlbServiceEngineGroupAssignment{
-			NsxtEdgeAlbServiceEngineGroupAssignment: typeResponses[sliceIndex],
-			vcdClient:                               vcdClient,
+			NsxtAlbServiceEngineGroupAssignment: typeResponses[sliceIndex],
+			vcdClient:                           vcdClient,
 		}
 	}
 
@@ -79,8 +79,8 @@ func (vcdClient *VCDClient) GetAlbServiceEngineGroupAssignmentById(id string) (*
 	}
 
 	wrappedResponse := &NsxtAlbServiceEngineGroupAssignment{
-		NsxtEdgeAlbServiceEngineGroupAssignment: typeResponse,
-		vcdClient:                               vcdClient,
+		NsxtAlbServiceEngineGroupAssignment: typeResponse,
+		vcdClient:                           vcdClient,
 	}
 
 	return wrappedResponse, nil
@@ -96,7 +96,7 @@ func (vcdClient *VCDClient) GetAlbServiceEngineGroupAssignmentByName(name string
 	var foundGroup *NsxtAlbServiceEngineGroupAssignment
 
 	for _, serviceEngineGroupAssignment := range allServiceEngineGroupAssignments {
-		if serviceEngineGroupAssignment.NsxtEdgeAlbServiceEngineGroupAssignment.ServiceEngineGroupRef.Name == name {
+		if serviceEngineGroupAssignment.NsxtAlbServiceEngineGroupAssignment.ServiceEngineGroupRef.Name == name {
 			foundGroup = serviceEngineGroupAssignment
 		}
 	}
@@ -126,11 +126,11 @@ func (vcdClient *VCDClient) CreateAlbServiceEngineGroupAssignment(assignmentConf
 	}
 
 	returnObject := &NsxtAlbServiceEngineGroupAssignment{
-		NsxtEdgeAlbServiceEngineGroupAssignment: &types.NsxtAlbServiceEngineGroupAssignment{},
-		vcdClient:                               vcdClient,
+		NsxtAlbServiceEngineGroupAssignment: &types.NsxtAlbServiceEngineGroupAssignment{},
+		vcdClient:                           vcdClient,
 	}
 
-	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, assignmentConfig, returnObject.NsxtEdgeAlbServiceEngineGroupAssignment, nil)
+	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, assignmentConfig, returnObject.NsxtAlbServiceEngineGroupAssignment, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating NSX-T ALB Service Engine Group Assignment: %s", err)
 	}
@@ -157,11 +157,11 @@ func (nsxtEdgeAlbServiceEngineGroup *NsxtAlbServiceEngineGroupAssignment) Update
 	}
 
 	responseAlbController := &NsxtAlbServiceEngineGroupAssignment{
-		NsxtEdgeAlbServiceEngineGroupAssignment: &types.NsxtAlbServiceEngineGroupAssignment{},
-		vcdClient:                               nsxtEdgeAlbServiceEngineGroup.vcdClient,
+		NsxtAlbServiceEngineGroupAssignment: &types.NsxtAlbServiceEngineGroupAssignment{},
+		vcdClient:                           nsxtEdgeAlbServiceEngineGroup.vcdClient,
 	}
 
-	err = client.OpenApiPutItem(minimumApiVersion, urlRef, nil, assignmentConfig, responseAlbController.NsxtEdgeAlbServiceEngineGroupAssignment, nil)
+	err = client.OpenApiPutItem(minimumApiVersion, urlRef, nil, assignmentConfig, responseAlbController.NsxtAlbServiceEngineGroupAssignment, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error updating NSX-T ALB Service Engine Group Assignment: %s", err)
 	}
@@ -178,11 +178,11 @@ func (nsxtEdgeAlbServiceEngineGroup *NsxtAlbServiceEngineGroupAssignment) Delete
 		return err
 	}
 
-	if nsxtEdgeAlbServiceEngineGroup.NsxtEdgeAlbServiceEngineGroupAssignment.ID == "" {
+	if nsxtEdgeAlbServiceEngineGroup.NsxtAlbServiceEngineGroupAssignment.ID == "" {
 		return fmt.Errorf("cannot delete NSX-T ALB Service Engine Group Assignment without ID")
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, nsxtEdgeAlbServiceEngineGroup.NsxtEdgeAlbServiceEngineGroupAssignment.ID)
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, nsxtEdgeAlbServiceEngineGroup.NsxtAlbServiceEngineGroupAssignment.ID)
 	if err != nil {
 		return err
 	}

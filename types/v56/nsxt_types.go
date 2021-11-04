@@ -832,7 +832,7 @@ type NsxtAlbConfig struct {
 	ServiceNetworkDefinition string `json:"serviceNetworkDefinition,omitempty"`
 }
 
-// NsxtAlbServiceEngineGroupAssignment configured Service Engine Group assignments to Edge Gateway. The only mandatory
+// NsxtAlbServiceEngineGroupAssignment configures Service Engine Group assignments to Edge Gateway. The only mandatory
 // fields are `GatewayRef` and `ServiceEngineGroupRef`. `MinVirtualServices` and `MaxVirtualServices` are only available
 // for SHARED Service Engine Groups.
 type NsxtAlbServiceEngineGroupAssignment struct {
