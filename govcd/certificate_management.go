@@ -186,11 +186,16 @@ func getCertificateFromLibraryByName(client *Client, name string, additionalHead
 	// For this reason, when one or more commas or semicolons are present we run the search brute force,
 	// by fetching all certificates and comparing the alias.
 	// This not needed in 10.3 version
+	// Also url.QueryEscape as well as url.Values.Encode()
+	// both encode the space as a + character
+	// https://github.com/golang/go/issues/4013
+	// https://github.com/czos/goamz/pull/11/files
+
 	versionWithNoBug, err := client.VersionEqualOrGreater("10.3", 3)
 	if err != nil {
 		return nil, err
 	}
-	if !versionWithNoBug && (strings.Contains(name, ",") || strings.Contains(name, ";")) {
+	if (!versionWithNoBug && (strings.Contains(name, ",") || strings.Contains(name, ";"))) || strings.Contains(name, " ") {
 		slowSearch = true
 	} else {
 		params.Set("filter", fmt.Sprintf("alias==%s", url.QueryEscape(name)))

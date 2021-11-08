@@ -628,12 +628,7 @@ func (client *Client) newOpenApiRequest(apiVersion string, params url.Values, me
 	reqUrlCopy := copyUrlRef(reqUrl)
 
 	// Add the params to our URL
-	// url.Values.Encode() and url.QueryEscape encode the space as a + character
-	// both encode the space as a + character
-	// https://github.com/golang/go/issues/4013
-	// https://github.com/czos/goamz/pull/11/files
-	// Hence, we do a strings.Replace to change encoded %2B(+) to %20(space)
-	reqUrlCopy.RawQuery += strings.Replace(params.Encode(), "%2B", "%20", -1)
+	reqUrlCopy.RawQuery += params.Encode()
 
 	// If the body contains data - try to read all contents for logging and re-create another
 	// io.Reader with all contents to use it down the line
