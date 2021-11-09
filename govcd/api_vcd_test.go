@@ -103,6 +103,7 @@ type TestConfig struct {
 		User     string `yaml:"user"`
 		Password string `yaml:"password"`
 		Token    string `yaml:"token"`
+		ApiToken string `yaml:"api_token"`
 
 		// UseSamlAdfs specifies if SAML auth is used for authenticating vCD instead of local login.
 		// The above `User` and `Password` will be used to authenticate against ADFS IdP when true.
@@ -418,7 +419,7 @@ func PrependToCleanupListOpenApi(name, createdBy, openApiEndpoint string) {
 // yaml file or if it cannot read it.
 func GetConfigStruct() (TestConfig, error) {
 	config := os.Getenv("GOVCD_CONFIG")
-	configStruct := TestConfig{}
+	var configStruct TestConfig
 	if config == "" {
 		// Finds the current directory, through the path of this running test
 		_, currentFilename, _, _ := runtime.Caller(0)
@@ -531,12 +532,22 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		token = config.Provider.Token
 	}
 
+	apiToken := os.Getenv("VCD_API_TOKEN")
+	if apiToken == "" {
+		apiToken = config.Provider.ApiToken
+	}
+
 	authenticationMode := "password"
-	if token != "" {
-		authenticationMode = "token"
-		err = vcd.client.SetToken(config.Provider.SysOrg, AuthorizationHeader, token)
+	if apiToken != "" {
+		authenticationMode = "API-token"
+		err = vcd.client.SetToken(config.Provider.SysOrg, ApiTokenHeader, apiToken)
 	} else {
-		err = vcd.client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
+		if token != "" {
+			authenticationMode = "token"
+			err = vcd.client.SetToken(config.Provider.SysOrg, AuthorizationHeader, token)
+		} else {
+			err = vcd.client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
+		}
 	}
 	if config.Provider.UseSamlAdfs {
 		authenticationMode = "SAML password"

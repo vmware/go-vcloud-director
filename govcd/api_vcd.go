@@ -6,7 +6,9 @@ package govcd
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -172,11 +174,62 @@ func (vcdCli *VCDClient) GetAuthResponse(username, password, org string) (*http.
 	return resp, nil
 }
 
+func (vcdCli *VCDClient) GetBearerTokenFromApiToken(org, token string) (string, error) {
+	if vcdCli.Client.APIVCDMaxVersionIs("< 36.1") {
+		return "", fmt.Errorf("minimum version for API token is 36.1 - Version detected: %s", vcdCli.Client.APIVersion)
+	}
+	var userDef string
+	urlStr := strings.Replace(vcdCli.Client.VCDHREF.String(), "/api", "", 1)
+	if strings.EqualFold(org, "system") {
+		userDef = "provider"
+	} else {
+		userDef = fmt.Sprintf("tenant/%s", org)
+	}
+	reqUrl := fmt.Sprintf("%s/oauth/%s/token", urlStr, userDef)
+	reqHref, err := url.ParseRequestURI(reqUrl)
+	if err != nil {
+		return "", fmt.Errorf("error getting request URL from %s : %s", reqUrl, err)
+	}
+	req := vcdCli.Client.NewRequest(map[string]string{"grant_type": "refresh_token", "refresh_token": token}, http.MethodPost, *reqHref, nil)
+	req.Header.Add("Accept", "application/*;version=36.1")
+	resp, err := vcdCli.Client.Http.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	var body []byte
+	var tokenDef types.ApiToken
+	if resp.Body == nil {
+		return "", fmt.Errorf("refresh token was empty: %s", resp.Status)
+	}
+	body, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("error extracting refresh token:%s", err)
+	}
+
+	err = json.Unmarshal(body, &tokenDef)
+	if err != nil {
+		return "", fmt.Errorf("error decoding token text: %s", err)
+	}
+	if tokenDef.AccessToken == "" {
+		return "", fmt.Errorf("access token retrieved from API token was empty %s", resp.Status)
+	}
+	return tokenDef.AccessToken, nil
+}
+
 // SetToken will set the authorization token in the client, without using other credentials
-// Up to version 29, token authorization uses the the header key x-vcloud-authorization
+// Up to version 29, token authorization uses the header key x-vcloud-authorization
 // In version 30+ it also uses X-Vmware-Vcloud-Access-Token:TOKEN coupled with
 // X-Vmware-Vcloud-Token-Type:"bearer"
 func (vcdCli *VCDClient) SetToken(org, authHeader, token string) error {
+	if authHeader == ApiTokenHeader {
+		bearerToken, err := vcdCli.GetBearerTokenFromApiToken(org, token)
+		if err != nil {
+			return err
+		}
+		token = bearerToken
+		authHeader = BearerTokenHeader
+	}
 	vcdCli.Client.VCDAuthHeader = authHeader
 	vcdCli.Client.VCDToken = token
 
