@@ -6,9 +6,10 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/url"
 	"strings"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 // Certificate is a structure defining a certificate in VCD
@@ -195,7 +196,8 @@ func getCertificateFromLibraryByName(client *Client, name string, additionalHead
 	if err != nil {
 		return nil, err
 	}
-	if (!versionWithNoBug && (strings.Contains(name, ",") || strings.Contains(name, ";"))) || strings.Contains(name, " ") {
+	if (!versionWithNoBug && (strings.Contains(name, ",") || strings.Contains(name, ";"))) ||
+		strings.Contains(name, " ") || strings.Contains(name, "+") || strings.Contains(name, "*") {
 		slowSearch = true
 	} else {
 		params.Set("filter", fmt.Sprintf("alias==%s", url.QueryEscape(name)))

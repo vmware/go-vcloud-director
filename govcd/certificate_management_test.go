@@ -10,6 +10,7 @@ package govcd
 import (
 	_ "embed"
 	"fmt"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 
 	. "gopkg.in/check.v1"
@@ -171,55 +172,35 @@ func (vcd *TestVCD) Test_GetCertificateFromLibraryByName_ValidatesSymbolsInName(
 	}
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointSSLCertificateLibrary)
 
-	// when alias contains commas or semicolons the encoding may reject by the API when we try to Query it
-	alias := "Test_Certificate,In;Library"
+	// When alias contains commas, semicolons, stars, or plus signs, the encoding may reject by the API when we try to Query it
+	// Also, spaces present their own issues
+	for _, symbol := range []string{";", ",", "+", " ", "*"} {
 
-	certificateConfig := &types.CertificateLibraryItem{
-		Alias:       alias,
-		Certificate: certificate,
+		alias := fmt.Sprintf("Test%sCertificate%sIn%sLibrary", symbol, symbol, symbol)
+
+		certificateConfig := &types.CertificateLibraryItem{
+			Alias:       alias,
+			Certificate: certificate,
+		}
+		createdCertificate, err := vcd.client.Client.AddCertificateToLibrary(certificateConfig)
+		check.Assert(err, IsNil)
+		openApiEndpoint, err := getEndpointByVersion(&vcd.client.Client)
+		check.Assert(err, IsNil)
+		check.Assert(openApiEndpoint, NotNil)
+		PrependToCleanupListOpenApi(createdCertificate.CertificateLibrary.Alias, check.TestName(),
+			openApiEndpoint+createdCertificate.CertificateLibrary.Id)
+
+		check.Assert(createdCertificate, NotNil)
+		check.Assert(createdCertificate.CertificateLibrary.Id, Not(Equals), "")
+		check.Assert(createdCertificate.CertificateLibrary.Alias, Equals, alias)
+		check.Assert(createdCertificate.CertificateLibrary.Certificate, Equals, certificate)
+
+		foundCertificate, err := vcd.client.Client.GetCertificateFromLibraryByName(alias)
+		check.Assert(err, IsNil)
+		check.Assert(foundCertificate, NotNil)
+		check.Assert(foundCertificate.CertificateLibrary.Alias, Equals, alias)
+
+		err = foundCertificate.Delete()
+		check.Assert(err, IsNil)
 	}
-	createdCertificate, err := vcd.client.Client.AddCertificateToLibrary(certificateConfig)
-	check.Assert(err, IsNil)
-	openApiEndpoint, err := getEndpointByVersion(&vcd.client.Client)
-	check.Assert(err, IsNil)
-	check.Assert(openApiEndpoint, NotNil)
-	PrependToCleanupListOpenApi(createdCertificate.CertificateLibrary.Alias, check.TestName(),
-		openApiEndpoint+createdCertificate.CertificateLibrary.Id)
-
-	check.Assert(createdCertificate, NotNil)
-	check.Assert(createdCertificate.CertificateLibrary.Id, Not(Equals), "")
-	check.Assert(createdCertificate.CertificateLibrary.Alias, Equals, alias)
-	check.Assert(createdCertificate.CertificateLibrary.Certificate, Equals, certificate)
-
-	foundCertificate, err := vcd.client.Client.GetCertificateFromLibraryByName(alias)
-	check.Assert(err, IsNil)
-	check.Assert(foundCertificate, NotNil)
-	check.Assert(foundCertificate.CertificateLibrary.Alias, Equals, alias)
-
-	err = foundCertificate.Delete()
-	check.Assert(err, IsNil)
-
-	// validate alias with space works
-	alias = "Test Certificate empty space"
-	certificateConfig = &types.CertificateLibraryItem{
-		Alias:       alias,
-		Certificate: certificate,
-	}
-	createdCertificate, err = vcd.client.Client.AddCertificateToLibrary(certificateConfig)
-	check.Assert(err, IsNil)
-	openApiEndpoint, err = getEndpointByVersion(&vcd.client.Client)
-	check.Assert(err, IsNil)
-	check.Assert(openApiEndpoint, NotNil)
-	PrependToCleanupListOpenApi(createdCertificate.CertificateLibrary.Alias, check.TestName(),
-		openApiEndpoint+createdCertificate.CertificateLibrary.Id)
-
-	check.Assert(createdCertificate, NotNil)
-	check.Assert(createdCertificate.CertificateLibrary.Id, Not(Equals), "")
-	check.Assert(createdCertificate.CertificateLibrary.Alias, Equals, alias)
-	check.Assert(createdCertificate.CertificateLibrary.Certificate, Equals, certificate)
-
-	foundCertificate, err = vcd.client.Client.GetCertificateFromLibraryByName(alias)
-	check.Assert(err, IsNil)
-	check.Assert(foundCertificate, NotNil)
-	check.Assert(foundCertificate.CertificateLibrary.Alias, Equals, alias)
 }
