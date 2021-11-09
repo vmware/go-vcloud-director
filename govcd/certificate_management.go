@@ -178,20 +178,17 @@ func (adminOrg *AdminOrg) GetAllCertificatesFromLibrary(queryParameters url.Valu
 }
 
 // getCertificateFromLibraryByName retrieves certificate from certificate library by given name
+// When the alias contains commas, semicolons or asterisks, the encoding is rejected by the API in VCD 10.2 version.
+// For this reason, when one or more commas, semicolons or asterisks are present we run the search brute force,
+// by fetching all certificates and comparing the alias. Yet, this not needed anymore in VCD 10.3 version.
+// Also, url.QueryEscape as well as url.Values.Encode() both encode the space as a + character. So we use
+// search brute force too. Reference to issue:
+// https://github.com/golang/go/issues/4013
+// https://github.com/czos/goamz/pull/11/files
 func getCertificateFromLibraryByName(client *Client, name string, additionalHeader map[string]string) (*Certificate, error) {
 	var params = url.Values{}
 
 	slowSearch := false
-
-	// When the right name contains commas or semicolons, the encoding is rejected by the API in VCD 10.2 version.
-	// For this reason, when one or more commas or semicolons are present we run the search brute force,
-	// by fetching all certificates and comparing the alias.
-	// This not needed in 10.3 version
-	// Also url.QueryEscape as well as url.Values.Encode()
-	// both encode the space as a + character
-	// https://github.com/golang/go/issues/4013
-	// https://github.com/czos/goamz/pull/11/files
-
 	versionWithNoBug, err := client.VersionEqualOrGreater("10.3", 3)
 	if err != nil {
 		return nil, err
