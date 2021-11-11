@@ -1563,15 +1563,22 @@ func TestVCDClient_Authenticate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-
-	token := os.Getenv("VCD_TOKEN")
-	if token == "" {
-		token = config.Provider.Token
+	apiToken := os.Getenv("VCD_API_TOKEN")
+	if apiToken == "" {
+		apiToken = config.Provider.ApiToken
 	}
-	if token != "" {
-		err = client.SetToken(config.Provider.SysOrg, AuthorizationHeader, token)
+	if apiToken != "" {
+		err = client.SetToken(config.Provider.SysOrg, ApiTokenHeader, apiToken)
 	} else {
-		err = client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
+		token := os.Getenv("VCD_TOKEN")
+		if token == "" {
+			token = config.Provider.Token
+		}
+		if token != "" {
+			err = client.SetToken(config.Provider.SysOrg, AuthorizationHeader, token)
+		} else {
+			err = client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
+		}
 	}
 
 	if err != nil {
