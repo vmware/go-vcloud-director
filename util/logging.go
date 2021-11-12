@@ -257,6 +257,15 @@ func logSanitizedHeader(inputHeader http.Header) {
 	}
 }
 
+// sanitizedUrl removes sensitive API token from URL
+func sanitizedUrl(url string) string {
+	if !LogPasswords && strings.Contains(url, "refresh_token=") {
+		parts := strings.Split(url, "?")
+		return parts[0] + "?grant_type=refresh_token&refresh_token=**********"
+	}
+	return url
+}
+
 // Returns true if the caller function matches any of the functions in the include function list
 func includeFunction(caller string) bool {
 	if len(apiLogFunctions) > 0 {
@@ -290,7 +299,7 @@ func ProcessRequestOutput(caller, operation, url, payload string, req *http.Requ
 
 	Logger.Printf("%s\n", dashLine)
 	Logger.Printf("Request caller: %s\n", caller)
-	Logger.Printf("%s %s\n", operation, url)
+	Logger.Printf("%s %s\n", operation, sanitizedUrl(url))
 	Logger.Printf("%s\n", dashLine)
 	dataSize := len(payload)
 	if isBinary(payload, req) {

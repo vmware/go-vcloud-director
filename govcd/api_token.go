@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 // SetApiToken behaves similarly to SetToken, with the difference that it will
@@ -59,6 +60,7 @@ func (vcdCli *VCDClient) GetBearerTokenFromApiToken(org, token string) (*types.A
 	}
 	req := vcdCli.Client.NewRequest(options, http.MethodPost, *reqHref, nil)
 	req.Header.Add("Accept", "application/*;version=36.1")
+
 	resp, err := vcdCli.Client.Http.Do(req)
 	if err != nil {
 		return nil, err
@@ -66,10 +68,17 @@ func (vcdCli *VCDClient) GetBearerTokenFromApiToken(org, token string) (*types.A
 
 	var body []byte
 	var tokenDef types.ApiTokenRefresh
-	if resp.Body == nil {
+	if resp.Body != nil {
+		body, err = ioutil.ReadAll(resp.Body)
+	}
+	responseData := "[" + strings.Repeat("*", 10) + "]"
+	if util.LogPasswords {
+		responseData = string(body)
+	}
+	util.ProcessResponseOutput("GetBearerTokenFromApiToken", resp, responseData)
+	if len(body) == 0 {
 		return nil, fmt.Errorf("refresh token was empty: %s", resp.Status)
 	}
-	body, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error extracting refresh token: %s", err)
 	}
