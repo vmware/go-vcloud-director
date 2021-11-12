@@ -178,7 +178,7 @@ func hideSensitive(in string, onScreen bool) string {
 
 	// Token data between <e:CipherValue> </e:CipherValue>
 	re3 := regexp.MustCompile(`(.*<e:CipherValue>)(.*)(</e:CipherValue>.*)`)
-	out = re3.ReplaceAllString(in, `${1}******${3}`)
+	out = re3.ReplaceAllString(out, `${1}******${3}`)
 	// Token data between <xenc:CipherValue> </xenc:CipherValue>
 	re4 := regexp.MustCompile(`(.*<xenc:CipherValue>)(.*)(</xenc:CipherValue>.*)`)
 	out = re4.ReplaceAllString(out, `${1}******${3}`)
