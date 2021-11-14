@@ -154,7 +154,7 @@ func (client *Client) FindVMByHREF(vmHREF string) (VM, error) {
 
 func (vm *VM) PowerOn() (Task, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/power/action/powerOn"
 
 	// Return the task
@@ -179,7 +179,7 @@ func (vm *VM) PowerOnAndForceCustomization() error {
 		return fmt.Errorf("VM %s must be undeployed before forcing customization", vm.VM.Name)
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/action/deploy"
 
 	powerOnAndCustomize := &types.DeployVAppParams{
@@ -205,7 +205,7 @@ func (vm *VM) PowerOnAndForceCustomization() error {
 
 func (vm *VM) PowerOff() (Task, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/power/action/powerOff"
 
 	// Return the task
@@ -255,7 +255,7 @@ func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (
 		},
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/virtualHardwareSection/cpu"
 
 	// Return the task
@@ -350,7 +350,7 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, erro
 	networkSection.Ovf = types.XMLNamespaceOVF
 	networkSection.Info = "Specifies the available VM network connections"
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/networkConnectionSection/"
 
 	// Return the task
@@ -386,7 +386,7 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 		},
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/virtualHardwareSection/memory"
 
 	// Return the task
@@ -466,7 +466,7 @@ func (vm *VM) Customize(computerName, script string, changeSid bool) (Task, erro
 		ChangeSid:           takeBoolPointer(changeSid),
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/guestCustomizationSection/"
 
 	// Return the task
@@ -482,7 +482,7 @@ func (vm *VM) Undeploy() (Task, error) {
 		UndeployPowerAction: "powerOff",
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/action/undeploy"
 
 	// Return the task
@@ -714,7 +714,7 @@ func (vm *VM) insertOrEjectMedia(mediaParams *types.MediaInsertOrEjectParams, li
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/GET-VmPendingQuestion.html
 func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/question"
 
 	req := vm.client.NewRequest(map[string]string{}, http.MethodGet, *apiEndpoint, nil)
@@ -761,7 +761,7 @@ func (vm *VM) AnswerQuestion(questionId string, choiceId int) error {
 		ChoiceId:   choiceId,
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/question/action/answer"
 
 	return vm.client.ExecuteRequestWithoutResponse(apiEndpoint.String(), http.MethodPost,
@@ -780,7 +780,7 @@ func (vm *VM) ToggleHardwareVirtualization(isEnabled bool) (Task, error) {
 		return Task{}, fmt.Errorf("hardware virtualization can be changed from powered off state, status: %s", vmStatus)
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	if isEnabled {
 		apiEndpoint.Path += "/action/enableNestedHypervisor"
 	} else {
@@ -1650,7 +1650,7 @@ func addEmptyVmAsyncV10(vapp *VApp, reComposeVAppParams *types.RecomposeVAppPara
 	if err != nil {
 		return Task{}, err
 	}
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/action/recomposeVApp"
 
 	reComposeVAppParams.XmlnsVcloud = types.XMLNamespaceVCloud

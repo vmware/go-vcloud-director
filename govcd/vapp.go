@@ -241,7 +241,7 @@ func addNewVMW(vapp *VApp, name string, vappTemplate VAppTemplate,
 	// Inject network config
 	vAppComposition.SourcedItem.InstantiationParams.NetworkConnectionSection = network
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/action/recomposeVApp"
 
 	// Return the task
@@ -283,7 +283,7 @@ func (vapp *VApp) RemoveVM(vm VM) error {
 		},
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/action/recomposeVApp"
 
 	deleteTask, err := vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
@@ -307,7 +307,7 @@ func (vapp *VApp) PowerOn() (Task, error) {
 		return Task{}, fmt.Errorf("error powering on vApp: %s", err)
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/power/action/powerOn"
 
 	// Return the task
@@ -317,7 +317,7 @@ func (vapp *VApp) PowerOn() (Task, error) {
 
 func (vapp *VApp) PowerOff() (Task, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/power/action/powerOff"
 
 	// Return the task
@@ -328,7 +328,7 @@ func (vapp *VApp) PowerOff() (Task, error) {
 
 func (vapp *VApp) Reboot() (Task, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/power/action/reboot"
 
 	// Return the task
@@ -338,7 +338,7 @@ func (vapp *VApp) Reboot() (Task, error) {
 
 func (vapp *VApp) Reset() (Task, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/power/action/reset"
 
 	// Return the task
@@ -348,7 +348,7 @@ func (vapp *VApp) Reset() (Task, error) {
 
 func (vapp *VApp) Suspend() (Task, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/power/action/suspend"
 
 	// Return the task
@@ -358,7 +358,7 @@ func (vapp *VApp) Suspend() (Task, error) {
 
 func (vapp *VApp) Shutdown() (Task, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/power/action/shutdown"
 
 	// Return the task
@@ -373,7 +373,7 @@ func (vapp *VApp) Undeploy() (Task, error) {
 		UndeployPowerAction: "powerOff",
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/action/undeploy"
 
 	// Return the task
@@ -388,7 +388,7 @@ func (vapp *VApp) Deploy() (Task, error) {
 		PowerOn: false,
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/action/deploy"
 
 	// Return the task
@@ -435,7 +435,7 @@ func (vapp *VApp) Customize(computername, script string, changeSid bool) (Task, 
 		ChangeSid:           takeBoolPointer(changeSid),
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.Children.VM[0].HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.Children.VM[0].HREF)
 	apiEndpoint.Path += "/guestCustomizationSection/"
 
 	// Return the task
@@ -548,7 +548,7 @@ func (vapp *VApp) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *in
 		},
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.Children.VM[0].HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.Children.VM[0].HREF)
 	apiEndpoint.Path += "/virtualHardwareSection/cpu"
 
 	// Return the task
@@ -639,7 +639,7 @@ func (vapp *VApp) SetOvf(parameters map[string]string) (Task, error) {
 		ProductSection: vapp.VApp.Children.VM[0].ProductSection,
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.Children.VM[0].HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.Children.VM[0].HREF)
 	apiEndpoint.Path += "/productSections"
 
 	// Return the task
@@ -697,7 +697,7 @@ func (vapp *VApp) ChangeNetworkConfig(networks []map[string]interface{}, ip stri
 
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.Children.VM[0].HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.Children.VM[0].HREF)
 	apiEndpoint.Path += "/networkConnectionSection/"
 
 	// Return the task
@@ -739,7 +739,7 @@ func (vapp *VApp) ChangeMemorySize(size int) (Task, error) {
 		},
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.Children.VM[0].HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.Children.VM[0].HREF)
 	apiEndpoint.Path += "/virtualHardwareSection/memory"
 
 	// Return the task
@@ -1243,7 +1243,7 @@ func updateNetworkConfigurations(vapp *VApp, networkConfigurations []types.VAppN
 		NetworkConfig: networkConfigurations,
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/networkConfigSection/"
 
 	// Return the task

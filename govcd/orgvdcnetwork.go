@@ -60,7 +60,7 @@ func (orgVdcNet *OrgVDCNetwork) Delete() (Task, error) {
 		return Task{}, fmt.Errorf("error refreshing network: %s", err)
 	}
 	pathArr := strings.Split(orgVdcNet.OrgVDCNetwork.HREF, "/")
-	apiEndpoint, _ := url.ParseRequestURI(orgVdcNet.OrgVDCNetwork.HREF)
+	apiEndpoint := urlParseRequestURI(orgVdcNet.OrgVDCNetwork.HREF)
 	apiEndpoint.Path = "/api/admin/network/" + pathArr[len(pathArr)-1]
 
 	var resp *http.Response

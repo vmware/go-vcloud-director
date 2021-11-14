@@ -778,3 +778,11 @@ func copyUrlRef(in *url.URL) *url.URL {
 	newUrlRef, _ := url.Parse(in.String())
 	return newUrlRef
 }
+
+func urlParseRequestURI(href string) *url.URL {
+	apiEndpoint, err := url.ParseRequestURI(href)
+	if err != nil {
+		util.Logger.Printf("[urlParseRequestURI] error parsing request URI: %s", err)
+	}
+	return apiEndpoint
+}
