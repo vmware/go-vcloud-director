@@ -162,12 +162,24 @@ func makeDateFilter(items []DateItem) ([]FilterMatch, error) {
 
 	if earliestFound && latestFound && earliestDate != latestDate {
 		earlyFilter := NewFilterDef()
-		_ = earlyFilter.AddFilter(types.FilterDate, "<"+latestDate)
-		_ = earlyFilter.AddFilter(types.FilterEarliest, "true")
+		err := earlyFilter.AddFilter(types.FilterDate, "<"+latestDate)
+		if err != nil {
+			return nil, err
+		}
+		err = earlyFilter.AddFilter(types.FilterEarliest, "true")
+		if err != nil {
+			return nil, err
+		}
 
 		lateFilter := NewFilterDef()
-		_ = lateFilter.AddFilter(types.FilterDate, ">"+earliestDate)
-		_ = lateFilter.AddFilter(types.FilterLatest, "true")
+		err = lateFilter.AddFilter(types.FilterDate, ">"+earliestDate)
+		if err != nil {
+			return nil, err
+		}
+		err = lateFilter.AddFilter(types.FilterLatest, "true")
+		if err != nil {
+			return nil, err
+		}
 
 		filters = append(filters, FilterMatch{earlyFilter, earliestName, earliestEntity, entityType})
 		filters = append(filters, FilterMatch{lateFilter, latestName, latestEntity, entityType})
@@ -459,7 +471,10 @@ func ipToRegex(ip string) string {
 func strToRegex(s string) string {
 	var result strings.Builder
 	var err error
-	result.WriteString("^")
+	_, err = result.WriteString("^")
+	if err != nil {
+		util.Logger.Printf("[DEBUG - strToRegex] error writing to string: %s", err)
+	}
 	for _, ch := range s {
 		if ch == '.' {
 			_, err = result.WriteString(fmt.Sprintf("\\%c", ch))

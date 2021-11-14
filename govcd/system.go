@@ -687,6 +687,9 @@ func CreateExternalNetwork(vcdClient *VCDClient, externalNetworkData *types.Exte
 	externalNetHREF := vcdClient.Client.VCDHREF
 	externalNetHREF.Path += "/admin/extension/externalnets"
 
+	if externalNetwork.Configuration == nil {
+		externalNetwork.Configuration = &types.NetworkConfiguration{}
+	}
 	externalNetwork.Configuration.FenceMode = "isolated"
 
 	// Return the task

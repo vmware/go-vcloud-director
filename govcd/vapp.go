@@ -1006,6 +1006,9 @@ func (vapp *VApp) UpdateNetworkAsync(networkSettingsToUpdate *VappNetworkSetting
 	if networkToUpdate == (types.VAppNetworkConfiguration{}) {
 		return Task{}, fmt.Errorf("not found network to update with Id %s", networkSettingsToUpdate.ID)
 	}
+	if networkToUpdate.Configuration == nil {
+		networkToUpdate.Configuration = &types.NetworkConfiguration{}
+	}
 	networkToUpdate.Configuration.RetainNetInfoAcrossDeployments = networkSettingsToUpdate.RetainIpMacEnabled
 	// new network to connect
 	if networkToUpdate.Configuration.ParentNetwork == nil && orgNetwork != nil {
@@ -1118,6 +1121,9 @@ func (vapp *VApp) UpdateOrgNetworkAsync(networkSettingsToUpdate *VappNetworkSett
 		fenceMode = types.FenceModeNAT
 	}
 
+	if networkToUpdate.Configuration == nil {
+		networkToUpdate.Configuration = &types.NetworkConfiguration{}
+	}
 	networkToUpdate.Configuration.RetainNetInfoAcrossDeployments = networkSettingsToUpdate.RetainIpMacEnabled
 	networkToUpdate.Configuration.FenceMode = fenceMode
 

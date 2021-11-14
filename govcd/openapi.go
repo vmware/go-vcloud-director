@@ -634,7 +634,10 @@ func (client *Client) newOpenApiRequest(apiVersion string, params url.Values, me
 	// io.Reader with all contents to use it down the line
 	var readBody []byte
 	if body != nil {
-		readBody, _ = ioutil.ReadAll(body)
+		readBody, err := ioutil.ReadAll(body)
+		if err != nil {
+			util.Logger.Printf("[DEBUG - newOpenApiRequest] error reading body: %s", err)
+		}
 		body = bytes.NewReader(readBody)
 	}
 

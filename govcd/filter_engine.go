@@ -291,10 +291,6 @@ func searchByFilter(queryByMetadata queryByMetadataFunc, queryWithMetadataFields
 			return nil, explanation, fmt.Errorf("search for oldest item failed. Empty dates found for items %v", emptyDatesFound)
 		}
 	}
-	if searchEarliest || searchLatest {
-		// We should never reach this point, as a failure for newest or oldest item was caught above, but just in case
-		return nil, explanation, fmt.Errorf("search for oldest or earliest item failed. No reason found")
-	}
 	return candidatesByConditions, explanation, nil
 }
 
