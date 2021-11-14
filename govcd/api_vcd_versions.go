@@ -151,7 +151,10 @@ func (client *Client) vcdFetchSupportedVersions() error {
 func (client *Client) MaxSupportedVersion() (string, error) {
 	versions := make([]*semver.Version, len(client.supportedVersions.VersionInfos))
 	for index, versionInfo := range client.supportedVersions.VersionInfos {
-		version, _ := semver.NewVersion(versionInfo.Version)
+		version, err := semver.NewVersion(versionInfo.Version)
+		if err != nil {
+			return "", fmt.Errorf("error parsing version %s: %s", versionInfo.Version, err)
+		}
 		versions[index] = version
 	}
 	// Sort supported versions in order lowest-highest
@@ -217,8 +220,12 @@ func (client *Client) validateAPIVersion() error {
 	}
 
 	// Check if version is supported
-	if ok, err := client.vcdCheckSupportedVersion(client.APIVersion); !ok || err != nil {
-		return fmt.Errorf("API version %s is not supported: %s", client.APIVersion, err)
+	ok, err := client.vcdCheckSupportedVersion(client.APIVersion)
+	if err != nil {
+		return fmt.Errorf("error checking version %s: %s", client.APIVersion, err)
+	}
+	if !ok {
+		return fmt.Errorf("API version %s is not supported", client.APIVersion)
 	}
 
 	return nil

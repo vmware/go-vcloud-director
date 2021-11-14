@@ -185,7 +185,10 @@ func uploadPartFile(client *Client, part []byte, partDataSize int64, uDetails up
 	if err != nil {
 		return fmt.Errorf("file upload failed. Err: %s", err)
 	}
-	response.Body.Close()
+	err = response.Body.Close()
+	if err != nil {
+		return fmt.Errorf("file closing failed. Err: %s", err)
+	}
 
 	uDetails.callBack(uDetails.uploadedBytesForCallback+partDataSize, uDetails.allFilesSize)
 
@@ -197,8 +200,11 @@ func makeEmptyRequest(client *Client) {
 	apiEndpoint := client.VCDHREF
 	apiEndpoint.Path += "/query?type=task&format=records&page=1&pageSize=5&"
 
-	_, _ = client.ExecuteRequest(apiEndpoint.String(), http.MethodGet,
+	_, err := client.ExecuteRequest(apiEndpoint.String(), http.MethodGet,
 		"", "error making empty request: %s", nil, nil)
+	if err != nil {
+		util.Logger.Printf("[DEBUG - makeEmptyRequest] error executing request: %s", err)
+	}
 }
 
 func getUploadLink(files *types.FilesList) (*url.URL, error) {

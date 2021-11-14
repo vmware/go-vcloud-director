@@ -263,7 +263,7 @@ func (egw *EdgeGateway) RemoveNATRuleAsync(id string) (Task, error) {
 		NatService: natServiceToUpdate,
 	}
 
-	egwConfigureHref, _ := url.ParseRequestURI(egw.EdgeGateway.HREF)
+	egwConfigureHref := urlParseRequestURI(egw.EdgeGateway.HREF)
 	egwConfigureHref.Path += "/action/configureServices"
 
 	// Return the task
@@ -428,7 +428,7 @@ func (egw *EdgeGateway) UpdateNatRuleAsync(natRule *types.NatRule) (Task, error)
 		NatService: natServiceToUpdate,
 	}
 
-	egwConfigureHref, _ := url.ParseRequestURI(egw.EdgeGateway.HREF)
+	egwConfigureHref := urlParseRequestURI(egw.EdgeGateway.HREF)
 	egwConfigureHref.Path += "/action/configureServices"
 
 	// Return the task
@@ -506,7 +506,7 @@ func (egw *EdgeGateway) AddNATRuleAsync(ruleDetails NatRule) (Task, error) {
 		NatService: newNatService,
 	}
 
-	egwConfigureHref, _ := url.ParseRequestURI(egw.EdgeGateway.HREF)
+	egwConfigureHref := urlParseRequestURI(egw.EdgeGateway.HREF)
 	egwConfigureHref.Path += "/action/configureServices"
 
 	// Return the task

@@ -10,6 +10,7 @@ import (
 	"net/url"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 // NsxtImportableSwitch is a read only object to retrieve NSX-T segments (importable switches) to be used for Org VDC
@@ -121,7 +122,10 @@ func getFilteredNsxtImportableSwitches(filter map[string]string, client *Client)
 	apiEndpoint := client.VCDHREF
 	endpoint := apiEndpoint.Scheme + "://" + apiEndpoint.Host + "/network/orgvdcnetworks/importableswitches/"
 	// error below is ignored because it is a static endpoint
-	urlRef, _ := url.Parse(endpoint)
+	urlRef, err := url.Parse(endpoint)
+	if err != nil {
+		util.Logger.Printf("[DEBUG - getFilteredNsxtImportableSwitches] error parsing URL: %s", err)
+	}
 
 	headAccept := http.Header{}
 	headAccept.Set("Accept", types.JSONMime)
