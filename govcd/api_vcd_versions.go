@@ -172,24 +172,24 @@ func (client *Client) MaxSupportedVersion() (string, error) {
 
 // vcdCheckSupportedVersion checks if there is at least one specified version exactly matching listed ones.
 // Format example "27.0"
-func (client *Client) vcdCheckSupportedVersion(version string) (bool, error) {
+func (client *Client) vcdCheckSupportedVersion(version string) error {
 	return client.checkSupportedVersionConstraint(fmt.Sprintf("= %s", version))
 }
 
 // Checks if there is at least one specified version matching the list returned by vCD.
 // Constraint format can be in format ">= 27.0, < 32",">= 30" ,"= 27.0".
-func (client *Client) checkSupportedVersionConstraint(versionConstraint string) (bool, error) {
+func (client *Client) checkSupportedVersionConstraint(versionConstraint string) error {
 	for _, versionInfo := range client.supportedVersions.VersionInfos {
 		versionMatch, err := client.apiVersionMatchesConstraint(versionInfo.Version, versionConstraint)
 		if err != nil {
-			return false, fmt.Errorf("cannot match version: %s", err)
+			return fmt.Errorf("cannot match version: %s", err)
 		}
 
 		if versionMatch {
-			return true, nil
+			return nil
 		}
 	}
-	return false, fmt.Errorf("version %s is not supported", versionConstraint)
+	return fmt.Errorf("version %s is not supported", versionConstraint)
 }
 
 func (client *Client) apiVersionMatchesConstraint(version, versionConstraint string) (bool, error) {
@@ -220,12 +220,9 @@ func (client *Client) validateAPIVersion() error {
 	}
 
 	// Check if version is supported
-	ok, err := client.vcdCheckSupportedVersion(client.APIVersion)
+	err = client.vcdCheckSupportedVersion(client.APIVersion)
 	if err != nil {
-		return fmt.Errorf("error checking version %s: %s", client.APIVersion, err)
-	}
-	if !ok {
-		return fmt.Errorf("API version %s is not supported", client.APIVersion)
+		return fmt.Errorf("API version %s is not supported: %s", client.APIVersion, err)
 	}
 
 	return nil
