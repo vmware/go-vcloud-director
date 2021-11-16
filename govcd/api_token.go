@@ -71,7 +71,10 @@ func (vcdCli *VCDClient) GetBearerTokenFromApiToken(org, token string) (*types.A
 	if resp.Body != nil {
 		body, err = ioutil.ReadAll(resp.Body)
 	}
+
+	// The default response data to show in the logs is a string of asterisks
 	responseData := "[" + strings.Repeat("*", 10) + "]"
+	// If users request to see sensitive data, we pass the unchanged response body
 	if util.LogPasswords {
 		responseData = string(body)
 	}
