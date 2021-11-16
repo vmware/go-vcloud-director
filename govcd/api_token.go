@@ -19,18 +19,18 @@ import (
 // SetApiToken behaves similarly to SetToken, with the difference that it will
 // return full information about the bearer token, so that the caller can make decisions about token expiration
 func (vcdCli *VCDClient) SetApiToken(org, apiToken string) (*types.ApiTokenRefresh, error) {
-	usableApiToken, err := vcdCli.GetBearerTokenFromApiToken(org, apiToken)
+	tokenRefresh, err := vcdCli.GetBearerTokenFromApiToken(org, apiToken)
 	if err != nil {
 		return nil, err
 	}
-	err = vcdCli.SetToken(org, BearerTokenHeader, usableApiToken.AccessToken)
+	err = vcdCli.SetToken(org, BearerTokenHeader, tokenRefresh.AccessToken)
 	if err != nil {
 		return nil, err
 	}
-	return usableApiToken, nil
+	return tokenRefresh, nil
 }
 
-// GetBearerTokenFromApiToken receives an API token and retrieves a bearer token
+// GetBearerTokenFromApiToken uses an API token to retrieve a bearer token
 // using the refresh token operation.
 func (vcdCli *VCDClient) GetBearerTokenFromApiToken(org, token string) (*types.ApiTokenRefresh, error) {
 	if vcdCli.Client.APIVCDMaxVersionIs("< 36.1") {
