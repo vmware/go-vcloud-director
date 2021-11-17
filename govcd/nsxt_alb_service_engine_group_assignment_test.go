@@ -10,7 +10,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_GetAllEdgeAlbServiceEngineGroupAssignmentsDedicatedSe(check *C) {
+func (vcd *TestVCD) Test_GetAllEdgeAlbServiceEngineGroupAssignmentsDedicated(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
@@ -81,7 +81,7 @@ func (vcd *TestVCD) Test_GetAllEdgeAlbServiceEngineGroupAssignmentsDedicatedSe(c
 	check.Assert(err, IsNil)
 }
 
-func (vcd *TestVCD) Test_GetAllEdgeAlbServiceEngineGroupAssignmentsSharedSe(check *C) {
+func (vcd *TestVCD) Test_GetAllEdgeAlbServiceEngineGroupAssignmentsShared(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
