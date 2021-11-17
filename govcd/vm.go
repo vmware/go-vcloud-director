@@ -296,9 +296,10 @@ func (vm *VM) updateNicParameters(networks []map[string]interface{}, networkSect
 					ipAllocationMode = types.IPAllocationModeDHCP
 					// TODO v3.0 remove until here when deprecated `ip` and `network_name` attributes are removed
 
-				case ipIsSet && net.ParseIP(ipFieldString) != nil && (network["ip_allocation_mode"].(string) == types.IPAllocationModeManual):
-					ipAllocationMode = types.IPAllocationModeManual
-					ipAddress = ipFieldString
+					// Removed for Coverity warning: dead code - We can reinstate after removing above code
+				//case ipIsSet && net.ParseIP(ipFieldString) != nil && (network["ip_allocation_mode"].(string) == types.IPAllocationModeManual):
+				//	ipAllocationMode = types.IPAllocationModeManual
+				//	ipAddress = ipFieldString
 				default: // New networks functionality. IP was not set and we're defaulting to provided ip_allocation_mode (only manual requires the IP)
 					ipAllocationMode = network["ip_allocation_mode"].(string)
 				}
