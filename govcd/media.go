@@ -132,7 +132,14 @@ func executeUpload(client *Client, media *types.Media, mediaFilePath, mediaName 
 		uploadError:              &uploadError,
 	}
 
-	go uploadFile(client, mediaFilePath, details)
+	go func() {
+		_, err = uploadFile(client, mediaFilePath, details)
+		if err != nil {
+			util.Logger.Println(strings.Repeat("*", 80))
+			util.Logger.Printf("*** [DEBUG - executeUpload] error calling uploadFile: %s\n", err)
+			util.Logger.Println(strings.Repeat("*", 80))
+		}
+	}()
 
 	var task Task
 	for _, item := range media.Tasks.Task {
