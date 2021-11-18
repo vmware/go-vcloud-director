@@ -132,6 +132,9 @@ func executeUpload(client *Client, media *types.Media, mediaFilePath, mediaName 
 		uploadError:              &uploadError,
 	}
 
+	// sending upload process to background, this allows not to lock and return task to client
+	// The error should be captured in details.uploadError, but just in case, we add a logging for the
+	// main error
 	go func() {
 		_, err = uploadFile(client, mediaFilePath, details)
 		if err != nil {
