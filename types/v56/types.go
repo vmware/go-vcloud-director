@@ -2975,3 +2975,11 @@ type UpdateVdcStorageProfiles struct {
 	AddStorageProfile    *VdcStorageProfileConfiguration `xml:"AddStorageProfile,omitempty"`
 	RemoveStorageProfile *Reference                      `xml:"RemoveStorageProfile,omitempty"`
 }
+
+// ApiTokenRefresh contains the access token resulting from a refresh_token operation
+type ApiTokenRefresh struct {
+	AccessToken  string      `json:"access_token"`
+	TokenType    string      `json:"token_type"`
+	ExpiresIn    int         `json:"expires_in"`
+	RefreshToken interface{} `json:"refresh_token"`
+}

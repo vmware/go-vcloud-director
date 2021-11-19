@@ -19,6 +19,7 @@ func (vcd *TestVCD) Test_RightsBundle(check *C) {
 	if !client.IsSysAdmin {
 		check.Skip("test Test_RightsBundle requires system administrator privileges")
 	}
+	vcd.checkSkipWhenApiToken(check)
 
 	// Step 1 - Get all rights bundles
 	allExistingRightsBundle, err := client.GetAllRightsBundles(nil)
