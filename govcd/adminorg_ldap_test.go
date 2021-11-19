@@ -26,6 +26,7 @@ func (vcd *TestVCD) Test_LDAP(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
+	vcd.checkSkipWhenApiToken(check)
 
 	if !catalogItemIsPhotonOs(vcd) {
 		check.Skip(fmt.Sprintf("Catalog item '%s' is not Photon OS", vcd.config.VCD.Catalog.CatalogItem))

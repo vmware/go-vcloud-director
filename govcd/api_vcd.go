@@ -173,34 +173,49 @@ func (vcdClient *VCDClient) GetAuthResponse(username, password, org string) (*ht
 }
 
 // SetToken will set the authorization token in the client, without using other credentials
-// Up to version 29, token authorization uses the the header key x-vcloud-authorization
+// Up to version 29, token authorization uses the header key x-vcloud-authorization
 // In version 30+ it also uses X-Vmware-Vcloud-Access-Token:TOKEN coupled with
 // X-Vmware-Vcloud-Token-Type:"bearer"
-func (vcdClient *VCDClient) SetToken(org, authHeader, token string) error {
-	vcdClient.Client.VCDAuthHeader = authHeader
-	vcdClient.Client.VCDToken = token
+func (vcdCli *VCDClient) SetToken(org, authHeader, token string) error {
+	if authHeader == ApiTokenHeader {
+		util.Logger.Printf("[DEBUG] Attempt authentication using API token")
+		apiToken, err := vcdCli.GetBearerTokenFromApiToken(org, token)
+		if err != nil {
+			util.Logger.Printf("[DEBUG] Authentication using API token was UNSUCCESSFUL: %s", err)
+			return err
+		}
+		token = apiToken.AccessToken
+		authHeader = BearerTokenHeader
+		vcdCli.Client.UsingAccessToken = true
+		util.Logger.Printf("[DEBUG] Authentication using API token was SUCCESSFUL")
+	}
+	if !vcdCli.Client.UsingAccessToken {
+		vcdCli.Client.UsingBearerToken = true
+	}
+	vcdCli.Client.VCDAuthHeader = authHeader
+	vcdCli.Client.VCDToken = token
 
-	err := vcdClient.vcdloginurl()
+	err := vcdCli.vcdloginurl()
 	if err != nil {
 		return fmt.Errorf("error finding LoginUrl: %s", err)
 	}
 
-	vcdClient.Client.IsSysAdmin = strings.EqualFold(org, "system")
+	vcdCli.Client.IsSysAdmin = strings.EqualFold(org, "system")
 	// Get query href
-	vcdClient.QueryHREF = vcdClient.Client.VCDHREF
-	vcdClient.QueryHREF.Path += "/query"
+	vcdCli.QueryHREF = vcdCli.Client.VCDHREF
+	vcdCli.QueryHREF.Path += "/query"
 
 	// The client is now ready to connect using the token, but has not communicated with the vCD yet.
 	// To make sure that it is working, we run a request for the org list.
 	// This list should work always: when run as system administrator, it retrieves all organizations.
 	// When run as org user, it only returns the organization the user is authorized to.
 	// In both cases, we discard the list, as we only use it to certify that the token works.
-	orgListHREF := vcdClient.Client.VCDHREF
+	orgListHREF := vcdCli.Client.VCDHREF
 	orgListHREF.Path += "/org"
 
 	orgList := new(types.OrgList)
 
-	_, err = vcdClient.Client.ExecuteRequest(orgListHREF.String(), http.MethodGet,
+	_, err = vcdCli.Client.ExecuteRequest(orgListHREF.String(), http.MethodGet,
 		"", "error connecting to vCD using token: %s", nil, orgList)
 	if err != nil {
 		return err

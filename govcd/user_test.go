@@ -103,6 +103,7 @@ func (vcd *TestVCD) Test_GetUserByNameOrId(check *C) {
 // Furthermore, disables, and then enables the users again
 // and finally deletes all of them
 func (vcd *TestVCD) Test_UserCRUD(check *C) {
+	vcd.checkSkipWhenApiToken(check)
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
