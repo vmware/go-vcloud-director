@@ -15,11 +15,12 @@ import (
 
 // ExtendedSessionInfo collects data regarding a VCD connection
 type ExtendedSessionInfo struct {
-	User    string
-	Org     string
-	Roles   []string
-	Version string
-	Rights  []string
+	User           string
+	Org            string
+	Roles          []string
+	Rights         []string
+	Version        string
+	ConnectionType string
 }
 
 // GetSessionInfo collects the basic session information for a VCD connection
@@ -55,6 +56,14 @@ func (vcdClient *VCDClient) GetExtendedSessionInfo() (*ExtendedSessionInfo, erro
 	sessionInfo, err := vcdClient.Client.GetSessionInfo()
 	if err != nil {
 		return nil, err
+	}
+	switch {
+	case vcdClient.Client.UsingBearerToken:
+		extendedSessionInfo.ConnectionType = "Bearer token"
+	case vcdClient.Client.UsingAccessToken:
+		extendedSessionInfo.ConnectionType = "API Access token"
+	default:
+		extendedSessionInfo.ConnectionType = "Username + password"
 	}
 	version, err := vcdClient.Client.GetVcdFullVersion()
 	if err == nil {
