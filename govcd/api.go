@@ -31,6 +31,7 @@ type Client struct {
 	VCDHREF       url.URL     // VCD API ENDPOINT
 	Http          http.Client // HttpClient is the client to use. Default will be used if not provided.
 	IsSysAdmin    bool        // flag if client is connected as system administrator
+	IsBearerToken bool        // flag if client is using a bearer token
 	IsAPiToken    bool        // flag if client is using an API token
 
 	// MaxRetryTimeout specifies a time limit (in seconds) for retrying requests made by the SDK

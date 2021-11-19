@@ -189,6 +189,9 @@ func (vcdCli *VCDClient) SetToken(org, authHeader, token string) error {
 		vcdCli.Client.IsAPiToken = true
 		util.Logger.Printf("[DEBUG] Authentication using API token was SUCCESSFUL")
 	}
+	if !vcdCli.Client.IsAPiToken {
+		vcdCli.Client.IsBearerToken = true
+	}
 	vcdCli.Client.VCDAuthHeader = authHeader
 	vcdCli.Client.VCDToken = token
 
