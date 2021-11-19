@@ -802,6 +802,31 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+	// 	OpenApiEntityAlbSettingsDisable has different API structure therefore generic `OpenApiEntity` case does not fit cleanup
+	case "OpenApiEntityAlbSettingsDisable":
+		edge, err := vcd.nsxtVdc.GetNsxtEdgeGatewayByName(entity.Parent)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		edgeAlbSettingsConfig, err := edge.GetAlbSettings()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+		if edgeAlbSettingsConfig.Enabled == false {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+
+		err = edge.DisableAlb()
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 	case "vapp":
 		vdc := vcd.vdc
 		var err error
