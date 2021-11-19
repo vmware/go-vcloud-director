@@ -16,6 +16,8 @@ import (
 )
 
 func (vcd *TestVCD) Test_Roles(check *C) {
+
+	vcd.checkSkipWhenApiToken(check)
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)

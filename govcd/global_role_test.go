@@ -28,6 +28,7 @@ func (vcd *TestVCD) Test_GlobalRoles(check *C) {
 	if !client.IsSysAdmin {
 		check.Skip("test Test_GlobalRoles requires system administrator privileges")
 	}
+	vcd.checkSkipWhenApiToken(check)
 
 	// Step 1 - Get all global roles
 	allExistingGlobalRoles, err := client.GetAllGlobalRoles(nil)
