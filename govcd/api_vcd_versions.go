@@ -110,7 +110,7 @@ func (client *Client) APIClientVersionIs(versionConstraint string) bool {
 
 	isSupported, err := client.apiVersionMatchesConstraint(client.APIVersion, versionConstraint)
 	if err != nil {
-		util.Logger.Printf("[ERROR] unable to find cur supported version : %s", err)
+		util.Logger.Printf("[ERROR] unable to find supported version : %s", err)
 		return false
 	}
 
