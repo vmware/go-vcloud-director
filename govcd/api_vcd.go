@@ -169,6 +169,7 @@ func (vcdCli *VCDClient) GetAuthResponse(username, password, org string) (*http.
 		}
 	}
 
+	vcdCli.LogSessionInfo()
 	return resp, nil
 }
 
@@ -205,6 +206,7 @@ func (vcdCli *VCDClient) SetToken(org, authHeader, token string) error {
 	if err != nil {
 		return err
 	}
+	vcdCli.LogSessionInfo()
 	return nil
 }
 
