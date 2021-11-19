@@ -18,12 +18,12 @@ import (
 
 // SetApiToken behaves similarly to SetToken, with the difference that it will
 // return full information about the bearer token, so that the caller can make decisions about token expiration
-func (vcdCli *VCDClient) SetApiToken(org, apiToken string) (*types.ApiTokenRefresh, error) {
-	tokenRefresh, err := vcdCli.GetBearerTokenFromApiToken(org, apiToken)
+func (vcdClient *VCDClient) SetApiToken(org, apiToken string) (*types.ApiTokenRefresh, error) {
+	tokenRefresh, err := vcdClient.GetBearerTokenFromApiToken(org, apiToken)
 	if err != nil {
 		return nil, err
 	}
-	err = vcdCli.SetToken(org, BearerTokenHeader, tokenRefresh.AccessToken)
+	err = vcdClient.SetToken(org, BearerTokenHeader, tokenRefresh.AccessToken)
 	if err != nil {
 		return nil, err
 	}
@@ -32,17 +32,17 @@ func (vcdCli *VCDClient) SetApiToken(org, apiToken string) (*types.ApiTokenRefre
 
 // GetBearerTokenFromApiToken uses an API token to retrieve a bearer token
 // using the refresh token operation.
-func (vcdCli *VCDClient) GetBearerTokenFromApiToken(org, token string) (*types.ApiTokenRefresh, error) {
-	if vcdCli.Client.APIVCDMaxVersionIs("< 36.1") {
-		version, err := vcdCli.Client.GetVcdFullVersion()
+func (vcdClient *VCDClient) GetBearerTokenFromApiToken(org, token string) (*types.ApiTokenRefresh, error) {
+	if vcdClient.Client.APIVCDMaxVersionIs("< 36.1") {
+		version, err := vcdClient.Client.GetVcdFullVersion()
 		if err == nil {
 			return nil, fmt.Errorf("minimum version for API token is 10.3.1 - Version detected: %s", version.Version)
 		}
 		// If we can't get the VCD version, we return API version info
-		return nil, fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", vcdCli.Client.APIVersion)
+		return nil, fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", vcdClient.Client.APIVersion)
 	}
 	var userDef string
-	urlStr := strings.Replace(vcdCli.Client.VCDHREF.String(), "/api", "", 1)
+	urlStr := strings.Replace(vcdClient.Client.VCDHREF.String(), "/api", "", 1)
 	if strings.EqualFold(org, "system") {
 		userDef = "provider"
 	} else {
@@ -58,10 +58,10 @@ func (vcdCli *VCDClient) GetBearerTokenFromApiToken(org, token string) (*types.A
 		"grant_type":    "refresh_token",
 		"refresh_token": token,
 	}
-	req := vcdCli.Client.NewRequest(options, http.MethodPost, *reqHref, nil)
+	req := vcdClient.Client.NewRequest(options, http.MethodPost, *reqHref, nil)
 	req.Header.Add("Accept", "application/*;version=36.1")
 
-	resp, err := vcdCli.Client.Http.Do(req)
+	resp, err := vcdClient.Client.Http.Do(req)
 	if err != nil {
 		return nil, err
 	}
