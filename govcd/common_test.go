@@ -870,7 +870,7 @@ func contains(s []string, element string) bool {
 
 // checkSkipWhenApiToken skips the test if the connection was established using an API token
 func (vcd *TestVCD) checkSkipWhenApiToken(check *C) {
-	if vcd.client.Client.IsAPiToken {
+	if vcd.client.Client.UsingAccessToken {
 		check.Skip("This test can't run on API token")
 	}
 }
