@@ -73,9 +73,7 @@ func (vcdClient *VCDClient) GetExtendedSessionInfo() (*ExtendedSessionInfo, erro
 	if len(sessionInfo.Roles) == 0 {
 		return &extendedSessionInfo, nil
 	}
-	for _, roleName := range sessionInfo.Roles {
-		extendedSessionInfo.Roles = append(extendedSessionInfo.Roles, roleName)
-	}
+	extendedSessionInfo.Roles = append(extendedSessionInfo.Roles, sessionInfo.Roles...)
 	org, err := vcdClient.GetAdminOrgById(sessionInfo.Org.ID)
 	if err != nil {
 		return &extendedSessionInfo, err
