@@ -6,10 +6,8 @@ package govcd
 
 import (
 	"fmt"
-	"net/url"
-	"strings"
-
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"net/url"
 )
 
 // Certificate is a structure defining a certificate in VCD
@@ -186,21 +184,10 @@ func (adminOrg *AdminOrg) GetAllCertificatesFromLibrary(queryParameters url.Valu
 // https://github.com/golang/go/issues/4013
 // https://github.com/czos/goamz/pull/11/files
 func getCertificateFromLibraryByName(client *Client, name string, additionalHeader map[string]string) (*Certificate, error) {
-	var params = url.Values{}
-
-	slowSearch := false
-	versionWithNoBug, err := client.VersionEqualOrGreater("10.3", 3)
+	slowSearch, params, err := isShouldDoSlowSearch(name, client)
 	if err != nil {
 		return nil, err
 	}
-	if (!versionWithNoBug && (strings.Contains(name, ",") || strings.Contains(name, ";"))) ||
-		strings.Contains(name, " ") || strings.Contains(name, "+") || strings.Contains(name, "*") {
-		slowSearch = true
-	} else {
-		params.Set("filter", fmt.Sprintf("alias==%s", url.QueryEscape(name)))
-		params.Set("filterEncoded", "true")
-	}
-
 	certificates, err := getAllCertificateFromLibrary(client, params, additionalHeader)
 	if err != nil {
 		return nil, err

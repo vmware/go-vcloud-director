@@ -360,6 +360,8 @@ const (
 	OpenApiEndpointIpSecVpnTunnelStatus               = "edgeGateways/%s/ipsec/tunnels/%s/status"
 	OpenApiEndpointSSLCertificateLibrary              = "ssl/certificateLibrary/"
 	OpenApiEndpointSSLCertificateLibraryOld           = "ssl/cetificateLibrary/"
+	OpenApiEndpointVdcGroups                          = "vdcGroups/"
+	OpenApiEndpointVdcGroupsCandidateVdcs             = "vdcGroups/networkingCandidateVdcs"
 
 	// NSX-T ALB related endpoints
 	OpenApiEndpointAlbController = "loadBalancer/controllers/"
