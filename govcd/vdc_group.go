@@ -248,9 +248,6 @@ func (adminOrg *AdminOrg) GetVdcGroupById(id string) (*VdcGroup, error) {
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroups
-	if err != nil {
-		return nil, err
-	}
 	minimumApiVersion, err := adminOrg.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
