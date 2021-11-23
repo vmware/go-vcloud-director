@@ -81,7 +81,7 @@ func (vcd *TestVCD) Test_GetAllAlbServiceEngineGroups(check *C) {
 
 // spawnAlbControllerCloudServiceEngineGroup is a helper function to spawn NSX-T ALB Controller, ALB Cloud, and ALB
 // Service Engine Group
-func spawnAlbControllerCloudServiceEngineGroup(vcd *TestVCD, check *C) (*NsxtAlbController, *NsxtAlbCloud, *NsxtAlbServiceEngineGroup) {
+func spawnAlbControllerCloudServiceEngineGroup(vcd *TestVCD, check *C, seGroupReservationType string) (*NsxtAlbController, *NsxtAlbCloud, *NsxtAlbServiceEngineGroup) {
 	skipNoNsxtAlbConfiguration(vcd, check)
 
 	albController, createdAlbCloud := spawnAlbControllerAndCloud(vcd, check)
@@ -92,7 +92,7 @@ func spawnAlbControllerCloudServiceEngineGroup(vcd *TestVCD, check *C) (*NsxtAlb
 	albSeGroup := &types.NsxtAlbServiceEngineGroup{
 		Name:            check.TestName() + "SE-group",
 		Description:     "Service Engine Group created by " + check.TestName(),
-		ReservationType: "DEDICATED",
+		ReservationType: seGroupReservationType,
 		ServiceEngineGroupBacking: types.ServiceEngineGroupBacking{
 			BackingId: importableSeGroups[0].NsxtAlbImportableServiceEngineGroups.ID,
 			LoadBalancerCloudRef: &types.OpenApiReference{

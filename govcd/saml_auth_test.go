@@ -27,6 +27,7 @@ func (vcd *TestVCD) Test_SamlAdfsAuth(check *C) {
 	if cfg.Provider.SamlUser == "" || cfg.Provider.SamlPassword == "" || cfg.VCD.Org == "" {
 		check.Skip("Skipping test because no Org, SamlUser, SamlPassword and was specified")
 	}
+	vcd.checkSkipWhenApiToken(check)
 
 	// Get vDC details using existing vCD client
 	org, err := vcd.client.GetOrgByName(cfg.VCD.Org)

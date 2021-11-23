@@ -1,5 +1,5 @@
-//go:build api || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || nsxv || nsxt || openapi || affinity || search || ALL
-// +build api functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user nsxv nsxt openapi affinity search ALL
+//go:build api || auth || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || role || nsxv || nsxt || openapi || affinity || search || ALL
+// +build api auth functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user role nsxv nsxt openapi affinity search ALL
 
 /*
  * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -866,4 +866,11 @@ func contains(s []string, element string) bool {
 		}
 	}
 	return false
+}
+
+// checkSkipWhenApiToken skips the test if the connection was established using an API token
+func (vcd *TestVCD) checkSkipWhenApiToken(check *C) {
+	if vcd.client.Client.UsingAccessToken {
+		check.Skip("This test can't run on API token")
+	}
 }

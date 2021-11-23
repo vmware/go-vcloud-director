@@ -747,8 +747,8 @@ func (client *Client) GetStorageProfileByHref(url string) (*types.VdcStorageProf
 // 2. [FOUND] The name matches, it is not unique, and it is disambiguated by the provider VDC HREF
 // 3. [NOT FOUND] The name matches, is not unique, but no Provider HREF was given: the search will fail
 // 4. [NOT FOUND] The name does not match any of the storage profiles
-func (vcdCli *VCDClient) QueryProviderVdcStorageProfileByName(name, providerVDCHref string) (*types.QueryResultProviderVdcStorageProfileRecordType, error) {
-	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
+func (vcdClient *VCDClient) QueryProviderVdcStorageProfileByName(name, providerVDCHref string) (*types.QueryResultProviderVdcStorageProfileRecordType, error) {
+	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":     "providerVdcStorageProfile",
 		"pageSize": "128",
 	})
@@ -933,8 +933,8 @@ func (client *Client) QueryAllVdcs() ([]*types.QueryResultOrgVdcRecordType, erro
 }
 
 // QueryNsxtManagerByName searches for NSX-T managers available in VCD
-func (vcdCli *VCDClient) QueryNsxtManagerByName(name string) ([]*types.QueryResultNsxtManagerRecordType, error) {
-	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
+func (vcdClient *VCDClient) QueryNsxtManagerByName(name string) ([]*types.QueryResultNsxtManagerRecordType, error) {
+	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":          "nsxTManager",
 		"filter":        fmt.Sprintf("name==%s", url.QueryEscape(name)),
 		"filterEncoded": "true",
@@ -1097,13 +1097,13 @@ func GetUuidFromHref(href string, idAtEnd bool) (string, error) {
 }
 
 // GetOrgList returns the list ov available orgs
-func (vcdCli *VCDClient) GetOrgList() (*types.OrgList, error) {
-	orgListHREF := vcdCli.Client.VCDHREF
+func (vcdClient *VCDClient) GetOrgList() (*types.OrgList, error) {
+	orgListHREF := vcdClient.Client.VCDHREF
 	orgListHREF.Path += "/org"
 
 	orgList := new(types.OrgList)
 
-	_, err := vcdCli.Client.ExecuteRequest(orgListHREF.String(), http.MethodGet,
+	_, err := vcdClient.Client.ExecuteRequest(orgListHREF.String(), http.MethodGet,
 		"", "error getting list of organizations: %s", nil, orgList)
 	if err != nil {
 		return nil, err

@@ -332,7 +332,8 @@ const (
 	FiqlQueryTimestampFormat = "2006-01-02T15:04:05.000Z"
 )
 
-// These constants allow to construct OpenAPI endpoint paths and avoid strings in code for easy replacement in future.
+// These constants allow constructing OpenAPI endpoint paths and avoid strings in code for easy replacement in the
+// future.
 const (
 	OpenApiPathVersion1_0_0                           = "1.0.0/"
 	OpenApiEndpointRoles                              = "roles/"
@@ -364,14 +365,16 @@ const (
 	OpenApiEndpointVdcGroupsCandidateVdcs             = "vdcGroups/networkingCandidateVdcs"
 
 	// NSX-T ALB related endpoints
+
 	OpenApiEndpointAlbController = "loadBalancer/controllers/"
+
 	// OpenApiEndpointAlbImportableClouds endpoint requires a filter _context==urn:vcloud:loadBalancerController:aa23ef66-ba32-48b2-892f-7acdffe4587e
 	OpenApiEndpointAlbImportableClouds              = "nsxAlbResources/importableClouds/"
 	OpenApiEndpointAlbImportableServiceEngineGroups = "nsxAlbResources/importableServiceEngineGroups"
 	OpenApiEndpointAlbCloud                         = "loadBalancer/clouds/"
 	OpenApiEndpointAlbServiceEngineGroups           = "loadBalancer/serviceEngineGroups/"
-
-	OpenApiEndpointEdgeGatewayAlb = "edgeGateways/%s/loadBalancer"
+	OpenApiEndpointAlbServiceEngineGroupAssignments = "loadBalancer/serviceEngineGroups/assignments/"
+	OpenApiEndpointAlbEdgeGateway                   = "edgeGateways/%s/loadBalancer"
 )
 
 // Header keys to run operations in tenant context
@@ -398,7 +401,7 @@ const (
 const (
 	// OrgVdcNetworkTypeRouted can be used to create NSX-T or NSX-V routed Org Vdc network
 	OrgVdcNetworkTypeRouted = "NAT_ROUTED"
-	// OrgVdcNetworkTypeIsolated can be used to creaate NSX-T or NSX-V isolated Org Vdc network
+	// OrgVdcNetworkTypeIsolated can be used to create NSX-T or NSX-V isolated Org Vdc network
 	OrgVdcNetworkTypeIsolated = "ISOLATED"
 	// OrgVdcNetworkTypeOpaque type is used to create NSX-T imported Org Vdc network
 	OrgVdcNetworkTypeOpaque = "OPAQUE"

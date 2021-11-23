@@ -25,12 +25,14 @@ import (
 
 // Client provides a client to vCloud Director, values can be populated automatically using the Authenticate method.
 type Client struct {
-	APIVersion    string      // The API version required
-	VCDToken      string      // Access Token (authorization header)
-	VCDAuthHeader string      // Authorization header
-	VCDHREF       url.URL     // VCD API ENDPOINT
-	Http          http.Client // HttpClient is the client to use. Default will be used if not provided.
-	IsSysAdmin    bool        // flag if client is connected as system administrator
+	APIVersion       string      // The API version required
+	VCDToken         string      // Access Token (authorization header)
+	VCDAuthHeader    string      // Authorization header
+	VCDHREF          url.URL     // VCD API ENDPOINT
+	Http             http.Client // HttpClient is the client to use. Default will be used if not provided.
+	IsSysAdmin       bool        // flag if client is connected as system administrator
+	UsingBearerToken bool        // flag if client is using a bearer token
+	UsingAccessToken bool        // flag if client is using an API token
 
 	// MaxRetryTimeout specifies a time limit (in seconds) for retrying requests made by the SDK
 	// where vCloud director may take time to respond and retry mechanism is needed.
@@ -60,6 +62,8 @@ const AuthorizationHeader = "X-Vcloud-Authorization"
 
 // BearerTokenHeader is the header key containing a bearer token
 const BearerTokenHeader = "X-Vmware-Vcloud-Access-Token"
+
+const ApiTokenHeader = "API-token"
 
 // General purpose error to be used whenever an entity is not found from a "GET" request
 // Allows a simpler checking of the call result

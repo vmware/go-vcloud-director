@@ -831,3 +831,22 @@ type NsxtAlbConfig struct {
 	// be updated.
 	ServiceNetworkDefinition string `json:"serviceNetworkDefinition,omitempty"`
 }
+
+// NsxtAlbServiceEngineGroupAssignment configures Service Engine Group assignments to Edge Gateway. The only mandatory
+// fields are `GatewayRef` and `ServiceEngineGroupRef`. `MinVirtualServices` and `MaxVirtualServices` are only available
+// for SHARED Service Engine Groups.
+type NsxtAlbServiceEngineGroupAssignment struct {
+	ID string `json:"id,omitempty"`
+	// GatewayRef contains reference to Edge Gateway
+	GatewayRef *OpenApiReference `json:"gatewayRef"`
+	// ServiceEngineGroupRef contains a reference to Service Engine Group
+	ServiceEngineGroupRef *OpenApiReference `json:"serviceEngineGroupRef"`
+	// GatewayOrgRef optional Org reference for gateway
+	GatewayOrgRef *OpenApiReference `json:"gatewayOrgRef,omitempty"`
+	// GatewayOwnerRef can be a VDC or VDC group
+	GatewayOwnerRef    *OpenApiReference `json:"gatewayOwnerRef,omitempty"`
+	MaxVirtualServices *int              `json:"maxVirtualServices,omitempty"`
+	MinVirtualServices *int              `json:"minVirtualServices,omitempty"`
+	// NumDeployedVirtualServices is a read only value
+	NumDeployedVirtualServices int `json:"numDeployedVirtualServices,omitempty"`
+}

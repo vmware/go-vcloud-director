@@ -35,6 +35,7 @@ func (vcd *TestVCD) Test_AdminCatalogAccessControl(check *C) {
 		check.Skip("Test_AdminCatalogAccessControl: Org name not given.")
 		return
 	}
+	vcd.checkSkipWhenApiToken(check)
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
@@ -64,6 +65,7 @@ func (vcd *TestVCD) Test_CatalogAccessControl(check *C) {
 		check.Skip("Test_CatalogAccessControl: Org name not given.")
 		return
 	}
+	vcd.checkSkipWhenApiToken(check)
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
