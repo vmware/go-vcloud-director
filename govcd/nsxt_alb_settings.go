@@ -9,7 +9,7 @@ import (
 // GetAlbSettings retrieves NSX-T ALB settings for a particular Edge Gateway
 func (egw *NsxtEdgeGateway) GetAlbSettings() (*types.NsxtAlbConfig, error) {
 	client := egw.client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayAlb
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbEdgeGateway
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (egw *NsxtEdgeGateway) GetAlbSettings() (*types.NsxtAlbConfig, error) {
 // UpdateAlbSettings updates NSX-T ALB settings for a particular Edge Gateway
 func (egw *NsxtEdgeGateway) UpdateAlbSettings(config *types.NsxtAlbConfig) (*types.NsxtAlbConfig, error) {
 	client := egw.client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayAlb
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbEdgeGateway
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
