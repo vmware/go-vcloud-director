@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -154,7 +153,7 @@ func (client *Client) FindVMByHREF(vmHREF string) (VM, error) {
 
 func (vm *VM) PowerOn() (Task, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/power/action/powerOn"
 
 	// Return the task
@@ -179,7 +178,7 @@ func (vm *VM) PowerOnAndForceCustomization() error {
 		return fmt.Errorf("VM %s must be undeployed before forcing customization", vm.VM.Name)
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/action/deploy"
 
 	powerOnAndCustomize := &types.DeployVAppParams{
@@ -205,7 +204,7 @@ func (vm *VM) PowerOnAndForceCustomization() error {
 
 func (vm *VM) PowerOff() (Task, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/power/action/powerOff"
 
 	// Return the task
@@ -255,7 +254,7 @@ func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (
 		},
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/virtualHardwareSection/cpu"
 
 	// Return the task
@@ -297,9 +296,10 @@ func (vm *VM) updateNicParameters(networks []map[string]interface{}, networkSect
 					ipAllocationMode = types.IPAllocationModeDHCP
 					// TODO v3.0 remove until here when deprecated `ip` and `network_name` attributes are removed
 
-				case ipIsSet && net.ParseIP(ipFieldString) != nil && (network["ip_allocation_mode"].(string) == types.IPAllocationModeManual):
-					ipAllocationMode = types.IPAllocationModeManual
-					ipAddress = ipFieldString
+					// Removed for Coverity warning: dead code - We can reinstate after removing above code
+				//case ipIsSet && net.ParseIP(ipFieldString) != nil && (network["ip_allocation_mode"].(string) == types.IPAllocationModeManual):
+				//	ipAllocationMode = types.IPAllocationModeManual
+				//	ipAddress = ipFieldString
 				default: // New networks functionality. IP was not set and we're defaulting to provided ip_allocation_mode (only manual requires the IP)
 					ipAllocationMode = network["ip_allocation_mode"].(string)
 				}
@@ -350,7 +350,7 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, erro
 	networkSection.Ovf = types.XMLNamespaceOVF
 	networkSection.Info = "Specifies the available VM network connections"
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/networkConnectionSection/"
 
 	// Return the task
@@ -386,7 +386,7 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 		},
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/virtualHardwareSection/memory"
 
 	// Return the task
@@ -466,7 +466,7 @@ func (vm *VM) Customize(computerName, script string, changeSid bool) (Task, erro
 		ChangeSid:           takeBoolPointer(changeSid),
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/guestCustomizationSection/"
 
 	// Return the task
@@ -482,7 +482,7 @@ func (vm *VM) Undeploy() (Task, error) {
 		UndeployPowerAction: "powerOff",
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/action/undeploy"
 
 	// Return the task
@@ -530,11 +530,10 @@ func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (vm *VM) AttachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, error) {
-	util.Logger.Printf("[TRACE] Attach disk, HREF: %s\n", diskParams.Disk.HREF)
-
-	if diskParams.Disk == nil {
+	if diskParams == nil || diskParams.Disk == nil || diskParams.Disk.HREF == "" {
 		return Task{}, fmt.Errorf("could not find disk info for attach")
 	}
+	util.Logger.Printf("[TRACE] Attach disk, HREF: %s\n", diskParams.Disk.HREF)
 
 	return vm.attachOrDetachDisk(diskParams, types.RelDiskAttach)
 }
@@ -547,11 +546,11 @@ func (vm *VM) AttachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, erro
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (vm *VM) DetachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, error) {
-	util.Logger.Printf("[TRACE] Detach disk, HREF: %s\n", diskParams.Disk.HREF)
 
-	if diskParams.Disk == nil {
+	if diskParams == nil || diskParams.Disk == nil || diskParams.Disk.HREF == "" {
 		return Task{}, fmt.Errorf("could not find disk info for detach")
 	}
+	util.Logger.Printf("[TRACE] Detach disk, HREF: %s\n", diskParams.Disk.HREF)
 
 	return vm.attachOrDetachDisk(diskParams, types.RelDiskDetach)
 }
@@ -714,7 +713,7 @@ func (vm *VM) insertOrEjectMedia(mediaParams *types.MediaInsertOrEjectParams, li
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/GET-VmPendingQuestion.html
 func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/question"
 
 	req := vm.client.NewRequest(map[string]string{}, http.MethodGet, *apiEndpoint, nil)
@@ -761,7 +760,7 @@ func (vm *VM) AnswerQuestion(questionId string, choiceId int) error {
 		ChoiceId:   choiceId,
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/question/action/answer"
 
 	return vm.client.ExecuteRequestWithoutResponse(apiEndpoint.String(), http.MethodPost,
@@ -780,7 +779,7 @@ func (vm *VM) ToggleHardwareVirtualization(isEnabled bool) (Task, error) {
 		return Task{}, fmt.Errorf("hardware virtualization can be changed from powered off state, status: %s", vmStatus)
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	if isEnabled {
 		apiEndpoint.Path += "/action/enableNestedHypervisor"
 	} else {
@@ -1650,7 +1649,7 @@ func addEmptyVmAsyncV10(vapp *VApp, reComposeVAppParams *types.RecomposeVAppPara
 	if err != nil {
 		return Task{}, err
 	}
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/action/recomposeVApp"
 
 	reComposeVAppParams.XmlnsVcloud = types.XMLNamespaceVCloud

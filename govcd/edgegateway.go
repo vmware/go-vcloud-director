@@ -120,7 +120,7 @@ func (egw *EdgeGateway) AddDhcpPool(network *types.OrgVDCNetwork, dhcppool []int
 	for {
 		buffer := bytes.NewBufferString(xml.Header + string(output))
 
-		apiEndpoint, _ := url.ParseRequestURI(egw.EdgeGateway.HREF)
+		apiEndpoint := urlParseRequestURI(egw.EdgeGateway.HREF)
 		apiEndpoint.Path += "/action/configureServices"
 
 		req := egw.client.NewRequest(map[string]string{}, http.MethodPost, *apiEndpoint, buffer)
@@ -197,7 +197,7 @@ func (egw *EdgeGateway) RemoveNATPortMapping(natType, externalIP, externalPort, 
 		NatService: newNatService,
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(egw.EdgeGateway.HREF)
+	apiEndpoint := urlParseRequestURI(egw.EdgeGateway.HREF)
 	apiEndpoint.Path += "/action/configureServices"
 
 	// Return the task
@@ -263,7 +263,7 @@ func (egw *EdgeGateway) RemoveNATRuleAsync(id string) (Task, error) {
 		NatService: natServiceToUpdate,
 	}
 
-	egwConfigureHref, _ := url.ParseRequestURI(egw.EdgeGateway.HREF)
+	egwConfigureHref := urlParseRequestURI(egw.EdgeGateway.HREF)
 	egwConfigureHref.Path += "/action/configureServices"
 
 	// Return the task
@@ -428,7 +428,7 @@ func (egw *EdgeGateway) UpdateNatRuleAsync(natRule *types.NatRule) (Task, error)
 		NatService: natServiceToUpdate,
 	}
 
-	egwConfigureHref, _ := url.ParseRequestURI(egw.EdgeGateway.HREF)
+	egwConfigureHref := urlParseRequestURI(egw.EdgeGateway.HREF)
 	egwConfigureHref.Path += "/action/configureServices"
 
 	// Return the task
@@ -506,7 +506,7 @@ func (egw *EdgeGateway) AddNATRuleAsync(ruleDetails NatRule) (Task, error) {
 		NatService: newNatService,
 	}
 
-	egwConfigureHref, _ := url.ParseRequestURI(egw.EdgeGateway.HREF)
+	egwConfigureHref := urlParseRequestURI(egw.EdgeGateway.HREF)
 	egwConfigureHref.Path += "/action/configureServices"
 
 	// Return the task
@@ -654,7 +654,7 @@ func (egw *EdgeGateway) AddNATPortMappingWithUplink(network *types.OrgVDCNetwork
 		NatService: newNatService,
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(egw.EdgeGateway.HREF)
+	apiEndpoint := urlParseRequestURI(egw.EdgeGateway.HREF)
 	apiEndpoint.Path += "/action/configureServices"
 
 	// Return the task
@@ -687,7 +687,7 @@ func (egw *EdgeGateway) CreateFirewallRules(defaultAction string, rules []*types
 	for {
 		buffer := bytes.NewBufferString(xml.Header + string(output))
 
-		apiEndpoint, _ := url.ParseRequestURI(egw.EdgeGateway.HREF)
+		apiEndpoint := urlParseRequestURI(egw.EdgeGateway.HREF)
 		apiEndpoint.Path += "/action/configureServices"
 
 		req := egw.client.NewRequest(map[string]string{}, http.MethodPost, *apiEndpoint, buffer)
@@ -837,7 +837,7 @@ func (egw *EdgeGateway) Remove1to1Mapping(internal, external string) (Task, erro
 	// Fix
 	newEdgeConfig.NatService.IsEnabled = true
 
-	apiEndpoint, _ := url.ParseRequestURI(egw.EdgeGateway.HREF)
+	apiEndpoint := urlParseRequestURI(egw.EdgeGateway.HREF)
 	apiEndpoint.Path += "/action/configureServices"
 
 	// Return the task
@@ -932,7 +932,7 @@ func (egw *EdgeGateway) Create1to1Mapping(internal, external, description string
 
 	newEdgeConfig.FirewallService.FirewallRule = append(newEdgeConfig.FirewallService.FirewallRule, fwout)
 
-	apiEndpoint, _ := url.ParseRequestURI(egw.EdgeGateway.HREF)
+	apiEndpoint := urlParseRequestURI(egw.EdgeGateway.HREF)
 	apiEndpoint.Path += "/action/configureServices"
 
 	// Return the task
@@ -950,7 +950,7 @@ func (egw *EdgeGateway) AddIpsecVPN(ipsecVPNConfig *types.EdgeGatewayServiceConf
 
 	ipsecVPNConfig.Xmlns = types.XMLNamespaceVCloud
 
-	apiEndpoint, _ := url.ParseRequestURI(egw.EdgeGateway.HREF)
+	apiEndpoint := urlParseRequestURI(egw.EdgeGateway.HREF)
 	apiEndpoint.Path += "/action/configureServices"
 
 	// Return the task

@@ -218,8 +218,17 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 
 	uploadError := *new(error)
 
-	//sending upload process to background, this allows no to lock and return task to client
-	go uploadFiles(cat.client, vappTemplate, &ovfFileDesc, tmpDir, filesAbsPaths, uploadPieceSize, progressCallBack, &uploadError, isOvf)
+	// sending upload process to background, this allows not to lock and return task to client
+	// The error should be captured in uploadError, but just in case, we add a logging for the
+	// main error
+	go func() {
+		err = uploadFiles(cat.client, vappTemplate, &ovfFileDesc, tmpDir, filesAbsPaths, uploadPieceSize, progressCallBack, &uploadError, isOvf)
+		if err != nil {
+			util.Logger.Println(strings.Repeat("*", 80))
+			util.Logger.Printf("*** [DEBUG - UploadOvf] error calling uploadFiles: %s\n", err)
+			util.Logger.Println(strings.Repeat("*", 80))
+		}
+	}()
 
 	var task Task
 	for _, item := range vappTemplate.Tasks.Task {
@@ -314,6 +323,7 @@ func uploadFiles(client *Client, vappTemplate *types.VAppTemplate, ovfFileDesc *
 			return err
 		}
 	}
+	uploadError = nil
 	return nil
 }
 

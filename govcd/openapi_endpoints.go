@@ -132,7 +132,10 @@ func (client *Client) getOpenApiHighestElevatedVersion(endpoint string) (string,
 	versionsRaw := elevatedVersionSlice
 	versions := make([]*version.Version, len(versionsRaw))
 	for i, raw := range versionsRaw {
-		v, _ := version.NewVersion(raw)
+		v, err := version.NewVersion(raw)
+		if err != nil {
+			return "", fmt.Errorf("error evaluating version %s: %s", raw, err)
+		}
 		versions[i] = v
 	}
 	sort.Sort(sort.Reverse(version.Collection(versions)))
