@@ -26,7 +26,14 @@ func (vcd *TestVCD) Test_CreateVdcGroup(check *C) {
 	}
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointVdcGroups)
 
-	adminOrg, createdVdc := createNewVdc(vcd, check, check.TestName())
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	test_CreateVdcGroup(check, adminOrg, vcd)
+}
+func test_CreateVdcGroup(check *C, adminOrg *AdminOrg, vcd *TestVCD) {
+	createdVdc := createNewVdc(vcd, check, check.TestName())
 
 	createdVdcAsCandidate, err := adminOrg.GetAllNsxtCandidateVdcs(createdVdc.vdcId(),
 		map[string][]string{"filter": []string{fmt.Sprintf("name==%s", url.QueryEscape(createdVdc.vdcName()))}})
@@ -74,7 +81,7 @@ func (vcd *TestVCD) Test_CreateVdcGroup(check *C) {
 	PrependToCleanupListOpenApi(vdcGroup.VdcGroup.Name, check.TestName(), openApiEndpoint)
 }
 
-func createNewVdc(vcd *TestVCD, check *C, vdcName string) (*AdminOrg, *Vdc) {
+func createNewVdc(vcd *TestVCD, check *C, vdcName string) *Vdc {
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
@@ -146,7 +153,7 @@ func createNewVdc(vcd *TestVCD, check *C, vdcName string) (*AdminOrg, *Vdc) {
 	check.Assert(err, IsNil)
 
 	AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, check.TestName())
-	return adminOrg, vdc
+	return vdc
 }
 
 // create only support NSXT VDCs
@@ -163,7 +170,10 @@ func (vcd *TestVCD) Test_NsxtVdcGroup(check *C) {
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
+	test_NsxtVdcGroup(check, adminOrg, vcd)
+}
 
+func test_NsxtVdcGroup(check *C, adminOrg *AdminOrg, vcd *TestVCD) {
 	description := "vdc group created by test"
 	vdcGroup, err := adminOrg.CreateNsxtVdcGroup(check.TestName(), description, vcd.nsxtVdc.vdcId(), []string{vcd.nsxtVdc.vdcId()})
 	check.Assert(err, IsNil)
@@ -204,7 +214,7 @@ func (vcd *TestVCD) Test_NsxtVdcGroup(check *C) {
 	}
 
 	// check fetching VDC group by Name
-	_, createdVdc := createNewVdc(vcd, check, check.TestName()+"_forUpdate")
+	createdVdc := createNewVdc(vcd, check, check.TestName()+"_forUpdate")
 	check.Assert(err, IsNil)
 	check.Assert(createdVdc, NotNil)
 
@@ -215,7 +225,7 @@ func (vcd *TestVCD) Test_NsxtVdcGroup(check *C) {
 
 	// check update
 	newDescription := "newDescription"
-	newName := "newName"
+	newName := check.TestName() + "newName"
 	createdVdcAsCandidate, err := adminOrg.GetAllNsxtCandidateVdcs(createdVdc.vdcId(),
 		map[string][]string{"filter": []string{fmt.Sprintf("name==%s", url.QueryEscape(createdVdc.vdcName()))}})
 	check.Assert(err, IsNil)
@@ -252,14 +262,19 @@ func (vcd *TestVCD) Test_GetVdcGroupByName_ValidatesSymbolsInName(check *C) {
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
+	test_GetVdcGroupByName_ValidatesSymbolsInName(check, adminOrg, vcd.nsxtVdc.vdcId())
+	test_NsxtVdcGroup(check, adminOrg, vcd)
+	test_CreateVdcGroup(check, adminOrg, vcd)
+}
 
+func test_GetVdcGroupByName_ValidatesSymbolsInName(check *C, adminOrg *AdminOrg, vdcId string) {
 	// When alias contains commas, semicolons, stars, or plus signs, the encoding may reject by the API when we try to Query it
 	// Also, spaces present their own issues
 	for _, symbol := range []string{";", ",", "+", " ", "*"} {
 
 		name := fmt.Sprintf("Test%sVdcGroup", symbol)
 
-		createdVdcGroup, err := adminOrg.CreateNsxtVdcGroup(name, "", vcd.nsxtVdc.vdcId(), []string{vcd.nsxtVdc.vdcId()})
+		createdVdcGroup, err := adminOrg.CreateNsxtVdcGroup(name, "", vdcId, []string{vdcId})
 		check.Assert(err, IsNil)
 		check.Assert(createdVdcGroup, NotNil)
 
@@ -297,19 +312,22 @@ func (vcd *TestVCD) Test_NsxtVdcGroupWithOrgAdmin(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	orgAdminClient, err := newOrgAdminUserWithVdcGroupRightsConnection(check, adminOrg, "test-user", "CHANGE-ME", vcd.config.Provider.Url, true)
+	rightsToRemove, orgAdminClient, err := newOrgAdminUserWithVdcGroupRightsConnection(check, adminOrg, "test-user", "CHANGE-ME", vcd.config.Provider.Url, true)
 	check.Assert(err, IsNil)
 	check.Assert(orgAdminClient, NotNil)
-	orgAsOrgAdminUser, err := orgAdminClient.GetOrgByName(vcd.config.VCD.Org)
+	orgAsOrgAdminUser, err := orgAdminClient.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(orgAsOrgAdminUser, NotNil)
 
-	cleanupRightsAndBundle(check, adminOrg)
+	//run tests ad org Admin with needed rights
+	test_GetVdcGroupByName_ValidatesSymbolsInName(check, orgAsOrgAdminUser, vcd.nsxtVdc.vdcId())
+
+	cleanupRightsAndBundle(check, adminOrg, rightsToRemove)
 }
 
 // newOrgAdminUserWithVdcGroupRightsConnection creates a new Org Admin User with VDC group rights
 // and returns a connection to it
-func newOrgAdminUserWithVdcGroupRightsConnection(check *C, adminOrg *AdminOrg, userName, password, href string, insecure bool) (*VCDClient, error) {
+func newOrgAdminUserWithVdcGroupRightsConnection(check *C, adminOrg *AdminOrg, userName, password, href string, insecure bool) ([]types.OpenApiReference, *VCDClient, error) {
 	defaultRightsBundle, err := adminOrg.client.GetRightsBundleByName("Default Rights Bundle")
 	check.Assert(err, IsNil)
 	check.Assert(defaultRightsBundle, NotNil)
@@ -317,53 +335,52 @@ func newOrgAdminUserWithVdcGroupRightsConnection(check *C, adminOrg *AdminOrg, u
 	// add new rights to bundle
 	var rightsToAdd []types.OpenApiReference
 
-	for _, rightName := range []string{"vDC Group: Configure", "vDC Group: Configure Logging", "vDC Group: View",
-		"Organization vDC Distributed Firewall: Configure Rules", "Organization vDC Distributed Firewall: Enable/Disable",
-		"Organization vDC Distributed Firewall: View Rules", "Security Tag Edit"} {
-		newRight, err := adminOrg.GetRightByName(rightName)
+	rightsBeforeChange, err := defaultRightsBundle.GetRights(nil)
+	check.Assert(err, IsNil)
+	for _, rightName := range []string{
+		"vDC Group: Configure",
+		"vDC Group: Configure Logging",
+		"vDC Group: View",
+		"Organization vDC Distributed Firewall: Enable/Disable",
+		"Security Tag Edit",
+	} {
+		newRight, err := adminOrg.client.GetRightByName(rightName)
 		check.Assert(err, IsNil)
 		check.Assert(newRight, NotNil)
-		rightsToAdd = append(rightsToAdd, types.OpenApiReference{Name: newRight.Name, ID: newRight.ID})
+		foundRight := false
+		for _, old := range rightsBeforeChange {
+			if old.Name == rightName {
+				foundRight = true
+			}
+		}
+		if foundRight {
+			fmt.Printf("Right %s already in Default Rights Bundle\n", rightName)
+			// ignore
+		} else {
+			rightsToAdd = append(rightsToAdd, types.OpenApiReference{Name: newRight.Name, ID: newRight.ID})
+		}
 	}
 
-	check.Assert(len(rightsToAdd), Equals, 7)
-
-	/*	rightsBeforeChange, err := defaultRightsBundle.GetRights(nil)
-		check.Assert(err, IsNil)*/
 	err = defaultRightsBundle.AddRights(rightsToAdd)
 	check.Assert(err, IsNil)
-	/*	rights, err := defaultRightsBundle.GetRights(nil)
-		check.Assert(err, IsNil)
-		check.Assert(len(rights), Equals, len(rightsBeforeChange)+7)*/
+	rights, err := defaultRightsBundle.GetRights(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(rights), Equals, len(rightsBeforeChange)+len(rightsToAdd))
 
-	return newOrgUserConnection(adminOrg, userName, password, href, insecure)
+	connection, err := newOrgUserConnection(adminOrg, userName, password, href, insecure)
+	return rightsToAdd, connection, err
 }
 
-func cleanupRightsAndBundle(check *C, adminOrg *AdminOrg) {
+func cleanupRightsAndBundle(check *C, adminOrg *AdminOrg, rightsToRemove []types.OpenApiReference) {
 	defaultRightsBundle, err := adminOrg.client.GetRightsBundleByName("Default Rights Bundle")
 	check.Assert(err, IsNil)
 	check.Assert(defaultRightsBundle, NotNil)
-
-	// add new rights to bundle
-	var rightsToRemove []types.OpenApiReference
-
-	for _, rightName := range []string{"vDC Group: Configure", "vDC Group: Configure Logging", "vDC Group: View",
-		"Organization vDC Distributed Firewall: Configure Rules", "Organization vDC Distributed Firewall: Enable/Disable",
-		"Organization vDC Distributed Firewall: View Rules", "Security Tag Edit"} {
-		newRight, err := adminOrg.GetRightByName(rightName)
-		check.Assert(err, IsNil)
-		check.Assert(newRight, NotNil)
-		rightsToRemove = append(rightsToRemove, types.OpenApiReference{Name: newRight.Name, ID: newRight.ID})
-	}
-
-	check.Assert(len(rightsToRemove), Equals, 7)
 
 	rightsBeforeChange, err := defaultRightsBundle.GetRights(nil)
 	check.Assert(err, IsNil)
 	err = defaultRightsBundle.RemoveRights(rightsToRemove)
 	check.Assert(err, IsNil)
-	rights, err := defaultRightsBundle.GetRights(nil)
+	rightsAfterRemoval, err := defaultRightsBundle.GetRights(nil)
 	check.Assert(err, IsNil)
-	check.Assert(len(rights), Equals, len(rightsBeforeChange)-7)
-
+	check.Assert(len(rightsAfterRemoval), Equals, len(rightsBeforeChange)-len(rightsToRemove))
 }
