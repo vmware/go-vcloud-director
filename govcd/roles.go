@@ -368,10 +368,14 @@ func removeRightsFromRole(client *Client, roleType, name, id, endpoint string, r
 		for _, rr := range removeRights {
 			if cr.ID == rr.ID {
 				foundToRemove[cr.Name] = true
-			} else {
-				// If the right is not in the list to be removed, we add it to the input (to be preserved) list
-				input.Values = append(input.Values, types.OpenApiReference{Name: cr.Name, ID: cr.ID})
 			}
+		}
+	}
+
+	for _, cr := range currentRights {
+		_, found := foundToRemove[cr.Name]
+		if !found {
+			input.Values = append(input.Values, types.OpenApiReference{Name: cr.Name, ID: cr.ID})
 		}
 	}
 
