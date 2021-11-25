@@ -214,11 +214,10 @@ func (disk *Disk) Delete() (Task, error) {
 
 // Refresh the disk information by disk href
 func (disk *Disk) Refresh() error {
-	util.Logger.Printf("[TRACE] Disk refresh, HREF: %s\n", disk.Disk.HREF)
-
 	if disk.Disk == nil || disk.Disk.HREF == "" {
 		return fmt.Errorf("cannot refresh, Object is empty")
 	}
+	util.Logger.Printf("[TRACE] Disk refresh, HREF: %s\n", disk.Disk.HREF)
 
 	unmarshalledDisk := &types.Disk{}
 

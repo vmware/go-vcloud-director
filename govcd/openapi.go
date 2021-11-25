@@ -284,7 +284,7 @@ func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params
 		// Task Owner ID is the ID of created object. ID must be used (although HREF exists in task) because HREF points to
 		// old XML API and here we need to pull data from OpenAPI.
 
-		newObjectUrl, _ := url.ParseRequestURI(urlRefCopy.String() + task.Task.Owner.ID)
+		newObjectUrl := urlParseRequestURI(urlRefCopy.String() + task.Task.Owner.ID)
 		err = client.OpenApiGetItem(apiVersion, newObjectUrl, nil, outType, additionalHeader)
 		if err != nil {
 			return fmt.Errorf("error retrieving item after creation: %s", err)
@@ -635,14 +635,17 @@ func (client *Client) newOpenApiRequest(apiVersion string, params url.Values, me
 	// io.Reader with all contents to use it down the line
 	var readBody []byte
 	if body != nil {
-		readBody, _ = ioutil.ReadAll(body)
+		readBody, err := ioutil.ReadAll(body)
+		if err != nil {
+			util.Logger.Printf("[DEBUG - newOpenApiRequest] error reading body: %s", err)
+		}
 		body = bytes.NewReader(readBody)
 	}
 
-	// Build the request, no point in checking for errors here as we're just
-	// passing a string version of an url.URL struct and http.NewRequest returns
-	// error only if can't process an url.ParseRequestURI().
-	req, _ := http.NewRequest(method, reqUrlCopy.String(), body)
+	req, err := http.NewRequest(method, reqUrlCopy.String(), body)
+	if err != nil {
+		util.Logger.Printf("[DEBUG - newOpenApiRequest] error getting new request: %s", err)
+	}
 
 	if client.VCDAuthHeader != "" && client.VCDToken != "" {
 		// Add the authorization header
@@ -776,7 +779,10 @@ func defaultPageSize(queryParams url.Values, defaultPageSize string) url.Values 
 // copyUrlRef creates a copy of URL reference by re-parsing it
 func copyUrlRef(in *url.URL) *url.URL {
 	// error is ignored because we expect to have correct URL supplied and this greatly simplifies code inside.
-	newUrlRef, _ := url.Parse(in.String())
+	newUrlRef, err := url.Parse(in.String())
+	if err != nil {
+		util.Logger.Printf("[DEBUG - copyUrlRef] error parsing URL: %s", err)
+	}
 	return newUrlRef
 }
 
