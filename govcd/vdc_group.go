@@ -302,6 +302,8 @@ func (vdcGroup *VdcGroup) Update() (*VdcGroup, error) {
 	returnVdcGroup := &VdcGroup{
 		VdcGroup: &types.VdcGroup{},
 		client:   vdcGroup.client,
+		Href:     vdcGroup.Href,
+		parent:   vdcGroup.parent,
 	}
 
 	err = vdcGroup.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, vdcGroup.VdcGroup,
@@ -311,4 +313,132 @@ func (vdcGroup *VdcGroup) Update() (*VdcGroup, error) {
 	}
 
 	return returnVdcGroup, nil
+}
+
+// UpdateDfwPolicies updates distributed firewall policies
+func (vdcGroup *VdcGroup) UpdateDfwPolicies(dfwPolicies types.DfwPolicies) (*VdcGroup, error) {
+	tenantContext, err := vdcGroup.getTenantContext()
+	if err != nil {
+		return nil, err
+	}
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwPolicies
+	minimumApiVersion, err := vdcGroup.client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	if vdcGroup.VdcGroup.Id == "" {
+		return nil, fmt.Errorf("cannot update VDC group Dfw policies without id")
+	}
+
+	urlRef, err := vdcGroup.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vdcGroup.VdcGroup.Id))
+	if err != nil {
+		return nil, err
+	}
+
+	err = vdcGroup.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, dfwPolicies,
+		nil, getTenantContextHeader(tenantContext))
+	if err != nil {
+		return nil, fmt.Errorf("error updating VDC group Dfw policies: %s", err)
+	}
+
+	adminOrg := vdcGroup.parent.fullObject().(*AdminOrg)
+	return adminOrg.GetVdcGroupById(vdcGroup.VdcGroup.Id)
+}
+
+// UpdateDefaultDfwPolicies updates distributed firewall default policies
+func (vdcGroup *VdcGroup) UpdateDefaultDfwPolicies(defaultDfwPolicies types.DefaultPolicy) (*VdcGroup, error) {
+	tenantContext, err := vdcGroup.getTenantContext()
+	if err != nil {
+		return nil, err
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwDefaultPolicies
+	minimumApiVersion, err := vdcGroup.client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	if vdcGroup.VdcGroup.Id == "" {
+		return nil, fmt.Errorf("cannot update VDC group default DFW policies without id")
+	}
+
+	urlRef, err := vdcGroup.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vdcGroup.VdcGroup.Id))
+	if err != nil {
+		return nil, err
+	}
+
+	err = vdcGroup.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, defaultDfwPolicies,
+		nil, getTenantContextHeader(tenantContext))
+	if err != nil {
+		return nil, fmt.Errorf("error updating VDC group default DFW policies: %s", err)
+	}
+
+	adminOrg := vdcGroup.parent.fullObject().(*AdminOrg)
+	return adminOrg.GetVdcGroupById(vdcGroup.VdcGroup.Id)
+}
+
+// ActivateDfw activates distributed firewall
+func (vdcGroup *VdcGroup) ActivateDfw() (*VdcGroup, error) {
+	return vdcGroup.UpdateDfwPolicies(types.DfwPolicies{
+		Enabled: true,
+	})
+}
+
+// DeActivateDfw deactivates distributed firewall
+func (vdcGroup *VdcGroup) DeActivateDfw() (*VdcGroup, error) {
+	return vdcGroup.UpdateDfwPolicies(types.DfwPolicies{
+		Enabled: false,
+	})
+}
+
+// GetDfwPolicies retrieves all VDC groups. Query parameters can be supplied to perform additional filtering
+func (vdcGroup *VdcGroup) GetDfwPolicies() (*types.DfwPolicies, error) {
+	tenantContext, err := vdcGroup.getTenantContext()
+	if err != nil {
+		return nil, err
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwPolicies
+	minimumApiVersion, err := vdcGroup.client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := vdcGroup.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vdcGroup.VdcGroup.Id))
+	if err != nil {
+		return nil, err
+	}
+
+	response := types.DfwPolicies{}
+	err = vdcGroup.client.OpenApiGetItem(minimumApiVersion, urlRef, nil, &response, getTenantContextHeader(tenantContext))
+	if err != nil {
+		return nil, err
+	}
+
+	return &response, nil
+}
+
+// EnableDefaultPolicy activates default dfw policy
+func (vdcGroup *VdcGroup) EnableDefaultPolicy() (*VdcGroup, error) {
+	dfwPolicies, err := vdcGroup.GetDfwPolicies()
+	if err != nil {
+		return nil, err
+	}
+
+	trueRef := true
+	dfwPolicies.DefaultPolicy.Enabled = &trueRef
+	return vdcGroup.UpdateDefaultDfwPolicies(*dfwPolicies.DefaultPolicy)
+}
+
+// DisableDefaultPolicy deactivates default dfw policy
+func (vdcGroup *VdcGroup) DisableDefaultPolicy() (*VdcGroup, error) {
+	dfwPolicies, err := vdcGroup.GetDfwPolicies()
+	if err != nil {
+		return nil, err
+	}
+
+	falseRef := false
+	dfwPolicies.DefaultPolicy.Enabled = &falseRef
+	return vdcGroup.UpdateDefaultDfwPolicies(*dfwPolicies.DefaultPolicy)
 }

@@ -247,6 +247,41 @@ func test_NsxtVdcGroup(check *C, adminOrg *AdminOrg, vcd *TestVCD) {
 	check.Assert(updatedVdcGroup.VdcGroup.Description, Equals, newDescription)
 	check.Assert(updatedVdcGroup.VdcGroup.Id, Not(Equals), "")
 	check.Assert(len(updatedVdcGroup.VdcGroup.ParticipatingOrgVdcs), Equals, 1)
+
+	// activate and deactivate DFW
+	enabledVdcGroup, err := updatedVdcGroup.ActivateDfw()
+	check.Assert(err, IsNil)
+	check.Assert(enabledVdcGroup, NotNil)
+	check.Assert(enabledVdcGroup.VdcGroup.DfwEnabled, Equals, true)
+
+	// disable default policy, otherwise deactivation of Dfw fails
+	_, err = enabledVdcGroup.DisableDefaultPolicy()
+	check.Assert(err, IsNil)
+	defaultPolicy, err := enabledVdcGroup.GetDfwPolicies()
+	check.Assert(err, IsNil)
+	check.Assert(defaultPolicy, NotNil)
+	check.Assert(*defaultPolicy.DefaultPolicy.Enabled, Equals, false)
+
+	// also validate enable default policy
+	_, err = enabledVdcGroup.EnableDefaultPolicy()
+	check.Assert(err, IsNil)
+	defaultPolicy, err = enabledVdcGroup.GetDfwPolicies()
+	check.Assert(err, IsNil)
+	check.Assert(defaultPolicy, NotNil)
+	check.Assert(*defaultPolicy.DefaultPolicy.Enabled, Equals, true)
+
+	_, err = enabledVdcGroup.DisableDefaultPolicy()
+	check.Assert(err, IsNil)
+	defaultPolicy, err = enabledVdcGroup.GetDfwPolicies()
+	check.Assert(err, IsNil)
+	check.Assert(defaultPolicy, NotNil)
+	check.Assert(*defaultPolicy.DefaultPolicy.Enabled, Equals, false)
+
+	disabledVdcGroup, err := updatedVdcGroup.DeActivateDfw()
+	check.Assert(err, IsNil)
+	check.Assert(disabledVdcGroup, NotNil)
+	check.Assert(disabledVdcGroup.VdcGroup.DfwEnabled, Equals, false)
+
 }
 
 func (vcd *TestVCD) Test_GetVdcGroupByName_ValidatesSymbolsInName(check *C) {
@@ -263,8 +298,6 @@ func (vcd *TestVCD) Test_GetVdcGroupByName_ValidatesSymbolsInName(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 	test_GetVdcGroupByName_ValidatesSymbolsInName(check, adminOrg, vcd.nsxtVdc.vdcId())
-	test_NsxtVdcGroup(check, adminOrg, vcd)
-	test_CreateVdcGroup(check, adminOrg, vcd)
 }
 
 func test_GetVdcGroupByName_ValidatesSymbolsInName(check *C, adminOrg *AdminOrg, vdcId string) {
@@ -320,6 +353,8 @@ func (vcd *TestVCD) Test_NsxtVdcGroupWithOrgAdmin(check *C) {
 	check.Assert(orgAsOrgAdminUser, NotNil)
 
 	//run tests ad org Admin with needed rights
+	test_NsxtVdcGroup(check, adminOrg, vcd)
+	test_CreateVdcGroup(check, adminOrg, vcd)
 	test_GetVdcGroupByName_ValidatesSymbolsInName(check, orgAsOrgAdminUser, vcd.nsxtVdc.vdcId())
 
 	cleanupRightsAndBundle(check, adminOrg, rightsToRemove)
@@ -361,26 +396,30 @@ func newOrgAdminUserWithVdcGroupRightsConnection(check *C, adminOrg *AdminOrg, u
 		}
 	}
 
-	err = defaultRightsBundle.AddRights(rightsToAdd)
-	check.Assert(err, IsNil)
-	rights, err := defaultRightsBundle.GetRights(nil)
-	check.Assert(err, IsNil)
-	check.Assert(len(rights), Equals, len(rightsBeforeChange)+len(rightsToAdd))
+	if len(rightsToAdd) > 0 {
+		err = defaultRightsBundle.AddRights(rightsToAdd)
+		check.Assert(err, IsNil)
+		rights, err := defaultRightsBundle.GetRights(nil)
+		check.Assert(err, IsNil)
+		check.Assert(len(rights), Equals, len(rightsBeforeChange)+len(rightsToAdd))
+	}
 
 	connection, err := newOrgUserConnection(adminOrg, userName, password, href, insecure)
 	return rightsToAdd, connection, err
 }
 
 func cleanupRightsAndBundle(check *C, adminOrg *AdminOrg, rightsToRemove []types.OpenApiReference) {
-	defaultRightsBundle, err := adminOrg.client.GetRightsBundleByName("Default Rights Bundle")
-	check.Assert(err, IsNil)
-	check.Assert(defaultRightsBundle, NotNil)
+	if len(rightsToRemove) > 0 {
+		defaultRightsBundle, err := adminOrg.client.GetRightsBundleByName("Default Rights Bundle")
+		check.Assert(err, IsNil)
+		check.Assert(defaultRightsBundle, NotNil)
 
-	rightsBeforeChange, err := defaultRightsBundle.GetRights(nil)
-	check.Assert(err, IsNil)
-	err = defaultRightsBundle.RemoveRights(rightsToRemove)
-	check.Assert(err, IsNil)
-	rightsAfterRemoval, err := defaultRightsBundle.GetRights(nil)
-	check.Assert(err, IsNil)
-	check.Assert(len(rightsAfterRemoval), Equals, len(rightsBeforeChange)-len(rightsToRemove))
+		rightsBeforeChange, err := defaultRightsBundle.GetRights(nil)
+		check.Assert(err, IsNil)
+		err = defaultRightsBundle.RemoveRights(rightsToRemove)
+		check.Assert(err, IsNil)
+		rightsAfterRemoval, err := defaultRightsBundle.GetRights(nil)
+		check.Assert(err, IsNil)
+		check.Assert(len(rightsAfterRemoval), Equals, len(rightsBeforeChange)-len(rightsToRemove))
+	}
 }

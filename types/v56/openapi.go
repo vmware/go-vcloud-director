@@ -332,3 +332,20 @@ type CandidateVdc struct {
 	OrgRef               OpenApiReference `json:"orgRef"`
 	SiteRef              OpenApiReference `json:"siteRef"`
 }
+
+type DfwPolicies struct {
+	Enabled       bool           `json:"enabled"`
+	DefaultPolicy *DefaultPolicy `json:"defaultPolicy,omitempty"`
+}
+
+type DefaultPolicy struct {
+	Description string        `json:"description,omitempty"` // Description for the security policy.
+	Enabled     *bool         `json:"enabled,omitempty"`     // Whether this security policy is enabled.
+	Id          string        `json:"id,omitempty"`          // The unique id of this security policy. On updates, the id is required for the policy, while for create a new id will be generated. This id is not a VCD URN.
+	Name        string        `json:"name"`                  // Name for the security policy.
+	Version     *VersionField `json:"version,omitempty"`     // This property describes the current version of the entity. To prevent clients from overwriting each other’s changes, update operations must include the version which can be obtained by issuing a GET operation. If the version number on an update call is missing, the operation will be rejected. This is only needed on update calls.
+}
+
+type VersionField struct {
+	Version int `json:"version"`
+}
