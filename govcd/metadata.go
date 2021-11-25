@@ -7,7 +7,6 @@ package govcd
 import (
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -116,7 +115,7 @@ func (vapp *VApp) DeleteMetadata(key string) (Task, error) {
 // Deletes metadata (type MetadataStringValue) from the vApp
 // TODO: Support all MetadataTypedValue types with this function
 func deleteMetadata(client *Client, key string, requestUri string) (Task, error) {
-	apiEndpoint, _ := url.ParseRequestURI(requestUri)
+	apiEndpoint := urlParseRequestURI(requestUri)
 	apiEndpoint.Path += "/metadata/" + key
 
 	// Return the task
@@ -142,7 +141,7 @@ func addMetadata(client *Client, key string, value string, requestUri string) (T
 		},
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(requestUri)
+	apiEndpoint := urlParseRequestURI(requestUri)
 	apiEndpoint.Path += "/metadata/" + key
 
 	// Return the task

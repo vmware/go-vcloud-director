@@ -88,7 +88,10 @@ func enableDebugShowRequest() {
 //lint:ignore U1000 this function is used on request for debugging purposes
 func disableDebugShowRequest() {
 	debugShowRequestEnabled = false
-	_ = os.Setenv("GOVCD_SHOW_REQ", "")
+	err := os.Setenv("GOVCD_SHOW_REQ", "")
+	if err != nil {
+		util.Logger.Printf("[DEBUG - disableDebugShowRequest] error setting environment variable: %s", err)
+	}
 }
 
 // Enables the debugging hook to show responses as they are processed.
@@ -101,7 +104,10 @@ func enableDebugShowResponse() {
 //lint:ignore U1000 this function is used on request for debugging purposes
 func disableDebugShowResponse() {
 	debugShowResponseEnabled = false
-	_ = os.Setenv("GOVCD_SHOW_RESP", "")
+	err := os.Setenv("GOVCD_SHOW_RESP", "")
+	if err != nil {
+		util.Logger.Printf("[DEBUG - disableDebugShowResponse] error setting environment variable: %s", err)
+	}
 }
 
 // On-the-fly debug hook. If either debugShowRequestEnabled or the environment
@@ -195,15 +201,19 @@ func (client *Client) newRequest(params map[string]string, notEncodedParams map[
 	// If the body contains data - try to read all contents for logging and re-create another
 	// io.Reader with all contents to use it down the line
 	var readBody []byte
+	var err error
 	if body != nil {
-		readBody, _ = ioutil.ReadAll(body)
+		readBody, err = ioutil.ReadAll(body)
+		if err != nil {
+			util.Logger.Printf("[DEBUG - newRequest] error reading body: %s", err)
+		}
 		body = bytes.NewReader(readBody)
 	}
 
-	// Build the request, no point in checking for errors here as we're just
-	// passing a string version of an url.URL struct and http.NewRequest returns
-	// error only if can't process an url.ParseRequestURI().
-	req, _ := http.NewRequest(method, reqUrl.String(), body)
+	req, err := http.NewRequest(method, reqUrl.String(), body)
+	if err != nil {
+		util.Logger.Printf("[DEBUG - newRequest] error getting new request: %s", err)
+	}
 
 	if client.VCDAuthHeader != "" && client.VCDToken != "" {
 		// Add the authorization header
@@ -747,4 +757,17 @@ func (client *Client) RemoveCustomHeader() {
 	if client.customHeader != nil {
 		client.customHeader = nil
 	}
+}
+
+// ---------------------------------------------------------------------
+// The following functions are needed to avoid strict Coverity warnings
+// ---------------------------------------------------------------------
+
+// urlParseRequestURI returns a URL, discarding the error
+func urlParseRequestURI(href string) *url.URL {
+	apiEndpoint, err := url.ParseRequestURI(href)
+	if err != nil {
+		util.Logger.Printf("[DEBUG - urlParseRequestURI] error parsing request URI: %s", err)
+	}
+	return apiEndpoint
 }

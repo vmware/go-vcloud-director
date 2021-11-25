@@ -132,7 +132,17 @@ func executeUpload(client *Client, media *types.Media, mediaFilePath, mediaName 
 		uploadError:              &uploadError,
 	}
 
-	go uploadFile(client, mediaFilePath, details)
+	// sending upload process to background, this allows not to lock and return task to client
+	// The error should be captured in details.uploadError, but just in case, we add a logging for the
+	// main error
+	go func() {
+		_, err = uploadFile(client, mediaFilePath, details)
+		if err != nil {
+			util.Logger.Println(strings.Repeat("*", 80))
+			util.Logger.Printf("*** [DEBUG - executeUpload] error calling uploadFile: %s\n", err)
+			util.Logger.Println(strings.Repeat("*", 80))
+		}
+	}()
 
 	var task Task
 	for _, item := range media.Tasks.Task {

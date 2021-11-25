@@ -687,19 +687,23 @@ func CreateExternalNetwork(vcdClient *VCDClient, externalNetworkData *types.Exte
 	externalNetHREF := vcdClient.Client.VCDHREF
 	externalNetHREF.Path += "/admin/extension/externalnets"
 
+	if externalNetwork.Configuration == nil {
+		externalNetwork.Configuration = &types.NetworkConfiguration{}
+	}
 	externalNetwork.Configuration.FenceMode = "isolated"
 
 	// Return the task
 	task, err := vcdClient.Client.ExecuteTaskRequest(externalNetHREF.String(), http.MethodPost,
 		types.MimeExternalNetwork, "error instantiating a new ExternalNetwork: %s", externalNetwork)
 
-	// Real task in task array
-	if err == nil {
-		if task.Task != nil && task.Task.Tasks != nil && len(task.Task.Tasks.Task) == 0 {
-			return Task{}, fmt.Errorf("create external network task wasn't found")
-		}
-		task.Task = task.Task.Tasks.Task[0]
+	if err != nil {
+		return Task{}, err
 	}
+	if task.Task == nil || task.Task.Tasks == nil || len(task.Task.Tasks.Task) == 0 {
+		return Task{}, fmt.Errorf("create external network task wasn't found")
+	}
+	// Real task in task array
+	task.Task = task.Task.Tasks.Task[0]
 
 	return task, err
 }
