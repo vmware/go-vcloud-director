@@ -102,7 +102,6 @@ func printVerbose(format string, args ...interface{}) {
 	}
 }
 
-//lint:ignore U1000 this function is used on request for debugging purposes
 func logVerbose(t *testing.T, format string, args ...interface{}) {
 	if testVerbose {
 		t.Logf(format, args...)
