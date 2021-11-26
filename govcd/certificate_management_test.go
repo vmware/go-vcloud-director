@@ -16,14 +16,6 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-var (
-	//go:embed test-resources/cert.pem
-	certificate string
-
-	//go:embed test-resources/key.pem
-	privateKey string
-)
-
 func (vcd *TestVCD) Test_CertificateInLibrary(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))

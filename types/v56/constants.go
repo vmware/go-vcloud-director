@@ -371,6 +371,7 @@ const (
 	OpenApiEndpointAlbImportableServiceEngineGroups = "nsxAlbResources/importableServiceEngineGroups"
 	OpenApiEndpointAlbCloud                         = "loadBalancer/clouds/"
 	OpenApiEndpointAlbServiceEngineGroups           = "loadBalancer/serviceEngineGroups/"
+	OpenApiEndpointAlbPools                         = "loadBalancer/pools/"
 	OpenApiEndpointAlbServiceEngineGroupAssignments = "loadBalancer/serviceEngineGroups/assignments/"
 	OpenApiEndpointAlbEdgeGateway                   = "edgeGateways/%s/loadBalancer"
 )
