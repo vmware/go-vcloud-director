@@ -226,21 +226,7 @@ func test_NsxtVdcGroup(check *C, adminOrg *AdminOrg, vcd *TestVCD) {
 	// check update
 	newDescription := "newDescription"
 	newName := check.TestName() + "newName"
-	createdVdcAsCandidate, err := adminOrg.GetAllNsxtCandidateVdcs(createdVdc.vdcId(),
-		map[string][]string{"filter": []string{fmt.Sprintf("name==%s", url.QueryEscape(createdVdc.vdcName()))}})
-	check.Assert(err, IsNil)
-	foundVdcGroup.VdcGroup.Description = newDescription
-	foundVdcGroup.VdcGroup.Name = newName
-	foundVdcGroup.VdcGroup.ParticipatingOrgVdcs = []types.ParticipatingOrgVdcs{
-		types.ParticipatingOrgVdcs{
-			VdcRef: types.OpenApiReference{
-				ID: createdVdc.vdcId(),
-			},
-			SiteRef: (*createdVdcAsCandidate)[0].SiteRef,
-			OrgRef:  (*createdVdcAsCandidate)[0].OrgRef,
-		},
-	}
-	updatedVdcGroup, err := foundVdcGroup.Update()
+	updatedVdcGroup, err := foundVdcGroup.Update(newName, newDescription, []string{createdVdc.vdcId()})
 	check.Assert(err, IsNil)
 	check.Assert(updatedVdcGroup, NotNil)
 	check.Assert(updatedVdcGroup.VdcGroup.Name, Equals, newName)

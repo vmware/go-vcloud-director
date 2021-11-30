@@ -20,12 +20,30 @@ type VdcGroup struct {
 
 // CreateNsxtVdcGroup create NSX-T VDC group with provided VDC IDs.
 func (adminOrg *AdminOrg) CreateNsxtVdcGroup(name, description, startingVdcId string, participatingVdcIds []string) (*VdcGroup, error) {
+	participatingVdcs, err := constructParticipatingOrgVdcs(adminOrg, startingVdcId, participatingVdcIds)
+	if err != nil {
+		return nil, err
+	}
+
+	vdcGroupConfig := &types.VdcGroup{}
+	vdcGroupConfig.OrgId = adminOrg.orgId()
+	vdcGroupConfig.Name = name
+	vdcGroupConfig.Description = description
+	vdcGroupConfig.ParticipatingOrgVdcs = participatingVdcs
+	vdcGroupConfig.LocalEgress = false
+	vdcGroupConfig.UniversalNetworkingEnabled = false
+	vdcGroupConfig.NetworkProviderType = "NSX_T"
+	vdcGroupConfig.Type = "LOCAL"
+	vdcGroupConfig.ParticipatingOrgVdcs = participatingVdcs
+	return adminOrg.CreateVdcGroup(vdcGroupConfig)
+}
+
+func constructParticipatingOrgVdcs(adminOrg *AdminOrg, startingVdcId string, participatingVdcIds []string) ([]types.ParticipatingOrgVdcs, error) {
 	candidateVdcs, err := adminOrg.GetAllNsxtCandidateVdcs(startingVdcId, nil)
 	if err != nil {
 		return nil, err
 	}
 	participatingVdcs := []types.ParticipatingOrgVdcs{}
-	vdcGroupConfig := &types.VdcGroup{}
 	for _, candidateVdc := range *candidateVdcs {
 		if containsInString(candidateVdc.Id, participatingVdcIds) {
 			participatingVdcs = append(participatingVdcs, types.ParticipatingOrgVdcs{
@@ -39,15 +57,7 @@ func (adminOrg *AdminOrg) CreateNsxtVdcGroup(name, description, startingVdcId st
 			})
 		}
 	}
-	vdcGroupConfig.OrgId = adminOrg.orgId()
-	vdcGroupConfig.Name = name
-	vdcGroupConfig.Description = description
-	vdcGroupConfig.ParticipatingOrgVdcs = participatingVdcs
-	vdcGroupConfig.LocalEgress = false
-	vdcGroupConfig.UniversalNetworkingEnabled = false
-	vdcGroupConfig.NetworkProviderType = "NSX_T"
-	vdcGroupConfig.Type = "LOCAL"
-	return adminOrg.CreateVdcGroup(vdcGroupConfig)
+	return participatingVdcs, nil
 }
 
 // containsInString tells whether slice of string contains item.
@@ -277,8 +287,8 @@ func (adminOrg *AdminOrg) GetVdcGroupById(id string) (*VdcGroup, error) {
 	return vdcGroup, nil
 }
 
-// Update updates existing Vdc group. Allows changing only name and description
-func (vdcGroup *VdcGroup) Update() (*VdcGroup, error) {
+// Update updates existing Vdc group. Allows changing only name and description and participating VCDs
+func (vdcGroup *VdcGroup) Update(name, description string, participatingOrgVddIs []string) (*VdcGroup, error) {
 	tenantContext, err := vdcGroup.getTenantContext()
 	if err != nil {
 		return nil, err
@@ -298,6 +308,15 @@ func (vdcGroup *VdcGroup) Update() (*VdcGroup, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	vdcGroup.VdcGroup.Name = name
+	vdcGroup.VdcGroup.Description = description
+
+	participatingOrgVdcs, err := constructParticipatingOrgVdcs(vdcGroup.parent.fullObject().(*AdminOrg), vdcGroup.VdcGroup.Id, participatingOrgVddIs)
+	if err != nil {
+		return nil, err
+	}
+	vdcGroup.VdcGroup.ParticipatingOrgVdcs = participatingOrgVdcs
 
 	returnVdcGroup := &VdcGroup{
 		VdcGroup: &types.VdcGroup{},
