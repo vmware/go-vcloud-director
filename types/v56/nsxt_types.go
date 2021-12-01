@@ -891,7 +891,7 @@ type NsxtAlbPool struct {
 	// GracefulTimeoutPeriod sets maximum time (in minutes) to gracefully disable a member. Virtual service waits for the
 	// specified time before terminating the existing connections to the pool members that are disabled.
 	//
-	//Special values: 0 represents Immediate, -1 represents Infinite.
+	// Special values: 0 represents Immediate, -1 represents Infinite.
 	GracefulTimeoutPeriod *int `json:"gracefulTimeoutPeriod,omitempty"`
 
 	// PassiveMonitoringEnabled sets if client traffic should be used to check if pool member is up or down.
@@ -903,7 +903,7 @@ type NsxtAlbPool struct {
 		Name          string `json:"name"`
 		SystemDefined bool   `json:"systemDefined,omitempty"`
 		Type          string `json:"type"`
-	} `json:"healthMonitors"`
+	} `json:"healthMonitors,omitempty"`
 
 	// Members field defines list of destination servers which are used by the Load Balancer Pool to direct load balanced
 	// traffic.
@@ -928,10 +928,10 @@ type NsxtAlbPoolMember struct {
 	IpAddress string `json:"ipAddress"`
 
 	// Port number of the Load Balancer Pool member. If unset, the port that the client used to connect will be used.
-	Port *int `json:"port"`
+	Port *int `json:"port,omitempty"`
 
 	// Ratio of selecting eligible servers in the pool.
-	Ratio *int `json:"ratio"`
+	Ratio *int `json:"ratio,omitempty"`
 
 	// MarkedDownBy gives the names of the health monitors that marked the member as down when it is DOWN. If a monitor
 	// cannot be determined, the value will be UNKNOWN.
