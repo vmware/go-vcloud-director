@@ -490,6 +490,22 @@ func (vm *VM) Undeploy() (Task, error) {
 		types.MimeUndeployVappParams, "error undeploy VM: %s", vu)
 }
 
+// Shutdown triggers a VM undeploy and shutdown action. "Shut Down Guest OS" action in UI behaves this way.
+func (vm *VM) Shutdown() (Task, error) {
+
+	vu := &types.UndeployVAppParams{
+		Xmlns:               types.XMLNamespaceVCloud,
+		UndeployPowerAction: "shutdown",
+	}
+
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
+	apiEndpoint.Path += "/action/undeploy"
+
+	// Return the task
+	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+		types.MimeUndeployVappParams, "error undeploy VM: %s", vu)
+}
+
 // Attach or detach an independent disk
 // Use the disk/action/attach or disk/action/detach links in a VM to attach or detach an independent disk.
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 164 - 165,
