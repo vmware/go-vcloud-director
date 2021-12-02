@@ -334,6 +334,10 @@ func (vcd *TestVCD) Test_NsxtVdcGroupWithOrgAdmin(check *C) {
 	rightsToRemove, orgAdminClient, err := newOrgAdminUserWithVdcGroupRightsConnection(check, adminOrg, "test-user", "CHANGE-ME", vcd.config.Provider.Url, true)
 	check.Assert(err, IsNil)
 	check.Assert(orgAdminClient, NotNil)
+
+	//cleanup
+	defer cleanupRightsAndBundle(check, adminOrg, rightsToRemove)
+
 	orgAsOrgAdminUser, err := orgAdminClient.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(orgAsOrgAdminUser, NotNil)
@@ -343,7 +347,6 @@ func (vcd *TestVCD) Test_NsxtVdcGroupWithOrgAdmin(check *C) {
 	test_CreateVdcGroup(check, adminOrg, vcd)
 	test_GetVdcGroupByName_ValidatesSymbolsInName(check, orgAsOrgAdminUser, vcd.nsxtVdc.vdcId())
 
-	cleanupRightsAndBundle(check, adminOrg, rightsToRemove)
 }
 
 // newOrgAdminUserWithVdcGroupRightsConnection creates a new Org Admin User with VDC group rights
