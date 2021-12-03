@@ -856,6 +856,8 @@ type NsxtAlbPool struct {
 	ID string `json:"id,omitempty"`
 	// Name is mandatory
 	Name string `json:"name"`
+	// Description is optional
+	Description string `json:"description,omitempty"`
 	// GatewayRef is mandatory and associates NSX-T Edge Gateway with this Load Balancer Pool.
 	GatewayRef OpenApiReference `json:"gatewayRef"`
 
@@ -873,20 +875,8 @@ type NsxtAlbPool struct {
 	// * CORE_AFFINITY
 	Algorithm string `json:"algorithm,omitempty"`
 
-	// CaCertificateRefs point to root certificates to use when validating certificates presented by the pool members.
-	CaCertificateRefs []OpenApiReference `json:"caCertificateRefs,omitempty"`
-	// CommonNameCheckEnabled specifies whether to check the common name of the certificate presented by the pool member.
-	// This cannot be enabled if no caCertificateRefs are specified.
-	CommonNameCheckEnabled *bool `json:"commonNameCheckEnabled,omitempty"`
-
 	// DefaultPort defines destination server port used by the traffic sent to the member.
 	DefaultPort *int `json:"defaultPort,omitempty"`
-
-	// DomainNames holds a list of domain names which will be used to verify the common names or subject alternative
-	// names presented by the pool member certificates. It is performed only when common name check
-	// (CommonNameCheckEnabled) is enabled. If common name check is enabled, but domain names are not specified then the
-	// incoming host header will be used to check the certificate.
-	DomainNames []string `json:"domainNames,omitempty"`
 
 	// GracefulTimeoutPeriod sets maximum time (in minutes) to gracefully disable a member. Virtual service waits for the
 	// specified time before terminating the existing connections to the pool members that are disabled.
@@ -899,15 +889,24 @@ type NsxtAlbPool struct {
 
 	// HealthMonitors check member servers health. It can be monitored by using one or more health monitors. Active
 	// monitors generate synthetic traffic and mark a server up or down based on the response.
-	HealthMonitors []struct {
-		Name          string `json:"name"`
-		SystemDefined bool   `json:"systemDefined,omitempty"`
-		Type          string `json:"type"`
-	} `json:"healthMonitors,omitempty"`
+	HealthMonitors []NsxtAlbPoolHealthMonitor `json:"healthMonitors,omitempty"`
 
 	// Members field defines list of destination servers which are used by the Load Balancer Pool to direct load balanced
 	// traffic.
 	Members []NsxtAlbPoolMember `json:"members,omitempty"`
+
+	// CaCertificateRefs point to root certificates to use when validating certificates presented by the pool members.
+	CaCertificateRefs []OpenApiReference `json:"caCertificateRefs,omitempty"`
+
+	// CommonNameCheckEnabled specifies whether to check the common name of the certificate presented by the pool member.
+	// This cannot be enabled if no caCertificateRefs are specified.
+	CommonNameCheckEnabled *bool `json:"commonNameCheckEnabled,omitempty"`
+
+	// DomainNames holds a list of domain names which will be used to verify the common names or subject alternative
+	// names presented by the pool member certificates. It is performed only when common name check
+	// (CommonNameCheckEnabled) is enabled. If common name check is enabled, but domain names are not specified then the
+	// incoming host header will be used to check the certificate.
+	DomainNames []string `json:"domainNames,omitempty"`
 
 	// PersistenceProfile of a Load Balancer Pool. Persistence profile will ensure that the same user sticks to the same
 	// server for a desired duration of time. If the persistence profile is unmanaged by Cloud Director, updates that
@@ -915,8 +914,35 @@ type NsxtAlbPool struct {
 	// profile will cause Cloud Director to switch the pool to a profile managed by Cloud Director.
 	PersistenceProfile *NsxtAlbPoolPersistenceProfile `json:"persistenceProfile,omitempty"`
 
+	// MemberCount is a read only value that reports number of members added
+	MemberCount int `json:"memberCount,omitempty"`
+
+	// EnabledMemberCount is a read only value that reports number of enabled members
+	EnabledMemberCount int `json:"enabledMemberCount,omitempty"`
+
+	// UpMemberCount is a read only value that reports number of members that are serving traffic
+	UpMemberCount int `json:"upMemberCount,omitempty"`
+
+	// HealthMessage shows a pool health status (e.g. "The pool is unassigned.")
+	HealthMessage string `json:"healthMessage,omitempty"`
+
 	// VirtualServiceRefs holds list of Load Balancer Virtual Services associated with this Load balancer Pool.
 	VirtualServiceRefs []OpenApiReference `json:"virtualServiceRefs,omitempty"`
+}
+
+// NsxtAlbPoolHealthMonitor checks member servers health. Active monitor generates synthetic traffic and mark a server
+// up or down based on the response.
+type NsxtAlbPoolHealthMonitor struct {
+	Name string `json:"name,omitempty"`
+	// SystemDefined is a boolean value
+	SystemDefined bool `json:"systemDefined,omitempty"`
+	// Type
+	// * HTTP - HTTP request/response is used to validate health.
+	// * HTTPS - Used against HTTPS encrypted web servers to validate health.
+	// * TCP - TCP connection is used to validate health.
+	// * UDP - A UDP datagram is used to validate health.
+	// * PING - An ICMP ping is used to validate health.
+	Type string `json:"type"`
 }
 
 // NsxtAlbPoolMember defines a single destination server which is used by the Load Balancer Pool to direct load balanced
@@ -928,24 +954,24 @@ type NsxtAlbPoolMember struct {
 	IpAddress string `json:"ipAddress"`
 
 	// Port number of the Load Balancer Pool member. If unset, the port that the client used to connect will be used.
-	Port *int `json:"port,omitempty"`
+	Port int `json:"port,omitempty"`
 
 	// Ratio of selecting eligible servers in the pool.
 	Ratio *int `json:"ratio,omitempty"`
 
 	// MarkedDownBy gives the names of the health monitors that marked the member as down when it is DOWN. If a monitor
 	// cannot be determined, the value will be UNKNOWN.
-	MarkedDownBy []string `json:"markedDownBy"`
+	MarkedDownBy []string `json:"markedDownBy,omitempty"`
 
 	// HealthStatus of the pool member. Possible values are:
 	// * UP - The member is operational
 	// * DOWN - The member is down
 	// * DISABLED - The member is disabled
 	// * UNKNOWN - The state is unknown
-	HealthStatus string `json:"healthStatus"`
+	HealthStatus string `json:"healthStatus,omitempty"`
 
 	// DetailedHealthMessage contains non-localized detailed message on the health of the pool member.
-	DetailedHealthMessage string `json:"detailedHealthMessage"`
+	DetailedHealthMessage string `json:"detailedHealthMessage,omitempty"`
 }
 
 // NsxtAlbPoolPersistenceProfile holds Persistence Profile of a Load Balancer Pool. Persistence profile will ensure that
@@ -953,16 +979,21 @@ type NsxtAlbPoolMember struct {
 // Cloud Director, updates that leave the values unchanged will continue to use the same unmanaged profile. Any changes
 // made to the persistence profile will cause Cloud Director to switch the pool to a profile managed by Cloud Director.
 type NsxtAlbPoolPersistenceProfile struct {
-	// Name of persistence profile
-	Name string `json:"name"`
+	// Name field is tricky. It remains empty in some case, but if it is sent it can become computed.
+	// (e.g. setting 'CUSTOM_HTTP_HEADER' results in value being
+	// 'VCD-LoadBalancer-3510eae9-53bb-49f1-b7aa-7aedf5ce3a77-CUSTOM_HTTP_HEADER')
+	Name string `json:"name,omitempty"`
 
 	// Type of persistence strategy to use. Supported values are:
 	//  * CLIENT_IP - The clients IP is used as the identifier and mapped to the server
 	//  * HTTP_COOKIE - Load Balancer inserts a cookie into HTTP responses. Cookie name must be provided as value
-	//  * CUSTOM_HTTP_HEADER - Custom, static mappings of header values to specific servers are used. Header name must be provided as value
-	//  * APP_COOKIE - Load Balancer reads existing server cookies or URI embedded data such as JSessionID. Cookie name must be provided as value
-	//  * TLS - Information is embedded in the client?s SSL/TLS ticket ID. This will use default system profile System-Persistence-TLS
-	Type string `json:"type"`
+	//  * CUSTOM_HTTP_HEADER - Custom, static mappings of header values to specific servers are used. Header name must be
+	// provided as value
+	//  * APP_COOKIE - Load Balancer reads existing server cookies or URI embedded data such as JSessionID. Cookie name
+	// must be provided as value
+	//  * TLS - Information is embedded in the client's SSL/TLS ticket ID. This will use default system profile
+	// System-Persistence-TLS
+	Type string `json:"type,omitempty"`
 
 	// Value of attribute based on selected persistence type.
 	// This is required for HTTP_COOKIE, CUSTOM_HTTP_HEADER and APP_COOKIE persistence types.

@@ -5,7 +5,6 @@ package govcd
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 
@@ -23,9 +22,6 @@ func (vcd *TestVCD) Test_AlbPool(check *C) {
 	controller, cloud, seGroup, edge, assignment := setupAlbPoolPrerequisites(check, vcd)
 
 	// Run various tests
-	fmt.Println("===")
-	time.Sleep(600 * time.Second)
-
 	testMinimalPoolConfig(check, edge, vcd)
 	testAdvancedPoolConfig(check, edge, vcd)
 	testPoolWithCertNoPrivateKey(check, vcd, edge.EdgeGateway.ID)
@@ -62,7 +58,7 @@ func testAdvancedPoolConfig(check *C, edge *NsxtEdgeGateway, vcd *TestVCD) {
 			types.NsxtAlbPoolMember{
 				Enabled:   true,
 				IpAddress: "1.1.1.1",
-				Port:      takeIntAddress(8400),
+				Port:      8400,
 				Ratio:     takeIntAddress(2),
 			},
 			types.NsxtAlbPoolMember{
@@ -92,7 +88,7 @@ func testAdvancedPoolConfig(check *C, edge *NsxtEdgeGateway, vcd *TestVCD) {
 			types.NsxtAlbPoolMember{
 				Enabled:   true,
 				IpAddress: "1.1.1.1",
-				Port:      takeIntAddress(8300),
+				Port:      8300,
 				Ratio:     takeIntAddress(3),
 			},
 			types.NsxtAlbPoolMember{
@@ -173,6 +169,9 @@ func testPoolWithCertAndPrivateKey(check *C, vcd *TestVCD, edgeGatewayId string)
 func testAlbPoolConfig(check *C, vcd *TestVCD, name string, setupConfig *types.NsxtAlbPool, updateConfig *types.NsxtAlbPool) {
 	fmt.Printf("# Running ALB Pool test with config %s ", name)
 
+	edge, err := vcd.nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
+	check.Assert(err, IsNil)
+
 	createdPool, err := vcd.client.CreateNsxtAlbPool(setupConfig)
 	check.Assert(err, IsNil)
 
@@ -183,6 +182,23 @@ func testAlbPoolConfig(check *C, vcd *TestVCD, name string, setupConfig *types.N
 
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbPools + createdPool.NsxtAlbPool.ID
 	PrependToCleanupListOpenApi(createdPool.NsxtAlbPool.Name, check.TestName(), openApiEndpoint)
+
+	// Get By ID
+	poolById, err := vcd.client.GetAlbPoolById(createdPool.NsxtAlbPool.ID)
+	check.Assert(err, IsNil)
+	check.Assert(poolById.NsxtAlbPool.ID, Equals, createdPool.NsxtAlbPool.ID)
+
+	// Get By Name
+	poolByName, err := vcd.client.GetAlbPoolByName(edge.EdgeGateway.ID, createdPool.NsxtAlbPool.Name)
+	check.Assert(err, IsNil)
+	check.Assert(poolByName.NsxtAlbPool.ID, Equals, createdPool.NsxtAlbPool.ID)
+
+	// Get All
+	allPools, err := vcd.client.GetAllAlbPools(edge.EdgeGateway.ID, nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(allPools) > 0, Equals, true)
+
+	// Check that
 
 	if updateConfig != nil {
 		updateConfig.ID = createdPool.NsxtAlbPool.ID

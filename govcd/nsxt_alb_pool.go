@@ -16,16 +16,18 @@ type NsxtAlbPool struct {
 	vcdClient   *VCDClient
 }
 
-func (vcdClient *VCDClient) GetAllAlbPools(queryParameters url.Values) ([]*NsxtAlbPool, error) {
+// GetAllAlbPoolSummaries retrieves partial information for type `NsxtAlbPool`, but it is the only way to retrieve all ALB
+// pools for Edge Gateway
+func (vcdClient *VCDClient) GetAllAlbPoolSummaries(edgeGatewayId string, queryParameters url.Values) ([]*NsxtAlbPool, error) {
 	client := vcdClient.Client
 
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbPools
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbPoolSummaries
 	apiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, edgeGatewayId))
 	if err != nil {
 		return nil, err
 	}
@@ -48,11 +50,31 @@ func (vcdClient *VCDClient) GetAllAlbPools(queryParameters url.Values) ([]*NsxtA
 	return wrappedResponses, nil
 }
 
-func (vcdClient *VCDClient) GetAlbPoolByName(name string) (*NsxtAlbPool, error) {
+func (vcdClient *VCDClient) GetAllAlbPools(edgeGatewayId string, queryParameters url.Values) ([]*NsxtAlbPool, error) {
+	allAlbPoolSummaries, err := vcdClient.GetAllAlbPoolSummaries(edgeGatewayId, queryParameters)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving all ALB Pool summaries: %s", err)
+	}
+
+	// Loop over all Summaries and retrieve complete information
+	allAlbPools := make([]*NsxtAlbPool, len(allAlbPoolSummaries))
+	for index := range allAlbPoolSummaries {
+
+		allAlbPools[index], err = vcdClient.GetAlbPoolById(allAlbPoolSummaries[index].NsxtAlbPool.ID)
+		if err != nil {
+			return nil, fmt.Errorf("error retrieving complete ALB Pool: %s", err)
+		}
+
+	}
+
+	return allAlbPools, nil
+}
+
+func (vcdClient *VCDClient) GetAlbPoolByName(edgeGatewayId string, name string) (*NsxtAlbPool, error) {
 	queryParameters := copyOrNewUrlValues(nil)
 	queryParameters.Add("filter", "name=="+name)
 
-	allAlbPools, err := vcdClient.GetAllAlbPools(queryParameters)
+	allAlbPools, err := vcdClient.GetAllAlbPools(edgeGatewayId, queryParameters)
 	if err != nil {
 		return nil, fmt.Errorf("error reading ALB Pool with Name '%s': %s", name, err)
 	}
