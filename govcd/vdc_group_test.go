@@ -366,7 +366,7 @@ func newOrgAdminUserWithVdcGroupRightsConnection(check *C, adminOrg *AdminOrg, u
 		"vDC Group: Configure Logging",
 		"vDC Group: View",
 		"Organization vDC Distributed Firewall: Enable/Disable",
-		//"Security Tag Edit", 10.2 doesn't have it and for this kind'a testing not needed
+		//"Security Tag Edit", 10.2 doesn't have it and for this kind testing not needed
 	} {
 		newRight, err := adminOrg.client.GetRightByName(rightName)
 		check.Assert(err, IsNil)

@@ -77,31 +77,32 @@ func (adminOrg *AdminOrg) CreateVdcGroup(vdcGroup *types.VdcGroup) (*VdcGroup, e
 	if err != nil {
 		return nil, err
 	}
-	return createVdcGroup(adminOrg.client, vdcGroup, getTenantContextHeader(tenantContext))
+	return createVdcGroup(adminOrg, vdcGroup, getTenantContextHeader(tenantContext))
 }
 
 // CreateVdcGroup create VDC group with provided VDC ref.
 // Only support NSX-T VDCs.
-func createVdcGroup(client *Client, vdcGroup *types.VdcGroup,
+func createVdcGroup(adminOrg *AdminOrg, vdcGroup *types.VdcGroup,
 	additionalHeader map[string]string) (*VdcGroup, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroups
-	apiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := adminOrg.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	urlRef, err := adminOrg.client.OpenApiBuildEndpoint(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
 	typeResponse := &VdcGroup{
 		VdcGroup: &types.VdcGroup{},
-		client:   client,
+		client:   adminOrg.client,
 		Href:     urlRef.String(),
+		parent:   adminOrg,
 	}
 
-	err = client.OpenApiPostItem(apiVersion, urlRef, nil,
+	err = adminOrg.client.OpenApiPostItem(apiVersion, urlRef, nil,
 		vdcGroup, typeResponse.VdcGroup, additionalHeader)
 	if err != nil {
 		return nil, err
@@ -446,6 +447,9 @@ func (vdcGroup *VdcGroup) EnableDefaultPolicy() (*VdcGroup, error) {
 	}
 
 	trueRef := true
+	if dfwPolicies.DefaultPolicy == nil {
+		dfwPolicies.DefaultPolicy = &types.DefaultPolicy{}
+	}
 	dfwPolicies.DefaultPolicy.Enabled = &trueRef
 	return vdcGroup.UpdateDefaultDfwPolicies(*dfwPolicies.DefaultPolicy)
 }
@@ -458,6 +462,9 @@ func (vdcGroup *VdcGroup) DisableDefaultPolicy() (*VdcGroup, error) {
 	}
 
 	falseRef := false
+	if dfwPolicies.DefaultPolicy == nil {
+		dfwPolicies.DefaultPolicy = &types.DefaultPolicy{}
+	}
 	dfwPolicies.DefaultPolicy.Enabled = &falseRef
 	return vdcGroup.UpdateDefaultDfwPolicies(*dfwPolicies.DefaultPolicy)
 }
