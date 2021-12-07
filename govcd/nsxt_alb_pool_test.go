@@ -193,13 +193,19 @@ func testAlbPoolConfig(check *C, vcd *TestVCD, name string, setupConfig *types.N
 	check.Assert(err, IsNil)
 	check.Assert(poolByName.NsxtAlbPool.ID, Equals, createdPool.NsxtAlbPool.ID)
 
-	// Get All
+	// Get All Pool summaries
+	allPoolSummaries, err := vcd.client.GetAllAlbPoolSummaries(edge.EdgeGateway.ID, nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(allPoolSummaries) > 0, Equals, true)
+
+	// Get All Pools
 	allPools, err := vcd.client.GetAllAlbPools(edge.EdgeGateway.ID, nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(allPools) > 0, Equals, true)
 
-	// Check that
+	check.Assert(len(allPoolSummaries), Equals, len(allPools))
 
+	// Attempt an update if config is provided
 	if updateConfig != nil {
 		updateConfig.ID = createdPool.NsxtAlbPool.ID
 		updatedPool, err := createdPool.Update(updateConfig)

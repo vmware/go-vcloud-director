@@ -851,7 +851,9 @@ type NsxtAlbServiceEngineGroupAssignment struct {
 	NumDeployedVirtualServices int `json:"numDeployedVirtualServices,omitempty"`
 }
 
-// NsxtAlbPool defines configuration of a single NSX-T ALB Pool
+// NsxtAlbPool defines configuration of a single NSX-T ALB Pool. Pools maintain the list of servers assigned to them and
+// perform health monitoring, load balancing, persistence. A pool may only be used or referenced by only one virtual
+// service at a time.
 type NsxtAlbPool struct {
 	ID string `json:"id,omitempty"`
 	// Name is mandatory

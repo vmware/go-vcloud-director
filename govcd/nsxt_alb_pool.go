@@ -11,6 +11,9 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+// NsxtAlbPool defines configuration of a single NSX-T ALB Pool. Pools maintain the list of servers assigned to them and
+// perform health monitoring, load balancing, persistence. A pool may only be used or referenced by only one virtual
+// service at a time.
 type NsxtAlbPool struct {
 	NsxtAlbPool *types.NsxtAlbPool
 	vcdClient   *VCDClient
@@ -50,6 +53,8 @@ func (vcdClient *VCDClient) GetAllAlbPoolSummaries(edgeGatewayId string, queryPa
 	return wrappedResponses, nil
 }
 
+// GetAllAlbPools uses GetAllAlbPoolSummaries behind the scenes and the fetches complete data for all ALB Pools. This
+// has performance penalty because each ALB Pool is fetched individually.
 func (vcdClient *VCDClient) GetAllAlbPools(edgeGatewayId string, queryParameters url.Values) ([]*NsxtAlbPool, error) {
 	allAlbPoolSummaries, err := vcdClient.GetAllAlbPoolSummaries(edgeGatewayId, queryParameters)
 	if err != nil {
@@ -70,6 +75,7 @@ func (vcdClient *VCDClient) GetAllAlbPools(edgeGatewayId string, queryParameters
 	return allAlbPools, nil
 }
 
+// GetAlbPoolByName fetches ALB Pool By Name
 func (vcdClient *VCDClient) GetAlbPoolByName(edgeGatewayId string, name string) (*NsxtAlbPool, error) {
 	queryParameters := copyOrNewUrlValues(nil)
 	queryParameters.Add("filter", "name=="+name)
@@ -90,6 +96,7 @@ func (vcdClient *VCDClient) GetAlbPoolByName(edgeGatewayId string, name string) 
 	return allAlbPools[0], nil
 }
 
+// GetAlbPoolById fetches ALB Pool By Id
 func (vcdClient *VCDClient) GetAlbPoolById(id string) (*NsxtAlbPool, error) {
 	client := vcdClient.Client
 
@@ -122,6 +129,7 @@ func (vcdClient *VCDClient) GetAlbPoolById(id string) (*NsxtAlbPool, error) {
 	return wrappedResponse, nil
 }
 
+// CreateNsxtAlbPool creates NSX-T ALB Pool based on supplied configuration
 func (vcdClient *VCDClient) CreateNsxtAlbPool(albPoolConfig *types.NsxtAlbPool) (*NsxtAlbPool, error) {
 	client := vcdClient.Client
 
@@ -149,6 +157,7 @@ func (vcdClient *VCDClient) CreateNsxtAlbPool(albPoolConfig *types.NsxtAlbPool) 
 	return returnObject, nil
 }
 
+// Update updates NSX-T ALB Pool based on supplied configuration
 func (nsxtAlbPool *NsxtAlbPool) Update(albPoolConfig *types.NsxtAlbPool) (*NsxtAlbPool, error) {
 	client := nsxtAlbPool.vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbPools
@@ -179,6 +188,7 @@ func (nsxtAlbPool *NsxtAlbPool) Update(albPoolConfig *types.NsxtAlbPool) (*NsxtA
 	return responseAlbController, nil
 }
 
+// Delete deletes NSX-T ALB Pool
 func (nsxtAlbPool *NsxtAlbPool) Delete() error {
 	client := nsxtAlbPool.vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbPools
