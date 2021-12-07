@@ -18,20 +18,32 @@ func (vcd *TestVCD) Test_AlbPool(check *C) {
 	skipNoNsxtAlbConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointAlbEdgeGateway)
 
-	// Setup prerequisites
+	// Setup prerequisite components
 	controller, cloud, seGroup, edge, assignment := setupAlbPoolPrerequisites(check, vcd)
 
-	// Run various tests
-	testMinimalPoolConfig(check, edge, vcd)
-	testAdvancedPoolConfig(check, edge, vcd)
-	testPoolWithCertNoPrivateKey(check, vcd, edge.EdgeGateway.ID)
-	testPoolWithCertAndPrivateKey(check, vcd, edge.EdgeGateway.ID)
+	// Setup Org user and connection
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	orgUserVcdClient, err := newOrgUserConnection(adminOrg, "alb-pool-testing", "CHANGE-ME", vcd.config.Provider.Url, true)
+	check.Assert(err, IsNil)
+
+	// Run tests with System user
+	testMinimalPoolConfig(check, edge, vcd, vcd.client)
+	testAdvancedPoolConfig(check, edge, vcd, vcd.client)
+	testPoolWithCertNoPrivateKey(check, vcd, edge.EdgeGateway.ID, vcd.client)
+	testPoolWithCertAndPrivateKey(check, vcd, edge.EdgeGateway.ID, vcd.client)
+
+	// Run tests with Org admin user
+	testMinimalPoolConfig(check, edge, vcd, orgUserVcdClient)
+	testAdvancedPoolConfig(check, edge, vcd, orgUserVcdClient)
+	testPoolWithCertNoPrivateKey(check, vcd, edge.EdgeGateway.ID, orgUserVcdClient)
+	testPoolWithCertAndPrivateKey(check, vcd, edge.EdgeGateway.ID, orgUserVcdClient)
 
 	// teardown prerequisites
 	tearDownAlbPoolPrerequisites(check, assignment, edge, seGroup, cloud, controller)
 }
 
-func testMinimalPoolConfig(check *C, edge *NsxtEdgeGateway, vcd *TestVCD) {
+func testMinimalPoolConfig(check *C, edge *NsxtEdgeGateway, vcd *TestVCD, client *VCDClient) {
 	poolConfigMinimal := &types.NsxtAlbPool{
 		Name:       check.TestName() + "Minimal",
 		GatewayRef: types.OpenApiReference{ID: edge.EdgeGateway.ID},
@@ -42,10 +54,10 @@ func testMinimalPoolConfig(check *C, edge *NsxtEdgeGateway, vcd *TestVCD) {
 		GatewayRef: types.OpenApiReference{ID: edge.EdgeGateway.ID},
 	}
 
-	testAlbPoolConfig(check, vcd, "Minimal", poolConfigMinimal, poolConfigMinimalUpdated)
+	testAlbPoolConfig(check, vcd, "Minimal", poolConfigMinimal, poolConfigMinimalUpdated, client)
 }
 
-func testAdvancedPoolConfig(check *C, edge *NsxtEdgeGateway, vcd *TestVCD) {
+func testAdvancedPoolConfig(check *C, edge *NsxtEdgeGateway, vcd *TestVCD, client *VCDClient) {
 	poolConfigAdvanced := &types.NsxtAlbPool{
 		Name:                     check.TestName() + "-Advanced",
 		GatewayRef:               types.OpenApiReference{ID: edge.EdgeGateway.ID},
@@ -99,10 +111,10 @@ func testAdvancedPoolConfig(check *C, edge *NsxtEdgeGateway, vcd *TestVCD) {
 		PersistenceProfile: nil,
 	}
 
-	testAlbPoolConfig(check, vcd, "Advanced", poolConfigAdvanced, poolConfigAdvancedUpdated)
+	testAlbPoolConfig(check, vcd, "Advanced", poolConfigAdvanced, poolConfigAdvancedUpdated, client)
 }
 
-func testPoolWithCertNoPrivateKey(check *C, vcd *TestVCD, edgeGatewayId string) {
+func testPoolWithCertNoPrivateKey(check *C, vcd *TestVCD, edgeGatewayId string, client *VCDClient) {
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
@@ -127,13 +139,13 @@ func testPoolWithCertNoPrivateKey(check *C, vcd *TestVCD, edgeGatewayId string) 
 		DefaultPort:            takeIntAddress(1211),
 	}
 
-	testAlbPoolConfig(check, vcd, "CertificateWithNoPrivateKey", poolConfigWithCert, nil)
+	testAlbPoolConfig(check, vcd, "CertificateWithNoPrivateKey", poolConfigWithCert, nil, client)
 
 	err = createdCertificate.Delete()
 	check.Assert(err, IsNil)
 }
 
-func testPoolWithCertAndPrivateKey(check *C, vcd *TestVCD, edgeGatewayId string) {
+func testPoolWithCertAndPrivateKey(check *C, vcd *TestVCD, edgeGatewayId string, client *VCDClient) {
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
@@ -160,19 +172,19 @@ func testPoolWithCertAndPrivateKey(check *C, vcd *TestVCD, edgeGatewayId string)
 		DefaultPort:       takeIntAddress(1211),
 	}
 
-	testAlbPoolConfig(check, vcd, "CertificateWithPrivateKey", poolConfigWithCertAndKey, nil)
+	testAlbPoolConfig(check, vcd, "CertificateWithPrivateKey", poolConfigWithCertAndKey, nil, client)
 
 	err = createdCertificate.Delete()
 	check.Assert(err, IsNil)
 }
 
-func testAlbPoolConfig(check *C, vcd *TestVCD, name string, setupConfig *types.NsxtAlbPool, updateConfig *types.NsxtAlbPool) {
-	fmt.Printf("# Running ALB Pool test with config %s ", name)
+func testAlbPoolConfig(check *C, vcd *TestVCD, name string, setupConfig *types.NsxtAlbPool, updateConfig *types.NsxtAlbPool, client *VCDClient) {
+	fmt.Printf("# Running ALB Pool test with config %s ('System' user: %t) ", name, client.Client.IsSysAdmin)
 
 	edge, err := vcd.nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
 	check.Assert(err, IsNil)
 
-	createdPool, err := vcd.client.CreateNsxtAlbPool(setupConfig)
+	createdPool, err := client.CreateNsxtAlbPool(setupConfig)
 	check.Assert(err, IsNil)
 
 	// Verify mandatory fields
@@ -184,22 +196,22 @@ func testAlbPoolConfig(check *C, vcd *TestVCD, name string, setupConfig *types.N
 	PrependToCleanupListOpenApi(createdPool.NsxtAlbPool.Name, check.TestName(), openApiEndpoint)
 
 	// Get By ID
-	poolById, err := vcd.client.GetAlbPoolById(createdPool.NsxtAlbPool.ID)
+	poolById, err := client.GetAlbPoolById(createdPool.NsxtAlbPool.ID)
 	check.Assert(err, IsNil)
 	check.Assert(poolById.NsxtAlbPool.ID, Equals, createdPool.NsxtAlbPool.ID)
 
 	// Get By Name
-	poolByName, err := vcd.client.GetAlbPoolByName(edge.EdgeGateway.ID, createdPool.NsxtAlbPool.Name)
+	poolByName, err := client.GetAlbPoolByName(edge.EdgeGateway.ID, createdPool.NsxtAlbPool.Name)
 	check.Assert(err, IsNil)
 	check.Assert(poolByName.NsxtAlbPool.ID, Equals, createdPool.NsxtAlbPool.ID)
 
 	// Get All Pool summaries
-	allPoolSummaries, err := vcd.client.GetAllAlbPoolSummaries(edge.EdgeGateway.ID, nil)
+	allPoolSummaries, err := client.GetAllAlbPoolSummaries(edge.EdgeGateway.ID, nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(allPoolSummaries) > 0, Equals, true)
 
 	// Get All Pools
-	allPools, err := vcd.client.GetAllAlbPools(edge.EdgeGateway.ID, nil)
+	allPools, err := client.GetAllAlbPools(edge.EdgeGateway.ID, nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(allPools) > 0, Equals, true)
 
