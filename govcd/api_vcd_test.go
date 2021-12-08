@@ -398,7 +398,6 @@ func AddToCleanupListOpenApi(name, createdBy, openApiEndpoint string) {
 
 // PrependToCleanupListOpenApi prepends an OpenAPI entity OpenApi objects `entityType=OpenApiEntity` and
 // `openApiEndpoint`should be set in format "types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + ID"
-//lint:ignore U1000 Not yet used
 func PrependToCleanupListOpenApi(name, createdBy, openApiEndpoint string) {
 	for _, item := range cleanupEntityList {
 		// avoid adding the same item twice

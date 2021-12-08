@@ -296,6 +296,17 @@ type CertificateLibraryItem struct {
 	PrivateKeyPassphrase string `json:"privateKeyPassphrase,omitempty"` // passphrase for the private key. Required if the private key is encrypted
 }
 
+// CurrentSessionInfo gives information about the current session
+type CurrentSessionInfo struct {
+	ID                        string            `json:"id"`                        // Session ID
+	User                      OpenApiReference  `json:"user"`                      // Name of the user associated with this session
+	Org                       OpenApiReference  `json:"org"`                       // Organization for this connection
+	Location                  string            `json:"location"`                  // Location ID: unknown usage
+	Roles                     []string          `json:"roles"`                     // Roles associated with the session user
+	RoleRefs                  OpenApiReferences `json:"roleRefs"`                  // Roles references for the session user
+	SessionIdleTimeoutMinutes int               `json:"sessionIdleTimeoutMinutes"` // session idle timeout
+}
+
 // VdcGroup is a VDC group definition
 type VdcGroup struct {
 	Description                string                 `json:"description,omitempty"`                // The description of this group.

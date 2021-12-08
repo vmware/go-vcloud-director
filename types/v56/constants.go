@@ -361,6 +361,7 @@ const (
 	OpenApiEndpointIpSecVpnTunnelStatus               = "edgeGateways/%s/ipsec/tunnels/%s/status"
 	OpenApiEndpointSSLCertificateLibrary              = "ssl/certificateLibrary/"
 	OpenApiEndpointSSLCertificateLibraryOld           = "ssl/cetificateLibrary/"
+	OpenApiEndpointSessionCurrent                     = "sessions/current"
 	OpenApiEndpointVdcGroups                          = "vdcGroups/"
 	OpenApiEndpointVdcGroupsCandidateVdcs             = "vdcGroups/networkingCandidateVdcs"
 	OpenApiEndpointVdcGroupsDfwPolicies               = "vdcGroups/%s/dfwPolicies"
