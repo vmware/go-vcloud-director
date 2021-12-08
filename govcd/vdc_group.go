@@ -418,7 +418,7 @@ func (vdcGroup *VdcGroup) DeActivateDfw() (*VdcGroup, error) {
 	})
 }
 
-// GetDfwPolicies retrieves all VDC groups. Query parameters can be supplied to perform additional filtering
+// GetDfwPolicies retrieves all distributed firewall policies
 func (vdcGroup *VdcGroup) GetDfwPolicies() (*types.DfwPolicies, error) {
 	tenantContext, err := vdcGroup.getTenantContext()
 	if err != nil {
