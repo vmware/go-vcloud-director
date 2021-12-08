@@ -290,6 +290,21 @@ func (adminOrg *AdminOrg) GetVdcGroupById(id string) (*VdcGroup, error) {
 
 // Update updates existing Vdc group. Allows changing only name and description and participating VCDs
 func (vdcGroup *VdcGroup) Update(name, description string, participatingOrgVddIs []string) (*VdcGroup, error) {
+
+	vdcGroup.VdcGroup.Name = name
+	vdcGroup.VdcGroup.Description = description
+
+	participatingOrgVdcs, err := constructParticipatingOrgVdcs(vdcGroup.parent.fullObject().(*AdminOrg), vdcGroup.VdcGroup.Id, participatingOrgVddIs)
+	if err != nil {
+		return nil, err
+	}
+	vdcGroup.VdcGroup.ParticipatingOrgVdcs = participatingOrgVdcs
+
+	return vdcGroup.GenericUpdate()
+}
+
+// GenericUpdate updates existing Vdc group. Allows changing only name and description and participating VCDs
+func (vdcGroup *VdcGroup) GenericUpdate() (*VdcGroup, error) {
 	tenantContext, err := vdcGroup.getTenantContext()
 	if err != nil {
 		return nil, err
@@ -309,15 +324,6 @@ func (vdcGroup *VdcGroup) Update(name, description string, participatingOrgVddIs
 	if err != nil {
 		return nil, err
 	}
-
-	vdcGroup.VdcGroup.Name = name
-	vdcGroup.VdcGroup.Description = description
-
-	participatingOrgVdcs, err := constructParticipatingOrgVdcs(vdcGroup.parent.fullObject().(*AdminOrg), vdcGroup.VdcGroup.Id, participatingOrgVddIs)
-	if err != nil {
-		return nil, err
-	}
-	vdcGroup.VdcGroup.ParticipatingOrgVdcs = participatingOrgVdcs
 
 	returnVdcGroup := &VdcGroup{
 		VdcGroup: &types.VdcGroup{},
@@ -448,7 +454,7 @@ func (vdcGroup *VdcGroup) EnableDefaultPolicy() (*VdcGroup, error) {
 
 	trueRef := true
 	if dfwPolicies.DefaultPolicy == nil {
-		dfwPolicies.DefaultPolicy = &types.DefaultPolicy{}
+		return nil, fmt.Errorf("DFW has to be enabled before changing  Default policy")
 	}
 	dfwPolicies.DefaultPolicy.Enabled = &trueRef
 	return vdcGroup.UpdateDefaultDfwPolicies(*dfwPolicies.DefaultPolicy)
@@ -463,7 +469,7 @@ func (vdcGroup *VdcGroup) DisableDefaultPolicy() (*VdcGroup, error) {
 
 	falseRef := false
 	if dfwPolicies.DefaultPolicy == nil {
-		dfwPolicies.DefaultPolicy = &types.DefaultPolicy{}
+		return nil, fmt.Errorf("DFW has to be enabled before changing Default policy")
 	}
 	dfwPolicies.DefaultPolicy.Enabled = &falseRef
 	return vdcGroup.UpdateDefaultDfwPolicies(*dfwPolicies.DefaultPolicy)
