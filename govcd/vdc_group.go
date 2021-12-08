@@ -111,6 +111,7 @@ func createVdcGroup(adminOrg *AdminOrg, vdcGroup *types.VdcGroup,
 	return typeResponse, nil
 }
 
+// GetAllNsxtCandidateVdcs returns NSXT candidate VDCs for VDC group
 func (adminOrg *AdminOrg) GetAllNsxtCandidateVdcs(startingVdcId string, queryParameters url.Values) (*[]types.CandidateVdc, error) {
 	queryParams := copyOrNewUrlValues(queryParameters)
 	queryParams = queryParameterFilterAnd("_context==LOCAL", queryParams)
@@ -120,6 +121,7 @@ func (adminOrg *AdminOrg) GetAllNsxtCandidateVdcs(startingVdcId string, queryPar
 	return adminOrg.GetAllCandidateVdcs(queryParams)
 }
 
+// GetAllCandidateVdcs returns candidate VDCs for VDC group
 func (adminOrg *AdminOrg) GetAllCandidateVdcs(queryParameters url.Values) (*[]types.CandidateVdc, error) {
 	tenantContext, err := adminOrg.getTenantContext()
 	if err != nil {
@@ -303,7 +305,7 @@ func (vdcGroup *VdcGroup) Update(name, description string, participatingOrgVddIs
 	return vdcGroup.GenericUpdate()
 }
 
-// GenericUpdate updates existing Vdc group. Allows changing only name and description and participating VCDs
+// GenericUpdate updates existing Vdc group. API allows changing only name and description and participating VCDs
 func (vdcGroup *VdcGroup) GenericUpdate() (*VdcGroup, error) {
 	tenantContext, err := vdcGroup.getTenantContext()
 	if err != nil {
