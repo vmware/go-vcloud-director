@@ -325,6 +325,7 @@ type VdcGroup struct {
 	UniversalNetworkingEnabled bool                   `json:"universalNetworkingEnabled,omitempty"` // True means that a vDC group router has been created. If set to true for vdc group creation, a universal router will also be created.
 }
 
+// ParticipatingOrgVdcs is a participating Org VDCs definition
 type ParticipatingOrgVdcs struct {
 	FaultDomainTag       string           `json:"faultDomainTag,omitempty"`       // Represents the fault domain of a given organization vDC. For NSX_V backed organization vDCs, this is the network provider scope. For NSX_T backed organization vDCs, this can vary (for example name of the provider vDC or compute provider scope).
 	NetworkProviderScope string           `json:"networkProviderScope,omitempty"` // Read-only field that specifies the network provider scope of the vDC.
@@ -335,6 +336,7 @@ type ParticipatingOrgVdcs struct {
 	VdcRef               OpenApiReference `json:"vdcRef"`                         // The reference to the vDC that is part of this a vDC group.
 }
 
+// CandidateVdc defines possible candidate VDCs for VDC group
 type CandidateVdc struct {
 	FaultDomainTag       string           `json:"faultDomainTag"`
 	Id                   string           `json:"id"`
@@ -344,11 +346,13 @@ type CandidateVdc struct {
 	SiteRef              OpenApiReference `json:"siteRef"`
 }
 
+// DfwPolicies defines Distributed firewall policies
 type DfwPolicies struct {
 	Enabled       bool           `json:"enabled"`
 	DefaultPolicy *DefaultPolicy `json:"defaultPolicy,omitempty"`
 }
 
+// DefaultPolicy defines Default policy for Distributed firewall
 type DefaultPolicy struct {
 	Description string        `json:"description,omitempty"` // Description for the security policy.
 	Enabled     *bool         `json:"enabled,omitempty"`     // Whether this security policy is enabled.
@@ -357,6 +361,7 @@ type DefaultPolicy struct {
 	Version     *VersionField `json:"version,omitempty"`     // This property describes the current version of the entity. To prevent clients from overwriting each other’s changes, update operations must include the version which can be obtained by issuing a GET operation. If the version number on an update call is missing, the operation will be rejected. This is only needed on update calls.
 }
 
+// VersionField defines Version
 type VersionField struct {
 	Version int `json:"version"`
 }
