@@ -225,7 +225,7 @@ func (adminOrg *AdminOrg) GetAllVdcGroups(queryParameters url.Values) ([]*VdcGro
 // https://github.com/golang/go/issues/4013
 // https://github.com/czos/goamz/pull/11/files
 func (adminOrg *AdminOrg) GetVdcGroupByName(name string) (*VdcGroup, error) {
-	slowSearch, params, err := isShouldDoSlowSearch(name, adminOrg.client)
+	slowSearch, params, err := isShouldDoSlowSearch("name", name, adminOrg.client)
 	if err != nil {
 		return nil, err
 	}

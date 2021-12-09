@@ -184,7 +184,7 @@ func (adminOrg *AdminOrg) GetAllCertificatesFromLibrary(queryParameters url.Valu
 // https://github.com/golang/go/issues/4013
 // https://github.com/czos/goamz/pull/11/files
 func getCertificateFromLibraryByName(client *Client, name string, additionalHeader map[string]string) (*Certificate, error) {
-	slowSearch, params, err := isShouldDoSlowSearch(name, client)
+	slowSearch, params, err := isShouldDoSlowSearch("alias", name, client)
 	if err != nil {
 		return nil, err
 	}

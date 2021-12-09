@@ -794,7 +794,7 @@ func copyUrlRef(in *url.URL) *url.URL {
 // search brute force too. Reference to issue:
 // https://github.com/golang/go/issues/4013
 // https://github.com/czos/goamz/pull/11/files
-func isShouldDoSlowSearch(name string, client *Client) (bool, url.Values, error) {
+func isShouldDoSlowSearch(filterKey, name string, client *Client) (bool, url.Values, error) {
 	var params = url.Values{}
 	slowSearch := false
 	versionWithNoBug, err := client.VersionEqualOrGreater("10.3", 3)
@@ -805,7 +805,7 @@ func isShouldDoSlowSearch(name string, client *Client) (bool, url.Values, error)
 		strings.Contains(name, " ") || strings.Contains(name, "+") || strings.Contains(name, "*") {
 		slowSearch = true
 	} else {
-		params.Set("filter", fmt.Sprintf("name==%s", url.QueryEscape(name)))
+		params.Set("filter", fmt.Sprintf(filterKey+"==%s", url.QueryEscape(name)))
 		params.Set("filterEncoded", "true")
 	}
 	return slowSearch, params, err
