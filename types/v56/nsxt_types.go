@@ -863,6 +863,9 @@ type NsxtAlbPool struct {
 	// GatewayRef is mandatory and associates NSX-T Edge Gateway with this Load Balancer Pool.
 	GatewayRef OpenApiReference `json:"gatewayRef"`
 
+	// Enabled defines if the Pool is enabled
+	Enabled *bool `json:"enabled,omitempty"`
+
 	// Algorithm for choosing a member within the pools list of available members for each new connection.
 	// Default value is LEAST_CONNECTIONS
 	// Supported algorithms are:

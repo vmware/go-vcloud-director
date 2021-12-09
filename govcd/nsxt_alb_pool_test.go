@@ -92,6 +92,7 @@ func testAdvancedPoolConfig(check *C, edge *NsxtEdgeGateway, vcd *TestVCD, clien
 	poolConfigAdvancedUpdated := &types.NsxtAlbPool{
 		Name:                     poolConfigAdvanced.Name + "-Updated",
 		GatewayRef:               types.OpenApiReference{ID: edge.EdgeGateway.ID},
+		Enabled:                  takeBoolPointer(false),
 		Algorithm:                "LEAST_LOAD",
 		GracefulTimeoutPeriod:    takeIntAddress(0),
 		PassiveMonitoringEnabled: takeBoolPointer(false),
