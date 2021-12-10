@@ -44,7 +44,7 @@ func constructParticipatingOrgVdcs(adminOrg *AdminOrg, startingVdcId string, par
 		return nil, err
 	}
 	participatingVdcs := []types.ParticipatingOrgVdcs{}
-	for _, candidateVdc := range *candidateVdcs {
+	for _, candidateVdc := range candidateVdcs {
 		if containsInString(candidateVdc.Id, participatingVdcIds) {
 			participatingVdcs = append(participatingVdcs, types.ParticipatingOrgVdcs{
 				OrgRef:  candidateVdc.OrgRef,
@@ -112,7 +112,7 @@ func createVdcGroup(adminOrg *AdminOrg, vdcGroup *types.VdcGroup,
 }
 
 // GetAllNsxtCandidateVdcs returns NSXT candidate VDCs for VDC group
-func (adminOrg *AdminOrg) GetAllNsxtCandidateVdcs(startingVdcId string, queryParameters url.Values) (*[]types.CandidateVdc, error) {
+func (adminOrg *AdminOrg) GetAllNsxtCandidateVdcs(startingVdcId string, queryParameters url.Values) ([]*types.CandidateVdc, error) {
 	queryParams := copyOrNewUrlValues(queryParameters)
 	queryParams = queryParameterFilterAnd("_context==LOCAL", queryParams)
 	queryParams = queryParameterFilterAnd(fmt.Sprintf("_context==%s", startingVdcId), queryParams)
@@ -122,7 +122,7 @@ func (adminOrg *AdminOrg) GetAllNsxtCandidateVdcs(startingVdcId string, queryPar
 }
 
 // GetAllCandidateVdcs returns candidate VDCs for VDC group
-func (adminOrg *AdminOrg) GetAllCandidateVdcs(queryParameters url.Values) (*[]types.CandidateVdc, error) {
+func (adminOrg *AdminOrg) GetAllCandidateVdcs(queryParameters url.Values) ([]*types.CandidateVdc, error) {
 	tenantContext, err := adminOrg.getTenantContext()
 	if err != nil {
 		return nil, err
@@ -139,7 +139,7 @@ func (adminOrg *AdminOrg) GetAllCandidateVdcs(queryParameters url.Values) (*[]ty
 		return nil, err
 	}
 
-	responses := &[]types.CandidateVdc{}
+	responses := []*types.CandidateVdc{}
 	err = adminOrg.client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &responses, getTenantContextHeader(tenantContext))
 	if err != nil {
 		return nil, err

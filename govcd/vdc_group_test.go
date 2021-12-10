@@ -39,13 +39,13 @@ func test_CreateVdcGroup(check *C, adminOrg *AdminOrg, vcd *TestVCD) {
 		map[string][]string{"filter": []string{fmt.Sprintf("name==%s", url.QueryEscape(createdVdc.vdcName()))}})
 	check.Assert(err, IsNil)
 	check.Assert(createdVdcAsCandidate, NotNil)
-	check.Assert(len(*createdVdcAsCandidate) == 1, Equals, true)
+	check.Assert(len(createdVdcAsCandidate) == 1, Equals, true)
 
 	existingVdcAsCandidate, err := adminOrg.GetAllNsxtCandidateVdcs(createdVdc.vdcId(),
 		map[string][]string{"filter": []string{fmt.Sprintf("name==%s", url.QueryEscape(vcd.nsxtVdc.vdcName()))}})
 	check.Assert(err, IsNil)
 	check.Assert(existingVdcAsCandidate, NotNil)
-	check.Assert(len(*existingVdcAsCandidate) == 1, Equals, true)
+	check.Assert(len(existingVdcAsCandidate) == 1, Equals, true)
 
 	vdcGroupConfig := &types.VdcGroup{
 		Name:  check.TestName() + "Group",
@@ -55,15 +55,15 @@ func test_CreateVdcGroup(check *C, adminOrg *AdminOrg, vcd *TestVCD) {
 				VdcRef: types.OpenApiReference{
 					ID: createdVdc.vdcId(),
 				},
-				SiteRef: (*createdVdcAsCandidate)[0].SiteRef,
-				OrgRef:  (*createdVdcAsCandidate)[0].OrgRef,
+				SiteRef: (createdVdcAsCandidate)[0].SiteRef,
+				OrgRef:  (createdVdcAsCandidate)[0].OrgRef,
 			},
 			types.ParticipatingOrgVdcs{
 				VdcRef: types.OpenApiReference{
 					ID: vcd.nsxtVdc.vdcId(),
 				},
-				SiteRef: (*existingVdcAsCandidate)[0].SiteRef,
-				OrgRef:  (*existingVdcAsCandidate)[0].OrgRef,
+				SiteRef: (existingVdcAsCandidate)[0].SiteRef,
+				OrgRef:  (existingVdcAsCandidate)[0].OrgRef,
 			},
 		},
 		LocalEgress:                false,
