@@ -786,7 +786,7 @@ func copyUrlRef(in *url.URL) *url.URL {
 	return newUrlRef
 }
 
-// isShouldDoSlowSearch returns true if query isn't working or added needed params if returns false.
+// shouldDoSlowSearch returns true if query isn't working or added needed params if returns false.
 // When the name contains commas, semicolons or asterisks, the encoding is rejected by the API in VCD 10.2 version.
 // For this reason, when one or more commas, semicolons or asterisks are present we run the search brute force,
 // by fetching all and comparing the name. Yet, this not needed anymore in VCD 10.3 version.
@@ -794,7 +794,7 @@ func copyUrlRef(in *url.URL) *url.URL {
 // search brute force too. Reference to issue:
 // https://github.com/golang/go/issues/4013
 // https://github.com/czos/goamz/pull/11/files
-func isShouldDoSlowSearch(filterKey, name string, client *Client) (bool, url.Values, error) {
+func shouldDoSlowSearch(filterKey, name string, client *Client) (bool, url.Values, error) {
 	var params = url.Values{}
 	slowSearch := false
 	versionWithNoBug, err := client.VersionEqualOrGreater("10.3", 3)

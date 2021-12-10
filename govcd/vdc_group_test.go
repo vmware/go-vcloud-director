@@ -263,7 +263,7 @@ func test_NsxtVdcGroup(check *C, adminOrg *AdminOrg, vcd *TestVCD) {
 	check.Assert(defaultPolicy, NotNil)
 	check.Assert(*defaultPolicy.DefaultPolicy.Enabled, Equals, false)
 
-	disabledVdcGroup, err := updatedVdcGroup.DeActivateDfw()
+	disabledVdcGroup, err := updatedVdcGroup.DeactivateDfw()
 	check.Assert(err, IsNil)
 	check.Assert(disabledVdcGroup, NotNil)
 	check.Assert(disabledVdcGroup.VdcGroup.DfwEnabled, Equals, false)
@@ -331,7 +331,7 @@ func (vcd *TestVCD) Test_NsxtVdcGroupWithOrgAdmin(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	rightsToRemove, orgAdminClient, err := newOrgAdminUserWithVdcGroupRightsConnection(check, adminOrg, "test-user", "CHANGE-ME", vcd.config.Provider.Url, true)
+	rightsToRemove, orgAdminClient, err := newOrgAdminUserWithVdcGroupRightsConnection(check, adminOrg, "test-user2", "CHANGE-ME", vcd.config.Provider.Url, true)
 	check.Assert(err, IsNil)
 	check.Assert(orgAdminClient, NotNil)
 

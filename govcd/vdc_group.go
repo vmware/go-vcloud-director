@@ -72,7 +72,7 @@ func containsInString(item string, slice []string) bool {
 }
 
 // CreateVdcGroup create VDC group with provided VDC ref.
-// Only support NSX-T VDCs.
+// Only supports NSX-T VDCs.
 func (adminOrg *AdminOrg) CreateVdcGroup(vdcGroup *types.VdcGroup) (*VdcGroup, error) {
 	tenantContext, err := adminOrg.getTenantContext()
 	if err != nil {
@@ -81,8 +81,8 @@ func (adminOrg *AdminOrg) CreateVdcGroup(vdcGroup *types.VdcGroup) (*VdcGroup, e
 	return createVdcGroup(adminOrg, vdcGroup, getTenantContextHeader(tenantContext))
 }
 
-// CreateVdcGroup create VDC group with provided VDC ref.
-// Only support NSX-T VDCs.
+// createVdcGroup create VDC group with provided VDC ref.
+// Only supports NSX-T VDCs.
 func createVdcGroup(adminOrg *AdminOrg, vdcGroup *types.VdcGroup,
 	additionalHeader map[string]string) (*VdcGroup, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroups
@@ -226,11 +226,12 @@ func (adminOrg *AdminOrg) GetAllVdcGroups(queryParameters url.Values) ([]*VdcGro
 // https://github.com/golang/go/issues/4013
 // https://github.com/czos/goamz/pull/11/files
 func (adminOrg *AdminOrg) GetVdcGroupByName(name string) (*VdcGroup, error) {
-	slowSearch, params, err := isShouldDoSlowSearch("name", name, adminOrg.client)
+	slowSearch, params, err := shouldDoSlowSearch("name", name, adminOrg.client)
 	if err != nil {
 		return nil, err
 	}
 
+	var foundVdcGroups []*VdcGroup
 	vdcGroups, err := adminOrg.GetAllVdcGroups(params)
 	if err != nil {
 		return nil, err
@@ -238,20 +239,28 @@ func (adminOrg *AdminOrg) GetVdcGroupByName(name string) (*VdcGroup, error) {
 	if len(vdcGroups) == 0 {
 		return nil, ErrorEntityNotFound
 	}
+	foundVdcGroups = append(foundVdcGroups, vdcGroups[0])
 
 	if slowSearch {
+		foundVdcGroups = nil
 		for _, vdcGroup := range vdcGroups {
 			if vdcGroup.VdcGroup.Name == name {
-				return vdcGroup, nil
+				foundVdcGroups = append(foundVdcGroups, vdcGroup)
 			}
 		}
-		return nil, ErrorEntityNotFound
+		if len(foundVdcGroups) == 0 {
+			return nil, ErrorEntityNotFound
+		}
+		if len(foundVdcGroups) > 1 {
+			return nil, fmt.Errorf("more than one VDC group found with name '%s'", name)
+		}
 	}
 
-	if len(vdcGroups) > 1 {
+	if len(vdcGroups) > 1 && !slowSearch {
 		return nil, fmt.Errorf("more than one VDC group found with name '%s'", name)
 	}
-	return vdcGroups[0], nil
+
+	return foundVdcGroups[0], nil
 }
 
 // GetVdcGroupById Returns VDC group using provided ID
@@ -292,6 +301,7 @@ func (adminOrg *AdminOrg) GetVdcGroupById(id string) (*VdcGroup, error) {
 }
 
 // Update updates existing Vdc group. Allows changing only name and description and participating VCDs
+// Not restrictive update method also available - GenericUpdate
 func (vdcGroup *VdcGroup) Update(name, description string, participatingOrgVddIs []string) (*VdcGroup, error) {
 
 	vdcGroup.VdcGroup.Name = name
@@ -414,8 +424,8 @@ func (vdcGroup *VdcGroup) ActivateDfw() (*VdcGroup, error) {
 	})
 }
 
-// DeActivateDfw deactivates distributed firewall
-func (vdcGroup *VdcGroup) DeActivateDfw() (*VdcGroup, error) {
+// DeactivateDfw deactivates distributed firewall
+func (vdcGroup *VdcGroup) DeactivateDfw() (*VdcGroup, error) {
 	return vdcGroup.UpdateDfwPolicies(types.DfwPolicies{
 		Enabled: false,
 	})
@@ -455,11 +465,10 @@ func (vdcGroup *VdcGroup) EnableDefaultPolicy() (*VdcGroup, error) {
 		return nil, err
 	}
 
-	trueRef := true
 	if dfwPolicies.DefaultPolicy == nil {
 		return nil, fmt.Errorf("DFW has to be enabled before changing  Default policy")
 	}
-	dfwPolicies.DefaultPolicy.Enabled = &trueRef
+	dfwPolicies.DefaultPolicy.Enabled = takeBoolPointer(true)
 	return vdcGroup.UpdateDefaultDfwPolicies(*dfwPolicies.DefaultPolicy)
 }
 
@@ -470,10 +479,9 @@ func (vdcGroup *VdcGroup) DisableDefaultPolicy() (*VdcGroup, error) {
 		return nil, err
 	}
 
-	falseRef := false
 	if dfwPolicies.DefaultPolicy == nil {
 		return nil, fmt.Errorf("DFW has to be enabled before changing Default policy")
 	}
-	dfwPolicies.DefaultPolicy.Enabled = &falseRef
+	dfwPolicies.DefaultPolicy.Enabled = takeBoolPointer(false)
 	return vdcGroup.UpdateDefaultDfwPolicies(*dfwPolicies.DefaultPolicy)
 }
