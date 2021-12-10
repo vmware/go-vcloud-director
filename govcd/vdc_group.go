@@ -19,6 +19,7 @@ type VdcGroup struct {
 }
 
 // CreateNsxtVdcGroup create NSX-T VDC group with provided VDC IDs.
+// More generic creation method available also - CreateVdcGroup
 func (adminOrg *AdminOrg) CreateNsxtVdcGroup(name, description, startingVdcId string, participatingVdcIds []string) (*VdcGroup, error) {
 	participatingVdcs, err := constructParticipatingOrgVdcs(adminOrg, startingVdcId, participatingVdcIds)
 	if err != nil {
