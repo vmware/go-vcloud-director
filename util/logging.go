@@ -189,6 +189,10 @@ func hideSensitive(in string, onScreen bool) string {
 	re6 := regexp.MustCompile(`(-----BEGIN ENCRYPTED PRIVATE KEY-----)(.*)(-----END ENCRYPTED PRIVATE KEY-----)`)
 	out = re6.ReplaceAllString(out, `${1}******${3}`)
 
+	// Token inside request body
+	re7 := regexp.MustCompile(`(refresh_token)=(\S+)`)
+	out = re7.ReplaceAllString(out, `${1}=*******`)
+
 	return out
 }
 
