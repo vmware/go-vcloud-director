@@ -176,10 +176,10 @@ func (vcd *TestVCD) Test_NsxtVdcGroup(check *C) {
 func test_NsxtVdcGroup(check *C, adminOrg *AdminOrg, vcd *TestVCD) {
 	description := "vdc group created by test"
 
-	vdcGroup, err := adminOrg.CreateNsxtVdcGroup(check.TestName(), description, vcd.nsxtVdc.vdcId(), []string{vcd.vdc.vdcId()})
+	_, err := adminOrg.CreateNsxtVdcGroup(check.TestName(), description, vcd.nsxtVdc.vdcId(), []string{vcd.vdc.vdcId()})
 	check.Assert(err, NotNil)
 
-	vdcGroup, err = adminOrg.CreateNsxtVdcGroup(check.TestName(), description, vcd.nsxtVdc.vdcId(), []string{vcd.nsxtVdc.vdcId()})
+	vdcGroup, err := adminOrg.CreateNsxtVdcGroup(check.TestName(), description, vcd.nsxtVdc.vdcId(), []string{vcd.nsxtVdc.vdcId()})
 	check.Assert(err, IsNil)
 	check.Assert(vdcGroup, NotNil)
 
