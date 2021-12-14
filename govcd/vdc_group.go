@@ -45,6 +45,7 @@ func constructParticipatingOrgVdcs(adminOrg *AdminOrg, startingVdcId string, par
 		return nil, err
 	}
 	participatingVdcs := []types.ParticipatingOrgVdcs{}
+	var foundParticipatingVdcsIds []string
 	for _, candidateVdc := range candidateVdcs {
 		if containsInString(candidateVdc.Id, participatingVdcIds) {
 			participatingVdcs = append(participatingVdcs, types.ParticipatingOrgVdcs{
@@ -56,8 +57,20 @@ func constructParticipatingOrgVdcs(adminOrg *AdminOrg, startingVdcId string, par
 				FaultDomainTag:       candidateVdc.FaultDomainTag,
 				NetworkProviderScope: candidateVdc.NetworkProviderScope,
 			})
+			foundParticipatingVdcsIds = append(foundParticipatingVdcsIds, candidateVdc.Id)
 		}
 	}
+
+	if len(participatingVdcs) != len(participatingVdcIds) {
+		var notFoundVdcs []string
+		for _, participatingVdcId := range participatingVdcIds {
+			if containsInString(participatingVdcId, foundParticipatingVdcsIds) {
+				notFoundVdcs = append(notFoundVdcs, participatingVdcId)
+			}
+		}
+		return nil, fmt.Errorf("VDC IDs are not found as Candidate VDCs: %s", notFoundVdcs)
+	}
+
 	return participatingVdcs, nil
 }
 
