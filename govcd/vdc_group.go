@@ -64,7 +64,7 @@ func constructParticipatingOrgVdcs(adminOrg *AdminOrg, startingVdcId string, par
 	if len(participatingVdcs) != len(participatingVdcIds) {
 		var notFoundVdcs []string
 		for _, participatingVdcId := range participatingVdcIds {
-			if containsInString(participatingVdcId, foundParticipatingVdcsIds) {
+			if !containsInString(participatingVdcId, foundParticipatingVdcsIds) {
 				notFoundVdcs = append(notFoundVdcs, participatingVdcId)
 			}
 		}
