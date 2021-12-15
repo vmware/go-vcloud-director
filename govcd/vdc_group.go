@@ -39,6 +39,8 @@ func (adminOrg *AdminOrg) CreateNsxtVdcGroup(name, description, startingVdcId st
 	return adminOrg.CreateVdcGroup(vdcGroupConfig)
 }
 
+// constructParticipatingOrgVdcs converts fetched candidate VDCs to []types.ParticipatingOrgVdcs
+// returns error also in case participatingVdcId not found as candidate VDC.
 func constructParticipatingOrgVdcs(adminOrg *AdminOrg, startingVdcId string, participatingVdcIds []string) ([]types.ParticipatingOrgVdcs, error) {
 	candidateVdcs, err := adminOrg.GetAllNsxtCandidateVdcs(startingVdcId, nil)
 	if err != nil {
