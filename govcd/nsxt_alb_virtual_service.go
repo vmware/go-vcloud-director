@@ -11,6 +11,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+// NsxtAlbVirtualService combines Load Balancer Pools with Service Engine Groups and exposes a virtual service on
+// defined VIP (virtual IP address) while optionally allowing to use encrypted traffic
 type NsxtAlbVirtualService struct {
 	NsxtAlbVirtualService *types.NsxtAlbVirtualService
 	vcdClient             *VCDClient
