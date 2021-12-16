@@ -21,7 +21,7 @@ type VdcGroup struct {
 // CreateNsxtVdcGroup create NSX-T VDC group with provided VDC IDs.
 // More generic creation method available also - CreateVdcGroup
 func (adminOrg *AdminOrg) CreateNsxtVdcGroup(name, description, startingVdcId string, participatingVdcIds []string) (*VdcGroup, error) {
-	participatingVdcs, err := constructParticipatingOrgVdcs(adminOrg, startingVdcId, participatingVdcIds)
+	participatingVdcs, err := composeParticipatingOrgVdcs(adminOrg, startingVdcId, participatingVdcIds)
 	if err != nil {
 		return nil, err
 	}
@@ -39,9 +39,9 @@ func (adminOrg *AdminOrg) CreateNsxtVdcGroup(name, description, startingVdcId st
 	return adminOrg.CreateVdcGroup(vdcGroupConfig)
 }
 
-// constructParticipatingOrgVdcs converts fetched candidate VDCs to []types.ParticipatingOrgVdcs
+// composeParticipatingOrgVdcs converts fetched candidate VDCs to []types.ParticipatingOrgVdcs
 // returns error also in case participatingVdcId not found as candidate VDC.
-func constructParticipatingOrgVdcs(adminOrg *AdminOrg, startingVdcId string, participatingVdcIds []string) ([]types.ParticipatingOrgVdcs, error) {
+func composeParticipatingOrgVdcs(adminOrg *AdminOrg, startingVdcId string, participatingVdcIds []string) ([]types.ParticipatingOrgVdcs, error) {
 	candidateVdcs, err := adminOrg.GetAllNsxtCandidateVdcs(startingVdcId, nil)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func constructParticipatingOrgVdcs(adminOrg *AdminOrg, startingVdcId string, par
 	participatingVdcs := []types.ParticipatingOrgVdcs{}
 	var foundParticipatingVdcsIds []string
 	for _, candidateVdc := range candidateVdcs {
-		if containsInString(candidateVdc.Id, participatingVdcIds) {
+		if contains(candidateVdc.Id, participatingVdcIds) {
 			participatingVdcs = append(participatingVdcs, types.ParticipatingOrgVdcs{
 				OrgRef:  candidateVdc.OrgRef,
 				SiteRef: candidateVdc.SiteRef,
@@ -66,7 +66,7 @@ func constructParticipatingOrgVdcs(adminOrg *AdminOrg, startingVdcId string, par
 	if len(participatingVdcs) != len(participatingVdcIds) {
 		var notFoundVdcs []string
 		for _, participatingVdcId := range participatingVdcIds {
-			if !containsInString(participatingVdcId, foundParticipatingVdcsIds) {
+			if !contains(participatingVdcId, foundParticipatingVdcsIds) {
 				notFoundVdcs = append(notFoundVdcs, participatingVdcId)
 			}
 		}
@@ -76,8 +76,8 @@ func constructParticipatingOrgVdcs(adminOrg *AdminOrg, startingVdcId string, par
 	return participatingVdcs, nil
 }
 
-// containsInString tells whether slice of string contains item.
-func containsInString(item string, slice []string) bool {
+// contains tells whether slice of string contains item.
+func contains(item string, slice []string) bool {
 	for _, n := range slice {
 		if item == n {
 			return true
@@ -322,7 +322,7 @@ func (vdcGroup *VdcGroup) Update(name, description string, participatingOrgVddIs
 	vdcGroup.VdcGroup.Name = name
 	vdcGroup.VdcGroup.Description = description
 
-	participatingOrgVdcs, err := constructParticipatingOrgVdcs(vdcGroup.parent.fullObject().(*AdminOrg), vdcGroup.VdcGroup.Id, participatingOrgVddIs)
+	participatingOrgVdcs, err := composeParticipatingOrgVdcs(vdcGroup.parent.fullObject().(*AdminOrg), vdcGroup.VdcGroup.Id, participatingOrgVddIs)
 	if err != nil {
 		return nil, err
 	}

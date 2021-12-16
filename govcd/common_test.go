@@ -858,16 +858,6 @@ func extractIdsFromOpenApiReferences(refs []types.OpenApiReference) []string {
 	return resultStrings
 }
 
-// contains checks if a slice contains element
-func contains(s []string, element string) bool {
-	for _, a := range s {
-		if a == element {
-			return true
-		}
-	}
-	return false
-}
-
 // checkSkipWhenApiToken skips the test if the connection was established using an API token
 func (vcd *TestVCD) checkSkipWhenApiToken(check *C) {
 	if vcd.client.Client.UsingAccessToken {

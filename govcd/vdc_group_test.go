@@ -32,6 +32,7 @@ func (vcd *TestVCD) Test_CreateVdcGroup(check *C) {
 
 	test_CreateVdcGroup(check, adminOrg, vcd)
 }
+
 func test_CreateVdcGroup(check *C, adminOrg *AdminOrg, vcd *TestVCD) {
 	createdVdc := createNewVdc(vcd, check, check.TestName())
 
