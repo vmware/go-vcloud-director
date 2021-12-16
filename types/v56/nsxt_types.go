@@ -1070,13 +1070,29 @@ type NsxtAlbVirtualServicePort struct {
 	TcpUdpProfile *NsxtAlbVirtualServicePortTcpUdpProfile `json:"tcpUdpProfile,omitempty"`
 }
 
-// NsxtAlbVirtualServicePortTcpUdpProfile must be specified for L4 Application Profiles
+// NsxtAlbVirtualServicePortTcpUdpProfile profile determines the type and settings of the network protocol that a
+// subscribing virtual service will use. It sets a number of parameters, such as whether the virtual service is a TCP
+// proxy versus a pass-through via fast path. A virtual service can have both TCP and UDP enabled, which is useful for
+// protocols such as DNS or syslog.
 type NsxtAlbVirtualServicePortTcpUdpProfile struct {
 	SystemDefined bool `json:"systemDefined"`
 	// Type defines L4 or L4_TLS profiles:
-	// * TCP_PROXY (the only possible type when L4_TLS is used)
-	// * TCP_FAST_PATH
-	// * UDP_FAST_PATH
+	// * TCP_PROXY (the only possible type when L4_TLS is used). Enabling TCP Proxy causes ALB to terminate an inbound
+	// connection from a client. Any application data from the client that is destined for a server is forwarded to that
+	// server over a new TCP connection. Separating (or proxying) the client-to-server connections enables ALB to provide
+	// enhanced security, such as TCP protocol sanitization or DoS mitigation. It also provides better client and server
+	// performance, such as maximizing client and server TCP MSS or window sizes independently and buffering server
+	// responses. One must use a TCP/UDP profile with the type set to Proxy for application profiles such as HTTP.
+	//
+	// * TCP_FAST_PATH profile does not proxy TCP connections - rather, it directly connects clients to the
+	// destination server and translates the client’s destination virtual service address with the chosen destination
+	// server’s IP address. The client’s source IP address is still translated to the Service Engine address to ensure
+	// that server response traffic returns symmetrically.
+	//
+	// * UDP_FAST_PATH profile enables a virtual service to support UDP. Avi Vantage translates the client’s destination
+	// virtual service address to the destination server and rewrites the client’s source IP address to the Service
+	// Engine’s address when forwarding the packet to the server. This ensures that server response traffic traverses
+	// symmetrically through the original SE.
 	Type string `json:"type"`
 }
 
