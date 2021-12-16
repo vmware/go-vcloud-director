@@ -1346,6 +1346,7 @@ func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection
 			Xmlns:         types.XMLNamespaceVCloud,
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
+			Description:   vm.VM.Description,
 			VmSpecSection: disksSettingToUpdate,
 		})
 }

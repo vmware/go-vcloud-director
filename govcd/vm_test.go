@@ -1052,6 +1052,10 @@ func (vcd *TestVCD) Test_UpdateInternalDisk(check *C) {
 	vm, storageProfile, diskSettings, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, vmName, 1)
 	check.Assert(err, IsNil)
 
+	description := "Test_UpdateInternalDisk_Description"
+	vm, err = vm.UpdateVmSpecSection(vm.VM.VmSpecSection, description)
+	check.Assert(err, IsNil)
+
 	//verify
 	disk, err := vm.GetInternalDiskById(diskId, true)
 	check.Assert(err, IsNil)
@@ -1086,6 +1090,11 @@ func (vcd *TestVCD) Test_UpdateInternalDisk(check *C) {
 	check.Assert(disk.UnitNumber, Equals, diskSettings.UnitNumber)
 	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
+
+	// verify VM description still available - bug fix test
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+	check.Assert(vm.VM.Description, Equals, description)
 
 	// attach independent disk
 	independentDisk, err := attachIndependentDisk(vcd, check)
