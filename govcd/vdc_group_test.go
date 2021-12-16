@@ -36,13 +36,13 @@ func (vcd *TestVCD) Test_CreateVdcGroup(check *C) {
 func test_CreateVdcGroup(check *C, adminOrg *AdminOrg, vcd *TestVCD) {
 	createdVdc := createNewVdc(vcd, check, check.TestName())
 
-	createdVdcAsCandidate, err := adminOrg.GetAllNsxtCandidateVdcs(createdVdc.vdcId(),
+	createdVdcAsCandidate, err := adminOrg.GetAllNsxtVdcGroupCandidates(createdVdc.vdcId(),
 		map[string][]string{"filter": []string{fmt.Sprintf("name==%s", url.QueryEscape(createdVdc.vdcName()))}})
 	check.Assert(err, IsNil)
 	check.Assert(createdVdcAsCandidate, NotNil)
 	check.Assert(len(createdVdcAsCandidate) == 1, Equals, true)
 
-	existingVdcAsCandidate, err := adminOrg.GetAllNsxtCandidateVdcs(createdVdc.vdcId(),
+	existingVdcAsCandidate, err := adminOrg.GetAllNsxtVdcGroupCandidates(createdVdc.vdcId(),
 		map[string][]string{"filter": []string{fmt.Sprintf("name==%s", url.QueryEscape(vcd.nsxtVdc.vdcName()))}})
 	check.Assert(err, IsNil)
 	check.Assert(existingVdcAsCandidate, NotNil)

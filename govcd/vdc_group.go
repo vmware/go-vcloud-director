@@ -42,7 +42,7 @@ func (adminOrg *AdminOrg) CreateNsxtVdcGroup(name, description, startingVdcId st
 // composeParticipatingOrgVdcs converts fetched candidate VDCs to []types.ParticipatingOrgVdcs
 // returns error also in case participatingVdcId not found as candidate VDC.
 func composeParticipatingOrgVdcs(adminOrg *AdminOrg, startingVdcId string, participatingVdcIds []string) ([]types.ParticipatingOrgVdcs, error) {
-	candidateVdcs, err := adminOrg.GetAllNsxtCandidateVdcs(startingVdcId, nil)
+	candidateVdcs, err := adminOrg.GetAllNsxtVdcGroupCandidates(startingVdcId, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -127,18 +127,18 @@ func createVdcGroup(adminOrg *AdminOrg, vdcGroup *types.VdcGroup,
 	return typeResponse, nil
 }
 
-// GetAllNsxtCandidateVdcs returns NSXT candidate VDCs for VDC group
-func (adminOrg *AdminOrg) GetAllNsxtCandidateVdcs(startingVdcId string, queryParameters url.Values) ([]*types.CandidateVdc, error) {
+// GetAllNsxtVdcGroupCandidates returns NSXT candidate VDCs for VDC group
+func (adminOrg *AdminOrg) GetAllNsxtVdcGroupCandidates(startingVdcId string, queryParameters url.Values) ([]*types.CandidateVdc, error) {
 	queryParams := copyOrNewUrlValues(queryParameters)
 	queryParams = queryParameterFilterAnd("_context==LOCAL", queryParams)
 	queryParams = queryParameterFilterAnd(fmt.Sprintf("_context==%s", startingVdcId), queryParams)
 	queryParams.Add("filterEncoded", "true")
 	queryParams.Add("links", "true")
-	return adminOrg.GetAllCandidateVdcs(queryParams)
+	return adminOrg.GetAllVdcGroupCandidates(queryParams)
 }
 
-// GetAllCandidateVdcs returns candidate VDCs for VDC group
-func (adminOrg *AdminOrg) GetAllCandidateVdcs(queryParameters url.Values) ([]*types.CandidateVdc, error) {
+// GetAllVdcGroupCandidates returns candidate VDCs for VDC group
+func (adminOrg *AdminOrg) GetAllVdcGroupCandidates(queryParameters url.Values) ([]*types.CandidateVdc, error) {
 	tenantContext, err := adminOrg.getTenantContext()
 	if err != nil {
 		return nil, err
