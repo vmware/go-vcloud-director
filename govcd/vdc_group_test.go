@@ -10,6 +10,7 @@ package govcd
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
@@ -336,12 +337,10 @@ func (vcd *TestVCD) Test_NsxtVdcGroupWithOrgAdmin(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	rightsToRemove, orgAdminClient, err := newOrgAdminUserWithVdcGroupRightsConnection(check, adminOrg, "test-user2", "CHANGE-ME", vcd.config.Provider.Url, true)
+	skipIfNeededRightsMissing(check, adminOrg)
+	orgAdminClient, err := newOrgUserConnection(adminOrg, "test-user2", "CHANGE-ME", vcd.config.Provider.Url, true)
 	check.Assert(err, IsNil)
 	check.Assert(orgAdminClient, NotNil)
-
-	//cleanup
-	defer cleanupRightsAndBundle(check, adminOrg, rightsToRemove)
 
 	orgAsOrgAdminUser, err := orgAdminClient.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
@@ -354,15 +353,14 @@ func (vcd *TestVCD) Test_NsxtVdcGroupWithOrgAdmin(check *C) {
 
 }
 
-// newOrgAdminUserWithVdcGroupRightsConnection creates a new Org Admin User with VDC group rights
-// and returns a connection to it
-func newOrgAdminUserWithVdcGroupRightsConnection(check *C, adminOrg *AdminOrg, userName, password, href string, insecure bool) ([]types.OpenApiReference, *VCDClient, error) {
+// skipIfNeededRightsMissing checks if needed rights are configured
+func skipIfNeededRightsMissing(check *C, adminOrg *AdminOrg) {
 	defaultRightsBundle, err := adminOrg.client.GetRightsBundleByName("Default Rights Bundle")
 	check.Assert(err, IsNil)
 	check.Assert(defaultRightsBundle, NotNil)
 
 	// add new rights to bundle
-	var rightsToAdd []types.OpenApiReference
+	var missingRights []string
 
 	rightsBeforeChange, err := defaultRightsBundle.GetRights(nil)
 	check.Assert(err, IsNil)
@@ -382,38 +380,12 @@ func newOrgAdminUserWithVdcGroupRightsConnection(check *C, adminOrg *AdminOrg, u
 				foundRight = true
 			}
 		}
-		if foundRight {
-			fmt.Printf("Right %s already in Default Rights Bundle\n", rightName)
-			// ignore
-		} else {
-			rightsToAdd = append(rightsToAdd, types.OpenApiReference{Name: newRight.Name, ID: newRight.ID})
+		if !foundRight {
+			missingRights = append(missingRights, newRight.Name)
 		}
 	}
 
-	if len(rightsToAdd) > 0 {
-		err = defaultRightsBundle.AddRights(rightsToAdd)
-		check.Assert(err, IsNil)
-		rights, err := defaultRightsBundle.GetRights(nil)
-		check.Assert(err, IsNil)
-		check.Assert(len(rights), Equals, len(rightsBeforeChange)+len(rightsToAdd))
-	}
-
-	connection, err := newOrgUserConnection(adminOrg, userName, password, href, insecure)
-	return rightsToAdd, connection, err
-}
-
-func cleanupRightsAndBundle(check *C, adminOrg *AdminOrg, rightsToRemove []types.OpenApiReference) {
-	if len(rightsToRemove) > 0 {
-		defaultRightsBundle, err := adminOrg.client.GetRightsBundleByName("Default Rights Bundle")
-		check.Assert(err, IsNil)
-		check.Assert(defaultRightsBundle, NotNil)
-
-		rightsBeforeChange, err := defaultRightsBundle.GetRights(nil)
-		check.Assert(err, IsNil)
-		err = defaultRightsBundle.RemoveRights(rightsToRemove)
-		check.Assert(err, IsNil)
-		rightsAfterRemoval, err := defaultRightsBundle.GetRights(nil)
-		check.Assert(err, IsNil)
-		check.Assert(len(rightsAfterRemoval), Equals, len(rightsBeforeChange)-len(rightsToRemove))
+	if len(missingRights) > 0 {
+		check.Skip(check.TestName() + "missing rights to run test: " + strings.Join(missingRights, ", "))
 	}
 }
