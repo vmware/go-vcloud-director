@@ -16,7 +16,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// create only support NSXT VDCs
+// tests creation of NSX-T VDCs
 func (vcd *TestVCD) Test_CreateVdcGroup(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	if vcd.skipAdminTests {
@@ -158,7 +158,7 @@ func createNewVdc(vcd *TestVCD, check *C, vdcName string) *Vdc {
 	return vdc
 }
 
-// create only support NSXT VDCs
+// tests creation of NSX-T VDCs
 func (vcd *TestVCD) Test_NsxtVdcGroup(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	if vcd.skipAdminTests {
