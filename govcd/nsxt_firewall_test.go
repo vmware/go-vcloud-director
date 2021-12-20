@@ -71,7 +71,7 @@ func (vcd *TestVCD) Test_NsxtFirewall(check *C) {
 		check.Assert(len(fwCreated.NsxtFirewallRuleContainer.UserDefinedRules), Equals, len(randomizedFwRuleDefs))
 		definedAppPortProfileIds := extractIdsFromOpenApiReferences(randomizedFwRuleDefs[index].ApplicationPortProfiles)
 		for _, appPortProfile := range fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[index].ApplicationPortProfiles {
-			check.Assert(contains(definedAppPortProfileIds, appPortProfile.ID), Equals, true)
+			check.Assert(contains(appPortProfile.ID, definedAppPortProfileIds), Equals, true)
 		}
 	}
 
