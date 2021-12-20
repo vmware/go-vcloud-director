@@ -362,6 +362,10 @@ const (
 	OpenApiEndpointSSLCertificateLibrary              = "ssl/certificateLibrary/"
 	OpenApiEndpointSSLCertificateLibraryOld           = "ssl/cetificateLibrary/"
 	OpenApiEndpointSessionCurrent                     = "sessions/current"
+	OpenApiEndpointVdcGroups                          = "vdcGroups/"
+	OpenApiEndpointVdcGroupsCandidateVdcs             = "vdcGroups/networkingCandidateVdcs"
+	OpenApiEndpointVdcGroupsDfwPolicies               = "vdcGroups/%s/dfwPolicies"
+	OpenApiEndpointVdcGroupsDfwDefaultPolicies        = "vdcGroups/%s/dfwPolicies/default"
 
 	// NSX-T ALB related endpoints
 
