@@ -82,7 +82,7 @@ func (vcdClient *VCDClient) GetAlbPoolByName(edgeGatewayId string, name string) 
 
 	allAlbPools, err := vcdClient.GetAllAlbPools(edgeGatewayId, queryParameters)
 	if err != nil {
-		return nil, fmt.Errorf("error reading ALB Pool with Name '%s': %s", name, err)
+		return nil, fmt.Errorf("error retrieving ALB Pool with Name '%s': %s", name, err)
 	}
 
 	if len(allAlbPools) == 0 {

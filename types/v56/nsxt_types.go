@@ -569,8 +569,8 @@ type NsxtIpSecVpnTunnelStatus struct {
 // dpd configurations can be specified. Otherwise, those fields are read only and are set to the values based on the
 // specific security type.
 type NsxtIpSecVpnTunnelSecurityProfile struct {
-	// SecurityType is the security type used for the IPSec Tunnel. If nothing is specified, this will be set to ‘DEFAULT’
-	// in which the default settings in NSX will be used. If ‘CUSTOM’ is specified, then IKE, Tunnel, and DPD
+	// SecurityType is the security type used for the IPSec Tunnel. If nothing is specified, this will be set to DEFAULT
+	// in which the default settings in NSX will be used. If CUSTOM is specified, then IKE, Tunnel, and DPD
 	// configurations can be set.
 	// To "RESET" configuration to DEFAULT, the NsxtIpSecVpnTunnel.SecurityType field should be changed instead of this
 	SecurityType string `json:"securityType,omitempty"`
@@ -861,11 +861,11 @@ type NsxtAlbPool struct {
 	// Description is optional
 	Description string `json:"description,omitempty"`
 
-	// Enabled defines if the Pool is enabled
-	Enabled *bool `json:"enabled,omitempty"`
-
 	// GatewayRef is mandatory and associates NSX-T Edge Gateway with this Load Balancer Pool.
 	GatewayRef OpenApiReference `json:"gatewayRef"`
+
+	// Enabled defines if the Pool is enabled
+	Enabled *bool `json:"enabled,omitempty"`
 
 	// Algorithm for choosing a member within the pools list of available members for each new connection.
 	// Default value is LEAST_CONNECTIONS
@@ -1085,13 +1085,13 @@ type NsxtAlbVirtualServicePortTcpUdpProfile struct {
 	// responses. One must use a TCP/UDP profile with the type set to Proxy for application profiles such as HTTP.
 	//
 	// * TCP_FAST_PATH profile does not proxy TCP connections - rather, it directly connects clients to the
-	// destination server and translates the client’s destination virtual service address with the chosen destination
-	// server’s IP address. The client’s source IP address is still translated to the Service Engine address to ensure
+	// destination server and translates the client's destination virtual service address with the chosen destination
+	// server's IP address. The client's source IP address is still translated to the Service Engine address to ensure
 	// that server response traffic returns symmetrically.
 	//
-	// * UDP_FAST_PATH profile enables a virtual service to support UDP. Avi Vantage translates the client’s destination
-	// virtual service address to the destination server and rewrites the client’s source IP address to the Service
-	// Engine’s address when forwarding the packet to the server. This ensures that server response traffic traverses
+	// * UDP_FAST_PATH profile enables a virtual service to support UDP. Avi Vantage translates the client's destination
+	// virtual service address to the destination server and rewrites the client's source IP address to the Service
+	// Engine's address when forwarding the packet to the server. This ensures that server response traffic traverses
 	// symmetrically through the original SE.
 	Type string `json:"type"`
 }

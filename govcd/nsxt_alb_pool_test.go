@@ -27,6 +27,9 @@ func (vcd *TestVCD) Test_AlbPool(check *C) {
 	orgUserVcdClient, err := newOrgUserConnection(adminOrg, "alb-pool-testing", "CHANGE-ME", vcd.config.Provider.Url, true)
 	check.Assert(err, IsNil)
 
+	// defer prerequisite teardown
+	defer func() { tearDownAlbPoolPrerequisites(check, assignment, edge, seGroup, cloud, controller) }()
+
 	// Run tests with System user
 	testMinimalPoolConfig(check, edge, vcd, vcd.client)
 	testAdvancedPoolConfig(check, edge, vcd, vcd.client)
@@ -38,9 +41,6 @@ func (vcd *TestVCD) Test_AlbPool(check *C) {
 	testAdvancedPoolConfig(check, edge, vcd, orgUserVcdClient)
 	testPoolWithCertNoPrivateKey(check, vcd, edge.EdgeGateway.ID, orgUserVcdClient)
 	testPoolWithCertAndPrivateKey(check, vcd, edge.EdgeGateway.ID, orgUserVcdClient)
-
-	// teardown prerequisites
-	tearDownAlbPoolPrerequisites(check, assignment, edge, seGroup, cloud, controller)
 }
 
 func testMinimalPoolConfig(check *C, edge *NsxtEdgeGateway, vcd *TestVCD, client *VCDClient) {
@@ -92,6 +92,7 @@ func testAdvancedPoolConfig(check *C, edge *NsxtEdgeGateway, vcd *TestVCD, clien
 	poolConfigAdvancedUpdated := &types.NsxtAlbPool{
 		Name:                     poolConfigAdvanced.Name + "-Updated",
 		GatewayRef:               types.OpenApiReference{ID: edge.EdgeGateway.ID},
+		Enabled:                  takeBoolPointer(false),
 		Algorithm:                "LEAST_LOAD",
 		GracefulTimeoutPeriod:    takeIntAddress(0),
 		PassiveMonitoringEnabled: takeBoolPointer(false),
@@ -186,6 +187,8 @@ func testAlbPoolConfig(check *C, vcd *TestVCD, name string, setupConfig *types.N
 
 	createdPool, err := client.CreateNsxtAlbPool(setupConfig)
 	check.Assert(err, IsNil)
+	check.Assert(createdPool, NotNil)
+	check.Assert(createdPool.NsxtAlbPool, NotNil)
 
 	// Verify mandatory fields
 	check.Assert(createdPool.NsxtAlbPool.ID, NotNil)
@@ -199,11 +202,15 @@ func testAlbPoolConfig(check *C, vcd *TestVCD, name string, setupConfig *types.N
 	poolById, err := client.GetAlbPoolById(createdPool.NsxtAlbPool.ID)
 	check.Assert(err, IsNil)
 	check.Assert(poolById.NsxtAlbPool.ID, Equals, createdPool.NsxtAlbPool.ID)
+	check.Assert(poolById, NotNil)
+	check.Assert(poolById.NsxtAlbPool, NotNil)
 
 	// Get By Name
 	poolByName, err := client.GetAlbPoolByName(edge.EdgeGateway.ID, createdPool.NsxtAlbPool.Name)
 	check.Assert(err, IsNil)
 	check.Assert(poolByName.NsxtAlbPool.ID, Equals, createdPool.NsxtAlbPool.ID)
+	check.Assert(poolByName, NotNil)
+	check.Assert(poolByName.NsxtAlbPool, NotNil)
 
 	// Get All Pool summaries
 	allPoolSummaries, err := client.GetAllAlbPoolSummaries(edge.EdgeGateway.ID, nil)
@@ -225,6 +232,8 @@ func testAlbPoolConfig(check *C, vcd *TestVCD, name string, setupConfig *types.N
 		check.Assert(createdPool.NsxtAlbPool.ID, Equals, updatedPool.NsxtAlbPool.ID)
 		check.Assert(updatedPool.NsxtAlbPool.Name, NotNil)
 		check.Assert(updatedPool.NsxtAlbPool.GatewayRef.ID, NotNil)
+		check.Assert(updatedPool, NotNil)
+		check.Assert(updatedPool.NsxtAlbPool, NotNil)
 	}
 
 	err = createdPool.Delete()
