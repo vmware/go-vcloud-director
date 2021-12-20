@@ -174,7 +174,7 @@ func getTenantContextFromHeader(header map[string]string) *TenantContext {
 	return nil
 }
 
-// getTenantContext retrieves the tenant context for an VdcGroup
+// getTenantContext retrieves the tenant context for a VdcGroup
 func (vdcGroup *VdcGroup) getTenantContext() (*TenantContext, error) {
 	org := vdcGroup.parent
 
