@@ -669,6 +669,6 @@ func (vcd *TestVCD) TestQueryAllVdcs(check *C) {
 		fmt.Printf("# Checking result contains all known VDCs (%s).", strings.Join((knownVdcs), ", "))
 	}
 	for _, knownVdcName := range knownVdcs {
-		check.Assert(contains(foundVdcNames, knownVdcName), Equals, true)
+		check.Assert(contains(knownVdcName, foundVdcNames), Equals, true)
 	}
 }
