@@ -380,6 +380,8 @@ const (
 	// OpenApiEndpointAlbPoolSummaries returns a limited subset of data provided by OpenApiEndpointAlbPools
 	// however only the summary endpoint can list all available pools for an edge gateway
 	OpenApiEndpointAlbPoolSummaries                 = "edgeGateways/%s/loadBalancer/poolSummaries" // %s contains edge gateway
+	OpenApiEndpointAlbVirtualServices               = "loadBalancer/virtualServices/"
+	OpenApiEndpointAlbVirtualServiceSummaries       = "edgeGateways/%s/loadBalancer/virtualServiceSummaries" // %s contains edge gateway
 	OpenApiEndpointAlbServiceEngineGroupAssignments = "loadBalancer/serviceEngineGroups/assignments/"
 	OpenApiEndpointAlbEdgeGateway                   = "edgeGateways/%s/loadBalancer"
 )

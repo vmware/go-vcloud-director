@@ -569,8 +569,8 @@ type NsxtIpSecVpnTunnelStatus struct {
 // dpd configurations can be specified. Otherwise, those fields are read only and are set to the values based on the
 // specific security type.
 type NsxtIpSecVpnTunnelSecurityProfile struct {
-	// SecurityType is the security type used for the IPSec Tunnel. If nothing is specified, this will be set to ‘DEFAULT’
-	// in which the default settings in NSX will be used. If ‘CUSTOM’ is specified, then IKE, Tunnel, and DPD
+	// SecurityType is the security type used for the IPSec Tunnel. If nothing is specified, this will be set to DEFAULT
+	// in which the default settings in NSX will be used. If CUSTOM is specified, then IKE, Tunnel, and DPD
 	// configurations can be set.
 	// To "RESET" configuration to DEFAULT, the NsxtIpSecVpnTunnel.SecurityType field should be changed instead of this
 	SecurityType string `json:"securityType,omitempty"`
@@ -860,6 +860,7 @@ type NsxtAlbPool struct {
 	Name string `json:"name"`
 	// Description is optional
 	Description string `json:"description,omitempty"`
+
 	// GatewayRef is mandatory and associates NSX-T Edge Gateway with this Load Balancer Pool.
 	GatewayRef OpenApiReference `json:"gatewayRef"`
 
@@ -1006,4 +1007,102 @@ type NsxtAlbPoolPersistenceProfile struct {
 	// HTTP_COOKIE, APP_COOKIE must have cookie name set as the value and CUSTOM_HTTP_HEADER must have header name set as
 	// the value.
 	Value string `json:"value,omitempty"`
+}
+
+// NsxtAlbVirtualService combines Load Balancer Pools with Service Engine Groups and exposes a virtual service on
+// defined VIP (virtual IP address) while optionally allowing to use encrypted traffic
+type NsxtAlbVirtualService struct {
+	ID string `json:"id,omitempty"`
+
+	// Name contains meaningful name
+	Name string `json:"name,omitempty"`
+
+	// Description is optional
+	Description string `json:"description,omitempty"`
+
+	// Enabled defines if the virtual service is enabled to accept traffic
+	Enabled *bool `json:"enabled"`
+
+	// ApplicationProfile sets protocol for load balancing by using NsxtAlbVirtualServiceApplicationProfile
+	ApplicationProfile NsxtAlbVirtualServiceApplicationProfile `json:"applicationProfile"`
+
+	// GatewayRef contains NSX-T Edge Gateway reference
+	GatewayRef OpenApiReference `json:"gatewayRef"`
+	//LoadBalancerPoolRef contains Pool reference
+	LoadBalancerPoolRef OpenApiReference `json:"loadBalancerPoolRef"`
+	// ServiceEngineGroupRef points to service engine group (which must be assigned to NSX-T Edge Gateway)
+	ServiceEngineGroupRef OpenApiReference `json:"serviceEngineGroupRef"`
+
+	// CertificateRef contains certificate reference if serving encrypted traffic
+	CertificateRef *OpenApiReference `json:"certificateRef,omitempty"`
+
+	// ServicePorts define one or more ports (or port ranges) of the virtual service
+	ServicePorts []NsxtAlbVirtualServicePort `json:"servicePorts"`
+
+	// VirtualIpAddress to be used for exposing this virtual service
+	VirtualIpAddress string `json:"virtualIpAddress"`
+
+	// HealthStatus contains status of the Load Balancer Cloud. Possible values are:
+	// UP - The cloud is healthy and ready to enable Load Balancer for an Edge Gateway.
+	// DOWN - The cloud is in a failure state. Enabling Load balancer on an Edge Gateway may not be possible.
+	// RUNNING - The cloud is currently processing. An example is if it's enabling a Load Balancer for an Edge Gateway.
+	// UNAVAILABLE - The cloud is unavailable.
+	// UNKNOWN - The cloud state is unknown.
+	HealthStatus string `json:"healthStatus,omitempty"`
+
+	// HealthMessage shows a pool health status (e.g. "The pool is unassigned.")
+	HealthMessage string `json:"healthMessage,omitempty"`
+
+	// DetailedHealthMessage containes a more in depth health message
+	DetailedHealthMessage string `json:"detailedHealthMessage,omitempty"`
+}
+
+// NsxtAlbVirtualServicePort port (or port ranges) of the virtual service
+type NsxtAlbVirtualServicePort struct {
+	// PortStart is always required
+	PortStart *int `json:"portStart"`
+	// PortEnd is only required if a port range is specified. For single port cases PortStart is sufficient
+	PortEnd *int `json:"portEnd,omitempty"`
+	// SslEnabled defines if traffic is served as secure. CertificateRef must be specified in NsxtAlbVirtualService when
+	// true
+	SslEnabled *bool `json:"sslEnabled,omitempty"`
+	// TcpUdpProfile defines
+	TcpUdpProfile *NsxtAlbVirtualServicePortTcpUdpProfile `json:"tcpUdpProfile,omitempty"`
+}
+
+// NsxtAlbVirtualServicePortTcpUdpProfile profile determines the type and settings of the network protocol that a
+// subscribing virtual service will use. It sets a number of parameters, such as whether the virtual service is a TCP
+// proxy versus a pass-through via fast path. A virtual service can have both TCP and UDP enabled, which is useful for
+// protocols such as DNS or syslog.
+type NsxtAlbVirtualServicePortTcpUdpProfile struct {
+	SystemDefined bool `json:"systemDefined"`
+	// Type defines L4 or L4_TLS profiles:
+	// * TCP_PROXY (the only possible type when L4_TLS is used). Enabling TCP Proxy causes ALB to terminate an inbound
+	// connection from a client. Any application data from the client that is destined for a server is forwarded to that
+	// server over a new TCP connection. Separating (or proxying) the client-to-server connections enables ALB to provide
+	// enhanced security, such as TCP protocol sanitization or DoS mitigation. It also provides better client and server
+	// performance, such as maximizing client and server TCP MSS or window sizes independently and buffering server
+	// responses. One must use a TCP/UDP profile with the type set to Proxy for application profiles such as HTTP.
+	//
+	// * TCP_FAST_PATH profile does not proxy TCP connections - rather, it directly connects clients to the
+	// destination server and translates the client's destination virtual service address with the chosen destination
+	// server's IP address. The client's source IP address is still translated to the Service Engine address to ensure
+	// that server response traffic returns symmetrically.
+	//
+	// * UDP_FAST_PATH profile enables a virtual service to support UDP. Avi Vantage translates the client's destination
+	// virtual service address to the destination server and rewrites the client's source IP address to the Service
+	// Engine's address when forwarding the packet to the server. This ensures that server response traffic traverses
+	// symmetrically through the original SE.
+	Type string `json:"type"`
+}
+
+// NsxtAlbVirtualServiceApplicationProfile sets protocol for load balancing. Type field defines possible options.
+type NsxtAlbVirtualServiceApplicationProfile struct {
+	SystemDefined bool `json:"systemDefined,omitempty"`
+	// Type defines Traffic
+	// * HTTP
+	// * HTTPS (certificate reference is mandatory)
+	// * L4
+	// * L4 TLS (certificate reference is mandatory)
+	Type string `json:"type"`
 }

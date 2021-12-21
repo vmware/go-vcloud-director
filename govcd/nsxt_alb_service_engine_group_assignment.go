@@ -21,10 +21,6 @@ type NsxtAlbServiceEngineGroupAssignment struct {
 func (vcdClient *VCDClient) GetAllAlbServiceEngineGroupAssignments(queryParameters url.Values) ([]*NsxtAlbServiceEngineGroupAssignment, error) {
 	client := vcdClient.Client
 
-	if !client.IsSysAdmin {
-		return nil, errors.New("handling NSX-T ALB Service Engine Groups require System user")
-	}
-
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroupAssignments
 	apiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
@@ -56,10 +52,6 @@ func (vcdClient *VCDClient) GetAllAlbServiceEngineGroupAssignments(queryParamete
 func (vcdClient *VCDClient) GetAlbServiceEngineGroupAssignmentById(id string) (*NsxtAlbServiceEngineGroupAssignment, error) {
 	client := vcdClient.Client
 
-	if !client.IsSysAdmin {
-		return nil, errors.New("handling NSX-T ALB Service Engine Groups require System user")
-	}
-
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroupAssignments
 	apiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
@@ -89,6 +81,31 @@ func (vcdClient *VCDClient) GetAlbServiceEngineGroupAssignmentById(id string) (*
 func (vcdClient *VCDClient) GetAlbServiceEngineGroupAssignmentByName(name string) (*NsxtAlbServiceEngineGroupAssignment, error) {
 	// Filtering by Service Engine Group name is not supported on API therefore filtering is done locally
 	allServiceEngineGroupAssignments, err := vcdClient.GetAllAlbServiceEngineGroupAssignments(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var foundGroup *NsxtAlbServiceEngineGroupAssignment
+
+	for _, serviceEngineGroupAssignment := range allServiceEngineGroupAssignments {
+		if serviceEngineGroupAssignment.NsxtAlbServiceEngineGroupAssignment.ServiceEngineGroupRef.Name == name {
+			foundGroup = serviceEngineGroupAssignment
+		}
+	}
+
+	if foundGroup == nil {
+		return nil, ErrorEntityNotFound
+	}
+
+	return foundGroup, nil
+}
+
+// GetFilteredAlbServiceEngineGroupAssignmentByName will get all ALB Service Engine Group assignments based on filters
+// provided in queryParameters additionally will filter by name locally because VCD does not support server side
+// filtering by name.
+func (vcdClient *VCDClient) GetFilteredAlbServiceEngineGroupAssignmentByName(name string, queryParameters url.Values) (*NsxtAlbServiceEngineGroupAssignment, error) {
+	// Filtering by Service Engine Group name is not supported on API therefore filtering is done locally
+	allServiceEngineGroupAssignments, err := vcdClient.GetAllAlbServiceEngineGroupAssignments(queryParameters)
 	if err != nil {
 		return nil, err
 	}
