@@ -1597,7 +1597,7 @@ type OVFItem struct {
 	Reservation     int      `xml:"rasd:Reservation"`
 	ResourceType    int      `xml:"rasd:ResourceType"`
 	VirtualQuantity int64    `xml:"rasd:VirtualQuantity"`
-	Weight          int      `xml:"rasd:Weight"`
+	Weight          int      `xml:"rasd:Weight,omitempty"`
 	CoresPerSocket  *int     `xml:"vmw:CoresPerSocket,omitempty"`
 	Link            *Link    `xml:"vcloud:Link"`
 }
