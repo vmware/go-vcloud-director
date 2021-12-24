@@ -51,6 +51,8 @@ At least one of the following tags should be defined:
    * user:       Runs user related tests
    * vapp:       Runs vapp related tests
    * vdc:        Runs vdc related tests
+   * vdcGroup:   Runs vdc group related tests
+   * certificate Runs certificate related tests
    * vm:         Runs vm related tests
 
 Examples:

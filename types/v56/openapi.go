@@ -306,3 +306,62 @@ type CurrentSessionInfo struct {
 	RoleRefs                  OpenApiReferences `json:"roleRefs"`                  // Roles references for the session user
 	SessionIdleTimeoutMinutes int               `json:"sessionIdleTimeoutMinutes"` // session idle timeout
 }
+
+// VdcGroup is a VDC group definition
+type VdcGroup struct {
+	Description                string                 `json:"description,omitempty"`                // The description of this group.
+	DfwEnabled                 bool                   `json:"dfwEnabled,omitempty"`                 // Whether Distributed Firewall is enabled for this vDC Group. Only applicable for NSX_T vDC Groups.
+	ErrorMessage               string                 `json:"errorMessage,omitempty"`               // If the group has an error status, a more detailed error message is set here.
+	Id                         string                 `json:"id,omitempty"`                         // The unique ID for the vDC Group (read-only).
+	LocalEgress                bool                   `json:"localEgress,omitempty"`                // Determines whether local egress is enabled for a universal router belonging to a universal vDC group. This value is used on create if universalNetworkingEnabled is set to true. This cannot be updated. This value is always false for local vDC groups.
+	Name                       string                 `json:"name"`                                 // The name of this group. The name must be unique.
+	NetworkPoolId              string                 `json:"networkPoolId,omitempty"`              // ID of network pool to use if creating a local vDC group router. Must be set if creating a local group. Ignored if creating a universal group.
+	NetworkPoolUniversalId     string                 `json:"networkPoolUniversalId,omitempty"`     // The network provider’s universal id that is backing the universal network pool. This field is read-only and is derived from the list of participating vDCs if a universal vDC group is created. For universal vDC groups, each participating vDC should have a universal network pool that is backed by this same id.
+	NetworkProviderType        string                 `json:"networkProviderType,omitempty"`        // The values currently supported are NSX_V and NSX_T. Defines the networking provider backing the vDC Group. This is used on create. If not specified, NSX_V value will be used. NSX_V is used for existing vDC Groups and vDC Groups where Cross-VC NSX is used for the underlying technology. NSX_T is used when the networking provider type for the Organization vDCs in the group is NSX-T. NSX_T only supports groups of type LOCAL (single site).
+	OrgId                      string                 `json:"orgId"`                                // The organization that this group belongs to.
+	ParticipatingOrgVdcs       []ParticipatingOrgVdcs `json:"participatingOrgVdcs"`                 // The list of organization vDCs that are participating in this group.
+	Status                     string                 `json:"status,omitempty"`                     // The status that the group can be in. Possible values are: SAVING, SAVED, CONFIGURING, REALIZED, REALIZATION_FAILED, DELETING, DELETE_FAILED, OBJECT_NOT_FOUND, UNCONFIGURED
+	Type                       string                 `json:"type,omitempty"`                       // Defines the group as LOCAL or UNIVERSAL. This cannot be changed. Local vDC Groups can have networks stretched across multiple vDCs in a single Cloud Director instance. Local vDC Groups share the same broadcast domain/transport zone and network provider scope. Universal vDC groups can have networks stretched across multiple vDCs in a single or multiple Cloud Director instance(s). Universal vDC groups are backed by a broadcast domain/transport zone that strectches across a single or multiple Cloud Director instance(s). Local vDC groups are supported for both NSX-V and NSX-T Network Provider Types. Universal vDC Groups are supported for only NSX_V Network Provider Type. Possible values are: LOCAL , UNIVERSAL
+	UniversalNetworkingEnabled bool                   `json:"universalNetworkingEnabled,omitempty"` // True means that a vDC group router has been created. If set to true for vdc group creation, a universal router will also be created.
+}
+
+// ParticipatingOrgVdcs is a participating Org VDCs definition
+type ParticipatingOrgVdcs struct {
+	FaultDomainTag       string           `json:"faultDomainTag,omitempty"`       // Represents the fault domain of a given organization vDC. For NSX_V backed organization vDCs, this is the network provider scope. For NSX_T backed organization vDCs, this can vary (for example name of the provider vDC or compute provider scope).
+	NetworkProviderScope string           `json:"networkProviderScope,omitempty"` // Read-only field that specifies the network provider scope of the vDC.
+	OrgRef               OpenApiReference `json:"orgRef,omitempty"`               // Read-only field that specifies what organization this vDC is in.
+	RemoteOrg            bool             `json:"remoteOrg,omitempty"`            // Read-only field that specifies whether the vDC is local to this VCD site.
+	SiteRef              OpenApiReference `json:"siteRef,omitempty"`              // The site ID that this vDC belongs to. Required for universal vDC groups.
+	Status               string           `json:"status,omitempty"`               // The status that the vDC can be in. An example is if the vDC has been deleted from the system but is still part of the group. Possible values are: SAVING, SAVED, CONFIGURING, REALIZED, REALIZATION_FAILED, DELETING, DELETE_FAILED, OBJECT_NOT_FOUND, UNCONFIGURED
+	VdcRef               OpenApiReference `json:"vdcRef"`                         // The reference to the vDC that is part of this a vDC group.
+}
+
+// CandidateVdc defines possible candidate VDCs for VDC group
+type CandidateVdc struct {
+	FaultDomainTag       string           `json:"faultDomainTag"`
+	Id                   string           `json:"id"`
+	Name                 string           `json:"name"`
+	NetworkProviderScope string           `json:"networkProviderScope"`
+	OrgRef               OpenApiReference `json:"orgRef"`
+	SiteRef              OpenApiReference `json:"siteRef"`
+}
+
+// DfwPolicies defines Distributed firewall policies
+type DfwPolicies struct {
+	Enabled       bool           `json:"enabled"`
+	DefaultPolicy *DefaultPolicy `json:"defaultPolicy,omitempty"`
+}
+
+// DefaultPolicy defines Default policy for Distributed firewall
+type DefaultPolicy struct {
+	Description string        `json:"description,omitempty"` // Description for the security policy.
+	Enabled     *bool         `json:"enabled,omitempty"`     // Whether this security policy is enabled.
+	Id          string        `json:"id,omitempty"`          // The unique id of this security policy. On updates, the id is required for the policy, while for create a new id will be generated. This id is not a VCD URN.
+	Name        string        `json:"name"`                  // Name for the security policy.
+	Version     *VersionField `json:"version,omitempty"`     // This property describes the current version of the entity. To prevent clients from overwriting each other’s changes, update operations must include the version which can be obtained by issuing a GET operation. If the version number on an update call is missing, the operation will be rejected. This is only needed on update calls.
+}
+
+// VersionField defines Version
+type VersionField struct {
+	Version int `json:"version"`
+}

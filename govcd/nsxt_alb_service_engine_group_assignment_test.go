@@ -5,6 +5,7 @@ package govcd
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
@@ -49,6 +50,13 @@ func (vcd *TestVCD) Test_GetAllEdgeAlbServiceEngineGroupAssignmentsDedicated(che
 	assignmentByName, err := vcd.client.GetAlbServiceEngineGroupAssignmentByName(assignment.NsxtAlbServiceEngineGroupAssignment.ServiceEngineGroupRef.Name)
 	check.Assert(err, IsNil)
 	check.Assert(assignmentByName.NsxtAlbServiceEngineGroupAssignment, DeepEquals, assignment.NsxtAlbServiceEngineGroupAssignment)
+
+	// Filtered by name and Edge Gateway ID
+	queryParams := url.Values{}
+	queryParams.Add("filter", fmt.Sprintf("gatewayRef.id==%s", edge.EdgeGateway.ID))
+	filteredAssignmentByName, err := vcd.client.GetFilteredAlbServiceEngineGroupAssignmentByName(assignment.NsxtAlbServiceEngineGroupAssignment.ServiceEngineGroupRef.Name, queryParams)
+	check.Assert(err, IsNil)
+	check.Assert(filteredAssignmentByName.NsxtAlbServiceEngineGroupAssignment, DeepEquals, filteredAssignmentByName.NsxtAlbServiceEngineGroupAssignment)
 
 	// Get all
 	allAssignments, err := vcd.client.GetAllAlbServiceEngineGroupAssignments(nil)
@@ -122,6 +130,13 @@ func (vcd *TestVCD) Test_GetAllEdgeAlbServiceEngineGroupAssignmentsShared(check 
 	assignmentByName, err := vcd.client.GetAlbServiceEngineGroupAssignmentByName(assignment.NsxtAlbServiceEngineGroupAssignment.ServiceEngineGroupRef.Name)
 	check.Assert(err, IsNil)
 	check.Assert(assignmentByName.NsxtAlbServiceEngineGroupAssignment, DeepEquals, assignment.NsxtAlbServiceEngineGroupAssignment)
+
+	// Filtered by name and Edge Gateway ID
+	queryParams := url.Values{}
+	queryParams.Add("filter", fmt.Sprintf("gatewayRef.id==%s", edge.EdgeGateway.ID))
+	filteredAssignmentByName, err := vcd.client.GetFilteredAlbServiceEngineGroupAssignmentByName(assignment.NsxtAlbServiceEngineGroupAssignment.ServiceEngineGroupRef.Name, queryParams)
+	check.Assert(err, IsNil)
+	check.Assert(filteredAssignmentByName.NsxtAlbServiceEngineGroupAssignment, DeepEquals, filteredAssignmentByName.NsxtAlbServiceEngineGroupAssignment)
 
 	// Get all
 	allAssignments, err := vcd.client.GetAllAlbServiceEngineGroupAssignments(nil)
