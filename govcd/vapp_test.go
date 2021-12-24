@@ -1650,3 +1650,67 @@ func (vcd *TestVCD) Test_UpdateVappNameDescription(check *C) {
 	err = deleteVapp(vcd, vappName)
 	check.Assert(err, IsNil)
 }
+
+func (vcd *TestVCD) Test_Vapp_LeaseUpdate(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Organization not set in configuration")
+	}
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	orgVappLease := org.AdminOrg.OrgSettings.OrgVAppLeaseSettings
+
+	vappName := check.TestName()
+	vappDescription := vappName + " description"
+
+	vapp, err := makeEmptyVapp(vcd.vdc, vappName, vappDescription)
+	check.Assert(err, IsNil)
+	AddToCleanupList(vappName, "vapp", "", "Test_Vapp_GetLease")
+
+	lease, err := vapp.GetLease()
+	check.Assert(err, IsNil)
+	check.Assert(lease, NotNil)
+
+	// Check that lease in vApp is the same as the default lease in the organization
+	check.Assert(lease.StorageLeaseInSeconds, Equals, *orgVappLease.StorageLeaseSeconds)
+	check.Assert(lease.DeploymentLeaseInSeconds, Equals, *orgVappLease.DeploymentLeaseSeconds)
+	if testVerbose {
+		fmt.Printf("lease deployment at Org level: %d\n", *orgVappLease.DeploymentLeaseSeconds)
+		fmt.Printf("lease storage at Org level: %d\n", *orgVappLease.StorageLeaseSeconds)
+		fmt.Printf("lease deployment in vApp before: %d\n", lease.DeploymentLeaseInSeconds)
+		fmt.Printf("lease storage in vApp before: %d\n", lease.StorageLeaseInSeconds)
+	}
+	secondsInDay := 60 * 60 * 24
+
+	// Set lease to 90 days deployment, 7 days storage
+	err = vapp.RenewLease(secondsInDay*90, secondsInDay*7)
+	check.Assert(err, IsNil)
+
+	// Make sure the vApp internal values were updated
+	check.Assert(vapp.VApp.LeaseSettingsSection.DeploymentLeaseInSeconds, Equals, secondsInDay*90)
+	check.Assert(vapp.VApp.LeaseSettingsSection.StorageLeaseInSeconds, Equals, secondsInDay*7)
+
+	newLease, err := vapp.GetLease()
+	check.Assert(err, IsNil)
+	check.Assert(newLease, NotNil)
+	check.Assert(newLease.DeploymentLeaseInSeconds, Equals, secondsInDay*90)
+	check.Assert(newLease.StorageLeaseInSeconds, Equals, secondsInDay*7)
+
+	if testVerbose {
+		fmt.Printf("lease deployment in vApp after: %d\n", newLease.DeploymentLeaseInSeconds)
+		fmt.Printf("lease storage in vApp after: %d\n", newLease.StorageLeaseInSeconds)
+	}
+
+	// Set lease to "never expires"
+	err = vapp.RenewLease(0, 0)
+	check.Assert(err, IsNil)
+
+	check.Assert(vapp.VApp.LeaseSettingsSection.DeploymentLeaseInSeconds, Equals, 0)
+	check.Assert(vapp.VApp.LeaseSettingsSection.StorageLeaseInSeconds, Equals, 0)
+
+	task, err := vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+}
