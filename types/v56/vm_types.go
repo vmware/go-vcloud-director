@@ -144,7 +144,7 @@ type SourcedVmTemplateParams struct {
 	LocalityParams                *LocalityParams      `xml:"LocalityParams,omitempty"`                // Locality parameters provide a hint that may help optimize placement of a VM and an independent a Disk so that the VM can make efficient use of the disk.
 	Source                        *Reference           `xml:"Source"`                                  // A reference to an existing VM template
 	VmCapabilities                *VmCapabilities      `xml:"VmCapabilities,omitempty"`                // Describes the capabilities (hot swap, etc.) the instantiated VM should have.
-	VmGeneralParams               *VMGeneralParams     `xml:"VMGeneralParams,omitempty"`               // Specify name, description, and other properties of a VM during instantiation.
+	VmGeneralParams               *VMGeneralParams     `xml:"VmGeneralParams,omitempty"`               // Specify name, description, and other properties of a VM during instantiation.
 	VmTemplateInstantiationParams *InstantiationParams `xml:"VmTemplateInstantiationParams,omitempty"` // Same as InstantiationParams used for VMs within a vApp
 	StorageProfile                *Reference           `xml:"StorageProfile,omitempty"`                // A reference to a storage profile to be used for the VM. The specified storage profile must exist in the organization vDC that contains the composed vApp. If not specified, the default storage profile for the vDC is used.
 }

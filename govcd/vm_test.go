@@ -1782,9 +1782,11 @@ func (vcd *TestVCD) Test_CreateStandaloneVMFromTemplate(check *C) {
 	check.Assert(vmTemplate.Type, Not(Equals), "")
 	check.Assert(vmTemplate.Name, Not(Equals), "")
 
+	vmName := "testStandaloneTemplate"
+	vmDescription := "Standalone VM"
 	params := types.InstantiateVmTemplateParams{
 		Xmlns:            types.XMLNamespaceVCloud,
-		Name:             "testStandaloneTemplate",
+		Name:             vmName,
 		PowerOn:          true,
 		AllEULAsAccepted: true,
 		SourcedVmTemplateItem: &types.SourcedVmTemplateParams{
@@ -1795,9 +1797,14 @@ func (vcd *TestVCD) Test_CreateStandaloneVMFromTemplate(check *C) {
 				Type: vmTemplate.Type,
 				Name: vmTemplate.Name,
 			},
-			StorageProfile:                nil,
-			VmCapabilities:                nil,
-			VmGeneralParams:               nil,
+			StorageProfile: nil,
+			VmCapabilities: nil,
+			VmGeneralParams: &types.VMGeneralParams{
+				Name:               vmName,
+				Description:        vmDescription,
+				NeedsCustomization: false,
+				RegenerateBiosUuid: false,
+			},
 			VmTemplateInstantiationParams: nil,
 		},
 	}
@@ -1808,6 +1815,8 @@ func (vcd *TestVCD) Test_CreateStandaloneVMFromTemplate(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vm, NotNil)
 	AddToCleanupList(vm.VM.ID, "standaloneVm", "", check.TestName())
+	check.Assert(vm.VM.Name, Equals, vmName)
+	check.Assert(vm.VM.Description, Equals, vmDescription)
 
 	_ = vdc.Refresh()
 	vappList = vdc.GetVappList()
