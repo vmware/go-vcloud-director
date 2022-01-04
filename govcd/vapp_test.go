@@ -1702,12 +1702,23 @@ func (vcd *TestVCD) Test_Vapp_LeaseUpdate(check *C) {
 		fmt.Printf("lease storage in vApp after: %d\n", newLease.StorageLeaseInSeconds)
 	}
 
-	// Set lease to "never expires"
+	// Set lease to "never expires", which defaults to the Org maximum lease if the Org itself has lower limits
 	err = vapp.RenewLease(0, 0)
 	check.Assert(err, IsNil)
 
-	check.Assert(vapp.VApp.LeaseSettingsSection.DeploymentLeaseInSeconds, Equals, 0)
-	check.Assert(vapp.VApp.LeaseSettingsSection.StorageLeaseInSeconds, Equals, 0)
+	check.Assert(vapp.VApp.LeaseSettingsSection.DeploymentLeaseInSeconds, Equals, *orgVappLease.DeploymentLeaseSeconds)
+
+	check.Assert(vapp.VApp.LeaseSettingsSection.StorageLeaseInSeconds, Equals, *orgVappLease.StorageLeaseSeconds)
+
+	if *orgVappLease.DeploymentLeaseSeconds != 0 {
+		// Check that setting a lease higher than allowed by the Org settings results in the defaults lease being set
+		err = vapp.RenewLease(*orgVappLease.DeploymentLeaseSeconds+3600,
+			*orgVappLease.StorageLeaseSeconds+3600)
+		check.Assert(err, IsNil)
+
+		check.Assert(vapp.VApp.LeaseSettingsSection.DeploymentLeaseInSeconds, Equals, *orgVappLease.DeploymentLeaseSeconds)
+		check.Assert(vapp.VApp.LeaseSettingsSection.StorageLeaseInSeconds, Equals, *orgVappLease.StorageLeaseSeconds)
+	}
 
 	task, err := vapp.Delete()
 	check.Assert(err, IsNil)
