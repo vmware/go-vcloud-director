@@ -90,6 +90,22 @@ type LeaseSettingsSection struct {
 	StorageLeaseInSeconds     int    `xml:"StorageLeaseInSeconds,omitempty"`
 }
 
+// UpdateLeaseSettingsSection is an extended version of LeaseSettingsSection
+// with additional fields for update
+type UpdateLeaseSettingsSection struct {
+	XMLName                   xml.Name `xml:"LeaseSettingsSection"`
+	XmlnsOvf                  string   `xml:"xmlns:ovf,attr,omitempty"`
+	Xmlns                     string   `xml:"xmlns,attr,omitempty"`
+	OVFInfo                   string   `xml:"ovf:Info"`
+	HREF                      string   `xml:"href,attr,omitempty"`
+	Type                      string   `xml:"type,attr,omitempty"`
+	DeploymentLeaseExpiration string   `xml:"DeploymentLeaseExpiration,omitempty"`
+	DeploymentLeaseInSeconds  *int     `xml:"DeploymentLeaseInSeconds,omitempty"`
+	Link                      *Link    `xml:"Link,omitempty"`
+	StorageLeaseExpiration    string   `xml:"StorageLeaseExpiration,omitempty"`
+	StorageLeaseInSeconds     *int     `xml:"StorageLeaseInSeconds,omitempty"`
+}
+
 // IPRange represents a range of IP addresses, start and end inclusive.
 // Type: IpRangeType
 // Namespace: http://www.vmware.com/vcloud/v1.5
@@ -1274,6 +1290,7 @@ type VApp struct {
 	OvfDescriptorUploaded bool   `xml:"ovfDescriptorUploaded,attr,omitempty"` // Read-only indicator that the OVF descriptor for this vApp has been uploaded.
 	// Elements
 	Link                 LinkList              `xml:"Link,omitempty"`                 // A reference to an entity or operation associated with this object.
+	LeaseSettingsSection *LeaseSettingsSection `xml:"LeaseSettingsSection,omitempty"` // A reference to the lease section of the vApp
 	NetworkConfigSection *NetworkConfigSection `xml:"NetworkConfigSection,omitempty"` // Represents vAPP network configuration
 	Description          string                `xml:"Description,omitempty"`          // Optional description.
 	Tasks                *TasksInProgress      `xml:"Tasks,omitempty"`                // A list of queued, running, or recently completed tasks associated with this entity.

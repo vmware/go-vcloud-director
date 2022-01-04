@@ -1453,3 +1453,79 @@ func (vapp *VApp) getTenantContext() (*TenantContext, error) {
 	}
 	return parentVdc.getTenantContext()
 }
+
+// RenewLease updates the lease terms for the vApp
+func (vapp *VApp) RenewLease(deploymentLeaseInSeconds, storageLeaseInSeconds int) error {
+
+	href := ""
+	if vapp.VApp.LeaseSettingsSection != nil {
+		if vapp.VApp.LeaseSettingsSection.DeploymentLeaseInSeconds == deploymentLeaseInSeconds &&
+			vapp.VApp.LeaseSettingsSection.StorageLeaseInSeconds == storageLeaseInSeconds {
+			// Requested parameters are the same as existing parameters: exit without updating
+			return nil
+		}
+		href = vapp.VApp.LeaseSettingsSection.HREF
+	}
+	if href == "" {
+		for _, link := range vapp.VApp.Link {
+			if link.Rel == "edit" && link.Type == types.MimeLeaseSettingSection {
+				href = link.HREF
+				break
+			}
+		}
+	}
+	if href == "" {
+		return fmt.Errorf("link to update lease sttings not found for vApp %s", vapp.VApp.Name)
+	}
+
+	var leaseSettings = types.UpdateLeaseSettingsSection{
+		HREF:                     href,
+		XmlnsOvf:                 types.XMLNamespaceOVF,
+		Xmlns:                    types.XMLNamespaceVCloud,
+		OVFInfo:                  "Lease section settings",
+		Type:                     types.MimeLeaseSettingSection,
+		DeploymentLeaseInSeconds: takeIntAddress(deploymentLeaseInSeconds),
+		StorageLeaseInSeconds:    takeIntAddress(storageLeaseInSeconds),
+	}
+
+	task, err := vapp.client.ExecuteTaskRequest(href, http.MethodPut,
+		types.MimeLeaseSettingSection, "error updating vapp lease : %s", &leaseSettings)
+
+	if err != nil {
+		return fmt.Errorf("unable to update vApp lease: %s", err)
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("task for updating vApp lease failed: %s", err)
+	}
+	return vapp.Refresh()
+}
+
+// GetLease retrieves the lease terms for a vApp
+func (vapp *VApp) GetLease() (*types.LeaseSettingsSection, error) {
+
+	href := ""
+	if vapp.VApp.LeaseSettingsSection != nil {
+		href = vapp.VApp.LeaseSettingsSection.HREF
+	}
+	if href == "" {
+		for _, link := range vapp.VApp.Link {
+			if link.Type == types.MimeLeaseSettingSection {
+				href = link.HREF
+				break
+			}
+		}
+	}
+	if href == "" {
+		return nil, fmt.Errorf("link to retrieve lease settings not found for vApp %s", vapp.VApp.Name)
+	}
+	var leaseSettings types.LeaseSettingsSection
+
+	_, err := vapp.client.ExecuteRequest(href, http.MethodGet, "", "error getting vApp lease info: %s", nil, &leaseSettings)
+
+	if err != nil {
+		return nil, err
+	}
+	return &leaseSettings, nil
+}

@@ -133,6 +133,8 @@ const (
 	MimeInstantiateVmTemplateParams = "application/vnd.vmware.vcloud.instantiateVmTemplateParams+xml"
 	// Mime for adding or removing VDC storage profiles
 	MimeUpdateVdcStorageProfiles = "application/vnd.vmware.admin.updateVdcStorageProfiles+xml"
+	// Mime to modify lease settings
+	MimeLeaseSettingSection = "application/vnd.vmware.vcloud.leaseSettingsSection+xml"
 )
 
 const (
