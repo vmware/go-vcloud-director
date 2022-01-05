@@ -794,12 +794,15 @@ func cleanupCatalogOrgVdc(check *C, sharedCatalog Catalog, vdc *Vdc, vcd *TestVC
 func (vcd *TestVCD) Test_UploadOvfByLink_progress_works(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	//skipWhenOvaPathMissing(vcd.config.OVA.OvaPath, check)
+	if vcd.config.OVA.OvfUrl == "" {
+		check.Skip("Skipping test because no OVF URL given")
+	}
+
 	itemName := TestUploadOvf + "URL"
 
 	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
 
-	uploadTask, err := catalog.UploadOvfByLink("http://10.150.170.19:8000/test_vapp_template_ovf/descriptor.ovf", itemName, "upload from test")
+	uploadTask, err := catalog.UploadOvfByLink(vcd.config.OVA.OvfUrl, itemName, "upload from test")
 	check.Assert(err, IsNil)
 	check.Assert(uploadTask, NotNil)
 
