@@ -90,6 +90,22 @@ type LeaseSettingsSection struct {
 	StorageLeaseInSeconds     int    `xml:"StorageLeaseInSeconds,omitempty"`
 }
 
+// UpdateLeaseSettingsSection is an extended version of LeaseSettingsSection
+// with additional fields for update
+type UpdateLeaseSettingsSection struct {
+	XMLName                   xml.Name `xml:"LeaseSettingsSection"`
+	XmlnsOvf                  string   `xml:"xmlns:ovf,attr,omitempty"`
+	Xmlns                     string   `xml:"xmlns,attr,omitempty"`
+	OVFInfo                   string   `xml:"ovf:Info"`
+	HREF                      string   `xml:"href,attr,omitempty"`
+	Type                      string   `xml:"type,attr,omitempty"`
+	DeploymentLeaseExpiration string   `xml:"DeploymentLeaseExpiration,omitempty"`
+	DeploymentLeaseInSeconds  *int     `xml:"DeploymentLeaseInSeconds,omitempty"`
+	Link                      *Link    `xml:"Link,omitempty"`
+	StorageLeaseExpiration    string   `xml:"StorageLeaseExpiration,omitempty"`
+	StorageLeaseInSeconds     *int     `xml:"StorageLeaseInSeconds,omitempty"`
+}
+
 // IPRange represents a range of IP addresses, start and end inclusive.
 // Type: IpRangeType
 // Namespace: http://www.vmware.com/vcloud/v1.5
@@ -1274,6 +1290,7 @@ type VApp struct {
 	OvfDescriptorUploaded bool   `xml:"ovfDescriptorUploaded,attr,omitempty"` // Read-only indicator that the OVF descriptor for this vApp has been uploaded.
 	// Elements
 	Link                 LinkList              `xml:"Link,omitempty"`                 // A reference to an entity or operation associated with this object.
+	LeaseSettingsSection *LeaseSettingsSection `xml:"LeaseSettingsSection,omitempty"` // A reference to the lease section of the vApp
 	NetworkConfigSection *NetworkConfigSection `xml:"NetworkConfigSection,omitempty"` // Represents vAPP network configuration
 	Description          string                `xml:"Description,omitempty"`          // Optional description.
 	Tasks                *TasksInProgress      `xml:"Tasks,omitempty"`                // A list of queued, running, or recently completed tasks associated with this entity.
@@ -1435,10 +1452,11 @@ type VMDiskChange struct {
 	Xsi     string   `xml:"xmlns:xsi,attr,omitempty"`
 	Xmlns   string   `xml:"xmlns,attr,omitempty"`
 
-	HREF string `xml:"href,attr,omitempty"` // The URI of the VM entity.
-	Type string `xml:"type,attr,omitempty"` // The MIME type of the entity - application/vnd.vmware.vcloud.vm+xml
-	Name string `xml:"name,attr"`           // VM name
-	ID   string `xml:"id,attr,omitempty"`   // VM ID. The entity identifier, expressed in URN format. The value of this attribute uniquely identifies the entity, persists for the life of the entity, and is never reused.
+	HREF        string `xml:"href,attr,omitempty"`   // The URI of the VM entity.
+	Type        string `xml:"type,attr,omitempty"`   // The MIME type of the entity - application/vnd.vmware.vcloud.vm+xml
+	Name        string `xml:"name,attr"`             // VM name
+	Description string `xml:"Description,omitempty"` // Optional description.
+	ID          string `xml:"id,attr,omitempty"`     // VM ID. The entity identifier, expressed in URN format. The value of this attribute uniquely identifies the entity, persists for the life of the entity, and is never reused.
 
 	VmSpecSection *VmSpecSection `xml:"VmSpecSection,omitempty"` // Container for the specification of this virtual machine. This is an alternative to using ovf:VirtualHardwareSection + ovf:OperatingSystemSection
 }
@@ -1596,9 +1614,10 @@ type OVFItem struct {
 	Reservation     int      `xml:"rasd:Reservation"`
 	ResourceType    int      `xml:"rasd:ResourceType"`
 	VirtualQuantity int64    `xml:"rasd:VirtualQuantity"`
-	Weight          int      `xml:"rasd:Weight"`
-	CoresPerSocket  *int     `xml:"vmw:CoresPerSocket,omitempty"`
-	Link            *Link    `xml:"vcloud:Link"`
+	// Weight corresponds to Shares when used for CPU and/or memory settings
+	Weight         int   `xml:"rasd:Weight,omitempty"`
+	CoresPerSocket *int  `xml:"vmw:CoresPerSocket,omitempty"`
+	Link           *Link `xml:"vcloud:Link"`
 }
 
 // DeployVAppParams are the parameters to a deploy vApp request

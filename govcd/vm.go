@@ -245,7 +245,6 @@ func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (
 		Reservation:     0,
 		ResourceType:    types.ResourceTypeProcessor,
 		VirtualQuantity: int64(virtualCpuCount),
-		Weight:          0,
 		CoresPerSocket:  coresPerSocket,
 		Link: &types.Link{
 			HREF: vm.VM.HREF + "/virtualHardwareSection/cpu",
@@ -1346,6 +1345,7 @@ func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection
 			Xmlns:         types.XMLNamespaceVCloud,
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
+			Description:   vm.VM.Description,
 			VmSpecSection: disksSettingToUpdate,
 		})
 }

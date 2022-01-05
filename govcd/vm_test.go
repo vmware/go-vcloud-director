@@ -1052,6 +1052,11 @@ func (vcd *TestVCD) Test_UpdateInternalDisk(check *C) {
 	vm, storageProfile, diskSettings, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, vmName, 1)
 	check.Assert(err, IsNil)
 
+	// verify VM description still available - test for bugfix #418
+	description := "Test_UpdateInternalDisk_Description"
+	vm, err = vm.UpdateVmSpecSection(vm.VM.VmSpecSection, description)
+	check.Assert(err, IsNil)
+
 	//verify
 	disk, err := vm.GetInternalDiskById(diskId, true)
 	check.Assert(err, IsNil)
@@ -1086,6 +1091,11 @@ func (vcd *TestVCD) Test_UpdateInternalDisk(check *C) {
 	check.Assert(disk.UnitNumber, Equals, diskSettings.UnitNumber)
 	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
+
+	// verify VM description still available - test for bugfix #418
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+	check.Assert(vm.VM.Description, Equals, description)
 
 	// attach independent disk
 	independentDisk, err := attachIndependentDisk(vcd, check)
@@ -1772,9 +1782,11 @@ func (vcd *TestVCD) Test_CreateStandaloneVMFromTemplate(check *C) {
 	check.Assert(vmTemplate.Type, Not(Equals), "")
 	check.Assert(vmTemplate.Name, Not(Equals), "")
 
+	vmName := "testStandaloneTemplate"
+	vmDescription := "Standalone VM"
 	params := types.InstantiateVmTemplateParams{
 		Xmlns:            types.XMLNamespaceVCloud,
-		Name:             "testStandaloneTemplate",
+		Name:             vmName,
 		PowerOn:          true,
 		AllEULAsAccepted: true,
 		SourcedVmTemplateItem: &types.SourcedVmTemplateParams{
@@ -1785,9 +1797,14 @@ func (vcd *TestVCD) Test_CreateStandaloneVMFromTemplate(check *C) {
 				Type: vmTemplate.Type,
 				Name: vmTemplate.Name,
 			},
-			StorageProfile:                nil,
-			VmCapabilities:                nil,
-			VmGeneralParams:               nil,
+			StorageProfile: nil,
+			VmCapabilities: nil,
+			VmGeneralParams: &types.VMGeneralParams{
+				Name:               vmName,
+				Description:        vmDescription,
+				NeedsCustomization: false,
+				RegenerateBiosUuid: false,
+			},
 			VmTemplateInstantiationParams: nil,
 		},
 	}
@@ -1798,6 +1815,8 @@ func (vcd *TestVCD) Test_CreateStandaloneVMFromTemplate(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vm, NotNil)
 	AddToCleanupList(vm.VM.ID, "standaloneVm", "", check.TestName())
+	check.Assert(vm.VM.Name, Equals, vmName)
+	check.Assert(vm.VM.Description, Equals, vmDescription)
 
 	_ = vdc.Refresh()
 	vappList = vdc.GetVappList()

@@ -569,8 +569,8 @@ type NsxtIpSecVpnTunnelStatus struct {
 // dpd configurations can be specified. Otherwise, those fields are read only and are set to the values based on the
 // specific security type.
 type NsxtIpSecVpnTunnelSecurityProfile struct {
-	// SecurityType is the security type used for the IPSec Tunnel. If nothing is specified, this will be set to ‘DEFAULT’
-	// in which the default settings in NSX will be used. If ‘CUSTOM’ is specified, then IKE, Tunnel, and DPD
+	// SecurityType is the security type used for the IPSec Tunnel. If nothing is specified, this will be set to DEFAULT
+	// in which the default settings in NSX will be used. If CUSTOM is specified, then IKE, Tunnel, and DPD
 	// configurations can be set.
 	// To "RESET" configuration to DEFAULT, the NsxtIpSecVpnTunnel.SecurityType field should be changed instead of this
 	SecurityType string `json:"securityType,omitempty"`
@@ -849,4 +849,260 @@ type NsxtAlbServiceEngineGroupAssignment struct {
 	MinVirtualServices *int              `json:"minVirtualServices,omitempty"`
 	// NumDeployedVirtualServices is a read only value
 	NumDeployedVirtualServices int `json:"numDeployedVirtualServices,omitempty"`
+}
+
+// NsxtAlbPool defines configuration of a single NSX-T ALB Pool. Pools maintain the list of servers assigned to them and
+// perform health monitoring, load balancing, persistence. A pool may only be used or referenced by only one virtual
+// service at a time.
+type NsxtAlbPool struct {
+	ID string `json:"id,omitempty"`
+	// Name is mandatory
+	Name string `json:"name"`
+	// Description is optional
+	Description string `json:"description,omitempty"`
+
+	// GatewayRef is mandatory and associates NSX-T Edge Gateway with this Load Balancer Pool.
+	GatewayRef OpenApiReference `json:"gatewayRef"`
+
+	// Enabled defines if the Pool is enabled
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// Algorithm for choosing a member within the pools list of available members for each new connection.
+	// Default value is LEAST_CONNECTIONS
+	// Supported algorithms are:
+	// * LEAST_CONNECTIONS
+	// * ROUND_ROBIN
+	// * CONSISTENT_HASH (uses Source IP Address hash)
+	// * FASTEST_RESPONSE
+	// * LEAST_LOAD
+	// * FEWEST_SERVERS
+	// * RANDOM
+	// * FEWEST_TASKS
+	// * CORE_AFFINITY
+	Algorithm string `json:"algorithm,omitempty"`
+
+	// DefaultPort defines destination server port used by the traffic sent to the member.
+	DefaultPort *int `json:"defaultPort,omitempty"`
+
+	// GracefulTimeoutPeriod sets maximum time (in minutes) to gracefully disable a member. Virtual service waits for the
+	// specified time before terminating the existing connections to the pool members that are disabled.
+	//
+	// Special values: 0 represents Immediate, -1 represents Infinite.
+	GracefulTimeoutPeriod *int `json:"gracefulTimeoutPeriod,omitempty"`
+
+	// PassiveMonitoringEnabled sets if client traffic should be used to check if pool member is up or down.
+	PassiveMonitoringEnabled *bool `json:"passiveMonitoringEnabled,omitempty"`
+
+	// HealthMonitors check member servers health. It can be monitored by using one or more health monitors. Active
+	// monitors generate synthetic traffic and mark a server up or down based on the response.
+	HealthMonitors []NsxtAlbPoolHealthMonitor `json:"healthMonitors,omitempty"`
+
+	// Members field defines list of destination servers which are used by the Load Balancer Pool to direct load balanced
+	// traffic.
+	Members []NsxtAlbPoolMember `json:"members,omitempty"`
+
+	// CaCertificateRefs point to root certificates to use when validating certificates presented by the pool members.
+	CaCertificateRefs []OpenApiReference `json:"caCertificateRefs,omitempty"`
+
+	// CommonNameCheckEnabled specifies whether to check the common name of the certificate presented by the pool member.
+	// This cannot be enabled if no caCertificateRefs are specified.
+	CommonNameCheckEnabled *bool `json:"commonNameCheckEnabled,omitempty"`
+
+	// DomainNames holds a list of domain names which will be used to verify the common names or subject alternative
+	// names presented by the pool member certificates. It is performed only when common name check
+	// (CommonNameCheckEnabled) is enabled. If common name check is enabled, but domain names are not specified then the
+	// incoming host header will be used to check the certificate.
+	DomainNames []string `json:"domainNames,omitempty"`
+
+	// PersistenceProfile of a Load Balancer Pool. Persistence profile will ensure that the same user sticks to the same
+	// server for a desired duration of time. If the persistence profile is unmanaged by Cloud Director, updates that
+	// leave the values unchanged will continue to use the same unmanaged profile. Any changes made to the persistence
+	// profile will cause Cloud Director to switch the pool to a profile managed by Cloud Director.
+	PersistenceProfile *NsxtAlbPoolPersistenceProfile `json:"persistenceProfile,omitempty"`
+
+	// MemberCount is a read only value that reports number of members added
+	MemberCount int `json:"memberCount,omitempty"`
+
+	// EnabledMemberCount is a read only value that reports number of enabled members
+	EnabledMemberCount int `json:"enabledMemberCount,omitempty"`
+
+	// UpMemberCount is a read only value that reports number of members that are serving traffic
+	UpMemberCount int `json:"upMemberCount,omitempty"`
+
+	// HealthMessage shows a pool health status (e.g. "The pool is unassigned.")
+	HealthMessage string `json:"healthMessage,omitempty"`
+
+	// VirtualServiceRefs holds list of Load Balancer Virtual Services associated with this Load balancer Pool.
+	VirtualServiceRefs []OpenApiReference `json:"virtualServiceRefs,omitempty"`
+}
+
+// NsxtAlbPoolHealthMonitor checks member servers health. Active monitor generates synthetic traffic and mark a server
+// up or down based on the response.
+type NsxtAlbPoolHealthMonitor struct {
+	Name string `json:"name,omitempty"`
+	// SystemDefined is a boolean value
+	SystemDefined bool `json:"systemDefined,omitempty"`
+	// Type
+	// * HTTP - HTTP request/response is used to validate health.
+	// * HTTPS - Used against HTTPS encrypted web servers to validate health.
+	// * TCP - TCP connection is used to validate health.
+	// * UDP - A UDP datagram is used to validate health.
+	// * PING - An ICMP ping is used to validate health.
+	Type string `json:"type"`
+}
+
+// NsxtAlbPoolMember defines a single destination server which is used by the Load Balancer Pool to direct load balanced
+// traffic.
+type NsxtAlbPoolMember struct {
+	// Enabled defines if member is enabled (will receive incoming requests) or not
+	Enabled bool `json:"enabled"`
+	// IpAddress of the Load Balancer Pool member.
+	IpAddress string `json:"ipAddress"`
+
+	// Port number of the Load Balancer Pool member. If unset, the port that the client used to connect will be used.
+	Port int `json:"port,omitempty"`
+
+	// Ratio of selecting eligible servers in the pool.
+	Ratio *int `json:"ratio,omitempty"`
+
+	// MarkedDownBy gives the names of the health monitors that marked the member as down when it is DOWN. If a monitor
+	// cannot be determined, the value will be UNKNOWN.
+	MarkedDownBy []string `json:"markedDownBy,omitempty"`
+
+	// HealthStatus of the pool member. Possible values are:
+	// * UP - The member is operational
+	// * DOWN - The member is down
+	// * DISABLED - The member is disabled
+	// * UNKNOWN - The state is unknown
+	HealthStatus string `json:"healthStatus,omitempty"`
+
+	// DetailedHealthMessage contains non-localized detailed message on the health of the pool member.
+	DetailedHealthMessage string `json:"detailedHealthMessage,omitempty"`
+}
+
+// NsxtAlbPoolPersistenceProfile holds Persistence Profile of a Load Balancer Pool. Persistence profile will ensure that
+// the same user sticks to the same server for a desired duration of time. If the persistence profile is unmanaged by
+// Cloud Director, updates that leave the values unchanged will continue to use the same unmanaged profile. Any changes
+// made to the persistence profile will cause Cloud Director to switch the pool to a profile managed by Cloud Director.
+type NsxtAlbPoolPersistenceProfile struct {
+	// Name field is tricky. It remains empty in some case, but if it is sent it can become computed.
+	// (e.g. setting 'CUSTOM_HTTP_HEADER' results in value being
+	// 'VCD-LoadBalancer-3510eae9-53bb-49f1-b7aa-7aedf5ce3a77-CUSTOM_HTTP_HEADER')
+	Name string `json:"name,omitempty"`
+
+	// Type of persistence strategy to use. Supported values are:
+	//  * CLIENT_IP - The clients IP is used as the identifier and mapped to the server
+	//  * HTTP_COOKIE - Load Balancer inserts a cookie into HTTP responses. Cookie name must be provided as value
+	//  * CUSTOM_HTTP_HEADER - Custom, static mappings of header values to specific servers are used. Header name must be
+	// provided as value
+	//  * APP_COOKIE - Load Balancer reads existing server cookies or URI embedded data such as JSessionID. Cookie name
+	// must be provided as value
+	//  * TLS - Information is embedded in the client's SSL/TLS ticket ID. This will use default system profile
+	// System-Persistence-TLS
+	Type string `json:"type,omitempty"`
+
+	// Value of attribute based on selected persistence type.
+	// This is required for HTTP_COOKIE, CUSTOM_HTTP_HEADER and APP_COOKIE persistence types.
+	//
+	// HTTP_COOKIE, APP_COOKIE must have cookie name set as the value and CUSTOM_HTTP_HEADER must have header name set as
+	// the value.
+	Value string `json:"value,omitempty"`
+}
+
+// NsxtAlbVirtualService combines Load Balancer Pools with Service Engine Groups and exposes a virtual service on
+// defined VIP (virtual IP address) while optionally allowing to use encrypted traffic
+type NsxtAlbVirtualService struct {
+	ID string `json:"id,omitempty"`
+
+	// Name contains meaningful name
+	Name string `json:"name,omitempty"`
+
+	// Description is optional
+	Description string `json:"description,omitempty"`
+
+	// Enabled defines if the virtual service is enabled to accept traffic
+	Enabled *bool `json:"enabled"`
+
+	// ApplicationProfile sets protocol for load balancing by using NsxtAlbVirtualServiceApplicationProfile
+	ApplicationProfile NsxtAlbVirtualServiceApplicationProfile `json:"applicationProfile"`
+
+	// GatewayRef contains NSX-T Edge Gateway reference
+	GatewayRef OpenApiReference `json:"gatewayRef"`
+	//LoadBalancerPoolRef contains Pool reference
+	LoadBalancerPoolRef OpenApiReference `json:"loadBalancerPoolRef"`
+	// ServiceEngineGroupRef points to service engine group (which must be assigned to NSX-T Edge Gateway)
+	ServiceEngineGroupRef OpenApiReference `json:"serviceEngineGroupRef"`
+
+	// CertificateRef contains certificate reference if serving encrypted traffic
+	CertificateRef *OpenApiReference `json:"certificateRef,omitempty"`
+
+	// ServicePorts define one or more ports (or port ranges) of the virtual service
+	ServicePorts []NsxtAlbVirtualServicePort `json:"servicePorts"`
+
+	// VirtualIpAddress to be used for exposing this virtual service
+	VirtualIpAddress string `json:"virtualIpAddress"`
+
+	// HealthStatus contains status of the Load Balancer Cloud. Possible values are:
+	// UP - The cloud is healthy and ready to enable Load Balancer for an Edge Gateway.
+	// DOWN - The cloud is in a failure state. Enabling Load balancer on an Edge Gateway may not be possible.
+	// RUNNING - The cloud is currently processing. An example is if it's enabling a Load Balancer for an Edge Gateway.
+	// UNAVAILABLE - The cloud is unavailable.
+	// UNKNOWN - The cloud state is unknown.
+	HealthStatus string `json:"healthStatus,omitempty"`
+
+	// HealthMessage shows a pool health status (e.g. "The pool is unassigned.")
+	HealthMessage string `json:"healthMessage,omitempty"`
+
+	// DetailedHealthMessage containes a more in depth health message
+	DetailedHealthMessage string `json:"detailedHealthMessage,omitempty"`
+}
+
+// NsxtAlbVirtualServicePort port (or port ranges) of the virtual service
+type NsxtAlbVirtualServicePort struct {
+	// PortStart is always required
+	PortStart *int `json:"portStart"`
+	// PortEnd is only required if a port range is specified. For single port cases PortStart is sufficient
+	PortEnd *int `json:"portEnd,omitempty"`
+	// SslEnabled defines if traffic is served as secure. CertificateRef must be specified in NsxtAlbVirtualService when
+	// true
+	SslEnabled *bool `json:"sslEnabled,omitempty"`
+	// TcpUdpProfile defines
+	TcpUdpProfile *NsxtAlbVirtualServicePortTcpUdpProfile `json:"tcpUdpProfile,omitempty"`
+}
+
+// NsxtAlbVirtualServicePortTcpUdpProfile profile determines the type and settings of the network protocol that a
+// subscribing virtual service will use. It sets a number of parameters, such as whether the virtual service is a TCP
+// proxy versus a pass-through via fast path. A virtual service can have both TCP and UDP enabled, which is useful for
+// protocols such as DNS or syslog.
+type NsxtAlbVirtualServicePortTcpUdpProfile struct {
+	SystemDefined bool `json:"systemDefined"`
+	// Type defines L4 or L4_TLS profiles:
+	// * TCP_PROXY (the only possible type when L4_TLS is used). Enabling TCP Proxy causes ALB to terminate an inbound
+	// connection from a client. Any application data from the client that is destined for a server is forwarded to that
+	// server over a new TCP connection. Separating (or proxying) the client-to-server connections enables ALB to provide
+	// enhanced security, such as TCP protocol sanitization or DoS mitigation. It also provides better client and server
+	// performance, such as maximizing client and server TCP MSS or window sizes independently and buffering server
+	// responses. One must use a TCP/UDP profile with the type set to Proxy for application profiles such as HTTP.
+	//
+	// * TCP_FAST_PATH profile does not proxy TCP connections - rather, it directly connects clients to the
+	// destination server and translates the client's destination virtual service address with the chosen destination
+	// server's IP address. The client's source IP address is still translated to the Service Engine address to ensure
+	// that server response traffic returns symmetrically.
+	//
+	// * UDP_FAST_PATH profile enables a virtual service to support UDP. Avi Vantage translates the client's destination
+	// virtual service address to the destination server and rewrites the client's source IP address to the Service
+	// Engine's address when forwarding the packet to the server. This ensures that server response traffic traverses
+	// symmetrically through the original SE.
+	Type string `json:"type"`
+}
+
+// NsxtAlbVirtualServiceApplicationProfile sets protocol for load balancing. Type field defines possible options.
+type NsxtAlbVirtualServiceApplicationProfile struct {
+	SystemDefined bool `json:"systemDefined,omitempty"`
+	// Type defines Traffic
+	// * HTTP
+	// * HTTPS (certificate reference is mandatory)
+	// * L4
+	// * L4 TLS (certificate reference is mandatory)
+	Type string `json:"type"`
 }
