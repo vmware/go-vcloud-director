@@ -788,3 +788,35 @@ func cleanupCatalogOrgVdc(check *C, sharedCatalog Catalog, vdc *Vdc, vcd *TestVC
 	err = adminOrg.Delete(true, true)
 	check.Assert(err, IsNil)
 }
+
+// Tests System function UploadOvf by creating catalog and
+// checking UploadTask.GetUploadProgress returns values of progress.
+func (vcd *TestVCD) Test_UploadOvfByLink_progress_works(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	//skipWhenOvaPathMissing(vcd.config.OVA.OvaPath, check)
+	itemName := TestUploadOvf + "URL"
+
+	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+
+	uploadTask, err := catalog.UploadOvfByLink("http://10.150.170.19:8000/test_vapp_template_ovf/descriptor.ovf", itemName, "upload from test")
+	check.Assert(err, IsNil)
+	check.Assert(uploadTask, NotNil)
+
+	for {
+		if value, err := uploadTask.GetTaskProgress(); value == "100" || err != nil {
+			check.Assert(err, IsNil)
+			break
+		} else {
+			check.Assert(value, Not(Equals), "")
+		}
+	}
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvfByLink_progress_works")
+
+	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	verifyCatalogItemUploaded(check, catalog, itemName)
+}
