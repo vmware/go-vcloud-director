@@ -1,6 +1,41 @@
-## 2.14.0 (Unreleased)
+## 2.14.0 (TBC)
 
-Changes in progress for v2.14.0 are available at [.changes/v2.14.0](https://github.com/vmware/go-vcloud-director/tree/master/.changes/v2.14.0) until the release.
+## FEATURES
+* Added type `NsxtAlbConfig` and functions `NsxtEdgeGateway.UpdateAlbSettings`, `NsxtEdgeGateway.GetAlbSettings`,
+  `NsxtEdgeGateway.DisableAlb` ([#403](https://github.com/vmware/go-vcloud-director/pull/403))
+* Added types `Certificate` and `types.CertificateLibraryItem` for handling Certificates in Certificate Library with corresponding
+  methods `client.GetCertificateFromLibraryById`, `client.AddCertificateToLibrary`, `client.GetAllCertificatesFromLibrary`, `client.GetCertificateFromLibraryByName`, `adminOrg.GetCertificateFromLibraryById`, `adminOrg.AddCertificateToLibrary`, `adminOrg.GetAllCertificatesFromLibrary`, `adminOrg.GetCertificateFromLibraryByName`,
+  `certificate.Update`, `certificate.Delete` ([#404](https://github.com/vmware/go-vcloud-director/pull/404))
+* Added support for ALB Service Engine Group Assignment to NSX-T Edge Gateway via type
+  `NsxtAlbServiceEngineGroupAssignment` and functions `GetAllAlbServiceEngineGroupAssignments`,
+  `GetAlbServiceEngineGroupAssignmentById`, `GetAlbServiceEngineGroupAssignmentByName`,
+  `CreateAlbServiceEngineGroupAssignment`, `Update`, `Delete`  ([#405](https://github.com/vmware/go-vcloud-director/pull/405))
+* Added type `types.ApiTokenRefresh` to contain data from API token refresh ([#406](https://github.com/vmware/go-vcloud-director/pull/406))
+* Added method `VCDClient.GetBearerTokenFromApiToken` to get a bearer token from an API token ([#406](https://github.com/vmware/go-vcloud-director/pull/406))
+* Added method `VCDClient.SetApiToken` to set a token and get a bearer token using and API token and get token details in return ([#406](https://github.com/vmware/go-vcloud-director/pull/406))
+* Added types `VdcGroup`, `types.VdcGroup`, `types.ParticipatingOrgVdcs`, `types.CandidateVdc`, `types.DfwPolicies` and `types.DefaultPolicy` for handling VDC groups with corresponding
+  methods `adminOrg.CreateNsxtVdcGroup`, `adminOrg.CreateVdcGroup`, `adminOrg.GetAllNsxtVdcGroupCandidates`, `adminOrg.GetAllVdcGroupCandidates`, `adminOrg.GetAllVdcGroups`, `adminOrg.GetVdcGroupByName`, `adminOrg.GetVdcGroupById`, `vdcGroup.Update`, `vdcGroup.GenericUpdate`, `vdcGroup.Delete`, `vdcGroup.DisableDefaultPolicy`, `vdcGroup.EnableDefaultPolicy`, `vdcGroup.GetDfwPolicies`, `vdcGroup.DeActivateDfw`, `vdcGroup.ActivateDfw`, `vdcGroup.UpdateDefaultDfwPolicies`, `vdcGroup.UpdateDfwPolicies`  ([#410](https://github.com/vmware/go-vcloud-director/pull/410))
+* Added support for ALB Pool to NSX-T Edge Gateway via type `NsxtAlbPool` and functions `GetAllAlbPools`,
+  `GetAllAlbPoolSummaries`, `GetAlbPoolByName`, `GetAlbPoolById`, `CreateNsxtAlbPool`, `nsxtAlbPool.Update`,
+  `nsxtAlbPool.Delete` ([#414](https://github.com/vmware/go-vcloud-director/pull/414))
+* Added support for ALB Virtual Services to NSX-T Edge Gateway via type `NsxtAlbVirtualService` and functions `GetAllAlbVirtualServices`,
+  `GetAllAlbGetAllAlbVirtualServiceSummaries`, `GetAlbVirtualServiceByName`, `GetAlbVirtualServiceById`,
+  `CreateNsxtAlbVirtualService`, `NsxtAlbVirtualService.Update`, `NsxtAlbVirtualService.Delete` ([#417](https://github.com/vmware/go-vcloud-director/pull/417))
+
+## IMPROVEMENTS
+* `VCDClient.SetToken` has now the ability of transparently setting a bearer token when receiving an API token ([#406](https://github.com/vmware/go-vcloud-director/pull/406))
+* Remove Coverity warnings from code ([#408](https://github.com/vmware/go-vcloud-director/pull/408), [#412](https://github.com/vmware/go-vcloud-director/pull/412))
+* Add session info to go-vcloud-director logs ([#409](https://github.com/vmware/go-vcloud-director/pull/409))
+* Add type `types.UpdateLeaseSettingsSection` to handle vApp lease settings. ([#420](https://github.com/vmware/go-vcloud-director/pull/420))
+* Add methods `vApp.GetLease` and `vApp.RenewLease`, to query the state of the vApp lease and eventually modify it. ([#420](https://github.com/vmware/go-vcloud-director/pull/420))
+* Add `LeaseSettingsSection` to `types.VApp` structure. ([#420](https://github.com/vmware/go-vcloud-director/pull/420))
+
+## BUG FIXES
+* Fix Issue #728: `vm.UpdateInternalDisksAsync()` didn't send VM description and as a result would delete VM description ([#418](https://github.com/vmware/go-vcloud-director/pull/418))
+
+* Remove hardcoded 0 value for Weight field in `ChangeCPUCountWithCore` function to avoid overriding shares ([#419](https://github.com/vmware/go-vcloud-director/pull/419))
+* Fix issue #421 "Wrong xml name in SourcedVmTemplateParams" ([#420](https://github.com/vmware/go-vcloud-director/pull/420))
+
 
 
 ## 2.13.0 (September 30, 2021)
