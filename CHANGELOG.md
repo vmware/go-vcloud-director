@@ -1,4 +1,4 @@
-## 2.14.0 (TBC)
+## 2.14.0 (January 7, 2022)
 
 ## FEATURES
 * Add type `NsxtAlbConfig` and functions `NsxtEdgeGateway.UpdateAlbSettings`, `NsxtEdgeGateway.GetAlbSettings`,
