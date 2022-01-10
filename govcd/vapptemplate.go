@@ -69,3 +69,57 @@ func (vAppTemplate *VAppTemplate) Refresh() error {
 
 	return err
 }
+
+// Update updates the vApp template item information
+// Returns vApp template and error.
+func (vAppTemplate *VAppTemplate) Update() (*VAppTemplate, error) {
+	if vAppTemplate.VAppTemplate == nil {
+		return nil, fmt.Errorf("cannot update, Object is empty")
+	}
+
+	url := vAppTemplate.VAppTemplate.HREF
+	if url == "nil" {
+		return nil, fmt.Errorf("cannot update, HREF is empty")
+	}
+
+	task, err := vAppTemplate.UpdateAsync()
+	if err != nil {
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("error waiting for task completion after updating vApp template %s: %s", vAppTemplate.VAppTemplate.Name, err)
+	}
+	err = vAppTemplate.Refresh()
+	if err != nil {
+		return nil, fmt.Errorf("error refreshing vApp template %s: %s", vAppTemplate.VAppTemplate.Name, err)
+	}
+	return vAppTemplate, nil
+}
+
+// UpdateAsync updates the vApp template item information
+// Returns Task and error.
+func (vAppTemplate *VAppTemplate) UpdateAsync() (Task, error) {
+
+	if vAppTemplate.VAppTemplate == nil {
+		return Task{}, fmt.Errorf("cannot update, Object is empty")
+	}
+
+	url := vAppTemplate.VAppTemplate.HREF
+	if url == "nil" {
+		return Task{}, fmt.Errorf("cannot update, HREF is empty")
+	}
+
+	vappTemplatePayload := types.VAppTemplateForUpdate{
+		Xmlns:       types.XMLNamespaceVCloud,
+		HREF:        vAppTemplate.VAppTemplate.HREF,
+		ID:          vAppTemplate.VAppTemplate.ID,
+		Name:        vAppTemplate.VAppTemplate.Name,
+		GoldMaster:  vAppTemplate.VAppTemplate.GoldMaster,
+		Description: vAppTemplate.VAppTemplate.Description,
+		Link:        vAppTemplate.VAppTemplate.Link,
+	}
+
+	return vAppTemplate.client.ExecuteTaskRequest(url, http.MethodPut,
+		types.MimeVAppTemplate, "error updating vApp template item: %s", vappTemplatePayload)
+}
