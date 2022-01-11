@@ -250,9 +250,9 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 	return *uploadTask, nil
 }
 
-// UploadOvfByLink uploads an ovf file to a catalog from remote URL.
-// Returns errors if any occur during upload from vCD or upload process. On upload fail client may need to
-// remove vCD catalog item which is in failed state.
+// UploadOvfByLink uploads an OVF file to a catalog from remote URL.
+// Returns errors if any occur during upload from VCD or upload process. On upload fail client may need to
+// remove VCD catalog item which is in failed state.
 func (cat *Catalog) UploadOvfByLink(ovfUrl, itemName, description string) (Task, error) {
 
 	if *cat == (Catalog{}) {
@@ -437,7 +437,7 @@ func waitForTempUploadLinks(client *Client, vappTemplateUrl *url.URL, newItemNam
 }
 
 func queryVappTemplateAndVerifyTask(client *Client, vappTemplateUrl *url.URL, newItemName string) (*types.VAppTemplate, error) {
-	util.Logger.Printf("[TRACE] Querying Vapp template: %s\n", vappTemplateUrl)
+	util.Logger.Printf("[TRACE] Querying vApp template: %s\n", vappTemplateUrl)
 
 	vappTemplateParsed, err := fetchVappTemplate(client, vappTemplateUrl)
 	if err != nil {
@@ -455,7 +455,7 @@ func queryVappTemplateAndVerifyTask(client *Client, vappTemplateUrl *url.URL, ne
 }
 
 func fetchVappTemplate(client *Client, vappTemplateUrl *url.URL) (*types.VAppTemplate, error) {
-	util.Logger.Printf("[TRACE] Querying vapp template: %s\n", vappTemplateUrl)
+	util.Logger.Printf("[TRACE] Querying vApp template: %s\n", vappTemplateUrl)
 
 	vappTemplateParsed := &types.VAppTemplate{}
 
