@@ -788,3 +788,63 @@ func cleanupCatalogOrgVdc(check *C, sharedCatalog Catalog, vdc *Vdc, vcd *TestVC
 	err = adminOrg.Delete(true, true)
 	check.Assert(err, IsNil)
 }
+
+// Creates a Catalog, updates the description, and checks the changes against the
+// newly updated catalog. Then deletes the catalog
+func (vcd *TestVCD) Test_PublishToExternalOrganizations(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	// test with AdminCatalog
+	catalogName := check.TestName()
+	catalogDescription := check.TestName() + " description"
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	adminCatalog, err := adminOrg.CreateCatalog(catalogName, catalogDescription)
+	check.Assert(err, IsNil)
+	check.Assert(adminCatalog.AdminCatalog.Name, Equals, catalogName)
+	check.Assert(adminCatalog.AdminCatalog.Description, Equals, catalogDescription)
+
+	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName())
+
+	err = adminCatalog.PublishToExternalOrganizations(types.PublishExternalCatalogParams{
+		IsPublishedExternally:    true,
+		IsCachedEnabled:          true,
+		Password:                 "secretOrNot",
+		PreserveIdentityInfoFlag: true,
+	})
+	check.Assert(err, IsNil)
+	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.IsPublishedExternally, Equals, true)
+	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.PreserveIdentityInfoFlag, Equals, true)
+	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.IsCachedEnabled, Equals, true)
+	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.Password, Equals, "******")
+
+	err = adminCatalog.Delete(true, true)
+	check.Assert(err, IsNil)
+
+	// test with Catalog
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	catalog, err := org.CreateCatalog(catalogName, catalogDescription)
+	check.Assert(err, IsNil)
+	check.Assert(catalog.Catalog.Name, Equals, catalogName)
+	check.Assert(catalog.Catalog.Description, Equals, catalogDescription)
+
+	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName())
+
+	err = catalog.PublishToExternalOrganizations(types.PublishExternalCatalogParams{
+		IsPublishedExternally: true,
+	})
+	check.Assert(err, IsNil)
+	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.IsPublishedExternally, Equals, true)
+	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.PreserveIdentityInfoFlag, Equals, true)
+	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.IsCachedEnabled, Equals, true)
+	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.Password, Equals, "******")
+
+	err = catalog.Delete(true, true)
+	check.Assert(err, IsNil)
+}

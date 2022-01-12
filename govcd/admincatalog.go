@@ -92,3 +92,32 @@ func (adminCatalog *AdminCatalog) Refresh() error {
 func (adminCatalog *AdminCatalog) getOrgInfo() (*TenantContext, error) {
 	return adminCatalog.getTenantContext()
 }
+
+// PublishToExternalOrganizations publishes a catalog to external organizations.
+func (cat *AdminCatalog) PublishToExternalOrganizations(publishExternalCatalog types.PublishExternalCatalogParams) error {
+	if cat.AdminCatalog == nil {
+		return fmt.Errorf("cannot publish to external organization, Object is empty")
+	}
+
+	url := cat.AdminCatalog.HREF
+	if url == "nil" || url == "" {
+		return fmt.Errorf("cannot publish to external organization, HREF is empty")
+	}
+
+	tenantContext, err := cat.getTenantContext()
+	if err != nil {
+		return fmt.Errorf("cannot publish to external organization, tenant context error: %s", err)
+	}
+
+	err = publishToExternalOrganizations(cat.client, url, tenantContext, publishExternalCatalog)
+	if err != nil {
+		return err
+	}
+
+	err = cat.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return err
+}
