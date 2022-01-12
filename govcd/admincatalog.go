@@ -29,6 +29,14 @@ func NewAdminCatalog(client *Client) *AdminCatalog {
 	}
 }
 
+func NewAdminCatalogWithParent(client *Client, parent organization) *AdminCatalog {
+	return &AdminCatalog{
+		AdminCatalog: new(types.AdminCatalog),
+		client:       client,
+		parent:       parent,
+	}
+}
+
 // Delete deletes the Catalog, returning an error if the vCD call fails.
 // Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Catalog.html
 func (adminCatalog *AdminCatalog) Delete(force, recursive bool) error {
