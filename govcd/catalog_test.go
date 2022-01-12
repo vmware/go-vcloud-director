@@ -789,8 +789,8 @@ func cleanupCatalogOrgVdc(check *C, sharedCatalog Catalog, vdc *Vdc, vcd *TestVC
 	check.Assert(err, IsNil)
 }
 
-// Tests System function UploadOvf by creating catalog and
-// checking UploadTask.GetUploadProgress returns values of progress.
+// Tests System function UploadOvfByLink and verifies that
+// Task.GetTaskProgress returns values of progress.
 func (vcd *TestVCD) Test_UploadOvfByLink_progress_works(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
