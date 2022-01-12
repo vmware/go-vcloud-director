@@ -762,7 +762,7 @@ func (client *Client) RemoveCustomHeader() {
 // RemoveCustomHeader removes custom header values from the client
 func (client *Client) RemoveProvidedCustomHeaders(values map[string]string) {
 	if client.customHeader != nil {
-		for k, _ := range values {
+		for k := range values {
 			client.customHeader.Del(k)
 		}
 	}
