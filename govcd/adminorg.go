@@ -50,7 +50,13 @@ func (adminOrg *AdminOrg) CreateCatalog(name, description string) (AdminCatalog,
 
 // CreateCatalogWithStorageProfile is like CreateCatalog, but allows to specify storage profile
 func (adminOrg *AdminOrg) CreateCatalogWithStorageProfile(name, description string, storageProfiles *types.CatalogStorageProfiles) (*AdminCatalog, error) {
-	return CreateCatalogWithStorageProfile(adminOrg.client, adminOrg.AdminOrg.Link, name, description, storageProfiles)
+	adminCatalog, err := CreateCatalogWithStorageProfile(adminOrg.client, adminOrg.AdminOrg.Link, name, description, storageProfiles)
+	if err != nil {
+		return &AdminCatalog{}, nil
+	}
+	adminCatalogWithParent := NewAdminCatalogWithParent(adminOrg.client, adminOrg)
+	adminCatalogWithParent.AdminCatalog = adminCatalog.AdminCatalog
+	return adminCatalogWithParent, nil
 }
 
 // GetAllVDCs returns all depending VDCs for a particular Org
