@@ -1023,11 +1023,11 @@ type AdminCatalog struct {
 // Since: 5.5
 type PublishExternalCatalogParams struct {
 	Xmlns                    string `xml:"xmlns,attr,omitempty"`
-	IsPublishedExternally    bool   `xml:"IsPublishedExternally,omitempty"`    // True enables external publication as configured by these parameters.
+	IsPublishedExternally    *bool  `xml:"IsPublishedExternally,omitempty"`    // True enables external publication as configured by these parameters.
 	CatalogPublishedUrl      string `xml:"catalogPublishedUrl,omitempty"`      // Read-only endpoint URL supplied by the server. External subscribers can connect to the catalog at this URL.
 	Password                 string `xml:"Password,omitempty"`                 // Password required when connecting to the endpoint.
-	IsCachedEnabled          bool   `xml:"IsCacheEnabled,omitempty"`           // True enables content caching for this catalog. All items in the catalog are created and stored in transfer storage. If false, items are not placed in transfer storage until they are requested by a subscriber. Note that access to this attribute is reserved to users with role that includes the right 'Catalog: VCSP Publish Subscribe Caching'.
-	PreserveIdentityInfoFlag bool   `xml:"PreserveIdentityInfoFlag,omitempty"` // True includes BIOS UUIDs and MAC addresses in the downloaded OVF package. If false, those information will be excluded.
+	IsCachedEnabled          *bool  `xml:"IsCacheEnabled,omitempty"`           // True enables content caching for this catalog. All items in the catalog are created and stored in transfer storage. If false, items are not placed in transfer storage until they are requested by a subscriber. Note that access to this attribute is reserved to users with role that includes the right 'Catalog: VCSP Publish Subscribe Caching'.
+	PreserveIdentityInfoFlag *bool  `xml:"PreserveIdentityInfoFlag,omitempty"` // True includes BIOS UUIDs and MAC addresses in the downloaded OVF package. If false, those information will be excluded.
 
 }
 

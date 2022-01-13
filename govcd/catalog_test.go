@@ -810,15 +810,15 @@ func (vcd *TestVCD) Test_PublishToExternalOrganizations(check *C) {
 	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName())
 
 	err = adminCatalog.PublishToExternalOrganizations(types.PublishExternalCatalogParams{
-		IsPublishedExternally:    true,
-		IsCachedEnabled:          true,
+		IsPublishedExternally:    takeBoolPointer(true),
+		IsCachedEnabled:          takeBoolPointer(true),
 		Password:                 "secretOrNot",
-		PreserveIdentityInfoFlag: true,
+		PreserveIdentityInfoFlag: takeBoolPointer(true),
 	})
 	check.Assert(err, IsNil)
-	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.IsPublishedExternally, Equals, true)
-	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.PreserveIdentityInfoFlag, Equals, true)
-	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.IsCachedEnabled, Equals, true)
+	check.Assert(*adminCatalog.AdminCatalog.PublishExternalCatalogParams.IsPublishedExternally, Equals, true)
+	check.Assert(*adminCatalog.AdminCatalog.PublishExternalCatalogParams.PreserveIdentityInfoFlag, Equals, true)
+	check.Assert(*adminCatalog.AdminCatalog.PublishExternalCatalogParams.IsCachedEnabled, Equals, true)
 	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.Password, Equals, "******")
 
 	err = adminCatalog.Delete(true, true)
@@ -837,13 +837,28 @@ func (vcd *TestVCD) Test_PublishToExternalOrganizations(check *C) {
 	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName())
 
 	err = catalog.PublishToExternalOrganizations(types.PublishExternalCatalogParams{
-		IsPublishedExternally: true,
+		IsPublishedExternally:    takeBoolPointer(true),
+		IsCachedEnabled:          takeBoolPointer(true),
+		Password:                 "secretOrNot",
+		PreserveIdentityInfoFlag: takeBoolPointer(true),
 	})
 	check.Assert(err, IsNil)
-	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.IsPublishedExternally, Equals, true)
-	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.PreserveIdentityInfoFlag, Equals, true)
-	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.IsCachedEnabled, Equals, true)
-	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.Password, Equals, "******")
+	check.Assert(*catalog.Catalog.PublishExternalCatalogParams.IsPublishedExternally, Equals, true)
+	check.Assert(*catalog.Catalog.PublishExternalCatalogParams.PreserveIdentityInfoFlag, Equals, true)
+	check.Assert(*catalog.Catalog.PublishExternalCatalogParams.IsCachedEnabled, Equals, true)
+	check.Assert(catalog.Catalog.PublishExternalCatalogParams.Password, Equals, "******")
+
+	err = catalog.PublishToExternalOrganizations(types.PublishExternalCatalogParams{
+		IsPublishedExternally:    takeBoolPointer(true),
+		IsCachedEnabled:          takeBoolPointer(false),
+		Password:                 "secretOrNot2",
+		PreserveIdentityInfoFlag: takeBoolPointer(false),
+	})
+	check.Assert(err, IsNil)
+	check.Assert(*catalog.Catalog.PublishExternalCatalogParams.IsPublishedExternally, Equals, true)
+	check.Assert(*catalog.Catalog.PublishExternalCatalogParams.PreserveIdentityInfoFlag, Equals, false)
+	check.Assert(*catalog.Catalog.PublishExternalCatalogParams.IsCachedEnabled, Equals, false)
+	check.Assert(catalog.Catalog.PublishExternalCatalogParams.Password, Equals, "******")
 
 	err = catalog.Delete(true, true)
 	check.Assert(err, IsNil)
