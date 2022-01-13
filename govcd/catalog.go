@@ -490,7 +490,7 @@ func findFilePath(filesAbsPaths []string, fileName string) string {
 
 // Initiates creation of item and returns ovf upload url for created item.
 func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName string, itemDescription string) (*url.URL, error) {
-	util.Logger.Printf("[TRACE] createItemForUpload: %s, item name: %v, description: %v \n", createHREF, catalogItemName, itemDescription)
+	util.Logger.Printf("[TRACE] createItemForUpload: %s, item name: %s, description: %s \n", createHREF, catalogItemName, itemDescription)
 	reqBody := bytes.NewBufferString(
 		"<UploadVAppTemplateParams xmlns=\"" + types.XMLNamespaceVCloud + "\" name=\"" + catalogItemName + "\" >" +
 			"<Description>" + itemDescription + "</Description>" +
