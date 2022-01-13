@@ -789,8 +789,7 @@ func cleanupCatalogOrgVdc(check *C, sharedCatalog Catalog, vdc *Vdc, vcd *TestVC
 	check.Assert(err, IsNil)
 }
 
-// Creates a Catalog, updates the description, and checks the changes against the
-// newly updated catalog. Then deletes the catalog
+// Creates a Catalog. Publishes catalog to external Org and then deletes the catalog.
 func (vcd *TestVCD) Test_PublishToExternalOrganizations(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
