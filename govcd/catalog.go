@@ -581,12 +581,11 @@ func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName st
 
 // Initiates creation of item in catalog and returns vappTeamplate Url for created item.
 func createItemWithLink(client *Client, createHREF *url.URL, catalogItemName, itemDescription, vappTemplateRemoteUrl string) (*url.URL, error) {
-	util.Logger.Printf("[TRACE] createItemWithLink: %s, item name: %s, description: %s, vappTemplateRemoteUrl: %s \n", createHREF, catalogItemName, itemDescription, vappTemplateRemoteUrl)
-	reqBody := bytes.NewBufferString(
-		"<UploadVAppTemplateParams xmlns=\"" + types.XMLNamespaceVCloud + "\" name=\"" + catalogItemName + "\" sourceHref=\"" + vappTemplateRemoteUrl + "\" >" +
-			"<Description>" + itemDescription + "</Description>" +
-			"</UploadVAppTemplateParams>")
+	util.Logger.Printf("[TRACE] createItemWithLink: %s, item name: %s, description: %s, vappTemplateRemoteUrl: %s \n",
+		createHREF, catalogItemName, itemDescription, vappTemplateRemoteUrl)
 
+	reqTemplate := `<UploadVAppTemplateParams xmlns="%s" name="%s" sourceHref="%s"><Description>%s</Description></UploadVAppTemplateParams>`
+	reqBody := bytes.NewBufferString(fmt.Sprintf(reqTemplate, types.XMLNamespaceVCloud, catalogItemName, vappTemplateRemoteUrl, itemDescription))
 	request := client.NewRequest(map[string]string{}, http.MethodPost, *createHREF, reqBody)
 	request.Header.Add("Content-Type", "application/vnd.vmware.vcloud.uploadVAppTemplateParams+xml")
 

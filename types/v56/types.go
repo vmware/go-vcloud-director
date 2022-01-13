@@ -1446,6 +1446,8 @@ type VAppTemplate struct {
 }
 
 // VAppTemplateForUpdate represents a vApp template.
+// It is shrunken version of VAppTemplateType used for update calls.
+// Full VAppTemplateType isn't accepted by API
 // Type: VAppTemplateType
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Represents a vApp template.
