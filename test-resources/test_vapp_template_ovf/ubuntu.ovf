@@ -1,0 +1,171 @@
+<?xml version="1.0" ?>
+<ovf:Envelope xmlns:ovf="http://schemas.dmtf.org/ovf/envelope" xmlns:rasd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:vssd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+	<!--Reference of all external files-->
+	<References>
+		<File ovf:id="file1" ovf:href="Ubuntu1.vmdk"
+			ovf:size="4882023564" ovf:chunkSize="2147483648" />
+		<File ovf:id="file2" ovf:href="Ubuntu-0.vmdk"
+			ovf:size="280114671" ovf:compression="gzip" />
+	</References>
+
+	<!--Meta Data description-->
+	<!--DiskSection-->
+	<Section ovf:id="93" ovf:required="false" xs:name="ovf:DiskSection_Type">
+		<Info>List of Virtual Disks</Info>
+		<Disk ovf:capacity="12884901888" ovf:diskId="disk1" ovf:fileRef="file1" ovf:format="http://www.vmware.com/specifications/vmdk.html#sparse" ovf:populatedSize="4435017728"/>
+		<Disk ovf:capacity="12884901888" ovf:diskId="disk2" ovf:fileRef="file2" ovf:format="http://www.vmware.com/specifications/vmdk.html#sparse" ovf:populatedSize="435017728"/>
+	</Section>
+	<!--NetworkSection-->
+	<Section xs:name="ovf:NetworkSection_Type">
+		<Info>List of networks</Info>
+		<Network ovf:name="Network 1">
+			<Description>The &quot;Network 1&quot; network</Description>
+		</Network>
+	</Section>
+	<!--ResourceAllocation-->
+
+	<!--Annotation-->
+	<Section ovf:required="false" xs:name="ovf:AnnotationSection_Type">
+		<Info>An annotation</Info>
+		<Annotation>
+			Base OS: SuSE Enterprise Server 10.1
+			root password: password
+			User/password: idsinst/ibmtds
+			Installed Software
+			TDS 6.1.x
+			DB2 9.1 FP 2 (as part of TDS install)
+			TDS server instance: idsinst
+			Database: idsdb
+			TDS Web Admin user: superuser/secret
+			TDS admin for TDS server instance
+			cn=root/ibmtds
+			Part of SOA Expediter Scenario 1 (SOAX-S1) Encryption Seed:
+			1234567890987654321
+		</Annotation>
+	</Section>
+	<!--Product Section-->
+	<Section ovf:class="com.mycrm.myservice" ovf:instance="1" xs:name="ovf:ProductSection_Type">
+		<Info>Describes product information for the service</Info>
+		<Product>MyCRM Enterprise</Product>
+		<Vendor>MyCRM Corporation</Vendor>
+		<Version>4.5</Version>
+		<FullVersion>4.5-b4523</FullVersion>
+		<ProductUrl>http://www.mycrm.com/enterprise</ProductUrl>
+		<VendorUrl>http://www.mycrm.com</VendorUrl>
+		<AppUrl>http://ibm.com/</AppUrl>
+		<Property ovf:configurableByUser="true" ovf:key="admin.email" ovf:type="string">
+			<Description>cintronm@something.com</Description>
+		</Property>
+		<Property ovf:configurableByUser="true" ovf:key="app.log" ovf:type="string" ovf:value="low">
+			<Description>Loglevel for the service</Description>
+		</Property>
+		<Property ovf:key="app.ip" ovf:type="ip:VM Network">
+			<Description>
+				The IP address of the application server virtual machine
+			</Description>
+		</Property>
+
+
+		<!--PropertySection (application-level customization params)-->
+		<!--NOTE: this section is actually part of the product section-->
+
+		<Property ovf:key="bootproto" ovf:required="false" ovf:type="string[dhcp,static]" ovf:userConfigurable="true" ovf:value="dhcp">
+			<Description>
+				Specifies the IP protocol assignment of dynamic or
+				static
+			</Description>
+		</Property>
+		<Property ovf:key="hostname" ovf:required="false" ovf:type="string" ovf:userConfigurable="true" ovf:value="tdsvr4">
+			<Description>
+				Specifies the IP hostname of the virtual machine
+			</Description>
+		</Property>
+		<Property ovf:key="domain" ovf:required="false" ovf:type="string" ovf:userConfigurable="true" ovf:value="rtp.raleigh.ibm.com">
+			<Description>
+				Specifies the IP Domain of the virtual machine
+			</Description>
+		</Property>
+		<Property ovf:key="ipaddr" ovf:required="false" ovf:type="ip" ovf:userConfigurable="true">
+			<Description>
+				Specifies the static IP address of the virtual machine
+			</Description>
+		</Property>
+		<Property ovf:key="netmask" ovf:required="false" ovf:type="ip" ovf:userConfigurable="true">
+			<Description>
+				Specifies the IP network mask of the virtual machine
+			</Description>
+		</Property>
+		<Property ovf:key="gateway" ovf:required="false" ovf:type="ip" ovf:userConfigurable="true">
+			<Description>
+				Specifies the gateway IP address of the virtual machine
+			</Description>
+		</Property>
+		<Property ovf:key="pri_dns" ovf:required="false" ovf:type="ip" ovf:userConfigurable="true">
+			<Description>
+				Specifies the primary DNS IP address of the virtual
+				machine
+			</Description>
+		</Property>
+		<Property ovf:key="sec_dns" ovf:required="false" ovf:type="ip" ovf:userConfigurable="true">
+			<Description>
+				Specifies the secondary DNS IP address of the virtual
+				machine
+			</Description>
+		</Property>
+	</Section>
+	<!-- End User License Agreement -->
+	<Section xs:name="ovf:EulaSection_Type">
+		<Info>Common Public License (CPL) Licensing agreement</Info>
+		<License>
+			http://www.ibm.com/developerworks/library/os-cpl.html
+		</License>
+		<Info>Licensing agreement</Info>
+		<License>
+			Lorem ipsum dolor sit amet, ligula suspendisse nulla
+			pretium, rhoncus tempor placerat fermentum, enim integer ad
+			vestibulum volutpat. Nisl rhoncus turpis est, vel elit,
+			congue wisi enim nunc ultricies sit, magna tincidunt.
+			Maecenas aliquam maecenas ligula nostra, accumsan taciti.
+			Sociis mauris in integer, a dolor netus non dui aliquet,
+			sagittis felis sodales, dolor sociis mauris, vel eu libero
+			cras. Interdum at. Eget habitasse elementum est, ipsum purus
+			pede porttitor class, ut adipiscing, aliquet sed auctor,
+			imperdiet arcu per diam dapibus libero duis. Enim eros in
+			vel, volutpat nec pellentesque leo, scelerisque.
+		</License>
+	</Section>
+	<Section xs:name="ovf:StartupSection_Type">
+		<Item ovf:id="vm1" ovf:order="0" ovf:startAction="powerOn" ovf:startDelay="30" ovf:stopAction="powerOff" ovf:stopDeplay="0" ovf:waitingForGuest="true"/>
+		<Item ovf:id="teamA" ovf:order="0"/>
+		<Item ovf:id="vm2" ovf:order="1" ovf:startAction="powerOn" ovf:startDelay="0" ovf:stopAction="guestShutdown" ovf:stopDeplay="20"/>
+	</Section>
+	<Section xs:name="ovf:DeploymentOptionSection_Type">
+		<Configuration ovf:id="Minimal">
+			<Label>Minimal</Label>
+			<Description>Some description</Description>
+		</Configuration>
+		<Configuration ovf:default="true" ovf:id="Typical">
+			<Label>Typical</Label>
+			<Description>Some description</Description>
+		</Configuration>
+	</Section>
+	<Section xs:name="ovf:CpuCompatibilitySection_Type">
+		<Info>
+			CPU Compatibility. This virtual machine requires SSE2
+		</Info>
+		<!-- Specifies that it requires the 26th bit in eax on level 1 to be 1. 
+			All others do not matter -->
+		<Level ovf:edx="xxxx:xxTx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx" ovf:level="1"/>
+	</Section>
+	<Section ovf:id="win2003server" xs:name="ovf:OperatingSystemSection_Type">
+		<Info>Specifies the operating system installed</Info>
+		<Description>Windows 2003 Server</Description>
+	</Section>
+	<Section ovf:numReboots="1" ovf:transport="a car?" xs:name="ovf:InstallSection_Type">
+		<Info>
+			Specifies that the virtual machine needs to be pre-booted in
+			order to install the software
+		</Info>
+	</Section>
+</ovf:Envelope>
