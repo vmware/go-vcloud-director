@@ -1028,7 +1028,6 @@ type PublishExternalCatalogParams struct {
 	Password                 string `xml:"Password,omitempty"`                 // Password required when connecting to the endpoint.
 	IsCachedEnabled          *bool  `xml:"IsCacheEnabled,omitempty"`           // True enables content caching for this catalog. All items in the catalog are created and stored in transfer storage. If false, items are not placed in transfer storage until they are requested by a subscriber. Note that access to this attribute is reserved to users with role that includes the right 'Catalog: VCSP Publish Subscribe Caching'.
 	PreserveIdentityInfoFlag *bool  `xml:"PreserveIdentityInfoFlag,omitempty"` // True includes BIOS UUIDs and MAC addresses in the downloaded OVF package. If false, those information will be excluded.
-
 }
 
 // ExternalCatalogSubscription represents the configuration parameters for a catalog that has an external subscription
