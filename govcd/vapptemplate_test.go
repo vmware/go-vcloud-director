@@ -82,6 +82,8 @@ func (vcd *TestVCD) Test_UpdateVAppTemplate(check *C) {
 	nameForUpdate := itemName + "updated"
 	descriptionForUpdate := description + "updated"
 
+	AddToCleanupList(nameForUpdate, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
+
 	vAppTemplate.VAppTemplate.Name = nameForUpdate
 	vAppTemplate.VAppTemplate.Description = descriptionForUpdate
 	vAppTemplate.VAppTemplate.GoldMaster = true
