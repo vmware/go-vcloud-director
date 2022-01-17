@@ -192,7 +192,7 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 		return UploadTask{}, err
 	}
 
-	vappTemplate, err := queryVappTemplate(cat.client, vappTemplateUrl, itemName)
+	vappTemplate, err := queryVappTemplateAndVerifyTask(cat.client, vappTemplateUrl, itemName)
 	if err != nil {
 		return UploadTask{}, err
 	}
@@ -248,6 +248,54 @@ func (cat *Catalog) UploadOvf(ovaFileName, itemName, description string, uploadP
 	util.Logger.Printf("[TRACE] Upload finished and task for vcd import created. \n")
 
 	return *uploadTask, nil
+}
+
+// UploadOvfByLink uploads an OVF file to a catalog from remote URL.
+// Returns errors if any occur during upload from VCD or upload process. On upload fail client may need to
+// remove VCD catalog item which is in failed state.
+func (cat *Catalog) UploadOvfByLink(ovfUrl, itemName, description string) (Task, error) {
+
+	if *cat == (Catalog{}) {
+		return Task{}, errors.New("catalog can not be empty or nil")
+	}
+
+	for _, catalogItemName := range getExistingCatalogItems(cat) {
+		if catalogItemName == itemName {
+			return Task{}, fmt.Errorf("catalog item '%s' already exists. Upload with different name", itemName)
+		}
+	}
+
+	catalogItemUploadURL, err := findCatalogItemUploadLink(cat, "application/vnd.vmware.vcloud.uploadVAppTemplateParams+xml")
+	if err != nil {
+		return Task{}, err
+	}
+
+	vappTemplateUrl, err := createItemWithLink(cat.client, catalogItemUploadURL, itemName, description, ovfUrl)
+	if err != nil {
+		return Task{}, err
+	}
+
+	vappTemplate, err := fetchVappTemplate(cat.client, vappTemplateUrl)
+	if err != nil {
+		return Task{}, err
+	}
+
+	var task Task
+	for _, item := range vappTemplate.Tasks.Task {
+		task, err = createTaskForVcdImport(cat.client, item.HREF)
+		if err != nil {
+			removeCatalogItemOnError(cat.client, vappTemplateUrl, itemName)
+			return Task{}, err
+		}
+		if task.Task.Status == "error" {
+			removeCatalogItemOnError(cat.client, vappTemplateUrl, itemName)
+			return Task{}, fmt.Errorf("task did not complete succesfully: %s", task.Task.Description)
+		}
+	}
+
+	util.Logger.Printf("[TRACE] task for vcd import created. \n")
+
+	return task, nil
 }
 
 // Upload files for vCD created upload links. Different approach then vmdk file are
@@ -376,7 +424,7 @@ func waitForTempUploadLinks(client *Client, vappTemplateUrl *url.URL, newItemNam
 	for {
 		util.Logger.Printf("[TRACE] Sleep... for 5 seconds.\n")
 		time.Sleep(time.Second * 5)
-		vAppTemplate, err = queryVappTemplate(client, vappTemplateUrl, newItemName)
+		vAppTemplate, err = queryVappTemplateAndVerifyTask(client, vappTemplateUrl, newItemName)
 		if err != nil {
 			return nil, err
 		}
@@ -388,13 +436,10 @@ func waitForTempUploadLinks(client *Client, vappTemplateUrl *url.URL, newItemNam
 	return vAppTemplate, nil
 }
 
-func queryVappTemplate(client *Client, vappTemplateUrl *url.URL, newItemName string) (*types.VAppTemplate, error) {
-	util.Logger.Printf("[TRACE] Querying vapp template: %s\n", vappTemplateUrl)
+func queryVappTemplateAndVerifyTask(client *Client, vappTemplateUrl *url.URL, newItemName string) (*types.VAppTemplate, error) {
+	util.Logger.Printf("[TRACE] Querying vApp template: %s\n", vappTemplateUrl)
 
-	vappTemplateParsed := &types.VAppTemplate{}
-
-	_, err := client.ExecuteRequest(vappTemplateUrl.String(), http.MethodGet,
-		"", "error querying vApp template: %s", nil, vappTemplateParsed)
+	vappTemplateParsed, err := fetchVappTemplate(client, vappTemplateUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -404,6 +449,20 @@ func queryVappTemplate(client *Client, vappTemplateUrl *url.URL, newItemName str
 			util.Logger.Printf("[Error] %#v", task.Error)
 			return vappTemplateParsed, fmt.Errorf("error in vcd returned error code: %d, error: %s and message: %s ", task.Error.MajorErrorCode, task.Error.MinorErrorCode, task.Error.Message)
 		}
+	}
+
+	return vappTemplateParsed, nil
+}
+
+func fetchVappTemplate(client *Client, vappTemplateUrl *url.URL) (*types.VAppTemplate, error) {
+	util.Logger.Printf("[TRACE] Querying vApp template: %s\n", vappTemplateUrl)
+
+	vappTemplateParsed := &types.VAppTemplate{}
+
+	_, err := client.ExecuteRequest(vappTemplateUrl.String(), http.MethodGet,
+		"", "error fetching vApp template: %s", nil, vappTemplateParsed)
+	if err != nil {
+		return nil, err
 	}
 
 	return vappTemplateParsed, nil
@@ -518,6 +577,37 @@ func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName st
 	}
 
 	return ovfUploadUrl, nil
+}
+
+// Initiates creation of item in catalog and returns vappTeamplate Url for created item.
+func createItemWithLink(client *Client, createHREF *url.URL, catalogItemName, itemDescription, vappTemplateRemoteUrl string) (*url.URL, error) {
+	util.Logger.Printf("[TRACE] createItemWithLink: %s, item name: %s, description: %s, vappTemplateRemoteUrl: %s \n",
+		createHREF, catalogItemName, itemDescription, vappTemplateRemoteUrl)
+
+	reqTemplate := `<UploadVAppTemplateParams xmlns="%s" name="%s" sourceHref="%s"><Description>%s</Description></UploadVAppTemplateParams>`
+	reqBody := bytes.NewBufferString(fmt.Sprintf(reqTemplate, types.XMLNamespaceVCloud, catalogItemName, vappTemplateRemoteUrl, itemDescription))
+	request := client.NewRequest(map[string]string{}, http.MethodPost, *createHREF, reqBody)
+	request.Header.Add("Content-Type", "application/vnd.vmware.vcloud.uploadVAppTemplateParams+xml")
+
+	response, err := checkResp(client.Http.Do(request))
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	catalogItemParsed := &types.CatalogItem{}
+	if err = decodeBody(types.BodyTypeXML, response, catalogItemParsed); err != nil {
+		return nil, err
+	}
+
+	util.Logger.Printf("[TRACE] Catalog item parsed: %#v\n", catalogItemParsed)
+
+	vappTemplateUrl, err := url.ParseRequestURI(catalogItemParsed.Entity.HREF)
+	if err != nil {
+		return nil, err
+	}
+
+	return vappTemplateUrl, nil
 }
 
 // Helper method to get path to multi-part files.
@@ -635,7 +725,7 @@ func removeCatalogItemOnError(client *Client, vappTemplateLink *url.URL, itemNam
 		for {
 			util.Logger.Printf("[TRACE] Sleep... for 5 seconds.\n")
 			time.Sleep(time.Second * 5)
-			vAppTemplate, err = queryVappTemplate(client, vappTemplateLink, itemName)
+			vAppTemplate, err = queryVappTemplateAndVerifyTask(client, vappTemplateLink, itemName)
 			if err != nil {
 				util.Logger.Printf("[Error] Error deleting Catalog item %s: %s", vappTemplateLink, err)
 			}

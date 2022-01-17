@@ -194,6 +194,7 @@ type TestConfig struct {
 		OvaMultiVmPath     string `yaml:"ovaMultiVmPath,omitempty"`
 		OvaWithoutSizePath string `yaml:"ovaWithoutSizePath,omitempty"`
 		OvfPath            string `yaml:"ovfPath,omitempty"`
+		OvfUrl             string `yaml:"ovfUrl,omitempty"`
 	} `yaml:"ova"`
 	Media struct {
 		MediaPath       string `yaml:"mediaPath,omitempty"`
