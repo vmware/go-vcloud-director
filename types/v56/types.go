@@ -984,19 +984,20 @@ type CatalogItems struct {
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/types/CatalogType.html
 // Since: 0.9
 type Catalog struct {
-	HREF          string           `xml:"href,attr,omitempty"`
-	Type          string           `xml:"type,attr,omitempty"`
-	ID            string           `xml:"id,attr,omitempty"`
-	OperationKey  string           `xml:"operationKey,attr,omitempty"`
-	Name          string           `xml:"name,attr"`
-	CatalogItems  []*CatalogItems  `xml:"CatalogItems,omitempty"`
-	DateCreated   string           `xml:"DateCreated,omitempty"`
-	Description   string           `xml:"Description,omitempty"`
-	IsPublished   bool             `xml:"IsPublished,omitempty"`
-	Link          LinkList         `xml:"Link,omitempty"`
-	Owner         *Owner           `xml:"Owner,omitempty"`
-	Tasks         *TasksInProgress `xml:"Tasks,omitempty"`
-	VersionNumber int64            `xml:"VersionNumber,omitempty"`
+	HREF                         string                        `xml:"href,attr,omitempty"`
+	Type                         string                        `xml:"type,attr,omitempty"`
+	ID                           string                        `xml:"id,attr,omitempty"`
+	OperationKey                 string                        `xml:"operationKey,attr,omitempty"`
+	Name                         string                        `xml:"name,attr"`
+	CatalogItems                 []*CatalogItems               `xml:"CatalogItems,omitempty"`
+	DateCreated                  string                        `xml:"DateCreated,omitempty"`
+	Description                  string                        `xml:"Description,omitempty"`
+	IsPublished                  bool                          `xml:"IsPublished,omitempty"`
+	Link                         LinkList                      `xml:"Link,omitempty"`
+	Owner                        *Owner                        `xml:"Owner,omitempty"`
+	Tasks                        *TasksInProgress              `xml:"Tasks,omitempty"`
+	VersionNumber                int64                         `xml:"VersionNumber,omitempty"`
+	PublishExternalCatalogParams *PublishExternalCatalogParams `xml:"PublishExternalCatalogParams,omitempty"`
 }
 
 // AdminCatalog represents the Admin view of a Catalog object.
@@ -1021,11 +1022,12 @@ type AdminCatalog struct {
 // Description: Represents the configuration parameters of a catalog published externally.
 // Since: 5.5
 type PublishExternalCatalogParams struct {
-	IsCachedEnabled          bool   `xml:"IsCacheEnabled,omitempty"`
-	IsPublishedExternally    bool   `xml:"IsPublishedExternally,omitempty"`
-	Password                 string `xml:"Password,omitempty"`
-	PreserveIdentityInfoFlag bool   `xml:"PreserveIdentityInfoFlag,omitempty"`
-	CatalogPublishedUrl      string `xml:"catalogPublishedUrl,omitempty"`
+	Xmlns                    string `xml:"xmlns,attr,omitempty"`
+	IsPublishedExternally    *bool  `xml:"IsPublishedExternally,omitempty"`    // True enables external publication as configured by these parameters.
+	CatalogPublishedUrl      string `xml:"catalogPublishedUrl,omitempty"`      // Read-only endpoint URL supplied by the server. External subscribers can connect to the catalog at this URL.
+	Password                 string `xml:"Password,omitempty"`                 // Password required when connecting to the endpoint.
+	IsCachedEnabled          *bool  `xml:"IsCacheEnabled,omitempty"`           // True enables content caching for this catalog. All items in the catalog are created and stored in transfer storage. If false, items are not placed in transfer storage until they are requested by a subscriber. Note that access to this attribute is reserved to users with role that includes the right 'Catalog: VCSP Publish Subscribe Caching'.
+	PreserveIdentityInfoFlag *bool  `xml:"PreserveIdentityInfoFlag,omitempty"` // True includes BIOS UUIDs and MAC addresses in the downloaded OVF package. If false, those information will be excluded.
 }
 
 // ExternalCatalogSubscription represents the configuration parameters for a catalog that has an external subscription

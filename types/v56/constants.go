@@ -135,6 +135,8 @@ const (
 	MimeUpdateVdcStorageProfiles = "application/vnd.vmware.admin.updateVdcStorageProfiles+xml"
 	// Mime to modify lease settings
 	MimeLeaseSettingSection = "application/vnd.vmware.vcloud.leaseSettingsSection+xml"
+	// Mime to publish external catalog
+	PublishExternalCatalog = "application/vnd.vmware.admin.publishExternalCatalogParams+xml"
 )
 
 const (
