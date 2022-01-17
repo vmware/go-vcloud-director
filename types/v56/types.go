@@ -1447,6 +1447,25 @@ type VAppTemplate struct {
 	// Section               Section              `xml:"Section,omitempty"`
 }
 
+// VAppTemplateForUpdate represents a vApp template.
+// It is shrunken version of VAppTemplateType used for update calls.
+// Full VAppTemplateType isn't accepted by API
+// Type: VAppTemplateType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents a vApp template.
+type VAppTemplateForUpdate struct {
+	XMLName xml.Name `xml:"VAppTemplate"`
+	// Attributes
+	Xmlns      string `xml:"xmlns,attr,omitempty"`
+	HREF       string `xml:"href,attr,omitempty"`       // The URI of the entity.
+	ID         string `xml:"id,attr,omitempty"`         // The entity identifier, expressed in URN format. The value of this attribute uniquely identifies the entity, persists for the life of the entity, and is never reused.
+	Name       string `xml:"name,attr"`                 // The name of the entity.
+	GoldMaster bool   `xml:"goldMaster,attr,omitempty"` // True if this template is a gold master.
+	// Elements
+	Link        LinkList `xml:"Link,omitempty"`        // A reference to an entity or operation associated with this object.
+	Description string   `xml:"Description,omitempty"` // Optional description.
+}
+
 // VMDiskChange represents a virtual machine only with Disk setting update part
 type VMDiskChange struct {
 	XMLName xml.Name `xml:"Vm"`

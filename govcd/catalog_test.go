@@ -862,3 +862,38 @@ func (vcd *TestVCD) Test_PublishToExternalOrganizations(check *C) {
 	err = catalog.Delete(true, true)
 	check.Assert(err, IsNil)
 }
+
+// Tests System function UploadOvfByLink and verifies that
+// Task.GetTaskProgress returns values of progress.
+func (vcd *TestVCD) Test_UploadOvfByLink_progress_works(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	if vcd.config.OVA.OvfUrl == "" {
+		check.Skip("Skipping test because no OVF URL given")
+	}
+
+	itemName := TestUploadOvf + "URL"
+
+	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+
+	uploadTask, err := catalog.UploadOvfByLink(vcd.config.OVA.OvfUrl, itemName, "upload from test")
+	check.Assert(err, IsNil)
+	check.Assert(uploadTask, NotNil)
+
+	for {
+		if value, err := uploadTask.GetTaskProgress(); value == "100" || err != nil {
+			check.Assert(err, IsNil)
+			break
+		} else {
+			check.Assert(value, Not(Equals), "")
+		}
+	}
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_UploadOvfByLink_progress_works")
+
+	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	verifyCatalogItemUploaded(check, catalog, itemName)
+}
