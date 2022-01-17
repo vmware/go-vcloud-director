@@ -29,6 +29,14 @@ func NewAdminCatalog(client *Client) *AdminCatalog {
 	}
 }
 
+func NewAdminCatalogWithParent(client *Client, parent organization) *AdminCatalog {
+	return &AdminCatalog{
+		AdminCatalog: new(types.AdminCatalog),
+		client:       client,
+		parent:       parent,
+	}
+}
+
 // Delete deletes the Catalog, returning an error if the vCD call fails.
 // Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Catalog.html
 func (adminCatalog *AdminCatalog) Delete(force, recursive bool) error {
@@ -91,4 +99,33 @@ func (adminCatalog *AdminCatalog) Refresh() error {
 // getOrgInfo finds the organization to which the admin catalog belongs, and returns its name and ID
 func (adminCatalog *AdminCatalog) getOrgInfo() (*TenantContext, error) {
 	return adminCatalog.getTenantContext()
+}
+
+// PublishToExternalOrganizations publishes a catalog to external organizations.
+func (cat *AdminCatalog) PublishToExternalOrganizations(publishExternalCatalog types.PublishExternalCatalogParams) error {
+	if cat.AdminCatalog == nil {
+		return fmt.Errorf("cannot publish to external organization, Object is empty")
+	}
+
+	url := cat.AdminCatalog.HREF
+	if url == "nil" || url == "" {
+		return fmt.Errorf("cannot publish to external organization, HREF is empty")
+	}
+
+	tenantContext, err := cat.getTenantContext()
+	if err != nil {
+		return fmt.Errorf("cannot publish to external organization, tenant context error: %s", err)
+	}
+
+	err = publishToExternalOrganizations(cat.client, url, tenantContext, publishExternalCatalog)
+	if err != nil {
+		return err
+	}
+
+	err = cat.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return err
 }

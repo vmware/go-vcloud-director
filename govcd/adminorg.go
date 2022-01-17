@@ -40,17 +40,23 @@ func NewAdminOrg(cli *Client) *AdminOrg {
 // task.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-CreateCatalog.html
 func (adminOrg *AdminOrg) CreateCatalog(name, description string) (AdminCatalog, error) {
-	catalog, err := adminOrg.CreateCatalogWithStorageProfile(name, description, nil)
+	adminCatalog, err := adminOrg.CreateCatalogWithStorageProfile(name, description, nil)
 	if err != nil {
 		return AdminCatalog{}, err
 	}
-	catalog.parent = adminOrg
-	return *catalog, nil
+	adminCatalog.parent = adminOrg
+	return *adminCatalog, nil
 }
 
 // CreateCatalogWithStorageProfile is like CreateCatalog, but allows to specify storage profile
 func (adminOrg *AdminOrg) CreateCatalogWithStorageProfile(name, description string, storageProfiles *types.CatalogStorageProfiles) (*AdminCatalog, error) {
-	return CreateCatalogWithStorageProfile(adminOrg.client, adminOrg.AdminOrg.Link, name, description, storageProfiles)
+	adminCatalog, err := CreateCatalogWithStorageProfile(adminOrg.client, adminOrg.AdminOrg.Link, name, description, storageProfiles)
+	if err != nil {
+		return nil, err
+	}
+	adminCatalogWithParent := NewAdminCatalogWithParent(adminOrg.client, adminOrg)
+	adminCatalogWithParent.AdminCatalog = adminCatalog.AdminCatalog
+	return adminCatalogWithParent, nil
 }
 
 // GetAllVDCs returns all depending VDCs for a particular Org

@@ -759,6 +759,15 @@ func (client *Client) RemoveCustomHeader() {
 	}
 }
 
+// RemoveProvidedCustomHeaders removes custom header values from the client
+func (client *Client) RemoveProvidedCustomHeaders(values map[string]string) {
+	if client.customHeader != nil {
+		for k := range values {
+			client.customHeader.Del(k)
+		}
+	}
+}
+
 // ---------------------------------------------------------------------
 // The following functions are needed to avoid strict Coverity warnings
 // ---------------------------------------------------------------------

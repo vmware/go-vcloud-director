@@ -549,7 +549,7 @@ func findFilePath(filesAbsPaths []string, fileName string) string {
 
 // Initiates creation of item and returns ovf upload url for created item.
 func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName string, itemDescription string) (*url.URL, error) {
-	util.Logger.Printf("[TRACE] createItemForUpload: %s, item name: %v, description: %v \n", createHREF, catalogItemName, itemDescription)
+	util.Logger.Printf("[TRACE] createItemForUpload: %s, item name: %s, description: %s \n", createHREF, catalogItemName, itemDescription)
 	reqBody := bytes.NewBufferString(
 		"<UploadVAppTemplateParams xmlns=\"" + types.XMLNamespaceVCloud + "\" name=\"" + catalogItemName + "\" >" +
 			"<Description>" + itemDescription + "</Description>" +
@@ -925,4 +925,47 @@ func (catalog *Catalog) getOrgInfo() (*TenantContext, error) {
 	}
 
 	return org.tenantContext()
+}
+
+func publishToExternalOrganizations(client *Client, url string, tenantContext *TenantContext, publishExternalCatalog types.PublishExternalCatalogParams) error {
+	url = url + "/action/publishToExternalOrganizations"
+
+	publishExternalCatalog.Xmlns = types.XMLNamespaceVCloud
+
+	if tenantContext != nil {
+		client.SetCustomHeader(getTenantContextHeader(tenantContext))
+	}
+
+	err := client.ExecuteRequestWithoutResponse(url, http.MethodPost,
+		types.PublishExternalCatalog, "error publishing to external organization: %s", publishExternalCatalog)
+
+	if tenantContext != nil {
+		client.RemoveProvidedCustomHeaders(getTenantContextHeader(tenantContext))
+	}
+
+	return err
+}
+
+// PublishToExternalOrganizations publishes a catalog to external organizations.
+func (cat *Catalog) PublishToExternalOrganizations(publishExternalCatalog types.PublishExternalCatalogParams) error {
+	if cat.Catalog == nil {
+		return fmt.Errorf("cannot publish to external organization, Object is empty")
+	}
+
+	url := cat.Catalog.HREF
+	if url == "nil" || url == "" {
+		return fmt.Errorf("cannot publish to external organization, HREF is empty")
+	}
+
+	err := publishToExternalOrganizations(cat.client, url, nil, publishExternalCatalog)
+	if err != nil {
+		return err
+	}
+
+	err = cat.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return err
 }

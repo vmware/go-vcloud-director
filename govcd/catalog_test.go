@@ -789,6 +789,80 @@ func cleanupCatalogOrgVdc(check *C, sharedCatalog Catalog, vdc *Vdc, vcd *TestVC
 	check.Assert(err, IsNil)
 }
 
+// Creates a Catalog. Publishes catalog to external Org and then deletes the catalog.
+func (vcd *TestVCD) Test_PublishToExternalOrganizations(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	// test with AdminCatalog
+	catalogName := check.TestName()
+	catalogDescription := check.TestName() + " description"
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	adminCatalog, err := adminOrg.CreateCatalog(catalogName, catalogDescription)
+	check.Assert(err, IsNil)
+	check.Assert(adminCatalog.AdminCatalog.Name, Equals, catalogName)
+	check.Assert(adminCatalog.AdminCatalog.Description, Equals, catalogDescription)
+
+	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName())
+
+	err = adminCatalog.PublishToExternalOrganizations(types.PublishExternalCatalogParams{
+		IsPublishedExternally:    takeBoolPointer(true),
+		IsCachedEnabled:          takeBoolPointer(true),
+		Password:                 "secretOrNot",
+		PreserveIdentityInfoFlag: takeBoolPointer(true),
+	})
+	check.Assert(err, IsNil)
+	check.Assert(*adminCatalog.AdminCatalog.PublishExternalCatalogParams.IsPublishedExternally, Equals, true)
+	check.Assert(*adminCatalog.AdminCatalog.PublishExternalCatalogParams.PreserveIdentityInfoFlag, Equals, true)
+	check.Assert(*adminCatalog.AdminCatalog.PublishExternalCatalogParams.IsCachedEnabled, Equals, true)
+	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.Password, Equals, "******")
+
+	err = adminCatalog.Delete(true, true)
+	check.Assert(err, IsNil)
+
+	// test with Catalog
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	catalog, err := org.CreateCatalog(catalogName, catalogDescription)
+	check.Assert(err, IsNil)
+	check.Assert(catalog.Catalog.Name, Equals, catalogName)
+	check.Assert(catalog.Catalog.Description, Equals, catalogDescription)
+
+	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName())
+
+	err = catalog.PublishToExternalOrganizations(types.PublishExternalCatalogParams{
+		IsPublishedExternally:    takeBoolPointer(true),
+		IsCachedEnabled:          takeBoolPointer(true),
+		Password:                 "secretOrNot",
+		PreserveIdentityInfoFlag: takeBoolPointer(true),
+	})
+	check.Assert(err, IsNil)
+	check.Assert(*catalog.Catalog.PublishExternalCatalogParams.IsPublishedExternally, Equals, true)
+	check.Assert(*catalog.Catalog.PublishExternalCatalogParams.PreserveIdentityInfoFlag, Equals, true)
+	check.Assert(*catalog.Catalog.PublishExternalCatalogParams.IsCachedEnabled, Equals, true)
+	check.Assert(catalog.Catalog.PublishExternalCatalogParams.Password, Equals, "******")
+
+	err = catalog.PublishToExternalOrganizations(types.PublishExternalCatalogParams{
+		IsPublishedExternally:    takeBoolPointer(true),
+		IsCachedEnabled:          takeBoolPointer(false),
+		Password:                 "secretOrNot2",
+		PreserveIdentityInfoFlag: takeBoolPointer(false),
+	})
+	check.Assert(err, IsNil)
+	check.Assert(*catalog.Catalog.PublishExternalCatalogParams.IsPublishedExternally, Equals, true)
+	check.Assert(*catalog.Catalog.PublishExternalCatalogParams.PreserveIdentityInfoFlag, Equals, false)
+	check.Assert(*catalog.Catalog.PublishExternalCatalogParams.IsCachedEnabled, Equals, false)
+	check.Assert(catalog.Catalog.PublishExternalCatalogParams.Password, Equals, "******")
+
+	err = catalog.Delete(true, true)
+	check.Assert(err, IsNil)
+}
+
 // Tests System function UploadOvfByLink and verifies that
 // Task.GetTaskProgress returns values of progress.
 func (vcd *TestVCD) Test_UploadOvfByLink_progress_works(check *C) {
