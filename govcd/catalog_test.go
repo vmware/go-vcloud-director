@@ -130,10 +130,10 @@ func (vcd *TestVCD) Test_DeleteCatalog(check *C) {
 	check.Assert(err, IsNil)
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
-	AddToCleanupList(TestDeleteCatalog, "catalog", vcd.config.VCD.Org, "Test_DeleteCatalog")
+	AddToCleanupList(TestDeleteCatalog, "catalog", vcd.config.VCD.Org, check.TestName())
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, TestDeleteCatalog)
 
-	checkUploadOvf(vcd, check, vcd.config.OVA.OvaPath, TestDeleteCatalog, TestUploadOvf)
+	checkUploadOvf(vcd, check, vcd.config.OVA.OvaPath, TestDeleteCatalog, TestUploadOvf+"_"+check.TestName())
 	err = adminCatalog.Delete(false, false)
 	check.Assert(err, NotNil)
 	// Catalog is not empty. An attempt to delete without recursion will fail
