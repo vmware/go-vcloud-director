@@ -30,4 +30,4 @@ an issue or PR.
 
 **Attribution**
 
-This Code of Conduct is adapted from the VMware Clarity project, available at this page: https://github.com/vmware/clarity/blob/master/CODE_OF_CONDUCT.md
+This Code of Conduct is adapted from the VMware Clarity project, available at this page: https://github.com/vmware/clarity/blob/next/docs/CODE_OF_CONDUCT.md

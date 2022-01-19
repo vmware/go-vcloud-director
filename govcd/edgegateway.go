@@ -1174,7 +1174,7 @@ func (egw *EdgeGateway) UpdateLBGeneralParams(enabled, accelerationEnabled, logg
 }
 
 // GetFirewallConfig retrieves firewall configuration and can be used
-// to alter master configuration options. These are 3 fields only:
+// to alter main configuration options. These are 3 fields only:
 // FirewallConfigWithXml.Enabled, FirewallConfigWithXml.DefaultPolicy.LoggingEnabled and
 // FirewallConfigWithXml.DefaultPolicy.Action
 func (egw *EdgeGateway) GetFirewallConfig() (*types.FirewallConfigWithXml, error) {

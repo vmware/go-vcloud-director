@@ -24,7 +24,7 @@ After a release, the changelog will be initialized with the following template:
 ```
     ## $VERSION (Unreleased)
 
-    Changes in progress for v$VERSION are available at [.changes/v$VERSION](https://github.com/vmware/go-vcloud-director/tree/master/.changes/v$VERSION) until the release.
+    Changes in progress for v$VERSION are available at [.changes/v$VERSION](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v$VERSION) until the release.
 ```
 
 Run `.changes/init.sh version` to get the needed text
