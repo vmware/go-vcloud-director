@@ -31,7 +31,7 @@ contributors.  Typical contribution flow steps are:
 - Update Go modules files `go.mod` and `go.sum` if you're changing dependencies.
 - Fetch changes from upstream and resolve any merge conflicts so that your topic branch is up-to-date
 - Push all commits to the topic branch in your forked repo
-- Submit a pull request to merge topic branch commits to upstream master
+- Submit a pull request to merge topic branch commits to upstream main
 
 If this process sounds unfamiliar have a look at the
 excellent [overview of collaboration via pull requests on
@@ -102,11 +102,11 @@ the fork up to date. More on that shortly.
 
 ### Make Changes and Commit
 
-Start a new topic branch from the current HEAD position on master and
+Start a new topic branch from the current HEAD position on main and
 commit your feature changes into that branch.  
 
 ``` shell
-git checkout -b foo-api-fix-22 master
+git checkout -b foo-api-fix-22 main
 # (Make feature changes)
 git commit -a --signoff
 git push origin foo-api-fix-22
@@ -131,7 +131,7 @@ them now](https://stackoverflow.com/questions/161813/how-to-resolve-merge-confli
 ``` shell
 git checkout foo-api-fix-22
 git fetch -a
-git pull --rebase upstream master --tags
+git pull --rebase upstream main --tags
 git push --force-with-lease origin foo-api-fix-22
 ```
 
@@ -159,7 +159,7 @@ To contribute your feature, create a pull request by going to the [go-vcloud-dir
 
 Select 'compare across forks' and select imahacker/go-vcloud-director as 'head fork'
 and foo-api-fix-22 as the 'compare' branch.  Leave the base fork as 
-vmware/go-vcloud-director and master. 
+vmware/go-vcloud-director and main. 
 
 ### Wait...
 
@@ -193,7 +193,7 @@ If you need to squash changes into an earlier commit, you can use:
 ``` shell
 git add .
 git commit --fixup <commit>
-git rebase -i --autosquash master
+git rebase -i --autosquash main
 git push --force-with-lease origin foo-api-fix-22
 ```
 
