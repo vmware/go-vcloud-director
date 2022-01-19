@@ -115,7 +115,7 @@ func (client *Client) ExecuteRequestWithCustomError(pathURL, requestType, conten
 In addition to saving code and time by reducing the boilerplate, these functions also trigger debugging calls that make the code 
 easier to monitor.
 Using any of the above calls will result in the standard log i
-(See [LOGGING.md](https://github.com/vmware/go-vcloud-director/blob/master/util/LOGGING.md)) recording all the requests and responses
+(See [LOGGING.md](https://github.com/vmware/go-vcloud-director/blob/main/util/LOGGING.md)) recording all the requests and responses
 on demand, and also triggering debug output for specific calls (see `enableDebugShowRequest` and `enableDebugShowResponse`
 and the corresponding `disable*` in `api.go`).
 
@@ -479,4 +479,4 @@ When the tenant context is not needed (system administration calls), we just pas
 
 ## Testing
 
-Every feature in the library must include testing. See [TESTING.md](https://github.com/vmware/go-vcloud-director/blob/master/TESTING.md) for more info.
+Every feature in the library must include testing. See [TESTING.md](https://github.com/vmware/go-vcloud-director/blob/main/TESTING.md) for more info.
