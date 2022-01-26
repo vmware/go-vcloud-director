@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -10,6 +10,13 @@ import (
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+)
+
+const (
+	MetadataStringValue   string = "MetadataStringValue"
+	MetadataNumberValue   string = "MetadataNumberValue"
+	MetadataDateTimeValue string = "MetadataDateTimeValue"
+	MetadataBooleanValue  string = "MetadataBooleanValue"
 )
 
 // GetMetadata calls private function getMetadata() with vm.client and vm.VM.HREF
@@ -27,7 +34,7 @@ func (vm *VM) DeleteMetadata(key string) (Task, error) {
 // AddMetadata calls private function addMetadata() with vm.client and vm.VM.HREF
 // which adds metadata key/value pair provided as input to VM.
 func (vm *VM) AddMetadata(key string, value string) (Task, error) {
-	return addMetadata(vm.client, key, value, vm.VM.HREF)
+	return addMetadata(vm.client, MetadataStringValue, key, value, vm.VM.HREF)
 }
 
 // GetMetadata returns meta data for VDC.
@@ -57,7 +64,7 @@ func (vdc *Vdc) DeleteMetadata(key string) (Vdc, error) {
 
 // AddMetadata adds metadata key/value pair provided as input to VDC.
 func (vdc *Vdc) AddMetadata(key string, value string) (Vdc, error) {
-	task, err := addMetadata(vdc.client, key, value, getAdminVdcURL(vdc.Vdc.HREF))
+	task, err := addMetadata(vdc.client, MetadataStringValue, key, value, getAdminVdcURL(vdc.Vdc.HREF))
 	if err != nil {
 		return Vdc{}, err
 	}
@@ -78,7 +85,7 @@ func (vdc *Vdc) AddMetadata(key string, value string) (Vdc, error) {
 // AddMetadata adds metadata key/value pair provided as input to VDC.
 // and returns task
 func (vdc *Vdc) AddMetadataAsync(key string, value string) (Task, error) {
-	return addMetadata(vdc.client, key, value, getAdminVdcURL(vdc.Vdc.HREF))
+	return addMetadata(vdc.client, MetadataStringValue, key, value, getAdminVdcURL(vdc.Vdc.HREF))
 }
 
 // DeleteMetadata() function deletes metadata by key provided as input
@@ -126,17 +133,17 @@ func deleteMetadata(client *Client, key string, requestUri string) (Task, error)
 // AddMetadata calls private function addMetadata() with vapp.client and vapp.VApp.HREF
 // which adds metadata key/value pair provided as input
 func (vapp *VApp) AddMetadata(key string, value string) (Task, error) {
-	return addMetadata(vapp.client, key, value, vapp.VApp.HREF)
+	return addMetadata(vapp.client, MetadataStringValue, key, value, vapp.VApp.HREF)
 }
 
 // Adds metadata (type MetadataStringValue) to the vApp
 // TODO: Support all MetadataTypedValue types with this function
-func addMetadata(client *Client, key string, value string, requestUri string) (Task, error) {
+func addMetadata(client *Client, typedValue, key, value, requestUri string) (Task, error) {
 	newMetadata := &types.MetadataValue{
 		Xmlns: types.XMLNamespaceVCloud,
 		Xsi:   types.XMLNamespaceXSI,
 		TypedValue: &types.TypedValue{
-			XsiType: "MetadataStringValue",
+			XsiType: typedValue,
 			Value:   value,
 		},
 	}
@@ -177,7 +184,7 @@ func (vAppTemplate *VAppTemplate) AddMetadata(key string, value string) (*VAppTe
 // AddMetadataAsync calls private function addMetadata() with vAppTemplate.client and vAppTemplate.VAppTemplate.HREF
 // which adds metadata key/value pair provided as input.
 func (vAppTemplate *VAppTemplate) AddMetadataAsync(key string, value string) (Task, error) {
-	return addMetadata(vAppTemplate.client, key, value, vAppTemplate.VAppTemplate.HREF)
+	return addMetadata(vAppTemplate.client, MetadataStringValue, key, value, vAppTemplate.VAppTemplate.HREF)
 }
 
 // DeleteMetadata deletes metadata depending on key provided as input from media item.
@@ -231,7 +238,7 @@ func (mediaItem *MediaItem) AddMetadata(key string, value string) (*MediaItem, e
 // which adds metadata key/value pair provided as input.
 // Deprecated: Use MediaRecord.AddMetadataAsync
 func (mediaItem *MediaItem) AddMetadataAsync(key string, value string) (Task, error) {
-	return addMetadata(mediaItem.vdc.client, key, value, mediaItem.MediaItem.HREF)
+	return addMetadata(mediaItem.vdc.client, MetadataStringValue, key, value, mediaItem.MediaItem.HREF)
 }
 
 // DeleteMetadata deletes metadata depending on key provided as input from media item.
@@ -284,7 +291,7 @@ func (mediaRecord *MediaRecord) AddMetadata(key string, value string) (*MediaRec
 // AddMetadataAsync calls private function addMetadata() with MediaRecord.client and MediaRecord.MediaRecord.HREF
 // which adds metadata key/value pair provided as input.
 func (mediaRecord *MediaRecord) AddMetadataAsync(key string, value string) (Task, error) {
-	return addMetadata(mediaRecord.client, key, value, mediaRecord.MediaRecord.HREF)
+	return addMetadata(mediaRecord.client, MetadataStringValue, key, value, mediaRecord.MediaRecord.HREF)
 }
 
 // DeleteMetadata deletes metadata depending on key provided as input from media item.
@@ -335,7 +342,7 @@ func (media *Media) AddMetadata(key string, value string) (*Media, error) {
 // AddMetadataAsync calls private function addMetadata() with Media.client and Media.Media.HREF
 // which adds metadata key/value pair provided as input.
 func (media *Media) AddMetadataAsync(key string, value string) (Task, error) {
-	return addMetadata(media.client, key, value, media.Media.HREF)
+	return addMetadata(media.client, MetadataStringValue, key, value, media.Media.HREF)
 }
 
 // DeleteMetadata deletes metadata depending on key provided as input from media item.
@@ -356,4 +363,52 @@ func (media *Media) DeleteMetadata(key string) error {
 // which deletes metadata depending on key provided as input from media item.
 func (media *Media) DeleteMetadataAsync(key string) (Task, error) {
 	return deleteMetadata(media.client, key, media.Media.HREF)
+}
+
+// GetMetadata TODO
+func (adminCatalog *AdminCatalog) GetMetadata() (*types.Metadata, error) {
+	return getMetadata(adminCatalog.client, adminCatalog.AdminCatalog.HREF)
+}
+
+// AddMetadata TODO
+func (adminCatalog *AdminCatalog) AddMetadata(typedValue, key, value string) (*AdminCatalog, error) {
+	task, err := adminCatalog.AddMetadataAsync(typedValue, key, value)
+	if err != nil {
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("error completing add metadata for media item task: %s", err)
+	}
+
+	err = adminCatalog.Refresh()
+	if err != nil {
+		return nil, fmt.Errorf("error refreshing media item: %s", err)
+	}
+
+	return adminCatalog, nil
+}
+
+// AddMetadataAsync TODO
+func (catalog *AdminCatalog) AddMetadataAsync(typedValue, key, value string) (Task, error) {
+	return addMetadata(catalog.client, typedValue, key, value, catalog.AdminCatalog.HREF)
+}
+
+// DeleteMetadata TODO
+func (adminCatalog *AdminCatalog) DeleteMetadata(key string) error {
+	task, err := adminCatalog.DeleteMetadataAsync(key)
+	if err != nil {
+		return err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error completing delete metadata for media item task: %s", err)
+	}
+
+	return nil
+}
+
+// DeleteMetadataAsync TODO
+func (adminCatalog *AdminCatalog) DeleteMetadataAsync(key string) (Task, error) {
+	return deleteMetadata(adminCatalog.client, key, adminCatalog.AdminCatalog.HREF)
 }
