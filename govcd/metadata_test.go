@@ -2,7 +2,7 @@
 // +build vapp vdc metadata functional ALL
 
 /*
- * Copyright 2018 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -380,4 +380,76 @@ func (vcd *TestVCD) Test_AddMetadataOnMediaRecord(check *C) {
 	check.Assert(len(metadata.MetadataEntry), Equals, 1)
 	check.Assert(metadata.MetadataEntry[0].Key, Equals, "key")
 	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
+}
+
+func (vcd *TestVCD) Test_MetadataOnCatalogCRUD(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	var catalogName string = check.TestName()
+
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	catalog, err := vcd.org.CreateCatalog(catalogName, catalogName)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+	AddToCleanupList(catalogName, "catalog", org.AdminOrg.Name, catalogName)
+
+	adminCatalog, err := org.GetAdminCatalogByName(catalogName, true)
+	check.Assert(err, IsNil)
+	check.Assert(adminCatalog, NotNil)
+
+	metadata, err := adminCatalog.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+
+	testData := map[string]struct {
+		value string
+		kind  string
+	}{
+		"key1": {
+			value: "123",
+			kind:  MetadataNumberValue,
+		},
+		"key2": {
+			value: "myvalue",
+			kind:  MetadataStringValue,
+		},
+	}
+
+	for k, v := range testData {
+		task, err := adminCatalog.AddMetadataAsync(v.kind, k, v.value)
+		check.Assert(err, IsNil)
+		check.Assert(task, NotNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+
+	}
+
+	// Check if metadata was added correctly
+	metadata, err = adminCatalog.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, len(testData))
+
+	for k, v := range testData {
+		var foundEntry *types.MetadataEntry
+		for _, entry := range metadata.MetadataEntry {
+			if entry.Key == k {
+				foundEntry = entry
+				break
+			}
+		}
+		check.Assert(foundEntry, NotNil)
+		check.Assert(foundEntry.TypedValue.Value, Equals, v.value)
+	}
+
+	for k := range testData {
+		err = adminCatalog.DeleteMetadata(k)
+		check.Assert(err, IsNil)
+	}
+
+	err = adminCatalog.Delete(true, true)
+	check.Assert(err, IsNil)
 }
