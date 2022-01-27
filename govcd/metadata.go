@@ -137,7 +137,9 @@ func (vapp *VApp) AddMetadata(key string, value string) (Task, error) {
 }
 
 // Adds metadata (type MetadataStringValue) to the vApp
-// TODO: Support all MetadataTypedValue types with this function
+// TODO: The function now supports passing a typedValue. Use one of the consts defined in
+// this file. Only tested with MetadataStringValue and MetadataNumberValue.
+// In the future we might add the user access.
 func addMetadata(client *Client, typedValue, key, value, requestUri string) (Task, error) {
 	newMetadata := &types.MetadataValue{
 		Xmlns: types.XMLNamespaceVCloud,
@@ -365,12 +367,13 @@ func (media *Media) DeleteMetadataAsync(key string) (Task, error) {
 	return deleteMetadata(media.client, key, media.Media.HREF)
 }
 
-// GetMetadata TODO
+// GetMetadata calls private function getMetadata() with AdminCatalog.client and AdminCatalog.AdminCatalog.HREF
+// which returns a *types.Metadata struct for provided adminCatalog item input.
 func (adminCatalog *AdminCatalog) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(adminCatalog.client, adminCatalog.AdminCatalog.HREF)
 }
 
-// AddMetadata TODO
+// AddMetadata adds metadata typedValue and key/value pair provided as input.
 func (adminCatalog *AdminCatalog) AddMetadata(typedValue, key, value string) (*AdminCatalog, error) {
 	task, err := adminCatalog.AddMetadataAsync(typedValue, key, value)
 	if err != nil {
@@ -389,12 +392,13 @@ func (adminCatalog *AdminCatalog) AddMetadata(typedValue, key, value string) (*A
 	return adminCatalog, nil
 }
 
-// AddMetadataAsync TODO
+// AddMetadataAsync calls private function addMetadata() with AdminCatalog.client and AdminCatalog.AdminCatalog.HREF
+// which adds metadata typedvalue as well as its key/value pair provided as input.
 func (catalog *AdminCatalog) AddMetadataAsync(typedValue, key, value string) (Task, error) {
 	return addMetadata(catalog.client, typedValue, key, value, catalog.AdminCatalog.HREF)
 }
 
-// DeleteMetadata TODO
+// DeleteMetadata deletes metadata depending on key provided as input from media item.
 func (adminCatalog *AdminCatalog) DeleteMetadata(key string) error {
 	task, err := adminCatalog.DeleteMetadataAsync(key)
 	if err != nil {
@@ -408,7 +412,8 @@ func (adminCatalog *AdminCatalog) DeleteMetadata(key string) error {
 	return nil
 }
 
-// DeleteMetadataAsync TODO
+// DeleteMetadataAsync calls private function deleteMetadata() with AdminCatalog.client and AdminCatalog.AdminCatalog.HREF
+// which deletes metadata depending on key provided as input from adminCatalog item.
 func (adminCatalog *AdminCatalog) DeleteMetadataAsync(key string) (Task, error) {
 	return deleteMetadata(adminCatalog.client, key, adminCatalog.AdminCatalog.HREF)
 }
