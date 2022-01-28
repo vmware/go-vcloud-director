@@ -480,3 +480,11 @@ const (
 	// NsxtAlbCloudBackingTypeNsxtAlb is a backing type for NSX-T ALB used in types.NsxtAlbCloudBacking
 	NsxtAlbCloudBackingTypeNsxtAlb = "NSXALB_NSXT"
 )
+
+// Metadata type constants
+const (
+	MetadataStringValue   string = "MetadataStringValue"
+	MetadataNumberValue   string = "MetadataNumberValue"
+	MetadataDateTimeValue string = "MetadataDateTimeValue"
+	MetadataBooleanValue  string = "MetadataBooleanValue"
+)
