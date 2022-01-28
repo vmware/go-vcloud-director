@@ -382,7 +382,7 @@ func (vcd *TestVCD) Test_AddMetadataOnMediaRecord(check *C) {
 	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
 }
 
-func (vcd *TestVCD) Test_MetadataOnCatalogCRUD(check *C) {
+func (vcd *TestVCD) Test_MetadataOnAdminCatalogCRUD(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	var catalogName string = check.TestName()
@@ -410,11 +410,11 @@ func (vcd *TestVCD) Test_MetadataOnCatalogCRUD(check *C) {
 	}{
 		"key1": {
 			value: "123",
-			kind:  MetadataNumberValue,
+			kind:  types.MetadataNumberValue,
 		},
 		"key2": {
 			value: "myvalue",
-			kind:  MetadataStringValue,
+			kind:  types.MetadataStringValue,
 		},
 	}
 
@@ -442,7 +442,67 @@ func (vcd *TestVCD) Test_MetadataOnCatalogCRUD(check *C) {
 			}
 		}
 		check.Assert(foundEntry, NotNil)
+		// check.Assert(foundEntry.TypedValue.XsiType, Equals, v.kind) // known issue, check filter_helpers.go guessMetadataType() func
 		check.Assert(foundEntry.TypedValue.Value, Equals, v.value)
+	}
+
+	for k := range testData {
+		err = adminCatalog.DeleteMetadata(k)
+		check.Assert(err, IsNil)
+	}
+
+	err = adminCatalog.Delete(true, true)
+	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_ReadMetadataOnCatalog(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	var catalogName string = check.TestName()
+
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	catalog, err := vcd.org.CreateCatalog(catalogName, catalogName)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+	AddToCleanupList(catalogName, "catalog", org.AdminOrg.Name, catalogName)
+
+	adminCatalog, err := org.GetAdminCatalogByName(catalogName, true)
+	check.Assert(err, IsNil)
+	check.Assert(adminCatalog, NotNil)
+
+	// Add a couple of test metadata entries
+	testData := map[string]struct {
+		value string
+		kind  string
+	}{
+		"key1": {
+			value: "123",
+			kind:  types.MetadataNumberValue,
+		},
+		"key2": {
+			value: "myvalue",
+			kind:  types.MetadataStringValue,
+		},
+	}
+
+	for k, v := range testData {
+		_, err = adminCatalog.AddMetadata(v.kind, k, v.value)
+		check.Assert(err, IsNil)
+	}
+
+	// Try to read them from non admin view
+	metadata, err := catalog.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+
+	for _, metadataEntry := range metadata.MetadataEntry {
+		v, ok := testData[metadataEntry.Key]
+		check.Assert(ok, Equals, true) // check that the key exists
+		// check.Assert(metadataEntry.TypedValue.XsiType, Equals, v.kind) // known issue, check filter_helpers.go guessMetadataType() func
+		check.Assert(metadataEntry.TypedValue.Value, Equals, v.value) // check that the value is correct
 	}
 
 	for k := range testData {
