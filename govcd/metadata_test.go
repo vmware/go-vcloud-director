@@ -342,7 +342,7 @@ func (vcd *TestVCD) Test_AddMetadataOnMediaRecord(check *C) {
 
 	//prepare media item
 	skipWhenMediaPathMissing(vcd, check)
-	itemName := "TestAddMediaMetaData"
+	itemName := "TestAddMediaMetaDataEntry"
 
 	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
@@ -413,16 +413,13 @@ func (vcd *TestVCD) Test_MetadataOnAdminCatalogCRUD(check *C) {
 			kind:  types.MetadataNumberValue,
 		},
 		"key2": {
-			value: "myvalue",
+			value: "value2",
 			kind:  types.MetadataStringValue,
 		},
 	}
 
 	for k, v := range testData {
-		task, err := adminCatalog.AddMetadataAsync(v.kind, k, v.value)
-		check.Assert(err, IsNil)
-		check.Assert(task, NotNil)
-		err = task.WaitTaskCompletion()
+		err := adminCatalog.AddMetadataEntry(v.kind, k, v.value)
 		check.Assert(err, IsNil)
 
 	}
@@ -447,7 +444,7 @@ func (vcd *TestVCD) Test_MetadataOnAdminCatalogCRUD(check *C) {
 	}
 
 	for k := range testData {
-		err = adminCatalog.DeleteMetadata(k)
+		err = adminCatalog.DeleteMetadataEntry(k)
 		check.Assert(err, IsNil)
 	}
 
@@ -483,13 +480,13 @@ func (vcd *TestVCD) Test_ReadMetadataOnCatalog(check *C) {
 			kind:  types.MetadataNumberValue,
 		},
 		"key2": {
-			value: "myvalue",
+			value: "value2",
 			kind:  types.MetadataStringValue,
 		},
 	}
 
 	for k, v := range testData {
-		_, err = adminCatalog.AddMetadata(v.kind, k, v.value)
+		err = adminCatalog.AddMetadataEntry(v.kind, k, v.value)
 		check.Assert(err, IsNil)
 	}
 
@@ -506,10 +503,354 @@ func (vcd *TestVCD) Test_ReadMetadataOnCatalog(check *C) {
 	}
 
 	for k := range testData {
-		err = adminCatalog.DeleteMetadata(k)
+		err = adminCatalog.DeleteMetadataEntry(k)
 		check.Assert(err, IsNil)
 	}
 
 	err = adminCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_AddMetadataEntryForVdc(check *C) {
+	if vcd.config.VCD.Vdc == "" {
+		check.Skip("skipping test because VDC name is empty")
+	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	// Add metadata
+	err := vcd.vdc.AddMetadataEntry(types.MetadataStringValue, "key", "value")
+	check.Assert(err, IsNil)
+
+	AddToCleanupList("key", "vdcMetaData", vcd.org.Org.Name+"|"+vcd.config.VCD.Vdc, check.TestName())
+
+	// Check if metadata was added correctly
+	metadata, err := vcd.vdc.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, 1)
+	check.Assert(metadata.MetadataEntry[0].Key, Equals, "key")
+	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
+}
+
+func (vcd *TestVCD) Test_DeleteMetadataEntryForVdc(check *C) {
+	if vcd.config.VCD.Vdc == "" {
+		check.Skip("skipping test because VDC name is empty")
+	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	// Add metadata
+	err := vcd.vdc.AddMetadataEntry(types.MetadataStringValue, "key", "value")
+	check.Assert(err, IsNil)
+
+	AddToCleanupList("key", "vdcMetaData", vcd.org.Org.Name+"|"+vcd.config.VCD.Vdc, check.TestName())
+
+	// Remove metadata
+	err = vcd.vdc.DeleteMetadataEntry("key2")
+	check.Assert(err, IsNil)
+
+	metadata, err := vcd.vdc.GetMetadata()
+	check.Assert(err, IsNil)
+	for _, k := range metadata.MetadataEntry {
+		if k.Key == "key2" {
+			check.Errorf("metadata.MetadataEntry should not contain key: 'key2'")
+		}
+	}
+}
+
+func (vcd *TestVCD) Test_AddMetadataEntryOnVapp(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp was not successfully created at setup")
+	}
+	// Add metadata
+	err := vcd.vapp.AddMetadataEntry(types.MetadataStringValue, "key", "value")
+	check.Assert(err, IsNil)
+
+	// Check if metadata was added correctly
+	metadata, err := vcd.vapp.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, 1)
+	check.Assert(metadata.MetadataEntry[0].Key, Equals, "key")
+	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
+}
+
+func (vcd *TestVCD) Test_DeleteMetadataEntryOnVapp(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp was not successfully created at setup")
+	}
+	// Add metadata
+	err := vcd.vapp.AddMetadataEntry(types.MetadataStringValue, "key2", "value2")
+	check.Assert(err, IsNil)
+
+	// Remove metadata
+	err = vcd.vapp.DeleteMetadataEntry("key2")
+	check.Assert(err, IsNil)
+
+	metadata, err := vcd.vapp.GetMetadata()
+	check.Assert(err, IsNil)
+	for _, k := range metadata.MetadataEntry {
+		if k.Key == "key2" {
+			check.Errorf("metadata.MetadataEntry should not contain key: 'key2'")
+		}
+	}
+}
+
+func (vcd *TestVCD) Test_AddMetadataEntryOnVm(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
+	// Find VApp
+	if vcd.vapp.VApp == nil {
+		check.Skip("skipping test because no vApp is found")
+	}
+
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	vm := NewVM(&vcd.client.Client)
+	vm.VM = &vmType
+
+	// Add metadata
+	err := vm.AddMetadataEntry(types.MetadataStringValue, "key", "value")
+	check.Assert(err, IsNil)
+
+	// Check if metadata was added correctly
+	metadata, err := vm.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, 1)
+	check.Assert(metadata.MetadataEntry[0].Key, Equals, "key")
+	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
+}
+
+func (vcd *TestVCD) Test_DeleteMetadataEntryOnVm(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
+	// Find VApp
+	if vcd.vapp.VApp == nil {
+		check.Skip("skipping test because no vApp is found")
+	}
+
+	vapp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	vm := NewVM(&vcd.client.Client)
+	vm.VM = &vmType
+
+	// Add metadata
+	err := vm.AddMetadataEntry(types.MetadataStringValue, "key2", "value2")
+	check.Assert(err, IsNil)
+
+	// Remove metadata
+	err = vm.DeleteMetadataEntry("key2")
+	check.Assert(err, IsNil)
+
+	metadata, err := vm.GetMetadata()
+	check.Assert(err, IsNil)
+	for _, k := range metadata.MetadataEntry {
+		if k.Key == "key2" {
+			check.Errorf("metadata.MetadataEntry should not contain key: 'key2'")
+		}
+	}
+}
+
+func (vcd *TestVCD) Test_DeleteMetadataEntryOnVAppTemplate(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	if err != nil {
+		check.Skip("Test_DeleteMetadataOnCatalogItem: Catalog not found. Test can't proceed")
+		return
+	}
+
+	if vcd.config.VCD.Catalog.CatalogItem == "" {
+		check.Skip("Test_DeleteMetadataOnCatalogItem: Catalog Item not given. Test can't proceed")
+	}
+
+	catItem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	check.Assert(err, IsNil)
+	check.Assert(catItem, NotNil)
+	check.Assert(catItem.CatalogItem.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
+
+	vAppTemplate, err := catItem.GetVAppTemplate()
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplate, NotNil)
+	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
+
+	// Add metadata
+	err = vAppTemplate.AddMetadataEntry(types.MetadataStringValue, "key2", "value2")
+	check.Assert(err, IsNil)
+
+	// Remove metadata
+	err = vAppTemplate.DeleteMetadataEntry("key2")
+	check.Assert(err, IsNil)
+
+	metadata, err := vAppTemplate.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	for _, k := range metadata.MetadataEntry {
+		if k.Key == "key2" {
+			check.Errorf("metadata.MetadataEntry should not contain key: 'key2'")
+		}
+	}
+}
+
+func (vcd *TestVCD) Test_AddMetadataEntryOnVAppTemplate(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	if err != nil {
+		check.Skip("Test_DeleteMetadataOnCatalogItem: Catalog not found. Test can't proceed")
+		return
+	}
+
+	if vcd.config.VCD.Catalog.CatalogItem == "" {
+		check.Skip("Test_DeleteMetadataOnCatalogItem: Catalog Item not given. Test can't proceed")
+	}
+
+	catItem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	check.Assert(err, IsNil)
+	check.Assert(catItem, NotNil)
+	check.Assert(catItem.CatalogItem.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
+
+	vAppTemplate, err := catItem.GetVAppTemplate()
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplate, NotNil)
+	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
+
+	// Check how much metaData exist
+	metadata, err := vAppTemplate.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	existingMetaDataCount := len(metadata.MetadataEntry)
+
+	// Add metadata
+	err = vAppTemplate.AddMetadataEntry(types.MetadataStringValue, "key", "value")
+	check.Assert(err, IsNil)
+
+	// Check if metadata was added correctly
+	metadata, err = vAppTemplate.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount+1)
+	var foundEntry *types.MetadataEntry
+	for _, entry := range metadata.MetadataEntry {
+		if entry.Key == "key" {
+			foundEntry = entry
+		}
+	}
+	check.Assert(foundEntry, NotNil)
+	check.Assert(foundEntry.Key, Equals, "key")
+	check.Assert(foundEntry.TypedValue.Value, Equals, "value")
+
+	err = vAppTemplate.DeleteMetadata("key")
+	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_DeleteMetadataEntryOnMediaRecord(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	//prepare mediaRecord item
+	skipWhenMediaPathMissing(vcd, check)
+	itemName := "TestDeleteMediaMetaDataEntry"
+
+	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+
+	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
+	check.Assert(err, IsNil)
+	check.Assert(uploadTask, NotNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_DeleteMetadataOnMediaRecord")
+
+	err = vcd.org.Refresh()
+	check.Assert(err, IsNil)
+
+	mediaRecord, err := catalog.QueryMedia(itemName)
+	check.Assert(err, IsNil)
+	check.Assert(mediaRecord, NotNil)
+	check.Assert(mediaRecord.MediaRecord.Name, Equals, itemName)
+
+	// Add metadata
+	err = mediaRecord.AddMetadataEntry(types.MetadataStringValue, "key2", "value2")
+	check.Assert(err, IsNil)
+
+	// Remove metadata
+	err = mediaRecord.DeleteMetadataEntry("key2")
+	check.Assert(err, IsNil)
+
+	metadata, err := mediaRecord.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	for _, k := range metadata.MetadataEntry {
+		if k.Key == "key2" {
+			check.Errorf("metadata.MetadataEntry should not contain key: 'key2'")
+		}
+	}
+}
+
+func (vcd *TestVCD) Test_AddMetadataEntryOnMediaRecord(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	//prepare media item
+	skipWhenMediaPathMissing(vcd, check)
+	itemName := "TestAddMediaMetaData"
+
+	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+	check.Assert(catalog.Catalog.Name, Equals, vcd.config.VCD.Catalog.Name)
+
+	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
+	check.Assert(err, IsNil)
+	check.Assert(uploadTask, NotNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_AddMetadataOnMediaRecord")
+
+	err = vcd.org.Refresh()
+	check.Assert(err, IsNil)
+
+	mediaRecord, err := catalog.QueryMedia(itemName)
+	check.Assert(err, IsNil)
+	check.Assert(mediaRecord, NotNil)
+	check.Assert(mediaRecord.MediaRecord.Name, Equals, itemName)
+
+	// Add metadata
+	err = mediaRecord.AddMetadataEntry(types.MetadataStringValue, "key", "value")
+	check.Assert(err, IsNil)
+
+	// Check if metadata was added correctly
+	metadata, err := mediaRecord.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, 1)
+	check.Assert(metadata.MetadataEntry[0].Key, Equals, "key")
+	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
 }
