@@ -216,6 +216,7 @@ func (vm *VM) PowerOff() (Task, error) {
 // (i.e. CPUs x cores per socket)
 // Cpu cores count is inherited from template.
 // https://communities.vmware.com/thread/576209
+// Deprecated: use vm.ChangeCPU instead
 func (vm *VM) ChangeCPUCount(virtualCpuCount int) (Task, error) {
 	return vm.ChangeCPUCountWithCore(virtualCpuCount, nil)
 }
@@ -224,6 +225,7 @@ func (vm *VM) ChangeCPUCount(virtualCpuCount int) (Task, error) {
 // (i.e. CPUs x cores per socket) and cores per socket.
 // Socket count is a result of: virtual logical processors/cores per socket
 // https://communities.vmware.com/thread/576209
+// Deprecated: use vm.ChangeCPU instead
 func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (Task, error) {
 
 	err := vm.Refresh()
@@ -357,6 +359,7 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, erro
 		types.MimeNetworkConnectionSection, "error changing network config: %s", networkSection)
 }
 
+// Deprecated: use vm.ChangeMemory instead
 func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 
 	err := vm.Refresh()
@@ -1812,4 +1815,41 @@ func (vm *VM) getTenantContext() (*TenantContext, error) {
 		return nil, err
 	}
 	return parentVdc.getTenantContext()
+}
+
+// ChangeMemory sets memory value
+func (vm *VM) ChangeMemory(size int64) error {
+	vmSpecSection := vm.VM.VmSpecSection
+	description := vm.VM.Description
+	// update treats same values as changes and fails, with no values provided - no changes are made for that section
+	vmSpecSection.DiskSection = nil
+
+	vmSpecSection.MemoryResourceMb.Configured = size
+
+	_, err := vm.UpdateVmSpecSection(vmSpecSection, description)
+	if err != nil {
+		return fmt.Errorf("error changing memory size: %s", err)
+	}
+	return nil
+}
+
+// ChangeCPUCount sets number of available virtual logical processors
+// (i.e. CPUs x cores per socket)
+// Cpu cores count is inherited from template.
+// https://communities.vmware.com/thread/576209
+func (vm *VM) ChangeCPU(cpus, cpuCores int) error {
+	vmSpecSection := vm.VM.VmSpecSection
+	description := vm.VM.Description
+	// update treats same values as changes and fails, with no values provided - no changes are made for that section
+	vmSpecSection.DiskSection = nil
+
+	vmSpecSection.NumCpus = takeIntAddress(cpus)
+	// has to come together
+	vmSpecSection.NumCoresPerSocket = takeIntAddress(cpuCores)
+
+	_, err := vm.UpdateVmSpecSection(vmSpecSection, description)
+	if err != nil {
+		return fmt.Errorf("error changing cpu size: %s", err)
+	}
+	return nil
 }
