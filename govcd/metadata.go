@@ -151,7 +151,7 @@ func (vAppTemplate *VAppTemplate) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(vAppTemplate.client, vAppTemplate.VAppTemplate.HREF)
 }
 
-// Deprecated: use vAppTemplate.AddMetadataMetadataEntry
+// Deprecated: use vAppTemplate.AddMetadataEntry
 func (vAppTemplate *VAppTemplate) AddMetadata(key string, value string) (*VAppTemplate, error) {
 	task, err := vAppTemplate.AddMetadataAsync(key, value)
 	if err != nil {
@@ -170,7 +170,7 @@ func (vAppTemplate *VAppTemplate) AddMetadata(key string, value string) (*VAppTe
 	return vAppTemplate, nil
 }
 
-// Deprecated: use vAppTemplate.DeleteMetadataEntryAsync
+// Deprecated: use vAppTemplate.AddMetadataEntryAsync
 func (vAppTemplate *VAppTemplate) AddMetadataAsync(key string, value string) (Task, error) {
 	return addMetadata(vAppTemplate.client, types.MetadataStringValue, key, value, vAppTemplate.VAppTemplate.HREF)
 }
