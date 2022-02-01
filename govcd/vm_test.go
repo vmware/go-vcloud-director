@@ -1884,11 +1884,11 @@ func (vcd *TestVCD) Test_VMChangeMemory(check *C) {
 	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
 	check.Assert(err, IsNil)
 
-	err = vm.ChangeMemory(768)
+	err = vm.ChangeMemory(2304)
 	check.Assert(err, IsNil)
 
 	check.Assert(existingVm.VmSpecSection.MemoryResourceMb, Not(IsNil))
-	check.Assert(vm.VM.VmSpecSection.MemoryResourceMb.Configured, Equals, int64(768))
+	check.Assert(vm.VM.VmSpecSection.MemoryResourceMb.Configured, Equals, int64(2304))
 
 	// return to previous value
 	err = vm.ChangeMemory(currentMemory)
