@@ -1817,14 +1817,14 @@ func (vm *VM) getTenantContext() (*TenantContext, error) {
 	return parentVdc.getTenantContext()
 }
 
-// ChangeMemory sets memory value
-func (vm *VM) ChangeMemory(size int64) error {
+// ChangeMemory sets memory value. Size is MB
+func (vm *VM) ChangeMemory(sizeInMb int64) error {
 	vmSpecSection := vm.VM.VmSpecSection
 	description := vm.VM.Description
 	// update treats same values as changes and fails, with no values provided - no changes are made for that section
 	vmSpecSection.DiskSection = nil
 
-	vmSpecSection.MemoryResourceMb.Configured = size
+	vmSpecSection.MemoryResourceMb.Configured = sizeInMb
 
 	_, err := vm.UpdateVmSpecSection(vmSpecSection, description)
 	if err != nil {
