@@ -41,10 +41,18 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 
 	providerVdcHref := getVdcProviderVdcHref(vcd, check)
 
-	storageProfile, err := vcd.client.QueryProviderVdcStorageProfileByName(vcd.config.VCD.ProviderVdc.StorageProfile, providerVdcHref)
+	storageProfile, err := vcd.client.QueryProviderVdcStorageProfileByName(vcd.config.VCD.StorageProfile.SP1, providerVdcHref)
 	check.Assert(err, IsNil)
-	providerVdcStorageProfileHref := storageProfile.HREF
+	firstStorageProfileHref := storageProfile.HREF
 	networkPoolHref := getVdcNetworkPoolHref(vcd, check)
+
+	secondStorageProfileHref := ""
+	// Make test more robust and tests additionally disabled storage profile
+	if vcd.config.VCD.StorageProfile.SP2 != "" {
+		storageProfile, err := vcd.client.QueryProviderVdcStorageProfileByName(vcd.config.VCD.StorageProfile.SP2, providerVdcHref)
+		check.Assert(err, IsNil)
+		secondStorageProfileHref = storageProfile.HREF
+	}
 
 	allocationModels := []string{"AllocationVApp", "AllocationPool", "ReservationPool", "Flex"}
 	trueValue := true
@@ -67,12 +75,12 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 				},
 			},
 			VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
-				Enabled: true,
+				Enabled: takeBoolPointer(true),
 				Units:   "MB",
 				Limit:   1024,
 				Default: true,
 				ProviderVdcStorageProfile: &types.Reference{
-					HREF: providerVdcStorageProfileHref,
+					HREF: firstStorageProfileHref,
 				},
 			},
 			},
@@ -92,6 +100,18 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 			vdcConfiguration.IncludeMemoryOverhead = &trueValue
 		}
 
+		if secondStorageProfileHref != "" {
+			vdcConfiguration.VdcStorageProfile = append(vdcConfiguration.VdcStorageProfile, &types.VdcStorageProfileConfiguration{
+				Enabled: takeBoolPointer(false),
+				Units:   "MB",
+				Limit:   1024,
+				Default: false,
+				ProviderVdcStorageProfile: &types.Reference{
+					HREF: secondStorageProfileHref,
+				},
+			})
+		}
+
 		vdc, _ := adminOrg.GetVDCByName(vdcConfiguration.Name, false)
 		if vdc != nil {
 			err = vdc.DeleteWait(true, true)
@@ -108,8 +128,8 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 		vdcConfiguration.ComputeCapacity[0].Memory.Units = "MB"
 
 		vdc, err = adminOrg.CreateOrgVdc(vdcConfiguration)
-		check.Assert(vdc, NotNil)
 		check.Assert(err, IsNil)
+		check.Assert(vdc, NotNil)
 
 		AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, "Test_CreateVdcWithFlex")
 
@@ -119,6 +139,14 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 		check.Assert(vdc.Vdc.Name, Equals, vdcConfiguration.Name)
 		check.Assert(vdc.Vdc.IsEnabled, Equals, vdcConfiguration.IsEnabled)
 		check.Assert(vdc.Vdc.AllocationModel, Equals, vdcConfiguration.AllocationModel)
+		if secondStorageProfileHref != "" {
+			check.Assert(vdc.Vdc.VdcStorageProfiles, NotNil)
+			check.Assert(vdc.Vdc.VdcStorageProfiles.VdcStorageProfile, NotNil)
+			check.Assert(vdc.Vdc.VdcStorageProfiles.VdcStorageProfile[1], NotNil)
+		}
+
+		vdcStorageProfileDetails, err := adminOrg.client.GetStorageProfileByHref(vdc.Vdc.VdcStorageProfiles.VdcStorageProfile[1].HREF)
+		check.Assert(*vdcStorageProfileDetails.Enabled, Equals, false)
 
 		err = vdc.DeleteWait(true, true)
 		check.Assert(err, IsNil)

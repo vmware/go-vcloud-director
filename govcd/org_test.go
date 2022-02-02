@@ -282,7 +282,7 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 				},
 			},
 			VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
-				Enabled: true,
+				Enabled: takeBoolPointer(true),
 				Units:   "MB",
 				Limit:   1024,
 				Default: true,
@@ -651,7 +651,7 @@ func setupVdc(vcd *TestVCD, check *C, allocationModel string) (AdminOrg, *types.
 			},
 		},
 		VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
-			Enabled: true,
+			Enabled: takeBoolPointer(true),
 			Units:   "MB",
 			Limit:   1024,
 			Default: true,
@@ -822,7 +822,7 @@ func (vcd *TestVCD) Test_AddRemoveVdcStorageProfiles(check *C) {
 
 	// Add another storage profile
 	err = adminVdc.AddStorageProfileWait(&types.VdcStorageProfileConfiguration{
-		Enabled: true,
+		Enabled: takeBoolPointer(true),
 		Units:   "MB",
 		Limit:   1024,
 		Default: false,
@@ -846,7 +846,7 @@ func (vcd *TestVCD) Test_AddRemoveVdcStorageProfiles(check *C) {
 
 	// Add the second storage profile again
 	err = adminVdc.AddStorageProfileWait(&types.VdcStorageProfileConfiguration{
-		Enabled: true,
+		Enabled: takeBoolPointer(true),
 		Units:   "MB",
 		Limit:   1024,
 		Default: false,

@@ -470,7 +470,7 @@ type AdminVdc struct {
 // Since: 5.1
 // https://code.vmware.com/apis/220/vcloud#/doc/doc/types/VdcStorageProfileParamsType.html
 type VdcStorageProfileConfiguration struct {
-	Enabled                   bool       `xml:"Enabled,omitempty"`
+	Enabled                   *bool      `xml:"Enabled,omitempty"`
 	Units                     string     `xml:"Units"`
 	Limit                     int64      `xml:"Limit"`
 	Default                   bool       `xml:"Default"`
@@ -485,7 +485,7 @@ type VdcStorageProfileConfiguration struct {
 type VdcStorageProfile struct {
 	Xmlns                     string                         `xml:"xmlns,attr"`
 	Name                      string                         `xml:"name,attr"`
-	Enabled                   bool                           `xml:"Enabled,omitempty"`
+	Enabled                   *bool                          `xml:"Enabled,omitempty"`
 	Units                     string                         `xml:"Units"`
 	Limit                     int64                          `xml:"Limit"`
 	Default                   bool                           `xml:"Default"`
