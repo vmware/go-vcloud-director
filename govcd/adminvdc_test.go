@@ -175,6 +175,41 @@ func (vcd *TestVCD) Test_UpdateVdcFlex(check *C) {
 	check.Assert(adminVdc.AdminVdc.IsEnabled, Equals, vdcConfiguration.IsEnabled)
 	check.Assert(adminVdc.AdminVdc.AllocationModel, Equals, vdcConfiguration.AllocationModel)
 
+	// test part to reproduce https://github.com/vmware/go-vcloud-director/issues/431
+	// this part manages to create task error which later on VDC update fails if type properties order is bad
+	providerVdcHref := getVdcProviderVdcHref(vcd, check)
+	pvdcStorageProfile, err := vcd.client.QueryProviderVdcStorageProfileByName(vcd.config.VCD.StorageProfile.SP2, providerVdcHref)
+	check.Assert(err, IsNil)
+
+	err = adminVdc.AddStorageProfileWait(&types.VdcStorageProfileConfiguration{
+		Enabled:                   takeBoolPointer(true),
+		Default:                   false,
+		Units:                     "MB",
+		ProviderVdcStorageProfile: &types.Reference{HREF: pvdcStorageProfile.HREF},
+	},
+		"")
+	check.Assert(err, IsNil)
+
+	vdc, err := adminOrg.GetVDCByName(vdcConfiguration.Name, true)
+	check.Assert(err, IsNil)
+
+	vappName := check.TestName()
+	vmName := check.TestName()
+	vapp, err := makeEmptyVapp(vdc, vappName, "")
+	check.Assert(err, IsNil)
+	_, err = makeEmptyVm(vapp, vmName)
+	check.Assert(err, IsNil)
+	AddToCleanupList(vappName, "vapp", "", vappName)
+
+	err = adminVdc.SetDefaultStorageProfile(vcd.config.VCD.StorageProfile.SP2)
+	check.Assert(err, IsNil)
+	err = adminVdc.RemoveStorageProfileWait(vcd.config.VCD.StorageProfile.SP1)
+	// fails with error in task which stays referenced in VDC as `history` element
+	check.Assert(err, NotNil)
+	err = adminVdc.Refresh()
+	check.Assert(err, IsNil)
+	// end
+
 	updateDescription := "updateDescription"
 	computeCapacity := []*types.ComputeCapacity{
 		&types.ComputeCapacity{
