@@ -146,6 +146,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 		}
 
 		vdcStorageProfileDetails, err := adminOrg.client.GetStorageProfileByHref(vdc.Vdc.VdcStorageProfiles.VdcStorageProfile[1].HREF)
+		check.Assert(err, IsNil)
 		check.Assert(*vdcStorageProfileDetails.Enabled, Equals, false)
 
 		err = vdc.DeleteWait(true, true)
