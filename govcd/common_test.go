@@ -320,6 +320,84 @@ func createVappForTest(vcd *TestVCD, vappName string) (*VApp, error) {
 	return vapp, nil
 }
 
+// deployVappForTest aims to replace createVappForTest
+func deployVappForTest(vcd *TestVCD, vappName string) (*VApp, error) {
+	// Populate OrgVDCNetwork
+	var networks []*types.OrgVDCNetwork
+	net, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	if err != nil {
+		return nil, fmt.Errorf("error finding network : %s", err)
+	}
+	networks = append(networks, net.OrgVDCNetwork)
+	// Populate Catalog
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	if err != nil || cat == nil {
+		return nil, fmt.Errorf("error finding catalog : %s", err)
+	}
+	// Populate Catalog Item
+	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	if err != nil {
+		return nil, fmt.Errorf("error finding catalog item : %s", err)
+	}
+	// Get VAppTemplate
+	vAppTemplate, err := catitem.GetVAppTemplate()
+	if err != nil {
+		return nil, fmt.Errorf("error finding vapptemplate : %s", err)
+	}
+	// Get StorageProfileReference
+	storageProfileRef, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
+	if err != nil {
+		return nil, fmt.Errorf("error finding storage profile: %s", err)
+	}
+
+	// Create empty vApp
+	vapp, err := vcd.vdc.CreateRawVApp(vappName, "description")
+	if err != nil {
+		return nil, fmt.Errorf("error creating vapp: %s", err)
+	}
+
+	// After a successful creation, the entity is added to the cleanup list.
+	// If something fails after this point, the entity will be removed
+	AddToCleanupList(vappName, "vapp", "", "createTestVapp")
+
+	// Create vApp networking
+	vAppNetworkConfig, err := vapp.AddOrgNetwork(&VappNetworkSettings{}, net.OrgVDCNetwork, false)
+	if err != nil {
+		return nil, fmt.Errorf("error creating vApp network. %s", err)
+	}
+
+	// Create VM with only one NIC connected to vapp_net
+	networkConnectionSection := &types.NetworkConnectionSection{
+		PrimaryNetworkConnectionIndex: 0,
+	}
+
+	netConn := &types.NetworkConnection{
+		Network:                 vAppNetworkConfig.NetworkConfig[0].NetworkName,
+		IsConnected:             true,
+		NetworkConnectionIndex:  0,
+		IPAddressAllocationMode: types.IPAllocationModePool,
+	}
+
+	networkConnectionSection.NetworkConnection = append(networkConnectionSection.NetworkConnection, netConn)
+
+	task, err := vapp.AddNewVMWithStorageProfile("test_vm", vAppTemplate, networkConnectionSection, &storageProfileRef, true)
+	if err != nil {
+		return nil, fmt.Errorf("error creating the VM: %s", err)
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("error while waiting for the VM to be created %s", err)
+	}
+
+	err = vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
+	if err != nil {
+		return nil, fmt.Errorf("error waiting for created test vApp to have working state: %s", err)
+	}
+
+	return vapp, nil
+}
+
 // Checks whether an independent disk is attached to a VM, and detaches it
 // moved from disk_test.go
 func (vcd *TestVCD) detachIndependentDisk(disk Disk) error {
