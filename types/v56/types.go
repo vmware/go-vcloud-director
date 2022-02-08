@@ -489,7 +489,7 @@ type VdcStorageProfile struct {
 	Units                     string                         `xml:"Units"`
 	Limit                     int64                          `xml:"Limit"`
 	Default                   bool                           `xml:"Default"`
-	IopsSettings              *VdcStorageProfileIopsSettings `xml:"IopsSettingsint64"`
+	IopsSettings              *VdcStorageProfileIopsSettings `xml:"IopsSettings"`
 	StorageUsedMB             int64                          `xml:"StorageUsedMB"`
 	IopsAllocated             int64                          `xml:"IopsAllocated"`
 	ProviderVdcStorageProfile *Reference                     `xml:"ProviderVdcStorageProfile"`
