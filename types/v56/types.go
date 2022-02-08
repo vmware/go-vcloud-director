@@ -506,7 +506,7 @@ type AdminVdcStorageProfile struct {
 	Units                     string                         `xml:"Units"`
 	Limit                     int64                          `xml:"Limit"`
 	Default                   bool                           `xml:"Default"`
-	IopsSettings              *VdcStorageProfileIopsSettings `xml:"IopsSettingsint64"`
+	IopsSettings              *VdcStorageProfileIopsSettings `xml:"IopsSettings"`
 	StorageUsedMB             int64                          `xml:"StorageUsedMB"`
 	IopsAllocated             int64                          `xml:"IopsAllocated"`
 	ProviderVdcStorageProfile *Reference                     `xml:"ProviderVdcStorageProfile"`
@@ -517,11 +517,11 @@ type AdminVdcStorageProfile struct {
 // https://vdc-repo.vmware.com/vmwb-repository/dcr-public/71e12563-bc11-4d64-821d-92d30f8fcfa1/7424bf8e-aec2-44ad-be7d-b98feda7bae0/doc/doc/types/VdcStorageProfileIopsSettingsType.html
 type VdcStorageProfileIopsSettings struct {
 	Xmlns                   string `xml:"xmlns,attr"`
-	Enabled                 bool   `xml:"enabled"`
-	DiskIopsMax             int64  `xml:"diskIopsMax,"`
-	DiskIopsDefault         int64  `xml:"diskIopsDefault"`
-	StorageProfileIopsLimit int64  `xml:"storageProfileIopsLimit,omitempty"`
-	DiskIopsPerGbMax        int64  `xml:"diskIopsPerGbMax"`
+	Enabled                 bool   `xml:"Enabled"`
+	DiskIopsMax             int64  `xml:"DiskIopsMax,"`
+	DiskIopsDefault         int64  `xml:"DiskIopsDefault"`
+	StorageProfileIopsLimit int64  `xml:"StorageProfileIopsLimit,omitempty"`
+	DiskIopsPerGbMax        int64  `xml:"DiskIopsPerGbMax"`
 }
 
 // VdcConfiguration models the payload for creating a VDC.
