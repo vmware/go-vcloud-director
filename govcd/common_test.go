@@ -265,70 +265,14 @@ func isTcpPortOpen(host, port string, timeout int) bool {
 
 }
 
-// moved from vapp_test.go
-func createVappForTest(vcd *TestVCD, vappName string) (*VApp, error) {
-	// Populate OrgVDCNetwork
-	var networks []*types.OrgVDCNetwork
-	net, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
-	if err != nil {
-		return nil, fmt.Errorf("error finding network : %s", err)
-	}
-	networks = append(networks, net.OrgVDCNetwork)
-	// Populate Catalog
-	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
-	if err != nil || cat == nil {
-		return nil, fmt.Errorf("error finding catalog : %s", err)
-	}
-	// Populate Catalog Item
-	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
-	if err != nil {
-		return nil, fmt.Errorf("error finding catalog item : %s", err)
-	}
-	// Get VAppTemplate
-	vAppTemplate, err := catitem.GetVAppTemplate()
-	if err != nil {
-		return nil, fmt.Errorf("error finding vapptemplate : %s", err)
-	}
-	// Get StorageProfileReference
-	storageProfileRef, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
-	if err != nil {
-		return nil, fmt.Errorf("error finding storage profile: %s", err)
-	}
-	// Compose VApp
-	task, err := vcd.vdc.ComposeVApp(networks, vAppTemplate, storageProfileRef, vappName, "description", true)
-	if err != nil {
-		return nil, fmt.Errorf("error composing vapp: %s", err)
-	}
-	// After a successful creation, the entity is added to the cleanup list.
-	// If something fails after this point, the entity will be removed
-	AddToCleanupList(vappName, "vapp", "", "createTestVapp")
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return nil, fmt.Errorf("error composing vapp: %s", err)
-	}
-	// Get VApp
-	vapp, err := vcd.vdc.GetVAppByName(vappName, true)
-	if err != nil {
-		return nil, fmt.Errorf("error getting vapp: %s", err)
-	}
-
-	err = vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
-	if err != nil {
-		return nil, fmt.Errorf("error waiting for created test vApp to have working state: %s", err)
-	}
-
-	return vapp, nil
-}
-
 // deployVappForTest aims to replace createVappForTest
 func deployVappForTest(vcd *TestVCD, vappName string) (*VApp, error) {
 	// Populate OrgVDCNetwork
-	var networks []*types.OrgVDCNetwork
 	net, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	if err != nil {
 		return nil, fmt.Errorf("error finding network : %s", err)
 	}
-	networks = append(networks, net.OrgVDCNetwork)
+
 	// Populate Catalog
 	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	if err != nil || cat == nil {
