@@ -86,7 +86,7 @@ func getAdminVdcURL(vdcURL string) string {
 	return strings.Split(vdcURL, "/api/vdc/")[0] + "/api/admin/vdc/" + strings.Split(vdcURL, "/api/vdc/")[1]
 }
 
-// GetMetadata returns vapp metadata.
+// GetMetadata returns vApp metadata.
 func (vapp *VApp) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(vapp.client, vapp.VApp.HREF)
 }
@@ -100,13 +100,12 @@ func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
 	return metadata, err
 }
 
-// Deprecated: use vapp.DeleteMetadataEntry
+// Deprecated: use vApp.DeleteMetadataEntry
 func (vapp *VApp) DeleteMetadata(key string) (Task, error) {
 	return deleteMetadata(vapp.client, key, vapp.VApp.HREF)
 }
 
-// Deletes metadata (type MetadataStringValue) from the vApp
-// TODO: Support all MetadataTypedValue types with this function
+// deleteMetadata Deletes metadata from an entity
 func deleteMetadata(client *Client, key string, requestUri string) (Task, error) {
 	apiEndpoint := urlParseRequestURI(requestUri)
 	apiEndpoint.Path += "/metadata/" + key
@@ -116,12 +115,12 @@ func deleteMetadata(client *Client, key string, requestUri string) (Task, error)
 		"", "error deleting metadata: %s", nil)
 }
 
-// Deprecated: use vapp.AddMetadataEntry
+// Deprecated: use vApp.AddMetadataEntry
 func (vapp *VApp) AddMetadata(key string, value string) (Task, error) {
 	return addMetadata(vapp.client, types.MetadataStringValue, key, value, vapp.VApp.HREF)
 }
 
-// Adds metadata to the vApp
+// Adds metadata to an entity
 // The function supports passing a typedValue. Use one of the constants defined.
 // Only tested with MetadataStringValue and MetadataNumberValue.
 // TODO: We might also need to add support to MetadataDateTimeValue and MetadataBooleanValue
@@ -444,7 +443,7 @@ func (vdc *Vdc) AddMetadataEntryAsync(typedValue, key, value string) (Task, erro
 	return addMetadata(vdc.client, typedValue, key, value, getAdminVdcURL(vdc.Vdc.HREF))
 }
 
-// DeleteMetadataEntry deletes vapp metadata by key provided as input and waits for
+// DeleteMetadataEntry deletes vApp metadata by key provided as input and waits for
 // the task to finish
 func (vapp *VApp) DeleteMetadataEntry(key string) error {
 	task, err := vapp.DeleteMetadataEntryAsync(key)
@@ -465,12 +464,12 @@ func (vapp *VApp) DeleteMetadataEntry(key string) error {
 	return nil
 }
 
-// DeleteMetadataEntryAsync deletes vapp metadata depending on key provided as input and returns the task
+// DeleteMetadataEntryAsync deletes vApp metadata depending on key provided as input and returns the task
 func (vapp *VApp) DeleteMetadataEntryAsync(key string) (Task, error) {
 	return deleteMetadata(vapp.client, key, vapp.VApp.HREF)
 }
 
-// AddMetadataEntry adds vapp metadata typedValue and key/value pair provided as input
+// AddMetadataEntry adds vApp metadata typedValue and key/value pair provided as input
 // and waits for the task to finish
 func (vapp *VApp) AddMetadataEntry(typedValue, key, value string) error {
 	task, err := vapp.AddMetadataEntryAsync(typedValue, key, value)
@@ -491,7 +490,7 @@ func (vapp *VApp) AddMetadataEntry(typedValue, key, value string) error {
 	return nil
 }
 
-// AddMetadataEntryAsync adds vapp metadata typedValue and key/value pair provided as input and returns the task
+// AddMetadataEntryAsync adds vApp metadata typedValue and key/value pair provided as input and returns the task
 func (vapp *VApp) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
 	return addMetadata(vapp.client, typedValue, key, value, vapp.VApp.HREF)
 }
