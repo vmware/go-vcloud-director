@@ -122,7 +122,8 @@ func (vapp *VApp) AddMetadata(key string, value string) (Task, error) {
 
 // Adds metadata to an entity
 // The function supports passing a typedValue. Use one of the constants defined.
-// Only tested with MetadataStringValue and MetadataNumberValue.
+// Constants are types.MetadataStringValue, types.MetadataNumberValue, types.MetadataDateTimeValue and types.MetadataBooleanValue.
+// Only tested with types.MetadataStringValue and types.MetadataNumberValue.
 // TODO: We might also need to add support to MetadataDateTimeValue and MetadataBooleanValue
 func addMetadata(client *Client, typedValue, key, value, requestUri string) (Task, error) {
 	newMetadata := &types.MetadataValue{
