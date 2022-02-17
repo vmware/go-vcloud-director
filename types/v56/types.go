@@ -2654,11 +2654,15 @@ type Disk struct {
 	Iops            *int             `xml:"iops,attr,omitempty"`
 	BusType         string           `xml:"busType,attr,omitempty"`
 	BusSubType      string           `xml:"busSubType,attr,omitempty"`
+	Encrypted       bool             `xml:"encrypted,attr,omitempty"`
+	Shareable       bool             `xml:"shareable,attr,omitempty"`
+	SharingType     string           `xml:"sharingType,attr,omitempty"`
+	UUID            string           `xml:"uuid,attr,omitempty"`
 	Description     string           `xml:"Description,omitempty"`
 	Files           *FilesList       `xml:"Files,omitempty"`
 	Link            []*Link          `xml:"Link,omitempty"`
-	Owner           *Owner           `xml:"Owner,omitempty"`
 	StorageProfile  *Reference       `xml:"StorageProfile,omitempty"`
+	Owner           *Owner           `xml:"Owner,omitempty"`
 	Tasks           *TasksInProgress `xml:"Tasks,omitempty"`
 	VCloudExtension *VCloudExtension `xml:"VCloudExtension,omitempty"`
 }
@@ -2687,11 +2691,11 @@ type DiskAttachOrDetachParams struct {
 // Reference: vCloud API 30.0 - VmsType
 // https://code.vmware.com/apis/287/vcloud?h=Director#/doc/doc/types/FilesListType.html
 type Vms struct {
-	XMLName     xml.Name   `xml:"Vms"`
-	Xmlns       string     `xml:"xmlns,attr,omitempty"`
-	Type        string     `xml:"type,attr"`
-	HREF        string     `xml:"href,attr"`
-	VmReference *Reference `xml:"VmReference,omitempty"`
+	XMLName     xml.Name     `xml:"Vms"`
+	Xmlns       string       `xml:"xmlns,attr,omitempty"`
+	Type        string       `xml:"type,attr"`
+	HREF        string       `xml:"href,attr"`
+	VmReference []*Reference `xml:"VmReference,omitempty"`
 }
 
 // Parameters for inserting and ejecting virtual media for VM as CD/DVD
