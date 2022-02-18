@@ -518,7 +518,7 @@ type AdminVdcStorageProfile struct {
 type VdcStorageProfileIopsSettings struct {
 	Xmlns                   string `xml:"xmlns,attr"`
 	Enabled                 bool   `xml:"Enabled"`
-	DiskIopsMax             int64  `xml:"DiskIopsMax,"`
+	DiskIopsMax             int64  `xml:"DiskIopsMax"`
 	DiskIopsDefault         int64  `xml:"DiskIopsDefault"`
 	StorageProfileIopsLimit int64  `xml:"StorageProfileIopsLimit,omitempty"`
 	DiskIopsPerGbMax        int64  `xml:"DiskIopsPerGbMax"`
