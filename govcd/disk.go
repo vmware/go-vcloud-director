@@ -317,7 +317,9 @@ func (vdc *Vdc) QueryDisk(diskName string) (DiskRecord, error) {
 		typeMedia = "adminDisk"
 	}
 
-	results, err := vdc.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia, "filter": "name==" + url.QueryEscape(diskName), "filterEncoded": "true"})
+	results, err := vdc.QueryWithNotEncodedParamsWithApiVersion(nil, map[string]string{"type": typeMedia,
+		"filter": "name==" + url.QueryEscape(diskName) + ";vdc==" + vdc.vdcId(), "filterEncoded": "true"},
+		vdc.client.GetSpecificApiVersionOnCondition(">= 36.0", "36.0"))
 	if err != nil {
 		return DiskRecord{}, fmt.Errorf("error querying disk %s", err)
 	}
@@ -350,7 +352,8 @@ func (vdc *Vdc) QueryDisks(diskName string) (*[]*types.DiskRecordType, error) {
 		typeMedia = "adminDisk"
 	}
 
-	results, err := vdc.QueryWithNotEncodedParamsWithApiVersion(nil, map[string]string{"type": typeMedia, "filter": "name==" + url.QueryEscape(diskName), "filterEncoded": "true"},
+	results, err := vdc.QueryWithNotEncodedParamsWithApiVersion(nil, map[string]string{"type": typeMedia,
+		"filter": "name==" + url.QueryEscape(diskName) + ";vdc==" + vdc.vdcId(), "filterEncoded": "true"},
 		vdc.client.GetSpecificApiVersionOnCondition(">= 36.0", "36.0"))
 	if err != nil {
 		return nil, fmt.Errorf("error querying disks %s", err)
