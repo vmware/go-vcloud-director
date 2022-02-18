@@ -2654,6 +2654,10 @@ type Disk struct {
 	Iops            *int             `xml:"iops,attr,omitempty"`
 	BusType         string           `xml:"busType,attr,omitempty"`
 	BusSubType      string           `xml:"busSubType,attr,omitempty"`
+	Encrypted       bool             `xml:"encrypted,attr,omitempty"`
+	Shareable       bool             `xml:"shareable,attr,omitempty"`
+	SharingType     string           `xml:"sharingType,attr,omitempty"`
+	UUID            string           `xml:"uuid,attr,omitempty"`
 	Description     string           `xml:"Description,omitempty"`
 	Files           *FilesList       `xml:"Files,omitempty"`
 	Link            []*Link          `xml:"Link,omitempty"`
@@ -2748,21 +2752,27 @@ type DiskRecordType struct {
 	Vdc   string `xml:"vdc,attr,omitempty"`
 	// SizeB is not available in API V33.0. It is replaced by SizeMb
 	//SizeB              int64   `xml:"sizeB,attr,omitempty"`
-	SizeMb             int64   `xml:"sizeMb,attr,omitempty"`
-	DataStore          string  `xml:"dataStore,attr,omitempty"`
-	DataStoreName      string  `xml:"datastoreName,attr,omitempty"`
-	OwnerName          string  `xml:"ownerName,attr,omitempty"`
-	VdcName            string  `xml:"vdcName,attr,omitempty"`
-	Task               string  `xml:"task,attr,omitempty"`
-	StorageProfile     string  `xml:"storageProfile,attr,omitempty"`
-	StorageProfileName string  `xml:"storageProfileName,attr,omitempty"`
-	Status             string  `xml:"status,attr,omitempty"`
-	BusType            string  `xml:"busType,attr,omitempty"`
-	BusSubType         string  `xml:"busSubType,attr,omitempty"`
-	BusTypeDesc        string  `xml:"busTypeDesc,attr,omitempty"`
-	IsAttached         bool    `xml:"isAttached,attr,omitempty"`
-	Description        string  `xml:"description,attr,omitempty"`
-	Link               []*Link `xml:"Link,omitempty"`
+	SizeMb             int64     `xml:"sizeMb,attr,omitempty"`
+	Iops               int64     `xml:"iops,attr,omitempty"`
+	Encrypted          bool      `xml:"encrypted,attr,omitempty"`
+	UUID               string    `xml:"uuid,attr,omitempty"`
+	DataStore          string    `xml:"dataStore,attr,omitempty"`
+	DataStoreName      string    `xml:"datastoreName,attr,omitempty"`
+	OwnerName          string    `xml:"ownerName,attr,omitempty"`
+	VdcName            string    `xml:"vdcName,attr,omitempty"`
+	Task               string    `xml:"task,attr,omitempty"`
+	StorageProfile     string    `xml:"storageProfile,attr,omitempty"`
+	StorageProfileName string    `xml:"storageProfileName,attr,omitempty"`
+	Status             string    `xml:"status,attr,omitempty"`
+	BusType            string    `xml:"busType,attr,omitempty"`
+	BusSubType         string    `xml:"busSubType,attr,omitempty"`
+	BusTypeDesc        string    `xml:"busTypeDesc,attr,omitempty"`
+	AttachedVmCount    int32     `xml:"attachedVmCount,attr,omitempty"`
+	IsAttached         bool      `xml:"isAttached,attr,omitempty"`
+	IsShareable        bool      `xml:"isShareable,attr,omitempty"`
+	Description        string    `xml:"description,attr,omitempty"`
+	Link               []*Link   `xml:"Link,omitempty"`
+	Metadata           *Metadata `xml:"Metadata,omitempty"`
 }
 
 // Represents port group
