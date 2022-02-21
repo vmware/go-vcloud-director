@@ -408,3 +408,52 @@ func (adminOrg *AdminOrg) DeleteMetadata(key string) error {
 func (adminOrg *AdminOrg) DeleteMetadataAsync(key string) (Task, error) {
 	return deleteMetadata(adminOrg.client, key, adminOrg.AdminOrg.HREF)
 }
+
+// GetMetadata returns the metadata of the corresponding independent disk
+func (disk *Disk) GetMetadata() (*types.Metadata, error) {
+	return getMetadata(disk.client, disk.Disk.HREF)
+}
+
+// AddMetadata adds metadata key/value pair provided as input to the corresponding independent disk and waits for completion.
+func (disk *Disk) AddMetadata(key string, value string) (*Disk, error) {
+	task, err := disk.AddMetadataAsync(key, value)
+	if err != nil {
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("error completing add metadata for independent disk task: %s", err)
+	}
+
+	err = disk.Refresh()
+	if err != nil {
+		return nil, fmt.Errorf("error refreshing independent disk: %s", err)
+	}
+
+	return disk, nil
+}
+
+// AddMetadataAsync adds metadata key/value pair provided as input to the corresponding independent disk and returns a task.
+func (disk *Disk) AddMetadataAsync(key string, value string) (Task, error) {
+	return addMetadata(disk.client, key, value, disk.Disk.HREF)
+}
+
+// DeleteMetadata deletes metadata of the corresponding independent disk with the given key, and waits for completion
+func (disk *Disk) DeleteMetadata(key string) error {
+	task, err := disk.DeleteMetadataAsync(key)
+	if err != nil {
+		return err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error completing delete metadata for organization task: %s", err)
+	}
+
+	return nil
+}
+
+// DeleteMetadataAsync deletes metadata of the corresponding organization with the given key, and returns
+// a task.
+func (disk *Disk) DeleteMetadataAsync(key string) (Task, error) {
+	return deleteMetadata(disk.client, key, disk.Disk.HREF)
+}
