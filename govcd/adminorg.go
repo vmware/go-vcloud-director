@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/vmware/go-vcloud-director/types/v56"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -13,8 +14,6 @@ import (
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/util"
-
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 // AdminOrg gives an admin representation of an org.

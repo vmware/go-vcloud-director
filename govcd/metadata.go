@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/vmware/go-vcloud-director/types/v56"
 	"net/http"
 	"strings"
 
@@ -18,7 +19,7 @@ func (vm *VM) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(vm.client, vm.VM.HREF)
 }
 
-// DeleteMetadata() function calls private function deleteMetadata() with vm.client and vm.VM.HREF
+// DeleteMetadata function calls private function deleteMetadata() with vm.client and vm.VM.HREF
 // which deletes metadata depending on key provided as input from VM.
 func (vm *VM) DeleteMetadata(key string) (Task, error) {
 	return deleteMetadata(vm.client, key, vm.VM.HREF)
@@ -35,7 +36,7 @@ func (vdc *Vdc) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(vdc.client, getAdminVdcURL(vdc.Vdc.HREF))
 }
 
-// DeleteMetadata() function deletes metadata by key provided as input
+// DeleteMetadata function deletes metadata by key provided as input
 func (vdc *Vdc) DeleteMetadata(key string) (Vdc, error) {
 	task, err := deleteMetadata(vdc.client, key, getAdminVdcURL(vdc.Vdc.HREF))
 	if err != nil {
@@ -75,13 +76,13 @@ func (vdc *Vdc) AddMetadata(key string, value string) (Vdc, error) {
 	return *vdc, nil
 }
 
-// AddMetadata adds metadata key/value pair provided as input to VDC.
+// AddMetadataAsync adds metadata key/value pair provided as input to VDC.
 // and returns task
 func (vdc *Vdc) AddMetadataAsync(key string, value string) (Task, error) {
 	return addMetadata(vdc.client, key, value, getAdminVdcURL(vdc.Vdc.HREF))
 }
 
-// DeleteMetadata() function deletes metadata by key provided as input
+// DeleteMetadataAsync function deletes metadata by key provided as input
 // and returns task
 func (vdc *Vdc) DeleteMetadataAsync(key string) (Task, error) {
 	return deleteMetadata(vdc.client, key, getAdminVdcURL(vdc.Vdc.HREF))
@@ -106,7 +107,7 @@ func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
 	return metadata, err
 }
 
-// DeleteMetadata() function calls private function deleteMetadata() with vapp.client and vapp.VApp.HREF
+// DeleteMetadata function calls private function deleteMetadata() with vapp.client and vapp.VApp.HREF
 // which deletes metadata depending on key provided as input from vApp.
 func (vapp *VApp) DeleteMetadata(key string) (Task, error) {
 	return deleteMetadata(vapp.client, key, vapp.VApp.HREF)
@@ -356,4 +357,55 @@ func (media *Media) DeleteMetadata(key string) error {
 // which deletes metadata depending on key provided as input from media item.
 func (media *Media) DeleteMetadataAsync(key string) (Task, error) {
 	return deleteMetadata(media.client, key, media.Media.HREF)
+}
+
+// GetMetadata returns the metadata of the corresponding organization seen as administrator
+func (adminOrg *AdminOrg) GetMetadata() (*types.Metadata, error) {
+	return getMetadata(adminOrg.client, adminOrg.AdminOrg.HREF)
+}
+
+// AddMetadata adds metadata key/value pair provided as input to the corresponding organization seen as administrator
+// and waits for completion.
+func (adminOrg *AdminOrg) AddMetadata(key string, value string) (*AdminOrg, error) {
+	task, err := adminOrg.AddMetadataAsync(key, value)
+	if err != nil {
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("error completing add metadata for organization task: %s", err)
+	}
+
+	err = adminOrg.Refresh()
+	if err != nil {
+		return nil, fmt.Errorf("error refreshing organization: %s", err)
+	}
+
+	return adminOrg, nil
+}
+
+// AddMetadataAsync adds metadata key/value pair provided as input to the corresponding organization seen as administrator
+// and returns a task.
+func (adminOrg *AdminOrg) AddMetadataAsync(key string, value string) (Task, error) {
+	return addMetadata(adminOrg.client, key, value, adminOrg.AdminOrg.HREF)
+}
+
+// DeleteMetadata deletes metadata of the corresponding organization with the given key, and waits for completion
+func (adminOrg *AdminOrg) DeleteMetadata(key string) error {
+	task, err := adminOrg.DeleteMetadataAsync(key)
+	if err != nil {
+		return err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error completing delete metadata for organization task: %s", err)
+	}
+
+	return nil
+}
+
+// DeleteMetadataAsync deletes metadata of the corresponding organization with the given key, and returns
+// a task.
+func (adminOrg *AdminOrg) DeleteMetadataAsync(key string) (Task, error) {
+	return deleteMetadata(adminOrg.client, key, adminOrg.AdminOrg.HREF)
 }
