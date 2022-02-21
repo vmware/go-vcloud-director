@@ -162,8 +162,9 @@ func (disk *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 	}
 
 	// Return the task
-	return disk.client.ExecuteTaskRequest(updateDiskLink.HREF, http.MethodPut,
-		updateDiskLink.Type, "error updating disk: %s", xmlPayload)
+	return disk.client.ExecuteTaskRequestWithApiVersion(updateDiskLink.HREF, http.MethodPut,
+		updateDiskLink.Type, "error updating disk: %s", xmlPayload,
+		disk.client.GetSpecificApiVersionOnCondition(">= 36.0", "36.0"))
 }
 
 // Remove an independent disk
@@ -222,8 +223,9 @@ func (disk *Disk) Refresh() error {
 
 	unmarshalledDisk := &types.Disk{}
 
-	_, err := disk.client.ExecuteRequest(disk.Disk.HREF, http.MethodGet,
-		"", "error refreshing independent disk: %s", nil, unmarshalledDisk)
+	_, err := disk.client.ExecuteRequestWithApiVersion(disk.Disk.HREF, http.MethodGet,
+		"", "error refreshing independent disk: %s", nil, unmarshalledDisk,
+		disk.client.GetSpecificApiVersionOnCondition(">= 36.0", "36.0"))
 	if err != nil {
 		return err
 	}
@@ -374,8 +376,9 @@ func (vdc *Vdc) GetDiskByHref(diskHref string) (*Disk, error) {
 	util.Logger.Printf("[TRACE] Get Disk By Href: %s\n", diskHref)
 	Disk := NewDisk(vdc.client)
 
-	_, err := vdc.client.ExecuteRequest(diskHref, http.MethodGet,
-		"", "error retrieving Disk: %#v", nil, Disk.Disk)
+	_, err := vdc.client.ExecuteRequestWithApiVersion(diskHref, http.MethodGet,
+		"", "error retrieving Disk: %#v", nil, Disk.Disk,
+		vdc.client.GetSpecificApiVersionOnCondition(">= 36.0", "36.0"))
 	if err != nil && strings.Contains(err.Error(), "MajorErrorCode:403") {
 		return nil, ErrorEntityNotFound
 	}
@@ -435,10 +438,10 @@ func (vdc *Vdc) GetDiskById(diskId string, refresh bool) (*Disk, error) {
 	return nil, ErrorEntityNotFound
 }
 
-// Get a VMs that is attached the disk
+// Get a VMs HREFs that is attached to the disk
 // An independent disk can be attached to at most one virtual machine.
 // If the disk isn't attached to any VM, return empty slice.
-// Otherwise return the list of VMs ID.
+// Otherwise return the list of VMs HREFs.
 func (disk *Disk) GetAttachedVmsHrefs() ([]string, error) {
 	util.Logger.Printf("[TRACE] GetAttachedVmsHrefs, HREF: %s\n", disk.Disk.HREF)
 
