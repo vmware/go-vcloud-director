@@ -6,7 +6,6 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/types/v56"
 	"net/http"
 	"strings"
 
