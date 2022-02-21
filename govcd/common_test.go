@@ -764,7 +764,7 @@ func spawnTestVdc(vcd *TestVCD, check *C, adminOrgName string) *Vdc {
 			},
 		},
 		VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
-			Enabled: true,
+			Enabled: takeBoolPointer(true),
 			Units:   "MB",
 			Limit:   1024,
 			Default: true,
