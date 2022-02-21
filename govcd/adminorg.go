@@ -6,7 +6,6 @@ package govcd
 
 import (
 	"fmt"
-
 	"net/http"
 	"net/url"
 	"regexp"
@@ -14,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/util"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
