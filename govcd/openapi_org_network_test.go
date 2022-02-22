@@ -21,7 +21,9 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkIsolated(check *C) {
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
 		Name:        check.TestName(),
 		Description: check.TestName() + "-description",
-		OrgVdc:      &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
+
+		// On v35.0 orgVdc is not supported anymore. Using ownerRef instead.
+		OwnerRef: &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
 
 		NetworkType: types.OrgVdcNetworkTypeIsolated,
 		Subnets: types.OrgVdcNetworkSubnets{
@@ -65,7 +67,9 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
 		Name:        check.TestName(),
 		Description: check.TestName() + "-description",
-		OrgVdc:      &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
+
+		// On v35.0 orgVdc is not supported anymore. Using ownerRef instead.
+		OwnerRef: &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
 
 		NetworkType: types.OrgVdcNetworkTypeRouted,
 
@@ -130,7 +134,9 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
 		Name:        check.TestName(),
 		Description: check.TestName() + "-description",
-		OrgVdc:      &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
+
+		// On v35.0 orgVdc is not supported anymore. Using ownerRef instead.
+		OwnerRef: &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
 
 		NetworkType: types.OrgVdcNetworkTypeOpaque,
 		// BackingNetworkId contains NSX-T logical switch ID for Imported networks
@@ -170,7 +176,9 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkIsolated(check *C) {
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
 		Name:        check.TestName(),
 		Description: check.TestName() + "-description",
-		OrgVdc:      &types.OpenApiReference{ID: vcd.vdc.Vdc.ID},
+
+		// On v35.0 orgVdc is not supported anymore. Using ownerRef instead.
+		OwnerRef: &types.OpenApiReference{ID: vcd.vdc.Vdc.ID},
 
 		NetworkType: types.OrgVdcNetworkTypeIsolated,
 		Subnets: types.OrgVdcNetworkSubnets{
@@ -213,7 +221,9 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkRouted(check *C) {
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
 		Name:        check.TestName(),
 		Description: check.TestName() + "-description",
-		OrgVdc:      &types.OpenApiReference{ID: vcd.vdc.Vdc.ID},
+
+		// On v35.0 orgVdc is not supported anymore. Using ownerRef instead.
+		OwnerRef: &types.OpenApiReference{ID: vcd.vdc.Vdc.ID},
 
 		NetworkType: types.OrgVdcNetworkTypeRouted,
 
@@ -275,7 +285,9 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkDirect(check *C) {
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
 		Name:        check.TestName(),
 		Description: check.TestName() + "-description",
-		OrgVdc:      &types.OpenApiReference{ID: vcd.vdc.Vdc.ID},
+
+		// On v35.0 orgVdc is not supported anymore. Using ownerRef instead.
+		OwnerRef: &types.OpenApiReference{ID: vcd.vdc.Vdc.ID},
 
 		NetworkType:   types.OrgVdcNetworkTypeDirect,
 		ParentNetwork: &types.OpenApiReference{ID: externalNetwork.ExternalNetwork.ID},
