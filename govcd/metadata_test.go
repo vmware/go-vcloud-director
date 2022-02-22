@@ -381,3 +381,45 @@ func (vcd *TestVCD) Test_AddMetadataOnMediaRecord(check *C) {
 	check.Assert(metadata.MetadataEntry[0].Key, Equals, "key")
 	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
 }
+
+func (vcd *TestVCD) Test_AddMetadataOnAdminOrg(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	adminOrg, err := vcd.client.GetAdminOrgById(vcd.org.Org.ID)
+	if err != nil {
+		check.Skip("Test_AddMetadataOnAdminOrg: Organization not found. Test can't proceed")
+		return
+	}
+
+	// Check how much metaData exist
+	metadata, err := adminOrg.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	existingMetaDataCount := len(metadata.MetadataEntry)
+
+	// Add metadata
+	_, err = adminOrg.AddMetadata("key", "value")
+	check.Assert(err, IsNil)
+
+	// Check if metadata was added correctly
+	metadata, err = adminOrg.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount+1)
+	var foundEntry *types.MetadataEntry
+	for _, entry := range metadata.MetadataEntry {
+		if entry.Key == "key" {
+			foundEntry = entry
+		}
+	}
+	check.Assert(foundEntry, NotNil)
+	check.Assert(foundEntry.Key, Equals, "key")
+	check.Assert(foundEntry.TypedValue.Value, Equals, "value")
+
+	err = adminOrg.DeleteMetadata("key")
+	check.Assert(err, IsNil)
+	// Check if metadata was deleted correctly
+	metadata, err = adminOrg.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, 0)
+}
