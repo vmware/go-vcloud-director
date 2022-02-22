@@ -483,7 +483,7 @@ func (vdc *AdminVdc) RemoveStorageProfile(storageProfileName string) (Task, erro
 	if err != nil {
 		return Task{}, fmt.Errorf("cannot retrieve VDC storage profile '%s' details: %s", storageProfileName, err)
 	}
-	if vdcStorageProfileDetails.Enabled {
+	if vdcStorageProfileDetails.Enabled != nil && *vdcStorageProfileDetails.Enabled {
 		_, err = vdc.UpdateStorageProfile(extractUuid(storageProfile.HREF), &types.AdminVdcStorageProfile{
 			Name:    vdcStorageProfileDetails.Name,
 			Units:   vdcStorageProfileDetails.Units,
