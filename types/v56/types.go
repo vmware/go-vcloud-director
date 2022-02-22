@@ -2744,14 +2744,12 @@ type VmQuestionAnswer struct {
 // Reference: vCloud API 27.0 - DiskType
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/types/QueryResultDiskRecordType.html
 type DiskRecordType struct {
-	Xmlns string `xml:"xmlns,attr,omitempty"`
-	HREF  string `xml:"href,attr,omitempty"`
-	Id    string `xml:"id,attr,omitempty"`
-	Type  string `xml:"type,attr,omitempty"`
-	Name  string `xml:"name,attr,omitempty"`
-	Vdc   string `xml:"vdc,attr,omitempty"`
-	// SizeB is not available in API V33.0. It is replaced by SizeMb
-	//SizeB              int64   `xml:"sizeB,attr,omitempty"`
+	Xmlns              string    `xml:"xmlns,attr,omitempty"`
+	HREF               string    `xml:"href,attr,omitempty"`
+	Id                 string    `xml:"id,attr,omitempty"`
+	Type               string    `xml:"type,attr,omitempty"`
+	Name               string    `xml:"name,attr,omitempty"`
+	Vdc                string    `xml:"vdc,attr,omitempty"`
 	SizeMb             int64     `xml:"sizeMb,attr,omitempty"`
 	Iops               int64     `xml:"iops,attr,omitempty"`
 	Encrypted          bool      `xml:"encrypted,attr,omitempty"`
