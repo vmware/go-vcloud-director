@@ -377,7 +377,7 @@ func (vdc *Vdc) GetDiskByHref(diskHref string) (*Disk, error) {
 	Disk := NewDisk(vdc.client)
 
 	_, err := vdc.client.ExecuteRequestWithApiVersion(diskHref, http.MethodGet,
-		"", "error retrieving Disk: %#v", nil, Disk.Disk,
+		"", "error retrieving Disk: %s", nil, Disk.Disk,
 		vdc.client.GetSpecificApiVersionOnCondition(">= 36.0", "36.0"))
 	if err != nil && strings.Contains(err.Error(), "MajorErrorCode:403") {
 		return nil, ErrorEntityNotFound
@@ -461,14 +461,14 @@ func (disk *Disk) GetAttachedVmsHrefs() ([]string, error) {
 	}
 
 	if attachedVMsLink == nil {
-		return nil, fmt.Errorf("[ERROR] GetAttachedVmsHrefs - could not find request URL for attached vm in disk Link")
+		return nil, fmt.Errorf("error GetAttachedVmsHrefs - could not find request URL for attached vm in disk Link")
 	}
 
 	// Decode request
 	var vms = new(types.Vms)
 
 	_, err := disk.client.ExecuteRequest(attachedVMsLink.HREF, http.MethodGet,
-		attachedVMsLink.Type, "[ERROR] GetAttachedVmsHrefs - error getting attached vms: %s", nil, vms)
+		attachedVMsLink.Type, "error GetAttachedVmsHrefs - error getting attached VMs: %s", nil, vms)
 	if err != nil {
 		return nil, err
 	}
