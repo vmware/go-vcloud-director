@@ -1831,3 +1831,66 @@ func (vcd *TestVCD) Test_CreateStandaloneVMFromTemplate(check *C) {
 	vappList = vdc.GetVappList()
 	check.Assert(len(vappList), Equals, vappNum)
 }
+
+func (vcd *TestVCD) Test_VMChangeCPU(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
+	vapp := vcd.findFirstVapp()
+	existingVm, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	currentCpus := existingVm.VmSpecSection.NumCpus
+	currentCores := existingVm.VmSpecSection.NumCoresPerSocket
+
+	check.Assert(0, Not(Equals), currentCpus)
+	check.Assert(0, Not(Equals), currentCores)
+
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
+	check.Assert(err, IsNil)
+
+	cores := 2
+	cpuCount := 4
+
+	err = vm.ChangeCPU(cpuCount, cores)
+	check.Assert(err, IsNil)
+
+	check.Assert(*vm.VM.VmSpecSection.NumCpus, Equals, cpuCount)
+	check.Assert(*vm.VM.VmSpecSection.NumCoresPerSocket, Equals, cores)
+
+	// return to previous value
+	err = vm.ChangeCPU(*currentCpus, *currentCores)
+	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_VMChangeMemory(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
+	vapp := vcd.findFirstVapp()
+	existingVm, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+	check.Assert(existingVm.VmSpecSection.MemoryResourceMb, Not(IsNil))
+
+	currentMemory := existingVm.VmSpecSection.MemoryResourceMb.Configured
+	check.Assert(0, Not(Equals), currentMemory)
+
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
+	check.Assert(err, IsNil)
+
+	err = vm.ChangeMemory(2304)
+	check.Assert(err, IsNil)
+
+	check.Assert(existingVm.VmSpecSection.MemoryResourceMb, Not(IsNil))
+	check.Assert(vm.VM.VmSpecSection.MemoryResourceMb.Configured, Equals, int64(2304))
+
+	// return to previous value
+	err = vm.ChangeMemory(currentMemory)
+	check.Assert(err, IsNil)
+}

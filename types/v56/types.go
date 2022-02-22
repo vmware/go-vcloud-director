@@ -470,7 +470,7 @@ type AdminVdc struct {
 // Since: 5.1
 // https://code.vmware.com/apis/220/vcloud#/doc/doc/types/VdcStorageProfileParamsType.html
 type VdcStorageProfileConfiguration struct {
-	Enabled                   bool       `xml:"Enabled,omitempty"`
+	Enabled                   *bool      `xml:"Enabled,omitempty"`
 	Units                     string     `xml:"Units"`
 	Limit                     int64      `xml:"Limit"`
 	Default                   bool       `xml:"Default"`
@@ -485,11 +485,11 @@ type VdcStorageProfileConfiguration struct {
 type VdcStorageProfile struct {
 	Xmlns                     string                         `xml:"xmlns,attr"`
 	Name                      string                         `xml:"name,attr"`
-	Enabled                   bool                           `xml:"Enabled,omitempty"`
+	Enabled                   *bool                          `xml:"Enabled,omitempty"`
 	Units                     string                         `xml:"Units"`
 	Limit                     int64                          `xml:"Limit"`
 	Default                   bool                           `xml:"Default"`
-	IopsSettings              *VdcStorageProfileIopsSettings `xml:"IopsSettingsint64"`
+	IopsSettings              *VdcStorageProfileIopsSettings `xml:"IopsSettings"`
 	StorageUsedMB             int64                          `xml:"StorageUsedMB"`
 	IopsAllocated             int64                          `xml:"IopsAllocated"`
 	ProviderVdcStorageProfile *Reference                     `xml:"ProviderVdcStorageProfile"`
@@ -506,7 +506,7 @@ type AdminVdcStorageProfile struct {
 	Units                     string                         `xml:"Units"`
 	Limit                     int64                          `xml:"Limit"`
 	Default                   bool                           `xml:"Default"`
-	IopsSettings              *VdcStorageProfileIopsSettings `xml:"IopsSettingsint64"`
+	IopsSettings              *VdcStorageProfileIopsSettings `xml:"IopsSettings"`
 	StorageUsedMB             int64                          `xml:"StorageUsedMB"`
 	IopsAllocated             int64                          `xml:"IopsAllocated"`
 	ProviderVdcStorageProfile *Reference                     `xml:"ProviderVdcStorageProfile"`
@@ -517,11 +517,11 @@ type AdminVdcStorageProfile struct {
 // https://vdc-repo.vmware.com/vmwb-repository/dcr-public/71e12563-bc11-4d64-821d-92d30f8fcfa1/7424bf8e-aec2-44ad-be7d-b98feda7bae0/doc/doc/types/VdcStorageProfileIopsSettingsType.html
 type VdcStorageProfileIopsSettings struct {
 	Xmlns                   string `xml:"xmlns,attr"`
-	Enabled                 bool   `xml:"enabled"`
-	DiskIopsMax             int64  `xml:"diskIopsMax,"`
-	DiskIopsDefault         int64  `xml:"diskIopsDefault"`
-	StorageProfileIopsLimit int64  `xml:"storageProfileIopsLimit,omitempty"`
-	DiskIopsPerGbMax        int64  `xml:"diskIopsPerGbMax"`
+	Enabled                 bool   `xml:"Enabled"`
+	DiskIopsMax             int64  `xml:"DiskIopsMax"`
+	DiskIopsDefault         int64  `xml:"DiskIopsDefault"`
+	StorageProfileIopsLimit int64  `xml:"StorageProfileIopsLimit,omitempty"`
+	DiskIopsPerGbMax        int64  `xml:"DiskIopsPerGbMax"`
 }
 
 // VdcConfiguration models the payload for creating a VDC.
@@ -576,15 +576,16 @@ type Task struct {
 	EndTime          string           `xml:"endTime,attr,omitempty"`          // The date and time that processing of the task was completed. May not be present if the task is still being executed.
 	ExpiryTime       string           `xml:"expiryTime,attr,omitempty"`       // The date and time at which the task resource will be destroyed and no longer available for retrieval. May not be present if the task has not been executed or is still being executed.
 	CancelRequested  bool             `xml:"cancelRequested,attr,omitempty"`  // Whether user has requested this processing to be canceled.
-	Description      string           `xml:"Description,omitempty"`           // Optional description.
-	Details          string           `xml:"Details,omitempty"`               // Detailed message about the task. Also contained by the Owner entity when task status is preRunning.
-	Error            *Error           `xml:"Error,omitempty"`                 // Represents error information from a failed task.
 	Link             *Link            `xml:"Link,omitempty"`                  // A reference to an entity or operation associated with this object.
-	Organization     *Reference       `xml:"Organization,omitempty"`          // The organization to which the User belongs.
-	Owner            *Reference       `xml:"Owner,omitempty"`                 // Reference to the owner of the task. This is typically the object that the task is creating or updating.
-	Progress         int              `xml:"Progress,omitempty"`              // Read-only indicator of task progress as an approximate percentage between 0 and 100. Not available for all tasks.
+	Description      string           `xml:"Description,omitempty"`           // Optional description.
 	Tasks            *TasksInProgress `xml:"Tasks,omitempty"`                 // A list of queued, running, or recently completed tasks associated with this entity.
+	Owner            *Reference       `xml:"Owner,omitempty"`                 // Reference to the owner of the task. This is typically the object that the task is creating or updating.
+	Error            *Error           `xml:"Error,omitempty"`                 // Represents error information from a failed task.
 	User             *Reference       `xml:"User,omitempty"`                  // The user who started the task.
+	Organization     *Reference       `xml:"Organization,omitempty"`          // The organization to which the User belongs.
+	Progress         int              `xml:"Progress,omitempty"`              // Read-only indicator of task progress as an approximate percentage between 0 and 100. Not available for all tasks.
+	Details          string           `xml:"Details,omitempty"`               // Detailed message about the task. Also contained by the Owner entity when task status is preRunning.
+
 	//
 	// TODO: add the following fields
 	// Params      anyType        The parameters with which this task was started.
