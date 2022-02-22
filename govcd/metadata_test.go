@@ -382,7 +382,7 @@ func (vcd *TestVCD) Test_AddMetadataOnMediaRecord(check *C) {
 	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
 }
 
-func (vcd *TestVCD) Test_AddMetadataOnAdminOrg(check *C) {
+func (vcd *TestVCD) Test_AddAndDeleteMetadataOnAdminOrg(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	adminOrg, err := vcd.client.GetAdminOrgById(vcd.org.Org.ID)
 	if err != nil {
@@ -419,6 +419,65 @@ func (vcd *TestVCD) Test_AddMetadataOnAdminOrg(check *C) {
 	check.Assert(err, IsNil)
 	// Check if metadata was deleted correctly
 	metadata, err = adminOrg.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, 0)
+}
+
+func (vcd *TestVCD) Test_AddAndDeleteMetadataOnIndependentDisk(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	// Create disk
+	diskCreateParamsDisk := &types.Disk{
+		Name:        TestCreateDisk,
+		SizeMb:      11,
+		Description: TestCreateDisk,
+	}
+
+	diskCreateParams := &types.DiskCreateParams{
+		Disk: diskCreateParamsDisk,
+	}
+
+	task, err := vcd.vdc.CreateDisk(diskCreateParams)
+	check.Assert(err, IsNil)
+
+	diskHREF := task.Task.Owner.HREF
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	disk, err := vcd.vdc.GetDiskByHref(diskHREF)
+	check.Assert(err, IsNil)
+
+	// Check how much metaData exist
+	metadata, err := disk.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	existingMetaDataCount := len(metadata.MetadataEntry)
+
+	// Add metadata
+	_, err = disk.AddMetadata("key", "value")
+	check.Assert(err, IsNil)
+
+	// Check if metadata was added correctly
+	metadata, err = disk.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount+1)
+	var foundEntry *types.MetadataEntry
+	for _, entry := range metadata.MetadataEntry {
+		if entry.Key == "key" {
+			foundEntry = entry
+		}
+	}
+	check.Assert(foundEntry, NotNil)
+	check.Assert(foundEntry.Key, Equals, "key")
+	check.Assert(foundEntry.TypedValue.Value, Equals, "value")
+
+	err = disk.DeleteMetadata("key")
+	check.Assert(err, IsNil)
+	// Check if metadata was deleted correctly
+	metadata, err = disk.GetMetadata()
 	check.Assert(err, IsNil)
 	check.Assert(metadata, NotNil)
 	check.Assert(len(metadata.MetadataEntry), Equals, 0)
