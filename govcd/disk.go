@@ -379,7 +379,7 @@ func (vdc *Vdc) GetDiskByHref(diskHref string) (*Disk, error) {
 	_, err := vdc.client.ExecuteRequestWithApiVersion(diskHref, http.MethodGet,
 		"", "error retrieving Disk: %s", nil, Disk.Disk,
 		vdc.client.GetSpecificApiVersionOnCondition(">= 36.0", "36.0"))
-	if err != nil && strings.Contains(err.Error(), "MajorErrorCode:403") {
+	if err != nil && (strings.Contains(err.Error(), "MajorErrorCode:403") || strings.Contains(err.Error(), "does not exist")) {
 		return nil, ErrorEntityNotFound
 	}
 	if err != nil {
