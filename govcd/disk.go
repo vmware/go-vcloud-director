@@ -83,8 +83,9 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (Task, erro
 
 	disk := NewDisk(vdc.client)
 
-	_, err = vdc.client.ExecuteRequest(createDiskLink.HREF, http.MethodPost,
-		createDiskLink.Type, "error create disk: %s", diskCreateParams, disk.Disk)
+	_, err = vdc.client.ExecuteRequestWithApiVersion(createDiskLink.HREF, http.MethodPost,
+		createDiskLink.Type, "error create disk: %s", diskCreateParams, disk.Disk,
+		vdc.client.GetSpecificApiVersionOnCondition(">= 36.0", "36.0"))
 	if err != nil {
 		return Task{}, err
 	}
@@ -161,8 +162,9 @@ func (disk *Disk) Update(newDiskInfo *types.Disk) (Task, error) {
 	}
 
 	// Return the task
-	return disk.client.ExecuteTaskRequest(updateDiskLink.HREF, http.MethodPut,
-		updateDiskLink.Type, "error updating disk: %s", xmlPayload)
+	return disk.client.ExecuteTaskRequestWithApiVersion(updateDiskLink.HREF, http.MethodPut,
+		updateDiskLink.Type, "error updating disk: %s", xmlPayload,
+		disk.client.GetSpecificApiVersionOnCondition(">= 36.0", "36.0"))
 }
 
 // Remove an independent disk
@@ -221,8 +223,9 @@ func (disk *Disk) Refresh() error {
 
 	unmarshalledDisk := &types.Disk{}
 
-	_, err := disk.client.ExecuteRequest(disk.Disk.HREF, http.MethodGet,
-		"", "error refreshing independent disk: %s", nil, unmarshalledDisk)
+	_, err := disk.client.ExecuteRequestWithApiVersion(disk.Disk.HREF, http.MethodGet,
+		"", "error refreshing independent disk: %s", nil, unmarshalledDisk,
+		disk.client.GetSpecificApiVersionOnCondition(">= 36.0", "36.0"))
 	if err != nil {
 		return err
 	}
@@ -273,12 +276,12 @@ func (disk *Disk) AttachedVM() (*types.Reference, error) {
 	}
 
 	// If disk is not attached to any VM
-	if vms.VmReference == nil {
+	if vms.VmReference == nil || len(vms.VmReference) == 0 {
 		return nil, nil
 	}
 
 	// An independent disk can be attached to at most one virtual machine so return the first result of VM reference
-	return vms.VmReference, nil
+	return vms.VmReference[0], nil
 }
 
 // Find an independent disk by disk href in VDC
@@ -316,7 +319,9 @@ func (vdc *Vdc) QueryDisk(diskName string) (DiskRecord, error) {
 		typeMedia = "adminDisk"
 	}
 
-	results, err := vdc.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia, "filter": "name==" + url.QueryEscape(diskName), "filterEncoded": "true"})
+	results, err := vdc.QueryWithNotEncodedParamsWithApiVersion(nil, map[string]string{"type": typeMedia,
+		"filter": "name==" + url.QueryEscape(diskName) + ";vdc==" + vdc.vdcId(), "filterEncoded": "true"},
+		vdc.client.GetSpecificApiVersionOnCondition(">= 36.0", "36.0"))
 	if err != nil {
 		return DiskRecord{}, fmt.Errorf("error querying disk %s", err)
 	}
@@ -349,7 +354,9 @@ func (vdc *Vdc) QueryDisks(diskName string) (*[]*types.DiskRecordType, error) {
 		typeMedia = "adminDisk"
 	}
 
-	results, err := vdc.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia, "filter": "name==" + url.QueryEscape(diskName), "filterEncoded": "true"})
+	results, err := vdc.QueryWithNotEncodedParamsWithApiVersion(nil, map[string]string{"type": typeMedia,
+		"filter": "name==" + url.QueryEscape(diskName) + ";vdc==" + vdc.vdcId(), "filterEncoded": "true"},
+		vdc.client.GetSpecificApiVersionOnCondition(">= 36.0", "36.0"))
 	if err != nil {
 		return nil, fmt.Errorf("error querying disks %s", err)
 	}
@@ -369,9 +376,10 @@ func (vdc *Vdc) GetDiskByHref(diskHref string) (*Disk, error) {
 	util.Logger.Printf("[TRACE] Get Disk By Href: %s\n", diskHref)
 	Disk := NewDisk(vdc.client)
 
-	_, err := vdc.client.ExecuteRequest(diskHref, http.MethodGet,
-		"", "error retrieving Disk: %#v", nil, Disk.Disk)
-	if err != nil && strings.Contains(err.Error(), "MajorErrorCode:403") {
+	_, err := vdc.client.ExecuteRequestWithApiVersion(diskHref, http.MethodGet,
+		"", "error retrieving Disk: %s", nil, Disk.Disk,
+		vdc.client.GetSpecificApiVersionOnCondition(">= 36.0", "36.0"))
+	if err != nil && (strings.Contains(err.Error(), "MajorErrorCode:403") || strings.Contains(err.Error(), "does not exist")) {
 		return nil, ErrorEntityNotFound
 	}
 	if err != nil {
@@ -428,4 +436,51 @@ func (vdc *Vdc) GetDiskById(diskId string, refresh bool) (*Disk, error) {
 		}
 	}
 	return nil, ErrorEntityNotFound
+}
+
+// Get a VMs HREFs that is attached to the disk
+// An independent disk can be attached to at most one virtual machine.
+// If the disk isn't attached to any VM, return empty slice.
+// Otherwise return the list of VMs HREFs.
+func (disk *Disk) GetAttachedVmsHrefs() ([]string, error) {
+	util.Logger.Printf("[TRACE] GetAttachedVmsHrefs, HREF: %s\n", disk.Disk.HREF)
+
+	var vmHrefs []string
+
+	var attachedVMsLink *types.Link
+
+	// Find the proper link for request
+	for _, diskLink := range disk.Disk.Link {
+		if diskLink.Type == types.MimeVMs {
+			util.Logger.Printf("[TRACE] GetAttachedVmsHrefs - found the proper link for request, HREF: %s, name: %s, type: %s,id: %s, rel: %s \n",
+				diskLink.HREF, diskLink.Name, diskLink.Type, diskLink.ID, diskLink.Rel)
+
+			attachedVMsLink = diskLink
+			break
+		}
+	}
+
+	if attachedVMsLink == nil {
+		return nil, fmt.Errorf("error GetAttachedVmsHrefs - could not find request URL for attached vm in disk Link")
+	}
+
+	// Decode request
+	var vms = new(types.Vms)
+
+	_, err := disk.client.ExecuteRequest(attachedVMsLink.HREF, http.MethodGet,
+		attachedVMsLink.Type, "error GetAttachedVmsHrefs - error getting attached VMs: %s", nil, vms)
+	if err != nil {
+		return nil, err
+	}
+
+	// If disk is not attached to any VM
+	if vms.VmReference == nil || len(vms.VmReference) == 0 {
+		return nil, nil
+	}
+
+	for _, value := range vms.VmReference {
+		vmHrefs = append(vmHrefs, value.HREF)
+	}
+
+	return vmHrefs, nil
 }
