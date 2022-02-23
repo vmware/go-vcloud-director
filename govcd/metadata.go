@@ -805,13 +805,13 @@ func (disk *Disk) DeleteMetadataEntry(key string) error {
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
-		return fmt.Errorf("error completing delete metadata for organization task: %s", err)
+		return fmt.Errorf("error completing delete metadata for independent disk task: %s", err)
 	}
 
 	return nil
 }
 
-// DeleteMetadataEntryAsync deletes metadata of the corresponding organization with the given key, and returns
+// DeleteMetadataEntryAsync deletes metadata of the corresponding independent disk with the given key, and returns
 // a task.
 func (disk *Disk) DeleteMetadataEntryAsync(key string) (Task, error) {
 	return deleteMetadata(disk.client, key, disk.Disk.HREF)
