@@ -9,6 +9,7 @@ package govcd
 
 import (
 	"fmt"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -179,7 +180,7 @@ func (vcd *TestVCD) test_GroupFinderGetGenericEntity(check *C) {
 
 // test_GroupUserListIsPopulated checks that when retrieving the existing groups from the testing LDAP,
 // the user list reference is populated.
-// Note 2: Because it requires LDAP to be functional - this test is run from main test "Test_LDAP"
+// Note. Because it requires LDAP to be functional - this test is run from main test "Test_LDAP"
 // which sets up LDAP configuration.
 func (vcd *TestVCD) test_GroupUserListIsPopulated(check *C) {
 	fmt.Printf("Running: %s\n", "test_GroupUserListIsPopulated")
@@ -222,7 +223,7 @@ func (vcd *TestVCD) test_GroupUserListIsPopulated(check *C) {
 	check.Assert(grp.Group.UsersList, NotNil)
 	check.Assert(grp.Group.UsersList.UserReference[0], NotNil)
 
-  user, err = adminOrg.GetUserByHref(grp.Group.UsersList.UserReference[0].HREF)
+	user, err = adminOrg.GetUserByHref(grp.Group.UsersList.UserReference[0].HREF)
 	check.Assert(err, IsNil)
 	check.Assert(user.User.Name, Equals, userName)
 	check.Assert(user.User.Role, Equals, roleRef)
