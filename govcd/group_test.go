@@ -9,7 +9,6 @@ package govcd
 
 import (
 	"fmt"
-
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -111,8 +110,6 @@ func (vcd *TestVCD) test_GroupCRUD(check *C) {
 
 		foundGroup2, err := adminOrg.GetGroupByName(gd.name, true)
 		check.Assert(err, IsNil)
-
-		check.Assert(err, IsNil)
 		check.Assert(foundGroup2.Group.Href, Equals, createdGroup.Group.Href)
 		check.Assert(foundGroup2.Group.Name, Equals, createdGroup.Group.Name)
 
@@ -178,4 +175,54 @@ func (vcd *TestVCD) test_GroupFinderGetGenericEntity(check *C) {
 	check.Assert(err, IsNil)
 	err = grp.Delete()
 	check.Assert(err, IsNil)
+}
+
+// test_GroupUserListIsPopulated checks that when retrieving the existing groups from the testing LDAP,
+// the user list reference is populated.
+// Note 2: Because it requires LDAP to be functional - this test is run from main test "Test_LDAP"
+// which sets up LDAP configuration.
+func (vcd *TestVCD) test_GroupUserListIsPopulated(check *C) {
+	fmt.Printf("Running: %s\n", "test_GroupUserListIsPopulated")
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	role, err := adminOrg.GetRoleReference(OrgUserRoleOrganizationAdministrator)
+	check.Assert(err, IsNil)
+
+	group := NewGroup(adminOrg.client, adminOrg)
+	const groupName = "ship_crew"
+	group.Group = &types.Group{
+		Name:         groupName,
+		Role:         role,
+		ProviderType: OrgUserProviderIntegrated,
+	}
+
+	_, err = adminOrg.CreateGroup(group.Group)
+	check.Assert(err, IsNil)
+	AddToCleanupList(groupName, "group", group.AdminOrg.AdminOrg.Name, check.TestName())
+
+	user := NewUser(adminOrg.client, adminOrg)
+	const userName = "fry"
+	user.User = &types.User{
+		Name:         userName,
+		Role:         role,
+		Password:     userName,
+		IsExternal:   true,
+		IsEnabled:    true,
+		IsGroupRole:  false,
+		ProviderType: OrgUserProviderIntegrated,
+	}
+	_, err = adminOrg.CreateUser(user.User)
+	check.Assert(err, IsNil)
+	AddToCleanupList(userName, "user", group.AdminOrg.AdminOrg.Name, check.TestName())
+
+	grp, err := adminOrg.GetGroupByName(group.Group.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(grp.Group.UsersList, NotNil)
+	check.Assert(len(grp.Group.UsersList), Equals, 1)
+
+	user, err = adminOrg.GetUserById(grp.Group.UsersList[0].ID, true)
+	check.Assert(err, IsNil)
+	check.Assert(user.User.Name, Equals, userName)
 }
