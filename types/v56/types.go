@@ -2899,8 +2899,13 @@ type Group struct {
 	ProviderType string `xml:"ProviderType"`
 	// Role - reference to existing role
 	Role *Reference `xml:"Role,omitempty"`
-	// UsersList - references to existing users
-	UsersList []*Reference `xml:"UsersList,omitempty"`
+	// UsersList - references to existing users of type User
+	UsersList *UsersList `xml:"UsersList,omitempty"`
+}
+
+// UsersList is a tagged list of User Reference's
+type UsersList struct {
+	UserReference []*Reference `xml:"UserReference"`
 }
 
 // Type: AdminCatalogRecord

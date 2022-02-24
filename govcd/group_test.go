@@ -187,14 +187,14 @@ func (vcd *TestVCD) test_GroupUserListIsPopulated(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	role, err := adminOrg.GetRoleReference(OrgUserRoleOrganizationAdministrator)
+	roleRef, err := adminOrg.GetRoleReference(OrgUserRoleOrganizationAdministrator)
 	check.Assert(err, IsNil)
 
 	group := NewGroup(adminOrg.client, adminOrg)
 	const groupName = "ship_crew"
 	group.Group = &types.Group{
 		Name:         groupName,
-		Role:         role,
+		Role:         roleRef,
 		ProviderType: OrgUserProviderIntegrated,
 	}
 
@@ -206,7 +206,7 @@ func (vcd *TestVCD) test_GroupUserListIsPopulated(check *C) {
 	const userName = "fry"
 	user.User = &types.User{
 		Name:         userName,
-		Role:         role,
+		Role:         roleRef,
 		Password:     userName,
 		IsExternal:   true,
 		IsEnabled:    true,
@@ -220,9 +220,16 @@ func (vcd *TestVCD) test_GroupUserListIsPopulated(check *C) {
 	grp, err := adminOrg.GetGroupByName(group.Group.Name, true)
 	check.Assert(err, IsNil)
 	check.Assert(grp.Group.UsersList, NotNil)
-	check.Assert(len(grp.Group.UsersList), Equals, 1)
+	check.Assert(grp.Group.UsersList.UserReference[0], NotNil)
 
-	user, err = adminOrg.GetUserById(grp.Group.UsersList[0].ID, true)
+  user, err = adminOrg.GetUserByHref(grp.Group.UsersList.UserReference[0].HREF)
 	check.Assert(err, IsNil)
 	check.Assert(user.User.Name, Equals, userName)
+	check.Assert(user.User.Role, Equals, roleRef)
+
+	// Cleanup
+	err = user.Delete(false)
+	check.Assert(err, IsNil)
+	err = grp.Delete()
+	check.Assert(err, IsNil)
 }
