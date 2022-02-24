@@ -1,1 +1,1 @@
-* Bumped Default API Version to V35.0 [GH-434]
+* Bump Default API Version to V35.0 [GH-434]
