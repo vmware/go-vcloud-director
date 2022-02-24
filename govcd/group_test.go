@@ -226,7 +226,6 @@ func (vcd *TestVCD) test_GroupUserListIsPopulated(check *C) {
 	user, err = adminOrg.GetUserByHref(grp.Group.UsersList.UserReference[0].HREF)
 	check.Assert(err, IsNil)
 	check.Assert(user.User.Name, Equals, userName)
-	check.Assert(user.User.Role, Equals, roleRef)
 
 	// Cleanup
 	err = user.Delete(false)
