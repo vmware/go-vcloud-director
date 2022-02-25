@@ -204,7 +204,7 @@ func (vcd *TestVCD) test_GroupUserListIsPopulated(check *C) {
 	AddToCleanupList(groupName, "group", group.AdminOrg.AdminOrg.Name, check.TestName())
 
 	user := NewUser(adminOrg.client, adminOrg)
-	const userName = "fry"
+	const userName = "zoidberg"
 	user.User = &types.User{
 		Name:         userName,
 		Role:         roleRef,
