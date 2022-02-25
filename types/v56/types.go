@@ -2905,7 +2905,7 @@ type Group struct {
 
 // UsersList is a tagged list of User Reference's
 type UsersList struct {
-	UserReference []*Reference `xml:"UserReference"`
+	UserReference []*Reference `xml:"UserReference,omitempty"`
 }
 
 // Type: AdminCatalogRecord
