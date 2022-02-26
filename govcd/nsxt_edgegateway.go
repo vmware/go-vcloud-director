@@ -17,26 +17,26 @@ type NsxtEdgeGateway struct {
 	client      *Client
 }
 
-// GetNsxtEdgeGatewayById allows to retrieve NSX-T edge gateway by ID for Org admins
+// GetNsxtEdgeGatewayById allows retrieving NSX-T edge gateway by ID for Org admins
 func (adminOrg *AdminOrg) GetNsxtEdgeGatewayById(id string) (*NsxtEdgeGateway, error) {
 	return getNsxtEdgeGatewayById(adminOrg.client, id, nil)
 }
 
-// GetNsxtEdgeGatewayById allows to retrieve NSX-T edge gateway by ID for Org users
+// GetNsxtEdgeGatewayById allows retrieving NSX-T edge gateway by ID for Org users
 func (org *Org) GetNsxtEdgeGatewayById(id string) (*NsxtEdgeGateway, error) {
 	return getNsxtEdgeGatewayById(org.client, id, nil)
 }
 
-// GetNsxtEdgeGatewayById allows to retrieve NSX-T edge gateway by ID for specific VDC
+// GetNsxtEdgeGatewayById allows retrieving NSX-T edge gateway by ID for specific VDC
 func (vdc *Vdc) GetNsxtEdgeGatewayById(id string) (*NsxtEdgeGateway, error) {
 	params := url.Values{}
-	filterParams := queryParameterFilterAnd("orgVdc.id=="+vdc.Vdc.ID, params)
+	filterParams := queryParameterFilterAnd("ownerRef.id=="+vdc.Vdc.ID, params)
 	egw, err := getNsxtEdgeGatewayById(vdc.client, id, filterParams)
 	if err != nil {
 		return nil, err
 	}
 
-	if egw.EdgeGateway.OrgVdc.ID != vdc.Vdc.ID {
+	if egw.EdgeGateway.OwnerRef.ID != vdc.Vdc.ID {
 		return nil, fmt.Errorf("%s: no NSX-T Edge Gateway with ID '%s' found in VDC '%s'",
 			ErrorEntityNotFound, id, vdc.Vdc.ID)
 	}
@@ -44,7 +44,7 @@ func (vdc *Vdc) GetNsxtEdgeGatewayById(id string) (*NsxtEdgeGateway, error) {
 	return egw, nil
 }
 
-// GetNsxtEdgeGatewayByName allows to retrieve NSX-T edge gateway by Name for Org admins
+// GetNsxtEdgeGatewayByName allows retrieving NSX-T edge gateway by Name for Org admins
 func (adminOrg *AdminOrg) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) {
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", "name=="+name)
@@ -59,7 +59,7 @@ func (adminOrg *AdminOrg) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGatewa
 	return returnSingleNsxtEdgeGateway(name, onlyNsxtEdges)
 }
 
-// GetNsxtEdgeGatewayByName allows to retrieve NSX-T edge gateway by Name for Org admins
+// GetNsxtEdgeGatewayByName allows retrieving NSX-T edge gateway by Name for Org admins
 func (org *Org) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) {
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", "name=="+name)
@@ -72,6 +72,20 @@ func (org *Org) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) 
 	onlyNsxtEdges := filterOnlyNsxtEdges(allEdges)
 
 	return returnSingleNsxtEdgeGateway(name, onlyNsxtEdges)
+}
+
+func (org *Org) GetNsxtEdgeGatewayByNameAndOwnerId(edgeGatewayName, ownerId string) (*NsxtEdgeGateway, error) {
+	queryParameters := url.Values{}
+	queryParameters.Add("filter", fmt.Sprintf("ownerRef.id==%s;name==%s", ownerId, edgeGatewayName))
+
+	allEdges, err := org.GetAllNsxtEdgeGateways(queryParameters)
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve Edge Gateway by name '%s': %s", edgeGatewayName, err)
+	}
+
+	onlyNsxtEdges := filterOnlyNsxtEdges(allEdges)
+
+	return returnSingleNsxtEdgeGateway(edgeGatewayName, onlyNsxtEdges)
 }
 
 // GetNsxtEdgeGatewayByName allows to retrieve NSX-T edge gateway by Name for specific VDC
@@ -99,7 +113,7 @@ func (org *Org) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeG
 
 // GetAllNsxtEdgeGateways allows to retrieve all NSX-T edge gateways for specific VDC
 func (vdc *Vdc) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
-	filteredQueryParams := queryParameterFilterAnd("orgVdc.id=="+vdc.Vdc.ID, queryParameters)
+	filteredQueryParams := queryParameterFilterAnd("ownerRef.id=="+vdc.Vdc.ID, queryParameters)
 	return getAllNsxtEdgeGateways(vdc.client, filteredQueryParams)
 }
 
@@ -110,7 +124,7 @@ func (adminOrg *AdminOrg) CreateNsxtEdgeGateway(edgeGatewayConfig *types.OpenAPI
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
-	minimumApiVersion, err := adminOrg.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := adminOrg.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -133,14 +147,14 @@ func (adminOrg *AdminOrg) CreateNsxtEdgeGateway(edgeGatewayConfig *types.OpenAPI
 	return returnEgw, nil
 }
 
-// Update allows to update NSX-T edge gateway for Org admins
+// Update allows updating NSX-T edge gateway for Org admins
 func (egw *NsxtEdgeGateway) Update(edgeGatewayConfig *types.OpenAPIEdgeGateway) (*NsxtEdgeGateway, error) {
 	if !egw.client.IsSysAdmin {
 		return nil, fmt.Errorf("only System Administrator can update Edge Gateway")
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
-	minimumApiVersion, err := egw.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := egw.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -167,14 +181,14 @@ func (egw *NsxtEdgeGateway) Update(edgeGatewayConfig *types.OpenAPIEdgeGateway) 
 	return returnEgw, nil
 }
 
-// Delete allows to delete NSX-T edge gateway for sysadmins
+// Delete allows deleting NSX-T edge gateway for sysadmins
 func (egw *NsxtEdgeGateway) Delete() error {
 	if !egw.client.IsSysAdmin {
 		return fmt.Errorf("only Provider can delete Edge Gateway")
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
-	minimumApiVersion, err := egw.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := egw.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
 	}
@@ -197,13 +211,56 @@ func (egw *NsxtEdgeGateway) Delete() error {
 	return nil
 }
 
+// MoveToVdc moves NSX-T Edge Gateway to another VDC. This can cover such scenarios:
+// * Move from VDC to VDC Group
+// * Move from VDC Group to VDC (which is part of that VDC Group)
+//
+// Note. NSX-T Edge Gateway cannot be moved directly from one VDC to another
+func (egw *NsxtEdgeGateway) MoveToVdc(vdcGroupId string) (*NsxtEdgeGateway, error) {
+	if !egw.client.IsSysAdmin {
+		return nil, fmt.Errorf("only System Administrator can update Edge Gateway")
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
+	minimumApiVersion, err := egw.client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	if egw.EdgeGateway.ID == "" {
+		return nil, fmt.Errorf("cannot update Edge Gateway without ID")
+	}
+
+	urlRef, err := egw.client.OpenApiBuildEndpoint(endpoint, egw.EdgeGateway.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	edgeGatewayConfig := egw.EdgeGateway
+	edgeGatewayConfig.OwnerRef = &types.OpenApiReference{ID: vdcGroupId}
+	// Explicitly unset VDC field because using it fails
+	edgeGatewayConfig.OrgVdc = nil
+
+	returnEgw := &NsxtEdgeGateway{
+		EdgeGateway: &types.OpenAPIEdgeGateway{},
+		client:      egw.client,
+	}
+
+	err = egw.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, edgeGatewayConfig, returnEgw.EdgeGateway, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error updating Edge Gateway: %s", err)
+	}
+
+	return returnEgw, nil
+}
+
 // getNsxtEdgeGatewayById is a private parent for wrapped functions:
 // func (adminOrg *AdminOrg) GetNsxtEdgeGatewayByName(id string) (*NsxtEdgeGateway, error)
 // func (org *Org) GetNsxtEdgeGatewayByName(id string) (*NsxtEdgeGateway, error)
 // func (vdc *Vdc) GetNsxtEdgeGatewayById(id string) (*NsxtEdgeGateway, error)
 func getNsxtEdgeGatewayById(client *Client, id string, queryParameters url.Values) (*NsxtEdgeGateway, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +312,7 @@ func returnSingleNsxtEdgeGateway(name string, allEdges []*NsxtEdgeGateway) (*Nsx
 // func (vdc *Vdc) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error)
 func getAllNsxtEdgeGateways(client *Client, queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}

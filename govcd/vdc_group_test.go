@@ -78,6 +78,7 @@ func test_CreateVdcGroup(check *C, adminOrg *AdminOrg, vcd *TestVCD) {
 	vdcGroup, err := adminOrg.CreateVdcGroup(vdcGroupConfig)
 	check.Assert(err, IsNil)
 	check.Assert(vdcGroup, NotNil)
+	check.Assert(vdcGroup.IsNsxt(), Equals, true)
 
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroups + vdcGroup.VdcGroup.Id
 	PrependToCleanupListOpenApi(vdcGroup.VdcGroup.Name, check.TestName(), openApiEndpoint)

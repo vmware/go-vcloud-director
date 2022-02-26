@@ -481,6 +481,11 @@ const (
 	NsxtAlbCloudBackingTypeNsxtAlb = "NSXALB_NSXT"
 )
 
+const (
+	UrnTypeVdcGroup = "vdcGroup"
+	UrnTypeVdc      = "vdc"
+)
+
 // Metadata type constants
 const (
 	MetadataStringValue   string = "MetadataStringValue"
