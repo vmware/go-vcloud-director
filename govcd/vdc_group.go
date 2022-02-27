@@ -540,7 +540,7 @@ func (vdcGroup *VdcGroup) DisableDefaultPolicy() (*VdcGroup, error) {
 	return vdcGroup.UpdateDefaultDfwPolicies(*dfwPolicies.DefaultPolicy)
 }
 
-func GetOwnerTypeFromUrn(urn string) (string, error) {
+func getOwnerTypeFromUrn(urn string) (string, error) {
 	if !isUrn(urn) {
 		return "", fmt.Errorf("supplied ID is not URN: %s", urn)
 	}
@@ -549,8 +549,9 @@ func GetOwnerTypeFromUrn(urn string) (string, error) {
 	return ss[2], nil
 }
 
+// OwnerIsVdcGroup evaluates given URN and returns true if it is a VDC Group
 func OwnerIsVdcGroup(urn string) bool {
-	ownerType, err := GetOwnerTypeFromUrn(urn)
+	ownerType, err := getOwnerTypeFromUrn(urn)
 	if err != nil {
 		return false
 	}
@@ -562,8 +563,9 @@ func OwnerIsVdcGroup(urn string) bool {
 	return false
 }
 
+// OwnerIsVdc evaluates a given URN and returns true if it is a VDC
 func OwnerIsVdc(urn string) bool {
-	ownerType, err := GetOwnerTypeFromUrn(urn)
+	ownerType, err := getOwnerTypeFromUrn(urn)
 	if err != nil {
 		return false
 	}
