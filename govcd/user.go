@@ -29,6 +29,7 @@ type OrgUserConfiguration struct {
 	ProviderType    string // Optional: defaults to "INTEGRATED"
 	IsEnabled       bool   // Optional: defaults to false
 	IsLocked        bool   // Only used for updates
+	IsExternal      bool   // Optional: defaults to false
 	DeployedVmQuota int    // Optional: 0 means "unlimited"
 	StoredVmQuota   int    // Optional: 0 means "unlimited"
 	FullName        string // Optional
@@ -298,6 +299,7 @@ func (adminOrg *AdminOrg) CreateUserSimple(userData OrgUserConfiguration) (*OrgU
 		ProviderType:    userData.ProviderType,
 		Name:            userData.Name,
 		IsEnabled:       userData.IsEnabled,
+		IsExternal:      userData.IsExternal,
 		Password:        userData.Password,
 		DeployedVmQuota: userData.DeployedVmQuota,
 		StoredVmQuota:   userData.StoredVmQuota,
@@ -383,6 +385,7 @@ func (user *OrgUser) UpdateSimple(userData OrgUserConfiguration) error {
 	user.User.DeployedVmQuota = userData.DeployedVmQuota
 	user.User.IsEnabled = userData.IsEnabled
 	user.User.IsLocked = userData.IsLocked
+	user.User.IsExternal = userData.IsExternal
 
 	if userData.RoleName != "" && user.User.Role != nil && user.User.Role.Name != userData.RoleName {
 		newRole, err := user.AdminOrg.GetRoleReference(userData.RoleName)
