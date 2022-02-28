@@ -15,7 +15,7 @@ import (
 )
 
 // test_GroupCRUD tests out CRUD capabilities for Org Groups.
-// Note. Because it requires LDAP to be functional - this test is run from main test "Test_LDAP"
+// Note: Because it requires LDAP to be functional - this test is run from main test "Test_LDAP"
 // which sets up LDAP configuration.
 func (vcd *TestVCD) test_GroupCRUD(check *C) {
 	fmt.Printf("Running: %s\n", "test_GroupCRUD")
@@ -124,7 +124,7 @@ func (vcd *TestVCD) test_GroupCRUD(check *C) {
 
 // test_GroupFinderGetGenericEntity uses testFinderGetGenericEntity to validate that ByName, ById
 // ByNameOrId method work properly.
-// Note. Because it requires LDAP to be functional - this test is run from main test "Test_LDAP"
+// Note: Because it requires LDAP to be functional - this test is run from main test "Test_LDAP"
 // which sets up LDAP configuration.
 func (vcd *TestVCD) test_GroupFinderGetGenericEntity(check *C) {
 	fmt.Printf("Running: %s\n", "test_GroupFinderGetGenericEntity")
@@ -180,7 +180,7 @@ func (vcd *TestVCD) test_GroupFinderGetGenericEntity(check *C) {
 
 // test_GroupUserListIsPopulated checks that when retrieving the existing groups from the testing LDAP,
 // the user list reference is populated.
-// Note. Because it requires LDAP to be functional - this test is run from main test "Test_LDAP"
+// Note: Because it requires LDAP to be functional - this test is run from main test "Test_LDAP"
 // which sets up LDAP configuration.
 func (vcd *TestVCD) test_GroupUserListIsPopulated(check *C) {
 	fmt.Printf("Running: %s\n", "test_GroupUserListIsPopulated")
@@ -204,14 +204,13 @@ func (vcd *TestVCD) test_GroupUserListIsPopulated(check *C) {
 	AddToCleanupList(groupName, "group", group.AdminOrg.AdminOrg.Name, check.TestName())
 
 	user := NewUser(adminOrg.client, adminOrg)
-	const userName = "zoidberg"
+	const userName = "fry"
 	user.User = &types.User{
 		Name:         userName,
-		Role:         roleRef,
 		Password:     userName,
+		Role:         roleRef,
 		IsExternal:   true,
 		IsEnabled:    true,
-		IsGroupRole:  false,
 		ProviderType: OrgUserProviderIntegrated,
 	}
 	_, err = adminOrg.CreateUser(user.User)
