@@ -286,7 +286,8 @@ func (adminOrg *AdminOrg) CreateUserSimple(userData OrgUserConfiguration) (*OrgU
 		return nil, fmt.Errorf("password is mandatory to create a user")
 	}
 	if userData.Password != "" && userData.IsExternal {
-		return nil, fmt.Errorf("external users should not specify a password")
+		// External users don't need to provide a password
+		userData.Password = ""
 	}
 
 	if userData.RoleName == "" {
@@ -533,6 +534,7 @@ func validateUserForCreation(user *types.User) error {
 		return fmt.Errorf(missingField, "Password")
 	}
 	if user.Password != "" && user.IsExternal {
+		// External users don't need to provide a password
 		user.Password = ""
 	}
 	if user.ProviderType != "" {
