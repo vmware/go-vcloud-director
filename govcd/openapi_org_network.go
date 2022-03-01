@@ -61,39 +61,25 @@ func (vdc *Vdc) GetAllOpenApiOrgVdcNetworks(queryParameters url.Values) ([]*Open
 	return getAllOpenApiOrgVdcNetworks(vdc.client, filteredQueryParams)
 }
 
-// CreateOpenApiOrgVdcNetwork allows creating NSX-T or NSX-V Org VDC network
-func (adminOrg *AdminOrg) CreateOpenApiOrgVdcNetwork(OrgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) (*OpenApiOrgVdcNetwork, error) {
-	return createOpenApiOrgVdcNetwork(adminOrg.client, OrgVdcNetworkConfig)
-}
-
-// CreateOpenApiOrgVdcNetwork allows creating NSX-T or NSX-V Org VDC network
-func (org *Org) CreateOpenApiOrgVdcNetwork(OrgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) (*OpenApiOrgVdcNetwork, error) {
-	return createOpenApiOrgVdcNetwork(org.client, OrgVdcNetworkConfig)
-}
-
-// CreateOpenApiOrgVdcNetwork allows creating NSX-T or NSX-V Org VDC network
+// CreateOpenApiOrgVdcNetwork allows to create NSX-T or NSX-V Org VDC network
 func (vdc *Vdc) CreateOpenApiOrgVdcNetwork(OrgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) (*OpenApiOrgVdcNetwork, error) {
-	return createOpenApiOrgVdcNetwork(vdc.client, OrgVdcNetworkConfig)
-}
-
-func createOpenApiOrgVdcNetwork(client *Client, OrgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) (*OpenApiOrgVdcNetwork, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
-	minimumApiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	urlRef, err := vdc.client.OpenApiBuildEndpoint(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
 	returnEgw := &OpenApiOrgVdcNetwork{
 		OpenApiOrgVdcNetwork: &types.OpenApiOrgVdcNetwork{},
-		client:               client,
+		client:               vdc.client,
 	}
 
-	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, OrgVdcNetworkConfig, returnEgw.OpenApiOrgVdcNetwork, nil)
+	err = vdc.client.OpenApiPostItem(minimumApiVersion, urlRef, nil, OrgVdcNetworkConfig, returnEgw.OpenApiOrgVdcNetwork, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating Org VDC network: %s", err)
 	}
@@ -101,10 +87,10 @@ func createOpenApiOrgVdcNetwork(client *Client, OrgVdcNetworkConfig *types.OpenA
 	return returnEgw, nil
 }
 
-// Update allows updating Org VDC network
+// Update allows to update Org VDC network
 func (orgVdcNet *OpenApiOrgVdcNetwork) Update(OrgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) (*OpenApiOrgVdcNetwork, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
-	minimumApiVersion, err := orgVdcNet.client.getOpenApiHighestElevatedVersion(endpoint)
+	minimumApiVersion, err := orgVdcNet.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +120,7 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) Update(OrgVdcNetworkConfig *types.OpenApi
 // Delete allows to delete Org VDC network
 func (orgVdcNet *OpenApiOrgVdcNetwork) Delete() error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
-	minimumApiVersion, err := orgVdcNet.client.getOpenApiHighestElevatedVersion(endpoint)
+	minimumApiVersion, err := orgVdcNet.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return err
 	}
@@ -187,7 +173,7 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) IsDirect() bool {
 // func (vdc *Vdc) GetOpenApiOrgVdcNetworkById(id string) (*OpenApiOrgVdcNetwork, error)
 func getOpenApiOrgVdcNetworkById(client *Client, id string, queryParameters url.Values) (*OpenApiOrgVdcNetwork, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
-	minimumApiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +241,7 @@ func getAllOpenApiOrgVdcNetworks(client *Client, queryParameters url.Values) ([]
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
-	minimumApiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
 	}

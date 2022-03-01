@@ -101,6 +101,19 @@ func (vdc *Vdc) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) 
 	return returnSingleNsxtEdgeGateway(name, allEdges)
 }
 
+// GetNsxtEdgeGatewayByName allows to retrieve NSX-T edge gateway by Name for specific VDC Group
+func (vdcGroup *VdcGroup) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) {
+	queryParameters := url.Values{}
+	queryParameters.Add("filter", "name=="+name)
+
+	allEdges, err := vdcGroup.GetAllNsxtEdgeGateways(queryParameters)
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve Edge Gateway by name '%s': %s", name, err)
+	}
+
+	return returnSingleNsxtEdgeGateway(name, allEdges)
+}
+
 // GetAllNsxtEdgeGateways allows to retrieve all NSX-T edge gateways for Org Admins
 func (adminOrg *AdminOrg) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
 	return getAllNsxtEdgeGateways(adminOrg.client, queryParameters)
@@ -115,6 +128,12 @@ func (org *Org) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeG
 func (vdc *Vdc) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
 	filteredQueryParams := queryParameterFilterAnd("ownerRef.id=="+vdc.Vdc.ID, queryParameters)
 	return getAllNsxtEdgeGateways(vdc.client, filteredQueryParams)
+}
+
+// GetAllNsxtEdgeGateways allows to retrieve all NSX-T edge gateways for specific VDC
+func (vdcGroup *VdcGroup) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
+	filteredQueryParams := queryParameterFilterAnd("ownerRef.id=="+vdcGroup.VdcGroup.Id, queryParameters)
+	return getAllNsxtEdgeGateways(vdcGroup.client, filteredQueryParams)
 }
 
 // CreateNsxtEdgeGateway allows to create NSX-T edge gateway for Org admins
@@ -215,43 +234,16 @@ func (egw *NsxtEdgeGateway) Delete() error {
 // * Move from VDC to VDC Group
 // * Move from VDC Group to VDC (which is part of that VDC Group)
 //
+// This function is just an Update operation with OwnerRef changed to vdcGroupId, but it is more
+// convenient to use it.
 // Note. NSX-T Edge Gateway cannot be moved directly from one VDC to another
-func (egw *NsxtEdgeGateway) MoveToVdc(vdcGroupId string) (*NsxtEdgeGateway, error) {
-	if !egw.client.IsSysAdmin {
-		return nil, fmt.Errorf("only System Administrator can update Edge Gateway")
-	}
-
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
-	minimumApiVersion, err := egw.client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	if egw.EdgeGateway.ID == "" {
-		return nil, fmt.Errorf("cannot update Edge Gateway without ID")
-	}
-
-	urlRef, err := egw.client.OpenApiBuildEndpoint(endpoint, egw.EdgeGateway.ID)
-	if err != nil {
-		return nil, err
-	}
-
+func (egw *NsxtEdgeGateway) MoveToVdc(vdcOrVdcGroupId string) (*NsxtEdgeGateway, error) {
 	edgeGatewayConfig := egw.EdgeGateway
-	edgeGatewayConfig.OwnerRef = &types.OpenApiReference{ID: vdcGroupId}
+	edgeGatewayConfig.OwnerRef = &types.OpenApiReference{ID: vdcOrVdcGroupId}
 	// Explicitly unset VDC field because using it fails
 	edgeGatewayConfig.OrgVdc = nil
 
-	returnEgw := &NsxtEdgeGateway{
-		EdgeGateway: &types.OpenAPIEdgeGateway{},
-		client:      egw.client,
-	}
-
-	err = egw.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, edgeGatewayConfig, returnEgw.EdgeGateway, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error updating Edge Gateway: %s", err)
-	}
-
-	return returnEgw, nil
+	return egw.Update(edgeGatewayConfig)
 }
 
 // getNsxtEdgeGatewayById is a private parent for wrapped functions:

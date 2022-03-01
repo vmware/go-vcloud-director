@@ -482,8 +482,10 @@ const (
 )
 
 const (
+	// UrnTypeVdcGroup is the third segment of URN for VDC Group
 	UrnTypeVdcGroup = "vdcGroup"
-	UrnTypeVdc      = "vdc"
+	// UrnTypeVdc is the third segment of URN for VDC
+	UrnTypeVdc = "vdc"
 )
 
 // Metadata type constants

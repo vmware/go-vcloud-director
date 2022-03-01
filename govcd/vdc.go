@@ -1184,6 +1184,18 @@ func (vdc *Vdc) IsNsxt() bool {
 	return networkProviderCapability == types.VdcCapabilityNetworkProviderNsxt
 }
 
+// IsNsxv is a convenience function to check if VDC is backed by NSX-V pVdc
+// If error occurs - it returns false
+func (vdc *Vdc) IsNsxv() bool {
+	vdcCapabilities, err := vdc.GetCapabilities()
+	if err != nil {
+		return false
+	}
+
+	networkProviderCapability := getCapabilityValue(vdcCapabilities, "networkProvider")
+	return networkProviderCapability == types.VdcCapabilityNetworkProviderNsxv
+}
+
 // getCapabilityValue helps to lookup a specific capability in []types.VdcCapability by provided fieldName
 func getCapabilityValue(capabilities []types.VdcCapability, fieldName string) string {
 	for _, field := range capabilities {

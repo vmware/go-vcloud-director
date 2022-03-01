@@ -556,7 +556,7 @@ func OwnerIsVdcGroup(urn string) bool {
 		return false
 	}
 
-	if strings.ToLower(ownerType) == strings.ToLower("vdcGroup") {
+	if strings.EqualFold(ownerType, types.UrnTypeVdcGroup) {
 		return true
 	}
 
@@ -570,7 +570,7 @@ func OwnerIsVdc(urn string) bool {
 		return false
 	}
 
-	if strings.ToLower(ownerType) == strings.ToLower("vdc") {
+	if strings.EqualFold(ownerType, types.UrnTypeVdc) {
 		return true
 	}
 
@@ -614,16 +614,4 @@ func (vdcGroup *VdcGroup) IsNsxt() bool {
 
 	networkProviderCapability := getCapabilityValue(vdcCapabilities, "networkProvider")
 	return networkProviderCapability == types.VdcCapabilityNetworkProviderNsxt
-}
-
-// IsNsxv is a convenience function to check if VDC is backed by NSX-V pVdc
-// If error occurs - it returns false
-func (vdcGroup *VdcGroup) IsNsxv() bool {
-	vdcCapabilities, err := vdcGroup.GetCapabilities()
-	if err != nil {
-		return false
-	}
-
-	networkProviderCapability := getCapabilityValue(vdcCapabilities, "networkProvider")
-	return networkProviderCapability == types.VdcCapabilityNetworkProviderNsxv
 }
