@@ -104,14 +104,10 @@ func spawnVM(name string, memorySize int, vdc Vdc, vapp VApp, net types.NetworkC
 	fmt.Printf(". Done\n")
 
 	fmt.Printf("# Applying 2 vCPU and "+strconv.Itoa(memorySize)+"MB configuration for VM '%s'", name)
-	task, err = vm.ChangeCPUCount(2)
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = vm.ChangeCPU(2, 1)
 	check.Assert(err, IsNil)
 
-	task, err = vm.ChangeMemorySize(memorySize)
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = vm.ChangeMemory(int64(memorySize))
 	check.Assert(err, IsNil)
 	fmt.Printf(". Done\n")
 
@@ -786,7 +782,7 @@ func spawnTestVdc(vcd *TestVCD, check *C, adminOrgName string) *Vdc {
 			},
 		},
 		VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
-			Enabled: true,
+			Enabled: takeBoolPointer(true),
 			Units:   "MB",
 			Limit:   1024,
 			Default: true,
