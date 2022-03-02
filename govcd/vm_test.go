@@ -1221,7 +1221,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
 		check.Skip("skipping test because no vApp is found")
 	}
 
-	vapp, err := createVappForTest(vcd, "Test_AddNewEmptyVMMultiNIC")
+	vapp, err := deployVappForTest(vcd, "Test_AddNewEmptyVMMultiNIC")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
@@ -1455,7 +1455,7 @@ func (vcd *TestVCD) Test_UpdateVmCpuAndMemoryHotAdd(check *C) {
 }
 
 func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
-	vapp, err := createVappForTest(vcd, "Test_AddNewEmptyVMWithVmComputePolicy")
+	vapp, err := deployVappForTest(vcd, "Test_AddNewEmptyVMWithVmComputePolicy")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
@@ -1609,7 +1609,7 @@ func (vcd *TestVCD) Test_VMUpdateStorageProfile(check *C) {
 		check.Skip("Skipping test because both storage profiles have to be configured")
 	}
 
-	vapp, err := createVappForTest(vcd, "Test_VMUpdateStorageProfile")
+	vapp, err := deployVappForTest(vcd, "Test_VMUpdateStorageProfile")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
