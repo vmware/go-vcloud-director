@@ -897,3 +897,45 @@ func (vcd *TestVCD) Test_UploadOvfByLink_progress_works(check *C) {
 	check.Assert(err, IsNil)
 	verifyCatalogItemUploaded(check, catalog, itemName)
 }
+
+// Test to be completed
+func (vcd *TestVCD) Test_QueryVappTemplateList(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	catalogName := vcd.config.VCD.Catalog.Name
+	if catalogName == "" {
+		check.Skip("Test_CatalogRefresh: Catalog name not given")
+		return
+	}
+
+	cat, err := vcd.org.GetCatalogByName(catalogName, false)
+	if err != nil {
+		check.Skip("Test_CatalogRefresh: Catalog not found")
+		return
+	}
+
+	numberOfMedias, err := cat.QueryVappTemplateList()
+	check.Assert(err, IsNil)
+	check.Assert(numberOfMedias, NotNil)
+}
+
+// Test to be completed
+func (vcd *TestVCD) Test_CatalogQueryMediaList(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	catalogName := vcd.config.VCD.Catalog.Name
+	if catalogName == "" {
+		check.Skip("Test_CatalogRefresh: Catalog name not given")
+		return
+	}
+
+	cat, err := vcd.org.GetCatalogByName(catalogName, false)
+	if err != nil {
+		check.Skip("Test_CatalogRefresh: Catalog not found")
+		return
+	}
+
+	numberOfMedias, err := cat.QueryMediaList()
+	check.Assert(err, IsNil)
+	check.Assert(numberOfMedias, NotNil)
+}
