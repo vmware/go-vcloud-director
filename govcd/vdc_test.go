@@ -144,6 +144,80 @@ func (vcd *TestVCD) Test_NewVdc(check *C) {
 
 }
 
+// Tests ComposeVApp with given parameters in the config file.
+// Throws an error if networks, catalog, catalog item, and
+// storage preference are omitted from the config file.
+func (vcd *TestVCD) Test_ComposeVApp(check *C) {
+	if vcd.config.VCD.Network.Net1 == "" {
+		check.Skip("Skipping test because no network was given")
+	}
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp wasn't properly created")
+	}
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	// Populate OrgVDCNetwork
+	networks := []*types.OrgVDCNetwork{}
+	net, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	check.Assert(err, IsNil)
+	networks = append(networks, net.OrgVDCNetwork)
+	check.Assert(err, IsNil)
+	// Populate Catalog
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(cat, NotNil)
+	// Populate Catalog Item
+	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	check.Assert(err, IsNil)
+	check.Assert(catitem, NotNil)
+	// Get VAppTemplate
+	vapptemplate, err := catitem.GetVAppTemplate()
+	check.Assert(err, IsNil)
+	// Get StorageProfileReference
+	storageprofileref, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
+	check.Assert(err, IsNil)
+	// Compose VApp
+	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, TestComposeVapp, TestComposeVappDesc, true)
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Tasks.Task[0].OperationName, Equals, "vdcComposeVapp")
+	// Get VApp
+	vapp, err := vcd.vdc.GetVAppByName(TestComposeVapp, true)
+	check.Assert(err, IsNil)
+	// After a successful creation, the entity is added to the cleanup list.
+	// If something fails after this point, the entity will be removed
+	AddToCleanupList(TestComposeVapp, "vapp", "", "Test_ComposeVApp")
+	// Once the operation is successful, we won't trigger a failure
+	// until after the vApp deletion
+	check.Check(vapp.VApp.Name, Equals, TestComposeVapp)
+	check.Check(vapp.VApp.Description, Equals, TestComposeVappDesc)
+
+	vapp_status, err := vapp.GetStatus()
+	check.Check(err, IsNil)
+	check.Check(vapp_status, Equals, "UNRESOLVED")
+	// Let the VApp creation complete
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		panic(err)
+	}
+	err = vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
+	check.Check(err, IsNil)
+	vapp_status, err = vapp.GetStatus()
+	check.Check(err, IsNil)
+	check.Check(vapp_status, Equals, "POWERED_OFF")
+	// Deleting VApp
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		panic(err)
+	}
+	check.Assert(err, IsNil)
+	noSuchVapp, err := vcd.vdc.GetVAppByName(TestComposeVapp, true)
+	check.Assert(err, NotNil)
+	check.Assert(noSuchVapp, IsNil)
+
+}
+
 func (vcd *TestVCD) Test_FindVApp(check *C) {
 
 	if vcd.skipVappTests {
