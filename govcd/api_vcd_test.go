@@ -618,7 +618,8 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	// creates a new VApp for vapp tests
 	if !skipVappCreation && config.VCD.Network.Net1 != "" && config.VCD.StorageProfile.SP1 != "" &&
 		config.VCD.Catalog.Name != "" && config.VCD.Catalog.CatalogItem != "" {
-		vcd.vapp, err = vcd.createTestVapp(TestSetUpSuite)
+		// deployVappForTest replaces the old createTestVapp() because it was using bad implemented method vdc.ComposeVApp
+		vcd.vapp, err = deployVappForTest(vcd, TestSetUpSuite)
 		// If no vApp is created, we skip all vApp tests
 		if err != nil {
 			fmt.Printf("%s\n", err)
@@ -1609,69 +1610,6 @@ func TestVCDClient_Authenticate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error authenticating: %s", err)
 	}
-}
-
-func (vcd *TestVCD) createTestVapp(name string) (*VApp, error) {
-	// ========================= issue#252 ==================================
-	// TODO: To be enabled when issue#252 is resolved.
-	// Allows re-using a pre-created vApp
-	// existingVapp, err := vcd.vdc.GetVAppByName(name, false)
-	// if err == nil {
-	// 	fmt.Printf("vApp %s already exists. Skipping creation\n",name)
-	// 	return existingVapp, nil
-	// }
-	// ======================================================================
-	// Populate OrgVDCNetwork
-	var networks []*types.OrgVDCNetwork
-	net, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
-	if err != nil {
-		return nil, fmt.Errorf("error finding network : %s, err: %s", vcd.config.VCD.Network.Net1, err)
-	}
-	networks = append(networks, net.OrgVDCNetwork)
-	// Populate Catalog
-	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
-	if err != nil || cat == nil {
-		return nil, fmt.Errorf("error finding catalog : %s", err)
-	}
-	// Populate Catalog Item
-	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
-	if err != nil {
-		return nil, fmt.Errorf("error finding catalog item : %s", err)
-	}
-	// Get VAppTemplate
-	vAppTemplate, err := catitem.GetVAppTemplate()
-	if err != nil {
-		return nil, fmt.Errorf("error finding vapptemplate : %s", err)
-	}
-	// Get StorageProfileReference
-	storageProfileRef, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
-	if err != nil {
-		return nil, fmt.Errorf("error finding storage profile: %s", err)
-	}
-	// Compose VApp
-	task, err := vcd.vdc.ComposeVApp(networks, vAppTemplate, storageProfileRef, name, "description", true)
-	if err != nil {
-		return nil, fmt.Errorf("error composing vapp: %s", err)
-	}
-	// After a successful creation, the entity is added to the cleanup list.
-	// If something fails after this point, the entity will be removed
-	AddToCleanupList(name, "vapp", "", "createTestVapp")
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return nil, fmt.Errorf("error composing vapp: %s", err)
-	}
-	// Get VApp
-	vapp, err := vcd.vdc.GetVAppByName(name, true)
-	if err != nil {
-		return nil, fmt.Errorf("error getting vapp: %s", err)
-	}
-
-	err = vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
-	if err != nil {
-		return nil, fmt.Errorf("error waiting for created test vApp to have working state: %s", err)
-	}
-
-	return vapp, err
 }
 
 func Test_splitParent(t *testing.T) {
