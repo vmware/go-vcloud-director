@@ -722,6 +722,11 @@ func (adminOrg *AdminOrg) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(adminOrg.client, adminOrg.AdminOrg.HREF)
 }
 
+// GetMetadata returns the metadata of the corresponding organization seen as administrator
+func (org *Org) GetMetadata() (*types.Metadata, error) {
+	return getMetadata(org.client, org.Org.HREF)
+}
+
 // AddMetadataEntry adds metadata key/value pair provided as input to the corresponding organization seen as administrator
 // and waits for completion.
 func (adminOrg *AdminOrg) AddMetadataEntry(typedValue, key, value string) (*AdminOrg, error) {
