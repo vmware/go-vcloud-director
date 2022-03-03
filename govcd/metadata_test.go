@@ -740,7 +740,7 @@ func (vcd *TestVCD) Test_MetadataEntryOnMediaRecordCRUD(check *C) {
 
 func (vcd *TestVCD) Test_MetadataOnVdcNetworkCRUD(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
-	net, err := 	vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	net, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	if err != nil {
 		check.Skip(fmt.Sprintf("Test_MetadataOnVdcNetworkCRUD: Network %s not found. Test can't proceed", vcd.config.VCD.Network.Net1))
 		return
