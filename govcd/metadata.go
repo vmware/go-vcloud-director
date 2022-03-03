@@ -716,3 +716,61 @@ func (adminCatalog *AdminCatalog) DeleteMetadataEntryAsync(key string) (Task, er
 func (catalog *Catalog) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(catalog.client, catalog.Catalog.HREF)
 }
+
+// GetMetadata returns OrgVDCNetwork metadata.
+func (orgVdcNetwork *OrgVDCNetwork) GetMetadata() (*types.Metadata, error) {
+	return getMetadata(orgVdcNetwork.client, orgVdcNetwork.OrgVDCNetwork.HREF)
+}
+
+// AddMetadataEntry adds OrgVDCNetwork metadata typedValue and key/value pair provided as input
+// and waits for the task to finish.
+func (orgVdcNetwork *OrgVDCNetwork) AddMetadataEntry(typedValue, key, value string) error {
+	task, err := orgVdcNetwork.AddMetadataEntryAsync(typedValue, key, value)
+	if err != nil {
+		return err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return err
+	}
+
+	err = orgVdcNetwork.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// AddMetadataEntryAsync adds OrgVDCNetwork metadata typedValue and key/value pair provided as input
+// and returns the task.
+func (orgVdcNetwork *OrgVDCNetwork) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
+	return addMetadata(orgVdcNetwork.client, typedValue, key, value, orgVdcNetwork.OrgVDCNetwork.HREF)
+}
+
+// DeleteMetadataEntry deletes OrgVDCNetwork metadata depending on key provided as input
+// and waits for the task to finish.
+func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntry(key string) error {
+	task, err := orgVdcNetwork.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return err
+	}
+
+	err = orgVdcNetwork.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteMetadataEntryAsync deletes OrgVDCNetwork metadata depending on key provided as input
+// and returns a task.
+func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(orgVdcNetwork.client, key, orgVdcNetwork.OrgVDCNetwork.HREF)
+}

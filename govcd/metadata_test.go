@@ -737,3 +737,45 @@ func (vcd *TestVCD) Test_MetadataEntryOnMediaRecordCRUD(check *C) {
 		}
 	}
 }
+
+func (vcd *TestVCD) Test_MetadataOnVdcNetworkCRUD(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	net, err := 	vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	if err != nil {
+		check.Skip(fmt.Sprintf("Test_MetadataOnVdcNetworkCRUD: Network %s not found. Test can't proceed", vcd.config.VCD.Network.Net1))
+		return
+	}
+
+	// Check how much metadata exists
+	metadata, err := net.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	existingMetaDataCount := len(metadata.MetadataEntry)
+
+	// Add metadata
+	err = net.AddMetadataEntry(types.MetadataStringValue, "key", "value")
+	check.Assert(err, IsNil)
+
+	// Check if metadata was added correctly
+	metadata, err = net.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount+1)
+	var foundEntry *types.MetadataEntry
+	for _, entry := range metadata.MetadataEntry {
+		if entry.Key == "key" {
+			foundEntry = entry
+		}
+	}
+	check.Assert(foundEntry, NotNil)
+	check.Assert(foundEntry.Key, Equals, "key")
+	check.Assert(foundEntry.TypedValue.Value, Equals, "value")
+
+	err = net.DeleteMetadataEntry("key")
+	check.Assert(err, IsNil)
+	// Check if metadata was deleted correctly
+	metadata, err = net.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, 0)
+}
