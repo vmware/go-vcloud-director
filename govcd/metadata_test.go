@@ -742,6 +742,11 @@ func (vcd *TestVCD) Test_MetadataOnAdminOrgCRUD(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	adminOrg, err := vcd.client.GetAdminOrgById(vcd.org.Org.ID)
 	if err != nil {
+		check.Skip("Test_AddMetadataOnAdminOrg: Organization (admin) not found. Test can't proceed")
+		return
+	}
+	org, err := vcd.client.GetOrgById(vcd.org.Org.ID)
+	if err != nil {
 		check.Skip("Test_AddMetadataOnAdminOrg: Organization not found. Test can't proceed")
 		return
 	}
@@ -762,6 +767,19 @@ func (vcd *TestVCD) Test_MetadataOnAdminOrgCRUD(check *C) {
 	check.Assert(metadata, NotNil)
 	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount+1)
 	var foundEntry *types.MetadataEntry
+	for _, entry := range metadata.MetadataEntry {
+		if entry.Key == "key" {
+			foundEntry = entry
+		}
+	}
+	check.Assert(foundEntry, NotNil)
+	check.Assert(foundEntry.Key, Equals, "key")
+	check.Assert(foundEntry.TypedValue.Value, Equals, "value")
+
+	metadata, err = org.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount+1)
 	for _, entry := range metadata.MetadataEntry {
 		if entry.Key == "key" {
 			foundEntry = entry
