@@ -745,7 +745,7 @@ func (orgVdcNetwork *OrgVDCNetwork) AddMetadataEntry(typedValue, key, value stri
 // AddMetadataEntryAsync adds OrgVDCNetwork metadata typedValue and key/value pair provided as input
 // and returns the task.
 func (orgVdcNetwork *OrgVDCNetwork) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
-	return addMetadata(orgVdcNetwork.client, typedValue, key, value, orgVdcNetwork.OrgVDCNetwork.HREF)
+	return addMetadata(orgVdcNetwork.client, typedValue, key, value, strings.ReplaceAll(orgVdcNetwork.OrgVDCNetwork.HREF, "/api/", "/api/admin/"))
 }
 
 // DeleteMetadataEntry deletes OrgVDCNetwork metadata depending on key provided as input
@@ -772,5 +772,5 @@ func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntry(key string) error {
 // DeleteMetadataEntryAsync deletes OrgVDCNetwork metadata depending on key provided as input
 // and returns a task.
 func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(orgVdcNetwork.client, key, orgVdcNetwork.OrgVDCNetwork.HREF)
+	return deleteMetadata(orgVdcNetwork.client, key, strings.ReplaceAll(orgVdcNetwork.OrgVDCNetwork.HREF, "/api/", "/api/admin/"))
 }
