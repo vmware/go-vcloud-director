@@ -898,44 +898,28 @@ func (vcd *TestVCD) Test_UploadOvfByLink_progress_works(check *C) {
 	verifyCatalogItemUploaded(check, catalog, itemName)
 }
 
-// Test to be completed
-func (vcd *TestVCD) Test_QueryVappTemplateList(check *C) {
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	catalogName := vcd.config.VCD.Catalog.Name
-	if catalogName == "" {
-		check.Skip("Test_CatalogRefresh: Catalog name not given")
-		return
-	}
-
-	cat, err := vcd.org.GetCatalogByName(catalogName, false)
-	if err != nil {
-		check.Skip("Test_CatalogRefresh: Catalog not found")
-		return
-	}
-
-	numberOfMedias, err := cat.QueryVappTemplateList()
-	check.Assert(err, IsNil)
-	check.Assert(numberOfMedias, NotNil)
-}
-
-// Test to be completed
 func (vcd *TestVCD) Test_CatalogQueryMediaList(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	catalogName := vcd.config.VCD.Catalog.Name
 	if catalogName == "" {
-		check.Skip("Test_CatalogRefresh: Catalog name not given")
+		check.Skip("Test_CatalogQueryMediaList: Catalog name not given")
 		return
 	}
 
 	cat, err := vcd.org.GetCatalogByName(catalogName, false)
 	if err != nil {
-		check.Skip("Test_CatalogRefresh: Catalog not found")
+		check.Skip("Test_CatalogQueryMediaList: Catalog not found")
 		return
 	}
 
-	numberOfMedias, err := cat.QueryMediaList()
+	medias, err := cat.QueryMediaList()
 	check.Assert(err, IsNil)
-	check.Assert(numberOfMedias, NotNil)
+	check.Assert(medias, NotNil)
+
+	// Check that number of medias is 1
+	check.Assert(len(medias), Equals, 1)
+
+	// Check that media name is what it should be
+	check.Assert(medias[0].Name, Equals, vcd.config.Media.Media)
 }
