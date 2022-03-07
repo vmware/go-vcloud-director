@@ -15,7 +15,7 @@ import (
 )
 
 // test_GroupCRUD tests out CRUD capabilities for Org Groups.
-// Note. Because it requires LDAP to be functional - this test is run from main test "Test_LDAP"
+// Note: Because it requires LDAP to be functional - this test is run from main test "Test_LDAP"
 // which sets up LDAP configuration.
 func (vcd *TestVCD) test_GroupCRUD(check *C) {
 	fmt.Printf("Running: %s\n", "test_GroupCRUD")
@@ -111,8 +111,6 @@ func (vcd *TestVCD) test_GroupCRUD(check *C) {
 
 		foundGroup2, err := adminOrg.GetGroupByName(gd.name, true)
 		check.Assert(err, IsNil)
-
-		check.Assert(err, IsNil)
 		check.Assert(foundGroup2.Group.Href, Equals, createdGroup.Group.Href)
 		check.Assert(foundGroup2.Group.Name, Equals, createdGroup.Group.Name)
 
@@ -126,7 +124,7 @@ func (vcd *TestVCD) test_GroupCRUD(check *C) {
 
 // test_GroupFinderGetGenericEntity uses testFinderGetGenericEntity to validate that ByName, ById
 // ByNameOrId method work properly.
-// Note. Because it requires LDAP to be functional - this test is run from main test "Test_LDAP"
+// Note: Because it requires LDAP to be functional - this test is run from main test "Test_LDAP"
 // which sets up LDAP configuration.
 func (vcd *TestVCD) test_GroupFinderGetGenericEntity(check *C) {
 	fmt.Printf("Running: %s\n", "test_GroupFinderGetGenericEntity")
@@ -175,6 +173,61 @@ func (vcd *TestVCD) test_GroupFinderGetGenericEntity(check *C) {
 
 	// Remove group because LDAP cleanup will fail.
 	grp, err := adminOrg.GetGroupByName(group.Group.Name, true)
+	check.Assert(err, IsNil)
+	err = grp.Delete()
+	check.Assert(err, IsNil)
+}
+
+// test_GroupUserListIsPopulated checks that when retrieving the existing groups from the testing LDAP,
+// the user list reference is populated.
+// Note: Because it requires LDAP to be functional - this test is run from main test "Test_LDAP"
+// which sets up LDAP configuration.
+func (vcd *TestVCD) test_GroupUserListIsPopulated(check *C) {
+	fmt.Printf("Running: %s\n", "test_GroupUserListIsPopulated")
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	roleRef, err := adminOrg.GetRoleReference(OrgUserRoleOrganizationAdministrator)
+	check.Assert(err, IsNil)
+
+	group := NewGroup(adminOrg.client, adminOrg)
+	const groupName = "ship_crew"
+	group.Group = &types.Group{
+		Name:         groupName,
+		Role:         roleRef,
+		ProviderType: OrgUserProviderIntegrated,
+	}
+
+	_, err = adminOrg.CreateGroup(group.Group)
+	check.Assert(err, IsNil)
+	AddToCleanupList(groupName, "group", group.AdminOrg.AdminOrg.Name, check.TestName())
+
+	user := NewUser(adminOrg.client, adminOrg)
+	const userName = "fry"
+	user.User = &types.User{
+		Name:         userName,
+		Password:     userName,
+		Role:         roleRef,
+		IsExternal:   true,
+		IsEnabled:    true,
+		ProviderType: OrgUserProviderIntegrated,
+	}
+	_, err = adminOrg.CreateUser(user.User)
+	check.Assert(err, IsNil)
+	AddToCleanupList(userName, "user", group.AdminOrg.AdminOrg.Name, check.TestName())
+
+	grp, err := adminOrg.GetGroupByName(group.Group.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(grp.Group.UsersList, NotNil)
+	check.Assert(grp.Group.UsersList.UserReference[0], NotNil)
+
+	user, err = adminOrg.GetUserByHref(grp.Group.UsersList.UserReference[0].HREF)
+	check.Assert(err, IsNil)
+	check.Assert(user.User.Name, Equals, userName)
+
+	// Cleanup
+	err = user.Delete(false)
 	check.Assert(err, IsNil)
 	err = grp.Delete()
 	check.Assert(err, IsNil)
