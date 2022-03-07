@@ -787,6 +787,8 @@ type OrgGeneralSettings struct {
 	Link LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
 
 	CanPublishCatalogs       bool `xml:"CanPublishCatalogs,omitempty"`
+	CanPublishExternally     bool `xml:"CanPublishExternally,omitempty"`
+	CanSubscribe             bool `xml:"CanSubscribe,omitempty"`
 	DeployedVMQuota          int  `xml:"DeployedVMQuota,omitempty"`
 	StoredVMQuota            int  `xml:"StoredVmQuota,omitempty"`
 	UseServerBootSequence    bool `xml:"UseServerBootSequence,omitempty"`
