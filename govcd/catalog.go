@@ -904,7 +904,7 @@ func (catalog *Catalog) QueryMediaList() ([]*types.MediaRecordType, error) {
 		typeMedia = "adminMedia"
 	}
 
-	filter := fmt.Sprintf("catalog==" + url.QueryEscape(catalog.Catalog.HREF))
+	filter := fmt.Sprintf("catalog==%s", url.QueryEscape(catalog.Catalog.HREF))
 	results, err := catalog.client.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia, "filter": filter, "filterEncoded": "true"})
 	if err != nil {
 		return nil, fmt.Errorf("error querying medias %s", err)

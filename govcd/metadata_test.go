@@ -738,6 +738,125 @@ func (vcd *TestVCD) Test_MetadataEntryOnMediaRecordCRUD(check *C) {
 	}
 }
 
+func (vcd *TestVCD) Test_MetadataOnAdminOrgCRUD(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	adminOrg, err := vcd.client.GetAdminOrgById(vcd.org.Org.ID)
+	if err != nil {
+		check.Skip("Test_AddMetadataOnAdminOrg: Organization (admin) not found. Test can't proceed")
+		return
+	}
+	org, err := vcd.client.GetOrgById(vcd.org.Org.ID)
+	if err != nil {
+		check.Skip("Test_AddMetadataOnAdminOrg: Organization not found. Test can't proceed")
+		return
+	}
+
+	// Check how much metadata exists
+	metadata, err := adminOrg.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	existingMetaDataCount := len(metadata.MetadataEntry)
+
+	// Add metadata
+	_, err = adminOrg.AddMetadataEntry(types.MetadataStringValue, "key", "value")
+	check.Assert(err, IsNil)
+
+	// Check if metadata was added correctly
+	metadata, err = adminOrg.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount+1)
+	var foundEntry *types.MetadataEntry
+	for _, entry := range metadata.MetadataEntry {
+		if entry.Key == "key" {
+			foundEntry = entry
+		}
+	}
+	check.Assert(foundEntry, NotNil)
+	check.Assert(foundEntry.Key, Equals, "key")
+	check.Assert(foundEntry.TypedValue.Value, Equals, "value")
+
+	metadata, err = org.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount+1)
+	for _, entry := range metadata.MetadataEntry {
+		if entry.Key == "key" {
+			foundEntry = entry
+		}
+	}
+	check.Assert(foundEntry, NotNil)
+	check.Assert(foundEntry.Key, Equals, "key")
+	check.Assert(foundEntry.TypedValue.Value, Equals, "value")
+
+	err = adminOrg.DeleteMetadataEntry("key")
+	check.Assert(err, IsNil)
+	// Check if metadata was deleted correctly
+	metadata, err = adminOrg.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, 0)
+}
+
+func (vcd *TestVCD) Test_MetadataOnIndependentDiskCRUD(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	// Create disk
+	diskCreateParamsDisk := &types.Disk{
+		Name:        TestCreateDisk,
+		SizeMb:      11,
+		Description: TestCreateDisk,
+	}
+
+	diskCreateParams := &types.DiskCreateParams{
+		Disk: diskCreateParamsDisk,
+	}
+
+	task, err := vcd.vdc.CreateDisk(diskCreateParams)
+	check.Assert(err, IsNil)
+
+	diskHREF := task.Task.Owner.HREF
+	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	disk, err := vcd.vdc.GetDiskByHref(diskHREF)
+	check.Assert(err, IsNil)
+
+	// Check how much metaData exist
+	metadata, err := disk.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	existingMetaDataCount := len(metadata.MetadataEntry)
+
+	// Add metadata
+	_, err = disk.AddMetadataEntry(types.MetadataStringValue, "key", "value")
+	check.Assert(err, IsNil)
+
+	// Check if metadata was added correctly
+	metadata, err = disk.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount+1)
+	var foundEntry *types.MetadataEntry
+	for _, entry := range metadata.MetadataEntry {
+		if entry.Key == "key" {
+			foundEntry = entry
+		}
+	}
+	check.Assert(foundEntry, NotNil)
+	check.Assert(foundEntry.Key, Equals, "key")
+	check.Assert(foundEntry.TypedValue.Value, Equals, "value")
+
+	err = disk.DeleteMetadataEntry("key")
+	check.Assert(err, IsNil)
+	// Check if metadata was deleted correctly
+	metadata, err = disk.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, 0)
+}
+
 func (vcd *TestVCD) Test_MetadataOnVdcNetworkCRUD(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	net, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)

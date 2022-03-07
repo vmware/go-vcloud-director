@@ -456,7 +456,7 @@ func (vcd *TestVCD) Test_AddNewVMNilNIC(check *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	check.Assert(err, IsNil)
 
-	vapp, err := createVappForTest(vcd, "Test_AddNewVMNilNIC")
+	vapp, err := deployVappForTest(vcd, "Test_AddNewVMNilNIC")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 	task, err := vapp.AddNewVM(check.TestName(), vapptemplate, nil, true)
@@ -511,7 +511,7 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	check.Assert(err, IsNil)
 
-	vapp, err := createVappForTest(vcd, "Test_AddNewVMMultiNIC")
+	vapp, err := deployVappForTest(vcd, "Test_AddNewVMMultiNIC")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
@@ -751,7 +751,7 @@ func (vcd *TestVCD) Test_GetVM(check *C) {
 func (vcd *TestVCD) Test_AddAndRemoveIsolatedVappNetwork(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	vapp, err := createVappForTest(vcd, "Test_AddAndRemoveIsolatedVappNetwork")
+	vapp, err := deployVappForTest(vcd, "Test_AddAndRemoveIsolatedVappNetwork")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
@@ -838,7 +838,7 @@ func (vcd *TestVCD) Test_AddAndRemoveNatVappNetwork(check *C) {
 		check.Skip("Skipping test because no network was given")
 	}
 
-	vapp, err := createVappForTest(vcd, "Test_AddAndRemoveNatVappNetwork")
+	vapp, err := deployVappForTest(vcd, "Test_AddAndRemoveNatVappNetwork")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
@@ -935,7 +935,7 @@ func (vcd *TestVCD) Test_UpdateVappNetwork(check *C) {
 		check.Skip("Skipping test because no network was given")
 	}
 
-	vapp, err := createVappForTest(vcd, "Test_UpdateVappNetwork")
+	vapp, err := deployVappForTest(vcd, "Test_UpdateVappNetwork")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
@@ -1094,7 +1094,7 @@ func (vcd *TestVCD) Test_UpdateVappNetwork(check *C) {
 func (vcd *TestVCD) Test_AddAndRemoveVappNetworkWithMinimumValues(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	vapp, err := createVappForTest(vcd, "Test_AddAndRemoveVappNetworkWithMinimumValues")
+	vapp, err := deployVappForTest(vcd, "Test_AddAndRemoveVappNetworkWithMinimumValues")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
@@ -1164,7 +1164,7 @@ func (vcd *TestVCD) Test_AddAndRemoveOrgVappNetworkWithMinimumValues(check *C) {
 		check.Skip("Skipping test because no network was given")
 	}
 
-	vapp, err := createVappForTest(vcd, "Test_AddAndRemoveOrgVappNetworkWithMinimumValues")
+	vapp, err := deployVappForTest(vcd, "Test_AddAndRemoveOrgVappNetworkWithMinimumValues")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
@@ -1198,7 +1198,7 @@ func (vcd *TestVCD) Test_AddAndRemoveOrgVappNetworkWithMinimumValues(check *C) {
 
 	check.Assert(networkFound.Configuration.ParentNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
 
-	err = vcd.vapp.Refresh()
+	err = vapp.Refresh()
 	check.Assert(err, IsNil)
 	vappNetworkConfig, err = vapp.RemoveNetwork(vcd.config.VCD.Network.Net1)
 	check.Assert(err, IsNil)
@@ -1226,7 +1226,7 @@ func (vcd *TestVCD) Test_AddAndRemoveOrgVappNetwork(check *C) {
 		check.Skip("Skipping test because no network was given")
 	}
 
-	vapp, err := createVappForTest(vcd, "Test_AddAndRemoveOrgVappNetwork")
+	vapp, err := deployVappForTest(vcd, "Test_AddAndRemoveOrgVappNetwork")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
@@ -1289,7 +1289,7 @@ func (vcd *TestVCD) Test_UpdateOrgVappNetwork(check *C) {
 		check.Skip("Skipping test because no network was given")
 	}
 
-	vapp, err := createVappForTest(vcd, "Test_UpdateOrgVappNetwork")
+	vapp, err := deployVappForTest(vcd, "Test_UpdateOrgVappNetwork")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
@@ -1420,7 +1420,7 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 	returnedVappTemplate, err := catalog.GetVappTemplateByHref(vmInTemplateRecord.HREF)
 	check.Assert(err, IsNil)
 
-	vapp, err := createVappForTest(vcd, "Test_AddNewVMFromMultiVmTemplate")
+	vapp, err := deployVappForTest(vcd, "Test_AddNewVMFromMultiVmTemplate")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 	task, err := vapp.AddNewVM(check.TestName(), *returnedVappTemplate, nil, true)
@@ -1469,7 +1469,7 @@ func (vcd *TestVCD) Test_AddNewVMWithComputeCapacity(check *C) {
 	vapptemplate, err := catitem.GetVAppTemplate()
 	check.Assert(err, IsNil)
 
-	vapp, err := createVappForTest(vcd, "Test_AddNewVMWithComputeCapacity")
+	vapp, err := deployVappForTest(vcd, "Test_AddNewVMWithComputeCapacity")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
