@@ -33,7 +33,7 @@ func (org *Org) GetOpenApiOrgVdcNetworkByNameAndOwnerId(name, ownerId string) (*
 	queryParameters := url.Values{}
 	queryParameters = queryParameterFilterAnd(fmt.Sprintf("name==%s;ownerRef.id==%s", name, ownerId), queryParameters)
 
-	allEdges, err := org.GetAllOpenApiOrgVdcNetworks(queryParameters)
+	allEdges, err := getAllOpenApiOrgVdcNetworks(org.client, queryParameters)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve Org VDC network by name '%s' in Owner '%s': %s", name, ownerId, err)
 	}
