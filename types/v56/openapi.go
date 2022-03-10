@@ -365,3 +365,24 @@ type DefaultPolicy struct {
 type VersionField struct {
 	Version int `json:"version"`
 }
+
+// TestConnection defines the parameters used when testing a connection, including SSL handshake and hostname verification.
+type TestConnection struct {
+	Host                          string           `json:"host"`                                    // The host (or IP address) to connect to.
+	Port                          int              `json:"port"`                                    // The port to use when connecting.
+	Secure                        bool             `json:"secure,omitempty"`                        // If the connection should use https.
+	Timeout                       int              `json:"timeout,omitempty"`                       // Maximum time (in seconds) any step in the test should wait for a response.
+	HostnameVerificationAlgorithm string           `json:"hostnameVerificationAlgorithm,omitempty"` // Endpoint/Hostname verification algorithm to be used during SSL/TLS/DTLS handshake.
+	AdditionalCAIssuers           []string         `json:"additionalCAIssuers,omitempty"`           // A list of URLs being authorized by the user to retrieve additional CA certificates from, if necessary, to complete the certificate chain to its trust anchor.
+	ProxyConnection               *ProxyConnection `json:"proxyConnection,omitempty"`               // Proxy connection to use for test. Only one of proxyConnection and preConfiguredProxy can be specified.
+	PreConfiguredProxy            string           `json:"preConfiguredProxy,omitempty"`            // The URN of a ProxyConfiguration to use for the test. Only one of proxyConnection or preConfiguredProxy can be specified. If neither is specified then no proxy is used to test the connection.
+}
+
+// ProxyConnection defines the proxy connection to use for TestConnection (if any).
+type ProxyConnection struct {
+	ProxyHost     string `json:"proxyHost"`               // The host (or IP address) of the proxy.
+	ProxyPort     int    `json:"proxyPort"`               // The port to use when connecting to the proxy.
+	ProxyUsername string `json:"proxyUsername,omitempty"` // Username to authenticate to the proxy.
+	ProxyPassword string `json:"proxyPassword,omitempty"` // Password to authenticate to the proxy.
+	ProxySecure   *bool  `json:"proxySecure,omitempty"`   // If the connection to the proxy should use https.
+}
