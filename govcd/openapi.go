@@ -291,7 +291,7 @@ func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params
 		}
 
 		// Synchronous task - new item body is returned in response of HTTP POST request
-	case http.StatusCreated:
+	case http.StatusCreated, http.StatusOK:
 		util.Logger.Printf("[TRACE] Synchronous task detected, marshalling outType '%s'", reflect.TypeOf(outType))
 		if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
 			return fmt.Errorf("error decoding JSON response after POST: %s", err)
@@ -687,6 +687,33 @@ func (client *Client) newOpenApiRequest(apiVersion string, params url.Values, me
 	}
 
 	return req
+}
+
+// OpenApiTestConnection Tests a connection, including SSL handshake and hostname verification.
+func (client *Client) OpenApiTestConnection(testConnection types.TestConnection) (*types.TestConnectionResult, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTestConnection
+
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	returnTestConnectionResult := &types.TestConnectionResult{
+		TargetProbe: &types.ProbeResult{},
+		ProxyProbe:  &types.ProbeResult{},
+	}
+
+	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, testConnection, returnTestConnectionResult, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating Edge Gateway: %s", err)
+	}
+
+	return returnTestConnectionResult, nil
 }
 
 // findRelLink looks for link to "nextPage" in "Link" header. It will return when first occurrence is found.
