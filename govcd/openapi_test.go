@@ -9,6 +9,7 @@ package govcd
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -258,6 +259,55 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 
 	err = vcd.client.Client.OpenApiDeleteItem(apiVersion, deleteUrlRef2, nil, nil)
 	check.Assert(err, IsNil)
+
+}
+
+func (vcd *TestVCD) Test_OpenApiTestConnection(check *C) {
+	// TestConnection is going to be used against the same VCD instance as the client is connected
+	tests := []struct {
+		TestConnection   types.TestConnection
+		WantedCanConnect bool
+	}{
+		{
+			TestConnection: types.TestConnection{
+				Host:                          vcd.client.Client.VCDHREF.Host,
+				Port:                          443,
+				Secure:                        takeBoolPointer(true),
+				Timeout:                       10,
+				HostnameVerificationAlgorithm: "HTTPS",
+			},
+			WantedCanConnect: true,
+		},
+		{
+			TestConnection: types.TestConnection{
+				Host:                          vcd.client.Client.VCDHREF.Host,
+				Port:                          443,
+				Secure:                        takeBoolPointer(false),
+				Timeout:                       10,
+				HostnameVerificationAlgorithm: "HTTPS",
+			},
+			WantedCanConnect: true,
+		},
+		{
+			TestConnection: types.TestConnection{
+				Host:                          fmt.Sprintf("%s.io", vcd.client.Client.VCDHREF.Host),
+				Port:                          443,
+				Timeout:                       10,
+				HostnameVerificationAlgorithm: "HTTPS",
+			},
+			WantedCanConnect: false,
+		},
+	}
+
+	for _, test := range tests {
+		result, err := vcd.client.Client.OpenApiTestConnection(test.TestConnection)
+		check.Assert(err, IsNil)
+		check.Assert(result.TargetProbe.CanConnect, Equals, test.WantedCanConnect)
+		if test.TestConnection.Secure != nil && *test.TestConnection.Secure {
+			check.Assert(result.TargetProbe.SSLHandshake, Equals, true)
+			check.Assert(len(result.TargetProbe.CertificateChain) > 0, Equals, true)
+		}
+	}
 
 }
 
