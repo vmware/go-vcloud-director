@@ -160,6 +160,7 @@ func (vcd *TestVCD) Test_UserCRUD(check *C) {
 			FullName:        strings.ReplaceAll(ud.name, "_", " "),
 			Description:     "user " + strings.ReplaceAll(ud.name, "_", " "),
 			IsEnabled:       true,
+			IsExternal:      false,
 			IM:              "TextIM",
 			EmailAddress:    "somename@somedomain.com",
 			Telephone:       "999 888-7777",
@@ -181,6 +182,7 @@ func (vcd *TestVCD) Test_UserCRUD(check *C) {
 		check.Assert(user.User.Telephone, Equals, userDefinition.Telephone)
 		check.Assert(user.User.StoredVmQuota, Equals, userDefinition.StoredVmQuota)
 		check.Assert(user.User.DeployedVmQuota, Equals, userDefinition.DeployedVmQuota)
+		check.Assert(user.User.IsExternal, Equals, userDefinition.IsExternal)
 
 		err = user.Disable()
 		check.Assert(err, IsNil)

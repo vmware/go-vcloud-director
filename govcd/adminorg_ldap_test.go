@@ -46,7 +46,7 @@ func (vcd *TestVCD) Test_LDAP(check *C) {
 	// Run tests requiring LDAP from here.
 	vcd.test_GroupCRUD(check)
 	vcd.test_GroupFinderGetGenericEntity(check)
-
+	vcd.test_GroupUserListIsPopulated(check)
 }
 
 // configureLdap creates direct network, spawns Photon OS VM with LDAP server and configures vCD to
