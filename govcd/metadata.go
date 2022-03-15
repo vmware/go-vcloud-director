@@ -734,7 +734,7 @@ func (adminOrg *AdminOrg) AddMetadataEntry(typedValue, key, value string) error 
 	if err != nil {
 		return err
 	}
-	return  task.WaitTaskCompletion()
+	return task.WaitTaskCompletion()
 }
 
 // AddMetadataEntryAsync adds metadata key/value pair provided as input to the corresponding organization seen as administrator
