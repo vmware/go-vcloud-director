@@ -768,6 +768,41 @@ func (client *Client) RemoveProvidedCustomHeaders(values map[string]string) {
 	}
 }
 
+// TestConnection Tests a connection against a VCD, including SSL handshake and hostname verification.
+func (client *Client) TestConnection(testConnection types.TestConnection) (*types.TestConnectionResult, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTestConnection
+
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	// TestConnection in versions lower than 36.0 doesn't support sending these fields in the POST payload and
+	// fails if they are included. These code snippet avoid sending them in case they are set in those versions.
+	if client.APIVCDMaxVersionIs("< 36.0") {
+		testConnection.HostnameVerificationAlgorithm = ""
+		testConnection.AdditionalCAIssuers = nil
+		testConnection.PreConfiguredProxy = ""
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	returnTestConnectionResult := &types.TestConnectionResult{
+		TargetProbe: &types.ProbeResult{},
+		ProxyProbe:  &types.ProbeResult{},
+	}
+
+	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, testConnection, returnTestConnectionResult, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error performing test connection: %s", err)
+	}
+
+	return returnTestConnectionResult, nil
+}
+
 // ---------------------------------------------------------------------
 // The following functions are needed to avoid strict Coverity warnings
 // ---------------------------------------------------------------------
