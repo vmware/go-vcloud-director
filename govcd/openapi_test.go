@@ -134,6 +134,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructAuditTrail(check *C) {
 // 5. Deletes created role
 // 6. Tests read for deleted item
 // 7. Create role once more using "Sync" version of POST function
+// 7.1 Queries TestConnection endpoint using "Sync" version of POST function to see that it handles 200OK accordingly
 // 8. Update role once more using "Sync" version of PUT function
 // 9. Delete role once again
 func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
@@ -241,6 +242,25 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	newRole.ID = newRoleResponse.ID
 	check.Assert(newRoleResponse, DeepEquals, newRole)
 
+	// Step 7.1 test synchronous POST with return code 200 OK works accordingly - This is checked because OpenAPI endpoint TestConnection returns 200 instead of 201 when success
+	var testConnectionResult types.TestConnectionResult
+	testConnectionPayload := types.TestConnection{
+		Host:    vcd.client.Client.VCDHREF.Host,
+		Port:    443,
+		Secure:  takeBoolPointer(true),
+		Timeout: 10,
+	}
+
+	testConnectionEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTestConnection
+	apiVersionTestConnection, err := vcd.client.Client.checkOpenApiEndpointCompatibility(testConnectionEndpoint)
+	check.Assert(err, IsNil)
+
+	urlRefTestConnection, err := vcd.client.Client.OpenApiBuildEndpoint(testConnectionEndpoint)
+	check.Assert(err, IsNil)
+
+	err = vcd.client.Client.OpenApiPostItemSync(apiVersionTestConnection, urlRefTestConnection, nil, testConnectionPayload, &testConnectionResult) // This call will get a 200 OK, which is what is being tested here
+	check.Assert(err, IsNil)
+
 	// Step 8 - update role using synchronous PUT function
 	newRoleResponse.Description = "Updated description created by sync test"
 	updateUrl2, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint, newRoleResponse.ID)
@@ -300,7 +320,7 @@ func (vcd *TestVCD) Test_OpenApiTestConnection(check *C) {
 	}
 
 	for _, test := range tests {
-		result, err := vcd.client.Client.OpenApiTestConnection(test.TestConnection)
+		result, err := vcd.client.Client.TestConnection(test.TestConnection)
 		check.Assert(err, IsNil)
 		check.Assert(result.TargetProbe.CanConnect, Equals, test.WantedCanConnect)
 		if test.TestConnection.Secure != nil && *test.TestConnection.Secure {
@@ -308,7 +328,6 @@ func (vcd *TestVCD) Test_OpenApiTestConnection(check *C) {
 			check.Assert(len(result.TargetProbe.CertificateChain) > 0, Equals, true)
 		}
 	}
-
 }
 
 // getAuditTrailTimestampWithElements helps to pick good timestamp filter so that it doesn't take long time to retrieve
