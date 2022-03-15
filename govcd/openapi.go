@@ -167,7 +167,7 @@ func (client *Client) OpenApiGetItem(apiVersion string, urlRef *url.URL, params 
 
 // OpenApiPostItemSync is a low level OpenAPI client function to perform POST request for items that support synchronous
 // requests. The urlRef must point to POST endpoint (e.g. '/1.0.0/edgeGateways') that supports synchronous requests. It
-// will return an error when endpoint does not support synchronous requests (HTTP response status code is not 201).
+// will return an error when endpoint does not support synchronous requests (HTTP response status code is not 200 or 201).
 // Response will be unmarshalled into outType.
 //
 // Note. Even though it may return error if the item does not support synchronous request - the object may still be
@@ -188,8 +188,9 @@ func (client *Client) OpenApiPostItemSync(apiVersion string, urlRef *url.URL, pa
 		return err
 	}
 
-	if resp.StatusCode != http.StatusCreated {
-		util.Logger.Printf("[TRACE] Synchronous task expected (HTTP status code 201). Got %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		util.Logger.Printf("[TRACE] Synchronous task expected (HTTP status code 200 or 201). Got %d", resp.StatusCode)
+		return fmt.Errorf("POST request expected sync task (HTTP response 200 or 201), got %d", resp.StatusCode)
 
 	}
 
@@ -687,33 +688,6 @@ func (client *Client) newOpenApiRequest(apiVersion string, params url.Values, me
 	}
 
 	return req
-}
-
-// OpenApiTestConnection Tests a connection, including SSL handshake and hostname verification.
-func (client *Client) OpenApiTestConnection(testConnection types.TestConnection) (*types.TestConnectionResult, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTestConnection
-
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	returnTestConnectionResult := &types.TestConnectionResult{
-		TargetProbe: &types.ProbeResult{},
-		ProxyProbe:  &types.ProbeResult{},
-	}
-
-	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, testConnection, returnTestConnectionResult, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error creating Edge Gateway: %s", err)
-	}
-
-	return returnTestConnectionResult, nil
 }
 
 // findRelLink looks for link to "nextPage" in "Link" header. It will return when first occurrence is found.
