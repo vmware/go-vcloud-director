@@ -267,7 +267,7 @@ func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params
 		return err
 	}
 
-	// Handle two cases of API behaviour - synchronous (response status code is 201) and asynchronous (response status
+	// Handle two cases of API behaviour - synchronous (response status code is 200 or 201) and asynchronous (response status
 	// code 202)
 	switch resp.StatusCode {
 	// Asynchronous case - must track task and get item HREF from there
