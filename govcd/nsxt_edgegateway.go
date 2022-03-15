@@ -74,7 +74,13 @@ func (org *Org) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) 
 	return returnSingleNsxtEdgeGateway(name, onlyNsxtEdges)
 }
 
+// GetNsxtEdgeGatewayByNameAndOwnerId looks up NSX-T Edge Gateway by name and its owner ID (owner
+// can be VDC or VDC Group).
 func (org *Org) GetNsxtEdgeGatewayByNameAndOwnerId(edgeGatewayName, ownerId string) (*NsxtEdgeGateway, error) {
+	if edgeGatewayName == "" || ownerId == "" {
+		return nil, fmt.Errorf("'edgeGatewayName' and 'ownerId' must both be specified")
+	}
+
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", fmt.Sprintf("ownerRef.id==%s;name==%s", ownerId, edgeGatewayName))
 
@@ -103,6 +109,10 @@ func (vdc *Vdc) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) 
 
 // GetNsxtEdgeGatewayByName allows to retrieve NSX-T edge gateway by Name for specific VDC Group
 func (vdcGroup *VdcGroup) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGateway, error) {
+	if name == "" {
+		return nil, fmt.Errorf("'name' must be specified")
+	}
+
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", "name=="+name)
 
@@ -230,14 +240,14 @@ func (egw *NsxtEdgeGateway) Delete() error {
 	return nil
 }
 
-// MoveToVdc moves NSX-T Edge Gateway to another VDC. This can cover such scenarios:
+// MoveToVdcOrVdcGroup moves NSX-T Edge Gateway to another VDC. This can cover such scenarios:
 // * Move from VDC to VDC Group
 // * Move from VDC Group to VDC (which is part of that VDC Group)
 //
 // This function is just an Update operation with OwnerRef changed to vdcGroupId, but it is more
 // convenient to use it.
 // Note. NSX-T Edge Gateway cannot be moved directly from one VDC to another
-func (egw *NsxtEdgeGateway) MoveToVdc(vdcOrVdcGroupId string) (*NsxtEdgeGateway, error) {
+func (egw *NsxtEdgeGateway) MoveToVdcOrVdcGroup(vdcOrVdcGroupId string) (*NsxtEdgeGateway, error) {
 	edgeGatewayConfig := egw.EdgeGateway
 	edgeGatewayConfig.OwnerRef = &types.OpenApiReference{ID: vdcOrVdcGroupId}
 	// Explicitly unset VDC field because using it fails
