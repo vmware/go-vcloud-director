@@ -293,7 +293,7 @@ func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params
 
 		// Synchronous task - new item body is returned in response of HTTP POST request
 	case http.StatusCreated, http.StatusOK:
-		util.Logger.Printf("[TRACE] Synchronous task detected, marshalling outType '%s'", reflect.TypeOf(outType))
+		util.Logger.Printf("[TRACE] Synchronous task detected (HTTP Status %d), marshalling outType '%s'", resp.StatusCode, reflect.TypeOf(outType))
 		if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
 			return fmt.Errorf("error decoding JSON response after POST: %s", err)
 		}
