@@ -82,6 +82,11 @@ var endpointElevatedApiVersions = map[string][]string{
 		"35.0", // Deprecates field BackingType in favor of BackingTypeValue
 		"36.0", // Adds support new type of BackingTypeValue - IMPORTED_T_LOGICAL_SWITCH (backed by NSX-T segment)
 	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTestConnection: {
+		//"34.0", Basic minimun required version
+		"36.0", // Adds fields hostnameVerificationAlgorithm and additionalCAIssuers to Connection
+		"36.1", // Adds preConfiguredProxy to Connection
+	},
 }
 
 // checkOpenApiEndpointCompatibility checks if VCD version (to which the client is connected) is sufficient to work with
@@ -116,7 +121,7 @@ func (client *Client) checkOpenApiEndpointCompatibility(endpoint string) (string
 // supported API versions just like client.checkOpenApiEndpointCompatibility().
 //
 // The advantage of this functions is that it provides a controlled API elevation instead of just picking the highest
-// which could be risky and untested (especially if new API version is released after release of package consuming this
+// which could be risky and untested (especially if new API version hich could be risky and untested (especially if new API version is released after release of package consuming this
 // SDK)
 func (client *Client) getOpenApiHighestElevatedVersion(endpoint string) (string, error) {
 	util.Logger.Printf("[DEBUG] Checking if elevated API versions are defined for endpoint '%s'", endpoint)
