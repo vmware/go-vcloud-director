@@ -116,13 +116,12 @@ func (client *Client) checkOpenApiEndpointCompatibility(endpoint string) (string
 	return minimumApiVersion, nil
 }
 
-// getOpenApiHighestElevatedVersion returns highest supported API version for particular endpoint
+// getOpenApiHighestElevatedVersion returns the highest supported API version for particular endpoint
 // These API versions must be defined in endpointElevatedApiVersions. If none are there - it will return minimum
 // supported API versions just like client.checkOpenApiEndpointCompatibility().
 //
-// The advantage of this functions is that it provides a controlled API elevation instead of just picking the highest
-// which could be risky and untested (especially if new API version hich could be risky and untested (especially if new API version is released after release of package consuming this
-// SDK)
+// The advantage of this function is that it provides a controlled API elevation instead of just picking the highest version
+// which could be risky and untested (especially if new API version is released after release of package consuming this SDK)
 func (client *Client) getOpenApiHighestElevatedVersion(endpoint string) (string, error) {
 	util.Logger.Printf("[DEBUG] Checking if elevated API versions are defined for endpoint '%s'", endpoint)
 
