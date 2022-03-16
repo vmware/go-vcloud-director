@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -793,6 +794,57 @@ func (client *Client) TestConnection(testConnection types.TestConnection) (*type
 	}
 
 	return returnTestConnectionResult, nil
+}
+
+// TestConnectionWithDefaults calls TestConnection given a subscriptionURL. The rest of parameters are set as default.
+// It returns whether it could reach the server and establish SSL connection or not.
+func (client *Client) TestConnectionWithDefaults(subscriptionURL string) (bool, error) {
+	if subscriptionURL == "" {
+		return false, fmt.Errorf("TestConnectionWithDefaults needs to be passed a host. i.e. my-host.vmware.com")
+	}
+
+	url, err := url.Parse(subscriptionURL)
+	if err != nil {
+		return false, fmt.Errorf("unable to parse URL - %s", err)
+	}
+
+	// Get port
+	var port int
+	if v := url.Port(); v != "" {
+		port, err = strconv.Atoi(v)
+		if err != nil {
+			return false, fmt.Errorf("couldn't parse port provided - %s", err)
+		}
+	} else {
+		switch url.Scheme {
+		case "http":
+			port = 80
+		case "https":
+			port = 443
+		}
+	}
+
+	testConnectionConfig := types.TestConnection{
+		Host:    url.Hostname(),
+		Port:    port,
+		Secure:  takeBoolPointer(true), // Default value used by VCD UI
+		Timeout: 30,                    // Default value used by VCD UI
+	}
+
+	testConnectionResult, err := client.TestConnection(testConnectionConfig)
+	if err != nil {
+		return false, err
+	}
+
+	if !testConnectionResult.TargetProbe.CanConnect {
+		return false, fmt.Errorf("the remote host is not reachable")
+	}
+
+	if !testConnectionResult.TargetProbe.SSLHandshake {
+		return true, fmt.Errorf("unsupported or unrecognized SSL message")
+	}
+
+	return true, nil
 }
 
 // ---------------------------------------------------------------------
