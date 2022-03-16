@@ -290,30 +290,27 @@ func (vcd *TestVCD) Test_OpenApiTestConnection(check *C) {
 	}{
 		{
 			TestConnection: types.TestConnection{
-				Host:                          vcd.client.Client.VCDHREF.Host,
-				Port:                          443,
-				Secure:                        takeBoolPointer(true),
-				Timeout:                       10,
-				HostnameVerificationAlgorithm: "HTTPS",
+				Host:    vcd.client.Client.VCDHREF.Host,
+				Port:    443,
+				Secure:  takeBoolPointer(true),
+				Timeout: 10,
 			},
 			WantedCanConnect: true,
 		},
 		{
 			TestConnection: types.TestConnection{
-				Host:                          vcd.client.Client.VCDHREF.Host,
-				Port:                          443,
-				Secure:                        takeBoolPointer(false),
-				Timeout:                       10,
-				HostnameVerificationAlgorithm: "HTTPS",
+				Host:    vcd.client.Client.VCDHREF.Host,
+				Port:    443,
+				Secure:  takeBoolPointer(false),
+				Timeout: 10,
 			},
 			WantedCanConnect: true,
 		},
 		{
 			TestConnection: types.TestConnection{
-				Host:                          fmt.Sprintf("%s.io", vcd.client.Client.VCDHREF.Host),
-				Port:                          443,
-				Timeout:                       10,
-				HostnameVerificationAlgorithm: "HTTPS",
+				Host:    fmt.Sprintf("%s.io", vcd.client.Client.VCDHREF.Host),
+				Port:    443,
+				Timeout: 10,
 			},
 			WantedCanConnect: false,
 		},
