@@ -768,7 +768,7 @@ func (client *Client) RemoveProvidedCustomHeaders(values map[string]string) {
 	}
 }
 
-// TestConnection Tests a connection against a VCD, including SSL handshake and hostname verification.
+// TestConnection calls API to test a connection against a VCD, including SSL handshake and hostname verification.
 func (client *Client) TestConnection(testConnection types.TestConnection) (*types.TestConnectionResult, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTestConnection
 
