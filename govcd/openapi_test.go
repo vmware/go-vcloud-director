@@ -284,46 +284,45 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 
 func (vcd *TestVCD) Test_OpenApiTestConnection(check *C) {
 	// TestConnection is going to be used against the same VCD instance as the client is connected
+	urlTest1 := vcd.client.Client.VCDHREF
+	urlTest1.Path = "vcsp/lib/a0c959b4-a6dd-4a68-8042-5025f42d845e"
+	urlTest2 := vcd.client.Client.VCDHREF
+	urlTest2.Scheme = "http"
+	urlTest3 := vcd.client.Client.VCDHREF
+	urlTest3.Host = "imadethisup.io"
+	urlTest4 := vcd.client.Client.VCDHREF
+	urlTest4.Host = fmt.Sprintf("%s:666", urlTest4.Hostname()) // For testing custom port feature
 	tests := []struct {
-		TestConnection   types.TestConnection
-		WantedCanConnect bool
+		SubscriptionURL  string
+		WantedConnection bool
+		WantedError      bool
 	}{
 		{
-			TestConnection: types.TestConnection{
-				Host:    vcd.client.Client.VCDHREF.Host,
-				Port:    443,
-				Secure:  takeBoolPointer(true),
-				Timeout: 10,
-			},
-			WantedCanConnect: true,
+			SubscriptionURL:  urlTest1.String(),
+			WantedConnection: true,  // it connects and it does SSL connection
+			WantedError:      false, //
 		},
 		{
-			TestConnection: types.TestConnection{
-				Host:    vcd.client.Client.VCDHREF.Host,
-				Port:    443,
-				Secure:  takeBoolPointer(false),
-				Timeout: 10,
-			},
-			WantedCanConnect: true,
+			SubscriptionURL:  urlTest2.String(),
+			WantedConnection: true, // it connects but it does not do SSL connection
+			WantedError:      true,
 		},
 		{
-			TestConnection: types.TestConnection{
-				Host:    fmt.Sprintf("%s.io", vcd.client.Client.VCDHREF.Host),
-				Port:    443,
-				Timeout: 10,
-			},
-			WantedCanConnect: false,
+			SubscriptionURL:  urlTest3.String(), // it doesn't do neither connection nor SSL
+			WantedConnection: false,
+			WantedError:      true,
+		},
+		{
+			SubscriptionURL:  urlTest4.String(), // it doesn't do neither connection nor SSL but tests custom port
+			WantedConnection: false,
+			WantedError:      true,
 		},
 	}
 
 	for _, test := range tests {
-		result, err := vcd.client.Client.TestConnection(test.TestConnection)
-		check.Assert(err, IsNil)
-		check.Assert(result.TargetProbe.CanConnect, Equals, test.WantedCanConnect)
-		if test.TestConnection.Secure != nil && *test.TestConnection.Secure {
-			check.Assert(result.TargetProbe.SSLHandshake, Equals, true)
-			check.Assert(len(result.TargetProbe.CertificateChain) > 0, Equals, true)
-		}
+		result, err := vcd.client.Client.TestConnectionWithDefaults(test.SubscriptionURL)
+		check.Assert(err == nil, Equals, !test.WantedError)
+		check.Assert(result, Equals, test.WantedConnection)
 	}
 }
 
