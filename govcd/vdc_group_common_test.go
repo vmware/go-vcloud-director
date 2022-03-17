@@ -79,10 +79,9 @@ func createNewVdc(vcd *TestVCD, check *C, vdcName string) *Vdc {
 		check.Skip(fmt.Sprintf("No NSX-T Provider VDC found with name '%s'", vcd.config.VCD.NsxtProviderVdc.Name))
 	}
 	providerVdcHref := pVdcs[0].HREF
-
 	pvdcStorageProfile, err := vcd.client.QueryProviderVdcStorageProfileByName(vcd.config.VCD.NsxtProviderVdc.StorageProfile, providerVdcHref)
-
 	check.Assert(err, IsNil)
+	check.Assert(pvdcStorageProfile, NotNil)
 	providerVdcStorageProfileHref := pvdcStorageProfile.HREF
 
 	networkPools, err := QueryNetworkPoolByName(vcd.client, vcd.config.VCD.NsxtProviderVdc.NetworkPool)
@@ -135,8 +134,8 @@ func createNewVdc(vcd *TestVCD, check *C, vdcName string) *Vdc {
 	}
 
 	vdc, err := adminOrg.CreateOrgVdc(vdcConfiguration)
-	check.Assert(vdc, NotNil)
 	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
 
 	AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, check.TestName())
 	return vdc
