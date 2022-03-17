@@ -787,6 +787,8 @@ type OrgGeneralSettings struct {
 	Link LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
 
 	CanPublishCatalogs       bool `xml:"CanPublishCatalogs,omitempty"`
+	CanPublishExternally     bool `xml:"CanPublishExternally,omitempty"`
+	CanSubscribe             bool `xml:"CanSubscribe,omitempty"`
 	DeployedVMQuota          int  `xml:"DeployedVMQuota,omitempty"`
 	StoredVMQuota            int  `xml:"StoredVmQuota,omitempty"`
 	UseServerBootSequence    bool `xml:"UseServerBootSequence,omitempty"`
@@ -2899,6 +2901,13 @@ type Group struct {
 	ProviderType string `xml:"ProviderType"`
 	// Role - reference to existing role
 	Role *Reference `xml:"Role,omitempty"`
+	// UsersList - references to existing users of type User
+	UsersList *UsersList `xml:"UsersList,omitempty"`
+}
+
+// UsersList is a tagged list of User Reference's
+type UsersList struct {
+	UserReference []*Reference `xml:"UserReference,omitempty"`
 }
 
 // Type: AdminCatalogRecord
