@@ -2927,7 +2927,7 @@ type CatalogRecord struct {
 	CreationDate            string    `xml:"creationDate,attr,omitempty"`
 	OrgName                 string    `xml:"orgName,attr,omitempty"`
 	OwnerName               string    `xml:"ownerName,attr,omitempty"`
-	NumberOfVAppTemplates   int64     `xml:"numberOfVAppTemplates,attr,omitempty"`
+	NumberOfVAppTemplates   int64     `xml:"numberOfTemplates,attr,omitempty"`
 	NumberOfMedia           int64     `xml:"numberOfMedia,attr,omitempty"`
 	Owner                   string    `xml:"owner,attr,omitempty"`
 	PublishSubscriptionType string    `xml:"publishSubscriptionType,attr,omitempty"`
