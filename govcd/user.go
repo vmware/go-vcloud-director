@@ -424,7 +424,7 @@ func (user *OrgUser) Update() error {
 	util.Logger.Printf("[TRACE] Url for updating user : %#v and name: %s", userHREF, user.User.Name)
 
 	_, err = user.client.ExecuteRequest(userHREF.String(), http.MethodPut,
-		types.MimeAdminUser, "error updating user : %s", user.User, nil)
+		types.MimeAdminUser, "error updating user : %s", copyWithoutGroupList(user.User), nil)
 	return err
 }
 
@@ -552,4 +552,37 @@ func validateUserForCreation(user *types.User) error {
 		return fmt.Errorf(missingField, "Role.HREF")
 	}
 	return nil
+}
+
+// copyWithoutGroupList returns a copy of the given user, with the GroupList attribute set to nil.
+// This can and should be used to interact with VCD after a user read if it belongs to an LDAP,
+// as having this list populated will return an error 400 as VCD doesn't expect this list to be updatable.
+func copyWithoutGroupList(user *types.User) *types.User {
+	return &types.User{
+		XMLName:         user.XMLName,
+		Xmlns:           user.Xmlns,
+		Href:            user.Href,
+		Type:            user.Type,
+		ID:              user.Type,
+		OperationKey:    user.OperationKey,
+		Name:            user.Name,
+		Links:           user.Links,
+		Description:     user.Description,
+		FullName:        user.FullName,
+		EmailAddress:    user.EmailAddress,
+		Telephone:       user.Telephone,
+		IsEnabled:       user.IsEnabled,
+		IsLocked:        user.IsLocked,
+		IM:              user.IM,
+		NameInSource:    user.NameInSource,
+		IsExternal:      user.IsExternal,
+		ProviderType:    user.ProviderType,
+		IsGroupRole:     user.IsGroupRole,
+		StoredVmQuota:   user.StoredVmQuota,
+		DeployedVmQuota: user.DeployedVmQuota,
+		Role:            user.Role,
+		GroupReferences: nil,
+		Password:        user.Password,
+		Tasks:           user.Tasks,
+	}
 }

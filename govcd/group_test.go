@@ -222,9 +222,18 @@ func (vcd *TestVCD) test_GroupUserListIsPopulated(check *C) {
 	check.Assert(grp.Group.UsersList, NotNil)
 	check.Assert(grp.Group.UsersList.UserReference[0], NotNil)
 
+	// We check here that usersList doesn't make VCD fail, they should be sent as nil
+	err = grp.Update()
+	check.Assert(err, IsNil)
+
 	user, err = adminOrg.GetUserByHref(grp.Group.UsersList.UserReference[0].HREF)
 	check.Assert(err, IsNil)
 	check.Assert(user.User.Name, Equals, userName)
+	check.Assert(len(user.User.GroupReferences.GroupReference), Equals, 1)
+
+	// We check here that groupReferences doesn't make VCD fail, they should be sent as nil
+	err = user.Update()
+	check.Assert(err, IsNil)
 
 	// Cleanup
 	err = user.Delete(false)

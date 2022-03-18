@@ -131,7 +131,7 @@ func (group *OrgGroup) Update() error {
 	util.Logger.Printf("[TRACE] Url for updating group : %s and name: %s", groupHREF.String(), group.Group.Name)
 
 	_, err = group.client.ExecuteRequest(groupHREF.String(), http.MethodPut,
-		types.MimeAdminGroup, "error updating group : %s", group.Group, nil)
+		types.MimeAdminGroup, "error updating group : %s", copyWithoutUserList(group.Group), nil)
 	return err
 }
 
@@ -182,4 +182,22 @@ func validateDeleteGroup(group *types.Group) error {
 	}
 
 	return nil
+}
+
+// copyWithoutUserList returns a copy of the given group, with the UserList attribute set to nil.
+// This can and should be used to interact with VCD after a group read from the LDAP,
+// as having this list populated will return an error 400 as VCD doesn't expect this list to be updatable.
+func copyWithoutUserList(group *types.Group) *types.Group {
+	return &types.Group{
+		XMLName:      group.XMLName,
+		Xmlns:        group.Xmlns,
+		ID:           group.ID,
+		Href:         group.Href,
+		Type:         group.Type,
+		Description:  group.Description,
+		Name:         group.Name,
+		ProviderType: group.ProviderType,
+		Role:         group.Role,
+		UsersList:    nil,
+	}
 }
