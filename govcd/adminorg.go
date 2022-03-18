@@ -757,14 +757,26 @@ func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
 
 // QueryCatalogList returns a list of catalogs for this organization
 func (adminOrg *AdminOrg) QueryCatalogList() ([]*types.CatalogRecord, error) {
+	return adminOrg.FindCatalogRecords("")
+}
+
+// FindCatalogRecords given a catalog name, retrieves the catalogRecords for a given organization
+func (adminOrg *AdminOrg) FindCatalogRecords(name string) ([]*types.CatalogRecord, error) {
 	util.Logger.Printf("[DEBUG] QueryCatalogList with org name %s", adminOrg.AdminOrg.Name)
 	queryType := types.QtCatalog
 	if adminOrg.client.IsSysAdmin {
 		queryType = types.QtAdminCatalog
 	}
+
+	var filter string
+	filter = fmt.Sprintf("orgName==%s", url.QueryEscape(adminOrg.AdminOrg.Name))
+	if name != "" {
+		filter = fmt.Sprintf("%s;name==%s", filter, name)
+	}
+
 	results, err := adminOrg.client.cumulativeQuery(queryType, nil, map[string]string{
 		"type":          queryType,
-		"filter":        fmt.Sprintf("orgName==%s", url.QueryEscape(adminOrg.AdminOrg.Name)),
+		"filter":        filter,
 		"filterEncoded": "true",
 	})
 	if err != nil {
