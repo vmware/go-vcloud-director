@@ -763,9 +763,14 @@ func (adminOrg *AdminOrg) QueryCatalogList() ([]*types.CatalogRecord, error) {
 // FindCatalogRecords given a catalog name, retrieves the catalogRecords for a given organization
 func (adminOrg *AdminOrg) FindCatalogRecords(name string) ([]*types.CatalogRecord, error) {
 	util.Logger.Printf("[DEBUG] QueryCatalogList with org name %s", adminOrg.AdminOrg.Name)
-	queryType := types.QtCatalog
+
 	if adminOrg.client.IsSysAdmin {
-		queryType = types.QtAdminCatalog
+		// Set tenant context
+		adminOrg.client.SetCustomHeader(map[string]string{
+			types.HeaderAuthContext:   adminOrg.TenantContext.OrgName,
+			types.HeaderTenantContext: adminOrg.TenantContext.OrgId,
+		})
+		defer adminOrg.client.RemoveCustomHeader()
 	}
 
 	var filter string
@@ -774,8 +779,8 @@ func (adminOrg *AdminOrg) FindCatalogRecords(name string) ([]*types.CatalogRecor
 		filter = fmt.Sprintf("%s;name==%s", filter, name)
 	}
 
-	results, err := adminOrg.client.cumulativeQuery(queryType, nil, map[string]string{
-		"type":          queryType,
+	results, err := adminOrg.client.cumulativeQuery(types.QtCatalog, nil, map[string]string{
+		"type":          types.QtCatalog,
 		"filter":        filter,
 		"filterEncoded": "true",
 	})
@@ -783,13 +788,8 @@ func (adminOrg *AdminOrg) FindCatalogRecords(name string) ([]*types.CatalogRecor
 		return nil, err
 	}
 
-	var catalogs []*types.CatalogRecord
+	catalogs := results.Results.CatalogRecord
 
-	if adminOrg.client.IsSysAdmin {
-		catalogs = results.Results.AdminCatalogRecord
-	} else {
-		catalogs = results.Results.CatalogRecord
-	}
 	util.Logger.Printf("[DEBUG] QueryCatalogList returned with : %#v and error: %s", catalogs, err)
 	return catalogs, nil
 }
