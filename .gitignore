@@ -32,6 +32,9 @@ secrets.yml
 # VScode IDE
 .vscode
 
+# IntelliJ IDE
+*.iml
+
 # Test artifacts
 govcd/govcd_test_config*.yaml
 govcd/govcd_test_config*.json

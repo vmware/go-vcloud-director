@@ -716,3 +716,108 @@ func (adminCatalog *AdminCatalog) DeleteMetadataEntryAsync(key string) (Task, er
 func (catalog *Catalog) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(catalog.client, catalog.Catalog.HREF)
 }
+
+// GetMetadata returns the metadata of the corresponding organization seen as administrator
+func (adminOrg *AdminOrg) GetMetadata() (*types.Metadata, error) {
+	return getMetadata(adminOrg.client, adminOrg.AdminOrg.HREF)
+}
+
+// GetMetadata returns the metadata of the corresponding organization seen as administrator
+func (org *Org) GetMetadata() (*types.Metadata, error) {
+	return getMetadata(org.client, org.Org.HREF)
+}
+
+// AddMetadataEntry adds metadata key/value pair provided as input to the corresponding organization seen as administrator
+// and waits for completion.
+func (adminOrg *AdminOrg) AddMetadataEntry(typedValue, key, value string) (*AdminOrg, error) {
+	task, err := adminOrg.AddMetadataEntryAsync(typedValue, key, value)
+	if err != nil {
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("error completing add metadata for organization task: %s", err)
+	}
+
+	err = adminOrg.Refresh()
+	if err != nil {
+		return nil, fmt.Errorf("error refreshing organization: %s", err)
+	}
+
+	return adminOrg, nil
+}
+
+// AddMetadataEntryAsync adds metadata key/value pair provided as input to the corresponding organization seen as administrator
+// and returns a task.
+func (adminOrg *AdminOrg) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
+	return addMetadata(adminOrg.client, typedValue, key, value, adminOrg.AdminOrg.HREF)
+}
+
+// DeleteMetadataEntry deletes metadata of the corresponding organization with the given key, and waits for completion
+func (adminOrg *AdminOrg) DeleteMetadataEntry(key string) error {
+	task, err := adminOrg.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error completing delete metadata for organization task: %s", err)
+	}
+
+	return nil
+}
+
+// DeleteMetadataEntryAsync deletes metadata of the corresponding organization with the given key, and returns
+// a task.
+func (adminOrg *AdminOrg) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(adminOrg.client, key, adminOrg.AdminOrg.HREF)
+}
+
+// GetMetadata returns the metadata of the corresponding independent disk
+func (disk *Disk) GetMetadata() (*types.Metadata, error) {
+	return getMetadata(disk.client, disk.Disk.HREF)
+}
+
+// AddMetadataEntry adds metadata key/value pair provided as input to the corresponding independent disk and waits for completion.
+func (disk *Disk) AddMetadataEntry(typedValue, key, value string) (*Disk, error) {
+	task, err := disk.AddMetadataEntryAsync(typedValue, key, value)
+	if err != nil {
+		return nil, err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("error completing add metadata for independent disk task: %s", err)
+	}
+
+	err = disk.Refresh()
+	if err != nil {
+		return nil, fmt.Errorf("error refreshing independent disk: %s", err)
+	}
+
+	return disk, nil
+}
+
+// AddMetadataEntryAsync adds metadata key/value pair provided as input to the corresponding independent disk and returns a task.
+func (disk *Disk) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
+	return addMetadata(disk.client, typedValue, key, value, disk.Disk.HREF)
+}
+
+// DeleteMetadataEntry deletes metadata of the corresponding independent disk with the given key, and waits for completion
+func (disk *Disk) DeleteMetadataEntry(key string) error {
+	task, err := disk.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error completing delete metadata for independent disk task: %s", err)
+	}
+
+	return nil
+}
+
+// DeleteMetadataEntryAsync deletes metadata of the corresponding independent disk with the given key, and returns
+// a task.
+func (disk *Disk) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(disk.client, key, disk.Disk.HREF)
+}

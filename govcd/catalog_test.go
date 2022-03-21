@@ -897,3 +897,29 @@ func (vcd *TestVCD) Test_UploadOvfByLink_progress_works(check *C) {
 	check.Assert(err, IsNil)
 	verifyCatalogItemUploaded(check, catalog, itemName)
 }
+
+func (vcd *TestVCD) Test_CatalogQueryMediaList(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	catalogName := vcd.config.VCD.Catalog.Name
+	if catalogName == "" {
+		check.Skip("Test_CatalogQueryMediaList: Catalog name not given")
+		return
+	}
+
+	cat, err := vcd.org.GetCatalogByName(catalogName, false)
+	if err != nil {
+		check.Skip("Test_CatalogQueryMediaList: Catalog not found")
+		return
+	}
+
+	medias, err := cat.QueryMediaList()
+	check.Assert(err, IsNil)
+	check.Assert(medias, NotNil)
+
+	// Check that number of medias is 1
+	check.Assert(len(medias), Equals, 1)
+
+	// Check that media name is what it should be
+	check.Assert(medias[0].Name, Equals, vcd.config.Media.Media)
+}
