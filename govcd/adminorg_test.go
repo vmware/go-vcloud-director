@@ -193,6 +193,7 @@ func (vcd *TestVCD) TestOrg_AdminOrg_QueryCatalogList(check *C) {
 	// gets a specific catalog as an adminOrg
 	singleCatalogInAdminOrg, err := adminOrg.FindCatalogRecords(vcd.config.VCD.Catalog.Name)
 	check.Assert(err, IsNil)
+	check.Assert(singleCatalogInAdminOrg, NotNil)
 	check.Assert(len(singleCatalogInAdminOrg), Equals, 1)
 
 	// gets the catalog list as an Org
