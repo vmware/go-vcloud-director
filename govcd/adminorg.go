@@ -789,6 +789,9 @@ func (adminOrg *AdminOrg) FindCatalogRecords(name string) ([]*types.CatalogRecor
 	}
 
 	catalogs := results.Results.CatalogRecord
+	if catalogs == nil {
+		return nil, ErrorEntityNotFound
+	}
 
 	util.Logger.Printf("[DEBUG] QueryCatalogList returned with : %#v and error: %s", catalogs, err)
 	return catalogs, nil
