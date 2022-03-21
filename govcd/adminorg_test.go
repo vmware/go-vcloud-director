@@ -196,6 +196,11 @@ func (vcd *TestVCD) TestOrg_AdminOrg_QueryCatalogList(check *C) {
 	check.Assert(singleCatalogInAdminOrg, NotNil)
 	check.Assert(len(singleCatalogInAdminOrg), Equals, 1)
 
+	// try to get a non-existent catalog
+	nonExistentCatalog, err := adminOrg.FindCatalogRecords("iCompletelyMadeThisUp")
+	check.Assert(nonExistentCatalog, IsNil)
+	check.Assert(err, Equals, ErrorEntityNotFound)
+
 	// gets the catalog list as an Org
 	catalogsInOrg, err := org.QueryCatalogList()
 	check.Assert(err, IsNil)
