@@ -231,6 +231,10 @@ func (vcd *TestVCD) test_GroupUserListIsPopulated(check *C) {
 	check.Assert(user.User.Name, Equals, userName)
 	check.Assert(len(user.User.GroupReferences.GroupReference), Equals, 1)
 
+	// We check here that the user used for update is the same as we had originally, except the user list
+	grp.Group.UsersList = nil
+	check.Assert(copyWithoutUserList(grp.Group), DeepEquals, grp)
+
 	// We check here that groupReferences doesn't make VCD fail, they should be sent as nil
 	err = user.Update()
 	check.Assert(err, IsNil)
