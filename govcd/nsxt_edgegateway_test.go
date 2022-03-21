@@ -17,20 +17,25 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
 
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
 
 	nsxvVdc, err := adminOrg.GetVDCByName(vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
+	check.Assert(nsxvVdc, NotNil)
 	nsxtVdc, err := adminOrg.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
 	if ContainsNotFound(err) {
 		check.Skip(fmt.Sprintf("No NSX-T VDC (%s) found - skipping test", vcd.config.VCD.Nsxt.Vdc))
 	}
 	check.Assert(err, IsNil)
+	check.Assert(nsxtVdc, NotNil)
 
 	nsxtExternalNetwork, err := GetExternalNetworkV2ByName(vcd.client, vcd.config.VCD.Nsxt.ExternalNetwork)
 	check.Assert(err, IsNil)
+	check.Assert(nsxtExternalNetwork, NotNil)
 
 	egwDefinition := &types.OpenAPIEdgeGateway{
 		Name:        "nsx-t-edge",
@@ -71,16 +76,22 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	// Lookup using different available methods
 	e1, err := adminOrg.GetNsxtEdgeGatewayByName(updatedEdge.EdgeGateway.Name)
 	check.Assert(err, IsNil)
+	check.Assert(e1, NotNil)
 	e2, err := org.GetNsxtEdgeGatewayByName(updatedEdge.EdgeGateway.Name)
 	check.Assert(err, IsNil)
+	check.Assert(e2, NotNil)
 	e3, err := nsxtVdc.GetNsxtEdgeGatewayByName(updatedEdge.EdgeGateway.Name)
 	check.Assert(err, IsNil)
+	check.Assert(e3, NotNil)
 	e4, err := adminOrg.GetNsxtEdgeGatewayById(updatedEdge.EdgeGateway.ID)
 	check.Assert(err, IsNil)
+	check.Assert(e4, NotNil)
 	e5, err := org.GetNsxtEdgeGatewayById(updatedEdge.EdgeGateway.ID)
 	check.Assert(err, IsNil)
+	check.Assert(e5, NotNil)
 	e6, err := nsxtVdc.GetNsxtEdgeGatewayById(updatedEdge.EdgeGateway.ID)
 	check.Assert(err, IsNil)
+	check.Assert(e6, NotNil)
 
 	// Try to search for NSX-T edge gateway in NSX-V VDC and expect it to be not found
 	expectNil, err := nsxvVdc.GetNsxtEdgeGatewayByName(updatedEdge.EdgeGateway.Name)
@@ -107,12 +118,15 @@ func (vcd *TestVCD) Test_NsxtEdgeVdcGroup(check *C) {
 
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
 
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
 
 	nsxtExternalNetwork, err := GetExternalNetworkV2ByName(vcd.client, vcd.config.VCD.Nsxt.ExternalNetwork)
 	check.Assert(err, IsNil)
+	check.Assert(nsxtExternalNetwork, NotNil)
 
 	vdc, vdcGroup := test_CreateVdcGroup(check, adminOrg, vcd)
 

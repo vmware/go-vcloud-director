@@ -319,6 +319,10 @@ func (adminOrg *AdminOrg) GetVdcGroupById(id string) (*VdcGroup, error) {
 
 // GetVdcGroupById Returns VDC group using provided ID
 func (org *Org) GetVdcGroupById(id string) (*VdcGroup, error) {
+	if id == "" {
+		return nil, fmt.Errorf("empty VDC group ID")
+	}
+
 	tenantContext, err := org.getTenantContext()
 	if err != nil {
 		return nil, err
@@ -328,10 +332,6 @@ func (org *Org) GetVdcGroupById(id string) (*VdcGroup, error) {
 	minimumApiVersion, err := org.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
-	}
-
-	if id == "" {
-		return nil, fmt.Errorf("empty VDC group ID")
 	}
 
 	urlRef, err := org.client.OpenApiBuildEndpoint(endpoint, id)

@@ -302,7 +302,7 @@ func (vcd *TestVCD) Test_VdcUpdateStorageProfile(check *C) {
 	check.Assert(updatedStorageProfile, Not(Equals), types.VdcStorageProfile{})
 	check.Assert(updatedStorageProfile, NotNil)
 
-	check.Assert(updatedStorageProfile.Enabled, Equals, true)
+	check.Assert(*updatedStorageProfile.Enabled, Equals, true)
 	check.Assert(updatedStorageProfile.Limit, Equals, int64(9081))
 	check.Assert(updatedStorageProfile.Default, Equals, true)
 	check.Assert(updatedStorageProfile.Units, Equals, "MB")
