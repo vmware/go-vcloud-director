@@ -481,6 +481,13 @@ const (
 	NsxtAlbCloudBackingTypeNsxtAlb = "NSXALB_NSXT"
 )
 
+const (
+	// UrnTypeVdcGroup is the third segment of URN for VDC Group
+	UrnTypeVdcGroup = "vdcGroup"
+	// UrnTypeVdc is the third segment of URN for VDC
+	UrnTypeVdc = "vdc"
+)
+
 // Metadata type constants
 const (
 	MetadataStringValue   string = "MetadataStringValue"
