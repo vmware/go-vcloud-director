@@ -758,7 +758,7 @@ func (vcd *TestVCD) Test_MetadataOnAdminOrgCRUD(check *C) {
 	existingMetaDataCount := len(metadata.MetadataEntry)
 
 	// Add metadata
-	_, err = adminOrg.AddMetadataEntry(types.MetadataStringValue, "key", "value")
+	err = adminOrg.AddMetadataEntry(types.MetadataStringValue, "key", "value")
 	check.Assert(err, IsNil)
 
 	// Check if metadata was added correctly
@@ -830,7 +830,7 @@ func (vcd *TestVCD) Test_MetadataOnIndependentDiskCRUD(check *C) {
 	existingMetaDataCount := len(metadata.MetadataEntry)
 
 	// Add metadata
-	_, err = disk.AddMetadataEntry(types.MetadataStringValue, "key", "value")
+	err = disk.AddMetadataEntry(types.MetadataStringValue, "key", "value")
 	check.Assert(err, IsNil)
 
 	// Check if metadata was added correctly
