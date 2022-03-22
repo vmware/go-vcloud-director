@@ -29,38 +29,38 @@ func (vcd *TestVCD) Test_AnyTypeEdgeGateway(check *C) {
 	check.Assert(nsxvEdge, NotNil)
 
 	// Retrieve both types of Edge Gateways using adminOrg structure (NSX-T and NSX-V) using the
-	// common type AnyEdgeGateway
-	nsxtAnyEdgeGateway, err := adminOrg.GetAnyTypeEdgeGatewayById(nsxtEdge.EdgeGateway.ID)
+	// common type AnyTypeEdgeGateway
+	nsxtAnyTypeEdgeGateway, err := adminOrg.GetAnyTypeEdgeGatewayById(nsxtEdge.EdgeGateway.ID)
 	check.Assert(err, IsNil)
-	check.Assert(nsxtAnyEdgeGateway, NotNil)
-	check.Assert(nsxtAnyEdgeGateway.EdgeGateway, DeepEquals, nsxtEdge.EdgeGateway)
+	check.Assert(nsxtAnyTypeEdgeGateway, NotNil)
+	check.Assert(nsxtAnyTypeEdgeGateway.EdgeGateway, DeepEquals, nsxtEdge.EdgeGateway)
 
-	nsxvAnyEdgeGateway, err := adminOrg.GetAnyTypeEdgeGatewayById(nsxvEdge.EdgeGateway.ID)
+	nsxvAnyTypeEdgeGateway, err := adminOrg.GetAnyTypeEdgeGatewayById(nsxvEdge.EdgeGateway.ID)
 	check.Assert(err, IsNil)
-	check.Assert(nsxvAnyEdgeGateway, NotNil)
+	check.Assert(nsxvAnyTypeEdgeGateway, NotNil)
 
 	// Structures for NSX-V Edge Gateway differ (because it uses XML API) therefore all fields
 	// cannot be compared
-	check.Assert(nsxvAnyEdgeGateway.EdgeGateway.ID, DeepEquals, nsxvEdge.EdgeGateway.ID)
+	check.Assert(nsxvAnyTypeEdgeGateway.EdgeGateway.ID, DeepEquals, nsxvEdge.EdgeGateway.ID)
 
 	// Retrieve both types of Edge Gateways using Org structure (NSX-T and NSX-V) using the
-	// common type AnyEdgeGateway
-	nsxtOrgAnyEdgeGateway, err := org.GetAnyTypeEdgeGatewayById(nsxtEdge.EdgeGateway.ID)
+	// common type AnyTypeEdgeGateway
+	nsxtOrgAnyTypeEdgeGateway, err := org.GetAnyTypeEdgeGatewayById(nsxtEdge.EdgeGateway.ID)
 	check.Assert(err, IsNil)
-	check.Assert(nsxtOrgAnyEdgeGateway, NotNil)
-	check.Assert(nsxtOrgAnyEdgeGateway.EdgeGateway, DeepEquals, nsxtEdge.EdgeGateway)
+	check.Assert(nsxtOrgAnyTypeEdgeGateway, NotNil)
+	check.Assert(nsxtOrgAnyTypeEdgeGateway.EdgeGateway, DeepEquals, nsxtEdge.EdgeGateway)
 
-	// Convert NSX-T backed AnyEdgeGateway to NsxtEdgeGateway
-	convertedGw, err := nsxtOrgAnyEdgeGateway.GetNsxtEdgeGateway()
+	// Convert NSX-T backed AnyTypeEdgeGateway to NsxtEdgeGateway
+	convertedGw, err := nsxtOrgAnyTypeEdgeGateway.GetNsxtEdgeGateway()
 	check.Assert(err, IsNil)
 	check.Assert(convertedGw, NotNil)
-	check.Assert(convertedGw.EdgeGateway, DeepEquals, nsxtOrgAnyEdgeGateway.EdgeGateway)
+	check.Assert(convertedGw.EdgeGateway, DeepEquals, nsxtOrgAnyTypeEdgeGateway.EdgeGateway)
 
 	// Structures for NSX-V Edge Gateway differ (because it uses XML API) therefore all fields
 	// cannot be compared
-	nsxvOrgAnyEdgeGateway, err := org.GetAnyTypeEdgeGatewayById(nsxvEdge.EdgeGateway.ID)
+	nsxvOrgAnyTypeEdgeGateway, err := org.GetAnyTypeEdgeGatewayById(nsxvEdge.EdgeGateway.ID)
 	check.Assert(err, IsNil)
-	check.Assert(nsxvOrgAnyEdgeGateway, NotNil)
-	check.Assert(nsxvOrgAnyEdgeGateway.EdgeGateway.ID, DeepEquals, nsxvEdge.EdgeGateway.ID)
+	check.Assert(nsxvOrgAnyTypeEdgeGateway, NotNil)
+	check.Assert(nsxvOrgAnyTypeEdgeGateway.EdgeGateway.ID, DeepEquals, nsxvEdge.EdgeGateway.ID)
 
 }

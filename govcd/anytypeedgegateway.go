@@ -74,7 +74,7 @@ func (anyTypeGateway *AnyTypeEdgeGateway) IsNsxv() bool {
 	return !anyTypeGateway.IsNsxt()
 }
 
-// GetNsxtEdgeGateway converts `AnyEdgeGateway` to `NsxtEdgeGateway` if it is an NSX-T one
+// GetNsxtEdgeGateway converts `AnyTypeEdgeGateway` to `NsxtEdgeGateway` if it is an NSX-T one
 func (anyTypeGateway *AnyTypeEdgeGateway) GetNsxtEdgeGateway() (*NsxtEdgeGateway, error) {
 	if !anyTypeGateway.IsNsxt() {
 		return nil, fmt.Errorf("this is not an NSX-T backed Edge Gateway")
