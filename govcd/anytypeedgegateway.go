@@ -39,7 +39,7 @@ func getAnyTypeApiEdgeGatewayById(client *Client, id string, queryParameters url
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
-	minimumApiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func getAnyTypeApiEdgeGatewayById(client *Client, id string, queryParameters url
 		client:      client,
 	}
 
-	err = client.OpenApiGetItem(minimumApiVersion, urlRef, queryParameters, egw.EdgeGateway, nil)
+	err = client.OpenApiGetItem(apiVersion, urlRef, queryParameters, egw.EdgeGateway, nil)
 	if err != nil {
 		return nil, err
 	}
