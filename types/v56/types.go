@@ -2875,8 +2875,8 @@ type User struct {
 	IsExternal      bool             `xml:"IsExternal,omitempty"`
 	ProviderType    string           `xml:"ProviderType,omitempty"`
 	IsGroupRole     bool             `xml:"IsGroupRole,omitempty"`
-	StoredVmQuota   int              `xml:"StoredVmQuota,omitempty"`
-	DeployedVmQuota int              `xml:"DeployedVmQuota,omitempty"`
+	StoredVmQuota   int              `xml:"StoredVmQuota"`
+	DeployedVmQuota int              `xml:"DeployedVmQuota"`
 	Role            *Reference       `xml:"Role,omitempty"`
 	GroupReferences *GroupReference  `xml:"GroupReferences,omitempty"`
 	Password        string           `xml:"Password,omitempty"`
