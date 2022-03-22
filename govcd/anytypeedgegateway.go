@@ -61,7 +61,7 @@ func getAnyTypeApiEdgeGatewayById(client *Client, id string, queryParameters url
 	return egw, nil
 }
 
-// IsNsxv checks if Edge Gateways is NSX-T backed
+// IsNsxt checks if Edge Gateways is NSX-T backed
 func (anyTypeGateway *AnyTypeEdgeGateway) IsNsxt() bool {
 	if anyTypeGateway != nil && anyTypeGateway.EdgeGateway != nil && anyTypeGateway.EdgeGateway.GatewayBacking != nil {
 		return anyTypeGateway.EdgeGateway.GatewayBacking.GatewayType == "NSXT_BACKED"
