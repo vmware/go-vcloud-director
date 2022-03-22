@@ -20,15 +20,20 @@ func (vcd *TestVCD) Test_NsxtVdcGroupOrgNetworks(check *C) {
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGateways)
 
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(adminOrg, NotNil)
 	check.Assert(err, IsNil)
 
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(org, NotNil)
 	check.Assert(err, IsNil)
 
 	nsxtExternalNetwork, err := GetExternalNetworkV2ByName(vcd.client, vcd.config.VCD.Nsxt.ExternalNetwork)
+	check.Assert(nsxtExternalNetwork, NotNil)
 	check.Assert(err, IsNil)
 
 	vdc, vdcGroup := test_CreateVdcGroup(check, adminOrg, vcd)
+	check.Assert(vdc, NotNil)
+	check.Assert(vdcGroup, NotNil)
 
 	egwDefinition := &types.OpenAPIEdgeGateway{
 		Name:        "nsx-t-edge",
@@ -51,6 +56,7 @@ func (vcd *TestVCD) Test_NsxtVdcGroupOrgNetworks(check *C) {
 	// Create Edge Gateway in VDC
 	createdEdge, err := adminOrg.CreateNsxtEdgeGateway(egwDefinition)
 	check.Assert(err, IsNil)
+	check.Assert(createdEdge, NotNil)
 	check.Assert(createdEdge.EdgeGateway.OwnerRef.ID, Matches, `^urn:vcloud:vdc:.*`)
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways + createdEdge.EdgeGateway.ID
 	PrependToCleanupListOpenApi(createdEdge.EdgeGateway.Name, check.TestName(), openApiEndpoint)
@@ -58,6 +64,7 @@ func (vcd *TestVCD) Test_NsxtVdcGroupOrgNetworks(check *C) {
 	// Move Edge Gateway to VDC Group
 	movedGateway, err := createdEdge.MoveToVdcOrVdcGroup(vdcGroup.VdcGroup.Id)
 	check.Assert(err, IsNil)
+	check.Assert(movedGateway, NotNil)
 	check.Assert(movedGateway.EdgeGateway.OwnerRef.ID, Equals, vdcGroup.VdcGroup.Id)
 	check.Assert(movedGateway.EdgeGateway.OwnerRef.ID, Matches, `^urn:vcloud:vdcGroup:.*`)
 
@@ -71,6 +78,7 @@ func (vcd *TestVCD) Test_NsxtVdcGroupOrgNetworks(check *C) {
 		orgVdcNet, err := org.CreateOpenApiOrgVdcNetwork(orgVdcNetworkConfig)
 		check.Assert(err, IsNil)
 		check.Assert(orgVdcNet, NotNil)
+		check.Assert(orgVdcNet.OpenApiOrgVdcNetwork.OwnerRef.ID, Equals, vdcGroup.VdcGroup.Id)
 
 		sliceOfCreatedNetworkConfigs[index] = orgVdcNet
 
@@ -84,6 +92,7 @@ func (vcd *TestVCD) Test_NsxtVdcGroupOrgNetworks(check *C) {
 	// Move Edge Gateway back to VDC
 	movedBackToVdcEdge, err := movedGateway.MoveToVdcOrVdcGroup(vdc.Vdc.ID)
 	check.Assert(err, IsNil)
+	check.Assert(movedBackToVdcEdge, NotNil)
 	check.Assert(movedBackToVdcEdge.EdgeGateway.OwnerRef.ID, Matches, `^urn:vcloud:vdc:.*`)
 
 	// Routed networks migrate to/from VDC Groups together with Edge Gateway therefore we need to
