@@ -764,13 +764,14 @@ func (adminOrg *AdminOrg) QueryCatalogList() ([]*types.CatalogRecord, error) {
 func (adminOrg *AdminOrg) FindCatalogRecords(name string) ([]*types.CatalogRecord, error) {
 	util.Logger.Printf("[DEBUG] QueryCatalogList with org name %s", adminOrg.AdminOrg.Name)
 
+	var tenantHeaders map[string]string
+
 	if adminOrg.client.IsSysAdmin {
-		// Set tenant context
-		adminOrg.client.SetCustomHeader(map[string]string{
+		// Set tenant context headers just for the query
+		tenantHeaders = map[string]string{
 			types.HeaderAuthContext:   adminOrg.TenantContext.OrgName,
 			types.HeaderTenantContext: adminOrg.TenantContext.OrgId,
-		})
-		defer adminOrg.client.RemoveCustomHeader()
+		}
 	}
 
 	var filter string
@@ -779,11 +780,11 @@ func (adminOrg *AdminOrg) FindCatalogRecords(name string) ([]*types.CatalogRecor
 		filter = fmt.Sprintf("%s;name==%s", filter, name)
 	}
 
-	results, err := adminOrg.client.cumulativeQuery(types.QtCatalog, nil, map[string]string{
+	results, err := adminOrg.client.cumulativeQueryWithHeaders(types.QtCatalog, nil, map[string]string{
 		"type":          types.QtCatalog,
 		"filter":        filter,
 		"filterEncoded": "true",
-	})
+	}, tenantHeaders)
 	if err != nil {
 		return nil, err
 	}
