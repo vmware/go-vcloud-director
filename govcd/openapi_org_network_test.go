@@ -167,7 +167,6 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 	}
 
 	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque, nil)
-
 }
 
 func (vcd *TestVCD) Test_NsxvOrgVdcNetworkIsolated(check *C) {
@@ -277,10 +276,9 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkDirect(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	// Using legacy API lookup function because GetExternalNetworkV2ByName does not support VCD 9.7
-	externalNetwork, err := vcd.client.GetExternalNetworkByName(vcd.config.VCD.ExternalNetwork)
-
+	externalNetwork, err := GetExternalNetworkV2ByName(vcd.client, vcd.config.VCD.ExternalNetwork)
 	check.Assert(err, IsNil)
+	check.Assert(externalNetwork, NotNil)
 
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
 		Name:        check.TestName(),
@@ -329,7 +327,7 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkDirect(check *C) {
 	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeDirect, nil)
 }
 
-func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, extpectNetworkType string, dhcpFunc dhcpConfigFunc) {
+func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, expectNetworkType string, dhcpFunc dhcpConfigFunc) {
 	orgVdcNet, err := vdc.CreateOpenApiOrgVdcNetwork(orgVdcNetworkConfig)
 	check.Assert(err, IsNil)
 
@@ -337,7 +335,7 @@ func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + orgVdcNet.OpenApiOrgVdcNetwork.ID
 	AddToCleanupListOpenApi(orgVdcNet.OpenApiOrgVdcNetwork.Name, check.TestName(), openApiEndpoint)
 
-	check.Assert(orgVdcNet.GetType(), Equals, extpectNetworkType)
+	check.Assert(orgVdcNet.GetType(), Equals, expectNetworkType)
 
 	// Check it can be found
 	orgVdcNetByIdInVdc, err := vdc.GetOpenApiOrgVdcNetworkById(orgVdcNet.OpenApiOrgVdcNetwork.ID)
