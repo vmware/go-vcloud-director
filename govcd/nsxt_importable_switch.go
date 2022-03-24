@@ -56,6 +56,62 @@ func (vdc *Vdc) GetNsxtImportableSwitchByName(name string) (*NsxtImportableSwitc
 	return filteredNsxtImportableSwitches[0], nil
 }
 
+// GetNsxtImportableSwitchByName retrieves a particular NSX-T Segment by name available for that VDC
+//
+// Note. OpenAPI endpoint does not exist for this resource and by default endpoint
+// "/network/orgvdcnetworks/importableswitches" returns only unused NSX-T importable switches (the ones that are not
+// already consumed in Org VDC networks) and there is no way to get them all (including the used ones).
+func (vdcGroup *VdcGroup) GetNsxtImportableSwitchByName(name string) (*NsxtImportableSwitch, error) {
+	if name == "" {
+		return nil, fmt.Errorf("empty NSX-T Importable Switch name specified")
+	}
+
+	allNsxtImportableSwitches, err := vdcGroup.GetAllNsxtImportableSwitches()
+	if err != nil {
+		return nil, fmt.Errorf("error getting all NSX-T Importable Switches for VDC Group '%s': %s", vdcGroup.VdcGroup.Name, err)
+	}
+
+	var filteredNsxtImportableSwitches []*NsxtImportableSwitch
+	for _, nsxtImportableSwitch := range allNsxtImportableSwitches {
+		if nsxtImportableSwitch.NsxtImportableSwitch.Name == name {
+			filteredNsxtImportableSwitches = append(filteredNsxtImportableSwitches, nsxtImportableSwitch)
+		}
+	}
+
+	if len(filteredNsxtImportableSwitches) == 0 {
+		// ErrorEntityNotFound is injected here for the ability to validate problem using ContainsNotFound()
+		return nil, fmt.Errorf("%s: no NSX-T Importable Switch with name '%s' for VDC Group with ID '%s' found",
+			ErrorEntityNotFound, name, vdcGroup.VdcGroup.Id)
+	}
+
+	if len(filteredNsxtImportableSwitches) > 1 {
+		return nil, fmt.Errorf("more than one (%d) NSX-T Importable Switch with name '%s' for VDC Group with ID '%s' found",
+			len(filteredNsxtImportableSwitches), name, vdcGroup.VdcGroup.Id)
+	}
+
+	return filteredNsxtImportableSwitches[0], nil
+}
+
+// GetAllNsxtImportableSwitches retrieves all available importable switches which can be consumed for creating NSX-T
+// "Imported" Org VDC network
+//
+// Note. OpenAPI endpoint does not exist for this resource and by default endpoint
+// "/network/orgvdcnetworks/importableswitches" returns only unused NSX-T importable switches (the ones that are not
+// already consumed in Org VDC networks) and there is no way to get them all.
+func (vdcGroup *VdcGroup) GetAllNsxtImportableSwitches() ([]*NsxtImportableSwitch, error) {
+	if vdcGroup.VdcGroup.Id == "" {
+		return nil, fmt.Errorf("VDC Group must have ID populated to retrieve NSX-T importable switches")
+	}
+	// request requires Org VDC Group ID to be specified as UUID, not as URN
+	orgVdcGroupId, err := getBareEntityUuid(vdcGroup.VdcGroup.Id)
+	if err != nil {
+		return nil, fmt.Errorf("could not get UUID from URN '%s': %s", vdcGroup.VdcGroup.Id, err)
+	}
+	filter := map[string]string{"vdcGroup": orgVdcGroupId}
+
+	return getFilteredNsxtImportableSwitches(filter, vdcGroup.client)
+}
+
 // GetAllNsxtImportableSwitches retrieves all available importable switches which can be consumed for creating NSX-T
 // "Imported" Org VDC network
 //

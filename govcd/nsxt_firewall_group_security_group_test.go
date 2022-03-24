@@ -171,7 +171,9 @@ func createNsxtRoutedNetwork(check *C, vcd *TestVCD, vdc *Vdc, edgeGatewayId str
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
 		Name:        check.TestName() + "routed-net",
 		Description: check.TestName() + "-description",
-		OrgVdc:      &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
+
+		// On v35.0 orgVdc is not supported anymore. Using ownerRef instead.
+		OwnerRef: &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
 
 		NetworkType: types.OrgVdcNetworkTypeRouted,
 

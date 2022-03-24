@@ -787,6 +787,8 @@ type OrgGeneralSettings struct {
 	Link LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
 
 	CanPublishCatalogs       bool `xml:"CanPublishCatalogs,omitempty"`
+	CanPublishExternally     bool `xml:"CanPublishExternally,omitempty"`
+	CanSubscribe             bool `xml:"CanSubscribe,omitempty"`
 	DeployedVMQuota          int  `xml:"DeployedVMQuota,omitempty"`
 	StoredVMQuota            int  `xml:"StoredVmQuota,omitempty"`
 	UseServerBootSequence    bool `xml:"UseServerBootSequence,omitempty"`
@@ -2662,8 +2664,8 @@ type Disk struct {
 	Description     string           `xml:"Description,omitempty"`
 	Files           *FilesList       `xml:"Files,omitempty"`
 	Link            []*Link          `xml:"Link,omitempty"`
-	Owner           *Owner           `xml:"Owner,omitempty"`
 	StorageProfile  *Reference       `xml:"StorageProfile,omitempty"`
+	Owner           *Owner           `xml:"Owner,omitempty"`
 	Tasks           *TasksInProgress `xml:"Tasks,omitempty"`
 	VCloudExtension *VCloudExtension `xml:"VCloudExtension,omitempty"`
 }
@@ -2692,11 +2694,11 @@ type DiskAttachOrDetachParams struct {
 // Reference: vCloud API 30.0 - VmsType
 // https://code.vmware.com/apis/287/vcloud?h=Director#/doc/doc/types/FilesListType.html
 type Vms struct {
-	XMLName     xml.Name   `xml:"Vms"`
-	Xmlns       string     `xml:"xmlns,attr,omitempty"`
-	Type        string     `xml:"type,attr"`
-	HREF        string     `xml:"href,attr"`
-	VmReference *Reference `xml:"VmReference,omitempty"`
+	XMLName     xml.Name     `xml:"Vms"`
+	Xmlns       string       `xml:"xmlns,attr,omitempty"`
+	Type        string       `xml:"type,attr"`
+	HREF        string       `xml:"href,attr"`
+	VmReference []*Reference `xml:"VmReference,omitempty"`
 }
 
 // Parameters for inserting and ejecting virtual media for VM as CD/DVD
@@ -2745,14 +2747,12 @@ type VmQuestionAnswer struct {
 // Reference: vCloud API 27.0 - DiskType
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/types/QueryResultDiskRecordType.html
 type DiskRecordType struct {
-	Xmlns string `xml:"xmlns,attr,omitempty"`
-	HREF  string `xml:"href,attr,omitempty"`
-	Id    string `xml:"id,attr,omitempty"`
-	Type  string `xml:"type,attr,omitempty"`
-	Name  string `xml:"name,attr,omitempty"`
-	Vdc   string `xml:"vdc,attr,omitempty"`
-	// SizeB is not available in API V33.0. It is replaced by SizeMb
-	//SizeB              int64   `xml:"sizeB,attr,omitempty"`
+	Xmlns              string    `xml:"xmlns,attr,omitempty"`
+	HREF               string    `xml:"href,attr,omitempty"`
+	Id                 string    `xml:"id,attr,omitempty"`
+	Type               string    `xml:"type,attr,omitempty"`
+	Name               string    `xml:"name,attr,omitempty"`
+	Vdc                string    `xml:"vdc,attr,omitempty"`
 	SizeMb             int64     `xml:"sizeMb,attr,omitempty"`
 	Iops               int64     `xml:"iops,attr,omitempty"`
 	Encrypted          bool      `xml:"encrypted,attr,omitempty"`
@@ -2769,6 +2769,7 @@ type DiskRecordType struct {
 	BusSubType         string    `xml:"busSubType,attr,omitempty"`
 	BusTypeDesc        string    `xml:"busTypeDesc,attr,omitempty"`
 	AttachedVmCount    int32     `xml:"attachedVmCount,attr,omitempty"`
+	SharingType        string    `xml:"sharingType,attr,omitempty"`
 	IsAttached         bool      `xml:"isAttached,attr,omitempty"`
 	IsShareable        bool      `xml:"isShareable,attr,omitempty"`
 	Description        string    `xml:"description,attr,omitempty"`
@@ -2874,8 +2875,8 @@ type User struct {
 	IsExternal      bool             `xml:"IsExternal,omitempty"`
 	ProviderType    string           `xml:"ProviderType,omitempty"`
 	IsGroupRole     bool             `xml:"IsGroupRole,omitempty"`
-	StoredVmQuota   int              `xml:"StoredVmQuota,omitempty"`
-	DeployedVmQuota int              `xml:"DeployedVmQuota,omitempty"`
+	StoredVmQuota   int              `xml:"StoredVmQuota"`
+	DeployedVmQuota int              `xml:"DeployedVmQuota"`
 	Role            *Reference       `xml:"Role,omitempty"`
 	GroupReferences *GroupReference  `xml:"GroupReferences,omitempty"`
 	Password        string           `xml:"Password,omitempty"`
@@ -2900,6 +2901,13 @@ type Group struct {
 	ProviderType string `xml:"ProviderType"`
 	// Role - reference to existing role
 	Role *Reference `xml:"Role,omitempty"`
+	// UsersList - references to existing users of type User
+	UsersList *UsersList `xml:"UsersList,omitempty"`
+}
+
+// UsersList is a tagged list of User Reference's
+type UsersList struct {
+	UserReference []*Reference `xml:"UserReference,omitempty"`
 }
 
 // Type: AdminCatalogRecord

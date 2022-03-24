@@ -480,3 +480,18 @@ const (
 	// NsxtAlbCloudBackingTypeNsxtAlb is a backing type for NSX-T ALB used in types.NsxtAlbCloudBacking
 	NsxtAlbCloudBackingTypeNsxtAlb = "NSXALB_NSXT"
 )
+
+const (
+	// UrnTypeVdcGroup is the third segment of URN for VDC Group
+	UrnTypeVdcGroup = "vdcGroup"
+	// UrnTypeVdc is the third segment of URN for VDC
+	UrnTypeVdc = "vdc"
+)
+
+// Metadata type constants
+const (
+	MetadataStringValue   string = "MetadataStringValue"
+	MetadataNumberValue   string = "MetadataNumberValue"
+	MetadataDateTimeValue string = "MetadataDateTimeValue"
+	MetadataBooleanValue  string = "MetadataBooleanValue"
+)

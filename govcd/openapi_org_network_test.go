@@ -21,7 +21,9 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkIsolated(check *C) {
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
 		Name:        check.TestName(),
 		Description: check.TestName() + "-description",
-		OrgVdc:      &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
+
+		// On v35.0 orgVdc is not supported anymore. Using ownerRef instead.
+		OwnerRef: &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
 
 		NetworkType: types.OrgVdcNetworkTypeIsolated,
 		Subnets: types.OrgVdcNetworkSubnets{
@@ -65,7 +67,9 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
 		Name:        check.TestName(),
 		Description: check.TestName() + "-description",
-		OrgVdc:      &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
+
+		// On v35.0 orgVdc is not supported anymore. Using ownerRef instead.
+		OwnerRef: &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
 
 		NetworkType: types.OrgVdcNetworkTypeRouted,
 
@@ -130,7 +134,9 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
 		Name:        check.TestName(),
 		Description: check.TestName() + "-description",
-		OrgVdc:      &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
+
+		// On v35.0 orgVdc is not supported anymore. Using ownerRef instead.
+		OwnerRef: &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
 
 		NetworkType: types.OrgVdcNetworkTypeOpaque,
 		// BackingNetworkId contains NSX-T logical switch ID for Imported networks
@@ -161,7 +167,6 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 	}
 
 	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque, nil)
-
 }
 
 func (vcd *TestVCD) Test_NsxvOrgVdcNetworkIsolated(check *C) {
@@ -170,7 +175,9 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkIsolated(check *C) {
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
 		Name:        check.TestName(),
 		Description: check.TestName() + "-description",
-		OrgVdc:      &types.OpenApiReference{ID: vcd.vdc.Vdc.ID},
+
+		// On v35.0 orgVdc is not supported anymore. Using ownerRef instead.
+		OwnerRef: &types.OpenApiReference{ID: vcd.vdc.Vdc.ID},
 
 		NetworkType: types.OrgVdcNetworkTypeIsolated,
 		Subnets: types.OrgVdcNetworkSubnets{
@@ -213,7 +220,9 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkRouted(check *C) {
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
 		Name:        check.TestName(),
 		Description: check.TestName() + "-description",
-		OrgVdc:      &types.OpenApiReference{ID: vcd.vdc.Vdc.ID},
+
+		// On v35.0 orgVdc is not supported anymore. Using ownerRef instead.
+		OwnerRef: &types.OpenApiReference{ID: vcd.vdc.Vdc.ID},
 
 		NetworkType: types.OrgVdcNetworkTypeRouted,
 
@@ -267,15 +276,16 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkDirect(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	// Using legacy API lookup function because GetExternalNetworkV2ByName does not support VCD 9.7
-	externalNetwork, err := vcd.client.GetExternalNetworkByName(vcd.config.VCD.ExternalNetwork)
-
+	externalNetwork, err := GetExternalNetworkV2ByName(vcd.client, vcd.config.VCD.ExternalNetwork)
 	check.Assert(err, IsNil)
+	check.Assert(externalNetwork, NotNil)
 
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
 		Name:        check.TestName(),
 		Description: check.TestName() + "-description",
-		OrgVdc:      &types.OpenApiReference{ID: vcd.vdc.Vdc.ID},
+
+		// On v35.0 orgVdc is not supported anymore. Using ownerRef instead.
+		OwnerRef: &types.OpenApiReference{ID: vcd.vdc.Vdc.ID},
 
 		NetworkType:   types.OrgVdcNetworkTypeDirect,
 		ParentNetwork: &types.OpenApiReference{ID: externalNetwork.ExternalNetwork.ID},
@@ -317,7 +327,7 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkDirect(check *C) {
 	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeDirect, nil)
 }
 
-func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, extpectNetworkType string, dhcpFunc dhcpConfigFunc) {
+func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, expectNetworkType string, dhcpFunc dhcpConfigFunc) {
 	orgVdcNet, err := vdc.CreateOpenApiOrgVdcNetwork(orgVdcNetworkConfig)
 	check.Assert(err, IsNil)
 
@@ -325,7 +335,7 @@ func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + orgVdcNet.OpenApiOrgVdcNetwork.ID
 	AddToCleanupListOpenApi(orgVdcNet.OpenApiOrgVdcNetwork.Name, check.TestName(), openApiEndpoint)
 
-	check.Assert(orgVdcNet.GetType(), Equals, extpectNetworkType)
+	check.Assert(orgVdcNet.GetType(), Equals, expectNetworkType)
 
 	// Check it can be found
 	orgVdcNetByIdInVdc, err := vdc.GetOpenApiOrgVdcNetworkById(orgVdcNet.OpenApiOrgVdcNetwork.ID)
