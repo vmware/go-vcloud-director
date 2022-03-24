@@ -729,22 +729,12 @@ func (org *Org) GetMetadata() (*types.Metadata, error) {
 
 // AddMetadataEntry adds metadata key/value pair provided as input to the corresponding organization seen as administrator
 // and waits for completion.
-func (adminOrg *AdminOrg) AddMetadataEntry(typedValue, key, value string) (*AdminOrg, error) {
+func (adminOrg *AdminOrg) AddMetadataEntry(typedValue, key, value string) error {
 	task, err := adminOrg.AddMetadataEntryAsync(typedValue, key, value)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return nil, fmt.Errorf("error completing add metadata for organization task: %s", err)
-	}
-
-	err = adminOrg.Refresh()
-	if err != nil {
-		return nil, fmt.Errorf("error refreshing organization: %s", err)
-	}
-
-	return adminOrg, nil
+	return task.WaitTaskCompletion()
 }
 
 // AddMetadataEntryAsync adds metadata key/value pair provided as input to the corresponding organization seen as administrator
@@ -779,22 +769,12 @@ func (disk *Disk) GetMetadata() (*types.Metadata, error) {
 }
 
 // AddMetadataEntry adds metadata key/value pair provided as input to the corresponding independent disk and waits for completion.
-func (disk *Disk) AddMetadataEntry(typedValue, key, value string) (*Disk, error) {
+func (disk *Disk) AddMetadataEntry(typedValue, key, value string) error {
 	task, err := disk.AddMetadataEntryAsync(typedValue, key, value)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return nil, fmt.Errorf("error completing add metadata for independent disk task: %s", err)
-	}
-
-	err = disk.Refresh()
-	if err != nil {
-		return nil, fmt.Errorf("error refreshing independent disk: %s", err)
-	}
-
-	return disk, nil
+	return task.WaitTaskCompletion()
 }
 
 // AddMetadataEntryAsync adds metadata key/value pair provided as input to the corresponding independent disk and returns a task.
@@ -820,4 +800,42 @@ func (disk *Disk) DeleteMetadataEntry(key string) error {
 // a task.
 func (disk *Disk) DeleteMetadataEntryAsync(key string) (Task, error) {
 	return deleteMetadata(disk.client, key, disk.Disk.HREF)
+}
+
+// GetMetadata returns OrgVDCNetwork metadata.
+func (orgVdcNetwork *OrgVDCNetwork) GetMetadata() (*types.Metadata, error) {
+	return getMetadata(orgVdcNetwork.client, orgVdcNetwork.OrgVDCNetwork.HREF)
+}
+
+// AddMetadataEntry adds OrgVDCNetwork metadata typedValue and key/value pair provided as input
+// and waits for the task to finish.
+func (orgVdcNetwork *OrgVDCNetwork) AddMetadataEntry(typedValue, key, value string) error {
+	task, err := orgVdcNetwork.AddMetadataEntryAsync(typedValue, key, value)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+// AddMetadataEntryAsync adds OrgVDCNetwork metadata typedValue and key/value pair provided as input
+// and returns the task.
+func (orgVdcNetwork *OrgVDCNetwork) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
+	return addMetadata(orgVdcNetwork.client, typedValue, key, value, strings.ReplaceAll(orgVdcNetwork.OrgVDCNetwork.HREF, "/api/", "/api/admin/"))
+}
+
+// DeleteMetadataEntry deletes OrgVDCNetwork metadata depending on key provided as input
+// and waits for the task to finish.
+func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntry(key string) error {
+	task, err := orgVdcNetwork.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+
+	return task.WaitTaskCompletion()
+}
+
+// DeleteMetadataEntryAsync deletes OrgVDCNetwork metadata depending on key provided as input
+// and returns a task.
+func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(orgVdcNetwork.client, key, strings.ReplaceAll(orgVdcNetwork.OrgVDCNetwork.HREF, "/api/", "/api/admin/"))
 }
