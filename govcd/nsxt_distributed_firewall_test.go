@@ -14,7 +14,10 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// Test_NsxtDistributedFirewall creates a list of distributed firewall rules with randomized parameters
+// Test_NsxtDistributedFirewall creates a list of distributed firewall rules with randomized
+// parameters in two modes:
+// * System user
+// * Org Admin user
 func (vcd *TestVCD) Test_NsxtDistributedFirewallRules(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGateways)
@@ -31,6 +34,36 @@ func (vcd *TestVCD) Test_NsxtDistributedFirewallRules(check *C) {
 	check.Assert(vdc, NotNil)
 	check.Assert(vdcGroup, NotNil)
 
+	// Run firewall tests as System user
+	fmt.Println("# Running Distributed Firewall tests as 'System' user")
+	test_NsxtDistributedFirewallRules(vcd, check, vdcGroup.VdcGroup.Id, vcd.client, vdc)
+
+	// Prep Org admin user and run firewall tests
+	userName := strings.ToLower(check.TestName())
+	fmt.Printf("# Running Distributed Firewall tests as Org Admin user '%s'\n", userName)
+	orgUserVcdClient, err := newOrgUserConnection(adminOrg, userName, "CHANGE-ME", vcd.config.Provider.Url, true)
+	check.Assert(err, IsNil)
+	orgUserOrgAdmin, err := orgUserVcdClient.GetAdminOrgById(adminOrg.AdminOrg.ID)
+	check.Assert(err, IsNil)
+	orgUserVdc, err := orgUserOrgAdmin.GetVDCById(vdc.Vdc.ID, false)
+	check.Assert(err, IsNil)
+	test_NsxtDistributedFirewallRules(vcd, check, vdcGroup.VdcGroup.Id, orgUserVcdClient, orgUserVdc)
+
+	// Cleanup
+	err = vdcGroup.Delete()
+	check.Assert(err, IsNil)
+	err = vdc.DeleteWait(true, true)
+	check.Assert(err, IsNil)
+}
+
+func test_NsxtDistributedFirewallRules(vcd *TestVCD, check *C, vdcGroupId string, vcdClient *VCDClient, vdc *Vdc) {
+	adminOrg, err := vcdClient.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(adminOrg, NotNil)
+	check.Assert(err, IsNil)
+
+	vdcGroup, err := adminOrg.GetVdcGroupById(vdcGroupId)
+	check.Assert(err, IsNil)
+
 	_, err = vdcGroup.ActivateDfw()
 	check.Assert(err, IsNil)
 
@@ -40,7 +73,7 @@ func (vcd *TestVCD) Test_NsxtDistributedFirewallRules(check *C) {
 	check.Assert(fwRules.DistributedFirewallRuleContainer.Values, NotNil)
 
 	// Create some prerequisites and generate firewall rule configurations to feed them into config
-	randomizedFwRuleDefs, ipSet, secGroup := createDistributedFirewallDefinitions(check, vcd, vdcGroup.VdcGroup.Id)
+	randomizedFwRuleDefs, ipSet, secGroup := createDistributedFirewallDefinitions(check, vcd, vdcGroup.VdcGroup.Id, vcdClient, vdc)
 
 	// Add IP Set and to cleanup list
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups + ipSet.NsxtFirewallGroup.ID
@@ -115,25 +148,20 @@ func (vcd *TestVCD) Test_NsxtDistributedFirewallRules(check *C) {
 	check.Assert(err, IsNil)
 	err = secGroup.Delete()
 	check.Assert(err, IsNil)
-	err = vdcGroup.Delete()
-	check.Assert(err, IsNil)
-	err = vdc.DeleteWait(true, true)
-	check.Assert(err, IsNil)
 }
 
 // createDistributedFirewallDefinitions creates some randomized firewall rule configurations to match possible configurations
-func createDistributedFirewallDefinitions(check *C, vcd *TestVCD, vdcGroupId string) ([]*types.DistributedFirewallRule, *NsxtFirewallGroup, *NsxtFirewallGroup) {
+func createDistributedFirewallDefinitions(check *C, vcd *TestVCD, vdcGroupId string, vcdClient *VCDClient, vdc *Vdc) ([]*types.DistributedFirewallRule, *NsxtFirewallGroup, *NsxtFirewallGroup) {
 	// This number does not impact performance because all rules are created at once in the API
 	numberOfRules := 40
 
 	// Pre-Create Firewall Groups (IP Set and Security Group to randomly configure them)
-	ipSet := preCreateVdcGroupIpSet(check, vcd, vdcGroupId)
-	secGroup := preCreateVdcGroupSecurityGroup(check, vcd, vdcGroupId)
+	ipSet := preCreateVdcGroupIpSet(check, vcd, vdcGroupId, vdc)
+	secGroup := preCreateVdcGroupSecurityGroup(check, vcd, vdcGroupId, vdc)
 	fwGroupIds := []string{ipSet.NsxtFirewallGroup.ID, secGroup.NsxtFirewallGroup.ID}
 	fwGroupRefs := convertSliceOfStringsToOpenApiReferenceIds(fwGroupIds)
 	appPortProfileReferences := getRandomListOfAppPortProfiles(check, vcd)
-	networkContextProfiles := getRandomListOfNetworkContextProfiles(check, vcd)
-	// _ = getRandomListOfNetworkContextProfiles(check, vcd)
+	networkContextProfiles := getRandomListOfNetworkContextProfiles(check, vcd, vcdClient)
 
 	firewallRules := make([]*types.DistributedFirewallRule, numberOfRules)
 	for a := 0; a < numberOfRules; a++ {
@@ -195,8 +223,7 @@ func createDistributedFirewallDefinitions(check *C, vcd *TestVCD, vdcGroupId str
 	return firewallRules, ipSet, secGroup
 }
 
-func preCreateVdcGroupIpSet(check *C, vcd *TestVCD, ownerId string) *NsxtFirewallGroup {
-	nsxtVdc := vcd.nsxtVdc
+func preCreateVdcGroupIpSet(check *C, vcd *TestVCD, ownerId string, nsxtVdc *Vdc) *NsxtFirewallGroup {
 	ipSetDefinition := &types.NsxtFirewallGroup{
 		Name:        check.TestName() + "ipset",
 		Description: check.TestName() + "-Description",
@@ -222,8 +249,7 @@ func preCreateVdcGroupIpSet(check *C, vcd *TestVCD, ownerId string) *NsxtFirewal
 	return createdIpSet
 }
 
-func preCreateVdcGroupSecurityGroup(check *C, vcd *TestVCD, ownerId string) *NsxtFirewallGroup {
-	nsxtVdc := vcd.nsxtVdc
+func preCreateVdcGroupSecurityGroup(check *C, vcd *TestVCD, ownerId string, nsxtVdc *Vdc) *NsxtFirewallGroup {
 	fwGroupDefinition := &types.NsxtFirewallGroup{
 		Name:        check.TestName() + "security-group",
 		Description: check.TestName() + "-Description",
@@ -240,7 +266,7 @@ func preCreateVdcGroupSecurityGroup(check *C, vcd *TestVCD, ownerId string) *Nsx
 	return createdSecGroup
 }
 
-func getRandomListOfNetworkContextProfiles(check *C, vcd *TestVCD) []types.OpenApiReference {
+func getRandomListOfNetworkContextProfiles(check *C, vcd *TestVCD, vdcClient *VCDClient) []types.OpenApiReference {
 	networkContextProfiles, err := GetAllNetworkContextProfiles(&vcd.client.Client, nil)
 	check.Assert(err, IsNil)
 	openApiRefs := make([]types.OpenApiReference, 1)
