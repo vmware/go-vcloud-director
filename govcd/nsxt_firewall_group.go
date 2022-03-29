@@ -124,7 +124,7 @@ func (vdc *Vdc) GetNsxtFirewallGroupByName(name, firewallGroupType string) (*Nsx
 	return getNsxtFirewallGroupByName(vdc.client, name, queryParameters)
 }
 
-// GetNsxtFirewallGroupByName allows users to retrieve Firewall Group by Name in a particular Vdc Group
+// GetNsxtFirewallGroupByName allows users to retrieve Firewall Group by Name in a particular VDC Group
 // firewallGroupType can be one of the following:
 // * types.FirewallGroupTypeSecurityGroup - for NSX-T Security Groups
 // * types.FirewallGroupTypeIpSet - for NSX-T IP Sets
