@@ -757,27 +757,43 @@ func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
 
 // QueryCatalogList returns a list of catalogs for this organization
 func (adminOrg *AdminOrg) QueryCatalogList() ([]*types.CatalogRecord, error) {
+	return adminOrg.FindCatalogRecords("")
+}
+
+// FindCatalogRecords given a catalog name, retrieves the catalogRecords for a given organization
+func (adminOrg *AdminOrg) FindCatalogRecords(name string) ([]*types.CatalogRecord, error) {
 	util.Logger.Printf("[DEBUG] QueryCatalogList with org name %s", adminOrg.AdminOrg.Name)
-	queryType := types.QtCatalog
+
+	var tenantHeaders map[string]string
+
 	if adminOrg.client.IsSysAdmin {
-		queryType = types.QtAdminCatalog
+		// Set tenant context headers just for the query
+		tenantHeaders = map[string]string{
+			types.HeaderAuthContext:   adminOrg.TenantContext.OrgName,
+			types.HeaderTenantContext: adminOrg.TenantContext.OrgId,
+		}
 	}
-	results, err := adminOrg.client.cumulativeQuery(queryType, nil, map[string]string{
-		"type":          queryType,
-		"filter":        fmt.Sprintf("orgName==%s", url.QueryEscape(adminOrg.AdminOrg.Name)),
+
+	var filter string
+	filter = fmt.Sprintf("orgName==%s", url.QueryEscape(adminOrg.AdminOrg.Name))
+	if name != "" {
+		filter = fmt.Sprintf("%s;name==%s", filter, name)
+	}
+
+	results, err := adminOrg.client.cumulativeQueryWithHeaders(types.QtCatalog, nil, map[string]string{
+		"type":          types.QtCatalog,
+		"filter":        filter,
 		"filterEncoded": "true",
-	})
+	}, tenantHeaders)
 	if err != nil {
 		return nil, err
 	}
 
-	var catalogs []*types.CatalogRecord
-
-	if adminOrg.client.IsSysAdmin {
-		catalogs = results.Results.AdminCatalogRecord
-	} else {
-		catalogs = results.Results.CatalogRecord
+	catalogs := results.Results.CatalogRecord
+	if catalogs == nil {
+		return nil, ErrorEntityNotFound
 	}
+
 	util.Logger.Printf("[DEBUG] QueryCatalogList returned with : %#v and error: %s", catalogs, err)
 	return catalogs, nil
 }

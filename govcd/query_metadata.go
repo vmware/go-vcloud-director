@@ -166,6 +166,11 @@ func addResults(queryType string, cumulativeResults, newResults Results) (Result
 
 // cumulativeQuery runs a paginated query and collects all elements until the total number of records is retrieved
 func (client *Client) cumulativeQuery(queryType string, params, notEncodedParams map[string]string) (Results, error) {
+	return client.cumulativeQueryWithHeaders(queryType, params, notEncodedParams, nil)
+}
+
+// cumulativeQueryWithHeaders is the same as cumulativeQuery() but let you add headers to the query
+func (client *Client) cumulativeQueryWithHeaders(queryType string, params, notEncodedParams map[string]string, headers map[string]string) (Results, error) {
 	var supportedQueryTypes = []string{
 		types.QtVappTemplate,
 		types.QtAdminVappTemplate,
@@ -198,7 +203,7 @@ func (client *Client) cumulativeQuery(queryType string, params, notEncodedParams
 		return Results{}, fmt.Errorf("[cumulativeQuery] query type %s not supported", queryType)
 	}
 
-	result, err := client.QueryWithNotEncodedParams(params, notEncodedParams)
+	result, err := client.QueryWithNotEncodedParamsWithHeaders(params, notEncodedParams, headers)
 	if err != nil {
 		return Results{}, err
 	}
@@ -221,7 +226,7 @@ func (client *Client) cumulativeQuery(queryType string, params, notEncodedParams
 		page++
 		notEncodedParams["page"] = fmt.Sprintf("%d", page)
 		var size int
-		newResult, err := client.QueryWithNotEncodedParams(params, notEncodedParams)
+		newResult, err := client.QueryWithNotEncodedParamsWithHeaders(params, notEncodedParams, headers)
 		if err != nil {
 			return Results{}, err
 		}
