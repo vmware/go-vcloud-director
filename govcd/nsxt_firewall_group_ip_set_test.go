@@ -162,9 +162,12 @@ func (vcd *TestVCD) Test_NsxtIpSet(check *C) {
 	// Remove
 	err = createdIpSet.Delete()
 	check.Assert(err, IsNil)
+	err = vdcGroupIpSetByName.Delete()
+	check.Assert(err, IsNil)
 
 	// Create IP Set using Edge Gateway method
 	ipSetDefinition.Name = check.TestName() + "-using-edge-gateway-type"
+	ipSetDefinition.OwnerRef.ID = edge.EdgeGateway.ID
 
 	// Create IP Set and add to cleanup if it was created
 	edgeCreatedIpSet, err := nsxtVdc.CreateNsxtFirewallGroup(ipSetDefinition)
@@ -173,7 +176,7 @@ func (vcd *TestVCD) Test_NsxtIpSet(check *C) {
 	AddToCleanupListOpenApi(createdIpSet.NsxtFirewallGroup.Name, check.TestName(), openApiEndpoint)
 
 	check.Assert(edgeCreatedIpSet.NsxtFirewallGroup.ID, Not(Equals), "")
-	check.Assert(edgeCreatedIpSet.NsxtFirewallGroup.OwnerRef.Name, Equals, vcd.config.VCD.Nsxt.EdgeGateway)
+	check.Assert(edgeCreatedIpSet.NsxtFirewallGroup.OwnerRef.Name, Equals, edge.EdgeGateway.Name)
 
 	err = edgeCreatedIpSet.Delete()
 	check.Assert(err, IsNil)
