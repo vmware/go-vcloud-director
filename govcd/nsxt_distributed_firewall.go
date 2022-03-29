@@ -7,13 +7,15 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// DistributedFirewall contains a types.DfwFirewallRule
+// DistributedFirewall contains a types.DistributedFirewallRules which handles Distributed Firewall
+// rules in a VDC Group
 type DistributedFirewall struct {
 	DistributedFirewallRuleContainer *types.DistributedFirewallRules
 	client                           *Client
 	VdcGroup                         *VdcGroup
 }
 
+// GetDistributedFirewall retrieves Distributed Firewall in a VDC Group which contains all rules
 func (vdcGroup *VdcGroup) GetDistributedFirewall() (*DistributedFirewall, error) {
 	client := vdcGroup.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules
@@ -41,6 +43,7 @@ func (vdcGroup *VdcGroup) GetDistributedFirewall() (*DistributedFirewall, error)
 	return returnObject, nil
 }
 
+// UpdateDistributedFirewall updates Distributed Firewall in a VDC Group
 func (vdcGroup *VdcGroup) UpdateDistributedFirewall(dfwRules *types.DistributedFirewallRules) (*DistributedFirewall, error) {
 	client := vdcGroup.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules
@@ -49,6 +52,7 @@ func (vdcGroup *VdcGroup) UpdateDistributedFirewall(dfwRules *types.DistributedF
 		return nil, err
 	}
 
+	// "default" policy is hardcoded because there is no other policy supported
 	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vdcGroup.VdcGroup.Id, "default"))
 	if err != nil {
 		return nil, err
@@ -68,11 +72,13 @@ func (vdcGroup *VdcGroup) UpdateDistributedFirewall(dfwRules *types.DistributedF
 	return returnObject, nil
 }
 
+// DeleteAllDistributedFirewallRules removes all Distributed Firewall rules
 func (vdcGroup *VdcGroup) DeleteAllDistributedFirewallRules() error {
 	_, err := vdcGroup.UpdateDistributedFirewall(&types.DistributedFirewallRules{})
 	return err
 }
 
+// DeleteAllRules removes all Distributed Firewall rules
 func (firewall *DistributedFirewall) DeleteAllRules() error {
 	if firewall.VdcGroup != nil && firewall.VdcGroup.VdcGroup != nil && firewall.VdcGroup.VdcGroup.Id == "" {
 		return errors.New("empty VDC Group ID for parent VDC Group")

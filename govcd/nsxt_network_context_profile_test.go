@@ -30,13 +30,6 @@ func (vcd *TestVCD) Test_GetAllNetworkContextProfiles(check *C) {
 	queryParams = copyOrNewUrlValues(nil)
 	queryParams.Add("filter", "scope==TENANT")
 	filteredTestGetAllNetworkContextProfiles(queryParams, &vcd.client.Client, check)
-
-}
-
-func filteredTestGetAllNetworkContextProfiles(queryParams url.Values, client *Client, check *C) {
-	profiles, err := GetAllNetworkContextProfiles(client, queryParams)
-	check.Assert(err, IsNil)
-	check.Assert(profiles, NotNil)
 }
 
 func (vcd *TestVCD) Test_GetNetworkContextProfilesByNameScopeAndContext(check *C) {
@@ -69,4 +62,10 @@ func (vcd *TestVCD) Test_GetNetworkContextProfilesByNameScopeAndContext(check *C
 	profiles, err = GetNetworkContextProfilesByNameScopeAndContext(&vcd.client.Client, "AMQP", "TENANT", nsxtManagerUrn)
 	check.Assert(err, NotNil)
 	check.Assert(profiles, IsNil)
+}
+
+func filteredTestGetAllNetworkContextProfiles(queryParams url.Values, client *Client, check *C) {
+	profiles, err := GetAllNetworkContextProfiles(client, queryParams)
+	check.Assert(err, IsNil)
+	check.Assert(profiles, NotNil)
 }

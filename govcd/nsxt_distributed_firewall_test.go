@@ -197,7 +197,6 @@ func createDistributedFirewallDefinitions(check *C, vcd *TestVCD, vdcGroupId str
 
 func preCreateVdcGroupIpSet(check *C, vcd *TestVCD, ownerId string) *NsxtFirewallGroup {
 	nsxtVdc := vcd.nsxtVdc
-
 	ipSetDefinition := &types.NsxtFirewallGroup{
 		Name:        check.TestName() + "ipset",
 		Description: check.TestName() + "-Description",
@@ -225,7 +224,6 @@ func preCreateVdcGroupIpSet(check *C, vcd *TestVCD, ownerId string) *NsxtFirewal
 
 func preCreateVdcGroupSecurityGroup(check *C, vcd *TestVCD, ownerId string) *NsxtFirewallGroup {
 	nsxtVdc := vcd.nsxtVdc
-
 	fwGroupDefinition := &types.NsxtFirewallGroup{
 		Name:        check.TestName() + "security-group",
 		Description: check.TestName() + "-Description",
@@ -240,18 +238,6 @@ func preCreateVdcGroupSecurityGroup(check *C, vcd *TestVCD, ownerId string) *Nsx
 	AddToCleanupListOpenApi(createdSecGroup.NsxtFirewallGroup.Name, check.TestName(), openApiEndpoint)
 
 	return createdSecGroup
-}
-
-func dumpDistributedFirewallRulesToScreen(rules []*types.DistributedFirewallRule) {
-	fmt.Println("# The following firewall rules will be created")
-	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
-	fmt.Fprintln(w, "Name\tDirection\tIP Protocol\tEnabled\tAction\tLogging\tSrc Count\tDst Count\tAppPortProfile Count\tNet Context Profile Count")
-
-	for _, rule := range rules {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%t\t%s\t%t\t%d\t%d\t%d\t%d\n", rule.Name, rule.Direction, rule.IpProtocol,
-			rule.Enabled, rule.Action, rule.Logging, len(rule.SourceFirewallGroups), len(rule.DestinationFirewallGroups), len(rule.ApplicationPortProfiles), len(rule.NetworkContextProfiles))
-	}
-	w.Flush()
 }
 
 func getRandomListOfNetworkContextProfiles(check *C, vcd *TestVCD) []types.OpenApiReference {
@@ -271,4 +257,16 @@ func getRandomListOfNetworkContextProfiles(check *C, vcd *TestVCD) []types.OpenA
 	}
 
 	return openApiRefs
+}
+
+func dumpDistributedFirewallRulesToScreen(rules []*types.DistributedFirewallRule) {
+	fmt.Println("# The following firewall rules will be created")
+	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
+	fmt.Fprintln(w, "Name\tDirection\tIP Protocol\tEnabled\tAction\tLogging\tSrc Count\tDst Count\tAppPortProfile Count\tNet Context Profile Count")
+
+	for _, rule := range rules {
+		fmt.Fprintf(w, "%s\t%s\t%s\t%t\t%s\t%t\t%d\t%d\t%d\t%d\n", rule.Name, rule.Direction, rule.IpProtocol,
+			rule.Enabled, rule.Action, rule.Logging, len(rule.SourceFirewallGroups), len(rule.DestinationFirewallGroups), len(rule.ApplicationPortProfiles), len(rule.NetworkContextProfiles))
+	}
+	w.Flush()
 }
