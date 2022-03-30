@@ -444,6 +444,45 @@ func (vdc *Vdc) AddMetadataEntryAsync(typedValue, key, value string) (Task, erro
 	return addMetadata(vdc.client, typedValue, key, value, getAdminVdcURL(vdc.Vdc.HREF))
 }
 
+
+// GetMetadata returns AdminVdc metadata.
+func (adminVdc *AdminVdc) GetMetadata() (*types.Metadata, error) {
+	return getMetadata(adminVdc.client, adminVdc.AdminVdc.HREF)
+}
+
+// AddMetadataEntry adds AdminVdc metadata typedValue and key/value pair provided as input
+// and waits for the task to finish.
+func (adminVdc *AdminVdc) AddMetadataEntry(typedValue, key, value string) error {
+	task, err := adminVdc.AddMetadataEntryAsync(typedValue, key, value)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+// AddMetadataEntryAsync adds AdminVdc metadata typedValue and key/value pair provided as input
+// and returns the task.
+func (adminVdc *AdminVdc) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
+	return addMetadata(adminVdc.client, typedValue, key, value, adminVdc.AdminVdc.HREF)
+}
+
+// DeleteMetadataEntry deletes AdminVdc metadata depending on key provided as input
+// and waits for the task to finish.
+func (adminVdc *AdminVdc) DeleteMetadataEntry(key string) error {
+	task, err := adminVdc.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+
+	return task.WaitTaskCompletion()
+}
+
+// DeleteMetadataEntryAsync deletes AdminVdc metadata depending on key provided as input
+// and returns a task.
+func (adminVdc *AdminVdc) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(adminVdc.client, key, adminVdc.AdminVdc.HREF)
+}
+
 // DeleteMetadataEntry deletes VApp metadata by key provided as input and waits for
 // the task to finish.
 func (vapp *VApp) DeleteMetadataEntry(key string) error {
