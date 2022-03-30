@@ -444,7 +444,6 @@ func (vdc *Vdc) AddMetadataEntryAsync(typedValue, key, value string) (Task, erro
 	return addMetadata(vdc.client, typedValue, key, value, getAdminVdcURL(vdc.Vdc.HREF))
 }
 
-
 // GetMetadata returns AdminVdc metadata.
 func (adminVdc *AdminVdc) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(adminVdc.client, adminVdc.AdminVdc.HREF)
