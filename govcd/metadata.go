@@ -12,6 +12,45 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+
+// GetMetadataByHref returns metadata from the given resource reference.
+func (vcdClient *VCDClient) GetMetadataByHref(href string) (*types.Metadata, error) {
+	return getMetadata(&vcdClient.Client, href)
+}
+
+// AddMetadataEntryByHref adds metadata typedValue and key/value pair provided as input to the given resource reference,
+// then waits for the task to finish.
+func (vcdClient *VCDClient) AddMetadataEntryByHref(href, typedValue, key, value string) error {
+	task, err := vcdClient.AddMetadataEntryByHrefAsync(href, typedValue, key, value)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+// AddMetadataEntryByHrefAsync adds metadata typedValue and key/value pair provided as input to the given resource reference
+// and returns the task.
+func (vcdClient *VCDClient) AddMetadataEntryByHrefAsync(href, typedValue, key, value string) (Task, error) {
+	return addMetadata(&vcdClient.Client, typedValue, key, value, href)
+}
+
+// DeleteMetadataEntryByHref deletes metadata from the given resource reference, depending on key provided as input
+// and waits for the task to finish.
+func (vcdClient *VCDClient) DeleteMetadataEntryByHref(href, key string) error {
+	task, err := vcdClient.DeleteMetadataEntryByHrefAsync(href, key)
+	if err != nil {
+		return err
+	}
+
+	return task.WaitTaskCompletion()
+}
+
+// DeleteMetadataEntryByHrefAsync deletes metadata from the given resource reference, depending on key provided as input
+// and returns a task.
+func (vcdClient *VCDClient) DeleteMetadataEntryByHrefAsync(href, key string) (Task, error) {
+	return deleteMetadata(&vcdClient.Client, key, href)
+}
+
 // GetMetadata returns VM metadata.
 func (vm *VM) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(vm.client, vm.VM.HREF)
