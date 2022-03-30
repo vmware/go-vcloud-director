@@ -1107,7 +1107,7 @@ type NsxtAlbVirtualServiceApplicationProfile struct {
 	Type string `json:"type"`
 }
 
-// DistributedFirewallRule represents a single Distributed firewall rule
+// DistributedFirewallRule represents a single Distributed Firewall rule
 type DistributedFirewallRule struct {
 	ID   string `json:"id,omitempty"`
 	Name string `json:"name"`
@@ -1162,7 +1162,7 @@ type DistributedFirewallRule struct {
 	// New fields starting with 36.2
 
 	// Comments permits setting text for user entered comments on the firewall rule. Length cannot
-	// exceed 2048 characters. Comments are shown Din UI for 10.3.2+.
+	// exceed 2048 characters. Comments are shown in UI for 10.3.2+.
 	Comments string `json:"comments,omitempty"`
 
 	// SourceGroupsExcluded reverses the list specified in SourceFirewallGroups and the rule gets

@@ -75,12 +75,6 @@ func test_NsxtDistributedFirewallRules(vcd *TestVCD, check *C, vdcGroupId string
 	// Create some prerequisites and generate firewall rule configurations to feed them into config
 	randomizedFwRuleDefs, ipSet, secGroup := createDistributedFirewallDefinitions(check, vcd, vdcGroup.VdcGroup.Id, vcdClient, vdc)
 
-	// Add IP Set and to cleanup list
-	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups + ipSet.NsxtFirewallGroup.ID
-	PrependToCleanupListOpenApi(ipSet.NsxtFirewallGroup.Name, check.TestName(), openApiEndpoint)
-	openApiEndpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups + secGroup.NsxtFirewallGroup.ID
-	PrependToCleanupListOpenApi(secGroup.NsxtFirewallGroup.Name, check.TestName(), openApiEndpoint)
-
 	fwRules.DistributedFirewallRuleContainer.Values = randomizedFwRuleDefs
 
 	if testVerbose {
@@ -244,7 +238,7 @@ func preCreateVdcGroupIpSet(check *C, vcd *TestVCD, ownerId string, nsxtVdc *Vdc
 	createdIpSet, err := nsxtVdc.CreateNsxtFirewallGroup(ipSetDefinition)
 	check.Assert(err, IsNil)
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups + createdIpSet.NsxtFirewallGroup.ID
-	AddToCleanupListOpenApi(createdIpSet.NsxtFirewallGroup.Name, check.TestName(), openApiEndpoint)
+	PrependToCleanupListOpenApi(createdIpSet.NsxtFirewallGroup.Name, check.TestName(), openApiEndpoint)
 
 	return createdIpSet
 }
@@ -261,7 +255,7 @@ func preCreateVdcGroupSecurityGroup(check *C, vcd *TestVCD, ownerId string, nsxt
 	createdSecGroup, err := nsxtVdc.CreateNsxtFirewallGroup(fwGroupDefinition)
 	check.Assert(err, IsNil)
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups + createdSecGroup.NsxtFirewallGroup.ID
-	AddToCleanupListOpenApi(createdSecGroup.NsxtFirewallGroup.Name, check.TestName(), openApiEndpoint)
+	PrependToCleanupListOpenApi(createdSecGroup.NsxtFirewallGroup.Name, check.TestName(), openApiEndpoint)
 
 	return createdSecGroup
 }

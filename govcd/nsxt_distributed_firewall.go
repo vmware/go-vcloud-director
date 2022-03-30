@@ -16,6 +16,9 @@ type DistributedFirewall struct {
 }
 
 // GetDistributedFirewall retrieves Distributed Firewall in a VDC Group which contains all rules
+//
+// Note. This function works only with `default` policy as this was the only supported when this
+// functions was created
 func (vdcGroup *VdcGroup) GetDistributedFirewall() (*DistributedFirewall, error) {
 	client := vdcGroup.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules
@@ -24,6 +27,7 @@ func (vdcGroup *VdcGroup) GetDistributedFirewall() (*DistributedFirewall, error)
 		return nil, err
 	}
 
+	// "default" policy is hardcoded because there is no other policy supported
 	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vdcGroup.VdcGroup.Id, "default"))
 	if err != nil {
 		return nil, err
@@ -44,6 +48,9 @@ func (vdcGroup *VdcGroup) GetDistributedFirewall() (*DistributedFirewall, error)
 }
 
 // UpdateDistributedFirewall updates Distributed Firewall in a VDC Group
+//
+// Note. This function works only with `default` policy as this was the only supported when this
+// functions was created
 func (vdcGroup *VdcGroup) UpdateDistributedFirewall(dfwRules *types.DistributedFirewallRules) (*DistributedFirewall, error) {
 	client := vdcGroup.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules
@@ -73,12 +80,18 @@ func (vdcGroup *VdcGroup) UpdateDistributedFirewall(dfwRules *types.DistributedF
 }
 
 // DeleteAllDistributedFirewallRules removes all Distributed Firewall rules
+//
+// Note. This function works only with `default` policy as this was the only supported when this
+// functions was created
 func (vdcGroup *VdcGroup) DeleteAllDistributedFirewallRules() error {
 	_, err := vdcGroup.UpdateDistributedFirewall(&types.DistributedFirewallRules{})
 	return err
 }
 
 // DeleteAllRules removes all Distributed Firewall rules
+//
+// Note. This function works only with `default` policy as this was the only supported when this
+// functions was created
 func (firewall *DistributedFirewall) DeleteAllRules() error {
 	if firewall.VdcGroup != nil && firewall.VdcGroup.VdcGroup != nil && firewall.VdcGroup.VdcGroup.Id == "" {
 		return errors.New("empty VDC Group ID for parent VDC Group")
