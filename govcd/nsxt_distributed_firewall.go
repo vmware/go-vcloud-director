@@ -28,7 +28,7 @@ func (vdcGroup *VdcGroup) GetDistributedFirewall() (*DistributedFirewall, error)
 	}
 
 	// "default" policy is hardcoded because there is no other policy supported
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vdcGroup.VdcGroup.Id, "default"))
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault))
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (vdcGroup *VdcGroup) UpdateDistributedFirewall(dfwRules *types.DistributedF
 	}
 
 	// "default" policy is hardcoded because there is no other policy supported
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vdcGroup.VdcGroup.Id, "default"))
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault))
 	if err != nil {
 		return nil, err
 	}

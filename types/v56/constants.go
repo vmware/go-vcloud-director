@@ -497,3 +497,8 @@ const (
 	MetadataDateTimeValue string = "MetadataDateTimeValue"
 	MetadataBooleanValue  string = "MetadataBooleanValue"
 )
+
+const (
+	// DistributedFirewallPolicyDefault is a constant for "default" Distributed Firewall Policy
+	DistributedFirewallPolicyDefault = "default"
+)
