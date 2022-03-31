@@ -73,7 +73,7 @@ func (vdcGroup *VdcGroup) UpdateDistributedFirewall(dfwRules *types.DistributedF
 
 	err = client.OpenApiPutItem(apiVersion, urlRef, nil, dfwRules, returnObject.DistributedFirewallRuleContainer, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error setting Distributed Firewall rules: %s", err)
+		return nil, fmt.Errorf("error updating Distributed Firewall rules: %s", err)
 	}
 
 	return returnObject, nil

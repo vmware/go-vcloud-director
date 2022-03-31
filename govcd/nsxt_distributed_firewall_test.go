@@ -87,7 +87,7 @@ func test_NsxtDistributedFirewallRules(vcd *TestVCD, check *C, vdcGroupId string
 
 	check.Assert(len(fwUpdated.DistributedFirewallRuleContainer.Values), Equals, len(randomizedFwRuleDefs))
 
-	// Check that all created rules are have the same attributes and order
+	// Check that all created rules have the same attributes and order
 	for index := range fwUpdated.DistributedFirewallRuleContainer.Values {
 		check.Assert(fwUpdated.DistributedFirewallRuleContainer.Values[index].Name, Equals, randomizedFwRuleDefs[index].Name)
 		check.Assert(fwUpdated.DistributedFirewallRuleContainer.Values[index].Direction, Equals, randomizedFwRuleDefs[index].Direction)
