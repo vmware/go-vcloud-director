@@ -91,56 +91,14 @@ func (vapp *VApp) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(vapp.client, vapp.VApp.HREF)
 }
 
-func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
-	metadata := &types.Metadata{}
-
-	_, err := client.ExecuteRequest(requestUri+"/metadata/", http.MethodGet,
-		types.MimeMetaData, "error retrieving metadata: %s", nil, metadata)
-
-	return metadata, err
-}
-
 // Deprecated: use VApp.DeleteMetadataEntry.
 func (vapp *VApp) DeleteMetadata(key string) (Task, error) {
 	return deleteMetadata(vapp.client, key, vapp.VApp.HREF)
 }
 
-// deleteMetadata Deletes metadata from an entity.
-func deleteMetadata(client *Client, key string, requestUri string) (Task, error) {
-	apiEndpoint := urlParseRequestURI(requestUri)
-	apiEndpoint.Path += "/metadata/" + key
-
-	// Return the task
-	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodDelete,
-		"", "error deleting metadata: %s", nil)
-}
-
 // Deprecated: use VApp.AddMetadataEntry
 func (vapp *VApp) AddMetadata(key string, value string) (Task, error) {
 	return addMetadata(vapp.client, types.MetadataStringValue, key, value, vapp.VApp.HREF)
-}
-
-// Adds metadata to an entity
-// The function supports passing a typedValue. Use one of the constants defined.
-// Constants are types.MetadataStringValue, types.MetadataNumberValue, types.MetadataDateTimeValue and types.MetadataBooleanValue.
-// Only tested with types.MetadataStringValue and types.MetadataNumberValue.
-// TODO: We might also need to add support to MetadataDateTimeValue and MetadataBooleanValue
-func addMetadata(client *Client, typedValue, key, value, requestUri string) (Task, error) {
-	newMetadata := &types.MetadataValue{
-		Xmlns: types.XMLNamespaceVCloud,
-		Xsi:   types.XMLNamespaceXSI,
-		TypedValue: &types.TypedValue{
-			XsiType: typedValue,
-			Value:   value,
-		},
-	}
-
-	apiEndpoint := urlParseRequestURI(requestUri)
-	apiEndpoint.Path += "/metadata/" + key
-
-	// Return the task
-	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
-		types.MimeMetaDataValue, "error adding metadata: %s", newMetadata)
 }
 
 // GetMetadata returns VAppTemplate metadata.
@@ -838,4 +796,152 @@ func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntry(key string) error {
 // and returns a task.
 func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntryAsync(key string) (Task, error) {
 	return deleteMetadata(orgVdcNetwork.client, key, strings.ReplaceAll(orgVdcNetwork.OrgVDCNetwork.HREF, "/api/", "/api/admin/"))
+}
+
+// ----
+
+// GetMetadata returns OrgVDCNetwork metadata.
+func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) GetMetadata() ([]*types.OpenApiMetadata, error) {
+	return getOpenApiMetadata(openApiOrgVdcNetwork.client, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID)
+}
+
+// AddMetadataEntry adds OrgVDCNetwork metadata typedValue and key/value pair provided as input
+// and waits for the task to finish.
+func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) AddMetadataEntry(typedValue, key, value string) error {
+	return addOpenApiMetadata(openApiOrgVdcNetwork.client, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, typedValue, key, value)
+}
+
+// DeleteMetadataEntry deletes OrgVDCNetwork metadata depending on key provided as input
+// and waits for the task to finish.
+func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntry(key string) error {
+	return deleteOpenApiMetadata(openApiOrgVdcNetwork.client, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, key)
+}
+
+// Private generic functions
+
+// getMetadata Retrieves metadata from an entity's HREF
+func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
+	metadata := &types.Metadata{}
+
+	_, err := client.ExecuteRequest(requestUri+"/metadata/", http.MethodGet,
+		types.MimeMetaData, "error retrieving metadata: %s", nil, metadata)
+
+	return metadata, err
+}
+
+// Adds metadata to an entity
+// The function supports passing a typedValue. Use one of the constants defined.
+// Constants are types.MetadataStringValue, types.MetadataNumberValue, types.MetadataDateTimeValue and types.MetadataBooleanValue.
+// Only tested with types.MetadataStringValue and types.MetadataNumberValue.
+// TODO: We might also need to add support to MetadataDateTimeValue and MetadataBooleanValue
+func addMetadata(client *Client, typedValue, key, value, requestUri string) (Task, error) {
+	newMetadata := &types.MetadataValue{
+		Xmlns: types.XMLNamespaceVCloud,
+		Xsi:   types.XMLNamespaceXSI,
+		TypedValue: &types.TypedValue{
+			XsiType: typedValue,
+			Value:   value,
+		},
+	}
+
+	apiEndpoint := urlParseRequestURI(requestUri)
+	apiEndpoint.Path += "/metadata/" + key
+
+	// Return the task
+	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
+		types.MimeMetaDataValue, "error adding metadata: %s", newMetadata)
+}
+
+// deleteMetadata Deletes metadata from an entity.
+func deleteMetadata(client *Client, key string, requestUri string) (Task, error) {
+	apiEndpoint := urlParseRequestURI(requestUri)
+	apiEndpoint.Path += "/metadata/" + key
+
+	// Return the task
+	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodDelete,
+		"", "error deleting metadata: %s", nil)
+}
+
+// getOpenApiMetadata gets all the metadata belonging to an entity specified by its ID
+func getOpenApiMetadata(client *Client, entityId string) ([]*types.OpenApiMetadata, error) {
+	if entityId == "" {
+		return nil, fmt.Errorf("the ID of the entity that contains the metadata is needed")
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityMetadata
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, strings.ReplaceAll(entityId, "urn:vcloud:network:", "")))
+	if err != nil {
+		return nil, err
+	}
+
+	metadataEntries := []*types.OpenApiMetadata{{}}
+
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, nil, metadataEntries, nil)
+	if err != nil {
+		return nil, err
+	}
+	return metadataEntries, nil
+}
+
+// addOpenApiMetadata adds a given metadata entry to an entity specified by its ID
+func addOpenApiMetadata(client *Client, entityId, valueType, key, value string) error {
+	if entityId == "" || key == "" {
+		return fmt.Errorf("the ID of the entity that will have the metadata and its key are needed")
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityMetadataByEntryId
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, entityId, key))
+	if err != nil {
+		return err
+	}
+
+	metadataEntry := &types.OpenApiMetadata{
+		KeyValue: &types.OpenApiMetadataKeyValue{
+			Key: key,
+			Value: &types.OpenApiMetadataValue{
+				Value: value,
+				Type:  valueType,
+			},
+		},
+	}
+
+	err = client.OpenApiPostItem(apiVersion, urlRef, nil, metadataEntry, nil, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// deleteOpenApiMetadata deletes a specific metadata entry from an entity specified by its key and entity ID
+func deleteOpenApiMetadata(client *Client, entityId, key string) error {
+	if entityId == "" {
+		return fmt.Errorf("the ID of the entity that contains the metadata and its metadata key are needed")
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityMetadataByEntryId
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, entityId, key))
+	if err != nil {
+		return err
+	}
+
+	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
+	if err != nil {
+		return err
+	}
+	return nil
 }

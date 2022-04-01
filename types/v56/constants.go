@@ -370,6 +370,8 @@ const (
 	OpenApiEndpointVdcGroupsCandidateVdcs             = "vdcGroups/networkingCandidateVdcs"
 	OpenApiEndpointVdcGroupsDfwPolicies               = "vdcGroups/%s/dfwPolicies"
 	OpenApiEndpointVdcGroupsDfwDefaultPolicies        = "vdcGroups/%s/dfwPolicies/default"
+	OpenApiEndpointEntityMetadata                     = "entities/%s/metadata"
+	OpenApiEndpointEntityMetadataByEntryId            = "entities/%s/metadata/%s"
 
 	// NSX-T ALB related endpoints
 

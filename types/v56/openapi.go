@@ -365,3 +365,25 @@ type DefaultPolicy struct {
 type VersionField struct {
 	Version int `json:"version"`
 }
+
+// OpenApiMetadata defines metadata information for VCD entities
+type OpenApiMetadata struct {
+	Id         string                   `json:"id,omitempty"` // The unique ID of this metadata entry
+	Persistent *bool                    `json:"persistent,omitempty"`
+	ReadOnly   *bool                    `json:"readOnly,omitempty"` // True means values can't be modified
+	KeyValue   *OpenApiMetadataKeyValue `json:"keyValue"`
+}
+
+// OpenApiMetadataKeyValue defines a metadata entry
+type OpenApiMetadataKeyValue struct {
+	Domain    string                `json:"domain,omitempty"` // A value of SYSTEM places this OpenApiMetadataKeyValue in the SYSTEM domain. Omit or leave empty to place this OpenApiMetadataKeyValue in the GENERAL domain.
+	Namespace string                `json:"namespace,omitempty"`
+	Key       string                `json:"key"`   // Key of the metadata entry
+	Value     *OpenApiMetadataValue `json:"value"` // Typed Value of the metadata entry
+}
+
+// OpenApiMetadataValue defines a typed metadata value
+type OpenApiMetadataValue struct {
+	Value string `json:"value"`          // Value of the metadata entry
+	Type  string `json:"type,omitempty"` // Type of the metadata value
+}

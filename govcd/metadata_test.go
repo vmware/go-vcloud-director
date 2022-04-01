@@ -898,3 +898,46 @@ func (vcd *TestVCD) Test_MetadataOnVdcNetworkCRUD(check *C) {
 	check.Assert(metadata, NotNil)
 	check.Assert(len(metadata.MetadataEntry), Equals, 0)
 }
+
+func (vcd *TestVCD) Test_MetadataOnOpenApiOrgVdcNetworkCRUD(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	net, err := vcd.vdc.GetOpenApiOrgVdcNetworkByName(vcd.config.VCD.Network.Net1)
+	if err != nil {
+		check.Skip(fmt.Sprintf("Test_MetadataOnOpenApiOrgVdcNetworkCRUD: Network %s not found. Test can't proceed", vcd.config.VCD.Network.Net1))
+		return
+	}
+
+	// Check how much metadata exists
+	metadataEntries, err := net.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadataEntries, NotNil)
+	existingMetaDataCount := len(metadataEntries)
+
+	// Add metadata
+	err = net.AddMetadataEntry(types.MetadataStringValue, "key", "value")
+	check.Assert(err, IsNil)
+
+	// Check if metadata was added correctly
+	metadataEntries, err = net.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadataEntries, NotNil)
+	check.Assert(len(metadataEntries), Equals, existingMetaDataCount+1)
+	var foundEntry *types.OpenApiMetadata
+	for _, entry := range metadataEntries {
+		if entry.KeyValue.Key == "key" {
+			foundEntry = entry
+		}
+	}
+	check.Assert(foundEntry, NotNil)
+	check.Assert(foundEntry.KeyValue.Key, Equals, "key")
+	check.Assert(foundEntry.KeyValue.Value.Value, Equals, "value")
+	check.Assert(foundEntry.KeyValue.Value.Type, Equals, types.MetadataStringValue)
+
+	err = net.DeleteMetadataEntry("key")
+	check.Assert(err, IsNil)
+	// Check if metadata was deleted correctly
+	metadataEntries, err = net.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadataEntries, NotNil)
+	check.Assert(len(metadataEntries), Equals, 0)
+}
