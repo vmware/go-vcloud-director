@@ -23,10 +23,10 @@ func (vcd *TestVCD) Test_NsxtIpSet(check *C) {
 	check.Assert(err, IsNil)
 
 	ipSetDefinition := &types.NsxtFirewallGroup{
-		Name:           check.TestName(),
-		Description:    check.TestName() + "-Description",
-		Type:           types.FirewallGroupTypeIpSet,
-		EdgeGatewayRef: &types.OpenApiReference{ID: edge.EdgeGateway.ID},
+		Name:        check.TestName(),
+		Description: check.TestName() + "-Description",
+		Type:        types.FirewallGroupTypeIpSet,
+		OwnerRef:    &types.OpenApiReference{ID: edge.EdgeGateway.ID},
 
 		IpAddresses: []string{
 			"12.12.12.1",
@@ -96,6 +96,62 @@ func (vcd *TestVCD) Test_NsxtIpSet(check *C) {
 	check.Assert(edgeIpSetByName.NsxtFirewallGroup, DeepEquals, orgIpSetByName.NsxtFirewallGroup)
 	check.Assert(edgeIpSetById.NsxtFirewallGroup, DeepEquals, edgeIpSetByName.NsxtFirewallGroup)
 
+	// Get Firewall Group using VDC Group
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	nsxtExternalNetwork, err := GetExternalNetworkV2ByName(vcd.client, vcd.config.VCD.Nsxt.ExternalNetwork)
+	check.Assert(err, IsNil)
+	check.Assert(nsxtExternalNetwork, NotNil)
+
+	vdc, vdcGroup := test_CreateVdcGroup(check, adminOrg, vcd)
+	egwDefinition := &types.OpenAPIEdgeGateway{
+		Name:        "nsx-for-IpSet-edge",
+		Description: "nsx-for-IpSet-edge-description",
+		OwnerRef: &types.OpenApiReference{
+			ID: vdc.Vdc.ID,
+		},
+		EdgeGatewayUplinks: []types.EdgeGatewayUplinks{{
+			UplinkID: nsxtExternalNetwork.ExternalNetwork.ID,
+			Subnets: types.OpenAPIEdgeGatewaySubnets{Values: []types.OpenAPIEdgeGatewaySubnetValue{{
+				Gateway:      "1.1.1.1",
+				PrefixLength: 24,
+				Enabled:      true,
+			}}},
+			Connected: true,
+			Dedicated: false,
+		}},
+	}
+
+	// Create Edge Gateway in VDC Group
+	createdEdge, err := adminOrg.CreateNsxtEdgeGateway(egwDefinition)
+	check.Assert(err, IsNil)
+	check.Assert(createdEdge.EdgeGateway.OwnerRef.ID, Matches, `^urn:vcloud:vdc:.*`)
+	openApiEndpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways + createdEdge.EdgeGateway.ID
+	PrependToCleanupListOpenApi(createdEdge.EdgeGateway.Name, check.TestName(), openApiEndpoint)
+
+	check.Assert(createdEdge.EdgeGateway.Name, Equals, egwDefinition.Name)
+	check.Assert(createdEdge.EdgeGateway.OwnerRef.ID, Equals, egwDefinition.OwnerRef.ID)
+
+	movedGateway, err := createdEdge.MoveToVdcOrVdcGroup(vdcGroup.VdcGroup.Id)
+	check.Assert(err, IsNil)
+	check.Assert(movedGateway.EdgeGateway.OwnerRef.ID, Equals, vdcGroup.VdcGroup.Id)
+	check.Assert(movedGateway.EdgeGateway.OwnerRef.ID, Matches, `^urn:vcloud:vdcGroup:.*`)
+
+	ipSetDefinition.Name = check.TestName() + "VdcGroup"
+	ipSetDefinition.OwnerRef.ID = vdcGroup.VdcGroup.Id
+	createdIpSetInVdcGroup, err := createdEdge.CreateNsxtFirewallGroup(ipSetDefinition)
+	check.Assert(err, IsNil)
+	check.Assert(createdIpSetInVdcGroup, NotNil)
+	openApiEndpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups + createdIpSetInVdcGroup.NsxtFirewallGroup.ID
+	AddToCleanupListOpenApi(createdIpSet.NsxtFirewallGroup.Name, check.TestName(), openApiEndpoint)
+	vdcGroupIpSetByName, err := vdcGroup.GetNsxtFirewallGroupByName(createdIpSetInVdcGroup.NsxtFirewallGroup.Name, types.FirewallGroupTypeIpSet)
+	check.Assert(err, IsNil)
+	vdcGroupIpSetById, err := vdcGroup.GetNsxtFirewallGroupById(createdIpSetInVdcGroup.NsxtFirewallGroup.ID)
+	check.Assert(err, IsNil)
+	check.Assert(vdcGroupIpSetByName.NsxtFirewallGroup, DeepEquals, vdcGroupIpSetById.NsxtFirewallGroup)
+	check.Assert(vdcGroupIpSetById.NsxtFirewallGroup, DeepEquals, vdcGroupIpSetByName.NsxtFirewallGroup)
+
 	associatedVms, err := edgeIpSetByName.GetAssociatedVms()
 	// IP_SET type Firewall Groups do not have VM associations and throw an error on API call.
 	// The error is: only Security Groups have associated VMs. This Firewall Group has type 'IP_SET'
@@ -106,9 +162,12 @@ func (vcd *TestVCD) Test_NsxtIpSet(check *C) {
 	// Remove
 	err = createdIpSet.Delete()
 	check.Assert(err, IsNil)
+	err = vdcGroupIpSetByName.Delete()
+	check.Assert(err, IsNil)
 
 	// Create IP Set using Edge Gateway method
 	ipSetDefinition.Name = check.TestName() + "-using-edge-gateway-type"
+	ipSetDefinition.OwnerRef.ID = edge.EdgeGateway.ID
 
 	// Create IP Set and add to cleanup if it was created
 	edgeCreatedIpSet, err := nsxtVdc.CreateNsxtFirewallGroup(ipSetDefinition)
@@ -117,7 +176,7 @@ func (vcd *TestVCD) Test_NsxtIpSet(check *C) {
 	AddToCleanupListOpenApi(createdIpSet.NsxtFirewallGroup.Name, check.TestName(), openApiEndpoint)
 
 	check.Assert(edgeCreatedIpSet.NsxtFirewallGroup.ID, Not(Equals), "")
-	check.Assert(edgeCreatedIpSet.NsxtFirewallGroup.EdgeGatewayRef.Name, Equals, vcd.config.VCD.Nsxt.EdgeGateway)
+	check.Assert(edgeCreatedIpSet.NsxtFirewallGroup.OwnerRef.Name, Equals, edge.EdgeGateway.Name)
 
 	err = edgeCreatedIpSet.Delete()
 	check.Assert(err, IsNil)
