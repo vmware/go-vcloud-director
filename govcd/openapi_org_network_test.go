@@ -55,6 +55,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkIsolated(check *C) {
 	}
 
 	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated, nil)
+	runOpenApiOrgVdcNetworkWithVdcGroupTest(check, vcd, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated, nil)
 }
 
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
@@ -115,6 +116,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
 	}
 
 	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted, nsxtRoutedDhcpConfig)
+	runOpenApiOrgVdcNetworkWithVdcGroupTest(check, vcd, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted, nsxtRoutedDhcpConfig)
 }
 
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
@@ -167,6 +169,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 	}
 
 	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque, nil)
+	runOpenApiOrgVdcNetworkWithVdcGroupTest(check, vcd, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque, nil)
 }
 
 func (vcd *TestVCD) Test_NsxvOrgVdcNetworkIsolated(check *C) {
@@ -408,4 +411,110 @@ func nsxtRoutedDhcpConfig(check *C, vdc *Vdc, orgNetId string) {
 		err = vdc.DeleteOpenApiOrgVdcNetworkDhcp(orgNetId)
 		check.Assert(err, IsNil)
 	}
+}
+
+func runOpenApiOrgVdcNetworkWithVdcGroupTest(check *C, vcd *TestVCD, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, expectNetworkType string, dhcpFunc dhcpConfigFunc) {
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	nsxtExternalNetwork, err := GetExternalNetworkV2ByName(vcd.client, vcd.config.VCD.Nsxt.ExternalNetwork)
+	check.Assert(err, IsNil)
+	check.Assert(nsxtExternalNetwork, NotNil)
+
+	vdc, vdcGroup := test_CreateVdcGroup(check, adminOrg, vcd)
+	egwDefinition := &types.OpenAPIEdgeGateway{
+		Name:        "nsx-for-org-networ-edge",
+		Description: "nsx-for-org-networ-edge-description",
+		OwnerRef: &types.OpenApiReference{
+			ID: vdc.Vdc.ID,
+		},
+		EdgeGatewayUplinks: []types.EdgeGatewayUplinks{{
+			UplinkID: nsxtExternalNetwork.ExternalNetwork.ID,
+			Subnets: types.OpenAPIEdgeGatewaySubnets{Values: []types.OpenAPIEdgeGatewaySubnetValue{{
+				Gateway:      "1.1.1.1",
+				PrefixLength: 24,
+				Enabled:      true,
+			}}},
+			Connected: true,
+			Dedicated: false,
+		}},
+	}
+
+	// Create Edge Gateway in VDC Group
+	createdEdge, err := adminOrg.CreateNsxtEdgeGateway(egwDefinition)
+	check.Assert(err, IsNil)
+	check.Assert(createdEdge.EdgeGateway.OwnerRef.ID, Matches, `^urn:vcloud:vdc:.*`)
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways + createdEdge.EdgeGateway.ID
+	PrependToCleanupListOpenApi(createdEdge.EdgeGateway.Name, check.TestName(), openApiEndpoint)
+
+	check.Assert(createdEdge.EdgeGateway.Name, Equals, egwDefinition.Name)
+	check.Assert(createdEdge.EdgeGateway.OwnerRef.ID, Equals, egwDefinition.OwnerRef.ID)
+
+	movedGateway, err := createdEdge.MoveToVdcOrVdcGroup(vdcGroup.VdcGroup.Id)
+	check.Assert(err, IsNil)
+	check.Assert(movedGateway.EdgeGateway.OwnerRef.ID, Equals, vdcGroup.VdcGroup.Id)
+	check.Assert(movedGateway.EdgeGateway.OwnerRef.ID, Matches, `^urn:vcloud:vdcGroup:.*`)
+
+	orgVdcNetworkConfig.OwnerRef.ID = vdcGroup.VdcGroup.Id
+	if orgVdcNetworkConfig.Connection != nil {
+		orgVdcNetworkConfig.Connection.RouterRef.ID = movedGateway.EdgeGateway.ID
+	}
+	orgVdcNet, err := vdcGroup.CreateOpenApiOrgVdcNetwork(orgVdcNetworkConfig)
+	check.Assert(err, IsNil)
+
+	// Use generic "OpenApiEntity" resource cleanup type
+	openApiEndpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + orgVdcNet.OpenApiOrgVdcNetwork.ID
+	AddToCleanupListOpenApi(orgVdcNet.OpenApiOrgVdcNetwork.Name, check.TestName(), openApiEndpoint)
+
+	check.Assert(orgVdcNet.GetType(), Equals, expectNetworkType)
+
+	// Check it can be found
+	orgVdcNetByIdInVdc, err := vdcGroup.GetOpenApiOrgVdcNetworkById(orgVdcNet.OpenApiOrgVdcNetwork.ID)
+	check.Assert(err, IsNil)
+	check.Assert(orgVdcNetByIdInVdc, NotNil)
+	orgVdcNetByName, err := vdcGroup.GetOpenApiOrgVdcNetworkByName(orgVdcNet.OpenApiOrgVdcNetwork.Name)
+	check.Assert(err, IsNil)
+	check.Assert(orgVdcNetByName, NotNil)
+
+	check.Assert(orgVdcNetByIdInVdc.OpenApiOrgVdcNetwork.ID, Equals, orgVdcNet.OpenApiOrgVdcNetwork.ID)
+	check.Assert(orgVdcNetByName.OpenApiOrgVdcNetwork.ID, Equals, orgVdcNet.OpenApiOrgVdcNetwork.ID)
+
+	// Retrieve all networks in VDC and expect newly created network to be there
+	var foundNetInVdc bool
+	allOrgVdcNets, err := vdcGroup.GetAllOpenApiOrgVdcNetworks(nil)
+	check.Assert(err, IsNil)
+	for _, net := range allOrgVdcNets {
+		if net.OpenApiOrgVdcNetwork.ID == orgVdcNet.OpenApiOrgVdcNetwork.ID {
+			foundNetInVdc = true
+		}
+	}
+	check.Assert(foundNetInVdc, Equals, true)
+
+	// Update
+	orgVdcNet.OpenApiOrgVdcNetwork.Description = check.TestName() + "updated description"
+	updatedOrgVdcNet, err := orgVdcNet.Update(orgVdcNet.OpenApiOrgVdcNetwork)
+	check.Assert(err, IsNil)
+
+	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.Name, Equals, orgVdcNet.OpenApiOrgVdcNetwork.Name)
+	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID, Equals, orgVdcNet.OpenApiOrgVdcNetwork.ID)
+	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.Description, Equals, orgVdcNet.OpenApiOrgVdcNetwork.Description)
+
+	// Configure DHCP if specified
+	if dhcpFunc != nil {
+		dhcpFunc(check, vdc, updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID)
+	}
+	// Delete
+	err = orgVdcNet.Delete()
+	check.Assert(err, IsNil)
+
+	// Test again if it was deleted and expect it to contain ErrorEntityNotFound
+	_, err = vdcGroup.GetOpenApiOrgVdcNetworkByName(orgVdcNet.OpenApiOrgVdcNetwork.Name)
+	check.Assert(ContainsNotFound(err), Equals, true)
+
+	_, err = vdcGroup.GetOpenApiOrgVdcNetworkById(orgVdcNet.OpenApiOrgVdcNetwork.ID)
+	check.Assert(ContainsNotFound(err), Equals, true)
+
+	//cleanup
+	err = movedGateway.Delete()
+	check.Assert(err, IsNil)
 }
