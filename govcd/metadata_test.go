@@ -900,6 +900,7 @@ func (vcd *TestVCD) Test_MetadataOnVdcNetworkCRUD(check *C) {
 }
 
 func (vcd *TestVCD) Test_MetadataOnOpenApiOrgVdcNetworkCRUD(check *C) {
+	// FIXME: SKIP for old api versions!
 	fmt.Printf("Running: %s\n", check.TestName())
 	net, err := vcd.vdc.GetOpenApiOrgVdcNetworkByName(vcd.config.VCD.Network.Net1)
 	if err != nil {
