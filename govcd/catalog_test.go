@@ -203,6 +203,9 @@ func (vcd *TestVCD) Test_UploadOvf_progress_works(check *C) {
 	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
 	verifyCatalogItemUploaded(check, catalog, itemName)
+
+	// Delete testing catalog item
+	deleteCatalogItem(check, catalog, itemName)
 }
 
 // Tests System function UploadOvf by creating catalog and
@@ -241,6 +244,9 @@ func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 	verifyCatalogItemUploaded(check, catalog, itemName)
+
+	// Delete testing catalog item
+	deleteCatalogItem(check, catalog, itemName)
 }
 
 // Tests System function UploadOvf by creating catalog, creating catalog item
@@ -265,6 +271,9 @@ func (vcd *TestVCD) Test_UploadOvf_error_withSameItem(check *C) {
 	catalog, _ = findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
 	_, err3 := catalog.UploadOvf(vcd.config.OVA.OvaPath, itemName, "upload from test", 1024)
 	check.Assert(err3.Error(), Matches, ".*already exists. Upload with different name.*")
+
+	// Delete testing catalog item
+	deleteCatalogItem(check, catalog, itemName)
 }
 
 // Tests System function UploadOvf by creating catalog, uploading file and verifying
@@ -290,6 +299,8 @@ func (vcd *TestVCD) Test_UploadOvf_cleaned_extracted_files(check *C) {
 
 	check.Assert(oldFolderCount, Equals, countFolders())
 
+	// Delete testing catalog item
+	deleteCatalogItem(check, catalog, itemName)
 }
 
 // Tests System function UploadOvf by creating catalog and
@@ -337,6 +348,9 @@ func checkUploadOvf(vcd *TestVCD, check *C, ovaFileName, catalogName, itemName s
 	catalog, err = org.GetCatalogByName(catalogName, false)
 	check.Assert(err, IsNil)
 	verifyCatalogItemUploaded(check, catalog, itemName)
+
+	// Delete testing catalog item
+	deleteCatalogItem(check, catalog, itemName)
 }
 
 func verifyCatalogItemUploaded(check *C, catalog *Catalog, itemName string) {
@@ -372,6 +386,15 @@ func skipWhenOvaPathMissing(ovaPath string, check *C) {
 	}
 }
 
+func deleteCatalogItem(check *C, catalog *Catalog, itemName string) {
+	catalogItem, err := catalog.GetCatalogItemByName(itemName, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalogItem, NotNil)
+
+	err = catalogItem.Delete()
+	check.Assert(err, IsNil)
+}
+
 // Tests System function UploadMediaImage by checking if provided standard iso file uploaded.
 func (vcd *TestVCD) Test_CatalogUploadMediaImage(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
@@ -392,6 +415,9 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 	verifyCatalogItemUploaded(check, catalog, TestCatalogUploadMedia)
+
+	// Delete testing catalog item
+	deleteCatalogItem(check, catalog, TestCatalogUploadMedia)
 }
 
 // Tests System function UploadMediaImage by checking UploadTask.GetUploadProgress returns values of progress.
@@ -421,6 +447,9 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_progress_works(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 	verifyCatalogItemUploaded(check, catalog, itemName)
+
+	// Delete testing catalog item
+	deleteCatalogItem(check, catalog, itemName)
 }
 
 // Tests System function UploadMediaImage by checking UploadTask.ShowUploadProgress writes values of progress to stdin.
@@ -457,6 +486,9 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_ShowUploadProgress_works(check 
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 	verifyCatalogItemUploaded(check, catalog, itemName)
+
+	// Delete testing catalog item
+	deleteCatalogItem(check, catalog, itemName)
 }
 
 // Tests System function UploadMediaImage by creating media item and expecting specific error
@@ -475,6 +507,9 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_error_withSameItem(check *C) {
 	check.Assert(err, IsNil)
 
 	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_CatalogUploadMediaImage_error_withSameItem")
+
+	// Delete testing catalog item
+	deleteCatalogItem(check, catalog, itemName)
 }
 
 // Tests System function Delete by creating media item and
@@ -896,6 +931,9 @@ func (vcd *TestVCD) Test_UploadOvfByLink_progress_works(check *C) {
 	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
 	check.Assert(err, IsNil)
 	verifyCatalogItemUploaded(check, catalog, itemName)
+
+	// Delete testing catalog item
+	deleteCatalogItem(check, catalog, itemName)
 }
 
 func (vcd *TestVCD) Test_CatalogQueryMediaList(check *C) {
