@@ -124,6 +124,27 @@ func (vdc *Vdc) GetNsxtFirewallGroupByName(name, firewallGroupType string) (*Nsx
 	return getNsxtFirewallGroupByName(vdc.client, name, queryParameters)
 }
 
+// GetNsxtFirewallGroupByName allows users to retrieve Firewall Group by Name in a particular VDC Group
+// firewallGroupType can be one of the following:
+// * types.FirewallGroupTypeSecurityGroup - for NSX-T Security Groups
+// * types.FirewallGroupTypeIpSet - for NSX-T IP Sets
+// * "" (empty) - search will not be limited and will get both - IP Sets and Security Groups
+//
+// Note. One might get an error if IP Set and Security Group exist with the same name (two objects
+// of the same type cannot exist) and firewallGroupType is left empty.
+func (vdcGroup *VdcGroup) GetNsxtFirewallGroupByName(name string, firewallGroupType string) (*NsxtFirewallGroup, error) {
+	queryParameters := url.Values{}
+
+	if firewallGroupType != "" {
+		queryParameters = queryParameterFilterAnd("type=="+firewallGroupType, queryParameters)
+	}
+
+	// Automatically inject Edge Gateway filter because this is an Edge Gateway scoped query
+	queryParameters = queryParameterFilterAnd("ownerRef.id=="+vdcGroup.VdcGroup.Id, queryParameters)
+
+	return getNsxtFirewallGroupByName(vdcGroup.client, name, queryParameters)
+}
+
 // GetNsxtFirewallGroupByName allows users to retrieve Firewall Group by Name in a particular Edge Gateway
 // firewallGroupType can be one of the following:
 // * types.FirewallGroupTypeSecurityGroup - for NSX-T Security Groups
@@ -158,6 +179,11 @@ func (vdc *Vdc) GetNsxtFirewallGroupById(id string) (*NsxtFirewallGroup, error) 
 // GetNsxtFirewallGroupById retrieves NSX-T Firewall Group by ID
 func (egw *NsxtEdgeGateway) GetNsxtFirewallGroupById(id string) (*NsxtFirewallGroup, error) {
 	return getNsxtFirewallGroupById(egw.client, id)
+}
+
+// GetNsxtFirewallGroupById retrieves NSX-T Firewall Group by ID
+func (vdcGroup *VdcGroup) GetNsxtFirewallGroupById(id string) (*NsxtFirewallGroup, error) {
+	return getNsxtFirewallGroupById(vdcGroup.client, id)
 }
 
 // Update allows users to update NSX-T Firewall Group
