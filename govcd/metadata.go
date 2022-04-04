@@ -798,23 +798,41 @@ func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntryAsync(key string) (Task, 
 	return deleteMetadata(orgVdcNetwork.client, key, strings.ReplaceAll(orgVdcNetwork.OrgVDCNetwork.HREF, "/api/", "/api/admin/"))
 }
 
-// ----
+// OpenAPI metadata
 
 // GetMetadata returns OrgVDCNetwork metadata.
-func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) GetMetadata() ([]*types.OpenApiMetadata, error) {
-	return getOpenApiMetadata(openApiOrgVdcNetwork.client, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID)
+func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) GetMetadata() (*types.Metadata, error) {
+	return getMetadata(openApiOrgVdcNetwork.client, fmt.Sprintf("%s/network/%s", openApiOrgVdcNetwork.client.VCDHREF.Host, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID))
+
+	// TODO: Remove the above code and just leave below line once metadata is supported in OpenAPI in v37.0
+	//return getOpenApiMetadata(openApiOrgVdcNetwork.client, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID)
 }
 
 // AddMetadataEntry adds OrgVDCNetwork metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
 func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) AddMetadataEntry(typedValue, key, value string) error {
-	return addOpenApiMetadata(openApiOrgVdcNetwork.client, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, typedValue, key, value)
+	task, err := addMetadata(openApiOrgVdcNetwork.client, typedValue, key, value, fmt.Sprintf("%s/admin/network/%s", openApiOrgVdcNetwork.client.VCDHREF.Host, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID))
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+
+	// TODO: Remove the above code and just leave below line once metadata is supported in OpenAPI in v37.0
+	// return addOpenApiMetadata(openApiOrgVdcNetwork.client, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, typedValue, key, value)
 }
 
 // DeleteMetadataEntry deletes OrgVDCNetwork metadata depending on key provided as input
 // and waits for the task to finish.
 func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntry(key string) error {
-	return deleteOpenApiMetadata(openApiOrgVdcNetwork.client, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, key)
+	task, err := deleteMetadata(openApiOrgVdcNetwork.client, key, fmt.Sprintf("%s/admin/network/%s", openApiOrgVdcNetwork.client.VCDHREF.Host, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID))
+	if err != nil {
+		return err
+	}
+
+	return task.WaitTaskCompletion()
+
+	// TODO: Remove the above code and just leave below line once metadata is supported in OpenAPI in v37.0
+	// return deleteOpenApiMetadata(openApiOrgVdcNetwork.client, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, key)
 }
 
 // Private generic functions
@@ -874,7 +892,7 @@ func getOpenApiMetadata(client *Client, entityId string) ([]*types.OpenApiMetada
 		return nil, err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, strings.ReplaceAll(entityId, "urn:vcloud:network:", "")))
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, entityId))
 	if err != nil {
 		return nil, err
 	}
