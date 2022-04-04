@@ -935,6 +935,21 @@ func (vcd *TestVCD) Test_MetadataByHrefCRUD(check *C) {
 	check.Assert(foundEntry.Key, Equals, "key")
 	check.Assert(foundEntry.TypedValue.Value, Equals, "value")
 
+	// Check the same without admin privileges
+	metadata, err = vcd.client.GetMetadataByHref(storageProfileRef.HREF)
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount+1)
+	for _, entry := range metadata.MetadataEntry {
+		if entry.Key == "key" {
+			foundEntry = entry
+		}
+	}
+	check.Assert(foundEntry, NotNil)
+	check.Assert(foundEntry.Key, Equals, "key")
+	check.Assert(foundEntry.TypedValue.Value, Equals, "value")
+
+	// Delete the metadata
 	err = vcd.client.DeleteMetadataEntryByHref(storageProfileAdminHref, "key")
 	check.Assert(err, IsNil)
 	// Check if metadata was deleted correctly
