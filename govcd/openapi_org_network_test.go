@@ -423,8 +423,8 @@ func runOpenApiOrgVdcNetworkWithVdcGroupTest(check *C, vcd *TestVCD, orgVdcNetwo
 
 	vdc, vdcGroup := test_CreateVdcGroup(check, adminOrg, vcd)
 	egwDefinition := &types.OpenAPIEdgeGateway{
-		Name:        "nsx-for-org-networ-edge",
-		Description: "nsx-for-org-networ-edge-description",
+		Name:        "nsx-for-org-network-edge",
+		Description: "nsx-for-org-network-edge-description",
 		OwnerRef: &types.OpenApiReference{
 			ID: vdc.Vdc.ID,
 		},
