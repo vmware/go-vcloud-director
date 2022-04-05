@@ -798,7 +798,8 @@ func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntryAsync(key string) (Task, 
 	return deleteMetadata(orgVdcNetwork.client, key, strings.ReplaceAll(orgVdcNetwork.OrgVDCNetwork.HREF, "/api/", "/api/admin/"))
 }
 
-// ----
+// ---
+// OpenAPI metadata
 
 // GetMetadata returns OrgVDCNetwork metadata.
 func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) GetMetadata() ([]*types.OpenApiMetadata, error) {
@@ -817,7 +818,8 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntry(key string
 	return deleteOpenApiMetadata(openApiOrgVdcNetwork.client, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, key)
 }
 
-// Private generic functions
+// ---
+// Private generic functions for XML
 
 // getMetadata Retrieves metadata from an entity's HREF
 func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
@@ -861,6 +863,9 @@ func deleteMetadata(client *Client, key string, requestUri string) (Task, error)
 	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodDelete,
 		"", "error deleting metadata: %s", nil)
 }
+
+// ---
+// Private generic functions for OpenAPI
 
 // getOpenApiMetadata gets all the metadata belonging to an entity specified by its ID
 func getOpenApiMetadata(client *Client, entityId string) ([]*types.OpenApiMetadata, error) {
