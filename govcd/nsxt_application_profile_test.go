@@ -102,10 +102,6 @@ func testAppPortProfile(appPortProfileConfig *types.NsxtAppPortProfile, scope st
 	appProfile, err := org.CreateNsxtAppPortProfile(appPortProfileConfig)
 	check.Assert(err, IsNil)
 
-	// vdc, err := org.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
-	// check.Assert(err, IsNil)
-	// check.Assert(vdc, NotNil)
-
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAppPortProfiles + appProfile.NsxtAppPortProfile.ID
 	AddToCleanupListOpenApi(appProfile.NsxtAppPortProfile.Name, check.TestName(), openApiEndpoint)
 
