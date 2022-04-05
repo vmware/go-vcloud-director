@@ -842,13 +842,13 @@ func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntryAsync(key string) (Task, 
 
 // OpenAPI metadata functions
 
-// GetMetadata returns OrgVDCNetwork metadata.
+// GetMetadata returns OpenApiOrgVdcNetwork metadata.
 // TODO: This function is currently using XML underneath as metadata is supported in v37.0 and at the moment is in alpha state. See https://github.com/vmware/go-vcloud-director/pull/455
 func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(openApiOrgVdcNetwork.client, fmt.Sprintf("%s/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), strings.ReplaceAll(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, "urn:vcloud:network:", "")))
 }
 
-// AddMetadataEntry adds OrgVDCNetwork metadata typedValue and key/value pair provided as input
+// AddMetadataEntry adds OpenApiOrgVdcNetwork metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
 // TODO: This function is currently using XML underneath as metadata is supported in v37.0 and at the moment is in alpha state. See https://github.com/vmware/go-vcloud-director/pull/455
 func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) AddMetadataEntry(typedValue, key, value string) error {
@@ -859,7 +859,7 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) AddMetadataEntry(typedValue, k
 	return task.WaitTaskCompletion()
 }
 
-// DeleteMetadataEntry deletes OrgVDCNetwork metadata depending on key provided as input
+// DeleteMetadataEntry deletes OpenApiOrgVdcNetwork metadata depending on key provided as input
 // and waits for the task to finish.
 // TODO: This function is currently using XML underneath as metadata is supported in v37.0 and at the moment is in alpha state. // TODO: This function is currently using XML underneath as metadata is supported in v37.0 and at the moment is in alpha state. See https://github.com/vmware/go-vcloud-director/pull/455
 func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntry(key string) error {
