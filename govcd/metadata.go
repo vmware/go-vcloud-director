@@ -29,7 +29,7 @@ func (vm *VM) AddMetadata(key string, value string) (Task, error) {
 
 // GetMetadata returns Vdc metadata.
 func (vdc *Vdc) GetMetadata() (*types.Metadata, error) {
-	if strings.Contains(vdc.Vdc.HREF, "/api/admin/vdc/"){
+	if strings.Contains(vdc.Vdc.HREF, "/api/admin/vdc/") {
 		return getMetadata(vdc.client, vdc.Vdc.HREF)
 	} else {
 		return getMetadata(vdc.client, getAdminVdcURL(vdc.Vdc.HREF))
