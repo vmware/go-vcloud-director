@@ -1,3 +1,5 @@
-* Added support to set, get and delete metadata to any supported resource via its HREF, with the methods
+* Added support to set, get and delete metadata to the following resources via its HREF:
+  `catalog`, `catalog item`, `disk`, `edge gateway`, `media`, `network`, `org`, `PVDC`, `PVDC storage profile`, `vApp`, `vApp template`,`VDC` and `VDC storage profile`;
+  with the methods
   `VCDClient.GetMetadataByHref`, `VCDClient.AddMetadataEntryByHref`, `VCDClient.AddMetadataEntryByHrefAsync`,
   `VCDClient.DeleteMetadataEntryByHref` and `VCDClient.DeleteMetadataEntryByHrefAsync` [GH-454]
