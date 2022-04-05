@@ -900,6 +900,7 @@ func (vcd *TestVCD) Test_MetadataOnVdcNetworkCRUD(check *C) {
 }
 
 func (vcd *TestVCD) Test_MetadataOnOpenApiOrgVdcNetworkCRUD(check *C) {
+	// FIXME: SKIP for old api versions!
 	fmt.Printf("Running: %s\n", check.TestName())
 	net, err := vcd.vdc.GetOpenApiOrgVdcNetworkByName(vcd.config.VCD.Network.Net1)
 	if err != nil {
@@ -908,35 +909,36 @@ func (vcd *TestVCD) Test_MetadataOnOpenApiOrgVdcNetworkCRUD(check *C) {
 	}
 
 	// Check how much metadata exists
-	metadata, err := net.GetMetadata()
+	metadataEntries, err := net.GetMetadata()
 	check.Assert(err, IsNil)
-	check.Assert(metadata, NotNil)
-	existingMetaDataCount := len(metadata.MetadataEntry)
+	check.Assert(metadataEntries, NotNil)
+	existingMetaDataCount := len(metadataEntries)
 
 	// Add metadata
 	err = net.AddMetadataEntry(types.MetadataStringValue, "key", "value")
 	check.Assert(err, IsNil)
 
 	// Check if metadata was added correctly
-	metadata, err = net.GetMetadata()
+	metadataEntries, err = net.GetMetadata()
 	check.Assert(err, IsNil)
-	check.Assert(metadata, NotNil)
-	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount+1)
-	var foundEntry *types.MetadataEntry
-	for _, entry := range metadata.MetadataEntry {
-		if entry.Key == "key" {
+	check.Assert(metadataEntries, NotNil)
+	check.Assert(len(metadataEntries), Equals, existingMetaDataCount+1)
+	var foundEntry *types.OpenApiMetadata
+	for _, entry := range metadataEntries {
+		if entry.KeyValue.Key == "key" {
 			foundEntry = entry
 		}
 	}
 	check.Assert(foundEntry, NotNil)
-	check.Assert(foundEntry.Key, Equals, "key")
-	check.Assert(foundEntry.TypedValue.Value, Equals, "value")
+	check.Assert(foundEntry.KeyValue.Key, Equals, "key")
+	check.Assert(foundEntry.KeyValue.Value.Value, Equals, "value")
+	check.Assert(foundEntry.KeyValue.Value.Type, Equals, types.MetadataStringValue)
 
 	err = net.DeleteMetadataEntry("key")
 	check.Assert(err, IsNil)
 	// Check if metadata was deleted correctly
-	metadata, err = net.GetMetadata()
+	metadataEntries, err = net.GetMetadata()
 	check.Assert(err, IsNil)
-	check.Assert(metadata, NotNil)
-	check.Assert(len(metadata.MetadataEntry), Equals, 0)
+	check.Assert(metadataEntries, NotNil)
+	check.Assert(len(metadataEntries), Equals, 0)
 }
