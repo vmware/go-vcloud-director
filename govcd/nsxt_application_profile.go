@@ -78,6 +78,35 @@ func (org *Org) GetNsxtAppPortProfileByName(name, scope string) (*NsxtAppPortPro
 	return getNsxtAppPortProfileByName(org.client, name, queryParameters)
 }
 
+// GetNsxtAppPortProfileByName allows users to retrieve Application Port Profiles for specific scope.
+// More details in documentation for types.NsxtAppPortProfile
+//
+// Note. Names are enforced to be unique per scope
+func (vdc *Vdc) GetNsxtAppPortProfileByName(name, scope string) (*NsxtAppPortProfile, error) {
+	queryParameters := copyOrNewUrlValues(nil)
+	queryParameters = queryParameterFilterAnd("_context=="+vdc.Vdc.ID, queryParameters)
+	if scope != "" {
+		queryParameters = queryParameterFilterAnd("scope=="+scope, queryParameters)
+	}
+
+	return getNsxtAppPortProfileByName(vdc.client, name, queryParameters)
+}
+
+// GetNsxtAppPortProfileByName allows users to retrieve Application Port Profiles for specific scope.
+// More details in documentation for types.NsxtAppPortProfile
+//
+// Note. Names are enforced to be unique per scope
+func (vdcGroup *VdcGroup) GetNsxtAppPortProfileByName(name, scope string) (*NsxtAppPortProfile, error) {
+	queryParameters := copyOrNewUrlValues(nil)
+	queryParameters = queryParameterFilterAnd("_context=="+vdcGroup.VdcGroup.Id, queryParameters)
+
+	if scope != "" {
+		queryParameters = queryParameterFilterAnd("scope=="+scope, queryParameters)
+	}
+
+	return getNsxtAppPortProfileByName(vdcGroup.client, name, queryParameters)
+}
+
 // GetNsxtAppPortProfileById retrieves NSX-T Application Port Profile by ID
 func (org *Org) GetNsxtAppPortProfileById(id string) (*NsxtAppPortProfile, error) {
 	return getNsxtAppPortProfileById(org.client, id)
