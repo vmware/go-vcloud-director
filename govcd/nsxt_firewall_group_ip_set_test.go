@@ -180,4 +180,8 @@ func (vcd *TestVCD) Test_NsxtIpSet(check *C) {
 
 	err = edgeCreatedIpSet.Delete()
 	check.Assert(err, IsNil)
+
+	// Remove Edge Gateway
+	err = movedGateway.Delete()
+	check.Assert(err, IsNil)
 }
