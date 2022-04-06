@@ -1506,15 +1506,28 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 				entity.Parent, err)
 			return
 		}
-		err = org.LdapDisable()
 
+		ldapConfig, err := org.GetLdapConfiguration()
 		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not clear LDAP settings for Org '%s': %s",
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Couldn't get LDAP settings for Org '%s': %s",
 				entity.Parent, err)
 			return
 		}
-		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+
+		// This is done to avoid calling LdapDisable() if it has been unconfigured, due to bug with Org catalog publish settings
+		if ldapConfig.OrgLdapMode != types.LdapModeNone {
+			err = org.LdapDisable()
+			if err != nil {
+				vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not clear LDAP settings for Org '%s': %s",
+					entity.Parent, err)
+				vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+				return
+			}
+		}
+
+		vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 		return
+
 	case "vdcComputePolicy":
 		if entity.Parent == "" {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for vdcComputePolicy '%s'\n", entity.Name)
