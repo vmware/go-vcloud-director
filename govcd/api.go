@@ -233,7 +233,7 @@ func (client *Client) newRequest(params map[string]string, notEncodedParams map[
 
 	// Merge in additional headers before logging if any where specified in additionalHeader
 	// parameter
-	if additionalHeader != nil && len(additionalHeader) > 0 {
+	if len(additionalHeader) > 0 {
 		for headerName, headerValueSlice := range additionalHeader {
 			for _, singleHeaderValue := range headerValueSlice {
 				req.Header.Add(headerName, singleHeaderValue)
