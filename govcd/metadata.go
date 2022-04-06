@@ -29,11 +29,7 @@ func (vm *VM) AddMetadata(key string, value string) (Task, error) {
 
 // GetMetadata returns Vdc metadata.
 func (vdc *Vdc) GetMetadata() (*types.Metadata, error) {
-	if strings.Contains(vdc.Vdc.HREF, "/api/admin/vdc/") {
-		return getMetadata(vdc.client, vdc.Vdc.HREF)
-	} else {
-		return getMetadata(vdc.client, getAdminVdcURL(vdc.Vdc.HREF))
-	}
+	return getMetadata(vdc.client, getAdminVdcURL(vdc.Vdc.HREF))
 }
 
 // Deprecated: use Vdc.DeleteMetadataEntry.
@@ -87,7 +83,7 @@ func (vdc *Vdc) DeleteMetadataAsync(key string) (Task, error) {
 }
 
 func getAdminVdcURL(vdcURL string) string {
-	return strings.Split(vdcURL, "/api/vdc/")[0] + "/api/admin/vdc/" + strings.Split(vdcURL, "/api/vdc/")[1]
+	return strings.ReplaceAll(vdcURL, "/api/vdc/", "/api/admin/vdc/")
 }
 
 // GetMetadata returns VApp metadata.
