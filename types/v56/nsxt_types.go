@@ -1106,3 +1106,101 @@ type NsxtAlbVirtualServiceApplicationProfile struct {
 	// * L4 TLS (certificate reference is mandatory)
 	Type string `json:"type"`
 }
+
+// DistributedFirewallRule represents a single Distributed Firewall rule
+type DistributedFirewallRule struct {
+	ID   string `json:"id,omitempty"`
+	Name string `json:"name"`
+
+	// Action field. Deprecated in favor of ActionValue in VCD 10.2.2+ (API V35.2)
+	Action string `json:"action,omitempty"`
+
+	// Description field is not shown in UI. 'Comments' field was introduced in 10.3.2 and is shown
+	// in UI.
+	Description string `json:"description,omitempty"`
+
+	// ApplicationPortProfiles contains a list of references to Application Port Profiles. Empty
+	// list means 'Any'
+	ApplicationPortProfiles []OpenApiReference `json:"applicationPortProfiles,omitempty"`
+
+	// SourceFirewallGroups contains a list of references to Firewall Groups. Empty list means 'Any'
+	SourceFirewallGroups []OpenApiReference `json:"sourceFirewallGroups,omitempty"`
+	// DestinationFirewallGroups contains a list of references to Firewall Groups. Empty list means
+	// 'Any'
+	DestinationFirewallGroups []OpenApiReference `json:"destinationFirewallGroups,omitempty"`
+
+	// Direction 'IN_OUT', 'OUT', 'IN'
+	Direction string `json:"direction"`
+	Enabled   bool   `json:"enabled"`
+
+	// IpProtocol 'IPV4', 'IPV6', 'IPV4_IPV6'
+	IpProtocol string `json:"ipProtocol"`
+
+	Logging bool `json:"logging"`
+
+	// NetworkContextProfiles sets  list of layer 7 network context profiles where this firewall
+	// rule is applicable. Null value or an empty list will be treated as 'ANY' which means rule
+	// applies to all applications and domains.
+	NetworkContextProfiles []OpenApiReference `json:"networkContextProfiles,omitempty"`
+
+	// Version describes the current version of the entity. To prevent clients from overwriting each
+	// other's changes, update operations must include the version which can be obtained by issuing
+	// a GET operation. If the version number on an update call is missing, the operation will be
+	// rejected. This is only needed on update calls.
+	Version *DistributedFirewallRuleVersion `json:"version,omitempty"`
+
+	// New fields starting with 35.2
+
+	// ActionValue replaces deprecated field Action and defines action to be applied to all the
+	// traffic that meets the firewall rule criteria. It determines if the rule permits or blocks
+	// traffic. Property is required if action is not set. Below are valid values:
+	// * ALLOW permits traffic to go through the firewall.
+	// * DROP blocks the traffic at the firewall. No response is sent back to the source.
+	// * REJECT blocks the traffic at the firewall. A response is sent back to the source.
+	ActionValue string `json:"actionValue,omitempty"`
+
+	// New fields starting with 36.2
+
+	// Comments permits setting text for user entered comments on the firewall rule. Length cannot
+	// exceed 2048 characters. Comments are shown in UI for 10.3.2+.
+	Comments string `json:"comments,omitempty"`
+
+	// SourceGroupsExcluded reverses the list specified in SourceFirewallGroups and the rule gets
+	// applied on all the groups that are NOT part of the SourceFirewallGroups. If false, the rule
+	// applies to the all the groups including the source groups.
+	SourceGroupsExcluded *bool `json:"sourceGroupsExcluded,omitempty"`
+
+	// DestinationGroupsExcluded reverses the list specified in DestinationFirewallGroups and the
+	// rule gets applied on all the groups that are NOT part of the DestinationFirewallGroups. If
+	// false, the rule applies to the all the groups in DestinationFirewallGroups.
+	DestinationGroupsExcluded *bool `json:"destinationGroupsExcluded,omitempty"`
+}
+
+type DistributedFirewallRules struct {
+	Values []*DistributedFirewallRule `json:"values"`
+}
+
+type DistributedFirewallRuleVersion struct {
+	Version int `json:"version"`
+}
+
+type NsxtNetworkContextProfile struct {
+	OrgRef               *OpenApiReference `json:"orgRef"`
+	ContextEntityID      interface{}       `json:"contextEntityId"`
+	NetworkProviderScope interface{}       `json:"networkProviderScope"`
+	ID                   string            `json:"id"`
+	Name                 string            `json:"name"`
+	Description          string            `json:"description"`
+
+	// Scope of NSX-T Network Context Profile
+	// SYSTEM profiles are available to all tenants. They are default profiles from the backing networking provider.
+	// PROVIDER profiles are available to all tenants. They are defined by the provider at a system level.
+	// TENANT profiles are available only to the specific tenant organization. They are defined by the tenant or by a provider on behalf of a tenant.
+	Scope      string                                `json:"scope"`
+	Attributes []NsxtNetworkContextProfileAttributes `json:"attributes"`
+}
+type NsxtNetworkContextProfileAttributes struct {
+	Type          string      `json:"type"`
+	Values        []string    `json:"values"`
+	SubAttributes interface{} `json:"subAttributes"`
+}

@@ -370,6 +370,8 @@ const (
 	OpenApiEndpointVdcGroupsCandidateVdcs             = "vdcGroups/networkingCandidateVdcs"
 	OpenApiEndpointVdcGroupsDfwPolicies               = "vdcGroups/%s/dfwPolicies"
 	OpenApiEndpointVdcGroupsDfwDefaultPolicies        = "vdcGroups/%s/dfwPolicies/default"
+	OpenApiEndpointVdcGroupsDfwRules                  = "vdcGroups/%s/dfwPolicies/%s/rules"
+	OpenApiEndpointNetworkContextProfiles             = "networkContextProfiles"
 
 	// NSX-T ALB related endpoints
 
@@ -494,4 +496,9 @@ const (
 	MetadataNumberValue   string = "MetadataNumberValue"
 	MetadataDateTimeValue string = "MetadataDateTimeValue"
 	MetadataBooleanValue  string = "MetadataBooleanValue"
+)
+
+const (
+	// DistributedFirewallPolicyDefault is a constant for "default" Distributed Firewall Policy
+	DistributedFirewallPolicyDefault = "default"
 )
