@@ -105,6 +105,7 @@
 
 ## NOTES
 * Bump `staticcheck` version to 2022.1 with Go 1.18 support ([#457](https://github.com/vmware/go-vcloud-director/pull/457))
+
 ## 2.14.0 (January 7, 2022)
 
 ## FEATURES
