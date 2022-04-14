@@ -5,7 +5,7 @@
   API v35.0 onwards. Also added UUID to the Disk structure which is a new member that is returned from v36.0 onwards. This
   member holds a UUID that can be used to correlate the disk that is attached to a particular VM from the VCD side and the
   VM host side. ([#383](https://github.com/vmware/go-vcloud-director/pull/383))
-* Added support for uploading OVF using URL `catalog.UploadOvfByLink` ([#422](https://github.com/vmware/go-vcloud-director/pull/422)], [[#426](https://github.com/vmware/go-vcloud-director/pull/426))
+* Added support for uploading OVF using URL `catalog.UploadOvfByLink` ([#422](https://github.com/vmware/go-vcloud-director/pull/422), [#426](https://github.com/vmware/go-vcloud-director/pull/426))
 * Added support for updating vApp template `vAppTemplate.UpdateAsync` and `vAppTemplate.Update` ([#422](https://github.com/vmware/go-vcloud-director/pull/422))
 * Add methods `catalog.PublishToExternalOrganizations` and `adminCatalog.PublishToExternalOrganizations` ([#424](https://github.com/vmware/go-vcloud-director/pull/424))
 * Added types `types.MetadataStringValue`, `types.MetadataNumberValue`, `types.MetadataDateTimeValue` and `types.MetadataBooleanValue` 
@@ -78,7 +78,7 @@
 * Fixed Issue where VDC creation with storage profile `enabled=false` wasn't working. `VdcStorageProfile.enabled` and `VdcStorageProfileConfiguration.enabled` changed to pointers ([#433](https://github.com/vmware/go-vcloud-director/pull/433))
 * Fixed method `client.GetStorageProfileByHref` to return IOPS `IopsSettings` ([#435](https://github.com/vmware/go-vcloud-director/pull/435))
 * `Vms.VmReference` changed to array to fix incorrect deserialization ([#436](https://github.com/vmware/go-vcloud-director/pull/436))
-* `Catalog.QueryMediaList` method was not working because fmt.Sprintf was being misused ([#441](https://github.com/vmware/go-vcloud-director/pull/441))
+* `Catalog.QueryMediaList` method was not working because `fmt.Sprintf` was being misused ([#441](https://github.com/vmware/go-vcloud-director/pull/441))
 
 ## DEPRECATIONS
 * Deprecated `vm.DeleteMetadata` in favor of `vm.DeleteMetadataEntry` ([#430](https://github.com/vmware/go-vcloud-director/pull/430))
