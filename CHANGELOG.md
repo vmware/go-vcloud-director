@@ -1,4 +1,4 @@
-## 2.15.0 (TBC)
+## 2.15.0 (April 14, 2022)
 
 ## FEATURES
 * Added support for Shareable disks, i.e., independent disks that can be attached to multiple VMs which is available from
