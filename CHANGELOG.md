@@ -16,7 +16,7 @@
 * Added support to get metadata from Catalog with method `Catalog.GetMetadata` ([#430](https://github.com/vmware/go-vcloud-director/pull/430))
 * Added to `VM` and `VApp` the methods `DeleteMetadataEntry`, `DeleteMetadataEntryAsync`, `AddMetadataEntry` and `AddMetadataEntryAsync`
   so it follows the same convention as the rest of entities that uses metadata. ([#430](https://github.com/vmware/go-vcloud-director/pull/430))
-* Added methods `vm.ChangeCPU` and `vm.ChangeMemory` which uses the latest API structure instead deprecated ones ([#432](https://github.com/vmware/go-vcloud-director/pull/432))
+* Added methods `vm.ChangeCPU` and `vm.ChangeMemory` which uses the latest API structure instead of deprecated ones ([#432](https://github.com/vmware/go-vcloud-director/pull/432))
 * Added environment variable `GOVCD_API_VERSION` so API version can be set manually ([#434](https://github.com/vmware/go-vcloud-director/pull/434))
 * Added support to set, get and delete metadata to AdminOrg with the methods
   `AdminOrg.AddMetadataEntry`, `AdminOrg.AddMetadataEntryAsync`, `AdminOrg.GetMetadata`,
@@ -47,11 +47,11 @@
   `VCDClient.GetMetadataByHref`, `VCDClient.AddMetadataEntryByHref`, `VCDClient.AddMetadataEntryByHrefAsync`,
   `VCDClient.DeleteMetadataEntryByHref` and `VCDClient.DeleteMetadataEntryByHrefAsync` ([#454](https://github.com/vmware/go-vcloud-director/pull/454))
 * Added functions `VdcGroup.GetOpenApiOrgVdcNetworkById` and `VdcGroup.CreateOpenApiOrgVdcNetwork` ([#456](https://github.com/vmware/go-vcloud-director/pull/456))
+* New method added `Disk.GetAttachedVmsHrefs` ([#436](https://github.com/vmware/go-vcloud-director/pull/436))
 
 ## IMPROVEMENTS
 * Bumped Default API Version to V35.0 ([#434](https://github.com/vmware/go-vcloud-director/pull/434))
 * Disk methods have now the ability to access new properties from API version 36.0. They are: `DiskRecordType.SharingType`, `DiskRecordType.UUID`, `DiskRecordType.Encrypted`, `Disk.SharingType`, `Disk.UUID` and `Disk.Encrypted` ([#436](https://github.com/vmware/go-vcloud-director/pull/436))
-* New method added `Disk.GetAttachedVmsHrefs` ([#436](https://github.com/vmware/go-vcloud-director/pull/436))
 * Added support for `User` entities imported from LDAP, with `IsExternal` property ([#439](https://github.com/vmware/go-vcloud-director/pull/439))
 * Added support for users list attribute for `Group` ([#439](https://github.com/vmware/go-vcloud-director/pull/439))
 * Improved `group.Update()` to avoid sending the users list to VCD to avoid unwanted errors ([#449](https://github.com/vmware/go-vcloud-director/pull/449))
