@@ -2,7 +2,7 @@
 
 ## FEATURES
 * Added support for Shareable disks, i.e., independent disks that can be attached to multiple VMs which is available from
-  API v35.0 onwards. Also added uuid to the Disk structure which is a new member that is returned from v36.0 onwards. This
+  API v35.0 onwards. Also added UUID to the Disk structure which is a new member that is returned from v36.0 onwards. This
   member holds a UUID that can be used to correlate the disk that is attached to a particular VM from the VCD side and the
   VM host side. ([#383](https://github.com/vmware/go-vcloud-director/pull/383))
 * Added support for uploading OVF using URL `catalog.UploadOvfByLink` ([#422](https://github.com/vmware/go-vcloud-director/pull/422)], [[#426](https://github.com/vmware/go-vcloud-director/pull/426))
@@ -14,10 +14,10 @@
   `AdminCatalog.AddMetadataEntry`, `AdminCatalog.AddMetadataEntryAsync`, `AdminCatalog.GetMetadata`, 
   `AdminCatalog.DeleteMetadataEntry` and `AdminCatalog.DeleteMetadataEntryAsync`. ([#430](https://github.com/vmware/go-vcloud-director/pull/430))
 * Added support to get metadata from Catalog with method `Catalog.GetMetadata` ([#430](https://github.com/vmware/go-vcloud-director/pull/430))
-* Added to *VM* and *VApp* the methods `DeleteMetadataEntry`, `DeleteMetadataEntryAsync`, `AddMetadataEntry` and `AddMetadataEntryAsync`
+* Added to `VM` and `VApp` the methods `DeleteMetadataEntry`, `DeleteMetadataEntryAsync`, `AddMetadataEntry` and `AddMetadataEntryAsync`
   so it follows the same convention as the rest of entities that uses metadata. ([#430](https://github.com/vmware/go-vcloud-director/pull/430))
-* Add methods `vm.ChangeCPU` and `vm.ChangeMemory` which uses the latest API structure instead deprecated ones ([#432](https://github.com/vmware/go-vcloud-director/pull/432))
-* Add environment variable `GOVCD_API_VERSION` so API version can be set manually ([#434](https://github.com/vmware/go-vcloud-director/pull/434))
+* Added methods `vm.ChangeCPU` and `vm.ChangeMemory` which uses the latest API structure instead deprecated ones ([#432](https://github.com/vmware/go-vcloud-director/pull/432))
+* Added environment variable `GOVCD_API_VERSION` so API version can be set manually ([#434](https://github.com/vmware/go-vcloud-director/pull/434))
 * Added support to set, get and delete metadata to AdminOrg with the methods
   `AdminOrg.AddMetadataEntry`, `AdminOrg.AddMetadataEntryAsync`, `AdminOrg.GetMetadata`,
   `AdminOrg.DeleteMetadataEntry` and `AdminOrg.DeleteMetadataEntryAsync`. ([#438](https://github.com/vmware/go-vcloud-director/pull/438))
@@ -33,11 +33,10 @@
 * Added functions `VdcGroup.GetCapabilities`, `VdcGroup.IsNsxt`,
   `VdcGroup.GetOpenApiOrgVdcNetworkByName`, `VdcGroup.GetAllOpenApiOrgVdcNetworks`,
   `Org.GetOpenApiOrgVdcNetworkByNameAndOwnerId` ([#443](https://github.com/vmware/go-vcloud-director/pull/443))
-
-* Add method `AdminOrg.FindCatalogRecords` that allows to query `types.CatalogRecord` by their catalog name. ([#450](https://github.com/vmware/go-vcloud-director/pull/450))
-* Add methods `Client.QueryWithNotEncodedParamsWithHeaders` and `Client.QueryWithNotEncodedParamsWithApiVersionWithHeaders` so HTTP headers can be added now when doing API queries. ([#450](https://github.com/vmware/go-vcloud-director/pull/450))
+* Added method `AdminOrg.FindCatalogRecords` that allows to query `types.CatalogRecord` by their catalog name. ([#450](https://github.com/vmware/go-vcloud-director/pull/450))
+* Added methods `Client.QueryWithNotEncodedParamsWithHeaders` and `Client.QueryWithNotEncodedParamsWithApiVersionWithHeaders` so HTTP headers can be added now when doing API queries. ([#450](https://github.com/vmware/go-vcloud-director/pull/450))
 * Added functions `VdcGroup.GetNsxtFirewallGroupByName` and `VdcGroup.GetNsxtFirewallGroupById` ([#451](https://github.com/vmware/go-vcloud-director/pull/451))
-* Add support for for Network Context Profile lookup using `GetAllNetworkContextProfiles` and
+* Added support for for Network Context Profile lookup using `GetAllNetworkContextProfiles` and
   `GetNetworkContextProfilesByNameScopeAndContext` functions ([#452](https://github.com/vmware/go-vcloud-director/pull/452))
 * Add support for NSX-T Distributed Firewall rule management using type `DistributedFirewall` and
 `VdcGroup.GetDistributedFirewall`, `VdcGroup.UpdateDistributedFirewall`,
@@ -50,32 +49,34 @@
 * Added functions `VdcGroup.GetOpenApiOrgVdcNetworkById` and `VdcGroup.CreateOpenApiOrgVdcNetwork` ([#456](https://github.com/vmware/go-vcloud-director/pull/456))
 
 ## IMPROVEMENTS
-* Bump Default API Version to V35.0 ([#434](https://github.com/vmware/go-vcloud-director/pull/434))
+* Bumped Default API Version to V35.0 ([#434](https://github.com/vmware/go-vcloud-director/pull/434))
 * Disk methods have now the ability to access new properties from API version 36.0. They are: `DiskRecordType.SharingType`, `DiskRecordType.UUID`, `DiskRecordType.Encrypted`, `Disk.SharingType`, `Disk.UUID` and `Disk.Encrypted` ([#436](https://github.com/vmware/go-vcloud-director/pull/436))
 * New method added `Disk.GetAttachedVmsHrefs` ([#436](https://github.com/vmware/go-vcloud-director/pull/436))
-* Add support for `User` entities imported from LDAP, with `IsExternal` property ([#439](https://github.com/vmware/go-vcloud-director/pull/439))
-* Add support for users list attribute for `Group` ([#439](https://github.com/vmware/go-vcloud-director/pull/439))
-* Improve `group.Update()` to avoid sending the users list to VCD to avoid unwanted errors ([#449](https://github.com/vmware/go-vcloud-director/pull/449))
+* Added support for `User` entities imported from LDAP, with `IsExternal` property ([#439](https://github.com/vmware/go-vcloud-director/pull/439))
+* Added support for users list attribute for `Group` ([#439](https://github.com/vmware/go-vcloud-director/pull/439))
+* Improved `group.Update()` to avoid sending the users list to VCD to avoid unwanted errors ([#449](https://github.com/vmware/go-vcloud-director/pull/449))
 * NSX-T Edge Gateway now supports VDC Groups by switching from `OrgVdc` to `OwnerRef` field.
   Additional methods `NsxtEdgeGateway.MoveToVdcOrVdcGroup()`,
   `Org.GetNsxtEdgeGatewayByNameAndOwnerId()`, `VdcGroup.GetNsxtEdgeGatewayByName()`,
   `VdcGroup.GetAllNsxtEdgeGateways()`, `org.GetVdcGroupById` ([#440](https://github.com/vmware/go-vcloud-director/pull/440))
-* Additional helper functions `OwnerIsVdcGroup()`, `OwnerIsVdc()`, `VdcGroup.GetCapabilities()`,
-  `VdcGroup.IsNsxt()` [[#440](https://github.com/vmware/go-vcloud-director/pull/440)]* Added support to set, get and delete metadata to VDC Networks with the methods
+* Added additional helper functions `OwnerIsVdcGroup()`, `OwnerIsVdc()`, `VdcGroup.GetCapabilities()`,
+  `VdcGroup.IsNsxt()` [[#440](https://github.com/vmware/go-vcloud-director/pull/440)]
+* Added support to set, get and delete metadata to VDC Networks with the methods
   `OrgVDCNetwork.AddMetadataEntry`, `OrgVDCNetwork.AddMetadataEntryAsync`, `OrgVDCNetwork.GetMetadata`,
   `OrgVDCNetwork.DeleteMetadataEntry` and `OrgVDCNetwork.DeleteMetadataEntryAsync` ([#442](https://github.com/vmware/go-vcloud-director/pull/442))
-* Add `CanPublishExternally` and `CanSubscribe` attributes to `OrgGeneralSettings` struct. ([#444](https://github.com/vmware/go-vcloud-director/pull/444))
-* Add workaround to tests for Org Catalog publishing bug when dealing with LDAP ([#458](https://github.com/vmware/go-vcloud-director/pull/458))
-* Add clean-up actions to some tests that were uploading vAppTemplates/medias to catalogs ([#458](https://github.com/vmware/go-vcloud-director/pull/458))
+* Added `CanPublishExternally` and `CanSubscribe` attributes to `OrgGeneralSettings` struct. ([#444](https://github.com/vmware/go-vcloud-director/pull/444))
+* Added workaround to tests for Org Catalog publishing bug when dealing with LDAP ([#458](https://github.com/vmware/go-vcloud-director/pull/458))
+* Added clean-up actions to some tests that were uploading vAppTemplates/medias to catalogs ([#458](https://github.com/vmware/go-vcloud-director/pull/458))
 * Added support to set, get and delete metadata to OpenAPI VDC Networks through XML with the methods
   `OpenApiOrgVdcNetwork.AddMetadataEntry`, `OpenApiOrgVdcNetwork.GetMetadata`,
   `OpenApiOrgVdcNetwork.DeleteMetadataEntry` ([#459](https://github.com/vmware/go-vcloud-director/pull/459))
 * Added `Vdc.GetNsxtAppPortProfileByName` and `VdcGroup.GetNsxtAppPortProfileByName` for NSX-T
   Application Port Profile lookup ([#460](https://github.com/vmware/go-vcloud-director/pull/460))
+
 ## BUG FIXES
-* Fixes Issue #431 "Wrong order in Task structure" ([#433](https://github.com/vmware/go-vcloud-director/pull/433))
-* Fixes Issue where VDC creation with storage profile `enabled=false` wasn't working. `VdcStorageProfile.enabled` and `VdcStorageProfileConfiguration.enabled` changed to pointers ([#433](https://github.com/vmware/go-vcloud-director/pull/433))
-* Fix method `client.GetStorageProfileByHref` to return IOPS `IopsSettings` ([#435](https://github.com/vmware/go-vcloud-director/pull/435))
+* Fixed Issue #431 "Wrong order in Task structure" ([#433](https://github.com/vmware/go-vcloud-director/pull/433))
+* Fixed Issue where VDC creation with storage profile `enabled=false` wasn't working. `VdcStorageProfile.enabled` and `VdcStorageProfileConfiguration.enabled` changed to pointers ([#433](https://github.com/vmware/go-vcloud-director/pull/433))
+* Fixed method `client.GetStorageProfileByHref` to return IOPS `IopsSettings` ([#435](https://github.com/vmware/go-vcloud-director/pull/435))
 * `Vms.VmReference` changed to array to fix incorrect deserialization ([#436](https://github.com/vmware/go-vcloud-director/pull/436))
 * `Catalog.QueryMediaList` method was not working because fmt.Sprintf was being misused ([#441](https://github.com/vmware/go-vcloud-director/pull/441))
 
@@ -104,7 +105,7 @@
 * Deprecated `vm.ChangeCPUCount` and `vm.ChangeCPUCountWithCore` in favor of `vm.ChangeCPU` ([#432](https://github.com/vmware/go-vcloud-director/pull/432))
 
 ## NOTES
-* Bump `staticcheck` version to 2022.1 with Go 1.18 support ([#457](https://github.com/vmware/go-vcloud-director/pull/457))
+* Bumped `staticcheck` version to 2022.1 with Go 1.18 support ([#457](https://github.com/vmware/go-vcloud-director/pull/457))
 
 ## 2.14.0 (January 7, 2022)
 
