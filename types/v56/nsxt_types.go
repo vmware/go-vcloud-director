@@ -220,7 +220,7 @@ type OpenApiOrgVdcNetworkDhcp struct {
 	IPAddress string `json:"ipAddress,omitempty"`
 
 	// New fields starting with 36.1
-	
+
 	// DnsServers are the IPs to be assigned by this DHCP service. The IP type must match the IP type of the subnet on
 	// which the DHCP config is being created.
 	DnsServers []string `json:"dnsServers,omitempty"`
