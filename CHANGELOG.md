@@ -1,4 +1,4 @@
-## 2.15.0 (TBC)
+## 2.16.0 (TBC)
 
 Changes in progress for v2.16.0 are available at [.changes/v2.16.0](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v2.16.0) until the release.
 
