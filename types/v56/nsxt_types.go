@@ -218,6 +218,9 @@ type OpenApiOrgVdcNetworkDhcp struct {
 	Mode string `json:"mode,omitempty"`
 	// IPAddress is only applicable when mode=NETWORK. This will specify IP address of DHCP server in network.
 	IPAddress string `json:"ipAddress,omitempty"`
+	// DnsServers are the IPs to be assigned by this DHCP service. The IP type must match the IP type of the subnet on
+	// which the DHCP config is being created.
+	DnsServers []string `json:"dnsServers,omitempty"`
 }
 
 // OpenApiOrgVdcNetworkDhcpIpRange is a type alias to fit naming
