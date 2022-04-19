@@ -88,6 +88,10 @@ var endpointElevatedApiVersions = map[string][]string{
 		"35.2", // Deprecates Action field in favor of ActionValue
 		"36.2", // Adds 3 new fields - Comments, SourceGroupsExcluded, and DestinationGroupsExcluded
 	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworksDhcp: {
+		//"32.0", // Basic minimum required version
+		"36.1", // Adds support for dnsServers
+	},
 }
 
 // checkOpenApiEndpointCompatibility checks if VCD version (to which the client is connected) is sufficient to work with
