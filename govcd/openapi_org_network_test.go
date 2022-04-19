@@ -399,18 +399,25 @@ func nsxtRoutedDhcpConfig(check *C, vdc *Vdc, orgNetId string) {
 				},
 			},
 		},
+		DnsServers: []string{
+			"8.8.8.8",
+			"8.8.4.4",
+		},
 	}
+
+	// In API versions lower than 36.1, dnsServers list does not exist
+	if vdc.client.APIVCDMaxVersionIs("< 36.1") {
+		dhcpDefinition.DnsServers = []string{}
+	}
+
 	updatedDhcp, err := vdc.UpdateOpenApiOrgVdcNetworkDhcp(orgNetId, dhcpDefinition)
 	check.Assert(err, IsNil)
 
 	check.Assert(dhcpDefinition, DeepEquals, updatedDhcp.OpenApiOrgVdcNetworkDhcp)
 
-	// VCD Versions before 10.2 do not allow to perform "DELETE" on DHCP pool
-	// To remove DHCP configuration one must remove Org VDC network itself.
-	if vdc.client.APIVCDMaxVersionIs(">= 35.0") {
-		err = vdc.DeleteOpenApiOrgVdcNetworkDhcp(orgNetId)
-		check.Assert(err, IsNil)
-	}
+	err = vdc.DeleteOpenApiOrgVdcNetworkDhcp(orgNetId)
+	check.Assert(err, IsNil)
+
 }
 
 func runOpenApiOrgVdcNetworkWithVdcGroupTest(check *C, vcd *TestVCD, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, expectNetworkType string, dhcpFunc dhcpConfigFunc) {
