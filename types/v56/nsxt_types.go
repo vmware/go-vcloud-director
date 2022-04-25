@@ -1210,3 +1210,20 @@ type NsxtNetworkContextProfileAttributes struct {
 	Values        []string    `json:"values"`
 	SubAttributes interface{} `json:"subAttributes"`
 }
+
+// NsxtSecurityTag represents An individual security tag
+type NsxtSecurityTag struct {
+	// Entities are the list of entities to tag in urn format.
+	Entities []string `json:"entities"`
+	// Tag is the tag name to use.
+	Tag string `json:"tag"`
+}
+
+// SecurityTaggedEntity is an entity that has a tag.
+type SecurityTaggedEntity struct {
+	EntityType string            `json:"entityType"`
+	ID         string            `json:"id"`
+	Name       string            `json:"name"`
+	OwnerRef   *OpenApiReference `json:"ownerRef"`
+	ParentRef  *OpenApiReference `json:"parentRef"`
+}
