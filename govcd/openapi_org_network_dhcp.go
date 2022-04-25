@@ -97,7 +97,7 @@ func (vdc *Vdc) UpdateOpenApiOrgVdcNetworkDhcp(orgNetworkId string, orgVdcNetwor
 // Network ID
 func (vdc *Vdc) DeleteOpenApiOrgVdcNetworkDhcp(orgNetworkId string) error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworksDhcp
-	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := vdc.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func (vdc *Vdc) DeleteOpenApiOrgVdcNetworkDhcp(orgNetworkId string) error {
 		return err
 	}
 
-	err = vdc.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil, nil)
+	err = vdc.client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting Org VDC network DHCP configuration: %s", err)
