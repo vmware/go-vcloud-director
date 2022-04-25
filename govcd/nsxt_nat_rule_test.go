@@ -50,57 +50,9 @@ func (vcd *TestVCD) Test_NsxtNatDnat(check *C) {
 	nsxtNatRuleChecks(natRuleDefinition, edge, check, vcd)
 }
 
-func (vcd *TestVCD) Test_NsxtNatDnatInternalPort(check *C) {
-	skipNoNsxtConfiguration(vcd, check)
-	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointFirewallGroups)
-
-	if vcd.client.Client.APIVCDMaxVersionIs(">= 35.2") {
-		check.Skip("InternalPort field is only used in older API versions (< 35.2) and is replaced by 'DnatExternalPort' field")
-	}
-
-	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
-	check.Assert(err, IsNil)
-
-	nsxtVdc, err := org.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
-	check.Assert(err, IsNil)
-
-	edge, err := nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
-	check.Assert(err, IsNil)
-
-	appPortProfiles, err := org.GetAllNsxtAppPortProfiles(nil, types.ApplicationPortProfileScopeSystem)
-	check.Assert(err, IsNil)
-
-	edgeGatewayPrimaryIp := ""
-	if edge.EdgeGateway != nil && len(edge.EdgeGateway.EdgeGatewayUplinks) > 0 && len(edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values) > 0 {
-		edgeGatewayPrimaryIp = edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP
-	}
-	check.Assert(edgeGatewayPrimaryIp, Not(Equals), "")
-
-	natRuleDefinition := &types.NsxtNatRule{
-		Name:              check.TestName() + "dnat",
-		Description:       "description",
-		Enabled:           true,
-		RuleType:          types.NsxtNatRuleTypeDnat,
-		ExternalAddresses: edgeGatewayPrimaryIp,
-		InternalAddresses: "11.11.11.2",
-		ApplicationPortProfile: &types.OpenApiReference{
-			ID:   appPortProfiles[0].NsxtAppPortProfile.ID,
-			Name: appPortProfiles[0].NsxtAppPortProfile.Name},
-		SnatDestinationAddresses: "",
-		Logging:                  true,
-		InternalPort:             "9898",
-	}
-
-	nsxtNatRuleChecks(natRuleDefinition, edge, check, vcd)
-}
-
 func (vcd *TestVCD) Test_NsxtNatDnatExternalPortPort(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointFirewallGroups)
-
-	if vcd.client.Client.APIVCDMaxVersionIs("< 35.2") {
-		check.Skip("DnatExternalPort field is only used in API V35.2 (previously 'InternalPort' field)")
-	}
 
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)

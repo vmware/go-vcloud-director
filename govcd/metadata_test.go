@@ -9,6 +9,7 @@ package govcd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 
@@ -894,6 +895,107 @@ func (vcd *TestVCD) Test_MetadataOnVdcNetworkCRUD(check *C) {
 	check.Assert(err, IsNil)
 	// Check if metadata was deleted correctly
 	metadata, err = net.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, 0)
+}
+
+func (vcd *TestVCD) Test_MetadataOnOpenApiOrgVdcNetworkCRUD(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	net, err := vcd.vdc.GetOpenApiOrgVdcNetworkByName(vcd.config.VCD.Network.Net1)
+	if err != nil {
+		check.Skip(fmt.Sprintf("Test_MetadataOnOpenApiOrgVdcNetworkCRUD: Network %s not found. Test can't proceed", vcd.config.VCD.Network.Net1))
+		return
+	}
+
+	// Check how much metadata exists
+	metadata, err := net.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	existingMetaDataCount := len(metadata.MetadataEntry)
+
+	// Add metadata
+	err = net.AddMetadataEntry(types.MetadataStringValue, "key", "value")
+	check.Assert(err, IsNil)
+
+	// Check if metadata was added correctly
+	metadata, err = net.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount+1)
+	var foundEntry *types.MetadataEntry
+	for _, entry := range metadata.MetadataEntry {
+		if entry.Key == "key" {
+			foundEntry = entry
+		}
+	}
+	check.Assert(foundEntry, NotNil)
+	check.Assert(foundEntry.Key, Equals, "key")
+	check.Assert(foundEntry.TypedValue.Value, Equals, "value")
+
+	err = net.DeleteMetadataEntry("key")
+	check.Assert(err, IsNil)
+	// Check if metadata was deleted correctly
+	metadata, err = net.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, 0)
+}
+
+func (vcd *TestVCD) Test_MetadataByHrefCRUD(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	storageProfileRef, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
+	if err != nil {
+		check.Skip(fmt.Sprintf("Test_MetadataByHrefCRUD: Storage Profile %s not found. Test can't proceed", vcd.config.VCD.StorageProfile.SP1))
+		return
+	}
+
+	storageProfileAdminHref := strings.ReplaceAll(storageProfileRef.HREF, "api", "api/admin")
+
+	// Check how much metadata exists
+	metadata, err := vcd.client.GetMetadataByHref(storageProfileAdminHref)
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	existingMetaDataCount := len(metadata.MetadataEntry)
+
+	// Add metadata
+	err = vcd.client.AddMetadataEntryByHref(storageProfileAdminHref, types.MetadataStringValue, "key", "value")
+	check.Assert(err, IsNil)
+
+	// Check if metadata was added correctly
+	metadata, err = vcd.client.GetMetadataByHref(storageProfileAdminHref)
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount+1)
+	var foundEntry *types.MetadataEntry
+	for _, entry := range metadata.MetadataEntry {
+		if entry.Key == "key" {
+			foundEntry = entry
+		}
+	}
+	check.Assert(foundEntry, NotNil)
+	check.Assert(foundEntry.Key, Equals, "key")
+	check.Assert(foundEntry.TypedValue.Value, Equals, "value")
+
+	// Check the same without admin privileges
+	metadata, err = vcd.client.GetMetadataByHref(storageProfileRef.HREF)
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount+1)
+	for _, entry := range metadata.MetadataEntry {
+		if entry.Key == "key" {
+			foundEntry = entry
+		}
+	}
+	check.Assert(foundEntry, NotNil)
+	check.Assert(foundEntry.Key, Equals, "key")
+	check.Assert(foundEntry.TypedValue.Value, Equals, "value")
+
+	// Delete the metadata
+	err = vcd.client.DeleteMetadataEntryByHref(storageProfileAdminHref, "key")
+	check.Assert(err, IsNil)
+	// Check if metadata was deleted correctly
+	metadata, err = vcd.client.GetMetadataByHref(storageProfileAdminHref)
 	check.Assert(err, IsNil)
 	check.Assert(metadata, NotNil)
 	check.Assert(len(metadata.MetadataEntry), Equals, 0)

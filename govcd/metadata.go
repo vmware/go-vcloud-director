@@ -12,6 +12,44 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+// GetMetadataByHref returns metadata from the given resource reference.
+func (vcdClient *VCDClient) GetMetadataByHref(href string) (*types.Metadata, error) {
+	return getMetadata(&vcdClient.Client, href)
+}
+
+// AddMetadataEntryByHref adds metadata typedValue and key/value pair provided as input to the given resource reference,
+// then waits for the task to finish.
+func (vcdClient *VCDClient) AddMetadataEntryByHref(href, typedValue, key, value string) error {
+	task, err := vcdClient.AddMetadataEntryByHrefAsync(href, typedValue, key, value)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+// AddMetadataEntryByHrefAsync adds metadata typedValue and key/value pair provided as input to the given resource reference
+// and returns the task.
+func (vcdClient *VCDClient) AddMetadataEntryByHrefAsync(href, typedValue, key, value string) (Task, error) {
+	return addMetadata(&vcdClient.Client, typedValue, key, value, href)
+}
+
+// DeleteMetadataEntryByHref deletes metadata from the given resource reference, depending on key provided as input
+// and waits for the task to finish.
+func (vcdClient *VCDClient) DeleteMetadataEntryByHref(href, key string) error {
+	task, err := vcdClient.DeleteMetadataEntryByHrefAsync(href, key)
+	if err != nil {
+		return err
+	}
+
+	return task.WaitTaskCompletion()
+}
+
+// DeleteMetadataEntryByHrefAsync deletes metadata from the given resource reference, depending on key provided as input
+// and returns a task.
+func (vcdClient *VCDClient) DeleteMetadataEntryByHrefAsync(href, key string) (Task, error) {
+	return deleteMetadata(&vcdClient.Client, key, href)
+}
+
 // GetMetadata returns VM metadata.
 func (vm *VM) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(vm.client, vm.VM.HREF)
@@ -838,4 +876,35 @@ func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntry(key string) error {
 // and returns a task.
 func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntryAsync(key string) (Task, error) {
 	return deleteMetadata(orgVdcNetwork.client, key, strings.ReplaceAll(orgVdcNetwork.OrgVDCNetwork.HREF, "/api/", "/api/admin/"))
+}
+
+// OpenAPI metadata functions
+
+// GetMetadata returns OpenApiOrgVdcNetwork metadata.
+// TODO: This function is currently using XML API underneath as OpenAPI metadata is supported from v37.0 and is currently in alpha at the moment. See https://github.com/vmware/go-vcloud-director/pull/455
+func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) GetMetadata() (*types.Metadata, error) {
+	return getMetadata(openApiOrgVdcNetwork.client, fmt.Sprintf("%s/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), strings.ReplaceAll(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, "urn:vcloud:network:", "")))
+}
+
+// AddMetadataEntry adds OpenApiOrgVdcNetwork metadata typedValue and key/value pair provided as input
+// and waits for the task to finish.
+// TODO: This function is currently using XML API underneath as OpenAPI metadata is supported from v37.0 and is currently in alpha at the moment. See https://github.com/vmware/go-vcloud-director/pull/455
+func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) AddMetadataEntry(typedValue, key, value string) error {
+	task, err := addMetadata(openApiOrgVdcNetwork.client, typedValue, key, value, fmt.Sprintf("%s/admin/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), strings.ReplaceAll(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, "urn:vcloud:network:", "")))
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+// DeleteMetadataEntry deletes OpenApiOrgVdcNetwork metadata depending on key provided as input
+// and waits for the task to finish.
+// TODO: This function is currently using XML API underneath as OpenAPI metadata is supported from v37.0 and is currently in alpha at the moment. // TODO: This function is currently using XML underneath as metadata is supported in v37.0 and at the moment is in alpha state. See https://github.com/vmware/go-vcloud-director/pull/455
+func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntry(key string) error {
+	task, err := deleteMetadata(openApiOrgVdcNetwork.client, key, fmt.Sprintf("%s/admin/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), strings.ReplaceAll(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, "urn:vcloud:network:", "")))
+	if err != nil {
+		return err
+	}
+
+	return task.WaitTaskCompletion()
 }
