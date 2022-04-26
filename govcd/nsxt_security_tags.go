@@ -85,7 +85,27 @@ func (org *Org) GetSecurityTagValues(filter string) ([]*types.SecurityTagValue, 
 	return securityTaggedValues, nil
 }
 
-func GetVMTags() {}
+// GetVMTags Retrieves the list of tags for a specific VM. If user has view right to the VM, user can view its tags.
+func (org *Org) GetVMSecurityTags(id string) (*types.EntitySecurityTags, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSecurityTags
+	apiVersion, err := org.client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := org.client.OpenApiBuildEndpoint(endpoint, fmt.Sprintf("/vm/%s", id))
+	if err != nil {
+		return nil, err
+	}
+
+	var entitySecurityTags types.EntitySecurityTags
+	err = org.client.OpenApiGetItem(apiVersion, urlRef, nil, &entitySecurityTags, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &entitySecurityTags, nil
+}
 
 func UpdateSecurityTag() {}
 
