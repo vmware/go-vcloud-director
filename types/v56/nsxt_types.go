@@ -1211,8 +1211,8 @@ type NsxtNetworkContextProfileAttributes struct {
 	SubAttributes interface{} `json:"subAttributes"`
 }
 
-// NsxtSecurityTag represents An individual security tag
-type NsxtSecurityTag struct {
+// SecurityTag represents An individual security tag
+type SecurityTag struct {
 	// Entities are the list of entities to tag in urn format.
 	Entities []string `json:"entities"`
 	// Tag is the tag name to use.
