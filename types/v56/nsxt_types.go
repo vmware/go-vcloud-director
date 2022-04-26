@@ -1238,3 +1238,9 @@ type SecurityTagValue struct {
 	// Tag is the value of the tag. The value is case-agnostic and will be converted to lower-case.
 	Tag string `json:"tag"`
 }
+
+// EntitySecurityTags is a list of a tags assigned to a specific entity
+type EntitySecurityTags struct {
+	// Tags is the list of tags. The value is case-agnostic and will be converted to lower-case.
+	Tags []string `json:"tags"`
+}
