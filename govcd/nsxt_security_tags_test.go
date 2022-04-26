@@ -51,3 +51,30 @@ func (vcd *TestVCD) Test_GetVMSecurityTags(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(securityTagValues, NotNil)
 }
+
+func (vcd *TestVCD) Test_UpdateSecurityTag(check *C) {
+	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointSecurityTags)
+
+	err := vcd.org.UpdateSecurityTag(&types.SecurityTag{
+		Tag: "test_tag_mike",
+		Entities: []string{
+			"urn:vcloud:vm:9f895262-2942-4826-8421-5ff3f1f53459",
+		},
+	})
+
+	check.Assert(err, NotNil)
+}
+
+func (vcd *TestVCD) Test_UpdateVMSecurityTags(check *C) {
+	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointSecurityTags)
+
+	securityTags := &types.EntitySecurityTags{
+		Tags: []string{"1", "2", "3", "4"},
+	}
+
+	outTags, err := vcd.org.UpdateVMSecurityTags("urn:vcloud:vm:9f895262-2942-4826-8421-5ff3f1f53459", securityTags)
+	check.Assert(err, IsNil)
+	check.Assert(len(outTags.Tags), Equals, 4)
+}
