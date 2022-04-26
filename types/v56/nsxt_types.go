@@ -1221,9 +1221,20 @@ type NsxtSecurityTag struct {
 
 // SecurityTaggedEntity is an entity that has a tag.
 type SecurityTaggedEntity struct {
-	EntityType string            `json:"entityType"`
-	ID         string            `json:"id"`
-	Name       string            `json:"name"`
-	OwnerRef   *OpenApiReference `json:"ownerRef"`
-	ParentRef  *OpenApiReference `json:"parentRef"`
+	// EntityType is the type of entity. Currently, only “vm” is supported.
+	EntityType string `json:"entityType"`
+	// ID is the unique identifier of the entity in URN format.
+	ID string `json:"id"`
+	// Name of the entity.
+	Name string `json:"name"`
+	// OwnerRef is the owner of the specified entity such as vDC or vDC Group. If not applicable, field is not set.
+	OwnerRef *OpenApiReference `json:"ownerRef"`
+	// ParentRef is the parent of the entity such as vApp if the entity is a VM. If not applicable, field is not set.
+	ParentRef *OpenApiReference `json:"parentRef"`
+}
+
+// SecurityTagValue describes the most basic tag structure: its value.
+type SecurityTagValue struct {
+	// Tag is the value of the tag. The value is case-agnostic and will be converted to lower-case.
+	Tag string `json:"tag"`
 }
