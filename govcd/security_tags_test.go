@@ -111,9 +111,5 @@ func checkIfSecurityTagsExist(securityTagValues []*types.SecurityTagValue, secur
 		}
 	}
 
-	if numberFound == len(securityTagName) {
-		return true
-	}
-
-	return false
+	return numberFound == len(securityTagName)
 }
