@@ -1,3 +1,6 @@
+//go:build network || nsxt || functional || openapi || ALL
+// +build network nsxt functional openapi ALL
+
 package govcd
 
 import (
