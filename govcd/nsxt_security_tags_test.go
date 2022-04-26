@@ -42,3 +42,12 @@ func (vcd *TestVCD) Test_GetSecurityTagValues(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(securityTagValues, NotNil)
 }
+
+func (vcd *TestVCD) Test_GetVMSecurityTags(check *C) {
+	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointSecurityTags)
+
+	securityTagValues, err := vcd.org.GetVMSecurityTags("urn:vcloud:vm:9f895262-2942-4826-8421-5ff3f1f53459")
+	check.Assert(err, IsNil)
+	check.Assert(securityTagValues, NotNil)
+}
