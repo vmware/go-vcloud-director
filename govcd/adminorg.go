@@ -777,7 +777,7 @@ func (adminOrg *AdminOrg) FindCatalogRecords(name string) ([]*types.CatalogRecor
 	var filter string
 	filter = fmt.Sprintf("orgName==%s", url.QueryEscape(adminOrg.AdminOrg.Name))
 	if name != "" {
-		filter = fmt.Sprintf("%s;name==%s", filter, name)
+		filter = fmt.Sprintf("%s;name==%s", filter, url.QueryEscape(name))
 	}
 
 	results, err := adminOrg.client.cumulativeQueryWithHeaders(types.QtCatalog, nil, map[string]string{
