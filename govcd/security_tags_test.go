@@ -18,12 +18,16 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 	securityTagName2 := strings.ToLower(fmt.Sprintf("%s_%d", check.TestName(), 2))
 
 	// Get testing VM ID
-	vm, _ := vcd.findFirstVm(*vcd.vapp)
+	testingVM, _ := vcd.findFirstVm(*vcd.vapp)
+	vm := &VM{
+		VM:     &testingVM,
+		client: vcd.org.client,
+	}
 
 	// Create a security tag using UpdateSecurityTag
 	err := vcd.org.UpdateSecurityTag(&types.SecurityTag{
 		Tag:      securityTagName1,
-		Entities: []string{vm.ID},
+		Entities: []string{testingVM.ID},
 	})
 	check.Assert(err, IsNil)
 
@@ -34,7 +38,7 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 			securityTagName2,
 		},
 	}
-	outputEntitySecurityTags, err := vcd.org.UpdateVMSecurityTags(vm.ID, inputEntitySecurityTags)
+	outputEntitySecurityTags, err := vm.UpdateVMSecurityTags(inputEntitySecurityTags)
 	check.Assert(err, IsNil)
 	check.Assert(outputEntitySecurityTags, DeepEquals, inputEntitySecurityTags)
 
@@ -45,7 +49,7 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 
 	var securityTaggedEntity *types.SecurityTaggedEntity
 	for _, v := range securityTaggedEntities {
-		if v.ID == vm.ID {
+		if v.ID == testingVM.ID {
 			securityTaggedEntity = v
 			break
 		}
@@ -79,7 +83,7 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 	check.Assert(checkIfSecurityTagsExist(securityTagValues, securityTagName1, securityTagName2), Equals, true)
 
 	// Get security tags by VM
-	entitySecurityTags, err := vcd.org.GetVMSecurityTags(vm.ID)
+	entitySecurityTags, err := vm.GetVMSecurityTags()
 	check.Assert(err, IsNil)
 	check.Assert(securityTagValues, NotNil)
 	check.Assert(contains(securityTagName1, entitySecurityTags.Tags), Equals, true)
