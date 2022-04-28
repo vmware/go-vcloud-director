@@ -40,6 +40,7 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 	}
 	outputEntitySecurityTags, err := vm.UpdateVMSecurityTags(inputEntitySecurityTags)
 	check.Assert(err, IsNil)
+	check.Assert(outputEntitySecurityTags, NotNil)
 	check.Assert(outputEntitySecurityTags, DeepEquals, inputEntitySecurityTags)
 
 	// Check that the VM with security tags is retrieved using GetSecurityTaggedEntities
