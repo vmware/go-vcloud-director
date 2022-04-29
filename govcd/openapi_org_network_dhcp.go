@@ -27,7 +27,7 @@ func (vdc *Vdc) GetOpenApiOrgVdcNetworkDhcp(orgNetworkId string) (*OpenApiOrgVdc
 	queryParameters := queryParameterFilterAnd("orgVdc.id=="+vdc.Vdc.ID, params)
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworksDhcp
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (vdc *Vdc) GetOpenApiOrgVdcNetworkDhcp(orgNetworkId string) (*OpenApiOrgVdc
 		client:                   client,
 	}
 
-	err = client.OpenApiGetItem(minimumApiVersion, urlRef, queryParameters, orgNetDhcp.OpenApiOrgVdcNetworkDhcp, nil)
+	err = client.OpenApiGetItem(apiVersion, urlRef, queryParameters, orgNetDhcp.OpenApiOrgVdcNetworkDhcp, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (vdc *Vdc) GetOpenApiOrgVdcNetworkDhcp(orgNetworkId string) (*OpenApiOrgVdc
 // ID specified as orgNetworkId using OpenAPI
 func (vdc *Vdc) UpdateOpenApiOrgVdcNetworkDhcp(orgNetworkId string, orgVdcNetworkDhcpConfig *types.OpenApiOrgVdcNetworkDhcp) (*OpenApiOrgVdcNetworkDhcp, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworksDhcp
-	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := vdc.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (vdc *Vdc) UpdateOpenApiOrgVdcNetworkDhcp(orgNetworkId string, orgVdcNetwor
 		orgVdcNetworkDhcpConfig.Mode = "EDGE"
 	}
 
-	err = vdc.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, orgVdcNetworkDhcpConfig, orgNetDhcpResponse.OpenApiOrgVdcNetworkDhcp, nil)
+	err = vdc.client.OpenApiPutItem(apiVersion, urlRef, nil, orgVdcNetworkDhcpConfig, orgNetDhcpResponse.OpenApiOrgVdcNetworkDhcp, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error updating Org VDC network DHCP configuration: %s", err)
 	}
@@ -95,12 +95,9 @@ func (vdc *Vdc) UpdateOpenApiOrgVdcNetworkDhcp(orgNetworkId string, orgVdcNetwor
 
 // DeleteOpenApiOrgVdcNetworkDhcp allows to perform HTTP DELETE request on DHCP pool configuration for specified Org VDC
 // Network ID
-//
-// Note. VCD Versions before 10.2 do not allow to perform "DELETE" on DHCP pool and will return error. The way to
-// remove DHCP configuration is to recreate Org VDC network itself.
 func (vdc *Vdc) DeleteOpenApiOrgVdcNetworkDhcp(orgNetworkId string) error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworksDhcp
-	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := vdc.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
 	}
@@ -114,7 +111,7 @@ func (vdc *Vdc) DeleteOpenApiOrgVdcNetworkDhcp(orgNetworkId string) error {
 		return err
 	}
 
-	err = vdc.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil, nil)
+	err = vdc.client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting Org VDC network DHCP configuration: %s", err)
