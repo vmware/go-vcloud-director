@@ -25,7 +25,7 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 	}
 
 	// Create a security tag using UpdateSecurityTag
-	err := vcd.org.UpdateSecurityTag(&types.SecurityTag{
+	err := vcd.client.UpdateSecurityTag(&types.SecurityTag{
 		Tag:      securityTagName1,
 		Entities: []string{testingVM.ID},
 	})
@@ -38,13 +38,13 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 			securityTagName2,
 		},
 	}
-	outputEntitySecurityTags, err := vm.UpdateVMSecurityTags(inputEntitySecurityTags)
+	outputEntitySecurityTags, err := vcd.client.UpdateVMSecurityTags(vm.VM.ID, inputEntitySecurityTags)
 	check.Assert(err, IsNil)
 	check.Assert(outputEntitySecurityTags, NotNil)
 	check.Assert(outputEntitySecurityTags, DeepEquals, inputEntitySecurityTags)
 
 	// Check that the VM with security tags is retrieved using GetSecurityTaggedEntities
-	securityTaggedEntities, err := vcd.org.GetSecurityTaggedEntities("")
+	securityTaggedEntities, err := vcd.client.GetSecurityTaggedEntities("")
 	check.Assert(err, IsNil)
 	check.Assert(securityTaggedEntities, NotNil)
 
@@ -84,20 +84,20 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 	check.Assert(checkIfSecurityTagsExist(securityTagValues, securityTagName1, securityTagName2), Equals, true)
 
 	// Get security tags by VM
-	entitySecurityTags, err := vm.GetVMSecurityTags()
+	entitySecurityTags, err := vcd.client.GetVMSecurityTags(vm.VM.ID)
 	check.Assert(err, IsNil)
 	check.Assert(securityTagValues, NotNil)
 	check.Assert(contains(securityTagName1, entitySecurityTags.Tags), Equals, true)
 	check.Assert(contains(securityTagName2, entitySecurityTags.Tags), Equals, true)
 
 	// Remove tags
-	err = vcd.org.UpdateSecurityTag(&types.SecurityTag{
+	err = vcd.client.UpdateSecurityTag(&types.SecurityTag{
 		Tag:      securityTagName1,
 		Entities: []string{},
 	})
 	check.Assert(err, IsNil)
 
-	err = vcd.org.UpdateSecurityTag(&types.SecurityTag{
+	err = vcd.client.UpdateSecurityTag(&types.SecurityTag{
 		Tag:      securityTagName2,
 		Entities: []string{},
 	})
