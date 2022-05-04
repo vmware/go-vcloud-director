@@ -25,11 +25,14 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 	}
 
 	// Create a security tag using UpdateSecurityTag
-	err := vcd.client.UpdateSecurityTag(&types.SecurityTag{
+	sentSecurityTag := &types.SecurityTag{
 		Tag:      securityTagName1,
 		Entities: []string{testingVM.ID},
-	})
+	}
+
+	receivedSecurityTag, err := vcd.client.UpdateSecurityTag(sentSecurityTag)
 	check.Assert(err, IsNil)
+	check.Assert(sentSecurityTag, DeepEquals, receivedSecurityTag)
 
 	// Create a security tag using UpdateVMSecurityTags
 	inputEntitySecurityTags := &types.EntitySecurityTags{
@@ -38,7 +41,7 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 			securityTagName2,
 		},
 	}
-	outputEntitySecurityTags, err := vcd.client.UpdateVMSecurityTags(vm.VM.ID, inputEntitySecurityTags)
+	outputEntitySecurityTags, err := vm.UpdateVMSecurityTags(inputEntitySecurityTags)
 	check.Assert(err, IsNil)
 	check.Assert(outputEntitySecurityTags, NotNil)
 	check.Assert(outputEntitySecurityTags, DeepEquals, inputEntitySecurityTags)
@@ -84,25 +87,32 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 	check.Assert(checkIfSecurityTagsExist(securityTagValues, securityTagName1, securityTagName2), Equals, true)
 
 	// Get security tags by VM
-	entitySecurityTags, err := vcd.client.GetVMSecurityTags(vm.VM.ID)
+	entitySecurityTags, err := vm.GetVMSecurityTags()
 	check.Assert(err, IsNil)
 	check.Assert(securityTagValues, NotNil)
 	check.Assert(contains(securityTagName1, entitySecurityTags.Tags), Equals, true)
 	check.Assert(contains(securityTagName2, entitySecurityTags.Tags), Equals, true)
 
 	// Remove tags
-	err = vcd.client.UpdateSecurityTag(&types.SecurityTag{
+	sentSecurityTag = &types.SecurityTag{
 		Tag:      securityTagName1,
 		Entities: []string{},
-	})
-	check.Assert(err, IsNil)
+	}
 
-	err = vcd.client.UpdateSecurityTag(&types.SecurityTag{
+	receivedSecurityTag, err = vcd.client.UpdateSecurityTag(sentSecurityTag)
+	check.Assert(err, IsNil)
+	check.Assert(receivedSecurityTag.Tag, Equals, sentSecurityTag.Tag)
+	check.Assert(len(receivedSecurityTag.Entities), Equals, 0)
+
+	sentSecurityTag2 := &types.SecurityTag{
 		Tag:      securityTagName2,
 		Entities: []string{},
-	})
-	check.Assert(err, IsNil)
+	}
 
+	receivedSecurityTag2, err := vcd.client.UpdateSecurityTag(sentSecurityTag2)
+	check.Assert(err, IsNil)
+	check.Assert(receivedSecurityTag2.Tag, Equals, sentSecurityTag2.Tag)
+	check.Assert(len(receivedSecurityTag2.Entities), Equals, 0)
 }
 
 func checkIfSecurityTagsExist(securityTagValues []*types.SecurityTagValue, securityTagName ...string) bool {
