@@ -88,20 +88,20 @@ func (org *Org) GetSecurityTagValues(filter string) ([]*types.SecurityTagValue, 
 
 // GetVMSecurityTags Retrieves the list of tags for a specific VM. If user has view right to the VM, user can view its tags.
 // This function works from API v36.1 (VCD 10.3.1+)
-func (vcdClient *VCDClient) GetVMSecurityTags(id string) (*types.EntitySecurityTags, error) {
+func (vm *VM) GetVMSecurityTags() (*types.EntitySecurityTags, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSecurityTags
-	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
+	apiVersion, err := vm.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint, fmt.Sprintf("/vm/%s", id))
+	urlRef, err := vm.client.OpenApiBuildEndpoint(endpoint, fmt.Sprintf("/vm/%s", vm.VM.ID))
 	if err != nil {
 		return nil, err
 	}
 
 	var entitySecurityTags types.EntitySecurityTags
-	err = vcdClient.Client.OpenApiGetItem(apiVersion, urlRef, nil, &entitySecurityTags, nil)
+	err = vm.client.OpenApiGetItem(apiVersion, urlRef, nil, &entitySecurityTags, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -113,43 +113,57 @@ func (vcdClient *VCDClient) GetVMSecurityTags(id string) (*types.EntitySecurityT
 // Only the list of tagged entities can be updated. The name cannot be updated.
 // Any other existing entities not in the list will be untagged.
 // This function works from API v36.1 (VCD 10.3.1+)
-func (vcdClient *VCDClient) UpdateSecurityTag(securityTag *types.SecurityTag) error {
+func (vcdClient *VCDClient) UpdateSecurityTag(securityTag *types.SecurityTag) (*types.SecurityTag, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSecurityTags
 	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint, "/tag")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = vcdClient.Client.OpenApiPutItem(apiVersion, urlRef, nil, securityTag, nil, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	readEntities, err := vcdClient.GetSecurityTaggedEntities(fmt.Sprintf("tag==%s", securityTag.Tag))
+	if err != nil {
+		return nil, err
+	}
+
+	returnSecurityTags := &types.SecurityTag{
+		Tag:      securityTag.Tag,
+		Entities: make([]string, len(readEntities)),
+	}
+
+	for i, entity := range readEntities {
+		returnSecurityTags.Entities[i] = entity.ID
+	}
+
+	return returnSecurityTags, nil
 }
 
 // UpdateVMSecurityTags updates the list of tags for a specific VM. An empty list of tags means to delete all dags
 // for the VM. If user has edit permission on the VM, user can edit its tags.
 // This function works from API v36.1 (VCD 10.3.1+)
-func (vcdClient *VCDClient) UpdateVMSecurityTags(id string, entitySecurityTags *types.EntitySecurityTags) (*types.EntitySecurityTags, error) {
+func (vm *VM) UpdateVMSecurityTags(entitySecurityTags *types.EntitySecurityTags) (*types.EntitySecurityTags, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSecurityTags
-	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
+	apiVersion, err := vm.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint, fmt.Sprintf("/vm/%s", id))
+	urlRef, err := vm.client.OpenApiBuildEndpoint(endpoint, fmt.Sprintf("/vm/%s", vm.VM.ID))
 	if err != nil {
 		return nil, err
 	}
 
 	var serverEntitySecurityTags types.EntitySecurityTags
-	err = vcdClient.Client.OpenApiPutItem(apiVersion, urlRef, nil, entitySecurityTags, &serverEntitySecurityTags, nil)
+	err = vm.client.OpenApiPutItem(apiVersion, urlRef, nil, entitySecurityTags, &serverEntitySecurityTags, nil)
 	if err != nil {
 		return nil, err
 	}
