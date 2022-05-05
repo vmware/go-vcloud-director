@@ -1529,16 +1529,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		return
 
 	case "vdcComputePolicy":
-		if entity.Parent == "" {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for vdcComputePolicy '%s'\n", entity.Name)
-			return
-		}
-		org, err := vcd.client.GetAdminOrgByName(entity.Parent)
-		if err != nil {
-			vcd.infoCleanup(notFoundMsg, "org", entity.Parent)
-			return
-		}
-		policy, err := org.GetVdcComputePolicyById(entity.Name)
+		policy, err := vcd.client.Client.GetVdcComputePolicyById(entity.Name)
 		if policy == nil || err != nil {
 			vcd.infoCleanup(notFoundMsg, "vdcComputePolicy", entity.Name)
 			return
