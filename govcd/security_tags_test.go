@@ -69,8 +69,8 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 
 	// Check that security tags added before exist (As org adm)
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
-	check.Assert(adminOrg, NotNil)
 	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
 
 	userName := strings.ToLower(check.TestName())
 	fmt.Printf("# Running Get Security Tag Values test as Org Admin user '%s'\n", userName)
