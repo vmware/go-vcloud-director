@@ -16,6 +16,7 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 
 	securityTagName1 := strings.ToLower(fmt.Sprintf("%s_%d", check.TestName(), 1)) // Security tags are always lowercase in server-side
 	securityTagName2 := strings.ToLower(fmt.Sprintf("%s_%d", check.TestName(), 2))
+	nonExistingSecurityTag := "icompletelymadeupthistag1234"
 
 	// Get testing Org
 	testingOrg, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
@@ -38,6 +39,17 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 	receivedSecurityTag, err := testingOrg.UpdateSecurityTag(sentSecurityTag)
 	check.Assert(err, IsNil)
 	check.Assert(sentSecurityTag, DeepEquals, receivedSecurityTag)
+
+	// Check that the security tag exist using Org.GetAllSecurityTaggedEntitiesByName
+	securityTagEntities, err := testingOrg.GetAllSecurityTaggedEntitiesByName(securityTagName1)
+	check.Assert(err, IsNil)
+	check.Assert(len(securityTagEntities) > 0, Equals, true)
+
+	// Check that ErrorEntityNotFound is returned if no entities where found with Org.GetAllSecurityTaggedEntitiesByName
+	securityTagEntities, err = testingOrg.GetAllSecurityTaggedEntitiesByName(nonExistingSecurityTag)
+	check.Assert(err, NotNil)
+	check.Assert(err, Equals, ErrorEntityNotFound)
+	check.Assert(securityTagEntities, IsNil)
 
 	// Create a security tag using UpdateVMSecurityTags
 	inputEntitySecurityTags := &types.EntitySecurityTags{
