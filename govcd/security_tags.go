@@ -1,52 +1,45 @@
 package govcd
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/url"
 )
 
-// GetSecurityTaggedEntities Retrieves the list of entities that have at least one tag assigned to it.
+// GetAllSecurityTaggedEntities Retrieves the list of entities that have at least one tag assigned to it.
 // Besides, entityType, additional supported filters are:
 //   - tag - The tag to search by. I.e: filter=(tag==Web;entityType==vm)
 // This function works from API v36.1 (VCD 10.3.1+)
-func (vcdClient *VCDClient) GetSecurityTaggedEntities(filter string) ([]*types.SecurityTaggedEntity, error) {
+func (org *Org) GetAllSecurityTaggedEntities(queryParameters url.Values) ([]types.SecurityTaggedEntity, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSecurityTags
-	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
+	apiVersion, err := org.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint, "/entities")
+	urlRef, err := org.client.OpenApiBuildEndpoint(endpoint, "/entities")
 	if err != nil {
 		return nil, err
 	}
 
-	queryParams := url.Values{}
-	queryParams.Set("filter", filter)
-	rawValues, err := vcdClient.Client.openApiGetAllPages(apiVersion, urlRef, queryParams, nil, nil, nil)
+	tenantContext, err := org.getTenantContext()
 	if err != nil {
 		return nil, err
 	}
 
-	securityTaggedEntities := make([]*types.SecurityTaggedEntity, len(rawValues))
-
-	for i, k := range rawValues {
-		var temp types.SecurityTaggedEntity
-		err = json.Unmarshal(k, &temp)
-		if err != nil {
-			return nil, fmt.Errorf("error when unmarshalling SecurityTaggedEntity - %s", err)
-		}
-		securityTaggedEntities[i] = &temp
+	var securityTaggedEntities []types.SecurityTaggedEntity
+	err = org.client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &securityTaggedEntities, getTenantContextHeader(tenantContext))
+	if err != nil {
+		return nil, err
 	}
+
 	return securityTaggedEntities, nil
 }
 
-// GetSecurityTagValues Retrieves the list of security tags that are in the organization and can be reused to tag an entity.
+// GetAllSecurityTagValues Retrieves the list of security tags that are in the organization and can be reused to tag an entity.
 // The list of tags include tags assigned to entities within the organization.
 // This function works from API v36.1 (VCD 10.3.1+)
-func (org *Org) GetSecurityTagValues(filter string) ([]*types.SecurityTagValue, error) {
+func (org *Org) GetAllSecurityTagValues(queryParameters url.Values) ([]types.SecurityTagValue, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSecurityTags
 	apiVersion, err := org.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
@@ -58,29 +51,15 @@ func (org *Org) GetSecurityTagValues(filter string) ([]*types.SecurityTagValue, 
 		return nil, err
 	}
 
-	// If sysadmin, getting the org context and this method only works for org users
-	orgContextHeaders := make(map[string]string)
-	if org.client.IsSysAdmin {
-		orgContextHeaders["X-VMWARE-VCLOUD-AUTH-CONTEXT"] = org.Org.Name
-		orgContextHeaders["X-VMWARE-VCLOUD-TENANT-CONTEXT"] = org.Org.ID
-	}
-
-	queryParams := url.Values{}
-	queryParams.Set("filter", filter)
-	rawValues, err := org.client.openApiGetAllPages(apiVersion, urlRef, queryParams, nil, nil, orgContextHeaders)
+	tenantContext, err := org.getTenantContext()
 	if err != nil {
 		return nil, err
 	}
 
-	securityTaggedValues := make([]*types.SecurityTagValue, len(rawValues))
-
-	for i, k := range rawValues {
-		var temp types.SecurityTagValue
-		err = json.Unmarshal(k, &temp)
-		if err != nil {
-			return nil, fmt.Errorf("error when unmarshalling SecurityTaggedEntity - %s", err)
-		}
-		securityTaggedValues[i] = &temp
+	var securityTaggedValues []types.SecurityTagValue
+	err = org.client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &securityTaggedValues, getTenantContextHeader(tenantContext))
+	if err != nil {
+		return nil, err
 	}
 
 	return securityTaggedValues, nil
@@ -113,24 +92,31 @@ func (vm *VM) GetVMSecurityTags() (*types.EntitySecurityTags, error) {
 // Only the list of tagged entities can be updated. The name cannot be updated.
 // Any other existing entities not in the list will be untagged.
 // This function works from API v36.1 (VCD 10.3.1+)
-func (vcdClient *VCDClient) UpdateSecurityTag(securityTag *types.SecurityTag) (*types.SecurityTag, error) {
+func (org *Org) UpdateSecurityTag(securityTag *types.SecurityTag) (*types.SecurityTag, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSecurityTags
-	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
+	apiVersion, err := org.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint, "/tag")
+	urlRef, err := org.client.OpenApiBuildEndpoint(endpoint, "/tag")
 	if err != nil {
 		return nil, err
 	}
 
-	err = vcdClient.Client.OpenApiPutItem(apiVersion, urlRef, nil, securityTag, nil, nil)
+	tenantContext, err := org.getTenantContext()
 	if err != nil {
 		return nil, err
 	}
 
-	readEntities, err := vcdClient.GetSecurityTaggedEntities(fmt.Sprintf("tag==%s", securityTag.Tag))
+	err = org.client.OpenApiPutItem(apiVersion, urlRef, nil, securityTag, nil, getTenantContextHeader(tenantContext))
+	if err != nil {
+		return nil, err
+	}
+
+	queryParameters := copyOrNewUrlValues(nil)
+	queryParameters.Add("filter", "tag=="+securityTag.Tag)
+	readEntities, err := org.GetAllSecurityTaggedEntities(queryParameters)
 	if err != nil {
 		return nil, err
 	}
