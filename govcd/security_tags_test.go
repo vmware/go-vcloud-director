@@ -17,7 +17,12 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 	securityTagName1 := strings.ToLower(fmt.Sprintf("%s_%d", check.TestName(), 1)) // Security tags are always lowercase in server-side
 	securityTagName2 := strings.ToLower(fmt.Sprintf("%s_%d", check.TestName(), 2))
 
-	// Get testing VM ID
+	// Get testing Org
+	testingOrg, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(testingOrg, NotNil)
+
+	// Get testing VM
 	testingVM, _ := vcd.findFirstVm(*vcd.vapp)
 	vm := &VM{
 		VM:     &testingVM,
@@ -30,7 +35,7 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 		Entities: []string{testingVM.ID},
 	}
 
-	receivedSecurityTag, err := vcd.client.UpdateSecurityTag(sentSecurityTag)
+	receivedSecurityTag, err := testingOrg.UpdateSecurityTag(sentSecurityTag)
 	check.Assert(err, IsNil)
 	check.Assert(sentSecurityTag, DeepEquals, receivedSecurityTag)
 
@@ -47,11 +52,11 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 	check.Assert(outputEntitySecurityTags, DeepEquals, inputEntitySecurityTags)
 
 	// Check that the VM with security tags is retrieved using GetSecurityTaggedEntities
-	securityTaggedEntities, err := vcd.client.GetSecurityTaggedEntities("")
+	securityTaggedEntities, err := testingOrg.GetAllSecurityTaggedEntities(nil)
 	check.Assert(err, IsNil)
-	check.Assert(securityTaggedEntities, NotNil)
+	check.Assert(len(securityTaggedEntities) > 0, Equals, true)
 
-	var securityTaggedEntity *types.SecurityTaggedEntity
+	var securityTaggedEntity types.SecurityTaggedEntity
 	for _, v := range securityTaggedEntities {
 		if v.ID == testingVM.ID {
 			securityTaggedEntity = v
@@ -62,9 +67,9 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 	check.Assert(securityTaggedEntity, NotNil)
 
 	// Check that security tags added before exist (As sysadm)
-	securityTagValues, err := vcd.org.GetSecurityTagValues("")
+	securityTagValues, err := testingOrg.GetAllSecurityTagValues(nil)
 	check.Assert(err, IsNil)
-	check.Assert(securityTagValues, NotNil)
+	check.Assert(len(securityTagValues) > 0, Equals, true)
 	check.Assert(checkIfSecurityTagsExist(securityTagValues, securityTagName1, securityTagName2), Equals, true)
 
 	// Check that security tags added before exist (As org adm)
@@ -81,9 +86,9 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 	orgUserOrg, err := orgUserVcdClient.GetOrgById(adminOrg.AdminOrg.ID)
 	check.Assert(err, IsNil)
 
-	securityTagValues, err = orgUserOrg.GetSecurityTagValues("")
+	securityTagValues, err = orgUserOrg.GetAllSecurityTagValues(nil)
 	check.Assert(err, IsNil)
-	check.Assert(securityTagValues, NotNil)
+	check.Assert(len(securityTagValues) > 0, Equals, true)
 	check.Assert(checkIfSecurityTagsExist(securityTagValues, securityTagName1, securityTagName2), Equals, true)
 
 	// Get security tags by VM
@@ -99,7 +104,7 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 		Entities: []string{},
 	}
 
-	receivedSecurityTag, err = vcd.client.UpdateSecurityTag(sentSecurityTag)
+	receivedSecurityTag, err = testingOrg.UpdateSecurityTag(sentSecurityTag)
 	check.Assert(err, IsNil)
 	check.Assert(receivedSecurityTag.Tag, Equals, sentSecurityTag.Tag)
 	check.Assert(len(receivedSecurityTag.Entities), Equals, 0)
@@ -109,13 +114,13 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 		Entities: []string{},
 	}
 
-	receivedSecurityTag2, err := vcd.client.UpdateSecurityTag(sentSecurityTag2)
+	receivedSecurityTag2, err := testingOrg.UpdateSecurityTag(sentSecurityTag2)
 	check.Assert(err, IsNil)
 	check.Assert(receivedSecurityTag2.Tag, Equals, sentSecurityTag2.Tag)
 	check.Assert(len(receivedSecurityTag2.Entities), Equals, 0)
 }
 
-func checkIfSecurityTagsExist(securityTagValues []*types.SecurityTagValue, securityTagName ...string) bool {
+func checkIfSecurityTagsExist(securityTagValues []types.SecurityTagValue, securityTagName ...string) bool {
 	var numberFound int
 	for _, v := range securityTagName {
 		for _, tag := range securityTagValues {
