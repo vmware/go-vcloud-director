@@ -36,6 +36,23 @@ func (org *Org) GetAllSecurityTaggedEntities(queryParameters url.Values) ([]type
 	return securityTaggedEntities, nil
 }
 
+// GetAllSecurityTaggedEntitiesByName wraps GetAllSecurityTaggedEntities and returns ErrorEntityNotFound if nothing was found
+func (org *Org) GetAllSecurityTaggedEntitiesByName(securityTagName string) ([]types.SecurityTaggedEntity, error) {
+	queryParameters := copyOrNewUrlValues(nil)
+	queryParameters.Add("filter", "tag=="+securityTagName)
+
+	securityTagEntities, err := org.GetAllSecurityTaggedEntities(queryParameters)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(securityTagEntities) == 0 {
+		return nil, ErrorEntityNotFound
+	}
+
+	return securityTagEntities, nil
+}
+
 // GetAllSecurityTagValues Retrieves the list of security tags that are in the organization and can be reused to tag an entity.
 // The list of tags include tags assigned to entities within the organization.
 // This function works from API v36.1 (VCD 10.3.1+)
