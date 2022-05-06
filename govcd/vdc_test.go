@@ -487,3 +487,7 @@ func (vcd *TestVCD) TestCreateRawVapp(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 }
+
+func (vcd *TestVCD) TestSetControlAccess(check *C) {
+	
+}
