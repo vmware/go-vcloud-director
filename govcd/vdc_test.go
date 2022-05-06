@@ -489,5 +489,21 @@ func (vcd *TestVCD) TestCreateRawVapp(check *C) {
 }
 
 func (vcd *TestVCD) TestSetControlAccess(check *C) {
-	
+	// Set VDC sharing to everyone
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	controlAccessParams := &types.ControlAccessParams{
+		Xmlns:               types.XMLNamespaceVCloud,
+		IsSharedToEveryone:  true,
+		EveryoneAccessLevel: takeStringPointer("ReadOnly"),
+	}
+	readControlAccessParams, err := vdc.SetControlAccess(controlAccessParams)
+	check.Assert(err, IsNil)
+	check.Assert(readControlAccessParams, NotNil)
 }
