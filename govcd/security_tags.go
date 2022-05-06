@@ -7,9 +7,8 @@ import (
 )
 
 // GetAllSecurityTaggedEntities Retrieves the list of entities that have at least one tag assigned to it.
-// Besides, entityType, additional supported filters are:
-//   - tag - The tag to search by. I.e: filter=(tag==Web;entityType==vm)
-// This function works from API v36.1 (VCD 10.3.1+)
+// queryParameters allows users to pass filters: I.e: filter=(tag==Web;entityType==vm)
+// This function works from API v36.0 (VCD 10.3.0+)
 func (org *Org) GetAllSecurityTaggedEntities(queryParameters url.Values) ([]types.SecurityTaggedEntity, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSecurityTags
 	apiVersion, err := org.client.getOpenApiHighestElevatedVersion(endpoint)
@@ -37,6 +36,7 @@ func (org *Org) GetAllSecurityTaggedEntities(queryParameters url.Values) ([]type
 }
 
 // GetAllSecurityTaggedEntitiesByName wraps GetAllSecurityTaggedEntities and returns ErrorEntityNotFound if nothing was found
+// This function works from API v36.0 (VCD 10.3.0+)
 func (org *Org) GetAllSecurityTaggedEntitiesByName(securityTagName string) ([]types.SecurityTaggedEntity, error) {
 	queryParameters := copyOrNewUrlValues(nil)
 	queryParameters.Add("filter", "tag=="+securityTagName)
@@ -55,7 +55,7 @@ func (org *Org) GetAllSecurityTaggedEntitiesByName(securityTagName string) ([]ty
 
 // GetAllSecurityTagValues Retrieves the list of security tags that are in the organization and can be reused to tag an entity.
 // The list of tags include tags assigned to entities within the organization.
-// This function works from API v36.1 (VCD 10.3.1+)
+// This function works from API v36.0 (VCD 10.3.0+)
 func (org *Org) GetAllSecurityTagValues(queryParameters url.Values) ([]types.SecurityTagValue, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSecurityTags
 	apiVersion, err := org.client.getOpenApiHighestElevatedVersion(endpoint)
@@ -83,7 +83,7 @@ func (org *Org) GetAllSecurityTagValues(queryParameters url.Values) ([]types.Sec
 }
 
 // GetVMSecurityTags Retrieves the list of tags for a specific VM. If user has view right to the VM, user can view its tags.
-// This function works from API v36.1 (VCD 10.3.1+)
+// This function works from API v36.0 (VCD 10.3.0+)
 func (vm *VM) GetVMSecurityTags() (*types.EntitySecurityTags, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSecurityTags
 	apiVersion, err := vm.client.getOpenApiHighestElevatedVersion(endpoint)
@@ -108,7 +108,7 @@ func (vm *VM) GetVMSecurityTags() (*types.EntitySecurityTags, error) {
 // UpdateSecurityTag updates the entities associated with a Security Tag.
 // Only the list of tagged entities can be updated. The name cannot be updated.
 // Any other existing entities not in the list will be untagged.
-// This function works from API v36.1 (VCD 10.3.1+)
+// This function works from API v36.0 (VCD 10.3.0+)
 func (org *Org) UpdateSecurityTag(securityTag *types.SecurityTag) (*types.SecurityTag, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSecurityTags
 	apiVersion, err := org.client.getOpenApiHighestElevatedVersion(endpoint)
@@ -150,9 +150,9 @@ func (org *Org) UpdateSecurityTag(securityTag *types.SecurityTag) (*types.Securi
 	return returnSecurityTags, nil
 }
 
-// UpdateVMSecurityTags updates the list of tags for a specific VM. An empty list of tags means to delete all dags
+// UpdateVMSecurityTags updates the list of tags for a specific VM. An empty list of tags means to delete all tags
 // for the VM. If user has edit permission on the VM, user can edit its tags.
-// This function works from API v36.1 (VCD 10.3.1+)
+// This function works from API v36.0 (VCD 10.3.0+)
 func (vm *VM) UpdateVMSecurityTags(entitySecurityTags *types.EntitySecurityTags) (*types.EntitySecurityTags, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSecurityTags
 	apiVersion, err := vm.client.getOpenApiHighestElevatedVersion(endpoint)
