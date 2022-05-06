@@ -1234,12 +1234,7 @@ func (vdc *Vdc) getParentOrg() (organization, error) {
 }
 
 func (vdc *Vdc) GetControlAccess() (*types.ControlAccessParams, error) {
-	accessControlLink := vdc.getLinkHref(types.RelControlAccess, types.MimeControlAccess)
-	if accessControlLink == "" {
-		return nil, fmt.Errorf("control access link for VDC wasn't found")
-	}
-
-	controlAccessParams, err := vdc.client.GetAccessControl(accessControlLink, "vdc", vdc.Vdc.Name, nil)
+	controlAccessParams, err := vdc.client.GetAccessControl(vdc.Vdc.HREF, "vdc", vdc.Vdc.Name, nil)
 	if err != nil {
 		return nil, fmt.Errorf("there was an error when retrieving VDC control access params - %s", err)
 	}
@@ -1247,13 +1242,8 @@ func (vdc *Vdc) GetControlAccess() (*types.ControlAccessParams, error) {
 	return controlAccessParams, nil
 }
 
-func (vdc *Vdc) SetControlAccess(accessControl *types.ControlAccessParams, tenanantContext bool) (*types.ControlAccessParams, error) {
-	accessControlLink := vdc.getLinkHref(types.RelControlAccess, types.MimeControlAccess)
-	if accessControlLink == "" {
-		return nil, fmt.Errorf("control access link for VDC wasn't found")
-	}
-
-	err := vdc.client.SetAccessControl(accessControl, accessControlLink, "vdc", vdc.Vdc.Name, nil)
+func (vdc *Vdc) SetControlAccess(accessControl *types.ControlAccessParams) (*types.ControlAccessParams, error) {
+	err := vdc.client.SetAccessControl(accessControl, vdc.Vdc.HREF, "vdc", vdc.Vdc.Name, nil)
 	if err != nil {
 		return nil, fmt.Errorf("there was an error when setting VDC control access params - %s", err)
 	}
