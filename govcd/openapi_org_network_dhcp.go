@@ -19,6 +19,38 @@ type OpenApiOrgVdcNetworkDhcp struct {
 
 // GetOpenApiOrgVdcNetworkDhcp allows to retrieve DHCP configuration for specific Org VDC network
 // ID specified as orgNetworkId using OpenAPI
+func (orgVdcNet *OpenApiOrgVdcNetwork) GetOpenApiOrgVdcNetworkDhcp() (*OpenApiOrgVdcNetworkDhcp, error) {
+	client := orgVdcNet.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworksDhcp
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	if orgVdcNet.OpenApiOrgVdcNetwork.ID == "" {
+		return nil, fmt.Errorf("empty Org VDC network ID")
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, orgVdcNet.OpenApiOrgVdcNetwork.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	orgNetDhcp := &OpenApiOrgVdcNetworkDhcp{
+		OpenApiOrgVdcNetworkDhcp: &types.OpenApiOrgVdcNetworkDhcp{},
+		client:                   client,
+	}
+
+	err = client.OpenApiGetItem(apiVersion, urlRef, nil, orgNetDhcp.OpenApiOrgVdcNetworkDhcp, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return orgNetDhcp, nil
+}
+
+// GetOpenApiOrgVdcNetworkDhcp allows to retrieve DHCP configuration for specific Org VDC network
+// ID specified as orgNetworkId using OpenAPI
 func (vdc *Vdc) GetOpenApiOrgVdcNetworkDhcp(orgNetworkId string) (*OpenApiOrgVdcNetworkDhcp, error) {
 
 	client := vdc.client
@@ -112,6 +144,33 @@ func (vdc *Vdc) DeleteOpenApiOrgVdcNetworkDhcp(orgNetworkId string) error {
 	}
 
 	err = vdc.client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
+
+	if err != nil {
+		return fmt.Errorf("error deleting Org VDC network DHCP configuration: %s", err)
+	}
+
+	return nil
+}
+
+// DeleteOpenApiOrgVdcNetworkDhcp allows to perform HTTP DELETE request on DHCP pool configuration for specified Org VDC
+// Network ID
+func (orgVdcNet *OpenApiOrgVdcNetwork) DeletNetworkDhcp() error {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworksDhcp
+	apiVersion, err := orgVdcNet.client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return err
+	}
+
+	if orgVdcNet.OpenApiOrgVdcNetwork.ID == "" {
+		return fmt.Errorf("cannot delete Org VDC network DHCP configuration without ID")
+	}
+
+	urlRef, err := orgVdcNet.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, orgVdcNet.OpenApiOrgVdcNetwork.ID))
+	if err != nil {
+		return err
+	}
+
+	err = orgVdcNet.client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting Org VDC network DHCP configuration: %s", err)

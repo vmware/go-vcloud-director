@@ -132,6 +132,43 @@ func (vdcGroup *VdcGroup) CreateOpenApiOrgVdcNetwork(orgVdcNetworkConfig *types.
 	return createOpenApiOrgVdcNetwork(vdcGroup.client, orgVdcNetworkConfig)
 }
 
+func (orgVdcNet *OpenApiOrgVdcNetwork) UpdateDhcp(orgVdcNetworkDhcpConfig *types.OpenApiOrgVdcNetworkDhcp) (*OpenApiOrgVdcNetworkDhcp, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworksDhcp
+	apiVersion, err := orgVdcNet.client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := orgVdcNet.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, orgVdcNet.OpenApiOrgVdcNetwork.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	orgNetDhcpResponse := &OpenApiOrgVdcNetworkDhcp{
+		OpenApiOrgVdcNetworkDhcp: &types.OpenApiOrgVdcNetworkDhcp{},
+		client:                   orgVdcNet.client,
+	}
+
+	// From v35.0 onwards, if orgVdcNetworkDhcpConfig.LeaseTime or orgVdcNetworkDhcpConfig.Mode are not explicitly
+	// passed, the API doesn't use any defaults returning an error. Previous API versions were setting
+	// LeaseTime to 86400 seconds and Mode to EDGE if these values were not supplied. These two conditional
+	// address the situation.
+	if orgVdcNetworkDhcpConfig.LeaseTime == nil {
+		orgVdcNetworkDhcpConfig.LeaseTime = takeIntAddress(86400)
+	}
+
+	if len(orgVdcNetworkDhcpConfig.Mode) == 0 {
+		orgVdcNetworkDhcpConfig.Mode = "EDGE"
+	}
+
+	err = orgVdcNet.client.OpenApiPutItem(apiVersion, urlRef, nil, orgVdcNetworkDhcpConfig, orgNetDhcpResponse.OpenApiOrgVdcNetworkDhcp, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error updating Org VDC network DHCP configuration: %s", err)
+	}
+
+	return orgNetDhcpResponse, nil
+}
+
 // Update allows to update Org VDC network
 func (orgVdcNet *OpenApiOrgVdcNetwork) Update(OrgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) (*OpenApiOrgVdcNetwork, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
