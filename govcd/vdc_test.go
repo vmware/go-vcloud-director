@@ -9,6 +9,7 @@ package govcd
 
 import (
 	"fmt"
+	"reflect"
 
 	. "gopkg.in/check.v1"
 
@@ -506,4 +507,51 @@ func (vcd *TestVCD) TestSetControlAccess(check *C) {
 	readControlAccessParams, err := vdc.SetControlAccess(controlAccessParams)
 	check.Assert(err, IsNil)
 	check.Assert(readControlAccessParams, NotNil)
+	check.Assert(readControlAccessParams.IsSharedToEveryone, Equals, true)
+	check.Assert(*readControlAccessParams.EveryoneAccessLevel, Equals, "ReadOnly")
+
+	// Get test Org user
+	orgUserRef := org.AdminOrg.Users.User[0]
+	user, err := org.GetUserByName(orgUserRef.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(user, NotNil)
+
+	controlAccessParams = &types.ControlAccessParams{
+		Xmlns:              types.XMLNamespaceVCloud,
+		IsSharedToEveryone: false,
+		AccessSettings: &types.AccessSettingList{
+			AccessSetting: []*types.AccessSetting{
+				{
+					AccessLevel: "ReadOnly",
+					Subject: &types.LocalSubject{
+						HREF: user.User.Href,
+						Name: user.User.Name,
+						Type: user.User.Type,
+					},
+				},
+			},
+		},
+	}
+
+	readControlAccessParams, err = vdc.SetControlAccess(controlAccessParams)
+	check.Assert(err, IsNil)
+	check.Assert(readControlAccessParams, NotNil)
+	check.Assert(assertVDCAccessSettings(controlAccessParams, readControlAccessParams), IsNil)
+}
+
+func assertVDCAccessSettings(wanted, received *types.ControlAccessParams) error {
+	if len(wanted.AccessSettings.AccessSetting) != len(received.AccessSettings.AccessSetting) {
+		return fmt.Errorf("wanted and received access settings are not the same length")
+	}
+	for _, receivedAccessSetting := range received.AccessSettings.AccessSetting {
+		for i, wantedAccessSetting := range wanted.AccessSettings.AccessSetting {
+			if reflect.DeepEqual(*wantedAccessSetting.Subject, *receivedAccessSetting.Subject) && (wantedAccessSetting.AccessLevel == receivedAccessSetting.AccessLevel) {
+				break
+			}
+			if i == len(wanted.AccessSettings.AccessSetting)-1 {
+				return fmt.Errorf("access settings for user %s were not found or are not correct", wantedAccessSetting.Subject.Name)
+			}
+		}
+	}
+	return nil
 }
