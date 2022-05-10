@@ -1863,7 +1863,9 @@ func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint string) {
 	}
 }
 
-// newOrgUserConnection creates a new Org User and returns a connection to it
+// newOrgUserConnection creates a new Org User and returns a connection to it.
+// Attention: Set the user to use only lowercase letters. If you put upper case letters the function fails on waiting
+// because VCD creates the user with lowercase letters.
 func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, insecure bool) (*VCDClient, error) {
 	u, err := url.ParseRequestURI(href)
 	if err != nil {
