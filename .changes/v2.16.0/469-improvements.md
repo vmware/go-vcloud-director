@@ -1,3 +1,3 @@
 * Add additional methods for convenience of NSX-T Org Network DHCP handling
   `OpenApiOrgVdcNetwork.GetOpenApiOrgVdcNetworkDhcp`, `OpenApiOrgVdcNetwork.DeletNetworkDhcp`
-  `OpenApiOrgVdcNetwork.UpdateDhcp` [GH-YYY]
+  `OpenApiOrgVdcNetwork.UpdateDhcp` [GH-469]

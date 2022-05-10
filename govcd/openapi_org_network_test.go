@@ -426,6 +426,8 @@ func nsxtRoutedDhcpConfig(check *C, vcd *TestVCD, vdc *Vdc, orgNetId string) {
 	check.Assert(err, IsNil)
 	check.Assert(updatedDhcp2, NotNil)
 
+	check.Assert(dhcpDefinition, DeepEquals, updatedDhcp2.OpenApiOrgVdcNetworkDhcp)
+
 	err = orgVdcNetwork.DeletNetworkDhcp()
 	check.Assert(err, IsNil)
 
