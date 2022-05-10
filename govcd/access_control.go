@@ -68,7 +68,10 @@ func (client Client) GetAccessControl(href, entityType, entityName string, heade
 // * The subject (HREF and Type are mandatory)
 // * The access level (one of ReadOnly, Change, FullControl)
 func (client *Client) SetAccessControl(accessControl *types.ControlAccessParams, href, entityType, entityName string, headerValues map[string]string) error {
+	return client.SetAccessControlWithMethod(http.MethodPost, accessControl, href, entityType, entityName, headerValues)
+}
 
+func (client *Client) SetAccessControlWithMethod(httpMethod string, accessControl *types.ControlAccessParams, href, entityType, entityName string, headerValues map[string]string) error {
 	href += "/action/controlAccess"
 	// Make sure that subjects in the setting list are used only once
 	if accessControl.AccessSettings != nil && len(accessControl.AccessSettings.AccessSetting) > 0 {
@@ -110,7 +113,7 @@ func (client *Client) SetAccessControl(accessControl *types.ControlAccessParams,
 	req := client.newRequest(
 		nil,               // params
 		nil,               // notEncodedParams
-		http.MethodPost,   // method
+		httpMethod,        // method
 		*queryUrl,         // reqUrl
 		body,              // body
 		client.APIVersion, // apiVersion
@@ -353,4 +356,25 @@ func (adminCatalog *AdminCatalog) getAccessControlHeader(useTenantContext bool) 
 		return nil, err
 	}
 	return map[string]string{types.HeaderTenantContext: orgInfo.OrgId, types.HeaderAuthContext: orgInfo.OrgName}, nil
+}
+
+// GetControlAccess read and returns the control access parameters from a VDC
+func (vdc *Vdc) GetControlAccess() (*types.ControlAccessParams, error) {
+	controlAccessParams, err := vdc.client.GetAccessControl(vdc.Vdc.HREF, "vdc", vdc.Vdc.Name, nil)
+	if err != nil {
+		return nil, fmt.Errorf("there was an error when retrieving VDC control access params - %s", err)
+	}
+
+	return controlAccessParams, nil
+}
+
+// SetControlAccess sets the control access parameters from a VDC given a *types.ControlAccessParams.
+// It returns the control access parameters that are read from the API (using Vdc.GetControlAccess).
+func (vdc *Vdc) SetControlAccess(accessControl *types.ControlAccessParams) (*types.ControlAccessParams, error) {
+	err := vdc.client.SetAccessControlWithMethod(http.MethodPut, accessControl, vdc.Vdc.HREF, "vdc", vdc.Vdc.Name, nil)
+	if err != nil {
+		return nil, fmt.Errorf("there was an error when setting VDC control access params - %s", err)
+	}
+
+	return vdc.GetControlAccess()
 }
