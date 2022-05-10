@@ -1232,21 +1232,3 @@ func (vdc *Vdc) getParentOrg() (organization, error) {
 	}
 	return nil, fmt.Errorf("no parent found for VDC %s", vdc.Vdc.Name)
 }
-
-func (vdc *Vdc) GetControlAccess() (*types.ControlAccessParams, error) {
-	controlAccessParams, err := vdc.client.GetAccessControl(vdc.Vdc.HREF, "vdc", vdc.Vdc.Name, nil)
-	if err != nil {
-		return nil, fmt.Errorf("there was an error when retrieving VDC control access params - %s", err)
-	}
-
-	return controlAccessParams, nil
-}
-
-func (vdc *Vdc) SetControlAccess(accessControl *types.ControlAccessParams) (*types.ControlAccessParams, error) {
-	err := vdc.client.SetAccessControl(accessControl, vdc.Vdc.HREF, "vdc", vdc.Vdc.Name, nil)
-	if err != nil {
-		return nil, fmt.Errorf("there was an error when setting VDC control access params - %s", err)
-	}
-
-	return vdc.GetControlAccess()
-}
