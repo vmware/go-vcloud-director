@@ -71,6 +71,7 @@ func (client *Client) SetAccessControl(accessControl *types.ControlAccessParams,
 	return client.SetAccessControlWithMethod(http.MethodPost, accessControl, href, entityType, entityName, headerValues)
 }
 
+// SetAccessControlWithMethod is the same as Client.SetAccessControl but allowing passing a different HTTP method
 func (client *Client) SetAccessControlWithMethod(httpMethod string, accessControl *types.ControlAccessParams, href, entityType, entityName string, headerValues map[string]string) error {
 	href += "/action/controlAccess"
 	// Make sure that subjects in the setting list are used only once
