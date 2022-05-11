@@ -1210,3 +1210,37 @@ type NsxtNetworkContextProfileAttributes struct {
 	Values        []string    `json:"values"`
 	SubAttributes interface{} `json:"subAttributes"`
 }
+
+// SecurityTag represents An individual security tag
+type SecurityTag struct {
+	// Entities are the list of entities to tag in urn format.
+	Entities []string `json:"entities"`
+	// Tag is the tag name to use.
+	Tag string `json:"tag"`
+}
+
+// SecurityTaggedEntity is an entity that has a tag.
+type SecurityTaggedEntity struct {
+	// EntityType is the type of entity. Currently, only “vm” is supported.
+	EntityType string `json:"entityType"`
+	// ID is the unique identifier of the entity in URN format.
+	ID string `json:"id"`
+	// Name of the entity.
+	Name string `json:"name"`
+	// OwnerRef is the owner of the specified entity such as vDC or vDC Group. If not applicable, field is not set.
+	OwnerRef *OpenApiReference `json:"ownerRef"`
+	// ParentRef is the parent of the entity such as vApp if the entity is a VM. If not applicable, field is not set.
+	ParentRef *OpenApiReference `json:"parentRef"`
+}
+
+// SecurityTagValue describes the most basic tag structure: its value.
+type SecurityTagValue struct {
+	// Tag is the value of the tag. The value is case-agnostic and will be converted to lower-case.
+	Tag string `json:"tag"`
+}
+
+// EntitySecurityTags is a list of a tags assigned to a specific entity
+type EntitySecurityTags struct {
+	// Tags is the list of tags. The value is case-agnostic and will be converted to lower-case.
+	Tags []string `json:"tags"`
+}
