@@ -64,8 +64,6 @@ func (vcd *TestVCD) Test_LDAP(check *C) {
 		check.Assert(err, IsNil)
 	}()
 
-	time.Sleep(10 * time.Minute)
-
 	// Run tests requiring LDAP from here.
 	vcd.test_GroupCRUD(check)
 	vcd.test_GroupFinderGetGenericEntity(check)
@@ -278,7 +276,6 @@ func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) (string,
 	ldapHostIp := ldapVm.VM.NetworkConnectionSection.NetworkConnection[0].IPAddress
 	fmt.Printf("# Waiting for server %s to respond on port 389: ", ldapHostIp)
 	timerStart := time.Now()
-	time.Sleep(10 * time.Minute)
 	isLdapServiceUp := isTcpPortOpen(ldapHostIp, "389", vapp.client.MaxRetryTimeout)
 	check.Assert(isLdapServiceUp, Equals, true)
 	fmt.Printf("# Time taken to start LDAP container: %s\n", time.Since(timerStart))
