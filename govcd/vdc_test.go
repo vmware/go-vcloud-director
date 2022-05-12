@@ -504,13 +504,14 @@ func (vcd *TestVCD) TestSetControlAccess(check *C) {
 		IsSharedToEveryone:  true,
 		EveryoneAccessLevel: takeStringPointer("ReadOnly"),
 	}
-	readControlAccessParams, err := vdc.SetControlAccess(controlAccessParams)
+	readControlAccessParams, err := vdc.SetControlAccess(controlAccessParams, true)
 	check.Assert(err, IsNil)
 	check.Assert(readControlAccessParams, NotNil)
 	check.Assert(readControlAccessParams.IsSharedToEveryone, Equals, true)
 	check.Assert(*readControlAccessParams.EveryoneAccessLevel, Equals, "ReadOnly")
+	check.Assert(readControlAccessParams.AccessSettings, IsNil) // If not shared with users/groups, this will be nil
 
-	// Get test Org user
+	// Set VDC sharing to one user
 	orgUserRef := org.AdminOrg.Users.User[0]
 	user, err := org.GetUserByName(orgUserRef.Name, false)
 	check.Assert(err, IsNil)
@@ -533,9 +534,10 @@ func (vcd *TestVCD) TestSetControlAccess(check *C) {
 		},
 	}
 
-	readControlAccessParams, err = vdc.SetControlAccess(controlAccessParams)
+	readControlAccessParams, err = vdc.SetControlAccess(controlAccessParams, true)
 	check.Assert(err, IsNil)
 	check.Assert(readControlAccessParams, NotNil)
+	check.Assert(len(readControlAccessParams.AccessSettings.AccessSetting) > 0, Equals, true)
 	check.Assert(assertVDCAccessSettings(controlAccessParams, readControlAccessParams), IsNil)
 }
 
