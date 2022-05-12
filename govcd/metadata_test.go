@@ -900,6 +900,54 @@ func (vcd *TestVCD) Test_MetadataOnVdcNetworkCRUD(check *C) {
 	check.Assert(len(metadata.MetadataEntry), Equals, 0)
 }
 
+func (vcd *TestVCD) Test_MetadataOnCatalogItemCRUD(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	if err != nil {
+		check.Skip(fmt.Sprintf("%s: Catalog %s not found. Test can't proceed", check.TestName(), vcd.config.VCD.Catalog.Name))
+		return
+	}
+
+	catalogItem, err := catalog.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	if err != nil {
+		check.Skip(fmt.Sprintf("%s: Catalog item %s not found. Test can't proceed", check.TestName(), vcd.config.VCD.Catalog.CatalogItem))
+		return
+	}
+
+	// Check how much metadata exists
+	metadata, err := catalogItem.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	existingMetaDataCount := len(metadata.MetadataEntry)
+
+	// Add metadata
+	err = catalogItem.AddMetadataEntry(types.MetadataStringValue, "key", "value")
+	check.Assert(err, IsNil)
+
+	// Check if metadata was added correctly
+	metadata, err = catalogItem.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount+1)
+	var foundEntry *types.MetadataEntry
+	for _, entry := range metadata.MetadataEntry {
+		if entry.Key == "key" {
+			foundEntry = entry
+		}
+	}
+	check.Assert(foundEntry, NotNil)
+	check.Assert(foundEntry.Key, Equals, "key")
+	check.Assert(foundEntry.TypedValue.Value, Equals, "value")
+
+	err = catalogItem.DeleteMetadataEntry("key")
+	check.Assert(err, IsNil)
+	// Check if metadata was deleted correctly
+	metadata, err = catalogItem.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, 0)
+}
+
 func (vcd *TestVCD) Test_MetadataOnOpenApiOrgVdcNetworkCRUD(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	net, err := vcd.vdc.GetOpenApiOrgVdcNetworkByName(vcd.config.VCD.Network.Net1)
