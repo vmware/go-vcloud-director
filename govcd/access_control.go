@@ -360,8 +360,19 @@ func (adminCatalog *AdminCatalog) getAccessControlHeader(useTenantContext bool) 
 }
 
 // GetControlAccess read and returns the control access parameters from a VDC
-func (vdc *Vdc) GetControlAccess() (*types.ControlAccessParams, error) {
-	controlAccessParams, err := vdc.client.GetAccessControl(vdc.Vdc.HREF, "vdc", vdc.Vdc.Name, nil)
+func (vdc *Vdc) GetControlAccess(useTenantContext bool) (*types.ControlAccessParams, error) {
+	var tenantContextHeaders map[string]string
+
+	if useTenantContext {
+		tenantContext, err := vdc.getTenantContext()
+		if err != nil {
+			return nil, fmt.Errorf("error getting the tenant context - %s", err)
+		}
+
+		tenantContextHeaders = getTenantContextHeader(tenantContext)
+	}
+
+	controlAccessParams, err := vdc.client.GetAccessControl(vdc.Vdc.HREF, "vdc", vdc.Vdc.Name, tenantContextHeaders)
 	if err != nil {
 		return nil, fmt.Errorf("there was an error when retrieving VDC control access params - %s", err)
 	}
@@ -371,11 +382,22 @@ func (vdc *Vdc) GetControlAccess() (*types.ControlAccessParams, error) {
 
 // SetControlAccess sets the control access parameters from a VDC given a *types.ControlAccessParams.
 // It returns the control access parameters that are read from the API (using Vdc.GetControlAccess).
-func (vdc *Vdc) SetControlAccess(accessControl *types.ControlAccessParams) (*types.ControlAccessParams, error) {
-	err := vdc.client.SetAccessControlWithMethod(http.MethodPut, accessControl, vdc.Vdc.HREF, "vdc", vdc.Vdc.Name, nil)
+func (vdc *Vdc) SetControlAccess(accessControl *types.ControlAccessParams, useTenantContext bool) (*types.ControlAccessParams, error) {
+	var tenantContextHeaders map[string]string
+
+	if useTenantContext {
+		tenantContext, err := vdc.getTenantContext()
+		if err != nil {
+			return nil, fmt.Errorf("error getting the tenant context - %s", err)
+		}
+
+		tenantContextHeaders = getTenantContextHeader(tenantContext)
+	}
+
+	err := vdc.client.SetAccessControlWithMethod(http.MethodPut, accessControl, vdc.Vdc.HREF, "vdc", vdc.Vdc.Name, tenantContextHeaders)
 	if err != nil {
 		return nil, fmt.Errorf("there was an error when setting VDC control access params - %s", err)
 	}
 
-	return vdc.GetControlAccess()
+	return vdc.GetControlAccess(useTenantContext)
 }
