@@ -68,11 +68,11 @@ func (client Client) GetAccessControl(href, entityType, entityName string, heade
 // * The subject (HREF and Type are mandatory)
 // * The access level (one of ReadOnly, Change, FullControl)
 func (client *Client) SetAccessControl(accessControl *types.ControlAccessParams, href, entityType, entityName string, headerValues map[string]string) error {
-	return client.SetAccessControlWithMethod(http.MethodPost, accessControl, href, entityType, entityName, headerValues)
+	return client.setAccessControlWithMethod(http.MethodPost, accessControl, href, entityType, entityName, headerValues)
 }
 
-// SetAccessControlWithMethod is the same as Client.SetAccessControl but allowing passing a different HTTP method
-func (client *Client) SetAccessControlWithMethod(httpMethod string, accessControl *types.ControlAccessParams, href, entityType, entityName string, headerValues map[string]string) error {
+// setAccessControlWithMethod is the same as Client.SetAccessControl but allowing passing a different HTTP method
+func (client *Client) setAccessControlWithMethod(httpMethod string, accessControl *types.ControlAccessParams, href, entityType, entityName string, headerValues map[string]string) error {
 	href += "/action/controlAccess"
 	// Make sure that subjects in the setting list are used only once
 	if accessControl.AccessSettings != nil && len(accessControl.AccessSettings.AccessSetting) > 0 {
@@ -361,6 +361,10 @@ func (adminCatalog *AdminCatalog) getAccessControlHeader(useTenantContext bool) 
 
 // GetControlAccess read and returns the control access parameters from a VDC
 func (vdc *Vdc) GetControlAccess(useTenantContext bool) (*types.ControlAccessParams, error) {
+	if vdc.client == nil || vdc.Vdc == nil || vdc.Vdc.Name == "" {
+		return nil, fmt.Errorf("vdc struct must be initialized before using this method")
+	}
+
 	var tenantContextHeaders map[string]string
 
 	if useTenantContext {
@@ -380,10 +384,40 @@ func (vdc *Vdc) GetControlAccess(useTenantContext bool) (*types.ControlAccessPar
 	return controlAccessParams, nil
 }
 
-// SetControlAccess sets the control access parameters from a VDC given a *types.ControlAccessParams.
+// SetControlAccess sets VDC control access parameters for everybody or individual users/groups.
+// This method either sets control for everybody, passing isSharedToEveryOne true, and everyoneAccessLevel (currently only ReadOnly is supported for VDC) and nil for accessSettings,
+// or can set access control for specific users/groups, passing isSharedToEveryOne false, everyoneAccessLevel "" and accessSettings filled as desired.
+// The method will fail if tries to configure access control for everybody and passes individual users/groups to configure.
 // It returns the control access parameters that are read from the API (using Vdc.GetControlAccess).
-func (vdc *Vdc) SetControlAccess(accessControl *types.ControlAccessParams, useTenantContext bool) (*types.ControlAccessParams, error) {
+func (vdc *Vdc) SetControlAccess(isSharedToEveryOne bool, everyoneAccessLevel string, accessSettings []*types.AccessSetting, useTenantContext bool) (*types.ControlAccessParams, error) {
+	if vdc.client == nil || vdc.Vdc == nil || vdc.Vdc.Name == "" {
+		return nil, fmt.Errorf("vdc struct must be initialized before using this method")
+	}
+
+	if (isSharedToEveryOne && accessSettings != nil) && len(accessSettings) > 0 {
+		return nil, fmt.Errorf("either configure access for everybody or individual users, not both at the same time")
+	}
+
 	var tenantContextHeaders map[string]string
+	var accessControl = &types.ControlAccessParams{
+		Xmlns: types.XMLNamespaceVCloud,
+	}
+
+	if isSharedToEveryOne { // Do configuration for everyone
+		if everyoneAccessLevel == "" {
+			return nil, fmt.Errorf("everyoneAccessLevel needs to be set if isSharedToEveryOne is true")
+		}
+
+		accessControl.IsSharedToEveryone = true
+		accessControl.EveryoneAccessLevel = takeStringPointer(everyoneAccessLevel)
+
+	} else { // Do configuration for individual users/groups
+		if accessSettings != nil && len(accessSettings) > 0 {
+			accessControl.AccessSettings = &types.AccessSettingList{
+				AccessSetting: accessSettings,
+			}
+		}
+	}
 
 	if useTenantContext {
 		tenantContext, err := vdc.getTenantContext()
@@ -394,10 +428,15 @@ func (vdc *Vdc) SetControlAccess(accessControl *types.ControlAccessParams, useTe
 		tenantContextHeaders = getTenantContextHeader(tenantContext)
 	}
 
-	err := vdc.client.SetAccessControlWithMethod(http.MethodPut, accessControl, vdc.Vdc.HREF, "vdc", vdc.Vdc.Name, tenantContextHeaders)
+	err := vdc.client.setAccessControlWithMethod(http.MethodPut, accessControl, vdc.Vdc.HREF, "vdc", vdc.Vdc.Name, tenantContextHeaders)
 	if err != nil {
 		return nil, fmt.Errorf("there was an error when setting VDC control access params - %s", err)
 	}
 
 	return vdc.GetControlAccess(useTenantContext)
+}
+
+// DeleteControlAccess makes stop sharing VDC with anyone
+func (vdc *Vdc) DeleteControlAccess(useTenantContext bool) (*types.ControlAccessParams, error) {
+	return vdc.SetControlAccess(false, "", nil, useTenantContext)
 }
