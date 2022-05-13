@@ -499,12 +499,7 @@ func (vcd *TestVCD) TestSetControlAccess(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 
-	controlAccessParams := &types.ControlAccessParams{
-		Xmlns:               types.XMLNamespaceVCloud,
-		IsSharedToEveryone:  true,
-		EveryoneAccessLevel: takeStringPointer("ReadOnly"),
-	}
-	readControlAccessParams, err := vdc.SetControlAccess(controlAccessParams, true)
+	readControlAccessParams, err := vdc.SetControlAccess(true, "ReadOnly", nil, true)
 	check.Assert(err, IsNil)
 	check.Assert(readControlAccessParams, NotNil)
 	check.Assert(readControlAccessParams.IsSharedToEveryone, Equals, true)
@@ -517,40 +512,45 @@ func (vcd *TestVCD) TestSetControlAccess(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(user, NotNil)
 
-	controlAccessParams = &types.ControlAccessParams{
-		Xmlns:              types.XMLNamespaceVCloud,
-		IsSharedToEveryone: false,
-		AccessSettings: &types.AccessSettingList{
-			AccessSetting: []*types.AccessSetting{
-				{
-					AccessLevel: "ReadOnly",
-					Subject: &types.LocalSubject{
-						HREF: user.User.Href,
-						Name: user.User.Name,
-						Type: user.User.Type,
-					},
-				},
+	accessSettings := []*types.AccessSetting{
+		{
+			AccessLevel: "ReadOnly",
+			Subject: &types.LocalSubject{
+				HREF: user.User.Href,
+				Name: user.User.Name,
+				Type: user.User.Type,
 			},
 		},
 	}
 
-	readControlAccessParams, err = vdc.SetControlAccess(controlAccessParams, true)
+	readControlAccessParams, err = vdc.SetControlAccess(false, "", accessSettings, true)
 	check.Assert(err, IsNil)
 	check.Assert(readControlAccessParams, NotNil)
 	check.Assert(len(readControlAccessParams.AccessSettings.AccessSetting) > 0, Equals, true)
-	check.Assert(assertVDCAccessSettings(controlAccessParams, readControlAccessParams), IsNil)
+	check.Assert(assertVDCAccessSettings(accessSettings, readControlAccessParams.AccessSettings.AccessSetting), IsNil)
+
+	// Check that fail if both isSharedToEveryone and accessSettings is passed
+	readControlAccessParams, err = vdc.SetControlAccess(true, "ReadOnly", accessSettings, true)
+	check.Assert(err, NotNil)
+	check.Assert(readControlAccessParams, IsNil)
+
+	// Check DeleteControlAccess
+	readControlAccessParams, err = vdc.DeleteControlAccess(true)
+	check.Assert(err, IsNil)
+	check.Assert(readControlAccessParams.IsSharedToEveryone, Equals, false)
+	check.Assert(readControlAccessParams.AccessSettings, IsNil)
 }
 
-func assertVDCAccessSettings(wanted, received *types.ControlAccessParams) error {
-	if len(wanted.AccessSettings.AccessSetting) != len(received.AccessSettings.AccessSetting) {
+func assertVDCAccessSettings(wanted, received []*types.AccessSetting) error {
+	if len(wanted) != len(received) {
 		return fmt.Errorf("wanted and received access settings are not the same length")
 	}
-	for _, receivedAccessSetting := range received.AccessSettings.AccessSetting {
-		for i, wantedAccessSetting := range wanted.AccessSettings.AccessSetting {
+	for _, receivedAccessSetting := range received {
+		for i, wantedAccessSetting := range wanted {
 			if reflect.DeepEqual(*wantedAccessSetting.Subject, *receivedAccessSetting.Subject) && (wantedAccessSetting.AccessLevel == receivedAccessSetting.AccessLevel) {
 				break
 			}
-			if i == len(wanted.AccessSettings.AccessSetting)-1 {
+			if i == len(wanted)-1 {
 				return fmt.Errorf("access settings for user %s were not found or are not correct", wantedAccessSetting.Subject.Name)
 			}
 		}
