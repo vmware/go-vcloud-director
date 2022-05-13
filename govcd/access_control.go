@@ -412,7 +412,7 @@ func (vdc *Vdc) SetControlAccess(isSharedToEveryOne bool, everyoneAccessLevel st
 		accessControl.EveryoneAccessLevel = takeStringPointer(everyoneAccessLevel)
 
 	} else { // Do configuration for individual users/groups
-		if accessSettings != nil && len(accessSettings) > 0 {
+		if len(accessSettings) > 0 {
 			accessControl.AccessSettings = &types.AccessSettingList{
 				AccessSetting: accessSettings,
 			}
