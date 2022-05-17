@@ -878,6 +878,44 @@ func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntryAsync(key string) (Task, 
 	return deleteMetadata(orgVdcNetwork.client, key, strings.ReplaceAll(orgVdcNetwork.OrgVDCNetwork.HREF, "/api/", "/api/admin/"))
 }
 
+// GetMetadata returns CatalogItem metadata.
+func (catalogItem *CatalogItem) GetMetadata() (*types.Metadata, error) {
+	return getMetadata(catalogItem.client, catalogItem.CatalogItem.HREF)
+}
+
+// AddMetadataEntry adds CatalogItem metadata typedValue and key/value pair provided as input
+// and waits for the task to finish.
+func (catalogItem *CatalogItem) AddMetadataEntry(typedValue, key, value string) error {
+	task, err := catalogItem.AddMetadataEntryAsync(typedValue, key, value)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+// AddMetadataEntryAsync adds CatalogItem metadata typedValue and key/value pair provided as input
+// and returns the task.
+func (catalogItem *CatalogItem) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
+	return addMetadata(catalogItem.client, typedValue, key, value, catalogItem.CatalogItem.HREF)
+}
+
+// DeleteMetadataEntry deletes CatalogItem metadata depending on key provided as input
+// and waits for the task to finish.
+func (catalogItem *CatalogItem) DeleteMetadataEntry(key string) error {
+	task, err := catalogItem.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+
+	return task.WaitTaskCompletion()
+}
+
+// DeleteMetadataEntryAsync deletes CatalogItem metadata depending on key provided as input
+// and returns a task.
+func (catalogItem *CatalogItem) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(catalogItem.client, key, catalogItem.CatalogItem.HREF)
+}
+
 // OpenAPI metadata functions
 
 // GetMetadata returns OpenApiOrgVdcNetwork metadata.
