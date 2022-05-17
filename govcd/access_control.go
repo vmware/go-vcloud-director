@@ -451,11 +451,8 @@ func checkSanityVdcControlAccess(vdc *Vdc) error {
 	if vdc.client == nil {
 		return fmt.Errorf("client has not been set up on Vdc struct. Please initialize it before using this method")
 	}
-	if vdc.Vdc == nil {
-		return fmt.Errorf("types.Vdc struct has not been set up on Vdc struct. Please initialize it before using this method ")
-	}
-	if vdc.Vdc.Name == "" {
-		return fmt.Errorf("name attribute from types.Vdc struct is empty. This method needs that to work propertly")
+	if vdc.Vdc == nil || vdc.Vdc.Name == "" {
+		return fmt.Errorf("types.Vdc struct has not been set up on Vdc struct or Vdc.Vdc.Name is missing. Please initialize it before using this method ")
 	}
 	return nil
 }
