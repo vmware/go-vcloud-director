@@ -68,11 +68,13 @@ func (client Client) GetAccessControl(href, entityType, entityName string, heade
 // * The subject (HREF and Type are mandatory)
 // * The access level (one of ReadOnly, Change, FullControl)
 func (client *Client) SetAccessControl(accessControl *types.ControlAccessParams, href, entityType, entityName string, headerValues map[string]string) error {
-	return client.setAccessControlWithMethod(http.MethodPost, accessControl, href, entityType, entityName, headerValues)
+	return client.setAccessControlWithHttpMethod(http.MethodPost, accessControl, href, entityType, entityName, headerValues)
 }
 
-// setAccessControlWithMethod is the same as Client.SetAccessControl but allowing passing a different HTTP method
-func (client *Client) setAccessControlWithMethod(httpMethod string, accessControl *types.ControlAccessParams, href, entityType, entityName string, headerValues map[string]string) error {
+// setAccessControlWithMethod is the same as Client.SetAccessControl but allowing passing a different HTTP method.
+// This method has been created since VDC accessControl endpoint works with PUT and SetAccessControl method worked
+// exclusively with POST. This private method gives the flexibility to use both POST and PUT passing it as httpMethod parameter.
+func (client *Client) setAccessControlWithHttpMethod(httpMethod string, accessControl *types.ControlAccessParams, href, entityType, entityName string, headerValues map[string]string) error {
 	href += "/action/controlAccess"
 	// Make sure that subjects in the setting list are used only once
 	if accessControl.AccessSettings != nil && len(accessControl.AccessSettings.AccessSetting) > 0 {
@@ -361,8 +363,9 @@ func (adminCatalog *AdminCatalog) getAccessControlHeader(useTenantContext bool) 
 
 // GetControlAccess read and returns the control access parameters from a VDC
 func (vdc *Vdc) GetControlAccess(useTenantContext bool) (*types.ControlAccessParams, error) {
-	if vdc.client == nil || vdc.Vdc == nil || vdc.Vdc.Name == "" {
-		return nil, fmt.Errorf("vdc struct must be initialized before using this method")
+	err := checkSanityVdcControlAccess(vdc)
+	if err != nil {
+		return nil, err
 	}
 
 	var tenantContextHeaders map[string]string
@@ -390,8 +393,9 @@ func (vdc *Vdc) GetControlAccess(useTenantContext bool) (*types.ControlAccessPar
 // The method will fail if tries to configure access control for everybody and passes individual users/groups to configure.
 // It returns the control access parameters that are read from the API (using Vdc.GetControlAccess).
 func (vdc *Vdc) SetControlAccess(isSharedToEveryOne bool, everyoneAccessLevel string, accessSettings []*types.AccessSetting, useTenantContext bool) (*types.ControlAccessParams, error) {
-	if vdc.client == nil || vdc.Vdc == nil || vdc.Vdc.Name == "" {
-		return nil, fmt.Errorf("vdc struct must be initialized before using this method")
+	err := checkSanityVdcControlAccess(vdc)
+	if err != nil {
+		return nil, err
 	}
 
 	if (isSharedToEveryOne && accessSettings != nil) && len(accessSettings) > 0 {
@@ -428,7 +432,7 @@ func (vdc *Vdc) SetControlAccess(isSharedToEveryOne bool, everyoneAccessLevel st
 		tenantContextHeaders = getTenantContextHeader(tenantContext)
 	}
 
-	err := vdc.client.setAccessControlWithMethod(http.MethodPut, accessControl, vdc.Vdc.HREF, "vdc", vdc.Vdc.Name, tenantContextHeaders)
+	err = vdc.client.setAccessControlWithHttpMethod(http.MethodPut, accessControl, vdc.Vdc.HREF, "vdc", vdc.Vdc.Name, tenantContextHeaders)
 	if err != nil {
 		return nil, fmt.Errorf("there was an error when setting VDC control access params - %s", err)
 	}
@@ -439,4 +443,19 @@ func (vdc *Vdc) SetControlAccess(isSharedToEveryOne bool, everyoneAccessLevel st
 // DeleteControlAccess makes stop sharing VDC with anyone
 func (vdc *Vdc) DeleteControlAccess(useTenantContext bool) (*types.ControlAccessParams, error) {
 	return vdc.SetControlAccess(false, "", nil, useTenantContext)
+}
+
+// checkSanityVdcControlAccess is a function that check some Vdc attributes and returns error if any is missing. It is useful for
+// checking sanity of Vdc struct before running controlAccess methods.
+func checkSanityVdcControlAccess(vdc *Vdc) error {
+	if vdc.client == nil {
+		return fmt.Errorf("client has not been set up on Vdc struct. Please initialize it before using this method")
+	}
+	if vdc.Vdc == nil {
+		return fmt.Errorf("types.Vdc struct has not been set up on Vdc struct. Please initialize it before using this method ")
+	}
+	if vdc.Vdc.Name == "" {
+		return fmt.Errorf("name attribute from types.Vdc struct is empty. This method needs that to work propertly")
+	}
+	return nil
 }
