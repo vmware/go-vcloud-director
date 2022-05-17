@@ -12,7 +12,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-type Metadata interface {
+type MetadataCompatible interface {
 	GetMetadata() (*types.Metadata, error)
 	AddMetadataEntry(typedValue, key, value string) error
 	DeleteMetadataEntry(key string) error
