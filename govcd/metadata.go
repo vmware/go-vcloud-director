@@ -12,6 +12,12 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+type Metadata interface {
+	GetMetadata() (*types.Metadata, error)
+	AddMetadataEntry(typedValue, key, value string) error
+	DeleteMetadataEntry(key string) error
+}
+
 // GetMetadataByHref returns metadata from the given resource reference.
 func (vcdClient *VCDClient) GetMetadataByHref(href string) (*types.Metadata, error) {
 	return getMetadata(&vcdClient.Client, href)
