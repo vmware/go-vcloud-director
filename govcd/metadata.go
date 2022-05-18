@@ -12,6 +12,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+// MetadataCompatible allows consumers of this library to consider all structs that implement
+// this interface to be the same type
 type MetadataCompatible interface {
 	GetMetadata() (*types.Metadata, error)
 	AddMetadataEntry(typedValue, key, value string) error
@@ -162,6 +164,31 @@ func deleteMetadata(client *Client, key string, requestUri string) (Task, error)
 // Deprecated: use VApp.AddMetadataEntry
 func (vapp *VApp) AddMetadata(key string, value string) (Task, error) {
 	return addMetadata(vapp.client, types.MetadataStringValue, key, value, vapp.VApp.HREF)
+}
+
+// mergeAllMetadata merges the metadata key-values provided as parameter with existing entity metadata
+func mergeAllMetadata(client *Client, metadata map[string]types.TypedValue, requestUri string) (Task, error) {
+	var metadataList []*types.MetadataEntry
+	for _, typedValue := range metadata {
+		metadataList = append(metadataList, &types.MetadataEntry{
+			Xmlns: types.XMLNamespaceVCloud,
+			Xsi:   types.XMLNamespaceXSI,
+			TypedValue: &typedValue,
+		})
+	}
+
+	newMetadata := &types.Metadata{
+		Xmlns: types.XMLNamespaceVCloud,
+		Xsi:   types.XMLNamespaceXSI,
+		MetadataEntry: metadataList,
+	}
+
+	apiEndpoint := urlParseRequestURI(requestUri)
+	apiEndpoint.Path += "/metadata"
+
+	// Return the task
+	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+		types.MimeMetaDataValue, "error adding metadata: %s", newMetadata)
 }
 
 // Adds metadata to an entity
