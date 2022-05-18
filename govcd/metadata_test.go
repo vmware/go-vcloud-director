@@ -42,10 +42,6 @@ func (vcd *TestVCD) Test_AddMetadataForVdc(check *C) {
 	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
 }
 
-func (vcd *TestVCD) Testfoo(check *C) {
-	getAdminVdcURL("")
-}
-
 func (vcd *TestVCD) Test_DeleteMetadataForVdc(check *C) {
 	if vcd.config.VCD.Vdc == "" {
 		check.Skip("skipping test because VDC name is empty")
