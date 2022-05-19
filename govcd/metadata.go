@@ -21,7 +21,7 @@ type MetadataCompatible interface {
 	DeleteMetadataEntry(key string) error
 }
 
-// ----------------
+// -----------------
 // REST API metadata CRUD functions
 
 // GetMetadataByHref returns metadata from the given resource reference.
