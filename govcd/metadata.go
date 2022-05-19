@@ -918,10 +918,11 @@ func addMetadata(client *Client, typedValue, key, value, requestUri string) (Tas
 // mergeAllMetadata merges the metadata key-values provided as parameter with existing entity metadata
 func mergeAllMetadata(client *Client, typedValue string, metadata map[string]interface{}, requestUri string) (Task, error) {
 	var metadataToMerge []*types.MetadataEntry
-	for _, value := range metadata {
+	for key, value := range metadata {
 		metadataToMerge = append(metadataToMerge, &types.MetadataEntry{
 			Xmlns: types.XMLNamespaceVCloud,
 			Xsi:   types.XMLNamespaceXSI,
+			Key: key,
 			TypedValue: &types.TypedValue{
 				XsiType: typedValue,
 				Value:   value.(string),
@@ -940,7 +941,7 @@ func mergeAllMetadata(client *Client, typedValue string, metadata map[string]int
 
 	// Return the task
 	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
-		types.MimeMetaDataValue, "error adding metadata: %s", newMetadata)
+		types.MimeMetaData, "error adding metadata: %s", newMetadata)
 }
 
 // deleteMetadata Deletes metadata from an entity.
