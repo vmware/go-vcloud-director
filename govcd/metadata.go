@@ -17,7 +17,7 @@ import (
 type MetadataCompatible interface {
 	GetMetadata() (*types.Metadata, error)
 	AddMetadataEntry(typedValue, key, value string) error
-	MergeMetadataEntryByHref(metadata map[string]types.TypedValue) error
+	MergeMetadata(metadata map[string]types.TypedValue) error
 	DeleteMetadataEntry(key string) error
 }
 
