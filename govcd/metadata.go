@@ -922,7 +922,7 @@ func mergeAllMetadata(client *Client, typedValue string, metadata map[string]int
 		metadataToMerge = append(metadataToMerge, &types.MetadataEntry{
 			Xmlns: types.XMLNamespaceVCloud,
 			Xsi:   types.XMLNamespaceXSI,
-			Key: key,
+			Key:   key,
 			TypedValue: &types.TypedValue{
 				XsiType: typedValue,
 				Value:   value.(string),

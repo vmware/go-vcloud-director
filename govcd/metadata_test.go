@@ -589,7 +589,6 @@ func (vcd *TestVCD) Test_MetadataOnCatalogItemCRUD(check *C) {
 	testMetadataCRUDActions(catalogItem, check, nil)
 }
 
-
 func (vcd *TestVCD) Test_MetadataOnOpenApiOrgVdcNetworkCRUD(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	net, err := vcd.vdc.GetOpenApiOrgVdcNetworkByName(vcd.config.VCD.Network.Net1)
@@ -744,4 +743,3 @@ func testMetadataCRUDActions(resource MetadataCompatible, check *C, extraCheck f
 	check.Assert(metadata, NotNil)
 	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount)
 }
-
