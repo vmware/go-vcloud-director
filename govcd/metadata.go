@@ -1005,12 +1005,12 @@ func (vdc *Vdc) AddMetadata(key string, value string) (Vdc, error) {
 
 // Deprecated: use Vdc.AddMetadataEntryAsync.
 func (vdc *Vdc) AddMetadataAsync(key string, value string) (Task, error) {
-	return addMetadata(vdc.client, types.MetadataStringValue, key, value, getAdminVdcURL(vdc.Vdc.HREF))
+	return addMetadata(vdc.client, types.MetadataStringValue, key, value, getAdminURL(vdc.Vdc.HREF))
 }
 
 // Deprecated: use Vdc.DeleteMetadataEntryAsync.
 func (vdc *Vdc) DeleteMetadataAsync(key string) (Task, error) {
-	return deleteMetadata(vdc.client, key, getAdminVdcURL(vdc.Vdc.HREF))
+	return deleteMetadata(vdc.client, key, getAdminURL(vdc.Vdc.HREF))
 }
 
 // Deprecated: use VApp.DeleteMetadataEntry.
