@@ -920,15 +920,15 @@ func mergeAllMetadata(client *Client, metadata map[string]types.TypedValue, requ
 	var metadataList []*types.MetadataEntry
 	for _, typedValue := range metadata {
 		metadataList = append(metadataList, &types.MetadataEntry{
-			Xmlns: types.XMLNamespaceVCloud,
-			Xsi:   types.XMLNamespaceXSI,
+			Xmlns:      types.XMLNamespaceVCloud,
+			Xsi:        types.XMLNamespaceXSI,
 			TypedValue: &typedValue,
 		})
 	}
 
 	newMetadata := &types.Metadata{
-		Xmlns: types.XMLNamespaceVCloud,
-		Xsi:   types.XMLNamespaceXSI,
+		Xmlns:         types.XMLNamespaceVCloud,
+		Xsi:           types.XMLNamespaceXSI,
 		MetadataEntry: metadataList,
 	}
 
@@ -1108,7 +1108,6 @@ func (media *Media) DeleteMetadata(key string) error {
 func (media *Media) DeleteMetadataAsync(key string) (Task, error) {
 	return deleteMetadata(media.client, key, media.Media.HREF)
 }
-
 
 // GetMetadata returns MediaItem metadata.
 // Deprecated: Use MediaRecord.GetMetadata.
