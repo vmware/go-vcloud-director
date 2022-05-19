@@ -17,7 +17,7 @@ import (
 type MetadataCompatible interface {
 	GetMetadata() (*types.Metadata, error)
 	AddMetadataEntry(typedValue, key, value string) error
-	MergeMetadata(metadata map[string]types.TypedValue) error
+	MergeMetadata(typedValue, metadata map[string]string) error
 	DeleteMetadataEntry(key string) error
 }
 
@@ -45,16 +45,16 @@ func (vcdClient *VCDClient) AddMetadataEntryByHrefAsync(href, typedValue, key, v
 	return addMetadata(&vcdClient.Client, typedValue, key, value, href)
 }
 
-// MergeMetadataByHrefAsync merges metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadataByHrefAsync merges metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // and returns the task.
-func (vcdClient *VCDClient) MergeMetadataByHrefAsync(href string, metadata map[string]types.TypedValue) (Task, error) {
-	return mergeAllMetadata(&vcdClient.Client, metadata, href)
+func (vcdClient *VCDClient) MergeMetadataByHrefAsync(href, typedValue string, metadata map[string]types.TypedValue) (Task, error) {
+	return mergeAllMetadata(&vcdClient.Client, typedValue, typedValue, metadata, href)
 }
 
-// MergeMetadataByHref merges metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadataByHref merges metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
-func (vcdClient *VCDClient) MergeMetadataByHref(href string, metadata map[string]types.TypedValue) error {
-	task, err := vcdClient.MergeMetadataByHrefAsync(href, metadata)
+func (vcdClient *VCDClient) MergeMetadataByHref(href, typedValue string, metadata map[string]types.TypedValue) error {
+	task, err := vcdClient.MergeMetadataByHrefAsync(href, typedValue, metadata)
 	if err != nil {
 		return err
 	}
@@ -110,16 +110,16 @@ func (vm *VM) AddMetadataEntryAsync(typedValue, key, value string) (Task, error)
 	return addMetadata(vm.client, typedValue, key, value, vm.VM.HREF)
 }
 
-// MergeMetadataAsync merges VM metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadataAsync merges VM metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then returns the task.
-func (vm *VM) MergeMetadataAsync(metadata map[string]types.TypedValue) (Task, error) {
-	return mergeAllMetadata(vm.client, metadata, vm.VM.HREF)
+func (vm *VM) MergeMetadataAsync(typedValue string, metadata map[string]string) (Task, error) {
+	return mergeAllMetadata(vm.client, typedValue, metadata, vm.VM.HREF)
 }
 
-// MergeMetadata merges VM metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadata merges VM metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
-func (vm *VM) MergeMetadata(metadata map[string]types.TypedValue) error {
-	task, err := vm.MergeMetadataAsync(metadata)
+func (vm *VM) MergeMetadata(typedValue string, metadata map[string]string) error {
+	task, err := vm.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
 		return err
 	}
@@ -186,18 +186,18 @@ func (vdc *Vdc) AddMetadataEntryAsync(typedValue, key, value string) (Task, erro
 	return addMetadata(vdc.client, typedValue, key, value, getAdminURL(vdc.Vdc.HREF))
 }
 
-// MergeMetadataAsync merges VM metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadataAsync merges VM metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
 // Note: Requires system administrator privileges.
-func (vdc *Vdc) MergeMetadataAsync(metadata map[string]types.TypedValue) (Task, error) {
-	return mergeAllMetadata(vdc.client, metadata, getAdminURL(vdc.Vdc.HREF))
+func (vdc *Vdc) MergeMetadataAsync(typedValue string, metadata map[string]string) (Task, error) {
+	return mergeAllMetadata(vdc.client, typedValue, metadata, getAdminURL(vdc.Vdc.HREF))
 }
 
-// MergeMetadata merges VM metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadata merges VM metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
 // Note: Requires system administrator privileges.
-func (vdc *Vdc) MergeMetadata(metadata map[string]types.TypedValue) error {
-	task, err := vdc.MergeMetadataAsync(metadata)
+func (vdc *Vdc) MergeMetadata(typedValue string, metadata map[string]string) error {
+	task, err := vdc.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
 		return err
 	}
@@ -263,16 +263,16 @@ func (vapp *VApp) AddMetadataEntryAsync(typedValue, key, value string) (Task, er
 	return addMetadata(vapp.client, typedValue, key, value, vapp.VApp.HREF)
 }
 
-// MergeMetadataAsync merges VApp metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadataAsync merges VApp metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
-func (vapp *VApp) MergeMetadataAsync(metadata map[string]types.TypedValue) (Task, error) {
-	return mergeAllMetadata(vapp.client, metadata, vapp.VApp.HREF)
+func (vapp *VApp) MergeMetadataAsync(typedValue string, metadata map[string]string) (Task, error) {
+	return mergeAllMetadata(vapp.client, typedValue, metadata, vapp.VApp.HREF)
 }
 
-// MergeMetadata merges VApp metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadata merges VApp metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
-func (vapp *VApp) MergeMetadata(metadata map[string]types.TypedValue) error {
-	task, err := vapp.MergeMetadataAsync(metadata)
+func (vapp *VApp) MergeMetadata(typedValue string, metadata map[string]string) error {
+	task, err := vapp.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
 		return err
 	}
@@ -336,16 +336,16 @@ func (vAppTemplate *VAppTemplate) AddMetadataEntryAsync(typedValue, key, value s
 	return addMetadata(vAppTemplate.client, typedValue, key, value, vAppTemplate.VAppTemplate.HREF)
 }
 
-// MergeMetadataAsync merges VAppTemplate metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadataAsync merges VAppTemplate metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
-func (vAppTemplate *VAppTemplate) MergeMetadataAsync(metadata map[string]types.TypedValue) (Task, error) {
-	return mergeAllMetadata(vAppTemplate.client, metadata, vAppTemplate.VAppTemplate.HREF)
+func (vAppTemplate *VAppTemplate) MergeMetadataAsync(typedValue string, metadata map[string]string) (Task, error) {
+	return mergeAllMetadata(vAppTemplate.client, typedValue, metadata, vAppTemplate.VAppTemplate.HREF)
 }
 
-// MergeMetadata merges VAppTemplate metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadata merges VAppTemplate metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
-func (vAppTemplate *VAppTemplate) MergeMetadata(metadata map[string]types.TypedValue) error {
-	task, err := vAppTemplate.MergeMetadataAsync(metadata)
+func (vAppTemplate *VAppTemplate) MergeMetadata(typedValue string, metadata map[string]string) error {
+	task, err := vAppTemplate.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
 		return err
 	}
@@ -410,16 +410,16 @@ func (mediaRecord *MediaRecord) AddMetadataEntryAsync(typedValue, key, value str
 	return addMetadata(mediaRecord.client, typedValue, key, value, mediaRecord.MediaRecord.HREF)
 }
 
-// MergeMetadataAsync merges MediaRecord metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadataAsync merges MediaRecord metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
-func (mediaRecord *MediaRecord) MergeMetadataAsync(metadata map[string]types.TypedValue) (Task, error) {
-	return mergeAllMetadata(mediaRecord.client, metadata, mediaRecord.MediaRecord.HREF)
+func (mediaRecord *MediaRecord) MergeMetadataAsync(typedValue string, metadata map[string]string) (Task, error) {
+	return mergeAllMetadata(mediaRecord.client, typedValue, metadata, mediaRecord.MediaRecord.HREF)
 }
 
-// MergeMetadata merges MediaRecord metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadata merges MediaRecord metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
-func (mediaRecord *MediaRecord) MergeMetadata(metadata map[string]types.TypedValue) error {
-	task, err := mediaRecord.MergeMetadataAsync(metadata)
+func (mediaRecord *MediaRecord) MergeMetadata(typedValue string, metadata map[string]string) error {
+	task, err := mediaRecord.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
 		return err
 	}
@@ -483,16 +483,16 @@ func (media *Media) AddMetadataEntryAsync(typedValue, key, value string) (Task, 
 	return addMetadata(media.client, typedValue, key, value, media.Media.HREF)
 }
 
-// MergeMetadataAsync merges Media metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadataAsync merges Media metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
-func (media *Media) MergeMetadataAsync(metadata map[string]types.TypedValue) (Task, error) {
-	return mergeAllMetadata(media.client, metadata, media.Media.HREF)
+func (media *Media) MergeMetadataAsync(typedValue string, metadata map[string]string) (Task, error) {
+	return mergeAllMetadata(media.client, typedValue, metadata, media.Media.HREF)
 }
 
-// MergeMetadata merges Media metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadata merges Media metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
-func (media *Media) MergeMetadata(metadata map[string]types.TypedValue) error {
-	task, err := media.MergeMetadataAsync(metadata)
+func (media *Media) MergeMetadata(typedValue string, metadata map[string]string) error {
+	task, err := media.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
 		return err
 	}
@@ -562,16 +562,16 @@ func (adminCatalog *AdminCatalog) AddMetadataEntryAsync(typedValue, key, value s
 	return addMetadata(adminCatalog.client, typedValue, key, value, adminCatalog.AdminCatalog.HREF)
 }
 
-// MergeMetadataAsync merges AdminCatalog metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadataAsync merges AdminCatalog metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
-func (adminCatalog *AdminCatalog) MergeMetadataAsync(metadata map[string]types.TypedValue) (Task, error) {
-	return mergeAllMetadata(adminCatalog.client, metadata, adminCatalog.AdminCatalog.HREF)
+func (adminCatalog *AdminCatalog) MergeMetadataAsync(typedValue string, metadata map[string]string) (Task, error) {
+	return mergeAllMetadata(adminCatalog.client, typedValue, metadata, adminCatalog.AdminCatalog.HREF)
 }
 
-// MergeMetadata merges AdminCatalog metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadata merges AdminCatalog metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
-func (adminCatalog *AdminCatalog) MergeMetadata(metadata map[string]types.TypedValue) error {
-	task, err := adminCatalog.MergeMetadataAsync(metadata)
+func (adminCatalog *AdminCatalog) MergeMetadata(typedValue string, metadata map[string]string) error {
+	task, err := adminCatalog.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
 		return err
 	}
@@ -631,16 +631,16 @@ func (adminOrg *AdminOrg) AddMetadataEntryAsync(typedValue, key, value string) (
 	return addMetadata(adminOrg.client, typedValue, key, value, adminOrg.AdminOrg.HREF)
 }
 
-// MergeMetadataAsync merges AdminOrg metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadataAsync merges AdminOrg metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
-func (adminOrg *AdminOrg) MergeMetadataAsync(metadata map[string]types.TypedValue) (Task, error) {
-	return mergeAllMetadata(adminOrg.client, metadata, adminOrg.AdminOrg.HREF)
+func (adminOrg *AdminOrg) MergeMetadataAsync(typedValue string, metadata map[string]string) (Task, error) {
+	return mergeAllMetadata(adminOrg.client, typedValue, metadata, adminOrg.AdminOrg.HREF)
 }
 
-// MergeMetadata merges AdminOrg metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadata merges AdminOrg metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
-func (adminOrg *AdminOrg) MergeMetadata(metadata map[string]types.TypedValue) error {
-	task, err := adminOrg.MergeMetadataAsync(metadata)
+func (adminOrg *AdminOrg) MergeMetadata(typedValue string, metadata map[string]string) error {
+	task, err := adminOrg.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
 		return err
 	}
@@ -686,16 +686,16 @@ func (disk *Disk) AddMetadataEntryAsync(typedValue, key, value string) (Task, er
 	return addMetadata(disk.client, typedValue, key, value, disk.Disk.HREF)
 }
 
-// MergeMetadataAsync merges Disk metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadataAsync merges Disk metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
-func (disk *Disk) MergeMetadataAsync(metadata map[string]types.TypedValue) (Task, error) {
-	return mergeAllMetadata(disk.client, metadata, disk.Disk.HREF)
+func (disk *Disk) MergeMetadataAsync(typedValue string, metadata map[string]string) (Task, error) {
+	return mergeAllMetadata(disk.client, typedValue, metadata, disk.Disk.HREF)
 }
 
-// MergeMetadata merges Disk metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadata merges Disk metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
-func (disk *Disk) MergeMetadata(metadata map[string]types.TypedValue) error {
-	task, err := disk.MergeMetadataAsync(metadata)
+func (disk *Disk) MergeMetadata(typedValue string, metadata map[string]string) error {
+	task, err := disk.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
 		return err
 	}
@@ -745,18 +745,18 @@ func (orgVdcNetwork *OrgVDCNetwork) AddMetadataEntryAsync(typedValue, key, value
 	return addMetadata(orgVdcNetwork.client, typedValue, key, value, getAdminURL(orgVdcNetwork.OrgVDCNetwork.HREF))
 }
 
-// MergeMetadataAsync merges OrgVDCNetwork metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadataAsync merges OrgVDCNetwork metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
 // Note: Requires system administrator privileges.
-func (orgVdcNetwork *OrgVDCNetwork) MergeMetadataAsync(metadata map[string]types.TypedValue) (Task, error) {
-	return mergeAllMetadata(orgVdcNetwork.client, metadata, getAdminURL(orgVdcNetwork.OrgVDCNetwork.HREF))
+func (orgVdcNetwork *OrgVDCNetwork) MergeMetadataAsync(typedValue string, metadata map[string]string) (Task, error) {
+	return mergeAllMetadata(orgVdcNetwork.client, typedValue, metadata, getAdminURL(orgVdcNetwork.OrgVDCNetwork.HREF))
 }
 
-// MergeMetadata merges OrgVDCNetwork metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadata merges OrgVDCNetwork metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
 // Note: Requires system administrator privileges.
-func (orgVdcNetwork *OrgVDCNetwork) MergeMetadata(metadata map[string]types.TypedValue) error {
-	task, err := orgVdcNetwork.MergeMetadataAsync(metadata)
+func (orgVdcNetwork *OrgVDCNetwork) MergeMetadata(typedValue string, metadata map[string]string) error {
+	task, err := orgVdcNetwork.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
 		return err
 	}
@@ -803,16 +803,16 @@ func (catalogItem *CatalogItem) AddMetadataEntryAsync(typedValue, key, value str
 	return addMetadata(catalogItem.client, typedValue, key, value, catalogItem.CatalogItem.HREF)
 }
 
-// MergeMetadataAsync merges CatalogItem metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadataAsync merges CatalogItem metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
-func (catalogItem *CatalogItem) MergeMetadataAsync(metadata map[string]types.TypedValue) (Task, error) {
-	return mergeAllMetadata(catalogItem.client, metadata, catalogItem.CatalogItem.HREF)
+func (catalogItem *CatalogItem) MergeMetadataAsync(typedValue string, metadata map[string]string) (Task, error) {
+	return mergeAllMetadata(catalogItem.client, typedValue, metadata, catalogItem.CatalogItem.HREF)
 }
 
-// MergeMetadata merges CatalogItem metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadata merges CatalogItem metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
-func (catalogItem *CatalogItem) MergeMetadata(metadata map[string]types.TypedValue) error {
-	task, err := catalogItem.MergeMetadataAsync(metadata)
+func (catalogItem *CatalogItem) MergeMetadata(typedValue string, metadata map[string]string) error {
+	task, err := catalogItem.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
 		return err
 	}
@@ -856,11 +856,11 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) AddMetadataEntry(typedValue, k
 	return task.WaitTaskCompletion()
 }
 
-// MergeMetadata merges OpenApiOrgVdcNetwork metadata provided as a map of key->types.TypedValue with the already present in VCD,
+// MergeMetadata merges OpenApiOrgVdcNetwork metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // and waits for the task to finish.
 // TODO: This function is currently using XML API underneath as OpenAPI metadata is supported from v37.0 and is currently in alpha at the moment. See https://github.com/vmware/go-vcloud-director/pull/455
-func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) MergeMetadata(metadata map[string]types.TypedValue) error {
-	task, err := mergeAllMetadata(openApiOrgVdcNetwork.client, metadata, fmt.Sprintf("%s/admin/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), strings.ReplaceAll(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, "urn:vcloud:network:", "")))
+func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) MergeMetadata(typedValue string, metadata map[string]string) error {
+	task, err := mergeAllMetadata(openApiOrgVdcNetwork.client, typedValue, metadata, fmt.Sprintf("%s/admin/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), strings.ReplaceAll(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, "urn:vcloud:network:", "")))
 	if err != nil {
 		return err
 	}
@@ -916,20 +916,23 @@ func addMetadata(client *Client, typedValue, key, value, requestUri string) (Tas
 }
 
 // mergeAllMetadata merges the metadata key-values provided as parameter with existing entity metadata
-func mergeAllMetadata(client *Client, metadata map[string]types.TypedValue, requestUri string) (Task, error) {
-	var metadataList []*types.MetadataEntry
-	for _, typedValue := range metadata {
-		metadataList = append(metadataList, &types.MetadataEntry{
+func mergeAllMetadata(client *Client, typedValue string, metadata map[string]string, requestUri string) (Task, error) {
+	var metadataToMerge []*types.MetadataEntry
+	for _, value := range metadata {
+		metadataToMerge = append(metadataToMerge, &types.MetadataEntry{
 			Xmlns:      types.XMLNamespaceVCloud,
 			Xsi:        types.XMLNamespaceXSI,
-			TypedValue: &typedValue,
+			TypedValue: &types.TypedValue{
+				XsiType: typedValue,
+				Value:   value,
+			},
 		})
 	}
 
 	newMetadata := &types.Metadata{
 		Xmlns:         types.XMLNamespaceVCloud,
 		Xsi:           types.XMLNamespaceXSI,
-		MetadataEntry: metadataList,
+		MetadataEntry: metadataToMerge,
 	}
 
 	apiEndpoint := urlParseRequestURI(requestUri)
