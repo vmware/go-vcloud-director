@@ -20,6 +20,15 @@ func init() {
 	testingTags["metadata"] = "metadata_test.go"
 }
 
+// MetadataCompatible allows consumers of this library to consider all structs that implement
+// this interface to be the same type
+type metadataCompatible interface {
+	GetMetadata() (*types.Metadata, error)
+	AddMetadataEntry(typedValue, key, value string) error
+	MergeMetadata(typedValue string, metadata map[string]interface{}) error
+	DeleteMetadataEntry(key string) error
+}
+
 func (vcd *TestVCD) Test_AddAndDeleteMetadataForVdc(check *C) {
 	if vcd.config.VCD.Vdc == "" {
 		check.Skip("skipping test because VDC name is empty")
@@ -554,7 +563,7 @@ func (vcd *TestVCD) Test_MetadataByHrefCRUD(check *C) {
 	check.Assert(len(metadata.MetadataEntry), Equals, 0)
 }
 
-func testMetadataCRUDActions(resource MetadataCompatible, check *C, extraCheck func()) {
+func testMetadataCRUDActions(resource metadataCompatible, check *C, extraCheck func()) {
 	// Check how much metadata exists
 	metadata, err := resource.GetMetadata()
 	check.Assert(err, IsNil)

@@ -12,15 +12,6 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// MetadataCompatible allows consumers of this library to consider all structs that implement
-// this interface to be the same type
-type MetadataCompatible interface {
-	GetMetadata() (*types.Metadata, error)
-	AddMetadataEntry(typedValue, key, value string) error
-	MergeMetadata(typedValue string, metadata map[string]interface{}) error
-	DeleteMetadataEntry(key string) error
-}
-
 // ----------------
 // REST API metadata CRUD functions
 
