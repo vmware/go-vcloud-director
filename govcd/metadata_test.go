@@ -20,8 +20,6 @@ func init() {
 	testingTags["metadata"] = "metadata_test.go"
 }
 
-// MetadataCompatible allows consumers of this library to consider all structs that implement
-// this interface to be the same type
 type metadataCompatible interface {
 	GetMetadata() (*types.Metadata, error)
 	AddMetadataEntry(typedValue, key, value string) error
