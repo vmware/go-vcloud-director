@@ -515,7 +515,7 @@ func extractUuid(input string) string {
 	reGetID := regexp.MustCompile(`([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})`)
 	matchListId := reGetID.FindAllStringSubmatch(input, -1)
 	if len(matchListId) > 0 && len(matchListId[0]) > 0 {
-		return matchListId[0][1]
+		return matchListId[len(matchListId)-1][1]
 	}
 	return ""
 }
