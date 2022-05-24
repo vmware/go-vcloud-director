@@ -132,6 +132,14 @@ func (vdcGroup *VdcGroup) CreateOpenApiOrgVdcNetwork(orgVdcNetworkConfig *types.
 	return createOpenApiOrgVdcNetwork(vdcGroup.client, orgVdcNetworkConfig)
 }
 
+// UpdateDhcp updates DHCP configuration for specific Org VDC network
+func (orgVdcNet *OpenApiOrgVdcNetwork) UpdateDhcp(orgVdcNetworkDhcpConfig *types.OpenApiOrgVdcNetworkDhcp) (*OpenApiOrgVdcNetworkDhcp, error) {
+	if orgVdcNet.client == nil || orgVdcNet.OpenApiOrgVdcNetwork == nil || orgVdcNet.OpenApiOrgVdcNetwork.ID == "" {
+		return nil, fmt.Errorf("error - Org VDC network structure must be set and have ID field available")
+	}
+	return updateOrgNetworkDhcp(orgVdcNet.client, orgVdcNet.OpenApiOrgVdcNetwork.ID, orgVdcNetworkDhcpConfig)
+}
+
 // Update allows to update Org VDC network
 func (orgVdcNet *OpenApiOrgVdcNetwork) Update(OrgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) (*OpenApiOrgVdcNetwork, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks

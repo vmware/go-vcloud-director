@@ -1529,16 +1529,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		return
 
 	case "vdcComputePolicy":
-		if entity.Parent == "" {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for vdcComputePolicy '%s'\n", entity.Name)
-			return
-		}
-		org, err := vcd.client.GetAdminOrgByName(entity.Parent)
-		if err != nil {
-			vcd.infoCleanup(notFoundMsg, "org", entity.Parent)
-			return
-		}
-		policy, err := org.GetVdcComputePolicyById(entity.Name)
+		policy, err := vcd.client.Client.GetVdcComputePolicyById(entity.Name)
 		if policy == nil || err != nil {
 			vcd.infoCleanup(notFoundMsg, "vdcComputePolicy", entity.Name)
 			return
@@ -1872,7 +1863,9 @@ func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint string) {
 	}
 }
 
-// newOrgUserConnection creates a new Org User and returns a connection to it
+// newOrgUserConnection creates a new Org User and returns a connection to it.
+// Attention: Set the user to use only lowercase letters. If you put upper case letters the function fails on waiting
+// because VCD creates the user with lowercase letters.
 func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, insecure bool) (*VCDClient, error) {
 	u, err := url.ParseRequestURI(href)
 	if err != nil {
