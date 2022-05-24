@@ -509,7 +509,7 @@ func (adminOrg *AdminOrg) GetCatalogByName(catalogName string, refresh bool) (*C
 	return nil, ErrorEntityNotFound
 }
 
-// Extracts an UUID from a string, regardless of surrounding text
+// Extracts an UUID from a string, regardless of surrounding text, returns the last found occurrence
 // Returns an empty string if no UUID was found
 func extractUuid(input string) string {
 	reGetID := regexp.MustCompile(`([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})`)
