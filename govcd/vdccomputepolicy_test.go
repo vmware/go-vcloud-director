@@ -2,7 +2,7 @@
 // +build vdc functional openapi ALL
 
 /*
- * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -21,29 +21,26 @@ func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
-	check.Assert(err, IsNil)
-	check.Assert(org, NotNil)
-
+	client := &vcd.client.Client
 	// Step 1 - Create a new VDC compute policies
 	newComputePolicy := &VdcComputePolicy{
-		client: org.client,
+		client: client,
 		VdcComputePolicy: &types.VdcComputePolicy{
 			Name:        check.TestName() + "_empty",
 			Description: "Empty policy created by test",
 		},
 	}
 
-	createdPolicy, err := org.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
+	createdPolicy, err := client.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies")
+	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", "", check.TestName())
 
 	check.Assert(createdPolicy.VdcComputePolicy.Name, Equals, newComputePolicy.VdcComputePolicy.Name)
 	check.Assert(createdPolicy.VdcComputePolicy.Description, Equals, newComputePolicy.VdcComputePolicy.Description)
 
 	newComputePolicy2 := &VdcComputePolicy{
-		client: org.client,
+		client: client,
 		VdcComputePolicy: &types.VdcComputePolicy{
 			Name:                       check.TestName(),
 			Description:                "Not Empty policy created by test",
@@ -60,10 +57,10 @@ func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
 		},
 	}
 
-	createdPolicy2, err := org.CreateVdcComputePolicy(newComputePolicy2.VdcComputePolicy)
+	createdPolicy2, err := client.CreateVdcComputePolicy(newComputePolicy2.VdcComputePolicy)
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(createdPolicy2.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies")
+	AddToCleanupList(createdPolicy2.VdcComputePolicy.ID, "vdcComputePolicy", "", check.TestName())
 
 	check.Assert(createdPolicy2.VdcComputePolicy.Name, Equals, newComputePolicy2.VdcComputePolicy.Name)
 	check.Assert(*createdPolicy2.VdcComputePolicy.CPUSpeed, Equals, 100)
@@ -84,7 +81,7 @@ func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
 	check.Assert(updatedPolicy.VdcComputePolicy, DeepEquals, createdPolicy2.VdcComputePolicy)
 
 	// Step 3 - Get all VDC compute policies
-	allExistingPolicies, err := org.GetAllVdcComputePolicies(nil)
+	allExistingPolicies, err := client.GetAllVdcComputePolicies(nil)
 	check.Assert(err, IsNil)
 	check.Assert(allExistingPolicies, NotNil)
 
@@ -95,12 +92,12 @@ func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
 		queryParams := url.Values{}
 		queryParams.Add("filter", "id=="+onePolicy.VdcComputePolicy.ID)
 
-		expectOnePolicyResultById, err := org.GetAllVdcComputePolicies(queryParams)
+		expectOnePolicyResultById, err := client.GetAllVdcComputePolicies(queryParams)
 		check.Assert(err, IsNil)
 		check.Assert(len(expectOnePolicyResultById) == 1, Equals, true)
 
 		// Step 2.2 - retrieve
-		exactItem, err := org.GetVdcComputePolicyById(onePolicy.VdcComputePolicy.ID)
+		exactItem, err := client.GetVdcComputePolicyById(onePolicy.VdcComputePolicy.ID)
 		check.Assert(err, IsNil)
 
 		check.Assert(err, IsNil)
@@ -115,13 +112,13 @@ func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
 	err = createdPolicy.Delete()
 	check.Assert(err, IsNil)
 	// Step 5 - try to read deleted VDC computed policy should end up with error 'ErrorEntityNotFound'
-	deletedPolicy, err := org.GetVdcComputePolicyById(createdPolicy.VdcComputePolicy.ID)
+	deletedPolicy, err := client.GetVdcComputePolicyById(createdPolicy.VdcComputePolicy.ID)
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(deletedPolicy, IsNil)
 
 	err = createdPolicy2.Delete()
 	check.Assert(err, IsNil)
-	deletedPolicy2, err := org.GetVdcComputePolicyById(createdPolicy2.VdcComputePolicy.ID)
+	deletedPolicy2, err := client.GetVdcComputePolicyById(createdPolicy2.VdcComputePolicy.ID)
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(deletedPolicy2, IsNil)
 }
@@ -131,6 +128,7 @@ func (vcd *TestVCD) Test_SetAssignedComputePolicies(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
+	client := &vcd.client.Client
 	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
@@ -145,29 +143,29 @@ func (vcd *TestVCD) Test_SetAssignedComputePolicies(check *C) {
 		client: org.client,
 		VdcComputePolicy: &types.VdcComputePolicy{
 			Name:                    check.TestName() + "1",
-			Description:             "Policy created by Test_SetVdcComputePolicies",
+			Description:             "Policy created by Test_SetAssignedComputePolicies",
 			CoresPerSocket:          takeIntAddress(1),
 			CPUReservationGuarantee: takeFloatAddress(0.26),
 			CPULimit:                takeIntAddress(200),
 		},
 	}
-	createdPolicy, err := org.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
+	createdPolicy, err := client.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
 	check.Assert(err, IsNil)
-	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies")
+	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", "", check.TestName())
 
 	newComputePolicy2 := &VdcComputePolicy{
 		client: org.client,
 		VdcComputePolicy: &types.VdcComputePolicy{
 			Name:                    check.TestName() + "2",
-			Description:             "Policy created by Test_SetVdcComputePolicies",
+			Description:             "Policy created by Test_SetAssignedComputePolicies",
 			CoresPerSocket:          takeIntAddress(2),
 			CPUReservationGuarantee: takeFloatAddress(0.52),
 			CPULimit:                takeIntAddress(400),
 		},
 	}
-	createdPolicy2, err := org.CreateVdcComputePolicy(newComputePolicy2.VdcComputePolicy)
+	createdPolicy2, err := client.CreateVdcComputePolicy(newComputePolicy2.VdcComputePolicy)
 	check.Assert(err, IsNil)
-	AddToCleanupList(createdPolicy2.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_VdcComputePolicies")
+	AddToCleanupList(createdPolicy2.VdcComputePolicy.ID, "vdcComputePolicy", "", check.TestName())
 
 	// Get default compute policy
 	allAssignedComputePolicies, err := adminVdc.GetAllAssignedVdcComputePolicies(nil)
@@ -199,5 +197,10 @@ func (vcd *TestVCD) Test_SetAssignedComputePolicies(check *C) {
 		{HREF: vdcComputePolicyHref.String() + defaultPolicyId}}}
 
 	_, err = adminVdc.SetAssignedComputePolicies(policyReferences)
+	check.Assert(err, IsNil)
+
+	err = createdPolicy.Delete()
+	check.Assert(err, IsNil)
+	err = createdPolicy2.Delete()
 	check.Assert(err, IsNil)
 }

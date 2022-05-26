@@ -54,7 +54,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkIsolated(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated, nil)
+	runOpenApiOrgVdcNetworkTest(check, vcd, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated, nil)
 	runOpenApiOrgVdcNetworkWithVdcGroupTest(check, vcd, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated, nil)
 }
 
@@ -115,7 +115,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted, nsxtRoutedDhcpConfig)
+	runOpenApiOrgVdcNetworkTest(check, vcd, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted, nsxtRoutedDhcpConfig)
 	runOpenApiOrgVdcNetworkWithVdcGroupTest(check, vcd, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted, nsxtRoutedDhcpConfig)
 }
 
@@ -168,7 +168,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque, nil)
+	runOpenApiOrgVdcNetworkTest(check, vcd, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque, nil)
 	runOpenApiOrgVdcNetworkWithVdcGroupTest(check, vcd, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque, nil)
 }
 
@@ -211,7 +211,7 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkIsolated(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated, nil)
+	runOpenApiOrgVdcNetworkTest(check, vcd, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated, nil)
 }
 
 func (vcd *TestVCD) Test_NsxvOrgVdcNetworkRouted(check *C) {
@@ -270,7 +270,7 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkRouted(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted, nil)
+	runOpenApiOrgVdcNetworkTest(check, vcd, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted, nil)
 }
 
 func (vcd *TestVCD) Test_NsxvOrgVdcNetworkDirect(check *C) {
@@ -327,10 +327,10 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkDirect(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeDirect, nil)
+	runOpenApiOrgVdcNetworkTest(check, vcd, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeDirect, nil)
 }
 
-func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, expectNetworkType string, dhcpFunc dhcpConfigFunc) {
+func runOpenApiOrgVdcNetworkTest(check *C, vcd *TestVCD, vdc *Vdc, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, expectNetworkType string, dhcpFunc dhcpConfigFunc) {
 	orgVdcNet, err := vdc.CreateOpenApiOrgVdcNetwork(orgVdcNetworkConfig)
 	check.Assert(err, IsNil)
 
@@ -371,7 +371,7 @@ func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.
 
 	// Configure DHCP if specified
 	if dhcpFunc != nil {
-		dhcpFunc(check, vdc, updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID)
+		dhcpFunc(check, vcd, vdc, updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID)
 	}
 	// Delete
 	err = orgVdcNet.Delete()
@@ -385,9 +385,9 @@ func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.
 	check.Assert(ContainsNotFound(err), Equals, true)
 }
 
-type dhcpConfigFunc func(check *C, vdc *Vdc, orgNetId string)
+type dhcpConfigFunc func(check *C, vcd *TestVCD, vdc *Vdc, orgNetId string)
 
-func nsxtRoutedDhcpConfig(check *C, vdc *Vdc, orgNetId string) {
+func nsxtRoutedDhcpConfig(check *C, vcd *TestVCD, vdc *Vdc, orgNetId string) {
 	dhcpDefinition := &types.OpenApiOrgVdcNetworkDhcp{
 		Enabled: takeBoolPointer(true),
 		DhcpPools: []types.OpenApiOrgVdcNetworkDhcpPools{
@@ -399,18 +399,43 @@ func nsxtRoutedDhcpConfig(check *C, vdc *Vdc, orgNetId string) {
 				},
 			},
 		},
+		DnsServers: []string{
+			"8.8.8.8",
+			"8.8.4.4",
+		},
 	}
+
+	// In API versions lower than 36.1, dnsServers list does not exist
+	if vdc.client.APIVCDMaxVersionIs("< 36.1") {
+		dhcpDefinition.DnsServers = nil
+	}
+
 	updatedDhcp, err := vdc.UpdateOpenApiOrgVdcNetworkDhcp(orgNetId, dhcpDefinition)
 	check.Assert(err, IsNil)
 
 	check.Assert(dhcpDefinition, DeepEquals, updatedDhcp.OpenApiOrgVdcNetworkDhcp)
 
-	// VCD Versions before 10.2 do not allow to perform "DELETE" on DHCP pool
-	// To remove DHCP configuration one must remove Org VDC network itself.
-	if vdc.client.APIVCDMaxVersionIs(">= 35.0") {
-		err = vdc.DeleteOpenApiOrgVdcNetworkDhcp(orgNetId)
-		check.Assert(err, IsNil)
-	}
+	err = vdc.DeleteOpenApiOrgVdcNetworkDhcp(orgNetId)
+	check.Assert(err, IsNil)
+
+	orgVdcNetwork, err := vcd.org.GetOpenApiOrgVdcNetworkById(orgNetId)
+	check.Assert(err, IsNil)
+	check.Assert(orgVdcNetwork, NotNil)
+
+	updatedDhcp2, err := orgVdcNetwork.UpdateDhcp(dhcpDefinition)
+	check.Assert(err, IsNil)
+	check.Assert(updatedDhcp2, NotNil)
+
+	check.Assert(dhcpDefinition, DeepEquals, updatedDhcp2.OpenApiOrgVdcNetworkDhcp)
+
+	err = orgVdcNetwork.DeletNetworkDhcp()
+	check.Assert(err, IsNil)
+
+	deletedDhcp, err := orgVdcNetwork.GetOpenApiOrgVdcNetworkDhcp()
+	check.Assert(err, IsNil)
+	check.Assert(len(deletedDhcp.OpenApiOrgVdcNetworkDhcp.DhcpPools), Equals, 0)
+	check.Assert(len(deletedDhcp.OpenApiOrgVdcNetworkDhcp.DnsServers), Equals, 0)
+
 }
 
 func runOpenApiOrgVdcNetworkWithVdcGroupTest(check *C, vcd *TestVCD, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, expectNetworkType string, dhcpFunc dhcpConfigFunc) {
@@ -501,7 +526,7 @@ func runOpenApiOrgVdcNetworkWithVdcGroupTest(check *C, vcd *TestVCD, orgVdcNetwo
 
 	// Configure DHCP if specified
 	if dhcpFunc != nil {
-		dhcpFunc(check, vdc, updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID)
+		dhcpFunc(check, vcd, vdc, updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID)
 	}
 	// Delete
 	err = orgVdcNet.Delete()

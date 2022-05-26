@@ -48,6 +48,7 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsCandidateVdcs:             "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwPolicies:               "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwDefaultPolicies:        "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSecurityTags:                       "36.0", // VCD 10.3+
 
 	// NSX-T ALB (Advanced/AVI Load Balancer) support was introduced in 10.2
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController:                    "35.0", // VCD 10.2+
@@ -87,6 +88,10 @@ var endpointElevatedApiVersions = map[string][]string{
 		//"35.0", // Basic minimum required version
 		"35.2", // Deprecates Action field in favor of ActionValue
 		"36.2", // Adds 3 new fields - Comments, SourceGroupsExcluded, and DestinationGroupsExcluded
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworksDhcp: {
+		//"32.0", // Basic minimum required version
+		"36.1", // Adds support for dnsServers
 	},
 }
 

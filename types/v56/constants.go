@@ -372,6 +372,7 @@ const (
 	OpenApiEndpointVdcGroupsDfwDefaultPolicies        = "vdcGroups/%s/dfwPolicies/default"
 	OpenApiEndpointVdcGroupsDfwRules                  = "vdcGroups/%s/dfwPolicies/%s/rules"
 	OpenApiEndpointNetworkContextProfiles             = "networkContextProfiles"
+	OpenApiEndpointSecurityTags                       = "securityTags"
 
 	// NSX-T ALB related endpoints
 

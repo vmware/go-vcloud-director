@@ -1490,10 +1490,10 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
 		vcd.infoCleanup(notFoundMsg, "vdc", vcd.vdc.Vdc.Name)
 	}
 
-	createdPolicy, err := adminOrg.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
+	createdPolicy, err := adminOrg.client.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
 	check.Assert(err, IsNil)
 
-	createdPolicy2, err := adminOrg.CreateVdcComputePolicy(newComputePolicy2.VdcComputePolicy)
+	createdPolicy2, err := adminOrg.client.CreateVdcComputePolicy(newComputePolicy2.VdcComputePolicy)
 	check.Assert(err, IsNil)
 
 	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_AddNewEmptyVMWithVmComputePolicyAndUpdate")
