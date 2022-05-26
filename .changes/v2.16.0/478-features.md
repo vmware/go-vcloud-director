@@ -1,0 +1,1 @@
+* Add NSX-T Edge Gateway methods `NsxtEdgeGateway.GetNsxtRouteAdvertisement`, `NsxtEdgeGateway.UpdateNsxtRouteAdvertisement` and `NsxtEdgeGateway.DeleteNsxtRouteAdvertisement` that allows to manage NSX-T route advertisement [GH-478]
