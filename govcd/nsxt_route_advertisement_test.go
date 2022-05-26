@@ -34,13 +34,23 @@ func (vcd *TestVCD) Test_NsxtEdgeRouteAdvertisement(check *C) {
 	network2 := "192.168.2.0/24"
 	networksToAdvertise := []string{network1, network2} // Sample networks to advertise
 
+	// Test UpdateNsxtRouteAdvertisement
 	nsxtEdgeRouteAdvertisement, err := edge.UpdateNsxtRouteAdvertisement(true, networksToAdvertise, true)
 	check.Assert(err, IsNil)
 	check.Assert(nsxtEdgeRouteAdvertisement, NotNil)
 	check.Assert(nsxtEdgeRouteAdvertisement.Enable, Equals, true)
-	check.Assert(nsxtEdgeRouteAdvertisement.Subnets, Equals, true)
+	check.Assert(len(nsxtEdgeRouteAdvertisement.Subnets), Equals, 2)
 	check.Assert(checkNetworkInSubnetsSlice(network1, networksToAdvertise), IsNil)
 	check.Assert(checkNetworkInSubnetsSlice(network2, networksToAdvertise), IsNil)
+
+	// Test DeleteNsxtRouteAdvertisement
+	err = edge.DeleteNsxtRouteAdvertisement(true)
+	check.Assert(err, IsNil)
+	nsxtEdgeRouteAdvertisement, err = edge.GetNsxtRouteAdvertisement(true)
+	check.Assert(err, IsNil)
+	check.Assert(nsxtEdgeRouteAdvertisement, NotNil)
+	check.Assert(nsxtEdgeRouteAdvertisement.Enable, Equals, false)
+	check.Assert(len(nsxtEdgeRouteAdvertisement.Subnets), Equals, 0)
 }
 
 func checkNetworkInSubnetsSlice(network string, subnets []string) error {
