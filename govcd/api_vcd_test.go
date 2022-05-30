@@ -197,9 +197,10 @@ type TestConfig struct {
 		OvfUrl             string `yaml:"ovfUrl,omitempty"`
 	} `yaml:"ova"`
 	Media struct {
-		MediaPath       string `yaml:"mediaPath,omitempty"`
-		Media           string `yaml:"mediaName,omitempty"`
-		PhotonOsOvaPath string `yaml:"photonOsOvaPath,omitempty"`
+		MediaPath        string `yaml:"mediaPath,omitempty"`
+		Media            string `yaml:"mediaName,omitempty"`
+		PhotonOsOvaPath  string `yaml:"photonOsOvaPath,omitempty"`
+		MediaUdfTypePath string `yaml:"mediaUdfTypePath,omitempty"`
 	} `yaml:"media"`
 	Misc struct {
 		LdapContainer string `yaml:"ldapContainer,omitempty"`
