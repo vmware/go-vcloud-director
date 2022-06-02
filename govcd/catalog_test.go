@@ -964,7 +964,7 @@ func (vcd *TestVCD) Test_CatalogQueryMediaList(check *C) {
 	check.Assert(medias[0].Name, Equals, vcd.config.Media.Media)
 }
 
-// Tests System function UploadMediaImage by checking if provided UDF type standard iso file uploaded.
+// Tests System function UploadMediaImage by checking if provided ISO file of UDF type.
 func (vcd *TestVCD) Test_CatalogUploadMediaImageWihUdfTypeIso(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
