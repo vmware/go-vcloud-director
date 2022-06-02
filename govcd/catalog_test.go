@@ -969,7 +969,7 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImageWihUdfTypeIso(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	if vcd.config.Media.MediaUdfTypePath == "" {
-		check.Skip("Skipping test because no UDF type iso path given")
+		check.Skip("Skipping test because no UDF type ISO path was given")
 	}
 
 	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
