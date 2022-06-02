@@ -143,13 +143,13 @@ func (vm *VM) DeleteMetadataEntryAsync(key string) (Task, error) {
 	return deleteMetadata(vm.client, key, vm.VM.HREF)
 }
 
-// GetMetadata returns Vdc metadata.
+// GetMetadata returns VDC metadata.
 // Note: Requires system administrator privileges.
 func (vdc *Vdc) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(vdc.client, getAdminURL(vdc.Vdc.HREF))
 }
 
-// AddMetadataEntry adds Vdc metadata typedValue and key/value pair provided as input
+// AddMetadataEntry adds VDC metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
 // Note: Requires system administrator privileges.
 func (vdc *Vdc) AddMetadataEntry(typedValue, key, value string) error {
@@ -171,20 +171,20 @@ func (vdc *Vdc) AddMetadataEntry(typedValue, key, value string) error {
 	return nil
 }
 
-// AddMetadataEntryAsync adds Vdc metadata typedValue and key/value pair provided as input and returns the task.
+// AddMetadataEntryAsync adds VDC metadata typedValue and key/value pair provided as input and returns the task.
 // Note: Requires system administrator privileges.
 func (vdc *Vdc) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
 	return addMetadata(vdc.client, typedValue, key, value, getAdminURL(vdc.Vdc.HREF))
 }
 
-// MergeMetadataAsync merges VM metadata provided as a key-value map of type `typedValue` with the already present in VCD,
+// MergeMetadataAsync merges VDC metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
 // Note: Requires system administrator privileges.
 func (vdc *Vdc) MergeMetadataAsync(typedValue string, metadata map[string]interface{}) (Task, error) {
 	return mergeAllMetadata(vdc.client, typedValue, metadata, getAdminURL(vdc.Vdc.HREF))
 }
 
-// MergeMetadata merges VM metadata provided as a key-value map of type `typedValue` with the already present in VCD,
+// MergeMetadata merges VDC metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
 // Note: Requires system administrator privileges.
 func (vdc *Vdc) MergeMetadata(typedValue string, metadata map[string]interface{}) error {
@@ -195,7 +195,7 @@ func (vdc *Vdc) MergeMetadata(typedValue string, metadata map[string]interface{}
 	return task.WaitTaskCompletion()
 }
 
-// DeleteMetadataEntry deletes Vdc metadata by key provided as input and waits for
+// DeleteMetadataEntry deletes VDC metadata by key provided as input and waits for
 // the task to finish.
 // Note: Requires system administrator privileges.
 func (vdc *Vdc) DeleteMetadataEntry(key string) error {
@@ -217,7 +217,7 @@ func (vdc *Vdc) DeleteMetadataEntry(key string) error {
 	return nil
 }
 
-// DeleteMetadataEntryAsync deletes Vdc metadata depending on key provided as input and returns the task.
+// DeleteMetadataEntryAsync deletes VDC metadata depending on key provided as input and returns the task.
 // Note: Requires system administrator privileges.
 func (vdc *Vdc) DeleteMetadataEntryAsync(key string) (Task, error) {
 	return deleteMetadata(vdc.client, key, getAdminURL(vdc.Vdc.HREF))
