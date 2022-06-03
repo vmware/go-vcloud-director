@@ -768,6 +768,11 @@ func (client *Client) RemoveProvidedCustomHeaders(values map[string]string) {
 	}
 }
 
+// Retrieves the administrator URL of a given HREF
+func getAdminURL(href string) string {
+	return strings.ReplaceAll(href, "/api/", "/api/admin/")
+}
+
 // ---------------------------------------------------------------------
 // The following functions are needed to avoid strict Coverity warnings
 // ---------------------------------------------------------------------
