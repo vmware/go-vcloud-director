@@ -374,6 +374,8 @@ const (
 	OpenApiEndpointNetworkContextProfiles             = "networkContextProfiles"
 	OpenApiEndpointSecurityTags                       = "securityTags"
 
+	OpenApiEndpointEdgeBgpConfig = "edgeGateways/%s/routing/bgp" // '%s' is NSX-T Edge gateway ID
+
 	// NSX-T ALB related endpoints
 
 	OpenApiEndpointAlbController = "loadBalancer/controllers/"
