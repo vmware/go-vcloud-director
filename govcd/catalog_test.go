@@ -963,3 +963,31 @@ func (vcd *TestVCD) Test_CatalogQueryMediaList(check *C) {
 	// Check that media name is what it should be
 	check.Assert(medias[0].Name, Equals, vcd.config.Media.Media)
 }
+
+// Tests System function UploadMediaImage by checking if provided UDF type standard iso file uploaded.
+func (vcd *TestVCD) Test_CatalogUploadMediaImageWihUdfTypeIso(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	if vcd.config.Media.MediaUdfTypePath == "" {
+		check.Skip("Skipping test because no UDF type iso path given")
+	}
+
+	catalog, org := findCatalog(vcd, check, vcd.config.VCD.Catalog.Name)
+
+	mediaName := check.TestName()
+
+	uploadTask, err := catalog.UploadMediaImage(mediaName, "upload from test", vcd.config.Media.MediaUdfTypePath, 1024)
+	check.Assert(err, IsNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(mediaName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, mediaName)
+
+	catalog, err = org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+	verifyCatalogItemUploaded(check, catalog, mediaName)
+
+	// Delete testing catalog item
+	deleteCatalogItem(check, catalog, mediaName)
+}

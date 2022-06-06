@@ -197,9 +197,10 @@ type TestConfig struct {
 		OvfUrl             string `yaml:"ovfUrl,omitempty"`
 	} `yaml:"ova"`
 	Media struct {
-		MediaPath       string `yaml:"mediaPath,omitempty"`
-		Media           string `yaml:"mediaName,omitempty"`
-		PhotonOsOvaPath string `yaml:"photonOsOvaPath,omitempty"`
+		MediaPath        string `yaml:"mediaPath,omitempty"`
+		Media            string `yaml:"mediaName,omitempty"`
+		PhotonOsOvaPath  string `yaml:"photonOsOvaPath,omitempty"`
+		MediaUdfTypePath string `yaml:"mediaUdfTypePath,omitempty"`
 	} `yaml:"media"`
 	Misc struct {
 		LdapContainer string `yaml:"ldapContainer,omitempty"`
@@ -1702,28 +1703,21 @@ func (vcd *TestVCD) findFirstVapp() VApp {
 		return VApp{}
 	}
 	wantedVapp := vcd.vapp.VApp.Name
-	vappName := ""
-	for _, res := range vdc.Vdc.ResourceEntities {
-		for _, item := range res.ResourceEntity {
-			// Finding a named vApp, if it was defined in config
-			if wantedVapp != "" {
-				if item.Name == wantedVapp {
-					vappName = item.Name
-					break
-				}
-			} else {
-				// Otherwise, we get the first vApp from the vDC list
+	if wantedVapp == "" {
+		// As no vApp is defined in config, we search for one randomly
+		for _, res := range vdc.Vdc.ResourceEntities {
+			for _, item := range res.ResourceEntity {
 				if item.Type == "application/vnd.vmware.vcloud.vApp+xml" {
-					vappName = item.Name
+					wantedVapp = item.Name
 					break
 				}
 			}
 		}
 	}
-	if wantedVapp == "" {
+	vapp, err := vdc.GetVAppByName(wantedVapp, false)
+	if err != nil {
 		return VApp{}
 	}
-	vapp, _ := vdc.GetVAppByName(vappName, false)
 	return *vapp
 }
 
