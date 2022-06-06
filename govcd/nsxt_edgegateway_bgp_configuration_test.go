@@ -37,7 +37,7 @@ func (vcd *TestVCD) Test_NsxEdgeBgpConfiguration(check *C) {
 		Enabled:       true,
 		Ecmp:          true,
 		LocalASNumber: "65420",
-		GracefulRestart: types.EdgeBgpGracefulRestartConfig{
+		GracefulRestart: &types.EdgeBgpGracefulRestartConfig{
 			StaleRouteTimer: 190,
 			RestartTimer:    600,
 			Mode:            "HELPER_ONLY",

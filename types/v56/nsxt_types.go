@@ -1255,12 +1255,14 @@ type EdgeBgpConfig struct {
 
 	// BGP AS (Autonomous system) number to advertise to BGP peers. BGP AS number can be specified
 	// in either ASPLAIN or ASDOT formats, like ASPLAIN format :- '65546', ASDOT format :- '1.10'.
+	//
 	// Read only if using a VRF-Lite backed external network.
-	LocalASNumber string `json:"localASNumber"`
+	LocalASNumber string `json:"localASNumber,omitempty"`
 
-	// BGP Graceful Restart configuration. Not specifying a value results in default bahavior. Read
-	// only if using a VRF-Lite backed external network.
-	GracefulRestart EdgeBgpGracefulRestartConfig `json:"gracefulRestart"`
+	// BGP Graceful Restart configuration. Not specifying a value results in default bahavior.
+	//
+	// Read only if using a VRF-Lite backed external network.
+	GracefulRestart *EdgeBgpGracefulRestartConfig `json:"gracefulRestart,omitempty"`
 
 	// This property describes the current version of the entity. To prevent clients from
 	// overwriting each other's changes, update operations must include the version which can be
