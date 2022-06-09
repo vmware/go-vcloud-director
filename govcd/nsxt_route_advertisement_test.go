@@ -25,10 +25,12 @@ func (vcd *TestVCD) Test_NsxtEdgeRouteAdvertisement(check *C) {
 	check.Assert(err, IsNil)
 
 	// Make sure we are using a dedicated Tier-0 gateway (otherwise route advertisement won't be available)
-	edge.EdgeGateway.EdgeGatewayUplinks[0].Dedicated = true
-	edge, err = edge.Update(edge.EdgeGateway)
+	edge, err = setDedicateTier0Gateway(edge, true)
 	check.Assert(err, IsNil)
 	check.Assert(edge, NotNil)
+
+	// Make sure that things get back to normal when the test is done
+	defer setDedicateTier0Gateway(edge, false)
 
 	network1 := "192.168.1.0/24"
 	network2 := "192.168.2.0/24"
@@ -60,4 +62,14 @@ func checkNetworkInSubnetsSlice(network string, subnets []string) error {
 		}
 	}
 	return fmt.Errorf("network %s is not within the slice provided", network)
+}
+
+func setDedicateTier0Gateway(edgeGateway *NsxtEdgeGateway, dedicate bool) (*NsxtEdgeGateway, error) {
+	edgeGateway.EdgeGateway.EdgeGatewayUplinks[0].Dedicated = dedicate
+	edgeGateway, err := edgeGateway.Update(edgeGateway.EdgeGateway)
+	if err != nil {
+		return nil, err
+	}
+
+	return edgeGateway, nil
 }
