@@ -193,5 +193,5 @@ func (egw *NsxtEdgeGateway) getTenantContext() (*TenantContext, error) {
 		return &TenantContext{OrgId: egw.EdgeGateway.Org.ID, OrgName: egw.EdgeGateway.Org.Name}, nil
 	}
 
-	return nil, fmt.Errorf("NsxtEdgeGateway is not fully initialized. Please initialized before using this method")
+	return nil, fmt.Errorf("NsxtEdgeGateway is not fully initialized. Please initialize it before using this method")
 }
