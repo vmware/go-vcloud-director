@@ -454,7 +454,7 @@ type AdminVdc struct {
 	IsThinProvision               *bool          `xml:"IsThinProvision,omitempty"`
 	NetworkPoolReference          *Reference     `xml:"NetworkPoolReference,omitempty"`
 	ProviderVdcReference          *Reference     `xml:"ProviderVdcReference"`
-	ResourcePoolRefs              *VimObjectRefs `xml:"vmext:ResourcePoolRefs,omitempty"`
+	ResourcePoolRefs              []VimObjectRef `xml:"ResourcePoolRefs,omitempty"`
 	UsesFastProvisioning          *bool          `xml:"UsesFastProvisioning,omitempty"`
 	OverCommitAllowed             bool           `xml:"OverCommitAllowed,omitempty"`
 	VmDiscoveryEnabled            bool           `xml:"VmDiscoveryEnabled,omitempty"`
@@ -2532,9 +2532,9 @@ type ExternalNetworkReference struct {
 // Description: Represents the Managed Object Reference (MoRef) and the type of a vSphere object.
 // Since: 0.9
 type VimObjectRef struct {
-	VimServerRef  *Reference `xml:"VimServerRef"`
-	MoRef         string     `xml:"MoRef"`
-	VimObjectType string     `xml:"VimObjectType"`
+	VimServerRef  *Reference `xml:"VimObjectRef>VimServerRef"`
+	MoRef         string     `xml:"VimObjectRef>MoRef"`
+	VimObjectType string     `xml:"VimObjectRef>VimObjectType"`
 }
 
 // Type: VimObjectRefsType
