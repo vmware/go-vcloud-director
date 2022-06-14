@@ -37,7 +37,7 @@ func (vcd *TestVCD) Test_NsxtEdgeRouteAdvertisement(check *C) {
 	networksToAdvertise := []string{network1, network2} // Sample networks to advertise
 
 	// Test UpdateNsxtRouteAdvertisement
-	nsxtEdgeRouteAdvertisement, err := edge.UpdateNsxtRouteAdvertisement(true, networksToAdvertise, true)
+	nsxtEdgeRouteAdvertisement, err := edge.UpdateNsxtRouteAdvertisement(true, networksToAdvertise)
 	check.Assert(err, IsNil)
 	check.Assert(nsxtEdgeRouteAdvertisement, NotNil)
 	check.Assert(nsxtEdgeRouteAdvertisement.Enable, Equals, true)
@@ -46,9 +46,9 @@ func (vcd *TestVCD) Test_NsxtEdgeRouteAdvertisement(check *C) {
 	check.Assert(checkNetworkInSubnetsSlice(network2, networksToAdvertise), IsNil)
 
 	// Test DeleteNsxtRouteAdvertisement
-	err = edge.DeleteNsxtRouteAdvertisement(true)
+	err = edge.DeleteNsxtRouteAdvertisement()
 	check.Assert(err, IsNil)
-	nsxtEdgeRouteAdvertisement, err = edge.GetNsxtRouteAdvertisement(true)
+	nsxtEdgeRouteAdvertisement, err = edge.GetNsxtRouteAdvertisement()
 	check.Assert(err, IsNil)
 	check.Assert(nsxtEdgeRouteAdvertisement, NotNil)
 	check.Assert(nsxtEdgeRouteAdvertisement.Enable, Equals, false)

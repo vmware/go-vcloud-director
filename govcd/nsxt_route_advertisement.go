@@ -9,9 +9,9 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// GetNsxtRouteAdvertisement retrieves the list of subnets that will be advertised so that the Edge Gateway can route
+// GetNsxtRouteAdvertisementWithContext retrieves the list of subnets that will be advertised so that the Edge Gateway can route
 // out to the connected external network.
-func (egw *NsxtEdgeGateway) GetNsxtRouteAdvertisement(useTenantContext bool) (*types.RouteAdvertisement, error) {
+func (egw *NsxtEdgeGateway) GetNsxtRouteAdvertisementWithContext(useTenantContext bool) (*types.RouteAdvertisement, error) {
 	err := checkSanityNsxtEdgeGatewayRouteAdvertisement(egw)
 	if err != nil {
 		return nil, err
@@ -48,14 +48,14 @@ func (egw *NsxtEdgeGateway) GetNsxtRouteAdvertisement(useTenantContext bool) (*t
 	return routeAdvertisement, nil
 }
 
-// GetNsxtRouteAdvertisementWithContext method is the same as GetNsxtRouteAdvertisement but using TenantContext by default
-func (egw *NsxtEdgeGateway) GetNsxtRouteAdvertisementWithContext() (*types.RouteAdvertisement, error) {
-	return egw.GetNsxtRouteAdvertisement(true)
+// GetNsxtRouteAdvertisement method is the same as GetNsxtRouteAdvertisementWithContext but sending TenantContext by default
+func (egw *NsxtEdgeGateway) GetNsxtRouteAdvertisement() (*types.RouteAdvertisement, error) {
+	return egw.GetNsxtRouteAdvertisementWithContext(true)
 }
 
-// UpdateNsxtRouteAdvertisement updates the list of subnets that will be advertised so that the Edge Gateway can route
+// UpdateNsxtRouteAdvertisementWithContext updates the list of subnets that will be advertised so that the Edge Gateway can route
 // out to the connected external network.
-func (egw *NsxtEdgeGateway) UpdateNsxtRouteAdvertisement(enable bool, subnets []string, useTenantContext bool) (*types.RouteAdvertisement, error) {
+func (egw *NsxtEdgeGateway) UpdateNsxtRouteAdvertisementWithContext(enable bool, subnets []string, useTenantContext bool) (*types.RouteAdvertisement, error) {
 	err := checkSanityNsxtEdgeGatewayRouteAdvertisement(egw)
 	if err != nil {
 		return nil, err
@@ -93,23 +93,23 @@ func (egw *NsxtEdgeGateway) UpdateNsxtRouteAdvertisement(enable bool, subnets []
 		return nil, err
 	}
 
-	return egw.GetNsxtRouteAdvertisement(useTenantContext)
+	return egw.GetNsxtRouteAdvertisementWithContext(useTenantContext)
 }
 
-// UpdateNsxtRouteAdvertisementWithContext method is the same as UpdateNsxtRouteAdvertisementWithContext but using TenantContext by default
-func (egw *NsxtEdgeGateway) UpdateNsxtRouteAdvertisementWithContext(enable bool, subnets []string) (*types.RouteAdvertisement, error) {
-	return egw.UpdateNsxtRouteAdvertisement(enable, subnets, true)
+// UpdateNsxtRouteAdvertisement method is the same as UpdateNsxtRouteAdvertisementWithContext but sending TenantContext by default
+func (egw *NsxtEdgeGateway) UpdateNsxtRouteAdvertisement(enable bool, subnets []string) (*types.RouteAdvertisement, error) {
+	return egw.UpdateNsxtRouteAdvertisementWithContext(enable, subnets, true)
 }
 
-// DeleteNsxtRouteAdvertisement deletes the list of subnets that will be advertised.
-func (egw *NsxtEdgeGateway) DeleteNsxtRouteAdvertisement(useTenantContext bool) error {
-	_, err := egw.UpdateNsxtRouteAdvertisement(false, []string{}, useTenantContext)
+// DeleteNsxtRouteAdvertisementWithContext deletes the list of subnets that will be advertised.
+func (egw *NsxtEdgeGateway) DeleteNsxtRouteAdvertisementWithContext(useTenantContext bool) error {
+	_, err := egw.UpdateNsxtRouteAdvertisementWithContext(false, []string{}, useTenantContext)
 	return err
 }
 
-// DeleteNsxtRouteAdvertisement method is the same as DeleteNsxtRouteAdvertisement but using TenantContext by default
-func (egw *NsxtEdgeGateway) DeleteNsxtRouteAdvertisementWithContext() error {
-	return egw.DeleteNsxtRouteAdvertisement(true)
+// DeleteNsxtRouteAdvertisement method is the same as DeleteNsxtRouteAdvertisementWithContext but sending TenantContext by default
+func (egw *NsxtEdgeGateway) DeleteNsxtRouteAdvertisement() error {
+	return egw.DeleteNsxtRouteAdvertisementWithContext(true)
 }
 
 // checkSanityNsxtEdgeGatewayRouteAdvertisement function performs some checks to *NsxtEdgeGateway parameter and returns error
