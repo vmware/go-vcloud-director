@@ -13,6 +13,7 @@ import (
 
 	. "gopkg.in/check.v1"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
@@ -250,6 +251,9 @@ func (vcd *TestVCD) Test_QueryVappTemplateList(check *C) {
 	check.Assert(vAppTemplates, NotNil)
 
 	// Check the number of vApp templates is one
+	if len(vAppTemplates) > 1 {
+		spew.Dump(vAppTemplates)
+	}
 	check.Assert(len(vAppTemplates), Equals, 1)
 
 	// Check the name of the vApp template is what it should be

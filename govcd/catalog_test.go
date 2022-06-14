@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
 	. "gopkg.in/check.v1"
@@ -838,6 +839,17 @@ func (vcd *TestVCD) Test_PublishToExternalOrganizations(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
+	// TODO - remove once VCD is fixed.
+	// Every Org update causes catalog publishing to be removed and therefore this test fails.
+	// Turning publishing on right before test to be sure it is tested and passes.
+	// VCD 10.2.0 <-> 10.3.3 have a bug that even though catalog publishing is enabled adminOrg.
+	fmt.Printf("Overcomming VCD 10.2.0 <-> 10.3.3)Running: %s\n", check.TestName())
+	adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishCatalogs = true
+	adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishExternally = true
+	updatedAdminOrg, err := adminOrg.Update()
+	check.Assert(err, IsNil)
+	check.Assert(updatedAdminOrg, NotNil)
+
 	adminCatalog, err := adminOrg.CreateCatalog(catalogName, catalogDescription)
 	check.Assert(err, IsNil)
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, catalogName)
@@ -958,6 +970,9 @@ func (vcd *TestVCD) Test_CatalogQueryMediaList(check *C) {
 	check.Assert(medias, NotNil)
 
 	// Check that number of medias is 1
+	if len(medias) > 1 {
+		spew.Dump(medias)
+	}
 	check.Assert(len(medias), Equals, 1)
 
 	// Check that media name is what it should be

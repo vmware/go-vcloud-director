@@ -251,6 +251,11 @@ func setupAlbPoolPrerequisites(check *C, vcd *TestVCD) (*NsxtAlbController, *Nsx
 		Enabled: true,
 	}
 	enabledSettings, err := edge.UpdateAlbSettings(albSettingsConfig)
+	if err != nil {
+		_ = seGroup.Delete()
+		_ = cloud.Delete()
+		_ = controller.Delete()
+	}
 	check.Assert(err, IsNil)
 	check.Assert(enabledSettings.Enabled, Equals, true)
 	PrependToCleanupList(check.TestName()+"-ALB-settings", "OpenApiEntityAlbSettingsDisable", edge.EdgeGateway.Name, check.TestName())
