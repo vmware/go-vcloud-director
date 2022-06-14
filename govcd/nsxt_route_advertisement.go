@@ -48,6 +48,11 @@ func (egw *NsxtEdgeGateway) GetNsxtRouteAdvertisement(useTenantContext bool) (*t
 	return routeAdvertisement, nil
 }
 
+// GetNsxtRouteAdvertisementWithContext method is the same as GetNsxtRouteAdvertisement but using TenantContext by default
+func (egw *NsxtEdgeGateway) GetNsxtRouteAdvertisementWithContext() (*types.RouteAdvertisement, error) {
+	return egw.GetNsxtRouteAdvertisement(true)
+}
+
 // UpdateNsxtRouteAdvertisement updates the list of subnets that will be advertised so that the Edge Gateway can route
 // out to the connected external network.
 func (egw *NsxtEdgeGateway) UpdateNsxtRouteAdvertisement(enable bool, subnets []string, useTenantContext bool) (*types.RouteAdvertisement, error) {
@@ -91,10 +96,20 @@ func (egw *NsxtEdgeGateway) UpdateNsxtRouteAdvertisement(enable bool, subnets []
 	return egw.GetNsxtRouteAdvertisement(useTenantContext)
 }
 
+// UpdateNsxtRouteAdvertisementWithContext method is the same as UpdateNsxtRouteAdvertisementWithContext but using TenantContext by default
+func (egw *NsxtEdgeGateway) UpdateNsxtRouteAdvertisementWithContext(enable bool, subnets []string) (*types.RouteAdvertisement, error) {
+	return egw.UpdateNsxtRouteAdvertisement(enable, subnets, true)
+}
+
 // DeleteNsxtRouteAdvertisement deletes the list of subnets that will be advertised.
 func (egw *NsxtEdgeGateway) DeleteNsxtRouteAdvertisement(useTenantContext bool) error {
 	_, err := egw.UpdateNsxtRouteAdvertisement(false, []string{}, useTenantContext)
 	return err
+}
+
+// DeleteNsxtRouteAdvertisement method is the same as DeleteNsxtRouteAdvertisement but using TenantContext by default
+func (egw *NsxtEdgeGateway) DeleteNsxtRouteAdvertisementWithContext() error {
+	return egw.DeleteNsxtRouteAdvertisement(true)
 }
 
 // checkSanityNsxtEdgeGatewayRouteAdvertisement function performs some checks to *NsxtEdgeGateway parameter and returns error
