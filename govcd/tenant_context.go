@@ -183,3 +183,15 @@ func (vdcGroup *VdcGroup) getTenantContext() (*TenantContext, error) {
 	}
 	return org.tenantContext()
 }
+
+func (egw *NsxtEdgeGateway) getTenantContext() (*TenantContext, error) {
+	if egw != nil && egw.EdgeGateway.Org != nil {
+		if egw.EdgeGateway.Org.Name == "" || egw.EdgeGateway.Org.ID == "" {
+			return nil, fmt.Errorf("either parent NsxtEdgeGateway Org name or ID is empty and both must be set. Org name is [%s] and Org ID is [%s]", egw.EdgeGateway.Org.Name, egw.EdgeGateway.Org.ID)
+		}
+
+		return &TenantContext{OrgId: egw.EdgeGateway.Org.ID, OrgName: egw.EdgeGateway.Org.Name}, nil
+	}
+
+	return nil, fmt.Errorf("NsxtEdgeGateway is not fully initialized. Please initialize it before using this method")
+}
