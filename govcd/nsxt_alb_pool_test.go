@@ -252,9 +252,19 @@ func setupAlbPoolPrerequisites(check *C, vcd *TestVCD) (*NsxtAlbController, *Nsx
 	}
 	enabledSettings, err := edge.UpdateAlbSettings(albSettingsConfig)
 	if err != nil {
-		_ = seGroup.Delete()
-		_ = cloud.Delete()
-		_ = controller.Delete()
+		fmt.Printf("# error occured while enabling ALB on Edge Gateway. Cleaning up Service Engine Group, ALB Cloud and ALB Controller: %s", err)
+		err2 := seGroup.Delete()
+		if err2 != nil {
+			fmt.Printf("# got error while cleaning up Service Engine Group: %s", err)
+		}
+		err2 = cloud.Delete()
+		if err2 != nil {
+			fmt.Printf("# got error while cleaning up ALB Cloud: %s", err)
+		}
+		err2 = controller.Delete()
+		if err2 != nil {
+			fmt.Printf("# got error while cleaning up ALB Controller: %s", err)
+		}
 	}
 	check.Assert(err, IsNil)
 	check.Assert(enabledSettings.Enabled, Equals, true)
