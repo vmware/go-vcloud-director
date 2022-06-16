@@ -373,6 +373,7 @@ const (
 	OpenApiEndpointVdcGroupsDfwRules                  = "vdcGroups/%s/dfwPolicies/%s/rules"
 	OpenApiEndpointNetworkContextProfiles             = "networkContextProfiles"
 	OpenApiEndpointSecurityTags                       = "securityTags"
+	OpenApiEndpointNsxtRouteAdvertisement             = "edgeGateways/%s/routing/advertisement"
 
 	OpenApiEndpointEdgeBgpConfig = "edgeGateways/%s/routing/bgp" // '%s' is NSX-T Edge gateway ID
 

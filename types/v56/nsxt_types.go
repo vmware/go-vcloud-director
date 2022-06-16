@@ -1299,3 +1299,13 @@ type EdgeBgpGracefulRestartConfig struct {
 type EdgeBgpConfigVersion struct {
 	Version int `json:"version"`
 }
+
+// RouteAdvertisement lists the subnets that will be advertised so that the Edge Gateway can route out to the
+// connected external network.
+type RouteAdvertisement struct {
+	// Enable if true, means that the subnets will be advertised.
+	Enable bool `json:"enable"`
+	// Subnets is the list of subnets that will be advertised so that the Edge Gateway can route out to the connected
+	// external network.
+	Subnets []string `json:"subnets"`
+}
