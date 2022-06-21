@@ -843,7 +843,7 @@ func (vcd *TestVCD) Test_PublishToExternalOrganizations(check *C) {
 	// Every Org update causes catalog publishing to be removed and therefore this test fails.
 	// Turning publishing on right before test to be sure it is tested and passes.
 	// VCD 10.2.0 <-> 10.3.3 have a bug that even though catalog publishing is enabled adminOrg.
-	fmt.Printf("Overcomming VCD 10.2.0 <-> 10.3.3)Running: %s\n", check.TestName())
+	fmt.Println("Overcomming VCD 10.2.0 <-> 10.3.3 bug - explicitly setting catalog sharing")
 	adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishCatalogs = true
 	adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishExternally = true
 	updatedAdminOrg, err := adminOrg.Update()
@@ -970,6 +970,7 @@ func (vcd *TestVCD) Test_CatalogQueryMediaList(check *C) {
 	check.Assert(medias, NotNil)
 
 	// Check that number of medias is 1
+	// Dump all media structures to easily identify leftover objects if number is not 1
 	if len(medias) > 1 {
 		spew.Dump(medias)
 	}

@@ -251,6 +251,7 @@ func (vcd *TestVCD) Test_QueryVappTemplateList(check *C) {
 	check.Assert(vAppTemplates, NotNil)
 
 	// Check the number of vApp templates is one
+	// Dump all vApp template structures to easily identify leftover objects if number is not 1
 	if len(vAppTemplates) > 1 {
 		spew.Dump(vAppTemplates)
 	}

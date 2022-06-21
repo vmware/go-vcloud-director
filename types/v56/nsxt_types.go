@@ -1245,7 +1245,17 @@ type EntitySecurityTags struct {
 	Tags []string `json:"tags"`
 }
 
-// EdgeBgpConfig
+// RouteAdvertisement lists the subnets that will be advertised so that the Edge Gateway can route out to the
+// connected external network.
+type RouteAdvertisement struct {
+	// Enable if true, means that the subnets will be advertised.
+	Enable bool `json:"enable"`
+	// Subnets is the list of subnets that will be advertised so that the Edge Gateway can route out to the connected
+	// external network.
+	Subnets []string `json:"subnets"`
+}
+
+// EdgeBgpConfig defines BGP configuration on NSX-T Edge Gateways (Tier1 NSX-T Gateways)
 type EdgeBgpConfig struct {
 	// A flag indicating whether BGP configuration is enabled or not.
 	Enabled bool `json:"enabled"`
@@ -1274,38 +1284,30 @@ type EdgeBgpConfig struct {
 // EdgeBgpGracefulRestartConfig describes current graceful restart configuration mode and timer for
 // BGP configuration on an edge gateway.
 type EdgeBgpGracefulRestartConfig struct {
-	// Describes Graceful Restart configuration Modes for BGP configuration on an edge gateway.
+	// Mode describes Graceful Restart configuration Modes for BGP configuration on an edge gateway.
 	// HELPER_ONLY mode is the ability for a BGP speaker to indicate its ability to preserve
 	// forwarding state during BGP restart. GRACEFUL_RESTART mode is the ability of a BGP speaker to
 	// advertise its restart to its peers.
-
+	//
 	// DISABLE - Both graceful restart and helper modes are disabled.
 	// HELPER_ONLY - Only helper mode is enabled.
 	// GRACEFUL_AND_HELPER - Both graceful restart and helper modes are enabled.
-
+	//
 	// Possible values are: DISABLE , HELPER_ONLY , GRACEFUL_AND_HELPER
-
 	Mode string `json:"mode"`
 
-	// Maximum time taken (in seconds) for a BGP session to be established after a restart. If the
-	// session is not re-established within this timer, the receiving speaker will delete all the
-	// stale routes from that peer.
+	// RestartTimer specifies maximum time taken (in seconds) for a BGP session to be established
+	// after a restart. If the session is not re-established within this timer, the receiving
+	// speaker will delete all the stale routes from that peer.
 	RestartTimer int `json:"restartTimer"`
 
-	// Maximum time (in seconds) before stale routes are removed when BGP restarts.
+	// StaleRouteTimer defines maximum time (in seconds) before stale routes are removed when BGP
+	// restarts.
 	StaleRouteTimer int `json:"staleRouteTimer"`
 }
 
+// EdgeBgpConfigVersion is part of EdgeBgpConfig type and describes current version of the entity
+// being modified
 type EdgeBgpConfigVersion struct {
 	Version int `json:"version"`
-}
-
-// RouteAdvertisement lists the subnets that will be advertised so that the Edge Gateway can route out to the
-// connected external network.
-type RouteAdvertisement struct {
-	// Enable if true, means that the subnets will be advertised.
-	Enable bool `json:"enable"`
-	// Subnets is the list of subnets that will be advertised so that the Edge Gateway can route out to the connected
-	// external network.
-	Subnets []string `json:"subnets"`
 }
