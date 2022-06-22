@@ -10,6 +10,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+// GetBgpConfiguration retrieves BGP Configuration for NSX-T Edge Gateway
 func (egw *NsxtEdgeGateway) GetBgpConfiguration() (*types.EdgeBgpConfig, error) {
 	client := egw.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpConfig
@@ -18,7 +19,7 @@ func (egw *NsxtEdgeGateway) GetBgpConfiguration() (*types.EdgeBgpConfig, error) 
 		return nil, err
 	}
 
-	// Insert Edge Gateway ID into endpoint path edgeGateways/%s/firewall/rules
+	// Insert Edge Gateway ID into endpoint path "edgeGateways/%s/routing/bgp"
 	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
 	if err != nil {
 		return nil, err
@@ -34,6 +35,10 @@ func (egw *NsxtEdgeGateway) GetBgpConfiguration() (*types.EdgeBgpConfig, error) 
 	return returnObject, nil
 }
 
+// UpdateBgpConfiguration updates BGP configuration on NSX-T Edge Gateway
+//
+// Note. Update of BGP configuration requires version to be specified in 'Version' field. This
+// function automatically handles it.
 func (egw *NsxtEdgeGateway) UpdateBgpConfiguration(bgpConfig *types.EdgeBgpConfig) (*types.EdgeBgpConfig, error) {
 	client := egw.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpConfig
@@ -65,8 +70,10 @@ func (egw *NsxtEdgeGateway) UpdateBgpConfiguration(bgpConfig *types.EdgeBgpConfi
 	return returnObject, nil
 }
 
+// DisableBgpConfiguration performs an `UpdateBgpConfiguration` and preserve all field values as
+// they were, but explicitly sets Enabled to false.
 func (egw *NsxtEdgeGateway) DisableBgpConfiguration() error {
-	// Get existring BGP configuration so that when disabling it - other settings remain as they are
+	// Get existing BGP configuration so that when disabling it - other settings remain as they are
 	bgpConfig, err := egw.GetBgpConfiguration()
 	if err != nil {
 		return fmt.Errorf("error retrieving BGP configuration: %s", err)

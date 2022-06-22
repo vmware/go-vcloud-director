@@ -51,7 +51,7 @@ func (vcd *TestVCD) Test_NsxEdgeBgpConfiguration(check *C) {
 	newBgpConfig.Version = updatedBgpConfig.Version // Version is constantly iterated and cant be checked
 	check.Assert(updatedBgpConfig, DeepEquals, newBgpConfig)
 
-	// Check "disable" function which keeps the all fields the same, but sets "Enabled: false"
+	// Check "disable" function which keeps all fields the same, but sets "Enabled: false"
 	err = edge.DisableBgpConfiguration()
 	check.Assert(err, IsNil)
 
