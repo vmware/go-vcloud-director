@@ -121,6 +121,7 @@ func (vcd *TestVCD) Test_CreateNsxtOrgVdc(check *C) {
 		check.Assert(vdc.Vdc.Name, Equals, vdcConfiguration.Name)
 		check.Assert(vdc.Vdc.IsEnabled, Equals, vdcConfiguration.IsEnabled)
 		check.Assert(vdc.Vdc.AllocationModel, Equals, vdcConfiguration.AllocationModel)
+		check.Assert(len(adminVdc.AdminVdc.ResourcePoolRefs) > 0, Equals, true)
 
 		// Test  update
 		adminVdc.AdminVdc.Description = "updated-description" + check.TestName()
