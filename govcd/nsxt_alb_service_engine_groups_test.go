@@ -34,8 +34,6 @@ func (vcd *TestVCD) Test_GetAllAlbServiceEngineGroups(check *C) {
 		SupportedFeatureSet: "PREMIUM",
 	}
 
-
-
 	createdSeGroup, err := vcd.client.CreateNsxtAlbServiceEngineGroup(albSeGroup)
 	check.Assert(err, IsNil)
 
@@ -43,7 +41,8 @@ func (vcd *TestVCD) Test_GetAllAlbServiceEngineGroups(check *C) {
 	check.Assert(createdSeGroup.NsxtAlbServiceEngineGroup.Name, Equals, albSeGroup.Name)
 	check.Assert(createdSeGroup.NsxtAlbServiceEngineGroup.Description, Equals, albSeGroup.Description)
 	check.Assert(createdSeGroup.NsxtAlbServiceEngineGroup.ReservationType, Equals, albSeGroup.ReservationType)
-	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.0") {
+	// Field is only populated in responses when using API version v37.0 onwards
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.0") && vcd.client.Client.APIClientVersionIs(">= 37.0") {
 		check.Assert(createdSeGroup.NsxtAlbServiceEngineGroup.SupportedFeatureSet, Equals, albSeGroup.SupportedFeatureSet)
 	}
 
@@ -69,11 +68,12 @@ func (vcd *TestVCD) Test_GetAllAlbServiceEngineGroups(check *C) {
 
 	// Test update
 	createdSeGroup.NsxtAlbServiceEngineGroup.Name = createdSeGroup.NsxtAlbServiceEngineGroup.Name + "updated"
+	createdSeGroup.NsxtAlbServiceEngineGroup.SupportedFeatureSet = "STANDARD"
 	updatedSeGroup, err := createdSeGroup.Update(createdSeGroup.NsxtAlbServiceEngineGroup)
 	check.Assert(err, IsNil)
 
-	// SupportedFeatureSet is a field only available since v37.0, so in prior versions we ignore it
-	if vcd.client.Client.APIVCDMaxVersionIs("< 37.0") {
+	// SupportedFeatureSet is a field only available since v37.0, in that case we ignore it in the following DeepEquals
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.0") {
 		updatedSeGroup.NsxtAlbServiceEngineGroup.SupportedFeatureSet = createdSeGroup.NsxtAlbServiceEngineGroup.SupportedFeatureSet
 	}
 	check.Assert(updatedSeGroup.NsxtAlbServiceEngineGroup, DeepEquals, createdSeGroup.NsxtAlbServiceEngineGroup)
