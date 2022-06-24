@@ -71,7 +71,10 @@ func (vcd *TestVCD) Test_NsxtAlbController(check *C) {
 	check.Assert(updatedController.NsxtAlbController.Description, Equals, updateControllerDef.Description)
 	check.Assert(updatedController.NsxtAlbController.Url, Equals, updateControllerDef.Url)
 	check.Assert(updatedController.NsxtAlbController.Username, Equals, updateControllerDef.Username)
-	check.Assert(updatedController.NsxtAlbController.LicenseType, Equals, updateControllerDef.LicenseType)
+	// LicenseType has been removed since v37.0
+	if vcd.client.Client.APIVCDMaxVersionIs("< 37.0") {
+		check.Assert(updatedController.NsxtAlbController.LicenseType, Equals, updateControllerDef.LicenseType)
+	}
 
 	// Revert settings to original ones
 	_, err = controllerByUrl.Update(controllerByUrl.NsxtAlbController)

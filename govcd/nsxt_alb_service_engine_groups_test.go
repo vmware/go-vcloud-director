@@ -31,7 +31,10 @@ func (vcd *TestVCD) Test_GetAllAlbServiceEngineGroups(check *C) {
 				ID: createdAlbCloud.NsxtAlbCloud.ID,
 			},
 		},
+		SupportedFeatureSet: "PREMIUM",
 	}
+
+
 
 	createdSeGroup, err := vcd.client.CreateNsxtAlbServiceEngineGroup(albSeGroup)
 	check.Assert(err, IsNil)
@@ -40,6 +43,9 @@ func (vcd *TestVCD) Test_GetAllAlbServiceEngineGroups(check *C) {
 	check.Assert(createdSeGroup.NsxtAlbServiceEngineGroup.Name, Equals, albSeGroup.Name)
 	check.Assert(createdSeGroup.NsxtAlbServiceEngineGroup.Description, Equals, albSeGroup.Description)
 	check.Assert(createdSeGroup.NsxtAlbServiceEngineGroup.ReservationType, Equals, albSeGroup.ReservationType)
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.0") {
+		check.Assert(createdSeGroup.NsxtAlbServiceEngineGroup.SupportedFeatureSet, Equals, albSeGroup.SupportedFeatureSet)
+	}
 
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroups + createdSeGroup.NsxtAlbServiceEngineGroup.ID
 	AddToCleanupListOpenApi(createdSeGroup.NsxtAlbServiceEngineGroup.Name, check.TestName(), openApiEndpoint)
@@ -66,6 +72,10 @@ func (vcd *TestVCD) Test_GetAllAlbServiceEngineGroups(check *C) {
 	updatedSeGroup, err := createdSeGroup.Update(createdSeGroup.NsxtAlbServiceEngineGroup)
 	check.Assert(err, IsNil)
 
+	// SupportedFeatureSet is a field only available since v37.0, so in prior versions we ignore it
+	if vcd.client.Client.APIVCDMaxVersionIs("< 37.0") {
+		updatedSeGroup.NsxtAlbServiceEngineGroup.SupportedFeatureSet = createdSeGroup.NsxtAlbServiceEngineGroup.SupportedFeatureSet
+	}
 	check.Assert(updatedSeGroup.NsxtAlbServiceEngineGroup, DeepEquals, createdSeGroup.NsxtAlbServiceEngineGroup)
 
 	// Cleanup
@@ -99,6 +109,7 @@ func spawnAlbControllerCloudServiceEngineGroup(vcd *TestVCD, check *C, seGroupRe
 				ID: createdAlbCloud.NsxtAlbCloud.ID,
 			},
 		},
+		SupportedFeatureSet: "PREMIUM",
 	}
 
 	createdSeGroup, err := vcd.client.CreateNsxtAlbServiceEngineGroup(albSeGroup)
