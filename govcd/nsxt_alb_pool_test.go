@@ -67,17 +67,17 @@ func testAdvancedPoolConfig(check *C, edge *NsxtEdgeGateway, vcd *TestVCD, clien
 		PassiveMonitoringEnabled: takeBoolPointer(true),
 		HealthMonitors:           nil,
 		Members: []types.NsxtAlbPoolMember{
-			types.NsxtAlbPoolMember{
+			{
 				Enabled:   true,
 				IpAddress: "1.1.1.1",
 				Port:      8400,
 				Ratio:     takeIntAddress(2),
 			},
-			types.NsxtAlbPoolMember{
+			{
 				Enabled:   false,
 				IpAddress: "1.1.1.2",
 			},
-			types.NsxtAlbPoolMember{
+			{
 				Enabled:   true,
 				IpAddress: "1.1.1.3",
 			},
@@ -98,13 +98,13 @@ func testAdvancedPoolConfig(check *C, edge *NsxtEdgeGateway, vcd *TestVCD, clien
 		PassiveMonitoringEnabled: takeBoolPointer(false),
 		HealthMonitors:           nil,
 		Members: []types.NsxtAlbPoolMember{
-			types.NsxtAlbPoolMember{
+			{
 				Enabled:   true,
 				IpAddress: "1.1.1.1",
 				Port:      8300,
 				Ratio:     takeIntAddress(3),
 			},
-			types.NsxtAlbPoolMember{
+			{
 				Enabled:   true,
 				IpAddress: "1.1.1.2",
 			},
@@ -248,7 +248,8 @@ func setupAlbPoolPrerequisites(check *C, vcd *TestVCD) (*NsxtAlbController, *Nsx
 
 	// Enable ALB on Edge Gateway with default ServiceNetworkDefinition
 	albSettingsConfig := &types.NsxtAlbConfig{
-		Enabled: true,
+		Enabled:             true,
+		SupportedFeatureSet: "PREMIUM",
 	}
 	enabledSettings, err := edge.UpdateAlbSettings(albSettingsConfig)
 	check.Assert(err, IsNil)

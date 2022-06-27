@@ -831,10 +831,13 @@ type NsxtAlbConfig struct {
 	// LicenseType of the backing Load Balancer Cloud.
 	// * BASIC - Basic edition of the NSX Advanced Load Balancer.
 	// * ENTERPRISE - Full featured edition of the NSX Advanced Load Balancer.
+	// This field was removed since VCD 10.4.0 (v37.0) in favor of NsxtAlbConfig.SupportedFeatureSet
 	LicenseType string `json:"licenseType,omitempty"`
+	// SupportedFeatureSet was added in VCD 10.4.0 (v37.0) as substitute of NsxtAlbConfig.LicenseType.
+	// Possible values are: "STANDARD", "PREMIUM".
+	SupportedFeatureSet string `json:"supportedFeatureSet,omitempty"`
 	// LoadBalancerCloudRef
 	LoadBalancerCloudRef *OpenApiReference `json:"loadBalancerCloudRef,omitempty"`
-
 	// ServiceNetworkDefinition in Gateway CIDR format which will be used by Load Balancer service. All the load balancer
 	// service engines associated with the Service Engine Group will be attached to this network. The subnet prefix length
 	// must be 25. If nothing is set, the default is 192.168.255.1/25. Default CIDR can be configured. This field cannot
