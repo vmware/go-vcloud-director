@@ -1,1 +1,1 @@
-* Add `SupportedFeatureSet` attribute to `NsxtAlbServiceEngineGroup` to support v37.0 AVI Load Balancer license management [GH-485]
+* Add `SupportedFeatureSet` attribute to `NsxtAlbServiceEngineGroup` and `NsxtAlbConfig` to support v37.0 license management for AVI Load Balancer [GH-485]
