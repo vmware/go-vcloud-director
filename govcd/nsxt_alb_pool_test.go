@@ -248,7 +248,7 @@ func setupAlbPoolPrerequisites(check *C, vcd *TestVCD) (*NsxtAlbController, *Nsx
 
 	// Enable ALB on Edge Gateway with default ServiceNetworkDefinition
 	albSettingsConfig := &types.NsxtAlbConfig{
-		Enabled:             true,
+		Enabled: true,
 	}
 
 	// Field is only available when using API version v37.0 onwards
