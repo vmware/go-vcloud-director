@@ -9,6 +9,7 @@ package types
 import (
 	"encoding/xml"
 	"fmt"
+	"reflect"
 	"sort"
 )
 
@@ -461,6 +462,26 @@ type AdminVdc struct {
 	IsElastic                     *bool          `xml:"IsElastic,omitempty"`                     // Supported from 32.0 for the Flex model
 	IncludeMemoryOverhead         *bool          `xml:"IncludeMemoryOverhead,omitempty"`         // Supported from 32.0 for the Flex model
 	UniversalNetworkPoolReference *Reference     `xml:"UniversalNetworkPoolReference,omitempty"` // Reference to a universal network pool
+}
+
+func (a AdminVdc) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	//change the tag of ResourecPoolRefs through reflection
+
+	value := reflect.ValueOf(a)
+	t := value.Type()
+	sf := make([]reflect.StructField, 0)
+	for i := 0; i < t.NumField(); i++ {
+		fmt.Println(t.Field(i).Tag)
+		sf = append(sf, t.Field(i))
+		if t.Field(i).Name == "ResourcePoolRefs" {
+			sf[i].Tag = `xml:"vmext:ResourcePoolRefs,omitempty"`
+		}
+	}
+	newType := reflect.StructOf(sf)
+	newValue := value.Convert(newType)
+
+	return e.EncodeElement(newValue.Interface(), start)
+
 }
 
 // VdcStorageProfileConfiguration represents the parameters to assign a storage profile in creation of organization vDC.

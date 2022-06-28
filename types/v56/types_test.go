@@ -5,9 +5,40 @@ import (
 	"testing"
 )
 
-func TestAdminVDCResourcePoolUnmarshal(t *testing.T) {
+func TestAdminVDCResourcePoolSerialization(t *testing.T) {
 
-	adminVdcXml := `
+	t.Run("Marshal", func(t *testing.T) {
+		myAdminVDC := AdminVdc{
+			ResourcePoolRefs: []VimObjectRef{
+				{
+					VimServerRef: &Reference{
+						HREF: "myref",
+						ID:   "myid",
+						Type: "mytype",
+						Name: "myname",
+					},
+					MoRef:         "moref",
+					VimObjectType: "RESOURCE_POOL",
+				},
+			},
+		}
+
+		expectedXML := `<AdminVdc xmlns="" name=""><AllocationModel></AllocationModel><NicQuota>0</NicQuota><NetworkQuota>0</NetworkQuota><VmQuota>0</VmQuota><IsEnabled>false</IsEnabled><vmext:ResourcePoolRefs><VimObjectRef><VimServerRef href="myref" id="myid" type="mytype" name="myname"></VimServerRef><MoRef>moref</MoRef><VimObjectType>RESOURCE_POOL</VimObjectType></VimObjectRef></vmext:ResourcePoolRefs></AdminVdc>`
+
+		bytes, err := xml.Marshal(myAdminVDC)
+		if err != nil {
+			t.Logf("Unexpected marshal error: %s", err)
+			t.FailNow()
+		}
+		if string(bytes) != expectedXML {
+			t.Logf("Was expecting '%s' but got '%s'", expectedXML, string(bytes))
+			t.FailNow()
+		}
+	})
+
+	t.Run("Unmarshal", func(t *testing.T) {
+
+		adminVdcXml := `
 <AdminVdc xmlns="http://www.vmware.com/vcloud/v1.5" xmlns:vmext="http://www.vmware.com/vcloud/extension/v1.5" xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1" xmlns:vssd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData" xmlns:common="http://schemas.dmtf.org/wbem/wscim/1/common" xmlns:rasd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:vmw="http://www.vmware.com/schema/ovf" xmlns:ovfenv="http://schemas.dmtf.org/ovf/environment/1" xmlns:ns9="http://www.vmware.com/vcloud/versions" status="1" isLegacyType="false" name="nl- - Production" id="urn:vcloud:vdc:c56ed4a4-9dec-4862-987a-5ebb601d7d19" href="https://testcloud/api/admin/vdc/c56ed4a4-9dec-4862-987a-5ebb601d7d19" type="application/vnd.vmware.admin.vdc+xml">
     <VCloudExtension required="false">
         <vmext:VimObjectRef>
@@ -156,33 +187,43 @@ func TestAdminVDCResourcePoolUnmarshal(t *testing.T) {
 </AdminVdc>
 `
 
-	myAdminVDC := AdminVdc{}
+		myAdminVDC := AdminVdc{}
 
-	err := xml.Unmarshal([]byte(adminVdcXml), &myAdminVDC)
-	if err != nil {
-		t.FailNow()
-	}
-	if len(myAdminVDC.ResourcePoolRefs) != 1 {
-		t.FailNow()
-	}
-	if myAdminVDC.ResourcePoolRefs[0].MoRef != "resgroup-1696" {
-		t.FailNow()
-	}
-	if myAdminVDC.ResourcePoolRefs[0].VimObjectType != "RESOURCE_POOL" {
-		t.FailNow()
-	}
-	if myAdminVDC.ResourcePoolRefs[0].VimServerRef == nil {
-		t.FailNow()
-	}
+		err := xml.Unmarshal([]byte(adminVdcXml), &myAdminVDC)
+		if err != nil {
+			t.Logf("Unexpected unmarshal error: %s", err)
+			t.FailNow()
+		}
+		if len(myAdminVDC.ResourcePoolRefs) != 1 {
+			t.Logf("Was expecting exactly one resource pool but got %d", len(myAdminVDC.ResourcePoolRefs))
+			t.Fail()
+		} else {
+			if myAdminVDC.ResourcePoolRefs[0].MoRef != "resgroup-1696" {
+				t.Logf("fail resgroup")
+				t.Fail()
+			}
+			if myAdminVDC.ResourcePoolRefs[0].VimObjectType != "RESOURCE_POOL" {
+				t.Logf("fail vimobject type")
+				t.Fail()
+			}
+			if myAdminVDC.ResourcePoolRefs[0].VimServerRef == nil {
+				t.Logf("fail vimserver ref missing")
+				t.Fail()
+			}
 
-	expectedVIMServerRef := Reference{
-		HREF: "https://testcloud/api/admin/extension/vimServer/d5b16253-9f4b-4652-936c-bee560901797",
-		ID:   "urn:vcloud:vimserver:d5b16253-9f4b-4652-936c-bee560901797",
-		Type: "application/vnd.vmware.admin.vmwvirtualcenter+xml",
-		Name: "VC",
-	}
+			expectedVIMServerRef := Reference{
+				HREF: "https://testcloud/api/admin/extension/vimServer/d5b16253-9f4b-4652-936c-bee560901797",
+				ID:   "urn:vcloud:vimserver:d5b16253-9f4b-4652-936c-bee560901797",
+				Type: "application/vnd.vmware.admin.vmwvirtualcenter+xml",
+				Name: "VC",
+			}
 
-	if *myAdminVDC.ResourcePoolRefs[0].VimServerRef != expectedVIMServerRef {
-		t.FailNow()
-	}
+			if *myAdminVDC.ResourcePoolRefs[0].VimServerRef != expectedVIMServerRef {
+				t.Logf("fail vimserver ref missing")
+				t.Fail()
+			}
+		}
+
+	})
+
 }
