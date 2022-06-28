@@ -471,7 +471,6 @@ func (a AdminVdc) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	t := value.Type()
 	sf := make([]reflect.StructField, 0)
 	for i := 0; i < t.NumField(); i++ {
-		fmt.Println(t.Field(i).Tag)
 		sf = append(sf, t.Field(i))
 		if t.Field(i).Name == "ResourcePoolRefs" {
 			sf[i].Tag = `xml:"vmext:ResourcePoolRefs,omitempty"`
