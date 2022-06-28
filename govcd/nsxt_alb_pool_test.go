@@ -249,8 +249,13 @@ func setupAlbPoolPrerequisites(check *C, vcd *TestVCD) (*NsxtAlbController, *Nsx
 	// Enable ALB on Edge Gateway with default ServiceNetworkDefinition
 	albSettingsConfig := &types.NsxtAlbConfig{
 		Enabled:             true,
-		SupportedFeatureSet: "PREMIUM",
 	}
+
+	// Field is only available when using API version v37.0 onwards
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.0") {
+		albSettingsConfig.SupportedFeatureSet = takeStringPointer("PREMIUM")
+	}
+
 	enabledSettings, err := edge.UpdateAlbSettings(albSettingsConfig)
 	check.Assert(err, IsNil)
 	check.Assert(enabledSettings.Enabled, Equals, true)

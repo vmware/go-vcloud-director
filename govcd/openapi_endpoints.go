@@ -94,6 +94,18 @@ var endpointElevatedApiVersions = map[string][]string{
 		//"32.0", // Basic minimum required version
 		"36.1", // Adds support for dnsServers
 	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController: {
+		//"35.0", // Basic minimum required version
+		"37.0", // Deprecates LicenseType in favor of SupportedFeatureSet
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroups: {
+		"35.0", // Basic minimum required version
+		"37.0", // Adds SupportedFeatureSet
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbEdgeGateway: {
+		"35.0", // Basic minimum required version
+		"37.0", // Deprecates LicenseType in favor of SupportedFeatureSet
+	},
 }
 
 // checkOpenApiEndpointCompatibility checks if VCD version (to which the client is connected) is sufficient to work with

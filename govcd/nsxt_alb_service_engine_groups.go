@@ -39,7 +39,7 @@ func (vcdClient *VCDClient) GetAllAlbServiceEngineGroups(context string, queryPa
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroups
-	apiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (vcdClient *VCDClient) GetAlbServiceEngineGroupById(id string) (*NsxtAlbSer
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroups
-	apiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func (vcdClient *VCDClient) CreateNsxtAlbServiceEngineGroup(albServiceEngineGrou
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroups
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +157,7 @@ func (vcdClient *VCDClient) CreateNsxtAlbServiceEngineGroup(albServiceEngineGrou
 		vcdClient:                 vcdClient,
 	}
 
-	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, albServiceEngineGroup, returnObject.NsxtAlbServiceEngineGroup, nil)
+	err = client.OpenApiPostItem(apiVersion, urlRef, nil, albServiceEngineGroup, returnObject.NsxtAlbServiceEngineGroup, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating NSX-T ALB Service Engine Group: %s", err)
 	}
@@ -169,7 +169,7 @@ func (vcdClient *VCDClient) CreateNsxtAlbServiceEngineGroup(albServiceEngineGrou
 func (nsxtAlbServiceEngineGroup *NsxtAlbServiceEngineGroup) Update(albSEGroupConfig *types.NsxtAlbServiceEngineGroup) (*NsxtAlbServiceEngineGroup, error) {
 	client := nsxtAlbServiceEngineGroup.vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroups
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +188,7 @@ func (nsxtAlbServiceEngineGroup *NsxtAlbServiceEngineGroup) Update(albSEGroupCon
 		vcdClient:                 nsxtAlbServiceEngineGroup.vcdClient,
 	}
 
-	err = client.OpenApiPutItem(minimumApiVersion, urlRef, nil, albSEGroupConfig, responseAlbController.NsxtAlbServiceEngineGroup, nil)
+	err = client.OpenApiPutItem(apiVersion, urlRef, nil, albSEGroupConfig, responseAlbController.NsxtAlbServiceEngineGroup, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error updating NSX-T ALB Service Engine Group: %s", err)
 	}
@@ -200,7 +200,7 @@ func (nsxtAlbServiceEngineGroup *NsxtAlbServiceEngineGroup) Update(albSEGroupCon
 func (nsxtAlbServiceEngineGroup *NsxtAlbServiceEngineGroup) Delete() error {
 	client := nsxtAlbServiceEngineGroup.vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroups
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
 	}
@@ -214,7 +214,7 @@ func (nsxtAlbServiceEngineGroup *NsxtAlbServiceEngineGroup) Delete() error {
 		return err
 	}
 
-	err = client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil, nil)
+	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
 	if err != nil {
 		return fmt.Errorf("error deleting NSX-T ALB Service Engine Group: %s", err)
 	}
@@ -228,7 +228,7 @@ func (nsxtAlbServiceEngineGroup *NsxtAlbServiceEngineGroup) Delete() error {
 func (nsxtAlbServiceEngineGroup *NsxtAlbServiceEngineGroup) Sync() error {
 	client := nsxtAlbServiceEngineGroup.vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroups
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
 	}
@@ -242,7 +242,7 @@ func (nsxtAlbServiceEngineGroup *NsxtAlbServiceEngineGroup) Sync() error {
 		return err
 	}
 
-	task, err := client.OpenApiPostItemAsync(minimumApiVersion, urlRef, nil, nil)
+	task, err := client.OpenApiPostItemAsync(apiVersion, urlRef, nil, nil)
 	if err != nil {
 		return fmt.Errorf("error syncing NSX-T ALB Service Engine Group: %s", err)
 	}

@@ -802,7 +802,7 @@ type NsxtAlbServiceEngineGroup struct {
 	OverAllocated *bool `json:"overAllocated,omitempty"`
 	// SupportedFeatureSet was added in VCD 10.4.0 (v37.0) as substitute of NsxtAlbController.LicenseType.
 	// Possible values are: "STANDARD", "PREMIUM".
-	SupportedFeatureSet string `json:"supportedFeatureSet,omitempty"`
+	SupportedFeatureSet *string `json:"supportedFeatureSet,omitempty"`
 }
 
 type ServiceEngineGroupBacking struct {
@@ -835,7 +835,7 @@ type NsxtAlbConfig struct {
 	LicenseType string `json:"licenseType,omitempty"`
 	// SupportedFeatureSet was added in VCD 10.4.0 (v37.0) as substitute of NsxtAlbConfig.LicenseType.
 	// Possible values are: "STANDARD", "PREMIUM".
-	SupportedFeatureSet string `json:"supportedFeatureSet,omitempty"`
+	SupportedFeatureSet *string `json:"supportedFeatureSet,omitempty"`
 	// LoadBalancerCloudRef
 	LoadBalancerCloudRef *OpenApiReference `json:"loadBalancerCloudRef,omitempty"`
 	// ServiceNetworkDefinition in Gateway CIDR format which will be used by Load Balancer service. All the load balancer
