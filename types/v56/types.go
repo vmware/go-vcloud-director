@@ -473,7 +473,7 @@ func (a AdminVdc) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	for i := 0; i < t.NumField(); i++ {
 		sf = append(sf, t.Field(i))
 		if t.Field(i).Name == "ResourcePoolRefs" {
-			sf[i].Tag = `xml:"vmext:ResourcePoolRefs,omitempty"`
+			sf[i].Tag = `xml:"ResourcePoolRefs,omitempty"`
 		}
 	}
 	newType := reflect.StructOf(sf)
@@ -2555,6 +2555,31 @@ type VimObjectRef struct {
 	VimServerRef  *Reference `xml:"VimObjectRef>VimServerRef"`
 	MoRef         string     `xml:"VimObjectRef>MoRef"`
 	VimObjectType string     `xml:"VimObjectRef>VimObjectType"`
+}
+
+func (vor VimObjectRef) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	//change the tag of VimObjectRef through reflection
+
+	value := reflect.ValueOf(vor)
+	t := value.Type()
+	sf := make([]reflect.StructField, 0)
+	for i := 0; i < t.NumField(); i++ {
+		sf = append(sf, t.Field(i))
+		if t.Field(i).Name == "VimServerRef" {
+			sf[i].Tag = `xml:"vmext:VimObjectRef>vmext:VimServerRef,omitempty"`
+		}
+		if t.Field(i).Name == "MoRef" {
+			sf[i].Tag = `xml:"vmext:VimObjectRef>vmext:MoRef,omitempty"`
+		}
+		if t.Field(i).Name == "VimObjectType" {
+			sf[i].Tag = `xml:"vmext:VimObjectRef>vmext:VimObjectType,omitempty"`
+		}
+	}
+	newType := reflect.StructOf(sf)
+	newValue := value.Convert(newType)
+
+	return e.EncodeElement(newValue.Interface(), start)
+
 }
 
 // Type: VimObjectRefsType

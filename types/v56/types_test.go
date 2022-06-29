@@ -12,20 +12,33 @@ func TestAdminVDCResourcePoolSerialization(t *testing.T) {
 			ResourcePoolRefs: []VimObjectRef{
 				{
 					VimServerRef: &Reference{
-						HREF: "myref",
-						ID:   "myid",
-						Type: "mytype",
-						Name: "myname",
+						HREF: "https://testcloud/api/admin/extension/vimServer/d5b16253-9f4b-4652-936c-bee560901797",
+						ID:   "urn:vcloud:vimserver:d5b16253-9f4b-4652-936c-bee560901797",
+						Type: "application/vnd.vmware.admin.vmwvirtualcenter+xml",
+						Name: "VC",
 					},
-					MoRef:         "moref",
+					MoRef:         "resgroup-1696",
 					VimObjectType: "RESOURCE_POOL",
 				},
 			},
 		}
 
-		expectedXML := `<AdminVdc xmlns="" name=""><AllocationModel></AllocationModel><NicQuota>0</NicQuota><NetworkQuota>0</NetworkQuota><VmQuota>0</VmQuota><IsEnabled>false</IsEnabled><vmext:ResourcePoolRefs><VimObjectRef><VimServerRef href="myref" id="myid" type="mytype" name="myname"></VimServerRef><MoRef>moref</MoRef><VimObjectType>RESOURCE_POOL</VimObjectType></VimObjectRef></vmext:ResourcePoolRefs></AdminVdc>`
+		expectedXML := `<AdminVdc xmlns="" name="">
+  <AllocationModel></AllocationModel>
+  <NicQuota>0</NicQuota>
+  <NetworkQuota>0</NetworkQuota>
+  <VmQuota>0</VmQuota>
+  <IsEnabled>false</IsEnabled>
+  <ResourcePoolRefs>
+    <vmext:VimObjectRef>
+      <vmext:VimServerRef href="https://testcloud/api/admin/extension/vimServer/d5b16253-9f4b-4652-936c-bee560901797" id="urn:vcloud:vimserver:d5b16253-9f4b-4652-936c-bee560901797" type="application/vnd.vmware.admin.vmwvirtualcenter+xml" name="VC"></vmext:VimServerRef>
+      <vmext:MoRef>resgroup-1696</vmext:MoRef>
+      <vmext:VimObjectType>RESOURCE_POOL</vmext:VimObjectType>
+    </vmext:VimObjectRef>
+  </ResourcePoolRefs>
+</AdminVdc>`
 
-		bytes, err := xml.Marshal(myAdminVDC)
+		bytes, err := xml.MarshalIndent(myAdminVDC, "", "  ")
 		if err != nil {
 			t.Logf("Unexpected marshal error: %s", err)
 			t.FailNow()
