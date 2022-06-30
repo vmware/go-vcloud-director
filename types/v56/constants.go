@@ -434,12 +434,16 @@ const (
 )
 
 const (
-	// FirewallGroupTypeSecurityGroup can be used in types.NsxtFirewallGroup for 'type' field to
-	// create Security Group
+	// FirewallGroupTypeSecurityGroup can be used in types.NsxtFirewallGroup for 'TypeValue' field
+	// to create Security Group
 	FirewallGroupTypeSecurityGroup = "SECURITY_GROUP"
-	// FirewallGroupTypeIpSet can be used in types.NsxtFirewallGroup for 'type' field to create IP
-	// Set
+	// FirewallGroupTypeIpSet can be used in types.NsxtFirewallGroup for 'TypeValue' field to create
+	// IP Set
 	FirewallGroupTypeIpSet = "IP_SET"
+
+	// FirewallGroupTypeVmCriteria can be used in types.NsxtFirewallGroup for 'TypeValue' field to
+	// create Dynamic Security Group (VCD 10.3+)
+	FirewallGroupTypeVmCriteria = "VM_CRITERIA"
 )
 
 // These constants can be used to pick type of NSX-T NAT Rule

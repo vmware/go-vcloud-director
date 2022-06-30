@@ -36,6 +36,10 @@ func (egw *NsxtEdgeGateway) CreateNsxtFirewallGroup(firewallGroupConfig *types.N
 	return createNsxtFirewallGroup(egw.client, firewallGroupConfig)
 }
 
+func (vdcGroup *VdcGroup) CreateNsxtFirewallGroup(firewallGroupConfig *types.NsxtFirewallGroup) (*NsxtFirewallGroup, error) {
+	return createNsxtFirewallGroup(vdcGroup.client, firewallGroupConfig)
+}
+
 // GetAllNsxtFirewallGroups allows users to retrieve all Firewall Groups for Org
 // firewallGroupType can be one of the following:
 // * types.FirewallGroupTypeSecurityGroup - for NSX-T Security Groups
@@ -57,8 +61,9 @@ func (egw *NsxtEdgeGateway) CreateNsxtFirewallGroup(firewallGroupConfig *types.N
 // 'networkProviderId' is NSX-T manager ID
 func (org *Org) GetAllNsxtFirewallGroups(queryParameters url.Values, firewallGroupType string) ([]*NsxtFirewallGroup, error) {
 	queryParams := copyOrNewUrlValues(queryParameters)
+	filteringTypeFieldName := getFirewallGroupTypeFilterFieldName(org.client)
 	if firewallGroupType != "" {
-		queryParams = queryParameterFilterAnd("type=="+firewallGroupType, queryParams)
+		queryParams = queryParameterFilterAnd(fmt.Sprintf("%s==%s", filteringTypeFieldName, firewallGroupType), queryParameters)
 	}
 
 	return getAllNsxtFirewallGroups(org.client, queryParams)
@@ -80,8 +85,9 @@ func (vdc *Vdc) GetAllNsxtFirewallGroups(queryParameters url.Values, firewallGro
 func (egw *NsxtEdgeGateway) GetAllNsxtFirewallGroups(queryParameters url.Values, firewallGroupType string) ([]*NsxtFirewallGroup, error) {
 	queryParams := copyOrNewUrlValues(queryParameters)
 
+	filteringTypeFieldName := getFirewallGroupTypeFilterFieldName(egw.client)
 	if firewallGroupType != "" {
-		queryParams = queryParameterFilterAnd("type=="+firewallGroupType, queryParams)
+		queryParams = queryParameterFilterAnd(fmt.Sprintf("%s==%s", filteringTypeFieldName, firewallGroupType), queryParameters)
 	}
 
 	// Automatically inject Edge Gateway filter because this is an Edge Gateway scoped query
@@ -100,8 +106,9 @@ func (egw *NsxtEdgeGateway) GetAllNsxtFirewallGroups(queryParameters url.Values,
 // of the same type cannot exist) and firewallGroupType is left empty.
 func (org *Org) GetNsxtFirewallGroupByName(name, firewallGroupType string) (*NsxtFirewallGroup, error) {
 	queryParameters := url.Values{}
+	filteringTypeFieldName := getFirewallGroupTypeFilterFieldName(org.client)
 	if firewallGroupType != "" {
-		queryParameters = queryParameterFilterAnd("type=="+firewallGroupType, queryParameters)
+		queryParameters = queryParameterFilterAnd(fmt.Sprintf("%s==%s", filteringTypeFieldName, firewallGroupType), queryParameters)
 	}
 
 	return getNsxtFirewallGroupByName(org.client, name, queryParameters)
@@ -118,15 +125,17 @@ func (org *Org) GetNsxtFirewallGroupByName(name, firewallGroupType string) (*Nsx
 func (vdc *Vdc) GetNsxtFirewallGroupByName(name, firewallGroupType string) (*NsxtFirewallGroup, error) {
 
 	queryParameters := url.Values{}
+	filteringTypeFieldName := getFirewallGroupTypeFilterFieldName(vdc.client)
 	if firewallGroupType != "" {
-		queryParameters = queryParameterFilterAnd("type=="+firewallGroupType, queryParameters)
+		queryParameters = queryParameterFilterAnd(fmt.Sprintf("%s==%s", filteringTypeFieldName, firewallGroupType), queryParameters)
 	}
 	return getNsxtFirewallGroupByName(vdc.client, name, queryParameters)
 }
 
 // GetNsxtFirewallGroupByName allows users to retrieve Firewall Group by Name in a particular VDC Group
 // firewallGroupType can be one of the following:
-// * types.FirewallGroupTypeSecurityGroup - for NSX-T Security Groups
+// * types.FirewallGroupTypeSecurityGroup - for NSX-T Static Security Groups
+// * types.FirewallGroupTypeVmCriteria - for NSX-T Dynamic Security Groups
 // * types.FirewallGroupTypeIpSet - for NSX-T IP Sets
 // * "" (empty) - search will not be limited and will get both - IP Sets and Security Groups
 //
@@ -135,8 +144,9 @@ func (vdc *Vdc) GetNsxtFirewallGroupByName(name, firewallGroupType string) (*Nsx
 func (vdcGroup *VdcGroup) GetNsxtFirewallGroupByName(name string, firewallGroupType string) (*NsxtFirewallGroup, error) {
 	queryParameters := url.Values{}
 
+	filteringTypeFieldName := getFirewallGroupTypeFilterFieldName(vdcGroup.client)
 	if firewallGroupType != "" {
-		queryParameters = queryParameterFilterAnd("type=="+firewallGroupType, queryParameters)
+		queryParameters = queryParameterFilterAnd(fmt.Sprintf("%s==%s", filteringTypeFieldName, firewallGroupType), queryParameters)
 	}
 
 	// Automatically inject Edge Gateway filter because this is an Edge Gateway scoped query
@@ -156,8 +166,9 @@ func (vdcGroup *VdcGroup) GetNsxtFirewallGroupByName(name string, firewallGroupT
 func (egw *NsxtEdgeGateway) GetNsxtFirewallGroupByName(name string, firewallGroupType string) (*NsxtFirewallGroup, error) {
 	queryParameters := url.Values{}
 
+	filteringTypeFieldName := getFirewallGroupTypeFilterFieldName(egw.client)
 	if firewallGroupType != "" {
-		queryParameters = queryParameterFilterAnd("type=="+firewallGroupType, queryParameters)
+		queryParameters = queryParameterFilterAnd(fmt.Sprintf("%s==%s", filteringTypeFieldName, firewallGroupType), queryParameters)
 	}
 
 	// Automatically inject Edge Gateway filter because this is an Edge Gateway scoped query
@@ -189,7 +200,7 @@ func (vdcGroup *VdcGroup) GetNsxtFirewallGroupById(id string) (*NsxtFirewallGrou
 // Update allows users to update NSX-T Firewall Group
 func (firewallGroup *NsxtFirewallGroup) Update(firewallGroupConfig *types.NsxtFirewallGroup) (*NsxtFirewallGroup, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups
-	minimumApiVersion, err := firewallGroup.client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := firewallGroup.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +219,7 @@ func (firewallGroup *NsxtFirewallGroup) Update(firewallGroupConfig *types.NsxtFi
 		client:            firewallGroup.client,
 	}
 
-	err = firewallGroup.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, firewallGroupConfig, returnObject.NsxtFirewallGroup, nil)
+	err = firewallGroup.client.OpenApiPutItem(apiVersion, urlRef, nil, firewallGroupConfig, returnObject.NsxtFirewallGroup, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error updating NSX-T firewall group: %s", err)
 	}
@@ -219,7 +230,7 @@ func (firewallGroup *NsxtFirewallGroup) Update(firewallGroupConfig *types.NsxtFi
 // Delete allows users to delete NSX-T Firewall Group
 func (firewallGroup *NsxtFirewallGroup) Delete() error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups
-	minimumApiVersion, err := firewallGroup.client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := firewallGroup.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
 	}
@@ -233,7 +244,7 @@ func (firewallGroup *NsxtFirewallGroup) Delete() error {
 		return err
 	}
 
-	err = firewallGroup.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil, nil)
+	err = firewallGroup.client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting NSX-T Firewall Group: %s", err)
@@ -248,7 +259,7 @@ func (firewallGroup *NsxtFirewallGroup) Delete() error {
 // similar to: "only Security Groups have associated VMs. This Firewall Group has type 'IP_SET'"
 func (firewallGroup *NsxtFirewallGroup) GetAssociatedVms() ([]*types.NsxtFirewallGroupMemberVms, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups
-	minimumApiVersion, err := firewallGroup.client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := firewallGroup.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +268,7 @@ func (firewallGroup *NsxtFirewallGroup) GetAssociatedVms() ([]*types.NsxtFirewal
 		return nil, fmt.Errorf("cannot retrieve associated VMs for NSX-T Firewall Group without ID")
 	}
 
-	if !firewallGroup.IsSecurityGroup() {
+	if !firewallGroup.IsSecurityGroup() && !firewallGroup.IsDynamicSecurityGroup() {
 		return nil, fmt.Errorf("only Security Groups have associated VMs. This Firewall Group has type '%s'",
 			firewallGroup.NsxtFirewallGroup.Type)
 	}
@@ -269,7 +280,7 @@ func (firewallGroup *NsxtFirewallGroup) GetAssociatedVms() ([]*types.NsxtFirewal
 
 	associatedVms := []*types.NsxtFirewallGroupMemberVms{{}}
 
-	err = firewallGroup.client.OpenApiGetAllItems(minimumApiVersion, urlRef, nil, &associatedVms, nil)
+	err = firewallGroup.client.OpenApiGetAllItems(apiVersion, urlRef, nil, &associatedVms, nil)
 
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving associated VMs: %s", err)
@@ -278,9 +289,14 @@ func (firewallGroup *NsxtFirewallGroup) GetAssociatedVms() ([]*types.NsxtFirewal
 	return associatedVms, nil
 }
 
-// IsSecurityGroup allows users to check if Firewall Group is a Security Group
+// IsSecurityGroup allows users to check if Firewall Group is a Static Security Group
 func (firewallGroup *NsxtFirewallGroup) IsSecurityGroup() bool {
 	return firewallGroup.NsxtFirewallGroup.Type == types.FirewallGroupTypeSecurityGroup
+}
+
+// IsDynamicSecurityGroup allows users to check if Firewall Group is a Dynamic Security Group
+func (firewallGroup *NsxtFirewallGroup) IsDynamicSecurityGroup() bool {
+	return firewallGroup.NsxtFirewallGroup.TypeValue == types.FirewallGroupTypeVmCriteria
 }
 
 // IsIpSet allows users to check if Firewall Group is an IP Set
@@ -317,7 +333,7 @@ func getNsxtFirewallGroupByName(client *Client, name string, queryParameters url
 
 func getNsxtFirewallGroupById(client *Client, id string) (*NsxtFirewallGroup, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -336,7 +352,7 @@ func getNsxtFirewallGroupById(client *Client, id string) (*NsxtFirewallGroup, er
 		client:            client,
 	}
 
-	err = client.OpenApiGetItem(minimumApiVersion, urlRef, nil, fwGroup.NsxtFirewallGroup, nil)
+	err = client.OpenApiGetItem(apiVersion, urlRef, nil, fwGroup.NsxtFirewallGroup, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -346,7 +362,7 @@ func getNsxtFirewallGroupById(client *Client, id string) (*NsxtFirewallGroup, er
 
 func getAllNsxtFirewallGroups(client *Client, queryParameters url.Values) ([]*NsxtFirewallGroup, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -359,7 +375,7 @@ func getAllNsxtFirewallGroups(client *Client, queryParameters url.Values) ([]*Ns
 	}
 
 	typeResponses := []*types.NsxtFirewallGroup{{}}
-	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &typeResponses, nil)
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -378,7 +394,7 @@ func getAllNsxtFirewallGroups(client *Client, queryParameters url.Values) ([]*Ns
 
 func createNsxtFirewallGroup(client *Client, firewallGroupConfig *types.NsxtFirewallGroup) (*NsxtFirewallGroup, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -393,10 +409,25 @@ func createNsxtFirewallGroup(client *Client, firewallGroupConfig *types.NsxtFire
 		client:            client,
 	}
 
-	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, firewallGroupConfig, returnObject.NsxtFirewallGroup, nil)
+	err = client.OpenApiPostItem(apiVersion, urlRef, nil, firewallGroupConfig, returnObject.NsxtFirewallGroup, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating NSX-T Firewall Group: %s", err)
 	}
 
 	return returnObject, nil
+}
+
+// getFirewallGroupTypeFilterFieldName is a helper that returns the field name to use for filtering
+// by type.
+// For VCD < 10.3.0, the type field is called "type" and for VCD >= 10.3.0, the type field is called
+// "typeValue".
+func getFirewallGroupTypeFilterFieldName(client *Client) string {
+	// Starting with API 36.0 new field 'typeValue' was introduced instead of deprecated `type` field.
+	filteringTypeFieldName := "typeValue"
+	// TODO - remove when API < 36.0 are deprecated
+	if client.APIVCDMaxVersionIs(" < 36.0") {
+		filteringTypeFieldName = "type"
+	}
+	// End OfTODO - remove when API 36.0 is deprecated
+	return filteringTypeFieldName
 }
