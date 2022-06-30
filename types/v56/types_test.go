@@ -29,13 +29,13 @@ func TestAdminVDCResourcePoolSerialization(t *testing.T) {
   <NetworkQuota>0</NetworkQuota>
   <VmQuota>0</VmQuota>
   <IsEnabled>false</IsEnabled>
-  <ResourcePoolRefs>
-    <vmext:VimObjectRef>
-      <vmext:VimServerRef href="https://testcloud/api/admin/extension/vimServer/d5b16253-9f4b-4652-936c-bee560901797" id="urn:vcloud:vimserver:d5b16253-9f4b-4652-936c-bee560901797" type="application/vnd.vmware.admin.vmwvirtualcenter+xml" name="VC"></vmext:VimServerRef>
-      <vmext:MoRef>resgroup-1696</vmext:MoRef>
-      <vmext:VimObjectType>RESOURCE_POOL</vmext:VimObjectType>
-    </vmext:VimObjectRef>
-  </ResourcePoolRefs>
+  <vmext:ResourcePoolRefs>
+    <VimObjectRef>
+      <VimServerRef href="https://testcloud/api/admin/extension/vimServer/d5b16253-9f4b-4652-936c-bee560901797" id="urn:vcloud:vimserver:d5b16253-9f4b-4652-936c-bee560901797" type="application/vnd.vmware.admin.vmwvirtualcenter+xml" name="VC"></VimServerRef>
+      <MoRef>resgroup-1696</MoRef>
+      <VimObjectType>RESOURCE_POOL</VimObjectType>
+    </VimObjectRef>
+  </vmext:ResourcePoolRefs>
 </AdminVdc>`
 
 		bytes, err := xml.MarshalIndent(myAdminVDC, "", "  ")
