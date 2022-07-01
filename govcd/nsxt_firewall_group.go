@@ -36,6 +36,7 @@ func (egw *NsxtEdgeGateway) CreateNsxtFirewallGroup(firewallGroupConfig *types.N
 	return createNsxtFirewallGroup(egw.client, firewallGroupConfig)
 }
 
+// CreateNsxtFirewallGroup allows users to create NSX-T Firewall Group
 func (vdcGroup *VdcGroup) CreateNsxtFirewallGroup(firewallGroupConfig *types.NsxtFirewallGroup) (*NsxtFirewallGroup, error) {
 	return createNsxtFirewallGroup(vdcGroup.client, firewallGroupConfig)
 }
@@ -418,16 +419,15 @@ func createNsxtFirewallGroup(client *Client, firewallGroupConfig *types.NsxtFire
 }
 
 // getFirewallGroupTypeFilterFieldName is a helper that returns the field name to use for filtering
+// TODO - remove this function when VCD 10.2 is no longer supported
 // by type.
 // For VCD < 10.3.0, the type field is called "type" and for VCD >= 10.3.0, the type field is called
 // "typeValue".
 func getFirewallGroupTypeFilterFieldName(client *Client) string {
 	// Starting with API 36.0 new field 'typeValue' was introduced instead of deprecated `type` field.
 	filteringTypeFieldName := "typeValue"
-	// TODO - remove when API < 36.0 are deprecated
 	if client.APIVCDMaxVersionIs(" < 36.0") {
 		filteringTypeFieldName = "type"
 	}
-	// End OfTODO - remove when API 36.0 is deprecated
 	return filteringTypeFieldName
 }

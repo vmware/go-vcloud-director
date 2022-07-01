@@ -279,8 +279,8 @@ type NsxtFirewallGroup struct {
 	// VmCriteria (VCD 10.3+) defines list of dynamic criteria that determines whether a VM belongs
 	// to a dynamic firewall group. A VM needs to meet at least one criteria to belong to the
 	// firewall group. In other words, the logical AND is used for rules within a single criteria
-	// and the logical OR is used in between each criteria. This is only applicable for VM_CRITERIA
-	// Firewall Groups.
+	// and the logical OR is used in between each criteria. This is only applicable for Dynamic
+	// Security Groups (VM_CRITERIA Firewall Groups).
 	VmCriteria []NsxtFirewallGroupVmCriteria `json:"vmCriteria,omitempty"`
 
 	// OwnerRef replaces EdgeGatewayRef in API V35.0+ and can accept both - NSX-T Edge Gateway or a
@@ -296,18 +296,20 @@ type NsxtFirewallGroup struct {
 	// value is only populated in this field (not OwnerRef)
 	EdgeGatewayRef *OpenApiReference `json:"edgeGatewayRef,omitempty"`
 
-	// Type is deprecated starting with API 35.2 (VCD 10.2.2+)
+	// Type is deprecated starting with API 36.0 (VCD 10.3+)
 	Type string `json:"type,omitempty"`
 
-	// TypeValue replaces Type starting with API 35.2 (VCD 10.2.2+) and can be one of:
-	// SECURITY_GROUP, IP_SET, VM_CRITERIA(VCD 10.3+)
+	// TypeValue replaces Type starting with API 36.0 (VCD 10.3+) and can be one of:
+	// SECURITY_GROUP, IP_SET, VM_CRITERIA(VCD 10.3+ only)
+	// Constants `types.FirewallGroupTypeSecurityGroup`, `types.FirewallGroupTypeIpSet`,
+	// `types.FirewallGroupTypeVmCriteria` can be used to set the value.
 	TypeValue string `json:"typeValue,omitempty"`
 }
 
 // NsxtFirewallGroupVmCriteria defines list of rules where criteria represents boolean OR for
 // matching There can be up to 3 criteria
 type NsxtFirewallGroupVmCriteria struct {
-	// VmCriteria is a list of rules where each rule represents boolean and for matching VMs
+	// VmCriteria is a list of rules where each rule represents boolean AND for matching VMs
 	VmCriteriaRule []NsxtFirewallGroupVmCriteriaRule `json:"rules,omitempty"`
 }
 
