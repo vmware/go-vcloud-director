@@ -1254,3 +1254,36 @@ type RouteAdvertisement struct {
 	// external network.
 	Subnets []string `json:"subnets"`
 }
+
+type EdgeBgpConfigPrefixList struct {
+	// ID is the unique identifier of the entity in URN format.
+	ID string `json:"id,omitempty"`
+
+	// Name of the entity
+	Name string `json:"name"`
+
+	// Description of the entity
+	Description string `json:"description,omitempty"`
+
+	// Prefixes is the list of prefixes that will be advertised so that the Edge Gateway can route out to the
+	// connected external network.
+	Prefixes []EdgeBgpConfigPrefixListPrefixes `json:"prefixes,omitempty"`
+}
+
+// EdgeBgpConfigPrefixListPrefixes is a list of prefixes that will be advertised so that the Edge Gateway can route out to the
+// connected external network.
+type EdgeBgpConfigPrefixListPrefixes struct {
+	// Network is the network address of the prefix
+	Network string `json:"network,omitempty"`
+
+	// Action is the action to be taken on the prefix. Can be 'PERMIT' or 'DENY'
+	Action string `json:"action,omitempty"`
+
+	// GreateerThan is the the value which the prefix length must be greater than or equal to. Must
+	// be less than or equal to 'LessThanEqualTo'
+	GreaterThanEqualTo int `json:"greaterThanEqualTo,omitempty"`
+
+	// The value which the prefix length must be less than or equal to. Must be greater than or
+	// equal to 'GreaterThanEqualTo'
+	LessThanEqualTo int `json:"lessThanEqualTo,omitempty"`
+}

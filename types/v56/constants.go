@@ -375,6 +375,8 @@ const (
 	OpenApiEndpointSecurityTags                       = "securityTags"
 	OpenApiEndpointNsxtRouteAdvertisement             = "edgeGateways/%s/routing/advertisement"
 
+	OpenApiEndpointEdgeBgpConfigPrefixLists = "edgeGateways/%s/routing/bgp/prefixLists/" // '%s' is NSX-T Edge gateway ID
+
 	// NSX-T ALB related endpoints
 
 	OpenApiEndpointAlbController = "loadBalancer/controllers/"
