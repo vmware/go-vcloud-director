@@ -8,6 +8,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+// Test_NsxEdgeBgpIpPrefixList tests CRUD operations for NSX-T Edge Gateway BGP IP Prefix Lists
 func (vcd *TestVCD) Test_NsxEdgeBgpIpPrefixList(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeBgpConfigPrefixLists)
