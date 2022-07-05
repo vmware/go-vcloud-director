@@ -26,8 +26,6 @@ func (vcd *TestVCD) Test_NsxtDynamicSecurityGroup(check *C) {
 	vdcGroup, err := adminOrg.GetVdcGroupByName(vcd.config.VCD.Nsxt.VdcGroup)
 	check.Assert(err, IsNil)
 
-	// vdcGroupEdgeGateway.
-
 	dynamicSecGroupDefinition := &types.NsxtFirewallGroup{
 		Name:        check.TestName(),
 		Description: check.TestName() + "-Description",
@@ -97,7 +95,7 @@ func (vcd *TestVCD) Test_NsxtDynamicSecurityGroup(check *C) {
 
 	check.Assert(updatedDynamicGroup, DeepEquals, createdDynamicGroup)
 
-	// Remove
+	// Remove Dynamic Security Group
 	err = updatedDynamicGroup.Delete()
 	check.Assert(err, IsNil)
 }
