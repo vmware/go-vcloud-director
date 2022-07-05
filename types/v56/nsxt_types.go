@@ -1255,7 +1255,8 @@ type RouteAdvertisement struct {
 	Subnets []string `json:"subnets"`
 }
 
-type EdgeBgpConfigPrefixList struct {
+// EdgeBgpIpPrefixList holds BGP IP Prefix List configuration for NSX-T Edge Gateways
+type EdgeBgpIpPrefixList struct {
 	// ID is the unique identifier of the entity in URN format.
 	ID string `json:"id,omitempty"`
 
