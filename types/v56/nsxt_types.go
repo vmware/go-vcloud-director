@@ -1254,3 +1254,73 @@ type RouteAdvertisement struct {
 	// external network.
 	Subnets []string `json:"subnets"`
 }
+
+type EdgeBgpNeighbor struct {
+	ID string `json:"id,omitempty"`
+
+	// NeighborAddress holds IP address of the BGP neighbor. Both IPv4 and IPv6 formats are supported.
+	//
+	// Note. Uniqueness is enforced by NeighborAddress
+	NeighborAddress string `json:"neighborAddress"`
+	// RemoteASNumber specified Autonomous System (AS) number of a BGP neighbor in ASPLAIN format.
+	RemoteASNumber string `json:"remoteASNumber"`
+
+	// KeepAliveTimer specifies the time interval (in seconds) between keep alive messages sent to
+	// peer.
+	KeepAliveTimer int `json:"keepAliveTimer,omitempty"`
+
+	// HoldDownTimer specifies the time interval (in seconds) before declaring a peer dead.
+	HoldDownTimer int `json:"holdDownTimer,omitempty"`
+
+	// NeighborPassword for BGP neighbor authentication. Empty string ("") clears existing password.
+	// Not specifying a value will be treated as "no password".
+	NeighborPassword string `json:"neighborPassword,omitempty"`
+
+	// AllowASIn is a flag indicating whether BGP neighbors can receive routes with same AS.
+	AllowASIn bool `json:"allowASIn,omitempty"`
+
+	// GracefulRestartMode Describes Graceful Restart configuration Modes for BGP configuration on
+	// an edge gateway. HELPER_ONLY mode is the ability for a BGP speaker to indicate its ability to
+	// preserve forwarding state during BGP restart. GRACEFUL_RESTART mode is the ability of a BGP
+	// speaker to advertise its restart to its peers.
+	//
+	// Possible values are: DISABLE , HELPER_ONLY , GRACEFUL_AND_HELPER
+	// * DISABLE - Both graceful restart and helper modes are disabled.
+	// * HELPER_ONLY - Only helper mode is enabled.
+	// * GRACEFUL_AND_HELPER - Both graceful restart and helper modes are enabled.
+	GracefulRestartMode string `json:"gracefulRestartMode,omitempty"`
+
+	// IpAddressTypeFiltering specifies IP address type based filtering in each direction. Setting
+	// the value to "DISABLED" will disable address family based filtering.
+	//
+	// Possible values are: IPV4 , IPV6 , DISABLED
+	IpAddressTypeFiltering string `json:"ipAddressTypeFiltering,omitempty"`
+
+	// InRoutesFilterRef specifies route filtering configuration for the BGP neighbor in IN
+	// direction. It is the reference to the prefix list, indicating which routes to filter for IN
+	// direction. Not specifying a value will be treated as "no IN route filters".
+	InRoutesFilterRef *OpenApiReference `json:"inRoutesFilterRef,omitempty"`
+
+	// OutRoutesFilterRef specifies route filtering configuration for the BGP neighbor in OUT
+	// direction. It is the reference to the prefix list, indicating which routes to filter for OUT
+	// direction. Not specifying a value will be treated as "no OUT route filters".
+	OutRoutesFilterRef *OpenApiReference `json:"outRoutesFilterRef,omitempty"`
+
+	// Specifies the BFD configuration for failure detection. Not specifying a value results in
+	// default behavior.
+	Bfd *EdgeBgpNeighborBfd `json:"bfd,omitempty"`
+}
+
+// EdgeBgpNeighborBfd describes BFD (Bidirectional Forwarding Detection) configuration for failure
+// detection.
+type EdgeBgpNeighborBfd struct {
+	// A flag indicating whether BFD configuration is enabled or not.
+	Enabled bool `json:"enabled"`
+
+	// BfdInterval specifies the time interval (in milliseconds) between heartbeat packets.
+	BfdInterval int `json:"bfdInterval,omitempty"`
+
+	// DeclareDeadMultiple specifies number of times heartbeat packet is missed before BFD declares
+	// that the neighbor is down.
+	DeclareDeadMultiple int `json:"declareDeadMultiple,omitempty"`
+}
