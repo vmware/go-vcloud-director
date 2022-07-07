@@ -11,6 +11,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+// EdgeBgpNeighbor represents NSX-T Edge Gateway BGP Neighbor
 type EdgeBgpNeighbor struct {
 	EdgeBgpNeighbor *types.EdgeBgpNeighbor
 	client          *Client
@@ -18,6 +19,7 @@ type EdgeBgpNeighbor struct {
 	edgeGatewayId string
 }
 
+// CreateBgpNeighbor creates BGP Neighbor with the given configuration
 func (egw *NsxtEdgeGateway) CreateBgpNeighbor(bgpNeighborConfig *types.EdgeBgpNeighbor) (*EdgeBgpNeighbor, error) {
 	client := egw.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpNeighbor
@@ -70,16 +72,17 @@ func (egw *NsxtEdgeGateway) CreateBgpNeighbor(bgpNeighborConfig *types.EdgeBgpNe
 	} else {
 		// ID after object creation was not returned therefore retrieving the entity by Name to lookup ID
 		// This has a risk of duplicate items, but is the only way to find the object when ID is not returned
-		bgpIpPrefixList, err := egw.GetBgpNeighborByIp(bgpNeighborConfig.NeighborAddress)
+		bgpNeighbor, err := egw.GetBgpNeighborByIp(bgpNeighborConfig.NeighborAddress)
 		if err != nil {
 			return nil, fmt.Errorf("error retrieving NSX-T Edge Gateway BGP Neighbor after creation: %s", err)
 		}
-		returnObject = bgpIpPrefixList
+		returnObject = bgpNeighbor
 	}
 
 	return returnObject, nil
 }
 
+// GetAllBgpNeighbors retrieves all BGP Neighbors
 func (egw *NsxtEdgeGateway) GetAllBgpNeighbors(queryParameters url.Values) ([]*EdgeBgpNeighbor, error) {
 	queryParams := copyOrNewUrlValues(queryParameters)
 
@@ -115,12 +118,13 @@ func (egw *NsxtEdgeGateway) GetAllBgpNeighbors(queryParameters url.Values) ([]*E
 	return wrappedResponses, nil
 }
 
-// GetBgpNeighborByIp retrieves BGP IP Prefix List By Name
+// GetBgpNeighborByIp retrieves BGP Neighbor by Neighbor IP address
 // It is meant to retrieve exactly one entry:
-// * Will fail if more than one entry with the same name found
+// * Will fail if more than one entry with the same Neighbor IP found (should not happen as uniqueness is
+// enforced by API)
 // * Will return an error containing `ErrorEntityNotFound` if no entries are found
 //
-// Note. API does not support filtering by 'name' field therefore filtering is performed on client
+// Note. API does not support filtering by 'neighborIpAddress' field therefore filtering is performed on client
 // side
 func (egw *NsxtEdgeGateway) GetBgpNeighborByIp(neighborIpAddress string) (*EdgeBgpNeighbor, error) {
 	if neighborIpAddress == "" {
@@ -133,9 +137,9 @@ func (egw *NsxtEdgeGateway) GetBgpNeighborByIp(neighborIpAddress string) (*EdgeB
 	}
 
 	var filteredBgpNeighbors []*EdgeBgpNeighbor
-	for _, bgpIpPrefixList := range allBgpNeighbors {
-		if bgpIpPrefixList.EdgeBgpNeighbor.NeighborAddress == neighborIpAddress {
-			filteredBgpNeighbors = append(filteredBgpNeighbors, bgpIpPrefixList)
+	for _, bgpNeighbor := range allBgpNeighbors {
+		if bgpNeighbor.EdgeBgpNeighbor.NeighborAddress == neighborIpAddress {
+			filteredBgpNeighbors = append(filteredBgpNeighbors, bgpNeighbor)
 		}
 	}
 
@@ -150,7 +154,7 @@ func (egw *NsxtEdgeGateway) GetBgpNeighborByIp(neighborIpAddress string) (*EdgeB
 	return filteredBgpNeighbors[0], nil
 }
 
-// GetBgpNeighborById retrieves BGP IP Prefix List By ID
+// GetBgpNeighborById retrieves BGP Neighbor By ID
 func (egw *NsxtEdgeGateway) GetBgpNeighborById(id string) (*EdgeBgpNeighbor, error) {
 	if id == "" {
 		return nil, fmt.Errorf("id is required")
@@ -183,7 +187,7 @@ func (egw *NsxtEdgeGateway) GetBgpNeighborById(id string) (*EdgeBgpNeighbor, err
 	return returnObject, nil
 }
 
-// Update updates existing BGP IP Prefix List with new configuration and returns it
+// Update updates existing BGP Neighbor with new configuration and returns it
 func (bgpNeighbor *EdgeBgpNeighbor) Update(bgpNeighborConfig *types.EdgeBgpNeighbor) (*EdgeBgpNeighbor, error) {
 	client := bgpNeighbor.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpNeighbor
@@ -212,7 +216,7 @@ func (bgpNeighbor *EdgeBgpNeighbor) Update(bgpNeighborConfig *types.EdgeBgpNeigh
 	return returnObject, nil
 }
 
-// Delete deletes existing BGP IP Prefix List
+// Delete deletes existing BGP Neighbor
 func (bgpNeighbor *EdgeBgpNeighbor) Delete() error {
 	client := bgpNeighbor.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpNeighbor

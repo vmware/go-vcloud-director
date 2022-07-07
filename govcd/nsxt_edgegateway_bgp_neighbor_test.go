@@ -24,8 +24,8 @@ func (vcd *TestVCD) Test_NsxEdgeBgpNeighbor(check *C) {
 	check.Assert(err, IsNil)
 	defer switchEdgeGatewayDedication(edge, false) // Turn off Dedicated Tier 0 gateway
 
-	// Create a new BGP IP Prefix List
-	BgpNeighbor := &types.EdgeBgpNeighbor{
+	// Create a new BGP IP Neighbor
+	bgpNeighbor := &types.EdgeBgpNeighbor{
 		NeighborAddress:        "11.11.11.11",
 		RemoteASNumber:         "64123",
 		KeepAliveTimer:         80,
@@ -36,47 +36,47 @@ func (vcd *TestVCD) Test_NsxEdgeBgpNeighbor(check *C) {
 		IpAddressTypeFiltering: "DISABLED",
 	}
 
-	bgpIpPrefix, err := edge.CreateBgpNeighbor(BgpNeighbor)
+	createdBgpNeighbor, err := edge.CreateBgpNeighbor(bgpNeighbor)
 	check.Assert(err, IsNil)
-	check.Assert(bgpIpPrefix, NotNil)
+	check.Assert(createdBgpNeighbor, NotNil)
 
-	// Get all BGP IP Prefix Lists
+	// Get all BGP Neighbors
 	BgpNeighbors, err := edge.GetAllBgpNeighbors(nil)
 	check.Assert(err, IsNil)
 	check.Assert(BgpNeighbors, NotNil)
 	check.Assert(len(BgpNeighbors), Equals, 1)
-	check.Assert(BgpNeighbors[0].EdgeBgpNeighbor.NeighborAddress, Equals, BgpNeighbor.NeighborAddress)
+	check.Assert(BgpNeighbors[0].EdgeBgpNeighbor.NeighborAddress, Equals, bgpNeighbor.NeighborAddress)
 
-	// Get By Neighbor IP Address
-	bgpPrefixListByName, err := edge.GetBgpNeighborByIp(BgpNeighbor.NeighborAddress)
+	// Get BGP Neighbor By Neighbor IP Address
+	bgpNeighborByIp, err := edge.GetBgpNeighborByIp(bgpNeighbor.NeighborAddress)
 	check.Assert(err, IsNil)
-	check.Assert(bgpPrefixListByName, NotNil)
+	check.Assert(bgpNeighborByIp, NotNil)
 
-	// Get By Id
-	bgpPrefixListById, err := edge.GetBgpNeighborById(bgpIpPrefix.EdgeBgpNeighbor.ID)
+	// Get BGP Neighbor By Id
+	bgpNeighborById, err := edge.GetBgpNeighborById(createdBgpNeighbor.EdgeBgpNeighbor.ID)
 	check.Assert(err, IsNil)
-	check.Assert(bgpPrefixListById, NotNil)
+	check.Assert(bgpNeighborById, NotNil)
 
-	// Update
-	BgpNeighbor.NeighborAddress = "12.12.12.12"
-	BgpNeighbor.ID = BgpNeighbors[0].EdgeBgpNeighbor.ID
+	// Update BGP Neighbor
+	bgpNeighbor.NeighborAddress = "12.12.12.12"
+	bgpNeighbor.ID = BgpNeighbors[0].EdgeBgpNeighbor.ID
 
-	updatedBgpNeighbor, err := BgpNeighbors[0].Update(BgpNeighbor)
+	updatedBgpNeighbor, err := BgpNeighbors[0].Update(bgpNeighbor)
 	check.Assert(err, IsNil)
 	check.Assert(updatedBgpNeighbor, NotNil)
 
 	check.Assert(updatedBgpNeighbor.EdgeBgpNeighbor.ID, Equals, BgpNeighbors[0].EdgeBgpNeighbor.ID)
 
-	// Delete
+	// Delete BGP Neighbor
 	err = BgpNeighbors[0].Delete()
 	check.Assert(err, IsNil)
 
-	// Try to get once again and ensure it is not there
-	notFoundByName, err := edge.GetBgpNeighborByIp(BgpNeighbor.NeighborAddress)
+	// Try to get deleted BGP Neighbor once again and ensure it is not there
+	notFoundByIp, err := edge.GetBgpNeighborByIp(bgpNeighbor.NeighborAddress)
 	check.Assert(err, NotNil)
-	check.Assert(notFoundByName, IsNil)
+	check.Assert(notFoundByIp, IsNil)
 
-	notFoundById, err := edge.GetBgpNeighborById(bgpIpPrefix.EdgeBgpNeighbor.ID)
+	notFoundById, err := edge.GetBgpNeighborById(createdBgpNeighbor.EdgeBgpNeighbor.ID)
 	check.Assert(err, NotNil)
 	check.Assert(notFoundById, IsNil)
 
