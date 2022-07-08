@@ -82,7 +82,7 @@ func (egw *NsxtEdgeGateway) CreateBgpNeighbor(bgpNeighborConfig *types.EdgeBgpNe
 	return returnObject, nil
 }
 
-// GetAllBgpNeighbors retrieves all BGP Neighbors
+// GetAllBgpNeighbors retrieves all BGP Neighbors with an optional filter
 func (egw *NsxtEdgeGateway) GetAllBgpNeighbors(queryParameters url.Values) ([]*EdgeBgpNeighbor, error) {
 	queryParams := copyOrNewUrlValues(queryParameters)
 
@@ -105,7 +105,6 @@ func (egw *NsxtEdgeGateway) GetAllBgpNeighbors(queryParameters url.Values) ([]*E
 		return nil, err
 	}
 
-	// Wrap all typeResponses into NsxtNatRule types with client
 	wrappedResponses := make([]*EdgeBgpNeighbor, len(typeResponses))
 	for sliceIndex := range typeResponses {
 		wrappedResponses[sliceIndex] = &EdgeBgpNeighbor{
