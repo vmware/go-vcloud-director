@@ -253,7 +253,7 @@ func setupAlbPoolPrerequisites(check *C, vcd *TestVCD) (*NsxtAlbController, *Nsx
 
 	// Field is only available when using API version v37.0 onwards
 	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.0") {
-		albSettingsConfig.SupportedFeatureSet = takeStringPointer("PREMIUM")
+		albSettingsConfig.SupportedFeatureSet = "PREMIUM"
 	}
 
 	enabledSettings, err := edge.UpdateAlbSettings(albSettingsConfig)

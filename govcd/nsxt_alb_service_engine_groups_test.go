@@ -35,7 +35,7 @@ func (vcd *TestVCD) Test_GetAllAlbServiceEngineGroups(check *C) {
 
 	// Field is only available when using API version v37.0 onwards
 	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.0") {
-		albSeGroup.SupportedFeatureSet = takeStringPointer("PREMIUM")
+		albSeGroup.SupportedFeatureSet = "PREMIUM"
 	}
 
 	createdSeGroup, err := vcd.client.CreateNsxtAlbServiceEngineGroup(albSeGroup)
@@ -47,7 +47,7 @@ func (vcd *TestVCD) Test_GetAllAlbServiceEngineGroups(check *C) {
 	check.Assert(createdSeGroup.NsxtAlbServiceEngineGroup.ReservationType, Equals, albSeGroup.ReservationType)
 	// Field is only populated in responses when using API version v37.0 onwards
 	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.0") {
-		check.Assert(*createdSeGroup.NsxtAlbServiceEngineGroup.SupportedFeatureSet, Equals, *albSeGroup.SupportedFeatureSet)
+		check.Assert(createdSeGroup.NsxtAlbServiceEngineGroup.SupportedFeatureSet, Equals, albSeGroup.SupportedFeatureSet)
 	}
 
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroups + createdSeGroup.NsxtAlbServiceEngineGroup.ID
@@ -74,7 +74,7 @@ func (vcd *TestVCD) Test_GetAllAlbServiceEngineGroups(check *C) {
 	createdSeGroup.NsxtAlbServiceEngineGroup.Name = createdSeGroup.NsxtAlbServiceEngineGroup.Name + "updated"
 	// Field is only available when using API version v37.0 onwards
 	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.0") {
-		albSeGroup.SupportedFeatureSet = takeStringPointer("STANDARD")
+		albSeGroup.SupportedFeatureSet = "STANDARD"
 	}
 	updatedSeGroup, err := createdSeGroup.Update(createdSeGroup.NsxtAlbServiceEngineGroup)
 	check.Assert(err, IsNil)
@@ -120,7 +120,7 @@ func spawnAlbControllerCloudServiceEngineGroup(vcd *TestVCD, check *C, seGroupRe
 
 	// Field is only available when using API version v37.0 onwards
 	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.0") {
-		albSeGroup.SupportedFeatureSet = takeStringPointer("PREMIUM")
+		albSeGroup.SupportedFeatureSet = "PREMIUM"
 	}
 
 	createdSeGroup, err := vcd.client.CreateNsxtAlbServiceEngineGroup(albSeGroup)
