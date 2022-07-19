@@ -265,6 +265,7 @@ func getRandomListOfNetworkContextProfiles(check *C, vcd *TestVCD, vdcClient *VC
 	check.Assert(err, IsNil)
 	openApiRefs := make([]types.OpenApiReference, 1)
 	for _, networkContextProfile := range networkContextProfiles {
+		// Skipping network context profile which has hardcoded destinations and throws error when used in firewall rules with specified destinations
 		if strings.Contains(networkContextProfile.Description, "ALG") || strings.Contains(networkContextProfile.Description, "includes the URL categories") {
 			continue
 		}
