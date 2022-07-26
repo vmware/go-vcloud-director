@@ -1254,3 +1254,60 @@ type RouteAdvertisement struct {
 	// external network.
 	Subnets []string `json:"subnets"`
 }
+
+// EdgeBgpConfig defines BGP configuration on NSX-T Edge Gateways (Tier1 NSX-T Gateways)
+type EdgeBgpConfig struct {
+	// A flag indicating whether BGP configuration is enabled or not.
+	Enabled bool `json:"enabled"`
+
+	// Ecmp A flag indicating whether ECMP is enabled or not.
+	Ecmp bool `json:"ecmp"`
+
+	// BGP AS (Autonomous system) number to advertise to BGP peers. BGP AS number can be specified
+	// in either ASPLAIN or ASDOT formats, like ASPLAIN format :- '65546', ASDOT format :- '1.10'.
+	//
+	// Read only if using a VRF-Lite backed external network.
+	LocalASNumber string `json:"localASNumber,omitempty"`
+
+	// BGP Graceful Restart configuration. Not specifying a value results in default bahavior.
+	//
+	// Read only if using a VRF-Lite backed external network.
+	GracefulRestart *EdgeBgpGracefulRestartConfig `json:"gracefulRestart,omitempty"`
+
+	// This property describes the current version of the entity. To prevent clients from
+	// overwriting each other's changes, update operations must include the version which can be
+	// obtained by issuing a GET operation. If the version number on an update call is missing, the
+	// operation will be rejected. This is only needed on update calls.
+	Version EdgeBgpConfigVersion `json:"version"`
+}
+
+// EdgeBgpGracefulRestartConfig describes current graceful restart configuration mode and timer for
+// BGP configuration on an edge gateway.
+type EdgeBgpGracefulRestartConfig struct {
+	// Mode describes Graceful Restart configuration Modes for BGP configuration on an edge gateway.
+	// HELPER_ONLY mode is the ability for a BGP speaker to indicate its ability to preserve
+	// forwarding state during BGP restart. GRACEFUL_RESTART mode is the ability of a BGP speaker to
+	// advertise its restart to its peers.
+	//
+	// DISABLE - Both graceful restart and helper modes are disabled.
+	// HELPER_ONLY - Only helper mode is enabled.
+	// GRACEFUL_AND_HELPER - Both graceful restart and helper modes are enabled.
+	//
+	// Possible values are: DISABLE , HELPER_ONLY , GRACEFUL_AND_HELPER
+	Mode string `json:"mode"`
+
+	// RestartTimer specifies maximum time taken (in seconds) for a BGP session to be established
+	// after a restart. If the session is not re-established within this timer, the receiving
+	// speaker will delete all the stale routes from that peer.
+	RestartTimer int `json:"restartTimer"`
+
+	// StaleRouteTimer defines maximum time (in seconds) before stale routes are removed when BGP
+	// restarts.
+	StaleRouteTimer int `json:"staleRouteTimer"`
+}
+
+// EdgeBgpConfigVersion is part of EdgeBgpConfig type and describes current version of the entity
+// being modified
+type EdgeBgpConfigVersion struct {
+	Version int `json:"version"`
+}
