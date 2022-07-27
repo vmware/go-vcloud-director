@@ -89,10 +89,3 @@ func (vcd *TestVCD) Test_NsxEdgeBgpIpPrefixList(check *C) {
 	check.Assert(notFoundById, IsNil)
 
 }
-
-func switchEdgeGatewayDedication(edge *NsxtEdgeGateway, isDedicated bool) error {
-	edge.EdgeGateway.EdgeGatewayUplinks[0].Dedicated = isDedicated
-	_, err := edge.Update(edge.EdgeGateway)
-
-	return err
-}

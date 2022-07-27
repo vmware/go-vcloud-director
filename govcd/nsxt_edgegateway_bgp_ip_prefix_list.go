@@ -54,7 +54,9 @@ func (egw *NsxtEdgeGateway) CreateBgpIpPrefixList(bgpIpPrefixList *types.EdgeBgp
 		return nil, fmt.Errorf("error creating NSX-T Edge Gateway BGP IP Prefix List: %s", err)
 	}
 
-	// API is not consistent across different versions therefore explicit manual handling is required to lookup newly created object
+	// API is not consistent across different versions therefore explicit manual handling is
+	// required to lookup newly created object
+	//
 	// VCD 10.2 -> no ID for newly created object is returned at all
 	// VCD 10.3 -> `Details` field in task contains ID of newly created object
 	// To cover all cases this code will at first look for ID in `Details` field and fall back to
