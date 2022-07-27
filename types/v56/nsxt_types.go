@@ -1283,6 +1283,40 @@ type RouteAdvertisement struct {
 	Subnets []string `json:"subnets"`
 }
 
+// EdgeBgpIpPrefixList holds BGP IP Prefix List configuration for NSX-T Edge Gateways
+type EdgeBgpIpPrefixList struct {
+	// ID is the unique identifier of the entity in URN format.
+	ID string `json:"id,omitempty"`
+
+	// Name of the entity
+	Name string `json:"name"`
+
+	// Description of the entity
+	Description string `json:"description,omitempty"`
+
+	// Prefixes is the list of prefixes that will be advertised so that the Edge Gateway can route out to the
+	// connected external network.
+	Prefixes []EdgeBgpConfigPrefixListPrefixes `json:"prefixes,omitempty"`
+}
+
+// EdgeBgpConfigPrefixListPrefixes is a list of prefixes that will be advertised so that the Edge Gateway can route out to the
+// connected external network.
+type EdgeBgpConfigPrefixListPrefixes struct {
+	// Network is the network address of the prefix
+	Network string `json:"network,omitempty"`
+
+	// Action is the action to be taken on the prefix. Can be 'PERMIT' or 'DENY'
+	Action string `json:"action,omitempty"`
+
+	// GreateerThan is the the value which the prefix length must be greater than or equal to. Must
+	// be less than or equal to 'LessThanEqualTo'
+	GreaterThanEqualTo int `json:"greaterThanEqualTo,omitempty"`
+
+	// The value which the prefix length must be less than or equal to. Must be greater than or
+	// equal to 'GreaterThanEqualTo'
+	LessThanEqualTo int `json:"lessThanEqualTo,omitempty"`
+}
+
 // EdgeBgpConfig defines BGP configuration on NSX-T Edge Gateways (Tier1 NSX-T Gateways)
 type EdgeBgpConfig struct {
 	// A flag indicating whether BGP configuration is enabled or not.
