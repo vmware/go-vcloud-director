@@ -1336,7 +1336,7 @@ type EdgeBgpNeighbor struct {
 	// direction. Not specifying a value will be treated as "no OUT route filters".
 	OutRoutesFilterRef *OpenApiReference `json:"outRoutesFilterRef,omitempty"`
 
-	// Specifies the BFD  (Bidirectional Forwarding Detection) configuration for failure detection. Not specifying a value
+	// Specifies the BFD (Bidirectional Forwarding Detection) configuration for failure detection. Not specifying a value
 	// results in default behavior.
 	Bfd *EdgeBgpNeighborBfd `json:"bfd,omitempty"`
 }
