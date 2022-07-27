@@ -8,10 +8,10 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// Test_NsxtSecurityGroup tests out CRUD of NSX-T Security Group
+// Test_NsxtSecurityGroup tests out CRUD of Static NSX-T Security Group
 //
 // Note. Security Group is one type of Firewall Group
-func (vcd *TestVCD) Test_NsxtSecurityGroup(check *C) {
+func (vcd *TestVCD) Test_NsxtStaticSecurityGroup(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointFirewallGroups)
 

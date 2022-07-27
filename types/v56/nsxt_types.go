@@ -255,7 +255,7 @@ type OpenApiOrgVdcNetworkDhcpPools struct {
 type NsxtFirewallGroup struct {
 	// ID contains Firewall Group ID (URN format)
 	// e.g. urn:vcloud:firewallGroup:d7f4e0b4-b83f-4a07-9f22-d242c9c0987a
-	ID string `json:"id"`
+	ID string `json:"id,omitempty"`
 	// Name of Firewall Group. Name are unique per 'Type'. There cannot be two SECURITY_GROUP or two
 	// IP_SET objects with the same name, but there can be one object of Type SECURITY_GROUP and one
 	// of Type IP_SET named the same.
@@ -276,6 +276,13 @@ type NsxtFirewallGroup struct {
 	// groups )
 	Members []OpenApiReference `json:"members,omitempty"`
 
+	// VmCriteria (VCD 10.3+) defines list of dynamic criteria that determines whether a VM belongs
+	// to a dynamic firewall group. A VM needs to meet at least one criteria to belong to the
+	// firewall group. In other words, the logical AND is used for rules within a single criteria
+	// and the logical OR is used in between each criteria. This is only applicable for Dynamic
+	// Security Groups (VM_CRITERIA Firewall Groups).
+	VmCriteria []NsxtFirewallGroupVmCriteria `json:"vmCriteria,omitempty"`
+
 	// OwnerRef replaces EdgeGatewayRef in API V35.0+ and can accept both - NSX-T Edge Gateway or a
 	// VDC group ID
 	// Sample VDC Group URN - urn:vcloud:vdcGroup:89a53000-ef41-474d-80dc-82431ff8a020
@@ -289,8 +296,29 @@ type NsxtFirewallGroup struct {
 	// value is only populated in this field (not OwnerRef)
 	EdgeGatewayRef *OpenApiReference `json:"edgeGatewayRef,omitempty"`
 
-	// Type is either SECURITY_GROUP or IP_SET
-	Type string `json:"type"`
+	// Type is deprecated starting with API 36.0 (VCD 10.3+)
+	Type string `json:"type,omitempty"`
+
+	// TypeValue replaces Type starting with API 36.0 (VCD 10.3+) and can be one of:
+	// SECURITY_GROUP, IP_SET, VM_CRITERIA(VCD 10.3+ only)
+	// Constants `types.FirewallGroupTypeSecurityGroup`, `types.FirewallGroupTypeIpSet`,
+	// `types.FirewallGroupTypeVmCriteria` can be used to set the value.
+	TypeValue string `json:"typeValue,omitempty"`
+}
+
+// NsxtFirewallGroupVmCriteria defines list of rules where criteria represents boolean OR for
+// matching There can be up to 3 criteria
+type NsxtFirewallGroupVmCriteria struct {
+	// VmCriteria is a list of rules where each rule represents boolean AND for matching VMs
+	VmCriteriaRule []NsxtFirewallGroupVmCriteriaRule `json:"rules,omitempty"`
+}
+
+// NsxtFirewallGroupVmCriteriaRule defines a single rule for matching VM
+// There can be up to 4 rules in a single criteria
+type NsxtFirewallGroupVmCriteriaRule struct {
+	AttributeType  string `json:"attributeType,omitempty"`
+	AttributeValue string `json:"attributeValue,omitempty"`
+	Operator       string `json:"operator,omitempty"`
 }
 
 // NsxtFirewallGroupMemberVms is a structure to read NsxtFirewallGroup associated VMs when its type
@@ -1324,4 +1352,96 @@ type EdgeBgpNeighborBfd struct {
 	// DeclareDeadMultiple specifies number of times heartbeat packet is missed before BFD declares
 	// that the neighbor is down.
 	DeclareDeadMultiple int `json:"declareDeadMultiple,omitempty"`
+	// EdgeBgpIpPrefixList holds BGP IP Prefix List configuration for NSX-T Edge Gateways
+
+}
+
+type EdgeBgpIpPrefixList struct {
+	// ID is the unique identifier of the entity in URN format.
+	ID string `json:"id,omitempty"`
+
+	// Name of the entity
+	Name string `json:"name"`
+
+	// Description of the entity
+	Description string `json:"description,omitempty"`
+
+	// Prefixes is the list of prefixes that will be advertised so that the Edge Gateway can route out to the
+	// connected external network.
+	Prefixes []EdgeBgpConfigPrefixListPrefixes `json:"prefixes,omitempty"`
+}
+
+// EdgeBgpConfigPrefixListPrefixes is a list of prefixes that will be advertised so that the Edge Gateway can route out to the
+// connected external network.
+type EdgeBgpConfigPrefixListPrefixes struct {
+	// Network is the network address of the prefix
+	Network string `json:"network,omitempty"`
+
+	// Action is the action to be taken on the prefix. Can be 'PERMIT' or 'DENY'
+	Action string `json:"action,omitempty"`
+
+	// GreateerThan is the the value which the prefix length must be greater than or equal to. Must
+	// be less than or equal to 'LessThanEqualTo'
+	GreaterThanEqualTo int `json:"greaterThanEqualTo,omitempty"`
+
+	// The value which the prefix length must be less than or equal to. Must be greater than or
+	// equal to 'GreaterThanEqualTo'
+	LessThanEqualTo int `json:"lessThanEqualTo,omitempty"`
+}
+
+// EdgeBgpConfig defines BGP configuration on NSX-T Edge Gateways (Tier1 NSX-T Gateways)
+type EdgeBgpConfig struct {
+	// A flag indicating whether BGP configuration is enabled or not.
+	Enabled bool `json:"enabled"`
+
+	// Ecmp A flag indicating whether ECMP is enabled or not.
+	Ecmp bool `json:"ecmp"`
+
+	// BGP AS (Autonomous system) number to advertise to BGP peers. BGP AS number can be specified
+	// in either ASPLAIN or ASDOT formats, like ASPLAIN format :- '65546', ASDOT format :- '1.10'.
+	//
+	// Read only if using a VRF-Lite backed external network.
+	LocalASNumber string `json:"localASNumber,omitempty"`
+
+	// BGP Graceful Restart configuration. Not specifying a value results in default bahavior.
+	//
+	// Read only if using a VRF-Lite backed external network.
+	GracefulRestart *EdgeBgpGracefulRestartConfig `json:"gracefulRestart,omitempty"`
+
+	// This property describes the current version of the entity. To prevent clients from
+	// overwriting each other's changes, update operations must include the version which can be
+	// obtained by issuing a GET operation. If the version number on an update call is missing, the
+	// operation will be rejected. This is only needed on update calls.
+	Version EdgeBgpConfigVersion `json:"version"`
+}
+
+// EdgeBgpGracefulRestartConfig describes current graceful restart configuration mode and timer for
+// BGP configuration on an edge gateway.
+type EdgeBgpGracefulRestartConfig struct {
+	// Mode describes Graceful Restart configuration Modes for BGP configuration on an edge gateway.
+	// HELPER_ONLY mode is the ability for a BGP speaker to indicate its ability to preserve
+	// forwarding state during BGP restart. GRACEFUL_RESTART mode is the ability of a BGP speaker to
+	// advertise its restart to its peers.
+	//
+	// DISABLE - Both graceful restart and helper modes are disabled.
+	// HELPER_ONLY - Only helper mode is enabled.
+	// GRACEFUL_AND_HELPER - Both graceful restart and helper modes are enabled.
+	//
+	// Possible values are: DISABLE , HELPER_ONLY , GRACEFUL_AND_HELPER
+	Mode string `json:"mode"`
+
+	// RestartTimer specifies maximum time taken (in seconds) for a BGP session to be established
+	// after a restart. If the session is not re-established within this timer, the receiving
+	// speaker will delete all the stale routes from that peer.
+	RestartTimer int `json:"restartTimer"`
+
+	// StaleRouteTimer defines maximum time (in seconds) before stale routes are removed when BGP
+	// restarts.
+	StaleRouteTimer int `json:"staleRouteTimer"`
+}
+
+// EdgeBgpConfigVersion is part of EdgeBgpConfig type and describes current version of the entity
+// being modified
+type EdgeBgpConfigVersion struct {
+	Version int `json:"version"`
 }
