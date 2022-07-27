@@ -241,6 +241,12 @@ func (vcd *TestVCD) Test_AddAndDeleteMetadataOnMediaRecord(check *C) {
 	metadata, err = mediaRecord.GetMetadata()
 	check.Assert(err, IsNil)
 	check.Assert(len(metadata.MetadataEntry), Equals, 0)
+
+	// Remove catalog item so far other tests don't fail
+	task, err := mediaRecord.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_MetadataOnAdminCatalogCRUD(check *C) {
