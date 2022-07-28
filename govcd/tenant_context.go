@@ -152,7 +152,11 @@ func getTenantContextHeader(tenantContext *TenantContext) map[string]string {
 		return nil
 	}
 	return map[string]string{
-		types.HeaderTenantContext: tenantContext.OrgId,
+		// All VCD 10.2.X versions do not like when URN is sent for Tenant context ID - they fail
+		// with 401 Unauthorized when such request is sent with URN formatted ID:
+		// * Fails with 401: urn:vcloud:org:6127c856-7315-46b8-b774-f2b8f1686c80
+		// * Works fine: 6127c856-7315-46b8-b774-f2b8f1686c80
+		types.HeaderTenantContext: extractUuid(tenantContext.OrgId),
 		types.HeaderAuthContext:   tenantContext.OrgName,
 	}
 }

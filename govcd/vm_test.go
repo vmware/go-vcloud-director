@@ -536,6 +536,12 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
+
+	// Remove catalog item so far other tests don't fail
+	task, err := media.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
