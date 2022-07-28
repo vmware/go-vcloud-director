@@ -732,6 +732,7 @@ type NsxtAlbController struct {
 	// LicenseType By enabling this feature, the provider acknowledges that they have independently licensed the
 	// enterprise version of the NSX AVI LB.
 	// Possible options: 'BASIC', 'ENTERPRISE'
+	// This field was removed since VCD 10.4.0 (v37.0) in favor of NsxtAlbServiceEngineGroup.SupportedFeatureSet
 	LicenseType string `json:"licenseType,omitempty"`
 	// Version of ALB (e.g. 20.1.3). Read-only
 	Version string `json:"version,omitempty"`
@@ -827,6 +828,9 @@ type NsxtAlbServiceEngineGroup struct {
 	// OverAllocated indicates whether the maximum number of virtual services supported on the Load Balancer Service
 	// Engine Group has been surpassed by the current number of reserved virtual services.
 	OverAllocated *bool `json:"overAllocated,omitempty"`
+	// SupportedFeatureSet was added in VCD 10.4.0 (v37.0) as substitute of NsxtAlbController.LicenseType.
+	// Possible values are: "STANDARD", "PREMIUM".
+	SupportedFeatureSet string `json:"supportedFeatureSet,omitempty"`
 }
 
 type ServiceEngineGroupBacking struct {
@@ -855,10 +859,13 @@ type NsxtAlbConfig struct {
 	// LicenseType of the backing Load Balancer Cloud.
 	// * BASIC - Basic edition of the NSX Advanced Load Balancer.
 	// * ENTERPRISE - Full featured edition of the NSX Advanced Load Balancer.
+	// This field was removed since VCD 10.4.0 (v37.0) in favor of NsxtAlbConfig.SupportedFeatureSet
 	LicenseType string `json:"licenseType,omitempty"`
+	// SupportedFeatureSet was added in VCD 10.4.0 (v37.0) as substitute of NsxtAlbConfig.LicenseType.
+	// Possible values are: "STANDARD", "PREMIUM".
+	SupportedFeatureSet string `json:"supportedFeatureSet,omitempty"`
 	// LoadBalancerCloudRef
 	LoadBalancerCloudRef *OpenApiReference `json:"loadBalancerCloudRef,omitempty"`
-
 	// ServiceNetworkDefinition in Gateway CIDR format which will be used by Load Balancer service. All the load balancer
 	// service engines associated with the Service Engine Group will be attached to this network. The subnet prefix length
 	// must be 25. If nothing is set, the default is 192.168.255.1/25. Default CIDR can be configured. This field cannot

@@ -191,7 +191,7 @@ func createDistributedFirewallDefinitions(check *C, vcd *TestVCD, vdcGroupId str
 			networkContextProfile := make([]types.OpenApiReference, 0)
 			for _, netCtxProf := range netCtxProfile {
 				if netCtxProf.ID != "" {
-					networkContextProfile = append(networkContextProfile, types.OpenApiReference{ID: netCtxProf.ID})
+					networkContextProfile = append(networkContextProfile, types.OpenApiReference{ID: netCtxProf.ID, Name: netCtxProf.Name})
 				}
 			}
 
@@ -265,7 +265,8 @@ func getRandomListOfNetworkContextProfiles(check *C, vcd *TestVCD, vdcClient *VC
 	check.Assert(err, IsNil)
 	openApiRefs := make([]types.OpenApiReference, 1)
 	for _, networkContextProfile := range networkContextProfiles {
-		if strings.Contains(networkContextProfile.Description, "ALG") {
+		// Skipping network context profile which has hardcoded destinations and throws error when used in firewall rules with specified destinations
+		if strings.Contains(networkContextProfile.Description, "ALG") || strings.Contains(networkContextProfile.Description, "includes the URL categories") {
 			continue
 		}
 		openApiRef := types.OpenApiReference{

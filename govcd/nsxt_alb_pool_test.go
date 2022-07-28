@@ -67,17 +67,17 @@ func testAdvancedPoolConfig(check *C, edge *NsxtEdgeGateway, vcd *TestVCD, clien
 		PassiveMonitoringEnabled: takeBoolPointer(true),
 		HealthMonitors:           nil,
 		Members: []types.NsxtAlbPoolMember{
-			types.NsxtAlbPoolMember{
+			{
 				Enabled:   true,
 				IpAddress: "1.1.1.1",
 				Port:      8400,
 				Ratio:     takeIntAddress(2),
 			},
-			types.NsxtAlbPoolMember{
+			{
 				Enabled:   false,
 				IpAddress: "1.1.1.2",
 			},
-			types.NsxtAlbPoolMember{
+			{
 				Enabled:   true,
 				IpAddress: "1.1.1.3",
 			},
@@ -98,13 +98,13 @@ func testAdvancedPoolConfig(check *C, edge *NsxtEdgeGateway, vcd *TestVCD, clien
 		PassiveMonitoringEnabled: takeBoolPointer(false),
 		HealthMonitors:           nil,
 		Members: []types.NsxtAlbPoolMember{
-			types.NsxtAlbPoolMember{
+			{
 				Enabled:   true,
 				IpAddress: "1.1.1.1",
 				Port:      8300,
 				Ratio:     takeIntAddress(3),
 			},
-			types.NsxtAlbPoolMember{
+			{
 				Enabled:   true,
 				IpAddress: "1.1.1.2",
 			},
@@ -250,6 +250,12 @@ func setupAlbPoolPrerequisites(check *C, vcd *TestVCD) (*NsxtAlbController, *Nsx
 	albSettingsConfig := &types.NsxtAlbConfig{
 		Enabled: true,
 	}
+
+	// Field is only available when using API version v37.0 onwards
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.0") {
+		albSettingsConfig.SupportedFeatureSet = "PREMIUM"
+	}
+
 	enabledSettings, err := edge.UpdateAlbSettings(albSettingsConfig)
 	if err != nil {
 		fmt.Printf("# error occured while enabling ALB on Edge Gateway. Cleaning up Service Engine Group, ALB Cloud and ALB Controller: %s", err)

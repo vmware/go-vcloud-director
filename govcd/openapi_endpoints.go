@@ -104,6 +104,18 @@ var endpointElevatedApiVersions = map[string][]string{
 		//"34.0", // Basic minimum required version
 		"36.0", // Adds support for Dynamic Security Groups by deprecating `Type` field in favor of `TypeValue`
 	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController: {
+		//"35.0", // Basic minimum required version
+		"37.0", // Deprecates LicenseType in favor of SupportedFeatureSet
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroups: {
+		//"35.0", // Basic minimum required version
+		"37.0", // Adds SupportedFeatureSet
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbEdgeGateway: {
+		//"35.0", // Basic minimum required version
+		"37.0", // Deprecates LicenseType in favor of SupportedFeatureSet
+	},
 }
 
 // checkOpenApiEndpointCompatibility checks if VCD version (to which the client is connected) is sufficient to work with
