@@ -97,28 +97,28 @@ func (vcd *TestVCD) Test_NewVdc(check *C) {
 	// check.Assert(vcd.vdc.Vdc.AllocationModel, Equals, "AllocationPool")
 
 	/*
-		 // TODO: Find the conditions that define valid ComputeCapacity
-		 for _, v := range vcd.vdc.Vdc.ComputeCapacity {
-			 check.Assert(v.CPU.Units, Equals, "MHz")
-			 check.Assert(v.CPU.Allocated, Equals, int64(30000))
-			 check.Assert(v.CPU.Limit, Equals, int64(30000))
-			 check.Assert(v.CPU.Reserved, Equals, int64(15000))
-			 check.Assert(v.CPU.Used, Equals, int64(0))
-			 check.Assert(v.CPU.Overhead, Equals, int64(0))
-			 check.Assert(v.Memory.Units, Equals, "MB")
-			 check.Assert(v.Memory.Allocated, Equals, int64(61440))
-			 check.Assert(v.Memory.Limit, Equals, int64(61440))
-			 check.Assert(v.Memory.Reserved, Equals, int64(61440))
-			 check.Assert(v.Memory.Used, Equals, int64(6144))
-			 check.Assert(v.Memory.Overhead, Equals, int64(95))
-		 }
+		// TODO: Find the conditions that define valid ComputeCapacity
+		for _, v := range vcd.vdc.Vdc.ComputeCapacity {
+			check.Assert(v.CPU.Units, Equals, "MHz")
+			check.Assert(v.CPU.Allocated, Equals, int64(30000))
+			check.Assert(v.CPU.Limit, Equals, int64(30000))
+			check.Assert(v.CPU.Reserved, Equals, int64(15000))
+			check.Assert(v.CPU.Used, Equals, int64(0))
+			check.Assert(v.CPU.Overhead, Equals, int64(0))
+			check.Assert(v.Memory.Units, Equals, "MB")
+			check.Assert(v.Memory.Allocated, Equals, int64(61440))
+			check.Assert(v.Memory.Limit, Equals, int64(61440))
+			check.Assert(v.Memory.Reserved, Equals, int64(61440))
+			check.Assert(v.Memory.Used, Equals, int64(6144))
+			check.Assert(v.Memory.Overhead, Equals, int64(95))
+		}
 	*/
 
 	// Skipping this check, as we can't define the existence of a given vApp template beforehand
 	/*
-	 check.Assert(vcd.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].Name, Equals, QtVappTemplate)
-	 check.Assert(vcd.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].Type, Equals, "application/vnd.vmware.vcloud.vAppTemplate+xml")
-	 check.Assert(vcd.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].HREF, Equals, "http://localhost:4444/api/vAppTemplate/vappTemplate-22222222-2222-2222-2222-222222222222")
+		check.Assert(vcd.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].Name, Equals, QtVappTemplate)
+		check.Assert(vcd.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].Type, Equals, "application/vnd.vmware.vcloud.vAppTemplate+xml")
+		check.Assert(vcd.vdc.Vdc.ResourceEntities[0].ResourceEntity[0].HREF, Equals, "http://localhost:4444/api/vAppTemplate/vappTemplate-22222222-2222-2222-2222-222222222222")
 	*/
 
 	for _, availableNetworks := range vcd.vdc.Vdc.AvailableNetworks {
@@ -131,12 +131,12 @@ func (vcd *TestVCD) Test_NewVdc(check *C) {
 
 	/*
 
-	 // Skipping this check, as we don't have precise terms of comparison for this entity
-	 check.Assert(vcd.vdc.Vdc.NicQuota, Equals, 0)
-	 check.Assert(vcd.vdc.Vdc.NetworkQuota, Equals, 20)
-	 check.Assert(vcd.vdc.Vdc.UsedNetworkCount, Equals, 0)
-	 check.Assert(vcd.vdc.Vdc.VMQuota, Equals, 0)
-	 check.Assert(vcd.vdc.Vdc.IsEnabled, Equals, true)
+		// Skipping this check, as we don't have precise terms of comparison for this entity
+		check.Assert(vcd.vdc.Vdc.NicQuota, Equals, 0)
+		check.Assert(vcd.vdc.Vdc.NetworkQuota, Equals, 20)
+		check.Assert(vcd.vdc.Vdc.UsedNetworkCount, Equals, 0)
+		check.Assert(vcd.vdc.Vdc.VMQuota, Equals, 0)
+		check.Assert(vcd.vdc.Vdc.IsEnabled, Equals, true)
 	*/
 
 	for _, v2 := range vcd.vdc.Vdc.VdcStorageProfiles.VdcStorageProfile {
@@ -263,7 +263,7 @@ func (vcd *TestVCD) Test_QueryVM(check *C) {
 	check.Assert(err, IsNil)
 
 	check.Assert(vm.VM.Name, Equals, vmName)
-
+	
 	check.Assert(vm.VM.Moref, Not(Equals), "")
 	check.Assert(strings.HasPrefix(vm.VM.Moref, "vm-"), Equals, true)
 }
