@@ -1,6 +1,57 @@
 ## 2.16.0 (TBC)
 
-Changes in progress for v2.16.0 are available at [.changes/v2.16.0](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v2.16.0) until the release.
+## FEATURES
+* Add support for `DnsServers` on `OpenApiOrgVdcNetworkDhcp` struct [GH-465]
+* Add new methods `Org.GetAllSecurityTaggedEntities`, `Org.GetAllSecurityTaggedEntitiesByName`,  `Org.GetAllSecurityTagValues`, `VM.GetVMSecurityTags`, `Org.UpdateSecurityTag` and `VM.UpdateVMSecurityTags` to deal with security tags [GH-467]
+* Add new structs `types.SecurityTag`, `types.SecurityTaggedEntity`, `types.SecurityTagValue` and `types.EntitySecurityTags` [GH-467]
+* Add `Vdc.GetControlAccess`, `Vdc.SetControlAccess` and `Vdc.DeleteControlAccess` to get, set and delete control access capabilities to VDCs [GH-470]
+* Added support to set, get and delete metadata to CatalogItem with the methods
+  `CatalogItem.AddMetadataEntry`, `CatalogItem.AddMetadataEntryAsync`, `CatalogItem.GetMetadata`,
+  `CatalogItem.DeleteMetadataEntry` and `CatalogItem.DeleteMetadataEntryAsync`. [GH-471]
+* Added `AdminCatalog.MergeMetadata`,`AdminCatalog.MergeMetadataAsync`, `AdminOrg.MergeMetadata`, `AdminOrg.MergeMetadataAsync`, 
+`CatalogItem.MergeMetadata`, `CatalogItem.MergeMetadataAsync`, `Disk.MergeMetadata`, `Disk.MergeMetadataAsync`, `Media.MergeMetadata`, 
+`Media.MergeMetadataAsync`, `MediaRecord.MergeMetadata`, `MediaRecord.MergeMetadataAsync`, `OpenAPIOrgVdcNetwork.MergeMetadata`, 
+`OpenAPIOrgVdcNetwork.MergeMetadataAsync`, `OrgVDCNetwork.MergeMetadata`, `OrgVDCNetwork.MergeMetadataAsync`, 
+`VApp.MergeMetadata`, `VApp.MergeMetadataAsync`, `VAppTemplate.MergeMetadata`, `VAppTemplate.MergeMetadataAsync`, 
+`VM.MergeMetadata`, `VM.MergeMetadataAsync`, `Vdc.MergeMetadata`, `Vdc.MergeMetadataAsync` to merge metadata, 
+which both updates existing metadata with same key and adds new entries for the non-existent ones [GH-473]
+* Add NSX-T Edge Gateway methods `NsxtEdgeGateway.GetNsxtRouteAdvertisement`,
+  `NsxtEdgeGateway.GetNsxtRouteAdvertisementWithContext`,
+  `NsxtEdgeGateway.UpdateNsxtRouteAdvertisement`,
+  `NsxtEdgeGateway.UpdateNsxtRouteAdvertisementWithContext`,
+  `NsxtEdgeGateway.DeleteNsxtRouteAdvertisement` and
+  `NsxtEdgeGateway.DeleteNsxtRouteAdvertisementWithContext` that allows to manage NSX-T Route
+  Advertisement [GH-478, GH-480]
+* Add new methods `NsxtEdgeGateway.GetBgpConfiguration`, `NsxtEdgeGateway.UpdateBgpConfiguration`,
+  `NsxtEdgeGateway.DisableBgpConfiguration`  for BGP Configuration management on NSX-T Edge Gateway
+  [GH-480]
+* Add new structs `types.EdgeBgpConfig`, `types.EdgeBgpGracefulRestartConfig`,
+  `types.EdgeBgpConfigVersion` for BGP Configuration management on NSX-T Edge Gateway [GH-480]
+* Add support for Dynamic Security Groups in VCD 10.3 by expanding `types.NsxtFirewallGroup` to
+  accommodate fields required for Dynamic Security Groups, implemented automatic API elevation to
+  v36.0. Added New functions `VdcGroup.CreateNsxtFirewallGroup`,
+  `NsxtFirewallGroup.IsDynamicSecurityGroup` [GH-487]
+* Add support for managing NSX-T Edge Gateway BGP IP Prefix Lists. It is done by adding types `EdgeBgpIpPrefixList` and
+`types.EdgeBgpIpPrefixList` with functions `CreateBgpIpPrefixList`, `GetAllBgpIpPrefixLists`,
+`GetBgpIpPrefixListByName`, `GetBgpIpPrefixListById`, `Update` and `Delete`  [GH-488]
+* Add support for managing NSX-T Edge Gateway BGP Neighbor. It is done by adding types `EdgeBgpNeighbor` and
+  `types.EdgeBgpNeighbor` with functions `CreateBgpNeighbor`, `GetAllBgpNeighbors`,
+  `GetBgpNeighborByIp`, `GetBgpNeighborById`, `Update` and `Delete`  [GH-489]
+
+## IMPROVEMENTS
+* Add methods `client.CreateVdcComputePolicy`, `client.GetVdcComputePolicyById`, `client.GetAllVdcComputePolicies` [GH-468]
+* Deprecate `org.GetVdcComputePolicyById`, `adminOrg.GetVdcComputePolicyById` [GH-468]
+* Deprecate `org.GetAllVdcComputePolicies`, `adminOrg.GetAllVdcComputePolicies`, `org.CreateVdcComputePolicy` [GH-468]
+* Add additional methods for convenience of NSX-T Org Network DHCP handling
+  `OpenApiOrgVdcNetwork.GetOpenApiOrgVdcNetworkDhcp`, `OpenApiOrgVdcNetwork.DeletNetworkDhcp`
+  `OpenApiOrgVdcNetwork.UpdateDhcp` [GH-469]
+* Add additional support for UDF type ISO files in `catalog.UploadMediaImage` [GH-479]
+* Add `SupportedFeatureSet` attribute to `NsxtAlbServiceEngineGroup` and `NsxtAlbConfig` to support v37.0 license management for AVI Load Balancer
+and replace `LicenseType` from `NsxtAlbController` [GH-485]
+
+## BUG FIXES
+* Fix method `adminOrg.FindCatalogRecords` to escape name in query URL [GH-466]
+* Fix method `vm.WaitForDhcpIpByNicIndexes` to ignore not found Edge Gateway [GH-481]
 
 ## 2.15.0 (April 14, 2022)
 
