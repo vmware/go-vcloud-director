@@ -1,6 +1,61 @@
-## 2.16.0 (TBC)
+## 2.16.0 (August 2, 2022)
 
-Changes in progress for v2.16.0 are available at [.changes/v2.16.0](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v2.16.0) until the release.
+## FEATURES
+* Added support for `DnsServers` on `OpenApiOrgVdcNetworkDhcp` struct ([#465](https://github.com/vmware/go-vcloud-director/pull/465))
+* Added new methods `Org.GetAllSecurityTaggedEntities`, `Org.GetAllSecurityTaggedEntitiesByName`,  `Org.GetAllSecurityTagValues`, `VM.GetVMSecurityTags`, `Org.UpdateSecurityTag` and `VM.UpdateVMSecurityTags` to deal with security tags ([#467](https://github.com/vmware/go-vcloud-director/pull/467))
+* Added new structs `types.SecurityTag`, `types.SecurityTaggedEntity`, `types.SecurityTagValue` and `types.EntitySecurityTags` ([#467](https://github.com/vmware/go-vcloud-director/pull/467))
+* Added `Vdc.GetControlAccess`, `Vdc.SetControlAccess` and `Vdc.DeleteControlAccess` to get, set and delete control access capabilities to VDCs ([#470](https://github.com/vmware/go-vcloud-director/pull/470))
+* Added support to set, get and delete metadata to CatalogItem with the methods
+  `CatalogItem.AddMetadataEntry`, `CatalogItem.AddMetadataEntryAsync`, `CatalogItem.GetMetadata`,
+  `CatalogItem.DeleteMetadataEntry` and `CatalogItem.DeleteMetadataEntryAsync`. ([#471](https://github.com/vmware/go-vcloud-director/pull/471))
+* Added `AdminCatalog.MergeMetadata`,`AdminCatalog.MergeMetadataAsync`, `AdminOrg.MergeMetadata`, `AdminOrg.MergeMetadataAsync`, 
+`CatalogItem.MergeMetadata`, `CatalogItem.MergeMetadataAsync`, `Disk.MergeMetadata`, `Disk.MergeMetadataAsync`, `Media.MergeMetadata`, 
+`Media.MergeMetadataAsync`, `MediaRecord.MergeMetadata`, `MediaRecord.MergeMetadataAsync`, `OpenAPIOrgVdcNetwork.MergeMetadata`, 
+`OpenAPIOrgVdcNetwork.MergeMetadataAsync`, `OrgVDCNetwork.MergeMetadata`, `OrgVDCNetwork.MergeMetadataAsync`, 
+`VApp.MergeMetadata`, `VApp.MergeMetadataAsync`, `VAppTemplate.MergeMetadata`, `VAppTemplate.MergeMetadataAsync`, 
+`VM.MergeMetadata`, `VM.MergeMetadataAsync`, `Vdc.MergeMetadata`, `Vdc.MergeMetadataAsync` to merge metadata, 
+which both updates existing metadata with same key and adds new entries for the non-existent ones ([#473](https://github.com/vmware/go-vcloud-director/pull/473))
+* Added NSX-T Edge Gateway methods `NsxtEdgeGateway.GetNsxtRouteAdvertisement`,
+  `NsxtEdgeGateway.GetNsxtRouteAdvertisementWithContext`,
+  `NsxtEdgeGateway.UpdateNsxtRouteAdvertisement`,
+  `NsxtEdgeGateway.UpdateNsxtRouteAdvertisementWithContext`,
+  `NsxtEdgeGateway.DeleteNsxtRouteAdvertisement` and
+  `NsxtEdgeGateway.DeleteNsxtRouteAdvertisementWithContext` that allow to manage NSX-T Route
+  Advertisement ([#478](https://github.com/vmware/go-vcloud-director/pull/478), [#480](https://github.com/vmware/go-vcloud-director/pull/480))
+* Added new methods `NsxtEdgeGateway.GetBgpConfiguration`, `NsxtEdgeGateway.UpdateBgpConfiguration`,
+  `NsxtEdgeGateway.DisableBgpConfiguration` for BGP Configuration management on NSX-T Edge Gateway
+  ([#480](https://github.com/vmware/go-vcloud-director/pull/480))
+* Added new structs `types.EdgeBgpConfig`, `types.EdgeBgpGracefulRestartConfig`,
+  `types.EdgeBgpConfigVersion` for BGP Configuration management on NSX-T Edge Gateway ([#480](https://github.com/vmware/go-vcloud-director/pull/480))
+* Added support for Dynamic Security Groups in VCD 10.3 by expanding `types.NsxtFirewallGroup` to
+  accommodate fields required for Dynamic Security Groups, implemented automatic API elevation to
+  v36.0. Added New functions `VdcGroup.CreateNsxtFirewallGroup`,
+  `NsxtFirewallGroup.IsDynamicSecurityGroup` ([#487](https://github.com/vmware/go-vcloud-director/pull/487))
+* Added support for managing NSX-T Edge Gateway BGP IP Prefix Lists. It is done by adding types `EdgeBgpIpPrefixList` and
+`types.EdgeBgpIpPrefixList` with functions `CreateBgpIpPrefixList`, `GetAllBgpIpPrefixLists`,
+`GetBgpIpPrefixListByName`, `GetBgpIpPrefixListById`, `Update` and `Delete`  ([#488](https://github.com/vmware/go-vcloud-director/pull/488))
+* Added support for managing NSX-T Edge Gateway BGP Neighbor. It is done by adding types `EdgeBgpNeighbor` and
+  `types.EdgeBgpNeighbor` with functions `CreateBgpNeighbor`, `GetAllBgpNeighbors`,
+  `GetBgpNeighborByIp`, `GetBgpNeighborById`, `Update` and `Delete`  ([#489](https://github.com/vmware/go-vcloud-director/pull/489))
+
+## IMPROVEMENTS
+* Added methods `client.CreateVdcComputePolicy`, `client.GetVdcComputePolicyById`, `client.GetAllVdcComputePolicies` ([#468](https://github.com/vmware/go-vcloud-director/pull/468))
+* Added additional methods for convenience of NSX-T Org Network DHCP handling
+  `OpenApiOrgVdcNetwork.GetOpenApiOrgVdcNetworkDhcp`, `OpenApiOrgVdcNetwork.DeletNetworkDhcp`
+  `OpenApiOrgVdcNetwork.UpdateDhcp` ([#469](https://github.com/vmware/go-vcloud-director/pull/469))
+* Added additional support for UDF type ISO files in `catalog.UploadMediaImage` ([#479](https://github.com/vmware/go-vcloud-director/pull/479))
+* Added `SupportedFeatureSet` attribute to `NsxtAlbServiceEngineGroup` and `NsxtAlbConfig` to
+support v37.0 license management for AVI Load Balancer and replace `LicenseType` from
+`NsxtAlbController` ([#485](https://github.com/vmware/go-vcloud-director/pull/485))
+
+## BUG FIXES
+* Fixed method `adminOrg.FindCatalogRecords` to escape name in query URL ([#466](https://github.com/vmware/go-vcloud-director/pull/466))
+* Fixed method `vm.WaitForDhcpIpByNicIndexes` to ignore not found Edge Gateway ([#481](https://github.com/vmware/go-vcloud-director/pull/481))
+
+## DEPRECATIONS
+* Deprecated `org.GetVdcComputePolicyById`, `adminOrg.GetVdcComputePolicyById` ([#468](https://github.com/vmware/go-vcloud-director/pull/468))
+* Deprecated `org.GetAllVdcComputePolicies`, `adminOrg.GetAllVdcComputePolicies`, `org.CreateVdcComputePolicy` ([#468](https://github.com/vmware/go-vcloud-director/pull/468))
+
 
 ## 2.15.0 (April 14, 2022)
 
@@ -64,7 +119,7 @@ Changes in progress for v2.16.0 are available at [.changes/v2.16.0](https://gith
   `Org.GetNsxtEdgeGatewayByNameAndOwnerId()`, `VdcGroup.GetNsxtEdgeGatewayByName()`,
   `VdcGroup.GetAllNsxtEdgeGateways()`, `org.GetVdcGroupById` ([#440](https://github.com/vmware/go-vcloud-director/pull/440))
 * Added additional helper functions `OwnerIsVdcGroup()`, `OwnerIsVdc()`, `VdcGroup.GetCapabilities()`,
-  `VdcGroup.IsNsxt()` [[#440](https://github.com/vmware/go-vcloud-director/pull/440)]
+  `VdcGroup.IsNsxt()` ([#440](https://github.com/vmware/go-vcloud-director/pull/440))
 * Added support to set, get and delete metadata to VDC Networks with the methods
   `OrgVDCNetwork.AddMetadataEntry`, `OrgVDCNetwork.AddMetadataEntryAsync`, `OrgVDCNetwork.GetMetadata`,
   `OrgVDCNetwork.DeleteMetadataEntry` and `OrgVDCNetwork.DeleteMetadataEntryAsync` ([#442](https://github.com/vmware/go-vcloud-director/pull/442))
