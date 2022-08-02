@@ -1,1 +1,1 @@
-* Add support for `DnsServers` on `OpenApiOrgVdcNetworkDhcp` struct [GH-465]
+* Added support for `DnsServers` on `OpenApiOrgVdcNetworkDhcp` struct [GH-465]

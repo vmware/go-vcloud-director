@@ -1,1 +1,1 @@
-* Fix method `vm.WaitForDhcpIpByNicIndexes` to ignore not found Edge Gateway [GH-481]
+* Fixed method `vm.WaitForDhcpIpByNicIndexes` to ignore not found Edge Gateway [GH-481]
