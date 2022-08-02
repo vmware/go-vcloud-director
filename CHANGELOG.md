@@ -40,8 +40,6 @@ which both updates existing metadata with same key and adds new entries for the 
 
 ## IMPROVEMENTS
 * Added methods `client.CreateVdcComputePolicy`, `client.GetVdcComputePolicyById`, `client.GetAllVdcComputePolicies` ([#468](https://github.com/vmware/go-vcloud-director/pull/468))
-* Deprecated `org.GetVdcComputePolicyById`, `adminOrg.GetVdcComputePolicyById` ([#468](https://github.com/vmware/go-vcloud-director/pull/468))
-* Deprecated `org.GetAllVdcComputePolicies`, `adminOrg.GetAllVdcComputePolicies`, `org.CreateVdcComputePolicy` ([#468](https://github.com/vmware/go-vcloud-director/pull/468))
 * Added additional methods for convenience of NSX-T Org Network DHCP handling
   `OpenApiOrgVdcNetwork.GetOpenApiOrgVdcNetworkDhcp`, `OpenApiOrgVdcNetwork.DeletNetworkDhcp`
   `OpenApiOrgVdcNetwork.UpdateDhcp` ([#469](https://github.com/vmware/go-vcloud-director/pull/469))
@@ -53,6 +51,11 @@ support v37.0 license management for AVI Load Balancer and replace `LicenseType`
 ## BUG FIXES
 * Fixed method `adminOrg.FindCatalogRecords` to escape name in query URL ([#466](https://github.com/vmware/go-vcloud-director/pull/466))
 * Fixed method `vm.WaitForDhcpIpByNicIndexes` to ignore not found Edge Gateway ([#481](https://github.com/vmware/go-vcloud-director/pull/481))
+
+## DEPRECATIONS
+* Deprecated `org.GetVdcComputePolicyById`, `adminOrg.GetVdcComputePolicyById` ([#468](https://github.com/vmware/go-vcloud-director/pull/468))
+* Deprecated `org.GetAllVdcComputePolicies`, `adminOrg.GetAllVdcComputePolicies`, `org.CreateVdcComputePolicy` ([#468](https://github.com/vmware/go-vcloud-director/pull/468))
+
 
 ## 2.15.0 (April 14, 2022)
 
