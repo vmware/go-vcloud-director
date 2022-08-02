@@ -1,4 +1,4 @@
-## 2.16.0 (TBC)
+## 2.16.0 (August 2, 2022)
 
 ## FEATURES
 * Added support for `DnsServers` on `OpenApiOrgVdcNetworkDhcp` struct ([#465](https://github.com/vmware/go-vcloud-director/pull/465))
