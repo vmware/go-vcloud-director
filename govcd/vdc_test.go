@@ -263,7 +263,7 @@ func (vcd *TestVCD) Test_QueryVM(check *C) {
 	check.Assert(err, IsNil)
 
 	check.Assert(vm.VM.Name, Equals, vmName)
-	
+
 	check.Assert(vm.VM.Moref, Not(Equals), "")
 	check.Assert(strings.HasPrefix(vm.VM.Moref, "vm-"), Equals, true)
 }
