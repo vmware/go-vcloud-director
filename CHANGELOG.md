@@ -1,3 +1,7 @@
+## 2.17.0 (TBC)
+
+Changes in progress for v2.17.0 are available at [.changes/v2.17.0](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v2.17.0) until the release.
+
 ## 2.16.0 (August 2, 2022)
 
 ## FEATURES
