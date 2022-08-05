@@ -10,6 +10,7 @@ package govcd
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	. "gopkg.in/check.v1"
 
@@ -262,6 +263,9 @@ func (vcd *TestVCD) Test_QueryVM(check *C) {
 	check.Assert(err, IsNil)
 
 	check.Assert(vm.VM.Name, Equals, vmName)
+
+	check.Assert(vm.VM.Moref, Not(Equals), "")
+	check.Assert(strings.HasPrefix(vm.VM.Moref, "vm-"), Equals, true)
 }
 
 func init() {

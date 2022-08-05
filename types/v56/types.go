@@ -2339,6 +2339,7 @@ type QueryResultVMRecordType struct {
 	// Attributes
 	HREF                     string    `xml:"href,attr,omitempty"` // The URI of the entity.
 	ID                       string    `xml:"id,attr,omitempty"`
+	Moref                    string    `xml:"moref,attr,omitempty"`         // VM moref id.
 	Name                     string    `xml:"name,attr,omitempty"`          // VM name.
 	Type                     string    `xml:"type,attr,omitempty"`          // Contains the type of the resource.
 	ContainerName            string    `xml:"containerName,attr,omitempty"` // The name of the vApp or vApp template that contains this VM.
