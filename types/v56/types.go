@@ -447,14 +447,17 @@ type AdminVdc struct {
 	Xmlns string `xml:"xmlns,attr"`
 	Vdc
 
-	VCpuInMhz2                    *int64         `xml:"VCpuInMhz2,omitempty"`
-	ResourceGuaranteedMemory      *float64       `xml:"ResourceGuaranteedMemory,omitempty"`
-	ResourceGuaranteedCpu         *float64       `xml:"ResourceGuaranteedCpu,omitempty"`
-	VCpuInMhz                     *int64         `xml:"VCpuInMhz,omitempty"`
-	IsThinProvision               *bool          `xml:"IsThinProvision,omitempty"`
-	NetworkPoolReference          *Reference     `xml:"NetworkPoolReference,omitempty"`
-	ProviderVdcReference          *Reference     `xml:"ProviderVdcReference"`
-	ResourcePoolRefs              *VimObjectRefs `xml:"vmext:ResourcePoolRefs,omitempty"`
+	VCpuInMhz2               *int64     `xml:"VCpuInMhz2,omitempty"`
+	ResourceGuaranteedMemory *float64   `xml:"ResourceGuaranteedMemory,omitempty"`
+	ResourceGuaranteedCpu    *float64   `xml:"ResourceGuaranteedCpu,omitempty"`
+	VCpuInMhz                *int64     `xml:"VCpuInMhz,omitempty"`
+	IsThinProvision          *bool      `xml:"IsThinProvision,omitempty"`
+	NetworkPoolReference     *Reference `xml:"NetworkPoolReference,omitempty"`
+	ProviderVdcReference     *Reference `xml:"ProviderVdcReference"`
+
+	// ResourcePoolRefs is a read-only field and should be avoided in XML structure for write
+	// operations because it breaks on Go marshalling bug https://github.com/golang/go/issues/9519
+	ResourcePoolRefs              *VimObjectRefs `xml:"ResourcePoolRefs,omitempty"`
 	UsesFastProvisioning          *bool          `xml:"UsesFastProvisioning,omitempty"`
 	OverCommitAllowed             bool           `xml:"OverCommitAllowed,omitempty"`
 	VmDiscoveryEnabled            bool           `xml:"VmDiscoveryEnabled,omitempty"`
