@@ -73,8 +73,8 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpNeighbor:          "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpConfigPrefixLists: "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpConfig:            "35.0", // VCD 10.2+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityMetadata:           "36.0", // VCD 10.3+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityMetadataByEntryId:  "36.0", // VCD 10.3+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityMetadata:           "37.0", // VCD 10.4+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityMetadataByEntryId:  "37.0", // VCD 10.4+
 }
 
 // elevateNsxtNatRuleApiVersion helps to elevate API version to consume newer NSX-T NAT Rule features

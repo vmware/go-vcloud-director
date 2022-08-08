@@ -27,6 +27,12 @@ type metadataCompatible interface {
 	DeleteMetadataEntry(key string) error
 }
 
+type metadataOpenApiCompatible interface {
+	GetOpenApiMetadata() ([]*types.OpenApiMetadata, error)
+	AddOpenApiMetadataEntry(typedValue, key, value string) error
+	DeleteOpenApiMetadataEntry(key string) error
+}
+
 func (vcd *TestVCD) Test_AddAndDeleteMetadataForVdc(check *C) {
 	if vcd.config.VCD.Vdc == "" {
 		check.Skip("skipping test because VDC name is empty")
@@ -483,6 +489,7 @@ func (vcd *TestVCD) Test_MetadataOnOpenApiOrgVdcNetworkCRUD(check *C) {
 	}
 
 	testMetadataCRUDActions(net, check, nil)
+	testOpenApiMetadataCRUDActions(vcd.client, net, check, nil)
 }
 
 func (vcd *TestVCD) Test_MetadataByHrefCRUD(check *C) {
@@ -629,46 +636,45 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraCheck f
 	check.Assert(len(metadata.MetadataEntry), Equals, existingMetaDataCount)
 }
 
-func (vcd *TestVCD) Test_MetadataOnOpenApiOrgVdcNetworkCRUD(check *C) {
-	// FIXME: SKIP for old api versions!
-	fmt.Printf("Running: %s\n", check.TestName())
-	net, err := vcd.vdc.GetOpenApiOrgVdcNetworkByName(vcd.config.VCD.Network.Net1)
-	if err != nil {
-		check.Skip(fmt.Sprintf("Test_MetadataOnOpenApiOrgVdcNetworkCRUD: Network %s not found. Test can't proceed", vcd.config.VCD.Network.Net1))
+func testOpenApiMetadataCRUDActions(vcdClient *VCDClient, resource metadataOpenApiCompatible, check *C, extraCheck func()) {
+	if vcdClient.Client.APIVCDMaxVersionIs("< 37.0") {
 		return
 	}
 
 	// Check how much metadata exists
-	metadataEntries, err := net.GetMetadata()
+	metadata, err := resource.GetOpenApiMetadata()
 	check.Assert(err, IsNil)
-	check.Assert(metadataEntries, NotNil)
-	existingMetaDataCount := len(metadataEntries)
+	check.Assert(metadata, NotNil)
+	existingMetaDataCount := len(metadata)
 
 	// Add metadata
-	err = net.AddMetadataEntry(types.MetadataStringValue, "key", "value")
+	err = resource.AddOpenApiMetadataEntry(types.MetadataStringValue, "key", "value")
 	check.Assert(err, IsNil)
 
 	// Check if metadata was added correctly
-	metadataEntries, err = net.GetMetadata()
+	metadata, err = resource.GetOpenApiMetadata()
 	check.Assert(err, IsNil)
-	check.Assert(metadataEntries, NotNil)
-	check.Assert(len(metadataEntries), Equals, existingMetaDataCount+1)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata), Equals, existingMetaDataCount+1)
 	var foundEntry *types.OpenApiMetadata
-	for _, entry := range metadataEntries {
+	for _, entry := range metadata {
 		if entry.KeyValue.Key == "key" {
 			foundEntry = entry
 		}
 	}
 	check.Assert(foundEntry, NotNil)
 	check.Assert(foundEntry.KeyValue.Key, Equals, "key")
-	check.Assert(foundEntry.KeyValue.Value.Value, Equals, "value")
-	check.Assert(foundEntry.KeyValue.Value.Type, Equals, types.MetadataStringValue)
+	check.Assert(foundEntry.KeyValue.Value, Equals, "value")
 
-	err = net.DeleteMetadataEntry("key")
+	if extraCheck != nil {
+		extraCheck()
+	}
+
+	err = resource.DeleteOpenApiMetadataEntry("key")
 	check.Assert(err, IsNil)
 	// Check if metadata was deleted correctly
-	metadataEntries, err = net.GetMetadata()
+	metadata, err = resource.GetOpenApiMetadata()
 	check.Assert(err, IsNil)
-	check.Assert(metadataEntries, NotNil)
-	check.Assert(len(metadataEntries), Equals, 0)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata), Equals, existingMetaDataCount)
 }
