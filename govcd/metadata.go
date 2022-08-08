@@ -1308,4 +1308,3 @@ func deleteOpenApiMetadata(client *Client, entityId, key string) error {
 	}
 	return nil
 }
-
