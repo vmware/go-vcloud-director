@@ -29,7 +29,7 @@ func (vcdClient *VCDClient) GetAllAlbControllers(queryParameters url.Values) ([]
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController
-	apiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func (vcdClient *VCDClient) GetAlbControllerById(id string) (*NsxtAlbController,
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController
-	apiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ func (vcdClient *VCDClient) CreateNsxtAlbController(albControllerConfig *types.N
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +166,7 @@ func (vcdClient *VCDClient) CreateNsxtAlbController(albControllerConfig *types.N
 		vcdClient:         vcdClient,
 	}
 
-	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, albControllerConfig, returnObject.NsxtAlbController, nil)
+	err = client.OpenApiPostItem(apiVersion, urlRef, nil, albControllerConfig, returnObject.NsxtAlbController, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating NSX-T ALB Controller: %s", err)
 	}
@@ -178,7 +178,7 @@ func (vcdClient *VCDClient) CreateNsxtAlbController(albControllerConfig *types.N
 func (nsxtAlbController *NsxtAlbController) Update(albControllerConfig *types.NsxtAlbController) (*NsxtAlbController, error) {
 	client := nsxtAlbController.vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +197,7 @@ func (nsxtAlbController *NsxtAlbController) Update(albControllerConfig *types.Ns
 		vcdClient:         nsxtAlbController.vcdClient,
 	}
 
-	err = client.OpenApiPutItem(minimumApiVersion, urlRef, nil, albControllerConfig, responseAlbController.NsxtAlbController, nil)
+	err = client.OpenApiPutItem(apiVersion, urlRef, nil, albControllerConfig, responseAlbController.NsxtAlbController, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error updating NSX-T ALB Controller: %s", err)
 	}
@@ -209,7 +209,7 @@ func (nsxtAlbController *NsxtAlbController) Update(albControllerConfig *types.Ns
 func (nsxtAlbController *NsxtAlbController) Delete() error {
 	client := nsxtAlbController.vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
 	}
@@ -223,7 +223,7 @@ func (nsxtAlbController *NsxtAlbController) Delete() error {
 		return err
 	}
 
-	err = client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil, nil)
+	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
 	if err != nil {
 		return fmt.Errorf("error deleting NSX-T ALB Controller: %s", err)
 	}

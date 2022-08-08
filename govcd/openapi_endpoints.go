@@ -28,12 +28,14 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableTier0Routers:              "32.0",
 	// OpenApiEndpointExternalNetworks endpoint support was introduced with version 32.0 however it was still not stable
 	// enough to be used. (i.e. it did not support update "PUT")
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks:                   "33.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies:                 "32.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies:         "33.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSessionCurrent:                     "34.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeClusters:                       "34.0", // VCD 10.1+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways:                       "34.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks:           "33.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies:         "32.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies: "33.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSessionCurrent:             "34.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeClusters:               "34.0", // VCD 10.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways:               "34.0",
+
+	// Static security groups and IP sets in VCD 10.2, Dynamic security groups in VCD 10.3+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups:                     "34.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtNatRules:                       "34.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtFirewallRules:                  "34.0",
@@ -48,6 +50,8 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsCandidateVdcs:             "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwPolicies:               "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwDefaultPolicies:        "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSecurityTags:                       "36.0", // VCD 10.3+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtRouteAdvertisement:             "34.0", // VCD 10.1+
 
 	// NSX-T ALB (Advanced/AVI Load Balancer) support was introduced in 10.2
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController:                    "35.0", // VCD 10.2+
@@ -63,8 +67,14 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceSummaries:       "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibrary:            "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibraryOld:         "35.0", // VCD 10.2+ and deprecated from 10.3
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityMetadata:                   "36.0", // VCD 10.3+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityMetadataByEntryId:          "36.0", // VCD 10.3+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules:                "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkContextProfiles:           "35.0", // VCD 10.2+
+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpNeighbor:          "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpConfigPrefixLists: "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpConfig:            "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityMetadata:           "36.0", // VCD 10.3+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityMetadataByEntryId:  "36.0", // VCD 10.3+
 }
 
 // elevateNsxtNatRuleApiVersion helps to elevate API version to consume newer NSX-T NAT Rule features
@@ -82,6 +92,31 @@ var endpointElevatedApiVersions = map[string][]string{
 		//"33.0", // Basic minimum required version
 		"35.0", // Deprecates field BackingType in favor of BackingTypeValue
 		"36.0", // Adds support new type of BackingTypeValue - IMPORTED_T_LOGICAL_SWITCH (backed by NSX-T segment)
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules: {
+		//"35.0", // Basic minimum required version
+		"35.2", // Deprecates Action field in favor of ActionValue
+		"36.2", // Adds 3 new fields - Comments, SourceGroupsExcluded, and DestinationGroupsExcluded
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworksDhcp: {
+		//"32.0", // Basic minimum required version
+		"36.1", // Adds support for dnsServers
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups: {
+		//"34.0", // Basic minimum required version
+		"36.0", // Adds support for Dynamic Security Groups by deprecating `Type` field in favor of `TypeValue`
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController: {
+		//"35.0", // Basic minimum required version
+		"37.0", // Deprecates LicenseType in favor of SupportedFeatureSet
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroups: {
+		//"35.0", // Basic minimum required version
+		"37.0", // Adds SupportedFeatureSet
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbEdgeGateway: {
+		//"35.0", // Basic minimum required version
+		"37.0", // Deprecates LicenseType in favor of SupportedFeatureSet
 	},
 }
 

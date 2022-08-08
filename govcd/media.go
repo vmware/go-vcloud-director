@@ -284,21 +284,32 @@ func readHeader(reader io.Reader) (bool, error) {
 	if headerOk {
 		return true, nil
 	} else {
-		return false, errors.New("file header didn't match ISO standard")
+		return false, errors.New("file header didn't match ISO or UDF standard")
 	}
 }
 
-// Verify file header info: https://www.garykessler.net/library/file_sigs.html
+// Verify file header for ISO or UDF type. Info: https://www.garykessler.net/library/file_sigs.html
 func verifyHeader(buf []byte) bool {
-	// search for CD001(43 44 30 30 31) in specific file places.
-	//This signature usually occurs at byte offset 32769 (0x8001),
-	//34817 (0x8801), or 36865 (0x9001).
+	// ISO verification - search for CD001(43 44 30 30 31) in specific file places.
+	// This signature usually occurs at byte offset 32769 (0x8001),
+	// 34817 (0x8801), or 36865 (0x9001).
+	// UDF verification - search for BEA01(42 45 41 30 31) in specific file places.
+	// This signature usually occurs at byte offset 32769 (0x8001),
+	// 34817 (0x8801), or 36865 (0x9001).
+
 	return (buf[32769] == 0x43 && buf[32770] == 0x44 &&
 		buf[32771] == 0x30 && buf[32772] == 0x30 && buf[32773] == 0x31) ||
 		(buf[34817] == 0x43 && buf[34818] == 0x44 &&
 			buf[34819] == 0x30 && buf[34820] == 0x30 && buf[34821] == 0x31) ||
 		(buf[36865] == 0x43 && buf[36866] == 0x44 &&
-			buf[36867] == 0x30 && buf[36868] == 0x30 && buf[36869] == 0x31)
+			buf[36867] == 0x30 && buf[36868] == 0x30 && buf[36869] == 0x31) ||
+		(buf[32769] == 0x42 && buf[32770] == 0x45 &&
+			buf[32771] == 0x41 && buf[32772] == 0x30 && buf[32773] == 0x31) ||
+		(buf[34817] == 0x42 && buf[34818] == 0x45 &&
+			buf[34819] == 41 && buf[34820] == 0x30 && buf[34821] == 0x31) ||
+		(buf[36865] == 42 && buf[36866] == 45 &&
+			buf[36867] == 41 && buf[36868] == 0x30 && buf[36869] == 0x31)
+
 }
 
 // Reference for API usage http://pubs.vmware.com/vcloud-api-1-5/wwhelp/wwhimpl/js/html/wwhelp.htm#href=api_prog/GUID-9356B99B-E414-474A-853C-1411692AF84C.html

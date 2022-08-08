@@ -1442,6 +1442,13 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
+
+	// Remove catalog item so far other tests don't fail
+	catalogItem, err := catalog.GetCatalogItemByName(itemName, true)
+	check.Assert(err, IsNil)
+
+	err = catalogItem.Delete()
+	check.Assert(err, IsNil)
 }
 
 // Test_AddNewVMWithComputeCapacity creates a new VM in vApp with VM using compute capacity

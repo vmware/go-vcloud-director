@@ -43,10 +43,20 @@ func (org *Org) GetOpenApiOrgVdcNetworkByNameAndOwnerId(name, ownerId string) (*
 
 // GetOpenApiOrgVdcNetworkById allows to retrieve both - NSX-T and NSX-V Org VDC networks
 func (vdc *Vdc) GetOpenApiOrgVdcNetworkById(id string) (*OpenApiOrgVdcNetwork, error) {
+	return getOrgVdcNetworkById(vdc.client, id, vdc.Vdc.ID)
+}
+
+// GetOpenApiOrgVdcNetworkById allows to retrieve both - NSX-T and NSX-V Org VDC Group networks
+func (vdcGroup *VdcGroup) GetOpenApiOrgVdcNetworkById(id string) (*OpenApiOrgVdcNetwork, error) {
+	return getOrgVdcNetworkById(vdcGroup.client, id, vdcGroup.VdcGroup.Id)
+}
+
+// getOrgVdcNetworkById allows to retrieve both - NSX-T and NSX-V Org VDC Group networks
+func getOrgVdcNetworkById(client *Client, id, ownerId string) (*OpenApiOrgVdcNetwork, error) {
 	// Inject Vdc ID filter to perform filtering on server side
 	params := url.Values{}
-	filterParams := queryParameterFilterAnd("ownerRef.id=="+vdc.Vdc.ID, params)
-	egw, err := getOpenApiOrgVdcNetworkById(vdc.client, id, filterParams)
+	filterParams := queryParameterFilterAnd("ownerRef.id=="+ownerId, params)
+	egw, err := getOpenApiOrgVdcNetworkById(client, id, filterParams)
 	if err != nil {
 		return nil, err
 	}
@@ -115,6 +125,19 @@ func (org *Org) CreateOpenApiOrgVdcNetwork(orgVdcNetworkConfig *types.OpenApiOrg
 // CreateOpenApiOrgVdcNetwork allows to create NSX-T or NSX-V Org VDC network
 func (vdc *Vdc) CreateOpenApiOrgVdcNetwork(orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) (*OpenApiOrgVdcNetwork, error) {
 	return createOpenApiOrgVdcNetwork(vdc.client, orgVdcNetworkConfig)
+}
+
+// CreateOpenApiOrgVdcNetwork allows to create NSX-T or NSX-V Org VDC network
+func (vdcGroup *VdcGroup) CreateOpenApiOrgVdcNetwork(orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) (*OpenApiOrgVdcNetwork, error) {
+	return createOpenApiOrgVdcNetwork(vdcGroup.client, orgVdcNetworkConfig)
+}
+
+// UpdateDhcp updates DHCP configuration for specific Org VDC network
+func (orgVdcNet *OpenApiOrgVdcNetwork) UpdateDhcp(orgVdcNetworkDhcpConfig *types.OpenApiOrgVdcNetworkDhcp) (*OpenApiOrgVdcNetworkDhcp, error) {
+	if orgVdcNet.client == nil || orgVdcNet.OpenApiOrgVdcNetwork == nil || orgVdcNet.OpenApiOrgVdcNetwork.ID == "" {
+		return nil, fmt.Errorf("error - Org VDC network structure must be set and have ID field available")
+	}
+	return updateOrgNetworkDhcp(orgVdcNet.client, orgVdcNet.OpenApiOrgVdcNetwork.ID, orgVdcNetworkDhcpConfig)
 }
 
 // Update allows to update Org VDC network

@@ -370,6 +370,13 @@ const (
 	OpenApiEndpointVdcGroupsCandidateVdcs             = "vdcGroups/networkingCandidateVdcs"
 	OpenApiEndpointVdcGroupsDfwPolicies               = "vdcGroups/%s/dfwPolicies"
 	OpenApiEndpointVdcGroupsDfwDefaultPolicies        = "vdcGroups/%s/dfwPolicies/default"
+	OpenApiEndpointVdcGroupsDfwRules                  = "vdcGroups/%s/dfwPolicies/%s/rules"
+	OpenApiEndpointNetworkContextProfiles             = "networkContextProfiles"
+	OpenApiEndpointSecurityTags                       = "securityTags"
+	OpenApiEndpointNsxtRouteAdvertisement             = "edgeGateways/%s/routing/advertisement"
+	OpenApiEndpointEdgeBgpNeighbor                    = "edgeGateways/%s/routing/bgp/neighbors/"   // '%s' is NSX-T Edge Gateway ID
+	OpenApiEndpointEdgeBgpConfigPrefixLists           = "edgeGateways/%s/routing/bgp/prefixLists/" // '%s' is NSX-T Edge Gateway ID
+	OpenApiEndpointEdgeBgpConfig                      = "edgeGateways/%s/routing/bgp"              // '%s' is NSX-T Edge Gateway ID
 	OpenApiEndpointEntityMetadata                     = "entities/%s/metadata"
 	OpenApiEndpointEntityMetadataByEntryId            = "entities/%s/metadata/%s"
 
@@ -432,12 +439,16 @@ const (
 )
 
 const (
-	// FirewallGroupTypeSecurityGroup can be used in types.NsxtFirewallGroup for 'type' field to
-	// create Security Group
+	// FirewallGroupTypeSecurityGroup can be used in types.NsxtFirewallGroup for 'TypeValue' field
+	// to create Security Group
 	FirewallGroupTypeSecurityGroup = "SECURITY_GROUP"
-	// FirewallGroupTypeIpSet can be used in types.NsxtFirewallGroup for 'type' field to create IP
-	// Set
+	// FirewallGroupTypeIpSet can be used in types.NsxtFirewallGroup for 'TypeValue' field to create
+	// IP Set
 	FirewallGroupTypeIpSet = "IP_SET"
+
+	// FirewallGroupTypeVmCriteria can be used in types.NsxtFirewallGroup for 'TypeValue' field to
+	// create Dynamic Security Group (VCD 10.3+)
+	FirewallGroupTypeVmCriteria = "VM_CRITERIA"
 )
 
 // These constants can be used to pick type of NSX-T NAT Rule
@@ -496,4 +507,9 @@ const (
 	MetadataNumberValue   string = "MetadataNumberValue"
 	MetadataDateTimeValue string = "MetadataDateTimeValue"
 	MetadataBooleanValue  string = "MetadataBooleanValue"
+)
+
+const (
+	// DistributedFirewallPolicyDefault is a constant for "default" Distributed Firewall Policy
+	DistributedFirewallPolicyDefault = "default"
 )

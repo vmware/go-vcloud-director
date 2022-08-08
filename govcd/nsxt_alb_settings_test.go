@@ -39,10 +39,20 @@ func (vcd *TestVCD) Test_UpdateAlbSettings(check *C) {
 	albSettingsConfig := &types.NsxtAlbConfig{
 		Enabled: true,
 	}
+
+	// Field is only available when using API version v37.0 onwards
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.0") {
+		albSettingsConfig.SupportedFeatureSet = "STANDARD"
+	}
+
 	enabledSettings, err := edge.UpdateAlbSettings(albSettingsConfig)
 	check.Assert(err, IsNil)
 	check.Assert(enabledSettings.Enabled, Equals, true)
 	check.Assert(enabledSettings.ServiceNetworkDefinition, Equals, "192.168.255.1/25")
+	// Field is only available when using API version v37.0 onwards
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.0") {
+		check.Assert(enabledSettings.SupportedFeatureSet, Equals, "STANDARD")
+	}
 	PrependToCleanupList("", "OpenApiEntityAlbSettingsDisable", edge.EdgeGateway.Name, check.TestName())
 
 	// Disable ALB on Edge Gateway
