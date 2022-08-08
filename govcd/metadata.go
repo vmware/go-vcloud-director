@@ -831,14 +831,22 @@ func (catalogItem *CatalogItem) DeleteMetadataEntryAsync(key string) (Task, erro
 // OpenAPI metadata functions
 
 // GetMetadata returns OpenApiOrgVdcNetwork metadata.
-// TODO: This function is currently using XML API underneath as OpenAPI metadata is supported from v37.0 and is currently in alpha at the moment. See https://github.com/vmware/go-vcloud-director/pull/455
+// NOTE: This function is currently using XML API underneath as OpenAPI metadata is supported from v37.0.
+//       For versions >= v37.0 use GetOpenApiMetadata
 func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(openApiOrgVdcNetwork.client, fmt.Sprintf("%s/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), strings.ReplaceAll(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, "urn:vcloud:network:", "")))
 }
 
+// GetOpenApiMetadata returns OpenApiOrgVdcNetwork metadata.
+// NOTE: For versions < v37.0 use GetMetadata
+func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) GetOpenApiMetadata() ([]*types.OpenApiMetadata, error) {
+	return getOpenApiMetadata(openApiOrgVdcNetwork.client, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID)
+}
+
 // AddMetadataEntry adds OpenApiOrgVdcNetwork metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
-// TODO: This function is currently using XML API underneath as OpenAPI metadata is supported from v37.0 and is currently in alpha at the moment. See https://github.com/vmware/go-vcloud-director/pull/455
+// NOTE: This function is currently using XML API underneath as OpenAPI metadata is supported from v37.0.
+//       For versions >= v37.0 use AddOpenApiMetadataEntry
 func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) AddMetadataEntry(typedValue, key, value string) error {
 	task, err := addMetadata(openApiOrgVdcNetwork.client, typedValue, key, value, fmt.Sprintf("%s/admin/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), strings.ReplaceAll(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, "urn:vcloud:network:", "")))
 	if err != nil {
@@ -847,9 +855,16 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) AddMetadataEntry(typedValue, k
 	return task.WaitTaskCompletion()
 }
 
+// AddOpenApiMetadataEntry adds OrgVDCNetwork metadata typedValue and key/value pair provided as input
+// and waits for the task to finish.
+// NOTE: For versions < v37.0 use AddMetadataEntry
+func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) AddOpenApiMetadataEntry(typedValue, key, value string) error {
+	return addOpenApiMetadata(openApiOrgVdcNetwork.client, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, typedValue, key, value)
+}
+
 // MergeMetadata merges OpenApiOrgVdcNetwork metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // and waits for the task to finish.
-// TODO: This function is currently using XML API underneath as OpenAPI metadata is supported from v37.0 and is currently in alpha at the moment. See https://github.com/vmware/go-vcloud-director/pull/455
+// NOTE: This function is currently using XML API underneath as OpenAPI doesn't have a merge operation as of v37.0.
 func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) MergeMetadata(typedValue string, metadata map[string]interface{}) error {
 	task, err := mergeAllMetadata(openApiOrgVdcNetwork.client, typedValue, metadata, fmt.Sprintf("%s/admin/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), strings.ReplaceAll(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, "urn:vcloud:network:", "")))
 	if err != nil {
@@ -860,7 +875,8 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) MergeMetadata(typedValue strin
 
 // DeleteMetadataEntry deletes OpenApiOrgVdcNetwork metadata depending on key provided as input
 // and waits for the task to finish.
-// TODO: This function is currently using XML API underneath as OpenAPI metadata is supported from v37.0 and is currently in alpha at the moment. // TODO: This function is currently using XML underneath as metadata is supported in v37.0 and at the moment is in alpha state. See https://github.com/vmware/go-vcloud-director/pull/455
+// NOTE: This function is currently using XML API underneath as OpenAPI metadata is supported from v37.0.
+//       For versions >= v37.0 use DeleteOpenApiMetadataEntry
 func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntry(key string) error {
 	task, err := deleteMetadata(openApiOrgVdcNetwork.client, key, fmt.Sprintf("%s/admin/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), strings.ReplaceAll(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, "urn:vcloud:network:", "")))
 	if err != nil {
@@ -870,79 +886,11 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntry(key string
 	return task.WaitTaskCompletion()
 }
 
-// ----------------
-// Generic private functions
-
-// Generic function to retrieve metadata from VCD
-func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
-	metadata := &types.Metadata{}
-
-	_, err := client.ExecuteRequest(requestUri+"/metadata/", http.MethodGet,
-		types.MimeMetaData, "error retrieving metadata: %s", nil, metadata)
-
-	return metadata, err
-}
-
-// addMetadata adds metadata to an entity.
-// The function supports passing a typedValue. Use one of the constants defined.
-// Constants are types.MetadataStringValue, types.MetadataNumberValue, types.MetadataDateTimeValue and types.MetadataBooleanValue.
-// Only tested with types.MetadataStringValue and types.MetadataNumberValue.
-// TODO: We might also need to add support to MetadataDateTimeValue and MetadataBooleanValue
-func addMetadata(client *Client, typedValue, key, value, requestUri string) (Task, error) {
-	newMetadata := &types.MetadataValue{
-		Xmlns: types.XMLNamespaceVCloud,
-		Xsi:   types.XMLNamespaceXSI,
-		TypedValue: &types.TypedValue{
-			XsiType: typedValue,
-			Value:   value,
-		},
-	}
-
-	apiEndpoint := urlParseRequestURI(requestUri)
-	apiEndpoint.Path += "/metadata/" + key
-
-	// Return the task
-	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
-		types.MimeMetaDataValue, "error adding metadata: %s", newMetadata)
-}
-
-// mergeAllMetadata merges the metadata key-values provided as parameter with existing entity metadata
-func mergeAllMetadata(client *Client, typedValue string, metadata map[string]interface{}, requestUri string) (Task, error) {
-	var metadataToMerge []*types.MetadataEntry
-	for key, value := range metadata {
-		metadataToMerge = append(metadataToMerge, &types.MetadataEntry{
-			Xmlns: types.XMLNamespaceVCloud,
-			Xsi:   types.XMLNamespaceXSI,
-			Key:   key,
-			TypedValue: &types.TypedValue{
-				XsiType: typedValue,
-				Value:   value.(string),
-			},
-		})
-	}
-
-	newMetadata := &types.Metadata{
-		Xmlns:         types.XMLNamespaceVCloud,
-		Xsi:           types.XMLNamespaceXSI,
-		MetadataEntry: metadataToMerge,
-	}
-
-	apiEndpoint := urlParseRequestURI(requestUri)
-	apiEndpoint.Path += "/metadata"
-
-	// Return the task
-	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
-		types.MimeMetaData, "error adding metadata: %s", newMetadata)
-}
-
-// deleteMetadata Deletes metadata from an entity.
-func deleteMetadata(client *Client, key string, requestUri string) (Task, error) {
-	apiEndpoint := urlParseRequestURI(requestUri)
-	apiEndpoint.Path += "/metadata/" + key
-
-	// Return the task
-	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodDelete,
-		"", "error deleting metadata: %s", nil)
+// DeleteOpenApiMetadataEntry deletes OrgVDCNetwork metadata depending on key provided as input
+// and waits for the task to finish.
+// NOTE: For versions < v37.0 use DeleteMetadataEntry
+func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteOpenApiMetadataEntry(key string) error {
+	return deleteOpenApiMetadata(openApiOrgVdcNetwork.client, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, key)
 }
 
 // ----------------
@@ -1200,26 +1148,6 @@ func (mediaRecord *MediaRecord) DeleteMetadataAsync(key string) (Task, error) {
 }
 
 // ---
-// OpenAPI metadata
-
-// GetMetadata returns OrgVDCNetwork metadata.
-func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) GetMetadata() ([]*types.OpenApiMetadata, error) {
-	return getOpenApiMetadata(openApiOrgVdcNetwork.client, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID)
-}
-
-// AddMetadataEntry adds OrgVDCNetwork metadata typedValue and key/value pair provided as input
-// and waits for the task to finish.
-func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) AddMetadataEntry(typedValue, key, value string) error {
-	return addOpenApiMetadata(openApiOrgVdcNetwork.client, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, typedValue, key, value)
-}
-
-// DeleteMetadataEntry deletes OrgVDCNetwork metadata depending on key provided as input
-// and waits for the task to finish.
-func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntry(key string) error {
-	return deleteOpenApiMetadata(openApiOrgVdcNetwork.client, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, key)
-}
-
-// ---
 // Private generic functions for XML
 
 // getMetadata Retrieves metadata from an entity's HREF
@@ -1253,6 +1181,35 @@ func addMetadata(client *Client, typedValue, key, value, requestUri string) (Tas
 	// Return the task
 	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
 		types.MimeMetaDataValue, "error adding metadata: %s", newMetadata)
+}
+
+// mergeAllMetadata merges the metadata key-values provided as parameter with existing entity metadata
+func mergeAllMetadata(client *Client, typedValue string, metadata map[string]interface{}, requestUri string) (Task, error) {
+	var metadataToMerge []*types.MetadataEntry
+	for key, value := range metadata {
+		metadataToMerge = append(metadataToMerge, &types.MetadataEntry{
+			Xmlns: types.XMLNamespaceVCloud,
+			Xsi:   types.XMLNamespaceXSI,
+			Key:   key,
+			TypedValue: &types.TypedValue{
+				XsiType: typedValue,
+				Value:   value.(string),
+			},
+		})
+	}
+
+	newMetadata := &types.Metadata{
+		Xmlns:         types.XMLNamespaceVCloud,
+		Xsi:           types.XMLNamespaceXSI,
+		MetadataEntry: metadataToMerge,
+	}
+
+	apiEndpoint := urlParseRequestURI(requestUri)
+	apiEndpoint.Path += "/metadata"
+
+	// Return the task
+	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+		types.MimeMetaData, "error adding metadata: %s", newMetadata)
 }
 
 // deleteMetadata Deletes metadata from an entity.
@@ -1351,3 +1308,4 @@ func deleteOpenApiMetadata(client *Client, entityId, key string) error {
 	}
 	return nil
 }
+
