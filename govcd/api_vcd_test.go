@@ -1,8 +1,8 @@
-//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || ALL
-// +build api openapi functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user search nsxv nsxt auth affinity role alb certificate ALL
+//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || ALL
+// +build api openapi functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user search nsxv nsxt auth affinity role alb certificate vdcGroup metadata ALL
 
 /*
- * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -165,13 +165,15 @@ type TestConfig struct {
 		ExternalNetworkPortGroupType string `yaml:"externalNetworkPortGroupType,omitempty"`
 		VimServer                    string `yaml:"vimServer,omitempty"`
 		Nsxt                         struct {
-			Manager           string `yaml:"manager"`
-			Tier0router       string `yaml:"tier0router"`
-			Tier0routerVrf    string `yaml:"tier0routerVrf"`
-			Vdc               string `yaml:"vdc"`
-			ExternalNetwork   string `yaml:"externalNetwork"`
-			EdgeGateway       string `yaml:"edgeGateway"`
-			NsxtImportSegment string `yaml:"nsxtImportSegment"`
+			Manager             string `yaml:"manager"`
+			Tier0router         string `yaml:"tier0router"`
+			Tier0routerVrf      string `yaml:"tier0routerVrf"`
+			Vdc                 string `yaml:"vdc"`
+			ExternalNetwork     string `yaml:"externalNetwork"`
+			EdgeGateway         string `yaml:"edgeGateway"`
+			NsxtImportSegment   string `yaml:"nsxtImportSegment"`
+			VdcGroup            string `yaml:"vdcGroup"`
+			VdcGroupEdgeGateway string `yaml:"vdcGroupEdgeGateway"`
 
 			NsxtAlbControllerUrl      string `yaml:"nsxtAlbControllerUrl"`
 			NsxtAlbControllerUser     string `yaml:"nsxtAlbControllerUser"`
@@ -194,11 +196,13 @@ type TestConfig struct {
 		OvaMultiVmPath     string `yaml:"ovaMultiVmPath,omitempty"`
 		OvaWithoutSizePath string `yaml:"ovaWithoutSizePath,omitempty"`
 		OvfPath            string `yaml:"ovfPath,omitempty"`
+		OvfUrl             string `yaml:"ovfUrl,omitempty"`
 	} `yaml:"ova"`
 	Media struct {
-		MediaPath       string `yaml:"mediaPath,omitempty"`
-		Media           string `yaml:"mediaName,omitempty"`
-		PhotonOsOvaPath string `yaml:"photonOsOvaPath,omitempty"`
+		MediaPath        string `yaml:"mediaPath,omitempty"`
+		Media            string `yaml:"mediaName,omitempty"`
+		PhotonOsOvaPath  string `yaml:"photonOsOvaPath,omitempty"`
+		MediaUdfTypePath string `yaml:"mediaUdfTypePath,omitempty"`
 	} `yaml:"media"`
 	Misc struct {
 		LdapContainer string `yaml:"ldapContainer,omitempty"`
@@ -617,7 +621,8 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	// creates a new VApp for vapp tests
 	if !skipVappCreation && config.VCD.Network.Net1 != "" && config.VCD.StorageProfile.SP1 != "" &&
 		config.VCD.Catalog.Name != "" && config.VCD.Catalog.CatalogItem != "" {
-		vcd.vapp, err = vcd.createTestVapp(TestSetUpSuite)
+		// deployVappForTest replaces the old createTestVapp() because it was using bad implemented method vdc.ComposeVApp
+		vcd.vapp, err = deployVappForTest(vcd, TestSetUpSuite)
 		// If no vApp is created, we skip all vApp tests
 		if err != nil {
 			fmt.Printf("%s\n", err)
@@ -1504,26 +1509,30 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 				entity.Parent, err)
 			return
 		}
-		err = org.LdapDisable()
 
+		ldapConfig, err := org.GetLdapConfiguration()
 		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not clear LDAP settings for Org '%s': %s",
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Couldn't get LDAP settings for Org '%s': %s",
 				entity.Parent, err)
 			return
 		}
-		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+
+		// This is done to avoid calling LdapDisable() if it has been unconfigured, due to bug with Org catalog publish settings
+		if ldapConfig.OrgLdapMode != types.LdapModeNone {
+			err = org.LdapDisable()
+			if err != nil {
+				vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not clear LDAP settings for Org '%s': %s",
+					entity.Parent, err)
+				vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+				return
+			}
+		}
+
+		vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 		return
+
 	case "vdcComputePolicy":
-		if entity.Parent == "" {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for vdcComputePolicy '%s'\n", entity.Name)
-			return
-		}
-		org, err := vcd.client.GetAdminOrgByName(entity.Parent)
-		if err != nil {
-			vcd.infoCleanup(notFoundMsg, "org", entity.Parent)
-			return
-		}
-		policy, err := org.GetVdcComputePolicyById(entity.Name)
+		policy, err := vcd.client.Client.GetVdcComputePolicyById(entity.Name)
 		if policy == nil || err != nil {
 			vcd.infoCleanup(notFoundMsg, "vdcComputePolicy", entity.Name)
 			return
@@ -1608,69 +1617,6 @@ func TestVCDClient_Authenticate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error authenticating: %s", err)
 	}
-}
-
-func (vcd *TestVCD) createTestVapp(name string) (*VApp, error) {
-	// ========================= issue#252 ==================================
-	// TODO: To be enabled when issue#252 is resolved.
-	// Allows re-using a pre-created vApp
-	// existingVapp, err := vcd.vdc.GetVAppByName(name, false)
-	// if err == nil {
-	// 	fmt.Printf("vApp %s already exists. Skipping creation\n",name)
-	// 	return existingVapp, nil
-	// }
-	// ======================================================================
-	// Populate OrgVDCNetwork
-	var networks []*types.OrgVDCNetwork
-	net, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
-	if err != nil {
-		return nil, fmt.Errorf("error finding network : %s, err: %s", vcd.config.VCD.Network.Net1, err)
-	}
-	networks = append(networks, net.OrgVDCNetwork)
-	// Populate Catalog
-	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
-	if err != nil || cat == nil {
-		return nil, fmt.Errorf("error finding catalog : %s", err)
-	}
-	// Populate Catalog Item
-	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
-	if err != nil {
-		return nil, fmt.Errorf("error finding catalog item : %s", err)
-	}
-	// Get VAppTemplate
-	vAppTemplate, err := catitem.GetVAppTemplate()
-	if err != nil {
-		return nil, fmt.Errorf("error finding vapptemplate : %s", err)
-	}
-	// Get StorageProfileReference
-	storageProfileRef, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
-	if err != nil {
-		return nil, fmt.Errorf("error finding storage profile: %s", err)
-	}
-	// Compose VApp
-	task, err := vcd.vdc.ComposeVApp(networks, vAppTemplate, storageProfileRef, name, "description", true)
-	if err != nil {
-		return nil, fmt.Errorf("error composing vapp: %s", err)
-	}
-	// After a successful creation, the entity is added to the cleanup list.
-	// If something fails after this point, the entity will be removed
-	AddToCleanupList(name, "vapp", "", "createTestVapp")
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return nil, fmt.Errorf("error composing vapp: %s", err)
-	}
-	// Get VApp
-	vapp, err := vcd.vdc.GetVAppByName(name, true)
-	if err != nil {
-		return nil, fmt.Errorf("error getting vapp: %s", err)
-	}
-
-	err = vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
-	if err != nil {
-		return nil, fmt.Errorf("error waiting for created test vApp to have working state: %s", err)
-	}
-
-	return vapp, err
 }
 
 func Test_splitParent(t *testing.T) {
@@ -1759,28 +1705,21 @@ func (vcd *TestVCD) findFirstVapp() VApp {
 		return VApp{}
 	}
 	wantedVapp := vcd.vapp.VApp.Name
-	vappName := ""
-	for _, res := range vdc.Vdc.ResourceEntities {
-		for _, item := range res.ResourceEntity {
-			// Finding a named vApp, if it was defined in config
-			if wantedVapp != "" {
-				if item.Name == wantedVapp {
-					vappName = item.Name
-					break
-				}
-			} else {
-				// Otherwise, we get the first vApp from the vDC list
+	if wantedVapp == "" {
+		// As no vApp is defined in config, we search for one randomly
+		for _, res := range vdc.Vdc.ResourceEntities {
+			for _, item := range res.ResourceEntity {
 				if item.Type == "application/vnd.vmware.vcloud.vApp+xml" {
-					vappName = item.Name
+					wantedVapp = item.Name
 					break
 				}
 			}
 		}
 	}
-	if wantedVapp == "" {
+	vapp, err := vdc.GetVAppByName(wantedVapp, false)
+	if err != nil {
 		return VApp{}
 	}
-	vapp, _ := vdc.GetVAppByName(vappName, false)
 	return *vapp
 }
 
@@ -1920,7 +1859,9 @@ func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint string) {
 	}
 }
 
-// newOrgUserConnection creates a new Org User and returns a connection to it
+// newOrgUserConnection creates a new Org User and returns a connection to it.
+// Attention: Set the user to use only lowercase letters. If you put upper case letters the function fails on waiting
+// because VCD creates the user with lowercase letters.
 func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, insecure bool) (*VCDClient, error) {
 	u, err := url.ParseRequestURI(href)
 	if err != nil {

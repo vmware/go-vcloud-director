@@ -233,7 +233,7 @@ func (client *Client) newRequest(params map[string]string, notEncodedParams map[
 
 	// Merge in additional headers before logging if any where specified in additionalHeader
 	// parameter
-	if additionalHeader != nil && len(additionalHeader) > 0 {
+	if len(additionalHeader) > 0 {
 		for headerName, headerValueSlice := range additionalHeader {
 			for _, singleHeaderValue := range headerValueSlice {
 				req.Header.Add(headerName, singleHeaderValue)
@@ -757,6 +757,20 @@ func (client *Client) RemoveCustomHeader() {
 	if client.customHeader != nil {
 		client.customHeader = nil
 	}
+}
+
+// RemoveProvidedCustomHeaders removes custom header values from the client
+func (client *Client) RemoveProvidedCustomHeaders(values map[string]string) {
+	if client.customHeader != nil {
+		for k := range values {
+			client.customHeader.Del(k)
+		}
+	}
+}
+
+// Retrieves the administrator URL of a given HREF
+func getAdminURL(href string) string {
+	return strings.ReplaceAll(href, "/api/", "/api/admin/")
 }
 
 // ---------------------------------------------------------------------

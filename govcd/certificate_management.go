@@ -6,10 +6,8 @@ package govcd
 
 import (
 	"fmt"
-	"net/url"
-	"strings"
-
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"net/url"
 )
 
 // Certificate is a structure defining a certificate in VCD
@@ -186,21 +184,12 @@ func (adminOrg *AdminOrg) GetAllCertificatesFromLibrary(queryParameters url.Valu
 // https://github.com/golang/go/issues/4013
 // https://github.com/czos/goamz/pull/11/files
 func getCertificateFromLibraryByName(client *Client, name string, additionalHeader map[string]string) (*Certificate, error) {
-	var params = url.Values{}
-
-	slowSearch := false
-	versionWithNoBug, err := client.VersionEqualOrGreater("10.3", 3)
+	slowSearch, params, err := shouldDoSlowSearch("alias", name, client)
 	if err != nil {
 		return nil, err
 	}
-	if (!versionWithNoBug && (strings.Contains(name, ",") || strings.Contains(name, ";"))) ||
-		strings.Contains(name, " ") || strings.Contains(name, "+") || strings.Contains(name, "*") {
-		slowSearch = true
-	} else {
-		params.Set("filter", fmt.Sprintf("alias==%s", url.QueryEscape(name)))
-		params.Set("filterEncoded", "true")
-	}
 
+	var foundCertificates []*Certificate
 	certificates, err := getAllCertificateFromLibrary(client, params, additionalHeader)
 	if err != nil {
 		return nil, err
@@ -208,20 +197,29 @@ func getCertificateFromLibraryByName(client *Client, name string, additionalHead
 	if len(certificates) == 0 {
 		return nil, ErrorEntityNotFound
 	}
+	foundCertificates = append(foundCertificates, certificates[0])
 
 	if slowSearch {
+		foundCertificates = nil
 		for _, certificate := range certificates {
 			if certificate.CertificateLibrary.Alias == name {
-				return certificate, nil
+				foundCertificates = append(foundCertificates, certificate)
 			}
 		}
-		return nil, ErrorEntityNotFound
+		if len(foundCertificates) == 0 {
+			return nil, ErrorEntityNotFound
+		}
+		if len(foundCertificates) > 1 {
+			return nil, fmt.Errorf("more than one certificate found with name '%s'", name)
+		}
 	}
 
-	if len(certificates) > 1 {
-		return nil, fmt.Errorf("more than one certificate found with name '%s'", name)
+	if len(certificates) > 1 && !slowSearch {
+		{
+			return nil, fmt.Errorf("more than one certificate found with name '%s'", name)
+		}
 	}
-	return certificates[0], nil
+	return foundCertificates[0], nil
 }
 
 // GetCertificateFromLibraryByName retrieves certificate from certificate library by given name

@@ -612,8 +612,10 @@ func (vcd *TestVCD) Test_GetStorageProfileByHref(check *C) {
 	// Get storage profile by href
 	foundStorageProfile, err := vcd.client.Client.GetStorageProfileByHref(adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
 	check.Assert(err, IsNil)
-	check.Assert(foundStorageProfile, Not(Equals), types.VdcStorageProfile{})
 	check.Assert(foundStorageProfile, NotNil)
+	check.Assert(foundStorageProfile.IopsSettings, NotNil)
+	check.Assert(foundStorageProfile, Not(Equals), types.VdcStorageProfile{})
+	check.Assert(foundStorageProfile.IopsSettings, Not(Equals), types.VdcStorageProfileIopsSettings{})
 }
 
 func (vcd *TestVCD) Test_GetOrgList(check *C) {
@@ -669,6 +671,6 @@ func (vcd *TestVCD) TestQueryAllVdcs(check *C) {
 		fmt.Printf("# Checking result contains all known VDCs (%s).", strings.Join((knownVdcs), ", "))
 	}
 	for _, knownVdcName := range knownVdcs {
-		check.Assert(contains(foundVdcNames, knownVdcName), Equals, true)
+		check.Assert(contains(knownVdcName, foundVdcNames), Equals, true)
 	}
 }

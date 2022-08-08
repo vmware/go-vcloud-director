@@ -152,7 +152,11 @@ func getTenantContextHeader(tenantContext *TenantContext) map[string]string {
 		return nil
 	}
 	return map[string]string{
-		types.HeaderTenantContext: tenantContext.OrgId,
+		// All VCD 10.2.X versions do not like when URN is sent for Tenant context ID - they fail
+		// with 401 Unauthorized when such request is sent with URN formatted ID:
+		// * Fails with 401: urn:vcloud:org:6127c856-7315-46b8-b774-f2b8f1686c80
+		// * Works fine: 6127c856-7315-46b8-b774-f2b8f1686c80
+		types.HeaderTenantContext: extractUuid(tenantContext.OrgId),
 		types.HeaderAuthContext:   tenantContext.OrgName,
 	}
 }
@@ -172,4 +176,26 @@ func getTenantContextFromHeader(header map[string]string) *TenantContext {
 		}
 	}
 	return nil
+}
+
+// getTenantContext retrieves the tenant context for a VdcGroup
+func (vdcGroup *VdcGroup) getTenantContext() (*TenantContext, error) {
+	org := vdcGroup.parent
+
+	if org == nil {
+		return nil, fmt.Errorf("VDC group %s has no parent", vdcGroup.VdcGroup.Name)
+	}
+	return org.tenantContext()
+}
+
+func (egw *NsxtEdgeGateway) getTenantContext() (*TenantContext, error) {
+	if egw != nil && egw.EdgeGateway.Org != nil {
+		if egw.EdgeGateway.Org.Name == "" || egw.EdgeGateway.Org.ID == "" {
+			return nil, fmt.Errorf("either parent NsxtEdgeGateway Org name or ID is empty and both must be set. Org name is [%s] and Org ID is [%s]", egw.EdgeGateway.Org.Name, egw.EdgeGateway.Org.ID)
+		}
+
+		return &TenantContext{OrgId: egw.EdgeGateway.Org.ID, OrgName: egw.EdgeGateway.Org.Name}, nil
+	}
+
+	return nil, fmt.Errorf("NsxtEdgeGateway is not fully initialized. Please initialize it before using this method")
 }

@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -54,11 +55,8 @@ func (vcdClient *VCDClient) GetBearerTokenFromApiToken(org, token string) (*type
 		return nil, fmt.Errorf("error getting request URL from %s : %s", reqUrl, err)
 	}
 
-	options := map[string]string{
-		"grant_type":    "refresh_token",
-		"refresh_token": token,
-	}
-	req := vcdClient.Client.NewRequest(options, http.MethodPost, *reqHref, nil)
+	data := bytes.NewBufferString(fmt.Sprintf("grant_type=refresh_token&refresh_token=%s", token))
+	req := vcdClient.Client.NewRequest(nil, http.MethodPost, *reqHref, data)
 	req.Header.Add("Accept", "application/*;version=36.1")
 
 	resp, err := vcdClient.Client.Http.Do(req)

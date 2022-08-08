@@ -634,8 +634,9 @@ func (client *Client) newOpenApiRequest(apiVersion string, params url.Values, me
 	// If the body contains data - try to read all contents for logging and re-create another
 	// io.Reader with all contents to use it down the line
 	var readBody []byte
+	var err error
 	if body != nil {
-		readBody, err := ioutil.ReadAll(body)
+		readBody, err = ioutil.ReadAll(body)
 		if err != nil {
 			util.Logger.Printf("[DEBUG - newOpenApiRequest] error reading body: %s", err)
 		}
@@ -784,4 +785,29 @@ func copyUrlRef(in *url.URL) *url.URL {
 		util.Logger.Printf("[DEBUG - copyUrlRef] error parsing URL: %s", err)
 	}
 	return newUrlRef
+}
+
+// shouldDoSlowSearch returns true if query isn't working or added needed params if returns false.
+// When the name contains commas, semicolons or asterisks, the encoding is rejected by the API in VCD 10.2 version.
+// For this reason, when one or more commas, semicolons or asterisks are present we run the search brute force,
+// by fetching all and comparing the name. Yet, this is not needed anymore in VCD 10.3 version.
+// Also, url.QueryEscape as well as url.Values.Encode() both encode the space as a + character. So we use
+// search brute force too. Reference to issue:
+// https://github.com/golang/go/issues/4013
+// https://github.com/czos/goamz/pull/11/files
+func shouldDoSlowSearch(filterKey, name string, client *Client) (bool, url.Values, error) {
+	var params = url.Values{}
+	slowSearch := false
+	versionWithNoBug, err := client.VersionEqualOrGreater("10.3", 2)
+	if err != nil {
+		return false, params, err
+	}
+	if (!versionWithNoBug && (strings.Contains(name, ",") || strings.Contains(name, ";"))) ||
+		strings.Contains(name, " ") || strings.Contains(name, "+") || strings.Contains(name, "*") {
+		slowSearch = true
+	} else {
+		params.Set("filter", fmt.Sprintf(filterKey+"==%s", url.QueryEscape(name)))
+		params.Set("filterEncoded", "true")
+	}
+	return slowSearch, params, err
 }

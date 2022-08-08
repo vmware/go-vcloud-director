@@ -1,5 +1,5 @@
-//go:build api || auth || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || role || nsxv || nsxt || openapi || affinity || search || ALL
-// +build api auth functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user role nsxv nsxt openapi affinity search ALL
+//go:build api || auth || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || role || nsxv || nsxt || openapi || affinity || search || alb || certificate || vdcGroup || metadata || ALL
+// +build api auth functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user role nsxv nsxt openapi affinity search alb certificate vdcGroup metadata ALL
 
 /*
  * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -104,14 +104,10 @@ func spawnVM(name string, memorySize int, vdc Vdc, vapp VApp, net types.NetworkC
 	fmt.Printf(". Done\n")
 
 	fmt.Printf("# Applying 2 vCPU and "+strconv.Itoa(memorySize)+"MB configuration for VM '%s'", name)
-	task, err = vm.ChangeCPUCount(2)
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = vm.ChangeCPU(2, 1)
 	check.Assert(err, IsNil)
 
-	task, err = vm.ChangeMemorySize(memorySize)
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = vm.ChangeMemory(int64(memorySize))
 	check.Assert(err, IsNil)
 	fmt.Printf(". Done\n")
 
@@ -265,15 +261,14 @@ func isTcpPortOpen(host, port string, timeout int) bool {
 
 }
 
-// moved from vapp_test.go
-func createVappForTest(vcd *TestVCD, vappName string) (*VApp, error) {
+// deployVappForTest aims to replace createVappForTest
+func deployVappForTest(vcd *TestVCD, vappName string) (*VApp, error) {
 	// Populate OrgVDCNetwork
-	var networks []*types.OrgVDCNetwork
 	net, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
 	if err != nil {
 		return nil, fmt.Errorf("error finding network : %s", err)
 	}
-	networks = append(networks, net.OrgVDCNetwork)
+
 	// Populate Catalog
 	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	if err != nil || cat == nil {
@@ -294,22 +289,45 @@ func createVappForTest(vcd *TestVCD, vappName string) (*VApp, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error finding storage profile: %s", err)
 	}
-	// Compose VApp
-	task, err := vcd.vdc.ComposeVApp(networks, vAppTemplate, storageProfileRef, vappName, "description", true)
+
+	// Create empty vApp
+	vapp, err := vcd.vdc.CreateRawVApp(vappName, "description")
 	if err != nil {
-		return nil, fmt.Errorf("error composing vapp: %s", err)
+		return nil, fmt.Errorf("error creating vapp: %s", err)
 	}
+
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
 	AddToCleanupList(vappName, "vapp", "", "createTestVapp")
+
+	// Create vApp networking
+	vAppNetworkConfig, err := vapp.AddOrgNetwork(&VappNetworkSettings{}, net.OrgVDCNetwork, false)
+	if err != nil {
+		return nil, fmt.Errorf("error creating vApp network. %s", err)
+	}
+
+	// Create VM with only one NIC connected to vapp_net
+	networkConnectionSection := &types.NetworkConnectionSection{
+		PrimaryNetworkConnectionIndex: 0,
+	}
+
+	netConn := &types.NetworkConnection{
+		Network:                 vAppNetworkConfig.NetworkConfig[0].NetworkName,
+		IsConnected:             true,
+		NetworkConnectionIndex:  0,
+		IPAddressAllocationMode: types.IPAllocationModePool,
+	}
+
+	networkConnectionSection.NetworkConnection = append(networkConnectionSection.NetworkConnection, netConn)
+
+	task, err := vapp.AddNewVMWithStorageProfile("test_vm", vAppTemplate, networkConnectionSection, &storageProfileRef, true)
+	if err != nil {
+		return nil, fmt.Errorf("error creating the VM: %s", err)
+	}
+
 	err = task.WaitTaskCompletion()
 	if err != nil {
-		return nil, fmt.Errorf("error composing vapp: %s", err)
-	}
-	// Get VApp
-	vapp, err := vcd.vdc.GetVAppByName(vappName, true)
-	if err != nil {
-		return nil, fmt.Errorf("error getting vapp: %s", err)
+		return nil, fmt.Errorf("error while waiting for the VM to be created %s", err)
 	}
 
 	err = vapp.BlockWhileStatus("UNRESOLVED", vapp.client.MaxRetryTimeout)
@@ -764,7 +782,7 @@ func spawnTestVdc(vcd *TestVCD, check *C, adminOrgName string) *Vdc {
 			},
 		},
 		VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
-			Enabled: true,
+			Enabled: takeBoolPointer(true),
 			Units:   "MB",
 			Limit:   1024,
 			Default: true,
@@ -856,16 +874,6 @@ func extractIdsFromOpenApiReferences(refs []types.OpenApiReference) []string {
 	}
 
 	return resultStrings
-}
-
-// contains checks if a slice contains element
-func contains(s []string, element string) bool {
-	for _, a := range s {
-		if a == element {
-			return true
-		}
-	}
-	return false
 }
 
 // checkSkipWhenApiToken skips the test if the connection was established using an API token

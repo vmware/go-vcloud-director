@@ -105,32 +105,42 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 	type updateSet struct {
-		orgName            string
-		enabled            bool
-		canPublishCatalogs bool
+		orgName              string
+		enabled              bool
+		canPublishCatalogs   bool
+		canPublishExternally bool
+		canSubscribe         bool
 	}
 
 	// Tests a combination of enabled and canPublishCatalogs to see
 	// whether they are updated correctly
 	var updateOrgs = []updateSet{
-		{TestUpdateOrg + "1", true, false},
-		{TestUpdateOrg + "2", false, false},
-		{TestUpdateOrg + "3", true, true},
-		{TestUpdateOrg + "4", false, true},
+		{TestUpdateOrg + "1", true, false, false, false},
+		{TestUpdateOrg + "2", false, false, false, false},
+		{TestUpdateOrg + "3", true, true, true, false},
+		{TestUpdateOrg + "4", false, true, false, true},
 	}
 
 	for _, uo := range updateOrgs {
 
 		fmt.Printf("Org %s - enabled %v - catalogs %v\n", uo.orgName, uo.enabled, uo.canPublishCatalogs)
 		task, err := CreateOrg(vcd.client, uo.orgName, uo.orgName, uo.orgName, &types.OrgSettings{
-			OrgGeneralSettings: &types.OrgGeneralSettings{CanPublishCatalogs: uo.canPublishCatalogs},
-			OrgLdapSettings:    &types.OrgLdapSettingsType{OrgLdapMode: "NONE"},
+			OrgGeneralSettings: &types.OrgGeneralSettings{
+				CanPublishCatalogs:   uo.canPublishCatalogs,
+				CanPublishExternally: uo.canPublishExternally,
+				CanSubscribe:         uo.canSubscribe,
+			},
+			OrgLdapSettings: &types.OrgLdapSettingsType{OrgLdapMode: "NONE"},
 		}, uo.enabled)
+
 		check.Assert(err, IsNil)
 		check.Assert(task, Not(Equals), Task{})
+
 		err = task.WaitTaskCompletion()
 		check.Assert(err, IsNil)
+
 		AddToCleanupList(uo.orgName, "org", "", "TestUpdateOrg")
+
 		// fetch newly created org
 		adminOrg, err := vcd.client.GetAdminOrgByName(uo.orgName)
 		check.Assert(err, IsNil)
@@ -144,6 +154,9 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 		adminOrg.AdminOrg.Description = updatedDescription
 		adminOrg.AdminOrg.FullName = updatedFullName
 		adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishCatalogs = !uo.canPublishCatalogs
+		adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishExternally = !uo.canPublishExternally
+		adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanSubscribe = !uo.canSubscribe
+
 		adminOrg.AdminOrg.IsEnabled = !uo.enabled
 
 		task, err = adminOrg.Update()
@@ -160,6 +173,8 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 
 		check.Assert(updatedAdminOrg.AdminOrg.IsEnabled, Equals, !uo.enabled)
 		check.Assert(updatedAdminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishCatalogs, Equals, !uo.canPublishCatalogs)
+		check.Assert(updatedAdminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishExternally, Equals, !uo.canPublishExternally)
+		check.Assert(updatedAdminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanSubscribe, Equals, !uo.canSubscribe)
 		if testVerbose {
 			fmt.Printf("[updated] Org %s - enabled %v (expected %v) - catalogs %v (expected %v)\n",
 				updatedAdminOrg.AdminOrg.Name,
@@ -282,7 +297,7 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 				},
 			},
 			VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
-				Enabled: true,
+				Enabled: takeBoolPointer(true),
 				Units:   "MB",
 				Limit:   1024,
 				Default: true,
@@ -651,7 +666,7 @@ func setupVdc(vcd *TestVCD, check *C, allocationModel string) (AdminOrg, *types.
 			},
 		},
 		VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
-			Enabled: true,
+			Enabled: takeBoolPointer(true),
 			Units:   "MB",
 			Limit:   1024,
 			Default: true,
@@ -822,7 +837,7 @@ func (vcd *TestVCD) Test_AddRemoveVdcStorageProfiles(check *C) {
 
 	// Add another storage profile
 	err = adminVdc.AddStorageProfileWait(&types.VdcStorageProfileConfiguration{
-		Enabled: true,
+		Enabled: takeBoolPointer(true),
 		Units:   "MB",
 		Limit:   1024,
 		Default: false,
@@ -846,7 +861,7 @@ func (vcd *TestVCD) Test_AddRemoveVdcStorageProfiles(check *C) {
 
 	// Add the second storage profile again
 	err = adminVdc.AddStorageProfileWait(&types.VdcStorageProfileConfiguration{
-		Enabled: true,
+		Enabled: takeBoolPointer(true),
 		Units:   "MB",
 		Limit:   1024,
 		Default: false,

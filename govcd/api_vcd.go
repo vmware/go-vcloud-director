@@ -9,8 +9,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
+
+	semver "github.com/hashicorp/go-version"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
@@ -102,10 +105,22 @@ func (vcdClient *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.
 // NewVCDClient initializes VMware vCloud Director client with reasonable defaults.
 // It accepts functions of type VCDClientOption for adjusting defaults.
 func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption) *VCDClient {
+	minVcdApiVersion := "35.0" // supported by 10.2+
+	userDefinedApiVersion := os.Getenv("GOVCD_API_VERSION")
+	if userDefinedApiVersion != "" {
+		_, err := semver.NewVersion(userDefinedApiVersion)
+		if err != nil {
+			// We do not have error in return of this function signature.
+			// To avoid breaking API the only thing we can do is panic.
+			panic(fmt.Sprintf("unable to initialize VCD client from environment variable GOVCD_API_VERSION. Version '%s' is not valid: %s", userDefinedApiVersion, err))
+		}
+		minVcdApiVersion = userDefinedApiVersion
+	}
+
 	// Setting defaults
 	vcdClient := &VCDClient{
 		Client: Client{
-			APIVersion: "33.0", // supported by 10.0+
+			APIVersion: minVcdApiVersion, // supported by 10.2+
 			// UserAgent cannot embed exact version by default because this is source code and is supposed to be used by programs,
 			// but any client can customize or disable it at all using WithHttpUserAgent() configuration options function.
 			UserAgent: "go-vcloud-director",
@@ -130,7 +145,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 		if err != nil {
 			// We do not have error in return of this function signature.
 			// To avoid breaking API the only thing we can do is panic.
-			panic(fmt.Sprintf("unable to initialize vCD client: %s", err))
+			panic(fmt.Sprintf("unable to initialize VCD client: %s", err))
 		}
 	}
 	return vcdClient

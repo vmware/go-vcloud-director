@@ -90,6 +90,22 @@ type LeaseSettingsSection struct {
 	StorageLeaseInSeconds     int    `xml:"StorageLeaseInSeconds,omitempty"`
 }
 
+// UpdateLeaseSettingsSection is an extended version of LeaseSettingsSection
+// with additional fields for update
+type UpdateLeaseSettingsSection struct {
+	XMLName                   xml.Name `xml:"LeaseSettingsSection"`
+	XmlnsOvf                  string   `xml:"xmlns:ovf,attr,omitempty"`
+	Xmlns                     string   `xml:"xmlns,attr,omitempty"`
+	OVFInfo                   string   `xml:"ovf:Info"`
+	HREF                      string   `xml:"href,attr,omitempty"`
+	Type                      string   `xml:"type,attr,omitempty"`
+	DeploymentLeaseExpiration string   `xml:"DeploymentLeaseExpiration,omitempty"`
+	DeploymentLeaseInSeconds  *int     `xml:"DeploymentLeaseInSeconds,omitempty"`
+	Link                      *Link    `xml:"Link,omitempty"`
+	StorageLeaseExpiration    string   `xml:"StorageLeaseExpiration,omitempty"`
+	StorageLeaseInSeconds     *int     `xml:"StorageLeaseInSeconds,omitempty"`
+}
+
 // IPRange represents a range of IP addresses, start and end inclusive.
 // Type: IpRangeType
 // Namespace: http://www.vmware.com/vcloud/v1.5
@@ -454,7 +470,7 @@ type AdminVdc struct {
 // Since: 5.1
 // https://code.vmware.com/apis/220/vcloud#/doc/doc/types/VdcStorageProfileParamsType.html
 type VdcStorageProfileConfiguration struct {
-	Enabled                   bool       `xml:"Enabled,omitempty"`
+	Enabled                   *bool      `xml:"Enabled,omitempty"`
 	Units                     string     `xml:"Units"`
 	Limit                     int64      `xml:"Limit"`
 	Default                   bool       `xml:"Default"`
@@ -469,11 +485,11 @@ type VdcStorageProfileConfiguration struct {
 type VdcStorageProfile struct {
 	Xmlns                     string                         `xml:"xmlns,attr"`
 	Name                      string                         `xml:"name,attr"`
-	Enabled                   bool                           `xml:"Enabled,omitempty"`
+	Enabled                   *bool                          `xml:"Enabled,omitempty"`
 	Units                     string                         `xml:"Units"`
 	Limit                     int64                          `xml:"Limit"`
 	Default                   bool                           `xml:"Default"`
-	IopsSettings              *VdcStorageProfileIopsSettings `xml:"IopsSettingsint64"`
+	IopsSettings              *VdcStorageProfileIopsSettings `xml:"IopsSettings"`
 	StorageUsedMB             int64                          `xml:"StorageUsedMB"`
 	IopsAllocated             int64                          `xml:"IopsAllocated"`
 	ProviderVdcStorageProfile *Reference                     `xml:"ProviderVdcStorageProfile"`
@@ -490,7 +506,7 @@ type AdminVdcStorageProfile struct {
 	Units                     string                         `xml:"Units"`
 	Limit                     int64                          `xml:"Limit"`
 	Default                   bool                           `xml:"Default"`
-	IopsSettings              *VdcStorageProfileIopsSettings `xml:"IopsSettingsint64"`
+	IopsSettings              *VdcStorageProfileIopsSettings `xml:"IopsSettings"`
 	StorageUsedMB             int64                          `xml:"StorageUsedMB"`
 	IopsAllocated             int64                          `xml:"IopsAllocated"`
 	ProviderVdcStorageProfile *Reference                     `xml:"ProviderVdcStorageProfile"`
@@ -501,11 +517,11 @@ type AdminVdcStorageProfile struct {
 // https://vdc-repo.vmware.com/vmwb-repository/dcr-public/71e12563-bc11-4d64-821d-92d30f8fcfa1/7424bf8e-aec2-44ad-be7d-b98feda7bae0/doc/doc/types/VdcStorageProfileIopsSettingsType.html
 type VdcStorageProfileIopsSettings struct {
 	Xmlns                   string `xml:"xmlns,attr"`
-	Enabled                 bool   `xml:"enabled"`
-	DiskIopsMax             int64  `xml:"diskIopsMax,"`
-	DiskIopsDefault         int64  `xml:"diskIopsDefault"`
-	StorageProfileIopsLimit int64  `xml:"storageProfileIopsLimit,omitempty"`
-	DiskIopsPerGbMax        int64  `xml:"diskIopsPerGbMax"`
+	Enabled                 bool   `xml:"Enabled"`
+	DiskIopsMax             int64  `xml:"DiskIopsMax"`
+	DiskIopsDefault         int64  `xml:"DiskIopsDefault"`
+	StorageProfileIopsLimit int64  `xml:"StorageProfileIopsLimit,omitempty"`
+	DiskIopsPerGbMax        int64  `xml:"DiskIopsPerGbMax"`
 }
 
 // VdcConfiguration models the payload for creating a VDC.
@@ -560,15 +576,16 @@ type Task struct {
 	EndTime          string           `xml:"endTime,attr,omitempty"`          // The date and time that processing of the task was completed. May not be present if the task is still being executed.
 	ExpiryTime       string           `xml:"expiryTime,attr,omitempty"`       // The date and time at which the task resource will be destroyed and no longer available for retrieval. May not be present if the task has not been executed or is still being executed.
 	CancelRequested  bool             `xml:"cancelRequested,attr,omitempty"`  // Whether user has requested this processing to be canceled.
-	Description      string           `xml:"Description,omitempty"`           // Optional description.
-	Details          string           `xml:"Details,omitempty"`               // Detailed message about the task. Also contained by the Owner entity when task status is preRunning.
-	Error            *Error           `xml:"Error,omitempty"`                 // Represents error information from a failed task.
 	Link             *Link            `xml:"Link,omitempty"`                  // A reference to an entity or operation associated with this object.
-	Organization     *Reference       `xml:"Organization,omitempty"`          // The organization to which the User belongs.
-	Owner            *Reference       `xml:"Owner,omitempty"`                 // Reference to the owner of the task. This is typically the object that the task is creating or updating.
-	Progress         int              `xml:"Progress,omitempty"`              // Read-only indicator of task progress as an approximate percentage between 0 and 100. Not available for all tasks.
+	Description      string           `xml:"Description,omitempty"`           // Optional description.
 	Tasks            *TasksInProgress `xml:"Tasks,omitempty"`                 // A list of queued, running, or recently completed tasks associated with this entity.
+	Owner            *Reference       `xml:"Owner,omitempty"`                 // Reference to the owner of the task. This is typically the object that the task is creating or updating.
+	Error            *Error           `xml:"Error,omitempty"`                 // Represents error information from a failed task.
 	User             *Reference       `xml:"User,omitempty"`                  // The user who started the task.
+	Organization     *Reference       `xml:"Organization,omitempty"`          // The organization to which the User belongs.
+	Progress         int              `xml:"Progress,omitempty"`              // Read-only indicator of task progress as an approximate percentage between 0 and 100. Not available for all tasks.
+	Details          string           `xml:"Details,omitempty"`               // Detailed message about the task. Also contained by the Owner entity when task status is preRunning.
+
 	//
 	// TODO: add the following fields
 	// Params      anyType        The parameters with which this task was started.
@@ -770,6 +787,8 @@ type OrgGeneralSettings struct {
 	Link LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
 
 	CanPublishCatalogs       bool `xml:"CanPublishCatalogs,omitempty"`
+	CanPublishExternally     bool `xml:"CanPublishExternally,omitempty"`
+	CanSubscribe             bool `xml:"CanSubscribe,omitempty"`
 	DeployedVMQuota          int  `xml:"DeployedVMQuota,omitempty"`
 	StoredVMQuota            int  `xml:"StoredVmQuota,omitempty"`
 	UseServerBootSequence    bool `xml:"UseServerBootSequence,omitempty"`
@@ -968,19 +987,20 @@ type CatalogItems struct {
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/types/CatalogType.html
 // Since: 0.9
 type Catalog struct {
-	HREF          string           `xml:"href,attr,omitempty"`
-	Type          string           `xml:"type,attr,omitempty"`
-	ID            string           `xml:"id,attr,omitempty"`
-	OperationKey  string           `xml:"operationKey,attr,omitempty"`
-	Name          string           `xml:"name,attr"`
-	CatalogItems  []*CatalogItems  `xml:"CatalogItems,omitempty"`
-	DateCreated   string           `xml:"DateCreated,omitempty"`
-	Description   string           `xml:"Description,omitempty"`
-	IsPublished   bool             `xml:"IsPublished,omitempty"`
-	Link          LinkList         `xml:"Link,omitempty"`
-	Owner         *Owner           `xml:"Owner,omitempty"`
-	Tasks         *TasksInProgress `xml:"Tasks,omitempty"`
-	VersionNumber int64            `xml:"VersionNumber,omitempty"`
+	HREF                         string                        `xml:"href,attr,omitempty"`
+	Type                         string                        `xml:"type,attr,omitempty"`
+	ID                           string                        `xml:"id,attr,omitempty"`
+	OperationKey                 string                        `xml:"operationKey,attr,omitempty"`
+	Name                         string                        `xml:"name,attr"`
+	CatalogItems                 []*CatalogItems               `xml:"CatalogItems,omitempty"`
+	DateCreated                  string                        `xml:"DateCreated,omitempty"`
+	Description                  string                        `xml:"Description,omitempty"`
+	IsPublished                  bool                          `xml:"IsPublished,omitempty"`
+	Link                         LinkList                      `xml:"Link,omitempty"`
+	Owner                        *Owner                        `xml:"Owner,omitempty"`
+	Tasks                        *TasksInProgress              `xml:"Tasks,omitempty"`
+	VersionNumber                int64                         `xml:"VersionNumber,omitempty"`
+	PublishExternalCatalogParams *PublishExternalCatalogParams `xml:"PublishExternalCatalogParams,omitempty"`
 }
 
 // AdminCatalog represents the Admin view of a Catalog object.
@@ -1005,11 +1025,12 @@ type AdminCatalog struct {
 // Description: Represents the configuration parameters of a catalog published externally.
 // Since: 5.5
 type PublishExternalCatalogParams struct {
-	IsCachedEnabled          bool   `xml:"IsCacheEnabled,omitempty"`
-	IsPublishedExternally    bool   `xml:"IsPublishedExternally,omitempty"`
-	Password                 string `xml:"Password,omitempty"`
-	PreserveIdentityInfoFlag bool   `xml:"PreserveIdentityInfoFlag,omitempty"`
-	CatalogPublishedUrl      string `xml:"catalogPublishedUrl,omitempty"`
+	Xmlns                    string `xml:"xmlns,attr,omitempty"`
+	IsPublishedExternally    *bool  `xml:"IsPublishedExternally,omitempty"`    // True enables external publication as configured by these parameters.
+	CatalogPublishedUrl      string `xml:"catalogPublishedUrl,omitempty"`      // Read-only endpoint URL supplied by the server. External subscribers can connect to the catalog at this URL.
+	Password                 string `xml:"Password,omitempty"`                 // Password required when connecting to the endpoint.
+	IsCachedEnabled          *bool  `xml:"IsCacheEnabled,omitempty"`           // True enables content caching for this catalog. All items in the catalog are created and stored in transfer storage. If false, items are not placed in transfer storage until they are requested by a subscriber. Note that access to this attribute is reserved to users with role that includes the right 'Catalog: VCSP Publish Subscribe Caching'.
+	PreserveIdentityInfoFlag *bool  `xml:"PreserveIdentityInfoFlag,omitempty"` // True includes BIOS UUIDs and MAC addresses in the downloaded OVF package. If false, those information will be excluded.
 }
 
 // ExternalCatalogSubscription represents the configuration parameters for a catalog that has an external subscription
@@ -1274,6 +1295,7 @@ type VApp struct {
 	OvfDescriptorUploaded bool   `xml:"ovfDescriptorUploaded,attr,omitempty"` // Read-only indicator that the OVF descriptor for this vApp has been uploaded.
 	// Elements
 	Link                 LinkList              `xml:"Link,omitempty"`                 // A reference to an entity or operation associated with this object.
+	LeaseSettingsSection *LeaseSettingsSection `xml:"LeaseSettingsSection,omitempty"` // A reference to the lease section of the vApp
 	NetworkConfigSection *NetworkConfigSection `xml:"NetworkConfigSection,omitempty"` // Represents vAPP network configuration
 	Description          string                `xml:"Description,omitempty"`          // Optional description.
 	Tasks                *TasksInProgress      `xml:"Tasks,omitempty"`                // A list of queued, running, or recently completed tasks associated with this entity.
@@ -1428,6 +1450,25 @@ type VAppTemplate struct {
 	// Section               Section              `xml:"Section,omitempty"`
 }
 
+// VAppTemplateForUpdate represents a vApp template.
+// It is shrunken version of VAppTemplateType used for update calls.
+// Full VAppTemplateType isn't accepted by API
+// Type: VAppTemplateType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents a vApp template.
+type VAppTemplateForUpdate struct {
+	XMLName xml.Name `xml:"VAppTemplate"`
+	// Attributes
+	Xmlns      string `xml:"xmlns,attr,omitempty"`
+	HREF       string `xml:"href,attr,omitempty"`       // The URI of the entity.
+	ID         string `xml:"id,attr,omitempty"`         // The entity identifier, expressed in URN format. The value of this attribute uniquely identifies the entity, persists for the life of the entity, and is never reused.
+	Name       string `xml:"name,attr"`                 // The name of the entity.
+	GoldMaster bool   `xml:"goldMaster,attr,omitempty"` // True if this template is a gold master.
+	// Elements
+	Link        LinkList `xml:"Link,omitempty"`        // A reference to an entity or operation associated with this object.
+	Description string   `xml:"Description,omitempty"` // Optional description.
+}
+
 // VMDiskChange represents a virtual machine only with Disk setting update part
 type VMDiskChange struct {
 	XMLName xml.Name `xml:"Vm"`
@@ -1435,10 +1476,11 @@ type VMDiskChange struct {
 	Xsi     string   `xml:"xmlns:xsi,attr,omitempty"`
 	Xmlns   string   `xml:"xmlns,attr,omitempty"`
 
-	HREF string `xml:"href,attr,omitempty"` // The URI of the VM entity.
-	Type string `xml:"type,attr,omitempty"` // The MIME type of the entity - application/vnd.vmware.vcloud.vm+xml
-	Name string `xml:"name,attr"`           // VM name
-	ID   string `xml:"id,attr,omitempty"`   // VM ID. The entity identifier, expressed in URN format. The value of this attribute uniquely identifies the entity, persists for the life of the entity, and is never reused.
+	HREF        string `xml:"href,attr,omitempty"`   // The URI of the VM entity.
+	Type        string `xml:"type,attr,omitempty"`   // The MIME type of the entity - application/vnd.vmware.vcloud.vm+xml
+	Name        string `xml:"name,attr"`             // VM name
+	Description string `xml:"Description,omitempty"` // Optional description.
+	ID          string `xml:"id,attr,omitempty"`     // VM ID. The entity identifier, expressed in URN format. The value of this attribute uniquely identifies the entity, persists for the life of the entity, and is never reused.
 
 	VmSpecSection *VmSpecSection `xml:"VmSpecSection,omitempty"` // Container for the specification of this virtual machine. This is an alternative to using ovf:VirtualHardwareSection + ovf:OperatingSystemSection
 }
@@ -1596,9 +1638,10 @@ type OVFItem struct {
 	Reservation     int      `xml:"rasd:Reservation"`
 	ResourceType    int      `xml:"rasd:ResourceType"`
 	VirtualQuantity int64    `xml:"rasd:VirtualQuantity"`
-	Weight          int      `xml:"rasd:Weight"`
-	CoresPerSocket  *int     `xml:"vmw:CoresPerSocket,omitempty"`
-	Link            *Link    `xml:"vcloud:Link"`
+	// Weight corresponds to Shares when used for CPU and/or memory settings
+	Weight         int   `xml:"rasd:Weight,omitempty"`
+	CoresPerSocket *int  `xml:"vmw:CoresPerSocket,omitempty"`
+	Link           *Link `xml:"vcloud:Link"`
 }
 
 // DeployVAppParams are the parameters to a deploy vApp request
@@ -2296,6 +2339,7 @@ type QueryResultVMRecordType struct {
 	// Attributes
 	HREF                     string    `xml:"href,attr,omitempty"` // The URI of the entity.
 	ID                       string    `xml:"id,attr,omitempty"`
+	Moref                    string    `xml:"moref,attr,omitempty"`         // VM moref id.
 	Name                     string    `xml:"name,attr,omitempty"`          // VM name.
 	Type                     string    `xml:"type,attr,omitempty"`          // Contains the type of the resource.
 	ContainerName            string    `xml:"containerName,attr,omitempty"` // The name of the vApp or vApp template that contains this VM.
@@ -2614,11 +2658,15 @@ type Disk struct {
 	Iops            *int             `xml:"iops,attr,omitempty"`
 	BusType         string           `xml:"busType,attr,omitempty"`
 	BusSubType      string           `xml:"busSubType,attr,omitempty"`
+	Encrypted       bool             `xml:"encrypted,attr,omitempty"`
+	Shareable       bool             `xml:"shareable,attr,omitempty"`
+	SharingType     string           `xml:"sharingType,attr,omitempty"`
+	UUID            string           `xml:"uuid,attr,omitempty"`
 	Description     string           `xml:"Description,omitempty"`
 	Files           *FilesList       `xml:"Files,omitempty"`
 	Link            []*Link          `xml:"Link,omitempty"`
-	Owner           *Owner           `xml:"Owner,omitempty"`
 	StorageProfile  *Reference       `xml:"StorageProfile,omitempty"`
+	Owner           *Owner           `xml:"Owner,omitempty"`
 	Tasks           *TasksInProgress `xml:"Tasks,omitempty"`
 	VCloudExtension *VCloudExtension `xml:"VCloudExtension,omitempty"`
 }
@@ -2647,11 +2695,11 @@ type DiskAttachOrDetachParams struct {
 // Reference: vCloud API 30.0 - VmsType
 // https://code.vmware.com/apis/287/vcloud?h=Director#/doc/doc/types/FilesListType.html
 type Vms struct {
-	XMLName     xml.Name   `xml:"Vms"`
-	Xmlns       string     `xml:"xmlns,attr,omitempty"`
-	Type        string     `xml:"type,attr"`
-	HREF        string     `xml:"href,attr"`
-	VmReference *Reference `xml:"VmReference,omitempty"`
+	XMLName     xml.Name     `xml:"Vms"`
+	Xmlns       string       `xml:"xmlns,attr,omitempty"`
+	Type        string       `xml:"type,attr"`
+	HREF        string       `xml:"href,attr"`
+	VmReference []*Reference `xml:"VmReference,omitempty"`
 }
 
 // Parameters for inserting and ejecting virtual media for VM as CD/DVD
@@ -2700,29 +2748,34 @@ type VmQuestionAnswer struct {
 // Reference: vCloud API 27.0 - DiskType
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/types/QueryResultDiskRecordType.html
 type DiskRecordType struct {
-	Xmlns string `xml:"xmlns,attr,omitempty"`
-	HREF  string `xml:"href,attr,omitempty"`
-	Id    string `xml:"id,attr,omitempty"`
-	Type  string `xml:"type,attr,omitempty"`
-	Name  string `xml:"name,attr,omitempty"`
-	Vdc   string `xml:"vdc,attr,omitempty"`
-	// SizeB is not available in API V33.0. It is replaced by SizeMb
-	//SizeB              int64   `xml:"sizeB,attr,omitempty"`
-	SizeMb             int64   `xml:"sizeMb,attr,omitempty"`
-	DataStore          string  `xml:"dataStore,attr,omitempty"`
-	DataStoreName      string  `xml:"datastoreName,attr,omitempty"`
-	OwnerName          string  `xml:"ownerName,attr,omitempty"`
-	VdcName            string  `xml:"vdcName,attr,omitempty"`
-	Task               string  `xml:"task,attr,omitempty"`
-	StorageProfile     string  `xml:"storageProfile,attr,omitempty"`
-	StorageProfileName string  `xml:"storageProfileName,attr,omitempty"`
-	Status             string  `xml:"status,attr,omitempty"`
-	BusType            string  `xml:"busType,attr,omitempty"`
-	BusSubType         string  `xml:"busSubType,attr,omitempty"`
-	BusTypeDesc        string  `xml:"busTypeDesc,attr,omitempty"`
-	IsAttached         bool    `xml:"isAttached,attr,omitempty"`
-	Description        string  `xml:"description,attr,omitempty"`
-	Link               []*Link `xml:"Link,omitempty"`
+	Xmlns              string    `xml:"xmlns,attr,omitempty"`
+	HREF               string    `xml:"href,attr,omitempty"`
+	Id                 string    `xml:"id,attr,omitempty"`
+	Type               string    `xml:"type,attr,omitempty"`
+	Name               string    `xml:"name,attr,omitempty"`
+	Vdc                string    `xml:"vdc,attr,omitempty"`
+	SizeMb             int64     `xml:"sizeMb,attr,omitempty"`
+	Iops               int64     `xml:"iops,attr,omitempty"`
+	Encrypted          bool      `xml:"encrypted,attr,omitempty"`
+	UUID               string    `xml:"uuid,attr,omitempty"`
+	DataStore          string    `xml:"dataStore,attr,omitempty"`
+	DataStoreName      string    `xml:"datastoreName,attr,omitempty"`
+	OwnerName          string    `xml:"ownerName,attr,omitempty"`
+	VdcName            string    `xml:"vdcName,attr,omitempty"`
+	Task               string    `xml:"task,attr,omitempty"`
+	StorageProfile     string    `xml:"storageProfile,attr,omitempty"`
+	StorageProfileName string    `xml:"storageProfileName,attr,omitempty"`
+	Status             string    `xml:"status,attr,omitempty"`
+	BusType            string    `xml:"busType,attr,omitempty"`
+	BusSubType         string    `xml:"busSubType,attr,omitempty"`
+	BusTypeDesc        string    `xml:"busTypeDesc,attr,omitempty"`
+	AttachedVmCount    int32     `xml:"attachedVmCount,attr,omitempty"`
+	SharingType        string    `xml:"sharingType,attr,omitempty"`
+	IsAttached         bool      `xml:"isAttached,attr,omitempty"`
+	IsShareable        bool      `xml:"isShareable,attr,omitempty"`
+	Description        string    `xml:"description,attr,omitempty"`
+	Link               []*Link   `xml:"Link,omitempty"`
+	Metadata           *Metadata `xml:"Metadata,omitempty"`
 }
 
 // Represents port group
@@ -2823,8 +2876,8 @@ type User struct {
 	IsExternal      bool             `xml:"IsExternal,omitempty"`
 	ProviderType    string           `xml:"ProviderType,omitempty"`
 	IsGroupRole     bool             `xml:"IsGroupRole,omitempty"`
-	StoredVmQuota   int              `xml:"StoredVmQuota,omitempty"`
-	DeployedVmQuota int              `xml:"DeployedVmQuota,omitempty"`
+	StoredVmQuota   int              `xml:"StoredVmQuota"`
+	DeployedVmQuota int              `xml:"DeployedVmQuota"`
 	Role            *Reference       `xml:"Role,omitempty"`
 	GroupReferences *GroupReference  `xml:"GroupReferences,omitempty"`
 	Password        string           `xml:"Password,omitempty"`
@@ -2849,6 +2902,13 @@ type Group struct {
 	ProviderType string `xml:"ProviderType"`
 	// Role - reference to existing role
 	Role *Reference `xml:"Role,omitempty"`
+	// UsersList - references to existing users of type User
+	UsersList *UsersList `xml:"UsersList,omitempty"`
+}
+
+// UsersList is a tagged list of User Reference's
+type UsersList struct {
+	UserReference []*Reference `xml:"UserReference,omitempty"`
 }
 
 // Type: AdminCatalogRecord

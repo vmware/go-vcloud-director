@@ -536,6 +536,12 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
+
+	// Remove catalog item so far other tests don't fail
+	task, err := media.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
@@ -1052,6 +1058,11 @@ func (vcd *TestVCD) Test_UpdateInternalDisk(check *C) {
 	vm, storageProfile, diskSettings, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, vmName, 1)
 	check.Assert(err, IsNil)
 
+	// verify VM description still available - test for bugfix #418
+	description := "Test_UpdateInternalDisk_Description"
+	vm, err = vm.UpdateVmSpecSection(vm.VM.VmSpecSection, description)
+	check.Assert(err, IsNil)
+
 	//verify
 	disk, err := vm.GetInternalDiskById(diskId, true)
 	check.Assert(err, IsNil)
@@ -1086,6 +1097,11 @@ func (vcd *TestVCD) Test_UpdateInternalDisk(check *C) {
 	check.Assert(disk.UnitNumber, Equals, diskSettings.UnitNumber)
 	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
+
+	// verify VM description still available - test for bugfix #418
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+	check.Assert(vm.VM.Description, Equals, description)
 
 	// attach independent disk
 	independentDisk, err := attachIndependentDisk(vcd, check)
@@ -1211,7 +1227,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
 		check.Skip("skipping test because no vApp is found")
 	}
 
-	vapp, err := createVappForTest(vcd, "Test_AddNewEmptyVMMultiNIC")
+	vapp, err := deployVappForTest(vcd, "Test_AddNewEmptyVMMultiNIC")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
@@ -1445,7 +1461,7 @@ func (vcd *TestVCD) Test_UpdateVmCpuAndMemoryHotAdd(check *C) {
 }
 
 func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
-	vapp, err := createVappForTest(vcd, "Test_AddNewEmptyVMWithVmComputePolicy")
+	vapp, err := deployVappForTest(vcd, "Test_AddNewEmptyVMWithVmComputePolicy")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
@@ -1480,10 +1496,10 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
 		vcd.infoCleanup(notFoundMsg, "vdc", vcd.vdc.Vdc.Name)
 	}
 
-	createdPolicy, err := adminOrg.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
+	createdPolicy, err := adminOrg.client.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
 	check.Assert(err, IsNil)
 
-	createdPolicy2, err := adminOrg.CreateVdcComputePolicy(newComputePolicy2.VdcComputePolicy)
+	createdPolicy2, err := adminOrg.client.CreateVdcComputePolicy(newComputePolicy2.VdcComputePolicy)
 	check.Assert(err, IsNil)
 
 	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_AddNewEmptyVMWithVmComputePolicyAndUpdate")
@@ -1599,7 +1615,7 @@ func (vcd *TestVCD) Test_VMUpdateStorageProfile(check *C) {
 		check.Skip("Skipping test because both storage profiles have to be configured")
 	}
 
-	vapp, err := createVappForTest(vcd, "Test_VMUpdateStorageProfile")
+	vapp, err := deployVappForTest(vcd, "Test_VMUpdateStorageProfile")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
@@ -1772,9 +1788,11 @@ func (vcd *TestVCD) Test_CreateStandaloneVMFromTemplate(check *C) {
 	check.Assert(vmTemplate.Type, Not(Equals), "")
 	check.Assert(vmTemplate.Name, Not(Equals), "")
 
+	vmName := "testStandaloneTemplate"
+	vmDescription := "Standalone VM"
 	params := types.InstantiateVmTemplateParams{
 		Xmlns:            types.XMLNamespaceVCloud,
-		Name:             "testStandaloneTemplate",
+		Name:             vmName,
 		PowerOn:          true,
 		AllEULAsAccepted: true,
 		SourcedVmTemplateItem: &types.SourcedVmTemplateParams{
@@ -1785,9 +1803,14 @@ func (vcd *TestVCD) Test_CreateStandaloneVMFromTemplate(check *C) {
 				Type: vmTemplate.Type,
 				Name: vmTemplate.Name,
 			},
-			StorageProfile:                nil,
-			VmCapabilities:                nil,
-			VmGeneralParams:               nil,
+			StorageProfile: nil,
+			VmCapabilities: nil,
+			VmGeneralParams: &types.VMGeneralParams{
+				Name:               vmName,
+				Description:        vmDescription,
+				NeedsCustomization: false,
+				RegenerateBiosUuid: false,
+			},
 			VmTemplateInstantiationParams: nil,
 		},
 	}
@@ -1798,6 +1821,8 @@ func (vcd *TestVCD) Test_CreateStandaloneVMFromTemplate(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vm, NotNil)
 	AddToCleanupList(vm.VM.ID, "standaloneVm", "", check.TestName())
+	check.Assert(vm.VM.Name, Equals, vmName)
+	check.Assert(vm.VM.Description, Equals, vmDescription)
 
 	_ = vdc.Refresh()
 	vappList = vdc.GetVappList()
@@ -1811,4 +1836,67 @@ func (vcd *TestVCD) Test_CreateStandaloneVMFromTemplate(check *C) {
 	_ = vdc.Refresh()
 	vappList = vdc.GetVappList()
 	check.Assert(len(vappList), Equals, vappNum)
+}
+
+func (vcd *TestVCD) Test_VMChangeCPU(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
+	vapp := vcd.findFirstVapp()
+	existingVm, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	currentCpus := existingVm.VmSpecSection.NumCpus
+	currentCores := existingVm.VmSpecSection.NumCoresPerSocket
+
+	check.Assert(0, Not(Equals), currentCpus)
+	check.Assert(0, Not(Equals), currentCores)
+
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
+	check.Assert(err, IsNil)
+
+	cores := 2
+	cpuCount := 4
+
+	err = vm.ChangeCPU(cpuCount, cores)
+	check.Assert(err, IsNil)
+
+	check.Assert(*vm.VM.VmSpecSection.NumCpus, Equals, cpuCount)
+	check.Assert(*vm.VM.VmSpecSection.NumCoresPerSocket, Equals, cores)
+
+	// return to previous value
+	err = vm.ChangeCPU(*currentCpus, *currentCores)
+	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_VMChangeMemory(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
+	vapp := vcd.findFirstVapp()
+	existingVm, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+	check.Assert(existingVm.VmSpecSection.MemoryResourceMb, Not(IsNil))
+
+	currentMemory := existingVm.VmSpecSection.MemoryResourceMb.Configured
+	check.Assert(0, Not(Equals), currentMemory)
+
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
+	check.Assert(err, IsNil)
+
+	err = vm.ChangeMemory(2304)
+	check.Assert(err, IsNil)
+
+	check.Assert(existingVm.VmSpecSection.MemoryResourceMb, Not(IsNil))
+	check.Assert(vm.VM.VmSpecSection.MemoryResourceMb.Configured, Equals, int64(2304))
+
+	// return to previous value
+	err = vm.ChangeMemory(currentMemory)
+	check.Assert(err, IsNil)
 }

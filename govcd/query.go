@@ -45,13 +45,25 @@ func (client *Client) QueryWithNotEncodedParams(params map[string]string, notEnc
 	return client.QueryWithNotEncodedParamsWithApiVersion(params, notEncodedParams, client.APIVersion)
 }
 
+func (client *Client) QueryWithNotEncodedParamsWithHeaders(params map[string]string, notEncodedParams map[string]string, headers map[string]string) (Results, error) {
+	return client.QueryWithNotEncodedParamsWithApiVersionWithHeaders(params, notEncodedParams, client.APIVersion, headers)
+}
+
 // QueryWithNotEncodedParams uses Query API to search for requested data
 func (client *Client) QueryWithNotEncodedParamsWithApiVersion(params map[string]string, notEncodedParams map[string]string, apiVersion string) (Results, error) {
+	return client.QueryWithNotEncodedParamsWithApiVersionWithHeaders(params, notEncodedParams, apiVersion, nil)
+}
+
+func (client *Client) QueryWithNotEncodedParamsWithApiVersionWithHeaders(params map[string]string, notEncodedParams map[string]string, apiVersion string, headers map[string]string) (Results, error) {
 	queryUrl := client.VCDHREF
 	queryUrl.Path += "/query"
 
 	req := client.NewRequestWitNotEncodedParamsWithApiVersion(params, notEncodedParams, http.MethodGet, queryUrl, nil, apiVersion)
 	req.Header.Add("Accept", "vnd.vmware.vcloud.org+xml;version="+apiVersion)
+
+	for k, v := range headers {
+		req.Header.Add(k, v)
+	}
 
 	return getResult(client, req)
 }

@@ -13,6 +13,7 @@ import (
 
 	. "gopkg.in/check.v1"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
@@ -228,4 +229,34 @@ func (vcd *TestVCD) Test_DeleteNonEmptyCatalog(check *C) {
 	retrievedCatalog, err = org.GetCatalogByName(catalogName, true)
 	check.Assert(err, NotNil)
 	check.Assert(retrievedCatalog, IsNil)
+}
+
+func (vcd *TestVCD) Test_QueryVappTemplateList(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	catalogName := vcd.config.VCD.Catalog.Name
+	if catalogName == "" {
+		check.Skip("Test_QueryVappTemplateList: Catalog name not given")
+		return
+	}
+
+	cat, err := vcd.org.GetCatalogByName(catalogName, false)
+	if err != nil {
+		check.Skip("Test_QueryVappTemplateList: Catalog not found")
+		return
+	}
+
+	vAppTemplates, err := cat.QueryVappTemplateList()
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplates, NotNil)
+
+	// Check the number of vApp templates is one
+	// Dump all vApp template structures to easily identify leftover objects if number is not 1
+	if len(vAppTemplates) > 1 {
+		spew.Dump(vAppTemplates)
+	}
+	check.Assert(len(vAppTemplates), Equals, 1)
+
+	// Check the name of the vApp template is what it should be
+	check.Assert(vAppTemplates[0].Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
 }
