@@ -12,7 +12,6 @@ package govcd
 import (
 	"fmt"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -122,8 +121,7 @@ func (vcd *TestVCD) Test_CreateNsxtOrgVdc(check *C) {
 		check.Assert(vdc.Vdc.Name, Equals, vdcConfiguration.Name)
 		check.Assert(vdc.Vdc.IsEnabled, Equals, vdcConfiguration.IsEnabled)
 		check.Assert(vdc.Vdc.AllocationModel, Equals, vdcConfiguration.AllocationModel)
-		spew.Dump(adminVdc.AdminVdc)
-		// check.Assert(len(adminVdc.AdminVdc.ResourcePoolRefs) > 0, Equals, true)
+		check.Assert(len(adminVdc.AdminVdc.ResourcePoolRefs.VimObjectRef) > 0, Equals, true)
 
 		// Test  update
 		adminVdc.AdminVdc.Description = "updated-description" + check.TestName()
