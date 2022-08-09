@@ -1237,14 +1237,14 @@ func getOpenApiMetadata(client *Client, entityId string) ([]*types.OpenApiMetada
 		return nil, err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, strings.ReplaceAll(entityId, "urn:vcloud:network:", "")))
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, entityId))
 	if err != nil {
 		return nil, err
 	}
 
 	metadataEntries := []*types.OpenApiMetadata{{}}
 
-	err = client.OpenApiGetAllItems(apiVersion, urlRef, nil, metadataEntries, nil)
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, nil, &metadataEntries, nil)
 	if err != nil {
 		return nil, err
 	}
