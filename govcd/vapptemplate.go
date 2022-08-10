@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/vmware/go-vcloud-director/v2/util"
 	"net/http"
 	"net/url"
 
@@ -122,4 +123,16 @@ func (vAppTemplate *VAppTemplate) UpdateAsync() (Task, error) {
 
 	return vAppTemplate.client.ExecuteTaskRequest(url, http.MethodPut,
 		types.MimeVAppTemplate, "error updating vApp template item: %s", vappTemplatePayload)
+}
+
+// Delete deletes the VAppTemplate Item, returning an error if the vCD call fails.
+func (vAppTemplate *VAppTemplate) Delete() error {
+	util.Logger.Printf("[TRACE] Deleting vApp Template: %#v", vAppTemplate.VAppTemplate)
+	vappTemplateHref := vAppTemplate.client.VCDHREF
+	vappTemplateHref.Path += "/vAppTemplate/" + vAppTemplate.VAppTemplate.ID[23:]
+
+	util.Logger.Printf("[TRACE] Url for deleting vApp Template: %#v and name: %s", vappTemplateHref, vAppTemplate.VAppTemplate.Name)
+
+	return vAppTemplate.client.ExecuteRequestWithoutResponse(vappTemplateHref.String(), http.MethodDelete,
+		"", "error deleting vApp Template: %s", nil)
 }
