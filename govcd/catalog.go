@@ -864,10 +864,10 @@ func (cat *Catalog) GetCatalogItemByName(catalogItemName string, refresh bool) (
 	return nil, ErrorEntityNotFound
 }
 
-// GetVappTemplateByName finds a VAppTemplate by Name
+// GetVAppTemplateByName finds a VAppTemplate by Name
 // On success, returns a pointer to the VAppTemplate structure and a nil error
 // On failure, returns a nil pointer and an error
-func (cat *Catalog) GetVappTemplateByName(vAppTemplateName string, refresh bool) (*VAppTemplate, error) {
+func (cat *Catalog) GetVAppTemplateByName(vAppTemplateName string, refresh bool) (*VAppTemplate, error) {
 	catalogItem, err := cat.GetCatalogItemByName(vAppTemplateName, refresh)
 	if err != nil {
 		return nil, err

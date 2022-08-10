@@ -68,7 +68,7 @@ func (vcd *TestVCD) Test_UpdateAndDeleteVAppTemplate(check *C) {
 
 	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
 
-	vAppTemplate, err := catalog.GetVappTemplateByName(itemName, true)
+	vAppTemplate, err := catalog.GetVAppTemplateByName(itemName, true)
 	check.Assert(err, IsNil)
 	check.Assert(vAppTemplate, NotNil)
 	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, itemName)
@@ -92,7 +92,7 @@ func (vcd *TestVCD) Test_UpdateAndDeleteVAppTemplate(check *C) {
 
 	err = vAppTemplate.Delete()
 	check.Assert(err, IsNil)
-	vAppTemplate, err = catalog.GetVappTemplateByName(itemName, true)
+	vAppTemplate, err = catalog.GetVAppTemplateByName(itemName, true)
 	check.Assert(err, NotNil)
 	check.Assert(vAppTemplate, IsNil)
 }
