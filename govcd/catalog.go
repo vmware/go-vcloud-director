@@ -899,10 +899,10 @@ func (cat *Catalog) GetCatalogItemById(catalogItemId string, refresh bool) (*Cat
 	return nil, ErrorEntityNotFound
 }
 
-// GetVappTemplateById finds a vApp Template by ID.
+// GetVAppTemplateById finds a vApp Template by ID.
 // On success, returns a pointer to the VAppTemplate structure and a nil error.
 // On failure, returns a nil pointer and an error.
-func (cat *Catalog) GetVappTemplateById(vAppTemplateId string) (*VAppTemplate, error) {
+func (cat *Catalog) GetVAppTemplateById(vAppTemplateId string) (*VAppTemplate, error) {
 	vappTemplateHref := cat.client.VCDHREF
 	vappTemplateHref.Path += "/vAppTemplate/vappTemplate-" + strings.ReplaceAll(vAppTemplateId, "urn:vcloud:vapptemplate:", "")
 

@@ -106,7 +106,7 @@ func (vcd *TestVCD) Test_FindVAppTemplate(check *C) {
 		check.Assert(vAppTemplate.VAppTemplate.Description, Equals, vcd.config.VCD.Catalog.CatalogItemDescription)
 	}
 
-	vAppTemplate, err = cat.GetVappTemplateById(vAppTemplate.VAppTemplate.ID)
+	vAppTemplate, err = cat.GetVAppTemplateById(vAppTemplate.VAppTemplate.ID)
 	check.Assert(err, IsNil)
 	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
 	if vcd.config.VCD.Catalog.CatalogItemDescription != "" {
