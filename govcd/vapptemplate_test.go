@@ -49,7 +49,7 @@ func (vcd *TestVCD) Test_RefreshVAppTemplate(check *C) {
 	check.Assert(oldVAppTemplate.VAppTemplate.HREF, Equals, vAppTemplate.VAppTemplate.HREF)
 }
 
-func (vcd *TestVCD) Test_UpdateVAppTemplate(check *C) {
+func (vcd *TestVCD) Test_UpdateAndDeleteVAppTemplate(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	if err != nil {

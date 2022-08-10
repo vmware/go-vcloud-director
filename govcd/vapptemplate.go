@@ -131,7 +131,7 @@ func (vAppTemplate *VAppTemplate) Delete() error {
 	util.Logger.Printf("[TRACE] Deleting vApp Template: %#v", vAppTemplate.VAppTemplate)
 
 	vappTemplateHref := vAppTemplate.client.VCDHREF
-	vappTemplateHref.Path += "/vAppTemplate/vappTemplate-" + strings.ReplaceAll(vAppTemplate.VAppTemplate.ID,"urn:vcloud:vapptemplate:", "")
+	vappTemplateHref.Path += "/vAppTemplate/vappTemplate-" + strings.ReplaceAll(vAppTemplate.VAppTemplate.ID, "urn:vcloud:vapptemplate:", "")
 
 	util.Logger.Printf("[TRACE] Url for deleting vApp Template: %#v and name: %s", vappTemplateHref, vAppTemplate.VAppTemplate.Name)
 

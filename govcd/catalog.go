@@ -904,7 +904,7 @@ func (cat *Catalog) GetCatalogItemById(catalogItemId string, refresh bool) (*Cat
 // On failure, returns a nil pointer and an error.
 func (cat *Catalog) GetVappTemplateById(vAppTemplateId string) (*VAppTemplate, error) {
 	vappTemplateHref := cat.client.VCDHREF
-	vappTemplateHref.Path += "/vAppTemplate/vappTemplate-" + strings.ReplaceAll(vAppTemplateId,"urn:vcloud:vapptemplate:", "")
+	vappTemplateHref.Path += "/vAppTemplate/vappTemplate-" + strings.ReplaceAll(vAppTemplateId, "urn:vcloud:vapptemplate:", "")
 
 	vappTemplate, err := cat.GetVappTemplateByHref(vappTemplateHref.String())
 	if err != nil {
