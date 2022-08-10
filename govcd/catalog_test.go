@@ -113,6 +113,20 @@ func (vcd *TestVCD) Test_FindVAppTemplate(check *C) {
 		check.Assert(vAppTemplate.VAppTemplate.Description, Equals, vcd.config.VCD.Catalog.CatalogItemDescription)
 	}
 
+	vAppTemplate, err = cat.GetVAppTemplateByNameOrId(vAppTemplate.VAppTemplate.ID, false)
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
+	if vcd.config.VCD.Catalog.CatalogItemDescription != "" {
+		check.Assert(vAppTemplate.VAppTemplate.Description, Equals, vcd.config.VCD.Catalog.CatalogItemDescription)
+	}
+
+	vAppTemplate, err = cat.GetVAppTemplateByNameOrId(vcd.config.VCD.Catalog.CatalogItem, false)
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
+	if vcd.config.VCD.Catalog.CatalogItemDescription != "" {
+		check.Assert(vAppTemplate.VAppTemplate.Description, Equals, vcd.config.VCD.Catalog.CatalogItemDescription)
+	}
+
 	// Test non-existent vApp Template
 	vAppTemplate, err = cat.GetVAppTemplateByName("INVALID", false)
 	check.Assert(err, NotNil)
