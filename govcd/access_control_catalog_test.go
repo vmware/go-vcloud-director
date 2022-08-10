@@ -17,7 +17,7 @@ import (
 )
 
 // catalogTenantContext defines whether we use tenant context during catalog tests.
-// By default is off, unless variable VCD_CATALOG_TENANT_CONTEXT is seta
+// By default is off, unless variable VCD_CATALOG_TENANT_CONTEXT is set
 var catalogTenantContext = os.Getenv("VCD_CATALOG_TENANT_CONTEXT") != ""
 
 // GetId completes the implementation of interface accessControlType
