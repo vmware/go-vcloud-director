@@ -903,8 +903,10 @@ func (cat *Catalog) GetCatalogItemById(catalogItemId string, refresh bool) (*Cat
 // On success, returns a pointer to the VAppTemplate structure and a nil error.
 // On failure, returns a nil pointer and an error.
 func (cat *Catalog) GetVappTemplateById(vAppTemplateId string) (*VAppTemplate, error) {
-	vAppTemplateHref := fmt.Sprintf("%s/vAppTemplate/vappTemplate-%s", cat.client.VCDHREF.String(), strings.ReplaceAll(vAppTemplateId, "urn:vcloud:vapptemplate:", ""))
-	vappTemplate, err := cat.GetVappTemplateByHref(vAppTemplateHref)
+	vappTemplateHref := cat.client.VCDHREF
+	vappTemplateHref.Path += "/vAppTemplate/vappTemplate-" + strings.ReplaceAll(vAppTemplateId,"urn:vcloud:vapptemplate:", "")
+
+	vappTemplate, err := cat.GetVappTemplateByHref(vappTemplateHref.String())
 	if err != nil {
 		return nil, fmt.Errorf("could not find vApp Template with ID %s: %s", vAppTemplateId, err)
 	}
