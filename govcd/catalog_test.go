@@ -88,44 +88,32 @@ func (vcd *TestVCD) Test_FindCatalogItem(check *C) {
 func (vcd *TestVCD) Test_FindVappTemplate(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	// Fetch Catalog
+	// Prepare test
 	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	if err != nil {
 		check.Skip(fmt.Sprintf("%s: Catalog not found. Test can't proceed", check.TestName()))
 		return
 	}
-
 	if vcd.config.VCD.Catalog.CatalogItem == "" {
 		check.Skip(fmt.Sprintf("%s: Catalog Item not given. Test can't proceed", check.TestName()))
 	}
+
+	// Test cases
 	vAppTemplate, err := cat.GetVappTemplateByName(vcd.config.VCD.Catalog.CatalogItem, false)
 	check.Assert(err, IsNil)
 	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
-	// If given a description in config file then it checks if the descriptions match
-	// Otherwise it skips the assert
 	if vcd.config.VCD.Catalog.CatalogItemDescription != "" {
 		check.Assert(vAppTemplate.VAppTemplate.Description, Equals, vcd.config.VCD.Catalog.CatalogItemDescription)
 	}
+
 	vAppTemplate, err = cat.GetVappTemplateById(vAppTemplate.VAppTemplate.ID)
 	check.Assert(err, IsNil)
 	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
 	if vcd.config.VCD.Catalog.CatalogItemDescription != "" {
 		check.Assert(vAppTemplate.VAppTemplate.Description, Equals, vcd.config.VCD.Catalog.CatalogItemDescription)
 	}
-	vAppTemplate, err = cat.GetVappTemplateByNameOrId(vAppTemplate.VAppTemplate.ID, false)
-	check.Assert(err, IsNil)
-	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
-	if vcd.config.VCD.Catalog.CatalogItemDescription != "" {
-		check.Assert(vAppTemplate.VAppTemplate.Description, Equals, vcd.config.VCD.Catalog.CatalogItemDescription)
-	}
-	vAppTemplate, err = cat.GetVappTemplateByNameOrId(vcd.config.VCD.Catalog.CatalogItem, false)
-	check.Assert(err, IsNil)
-	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
-	if vcd.config.VCD.Catalog.CatalogItemDescription != "" {
-		check.Assert(vAppTemplate.VAppTemplate.Description, Equals, vcd.config.VCD.Catalog.CatalogItemDescription)
-	}
 
-	// Test non-existent catalog item
+	// Test non-existent vApp Template
 	vAppTemplate, err = cat.GetVappTemplateByName("INVALID", false)
 	check.Assert(err, NotNil)
 	check.Assert(vAppTemplate, IsNil)

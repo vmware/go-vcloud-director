@@ -925,19 +925,6 @@ func (cat *Catalog) GetCatalogItemByNameOrId(identifier string, refresh bool) (*
 	return entity.(*CatalogItem), err
 }
 
-// GetVappTemplateByNameOrId finds a vApp Template by Name or ID.
-// On success, returns a pointer to the VAppTemplate structure and a nil error.
-// On failure, returns a nil pointer and an error.
-func (cat *Catalog) GetVappTemplateByNameOrId(identifier string, refresh bool) (*VAppTemplate, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return cat.GetVappTemplateByName(name, refresh) }
-	getById := func(id string, refresh bool) (interface{}, error) { return cat.GetVappTemplateById(id) }
-	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
-	if entity == nil {
-		return nil, err
-	}
-	return entity.(*VAppTemplate), err
-}
-
 // QueryMediaList retrieves a list of media items for the catalog
 func (catalog *Catalog) QueryMediaList() ([]*types.MediaRecordType, error) {
 	typeMedia := "media"
