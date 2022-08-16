@@ -175,7 +175,7 @@ type OrgVdcNetworkSubnetIPRanges = ExternalNetworkV2IPRanges
 // OrgVdcNetworkSubnetIPRangeValues is a type alias to reuse the same definitions with appropriate names
 type OrgVdcNetworkSubnetIPRangeValues = ExternalNetworkV2IPRange
 
-//OrgVdcNetworkSubnets
+// OrgVdcNetworkSubnets
 type OrgVdcNetworkSubnets struct {
 	Values []OrgVdcNetworkSubnetValues `json:"values"`
 }

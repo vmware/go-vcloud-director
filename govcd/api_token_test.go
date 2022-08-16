@@ -17,10 +17,10 @@ import (
 
 // TestVCDClient_GetBearerTokenFromApiToken tests the token refresh operation
 // To make it work, we need the following, or the test is skipped:
-// * VCD version 10.3.1 or greater
-// * environment variable TEST_VCD_API_TOKEN filled with a valid API token for that VCD
-// * If the API token was not set for the Organization defined in vcd.config.VCD.Org, the variable
-//   TEST_VCD_ORG should be filled with the name of the Org for which the API token was set.
+//   - VCD version 10.3.1 or greater
+//   - environment variable TEST_VCD_API_TOKEN filled with a valid API token for that VCD
+//   - If the API token was not set for the Organization defined in vcd.config.VCD.Org, the variable
+//     TEST_VCD_ORG should be filled with the name of the Org for which the API token was set.
 func (vcd *TestVCD) TestVCDClient_GetBearerTokenFromApiToken(check *C) {
 
 	apiToken := os.Getenv("TEST_VCD_API_TOKEN")

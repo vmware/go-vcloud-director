@@ -68,9 +68,10 @@ const ApiTokenHeader = "API-token"
 // General purpose error to be used whenever an entity is not found from a "GET" request
 // Allows a simpler checking of the call result
 // such as
-// if err == ErrorEntityNotFound {
-//    // do what is needed in case of not found
-// }
+//
+//	if err == ErrorEntityNotFound {
+//	   // do what is needed in case of not found
+//	}
 var errorEntityNotFoundMessage = "[ENF] entity not found"
 var ErrorEntityNotFound = fmt.Errorf(errorEntityNotFoundMessage)
 
@@ -79,12 +80,14 @@ var debugShowRequestEnabled = os.Getenv("GOVCD_SHOW_REQ") != ""
 var debugShowResponseEnabled = os.Getenv("GOVCD_SHOW_RESP") != ""
 
 // Enables the debugging hook to show requests as they are processed.
+//
 //lint:ignore U1000 this function is used on request for debugging purposes
 func enableDebugShowRequest() {
 	debugShowRequestEnabled = true
 }
 
 // Disables the debugging hook to show requests as they are processed.
+//
 //lint:ignore U1000 this function is used on request for debugging purposes
 func disableDebugShowRequest() {
 	debugShowRequestEnabled = false
@@ -95,12 +98,14 @@ func disableDebugShowRequest() {
 }
 
 // Enables the debugging hook to show responses as they are processed.
+//
 //lint:ignore U1000 this function is used on request for debugging purposes
 func enableDebugShowResponse() {
 	debugShowResponseEnabled = true
 }
 
 // Disables the debugging hook to show responses as they are processed.
+//
 //lint:ignore U1000 this function is used on request for debugging purposes
 func disableDebugShowResponse() {
 	debugShowResponseEnabled = false
@@ -149,9 +154,10 @@ func debugShowResponse(resp *http.Response, body []byte) {
 
 // IsNotFound is a convenience function, similar to os.IsNotExist that checks whether a given error
 // is a "Not found" error, such as
-// if isNotFound(err) {
-//    // do what is needed in case of not found
-// }
+//
+//	if isNotFound(err) {
+//	   // do what is needed in case of not found
+//	}
 func IsNotFound(err error) bool {
 	return err != nil && err == ErrorEntityNotFound
 }
