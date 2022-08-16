@@ -12,7 +12,7 @@ import "encoding/xml"
 //
 // Warning. It nests all firewall rules because Edge Gateway API is done so that if this data is not
 // sent while enabling it would wipe all firewall rules. InnerXML type field is used with struct tag
-//`innerxml` to prevent any manipulation of configuration and sending it verbatim
+// `innerxml` to prevent any manipulation of configuration and sending it verbatim
 type FirewallConfigWithXml struct {
 	XMLName       xml.Name              `xml:"firewall"`
 	Enabled       bool                  `xml:"enabled"`

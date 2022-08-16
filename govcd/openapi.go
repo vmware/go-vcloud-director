@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -636,7 +635,7 @@ func (client *Client) newOpenApiRequest(apiVersion string, params url.Values, me
 	var readBody []byte
 	var err error
 	if body != nil {
-		readBody, err = ioutil.ReadAll(body)
+		readBody, err = io.ReadAll(body)
 		if err != nil {
 			util.Logger.Printf("[DEBUG - newOpenApiRequest] error reading body: %s", err)
 		}

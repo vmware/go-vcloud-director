@@ -12,7 +12,9 @@ import (
 )
 
 // Test_SamlAdfsAuth checks if SAML ADFS login works using WS-TRUST endpoint
-//  "/adfs/services/trust/13/usernamemixed".
+//
+//	"/adfs/services/trust/13/usernamemixed".
+//
 // Credential variables must be specified in test configuration for it to work
 // The steps of this test are:
 // * Query object using test framework vCD connection

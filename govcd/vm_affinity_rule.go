@@ -157,12 +157,12 @@ func (vdc *Vdc) GetVmAffinityRuleByNameOrId(identifier string) (*VmAffinityRule,
 // validateAffinityRule checks that a VM affinity rule has all the needed properties
 // If checkVMs is true, then the function checks that all VMs in the internal list exist.
 // The usual workflow is:
-// 1. validation without VM checking
-// 2. creation or update
-// 3. if no error -> end
-// 4. if error, validation with VM checks
-//    4a. if validation error, it was a VM issue: return combined original error + validation error
-//    4b. if no validation error, the failure was due to something else: return only original error
+//  1. validation without VM checking
+//  2. creation or update
+//  3. if no error -> end
+//  4. if error, validation with VM checks
+//     4a. if validation error, it was a VM issue: return combined original error + validation error
+//     4b. if no validation error, the failure was due to something else: return only original error
 func validateAffinityRule(client *Client, affinityRuleDef *types.VmAffinityRule, checkVMs bool) (*types.VmAffinityRule, error) {
 	if affinityRuleDef == nil {
 		return nil, fmt.Errorf("empty definition given for a VM affinity rule")

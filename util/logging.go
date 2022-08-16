@@ -9,7 +9,7 @@ package util
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -137,7 +137,7 @@ func SetLog() {
 		return
 	}
 	if !EnableLogging {
-		Logger = log.New(ioutil.Discard, "", log.Ldate|log.Ltime)
+		Logger = log.New(io.Discard, "", log.Ldate|log.Ltime)
 		return
 	}
 
