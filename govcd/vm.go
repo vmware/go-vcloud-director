@@ -492,7 +492,10 @@ func (vm *VM) Undeploy() (Task, error) {
 		types.MimeUndeployVappParams, "error undeploy VM: %s", vu)
 }
 
-// Shutdown triggers a VM undeploy and shutdown action. "Shut Down Guest OS" action in UI behaves this way.
+// Shutdown triggers a VM undeploy and shutdown action. "Shut Down Guest OS" action in UI behaves
+// this way.
+//
+// Note. Success of this operation depends on the VM having Guest Tools installed.
 func (vm *VM) Shutdown() (Task, error) {
 
 	vu := &types.UndeployVAppParams{
@@ -507,6 +510,31 @@ func (vm *VM) Shutdown() (Task, error) {
 	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
 		types.MimeUndeployVappParams, "error undeploy VM: %s", vu)
 }
+
+// func
+
+// func (vm *VM) GetVmToolsStatus() error {
+
+// 	vdc, err := vm.GetParentVdc()
+// 	if err != nil {
+// 		return fmt.Errorf("error finding parent VDC for VM: %s: %s", vm.VM.Name, err)
+// 	}
+// 	vappName, err := vm.GetParentVApp()
+
+// 	vdc.QueryVM(vm.VM.P)
+
+// 	// vu := &types.UndeployVAppParams{
+// 	// 	Xmlns:               types.XMLNamespaceVCloud,
+// 	// 	UndeployPowerAction: "shutdown",
+// 	// }
+
+// 	// apiEndpoint := urlParseRequestURI(vm.VM.HREF)
+// 	// apiEndpoint.Path += "/action/undeploy"
+
+// 	// // Return the task
+// 	// return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+// 	// 	types.MimeUndeployVappParams, "error undeploy VM: %s", vu)
+// }
 
 // Attach or detach an independent disk
 // Use the disk/action/attach or disk/action/detach links in a VM to attach or detach an independent disk.
