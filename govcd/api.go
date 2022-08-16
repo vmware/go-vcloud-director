@@ -11,7 +11,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -209,7 +208,7 @@ func (client *Client) newRequest(params map[string]string, notEncodedParams map[
 	var readBody []byte
 	var err error
 	if body != nil {
-		readBody, err = ioutil.ReadAll(body)
+		readBody, err = io.ReadAll(body)
 		if err != nil {
 			util.Logger.Printf("[DEBUG - newRequest] error reading body: %s", err)
 		}
@@ -300,7 +299,7 @@ func ParseErr(bodyType types.BodyType, resp *http.Response, errType error) error
 
 // decodeBody is used to decode a response body of types.BodyType
 func decodeBody(bodyType types.BodyType, resp *http.Response, out interface{}) error {
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 
 	// In case of JSON, body does not have indents in response therefore it must be indented
 	if bodyType == types.BodyTypeJSON {
@@ -605,12 +604,12 @@ func (client *Client) ExecuteParamRequestWithCustomError(pathURL string, params 
 	// read from resp.Body io.Reader for debug output if it has body
 	var bodyBytes []byte
 	if resp.Body != nil {
-		bodyBytes, err = ioutil.ReadAll(resp.Body)
+		bodyBytes, err = io.ReadAll(resp.Body)
 		if err != nil {
 			return &http.Response{}, fmt.Errorf("could not read response body: %s", err)
 		}
 		// Restore the io.ReadCloser to its original state with no-op closer
-		resp.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+		resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 	}
 
 	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, string(bodyBytes))

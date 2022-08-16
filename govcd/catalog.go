@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"net/http"
 	"net/url"
@@ -499,7 +498,7 @@ func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL)
 }
 
 func parseOvfFileDesc(file *os.File, ovfFileDesc *Envelope) error {
-	ovfXml, err := ioutil.ReadAll(file)
+	ovfXml, err := io.ReadAll(file)
 	if err != nil {
 		return err
 	}

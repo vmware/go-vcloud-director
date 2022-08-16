@@ -46,8 +46,6 @@ import (
 	"net/url"
 	"os"
 
-	"io/ioutil"
-
 	"gopkg.in/yaml.v2"
 
 	"github.com/vmware/go-vcloud-director/v2/govcd"
@@ -96,7 +94,7 @@ func check_configuration(conf Config) {
 // Retrieves the configuration from a Json or Yaml file
 func getConfig(config_file string) Config {
 	var configuration Config
-	buffer, err := ioutil.ReadFile(config_file)
+	buffer, err := io.ReadFile(config_file)
 	if err != nil {
 		fmt.Printf("Configuration file %s not found\n%s\n", config_file, err)
 		os.Exit(1)
