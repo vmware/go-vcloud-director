@@ -8,7 +8,7 @@
 package govcd
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -174,7 +174,7 @@ func (mockServer *samlMockServer) adfsSamlAuthHandler(w http.ResponseWriter, r *
 	}
 
 	// Replace known dynamic strings to 'REPLACED' string
-	gotBody, _ := ioutil.ReadAll(r.Body)
+	gotBody, _ := io.ReadAll(r.Body)
 	gotBodyString := string(gotBody)
 	re := regexp.MustCompile(`(<a:To s:mustUnderstand="1">).*(</a:To>)`)
 	gotBodyString = re.ReplaceAllString(gotBodyString, `${1}REPLACED${2}`)

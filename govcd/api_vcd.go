@@ -102,7 +102,7 @@ func (vcdClient *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.
 	return resp, nil
 }
 
-// NewVCDClient initializes VMware vCloud Director client with reasonable defaults.
+// NewVCDClient initializes VMware VMware Cloud Director client with reasonable defaults.
 // It accepts functions of type VCDClientOption for adjusting defaults.
 func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption) *VCDClient {
 	minVcdApiVersion := "35.0" // supported by 10.2+
@@ -151,7 +151,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 	return vcdClient
 }
 
-// Authenticate is a helper function that performs a login in vCloud Director.
+// Authenticate is a helper function that performs a login in VMware Cloud Director.
 func (vcdClient *VCDClient) Authenticate(username, password, org string) error {
 	_, err := vcdClient.GetAuthResponse(username, password, org)
 	return err
@@ -240,7 +240,7 @@ func (vcdClient *VCDClient) SetToken(org, authHeader, token string) error {
 	return nil
 }
 
-// Disconnect performs a disconnection from the vCloud Director API endpoint.
+// Disconnect performs a disconnection from the VMware Cloud Director API endpoint.
 func (vcdClient *VCDClient) Disconnect() error {
 	if vcdClient.Client.VCDToken == "" && vcdClient.Client.VCDAuthHeader == "" {
 		return fmt.Errorf("cannot disconnect, client is not authenticated")
@@ -251,7 +251,7 @@ func (vcdClient *VCDClient) Disconnect() error {
 	// Set Authorization Header
 	req.Header.Add(vcdClient.Client.VCDAuthHeader, vcdClient.Client.VCDToken)
 	if _, err := checkResp(vcdClient.Client.Http.Do(req)); err != nil {
-		return fmt.Errorf("error processing session delete for vCloud Director: %s", err)
+		return fmt.Errorf("error processing session delete for VMware Cloud Director: %s", err)
 	}
 	return nil
 }

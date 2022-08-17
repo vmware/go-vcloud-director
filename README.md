@@ -1,8 +1,8 @@
 # go-vcloud-director [![GoDoc](https://godoc.org/github.com/vmware/go-vcloud-director?status.svg)](http://godoc.org/github.com/vmware/go-vcloud-director) [![Chat](https://img.shields.io/badge/chat-on%20slack-brightgreen.svg)](https://vmwarecode.slack.com/messages/CBBBXVB16)
 
 This repo contains the `go-vcloud-director` package which implements
-an SDK for vCloud Director. The project serves the needs of Golang
-developers who need to integrate with vCloud Director. It is also the
+an SDK for VMware Cloud Director. The project serves the needs of Golang
+developers who need to integrate with VMware Cloud Director. It is also the
 basis of the [vCD Terraform
 Provider](https://github.com/vmware/terraform-provider-vcd).
 

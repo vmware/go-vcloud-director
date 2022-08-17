@@ -59,7 +59,7 @@ func (egw *NsxtEdgeGateway) GetAllIpSecVpnTunnels(queryParameters url.Values) ([
 	return wrappedResponses, nil
 }
 
-//GetIpSecVpnTunnelById retrieves single IPsec VPN Tunnel by ID
+// GetIpSecVpnTunnelById retrieves single IPsec VPN Tunnel by ID
 func (egw *NsxtEdgeGateway) GetIpSecVpnTunnelById(id string) (*NsxtIpSecVpnTunnel, error) {
 	if id == "" {
 		return nil, fmt.Errorf("canot find NSX-T IPsec VPN Tunnel configuration without ID")

@@ -163,7 +163,7 @@ func prettyTask(task *types.Task) string {
 }
 
 // Returns an Edge Gateway service configuration structure as JSON
-//func prettyEdgeGatewayServiceConfiguration(conf types.EdgeGatewayServiceConfiguration) string {
+// func prettyEdgeGatewayServiceConfiguration(conf types.EdgeGatewayServiceConfiguration) string {
 func prettyEdgeGateway(egw types.EdgeGateway) string {
 	result := ""
 	byteBuf, err := json.MarshalIndent(egw, " ", " ")

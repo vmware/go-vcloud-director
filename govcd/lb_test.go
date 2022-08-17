@@ -10,7 +10,7 @@ package govcd
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -203,7 +203,7 @@ func checkLb(queryUrl string, expectedResponses []string, maxRetryTimeout int) e
 
 			if err == nil {
 				fmt.Printf(".") // progress bar when waiting for responses from all nodes
-				body, _ := ioutil.ReadAll(resp.Body)
+				body, _ := io.ReadAll(resp.Body)
 				resp.Body.Close()
 				// check if the element is in the list
 				for index, value := range expectedResponses {

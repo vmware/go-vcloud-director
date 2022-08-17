@@ -51,12 +51,13 @@ type parentIdCondition struct {
 
 // matchParent matches the wanted parent name (passed in 'stored') to the parent of the queryItem
 // Input:
-//   * stored: the data of the condition (a parentCondition)
-//   * item:   a QueryItem
+//   - stored: the data of the condition (a parentCondition)
+//   - item:   a QueryItem
+//
 // Returns:
-//   * bool:   the result of the comparison
-//   * string: a description of the operation
-//   * error:  an error when the input is not as expected
+//   - bool:   the result of the comparison
+//   - string: a description of the operation
+//   - error:  an error when the input is not as expected
 func matchParent(stored, item interface{}) (bool, string, error) {
 	condition, ok := stored.(parentCondition)
 	if !ok {
@@ -74,12 +75,13 @@ func matchParent(stored, item interface{}) (bool, string, error) {
 // matchParentId matches the wanted parent ID (passed in 'stored') to the parent ID of the queryItem
 // The IDs being compared are filtered through extractUuid, to make them homogeneous
 // Input:
-//   * stored: the data of the condition (a parentCondition)
-//   * item:   a QueryItem
+//   - stored: the data of the condition (a parentCondition)
+//   - item:   a QueryItem
+//
 // Returns:
-//   * bool:   the result of the comparison
-//   * string: a description of the operation
-//   * error:  an error when the input is not as expected
+//   - bool:   the result of the comparison
+//   - string: a description of the operation
+//   - error:  an error when the input is not as expected
 func matchParentId(stored, item interface{}) (bool, string, error) {
 	condition, ok := stored.(parentIdCondition)
 	if !ok {
@@ -98,12 +100,13 @@ func matchParentId(stored, item interface{}) (bool, string, error) {
 
 // matchName matches a name (passed in 'stored') to the name of the queryItem
 // Input:
-//   * stored: the data of the condition (a nameCondition)
-//   * item:   a QueryItem
+//   - stored: the data of the condition (a nameCondition)
+//   - item:   a QueryItem
+//
 // Returns:
-//   * bool:   the result of the comparison
-//   * string: a description of the operation
-//   * error:  an error when the input is not as expected
+//   - bool:   the result of the comparison
+//   - string: a description of the operation
+//   - error:  an error when the input is not as expected
 func matchName(stored, item interface{}) (bool, string, error) {
 	re, ok := stored.(nameCondition)
 	if !ok {
@@ -118,12 +121,13 @@ func matchName(stored, item interface{}) (bool, string, error) {
 
 // matchIp matches an IP (passed in 'stored') to the IP of the queryItem
 // Input:
-//   * stored: the data of the condition (an ipCondition)
-//   * item:   a QueryItem
+//   - stored: the data of the condition (an ipCondition)
+//   - item:   a QueryItem
+//
 // Returns:
-//   * bool:   the result of the comparison
-//   * string: a description of the operation
-//   * error:  an error when the input is not as expected
+//   - bool:   the result of the comparison
+//   - string: a description of the operation
+//   - error:  an error when the input is not as expected
 func matchIp(stored, item interface{}) (bool, string, error) {
 	re, ok := stored.(ipCondition)
 	if !ok {
@@ -142,12 +146,13 @@ func matchIp(stored, item interface{}) (bool, string, error) {
 
 // matchDate matches a date (passed in 'stored') to the date of the queryItem
 // Input:
-//   * stored: the data of the condition (a dateCondition)
-//   * item:   a QueryItem
+//   - stored: the data of the condition (a dateCondition)
+//   - item:   a QueryItem
+//
 // Returns:
-//   * bool:   the result of the comparison
-//   * string: a description of the operation
-//   * error:  an error when the input is not as expected
+//   - bool:   the result of the comparison
+//   - string: a description of the operation
+//   - error:  an error when the input is not as expected
 func matchDate(stored, item interface{}) (bool, string, error) {
 	expr, ok := stored.(dateCondition)
 	if !ok {
@@ -167,12 +172,13 @@ func matchDate(stored, item interface{}) (bool, string, error) {
 
 // matchMetadata matches a value (passed in 'stored') to the metadata value retrieved from queryItem
 // Input:
-//   * stored: the data of the condition (a metadataRegexpCondition)
-//   * item:   a QueryItem
+//   - stored: the data of the condition (a metadataRegexpCondition)
+//   - item:   a QueryItem
+//
 // Returns:
-//   * bool:   the result of the comparison
-//   * string: a description of the operation
-//   * error:  an error when the input is not as expected
+//   - bool:   the result of the comparison
+//   - string: a description of the operation
+//   - error:  an error when the input is not as expected
 func matchMetadata(stored, item interface{}) (bool, string, error) {
 	re, ok := stored.(metadataRegexpCondition)
 	if !ok {

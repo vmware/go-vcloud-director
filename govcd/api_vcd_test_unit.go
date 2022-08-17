@@ -8,7 +8,7 @@
 package govcd
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 )
@@ -35,7 +35,7 @@ func goldenString(t *testing.T, goldenFile string, actual string, update bool) s
 		return actual
 	}
 
-	content, err := ioutil.ReadAll(f)
+	content, err := io.ReadAll(f)
 	if err != nil {
 		t.Fatalf("error opening file %s: %s", goldenPath, err)
 	}

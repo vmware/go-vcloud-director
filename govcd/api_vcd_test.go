@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -305,7 +304,7 @@ func readCleanupList() ([]CleanupEntity, error) {
 	if os.IsNotExist(err) {
 		return nil, err
 	}
-	listText, err := ioutil.ReadFile(persistentCleanupListFile)
+	listText, err := os.ReadFile(persistentCleanupListFile)
 	if err != nil {
 		return nil, err
 	}
@@ -434,7 +433,7 @@ func GetConfigStruct() (TestConfig, error) {
 	if os.IsNotExist(err) {
 		return TestConfig{}, fmt.Errorf("Configuration file %s not found: %s", config, err)
 	}
-	yamlFile, err := ioutil.ReadFile(config)
+	yamlFile, err := os.ReadFile(config)
 	if err != nil {
 		return TestConfig{}, fmt.Errorf("could not read config file %s: %s", config, err)
 	}

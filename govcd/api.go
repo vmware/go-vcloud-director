@@ -2,7 +2,7 @@
  * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
-// Package govcd provides a simple binding for vCloud Director REST APIs.
+// Package govcd provides a simple binding for VMware Cloud Director REST APIs.
 package govcd
 
 import (
@@ -11,7 +11,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -23,7 +22,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
-// Client provides a client to vCloud Director, values can be populated automatically using the Authenticate method.
+// Client provides a client to VMware Cloud Director, values can be populated automatically using the Authenticate method.
 type Client struct {
 	APIVersion       string      // The API version required
 	VCDToken         string      // Access Token (authorization header)
@@ -35,7 +34,7 @@ type Client struct {
 	UsingAccessToken bool        // flag if client is using an API token
 
 	// MaxRetryTimeout specifies a time limit (in seconds) for retrying requests made by the SDK
-	// where vCloud director may take time to respond and retry mechanism is needed.
+	// where VMware Cloud Director may take time to respond and retry mechanism is needed.
 	// This must be >0 to avoid instant timeout errors.
 	MaxRetryTimeout int
 
@@ -68,9 +67,10 @@ const ApiTokenHeader = "API-token"
 // General purpose error to be used whenever an entity is not found from a "GET" request
 // Allows a simpler checking of the call result
 // such as
-// if err == ErrorEntityNotFound {
-//    // do what is needed in case of not found
-// }
+//
+//	if err == ErrorEntityNotFound {
+//	   // do what is needed in case of not found
+//	}
 var errorEntityNotFoundMessage = "[ENF] entity not found"
 var ErrorEntityNotFound = fmt.Errorf(errorEntityNotFoundMessage)
 
@@ -79,12 +79,14 @@ var debugShowRequestEnabled = os.Getenv("GOVCD_SHOW_REQ") != ""
 var debugShowResponseEnabled = os.Getenv("GOVCD_SHOW_RESP") != ""
 
 // Enables the debugging hook to show requests as they are processed.
+//
 //lint:ignore U1000 this function is used on request for debugging purposes
 func enableDebugShowRequest() {
 	debugShowRequestEnabled = true
 }
 
 // Disables the debugging hook to show requests as they are processed.
+//
 //lint:ignore U1000 this function is used on request for debugging purposes
 func disableDebugShowRequest() {
 	debugShowRequestEnabled = false
@@ -95,12 +97,14 @@ func disableDebugShowRequest() {
 }
 
 // Enables the debugging hook to show responses as they are processed.
+//
 //lint:ignore U1000 this function is used on request for debugging purposes
 func enableDebugShowResponse() {
 	debugShowResponseEnabled = true
 }
 
 // Disables the debugging hook to show responses as they are processed.
+//
 //lint:ignore U1000 this function is used on request for debugging purposes
 func disableDebugShowResponse() {
 	debugShowResponseEnabled = false
@@ -149,9 +153,10 @@ func debugShowResponse(resp *http.Response, body []byte) {
 
 // IsNotFound is a convenience function, similar to os.IsNotExist that checks whether a given error
 // is a "Not found" error, such as
-// if isNotFound(err) {
-//    // do what is needed in case of not found
-// }
+//
+//	if isNotFound(err) {
+//	   // do what is needed in case of not found
+//	}
 func IsNotFound(err error) bool {
 	return err != nil && err == ErrorEntityNotFound
 }
@@ -203,7 +208,7 @@ func (client *Client) newRequest(params map[string]string, notEncodedParams map[
 	var readBody []byte
 	var err error
 	if body != nil {
-		readBody, err = ioutil.ReadAll(body)
+		readBody, err = io.ReadAll(body)
 		if err != nil {
 			util.Logger.Printf("[DEBUG - newRequest] error reading body: %s", err)
 		}
@@ -294,7 +299,7 @@ func ParseErr(bodyType types.BodyType, resp *http.Response, errType error) error
 
 // decodeBody is used to decode a response body of types.BodyType
 func decodeBody(bodyType types.BodyType, resp *http.Response, out interface{}) error {
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 
 	// In case of JSON, body does not have indents in response therefore it must be indented
 	if bodyType == types.BodyTypeJSON {
@@ -599,12 +604,12 @@ func (client *Client) ExecuteParamRequestWithCustomError(pathURL string, params 
 	// read from resp.Body io.Reader for debug output if it has body
 	var bodyBytes []byte
 	if resp.Body != nil {
-		bodyBytes, err = ioutil.ReadAll(resp.Body)
+		bodyBytes, err = io.ReadAll(resp.Body)
 		if err != nil {
 			return &http.Response{}, fmt.Errorf("could not read response body: %s", err)
 		}
 		// Restore the io.ReadCloser to its original state with no-op closer
-		resp.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+		resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 	}
 
 	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, string(bodyBytes))

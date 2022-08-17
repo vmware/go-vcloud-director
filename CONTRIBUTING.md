@@ -8,8 +8,8 @@ request. For any questions about the CLA process, please refer to our
 
 ## Community
 
-vCloud Director Golang and Terraform contributors can be found here: 
-https://vmwarecode.slack.com, vcd-terraform-dev#
+VMware Cloud Director Go(lang) and Terraform contributors can be found here: 
+https://vmwarecode.slack.com, #vcd-terraform-dev
 
 ## Logging Bugs
 
@@ -83,10 +83,7 @@ of the repo for pull requests back to go-vcloud-director.
 ### Clone and Set Upstream Remote
 
 Make a local clone of the forked repo and add the base go-vcloud-director
-repo as the upstream remote repository.
-
-The project uses Go modules so the path is up to you, but do not forget
-to set `GO111MODULE=on` if you are in `GOPATH`
+repo as the upstream remote repository. The project uses Go modules so the path is up to you.
 
 ``` shell
 
