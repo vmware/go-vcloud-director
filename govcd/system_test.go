@@ -602,17 +602,22 @@ func (vcd *TestVCD) Test_QueryAdminOrgVdcStorageProfileByID(check *C) {
 }
 
 func (vcd *TestVCD) Test_QueryOrgVdcStorageProfileByID(check *C) {
-	if vcd.client.Client.IsSysAdmin {
-		check.Skip("Skipping VDC StorageProfile query: can't query as provider user")
-	}
 	if vcd.config.VCD.StorageProfile.SP1 == "" {
 		check.Skip("Skipping VDC StorageProfile query: no StorageProfile ID was given")
 	}
+
+	// Setup Org user and connection
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	orgUserVcdClient, err := newOrgUserConnection(adminOrg, "query-org-vdc-storage-profile-by-id", "CHANGE-ME", vcd.config.Provider.Url, true)
+	check.Assert(err, IsNil)
+
 	ref, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
 	check.Assert(err, IsNil)
 	expectedStorageProfileID, err := GetUuidFromHref(ref.HREF, true)
 	check.Assert(err, IsNil)
-	vdcStorageProfile, err := QueryOrgVdcStorageProfileByID(vcd.client, ref.ID)
+	vdcStorageProfile, err := QueryOrgVdcStorageProfileByID(orgUserVcdClient, ref.ID)
 	check.Assert(err, IsNil)
 
 	storageProfileFound := false
