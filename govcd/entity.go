@@ -11,19 +11,19 @@ type genericGetter func(string, bool) (interface{}, error)
 // On failure, returns a nil pointer and an error
 // Example usage:
 //
-// func (org *Org) GetCatalogByNameOrId(identifier string, refresh bool) (*Catalog, error) {
-// 	getByName := func(name string, refresh bool) (interface{}, error) {
-// 		return org.GetCatalogByName(name, refresh)
-// 	}
-// 	getById := func(id string, refresh bool) (interface{}, error) {
-// 	  return org.GetCatalogById(id, refresh)
-// 	}
-// 	entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
-//  if entity != nil {
-//    return nil, err
-//  }
-// 	return entity.(*Catalog), err
-// }
+//	func (org *Org) GetCatalogByNameOrId(identifier string, refresh bool) (*Catalog, error) {
+//		getByName := func(name string, refresh bool) (interface{}, error) {
+//			return org.GetCatalogByName(name, refresh)
+//		}
+//		getById := func(id string, refresh bool) (interface{}, error) {
+//		  return org.GetCatalogById(id, refresh)
+//		}
+//		entity, err := getEntityByNameOrId(getByName, getById, identifier, refresh)
+//	 if entity != nil {
+//	   return nil, err
+//	 }
+//		return entity.(*Catalog), err
+//	}
 func getEntityByNameOrId(getByName, getById genericGetter, identifier string, refresh bool) (interface{}, error) {
 
 	var byNameErr, byIdErr error

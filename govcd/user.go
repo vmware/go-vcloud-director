@@ -337,8 +337,9 @@ func (user *OrgUser) GetRoleName() string {
 // Expected behaviour:
 // with takeOwnership = true, all entities owned by the user being deleted will be transferred to the caller.
 // with takeOwnership = false, if the user own catalogs, networks, or running VMs/vApps, the call will fail.
-//                             If the user owns only powered-off VMs/vApps, the call will succeeds and the
-//                             VMs/vApps will be removed.
+//
+//	If the user owns only powered-off VMs/vApps, the call will succeeds and the
+//	VMs/vApps will be removed.
 func (user *OrgUser) Delete(takeOwnership bool) error {
 	util.Logger.Printf("[TRACE] Deleting user: %#v (take ownership: %v)", user.User.Name, takeOwnership)
 

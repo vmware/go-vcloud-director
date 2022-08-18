@@ -556,10 +556,10 @@ type VdcConfiguration struct {
 	IncludeMemoryOverhead    *bool                             `xml:"IncludeMemoryOverhead,omitempty"` // Supported from 32.0 for the Flex model
 }
 
-// Task represents an asynchronous operation in vCloud Director.
+// Task represents an asynchronous operation in VMware Cloud Director.
 // Type: TaskType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents an asynchronous operation in vCloud Director.
+// Description: Represents an asynchronous operation in VMware Cloud Director.
 // Since: 0.9
 // Comments added from https://code.vmware.com/apis/912/vmware-cloud-director/doc/doc/types/TaskType.html
 type Task struct {
@@ -685,17 +685,17 @@ type Link struct {
 // OrgList represents a lists of Organizations
 // Type: OrgType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents a list of vCloud Director organizations.
+// Description: Represents a list of VMware Cloud Director organizations.
 // Since: 0.9
 type OrgList struct {
 	Link LinkList `xml:"Link,omitempty"`
 	Org  []*Org   `xml:"Org,omitempty"`
 }
 
-// Org represents the user view of a vCloud Director organization.
+// Org represents the user view of a VMware Cloud Director organization.
 // Type: OrgType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the user view of a vCloud Director organization.
+// Description: Represents the user view of a VMware Cloud Director organization.
 // Since: 0.9
 type Org struct {
 	HREF         string           `xml:"href,attr,omitempty"`
@@ -730,10 +730,10 @@ type RightsType struct {
 	RightReference []*Reference `xml:"RightReference,omitempty"`
 }
 
-// AdminOrg represents the admin view of a vCloud Director organization.
+// AdminOrg represents the admin view of a VMware Cloud Director organization.
 // Type: AdminOrgType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the admin view of a vCloud Director organization.
+// Description: Represents the admin view of a VMware Cloud Director organization.
 // Since: 0.9
 type AdminOrg struct {
 	XMLName         xml.Name         `xml:"AdminOrg"`
@@ -758,10 +758,10 @@ type AdminOrg struct {
 	RoleReferences  *OrgRoleType     `xml:"RoleReferences,omitempty"`
 }
 
-// OrgSettingsType represents the settings for a vCloud Director organization.
+// OrgSettingsType represents the settings for a VMware Cloud Director organization.
 // Type: OrgSettingsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the settings of a vCloud Director organization.
+// Description: Represents the settings of a VMware Cloud Director organization.
 // Since: 0.9
 type OrgSettings struct {
 	//attributes
@@ -776,10 +776,10 @@ type OrgSettings struct {
 
 }
 
-// OrgGeneralSettingsType represents the general settings for a vCloud Director organization.
+// OrgGeneralSettingsType represents the general settings for a VMware Cloud Director organization.
 // Type: OrgGeneralSettingsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the user view of a vCloud Director organization.
+// Description: Represents the user view of a VMware Cloud Director organization.
 // Since: 0.9
 type OrgGeneralSettings struct {
 	HREF string   `xml:"href,attr,omitempty"` // The URI of the entity.
@@ -795,10 +795,10 @@ type OrgGeneralSettings struct {
 	DelayAfterPowerOnSeconds int  `xml:"DelayAfterPowerOnSeconds,omitempty"`
 }
 
-// VAppTemplateLeaseSettings represents the vapp template lease settings for a vCloud Director organization.
+// VAppTemplateLeaseSettings represents the vapp template lease settings for a VMware Cloud Director organization.
 // Type: VAppTemplateLeaseSettingsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the vapp template lease settings of a vCloud Director organization.
+// Description: Represents the vapp template lease settings of a VMware Cloud Director organization.
 // Since: 0.9
 type VAppTemplateLeaseSettings struct {
 	HREF string   `xml:"href,attr,omitempty"` // The URI of the entity.
@@ -828,10 +828,10 @@ type OrgFederationSettings struct {
 	Enabled bool `xml:"Enabled,omitempty"`
 }
 
-// OrgLdapSettingsType represents the ldap settings for a vCloud Director organization.
+// OrgLdapSettingsType represents the ldap settings for a VMware Cloud Director organization.
 // Type: OrgLdapSettingsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the ldap settings of a vCloud Director organization.
+// Description: Represents the ldap settings of a VMware Cloud Director organization.
 // Since: 0.9
 type OrgLdapSettingsType struct {
 	XMLName xml.Name `xml:"OrgLdapSettings"`
@@ -845,10 +845,10 @@ type OrgLdapSettingsType struct {
 	CustomOrgLdapSettings *CustomOrgLdapSettings `xml:"CustomOrgLdapSettings,omitempty"` // Needs to be set if user chooses custom mode
 }
 
-// CustomOrgLdapSettings represents the custom ldap settings for a vCloud Director organization.
+// CustomOrgLdapSettings represents the custom ldap settings for a VMware Cloud Director organization.
 // Type: CustomOrgLdapSettingsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the custom ldap settings of a vCloud Director organization.
+// Description: Represents the custom ldap settings of a VMware Cloud Director organization.
 // Since: 0.9
 // Note. Order of these fields matter and API will error if it is changed
 type CustomOrgLdapSettings struct {
@@ -874,10 +874,10 @@ type CustomOrgLdapSettings struct {
 	Realm string `xml:"Realm,omitempty"`
 }
 
-// OrgLdapGroupAttributes	 represents the ldap group attribute settings for a vCloud Director organization.
+// OrgLdapGroupAttributes	 represents the ldap group attribute settings for a VMware Cloud Director organization.
 // Type: OrgLdapGroupAttributesType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the ldap group attribute settings of a vCloud Director organization.
+// Description: Represents the ldap group attribute settings of a VMware Cloud Director organization.
 // Since: 0.9
 // Note. Order of these fields matter and API will error if it is changed
 type OrgLdapGroupAttributes struct {
@@ -889,10 +889,10 @@ type OrgLdapGroupAttributes struct {
 	MembershipIdentifier string `xml:"MembershipIdentifier"`
 }
 
-// OrgLdapUserAttributesType represents the ldap user attribute settings for a vCloud Director organization.
+// OrgLdapUserAttributesType represents the ldap user attribute settings for a VMware Cloud Director organization.
 // Type: OrgLdapUserAttributesType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the ldap user attribute settings of a vCloud Director organization.
+// Description: Represents the ldap user attribute settings of a VMware Cloud Director organization.
 // Since: 0.9
 // Note. Order of these fields matter and API will error if it is changed.
 type OrgLdapUserAttributes struct {
