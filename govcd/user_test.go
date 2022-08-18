@@ -1,3 +1,4 @@
+//go:build user || functional || ALL
 // +build user functional ALL
 
 /*
@@ -102,6 +103,7 @@ func (vcd *TestVCD) Test_GetUserByNameOrId(check *C) {
 // Furthermore, disables, and then enables the users again
 // and finally deletes all of them
 func (vcd *TestVCD) Test_UserCRUD(check *C) {
+	vcd.checkSkipWhenApiToken(check)
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
@@ -158,6 +160,7 @@ func (vcd *TestVCD) Test_UserCRUD(check *C) {
 			FullName:        strings.ReplaceAll(ud.name, "_", " "),
 			Description:     "user " + strings.ReplaceAll(ud.name, "_", " "),
 			IsEnabled:       true,
+			IsExternal:      false,
 			IM:              "TextIM",
 			EmailAddress:    "somename@somedomain.com",
 			Telephone:       "999 888-7777",
@@ -179,6 +182,20 @@ func (vcd *TestVCD) Test_UserCRUD(check *C) {
 		check.Assert(user.User.Telephone, Equals, userDefinition.Telephone)
 		check.Assert(user.User.StoredVmQuota, Equals, userDefinition.StoredVmQuota)
 		check.Assert(user.User.DeployedVmQuota, Equals, userDefinition.DeployedVmQuota)
+		check.Assert(user.User.IsExternal, Equals, userDefinition.IsExternal)
+
+		// change DeployedVmQuota and StoredVmQuota to 0 and assert
+		// this will make DeployedVmQuota and StoredVmQuota unlimited
+		user.User.DeployedVmQuota = 0
+		user.User.StoredVmQuota = 0
+		err = user.Update()
+		check.Assert(err, IsNil)
+
+		// Get the user from API again
+		user, err = adminOrg.GetUserByHref(user.User.Href)
+		check.Assert(err, IsNil)
+		check.Assert(user.User.DeployedVmQuota, Equals, 0)
+		check.Assert(user.User.StoredVmQuota, Equals, 0)
 
 		err = user.Disable()
 		check.Assert(err, IsNil)

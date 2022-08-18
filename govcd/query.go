@@ -23,12 +23,12 @@ func NewResults(cli *Client) *Results {
 	}
 }
 
-func (vcdCli *VCDClient) Query(params map[string]string) (Results, error) {
+func (vcdClient *VCDClient) Query(params map[string]string) (Results, error) {
 
-	req := vcdCli.Client.NewRequest(params, http.MethodGet, vcdCli.QueryHREF, nil)
-	req.Header.Add("Accept", "vnd.vmware.vcloud.org+xml;version="+vcdCli.Client.APIVersion)
+	req := vcdClient.Client.NewRequest(params, http.MethodGet, vcdClient.QueryHREF, nil)
+	req.Header.Add("Accept", "vnd.vmware.vcloud.org+xml;version="+vcdClient.Client.APIVersion)
 
-	return getResult(&vcdCli.Client, req)
+	return getResult(&vcdClient.Client, req)
 }
 
 func (vdc *Vdc) Query(params map[string]string) (Results, error) {
@@ -45,27 +45,39 @@ func (client *Client) QueryWithNotEncodedParams(params map[string]string, notEnc
 	return client.QueryWithNotEncodedParamsWithApiVersion(params, notEncodedParams, client.APIVersion)
 }
 
+func (client *Client) QueryWithNotEncodedParamsWithHeaders(params map[string]string, notEncodedParams map[string]string, headers map[string]string) (Results, error) {
+	return client.QueryWithNotEncodedParamsWithApiVersionWithHeaders(params, notEncodedParams, client.APIVersion, headers)
+}
+
 // QueryWithNotEncodedParams uses Query API to search for requested data
 func (client *Client) QueryWithNotEncodedParamsWithApiVersion(params map[string]string, notEncodedParams map[string]string, apiVersion string) (Results, error) {
+	return client.QueryWithNotEncodedParamsWithApiVersionWithHeaders(params, notEncodedParams, apiVersion, nil)
+}
+
+func (client *Client) QueryWithNotEncodedParamsWithApiVersionWithHeaders(params map[string]string, notEncodedParams map[string]string, apiVersion string, headers map[string]string) (Results, error) {
 	queryUrl := client.VCDHREF
 	queryUrl.Path += "/query"
 
 	req := client.NewRequestWitNotEncodedParamsWithApiVersion(params, notEncodedParams, http.MethodGet, queryUrl, nil, apiVersion)
 	req.Header.Add("Accept", "vnd.vmware.vcloud.org+xml;version="+apiVersion)
 
+	for k, v := range headers {
+		req.Header.Add(k, v)
+	}
+
 	return getResult(client, req)
 }
 
-func (vcdCli *VCDClient) QueryWithNotEncodedParams(params map[string]string, notEncodedParams map[string]string) (Results, error) {
-	return vcdCli.Client.QueryWithNotEncodedParams(params, notEncodedParams)
+func (vcdClient *VCDClient) QueryWithNotEncodedParams(params map[string]string, notEncodedParams map[string]string) (Results, error) {
+	return vcdClient.Client.QueryWithNotEncodedParams(params, notEncodedParams)
 }
 
 func (vdc *Vdc) QueryWithNotEncodedParams(params map[string]string, notEncodedParams map[string]string) (Results, error) {
 	return vdc.client.QueryWithNotEncodedParams(params, notEncodedParams)
 }
 
-func (vcdCli *VCDClient) QueryWithNotEncodedParamsWithApiVersion(params map[string]string, notEncodedParams map[string]string, apiVersion string) (Results, error) {
-	return vcdCli.Client.QueryWithNotEncodedParamsWithApiVersion(params, notEncodedParams, apiVersion)
+func (vcdClient *VCDClient) QueryWithNotEncodedParamsWithApiVersion(params map[string]string, notEncodedParams map[string]string, apiVersion string) (Results, error) {
+	return vcdClient.Client.QueryWithNotEncodedParamsWithApiVersion(params, notEncodedParams, apiVersion)
 }
 
 func (vdc *Vdc) QueryWithNotEncodedParamsWithApiVersion(params map[string]string, notEncodedParams map[string]string, apiVersion string) (Results, error) {

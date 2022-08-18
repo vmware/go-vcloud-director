@@ -1,0 +1,1 @@
+* Bump `staticcheck` version to 2022.1 with Go 1.18 support [GH-457]

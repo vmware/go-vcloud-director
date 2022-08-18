@@ -1,3 +1,4 @@
+//go:build functional || vapp || ALL
 // +build functional vapp ALL
 
 /*
@@ -34,6 +35,7 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 		check.Skip("Test_VappAccessControl: VDC name not given.")
 		return
 	}
+	vcd.checkSkipWhenApiToken(check)
 	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
@@ -57,7 +59,7 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 	vapp, err := makeEmptyVapp(vdc, vappName, "")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
-	AddToCleanupList(vappName, "vapp", vcd.config.VCD.Org+"|"+vcd.config.VCD.Vdc, "Test_VappAccessControl")
+	AddToCleanupList(vappName, "vapp", vcd.config.VCD.Vdc, "Test_VappAccessControl")
 
 	checkEmpty := func() {
 		settings, err := vapp.GetAccessControl(vappTenantContext)
@@ -229,6 +231,6 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 
 	orgInfo, err := vapp.getOrgInfo()
 	check.Assert(err, IsNil)
-	check.Assert(orgInfo.id, Equals, extractUuid(org.AdminOrg.ID))
-	check.Assert(orgInfo.name, Equals, org.AdminOrg.Name)
+	check.Assert(orgInfo.OrgId, Equals, extractUuid(org.AdminOrg.ID))
+	check.Assert(orgInfo.OrgName, Equals, org.AdminOrg.Name)
 }

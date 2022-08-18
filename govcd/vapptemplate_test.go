@@ -1,3 +1,4 @@
+//go:build vapp || functional || ALL
 // +build vapp functional ALL
 
 /*
@@ -46,4 +47,52 @@ func (vcd *TestVCD) Test_RefreshVAppTemplate(check *C) {
 	check.Assert(oldVAppTemplate.VAppTemplate.ID, Equals, vAppTemplate.VAppTemplate.ID)
 	check.Assert(oldVAppTemplate.VAppTemplate.Name, Equals, vAppTemplate.VAppTemplate.Name)
 	check.Assert(oldVAppTemplate.VAppTemplate.HREF, Equals, vAppTemplate.VAppTemplate.HREF)
+}
+
+func (vcd *TestVCD) Test_UpdateVAppTemplate(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	if err != nil {
+		check.Skip("Test_UpdateVAppTemplate: Catalog not found. Test can't proceed")
+		return
+	}
+	check.Assert(catalog, NotNil)
+
+	itemName := check.TestName()
+
+	description := "upload from test"
+	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OvaPath, itemName, description, 1024)
+	check.Assert(err, IsNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
+
+	catItem, err := catalog.GetCatalogItemByName(itemName, true)
+	check.Assert(err, IsNil)
+	check.Assert(catItem, NotNil)
+	check.Assert(catItem.CatalogItem.Name, Equals, itemName)
+
+	// Get VAppTemplate
+	vAppTemplate, err := catItem.GetVAppTemplate()
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplate, NotNil)
+	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, itemName)
+
+	nameForUpdate := itemName + "updated"
+	descriptionForUpdate := description + "updated"
+
+	AddToCleanupList(nameForUpdate, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
+
+	vAppTemplate.VAppTemplate.Name = nameForUpdate
+	vAppTemplate.VAppTemplate.Description = descriptionForUpdate
+	vAppTemplate.VAppTemplate.GoldMaster = true
+
+	_, err = vAppTemplate.Update()
+	check.Assert(err, IsNil)
+	err = vAppTemplate.Refresh()
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, nameForUpdate)
+	check.Assert(vAppTemplate.VAppTemplate.Description, Equals, descriptionForUpdate)
+	check.Assert(vAppTemplate.VAppTemplate.GoldMaster, Equals, true)
 }

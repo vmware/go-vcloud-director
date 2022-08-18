@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -34,7 +33,7 @@ func NewVM(cli *Client) *VM {
 	}
 }
 
-// create instance with reference to types.QueryResultVMRecordType
+// NewVMRecord creates an instance with reference to types.QueryResultVMRecordType
 func NewVMRecord(cli *Client) *VMRecord {
 	return &VMRecord{
 		VM:     new(types.QueryResultVMRecordType),
@@ -141,11 +140,11 @@ func (vm *VM) UpdateNetworkConnectionSection(networks *types.NetworkConnectionSe
 }
 
 // Deprecated: use client.GetVMByHref instead
-func (cli *Client) FindVMByHREF(vmHREF string) (VM, error) {
+func (client *Client) FindVMByHREF(vmHREF string) (VM, error) {
 
-	newVm := NewVM(cli)
+	newVm := NewVM(client)
 
-	_, err := cli.ExecuteRequest(vmHREF, http.MethodGet,
+	_, err := client.ExecuteRequest(vmHREF, http.MethodGet,
 		"", "error retrieving VM: %s", nil, newVm.VM)
 
 	return *newVm, err
@@ -154,7 +153,7 @@ func (cli *Client) FindVMByHREF(vmHREF string) (VM, error) {
 
 func (vm *VM) PowerOn() (Task, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/power/action/powerOn"
 
 	// Return the task
@@ -179,7 +178,7 @@ func (vm *VM) PowerOnAndForceCustomization() error {
 		return fmt.Errorf("VM %s must be undeployed before forcing customization", vm.VM.Name)
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/action/deploy"
 
 	powerOnAndCustomize := &types.DeployVAppParams{
@@ -205,7 +204,7 @@ func (vm *VM) PowerOnAndForceCustomization() error {
 
 func (vm *VM) PowerOff() (Task, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/power/action/powerOff"
 
 	// Return the task
@@ -213,18 +212,20 @@ func (vm *VM) PowerOff() (Task, error) {
 		"", "error powering off VM: %s", nil)
 }
 
-// Sets number of available virtual logical processors
+// ChangeCPUCount sets number of available virtual logical processors
 // (i.e. CPUs x cores per socket)
 // Cpu cores count is inherited from template.
 // https://communities.vmware.com/thread/576209
+// Deprecated: use vm.ChangeCPU instead
 func (vm *VM) ChangeCPUCount(virtualCpuCount int) (Task, error) {
 	return vm.ChangeCPUCountWithCore(virtualCpuCount, nil)
 }
 
-// Sets number of available virtual logical processors
+// ChangeCPUCountWithCore sets number of available virtual logical processors
 // (i.e. CPUs x cores per socket) and cores per socket.
 // Socket count is a result of: virtual logical processors/cores per socket
 // https://communities.vmware.com/thread/576209
+// Deprecated: use vm.ChangeCPU instead
 func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (Task, error) {
 
 	err := vm.Refresh()
@@ -246,7 +247,6 @@ func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (
 		Reservation:     0,
 		ResourceType:    types.ResourceTypeProcessor,
 		VirtualQuantity: int64(virtualCpuCount),
-		Weight:          0,
 		CoresPerSocket:  coresPerSocket,
 		Link: &types.Link{
 			HREF: vm.VM.HREF + "/virtualHardwareSection/cpu",
@@ -255,7 +255,7 @@ func (vm *VM) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *int) (
 		},
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/virtualHardwareSection/cpu"
 
 	// Return the task
@@ -297,9 +297,10 @@ func (vm *VM) updateNicParameters(networks []map[string]interface{}, networkSect
 					ipAllocationMode = types.IPAllocationModeDHCP
 					// TODO v3.0 remove until here when deprecated `ip` and `network_name` attributes are removed
 
-				case ipIsSet && net.ParseIP(ipFieldString) != nil && (network["ip_allocation_mode"].(string) == types.IPAllocationModeManual):
-					ipAllocationMode = types.IPAllocationModeManual
-					ipAddress = ipFieldString
+					// Removed for Coverity warning: dead code - We can reinstate after removing above code
+				//case ipIsSet && net.ParseIP(ipFieldString) != nil && (network["ip_allocation_mode"].(string) == types.IPAllocationModeManual):
+				//	ipAllocationMode = types.IPAllocationModeManual
+				//	ipAddress = ipFieldString
 				default: // New networks functionality. IP was not set and we're defaulting to provided ip_allocation_mode (only manual requires the IP)
 					ipAllocationMode = network["ip_allocation_mode"].(string)
 				}
@@ -350,7 +351,7 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, erro
 	networkSection.Ovf = types.XMLNamespaceOVF
 	networkSection.Info = "Specifies the available VM network connections"
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/networkConnectionSection/"
 
 	// Return the task
@@ -358,6 +359,7 @@ func (vm *VM) ChangeNetworkConfig(networks []map[string]interface{}) (Task, erro
 		types.MimeNetworkConnectionSection, "error changing network config: %s", networkSection)
 }
 
+// Deprecated: use vm.ChangeMemory instead
 func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 
 	err := vm.Refresh()
@@ -386,7 +388,7 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 		},
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/virtualHardwareSection/memory"
 
 	// Return the task
@@ -394,8 +396,8 @@ func (vm *VM) ChangeMemorySize(size int) (Task, error) {
 		types.MimeRasdItem, "error changing memory size: %s", newMem)
 }
 
-func (vm *VM) RunCustomizationScript(computername, script string) (Task, error) {
-	return vm.Customize(computername, script, false)
+func (vm *VM) RunCustomizationScript(computerName, script string) (Task, error) {
+	return vm.Customize(computerName, script, false)
 }
 
 // GetGuestCustomizationStatus retrieves guest customization status.
@@ -446,7 +448,7 @@ func (vm *VM) BlockWhileGuestCustomizationStatus(unwantedStatus string, timeOutA
 // Customize function allows to set ComputerName, apply customization script and enable or disable the changeSid option
 //
 // Deprecated: Use vm.SetGuestCustomizationSection()
-func (vm *VM) Customize(computername, script string, changeSid bool) (Task, error) {
+func (vm *VM) Customize(computerName, script string, changeSid bool) (Task, error) {
 	err := vm.Refresh()
 	if err != nil {
 		return Task{}, fmt.Errorf("error refreshing VM before running customization: %s", err)
@@ -461,12 +463,12 @@ func (vm *VM) Customize(computername, script string, changeSid bool) (Task, erro
 		Type:                types.MimeGuestCustomizationSection,
 		Info:                "Specifies Guest OS Customization Settings",
 		Enabled:             takeBoolPointer(true),
-		ComputerName:        computername,
+		ComputerName:        computerName,
 		CustomizationScript: script,
 		ChangeSid:           takeBoolPointer(changeSid),
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/guestCustomizationSection/"
 
 	// Return the task
@@ -482,7 +484,7 @@ func (vm *VM) Undeploy() (Task, error) {
 		UndeployPowerAction: "powerOff",
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/action/undeploy"
 
 	// Return the task
@@ -522,7 +524,7 @@ func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel
 		attachOrDetachDiskLink.Type, "error attach or detach disk: %s", diskParams)
 }
 
-// Attach an independent disk
+// AttachDisk attaches an independent disk
 // Call attachOrDetachDisk with disk and types.RelDiskAttach to attach an independent disk.
 // Please verify the independent disk is not connected to any VM before calling this function.
 // If the independent disk is connected to a VM, the task will be failed.
@@ -530,16 +532,15 @@ func (vm *VM) attachOrDetachDisk(diskParams *types.DiskAttachOrDetachParams, rel
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (vm *VM) AttachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, error) {
-	util.Logger.Printf("[TRACE] Attach disk, HREF: %s\n", diskParams.Disk.HREF)
-
-	if diskParams.Disk == nil {
+	if diskParams == nil || diskParams.Disk == nil || diskParams.Disk.HREF == "" {
 		return Task{}, fmt.Errorf("could not find disk info for attach")
 	}
+	util.Logger.Printf("[TRACE] Attach disk, HREF: %s\n", diskParams.Disk.HREF)
 
 	return vm.attachOrDetachDisk(diskParams, types.RelDiskAttach)
 }
 
-// Detach an independent disk
+// DetachDisk detaches an independent disk
 // Call attachOrDetachDisk with disk and types.RelDiskDetach to detach an independent disk.
 // Please verify the independent disk is connected the VM before calling this function.
 // If the independent disk is not connected to the VM, the task will be failed.
@@ -547,16 +548,16 @@ func (vm *VM) AttachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, erro
 // https://vdc-download.vmware.com/vmwb-repository/dcr-public/1b6cf07d-adb3-4dba-8c47-9c1c92b04857/
 // 241956dd-e128-4fcc-8131-bf66e1edd895/vcloud_sp_api_guide_30_0.pdf
 func (vm *VM) DetachDisk(diskParams *types.DiskAttachOrDetachParams) (Task, error) {
-	util.Logger.Printf("[TRACE] Detach disk, HREF: %s\n", diskParams.Disk.HREF)
 
-	if diskParams.Disk == nil {
+	if diskParams == nil || diskParams.Disk == nil || diskParams.Disk.HREF == "" {
 		return Task{}, fmt.Errorf("could not find disk info for detach")
 	}
+	util.Logger.Printf("[TRACE] Detach disk, HREF: %s\n", diskParams.Disk.HREF)
 
 	return vm.attachOrDetachDisk(diskParams, types.RelDiskDetach)
 }
 
-// Helper function which finds media and calls InsertMedia
+// HandleInsertMedia helper function finds media and calls InsertMedia
 func (vm *VM) HandleInsertMedia(org *Org, catalogName, mediaName string) (Task, error) {
 
 	catalog, err := org.GetCatalogByName(catalogName, false)
@@ -617,7 +618,7 @@ func isMediaInjected(items []*types.VirtualHardwareItem) bool {
 	return false
 }
 
-// Helper function which finds media and calls EjectMedia
+// HandleEjectMedia is a helper function which finds media and calls EjectMedia
 func (vm *VM) HandleEjectMedia(org *Org, catalogName, mediaName string) (EjectTask, error) {
 	catalog, err := org.GetCatalogByName(catalogName, false)
 	if err != nil {
@@ -638,7 +639,7 @@ func (vm *VM) HandleEjectMedia(org *Org, catalogName, mediaName string) (EjectTa
 	return task, err
 }
 
-// Insert media for VM
+// InsertMedia insert media for a VM
 // Call insertOrEjectMedia with media and types.RelMediaInsertMedia to insert media from VM.
 func (vm *VM) InsertMedia(mediaParams *types.MediaInsertOrEjectParams) (Task, error) {
 	util.Logger.Printf("[TRACE] Insert media, HREF: %s\n", mediaParams.Media.HREF)
@@ -651,7 +652,7 @@ func (vm *VM) InsertMedia(mediaParams *types.MediaInsertOrEjectParams) (Task, er
 	return vm.insertOrEjectMedia(mediaParams, types.RelMediaInsertMedia)
 }
 
-// Eject media from VM
+// EjectMedia ejects media from VM
 // Call insertOrEjectMedia with media and types.RelMediaEjectMedia to eject media from VM.
 // If media isn't inserted then task still will be successful.
 func (vm *VM) EjectMedia(mediaParams *types.MediaInsertOrEjectParams) (EjectTask, error) {
@@ -709,26 +710,25 @@ func (vm *VM) insertOrEjectMedia(mediaParams *types.MediaInsertOrEjectParams, li
 		insertOrEjectMediaLink.Type, "error insert or eject media: %s", mediaParams)
 }
 
-// Use the get existing VM question for operation which need additional response
+// GetQuestion uses the get existing VM question for operation which need additional response
 // Reference:
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/GET-VmPendingQuestion.html
 func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/question"
 
 	req := vm.client.NewRequest(map[string]string{}, http.MethodGet, *apiEndpoint, nil)
 
 	resp, err := vm.client.Http.Do(req)
+	if err != nil {
+		return types.VmPendingQuestion{}, fmt.Errorf("error getting VM question: %s", err)
+	}
 
 	// vCD security feature - on no question return 403 access error
 	if http.StatusForbidden == resp.StatusCode {
 		util.Logger.Printf("No question found for VM: %s\n", vm.VM.ID)
 		return types.VmPendingQuestion{}, nil
-	}
-
-	if err != nil {
-		return types.VmPendingQuestion{}, fmt.Errorf("error getting question: %s", err)
 	}
 
 	if http.StatusOK != resp.StatusCode {
@@ -746,7 +746,7 @@ func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
 
 }
 
-// Use the provide answer to existing VM question for operation which need additional response
+// AnswerQuestion uses the provided answer to existing VM question for operation which need additional response
 // Reference:
 // https://code.vmware.com/apis/287/vcloud#/doc/doc/operations/POST-AnswerVmPendingQuestion.html
 func (vm *VM) AnswerQuestion(questionId string, choiceId int) error {
@@ -762,7 +762,7 @@ func (vm *VM) AnswerQuestion(questionId string, choiceId int) error {
 		ChoiceId:   choiceId,
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	apiEndpoint.Path += "/question/action/answer"
 
 	return vm.client.ExecuteRequestWithoutResponse(apiEndpoint.String(), http.MethodPost,
@@ -781,7 +781,7 @@ func (vm *VM) ToggleHardwareVirtualization(isEnabled bool) (Task, error) {
 		return Task{}, fmt.Errorf("hardware virtualization can be changed from powered off state, status: %s", vmStatus)
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
 	if isEnabled {
 		apiEndpoint.Path += "/action/enableNestedHypervisor"
 	} else {
@@ -922,6 +922,10 @@ func (vm *VM) getEdgeGatewaysForRoutedNics(nicDhcpConfigs []nicDhcpConfig) ([]ni
 		} else {
 			// Lookup edge gateway
 			edgeGateway, err := vdc.GetEdgeGatewayByName(edgeGatewayName, false)
+			if ContainsNotFound(err) {
+				util.Logger.Printf("[TRACE] [DHCP IP Lookup] edge gateway not found: %s. Ignoring.", edgeGatewayName)
+				continue
+			}
 			if err != nil {
 				return nil, fmt.Errorf("could not lookup edge gateway for routed network on NIC %d: %s",
 					nic.vmNicIndex, err)
@@ -1348,6 +1352,7 @@ func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection
 			Xmlns:         types.XMLNamespaceVCloud,
 			Ovf:           types.XMLNamespaceOVF,
 			Name:          vm.VM.Name,
+			Description:   vm.VM.Description,
 			VmSpecSection: disksSettingToUpdate,
 		})
 }
@@ -1651,7 +1656,7 @@ func addEmptyVmAsyncV10(vapp *VApp, reComposeVAppParams *types.RecomposeVAppPara
 	if err != nil {
 		return Task{}, err
 	}
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/action/recomposeVApp"
 
 	reComposeVAppParams.XmlnsVcloud = types.XMLNamespaceVCloud
@@ -1806,4 +1811,49 @@ func (vm *VM) Delete() error {
 		return err
 	}
 	return task.WaitTaskCompletion()
+}
+
+func (vm *VM) getTenantContext() (*TenantContext, error) {
+	parentVdc, err := vm.GetParentVdc()
+	if err != nil {
+		return nil, err
+	}
+	return parentVdc.getTenantContext()
+}
+
+// ChangeMemory sets memory value. Size is MB
+func (vm *VM) ChangeMemory(sizeInMb int64) error {
+	vmSpecSection := vm.VM.VmSpecSection
+	description := vm.VM.Description
+	// update treats same values as changes and fails, with no values provided - no changes are made for that section
+	vmSpecSection.DiskSection = nil
+
+	vmSpecSection.MemoryResourceMb.Configured = sizeInMb
+
+	_, err := vm.UpdateVmSpecSection(vmSpecSection, description)
+	if err != nil {
+		return fmt.Errorf("error changing memory size: %s", err)
+	}
+	return nil
+}
+
+// ChangeCPUCount sets number of available virtual logical processors
+// (i.e. CPUs x cores per socket)
+// Cpu cores count is inherited from template.
+// https://communities.vmware.com/thread/576209
+func (vm *VM) ChangeCPU(cpus, cpuCores int) error {
+	vmSpecSection := vm.VM.VmSpecSection
+	description := vm.VM.Description
+	// update treats same values as changes and fails, with no values provided - no changes are made for that section
+	vmSpecSection.DiskSection = nil
+
+	vmSpecSection.NumCpus = takeIntAddress(cpus)
+	// has to come together
+	vmSpecSection.NumCoresPerSocket = takeIntAddress(cpuCores)
+
+	_, err := vm.UpdateVmSpecSection(vmSpecSection, description)
+	if err != nil {
+		return fmt.Errorf("error changing cpu size: %s", err)
+	}
+	return nil
 }

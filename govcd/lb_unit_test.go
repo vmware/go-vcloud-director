@@ -1,3 +1,4 @@
+//go:build unit || lb || lbAppProfile || functional || ALL
 // +build unit lb lbAppProfile functional ALL
 
 /*

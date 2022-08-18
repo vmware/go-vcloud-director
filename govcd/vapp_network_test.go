@@ -1,3 +1,4 @@
+//go:build vapp || functional || ALL
 // +build vapp functional ALL
 
 /*
@@ -83,7 +84,7 @@ func (vcd *TestVCD) Test_UpdateNetworkFirewallRules(check *C) {
 func (vcd *TestVCD) prepareVappWithVappNetwork(check *C, vappName, orgVdcNetworkName string) (*VApp, string, *types.NetworkConfigSection, error) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	vapp, err := createVappForTest(vcd, vappName)
+	vapp, err := deployVappForTest(vcd, vappName)
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 

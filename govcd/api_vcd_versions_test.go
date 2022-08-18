@@ -1,3 +1,4 @@
+//go:build api || functional || ALL
 // +build api functional ALL
 
 /*

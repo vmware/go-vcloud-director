@@ -1,3 +1,4 @@
+//go:build api || functional || catalog || org || extnetwork || vm || vdc || system || user || nsxv || network || vapp || vm || affinity || ALL
 // +build api functional catalog org extnetwork vm vdc system user nsxv network vapp vm affinity ALL
 
 /*
@@ -142,7 +143,7 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 		check.Skip(fmt.Sprintf("testFinderGetGenericEntity: %s %s not found.", def.entityType, def.entityName))
 		return
 	}
-	entity1 := ge.(genericEntity)
+	entity1 := ge
 
 	wantedType := fmt.Sprintf("*govcd.%s", def.entityType)
 	if testVerbose {
@@ -162,7 +163,7 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 	ge, err = def.getById(entityId, false)
 	check.Assert(err, IsNil)
 	check.Assert(ge, NotNil)
-	entity2 := ge.(genericEntity)
+	entity2 := ge
 	check.Assert(entity2, NotNil)
 	check.Assert(entity2.name(), Equals, entityName)
 	check.Assert(entity2.id(), Equals, entityId)
@@ -175,7 +176,7 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 	ge, err = def.getByNameOrId(entityId, false)
 	check.Assert(err, IsNil)
 	check.Assert(ge, NotNil)
-	entity3 := ge.(genericEntity)
+	entity3 := ge
 	check.Assert(entity3, NotNil)
 	check.Assert(entity3.name(), Equals, entityName)
 	check.Assert(entity3.id(), Equals, entityId)
@@ -189,7 +190,7 @@ func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *
 	ge, err = def.getByNameOrId(entityName, false)
 	check.Assert(err, IsNil)
 	check.Assert(ge, NotNil)
-	entity4 := ge.(genericEntity)
+	entity4 := ge
 	check.Assert(entity4, NotNil)
 	check.Assert(entity4.name(), Equals, entityName)
 	check.Assert(entity4.id(), Equals, entityId)

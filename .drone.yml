@@ -19,4 +19,4 @@ publish:
     server: https://coverage.vmware.run
     token: $$COVERAGE_TOKEN
     when:
-      branch: master
+      branch: main

@@ -177,6 +177,9 @@ ova:
   #
   # The ovf for uploading catalog item for tests.
   ovfPath: ../test-resources/test_vapp_template_ovf/descriptor.ovf
+  #
+  # The OVF URL for uploading catalog item for tests.
+  ovfUrl: https://raw.githubusercontent.com/vmware/go-vcloud-director/main/test-resources/test_vapp_template_ovf/descriptor.ovf
 media:
   # The iso for uploading media item for tests.
   # Default paths are simple iso provided by project

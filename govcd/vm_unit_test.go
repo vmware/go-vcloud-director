@@ -1,3 +1,4 @@
+//go:build vm || unit || ALL
 // +build vm unit ALL
 
 /*

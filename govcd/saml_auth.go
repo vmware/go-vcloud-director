@@ -63,13 +63,13 @@ auth.
 // 5 - Authenticate to vCD using SIGN token in order to receive back regular
 // X-Vcloud-Authorization token
 // 6 - Set the received X-Vcloud-Authorization for further usage
-func (vcdCli *VCDClient) authorizeSamlAdfs(user, pass, org, overrideRptId string) error {
+func (vcdClient *VCDClient) authorizeSamlAdfs(user, pass, org, overrideRptId string) error {
 	// Step 1 - find SAML entity ID configured in vCD metadata URL unless overrideRptId is provided
 	// Example URL: url.Scheme + "://" + url.Host + "/cloud/org/" + org + "/saml/metadata/alias/vcd"
 	samlEntityId := overrideRptId
 	var err error
 	if overrideRptId == "" {
-		samlEntityId, err = getSamlEntityId(vcdCli, org)
+		samlEntityId, err = getSamlEntityId(vcdClient, org)
 		if err != nil {
 			return fmt.Errorf("SAML - error getting vCD SAML Entity ID: %s", err)
 		}
@@ -78,13 +78,13 @@ func (vcdCli *VCDClient) authorizeSamlAdfs(user, pass, org, overrideRptId string
 	// Step 2 - find ADFS server used for SAML by calling vCD SAML endpoint and hoping for a
 	// redirect to ADFS server. Example URL:
 	// url.Scheme + "://" + url.Host + "/login/my-org/saml/login/alias/vcd?service=tenant:" + org
-	adfsAuthEndPoint, err := getSamlAdfsServer(vcdCli, org)
+	adfsAuthEndPoint, err := getSamlAdfsServer(vcdClient, org)
 	if err != nil {
 		return fmt.Errorf("SAML - error getting IdP (ADFS): %s", err)
 	}
 
 	// Step 3 - authenticate to ADFS to receive SIGN token which can be used for vCD authentication
-	signToken, err := getSamlAuthToken(vcdCli, user, pass, samlEntityId, adfsAuthEndPoint, org)
+	signToken, err := getSamlAuthToken(vcdClient, user, pass, samlEntityId, adfsAuthEndPoint, org)
 	if err != nil {
 		return fmt.Errorf("SAML - could not get auth token from IdP (ADFS). Did you specify "+
 			"username in ADFS format ('user@contoso.com' or 'contoso.com\\user')? : %s", err)
@@ -99,13 +99,13 @@ func (vcdCli *VCDClient) authorizeSamlAdfs(user, pass, org, overrideRptId string
 		adfsAuthEndPoint, samlEntityId)
 
 	// Step 5 - authenticate to vCD with SIGN token and receive vCD regular token in exchange
-	accessToken, err := authorizeSignToken(vcdCli, base64GzippedSignToken, org)
+	accessToken, err := authorizeSignToken(vcdClient, base64GzippedSignToken, org)
 	if err != nil {
 		return fmt.Errorf("SAML - error submitting SIGN token to vCD: %s", err)
 	}
 
 	// Step 6 - set regular vCD auth token X-Vcloud-Authorization
-	err = vcdCli.SetToken(org, AuthorizationHeader, accessToken)
+	err = vcdClient.SetToken(org, AuthorizationHeader, accessToken)
 	if err != nil {
 		return fmt.Errorf("error during token-based authentication: %s", err)
 	}

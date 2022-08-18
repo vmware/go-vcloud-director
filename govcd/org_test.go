@@ -1,3 +1,4 @@
+//go:build org || functional || ALL
 // +build org functional ALL
 
 /*
@@ -104,32 +105,42 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 	type updateSet struct {
-		orgName            string
-		enabled            bool
-		canPublishCatalogs bool
+		orgName              string
+		enabled              bool
+		canPublishCatalogs   bool
+		canPublishExternally bool
+		canSubscribe         bool
 	}
 
 	// Tests a combination of enabled and canPublishCatalogs to see
 	// whether they are updated correctly
 	var updateOrgs = []updateSet{
-		{TestUpdateOrg + "1", true, false},
-		{TestUpdateOrg + "2", false, false},
-		{TestUpdateOrg + "3", true, true},
-		{TestUpdateOrg + "4", false, true},
+		{TestUpdateOrg + "1", true, false, false, false},
+		{TestUpdateOrg + "2", false, false, false, false},
+		{TestUpdateOrg + "3", true, true, true, false},
+		{TestUpdateOrg + "4", false, true, false, true},
 	}
 
 	for _, uo := range updateOrgs {
 
 		fmt.Printf("Org %s - enabled %v - catalogs %v\n", uo.orgName, uo.enabled, uo.canPublishCatalogs)
 		task, err := CreateOrg(vcd.client, uo.orgName, uo.orgName, uo.orgName, &types.OrgSettings{
-			OrgGeneralSettings: &types.OrgGeneralSettings{CanPublishCatalogs: uo.canPublishCatalogs},
-			OrgLdapSettings:    &types.OrgLdapSettingsType{OrgLdapMode: "NONE"},
+			OrgGeneralSettings: &types.OrgGeneralSettings{
+				CanPublishCatalogs:   uo.canPublishCatalogs,
+				CanPublishExternally: uo.canPublishExternally,
+				CanSubscribe:         uo.canSubscribe,
+			},
+			OrgLdapSettings: &types.OrgLdapSettingsType{OrgLdapMode: "NONE"},
 		}, uo.enabled)
+
 		check.Assert(err, IsNil)
 		check.Assert(task, Not(Equals), Task{})
+
 		err = task.WaitTaskCompletion()
 		check.Assert(err, IsNil)
+
 		AddToCleanupList(uo.orgName, "org", "", "TestUpdateOrg")
+
 		// fetch newly created org
 		adminOrg, err := vcd.client.GetAdminOrgByName(uo.orgName)
 		check.Assert(err, IsNil)
@@ -143,6 +154,9 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 		adminOrg.AdminOrg.Description = updatedDescription
 		adminOrg.AdminOrg.FullName = updatedFullName
 		adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishCatalogs = !uo.canPublishCatalogs
+		adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishExternally = !uo.canPublishExternally
+		adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanSubscribe = !uo.canSubscribe
+
 		adminOrg.AdminOrg.IsEnabled = !uo.enabled
 
 		task, err = adminOrg.Update()
@@ -159,6 +173,8 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 
 		check.Assert(updatedAdminOrg.AdminOrg.IsEnabled, Equals, !uo.enabled)
 		check.Assert(updatedAdminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishCatalogs, Equals, !uo.canPublishCatalogs)
+		check.Assert(updatedAdminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishExternally, Equals, !uo.canPublishExternally)
+		check.Assert(updatedAdminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanSubscribe, Equals, !uo.canSubscribe)
 		if testVerbose {
 			fmt.Printf("[updated] Org %s - enabled %v (expected %v) - catalogs %v (expected %v)\n",
 				updatedAdminOrg.AdminOrg.Name,
@@ -249,15 +265,8 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 	}
 	providerVdcHref := results.Results.VMWProviderVdcRecord[0].HREF
 
-	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":   "providerVdcStorageProfile",
-		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.StorageProfile),
-	})
+	storageProfile, err := vcd.client.QueryProviderVdcStorageProfileByName(vcd.config.VCD.ProviderVdc.StorageProfile, providerVdcHref)
 	check.Assert(err, IsNil)
-	if len(results.Results.ProviderVdcStorageProfileRecord) == 0 {
-		check.Skip(fmt.Sprintf("No storage profile found with name '%s'", vcd.config.VCD.ProviderVdc.StorageProfile))
-	}
-	providerVdcStorageProfileHref := results.Results.ProviderVdcStorageProfileRecord[0].HREF
 
 	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":   "networkPool",
@@ -288,12 +297,12 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 				},
 			},
 			VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
-				Enabled: true,
+				Enabled: takeBoolPointer(true),
 				Units:   "MB",
 				Limit:   1024,
 				Default: true,
 				ProviderVdcStorageProfile: &types.Reference{
-					HREF: providerVdcStorageProfileHref,
+					HREF: storageProfile.HREF,
 				},
 			},
 			},
@@ -626,15 +635,10 @@ func setupVdc(vcd *TestVCD, check *C, allocationModel string) (AdminOrg, *types.
 		check.Skip(fmt.Sprintf("No Provider VDC found with name '%s'", vcd.config.VCD.ProviderVdc.Name))
 	}
 	providerVdcHref := results.Results.VMWProviderVdcRecord[0].HREF
-	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":   "providerVdcStorageProfile",
-		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.StorageProfile),
-	})
+	storageProfile, err := vcd.client.QueryProviderVdcStorageProfileByName(vcd.config.VCD.ProviderVdc.StorageProfile, providerVdcHref)
 	check.Assert(err, IsNil)
-	if len(results.Results.ProviderVdcStorageProfileRecord) == 0 {
-		check.Skip(fmt.Sprintf("No storage profile found with name '%s'", vcd.config.VCD.ProviderVdc.StorageProfile))
-	}
-	providerVdcStorageProfileHref := results.Results.ProviderVdcStorageProfileRecord[0].HREF
+
+	check.Assert(storageProfile.HREF, Not(Equals), "")
 	results, err = vcd.client.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":   "networkPool",
 		"filter": fmt.Sprintf("name==%s", vcd.config.VCD.ProviderVdc.NetworkPool),
@@ -645,7 +649,7 @@ func setupVdc(vcd *TestVCD, check *C, allocationModel string) (AdminOrg, *types.
 	}
 	networkPoolHref := results.Results.NetworkPoolRecord[0].HREF
 	vdcConfiguration := &types.VdcConfiguration{
-		Name:            TestCreateOrgVdc + "ForRefresh",
+		Name:            check.TestName(),
 		AllocationModel: allocationModel,
 		ComputeCapacity: []*types.ComputeCapacity{
 			&types.ComputeCapacity{
@@ -662,12 +666,12 @@ func setupVdc(vcd *TestVCD, check *C, allocationModel string) (AdminOrg, *types.
 			},
 		},
 		VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
-			Enabled: true,
+			Enabled: takeBoolPointer(true),
 			Units:   "MB",
 			Limit:   1024,
 			Default: true,
 			ProviderVdcStorageProfile: &types.Reference{
-				HREF: providerVdcStorageProfileHref,
+				HREF: storageProfile.HREF,
 			},
 		},
 		},
@@ -697,6 +701,206 @@ func setupVdc(vcd *TestVCD, check *C, allocationModel string) (AdminOrg, *types.
 	check.Assert(err, IsNil)
 	AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, check.TestName())
 	return *adminOrg, vdcConfiguration, err
+}
+
+func (vcd *TestVCD) Test_QueryStorageProfiles(check *C) {
+
+	// retrieve Org and VDC
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	adminVdc, err := adminOrg.GetAdminVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+
+	// Gets the Provider VDC from the AdminVdc structure
+	providerVdcName := adminVdc.AdminVdc.ProviderVdcReference.Name
+	check.Assert(providerVdcName, Not(Equals), "")
+	providerVdcHref := adminVdc.AdminVdc.ProviderVdcReference.HREF
+	check.Assert(providerVdcHref, Not(Equals), "")
+
+	// Gets the full list of storage profilers
+	rawSpList, err := vcd.client.Client.QueryAllProviderVdcStorageProfiles()
+	check.Assert(err, IsNil)
+
+	// Manually select the storage profiles that belong to the current provider VDC
+	var spList []*types.QueryResultProviderVdcStorageProfileRecordType
+	var duplicateNames = make(map[string]bool)
+	var notLocalStorageProfile string
+	var used = make(map[string]bool)
+	for _, sp := range rawSpList {
+		if sp.ProviderVdcHREF == providerVdcHref {
+			spList = append(spList, sp)
+		}
+		_, seen := used[sp.Name]
+		if seen {
+			duplicateNames[sp.Name] = true
+		}
+		used[sp.Name] = true
+	}
+	// Find a storage profile from a different provider VDC
+	for _, sp := range rawSpList {
+		if sp.ProviderVdcHREF != providerVdcHref {
+			_, isDuplicate := duplicateNames[sp.Name]
+			if !isDuplicate {
+				notLocalStorageProfile = sp.Name
+			}
+		}
+	}
+
+	// Get the list of local storage profiles (belonging to the Provider VDC that the adminVdc depends on)
+	localSpList, err := vcd.client.Client.QueryProviderVdcStorageProfiles(providerVdcHref)
+	check.Assert(err, IsNil)
+	// Make sure the automated list and the manual list match
+	check.Assert(spList, DeepEquals, localSpList)
+
+	// Get the same list using the AdminVdc method and check that the result matches
+	compatibleSpList, err := adminVdc.QueryCompatibleStorageProfiles()
+	check.Assert(err, IsNil)
+	check.Assert(compatibleSpList, DeepEquals, localSpList)
+
+	for _, sp := range compatibleSpList {
+		fullSp, err := vcd.client.QueryProviderVdcStorageProfileByName(sp.Name, providerVdcHref)
+		check.Assert(err, IsNil)
+		check.Assert(sp.HREF, Equals, fullSp.HREF)
+		check.Assert(fullSp.ProviderVdcHREF, Equals, providerVdcHref)
+	}
+
+	// When we have duplicate names, we also check the effectiveness of the retrieval function with Provider VDC filter
+	for name := range duplicateNames {
+		// Duplicate name with specific provider VDC HREF will succeed
+		fullSp, err := vcd.client.QueryProviderVdcStorageProfileByName(name, providerVdcHref)
+		check.Assert(err, IsNil)
+		check.Assert(fullSp.ProviderVdcHREF, Equals, providerVdcHref)
+		// Duplicate name with empty provider VDC HREF will fail
+		faultySp, err := vcd.client.QueryProviderVdcStorageProfileByName(name, "")
+		check.Assert(err, NotNil)
+		check.Assert(faultySp, IsNil)
+	}
+
+	// Search explicitly for a storage profile not present in current provider VDC
+	if notLocalStorageProfile != "" {
+		fullSp, err := vcd.client.QueryProviderVdcStorageProfileByName(notLocalStorageProfile, providerVdcHref)
+		check.Assert(err, NotNil)
+		check.Assert(fullSp, IsNil)
+	}
+}
+
+func (vcd *TestVCD) Test_AddRemoveVdcStorageProfiles(check *C) {
+
+	if vcd.config.VCD.ProviderVdc.Name == "" {
+		check.Skip("No provider VDC found in configuration")
+	}
+	providerVDCs, err := QueryProviderVdcByName(vcd.client, vcd.config.VCD.ProviderVdc.Name)
+	check.Assert(err, IsNil)
+	check.Assert(len(providerVDCs), Equals, 1)
+
+	rawSpList, err := vcd.client.Client.QueryAllProviderVdcStorageProfiles()
+	check.Assert(err, IsNil)
+	var spList []*types.QueryResultProviderVdcStorageProfileRecordType
+	for _, sp := range rawSpList {
+		if sp.ProviderVdcHREF == providerVDCs[0].HREF {
+			spList = append(spList, sp)
+		}
+	}
+
+	localSpList, err := vcd.client.Client.QueryProviderVdcStorageProfiles(providerVDCs[0].HREF)
+	check.Assert(err, IsNil)
+	check.Assert(spList, DeepEquals, localSpList)
+
+	const minSp = 2
+	if len(spList) < minSp {
+		check.Skip(fmt.Sprintf("At least %d  storage profiles are needed for this test", minSp))
+	}
+	var defaultSp *types.QueryResultProviderVdcStorageProfileRecordType
+	var sp2 *types.QueryResultProviderVdcStorageProfileRecordType
+
+	for i := 0; i < minSp; i++ {
+		if spList[i].Name == vcd.config.VCD.ProviderVdc.StorageProfile {
+			if defaultSp == nil {
+				defaultSp = spList[i]
+			}
+		} else {
+			if sp2 == nil {
+				sp2 = spList[i]
+			}
+		}
+	}
+
+	check.Assert(defaultSp, NotNil)
+	check.Assert(sp2, NotNil)
+
+	// Create the VDC
+	adminOrg, vdcConfiguration, err := setupVdc(vcd, check, "AllocationPool")
+	check.Assert(err, IsNil)
+
+	adminVdc, err := adminOrg.GetAdminVDCByName(vdcConfiguration.Name, true)
+	check.Assert(err, IsNil)
+
+	// Add another storage profile
+	err = adminVdc.AddStorageProfileWait(&types.VdcStorageProfileConfiguration{
+		Enabled: takeBoolPointer(true),
+		Units:   "MB",
+		Limit:   1024,
+		Default: false,
+		ProviderVdcStorageProfile: &types.Reference{
+			HREF: sp2.HREF,
+			Name: sp2.Name,
+		},
+	}, "new sp 2")
+	check.Assert(err, IsNil)
+	check.Assert(len(adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile), Equals, 2)
+
+	// Find the default storage profile and makes sure it matches with the one we know to be the default
+	defaultSpRef, err := adminVdc.GetDefaultStorageProfileReference()
+	check.Assert(err, IsNil)
+	check.Assert(defaultSp.Name, Equals, defaultSpRef.Name)
+
+	// Remove the second storage profile
+	err = adminVdc.RemoveStorageProfileWait(sp2.Name)
+	check.Assert(err, IsNil)
+	check.Assert(len(adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile), Equals, 1)
+
+	// Add the second storage profile again
+	err = adminVdc.AddStorageProfileWait(&types.VdcStorageProfileConfiguration{
+		Enabled: takeBoolPointer(true),
+		Units:   "MB",
+		Limit:   1024,
+		Default: false,
+		ProviderVdcStorageProfile: &types.Reference{
+			HREF: sp2.HREF,
+			Name: sp2.Name,
+		},
+	}, "new sp 2")
+
+	check.Assert(err, IsNil)
+	check.Assert(len(adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile), Equals, 2)
+
+	// Change default storage profile from the original one to the second one
+	err = adminVdc.SetDefaultStorageProfile(sp2.Name)
+	check.Assert(err, IsNil)
+
+	// Check that the default storage profile was changed
+	defaultSpRef, err = adminVdc.GetDefaultStorageProfileReference()
+	check.Assert(err, IsNil)
+	check.Assert(defaultSpRef.Name, Equals, sp2.Name)
+
+	// Set the default storage profile again to the same item.
+	// This proves that SetDefaultStorageProfile is idempotent
+	err = adminVdc.SetDefaultStorageProfile(sp2.Name)
+	check.Assert(err, IsNil)
+	defaultSpRef, err = adminVdc.GetDefaultStorageProfileReference()
+	check.Assert(err, IsNil)
+	check.Assert(defaultSpRef.Name, Equals, sp2.Name)
+
+	// Remove the former default storage profile
+	err = adminVdc.RemoveStorageProfileWait(defaultSp.Name)
+	check.Assert(err, IsNil)
+	check.Assert(len(adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile), Equals, 1)
+
+	// Delete the VDC
+	vdc, err := adminOrg.GetVDCByName(adminVdc.AdminVdc.Name, false)
+	check.Assert(err, IsNil)
+	err = vdc.DeleteWait(true, true)
+	check.Assert(err, IsNil)
 }
 
 // Tests VDC by updating it and then asserting if the
@@ -1106,18 +1310,4 @@ func validateQueryOrgVdcResults(vcd *TestVCD, check *C, name, orgName string, ex
 		fmt.Printf("%d VDC(s) in Org '%s' have correct parent set\n", len(orgList), orgName)
 		fmt.Println()
 	}
-}
-
-// spawnTestOrg spawns an Org to be used in tests
-func spawnTestOrg(vcd *TestVCD, check *C, nameSuffix string) string {
-	newOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
-	check.Assert(err, IsNil)
-	newOrgName := check.TestName() + "-" + nameSuffix
-	task, err := CreateOrg(vcd.client, newOrgName, newOrgName, newOrgName, newOrg.AdminOrg.OrgSettings, true)
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	AddToCleanupList(newOrgName, "org", "", check.TestName())
-
-	return newOrgName
 }

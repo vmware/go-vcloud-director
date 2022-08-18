@@ -100,13 +100,19 @@ func Unpack(tarFile string) ([]string, string, error) {
 			filePaths = append(filePaths, newFile.Name())
 
 			if err := isExtractedFileValid(newFile, expectedFileSize); err != nil {
-				newFile.Close()
+				errClose := newFile.Close()
+				if errClose != nil {
+					Logger.Printf("[DEBUG - Unpack] error closing newFile: %s", errClose)
+				}
 				return filePaths, dst, err
 			}
 
-			// manually close here after each newFile operation; defering would cause each newFile close
+			// manually close here after each newFile operation; deferring would cause each newFile close
 			// to wait until all operations have completed.
-			newFile.Close()
+			errClose := newFile.Close()
+			if errClose != nil {
+				Logger.Printf("[DEBUG - Unpack] error closing newFile: %s", errClose)
+			}
 		}
 	}
 }

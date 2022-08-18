@@ -132,7 +132,17 @@ func executeUpload(client *Client, media *types.Media, mediaFilePath, mediaName 
 		uploadError:              &uploadError,
 	}
 
-	go uploadFile(client, mediaFilePath, details)
+	// sending upload process to background, this allows not to lock and return task to client
+	// The error should be captured in details.uploadError, but just in case, we add a logging for the
+	// main error
+	go func() {
+		_, err = uploadFile(client, mediaFilePath, details)
+		if err != nil {
+			util.Logger.Println(strings.Repeat("*", 80))
+			util.Logger.Printf("*** [DEBUG - executeUpload] error calling uploadFile: %s\n", err)
+			util.Logger.Println(strings.Repeat("*", 80))
+		}
+	}()
 
 	var task Task
 	for _, item := range media.Tasks.Task {
@@ -274,21 +284,32 @@ func readHeader(reader io.Reader) (bool, error) {
 	if headerOk {
 		return true, nil
 	} else {
-		return false, errors.New("file header didn't match ISO standard")
+		return false, errors.New("file header didn't match ISO or UDF standard")
 	}
 }
 
-// Verify file header info: https://www.garykessler.net/library/file_sigs.html
+// Verify file header for ISO or UDF type. Info: https://www.garykessler.net/library/file_sigs.html
 func verifyHeader(buf []byte) bool {
-	// search for CD001(43 44 30 30 31) in specific file places.
-	//This signature usually occurs at byte offset 32769 (0x8001),
-	//34817 (0x8801), or 36865 (0x9001).
+	// ISO verification - search for CD001(43 44 30 30 31) in specific file places.
+	// This signature usually occurs at byte offset 32769 (0x8001),
+	// 34817 (0x8801), or 36865 (0x9001).
+	// UDF verification - search for BEA01(42 45 41 30 31) in specific file places.
+	// This signature usually occurs at byte offset 32769 (0x8001),
+	// 34817 (0x8801), or 36865 (0x9001).
+
 	return (buf[32769] == 0x43 && buf[32770] == 0x44 &&
 		buf[32771] == 0x30 && buf[32772] == 0x30 && buf[32773] == 0x31) ||
 		(buf[34817] == 0x43 && buf[34818] == 0x44 &&
 			buf[34819] == 0x30 && buf[34820] == 0x30 && buf[34821] == 0x31) ||
 		(buf[36865] == 0x43 && buf[36866] == 0x44 &&
-			buf[36867] == 0x30 && buf[36868] == 0x30 && buf[36869] == 0x31)
+			buf[36867] == 0x30 && buf[36868] == 0x30 && buf[36869] == 0x31) ||
+		(buf[32769] == 0x42 && buf[32770] == 0x45 &&
+			buf[32771] == 0x41 && buf[32772] == 0x30 && buf[32773] == 0x31) ||
+		(buf[34817] == 0x42 && buf[34818] == 0x45 &&
+			buf[34819] == 41 && buf[34820] == 0x30 && buf[34821] == 0x31) ||
+		(buf[36865] == 42 && buf[36866] == 45 &&
+			buf[36867] == 41 && buf[36868] == 0x30 && buf[36869] == 0x31)
+
 }
 
 // Reference for API usage http://pubs.vmware.com/vcloud-api-1-5/wwhelp/wwhimpl/js/html/wwhelp.htm#href=api_prog/GUID-9356B99B-E414-474A-853C-1411692AF84C.html
@@ -526,6 +547,7 @@ func (cat *Catalog) GetMediaByNameOrId(identifier string, refresh bool) (*Media,
 func (adminCatalog *AdminCatalog) GetMediaByHref(mediaHref string) (*Media, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
+	catalog.parent = adminCatalog.parent
 	return catalog.GetMediaByHref(mediaHref)
 }
 
@@ -535,6 +557,7 @@ func (adminCatalog *AdminCatalog) GetMediaByHref(mediaHref string) (*Media, erro
 func (adminCatalog *AdminCatalog) GetMediaByName(mediaName string, refresh bool) (*Media, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
+	catalog.parent = adminCatalog.parent
 	return catalog.GetMediaByName(mediaName, refresh)
 }
 
@@ -544,6 +567,7 @@ func (adminCatalog *AdminCatalog) GetMediaByName(mediaName string, refresh bool)
 func (adminCatalog *AdminCatalog) GetMediaById(mediaId string) (*Media, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
+	catalog.parent = adminCatalog.parent
 	return catalog.GetMediaById(mediaId)
 }
 
@@ -553,6 +577,7 @@ func (adminCatalog *AdminCatalog) GetMediaById(mediaId string) (*Media, error) {
 func (adminCatalog *AdminCatalog) GetMediaByNameOrId(identifier string, refresh bool) (*Media, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
+	catalog.parent = adminCatalog.parent
 	return catalog.GetMediaByNameOrId(identifier, refresh)
 }
 
@@ -606,6 +631,7 @@ func (catalog *Catalog) QueryMedia(mediaName string) (*MediaRecord, error) {
 func (adminCatalog *AdminCatalog) QueryMedia(mediaName string) (*MediaRecord, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
+	catalog.parent = adminCatalog.parent
 	return catalog.QueryMedia(mediaName)
 }
 

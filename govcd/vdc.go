@@ -20,6 +20,7 @@ import (
 type Vdc struct {
 	Vdc    *types.Vdc
 	client *Client
+	parent organization
 }
 
 func NewVdc(cli *Client) *Vdc {
@@ -277,6 +278,8 @@ func (vdc *Vdc) FindStorageProfileReference(name string) (types.Reference, error
 	return types.Reference{}, fmt.Errorf("can't find any VDC Storage_profiles")
 }
 
+// GetDefaultStorageProfileReference should find the default storage profile for a VDC
+// Deprecated: unused and implemented in the wrong way. Use adminVdc.GetDefaultStorageProfileReference instead
 func (vdc *Vdc) GetDefaultStorageProfileReference(storageprofiles *types.QueryResultRecordsType) (types.Reference, error) {
 
 	err := vdc.Refresh()
@@ -464,6 +467,8 @@ func (vdc *Vdc) GetEdgeGatewayByNameOrId(identifier string, refresh bool) (*Edge
 	return entity.(*EdgeGateway), err
 }
 
+// ComposeRawVApp creates an empty vApp
+// Deprecated: use CreateRawVApp instead
 func (vdc *Vdc) ComposeRawVApp(name string, description string) error {
 	vcomp := &types.ComposeVAppParams{
 		Ovf:         types.XMLNamespaceOVF,
@@ -481,6 +486,7 @@ func (vdc *Vdc) ComposeRawVApp(name string, description string) error {
 	}
 	vdcHref.Path += "/action/composeVApp"
 
+	// This call is wrong: /action/composeVApp returns a vApp, not a task
 	task, err := vdc.client.ExecuteTaskRequest(vdcHref.String(), http.MethodPost,
 		types.MimeComposeVappParams, "error instantiating a new vApp:: %s", vcomp)
 	if err != nil {
@@ -495,10 +501,65 @@ func (vdc *Vdc) ComposeRawVApp(name string, description string) error {
 	return nil
 }
 
+// CreateRawVApp creates an empty vApp
+func (vdc *Vdc) CreateRawVApp(name string, description string) (*VApp, error) {
+	vcomp := &types.ComposeVAppParams{
+		Ovf:         types.XMLNamespaceOVF,
+		Xsi:         types.XMLNamespaceXSI,
+		Xmlns:       types.XMLNamespaceVCloud,
+		Deploy:      false,
+		Name:        name,
+		PowerOn:     false,
+		Description: description,
+	}
+
+	vdcHref, err := url.ParseRequestURI(vdc.Vdc.HREF)
+	if err != nil {
+		return nil, fmt.Errorf("error getting vdc href: %s", err)
+	}
+	vdcHref.Path += "/action/composeVApp"
+
+	var vAppContents types.VApp
+
+	_, err = vdc.client.ExecuteRequest(vdcHref.String(), http.MethodPost,
+		types.MimeComposeVappParams, "error instantiating a new vApp:: %s", vcomp, &vAppContents)
+	if err != nil {
+		return nil, fmt.Errorf("error executing task request: %s", err)
+	}
+
+	if vAppContents.Tasks != nil {
+		for _, innerTask := range vAppContents.Tasks.Task {
+			if innerTask != nil {
+				task := NewTask(vdc.client)
+				task.Task = innerTask
+				err = task.WaitTaskCompletion()
+				if err != nil {
+					return nil, fmt.Errorf("error performing task: %s", err)
+				}
+			}
+		}
+	}
+
+	vapp := NewVApp(vdc.client)
+	vapp.VApp = &vAppContents
+
+	err = vapp.Refresh()
+	if err != nil {
+		return nil, err
+	}
+
+	err = vdc.Refresh()
+	if err != nil {
+		return nil, err
+	}
+	return vapp, nil
+}
+
 // ComposeVApp creates a vapp with the given template, name, and description
 // that uses the storageprofile and networks given. If you want all eulas
 // to be accepted set acceptalleulas to true. Returns a successful task
 // if completed successfully, otherwise returns an error and an empty task.
+// Deprecated: bad implementation
 func (vdc *Vdc) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate VAppTemplate, storageprofileref types.Reference, name string, description string, acceptalleulas bool) (Task, error) {
 	if vapptemplate.VAppTemplate.Children == nil || orgvdcnetworks == nil {
 		return Task{}, fmt.Errorf("can't compose a new vApp, objects passed are not valid")
@@ -580,6 +641,9 @@ func (vdc *Vdc) ComposeVApp(orgvdcnetworks []*types.OrgVDCNetwork, vapptemplate 
 	}
 	vdcHref.Path += "/action/composeVApp"
 
+	// Like ComposeRawVApp, this function returns a task, while it should be returning a vApp
+	// Since we don't use this function in terraform-provider-vcd, we are not going to
+	// replace it.
 	return vdc.client.ExecuteTaskRequest(vdcHref.String(), http.MethodPost,
 		types.MimeComposeVappParams, "error instantiating a new vApp: %s", vcomp)
 }
@@ -1101,7 +1165,7 @@ func (vdc *Vdc) GetCapabilities() ([]types.VdcCapability, error) {
 	}
 
 	capabilities := make([]types.VdcCapability, 0)
-	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, nil, &capabilities)
+	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, nil, &capabilities, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1141,4 +1205,30 @@ func getCapabilityValue(capabilities []types.VdcCapability, fieldName string) st
 	}
 
 	return ""
+}
+
+func (vdc *Vdc) getParentOrg() (organization, error) {
+	for _, vdcLink := range vdc.Vdc.Link {
+		if vdcLink.Rel != "up" {
+			continue
+		}
+		switch vdcLink.Type {
+		case types.MimeOrg:
+			org, err := getOrgByHref(vdc.client, vdcLink.HREF)
+			if err != nil {
+				return nil, err
+			}
+			return org, nil
+		case types.MimeAdminOrg:
+			adminOrg, err := getAdminOrgByHref(vdc.client, vdcLink.HREF)
+			if err != nil {
+				return nil, err
+			}
+			return adminOrg, nil
+
+		default:
+			continue
+		}
+	}
+	return nil, fmt.Errorf("no parent found for VDC %s", vdc.Vdc.Name)
 }

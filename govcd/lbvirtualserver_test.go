@@ -1,3 +1,4 @@
+//go:build lb || lbVirtualServer || nsxv || functional || ALL
 // +build lb lbVirtualServer nsxv functional ALL
 
 /*

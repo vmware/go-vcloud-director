@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -19,6 +19,7 @@ import (
 type AdminCatalog struct {
 	AdminCatalog *types.AdminCatalog
 	client       *Client
+	parent       organization
 }
 
 func NewAdminCatalog(client *Client) *AdminCatalog {
@@ -28,7 +29,15 @@ func NewAdminCatalog(client *Client) *AdminCatalog {
 	}
 }
 
-// Deletes the Catalog, returning an error if the vCD call fails.
+func NewAdminCatalogWithParent(client *Client, parent organization) *AdminCatalog {
+	return &AdminCatalog{
+		AdminCatalog: new(types.AdminCatalog),
+		client:       client,
+		parent:       parent,
+	}
+}
+
+// Delete deletes the Catalog, returning an error if the vCD call fails.
 // Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Catalog.html
 func (adminCatalog *AdminCatalog) Delete(force, recursive bool) error {
 	catalog := NewCatalog(adminCatalog.client)
@@ -36,7 +45,7 @@ func (adminCatalog *AdminCatalog) Delete(force, recursive bool) error {
 	return catalog.Delete(force, recursive)
 }
 
-// Updates the Catalog definition from current Catalog struct contents.
+// Update updates the Catalog definition from current Catalog struct contents.
 // Any differences that may be legally applied will be updated.
 // Returns an error if the call to vCD fails. Update automatically performs
 // a refresh with the admin catalog it gets back from the rest api
@@ -59,13 +68,14 @@ func (adminCatalog *AdminCatalog) Update() error {
 	return err
 }
 
-// Uploads an ova file to a catalog. This method only uploads bits to vCD spool area.
+// UploadOvf uploads an ova file to a catalog. This method only uploads bits to vCD spool area.
 // Returns errors if any occur during upload from vCD or upload process. On upload fail client may need to
 // remove vCD catalog item which waits for files to be uploaded. Files from ova are extracted to system
 // temp folder "govcd+random number" and left for inspection on error.
 func (adminCatalog *AdminCatalog) UploadOvf(ovaFileName, itemName, description string, uploadPieceSize int64) (UploadTask, error) {
 	catalog := NewCatalog(adminCatalog.client)
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
+	catalog.parent = adminCatalog.parent
 	return catalog.UploadOvf(ovaFileName, itemName, description, uploadPieceSize)
 }
 
@@ -87,6 +97,35 @@ func (adminCatalog *AdminCatalog) Refresh() error {
 }
 
 // getOrgInfo finds the organization to which the admin catalog belongs, and returns its name and ID
-func (adminCatalog *AdminCatalog) getOrgInfo() (orgInfoType, error) {
-	return getOrgInfo(adminCatalog.client, adminCatalog.AdminCatalog.Link, adminCatalog.AdminCatalog.ID, adminCatalog.AdminCatalog.Name, "AdminCatalog")
+func (adminCatalog *AdminCatalog) getOrgInfo() (*TenantContext, error) {
+	return adminCatalog.getTenantContext()
+}
+
+// PublishToExternalOrganizations publishes a catalog to external organizations.
+func (cat *AdminCatalog) PublishToExternalOrganizations(publishExternalCatalog types.PublishExternalCatalogParams) error {
+	if cat.AdminCatalog == nil {
+		return fmt.Errorf("cannot publish to external organization, Object is empty")
+	}
+
+	url := cat.AdminCatalog.HREF
+	if url == "nil" || url == "" {
+		return fmt.Errorf("cannot publish to external organization, HREF is empty")
+	}
+
+	tenantContext, err := cat.getTenantContext()
+	if err != nil {
+		return fmt.Errorf("cannot publish to external organization, tenant context error: %s", err)
+	}
+
+	err = publishToExternalOrganizations(cat.client, url, tenantContext, publishExternalCatalog)
+	if err != nil {
+		return err
+	}
+
+	err = cat.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return err
 }

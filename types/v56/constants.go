@@ -131,6 +131,12 @@ const (
 	MimeCreateVmParams = "application/vnd.vmware.vcloud.CreateVmParams+xml"
 	// Mime for instantiate VM Params from template
 	MimeInstantiateVmTemplateParams = "application/vnd.vmware.vcloud.instantiateVmTemplateParams+xml"
+	// Mime for adding or removing VDC storage profiles
+	MimeUpdateVdcStorageProfiles = "application/vnd.vmware.admin.updateVdcStorageProfiles+xml"
+	// Mime to modify lease settings
+	MimeLeaseSettingSection = "application/vnd.vmware.vcloud.leaseSettingsSection+xml"
+	// Mime to publish external catalog
+	PublishExternalCatalog = "application/vnd.vmware.admin.publishExternalCatalogParams+xml"
 )
 
 const (
@@ -332,23 +338,66 @@ const (
 	FiqlQueryTimestampFormat = "2006-01-02T15:04:05.000Z"
 )
 
-// These constants allow to construct OpenAPI endpoint paths and avoid strings in code for easy replacement in future.
+// These constants allow constructing OpenAPI endpoint paths and avoid strings in code for easy replacement in the
+// future.
 const (
-	OpenApiPathVersion1_0_0                   = "1.0.0/"
-	OpenApiEndpointRoles                      = "roles/"
-	OpenApiEndpointAuditTrail                 = "auditTrail/"
-	OpenApiEndpointImportableTier0Routers     = "nsxTResources/importableTier0Routers"
-	OpenApiEndpointImportableSwitches         = "/network/orgvdcnetworks/importableswitches"
-	OpenApiEndpointEdgeClusters               = "nsxTResources/edgeClusters"
-	OpenApiEndpointExternalNetworks           = "externalNetworks/"
-	OpenApiEndpointVdcComputePolicies         = "vdcComputePolicies/"
-	OpenApiEndpointVdcAssignedComputePolicies = "vdcs/%s/computePolicies"
-	OpenApiEndpointVdcCapabilities            = "vdcs/%s/capabilities"
-	OpenApiEndpointEdgeGateways               = "edgeGateways/"
-	OpenApiEndpointFirewallGroups             = "firewallGroups/"
-	OpenApiEndpointOrgVdcNetworks             = "orgVdcNetworks/"
-	OpenApiEndpointOrgVdcNetworksDhcp         = "orgVdcNetworks/%s/dhcp"
-	OpenApiEndpointAppPortProfiles            = "applicationPortProfiles/"
+	OpenApiPathVersion1_0_0                           = "1.0.0/"
+	OpenApiEndpointRoles                              = "roles/"
+	OpenApiEndpointGlobalRoles                        = "globalRoles/"
+	OpenApiEndpointRights                             = "rights/"
+	OpenApiEndpointRightsCategories                   = "rightsCategories/"
+	OpenApiEndpointRightsBundles                      = "rightsBundles/"
+	OpenApiEndpointAuditTrail                         = "auditTrail/"
+	OpenApiEndpointImportableTier0Routers             = "nsxTResources/importableTier0Routers"
+	OpenApiEndpointImportableSwitches                 = "/network/orgvdcnetworks/importableswitches"
+	OpenApiEndpointEdgeClusters                       = "nsxTResources/edgeClusters"
+	OpenApiEndpointExternalNetworks                   = "externalNetworks/"
+	OpenApiEndpointVdcComputePolicies                 = "vdcComputePolicies/"
+	OpenApiEndpointVdcAssignedComputePolicies         = "vdcs/%s/computePolicies"
+	OpenApiEndpointVdcCapabilities                    = "vdcs/%s/capabilities"
+	OpenApiEndpointEdgeGateways                       = "edgeGateways/"
+	OpenApiEndpointNsxtFirewallRules                  = "edgeGateways/%s/firewall/rules"
+	OpenApiEndpointFirewallGroups                     = "firewallGroups/"
+	OpenApiEndpointOrgVdcNetworks                     = "orgVdcNetworks/"
+	OpenApiEndpointOrgVdcNetworksDhcp                 = "orgVdcNetworks/%s/dhcp"
+	OpenApiEndpointNsxtNatRules                       = "edgeGateways/%s/nat/rules/"
+	OpenApiEndpointAppPortProfiles                    = "applicationPortProfiles/"
+	OpenApiEndpointIpSecVpnTunnel                     = "edgeGateways/%s/ipsec/tunnels/"
+	OpenApiEndpointIpSecVpnTunnelConnectionProperties = "edgeGateways/%s/ipsec/tunnels/%s/connectionProperties"
+	OpenApiEndpointIpSecVpnTunnelStatus               = "edgeGateways/%s/ipsec/tunnels/%s/status"
+	OpenApiEndpointSSLCertificateLibrary              = "ssl/certificateLibrary/"
+	OpenApiEndpointSSLCertificateLibraryOld           = "ssl/cetificateLibrary/"
+	OpenApiEndpointSessionCurrent                     = "sessions/current"
+	OpenApiEndpointVdcGroups                          = "vdcGroups/"
+	OpenApiEndpointVdcGroupsCandidateVdcs             = "vdcGroups/networkingCandidateVdcs"
+	OpenApiEndpointVdcGroupsDfwPolicies               = "vdcGroups/%s/dfwPolicies"
+	OpenApiEndpointVdcGroupsDfwDefaultPolicies        = "vdcGroups/%s/dfwPolicies/default"
+	OpenApiEndpointVdcGroupsDfwRules                  = "vdcGroups/%s/dfwPolicies/%s/rules"
+	OpenApiEndpointNetworkContextProfiles             = "networkContextProfiles"
+	OpenApiEndpointSecurityTags                       = "securityTags"
+	OpenApiEndpointNsxtRouteAdvertisement             = "edgeGateways/%s/routing/advertisement"
+
+	OpenApiEndpointEdgeBgpNeighbor          = "edgeGateways/%s/routing/bgp/neighbors/"   // '%s' is NSX-T Edge Gateway ID
+	OpenApiEndpointEdgeBgpConfigPrefixLists = "edgeGateways/%s/routing/bgp/prefixLists/" // '%s' is NSX-T Edge Gateway ID
+	OpenApiEndpointEdgeBgpConfig            = "edgeGateways/%s/routing/bgp"              // '%s' is NSX-T Edge Gateway ID
+
+	// NSX-T ALB related endpoints
+
+	OpenApiEndpointAlbController = "loadBalancer/controllers/"
+
+	// OpenApiEndpointAlbImportableClouds endpoint requires a filter _context==urn:vcloud:loadBalancerController:aa23ef66-ba32-48b2-892f-7acdffe4587e
+	OpenApiEndpointAlbImportableClouds              = "nsxAlbResources/importableClouds/"
+	OpenApiEndpointAlbImportableServiceEngineGroups = "nsxAlbResources/importableServiceEngineGroups"
+	OpenApiEndpointAlbCloud                         = "loadBalancer/clouds/"
+	OpenApiEndpointAlbServiceEngineGroups           = "loadBalancer/serviceEngineGroups/"
+	OpenApiEndpointAlbPools                         = "loadBalancer/pools/"
+	// OpenApiEndpointAlbPoolSummaries returns a limited subset of data provided by OpenApiEndpointAlbPools
+	// however only the summary endpoint can list all available pools for an edge gateway
+	OpenApiEndpointAlbPoolSummaries                 = "edgeGateways/%s/loadBalancer/poolSummaries" // %s contains edge gateway
+	OpenApiEndpointAlbVirtualServices               = "loadBalancer/virtualServices/"
+	OpenApiEndpointAlbVirtualServiceSummaries       = "edgeGateways/%s/loadBalancer/virtualServiceSummaries" // %s contains edge gateway
+	OpenApiEndpointAlbServiceEngineGroupAssignments = "loadBalancer/serviceEngineGroups/assignments/"
+	OpenApiEndpointAlbEdgeGateway                   = "edgeGateways/%s/loadBalancer"
 )
 
 // Header keys to run operations in tenant context
@@ -364,6 +413,8 @@ const (
 	ExternalNetworkBackingTypeNsxtTier0Router = "NSXT_TIER0"
 	// ExternalNetworkBackingTypeNsxtVrfTier0Router defines backing type of NSX-T Tier-0 VRF router
 	ExternalNetworkBackingTypeNsxtVrfTier0Router = "NSXT_VRF_TIER0"
+	// ExternalNetworkBackingTypeNsxtSegment defines backing type of NSX-T Segment (supported in VCD 10.3+)
+	ExternalNetworkBackingTypeNsxtSegment = "IMPORTED_T_LOGICAL_SWITCH"
 	// ExternalNetworkBackingTypeNetwork defines vSwitch portgroup
 	ExternalNetworkBackingTypeNetwork = "NETWORK"
 	// ExternalNetworkBackingDvPortgroup refers distributed switch portgroup
@@ -373,7 +424,7 @@ const (
 const (
 	// OrgVdcNetworkTypeRouted can be used to create NSX-T or NSX-V routed Org Vdc network
 	OrgVdcNetworkTypeRouted = "NAT_ROUTED"
-	// OrgVdcNetworkTypeIsolated can be used to creaate NSX-T or NSX-V isolated Org Vdc network
+	// OrgVdcNetworkTypeIsolated can be used to create NSX-T or NSX-V isolated Org Vdc network
 	OrgVdcNetworkTypeIsolated = "ISOLATED"
 	// OrgVdcNetworkTypeOpaque type is used to create NSX-T imported Org Vdc network
 	OrgVdcNetworkTypeOpaque = "OPAQUE"
@@ -389,12 +440,38 @@ const (
 )
 
 const (
-	// FirewallGroupTypeSecurityGroup can be used in types.NsxtFirewallGroup for 'type' field to
-	// create Security Group
+	// FirewallGroupTypeSecurityGroup can be used in types.NsxtFirewallGroup for 'TypeValue' field
+	// to create Security Group
 	FirewallGroupTypeSecurityGroup = "SECURITY_GROUP"
-	// FirewallGroupTypeIpSet can be used in types.NsxtFirewallGroup for 'type' field to create IP
-	// Set
+	// FirewallGroupTypeIpSet can be used in types.NsxtFirewallGroup for 'TypeValue' field to create
+	// IP Set
 	FirewallGroupTypeIpSet = "IP_SET"
+
+	// FirewallGroupTypeVmCriteria can be used in types.NsxtFirewallGroup for 'TypeValue' field to
+	// create Dynamic Security Group (VCD 10.3+)
+	FirewallGroupTypeVmCriteria = "VM_CRITERIA"
+)
+
+// These constants can be used to pick type of NSX-T NAT Rule
+const (
+	NsxtNatRuleTypeDnat      = "DNAT"
+	NsxtNatRuleTypeNoDnat    = "NO_DNAT"
+	NsxtNatRuleTypeSnat      = "SNAT"
+	NsxtNatRuleTypeNoSnat    = "NO_SNAT"
+	NsxtNatRuleTypeReflexive = "REFLEXIVE" // Only in VCD 10.3+ (API V36.0)
+)
+
+// In VCD versions 10.2.2+ (API V35.2+) there is a FirewallMatch field in NAT rule with these
+// options
+const (
+	// NsxtNatRuleFirewallMatchInternalAddress will match firewall rules based on NAT rules internal
+	// address (DEFAULT)
+	NsxtNatRuleFirewallMatchInternalAddress = "MATCH_INTERNAL_ADDRESS"
+	// NsxtNatRuleFirewallMatchExternalAddress will match firewall rules based on NAT rule external
+	// address
+	NsxtNatRuleFirewallMatchExternalAddress = "MATCH_EXTERNAL_ADDRESS"
+	// NsxtNatRuleFirewallMatchBypass will skip evaluating NAT rules in firewall
+	NsxtNatRuleFirewallMatchBypass = "BYPASS"
 )
 
 const (
@@ -406,4 +483,34 @@ const (
 	ApplicationPortProfileScopeProvider = "PROVIDER"
 	// ApplicationPortProfileScopeTenant allows user to read and set Application Port Profiles at Org VDC level.
 	ApplicationPortProfileScopeTenant = "TENANT"
+)
+
+const (
+	// VcloudUndefinedKey is the bundles key automatically added to new role related objects
+	VcloudUndefinedKey = "com.vmware.vcloud.undefined.key"
+)
+
+const (
+	// NsxtAlbCloudBackingTypeNsxtAlb is a backing type for NSX-T ALB used in types.NsxtAlbCloudBacking
+	NsxtAlbCloudBackingTypeNsxtAlb = "NSXALB_NSXT"
+)
+
+const (
+	// UrnTypeVdcGroup is the third segment of URN for VDC Group
+	UrnTypeVdcGroup = "vdcGroup"
+	// UrnTypeVdc is the third segment of URN for VDC
+	UrnTypeVdc = "vdc"
+)
+
+// Metadata type constants
+const (
+	MetadataStringValue   string = "MetadataStringValue"
+	MetadataNumberValue   string = "MetadataNumberValue"
+	MetadataDateTimeValue string = "MetadataDateTimeValue"
+	MetadataBooleanValue  string = "MetadataBooleanValue"
+)
+
+const (
+	// DistributedFirewallPolicyDefault is a constant for "default" Distributed Firewall Policy
+	DistributedFirewallPolicyDefault = "default"
 )

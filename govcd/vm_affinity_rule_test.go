@@ -1,3 +1,4 @@
+//go:build vdc || affinity || functional || ALL
 // +build vdc affinity functional ALL
 
 /*

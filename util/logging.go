@@ -160,34 +160,38 @@ func SetLog() {
 	}
 }
 
-// hidePasswords hides passwords that may be used in a request
-func hidePasswords(in string, onScreen bool) string {
+// hideSensitive hides passwords, tokens, and certificate details
+func hideSensitive(in string, onScreen bool) string {
 	if !onScreen && LogPasswords {
 		return in
 	}
 	var out string
+
+	// Filters out the below:
+	// Regular passwords
 	re1 := regexp.MustCompile(`("[^\"]*[Pp]assword"\s*:\s*)"[^\"]+"`)
 	out = re1.ReplaceAllString(in, `${1}"********"`)
 
 	// Replace password in ADFS SAML request
 	re2 := regexp.MustCompile(`(\s*<o:Password.*ext">)(.*)(</o:Password>)`)
 	out = re2.ReplaceAllString(out, `${1}******${3}`)
-	return out
-}
 
-// hideTokens hides SAML auth response token
-func hideTokens(in string, onScreen bool) string {
-	if !onScreen && LogPasswords {
-		return in
-	}
-	var out string
-	// Filters out the below:
 	// Token data between <e:CipherValue> </e:CipherValue>
-	re1 := regexp.MustCompile(`(.*<e:CipherValue>)(.*)(</e:CipherValue>.*)`)
-	out = re1.ReplaceAllString(in, `${1}******${3}`)
+	re3 := regexp.MustCompile(`(.*<e:CipherValue>)(.*)(</e:CipherValue>.*)`)
+	out = re3.ReplaceAllString(out, `${1}******${3}`)
 	// Token data between <xenc:CipherValue> </xenc:CipherValue>
-	re2 := regexp.MustCompile(`(.*<xenc:CipherValue>)(.*)(</xenc:CipherValue>.*)`)
-	out = re2.ReplaceAllString(out, `${1}******${3}`)
+	re4 := regexp.MustCompile(`(.*<xenc:CipherValue>)(.*)(</xenc:CipherValue>.*)`)
+	out = re4.ReplaceAllString(out, `${1}******${3}`)
+
+	// Data inside certificates and private keys
+	re5 := regexp.MustCompile(`(-----BEGIN CERTIFICATE-----)(.*)(-----END CERTIFICATE-----)`)
+	out = re5.ReplaceAllString(out, `${1}******${3}`)
+	re6 := regexp.MustCompile(`(-----BEGIN ENCRYPTED PRIVATE KEY-----)(.*)(-----END ENCRYPTED PRIVATE KEY-----)`)
+	out = re6.ReplaceAllString(out, `${1}******${3}`)
+
+	// Token inside request body
+	re7 := regexp.MustCompile(`(refresh_token)=(\S+)`)
+	out = re7.ReplaceAllString(out, `${1}=*******`)
 
 	return out
 }
@@ -296,12 +300,13 @@ func ProcessRequestOutput(caller, operation, url, payload string, req *http.Requ
 	if isBinary(payload, req) {
 		payload = "[binary data]"
 	}
-	if dataSize > 0 {
-		Logger.Printf("Request data: [%d]\n%s\n", dataSize, hidePasswords(payload, false))
-	}
+	// Request header should be shown before Request data
 	Logger.Printf("Req header:\n")
 	logSanitizedHeader(req.Header)
 
+	if dataSize > 0 {
+		Logger.Printf("Request data: [%d]\n%s\n", dataSize, hideSensitive(payload, false))
+	}
 }
 
 // Logs the essentials of a HTTP response
@@ -345,9 +350,9 @@ func ProcessResponseOutput(caller string, resp *http.Response, result string) {
 	dataSize := len(result)
 	outTextSize := len(outText)
 	if outTextSize != dataSize {
-		Logger.Printf("Response text: [%d -> %d]\n%s\n", dataSize, outTextSize, hideTokens(outText, false))
+		Logger.Printf("Response text: [%d -> %d]\n%s\n", dataSize, outTextSize, hideSensitive(outText, false))
 	} else {
-		Logger.Printf("Response text: [%d]\n%s\n", dataSize, hideTokens(outText, false))
+		Logger.Printf("Response text: [%d]\n%s\n", dataSize, hideSensitive(outText, false))
 	}
 }
 

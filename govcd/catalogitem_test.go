@@ -1,3 +1,4 @@
+//go:build catalog || functional || ALL
 // +build catalog functional ALL
 
 /*
@@ -12,6 +13,7 @@ import (
 
 	. "gopkg.in/check.v1"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
@@ -191,4 +193,70 @@ func (vcd *TestVCD) TestQueryCatalogItemAndVAppTemplateList(check *C) {
 		check.Assert(vappTemplate, NotNil)
 	}
 
+}
+
+func (vcd *TestVCD) Test_DeleteNonEmptyCatalog(check *C) {
+	skipWhenOvaPathMissing(vcd.config.OVA.OvaPath, check)
+
+	catalogName := check.TestName()
+	catalogItemName := check.TestName() + "_item"
+	// Fetching organization
+	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+	catalog, err := org.CreateCatalog(catalogName, catalogName)
+	check.Assert(err, IsNil)
+	AddToCleanupList(catalogName, "catalog", vcd.org.Org.Name, check.TestName())
+
+	check.Assert(catalog, NotNil)
+
+	// add catalogItem
+	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OvaPath, catalogItemName, "upload from delete catalog item test", 1024)
+	check.Assert(err, IsNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	AddToCleanupList(catalogItemName, "catalogItem", vcd.org.Org.Name+"|"+catalogName, check.TestName())
+
+	retrievedCatalog, err := org.GetCatalogByName(catalogName, true)
+	check.Assert(err, IsNil)
+	catalogItem, err := retrievedCatalog.GetCatalogItemByName(catalogItemName, true)
+	check.Assert(err, IsNil)
+	check.Assert(catalogItem, NotNil)
+
+	err = retrievedCatalog.Delete(true, true)
+	check.Assert(err, IsNil)
+
+	retrievedCatalog, err = org.GetCatalogByName(catalogName, true)
+	check.Assert(err, NotNil)
+	check.Assert(retrievedCatalog, IsNil)
+}
+
+func (vcd *TestVCD) Test_QueryVappTemplateList(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	catalogName := vcd.config.VCD.Catalog.Name
+	if catalogName == "" {
+		check.Skip("Test_QueryVappTemplateList: Catalog name not given")
+		return
+	}
+
+	cat, err := vcd.org.GetCatalogByName(catalogName, false)
+	if err != nil {
+		check.Skip("Test_QueryVappTemplateList: Catalog not found")
+		return
+	}
+
+	vAppTemplates, err := cat.QueryVappTemplateList()
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplates, NotNil)
+
+	// Check the number of vApp templates is one
+	// Dump all vApp template structures to easily identify leftover objects if number is not 1
+	if len(vAppTemplates) > 1 {
+		spew.Dump(vAppTemplates)
+	}
+	check.Assert(len(vAppTemplates), Equals, 1)
+
+	// Check the name of the vApp template is what it should be
+	check.Assert(vAppTemplates[0].Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
 }

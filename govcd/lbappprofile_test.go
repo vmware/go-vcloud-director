@@ -1,3 +1,4 @@
+//go:build lb || lbAppProfile || nsxv || functional || ALL
 // +build lb lbAppProfile nsxv functional ALL
 
 /*

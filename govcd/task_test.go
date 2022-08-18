@@ -1,3 +1,4 @@
+//go:build task || functional || ALL
 // +build task functional ALL
 
 /*

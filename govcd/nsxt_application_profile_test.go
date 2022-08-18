@@ -1,3 +1,4 @@
+//go:build network || nsxt || functional || openapi || ALL
 // +build network nsxt functional openapi ALL
 
 package govcd
@@ -16,7 +17,6 @@ func (vcd *TestVCD) Test_NsxtApplicationPortProfileProvider(check *C) {
 
 	appPortProfileConfig := getAppProfileProvider(vcd, check)
 	testAppPortProfile(appPortProfileConfig, types.ApplicationPortProfileScopeProvider, vcd, check)
-
 }
 
 func (vcd *TestVCD) Test_NsxtApplicationPortProfileTenant(check *C) {
@@ -25,7 +25,6 @@ func (vcd *TestVCD) Test_NsxtApplicationPortProfileTenant(check *C) {
 
 	appPortProfileConfig := getAppProfileTenant(vcd, check)
 	testAppPortProfile(appPortProfileConfig, types.ApplicationPortProfileScopeTenant, vcd, check)
-
 }
 
 func (vcd *TestVCD) Test_NsxtApplicationPortProfileReadSystem(check *C) {
@@ -125,6 +124,26 @@ func testAppPortProfile(appPortProfileConfig *types.NsxtAppPortProfile, scope st
 	check.Assert(err, IsNil)
 	check.Assert(foundAppProfileByName.NsxtAppPortProfile, DeepEquals, foundAppProfileById.NsxtAppPortProfile)
 
+	// Check VDC and VDC Group lookup
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+	vdc, vdcGroup := test_CreateVdcGroup(check, adminOrg, vcd)
+
+	// Lookup by VDC
+	foundAppProfileByNameInVdc, err := vdc.GetNsxtAppPortProfileByName(appProfile.NsxtAppPortProfile.Name, scope)
+	check.Assert(err, IsNil)
+	check.Assert(foundAppProfileByNameInVdc.NsxtAppPortProfile, DeepEquals, foundAppProfileById.NsxtAppPortProfile)
+
+	foundAppProfileByNameInVdcGroup, err := vdcGroup.GetNsxtAppPortProfileByName(appProfile.NsxtAppPortProfile.Name, scope)
+	check.Assert(err, IsNil)
+	check.Assert(foundAppProfileByNameInVdcGroup.NsxtAppPortProfile, DeepEquals, foundAppProfileById.NsxtAppPortProfile)
+	// Remove VDC group
+	err = vdcGroup.Delete()
+	check.Assert(err, IsNil)
+	err = vdc.DeleteWait(true, true)
+	check.Assert(err, IsNil)
+
 	err = appProfile.Delete()
 	check.Assert(err, IsNil)
 
@@ -176,7 +195,7 @@ func getResultCountByScope(scope string, check *C, vcd *TestVCD) int {
 		Resulttotal int `json:"resultTotal"`
 	}{}
 
-	err = vcd.vdc.client.OpenApiGetItem(apiVersion, urlRef, queryParams, &result)
+	err = vcd.vdc.client.OpenApiGetItem(apiVersion, urlRef, queryParams, &result, nil)
 	check.Assert(err, IsNil)
 	return result.Resulttotal
 }

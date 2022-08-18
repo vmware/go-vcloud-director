@@ -1,3 +1,4 @@
+//go:build nsxv || vm || functional || ALL
 // +build nsxv vm functional ALL
 
 /*
@@ -28,7 +29,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	}
 
 	// Construct new VM for test
-	vapp, err := vcd.createTestVapp("GetDhcpAddress")
+	vapp, err := deployVappForTest(vcd, "GetDhcpAddress")
 	check.Assert(err, IsNil)
 	vmType, _ := vcd.findFirstVm(*vapp)
 	vm := &VM{

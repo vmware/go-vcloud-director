@@ -1,3 +1,4 @@
+//go:build functional || catalog || ALL
 // +build functional catalog ALL
 
 /*
@@ -34,6 +35,7 @@ func (vcd *TestVCD) Test_AdminCatalogAccessControl(check *C) {
 		check.Skip("Test_AdminCatalogAccessControl: Org name not given.")
 		return
 	}
+	vcd.checkSkipWhenApiToken(check)
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
@@ -51,8 +53,8 @@ func (vcd *TestVCD) Test_AdminCatalogAccessControl(check *C) {
 
 	orgInfo, err := adminCatalog.getOrgInfo()
 	check.Assert(err, IsNil)
-	check.Assert(orgInfo.id, Equals, extractUuid(adminorg.AdminOrg.ID))
-	check.Assert(orgInfo.name, Equals, adminorg.AdminOrg.Name)
+	check.Assert(orgInfo.OrgId, Equals, extractUuid(adminorg.AdminOrg.ID))
+	check.Assert(orgInfo.OrgName, Equals, adminorg.AdminOrg.Name)
 
 	err = adminCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
@@ -63,6 +65,7 @@ func (vcd *TestVCD) Test_CatalogAccessControl(check *C) {
 		check.Skip("Test_CatalogAccessControl: Org name not given.")
 		return
 	}
+	vcd.checkSkipWhenApiToken(check)
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
@@ -82,8 +85,8 @@ func (vcd *TestVCD) Test_CatalogAccessControl(check *C) {
 
 	orgInfo, err := catalog.getOrgInfo()
 	check.Assert(err, IsNil)
-	check.Assert(orgInfo.id, Equals, extractUuid(adminorg.AdminOrg.ID))
-	check.Assert(orgInfo.name, Equals, adminorg.AdminOrg.Name)
+	check.Assert(orgInfo.OrgId, Equals, extractUuid(adminorg.AdminOrg.ID))
+	check.Assert(orgInfo.OrgName, Equals, adminorg.AdminOrg.Name)
 
 	err = catalog.Delete(true, true)
 	check.Assert(err, IsNil)

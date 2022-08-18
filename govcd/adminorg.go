@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -23,8 +23,9 @@ import (
 // elements that can be viewed and modified only by system administrators.
 // Definition: https://code.vmware.com/apis/220/vcloud#/doc/doc/types/AdminOrgType.html
 type AdminOrg struct {
-	AdminOrg *types.AdminOrg
-	client   *Client
+	AdminOrg      *types.AdminOrg
+	client        *Client
+	TenantContext *TenantContext
 }
 
 func NewAdminOrg(cli *Client) *AdminOrg {
@@ -39,12 +40,23 @@ func NewAdminOrg(cli *Client) *AdminOrg {
 // task.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-CreateCatalog.html
 func (adminOrg *AdminOrg) CreateCatalog(name, description string) (AdminCatalog, error) {
-	return CreateCatalog(adminOrg.client, adminOrg.AdminOrg.Link, name, description)
+	adminCatalog, err := adminOrg.CreateCatalogWithStorageProfile(name, description, nil)
+	if err != nil {
+		return AdminCatalog{}, err
+	}
+	adminCatalog.parent = adminOrg
+	return *adminCatalog, nil
 }
 
 // CreateCatalogWithStorageProfile is like CreateCatalog, but allows to specify storage profile
 func (adminOrg *AdminOrg) CreateCatalogWithStorageProfile(name, description string, storageProfiles *types.CatalogStorageProfiles) (*AdminCatalog, error) {
-	return CreateCatalogWithStorageProfile(adminOrg.client, adminOrg.AdminOrg.Link, name, description, storageProfiles)
+	adminCatalog, err := CreateCatalogWithStorageProfile(adminOrg.client, adminOrg.AdminOrg.Link, name, description, storageProfiles)
+	if err != nil {
+		return nil, err
+	}
+	adminCatalogWithParent := NewAdminCatalogWithParent(adminOrg.client, adminOrg)
+	adminCatalogWithParent.AdminCatalog = adminCatalog.AdminCatalog
+	return adminCatalogWithParent, nil
 }
 
 // GetAllVDCs returns all depending VDCs for a particular Org
@@ -274,6 +286,8 @@ func (adminOrg *AdminOrg) getVdcByAdminHREF(adminVdcUrl *url.URL) (*Vdc, error) 
 
 	vdc := NewVdc(adminOrg.client)
 
+	vdc.parent = adminOrg
+
 	_, err := adminOrg.client.ExecuteRequest(vdcURL.String(), http.MethodGet,
 		"", "error retrieving vdc: %s", nil, vdc.Vdc)
 
@@ -470,6 +484,7 @@ func (adminOrg *AdminOrg) GetCatalogByHref(catalogHref string) (*Catalog, error)
 	if err != nil {
 		return nil, err
 	}
+	cat.parent = adminOrg
 	// The request was successful
 	return cat, nil
 }
@@ -494,13 +509,13 @@ func (adminOrg *AdminOrg) GetCatalogByName(catalogName string, refresh bool) (*C
 	return nil, ErrorEntityNotFound
 }
 
-// Extracts an UUID from a string, regardless of surrounding text
+// Extracts an UUID from a string, regardless of surrounding text, returns the last found occurrence
 // Returns an empty string if no UUID was found
 func extractUuid(input string) string {
 	reGetID := regexp.MustCompile(`([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})`)
 	matchListId := reGetID.FindAllStringSubmatch(input, -1)
 	if len(matchListId) > 0 && len(matchListId[0]) > 0 {
-		return matchListId[0][1]
+		return matchListId[len(matchListId)-1][1]
 	}
 	return ""
 }
@@ -577,6 +592,7 @@ func (adminOrg *AdminOrg) GetAdminCatalogByHref(catalogHref string) (*AdminCatal
 		return nil, err
 	}
 
+	adminCatalog.parent = adminOrg
 	// The request was successful
 	return adminCatalog, nil
 }
@@ -656,6 +672,7 @@ func (adminOrg *AdminOrg) GetVDCByHref(vdcHref string) (*Vdc, error) {
 	if err != nil {
 		return nil, err
 	}
+	vdc.parent = adminOrg
 
 	return vdc, nil
 }
@@ -740,27 +757,43 @@ func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
 
 // QueryCatalogList returns a list of catalogs for this organization
 func (adminOrg *AdminOrg) QueryCatalogList() ([]*types.CatalogRecord, error) {
+	return adminOrg.FindCatalogRecords("")
+}
+
+// FindCatalogRecords given a catalog name, retrieves the catalogRecords for a given organization
+func (adminOrg *AdminOrg) FindCatalogRecords(name string) ([]*types.CatalogRecord, error) {
 	util.Logger.Printf("[DEBUG] QueryCatalogList with org name %s", adminOrg.AdminOrg.Name)
-	queryType := types.QtCatalog
+
+	var tenantHeaders map[string]string
+
 	if adminOrg.client.IsSysAdmin {
-		queryType = types.QtAdminCatalog
+		// Set tenant context headers just for the query
+		tenantHeaders = map[string]string{
+			types.HeaderAuthContext:   adminOrg.TenantContext.OrgName,
+			types.HeaderTenantContext: adminOrg.TenantContext.OrgId,
+		}
 	}
-	results, err := adminOrg.client.cumulativeQuery(queryType, nil, map[string]string{
-		"type":          queryType,
-		"filter":        fmt.Sprintf("orgName==%s", url.QueryEscape(adminOrg.AdminOrg.Name)),
+
+	var filter string
+	filter = fmt.Sprintf("orgName==%s", url.QueryEscape(adminOrg.AdminOrg.Name))
+	if name != "" {
+		filter = fmt.Sprintf("%s;name==%s", filter, url.QueryEscape(name))
+	}
+
+	results, err := adminOrg.client.cumulativeQueryWithHeaders(types.QtCatalog, nil, map[string]string{
+		"type":          types.QtCatalog,
+		"filter":        filter,
 		"filterEncoded": "true",
-	})
+	}, tenantHeaders)
 	if err != nil {
 		return nil, err
 	}
 
-	var catalogs []*types.CatalogRecord
-
-	if adminOrg.client.IsSysAdmin {
-		catalogs = results.Results.AdminCatalogRecord
-	} else {
-		catalogs = results.Results.CatalogRecord
+	catalogs := results.Results.CatalogRecord
+	if catalogs == nil {
+		return nil, ErrorEntityNotFound
 	}
+
 	util.Logger.Printf("[DEBUG] QueryCatalogList returned with : %#v and error: %s", catalogs, err)
 	return catalogs, nil
 }

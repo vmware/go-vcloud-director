@@ -1,15 +1,16 @@
 package govcd
 
 /*
- * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	"github.com/vmware/go-vcloud-director/v2/util"
 	"net/http"
 	"net/url"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 // In UI called VM sizing policy. In API VDC compute policy
@@ -20,11 +21,18 @@ type VdcComputePolicy struct {
 }
 
 // GetVdcComputePolicyById retrieves VDC compute policy by given ID
+func (client *Client) GetVdcComputePolicyById(id string) (*VdcComputePolicy, error) {
+	return getVdcComputePolicyById(client, id)
+}
+
+// GetVdcComputePolicyById retrieves VDC compute policy by given ID
+// Deprecated: use client.GetVdcComputePolicyById
 func (org *AdminOrg) GetVdcComputePolicyById(id string) (*VdcComputePolicy, error) {
 	return getVdcComputePolicyById(org.client, id)
 }
 
 // GetVdcComputePolicyById retrieves VDC compute policy by given ID
+// Deprecated: use client.GetVdcComputePolicyById
 func (org *Org) GetVdcComputePolicyById(id string) (*VdcComputePolicy, error) {
 	return getVdcComputePolicyById(org.client, id)
 }
@@ -53,7 +61,7 @@ func getVdcComputePolicyById(client *Client, id string) (*VdcComputePolicy, erro
 		client:           client,
 	}
 
-	err = client.OpenApiGetItem(minimumApiVersion, urlRef, nil, vdcComputePolicy.VdcComputePolicy)
+	err = client.OpenApiGetItem(minimumApiVersion, urlRef, nil, vdcComputePolicy.VdcComputePolicy, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -63,12 +71,20 @@ func getVdcComputePolicyById(client *Client, id string) (*VdcComputePolicy, erro
 
 // GetAllVdcComputePolicies retrieves all VDC compute policies using OpenAPI endpoint. Query parameters can be supplied to perform additional
 // filtering
+func (client *Client) GetAllVdcComputePolicies(queryParameters url.Values) ([]*VdcComputePolicy, error) {
+	return getAllVdcComputePolicies(client, queryParameters)
+}
+
+// GetAllVdcComputePolicies retrieves all VDC compute policies using OpenAPI endpoint. Query parameters can be supplied to perform additional
+// filtering
+// Deprecated: use client.GetAllVdcComputePolicies
 func (org *AdminOrg) GetAllVdcComputePolicies(queryParameters url.Values) ([]*VdcComputePolicy, error) {
 	return getAllVdcComputePolicies(org.client, queryParameters)
 }
 
 // GetAllVdcComputePolicies retrieves all VDC compute policies using OpenAPI endpoint. Query parameters can be supplied to perform additional
 // filtering
+// Deprecated: use client.GetAllVdcComputePolicies
 func (org *Org) GetAllVdcComputePolicies(queryParameters url.Values) ([]*VdcComputePolicy, error) {
 	return getAllVdcComputePolicies(org.client, queryParameters)
 }
@@ -89,7 +105,7 @@ func getAllVdcComputePolicies(client *Client, queryParameters url.Values) ([]*Vd
 
 	responses := []*types.VdcComputePolicy{{}}
 
-	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &responses)
+	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &responses, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -107,24 +123,30 @@ func getAllVdcComputePolicies(client *Client, queryParameters url.Values) ([]*Vd
 }
 
 // CreateVdcComputePolicy creates a new VDC Compute Policy using OpenAPI endpoint
+// Deprecated: use client.CreateVdcComputePolicy
 func (org *AdminOrg) CreateVdcComputePolicy(newVdcComputePolicy *types.VdcComputePolicy) (*VdcComputePolicy, error) {
+	return org.client.CreateVdcComputePolicy(newVdcComputePolicy)
+}
+
+// CreateVdcComputePolicy creates a new VDC Compute Policy using OpenAPI endpoint
+func (client *Client) CreateVdcComputePolicy(newVdcComputePolicy *types.VdcComputePolicy) (*VdcComputePolicy, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies
-	minimumApiVersion, err := org.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := org.client.OpenApiBuildEndpoint(endpoint)
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
 	returnVdcComputePolicy := &VdcComputePolicy{
 		VdcComputePolicy: &types.VdcComputePolicy{},
-		client:           org.client,
+		client:           client,
 	}
 
-	err = org.client.OpenApiPostItem(minimumApiVersion, urlRef, nil, newVdcComputePolicy, returnVdcComputePolicy.VdcComputePolicy)
+	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, newVdcComputePolicy, returnVdcComputePolicy.VdcComputePolicy, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating VDC compute policy: %s", err)
 	}
@@ -154,7 +176,7 @@ func (vdcComputePolicy *VdcComputePolicy) Update() (*VdcComputePolicy, error) {
 		client:           vdcComputePolicy.client,
 	}
 
-	err = vdcComputePolicy.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, vdcComputePolicy.VdcComputePolicy, returnVdcComputePolicy.VdcComputePolicy)
+	err = vdcComputePolicy.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, vdcComputePolicy.VdcComputePolicy, returnVdcComputePolicy.VdcComputePolicy, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error updating VDC compute policy: %s", err)
 	}
@@ -179,7 +201,7 @@ func (vdcComputePolicy *VdcComputePolicy) Delete() error {
 		return err
 	}
 
-	err = vdcComputePolicy.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil)
+	err = vdcComputePolicy.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting VDC compute policy: %s", err)
@@ -204,7 +226,7 @@ func (vdc *AdminVdc) GetAllAssignedVdcComputePolicies(queryParameters url.Values
 
 	responses := []*types.VdcComputePolicy{{}}
 
-	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &responses)
+	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &responses, nil)
 	if err != nil {
 		return nil, err
 	}

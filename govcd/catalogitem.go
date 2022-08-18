@@ -37,7 +37,7 @@ func (catalogItem *CatalogItem) GetVAppTemplate() (VAppTemplate, error) {
 
 }
 
-// Deletes the Catalog Item, returning an error if the vCD call fails.
+// Delete deletes the Catalog Item, returning an error if the vCD call fails.
 // Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-CatalogItem.html
 func (catalogItem *CatalogItem) Delete() error {
 	util.Logger.Printf("[TRACE] Deleting catalog item: %#v", catalogItem.CatalogItem)

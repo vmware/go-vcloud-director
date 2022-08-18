@@ -54,7 +54,7 @@ func (task *Task) Refresh() error {
 		return fmt.Errorf("cannot refresh, Object is empty")
 	}
 
-	refreshUrl, _ := url.ParseRequestURI(task.Task.HREF)
+	refreshUrl := urlParseRequestURI(task.Task.HREF)
 
 	req := task.client.NewRequest(map[string]string{}, http.MethodGet, *refreshUrl, nil)
 

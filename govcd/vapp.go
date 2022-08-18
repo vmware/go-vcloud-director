@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 	"time"
 
@@ -29,7 +28,7 @@ func NewVApp(cli *Client) *VApp {
 	}
 }
 
-func (vcdCli *VCDClient) NewVApp(client *Client) VApp {
+func (vcdClient *VCDClient) NewVApp(client *Client) VApp {
 	newvapp := NewVApp(client)
 	return *newvapp
 }
@@ -62,7 +61,7 @@ type DhcpSettings struct {
 // Returns the vdc where the vapp resides in.
 func (vapp *VApp) getParentVDC() (Vdc, error) {
 	for _, link := range vapp.VApp.Link {
-		if link.Type == "application/vnd.vmware.vcloud.vdc+xml" {
+		if (link.Type == types.MimeVDC || link.Type == types.MimeAdminVDC) && link.Rel == "up" {
 
 			vdc := NewVdc(vapp.client)
 
@@ -72,6 +71,11 @@ func (vapp *VApp) getParentVDC() (Vdc, error) {
 				return Vdc{}, err
 			}
 
+			parent, err := vdc.getParentOrg()
+			if err != nil {
+				return Vdc{}, err
+			}
+			vdc.parent = parent
 			return *vdc, nil
 		}
 	}
@@ -236,7 +240,7 @@ func addNewVMW(vapp *VApp, name string, vappTemplate VAppTemplate,
 	// Inject network config
 	vAppComposition.SourcedItem.InstantiationParams.NetworkConnectionSection = network
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/action/recomposeVApp"
 
 	// Return the task
@@ -278,7 +282,7 @@ func (vapp *VApp) RemoveVM(vm VM) error {
 		},
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/action/recomposeVApp"
 
 	deleteTask, err := vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
@@ -302,7 +306,7 @@ func (vapp *VApp) PowerOn() (Task, error) {
 		return Task{}, fmt.Errorf("error powering on vApp: %s", err)
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/power/action/powerOn"
 
 	// Return the task
@@ -312,7 +316,7 @@ func (vapp *VApp) PowerOn() (Task, error) {
 
 func (vapp *VApp) PowerOff() (Task, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/power/action/powerOff"
 
 	// Return the task
@@ -323,7 +327,7 @@ func (vapp *VApp) PowerOff() (Task, error) {
 
 func (vapp *VApp) Reboot() (Task, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/power/action/reboot"
 
 	// Return the task
@@ -333,7 +337,7 @@ func (vapp *VApp) Reboot() (Task, error) {
 
 func (vapp *VApp) Reset() (Task, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/power/action/reset"
 
 	// Return the task
@@ -343,7 +347,7 @@ func (vapp *VApp) Reset() (Task, error) {
 
 func (vapp *VApp) Suspend() (Task, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/power/action/suspend"
 
 	// Return the task
@@ -353,7 +357,7 @@ func (vapp *VApp) Suspend() (Task, error) {
 
 func (vapp *VApp) Shutdown() (Task, error) {
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/power/action/shutdown"
 
 	// Return the task
@@ -368,7 +372,7 @@ func (vapp *VApp) Undeploy() (Task, error) {
 		UndeployPowerAction: "powerOff",
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/action/undeploy"
 
 	// Return the task
@@ -383,7 +387,7 @@ func (vapp *VApp) Deploy() (Task, error) {
 		PowerOn: false,
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/action/deploy"
 
 	// Return the task
@@ -430,7 +434,7 @@ func (vapp *VApp) Customize(computername, script string, changeSid bool) (Task, 
 		ChangeSid:           takeBoolPointer(changeSid),
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.Children.VM[0].HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.Children.VM[0].HREF)
 	apiEndpoint.Path += "/guestCustomizationSection/"
 
 	// Return the task
@@ -543,7 +547,7 @@ func (vapp *VApp) ChangeCPUCountWithCore(virtualCpuCount int, coresPerSocket *in
 		},
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.Children.VM[0].HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.Children.VM[0].HREF)
 	apiEndpoint.Path += "/virtualHardwareSection/cpu"
 
 	// Return the task
@@ -634,7 +638,7 @@ func (vapp *VApp) SetOvf(parameters map[string]string) (Task, error) {
 		ProductSection: vapp.VApp.Children.VM[0].ProductSection,
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.Children.VM[0].HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.Children.VM[0].HREF)
 	apiEndpoint.Path += "/productSections"
 
 	// Return the task
@@ -692,7 +696,7 @@ func (vapp *VApp) ChangeNetworkConfig(networks []map[string]interface{}, ip stri
 
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.Children.VM[0].HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.Children.VM[0].HREF)
 	apiEndpoint.Path += "/networkConnectionSection/"
 
 	// Return the task
@@ -734,7 +738,7 @@ func (vapp *VApp) ChangeMemorySize(size int) (Task, error) {
 		},
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.Children.VM[0].HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.Children.VM[0].HREF)
 	apiEndpoint.Path += "/virtualHardwareSection/memory"
 
 	// Return the task
@@ -1002,6 +1006,9 @@ func (vapp *VApp) UpdateNetworkAsync(networkSettingsToUpdate *VappNetworkSetting
 	if networkToUpdate == (types.VAppNetworkConfiguration{}) {
 		return Task{}, fmt.Errorf("not found network to update with Id %s", networkSettingsToUpdate.ID)
 	}
+	if networkToUpdate.Configuration == nil {
+		networkToUpdate.Configuration = &types.NetworkConfiguration{}
+	}
 	networkToUpdate.Configuration.RetainNetInfoAcrossDeployments = networkSettingsToUpdate.RetainIpMacEnabled
 	// new network to connect
 	if networkToUpdate.Configuration.ParentNetwork == nil && orgNetwork != nil {
@@ -1114,6 +1121,9 @@ func (vapp *VApp) UpdateOrgNetworkAsync(networkSettingsToUpdate *VappNetworkSett
 		fenceMode = types.FenceModeNAT
 	}
 
+	if networkToUpdate.Configuration == nil {
+		networkToUpdate.Configuration = &types.NetworkConfiguration{}
+	}
 	networkToUpdate.Configuration.RetainNetInfoAcrossDeployments = networkSettingsToUpdate.RetainIpMacEnabled
 	networkToUpdate.Configuration.FenceMode = fenceMode
 
@@ -1238,7 +1248,7 @@ func updateNetworkConfigurations(vapp *VApp, networkConfigurations []types.VAppN
 		NetworkConfig: networkConfigurations,
 	}
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
 	apiEndpoint.Path += "/networkConfigSection/"
 
 	// Return the task
@@ -1359,18 +1369,17 @@ func (client *Client) QueryVappList() ([]*types.QueryResultVAppRecordType, error
 }
 
 // getOrgInfo finds the organization to which the vApp belongs (through the VDC), and returns its name and ID
-func (vapp *VApp) getOrgInfo() (orgInfoType, error) {
+func (vapp *VApp) getOrgInfo() (*TenantContext, error) {
 	previous, exists := orgInfoCache[vapp.VApp.ID]
 	if exists {
 		return previous, nil
 	}
-	//var orgHref string
 	var err error
 	vdc, err := vapp.getParentVDC()
 	if err != nil {
-		return orgInfoType{}, err
+		return nil, err
 	}
-	return getOrgInfo(vapp.client, vdc.Vdc.Link, vapp.VApp.ID, vapp.VApp.Name, "vApp")
+	return vdc.getTenantContext()
 }
 
 // UpdateNameDescription can change the name and the description of a vApp
@@ -1435,4 +1444,88 @@ func (vapp *VApp) UpdateDescription(newDescription string) error {
 // Rename changes the name of a vApp
 func (vapp *VApp) Rename(newName string) error {
 	return vapp.UpdateNameDescription(newName, vapp.VApp.Description)
+}
+
+func (vapp *VApp) getTenantContext() (*TenantContext, error) {
+	parentVdc, err := vapp.getParentVDC()
+	if err != nil {
+		return nil, err
+	}
+	return parentVdc.getTenantContext()
+}
+
+// RenewLease updates the lease terms for the vApp
+func (vapp *VApp) RenewLease(deploymentLeaseInSeconds, storageLeaseInSeconds int) error {
+
+	href := ""
+	if vapp.VApp.LeaseSettingsSection != nil {
+		if vapp.VApp.LeaseSettingsSection.DeploymentLeaseInSeconds == deploymentLeaseInSeconds &&
+			vapp.VApp.LeaseSettingsSection.StorageLeaseInSeconds == storageLeaseInSeconds {
+			// Requested parameters are the same as existing parameters: exit without updating
+			return nil
+		}
+		href = vapp.VApp.LeaseSettingsSection.HREF
+	}
+	if href == "" {
+		for _, link := range vapp.VApp.Link {
+			if link.Rel == "edit" && link.Type == types.MimeLeaseSettingSection {
+				href = link.HREF
+				break
+			}
+		}
+	}
+	if href == "" {
+		return fmt.Errorf("link to update lease sttings not found for vApp %s", vapp.VApp.Name)
+	}
+
+	var leaseSettings = types.UpdateLeaseSettingsSection{
+		HREF:                     href,
+		XmlnsOvf:                 types.XMLNamespaceOVF,
+		Xmlns:                    types.XMLNamespaceVCloud,
+		OVFInfo:                  "Lease section settings",
+		Type:                     types.MimeLeaseSettingSection,
+		DeploymentLeaseInSeconds: takeIntAddress(deploymentLeaseInSeconds),
+		StorageLeaseInSeconds:    takeIntAddress(storageLeaseInSeconds),
+	}
+
+	task, err := vapp.client.ExecuteTaskRequest(href, http.MethodPut,
+		types.MimeLeaseSettingSection, "error updating vapp lease : %s", &leaseSettings)
+
+	if err != nil {
+		return fmt.Errorf("unable to update vApp lease: %s", err)
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("task for updating vApp lease failed: %s", err)
+	}
+	return vapp.Refresh()
+}
+
+// GetLease retrieves the lease terms for a vApp
+func (vapp *VApp) GetLease() (*types.LeaseSettingsSection, error) {
+
+	href := ""
+	if vapp.VApp.LeaseSettingsSection != nil {
+		href = vapp.VApp.LeaseSettingsSection.HREF
+	}
+	if href == "" {
+		for _, link := range vapp.VApp.Link {
+			if link.Type == types.MimeLeaseSettingSection {
+				href = link.HREF
+				break
+			}
+		}
+	}
+	if href == "" {
+		return nil, fmt.Errorf("link to retrieve lease settings not found for vApp %s", vapp.VApp.Name)
+	}
+	var leaseSettings types.LeaseSettingsSection
+
+	_, err := vapp.client.ExecuteRequest(href, http.MethodGet, "", "error getting vApp lease info: %s", nil, &leaseSettings)
+
+	if err != nil {
+		return nil, err
+	}
+	return &leaseSettings, nil
 }

@@ -1,3 +1,4 @@
+//go:build (user || functional || ALL) && !skipLong
 // +build user functional ALL
 // +build !skipLong
 
@@ -25,6 +26,7 @@ func (vcd *TestVCD) Test_LDAP(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
+	vcd.checkSkipWhenApiToken(check)
 
 	if !catalogItemIsPhotonOs(vcd) {
 		check.Skip(fmt.Sprintf("Catalog item '%s' is not Photon OS", vcd.config.VCD.Catalog.CatalogItem))
@@ -33,18 +35,39 @@ func (vcd *TestVCD) Test_LDAP(check *C) {
 	if vcd.config.VCD.ExternalNetwork == "" {
 		check.Skip("[" + check.TestName() + "] external network not provided")
 	}
+	// Due to a bug in VCD, when configuring LDAP service, Org publishing catalog settings `Publish external catalogs` and
+	// `Subscribe to external catalogs ` gets disabled. For that reason we are getting the current values from those vars
+	// to set them at the end of the test, to avoid interference with other tests.
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	publishExternalCatalogs := adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishExternally
+	subscribeToExternalCatalogs := adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanSubscribe
 
 	fmt.Println("Setting up LDAP")
 	networkName, vappName, vmName := vcd.configureLdap(check)
 	defer func() {
 		fmt.Println("Unconfiguring LDAP")
 		vcd.unconfigureLdap(check, networkName, vappName, vmName)
+
+		// Due to the VCD bug mentioned above, we need to set the previous state from the publishing settings vars
+		check.Assert(adminOrg.Refresh(), IsNil)
+
+		adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishExternally = publishExternalCatalogs
+		adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanSubscribe = subscribeToExternalCatalogs
+
+		task, err := adminOrg.Update()
+		check.Assert(err, IsNil)
+
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
 	}()
 
 	// Run tests requiring LDAP from here.
 	vcd.test_GroupCRUD(check)
 	vcd.test_GroupFinderGetGenericEntity(check)
-
+	vcd.test_GroupUserListIsPopulated(check)
 }
 
 // configureLdap creates direct network, spawns Photon OS VM with LDAP server and configures vCD to
@@ -206,10 +229,9 @@ func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) (string,
 	vappTemplate, err := catalogItem.GetVAppTemplate()
 	check.Assert(err, IsNil)
 	// Compose Raw vApp
-	err = vdc.ComposeRawVApp(vAppName, "")
+	vapp, err := vdc.CreateRawVApp(vAppName, "")
 	check.Assert(err, IsNil)
-	vapp, err := vdc.GetVAppByName(vAppName, true)
-	check.Assert(err, IsNil)
+	check.Assert(vapp, NotNil)
 	// vApp was created - adding it to cleanup list (using prepend to remove it before direct
 	// network removal)
 	PrependToCleanupList(vAppName, "vapp", "", check.TestName())
