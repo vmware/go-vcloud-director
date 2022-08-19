@@ -20,9 +20,10 @@ import (
 )
 
 type VersionInfo struct {
-	Version    string `xml:"Version"`
-	LoginUrl   string `xml:"LoginUrl"`
-	Deprecated bool   `xml:"deprecated,attr,omitempty"`
+	Version          string `xml:"Version"`
+	LoginUrl         string `xml:"LoginUrl"`
+	ProviderLoginUrl string `xml:"ProviderLoginUrl"`
+	Deprecated       bool   `xml:"deprecated,attr,omitempty"`
 }
 
 type VersionInfos []VersionInfo
