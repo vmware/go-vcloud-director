@@ -14,10 +14,6 @@ import (
 )
 
 func (vcd *TestVCD) Test_GetAllNsxtEdgeClusters(check *C) {
-	if vcd.client.Client.APIVCDMaxVersionIs("< 34") {
-		check.Skip("At least VCD 10.1 is required")
-	}
-
 	skipNoNsxtConfiguration(vcd, check)
 
 	if vcd.skipAdminTests {
@@ -34,10 +30,6 @@ func (vcd *TestVCD) Test_GetAllNsxtEdgeClusters(check *C) {
 }
 
 func (vcd *TestVCD) Test_GetNsxtEdgeClusterByName(check *C) {
-	if vcd.client.Client.APIVCDMaxVersionIs("< 34") {
-		check.Skip("At least VCD 10.1 is required")
-	}
-
 	skipNoNsxtConfiguration(vcd, check)
 
 	if vcd.skipAdminTests {
