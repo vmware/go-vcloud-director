@@ -49,7 +49,7 @@ const (
 )
 
 var (
-	// All go-vcloud director logging goes through this logger
+	// All go-vcloud-director logging goes through this logger
 	Logger *log.Logger
 
 	// It's true if we're using an user provided logger

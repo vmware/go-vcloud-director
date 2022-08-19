@@ -11,7 +11,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// AdminCatalog is a admin view of a vCloud Director Catalog
+// AdminCatalog is a admin view of a VMware Cloud Director Catalog
 // To be able to get an AdminCatalog representation, users must have
 // admin credentials to the System org. AdminCatalog is used
 // for creating, updating, and deleting a Catalog.

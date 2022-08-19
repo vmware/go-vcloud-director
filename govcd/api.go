@@ -2,7 +2,7 @@
  * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
-// Package govcd provides a simple binding for vCloud Director REST APIs.
+// Package govcd provides a simple binding for VMware Cloud Director REST APIs.
 package govcd
 
 import (
@@ -22,7 +22,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
-// Client provides a client to vCloud Director, values can be populated automatically using the Authenticate method.
+// Client provides a client to VMware Cloud Director, values can be populated automatically using the Authenticate method.
 type Client struct {
 	APIVersion       string      // The API version required
 	VCDToken         string      // Access Token (authorization header)
@@ -34,7 +34,7 @@ type Client struct {
 	UsingAccessToken bool        // flag if client is using an API token
 
 	// MaxRetryTimeout specifies a time limit (in seconds) for retrying requests made by the SDK
-	// where vCloud director may take time to respond and retry mechanism is needed.
+	// where VMware Cloud Director may take time to respond and retry mechanism is needed.
 	// This must be >0 to avoid instant timeout errors.
 	MaxRetryTimeout int
 
