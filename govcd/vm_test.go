@@ -707,7 +707,7 @@ func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
 	check.Assert(err, IsNil)
 	vmStatus, err = vm.GetStatus()
 	check.Assert(err, IsNil)
-	check.Assert(vmStatus, Equals, "POWERED_OFF")
+	check.Assert(vmStatus == "POWERED_OFF" || vmStatus == "PARTIALLY_POWERED_OFF", Equals, true)
 }
 
 func (vcd *TestVCD) Test_GetNetworkConnectionSection(check *C) {
