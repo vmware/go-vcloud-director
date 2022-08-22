@@ -91,31 +91,31 @@ func (vmar *VmAffinityRule) id() string   { return vmar.VmAffinityRule.ID }
 // and within the caller it must define the getter functions
 // Example usage:
 //
-// func (vcd *TestVCD) Test_OrgGetVdc(check *C) {
-//	if vcd.config.VCD.Org == "" {
-//		check.Skip("Test_OrgGetVdc: Org name not given.")
-//		return
-//	}
-//	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
-//	check.Assert(err, IsNil)
-//	check.Assert(org, NotNil)
+//	func (vcd *TestVCD) Test_OrgGetVdc(check *C) {
+//		if vcd.config.VCD.Org == "" {
+//			check.Skip("Test_OrgGetVdc: Org name not given.")
+//			return
+//		}
+//		org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+//		check.Assert(err, IsNil)
+//		check.Assert(org, NotNil)
 //
-//	getByName := func(name string, refresh bool) (genericEntity, error) { return org.GetVDCByName(name, refresh) }
-//	getById := func(id string, refresh bool) (genericEntity, error) { return org.GetVDCById(id, refresh) }
-//	getByNameOrId := func(id string, refresh bool) (genericEntity, error) { return org.GetVDCByNameOrId(id, refresh) }
+//		getByName := func(name string, refresh bool) (genericEntity, error) { return org.GetVDCByName(name, refresh) }
+//		getById := func(id string, refresh bool) (genericEntity, error) { return org.GetVDCById(id, refresh) }
+//		getByNameOrId := func(id string, refresh bool) (genericEntity, error) { return org.GetVDCByNameOrId(id, refresh) }
 //
-//	var def = getterTestDefinition{
-//		parentType:       "Org",
-//		parentName:       vcd.config.VCD.Org,
-//		entityType:       "Vdc",
-//		getterPrefix:     "VDC",
-//		entityName:       vcd.config.VCD.Vdc,
-//		getByName:        getByName,
-//		getById:          getById,
-//		getByNameOrId:    getByNameOrId,
+//		var def = getterTestDefinition{
+//			parentType:       "Org",
+//			parentName:       vcd.config.VCD.Org,
+//			entityType:       "Vdc",
+//			getterPrefix:     "VDC",
+//			entityName:       vcd.config.VCD.Vdc,
+//			getByName:        getByName,
+//			getById:          getById,
+//			getByNameOrId:    getByNameOrId,
+//		}
+//		vcd.testFinderGetGenericEntity(def, check)
 //	}
-//	vcd.testFinderGetGenericEntity(def, check)
-// }
 func (vcd *TestVCD) testFinderGetGenericEntity(def getterTestDefinition, check *C) {
 	entityName := def.entityName
 	if entityName == "" {

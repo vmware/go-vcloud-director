@@ -9,7 +9,7 @@ package govcd
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -280,7 +280,7 @@ func (vcd *TestVCD) Test_UploadOvf_ShowUploadProgress_works(check *C) {
 	check.Assert(err, IsNil)
 	w.Close()
 	//read stdin
-	result, _ := ioutil.ReadAll(r)
+	result, _ := io.ReadAll(r)
 	os.Stdout = oldStdout
 
 	err = uploadTask.WaitTaskCompletion()
@@ -371,7 +371,7 @@ func (vcd *TestVCD) Test_UploadOvf_withoutVMDKSize(check *C) {
 }
 
 func countFolders() int {
-	files, err := ioutil.ReadDir(os.TempDir())
+	files, err := os.ReadDir(os.TempDir())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -524,7 +524,7 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImage_ShowUploadProgress_works(check 
 	check.Assert(err, IsNil)
 	w.Close()
 	//read stdin
-	result, _ := ioutil.ReadAll(r)
+	result, _ := io.ReadAll(r)
 	os.Stdout = oldStdout
 
 	err = uploadTask.WaitTaskCompletion()

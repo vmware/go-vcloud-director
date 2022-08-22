@@ -123,8 +123,8 @@ func (adminOrg *AdminOrg) GetStorageProfileReferenceById(id string, refresh bool
 		ErrorEntityNotFound, id, adminOrg.AdminOrg.Name)
 }
 
-//   Deletes the org, returning an error if the vCD call fails.
-//   API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Organization.html
+// Deletes the org, returning an error if the vCD call fails.
+// API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Organization.html
 func (adminOrg *AdminOrg) Delete(force bool, recursive bool) error {
 	if force && recursive {
 		//undeploys vapps
@@ -191,10 +191,10 @@ func (adminOrg *AdminOrg) Disable() error {
 	return adminOrg.client.ExecuteRequestWithoutResponse(orgHREF.String(), http.MethodPost, "", "error disabling organization: %s", nil)
 }
 
-//   Updates the Org definition from current org struct contents.
-//   Any differences that may be legally applied will be updated.
-//   Returns an error if the call to vCD fails.
-//   API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/PUT-Organization.html
+// Updates the Org definition from current org struct contents.
+// Any differences that may be legally applied will be updated.
+// Returns an error if the call to vCD fails.
+// API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/PUT-Organization.html
 func (adminOrg *AdminOrg) Update() (Task, error) {
 	vcomp := &types.AdminOrg{
 		Xmlns:       types.XMLNamespaceVCloud,

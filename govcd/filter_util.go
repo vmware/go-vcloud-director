@@ -117,7 +117,8 @@ func (fd *FilterDef) AddMetadataFilter(key, value, valueType string, isSystem, u
 
 // stringToBool converts a string to a bool
 // The following values are recognized as TRUE:
-//  t, true, y, yes, ok
+//
+//	t, true, y, yes, ok
 func stringToBool(s string) bool {
 	switch strings.ToLower(s) {
 	case "t", "true", "y", "yes", "ok":

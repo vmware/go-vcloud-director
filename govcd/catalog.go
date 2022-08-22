@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"net/http"
 	"net/url"
@@ -499,7 +498,7 @@ func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL)
 }
 
 func parseOvfFileDesc(file *os.File, ovfFileDesc *Envelope) error {
-	ovfXml, err := ioutil.ReadAll(file)
+	ovfXml, err := io.ReadAll(file)
 	if err != nil {
 		return err
 	}
@@ -611,12 +610,13 @@ func createItemWithLink(client *Client, createHREF *url.URL, catalogItemName, it
 }
 
 // Helper method to get path to multi-part files.
-//For example a file called test.vmdk with total_file_size = 100 bytes and part_size = 40 bytes, implies the file is made of *3* part files.
-//		- test.vmdk.000000000 = 40 bytes
-//		- test.vmdk.000000001 = 40 bytes
-//		- test.vmdk.000000002 = 20 bytes
-//Say base_dir = /dummy_path/, and base_file_name = test.vmdk then
-//the output of this function will be [/dummy_path/test.vmdk.000000000,
+// For example a file called test.vmdk with total_file_size = 100 bytes and part_size = 40 bytes, implies the file is made of *3* part files.
+//   - test.vmdk.000000000 = 40 bytes
+//   - test.vmdk.000000001 = 40 bytes
+//   - test.vmdk.000000002 = 20 bytes
+//
+// Say base_dir = /dummy_path/, and base_file_name = test.vmdk then
+// the output of this function will be [/dummy_path/test.vmdk.000000000,
 // /dummy_path/test.vmdk.000000001, /dummy_path/test.vmdk.000000002]
 func getChunkedFilePaths(baseDir, baseFileName string, totalFileSize, partSize int) []string {
 	var filePaths []string

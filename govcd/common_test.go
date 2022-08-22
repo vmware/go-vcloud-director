@@ -10,7 +10,7 @@ package govcd
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -197,7 +197,7 @@ func testGetEdgeEndpointXML(endpoint string, edge EdgeGateway, check *C) string 
 
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	check.Assert(err, IsNil)
 
 	return string(body)

@@ -9,7 +9,7 @@ package util
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -49,7 +49,7 @@ const (
 )
 
 var (
-	// All go-vcloud director logging goes through this logger
+	// All go-vcloud-director logging goes through this logger
 	Logger *log.Logger
 
 	// It's true if we're using an user provided logger
@@ -137,7 +137,7 @@ func SetLog() {
 		return
 	}
 	if !EnableLogging {
-		Logger = log.New(ioutil.Discard, "", log.Ldate|log.Ltime)
+		Logger = log.New(io.Discard, "", log.Ldate|log.Ltime)
 		return
 	}
 
