@@ -664,6 +664,10 @@ func (vcd *TestVCD) Test_RemoveAllNetworks(check *C) {
 
 	check.Assert(len(networkConfig.NetworkConfig), Equals, 2)
 
+	vappStatus, err := vcd.vapp.GetStatus()
+	check.Assert(err, IsNil)
+	printVerbose("vApp status: %s\n", vappStatus)
+
 	task, err := vcd.vapp.RemoveAllNetworks()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
