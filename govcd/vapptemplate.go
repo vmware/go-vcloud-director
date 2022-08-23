@@ -128,13 +128,8 @@ func (vAppTemplate *VAppTemplate) UpdateAsync() (Task, error) {
 func (vAppTemplate *VAppTemplate) Delete() error {
 	util.Logger.Printf("[TRACE] Deleting vApp Template: %#v", vAppTemplate.VAppTemplate)
 
-	uuid, err := getBareEntityUuid(vAppTemplate.VAppTemplate.ID)
-	if err != nil {
-		return fmt.Errorf("not a valid VApp Template identifier %s", vAppTemplate.VAppTemplate.ID)
-	}
-
 	vappTemplateHref := vAppTemplate.client.VCDHREF
-	vappTemplateHref.Path += "/vAppTemplate/vappTemplate-" + uuid
+	vappTemplateHref.Path += "/vAppTemplate/vappTemplate-" + extractUuid(vAppTemplate.VAppTemplate.ID)
 
 	util.Logger.Printf("[TRACE] Url for deleting vApp Template: %#v and name: %s", vappTemplateHref, vAppTemplate.VAppTemplate.Name)
 
