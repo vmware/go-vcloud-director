@@ -6,12 +6,10 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
 	"net/http"
 	"net/url"
-	"strings"
-
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 type VAppTemplate struct {
@@ -126,12 +124,17 @@ func (vAppTemplate *VAppTemplate) UpdateAsync() (Task, error) {
 		types.MimeVAppTemplate, "error updating vApp template item: %s", vappTemplatePayload)
 }
 
-// Delete deletes the VAppTemplate Item, returning an error if the vCD call fails.
+// Delete deletes the VAppTemplate Item, returning an error if the VCD call fails.
 func (vAppTemplate *VAppTemplate) Delete() error {
 	util.Logger.Printf("[TRACE] Deleting vApp Template: %#v", vAppTemplate.VAppTemplate)
 
+	uuid, err := getBareEntityUuid(vAppTemplate.VAppTemplate.ID)
+	if err != nil {
+		return fmt.Errorf("not a valid VApp Template identifier %s", vAppTemplate.VAppTemplate.ID)
+	}
+
 	vappTemplateHref := vAppTemplate.client.VCDHREF
-	vappTemplateHref.Path += "/vAppTemplate/vappTemplate-" + strings.ReplaceAll(vAppTemplate.VAppTemplate.ID, "urn:vcloud:vapptemplate:", "")
+	vappTemplateHref.Path += "/vAppTemplate/vappTemplate-" + uuid
 
 	util.Logger.Printf("[TRACE] Url for deleting vApp Template: %#v and name: %s", vappTemplateHref, vAppTemplate.VAppTemplate.Name)
 

@@ -903,8 +903,12 @@ func (cat *Catalog) GetCatalogItemById(catalogItemId string, refresh bool) (*Cat
 // On success, returns a pointer to the VAppTemplate structure and a nil error.
 // On failure, returns a nil pointer and an error.
 func (cat *Catalog) GetVAppTemplateById(vAppTemplateId string) (*VAppTemplate, error) {
+	uuid, err := getBareEntityUuid(vAppTemplateId)
+	if err != nil {
+		return nil, fmt.Errorf("not a valid VApp Template identifier %s", vAppTemplateId)
+	}
 	vappTemplateHref := cat.client.VCDHREF
-	vappTemplateHref.Path += "/vAppTemplate/vappTemplate-" + strings.ReplaceAll(vAppTemplateId, "urn:vcloud:vapptemplate:", "")
+	vappTemplateHref.Path += "/vAppTemplate/vappTemplate-" + uuid
 
 	vappTemplate, err := cat.GetVappTemplateByHref(vappTemplateHref.String())
 	if err != nil {
