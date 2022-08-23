@@ -1119,7 +1119,7 @@ func (vcdClient *VCDClient) GetOrgList() (*types.OrgList, error) {
 // QueryAdminOrgVdcStorageProfileByID finds a StorageProfile of VDC by ID as admin
 func QueryAdminOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) (*types.QueryResultAdminOrgVdcStorageProfileRecordType, error) {
 	if !vcdCli.Client.IsSysAdmin {
-		return nil, errors.New("cant query type QueryAdminOrgVdcStorageProfileByID as tenant user")
+		return nil, errors.New("can't query type QueryAdminOrgVdcStorageProfileByID as tenant user")
 	}
 	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":          types.QtAdminOrgVdcStorageProfile,
@@ -1141,7 +1141,7 @@ func QueryAdminOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) (*types.Qu
 // QueryOrgVdcStorageProfileByID finds a StorageProfile of VDC by ID
 func QueryOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) (*types.QueryResultOrgVdcStorageProfileRecordType, error) {
 	if vcdCli.Client.IsSysAdmin {
-		return nil, errors.New("cant query type QueryOrgVdcStorageProfileByID as sys admin")
+		return nil, errors.New("can't query type QueryOrgVdcStorageProfileByID as System administrator")
 	}
 	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":          types.QtOrgVdcStorageProfile,

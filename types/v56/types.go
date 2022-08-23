@@ -2192,7 +2192,7 @@ type QueryResultRecordsType struct {
 	VAppRecord                      []*QueryResultVAppRecordType                      `xml:"VAppRecord"`                      // A record representing a VApp result.
 	AdminVAppRecord                 []*QueryResultVAppRecordType                      `xml:"AdminVAppRecord"`                 // A record representing a VApp result as admin.
 	OrgVdcStorageProfileRecord      []*QueryResultOrgVdcStorageProfileRecordType      `xml:"OrgVdcStorageProfileRecord"`      // A record representing storage profiles
-	AdminOrgVdcStorageProfileRecord []*QueryResultAdminOrgVdcStorageProfileRecordType `xml:"AdminOrgVdcStorageProfileRecord"` // A record Admin representing storage profiles
+	AdminOrgVdcStorageProfileRecord []*QueryResultAdminOrgVdcStorageProfileRecordType `xml:"AdminOrgVdcStorageProfileRecord"` // A record representing storage profiles as admin
 	MediaRecord                     []*MediaRecordType                                `xml:"MediaRecord"`                     // A record representing media
 	AdminMediaRecord                []*MediaRecordType                                `xml:"AdminMediaRecord"`                // A record representing Admin media
 	VMWProviderVdcRecord            []*QueryResultVMWProviderVdcRecordType            `xml:"VMWProviderVdcRecord"`            // A record representing a Provider VDC result.
