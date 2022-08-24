@@ -666,13 +666,21 @@ func (vcd *TestVCD) Test_RemoveAllNetworks(check *C) {
 
 	// Network removal requires for the vApp to be down therefore attempt to power off vApp before
 	// network removal, but ignore error as it might already be powered off
-	task, _ := vcd.vapp.PowerOff()
-	if (task != Task{}) {
+	vappStatus, err := vcd.vapp.GetStatus()
+	check.Assert(err, IsNil)
+
+	if vappStatus != "POWERED_OFF" {
+		task, err := vcd.vapp.Undeploy()
+		check.Assert(err, IsNil)
 		err = task.WaitTaskCompletion()
 		check.Assert(err, IsNil)
 	}
 
-	task, err = vcd.vapp.RemoveAllNetworks()
+	vappStatus, err = vcd.vapp.GetStatus()
+	check.Assert(err, IsNil)
+	printVerbose("vApp status before network removal: %s\n", vappStatus)
+
+	task, err := vcd.vapp.RemoveAllNetworks()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
