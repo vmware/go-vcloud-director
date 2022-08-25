@@ -95,13 +95,7 @@ func test_NsxtDistributedFirewallRules(vcd *TestVCD, check *C, vdcGroupId string
 		check.Assert(fwUpdated.DistributedFirewallRuleContainer.Values[index].Enabled, Equals, randomizedFwRuleDefs[index].Enabled)
 		check.Assert(fwUpdated.DistributedFirewallRuleContainer.Values[index].Logging, Equals, randomizedFwRuleDefs[index].Logging)
 		check.Assert(fwUpdated.DistributedFirewallRuleContainer.Values[index].Comments, Equals, randomizedFwRuleDefs[index].Comments)
-
-		// API V 35.2 uses ActionValue field instead of deprecated `Action`
-		if vcd.client.Client.APIVCDMaxVersionIs(">= 35.2") {
-			check.Assert(fwUpdated.DistributedFirewallRuleContainer.Values[index].ActionValue, Equals, randomizedFwRuleDefs[index].ActionValue)
-		} else {
-			check.Assert(fwUpdated.DistributedFirewallRuleContainer.Values[index].Action, Equals, randomizedFwRuleDefs[index].Action)
-		}
+		check.Assert(fwUpdated.DistributedFirewallRuleContainer.Values[index].ActionValue, Equals, randomizedFwRuleDefs[index].ActionValue)
 
 		for fwGroupIndex := range fwUpdated.DistributedFirewallRuleContainer.Values[index].SourceFirewallGroups {
 			check.Assert(fwUpdated.DistributedFirewallRuleContainer.Values[index].SourceFirewallGroups[fwGroupIndex].ID, Equals, randomizedFwRuleDefs[index].SourceFirewallGroups[fwGroupIndex].ID)
@@ -174,7 +168,7 @@ func createDistributedFirewallDefinitions(check *C, vcd *TestVCD, vdcGroupId str
 
 		firewallRules[a] = &types.DistributedFirewallRule{
 			Name:                      check.TestName() + strconv.Itoa(a),
-			Action:                    pickRandomString([]string{"ALLOW", "DROP"}),
+			ActionValue:               pickRandomString([]string{"ALLOW", "DROP", "REJECT"}),
 			Enabled:                   a%2 == 0,
 			SourceFirewallGroups:      srcValue,
 			DestinationFirewallGroups: dstValue,
@@ -199,12 +193,6 @@ func createDistributedFirewallDefinitions(check *C, vcd *TestVCD, vdcGroupId str
 			// firewallRules[a].ApplicationPortProfiles = appPortProfileReferences[0:1]
 			firewallRules[a].ApplicationPortProfiles = nil
 
-		}
-
-		// API V35.2 introduced new field ActionValue instead of deprecated Action
-		if vcd.client.Client.APIVCDMaxVersionIs(">= 35.2") {
-			firewallRules[a].Action = ""
-			firewallRules[a].ActionValue = pickRandomString([]string{"ALLOW", "DROP", "REJECT"})
 		}
 
 		// API V36.2 introduced new field Comment which is shown in UI

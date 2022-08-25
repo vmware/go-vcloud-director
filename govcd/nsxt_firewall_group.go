@@ -62,9 +62,8 @@ func (vdcGroup *VdcGroup) CreateNsxtFirewallGroup(firewallGroupConfig *types.Nsx
 // 'networkProviderId' is NSX-T manager ID
 func (org *Org) GetAllNsxtFirewallGroups(queryParameters url.Values, firewallGroupType string) ([]*NsxtFirewallGroup, error) {
 	queryParams := copyOrNewUrlValues(queryParameters)
-	filteringTypeFieldName := getFirewallGroupTypeFilterFieldName(org.client)
 	if firewallGroupType != "" {
-		queryParams = queryParameterFilterAnd(fmt.Sprintf("%s==%s", filteringTypeFieldName, firewallGroupType), queryParameters)
+		queryParams = queryParameterFilterAnd(fmt.Sprintf("typeValue==%s", firewallGroupType), queryParameters)
 	}
 
 	return getAllNsxtFirewallGroups(org.client, queryParams)
@@ -86,9 +85,8 @@ func (vdc *Vdc) GetAllNsxtFirewallGroups(queryParameters url.Values, firewallGro
 func (egw *NsxtEdgeGateway) GetAllNsxtFirewallGroups(queryParameters url.Values, firewallGroupType string) ([]*NsxtFirewallGroup, error) {
 	queryParams := copyOrNewUrlValues(queryParameters)
 
-	filteringTypeFieldName := getFirewallGroupTypeFilterFieldName(egw.client)
 	if firewallGroupType != "" {
-		queryParams = queryParameterFilterAnd(fmt.Sprintf("%s==%s", filteringTypeFieldName, firewallGroupType), queryParameters)
+		queryParams = queryParameterFilterAnd(fmt.Sprintf("typeValue==%s", firewallGroupType), queryParameters)
 	}
 
 	// Automatically inject Edge Gateway filter because this is an Edge Gateway scoped query
@@ -107,9 +105,8 @@ func (egw *NsxtEdgeGateway) GetAllNsxtFirewallGroups(queryParameters url.Values,
 // of the same type cannot exist) and firewallGroupType is left empty.
 func (org *Org) GetNsxtFirewallGroupByName(name, firewallGroupType string) (*NsxtFirewallGroup, error) {
 	queryParameters := url.Values{}
-	filteringTypeFieldName := getFirewallGroupTypeFilterFieldName(org.client)
 	if firewallGroupType != "" {
-		queryParameters = queryParameterFilterAnd(fmt.Sprintf("%s==%s", filteringTypeFieldName, firewallGroupType), queryParameters)
+		queryParameters = queryParameterFilterAnd(fmt.Sprintf("typeValue==%s", firewallGroupType), queryParameters)
 	}
 
 	return getNsxtFirewallGroupByName(org.client, name, queryParameters)
@@ -126,9 +123,8 @@ func (org *Org) GetNsxtFirewallGroupByName(name, firewallGroupType string) (*Nsx
 func (vdc *Vdc) GetNsxtFirewallGroupByName(name, firewallGroupType string) (*NsxtFirewallGroup, error) {
 
 	queryParameters := url.Values{}
-	filteringTypeFieldName := getFirewallGroupTypeFilterFieldName(vdc.client)
 	if firewallGroupType != "" {
-		queryParameters = queryParameterFilterAnd(fmt.Sprintf("%s==%s", filteringTypeFieldName, firewallGroupType), queryParameters)
+		queryParameters = queryParameterFilterAnd(fmt.Sprintf("typeValue==%s", firewallGroupType), queryParameters)
 	}
 	return getNsxtFirewallGroupByName(vdc.client, name, queryParameters)
 }
@@ -145,9 +141,8 @@ func (vdc *Vdc) GetNsxtFirewallGroupByName(name, firewallGroupType string) (*Nsx
 func (vdcGroup *VdcGroup) GetNsxtFirewallGroupByName(name string, firewallGroupType string) (*NsxtFirewallGroup, error) {
 	queryParameters := url.Values{}
 
-	filteringTypeFieldName := getFirewallGroupTypeFilterFieldName(vdcGroup.client)
 	if firewallGroupType != "" {
-		queryParameters = queryParameterFilterAnd(fmt.Sprintf("%s==%s", filteringTypeFieldName, firewallGroupType), queryParameters)
+		queryParameters = queryParameterFilterAnd(fmt.Sprintf("typeValue==%s", firewallGroupType), queryParameters)
 	}
 
 	// Automatically inject Edge Gateway filter because this is an Edge Gateway scoped query
@@ -167,9 +162,8 @@ func (vdcGroup *VdcGroup) GetNsxtFirewallGroupByName(name string, firewallGroupT
 func (egw *NsxtEdgeGateway) GetNsxtFirewallGroupByName(name string, firewallGroupType string) (*NsxtFirewallGroup, error) {
 	queryParameters := url.Values{}
 
-	filteringTypeFieldName := getFirewallGroupTypeFilterFieldName(egw.client)
 	if firewallGroupType != "" {
-		queryParameters = queryParameterFilterAnd(fmt.Sprintf("%s==%s", filteringTypeFieldName, firewallGroupType), queryParameters)
+		queryParameters = queryParameterFilterAnd(fmt.Sprintf("typeValue==%s", firewallGroupType), queryParameters)
 	}
 
 	// Automatically inject Edge Gateway filter because this is an Edge Gateway scoped query
@@ -416,18 +410,4 @@ func createNsxtFirewallGroup(client *Client, firewallGroupConfig *types.NsxtFire
 	}
 
 	return returnObject, nil
-}
-
-// getFirewallGroupTypeFilterFieldName is a helper that returns the field name to use for filtering
-// TODO - remove this function when VCD 10.2 is no longer supported
-// by type.
-// For VCD < 10.3.0, the type field is called "type" and for VCD >= 10.3.0, the type field is called
-// "typeValue".
-func getFirewallGroupTypeFilterFieldName(client *Client) string {
-	// Starting with API 36.0 new field 'typeValue' was introduced instead of deprecated `type` field.
-	filteringTypeFieldName := "typeValue"
-	if client.APIVCDMaxVersionIs(" < 36.0") {
-		filteringTypeFieldName = "type"
-	}
-	return filteringTypeFieldName
 }
