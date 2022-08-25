@@ -63,7 +63,7 @@ func (vcd *TestVCD) Test_NsxtAlbController(check *C) {
 		Url:         vcd.config.VCD.Nsxt.NsxtAlbControllerUrl,
 		Username:    vcd.config.VCD.Nsxt.NsxtAlbControllerUser,
 		Password:    vcd.config.VCD.Nsxt.NsxtAlbControllerPassword,
-		LicenseType: "BASIC",
+		LicenseType: "BASIC", // Not used since v37.0
 	}
 	updatedController, err := controllerByUrl.Update(updateControllerDef)
 	check.Assert(err, IsNil)
@@ -71,7 +71,9 @@ func (vcd *TestVCD) Test_NsxtAlbController(check *C) {
 	check.Assert(updatedController.NsxtAlbController.Description, Equals, updateControllerDef.Description)
 	check.Assert(updatedController.NsxtAlbController.Url, Equals, updateControllerDef.Url)
 	check.Assert(updatedController.NsxtAlbController.Username, Equals, updateControllerDef.Username)
-	check.Assert(updatedController.NsxtAlbController.LicenseType, Equals, updateControllerDef.LicenseType)
+	if vcd.client.Client.APIVCDMaxVersionIs("< 37.0") {
+		check.Assert(updatedController.NsxtAlbController.LicenseType, Equals, updateControllerDef.LicenseType)
+	}
 
 	// Revert settings to original ones
 	_, err = controllerByUrl.Update(controllerByUrl.NsxtAlbController)
@@ -95,7 +97,7 @@ func spawnAlbController(vcd *TestVCD, check *C) *NsxtAlbController {
 		Url:         vcd.config.VCD.Nsxt.NsxtAlbControllerUrl,
 		Username:    vcd.config.VCD.Nsxt.NsxtAlbControllerUser,
 		Password:    vcd.config.VCD.Nsxt.NsxtAlbControllerPassword,
-		LicenseType: "ENTERPRISE",
+		LicenseType: "ENTERPRISE", // Not used since v37.0
 	}
 
 	newController, err := vcd.client.CreateNsxtAlbController(newControllerDef)

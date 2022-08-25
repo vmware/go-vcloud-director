@@ -242,22 +242,24 @@ const (
 
 const (
 	// The Qt* (Query Type) constants are the names used with Query requests to retrieve the corresponding entities
-	QtVappTemplate      = "vAppTemplate"      // vApp template
-	QtAdminVappTemplate = "adminVAppTemplate" // vApp template as admin
-	QtEdgeGateway       = "edgeGateway"       // edge gateway
-	QtOrgVdcNetwork     = "orgVdcNetwork"     // Org VDC network
-	QtCatalog           = "catalog"           // catalog
-	QtAdminCatalog      = "adminCatalog"      // catalog as admin
-	QtCatalogItem       = "catalogItem"       // catalog item
-	QtAdminCatalogItem  = "adminCatalogItem"  // catalog item as admin
-	QtAdminMedia        = "adminMedia"        // media item as admin
-	QtMedia             = "media"             // media item
-	QtVm                = "vm"                // Virtual machine
-	QtAdminVm           = "adminVM"           // Virtual machine as admin
-	QtVapp              = "vApp"              // vApp
-	QtAdminVapp         = "adminVApp"         // vApp as admin
-	QtOrgVdc            = "orgVdc"            // Org VDC
-	QtAdminOrgVdc       = "adminOrgVdc"       // Org VDC as admin
+	QtVappTemplate              = "vAppTemplate"              // vApp template
+	QtAdminVappTemplate         = "adminVAppTemplate"         // vApp template as admin
+	QtEdgeGateway               = "edgeGateway"               // edge gateway
+	QtOrgVdcNetwork             = "orgVdcNetwork"             // Org VDC network
+	QtCatalog                   = "catalog"                   // catalog
+	QtAdminCatalog              = "adminCatalog"              // catalog as admin
+	QtCatalogItem               = "catalogItem"               // catalog item
+	QtAdminCatalogItem          = "adminCatalogItem"          // catalog item as admin
+	QtAdminMedia                = "adminMedia"                // media item as admin
+	QtMedia                     = "media"                     // media item
+	QtVm                        = "vm"                        // Virtual machine
+	QtAdminVm                   = "adminVM"                   // Virtual machine as admin
+	QtVapp                      = "vApp"                      // vApp
+	QtAdminVapp                 = "adminVApp"                 // vApp as admin
+	QtOrgVdc                    = "orgVdc"                    // Org VDC
+	QtAdminOrgVdc               = "adminOrgVdc"               // Org VDC as admin
+	QtOrgVdcStorageProfile      = "orgVdcStorageProfile"      // StorageProfile of VDC
+	QtAdminOrgVdcStorageProfile = "adminOrgVdcStorageProfile" // StorageProfile of VDC as admin
 )
 
 // AdminQueryTypes returns the corresponding "admin" query type for each regular type
@@ -370,7 +372,14 @@ const (
 	OpenApiEndpointVdcGroupsCandidateVdcs             = "vdcGroups/networkingCandidateVdcs"
 	OpenApiEndpointVdcGroupsDfwPolicies               = "vdcGroups/%s/dfwPolicies"
 	OpenApiEndpointVdcGroupsDfwDefaultPolicies        = "vdcGroups/%s/dfwPolicies/default"
+	OpenApiEndpointVdcGroupsDfwRules                  = "vdcGroups/%s/dfwPolicies/%s/rules"
+	OpenApiEndpointNetworkContextProfiles             = "networkContextProfiles"
+	OpenApiEndpointSecurityTags                       = "securityTags"
+	OpenApiEndpointNsxtRouteAdvertisement             = "edgeGateways/%s/routing/advertisement"
 	OpenApiEndpointTestConnection                     = "testConnection/"
+	OpenApiEndpointEdgeBgpNeighbor                    = "edgeGateways/%s/routing/bgp/neighbors/"   // '%s' is NSX-T Edge Gateway ID
+	OpenApiEndpointEdgeBgpConfigPrefixLists           = "edgeGateways/%s/routing/bgp/prefixLists/" // '%s' is NSX-T Edge Gateway ID
+	OpenApiEndpointEdgeBgpConfig                      = "edgeGateways/%s/routing/bgp"              // '%s' is NSX-T Edge Gateway ID
 
 	// NSX-T ALB related endpoints
 
@@ -431,12 +440,16 @@ const (
 )
 
 const (
-	// FirewallGroupTypeSecurityGroup can be used in types.NsxtFirewallGroup for 'type' field to
-	// create Security Group
+	// FirewallGroupTypeSecurityGroup can be used in types.NsxtFirewallGroup for 'TypeValue' field
+	// to create Security Group
 	FirewallGroupTypeSecurityGroup = "SECURITY_GROUP"
-	// FirewallGroupTypeIpSet can be used in types.NsxtFirewallGroup for 'type' field to create IP
-	// Set
+	// FirewallGroupTypeIpSet can be used in types.NsxtFirewallGroup for 'TypeValue' field to create
+	// IP Set
 	FirewallGroupTypeIpSet = "IP_SET"
+
+	// FirewallGroupTypeVmCriteria can be used in types.NsxtFirewallGroup for 'TypeValue' field to
+	// create Dynamic Security Group (VCD 10.3+)
+	FirewallGroupTypeVmCriteria = "VM_CRITERIA"
 )
 
 // These constants can be used to pick type of NSX-T NAT Rule
@@ -482,10 +495,22 @@ const (
 	NsxtAlbCloudBackingTypeNsxtAlb = "NSXALB_NSXT"
 )
 
+const (
+	// UrnTypeVdcGroup is the third segment of URN for VDC Group
+	UrnTypeVdcGroup = "vdcGroup"
+	// UrnTypeVdc is the third segment of URN for VDC
+	UrnTypeVdc = "vdc"
+)
+
 // Metadata type constants
 const (
 	MetadataStringValue   string = "MetadataStringValue"
 	MetadataNumberValue   string = "MetadataNumberValue"
 	MetadataDateTimeValue string = "MetadataDateTimeValue"
 	MetadataBooleanValue  string = "MetadataBooleanValue"
+)
+
+const (
+	// DistributedFirewallPolicyDefault is a constant for "default" Distributed Firewall Policy
+	DistributedFirewallPolicyDefault = "default"
 )

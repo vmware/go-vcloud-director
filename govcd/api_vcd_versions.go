@@ -46,7 +46,8 @@ var apiVersionToVcdVersion = map[string]string{
 	"33.0": "10.0",
 	"34.0": "10.1",
 	"35.0": "10.2",
-	"36.0": "10.3", // Provisional version for non-GA release. It may change later
+	"36.0": "10.3",
+	"37.0": "10.4", // Provisional version for non-GA release. It may change later
 }
 
 // vcdVersionToApiVersion gets the max supported API version from vCD version
@@ -58,7 +59,8 @@ var vcdVersionToApiVersion = map[string]string{
 	"10.0": "33.0",
 	"10.1": "34.0",
 	"10.2": "35.0",
-	"10.3": "36.0", // Provisional version for non-GA release. It may change later
+	"10.3": "36.0",
+	"10.4": "37.0", // Provisional version for non-GA release. It may change later
 }
 
 // to make vcdVersionToApiVersion used
@@ -321,12 +323,15 @@ func intListToVersion(digits []int, atMost int) string {
 // VersionEqualOrGreater return true if the current version is the same or greater than the one being compared.
 // If howManyDigits is > 3, the comparison includes the build.
 // Examples:
-//  client version is 1.2.3.1234
-//  compare version is 1.2.3.2000
+//
+//	client version is 1.2.3.1234
+//	compare version is 1.2.3.2000
+//
 // function return true if howManyDigits is <= 3, but false if howManyDigits is > 3
 //
-//  client version is 1.2.3.1234
-//  compare version is 1.1.1.0
+//	client version is 1.2.3.1234
+//	compare version is 1.1.1.0
+//
 // function returns true regardless of value of howManyDigits
 func (client *Client) VersionEqualOrGreater(compareTo string, howManyDigits int) (bool, error) {
 

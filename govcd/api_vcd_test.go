@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -165,13 +164,15 @@ type TestConfig struct {
 		ExternalNetworkPortGroupType string `yaml:"externalNetworkPortGroupType,omitempty"`
 		VimServer                    string `yaml:"vimServer,omitempty"`
 		Nsxt                         struct {
-			Manager           string `yaml:"manager"`
-			Tier0router       string `yaml:"tier0router"`
-			Tier0routerVrf    string `yaml:"tier0routerVrf"`
-			Vdc               string `yaml:"vdc"`
-			ExternalNetwork   string `yaml:"externalNetwork"`
-			EdgeGateway       string `yaml:"edgeGateway"`
-			NsxtImportSegment string `yaml:"nsxtImportSegment"`
+			Manager             string `yaml:"manager"`
+			Tier0router         string `yaml:"tier0router"`
+			Tier0routerVrf      string `yaml:"tier0routerVrf"`
+			Vdc                 string `yaml:"vdc"`
+			ExternalNetwork     string `yaml:"externalNetwork"`
+			EdgeGateway         string `yaml:"edgeGateway"`
+			NsxtImportSegment   string `yaml:"nsxtImportSegment"`
+			VdcGroup            string `yaml:"vdcGroup"`
+			VdcGroupEdgeGateway string `yaml:"vdcGroupEdgeGateway"`
 
 			NsxtAlbControllerUrl      string `yaml:"nsxtAlbControllerUrl"`
 			NsxtAlbControllerUser     string `yaml:"nsxtAlbControllerUser"`
@@ -197,9 +198,10 @@ type TestConfig struct {
 		OvfUrl             string `yaml:"ovfUrl,omitempty"`
 	} `yaml:"ova"`
 	Media struct {
-		MediaPath       string `yaml:"mediaPath,omitempty"`
-		Media           string `yaml:"mediaName,omitempty"`
-		PhotonOsOvaPath string `yaml:"photonOsOvaPath,omitempty"`
+		MediaPath        string `yaml:"mediaPath,omitempty"`
+		Media            string `yaml:"mediaName,omitempty"`
+		PhotonOsOvaPath  string `yaml:"photonOsOvaPath,omitempty"`
+		MediaUdfTypePath string `yaml:"mediaUdfTypePath,omitempty"`
 	} `yaml:"media"`
 	Misc struct {
 		LdapContainer string `yaml:"ldapContainer,omitempty"`
@@ -302,7 +304,7 @@ func readCleanupList() ([]CleanupEntity, error) {
 	if os.IsNotExist(err) {
 		return nil, err
 	}
-	listText, err := ioutil.ReadFile(persistentCleanupListFile)
+	listText, err := os.ReadFile(persistentCleanupListFile)
 	if err != nil {
 		return nil, err
 	}
@@ -431,7 +433,7 @@ func GetConfigStruct() (TestConfig, error) {
 	if os.IsNotExist(err) {
 		return TestConfig{}, fmt.Errorf("Configuration file %s not found: %s", config, err)
 	}
-	yamlFile, err := ioutil.ReadFile(config)
+	yamlFile, err := os.ReadFile(config)
 	if err != nil {
 		return TestConfig{}, fmt.Errorf("could not read config file %s: %s", config, err)
 	}
@@ -1506,26 +1508,30 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 				entity.Parent, err)
 			return
 		}
-		err = org.LdapDisable()
 
+		ldapConfig, err := org.GetLdapConfiguration()
 		if err != nil {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not clear LDAP settings for Org '%s': %s",
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Couldn't get LDAP settings for Org '%s': %s",
 				entity.Parent, err)
 			return
 		}
-		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+
+		// This is done to avoid calling LdapDisable() if it has been unconfigured, due to bug with Org catalog publish settings
+		if ldapConfig.OrgLdapMode != types.LdapModeNone {
+			err = org.LdapDisable()
+			if err != nil {
+				vcd.infoCleanup("removeLeftoverEntries: [ERROR] Could not clear LDAP settings for Org '%s': %s",
+					entity.Parent, err)
+				vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+				return
+			}
+		}
+
+		vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 		return
+
 	case "vdcComputePolicy":
-		if entity.Parent == "" {
-			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for vdcComputePolicy '%s'\n", entity.Name)
-			return
-		}
-		org, err := vcd.client.GetAdminOrgByName(entity.Parent)
-		if err != nil {
-			vcd.infoCleanup(notFoundMsg, "org", entity.Parent)
-			return
-		}
-		policy, err := org.GetVdcComputePolicyById(entity.Name)
+		policy, err := vcd.client.Client.GetVdcComputePolicyById(entity.Name)
 		if policy == nil || err != nil {
 			vcd.infoCleanup(notFoundMsg, "vdcComputePolicy", entity.Name)
 			return
@@ -1698,28 +1704,21 @@ func (vcd *TestVCD) findFirstVapp() VApp {
 		return VApp{}
 	}
 	wantedVapp := vcd.vapp.VApp.Name
-	vappName := ""
-	for _, res := range vdc.Vdc.ResourceEntities {
-		for _, item := range res.ResourceEntity {
-			// Finding a named vApp, if it was defined in config
-			if wantedVapp != "" {
-				if item.Name == wantedVapp {
-					vappName = item.Name
-					break
-				}
-			} else {
-				// Otherwise, we get the first vApp from the vDC list
+	if wantedVapp == "" {
+		// As no vApp is defined in config, we search for one randomly
+		for _, res := range vdc.Vdc.ResourceEntities {
+			for _, item := range res.ResourceEntity {
 				if item.Type == "application/vnd.vmware.vcloud.vApp+xml" {
-					vappName = item.Name
+					wantedVapp = item.Name
 					break
 				}
 			}
 		}
 	}
-	if wantedVapp == "" {
+	vapp, err := vdc.GetVAppByName(wantedVapp, false)
+	if err != nil {
 		return VApp{}
 	}
-	vapp, _ := vdc.GetVAppByName(vappName, false)
 	return *vapp
 }
 
@@ -1859,7 +1858,9 @@ func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint string) {
 	}
 }
 
-// newOrgUserConnection creates a new Org User and returns a connection to it
+// newOrgUserConnection creates a new Org User and returns a connection to it.
+// Attention: Set the user to use only lowercase letters. If you put upper case letters the function fails on waiting
+// because VCD creates the user with lowercase letters.
 func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, insecure bool) (*VCDClient, error) {
 	u, err := url.ParseRequestURI(href)
 	if err != nil {

@@ -123,8 +123,8 @@ func (adminOrg *AdminOrg) GetStorageProfileReferenceById(id string, refresh bool
 		ErrorEntityNotFound, id, adminOrg.AdminOrg.Name)
 }
 
-//   Deletes the org, returning an error if the vCD call fails.
-//   API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Organization.html
+// Deletes the org, returning an error if the vCD call fails.
+// API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-Organization.html
 func (adminOrg *AdminOrg) Delete(force bool, recursive bool) error {
 	if force && recursive {
 		//undeploys vapps
@@ -191,10 +191,10 @@ func (adminOrg *AdminOrg) Disable() error {
 	return adminOrg.client.ExecuteRequestWithoutResponse(orgHREF.String(), http.MethodPost, "", "error disabling organization: %s", nil)
 }
 
-//   Updates the Org definition from current org struct contents.
-//   Any differences that may be legally applied will be updated.
-//   Returns an error if the call to vCD fails.
-//   API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/PUT-Organization.html
+// Updates the Org definition from current org struct contents.
+// Any differences that may be legally applied will be updated.
+// Returns an error if the call to vCD fails.
+// API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/PUT-Organization.html
 func (adminOrg *AdminOrg) Update() (Task, error) {
 	vcomp := &types.AdminOrg{
 		Xmlns:       types.XMLNamespaceVCloud,
@@ -509,13 +509,13 @@ func (adminOrg *AdminOrg) GetCatalogByName(catalogName string, refresh bool) (*C
 	return nil, ErrorEntityNotFound
 }
 
-// Extracts an UUID from a string, regardless of surrounding text
+// Extracts an UUID from a string, regardless of surrounding text, returns the last found occurrence
 // Returns an empty string if no UUID was found
 func extractUuid(input string) string {
 	reGetID := regexp.MustCompile(`([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})`)
 	matchListId := reGetID.FindAllStringSubmatch(input, -1)
 	if len(matchListId) > 0 && len(matchListId[0]) > 0 {
-		return matchListId[0][1]
+		return matchListId[len(matchListId)-1][1]
 	}
 	return ""
 }
@@ -757,27 +757,43 @@ func (adminOrg *AdminOrg) GetVdcByName(vdcname string) (Vdc, error) {
 
 // QueryCatalogList returns a list of catalogs for this organization
 func (adminOrg *AdminOrg) QueryCatalogList() ([]*types.CatalogRecord, error) {
+	return adminOrg.FindCatalogRecords("")
+}
+
+// FindCatalogRecords given a catalog name, retrieves the catalogRecords for a given organization
+func (adminOrg *AdminOrg) FindCatalogRecords(name string) ([]*types.CatalogRecord, error) {
 	util.Logger.Printf("[DEBUG] QueryCatalogList with org name %s", adminOrg.AdminOrg.Name)
-	queryType := types.QtCatalog
+
+	var tenantHeaders map[string]string
+
 	if adminOrg.client.IsSysAdmin {
-		queryType = types.QtAdminCatalog
+		// Set tenant context headers just for the query
+		tenantHeaders = map[string]string{
+			types.HeaderAuthContext:   adminOrg.TenantContext.OrgName,
+			types.HeaderTenantContext: adminOrg.TenantContext.OrgId,
+		}
 	}
-	results, err := adminOrg.client.cumulativeQuery(queryType, nil, map[string]string{
-		"type":          queryType,
-		"filter":        fmt.Sprintf("orgName==%s", url.QueryEscape(adminOrg.AdminOrg.Name)),
+
+	var filter string
+	filter = fmt.Sprintf("orgName==%s", url.QueryEscape(adminOrg.AdminOrg.Name))
+	if name != "" {
+		filter = fmt.Sprintf("%s;name==%s", filter, url.QueryEscape(name))
+	}
+
+	results, err := adminOrg.client.cumulativeQueryWithHeaders(types.QtCatalog, nil, map[string]string{
+		"type":          types.QtCatalog,
+		"filter":        filter,
 		"filterEncoded": "true",
-	})
+	}, tenantHeaders)
 	if err != nil {
 		return nil, err
 	}
 
-	var catalogs []*types.CatalogRecord
-
-	if adminOrg.client.IsSysAdmin {
-		catalogs = results.Results.AdminCatalogRecord
-	} else {
-		catalogs = results.Results.CatalogRecord
+	catalogs := results.Results.CatalogRecord
+	if catalogs == nil {
+		return nil, ErrorEntityNotFound
 	}
+
 	util.Logger.Printf("[DEBUG] QueryCatalogList returned with : %#v and error: %s", catalogs, err)
 	return catalogs, nil
 }

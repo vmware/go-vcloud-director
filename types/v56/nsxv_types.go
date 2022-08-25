@@ -7,12 +7,12 @@ package types
 import "encoding/xml"
 
 // FirewallConfigWithXml allows to enable/disable firewall on a specific edge gateway
-// Reference: vCloud Director API for NSX Programming Guide
+// Reference: VMware Cloud Director API for NSX Programming Guide
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 //
 // Warning. It nests all firewall rules because Edge Gateway API is done so that if this data is not
 // sent while enabling it would wipe all firewall rules. InnerXML type field is used with struct tag
-//`innerxml` to prevent any manipulation of configuration and sending it verbatim
+// `innerxml` to prevent any manipulation of configuration and sending it verbatim
 type FirewallConfigWithXml struct {
 	XMLName       xml.Name              `xml:"firewall"`
 	Enabled       bool                  `xml:"enabled"`
@@ -34,7 +34,7 @@ type FirewallDefaultPolicy struct {
 }
 
 // LbGeneralParamsWithXml allows to enable/disable load balancing capabilities on specific edge gateway
-// Reference: vCloud Director API for NSX Programming Guide
+// Reference: VMware Cloud Director API for NSX Programming Guide
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 //
 // Warning. It nests all components (LbMonitor, LbPool, LbAppProfile, LbAppRule, LbVirtualServer)
@@ -74,7 +74,7 @@ type InnerXML struct {
 }
 
 // LbMonitor defines health check parameters for a particular type of network traffic
-// Reference: vCloud Director API for NSX Programming Guide
+// Reference: VMware Cloud Director API for NSX Programming Guide
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 type LbMonitor struct {
 	XMLName    xml.Name `xml:"monitor"`
@@ -94,7 +94,7 @@ type LbMonitor struct {
 
 type LbMonitors []LbMonitor
 
-// LbPool represents a load balancer server pool as per "vCloud Director API for NSX Programming Guide"
+// LbPool represents a load balancer server pool as per "VMware Cloud Director API for NSX Programming Guide"
 // Type: LBPoolHealthCheckType
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 type LbPool struct {
@@ -126,7 +126,7 @@ type LbPoolMember struct {
 
 type LbPoolMembers []LbPoolMember
 
-// LbAppProfile represents a load balancer application profile as per "vCloud Director API for NSX
+// LbAppProfile represents a load balancer application profile as per "VMware Cloud Director API for NSX
 // Programming Guide"
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 type LbAppProfile struct {
@@ -158,7 +158,7 @@ type LbAppProfileHttpRedirect struct {
 	To      string   `xml:"to,omitempty"`
 }
 
-// LbAppRule represents a load balancer application rule as per "vCloud Director API for NSX
+// LbAppRule represents a load balancer application rule as per "VMware Cloud Director API for NSX
 // Programming Guide"
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 type LbAppRule struct {
@@ -170,7 +170,7 @@ type LbAppRule struct {
 
 type LbAppRules []LbAppRule
 
-// LbVirtualServer represents a load balancer virtual server as per "vCloud Director API for NSX
+// LbVirtualServer represents a load balancer virtual server as per "VMware Cloud Director API for NSX
 // Programming Guide"
 // https://code.vmware.com/docs/6900/vcloud-director-api-for-nsx-programming-guide
 type LbVirtualServer struct {

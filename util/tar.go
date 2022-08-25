@@ -8,7 +8,6 @@ import (
 	"archive/tar"
 	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -32,7 +31,7 @@ func Unpack(tarFile string) ([]string, string, error) {
 
 	tarReader := tar.NewReader(reader)
 
-	dst, err = ioutil.TempDir("", TmpDirPrefix)
+	dst, err = os.MkdirTemp("", TmpDirPrefix)
 	if err != nil {
 		return filePaths, dst, err
 	}

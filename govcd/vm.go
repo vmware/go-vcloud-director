@@ -492,6 +492,25 @@ func (vm *VM) Undeploy() (Task, error) {
 		types.MimeUndeployVappParams, "error undeploy VM: %s", vu)
 }
 
+// Shutdown triggers a VM undeploy and shutdown action. "Shut Down Guest OS" action in UI behaves
+// this way.
+//
+// Note. Success of this operation depends on the VM having Guest Tools installed.
+func (vm *VM) Shutdown() (Task, error) {
+
+	vu := &types.UndeployVAppParams{
+		Xmlns:               types.XMLNamespaceVCloud,
+		UndeployPowerAction: "shutdown",
+	}
+
+	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
+	apiEndpoint.Path += "/action/undeploy"
+
+	// Return the task
+	return vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+		types.MimeUndeployVappParams, "error undeploy VM: %s", vu)
+}
+
 // Attach or detach an independent disk
 // Use the disk/action/attach or disk/action/detach links in a VM to attach or detach an independent disk.
 // Reference: vCloud API Programming Guide for Service Providers vCloud API 30.0 PDF Page 164 - 165,
@@ -922,6 +941,10 @@ func (vm *VM) getEdgeGatewaysForRoutedNics(nicDhcpConfigs []nicDhcpConfig) ([]ni
 		} else {
 			// Lookup edge gateway
 			edgeGateway, err := vdc.GetEdgeGatewayByName(edgeGatewayName, false)
+			if ContainsNotFound(err) {
+				util.Logger.Printf("[TRACE] [DHCP IP Lookup] edge gateway not found: %s. Ignoring.", edgeGatewayName)
+				continue
+			}
 			if err != nil {
 				return nil, fmt.Errorf("could not lookup edge gateway for routed network on NIC %d: %s",
 					nic.vmNicIndex, err)

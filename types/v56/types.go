@@ -556,10 +556,10 @@ type VdcConfiguration struct {
 	IncludeMemoryOverhead    *bool                             `xml:"IncludeMemoryOverhead,omitempty"` // Supported from 32.0 for the Flex model
 }
 
-// Task represents an asynchronous operation in vCloud Director.
+// Task represents an asynchronous operation in VMware Cloud Director.
 // Type: TaskType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents an asynchronous operation in vCloud Director.
+// Description: Represents an asynchronous operation in VMware Cloud Director.
 // Since: 0.9
 // Comments added from https://code.vmware.com/apis/912/vmware-cloud-director/doc/doc/types/TaskType.html
 type Task struct {
@@ -685,17 +685,17 @@ type Link struct {
 // OrgList represents a lists of Organizations
 // Type: OrgType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents a list of vCloud Director organizations.
+// Description: Represents a list of VMware Cloud Director organizations.
 // Since: 0.9
 type OrgList struct {
 	Link LinkList `xml:"Link,omitempty"`
 	Org  []*Org   `xml:"Org,omitempty"`
 }
 
-// Org represents the user view of a vCloud Director organization.
+// Org represents the user view of a VMware Cloud Director organization.
 // Type: OrgType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the user view of a vCloud Director organization.
+// Description: Represents the user view of a VMware Cloud Director organization.
 // Since: 0.9
 type Org struct {
 	HREF         string           `xml:"href,attr,omitempty"`
@@ -730,10 +730,10 @@ type RightsType struct {
 	RightReference []*Reference `xml:"RightReference,omitempty"`
 }
 
-// AdminOrg represents the admin view of a vCloud Director organization.
+// AdminOrg represents the admin view of a VMware Cloud Director organization.
 // Type: AdminOrgType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the admin view of a vCloud Director organization.
+// Description: Represents the admin view of a VMware Cloud Director organization.
 // Since: 0.9
 type AdminOrg struct {
 	XMLName         xml.Name         `xml:"AdminOrg"`
@@ -758,10 +758,10 @@ type AdminOrg struct {
 	RoleReferences  *OrgRoleType     `xml:"RoleReferences,omitempty"`
 }
 
-// OrgSettingsType represents the settings for a vCloud Director organization.
+// OrgSettingsType represents the settings for a VMware Cloud Director organization.
 // Type: OrgSettingsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the settings of a vCloud Director organization.
+// Description: Represents the settings of a VMware Cloud Director organization.
 // Since: 0.9
 type OrgSettings struct {
 	//attributes
@@ -776,10 +776,10 @@ type OrgSettings struct {
 
 }
 
-// OrgGeneralSettingsType represents the general settings for a vCloud Director organization.
+// OrgGeneralSettingsType represents the general settings for a VMware Cloud Director organization.
 // Type: OrgGeneralSettingsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the user view of a vCloud Director organization.
+// Description: Represents the user view of a VMware Cloud Director organization.
 // Since: 0.9
 type OrgGeneralSettings struct {
 	HREF string   `xml:"href,attr,omitempty"` // The URI of the entity.
@@ -787,16 +787,18 @@ type OrgGeneralSettings struct {
 	Link LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
 
 	CanPublishCatalogs       bool `xml:"CanPublishCatalogs,omitempty"`
+	CanPublishExternally     bool `xml:"CanPublishExternally,omitempty"`
+	CanSubscribe             bool `xml:"CanSubscribe,omitempty"`
 	DeployedVMQuota          int  `xml:"DeployedVMQuota,omitempty"`
 	StoredVMQuota            int  `xml:"StoredVmQuota,omitempty"`
 	UseServerBootSequence    bool `xml:"UseServerBootSequence,omitempty"`
 	DelayAfterPowerOnSeconds int  `xml:"DelayAfterPowerOnSeconds,omitempty"`
 }
 
-// VAppTemplateLeaseSettings represents the vapp template lease settings for a vCloud Director organization.
+// VAppTemplateLeaseSettings represents the vapp template lease settings for a VMware Cloud Director organization.
 // Type: VAppTemplateLeaseSettingsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the vapp template lease settings of a vCloud Director organization.
+// Description: Represents the vapp template lease settings of a VMware Cloud Director organization.
 // Since: 0.9
 type VAppTemplateLeaseSettings struct {
 	HREF string   `xml:"href,attr,omitempty"` // The URI of the entity.
@@ -826,10 +828,10 @@ type OrgFederationSettings struct {
 	Enabled bool `xml:"Enabled,omitempty"`
 }
 
-// OrgLdapSettingsType represents the ldap settings for a vCloud Director organization.
+// OrgLdapSettingsType represents the ldap settings for a VMware Cloud Director organization.
 // Type: OrgLdapSettingsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the ldap settings of a vCloud Director organization.
+// Description: Represents the ldap settings of a VMware Cloud Director organization.
 // Since: 0.9
 type OrgLdapSettingsType struct {
 	XMLName xml.Name `xml:"OrgLdapSettings"`
@@ -843,10 +845,10 @@ type OrgLdapSettingsType struct {
 	CustomOrgLdapSettings *CustomOrgLdapSettings `xml:"CustomOrgLdapSettings,omitempty"` // Needs to be set if user chooses custom mode
 }
 
-// CustomOrgLdapSettings represents the custom ldap settings for a vCloud Director organization.
+// CustomOrgLdapSettings represents the custom ldap settings for a VMware Cloud Director organization.
 // Type: CustomOrgLdapSettingsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the custom ldap settings of a vCloud Director organization.
+// Description: Represents the custom ldap settings of a VMware Cloud Director organization.
 // Since: 0.9
 // Note. Order of these fields matter and API will error if it is changed
 type CustomOrgLdapSettings struct {
@@ -872,10 +874,10 @@ type CustomOrgLdapSettings struct {
 	Realm string `xml:"Realm,omitempty"`
 }
 
-// OrgLdapGroupAttributes	 represents the ldap group attribute settings for a vCloud Director organization.
+// OrgLdapGroupAttributes	 represents the ldap group attribute settings for a VMware Cloud Director organization.
 // Type: OrgLdapGroupAttributesType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the ldap group attribute settings of a vCloud Director organization.
+// Description: Represents the ldap group attribute settings of a VMware Cloud Director organization.
 // Since: 0.9
 // Note. Order of these fields matter and API will error if it is changed
 type OrgLdapGroupAttributes struct {
@@ -887,10 +889,10 @@ type OrgLdapGroupAttributes struct {
 	MembershipIdentifier string `xml:"MembershipIdentifier"`
 }
 
-// OrgLdapUserAttributesType represents the ldap user attribute settings for a vCloud Director organization.
+// OrgLdapUserAttributesType represents the ldap user attribute settings for a VMware Cloud Director organization.
 // Type: OrgLdapUserAttributesType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: Represents the ldap user attribute settings of a vCloud Director organization.
+// Description: Represents the ldap user attribute settings of a VMware Cloud Director organization.
 // Since: 0.9
 // Note. Order of these fields matter and API will error if it is changed.
 type OrgLdapUserAttributes struct {
@@ -2190,6 +2192,7 @@ type QueryResultRecordsType struct {
 	VAppRecord                      []*QueryResultVAppRecordType                      `xml:"VAppRecord"`                      // A record representing a VApp result.
 	AdminVAppRecord                 []*QueryResultVAppRecordType                      `xml:"AdminVAppRecord"`                 // A record representing a VApp result as admin.
 	OrgVdcStorageProfileRecord      []*QueryResultOrgVdcStorageProfileRecordType      `xml:"OrgVdcStorageProfileRecord"`      // A record representing storage profiles
+	AdminOrgVdcStorageProfileRecord []*QueryResultAdminOrgVdcStorageProfileRecordType `xml:"AdminOrgVdcStorageProfileRecord"` // A record representing storage profiles as admin
 	MediaRecord                     []*MediaRecordType                                `xml:"MediaRecord"`                     // A record representing media
 	AdminMediaRecord                []*MediaRecordType                                `xml:"AdminMediaRecord"`                // A record representing Admin media
 	VMWProviderVdcRecord            []*QueryResultVMWProviderVdcRecordType            `xml:"VMWProviderVdcRecord"`            // A record representing a Provider VDC result.
@@ -2337,6 +2340,7 @@ type QueryResultVMRecordType struct {
 	// Attributes
 	HREF                     string    `xml:"href,attr,omitempty"` // The URI of the entity.
 	ID                       string    `xml:"id,attr,omitempty"`
+	Moref                    string    `xml:"moref,attr,omitempty"`         // VM moref id.
 	Name                     string    `xml:"name,attr,omitempty"`          // VM name.
 	Type                     string    `xml:"type,attr,omitempty"`          // Contains the type of the resource.
 	ContainerName            string    `xml:"containerName,attr,omitempty"` // The name of the vApp or vApp template that contains this VM.
@@ -2415,18 +2419,52 @@ type QueryResultVAppRecordType struct {
 
 // QueryResultOrgVdcStorageProfileRecordType represents a storage
 // profile as query result.
+// https://code.vmware.com/apis/722/vmware-cloud-director/doc/doc/types/QueryResultOrgVdcStorageProfileRecordType.html
 type QueryResultOrgVdcStorageProfileRecordType struct {
 	// Attributes
-	HREF                    string `xml:"href,attr,omitempty"` // The URI of the entity.
-	Name                    string `xml:"name,attr,omitempty"` // Storage Profile name.
-	VdcHREF                 string `xml:"vdc,attr,omitempty"`
-	VdcName                 string `xml:"vdcName,attr,omitempty"`
-	IsDefaultStorageProfile bool   `xml:"isDefaultStorageProfile,attr,omitempty"`
-	IsEnabled               bool   `xml:"isEnabled,attr,omitempty"`
-	IsVdcBusy               bool   `xml:"isVdcBusy,attr,omitempty"`
-	NumberOfConditions      int    `xml:"numberOfConditions,attr,omitempty"`
-	StorageUsedMB           int    `xml:"storageUsedMB,attr,omitempty"`
-	StorageLimitMB          int    `xml:"storageLimitMB,attr,omitempty"`
+	HREF                    string `xml:"href,attr,omitempty"`                    // The URI of the entity.
+	ID                      string `xml:"id,attr,omitempty"`                      // The ID of the entity.
+	Type                    string `xml:"type,attr,omitempty"`                    // Contains the type of the resource.
+	Name                    string `xml:"name,attr,omitempty"`                    // Name of the storage profile.
+	IsEnabled               bool   `xml:"isEnabled,attr,omitempty"`               // True if this entity is enabled.
+	IsDefaultStorageProfile bool   `xml:"isDefaultStorageProfile,attr,omitempty"` // True if this is the default storage profile for a VDC.
+	StorageUsedMB           uint64 `xml:"storageUsedMB,attr,omitempty"`           // Storage used in MB.
+	StorageLimitMB          uint64 `xml:"storageLimitMB,attr,omitempty"`          // Storage limit in MB.
+	IopsAllocated           uint64 `xml:"iopsAllocated,attr,omitempty"`           // Total currently allocated IOPS on the storage profile.
+	IopsLimit               uint64 `xml:"iopsLimit,attr,omitempty"`               // IOPS limit for the storage profile.
+	NumberOfConditions      int    `xml:"numberOfConditions,attr,omitempty"`      // Number of conditions on the storage profile.
+	Vdc                     string `xml:"vdc,attr,omitempty"`                     // VDC reference or id.
+	VdcName                 string `xml:"vdcName,attr,omitempty"`                 // VDC name.
+	IsVdcBusy               bool   `xml:"isVdcBusy,attr,omitempty"`               // True if the associated VDC is busy.
+	// Elements
+	Link          []*Link          `xml:"Link,omitempty"`
+	MetadataEntry []*MetadataEntry `xml:"MetadataEntry,omitempty"`
+}
+
+// QueryResultAdminOrgVdcStorageProfileRecordType represents a storage
+// profile as query result.
+// https://code.vmware.com/apis/722/vmware-cloud-director/doc/doc/types/QueryResultAdminOrgVdcStorageProfileRecordType.html
+type QueryResultAdminOrgVdcStorageProfileRecordType struct {
+	// Attributes
+	HREF                    string `xml:"href,attr,omitempty"`                    // The URI of the entity.
+	ID                      string `xml:"id,attr,omitempty"`                      // The ID of the entity.
+	Type                    string `xml:"type,attr,omitempty"`                    // Contains the type of the resource.
+	Name                    string `xml:"name,attr,omitempty"`                    // Name of the storage profile.
+	IsEnabled               bool   `xml:"isEnabled,attr,omitempty"`               // True if this entity is enabled.
+	IsDefaultStorageProfile bool   `xml:"isDefaultStorageProfile,attr,omitempty"` // True if this is the default storage profile for a VDC.
+	StorageUsedMB           uint64 `xml:"storageUsedMB,attr,omitempty"`           // Storage used in MB.
+	StorageLimitMB          uint64 `xml:"storageLimitMB,attr,omitempty"`          // Storage limit in MB.
+	IopsAllocated           uint64 `xml:"iopsAllocated,attr,omitempty"`           // Total currently allocated IOPS on the storage profile.
+	IopsLimit               uint64 `xml:"iopsLimit,attr,omitempty"`               // IOPS limit for the storage profile.
+	NumberOfConditions      int    `xml:"numberOfConditions,attr,omitempty"`      // Number of conditions on the storage profile.
+	Vdc                     string `xml:"vdc,attr,omitempty"`                     // VDC reference or id.
+	VdcName                 string `xml:"vdcName,attr,omitempty"`                 // VDC name.
+	Org                     string `xml:"org,attr,omitempty"`                     // Organization reference or id.
+	VC                      string `xml:"vc,attr,omitempty"`                      // Virtual center reference or id.
+	StorageProfileMoref     string `xml:"storageProfileMoref,omitempty"`
+	// Elements
+	Link          []*Link          `xml:"Link,omitempty"`
+	MetadataEntry []*MetadataEntry `xml:"MetadataEntry,omitempty"`
 }
 
 // QueryResultVMWProviderVdcRecordType represents a Provider VDC as query result.
@@ -2873,8 +2911,8 @@ type User struct {
 	IsExternal      bool             `xml:"IsExternal,omitempty"`
 	ProviderType    string           `xml:"ProviderType,omitempty"`
 	IsGroupRole     bool             `xml:"IsGroupRole,omitempty"`
-	StoredVmQuota   int              `xml:"StoredVmQuota,omitempty"`
-	DeployedVmQuota int              `xml:"DeployedVmQuota,omitempty"`
+	StoredVmQuota   int              `xml:"StoredVmQuota"`
+	DeployedVmQuota int              `xml:"DeployedVmQuota"`
 	Role            *Reference       `xml:"Role,omitempty"`
 	GroupReferences *GroupReference  `xml:"GroupReferences,omitempty"`
 	Password        string           `xml:"Password,omitempty"`

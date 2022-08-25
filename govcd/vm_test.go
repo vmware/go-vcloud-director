@@ -536,6 +536,12 @@ func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
+
+	// Remove catalog item so far other tests don't fail
+	task, err := media.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_VMChangeCPUCountWithCore(check *C) {
@@ -702,6 +708,70 @@ func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
 	vmStatus, err = vm.GetStatus()
 	check.Assert(err, IsNil)
 	check.Assert(vmStatus, Equals, "POWERED_OFF")
+}
+
+func (vcd *TestVCD) Test_VmShutdown(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+	vapp := vcd.findFirstVapp()
+	existingVm, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
+	check.Assert(err, IsNil)
+
+	vdc, err := vm.GetParentVdc()
+	check.Assert(err, IsNil)
+
+	// Ensure VM is not powered on
+	vmStatus, err := vm.GetStatus()
+	check.Assert(err, IsNil)
+	fmt.Println("VM status: ", vmStatus)
+
+	if vmStatus != "POWERED_ON" {
+		task, err := vm.PowerOn()
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+		check.Assert(task.Task.Status, Equals, "success")
+	}
+
+	// Wait until Guest Tools gets to `REBOOT_PENDING` or `GC_COMPLETE` as there is no real way to
+	// check if VM has Guest Tools operating
+	for {
+		err = vm.Refresh()
+		check.Assert(err, IsNil)
+
+		vmQuery, err := vdc.QueryVM(vapp.VApp.Name, vm.VM.Name)
+		check.Assert(err, IsNil)
+
+		printVerbose("VM Tools Status: %s\n", vmQuery.VM.GcStatus)
+		if vmQuery.VM.GcStatus == "GC_COMPLETE" || vmQuery.VM.GcStatus == "REBOOT_PENDING" {
+			break
+		}
+
+		time.Sleep(3 * time.Second)
+	}
+	printVerbose("Shuting down VM:\n")
+
+	task, err := vm.Shutdown()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	newStatus, err := vm.GetStatus()
+	check.Assert(err, IsNil)
+	printVerbose("New VM status: %s\n", newStatus)
+	check.Assert(newStatus, Equals, "POWERED_OFF")
+
+	// End of test - power on the VM to leave it running
+	task, err = vm.PowerOn()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_GetNetworkConnectionSection(check *C) {
@@ -1490,10 +1560,10 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
 		vcd.infoCleanup(notFoundMsg, "vdc", vcd.vdc.Vdc.Name)
 	}
 
-	createdPolicy, err := adminOrg.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
+	createdPolicy, err := adminOrg.client.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
 	check.Assert(err, IsNil)
 
-	createdPolicy2, err := adminOrg.CreateVdcComputePolicy(newComputePolicy2.VdcComputePolicy)
+	createdPolicy2, err := adminOrg.client.CreateVdcComputePolicy(newComputePolicy2.VdcComputePolicy)
 	check.Assert(err, IsNil)
 
 	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", vcd.org.Org.Name, "Test_AddNewEmptyVMWithVmComputePolicyAndUpdate")
