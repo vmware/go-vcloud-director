@@ -73,6 +73,8 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpNeighbor:          "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpConfigPrefixLists: "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpConfig:            "35.0", // VCD 10.2+
+
+	types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies: "35.0",
 }
 
 // elevateNsxtNatRuleApiVersion helps to elevate API version to consume newer NSX-T NAT Rule features

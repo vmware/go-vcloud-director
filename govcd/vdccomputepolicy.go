@@ -213,7 +213,7 @@ func (vdcComputePolicy *VdcComputePolicy) Delete() error {
 // GetAllAssignedVdcComputePolicies retrieves all VDC assigned compute policies using OpenAPI endpoint. Query parameters can be supplied to perform additional
 // filtering
 func (vdc *AdminVdc) GetAllAssignedVdcComputePolicies(queryParameters url.Values) ([]*VdcComputePolicy, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies
+	endpoint := types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies
 	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
