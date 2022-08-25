@@ -94,10 +94,6 @@ func (vcd *TestVCD) Test_NsxtNatDnatFirewallMatchPriority(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointFirewallGroups)
 
-	if vcd.client.Client.APIVCDMaxVersionIs("< 35.2") {
-		check.Skip("FirewallMatch and Priority fields are only supported in API V35.2")
-	}
-
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 
@@ -232,10 +228,6 @@ func (vcd *TestVCD) Test_NsxtNatPriorityAndFirewallMatch(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointFirewallGroups)
 
-	if vcd.client.Client.APIVCDMaxVersionIs("< 35.2") {
-		check.Skip("testing 'Priority' and 'FirewallMatch' fields requires at least VCD 10.2.2")
-	}
-
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 
@@ -272,10 +264,6 @@ func (vcd *TestVCD) Test_NsxtNatPriorityAndFirewallMatch(check *C) {
 func (vcd *TestVCD) Test_NsxtNatReflexive(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointFirewallGroups)
-
-	if vcd.client.Client.APIVCDMaxVersionIs("< 36.0") {
-		check.Skip("REFLEXIVE NAT rules require at least VCD 10.3")
-	}
 
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
@@ -321,11 +309,7 @@ func nsxtNatRuleChecks(natRuleDefinition *types.NsxtNatRule, edge *NsxtEdgeGatew
 	natRuleDefinition.Priority = createdNatRule.NsxtNatRule.Priority           // Priority returns default value (0) for VCD 10.2.2+
 	natRuleDefinition.FirewallMatch = createdNatRule.NsxtNatRule.FirewallMatch // FirewallMatch returns default value (MATCH_INTERNAL_ADDRESS) for VCD 10.2.2+
 	natRuleDefinition.Version = createdNatRule.NsxtNatRule.Version             // Version will always be populated afterwards
-
-	// In API V36.0 expect the Type field to have the same value as specified RuleType
-	if vcd.client.Client.APIVCDMaxVersionIs(">= 36.0") {
-		natRuleDefinition.Type = createdNatRule.NsxtNatRule.Type
-	}
+	natRuleDefinition.Type = createdNatRule.NsxtNatRule.Type
 
 	check.Assert(createdNatRule.NsxtNatRule, DeepEquals, natRuleDefinition)
 

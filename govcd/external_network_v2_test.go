@@ -19,21 +19,10 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2Nsxt(check *C) {
 }
 
 func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxtVrf(check *C) {
-	// The documented backing type of NSX-T VRF router is "NSXT_VRF_TIER0" (types.ExternalNetworkBackingTypeNsxtVrfTier0Router)
-	// but although it is documented - it fails and requires the same "NSXT_TIER0" (types.ExternalNetworkBackingTypeNsxtTier0Router)
-	// backing type to be specified
-	// As of 10.1.2 release it is not officially supported (support only introduced in 10.2.0) therefore skipping this test for
-	// 10.1.X. 10.1.1 allowed to create it, but 10.1.2 introduced a validator and throws error.
-	if vcd.client.Client.APIVCDMaxVersionIs("< 35") {
-		check.Skip("NSX-T VRF-Lite backed external networks are officially supported only in 10.2.0+")
-	}
 	vcd.testCreateExternalNetworkV2Nsxt(check, vcd.config.VCD.Nsxt.Tier0routerVrf, types.ExternalNetworkBackingTypeNsxtTier0Router)
 }
 
 func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxtSegment(check *C) {
-	if vcd.client.Client.APIVCDMaxVersionIs("< 36") {
-		check.Skip("NSX-T segment backed external networks are supported only in 10.3.0+")
-	}
 	vcd.testCreateExternalNetworkV2Nsxt(check, vcd.config.VCD.Nsxt.NsxtImportSegment, types.ExternalNetworkBackingTypeNsxtSegment)
 }
 
@@ -187,15 +176,9 @@ func testExternalNetworkV2(vcd *TestVCD, name, backingType, backingId, NetworkPr
 				NetworkProvider: types.NetworkProvider{
 					ID: NetworkProviderId,
 				},
+				BackingTypeValue: backingType,
 			},
 		}},
-	}
-
-	// Starting with VCD 10.2 field BackingType is deprecated in favor of BackingTypeValue, and it only accepts new values
-	if vcd.client.Client.APIVCDMaxVersionIs(">= 35.0") {
-		net.NetworkBackings.Values[0].BackingTypeValue = backingType
-	} else {
-		net.NetworkBackings.Values[0].BackingType = backingType
 	}
 
 	return net

@@ -274,21 +274,3 @@ func natRulesEqual(first, second *types.NsxtNatRule) bool {
 
 	return false
 }
-
-// elevateNsxtNatRuleApiVersion helps to elevate API version to consume newer NSX-T NAT Rule features
-// API V35.2+ support new fields FirewallMatch and Priority
-// API V36.0+ supports new RuleType - REFLEXIVE
-//func elevateNsxtNatRuleApiVersion(apiVersion string, client *Client) string {
-//
-//	// Fields FirewallMatch and Priority require API version 35.2 to be set therefore version is elevated if API supports
-//	if client.APIVCDMaxVersionIs(">= 35.2") {
-//		apiVersion = "35.2"
-//	}
-//
-//	// RuleType REFLEXIVE requires API V36.0
-//	if client.APIVCDMaxVersionIs(">= 36.0") {
-//		apiVersion = "36.0"
-//	}
-//
-//	return apiVersion
-//}
