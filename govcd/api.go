@@ -775,7 +775,11 @@ func (client *Client) RemoveProvidedCustomHeaders(values map[string]string) {
 
 // Retrieves the administrator URL of a given HREF
 func getAdminURL(href string) string {
-	return strings.ReplaceAll(href, "/api/", "/api/admin/")
+	adminApi := "/api/admin"
+	if strings.Contains(href, adminApi) {
+		return href
+	}
+	return strings.ReplaceAll(href, "/api/", adminApi)
 }
 
 // ---------------------------------------------------------------------

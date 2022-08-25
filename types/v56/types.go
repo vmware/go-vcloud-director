@@ -463,6 +463,11 @@ type AdminVdc struct {
 	UniversalNetworkPoolReference *Reference     `xml:"UniversalNetworkPoolReference,omitempty"` // Reference to a universal network pool
 }
 
+// ProviderVdc represents a Provider VDC.
+// Type: ProviderVdcType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents a Provider VDC.
+// Since: 0.9
 type ProviderVdc struct {
 	Xmlns        string `xml:"xmlns,attr"`
 	HREF         string `xml:"href,attr,omitempty"`
@@ -470,18 +475,18 @@ type ProviderVdc struct {
 	ID           string `xml:"id,attr,omitempty"`
 	OperationKey string `xml:"operationKey,attr,omitempty"`
 	Name         string `xml:"name,attr"`
-	Status       int    `xml:"status,attr,omitempty"`
+	Status       int    `xml:"status,attr,omitempty"` // -1 (creation failed), 0 (not ready), 1 (ready), 2 (unknown), 3 (unrecognized)
 
-	AvailableNetworks     []*AvailableNetworks       `xml:"AvailableNetworks,attr,omitempty"`
-	Capabilities          []*Capabilities            `xml:"Capabilities,attr,omitempty"`
-	ComputeCapacity       *RootComputeCapacity       `xml:"RootComputeCapacity,attr,omitempty"`
-	Description           *string                    `xml:"Description,attr,omitempty"`
-	IsEnabled             *bool                      `xml:"IsEnabled,attr,omitempty"`
-	Link                  *Link                      `xml:"Link,attr,omitempty"`
-	NetworkPoolReferences []*NetworkPoolReferences   `xml:"NetworkPoolReferences,attr,omitempty"`
-	StorageProfiles       []*ProviderStorageProfiles `xml:"StorageProfiles,attr,omitempty"`
-	Tasks                 *TasksInProgress           `xml:"Tasks,attr,omitempty"`
-	Vdcs                  []*Vdc                     `xml:"Vdcs,attr,omitempty"`
+	AvailableNetworks     *AvailableNetworks       `xml:"AvailableNetworks,omitempty"`     // Read-only list of available networks.
+	Capabilities          *Capabilities            `xml:"Capabilities,omitempty"`          // Read-only list of virtual hardware versions supported by this Provider vDC.
+	ComputeCapacity       *RootComputeCapacity     `xml:"RootComputeCapacity,omitempty"`   // Read-only indicator of CPU and memory capacity.
+	Description           string                   `xml:"Description,omitempty"`           // Optional description.
+	IsEnabled             *bool                    `xml:"IsEnabled,omitempty"`             // True if this Provider vDC is enabled and can provide resources to organization vDCs. A Provider vDC is always enabled on creation.
+	Link                  *Link                    `xml:"Link,omitempty"`                  // A reference to an entity or operation associated with this object.
+	NetworkPoolReferences *NetworkPoolReferences   `xml:"NetworkPoolReferences,omitempty"` // Container for references to vSphere storage profiles available to this Provider vDC.
+	StorageProfiles       *ProviderStorageProfiles `xml:"StorageProfiles,omitempty"`       // Read-only list of network pools used by this Provider vDC.
+	Tasks                 *TasksInProgress         `xml:"Tasks,omitempty"`                 // A list of queued, running, or recently completed tasks associated with this entity.
+	Vdcs                  []*Vdc                   `xml:"Vdcs,omitempty"`                  // Read-only list of organization vDCs backed by this Provider vDC.
 }
 
 // RootComputeCapacity represents compute capacity with units.
@@ -502,7 +507,7 @@ type RootComputeCapacity struct {
 // Description: Container for references to network pools in this vDC.
 // Since: 0.9
 type NetworkPoolReferences struct {
-	NetworkPoolReference *Reference `xml:"NetworkPoolReference"`
+	NetworkPoolReference []*Reference `xml:"NetworkPoolReference"`
 }
 
 // ProviderVdcStorageProfiles is a container for references to storage profiles associated with a Provider vDC.
@@ -511,7 +516,7 @@ type NetworkPoolReferences struct {
 // Description: Container for references to storage profiles associated with a Provider vDC.
 // Since: 0.9
 type ProviderStorageProfiles struct {
-	ProviderVdcStorageProfile *Reference `xml:"ProviderVdcStorageProfile"`
+	ProviderVdcStorageProfile []*Reference `xml:"ProviderVdcStorageProfile"`
 }
 
 // ProviderVdcCapacity represents resource capacity in a Provider vDC.

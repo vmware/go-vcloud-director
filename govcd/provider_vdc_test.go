@@ -1,18 +1,37 @@
-//go:build pvdc || functional || ALL
-
-/*
- * Copyright 2018 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- * Copyright 2016 Skyscape Cloud Services.  All rights reserved.  Licensed under the Apache v2 License.
- */
+//go:build providervdc || functional || ALL
+// +build providervdc functional ALL
 
 package govcd
 
 import (
+	"fmt"
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_ProviderVdc(check *C) {
-	providerVdc, err := vcd.client.GetProviderVdcById("0f32bce0-62c0-481e-bb71-254b1fd40434")
+func init() {
+	testingTags["providervdc"] = "provider_vdc_test.go"
+}
+
+func (vcd *TestVCD) Test_GetProviderVdc(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	var providerVdcs []*ProviderVdc
+	providerVdc, err := vcd.client.GetProviderVdcByName(vcd.config.VCD.NsxtProviderVdc.Name)
 	check.Assert(err, IsNil)
-	check.Assert(providerVdc, NotNil)
+	providerVdcs = append(providerVdcs, providerVdc)
+	providerVdc, err = vcd.client.GetProviderVdcById(providerVdc.ProviderVdc.ID)
+	check.Assert(err, IsNil)
+	providerVdcs = append(providerVdcs, providerVdc)
+	providerVdc, err = vcd.client.GetProviderVdcByHref(providerVdc.ProviderVdc.HREF)
+	check.Assert(err, IsNil)
+	providerVdcs = append(providerVdcs, providerVdc)
+
+	// Common asserts
+	for _, providerVdc := range providerVdcs {
+		check.Assert(providerVdc.ProviderVdc.Name, Equals, vcd.config.VCD.NsxtProviderVdc.Name)
+		check.Assert(providerVdc.ProviderVdc.StorageProfiles.ProviderVdcStorageProfile[0].Name, Equals, vcd.config.VCD.NsxtProviderVdc.StorageProfile)
+	}
+
 }
