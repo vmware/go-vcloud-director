@@ -1580,7 +1580,7 @@ func TestClient_getloginurl(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	if client.sessionHREF.Path != "/api/sessions" {
+	if client.sessionHREF.Path != "/cloudapi/1.0.0/sessions" {
 		t.Fatalf("Getting LoginUrl failed, url: %s", client.sessionHREF.Path)
 	}
 }

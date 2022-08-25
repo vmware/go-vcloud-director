@@ -664,6 +664,22 @@ func (vcd *TestVCD) Test_RemoveAllNetworks(check *C) {
 
 	check.Assert(len(networkConfig.NetworkConfig), Equals, 2)
 
+	// Network removal requires for the vApp to be down therefore attempt to power off vApp before
+	// network removal, but ignore error as it might already be powered off
+	vappStatus, err := vcd.vapp.GetStatus()
+	check.Assert(err, IsNil)
+
+	if vappStatus != "POWERED_OFF" {
+		task, err := vcd.vapp.Undeploy()
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+	}
+
+	vappStatus, err = vcd.vapp.GetStatus()
+	check.Assert(err, IsNil)
+	printVerbose("vApp status before network removal: %s\n", vappStatus)
+
 	task, err := vcd.vapp.RemoveAllNetworks()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
@@ -683,6 +699,12 @@ func (vcd *TestVCD) Test_RemoveAllNetworks(check *C) {
 
 	}
 	check.Assert(hasNetworks, Equals, false)
+
+	// Power on shared vApp for other tests
+	task, err = vcd.vapp.PowerOn()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 // Test_VappSetProductSectionList sets vApp product section, retrieves it and deeply matches if

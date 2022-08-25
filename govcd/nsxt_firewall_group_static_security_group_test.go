@@ -126,7 +126,7 @@ func (vcd *TestVCD) Test_NsxtSecurityGroupGetAssociatedVms(check *C) {
 
 	// VMs are prependend to cleanup list to make sure they are removed before routed network
 	standaloneVm := createStandaloneVm(check, vcd, nsxtVdc, routedNet)
-	PrependToCleanupList(standaloneVm.VM.ID, "standaloneVm", "", check.TestName())
+	PrependToCleanupList(standaloneVm.VM.ID, "standaloneVm", "", standaloneVm.VM.Name)
 
 	secGroupDefinition := &types.NsxtFirewallGroup{
 		Name:           check.TestName(),
@@ -208,10 +208,10 @@ func createNsxtRoutedNetwork(check *C, vcd *TestVCD, vdc *Vdc, edgeGatewayId str
 
 func createStandaloneVm(check *C, vcd *TestVCD, vdc *Vdc, net *OpenApiOrgVdcNetwork) *VM {
 	params := types.CreateVmParams{
-		Name:    check.TestName(),
+		Name:    check.TestName() + "-standalone",
 		PowerOn: false,
 		CreateVm: &types.Vm{
-			Name:                   check.TestName(),
+			Name:                   check.TestName() + "-standalone",
 			VirtualHardwareSection: nil,
 			NetworkConnectionSection: &types.NetworkConnectionSection{
 				Info:                          "Network Configuration for VM",

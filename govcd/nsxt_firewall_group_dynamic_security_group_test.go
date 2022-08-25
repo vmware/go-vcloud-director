@@ -16,10 +16,6 @@ func (vcd *TestVCD) Test_NsxtDynamicSecurityGroup(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointFirewallGroups)
 
-	if vcd.client.Client.APIVCDMaxVersionIs("< 36.0") {
-		check.Skip("Dynamic security groups require VCD 10.3+")
-	}
-
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 

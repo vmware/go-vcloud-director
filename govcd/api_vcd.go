@@ -105,7 +105,7 @@ func (vcdClient *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.
 // NewVCDClient initializes VMware VMware Cloud Director client with reasonable defaults.
 // It accepts functions of type VCDClientOption for adjusting defaults.
 func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption) *VCDClient {
-	minVcdApiVersion := "35.0" // supported by 10.2+
+	minVcdApiVersion := "36.0" // supported by 10.3+
 	userDefinedApiVersion := os.Getenv("GOVCD_API_VERSION")
 	if userDefinedApiVersion != "" {
 		_, err := semver.NewVersion(userDefinedApiVersion)
@@ -120,7 +120,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 	// Setting defaults
 	vcdClient := &VCDClient{
 		Client: Client{
-			APIVersion: minVcdApiVersion, // supported by 10.2+
+			APIVersion: minVcdApiVersion,
 			// UserAgent cannot embed exact version by default because this is source code and is supposed to be used by programs,
 			// but any client can customize or disable it at all using WithHttpUserAgent() configuration options function.
 			UserAgent: "go-vcloud-director",

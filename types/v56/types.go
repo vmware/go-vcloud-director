@@ -35,7 +35,7 @@ var VAppStatuses = map[int]string{
 	17: "TRANSFER_TIMEOUT",
 	18: "VAPP_UNDEPLOYED",
 	19: "VAPP_PARTIALLY_DEPLOYED",
-	20: "PARTIALLY_POWERED_OFF",
+	20: "PARTIALLY_POWERED_OFF", // VCD 10.3+
 	21: "PARTIALLY_SUSPENDED",
 }
 
@@ -447,14 +447,17 @@ type AdminVdc struct {
 	Xmlns string `xml:"xmlns,attr"`
 	Vdc
 
-	VCpuInMhz2                    *int64         `xml:"VCpuInMhz2,omitempty"`
-	ResourceGuaranteedMemory      *float64       `xml:"ResourceGuaranteedMemory,omitempty"`
-	ResourceGuaranteedCpu         *float64       `xml:"ResourceGuaranteedCpu,omitempty"`
-	VCpuInMhz                     *int64         `xml:"VCpuInMhz,omitempty"`
-	IsThinProvision               *bool          `xml:"IsThinProvision,omitempty"`
-	NetworkPoolReference          *Reference     `xml:"NetworkPoolReference,omitempty"`
-	ProviderVdcReference          *Reference     `xml:"ProviderVdcReference"`
-	ResourcePoolRefs              *VimObjectRefs `xml:"vmext:ResourcePoolRefs,omitempty"`
+	VCpuInMhz2               *int64     `xml:"VCpuInMhz2,omitempty"`
+	ResourceGuaranteedMemory *float64   `xml:"ResourceGuaranteedMemory,omitempty"`
+	ResourceGuaranteedCpu    *float64   `xml:"ResourceGuaranteedCpu,omitempty"`
+	VCpuInMhz                *int64     `xml:"VCpuInMhz,omitempty"`
+	IsThinProvision          *bool      `xml:"IsThinProvision,omitempty"`
+	NetworkPoolReference     *Reference `xml:"NetworkPoolReference,omitempty"`
+	ProviderVdcReference     *Reference `xml:"ProviderVdcReference"`
+
+	// ResourcePoolRefs is a read-only field and should be avoided in XML structure for write
+	// operations because it breaks on Go marshalling bug https://github.com/golang/go/issues/9519
+	ResourcePoolRefs              *VimObjectRefs `xml:"ResourcePoolRefs,omitempty"`
 	UsesFastProvisioning          *bool          `xml:"UsesFastProvisioning,omitempty"`
 	OverCommitAllowed             bool           `xml:"OverCommitAllowed,omitempty"`
 	VmDiscoveryEnabled            bool           `xml:"VmDiscoveryEnabled,omitempty"`
@@ -2192,6 +2195,7 @@ type QueryResultRecordsType struct {
 	VAppRecord                      []*QueryResultVAppRecordType                      `xml:"VAppRecord"`                      // A record representing a VApp result.
 	AdminVAppRecord                 []*QueryResultVAppRecordType                      `xml:"AdminVAppRecord"`                 // A record representing a VApp result as admin.
 	OrgVdcStorageProfileRecord      []*QueryResultOrgVdcStorageProfileRecordType      `xml:"OrgVdcStorageProfileRecord"`      // A record representing storage profiles
+	AdminOrgVdcStorageProfileRecord []*QueryResultAdminOrgVdcStorageProfileRecordType `xml:"AdminOrgVdcStorageProfileRecord"` // A record representing storage profiles as admin
 	MediaRecord                     []*MediaRecordType                                `xml:"MediaRecord"`                     // A record representing media
 	AdminMediaRecord                []*MediaRecordType                                `xml:"AdminMediaRecord"`                // A record representing Admin media
 	VMWProviderVdcRecord            []*QueryResultVMWProviderVdcRecordType            `xml:"VMWProviderVdcRecord"`            // A record representing a Provider VDC result.
@@ -2418,18 +2422,52 @@ type QueryResultVAppRecordType struct {
 
 // QueryResultOrgVdcStorageProfileRecordType represents a storage
 // profile as query result.
+// https://code.vmware.com/apis/722/vmware-cloud-director/doc/doc/types/QueryResultOrgVdcStorageProfileRecordType.html
 type QueryResultOrgVdcStorageProfileRecordType struct {
 	// Attributes
-	HREF                    string `xml:"href,attr,omitempty"` // The URI of the entity.
-	Name                    string `xml:"name,attr,omitempty"` // Storage Profile name.
-	VdcHREF                 string `xml:"vdc,attr,omitempty"`
-	VdcName                 string `xml:"vdcName,attr,omitempty"`
-	IsDefaultStorageProfile bool   `xml:"isDefaultStorageProfile,attr,omitempty"`
-	IsEnabled               bool   `xml:"isEnabled,attr,omitempty"`
-	IsVdcBusy               bool   `xml:"isVdcBusy,attr,omitempty"`
-	NumberOfConditions      int    `xml:"numberOfConditions,attr,omitempty"`
-	StorageUsedMB           int    `xml:"storageUsedMB,attr,omitempty"`
-	StorageLimitMB          int    `xml:"storageLimitMB,attr,omitempty"`
+	HREF                    string `xml:"href,attr,omitempty"`                    // The URI of the entity.
+	ID                      string `xml:"id,attr,omitempty"`                      // The ID of the entity.
+	Type                    string `xml:"type,attr,omitempty"`                    // Contains the type of the resource.
+	Name                    string `xml:"name,attr,omitempty"`                    // Name of the storage profile.
+	IsEnabled               bool   `xml:"isEnabled,attr,omitempty"`               // True if this entity is enabled.
+	IsDefaultStorageProfile bool   `xml:"isDefaultStorageProfile,attr,omitempty"` // True if this is the default storage profile for a VDC.
+	StorageUsedMB           uint64 `xml:"storageUsedMB,attr,omitempty"`           // Storage used in MB.
+	StorageLimitMB          uint64 `xml:"storageLimitMB,attr,omitempty"`          // Storage limit in MB.
+	IopsAllocated           uint64 `xml:"iopsAllocated,attr,omitempty"`           // Total currently allocated IOPS on the storage profile.
+	IopsLimit               uint64 `xml:"iopsLimit,attr,omitempty"`               // IOPS limit for the storage profile.
+	NumberOfConditions      int    `xml:"numberOfConditions,attr,omitempty"`      // Number of conditions on the storage profile.
+	Vdc                     string `xml:"vdc,attr,omitempty"`                     // VDC reference or id.
+	VdcName                 string `xml:"vdcName,attr,omitempty"`                 // VDC name.
+	IsVdcBusy               bool   `xml:"isVdcBusy,attr,omitempty"`               // True if the associated VDC is busy.
+	// Elements
+	Link          []*Link          `xml:"Link,omitempty"`
+	MetadataEntry []*MetadataEntry `xml:"MetadataEntry,omitempty"`
+}
+
+// QueryResultAdminOrgVdcStorageProfileRecordType represents a storage
+// profile as query result.
+// https://code.vmware.com/apis/722/vmware-cloud-director/doc/doc/types/QueryResultAdminOrgVdcStorageProfileRecordType.html
+type QueryResultAdminOrgVdcStorageProfileRecordType struct {
+	// Attributes
+	HREF                    string `xml:"href,attr,omitempty"`                    // The URI of the entity.
+	ID                      string `xml:"id,attr,omitempty"`                      // The ID of the entity.
+	Type                    string `xml:"type,attr,omitempty"`                    // Contains the type of the resource.
+	Name                    string `xml:"name,attr,omitempty"`                    // Name of the storage profile.
+	IsEnabled               bool   `xml:"isEnabled,attr,omitempty"`               // True if this entity is enabled.
+	IsDefaultStorageProfile bool   `xml:"isDefaultStorageProfile,attr,omitempty"` // True if this is the default storage profile for a VDC.
+	StorageUsedMB           uint64 `xml:"storageUsedMB,attr,omitempty"`           // Storage used in MB.
+	StorageLimitMB          uint64 `xml:"storageLimitMB,attr,omitempty"`          // Storage limit in MB.
+	IopsAllocated           uint64 `xml:"iopsAllocated,attr,omitempty"`           // Total currently allocated IOPS on the storage profile.
+	IopsLimit               uint64 `xml:"iopsLimit,attr,omitempty"`               // IOPS limit for the storage profile.
+	NumberOfConditions      int    `xml:"numberOfConditions,attr,omitempty"`      // Number of conditions on the storage profile.
+	Vdc                     string `xml:"vdc,attr,omitempty"`                     // VDC reference or id.
+	VdcName                 string `xml:"vdcName,attr,omitempty"`                 // VDC name.
+	Org                     string `xml:"org,attr,omitempty"`                     // Organization reference or id.
+	VC                      string `xml:"vc,attr,omitempty"`                      // Virtual center reference or id.
+	StorageProfileMoref     string `xml:"storageProfileMoref,omitempty"`
+	// Elements
+	Link          []*Link          `xml:"Link,omitempty"`
+	MetadataEntry []*MetadataEntry `xml:"MetadataEntry,omitempty"`
 }
 
 // QueryResultVMWProviderVdcRecordType represents a Provider VDC as query result.
