@@ -232,8 +232,8 @@ func isTcpPortOpen(host, port string, timeout int) bool {
 	retryTimeout := timeout
 	// due to the VMs taking long time to boot it needs to be at least 6 minutes
 	// may be even more in slower environments
-	if timeout < 6*60 { // 5 minutes
-		retryTimeout = 6 * 60 // 5 minutes
+	if timeout < 6*60 {
+		retryTimeout = 6 * 60
 	}
 	timeOutAfterInterval := time.Duration(retryTimeout) * time.Second
 	timeoutAfter := time.After(timeOutAfterInterval)
