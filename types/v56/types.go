@@ -463,6 +463,71 @@ type AdminVdc struct {
 	UniversalNetworkPoolReference *Reference     `xml:"UniversalNetworkPoolReference,omitempty"` // Reference to a universal network pool
 }
 
+type ProviderVdc struct {
+	Xmlns        string `xml:"xmlns,attr"`
+	HREF         string `xml:"href,attr,omitempty"`
+	Type         string `xml:"type,attr,omitempty"`
+	ID           string `xml:"id,attr,omitempty"`
+	OperationKey string `xml:"operationKey,attr,omitempty"`
+	Name         string `xml:"name,attr"`
+	Status       int    `xml:"status,attr,omitempty"`
+
+	AvailableNetworks     []*AvailableNetworks       `xml:"AvailableNetworks,attr,omitempty"`
+	Capabilities          []*Capabilities            `xml:"Capabilities,attr,omitempty"`
+	ComputeCapacity       *RootComputeCapacity       `xml:"RootComputeCapacity,attr,omitempty"`
+	Description           *string                    `xml:"Description,attr,omitempty"`
+	IsEnabled             *bool                      `xml:"IsEnabled,attr,omitempty"`
+	Link                  *Link                      `xml:"Link,attr,omitempty"`
+	NetworkPoolReferences []*NetworkPoolReferences   `xml:"NetworkPoolReferences,attr,omitempty"`
+	StorageProfiles       []*ProviderStorageProfiles `xml:"StorageProfiles,attr,omitempty"`
+	Tasks                 *TasksInProgress           `xml:"Tasks,attr,omitempty"`
+	Vdcs                  []*Vdc                     `xml:"Vdcs,attr,omitempty"`
+}
+
+// RootComputeCapacity represents compute capacity with units.
+// Type: RootComputeCapacityType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents compute capacity with units.
+// Since: 0.9
+type RootComputeCapacity struct {
+	Cpu       *ProviderVdcCapacity `xml:"Cpu"`
+	IsElastic *bool                `xml:"IsElastic,omitempty"`
+	IsHA      *bool                `xml:"IsHA,omitempty"`
+	Memory    *ProviderVdcCapacity `xml:"Memory"`
+}
+
+// NetworkPoolReferences is a container for references to network pools in this vDC.
+// Type: NetworkPoolReferencesType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Container for references to network pools in this vDC.
+// Since: 0.9
+type NetworkPoolReferences struct {
+	NetworkPoolReference *Reference `xml:"NetworkPoolReference"`
+}
+
+// ProviderVdcStorageProfiles is a container for references to storage profiles associated with a Provider vDC.
+// Type: ProviderVdcStorageProfilesType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Container for references to storage profiles associated with a Provider vDC.
+// Since: 0.9
+type ProviderStorageProfiles struct {
+	ProviderVdcStorageProfile *Reference `xml:"ProviderVdcStorageProfile"`
+}
+
+// ProviderVdcCapacity represents resource capacity in a Provider vDC.
+// Type: ProviderVdcCapacityType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents resource capacity in a Provider vDC.
+// Since: 0.9
+type ProviderVdcCapacity struct {
+	Allocation *int64 `xml:"Allocation,omitempty"`
+	Overhead   *int64 `xml:"Overhead,omitempty"`
+	Reserved   *int64 `xml:"Reserved,omitempty"`
+	Total      int64  `xml:"Total"`
+	Units      string `xml:"Units"`
+	Used       *int64 `xml:"Used,omitempty"`
+}
+
 // VdcStorageProfileConfiguration represents the parameters to assign a storage profile in creation of organization vDC.
 // Type: VdcStorageProfileParamsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
