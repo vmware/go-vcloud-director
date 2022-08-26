@@ -102,7 +102,7 @@ func (vcdClient *VCDClient) GetProviderVdcExtendedByName(providerVdcName string)
 // Refresh updates the contents of the Provider VDC associated to the receiver object.
 func (providerVdc *ProviderVdc) Refresh() error {
 	if providerVdc.ProviderVdc.HREF == "" {
-		return fmt.Errorf("cannot refresh, receiver object is empty")
+		return fmt.Errorf("cannot refresh, receiver Provider VDC is empty")
 	}
 
 	unmarshalledVdc := &types.ProviderVdc{}
@@ -119,22 +119,38 @@ func (providerVdc *ProviderVdc) Refresh() error {
 }
 
 // Refresh updates the contents of the extended Provider VDC associated to the receiver object.
-func (providerVdc *ProviderVdcExtended) Refresh() error {
-	if providerVdc.VMWProviderVdc.HREF == "" {
-		return fmt.Errorf("cannot refresh, receiver object is empty")
+func (providerVdcExtended *ProviderVdcExtended) Refresh() error {
+	if providerVdcExtended.VMWProviderVdc.HREF == "" {
+		return fmt.Errorf("cannot refresh, receiver extended Provider VDC is empty")
 	}
 
 	unmarshalledVdc := &types.VMWProviderVdc{}
 
-	_, err := providerVdc.client.ExecuteRequest(providerVdc.VMWProviderVdc.HREF, http.MethodGet,
+	_, err := providerVdcExtended.client.ExecuteRequest(providerVdcExtended.VMWProviderVdc.HREF, http.MethodGet,
 		"", "error refreshing extended Provider VDC: %s", nil, unmarshalledVdc)
 	if err != nil {
 		return err
 	}
 
-	providerVdc.VMWProviderVdc = unmarshalledVdc
+	providerVdcExtended.VMWProviderVdc = unmarshalledVdc
 
 	return nil
+}
+
+// ToProviderVdc converts the receiver ProviderVdcExtended into the subset ProviderVdc
+func (providerVdcExtended *ProviderVdcExtended) ToProviderVdc() (*ProviderVdc, error) {
+	providerVdcHref := providerVdcExtended.client.VCDHREF
+	providerVdcHref.Path += "/admin/providervdc/" + extractUuid(providerVdcExtended.VMWProviderVdc.ID)
+
+	providerVdc := NewProviderVdc(providerVdcExtended.client)
+
+	_, err := providerVdcExtended.client.ExecuteRequest(providerVdcHref.String(), http.MethodGet,
+		"", "error retrieving Provider VDC: %s", nil, providerVdc.ProviderVdc)
+	if err != nil {
+		return nil, err
+	}
+
+	return providerVdc, nil
 }
 
 // getProviderVdcByName finds a Provider VDC with extension (extended=true) or without extension (extended=false) by name

@@ -78,3 +78,21 @@ func (vcd *TestVCD) Test_GetProviderVdcExtended(check *C) {
 		check.Assert(providerVdcExtended.VMWProviderVdc.VimServer, NotNil)
 	}
 }
+
+func (vcd *TestVCD) Test_GetProviderVdcConvertFromExtendedToNormal(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	providerVdcExtended, err := vcd.client.GetProviderVdcExtendedByName(vcd.config.VCD.NsxtProviderVdc.Name)
+	check.Assert(err, IsNil)
+	providerVdc, err := providerVdcExtended.ToProviderVdc()
+	check.Assert(err, IsNil)
+	check.Assert(providerVdc.ProviderVdc.Name, Equals, vcd.config.VCD.NsxtProviderVdc.Name)
+	check.Assert(providerVdc.ProviderVdc.StorageProfiles.ProviderVdcStorageProfile[0].Name, Equals, vcd.config.VCD.NsxtProviderVdc.StorageProfile)
+	check.Assert(*providerVdc.ProviderVdc.IsEnabled, Equals, true)
+	check.Assert(providerVdc.ProviderVdc.Status, Equals, 1)
+	check.Assert(len(providerVdc.ProviderVdc.NetworkPoolReferences.NetworkPoolReference), Equals, 1)
+	check.Assert(providerVdc.ProviderVdc.NetworkPoolReferences.NetworkPoolReference[0].Name, Equals, vcd.config.VCD.NsxtProviderVdc.NetworkPool)
+	check.Assert(providerVdc.ProviderVdc.Link, NotNil)
+}
