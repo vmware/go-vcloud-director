@@ -782,6 +782,15 @@ func getAdminURL(href string) string {
 	return strings.ReplaceAll(href, "/api/", adminApi)
 }
 
+// Retrieves the administrator URL of a given HREF
+func getAdminExtensionURL(href string) string {
+	adminExtensionApi := "/api/admin/extension/"
+	if strings.Contains(href, adminExtensionApi) {
+		return href
+	}
+	return strings.ReplaceAll(getAdminURL(href), "/api/admin/", adminExtensionApi)
+}
+
 // ---------------------------------------------------------------------
 // The following functions are needed to avoid strict Coverity warnings
 // ---------------------------------------------------------------------

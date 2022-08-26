@@ -489,6 +489,34 @@ type ProviderVdc struct {
 	Vdcs                  []*Vdc                   `xml:"Vdcs,omitempty"`                  // Read-only list of organization vDCs backed by this Provider vDC.
 }
 
+// VMWProviderVdc represents an extension of ProviderVdc.
+// Type: VMWProviderVdcType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents an extension of ProviderVdc.
+// Since: 1.0
+type VMWProviderVdc struct {
+	ProviderVdc
+
+	AvailableUniversalNetworkPool   *Reference         `xml:"AvailableUniversalNetworkPool,omitempty"`   // Selectable universal network reference.
+	ComputeProviderScope            string             `xml:"ComputeProviderScope,omitempty"`            // The compute provider scope represents the compute fault domain for this provider VDC. This value is a tenant-facing tag that is shown to tenants when viewing fault domains of the child Organization VDCs (for ex. a VDC Group).
+	DataStoreRefs                   *VimObjectRefs     `xml:"DataStoreRefs,omitempty"`                   // vSphere datastores backing this provider VDC.
+	HighestSupportedHardwareVersion string             `xml:"HighestSupportedHardwareVersion,omitempty"` // The highest virtual hardware version supported by this Provider VDC. If empty or omitted on creation, the system sets it to the highest virtual hardware version supported by all hosts in the primary resource pool. You can modify it when you add more resource pools.
+	HostReferences                  *VMWHostReferences `xml:"HostReferences,omitempty"`                  // Shows all hosts which are connected to VC server.
+	NsxTManagerReference            *Reference         `xml:"NsxTManagerReference,omitempty"`            // An optional reference to a registered NSX-T Manager to back networking operations for this provider VDC.
+	ResourcePoolRefs                *VimObjectRefs     `xml:"ResourcePoolRefs,omitempty"`                // Resource pools backing this provider vDC. On create, you must specify a resource pool that is not used by (and is not the child of a resource pool used by) any other provider VDC. On modify, this element is required for schema validation, but its contents cannot be changed.
+	VimServer                       *Reference         `xml:"VimServer,omitempty"`                       // The vCenter server that provides the resource pools and datastores. A valid reference is required on create. On modify, this element is required for schema validation, but its contents cannot be changed.
+}
+
+// VMWHostReferences represents a list of available hosts.
+// Type: VMWHostReferencesType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents a list of available hosts.
+// Since: 1.0
+type VMWHostReferences struct {
+	HostReference *Reference `xml:"HostReference,omitempty"`
+	Link          *Link      `xml:"Link,omitempty"`
+}
+
 // RootComputeCapacity represents compute capacity with units.
 // Type: RootComputeCapacityType
 // Namespace: http://www.vmware.com/vcloud/v1.5
@@ -510,7 +538,7 @@ type NetworkPoolReferences struct {
 	NetworkPoolReference []*Reference `xml:"NetworkPoolReference"`
 }
 
-// ProviderVdcStorageProfiles is a container for references to storage profiles associated with a Provider vDC.
+// ProviderStorageProfiles is a container for references to storage profiles associated with a Provider vDC.
 // Type: ProviderVdcStorageProfilesType
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Container for references to storage profiles associated with a Provider vDC.
