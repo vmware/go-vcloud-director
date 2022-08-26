@@ -61,6 +61,9 @@ func (client *Client) QueryWithNotEncodedParamsWithApiVersionWithHeaders(params 
 	req := client.NewRequestWitNotEncodedParamsWithApiVersion(params, notEncodedParams, http.MethodGet, queryUrl, nil, apiVersion)
 	req.Header.Add("Accept", "vnd.vmware.vcloud.org+xml;version="+apiVersion)
 
+	// TODO delete
+	// fmt.Printf("REQUEST: %+v\n\n", req)
+
 	for k, v := range headers {
 		req.Header.Add(k, v)
 	}

@@ -1570,6 +1570,7 @@ func (vdc *Vdc) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryResultVMR
 
 // queryVmList is extracted and used by org.QueryVmList and vdc.QueryVmList to adjust filtering scope
 func queryVmList(filter types.VmQueryFilter, client *Client, filterParent, filterParentHref string) ([]*types.QueryResultVMRecordType, error) {
+
 	var vmList []*types.QueryResultVMRecordType
 	queryType := client.GetQueryType(types.QtVm)
 	params := map[string]string{
