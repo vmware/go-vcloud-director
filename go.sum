@@ -20,5 +20,3 @@ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZN
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.5.1 h1:nOGnQDM7FYENwehXlg/kFVnos3rEvtKTjRvOWSzb6H4=
 github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
-github.com/vmware/go-vcloud-director/v2 v2.16.0 h1:2KxPI3jDPV4ZpYU6odYcMiyKyXK589Hg5cRdnnOU5Gw=
-github.com/vmware/go-vcloud-director/v2 v2.16.0/go.mod h1:DgfzOh0u9J70FFOC2Qwy4iCjPoktg6SDdEguNi0z0H0=
