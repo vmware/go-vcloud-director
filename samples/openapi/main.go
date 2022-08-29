@@ -58,11 +58,6 @@ func main() {
 		os.Exit(3)
 	}
 
-	if vcdCli.Client.APIVCDMaxVersionIs("< 35.0") {
-		fmt.Println("This example requires VCD API to support at least version 35.0 (VCD 10.2) to use '1.0.0/auditTrail' endpoint")
-		os.Exit(4)
-	}
-
 	switch mode {
 	case "1":
 		openAPIGetRawJsonAuditTrail(vcdCli)

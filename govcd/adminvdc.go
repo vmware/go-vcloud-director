@@ -251,6 +251,10 @@ func (adminVdc *AdminVdc) Update() (AdminVdc, error) {
 
 	util.Logger.Printf("[DEBUG] Update call function for version %s", vdcFunctions.SupportedVersion)
 
+	// Explicitly remove ResourcePoolRefs because it cannot be set and breaks Go marshaling bug
+	// https://github.com/golang/go/issues/9519
+	adminVdc.AdminVdc.ResourcePoolRefs = nil
+
 	updatedAdminVdc, err := vdcFunctions.UpdateVdc(adminVdc)
 	if err != nil {
 		return AdminVdc{}, err

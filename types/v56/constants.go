@@ -242,22 +242,24 @@ const (
 
 const (
 	// The Qt* (Query Type) constants are the names used with Query requests to retrieve the corresponding entities
-	QtVappTemplate      = "vAppTemplate"      // vApp template
-	QtAdminVappTemplate = "adminVAppTemplate" // vApp template as admin
-	QtEdgeGateway       = "edgeGateway"       // edge gateway
-	QtOrgVdcNetwork     = "orgVdcNetwork"     // Org VDC network
-	QtCatalog           = "catalog"           // catalog
-	QtAdminCatalog      = "adminCatalog"      // catalog as admin
-	QtCatalogItem       = "catalogItem"       // catalog item
-	QtAdminCatalogItem  = "adminCatalogItem"  // catalog item as admin
-	QtAdminMedia        = "adminMedia"        // media item as admin
-	QtMedia             = "media"             // media item
-	QtVm                = "vm"                // Virtual machine
-	QtAdminVm           = "adminVM"           // Virtual machine as admin
-	QtVapp              = "vApp"              // vApp
-	QtAdminVapp         = "adminVApp"         // vApp as admin
-	QtOrgVdc            = "orgVdc"            // Org VDC
-	QtAdminOrgVdc       = "adminOrgVdc"       // Org VDC as admin
+	QtVappTemplate              = "vAppTemplate"              // vApp template
+	QtAdminVappTemplate         = "adminVAppTemplate"         // vApp template as admin
+	QtEdgeGateway               = "edgeGateway"               // edge gateway
+	QtOrgVdcNetwork             = "orgVdcNetwork"             // Org VDC network
+	QtCatalog                   = "catalog"                   // catalog
+	QtAdminCatalog              = "adminCatalog"              // catalog as admin
+	QtCatalogItem               = "catalogItem"               // catalog item
+	QtAdminCatalogItem          = "adminCatalogItem"          // catalog item as admin
+	QtAdminMedia                = "adminMedia"                // media item as admin
+	QtMedia                     = "media"                     // media item
+	QtVm                        = "vm"                        // Virtual machine
+	QtAdminVm                   = "adminVM"                   // Virtual machine as admin
+	QtVapp                      = "vApp"                      // vApp
+	QtAdminVapp                 = "adminVApp"                 // vApp as admin
+	QtOrgVdc                    = "orgVdc"                    // Org VDC
+	QtAdminOrgVdc               = "adminOrgVdc"               // Org VDC as admin
+	QtOrgVdcStorageProfile      = "orgVdcStorageProfile"      // StorageProfile of VDC
+	QtAdminOrgVdcStorageProfile = "adminOrgVdcStorageProfile" // StorageProfile of VDC as admin
 )
 
 // AdminQueryTypes returns the corresponding "admin" query type for each regular type
@@ -375,10 +377,10 @@ const (
 	OpenApiEndpointNetworkContextProfiles             = "networkContextProfiles"
 	OpenApiEndpointSecurityTags                       = "securityTags"
 	OpenApiEndpointNsxtRouteAdvertisement             = "edgeGateways/%s/routing/advertisement"
-
-	OpenApiEndpointEdgeBgpNeighbor          = "edgeGateways/%s/routing/bgp/neighbors/"   // '%s' is NSX-T Edge Gateway ID
-	OpenApiEndpointEdgeBgpConfigPrefixLists = "edgeGateways/%s/routing/bgp/prefixLists/" // '%s' is NSX-T Edge Gateway ID
-	OpenApiEndpointEdgeBgpConfig            = "edgeGateways/%s/routing/bgp"              // '%s' is NSX-T Edge Gateway ID
+	OpenApiEndpointTestConnection                     = "testConnection/"
+	OpenApiEndpointEdgeBgpNeighbor                    = "edgeGateways/%s/routing/bgp/neighbors/"   // '%s' is NSX-T Edge Gateway ID
+	OpenApiEndpointEdgeBgpConfigPrefixLists           = "edgeGateways/%s/routing/bgp/prefixLists/" // '%s' is NSX-T Edge Gateway ID
+	OpenApiEndpointEdgeBgpConfig                      = "edgeGateways/%s/routing/bgp"              // '%s' is NSX-T Edge Gateway ID
 
 	// NSX-T ALB related endpoints
 

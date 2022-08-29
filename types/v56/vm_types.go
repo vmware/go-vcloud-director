@@ -42,6 +42,8 @@ type Vm struct {
 	// Section ovf:VirtualHardwareSection
 	VirtualHardwareSection *VirtualHardwareSection `xml:"VirtualHardwareSection,omitempty"`
 
+	RuntimeInfoSection *RuntimeInfoSection `xml:"RuntimeInfoSection,omitempty"`
+
 	// FIXME: Upstream bug? Missing NetworkConnectionSection
 	NetworkConnectionSection *NetworkConnectionSection `xml:"NetworkConnectionSection,omitempty"`
 
@@ -63,6 +65,16 @@ type Vm struct {
 	ProductSection *ProductSection `xml:"ProductSection,omitempty"`
 	ComputePolicy  *ComputePolicy  `xml:"ComputePolicy,omitempty"` // accessible only from version API 33.0
 	Media          *Reference      `xml:"Media,omitempty"`         // Reference to the media object to insert in a new VM.
+}
+
+type RuntimeInfoSection struct {
+	Ns10        string `xml:"ns10,attr"`
+	Type        string `xml:"type,attr"`
+	Href        string `xml:"href,attr"`
+	Info        string `xml:"Info"`
+	VMWareTools struct {
+		Version string `xml:"version,attr"`
+	} `xml:"VMWareTools"`
 }
 
 // VmSpecSection from Vm struct
