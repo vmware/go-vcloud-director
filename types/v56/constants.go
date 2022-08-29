@@ -376,10 +376,10 @@ const (
 	OpenApiEndpointNetworkContextProfiles             = "networkContextProfiles"
 	OpenApiEndpointSecurityTags                       = "securityTags"
 	OpenApiEndpointNsxtRouteAdvertisement             = "edgeGateways/%s/routing/advertisement"
-
-	OpenApiEndpointEdgeBgpNeighbor          = "edgeGateways/%s/routing/bgp/neighbors/"   // '%s' is NSX-T Edge Gateway ID
-	OpenApiEndpointEdgeBgpConfigPrefixLists = "edgeGateways/%s/routing/bgp/prefixLists/" // '%s' is NSX-T Edge Gateway ID
-	OpenApiEndpointEdgeBgpConfig            = "edgeGateways/%s/routing/bgp"              // '%s' is NSX-T Edge Gateway ID
+	OpenApiEndpointTestConnection                     = "testConnection/"
+	OpenApiEndpointEdgeBgpNeighbor                    = "edgeGateways/%s/routing/bgp/neighbors/"   // '%s' is NSX-T Edge Gateway ID
+	OpenApiEndpointEdgeBgpConfigPrefixLists           = "edgeGateways/%s/routing/bgp/prefixLists/" // '%s' is NSX-T Edge Gateway ID
+	OpenApiEndpointEdgeBgpConfig                      = "edgeGateways/%s/routing/bgp"              // '%s' is NSX-T Edge Gateway ID
 
 	// NSX-T ALB related endpoints
 
