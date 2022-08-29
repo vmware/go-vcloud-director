@@ -559,7 +559,7 @@ type ProviderVdcCapacity struct {
 	Allocation int64  `xml:"Allocation,omitempty"`
 	Overhead   int64  `xml:"Overhead,omitempty"`
 	Reserved   int64  `xml:"Reserved,omitempty"`
-	Total      int64  `xml:"Total"`
+	Total      int64  `xml:"Total,omitempty"`
 	Units      string `xml:"Units"`
 	Used       int64  `xml:"Used,omitempty"`
 }
