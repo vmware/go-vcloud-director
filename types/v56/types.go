@@ -489,7 +489,6 @@ type ProviderVdc struct {
 	NetworkPoolReferences *NetworkPoolReferences   `xml:"NetworkPoolReferences,omitempty"` // Read-only list of network pools used by this Provider VDC.
 	StorageProfiles       *ProviderStorageProfiles `xml:"StorageProfiles,omitempty"`       // Container for references to vSphere storage profiles available to this Provider VDC.
 	Tasks                 *TasksInProgress         `xml:"Tasks,omitempty"`                 // A list of queued, running, or recently completed tasks associated with this entity.
-	Vdcs                  []*Vdc                   `xml:"Vdcs,omitempty"`                  // Read-only list of organization VDCs backed by this Provider VDC.
 }
 
 // VMWProviderVdc represents an extension of ProviderVdc.
