@@ -9,6 +9,7 @@ package govcd
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -133,6 +134,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructAuditTrail(check *C) {
 // 5. Deletes created role
 // 6. Tests read for deleted item
 // 7. Create role once more using "Sync" version of POST function
+// 7.1 Queries TestConnection endpoint using "Sync" version of POST function to see that it handles 200OK accordingly
 // 8. Update role once more using "Sync" version of PUT function
 // 9. Delete role once again
 func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
@@ -240,6 +242,25 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	newRole.ID = newRoleResponse.ID
 	check.Assert(newRoleResponse, DeepEquals, newRole)
 
+	// Step 7.1 test synchronous POST with return code 200 OK works accordingly - This is checked because OpenAPI endpoint TestConnection returns 200 instead of 201 when success
+	var testConnectionResult types.TestConnectionResult
+	testConnectionPayload := types.TestConnection{
+		Host:    vcd.client.Client.VCDHREF.Host,
+		Port:    443,
+		Secure:  takeBoolPointer(true),
+		Timeout: 10,
+	}
+
+	testConnectionEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTestConnection
+	apiVersionTestConnection, err := vcd.client.Client.checkOpenApiEndpointCompatibility(testConnectionEndpoint)
+	check.Assert(err, IsNil)
+
+	urlRefTestConnection, err := vcd.client.Client.OpenApiBuildEndpoint(testConnectionEndpoint)
+	check.Assert(err, IsNil)
+
+	err = vcd.client.Client.OpenApiPostItemSync(apiVersionTestConnection, urlRefTestConnection, nil, testConnectionPayload, &testConnectionResult) // This call will get a 200 OK, which is what is being tested here
+	check.Assert(err, IsNil)
+
 	// Step 8 - update role using synchronous PUT function
 	newRoleResponse.Description = "Updated description created by sync test"
 	updateUrl2, err := vcd.client.Client.OpenApiBuildEndpoint(endpoint, newRoleResponse.ID)
@@ -259,6 +280,50 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	err = vcd.client.Client.OpenApiDeleteItem(apiVersion, deleteUrlRef2, nil, nil)
 	check.Assert(err, IsNil)
 
+}
+
+func (vcd *TestVCD) Test_OpenApiTestConnection(check *C) {
+	// TestConnection is going to be used against the same VCD instance as the client is connected
+	urlTest1 := vcd.client.Client.VCDHREF
+	urlTest1.Path = "vcsp/lib/a0c959b4-a6dd-4a68-8042-5025f42d845e"
+	urlTest2 := vcd.client.Client.VCDHREF
+	urlTest2.Scheme = "http"
+	urlTest3 := vcd.client.Client.VCDHREF
+	urlTest3.Host = "imadethisup.io"
+	urlTest4 := vcd.client.Client.VCDHREF
+	urlTest4.Host = fmt.Sprintf("%s:666", urlTest4.Hostname()) // For testing custom port feature
+	tests := []struct {
+		SubscriptionURL  string
+		WantedConnection bool
+		WantedError      bool
+	}{
+		{
+			SubscriptionURL:  urlTest1.String(),
+			WantedConnection: true,  // it connects and it does SSL connection
+			WantedError:      false, //
+		},
+		{
+			SubscriptionURL:  urlTest2.String(),
+			WantedConnection: true, // it connects but it does not do SSL connection
+			WantedError:      true,
+		},
+		{
+			SubscriptionURL:  urlTest3.String(), // it doesn't do neither connection nor SSL
+			WantedConnection: false,
+			WantedError:      true,
+		},
+		{
+			SubscriptionURL:  urlTest4.String(), // it doesn't do neither connection nor SSL but tests custom port
+			WantedConnection: false,
+			WantedError:      true,
+		},
+	}
+
+	for _, test := range tests {
+		result, err := vcd.client.Client.TestConnectionWithDefaults(test.SubscriptionURL)
+		check.Assert(err == nil, Equals, !test.WantedError)
+		check.Assert(result, Equals, test.WantedConnection)
+	}
 }
 
 // getAuditTrailTimestampWithElements helps to pick good timestamp filter so that it doesn't take long time to retrieve
