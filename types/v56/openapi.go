@@ -365,3 +365,42 @@ type DefaultPolicy struct {
 type VersionField struct {
 	Version int `json:"version"`
 }
+
+// TestConnection defines the parameters used when testing a connection, including SSL handshake and hostname verification.
+type TestConnection struct {
+	Host                          string               `json:"host"`                                    // The host (or IP address) to connect to.
+	Port                          int                  `json:"port"`                                    // The port to use when connecting.
+	Secure                        *bool                `json:"secure,omitempty"`                        // If the connection should use https.
+	Timeout                       int                  `json:"timeout,omitempty"`                       // Maximum time (in seconds) any step in the test should wait for a response.
+	HostnameVerificationAlgorithm string               `json:"hostnameVerificationAlgorithm,omitempty"` // Endpoint/Hostname verification algorithm to be used during SSL/TLS/DTLS handshake.
+	AdditionalCAIssuers           []string             `json:"additionalCAIssuers,omitempty"`           // A list of URLs being authorized by the user to retrieve additional CA certificates from, if necessary, to complete the certificate chain to its trust anchor.
+	ProxyConnection               *ProxyTestConnection `json:"proxyConnection,omitempty"`               // Proxy connection to use for test. Only one of proxyConnection and preConfiguredProxy can be specified.
+	PreConfiguredProxy            string               `json:"preConfiguredProxy,omitempty"`            // The URN of a ProxyConfiguration to use for the test. Only one of proxyConnection or preConfiguredProxy can be specified. If neither is specified then no proxy is used to test the connection.
+}
+
+// ProxyTestConnection defines the proxy connection to use for TestConnection (if any).
+type ProxyTestConnection struct {
+	ProxyHost     string `json:"proxyHost"`               // The host (or IP address) of the proxy.
+	ProxyPort     int    `json:"proxyPort"`               // The port to use when connecting to the proxy.
+	ProxyUsername string `json:"proxyUsername,omitempty"` // Username to authenticate to the proxy.
+	ProxyPassword string `json:"proxyPassword,omitempty"` // Password to authenticate to the proxy.
+	ProxySecure   *bool  `json:"proxySecure,omitempty"`   // If the connection to the proxy should use https.
+}
+
+// TestConnectionResult is the result of a connection test.
+type TestConnectionResult struct {
+	TargetProbe *ProbeResult `json:"targetProbe,omitempty"` // Results of a connection test to a specific endpoint.
+	ProxyProbe  *ProbeResult `json:"proxyProbe,omitempty"`  // Results of a connection test to a specific endpoint.
+}
+
+// ProbeResult results of a connection test to a specific endpoint.
+type ProbeResult struct {
+	Result              string   `json:"result,omitempty"`              // Localized message describing the connection result stating success or an error message with a brief summary.
+	ResolvedIp          string   `json:"resolvedIp,omitempty"`          // The IP address the host was resolved to, if not going through a proxy.
+	CanConnect          bool     `json:"canConnect,omitempty"`          // If vCD can establish a connection on the specified port.
+	SSLHandshake        bool     `json:"sslHandshake,omitempty"`        // If an SSL Handshake succeeded (secure requests only).
+	ConnectionResult    string   `json:"connectionResult,omitempty"`    // A code describing the result of establishing a connection. It can be either SUCCESS, ERROR_CANNOT_RESOLVE_IP or ERROR_CANNOT_CONNECT.
+	SSLResult           string   `json:"sslResult,omitempty"`           // A code describing the result of the SSL handshake. It can be either SUCCESS, ERROR_SSL_ERROR, ERROR_UNTRUSTED_CERTIFICATE, ERROR_CANNOT_VERIFY_HOSTNAME or null.
+	CertificateChain    string   `json:"certificateChain,omitempty"`    // The SSL certificate chain presented by the server if a secure connection was made.
+	AdditionalCAIssuers []string `json:"additionalCAIssuers,omitempty"` // URLs supplied by Certificate Authorities to retrieve signing certificates, when those certificates are not included in the chain.
+}
