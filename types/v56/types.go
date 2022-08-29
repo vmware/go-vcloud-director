@@ -524,8 +524,8 @@ type VMWHostReferences struct {
 // Since: 0.9
 type RootComputeCapacity struct {
 	Cpu       *ProviderVdcCapacity `xml:"Cpu"`
-	IsElastic *bool                `xml:"IsElastic,omitempty"`
-	IsHA      *bool                `xml:"IsHA,omitempty"`
+	IsElastic bool                 `xml:"IsElastic,omitempty"`
+	IsHA      bool                 `xml:"IsHA,omitempty"`
 	Memory    *ProviderVdcCapacity `xml:"Memory"`
 }
 
@@ -553,12 +553,12 @@ type ProviderStorageProfiles struct {
 // Description: Represents resource capacity in a Provider vDC.
 // Since: 0.9
 type ProviderVdcCapacity struct {
-	Allocation *int64 `xml:"Allocation,omitempty"`
-	Overhead   *int64 `xml:"Overhead,omitempty"`
-	Reserved   *int64 `xml:"Reserved,omitempty"`
+	Allocation int64  `xml:"Allocation,omitempty"`
+	Overhead   int64  `xml:"Overhead,omitempty"`
+	Reserved   int64  `xml:"Reserved,omitempty"`
 	Total      int64  `xml:"Total"`
 	Units      string `xml:"Units"`
-	Used       *int64 `xml:"Used,omitempty"`
+	Used       int64  `xml:"Used,omitempty"`
 }
 
 // VdcStorageProfileConfiguration represents the parameters to assign a storage profile in creation of organization vDC.

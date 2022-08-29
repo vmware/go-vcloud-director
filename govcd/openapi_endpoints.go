@@ -28,10 +28,12 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableTier0Routers:              "32.0",
 	// OpenApiEndpointExternalNetworks endpoint support was introduced with version 32.0 however it was still not stable
 	// enough to be used. (i.e. it did not support update "PUT")
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks: "33.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSessionCurrent:   "34.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeClusters:     "34.0", // VCD 10.1+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways:     "34.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks:           "33.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies:         "32.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies: "33.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSessionCurrent:             "34.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeClusters:               "34.0", // VCD 10.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways:               "34.0",
 
 	// Static security groups and IP sets in VCD 10.2, Dynamic security groups in VCD 10.3+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups:                     "34.0",
@@ -126,7 +128,7 @@ var endpointElevatedApiVersions = map[string][]string{
 func (client *Client) checkOpenApiEndpointCompatibility(endpoint string) (string, error) {
 	minimumApiVersion, ok := endpointMinApiVersions[endpoint]
 	if !ok {
-		return "", fmt.Errorf("minimum API version for endopoint '%s' is not defined", endpoint)
+		return "", fmt.Errorf("minimum API version for endpoint '%s' is not defined", endpoint)
 	}
 
 	if client.APIVCDMaxVersionIs("< " + minimumApiVersion) {
