@@ -19,14 +19,14 @@ type ProviderVdcExtended struct {
 	client         *Client
 }
 
-func NewProviderVdc(cli *Client) *ProviderVdc {
+func newProviderVdc(cli *Client) *ProviderVdc {
 	return &ProviderVdc{
 		ProviderVdc: new(types.ProviderVdc),
 		client:      cli,
 	}
 }
 
-func NewProviderVdcExtended(cli *Client) *ProviderVdcExtended {
+func newProviderVdcExtended(cli *Client) *ProviderVdcExtended {
 	return &ProviderVdcExtended{
 		VMWProviderVdc: new(types.VMWProviderVdc),
 		client:         cli,
@@ -37,7 +37,7 @@ func NewProviderVdcExtended(cli *Client) *ProviderVdcExtended {
 // On success, returns a pointer to the ProviderVdc structure and a nil error
 // On failure, returns a nil pointer and an error
 func (vcdClient *VCDClient) GetProviderVdcByHref(providerVdcHref string) (*ProviderVdc, error) {
-	providerVdc := NewProviderVdc(&vcdClient.Client)
+	providerVdc := newProviderVdc(&vcdClient.Client)
 
 	_, err := vcdClient.Client.ExecuteRequest(providerVdcHref, http.MethodGet,
 		"", "error retrieving Provider VDC: %s", nil, providerVdc.ProviderVdc)
@@ -52,7 +52,7 @@ func (vcdClient *VCDClient) GetProviderVdcByHref(providerVdcHref string) (*Provi
 // On success, returns a pointer to the ProviderVdcExtended structure and a nil error
 // On failure, returns a nil pointer and an error
 func (vcdClient *VCDClient) GetProviderVdcExtendedByHref(providerVdcHref string) (*ProviderVdcExtended, error) {
-	providerVdc := NewProviderVdcExtended(&vcdClient.Client)
+	providerVdc := newProviderVdcExtended(&vcdClient.Client)
 
 	_, err := vcdClient.Client.ExecuteRequest(getAdminExtensionURL(providerVdcHref), http.MethodGet,
 		"", "error retrieving extended Provider VDC: %s", nil, providerVdc.VMWProviderVdc)
@@ -142,7 +142,7 @@ func (providerVdcExtended *ProviderVdcExtended) ToProviderVdc() (*ProviderVdc, e
 	providerVdcHref := providerVdcExtended.client.VCDHREF
 	providerVdcHref.Path += "/admin/providervdc/" + extractUuid(providerVdcExtended.VMWProviderVdc.ID)
 
-	providerVdc := NewProviderVdc(providerVdcExtended.client)
+	providerVdc := newProviderVdc(providerVdcExtended.client)
 
 	_, err := providerVdcExtended.client.ExecuteRequest(providerVdcHref.String(), http.MethodGet,
 		"", "error retrieving Provider VDC: %s", nil, providerVdc.ProviderVdc)
