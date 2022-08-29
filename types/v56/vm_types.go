@@ -29,8 +29,6 @@ type Vm struct {
 	Deployed                bool   `xml:"deployed,attr,omitempty"`                // True if the virtual machine is deployed.
 	NeedsCustomization      bool   `xml:"needsCustomization,attr,omitempty"`      // True if this virtual machine needs customization.
 	NestedHypervisorEnabled bool   `xml:"nestedHypervisorEnabled,attr,omitempty"` // True if hardware-assisted CPU virtualization capabilities in the host should be exposed to the guest operating system.
-	// TODO delete
-	Hypervisor interface{} `xml:"hostName,omitempty"`
 	// Elements
 	Link        LinkList         `xml:"Link,omitempty"`        // A reference to an entity or operation associated with this object.
 	Description string           `xml:"Description,omitempty"` // Optional description.

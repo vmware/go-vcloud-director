@@ -199,5 +199,4 @@ are ready to review, as GitHub does not generate a notification when
 you git push.
 
 ## Final Words
-
 Thanks for helping us make the project better!

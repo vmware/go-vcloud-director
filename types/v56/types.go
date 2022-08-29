@@ -2381,7 +2381,7 @@ type QueryResultVMRecordType struct {
 	DateCreated              string    `xml:"dateCreated,attr,omitempty"`
 	TotalStorageAllocatedMb  string    `xml:"totalStorageAllocatedMb,attr,omitempty"`
 	IsExpired                bool      `xml:"isExpired,attr,omitempty"`
-	Hypervisor               string    `xml:"hostName,attr,omitempty"` // Hostaname/hypervisor of virtual machine
+	Hypervisor               string    `xml:"hostName,attr,omitempty"` // HostName/hypervisor of virtual machine
 	Link                     []*Link   `xml:"Link,omitempty"`
 	MetaData                 *Metadata `xml:"Metadata,omitempty"`
 }
