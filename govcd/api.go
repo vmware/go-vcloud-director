@@ -782,7 +782,7 @@ func getAdminURL(href string) string {
 	return strings.ReplaceAll(href, "/api/", adminApi)
 }
 
-// Retrieves the administrator URL of a given HREF
+// Retrieves the admin extension URL of a given HREF
 func getAdminExtensionURL(href string) string {
 	adminExtensionApi := "/api/admin/extension/"
 	if strings.Contains(href, adminExtensionApi) {
