@@ -154,6 +154,7 @@ type TestConfig struct {
 			SP1 string `yaml:"storageProfile1"`
 			SP2 string `yaml:"storageProfile2,omitempty"`
 		} `yaml:"storageProfile"`
+		PlacementPolicy              string `yaml:"placementPolicy,omitempty"`
 		ExternalIp                   string `yaml:"externalIp,omitempty"`
 		ExternalNetmask              string `yaml:"externalNetmask,omitempty"`
 		InternalIp                   string `yaml:"internalIp,omitempty"`

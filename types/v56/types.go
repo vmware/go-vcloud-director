@@ -2312,6 +2312,18 @@ type QueryResultRecordsType struct {
 	NsxtManagerRecord               []*QueryResultNsxtManagerRecordType               `xml:"NsxTManagerRecord"`               // A record representing NSX-T manager
 	OrgVdcRecord                    []*QueryResultOrgVdcRecordType                    `xml:"OrgVdcRecord"`                    // A record representing Org VDC
 	OrgVdcAdminRecord               []*QueryResultOrgVdcRecordType                    `xml:"AdminVdcRecord"`                  // A record representing Org VDC
+	VmGroupsRecord                  []*QueryResultVmGroupsRecordType                  `xml:"VmGroupsRecord"`
+}
+
+// QueryResultVmGroupsRecordType represent a VM Groups record
+type QueryResultVmGroupsRecordType struct {
+	HREF           string `xml:"href,attr,omitempty"`
+	ID             string `xml:"vmGroupId,attr,omitempty"`
+	Name           string `xml:"vmGroupName,attr,omitempty"`
+	ClusterMoref   string `xml:"clusterMoref,attr,omitempty"`
+	ClusterName    string `xml:"clusterName,attr,omitempty"`
+	VcenterId      string `xml:"vcId,attr,omitempty"`
+	NamedVmGroupId string `xml:"namedVmGroupId,attr,omitempty"`
 }
 
 // QueryResultOrgVdcRecordType represents an Org VDC record
