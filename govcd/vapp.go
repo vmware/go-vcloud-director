@@ -168,9 +168,11 @@ func (vapp *VApp) AddRawVM(vAppComposition *types.ReComposeVAppParams) (*VM, err
 		return nil, fmt.Errorf("VM creation task failed: %s", err)
 	}
 
-	vm, err := vapp.GetVMByName(vAppComposition.Name, true)
+	// VM task does not return any reference to VM therefore it must be looked up by name after
+	// creation
+	vm, err := vapp.GetVMByName(vAppComposition.SourcedItem.Source.Name, true)
 	if err != nil {
-		return nil, fmt.Errorf("error finding VM %s after creation: %s", vAppComposition.Name, err)
+		return nil, fmt.Errorf("error finding VM %s in vApp %s after creation: %s", vAppComposition.Name, vapp.VApp.Name, err)
 	}
 
 	return vm, nil
