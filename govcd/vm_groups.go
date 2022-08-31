@@ -22,25 +22,14 @@ type VmGroup struct {
 // On success, returns a pointer to the VmGroup structure and a nil error
 // On failure, returns a nil pointer and an error
 func (vcdClient *VCDClient) GetVmGroupByNamedVmGroupId(namedVmGroupId string) (*VmGroup, error) {
-	foundVmGroups, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":          "vmGroups",
-		"filter":        fmt.Sprintf("namedVmGroupId==%s", url.QueryEscape(extractUuid(namedVmGroupId))),
-		"filterEncoded": "true",
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(foundVmGroups.Results.VmGroupsRecord) == 0 {
-		return nil, ErrorEntityNotFound
-	}
-	if len(foundVmGroups.Results.VmGroupsRecord) > 1 {
-		return nil, fmt.Errorf("more than one VM Group found with Named VM Group ID '%s'", namedVmGroupId)
-	}
-	vmGroup := &VmGroup{
-		VmGroup: foundVmGroups.Results.VmGroupsRecord[0],
-		client:  &vcdClient.Client,
-	}
-	return vmGroup, nil
+	return getVmGroupByFilterField(vcdClient, "namedVmGroupId", extractUuid(namedVmGroupId))
+}
+
+// GetVmGroupByName finds a VM Group by its name.
+// On success, returns a pointer to the VmGroup structure and a nil error
+// On failure, returns a nil pointer and an error
+func (vcdClient *VCDClient) GetVmGroupByName(vmGroupName string) (*VmGroup, error) {
+	return getVmGroupByFilterField(vcdClient, "vmGroupName", vmGroupName)
 }
 
 // GetLogicalVmGroupById finds a Logical VM Group by its URN.
@@ -126,4 +115,29 @@ func (logicalVmGroup *LogicalVmGroup) Delete() error {
 		return fmt.Errorf("error deleting the Logical VM Group: %s", err)
 	}
 	return nil
+}
+
+// getVmGroupByFilterField finds a VM Group by specifying a filter=(filterKey==filterValue).
+// On success, returns a pointer to the VmGroup structure and a nil error
+// On failure, returns a nil pointer and an error
+func getVmGroupByFilterField(vcdClient *VCDClient, filterKey, filterValue string) (*VmGroup, error) {
+	foundVmGroups, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":          "vmGroups",
+		"filter":        fmt.Sprintf("%s==%s", url.QueryEscape(filterKey), url.QueryEscape(filterValue)),
+		"filterEncoded": "true",
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(foundVmGroups.Results.VmGroupsRecord) == 0 {
+		return nil, ErrorEntityNotFound
+	}
+	if len(foundVmGroups.Results.VmGroupsRecord) > 1 {
+		return nil, fmt.Errorf("more than one VM Group found with Named VM Group %s '%s'", filterKey, filterValue)
+	}
+	vmGroup := &VmGroup{
+		VmGroup: foundVmGroups.Results.VmGroupsRecord[0],
+		client:  &vcdClient.Client,
+	}
+	return vmGroup, nil
 }
