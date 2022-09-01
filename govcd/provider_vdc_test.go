@@ -81,6 +81,31 @@ func (vcd *TestVCD) Test_GetProviderVdcExtended(check *C) {
 	}
 }
 
+func (vcd *TestVCD) Test_GetNonExistentProviderVdc(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	providerVdcExtended, err := vcd.client.GetProviderVdcExtendedByName("non-existent-pvdc")
+	check.Assert(providerVdcExtended, IsNil)
+	check.Assert(err, NotNil)
+	providerVdcExtended, err = vcd.client.GetProviderVdcExtendedById("non-existent-pvdc")
+	check.Assert(providerVdcExtended, IsNil)
+	check.Assert(err, NotNil)
+	providerVdcExtended, err = vcd.client.GetProviderVdcExtendedByHref("non-existent-pvdc")
+	check.Assert(providerVdcExtended, IsNil)
+	check.Assert(err, NotNil)
+	providerVdc, err := vcd.client.GetProviderVdcByName("non-existent-pvdc")
+	check.Assert(providerVdc, IsNil)
+	check.Assert(err, NotNil)
+	providerVdc, err = vcd.client.GetProviderVdcById("non-existent-pvdc")
+	check.Assert(providerVdc, IsNil)
+	check.Assert(err, NotNil)
+	providerVdc, err = vcd.client.GetProviderVdcByHref("non-existent-pvdc")
+	check.Assert(providerVdc, IsNil)
+	check.Assert(err, NotNil)
+}
+
 func (vcd *TestVCD) Test_GetProviderVdcConvertFromExtendedToNormal(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
