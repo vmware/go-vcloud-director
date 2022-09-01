@@ -47,8 +47,6 @@ func (vcdClient *VCDClient) GetVmGroupByNameAndProviderVdcUrn(name, pvdcUrn stri
 	return getVmGroupWithFilter(vcdClient, map[string]string{"vmGroupName": name, "clusterMoref": resourcePool.ClusterMoref, "vcId": extractUuid(resourcePool.VcenterHREF)})
 }
 
-
-
 // GetLogicalVmGroupById finds a Logical VM Group by its URN.
 // On success, returns a pointer to the LogicalVmGroup structure and a nil error
 // On failure, returns a nil pointer and an error
