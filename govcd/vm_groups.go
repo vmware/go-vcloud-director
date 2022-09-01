@@ -33,7 +33,7 @@ func (vcdClient *VCDClient) GetVmGroupByNamedVmGroupIdAndProviderVdcUrn(namedVmG
 	if err != nil {
 		return nil, fmt.Errorf("could not get VM Group: %s", err)
 	}
-	return getVmGroupWithFilter(vcdClient, map[string]string{"namedVmGroupId": namedVmGroupId, "clusterMoref": resourcePool.ClusterMoref, "vcId": extractUuid(resourcePool.VcenterHREF)})
+	return getVmGroupWithFilter(vcdClient, map[string]string{"namedVmGroupId": extractUuid(namedVmGroupId), "clusterMoref": resourcePool.ClusterMoref, "vcId": extractUuid(resourcePool.VcenterHREF)})
 }
 
 // GetVmGroupByNameAndProviderVdcUrn finds a VM Group by its name and associated Provider VDC URN.
