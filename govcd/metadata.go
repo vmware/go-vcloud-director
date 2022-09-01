@@ -223,6 +223,86 @@ func (vdc *Vdc) DeleteMetadataEntryAsync(key string) (Task, error) {
 	return deleteMetadata(vdc.client, key, getAdminURL(vdc.Vdc.HREF))
 }
 
+// GetMetadata returns Provider VDC metadata.
+// Note: Requires system administrator privileges.
+func (providerVdc *ProviderVdc) GetMetadata() (*types.Metadata, error) {
+	return getMetadata(providerVdc.client, providerVdc.ProviderVdc.HREF)
+}
+
+// AddMetadataEntry adds Provider VDC metadata typedValue and key/value pair provided as input
+// and waits for the task to finish.
+// Note: Requires system administrator privileges.
+func (providerVdc *ProviderVdc) AddMetadataEntry(typedValue, key, value string) error {
+	task, err := providerVdc.AddMetadataEntryAsync(typedValue, key, value)
+	if err != nil {
+		return err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return err
+	}
+
+	err = providerVdc.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// AddMetadataEntryAsync adds Provider VDC metadata typedValue and key/value pair provided as input and returns the task.
+// Note: Requires system administrator privileges.
+func (providerVdc *ProviderVdc) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
+	return addMetadata(providerVdc.client, typedValue, key, value, providerVdc.ProviderVdc.HREF)
+}
+
+// MergeMetadataAsync merges Provider VDC metadata provided as a key-value map of type `typedValue` with the already present in VCD,
+// then waits for the task to complete.
+// Note: Requires system administrator privileges.
+func (providerVdc *ProviderVdc) MergeMetadataAsync(typedValue string, metadata map[string]interface{}) (Task, error) {
+	return mergeAllMetadata(providerVdc.client, typedValue, metadata, providerVdc.ProviderVdc.HREF)
+}
+
+// MergeMetadata merges Provider VDC metadata provided as a key-value map of type `typedValue` with the already present in VCD,
+// then waits for the task to complete.
+// Note: Requires system administrator privileges.
+func (providerVdc *ProviderVdc) MergeMetadata(typedValue string, metadata map[string]interface{}) error {
+	task, err := providerVdc.MergeMetadataAsync(typedValue, metadata)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+// DeleteMetadataEntry deletes Provider VDC metadata by key provided as input and waits for
+// the task to finish.
+// Note: Requires system administrator privileges.
+func (providerVdc *ProviderVdc) DeleteMetadataEntry(key string) error {
+	task, err := providerVdc.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return err
+	}
+
+	err = providerVdc.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteMetadataEntryAsync deletes Provider VDC metadata depending on key provided as input and returns the task.
+// Note: Requires system administrator privileges.
+func (providerVdc *ProviderVdc) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(providerVdc.client, key, providerVdc.ProviderVdc.HREF)
+}
+
 // GetMetadata returns VApp metadata.
 func (vapp *VApp) GetMetadata() (*types.Metadata, error) {
 	return getMetadata(vapp.client, vapp.VApp.HREF)

@@ -466,6 +466,103 @@ type AdminVdc struct {
 	UniversalNetworkPoolReference *Reference     `xml:"UniversalNetworkPoolReference,omitempty"` // Reference to a universal network pool
 }
 
+// ProviderVdc represents a Provider VDC.
+// Type: ProviderVdcType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents a Provider VDC.
+// Since: 0.9
+type ProviderVdc struct {
+	Xmlns        string `xml:"xmlns,attr"`
+	HREF         string `xml:"href,attr,omitempty"`
+	Type         string `xml:"type,attr,omitempty"`
+	ID           string `xml:"id,attr,omitempty"`
+	OperationKey string `xml:"operationKey,attr,omitempty"`
+	Name         string `xml:"name,attr"`
+	Status       int    `xml:"status,attr,omitempty"` // -1 (creation failed), 0 (not ready), 1 (ready), 2 (unknown), 3 (unrecognized)
+
+	AvailableNetworks     *AvailableNetworks       `xml:"AvailableNetworks,omitempty"`     // Read-only list of available networks.
+	Capabilities          *Capabilities            `xml:"Capabilities,omitempty"`          // Read-only list of virtual hardware versions supported by this Provider VDC.
+	ComputeCapacity       *RootComputeCapacity     `xml:"ComputeCapacity,omitempty"`       // Read-only indicator of CPU and memory capacity.
+	Description           string                   `xml:"Description,omitempty"`           // Optional description.
+	IsEnabled             *bool                    `xml:"IsEnabled,omitempty"`             // True if this Provider VDC is enabled and can provide resources to organization VDCs. A Provider VDC is always enabled on creation.
+	Link                  *Link                    `xml:"Link,omitempty"`                  // A reference to an entity or operation associated with this object.
+	NetworkPoolReferences *NetworkPoolReferences   `xml:"NetworkPoolReferences,omitempty"` // Read-only list of network pools used by this Provider VDC.
+	StorageProfiles       *ProviderStorageProfiles `xml:"StorageProfiles,omitempty"`       // Container for references to vSphere storage profiles available to this Provider VDC.
+	Tasks                 *TasksInProgress         `xml:"Tasks,omitempty"`                 // A list of queued, running, or recently completed tasks associated with this entity.
+}
+
+// VMWProviderVdc represents an extension of ProviderVdc.
+// Type: VMWProviderVdcType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents an extension of ProviderVdc.
+// Since: 1.0
+type VMWProviderVdc struct {
+	ProviderVdc
+
+	AvailableUniversalNetworkPool   *Reference         `xml:"AvailableUniversalNetworkPool,omitempty"`   // Selectable universal network reference.
+	ComputeProviderScope            string             `xml:"ComputeProviderScope,omitempty"`            // The compute provider scope represents the compute fault domain for this provider VDC. This value is a tenant-facing tag that is shown to tenants when viewing fault domains of the child Organization VDCs (for ex. a VDC Group).
+	DataStoreRefs                   *VimObjectRefs     `xml:"DataStoreRefs,omitempty"`                   // vSphere datastores backing this provider VDC.
+	HighestSupportedHardwareVersion string             `xml:"HighestSupportedHardwareVersion,omitempty"` // The highest virtual hardware version supported by this Provider VDC. If empty or omitted on creation, the system sets it to the highest virtual hardware version supported by all hosts in the primary resource pool. You can modify it when you add more resource pools.
+	HostReferences                  *VMWHostReferences `xml:"HostReferences,omitempty"`                  // Shows all hosts which are connected to VC server.
+	NsxTManagerReference            *Reference         `xml:"NsxTManagerReference,omitempty"`            // An optional reference to a registered NSX-T Manager to back networking operations for this provider VDC.
+	ResourcePoolRefs                *VimObjectRefs     `xml:"ResourcePoolRefs,omitempty"`                // Resource pools backing this provider VDC. On create, you must specify a resource pool that is not used by (and is not the child of a resource pool used by) any other provider VDC. On modify, this element is required for schema validation, but its contents cannot be changed.
+	VimServer                       *Reference         `xml:"VimServer,omitempty"`                       // The vCenter server that provides the resource pools and datastores. A valid reference is required on create. On modify, this element is required for schema validation, but its contents cannot be changed.
+}
+
+// VMWHostReferences represents a list of available hosts.
+// Type: VMWHostReferencesType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents a list of available hosts.
+// Since: 1.0
+type VMWHostReferences struct {
+	HostReference []*Reference `xml:"HostReference,omitempty"`
+	Link          *Link        `xml:"Link,omitempty"`
+}
+
+// RootComputeCapacity represents compute capacity with units.
+// Type: RootComputeCapacityType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents compute capacity with units.
+// Since: 0.9
+type RootComputeCapacity struct {
+	Cpu       *ProviderVdcCapacity `xml:"Cpu"`
+	IsElastic bool                 `xml:"IsElastic,omitempty"`
+	IsHA      bool                 `xml:"IsHA,omitempty"`
+	Memory    *ProviderVdcCapacity `xml:"Memory"`
+}
+
+// NetworkPoolReferences is a container for references to network pools in this vDC.
+// Type: NetworkPoolReferencesType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Container for references to network pools in this vDC.
+// Since: 0.9
+type NetworkPoolReferences struct {
+	NetworkPoolReference []*Reference `xml:"NetworkPoolReference"`
+}
+
+// ProviderStorageProfiles is a container for references to storage profiles associated with a Provider vDC.
+// Type: ProviderVdcStorageProfilesType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Container for references to storage profiles associated with a Provider vDC.
+// Since: 0.9
+type ProviderStorageProfiles struct {
+	ProviderVdcStorageProfile []*Reference `xml:"ProviderVdcStorageProfile"`
+}
+
+// ProviderVdcCapacity represents resource capacity in a Provider vDC.
+// Type: ProviderVdcCapacityType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents resource capacity in a Provider vDC.
+// Since: 0.9
+type ProviderVdcCapacity struct {
+	Allocation int64  `xml:"Allocation,omitempty"`
+	Overhead   int64  `xml:"Overhead,omitempty"`
+	Reserved   int64  `xml:"Reserved,omitempty"`
+	Total      int64  `xml:"Total,omitempty"`
+	Units      string `xml:"Units"`
+	Used       int64  `xml:"Used,omitempty"`
+}
+
 // VdcStorageProfileConfiguration represents the parameters to assign a storage profile in creation of organization vDC.
 // Type: VdcStorageProfileParamsType
 // Namespace: http://www.vmware.com/vcloud/v1.5

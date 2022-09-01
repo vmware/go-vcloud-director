@@ -342,6 +342,7 @@ const (
 // future.
 const (
 	OpenApiPathVersion1_0_0                           = "1.0.0/"
+	OpenApiPathVersion2_0_0                           = "2.0.0/"
 	OpenApiEndpointRoles                              = "roles/"
 	OpenApiEndpointGlobalRoles                        = "globalRoles/"
 	OpenApiEndpointRights                             = "rights/"

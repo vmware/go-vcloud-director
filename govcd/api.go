@@ -776,7 +776,20 @@ func (client *Client) RemoveProvidedCustomHeaders(values map[string]string) {
 
 // Retrieves the administrator URL of a given HREF
 func getAdminURL(href string) string {
-	return strings.ReplaceAll(href, "/api/", "/api/admin/")
+	adminApi := "/api/admin/"
+	if strings.Contains(href, adminApi) {
+		return href
+	}
+	return strings.ReplaceAll(href, "/api/", adminApi)
+}
+
+// Retrieves the admin extension URL of a given HREF
+func getAdminExtensionURL(href string) string {
+	adminExtensionApi := "/api/admin/extension/"
+	if strings.Contains(href, adminExtensionApi) {
+		return href
+	}
+	return strings.ReplaceAll(getAdminURL(href), "/api/admin/", adminExtensionApi)
 }
 
 // TestConnection calls API to test a connection against a VCD, including SSL handshake and hostname verification.

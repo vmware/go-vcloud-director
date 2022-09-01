@@ -474,6 +474,17 @@ func (vcd *TestVCD) Test_MetadataOnCatalogItemCRUD(check *C) {
 	testMetadataCRUDActions(catalogItem, check, nil)
 }
 
+func (vcd *TestVCD) Test_MetadataOnProviderVdcCRUD(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	providerVdc, err := vcd.client.GetProviderVdcByName(vcd.config.VCD.NsxtProviderVdc.Name)
+	if err != nil {
+		check.Skip(fmt.Sprintf("%s: Provider VDC %s not found. Test can't proceed", check.TestName(), vcd.config.VCD.NsxtProviderVdc.Name))
+		return
+	}
+
+	testMetadataCRUDActions(providerVdc, check, nil)
+}
+
 func (vcd *TestVCD) Test_MetadataOnOpenApiOrgVdcNetworkCRUD(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	net, err := vcd.vdc.GetOpenApiOrgVdcNetworkByName(vcd.config.VCD.Network.Net1)
