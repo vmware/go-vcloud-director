@@ -34,6 +34,10 @@ func (vcd *TestVCD) Test_VmGroupsCRUD(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vmGroup.VmGroup.Name, Equals, vcd.config.VCD.PlacementPolicyVmGroup)
 
+	vmGroup2, err := vcd.client.GetVmGroupById(vmGroup.VmGroup.ID)
+	check.Assert(err, IsNil)
+	check.Assert(vmGroup2, DeepEquals, vmGroup)
+
 	logicalVmGroup, err := vcd.client.CreateLogicalVmGroup(types.LogicalVmGroup{
 		Name: check.TestName(),
 		NamedVmGroupReferences: types.OpenApiReferences{
