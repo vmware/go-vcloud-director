@@ -22,18 +22,17 @@ func (vcd *TestVCD) Test_VmGroupsCRUD(check *C) {
 	if vcd.config.VCD.PlacementPolicyVmGroup == "" {
 		check.Skip(fmt.Sprintf("%s test requires vcd.placementPolicyVmGroup configuration", check.TestName()))
 	}
+	if vcd.config.VCD.NsxtProviderVdc.Name == "" {
+		check.Skip(fmt.Sprintf("%s test requires vcd.nsxtProviderVdc configuration", check.TestName()))
+	}
 
-	vmGroup, err := vcd.client.GetVmGroupByName(vcd.config.VCD.PlacementPolicyVmGroup)
-	check.Assert(err, IsNil)
-	check.Assert(vmGroup.VmGroup.Name, Equals, vcd.config.VCD.PlacementPolicyVmGroup)
-
-	vmGroup2, err := vcd.client.GetVmGroupByNamedVmGroupId(vmGroup.VmGroup.NamedVmGroupId)
-	check.Assert(err, IsNil)
-	check.Assert(vmGroup, DeepEquals, vmGroup2)
-
-	// We need the Provider VDC to create a Logical VM Group
+	// We need the Provider VDC URN
 	pVdc, err := vcd.client.GetProviderVdcByName(vcd.config.VCD.NsxtProviderVdc.Name)
 	check.Assert(err, IsNil)
+
+	vmGroup, err := vcd.client.GetVmGroupByNameAndProviderVdcUrn(vcd.config.VCD.PlacementPolicyVmGroup, pVdc.ProviderVdc.ID)
+	check.Assert(err, IsNil)
+	check.Assert(vmGroup.VmGroup.Name, Equals, vcd.config.VCD.PlacementPolicyVmGroup)
 
 	logicalVmGroup, err := vcd.client.CreateLogicalVmGroup(types.LogicalVmGroup{
 		Name: check.TestName(),
