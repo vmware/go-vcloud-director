@@ -244,7 +244,7 @@ func (vcd *TestVCD) Test_VdcVmPlacementPoliciesV2(check *C) {
 	check.Assert(err, IsNil)
 	AddToCleanupList(logicalVmGroup.LogicalVmGroup.ID, "logicalVmGroup", "", check.TestName())
 
-	// Step 1 - Create a new VDC Compute Policy
+	// Create a new VDC Compute Policy (VM Placement Policy)
 	newComputePolicy := &VdcComputePolicyV2{
 		client: &vcd.client.Client,
 		VdcComputePolicyV2: &types.VdcComputePolicyV2{
