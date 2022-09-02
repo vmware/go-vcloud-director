@@ -1,2 +1,4 @@
-* Updated VDC Compute Policies retrieval methods `AdminVdc.GetAllAssignedVdcComputePolicies` and `Org.GetAllVdcComputePolicies` 
-  from OpenAPI v1.0.0 to v2.0.0, this version supports more filtering options like `isVgpuPolicy`[GH-502]
+* Created new VDC Compute Policies CRUD methods using OpenAPI v2.0.0:
+  `VCDClient.GetVdcComputePolicyV2ById`, `VCDClient.GetAllVdcComputePoliciesV2`, `VCDClient.CreateVdcComputePolicyV2`,
+  `VdcComputePolicyV2.Update`, `VdcComputePolicyV2.Delete` and `AdminVdc.GetAllAssignedVdcComputePoliciesV2`.
+  This version supports more filtering options like `isVgpuPolicy` [GH-502], [GH-504]
