@@ -404,6 +404,6 @@ type LogicalVmGroup struct {
 	Name                   string            `json:"name,omitempty"` // Display name
 	Description            string            `json:"description,omitempty"`
 	ID                     string            `json:"id,omitempty"`                     // UUID for LogicalVmGroup. This is immutable
-	NamedVmGroupReferences OpenApiReferences `json:"namedVmGroupReferences,omitempty"` // List of named vm groups associated with LogicalVmGroup.
+	NamedVmGroupReferences OpenApiReferences `json:"namedVmGroupReferences,omitempty"` // List of named VM Groups associated with LogicalVmGroup.
 	PvdcID                 string            `json:"pvdcId,omitempty"`                 // URN for Provider VDC
 }
