@@ -207,7 +207,7 @@ type PvdcNamedVmGroupsMap struct {
 // This is used for VM Placement Policies (see VdcComputePolicyV2)
 type PvdcLogicalVmGroupsMap struct {
 	LogicalVmGroups OpenApiReferences `json:"logicalVmGroups,omitempty"`
-	Pvdc            OpenApiReference    `json:"pvdc,omitempty"`
+	Pvdc            OpenApiReference  `json:"pvdc,omitempty"`
 }
 
 // OpenApiReference is a generic reference type commonly used throughout OpenAPI endpoints

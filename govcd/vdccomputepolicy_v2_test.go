@@ -250,7 +250,7 @@ func (vcd *TestVCD) Test_VdcVmPlacementPoliciesV2(check *C) {
 		VdcComputePolicyV2: &types.VdcComputePolicyV2{
 			VdcComputePolicy: types.VdcComputePolicy{
 				Name:        check.TestName() + "_empty",
-				Description: "VM Placement Policy created by "+check.TestName(),
+				Description: "VM Placement Policy created by " + check.TestName(),
 			},
 			PolicyType: "VdcVmPolicy",
 			PvdcNamedVmGroupsMap: []types.PvdcNamedVmGroupsMap{
@@ -274,7 +274,7 @@ func (vcd *TestVCD) Test_VdcVmPlacementPoliciesV2(check *C) {
 					LogicalVmGroups: types.OpenApiReferences{
 						types.OpenApiReference{
 							Name: logicalVmGroup.LogicalVmGroup.Name,
-							ID:    logicalVmGroup.LogicalVmGroup.ID,
+							ID:   logicalVmGroup.LogicalVmGroup.ID,
 						},
 					},
 					Pvdc: types.OpenApiReference{
