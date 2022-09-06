@@ -19,12 +19,12 @@ type VdcComputePolicyV2 struct {
 	client             *Client
 }
 
-// GetVdcComputePolicyV2ById retrieves VDC Compute Policy (version 2) by given ID
+// GetVdcComputePolicyV2ById retrieves VDC Compute Policy (V2) by given ID
 func (client *VCDClient) GetVdcComputePolicyV2ById(id string) (*VdcComputePolicyV2, error) {
 	return getVdcComputePolicyV2ById(client, id)
 }
 
-// getVdcComputePolicyV2ById retrieves VDC Compute Policy (version 2) by given ID
+// getVdcComputePolicyV2ById retrieves VDC Compute Policy (V2) by given ID
 func getVdcComputePolicyV2ById(client *VCDClient, id string) (*VdcComputePolicyV2, error) {
 	endpoint := types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcComputePolicies
 	minimumApiVersion, err := client.Client.checkOpenApiEndpointCompatibility(endpoint)
@@ -55,13 +55,13 @@ func getVdcComputePolicyV2ById(client *VCDClient, id string) (*VdcComputePolicyV
 	return vdcComputePolicy, nil
 }
 
-// GetAllVdcComputePoliciesV2 retrieves all VDC Compute Policies (version 2) using OpenAPI endpoint. Query parameters can be supplied to perform additional
+// GetAllVdcComputePoliciesV2 retrieves all VDC Compute Policies (V2) using OpenAPI endpoint. Query parameters can be supplied to perform additional
 // filtering
 func (client *VCDClient) GetAllVdcComputePoliciesV2(queryParameters url.Values) ([]*VdcComputePolicyV2, error) {
 	return getAllVdcComputePoliciesV2(client, queryParameters)
 }
 
-// getAllVdcComputePolicies retrieves all VDC Compute Policies (version 2) using OpenAPI endpoint. Query parameters can be supplied to perform additional
+// getAllVdcComputePolicies retrieves all VDC Compute Policies (V2) using OpenAPI endpoint. Query parameters can be supplied to perform additional
 // filtering
 func getAllVdcComputePoliciesV2(client *VCDClient, queryParameters url.Values) ([]*VdcComputePolicyV2, error) {
 	endpoint := types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcComputePolicies
@@ -94,7 +94,7 @@ func getAllVdcComputePoliciesV2(client *VCDClient, queryParameters url.Values) (
 	return wrappedVdcComputePolicies, nil
 }
 
-// CreateVdcComputePolicyV2 creates a new VDC Compute Policy (version 2) using OpenAPI endpoint
+// CreateVdcComputePolicyV2 creates a new VDC Compute Policy (V2) using OpenAPI endpoint
 func (client *VCDClient) CreateVdcComputePolicyV2(newVdcComputePolicy *types.VdcComputePolicyV2) (*VdcComputePolicyV2, error) {
 	endpoint := types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcComputePolicies
 	minimumApiVersion, err := client.Client.checkOpenApiEndpointCompatibility(endpoint)
@@ -120,7 +120,7 @@ func (client *VCDClient) CreateVdcComputePolicyV2(newVdcComputePolicy *types.Vdc
 	return returnVdcComputePolicy, nil
 }
 
-// Update existing VDC Compute Policy (version 2)
+// Update existing VDC Compute Policy (V2)
 func (vdcComputePolicy *VdcComputePolicyV2) Update() (*VdcComputePolicyV2, error) {
 	endpoint := types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcComputePolicies
 	minimumApiVersion, err := vdcComputePolicy.client.checkOpenApiEndpointCompatibility(endpoint)
@@ -150,7 +150,7 @@ func (vdcComputePolicy *VdcComputePolicyV2) Update() (*VdcComputePolicyV2, error
 	return returnVdcComputePolicy, nil
 }
 
-// Delete deletes VDC Compute Policy (version 2)
+// Delete deletes VDC Compute Policy (V2)
 func (vdcComputePolicy *VdcComputePolicyV2) Delete() error {
 	endpoint := types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcComputePolicies
 	minimumApiVersion, err := vdcComputePolicy.client.checkOpenApiEndpointCompatibility(endpoint)
@@ -176,7 +176,7 @@ func (vdcComputePolicy *VdcComputePolicyV2) Delete() error {
 	return nil
 }
 
-// GetAllAssignedVdcComputePoliciesV2 retrieves all VDC assigned Compute Policies (version 2) using OpenAPI endpoint. Query parameters can be supplied to perform additional
+// GetAllAssignedVdcComputePoliciesV2 retrieves all VDC assigned Compute Policies (V2) using OpenAPI endpoint. Query parameters can be supplied to perform additional
 // filtering
 func (vdc *AdminVdc) GetAllAssignedVdcComputePoliciesV2(queryParameters url.Values) ([]*VdcComputePolicyV2, error) {
 	endpoint := types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies
