@@ -165,7 +165,7 @@ func getVmGroupWithFilter(vcdClient *VCDClient, filter map[string]string) (*VmGr
 func getResourcePool(vcdClient *VCDClient, pvdcUrn string) (*types.QueryResultResourcePoolRecordType, error) {
 	foundResourcePools, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":          "resourcePool",
-		"filter":        fmt.Sprintf("providerVdc==%s", pvdcUrn),
+		"filter":        fmt.Sprintf("providerVdc==%s", url.QueryEscape(pvdcUrn)),
 		"filterEncoded": "true",
 	})
 	if err != nil {
