@@ -61,7 +61,7 @@ func (client *VCDClient) GetAllVdcComputePoliciesV2(queryParameters url.Values) 
 	return getAllVdcComputePoliciesV2(client, queryParameters)
 }
 
-// getAllVdcComputePolicies retrieves all VDC Compute Policies (version 2)  using OpenAPI endpoint. Query parameters can be supplied to perform additional
+// getAllVdcComputePolicies retrieves all VDC Compute Policies (version 2) using OpenAPI endpoint. Query parameters can be supplied to perform additional
 // filtering
 func getAllVdcComputePoliciesV2(client *VCDClient, queryParameters url.Values) ([]*VdcComputePolicyV2, error) {
 	endpoint := types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcComputePolicies
