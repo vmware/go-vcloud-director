@@ -107,6 +107,7 @@ vcd:
     # A VM Group that needs to exist in the backing vSphere. This VM Group can be used
     # to create VM Placement Policies.
     placementPolicyVmGroup: testVmGroup
+    #
     # An edge gateway
     # (see https://pubs.vmware.com/vca/topic/com.vmware.vcloud.api.doc_56/GUID-18B0FB8B-385C-4B6D-982C-4B24D271C646.html)
     edgeGateway: myedgegw
