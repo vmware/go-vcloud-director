@@ -79,7 +79,7 @@ func (vcd *TestVCD) Test_VdcComputePoliciesV2(check *C) {
 	check.Assert(*createdPolicy2.VdcComputePolicyV2.MemoryLimit, Equals, 1200)
 	check.Assert(*createdPolicy2.VdcComputePolicyV2.MemoryShares, Equals, 500)
 
-	// Step 2 - update
+	// Step 2 - Update
 	createdPolicy2.VdcComputePolicyV2.Description = "Updated description"
 	updatedPolicy, err := createdPolicy2.Update()
 	check.Assert(err, IsNil)
@@ -93,7 +93,7 @@ func (vcd *TestVCD) Test_VdcComputePoliciesV2(check *C) {
 	// Step 4 - Get all VDC compute policies using query filters
 	for _, onePolicy := range allExistingPolicies {
 
-		// Step 3.1 - retrieve  using FIQL filter
+		// Step 3.1 - Retrieve  using FIQL filter
 		queryParams := url.Values{}
 		queryParams.Add("filter", "id=="+onePolicy.VdcComputePolicyV2.ID)
 
@@ -101,22 +101,22 @@ func (vcd *TestVCD) Test_VdcComputePoliciesV2(check *C) {
 		check.Assert(err, IsNil)
 		check.Assert(len(expectOnePolicyResultById) == 1, Equals, true)
 
-		// Step 2.2 - retrieve
+		// Step 2.2 - Retrieve
 		exactItem, err := vcd.client.GetVdcComputePolicyV2ById(onePolicy.VdcComputePolicyV2.ID)
 		check.Assert(err, IsNil)
 
 		check.Assert(err, IsNil)
 		check.Assert(exactItem, NotNil)
 
-		// Step 2.3 - compare struct retrieved by using filter and the one retrieved by exact ID
+		// Step 2.3 - Compare struct retrieved by using filter and the one retrieved by exact ID
 		check.Assert(onePolicy, DeepEquals, expectOnePolicyResultById[0])
 
 	}
 
-	// Step 5 - delete
+	// Step 5 - Delete
 	err = createdPolicy.Delete()
 	check.Assert(err, IsNil)
-	// Step 5 - try to read deleted VDC computed policy should end up with error 'ErrorEntityNotFound'
+	// Step 5 - Try to read deleted VDC computed policy should end up with error 'ErrorEntityNotFound'
 	deletedPolicy, err := vcd.client.GetVdcComputePolicyV2ById(createdPolicy.VdcComputePolicyV2.ID)
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(deletedPolicy, IsNil)
@@ -142,7 +142,7 @@ func (vcd *TestVCD) Test_SetAssignedComputePoliciesV2(check *C) {
 		vcd.infoCleanup(notFoundMsg, "vdc", vcd.vdc.Vdc.Name)
 	}
 
-	// Step 1 - Create a new VDC compute policies
+	// Create a new VDC compute policies
 	newComputePolicy := &VdcComputePolicyV2{
 		client: &vcd.client.Client,
 		VdcComputePolicyV2: &types.VdcComputePolicyV2{
@@ -203,7 +203,7 @@ func (vcd *TestVCD) Test_SetAssignedComputePoliciesV2(check *C) {
 	check.Assert(strings.SplitAfter(policyReferences.VdcComputePolicyReference[1].HREF, "vdcComputePolicy:")[1], Equals,
 		strings.SplitAfter(assignedVdcComputePolicies.VdcComputePolicyReference[1].HREF, "vdcComputePolicy:")[1])
 
-	// cleanup assigned compute policies
+	// Cleanup assigned compute policies
 	policyReferences = types.VdcComputePolicyReferences{VdcComputePolicyReference: []*types.Reference{
 		{HREF: vdcComputePolicyHref.String() + defaultPolicyId}}}
 
