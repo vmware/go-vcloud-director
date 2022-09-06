@@ -159,7 +159,7 @@ type NetworkProvider struct {
 // Use VdcComputePolicyV2 instead (version 2.0.0)
 type VdcComputePolicy struct {
 	ID                         string   `json:"id,omitempty"`
-	Description                *string   `json:"description"` // It's a not-omitempty pointer to be able to send "null" values for empty descriptions.
+	Description                *string  `json:"description"` // It's a not-omitempty pointer to be able to send "null" values for empty descriptions.
 	Name                       string   `json:"name"`
 	CPUSpeed                   *int     `json:"cpuSpeed,omitempty"`
 	Memory                     *int     `json:"memory,omitempty"`
