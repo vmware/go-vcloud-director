@@ -73,6 +73,9 @@ vcd:
       edgeGateway: nsxt-gw-name
       # Existing NSX-T segment to test NSX-T Imported Org Vdc network
       nsxtImportSegment: vcd-org-vdc-imported-network-backing
+      # A VM Group that needs to exist in the backing vSphere. This VM Group can be used
+      # to create VM Placement Policies.
+      placementPolicyVmGroup: testVmGroup
     # An Org catalog, possibly containing at least one item
     catalog:
         name: mycat
@@ -104,10 +107,6 @@ vcd:
         storageProfile1: Development
         # Second storage profile. If omitted, some tests will be skipped.
         storageProfile2: "*"
-    # A VM Group that needs to exist in the backing vSphere. This VM Group can be used
-    # to create VM Placement Policies.
-    placementPolicyVmGroup: testVmGroup
-    #
     # An edge gateway
     # (see https://pubs.vmware.com/vca/topic/com.vmware.vcloud.api.doc_56/GUID-18B0FB8B-385C-4B6D-982C-4B24D271C646.html)
     edgeGateway: myedgegw
