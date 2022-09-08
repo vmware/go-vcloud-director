@@ -227,9 +227,9 @@ func (vcd *TestVCD) Test_VdcVmPlacementPoliciesV2(check *C) {
 	check.Assert(err, IsNil)
 
 	// We also need the VM Group to create a VM Placement Policy
-	vmGroup, err := vcd.client.GetVmGroupByNameAndProviderVdcUrn(vcd.config.VCD.PlacementPolicyVmGroup, pVdc.ProviderVdc.ID)
+	vmGroup, err := vcd.client.GetVmGroupByNameAndProviderVdcUrn(vcd.config.VCD.NsxtProviderVdc.PlacementPolicyVmGroup, pVdc.ProviderVdc.ID)
 	check.Assert(err, IsNil)
-	check.Assert(vmGroup.VmGroup.Name, Equals, vcd.config.VCD.PlacementPolicyVmGroup)
+	check.Assert(vmGroup.VmGroup.Name, Equals, vcd.config.VCD.NsxtProviderVdc.PlacementPolicyVmGroup)
 
 	// We'll also use a Logical VM Group to create the VM Placement Policy
 	logicalVmGroup, err := vcd.client.CreateLogicalVmGroup(types.LogicalVmGroup{

@@ -19,20 +19,20 @@ func (vcd *TestVCD) Test_VmGroupsCRUD(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	if vcd.config.VCD.PlacementPolicyVmGroup == "" {
-		check.Skip(fmt.Sprintf("%s test requires vcd.placementPolicyVmGroup configuration", check.TestName()))
+	if vcd.config.VCD.NsxtProviderVdc.PlacementPolicyVmGroup == "" {
+		check.Skip(fmt.Sprintf("%s test requires vcd.nsxt_provider_vdc.placementPolicyVmGroup configuration", check.TestName()))
 	}
 	if vcd.config.VCD.NsxtProviderVdc.Name == "" {
-		check.Skip(fmt.Sprintf("%s test requires vcd.nsxtProviderVdc configuration", check.TestName()))
+		check.Skip(fmt.Sprintf("%s test requires vcd.nsxt_provider_vdc configuration", check.TestName()))
 	}
 
 	// We need the Provider VDC URN
 	pVdc, err := vcd.client.GetProviderVdcByName(vcd.config.VCD.NsxtProviderVdc.Name)
 	check.Assert(err, IsNil)
 
-	vmGroup, err := vcd.client.GetVmGroupByNameAndProviderVdcUrn(vcd.config.VCD.PlacementPolicyVmGroup, pVdc.ProviderVdc.ID)
+	vmGroup, err := vcd.client.GetVmGroupByNameAndProviderVdcUrn(vcd.config.VCD.NsxtProviderVdc.PlacementPolicyVmGroup, pVdc.ProviderVdc.ID)
 	check.Assert(err, IsNil)
-	check.Assert(vmGroup.VmGroup.Name, Equals, vcd.config.VCD.PlacementPolicyVmGroup)
+	check.Assert(vmGroup.VmGroup.Name, Equals, vcd.config.VCD.NsxtProviderVdc.PlacementPolicyVmGroup)
 
 	vmGroup2, err := vcd.client.GetVmGroupById(vmGroup.VmGroup.ID)
 	check.Assert(err, IsNil)

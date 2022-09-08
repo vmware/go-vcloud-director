@@ -134,9 +134,10 @@ type TestConfig struct {
 			NetworkPool    string `yaml:"network_pool"`
 		} `yaml:"provider_vdc"`
 		NsxtProviderVdc struct {
-			Name           string `yaml:"name"`
-			StorageProfile string `yaml:"storage_profile"`
-			NetworkPool    string `yaml:"network_pool"`
+			Name                   string `yaml:"name"`
+			StorageProfile         string `yaml:"storage_profile"`
+			NetworkPool            string `yaml:"network_pool"`
+			PlacementPolicyVmGroup string `yaml:"placementPolicyVmGroup,omitempty"`
 		} `yaml:"nsxt_provider_vdc"`
 		Catalog struct {
 			Name                    string `yaml:"name,omitempty"`
@@ -154,7 +155,6 @@ type TestConfig struct {
 			SP1 string `yaml:"storageProfile1"`
 			SP2 string `yaml:"storageProfile2,omitempty"`
 		} `yaml:"storageProfile"`
-		PlacementPolicyVmGroup       string `yaml:"placementPolicyVmGroup,omitempty"`
 		ExternalIp                   string `yaml:"externalIp,omitempty"`
 		ExternalNetmask              string `yaml:"externalNetmask,omitempty"`
 		InternalIp                   string `yaml:"internalIp,omitempty"`
