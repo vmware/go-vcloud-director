@@ -58,6 +58,9 @@ vcd:
       name: nsxTPvdc1
       storage_profile: "*"
       network_pool: "NSX-T Overlay 1"
+      # A VM Group that needs to exist in the backing vSphere. This VM Group can be used
+      # to create VM Placement Policies.
+      placementPolicyVmGroup: testVmGroup
     nsxt:
       # NSX-T manager name to be used as defined in VCD
       manager: nsxManager1
@@ -73,9 +76,6 @@ vcd:
       edgeGateway: nsxt-gw-name
       # Existing NSX-T segment to test NSX-T Imported Org Vdc network
       nsxtImportSegment: vcd-org-vdc-imported-network-backing
-      # A VM Group that needs to exist in the backing vSphere. This VM Group can be used
-      # to create VM Placement Policies.
-      placementPolicyVmGroup: testVmGroup
     # An Org catalog, possibly containing at least one item
     catalog:
         name: mycat
