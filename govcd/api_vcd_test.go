@@ -1532,12 +1532,26 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		return
 
 	case "vdcComputePolicy":
-		policy, err := vcd.client.Client.GetVdcComputePolicyById(entity.Name)
+		policy, err := vcd.client.GetVdcComputePolicyV2ById(entity.Name)
 		if policy == nil || err != nil {
 			vcd.infoCleanup(notFoundMsg, "vdcComputePolicy", entity.Name)
 			return
 		}
 		err = policy.Delete()
+		if err == nil {
+			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		} else {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+		return
+
+	case "logicalVmGroup":
+		logicalVmGroup, err := vcd.client.GetLogicalVmGroupById(entity.Name)
+		if logicalVmGroup == nil || err != nil {
+			vcd.infoCleanup(notFoundMsg, "logicalVmGroup", entity.Name)
+			return
+		}
+		err = logicalVmGroup.Delete()
 		if err == nil {
 			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		} else {
