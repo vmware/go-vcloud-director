@@ -240,7 +240,7 @@ func (vcd *TestVCD) Test_VdcVmPlacementPoliciesV2(check *C) {
 		Name: check.TestName(),
 		NamedVmGroupReferences: types.OpenApiReferences{
 			types.OpenApiReference{
-				ID:   fmt.Sprintf("urn:vcloud:namedVmGroup:%s", vmGroup.VmGroup.NamedVmGroupId),
+				ID:   fmt.Sprintf("%s:%s", vmGroupUrnPrefix, vmGroup.VmGroup.NamedVmGroupId),
 				Name: vmGroup.VmGroup.Name},
 		},
 		PvdcID: pVdc.ProviderVdc.ID,
@@ -263,7 +263,7 @@ func (vcd *TestVCD) Test_VdcVmPlacementPoliciesV2(check *C) {
 						{
 							types.OpenApiReference{
 								Name: vmGroup.VmGroup.Name,
-								ID:   fmt.Sprintf("urn:vcloud:namedVmGroup:%s", vmGroup.VmGroup.NamedVmGroupId),
+								ID:   fmt.Sprintf("%s:%s", vmGroupUrnPrefix, vmGroup.VmGroup.NamedVmGroupId),
 							},
 						},
 					},

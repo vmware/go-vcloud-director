@@ -46,7 +46,7 @@ func (vcd *TestVCD) Test_VmGroupsCRUD(check *C) {
 		Name: check.TestName(),
 		NamedVmGroupReferences: types.OpenApiReferences{
 			types.OpenApiReference{
-				ID:   fmt.Sprintf("urn:vcloud:namedVmGroup:%s", vmGroup.VmGroup.NamedVmGroupId),
+				ID:   fmt.Sprintf("%s:%s", vmGroupUrnPrefix, vmGroup.VmGroup.NamedVmGroupId),
 				Name: vmGroup.VmGroup.Name},
 		},
 		PvdcID: pVdc.ProviderVdc.ID,

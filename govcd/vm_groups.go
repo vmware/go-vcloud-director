@@ -18,6 +18,10 @@ type VmGroup struct {
 	client  *Client
 }
 
+// This constant is useful when managing Logical VM Groups by referencing VM Groups, as these are
+// XML based and don't deal with IDs with full URNs, while Logical VM Groups are OpenAPI based and they do.
+const vmGroupUrnPrefix = "urn:vcloud:namedVmGroup"
+
 // GetVmGroupById finds a VM Group by its ID.
 // On success, returns a pointer to the VmGroup structure and a nil error
 // On failure, returns a nil pointer and an error
