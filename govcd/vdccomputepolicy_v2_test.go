@@ -222,6 +222,10 @@ func (vcd *TestVCD) Test_VdcVmPlacementPoliciesV2(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
+	if vcd.config.VCD.NsxtProviderVdc.PlacementPolicyVmGroup == "" {
+		check.Skip("The configuration entry vcd.nsxt_provider_vdc.placementPolicyVmGroup is needed")
+	}
+
 	// We need the Provider VDC URN
 	pVdc, err := vcd.client.GetProviderVdcByName(vcd.config.VCD.NsxtProviderVdc.Name)
 	check.Assert(err, IsNil)
