@@ -49,11 +49,19 @@ func (vcd *TestVCD) Test_RefreshVAppTemplate(check *C) {
 	check.Assert(oldVAppTemplate.VAppTemplate.HREF, Equals, vAppTemplate.VAppTemplate.HREF)
 }
 
-func (vcd *TestVCD) Test_UpdateAndDeleteVAppTemplate(check *C) {
+func (vcd *TestVCD) Test_UpdateAndDeleteVAppTemplateFromOvaFile(check *C) {
+	testUploadAndDeleteVAppTemplate(vcd, check, false)
+}
+
+func (vcd *TestVCD) Test_UpdateAndDeleteVAppTemplateFromUrl(check *C) {
+	testUploadAndDeleteVAppTemplate(vcd, check, true)
+}
+
+func testUploadAndDeleteVAppTemplate(vcd *TestVCD, check *C, isOvfLink bool) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	if err != nil {
-		check.Skip("Test_UpdateVAppTemplate: Catalog not found. Test can't proceed")
+		check.Skip(check.TestName() + ": Catalog not found. Test can't proceed")
 		return
 	}
 	check.Assert(catalog, NotNil)
@@ -61,10 +69,18 @@ func (vcd *TestVCD) Test_UpdateAndDeleteVAppTemplate(check *C) {
 	itemName := check.TestName()
 
 	description := "upload from test"
-	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OvaPath, itemName, description, 1024)
-	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
+
+	if isOvfLink {
+		uploadTask, err := catalog.UploadOvfByLink(vcd.config.OVA.OvfUrl, itemName, description)
+		check.Assert(err, IsNil)
+		err = uploadTask.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+	} else {
+		uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OvaPath, itemName, description, 1024)
+		check.Assert(err, IsNil)
+		err = uploadTask.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+	}
 
 	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
 
@@ -72,6 +88,11 @@ func (vcd *TestVCD) Test_UpdateAndDeleteVAppTemplate(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vAppTemplate, NotNil)
 	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, itemName)
+
+	// FIXME: Due to bug in OVF Link upload in VCD, this assert is skipped
+	if isOvfLink {
+		check.Assert(vAppTemplate.VAppTemplate.Description, Equals, description)
+	}
 
 	nameForUpdate := itemName + "updated"
 	descriptionForUpdate := description + "updated"
