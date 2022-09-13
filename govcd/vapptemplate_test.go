@@ -76,9 +76,9 @@ func testUploadAndDeleteVAppTemplate(vcd *TestVCD, check *C, isOvfLink bool) {
 		err = uploadTask.WaitTaskCompletion()
 		check.Assert(err, IsNil)
 	} else {
-		uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OvaPath, itemName, description, 1024)
+		task, err := catalog.UploadOvf(vcd.config.OVA.OvaPath, itemName, description, 1024)
 		check.Assert(err, IsNil)
-		err = uploadTask.WaitTaskCompletion()
+		err = task.WaitTaskCompletion()
 		check.Assert(err, IsNil)
 	}
 
