@@ -1208,6 +1208,7 @@ type ReComposeVAppParams struct {
 	VAppParent          *Reference                   `xml:"VAppParent,omitempty"`          // Reserved. Unimplemented.
 	InstantiationParams *InstantiationParams         `xml:"InstantiationParams,omitempty"` // Instantiation parameters for the composed vApp.
 	SourcedItem         *SourcedCompositionItemParam `xml:"SourcedItem,omitempty"`         // Composition item. One of: vApp vAppTemplate VM.
+	CreateItem          *CreateItem                  `xml:"CreateItem,omitempty"`
 	AllEULAsAccepted    bool                         `xml:"AllEULAsAccepted,omitempty"`
 	DeleteItem          *DeleteItem                  `xml:"DeleteItem,omitempty"`
 }
