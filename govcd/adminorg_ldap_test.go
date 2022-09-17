@@ -1,39 +1,34 @@
-//go:build (user || functional || ALL) && !skipLong
+//go:build user || functional || ALL
 // +build user functional ALL
-// +build !skipLong
 
 /*
- * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
 
 // Test_LDAP serves as a "subtest" framework for tests requiring LDAP configuration. It sets up LDAP
-// server and configuration for Org and cleans up this test run.
+// configuration for Org and cleans up this test run.
 //
 // Prerequisites:
-// * External network subnet must have access to internet
-// * Correct DNS servers must be set for external network so that guest VM can resolve DNS records
+// * LDAP server already installed
+// * LDAP server IP set in TestConfig.VCD.LdapServer
 func (vcd *TestVCD) Test_LDAP(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 	vcd.checkSkipWhenApiToken(check)
 
-	if !catalogItemIsPhotonOs(vcd) {
-		check.Skip(fmt.Sprintf("Catalog item '%s' is not Photon OS", vcd.config.VCD.Catalog.CatalogItem))
-	}
-
-	if vcd.config.VCD.ExternalNetwork == "" {
-		check.Skip("[" + check.TestName() + "] external network not provided")
+	ldapHostIp := vcd.config.VCD.LdapServer
+	if ldapHostIp == "" {
+		check.Skip("[" + check.TestName() + "] LDAP server IP not provided in configuration")
 	}
 	// Due to a bug in VCD, when configuring LDAP service, Org publishing catalog settings `Publish external catalogs` and
 	// `Subscribe to external catalogs ` gets disabled. For that reason we are getting the current values from those vars
@@ -46,10 +41,13 @@ func (vcd *TestVCD) Test_LDAP(check *C) {
 	subscribeToExternalCatalogs := adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanSubscribe
 
 	fmt.Println("Setting up LDAP")
-	networkName, vappName, vmName := vcd.configureLdap(check)
+	err = configureLdapForOrg(vcd, adminOrg, ldapHostIp, check.TestName())
+	check.Assert(err, IsNil)
 	defer func() {
 		fmt.Println("Unconfiguring LDAP")
-		vcd.unconfigureLdap(check, networkName, vappName, vmName)
+		// Clear LDAP configuration
+		err = adminOrg.LdapDisable()
+		check.Assert(err, IsNil)
 
 		// Due to the VCD bug mentioned above, we need to set the previous state from the publishing settings vars
 		check.Assert(adminOrg.Refresh(), IsNil)
@@ -70,75 +68,10 @@ func (vcd *TestVCD) Test_LDAP(check *C) {
 	vcd.test_GroupUserListIsPopulated(check)
 }
 
-// configureLdap creates direct network, spawns Photon OS VM with LDAP server and configures vCD to
-// use LDAP server
-func (vcd *TestVCD) configureLdap(check *C) (string, string, string) {
-
-	// Create direct network to expose LDAP server on external network
-	directNetworkName := createDirectNetwork(vcd, check)
-
-	// Launch LDAP server on external network
-	ldapHostIp, vappName, vmName := createLdapServer(vcd, check, directNetworkName)
-
-	// Configure vCD to use new LDAP server
-	configureLdapForOrg(vcd, check, ldapHostIp)
-
-	return directNetworkName, vappName, vmName
-}
-
-// unconfigureLdap cleans up LDAP configuration created by `configureLdap` immediately to reduce
-// resource usage
-func (vcd *TestVCD) unconfigureLdap(check *C, networkName, vAppName, vmName string) {
-
-	// Get Org Vdc
-	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
-	check.Assert(err, IsNil)
-	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
-	check.Assert(err, IsNil)
-	check.Assert(vdc, NotNil)
-
-	vapp, err := vdc.GetVAppByName(vAppName, false)
-	check.Assert(err, IsNil)
-
-	vm, err := vapp.GetVMByName(vmName, false)
-	check.Assert(err, IsNil)
-
-	// Remove VM
-	task, err := vm.Undeploy()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	err = vapp.RemoveVM(*vm)
-	check.Assert(err, IsNil)
-
-	// undeploy and remove vApp
-	task, err = vapp.Undeploy()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	task, err = vapp.Delete()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	// Remove network
-	err = RemoveOrgVdcNetworkIfExists(*vcd.vdc, networkName)
-	check.Assert(err, IsNil)
-
-	// Clear LDAP configuration
-	err = org.LdapDisable()
-	check.Assert(err, IsNil)
-
-}
-
-// orgConfigureLdap sets up LDAP configuration in vCD org specified by vcd.config.VCD.Org variable
-func configureLdapForOrg(vcd *TestVCD, check *C, ldapHostIp string) {
+// configureLdapForOrg sets up LDAP configuration in vCD org
+func configureLdapForOrg(vcd *TestVCD, adminOrg *AdminOrg, ldapHostIp, testName string) error {
 	fmt.Printf("# Configuring LDAP settings for Org '%s'", vcd.config.VCD.Org)
 
-	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
-	check.Assert(err, IsNil)
 	// The below settings are tailored for LDAP docker testing image
 	// https://github.com/rroemhild/docker-test-openldap
 	ldapSettings := &types.OrgLdapSettingsType{
@@ -172,165 +105,11 @@ func configureLdapForOrg(vcd *TestVCD, check *C, ldapHostIp string) {
 		},
 	}
 
-	_, err = org.LdapConfigure(ldapSettings)
-	check.Assert(err, IsNil)
-
+	_, err := adminOrg.LdapConfigure(ldapSettings)
+	if err != nil {
+		return err
+	}
 	fmt.Println(" Done")
-	AddToCleanupList("LDAP-configuration", "orgLdapSettings", org.AdminOrg.Name, check.TestName())
-}
-
-// createLdapServer spawns a vApp and photon OS VM. Using customization script it starts a testing
-// LDAP server in docker container which has a few users and groups defined.
-// In essence it creates two groups - "admin_staff" and "ship_crew" and a few users.
-// More information about users and groups in: https://github.com/rroemhild/docker-test-openldap
-func createLdapServer(vcd *TestVCD, check *C, directNetworkName string) (string, string, string) {
-	// LDAP configuration is tailored for this testing LDAP container. However it may make sense to host it in custom
-	// docker registry because docker throttles container downloads and this might cause test failures.
-	// Config vcd.config.Misc.LdapContainer can be set to pull this container from custom registry.
-	ldapContainerName := "rroemhild/test-openldap"
-	if vcd.config.Misc.LdapContainer != "" {
-		ldapContainerName = vcd.config.Misc.LdapContainer
-	}
-	fmt.Printf("# Using docker LDAP image '%s'\n", ldapContainerName)
-
-	vAppName := "ldap"
-	// The customization script waits until IP address is set on the NIC because Guest tools run
-	// script and network configuration together. If the script runs too quick - there is a risk
-	// that network card is not yet configured and it will not be able to pull docker image from
-	// remote. Guest tools could also be interrupted if the script below failed before NICs are
-	// configured therefore it is run in background.
-	// It waits until "inet" (not "inet6") is set and then runs docker container
-	ldapCustomizationScript := `
-		{
-			until ip a show eth0 | grep "inet "
-			do
-				sleep 1
-			done
-			systemctl enable docker
-			systemctl start docker
-			docker run --name ldap-server --restart=always -d -p 389:10389 ` + ldapContainerName + `
-		} &
-	`
-	// Get Org, Vdc
-	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
-	check.Assert(err, IsNil)
-	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
-	check.Assert(err, IsNil)
-	check.Assert(vdc, NotNil)
-
-	// Find catalog and catalog item
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
-	check.Assert(err, IsNil)
-	check.Assert(catalog, NotNil)
-	catalogItem, err := catalog.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
-	check.Assert(err, IsNil)
-
-	fmt.Printf("# Creating RAW vApp '%s'", vAppName)
-	vappTemplate, err := catalogItem.GetVAppTemplate()
-	check.Assert(err, IsNil)
-	// Compose Raw vApp
-	vapp, err := vdc.CreateRawVApp(vAppName, "")
-	check.Assert(err, IsNil)
-	check.Assert(vapp, NotNil)
-	// vApp was created - adding it to cleanup list (using prepend to remove it before direct
-	// network removal)
-	PrependToCleanupList(vAppName, "vapp", "", check.TestName())
-	// Wait until vApp becomes configurable
-	initialVappStatus, err := vapp.GetStatus()
-	check.Assert(err, IsNil)
-	if initialVappStatus != "RESOLVED" { // RESOLVED vApp is ready to accept operations
-		err = vapp.BlockWhileStatus(initialVappStatus, vapp.client.MaxRetryTimeout)
-		check.Assert(err, IsNil)
-	}
-	fmt.Printf(". Done\n")
-
-	// Attach VDC network to vApp so that VMs can use it
-	fmt.Printf("# Attaching network '%s'", directNetworkName)
-	net, err := vdc.GetOrgVdcNetworkByName(directNetworkName, false)
-	check.Assert(err, IsNil)
-	task, err := vapp.AddRAWNetworkConfig([]*types.OrgVDCNetwork{net.OrgVDCNetwork})
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	fmt.Printf(". Done\n")
-
-	// Create VM
-	desiredNetConfig := types.NetworkConnectionSection{}
-	desiredNetConfig.PrimaryNetworkConnectionIndex = 0
-	desiredNetConfig.NetworkConnection = append(desiredNetConfig.NetworkConnection,
-		&types.NetworkConnection{
-			IsConnected:             true,
-			IPAddressAllocationMode: types.IPAllocationModePool,
-			Network:                 directNetworkName,
-			NetworkConnectionIndex:  0,
-		})
-
-	// LDAP docker container does not start if Photon OS VM does not have at least 1024 of RAM
-	ldapVm, err := spawnVM("ldap-vm", 1024, *vdc, *vapp, desiredNetConfig, vappTemplate, check, ldapCustomizationScript, true)
-	check.Assert(err, IsNil)
-
-	// Must be deleted before vApp to avoid IP leak
-	PrependToCleanupList(ldapVm.VM.Name, "vm", vAppName, check.TestName())
-
-	// Got VM - ensure that TCP port for ldap service is open and reachable
-	ldapHostIp := ldapVm.VM.NetworkConnectionSection.NetworkConnection[0].IPAddress
-	fmt.Printf("# Waiting for server %s to respond on port 389: ", ldapHostIp)
-	timerStart := time.Now()
-	isLdapServiceUp := isTcpPortOpen(ldapHostIp, "389", vapp.client.MaxRetryTimeout)
-	check.Assert(isLdapServiceUp, Equals, true)
-	fmt.Printf("# Time taken to start LDAP container: %s\n", time.Since(timerStart))
-
-	return ldapHostIp, vAppName, ldapVm.VM.Name
-}
-
-// createDirectNetwork creates a direct network attached to existing external network
-func createDirectNetwork(vcd *TestVCD, check *C) string {
-	networkName := check.TestName()
-	fmt.Printf("# Creating direct network %s.", networkName)
-
-	err := RemoveOrgVdcNetworkIfExists(*vcd.vdc, networkName)
-	if err != nil {
-		check.Skip(fmt.Sprintf("Error deleting network : %s", err))
-	}
-
-	externalNetwork, err := vcd.client.GetExternalNetworkByName(vcd.config.VCD.ExternalNetwork)
-	check.Assert(err, IsNil)
-	// Note that there is no IPScope for this type of network
-	description := "Created by govcd test"
-	var networkConfig = types.OrgVDCNetwork{
-		Xmlns:       types.XMLNamespaceVCloud,
-		Name:        networkName,
-		Description: description,
-		Configuration: &types.NetworkConfiguration{
-			FenceMode: types.FenceModeBridged,
-			ParentNetwork: &types.Reference{
-				HREF: externalNetwork.ExternalNetwork.HREF,
-				Name: externalNetwork.ExternalNetwork.Name,
-				Type: externalNetwork.ExternalNetwork.Type,
-			},
-			BackwardCompatibilityMode: true,
-		},
-		IsShared: false,
-	}
-	LogNetwork(networkConfig)
-
-	task, err := vcd.vdc.CreateOrgVDCNetwork(&networkConfig)
-	if err != nil {
-		fmt.Printf("error creating the network: %s", err)
-	}
-	check.Assert(err, IsNil)
-	if task == (Task{}) {
-		fmt.Printf("NULL task retrieved after network creation")
-	}
-	check.Assert(task.Task.HREF, Not(Equals), "")
-
-	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, check.TestName())
-
-	err = task.WaitInspectTaskCompletion(LogTask, 10)
-	if err != nil {
-		fmt.Printf("error performing task: %s", err)
-	}
-	check.Assert(err, IsNil)
-	fmt.Println(" Done")
-	return networkName
+	AddToCleanupList("LDAP-configuration", "orgLdapSettings", adminOrg.AdminOrg.Name, testName)
+	return nil
 }

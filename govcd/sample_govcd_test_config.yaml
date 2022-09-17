@@ -132,6 +132,9 @@ vcd:
     # A vSphere server name for creating an external network
     vimServer: vc9
     #
+    # IP of a pre-configured LDAP server
+    # using Docker image https://github.com/rroemhild/docker-test-openldap
+    ldap_server: 10.10.10.99
 logging:
     # All items in this section are optional
     # Logging is disabled by default.
