@@ -90,7 +90,7 @@ func testUploadAndDeleteVAppTemplate(vcd *TestVCD, check *C, isOvfLink bool) {
 	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, itemName)
 
 	// FIXME: Due to bug in OVF Link upload in VCD, this assert is skipped
-	if isOvfLink {
+	if !isOvfLink {
 		check.Assert(vAppTemplate.VAppTemplate.Description, Equals, description)
 	}
 
