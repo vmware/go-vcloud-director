@@ -71,8 +71,8 @@ func (vAppTemplate *VAppTemplate) Refresh() error {
 }
 
 // Update updates the vApp template item information.
-// It also updates the associated Catalog Item, in order to be in sync with the receiver vApp Template entity.
-// For example, updating a vApp Template name "A" to "B" will make the Catalog Item to be also renamed to "B" in VCD.
+// VCD also updates the associated Catalog Item, in order to be in sync with the receiver vApp Template entity.
+// For example, updating a vApp Template name "A" to "B" will make VCD to also update the Catalog Item to be renamed to "B".
 // Returns vApp template and error.
 func (vAppTemplate *VAppTemplate) Update() (*VAppTemplate, error) {
 	if vAppTemplate.VAppTemplate == nil {
