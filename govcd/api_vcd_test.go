@@ -204,9 +204,6 @@ type TestConfig struct {
 		PhotonOsOvaPath  string `yaml:"photonOsOvaPath,omitempty"`
 		MediaUdfTypePath string `yaml:"mediaUdfTypePath,omitempty"`
 	} `yaml:"media"`
-	Misc struct {
-		LdapContainer string `yaml:"ldapContainer,omitempty"`
-	} `yaml:"misc"`
 }
 
 // Test struct for vcloud-director.
