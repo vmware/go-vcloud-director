@@ -40,7 +40,7 @@ func (vcd *TestVCD) Test_LDAP(check *C) {
 	publishExternalCatalogs := adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishExternally
 	subscribeToExternalCatalogs := adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanSubscribe
 
-	fmt.Println("Setting up LDAP")
+	fmt.Printf("Setting up LDAP (IP: %s)\n", ldapHostIp)
 	err = configureLdapForOrg(vcd, adminOrg, ldapHostIp, check.TestName())
 	check.Assert(err, IsNil)
 	defer func() {

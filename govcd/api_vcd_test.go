@@ -163,7 +163,7 @@ type TestConfig struct {
 		ExternalNetworkPortGroup     string `yaml:"externalNetworkPortGroup,omitempty"`
 		ExternalNetworkPortGroupType string `yaml:"externalNetworkPortGroupType,omitempty"`
 		VimServer                    string `yaml:"vimServer,omitempty"`
-		LdapServer                   string `yaml:"ldap_server,omitempty"`
+		LdapServer                   string `yaml:"ldapServer,omitempty"`
 		Nsxt                         struct {
 			Manager             string `yaml:"manager"`
 			Tier0router         string `yaml:"tier0router"`
