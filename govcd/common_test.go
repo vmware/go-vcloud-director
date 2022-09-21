@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -152,29 +151,6 @@ func isItemPhotonOs(item CatalogItem) bool {
 	return true
 }
 
-// catalogItemIsPhotonOs returns true if test config  catalog item is Photon OS image
-func catalogItemIsPhotonOs(vcd *TestVCD) bool {
-	// Get Org, Vdc
-	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
-	if err != nil {
-		return false
-	}
-	// Find catalog and catalog item
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
-	if err != nil {
-		return false
-	}
-	catalogItem, err := catalog.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
-	if err != nil {
-		return false
-	}
-	if !isItemPhotonOs(*catalogItem) {
-		return false
-	}
-
-	return true
-}
-
 // cacheLoadBalancer is meant to store load balancer settings before any operations so that all
 // configuration can be checked after manipulation
 func testCacheLoadBalancer(edge EdgeGateway, check *C) (*types.LbGeneralParamsWithXml, string) {
@@ -224,41 +200,6 @@ func testCheckLoadBalancerConfig(beforeLb *types.LbGeneralParamsWithXml, beforeL
 
 	check.Assert(beforeLb, DeepEquals, afterLb)
 	check.Assert(beforeLbXml, DeepEquals, afterLbXml)
-}
-
-// isTcpPortOpen checks if remote TCP port is open or closed every 8 seconds until timeout is
-// reached
-func isTcpPortOpen(host, port string, timeout int) bool {
-	retryTimeout := timeout
-	// due to the VMs taking long time to boot it needs to be at least 6 minutes
-	// may be even more in slower environments
-	if timeout < 6*60 {
-		retryTimeout = 6 * 60
-	}
-	timeOutAfterInterval := time.Duration(retryTimeout) * time.Second
-	timeoutAfter := time.After(timeOutAfterInterval)
-	tick := time.NewTicker(time.Duration(8) * time.Second)
-
-	for {
-		select {
-		case <-timeoutAfter:
-			fmt.Printf(" Failed\n")
-			return false
-		case <-tick.C:
-			timeout := time.Second * 3
-			conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, port), timeout)
-			if err != nil {
-				fmt.Printf(".")
-			}
-			// Connection established - the port is open
-			if conn != nil {
-				defer conn.Close()
-				fmt.Printf(" Done\n")
-				return true
-			}
-		}
-	}
-
 }
 
 // deployVappForTest aims to replace createVappForTest
