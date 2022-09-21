@@ -520,7 +520,10 @@ func (client *Client) metadataToFilter(href string, filter *FilterDef) (*FilterD
 	metadata, err := getMetadata(client, href)
 	if err == nil && metadata != nil && len(metadata.MetadataEntry) > 0 {
 		for _, md := range metadata.MetadataEntry {
-			isSystem := md.Domain == "SYSTEM"
+			isSystem := false
+			if md.Domain != nil && md.Domain.Domain == "SYSTEM" {
+				isSystem = true
+			}
 			var fType string
 			var ok bool
 			if md.TypedValue.XsiType == "" {

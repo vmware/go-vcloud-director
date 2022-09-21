@@ -1474,14 +1474,24 @@ type Metadata struct {
 // Type: MetadataEntryType
 // Namespace: http://www.vmware.com/vcloud/v1.5
 type MetadataEntry struct {
-	Xmlns      string      `xml:"xmlns,attr"`
-	HREF       string      `xml:"href,attr"`
-	Type       string      `xml:"type,attr,omitempty"`
-	Xsi        string      `xml:"xmlns:xsi,attr"`
-	Domain     string      `xml:"Domain,omitempty"` // A value of SYSTEM places this MetadataEntry in the SYSTEM domain. Omit or leave empty to place this MetadataEntry in the GENERAL domain.
-	Key        string      `xml:"Key"`              // An arbitrary key name. Length cannot exceed 256 UTF-8 characters.
-	Link       []*Link     `xml:"Link,omitempty"`   //A reference to an entity or operation associated with this object.
-	TypedValue *TypedValue `xml:"TypedValue"`
+	Xmlns      string             `xml:"xmlns,attr"`
+	HREF       string             `xml:"href,attr"`
+	Type       string             `xml:"type,attr,omitempty"`
+	Xsi        string             `xml:"xmlns:xsi,attr"`
+	Domain     *MetadataDomainTag `xml:"Domain,omitempty"` // FIXME!!!!!!
+	Key        string             `xml:"Key"`            // An arbitrary key name. Length cannot exceed 256 UTF-8 characters.
+	Link       []*Link            `xml:"Link,omitempty"` //A reference to an entity or operation associated with this object.
+	TypedValue *TypedValue        `xml:"TypedValue"`
+}
+
+// MetadataDomainTag contains both the visibility and the domain of the metadata.
+// Type: MetadataDomainTagType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: A value of SYSTEM places this MetadataEntry in the SYSTEM domain. Omit or leave empty to place this MetadataEntry in the GENERAL domain.
+// Since: 5.1
+type MetadataDomainTag struct {
+	Visibility string `xml:"visibility,attr"` // One of: PRIVATE (hidden), READONLY
+	Domain     string `xml:"Domain"`
 }
 
 // VAppChildren is a container for virtual machines included in this vApp.
