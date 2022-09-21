@@ -867,16 +867,12 @@ func (cat *Catalog) GetCatalogItemByName(catalogItemName string, refresh bool) (
 // GetVAppTemplateByName finds a VAppTemplate by Name
 // On success, returns a pointer to the VAppTemplate structure and a nil error
 // On failure, returns a nil pointer and an error
-func (cat *Catalog) GetVAppTemplateByName(vAppTemplateName string, refresh bool) (*VAppTemplate, error) {
-	catalogItem, err := cat.GetCatalogItemByName(vAppTemplateName, refresh)
+func (cat *Catalog) GetVAppTemplateByName(vAppTemplateName string) (*VAppTemplate, error) {
+	vAppTemplateQueryResult, err := cat.QueryVappTemplateWithName(vAppTemplateName)
 	if err != nil {
 		return nil, err
 	}
-	vAppTemplate, err := catalogItem.GetVAppTemplate()
-	if err != nil {
-		return nil, err
-	}
-	return &vAppTemplate, nil
+	return cat.GetVappTemplateByHref(vAppTemplateQueryResult.HREF)
 }
 
 // GetCatalogItemById finds a Catalog Item by ID
@@ -931,7 +927,7 @@ func (cat *Catalog) GetCatalogItemByNameOrId(identifier string, refresh bool) (*
 // On success, returns a pointer to the VAppTemplate structure and a nil error
 // On failure, returns a nil pointer and an error
 func (cat *Catalog) GetVAppTemplateByNameOrId(identifier string, refresh bool) (*VAppTemplate, error) {
-	getByName := func(name string, refresh bool) (interface{}, error) { return cat.GetVAppTemplateByName(name, refresh) }
+	getByName := func(name string, refresh bool) (interface{}, error) { return cat.GetVAppTemplateByName(name) }
 	getById := func(id string, refresh bool) (interface{}, error) { return cat.GetVAppTemplateById(id) }
 	entity, err := getEntityByNameOrIdSkipNonId(getByName, getById, identifier, refresh)
 	if entity == nil {

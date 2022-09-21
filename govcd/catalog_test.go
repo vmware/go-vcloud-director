@@ -99,7 +99,7 @@ func (vcd *TestVCD) Test_FindVAppTemplate(check *C) {
 	}
 
 	// Test cases
-	vAppTemplate, err := cat.GetVAppTemplateByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	vAppTemplate, err := cat.GetVAppTemplateByName(vcd.config.VCD.Catalog.CatalogItem)
 	check.Assert(err, IsNil)
 	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
 	if vcd.config.VCD.Catalog.CatalogItemDescription != "" {
@@ -128,7 +128,7 @@ func (vcd *TestVCD) Test_FindVAppTemplate(check *C) {
 	}
 
 	// Test non-existent vApp Template
-	vAppTemplate, err = cat.GetVAppTemplateByName("INVALID", false)
+	vAppTemplate, err = cat.GetVAppTemplateByName("INVALID")
 	check.Assert(err, NotNil)
 	check.Assert(vAppTemplate, IsNil)
 }

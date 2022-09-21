@@ -84,7 +84,7 @@ func testUploadAndDeleteVAppTemplate(vcd *TestVCD, check *C, isOvfLink bool) {
 
 	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
 
-	vAppTemplate, err := catalog.GetVAppTemplateByName(itemName, true)
+	vAppTemplate, err := catalog.GetVAppTemplateByName(itemName)
 	check.Assert(err, IsNil)
 	check.Assert(vAppTemplate, NotNil)
 	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, itemName)
@@ -113,7 +113,7 @@ func testUploadAndDeleteVAppTemplate(vcd *TestVCD, check *C, isOvfLink bool) {
 
 	err = vAppTemplate.Delete()
 	check.Assert(err, IsNil)
-	vAppTemplate, err = catalog.GetVAppTemplateByName(itemName, true)
+	vAppTemplate, err = catalog.GetVAppTemplateByName(itemName)
 	check.Assert(err, NotNil)
 	check.Assert(vAppTemplate, IsNil)
 }

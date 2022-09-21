@@ -90,16 +90,27 @@ func (vdc *AdminVdc) QueryCatalogItemList() ([]*types.QueryResultCatalogItemType
 	return queryCatalogItemList(vdc.client, "vdc", vdc.AdminVdc.ID)
 }
 
-// queryVappTemplateList returns a list of vApp templates for the given parent
-func queryVappTemplateList(client *Client, parentField, parentValue string) ([]*types.QueryResultVappTemplateType, error) {
+// queryVappTemplateListWithParentField returns a list of vApp templates for the given parent
+func queryVappTemplateListWithParentField(client *Client, parentField, parentValue string) ([]*types.QueryResultVappTemplateType, error) {
+	return queryVappTemplateListWithFilter(client, map[string]string{
+		parentField: parentValue,
+	})
+}
 
+// queryVappTemplateListGeneric returns a list of vApp templates filtered by the given filter map.
+// The filter map will build a filter like filterKey==filterValue;filterKey2==filterValue2;...
+func queryVappTemplateListWithFilter(client *Client, filter map[string]string) ([]*types.QueryResultVappTemplateType, error) {
 	vappTemplateType := types.QtVappTemplate
 	if client.IsSysAdmin {
 		vappTemplateType = types.QtAdminVappTemplate
 	}
+	filterEncoded := ""
+	for k, v := range filter {
+		filterEncoded += fmt.Sprintf("%s==%s;", url.QueryEscape(k), url.QueryEscape(v))
+	}
 	results, err := client.cumulativeQuery(vappTemplateType, nil, map[string]string{
 		"type":   vappTemplateType,
-		"filter": fmt.Sprintf("%s==%s", parentField, url.QueryEscape(parentValue)),
+		"filter": filterEncoded[:len(filterEncoded)-1], // Removes the trailing ';'
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error querying vApp templates %s", err)
@@ -114,15 +125,63 @@ func queryVappTemplateList(client *Client, parentField, parentValue string) ([]*
 
 // QueryVappTemplateList returns a list of vApp templates for the given VDC
 func (vdc *Vdc) QueryVappTemplateList() ([]*types.QueryResultVappTemplateType, error) {
-	return queryVappTemplateList(vdc.client, "vdcName", vdc.Vdc.Name)
+	return queryVappTemplateListWithParentField(vdc.client, "vdcName", vdc.Vdc.Name)
+}
+
+// QueryVappTemplateWithName returns one vApp template for the given VDC with the given name.
+// Returns an error if it finds more than one.
+func (vdc *Vdc) QueryVappTemplateWithName(vAppTemplateName string) (*types.QueryResultVappTemplateType, error) {
+	vAppTemplates, err := queryVappTemplateListWithFilter(vdc.client, map[string]string{
+		"vdcName": vdc.Vdc.Name,
+		"name": vAppTemplateName,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(vAppTemplates) != 1 {
+		return nil, fmt.Errorf("found more than one vApp Template with name %s in VDC %s", vAppTemplateName, vdc.Vdc.Name)
+	}
+	return vAppTemplates[0], nil
 }
 
 // QueryVappTemplateList returns a list of vApp templates for the given VDC
 func (vdc *AdminVdc) QueryVappTemplateList() ([]*types.QueryResultVappTemplateType, error) {
-	return queryVappTemplateList(vdc.client, "vdcName", vdc.AdminVdc.Name)
+	return queryVappTemplateListWithParentField(vdc.client, "vdcName", vdc.AdminVdc.Name)
+}
+
+// QueryVappTemplateWithName returns one vApp template for the given VDC with the given name.
+// Returns an error if it finds more than one.
+func (vdc *AdminVdc) QueryVappTemplateWithName(vAppTemplateName string) (*types.QueryResultVappTemplateType, error) {
+	vAppTemplates, err := queryVappTemplateListWithFilter(vdc.client, map[string]string{
+		"vdcName": vdc.AdminVdc.Name,
+		"name": vAppTemplateName,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(vAppTemplates) != 1 {
+		return nil, fmt.Errorf("found more than one vApp Template with name %s in VDC %s", vAppTemplateName, vdc.AdminVdc.Name)
+	}
+	return vAppTemplates[0], nil
 }
 
 // QueryVappTemplateList returns a list of vApp templates for the given catalog
 func (catalog *Catalog) QueryVappTemplateList() ([]*types.QueryResultVappTemplateType, error) {
-	return queryVappTemplateList(catalog.client, "catalogName", catalog.Catalog.Name)
+	return queryVappTemplateListWithParentField(catalog.client, "catalogName", catalog.Catalog.Name)
+}
+
+// QueryVappTemplateWithName returns one vApp template for the given Catalog with the given name.
+// Returns an error if it finds more than one.
+func (catalog *Catalog) QueryVappTemplateWithName(vAppTemplateName string) (*types.QueryResultVappTemplateType, error) {
+	vAppTemplates, err := queryVappTemplateListWithFilter(catalog.client, map[string]string{
+		"catalogName": catalog.Catalog.Name,
+		"name": vAppTemplateName,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(vAppTemplates) != 1 {
+		return nil, fmt.Errorf("found more than one vApp Template with name %s in Catalog %s", vAppTemplateName, catalog.Catalog.Name)
+	}
+	return vAppTemplates[0], nil
 }
