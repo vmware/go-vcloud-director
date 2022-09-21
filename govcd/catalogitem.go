@@ -97,7 +97,7 @@ func queryVappTemplateListWithParentField(client *Client, parentField, parentVal
 	})
 }
 
-// queryVappTemplateListGeneric returns a list of vApp templates filtered by the given filter map.
+// queryVappTemplateListWithFilter returns a list of vApp templates filtered by the given filter map.
 // The filter map will build a filter like filterKey==filterValue;filterKey2==filterValue2;...
 func queryVappTemplateListWithFilter(client *Client, filter map[string]string) ([]*types.QueryResultVappTemplateType, error) {
 	vappTemplateType := types.QtVappTemplate
