@@ -833,11 +833,16 @@ func (cat *Catalog) GetCatalogItemByHref(catalogItemHref string) (*CatalogItem, 
 // On success, returns a pointer to the vApp template structure and a nil error
 // On failure, returns a nil pointer and an error
 func (cat *Catalog) GetVappTemplateByHref(href string) (*VAppTemplate, error) {
+	return getVAppTemplateByHref(cat.client, href)
+}
 
-	vappTemplate := NewVAppTemplate(cat.client)
+// getVAppTemplateByHref finds a vApp template by HREF
+// On success, returns a pointer to the vApp template structure and a nil error
+// On failure, returns a nil pointer and an error
+func getVAppTemplateByHref(client *Client, href string) (*VAppTemplate, error) {
+	vappTemplate := NewVAppTemplate(client)
 
-	_, err := cat.client.ExecuteRequest(href, http.MethodGet,
-		"", "error retrieving catalog item: %s", nil, vappTemplate.VAppTemplate)
+	_, err := client.ExecuteRequest(href, http.MethodGet, "", "error retrieving vApp Template: %s", nil, vappTemplate.VAppTemplate)
 	if err != nil {
 		return nil, err
 	}
@@ -899,15 +904,21 @@ func (cat *Catalog) GetCatalogItemById(catalogItemId string, refresh bool) (*Cat
 // On success, returns a pointer to the VAppTemplate structure and a nil error.
 // On failure, returns a nil pointer and an error.
 func (cat *Catalog) GetVAppTemplateById(vAppTemplateId string) (*VAppTemplate, error) {
-	vappTemplateHref := cat.client.VCDHREF
+	return getVAppTemplateById(cat.client, vAppTemplateId)
+}
+
+// getVAppTemplateById finds a vApp Template by ID.
+// On success, returns a pointer to the VAppTemplate structure and a nil error.
+// On failure, returns a nil pointer and an error.
+func getVAppTemplateById(client *Client, vAppTemplateId string) (*VAppTemplate, error) {
+	vappTemplateHref := client.VCDHREF
 	vappTemplateHref.Path += "/vAppTemplate/vappTemplate-" + extractUuid(vAppTemplateId)
 
-	vappTemplate, err := cat.GetVappTemplateByHref(vappTemplateHref.String())
+	vappTemplate, err := getVAppTemplateByHref(client, vappTemplateHref.String())
 	if err != nil {
 		return nil, fmt.Errorf("could not find vApp Template with ID %s: %s", vAppTemplateId, err)
 	}
 	return vappTemplate, nil
-
 }
 
 // GetCatalogItemByNameOrId finds a Catalog Item by Name or ID.

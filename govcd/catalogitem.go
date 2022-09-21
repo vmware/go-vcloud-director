@@ -133,7 +133,7 @@ func (vdc *Vdc) QueryVappTemplateList() ([]*types.QueryResultVappTemplateType, e
 func (vdc *Vdc) QueryVappTemplateWithName(vAppTemplateName string) (*types.QueryResultVappTemplateType, error) {
 	vAppTemplates, err := queryVappTemplateListWithFilter(vdc.client, map[string]string{
 		"vdcName": vdc.Vdc.Name,
-		"name": vAppTemplateName,
+		"name":    vAppTemplateName,
 	})
 	if err != nil {
 		return nil, err
@@ -154,7 +154,7 @@ func (vdc *AdminVdc) QueryVappTemplateList() ([]*types.QueryResultVappTemplateTy
 func (vdc *AdminVdc) QueryVappTemplateWithName(vAppTemplateName string) (*types.QueryResultVappTemplateType, error) {
 	vAppTemplates, err := queryVappTemplateListWithFilter(vdc.client, map[string]string{
 		"vdcName": vdc.AdminVdc.Name,
-		"name": vAppTemplateName,
+		"name":    vAppTemplateName,
 	})
 	if err != nil {
 		return nil, err
@@ -175,7 +175,7 @@ func (catalog *Catalog) QueryVappTemplateList() ([]*types.QueryResultVappTemplat
 func (catalog *Catalog) QueryVappTemplateWithName(vAppTemplateName string) (*types.QueryResultVappTemplateType, error) {
 	vAppTemplates, err := queryVappTemplateListWithFilter(catalog.client, map[string]string{
 		"catalogName": catalog.Catalog.Name,
-		"name": vAppTemplateName,
+		"name":        vAppTemplateName,
 	})
 	if err != nil {
 		return nil, err
