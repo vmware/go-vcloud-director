@@ -70,6 +70,20 @@ func (vAppTemplate *VAppTemplate) Refresh() error {
 	return err
 }
 
+// GetCatalogName gets the catalog name to which the receiver vApp Template belongs
+func (vAppTemplate *VAppTemplate) GetCatalogName() (string, error) {
+	queriedVappTemplates, err := queryVappTemplateListWithFilter(vAppTemplate.client, map[string]string{
+		"id": vAppTemplate.VAppTemplate.ID,
+	})
+	if err != nil {
+		return "", err
+	}
+	if len(queriedVappTemplates) != 1 {
+		return "", fmt.Errorf("found more than one vApp Template with ID %s", vAppTemplate.VAppTemplate.ID)
+	}
+	return queriedVappTemplates[0].CatalogName, nil
+}
+
 // Update updates the vApp template item information.
 // VCD also updates the associated Catalog Item, in order to be in sync with the receiver vApp Template entity.
 // For example, updating a vApp Template name "A" to "B" will make VCD to also update the Catalog Item to be renamed to "B".
