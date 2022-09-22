@@ -156,7 +156,7 @@ type NetworkProvider struct {
 }
 
 // VdcComputePolicy contains VDC specific configuration for workloads. (version 1.0.0)
-// Use VdcComputePolicyV2 instead (version 2.0.0)
+// Deprecated: Use VdcComputePolicyV2 instead (version 2.0.0)
 type VdcComputePolicy struct {
 	ID                         string   `json:"id,omitempty"`
 	Description                *string  `json:"description"` // It's a not-omitempty pointer to be able to send "null" values for empty descriptions.
