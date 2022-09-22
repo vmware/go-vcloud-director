@@ -57,7 +57,7 @@ func (vcd *TestVCD) Test_UpdateAndDeleteVAppTemplateFromUrl(check *C) {
 	testUploadAndDeleteVAppTemplate(vcd, check, true)
 }
 
-func (vcd *TestVCD) Test_GetCatalogNameFromVAppTemplate(check *C) {
+func (vcd *TestVCD) Test_GetInformationFromVAppTemplate(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	if vcd.config.VCD.Catalog.Name == "" {
 		check.Skip(check.TestName() + ": Catalog not given in testing configuration. Test can't proceed")
@@ -77,6 +77,10 @@ func (vcd *TestVCD) Test_GetCatalogNameFromVAppTemplate(check *C) {
 	catalogName, err := vAppTemplate.GetCatalogName()
 	check.Assert(err, IsNil)
 	check.Assert(catalogName, Equals, catalog.Catalog.Name)
+
+	vdcId, err := vAppTemplate.GetVdcName()
+	check.Assert(err, IsNil)
+	check.Assert(vdcId, Equals, vcd.vdc.Vdc.Name)
 }
 
 func testUploadAndDeleteVAppTemplate(vcd *TestVCD, check *C, isOvfLink bool) {
