@@ -342,6 +342,7 @@ const (
 // future.
 const (
 	OpenApiPathVersion1_0_0                           = "1.0.0/"
+	OpenApiPathVersion2_0_0                           = "2.0.0/"
 	OpenApiEndpointRoles                              = "roles/"
 	OpenApiEndpointGlobalRoles                        = "globalRoles/"
 	OpenApiEndpointRights                             = "rights/"
@@ -373,13 +374,14 @@ const (
 	OpenApiEndpointVdcGroupsDfwPolicies               = "vdcGroups/%s/dfwPolicies"
 	OpenApiEndpointVdcGroupsDfwDefaultPolicies        = "vdcGroups/%s/dfwPolicies/default"
 	OpenApiEndpointVdcGroupsDfwRules                  = "vdcGroups/%s/dfwPolicies/%s/rules"
+	OpenApiEndpointLogicalVmGroups                    = "logicalVmGroups/"
 	OpenApiEndpointNetworkContextProfiles             = "networkContextProfiles"
 	OpenApiEndpointSecurityTags                       = "securityTags"
 	OpenApiEndpointNsxtRouteAdvertisement             = "edgeGateways/%s/routing/advertisement"
-
-	OpenApiEndpointEdgeBgpNeighbor          = "edgeGateways/%s/routing/bgp/neighbors/"   // '%s' is NSX-T Edge Gateway ID
-	OpenApiEndpointEdgeBgpConfigPrefixLists = "edgeGateways/%s/routing/bgp/prefixLists/" // '%s' is NSX-T Edge Gateway ID
-	OpenApiEndpointEdgeBgpConfig            = "edgeGateways/%s/routing/bgp"              // '%s' is NSX-T Edge Gateway ID
+	OpenApiEndpointTestConnection                     = "testConnection/"
+	OpenApiEndpointEdgeBgpNeighbor                    = "edgeGateways/%s/routing/bgp/neighbors/"   // '%s' is NSX-T Edge Gateway ID
+	OpenApiEndpointEdgeBgpConfigPrefixLists           = "edgeGateways/%s/routing/bgp/prefixLists/" // '%s' is NSX-T Edge Gateway ID
+	OpenApiEndpointEdgeBgpConfig                      = "edgeGateways/%s/routing/bgp"              // '%s' is NSX-T Edge Gateway ID
 
 	// NSX-T ALB related endpoints
 

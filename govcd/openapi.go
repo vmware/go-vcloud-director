@@ -166,7 +166,7 @@ func (client *Client) OpenApiGetItem(apiVersion string, urlRef *url.URL, params 
 
 // OpenApiPostItemSync is a low level OpenAPI client function to perform POST request for items that support synchronous
 // requests. The urlRef must point to POST endpoint (e.g. '/1.0.0/edgeGateways') that supports synchronous requests. It
-// will return an error when endpoint does not support synchronous requests (HTTP response status code is not 201).
+// will return an error when endpoint does not support synchronous requests (HTTP response status code is not 200 or 201).
 // Response will be unmarshalled into outType.
 //
 // Note. Even though it may return error if the item does not support synchronous request - the object may still be
@@ -187,8 +187,9 @@ func (client *Client) OpenApiPostItemSync(apiVersion string, urlRef *url.URL, pa
 		return err
 	}
 
-	if resp.StatusCode != http.StatusCreated {
-		util.Logger.Printf("[TRACE] Synchronous task expected (HTTP status code 201). Got %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		util.Logger.Printf("[TRACE] Synchronous task expected (HTTP status code 200 or 201). Got %d", resp.StatusCode)
+		return fmt.Errorf("POST request expected sync task (HTTP response 200 or 201), got %d", resp.StatusCode)
 
 	}
 
@@ -265,7 +266,7 @@ func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params
 		return err
 	}
 
-	// Handle two cases of API behaviour - synchronous (response status code is 201) and asynchronous (response status
+	// Handle two cases of API behaviour - synchronous (response status code is 200 or 201) and asynchronous (response status
 	// code 202)
 	switch resp.StatusCode {
 	// Asynchronous case - must track task and get item HREF from there
@@ -290,8 +291,8 @@ func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params
 		}
 
 		// Synchronous task - new item body is returned in response of HTTP POST request
-	case http.StatusCreated:
-		util.Logger.Printf("[TRACE] Synchronous task detected, marshalling outType '%s'", reflect.TypeOf(outType))
+	case http.StatusCreated, http.StatusOK:
+		util.Logger.Printf("[TRACE] Synchronous task detected (HTTP Status %d), marshalling outType '%s'", resp.StatusCode, reflect.TypeOf(outType))
 		if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
 			return fmt.Errorf("error decoding JSON response after POST: %s", err)
 		}

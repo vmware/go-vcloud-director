@@ -26,6 +26,7 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles + types.OpenApiEndpointRights: "31.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAuditTrail:                          "33.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableTier0Routers:              "32.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTestConnection:                      "34.0",
 	// OpenApiEndpointExternalNetworks endpoint support was introduced with version 32.0 however it was still not stable
 	// enough to be used. (i.e. it did not support update "PUT")
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks:           "33.0",
@@ -52,6 +53,7 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwDefaultPolicies:        "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSecurityTags:                       "36.0", // VCD 10.3+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtRouteAdvertisement:             "34.0", // VCD 10.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointLogicalVmGroups:                    "35.0", // VCD 10.2+
 
 	// NSX-T ALB (Advanced/AVI Load Balancer) support was introduced in 10.2
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController:                    "35.0", // VCD 10.2+
@@ -73,6 +75,9 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpNeighbor:          "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpConfigPrefixLists: "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpConfig:            "35.0", // VCD 10.2+
+
+	types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies: "35.0",
+	types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcComputePolicies:         "35.0",
 }
 
 // elevateNsxtNatRuleApiVersion helps to elevate API version to consume newer NSX-T NAT Rule features
@@ -125,7 +130,7 @@ var endpointElevatedApiVersions = map[string][]string{
 func (client *Client) checkOpenApiEndpointCompatibility(endpoint string) (string, error) {
 	minimumApiVersion, ok := endpointMinApiVersions[endpoint]
 	if !ok {
-		return "", fmt.Errorf("minimum API version for endopoint '%s' is not defined", endpoint)
+		return "", fmt.Errorf("minimum API version for endpoint '%s' is not defined", endpoint)
 	}
 
 	if client.APIVCDMaxVersionIs("< " + minimumApiVersion) {

@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -775,7 +776,98 @@ func (client *Client) RemoveProvidedCustomHeaders(values map[string]string) {
 
 // Retrieves the administrator URL of a given HREF
 func getAdminURL(href string) string {
-	return strings.ReplaceAll(href, "/api/", "/api/admin/")
+	adminApi := "/api/admin/"
+	if strings.Contains(href, adminApi) {
+		return href
+	}
+	return strings.ReplaceAll(href, "/api/", adminApi)
+}
+
+// Retrieves the admin extension URL of a given HREF
+func getAdminExtensionURL(href string) string {
+	adminExtensionApi := "/api/admin/extension/"
+	if strings.Contains(href, adminExtensionApi) {
+		return href
+	}
+	return strings.ReplaceAll(getAdminURL(href), "/api/admin/", adminExtensionApi)
+}
+
+// TestConnection calls API to test a connection against a VCD, including SSL handshake and hostname verification.
+func (client *Client) TestConnection(testConnection types.TestConnection) (*types.TestConnectionResult, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTestConnection
+
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	returnTestConnectionResult := &types.TestConnectionResult{
+		TargetProbe: &types.ProbeResult{},
+		ProxyProbe:  &types.ProbeResult{},
+	}
+
+	err = client.OpenApiPostItem(apiVersion, urlRef, nil, testConnection, returnTestConnectionResult, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error performing test connection: %s", err)
+	}
+
+	return returnTestConnectionResult, nil
+}
+
+// TestConnectionWithDefaults calls TestConnection given a subscriptionURL. The rest of parameters are set as default.
+// It returns whether it could reach the server and establish SSL connection or not.
+func (client *Client) TestConnectionWithDefaults(subscriptionURL string) (bool, error) {
+	if subscriptionURL == "" {
+		return false, fmt.Errorf("TestConnectionWithDefaults needs to be passed a host. i.e. my-host.vmware.com")
+	}
+
+	url, err := url.Parse(subscriptionURL)
+	if err != nil {
+		return false, fmt.Errorf("unable to parse URL - %s", err)
+	}
+
+	// Get port
+	var port int
+	if v := url.Port(); v != "" {
+		port, err = strconv.Atoi(v)
+		if err != nil {
+			return false, fmt.Errorf("couldn't parse port provided - %s", err)
+		}
+	} else {
+		switch url.Scheme {
+		case "http":
+			port = 80
+		case "https":
+			port = 443
+		}
+	}
+
+	testConnectionConfig := types.TestConnection{
+		Host:    url.Hostname(),
+		Port:    port,
+		Secure:  takeBoolPointer(true), // Default value used by VCD UI
+		Timeout: 30,                    // Default value used by VCD UI
+	}
+
+	testConnectionResult, err := client.TestConnection(testConnectionConfig)
+	if err != nil {
+		return false, err
+	}
+
+	if !testConnectionResult.TargetProbe.CanConnect {
+		return false, fmt.Errorf("the remote host is not reachable")
+	}
+
+	if !testConnectionResult.TargetProbe.SSLHandshake {
+		return true, fmt.Errorf("unsupported or unrecognized SSL message")
+	}
+
+	return true, nil
 }
 
 // ---------------------------------------------------------------------

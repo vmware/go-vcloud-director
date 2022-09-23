@@ -1,0 +1,4 @@
+* Added new methods `VCDClient.GetProviderVdcByHref`, `VCDClient.GetProviderVdcById`, `VCDClient.GetProviderVdcByName` and `ProviderVdc.Refresh` to retrieve Provider VDCs [GH-502]
+* Added new methods `VCDClient.GetProviderVdcExtendedByHref`, `VCDClient.GetProviderVdcExtendedById`, `VCDClient.GetProviderVdcExtendedByName` and `ProviderVdcExtended.Refresh` to retrieve the extended flavor of Provider VDCs [GH-502]
+* Added new methods `ProviderVdcExtended.ToProviderVdc`, to convert from an extended Provider VDC to a regular one [GH-502]
+* Added new methods `ProviderVdc.GetMetadata`, `ProviderVdc.AddMetadataEntry`, `ProviderVdc.AddMetadataEntryAsync`, `ProviderVdc.MergeMetadataAsync`, `ProviderVdc.MergeMetadata`, `ProviderVdc.DeleteMetadataEntry` and `ProviderVdc.DeleteMetadataEntryAsync` to manage Provider VDCs metadata [GH-502]
