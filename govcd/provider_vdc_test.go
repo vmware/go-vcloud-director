@@ -32,12 +32,26 @@ func (vcd *TestVCD) Test_GetProviderVdc(check *C) {
 	// Common asserts
 	for _, providerVdc := range providerVdcs {
 		check.Assert(providerVdc.ProviderVdc.Name, Equals, vcd.config.VCD.NsxtProviderVdc.Name)
-		check.Assert(providerVdc.ProviderVdc.StorageProfiles.ProviderVdcStorageProfile[0].Name, Equals, vcd.config.VCD.NsxtProviderVdc.StorageProfile)
+		foundStorageProfile := false
+		for _, storageProfile := range providerVdc.ProviderVdc.StorageProfiles.ProviderVdcStorageProfile {
+			if storageProfile.Name == vcd.config.VCD.NsxtProviderVdc.StorageProfile {
+				foundStorageProfile = true
+				break
+			}
+		}
+		check.Assert(foundStorageProfile, Equals, true)
 		check.Assert(*providerVdc.ProviderVdc.IsEnabled, Equals, true)
 		check.Assert(providerVdc.ProviderVdc.ComputeCapacity, NotNil)
 		check.Assert(providerVdc.ProviderVdc.Status, Equals, 1)
 		check.Assert(len(providerVdc.ProviderVdc.NetworkPoolReferences.NetworkPoolReference), Equals, 1)
-		check.Assert(providerVdc.ProviderVdc.NetworkPoolReferences.NetworkPoolReference[0].Name, Equals, vcd.config.VCD.NsxtProviderVdc.NetworkPool)
+		foundNetworkPool := false
+		for _, networkPool := range providerVdc.ProviderVdc.NetworkPoolReferences.NetworkPoolReference {
+			if networkPool.Name == vcd.config.VCD.NsxtProviderVdc.NetworkPool {
+				foundNetworkPool = true
+				break
+			}
+		}
+		check.Assert(foundNetworkPool, Equals, true)
 		check.Assert(providerVdc.ProviderVdc.Link, NotNil)
 	}
 }
@@ -62,12 +76,26 @@ func (vcd *TestVCD) Test_GetProviderVdcExtended(check *C) {
 	for _, providerVdcExtended := range providerVdcsExtended {
 		// Basic PVDC asserts
 		check.Assert(providerVdcExtended.VMWProviderVdc.Name, Equals, vcd.config.VCD.NsxtProviderVdc.Name)
-		check.Assert(providerVdcExtended.VMWProviderVdc.StorageProfiles.ProviderVdcStorageProfile[0].Name, Equals, vcd.config.VCD.NsxtProviderVdc.StorageProfile)
+		foundStorageProfile := false
+		for _, storageProfile := range providerVdcExtended.VMWProviderVdc.StorageProfiles.ProviderVdcStorageProfile {
+			if storageProfile.Name == vcd.config.VCD.NsxtProviderVdc.StorageProfile {
+				foundStorageProfile = true
+				break
+			}
+		}
+		check.Assert(foundStorageProfile, Equals, true)
 		check.Assert(*providerVdcExtended.VMWProviderVdc.IsEnabled, Equals, true)
 		check.Assert(providerVdcExtended.VMWProviderVdc.ComputeCapacity, NotNil)
 		check.Assert(providerVdcExtended.VMWProviderVdc.Status, Equals, 1)
 		check.Assert(len(providerVdcExtended.VMWProviderVdc.NetworkPoolReferences.NetworkPoolReference), Equals, 1)
-		check.Assert(providerVdcExtended.VMWProviderVdc.NetworkPoolReferences.NetworkPoolReference[0].Name, Equals, vcd.config.VCD.NsxtProviderVdc.NetworkPool)
+		foundNetworkPool := false
+		for _, networkPool := range providerVdcExtended.VMWProviderVdc.NetworkPoolReferences.NetworkPoolReference {
+			if networkPool.Name == vcd.config.VCD.NsxtProviderVdc.NetworkPool {
+				foundNetworkPool = true
+				break
+			}
+		}
+		check.Assert(foundNetworkPool, Equals, true)
 		check.Assert(providerVdcExtended.VMWProviderVdc.Link, NotNil)
 		// Extended PVDC asserts
 		check.Assert(providerVdcExtended.VMWProviderVdc.ComputeProviderScope, Equals, "vc1")
@@ -81,6 +109,31 @@ func (vcd *TestVCD) Test_GetProviderVdcExtended(check *C) {
 	}
 }
 
+func (vcd *TestVCD) Test_GetNonExistentProviderVdc(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	providerVdcExtended, err := vcd.client.GetProviderVdcExtendedByName("non-existent-pvdc")
+	check.Assert(providerVdcExtended, IsNil)
+	check.Assert(err, NotNil)
+	providerVdcExtended, err = vcd.client.GetProviderVdcExtendedById("non-existent-pvdc")
+	check.Assert(providerVdcExtended, IsNil)
+	check.Assert(err, NotNil)
+	providerVdcExtended, err = vcd.client.GetProviderVdcExtendedByHref("non-existent-pvdc")
+	check.Assert(providerVdcExtended, IsNil)
+	check.Assert(err, NotNil)
+	providerVdc, err := vcd.client.GetProviderVdcByName("non-existent-pvdc")
+	check.Assert(providerVdc, IsNil)
+	check.Assert(err, NotNil)
+	providerVdc, err = vcd.client.GetProviderVdcById("non-existent-pvdc")
+	check.Assert(providerVdc, IsNil)
+	check.Assert(err, NotNil)
+	providerVdc, err = vcd.client.GetProviderVdcByHref("non-existent-pvdc")
+	check.Assert(providerVdc, IsNil)
+	check.Assert(err, NotNil)
+}
+
 func (vcd *TestVCD) Test_GetProviderVdcConvertFromExtendedToNormal(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
@@ -91,7 +144,14 @@ func (vcd *TestVCD) Test_GetProviderVdcConvertFromExtendedToNormal(check *C) {
 	providerVdc, err := providerVdcExtended.ToProviderVdc()
 	check.Assert(err, IsNil)
 	check.Assert(providerVdc.ProviderVdc.Name, Equals, vcd.config.VCD.NsxtProviderVdc.Name)
-	check.Assert(providerVdc.ProviderVdc.StorageProfiles.ProviderVdcStorageProfile[0].Name, Equals, vcd.config.VCD.NsxtProviderVdc.StorageProfile)
+	foundStorageProfile := false
+	for _, storageProfile := range providerVdc.ProviderVdc.StorageProfiles.ProviderVdcStorageProfile {
+		if storageProfile.Name == vcd.config.VCD.NsxtProviderVdc.StorageProfile {
+			foundStorageProfile = true
+			break
+		}
+	}
+	check.Assert(foundStorageProfile, Equals, true)
 	check.Assert(*providerVdc.ProviderVdc.IsEnabled, Equals, true)
 	check.Assert(providerVdc.ProviderVdc.Status, Equals, 1)
 	check.Assert(len(providerVdc.ProviderVdc.NetworkPoolReferences.NetworkPoolReference), Equals, 1)

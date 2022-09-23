@@ -27,7 +27,7 @@ func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
 		client: client,
 		VdcComputePolicy: &types.VdcComputePolicy{
 			Name:        check.TestName() + "_empty",
-			Description: "Empty policy created by test",
+			Description: takeStringPointer("Empty policy created by test"),
 		},
 	}
 
@@ -37,13 +37,13 @@ func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
 	AddToCleanupList(createdPolicy.VdcComputePolicy.ID, "vdcComputePolicy", "", check.TestName())
 
 	check.Assert(createdPolicy.VdcComputePolicy.Name, Equals, newComputePolicy.VdcComputePolicy.Name)
-	check.Assert(createdPolicy.VdcComputePolicy.Description, Equals, newComputePolicy.VdcComputePolicy.Description)
+	check.Assert(*createdPolicy.VdcComputePolicy.Description, Equals, *newComputePolicy.VdcComputePolicy.Description)
 
 	newComputePolicy2 := &VdcComputePolicy{
 		client: client,
 		VdcComputePolicy: &types.VdcComputePolicy{
 			Name:                       check.TestName(),
-			Description:                "Not Empty policy created by test",
+			Description:                takeStringPointer("Not Empty policy created by test"),
 			CPUSpeed:                   takeIntAddress(100),
 			CPUCount:                   takeIntAddress(2),
 			CoresPerSocket:             takeIntAddress(1),
@@ -75,7 +75,7 @@ func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
 	check.Assert(*createdPolicy2.VdcComputePolicy.MemoryShares, Equals, 500)
 
 	// Step 2 - update
-	createdPolicy2.VdcComputePolicy.Description = "Updated description"
+	createdPolicy2.VdcComputePolicy.Description = takeStringPointer("Updated description")
 	updatedPolicy, err := createdPolicy2.Update()
 	check.Assert(err, IsNil)
 	check.Assert(updatedPolicy.VdcComputePolicy, DeepEquals, createdPolicy2.VdcComputePolicy)
@@ -143,7 +143,7 @@ func (vcd *TestVCD) Test_SetAssignedComputePolicies(check *C) {
 		client: org.client,
 		VdcComputePolicy: &types.VdcComputePolicy{
 			Name:                    check.TestName() + "1",
-			Description:             "Policy created by Test_SetAssignedComputePolicies",
+			Description:             takeStringPointer("Policy created by Test_SetAssignedComputePolicies"),
 			CoresPerSocket:          takeIntAddress(1),
 			CPUReservationGuarantee: takeFloatAddress(0.26),
 			CPULimit:                takeIntAddress(200),
@@ -157,7 +157,7 @@ func (vcd *TestVCD) Test_SetAssignedComputePolicies(check *C) {
 		client: org.client,
 		VdcComputePolicy: &types.VdcComputePolicy{
 			Name:                    check.TestName() + "2",
-			Description:             "Policy created by Test_SetAssignedComputePolicies",
+			Description:             takeStringPointer("Policy created by Test_SetAssignedComputePolicies"),
 			CoresPerSocket:          takeIntAddress(2),
 			CPUReservationGuarantee: takeFloatAddress(0.52),
 			CPULimit:                takeIntAddress(400),

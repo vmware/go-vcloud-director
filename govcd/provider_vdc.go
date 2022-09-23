@@ -88,6 +88,9 @@ func (vcdClient *VCDClient) GetProviderVdcExtendedById(providerVdcId string) (*P
 // On failure, returns a nil pointer and an error
 func (vcdClient *VCDClient) GetProviderVdcByName(providerVdcName string) (*ProviderVdc, error) {
 	providerVdc, err := getProviderVdcByName(vcdClient, providerVdcName, false)
+	if err != nil {
+		return nil, err
+	}
 	return providerVdc.(*ProviderVdc), err
 }
 
@@ -96,6 +99,9 @@ func (vcdClient *VCDClient) GetProviderVdcByName(providerVdcName string) (*Provi
 // On failure, returns a nil pointer and an error
 func (vcdClient *VCDClient) GetProviderVdcExtendedByName(providerVdcName string) (*ProviderVdcExtended, error) {
 	providerVdcExtended, err := getProviderVdcByName(vcdClient, providerVdcName, true)
+	if err != nil {
+		return nil, err
+	}
 	return providerVdcExtended.(*ProviderVdcExtended), err
 }
 
