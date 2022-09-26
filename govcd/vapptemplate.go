@@ -172,7 +172,7 @@ func (vAppTemplate *VAppTemplate) DeleteAsync() (Task, error) {
 func (vAppTemplate *VAppTemplate) Delete() error {
 	task, err := vAppTemplate.UpdateAsync()
 	if err != nil {
-		return nil
+		return err
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
