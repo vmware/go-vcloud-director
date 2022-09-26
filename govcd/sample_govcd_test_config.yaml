@@ -58,6 +58,9 @@ vcd:
       name: nsxTPvdc1
       storage_profile: "*"
       network_pool: "NSX-T Overlay 1"
+      # A VM Group that needs to exist in the backing vSphere. This VM Group can be used
+      # to create VM Placement Policies.
+      placementPolicyVmGroup: testVmGroup
     nsxt:
       # NSX-T manager name to be used as defined in VCD
       manager: nsxManager1
@@ -132,6 +135,9 @@ vcd:
     # A vSphere server name for creating an external network
     vimServer: vc9
     #
+    # IP of a pre-configured LDAP server
+    # using Docker image https://github.com/rroemhild/docker-test-openldap
+    ldap_server: 10.10.10.99
 logging:
     # All items in this section are optional
     # Logging is disabled by default.
@@ -188,8 +194,3 @@ media:
   mediaPath: ../test-resources/test.iso
   # Existing media in test system
   mediaName: uploadedMediaName
-misc:
-  # By default tests in this repository pick LDAP container 'rroemhild/test-openldap'. As docker throttles downloads
-  # it can help to host the image on local registry and pull it from there. This variable overrides default container
-  # location when set.
-  #ldapContainer: custom-registry.yyy/directory/test-openldap:latest

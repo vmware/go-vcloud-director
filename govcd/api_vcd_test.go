@@ -1,5 +1,5 @@
-//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || ALL
-// +build api openapi functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user search nsxv nsxt auth affinity role alb certificate vdcGroup metadata ALL
+//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || ALL
+// +build api openapi functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user search nsxv nsxt auth affinity role alb certificate vdcGroup metadata providervdc ALL
 
 /*
  * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -134,9 +134,10 @@ type TestConfig struct {
 			NetworkPool    string `yaml:"network_pool"`
 		} `yaml:"provider_vdc"`
 		NsxtProviderVdc struct {
-			Name           string `yaml:"name"`
-			StorageProfile string `yaml:"storage_profile"`
-			NetworkPool    string `yaml:"network_pool"`
+			Name                   string `yaml:"name"`
+			StorageProfile         string `yaml:"storage_profile"`
+			NetworkPool            string `yaml:"network_pool"`
+			PlacementPolicyVmGroup string `yaml:"placementPolicyVmGroup,omitempty"`
 		} `yaml:"nsxt_provider_vdc"`
 		Catalog struct {
 			Name                    string `yaml:"name,omitempty"`
@@ -163,6 +164,7 @@ type TestConfig struct {
 		ExternalNetworkPortGroup     string `yaml:"externalNetworkPortGroup,omitempty"`
 		ExternalNetworkPortGroupType string `yaml:"externalNetworkPortGroupType,omitempty"`
 		VimServer                    string `yaml:"vimServer,omitempty"`
+		LdapServer                   string `yaml:"ldapServer,omitempty"`
 		Nsxt                         struct {
 			Manager             string `yaml:"manager"`
 			Tier0router         string `yaml:"tier0router"`
@@ -203,9 +205,6 @@ type TestConfig struct {
 		PhotonOsOvaPath  string `yaml:"photonOsOvaPath,omitempty"`
 		MediaUdfTypePath string `yaml:"mediaUdfTypePath,omitempty"`
 	} `yaml:"media"`
-	Misc struct {
-		LdapContainer string `yaml:"ldapContainer,omitempty"`
-	} `yaml:"misc"`
 }
 
 // Test struct for vcloud-director.
@@ -1531,12 +1530,26 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		return
 
 	case "vdcComputePolicy":
-		policy, err := vcd.client.Client.GetVdcComputePolicyById(entity.Name)
+		policy, err := vcd.client.GetVdcComputePolicyV2ById(entity.Name)
 		if policy == nil || err != nil {
 			vcd.infoCleanup(notFoundMsg, "vdcComputePolicy", entity.Name)
 			return
 		}
 		err = policy.Delete()
+		if err == nil {
+			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		} else {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+		return
+
+	case "logicalVmGroup":
+		logicalVmGroup, err := vcd.client.GetLogicalVmGroupById(entity.Name)
+		if logicalVmGroup == nil || err != nil {
+			vcd.infoCleanup(notFoundMsg, "logicalVmGroup", entity.Name)
+			return
+		}
+		err = logicalVmGroup.Delete()
 		if err == nil {
 			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		} else {
