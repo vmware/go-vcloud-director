@@ -34,7 +34,7 @@ func (vdc *Vdc) InstantiateVAppTemplate(template *types.InstantiateVAppTemplateP
 	vapptemplate := NewVAppTemplate(vdc.client)
 
 	_, err = vdc.client.ExecuteRequest(vdcHref.String(), http.MethodPut,
-		types.MimeInstantiateVappTemplateParams, "error instantiating a new template: %s", template, vapptemplate)
+		types.MimeInstantiateVappTemplateParams, "error instantiating a new vApp Template: %s", template, vapptemplate)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (vAppTemplate *VAppTemplate) Refresh() error {
 	vAppTemplate.VAppTemplate = &types.VAppTemplate{}
 
 	_, err := vAppTemplate.client.ExecuteRequest(url, http.MethodGet,
-		"", "error retrieving vApp template item: %s", nil, vAppTemplate.VAppTemplate)
+		"", "error retrieving vApp Template: %s", nil, vAppTemplate.VAppTemplate)
 
 	return err
 }
@@ -118,11 +118,11 @@ func (vAppTemplate *VAppTemplate) Update() (*VAppTemplate, error) {
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
-		return nil, fmt.Errorf("error waiting for task completion after updating vApp template %s: %s", vAppTemplate.VAppTemplate.Name, err)
+		return nil, fmt.Errorf("error waiting for task completion after updating vApp Template %s: %s", vAppTemplate.VAppTemplate.Name, err)
 	}
 	err = vAppTemplate.Refresh()
 	if err != nil {
-		return nil, fmt.Errorf("error refreshing vApp template %s: %s", vAppTemplate.VAppTemplate.Name, err)
+		return nil, fmt.Errorf("error refreshing vApp Template %s: %s", vAppTemplate.VAppTemplate.Name, err)
 	}
 	return vAppTemplate, nil
 }
@@ -151,11 +151,12 @@ func (vAppTemplate *VAppTemplate) UpdateAsync() (Task, error) {
 	}
 
 	return vAppTemplate.client.ExecuteTaskRequest(url, http.MethodPut,
-		types.MimeVAppTemplate, "error updating vApp template item: %s", vappTemplatePayload)
+		types.MimeVAppTemplate, "error updating vApp Template: %s", vappTemplatePayload)
 }
 
-// Delete deletes the VAppTemplate Item, returning an error if the VCD call fails.
-func (vAppTemplate *VAppTemplate) Delete() error {
+// DeleteAsync deletes the VAppTemplate, returning the Task that monitors the deletion process, or an error
+// if something wrong happened.
+func (vAppTemplate *VAppTemplate) DeleteAsync() (Task, error) {
 	util.Logger.Printf("[TRACE] Deleting vApp Template: %#v", vAppTemplate.VAppTemplate)
 
 	vappTemplateHref := vAppTemplate.client.VCDHREF
@@ -163,6 +164,19 @@ func (vAppTemplate *VAppTemplate) Delete() error {
 
 	util.Logger.Printf("[TRACE] Url for deleting vApp Template: %#v and name: %s", vappTemplateHref, vAppTemplate.VAppTemplate.Name)
 
-	return vAppTemplate.client.ExecuteRequestWithoutResponse(vappTemplateHref.String(), http.MethodDelete,
+	return vAppTemplate.client.ExecuteTaskRequest(vappTemplateHref.String(), http.MethodDelete,
 		"", "error deleting vApp Template: %s", nil)
+}
+
+// Delete deletes the VAppTemplate and waits for the deletion to finish, returning an error if something wrong happened.
+func (vAppTemplate *VAppTemplate) Delete() error {
+	task, err := vAppTemplate.UpdateAsync()
+	if err != nil {
+		return nil
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error waiting for task completion after deleting vApp Template %s: %s", vAppTemplate.VAppTemplate.Name, err)
+	}
+	return nil
 }
