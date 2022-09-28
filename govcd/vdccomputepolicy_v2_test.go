@@ -375,7 +375,7 @@ func (vcd *TestVCD) Test_VdcDuplicatedVmPlacementPolicyGetsACleanError(check *C)
 
 	_, err = vcd.client.CreateVdcComputePolicyV2(newComputePolicy.VdcComputePolicyV2)
 	check.Assert(err, NotNil)
-	check.Assert(true, Equals, strings.Contains(err.Error(),"VM Placement Policy with name '"+check.TestName()+"' already exists"))
+	check.Assert(true, Equals, strings.Contains(err.Error(), "VM Placement Policy with name '"+check.TestName()+"' already exists"))
 
 	err = createdPolicy.Delete()
 	check.Assert(err, IsNil)
