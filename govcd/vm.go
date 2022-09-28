@@ -1429,13 +1429,13 @@ func validateEmptyVmParams(reComposeVAppParams *types.RecomposeVAppParamsForEmpt
 		return fmt.Errorf("[AddEmptyVmAsync] CreateItem.VmSpecSection.HardwareVersion.Value can't be empty")
 	}
 
-	if reComposeVAppParams.CreateItem.VmSpecSection.MemoryResourceMb == nil {
-		return fmt.Errorf("[AddEmptyVmAsync] CreateItem.VmSpecSection.MemoryResourceMb can't be empty")
-	}
+	// if reComposeVAppParams.CreateItem.VmSpecSection.MemoryResourceMb == nil {
+	// 	return fmt.Errorf("[AddEmptyVmAsync] CreateItem.VmSpecSection.MemoryResourceMb can't be empty")
+	// }
 
-	if reComposeVAppParams.CreateItem.VmSpecSection.MemoryResourceMb.Configured <= int64(0) {
-		return fmt.Errorf("[AddEmptyVmAsync] CreateItem.VmSpecSection.MemoryResourceMb.Configured can't be empty")
-	}
+	// if reComposeVAppParams.CreateItem.VmSpecSection.MemoryResourceMb.Configured <= int64(0) {
+	// 	return fmt.Errorf("[AddEmptyVmAsync] CreateItem.VmSpecSection.MemoryResourceMb.Configured can't be empty")
+	// }
 
 	return nil
 }
