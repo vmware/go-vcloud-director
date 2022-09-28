@@ -317,3 +317,66 @@ func (vcd *TestVCD) Test_VdcVmPlacementPoliciesV2(check *C) {
 	err = logicalVmGroup.Delete()
 	check.Assert(err, IsNil)
 }
+
+// Test_VdcDuplicatedVmPlacementPolicyGetsACleanError checks that when creating a duplicated VM Placement Policy, consumers
+// of the SDK get a nicely formatted error.
+// This test should not be needed once function `getFriendlyErrorIfVmPlacementPolicyAlreadyExists` is removed.
+func (vcd *TestVCD) Test_VdcDuplicatedVmPlacementPolicyGetsACleanError(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	if vcd.config.VCD.NsxtProviderVdc.PlacementPolicyVmGroup == "" {
+		check.Skip("The configuration entry vcd.nsxt_provider_vdc.placementPolicyVmGroup is needed")
+	}
+
+	// We need the Provider VDC URN
+	pVdc, err := vcd.client.GetProviderVdcByName(vcd.config.VCD.NsxtProviderVdc.Name)
+	check.Assert(err, IsNil)
+
+	// We also need the VM Group to create a VM Placement Policy
+	vmGroup, err := vcd.client.GetVmGroupByNameAndProviderVdcUrn(vcd.config.VCD.NsxtProviderVdc.PlacementPolicyVmGroup, pVdc.ProviderVdc.ID)
+	check.Assert(err, IsNil)
+	check.Assert(vmGroup.VmGroup.Name, Equals, vcd.config.VCD.NsxtProviderVdc.PlacementPolicyVmGroup)
+
+	// Create a new VDC Compute Policy (VM Placement Policy)
+	newComputePolicy := &VdcComputePolicyV2{
+		client: &vcd.client.Client,
+		VdcComputePolicyV2: &types.VdcComputePolicyV2{
+			VdcComputePolicy: types.VdcComputePolicy{
+				Name:        check.TestName(),
+				Description: takeStringPointer("VM Placement Policy created by " + check.TestName()),
+			},
+			PolicyType: "VdcVmPolicy",
+			PvdcNamedVmGroupsMap: []types.PvdcNamedVmGroupsMap{
+				{
+					NamedVmGroups: []types.OpenApiReferences{
+						{
+							types.OpenApiReference{
+								Name: vmGroup.VmGroup.Name,
+								ID:   fmt.Sprintf("%s:%s", vmGroupUrnPrefix, vmGroup.VmGroup.NamedVmGroupId),
+							},
+						},
+					},
+					Pvdc: types.OpenApiReference{
+						Name: pVdc.ProviderVdc.Name,
+						ID:   pVdc.ProviderVdc.ID,
+					},
+				},
+			},
+		},
+	}
+
+	createdPolicy, err := vcd.client.CreateVdcComputePolicyV2(newComputePolicy.VdcComputePolicyV2)
+	check.Assert(err, IsNil)
+	check.Assert(createdPolicy, NotNil)
+
+	AddToCleanupList(createdPolicy.VdcComputePolicyV2.ID, "vdcComputePolicy", "", check.TestName())
+
+	_, err = vcd.client.CreateVdcComputePolicyV2(newComputePolicy.VdcComputePolicyV2)
+	check.Assert(err, NotNil)
+	check.Assert(true, Equals, strings.Contains(err.Error(),"VM Placement Policy with name '"+check.TestName()+"' already exists"))
+
+	err = createdPolicy.Delete()
+	check.Assert(err, IsNil)
+}
