@@ -79,7 +79,7 @@ func (vAppTemplate *VAppTemplate) GetCatalogName() (string, error) {
 		return "", err
 	}
 	if len(queriedVappTemplates) != 1 {
-		return "", fmt.Errorf("found more than one vApp Template with ID %s", vAppTemplate.VAppTemplate.ID)
+		return "", fmt.Errorf("found %d vApp Templates with ID %s", len(queriedVappTemplates), vAppTemplate.VAppTemplate.ID)
 	}
 	return queriedVappTemplates[0].CatalogName, nil
 }
@@ -93,7 +93,7 @@ func (vAppTemplate *VAppTemplate) GetVdcName() (string, error) {
 		return "", err
 	}
 	if len(queriedVappTemplates) != 1 {
-		return "", fmt.Errorf("found more than one vApp Template with ID %s", vAppTemplate.VAppTemplate.ID)
+		return "", fmt.Errorf("found %d vApp Templates with ID %s", len(queriedVappTemplates), vAppTemplate.VAppTemplate.ID)
 	}
 	return queriedVappTemplates[0].VdcName, nil
 }
