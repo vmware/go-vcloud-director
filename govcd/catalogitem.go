@@ -139,7 +139,7 @@ func (vdc *Vdc) QueryVappTemplateWithName(vAppTemplateName string) (*types.Query
 		return nil, err
 	}
 	if len(vAppTemplates) != 1 {
-		return nil, fmt.Errorf("found more than one vApp Template with name %s in VDC %s", vAppTemplateName, vdc.Vdc.Name)
+		return nil, fmt.Errorf("found %d vApp Templates with name %s in VDC %s", len(vAppTemplates), vAppTemplateName, vdc.Vdc.Name)
 	}
 	return vAppTemplates[0], nil
 }
@@ -160,7 +160,7 @@ func (vdc *AdminVdc) QueryVappTemplateWithName(vAppTemplateName string) (*types.
 		return nil, err
 	}
 	if len(vAppTemplates) != 1 {
-		return nil, fmt.Errorf("found more than one vApp Template with name %s in VDC %s", vAppTemplateName, vdc.AdminVdc.Name)
+		return nil, fmt.Errorf("found %d vApp Templates with name %s in VDC %s", len(vAppTemplates), vAppTemplateName, vdc.AdminVdc.Name)
 	}
 	return vAppTemplates[0], nil
 }
@@ -181,7 +181,7 @@ func (catalog *Catalog) QueryVappTemplateWithName(vAppTemplateName string) (*typ
 		return nil, err
 	}
 	if len(vAppTemplates) != 1 {
-		return nil, fmt.Errorf("found more than one vApp Template with name %s in Catalog %s", vAppTemplateName, catalog.Catalog.Name)
+		return nil, fmt.Errorf("found %d vApp Templates with name %s in Catalog %s", len(vAppTemplates), vAppTemplateName, catalog.Catalog.Name)
 	}
 	return vAppTemplates[0], nil
 }
