@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
@@ -114,7 +115,7 @@ func (client *VCDClient) CreateVdcComputePolicyV2(newVdcComputePolicy *types.Vdc
 
 	err = client.Client.OpenApiPostItem(minimumApiVersion, urlRef, nil, newVdcComputePolicy, returnVdcComputePolicy.VdcComputePolicyV2, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error creating VDC Compute Policy: %s", err)
+		return nil, fmt.Errorf("error creating VDC Compute Policy: %s", getFriendlyErrorIfVmPlacementPolicyAlreadyExists(newVdcComputePolicy.Name, err))
 	}
 
 	return returnVdcComputePolicy, nil
@@ -238,4 +239,15 @@ func (vdc *AdminVdc) SetAssignedComputePolicies(computePolicyReferences types.Vd
 	}
 
 	return returnedVdcComputePolicies, nil
+}
+
+// getFriendlyErrorIfVmPlacementPolicyAlreadyExists is intended to be used when a VM Placement Policy already exists, and
+// we try to create another one with the same name. When this happens, VCD discloses a lot of unnecessary information to the user that is
+// hard to read and understand, so this function simplifies the message.
+// Note: This function should not be needed anymore once VCD 10.4.0 is discontinued (this issue is fixed in 10.4.1).
+func getFriendlyErrorIfVmPlacementPolicyAlreadyExists(vmPlacementPolicyName string, err error) error {
+	if err != nil && strings.Contains(err.Error(), "already exists") && strings.Contains(err.Error(), "duplicate key") {
+		return fmt.Errorf("VM Placement Policy with name '%s' already exists", vmPlacementPolicyName)
+	}
+	return err
 }
