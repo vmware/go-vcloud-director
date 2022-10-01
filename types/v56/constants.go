@@ -137,6 +137,8 @@ const (
 	MimeLeaseSettingSection = "application/vnd.vmware.vcloud.leaseSettingsSection+xml"
 	// Mime to publish external catalog
 	PublishExternalCatalog = "application/vnd.vmware.admin.publishExternalCatalogParams+xml"
+	// Mime to subscribe to external catalog
+	SubscribeToExternalCatalog = "application/vnd.vmware.admin.externalCatalogSubscriptionParams+xml"
 )
 
 const (
