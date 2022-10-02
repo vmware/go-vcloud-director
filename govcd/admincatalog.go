@@ -161,3 +161,94 @@ func (cat *AdminCatalog) GetParent() (*Org, error) {
 	return org, nil
 }
 
+// CreateCatalogFromSubscription creates a new catalog by subscribing to a published catalog
+// Parameter subscription has to be filled manually
+func (org *AdminOrg) CreateCatalogFromSubscription(subscription types.ExternalCatalogSubscription,
+	storageProfiles *types.CatalogStorageProfiles,
+	catalogName, catalogDescription, password string, localCopy bool) (*AdminCatalog, error) {
+
+	// If the receiving Org doesn't have any VDCs, it means that there is no storage that can be used
+	// by a catalog
+	if len(org.AdminOrg.Vdcs.Vdcs) == 0 {
+		return nil, fmt.Errorf("org %s does not have any storage to support a catalog", org.AdminOrg.Name)
+	}
+	href := ""
+
+	// The subscibed catalog creation is like a regular catalog creation, with the
+	// difference that the subscription details are filled in
+	for _, link := range org.AdminOrg.Link {
+		if link.Rel == "add" && link.Type == types.MimeAdminCatalog {
+			href = link.HREF
+			break
+		}
+	}
+	if href == "" {
+		return nil, fmt.Errorf("catalog creation link not found for org %s", org.AdminOrg.Name)
+	}
+	reqCatalog := &types.Catalog{
+		Name:        catalogName,
+		Description: catalogDescription,
+	}
+	adminCatalog := types.AdminCatalog{
+		Xmlns:                  types.XMLNamespaceVCloud,
+		Catalog:                *reqCatalog,
+		CatalogStorageProfiles: storageProfiles,
+		ExternalCatalogSubscription: &types.ExternalCatalogSubscription{
+			LocalCopy:                localCopy,
+			Password:                 password,
+			Location:                 subscription.Location,
+			SubscribeToExternalFeeds: true,
+		},
+	}
+	// The subscription URL returned by the API is in abbreviated form
+	// such as "/vcsp/lib/65637586-c703-48ae-a7e2-82605d18db57/"
+	// If the passed URL is so abbreviated, we need to add the host
+	if !IsValidUrl(subscription.Location) {
+		// Get the catalog base URL
+		cutPosition := strings.Index(org.AdminOrg.HREF, "/api")
+		catalogHost := org.AdminOrg.HREF[:cutPosition]
+		subscriptionUrl, err := url.JoinPath(catalogHost, subscription.Location)
+		if err != nil {
+			return nil, fmt.Errorf("error composing subscription URL: %s", err)
+		}
+		adminCatalog.ExternalCatalogSubscription.Location = subscriptionUrl
+	}
+
+	adminCatalog.ExternalCatalogSubscription.Password = password
+	adminCatalog.ExternalCatalogSubscription.LocalCopy = localCopy
+	_, err := org.client.ExecuteRequest(href, http.MethodPost, types.MimeAdminCatalog,
+		"error subscribing to catalog: %s", adminCatalog, nil)
+	if err != nil {
+		return nil, err
+	}
+	return org.GetAdminCatalogByName(catalogName, true)
+}
+
+// ImportFromCatalog creates a new catalog by subscribing to an existing catalog
+// The subscription parameters are gathered, as much as possible, from the published catalog itself
+func (org *AdminOrg) ImportFromCatalog(fromCatalog *AdminCatalog, profiles *types.CatalogStorageProfiles,
+	catalogName, catalogDescription, password string, localCopy bool) (*AdminCatalog, error) {
+	err := fromCatalog.Refresh()
+
+	if err != nil {
+		return nil, fmt.Errorf("error refreshing catalog %s: %s", fromCatalog.AdminCatalog.Name, err)
+	}
+
+	if fromCatalog.AdminCatalog.PublishExternalCatalogParams == nil {
+		return nil, fmt.Errorf("catalog '%s' has not acivated its subscription", fromCatalog.AdminCatalog.Name)
+	}
+
+	params := types.ExternalCatalogSubscription{
+		SubscribeToExternalFeeds: true,
+		Location:                 fromCatalog.AdminCatalog.PublishExternalCatalogParams.CatalogPublishedUrl,
+		Password:                 password,
+		LocalCopy:                localCopy,
+	}
+	return org.CreateCatalogFromSubscription(params, profiles, catalogName, catalogDescription, password, localCopy)
+}
+
+// IsValidUrl returns true if the given URL is complete and usable
+func IsValidUrl(str string) bool {
+	u, err := url.Parse(str)
+	return err == nil && u.Scheme != "" && u.Host != ""
+}
