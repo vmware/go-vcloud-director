@@ -1895,32 +1895,3 @@ func (vm *VM) ChangeCPUAndCoreCount(cpus, cpuCores *int) error {
 	}
 	return nil
 }
-
-// ChangeDescription updates only VM description by calling `reconfigureVm` endpoint. There is no way
-// to update description with a dedicated endpoint therefore reconfigureVm must be used. Some
-// "create" endpoints do not support setting description.
-func (vm *VM) ChangeDescription(description string) error {
-	if vm.VM.HREF == "" {
-		return fmt.Errorf("cannot update VM spec section, VM HREF is unset")
-	}
-
-	task, err := vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
-		types.MimeVM, "error updating VM description: %s", &types.Vm{
-			Xmlns:       types.XMLNamespaceVCloud,
-			Ovf:         types.XMLNamespaceOVF,
-			Name:        vm.VM.Name,
-			Description: description,
-		})
-
-	if err != nil {
-		return err
-	}
-
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return fmt.Errorf("error while updating VM description: %s", err)
-	}
-
-	return nil
-
-}
