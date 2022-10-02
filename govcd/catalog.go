@@ -952,20 +952,79 @@ func (cat *Catalog) PublishToExternalOrganizations(publishExternalCatalog types.
 		return fmt.Errorf("cannot publish to external organization, Object is empty")
 	}
 
+	adminOrg, _, err := getCatalogParent(cat.Catalog.Name, cat.client, cat.Catalog.Link, true)
+	if err != nil {
+		return fmt.Errorf("cannot get parent organization for catalog %s", cat.Catalog.Name)
+	}
+	if !adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishCatalogs {
+		return fmt.Errorf("parent organization %s of catalog %s can't publish catalogs", adminOrg.AdminOrg.Name, cat.Catalog.Name)
+	}
+	if !adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishExternally {
+		return fmt.Errorf("parent organization %s of catalog %s can't publish to external orgs", adminOrg.AdminOrg.Name, cat.Catalog.Name)
+	}
 	url := cat.Catalog.HREF
 	if url == "nil" || url == "" {
 		return fmt.Errorf("cannot publish to external organization, HREF is empty")
 	}
 
-	err := publishToExternalOrganizations(cat.client, url, nil, publishExternalCatalog)
+	err = publishToExternalOrganizations(cat.client, url, nil, publishExternalCatalog)
 	if err != nil {
 		return err
 	}
 
-	err = cat.Refresh()
-	if err != nil {
-		return err
-	}
+	return cat.Refresh()
+}
 
-	return err
+// GetParent returns the Org to which the catalog belongs
+func (cat *Catalog) GetParent() (*Org, error) {
+	_, org, err := getCatalogParent(cat.Catalog.Name, cat.client, cat.Catalog.Link, false)
+	if err != nil {
+		return nil, err
+	}
+	return org, nil
+}
+
+// GetAdminParent returns the AdminOrg to which the catalog belongs
+func (cat *Catalog) GetAdminParent() (*AdminOrg, error) {
+	adminOrg, _, err := getCatalogParent(cat.Catalog.Name, cat.client, cat.Catalog.Link, false)
+	if err != nil {
+		return nil, err
+	}
+	return adminOrg, nil
+}
+
+// getCatalogParent return the parent of a given catalog
+// * name is the catalog or Admin catalog name
+// * links is the links collection frm within the catalog
+// * wantAdmin is an indication that we want an AdminOrg as a result
+func getCatalogParent(name string, client *Client, links types.LinkList, wantAdmin bool) (*AdminOrg, *Org, error) {
+	for _, catLink := range links {
+		if catLink.Rel != "up" {
+			continue
+		}
+		switch catLink.Type {
+		case types.MimeOrg:
+			if wantAdmin {
+				continue
+			}
+			org, err := getOrgByHref(client, catLink.HREF)
+			if err != nil {
+				return nil, nil, err
+			}
+			return nil, org, nil
+		case types.MimeAdminOrg:
+			if !wantAdmin {
+				continue
+			}
+			adminOrg, err := getAdminOrgByHref(client, catLink.HREF)
+			if err != nil {
+				return nil, nil, err
+			}
+			return adminOrg, nil, nil
+
+		default:
+			continue
+		}
+	}
+	return nil, nil, fmt.Errorf("no parent found for Catalog %s", name)
 }

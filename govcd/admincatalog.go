@@ -7,6 +7,8 @@ package govcd
 import (
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
@@ -112,6 +114,17 @@ func (cat *AdminCatalog) PublishToExternalOrganizations(publishExternalCatalog t
 		return fmt.Errorf("cannot publish to external organization, HREF is empty")
 	}
 
+	adminOrg, err := cat.GetAdminParent()
+	if err != nil {
+		return fmt.Errorf("cannot get parent organization for catalog %s: %s", cat.AdminCatalog.Name, err)
+	}
+	if !adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishCatalogs {
+		return fmt.Errorf("parent organization %s of catalog %s can't publish catalogs", adminOrg.AdminOrg.Name, cat.AdminCatalog.Name)
+	}
+	if !adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishExternally {
+		return fmt.Errorf("parent organization %s of catalog %s can't publish to external orgs", adminOrg.AdminOrg.Name, cat.AdminCatalog.Name)
+	}
+
 	tenantContext, err := cat.getTenantContext()
 	if err != nil {
 		return fmt.Errorf("cannot publish to external organization, tenant context error: %s", err)
@@ -129,3 +142,22 @@ func (cat *AdminCatalog) PublishToExternalOrganizations(publishExternalCatalog t
 
 	return err
 }
+
+// GetAdminParent returns the OrAdming to which the catalog belongs
+func (cat *AdminCatalog) GetAdminParent() (*AdminOrg, error) {
+	adminOrg, _, err := getCatalogParent(cat.AdminCatalog.Name, cat.client, cat.AdminCatalog.Link, false)
+	if err != nil {
+		return nil, err
+	}
+	return adminOrg, nil
+}
+
+// GetParent returns the Org to which the catalog belongs
+func (cat *AdminCatalog) GetParent() (*Org, error) {
+	_, org, err := getCatalogParent(cat.AdminCatalog.Name, cat.client, cat.AdminCatalog.Link, false)
+	if err != nil {
+		return nil, err
+	}
+	return org, nil
+}
+
