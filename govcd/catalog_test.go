@@ -843,7 +843,7 @@ func (vcd *TestVCD) Test_PublishToExternalOrganizations(check *C) {
 	// Every Org update causes catalog publishing to be removed and therefore this test fails.
 	// Turning publishing on right before test to be sure it is tested and passes.
 	// VCD 10.2.0 <-> 10.3.3 have a bug that even though catalog publishing is enabled adminOrg.
-	fmt.Println("Overcomming VCD 10.2.0 <-> 10.3.3 bug - explicitly setting catalog sharing")
+	fmt.Println("Overcoming VCD 10.2.0 <-> 10.3.3 bug - explicitly setting catalog sharing")
 	adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishCatalogs = true
 	adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishExternally = true
 	updatedAdminOrg, err := adminOrg.Update()
@@ -868,6 +868,7 @@ func (vcd *TestVCD) Test_PublishToExternalOrganizations(check *C) {
 	check.Assert(*adminCatalog.AdminCatalog.PublishExternalCatalogParams.PreserveIdentityInfoFlag, Equals, true)
 	check.Assert(*adminCatalog.AdminCatalog.PublishExternalCatalogParams.IsCachedEnabled, Equals, true)
 	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.Password, Equals, "******")
+	check.Assert(adminCatalog.AdminCatalog.PublishExternalCatalogParams.CatalogPublishedUrl, Matches, `/vcsp/lib/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/`)
 
 	err = adminCatalog.Delete(true, true)
 	check.Assert(err, IsNil)
@@ -1006,4 +1007,71 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImageWihUdfTypeIso(check *C) {
 
 	// Delete testing catalog item
 	deleteCatalogItem(check, catalog, mediaName)
+}
+
+func (vcd *TestVCD) Test_CatalogSubscribe(check *C) {
+	// TODO: create explicitly published catalog in a well-prepared org
+	fromOrg, err := vcd.client.GetAdminOrgByName("datacloud")
+	check.Assert(err, IsNil)
+	fromCatalog, err := fromOrg.GetAdminCatalogByName("original", false)
+	check.Assert(err, IsNil)
+	toOrg, err := vcd.client.GetAdminOrgByName("datacloud-1")
+	check.Assert(err, IsNil)
+
+	toCatalog, err := toOrg.CreateCatalogFromSubscription(types.ExternalCatalogSubscription{
+		SubscribeToExternalFeeds: true,
+		Location:                 fromCatalog.AdminCatalog.PublishExternalCatalogParams.CatalogPublishedUrl,
+		Password:                 "",
+		LocalCopy:                false,
+	},
+		nil,
+		"imported-catalog-other-org", "imported catalog to other org", "", true)
+	check.Assert(err, IsNil)
+	toCatalog2, err := fromOrg.ImportFromCatalog(fromCatalog,
+		nil,
+		"imported-catalog-same-org", "imported catalog to same org", "", true)
+	check.Assert(err, IsNil)
+
+	// NOTE: an imported catalog cannot be removed while it is synchronising
+	//AddToCleanupList("imported-catalog-other-org", "catalog", "datacloud-1", check.TestName())
+	//AddToCleanupList("imported-catalog-same-org", "catalog", "datacloud", check.TestName())
+
+	elapsed := 0
+	timeout := 10
+	foundOrigin := len(fromCatalog.AdminCatalog.CatalogItems)
+	foundSameOrg := 0
+	foundOtherOrg := 0
+	for elapsed < timeout {
+		err = toCatalog.Refresh()
+		check.Assert(err, IsNil)
+		err = toCatalog2.Refresh()
+		check.Assert(err, IsNil)
+		foundSameOrg = len(toCatalog2.AdminCatalog.CatalogItems)
+		foundOtherOrg = len(toCatalog.AdminCatalog.CatalogItems)
+		if foundSameOrg == foundOrigin &&
+			foundOtherOrg == foundOrigin {
+			break
+		}
+		time.Sleep(time.Second)
+		elapsed++
+	}
+	check.Assert(foundSameOrg, Equals, foundOrigin)
+	check.Assert(foundOtherOrg, Equals, foundOrigin)
+
+	fmt.Printf("Catalog items seen after %d seconds\n", elapsed)
+	for _, item := range toCatalog.AdminCatalog.CatalogItems {
+		for _, inner := range item.CatalogItem {
+			fmt.Printf("other-org %s\n", inner.Name)
+		}
+	}
+	for _, item := range toCatalog2.AdminCatalog.CatalogItems {
+		for _, inner := range item.CatalogItem {
+			fmt.Printf("same-org %s\n", inner.Name)
+		}
+	}
+	// NOTE: an imported catalog cannot be removed while it is synchronising
+	//err = toCatalog.Delete(true, true)
+	//check.Assert(err, IsNil)
+	//err = toCatalog2.Delete(true, true)
+	//check.Assert(err, IsNil)
 }
