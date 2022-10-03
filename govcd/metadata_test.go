@@ -20,12 +20,7 @@ func init() {
 	testingTags["metadata"] = "metadata_test.go"
 }
 
-type metadataCompatible interface {
-	GetMetadata() (*types.Metadata, error)
-	AddMetadataEntry(typedValue, key, value string) error
-	MergeMetadata(typedValue string, metadata map[string]interface{}) error
-	DeleteMetadataEntry(key string) error
-}
+
 
 func (vcd *TestVCD) Test_AddAndDeleteMetadataForVdc(check *C) {
 	if vcd.config.VCD.Vdc == "" {

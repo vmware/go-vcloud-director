@@ -37,6 +37,14 @@ func (catalogItem *CatalogItem) GetVAppTemplate() (VAppTemplate, error) {
 
 }
 
+// Refresh refreshes the CatalogItem attributes by using its href.
+func (catalogItem *CatalogItem) Refresh() error {
+	_, err := catalogItem.client.ExecuteRequest(catalogItem.CatalogItem.HREF, http.MethodGet,
+		"", "error refreshing external network: %s", nil, catalogItem.CatalogItem)
+
+	return err
+}
+
 // Delete deletes the Catalog Item, returning an error if the vCD call fails.
 // Link to API call: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/DELETE-CatalogItem.html
 func (catalogItem *CatalogItem) Delete() error {

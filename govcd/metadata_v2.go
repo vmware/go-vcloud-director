@@ -11,6 +11,9 @@ import (
 	"strings"
 )
 
+// NOTE: This "v2" is not v2 in terms of API versioning, it's just a new way of handling metadata.
+// The idea is that once go-vcloud-director 3.0 is released, one can just remove "v1".
+
 // ----------------
 // GET metadata
 // ----------------
@@ -198,6 +201,81 @@ func (vcdClient *VCDClient) AddMetadataEntryWithVisibilityByHref(href, key, valu
 	return task.WaitTaskCompletion()
 }
 
+// AddMetadataEntryWithVisibility adds metadata to the receiver VM and waits for the task to finish.
+func (vm *VM) AddMetadataEntryWithVisibility(key, value, typedValue, visibility string, isSystem bool) error {
+	return addMetadataAndWait(vm, key, value, typedValue, visibility, isSystem)
+}
+
+// AddMetadataEntryWithVisibility adds metadata to the receiver VDC and waits for the task to finish.
+// Note: Requires system administrator privileges.
+func (vdc *Vdc) AddMetadataEntryWithVisibility(key, value, typedValue, visibility string, isSystem bool) error {
+	return addMetadataAndWait(vdc, key, value, typedValue, visibility, isSystem)
+}
+
+// AddMetadataEntryWithVisibility adds metadata to the receiver ProviderVdc and waits for the task to finish.
+// Note: Requires system administrator privileges.
+func (providerVdc *ProviderVdc) AddMetadataEntryWithVisibility(key, value, typedValue, visibility string, isSystem bool) error {
+	return addMetadataAndWait(providerVdc, key, value, typedValue, visibility, isSystem)
+}
+
+// AddMetadataEntryWithVisibility adds metadata to the receiver VApp and waits for the task to finish.
+func (vapp *VApp) AddMetadataEntryWithVisibility(key, value, typedValue, visibility string, isSystem bool) error {
+	return addMetadataAndWait(vapp, key, value, typedValue, visibility, isSystem)
+}
+
+// AddMetadataEntryWithVisibility adds metadata to the receiver VAppTemplate and waits for the task to finish.
+func (vAppTemplate *VAppTemplate) AddMetadataEntryWithVisibility(key, value, typedValue, visibility string, isSystem bool) error {
+	return addMetadataAndWait(vAppTemplate, key, value, typedValue, visibility, isSystem)
+}
+
+// AddMetadataEntryWithVisibility adds metadata to the receiver MediaRecord and waits for the task to finish.
+func (mediaRecord *MediaRecord) AddMetadataEntryWithVisibility(key, value, typedValue, visibility string, isSystem bool) error {
+	return addMetadataAndWait(mediaRecord, key, value, typedValue, visibility, isSystem)
+}
+
+// AddMetadataEntryWithVisibility adds metadata to the receiver Media and waits for the task to finish.
+func (media *Media) AddMetadataEntryWithVisibility(key, value, typedValue, visibility string, isSystem bool) error {
+	return addMetadataAndWait(media, key, value, typedValue, visibility, isSystem)
+}
+
+// AddMetadataEntryWithVisibility adds metadata to the receiver AdminCatalog and waits for the task to finish.
+func (adminCatalog *AdminCatalog) AddMetadataEntryWithVisibility(key, value, typedValue, visibility string, isSystem bool) error {
+	return addMetadataAndWait(adminCatalog, key, value, typedValue, visibility, isSystem)
+}
+
+// AddMetadataEntryWithVisibility adds metadata to the receiver AdminOrg and waits for the task to finish.
+func (adminOrg *AdminOrg) AddMetadataEntryWithVisibility(key, value, typedValue, visibility string, isSystem bool) error {
+	return addMetadataAndWait(adminOrg, key, value, typedValue, visibility, isSystem)
+}
+
+// AddMetadataEntryWithVisibility adds metadata to the receiver Disk and waits for the task to finish.
+func (disk *Disk) AddMetadataEntryWithVisibility(key, value, typedValue, visibility string, isSystem bool) error {
+	return addMetadataAndWait(disk, key, value, typedValue, visibility, isSystem)
+}
+
+// AddMetadataEntryWithVisibility adds metadata to the receiver OrgVDCNetwork and waits for the task to finish.
+// Note: Requires system administrator privileges.
+func (orgVdcNetwork *OrgVDCNetwork) AddMetadataEntryWithVisibility(key, value, typedValue, visibility string, isSystem bool) error {
+	return addMetadataAndWait(orgVdcNetwork, key, value, typedValue, visibility, isSystem)
+}
+
+// AddMetadataEntryWithVisibility adds metadata to the receiver CatalogItem and waits for the task to finish.
+func (catalogItem *CatalogItem) AddMetadataEntryWithVisibility(key, value, typedValue, visibility string, isSystem bool) error {
+	return addMetadataAndWait(catalogItem, key, value, typedValue, visibility, isSystem)
+}
+
+// AddMetadataEntryWithVisibility adds metadata to the receiver OpenApiOrgVdcNetwork and waits for the task to finish.
+// Note: It doesn't add metadata to networks that belong to a VDC Group.
+// TODO: This function is currently using XML API underneath as OpenAPI metadata is not supported yet.
+func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) AddMetadataEntryWithVisibility(key, value, typedValue, visibility string, isSystem bool) error {
+	href := fmt.Sprintf("%s/admin/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), extractUuid(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID))
+	task, err := addMetadata(openApiOrgVdcNetwork.client, href, key, value, typedValue, visibility, isSystem)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
 // ----------------
 // POST metadata async
 // ----------------
@@ -240,6 +318,7 @@ func (vcdClient *VCDClient) DeleteMetadataEntryByHrefAsync(href, key string) (Ta
 
 // ----------------
 // Generic private functions
+// ----------------
 
 // Generic function to retrieve metadata from VCD
 func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
@@ -250,9 +329,6 @@ func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
 
 	return metadata, err
 }
-
-// NOTE: This "v2" is not v2 in terms of API versioning, it's just a new way of handling metadata.
-// The idea is that once go-vcloud-director 3.0 is released, one can just remove "v1".
 
 // addMetadata adds metadata to an entity.
 // The function supports passing a value that requires a typed value that must be one of:
@@ -283,6 +359,28 @@ func addMetadata(client *Client, requestUri, key, value, typedValue, visibility 
 		types.MimeMetaDataValue, "error adding metadata: %s", newMetadata)
 }
 
+type metadataCompatible interface {
+	AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visibility string, isSystem bool) (Task, error)
+	Refresh() error
+}
+
+// addMetadataAndWait adds metadata to an entity and waits for the task completion.
+// The function supports passing a value that requires a typed value that must be one of:
+// types.MetadataStringValue, types.MetadataNumberValue, types.MetadataDateTimeValue and types.MetadataBooleanValue.
+// Visibility also needs to be one of: types.MetadataReadOnlyVisibility, types.MetadataHiddenVisibility or types.MetadataReadWriteVisibility
+func addMetadataAndWait(receiver metadataCompatible, key, value, typedValue, visibility string, isSystem bool) error {
+	task, err := receiver.AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visibility, isSystem)
+	if err != nil {
+		return err
+	}
+
+	err = receiver.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return task.WaitTaskCompletion()
+}
 
 // mergeAllMetadata merges the metadata key-values provided as parameter with existing entity metadata
 func mergeAllMetadata(client *Client, requestUri string, metadata map[string]types.MetadataTypedValue) (Task, error) {
