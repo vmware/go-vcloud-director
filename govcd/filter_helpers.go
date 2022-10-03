@@ -496,7 +496,7 @@ func strToRegex(s string) string {
 // If the value looks like a number, or a true/false value, the corresponding type is returned
 // Otherwise, we assume it's a string.
 // We do this because the API doesn't return the metadata type
-// (it would if the field TypedValue.XsiType were defined as `xml:"type,attr"`, but then metadata updates would fail.)
+// (it would if the field MetadataTypedValue.XsiType were defined as `xml:"type,attr"`, but then metadata updates would fail.)
 func guessMetadataType(value string) string {
 	fType := "STRING"
 	reNumber := regexp.MustCompile(`^[0-9]+$`)

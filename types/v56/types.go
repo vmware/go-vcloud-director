@@ -1445,21 +1445,31 @@ type Value struct {
 	Value string `xml:"http://schemas.dmtf.org/ovf/envelope/1 value,attr,omitempty"`
 }
 
+// MetadataValue is the type returned when querying a unique entry of metadata.
+// Type: MetadataValueType
+// Namespace: http://www.vmware.com/vcloud/v1.5
 type MetadataValue struct {
-	XMLName    xml.Name    `xml:"MetadataValue"`
-	Xsi        string      `xml:"xmlns:xsi,attr"`
-	Xmlns      string      `xml:"xmlns,attr"`
-	TypedValue *TypedValue `xml:"TypedValue"`
+	XMLName    xml.Name            `xml:"MetadataValue"`
+	Xsi        string              `xml:"xmlns:xsi,attr"`
+	Xmlns      string              `xml:"xmlns,attr"`
+	TypedValue *MetadataTypedValue `xml:"MetadataTypedValue"`
+	Domain     *MetadataDomainTag  `xml:"Domain,omitempty"`
 }
 
-type TypedValue struct {
+// MetadataTypedValue is the content of a metadata entry.
+// Type: MetadataTypedValue
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: One of: MetadataStringValue, MetadataNumberValue, MetadataBooleanValue, MetadataDateTimeValue
+// Since: 5.1
+type MetadataTypedValue struct {
 	XsiType string `xml:"xsi:type,attr"`
 	Value   string `xml:"Value"`
 }
 
+// Metadata is the user-defined metadata associated with an object.
 // Type: MetadataType
 // Namespace: http://www.vmware.com/vcloud/v1.5
-// Description: User-defined metadata associated with with an object.
+// Description: User-defined metadata associated with an object.
 // Since: 1.5
 type Metadata struct {
 	XMLName       xml.Name         `xml:"Metadata"`
@@ -1471,17 +1481,18 @@ type Metadata struct {
 	MetadataEntry []*MetadataEntry `xml:"MetadataEntry,omitempty"`
 }
 
+// MetadataEntry is a single metadata entry.
 // Type: MetadataEntryType
 // Namespace: http://www.vmware.com/vcloud/v1.5
 type MetadataEntry struct {
-	Xmlns      string             `xml:"xmlns,attr"`
-	HREF       string             `xml:"href,attr"`
-	Type       string             `xml:"type,attr,omitempty"`
-	Xsi        string             `xml:"xmlns:xsi,attr"`
-	Domain     *MetadataDomainTag `xml:"Domain,omitempty"` // FIXME!!!!!!
-	Key        string             `xml:"Key"`            // An arbitrary key name. Length cannot exceed 256 UTF-8 characters.
-	Link       []*Link            `xml:"Link,omitempty"` //A reference to an entity or operation associated with this object.
-	TypedValue *TypedValue        `xml:"TypedValue"`
+	Xmlns      string              `xml:"xmlns,attr"`
+	HREF       string              `xml:"href,attr"`
+	Type       string              `xml:"type,attr,omitempty"`
+	Xsi        string              `xml:"xmlns:xsi,attr"`
+	Domain     *MetadataDomainTag  `xml:"Domain,omitempty"`
+	Key        string              `xml:"Key"`            // An arbitrary key name. Length cannot exceed 256 UTF-8 characters.
+	Link       []*Link             `xml:"Link,omitempty"` // A reference to an entity or operation associated with this object.
+	TypedValue *MetadataTypedValue `xml:"MetadataTypedValue"`
 }
 
 // MetadataDomainTag contains both the visibility and the domain of the metadata.
@@ -1490,8 +1501,8 @@ type MetadataEntry struct {
 // Description: A value of SYSTEM places this MetadataEntry in the SYSTEM domain. Omit or leave empty to place this MetadataEntry in the GENERAL domain.
 // Since: 5.1
 type MetadataDomainTag struct {
-	Visibility string `xml:"visibility,attr"` // One of: PRIVATE (hidden), READONLY
-	Domain     string `xml:"Domain"`
+	Visibility string `xml:"visibility,attr,omitempty"` // One of: PRIVATE (hidden), READONLY, nil (read/write)
+	Domain     string `xml:",chardata,omitempty"`
 }
 
 // VAppChildren is a container for virtual machines included in this vApp.
