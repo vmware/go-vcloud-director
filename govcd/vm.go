@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"encoding/xml"
 	"fmt"
 	"net"
 	"net/http"
@@ -1893,5 +1894,46 @@ func (vm *VM) ChangeCPUAndCoreCount(cpus, cpuCores *int) error {
 	if err != nil {
 		return fmt.Errorf("error changing CPU size: %s", err)
 	}
+	return nil
+}
+
+// SetDescription updates VM description and returns an error if fails
+func (vm *VM) SetDescription(description string) error {
+	if vm.VM.HREF == "" {
+		return fmt.Errorf("cannot update VM description, VM HREF is unset")
+	}
+
+	// vm is minimized copy of types.Vm
+	// The different from `types.Vm` is that this type has not tag `omitempty for `Description` field
+	// which allows to set empty description. When `omitempty` is present
+	type VmType struct {
+		XMLName xml.Name
+		// Attributes
+		Ovf   string `xml:"xmlns:ovf,attr,omitempty"`
+		Xsi   string `xml:"xmlns:xsi,attr,omitempty"`
+		Xmlns string `xml:"xmlns,attr,omitempty"`
+
+		Name        string `xml:"name,attr"`   // The name of the entity.
+		Description string `xml:"Description"` // Optional description.
+	}
+
+	task, err := vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
+		types.MimeVM, "error updating VM spec section: %s", &VmType{
+			XMLName:     xml.Name{Local: "Vm"},
+			Xmlns:       types.XMLNamespaceVCloud,
+			Ovf:         types.XMLNamespaceOVF,
+			Name:        vm.VM.Name,
+			Description: description,
+		})
+
+	if err != nil {
+		return fmt.Errorf("error reconfiguring VM descrption: %s", err)
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("task error while changing VM description: %s", err)
+	}
+
 	return nil
 }
