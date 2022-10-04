@@ -473,7 +473,7 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) MergeMetadataWithMetadataValue
 // DeleteMetadataEntryByHrefAsync deletes metadata from the given resource reference, depending on key provided as input
 // and returns a task.
 func (vcdClient *VCDClient) DeleteMetadataEntryByHrefAsync(href, key string) (Task, error) {
-	return deleteMetadata(&vcdClient.Client, key, href)
+	return deleteMetadata(&vcdClient.Client, href, key)
 }
 
 // DeleteMetadataEntryAsync deletes VM metadata associated to the input key and returns the task.

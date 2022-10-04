@@ -662,7 +662,7 @@ func (vm *VM) DeleteMetadata(key string) (Task, error) {
 }
 
 // Deprecated: use VM.AddMetadataEntry.
-func (vm *VM) addMetadataDeprecated(key string, value string) (Task, error) {
+func (vm *VM) AddMetadata(key string, value string) (Task, error) {
 	return addMetadataDeprecated(vm.client, types.MetadataStringValue, key, value, vm.VM.HREF)
 }
 
@@ -687,7 +687,7 @@ func (vdc *Vdc) DeleteMetadata(key string) (Vdc, error) {
 }
 
 // Deprecated: use Vdc.AddMetadataEntry.
-func (vdc *Vdc) addMetadataDeprecated(key string, value string) (Vdc, error) {
+func (vdc *Vdc) AddMetadata(key string, value string) (Vdc, error) {
 	task, err := addMetadataDeprecated(vdc.client, types.MetadataStringValue, key, value, getAdminURL(vdc.Vdc.HREF))
 	if err != nil {
 		return Vdc{}, err
@@ -722,12 +722,12 @@ func (vapp *VApp) DeleteMetadata(key string) (Task, error) {
 }
 
 // Deprecated: use VApp.AddMetadataEntry
-func (vapp *VApp) addMetadataDeprecated(key string, value string) (Task, error) {
+func (vapp *VApp) AddMetadata(key string, value string) (Task, error) {
 	return addMetadataDeprecated(vapp.client, types.MetadataStringValue, key, value, vapp.VApp.HREF)
 }
 
 // Deprecated: use VAppTemplate.AddMetadataEntry.
-func (vAppTemplate *VAppTemplate) addMetadataDeprecated(key string, value string) (*VAppTemplate, error) {
+func (vAppTemplate *VAppTemplate) AddMetadata(key string, value string) (*VAppTemplate, error) {
 	task, err := vAppTemplate.AddMetadataAsync(key, value)
 	if err != nil {
 		return nil, err
@@ -770,7 +770,7 @@ func (vAppTemplate *VAppTemplate) DeleteMetadataAsync(key string) (Task, error) 
 }
 
 // Deprecated: use Media.AddMetadataEntry.
-func (media *Media) addMetadataDeprecated(key string, value string) (*Media, error) {
+func (media *Media) AddMetadata(key string, value string) (*Media, error) {
 	task, err := media.AddMetadataAsync(key, value)
 	if err != nil {
 		return nil, err
@@ -820,7 +820,7 @@ func (mediaItem *MediaItem) GetMetadata() (*types.Metadata, error) {
 
 // AddMetadata adds metadata key/value pair provided as input.
 // Deprecated: Use MediaRecord.AddMetadata.
-func (mediaItem *MediaItem) addMetadataDeprecated(key string, value string) (*MediaItem, error) {
+func (mediaItem *MediaItem) AddMetadata(key string, value string) (*MediaItem, error) {
 	task, err := mediaItem.AddMetadataAsync(key, value)
 	if err != nil {
 		return nil, err
@@ -865,7 +865,7 @@ func (mediaItem *MediaItem) DeleteMetadataAsync(key string) (Task, error) {
 }
 
 // Deprecated: use MediaRecord.AddMetadataEntry.
-func (mediaRecord *MediaRecord) addMetadataDeprecated(key string, value string) (*MediaRecord, error) {
+func (mediaRecord *MediaRecord) AddMetadata(key string, value string) (*MediaRecord, error) {
 	task, err := mediaRecord.AddMetadataAsync(key, value)
 	if err != nil {
 		return nil, err

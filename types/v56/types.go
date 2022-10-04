@@ -1452,7 +1452,7 @@ type MetadataValue struct {
 	XMLName    xml.Name            `xml:"MetadataValue"`
 	Xsi        string              `xml:"xmlns:xsi,attr"`
 	Xmlns      string              `xml:"xmlns,attr"`
-	TypedValue *MetadataTypedValue `xml:"MetadataTypedValue"`
+	TypedValue *MetadataTypedValue `xml:"TypedValue"`
 	Domain     *MetadataDomainTag  `xml:"Domain,omitempty"`
 }
 
@@ -1492,7 +1492,7 @@ type MetadataEntry struct {
 	Domain     *MetadataDomainTag  `xml:"Domain,omitempty"`
 	Key        string              `xml:"Key"`            // An arbitrary key name. Length cannot exceed 256 UTF-8 characters.
 	Link       []*Link             `xml:"Link,omitempty"` // A reference to an entity or operation associated with this object.
-	TypedValue *MetadataTypedValue `xml:"MetadataTypedValue"`
+	TypedValue *MetadataTypedValue `xml:"TypedValue"`
 }
 
 // MetadataDomainTag contains both the visibility and the domain of the metadata.
