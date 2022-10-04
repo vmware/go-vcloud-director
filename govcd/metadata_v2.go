@@ -649,10 +649,18 @@ func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
 }
 
 // addMetadata adds metadata to an entity.
-// The function supports passing a value that requires a typed value that must be one of:
+// If the metadata entry is of the SYSTEM domain (isSystem=true), one can set different types of Visibility:
+// types.MetadataReadOnlyVisibility, types.MetadataHiddenVisibility but NOT types.MetadataReadWriteVisibility.
+// If the metadata entry is of the GENERAL domain (isSystem=false), visibility is always types.MetadataReadWriteVisibility.
+// In terms of typedValues, that must be one of:
 // types.MetadataStringValue, types.MetadataNumberValue, types.MetadataDateTimeValue and types.MetadataBooleanValue.
-// Visibility also needs to be one of: types.MetadataReadOnlyVisibility, types.MetadataHiddenVisibility or types.MetadataReadWriteVisibility
 func addMetadata(client *Client, requestUri, key, value, typedValue, visibility string, isSystem bool) (Task, error) {
+
+	if isSystem && visibility == types.MetadataReadWriteVisibility {
+		return Task{}, fmt.Errorf("visibility cannot be %s when domain is SYSTEM", types.MetadataReadWriteVisibility)
+	}
+
+	apiEndpoint := urlParseRequestURI(requestUri)
 	newMetadata := &types.MetadataValue{
 		Xmlns: types.XMLNamespaceVCloud,
 		Xsi:   types.XMLNamespaceXSI,
@@ -662,15 +670,19 @@ func addMetadata(client *Client, requestUri, key, value, typedValue, visibility 
 		},
 		Domain: &types.MetadataDomainTag{
 			Visibility: visibility,
+			Domain: "SYSTEM",
 		},
 	}
 
 	if isSystem {
-		newMetadata.Domain.Domain = "SYSTEM"
+		apiEndpoint.Path += "/metadata/SYSTEM/" + key
+	} else {
+		apiEndpoint.Path += "/metadata/" + key
+		newMetadata.Domain.Domain ="GENERAL"
+		if visibility != types.MetadataReadWriteVisibility {
+			newMetadata.Domain.Visibility = types.MetadataReadWriteVisibility
+		}
 	}
-
-	apiEndpoint := urlParseRequestURI(requestUri)
-	apiEndpoint.Path += "/metadata/" + key
 
 	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut, types.MimeMetaDataValue, "error adding metadata: %s", newMetadata)
 }

@@ -511,8 +511,8 @@ const (
 	MetadataBooleanValue  string = "MetadataBooleanValue"
 
 	MetadataReadOnlyVisibility  string = "READONLY"
-	MetadataHiddenVisibility    string = "HIDDEN"
-	MetadataReadWriteVisibility string = "" // Syntactic sugar for marking a metadata entry with default r/w visibility.
+	MetadataHiddenVisibility    string = "PRIVATE"
+	MetadataReadWriteVisibility string = "READWRITE"
 )
 
 const (

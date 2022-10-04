@@ -16,6 +16,8 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+// TODO: All tests here are deprecated in favor of those present in "metadata_v2_test". Remove this file once go-vcloud-director v3.0 is released.
+
 func (vcd *TestVCD) Test_AddAndDeleteMetadataForVdc(check *C) {
 	if vcd.config.VCD.Vdc == "" {
 		check.Skip("skipping test because VDC name is empty")

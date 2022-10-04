@@ -1452,8 +1452,8 @@ type MetadataValue struct {
 	XMLName    xml.Name            `xml:"MetadataValue"`
 	Xsi        string              `xml:"xmlns:xsi,attr"`
 	Xmlns      string              `xml:"xmlns,attr"`
-	TypedValue *MetadataTypedValue `xml:"TypedValue"`
 	Domain     *MetadataDomainTag  `xml:"Domain,omitempty"`
+	TypedValue *MetadataTypedValue `xml:"TypedValue"`
 }
 
 // MetadataTypedValue is the content of a metadata entry.
@@ -1501,8 +1501,8 @@ type MetadataEntry struct {
 // Description: A value of SYSTEM places this MetadataEntry in the SYSTEM domain. Omit or leave empty to place this MetadataEntry in the GENERAL domain.
 // Since: 5.1
 type MetadataDomainTag struct {
-	Visibility string `xml:"visibility,attr,omitempty"` // One of: PRIVATE (hidden), READONLY, nil (read/write)
-	Domain     string `xml:",chardata,omitempty"`
+	Visibility string `xml:"visibility,attr"` // One of: PRIVATE (hidden), READONLY, nil (read/write)
+	Domain     string `xml:",chardata"`
 }
 
 // VAppChildren is a container for virtual machines included in this vApp.

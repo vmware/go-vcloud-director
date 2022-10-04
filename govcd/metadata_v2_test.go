@@ -8,6 +8,7 @@
 package govcd
 
 import (
+	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -16,30 +17,30 @@ func init() {
 	testingTags["metadata"] = "metadata_v2_test.go"
 }
 
-//func (vcd *TestVCD) TestMetadataForVm(check *C) {
-//	fmt.Printf("Running: %s\n", check.TestName())
-//
-//	if vcd.skipVappTests {
-//		check.Skip("Skipping test because vApp was not successfully created at setup")
-//	}
-//
-//	// Find VApp
-//	if vcd.vapp.VApp == nil {
-//		check.Skip("skipping test because no vApp is found in configuration")
-//	}
-//
-//	vApp := vcd.findFirstVapp()
-//	vmType, vmName := vcd.findFirstVm(vApp)
-//	if vmName == "" {
-//		check.Skip("skipping test because no VM is found")
-//	}
-//
-//	vm := NewVM(&vcd.client.Client)
-//	vm.VM = &vmType
-//
-//	testMetadataCRUDActions(vm, check, nil)
-//}
+func (vcd *TestVCD) TestVmMetadata(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
 
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp was not successfully created at setup")
+	}
+
+	if vcd.vapp.VApp == nil {
+		check.Skip("skipping test because no vApp is found in configuration")
+	}
+
+	vApp := vcd.findFirstVapp()
+	vmType, vmName := vcd.findFirstVm(vApp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	vm := NewVM(&vcd.client.Client)
+	vm.VM = &vmType
+
+	testMetadataCRUDActions(vm, check, nil)
+}
+
+// metadataCompatible allows centralizing and generalizing the tests for metadata compatible resources.
 type metadataCompatible interface {
 	GetMetadata() (*types.Metadata, error)
 	AddMetadataEntryWithVisibility(key, value, typedValue, visibility string, isSystem bool) error
@@ -47,6 +48,7 @@ type metadataCompatible interface {
 	DeleteMetadataEntry(key string) error
 }
 
+// testMetadataCRUDActions performs a complete test of all use cases that metadata can have, for a metadata compatible resource.
 func testMetadataCRUDActions(resource metadataCompatible, check *C, extraCheck func()) {
 
 	type metadataTests struct {
@@ -55,6 +57,7 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraCheck f
 		Type       string
 		Visibility string
 		IsSystem   bool
+		ExpectErrorOnFirstAdd bool
 	}
 
 	// Check how much metadata exists
@@ -69,21 +72,32 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraCheck f
 			Value:      "stringValue",
 			Type:       types.MetadataStringValue,
 			Visibility: types.MetadataReadWriteVisibility,
-			IsSystem:   true,
+			IsSystem:   false,
+			ExpectErrorOnFirstAdd: false,
+		},
+		{
+			Key:        "numberKey",
+			Value:      "numberValue",
+			Type:       types.MetadataNumberValue,
+			Visibility: types.MetadataReadWriteVisibility,
+			IsSystem:   false,
+			ExpectErrorOnFirstAdd: false,
 		},
 		{
 			Key:        "boolKey",
 			Value:      "true",
 			Type:       types.MetadataBooleanValue,
 			Visibility: types.MetadataReadWriteVisibility,
-			IsSystem:   true,
+			IsSystem:   false,
+			ExpectErrorOnFirstAdd: false,
 		},
 		{
 			Key:        "dateKey",
 			Value:      "2022-10-05T13:44:00.000Z",
 			Type:       types.MetadataDateTimeValue,
 			Visibility: types.MetadataReadWriteVisibility,
-			IsSystem:   true,
+			IsSystem:   false,
+			ExpectErrorOnFirstAdd: false,
 		},
 		{
 			Key:        "hidden",
@@ -91,6 +105,7 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraCheck f
 			Type:       types.MetadataStringValue,
 			Visibility: types.MetadataHiddenVisibility,
 			IsSystem:   true,
+			ExpectErrorOnFirstAdd: false,
 		},
 		{
 			Key:        "readOnly",
@@ -98,19 +113,25 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraCheck f
 			Type:       types.MetadataStringValue,
 			Visibility: types.MetadataReadOnlyVisibility,
 			IsSystem:   true,
+			ExpectErrorOnFirstAdd: false,
 		},
 		{
-			Key:        "notSystem",
-			Value:      "notSystemValue",
+			Key:        "error1",
+			Value:      "errorValue1",
 			Type:       types.MetadataStringValue,
 			Visibility: types.MetadataReadWriteVisibility,
-			IsSystem:   false,
+			IsSystem:   true,
+			ExpectErrorOnFirstAdd: true, // types.MetadataReadWriteVisibility can't have isSystem=true
 		},
 	}
 
 	for _, testCase := range testCases {
 
 		err = resource.AddMetadataEntryWithVisibility(testCase.Key, testCase.Value, testCase.Type, testCase.Visibility, testCase.IsSystem)
+		if testCase.ExpectErrorOnFirstAdd {
+			check.Assert(err, NotNil)
+			return
+		}
 		check.Assert(err, IsNil)
 
 		// Check if metadata was added correctly
