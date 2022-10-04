@@ -51,6 +51,7 @@ func (vcdClient *VCDClient) MergeMetadataByHref(href, typedValue string, metadat
 
 // AddMetadataEntry adds VM metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
+// Deprecated: Use VM.AddMetadataEntryWithVisibility instead
 func (vm *VM) AddMetadataEntry(typedValue, key, value string) error {
 	task, err := vm.AddMetadataEntryAsync(typedValue, key, value)
 	if err != nil {
@@ -72,12 +73,14 @@ func (vm *VM) AddMetadataEntry(typedValue, key, value string) error {
 
 // AddMetadataEntryAsync adds VM metadata typedValue and key/value pair provided as input
 // and returns the task.
+// Deprecated: Use VM.AddMetadataEntryWithVisibilityAsync instead
 func (vm *VM) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
 	return addMetadataDeprecated(vm.client, typedValue, key, value, vm.VM.HREF)
 }
 
 // MergeMetadataAsync merges VM metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then returns the task.
+// Deprecated: Use VM.MergeMetadataWithMetadataValuesAsync instead
 func (vm *VM) MergeMetadataAsync(typedValue string, metadata map[string]interface{}) (Task, error) {
 	return mergeAllMetadataDeprecated(vm.client, typedValue, metadata, vm.VM.HREF)
 }
@@ -124,6 +127,7 @@ func (vm *VM) DeleteMetadataEntryAsync(key string) (Task, error) {
 // AddMetadataEntry adds VDC metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
 // Note: Requires system administrator privileges.
+// Deprecated: Use Vdc.AddMetadataEntryWithVisibility instead
 func (vdc *Vdc) AddMetadataEntry(typedValue, key, value string) error {
 	task, err := vdc.AddMetadataEntryAsync(typedValue, key, value)
 	if err != nil {
@@ -145,6 +149,7 @@ func (vdc *Vdc) AddMetadataEntry(typedValue, key, value string) error {
 
 // AddMetadataEntryAsync adds VDC metadata typedValue and key/value pair provided as input and returns the task.
 // Note: Requires system administrator privileges.
+// Deprecated: Use Vdc.AddMetadataEntryWithVisibilityAsync instead
 func (vdc *Vdc) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
 	return addMetadataDeprecated(vdc.client, typedValue, key, value, getAdminURL(vdc.Vdc.HREF))
 }
@@ -152,6 +157,7 @@ func (vdc *Vdc) AddMetadataEntryAsync(typedValue, key, value string) (Task, erro
 // MergeMetadataAsync merges VDC metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
 // Note: Requires system administrator privileges.
+// Deprecated: Use Vdc.MergeMetadataWithMetadataValuesAsync
 func (vdc *Vdc) MergeMetadataAsync(typedValue string, metadata map[string]interface{}) (Task, error) {
 	return mergeAllMetadataDeprecated(vdc.client, typedValue, metadata, getAdminURL(vdc.Vdc.HREF))
 }
@@ -199,6 +205,7 @@ func (vdc *Vdc) DeleteMetadataEntryAsync(key string) (Task, error) {
 // AddMetadataEntry adds Provider VDC metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
 // Note: Requires system administrator privileges.
+// Deprecated: Use ProviderVdc.AddMetadataEntryWithVisibility instead
 func (providerVdc *ProviderVdc) AddMetadataEntry(typedValue, key, value string) error {
 	task, err := providerVdc.AddMetadataEntryAsync(typedValue, key, value)
 	if err != nil {
@@ -220,6 +227,7 @@ func (providerVdc *ProviderVdc) AddMetadataEntry(typedValue, key, value string) 
 
 // AddMetadataEntryAsync adds Provider VDC metadata typedValue and key/value pair provided as input and returns the task.
 // Note: Requires system administrator privileges.
+// Deprecated: Use ProviderVdc.AddMetadataEntryWithVisibilityAsync instead
 func (providerVdc *ProviderVdc) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
 	return addMetadataDeprecated(providerVdc.client, typedValue, key, value, providerVdc.ProviderVdc.HREF)
 }
@@ -227,6 +235,7 @@ func (providerVdc *ProviderVdc) AddMetadataEntryAsync(typedValue, key, value str
 // MergeMetadataAsync merges Provider VDC metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
 // Note: Requires system administrator privileges.
+// Deprecated: Use ProviderVdc.MergeMetadataWithMetadataValuesAsync
 func (providerVdc *ProviderVdc) MergeMetadataAsync(typedValue string, metadata map[string]interface{}) (Task, error) {
 	return mergeAllMetadataDeprecated(providerVdc.client, typedValue, metadata, providerVdc.ProviderVdc.HREF)
 }
@@ -273,6 +282,7 @@ func (providerVdc *ProviderVdc) DeleteMetadataEntryAsync(key string) (Task, erro
 
 // AddMetadataEntry adds VApp metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
+// Deprecated: Use VApp.AddMetadataEntryWithVisibility instead
 func (vapp *VApp) AddMetadataEntry(typedValue, key, value string) error {
 	task, err := vapp.AddMetadataEntryAsync(typedValue, key, value)
 	if err != nil {
@@ -293,12 +303,14 @@ func (vapp *VApp) AddMetadataEntry(typedValue, key, value string) error {
 }
 
 // AddMetadataEntryAsync adds VApp metadata typedValue and key/value pair provided as input and returns the task.
+// Deprecated: Use VApp.AddMetadataEntryWithVisibilityAsync instead
 func (vapp *VApp) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
 	return addMetadataDeprecated(vapp.client, typedValue, key, value, vapp.VApp.HREF)
 }
 
 // MergeMetadataAsync merges VApp metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
+// Deprecated: Use VApp.MergeMetadataWithMetadataValuesAsync
 func (vapp *VApp) MergeMetadataAsync(typedValue string, metadata map[string]interface{}) (Task, error) {
 	return mergeAllMetadataDeprecated(vapp.client, typedValue, metadata, vapp.VApp.HREF)
 }
@@ -342,6 +354,7 @@ func (vapp *VApp) DeleteMetadataEntryAsync(key string) (Task, error) {
 
 // AddMetadataEntry adds VAppTemplate metadata typedValue and key/value pair provided as input and
 // waits for the task to finish.
+// Deprecated: Use VAppTemplate.AddMetadataEntryWithVisibility instead
 func (vAppTemplate *VAppTemplate) AddMetadataEntry(typedValue, key, value string) error {
 	task, err := vAppTemplate.AddMetadataEntryAsync(typedValue, key, value)
 	if err != nil {
@@ -362,12 +375,14 @@ func (vAppTemplate *VAppTemplate) AddMetadataEntry(typedValue, key, value string
 
 // AddMetadataEntryAsync adds VAppTemplate metadata typedValue and key/value pair provided as input
 // and returns the task.
+// Deprecated: Use VAppTemplate.AddMetadataEntryWithVisibilityAsync instead
 func (vAppTemplate *VAppTemplate) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
 	return addMetadataDeprecated(vAppTemplate.client, typedValue, key, value, vAppTemplate.VAppTemplate.HREF)
 }
 
 // MergeMetadataAsync merges VAppTemplate metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
+// Deprecated: Use VAppTemplate.MergeMetadataWithMetadataValuesAsync
 func (vAppTemplate *VAppTemplate) MergeMetadataAsync(typedValue string, metadata map[string]interface{}) (Task, error) {
 	return mergeAllMetadataDeprecated(vAppTemplate.client, typedValue, metadata, vAppTemplate.VAppTemplate.HREF)
 }
@@ -412,6 +427,7 @@ func (vAppTemplate *VAppTemplate) DeleteMetadataEntryAsync(key string) (Task, er
 
 // AddMetadataEntry adds MediaRecord metadata typedValue and key/value pair provided as input and
 // waits for the task to finish.
+// Deprecated: Use MediaRecord.AddMetadataEntryWithVisibility instead
 func (mediaRecord *MediaRecord) AddMetadataEntry(typedValue, key, value string) error {
 	task, err := mediaRecord.AddMetadataEntryAsync(typedValue, key, value)
 	if err != nil {
@@ -432,12 +448,14 @@ func (mediaRecord *MediaRecord) AddMetadataEntry(typedValue, key, value string) 
 
 // AddMetadataEntryAsync adds MediaRecord metadata typedValue and key/value pair provided as input
 // and returns the task.
+// Deprecated: Use MediaRecord.AddMetadataEntryWithVisibilityAsync instead
 func (mediaRecord *MediaRecord) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
 	return addMetadataDeprecated(mediaRecord.client, typedValue, key, value, mediaRecord.MediaRecord.HREF)
 }
 
 // MergeMetadataAsync merges MediaRecord metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
+// Deprecated: Use MediaRecord.MergeMetadataWithMetadataValuesAsync
 func (mediaRecord *MediaRecord) MergeMetadataAsync(typedValue string, metadata map[string]interface{}) (Task, error) {
 	return mergeAllMetadataDeprecated(mediaRecord.client, typedValue, metadata, mediaRecord.MediaRecord.HREF)
 }
@@ -483,6 +501,7 @@ func (mediaRecord *MediaRecord) DeleteMetadataEntryAsync(key string) (Task, erro
 
 // AddMetadataEntry adds Media metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
+// Deprecated: Use Media.AddMetadataEntryWithVisibility instead
 func (media *Media) AddMetadataEntry(typedValue, key, value string) error {
 	task, err := media.AddMetadataEntryAsync(typedValue, key, value)
 	if err != nil {
@@ -503,12 +522,14 @@ func (media *Media) AddMetadataEntry(typedValue, key, value string) error {
 
 // AddMetadataEntryAsync adds Media metadata typedValue and key/value pair provided as input
 // and returns the task.
+// Deprecated: Use Media.AddMetadataEntryWithVisibilityAsync instead
 func (media *Media) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
 	return addMetadataDeprecated(media.client, typedValue, key, value, media.Media.HREF)
 }
 
 // MergeMetadataAsync merges Media metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
+// Deprecated: Use Media.MergeMetadataWithMetadataValuesAsync
 func (media *Media) MergeMetadataAsync(typedValue string, metadata map[string]interface{}) (Task, error) {
 	return mergeAllMetadataDeprecated(media.client, typedValue, metadata, media.Media.HREF)
 }
@@ -553,6 +574,7 @@ func (media *Media) DeleteMetadataEntryAsync(key string) (Task, error) {
 
 // AddMetadataEntry adds AdminCatalog metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
+// Deprecated: Use AdminCatalog.AddMetadataEntryWithVisibility instead
 func (adminCatalog *AdminCatalog) AddMetadataEntry(typedValue, key, value string) error {
 	task, err := adminCatalog.AddMetadataEntryAsync(typedValue, key, value)
 	if err != nil {
@@ -573,12 +595,14 @@ func (adminCatalog *AdminCatalog) AddMetadataEntry(typedValue, key, value string
 
 // AddMetadataEntryAsync adds AdminCatalog metadata typedValue and key/value pair provided as input
 // and returns the task.
+// Deprecated: Use AdminCatalog.AddMetadataEntryWithVisibilityAsync instead
 func (adminCatalog *AdminCatalog) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
 	return addMetadataDeprecated(adminCatalog.client, typedValue, key, value, adminCatalog.AdminCatalog.HREF)
 }
 
 // MergeMetadataAsync merges AdminCatalog metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
+// Deprecated: Use AdminCatalog.MergeMetadataWithMetadataValuesAsync
 func (adminCatalog *AdminCatalog) MergeMetadataAsync(typedValue string, metadata map[string]interface{}) (Task, error) {
 	return mergeAllMetadataDeprecated(adminCatalog.client, typedValue, metadata, adminCatalog.AdminCatalog.HREF)
 }
@@ -623,6 +647,7 @@ func (adminCatalog *AdminCatalog) DeleteMetadataEntryAsync(key string) (Task, er
 
 // AddMetadataEntry adds AdminOrg metadata key/value pair provided as input to the corresponding organization seen as administrator
 // and waits for completion.
+// Deprecated: Use AdminOrg.AddMetadataEntryWithVisibility instead
 func (adminOrg *AdminOrg) AddMetadataEntry(typedValue, key, value string) error {
 	task, err := adminOrg.AddMetadataEntryAsync(typedValue, key, value)
 	if err != nil {
@@ -633,12 +658,14 @@ func (adminOrg *AdminOrg) AddMetadataEntry(typedValue, key, value string) error 
 
 // AddMetadataEntryAsync adds AdminOrg metadata key/value pair provided as input to the corresponding organization seen as administrator
 // and returns a task.
+// Deprecated: Use AdminOrg.AddMetadataEntryWithVisibilityAsync instead
 func (adminOrg *AdminOrg) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
 	return addMetadataDeprecated(adminOrg.client, typedValue, key, value, adminOrg.AdminOrg.HREF)
 }
 
 // MergeMetadataAsync merges AdminOrg metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
+// Deprecated: Use AdminOrg.MergeMetadataWithMetadataValuesAsync
 func (adminOrg *AdminOrg) MergeMetadataAsync(typedValue string, metadata map[string]interface{}) (Task, error) {
 	return mergeAllMetadataDeprecated(adminOrg.client, typedValue, metadata, adminOrg.AdminOrg.HREF)
 }
@@ -677,6 +704,7 @@ func (adminOrg *AdminOrg) DeleteMetadataEntryAsync(key string) (Task, error) {
 
 
 // AddMetadataEntry adds metadata key/value pair provided as input to the corresponding independent disk and waits for completion.
+// Deprecated: Use Disk.AddMetadataEntryWithVisibility instead
 func (disk *Disk) AddMetadataEntry(typedValue, key, value string) error {
 	task, err := disk.AddMetadataEntryAsync(typedValue, key, value)
 	if err != nil {
@@ -686,12 +714,14 @@ func (disk *Disk) AddMetadataEntry(typedValue, key, value string) error {
 }
 
 // AddMetadataEntryAsync adds metadata key/value pair provided as input to the corresponding independent disk and returns a task.
+// Deprecated: Use Disk.AddMetadataEntryWithVisibilityAsync instead
 func (disk *Disk) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
 	return addMetadataDeprecated(disk.client, typedValue, key, value, disk.Disk.HREF)
 }
 
 // MergeMetadataAsync merges Disk metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
+// Deprecated: Use Disk.MergeMetadataWithMetadataValuesAsync
 func (disk *Disk) MergeMetadataAsync(typedValue string, metadata map[string]interface{}) (Task, error) {
 	return mergeAllMetadataDeprecated(disk.client, typedValue, metadata, disk.Disk.HREF)
 }
@@ -732,6 +762,7 @@ func (disk *Disk) DeleteMetadataEntryAsync(key string) (Task, error) {
 // AddMetadataEntry adds OrgVDCNetwork metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
 // Note: Requires system administrator privileges.
+// Deprecated: Use OrgVDCNetwork.AddMetadataEntryWithVisibility instead
 func (orgVdcNetwork *OrgVDCNetwork) AddMetadataEntry(typedValue, key, value string) error {
 	task, err := orgVdcNetwork.AddMetadataEntryAsync(typedValue, key, value)
 	if err != nil {
@@ -743,6 +774,7 @@ func (orgVdcNetwork *OrgVDCNetwork) AddMetadataEntry(typedValue, key, value stri
 // AddMetadataEntryAsync adds OrgVDCNetwork metadata typedValue and key/value pair provided as input
 // and returns the task.
 // Note: Requires system administrator privileges.
+// Deprecated: Use OrgVDCNetwork.AddMetadataEntryWithVisibilityAsync instead
 func (orgVdcNetwork *OrgVDCNetwork) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
 	return addMetadataDeprecated(orgVdcNetwork.client, typedValue, key, value, getAdminURL(orgVdcNetwork.OrgVDCNetwork.HREF))
 }
@@ -750,6 +782,7 @@ func (orgVdcNetwork *OrgVDCNetwork) AddMetadataEntryAsync(typedValue, key, value
 // MergeMetadataAsync merges OrgVDCNetwork metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
 // Note: Requires system administrator privileges.
+// Deprecated: Use OrgVDCNetwork.MergeMetadataWithMetadataValuesAsync
 func (orgVdcNetwork *OrgVDCNetwork) MergeMetadataAsync(typedValue string, metadata map[string]interface{}) (Task, error) {
 	return mergeAllMetadataDeprecated(orgVdcNetwork.client, typedValue, metadata, getAdminURL(orgVdcNetwork.OrgVDCNetwork.HREF))
 }
@@ -788,6 +821,7 @@ func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntryAsync(key string) (Task, 
 
 // AddMetadataEntry adds CatalogItem metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
+// Deprecated: Use CatalogItem.AddMetadataEntryWithVisibility instead
 func (catalogItem *CatalogItem) AddMetadataEntry(typedValue, key, value string) error {
 	task, err := catalogItem.AddMetadataEntryAsync(typedValue, key, value)
 	if err != nil {
@@ -798,12 +832,14 @@ func (catalogItem *CatalogItem) AddMetadataEntry(typedValue, key, value string) 
 
 // AddMetadataEntryAsync adds CatalogItem metadata typedValue and key/value pair provided as input
 // and returns the task.
+// Deprecated: Use CatalogItem.AddMetadataEntryWithVisibilityAsync instead
 func (catalogItem *CatalogItem) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
 	return addMetadataDeprecated(catalogItem.client, typedValue, key, value, catalogItem.CatalogItem.HREF)
 }
 
 // MergeMetadataAsync merges CatalogItem metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
+// Deprecated: Use CatalogItem.MergeMetadataWithMetadataValuesAsync
 func (catalogItem *CatalogItem) MergeMetadataAsync(typedValue string, metadata map[string]interface{}) (Task, error) {
 	return mergeAllMetadataDeprecated(catalogItem.client, typedValue, metadata, catalogItem.CatalogItem.HREF)
 }
@@ -841,7 +877,7 @@ func (catalogItem *CatalogItem) DeleteMetadataEntryAsync(key string) (Task, erro
 
 // AddMetadataEntry adds OpenApiOrgVdcNetwork metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
-// TODO: This function is currently using XML API underneath as OpenAPI metadata is supported from v37.0 and is currently in alpha at the moment. See https://github.com/vmware/go-vcloud-director/pull/455
+// Deprecated: Use OpenApiOrgVdcNetwork.AddMetadataEntryWithVisibility instead
 func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) AddMetadataEntry(typedValue, key, value string) error {
 	task, err := addMetadataDeprecated(openApiOrgVdcNetwork.client, typedValue, key, value, fmt.Sprintf("%s/admin/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), strings.ReplaceAll(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, "urn:vcloud:network:", "")))
 	if err != nil {
