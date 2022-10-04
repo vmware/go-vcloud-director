@@ -653,9 +653,12 @@ func mergeAllMetadataDeprecated(client *Client, typedValue string, metadata map[
 		types.MimeMetaData, "error adding metadata: %s", newMetadata)
 }
 
+// ----------------
+// Deprecations
+
 // Deprecated: use VM.DeleteMetadataEntry.
 func (vm *VM) DeleteMetadata(key string) (Task, error) {
-	return deleteMetadata(vm.client, key, vm.VM.HREF)
+	return deleteMetadata(vm.client, vm.VM.HREF, key)
 }
 
 // Deprecated: use VM.AddMetadataEntry.
@@ -665,7 +668,7 @@ func (vm *VM) addMetadataDeprecated(key string, value string) (Task, error) {
 
 // Deprecated: use Vdc.DeleteMetadataEntry.
 func (vdc *Vdc) DeleteMetadata(key string) (Vdc, error) {
-	task, err := deleteMetadata(vdc.client, key, getAdminURL(vdc.Vdc.HREF))
+	task, err := deleteMetadata(vdc.client, getAdminURL(vdc.Vdc.HREF), key)
 	if err != nil {
 		return Vdc{}, err
 	}
@@ -710,12 +713,12 @@ func (vdc *Vdc) AddMetadataAsync(key string, value string) (Task, error) {
 
 // Deprecated: use Vdc.DeleteMetadataEntryAsync.
 func (vdc *Vdc) DeleteMetadataAsync(key string) (Task, error) {
-	return deleteMetadata(vdc.client, key, getAdminURL(vdc.Vdc.HREF))
+	return deleteMetadata(vdc.client, getAdminURL(vdc.Vdc.HREF), key)
 }
 
 // Deprecated: use VApp.DeleteMetadataEntry.
 func (vapp *VApp) DeleteMetadata(key string) (Task, error) {
-	return deleteMetadata(vapp.client, key, vapp.VApp.HREF)
+	return deleteMetadata(vapp.client, vapp.VApp.HREF, key)
 }
 
 // Deprecated: use VApp.AddMetadataEntry
@@ -763,7 +766,7 @@ func (vAppTemplate *VAppTemplate) DeleteMetadata(key string) error {
 
 // Deprecated: use VAppTemplate.DeleteMetadataEntryAsync.
 func (vAppTemplate *VAppTemplate) DeleteMetadataAsync(key string) (Task, error) {
-	return deleteMetadata(vAppTemplate.client, key, vAppTemplate.VAppTemplate.HREF)
+	return deleteMetadata(vAppTemplate.client, vAppTemplate.VAppTemplate.HREF, key)
 }
 
 // Deprecated: use Media.AddMetadataEntry.
@@ -806,7 +809,7 @@ func (media *Media) DeleteMetadata(key string) error {
 
 // Deprecated: use Media.DeleteMetadataEntryAsync.
 func (media *Media) DeleteMetadataAsync(key string) (Task, error) {
-	return deleteMetadata(media.client, key, media.Media.HREF)
+	return deleteMetadata(media.client, media.Media.HREF, key)
 }
 
 // GetMetadata returns MediaItem metadata.
@@ -858,7 +861,7 @@ func (mediaItem *MediaItem) DeleteMetadata(key string) error {
 // DeleteMetadataAsync deletes metadata depending on key provided as input from MediaItem.
 // Deprecated: Use MediaRecord.DeleteMetadataAsync.
 func (mediaItem *MediaItem) DeleteMetadataAsync(key string) (Task, error) {
-	return deleteMetadata(mediaItem.vdc.client, key, mediaItem.MediaItem.HREF)
+	return deleteMetadata(mediaItem.vdc.client, mediaItem.MediaItem.HREF, key)
 }
 
 // Deprecated: use MediaRecord.AddMetadataEntry.
@@ -901,5 +904,5 @@ func (mediaRecord *MediaRecord) DeleteMetadata(key string) error {
 
 // Deprecated: use MediaRecord.DeleteMetadataEntryAsync.
 func (mediaRecord *MediaRecord) DeleteMetadataAsync(key string) (Task, error) {
-	return deleteMetadata(mediaRecord.client, key, mediaRecord.MediaRecord.HREF)
+	return deleteMetadata(mediaRecord.client, mediaRecord.MediaRecord.HREF, key)
 }
