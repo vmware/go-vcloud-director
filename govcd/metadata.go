@@ -96,34 +96,6 @@ func (vm *VM) MergeMetadata(typedValue string, metadata map[string]interface{}) 
 	return task.WaitTaskCompletion()
 }
 
-// DeleteMetadataEntry deletes VM metadata by key provided as input and waits for the task to finish.
-func (vm *VM) DeleteMetadataEntry(key string) error {
-	task, err := vm.DeleteMetadataEntryAsync(key)
-	if err != nil {
-		return err
-	}
-
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return err
-	}
-
-	err = vm.Refresh()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// DeleteMetadataEntryAsync deletes VM metadata depending on key provided as input
-// and returns the task.
-func (vm *VM) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(vm.client, key, vm.VM.HREF)
-}
-
-
-
 // AddMetadataEntry adds VDC metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
 // Note: Requires system administrator privileges.
@@ -172,34 +144,6 @@ func (vdc *Vdc) MergeMetadata(typedValue string, metadata map[string]interface{}
 		return err
 	}
 	return task.WaitTaskCompletion()
-}
-
-// DeleteMetadataEntry deletes VDC metadata by key provided as input and waits for
-// the task to finish.
-// Note: Requires system administrator privileges.
-func (vdc *Vdc) DeleteMetadataEntry(key string) error {
-	task, err := vdc.DeleteMetadataEntryAsync(key)
-	if err != nil {
-		return err
-	}
-
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return err
-	}
-
-	err = vdc.Refresh()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// DeleteMetadataEntryAsync deletes VDC metadata depending on key provided as input and returns the task.
-// Note: Requires system administrator privileges.
-func (vdc *Vdc) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(vdc.client, key, getAdminURL(vdc.Vdc.HREF))
 }
 
 // AddMetadataEntry adds Provider VDC metadata typedValue and key/value pair provided as input
@@ -252,34 +196,6 @@ func (providerVdc *ProviderVdc) MergeMetadata(typedValue string, metadata map[st
 	return task.WaitTaskCompletion()
 }
 
-// DeleteMetadataEntry deletes Provider VDC metadata by key provided as input and waits for
-// the task to finish.
-// Note: Requires system administrator privileges.
-func (providerVdc *ProviderVdc) DeleteMetadataEntry(key string) error {
-	task, err := providerVdc.DeleteMetadataEntryAsync(key)
-	if err != nil {
-		return err
-	}
-
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return err
-	}
-
-	err = providerVdc.Refresh()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// DeleteMetadataEntryAsync deletes Provider VDC metadata depending on key provided as input and returns the task.
-// Note: Requires system administrator privileges.
-func (providerVdc *ProviderVdc) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(providerVdc.client, key, providerVdc.ProviderVdc.HREF)
-}
-
 // AddMetadataEntry adds VApp metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
 // Deprecated: Use VApp.AddMetadataEntryWithVisibility instead
@@ -324,32 +240,6 @@ func (vapp *VApp) MergeMetadata(typedValue string, metadata map[string]interface
 		return err
 	}
 	return task.WaitTaskCompletion()
-}
-
-// DeleteMetadataEntry deletes VApp metadata by key provided as input and waits for
-// the task to finish.
-func (vapp *VApp) DeleteMetadataEntry(key string) error {
-	task, err := vapp.DeleteMetadataEntryAsync(key)
-	if err != nil {
-		return err
-	}
-
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return err
-	}
-
-	err = vapp.Refresh()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// DeleteMetadataEntryAsync deletes VApp metadata depending on key provided as input and returns the task.
-func (vapp *VApp) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(vapp.client, key, vapp.VApp.HREF)
 }
 
 // AddMetadataEntry adds VAppTemplate metadata typedValue and key/value pair provided as input and
@@ -398,33 +288,6 @@ func (vAppTemplate *VAppTemplate) MergeMetadata(typedValue string, metadata map[
 	return task.WaitTaskCompletion()
 }
 
-// DeleteMetadataEntry deletes VAppTemplate metadata depending on key provided as input
-// and waits for the task to finish.
-func (vAppTemplate *VAppTemplate) DeleteMetadataEntry(key string) error {
-	task, err := vAppTemplate.DeleteMetadataEntryAsync(key)
-	if err != nil {
-		return err
-	}
-
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return err
-	}
-
-	err = vAppTemplate.Refresh()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// DeleteMetadataEntryAsync deletes VAppTemplate metadata depending on key provided as input
-// and returns the task.
-func (vAppTemplate *VAppTemplate) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(vAppTemplate.client, key, vAppTemplate.VAppTemplate.HREF)
-}
-
 // AddMetadataEntry adds MediaRecord metadata typedValue and key/value pair provided as input and
 // waits for the task to finish.
 // Deprecated: Use MediaRecord.AddMetadataEntryWithVisibility instead
@@ -471,34 +334,6 @@ func (mediaRecord *MediaRecord) MergeMetadata(typedValue string, metadata map[st
 	return task.WaitTaskCompletion()
 }
 
-// DeleteMetadataEntry deletes MediaRecord metadata depending on key provided as input
-// and waits for the task to finish.
-func (mediaRecord *MediaRecord) DeleteMetadataEntry(key string) error {
-	task, err := mediaRecord.DeleteMetadataEntryAsync(key)
-	if err != nil {
-		return err
-	}
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return err
-	}
-
-	err = mediaRecord.Refresh()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// DeleteMetadataEntryAsync deletes MediaRecord metadata depending on key provided as input
-// and returns the task.
-func (mediaRecord *MediaRecord) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(mediaRecord.client, key, mediaRecord.MediaRecord.HREF)
-}
-
-
-
 // AddMetadataEntry adds Media metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
 // Deprecated: Use Media.AddMetadataEntryWithVisibility instead
@@ -543,33 +378,6 @@ func (media *Media) MergeMetadata(typedValue string, metadata map[string]interfa
 		return err
 	}
 	return task.WaitTaskCompletion()
-}
-
-// DeleteMetadataEntry deletes Media metadata depending on key provided as input
-// and waits for the task to finish.
-func (media *Media) DeleteMetadataEntry(key string) error {
-	task, err := media.DeleteMetadataEntryAsync(key)
-	if err != nil {
-		return err
-	}
-
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return err
-	}
-
-	err = media.Refresh()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// DeleteMetadataEntryAsync deletes Media metadata depending on key provided as input
-// and returns the task.
-func (media *Media) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(media.client, key, media.Media.HREF)
 }
 
 // AddMetadataEntry adds AdminCatalog metadata typedValue and key/value pair provided as input
@@ -618,33 +426,6 @@ func (adminCatalog *AdminCatalog) MergeMetadata(typedValue string, metadata map[
 	return task.WaitTaskCompletion()
 }
 
-// DeleteMetadataEntry deletes AdminCatalog metadata depending on key provided as input
-// and waits for the task to finish.
-func (adminCatalog *AdminCatalog) DeleteMetadataEntry(key string) error {
-	task, err := adminCatalog.DeleteMetadataEntryAsync(key)
-	if err != nil {
-		return err
-	}
-
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return err
-	}
-
-	err = adminCatalog.Refresh()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// DeleteMetadataEntryAsync deletes AdminCatalog metadata depending on key provided as input
-// and returns a task.
-func (adminCatalog *AdminCatalog) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(adminCatalog.client, key, adminCatalog.AdminCatalog.HREF)
-}
-
 // AddMetadataEntry adds AdminOrg metadata key/value pair provided as input to the corresponding organization seen as administrator
 // and waits for completion.
 // Deprecated: Use AdminOrg.AddMetadataEntryWithVisibility instead
@@ -681,28 +462,6 @@ func (adminOrg *AdminOrg) MergeMetadata(typedValue string, metadata map[string]i
 	return task.WaitTaskCompletion()
 }
 
-// DeleteMetadataEntry deletes metadata of the corresponding organization with the given key, and waits for completion
-func (adminOrg *AdminOrg) DeleteMetadataEntry(key string) error {
-	task, err := adminOrg.DeleteMetadataEntryAsync(key)
-	if err != nil {
-		return err
-	}
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return fmt.Errorf("error completing delete metadata for organization task: %s", err)
-	}
-
-	return nil
-}
-
-// DeleteMetadataEntryAsync deletes metadata of the corresponding organization with the given key, and returns
-// a task.
-func (adminOrg *AdminOrg) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(adminOrg.client, key, adminOrg.AdminOrg.HREF)
-}
-
-
-
 // AddMetadataEntry adds metadata key/value pair provided as input to the corresponding independent disk and waits for completion.
 // Deprecated: Use Disk.AddMetadataEntryWithVisibility instead
 func (disk *Disk) AddMetadataEntry(typedValue, key, value string) error {
@@ -736,28 +495,6 @@ func (disk *Disk) MergeMetadata(typedValue string, metadata map[string]interface
 	}
 	return task.WaitTaskCompletion()
 }
-
-// DeleteMetadataEntry deletes metadata of the corresponding independent disk with the given key, and waits for completion
-func (disk *Disk) DeleteMetadataEntry(key string) error {
-	task, err := disk.DeleteMetadataEntryAsync(key)
-	if err != nil {
-		return err
-	}
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return fmt.Errorf("error completing delete metadata for independent disk task: %s", err)
-	}
-
-	return nil
-}
-
-// DeleteMetadataEntryAsync deletes metadata of the corresponding independent disk with the given key, and returns
-// a task.
-func (disk *Disk) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(disk.client, key, disk.Disk.HREF)
-}
-
-
 
 // AddMetadataEntry adds OrgVDCNetwork metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
@@ -799,26 +536,6 @@ func (orgVdcNetwork *OrgVDCNetwork) MergeMetadata(typedValue string, metadata ma
 	return task.WaitTaskCompletion()
 }
 
-// DeleteMetadataEntry deletes OrgVDCNetwork metadata depending on key provided as input
-// and waits for the task to finish.
-// Note: Requires system administrator privileges.
-func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntry(key string) error {
-	task, err := orgVdcNetwork.DeleteMetadataEntryAsync(key)
-	if err != nil {
-		return err
-	}
-
-	return task.WaitTaskCompletion()
-}
-
-// DeleteMetadataEntryAsync deletes OrgVDCNetwork metadata depending on key provided as input
-// and returns a task.
-// Note: Requires system administrator privileges.
-func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(orgVdcNetwork.client, key, getAdminURL(orgVdcNetwork.OrgVDCNetwork.HREF))
-}
-
-
 // AddMetadataEntry adds CatalogItem metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
 // Deprecated: Use CatalogItem.AddMetadataEntryWithVisibility instead
@@ -855,23 +572,6 @@ func (catalogItem *CatalogItem) MergeMetadata(typedValue string, metadata map[st
 	return task.WaitTaskCompletion()
 }
 
-// DeleteMetadataEntry deletes CatalogItem metadata depending on key provided as input
-// and waits for the task to finish.
-func (catalogItem *CatalogItem) DeleteMetadataEntry(key string) error {
-	task, err := catalogItem.DeleteMetadataEntryAsync(key)
-	if err != nil {
-		return err
-	}
-
-	return task.WaitTaskCompletion()
-}
-
-// DeleteMetadataEntryAsync deletes CatalogItem metadata depending on key provided as input
-// and returns a task.
-func (catalogItem *CatalogItem) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(catalogItem.client, key, catalogItem.CatalogItem.HREF)
-}
-
 // ----------------
 // OpenAPI metadata functions
 
@@ -894,18 +594,6 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) MergeMetadata(typedValue strin
 	if err != nil {
 		return err
 	}
-	return task.WaitTaskCompletion()
-}
-
-// DeleteMetadataEntry deletes OpenApiOrgVdcNetwork metadata depending on key provided as input
-// and waits for the task to finish.
-// TODO: This function is currently using XML API underneath as OpenAPI metadata is supported from v37.0 and is currently in alpha at the moment. // TODO: This function is currently using XML underneath as metadata is supported in v37.0 and at the moment is in alpha state. See https://github.com/vmware/go-vcloud-director/pull/455
-func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntry(key string) error {
-	task, err := deleteMetadata(openApiOrgVdcNetwork.client, key, fmt.Sprintf("%s/admin/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), strings.ReplaceAll(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, "urn:vcloud:network:", "")))
-	if err != nil {
-		return err
-	}
-
 	return task.WaitTaskCompletion()
 }
 

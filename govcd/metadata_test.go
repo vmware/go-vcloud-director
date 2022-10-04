@@ -20,8 +20,6 @@ func init() {
 	testingTags["metadata"] = "metadata_test.go"
 }
 
-
-
 func (vcd *TestVCD) Test_AddAndDeleteMetadataForVdc(check *C) {
 	if vcd.config.VCD.Vdc == "" {
 		check.Skip("skipping test because VDC name is empty")

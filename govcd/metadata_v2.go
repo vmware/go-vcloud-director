@@ -129,62 +129,62 @@ func (vdc *Vdc) AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visi
 // and returns the task.
 // Note: Requires system administrator privileges.
 func (providerVdc *ProviderVdc) AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visibility string, isSystem bool) (Task, error) {
-	return addMetadata(providerVdc.client,  providerVdc.ProviderVdc.HREF, key, value, typedValue, visibility, isSystem)
+	return addMetadata(providerVdc.client, providerVdc.ProviderVdc.HREF, key, value, typedValue, visibility, isSystem)
 }
 
 // AddMetadataEntryWithVisibilityAsync adds metadata to the given VApp with the given key, value, type and visibility
 // and returns the task.
 func (vapp *VApp) AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visibility string, isSystem bool) (Task, error) {
-	return addMetadata(vapp.client, vapp.VApp.HREF, key, value, typedValue, visibility, isSystem )
+	return addMetadata(vapp.client, vapp.VApp.HREF, key, value, typedValue, visibility, isSystem)
 }
 
 // AddMetadataEntryWithVisibilityAsync adds metadata to the given VAppTemplate with the given key, value, type and visibility
 // and returns the task.
 func (vAppTemplate *VAppTemplate) AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visibility string, isSystem bool) (Task, error) {
-	return addMetadata(vAppTemplate.client, vAppTemplate.VAppTemplate.HREF, key, value, typedValue, visibility, isSystem )
+	return addMetadata(vAppTemplate.client, vAppTemplate.VAppTemplate.HREF, key, value, typedValue, visibility, isSystem)
 }
 
 // AddMetadataEntryWithVisibilityAsync adds metadata to the given MediaRecord with the given key, value, type and visibility
 // and returns the task.
 func (mediaRecord *MediaRecord) AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visibility string, isSystem bool) (Task, error) {
-	return addMetadata(mediaRecord.client, mediaRecord.MediaRecord.HREF, key, value, typedValue, visibility, isSystem )
+	return addMetadata(mediaRecord.client, mediaRecord.MediaRecord.HREF, key, value, typedValue, visibility, isSystem)
 }
 
 // AddMetadataEntryWithVisibilityAsync adds metadata to the given Media with the given key, value, type and visibility
 // and returns the task.
 func (media *Media) AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visibility string, isSystem bool) (Task, error) {
-	return addMetadata(media.client, media.Media.HREF, key, value, typedValue, visibility, isSystem )
+	return addMetadata(media.client, media.Media.HREF, key, value, typedValue, visibility, isSystem)
 }
 
 // AddMetadataEntryWithVisibilityAsync adds metadata to the given AdminCatalog with the given key, value, type and visibility
 // and returns the task.
 func (adminCatalog *AdminCatalog) AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visibility string, isSystem bool) (Task, error) {
-	return addMetadata(adminCatalog.client, adminCatalog.AdminCatalog.HREF, key, value, typedValue, visibility, isSystem )
+	return addMetadata(adminCatalog.client, adminCatalog.AdminCatalog.HREF, key, value, typedValue, visibility, isSystem)
 }
 
 // AddMetadataEntryWithVisibilityAsync adds metadata to the given AdminOrg with the given key, value, type and visibility
 // and returns the task.
 func (adminOrg *AdminOrg) AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visibility string, isSystem bool) (Task, error) {
-	return addMetadata(adminOrg.client, adminOrg.AdminOrg.HREF, key, value, typedValue, visibility, isSystem )
+	return addMetadata(adminOrg.client, adminOrg.AdminOrg.HREF, key, value, typedValue, visibility, isSystem)
 }
 
 // AddMetadataEntryWithVisibilityAsync adds metadata to the given Disk with the given key, value, type and visibility
 // and returns the task.
 func (disk *Disk) AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visibility string, isSystem bool) (Task, error) {
-	return addMetadata(disk.client, disk.Disk.HREF, key, value, typedValue, visibility, isSystem )
+	return addMetadata(disk.client, disk.Disk.HREF, key, value, typedValue, visibility, isSystem)
 }
 
 // AddMetadataEntryWithVisibilityAsync adds metadata to the given OrgVDCNetwork with the given key, value, type and visibility
 // and returns the task.
 // Note: Requires system administrator privileges.
 func (orgVdcNetwork *OrgVDCNetwork) AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visibility string, isSystem bool) (Task, error) {
-	return addMetadata(orgVdcNetwork.client, getAdminURL(orgVdcNetwork.OrgVDCNetwork.HREF), key, value, typedValue, visibility, isSystem )
+	return addMetadata(orgVdcNetwork.client, getAdminURL(orgVdcNetwork.OrgVDCNetwork.HREF), key, value, typedValue, visibility, isSystem)
 }
 
 // AddMetadataEntryWithVisibilityAsync adds metadata to the given Catalog Item with the given key, value, type and visibility
 // and returns the task.
 func (catalogItem *CatalogItem) AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visibility string, isSystem bool) (Task, error) {
-	return addMetadata(catalogItem.client, catalogItem.CatalogItem.HREF, key, value, typedValue, visibility, isSystem )
+	return addMetadata(catalogItem.client, catalogItem.CatalogItem.HREF, key, value, typedValue, visibility, isSystem)
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -277,7 +277,7 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) AddMetadataEntryWithVisibility
 }
 
 // ------------------------------------------------------------------------------------------------
-// POST metadata async
+// MERGE metadata async
 // ------------------------------------------------------------------------------------------------
 
 // MergeMetadataWithVisibilityByHrefAsync updates the metadata entries present in the referenced entity and creates the ones not present, then
@@ -361,9 +361,9 @@ func (catalogItem *CatalogItem) MergeMetadataWithMetadataValuesAsync(metadata ma
 	return mergeAllMetadata(catalogItem.client, catalogItem.CatalogItem.HREF, metadata)
 }
 
-// ------------------------------------------------
-// POST metadata
-// ------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+// MERGE metadata
+// ------------------------------------------------------------------------------------------------
 
 // MergeMetadataWithMetadataValues updates the metadata values that are already present in the receiver VM and creates the ones not present.
 // The input metadata map has a "metadata key"->"metadata value" relation.
@@ -466,9 +466,82 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) MergeMetadataWithMetadataValue
 	return task.WaitTaskCompletion()
 }
 
-// ----------------
+// ------------------------------------------------------------------------------------------------
 // DELETE metadata async
-// ----------------
+// ------------------------------------------------------------------------------------------------
+
+// DeleteMetadataEntryByHrefAsync deletes metadata from the given resource reference, depending on key provided as input
+// and returns a task.
+func (vcdClient *VCDClient) DeleteMetadataEntryByHrefAsync(href, key string) (Task, error) {
+	return deleteMetadata(&vcdClient.Client, key, href)
+}
+
+// DeleteMetadataEntryAsync deletes VM metadata associated to the input key and returns the task.
+func (vm *VM) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(vm.client, vm.VM.HREF, key)
+}
+
+// DeleteMetadataEntryAsync deletes VDC metadata associated to the input key and returns the task.
+// Note: Requires system administrator privileges.
+func (vdc *Vdc) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(vdc.client, getAdminURL(vdc.Vdc.HREF), key)
+}
+
+// DeleteMetadataEntryAsync deletes ProviderVdc metadata associated to the input key and returns the task.
+// Note: Requires system administrator privileges.
+func (providerVdc *ProviderVdc) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(providerVdc.client, providerVdc.ProviderVdc.HREF, key)
+}
+
+// DeleteMetadataEntryAsync deletes VApp metadata associated to the input key and returns the task.
+func (vapp *VApp) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(vapp.client, vapp.VApp.HREF, key)
+}
+
+// DeleteMetadataEntryAsync deletes VAppTemplate metadata associated to the input key and returns the task.
+func (vAppTemplate *VAppTemplate) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(vAppTemplate.client, vAppTemplate.VAppTemplate.HREF, key)
+}
+
+// DeleteMetadataEntryAsync deletes MediaRecord metadata associated to the input key and returns the task.
+func (mediaRecord *MediaRecord) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(mediaRecord.client, mediaRecord.MediaRecord.HREF, key)
+}
+
+// DeleteMetadataEntryAsync deletes Media metadata associated to the input key and returns the task.
+func (media *Media) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(media.client, media.Media.HREF, key)
+}
+
+// DeleteMetadataEntryAsync deletes AdminCatalog metadata associated to the input key and returns the task.
+func (adminCatalog *AdminCatalog) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(adminCatalog.client, adminCatalog.AdminCatalog.HREF, key)
+}
+
+// DeleteMetadataEntryAsync deletes AdminOrg metadata associated to the input key and returns the task.
+func (adminOrg *AdminOrg) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(adminOrg.client, adminOrg.AdminOrg.HREF, key)
+}
+
+// DeleteMetadataEntryAsync deletes Disk metadata associated to the input key and returns the task.
+func (disk *Disk) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(disk.client, disk.Disk.HREF, key)
+}
+
+// DeleteMetadataEntryAsync deletes OrgVDCNetwork metadata associated to the input key and returns the task.
+// Note: Requires system administrator privileges.
+func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(orgVdcNetwork.client, getAdminURL(orgVdcNetwork.OrgVDCNetwork.HREF), key)
+}
+
+// DeleteMetadataEntryAsync deletes CatalogItem metadata associated to the input key and returns the task.
+func (catalogItem *CatalogItem) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(catalogItem.client, catalogItem.CatalogItem.HREF, key)
+}
+
+// ------------------------------------------------------------------------------------------------
+// DELETE metadata
+// ------------------------------------------------------------------------------------------------
 
 // DeleteMetadataEntryByHref deletes metadata from the given resource reference, depending on key provided as input
 // and waits for the task to finish.
@@ -480,37 +553,98 @@ func (vcdClient *VCDClient) DeleteMetadataEntryByHref(href, key string) error {
 	return task.WaitTaskCompletion()
 }
 
-
-// DeleteMetadataEntryByHrefAsync deletes metadata from the given resource reference, depending on key provided as input
-// and returns a task.
-func (vcdClient *VCDClient) DeleteMetadataEntryByHrefAsync(href, key string) (Task, error) {
-	return deleteMetadata(&vcdClient.Client, key, href)
+// DeleteMetadataEntry deletes VM metadata associated to the input key and waits for the task to finish.
+func (vm *VM) DeleteMetadataEntry(key string) error {
+	return deleteMetadataAndWait(vm, key)
 }
 
-// ----------------
-// DELETE metadata
-// ----------------
+// DeleteMetadataEntry deletes VDC metadata associated to the input key and waits for the task to finish.
+// Note: Requires system administrator privileges.
+func (vdc *Vdc) DeleteMetadataEntry(key string) error {
+	return deleteMetadataAndWait(vdc, key)
+}
 
+// DeleteMetadataEntry deletes ProviderVdc metadata associated to the input key and waits for the task to finish.
+// Note: Requires system administrator privileges.
+func (providerVdc *ProviderVdc) DeleteMetadataEntry(key string) error {
+	return deleteMetadataAndWait(providerVdc, key)
+}
 
+// DeleteMetadataEntry deletes VApp metadata associated to the input key and waits for the task to finish.
+func (vapp *VApp) DeleteMetadataEntry(key string) error {
+	return deleteMetadataAndWait(vapp, key)
+}
 
-// ----------------
+// DeleteMetadataEntry deletes VAppTemplate metadata associated to the input key and waits for the task to finish.
+func (vAppTemplate *VAppTemplate) DeleteMetadataEntry(key string) error {
+	return deleteMetadataAndWait(vAppTemplate, key)
+}
+
+// DeleteMetadataEntry deletes MediaRecord metadata associated to the input key and waits for the task to finish.
+func (mediaRecord *MediaRecord) DeleteMetadataEntry(key string) error {
+	return deleteMetadataAndWait(mediaRecord, key)
+}
+
+// DeleteMetadataEntry deletes Media metadata associated to the input key and waits for the task to finish.
+func (media *Media) DeleteMetadataEntry(key string) error {
+	return deleteMetadataAndWait(media, key)
+}
+
+// DeleteMetadataEntry deletes AdminCatalog metadata associated to the input key and waits for the task to finish.
+func (adminCatalog *AdminCatalog) DeleteMetadataEntry(key string) error {
+	return deleteMetadataAndWait(adminCatalog, key)
+}
+
+// DeleteMetadataEntry deletes AdminOrg metadata associated to the input key and waits for the task to finish.
+func (adminOrg *AdminOrg) DeleteMetadataEntry(key string) error {
+	return deleteMetadataAndWait(adminOrg, key)
+}
+
+// DeleteMetadataEntry deletes Disk metadata associated to the input key and waits for the task to finish.
+func (disk *Disk) DeleteMetadataEntry(key string) error {
+	return deleteMetadataAndWait(disk, key)
+}
+
+// DeleteMetadataEntry deletes OrgVDCNetwork metadata associated to the input key and waits for the task to finish.
+// Note: Requires system administrator privileges.
+func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntry(key string) error {
+	return deleteMetadataAndWait(orgVdcNetwork, key)
+}
+
+// DeleteMetadataEntry deletes CatalogItem metadata associated to the input key and waits for the task to finish.
+func (catalogItem *CatalogItem) DeleteMetadataEntry(key string) error {
+	return deleteMetadataAndWait(catalogItem, key)
+}
+
+// DeleteMetadataEntry deletes OpenApiOrgVdcNetwork metadata associated to the input key and waits for the task to finish.
+// Note: It doesn't delete metadata from networks that belong to a VDC Group.
+// TODO: This function is currently using XML API underneath as OpenAPI metadata is still not supported.
+func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntry(key string) error {
+	href := fmt.Sprintf("%s/admin/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), extractUuid(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID))
+	task, err := deleteMetadata(openApiOrgVdcNetwork.client, href, key)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+// ------------------------------------------------------------------------------------------------
 // Generic private functions
-// ----------------
+// ------------------------------------------------------------------------------------------------
 
-// This interface helps to generalize implementations for receiver objects that have async metadata methods.
+// This interface helps to generalize synchronous implementations for receiver objects that have async metadata methods.
 type metadataAsync interface {
 	AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visibility string, isSystem bool) (Task, error)
 	MergeMetadataWithMetadataValuesAsync(metadata map[string]types.MetadataValue) (Task, error)
+	DeleteMetadataEntryAsync(key string) (Task, error)
 	Refresh() error
 }
 
-// Generic function to retrieve metadata from VCD
+// getMetadata is a generic function to retrieve metadata from VCD
 func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
 	metadata := &types.Metadata{}
 
-	_, err := client.ExecuteRequest(requestUri+"/metadata/", http.MethodGet,
-		types.MimeMetaData, "error retrieving metadata: %s", nil, metadata)
-
+	_, err := client.ExecuteRequest(requestUri+"/metadata/", http.MethodGet, types.MimeMetaData, "error retrieving metadata: %s", nil, metadata)
 	return metadata, err
 }
 
@@ -538,9 +672,7 @@ func addMetadata(client *Client, requestUri, key, value, typedValue, visibility 
 	apiEndpoint := urlParseRequestURI(requestUri)
 	apiEndpoint.Path += "/metadata/" + key
 
-	// Return the task
-	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut,
-		types.MimeMetaDataValue, "error adding metadata: %s", newMetadata)
+	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut, types.MimeMetaDataValue, "error adding metadata: %s", newMetadata)
 }
 
 // addMetadataAndWait adds metadata to an entity and waits for the task completion.
@@ -568,11 +700,11 @@ func mergeAllMetadata(client *Client, requestUri string, metadata map[string]typ
 	var metadataToMerge []*types.MetadataEntry
 	for key, value := range metadata {
 		metadataToMerge = append(metadataToMerge, &types.MetadataEntry{
-			Xmlns: types.XMLNamespaceVCloud,
-			Xsi:   types.XMLNamespaceXSI,
-			Key:   key,
+			Xmlns:      types.XMLNamespaceVCloud,
+			Xsi:        types.XMLNamespaceXSI,
+			Key:        key,
 			TypedValue: value.TypedValue,
-			Domain: value.Domain,
+			Domain:     value.Domain,
 		})
 	}
 
@@ -585,9 +717,7 @@ func mergeAllMetadata(client *Client, requestUri string, metadata map[string]typ
 	apiEndpoint := urlParseRequestURI(requestUri)
 	apiEndpoint.Path += "/metadata"
 
-	// Return the task
-	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
-		types.MimeMetaData, "error adding metadata: %s", newMetadata)
+	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost, types.MimeMetaData, "error adding metadata: %s", newMetadata)
 }
 
 // mergeAllMetadata updates the metadata values that are already present in VCD and creates the ones not present.
@@ -607,12 +737,25 @@ func mergeMetadataAndWait(receiver metadataAsync, metadata map[string]types.Meta
 	return task.WaitTaskCompletion()
 }
 
-// deleteMetadata Deletes metadata from an entity.
+// deleteMetadata deletes metadata associated to the input key from an entity referenced by its URI, then returns the
+// task.
 func deleteMetadata(client *Client, requestUri string, key string) (Task, error) {
 	apiEndpoint := urlParseRequestURI(requestUri)
 	apiEndpoint.Path += "/metadata/" + key
+	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodDelete, "", "error deleting metadata: %s", nil)
+}
 
-	// Return the task
-	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodDelete,
-		"", "error deleting metadata: %s", nil)
+// deleteMetadata deletes metadata associated to the input key from an entity referenced by its URI.
+func deleteMetadataAndWait(receiver metadataAsync, key string) error {
+	task, err := receiver.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+
+	err = receiver.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return task.WaitTaskCompletion()
 }
