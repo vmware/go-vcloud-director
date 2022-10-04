@@ -1462,7 +1462,7 @@ type MetadataValue struct {
 // Description: One of: MetadataStringValue, MetadataNumberValue, MetadataBooleanValue, MetadataDateTimeValue
 // Since: 5.1
 type MetadataTypedValue struct {
-	XsiType string `xml:"xsi:type,attr"`
+	XsiType string `xml:"http://www.w3.org/2001/XMLSchema-instance type,attr"`
 	Value   string `xml:"Value"`
 }
 

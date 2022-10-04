@@ -150,11 +150,16 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraCheck f
 		check.Assert(foundEntry.Key, Equals, testCase.Key)
 		check.Assert(foundEntry.TypedValue.Value, Equals, testCase.Value)
 		check.Assert(foundEntry.TypedValue.XsiType, Equals, testCase.Type)
-		check.Assert(foundEntry.Domain.Visibility, Equals, testCase.Visibility)
-		if testCase.IsSystem {
-			check.Assert(foundEntry.Domain.Domain, Equals, "SYSTEM")
+		// FIXME!!!! VVVVV
+		if !testCase.IsSystem && testCase.Visibility == types.MetadataReadWriteVisibility {
+			check.Assert(foundEntry.Domain, IsNil)
 		} else {
-			check.Assert(foundEntry.Domain.Domain, Equals, "GENERAL")
+			check.Assert(foundEntry.Domain, NotNil)
+			if testCase.IsSystem {
+				check.Assert(foundEntry.Domain.Domain, Equals, "SYSTEM")
+			} else {
+				check.Assert(foundEntry.Domain.Domain, Equals, "GENERAL")
+			}
 		}
 
 		// Perform an extra check that can be passed as a function
