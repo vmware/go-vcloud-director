@@ -84,6 +84,7 @@ func (vm *VM) MergeMetadataAsync(typedValue string, metadata map[string]interfac
 
 // MergeMetadata merges VM metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
+// Deprecated: Use VM.MergeMetadataWithMetadataValues
 func (vm *VM) MergeMetadata(typedValue string, metadata map[string]interface{}) error {
 	task, err := vm.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
@@ -158,6 +159,7 @@ func (vdc *Vdc) MergeMetadataAsync(typedValue string, metadata map[string]interf
 // MergeMetadata merges VDC metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
 // Note: Requires system administrator privileges.
+// Deprecated: Use Vdc.MergeMetadataWithMetadataValues
 func (vdc *Vdc) MergeMetadata(typedValue string, metadata map[string]interface{}) error {
 	task, err := vdc.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
@@ -232,6 +234,7 @@ func (providerVdc *ProviderVdc) MergeMetadataAsync(typedValue string, metadata m
 // MergeMetadata merges Provider VDC metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
 // Note: Requires system administrator privileges.
+// Deprecated: Use ProviderVdc.MergeMetadataWithMetadataValues
 func (providerVdc *ProviderVdc) MergeMetadata(typedValue string, metadata map[string]interface{}) error {
 	task, err := providerVdc.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
@@ -302,6 +305,7 @@ func (vapp *VApp) MergeMetadataAsync(typedValue string, metadata map[string]inte
 
 // MergeMetadata merges VApp metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
+// Deprecated: Use VApp.MergeMetadataWithMetadataValues
 func (vapp *VApp) MergeMetadata(typedValue string, metadata map[string]interface{}) error {
 	task, err := vapp.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
@@ -370,6 +374,7 @@ func (vAppTemplate *VAppTemplate) MergeMetadataAsync(typedValue string, metadata
 
 // MergeMetadata merges VAppTemplate metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
+// Deprecated: Use VAppTemplate.MergeMetadataWithMetadataValues
 func (vAppTemplate *VAppTemplate) MergeMetadata(typedValue string, metadata map[string]interface{}) error {
 	task, err := vAppTemplate.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
@@ -439,6 +444,7 @@ func (mediaRecord *MediaRecord) MergeMetadataAsync(typedValue string, metadata m
 
 // MergeMetadata merges MediaRecord metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
+// Deprecated: Use MediaRecord.MergeMetadataWithMetadataValues
 func (mediaRecord *MediaRecord) MergeMetadata(typedValue string, metadata map[string]interface{}) error {
 	task, err := mediaRecord.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
@@ -509,6 +515,7 @@ func (media *Media) MergeMetadataAsync(typedValue string, metadata map[string]in
 
 // MergeMetadata merges Media metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
+// Deprecated: Use Media.MergeMetadataWithMetadataValues
 func (media *Media) MergeMetadata(typedValue string, metadata map[string]interface{}) error {
 	task, err := media.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
@@ -578,6 +585,7 @@ func (adminCatalog *AdminCatalog) MergeMetadataAsync(typedValue string, metadata
 
 // MergeMetadata merges AdminCatalog metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
+// Deprecated: Use AdminCatalog.MergeMetadataWithMetadataValues
 func (adminCatalog *AdminCatalog) MergeMetadata(typedValue string, metadata map[string]interface{}) error {
 	task, err := adminCatalog.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
@@ -637,6 +645,7 @@ func (adminOrg *AdminOrg) MergeMetadataAsync(typedValue string, metadata map[str
 
 // MergeMetadata merges AdminOrg metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
+// Deprecated: Use AdminOrg.MergeMetadataWithMetadataValues
 func (adminOrg *AdminOrg) MergeMetadata(typedValue string, metadata map[string]interface{}) error {
 	task, err := adminOrg.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
@@ -689,6 +698,7 @@ func (disk *Disk) MergeMetadataAsync(typedValue string, metadata map[string]inte
 
 // MergeMetadata merges Disk metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
+// Deprecated: Use Disk.MergeMetadataWithMetadataValues
 func (disk *Disk) MergeMetadata(typedValue string, metadata map[string]interface{}) error {
 	task, err := disk.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
@@ -747,6 +757,7 @@ func (orgVdcNetwork *OrgVDCNetwork) MergeMetadataAsync(typedValue string, metada
 // MergeMetadata merges OrgVDCNetwork metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
 // Note: Requires system administrator privileges.
+// Deprecated: Use OrgVDCNetwork.MergeMetadataWithMetadataValues
 func (orgVdcNetwork *OrgVDCNetwork) MergeMetadata(typedValue string, metadata map[string]interface{}) error {
 	task, err := orgVdcNetwork.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
@@ -799,6 +810,7 @@ func (catalogItem *CatalogItem) MergeMetadataAsync(typedValue string, metadata m
 
 // MergeMetadata merges CatalogItem metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
+// Deprecated: Use CatalogItem.MergeMetadataWithMetadataValues
 func (catalogItem *CatalogItem) MergeMetadata(typedValue string, metadata map[string]interface{}) error {
 	task, err := catalogItem.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
@@ -840,7 +852,7 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) AddMetadataEntry(typedValue, k
 
 // MergeMetadata merges OpenApiOrgVdcNetwork metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // and waits for the task to finish.
-// TODO: This function is currently using XML API underneath as OpenAPI metadata is supported from v37.0 and is currently in alpha at the moment. See https://github.com/vmware/go-vcloud-director/pull/455
+// Deprecated: Use OpenApiOrgVdcNetwork.MergeMetadataWithMetadataValues
 func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) MergeMetadata(typedValue string, metadata map[string]interface{}) error {
 	task, err := mergeAllMetadataDeprecated(openApiOrgVdcNetwork.client, typedValue, metadata, fmt.Sprintf("%s/admin/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), strings.ReplaceAll(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, "urn:vcloud:network:", "")))
 	if err != nil {

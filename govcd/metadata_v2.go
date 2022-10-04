@@ -14,9 +14,9 @@ import (
 // NOTE: This "v2" is not v2 in terms of API versioning, it's just a new way of handling metadata.
 // The idea is that once go-vcloud-director 3.0 is released, one can just remove "v1".
 
-// ----------------
+// ------------------------------------------------------------------------------------------------
 // GET metadata
-// ----------------
+// ------------------------------------------------------------------------------------------------
 
 // GetMetadataByHref returns metadata from the given resource reference.
 func (vcdClient *VCDClient) GetMetadataByHref(href string) (*types.Metadata, error) {
@@ -102,9 +102,9 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) GetMetadata() (*types.Metadata
 	return getMetadata(openApiOrgVdcNetwork.client, fmt.Sprintf("%s/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), strings.ReplaceAll(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, "urn:vcloud:network:", "")))
 }
 
-// ----------------
+// ------------------------------------------------------------------------------------------------
 // ADD metadata async
-// ----------------
+// ------------------------------------------------------------------------------------------------
 
 // AddMetadataEntryWithVisibilityByHrefAsync adds metadata to the given resource reference with the given key, value, type and visibility
 // and returns the task.
@@ -187,9 +187,9 @@ func (catalogItem *CatalogItem) AddMetadataEntryWithVisibilityAsync(key, value, 
 	return addMetadata(catalogItem.client, catalogItem.CatalogItem.HREF, key, value, typedValue, visibility, isSystem )
 }
 
-// ----------------
+// ------------------------------------------------------------------------------------------------
 // ADD metadata
-// ----------------
+// ------------------------------------------------------------------------------------------------
 
 // AddMetadataEntryWithVisibilityByHref adds metadata to the given resource reference with the given key, value, type and visibility
 // and waits for completion.
@@ -266,7 +266,7 @@ func (catalogItem *CatalogItem) AddMetadataEntryWithVisibility(key, value, typed
 
 // AddMetadataEntryWithVisibility adds metadata to the receiver OpenApiOrgVdcNetwork and waits for the task to finish.
 // Note: It doesn't add metadata to networks that belong to a VDC Group.
-// TODO: This function is currently using XML API underneath as OpenAPI metadata is not supported yet.
+// TODO: This function is currently using XML API underneath as OpenAPI metadata is still not supported.
 func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) AddMetadataEntryWithVisibility(key, value, typedValue, visibility string, isSystem bool) error {
 	href := fmt.Sprintf("%s/admin/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), extractUuid(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID))
 	task, err := addMetadata(openApiOrgVdcNetwork.client, href, key, value, typedValue, visibility, isSystem)
@@ -276,18 +276,198 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) AddMetadataEntryWithVisibility
 	return task.WaitTaskCompletion()
 }
 
-// ----------------
+// ------------------------------------------------------------------------------------------------
 // POST metadata async
-// ----------------
+// ------------------------------------------------------------------------------------------------
 
 // MergeMetadataWithVisibilityByHrefAsync updates the metadata entries present in the referenced entity and creates the ones not present, then
 // returns the task.
-func (vcdClient *VCDClient) MergeMetadataWithVisibilityByHrefAsync(href string, metadata map[string]types.MetadataTypedValue) (Task, error) {
+func (vcdClient *VCDClient) MergeMetadataWithVisibilityByHrefAsync(href string, metadata map[string]types.MetadataValue) (Task, error) {
 	return mergeAllMetadata(&vcdClient.Client, href, metadata)
 }
 
-// ----------------
+// MergeMetadataWithMetadataValuesAsync merges VM metadata provided as a key-value map of type `typedValue` with the already present in VCD,
+// then returns the task.
+func (vm *VM) MergeMetadataWithMetadataValuesAsync(metadata map[string]types.MetadataValue) (Task, error) {
+	return mergeAllMetadata(vm.client, vm.VM.HREF, metadata)
+}
+
+// MergeMetadataWithMetadataValuesAsync merges VDC metadata provided as a key-value map of type `typedValue` with the already present in VCD,
+// then waits for the task to complete.
+// Note: Requires system administrator privileges.
+func (vdc *Vdc) MergeMetadataWithMetadataValuesAsync(metadata map[string]types.MetadataValue) (Task, error) {
+	return mergeAllMetadata(vdc.client, getAdminURL(vdc.Vdc.HREF), metadata)
+}
+
+// MergeMetadataWithMetadataValuesAsync merges Provider VDC metadata provided as a key-value map of type `typedValue` with the already present in VCD,
+// then waits for the task to complete.
+// Note: Requires system administrator privileges.
+func (providerVdc *ProviderVdc) MergeMetadataWithMetadataValuesAsync(metadata map[string]types.MetadataValue) (Task, error) {
+	return mergeAllMetadata(providerVdc.client, providerVdc.ProviderVdc.HREF, metadata)
+}
+
+// MergeMetadataWithMetadataValuesAsync merges VApp metadata provided as a key-value map of type `typedValue` with the already present in VCD,
+// then waits for the task to complete.
+func (vapp *VApp) MergeMetadataWithMetadataValuesAsync(metadata map[string]types.MetadataValue) (Task, error) {
+	return mergeAllMetadata(vapp.client, vapp.VApp.HREF, metadata)
+}
+
+// MergeMetadataWithMetadataValuesAsync merges VAppTemplate metadata provided as a key-value map of type `typedValue` with the already present in VCD,
+// then waits for the task to complete.
+func (vAppTemplate *VAppTemplate) MergeMetadataWithMetadataValuesAsync(metadata map[string]types.MetadataValue) (Task, error) {
+	return mergeAllMetadata(vAppTemplate.client, vAppTemplate.VAppTemplate.HREF, metadata)
+}
+
+// MergeMetadataWithMetadataValuesAsync merges MediaRecord metadata provided as a key-value map of type `typedValue` with the already present in VCD,
+// then waits for the task to complete.
+func (mediaRecord *MediaRecord) MergeMetadataWithMetadataValuesAsync(metadata map[string]types.MetadataValue) (Task, error) {
+	return mergeAllMetadata(mediaRecord.client, mediaRecord.MediaRecord.HREF, metadata)
+}
+
+// MergeMetadataWithMetadataValuesAsync merges Media metadata provided as a key-value map of type `typedValue` with the already present in VCD,
+// then waits for the task to complete.
+func (media *Media) MergeMetadataWithMetadataValuesAsync(metadata map[string]types.MetadataValue) (Task, error) {
+	return mergeAllMetadata(media.client, media.Media.HREF, metadata)
+}
+
+// MergeMetadataWithMetadataValuesAsync merges AdminCatalog metadata provided as a key-value map of type `typedValue` with the already present in VCD,
+// then waits for the task to complete.
+func (adminCatalog *AdminCatalog) MergeMetadataWithMetadataValuesAsync(metadata map[string]types.MetadataValue) (Task, error) {
+	return mergeAllMetadata(adminCatalog.client, adminCatalog.AdminCatalog.HREF, metadata)
+}
+
+// MergeMetadataWithMetadataValuesAsync merges AdminOrg metadata provided as a key-value map of type `typedValue` with the already present in VCD,
+// then waits for the task to complete.
+func (adminOrg *AdminOrg) MergeMetadataWithMetadataValuesAsync(metadata map[string]types.MetadataValue) (Task, error) {
+	return mergeAllMetadata(adminOrg.client, adminOrg.AdminOrg.HREF, metadata)
+}
+
+// MergeMetadataWithMetadataValuesAsync merges Disk metadata provided as a key-value map of type `typedValue` with the already present in VCD,
+// then waits for the task to complete.
+func (disk *Disk) MergeMetadataWithMetadataValuesAsync(metadata map[string]types.MetadataValue) (Task, error) {
+	return mergeAllMetadata(disk.client, disk.Disk.HREF, metadata)
+}
+
+// MergeMetadataWithMetadataValuesAsync merges OrgVDCNetwork metadata provided as a key-value map of type `typedValue` with the already present in VCD,
+// then waits for the task to complete.
+// Note: Requires system administrator privileges.
+func (orgVdcNetwork *OrgVDCNetwork) MergeMetadataWithMetadataValuesAsync(metadata map[string]types.MetadataValue) (Task, error) {
+	return mergeAllMetadata(orgVdcNetwork.client, getAdminURL(orgVdcNetwork.OrgVDCNetwork.HREF), metadata)
+}
+
+// MergeMetadataWithMetadataValuesAsync merges CatalogItem metadata provided as a key-value map of type `typedValue` with the already present in VCD,
+// then waits for the task to complete.
+func (catalogItem *CatalogItem) MergeMetadataWithMetadataValuesAsync(metadata map[string]types.MetadataValue) (Task, error) {
+	return mergeAllMetadata(catalogItem.client, catalogItem.CatalogItem.HREF, metadata)
+}
+
+// ------------------------------------------------
 // POST metadata
+// ------------------------------------------------
+
+// MergeMetadataWithMetadataValues updates the metadata values that are already present in the receiver VM and creates the ones not present.
+// The input metadata map has a "metadata key"->"metadata value" relation.
+// This function waits until merge finishes.
+func (vm *VM) MergeMetadataWithMetadataValues(metadata map[string]types.MetadataValue) error {
+	return mergeMetadataAndWait(vm, metadata)
+}
+
+// MergeMetadataWithMetadataValues updates the metadata values that are already present in the receiver VDC and creates the ones not present.
+// The input metadata map has a "metadata key"->"metadata value" relation.
+// This function waits until merge finishes.
+// Note: Requires system administrator privileges.
+func (vdc *Vdc) MergeMetadataWithMetadataValues(metadata map[string]types.MetadataValue) error {
+	return mergeMetadataAndWait(vdc, metadata)
+}
+
+// MergeMetadataWithMetadataValues updates the metadata values that are already present in the receiver ProviderVdc and creates the ones not present.
+// The input metadata map has a "metadata key"->"metadata value" relation.
+// This function waits until merge finishes.
+// Note: Requires system administrator privileges.
+func (providerVdc *ProviderVdc) MergeMetadataWithMetadataValues(metadata map[string]types.MetadataValue) error {
+	return mergeMetadataAndWait(providerVdc, metadata)
+}
+
+// MergeMetadataWithMetadataValues updates the metadata values that are already present in the receiver VApp and creates the ones not present.
+// The input metadata map has a "metadata key"->"metadata value" relation.
+// This function waits until merge finishes.
+func (vapp *VApp) MergeMetadataWithMetadataValues(metadata map[string]types.MetadataValue) error {
+	return mergeMetadataAndWait(vapp, metadata)
+}
+
+// MergeMetadataWithMetadataValues updates the metadata values that are already present in the receiver VAppTemplate and creates the ones not present.
+// The input metadata map has a "metadata key"->"metadata value" relation.
+// This function waits until merge finishes.
+func (vAppTemplate *VAppTemplate) MergeMetadataWithMetadataValues(metadata map[string]types.MetadataValue) error {
+	return mergeMetadataAndWait(vAppTemplate, metadata)
+}
+
+// MergeMetadataWithMetadataValues updates the metadata values that are already present in the receiver MediaRecord and creates the ones not present.
+// The input metadata map has a "metadata key"->"metadata value" relation.
+// This function waits until merge finishes.
+func (mediaRecord *MediaRecord) MergeMetadataWithMetadataValues(metadata map[string]types.MetadataValue) error {
+	return mergeMetadataAndWait(mediaRecord, metadata)
+}
+
+// MergeMetadataWithMetadataValues updates the metadata values that are already present in the receiver Media and creates the ones not present.
+// The input metadata map has a "metadata key"->"metadata value" relation.
+// This function waits until merge finishes.
+func (media *Media) MergeMetadataWithMetadataValues(metadata map[string]types.MetadataValue) error {
+	return mergeMetadataAndWait(media, metadata)
+}
+
+// MergeMetadataWithMetadataValues updates the metadata values that are already present in the receiver AdminCatalog and creates the ones not present.
+// The input metadata map has a "metadata key"->"metadata value" relation.
+// This function waits until merge finishes.
+func (adminCatalog *AdminCatalog) MergeMetadataWithMetadataValues(metadata map[string]types.MetadataValue) error {
+	return mergeMetadataAndWait(adminCatalog, metadata)
+}
+
+// MergeMetadataWithMetadataValues updates the metadata values that are already present in the receiver AdminOrg and creates the ones not present.
+// The input metadata map has a "metadata key"->"metadata value" relation.
+// This function waits until merge finishes.
+func (adminOrg *AdminOrg) MergeMetadataWithMetadataValues(metadata map[string]types.MetadataValue) error {
+	return mergeMetadataAndWait(adminOrg, metadata)
+}
+
+// MergeMetadataWithMetadataValues updates the metadata values that are already present in the receiver Disk and creates the ones not present.
+// The input metadata map has a "metadata key"->"metadata value" relation.
+// This function waits until merge finishes.
+func (disk *Disk) MergeMetadataWithMetadataValues(metadata map[string]types.MetadataValue) error {
+	return mergeMetadataAndWait(disk, metadata)
+}
+
+// MergeMetadataWithMetadataValues updates the metadata values that are already present in the receiver OrgVDCNetwork and creates the ones not present.
+// The input metadata map has a "metadata key"->"metadata value" relation.
+// This function waits until merge finishes.
+// Note: Requires system administrator privileges.
+func (orgVdcNetwork *OrgVDCNetwork) MergeMetadataWithMetadataValues(metadata map[string]types.MetadataValue) error {
+	return mergeMetadataAndWait(orgVdcNetwork, metadata)
+}
+
+// MergeMetadataWithMetadataValues updates the metadata values that are already present in the receiver CatalogItem and creates the ones not present.
+// The input metadata map has a "metadata key"->"metadata value" relation.
+// This function waits until merge finishes.
+func (catalogItem *CatalogItem) MergeMetadataWithMetadataValues(metadata map[string]types.MetadataValue) error {
+	return mergeMetadataAndWait(catalogItem, metadata)
+}
+
+// MergeMetadataWithMetadataValues updates the metadata values that are already present in the receiver OpenApiOrgVdcNetwork and creates the ones not present.
+// The input metadata map has a "metadata key"->"metadata value" relation.
+// This function waits until merge finishes.
+// Note: It doesn't merge metadata to networks that belong to a VDC Group.
+// TODO: This function is currently using XML API underneath as OpenAPI metadata is still not supported.
+func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) MergeMetadataWithMetadataValues(metadata map[string]types.MetadataValue) error {
+	href := fmt.Sprintf("%s/admin/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), extractUuid(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID))
+	task, err := mergeAllMetadata(openApiOrgVdcNetwork.client, href, metadata)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+// ----------------
+// DELETE metadata async
 // ----------------
 
 // DeleteMetadataEntryByHref deletes metadata from the given resource reference, depending on key provided as input
@@ -300,9 +480,6 @@ func (vcdClient *VCDClient) DeleteMetadataEntryByHref(href, key string) error {
 	return task.WaitTaskCompletion()
 }
 
-// ----------------
-// DELETE metadata async
-// ----------------
 
 // DeleteMetadataEntryByHrefAsync deletes metadata from the given resource reference, depending on key provided as input
 // and returns a task.
@@ -319,6 +496,13 @@ func (vcdClient *VCDClient) DeleteMetadataEntryByHrefAsync(href, key string) (Ta
 // ----------------
 // Generic private functions
 // ----------------
+
+// This interface helps to generalize implementations for receiver objects that have async metadata methods.
+type metadataAsync interface {
+	AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visibility string, isSystem bool) (Task, error)
+	MergeMetadataWithMetadataValuesAsync(metadata map[string]types.MetadataValue) (Task, error)
+	Refresh() error
+}
 
 // Generic function to retrieve metadata from VCD
 func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
@@ -359,16 +543,11 @@ func addMetadata(client *Client, requestUri, key, value, typedValue, visibility 
 		types.MimeMetaDataValue, "error adding metadata: %s", newMetadata)
 }
 
-type metadataCompatible interface {
-	AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visibility string, isSystem bool) (Task, error)
-	Refresh() error
-}
-
 // addMetadataAndWait adds metadata to an entity and waits for the task completion.
 // The function supports passing a value that requires a typed value that must be one of:
 // types.MetadataStringValue, types.MetadataNumberValue, types.MetadataDateTimeValue and types.MetadataBooleanValue.
 // Visibility also needs to be one of: types.MetadataReadOnlyVisibility, types.MetadataHiddenVisibility or types.MetadataReadWriteVisibility
-func addMetadataAndWait(receiver metadataCompatible, key, value, typedValue, visibility string, isSystem bool) error {
+func addMetadataAndWait(receiver metadataAsync, key, value, typedValue, visibility string, isSystem bool) error {
 	task, err := receiver.AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visibility, isSystem)
 	if err != nil {
 		return err
@@ -382,15 +561,18 @@ func addMetadataAndWait(receiver metadataCompatible, key, value, typedValue, vis
 	return task.WaitTaskCompletion()
 }
 
-// mergeAllMetadata merges the metadata key-values provided as parameter with existing entity metadata
-func mergeAllMetadata(client *Client, requestUri string, metadata map[string]types.MetadataTypedValue) (Task, error) {
+// mergeAllMetadata updates the metadata values that are already present in VCD and creates the ones not present.
+// The input metadata map has a "metadata key"->"metadata value" relation.
+// If the operation is successful, it returns the created task.
+func mergeAllMetadata(client *Client, requestUri string, metadata map[string]types.MetadataValue) (Task, error) {
 	var metadataToMerge []*types.MetadataEntry
 	for key, value := range metadata {
 		metadataToMerge = append(metadataToMerge, &types.MetadataEntry{
 			Xmlns: types.XMLNamespaceVCloud,
 			Xsi:   types.XMLNamespaceXSI,
 			Key:   key,
-			TypedValue: &value,
+			TypedValue: value.TypedValue,
+			Domain: value.Domain,
 		})
 	}
 
@@ -406,6 +588,23 @@ func mergeAllMetadata(client *Client, requestUri string, metadata map[string]typ
 	// Return the task
 	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
 		types.MimeMetaData, "error adding metadata: %s", newMetadata)
+}
+
+// mergeAllMetadata updates the metadata values that are already present in VCD and creates the ones not present.
+// The input metadata map has a "metadata key"->"metadata value" relation.
+// This function waits until merge finishes.
+func mergeMetadataAndWait(receiver metadataAsync, metadata map[string]types.MetadataValue) error {
+	task, err := receiver.MergeMetadataWithMetadataValuesAsync(metadata)
+	if err != nil {
+		return err
+	}
+
+	err = receiver.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return task.WaitTaskCompletion()
 }
 
 // deleteMetadata Deletes metadata from an entity.

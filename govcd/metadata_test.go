@@ -573,7 +573,7 @@ func (vcd *TestVCD) Test_MetadataByHrefCRUD(check *C) {
 	check.Assert(len(metadata.MetadataEntry), Equals, 0)
 }
 
-func testMetadataCRUDActions(resource metadataCompatible, check *C, extraCheck func()) {
+func testMetadataCRUDActions(resource metadataAsync, check *C, extraCheck func()) {
 	// Check how much metadata exists
 	metadata, err := resource.GetMetadata()
 	check.Assert(err, IsNil)
