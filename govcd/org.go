@@ -216,6 +216,20 @@ func (org *Org) GetCatalogByHref(catalogHref string) (*Catalog, error) {
 	return cat, nil
 }
 
+// GetCatalogByHref  finds a Catalog by HREF
+// On success, returns a pointer to the Catalog structure and a nil error
+// On failure, returns a nil pointer and an error
+func (client *Client) GetCatalogByHref(catalogHref string) (*Catalog, error) {
+	cat := NewCatalog(client)
+
+	_, err := client.ExecuteRequest(catalogHref, http.MethodGet,
+		"", "error retrieving catalog: %s", nil, cat.Catalog)
+	if err != nil {
+		return nil, err
+	}
+	return cat, nil
+}
+
 // GetCatalogByName  finds a Catalog by Name
 // On success, returns a pointer to the Catalog structure and a nil error
 // On failure, returns a nil pointer and an error
