@@ -12,3 +12,5 @@
   `VM`, `Vdc`, `ProviderVdc`, `VApp`, `VAppTemplate`, `MediaRecord`, `Media`, `AdminCatalog`, `AdminOrg`, `Disk`,
   `OrgVDCNetwork`, `CatalogItem` in favor of their `MergeMetadataWithMetadataValuesAsync` and `MergeMetadataWithMetadataValues`
   counterparts [GH-510]
+* Deprecated the functions `Vdc.DeleteMetadataEntryAsync` and `Vdc.DeleteMetadataEntry` in favor of
+  `AdminVdc.DeleteMetadataEntryAsync` and `AdminVdc.DeleteMetadataEntry` [GH-510]
