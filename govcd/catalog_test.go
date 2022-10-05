@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kr/pretty"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
 	. "gopkg.in/check.v1"
@@ -1018,16 +1019,16 @@ func (vcd *TestVCD) Test_CatalogSubscribe(check *C) {
 	toOrg, err := vcd.client.GetAdminOrgByName("datacloud-1")
 	check.Assert(err, IsNil)
 
-	toCatalog, err := toOrg.CreateCatalogFromSubscription(types.ExternalCatalogSubscription{
+	toCatalog, err := toOrg.CreateCatalogFromSubscriptionAsync(types.ExternalCatalogSubscription{
 		SubscribeToExternalFeeds: true,
 		Location:                 fromCatalog.AdminCatalog.PublishExternalCatalogParams.CatalogPublishedUrl,
 		Password:                 "",
 		LocalCopy:                false,
 	},
 		nil,
-		"imported-catalog-other-org", "imported catalog to other org", "", true)
+		"imported-catalog-other-org", "imported catalog to other org", "", false)
 	check.Assert(err, IsNil)
-	toCatalog2, err := fromOrg.ImportFromCatalog(fromCatalog,
+	toCatalog2, err := fromOrg.ImportFromCatalogAsync(fromCatalog,
 		nil,
 		"imported-catalog-same-org", "imported catalog to same org", "", true)
 	check.Assert(err, IsNil)
@@ -1036,12 +1037,24 @@ func (vcd *TestVCD) Test_CatalogSubscribe(check *C) {
 	//AddToCleanupList("imported-catalog-other-org", "catalog", "datacloud-1", check.TestName())
 	//AddToCleanupList("imported-catalog-same-org", "catalog", "datacloud", check.TestName())
 
-	elapsed := 0
-	timeout := 10
+	timeout := 120 * time.Second
+	start := time.Now()
+	for time.Since(start) < timeout {
+		err = toCatalog.Refresh()
+		check.Assert(err, IsNil)
+		err = toCatalog2.Refresh()
+		check.Assert(err, IsNil)
+		if ResourceComplete(toCatalog.AdminCatalog.Tasks) && ResourceComplete(toCatalog2.AdminCatalog.Tasks) {
+			break
+		}
+		fmt.Printf(".")
+		time.Sleep(time.Second)
+	}
+	fmt.Println()
 	foundOrigin := len(fromCatalog.AdminCatalog.CatalogItems)
 	foundSameOrg := 0
 	foundOtherOrg := 0
-	for elapsed < timeout {
+	for time.Since(start) < timeout {
 		err = toCatalog.Refresh()
 		check.Assert(err, IsNil)
 		err = toCatalog2.Refresh()
@@ -1053,22 +1066,34 @@ func (vcd *TestVCD) Test_CatalogSubscribe(check *C) {
 			break
 		}
 		time.Sleep(time.Second)
-		elapsed++
 	}
 	check.Assert(foundSameOrg, Equals, foundOrigin)
 	check.Assert(foundOtherOrg, Equals, foundOrigin)
 
-	fmt.Printf("Catalog items seen after %d seconds\n", elapsed)
+	err = toCatalog.Refresh()
+	check.Assert(err, IsNil)
+	err = toCatalog2.Refresh()
+	check.Assert(err, IsNil)
+	fmt.Printf("Catalog items seen after %s\n", time.Since(start))
 	for _, item := range toCatalog.AdminCatalog.CatalogItems {
 		for _, inner := range item.CatalogItem {
-			fmt.Printf("other-org %s\n", inner.Name)
+			catalogItem, err := toCatalog.GetCatalogItemByHref(inner.HREF)
+			//check.Assert(err, IsNil)
+			if err == nil {
+				fmt.Printf("other-org (no-local-copy) %s\n%# v\n", inner.Name, pretty.Formatter(catalogItem.CatalogItem))
+			}
 		}
 	}
 	for _, item := range toCatalog2.AdminCatalog.CatalogItems {
 		for _, inner := range item.CatalogItem {
-			fmt.Printf("same-org %s\n", inner.Name)
+			catalogItem, err := toCatalog2.GetCatalogItemByHref(inner.HREF)
+			//check.Assert(err, IsNil)
+			if err == nil {
+				fmt.Printf("same-org (with-local-copy) %s\n%# v\n", inner.Name, pretty.Formatter(catalogItem.CatalogItem))
+			}
 		}
 	}
+
 	// NOTE: an imported catalog cannot be removed while it is synchronising
 	//err = toCatalog.Delete(true, true)
 	//check.Assert(err, IsNil)
