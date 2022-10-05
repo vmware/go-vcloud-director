@@ -670,7 +670,7 @@ func addMetadata(client *Client, requestUri, key, value, typedValue, visibility 
 		},
 		Domain: &types.MetadataDomainTag{
 			Visibility: visibility,
-			Domain: "SYSTEM",
+			Domain:     "SYSTEM",
 		},
 	}
 
@@ -678,7 +678,7 @@ func addMetadata(client *Client, requestUri, key, value, typedValue, visibility 
 		apiEndpoint.Path += "/metadata/SYSTEM/" + key
 	} else {
 		apiEndpoint.Path += "/metadata/" + key
-		newMetadata.Domain.Domain ="GENERAL"
+		newMetadata.Domain.Domain = "GENERAL"
 		if visibility != types.MetadataReadWriteVisibility {
 			newMetadata.Domain.Visibility = types.MetadataReadWriteVisibility
 		}
