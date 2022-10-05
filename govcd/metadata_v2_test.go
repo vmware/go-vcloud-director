@@ -134,21 +134,8 @@ func (vcd *TestVCD) TestMediaMetadata(check *C) {
 	check.Assert(catalog, NotNil)
 	check.Assert(catalog.Catalog.Name, Equals, vcd.config.VCD.Catalog.Name)
 
-	uploadTask, err := catalog.UploadMediaImage(check.TestName(), check.TestName(), vcd.config.Media.MediaPath, 1024)
+	media, err := catalog.GetMediaByName(vcd.config.Media.Media, false)
 	check.Assert(err, IsNil)
-	check.Assert(uploadTask, NotNil)
-	err = uploadTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	AddToCleanupList(check.TestName(), "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
-
-	err = vcd.org.Refresh()
-	check.Assert(err, IsNil)
-
-	media, err := catalog.GetMediaByName(check.TestName(), false)
-	check.Assert(err, IsNil)
-	check.Assert(media, NotNil)
-	check.Assert(media.Media.Name, Equals, check.TestName())
 
 	testMetadataCRUDActions(media, check, nil)
 }
