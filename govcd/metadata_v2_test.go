@@ -40,12 +40,37 @@ func (vcd *TestVCD) TestVmMetadata(check *C) {
 	testMetadataCRUDActions(vm, check, nil)
 }
 
-func (vcd *TestVCD) TestVdcMetadata(check *C) {
+func (vcd *TestVCD) TestAdminVdcMetadata(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	if vcd.config.VCD.Nsxt.Vdc == "" {
 		check.Skip("skipping test because VDC name is empty")
 	}
-	testMetadataCRUDActions(vcd.nsxtVdc, check, nil)
+
+	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	adminVdc, err := org.GetAdminVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+
+	testMetadataCRUDActions(adminVdc, check, func(testCase metadataTest) {
+		testVdcMetadata(vcd, check, testCase)
+	})
+}
+
+
+func testVdcMetadata(vcd *TestVCD, check *C, testCase metadataTest) {
+	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+	check.Assert(vdc.Vdc.Name, Equals, vcd.config.VCD.Nsxt.Vdc)
+
+	metadata, err := vdc.GetMetadata()
+	check.Assert(err, IsNil)
+	assertMetadata(check, metadata, testCase, 1)
 }
 
 func (vcd *TestVCD) TestProviderVdcMetadata(check *C) {
