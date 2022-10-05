@@ -99,7 +99,7 @@ func (vm *VM) MergeMetadata(typedValue string, metadata map[string]interface{}) 
 // AddMetadataEntry adds VDC metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
 // Note: Requires system administrator privileges.
-// Deprecated: Use Vdc.AddMetadataEntryWithVisibility instead
+// Deprecated: Use AdminVdc.AddMetadataEntryWithVisibility instead
 func (vdc *Vdc) AddMetadataEntry(typedValue, key, value string) error {
 	task, err := vdc.AddMetadataEntryAsync(typedValue, key, value)
 	if err != nil {
@@ -121,7 +121,7 @@ func (vdc *Vdc) AddMetadataEntry(typedValue, key, value string) error {
 
 // AddMetadataEntryAsync adds VDC metadata typedValue and key/value pair provided as input and returns the task.
 // Note: Requires system administrator privileges.
-// Deprecated: Use Vdc.AddMetadataEntryWithVisibilityAsync instead
+// Deprecated: Use AdminVdc.AddMetadataEntryWithVisibilityAsync instead
 func (vdc *Vdc) AddMetadataEntryAsync(typedValue, key, value string) (Task, error) {
 	return addMetadataDeprecated(vdc.client, typedValue, key, value, getAdminURL(vdc.Vdc.HREF))
 }
@@ -129,7 +129,7 @@ func (vdc *Vdc) AddMetadataEntryAsync(typedValue, key, value string) (Task, erro
 // MergeMetadataAsync merges VDC metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
 // Note: Requires system administrator privileges.
-// Deprecated: Use Vdc.MergeMetadataWithMetadataValuesAsync
+// Deprecated: Use AdminVdc.MergeMetadataWithMetadataValuesAsync
 func (vdc *Vdc) MergeMetadataAsync(typedValue string, metadata map[string]interface{}) (Task, error) {
 	return mergeAllMetadataDeprecated(vdc.client, typedValue, metadata, getAdminURL(vdc.Vdc.HREF))
 }
@@ -137,13 +137,43 @@ func (vdc *Vdc) MergeMetadataAsync(typedValue string, metadata map[string]interf
 // MergeMetadata merges VDC metadata provided as a key-value map of type `typedValue` with the already present in VCD,
 // then waits for the task to complete.
 // Note: Requires system administrator privileges.
-// Deprecated: Use Vdc.MergeMetadataWithMetadataValues
+// Deprecated: Use AdminVdc.MergeMetadataWithMetadataValues
 func (vdc *Vdc) MergeMetadata(typedValue string, metadata map[string]interface{}) error {
 	task, err := vdc.MergeMetadataAsync(typedValue, metadata)
 	if err != nil {
 		return err
 	}
 	return task.WaitTaskCompletion()
+}
+
+// DeleteMetadataEntry deletes VDC metadata by key provided as input and waits for
+// the task to finish.
+// Note: Requires system administrator privileges.
+// Deprecated: Use AdminVdc.DeleteMetadataEntry
+func (vdc *Vdc) DeleteMetadataEntry(key string) error {
+	task, err := vdc.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return err
+	}
+
+	err = vdc.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteMetadataEntryAsync deletes VDC metadata depending on key provided as input and returns the task.
+// Note: Requires system administrator privileges.
+// Deprecated: Use AdminVdc.DeleteMetadataEntryAsync
+func (vdc *Vdc) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(vdc.client, key, getAdminURL(vdc.Vdc.HREF))
 }
 
 // AddMetadataEntry adds Provider VDC metadata typedValue and key/value pair provided as input
