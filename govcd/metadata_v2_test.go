@@ -40,6 +40,54 @@ func (vcd *TestVCD) TestVmMetadata(check *C) {
 	testMetadataCRUDActions(vm, check, nil)
 }
 
+func (vcd *TestVCD) TestVdcMetadata(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	if vcd.config.VCD.Nsxt.Vdc == "" {
+		check.Skip("skipping test because VDC name is empty")
+	}
+	testMetadataCRUDActions(vcd.nsxtVdc, check, nil)
+}
+
+func (vcd *TestVCD) TestProviderVdcMetadata(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	providerVdc, err := vcd.client.GetProviderVdcByName(vcd.config.VCD.NsxtProviderVdc.Name)
+	if err != nil {
+		check.Skip(fmt.Sprintf("%s: Provider VDC %s not found. Test can't proceed", check.TestName(), vcd.config.VCD.NsxtProviderVdc.Name))
+		return
+	}
+	testMetadataCRUDActions(providerVdc, check, nil)
+}
+
+func (vcd *TestVCD) TestVAppMetadata(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp was not successfully created at setup")
+	}
+	testMetadataCRUDActions(vcd.vapp, check, nil)
+}
+
+// TODO: Change to new vApp Template functions
+func (vcd *TestVCD) TestVAppTemplateMetadata(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	if err != nil {
+		check.Skip("Skipping test because Catalog was not found. Test can't proceed")
+		return
+	}
+	catItem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
+	check.Assert(err, IsNil)
+	check.Assert(catItem, NotNil)
+	check.Assert(catItem.CatalogItem.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
+
+	vAppTemplate, err := catItem.GetVAppTemplate()
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplate, NotNil)
+	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
+
+	testMetadataCRUDActions(&vAppTemplate, check, nil)
+}
+
+
 // metadataCompatible allows centralizing and generalizing the tests for metadata compatible resources.
 type metadataCompatible interface {
 	GetMetadata() (*types.Metadata, error)
@@ -77,11 +125,27 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraCheck f
 		},
 		{
 			Key:        "numberKey",
-			Value:      "numberValue",
+			Value:      "notANumber",
+			Type:       types.MetadataNumberValue,
+			Visibility: types.MetadataReadWriteVisibility,
+			IsSystem:   false,
+			ExpectErrorOnFirstAdd: true,
+		},
+		{
+			Key:        "numberKey",
+			Value:      "1",
 			Type:       types.MetadataNumberValue,
 			Visibility: types.MetadataReadWriteVisibility,
 			IsSystem:   false,
 			ExpectErrorOnFirstAdd: false,
+		},
+		{
+			Key:        "boolKey",
+			Value:      "notABool",
+			Type:       types.MetadataBooleanValue,
+			Visibility: types.MetadataReadWriteVisibility,
+			IsSystem:   false,
+			ExpectErrorOnFirstAdd: true,
 		},
 		{
 			Key:        "boolKey",
@@ -90,6 +154,14 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraCheck f
 			Visibility: types.MetadataReadWriteVisibility,
 			IsSystem:   false,
 			ExpectErrorOnFirstAdd: false,
+		},
+		{
+			Key:        "dateKey",
+			Value:      "notADate",
+			Type:       types.MetadataDateTimeValue,
+			Visibility: types.MetadataReadWriteVisibility,
+			IsSystem:   false,
+			ExpectErrorOnFirstAdd: true,
 		},
 		{
 			Key:        "dateKey",
@@ -116,12 +188,28 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraCheck f
 			ExpectErrorOnFirstAdd: false,
 		},
 		{
-			Key:        "error1",
-			Value:      "errorValue1",
+			Key:        "readWriteKey",
+			Value:      "butPlacedInSystem",
 			Type:       types.MetadataStringValue,
 			Visibility: types.MetadataReadWriteVisibility,
 			IsSystem:   true,
 			ExpectErrorOnFirstAdd: true, // types.MetadataReadWriteVisibility can't have isSystem=true
+		},
+		{
+			Key:        "readOnlyKey",
+			Value:      "butPlacedInGeneral",
+			Type:       types.MetadataStringValue,
+			Visibility: types.MetadataReadOnlyVisibility,
+			IsSystem:   false,
+			ExpectErrorOnFirstAdd: true, // types.MetadataReadOnlyVisibility can't have isSystem=false
+		},
+		{
+			Key:        "hiddenKey",
+			Value:      "butPlacedInGeneral",
+			Type:       types.MetadataStringValue,
+			Visibility: types.MetadataHiddenVisibility,
+			IsSystem:   false,
+			ExpectErrorOnFirstAdd: true, // types.MetadataHiddenVisibility can't have isSystem=false
 		},
 	}
 
@@ -150,15 +238,16 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraCheck f
 		check.Assert(foundEntry.Key, Equals, testCase.Key)
 		check.Assert(foundEntry.TypedValue.Value, Equals, testCase.Value)
 		check.Assert(foundEntry.TypedValue.XsiType, Equals, testCase.Type)
-		// FIXME!!!! VVVVV
-		if !testCase.IsSystem && testCase.Visibility == types.MetadataReadWriteVisibility {
-			check.Assert(foundEntry.Domain, IsNil)
-		} else {
+		if testCase.IsSystem {
 			check.Assert(foundEntry.Domain, NotNil)
-			if testCase.IsSystem {
-				check.Assert(foundEntry.Domain.Domain, Equals, "SYSTEM")
+			check.Assert(foundEntry.Domain.Domain, Equals, "SYSTEM")
+			check.Assert(foundEntry.Domain.Visibility, Equals, testCase.Visibility)
+		} else {
+			if testCase.Visibility == types.MetadataReadWriteVisibility {
+				check.Assert(foundEntry.Domain, IsNil)
 			} else {
 				check.Assert(foundEntry.Domain.Domain, Equals, "GENERAL")
+				check.Assert(foundEntry.Domain.Visibility, Equals, types.MetadataReadWriteVisibility)
 			}
 		}
 
@@ -178,6 +267,7 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraCheck f
 			testCase.Key: {
 				TypedValue: &types.MetadataTypedValue{
 					Value: testCase.Value + "-Merged",
+					XsiType: testCase.Type,
 				},
 			},
 		})
