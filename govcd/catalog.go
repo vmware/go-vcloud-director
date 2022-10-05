@@ -897,24 +897,46 @@ func (cat *Catalog) GetCatalogItemByNameOrId(identifier string, refresh bool) (*
 	return entity.(*CatalogItem), err
 }
 
-// QueryMediaList retrieves a list of media items for the catalog
-func (catalog *Catalog) QueryMediaList() ([]*types.MediaRecordType, error) {
+// queryMediaList retrieves a list of media items for a given catalog or AdminCatalog
+func queryMediaList(client *Client, catalogHref string) ([]*types.MediaRecordType, error) {
 	typeMedia := "media"
-	if catalog.client.IsSysAdmin {
+	if client.IsSysAdmin {
 		typeMedia = "adminMedia"
 	}
 
-	filter := fmt.Sprintf("catalog==%s", url.QueryEscape(catalog.Catalog.HREF))
-	results, err := catalog.client.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia, "filter": filter, "filterEncoded": "true"})
+	filter := fmt.Sprintf("catalog==%s", url.QueryEscape(catalogHref))
+	results, err := client.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia, "filter": filter, "filterEncoded": "true"})
 	if err != nil {
 		return nil, fmt.Errorf("error querying medias %s", err)
 	}
 
 	mediaResults := results.Results.MediaRecord
-	if catalog.client.IsSysAdmin {
+	if client.IsSysAdmin {
 		mediaResults = results.Results.AdminMediaRecord
 	}
 	return mediaResults, nil
+}
+
+// Sync synchronise a subscribed catalog
+func (cat *Catalog) Sync() error {
+	return catalogSync(cat.client, cat.Catalog.HREF)
+}
+
+// catalogSync is a low level function that synchronises a Catalog or AdminCatalog
+func catalogSync(client *Client, catalogHref string) error {
+	href := catalogHref + "/sync"
+	syncTask, err := client.ExecuteTaskRequest(href, http.MethodPost,
+		"", "error synchronizing catalog: %s", nil)
+
+	if err != nil {
+		return err
+	}
+	return syncTask.WaitTaskCompletion()
+}
+
+// QueryMediaList retrieves a list of media items for the catalog
+func (catalog *Catalog) QueryMediaList() ([]*types.MediaRecordType, error) {
+	return queryMediaList(catalog.client, catalog.Catalog.HREF)
 }
 
 // getOrgInfo finds the organization to which the catalog belongs, and returns its name and ID
@@ -952,15 +974,15 @@ func (cat *Catalog) PublishToExternalOrganizations(publishExternalCatalog types.
 		return fmt.Errorf("cannot publish to external organization, Object is empty")
 	}
 
-	adminOrg, _, err := getCatalogParent(cat.Catalog.Name, cat.client, cat.Catalog.Link, true)
-	if err != nil {
-		return fmt.Errorf("cannot get parent organization for catalog %s", cat.Catalog.Name)
-	}
-	if !adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishCatalogs {
-		return fmt.Errorf("parent organization %s of catalog %s can't publish catalogs", adminOrg.AdminOrg.Name, cat.Catalog.Name)
-	}
-	if !adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishExternally {
-		return fmt.Errorf("parent organization %s of catalog %s can't publish to external orgs", adminOrg.AdminOrg.Name, cat.Catalog.Name)
+	adminOrg, err := cat.GetAdminParent()
+	if err == nil {
+		// If we can get the admin Org from the catalog, we check whether the Org can publish.
+		if !adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishCatalogs {
+			return fmt.Errorf("parent organization %s of catalog %s can't publish catalogs", adminOrg.AdminOrg.Name, cat.Catalog.Name)
+		}
+		if !adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishExternally {
+			return fmt.Errorf("parent organization %s of catalog %s can't publish to external orgs", adminOrg.AdminOrg.Name, cat.Catalog.Name)
+		}
 	}
 	url := cat.Catalog.HREF
 	if url == "nil" || url == "" {
@@ -986,7 +1008,7 @@ func (cat *Catalog) GetParent() (*Org, error) {
 
 // GetAdminParent returns the AdminOrg to which the catalog belongs
 func (cat *Catalog) GetAdminParent() (*AdminOrg, error) {
-	adminOrg, _, err := getCatalogParent(cat.Catalog.Name, cat.client, cat.Catalog.Link, false)
+	adminOrg, _, err := getCatalogParent(cat.Catalog.Name, cat.client, cat.Catalog.Link, true)
 	if err != nil {
 		return nil, err
 	}
