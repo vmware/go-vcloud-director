@@ -197,3 +197,22 @@ func (task *Task) CancelTask() error {
 	}
 	return nil
 }
+
+// ResourceInProgress returns true if any of the provided tasks is still running
+func ResourceInProgress(task *types.TasksInProgress) bool {
+	if task == nil {
+		return false
+	}
+	tasks := task.Task
+	for _, task := range tasks {
+		if task.Status == "running" || task.Status == "preRunning" || task.Status == "queued" || task.Progress < 100 {
+			return true
+		}
+	}
+	return false
+}
+
+// ResourceComplete return true is none of its tasks are running
+func ResourceComplete(task *types.TasksInProgress) bool {
+	return !ResourceInProgress(task)
+}
