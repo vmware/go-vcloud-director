@@ -1,0 +1,10 @@
+* Added methods `AdminCatalog.GetParent`, `AdminCatalog.GetAdminParent`, `Catalog.GetParent`, and `Catalog.GetAdminParent` to retrieve parent Organization [GH-508]
+* Added AdminOrg methods `CreateCatalogFromSubscriptionAsync`, `CreateCatalogFromSubscription`, `ImportFromCatalogAsync`, `ImportFromCatalog` to to create a catalog by subscribing to a published one [GH-508]
+* Added method `AdminCatalog.FullSubscriptionUrl` to return a well formatted subscription URL [GH-508]
+* Added method `AdminCatalog.GetSubscribedCatalogItem` to retrieve a (possibly incomplete) catalog item [GH-508]
+* Added functions `ResourceInProgress` and `ResourceComplete` to check for running tasks [GH-508]
+* Add function `IsValidUrl` to check for URL completiion [GH-508]
+* Added methods `client.GetCatalogByHref` and `client.GetAdminCatalogByHref` to retrieve a Catalog or AdminCatalog regardless of the working Org [GH-508]
+* Added methods `catalog.Sync` and `adminCatalog.Sync` to synchronise a subscribed catalog [GH-508]
+* Added methods `adminCatalog.QueryMediaList` and `adminCatalog.QueryVappTemplateList` to retrieve media and vApp template lists[GH-508]
+
