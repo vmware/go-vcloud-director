@@ -57,7 +57,6 @@ func (vcd *TestVCD) TestAdminVdcMetadata(check *C) {
 	})
 }
 
-
 func testVdcMetadata(vcd *TestVCD, check *C, testCase metadataTest) {
 	org, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)

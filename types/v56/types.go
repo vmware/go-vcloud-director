@@ -1475,7 +1475,7 @@ type Metadata struct {
 	XMLName       xml.Name         `xml:"Metadata"`
 	Xmlns         string           `xml:"xmlns,attr"`
 	HREF          string           `xml:"href,attr"`
-	Type          string           `xml:"type,attr,omitempty"`
+	Type          string           `xml:"type,attr,omitempty"` // The MIME type of the entity.
 	Xsi           string           `xml:"xmlns:xsi,attr"`
 	Link          []*Link          `xml:"Link,omitempty"`
 	MetadataEntry []*MetadataEntry `xml:"MetadataEntry,omitempty"`
@@ -1487,7 +1487,7 @@ type Metadata struct {
 type MetadataEntry struct {
 	Xmlns      string              `xml:"xmlns,attr"`
 	HREF       string              `xml:"href,attr"`
-	Type       string              `xml:"type,attr,omitempty"`
+	Type       string              `xml:"type,attr,omitempty"` // The MIME type of the entity
 	Xsi        string              `xml:"xmlns:xsi,attr"`
 	Domain     *MetadataDomainTag  `xml:"Domain,omitempty"`
 	Key        string              `xml:"Key"`            // An arbitrary key name. Length cannot exceed 256 UTF-8 characters.
