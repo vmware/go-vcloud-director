@@ -637,7 +637,6 @@ type metadataAsync interface {
 	AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visibility string, isSystem bool) (Task, error)
 	MergeMetadataWithMetadataValuesAsync(metadata map[string]types.MetadataValue) (Task, error)
 	DeleteMetadataEntryAsync(key string) (Task, error)
-	Refresh() error
 }
 
 // getMetadata is a generic function to retrieve metadata from VCD
@@ -697,11 +696,6 @@ func addMetadataAndWait(receiver metadataAsync, key, value, typedValue, visibili
 		return err
 	}
 
-	err = receiver.Refresh()
-	if err != nil {
-		return err
-	}
-
 	return task.WaitTaskCompletion()
 }
 
@@ -741,11 +735,6 @@ func mergeMetadataAndWait(receiver metadataAsync, metadata map[string]types.Meta
 		return err
 	}
 
-	err = receiver.Refresh()
-	if err != nil {
-		return err
-	}
-
 	return task.WaitTaskCompletion()
 }
 
@@ -760,11 +749,6 @@ func deleteMetadata(client *Client, requestUri string, key string) (Task, error)
 // deleteMetadata deletes metadata associated to the input key from an entity referenced by its URI.
 func deleteMetadataAndWait(receiver metadataAsync, key string) error {
 	task, err := receiver.DeleteMetadataEntryAsync(key)
-	if err != nil {
-		return err
-	}
-
-	err = receiver.Refresh()
 	if err != nil {
 		return err
 	}
