@@ -9,8 +9,10 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 // AdminCatalog is a admin view of a VMware Cloud Director Catalog
@@ -115,14 +117,14 @@ func (cat *AdminCatalog) PublishToExternalOrganizations(publishExternalCatalog t
 	}
 
 	adminOrg, err := cat.GetAdminParent()
-	if err != nil {
-		return fmt.Errorf("cannot get parent organization for catalog %s: %s", cat.AdminCatalog.Name, err)
-	}
-	if !adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishCatalogs {
-		return fmt.Errorf("parent organization %s of catalog %s can't publish catalogs", adminOrg.AdminOrg.Name, cat.AdminCatalog.Name)
-	}
-	if !adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishExternally {
-		return fmt.Errorf("parent organization %s of catalog %s can't publish to external orgs", adminOrg.AdminOrg.Name, cat.AdminCatalog.Name)
+	if err == nil {
+		// If we can get the admin Org from the catalog, we check whether the Org can publish.
+		if !adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishCatalogs {
+			return fmt.Errorf("parent organization %s of catalog %s can't publish catalogs", adminOrg.AdminOrg.Name, cat.AdminCatalog.Name)
+		}
+		if !adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishExternally {
+			return fmt.Errorf("parent organization %s of catalog %s can't publish to external orgs", adminOrg.AdminOrg.Name, cat.AdminCatalog.Name)
+		}
 	}
 
 	tenantContext, err := cat.getTenantContext()
@@ -145,7 +147,7 @@ func (cat *AdminCatalog) PublishToExternalOrganizations(publishExternalCatalog t
 
 // GetAdminParent returns the OrAdming to which the catalog belongs
 func (cat *AdminCatalog) GetAdminParent() (*AdminOrg, error) {
-	adminOrg, _, err := getCatalogParent(cat.AdminCatalog.Name, cat.client, cat.AdminCatalog.Link, false)
+	adminOrg, _, err := getCatalogParent(cat.AdminCatalog.Name, cat.client, cat.AdminCatalog.Link, true)
 	if err != nil {
 		return nil, err
 	}
@@ -161,9 +163,9 @@ func (cat *AdminCatalog) GetParent() (*Org, error) {
 	return org, nil
 }
 
-// CreateCatalogFromSubscription creates a new catalog by subscribing to a published catalog
-// Parameter subscription has to be filled manually
-func (org *AdminOrg) CreateCatalogFromSubscription(subscription types.ExternalCatalogSubscription,
+// CreateCatalogFromSubscriptionAsync creates a new catalog by subscribing to a published catalog
+// Parameter subscription needs to be filled manually
+func (org *AdminOrg) CreateCatalogFromSubscriptionAsync(subscription types.ExternalCatalogSubscription,
 	storageProfiles *types.CatalogStorageProfiles,
 	catalogName, catalogDescription, password string, localCopy bool) (*AdminCatalog, error) {
 
@@ -174,7 +176,7 @@ func (org *AdminOrg) CreateCatalogFromSubscription(subscription types.ExternalCa
 	}
 	href := ""
 
-	// The subscibed catalog creation is like a regular catalog creation, with the
+	// The subscribed catalog creation is like a regular catalog creation, with the
 	// difference that the subscription details are filled in
 	for _, link := range org.AdminOrg.Link {
 		if link.Rel == "add" && link.Type == types.MimeAdminCatalog {
@@ -224,9 +226,29 @@ func (org *AdminOrg) CreateCatalogFromSubscription(subscription types.ExternalCa
 	return org.GetAdminCatalogByName(catalogName, true)
 }
 
-// ImportFromCatalog creates a new catalog by subscribing to an existing catalog
+// FullSubscriptionUrl returns the subscription URL from a publisher catalog
+// adding the HOST if needed
+func (cat *AdminCatalog) FullSubscriptionUrl() string {
+	if cat.AdminCatalog.PublishExternalCatalogParams == nil {
+		return ""
+	}
+	subscriptionUrl := cat.AdminCatalog.PublishExternalCatalogParams.CatalogPublishedUrl
+	var err error
+	if !IsValidUrl(subscriptionUrl) {
+		// Get the catalog base URL
+		cutPosition := strings.Index(cat.AdminCatalog.HREF, "/api")
+		catalogHost := cat.AdminCatalog.HREF[:cutPosition]
+		subscriptionUrl, err = url.JoinPath(catalogHost, subscriptionUrl)
+		if err != nil {
+			return ""
+		}
+	}
+	return subscriptionUrl
+}
+
+// ImportFromCatalogAsync creates a new catalog by subscribing to an existing catalog
 // The subscription parameters are gathered, as much as possible, from the published catalog itself
-func (org *AdminOrg) ImportFromCatalog(fromCatalog *AdminCatalog, profiles *types.CatalogStorageProfiles,
+func (org *AdminOrg) ImportFromCatalogAsync(fromCatalog *AdminCatalog, profiles *types.CatalogStorageProfiles,
 	catalogName, catalogDescription, password string, localCopy bool) (*AdminCatalog, error) {
 	err := fromCatalog.Refresh()
 
@@ -240,15 +262,160 @@ func (org *AdminOrg) ImportFromCatalog(fromCatalog *AdminCatalog, profiles *type
 
 	params := types.ExternalCatalogSubscription{
 		SubscribeToExternalFeeds: true,
-		Location:                 fromCatalog.AdminCatalog.PublishExternalCatalogParams.CatalogPublishedUrl,
+		Location:                 fromCatalog.FullSubscriptionUrl(),
 		Password:                 password,
 		LocalCopy:                localCopy,
 	}
-	return org.CreateCatalogFromSubscription(params, profiles, catalogName, catalogDescription, password, localCopy)
+	return org.CreateCatalogFromSubscriptionAsync(params, profiles, catalogName, catalogDescription, password, localCopy)
 }
 
 // IsValidUrl returns true if the given URL is complete and usable
 func IsValidUrl(str string) bool {
 	u, err := url.Parse(str)
 	return err == nil && u.Scheme != "" && u.Host != ""
+}
+
+// GetSubscribedCatalogItem returns a catalog item from a subscribed catalog
+// If the item is not available before the requested timeout, it returns an error
+// Note that, in this context, catalog item can also be a media item
+func (cat *AdminCatalog) GetSubscribedCatalogItem(name string, timeout time.Duration) (*CatalogItem, error) {
+	errorMsg := "could not find subscribed catalog item %s before timeout of %s"
+	var item types.Reference
+	start := time.Now()
+	err := cat.Refresh()
+	if err != nil {
+		return nil, err
+	}
+	// catalog items list may still be empty when the catalog is created
+	for time.Since(start) < timeout {
+		if cat.AdminCatalog.CatalogItems != nil {
+			break
+		}
+		err = cat.Refresh()
+		if err != nil {
+			return nil, err
+		}
+		time.Sleep(time.Second)
+	}
+	if time.Since(start) > timeout {
+		return nil, fmt.Errorf(errorMsg, name, timeout)
+	}
+
+	// The catalog items may still not be populated. It depends on the type of subscription
+	// and network traffic within the VCD
+	for time.Since(start) < timeout {
+		for _, ref := range cat.AdminCatalog.CatalogItems {
+			for _, catItemRef := range ref.CatalogItem {
+				if catItemRef.Name == name {
+					item = *catItemRef
+					break
+				}
+			}
+		}
+		// Attempt catalog item retrieval: if the item is available (even if its tasks are still running)
+		// we can return it
+		if item.HREF != "" {
+			catalogItem, err := cat.GetCatalogItemByHref(item.HREF)
+			if err == nil {
+				return catalogItem, nil
+			}
+		}
+		err = cat.Refresh()
+		if err != nil {
+			return nil, err
+		}
+		time.Sleep(time.Second)
+	}
+
+	return nil, fmt.Errorf(errorMsg, name, timeout)
+}
+
+// CreateCatalogFromSubscription is a wrapper around CreateCatalogFromSubscriptionAsync
+// After catalog creation, it waits for the import tasks to complete within a given timeout
+func (org *AdminOrg) CreateCatalogFromSubscription(subscription types.ExternalCatalogSubscription,
+	storageProfiles *types.CatalogStorageProfiles,
+	catalogName, catalogDescription, password string, localCopy bool, timeout time.Duration) (*AdminCatalog, error) {
+	noTimeout := timeout == 0
+	adminCatalog, err := org.CreateCatalogFromSubscriptionAsync(subscription, storageProfiles, catalogName, catalogDescription, password, localCopy)
+	if err != nil {
+		return nil, err
+	}
+	start := time.Now()
+	for noTimeout || time.Since(start) < timeout {
+		if noTimeout {
+			util.Logger.Printf("[TRACE] [CreateCatalogFromSubscription] no timeout given - Elapsed %s", time.Since(start))
+		}
+		err = adminCatalog.Refresh()
+		if err != nil {
+			return nil, err
+		}
+		if ResourceComplete(adminCatalog.AdminCatalog.Tasks) {
+			return adminCatalog, nil
+		}
+	}
+	return nil, fmt.Errorf("adminCatalog %s still not complete after %s", adminCatalog.AdminCatalog.Name, timeout)
+}
+
+// GetCatalogItemByHref finds a CatalogItem by HREF
+// On success, returns a pointer to the CatalogItem structure and a nil error
+// On failure, returns a nil pointer and an error
+func (cat *AdminCatalog) GetCatalogItemByHref(catalogItemHref string) (*CatalogItem, error) {
+	catItem := NewCatalogItem(cat.client)
+
+	_, err := cat.client.ExecuteRequest(catalogItemHref, http.MethodGet,
+		"", "error retrieving catalog item: %s", nil, catItem.CatalogItem)
+	if err != nil {
+		return nil, err
+	}
+	return catItem, nil
+}
+
+// ImportFromCatalog is a wrapper around ImportFromCatalogAsync
+// After catalog creation, it waits for the import tasks to complete within a given timeout
+// A timeout of 0 means no timeout
+func (org *AdminOrg) ImportFromCatalog(fromCatalog *AdminCatalog, profiles *types.CatalogStorageProfiles,
+	catalogName, catalogDescription, password string, localCopy bool, timeout time.Duration) (*AdminCatalog, error) {
+
+	noTimeout := timeout == 0
+	adminCatalog, err := org.ImportFromCatalogAsync(fromCatalog, profiles, catalogName, catalogDescription, password, localCopy)
+	if err != nil {
+		return nil, err
+	}
+	start := time.Now()
+	for noTimeout || time.Since(start) < timeout {
+		if noTimeout {
+			util.Logger.Printf("[TRACE] [ImportFromCatalog] no timeout given - Elapsed %s", time.Since(start))
+		}
+		err = adminCatalog.Refresh()
+		if err != nil {
+			return nil, err
+		}
+		if ResourceComplete(adminCatalog.AdminCatalog.Tasks) {
+			return adminCatalog, nil
+		}
+	}
+	// At this point, the adminCatalog is usable, although its tasks are still running.
+	// Thus, we return a valid object and an error
+	return adminCatalog, fmt.Errorf("adminCatalog %s still not complete after %s", adminCatalog.AdminCatalog.Name, timeout)
+}
+
+// Sync synchronises a subscribed AdminCatalog
+func (cat *AdminCatalog) Sync() error {
+	// if the catalog was not subscribed, return
+	if cat.AdminCatalog.ExternalCatalogSubscription == nil || cat.AdminCatalog.ExternalCatalogSubscription.Location == "" {
+		return nil
+	}
+	// The sync operation is only available for Catalog, not AdminCatalog.
+	// We use the embedded Catalog object for this purpose
+	return catalogSync(cat.client, cat.AdminCatalog.Catalog.HREF)
+}
+
+// QueryMediaList retrieves a list of media items for the Admin Catalog
+func (catalog *AdminCatalog) QueryMediaList() ([]*types.MediaRecordType, error) {
+	return queryMediaList(catalog.client, catalog.AdminCatalog.HREF)
+}
+
+// QueryVappTemplateList returns a list of vApp templates for the given catalog
+func (catalog *AdminCatalog) QueryVappTemplateList() ([]*types.QueryResultVappTemplateType, error) {
+	return queryVappTemplateList(catalog.client, "catalogName", catalog.AdminCatalog.Name)
 }
