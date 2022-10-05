@@ -597,6 +597,22 @@ func (adminOrg *AdminOrg) GetAdminCatalogByHref(catalogHref string) (*AdminCatal
 	return adminCatalog, nil
 }
 
+// GetAdminCatalogByHref  finds an AdminCatalog by HREF
+// On success, returns a pointer to the Catalog structure and a nil error
+// On failure, returns a nil pointer and an error
+func (client *Client) GetAdminCatalogByHref(catalogHref string) (*AdminCatalog, error) {
+	adminCatalog := NewAdminCatalog(client)
+
+	_, err := client.ExecuteRequest(catalogHref, http.MethodGet,
+		"", "error retrieving catalog: %s", nil, adminCatalog.AdminCatalog)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return adminCatalog, nil
+}
+
 // GetCatalogByName finds an AdminCatalog by Name
 // On success, returns a pointer to the AdminCatalog structure and a nil error
 // On failure, returns a nil pointer and an error
