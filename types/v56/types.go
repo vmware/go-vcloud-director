@@ -1501,7 +1501,7 @@ type MetadataEntry struct {
 // Description: A value of SYSTEM places this MetadataEntry in the SYSTEM domain. Omit or leave empty to place this MetadataEntry in the GENERAL domain.
 // Since: 5.1
 type MetadataDomainTag struct {
-	Visibility string `xml:"visibility,attr"` // One of: PRIVATE (hidden), READONLY, nil (read/write)
+	Visibility string `xml:"visibility,attr"` // One of: PRIVATE (hidden), READONLY, READWRITE (read/write)
 	Domain     string `xml:",chardata"`
 }
 
