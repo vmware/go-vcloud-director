@@ -1305,7 +1305,6 @@ type ReComposeVAppParams struct {
 	VAppParent          *Reference                   `xml:"VAppParent,omitempty"`          // Reserved. Unimplemented.
 	InstantiationParams *InstantiationParams         `xml:"InstantiationParams,omitempty"` // Instantiation parameters for the composed vApp.
 	SourcedItem         *SourcedCompositionItemParam `xml:"SourcedItem,omitempty"`         // Composition item. One of: vApp vAppTemplate VM.
-	CreateItem          *CreateItem                  `xml:"CreateItem,omitempty"`
 	AllEULAsAccepted    bool                         `xml:"AllEULAsAccepted,omitempty"`
 	DeleteItem          *DeleteItem                  `xml:"DeleteItem,omitempty"`
 }
@@ -1343,7 +1342,6 @@ type SourcedCompositionItemParam struct {
 	StorageProfile      *Reference           `xml:"StorageProfile,omitempty"`      // If Source references a VM, this element contains a reference to a storage profile to be used for the VM. The specified storage profile must exist in the organization vDC that contains the composed vApp. If not specified, the default storage profile for the vDC is used.
 	LocalityParams      *LocalityParams      `xml:"LocalityParams,omitempty"`      // Represents locality parameters. Locality parameters provide a hint that may help the placement engine optimize placement of a VM and an independent a Disk so that the VM can make efficient use of the disk.
 	ComputePolicy       *ComputePolicy       `xml:"ComputePolicy,omitempty"`       // accessible only from version API 33.0
-	VmCapabilities      *VmCapabilities      `xml:"VmCapabilities,omitempty"`      // Describes the capabilities (hot swap, etc.) the instantiated VM should have.
 }
 
 // LocalityParams represents locality parameters. Locality parameters provide a hint that may help the placement engine optimize placement of a VM with respect to another VM or an independent disk.
