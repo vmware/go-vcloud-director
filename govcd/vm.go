@@ -1914,7 +1914,7 @@ func (vm *VM) SetDescription(description string) error {
 		Xmlns string `xml:"xmlns,attr,omitempty"`
 
 		Name        string `xml:"name,attr"`   // The name of the entity.
-		Description string `xml:"Description"` // Optional description.
+		Description string `xml:"Description"` // Description will be set even if it is empty.
 	}
 
 	task, err := vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
