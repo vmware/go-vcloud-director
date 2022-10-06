@@ -919,14 +919,14 @@ func queryMediaList(client *Client, catalogHref string) ([]*types.MediaRecordTyp
 
 // Sync synchronise a subscribed catalog
 func (cat *Catalog) Sync() error {
-	return catalogSync(cat.client, cat.Catalog.HREF)
+	return elementSync(cat.client, cat.Catalog.HREF, "catalog")
 }
 
-// catalogSync is a low level function that synchronises a Catalog or AdminCatalog
-func catalogSync(client *Client, catalogHref string) error {
-	href := catalogHref + "/sync"
+// elementSync is a low level function that synchronises a Catalog, AdminCatalog, CatalogItem, or Media item
+func elementSync(client *Client, elementHref, label string) error {
+	href := elementHref + "/action/sync"
 	syncTask, err := client.ExecuteTaskRequest(href, http.MethodPost,
-		"", "error synchronizing catalog: %s", nil)
+		"", "error synchronizing "+label+": %s", nil)
 
 	if err != nil {
 		return err
