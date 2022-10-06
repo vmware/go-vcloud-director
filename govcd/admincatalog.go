@@ -399,6 +399,20 @@ func (org *AdminOrg) ImportFromCatalog(fromCatalog *AdminCatalog, profiles *type
 	return adminCatalog, fmt.Errorf("adminCatalog %s still not complete after %s", adminCatalog.AdminCatalog.Name, timeout)
 }
 
+func (cat *AdminCatalog) GetCatalogHref() (string, error) {
+	href := ""
+	for _, link := range cat.AdminCatalog.Link {
+		if link.Rel == "alternate" && link.Type == types.MimeCatalog {
+			href = link.HREF
+			break
+		}
+	}
+	if href == "" {
+		return "", fmt.Errorf("no regular Catalog HREF found for admin Catalog %s", cat.AdminCatalog.Name)
+	}
+	return href, nil
+}
+
 // Sync synchronises a subscribed AdminCatalog
 func (cat *AdminCatalog) Sync() error {
 	// if the catalog was not subscribed, return
@@ -407,7 +421,11 @@ func (cat *AdminCatalog) Sync() error {
 	}
 	// The sync operation is only available for Catalog, not AdminCatalog.
 	// We use the embedded Catalog object for this purpose
-	return catalogSync(cat.client, cat.AdminCatalog.Catalog.HREF)
+	catalogHref, err := cat.GetCatalogHref()
+	if err != nil || catalogHref == "" {
+		return fmt.Errorf("empty catalog HREF for admin catalog %s", cat.AdminCatalog.Name)
+	}
+	return elementSync(cat.client, catalogHref, "admin catalog")
 }
 
 // QueryMediaList retrieves a list of media items for the Admin Catalog
@@ -418,4 +436,88 @@ func (catalog *AdminCatalog) QueryMediaList() ([]*types.MediaRecordType, error) 
 // QueryVappTemplateList returns a list of vApp templates for the given catalog
 func (catalog *AdminCatalog) QueryVappTemplateList() ([]*types.QueryResultVappTemplateType, error) {
 	return queryVappTemplateList(catalog.client, "catalogName", catalog.AdminCatalog.Name)
+}
+
+// SynchroniseAllVappTemplates synchronises all vApp templates for a given catalog
+func (cat *AdminCatalog) SynchroniseAllVappTemplates() error {
+	vappTemplatesList, err := cat.QueryVappTemplateList()
+	if err != nil {
+		return err
+	}
+	var nameList []string
+	for _, element := range vappTemplatesList {
+		nameList = append(nameList, element.Name)
+	}
+	return cat.SynchroniseVappTemplates(nameList)
+}
+
+// SynchroniseVappTemplates synchronises a list of vApp templates
+func (cat *AdminCatalog) SynchroniseVappTemplates(nameList []string) error {
+	for _, element := range nameList {
+		catalogItem, err := cat.GetSubscribedCatalogItem(element, 3*time.Second)
+		if err != nil {
+			return err
+		}
+		err = catalogItem.Sync()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// SynchroniseAllMediaItems synchronises all media items for a given catalog
+func (cat *AdminCatalog) SynchroniseAllMediaItems() error {
+	mediaList, err := cat.QueryMediaList()
+	if err != nil {
+		return err
+	}
+	for _, element := range mediaList {
+		catalogItem, err := cat.GetCatalogItemByHref(element.CatalogItem)
+		if err != nil {
+			return err
+		}
+		err = catalogItem.Sync()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// SynchroniseMediaItems synchronises a list of media items
+func (cat *AdminCatalog) SynchroniseMediaItems(nameList []string) error {
+	mediaList, err := cat.QueryMediaList()
+	if err != nil {
+		return err
+	}
+	var actionList []string
+
+	var found = make(map[string]string)
+	for _, element := range mediaList {
+		if contains(element.Name, nameList) {
+			util.Logger.Printf("scheduling for synchronisation Media item %s with catalog item HREF %s\n", element.Name, element.CatalogItem)
+			actionList = append(actionList, element.CatalogItem)
+			found[element.Name] = element.CatalogItem
+		}
+	}
+	if len(actionList) < len(nameList) {
+		var foundList []string
+		for k := range found {
+			foundList = append(foundList, k)
+		}
+		return fmt.Errorf("%d names provided [%v] but %d actions scheduled [%v]\n", len(nameList), nameList, len(actionList), foundList)
+	}
+	for _, element := range actionList {
+		util.Logger.Printf("synchronising Media catalog item HREF %s\n", element)
+		catalogItem, err := cat.GetCatalogItemByHref(element)
+		if err != nil {
+			return err
+		}
+		err = catalogItem.Sync()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
