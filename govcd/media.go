@@ -706,3 +706,12 @@ func (vdc *Vdc) QueryAllMedia(mediaName string) ([]*MediaRecord, error) {
 	util.Logger.Printf("[TRACE] Found media records by name: %#v \n", mediaResults)
 	return newMediaRecords, nil
 }
+
+// Sync synchronises a subscribed media item
+func (item *MediaRecord) Sync() error {
+	if item.MediaRecord.CatalogItem == "" {
+		return fmt.Errorf("could not find catalog item HREF for media %s", item.MediaRecord.Name)
+	}
+	// only catalog items can be synchronised
+	return elementSync(item.client, item.MediaRecord.CatalogItem, "catalog media")
+}

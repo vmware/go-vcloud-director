@@ -126,3 +126,8 @@ func (vdc *AdminVdc) QueryVappTemplateList() ([]*types.QueryResultVappTemplateTy
 func (catalog *Catalog) QueryVappTemplateList() ([]*types.QueryResultVappTemplateType, error) {
 	return queryVappTemplateList(catalog.client, "catalogName", catalog.Catalog.Name)
 }
+
+// Sync synchronises a subscribed Catalog item
+func (item *CatalogItem) Sync() error {
+	return elementSync(item.client, item.CatalogItem.HREF, "catalog item")
+}
