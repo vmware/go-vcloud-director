@@ -1964,3 +1964,69 @@ func (vcd *TestVCD) Test_VMChangeMemory(check *C) {
 	err = vm.ChangeMemory(currentMemory)
 	check.Assert(err, IsNil)
 }
+
+func (vcd *TestVCD) Test_AddRawVm(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, false)
+	check.Assert(err, IsNil)
+	check.Assert(cat, NotNil)
+	// Populate Catalog Item
+	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.NsxtCatalogItem, false)
+	check.Assert(err, IsNil)
+	check.Assert(catitem, NotNil)
+	// Get VAppTemplate
+	vapptemplate, err := catitem.GetVAppTemplate()
+	check.Assert(err, IsNil)
+
+	vapp, err := vcd.nsxtVdc.CreateRawVApp(check.TestName(), check.TestName())
+	check.Assert(err, IsNil)
+	check.Assert(vapp, NotNil)
+	// After a successful creation, the entity is added to the cleanup list.
+	AddToCleanupList(vapp.VApp.Name, "vapp", vcd.nsxtVdc.Vdc.Name, check.TestName())
+
+	// Once the operation is successful, we won't trigger a failure
+	// until after the vApp deletion
+	check.Check(vapp.VApp.Name, Equals, check.TestName())
+	check.Check(vapp.VApp.Description, Equals, check.TestName())
+
+	// Construct VM
+	vmDef := &types.ReComposeVAppParams{
+		Ovf:              types.XMLNamespaceOVF,
+		Xsi:              types.XMLNamespaceXSI,
+		Xmlns:            types.XMLNamespaceVCloud,
+		AllEULAsAccepted: true,
+		Deploy:           false,
+		Name:             check.TestName() + "-vm",
+		PowerOn:          false, // Power on is set to false as there will be additional operations before final VM creation
+		SourcedItem: &types.SourcedCompositionItemParam{
+			Source: &types.Reference{
+				HREF: vapptemplate.VAppTemplate.HREF,
+				Name: check.TestName() + "-vm",
+			},
+			// VMGeneralParams: &types.VMGeneralParams{
+			// 	Description: d.Get("description").(string),
+			// },
+			// InstantiationParams: &types.InstantiationParams{
+			// 	// TODO check in other places
+			// 	// If a MAC address is specified for NIC - it does not get set with this call, therefore an additional
+			// 	NetworkConnectionSection: &networkConnectionSection,
+			// },
+			// ComputePolicy:  vmComputePolicy,
+			// StorageProfile: storageProfilePtr,
+		},
+	}
+	vm, err := vapp.AddRawVM(vmDef)
+	check.Assert(err, IsNil)
+	check.Assert(vm, NotNil)
+
+	// Cleanup
+	task, err := vapp.Delete()
+	check.Assert(err, nil)
+	check.Assert(task, Not(Equals), Task{})
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+}

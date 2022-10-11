@@ -141,8 +141,10 @@ type TestConfig struct {
 		} `yaml:"nsxt_provider_vdc"`
 		Catalog struct {
 			Name                    string `yaml:"name,omitempty"`
+			NsxtBackedCatalogName   string `yaml:"nsxtBackedCatalogName,omitempty"`
 			Description             string `yaml:"description,omitempty"`
 			CatalogItem             string `yaml:"catalogItem,omitempty"`
+			NsxtCatalogItem         string `yaml:"nsxtCatalogItem,omitempty"`
 			CatalogItemDescription  string `yaml:"catalogItemDescription,omitempty"`
 			CatalogItemWithMultiVms string `yaml:"catalogItemWithMultiVms,omitempty"`
 			VmNameInMultiVmItem     string `yaml:"vmNameInMultiVmItem,omitempty"`

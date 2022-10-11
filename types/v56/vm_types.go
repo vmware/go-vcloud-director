@@ -99,7 +99,7 @@ type RecomposeVAppParamsForEmptyVm struct {
 	XMLName          xml.Name    `xml:"RecomposeVAppParams"`
 	XmlnsVcloud      string      `xml:"xmlns,attr"`
 	XmlnsOvf         string      `xml:"xmlns:ovf,attr"`
-	PowerOn          bool        `xml:"powerOn,attr"` // True if the vApp should be powered-on at instantiation. Defaults to true.
+	PowerOn          bool        `xml:"powerOn,attr,omitempty"` // True if the VM should be powered-on after creation. Defaults to false.
 	CreateItem       *CreateItem `xml:"CreateItem,omitempty"`
 	AllEULAsAccepted bool        `xml:"AllEULAsAccepted,omitempty"`
 }
