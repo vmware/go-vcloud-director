@@ -1571,11 +1571,11 @@ func (vcd *TestVCD) TearDownSuite(check *C) {
 	// We will try to remove every entity that has been registered into
 	// CleanupEntityList. Entities that have already been cleaned up by their
 	// functions will be ignored.
-	// for i, cleanupEntity := range cleanupEntityList {
-	// 	fmt.Printf("# %d of %d - ", i+1, len(cleanupEntityList))
-	// 	vcd.removeLeftoverEntities(cleanupEntity)
-	// 	removePersistentCleanupList()
-	// }
+	for i, cleanupEntity := range cleanupEntityList {
+		fmt.Printf("# %d of %d - ", i+1, len(cleanupEntityList))
+		vcd.removeLeftoverEntities(cleanupEntity)
+		removePersistentCleanupList()
+	}
 }
 
 // Tests getloginurl with the endpoint given
