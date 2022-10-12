@@ -1936,6 +1936,56 @@ func (vcd *TestVCD) Test_VMChangeCPU(check *C) {
 	check.Assert(err, IsNil)
 }
 
+func (vcd *TestVCD) Test_VMChangeCPUAndCoreCount(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
+	vapp := vcd.findFirstVapp()
+	existingVm, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	currentCpus := existingVm.VmSpecSection.NumCpus
+	currentCores := existingVm.VmSpecSection.NumCoresPerSocket
+
+	check.Assert(0, Not(Equals), currentCpus)
+	check.Assert(0, Not(Equals), currentCores)
+
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
+	check.Assert(err, IsNil)
+
+	cores := 2
+	cpuCount := 4
+
+	err = vm.ChangeCPUAndCoreCount(&cpuCount, &cores)
+	check.Assert(err, IsNil)
+
+	check.Assert(*vm.VM.VmSpecSection.NumCpus, Equals, cpuCount)
+	check.Assert(*vm.VM.VmSpecSection.NumCoresPerSocket, Equals, cores)
+
+	// Try changing only CPU count and seeing if coreCount remains the same
+	newCpuCount := 2
+	err = vm.ChangeCPUAndCoreCount(&newCpuCount, nil)
+	check.Assert(err, IsNil)
+
+	check.Assert(*vm.VM.VmSpecSection.NumCpus, Equals, newCpuCount)
+	check.Assert(*vm.VM.VmSpecSection.NumCoresPerSocket, Equals, cores)
+
+	// Change only core count and check that CPU count remains as it was
+	newCoreCount := 1
+	err = vm.ChangeCPUAndCoreCount(nil, &newCoreCount)
+	check.Assert(err, IsNil)
+
+	check.Assert(*vm.VM.VmSpecSection.NumCpus, Equals, newCpuCount)
+	check.Assert(*vm.VM.VmSpecSection.NumCoresPerSocket, Equals, newCoreCount)
+
+	// return to previous value
+	err = vm.ChangeCPUAndCoreCount(currentCpus, currentCores)
+	check.Assert(err, IsNil)
+}
+
 func (vcd *TestVCD) Test_VMChangeMemory(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
@@ -2048,14 +2098,6 @@ func (vcd *TestVCD) Test_AddRawVm(check *C) {
 	vmStatus, err := vm.GetStatus()
 	check.Assert(err, IsNil)
 	check.Assert(vmStatus, Equals, "POWERED_OFF")
-
-	// // Power On VM
-	// task, err = vm.PowerOn()
-	// check.Assert(err, IsNil)
-	// check.Assert(task, Not(Equals), Task{})
-
-	// err = task.WaitTaskCompletion()
-	// check.Assert(err, IsNil)
 
 	// Cleanup
 	task, err = vapp.Undeploy()
