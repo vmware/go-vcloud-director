@@ -1878,7 +1878,8 @@ func (vm *VM) ChangeCPU(cpus, cpuCores int) error {
 	return nil
 }
 
-// ChangeCPUAndCoreCount accepts values or `nil` for both parameters.
+// ChangeCPUAndCoreCount sets CPU and CPU core counts
+// Accepts values or `nil` for both parameters.
 func (vm *VM) ChangeCPUAndCoreCount(cpus, cpuCores *int) error {
 	vmSpecSection := vm.VM.VmSpecSection
 	description := vm.VM.Description

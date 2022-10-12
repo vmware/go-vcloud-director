@@ -1987,16 +1987,19 @@ func (vcd *TestVCD) Test_AddRawVm(check *C) {
 	// fmt.Println("sleeping")
 	// time.Sleep(1 * time.Minute)
 	// // Check that vApp is powered of
-	// vappStatus, err := vapp.GetStatus()
-	// check.Assert(err, IsNil)
-	// check.Assert(vappStatus, Equals, "RESOLVED")
+	vappStatus, err := vapp.GetStatus()
+	check.Assert(err, IsNil)
+	check.Assert(vappStatus, Equals, "RESOLVED")
 
 	task, err := vapp.PowerOn()
 	check.Assert(err, IsNil)
 	check.Assert(task, NotNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
-	// check.Assert(vappStatus, Equals, "POWERED_ON")
+
+	vappStatus, err = vapp.GetStatus()
+	check.Assert(err, IsNil)
+	check.Assert(vappStatus, Equals, "POWERED_ON")
 
 	// Once the operation is successful, we won't trigger a failure
 	// until after the vApp deletion
@@ -2035,7 +2038,7 @@ func (vcd *TestVCD) Test_AddRawVm(check *C) {
 	check.Assert(err, IsNil)
 
 	// Check that vApp did not lose its state
-	vappStatus, err := vapp.GetStatus()
+	vappStatus, err = vapp.GetStatus()
 	check.Assert(err, IsNil)
 	check.Assert(vappStatus, Equals, "MIXED") //vApp is powered on, but the VM withing is powered off
 	check.Assert(vapp.VApp.Name, Equals, check.TestName())
@@ -2046,8 +2049,16 @@ func (vcd *TestVCD) Test_AddRawVm(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vmStatus, Equals, "POWERED_OFF")
 
+	// // Power On VM
+	// task, err = vm.PowerOn()
+	// check.Assert(err, IsNil)
+	// check.Assert(task, Not(Equals), Task{})
+
+	// err = task.WaitTaskCompletion()
+	// check.Assert(err, IsNil)
+
 	// Cleanup
-	task, err = vapp.Shutdown()
+	task, err = vapp.Undeploy()
 	check.Assert(err, IsNil)
 	check.Assert(task, Not(Equals), Task{})
 
