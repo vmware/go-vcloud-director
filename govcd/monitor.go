@@ -308,6 +308,20 @@ func SimpleShowTask(task *types.Task, howManyTimes int, elapsed time.Duration, f
 	simpleOutTask("screen", task, howManyTimes, elapsed, first, last)
 }
 
+func MinimalShowTask(task *types.Task, howManyTimes int, elapsed time.Duration, first, last bool) {
+	marker := "."
+	if task.Status == "success" {
+		marker = "+"
+	}
+	if task.Status == "error" {
+		marker = "-"
+	}
+	fmt.Printf(marker)
+	if last {
+		fmt.Println()
+	}
+}
+
 func SimpleLogTask(task *types.Task, howManyTimes int, elapsed time.Duration, first, last bool) {
 	simpleOutTask("log", task, howManyTimes, elapsed, first, last)
 }
