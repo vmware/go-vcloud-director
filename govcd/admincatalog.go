@@ -167,7 +167,7 @@ func (cat *AdminCatalog) GetParent() (*Org, error) {
 // Parameter subscription needs to be filled manually
 func (org *AdminOrg) CreateCatalogFromSubscriptionAsync(subscription types.ExternalCatalogSubscription,
 	storageProfiles *types.CatalogStorageProfiles,
-	catalogName, catalogDescription, password string, localCopy bool) (*AdminCatalog, error) {
+	catalogName, password string, localCopy bool) (*AdminCatalog, error) {
 
 	// If the receiving Org doesn't have any VDCs, it means that there is no storage that can be used
 	// by a catalog
@@ -188,8 +188,7 @@ func (org *AdminOrg) CreateCatalogFromSubscriptionAsync(subscription types.Exter
 		return nil, fmt.Errorf("catalog creation link not found for org %s", org.AdminOrg.Name)
 	}
 	reqCatalog := &types.Catalog{
-		Name:        catalogName,
-		Description: catalogDescription,
+		Name: catalogName,
 	}
 	adminCatalog := types.AdminCatalog{
 		Xmlns:                  types.XMLNamespaceVCloud,
@@ -249,7 +248,7 @@ func (cat *AdminCatalog) FullSubscriptionUrl() string {
 // ImportFromCatalogAsync creates a new catalog by subscribing to an existing catalog
 // The subscription parameters are gathered, as much as possible, from the published catalog itself
 func (org *AdminOrg) ImportFromCatalogAsync(fromCatalog *AdminCatalog, profiles *types.CatalogStorageProfiles,
-	catalogName, catalogDescription, password string, localCopy bool) (*AdminCatalog, error) {
+	catalogName, password string, localCopy bool) (*AdminCatalog, error) {
 	err := fromCatalog.Refresh()
 
 	if err != nil {
@@ -266,7 +265,7 @@ func (org *AdminOrg) ImportFromCatalogAsync(fromCatalog *AdminCatalog, profiles 
 		Password:                 password,
 		LocalCopy:                localCopy,
 	}
-	return org.CreateCatalogFromSubscriptionAsync(params, profiles, catalogName, catalogDescription, password, localCopy)
+	return org.CreateCatalogFromSubscriptionAsync(params, profiles, catalogName, password, localCopy)
 }
 
 // IsValidUrl returns true if the given URL is complete and usable
@@ -275,6 +274,7 @@ func IsValidUrl(str string) bool {
 	return err == nil && u.Scheme != "" && u.Host != ""
 }
 
+/*
 // GetSubscribedCatalogItem returns a catalog item from a subscribed catalog
 // If the item is not available before the requested timeout, it returns an error
 // Note that, in this context, catalog item can also be a media item
@@ -330,13 +330,15 @@ func (cat *AdminCatalog) GetSubscribedCatalogItem(name string, timeout time.Dura
 	return nil, fmt.Errorf(errorMsg, name, timeout)
 }
 
+*/
+
 // CreateCatalogFromSubscription is a wrapper around CreateCatalogFromSubscriptionAsync
 // After catalog creation, it waits for the import tasks to complete within a given timeout
 func (org *AdminOrg) CreateCatalogFromSubscription(subscription types.ExternalCatalogSubscription,
 	storageProfiles *types.CatalogStorageProfiles,
-	catalogName, catalogDescription, password string, localCopy bool, timeout time.Duration) (*AdminCatalog, error) {
+	catalogName, password string, localCopy bool, timeout time.Duration) (*AdminCatalog, error) {
 	noTimeout := timeout == 0
-	adminCatalog, err := org.CreateCatalogFromSubscriptionAsync(subscription, storageProfiles, catalogName, catalogDescription, password, localCopy)
+	adminCatalog, err := org.CreateCatalogFromSubscriptionAsync(subscription, storageProfiles, catalogName, password, localCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -374,10 +376,10 @@ func (cat *AdminCatalog) GetCatalogItemByHref(catalogItemHref string) (*CatalogI
 // After catalog creation, it waits for the import tasks to complete within a given timeout
 // A timeout of 0 means no timeout
 func (org *AdminOrg) ImportFromCatalog(fromCatalog *AdminCatalog, profiles *types.CatalogStorageProfiles,
-	catalogName, catalogDescription, password string, localCopy bool, timeout time.Duration) (*AdminCatalog, error) {
+	catalogName, password string, localCopy bool, timeout time.Duration) (*AdminCatalog, error) {
 
 	noTimeout := timeout == 0
-	adminCatalog, err := org.ImportFromCatalogAsync(fromCatalog, profiles, catalogName, catalogDescription, password, localCopy)
+	adminCatalog, err := org.ImportFromCatalogAsync(fromCatalog, profiles, catalogName, password, localCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -454,11 +456,11 @@ func (cat *AdminCatalog) SynchroniseAllVappTemplates() error {
 // SynchroniseVappTemplates synchronises a list of vApp templates
 func (cat *AdminCatalog) SynchroniseVappTemplates(nameList []string) error {
 	for _, element := range nameList {
-		catalogItem, err := cat.GetSubscribedCatalogItem(element, 3*time.Second)
+		catalogItem, err := cat.QueryCatalogItem(element)
 		if err != nil {
 			return err
 		}
-		err = catalogItem.Sync()
+		err = queryResultCatalogItemToCatalogItem(cat.client, catalogItem).Sync()
 		if err != nil {
 			return err
 		}
@@ -520,4 +522,109 @@ func (cat *AdminCatalog) SynchroniseMediaItems(nameList []string) error {
 		}
 	}
 	return nil
+}
+
+// LaunchSync starts synchronisation of a subscribed AdminCatalog
+func (cat *AdminCatalog) LaunchSync() (*Task, error) {
+	// if the catalog was not subscribed, return
+	if cat.AdminCatalog.ExternalCatalogSubscription == nil || cat.AdminCatalog.ExternalCatalogSubscription.Location == "" {
+		return nil, nil
+	}
+	// The sync operation is only available for Catalog, not AdminCatalog.
+	// We use the embedded Catalog object for this purpose
+	catalogHref, err := cat.GetCatalogHref()
+	if err != nil || catalogHref == "" {
+		return nil, fmt.Errorf("empty catalog HREF for admin catalog %s", cat.AdminCatalog.Name)
+	}
+	return elementLaunchSync(cat.client, catalogHref, "admin catalog")
+}
+
+// LaunchSynchronisationMediaItems starts synchronisation of a list of media items
+func (cat *AdminCatalog) LaunchSynchronisationMediaItems(nameList []string) ([]*Task, error) {
+	var taskList []*Task
+	mediaList, err := cat.QueryMediaList()
+	if err != nil {
+		return nil, err
+	}
+	var actionList []string
+
+	var found = make(map[string]string)
+	for _, element := range mediaList {
+		if contains(element.Name, nameList) {
+			util.Logger.Printf("scheduling for synchronisation Media item %s with catalog item HREF %s\n", element.Name, element.CatalogItem)
+			actionList = append(actionList, element.CatalogItem)
+			found[element.Name] = element.CatalogItem
+		}
+	}
+	if len(actionList) < len(nameList) {
+		var foundList []string
+		for k := range found {
+			foundList = append(foundList, k)
+		}
+		return nil, fmt.Errorf("%d names provided [%v] but %d actions scheduled [%v]\n", len(nameList), nameList, len(actionList), foundList)
+	}
+	for _, element := range actionList {
+		util.Logger.Printf("synchronising Media catalog item HREF %s\n", element)
+		catalogItem, err := cat.GetCatalogItemByHref(element)
+		if err != nil {
+			return nil, err
+		}
+		task, err := catalogItem.LaunchSync()
+		if err != nil {
+			return nil, err
+		}
+		taskList = append(taskList, task)
+	}
+	return taskList, nil
+}
+
+// LaunchSynchronisationAllMediaItems starts synchronisation of all media items for a given catalog
+func (cat *AdminCatalog) LaunchSynchronisationAllMediaItems() ([]*Task, error) {
+	var taskList []*Task
+	mediaList, err := cat.QueryMediaList()
+	if err != nil {
+		return nil, err
+	}
+	for _, element := range mediaList {
+		catalogItem, err := cat.GetCatalogItemByHref(element.CatalogItem)
+		if err != nil {
+			return nil, err
+		}
+		task, err := catalogItem.LaunchSync()
+		if err != nil {
+			return nil, err
+		}
+		taskList = append(taskList, task)
+	}
+	return taskList, nil
+}
+
+// LaunchSynchronisationVappTemplates starts synchronisation of a list of vApp templates
+func (cat *AdminCatalog) LaunchSynchronisationVappTemplates(nameList []string) ([]*Task, error) {
+	var taskList []*Task
+	for _, element := range nameList {
+		catalogItem, err := cat.QueryCatalogItem(element)
+		if err != nil {
+			return nil, err
+		}
+		task, err := queryResultCatalogItemToCatalogItem(cat.client, catalogItem).LaunchSync()
+		if err != nil {
+			return nil, err
+		}
+		taskList = append(taskList, task)
+	}
+	return taskList, nil
+}
+
+// LaunchSynchronisationAllVappTemplates starts synchronisation of all vApp templates for a given catalog
+func (cat *AdminCatalog) LaunchSynchronisationAllVappTemplates() ([]*Task, error) {
+	vappTemplatesList, err := cat.QueryVappTemplateList()
+	if err != nil {
+		return nil, err
+	}
+	var nameList []string
+	for _, element := range vappTemplatesList {
+		nameList = append(nameList, element.Name)
+	}
+	return cat.LaunchSynchronisationVappTemplates(nameList)
 }

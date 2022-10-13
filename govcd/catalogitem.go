@@ -52,18 +52,31 @@ func (catalogItem *CatalogItem) Delete() error {
 
 // queryCatalogItemList returns a list of Catalog Item for the given parent
 func queryCatalogItemList(client *Client, parentField, parentValue string) ([]*types.QueryResultCatalogItemType, error) {
+	return queryCatalogItemFilteredList(client, map[string]string{parentField: parentValue})
+}
 
+// queryCatalogItemFilteredList returns a list of Catalog Items with an optional filter
+func queryCatalogItemFilteredList(client *Client, filter map[string]string) ([]*types.QueryResultCatalogItemType, error) {
 	catalogItemType := types.QtCatalogItem
 	if client.IsSysAdmin {
 		catalogItemType = types.QtAdminCatalogItem
 	}
 
-	filterText := fmt.Sprintf("%s==%s", parentField, url.QueryEscape(parentValue))
+	filterText := ""
+	for k, v := range filter {
+		if filterText != "" {
+			filterText += ";"
+		}
+		filterText += fmt.Sprintf("%s==%s", k, url.QueryEscape(v))
+	}
 
-	results, err := client.cumulativeQuery(catalogItemType, nil, map[string]string{
-		"type":   catalogItemType,
-		"filter": filterText,
-	})
+	notEncodedParams := map[string]string{
+		"type": catalogItemType,
+	}
+	if filterText != "" {
+		notEncodedParams["filter"] = filterText
+	}
+	results, err := client.cumulativeQuery(catalogItemType, nil, notEncodedParams)
 	if err != nil {
 		return nil, fmt.Errorf("error querying catalog items %s", err)
 	}
@@ -78,6 +91,54 @@ func queryCatalogItemList(client *Client, parentField, parentValue string) ([]*t
 // QueryCatalogItemList returns a list of Catalog Item for the given catalog
 func (catalog *Catalog) QueryCatalogItemList() ([]*types.QueryResultCatalogItemType, error) {
 	return queryCatalogItemList(catalog.client, "catalog", catalog.Catalog.ID)
+}
+
+// QueryCatalogItemList returns a list of Catalog Item for the given admin catalog
+func (catalog *AdminCatalog) QueryCatalogItemList() ([]*types.QueryResultCatalogItemType, error) {
+	return queryCatalogItemList(catalog.client, "catalog", catalog.AdminCatalog.ID)
+}
+
+// QueryCatalogItem returns a named Catalog Item for the given catalog
+func (catalog *Catalog) QueryCatalogItem(name string) (*types.QueryResultCatalogItemType, error) {
+	return queryCatalogItem(catalog.client, "catalog", catalog.Catalog.ID, name)
+}
+
+// QueryCatalogItem returns a named Catalog Item for the given catalog
+func (catalog *AdminCatalog) QueryCatalogItem(name string) (*types.QueryResultCatalogItemType, error) {
+	return queryCatalogItem(catalog.client, "catalog", catalog.AdminCatalog.ID, name)
+}
+
+// queryCatalogItem returns a named Catalog Item for the given parent
+func queryCatalogItem(client *Client, parentField, parentValue, name string) (*types.QueryResultCatalogItemType, error) {
+
+	result, err := queryCatalogItemFilteredList(client, map[string]string{parentField: parentValue, "name": name})
+	if err != nil {
+		return nil, err
+	}
+	if len(result) == 0 {
+		return nil, ErrorEntityNotFound
+	}
+	if len(result) > 1 {
+		return nil, fmt.Errorf("more than one item (%d) found with name %s", len(result), name)
+	}
+	return result[0], nil
+}
+
+func queryResultCatalogItemToCatalogItem(client *Client, qr *types.QueryResultCatalogItemType) *CatalogItem {
+	var catalogItem = NewCatalogItem(client)
+	catalogItem.CatalogItem = &types.CatalogItem{
+		HREF:        qr.HREF,
+		Type:        qr.Type,
+		ID:          extractUuid(qr.HREF),
+		Name:        qr.Name,
+		DateCreated: qr.CreationDate,
+		Entity: &types.Entity{
+			HREF: qr.Entity,
+			Type: qr.EntityType,
+			Name: qr.EntityName,
+		},
+	}
+	return catalogItem
 }
 
 // QueryCatalogItemList returns a list of Catalog Item for the given VDC
@@ -130,4 +191,9 @@ func (catalog *Catalog) QueryVappTemplateList() ([]*types.QueryResultVappTemplat
 // Sync synchronises a subscribed Catalog item
 func (item *CatalogItem) Sync() error {
 	return elementSync(item.client, item.CatalogItem.HREF, "catalog item")
+}
+
+// LaunchSync starts synchronisation of a subscribed Catalog item
+func (item *CatalogItem) LaunchSync() (*Task, error) {
+	return elementLaunchSync(item.client, item.CatalogItem.HREF, "catalog item")
 }

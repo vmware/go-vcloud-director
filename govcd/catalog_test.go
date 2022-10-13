@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/kr/pretty"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
 	. "gopkg.in/check.v1"
@@ -1010,6 +1009,7 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImageWihUdfTypeIso(check *C) {
 	deleteCatalogItem(check, catalog, mediaName)
 }
 
+/*
 func (vcd *TestVCD) Test_CatalogSubscribe(check *C) {
 	// TODO: create explicitly published catalog in a well-prepared org
 	fromOrg, err := vcd.client.GetAdminOrgByName("datacloud")
@@ -1100,3 +1100,115 @@ func (vcd *TestVCD) Test_CatalogSubscribe(check *C) {
 	//err = toCatalog2.Delete(true, true)
 	//check.Assert(err, IsNil)
 }
+
+
+func (vcd *TestVCD) Test_SubscribedCatalog(check *C) {
+
+	fromOrg, err := vcd.client.GetAdminOrgByName("datacloud")
+	check.Assert(err, IsNil)
+	fromCatalog, err := fromOrg.GetAdminCatalogByName("original", false)
+	check.Assert(err, IsNil)
+	toOrg, err := vcd.client.GetAdminOrgByName("datacloud-1")
+	check.Assert(err, IsNil)
+
+	toCatalog, err := toOrg.GetAdminCatalogByName("subscribed", false)
+	check.Assert(err, IsNil)
+
+	originalVappTemplates, err := fromCatalog.QueryVappTemplateList()
+	check.Assert(err, IsNil)
+	originalMediaItems, err := fromCatalog.QueryMediaList()
+	check.Assert(err, IsNil)
+	originalCatalogItems, err := queryCatalogItemList(fromCatalog.client, "catalog", fromCatalog.AdminCatalog.Catalog.ID)
+	check.Assert(err, IsNil)
+	fmt.Printf("original catalog items: %d\n", len(originalCatalogItems))
+	fmt.Printf("original vApp templates: %d\n", len(originalVappTemplates))
+	fmt.Printf("original media items: %d\n", len(originalMediaItems))
+	fmt.Printf("%# v\n", pretty.Formatter(originalCatalogItems))
+
+	catalogs, err := toOrg.QueryCatalogList()
+	check.Assert(err, IsNil)
+	fmt.Printf("catalog before sync %# v\n", pretty.Formatter(catalogs[0]))
+
+	subscribedCatalogItems, err := queryCatalogItemList(toCatalog.client, "catalog", toCatalog.AdminCatalog.Catalog.ID)
+	check.Assert(err, IsNil)
+	fmt.Printf("Catalog items before catalog sync: %d\n", len(subscribedCatalogItems))
+
+	start := time.Now()
+	err = toCatalog.Sync()
+	check.Assert(err, IsNil)
+	fmt.Printf("time elapsed for catalog sync: %s\n", time.Since(start))
+	catalogs, err = toOrg.QueryCatalogList()
+	check.Assert(err, IsNil)
+	fmt.Printf("catalog after sync %# v\n", pretty.Formatter(catalogs[0]))
+
+	subscribedCatalogItems, err = queryCatalogItemList(toCatalog.client, "catalog", toCatalog.AdminCatalog.Catalog.ID)
+	check.Assert(err, IsNil)
+	compareCatalogItems("after catalog sync", originalCatalogItems, subscribedCatalogItems)
+	fmt.Printf("%# v\n", pretty.Formatter(subscribedCatalogItems))
+	subscribedVappTemplates, err := toCatalog.QueryVappTemplateList()
+	check.Assert(err, IsNil)
+	subscribedMediaItems, err := toCatalog.QueryMediaList()
+	check.Assert(err, IsNil)
+
+	tasksVappTemplates, err := toCatalog.LaunchSynchronisationAllVappTemplates()
+	check.Assert(err, IsNil)
+	tasksMediaItems, err := toCatalog.LaunchSynchronisationAllMediaItems()
+	check.Assert(err, IsNil)
+
+	fmt.Printf("vApp template after catalog sync%# v\n", pretty.Formatter(subscribedVappTemplates[0]))
+	fmt.Printf("media item after catalog sync%# v\n", pretty.Formatter(subscribedMediaItems[0]))
+	fmt.Printf("subscribed vApp templates after catalog sync: %d\n", len(subscribedVappTemplates))
+	fmt.Printf("subscribed media items after catalog sync: %d\n", len(subscribedMediaItems))
+	var allTasks []*Task
+	allTasks = append(allTasks, tasksVappTemplates...)
+	allTasks = append(allTasks, tasksMediaItems...)
+	start = time.Now()
+	fmt.Println(start)
+	failedTasks, err := WaitTaskListCompletionMonitor(allTasks, func(task *types.Task) {
+		fmt.Printf("task %s - owner %s - operation %s -  status %s - progress %d\n", task.ID, task.Owner.Name, task.Operation, task.Status, task.Progress)
+	})
+
+	if err != nil {
+		fmt.Printf("%s\n", err)
+		for _, t := range failedTasks {
+			fmt.Printf("%s\n", t.Task.Error)
+		}
+	}
+	check.Assert(err, IsNil)
+	fmt.Printf("time elapsed for items sync: %s\n", time.Since(start))
+	subscribedCatalogItemsAfterSync, err := queryCatalogItemList(toCatalog.client, "catalog", toCatalog.AdminCatalog.Catalog.ID)
+	check.Assert(err, IsNil)
+
+	fmt.Printf("catalog items before and after sync %v\n", reflect.DeepEqual(subscribedCatalogItems, subscribedCatalogItemsAfterSync))
+	compareCatalogItems("after items sync", originalCatalogItems, subscribedCatalogItemsAfterSync)
+
+	subscribedVappTemplates, err = toCatalog.QueryVappTemplateList()
+	check.Assert(err, IsNil)
+	subscribedMediaItems, err = toCatalog.QueryMediaList()
+	check.Assert(err, IsNil)
+	fmt.Printf("vApp template after elements sync%# v\n", pretty.Formatter(subscribedVappTemplates[0]))
+	fmt.Printf("media item after elements sync%# v\n", pretty.Formatter(subscribedMediaItems[0]))
+	subscribedMediaItems, err = toCatalog.QueryMediaList()
+	check.Assert(err, IsNil)
+	check.Assert(len(subscribedVappTemplates), Equals, len(originalVappTemplates))
+	check.Assert(len(subscribedMediaItems), Equals, len(originalMediaItems))
+
+}
+
+func compareCatalogItems(label string, original, subscribed []*types.QueryResultCatalogItemType) {
+	fmt.Println(strings.Repeat("-", 50))
+	fmt.Printf("%s\n", label)
+	for _, o := range original {
+		for _, s := range subscribed {
+			if o.Name == s.Name {
+				fmt.Printf("%-20s (%s) %s %s - entity %s\n", o.Name, extractUuid(o.HREF), o.Status, s.Status, s.Entity)
+				break
+			}
+		}
+		fmt.Println(strings.Repeat("-", 50))
+	}
+
+}
+
+
+*/

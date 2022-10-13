@@ -139,6 +139,8 @@ const (
 	PublishExternalCatalog = "application/vnd.vmware.admin.publishExternalCatalogParams+xml"
 	// Mime to subscribe to external catalog
 	SubscribeToExternalCatalog = "application/vnd.vmware.admin.externalCatalogSubscriptionParams+xml"
+	// Mime to identify a media item
+	MimeMediaItem = "application/vnd.vmware.vcloud.media+xml"
 )
 
 const (

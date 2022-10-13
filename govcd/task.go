@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -28,8 +29,10 @@ func NewTask(cli *Client) *Task {
 	}
 }
 
-// If the error is not nil, composes an error message
-// made of the error itself + the information from the task's Error component.
+const errorRetrievingTask = "error retrieving task"
+
+// getErrorMessage composes a new error message, if the error is not nil.
+// The message is made of the error itself + the information from the task's Error component.
 // See:
 //
 //	https://code.vmware.com/apis/220/vcloud#/doc/doc/types/TaskType.html
@@ -42,13 +45,14 @@ func (task *Task) getErrorMessage(err error) string {
 	if task.Task.Error != nil {
 		errorMessage += " [" +
 			fmt.Sprintf("%d:%s",
-				task.Task.Error.MajorErrorCode,   // The MajorError is a numeric code
+				task.Task.Error.MajorErrorCode, // The MajorError is a numeric code
 				task.Task.Error.MinorErrorCode) + // The MinorError is a string with a generic definition of the error
 			"] - " + task.Task.Error.Message
 	}
 	return errorMessage
 }
 
+// Refresh retrieves a fresh copy of the task
 func (task *Task) Refresh() error {
 
 	if task.Task == nil {
@@ -61,7 +65,7 @@ func (task *Task) Refresh() error {
 
 	resp, err := checkResp(task.client.Http.Do(req))
 	if err != nil {
-		return fmt.Errorf("error retrieving task: %s", err)
+		return fmt.Errorf("%s: %s", errorRetrievingTask, err)
 	}
 
 	// Empty struct before a new unmarshal, otherwise we end up with duplicate
@@ -76,7 +80,7 @@ func (task *Task) Refresh() error {
 	return nil
 }
 
-// This callback function can be passed to task.WaitInspectTaskCompletion
+// InspectionFunc is a callback function that can be passed to task.WaitInspectTaskCompletion
 // to perform user defined operations
 // * task is the task object being processed
 // * howManyTimes is the number of times the task has been refreshed
@@ -85,7 +89,10 @@ func (task *Task) Refresh() error {
 // * last is true if the function is being called for the last time.
 type InspectionFunc func(task *types.Task, howManyTimes int, elapsed time.Duration, first, last bool)
 
-// Customizable version of WaitTaskCompletion.
+// TaskMonitoringFunc can run monitoring operations on a task
+type TaskMonitoringFunc func(*types.Task)
+
+// WaitInspectTaskCompletion is a customizable version of WaitTaskCompletion.
 // Users can define the sleeping duration and an optional callback function for
 // extra monitoring.
 func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay time.Duration) error {
@@ -102,7 +109,7 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 		elapsed := time.Since(startTime)
 		err := task.Refresh()
 		if err != nil {
-			return fmt.Errorf("error retrieving task: %s", err)
+			return fmt.Errorf("%s : %s", errorRetrievingTask, err)
 		}
 
 		// If an inspection function is provided, we pass information about the task processing:
@@ -119,7 +126,7 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 				inspectionFunc(task.Task,
 					howManyTimesRefreshed,
 					elapsed,
-					howManyTimesRefreshed == 1, // first
+					howManyTimesRefreshed == 1,                                   // first
 					task.Task.Status == "error" || task.Task.Status == "success", // last
 				)
 			}
@@ -142,6 +149,8 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 					inspectionFunc = SimpleLogTask // writes a summary line for the task to the log
 				case "simple_show":
 					inspectionFunc = SimpleShowTask // writes a summary line for the task to the screen
+				case "minimal_show":
+					inspectionFunc = MinimalShowTask // writes a dot for each iteration, or "+" for success, "-" for failure
 				}
 			}
 		}
@@ -159,12 +168,13 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 	}
 }
 
-// Checks the status of the task every 3 seconds and returns when the
+// WaitTaskCompletion checks the status of the task every 3 seconds and returns when the
 // task is either completed or failed
 func (task *Task) WaitTaskCompletion() error {
 	return task.WaitInspectTaskCompletion(nil, 3*time.Second)
 }
 
+// GetTaskProgress retrieves the task progress as a string
 func (task *Task) GetTaskProgress() (string, error) {
 	if task.Task == nil {
 		return "", fmt.Errorf("cannot refresh, Object is empty")
@@ -172,7 +182,7 @@ func (task *Task) GetTaskProgress() (string, error) {
 
 	err := task.Refresh()
 	if err != nil {
-		return "", fmt.Errorf("error retreiving task: %s", err)
+		return "", fmt.Errorf("error retrieving task: %s", err)
 	}
 
 	if task.Task.Status == "error" {
@@ -182,6 +192,7 @@ func (task *Task) GetTaskProgress() (string, error) {
 	return strconv.Itoa(task.Task.Progress), nil
 }
 
+// CancelTask attempts a task cancellation, returning an error if cancellation fails
 func (task *Task) CancelTask() error {
 	cancelTaskURL, err := url.ParseRequestURI(task.Task.HREF + "/action/cancel")
 	if err != nil {
@@ -199,12 +210,15 @@ func (task *Task) CancelTask() error {
 }
 
 // ResourceInProgress returns true if any of the provided tasks is still running
-func ResourceInProgress(task *types.TasksInProgress) bool {
-	if task == nil {
+func ResourceInProgress(tasksInProgress *types.TasksInProgress) bool {
+	if tasksInProgress == nil {
 		return false
 	}
-	tasks := task.Task
+	tasks := tasksInProgress.Task
 	for _, task := range tasks {
+		if task.Status == "success" || task.Status == "error" {
+			continue
+		}
 		if task.Status == "running" || task.Status == "preRunning" || task.Status == "queued" || task.Progress < 100 {
 			return true
 		}
@@ -213,6 +227,174 @@ func ResourceInProgress(task *types.TasksInProgress) bool {
 }
 
 // ResourceComplete return true is none of its tasks are running
-func ResourceComplete(task *types.TasksInProgress) bool {
-	return !ResourceInProgress(task)
+func ResourceComplete(tasksInProgress *types.TasksInProgress) bool {
+	return !ResourceInProgress(tasksInProgress)
+}
+
+// SkimTasksList checks a list of tasks and returns  a list of tasks still in progress and a list of failed ones
+func SkimTasksList(taskList []*Task) ([]*Task, []*Task, error) {
+	return SkimTasksListMonitor(taskList, nil)
+}
+
+// SkimTasksListMonitor checks a list of tasks and returns  a list of tasks in progress and a list of failed ones
+// It can optionally do something with each task by means of a monitoring function
+func SkimTasksListMonitor(taskList []*Task, monitoringFunc TaskMonitoringFunc) ([]*Task, []*Task, error) {
+	var newTaskList []*Task
+	var errorList []*Task
+	for _, task := range taskList {
+		if task == nil {
+			continue
+		}
+		err := task.Refresh()
+		if err != nil {
+			if strings.Contains(err.Error(), errorRetrievingTask) {
+				// Task was not found. Probably expired. We don't need it anymore
+				continue
+			}
+			return newTaskList, errorList, err
+		}
+		if monitoringFunc != nil {
+			monitoringFunc(task.Task)
+		}
+		// if a cancellation was requested, we can ignore the task
+		if task.Task.CancelRequested {
+			continue
+		}
+		// If the task was completed successfully, we don't need further processing
+		if task.Task.Status == "success" {
+			continue
+		}
+		// if the task failed, we add it to the special list
+		if task.Task.Status == "error" {
+			errorList = append(errorList, task)
+			continue
+		}
+		// If the task is running, we add it to the list that will continue to be monitored
+		if task.Task.Status == "running" || task.Task.Status == "preRunning" || task.Task.Status == "queued" || task.Task.Progress < 100 {
+			newTaskList = append(newTaskList, task)
+		}
+	}
+	return newTaskList, errorList, nil
+}
+
+// WaitTaskListCompletion continuously skims the task list until no tasks in progress are left
+func WaitTaskListCompletion(taskList []*Task) ([]*Task, error) {
+	return WaitTaskListCompletionMonitor(taskList, nil)
+}
+
+// WaitTaskListCompletionMonitor continuously skims the task list until no tasks in progress are left
+// Using a TaskMonitoringFunc, it can display or log information as the list reduction happens
+func WaitTaskListCompletionMonitor(taskList []*Task, f TaskMonitoringFunc) ([]*Task, error) {
+	var failedTaskList []*Task
+	var err error
+	for len(taskList) > 0 {
+		taskList, failedTaskList, err = SkimTasksListMonitor(taskList, f)
+		if err != nil {
+			return failedTaskList, err
+		}
+		time.Sleep(3 * time.Second)
+	}
+	if len(failedTaskList) == 0 {
+		return nil, nil
+	}
+	return failedTaskList, fmt.Errorf("%d tasks have failed", len(failedTaskList))
+}
+
+// GetTaskByHREF retrieves a task by its HREF
+func (client *Client) GetTaskByHREF(taskHref string) (*Task, error) {
+	task := NewTask(client)
+
+	_, err := client.ExecuteRequest(taskHref, http.MethodGet,
+		"", "error retrieving task: %s", nil, task.Task)
+	if err != nil {
+		return nil, err
+	}
+
+	return task, nil
+}
+
+// GetTaskById retrieves a task by ID
+func (client *Client) GetTaskById(taskId string) (*Task, error) {
+	// Builds the task HREF using the VCD HREF + /task/{ID} suffix
+	taskHref, err := url.JoinPath(client.VCDHREF.String(), "task", extractUuid(taskId))
+	if err != nil {
+		return nil, err
+	}
+	return client.GetTaskByHREF(taskHref)
+}
+
+// SkimTasksList checks a list of task IDs and returns  a list of IDs for tasks in progress and a list of IDs for failed ones
+func (client Client) SkimTasksList(taskIdList []string) ([]string, []string, error) {
+	var seenTasks = make(map[string]bool)
+	var newTaskList []string
+	var errorList []string
+	for _, taskId := range taskIdList {
+		_, seen := seenTasks[taskId]
+		if seen {
+			continue
+		}
+		seenTasks[taskId] = true
+		task, err := client.GetTaskById(taskId)
+		if err != nil {
+			if strings.Contains(err.Error(), errorRetrievingTask) {
+				// Task was not found. Probably expired. We don't need it anymore
+				continue
+			}
+			return newTaskList, errorList, err
+		}
+		if task.Task.Status == "success" {
+			continue
+		}
+		if task.Task.Status == "running" || task.Task.Status == "preRunning" || task.Task.Status == "queued" || task.Task.Progress < 100 {
+			newTaskList = append(newTaskList, taskId)
+		}
+		if task.Task.Status == "error" {
+			errorList = append(errorList, taskId)
+		}
+	}
+	return newTaskList, errorList, nil
+}
+
+// WaitTaskListCompletion waits until all tasks in the list are completed, removed, or failed
+// Returns a list of failed tasks and an error
+func (client Client) WaitTaskListCompletion(taskIdList []string) ([]string, error) {
+	var failedTaskList []string
+	var err error
+	for len(taskIdList) > 0 {
+		taskIdList, failedTaskList, err = client.SkimTasksList(taskIdList)
+		if err != nil {
+			return failedTaskList, err
+		}
+		time.Sleep(time.Second)
+	}
+	if len(failedTaskList) == 0 {
+		return nil, nil
+	}
+	return failedTaskList, fmt.Errorf("%d tasks have failed", len(failedTaskList))
+}
+
+// GetIdListFromTaskList returns a list of IDs from a list of tasks
+func GetIdListFromTaskList(taskList []*Task) []string {
+	var idList []string
+	for _, element := range taskList {
+		idList = append(idList, element.Task.ID)
+	}
+	return idList
+}
+
+// GetTaskListFromIdList builds a list of tasks from a list of task IDs
+func GetTaskListFromIdList(client *Client, IDList []string) ([]*Task, error) {
+	var taskList []*Task
+	for _, id := range IDList {
+		task, err := client.GetTaskById(id)
+		if err != nil {
+			if strings.Contains(err.Error(), errorRetrievingTask) {
+				// Task was not found. Probably expired. We don't need it anymore
+				continue
+			}
+			return taskList, err
+		}
+		taskList = append(taskList, task)
+	}
+	return taskList, nil
 }

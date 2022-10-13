@@ -55,6 +55,13 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 	}
 	adminCatalogHREF.Path += "/admin/catalog/" + catalogID
 
+	// A subscribed catalog that has running tasks cannot be deleted.
+	// Thus, we try cancelling all tasks, or waiting for their completion if cancellation fails.
+	err = catalog.consumeTasks()
+	if err != nil {
+		return err
+	}
+
 	req := catalog.client.NewRequest(map[string]string{
 		"force":     strconv.FormatBool(force),
 		"recursive": strconv.FormatBool(recursive),
@@ -72,6 +79,26 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 		return fmt.Errorf(combinedTaskErrorMessage(task.Task, fmt.Errorf("catalog %s not properly destroyed", catalog.Catalog.Name)))
 	}
 	return task.WaitTaskCompletion()
+}
+
+// consumeTasks Will attempt to cancel all outstanding tasks
+// (To be used before deleting the catalog)
+// If cancellation fails, the tasks are monitored until they finish
+func (catalog *Catalog) consumeTasks() error {
+	var taskList []*Task
+	if catalog.Catalog.Tasks == nil || len(catalog.Catalog.Tasks.Task) == 0 {
+		return nil
+	}
+	for _, task := range catalog.Catalog.Tasks.Task {
+		newTask := &Task{task, catalog.client}
+		// Attempt canceling the task. We ignore the error here.
+		// If the failure persists, it will be reported at the end of WaitTaskListCompletion
+		_ = newTask.CancelTask()
+		taskList = append(taskList, newTask)
+	}
+	_, err := WaitTaskListCompletion(taskList)
+
+	return err
 }
 
 // Envelope is a ovf description root element. File contains information for vmdk files.
@@ -1049,4 +1076,21 @@ func getCatalogParent(name string, client *Client, links types.LinkList, wantAdm
 		}
 	}
 	return nil, nil, fmt.Errorf("no parent found for Catalog %s", name)
+}
+
+// elementLaunchSync is a low level function that starts synchronisation for Catalog, AdminCatalog, CatalogItem, or Media item
+func elementLaunchSync(client *Client, elementHref, label string) (*Task, error) {
+	href := elementHref + "/action/sync"
+	syncTask, err := client.ExecuteTaskRequest(href, http.MethodPost,
+		"", "error synchronizing "+label+": %s", nil)
+
+	if err != nil {
+		return nil, err
+	}
+	return &syncTask, nil
+}
+
+// LaunchSync starts synchronisation of a subscribed catalog
+func (cat *Catalog) LaunchSync() (*Task, error) {
+	return elementLaunchSync(cat.client, cat.Catalog.HREF, "catalog")
 }
