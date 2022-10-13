@@ -126,3 +126,85 @@ func (vdc *AdminVdc) QueryVappTemplateList() ([]*types.QueryResultVappTemplateTy
 func (catalog *Catalog) QueryVappTemplateList() ([]*types.QueryResultVappTemplateType, error) {
 	return queryVappTemplateList(catalog.client, "catalogName", catalog.Catalog.Name)
 }
+
+// queryCatalogItemFilteredList returns a list of Catalog Items with an optional filter
+func queryCatalogItemFilteredList(client *Client, filter map[string]string) ([]*types.QueryResultCatalogItemType, error) {
+	catalogItemType := types.QtCatalogItem
+	if client.IsSysAdmin {
+		catalogItemType = types.QtAdminCatalogItem
+	}
+
+	filterText := ""
+	for k, v := range filter {
+		if filterText != "" {
+			filterText += ";"
+		}
+		filterText += fmt.Sprintf("%s==%s", k, url.QueryEscape(v))
+	}
+
+	notEncodedParams := map[string]string{
+		"type": catalogItemType,
+	}
+	if filterText != "" {
+		notEncodedParams["filter"] = filterText
+	}
+	results, err := client.cumulativeQuery(catalogItemType, nil, notEncodedParams)
+	if err != nil {
+		return nil, fmt.Errorf("error querying catalog items %s", err)
+	}
+
+	if client.IsSysAdmin {
+		return results.Results.AdminCatalogItemRecord, nil
+	} else {
+		return results.Results.CatalogItemRecord, nil
+	}
+}
+
+// QueryCatalogItemList returns a list of Catalog Item for the given admin catalog
+func (catalog *AdminCatalog) QueryCatalogItemList() ([]*types.QueryResultCatalogItemType, error) {
+	return queryCatalogItemList(catalog.client, "catalog", catalog.AdminCatalog.ID)
+}
+
+// QueryCatalogItem returns a named Catalog Item for the given catalog
+func (catalog *AdminCatalog) QueryCatalogItem(name string) (*types.QueryResultCatalogItemType, error) {
+	return queryCatalogItem(catalog.client, "catalog", catalog.AdminCatalog.ID, name)
+}
+
+// queryCatalogItem returns a named Catalog Item for the given parent
+func queryCatalogItem(client *Client, parentField, parentValue, name string) (*types.QueryResultCatalogItemType, error) {
+
+	result, err := queryCatalogItemFilteredList(client, map[string]string{parentField: parentValue, "name": name})
+	if err != nil {
+		return nil, err
+	}
+	if len(result) == 0 {
+		return nil, ErrorEntityNotFound
+	}
+	if len(result) > 1 {
+		return nil, fmt.Errorf("more than one item (%d) found with name %s", len(result), name)
+	}
+	return result[0], nil
+}
+
+// queryResultCatalogItemToCatalogItem converts a catalog item as retrieved from a query into a regular one
+func queryResultCatalogItemToCatalogItem(client *Client, qr *types.QueryResultCatalogItemType) *CatalogItem {
+	var catalogItem = NewCatalogItem(client)
+	catalogItem.CatalogItem = &types.CatalogItem{
+		HREF:        qr.HREF,
+		Type:        qr.Type,
+		ID:          extractUuid(qr.HREF),
+		Name:        qr.Name,
+		DateCreated: qr.CreationDate,
+		Entity: &types.Entity{
+			HREF: qr.Entity,
+			Type: qr.EntityType,
+			Name: qr.EntityName,
+		},
+	}
+	return catalogItem
+}
+
+// LaunchSync starts synchronisation of a subscribed Catalog item
+func (item *CatalogItem) LaunchSync() (*Task, error) {
+	return elementLaunchSync(item.client, item.CatalogItem.HREF, "catalog item")
+}
