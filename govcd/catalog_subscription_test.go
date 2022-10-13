@@ -254,6 +254,7 @@ func testSubscribedCatalog(testData subscriptionTestData, check *C) {
 	subscribedVappTemplates, err := toCatalog.QueryVappTemplateList()
 	check.Assert(err, IsNil)
 	publishedMediaItems, err := fromCatalog.QueryMediaList()
+	check.Assert(err, IsNil)
 	subscribedMediaItems, err := toCatalog.QueryMediaList()
 	check.Assert(err, IsNil)
 
@@ -332,6 +333,6 @@ func testMonitor(task *types.Task) {
 		if task.Status == "error" {
 			marker = "-"
 		}
-		fmt.Printf(marker)
+		fmt.Print(marker)
 	}
 }

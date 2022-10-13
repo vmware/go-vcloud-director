@@ -355,7 +355,7 @@ func (cat *AdminCatalog) LaunchSynchronisationMediaItems(nameList []string) ([]*
 		for k := range found {
 			foundList = append(foundList, k)
 		}
-		return nil, fmt.Errorf("%d names provided [%v] but %d actions scheduled [%v]\n", len(nameList), nameList, len(actionList), foundList)
+		return nil, fmt.Errorf("%d names provided [%v] but %d actions scheduled [%v]", len(nameList), nameList, len(actionList), foundList)
 	}
 	for _, element := range actionList {
 		util.Logger.Printf("synchronising Media catalog item HREF %s\n", element)

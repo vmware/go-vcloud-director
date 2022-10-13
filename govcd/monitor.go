@@ -316,7 +316,7 @@ func MinimalShowTask(task *types.Task, howManyTimes int, elapsed time.Duration, 
 	if task.Status == "error" {
 		marker = "-"
 	}
-	fmt.Printf(marker)
+	fmt.Print(marker)
 	if last {
 		fmt.Println()
 	}
