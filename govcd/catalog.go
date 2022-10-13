@@ -969,3 +969,47 @@ func (cat *Catalog) PublishToExternalOrganizations(publishExternalCatalog types.
 
 	return err
 }
+
+// elementSync is a low level function that synchronises a Catalog, AdminCatalog, CatalogItem, or Media item
+func elementSync(client *Client, elementHref, label string) error {
+	href := elementHref + "/action/sync"
+	syncTask, err := client.ExecuteTaskRequest(href, http.MethodPost,
+		"", "error synchronizing "+label+": %s", nil)
+
+	if err != nil {
+		return err
+	}
+	return syncTask.WaitTaskCompletion()
+}
+
+// queryMediaList retrieves a list of media items for a given catalog or AdminCatalog
+func queryMediaList(client *Client, catalogHref string) ([]*types.MediaRecordType, error) {
+	typeMedia := "media"
+	if client.IsSysAdmin {
+		typeMedia = "adminMedia"
+	}
+
+	filter := fmt.Sprintf("catalog==%s", url.QueryEscape(catalogHref))
+	results, err := client.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia, "filter": filter, "filterEncoded": "true"})
+	if err != nil {
+		return nil, fmt.Errorf("error querying medias %s", err)
+	}
+
+	mediaResults := results.Results.MediaRecord
+	if client.IsSysAdmin {
+		mediaResults = results.Results.AdminMediaRecord
+	}
+	return mediaResults, nil
+}
+
+// elementLaunchSync is a low level function that starts synchronisation for Catalog, AdminCatalog, CatalogItem, or Media item
+func elementLaunchSync(client *Client, elementHref, label string) (*Task, error) {
+	href := elementHref + "/action/sync"
+	syncTask, err := client.ExecuteTaskRequest(href, http.MethodPost,
+		"", "error synchronizing "+label+": %s", nil)
+
+	if err != nil {
+		return nil, err
+	}
+	return &syncTask, nil
+}
