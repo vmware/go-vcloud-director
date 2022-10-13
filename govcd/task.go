@@ -28,8 +28,10 @@ func NewTask(cli *Client) *Task {
 	}
 }
 
-// If the error is not nil, composes an error message
-// made of the error itself + the information from the task's Error component.
+const errorRetrievingTask = "error retrieving task"
+
+// getErrorMessage composes a new error message, if the error is not nil.
+// The message is made of the error itself + the information from the task's Error component.
 // See:
 //
 //	https://code.vmware.com/apis/220/vcloud#/doc/doc/types/TaskType.html
@@ -49,6 +51,7 @@ func (task *Task) getErrorMessage(err error) string {
 	return errorMessage
 }
 
+// Refresh retrieves a fresh copy of the task
 func (task *Task) Refresh() error {
 
 	if task.Task == nil {
@@ -61,7 +64,7 @@ func (task *Task) Refresh() error {
 
 	resp, err := checkResp(task.client.Http.Do(req))
 	if err != nil {
-		return fmt.Errorf("error retrieving task: %s", err)
+		return fmt.Errorf("%s: %s", errorRetrievingTask, err)
 	}
 
 	// Empty struct before a new unmarshal, otherwise we end up with duplicate
@@ -76,7 +79,7 @@ func (task *Task) Refresh() error {
 	return nil
 }
 
-// This callback function can be passed to task.WaitInspectTaskCompletion
+// InspectionFunc is a callback function that can be passed to task.WaitInspectTaskCompletion
 // to perform user defined operations
 // * task is the task object being processed
 // * howManyTimes is the number of times the task has been refreshed
@@ -85,7 +88,10 @@ func (task *Task) Refresh() error {
 // * last is true if the function is being called for the last time.
 type InspectionFunc func(task *types.Task, howManyTimes int, elapsed time.Duration, first, last bool)
 
-// Customizable version of WaitTaskCompletion.
+// TaskMonitoringFunc can run monitoring operations on a task
+type TaskMonitoringFunc func(*types.Task)
+
+// WaitInspectTaskCompletion is a customizable version of WaitTaskCompletion.
 // Users can define the sleeping duration and an optional callback function for
 // extra monitoring.
 func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay time.Duration) error {
@@ -102,7 +108,7 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 		elapsed := time.Since(startTime)
 		err := task.Refresh()
 		if err != nil {
-			return fmt.Errorf("error retrieving task: %s", err)
+			return fmt.Errorf("%s : %s", errorRetrievingTask, err)
 		}
 
 		// If an inspection function is provided, we pass information about the task processing:
@@ -142,6 +148,8 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 					inspectionFunc = SimpleLogTask // writes a summary line for the task to the log
 				case "simple_show":
 					inspectionFunc = SimpleShowTask // writes a summary line for the task to the screen
+				case "minimal_show":
+					inspectionFunc = MinimalShowTask // writes a dot for each iteration, or "+" for success, "-" for failure
 				}
 			}
 		}
@@ -159,12 +167,13 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 	}
 }
 
-// Checks the status of the task every 3 seconds and returns when the
+// WaitTaskCompletion checks the status of the task every 3 seconds and returns when the
 // task is either completed or failed
 func (task *Task) WaitTaskCompletion() error {
 	return task.WaitInspectTaskCompletion(nil, 3*time.Second)
 }
 
+// GetTaskProgress retrieves the task progress as a string
 func (task *Task) GetTaskProgress() (string, error) {
 	if task.Task == nil {
 		return "", fmt.Errorf("cannot refresh, Object is empty")
@@ -172,7 +181,7 @@ func (task *Task) GetTaskProgress() (string, error) {
 
 	err := task.Refresh()
 	if err != nil {
-		return "", fmt.Errorf("error retreiving task: %s", err)
+		return "", fmt.Errorf("error retrieving task: %s", err)
 	}
 
 	if task.Task.Status == "error" {
