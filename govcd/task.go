@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -191,6 +192,7 @@ func (task *Task) GetTaskProgress() (string, error) {
 	return strconv.Itoa(task.Task.Progress), nil
 }
 
+// CancelTask attempts a task cancellation, returning an error if cancellation fails
 func (task *Task) CancelTask() error {
 	cancelTaskURL, err := url.ParseRequestURI(task.Task.HREF + "/action/cancel")
 	if err != nil {
@@ -205,4 +207,168 @@ func (task *Task) CancelTask() error {
 		return err
 	}
 	return nil
+}
+
+// ResourceInProgress returns true if any of the provided tasks is still running
+func ResourceInProgress(tasksInProgress *types.TasksInProgress) bool {
+	if tasksInProgress == nil {
+		return false
+	}
+	tasks := tasksInProgress.Task
+	for _, task := range tasks {
+		if task.Status == "success" || task.Status == "error" {
+			continue
+		}
+		if task.Status == "running" || task.Status == "preRunning" || task.Status == "queued" || task.Progress < 100 {
+			return true
+		}
+	}
+	return false
+}
+
+// ResourceComplete return true is none of its tasks are running
+func ResourceComplete(tasksInProgress *types.TasksInProgress) bool {
+	return !ResourceInProgress(tasksInProgress)
+}
+
+// SkimTasksList checks a list of tasks and returns  a list of tasks still in progress and a list of failed ones
+func SkimTasksList(taskList []*Task) ([]*Task, []*Task, error) {
+	return SkimTasksListMonitor(taskList, nil)
+}
+
+// SkimTasksListMonitor checks a list of tasks and returns  a list of tasks in progress and a list of failed ones
+// It can optionally do something with each task by means of a monitoring function
+func SkimTasksListMonitor(taskList []*Task, monitoringFunc TaskMonitoringFunc) ([]*Task, []*Task, error) {
+	var newTaskList []*Task
+	var errorList []*Task
+	for _, task := range taskList {
+		if task == nil {
+			continue
+		}
+		err := task.Refresh()
+		if err != nil {
+			if strings.Contains(err.Error(), errorRetrievingTask) {
+				// Task was not found. Probably expired. We don't need it anymore
+				continue
+			}
+			return newTaskList, errorList, err
+		}
+		if monitoringFunc != nil {
+			monitoringFunc(task.Task)
+		}
+		// if a cancellation was requested, we can ignore the task
+		if task.Task.CancelRequested {
+			continue
+		}
+		// If the task was completed successfully, we don't need further processing
+		if task.Task.Status == "success" {
+			continue
+		}
+		// if the task failed, we add it to the special list
+		if task.Task.Status == "error" {
+			errorList = append(errorList, task)
+			continue
+		}
+		// If the task is running, we add it to the list that will continue to be monitored
+		if task.Task.Status == "running" || task.Task.Status == "preRunning" || task.Task.Status == "queued" || task.Task.Progress < 100 {
+			newTaskList = append(newTaskList, task)
+		}
+	}
+	return newTaskList, errorList, nil
+}
+
+// WaitTaskListCompletion continuously skims the task list until no tasks in progress are left
+func WaitTaskListCompletion(taskList []*Task) ([]*Task, error) {
+	return WaitTaskListCompletionMonitor(taskList, nil)
+}
+
+// WaitTaskListCompletionMonitor continuously skims the task list until no tasks in progress are left
+// Using a TaskMonitoringFunc, it can display or log information as the list reduction happens
+func WaitTaskListCompletionMonitor(taskList []*Task, f TaskMonitoringFunc) ([]*Task, error) {
+	var failedTaskList []*Task
+	var err error
+	for len(taskList) > 0 {
+		taskList, failedTaskList, err = SkimTasksListMonitor(taskList, f)
+		if err != nil {
+			return failedTaskList, err
+		}
+		time.Sleep(3 * time.Second)
+	}
+	if len(failedTaskList) == 0 {
+		return nil, nil
+	}
+	return failedTaskList, fmt.Errorf("%d tasks have failed", len(failedTaskList))
+}
+
+// GetTaskByHREF retrieves a task by its HREF
+func (client *Client) GetTaskByHREF(taskHref string) (*Task, error) {
+	task := NewTask(client)
+
+	_, err := client.ExecuteRequest(taskHref, http.MethodGet,
+		"", "error retrieving task: %s", nil, task.Task)
+	if err != nil {
+		return nil, err
+	}
+
+	return task, nil
+}
+
+// GetTaskById retrieves a task by ID
+func (client *Client) GetTaskById(taskId string) (*Task, error) {
+	// Builds the task HREF using the VCD HREF + /task/{ID} suffix
+	taskHref, err := url.JoinPath(client.VCDHREF.String(), "task", extractUuid(taskId))
+	if err != nil {
+		return nil, err
+	}
+	return client.GetTaskByHREF(taskHref)
+}
+
+// SkimTasksList checks a list of task IDs and returns  a list of IDs for tasks in progress and a list of IDs for failed ones
+func (client Client) SkimTasksList(taskIdList []string) ([]string, []string, error) {
+	var seenTasks = make(map[string]bool)
+	var newTaskList []string
+	var errorList []string
+	for _, taskId := range taskIdList {
+		_, seen := seenTasks[taskId]
+		if seen {
+			continue
+		}
+		seenTasks[taskId] = true
+		task, err := client.GetTaskById(taskId)
+		if err != nil {
+			if strings.Contains(err.Error(), errorRetrievingTask) {
+				// Task was not found. Probably expired. We don't need it anymore
+				continue
+			}
+			return newTaskList, errorList, err
+		}
+		if task.Task.Status == "success" {
+			continue
+		}
+		if task.Task.Status == "running" || task.Task.Status == "preRunning" || task.Task.Status == "queued" || task.Task.Progress < 100 {
+			newTaskList = append(newTaskList, taskId)
+		}
+		if task.Task.Status == "error" {
+			errorList = append(errorList, taskId)
+		}
+	}
+	return newTaskList, errorList, nil
+}
+
+// WaitTaskListCompletion waits until all tasks in the list are completed, removed, or failed
+// Returns a list of failed tasks and an error
+func (client Client) WaitTaskListCompletion(taskIdList []string) ([]string, error) {
+	var failedTaskList []string
+	var err error
+	for len(taskIdList) > 0 {
+		taskIdList, failedTaskList, err = client.SkimTasksList(taskIdList)
+		if err != nil {
+			return failedTaskList, err
+		}
+		time.Sleep(time.Second)
+	}
+	if len(failedTaskList) == 0 {
+		return nil, nil
+	}
+	return failedTaskList, fmt.Errorf("%d tasks have failed", len(failedTaskList))
 }
