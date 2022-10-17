@@ -406,3 +406,92 @@ func (cat *AdminCatalog) GetCatalogItemByHref(catalogItemHref string) (*CatalogI
 	}
 	return catItem, nil
 }
+
+/*
+// GetCatalogByHref retrieves a catalog without the parent Org
+func (client *Client) GetCatalogByHref(catalogHref string) (*Catalog, error) {
+	if strings.Contains(catalogHref, "/admin/") {
+		return nil, fmt.Errorf("catalog HREF '%s' is for an Admin catalog", catalogHref)
+	}
+	cat := NewCatalog(client)
+
+	_, err := client.ExecuteRequest(catalogHref, http.MethodGet,
+		"", "error retrieving catalog: %s", nil, cat.Catalog)
+	if err != nil {
+		return nil, err
+	}
+	return cat, nil
+}
+
+// GetCatalogById retrieves a catalog by ID without the parent Org
+func (client *Client) GetCatalogById(catalogId string) (*Catalog, error) {
+	catalogHREF := client.VCDHREF
+	catalogHREF.Path += "/catalog/" + extractUuid(catalogId)
+
+	util.Logger.Printf("[TRACE] Url for retrieving catalog : %s", catalogHREF.String())
+
+	return client.GetCatalogByHref(catalogHREF.String())
+}
+
+// GetAdminCatalogByHref retrieves an admin catalog without the parent Org
+func (client *Client) GetAdminCatalogByHref(catalogHref string) (*AdminCatalog, error) {
+	if !strings.Contains(catalogHref, "/admin/") {
+		return nil, fmt.Errorf("catalog HREF '%s' is NOT for an Admin Catalog", catalogHref)
+	}
+	cat := NewAdminCatalog(client)
+
+	_, err := client.ExecuteRequest(catalogHref, http.MethodGet,
+		"", "error retrieving catalog: %s", nil, cat.AdminCatalog)
+	if err != nil {
+		return nil, err
+	}
+	return cat, nil
+}
+
+// GetAdminCatalogById retrieves a catalog by ID without the parent Org
+func (client *Client) GetAdminCatalogById(catalogId string) (*AdminCatalog, error) {
+	catalogHREF := client.VCDHREF
+	catalogHREF.Path += "/admin/catalog/" + extractUuid(catalogId)
+
+	util.Logger.Printf("[TRACE] Url for retrieving Admin Catalog : %s", catalogHREF.String())
+	return client.GetAdminCatalogByHref(catalogHREF.String())
+}
+*/
+
+// UpdateSubscriptionParams modifies the subscription parameters of an already subscribed catalog
+func (catalog *AdminCatalog) UpdateSubscriptionParams(params types.ExternalCatalogSubscription) error {
+	var href string
+	for _, link := range catalog.AdminCatalog.Link {
+		if link.Rel == "externalCatalogSubscriptionParams" && link.Type == types.MimeSubscribeToExternalCatalog {
+			href = link.HREF
+			break
+		}
+	}
+	if href == "" {
+		return fmt.Errorf("catalog subscription link not found for catalog %s", catalog.AdminCatalog.Name)
+	}
+	_, err := catalog.client.ExecuteRequest(href, http.MethodPost, types.MimeAdminCatalog,
+		"error subscribing to catalog: %s", params, nil)
+	return err
+	if err != nil {
+		return err
+	}
+	return catalog.Refresh()
+}
+
+/*
+// QueryTaskList retrieves a list of tasks associated to the Admin Catalog
+func (catalog *AdminCatalog) QueryTaskList(filter map[string]string) ([]*types.QueryResultTaskRecordType, error) {
+	catalogHref, err := catalog.GetCatalogHref()
+	if err != nil {
+		return nil, err
+	}
+	var newFilter = map[string]string{
+		"object": catalogHref,
+	}
+	for k, v := range filter {
+		newFilter[k] = v
+	}
+	return catalog.client.QueryTaskList(newFilter)
+}
+*/
