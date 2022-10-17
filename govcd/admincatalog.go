@@ -472,7 +472,6 @@ func (catalog *AdminCatalog) UpdateSubscriptionParams(params types.ExternalCatal
 	}
 	_, err := catalog.client.ExecuteRequest(href, http.MethodPost, types.MimeAdminCatalog,
 		"error subscribing to catalog: %s", params, nil)
-	return err
 	if err != nil {
 		return err
 	}

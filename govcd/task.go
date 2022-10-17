@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -45,7 +45,7 @@ func (task *Task) getErrorMessage(err error) string {
 	if task.Task.Error != nil {
 		errorMessage += " [" +
 			fmt.Sprintf("%d:%s",
-				task.Task.Error.MajorErrorCode, // The MajorError is a numeric code
+				task.Task.Error.MajorErrorCode,   // The MajorError is a numeric code
 				task.Task.Error.MinorErrorCode) + // The MinorError is a string with a generic definition of the error
 			"] - " + task.Task.Error.Message
 	}
@@ -126,7 +126,7 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 				inspectionFunc(task.Task,
 					howManyTimesRefreshed,
 					elapsed,
-					howManyTimesRefreshed == 1,                                                                    // first
+					howManyTimesRefreshed == 1, // first
 					task.Task.Status == "error" || task.Task.Status == "aborted" || task.Task.Status == "success", // last
 				)
 			}
