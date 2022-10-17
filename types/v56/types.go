@@ -2316,6 +2316,8 @@ type QueryResultRecordsType struct {
 	OrgVdcAdminRecord               []*QueryResultOrgVdcRecordType                    `xml:"AdminVdcRecord"`                  // A record representing Org VDC
 	ResourcePoolRecord              []*QueryResultResourcePoolRecordType              `xml:"ResourcePoolRecord"`              // A record representing a Resource Pool
 	VmGroupsRecord                  []*QueryResultVmGroupsRecordType                  `xml:"VmGroupsRecord"`                  // A record representing a VM Group
+	//TaskRecord                      []*QueryResultTaskRecordType                      `xml:"TaskRecord"`                      // A record representing a Task
+	//AdminTaskRecord                 []*QueryResultTaskRecordType                      `xml:"AdminTaskRecord"`                 // A record representing an Admin Task
 }
 
 // QueryResultVmGroupsRecordType represent a VM Groups record
@@ -3210,3 +3212,27 @@ type ApiTokenRefresh struct {
 	ExpiresIn    int         `json:"expires_in"`
 	RefreshToken interface{} `json:"refresh_token"`
 }
+
+/*
+type QueryResultTaskRecordType struct {
+	HREF             string    `xml:"href,attr,omitempty"`             // Contains the URI to the resource.
+	ID               string    `xml:"id,attr,omitempty"`               //	The resource identifier, expressed in URN format. The value of this attribute uniquely identifies the resource, persists for the life of the resource, and is never reused. 	Yes 	Yes
+	Type             string    `xml:"type,attr,omitempty"`             //	Contains the type of the resource.
+	Org              string    `xml:"org,attr,omitempty"`              //	Organization reference or id
+	OrgName          string    `xml:"orgName,attr,omitempty"`          //	Organization name
+	Name             string    `xml:"name,attr,omitempty"`             //	The name of this task.
+	OperationFull    string    `xml:"operationFull,attr,omitempty"`    //	The full human-readable name of this task.
+	Message          string    `xml:"message,attr,omitempty"`          //	message
+	StartDate        string    `xml:"startDate,attr,omitempty"`        //	Start date
+	EndDate          string    `xml:"endDate,attr,omitempty"`          //	End date
+	Status           string    `xml:"status,attr,omitempty"`           //	Status
+	Progress         int       `xml:"progress,attr,omitempty"`         //	Progress of the task, expressed as a percentage.
+	OwnerName        string    `xml:"ownerName,attr,omitempty"`        //	Owner name
+	Object           string    `xml:"object,attr,omitempty"`           //	Object
+	ObjectType       string    `xml:"objectType,attr,omitempty"`       //	Object
+	ObjectName       string    `xml:"objectName,attr,omitempty"`       //	Object name
+	ServiceNamespace string    `xml:"serviceNamespace,attr,omitempty"` //	Service name space
+	Link             *Link     `xml:"Link,omitempty"`
+	Metadata         *Metadata `xml:"Metadata,omitempty"`
+}
+*/

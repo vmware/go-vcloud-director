@@ -1013,3 +1013,16 @@ func elementLaunchSync(client *Client, elementHref, label string) (*Task, error)
 	}
 	return &syncTask, nil
 }
+
+/*
+// QueryTaskList retrieves a list of tasks associated to the Catalog
+func (catalog *Catalog) QueryTaskList(filter map[string]string) ([]*types.QueryResultTaskRecordType, error) {
+	var newFilter = map[string]string{
+		"object": catalog.Catalog.HREF,
+	}
+	for k, v := range filter {
+		newFilter[k] = v
+	}
+	return catalog.client.QueryTaskList(newFilter)
+}
+*/

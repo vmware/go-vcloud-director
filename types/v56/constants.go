@@ -137,6 +137,8 @@ const (
 	MimeLeaseSettingSection = "application/vnd.vmware.vcloud.leaseSettingsSection+xml"
 	// Mime to publish external catalog
 	PublishExternalCatalog = "application/vnd.vmware.admin.publishExternalCatalogParams+xml"
+	// Mime to subscribe to an external catalog
+	MimeSubscribeToExternalCatalog = "application/vnd.vmware.admin.externalCatalogSubscriptionParams+json"
 	// Mime to identify a media item
 	MimeMediaItem = "application/vnd.vmware.vcloud.media+xml"
 )
@@ -262,6 +264,8 @@ const (
 	QtAdminOrgVdc               = "adminOrgVdc"               // Org VDC as admin
 	QtOrgVdcStorageProfile      = "orgVdcStorageProfile"      // StorageProfile of VDC
 	QtAdminOrgVdcStorageProfile = "adminOrgVdcStorageProfile" // StorageProfile of VDC as admin
+	//QtTask                      = "task"                      // Task
+	//QtAdminTask                 = "adminTask"                 // Task as admin
 )
 
 // AdminQueryTypes returns the corresponding "admin" query type for each regular type

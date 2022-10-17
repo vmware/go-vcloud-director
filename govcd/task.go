@@ -45,7 +45,7 @@ func (task *Task) getErrorMessage(err error) string {
 	if task.Task.Error != nil {
 		errorMessage += " [" +
 			fmt.Sprintf("%d:%s",
-				task.Task.Error.MajorErrorCode,   // The MajorError is a numeric code
+				task.Task.Error.MajorErrorCode, // The MajorError is a numeric code
 				task.Task.Error.MinorErrorCode) + // The MinorError is a string with a generic definition of the error
 			"] - " + task.Task.Error.Message
 	}
@@ -126,8 +126,8 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 				inspectionFunc(task.Task,
 					howManyTimesRefreshed,
 					elapsed,
-					howManyTimesRefreshed == 1, // first
-					task.Task.Status == "error" || task.Task.Status == "success", // last
+					howManyTimesRefreshed == 1,                                                                    // first
+					task.Task.Status == "error" || task.Task.Status == "aborted" || task.Task.Status == "success", // last
 				)
 			}
 			if task.Task.Status == "error" {
@@ -216,7 +216,7 @@ func ResourceInProgress(tasksInProgress *types.TasksInProgress) bool {
 	}
 	tasks := tasksInProgress.Task
 	for _, task := range tasks {
-		if task.Status == "success" || task.Status == "error" {
+		if task.Status == "success" || task.Status == "error" || task.Status == "aborted" {
 			continue
 		}
 		if task.Status == "running" || task.Status == "preRunning" || task.Status == "queued" || task.Progress < 100 {
@@ -260,8 +260,8 @@ func SkimTasksListMonitor(taskList []*Task, monitoringFunc TaskMonitoringFunc) (
 		if task.Task.CancelRequested {
 			continue
 		}
-		// If the task was completed successfully, we don't need further processing
-		if task.Task.Status == "success" {
+		// If the task was completed successfully, or it was abandoned, we don't need further processing
+		if task.Task.Status == "success" || task.Task.Status == "aborted" {
 			continue
 		}
 		// if the task failed, we add it to the special list
@@ -342,7 +342,7 @@ func (client Client) SkimTasksList(taskIdList []string) ([]string, []string, err
 			}
 			return newTaskList, errorList, err
 		}
-		if task.Task.Status == "success" {
+		if task.Task.Status == "success" || task.Task.Status == "aborted" {
 			continue
 		}
 		if task.Task.Status == "running" || task.Task.Status == "preRunning" || task.Task.Status == "queued" || task.Task.Progress < 100 {
@@ -372,3 +372,37 @@ func (client Client) WaitTaskListCompletion(taskIdList []string) ([]string, erro
 	}
 	return failedTaskList, fmt.Errorf("%d tasks have failed", len(failedTaskList))
 }
+
+/*
+func (client *Client) QueryTaskList(filter map[string]string) ([]*types.QueryResultTaskRecordType, error) {
+	taskType := types.QtTask
+	if client.IsSysAdmin {
+		taskType = types.QtAdminTask
+	}
+
+	filterText := ""
+	for k, v := range filter {
+		if filterText != "" {
+			filterText += ";"
+		}
+		filterText += fmt.Sprintf("%s==%s", k, url.QueryEscape(v))
+	}
+
+	notEncodedParams := map[string]string{
+		"type": taskType,
+	}
+	if filterText != "" {
+		notEncodedParams["filter"] = filterText
+	}
+	results, err := client.cumulativeQuery(taskType, nil, notEncodedParams)
+	if err != nil {
+		return nil, fmt.Errorf("error querying task %s", err)
+	}
+
+	if client.IsSysAdmin {
+		return results.Results.AdminTaskRecord, nil
+	} else {
+		return results.Results.TaskRecord, nil
+	}
+}
+*/
