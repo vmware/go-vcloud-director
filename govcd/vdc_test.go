@@ -566,7 +566,7 @@ func assertVDCAccessSettings(wanted, received []*types.AccessSetting) error {
 func (vcd *TestVCD) TestVAppTemplateRetrieval(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	if vcd.config.VCD.Catalog.CatalogItem == "" {
+	if vcd.config.VCD.Catalog.NsxtCatalogItem == "" {
 		check.Skip(fmt.Sprintf("%s: Catalog Item not given. Test can't proceed", check.TestName()))
 	}
 
@@ -574,37 +574,37 @@ func (vcd *TestVCD) TestVAppTemplateRetrieval(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 
 	// Test cases
-	vAppTemplate, err := vdc.GetVAppTemplateByName(vcd.config.VCD.Catalog.CatalogItem)
+	vAppTemplate, err := vdc.GetVAppTemplateByName(vcd.config.VCD.Catalog.NsxtCatalogItem)
 	check.Assert(err, IsNil)
-	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
+	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.NsxtCatalogItem)
 	if vcd.config.VCD.Catalog.CatalogItemDescription != "" {
-		check.Assert(vAppTemplate.VAppTemplate.Description, Equals, vcd.config.VCD.Catalog.CatalogItemDescription)
+		check.Assert(strings.Contains(vAppTemplate.VAppTemplate.Description, vcd.config.VCD.Catalog.CatalogItemDescription), Equals, true)
 	}
 
 	vAppTemplate, err = vdc.GetVAppTemplateById(vAppTemplate.VAppTemplate.ID)
 	check.Assert(err, IsNil)
-	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
+	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.NsxtCatalogItem)
 	if vcd.config.VCD.Catalog.CatalogItemDescription != "" {
-		check.Assert(vAppTemplate.VAppTemplate.Description, Equals, vcd.config.VCD.Catalog.CatalogItemDescription)
+		check.Assert(strings.Contains(vAppTemplate.VAppTemplate.Description, vcd.config.VCD.Catalog.CatalogItemDescription), Equals, true)
 	}
 
 	vAppTemplate, err = vdc.GetVAppTemplateByNameOrId(vAppTemplate.VAppTemplate.ID, false)
 	check.Assert(err, IsNil)
-	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
+	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.NsxtCatalogItem)
 	if vcd.config.VCD.Catalog.CatalogItemDescription != "" {
-		check.Assert(vAppTemplate.VAppTemplate.Description, Equals, vcd.config.VCD.Catalog.CatalogItemDescription)
+		check.Assert(strings.Contains(vAppTemplate.VAppTemplate.Description, vcd.config.VCD.Catalog.CatalogItemDescription), Equals, true)
 	}
 
-	vAppTemplate, err = vdc.GetVAppTemplateByNameOrId(vcd.config.VCD.Catalog.CatalogItem, false)
+	vAppTemplate, err = vdc.GetVAppTemplateByNameOrId(vcd.config.VCD.Catalog.NsxtCatalogItem, false)
 	check.Assert(err, IsNil)
-	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
+	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.NsxtCatalogItem)
 	if vcd.config.VCD.Catalog.CatalogItemDescription != "" {
-		check.Assert(vAppTemplate.VAppTemplate.Description, Equals, vcd.config.VCD.Catalog.CatalogItemDescription)
+		check.Assert(strings.Contains(vAppTemplate.VAppTemplate.Description, vcd.config.VCD.Catalog.CatalogItemDescription), Equals, true)
 	}
 
 	// Test non-existent vApp Template
