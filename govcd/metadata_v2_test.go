@@ -51,6 +51,8 @@ func (vcd *TestVCD) TestAdminVdcMetadata(check *C) {
 	check.Assert(org, NotNil)
 
 	adminVdc, err := org.GetAdminVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(adminVdc, NotNil)
 
 	testMetadataCRUDActions(adminVdc, check, func(testCase metadataTest) {
 		testVdcMetadata(vcd, check, testCase)
