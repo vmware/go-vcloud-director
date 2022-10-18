@@ -787,8 +787,6 @@ func (vapp *VApp) DeleteMetadata(key string) (Task, error) {
 	return deleteMetadata(vapp.client, vapp.VApp.HREF, key)
 }
 
-
-
 // Deprecated: use VApp.AddMetadataEntry
 func (vapp *VApp) AddMetadata(key string, value string) (Task, error) {
 	return addMetadataDeprecated(vapp.client, types.MetadataStringValue, key, value, vapp.VApp.HREF)
