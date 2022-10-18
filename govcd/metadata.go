@@ -209,7 +209,7 @@ func (vdc *Vdc) DeleteMetadataEntry(key string) error {
 // Note: Requires system administrator privileges.
 // Deprecated: Use AdminVdc.DeleteMetadataEntryAsync
 func (vdc *Vdc) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(vdc.client, key, getAdminURL(vdc.Vdc.HREF))
+	return deleteMetadata(vdc.client, getAdminURL(vdc.Vdc.HREF), key)
 }
 
 // AddMetadataEntry adds Provider VDC metadata typedValue and key/value pair provided as input
