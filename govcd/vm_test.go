@@ -1938,7 +1938,7 @@ func (vcd *TestVCD) Test_VMChangeCPU(check *C) {
 
 func (vcd *TestVCD) Test_VMChangeCPUAndCoreCount(check *C) {
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 
 	vapp := vcd.findFirstVapp()
@@ -2034,9 +2034,7 @@ func (vcd *TestVCD) Test_AddRawVm(check *C) {
 	// After a successful creation, the entity is added to the cleanup list.
 	AddToCleanupList(vapp.VApp.Name, "vapp", vcd.nsxtVdc.Vdc.Name, check.TestName())
 
-	// fmt.Println("sleeping")
-	// time.Sleep(1 * time.Minute)
-	// // Check that vApp is powered of
+	// Check that vApp is powered-off
 	vappStatus, err := vapp.GetStatus()
 	check.Assert(err, IsNil)
 	check.Assert(vappStatus, Equals, "RESOLVED")
@@ -2090,7 +2088,7 @@ func (vcd *TestVCD) Test_AddRawVm(check *C) {
 	// Check that vApp did not lose its state
 	vappStatus, err = vapp.GetStatus()
 	check.Assert(err, IsNil)
-	check.Assert(vappStatus, Equals, "MIXED") //vApp is powered on, but the VM withing is powered off
+	check.Assert(vappStatus, Equals, "MIXED") //vApp is powered on, but the VM within is powered off
 	check.Assert(vapp.VApp.Name, Equals, check.TestName())
 	check.Assert(vapp.VApp.Description, Equals, check.TestName())
 
