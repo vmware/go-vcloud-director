@@ -49,11 +49,45 @@ func (vcd *TestVCD) Test_RefreshVAppTemplate(check *C) {
 	check.Assert(oldVAppTemplate.VAppTemplate.HREF, Equals, vAppTemplate.VAppTemplate.HREF)
 }
 
-func (vcd *TestVCD) Test_UpdateVAppTemplate(check *C) {
+func (vcd *TestVCD) Test_UpdateAndDeleteVAppTemplateFromOvaFile(check *C) {
+	testUploadAndDeleteVAppTemplate(vcd, check, false)
+}
+
+func (vcd *TestVCD) Test_UpdateAndDeleteVAppTemplateFromUrl(check *C) {
+	testUploadAndDeleteVAppTemplate(vcd, check, true)
+}
+
+func (vcd *TestVCD) Test_GetInformationFromVAppTemplate(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip(check.TestName() + ": Catalog not given in testing configuration. Test can't proceed")
+	}
+
+	if vcd.config.VCD.Catalog.CatalogItem == "" {
+		check.Skip(check.TestName() + ": Catalog Item not given in testing configuration. Test can't proceed")
+	}
+
+	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+	vAppTemplate, err := catalog.GetVAppTemplateByName(vcd.config.VCD.Catalog.CatalogItem)
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplate, NotNil)
+
+	catalogName, err := vAppTemplate.GetCatalogName()
+	check.Assert(err, IsNil)
+	check.Assert(catalogName, Equals, catalog.Catalog.Name)
+
+	vdcId, err := vAppTemplate.GetVdcName()
+	check.Assert(err, IsNil)
+	check.Assert(vdcId, Equals, vcd.vdc.Vdc.Name)
+}
+
+func testUploadAndDeleteVAppTemplate(vcd *TestVCD, check *C, isOvfLink bool) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
 	if err != nil {
-		check.Skip("Test_UpdateVAppTemplate: Catalog not found. Test can't proceed")
+		check.Skip(check.TestName() + ": Catalog not found. Test can't proceed")
 		return
 	}
 	check.Assert(catalog, NotNil)
@@ -61,23 +95,30 @@ func (vcd *TestVCD) Test_UpdateVAppTemplate(check *C) {
 	itemName := check.TestName()
 
 	description := "upload from test"
-	uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OvaPath, itemName, description, 1024)
-	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
+
+	if isOvfLink {
+		uploadTask, err := catalog.UploadOvfByLink(vcd.config.OVA.OvfUrl, itemName, description)
+		check.Assert(err, IsNil)
+		err = uploadTask.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+	} else {
+		task, err := catalog.UploadOvf(vcd.config.OVA.OvaPath, itemName, description, 1024)
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+	}
 
 	AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
 
-	catItem, err := catalog.GetCatalogItemByName(itemName, true)
-	check.Assert(err, IsNil)
-	check.Assert(catItem, NotNil)
-	check.Assert(catItem.CatalogItem.Name, Equals, itemName)
-
-	// Get VAppTemplate
-	vAppTemplate, err := catItem.GetVAppTemplate()
+	vAppTemplate, err := catalog.GetVAppTemplateByName(itemName)
 	check.Assert(err, IsNil)
 	check.Assert(vAppTemplate, NotNil)
 	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, itemName)
+
+	// FIXME: Due to bug in OVF Link upload in VCD, this assert is skipped
+	if !isOvfLink {
+		check.Assert(vAppTemplate.VAppTemplate.Description, Equals, description)
+	}
 
 	nameForUpdate := itemName + "updated"
 	descriptionForUpdate := description + "updated"
@@ -95,4 +136,10 @@ func (vcd *TestVCD) Test_UpdateVAppTemplate(check *C) {
 	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, nameForUpdate)
 	check.Assert(vAppTemplate.VAppTemplate.Description, Equals, descriptionForUpdate)
 	check.Assert(vAppTemplate.VAppTemplate.GoldMaster, Equals, true)
+
+	err = vAppTemplate.Delete()
+	check.Assert(err, IsNil)
+	vAppTemplate, err = catalog.GetVAppTemplateByName(itemName)
+	check.Assert(err, NotNil)
+	check.Assert(vAppTemplate, IsNil)
 }
