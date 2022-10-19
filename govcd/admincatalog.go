@@ -295,7 +295,7 @@ func (cat *AdminCatalog) GetCatalogHref() (string, error) {
 
 // QueryVappTemplateList returns a list of vApp templates for the given catalog
 func (catalog *AdminCatalog) QueryVappTemplateList() ([]*types.QueryResultVappTemplateType, error) {
-	return queryVappTemplateList(catalog.client, "catalogName", catalog.AdminCatalog.Name)
+	return queryVappTemplateListWithFilter(catalog.client, map[string]string{"catalogName": catalog.AdminCatalog.Name})
 }
 
 // QueryMediaList retrieves a list of media items for the Admin Catalog
