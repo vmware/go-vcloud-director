@@ -79,9 +79,13 @@ vcd:
     # An Org catalog, possibly containing at least one item
     catalog:
         name: mycat
+        nsxtBackedCatalogName: my-nsxt-catalog
         # One item in the catalog. It will be used to compose test vApps. Some tests rely on it
         # being Photon OS. If it is not Photon OS - some tests will be skipped
         catalogItem: myitem
+        # One item in the NSX-T catalog. It will be used to compose test vApps. Some tests rely on it
+        # being Photon OS. If it is not Photon OS - some tests will be skipped
+        nsxtCatalogItem: my-nsxt-item
         #
         # An optional description for the catalog. Its test will be skipped if omitted.
         # If provided, it must be the current description of the catalog

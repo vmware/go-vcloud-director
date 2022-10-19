@@ -944,6 +944,44 @@ func (vdc *Vdc) QueryVappVmTemplate(catalogName, vappTemplateName, vmNameInTempl
 	return vmResults[0], nil
 }
 
+// GetVAppTemplateByName finds a VAppTemplate by Name
+// On success, returns a pointer to the VAppTemplate structure and a nil error
+// On failure, returns a nil pointer and an error
+func (vdc *Vdc) GetVAppTemplateByName(vAppTemplateName string) (*VAppTemplate, error) {
+	vAppTemplateQueryResult, err := vdc.QueryVappTemplateWithName(vAppTemplateName)
+	if err != nil {
+		return nil, err
+	}
+	return vdc.GetVAppTemplateByHref(vAppTemplateQueryResult.HREF)
+}
+
+// GetVAppTemplateByHref finds a vApp template by HREF
+// On success, returns a pointer to the vApp template structure and a nil error
+// On failure, returns a nil pointer and an error
+func (vdc *Vdc) GetVAppTemplateByHref(href string) (*VAppTemplate, error) {
+	return getVAppTemplateByHref(vdc.client, href)
+}
+
+// GetVAppTemplateById finds a vApp Template by ID.
+// On success, returns a pointer to the VAppTemplate structure and a nil error.
+// On failure, returns a nil pointer and an error.
+func (vdc *Vdc) GetVAppTemplateById(vAppTemplateId string) (*VAppTemplate, error) {
+	return getVAppTemplateById(vdc.client, vAppTemplateId)
+}
+
+// GetVAppTemplateByNameOrId finds a vApp Template by Name or ID.
+// On success, returns a pointer to the VAppTemplate structure and a nil error
+// On failure, returns a nil pointer and an error
+func (vdc *Vdc) GetVAppTemplateByNameOrId(identifier string, refresh bool) (*VAppTemplate, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) { return vdc.GetVAppTemplateByName(name) }
+	getById := func(id string, refresh bool) (interface{}, error) { return vdc.GetVAppTemplateById(id) }
+	entity, err := getEntityByNameOrIdSkipNonId(getByName, getById, identifier, refresh)
+	if entity == nil {
+		return nil, err
+	}
+	return entity.(*VAppTemplate), err
+}
+
 // getLinkHref returns a link HREF for a wanted combination of rel and type
 func (vdc *Vdc) getLinkHref(rel, linkType string) string {
 	for _, link := range vdc.Vdc.Link {
