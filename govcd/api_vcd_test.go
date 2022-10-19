@@ -606,7 +606,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	// Gets the persistent cleanup list from file, if exists.
 	cleanupList, err := readCleanupList()
 	if len(cleanupList) > 0 && err == nil {
-		if ignoreCleanupFile {
+		if !ignoreCleanupFile {
 			// If we found a cleanup file and we want to process it (default)
 			// We proceed to cleanup the leftovers before any other operation
 			fmt.Printf("*** Found cleanup file %s\n", makePersistentCleanupFileName())

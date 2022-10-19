@@ -1860,6 +1860,7 @@ func (vm *VM) ChangeMemory(sizeInMb int64) error {
 // (i.e. CPUs x cores per socket)
 // Cpu cores count is inherited from template.
 // https://communities.vmware.com/thread/576209
+// Deprecated: use ChangeCPUAndCoreCount
 func (vm *VM) ChangeCPU(cpus, cpuCores int) error {
 	vmSpecSection := vm.VM.VmSpecSection
 	description := vm.VM.Description
@@ -1873,6 +1874,25 @@ func (vm *VM) ChangeCPU(cpus, cpuCores int) error {
 	_, err := vm.UpdateVmSpecSection(vmSpecSection, description)
 	if err != nil {
 		return fmt.Errorf("error changing cpu size: %s", err)
+	}
+	return nil
+}
+
+// ChangeCPUAndCoreCount sets CPU and CPU core counts
+// Accepts values or `nil` for both parameters.
+func (vm *VM) ChangeCPUAndCoreCount(cpus, cpuCores *int) error {
+	vmSpecSection := vm.VM.VmSpecSection
+	description := vm.VM.Description
+	// update treats same values as changes and fails, with no values provided - no changes are made for that section
+	vmSpecSection.DiskSection = nil
+
+	vmSpecSection.NumCpus = cpus
+	// has to come together
+	vmSpecSection.NumCoresPerSocket = cpuCores
+
+	_, err := vm.UpdateVmSpecSection(vmSpecSection, description)
+	if err != nil {
+		return fmt.Errorf("error changing CPU size: %s", err)
 	}
 	return nil
 }
