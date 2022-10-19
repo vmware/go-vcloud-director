@@ -833,11 +833,16 @@ func (cat *Catalog) GetCatalogItemByHref(catalogItemHref string) (*CatalogItem, 
 // On success, returns a pointer to the vApp template structure and a nil error
 // On failure, returns a nil pointer and an error
 func (cat *Catalog) GetVappTemplateByHref(href string) (*VAppTemplate, error) {
+	return getVAppTemplateByHref(cat.client, href)
+}
 
-	vappTemplate := NewVAppTemplate(cat.client)
+// getVAppTemplateByHref finds a vApp template by HREF
+// On success, returns a pointer to the vApp template structure and a nil error
+// On failure, returns a nil pointer and an error
+func getVAppTemplateByHref(client *Client, href string) (*VAppTemplate, error) {
+	vappTemplate := NewVAppTemplate(client)
 
-	_, err := cat.client.ExecuteRequest(href, http.MethodGet,
-		"", "error retrieving catalog item: %s", nil, vappTemplate.VAppTemplate)
+	_, err := client.ExecuteRequest(href, http.MethodGet, "", "error retrieving vApp Template: %s", nil, vappTemplate.VAppTemplate)
 	if err != nil {
 		return nil, err
 	}
@@ -864,6 +869,17 @@ func (cat *Catalog) GetCatalogItemByName(catalogItemName string, refresh bool) (
 	return nil, ErrorEntityNotFound
 }
 
+// GetVAppTemplateByName finds a VAppTemplate by Name
+// On success, returns a pointer to the VAppTemplate structure and a nil error
+// On failure, returns a nil pointer and an error
+func (cat *Catalog) GetVAppTemplateByName(vAppTemplateName string) (*VAppTemplate, error) {
+	vAppTemplateQueryResult, err := cat.QueryVappTemplateWithName(vAppTemplateName)
+	if err != nil {
+		return nil, err
+	}
+	return cat.GetVappTemplateByHref(vAppTemplateQueryResult.HREF)
+}
+
 // GetCatalogItemById finds a Catalog Item by ID
 // On success, returns a pointer to the CatalogItem structure and a nil error
 // On failure, returns a nil pointer and an error
@@ -884,7 +900,28 @@ func (cat *Catalog) GetCatalogItemById(catalogItemId string, refresh bool) (*Cat
 	return nil, ErrorEntityNotFound
 }
 
-// GetCatalogItemByNameOrId finds a Catalog Item by Name or ID
+// GetVAppTemplateById finds a vApp Template by ID.
+// On success, returns a pointer to the VAppTemplate structure and a nil error.
+// On failure, returns a nil pointer and an error.
+func (cat *Catalog) GetVAppTemplateById(vAppTemplateId string) (*VAppTemplate, error) {
+	return getVAppTemplateById(cat.client, vAppTemplateId)
+}
+
+// getVAppTemplateById finds a vApp Template by ID.
+// On success, returns a pointer to the VAppTemplate structure and a nil error.
+// On failure, returns a nil pointer and an error.
+func getVAppTemplateById(client *Client, vAppTemplateId string) (*VAppTemplate, error) {
+	vappTemplateHref := client.VCDHREF
+	vappTemplateHref.Path += "/vAppTemplate/vappTemplate-" + extractUuid(vAppTemplateId)
+
+	vappTemplate, err := getVAppTemplateByHref(client, vappTemplateHref.String())
+	if err != nil {
+		return nil, fmt.Errorf("could not find vApp Template with ID %s: %s", vAppTemplateId, err)
+	}
+	return vappTemplate, nil
+}
+
+// GetCatalogItemByNameOrId finds a Catalog Item by Name or ID.
 // On success, returns a pointer to the CatalogItem structure and a nil error
 // On failure, returns a nil pointer and an error
 func (cat *Catalog) GetCatalogItemByNameOrId(identifier string, refresh bool) (*CatalogItem, error) {
@@ -895,6 +932,19 @@ func (cat *Catalog) GetCatalogItemByNameOrId(identifier string, refresh bool) (*
 		return nil, err
 	}
 	return entity.(*CatalogItem), err
+}
+
+// GetVAppTemplateByNameOrId finds a vApp Template by Name or ID.
+// On success, returns a pointer to the VAppTemplate structure and a nil error
+// On failure, returns a nil pointer and an error
+func (cat *Catalog) GetVAppTemplateByNameOrId(identifier string, refresh bool) (*VAppTemplate, error) {
+	getByName := func(name string, refresh bool) (interface{}, error) { return cat.GetVAppTemplateByName(name) }
+	getById := func(id string, refresh bool) (interface{}, error) { return cat.GetVAppTemplateById(id) }
+	entity, err := getEntityByNameOrIdSkipNonId(getByName, getById, identifier, refresh)
+	if entity == nil {
+		return nil, err
+	}
+	return entity.(*VAppTemplate), err
 }
 
 // QueryMediaList retrieves a list of media items for the catalog
