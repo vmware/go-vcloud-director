@@ -92,25 +92,17 @@ func (vcd *TestVCD) TestVAppMetadata(check *C) {
 	testMetadataCRUDActions(vcd.vapp, check, nil)
 }
 
-// TODO: Change to new vApp Template functions
 func (vcd *TestVCD) TestVAppTemplateMetadata(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
-	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	vAppTemplate, err := vcd.nsxtVdc.GetVAppTemplateByName(vcd.config.VCD.Catalog.NsxtCatalogItem)
 	if err != nil {
-		check.Skip("Skipping test because Catalog was not found. Test can't proceed")
+		check.Skip("Skipping test because vApp Template was not found. Test can't proceed")
 		return
 	}
-	catItem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItem, false)
-	check.Assert(err, IsNil)
-	check.Assert(catItem, NotNil)
-	check.Assert(catItem.CatalogItem.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
-
-	vAppTemplate, err := catItem.GetVAppTemplate()
-	check.Assert(err, IsNil)
 	check.Assert(vAppTemplate, NotNil)
-	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
+	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.NsxtCatalogItem)
 
-	testMetadataCRUDActions(&vAppTemplate, check, nil)
+	testMetadataCRUDActions(vAppTemplate, check, nil)
 }
 
 func (vcd *TestVCD) TestMediaRecordMetadata(check *C) {
