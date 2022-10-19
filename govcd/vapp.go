@@ -152,6 +152,39 @@ func (vapp *VApp) AddVM(orgVdcNetworks []*types.OrgVDCNetwork, vappNetworkName s
 	return vapp.AddNewVM(name, vappTemplate, &networkConnectionSection, acceptAllEulas)
 }
 
+// AddRawVM accepts raw types.ReComposeVAppParams which contains all information for VM creation
+func (vapp *VApp) AddRawVM(vAppComposition *types.ReComposeVAppParams) (*VM, error) {
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint.Path += "/action/recomposeVApp"
+
+	// Return the task
+	task, err := vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost, types.MimeRecomposeVappParams, "error instantiating a new VM: %s", vAppComposition)
+	if err != nil {
+		return nil, fmt.Errorf("error instantiating a new VM: %s", err)
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("VM creation task failed: %s", err)
+	}
+
+	// VM task does not return any reference to VM therefore it must be looked up by name after
+	// creation
+
+	var vmName string
+	if vAppComposition.SourcedItem != nil && vAppComposition.SourcedItem.Source != nil {
+		vmName = vAppComposition.SourcedItem.Source.Name
+	}
+
+	vm, err := vapp.GetVMByName(vmName, true)
+	if err != nil {
+		return nil, fmt.Errorf("error finding VM %s in vApp %s after creation: %s", vAppComposition.Name, vapp.VApp.Name, err)
+	}
+
+	return vm, nil
+
+}
+
 // AddNewVM adds VM from vApp template with custom NetworkConnectionSection
 func (vapp *VApp) AddNewVM(name string, vappTemplate VAppTemplate, network *types.NetworkConnectionSection, acceptAllEulas bool) (Task, error) {
 	return vapp.AddNewVMWithStorageProfile(name, vappTemplate, network, nil, acceptAllEulas)
