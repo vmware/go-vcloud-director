@@ -84,7 +84,7 @@ func (vAppTemplate *VAppTemplate) GetCatalogName() (string, error) {
 	return queriedVappTemplates[0].CatalogName, nil
 }
 
-// GetVdcName gets the VDC id to which the receiver vApp Template belongs
+// GetVdcName gets the VDC name to which the receiver vApp Template belongs
 func (vAppTemplate *VAppTemplate) GetVdcName() (string, error) {
 	queriedVappTemplates, err := queryVappTemplateListWithFilter(vAppTemplate.client, map[string]string{
 		"id": vAppTemplate.VAppTemplate.ID,
