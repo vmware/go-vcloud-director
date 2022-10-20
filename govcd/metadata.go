@@ -65,7 +65,7 @@ func (vcdClient *VCDClient) DeleteMetadataEntryByHref(href, key string) error {
 // and returns a task.
 // Deprecated: Use VCDClient.DeleteMetadataEntryWithDomainByHrefAsync
 func (vcdClient *VCDClient) DeleteMetadataEntryByHrefAsync(href, key string) (Task, error) {
-	return deleteMetadata(&vcdClient.Client, key, href, false)
+	return deleteMetadata(&vcdClient.Client, href, key,false)
 }
 
 // AddMetadataEntry adds VM metadata typedValue and key/value pair provided as input
