@@ -141,8 +141,10 @@ type TestConfig struct {
 		} `yaml:"nsxt_provider_vdc"`
 		Catalog struct {
 			Name                    string `yaml:"name,omitempty"`
+			NsxtBackedCatalogName   string `yaml:"nsxtBackedCatalogName,omitempty"`
 			Description             string `yaml:"description,omitempty"`
 			CatalogItem             string `yaml:"catalogItem,omitempty"`
+			NsxtCatalogItem         string `yaml:"nsxtCatalogItem,omitempty"`
 			CatalogItemDescription  string `yaml:"catalogItemDescription,omitempty"`
 			CatalogItemWithMultiVms string `yaml:"catalogItemWithMultiVms,omitempty"`
 			VmNameInMultiVmItem     string `yaml:"vmNameInMultiVmItem,omitempty"`
@@ -604,7 +606,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	// Gets the persistent cleanup list from file, if exists.
 	cleanupList, err := readCleanupList()
 	if len(cleanupList) > 0 && err == nil {
-		if ignoreCleanupFile {
+		if !ignoreCleanupFile {
 			// If we found a cleanup file and we want to process it (default)
 			// We proceed to cleanup the leftovers before any other operation
 			fmt.Printf("*** Found cleanup file %s\n", makePersistentCleanupFileName())

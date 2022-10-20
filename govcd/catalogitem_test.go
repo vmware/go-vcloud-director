@@ -193,6 +193,11 @@ func (vcd *TestVCD) TestQueryCatalogItemAndVAppTemplateList(check *C) {
 		check.Assert(vappTemplate, NotNil)
 	}
 
+	// Compare vApp templates from query with one retrieved by name
+	vAppTemplateQueryResult, err := catalog.QueryVappTemplateWithName(queryVappTemplatesByCatalog[0].Name)
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplateQueryResult, NotNil)
+	check.Assert(vAppTemplateQueryResult, DeepEquals, queryVappTemplatesByCatalog[0])
 }
 
 func (vcd *TestVCD) Test_DeleteNonEmptyCatalog(check *C) {
@@ -259,4 +264,10 @@ func (vcd *TestVCD) Test_QueryVappTemplateList(check *C) {
 
 	// Check the name of the vApp template is what it should be
 	check.Assert(vAppTemplates[0].Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
+
+	// Check the vApp Template retrieved before is the same as the one retrieved by name
+	vAppTemplate, err := cat.QueryVappTemplateWithName(vAppTemplates[0].Name)
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplates, NotNil)
+	check.Assert(vAppTemplate, DeepEquals, vAppTemplates[0])
 }

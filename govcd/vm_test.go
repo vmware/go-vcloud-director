@@ -1936,6 +1936,56 @@ func (vcd *TestVCD) Test_VMChangeCPU(check *C) {
 	check.Assert(err, IsNil)
 }
 
+func (vcd *TestVCD) Test_VMChangeCPUAndCoreCount(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp was not successfully created at setup")
+	}
+
+	vapp := vcd.findFirstVapp()
+	existingVm, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+
+	currentCpus := existingVm.VmSpecSection.NumCpus
+	currentCores := existingVm.VmSpecSection.NumCoresPerSocket
+
+	check.Assert(0, Not(Equals), currentCpus)
+	check.Assert(0, Not(Equals), currentCores)
+
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
+	check.Assert(err, IsNil)
+
+	cores := 2
+	cpuCount := 4
+
+	err = vm.ChangeCPUAndCoreCount(&cpuCount, &cores)
+	check.Assert(err, IsNil)
+
+	check.Assert(*vm.VM.VmSpecSection.NumCpus, Equals, cpuCount)
+	check.Assert(*vm.VM.VmSpecSection.NumCoresPerSocket, Equals, cores)
+
+	// Try changing only CPU count and seeing if coreCount remains the same
+	newCpuCount := 2
+	err = vm.ChangeCPUAndCoreCount(&newCpuCount, nil)
+	check.Assert(err, IsNil)
+
+	check.Assert(*vm.VM.VmSpecSection.NumCpus, Equals, newCpuCount)
+	check.Assert(*vm.VM.VmSpecSection.NumCoresPerSocket, Equals, cores)
+
+	// Change only core count and check that CPU count remains as it was
+	newCoreCount := 1
+	err = vm.ChangeCPUAndCoreCount(nil, &newCoreCount)
+	check.Assert(err, IsNil)
+
+	check.Assert(*vm.VM.VmSpecSection.NumCpus, Equals, newCpuCount)
+	check.Assert(*vm.VM.VmSpecSection.NumCoresPerSocket, Equals, newCoreCount)
+
+	// return to previous value
+	err = vm.ChangeCPUAndCoreCount(currentCpus, currentCores)
+	check.Assert(err, IsNil)
+}
+
 func (vcd *TestVCD) Test_VMChangeMemory(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
@@ -1962,5 +2012,103 @@ func (vcd *TestVCD) Test_VMChangeMemory(check *C) {
 
 	// return to previous value
 	err = vm.ChangeMemory(currentMemory)
+	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_AddRawVm(check *C) {
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, false)
+	check.Assert(err, IsNil)
+	check.Assert(cat, NotNil)
+	// Populate Catalog Item
+	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.NsxtCatalogItem, false)
+	check.Assert(err, IsNil)
+	check.Assert(catitem, NotNil)
+	// Get VAppTemplate
+	vapptemplate, err := catitem.GetVAppTemplate()
+	check.Assert(err, IsNil)
+	check.Assert(vapptemplate.VAppTemplate.Children.VM[0].HREF, NotNil)
+
+	vapp, err := vcd.nsxtVdc.CreateRawVApp(check.TestName(), check.TestName())
+	check.Assert(err, IsNil)
+	check.Assert(vapp, NotNil)
+	// After a successful creation, the entity is added to the cleanup list.
+	AddToCleanupList(vapp.VApp.Name, "vapp", vcd.nsxtVdc.Vdc.Name, check.TestName())
+
+	// Check that vApp is powered-off
+	vappStatus, err := vapp.GetStatus()
+	check.Assert(err, IsNil)
+	check.Assert(vappStatus, Equals, "RESOLVED")
+
+	task, err := vapp.PowerOn()
+	check.Assert(err, IsNil)
+	check.Assert(task, NotNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	vappStatus, err = vapp.GetStatus()
+	check.Assert(err, IsNil)
+	check.Assert(vappStatus, Equals, "POWERED_ON")
+
+	// Once the operation is successful, we won't trigger a failure
+	// until after the vApp deletion
+	check.Check(vapp.VApp.Name, Equals, check.TestName())
+	check.Check(vapp.VApp.Description, Equals, check.TestName())
+
+	// Construct VM
+	vmDef := &types.ReComposeVAppParams{
+		Ovf:              types.XMLNamespaceOVF,
+		Xsi:              types.XMLNamespaceXSI,
+		Xmlns:            types.XMLNamespaceVCloud,
+		AllEULAsAccepted: true,
+		// Deploy:           false,
+		Name: vapp.VApp.Name,
+		// PowerOn: false, // Not touching power state at this phase
+		SourcedItem: &types.SourcedCompositionItemParam{
+			Source: &types.Reference{
+				HREF: vapptemplate.VAppTemplate.Children.VM[0].HREF,
+				Name: check.TestName() + "-vm-tmpl",
+			},
+			VMGeneralParams: &types.VMGeneralParams{
+				Description: "test-vm-description",
+			},
+			InstantiationParams: &types.InstantiationParams{
+				NetworkConnectionSection: &types.NetworkConnectionSection{},
+			},
+		},
+	}
+	vm, err := vapp.AddRawVM(vmDef)
+	check.Assert(err, IsNil)
+	check.Assert(vm, NotNil)
+	check.Assert(vm.VM.Name, Equals, vmDef.SourcedItem.Source.Name)
+
+	// Refresh vApp to have latest state
+	err = vapp.Refresh()
+	check.Assert(err, IsNil)
+
+	// Check that vApp did not lose its state
+	vappStatus, err = vapp.GetStatus()
+	check.Assert(err, IsNil)
+	check.Assert(vappStatus, Equals, "MIXED") //vApp is powered on, but the VM within is powered off
+	check.Assert(vapp.VApp.Name, Equals, check.TestName())
+	check.Assert(vapp.VApp.Description, Equals, check.TestName())
+
+	// Check that VM is not powered on
+	vmStatus, err := vm.GetStatus()
+	check.Assert(err, IsNil)
+	check.Assert(vmStatus, Equals, "POWERED_OFF")
+
+	// Cleanup
+	task, err = vapp.Undeploy()
+	check.Assert(err, IsNil)
+	check.Assert(task, Not(Equals), Task{})
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	check.Assert(task, Not(Equals), Task{})
+
+	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 }
