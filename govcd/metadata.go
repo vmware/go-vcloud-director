@@ -252,11 +252,41 @@ func (vdc *Vdc) DeleteMetadataEntry(key string) error {
 	return nil
 }
 
+// DeleteMetadataEntry deletes AdminVdc metadata by key provided as input and waits for
+// the task to finish.
+// Note: Requires system administrator privileges.
+// Deprecated: Use AdminVdc.DeleteMetadataEntryWithDomain
+func (adminVdc *AdminVdc) DeleteMetadataEntry(key string) error {
+	task, err := adminVdc.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return err
+	}
+
+	err = adminVdc.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // DeleteMetadataEntryAsync deletes VDC metadata depending on key provided as input and returns the task.
 // Note: Requires system administrator privileges.
 // Deprecated: Use AdminVdc.DeleteMetadataEntryWithDomainAsync
 func (vdc *Vdc) DeleteMetadataEntryAsync(key string) (Task, error) {
 	return deleteMetadata(vdc.client, getAdminURL(vdc.Vdc.HREF), key, false)
+}
+
+// DeleteMetadataEntryAsync deletes VDC metadata depending on key provided as input and returns the task.
+// Note: Requires system administrator privileges.
+// Deprecated: Use AdminVdc.DeleteMetadataEntryWithDomainAsync
+func (adminVdc *AdminVdc) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(adminVdc.client, adminVdc.AdminVdc.HREF, key, false)
 }
 
 // AddMetadataEntry adds Provider VDC metadata typedValue and key/value pair provided as input
