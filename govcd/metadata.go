@@ -49,6 +49,25 @@ func (vcdClient *VCDClient) MergeMetadataByHref(href, typedValue string, metadat
 	return task.WaitTaskCompletion()
 }
 
+// DeleteMetadataEntryByHref deletes metadata from the given resource reference, depending on key provided as input
+// and waits for the task to finish.
+// Deprecated: Use VCDClient.DeleteMetadataEntryWithDomainByHref
+func (vcdClient *VCDClient) DeleteMetadataEntryByHref(href, key string) error {
+	task, err := vcdClient.DeleteMetadataEntryByHrefAsync(href, key)
+	if err != nil {
+		return err
+	}
+
+	return task.WaitTaskCompletion()
+}
+
+// DeleteMetadataEntryByHrefAsync deletes metadata from the given resource reference, depending on key provided as input
+// and returns a task.
+// Deprecated: Use VCDClient.DeleteMetadataEntryWithDomainByHrefAsync
+func (vcdClient *VCDClient) DeleteMetadataEntryByHrefAsync(href, key string) (Task, error) {
+	return deleteMetadata(&vcdClient.Client, key, href, false)
+}
+
 // AddMetadataEntry adds VM metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
 // Deprecated: Use VM.AddMetadataEntryWithVisibility instead
@@ -94,6 +113,34 @@ func (vm *VM) MergeMetadata(typedValue string, metadata map[string]interface{}) 
 		return err
 	}
 	return task.WaitTaskCompletion()
+}
+
+// DeleteMetadataEntry deletes VM metadata by key provided as input and waits for the task to finish.
+// Deprecated: Use VM.DeleteMetadataEntryWithDomain instead
+func (vm *VM) DeleteMetadataEntry(key string) error {
+	task, err := vm.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return err
+	}
+
+	err = vm.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteMetadataEntryAsync deletes VM metadata depending on key provided as input
+// and returns the task.
+// Deprecated: Use VM.DeleteMetadataEntryWithDomainAsync instead
+func (vm *VM) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(vm.client, vm.VM.HREF, key, false)
 }
 
 // AddMetadataEntry adds VDC metadata typedValue and key/value pair provided as input
@@ -185,7 +232,7 @@ func (adminVdc *AdminVdc) MergeMetadata(typedValue string, metadata map[string]i
 // DeleteMetadataEntry deletes VDC metadata by key provided as input and waits for
 // the task to finish.
 // Note: Requires system administrator privileges.
-// Deprecated: Use AdminVdc.DeleteMetadataEntry
+// Deprecated: Use AdminVdc.DeleteMetadataEntryWithDomain
 func (vdc *Vdc) DeleteMetadataEntry(key string) error {
 	task, err := vdc.DeleteMetadataEntryAsync(key)
 	if err != nil {
@@ -207,9 +254,9 @@ func (vdc *Vdc) DeleteMetadataEntry(key string) error {
 
 // DeleteMetadataEntryAsync deletes VDC metadata depending on key provided as input and returns the task.
 // Note: Requires system administrator privileges.
-// Deprecated: Use AdminVdc.DeleteMetadataEntryAsync
+// Deprecated: Use AdminVdc.DeleteMetadataEntryWithDomainAsync
 func (vdc *Vdc) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(vdc.client, getAdminURL(vdc.Vdc.HREF), key)
+	return deleteMetadata(vdc.client, getAdminURL(vdc.Vdc.HREF), key, false)
 }
 
 // AddMetadataEntry adds Provider VDC metadata typedValue and key/value pair provided as input
@@ -262,6 +309,36 @@ func (providerVdc *ProviderVdc) MergeMetadata(typedValue string, metadata map[st
 	return task.WaitTaskCompletion()
 }
 
+// DeleteMetadataEntry deletes Provider VDC metadata by key provided as input and waits for
+// the task to finish.
+// Note: Requires system administrator privileges.
+// Deprecated: Use ProviderVdc.DeleteMetadataEntryWithDomain
+func (providerVdc *ProviderVdc) DeleteMetadataEntry(key string) error {
+	task, err := providerVdc.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return err
+	}
+
+	err = providerVdc.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteMetadataEntryAsync deletes Provider VDC metadata depending on key provided as input and returns the task.
+// Note: Requires system administrator privileges.
+// Deprecated: Use ProviderVdc.DeleteMetadataEntryWithDomainAsync
+func (providerVdc *ProviderVdc) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(providerVdc.client, providerVdc.ProviderVdc.HREF, key, false)
+}
+
 // AddMetadataEntry adds VApp metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
 // Deprecated: Use VApp.AddMetadataEntryWithVisibility instead
@@ -306,6 +383,34 @@ func (vapp *VApp) MergeMetadata(typedValue string, metadata map[string]interface
 		return err
 	}
 	return task.WaitTaskCompletion()
+}
+
+// DeleteMetadataEntry deletes VApp metadata by key provided as input and waits for
+// the task to finish.
+// Deprecated: Use VApp.DeleteMetadataEntryWithDomain instead
+func (vapp *VApp) DeleteMetadataEntry(key string) error {
+	task, err := vapp.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return err
+	}
+
+	err = vapp.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteMetadataEntryAsync deletes VApp metadata depending on key provided as input and returns the task.
+// Deprecated: Use VApp.DeleteMetadataEntryWithDomainAsync instead
+func (vapp *VApp) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(vapp.client, vapp.VApp.HREF, key, false)
 }
 
 // AddMetadataEntry adds VAppTemplate metadata typedValue and key/value pair provided as input and
@@ -354,6 +459,35 @@ func (vAppTemplate *VAppTemplate) MergeMetadata(typedValue string, metadata map[
 	return task.WaitTaskCompletion()
 }
 
+// DeleteMetadataEntry deletes VAppTemplate metadata depending on key provided as input
+// and waits for the task to finish.
+// Deprecated: Use VAppTemplate.DeleteMetadataEntryWithDomain instead
+func (vAppTemplate *VAppTemplate) DeleteMetadataEntry(key string) error {
+	task, err := vAppTemplate.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return err
+	}
+
+	err = vAppTemplate.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteMetadataEntryAsync deletes VAppTemplate metadata depending on key provided as input
+// and returns the task.
+// Deprecated: Use VAppTemplate.DeleteMetadataEntryWithDomainAsync instead
+func (vAppTemplate *VAppTemplate) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(vAppTemplate.client, vAppTemplate.VAppTemplate.HREF, key, false)
+}
+
 // AddMetadataEntry adds MediaRecord metadata typedValue and key/value pair provided as input and
 // waits for the task to finish.
 // Deprecated: Use MediaRecord.AddMetadataEntryWithVisibility instead
@@ -398,6 +532,34 @@ func (mediaRecord *MediaRecord) MergeMetadata(typedValue string, metadata map[st
 		return err
 	}
 	return task.WaitTaskCompletion()
+}
+
+// DeleteMetadataEntry deletes MediaRecord metadata depending on key provided as input
+// and waits for the task to finish.
+// Deprecated: Use MediaRecord.DeleteMetadataEntryWithDomain instead
+func (mediaRecord *MediaRecord) DeleteMetadataEntry(key string) error {
+	task, err := mediaRecord.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return err
+	}
+
+	err = mediaRecord.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteMetadataEntryAsync deletes MediaRecord metadata depending on key provided as input
+// and returns the task.
+// Deprecated: Use MediaRecord.DeleteMetadataEntryWithDomainAsync instead
+func (mediaRecord *MediaRecord) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(mediaRecord.client, mediaRecord.MediaRecord.HREF, key, false)
 }
 
 // AddMetadataEntry adds Media metadata typedValue and key/value pair provided as input
@@ -446,6 +608,35 @@ func (media *Media) MergeMetadata(typedValue string, metadata map[string]interfa
 	return task.WaitTaskCompletion()
 }
 
+// DeleteMetadataEntry deletes Media metadata depending on key provided as input
+// and waits for the task to finish.
+// Deprecated: Use Media.DeleteMetadataEntryWithDomain instead
+func (media *Media) DeleteMetadataEntry(key string) error {
+	task, err := media.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return err
+	}
+
+	err = media.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteMetadataEntryAsync deletes Media metadata depending on key provided as input
+// and returns the task.
+// Deprecated: Use Media.DeleteMetadataEntryWithDomainAsync instead
+func (media *Media) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(media.client, media.Media.HREF, key, false)
+}
+
 // AddMetadataEntry adds AdminCatalog metadata typedValue and key/value pair provided as input
 // and waits for the task to finish.
 // Deprecated: Use AdminCatalog.AddMetadataEntryWithVisibility instead
@@ -492,6 +683,35 @@ func (adminCatalog *AdminCatalog) MergeMetadata(typedValue string, metadata map[
 	return task.WaitTaskCompletion()
 }
 
+// DeleteMetadataEntry deletes AdminCatalog metadata depending on key provided as input
+// and waits for the task to finish.
+// Deprecated: Use AdminCatalog.DeleteMetadataEntryWithDomain instead
+func (adminCatalog *AdminCatalog) DeleteMetadataEntry(key string) error {
+	task, err := adminCatalog.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return err
+	}
+
+	err = adminCatalog.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteMetadataEntryAsync deletes AdminCatalog metadata depending on key provided as input
+// and returns a task.
+// Deprecated: Use AdminCatalog.DeleteMetadataEntryWithDomainAsync instead
+func (adminCatalog *AdminCatalog) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(adminCatalog.client, adminCatalog.AdminCatalog.HREF, key, false)
+}
+
 // AddMetadataEntry adds AdminOrg metadata key/value pair provided as input to the corresponding organization seen as administrator
 // and waits for completion.
 // Deprecated: Use AdminOrg.AddMetadataEntryWithVisibility instead
@@ -528,6 +748,28 @@ func (adminOrg *AdminOrg) MergeMetadata(typedValue string, metadata map[string]i
 	return task.WaitTaskCompletion()
 }
 
+// DeleteMetadataEntry deletes metadata of the corresponding organization with the given key, and waits for completion
+// Deprecated: Use AdminOrg.DeleteMetadataEntryWithDomain instead
+func (adminOrg *AdminOrg) DeleteMetadataEntry(key string) error {
+	task, err := adminOrg.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error completing delete metadata for organization task: %s", err)
+	}
+
+	return nil
+}
+
+// DeleteMetadataEntryAsync deletes metadata of the corresponding organization with the given key, and returns
+// a task.
+// Deprecated: Use AdminOrg.DeleteMetadataEntryWithDomainAsync instead
+func (adminOrg *AdminOrg) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(adminOrg.client, adminOrg.AdminOrg.HREF, key, false)
+}
+
 // AddMetadataEntry adds metadata key/value pair provided as input to the corresponding independent disk and waits for completion.
 // Deprecated: Use Disk.AddMetadataEntryWithVisibility instead
 func (disk *Disk) AddMetadataEntry(typedValue, key, value string) error {
@@ -560,6 +802,28 @@ func (disk *Disk) MergeMetadata(typedValue string, metadata map[string]interface
 		return err
 	}
 	return task.WaitTaskCompletion()
+}
+
+// DeleteMetadataEntry deletes metadata of the corresponding independent disk with the given key, and waits for completion
+// Deprecated: Use Disk.DeleteMetadataEntryWithDomain instead
+func (disk *Disk) DeleteMetadataEntry(key string) error {
+	task, err := disk.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error completing delete metadata for independent disk task: %s", err)
+	}
+
+	return nil
+}
+
+// DeleteMetadataEntryAsync deletes metadata of the corresponding independent disk with the given key, and returns
+// a task.
+// Deprecated: Use Disk.DeleteMetadataEntryWithDomainAsync instead
+func (disk *Disk) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(disk.client, disk.Disk.HREF, key, false)
 }
 
 // AddMetadataEntry adds OrgVDCNetwork metadata typedValue and key/value pair provided as input
@@ -638,6 +902,46 @@ func (catalogItem *CatalogItem) MergeMetadata(typedValue string, metadata map[st
 	return task.WaitTaskCompletion()
 }
 
+// DeleteMetadataEntry deletes CatalogItem metadata depending on key provided as input
+// and waits for the task to finish.
+// Deprecated: Use CatalogItem.DeleteMetadataEntryWithDomain instead
+func (catalogItem *CatalogItem) DeleteMetadataEntry(key string) error {
+	task, err := catalogItem.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+
+	return task.WaitTaskCompletion()
+}
+
+// DeleteMetadataEntryAsync deletes CatalogItem metadata depending on key provided as input
+// and returns a task.
+// Deprecated: Use CatalogItem.DeleteMetadataEntryWithDomainAsync instead
+func (catalogItem *CatalogItem) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(catalogItem.client, catalogItem.CatalogItem.HREF, key, false)
+}
+
+// DeleteMetadataEntry deletes OrgVDCNetwork metadata depending on key provided as input
+// and waits for the task to finish.
+// Note: Requires system administrator privileges.
+// Deprecated: Use OrgVDCNetwork.DeleteMetadataEntryWithDomain instead
+func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntry(key string) error {
+	task, err := orgVdcNetwork.DeleteMetadataEntryAsync(key)
+	if err != nil {
+		return err
+	}
+
+	return task.WaitTaskCompletion()
+}
+
+// DeleteMetadataEntryAsync deletes OrgVDCNetwork metadata depending on key provided as input
+// and returns a task.
+// Note: Requires system administrator privileges.
+// Deprecated: Use OrgVDCNetwork.DeleteMetadataEntryWithDomainAsync instead
+func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntryAsync(key string) (Task, error) {
+	return deleteMetadata(orgVdcNetwork.client, getAdminURL(orgVdcNetwork.OrgVDCNetwork.HREF), key, false)
+}
+
 // ----------------
 // OpenAPI metadata functions
 
@@ -660,6 +964,18 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) MergeMetadata(typedValue strin
 	if err != nil {
 		return err
 	}
+	return task.WaitTaskCompletion()
+}
+
+// DeleteMetadataEntry deletes OpenApiOrgVdcNetwork metadata depending on key provided as input
+// and waits for the task to finish.
+// Deprecated: Use OpenApiOrgVdcNetwork.DeleteMetadataEntryWithDomain
+func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntry(key string) error {
+	task, err := deleteMetadata(openApiOrgVdcNetwork.client, fmt.Sprintf("%s/admin/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), strings.ReplaceAll(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID, "urn:vcloud:network:", "")), key, false)
+	if err != nil {
+		return err
+	}
+
 	return task.WaitTaskCompletion()
 }
 
@@ -724,7 +1040,7 @@ func mergeAllMetadataDeprecated(client *Client, typedValue string, metadata map[
 
 // Deprecated: use VM.DeleteMetadataEntry.
 func (vm *VM) DeleteMetadata(key string) (Task, error) {
-	return deleteMetadata(vm.client, vm.VM.HREF, key)
+	return deleteMetadata(vm.client, vm.VM.HREF, key, false)
 }
 
 // Deprecated: use VM.AddMetadataEntry.
@@ -734,7 +1050,7 @@ func (vm *VM) AddMetadata(key string, value string) (Task, error) {
 
 // Deprecated: use Vdc.DeleteMetadataEntry.
 func (vdc *Vdc) DeleteMetadata(key string) (Vdc, error) {
-	task, err := deleteMetadata(vdc.client, getAdminURL(vdc.Vdc.HREF), key)
+	task, err := deleteMetadata(vdc.client, getAdminURL(vdc.Vdc.HREF), key, false)
 	if err != nil {
 		return Vdc{}, err
 	}
@@ -779,12 +1095,12 @@ func (vdc *Vdc) AddMetadataAsync(key string, value string) (Task, error) {
 
 // Deprecated: use Vdc.DeleteMetadataEntryAsync.
 func (vdc *Vdc) DeleteMetadataAsync(key string) (Task, error) {
-	return deleteMetadata(vdc.client, getAdminURL(vdc.Vdc.HREF), key)
+	return deleteMetadata(vdc.client, getAdminURL(vdc.Vdc.HREF), key, false)
 }
 
 // Deprecated: use VApp.DeleteMetadataEntry.
 func (vapp *VApp) DeleteMetadata(key string) (Task, error) {
-	return deleteMetadata(vapp.client, vapp.VApp.HREF, key)
+	return deleteMetadata(vapp.client, vapp.VApp.HREF, key, false)
 }
 
 // Deprecated: use VApp.AddMetadataEntry
@@ -832,7 +1148,7 @@ func (vAppTemplate *VAppTemplate) DeleteMetadata(key string) error {
 
 // Deprecated: use VAppTemplate.DeleteMetadataEntryAsync.
 func (vAppTemplate *VAppTemplate) DeleteMetadataAsync(key string) (Task, error) {
-	return deleteMetadata(vAppTemplate.client, vAppTemplate.VAppTemplate.HREF, key)
+	return deleteMetadata(vAppTemplate.client, vAppTemplate.VAppTemplate.HREF, key, false)
 }
 
 // Deprecated: use Media.AddMetadataEntry.
@@ -875,7 +1191,7 @@ func (media *Media) DeleteMetadata(key string) error {
 
 // Deprecated: use Media.DeleteMetadataEntryAsync.
 func (media *Media) DeleteMetadataAsync(key string) (Task, error) {
-	return deleteMetadata(media.client, media.Media.HREF, key)
+	return deleteMetadata(media.client, media.Media.HREF, key, false)
 }
 
 // GetMetadata returns MediaItem metadata.
@@ -927,7 +1243,7 @@ func (mediaItem *MediaItem) DeleteMetadata(key string) error {
 // DeleteMetadataAsync deletes metadata depending on key provided as input from MediaItem.
 // Deprecated: Use MediaRecord.DeleteMetadataAsync.
 func (mediaItem *MediaItem) DeleteMetadataAsync(key string) (Task, error) {
-	return deleteMetadata(mediaItem.vdc.client, mediaItem.MediaItem.HREF, key)
+	return deleteMetadata(mediaItem.vdc.client, mediaItem.MediaItem.HREF, key, false)
 }
 
 // Deprecated: use MediaRecord.AddMetadataEntry.
@@ -970,5 +1286,5 @@ func (mediaRecord *MediaRecord) DeleteMetadata(key string) error {
 
 // Deprecated: use MediaRecord.DeleteMetadataEntryAsync.
 func (mediaRecord *MediaRecord) DeleteMetadataAsync(key string) (Task, error) {
-	return deleteMetadata(mediaRecord.client, mediaRecord.MediaRecord.HREF, key)
+	return deleteMetadata(mediaRecord.client, mediaRecord.MediaRecord.HREF, key, false)
 }

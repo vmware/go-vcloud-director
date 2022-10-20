@@ -9,4 +9,6 @@
 * Added the functions `MergeMetadataWithMetadataValuesAsync` and `MergeMetadataWithMetadataValues` to the following entities:
   `VM`, `AdminVdc`, `ProviderVdc`, `VApp`, `VAppTemplate`, `MediaRecord`, `Media`, `AdminCatalog`, `AdminOrg`, `Disk`,
   `OrgVDCNetwork`, `CatalogItem` to merge metadata data supporting also visibility and domain [GH-510]
-* Added the functions `AdminVdc.DeleteMetadataEntryAsync` and `AdminVdc.DeleteMetadataEntryAsync` [GH-510]
+* Added the functions `DeleteMetadataEntryWithDomainAsync` and `DeleteMetadataEntryWithDomain` to the following entities:
+  `VM`, `AdminVdc`, `ProviderVdc`, `VApp`, `VAppTemplate`, `MediaRecord`, `Media`, `AdminCatalog`, `AdminOrg`, `Disk`,
+  `OrgVDCNetwork`, `CatalogItem` to delete metadata with the domain, that allows deleting metadata present in SYSTEM [GH-510]

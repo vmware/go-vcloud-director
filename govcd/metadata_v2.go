@@ -470,157 +470,157 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) MergeMetadataWithMetadataValue
 // DELETE metadata async
 // ------------------------------------------------------------------------------------------------
 
-// DeleteMetadataEntryByHrefAsync deletes metadata from the given resource reference, depending on key provided as input
+// DeleteMetadataEntryWithDomainByHrefAsync deletes metadata from the given resource reference, depending on key provided as input
 // and returns a task.
-func (vcdClient *VCDClient) DeleteMetadataEntryByHrefAsync(href, key string) (Task, error) {
-	return deleteMetadata(&vcdClient.Client, href, key)
+func (vcdClient *VCDClient) DeleteMetadataEntryWithDomainByHrefAsync(href, key string, isSystem bool) (Task, error) {
+	return deleteMetadata(&vcdClient.Client, href, key, isSystem)
 }
 
-// DeleteMetadataEntryAsync deletes VM metadata associated to the input key and returns the task.
-func (vm *VM) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(vm.client, vm.VM.HREF, key)
+// DeleteMetadataEntryWithDomainAsync deletes VM metadata associated to the input key and returns the task.
+func (vm *VM) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
+	return deleteMetadata(vm.client, vm.VM.HREF, key, isSystem)
 }
 
 // DeleteMetadataEntryAsync deletes AdminVdc metadata associated to the input key and returns the task.
-func (adminVdc *AdminVdc) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(adminVdc.client, adminVdc.AdminVdc.HREF, key)
+func (adminVdc *AdminVdc) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
+	return deleteMetadata(adminVdc.client, adminVdc.AdminVdc.HREF, key, isSystem)
 }
 
 // DeleteMetadataEntryAsync deletes ProviderVdc metadata associated to the input key and returns the task.
 // Note: Requires system administrator privileges.
-func (providerVdc *ProviderVdc) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(providerVdc.client, providerVdc.ProviderVdc.HREF, key)
+func (providerVdc *ProviderVdc) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
+	return deleteMetadata(providerVdc.client, providerVdc.ProviderVdc.HREF, key, isSystem)
 }
 
 // DeleteMetadataEntryAsync deletes VApp metadata associated to the input key and returns the task.
-func (vapp *VApp) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(vapp.client, vapp.VApp.HREF, key)
+func (vapp *VApp) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
+	return deleteMetadata(vapp.client, vapp.VApp.HREF, key, isSystem)
 }
 
 // DeleteMetadataEntryAsync deletes VAppTemplate metadata associated to the input key and returns the task.
-func (vAppTemplate *VAppTemplate) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(vAppTemplate.client, vAppTemplate.VAppTemplate.HREF, key)
+func (vAppTemplate *VAppTemplate) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
+	return deleteMetadata(vAppTemplate.client, vAppTemplate.VAppTemplate.HREF, key, isSystem)
 }
 
 // DeleteMetadataEntryAsync deletes MediaRecord metadata associated to the input key and returns the task.
-func (mediaRecord *MediaRecord) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(mediaRecord.client, mediaRecord.MediaRecord.HREF, key)
+func (mediaRecord *MediaRecord) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
+	return deleteMetadata(mediaRecord.client, mediaRecord.MediaRecord.HREF, key, isSystem)
 }
 
 // DeleteMetadataEntryAsync deletes Media metadata associated to the input key and returns the task.
-func (media *Media) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(media.client, media.Media.HREF, key)
+func (media *Media) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
+	return deleteMetadata(media.client, media.Media.HREF, key, isSystem)
 }
 
 // DeleteMetadataEntryAsync deletes AdminCatalog metadata associated to the input key and returns the task.
-func (adminCatalog *AdminCatalog) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(adminCatalog.client, adminCatalog.AdminCatalog.HREF, key)
+func (adminCatalog *AdminCatalog) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
+	return deleteMetadata(adminCatalog.client, adminCatalog.AdminCatalog.HREF, key, isSystem)
 }
 
 // DeleteMetadataEntryAsync deletes AdminOrg metadata associated to the input key and returns the task.
-func (adminOrg *AdminOrg) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(adminOrg.client, adminOrg.AdminOrg.HREF, key)
+func (adminOrg *AdminOrg) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
+	return deleteMetadata(adminOrg.client, adminOrg.AdminOrg.HREF, key, isSystem)
 }
 
 // DeleteMetadataEntryAsync deletes Disk metadata associated to the input key and returns the task.
-func (disk *Disk) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(disk.client, disk.Disk.HREF, key)
+func (disk *Disk) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
+	return deleteMetadata(disk.client, disk.Disk.HREF, key, isSystem)
 }
 
 // DeleteMetadataEntryAsync deletes OrgVDCNetwork metadata associated to the input key and returns the task.
 // Note: Requires system administrator privileges.
-func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(orgVdcNetwork.client, getAdminURL(orgVdcNetwork.OrgVDCNetwork.HREF), key)
+func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
+	return deleteMetadata(orgVdcNetwork.client, getAdminURL(orgVdcNetwork.OrgVDCNetwork.HREF), key, isSystem)
 }
 
 // DeleteMetadataEntryAsync deletes CatalogItem metadata associated to the input key and returns the task.
-func (catalogItem *CatalogItem) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(catalogItem.client, catalogItem.CatalogItem.HREF, key)
+func (catalogItem *CatalogItem) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
+	return deleteMetadata(catalogItem.client, catalogItem.CatalogItem.HREF, key, isSystem)
 }
 
 // ------------------------------------------------------------------------------------------------
 // DELETE metadata
 // ------------------------------------------------------------------------------------------------
 
-// DeleteMetadataEntryByHref deletes metadata from the given resource reference, depending on key provided as input
+// DeleteMetadataEntryWithDomainByHref deletes metadata from the given resource reference, depending on key provided as input
 // and waits for the task to finish.
-func (vcdClient *VCDClient) DeleteMetadataEntryByHref(href, key string) error {
-	task, err := vcdClient.DeleteMetadataEntryByHrefAsync(href, key)
+func (vcdClient *VCDClient) DeleteMetadataEntryWithDomainByHref(href, key string, isSystem bool) error {
+	task, err := vcdClient.DeleteMetadataEntryWithDomainByHrefAsync(href, key, isSystem)
 	if err != nil {
 		return err
 	}
 	return task.WaitTaskCompletion()
 }
 
-// DeleteMetadataEntry deletes VM metadata associated to the input key and waits for the task to finish.
-func (vm *VM) DeleteMetadataEntry(key string) error {
-	return deleteMetadataAndWait(vm.client, vm.VM.HREF, key)
+// DeleteMetadataEntryWithDomain deletes VM metadata associated to the input key and waits for the task to finish.
+func (vm *VM) DeleteMetadataEntryWithDomain(key string, isSystem bool) error {
+	return deleteMetadataAndWait(vm.client, vm.VM.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntry deletes AdminVdc metadata associated to the input key and waits for the task to finish.
+// DeleteMetadataEntryWithDomain deletes AdminVdc metadata associated to the input key and waits for the task to finish.
 // Note: Requires system administrator privileges.
-func (adminVdc *AdminVdc) DeleteMetadataEntry(key string) error {
-	return deleteMetadataAndWait(adminVdc.client, getAdminURL(adminVdc.AdminVdc.HREF), key)
+func (adminVdc *AdminVdc) DeleteMetadataEntryWithDomain(key string, isSystem bool) error {
+	return deleteMetadataAndWait(adminVdc.client, getAdminURL(adminVdc.AdminVdc.HREF), key, isSystem)
 }
 
-// DeleteMetadataEntry deletes ProviderVdc metadata associated to the input key and waits for the task to finish.
+// DeleteMetadataEntryWithDomain deletes ProviderVdc metadata associated to the input key and waits for the task to finish.
 // Note: Requires system administrator privileges.
-func (providerVdc *ProviderVdc) DeleteMetadataEntry(key string) error {
-	return deleteMetadataAndWait(providerVdc.client, providerVdc.ProviderVdc.HREF, key)
+func (providerVdc *ProviderVdc) DeleteMetadataEntryWithDomain(key string, isSystem bool) error {
+	return deleteMetadataAndWait(providerVdc.client, providerVdc.ProviderVdc.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntry deletes VApp metadata associated to the input key and waits for the task to finish.
-func (vApp *VApp) DeleteMetadataEntry(key string) error {
-	return deleteMetadataAndWait(vApp.client, vApp.VApp.HREF, key)
+// DeleteMetadataEntryWithDomain deletes VApp metadata associated to the input key and waits for the task to finish.
+func (vApp *VApp) DeleteMetadataEntryWithDomain(key string, isSystem bool) error {
+	return deleteMetadataAndWait(vApp.client, vApp.VApp.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntry deletes VAppTemplate metadata associated to the input key and waits for the task to finish.
-func (vAppTemplate *VAppTemplate) DeleteMetadataEntry(key string) error {
-	return deleteMetadataAndWait(vAppTemplate.client, vAppTemplate.VAppTemplate.HREF, key)
+// DeleteMetadataEntryWithDomain deletes VAppTemplate metadata associated to the input key and waits for the task to finish.
+func (vAppTemplate *VAppTemplate) DeleteMetadataEntryWithDomain(key string, isSystem bool) error {
+	return deleteMetadataAndWait(vAppTemplate.client, vAppTemplate.VAppTemplate.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntry deletes MediaRecord metadata associated to the input key and waits for the task to finish.
-func (mediaRecord *MediaRecord) DeleteMetadataEntry(key string) error {
-	return deleteMetadataAndWait(mediaRecord.client, mediaRecord.MediaRecord.HREF, key)
+// DeleteMetadataEntryWithDomain deletes MediaRecord metadata associated to the input key and waits for the task to finish.
+func (mediaRecord *MediaRecord) DeleteMetadataEntryWithDomain(key string, isSystem bool) error {
+	return deleteMetadataAndWait(mediaRecord.client, mediaRecord.MediaRecord.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntry deletes Media metadata associated to the input key and waits for the task to finish.
-func (media *Media) DeleteMetadataEntry(key string) error {
-	return deleteMetadataAndWait(media.client, media.Media.HREF, key)
+// DeleteMetadataEntryWithDomain deletes Media metadata associated to the input key and waits for the task to finish.
+func (media *Media) DeleteMetadataEntryWithDomain(key string, isSystem bool) error {
+	return deleteMetadataAndWait(media.client, media.Media.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntry deletes AdminCatalog metadata associated to the input key and waits for the task to finish.
-func (adminCatalog *AdminCatalog) DeleteMetadataEntry(key string) error {
-	return deleteMetadataAndWait(adminCatalog.client, adminCatalog.AdminCatalog.HREF, key)
+// DeleteMetadataEntryWithDomain deletes AdminCatalog metadata associated to the input key and waits for the task to finish.
+func (adminCatalog *AdminCatalog) DeleteMetadataEntryWithDomain(key string, isSystem bool) error {
+	return deleteMetadataAndWait(adminCatalog.client, adminCatalog.AdminCatalog.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntry deletes AdminOrg metadata associated to the input key and waits for the task to finish.
-func (adminOrg *AdminOrg) DeleteMetadataEntry(key string) error {
-	return deleteMetadataAndWait(adminOrg.client, adminOrg.AdminOrg.HREF, key)
+// DeleteMetadataEntryWithDomain deletes AdminOrg metadata associated to the input key and waits for the task to finish.
+func (adminOrg *AdminOrg) DeleteMetadataEntryWithDomain(key string, isSystem bool) error {
+	return deleteMetadataAndWait(adminOrg.client, adminOrg.AdminOrg.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntry deletes Disk metadata associated to the input key and waits for the task to finish.
-func (disk *Disk) DeleteMetadataEntry(key string) error {
-	return deleteMetadataAndWait(disk.client, disk.Disk.HREF, key)
+// DeleteMetadataEntryWithDomain deletes Disk metadata associated to the input key and waits for the task to finish.
+func (disk *Disk) DeleteMetadataEntryWithDomain(key string, isSystem bool) error {
+	return deleteMetadataAndWait(disk.client, disk.Disk.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntry deletes OrgVDCNetwork metadata associated to the input key and waits for the task to finish.
+// DeleteMetadataEntryWithDomain deletes OrgVDCNetwork metadata associated to the input key and waits for the task to finish.
 // Note: Requires system administrator privileges.
-func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntry(key string) error {
-	return deleteMetadataAndWait(orgVdcNetwork.client, getAdminURL(orgVdcNetwork.OrgVDCNetwork.HREF), key)
+func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntryWithDomain(key string, isSystem bool) error {
+	return deleteMetadataAndWait(orgVdcNetwork.client, getAdminURL(orgVdcNetwork.OrgVDCNetwork.HREF), key, isSystem)
 }
 
-// DeleteMetadataEntry deletes CatalogItem metadata associated to the input key and waits for the task to finish.
-func (catalogItem *CatalogItem) DeleteMetadataEntry(key string) error {
-	return deleteMetadataAndWait(catalogItem.client, catalogItem.CatalogItem.HREF, key)
+// DeleteMetadataEntryWithDomain deletes CatalogItem metadata associated to the input key and waits for the task to finish.
+func (catalogItem *CatalogItem) DeleteMetadataEntryWithDomain(key string, isSystem bool) error {
+	return deleteMetadataAndWait(catalogItem.client, catalogItem.CatalogItem.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntry deletes OpenApiOrgVdcNetwork metadata associated to the input key and waits for the task to finish.
+// DeleteMetadataEntryWithDomain deletes OpenApiOrgVdcNetwork metadata associated to the input key and waits for the task to finish.
 // Note: It doesn't delete metadata from networks that belong to a VDC Group.
 // TODO: This function is currently using XML API underneath as OpenAPI metadata is still not supported.
-func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntry(key string) error {
+func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntryWithDomain(key string, isSystem bool) error {
 	href := fmt.Sprintf("%s/admin/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), extractUuid(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID))
-	task, err := deleteMetadata(openApiOrgVdcNetwork.client, href, key)
+	task, err := deleteMetadata(openApiOrgVdcNetwork.client, href, key, isSystem)
 	if err != nil {
 		return err
 	}
@@ -732,15 +732,20 @@ func mergeMetadataAndWait(client *Client, requestUri string, metadata map[string
 
 // deleteMetadata deletes metadata associated to the input key from an entity referenced by its URI, then returns the
 // task.
-func deleteMetadata(client *Client, requestUri string, key string) (Task, error) {
+func deleteMetadata(client *Client, requestUri string, key string, isSystem bool) (Task, error) {
 	apiEndpoint := urlParseRequestURI(requestUri)
-	apiEndpoint.Path += "/metadata/" + key
+	if isSystem {
+		apiEndpoint.Path += "/metadata/SYSTEM/" + key
+	} else {
+		apiEndpoint.Path += "/metadata/" + key
+	}
+
 	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodDelete, "", "error deleting metadata: %s", nil)
 }
 
 // deleteMetadata deletes metadata associated to the input key from an entity referenced by its URI.
-func deleteMetadataAndWait(client *Client, requestUri string, key string) error {
-	task, err := deleteMetadata(client, requestUri, key)
+func deleteMetadataAndWait(client *Client, requestUri string, key string, isSystem bool) error {
+	task, err := deleteMetadata(client, requestUri, key, isSystem)
 	if err != nil {
 		return err
 	}

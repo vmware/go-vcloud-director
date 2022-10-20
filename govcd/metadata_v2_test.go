@@ -165,10 +165,10 @@ func (vcd *TestVCD) TestAdminCatalogMetadata(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	adminCatalog, err := org.GetAdminCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	adminCatalog, err := org.GetAdminCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, false)
 	check.Assert(err, IsNil)
 	check.Assert(adminCatalog, NotNil)
-	check.Assert(adminCatalog.AdminCatalog.Name, Equals, vcd.config.VCD.Catalog.Name)
+	check.Assert(adminCatalog.AdminCatalog.Name, Equals, vcd.config.VCD.Catalog.NsxtBackedCatalogName)
 
 	testMetadataCRUDActions(adminCatalog, check, func(testCase metadataTest) {
 		testCatalogMetadata(vcd, check, testCase)
@@ -180,10 +180,10 @@ func testCatalogMetadata(vcd *TestVCD, check *C, testCase metadataTest) {
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
-	check.Assert(catalog.Catalog.Name, Equals, vcd.config.VCD.Catalog.Name)
+	check.Assert(catalog.Catalog.Name, Equals, vcd.config.VCD.Catalog.NsxtBackedCatalogName)
 
 	metadata, err := catalog.GetMetadata()
 	check.Assert(err, IsNil)
@@ -270,12 +270,13 @@ type metadataCompatible interface {
 	GetMetadata() (*types.Metadata, error)
 	AddMetadataEntryWithVisibility(key, value, typedValue, visibility string, isSystem bool) error
 	MergeMetadataWithMetadataValues(metadata map[string]types.MetadataValue) error
-	DeleteMetadataEntry(key string) error
+	DeleteMetadataEntryWithDomain(key string, isSystem bool) error
 }
 
 type metadataTest struct {
 	Key                   string
 	Value                 string
+	UpdatedValue          string
 	Type                  string
 	Visibility            string
 	IsSystem              bool
@@ -297,6 +298,7 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraReadSte
 		{
 			Key:                   "stringKey",
 			Value:                 "stringValue",
+			UpdatedValue:          "stringValueUpdated",
 			Type:                  types.MetadataStringValue,
 			Visibility:            types.MetadataReadWriteVisibility,
 			IsSystem:              false,
@@ -313,6 +315,7 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraReadSte
 		{
 			Key:                   "numberKey",
 			Value:                 "1",
+			UpdatedValue:          "99",
 			Type:                  types.MetadataNumberValue,
 			Visibility:            types.MetadataReadWriteVisibility,
 			IsSystem:              false,
@@ -329,6 +332,7 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraReadSte
 		{
 			Key:                   "boolKey",
 			Value:                 "true",
+			UpdatedValue:          "false",
 			Type:                  types.MetadataBooleanValue,
 			Visibility:            types.MetadataReadWriteVisibility,
 			IsSystem:              false,
@@ -345,6 +349,7 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraReadSte
 		{
 			Key:                   "dateKey",
 			Value:                 "2022-10-05T13:44:00.000Z",
+			UpdatedValue:          "2022-12-05T13:44:00.000Z",
 			Type:                  types.MetadataDateTimeValue,
 			Visibility:            types.MetadataReadWriteVisibility,
 			IsSystem:              false,
@@ -353,6 +358,7 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraReadSte
 		{
 			Key:                   "hidden",
 			Value:                 "hiddenValue",
+			UpdatedValue:          "hiddenValueUpdated",
 			Type:                  types.MetadataStringValue,
 			Visibility:            types.MetadataHiddenVisibility,
 			IsSystem:              true,
@@ -361,6 +367,7 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraReadSte
 		{
 			Key:                   "readOnly",
 			Value:                 "readOnlyValue",
+			UpdatedValue:          "readOnlyValueUpdated",
 			Type:                  types.MetadataStringValue,
 			Visibility:            types.MetadataReadOnlyVisibility,
 			IsSystem:              true,
@@ -374,22 +381,6 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraReadSte
 			IsSystem:              true,
 			ExpectErrorOnFirstAdd: true, // types.MetadataReadWriteVisibility can't have isSystem=true
 		},
-		{
-			Key:                   "readOnlyKey",
-			Value:                 "butPlacedInGeneral",
-			Type:                  types.MetadataStringValue,
-			Visibility:            types.MetadataReadOnlyVisibility,
-			IsSystem:              false,
-			ExpectErrorOnFirstAdd: true, // types.MetadataReadOnlyVisibility can't have isSystem=false
-		},
-		{
-			Key:                   "hiddenKey",
-			Value:                 "butPlacedInGeneral",
-			Type:                  types.MetadataStringValue,
-			Visibility:            types.MetadataHiddenVisibility,
-			IsSystem:              false,
-			ExpectErrorOnFirstAdd: true, // types.MetadataHiddenVisibility can't have isSystem=false
-		},
 	}
 
 	for _, testCase := range testCases {
@@ -397,7 +388,7 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraReadSte
 		err = resource.AddMetadataEntryWithVisibility(testCase.Key, testCase.Value, testCase.Type, testCase.Visibility, testCase.IsSystem)
 		if testCase.ExpectErrorOnFirstAdd {
 			check.Assert(err, NotNil)
-			return
+			continue
 		}
 		check.Assert(err, IsNil)
 
@@ -412,6 +403,10 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraReadSte
 			extraReadStep(testCase)
 		}
 
+		domain := "GENERAL"
+		if testCase.IsSystem {
+			domain = "SYSTEM"
+		}
 		// Merge updated metadata with a new entry
 		err = resource.MergeMetadataWithMetadataValues(map[string]types.MetadataValue{
 			"mergedKey": {
@@ -421,8 +416,12 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraReadSte
 				},
 			},
 			testCase.Key: {
+				Domain: &types.MetadataDomainTag{
+					Visibility: testCase.Visibility,
+					Domain:     domain,
+				},
 				TypedValue: &types.MetadataTypedValue{
-					Value:   testCase.Value + "-Merged",
+					Value:   testCase.UpdatedValue,
 					XsiType: testCase.Type,
 				},
 			},
@@ -439,13 +438,13 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraReadSte
 			case "mergedKey":
 				check.Assert(entry.TypedValue.Value, Equals, "mergedValue")
 			case testCase.Key:
-				check.Assert(entry.TypedValue.Value, Equals, testCase.Value+"-Merged")
+				check.Assert(entry.TypedValue.Value, Equals, testCase.UpdatedValue)
 			}
 		}
 
-		err = resource.DeleteMetadataEntry("mergedKey")
+		err = resource.DeleteMetadataEntryWithDomain("mergedKey", false)
 		check.Assert(err, IsNil)
-		err = resource.DeleteMetadataEntry(testCase.Key)
+		err = resource.DeleteMetadataEntryWithDomain(testCase.Key, testCase.IsSystem)
 		check.Assert(err, IsNil)
 
 		// Check if metadata was deleted correctly
@@ -456,6 +455,7 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraReadSte
 	}
 }
 
+// assertMetadata performs a common set of assertions on the given metadata
 func assertMetadata(check *C, given *types.Metadata, expected metadataTest, expectedMetadataEntries int) {
 	check.Assert(given, NotNil)
 	check.Assert(len(given.MetadataEntry), Equals, expectedMetadataEntries)
@@ -470,15 +470,17 @@ func assertMetadata(check *C, given *types.Metadata, expected metadataTest, expe
 	check.Assert(foundEntry.TypedValue.Value, Equals, expected.Value)
 	check.Assert(foundEntry.TypedValue.XsiType, Equals, expected.Type)
 	if expected.IsSystem {
+		// If it's on SYSTEM domain, VCD should return the Domain subtype always populated
 		check.Assert(foundEntry.Domain, NotNil)
 		check.Assert(foundEntry.Domain.Domain, Equals, "SYSTEM")
 		check.Assert(foundEntry.Domain.Visibility, Equals, expected.Visibility)
 	} else {
 		if expected.Visibility == types.MetadataReadWriteVisibility {
+			// If it's on GENERAL domain, and the entry is Read/Write, VCD doesn't return the Domain subtype.
 			check.Assert(foundEntry.Domain, IsNil)
 		} else {
 			check.Assert(foundEntry.Domain.Domain, Equals, "GENERAL")
-			check.Assert(foundEntry.Domain.Visibility, Equals, types.MetadataReadWriteVisibility)
+			check.Assert(foundEntry.Domain.Visibility, Equals, expected.Visibility)
 		}
 	}
 }
