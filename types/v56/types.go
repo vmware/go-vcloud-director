@@ -1466,6 +1466,9 @@ type MetadataTypedValue struct {
 	Value   string `xml:"Value"`
 }
 
+// Deprecated: Use MetadataTypedValue instead
+type TypedValue = MetadataTypedValue
+
 // Metadata is the user-defined metadata associated with an object.
 // Type: MetadataType
 // Namespace: http://www.vmware.com/vcloud/v1.5
