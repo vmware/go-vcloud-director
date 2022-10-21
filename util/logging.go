@@ -152,12 +152,6 @@ func SetLog() {
 	} else {
 		Logger = newLogger(ApiLogFileName)
 	}
-	if len(skipTags) > 0 {
-		Logger.Printf("### WILL SKIP THE FOLLOWING TAGS: %+v", skipTags)
-	}
-	if len(apiLogFunctions) > 0 {
-		Logger.Printf("### WILL ONLY INCLUDE API LOGS FROM THE FOLLOWING FUNCTIONS: %+v", apiLogFunctions)
-	}
 }
 
 // hideSensitive hides passwords, tokens, and certificate details

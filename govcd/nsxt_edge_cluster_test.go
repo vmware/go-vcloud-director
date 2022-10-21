@@ -23,10 +23,16 @@ func (vcd *TestVCD) Test_GetAllNsxtEdgeClusters(check *C) {
 	nsxtVdc, err := vcd.org.GetVDCByNameOrId(vcd.config.VCD.Nsxt.Vdc, true)
 	check.Assert(err, IsNil)
 
-	tier0Router, err := nsxtVdc.GetAllNsxtEdgeClusters(nil)
+	edgeClusters, err := nsxtVdc.GetAllNsxtEdgeClusters(nil)
 	check.Assert(err, IsNil)
-	check.Assert(tier0Router, NotNil)
-	check.Assert(len(tier0Router) > 0, Equals, true)
+	check.Assert(edgeClusters, NotNil)
+	check.Assert(len(edgeClusters) > 0, Equals, true)
+
+	allEdgeClusters, err := vcd.client.GetAllNsxtEdgeClusters(nil)
+	check.Assert(err, IsNil)
+	check.Assert(allEdgeClusters, NotNil)
+	check.Assert(len(allEdgeClusters) > 0, Equals, true)
+
 }
 
 func (vcd *TestVCD) Test_GetNsxtEdgeClusterByName(check *C) {

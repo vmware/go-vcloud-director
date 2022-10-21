@@ -122,6 +122,10 @@ var endpointElevatedApiVersions = map[string][]string{
 		//"35.0", // Basic minimum required version
 		"37.0", // Deprecates LicenseType in favor of SupportedFeatureSet
 	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile: {
+		//"36.0", // Introduced support
+		"36.2", //
+	},
 }
 
 // checkOpenApiEndpointCompatibility checks if VCD version (to which the client is connected) is sufficient to work with
