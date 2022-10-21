@@ -1,7 +1,5 @@
 package types
 
-import "encoding/json"
-
 // OpenAPIEdgeGateway structure supports marshalling both - NSX-V and NSX-T edge gateways as returned by OpenAPI
 // endpoint (cloudapi/1.0.0edgeGateways/), but the endpoint only allows users to create NSX-T edge gateways.
 type OpenAPIEdgeGateway struct {
@@ -1492,94 +1490,4 @@ type VdcNetworkProfile struct {
 type VdcNetworkProfileServicesEdgeCluster struct {
 	BackingID      string            `json:"backingId"`
 	EdgeClusterRef *OpenApiReference `json:"edgeClusterRef,omitempty"`
-}
-
-// OpenApiReferenceNullOnEmpty is like OpenApiReference but its Marshalling behavior is altered
-// using pointer receiver MarshalJSON which implements Marshaler interface and is able to modify
-// Marshaling behavior for this type to match VCD API requirement
-//
-// There is a need to handle 3 cases:
-// 1. Be able to send an OpenApi reference so that it can be set on VCD (normal behavior when values
-// are properly set)
-//
-// 2. Be able to send JSON "null" value for some reference to remove their configuration from VCD
-// (this is where default implementation falls short, and this type with modified behavior is
-// required)
-//
-// 3. Be able to avoid sending a value at all  (omitempty tag). Mainly to support scenario where
-// particular VCD version  did not yet support a field and sending it could cause VCD validation
-// error
-//
-// Below is an example of how it would work in a sample structure:
-//
-// Given a sample type:
-//
-//	type VdcNetworkProfile struct {
-//	  PrimaryEdgeCluster                   *OpenApiReference            `json:"primaryEdgeCluster,omitempty"`
-//	  VappNetworkSegmentProfileTemplateRef *OpenApiReferenceNullOnEmpty `json:"vappNetworkSegmentProfileTemplateRef,omitempty"`
-//	}
-//
-// Case 1 - Send OpenAPI references (works with both types OpenApiReference and OpenApiReferenceNullOnEmpty)
-// Type definition:
-//
-//	t := &VdcNetworkProfile{
-//		PrimaryEdgeCluster: &types.OpenApiReference{
-//			Name: "edge-cluster-1",
-//			ID: "XXXXXXXX",
-//		},
-//		VappNetworkSegmentProfileTemplateRef: &types.OpenApiReferenceNullOnEmpty{
-//			Name: "manual-template-1",
-//			ID: "urn:vcloud:segmentProfileTemplate:fbf270e4-ae1c-4c46-ae78-cca13c75eb75",
-//		}
-//	}
-//
-// Marshals to:
-//
-//	{
-//		"primaryEdgeCluster": {
-//			"name": "edge-cluster-1",
-//			"id"  : "XXXXXXXX",
-//	 },
-//		"vdcNetworkSegmentProfileTemplateRef": {
-//			"name": "manual-template-1",
-//			"id":   "urn:vcloud:segmentProfileTemplate:fbf270e4-ae1c-4c46-ae78-cca13c75eb75"
-//		}
-//	}
-//
-// Case 2 - send JSON "null" value for some reference to remove their configuration from VCD (does not work with OpenApiReference type)
-// Type definition:
-//
-//	t := &VdcNetworkProfile{
-//		PrimaryEdgeCluster: &types.OpenApiReference{},
-//		VappNetworkSegmentProfileTemplateRef: &types.OpenApiReferenceNullOnEmpty{}
-//	}
-//
-// Marshals to:
-//
-//	{
-//		"primaryEdgeCluster" : {},                    <----------- This is the part that makes VCD validation break
-//		"vdcNetworkSegmentProfileTemplateRef": null   <----------- `null` works fine and removes value from configuration
-//	}
-//
-// Case 3 - Do not send value at all using `omitempty` (to support VCD versions that don't have this field yet)
-// Type definition:
-// t := &VdcNetworkProfile{}
-//
-// Marshals to:
-// {}
-type OpenApiReferenceNullOnEmpty struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-// MarshalJSON handles marshaling a bit differently than original json.Marshal. This function is
-// automatically invoked by json.Marshal as it implements Marshaler interface It check of both `ID“
-// and `Name` fields are empty and then immediatelly returns 'null' while Go native Marshaller would
-// return empty string object {}
-func (o *OpenApiReferenceNullOnEmpty) MarshalJSON() ([]byte, error) {
-	if o.ID == "" && o.Name == "" {
-		return []byte("null"), nil
-	}
-	type ref2 OpenApiReferenceNullOnEmpty
-	return json.Marshal((*ref2)(o))
 }

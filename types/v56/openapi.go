@@ -216,16 +216,6 @@ type OpenApiReference struct {
 	ID   string `json:"id,omitempty"`
 }
 
-// OpenApiReferenceEmpty is like OpenApiReference but it does not have `omitempty` tags and would
-// still be sent if no values are specified.
-//
-// This is helpful in strucutres which use `null` value to ignore the change for particular field,
-// but accepts empty values to unset it
-type OpenApiReferenceEmpty struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
 type OpenApiReferences []OpenApiReference
 
 // VdcCapability can be used to determine VDC capabilities, including such:
