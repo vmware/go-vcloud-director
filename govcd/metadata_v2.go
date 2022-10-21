@@ -481,59 +481,59 @@ func (vm *VM) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Tas
 	return deleteMetadata(vm.client, vm.VM.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntryAsync deletes AdminVdc metadata associated to the input key and returns the task.
+// DeleteMetadataEntryWithDomainAsync deletes AdminVdc metadata associated to the input key and returns the task.
 func (adminVdc *AdminVdc) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
 	return deleteMetadata(adminVdc.client, adminVdc.AdminVdc.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntryAsync deletes ProviderVdc metadata associated to the input key and returns the task.
+// DeleteMetadataEntryWithDomainAsync deletes ProviderVdc metadata associated to the input key and returns the task.
 // Note: Requires system administrator privileges.
 func (providerVdc *ProviderVdc) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
 	return deleteMetadata(providerVdc.client, providerVdc.ProviderVdc.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntryAsync deletes VApp metadata associated to the input key and returns the task.
+// DeleteMetadataEntryWithDomainAsync deletes VApp metadata associated to the input key and returns the task.
 func (vapp *VApp) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
 	return deleteMetadata(vapp.client, vapp.VApp.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntryAsync deletes VAppTemplate metadata associated to the input key and returns the task.
+// DeleteMetadataEntryWithDomainAsync deletes VAppTemplate metadata associated to the input key and returns the task.
 func (vAppTemplate *VAppTemplate) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
 	return deleteMetadata(vAppTemplate.client, vAppTemplate.VAppTemplate.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntryAsync deletes MediaRecord metadata associated to the input key and returns the task.
+// DeleteMetadataEntryWithDomainAsync deletes MediaRecord metadata associated to the input key and returns the task.
 func (mediaRecord *MediaRecord) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
 	return deleteMetadata(mediaRecord.client, mediaRecord.MediaRecord.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntryAsync deletes Media metadata associated to the input key and returns the task.
+// DeleteMetadataEntryWithDomainAsync deletes Media metadata associated to the input key and returns the task.
 func (media *Media) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
 	return deleteMetadata(media.client, media.Media.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntryAsync deletes AdminCatalog metadata associated to the input key and returns the task.
+// DeleteMetadataEntryWithDomainAsync deletes AdminCatalog metadata associated to the input key and returns the task.
 func (adminCatalog *AdminCatalog) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
 	return deleteMetadata(adminCatalog.client, adminCatalog.AdminCatalog.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntryAsync deletes AdminOrg metadata associated to the input key and returns the task.
+// DeleteMetadataEntryWithDomainAsync deletes AdminOrg metadata associated to the input key and returns the task.
 func (adminOrg *AdminOrg) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
 	return deleteMetadata(adminOrg.client, adminOrg.AdminOrg.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntryAsync deletes Disk metadata associated to the input key and returns the task.
+// DeleteMetadataEntryWithDomainAsync deletes Disk metadata associated to the input key and returns the task.
 func (disk *Disk) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
 	return deleteMetadata(disk.client, disk.Disk.HREF, key, isSystem)
 }
 
-// DeleteMetadataEntryAsync deletes OrgVDCNetwork metadata associated to the input key and returns the task.
+// DeleteMetadataEntryWithDomainAsync deletes OrgVDCNetwork metadata associated to the input key and returns the task.
 // Note: Requires system administrator privileges.
 func (orgVdcNetwork *OrgVDCNetwork) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
 	return deleteMetadata(orgVdcNetwork.client, getAdminURL(orgVdcNetwork.OrgVDCNetwork.HREF), key, isSystem)
 }
 
-// DeleteMetadataEntryAsync deletes CatalogItem metadata associated to the input key and returns the task.
+// DeleteMetadataEntryWithDomainAsync deletes CatalogItem metadata associated to the input key and returns the task.
 func (catalogItem *CatalogItem) DeleteMetadataEntryWithDomainAsync(key string, isSystem bool) (Task, error) {
 	return deleteMetadata(catalogItem.client, catalogItem.CatalogItem.HREF, key, isSystem)
 }
