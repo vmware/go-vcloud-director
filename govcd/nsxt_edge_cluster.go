@@ -90,9 +90,16 @@ func (vdc *Vdc) GetAllNsxtEdgeClusters(queryParameters url.Values) ([]*NsxtEdgeC
 
 // GetAllNsxtEdgeClusters retrieves all NSX-T Edge Clusters in the system
 //
-// orgVdcId - | The filter orgVdcId must be set equal to the id of the NSX-T backed Org vDC for which we want to get the edge clusters. Example: (orgVdcId==urn:vcloud:vdc:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-// vdcGroupId - | The filter vdcGroupId must be set equal to the id of the NSX-T VDC Group for which we want to get the edge clusters. Example: (vdcGroupId==urn:vcloud:vdcGroup:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-// pvdcId - | The filter pvdcId must be set equal to the id of the NSX-T backed Provider VDC for which we want to get the edge clusters. pvdcId filter is supported from version 35.2 Example: (pvdcId==urn:vcloud:providervdc:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+// A filter is mandatory as otherwise request will fail
+// orgVdcId - | The filter orgVdcId must be set equal to the id of the NSX-T backed Org vDC for
+// which we want to get the edge clusters. Example:
+// (orgVdcId==urn:vcloud:vdc:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+// vdcGroupId - | The filter vdcGroupId must be set equal to the id of the NSX-T VDC Group for which
+// we want to get the edge clusters. Example:
+// (vdcGroupId==urn:vcloud:vdcGroup:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+// pvdcId - | The filter pvdcId must be set equal to the id of the NSX-T backed Provider VDC for
+// which we want to get the edge clusters. pvdcId filter is supported from version 35.2 Example:
+// (pvdcId==urn:vcloud:providervdc:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
 func (vcdClient *VCDClient) GetAllNsxtEdgeClusters(queryParameters url.Values) ([]*NsxtEdgeCluster, error) {
 	return getAllNsxtEdgeClusters(&vcdClient.Client, queryParameters)
 }

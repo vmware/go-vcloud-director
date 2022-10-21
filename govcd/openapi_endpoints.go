@@ -124,7 +124,7 @@ var endpointElevatedApiVersions = map[string][]string{
 	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile: {
 		//"36.0", // Introduced support
-		"36.2", //
+		"36.2", // 2 additional fields vappNetworkSegmentProfileTemplateRef and vdcNetworkSegmentProfileTemplateRef added
 	},
 }
 
