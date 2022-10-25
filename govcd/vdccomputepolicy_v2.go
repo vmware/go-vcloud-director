@@ -17,6 +17,7 @@ import (
 // VdcComputePolicyV2 defines a VDC Compute Policy, which can be a VM Sizing Policy, a VM Placement Policy or a vGPU Policy.
 type VdcComputePolicyV2 struct {
 	VdcComputePolicyV2 *types.VdcComputePolicyV2
+	Href               string
 	client             *Client
 }
 
@@ -45,6 +46,7 @@ func getVdcComputePolicyV2ById(client *VCDClient, id string) (*VdcComputePolicyV
 
 	vdcComputePolicy := &VdcComputePolicyV2{
 		VdcComputePolicyV2: &types.VdcComputePolicyV2{},
+		Href:								urlRef.String(),
 		client:             &client.Client,
 	}
 
