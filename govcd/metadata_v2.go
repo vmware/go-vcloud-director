@@ -671,11 +671,12 @@ func addMetadata(client *Client, requestUri, key, value, typedValue, visibility 
 		}
 	}
 
+	domain := newMetadata.Domain.Visibility
 	task, err := client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut, types.MimeMetaDataValue, "error adding metadata: %s", newMetadata)
 
 	// Workaround for ugly error returned by VCD: "API Error: 500: [ <uuid> ] visibility"
 	if err != nil && strings.HasSuffix(err.Error(), "visibility") {
-		err = fmt.Errorf("error adding metadata with key %s: visibility cannot be %s when domain is SYSTEM", key, types.MetadataReadWriteVisibility)
+		err = fmt.Errorf("error adding metadata with key %s: visibility cannot be %s when domain is %s", key, visibility, domain)
 	}
 	return task, err
 }
