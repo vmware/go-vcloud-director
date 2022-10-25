@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/http"
+	"strings"
 )
 
 // NOTE: This "v2" is not v2 in terms of API versioning, it's just a new way of handling metadata.
@@ -646,11 +647,6 @@ func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
 // In terms of typedValues, that must be one of:
 // types.MetadataStringValue, types.MetadataNumberValue, types.MetadataDateTimeValue and types.MetadataBooleanValue.
 func addMetadata(client *Client, requestUri, key, value, typedValue, visibility string, isSystem bool) (Task, error) {
-
-	if isSystem && visibility == types.MetadataReadWriteVisibility {
-		return Task{}, fmt.Errorf("visibility cannot be %s when domain is SYSTEM", types.MetadataReadWriteVisibility)
-	}
-
 	apiEndpoint := urlParseRequestURI(requestUri)
 	newMetadata := &types.MetadataValue{
 		Xmlns: types.XMLNamespaceVCloud,
@@ -675,7 +671,13 @@ func addMetadata(client *Client, requestUri, key, value, typedValue, visibility 
 		}
 	}
 
-	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut, types.MimeMetaDataValue, "error adding metadata: %s", newMetadata)
+	task, err := client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPut, types.MimeMetaDataValue, "error adding metadata: %s", newMetadata)
+
+	// Workaround for ugly error returned by VCD: "API Error: 500: [ <uuid> ] visibility"
+	if err != nil && strings.HasSuffix(err.Error(), "visibility") {
+		err = fmt.Errorf("error adding metadata with key %s: visibility cannot be %s when domain is SYSTEM", key, types.MetadataReadWriteVisibility)
+	}
+	return task, err
 }
 
 // addMetadataAndWait adds metadata to an entity and waits for the task completion.
