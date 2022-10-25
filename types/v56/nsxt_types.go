@@ -1455,9 +1455,8 @@ type EdgeBgpConfigVersion struct {
 
 // VdcNetworkProfile defines a VDC Network Profile.
 //
-// All fields are optional. They have `omitempty` to ignore overriding values for some fields. In
-// case there is a need to unset particular value - one can send empty `OpenApiReferenceEmpty` which
-// does not have `omitempty` on its fields.
+// All fields are optional, but omiting them will reset value. The general approach while updating
+// VdcNetworkProfile should be to retrieve existing configuration and mutate it.
 type VdcNetworkProfile struct {
 	// PrimaryEdgeCluster defines NSX-V Edge Cluster where the primary appliance for an NSX-V Edge
 	// Gateway will be deployed. (NSX-V only)
