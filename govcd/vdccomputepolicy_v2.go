@@ -46,7 +46,7 @@ func getVdcComputePolicyV2ById(client *VCDClient, id string) (*VdcComputePolicyV
 
 	vdcComputePolicy := &VdcComputePolicyV2{
 		VdcComputePolicyV2: &types.VdcComputePolicyV2{},
-		Href:								urlRef.String(),
+		Href:               urlRef.String(),
 		client:             &client.Client,
 	}
 
