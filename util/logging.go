@@ -103,10 +103,6 @@ var (
 	hashLine   string = strings.Repeat("#", lineLength)
 )
 
-func init() {
-	InitLogging()
-}
-
 // TogglePanicEmptyUserAgent allows to enable Panic in test if HTTP User-Agent is missing. This
 // generally is useful in tests and is off by default.
 func TogglePanicEmptyUserAgent(willPanic bool) {
@@ -155,6 +151,12 @@ func SetLog() {
 		}
 	} else {
 		Logger = newLogger(ApiLogFileName)
+	}
+	if len(skipTags) > 0 {
+		Logger.Printf("### WILL SKIP THE FOLLOWING TAGS: %+v", skipTags)
+	}
+	if len(apiLogFunctions) > 0 {
+		Logger.Printf("### WILL ONLY INCLUDE API LOGS FROM THE FOLLOWING FUNCTIONS: %+v", apiLogFunctions)
 	}
 }
 
@@ -411,6 +413,10 @@ func InitLogging() {
 	}
 
 	SetLog()
+}
+
+func init() {
+	InitLogging()
 }
 
 // Returns the name of the function that called the
