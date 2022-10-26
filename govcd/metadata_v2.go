@@ -118,7 +118,7 @@ func (vcdClient *VCDClient) AddMetadataEntryWithVisibilityByHrefAsync(href, key,
 }
 
 // AddMetadataEntryWithVisibilityAsync adds metadata to the given VM with the given key, value, type and visibility
-//// and returns the task.
+// // and returns the task.
 func (vm *VM) AddMetadataEntryWithVisibilityAsync(key, value, typedValue, visibility string, isSystem bool) (Task, error) {
 	return addMetadata(vm.client, vm.VM.HREF, key, value, typedValue, visibility, isSystem)
 }
