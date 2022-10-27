@@ -12,7 +12,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// TODO: All functions here are deprecated in favor of those present in "metadata_v2". Remove this file once go-vcloud-director v3.0 is released.
+// All functions here should not be used as they are deprecated in favor of those present in "metadata_v2".
+// Remove this file once go-vcloud-director v3.0 is released.
 
 // AddMetadataEntryByHref adds metadata typedValue and key/value pair provided as input to the given resource reference,
 // then waits for the task to finish.

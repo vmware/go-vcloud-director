@@ -11,8 +11,14 @@ import (
 	"strings"
 )
 
-// NOTE: This "v2" is not v2 in terms of API versioning, it's just a new way of handling metadata.
-// The idea is that once go-vcloud-director 3.0 is released, one can just remove "v1".
+// NOTE: This "v2" is not v2 in terms of API versioning, it's just a way to separate the functions that handle
+// metadata in a complete way (v2, this file) and the deprecated functions that were incomplete (v1, they lacked
+// "visibility" and "domain" handling).
+//
+// The idea is that once a new major version of go-vcloud-director is released, one can just remove "v1" file and perform
+// a minor refactoring of the code here (probably renaming functions). Also, the code in "v2" is organized differently,
+// as this is classified using "CRUD blocks" (meaning that all Create functions are together, same for Read... etc),
+// which makes the code more readable.
 
 // ------------------------------------------------------------------------------------------------
 // GET metadata
