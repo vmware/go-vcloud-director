@@ -21,7 +21,101 @@ import (
 // which makes the code more readable.
 
 // ------------------------------------------------------------------------------------------------
-// GET metadata
+// GET metadata by key
+// ------------------------------------------------------------------------------------------------
+
+// GetMetadataByKeyAndHref returns metadata from the given resource reference, corresponding to the given key and domain.
+func (vcdClient *VCDClient) GetMetadataByKeyAndHref(href, key string, isSystem bool) (*types.MetadataValue, error) {
+	return getMetadataByKey(&vcdClient.Client, href, key, isSystem)
+}
+
+// GetMetadataByKey returns VM metadata corresponding to the given key and domain.
+func (vm *VM) GetMetadataByKey(key string, isSystem bool) (*types.MetadataValue, error) {
+	return getMetadataByKey(vm.client, vm.VM.HREF, key, isSystem)
+}
+
+// GetMetadataByKey returns VDC metadata corresponding to the given key and domain.
+func (vdc *Vdc) GetMetadataByKey(key string, isSystem bool) (*types.MetadataValue, error) {
+	return getMetadataByKey(vdc.client, vdc.Vdc.HREF, key, isSystem)
+}
+
+// GetMetadataByKey returns AdminVdc metadata corresponding to the given key and domain.
+func (adminVdc *AdminVdc) GetMetadataByKey(key string, isSystem bool) (*types.MetadataValue, error) {
+	return getMetadataByKey(adminVdc.client, adminVdc.AdminVdc.HREF, key, isSystem)
+}
+
+// GetMetadataByKey returns ProviderVdc metadata corresponding to the given key and domain.
+// Note: Requires system administrator privileges.
+func (providerVdc *ProviderVdc) GetMetadataByKey(key string, isSystem bool) (*types.MetadataValue, error) {
+	return getMetadataByKey(providerVdc.client, providerVdc.ProviderVdc.HREF, key, isSystem)
+}
+
+// GetMetadataByKey returns VApp metadata corresponding to the given key and domain.
+func (vapp *VApp) GetMetadataByKey(key string, isSystem bool) (*types.MetadataValue, error) {
+	return getMetadataByKey(vapp.client, vapp.VApp.HREF, key, isSystem)
+}
+
+// GetMetadataByKey returns VAppTemplate metadata corresponding to the given key and domain.
+func (vAppTemplate *VAppTemplate) GetMetadataByKey(key string, isSystem bool) (*types.MetadataValue, error) {
+	return getMetadataByKey(vAppTemplate.client, vAppTemplate.VAppTemplate.HREF, key, isSystem)
+}
+
+// GetMetadataByKey returns MediaRecord metadata corresponding to the given key and domain.
+func (mediaRecord *MediaRecord) GetMetadataByKey(key string, isSystem bool) (*types.MetadataValue, error) {
+	return getMetadataByKey(mediaRecord.client, mediaRecord.MediaRecord.HREF, key, isSystem)
+}
+
+// GetMetadataByKey returns Media metadata corresponding to the given key and domain.
+func (media *Media) GetMetadataByKey(key string, isSystem bool) (*types.MetadataValue, error) {
+	return getMetadataByKey(media.client, media.Media.HREF, key, isSystem)
+}
+
+// GetMetadataByKey returns Catalog metadata corresponding to the given key and domain.
+func (catalog *Catalog) GetMetadataByKey(key string, isSystem bool) (*types.MetadataValue, error) {
+	return getMetadataByKey(catalog.client, catalog.Catalog.HREF, key, isSystem)
+}
+
+// GetMetadataByKey returns AdminCatalog metadata corresponding to the given key and domain.
+func (adminCatalog *AdminCatalog) GetMetadataByKey(key string, isSystem bool) (*types.MetadataValue, error) {
+	return getMetadataByKey(adminCatalog.client, adminCatalog.AdminCatalog.HREF, key, isSystem)
+}
+
+// GetMetadataByKey returns the Org metadata corresponding to the given key and domain.
+func (org *Org) GetMetadataByKey(key string, isSystem bool) (*types.MetadataValue, error) {
+	return getMetadataByKey(org.client, org.Org.HREF, key, isSystem)
+}
+
+// GetMetadataByKey returns the AdminOrg metadata corresponding to the given key and domain.
+// Note: Requires system administrator privileges.
+func (adminOrg *AdminOrg) GetMetadataByKey(key string, isSystem bool) (*types.MetadataValue, error) {
+	return getMetadataByKey(adminOrg.client, adminOrg.AdminOrg.HREF, key, isSystem)
+}
+
+// GetMetadataByKey returns the metadata corresponding to the given key and domain.
+func (disk *Disk) GetMetadataByKey(key string, isSystem bool) (*types.MetadataValue, error) {
+	return getMetadataByKey(disk.client, disk.Disk.HREF, key, isSystem)
+}
+
+// GetMetadataByKey returns OrgVDCNetwork metadata corresponding to the given key and domain.
+func (orgVdcNetwork *OrgVDCNetwork) GetMetadataByKey(key string, isSystem bool) (*types.MetadataValue, error) {
+	return getMetadataByKey(orgVdcNetwork.client, orgVdcNetwork.OrgVDCNetwork.HREF, key, isSystem)
+}
+
+// GetMetadataByKey returns CatalogItem metadata corresponding to the given key and domain.
+func (catalogItem *CatalogItem) GetMetadataByKey(key string, isSystem bool) (*types.MetadataValue, error) {
+	return getMetadataByKey(catalogItem.client, catalogItem.CatalogItem.HREF, key, isSystem)
+}
+
+// GetMetadataByKey returns OpenApiOrgVdcNetwork metadata corresponding to the given key and domain.
+// NOTE: This function cannot retrieve metadata if the network belongs to a VDC Group.
+// TODO: This function is currently using XML API underneath as OpenAPI metadata is still not supported.
+func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) GetMetadataByKey(key string, isSystem bool) (*types.MetadataValue, error) {
+	href := fmt.Sprintf("%s/network/%s", openApiOrgVdcNetwork.client.VCDHREF.String(), extractUuid(openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.ID))
+	return getMetadataByKey(openApiOrgVdcNetwork.client, href, key, isSystem)
+}
+
+// ------------------------------------------------------------------------------------------------
+// GET all metadata
 // ------------------------------------------------------------------------------------------------
 
 // GetMetadataByHref returns metadata from the given resource reference.
@@ -637,6 +731,19 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntryWithDomain(
 // ------------------------------------------------------------------------------------------------
 // Generic private functions
 // ------------------------------------------------------------------------------------------------
+
+// getMetadata is a generic function to retrieve metadata from VCD
+func getMetadataByKey(client *Client, requestUri, key string, isSystem bool) (*types.MetadataValue, error) {
+	metadata := &types.MetadataValue{}
+	href := requestUri+"/metadata/"
+
+	if isSystem {
+		href += "SYSTEM/"
+	}
+
+	_, err := client.ExecuteRequest(href + key, http.MethodGet, types.MimeMetaData, "error retrieving metadata by key "+key+": %s", nil, metadata)
+	return metadata, err
+}
 
 // getMetadata is a generic function to retrieve metadata from VCD
 func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
