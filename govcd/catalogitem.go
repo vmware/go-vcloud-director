@@ -274,5 +274,25 @@ func queryResultCatalogItemToCatalogItem(client *Client, qr *types.QueryResultCa
 
 // LaunchSync starts synchronisation of a subscribed Catalog item
 func (item *CatalogItem) LaunchSync() (*Task, error) {
+	err := WaitResource(func() (*types.TasksInProgress, error) {
+		err := item.Refresh()
+		if err != nil {
+			return nil, err
+		}
+		return item.CatalogItem.Tasks, nil
+	})
+	if err != nil {
+		return nil, err
+	}
 	return elementLaunchSync(item.client, item.CatalogItem.HREF, "catalog item")
+}
+
+// Refresh retriefes a fresh copy of the catalog Item
+func (item *CatalogItem) Refresh() error {
+	_, err := item.client.ExecuteRequest(item.CatalogItem.HREF, http.MethodGet,
+		"", "error retrieving catalog item: %s", nil, item.CatalogItem)
+	if err != nil {
+		return err
+	}
+	return nil
 }

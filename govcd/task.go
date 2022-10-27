@@ -196,16 +196,17 @@ func (task *Task) GetTaskProgress() (string, error) {
 func (task *Task) CancelTask() error {
 	cancelTaskURL, err := url.ParseRequestURI(task.Task.HREF + "/action/cancel")
 	if err != nil {
-		util.Logger.Printf("[Error] Error cancelling task %v: %s", cancelTaskURL.String(), err)
+		util.Logger.Printf("[CancelTask] Error parsing task request URI %v: %s", cancelTaskURL.String(), err)
 		return err
 	}
 
 	request := task.client.NewRequest(map[string]string{}, http.MethodPost, *cancelTaskURL, nil)
 	_, err = checkResp(task.client.Http.Do(request))
 	if err != nil {
-		util.Logger.Printf("[Error] Error cancelling task  %v: %s", cancelTaskURL.String(), err)
+		util.Logger.Printf("[CancelTask] Error cancelling task  %v: %s", cancelTaskURL.String(), err)
 		return err
 	}
+	util.Logger.Printf("[CancelTask] task %s CANCELED\n", task.Task.ID)
 	return nil
 }
 
@@ -229,6 +230,21 @@ func ResourceInProgress(tasksInProgress *types.TasksInProgress) bool {
 // ResourceComplete return true is none of its tasks are running
 func ResourceComplete(tasksInProgress *types.TasksInProgress) bool {
 	return !ResourceInProgress(tasksInProgress)
+}
+
+func WaitResource(refresh func() (*types.TasksInProgress, error)) error {
+	tasks, err := refresh()
+	for err == nil && tasks != nil {
+		time.Sleep(time.Second)
+		tasks, err = refresh()
+		if err != nil {
+			return err
+		}
+		if ResourceComplete(tasks) {
+			return nil
+		}
+	}
+	return nil
 }
 
 // SkimTasksList checks a list of tasks and returns  a list of tasks still in progress and a list of failed ones
@@ -328,7 +344,7 @@ func (client Client) SkimTasksList(taskIdList []string) ([]string, []string, err
 	var seenTasks = make(map[string]bool)
 	var newTaskList []string
 	var errorList []string
-	for _, taskId := range taskIdList {
+	for i, taskId := range taskIdList {
 		_, seen := seenTasks[taskId]
 		if seen {
 			continue
@@ -342,6 +358,7 @@ func (client Client) SkimTasksList(taskIdList []string) ([]string, []string, err
 			}
 			return newTaskList, errorList, err
 		}
+		util.Logger.Printf("[SkimTasksList] {%d} task %s %s (status %s - cancel requested: %v)\n", i, task.Task.Name, task.Task.ID, task.Task.Status, task.Task.CancelRequested)
 		if task.Task.Status == "success" || task.Task.Status == "aborted" {
 			continue
 		}
@@ -357,7 +374,7 @@ func (client Client) SkimTasksList(taskIdList []string) ([]string, []string, err
 
 // WaitTaskListCompletion waits until all tasks in the list are completed, removed, or failed
 // Returns a list of failed tasks and an error
-func (client Client) WaitTaskListCompletion(taskIdList []string) ([]string, error) {
+func (client Client) WaitTaskListCompletion(taskIdList []string, ignoreFailed bool) ([]string, error) {
 	var failedTaskList []string
 	var err error
 	for len(taskIdList) > 0 {
@@ -367,26 +384,20 @@ func (client Client) WaitTaskListCompletion(taskIdList []string) ([]string, erro
 		}
 		time.Sleep(time.Second)
 	}
-	if len(failedTaskList) == 0 {
+	if len(failedTaskList) == 0 || ignoreFailed {
 		return nil, nil
 	}
 	return failedTaskList, fmt.Errorf("%d tasks have failed", len(failedTaskList))
 }
 
-/*
+// QueryTaskList performs a query for tasks according to a specific filter
 func (client *Client) QueryTaskList(filter map[string]string) ([]*types.QueryResultTaskRecordType, error) {
 	taskType := types.QtTask
 	if client.IsSysAdmin {
 		taskType = types.QtAdminTask
 	}
 
-	filterText := ""
-	for k, v := range filter {
-		if filterText != "" {
-			filterText += ";"
-		}
-		filterText += fmt.Sprintf("%s==%s", k, url.QueryEscape(v))
-	}
+	filterText := buildFilterText(filter)
 
 	notEncodedParams := map[string]string{
 		"type": taskType,
@@ -405,4 +416,29 @@ func (client *Client) QueryTaskList(filter map[string]string) ([]*types.QueryRes
 		return results.Results.TaskRecord, nil
 	}
 }
-*/
+
+// buildFilterText creates a filter with multiple values for a single column
+// Given a map entry "key": "value1,value2"
+// it creates a filter with a logical OR:  "key==value1,key==value2"
+func buildFilterText(filter map[string]string) string {
+	filterText := ""
+	for k, v := range filter {
+		if filterText != "" {
+			filterText += ";" // logical AND
+		}
+		if strings.Contains(v, ",") {
+			valueText := ""
+			values := strings.Split(v, ",")
+			for _, value := range values {
+				if valueText != "" {
+					valueText += "," // logical OR
+				}
+				valueText += fmt.Sprintf("%s==%s", k, url.QueryEscape(value))
+			}
+			filterText += valueText
+		} else {
+			filterText += fmt.Sprintf("%s==%s", k, url.QueryEscape(v))
+		}
+	}
+	return filterText
+}

@@ -55,6 +55,14 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 	}
 	adminCatalogHREF.Path += "/admin/catalog/" + catalogID
 
+	if force && recursive {
+		// A catalog cannot be removed if it has active tasks, or if any of its items have active tasks
+		err = catalog.ConsumeTasks()
+		if err != nil {
+			return err
+		}
+	}
+
 	req := catalog.client.NewRequest(map[string]string{
 		"force":     strconv.FormatBool(force),
 		"recursive": strconv.FormatBool(recursive),
@@ -72,6 +80,131 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 		return fmt.Errorf(combinedTaskErrorMessage(task.Task, fmt.Errorf("catalog %s not properly destroyed", catalog.Catalog.Name)))
 	}
 	return task.WaitTaskCompletion()
+}
+
+// ConsumeTasks will cancel all catalog tasks and the ones related to its items
+// TODO: remove unused algorithm
+func (catalog *Catalog) ConsumeTasks() error {
+	if os.Getenv("consume_algorithm1") != "" {
+		return catalog.consumeTasksAlgorithm1()
+	}
+	return catalog.consumeTasksAlgorithm2()
+}
+
+// consumeTasksAlgorithm2 will cancel all catalog tasks and the ones related to its items
+// 1. cancel all tasks associated with the catalog and keep them in a list
+// 2. find a list of all catalog items
+// 3. find a list of all tasks associated with the organization, with name = "syncCatalogItem" or "createCatalogItem"
+// 4. loop through the tasks until we find the ones that belong to one of the items - add them to list in 1.
+// 5. cancel all the filtered tasks
+// 6. wait for the task list until all are finished
+// Number of calls for 10 items:
+// 1 list of RUNNING tasks
+// 1 list of items
+// 11 task.cancelTask
+// 11 task.Refresh
+// TOTAL: 24
+func (catalog *Catalog) consumeTasksAlgorithm2() error {
+	allTasks, err := catalog.client.QueryTaskList(map[string]string{
+		"status": "running,preRunning,queued",
+	})
+	if err != nil {
+		return err
+	}
+	var taskList []string
+	addTask := func(status, href string) {
+		if status != "success" && status != "error" && status != "aborted" {
+			quickTask := Task{
+				client: catalog.client,
+				Task: &types.Task{
+					HREF: href,
+				},
+			}
+			err = quickTask.CancelTask()
+			if err != nil {
+				util.Logger.Printf("[ConsumeTasks 2] error canceling task: %s\n", err)
+			}
+			taskList = append(taskList, extractUuid(href))
+		}
+	}
+	if catalog.Catalog.Tasks != nil && len(catalog.Catalog.Tasks.Task) > 0 {
+		for _, task := range catalog.Catalog.Tasks.Task {
+			addTask(task.Status, task.HREF)
+		}
+	}
+	itemRefs, err := catalog.QueryCatalogItemList()
+	if err != nil {
+		return err
+	}
+	for _, task := range allTasks {
+		for _, ref := range itemRefs {
+			id := extractUuid(ref.HREF)
+			if extractUuid(task.Object) == id {
+				addTask(task.Status, task.HREF)
+				// No break here: the same object can have more than one task
+			}
+		}
+	}
+	_, err = catalog.client.WaitTaskListCompletion(taskList, true)
+	return err
+}
+
+// consumeTasksAlgorithm1 will cancel all catalog tasks and the ones related to its items
+//  1. cancel all tasks associated with the catalog and keep them in a list
+//  2. find a list of all catalog items
+//  3. For each item
+//     a. get a CatalogItem object
+//     b. cancel all item's tasks and add to the list
+//  4. wait for the list of tasks to be finished
+//
+// number of calls for 10 items:
+//
+//	1 list of items
+//	10 catalog.GetCatalogItem
+//	11 task.CancelTask
+//	11 task.Refresh
+//
+// TOTAL: 33
+func (catalog *Catalog) consumeTasksAlgorithm1() error {
+	var taskList []string
+	addTask := func(task *types.Task) {
+		if task.Status != "success" && task.Status != "error" && task.Status != "aborted" && !task.CancelRequested {
+			quickTask := Task{
+				client: catalog.client,
+				Task: &types.Task{
+					HREF: task.HREF,
+				},
+			}
+			err := quickTask.CancelTask()
+			if err != nil {
+				util.Logger.Printf("[ConsumeTasks 1] error canceling task: %s\n", err)
+			}
+			taskList = append(taskList, extractUuid(task.HREF))
+		}
+	}
+	if catalog.Catalog.Tasks != nil && len(catalog.Catalog.Tasks.Task) > 0 {
+		for _, task := range catalog.Catalog.Tasks.Task {
+			addTask(task)
+		}
+	}
+	itemRefs, err := catalog.QueryCatalogItemList()
+	if err != nil {
+		return err
+	}
+	for _, ref := range itemRefs {
+		item, err := catalog.GetCatalogItemByHref(ref.HREF)
+		if err != nil {
+			return err
+		}
+		if item.CatalogItem.Tasks == nil || len(item.CatalogItem.Tasks.Task) == 0 {
+			continue
+		}
+		for _, task := range item.CatalogItem.Tasks.Task {
+			addTask(task)
+		}
+	}
+	_, err = catalog.client.WaitTaskListCompletion(taskList, true)
+	return err
 }
 
 // Envelope is a ovf description root element. File contains information for vmdk files.
@@ -1064,7 +1197,6 @@ func elementLaunchSync(client *Client, elementHref, label string) (*Task, error)
 	return &syncTask, nil
 }
 
-/*
 // QueryTaskList retrieves a list of tasks associated to the Catalog
 func (catalog *Catalog) QueryTaskList(filter map[string]string) ([]*types.QueryResultTaskRecordType, error) {
 	var newFilter = map[string]string{
@@ -1075,4 +1207,3 @@ func (catalog *Catalog) QueryTaskList(filter map[string]string) ([]*types.QueryR
 	}
 	return catalog.client.QueryTaskList(newFilter)
 }
-*/

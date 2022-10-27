@@ -248,6 +248,20 @@ func (org *AdminOrg) CreateCatalogFromSubscription(subscription types.ExternalCa
 	return nil, fmt.Errorf("adminCatalog %s still not complete after %s", adminCatalog.AdminCatalog.Name, timeout)
 }
 
+func (cat *AdminCatalog) WaitForTasks() error {
+	if ResourceInProgress(cat.AdminCatalog.Tasks) {
+		err := WaitResource(func() (*types.TasksInProgress, error) {
+			err := cat.Refresh()
+			if err != nil {
+				return nil, err
+			}
+			return cat.AdminCatalog.Tasks, nil
+		})
+		return err
+	}
+	return nil
+}
+
 // Sync synchronises a subscribed AdminCatalog
 func (cat *AdminCatalog) Sync() error {
 	// if the catalog was not subscribed, return
@@ -259,6 +273,10 @@ func (cat *AdminCatalog) Sync() error {
 	catalogHref, err := cat.GetCatalogHref()
 	if err != nil || catalogHref == "" {
 		return fmt.Errorf("empty catalog HREF for admin catalog %s", cat.AdminCatalog.Name)
+	}
+	err = cat.WaitForTasks()
+	if err != nil {
+		return err
 	}
 	return elementSync(cat.client, catalogHref, "admin catalog")
 }
@@ -274,6 +292,10 @@ func (cat *AdminCatalog) LaunchSync() (*Task, error) {
 	catalogHref, err := cat.GetCatalogHref()
 	if err != nil || catalogHref == "" {
 		return nil, fmt.Errorf("empty catalog HREF for admin catalog %s", cat.AdminCatalog.Name)
+	}
+	err = cat.WaitForTasks()
+	if err != nil {
+		return nil, err
 	}
 	return elementLaunchSync(cat.client, catalogHref, "admin catalog")
 }
@@ -309,7 +331,7 @@ func (cat *AdminCatalog) LaunchSynchronisationVappTemplates(nameList []string) (
 	for _, element := range nameList {
 		catalogItem, err := cat.QueryCatalogItem(element)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error retrieving catalog item %s: %s", element, err)
 		}
 		task, err := queryResultCatalogItemToCatalogItem(cat.client, catalogItem).LaunchSync()
 		if err != nil {
@@ -328,6 +350,19 @@ func (cat *AdminCatalog) LaunchSynchronisationAllVappTemplates() ([]*Task, error
 	}
 	var nameList []string
 	for _, element := range vappTemplatesList {
+		complete := element.TaskStatus == "" || (element.TaskStatus == "success" || element.TaskStatus == "aborted" || element.TaskStatus == "error")
+		if !complete {
+			if element.Task != "" {
+				task, err := cat.client.GetTaskById(element.Task)
+				if err != nil {
+					return nil, err
+				}
+				err = task.WaitTaskCompletion()
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
 		nameList = append(nameList, element.Name)
 	}
 	return cat.LaunchSynchronisationVappTemplates(nameList)
@@ -345,6 +380,19 @@ func (cat *AdminCatalog) LaunchSynchronisationMediaItems(nameList []string) ([]*
 	var found = make(map[string]string)
 	for _, element := range mediaList {
 		if contains(element.Name, nameList) {
+			complete := element.TaskStatus == "" || (element.TaskStatus == "success" || element.TaskStatus == "aborted" || element.TaskStatus == "error")
+			if !complete {
+				if element.Task != "" {
+					task, err := cat.client.GetTaskById(element.Task)
+					if err != nil {
+						return nil, err
+					}
+					err = task.WaitTaskCompletion()
+					if err != nil {
+						return nil, err
+					}
+				}
+			}
 			util.Logger.Printf("scheduling for synchronisation Media item %s with catalog item HREF %s\n", element.Name, element.CatalogItem)
 			actionList = append(actionList, element.CatalogItem)
 			found[element.Name] = element.CatalogItem
@@ -408,6 +456,11 @@ func (cat *AdminCatalog) GetCatalogItemByHref(catalogItemHref string) (*CatalogI
 }
 
 /*
+
+// TODO: these functions may be useful to retrieve catalogs by simple ID (without Org)
+// Created in support of now removed vcd_catalog_sync
+// Currently unused. May be removed
+
 // GetCatalogByHref retrieves a catalog without the parent Org
 func (client *Client) GetCatalogByHref(catalogHref string) (*Catalog, error) {
 	if strings.Contains(catalogHref, "/admin/") {
@@ -478,7 +531,6 @@ func (catalog *AdminCatalog) UpdateSubscriptionParams(params types.ExternalCatal
 	return catalog.Refresh()
 }
 
-/*
 // QueryTaskList retrieves a list of tasks associated to the Admin Catalog
 func (catalog *AdminCatalog) QueryTaskList(filter map[string]string) ([]*types.QueryResultTaskRecordType, error) {
 	catalogHref, err := catalog.GetCatalogHref()
@@ -493,4 +545,3 @@ func (catalog *AdminCatalog) QueryTaskList(filter map[string]string) ([]*types.Q
 	}
 	return catalog.client.QueryTaskList(newFilter)
 }
-*/
