@@ -36,7 +36,7 @@ func (adminVdc *AdminVdc) GetVdcNetworkProfile() (*types.VdcNetworkProfile, erro
 // UpdateVdcNetworkProfile updates the VDC Network Profile configuration
 //
 // Note. Whenever updating VDC Network Profile it is required to send all fields (not only the
-// change one) as VCD will remove other configuration. Best practice is to fetch current
+// changed ones) as VCD will remove other configuration. Best practice is to fetch current
 // configuration of VDC Network Profile using GetVdcNetworkProfile, alter it with new values and
 // submit it to UpdateVdcNetworkProfile.
 func (vdc *Vdc) UpdateVdcNetworkProfile(vdcNetworkProfileConfig *types.VdcNetworkProfile) (*types.VdcNetworkProfile, error) {
