@@ -735,13 +735,13 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntryWithDomain(
 // getMetadata is a generic function to retrieve metadata from VCD
 func getMetadataByKey(client *Client, requestUri, key string, isSystem bool) (*types.MetadataValue, error) {
 	metadata := &types.MetadataValue{}
-	href := requestUri+"/metadata/"
+	href := requestUri + "/metadata/"
 
 	if isSystem {
 		href += "SYSTEM/"
 	}
 
-	_, err := client.ExecuteRequest(href + key, http.MethodGet, types.MimeMetaData, "error retrieving metadata by key "+key+": %s", nil, metadata)
+	_, err := client.ExecuteRequest(href+key, http.MethodGet, types.MimeMetaData, "error retrieving metadata by key "+key+": %s", nil, metadata)
 	return metadata, err
 }
 

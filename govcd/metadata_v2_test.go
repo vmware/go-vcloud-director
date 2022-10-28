@@ -268,6 +268,7 @@ func (vcd *TestVCD) TestCatalogItemMetadata(check *C) {
 // metadataCompatible allows centralizing and generalizing the tests for metadata compatible resources.
 type metadataCompatible interface {
 	GetMetadata() (*types.Metadata, error)
+	GetMetadataByKey(key string, isSystem bool) (*types.MetadataValue, error)
 	AddMetadataEntryWithVisibility(key, value, typedValue, visibility string, isSystem bool) error
 	MergeMetadataWithMetadataValues(metadata map[string]types.MetadataValue) error
 	DeleteMetadataEntryWithDomain(key string, isSystem bool) error
@@ -396,6 +397,11 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraReadSte
 		metadata, err = resource.GetMetadata()
 		check.Assert(err, IsNil)
 		assertMetadata(check, metadata, testCase, existingMetaDataCount+1)
+
+		metadataValue, err := resource.GetMetadataByKey(testCase.Key, testCase.IsSystem)
+		check.Assert(err, IsNil)
+		check.Assert(metadataValue.TypedValue.Value, Equals, testCase.Value)
+		check.Assert(metadataValue.TypedValue.XsiType, Equals, testCase.Type)
 
 		// Perform an extra read step that can be passed as a function. Useful to perform a test
 		// on resources that only have a GetMetadata function. For example, AdminOrg and Org, where Org only has GetMetadata.
