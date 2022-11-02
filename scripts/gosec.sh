@@ -45,7 +45,14 @@ function get_gosec {
             echo "'curl' executable not found - Skipping gosec"
             exit 0
         fi
-        $curl -sFL "$GOSEC_URL" | sh -s -- -b "$(go env GOPATH)/bin" "$GOSEC_VERSION"
+        $curl -sfL "$GOSEC_URL" | sh -s -- -b "$(go env GOPATH)/bin" "$GOSEC_VERSION"
+        exit_code=$?
+        if [ "$exit_code" != "0" ]
+        then
+          echo "Error installing gosec"
+          exit $exit_code
+        fi
+        gosec=$(exists_in_path gosec)
     fi
     if [ -n "$gosec" ]
     then
