@@ -7,6 +7,7 @@ package util
 import (
 	"archive/tar"
 	"errors"
+	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"io"
 	"net/http"
 	"os"
@@ -16,7 +17,7 @@ import (
 
 const TmpDirPrefix = "govcd"
 
-// Extract files to system tmp dir with name govcd+random number. Created folder with files isn't deleted.
+// Unpack extracts files to system tmp dir with name govcd+random number. Created folder with files isn't deleted.
 // Returns extracted files paths in array and path where folder with files created.
 func Unpack(tarFile string) ([]string, string, error) {
 
@@ -27,7 +28,11 @@ func Unpack(tarFile string) ([]string, string, error) {
 	if err != nil {
 		return filePaths, dst, err
 	}
-	defer reader.Close()
+	defer func()  {
+		if err := reader.Close(); err != nil {
+			Logger.Printf("Error closing file: %s\n", err)
+		}
+	}()
 
 	tarReader := tar.NewReader(reader)
 
@@ -69,7 +74,7 @@ func Unpack(tarFile string) ([]string, string, error) {
 		// if its a dir and it doesn't exist create it
 		case tar.TypeDir:
 			if _, err := os.Stat(target); err != nil {
-				if err := os.MkdirAll(target, 0755); err != nil {
+				if err := os.MkdirAll(target, 0750); err != nil {
 					return filePaths, dst, err
 				}
 			}
@@ -92,8 +97,14 @@ func Unpack(tarFile string) ([]string, string, error) {
 			}
 
 			// copy over contents
-			if _, err := io.Copy(newFile, tarReader); err != nil {
-				return filePaths, dst, err
+			for {
+				_, err := io.CopyN(newFile, tarReader, 1024)
+				if err != nil {
+					if errors.Is(err, io.EOF) {
+						break
+					}
+					return filePaths, dst, err
+				}
 			}
 
 			filePaths = append(filePaths, newFile.Name())
@@ -138,11 +149,16 @@ func sanitizedName(filename string) string {
 
 // GetFileContentType returns the real file type
 func GetFileContentType(file string) (string, error) { // Open File
+	//#nosec G304 -- The file is just opened to detect the content type
 	f, err := os.Open(file)
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			Logger.Printf("Error closing file: %s\n", err)
+		}
+	}()
 	// Only the first 512 bytes are used to sniff the content type.
 	buffer := make([]byte, 512)
 

@@ -82,7 +82,7 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 		return 0, err
 	}
 
-	defer file.Close()
+	defer safeClose(file)
 
 	fileSize := fileInfo.Size()
 	// when file size in OVF does not exist, use real file size instead

@@ -266,7 +266,7 @@ func verifyIso(filePath string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	defer file.Close()
+	defer safeClose(file)
 
 	return readHeader(file)
 }

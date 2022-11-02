@@ -61,6 +61,7 @@ type Client struct {
 const AuthorizationHeader = "X-Vcloud-Authorization"
 
 // BearerTokenHeader is the header key containing a bearer token
+// #nosec G101 -- This is not a credential, it's just the header key
 const BearerTokenHeader = "X-Vmware-Vcloud-Access-Token"
 
 const ApiTokenHeader = "API-token"
@@ -881,4 +882,11 @@ func urlParseRequestURI(href string) *url.URL {
 		util.Logger.Printf("[DEBUG - urlParseRequestURI] error parsing request URI: %s", err)
 	}
 	return apiEndpoint
+}
+
+// safeClose closes a file and logs the error, if any. This can be used instead of file.Close()
+func safeClose(file *os.File)  {
+	if err := file.Close(); err != nil {
+		util.Logger.Printf("Error closing file: %s\n", err)
+	}
 }
