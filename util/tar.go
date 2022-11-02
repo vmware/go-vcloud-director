@@ -23,7 +23,7 @@ func Unpack(tarFile string) ([]string, string, error) {
 	var filePaths []string
 	var dst string
 
-	//#nosec G304 -- It only accepts TAR files, otherwise it will fail later
+	// #nosec G304 -- It only accepts TAR files, otherwise it will fail later
 	reader, err := os.Open(tarFile)
 	if err != nil {
 		return filePaths, dst, err
@@ -91,7 +91,7 @@ func Unpack(tarFile string) ([]string, string, error) {
 
 			// if it's a newFile create it
 		case tar.TypeReg:
-			//#nosec G304 -- File path is coming from inside the TAR file.
+			// #nosec G304 -- File path is coming from inside the TAR file.
 			newFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
 			if err != nil {
 				return filePaths, dst, err
@@ -150,7 +150,7 @@ func sanitizedName(filename string) string {
 
 // GetFileContentType returns the real file type
 func GetFileContentType(file string) (string, error) { // Open File
-	//#nosec G304 -- The file is just opened to detect the content type
+	// #nosec G304 -- The file is just opened to detect the content type
 	f, err := os.Open(file)
 	if err != nil {
 		return "", err
