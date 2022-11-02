@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -113,11 +114,10 @@ func TogglePanicEmptyUserAgent(willPanic bool) {
 func newLogger(logpath string) *log.Logger {
 	var err error
 	var file *os.File
-	// #nosec G302 G304 -- The file has read permissions for groups as it is just a log
 	if OverwriteLog {
-		file, err = os.OpenFile(logpath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0640)
+		file, err = os.OpenFile(filepath.Clean(logpath), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	} else {
-		file, err = os.OpenFile(logpath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0640)
+		file, err = os.OpenFile(filepath.Clean(logpath), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
 	}
 
 	if err != nil {

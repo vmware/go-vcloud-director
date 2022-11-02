@@ -45,6 +45,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v2"
 
@@ -94,8 +95,7 @@ func check_configuration(conf Config) {
 // Retrieves the configuration from a Json or Yaml file
 func getConfig(config_file string) Config {
 	var configuration Config
-	// #nosec G304 -- We only accept YAML files, it would fail once unmarshalled if one puts a malicious file
-	buffer, err := os.ReadFile(config_file)
+	buffer, err := os.ReadFile(filepath.Clean(config_file))
 	if err != nil {
 		fmt.Printf("Configuration file %s not found\n%s\n", config_file, err)
 		os.Exit(1)
