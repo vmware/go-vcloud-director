@@ -90,8 +90,7 @@ func Unpack(tarFile string) ([]string, string, error) {
 
 			// if it's a newFile create it
 		case tar.TypeReg:
-			// #nosec G304 -- File path is coming from inside the TAR file.
-			newFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			newFile, err := os.OpenFile(filepath.Clean(target), os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
 			if err != nil {
 				return filePaths, dst, err
 			}
