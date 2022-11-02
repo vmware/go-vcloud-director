@@ -7,7 +7,6 @@ package util
 import (
 	"archive/tar"
 	"errors"
-	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"io"
 	"net/http"
 	"os"
@@ -28,7 +27,7 @@ func Unpack(tarFile string) ([]string, string, error) {
 	if err != nil {
 		return filePaths, dst, err
 	}
-	defer func()  {
+	defer func() {
 		if err := reader.Close(); err != nil {
 			Logger.Printf("Error closing file: %s\n", err)
 		}
