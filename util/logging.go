@@ -114,6 +114,7 @@ func newLogger(logpath string) *log.Logger {
 	var err error
 	var file *os.File
 	//#nosec G302 -- The file has read permissions for groups as it is just a log
+	//#nosec G304 -- The file is open for creation just to write logs
 	if OverwriteLog {
 		file, err = os.OpenFile(logpath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0640)
 	} else {

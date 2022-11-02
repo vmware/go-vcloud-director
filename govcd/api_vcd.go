@@ -118,6 +118,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 	}
 
 	// Setting defaults
+	//#nosec G402 -- InsecureSkipVerify: insecure - This allows connecting to VCDs with self-signed certificates
 	vcdClient := &VCDClient{
 		Client: Client{
 			APIVersion: minVcdApiVersion,
@@ -128,7 +129,6 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 			Http: http.Client{
 				Transport: &http.Transport{
 					TLSClientConfig: &tls.Config{
-						//#nosec G402 -- This allows connecting to VCDs with self-signed certificates
 						InsecureSkipVerify: insecure,
 					},
 					Proxy:               http.ProxyFromEnvironment,
