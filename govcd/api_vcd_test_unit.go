@@ -10,6 +10,7 @@ package govcd
 import (
 	"io"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -20,11 +21,11 @@ func goldenString(t *testing.T, goldenFile string, actual string, update bool) s
 
 	goldenPath := "../test-resources/golden/" + t.Name() + "_" + goldenFile + ".golden"
 
-	f, err := os.OpenFile(goldenPath, os.O_RDWR|os.O_CREATE, 0644)
+	f, err := os.OpenFile(filepath.Clean(goldenPath), os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
 		t.Fatalf("unable to find golden file '%s': %s", goldenPath, err)
 	}
-	defer f.Close()
+	defer safeClose(f)
 
 	if update {
 		_, err := f.WriteString(actual)

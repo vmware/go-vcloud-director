@@ -67,8 +67,7 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 	var count int
 	var pieceSize int64
 
-	// #nosec G304 - linter does not like 'filePath' to be a variable. However this is necessary for file uploads.
-	file, err := os.Open(filePath)
+	file, err := os.Open(filepath.Clean(filePath))
 	if err != nil {
 		util.Logger.Printf("[ERROR] during upload process - file open issue : %s, error %s ", filePath, err)
 		*uDetails.uploadError = err
