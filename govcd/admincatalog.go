@@ -158,10 +158,11 @@ func (org *AdminOrg) CreateCatalogFromSubscriptionAsync(subscription types.Exter
 	if href == "" {
 		return nil, fmt.Errorf("catalog creation link not found for org %s", org.AdminOrg.Name)
 	}
+	adminCatalog := NewAdminCatalog(org.client)
 	reqCatalog := &types.Catalog{
 		Name: catalogName,
 	}
-	adminCatalog := types.AdminCatalog{
+	adminCatalog.AdminCatalog = &types.AdminCatalog{
 		Xmlns:                  types.XMLNamespaceVCloud,
 		Catalog:                *reqCatalog,
 		CatalogStorageProfiles: storageProfiles,
@@ -183,17 +184,17 @@ func (org *AdminOrg) CreateCatalogFromSubscriptionAsync(subscription types.Exter
 		if err != nil {
 			return nil, fmt.Errorf("error composing subscription URL: %s", err)
 		}
-		adminCatalog.ExternalCatalogSubscription.Location = subscriptionUrl
+		adminCatalog.AdminCatalog.ExternalCatalogSubscription.Location = subscriptionUrl
 	}
 
-	adminCatalog.ExternalCatalogSubscription.Password = password
-	adminCatalog.ExternalCatalogSubscription.LocalCopy = localCopy
+	adminCatalog.AdminCatalog.ExternalCatalogSubscription.Password = password
+	adminCatalog.AdminCatalog.ExternalCatalogSubscription.LocalCopy = localCopy
 	_, err := org.client.ExecuteRequest(href, http.MethodPost, types.MimeAdminCatalog,
-		"error subscribing to catalog: %s", adminCatalog, nil)
+		"error subscribing to catalog: %s", adminCatalog.AdminCatalog, adminCatalog.AdminCatalog)
 	if err != nil {
 		return nil, err
 	}
-	return org.GetAdminCatalogByName(catalogName, true)
+	return adminCatalog, nil
 }
 
 // FullSubscriptionUrl returns the subscription URL from a publisher catalog
