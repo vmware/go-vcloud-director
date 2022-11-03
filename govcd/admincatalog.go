@@ -83,6 +83,7 @@ func (adminCatalog *AdminCatalog) UploadOvf(ovaFileName, itemName, description s
 	return catalog.UploadOvf(ovaFileName, itemName, description, uploadPieceSize)
 }
 
+// Refresh fetches a fresh copy of the Admin Catalog
 func (adminCatalog *AdminCatalog) Refresh() error {
 	if *adminCatalog == (AdminCatalog{}) || adminCatalog.AdminCatalog.HREF == "" {
 		return fmt.Errorf("cannot refresh, Object is empty or HREF is empty")
@@ -197,7 +198,7 @@ func (org *AdminOrg) CreateCatalogFromSubscriptionAsync(subscription types.Exter
 	return adminCatalog, nil
 }
 
-// FullSubscriptionUrl returns the subscription URL from a publisher catalog
+// FullSubscriptionUrl returns the subscription URL from a publishing catalog
 // adding the HOST if needed
 func (cat *AdminCatalog) FullSubscriptionUrl() string {
 	if cat.AdminCatalog.PublishExternalCatalogParams == nil {
@@ -249,6 +250,7 @@ func (org *AdminOrg) CreateCatalogFromSubscription(subscription types.ExternalCa
 	return nil, fmt.Errorf("adminCatalog %s still not complete after %s", adminCatalog.AdminCatalog.Name, timeout)
 }
 
+// WaitForTasks waits for the catalog's tasks to complete
 func (cat *AdminCatalog) WaitForTasks() error {
 	if ResourceInProgress(cat.AdminCatalog.Tasks) {
 		err := WaitResource(func() (*types.TasksInProgress, error) {

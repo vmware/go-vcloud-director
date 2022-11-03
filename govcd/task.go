@@ -220,7 +220,7 @@ func ResourceInProgress(tasksInProgress *types.TasksInProgress) bool {
 		if task.Status == "success" || task.Status == "error" || task.Status == "aborted" {
 			continue
 		}
-		if task.Status == "running" || task.Status == "preRunning" || task.Status == "queued" || task.Progress < 100 {
+		if task.Status == "running" || task.Status == "preRunning" || task.Status == "queued" {
 			return true
 		}
 	}
@@ -286,7 +286,7 @@ func SkimTasksListMonitor(taskList []*Task, monitoringFunc TaskMonitoringFunc) (
 			continue
 		}
 		// If the task is running, we add it to the list that will continue to be monitored
-		if task.Task.Status == "running" || task.Task.Status == "preRunning" || task.Task.Status == "queued" || task.Task.Progress < 100 {
+		if task.Task.Status == "running" || task.Task.Status == "preRunning" || task.Task.Status == "queued" {
 			newTaskList = append(newTaskList, task)
 		}
 	}
@@ -362,7 +362,7 @@ func (client Client) SkimTasksList(taskIdList []string) ([]string, []string, err
 		if task.Task.Status == "success" || task.Task.Status == "aborted" {
 			continue
 		}
-		if task.Task.Status == "running" || task.Task.Status == "preRunning" || task.Task.Status == "queued" || task.Task.Progress < 100 {
+		if task.Task.Status == "running" || task.Task.Status == "preRunning" || task.Task.Status == "queued" {
 			newTaskList = append(newTaskList, taskId)
 		}
 		if task.Task.Status == "error" {
