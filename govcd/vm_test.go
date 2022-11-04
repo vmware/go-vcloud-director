@@ -1844,7 +1844,7 @@ func (vcd *TestVCD) Test_VMUpdateComputePolicies(check *C) {
 	// Remove Sizing Policy
 	vm, err = vm.UpdateComputePolicyV2("", placementPolicies[1].VdcComputePolicyV2.ID)
 	check.Assert(err, IsNil)
-	check.Assert(vm.VM.ComputePolicy.VmSizingPolicy.ID, IsNil)
+	check.Assert(vm.VM.ComputePolicy.VmSizingPolicy, IsNil)
 	check.Assert(vm.VM.ComputePolicy.VmPlacementPolicy.ID, Equals, placementPolicies[1].VdcComputePolicyV2.ID)
 
 	// Clean VM
