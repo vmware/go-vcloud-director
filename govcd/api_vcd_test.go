@@ -305,7 +305,7 @@ func readCleanupList() ([]CleanupEntity, error) {
 	if os.IsNotExist(err) {
 		return nil, err
 	}
-	listText, err := os.ReadFile(persistentCleanupListFile)
+	listText, err := os.ReadFile(filepath.Clean(persistentCleanupListFile))
 	if err != nil {
 		return nil, err
 	}
@@ -332,7 +332,7 @@ func writeCleanupList(cleanupList []CleanupEntity) error {
 	if err != nil {
 		return err
 	}
-	file, err := os.Create(persistentCleanupListFile)
+	file, err := os.Create(filepath.Clean(persistentCleanupListFile))
 	if err != nil {
 		return err
 	}
@@ -434,7 +434,7 @@ func GetConfigStruct() (TestConfig, error) {
 	if os.IsNotExist(err) {
 		return TestConfig{}, fmt.Errorf("Configuration file %s not found: %s", config, err)
 	}
-	yamlFile, err := os.ReadFile(config)
+	yamlFile, err := os.ReadFile(filepath.Clean(config))
 	if err != nil {
 		return TestConfig{}, fmt.Errorf("could not read config file %s: %s", config, err)
 	}

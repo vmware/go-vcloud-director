@@ -5,6 +5,7 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/vmware/go-vcloud-director/v2/util"
 	"os"
 	"strconv"
 	"strings"
@@ -277,5 +278,8 @@ func dumpDistributedFirewallRulesToScreen(rules []*types.DistributedFirewallRule
 		fmt.Fprintf(w, "%s\t%s\t%s\t%t\t%s\t%t\t%d\t%d\t%d\t%d\n", rule.Name, rule.Direction, rule.IpProtocol,
 			rule.Enabled, rule.Action, rule.Logging, len(rule.SourceFirewallGroups), len(rule.DestinationFirewallGroups), len(rule.ApplicationPortProfiles), len(rule.NetworkContextProfiles))
 	}
-	w.Flush()
+	err := w.Flush()
+	if err != nil {
+		util.Logger.Printf("Error while dumping Distributed Firewall rules to screen: %s", err)
+	}
 }
