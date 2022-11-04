@@ -789,7 +789,7 @@ func addMetadata(client *Client, requestUri, key, value, typedValue, visibility 
 
 	// Workaround for ugly error returned by VCD: "API Error: 500: [ <uuid> ] visibility"
 	if err != nil && strings.HasSuffix(err.Error(), "visibility") {
-		err = fmt.Errorf("error adding metadata with key %s: visibility cannot be %s when domain is %s", key, visibility, domain)
+		err = fmt.Errorf("error adding metadata with key %s: visibility cannot be %s when domain is %s: %s", key, visibility, domain, err)
 	}
 	return task, err
 }
