@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -33,6 +34,7 @@ const (
 	envLogOnScreen = "GOVCD_LOG_ON_SCREEN"
 
 	// Name of the environment variable that enables logging of passwords
+	// #nosec G101 -- This is not a password
 	envLogPasswords = "GOVCD_LOG_PASSWORDS"
 
 	// Name of the environment variable that enables logging of HTTP requests
@@ -113,9 +115,9 @@ func newLogger(logpath string) *log.Logger {
 	var err error
 	var file *os.File
 	if OverwriteLog {
-		file, err = os.OpenFile(logpath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0640)
+		file, err = os.OpenFile(filepath.Clean(logpath), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	} else {
-		file, err = os.OpenFile(logpath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0640)
+		file, err = os.OpenFile(filepath.Clean(logpath), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
 	}
 
 	if err != nil {

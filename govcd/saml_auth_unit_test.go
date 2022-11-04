@@ -20,6 +20,7 @@ import (
 
 // testVcdMockAuthToken is the expected vcdCli.Client.VCDToken value after `Authentication()`
 // function passes mock SAML authentication process
+// #nosec G101 -- These credentials are fake for testing purposes
 const testVcdMockAuthToken = "e3b02b30b8ff4e87ac38db785b0172b5"
 
 // samlMockServer struct allows to attach HTTP handlers to use additional variables (like

@@ -4,8 +4,10 @@
 package govcd
 
 import (
+	"crypto/rand"
 	"fmt"
-	"math/rand"
+	"github.com/vmware/go-vcloud-director/v2/util"
+	"math/big"
 	"os"
 	"strconv"
 	"text/tabwriter"
@@ -146,18 +148,18 @@ func createFirewallDefinitions(check *C, vcd *TestVCD) []*types.NsxtFirewallRule
 }
 
 func pickRandomString(in []string) string {
-	randomIndex := rand.Intn(len(in))
-	return in[randomIndex]
+	randomIndex, _ := rand.Int(rand.Reader, big.NewInt(int64(len(in))))
+	return in[randomIndex.Uint64()]
 }
 
 // pickRandomOpenApiRefOrEmpty picks a random OpenAPI entity or an empty one
 func pickRandomOpenApiRefOrEmpty(in []types.OpenApiReference) types.OpenApiReference {
 	// Random value can be up to len+1 (len+1 is the special case when it should return an empty reference)
-	randomIndex := rand.Intn(len(in) + 1)
-	if randomIndex == len(in) {
+	randomIndex, _ := rand.Int(rand.Reader, big.NewInt(int64(len(in)+1)))
+	if randomIndex.Uint64() == uint64(len(in)) {
 		return types.OpenApiReference{}
 	}
-	return in[randomIndex]
+	return in[randomIndex.Uint64()]
 }
 
 func preCreateIpSet(check *C, vcd *TestVCD) *NsxtFirewallGroup {
@@ -236,5 +238,8 @@ func dumpFirewallRulesToScreen(rules []*types.NsxtFirewallRule) {
 		fmt.Fprintf(w, "%s\t%s\t%s\t%t\t%s\t%t\t%d\t%d\t%d\n", rule.Name, rule.Direction, rule.IpProtocol,
 			rule.Enabled, rule.Action, rule.Logging, len(rule.SourceFirewallGroups), len(rule.DestinationFirewallGroups), len(rule.ApplicationPortProfiles))
 	}
-	w.Flush()
+	err := w.Flush()
+	if err != nil {
+		util.Logger.Printf("Error while dumping Firewall rules to screen: %s", err)
+	}
 }
