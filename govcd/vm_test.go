@@ -1724,6 +1724,154 @@ func (vcd *TestVCD) Test_VMUpdateStorageProfile(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
+func (vcd *TestVCD) Test_VMUpdateComputePolicies(check *C) {
+
+	providerVdc, err := vcd.client.GetProviderVdcByName(vcd.config.VCD.NsxtProviderVdc.Name)
+	check.Assert(err, IsNil)
+	check.Assert(providerVdc, NotNil)
+
+	vmGroup, err := vcd.client.GetVmGroupByNameAndProviderVdcUrn(vcd.config.VCD.NsxtProviderVdc.PlacementPolicyVmGroup, providerVdc.ProviderVdc.ID)
+	check.Assert(err, IsNil)
+	check.Assert(vmGroup, NotNil)
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	adminVdc, err := adminOrg.GetAdminVDCByName(vcd.nsxtVdc.Vdc.Name, false)
+	if adminVdc == nil || err != nil {
+		vcd.infoCleanup(notFoundMsg, "vdc", vcd.nsxtVdc.Vdc.Name)
+	}
+
+	// Create some Compute Policies
+	var placementPolicies []*VdcComputePolicyV2
+	var sizingPolicies []*VdcComputePolicyV2
+	numberOfPolicies := 2
+	for i := 0; i < numberOfPolicies; i++ {
+		sizingPolicyName := fmt.Sprintf("%s_Sizing%d", check.TestName(), i+1)
+		placementPolicyName := fmt.Sprintf("%s_Placement%d", check.TestName(), i+1)
+
+		sizingPolicies = append(sizingPolicies, &VdcComputePolicyV2{
+			VdcComputePolicyV2: &types.VdcComputePolicyV2{
+				VdcComputePolicy: types.VdcComputePolicy{
+					Name:         sizingPolicyName,
+					Description:  takeStringPointer("Empty sizing policy created by test"),
+					IsSizingOnly: true,
+				},
+				PolicyType: "VdcVmPolicy",
+			},
+		})
+
+		placementPolicies = append(placementPolicies, &VdcComputePolicyV2{
+			VdcComputePolicyV2: &types.VdcComputePolicyV2{
+				VdcComputePolicy: types.VdcComputePolicy{
+					Name:         placementPolicyName,
+					Description:  takeStringPointer("Empty placement policy created by test"),
+					IsSizingOnly: false,
+				},
+				PolicyType: "VdcVmPolicy",
+				PvdcNamedVmGroupsMap: []types.PvdcNamedVmGroupsMap{
+					{
+						NamedVmGroups: []types.OpenApiReferences{{
+							{
+								Name: vmGroup.VmGroup.Name,
+								ID:   fmt.Sprintf("urn:vcloud:namedVmGroup:%s", vmGroup.VmGroup.NamedVmGroupId),
+							},
+						}},
+						Pvdc: types.OpenApiReference{
+							Name: providerVdc.ProviderVdc.Name,
+							ID:   providerVdc.ProviderVdc.ID,
+						},
+					},
+				},
+			},
+		})
+
+		sizingPolicies[i], err = vcd.client.CreateVdcComputePolicyV2(sizingPolicies[i].VdcComputePolicyV2)
+		check.Assert(err, IsNil)
+		AddToCleanupList(sizingPolicies[i].VdcComputePolicyV2.ID, "vdcComputePolicy", vcd.org.Org.Name, sizingPolicyName)
+
+		placementPolicies[i], err = vcd.client.CreateVdcComputePolicyV2(placementPolicies[i].VdcComputePolicyV2)
+		check.Assert(err, IsNil)
+		AddToCleanupList(placementPolicies[i].VdcComputePolicyV2.ID, "vdcComputePolicy", vcd.org.Org.Name, placementPolicyName)
+	}
+
+	vdcComputePolicyHref, err := adminOrg.client.OpenApiBuildEndpoint(types.OpenApiPathVersion2_0_0, types.OpenApiEndpointVdcComputePolicies)
+	check.Assert(err, IsNil)
+
+	// Add the created compute policies to the ones that the VDC has already assigned
+	alreadyAssignedPolicies, err := adminVdc.GetAllAssignedVdcComputePoliciesV2(nil)
+	check.Assert(err, IsNil)
+	var allComputePoliciesToAssign []*types.Reference
+	for _, alreadyAssignedPolicy := range alreadyAssignedPolicies {
+		allComputePoliciesToAssign = append(allComputePoliciesToAssign, &types.Reference{HREF: vdcComputePolicyHref.String() + alreadyAssignedPolicy.VdcComputePolicyV2.ID})
+	}
+	for i := 0; i < numberOfPolicies; i++ {
+		allComputePoliciesToAssign = append(allComputePoliciesToAssign, &types.Reference{HREF: vdcComputePolicyHref.String() + sizingPolicies[i].VdcComputePolicyV2.ID})
+		allComputePoliciesToAssign = append(allComputePoliciesToAssign, &types.Reference{HREF: vdcComputePolicyHref.String() + placementPolicies[i].VdcComputePolicyV2.ID})
+	}
+
+	assignedVdcComputePolicies, err := adminVdc.SetAssignedComputePolicies(types.VdcComputePolicyReferences{VdcComputePolicyReference: allComputePoliciesToAssign})
+	check.Assert(err, IsNil)
+	check.Assert(len(alreadyAssignedPolicies)+numberOfPolicies*2, Equals, len(assignedVdcComputePolicies.VdcComputePolicyReference))
+
+	vapp, vm := createNsxtVAppAndVm(vcd, check)
+	// Update all Compute Policies: Sizing and Placement
+	check.Assert(err, IsNil)
+	vm, err = vm.UpdateComputePolicyV2(sizingPolicies[0].VdcComputePolicyV2.ID, placementPolicies[0].VdcComputePolicyV2.ID)
+	check.Assert(err, IsNil)
+	check.Assert(vm.VM.ComputePolicy.VmSizingPolicy.ID, Equals, sizingPolicies[0].VdcComputePolicyV2.ID)
+	check.Assert(vm.VM.ComputePolicy.VmPlacementPolicy.ID, Equals, placementPolicies[0].VdcComputePolicyV2.ID)
+
+	// Update Sizing policy only
+	vm, err = vm.UpdateComputePolicyV2(sizingPolicies[0].VdcComputePolicyV2.ID, placementPolicies[1].VdcComputePolicyV2.ID)
+	check.Assert(err, IsNil)
+	check.Assert(vm.VM.ComputePolicy.VmSizingPolicy.ID, Equals, sizingPolicies[0].VdcComputePolicyV2.ID)
+	check.Assert(vm.VM.ComputePolicy.VmPlacementPolicy.ID, Equals, placementPolicies[1].VdcComputePolicyV2.ID)
+
+	// Update Placement policy only
+	vm, err = vm.UpdateComputePolicyV2(sizingPolicies[1].VdcComputePolicyV2.ID, placementPolicies[1].VdcComputePolicyV2.ID)
+	check.Assert(err, IsNil)
+	check.Assert(vm.VM.ComputePolicy.VmSizingPolicy.ID, Equals, sizingPolicies[1].VdcComputePolicyV2.ID)
+	check.Assert(vm.VM.ComputePolicy.VmPlacementPolicy.ID, Equals, placementPolicies[1].VdcComputePolicyV2.ID)
+
+	// Remove Placement Policy
+	vm, err = vm.UpdateComputePolicyV2(sizingPolicies[1].VdcComputePolicyV2.ID, "")
+	check.Assert(err, IsNil)
+	check.Assert(vm.VM.ComputePolicy.VmSizingPolicy.ID, Equals, sizingPolicies[1].VdcComputePolicyV2.ID)
+	check.Assert(vm.VM.ComputePolicy.VmPlacementPolicy, IsNil)
+
+	// Remove Sizing Policy
+	vm, err = vm.UpdateComputePolicyV2("", placementPolicies[1].VdcComputePolicyV2.ID)
+	check.Assert(err, IsNil)
+	check.Assert(vm.VM.ComputePolicy.VmSizingPolicy.ID, IsNil)
+	check.Assert(vm.VM.ComputePolicy.VmPlacementPolicy.ID, Equals, placementPolicies[1].VdcComputePolicyV2.ID)
+
+	// Clean VM
+	task, err := vapp.Undeploy()
+	check.Assert(err, IsNil)
+	check.Assert(task, Not(Equals), Task{})
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	check.Assert(task, Not(Equals), Task{})
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	// Cleanup assigned compute policies
+	var beforeTestPolicyReferences []*types.Reference
+	for _, assignedPolicy := range alreadyAssignedPolicies {
+		beforeTestPolicyReferences = append(beforeTestPolicyReferences, &types.Reference{HREF: vdcComputePolicyHref.String() + assignedPolicy.VdcComputePolicyV2.ID})
+	}
+
+	_, err = adminVdc.SetAssignedComputePolicies(types.VdcComputePolicyReferences{VdcComputePolicyReference: beforeTestPolicyReferences})
+	check.Assert(err, IsNil)
+}
+
 func (vcd *TestVCD) getNetworkConnection() *types.NetworkConnectionSection {
 
 	if vcd.config.VCD.Network.Net1 == "" {
@@ -2021,6 +2169,37 @@ func (vcd *TestVCD) Test_VMChangeMemory(check *C) {
 }
 
 func (vcd *TestVCD) Test_AddRawVm(check *C) {
+	vapp, vm := createNsxtVAppAndVm(vcd, check)
+
+	// Check that vApp did not lose its state
+	vappStatus, err := vapp.GetStatus()
+	check.Assert(err, IsNil)
+	check.Assert(vappStatus, Equals, "MIXED") //vApp is powered on, but the VM within is powered off
+	check.Assert(vapp.VApp.Name, Equals, check.TestName())
+	check.Assert(vapp.VApp.Description, Equals, check.TestName())
+
+	// Check that VM is not powered on
+	vmStatus, err := vm.GetStatus()
+	check.Assert(err, IsNil)
+	check.Assert(vmStatus, Equals, "POWERED_OFF")
+
+	// Cleanup
+	task, err := vapp.Undeploy()
+	check.Assert(err, IsNil)
+	check.Assert(task, Not(Equals), Task{})
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	check.Assert(task, Not(Equals), Task{})
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+}
+
+func createNsxtVAppAndVm(vcd *TestVCD, check *C) (*VApp, *VM) {
 	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, false)
 	check.Assert(err, IsNil)
 	check.Assert(cat, NotNil)
@@ -2090,30 +2269,5 @@ func (vcd *TestVCD) Test_AddRawVm(check *C) {
 	err = vapp.Refresh()
 	check.Assert(err, IsNil)
 
-	// Check that vApp did not lose its state
-	vappStatus, err = vapp.GetStatus()
-	check.Assert(err, IsNil)
-	check.Assert(vappStatus, Equals, "MIXED") //vApp is powered on, but the VM within is powered off
-	check.Assert(vapp.VApp.Name, Equals, check.TestName())
-	check.Assert(vapp.VApp.Description, Equals, check.TestName())
-
-	// Check that VM is not powered on
-	vmStatus, err := vm.GetStatus()
-	check.Assert(err, IsNil)
-	check.Assert(vmStatus, Equals, "POWERED_OFF")
-
-	// Cleanup
-	task, err = vapp.Undeploy()
-	check.Assert(err, IsNil)
-	check.Assert(task, Not(Equals), Task{})
-
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	task, err = vapp.Delete()
-	check.Assert(err, IsNil)
-	check.Assert(task, Not(Equals), Task{})
-
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
+	return vapp, vm
 }

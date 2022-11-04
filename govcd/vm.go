@@ -1488,8 +1488,8 @@ func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection, 
 }
 
 // UpdateComputePolicyV2 updates VM compute policy and returns refreshed VM or error.
-func (vm *VM) UpdateComputePolicyV2(sizingPolicy, placementPolicy *types.VdcComputePolicyV2) (*VM, error) {
-	task, err := vm.UpdateComputePolicyV2Async(sizingPolicy, placementPolicy)
+func (vm *VM) UpdateComputePolicyV2(sizingPolicyId, placementPolicyId string) (*VM, error) {
+	task, err := vm.UpdateComputePolicyV2Async(sizingPolicyId, placementPolicyId)
 	if err != nil {
 		return nil, err
 	}
@@ -1531,8 +1531,8 @@ func (vm *VM) UpdateComputePolicy(computePolicy *types.VdcComputePolicy) (*VM, e
 }
 
 // UpdateComputePolicyV2Async updates VM Compute policy with the given compute policies using v2.0.0 OpenAPI endpoint,
-// and returns a Task and an error.
-func (vm *VM) UpdateComputePolicyV2Async(sizingPolicy, placementPolicy *types.VdcComputePolicyV2) (Task, error) {
+// and returns a Task and an error. Updating with an empty compute policy ID will remove it from the VM.
+func (vm *VM) UpdateComputePolicyV2Async(sizingPolicyId, placementPolicyId string) (Task, error) {
 	if vm.VM.HREF == "" {
 		return Task{}, fmt.Errorf("cannot update VM compute policy, VM HREF is unset")
 	}
@@ -1546,16 +1546,16 @@ func (vm *VM) UpdateComputePolicyV2Async(sizingPolicy, placementPolicy *types.Vd
 
 	computePolicy := &types.ComputePolicy{}
 
-	if sizingPolicy != nil {
-		vdcSizingPolicyHref, err := vm.client.OpenApiBuildEndpoint(types.OpenApiPathVersion2_0_0, types.OpenApiEndpointVdcComputePolicies, sizingPolicy.ID)
+	if sizingPolicyId != "" {
+		vdcSizingPolicyHref, err := vm.client.OpenApiBuildEndpoint(types.OpenApiPathVersion2_0_0, types.OpenApiEndpointVdcComputePolicies, sizingPolicyId)
 		if err != nil {
 			return Task{}, fmt.Errorf("error constructing HREF for sizing policy")
 		}
 		computePolicy.VmSizingPolicy = &types.Reference{HREF: vdcSizingPolicyHref.String()}
 	}
 
-	if placementPolicy != nil {
-		vdcPlacementPolicyHref, err := vm.client.OpenApiBuildEndpoint(types.OpenApiPathVersion2_0_0, types.OpenApiEndpointVdcComputePolicies, placementPolicy.ID)
+	if placementPolicyId != "" {
+		vdcPlacementPolicyHref, err := vm.client.OpenApiBuildEndpoint(types.OpenApiPathVersion2_0_0, types.OpenApiEndpointVdcComputePolicies, placementPolicyId)
 		if err != nil {
 			return Task{}, fmt.Errorf("error constructing HREF for placement policy")
 		}
