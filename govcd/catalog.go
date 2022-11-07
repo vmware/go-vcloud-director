@@ -537,8 +537,7 @@ func fetchVappTemplate(client *Client, vappTemplateUrl *url.URL) (*types.VAppTem
 // Function will return parsed part for upload files from description xml.
 func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL) error {
 	util.Logger.Printf("[TRACE] Uploding ovf description with file: %s and url: %s\n", ovfFile, ovfUploadUrl)
-	// #nosec G304 - linter does not like 'filePath' to be a variable. However this is necessary for file uploads.
-	openedFile, err := os.Open(ovfFile)
+	openedFile, err := os.Open(filepath.Clean(ovfFile))
 	if err != nil {
 		return err
 	}
@@ -708,8 +707,7 @@ func getOvfPath(filesAbsPaths []string) (string, error) {
 }
 
 func getOvf(ovfFilePath string) (Envelope, error) {
-	// #nosec G304 - linter does not like 'filePath' to be a variable. However this is necessary for file uploads.
-	openedFile, err := os.Open(ovfFilePath)
+	openedFile, err := os.Open(filepath.Clean(ovfFilePath))
 	if err != nil {
 		return Envelope{}, err
 	}

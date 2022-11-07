@@ -42,6 +42,7 @@ func init() {
 	setBoolFlag(&debugShowRequestEnabled, "vcd-show-request", "GOVCD_SHOW_REQ", "Shows API request")
 	setBoolFlag(&debugShowResponseEnabled, "vcd-show-response", "GOVCD_SHOW_RESP", "Shows API response")
 	setBoolFlag(&connectAsOrgUser, "vcd-as-org-user", "VCD_TEST_ORG_USER", "Connect as Org user")
+	setBoolFlag(&connectAsOrgUser, "vcd-test-org-user", "VCD_TEST_ORG_USER", "Connect as Org user")
 	flag.IntVar(&connectTenantNum, "vcd-connect-tenant", connectTenantNum, "change index of tenant to use (0=first)")
 }
 
@@ -319,7 +320,7 @@ func readCleanupList() ([]CleanupEntity, error) {
 	if os.IsNotExist(err) {
 		return nil, err
 	}
-	listText, err := os.ReadFile(persistentCleanupListFile)
+	listText, err := os.ReadFile(filepath.Clean(persistentCleanupListFile))
 	if err != nil {
 		return nil, err
 	}
@@ -346,7 +347,7 @@ func writeCleanupList(cleanupList []CleanupEntity) error {
 	if err != nil {
 		return err
 	}
-	file, err := os.Create(persistentCleanupListFile)
+	file, err := os.Create(filepath.Clean(persistentCleanupListFile))
 	if err != nil {
 		return err
 	}
@@ -448,7 +449,7 @@ func GetConfigStruct() (TestConfig, error) {
 	if os.IsNotExist(err) {
 		return TestConfig{}, fmt.Errorf("Configuration file %s not found: %s", config, err)
 	}
-	yamlFile, err := os.ReadFile(config)
+	yamlFile, err := os.ReadFile(filepath.Clean(config))
 	if err != nil {
 		return TestConfig{}, fmt.Errorf("could not read config file %s: %s", config, err)
 	}
@@ -458,11 +459,12 @@ func GetConfigStruct() (TestConfig, error) {
 	}
 	if connectAsOrgUser {
 		if len(configStruct.Tenants) == 0 {
-			return TestConfig{}, fmt.Errorf("org user connection required, but 'tenants[%d].user' is empty", connectTenantNum)
+			return TestConfig{}, fmt.Errorf("org user connection required, but 'tenants[%d]' is empty", connectTenantNum)
 		}
 		if connectTenantNum > len(configStruct.Tenants)-1 {
 			return TestConfig{}, fmt.Errorf("org user connection required, but tenant number %d is higher than the number of tenants ", connectTenantNum)
 		}
+		// Change configStruct.Provider, to reuse the global fields, such as URL
 		configStruct.Provider.User = configStruct.Tenants[connectTenantNum].User
 		configStruct.Provider.Password = configStruct.Tenants[connectTenantNum].Password
 		configStruct.Provider.SysOrg = configStruct.Tenants[connectTenantNum].SysOrg
