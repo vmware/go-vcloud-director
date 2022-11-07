@@ -174,6 +174,16 @@ func (org *AdminOrg) CreateCatalogFromSubscriptionAsync(subscription types.Exter
 			SubscribeToExternalFeeds: true,
 		},
 	}
+
+	uuid := extractUuid(subscription.Location)
+	if uuid == "" {
+		return nil, fmt.Errorf("subscription URL %s does not contain a valid UUID", subscription.Location)
+	}
+	subscription.Location = strings.TrimSpace(subscription.Location)
+	if !strings.HasSuffix(subscription.Location, "/") {
+		return nil, fmt.Errorf("subscription URL '%s' should end with a '/'", subscription.Location)
+	}
+
 	// The subscription URL returned by the API is in abbreviated form
 	// such as "/vcsp/lib/65637586-c703-48ae-a7e2-82605d18db57/"
 	// If the passed URL is so abbreviated, we need to add the host
@@ -194,6 +204,33 @@ func (org *AdminOrg) CreateCatalogFromSubscriptionAsync(subscription types.Exter
 		"error subscribing to catalog: %s", adminCatalog.AdminCatalog, adminCatalog.AdminCatalog)
 	if err != nil {
 		return nil, err
+	}
+	// Before returning, check that there are no failing tasks
+	err = adminCatalog.Refresh()
+	if err != nil {
+		return nil, fmt.Errorf("error refreshing subscribed catalog %s: %s", catalogName, err)
+	}
+	if adminCatalog.AdminCatalog.Tasks != nil {
+		msg := ""
+		for _, task := range adminCatalog.AdminCatalog.Tasks.Task {
+			if task.Status == "error" {
+				if task.Error != nil {
+					msg = task.Error.Error()
+				}
+				return nil, fmt.Errorf("error while subscribing catalog %s (task %s): %s", catalogName, task.Name, msg)
+			}
+			if task.Tasks != nil {
+				for _, subTask := range task.Tasks.Task {
+					if subTask.Status == "error" {
+						if subTask.Error != nil {
+							msg = subTask.Error.Error()
+						}
+						return nil, fmt.Errorf("error while subscribing catalog %s (subTask %s): %s", catalogName, subTask.Name, msg)
+					}
+
+				}
+			}
+		}
 	}
 	return adminCatalog, nil
 }
@@ -518,7 +555,7 @@ func (client *Client) GetAdminCatalogById(catalogId string) (*AdminCatalog, erro
 func (catalog *AdminCatalog) UpdateSubscriptionParams(params types.ExternalCatalogSubscription) error {
 	var href string
 	for _, link := range catalog.AdminCatalog.Link {
-		if link.Rel == "externalCatalogSubscriptionParams" && link.Type == types.MimeSubscribeToExternalCatalog {
+		if link.Rel == "subscribeToExternalCatalog" && link.Type == types.MimeSubscribeToExternalCatalog {
 			href = link.HREF
 			break
 		}
