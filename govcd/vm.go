@@ -1546,7 +1546,7 @@ func (vm *VM) UpdateComputePolicyV2Async(sizingPolicyId, placementPolicyId strin
 
 	computePolicy := &types.ComputePolicy{}
 
-	if sizingPolicyId != "" {
+	if strings.TrimSpace(sizingPolicyId) != "" {
 		vdcSizingPolicyHref, err := vm.client.OpenApiBuildEndpoint(types.OpenApiPathVersion2_0_0, types.OpenApiEndpointVdcComputePolicies, sizingPolicyId)
 		if err != nil {
 			return Task{}, fmt.Errorf("error constructing HREF for sizing policy")
@@ -1554,7 +1554,7 @@ func (vm *VM) UpdateComputePolicyV2Async(sizingPolicyId, placementPolicyId strin
 		computePolicy.VmSizingPolicy = &types.Reference{HREF: vdcSizingPolicyHref.String()}
 	}
 
-	if placementPolicyId != "" {
+	if strings.TrimSpace(placementPolicyId) != "" {
 		vdcPlacementPolicyHref, err := vm.client.OpenApiBuildEndpoint(types.OpenApiPathVersion2_0_0, types.OpenApiEndpointVdcComputePolicies, placementPolicyId)
 		if err != nil {
 			return Task{}, fmt.Errorf("error constructing HREF for placement policy")
