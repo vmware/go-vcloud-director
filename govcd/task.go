@@ -281,7 +281,7 @@ func SkimTasksListMonitor(taskList []*Task, monitoringFunc TaskMonitoringFunc) (
 			continue
 		}
 		// if the task failed, we add it to the special list
-		if task.Task.Status == "error" {
+		if task.Task.Status == "error" && !task.Task.CancelRequested {
 			errorList = append(errorList, task)
 			continue
 		}
@@ -365,7 +365,7 @@ func (client Client) SkimTasksList(taskIdList []string) ([]string, []string, err
 		if task.Task.Status == "running" || task.Task.Status == "preRunning" || task.Task.Status == "queued" {
 			newTaskList = append(newTaskList, taskId)
 		}
-		if task.Task.Status == "error" {
+		if task.Task.Status == "error" && !task.Task.CancelRequested {
 			errorList = append(errorList, taskId)
 		}
 	}
