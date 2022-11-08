@@ -1487,7 +1487,10 @@ func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection, 
 		})
 }
 
-// UpdateComputePolicyV2 updates VM compute policy and returns refreshed VM or error.
+// UpdateComputePolicyV2 updates VM Compute policy with the given compute policies using v2.0.0 OpenAPI endpoint,
+// and returns an error if something went wrong, or the refreshed VM if all went OK.
+// Updating with an empty compute policy ID will remove it from the VM. Both policies can't be empty as the VM requires
+// at least one policy.
 func (vm *VM) UpdateComputePolicyV2(sizingPolicyId, placementPolicyId string) (*VM, error) {
 	task, err := vm.UpdateComputePolicyV2Async(sizingPolicyId, placementPolicyId)
 	if err != nil {
