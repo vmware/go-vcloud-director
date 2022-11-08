@@ -57,7 +57,7 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 
 	if force && recursive {
 		// A catalog cannot be removed if it has active tasks, or if any of its items have active tasks
-		err = catalog.ConsumeTasks()
+		err = catalog.consumeTasks()
 		if err != nil {
 			return err
 		}
@@ -82,20 +82,14 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 	return task.WaitTaskCompletion()
 }
 
-// ConsumeTasks will cancel all catalog tasks and the ones related to its items
+// consumeTasks will cancel all catalog tasks and the ones related to its items
 // 1. cancel all tasks associated with the catalog and keep them in a list
 // 2. find a list of all catalog items
 // 3. find a list of all tasks associated with the organization, with name = "syncCatalogItem" or "createCatalogItem"
 // 4. loop through the tasks until we find the ones that belong to one of the items - add them to list in 1.
 // 5. cancel all the filtered tasks
 // 6. wait for the task list until all are finished
-// Number of calls for 10 items:
-// 1 list of RUNNING tasks
-// 1 list of items
-// 11 task.cancelTask
-// 11 task.Refresh
-// TOTAL: 24
-func (catalog *Catalog) ConsumeTasks() error {
+func (catalog *Catalog) consumeTasks() error {
 	allTasks, err := catalog.client.QueryTaskList(map[string]string{
 		"status": "running,preRunning,queued",
 	})
