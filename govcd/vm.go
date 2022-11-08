@@ -1537,6 +1537,13 @@ func (vm *VM) UpdateComputePolicyV2Async(sizingPolicyId, placementPolicyId strin
 		return Task{}, fmt.Errorf("cannot update VM compute policy, VM HREF is unset")
 	}
 
+	sizingIsEmpty := strings.TrimSpace(sizingPolicyId) == ""
+	placementIsEmpty := strings.TrimSpace(placementPolicyId) == ""
+
+	if sizingIsEmpty && placementIsEmpty {
+		return Task{}, fmt.Errorf("either sizing policy ID or placement policy ID is needed")
+	}
+
 	// `reconfigureVm` updates VM name, Description, and any or all of the following sections.
 	//    VirtualHardwareSection
 	//    OperatingSystemSection
@@ -1546,7 +1553,7 @@ func (vm *VM) UpdateComputePolicyV2Async(sizingPolicyId, placementPolicyId strin
 
 	computePolicy := &types.ComputePolicy{}
 
-	if strings.TrimSpace(sizingPolicyId) != "" {
+	if !sizingIsEmpty {
 		vdcSizingPolicyHref, err := vm.client.OpenApiBuildEndpoint(types.OpenApiPathVersion2_0_0, types.OpenApiEndpointVdcComputePolicies, sizingPolicyId)
 		if err != nil {
 			return Task{}, fmt.Errorf("error constructing HREF for sizing policy")
@@ -1554,7 +1561,7 @@ func (vm *VM) UpdateComputePolicyV2Async(sizingPolicyId, placementPolicyId strin
 		computePolicy.VmSizingPolicy = &types.Reference{HREF: vdcSizingPolicyHref.String()}
 	}
 
-	if strings.TrimSpace(placementPolicyId) != "" {
+	if !placementIsEmpty {
 		vdcPlacementPolicyHref, err := vm.client.OpenApiBuildEndpoint(types.OpenApiPathVersion2_0_0, types.OpenApiEndpointVdcComputePolicies, placementPolicyId)
 		if err != nil {
 			return Task{}, fmt.Errorf("error constructing HREF for placement policy")
