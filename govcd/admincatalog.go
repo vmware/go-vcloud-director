@@ -495,62 +495,6 @@ func (cat *AdminCatalog) GetCatalogItemByHref(catalogItemHref string) (*CatalogI
 	return catItem, nil
 }
 
-/*
-
-// TODO: these functions may be useful to retrieve catalogs by simple ID (without Org)
-// Created in support of now removed vcd_catalog_sync
-// Currently unused. May be removed
-
-// GetCatalogByHref retrieves a catalog without the parent Org
-func (client *Client) GetCatalogByHref(catalogHref string) (*Catalog, error) {
-	if strings.Contains(catalogHref, "/admin/") {
-		return nil, fmt.Errorf("catalog HREF '%s' is for an Admin catalog", catalogHref)
-	}
-	cat := NewCatalog(client)
-
-	_, err := client.ExecuteRequest(catalogHref, http.MethodGet,
-		"", "error retrieving catalog: %s", nil, cat.Catalog)
-	if err != nil {
-		return nil, err
-	}
-	return cat, nil
-}
-
-// GetCatalogById retrieves a catalog by ID without the parent Org
-func (client *Client) GetCatalogById(catalogId string) (*Catalog, error) {
-	catalogHREF := client.VCDHREF
-	catalogHREF.Path += "/catalog/" + extractUuid(catalogId)
-
-	util.Logger.Printf("[TRACE] Url for retrieving catalog : %s", catalogHREF.String())
-
-	return client.GetCatalogByHref(catalogHREF.String())
-}
-
-// GetAdminCatalogByHref retrieves an admin catalog without the parent Org
-func (client *Client) GetAdminCatalogByHref(catalogHref string) (*AdminCatalog, error) {
-	if !strings.Contains(catalogHref, "/admin/") {
-		return nil, fmt.Errorf("catalog HREF '%s' is NOT for an Admin Catalog", catalogHref)
-	}
-	cat := NewAdminCatalog(client)
-
-	_, err := client.ExecuteRequest(catalogHref, http.MethodGet,
-		"", "error retrieving catalog: %s", nil, cat.AdminCatalog)
-	if err != nil {
-		return nil, err
-	}
-	return cat, nil
-}
-
-// GetAdminCatalogById retrieves a catalog by ID without the parent Org
-func (client *Client) GetAdminCatalogById(catalogId string) (*AdminCatalog, error) {
-	catalogHREF := client.VCDHREF
-	catalogHREF.Path += "/admin/catalog/" + extractUuid(catalogId)
-
-	util.Logger.Printf("[TRACE] Url for retrieving Admin Catalog : %s", catalogHREF.String())
-	return client.GetAdminCatalogByHref(catalogHREF.String())
-}
-*/
-
 // UpdateSubscriptionParams modifies the subscription parameters of an already subscribed catalog
 func (catalog *AdminCatalog) UpdateSubscriptionParams(params types.ExternalCatalogSubscription) error {
 	var href string
