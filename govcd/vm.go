@@ -1531,7 +1531,8 @@ func (vm *VM) UpdateComputePolicy(computePolicy *types.VdcComputePolicy) (*VM, e
 }
 
 // UpdateComputePolicyV2Async updates VM Compute policy with the given compute policies using v2.0.0 OpenAPI endpoint,
-// and returns a Task and an error. Updating with an empty compute policy ID will remove it from the VM.
+// and returns a Task and an error. Updating with an empty compute policy ID will remove it from the VM. Both
+// policies can't be empty as the VM requires at least one policy.
 func (vm *VM) UpdateComputePolicyV2Async(sizingPolicyId, placementPolicyId string) (Task, error) {
 	if vm.VM.HREF == "" {
 		return Task{}, fmt.Errorf("cannot update VM compute policy, VM HREF is unset")

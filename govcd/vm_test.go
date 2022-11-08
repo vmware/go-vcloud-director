@@ -1848,7 +1848,7 @@ func (vcd *TestVCD) Test_VMUpdateComputePolicies(check *C) {
 	check.Assert(vm.VM.ComputePolicy.VmPlacementPolicy.ID, Equals, placementPolicies[1].VdcComputePolicyV2.ID)
 
 	// Try to remove both, it should fail
-	vm, err = vm.UpdateComputePolicyV2("", "")
+	_, err = vm.UpdateComputePolicyV2("", "")
 	check.Assert(err, NotNil)
 	check.Assert(true, Equals, strings.Contains(err.Error(), "either sizing policy ID or placement policy ID is needed"))
 
