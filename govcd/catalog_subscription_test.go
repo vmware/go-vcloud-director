@@ -28,6 +28,17 @@ type subscriptionTestData struct {
 	asynchronousSubscription  bool
 }
 
+// Test_SubscribedCatalog tests four scenarios of Catalog subscription
+// All cases use a publishing catalog in one Org and a subscribing catalog
+// in a different Org.
+// The scenarios are a combination of these two facts:
+// * whether the subscribing catalog was created before or after the publishing catalog was filled
+// * whether the subscribing catalog enabled automatic downloads (localCopy)
+//
+// To see the inner working of the test components, you may run it as follows:
+// $ export GOVCD_TASK_MONITOR=simple_show
+// $ go test -tags catalog -check.f Test_SubscribedCatalog -vcd-verbose -check.vv -timeout 0
+// When running this way, you will see the tasks originated by the catalogs and the ones started by the catalog items
 func (vcd *TestVCD) Test_SubscribedCatalog(check *C) {
 
 	fromOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
@@ -336,39 +347,3 @@ func testMonitor(task *types.Task) {
 		fmt.Print(marker)
 	}
 }
-
-/*
-// TODO:
-// TEMPORARY tests. To be removed before merging
-func (vcd *TestVCD) Test_CatalogItems(check *C) {
-
-	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
-	check.Assert(err, IsNil)
-
-	catalog, err := org.GetAdminCatalogByName("test-publisher", false)
-	check.Assert(err, IsNil)
-
-	items, err := catalog.QueryCatalogItemList()
-	check.Assert(err, IsNil)
-	templates, err := catalog.QueryVappTemplateList()
-	check.Assert(err, IsNil)
-	mediaItems, err := catalog.QueryMediaList()
-	check.Assert(err, IsNil)
-	fmt.Printf("items %# v\n", pretty.Formatter(items))
-	fmt.Printf("templates %# v\n", pretty.Formatter(templates))
-	fmt.Printf("media %# v\n", pretty.Formatter(mediaItems))
-}
-
-func (vcd *TestVCD) Test_CatalogTasks(check *C) {
-
-	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org + "-1")
-	check.Assert(err, IsNil)
-
-	catalog, err := org.GetAdminCatalogByName("test-subscriber", false)
-	check.Assert(err, IsNil)
-
-	tasks, err := catalog.QueryTaskList(nil)
-	check.Assert(err, IsNil)
-	fmt.Printf("tasks %# v\n", pretty.Formatter(tasks))
-}
-*/
