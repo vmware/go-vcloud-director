@@ -187,6 +187,7 @@ type TestConfig struct {
 			NsxtImportSegment   string `yaml:"nsxtImportSegment"`
 			VdcGroup            string `yaml:"vdcGroup"`
 			VdcGroupEdgeGateway string `yaml:"vdcGroupEdgeGateway"`
+			NsxtEdgeCluster     string `yaml:"nsxtEdgeCluster"`
 
 			NsxtAlbControllerUrl      string `yaml:"nsxtAlbControllerUrl"`
 			NsxtAlbControllerUser     string `yaml:"nsxtAlbControllerUser"`

@@ -92,6 +92,8 @@ vcd:
       edgeGateway: nsxt-gw-name
       # Existing NSX-T segment to test NSX-T Imported Org Vdc network
       nsxtImportSegment: vcd-org-vdc-imported-network-backing
+      # Existing NSX-T Edge Cluster name
+      nsxtEdgeCluster: existing-nsxt-edge-cluster
     # An Org catalog, possibly containing at least one item
     catalog:
         name: mycat
