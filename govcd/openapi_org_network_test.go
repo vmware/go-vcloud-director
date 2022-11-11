@@ -21,10 +21,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkIsolated(check *C) {
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
 		Name:        check.TestName(),
 		Description: check.TestName() + "-description",
-
-		// On v35.0 orgVdc is not supported anymore. Using ownerRef instead.
-		OwnerRef: &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
-
+		OwnerRef:    &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
 		NetworkType: types.OrgVdcNetworkTypeIsolated,
 		Subnets: types.OrgVdcNetworkSubnets{
 			Values: []types.OrgVdcNetworkSubnetValues{
@@ -54,8 +51,8 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkIsolated(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated, nil)
-	runOpenApiOrgVdcNetworkWithVdcGroupTest(check, vcd, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated, nil)
+	runOpenApiOrgVdcNetworkTest(check, vcd, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated, []dhcpConfigFunc{nsxtDhcpConfigNetworkMode})
+	runOpenApiOrgVdcNetworkWithVdcGroupTest(check, vcd, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated, []dhcpConfigFunc{nsxtDhcpConfigNetworkMode})
 }
 
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
@@ -68,10 +65,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
 		Name:        check.TestName(),
 		Description: check.TestName() + "-description",
-
-		// On v35.0 orgVdc is not supported anymore. Using ownerRef instead.
-		OwnerRef: &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
-
+		OwnerRef:    &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
 		NetworkType: types.OrgVdcNetworkTypeRouted,
 
 		// Connection is used for "routed" network
@@ -115,8 +109,8 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted, nsxtRoutedDhcpConfig)
-	runOpenApiOrgVdcNetworkWithVdcGroupTest(check, vcd, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted, nsxtRoutedDhcpConfig)
+	runOpenApiOrgVdcNetworkTest(check, vcd, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted, []dhcpConfigFunc{nsxtRoutedDhcpConfigEdgeMode, nsxtDhcpConfigNetworkMode})
+	runOpenApiOrgVdcNetworkWithVdcGroupTest(check, vcd, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted, []dhcpConfigFunc{nsxtRoutedDhcpConfigEdgeMode, nsxtDhcpConfigNetworkMode})
 }
 
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
@@ -330,7 +324,7 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkDirect(check *C) {
 	runOpenApiOrgVdcNetworkTest(check, vcd, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeDirect, nil)
 }
 
-func runOpenApiOrgVdcNetworkTest(check *C, vcd *TestVCD, vdc *Vdc, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, expectNetworkType string, dhcpFunc dhcpConfigFunc) {
+func runOpenApiOrgVdcNetworkTest(check *C, vcd *TestVCD, vdc *Vdc, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, expectNetworkType string, dhcpFunc []dhcpConfigFunc) {
 	orgVdcNet, err := vdc.CreateOpenApiOrgVdcNetwork(orgVdcNetworkConfig)
 	check.Assert(err, IsNil)
 
@@ -370,8 +364,8 @@ func runOpenApiOrgVdcNetworkTest(check *C, vcd *TestVCD, vdc *Vdc, orgVdcNetwork
 	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.Description, Equals, orgVdcNet.OpenApiOrgVdcNetwork.Description)
 
 	// Configure DHCP if specified
-	if dhcpFunc != nil {
-		dhcpFunc(check, vcd, vdc, updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID)
+	for i := range dhcpFunc {
+		dhcpFunc[i](check, vcd, vdc, updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID)
 	}
 	// Delete
 	err = orgVdcNet.Delete()
@@ -387,7 +381,7 @@ func runOpenApiOrgVdcNetworkTest(check *C, vcd *TestVCD, vdc *Vdc, orgVdcNetwork
 
 type dhcpConfigFunc func(check *C, vcd *TestVCD, vdc *Vdc, orgNetId string)
 
-func nsxtRoutedDhcpConfig(check *C, vcd *TestVCD, vdc *Vdc, orgNetId string) {
+func nsxtRoutedDhcpConfigEdgeMode(check *C, vcd *TestVCD, vdc *Vdc, orgNetId string) {
 	dhcpDefinition := &types.OpenApiOrgVdcNetworkDhcp{
 		Enabled: takeBoolPointer(true),
 		DhcpPools: []types.OpenApiOrgVdcNetworkDhcpPools{
@@ -435,10 +429,81 @@ func nsxtRoutedDhcpConfig(check *C, vcd *TestVCD, vdc *Vdc, orgNetId string) {
 	check.Assert(err, IsNil)
 	check.Assert(len(deletedDhcp.OpenApiOrgVdcNetworkDhcp.DhcpPools), Equals, 0)
 	check.Assert(len(deletedDhcp.OpenApiOrgVdcNetworkDhcp.DnsServers), Equals, 0)
-
 }
 
-func runOpenApiOrgVdcNetworkWithVdcGroupTest(check *C, vcd *TestVCD, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, expectNetworkType string, dhcpFunc dhcpConfigFunc) {
+// nsxtDhcpConfigNetworkMode checks DHCP functionality in NETWORK mode
+// It requires that Edge Cluster is set at VDC level therefore this function does it for the
+// duration of this test and restores it back
+func nsxtDhcpConfigNetworkMode(check *C, vcd *TestVCD, vdc *Vdc, orgNetId string) {
+	// Only supported in 10.3.1+
+	if vdc.client.APIVCDMaxVersionIs("< 36.1") {
+		return
+	}
+
+	// DHCP in NETWORK mode requires Edge Cluster to be set for VDC and cleaned up afterwards
+	edgeCluster, err := vdc.GetNsxtEdgeClusterByName(vcd.config.VCD.Nsxt.NsxtEdgeCluster)
+	check.Assert(err, IsNil)
+	vdcNetworkProfile := &types.VdcNetworkProfile{
+		ServicesEdgeCluster: &types.VdcNetworkProfileServicesEdgeCluster{
+			BackingID: edgeCluster.NsxtEdgeCluster.ID,
+		},
+	}
+	_, err = vdc.UpdateVdcNetworkProfile(vdcNetworkProfile)
+	check.Assert(err, IsNil)
+	defer func() {
+		err := vdc.DeleteVdcNetworkProfile()
+		if err != nil {
+			check.Errorf("error cleaning up VDC Network Profile: %s", err)
+		}
+	}()
+
+	dhcpDefinition := &types.OpenApiOrgVdcNetworkDhcp{
+		Enabled:   takeBoolPointer(true),
+		Mode:      "NETWORK",
+		IPAddress: "2.1.1.252",
+		DhcpPools: []types.OpenApiOrgVdcNetworkDhcpPools{
+			{
+				Enabled: takeBoolPointer(true),
+				IPRange: types.OpenApiOrgVdcNetworkDhcpIpRange{
+					StartAddress: "2.1.1.200",
+					EndAddress:   "2.1.1.201",
+				},
+			},
+		},
+		DnsServers: []string{
+			"8.8.8.8",
+			"8.8.4.4",
+		},
+	}
+
+	updatedDhcp, err := vdc.UpdateOpenApiOrgVdcNetworkDhcp(orgNetId, dhcpDefinition)
+	check.Assert(err, IsNil)
+
+	check.Assert(dhcpDefinition, DeepEquals, updatedDhcp.OpenApiOrgVdcNetworkDhcp)
+
+	err = vdc.DeleteOpenApiOrgVdcNetworkDhcp(orgNetId)
+	check.Assert(err, IsNil)
+
+	orgVdcNetwork, err := vcd.org.GetOpenApiOrgVdcNetworkById(orgNetId)
+	check.Assert(err, IsNil)
+	check.Assert(orgVdcNetwork, NotNil)
+
+	updatedDhcp2, err := orgVdcNetwork.UpdateDhcp(dhcpDefinition)
+	check.Assert(err, IsNil)
+	check.Assert(updatedDhcp2, NotNil)
+
+	check.Assert(dhcpDefinition, DeepEquals, updatedDhcp2.OpenApiOrgVdcNetworkDhcp)
+
+	err = orgVdcNetwork.DeletNetworkDhcp()
+	check.Assert(err, IsNil)
+
+	deletedDhcp, err := orgVdcNetwork.GetOpenApiOrgVdcNetworkDhcp()
+	check.Assert(err, IsNil)
+	check.Assert(len(deletedDhcp.OpenApiOrgVdcNetworkDhcp.DhcpPools), Equals, 0)
+	check.Assert(len(deletedDhcp.OpenApiOrgVdcNetworkDhcp.DnsServers), Equals, 0)
+}
+
+func runOpenApiOrgVdcNetworkWithVdcGroupTest(check *C, vcd *TestVCD, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, expectNetworkType string, dhcpFunc []dhcpConfigFunc) {
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 
@@ -525,8 +590,8 @@ func runOpenApiOrgVdcNetworkWithVdcGroupTest(check *C, vcd *TestVCD, orgVdcNetwo
 	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.Description, Equals, orgVdcNet.OpenApiOrgVdcNetwork.Description)
 
 	// Configure DHCP if specified
-	if dhcpFunc != nil {
-		dhcpFunc(check, vcd, vdc, updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID)
+	for i := range dhcpFunc {
+		dhcpFunc[i](check, vcd, vdc, updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID)
 	}
 	// Delete
 	err = orgVdcNet.Delete()
