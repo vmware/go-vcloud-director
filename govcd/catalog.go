@@ -107,7 +107,7 @@ func (catalog *Catalog) consumeTasks() error {
 			}
 			err = quickTask.CancelTask()
 			if err != nil {
-				util.Logger.Printf("[ConsumeTasks 2] error canceling task: %s\n", err)
+				util.Logger.Printf("[consumeTasks] error canceling task: %s\n", err)
 			}
 			taskList = append(taskList, extractUuid(href))
 		}
@@ -117,14 +117,14 @@ func (catalog *Catalog) consumeTasks() error {
 			addTask(task.Status, task.HREF)
 		}
 	}
-	itemRefs, err := catalog.QueryCatalogItemList()
+	catalogItemRefs, err := catalog.QueryCatalogItemList()
 	if err != nil {
 		return err
 	}
 	for _, task := range allTasks {
-		for _, ref := range itemRefs {
-			id := extractUuid(ref.HREF)
-			if extractUuid(task.Object) == id {
+		for _, ref := range catalogItemRefs {
+			catalogItemId := extractUuid(ref.HREF)
+			if extractUuid(task.Object) == catalogItemId {
 				addTask(task.Status, task.HREF)
 				// No break here: the same object can have more than one task
 			}
@@ -1015,7 +1015,7 @@ func (catalog *Catalog) QueryMediaList() ([]*types.MediaRecordType, error) {
 	filter := fmt.Sprintf("catalog==%s", url.QueryEscape(catalog.Catalog.HREF))
 	results, err := catalog.client.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia, "filter": filter, "filterEncoded": "true"})
 	if err != nil {
-		return nil, fmt.Errorf("error querying medias %s", err)
+		return nil, fmt.Errorf("error querying medias: %s", err)
 	}
 
 	mediaResults := results.Results.MediaRecord
@@ -1080,14 +1080,11 @@ func (cat *Catalog) PublishToExternalOrganizations(publishExternalCatalog types.
 
 // elementSync is a low level function that synchronises a Catalog, AdminCatalog, CatalogItem, or Media item
 func elementSync(client *Client, elementHref, label string) error {
-	href := elementHref + "/action/sync"
-	syncTask, err := client.ExecuteTaskRequest(href, http.MethodPost,
-		"", "error synchronizing "+label+": %s", nil)
-
+	task, err := elementLaunchSync(client, elementHref, label)
 	if err != nil {
 		return err
 	}
-	return syncTask.WaitTaskCompletion()
+	return task.WaitTaskCompletion()
 }
 
 // queryMediaList retrieves a list of media items for a given catalog or AdminCatalog
@@ -1100,7 +1097,7 @@ func queryMediaList(client *Client, catalogHref string) ([]*types.MediaRecordTyp
 	filter := fmt.Sprintf("catalog==%s", url.QueryEscape(catalogHref))
 	results, err := client.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia, "filter": filter, "filterEncoded": "true"})
 	if err != nil {
-		return nil, fmt.Errorf("error querying medias %s", err)
+		return nil, fmt.Errorf("error querying medias: %s", err)
 	}
 
 	mediaResults := results.Results.MediaRecord
@@ -1112,11 +1109,21 @@ func queryMediaList(client *Client, catalogHref string) ([]*types.MediaRecordTyp
 
 // elementLaunchSync is a low level function that starts synchronisation for Catalog, AdminCatalog, CatalogItem, or Media item
 func elementLaunchSync(client *Client, elementHref, label string) (*Task, error) {
+	util.Logger.Printf("[TRACE] elementLaunchSync '%s' \n", label)
 	href := elementHref + "/action/sync"
 	syncTask, err := client.ExecuteTaskRequest(href, http.MethodPost,
 		"", "error synchronizing "+label+": %s", nil)
 
 	if err != nil {
+		// This process may fail due to a possible race condition: a synchronisation process may start in background
+		// after we check for existing tasks (in the function that called this one)
+		// and before we run the request in this function.
+		// In a Terraform vcd_subscribed_catalog operation, the completeness of the synchronisation
+		// will be ensured at the next refresh.
+		if strings.Contains(err.Error(), "LIBRARY_ITEM_SYNC") {
+			util.Logger.Printf("[SYNC FAILURE] error when launching synchronisation: %s\n", err)
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &syncTask, nil

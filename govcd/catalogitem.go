@@ -179,8 +179,20 @@ func (catalog *Catalog) QueryVappTemplateList() ([]*types.QueryResultVappTemplat
 // QueryVappTemplateWithName returns one vApp template for the given Catalog with the given name.
 // Returns an error if it finds more than one.
 func (catalog *Catalog) QueryVappTemplateWithName(vAppTemplateName string) (*types.QueryResultVappTemplateType, error) {
-	vAppTemplates, err := queryVappTemplateListWithFilter(catalog.client, map[string]string{
-		"catalogName": catalog.Catalog.Name,
+	return queryVappTemplateWithName(catalog.client, catalog.Catalog.Name, vAppTemplateName)
+}
+
+// QueryVappTemplateWithName returns one vApp template for the given Catalog with the given name.
+// Returns an error if it finds more than one.
+func (catalog *AdminCatalog) QueryVappTemplateWithName(vAppTemplateName string) (*types.QueryResultVappTemplateType, error) {
+	return queryVappTemplateWithName(catalog.client, catalog.AdminCatalog.Name, vAppTemplateName)
+}
+
+// queryVappTemplateWithName returns one vApp template for the given Catalog with the given name.
+// Returns an error if it finds more than one.
+func queryVappTemplateWithName(client *Client, catalogName, vAppTemplateName string) (*types.QueryResultVappTemplateType, error) {
+	vAppTemplates, err := queryVappTemplateListWithFilter(client, map[string]string{
+		"catalogName": catalogName,
 		"name":        vAppTemplateName,
 	})
 	if err != nil {
@@ -190,7 +202,7 @@ func (catalog *Catalog) QueryVappTemplateWithName(vAppTemplateName string) (*typ
 		if len(vAppTemplates) == 0 {
 			return nil, ErrorEntityNotFound
 		}
-		return nil, fmt.Errorf("found %d vApp Templates with name %s in Catalog %s", len(vAppTemplates), vAppTemplateName, catalog.Catalog.Name)
+		return nil, fmt.Errorf("found %d vApp Templates with name %s in Catalog %s", len(vAppTemplates), vAppTemplateName, catalogName)
 	}
 	return vAppTemplates[0], nil
 }
@@ -274,7 +286,11 @@ func queryResultCatalogItemToCatalogItem(client *Client, qr *types.QueryResultCa
 
 // LaunchSync starts synchronisation of a subscribed Catalog item
 func (item *CatalogItem) LaunchSync() (*Task, error) {
+	util.Logger.Printf("[TRACE] LaunchSync '%s' \n", item.CatalogItem.Name)
 	err := WaitResource(func() (*types.TasksInProgress, error) {
+		if item.CatalogItem.Tasks == nil {
+			return nil, nil
+		}
 		err := item.Refresh()
 		if err != nil {
 			return nil, err
@@ -287,7 +303,7 @@ func (item *CatalogItem) LaunchSync() (*Task, error) {
 	return elementLaunchSync(item.client, item.CatalogItem.HREF, "catalog item")
 }
 
-// Refresh retriefes a fresh copy of the catalog Item
+// Refresh retrieves a fresh copy of the catalog Item
 func (item *CatalogItem) Refresh() error {
 	_, err := item.client.ExecuteRequest(item.CatalogItem.HREF, http.MethodGet,
 		"", "error retrieving catalog item: %s", nil, item.CatalogItem)

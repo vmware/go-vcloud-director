@@ -121,13 +121,13 @@ func (task *Task) WaitInspectTaskCompletion(inspectionFunc InspectionFunc, delay
 		// It's up to the inspection function to render this information fittingly.
 
 		// If task is not in a waiting status we're done, check if there's an error and return it.
-		if task.Task.Status != "queued" && task.Task.Status != "preRunning" && task.Task.Status != "running" {
+		if !isTaskRunning(task.Task.Status) {
 			if inspectionFunc != nil {
 				inspectionFunc(task.Task,
 					howManyTimesRefreshed,
 					elapsed,
-					howManyTimesRefreshed == 1, // first
-					task.Task.Status == "error" || task.Task.Status == "aborted" || task.Task.Status == "success", // last
+					howManyTimesRefreshed == 1,              // first
+					isTaskCompleteOrError(task.Task.Status), // last
 				)
 			}
 			if task.Task.Status == "error" {
@@ -212,15 +212,16 @@ func (task *Task) CancelTask() error {
 
 // ResourceInProgress returns true if any of the provided tasks is still running
 func ResourceInProgress(tasksInProgress *types.TasksInProgress) bool {
+	util.Logger.Printf("[TRACE] ResourceInProgress - has tasks %v\n", tasksInProgress != nil)
 	if tasksInProgress == nil {
 		return false
 	}
 	tasks := tasksInProgress.Task
 	for _, task := range tasks {
-		if task.Status == "success" || task.Status == "error" || task.Status == "aborted" {
+		if isTaskCompleteOrError(task.Status) {
 			continue
 		}
-		if task.Status == "running" || task.Status == "preRunning" || task.Status == "queued" {
+		if isTaskRunning(task.Status) {
 			return true
 		}
 	}
@@ -229,30 +230,36 @@ func ResourceInProgress(tasksInProgress *types.TasksInProgress) bool {
 
 // ResourceComplete return true is none of its tasks are running
 func ResourceComplete(tasksInProgress *types.TasksInProgress) bool {
+	util.Logger.Printf("[TRACE] ResourceComplete - has tasks %v\n", tasksInProgress != nil)
 	return !ResourceInProgress(tasksInProgress)
 }
 
+// WaitResource waits for the tasks associated to a given resource to complete
 func WaitResource(refresh func() (*types.TasksInProgress, error)) error {
+	util.Logger.Printf("[TRACE] WaitResource \n")
 	tasks, err := refresh()
-	for err == nil && tasks != nil {
+	if tasks == nil {
+		return nil
+	}
+	for err == nil {
 		time.Sleep(time.Second)
 		tasks, err = refresh()
 		if err != nil {
 			return err
 		}
-		if ResourceComplete(tasks) {
+		if tasks == nil || ResourceComplete(tasks) {
 			return nil
 		}
 	}
 	return nil
 }
 
-// SkimTasksList checks a list of tasks and returns  a list of tasks still in progress and a list of failed ones
+// SkimTasksList checks a list of tasks and returns a list of tasks still in progress and a list of failed ones
 func SkimTasksList(taskList []*Task) ([]*Task, []*Task, error) {
 	return SkimTasksListMonitor(taskList, nil)
 }
 
-// SkimTasksListMonitor checks a list of tasks and returns  a list of tasks in progress and a list of failed ones
+// SkimTasksListMonitor checks a list of tasks and returns a list of tasks in progress and a list of failed ones
 // It can optionally do something with each task by means of a monitoring function
 func SkimTasksListMonitor(taskList []*Task, monitoringFunc TaskMonitoringFunc) ([]*Task, []*Task, error) {
 	var newTaskList []*Task
@@ -277,7 +284,7 @@ func SkimTasksListMonitor(taskList []*Task, monitoringFunc TaskMonitoringFunc) (
 			continue
 		}
 		// If the task was completed successfully, or it was abandoned, we don't need further processing
-		if task.Task.Status == "success" || task.Task.Status == "aborted" {
+		if isTaskComplete(task.Task.Status) {
 			continue
 		}
 		// if the task failed, we add it to the special list
@@ -286,11 +293,26 @@ func SkimTasksListMonitor(taskList []*Task, monitoringFunc TaskMonitoringFunc) (
 			continue
 		}
 		// If the task is running, we add it to the list that will continue to be monitored
-		if task.Task.Status == "running" || task.Task.Status == "preRunning" || task.Task.Status == "queued" {
+		if isTaskRunning(task.Task.Status) {
 			newTaskList = append(newTaskList, task)
 		}
 	}
 	return newTaskList, errorList, nil
+}
+
+// isTaskRunning returns true if the task has started or is about to start
+func isTaskRunning(status string) bool {
+	return status == "running" || status == "preRunning" || status == "queued"
+}
+
+// isTaskComplete returns true if the task has finished successfully or was interrupted, but not if it finished with error
+func isTaskComplete(status string) bool {
+	return status == "success" || status == "aborted"
+}
+
+// isTaskCompleteOrError returns true if the status has finished, regardless of the outcome
+func isTaskCompleteOrError(status string) bool {
+	return isTaskComplete(status) || status == "error"
 }
 
 // WaitTaskListCompletion continuously skims the task list until no tasks in progress are left
@@ -323,7 +345,7 @@ func (client *Client) GetTaskByHREF(taskHref string) (*Task, error) {
 	_, err := client.ExecuteRequest(taskHref, http.MethodGet,
 		"", "error retrieving task: %s", nil, task.Task)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s : %s", ErrorEntityNotFound, err)
 	}
 
 	return task, nil
@@ -339,7 +361,7 @@ func (client *Client) GetTaskById(taskId string) (*Task, error) {
 	return client.GetTaskByHREF(taskHref)
 }
 
-// SkimTasksList checks a list of task IDs and returns  a list of IDs for tasks in progress and a list of IDs for failed ones
+// SkimTasksList checks a list of task IDs and returns a list of IDs for tasks in progress and a list of IDs for failed ones
 func (client Client) SkimTasksList(taskIdList []string) ([]string, []string, error) {
 	var seenTasks = make(map[string]bool)
 	var newTaskList []string
@@ -359,10 +381,10 @@ func (client Client) SkimTasksList(taskIdList []string) ([]string, []string, err
 			return newTaskList, errorList, err
 		}
 		util.Logger.Printf("[SkimTasksList] {%d} task %s %s (status %s - cancel requested: %v)\n", i, task.Task.Name, task.Task.ID, task.Task.Status, task.Task.CancelRequested)
-		if task.Task.Status == "success" || task.Task.Status == "aborted" {
+		if isTaskComplete(task.Task.Status) {
 			continue
 		}
-		if task.Task.Status == "running" || task.Task.Status == "preRunning" || task.Task.Status == "queued" {
+		if isTaskRunning(task.Task.Status) {
 			newTaskList = append(newTaskList, taskId)
 		}
 		if task.Task.Status == "error" && !task.Task.CancelRequested {
@@ -397,7 +419,7 @@ func (client *Client) QueryTaskList(filter map[string]string) ([]*types.QueryRes
 		taskType = types.QtAdminTask
 	}
 
-	filterText := buildFilterText(filter)
+	filterText := buildFilterTextWithLogicalOr(filter)
 
 	notEncodedParams := map[string]string{
 		"type": taskType,
@@ -417,10 +439,10 @@ func (client *Client) QueryTaskList(filter map[string]string) ([]*types.QueryRes
 	}
 }
 
-// buildFilterText creates a filter with multiple values for a single column
+// buildFilterTextWithLogicalOr creates a filter with multiple values for a single column
 // Given a map entry "key": "value1,value2"
 // it creates a filter with a logical OR:  "key==value1,key==value2"
-func buildFilterText(filter map[string]string) string {
+func buildFilterTextWithLogicalOr(filter map[string]string) string {
 	filterText := ""
 	for k, v := range filter {
 		if filterText != "" {

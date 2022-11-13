@@ -29,8 +29,9 @@ func (vcd *TestVCD) Test_QueryTaskList(check *C) {
 		"status": "running,preRunning,queued",
 	})
 	check.Assert(err, IsNil)
-	fmt.Printf("%# v\n%s\n", pretty.Formatter(allTasks), time.Since(startQuery))
-
+	if testVerbose {
+		fmt.Printf("%# v\n%s\n", pretty.Formatter(allTasks), time.Since(startQuery))
+	}
 	// search using a client, giving the org and catalog names
 	resultByClient, err := vcd.client.Client.QueryTaskList(map[string]string{
 		"orgName":    vcd.config.VCD.Org,

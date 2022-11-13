@@ -175,7 +175,6 @@ func testSubscribedCatalog(testData subscriptionTestData, check *C) {
 		PreserveIdentityInfoFlag: takeBoolPointer(true),
 	})
 	check.Assert(err, IsNil)
-	//start := time.Now()
 
 	uploadItemsIf := func(wanted string) {
 		if wanted != testData.uploadWhen {

@@ -187,20 +187,14 @@ func (org *AdminOrg) CreateCatalogFromSubscriptionAsync(subscription types.Exter
 	// The subscription URL returned by the API is in abbreviated form
 	// such as "/vcsp/lib/65637586-c703-48ae-a7e2-82605d18db57/"
 	// If the passed URL is so abbreviated, we need to add the host
-	if !IsValidUrl(subscription.Location) {
-		// Get the catalog base URL
-		cutPosition := strings.Index(org.AdminOrg.HREF, "/api")
-		catalogHost := org.AdminOrg.HREF[:cutPosition]
-		subscriptionUrl, err := url.JoinPath(catalogHost, subscription.Location)
-		if err != nil {
-			return nil, fmt.Errorf("error composing subscription URL: %s", err)
-		}
-		adminCatalog.AdminCatalog.ExternalCatalogSubscription.Location = subscriptionUrl
+	subscriptionUrl, err := buildFullUrl(subscription.Location, org.AdminOrg.HREF)
+	if err != nil {
+		return nil, fmt.Errorf("error composing subscription URL: %s", err)
 	}
-
+	adminCatalog.AdminCatalog.ExternalCatalogSubscription.Location = subscriptionUrl
 	adminCatalog.AdminCatalog.ExternalCatalogSubscription.Password = password
 	adminCatalog.AdminCatalog.ExternalCatalogSubscription.LocalCopy = localCopy
-	_, err := org.client.ExecuteRequest(href, http.MethodPost, types.MimeAdminCatalog,
+	_, err = org.client.ExecuteRequest(href, http.MethodPost, types.MimeAdminCatalog,
 		"error subscribing to catalog: %s", adminCatalog.AdminCatalog, adminCatalog.AdminCatalog)
 	if err != nil {
 		return nil, err
@@ -237,22 +231,34 @@ func (org *AdminOrg) CreateCatalogFromSubscriptionAsync(subscription types.Exter
 
 // FullSubscriptionUrl returns the subscription URL from a publishing catalog
 // adding the HOST if needed
-func (cat *AdminCatalog) FullSubscriptionUrl() string {
-	if cat.AdminCatalog.PublishExternalCatalogParams == nil {
-		return ""
+func (cat *AdminCatalog) FullSubscriptionUrl() (string, error) {
+	err := cat.Refresh()
+	if err != nil {
+		return "", err
 	}
-	subscriptionUrl := cat.AdminCatalog.PublishExternalCatalogParams.CatalogPublishedUrl
+	if cat.AdminCatalog.PublishExternalCatalogParams == nil {
+		return "", fmt.Errorf("AdminCatalog %s has no publishing parameters", cat.AdminCatalog.Name)
+	}
+	subscriptionUrl, err := buildFullUrl(cat.AdminCatalog.PublishExternalCatalogParams.CatalogPublishedUrl, cat.AdminCatalog.HREF)
+	if err != nil {
+		return "", err
+	}
+	return subscriptionUrl, nil
+}
+
+// buildFullUrl gets a (possibly incomplete) URL and returns it completed, using the provided HREF as basis
+func buildFullUrl(subscriptionUrl, href string) (string, error) {
 	var err error
 	if !IsValidUrl(subscriptionUrl) {
-		// Get the catalog base URL
-		cutPosition := strings.Index(cat.AdminCatalog.HREF, "/api")
-		catalogHost := cat.AdminCatalog.HREF[:cutPosition]
-		subscriptionUrl, err = url.JoinPath(catalogHost, subscriptionUrl)
+		// Get the entity base URL
+		cutPosition := strings.Index(href, "/api")
+		host := href[:cutPosition]
+		subscriptionUrl, err = url.JoinPath(host, subscriptionUrl)
 		if err != nil {
-			return ""
+			return "", err
 		}
 	}
-	return subscriptionUrl
+	return subscriptionUrl, nil
 }
 
 // IsValidUrl returns true if the given URL is complete and usable
@@ -323,9 +329,9 @@ func (cat *AdminCatalog) Sync() error {
 
 // LaunchSync starts synchronisation of a subscribed AdminCatalog
 func (cat *AdminCatalog) LaunchSync() (*Task, error) {
-	// if the catalog was not subscribed, return
-	if cat.AdminCatalog.ExternalCatalogSubscription == nil || cat.AdminCatalog.ExternalCatalogSubscription.Location == "" {
-		return nil, nil
+	err := checkIfSubscribedCatalog(cat)
+	if err != nil {
+		return nil, err
 	}
 	// The sync operation is only available for Catalog, not AdminCatalog.
 	// We use the embedded Catalog object for this purpose
@@ -367,49 +373,119 @@ func (catalog *AdminCatalog) QueryMediaList() ([]*types.MediaRecordType, error) 
 
 // LaunchSynchronisationVappTemplates starts synchronisation of a list of vApp templates
 func (cat *AdminCatalog) LaunchSynchronisationVappTemplates(nameList []string) ([]*Task, error) {
+	return launchSynchronisationVappTemplates(cat, nameList, true)
+}
+
+// launchSynchronisationVappTemplates waits for existing tasks to complete and then starts synchronisation for a list of vApp templates
+// optionally checking for running tasks
+// TODO: re-implement without the undocumented task-related fields
+func launchSynchronisationVappTemplates(cat *AdminCatalog, nameList []string, checkForRunningTasks bool) ([]*Task, error) {
+	err := checkIfSubscribedCatalog(cat)
+	if err != nil {
+		return nil, err
+	}
+	util.Logger.Printf("[TRACE] launchSynchronisationVappTemplates - AdminCatalog '%s' - 'make_local_copy=%v]\n", cat.AdminCatalog.Name, cat.AdminCatalog.ExternalCatalogSubscription.LocalCopy)
 	var taskList []*Task
+
 	for _, element := range nameList {
-		catalogItem, err := cat.QueryCatalogItem(element)
-		if err != nil {
-			return nil, fmt.Errorf("error retrieving catalog item %s: %s", element, err)
+		var queryResultCatalogItem *types.QueryResultCatalogItemType
+
+		if checkForRunningTasks {
+			queryResultVappTemplate, err := cat.QueryVappTemplateWithName(element)
+			if err != nil {
+				return nil, err
+			}
+			err = checkIfTaskComplete(cat.client, queryResultVappTemplate.Task, queryResultVappTemplate.TaskStatus)
+			if err != nil {
+				return nil, err
+			}
+			queryResultCatalogItem = &types.QueryResultCatalogItemType{
+				HREF:        queryResultVappTemplate.CatalogItem,
+				ID:          extractUuid(queryResultVappTemplate.CatalogItem),
+				Type:        types.MimeCatalogItem,
+				Entity:      queryResultVappTemplate.HREF,
+				EntityName:  queryResultVappTemplate.Name,
+				EntityType:  "vapptemplate",
+				Catalog:     cat.AdminCatalog.HREF,
+				CatalogName: cat.AdminCatalog.Name,
+				Status:      queryResultVappTemplate.Status,
+				Name:        queryResultVappTemplate.Name,
+			}
+		} else {
+			queryResultCatalogItem, err = cat.QueryCatalogItem(element)
+			if err != nil {
+				return nil, fmt.Errorf("error retrieving catalog item %s: %s", element, err)
+			}
 		}
-		task, err := queryResultCatalogItemToCatalogItem(cat.client, catalogItem).LaunchSync()
+		task, err := queryResultCatalogItemToCatalogItem(cat.client, queryResultCatalogItem).LaunchSync()
 		if err != nil {
 			return nil, err
 		}
-		taskList = append(taskList, task)
+		if task != nil {
+			taskList = append(taskList, task)
+		}
 	}
 	return taskList, nil
 }
 
-// LaunchSynchronisationAllVappTemplates starts synchronisation of all vApp templates for a given catalog
+// LaunchSynchronisationAllVappTemplates waits for existing tasks to complete and then starts synchronisation of all vApp templates for a given catalog
+// TODO: re-implement without the undocumented task-related fields
 func (cat *AdminCatalog) LaunchSynchronisationAllVappTemplates() ([]*Task, error) {
+	err := checkIfSubscribedCatalog(cat)
+	if err != nil {
+		return nil, err
+	}
+	util.Logger.Printf("[TRACE] AdminCatalog '%s' LaunchSynchronisationAllVappTemplates - 'make_local_copy=%v]\n", cat.AdminCatalog.Name, cat.AdminCatalog.ExternalCatalogSubscription.LocalCopy)
 	vappTemplatesList, err := cat.QueryVappTemplateList()
 	if err != nil {
 		return nil, err
 	}
 	var nameList []string
 	for _, element := range vappTemplatesList {
-		complete := element.TaskStatus == "" || (element.TaskStatus == "success" || element.TaskStatus == "aborted" || element.TaskStatus == "error")
-		if !complete {
-			if element.Task != "" {
-				task, err := cat.client.GetTaskById(element.Task)
-				if err != nil {
-					return nil, err
-				}
-				err = task.WaitTaskCompletion()
-				if err != nil {
-					return nil, err
-				}
-			}
+		err = checkIfTaskComplete(cat.client, element.Task, element.TaskStatus)
+		if err != nil {
+			return nil, err
 		}
 		nameList = append(nameList, element.Name)
 	}
-	return cat.LaunchSynchronisationVappTemplates(nameList)
+	// Launch synchronisation for each item, without checking for running tasks, as it was already done in this function
+	return launchSynchronisationVappTemplates(cat, nameList, false)
 }
 
-// LaunchSynchronisationMediaItems starts synchronisation of a list of media items
+func checkIfTaskComplete(client *Client, taskHref, taskStatus string) error {
+	complete := taskStatus == "" || isTaskCompleteOrError(taskStatus)
+	if !complete {
+		task, err := client.GetTaskById(taskHref)
+		if err != nil {
+			return err
+		}
+		err = task.WaitTaskCompletion()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func checkIfSubscribedCatalog(catalog *AdminCatalog) error {
+	err := catalog.Refresh()
+	if err != nil {
+		return err
+	}
+	if catalog.AdminCatalog.ExternalCatalogSubscription == nil || catalog.AdminCatalog.ExternalCatalogSubscription.Location == "" {
+		return fmt.Errorf("catalog '%s' is not subscribed", catalog.AdminCatalog.Name)
+	}
+	return nil
+}
+
+// LaunchSynchronisationMediaItems waits for existing tasks to complete and then starts synchronisation of a list of media items
+// TODO: re-implement without the undocumented task-related fields
 func (cat *AdminCatalog) LaunchSynchronisationMediaItems(nameList []string) ([]*Task, error) {
+	err := checkIfSubscribedCatalog(cat)
+	if err != nil {
+		return nil, err
+	}
+	util.Logger.Printf("[TRACE] AdminCatalog '%s' LaunchSynchronisationMediaItems\n", cat.AdminCatalog.Name)
 	var taskList []*Task
 	mediaList, err := cat.QueryMediaList()
 	if err != nil {
@@ -420,7 +496,7 @@ func (cat *AdminCatalog) LaunchSynchronisationMediaItems(nameList []string) ([]*
 	var found = make(map[string]string)
 	for _, element := range mediaList {
 		if contains(element.Name, nameList) {
-			complete := element.TaskStatus == "" || (element.TaskStatus == "success" || element.TaskStatus == "aborted" || element.TaskStatus == "error")
+			complete := element.TaskStatus == "" || isTaskCompleteOrError(element.TaskStatus)
 			if !complete {
 				if element.Task != "" {
 					task, err := cat.client.GetTaskById(element.Task)
@@ -455,19 +531,37 @@ func (cat *AdminCatalog) LaunchSynchronisationMediaItems(nameList []string) ([]*
 		if err != nil {
 			return nil, err
 		}
-		taskList = append(taskList, task)
+		if task != nil {
+			taskList = append(taskList, task)
+		}
 	}
 	return taskList, nil
 }
 
-// LaunchSynchronisationAllMediaItems starts synchronisation of all media items for a given catalog
+// LaunchSynchronisationAllMediaItems waits for existing tasks to complete and then starts synchronisation of all media items for a given catalog
+// TODO re-implement without the non-documented task-related fields
 func (cat *AdminCatalog) LaunchSynchronisationAllMediaItems() ([]*Task, error) {
+	err := checkIfSubscribedCatalog(cat)
+	if err != nil {
+		return nil, err
+	}
+	util.Logger.Printf("[TRACE] AdminCatalog '%s' LaunchSynchronisationAllMediaItems\n", cat.AdminCatalog.Name)
 	var taskList []*Task
 	mediaList, err := cat.QueryMediaList()
 	if err != nil {
 		return nil, err
 	}
 	for _, element := range mediaList {
+		if isTaskRunning(element.TaskStatus) {
+			task, err := cat.client.GetTaskByHREF(element.Task)
+			if err != nil {
+				return nil, err
+			}
+			err = task.WaitTaskCompletion()
+			if err != nil {
+				return nil, err
+			}
+		}
 		catalogItem, err := cat.GetCatalogItemByHref(element.CatalogItem)
 		if err != nil {
 			return nil, err
@@ -476,7 +570,9 @@ func (cat *AdminCatalog) LaunchSynchronisationAllMediaItems() ([]*Task, error) {
 		if err != nil {
 			return nil, err
 		}
-		taskList = append(taskList, task)
+		if task != nil {
+			taskList = append(taskList, task)
+		}
 	}
 	return taskList, nil
 }
@@ -497,6 +593,10 @@ func (cat *AdminCatalog) GetCatalogItemByHref(catalogItemHref string) (*CatalogI
 
 // UpdateSubscriptionParams modifies the subscription parameters of an already subscribed catalog
 func (catalog *AdminCatalog) UpdateSubscriptionParams(params types.ExternalCatalogSubscription) error {
+	err := checkIfSubscribedCatalog(catalog)
+	if err != nil {
+		return err
+	}
 	var href string
 	for _, link := range catalog.AdminCatalog.Link {
 		if link.Rel == "subscribeToExternalCatalog" && link.Type == types.MimeSubscribeToExternalCatalog {
@@ -507,7 +607,7 @@ func (catalog *AdminCatalog) UpdateSubscriptionParams(params types.ExternalCatal
 	if href == "" {
 		return fmt.Errorf("catalog subscription link not found for catalog %s", catalog.AdminCatalog.Name)
 	}
-	_, err := catalog.client.ExecuteRequest(href, http.MethodPost, types.MimeAdminCatalog,
+	_, err = catalog.client.ExecuteRequest(href, http.MethodPost, types.MimeAdminCatalog,
 		"error subscribing to catalog: %s", params, nil)
 	if err != nil {
 		return err
@@ -521,11 +621,9 @@ func (catalog *AdminCatalog) QueryTaskList(filter map[string]string) ([]*types.Q
 	if err != nil {
 		return nil, err
 	}
-	var newFilter = map[string]string{
-		"object": catalogHref,
+	if filter == nil {
+		filter = make(map[string]string)
 	}
-	for k, v := range filter {
-		newFilter[k] = v
-	}
-	return catalog.client.QueryTaskList(newFilter)
+	filter["object"] = catalogHref
+	return catalog.client.QueryTaskList(filter)
 }
