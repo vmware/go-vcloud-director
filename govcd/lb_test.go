@@ -204,7 +204,10 @@ func checkLb(queryUrl string, expectedResponses []string, maxRetryTimeout int) e
 			if err == nil {
 				fmt.Printf(".") // progress bar when waiting for responses from all nodes
 				body, _ := io.ReadAll(resp.Body)
-				resp.Body.Close()
+				err = resp.Body.Close()
+				if err != nil {
+					return err
+				}
 				// check if the element is in the list
 				for index, value := range expectedResponses {
 					if value == string(body) {

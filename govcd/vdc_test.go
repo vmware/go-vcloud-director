@@ -430,7 +430,8 @@ func (vcd *TestVCD) TestGetVappList(check *C) {
 
 	// Use the search engine to find the known vApp
 	criteria := NewFilterDef()
-	criteria.AddFilter(types.FilterNameRegex, TestSetUpSuite)
+	err = criteria.AddFilter(types.FilterNameRegex, TestSetUpSuite)
+	check.Assert(err, IsNil)
 	queryType := vcd.client.Client.GetQueryType(types.QtVapp)
 	queryItems, _, err := vcd.client.Client.SearchByFilter(queryType, criteria)
 	check.Assert(err, IsNil)
@@ -443,8 +444,10 @@ func (vcd *TestVCD) TestGetVappList(check *C) {
 	check.Assert(vmName, Not(Equals), "")
 	check.Assert(vm.HREF, Not(Equals), "")
 	criteria = NewFilterDef()
-	criteria.AddFilter(types.FilterNameRegex, vmName)
-	criteria.AddFilter(types.FilterParent, vapp.VApp.Name)
+	err = criteria.AddFilter(types.FilterNameRegex, vmName)
+	check.Assert(err, IsNil)
+	err = criteria.AddFilter(types.FilterParent, vapp.VApp.Name)
+	check.Assert(err, IsNil)
 	queryType = vcd.client.Client.GetQueryType(types.QtVm)
 	queryItems, _, err = vcd.client.Client.SearchByFilter(queryType, criteria)
 	check.Assert(err, IsNil)

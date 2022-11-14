@@ -40,6 +40,22 @@ provider:
     # (Optional) httpTimeout specifies a time limit (in seconds) for waiting http response.
     # If omitted - default value is set.
     # httpTimeout: 600
+# 'tenants' is an array of org users with their relative organization
+# This structure makes it easier to run go-vcloud-director tests as org-user
+# with the options '-vcd-test-org-user' (bool) and '-vcd-connect-tenant' (int)
+tenants:
+    # the first user is the one that will be picked by default when -vcd-test-org-user is set
+  - user: user-first-org
+    password: password-first-user
+    sysOrg: first-org
+    token: optional-token
+    api_token: optional-api-token
+    # with -vcd-connect-tenant=1 the second user will be picked for connection 
+  - user: user-second-org
+    password: password-second-org
+    sysOrg: second-org
+    token: optional-token
+    api_token: optional-api-token
 vcd:
     # Name of the organization (mandatory)
     org: myorg

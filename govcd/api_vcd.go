@@ -118,6 +118,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 	}
 
 	// Setting defaults
+	// #nosec G402 -- InsecureSkipVerify: insecure - This allows connecting to VCDs with self-signed certificates
 	vcdClient := &VCDClient{
 		Client: Client{
 			APIVersion: minVcdApiVersion,

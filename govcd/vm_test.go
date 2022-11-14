@@ -994,7 +994,8 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	updateVdcFastProvisioning(vcd, check, previousProvisioningValue)
 
 	// delete Vapp early to avoid env capacity issue
-	deleteVapp(vcd, vmName)
+	err = deleteVapp(vcd, vmName)
+	check.Assert(err, IsNil)
 }
 
 // createInternalDisk Finds available VM and creates internal Disk in it.
@@ -1107,7 +1108,8 @@ func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
 	updateVdcFastProvisioning(vcd, check, previousProvisioningValue)
 
 	// delete Vapp early to avoid env capacity issue
-	deleteVapp(vcd, vmName)
+	err = deleteVapp(vcd, vmName)
+	check.Assert(err, IsNil)
 }
 
 // Test update internal disk for VM which has independent disk
@@ -1180,7 +1182,8 @@ func (vcd *TestVCD) Test_UpdateInternalDisk(check *C) {
 	updateVdcFastProvisioning(vcd, check, previousProvisioningValue)
 
 	// delete Vapp early to avoid env capacity issue
-	deleteVapp(vcd, vmName)
+	err = deleteVapp(vcd, vmName)
+	check.Assert(err, IsNil)
 }
 
 func attachIndependentDisk(vcd *TestVCD, check *C) (*Disk, error) {
@@ -1449,7 +1452,8 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	check.Assert(updatedVm.VM.Description, Equals, "updateDescription")
 
 	// delete Vapp early to avoid env capacity issue
-	deleteVapp(vcd, vmName)
+	err = deleteVapp(vcd, vmName)
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_QueryVmList(check *C) {
@@ -1521,7 +1525,8 @@ func (vcd *TestVCD) Test_UpdateVmCpuAndMemoryHotAdd(check *C) {
 	check.Assert(updatedVm.VM.VMCapabilities.CPUHotAddEnabled, Equals, true)
 
 	// delete Vapp early to avoid env capacity issue
-	deleteVapp(vcd, vmName)
+	err = deleteVapp(vcd, vmName)
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {

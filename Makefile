@@ -2,7 +2,7 @@ TEST?=./...
 GOFMT_FILES?=$$(find . -name '*.go')
 maindir=$(PWD)
 
-default: fmtcheck vet static build
+default: fmtcheck vet static security build
 
 # test runs the test suite and vets the code
 test: testunit tagverify
@@ -10,7 +10,7 @@ test: testunit tagverify
 	cd govcd && go test -tags "functional" -timeout=650m -check.vv
 
 # tagverify checks that each tag can run independently
-tagverify: fmtcheck 
+tagverify: fmtcheck
 	@echo "==> Running Tags Tests"
 	@./scripts/test-tags.sh
 
@@ -61,6 +61,10 @@ vet:
 # static runs the source code static analysis tool `staticcheck`
 static: fmtcheck
 	@./scripts/staticcheck.sh
+
+# security runs the source code security analysis tool `gosec`
+security: fmtcheck
+	@./scripts/gosec.sh
 
 get-deps:
 	@echo "==> Fetching dependencies"

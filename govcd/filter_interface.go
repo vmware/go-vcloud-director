@@ -35,6 +35,8 @@ type (
 	QueryVapp          types.QueryResultVAppRecordType
 	QueryVm            types.QueryResultVMRecordType
 	QueryOrgVdc        types.QueryResultOrgVdcRecordType
+	QueryTask          types.QueryResultTaskRecordType
+	QueryAdminTask     types.QueryResultTaskRecordType
 )
 
 // getMetadataValue is a generic metadata lookup for all query items
@@ -173,6 +175,34 @@ func (network QueryOrgVdcNetwork) GetMetadataValue(key string) string {
 }
 
 // --------------------------------------------------------------
+// Task
+// --------------------------------------------------------------
+func (task QueryTask) GetHref() string       { return task.HREF }
+func (task QueryTask) GetName() string       { return task.Name }
+func (task QueryTask) GetType() string       { return "Task" }
+func (task QueryTask) GetIp() string         { return "" }
+func (task QueryTask) GetDate() string       { return task.StartDate }
+func (task QueryTask) GetParentName() string { return task.OwnerName }
+func (task QueryTask) GetParentId() string   { return task.Org }
+func (task QueryTask) GetMetadataValue(key string) string {
+	return getMetadataValue(task.Metadata, key)
+}
+
+// --------------------------------------------------------------
+// AdminTask
+// --------------------------------------------------------------
+func (task QueryAdminTask) GetHref() string       { return task.HREF }
+func (task QueryAdminTask) GetName() string       { return task.Name }
+func (task QueryAdminTask) GetType() string       { return "Task" }
+func (task QueryAdminTask) GetIp() string         { return "" }
+func (task QueryAdminTask) GetDate() string       { return task.StartDate }
+func (task QueryAdminTask) GetParentName() string { return task.OwnerName }
+func (task QueryAdminTask) GetParentId() string   { return task.Org }
+func (task QueryAdminTask) GetMetadataValue(key string) string {
+	return getMetadataValue(task.Metadata, key)
+}
+
+// --------------------------------------------------------------
 // vApp
 // --------------------------------------------------------------
 func (vapp QueryVapp) GetHref() string       { return vapp.HREF }
@@ -275,6 +305,15 @@ func resultToQueryItems(queryType string, results Results) ([]QueryItem, error) 
 		for i, item := range results.Results.OrgVdcAdminRecord {
 			items[i] = QueryOrgVdc(*item)
 		}
+	case types.QtTask:
+		for i, item := range results.Results.TaskRecord {
+			items[i] = QueryTask(*item)
+		}
+	case types.QtAdminTask:
+		for i, item := range results.Results.TaskRecord {
+			items[i] = QueryAdminTask(*item)
+		}
+
 	}
 	if len(items) > 0 {
 		return items, nil
