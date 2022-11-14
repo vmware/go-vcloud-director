@@ -10,6 +10,9 @@ import (
 
 func (vcd *TestVCD) Test_VdcNetworkProfile(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
+	if vcd.config.VCD.Nsxt.NsxtEdgeCluster == "" {
+		check.Skip("missing value for vcd.config.VCD.Nsxt.NsxtEdgeCluster")
+	}
 
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
