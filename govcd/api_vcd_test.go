@@ -41,7 +41,9 @@ func init() {
 	setBoolFlag(&ignoreCleanupFile, "vcd-ignore-cleanup-file", "GOVCD_IGNORE_CLEANUP_FILE", "Does not process previous cleanup file")
 	setBoolFlag(&debugShowRequestEnabled, "vcd-show-request", "GOVCD_SHOW_REQ", "Shows API request")
 	setBoolFlag(&debugShowResponseEnabled, "vcd-show-response", "GOVCD_SHOW_RESP", "Shows API response")
-
+	setBoolFlag(&connectAsOrgUser, "vcd-as-org-user", "VCD_TEST_ORG_USER", "Connect as Org user")
+	setBoolFlag(&connectAsOrgUser, "vcd-test-org-user", "VCD_TEST_ORG_USER", "Connect as Org user")
+	flag.IntVar(&connectTenantNum, "vcd-connect-tenant", connectTenantNum, "change index of tenant to use (0=first)")
 }
 
 const (
@@ -95,6 +97,14 @@ const (
 	TestRequiresSysAdminPrivileges = "Test %s requires system administrator privileges"
 )
 
+type Tenant struct {
+	User     string `yaml:"user,omitempty"`
+	Password string `yaml:"password,omitempty"`
+	Token    string `yaml:"token,omitempty"`
+	ApiToken string `yaml:"api_token,omitempty"`
+	SysOrg   string `yaml:"sysOrg,omitempty"`
+}
+
 // Struct to get info from a config yaml file that the user
 // specifies
 type TestConfig struct {
@@ -125,7 +135,8 @@ type TestConfig struct {
 		MaxRetryTimeout int    `yaml:"maxRetryTimeout,omitempty"`
 		HttpTimeout     int64  `yaml:"httpTimeout,omitempty"`
 	}
-	VCD struct {
+	Tenants []Tenant `yaml:"tenants,omitempty"`
+	VCD     struct {
 		Org         string `yaml:"org"`
 		Vdc         string `yaml:"vdc"`
 		ProviderVdc struct {
@@ -265,6 +276,10 @@ var enableDebug bool
 
 // ignoreCleanupFile prevents processing a previous cleanup file
 var ignoreCleanupFile bool
+
+// connectAsOrgUser connects as Org user instead of System administrator
+var connectAsOrgUser bool
+var connectTenantNum int
 
 // Makes the name for the cleanup entities persistent file
 // Using a name for each vCD allows us to run tests with different servers
@@ -442,6 +457,20 @@ func GetConfigStruct() (TestConfig, error) {
 	if err != nil {
 		return TestConfig{}, fmt.Errorf("could not unmarshal yaml file: %s", err)
 	}
+	if connectAsOrgUser {
+		if len(configStruct.Tenants) == 0 {
+			return TestConfig{}, fmt.Errorf("org user connection required, but 'tenants[%d]' is empty", connectTenantNum)
+		}
+		if connectTenantNum > len(configStruct.Tenants)-1 {
+			return TestConfig{}, fmt.Errorf("org user connection required, but tenant number %d is higher than the number of tenants ", connectTenantNum)
+		}
+		// Change configStruct.Provider, to reuse the global fields, such as URL
+		configStruct.Provider.User = configStruct.Tenants[connectTenantNum].User
+		configStruct.Provider.Password = configStruct.Tenants[connectTenantNum].Password
+		configStruct.Provider.SysOrg = configStruct.Tenants[connectTenantNum].SysOrg
+		configStruct.Provider.Token = configStruct.Tenants[connectTenantNum].Token
+		configStruct.Provider.ApiToken = configStruct.Tenants[connectTenantNum].ApiToken
+	}
 	return configStruct, nil
 }
 
@@ -485,15 +514,17 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		fmt.Println()
 		// Prints only the flags defined in this package
 		flag.CommandLine.VisitAll(func(f *flag.Flag) {
-			if strings.Contains(f.Name, "vcd-") {
+			if strings.HasPrefix(f.Name, "vcd-") {
 				fmt.Printf("  -%-40s %s (%v)\n", f.Name, f.Usage, f.Value)
 			}
 		})
 		fmt.Println()
-		os.Exit(0)
+		// This will skip the whole suite.
+		// Instead, running os.Exit(0) will panic
+		check.Skip("--- showing help ---")
 	}
 	config, err := GetConfigStruct()
-	if config == (TestConfig{}) || err != nil {
+	if config.Provider.Url == "" || err != nil {
 		panic(err)
 	}
 	vcd.config = config
