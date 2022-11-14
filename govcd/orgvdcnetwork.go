@@ -199,8 +199,8 @@ func (vdc *Vdc) CreateOrgVDCNetwork(networkConfig *types.OrgVDCNetwork) (Task, e
 // GetNetworkList returns a list of networks for the VDC
 func (vdc *Vdc) GetNetworkList() ([]*types.QueryResultOrgVdcNetworkRecordType, error) {
 	// Find the list of networks with the wanted name
-	result, err := vdc.client.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":          "orgVdcNetwork",
+	result, err := vdc.client.cumulativeQuery(types.QtOrgVdcNetwork, nil, map[string]string{
+		"type":          types.QtOrgVdcNetwork,
 		"filter":        fmt.Sprintf("vdc==%s", url.QueryEscape(vdc.Vdc.ID)),
 		"filterEncoded": "true",
 	})
@@ -215,8 +215,8 @@ func (vdc *Vdc) GetNetworkList() ([]*types.QueryResultOrgVdcNetworkRecordType, e
 func (vdc *Vdc) FindEdgeGatewayNameByNetwork(networkName string) (string, error) {
 
 	// Find the list of networks with the wanted name
-	result, err := vdc.client.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":          "orgVdcNetwork",
+	result, err := vdc.client.cumulativeQuery(types.QtOrgVdcNetwork, nil, map[string]string{
+		"type":          types.QtOrgVdcNetwork,
 		"filter":        fmt.Sprintf("name==%s;vdc==%s", url.QueryEscape(networkName), url.QueryEscape(vdc.Vdc.ID)),
 		"filterEncoded": "true",
 	})
