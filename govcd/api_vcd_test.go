@@ -41,6 +41,7 @@ func init() {
 	setBoolFlag(&ignoreCleanupFile, "vcd-ignore-cleanup-file", "GOVCD_IGNORE_CLEANUP_FILE", "Does not process previous cleanup file")
 	setBoolFlag(&debugShowRequestEnabled, "vcd-show-request", "GOVCD_SHOW_REQ", "Shows API request")
 	setBoolFlag(&debugShowResponseEnabled, "vcd-show-response", "GOVCD_SHOW_RESP", "Shows API response")
+	setBoolFlag(&connectAsOrgUser, "vcd-as-org-user", "VCD_TEST_ORG_USER", "Connect as Org user")
 	setBoolFlag(&connectAsOrgUser, "vcd-test-org-user", "VCD_TEST_ORG_USER", "Connect as Org user")
 	flag.IntVar(&connectTenantNum, "vcd-connect-tenant", connectTenantNum, "change index of tenant to use (0=first)")
 }
