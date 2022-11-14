@@ -55,6 +55,14 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 	}
 	adminCatalogHREF.Path += "/admin/catalog/" + catalogID
 
+	if force && recursive {
+		// A catalog cannot be removed if it has active tasks, or if any of its items have active tasks
+		err = catalog.consumeTasks()
+		if err != nil {
+			return err
+		}
+	}
+
 	req := catalog.client.NewRequest(map[string]string{
 		"force":     strconv.FormatBool(force),
 		"recursive": strconv.FormatBool(recursive),
@@ -72,6 +80,58 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 		return fmt.Errorf(combinedTaskErrorMessage(task.Task, fmt.Errorf("catalog %s not properly destroyed", catalog.Catalog.Name)))
 	}
 	return task.WaitTaskCompletion()
+}
+
+// consumeTasks will cancel all catalog tasks and the ones related to its items
+// 1. cancel all tasks associated with the catalog and keep them in a list
+// 2. find a list of all catalog items
+// 3. find a list of all tasks associated with the organization, with name = "syncCatalogItem" or "createCatalogItem"
+// 4. loop through the tasks until we find the ones that belong to one of the items - add them to list in 1.
+// 5. cancel all the filtered tasks
+// 6. wait for the task list until all are finished
+func (catalog *Catalog) consumeTasks() error {
+	allTasks, err := catalog.client.QueryTaskList(map[string]string{
+		"status": "running,preRunning,queued",
+	})
+	if err != nil {
+		return err
+	}
+	var taskList []string
+	addTask := func(status, href string) {
+		if status != "success" && status != "error" && status != "aborted" {
+			quickTask := Task{
+				client: catalog.client,
+				Task: &types.Task{
+					HREF: href,
+				},
+			}
+			err = quickTask.CancelTask()
+			if err != nil {
+				util.Logger.Printf("[consumeTasks] error canceling task: %s\n", err)
+			}
+			taskList = append(taskList, extractUuid(href))
+		}
+	}
+	if catalog.Catalog.Tasks != nil && len(catalog.Catalog.Tasks.Task) > 0 {
+		for _, task := range catalog.Catalog.Tasks.Task {
+			addTask(task.Status, task.HREF)
+		}
+	}
+	catalogItemRefs, err := catalog.QueryCatalogItemList()
+	if err != nil {
+		return err
+	}
+	for _, task := range allTasks {
+		for _, ref := range catalogItemRefs {
+			catalogItemId := extractUuid(ref.HREF)
+			if extractUuid(task.Object) == catalogItemId {
+				addTask(task.Status, task.HREF)
+				// No break here: the same object can have more than one task
+			}
+		}
+	}
+	_, err = catalog.client.WaitTaskListCompletion(taskList, true)
+	return err
 }
 
 // Envelope is a ovf description root element. File contains information for vmdk files.
@@ -471,8 +531,7 @@ func fetchVappTemplate(client *Client, vappTemplateUrl *url.URL) (*types.VAppTem
 // Function will return parsed part for upload files from description xml.
 func uploadOvfDescription(client *Client, ovfFile string, ovfUploadUrl *url.URL) error {
 	util.Logger.Printf("[TRACE] Uploding ovf description with file: %s and url: %s\n", ovfFile, ovfUploadUrl)
-	// #nosec G304 - linter does not like 'filePath' to be a variable. However this is necessary for file uploads.
-	openedFile, err := os.Open(ovfFile)
+	openedFile, err := os.Open(filepath.Clean(ovfFile))
 	if err != nil {
 		return err
 	}
@@ -642,8 +701,7 @@ func getOvfPath(filesAbsPaths []string) (string, error) {
 }
 
 func getOvf(ovfFilePath string) (Envelope, error) {
-	// #nosec G304 - linter does not like 'filePath' to be a variable. However this is necessary for file uploads.
-	openedFile, err := os.Open(ovfFilePath)
+	openedFile, err := os.Open(filepath.Clean(ovfFilePath))
 	if err != nil {
 		return Envelope{}, err
 	}
@@ -957,7 +1015,7 @@ func (catalog *Catalog) QueryMediaList() ([]*types.MediaRecordType, error) {
 	filter := fmt.Sprintf("catalog==%s", url.QueryEscape(catalog.Catalog.HREF))
 	results, err := catalog.client.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia, "filter": filter, "filterEncoded": "true"})
 	if err != nil {
-		return nil, fmt.Errorf("error querying medias %s", err)
+		return nil, fmt.Errorf("error querying medias: %s", err)
 	}
 
 	mediaResults := results.Results.MediaRecord
@@ -1018,4 +1076,66 @@ func (cat *Catalog) PublishToExternalOrganizations(publishExternalCatalog types.
 	}
 
 	return err
+}
+
+// elementSync is a low level function that synchronises a Catalog, AdminCatalog, CatalogItem, or Media item
+func elementSync(client *Client, elementHref, label string) error {
+	task, err := elementLaunchSync(client, elementHref, label)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+// queryMediaList retrieves a list of media items for a given catalog or AdminCatalog
+func queryMediaList(client *Client, catalogHref string) ([]*types.MediaRecordType, error) {
+	typeMedia := "media"
+	if client.IsSysAdmin {
+		typeMedia = "adminMedia"
+	}
+
+	filter := fmt.Sprintf("catalog==%s", url.QueryEscape(catalogHref))
+	results, err := client.QueryWithNotEncodedParams(nil, map[string]string{"type": typeMedia, "filter": filter, "filterEncoded": "true"})
+	if err != nil {
+		return nil, fmt.Errorf("error querying medias: %s", err)
+	}
+
+	mediaResults := results.Results.MediaRecord
+	if client.IsSysAdmin {
+		mediaResults = results.Results.AdminMediaRecord
+	}
+	return mediaResults, nil
+}
+
+// elementLaunchSync is a low level function that starts synchronisation for Catalog, AdminCatalog, CatalogItem, or Media item
+func elementLaunchSync(client *Client, elementHref, label string) (*Task, error) {
+	util.Logger.Printf("[TRACE] elementLaunchSync '%s' \n", label)
+	href := elementHref + "/action/sync"
+	syncTask, err := client.ExecuteTaskRequest(href, http.MethodPost,
+		"", "error synchronizing "+label+": %s", nil)
+
+	if err != nil {
+		// This process may fail due to a possible race condition: a synchronisation process may start in background
+		// after we check for existing tasks (in the function that called this one)
+		// and before we run the request in this function.
+		// In a Terraform vcd_subscribed_catalog operation, the completeness of the synchronisation
+		// will be ensured at the next refresh.
+		if strings.Contains(err.Error(), "LIBRARY_ITEM_SYNC") {
+			util.Logger.Printf("[SYNC FAILURE] error when launching synchronisation: %s\n", err)
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &syncTask, nil
+}
+
+// QueryTaskList retrieves a list of tasks associated to the Catalog
+func (catalog *Catalog) QueryTaskList(filter map[string]string) ([]*types.QueryResultTaskRecordType, error) {
+	var newFilter = map[string]string{
+		"object": catalog.Catalog.HREF,
+	}
+	for k, v := range filter {
+		newFilter[k] = v
+	}
+	return catalog.client.QueryTaskList(newFilter)
 }
