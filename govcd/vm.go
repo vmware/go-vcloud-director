@@ -1536,7 +1536,7 @@ func (vm *VM) UpdateComputePolicy(computePolicy *types.VdcComputePolicy) (*VM, e
 // UpdateComputePolicyV2Async updates VM Compute policy with the given compute policies using v2.0.0 OpenAPI endpoint,
 // and returns a Task and an error. Updating with an empty compute policy ID will remove it from the VM. Both
 // policies can't be empty as the VM requires at least one policy.
-// Note: At the moment, vGPU Policies are not supported.
+// WARNING: At the moment, vGPU Policies are not supported. Using one will return an error.
 func (vm *VM) UpdateComputePolicyV2Async(sizingPolicyId, placementPolicyId, vGpuPolicyId string) (Task, error) {
 	if vm.VM.HREF == "" {
 		return Task{}, fmt.Errorf("cannot update VM compute policy, VM HREF is unset")
@@ -1547,7 +1547,7 @@ func (vm *VM) UpdateComputePolicyV2Async(sizingPolicyId, placementPolicyId, vGpu
 	vGpuPolicyIsEmpty := strings.TrimSpace(vGpuPolicyId) == ""
 
 	if !vGpuPolicyIsEmpty {
-		util.Logger.Printf("[WARN] vGPU policies are not supported, hence %s will be ignored", vGpuPolicyId)
+		return Task{}, fmt.Errorf("vGPU policies are not supported, hence %s should be empty", vGpuPolicyId)
 	}
 
 	if sizingIsEmpty && placementIsEmpty {
