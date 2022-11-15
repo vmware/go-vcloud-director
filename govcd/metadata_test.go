@@ -16,16 +16,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func init() {
-	testingTags["metadata"] = "metadata_test.go"
-}
-
-type metadataCompatible interface {
-	GetMetadata() (*types.Metadata, error)
-	AddMetadataEntry(typedValue, key, value string) error
-	MergeMetadata(typedValue string, metadata map[string]interface{}) error
-	DeleteMetadataEntry(key string) error
-}
+// TODO: All tests here are deprecated in favor of those present in "metadata_v2_test". Remove this file once go-vcloud-director v3.0 is released.
 
 func (vcd *TestVCD) Test_AddAndDeleteMetadataForVdc(check *C) {
 	if vcd.config.VCD.Vdc == "" {
@@ -267,7 +258,7 @@ func (vcd *TestVCD) Test_MetadataOnAdminCatalogCRUD(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminCatalog, NotNil)
 
-	testMetadataCRUDActions(adminCatalog, check, func() {
+	testMetadataCRUDActionsDeprecated(adminCatalog, check, func() {
 		metadata, err := catalog.GetMetadata()
 		check.Assert(err, IsNil)
 		check.Assert(metadata, NotNil)
@@ -291,7 +282,7 @@ func (vcd *TestVCD) Test_MetadataEntryForVdcCRUD(check *C) {
 
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	testMetadataCRUDActions(vcd.vdc, check, nil)
+	testMetadataCRUDActionsDeprecated(vcd.vdc, check, nil)
 }
 
 func (vcd *TestVCD) Test_MetadataEntryOnVappCRUD(check *C) {
@@ -300,7 +291,7 @@ func (vcd *TestVCD) Test_MetadataEntryOnVappCRUD(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
-	testMetadataCRUDActions(vcd.vapp, check, nil)
+	testMetadataCRUDActionsDeprecated(vcd.vapp, check, nil)
 }
 
 func (vcd *TestVCD) Test_MetadataEntryOnVmCRUD(check *C) {
@@ -324,7 +315,7 @@ func (vcd *TestVCD) Test_MetadataEntryOnVmCRUD(check *C) {
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
 
-	testMetadataCRUDActions(vm, check, nil)
+	testMetadataCRUDActionsDeprecated(vm, check, nil)
 }
 
 func (vcd *TestVCD) Test_MetadataEntryOnVAppTemplateCRUD(check *C) {
@@ -349,7 +340,7 @@ func (vcd *TestVCD) Test_MetadataEntryOnVAppTemplateCRUD(check *C) {
 	check.Assert(vAppTemplate, NotNil)
 	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.CatalogItem)
 
-	testMetadataCRUDActions(&vAppTemplate, check, nil)
+	testMetadataCRUDActionsDeprecated(&vAppTemplate, check, nil)
 }
 
 func (vcd *TestVCD) Test_MetadataEntryOnMediaRecordCRUD(check *C) {
@@ -384,7 +375,7 @@ func (vcd *TestVCD) Test_MetadataEntryOnMediaRecordCRUD(check *C) {
 	check.Assert(mediaRecord, NotNil)
 	check.Assert(mediaRecord.MediaRecord.Name, Equals, itemName)
 
-	testMetadataCRUDActions(mediaRecord, check, nil)
+	testMetadataCRUDActionsDeprecated(mediaRecord, check, nil)
 }
 
 func (vcd *TestVCD) Test_MetadataOnAdminOrgCRUD(check *C) {
@@ -400,7 +391,7 @@ func (vcd *TestVCD) Test_MetadataOnAdminOrgCRUD(check *C) {
 		return
 	}
 
-	testMetadataCRUDActions(adminOrg, check, func() {
+	testMetadataCRUDActionsDeprecated(adminOrg, check, func() {
 		metadata, err := org.GetMetadata()
 		check.Assert(err, IsNil)
 		check.Assert(metadata, NotNil)
@@ -443,7 +434,7 @@ func (vcd *TestVCD) Test_MetadataOnIndependentDiskCRUD(check *C) {
 	disk, err := vcd.vdc.GetDiskByHref(diskHREF)
 	check.Assert(err, IsNil)
 
-	testMetadataCRUDActions(disk, check, nil)
+	testMetadataCRUDActionsDeprecated(disk, check, nil)
 }
 
 func (vcd *TestVCD) Test_MetadataOnVdcNetworkCRUD(check *C) {
@@ -454,7 +445,7 @@ func (vcd *TestVCD) Test_MetadataOnVdcNetworkCRUD(check *C) {
 		return
 	}
 
-	testMetadataCRUDActions(net, check, nil)
+	testMetadataCRUDActionsDeprecated(net, check, nil)
 }
 
 func (vcd *TestVCD) Test_MetadataOnCatalogItemCRUD(check *C) {
@@ -471,7 +462,7 @@ func (vcd *TestVCD) Test_MetadataOnCatalogItemCRUD(check *C) {
 		return
 	}
 
-	testMetadataCRUDActions(catalogItem, check, nil)
+	testMetadataCRUDActionsDeprecated(catalogItem, check, nil)
 }
 
 func (vcd *TestVCD) Test_MetadataOnProviderVdcCRUD(check *C) {
@@ -482,7 +473,7 @@ func (vcd *TestVCD) Test_MetadataOnProviderVdcCRUD(check *C) {
 		return
 	}
 
-	testMetadataCRUDActions(providerVdc, check, nil)
+	testMetadataCRUDActionsDeprecated(providerVdc, check, nil)
 }
 
 func (vcd *TestVCD) Test_MetadataOnOpenApiOrgVdcNetworkCRUD(check *C) {
@@ -493,7 +484,7 @@ func (vcd *TestVCD) Test_MetadataOnOpenApiOrgVdcNetworkCRUD(check *C) {
 		return
 	}
 
-	testMetadataCRUDActions(net, check, nil)
+	testMetadataCRUDActionsDeprecated(net, check, nil)
 }
 
 func (vcd *TestVCD) Test_MetadataByHrefCRUD(check *C) {
@@ -578,7 +569,14 @@ func (vcd *TestVCD) Test_MetadataByHrefCRUD(check *C) {
 	check.Assert(len(metadata.MetadataEntry), Equals, 0)
 }
 
-func testMetadataCRUDActions(resource metadataCompatible, check *C, extraCheck func()) {
+type metadataCompatibleDeprecated interface {
+	GetMetadata() (*types.Metadata, error)
+	AddMetadataEntry(typedValue, key, value string) error
+	MergeMetadata(typedValue string, metadata map[string]interface{}) error
+	DeleteMetadataEntry(key string) error
+}
+
+func testMetadataCRUDActionsDeprecated(resource metadataCompatibleDeprecated, check *C, extraCheck func()) {
 	// Check how much metadata exists
 	metadata, err := resource.GetMetadata()
 	check.Assert(err, IsNil)
