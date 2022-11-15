@@ -517,6 +517,10 @@ const (
 	MetadataNumberValue   string = "MetadataNumberValue"
 	MetadataDateTimeValue string = "MetadataDateTimeValue"
 	MetadataBooleanValue  string = "MetadataBooleanValue"
+
+	MetadataReadOnlyVisibility  string = "READONLY"
+	MetadataHiddenVisibility    string = "PRIVATE"
+	MetadataReadWriteVisibility string = "READWRITE"
 )
 
 const (
