@@ -992,6 +992,40 @@ func (vdc *Vdc) getLinkHref(rel, linkType string) string {
 	return ""
 }
 
+// GetMediaById finds a Media item by ID.
+// On success, returns a pointer to the Media structure and a nil error.
+// On failure, returns a nil pointer and an error.
+func (vdc *Vdc) GetMediaById(mediaId string) (*Media, error) {
+	return getMediaById(vdc.client, mediaId)
+}
+
+// getMediaById finds a Media item by ID.
+// On success, returns a pointer to the Media structure and a nil error.
+// On failure, returns a nil pointer and an error.
+func getMediaById(client *Client, mediaId string) (*Media, error) {
+	mediaHref := client.VCDHREF
+	mediaHref.Path += "/media/" + extractUuid(mediaId)
+
+	media, err := getMediaByHref(client, mediaHref.String())
+	if err != nil {
+		return nil, fmt.Errorf("could not find Media item with ID %s: %s", mediaId, err)
+	}
+	return media, nil
+}
+
+// getMediaByHref finds a Media item by its HREF
+// On success, returns a pointer to the Media structure and a nil error
+// On failure, returns a nil pointer and an error
+func getMediaByHref(client *Client, href string) (*Media, error) {
+	media := NewMedia(client)
+
+	_, err := client.ExecuteRequest(href, http.MethodGet, "", "error retrieving Media item: %s", nil, media.Media)
+	if err != nil {
+		return nil, err
+	}
+	return media, nil
+}
+
 // GetVappList returns the list of vApps for a VDC
 func (vdc *Vdc) GetVappList() []*types.ResourceReference {
 	var list []*types.ResourceReference
