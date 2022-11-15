@@ -1452,3 +1452,41 @@ type EdgeBgpGracefulRestartConfig struct {
 type EdgeBgpConfigVersion struct {
 	Version int `json:"version"`
 }
+
+// VdcNetworkProfile defines a VDC Network Profile.
+//
+// All fields are optional, but omiting them will reset value. The general approach while updating
+// VdcNetworkProfile should be to retrieve existing configuration and mutate it.
+type VdcNetworkProfile struct {
+	// PrimaryEdgeCluster defines NSX-V Edge Cluster where the primary appliance for an NSX-V Edge
+	// Gateway will be deployed. (NSX-V only)
+	PrimaryEdgeCluster *OpenApiReference `json:"primaryEdgeCluster,omitempty"`
+
+	// SecondaryEdgeCluster defines NSX-V Edge Cluster where the secondary appliance for an NSX-V
+	// Edge Gateway will be deployed if HA is enabled on the Edge. (NSX-V only)
+	SecondaryEdgeCluster *OpenApiReference `json:"secondaryEdgeCluster,omitempty"`
+
+	// ServicesEdgeCluster contains NSX-T Edge Cluster where the DHCP server profile will be stored
+	// for NSX-T networks using NETWORK mode DHCP. (NSX-T only)
+	ServicesEdgeCluster *VdcNetworkProfileServicesEdgeCluster `json:"servicesEdgeCluster,omitempty"`
+
+	// VappNetworkSegmentProfileTemplateRef defines vApp Network Segment Profile Template that is to
+	// be used when any new vApp Network is created under this VDC. Setting this will override any
+	// global level vApp Network Segment Profile Template. This field is only applicable for (NSX-T
+	// only)
+	// VCD 10.3.2+ (API 36.2+)
+	VappNetworkSegmentProfileTemplateRef *OpenApiReference `json:"vappNetworkSegmentProfileTemplateRef,omitempty"`
+
+	// VdcNetworkSegmentProfileTemplateRef defines Org vDC Network Segment Profile Template that is
+	// to be used when any new Org vDC Network is created under this VDC. Setting this will override
+	// any global level Org vDC Network Segment Profile Template. (NSX-T only)
+	// VCD 10.3.2+ (API 36.2+)
+	VdcNetworkSegmentProfileTemplateRef *OpenApiReference `json:"vdcNetworkSegmentProfileTemplateRef,omitempty"`
+}
+
+// VdcNetworkProfileServicesEdgeCluster contains reference to NSX-T Edge Cluster used in
+// VdcNetworkProfile
+type VdcNetworkProfileServicesEdgeCluster struct {
+	BackingID      string            `json:"backingId"`
+	EdgeClusterRef *OpenApiReference `json:"edgeClusterRef,omitempty"`
+}

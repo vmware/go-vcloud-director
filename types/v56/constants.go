@@ -362,6 +362,7 @@ const (
 	OpenApiEndpointVdcComputePolicies                 = "vdcComputePolicies/"
 	OpenApiEndpointVdcAssignedComputePolicies         = "vdcs/%s/computePolicies"
 	OpenApiEndpointVdcCapabilities                    = "vdcs/%s/capabilities"
+	OpenApiEndpointVdcNetworkProfile                  = "vdcs/%s/networkProfile"
 	OpenApiEndpointEdgeGateways                       = "edgeGateways/"
 	OpenApiEndpointNsxtFirewallRules                  = "edgeGateways/%s/firewall/rules"
 	OpenApiEndpointFirewallGroups                     = "firewallGroups/"
