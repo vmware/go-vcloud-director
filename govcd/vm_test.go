@@ -1816,6 +1816,9 @@ func (vcd *TestVCD) Test_VMUpdateComputePolicies(check *C) {
 	check.Assert(len(alreadyAssignedPolicies)+numberOfPolicies*2, Equals, len(assignedVdcComputePolicies.VdcComputePolicyReference))
 
 	vapp, vm := createNsxtVAppAndVm(vcd, check)
+	check.Assert(vapp, NotNil)
+	check.Assert(vm, NotNil)
+
 	// Update all Compute Policies: Sizing and Placement
 	check.Assert(err, IsNil)
 	vm, err = vm.UpdateComputePolicyV2(sizingPolicies[0].VdcComputePolicyV2.ID, placementPolicies[0].VdcComputePolicyV2.ID, "")
@@ -2175,6 +2178,8 @@ func (vcd *TestVCD) Test_VMChangeMemory(check *C) {
 
 func (vcd *TestVCD) Test_AddRawVm(check *C) {
 	vapp, vm := createNsxtVAppAndVm(vcd, check)
+	check.Assert(vapp, NotNil)
+	check.Assert(vm, NotNil)
 
 	// Check that vApp did not lose its state
 	vappStatus, err := vapp.GetStatus()
