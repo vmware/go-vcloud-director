@@ -211,6 +211,85 @@ func (vcd *TestVCD) Test_GetNetworkList(check *C) {
 	check.Assert(found, Equals, true)
 }
 
+// Test_GetNetworkListLarge makes sure we can query a number of networks larger than the default query page length
+func (vcd *TestVCD) Test_GetNetworkListLarge(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	defaultPagelength := 25
+	externalNetwork, err := vcd.client.GetExternalNetworkByName(vcd.config.VCD.ExternalNetwork)
+	if err != nil {
+		check.Skip("[Test_GetNetworkListLarge] parent network not found")
+		return
+	}
+	numOfNetworks := defaultPagelength + 1
+	baseName := vcd.config.VCD.Org
+	for i := 1; i <= numOfNetworks; i++ {
+		networkName := fmt.Sprintf("net-%s-d-%d", baseName, i)
+		if testVerbose {
+			fmt.Printf("creating network %s\n", networkName)
+		}
+		description := fmt.Sprintf("Created by govcd test - network n. %d", i)
+		var networkConfig = types.OrgVDCNetwork{
+			Xmlns:       types.XMLNamespaceVCloud,
+			Name:        networkName,
+			Description: description,
+			Configuration: &types.NetworkConfiguration{
+				FenceMode: types.FenceModeBridged,
+				ParentNetwork: &types.Reference{
+					HREF: externalNetwork.ExternalNetwork.HREF,
+					Name: externalNetwork.ExternalNetwork.Name,
+					Type: externalNetwork.ExternalNetwork.Type,
+				},
+				BackwardCompatibilityMode: true,
+			},
+			IsShared: false,
+		}
+		task, err := vcd.vdc.CreateOrgVDCNetwork(&networkConfig)
+		check.Assert(err, IsNil)
+
+		AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_GetNetworkListLarge")
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+	}
+
+	err = vcd.vdc.Refresh()
+	check.Assert(err, IsNil)
+
+	knownNetworkName1 := fmt.Sprintf("net-%s-d", baseName)
+	knownNetworkName2 := fmt.Sprintf("net-%s-d-%d", baseName, numOfNetworks)
+	networks, err := vcd.vdc.GetNetworkList()
+	check.Assert(err, IsNil)
+	if testVerbose {
+		fmt.Printf("Number of networks: %d\n", len(networks))
+	}
+	check.Assert(len(networks) > defaultPagelength, Equals, true)
+	found1 := false
+	found2 := false
+	for _, net := range networks {
+		if net.Name == knownNetworkName1 {
+			found1 = true
+		}
+		if net.Name == knownNetworkName2 {
+			found2 = true
+		}
+	}
+	check.Assert(found1, Equals, true)
+	check.Assert(found2, Equals, true)
+
+	for i := 1; i <= numOfNetworks; i++ {
+		networkName := fmt.Sprintf("net-%s-d-%d", baseName, i)
+		if testVerbose {
+			fmt.Printf("Removing network %s\n", networkName)
+		}
+		network, err := vcd.vdc.GetOrgVdcNetworkByName(networkName, false)
+		check.Assert(err, IsNil)
+		_, err = network.Delete()
+		check.Assert(err, IsNil)
+	}
+	err = vcd.vdc.Refresh()
+	check.Assert(err, IsNil)
+}
+
 // Tests the creation and update of an isolated Org VDC network
 func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkIso(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
