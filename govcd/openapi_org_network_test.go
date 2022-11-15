@@ -431,7 +431,7 @@ func nsxtRoutedDhcpConfigEdgeMode(check *C, vcd *TestVCD, vdc *Vdc, orgNetId str
 	check.Assert(len(deletedDhcp.OpenApiOrgVdcNetworkDhcp.DnsServers), Equals, 0)
 }
 
-// nsxtDhcpConfigNetworkMode checks DHCP functionality in NETWORK mode
+// nsxtDhcpConfigNetworkMode checks DHCP functionality in NETWORK mode.
 // It requires that Edge Cluster is set at VDC level therefore this function does it for the
 // duration of this test and restores it back
 func nsxtDhcpConfigNetworkMode(check *C, vcd *TestVCD, vdc *Vdc, orgNetId string) {

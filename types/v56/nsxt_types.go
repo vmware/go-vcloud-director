@@ -212,7 +212,7 @@ type OpenApiOrgVdcNetworkDhcp struct {
 	// attribute cannot be changed. The mode field will default to 'EDGE' if it is not provided. This field only applies
 	// to networks backed by an NSX-T network provider.
 	//
-	// The supported values are EDGE ,NETWORK and RELAY (VCD 10.3.1+, API 36.1+).
+	// The supported values are EDGE, NETWORK and RELAY (VCD 10.3.1+, API 36.1+).
 	// * If EDGE is specified, the DHCP service of the edge is used to obtain DHCP IPs.
 	// * If NETWORK is specified, a DHCP server is created for use by this network.
 	// * If RELAY is specified, all the DHCP client requests will be relayed to Gateway DHCP
