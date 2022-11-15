@@ -201,28 +201,36 @@ type NsxtImportableSwitch = OpenApiReference
 
 // OpenApiOrgVdcNetworkDhcp allows users to manage DHCP configuration for Org VDC networks by using OpenAPI endpoint
 type OpenApiOrgVdcNetworkDhcp struct {
-	Enabled   *bool                           `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// LeaseTime specifies the amount of time in seconds of how long a DHCP IP will be leased out
+	// for. The minimum is 60s while the maximum is 4,294,967,295s, which is roughly 49,710 days.
 	LeaseTime *int                            `json:"leaseTime,omitempty"`
 	DhcpPools []OpenApiOrgVdcNetworkDhcpPools `json:"dhcpPools,omitempty"`
+
 	// Mode describes how the DHCP service is configured for this network. Once a DHCP service has been created, the mode
 	// attribute cannot be changed. The mode field will default to 'EDGE' if it is not provided. This field only applies
 	// to networks backed by an NSX-T network provider.
 	//
-	// The supported values are EDGE (default) and NETWORK.
+	// The supported values are EDGE, NETWORK and RELAY (VCD 10.3.1+, API 36.1+).
 	// * If EDGE is specified, the DHCP service of the edge is used to obtain DHCP IPs.
-	// * If NETWORK is specified, a DHCP server is created for use by this network. (To use NETWORK
+	// * If NETWORK is specified, a DHCP server is created for use by this network.
+	// * If RELAY is specified, all the DHCP client requests will be relayed to Gateway DHCP
+	//   Forwarder service. This mode is only supported for Routed Org vDC Networks.
 	//
-	// In order to use DHCP for IPV6, NETWORK mode must be used. Routed networks which are using NETWORK DHCP services can
-	// be disconnected from the edge gateway and still retain their DHCP configuration, however network using EDGE DHCP
-	// cannot be disconnected from the gateway until DHCP has been disabled.
+	// In order to use DHCP for IPV6, NETWORK mode must be used. Routed networks which are using
+	// NETWORK DHCP services can be disconnected from the edge gateway and still retain their DHCP
+	// configuration, however DHCP configuration will be removed during connection change for
+	// networks using EDGE or RELAY DHCP mode.
 	Mode string `json:"mode,omitempty"`
+
 	// IPAddress is only applicable when mode=NETWORK. This will specify IP address of DHCP server in network.
 	IPAddress string `json:"ipAddress,omitempty"`
 
 	// New fields starting with 36.1
 
-	// DnsServers are the IPs to be assigned by this DHCP service. The IP type must match the IP type of the subnet on
-	// which the DHCP config is being created.
+	// DnsServers are the IPs to be assigned by this DHCP service. The IP type must match the IP
+	// type of the subnet on which the DHCP config is being created.
 	DnsServers []string `json:"dnsServers,omitempty"`
 }
 
