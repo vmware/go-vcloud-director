@@ -992,40 +992,6 @@ func (vdc *Vdc) getLinkHref(rel, linkType string) string {
 	return ""
 }
 
-// GetMediaById finds a Media item by ID.
-// On success, returns a pointer to the Media structure and a nil error.
-// On failure, returns a nil pointer and an error.
-func (vdc *Vdc) GetMediaById(mediaId string) (*Media, error) {
-	return getMediaById(vdc.client, mediaId)
-}
-
-// getMediaById finds a Media item by ID.
-// On success, returns a pointer to the Media structure and a nil error.
-// On failure, returns a nil pointer and an error.
-func getMediaById(client *Client, mediaId string) (*Media, error) {
-	mediaHref := client.VCDHREF
-	mediaHref.Path += "/media/" + extractUuid(mediaId)
-
-	media, err := getMediaByHref(client, mediaHref.String())
-	if err != nil {
-		return nil, fmt.Errorf("could not find Media item with ID %s: %s", mediaId, err)
-	}
-	return media, nil
-}
-
-// getMediaByHref finds a Media item by its HREF
-// On success, returns a pointer to the Media structure and a nil error
-// On failure, returns a nil pointer and an error
-func getMediaByHref(client *Client, href string) (*Media, error) {
-	media := NewMedia(client)
-
-	_, err := client.ExecuteRequest(href, http.MethodGet, "", "error retrieving Media item: %s", nil, media.Media)
-	if err != nil {
-		return nil, err
-	}
-	return media, nil
-}
-
 // GetVappList returns the list of vApps for a VDC
 func (vdc *Vdc) GetVappList() []*types.ResourceReference {
 	var list []*types.ResourceReference
@@ -1303,4 +1269,40 @@ func (vdc *Vdc) getParentOrg() (organization, error) {
 		}
 	}
 	return nil, fmt.Errorf("no parent found for VDC %s", vdc.Vdc.Name)
+}
+
+// QueryMediaById returns a MediaRecord associated to the given media item URN. Returns ErrorEntityNotFound
+// if it is not found, or an error if there's more than one result.
+func (vdc *Vdc) QueryMediaById(mediaId string) (*MediaRecord, error) {
+	if mediaId == "" {
+		return nil, fmt.Errorf("media ID is empty")
+	}
+
+	filterType := types.QtMedia
+	if vdc.client.IsSysAdmin {
+		filterType = types.QtAdminMedia
+	}
+	results, err := vdc.client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":          filterType,
+		"filter":        fmt.Sprintf("id==%s", url.QueryEscape(mediaId)),
+		"filterEncoded": "true"})
+	if err != nil {
+		return nil, fmt.Errorf("error querying medias %s", err)
+	}
+	newMediaRecord := NewMediaRecord(vdc.client)
+
+	mediaResults := results.Results.MediaRecord
+	if vdc.client.IsSysAdmin {
+		mediaResults = results.Results.AdminMediaRecord
+	}
+
+	if len(mediaResults) == 0 {
+		return nil, ErrorEntityNotFound
+	}
+	if len(mediaResults) > 1 {
+		return nil, fmt.Errorf("found %#v results with media ID %s", len(mediaResults), mediaId)
+	}
+
+	newMediaRecord.MediaRecord = mediaResults[0]
+	return newMediaRecord, nil
 }

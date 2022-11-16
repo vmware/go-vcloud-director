@@ -641,12 +641,14 @@ func (vcd *TestVCD) TestMediaRetrieval(check *C) {
 	check.Assert(mediaFromCatalog, NotNil)
 
 	// Test cases
-	mediaFromVdc, err := vdc.GetMediaById(mediaFromCatalog.Media.ID)
+	mediaFromVdc, err := vdc.QueryMediaById(mediaFromCatalog.Media.ID)
 	check.Assert(err, IsNil)
-	check.Assert(mediaFromCatalog, DeepEquals, mediaFromVdc)
+	check.Assert(mediaFromCatalog.Media.ID, Equals, mediaFromVdc.MediaRecord.ID)
+	check.Assert(mediaFromCatalog.Media.HREF, Equals, mediaFromVdc.MediaRecord.HREF)
+	check.Assert(mediaFromCatalog.Media.Name, Equals, mediaFromVdc.MediaRecord.Name)
 
 	// Test non-existent Media item
-	mediaFromVdc, err = vdc.GetMediaById("INVALID")
+	mediaFromVdc, err = vdc.QueryMediaById("INVALID")
 	check.Assert(err, NotNil)
 	check.Assert(mediaFromVdc, IsNil)
 }
