@@ -1487,7 +1487,32 @@ func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection, 
 		})
 }
 
+// UpdateComputePolicyV2 updates VM Compute policy with the given compute policies using v2.0.0 OpenAPI endpoint,
+// and returns an error if something went wrong, or the refreshed VM if all went OK.
+// Updating with an empty compute policy ID will remove it from the VM. Both policies can't be empty as the VM requires
+// at least one policy.
+func (vm *VM) UpdateComputePolicyV2(sizingPolicyId, placementPolicyId, vGpuPolicyId string) (*VM, error) {
+	task, err := vm.UpdateComputePolicyV2Async(sizingPolicyId, placementPolicyId, vGpuPolicyId)
+	if err != nil {
+		return nil, err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, err
+	}
+
+	err = vm.Refresh()
+	if err != nil {
+		return nil, err
+	}
+
+	return vm, nil
+
+}
+
 // UpdateComputePolicy updates VM compute policy and returns refreshed VM or error.
+// Deprecated: Use VM.UpdateComputePolicyV2 instead
 func (vm *VM) UpdateComputePolicy(computePolicy *types.VdcComputePolicy) (*VM, error) {
 	task, err := vm.UpdateComputePolicyAsync(computePolicy)
 	if err != nil {
@@ -1508,7 +1533,64 @@ func (vm *VM) UpdateComputePolicy(computePolicy *types.VdcComputePolicy) (*VM, e
 
 }
 
+// UpdateComputePolicyV2Async updates VM Compute policy with the given compute policies using v2.0.0 OpenAPI endpoint,
+// and returns a Task and an error. Updating with an empty compute policy ID will remove it from the VM. Both
+// policies can't be empty as the VM requires at least one policy.
+// WARNING: At the moment, vGPU Policies are not supported. Using one will return an error.
+func (vm *VM) UpdateComputePolicyV2Async(sizingPolicyId, placementPolicyId, vGpuPolicyId string) (Task, error) {
+	if vm.VM.HREF == "" {
+		return Task{}, fmt.Errorf("cannot update VM compute policy, VM HREF is unset")
+	}
+
+	sizingIsEmpty := strings.TrimSpace(sizingPolicyId) == ""
+	placementIsEmpty := strings.TrimSpace(placementPolicyId) == ""
+	vGpuPolicyIsEmpty := strings.TrimSpace(vGpuPolicyId) == ""
+
+	if !vGpuPolicyIsEmpty {
+		return Task{}, fmt.Errorf("vGPU policies are not supported, hence %s should be empty", vGpuPolicyId)
+	}
+
+	if sizingIsEmpty && placementIsEmpty {
+		return Task{}, fmt.Errorf("either sizing policy ID or placement policy ID is needed")
+	}
+
+	// `reconfigureVm` updates VM name, Description, and any or all of the following sections.
+	//    VirtualHardwareSection
+	//    OperatingSystemSection
+	//    NetworkConnectionSection
+	//    GuestCustomizationSection
+	// Sections not included in the request body will not be updated.
+
+	computePolicy := &types.ComputePolicy{}
+
+	if !sizingIsEmpty {
+		vdcSizingPolicyHref, err := vm.client.OpenApiBuildEndpoint(types.OpenApiPathVersion2_0_0, types.OpenApiEndpointVdcComputePolicies, sizingPolicyId)
+		if err != nil {
+			return Task{}, fmt.Errorf("error constructing HREF for sizing policy")
+		}
+		computePolicy.VmSizingPolicy = &types.Reference{HREF: vdcSizingPolicyHref.String()}
+	}
+
+	if !placementIsEmpty {
+		vdcPlacementPolicyHref, err := vm.client.OpenApiBuildEndpoint(types.OpenApiPathVersion2_0_0, types.OpenApiEndpointVdcComputePolicies, placementPolicyId)
+		if err != nil {
+			return Task{}, fmt.Errorf("error constructing HREF for placement policy")
+		}
+		computePolicy.VmPlacementPolicy = &types.Reference{HREF: vdcPlacementPolicyHref.String()}
+	}
+
+	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
+		types.MimeVM, "error updating VM spec section: %s", &types.Vm{
+			Xmlns:         types.XMLNamespaceVCloud,
+			Ovf:           types.XMLNamespaceOVF,
+			Name:          vm.VM.Name,
+			Description:   vm.VM.Description,
+			ComputePolicy: computePolicy,
+		})
+}
+
 // UpdateComputePolicyAsync updates VM Compute policy and returns Task and error.
+// Deprecated: Use VM.UpdateComputePolicyV2Async instead
 func (vm *VM) UpdateComputePolicyAsync(computePolicy *types.VdcComputePolicy) (Task, error) {
 	if vm.VM.HREF == "" {
 		return Task{}, fmt.Errorf("cannot update VM compute policy, VM HREF is unset")
