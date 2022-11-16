@@ -635,6 +635,42 @@ func (adminCatalog *AdminCatalog) QueryMedia(mediaName string) (*MediaRecord, er
 	return catalog.QueryMedia(mediaName)
 }
 
+// QueryMediaById returns a MediaRecord associated to the given media item URN. Returns ErrorEntityNotFound
+// if it is not found, or an error if there's more than one result.
+func (vcdClient *VCDClient) QueryMediaById(mediaId string) (*MediaRecord, error) {
+	if mediaId == "" {
+		return nil, fmt.Errorf("media ID is empty")
+	}
+
+	filterType := types.QtMedia
+	if vcdClient.Client.IsSysAdmin {
+		filterType = types.QtAdminMedia
+	}
+	results, err := vcdClient.Client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":          filterType,
+		"filter":        fmt.Sprintf("id==%s", url.QueryEscape(mediaId)),
+		"filterEncoded": "true"})
+	if err != nil {
+		return nil, fmt.Errorf("error querying medias %s", err)
+	}
+	newMediaRecord := NewMediaRecord(&vcdClient.Client)
+
+	mediaResults := results.Results.MediaRecord
+	if vcdClient.Client.IsSysAdmin {
+		mediaResults = results.Results.AdminMediaRecord
+	}
+
+	if len(mediaResults) == 0 {
+		return nil, ErrorEntityNotFound
+	}
+	if len(mediaResults) > 1 {
+		return nil, fmt.Errorf("found %#v results with media ID %s", len(mediaResults), mediaId)
+	}
+
+	newMediaRecord.MediaRecord = mediaResults[0]
+	return newMediaRecord, nil
+}
+
 // Refresh refreshes the media information by href
 func (mediaRecord *MediaRecord) Refresh() error {
 

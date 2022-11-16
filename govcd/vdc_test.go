@@ -589,7 +589,7 @@ func (vcd *TestVCD) TestVAppTemplateRetrieval(check *C) {
 		check.Assert(strings.Contains(vAppTemplate.VAppTemplate.Description, vcd.config.VCD.Catalog.CatalogItemDescription), Equals, true)
 	}
 
-	vAppTemplate, err = vdc.GetVAppTemplateById(vAppTemplate.VAppTemplate.ID)
+	vAppTemplate, err = vcd.client.GetVAppTemplateById(vAppTemplate.VAppTemplate.ID)
 	check.Assert(err, IsNil)
 	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.NsxtCatalogItem)
 	if vcd.config.VCD.Catalog.CatalogItemDescription != "" {
@@ -641,13 +641,13 @@ func (vcd *TestVCD) TestMediaRetrieval(check *C) {
 	check.Assert(mediaFromCatalog, NotNil)
 
 	// Test cases
-	mediaFromVdc, err := vdc.QueryMediaById(mediaFromCatalog.Media.ID)
+	mediaFromVdc, err := vcd.client.QueryMediaById(mediaFromCatalog.Media.ID)
 	check.Assert(err, IsNil)
 	check.Assert(mediaFromCatalog.Media.HREF, Equals, mediaFromVdc.MediaRecord.HREF)
 	check.Assert(mediaFromCatalog.Media.Name, Equals, mediaFromVdc.MediaRecord.Name)
 
 	// Test non-existent Media item
-	mediaFromVdc, err = vdc.QueryMediaById("INVALID")
+	mediaFromVdc, err = vcd.client.QueryMediaById("INVALID")
 	check.Assert(err, NotNil)
 	check.Assert(mediaFromVdc, IsNil)
 }

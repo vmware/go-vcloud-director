@@ -180,3 +180,49 @@ func (vAppTemplate *VAppTemplate) Delete() error {
 	}
 	return nil
 }
+
+// GetVAppTemplateByHref finds a vApp template by HREF
+// On success, returns a pointer to the vApp template structure and a nil error
+// On failure, returns a nil pointer and an error
+func (vcdClient *VCDClient) GetVAppTemplateByHref(href string) (*VAppTemplate, error) {
+	return getVAppTemplateByHref(&vcdClient.Client, href)
+}
+
+// GetVAppTemplateById finds a vApp Template by ID.
+// On success, returns a pointer to the VAppTemplate structure and a nil error.
+// On failure, returns a nil pointer and an error.
+func (vcdClient *VCDClient) GetVAppTemplateById(vAppTemplateId string) (*VAppTemplate, error) {
+	return getVAppTemplateById(&vcdClient.Client, vAppTemplateId)
+}
+
+func (vcdClient *VCDClient) QueryVmInVAppTemplateByHref(vAppTemplateHref, vmInTemplateName string) (*types.QueryResultVMRecordType, error) {
+	queryType := "vm"
+	if vcdClient.Client.IsSysAdmin {
+		queryType = "adminVM"
+	}
+
+	// this allows to query deployed and not deployed templates
+	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
+		"type": queryType,
+		"filter": "container==" + url.QueryEscape(vAppTemplateHref) + ";name==" + url.QueryEscape(vmInTemplateName) +
+			";isVAppTemplate==true;status!=FAILED_CREATION;status!=UNKNOWN;status!=UNRECOGNIZED;status!=UNRESOLVED;status!=LOCAL_COPY_UNAVAILABLE&links=true;",
+		"filterEncoded": "true"})
+	if err != nil {
+		return nil, fmt.Errorf("[QueryVmInVAppTemplateByHref] error quering vApp templates with HREF %s:, VM name: %s: Error: %s", vAppTemplateHref, vmInTemplateName, err)
+	}
+
+	vmResults := results.Results.VMRecord
+	if vcdClient.Client.IsSysAdmin {
+		vmResults = results.Results.AdminVMRecord
+	}
+
+	if len(vmResults) == 0 {
+		return nil, fmt.Errorf("[QueryVmInVAppTemplateByHref] did not find any result with HREF: %s, VM name: %s", vAppTemplateHref, vmInTemplateName)
+	}
+
+	if len(vmResults) > 1 {
+		return nil, fmt.Errorf("[QueryVmInVAppTemplateByHref] found %d results with with HREF: %s, VM name: %s", len(vmResults), vAppTemplateHref, vmInTemplateName)
+	}
+
+	return vmResults[0], nil
+}

@@ -952,21 +952,7 @@ func (vdc *Vdc) GetVAppTemplateByName(vAppTemplateName string) (*VAppTemplate, e
 	if err != nil {
 		return nil, err
 	}
-	return vdc.GetVAppTemplateByHref(vAppTemplateQueryResult.HREF)
-}
-
-// GetVAppTemplateByHref finds a vApp template by HREF
-// On success, returns a pointer to the vApp template structure and a nil error
-// On failure, returns a nil pointer and an error
-func (vdc *Vdc) GetVAppTemplateByHref(href string) (*VAppTemplate, error) {
-	return getVAppTemplateByHref(vdc.client, href)
-}
-
-// GetVAppTemplateById finds a vApp Template by ID.
-// On success, returns a pointer to the VAppTemplate structure and a nil error.
-// On failure, returns a nil pointer and an error.
-func (vdc *Vdc) GetVAppTemplateById(vAppTemplateId string) (*VAppTemplate, error) {
-	return getVAppTemplateById(vdc.client, vAppTemplateId)
+	return getVAppTemplateByHref(vdc.client, vAppTemplateQueryResult.HREF)
 }
 
 // GetVAppTemplateByNameOrId finds a vApp Template by Name or ID.
@@ -974,7 +960,7 @@ func (vdc *Vdc) GetVAppTemplateById(vAppTemplateId string) (*VAppTemplate, error
 // On failure, returns a nil pointer and an error
 func (vdc *Vdc) GetVAppTemplateByNameOrId(identifier string, refresh bool) (*VAppTemplate, error) {
 	getByName := func(name string, refresh bool) (interface{}, error) { return vdc.GetVAppTemplateByName(name) }
-	getById := func(id string, refresh bool) (interface{}, error) { return vdc.GetVAppTemplateById(id) }
+	getById := func(id string, refresh bool) (interface{}, error) { return getVAppTemplateById(vdc.client, id) }
 	entity, err := getEntityByNameOrIdSkipNonId(getByName, getById, identifier, refresh)
 	if entity == nil {
 		return nil, err
@@ -1269,40 +1255,4 @@ func (vdc *Vdc) getParentOrg() (organization, error) {
 		}
 	}
 	return nil, fmt.Errorf("no parent found for VDC %s", vdc.Vdc.Name)
-}
-
-// QueryMediaById returns a MediaRecord associated to the given media item URN. Returns ErrorEntityNotFound
-// if it is not found, or an error if there's more than one result.
-func (vdc *Vdc) QueryMediaById(mediaId string) (*MediaRecord, error) {
-	if mediaId == "" {
-		return nil, fmt.Errorf("media ID is empty")
-	}
-
-	filterType := types.QtMedia
-	if vdc.client.IsSysAdmin {
-		filterType = types.QtAdminMedia
-	}
-	results, err := vdc.client.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":          filterType,
-		"filter":        fmt.Sprintf("id==%s", url.QueryEscape(mediaId)),
-		"filterEncoded": "true"})
-	if err != nil {
-		return nil, fmt.Errorf("error querying medias %s", err)
-	}
-	newMediaRecord := NewMediaRecord(vdc.client)
-
-	mediaResults := results.Results.MediaRecord
-	if vdc.client.IsSysAdmin {
-		mediaResults = results.Results.AdminMediaRecord
-	}
-
-	if len(mediaResults) == 0 {
-		return nil, ErrorEntityNotFound
-	}
-	if len(mediaResults) > 1 {
-		return nil, fmt.Errorf("found %#v results with media ID %s", len(mediaResults), mediaId)
-	}
-
-	newMediaRecord.MediaRecord = mediaResults[0]
-	return newMediaRecord, nil
 }

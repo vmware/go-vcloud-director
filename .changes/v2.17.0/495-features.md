@@ -1,5 +1,5 @@
-* Added new functions to get vApp Templates `catalog.GetVAppTemplateByName`, `catalog.GetVAppTemplateById`, `catalog.GetVAppTemplateByNameOrId`,
-  `vdc.GetVAppTemplateByName`, `vdc.GetVAppTemplateByHref`, `vdc.GetVAppTemplateById` and `vdc.GetVAppTemplateById` [GH-495]
-* Added new functions to query vApp Templates by name `catalog.QueryVappTemplateWithName`, `vdc.QueryVappTemplateWithName`, `adminVdc.QueryVappTemplateWithName` [GH-495]
-* Added new functions to delete vApp Templates `vAppTemplate.DeleteAsync` and `vAppTemplate.Delete` [GH-495]
-* Added new functions to extract information from vApp Templates `vAppTemplate.GetCatalogName` and `vAppTemplate.GetVdcName` [GH-495]
+* Added new functions to get vApp Templates `Catalog.GetVAppTemplateByName`, `Catalog.GetVAppTemplateById`, `Catalog.GetVAppTemplateByNameOrId`,
+  `Vdc.GetVAppTemplateByName`, `VCDClient.GetVAppTemplateByHref` and `VCDClient.GetVAppTemplateById` [GH-495], [GH-520]
+* Added new functions to query vApp Templates by name `Catalog.QueryVappTemplateWithName`, `Vdc.QueryVappTemplateWithName`, `AdminVdc.QueryVappTemplateWithName` [GH-495]
+* Added new functions to delete vApp Templates `VAppTemplate.DeleteAsync` and `VAppTemplate.Delete` [GH-495]
+* Added new functions to extract information from vApp Templates `VAppTemplate.GetCatalogName` and `VAppTemplate.GetVdcName` [GH-495]
