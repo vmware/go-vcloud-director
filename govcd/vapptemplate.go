@@ -195,6 +195,43 @@ func (vcdClient *VCDClient) GetVAppTemplateById(vAppTemplateId string) (*VAppTem
 	return getVAppTemplateById(&vcdClient.Client, vAppTemplateId)
 }
 
+// QueryVAppTemplateById Finds a vApp Template by its URN.
+// Returns types.QueryResultVMRecordType if it is found, returns ErrorEntityNotFound if not found, or an error if many are
+// found.
+func (vcdClient *VCDClient) QueryVAppTemplateById(vAppTemplateId string) (*types.QueryResultVappTemplateType, error) {
+	queryType := "vAppTemplate"
+	if vcdClient.Client.IsSysAdmin {
+		queryType = "adminVAppTemplate"
+	}
+
+	// this allows to query deployed and not deployed templates
+	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
+		"type": queryType,
+		"filter": "id==" + url.QueryEscape(extractUuid(vAppTemplateId)) +
+			";status!=FAILED_CREATION;status!=UNKNOWN;status!=UNRECOGNIZED;status!=UNRESOLVED;status!=LOCAL_COPY_UNAVAILABLE&links=true",
+		"filterEncoded": "true"})
+	if err != nil {
+		return nil, fmt.Errorf("[QueryVAppTemplateById] error quering vApp templates with ID %s: %s", vAppTemplateId, err)
+	}
+
+	vAppTemplateRecords := results.Results.VappTemplateRecord
+	if vcdClient.Client.IsSysAdmin {
+		vAppTemplateRecords = results.Results.AdminVappTemplateRecord
+	}
+	if len(vAppTemplateRecords) == 0 {
+		return nil, ErrorEntityNotFound
+	}
+
+	if len(vAppTemplateRecords) > 1 {
+		return nil, fmt.Errorf("[QueryVmInVAppTemplateByHref] found %d results with with ID: %s", len(vAppTemplateRecords), vAppTemplateId)
+	}
+
+	return vAppTemplateRecords[0], nil
+}
+
+// QueryVmInVAppTemplateByHref Finds a VM inside a vApp Template using the latter HREF.
+// Returns types.QueryResultVMRecordType if it is found, returns ErrorEntityNotFound if not found, or an error if many are
+// found.
 func (vcdClient *VCDClient) QueryVmInVAppTemplateByHref(vAppTemplateHref, vmInTemplateName string) (*types.QueryResultVMRecordType, error) {
 	queryType := "vm"
 	if vcdClient.Client.IsSysAdmin {
@@ -217,7 +254,7 @@ func (vcdClient *VCDClient) QueryVmInVAppTemplateByHref(vAppTemplateHref, vmInTe
 	}
 
 	if len(vmResults) == 0 {
-		return nil, fmt.Errorf("[QueryVmInVAppTemplateByHref] did not find any result with HREF: %s, VM name: %s", vAppTemplateHref, vmInTemplateName)
+		return nil, ErrorEntityNotFound
 	}
 
 	if len(vmResults) > 1 {

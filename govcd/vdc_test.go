@@ -610,6 +610,11 @@ func (vcd *TestVCD) TestVAppTemplateRetrieval(check *C) {
 		check.Assert(strings.Contains(vAppTemplate.VAppTemplate.Description, vcd.config.VCD.Catalog.CatalogItemDescription), Equals, true)
 	}
 
+	vAppTemplateRecord, err := vcd.client.QueryVAppTemplateById(vAppTemplate.VAppTemplate.ID)
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplateRecord.Name, Equals, vAppTemplate.VAppTemplate.Name)
+	check.Assert(vAppTemplateRecord.HREF, Equals, vAppTemplate.VAppTemplate.HREF)
+
 	// Test non-existent vApp Template
 	vAppTemplate, err = vdc.GetVAppTemplateByName("INVALID")
 	check.Assert(err, NotNil)
