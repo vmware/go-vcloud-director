@@ -920,7 +920,7 @@ func (vdc *Vdc) QueryVappVmTemplate(catalogName, vappTemplateName, vmNameInTempl
 	// this allows to query deployed and not deployed templates
 	results, err := vdc.QueryWithNotEncodedParams(nil, map[string]string{"type": queryType,
 		"filter": "catalogName==" + url.QueryEscape(catalogName) + ";containerName==" + url.QueryEscape(vappTemplateName) + ";name==" + url.QueryEscape(vmNameInTemplate) +
-			";isVAppTemplate==true;status!=FAILED_CREATION;status!=UNKNOWN;status!=UNRECOGNIZED;status!=UNRESOLVED&links=true;",
+			";isVAppTemplate==true;status!=FAILED_CREATION;status!=UNKNOWN;status!=UNRECOGNIZED;status!=UNRESOLVED;status!=LOCAL_COPY_UNAVAILABLE&links=true;",
 		"filterEncoded": "true"})
 	if err != nil {
 		return nil, fmt.Errorf("error quering all vApp templates: %s", err)
