@@ -1438,10 +1438,6 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 	vmInTemplateRecord, err := vcd.vdc.QueryVappSynchronizedVmTemplate(vcd.config.VCD.Catalog.Name, itemName, vcd.config.VCD.Catalog.VmNameInMultiVmItem)
 	check.Assert(err, IsNil)
 
-	vmInTemplateRecord2, err := vcd.client.QuerySynchronizedVmInVAppTemplateByHref(vmInTemplateRecord.HREF, vcd.config.VCD.Catalog.VmNameInMultiVmItem)
-	check.Assert(err, IsNil)
-	check.Assert(vmInTemplateRecord, DeepEquals, vmInTemplateRecord2)
-
 	// Get VAppTemplate
 	returnedVappTemplate, err := catalog.GetVappTemplateByHref(vmInTemplateRecord.HREF)
 	check.Assert(err, IsNil)

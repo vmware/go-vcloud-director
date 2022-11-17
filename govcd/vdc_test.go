@@ -615,10 +615,17 @@ func (vcd *TestVCD) TestVAppTemplateRetrieval(check *C) {
 	check.Assert(vAppTemplateRecord.Name, Equals, vAppTemplate.VAppTemplate.Name)
 	check.Assert(vAppTemplateRecord.HREF, Equals, vAppTemplate.VAppTemplate.HREF)
 
+	vmTemplateRecord, err := vcd.client.QuerySynchronizedVmInVAppTemplateByHref(vAppTemplate.VAppTemplate.HREF, "**")
+	check.Assert(err, IsNil)
+	check.Assert(vmTemplateRecord, NotNil)
+
 	// Test non-existent vApp Template
 	vAppTemplate, err = vdc.GetVAppTemplateByName("INVALID")
 	check.Assert(err, NotNil)
 	check.Assert(vAppTemplate, IsNil)
+
+	_, err = vcd.client.QuerySynchronizedVmInVAppTemplateByHref(vAppTemplate.VAppTemplate.HREF, "INVALID")
+	check.Assert(err, Equals, ErrorEntityNotFound)
 }
 
 // TestMediaRetrieval tests that VDC receiver objects can search Media items successfully.
