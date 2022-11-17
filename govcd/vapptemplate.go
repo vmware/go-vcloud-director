@@ -195,10 +195,10 @@ func (vcdClient *VCDClient) GetVAppTemplateById(vAppTemplateId string) (*VAppTem
 	return getVAppTemplateById(&vcdClient.Client, vAppTemplateId)
 }
 
-// QueryVAppTemplateById Finds a vApp Template by its URN.
+// QuerySynchronizedVAppTemplateById Finds a vApp Template by its URN that is synchronized in the catalog.
 // Returns types.QueryResultVMRecordType if it is found, returns ErrorEntityNotFound if not found, or an error if many are
 // found.
-func (vcdClient *VCDClient) QueryVAppTemplateById(vAppTemplateId string) (*types.QueryResultVappTemplateType, error) {
+func (vcdClient *VCDClient) QuerySynchronizedVAppTemplateById(vAppTemplateId string) (*types.QueryResultVappTemplateType, error) {
 	queryType := "vAppTemplate"
 	if vcdClient.Client.IsSysAdmin {
 		queryType = "adminVAppTemplate"
@@ -232,7 +232,7 @@ func (vcdClient *VCDClient) QueryVAppTemplateById(vAppTemplateId string) (*types
 // QueryVmInVAppTemplateByHref Finds a VM inside a vApp Template using the latter HREF.
 // Returns types.QueryResultVMRecordType if it is found, returns ErrorEntityNotFound if not found, or an error if many are
 // found.
-func (vcdClient *VCDClient) QueryVmInVAppTemplateByHref(vAppTemplateHref, vmInTemplateName string) (*types.QueryResultVMRecordType, error) {
+func (vcdClient *VCDClient) QueryVmInVAppTemplateByHref(vAppTemplateHref, vmNameInTemplate string) (*types.QueryResultVMRecordType, error) {
 	queryType := "vm"
 	if vcdClient.Client.IsSysAdmin {
 		queryType = "adminVM"
@@ -241,11 +241,11 @@ func (vcdClient *VCDClient) QueryVmInVAppTemplateByHref(vAppTemplateHref, vmInTe
 	// this allows to query deployed and not deployed templates
 	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
 		"type": queryType,
-		"filter": "container==" + url.QueryEscape(vAppTemplateHref) + ";name==" + url.QueryEscape(vmInTemplateName) +
-			";isVAppTemplate==true;status!=FAILED_CREATION;status!=UNKNOWN;status!=UNRECOGNIZED;status!=UNRESOLVED;status!=LOCAL_COPY_UNAVAILABLE&links=true;",
+		"filter": "container==" + url.QueryEscape(vAppTemplateHref) + ";name==" + url.QueryEscape(vmNameInTemplate) +
+			";isVAppTemplate==true;status!=FAILED_CREATION;status!=UNKNOWN;status!=UNRECOGNIZED;status!=UNRESOLVED&links=true;",
 		"filterEncoded": "true"})
 	if err != nil {
-		return nil, fmt.Errorf("[QueryVmInVAppTemplateByHref] error quering vApp templates with HREF %s:, VM name: %s: Error: %s", vAppTemplateHref, vmInTemplateName, err)
+		return nil, fmt.Errorf("[QueryVmInVAppTemplateByHref] error quering vApp templates with HREF %s:, VM name: %s: Error: %s", vAppTemplateHref, vmNameInTemplate, err)
 	}
 
 	vmResults := results.Results.VMRecord
@@ -258,8 +258,22 @@ func (vcdClient *VCDClient) QueryVmInVAppTemplateByHref(vAppTemplateHref, vmInTe
 	}
 
 	if len(vmResults) > 1 {
-		return nil, fmt.Errorf("[QueryVmInVAppTemplateByHref] found %d results with with HREF: %s, VM name: %s", len(vmResults), vAppTemplateHref, vmInTemplateName)
+		return nil, fmt.Errorf("[QueryVmInVAppTemplateByHref] found %d results with with HREF: %s, VM name: %s", len(vmResults), vAppTemplateHref, vmNameInTemplate)
 	}
 
 	return vmResults[0], nil
+}
+
+// QuerySynchronizedVmInVAppTemplateByHref Finds a catalog-synchronized VM inside a vApp Template using the latter HREF.
+// Returns types.QueryResultVMRecordType if it is found and it's synchronized in the catalog.
+// Returns ErrorEntityNotFound if not found, or an error if many are found.
+func (vcdClient *VCDClient) QuerySynchronizedVmInVAppTemplateByHref(vAppTemplateHref, vmNameInTemplate string) (*types.QueryResultVMRecordType, error) {
+	vmRecord, err := vcdClient.QueryVmInVAppTemplateByHref(vAppTemplateHref, vmNameInTemplate)
+	if err != nil {
+		return nil, err
+	}
+	if vmRecord.Status == "LOCAL_COPY_UNAVAILABLE" {
+		return nil, ErrorEntityNotFound
+	}
+	return vmRecord, nil
 }

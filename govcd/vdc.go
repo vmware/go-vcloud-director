@@ -909,7 +909,9 @@ func (vdc *Vdc) QueryMediaList() ([]*types.MediaRecordType, error) {
 	return getExistingMedia(vdc)
 }
 
-// QueryVappVmTemplate Finds VM template using catalog name, vApp template name, VN name in template. Returns types.QueryResultVMRecordType
+// QueryVappVmTemplate Finds VM template using catalog name, vApp template name, VN name in template.
+// Returns types.QueryResultVMRecordType if it finds the VM. Returns ErrorEntityNotFound
+// if it's not found. Returns other error if it finds more than one or the search fails.
 func (vdc *Vdc) QueryVappVmTemplate(catalogName, vappTemplateName, vmNameInTemplate string) (*types.QueryResultVMRecordType, error) {
 
 	queryType := "vm"
@@ -920,7 +922,7 @@ func (vdc *Vdc) QueryVappVmTemplate(catalogName, vappTemplateName, vmNameInTempl
 	// this allows to query deployed and not deployed templates
 	results, err := vdc.QueryWithNotEncodedParams(nil, map[string]string{"type": queryType,
 		"filter": "catalogName==" + url.QueryEscape(catalogName) + ";containerName==" + url.QueryEscape(vappTemplateName) + ";name==" + url.QueryEscape(vmNameInTemplate) +
-			";isVAppTemplate==true;status!=FAILED_CREATION;status!=UNKNOWN;status!=UNRECOGNIZED;status!=UNRESOLVED;status!=LOCAL_COPY_UNAVAILABLE&links=true;",
+			";isVAppTemplate==true;status!=FAILED_CREATION;status!=UNKNOWN;status!=UNRECOGNIZED;status!=UNRESOLVED&links=true;",
 		"filterEncoded": "true"})
 	if err != nil {
 		return nil, fmt.Errorf("error quering all vApp templates: %s", err)
@@ -942,6 +944,20 @@ func (vdc *Vdc) QueryVappVmTemplate(catalogName, vappTemplateName, vmNameInTempl
 	}
 
 	return vmResults[0], nil
+}
+
+// QueryVappSynchronizedVmTemplate Finds a catalog-synchronized VM inside a vApp Template using catalog name, vApp template name, VN name in template.
+// Returns types.QueryResultVMRecordType if it finds the VM and it's synchronized in the catalog. Returns ErrorEntityNotFound
+// if it's not found. Returns other error if it finds more than one or the search fails.
+func (vdc *Vdc) QueryVappSynchronizedVmTemplate(catalogName, vappTemplateName, vmNameInTemplate string) (*types.QueryResultVMRecordType, error) {
+	vmRecord, err := vdc.QueryVappVmTemplate(catalogName, vappTemplateName, vmNameInTemplate)
+	if err != nil {
+		return nil, err
+	}
+	if vmRecord.Status == "LOCAL_COPY_UNAVAILABLE" {
+		return nil, ErrorEntityNotFound
+	}
+	return vmRecord, nil
 }
 
 // GetVAppTemplateByName finds a VAppTemplate by Name
