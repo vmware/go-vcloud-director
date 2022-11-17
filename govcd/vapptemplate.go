@@ -199,9 +199,9 @@ func (vcdClient *VCDClient) GetVAppTemplateById(vAppTemplateId string) (*VAppTem
 // Returns types.QueryResultVMRecordType if it is found, returns ErrorEntityNotFound if not found, or an error if many are
 // found.
 func (vcdClient *VCDClient) QuerySynchronizedVAppTemplateById(vAppTemplateId string) (*types.QueryResultVappTemplateType, error) {
-	queryType := "vAppTemplate"
+	queryType := types.QtVappTemplate
 	if vcdClient.Client.IsSysAdmin {
-		queryType = "adminVAppTemplate"
+		queryType = types.QtAdminVappTemplate
 	}
 
 	// this allows to query deployed and not deployed templates
@@ -233,9 +233,9 @@ func (vcdClient *VCDClient) QuerySynchronizedVAppTemplateById(vAppTemplateId str
 // Returns types.QueryResultVMRecordType if it is found, returns ErrorEntityNotFound if not found, or an error if many are
 // found.
 func (vcdClient *VCDClient) QueryVmInVAppTemplateByHref(vAppTemplateHref, vmNameInTemplate string) (*types.QueryResultVMRecordType, error) {
-	queryType := "vm"
+	queryType := types.QtVm
 	if vcdClient.Client.IsSysAdmin {
-		queryType = "adminVM"
+		queryType = types.QtAdminVm
 	}
 
 	// this allows to query deployed and not deployed templates
@@ -273,7 +273,7 @@ func (vcdClient *VCDClient) QuerySynchronizedVmInVAppTemplateByHref(vAppTemplate
 		return nil, err
 	}
 	if vmRecord.Status == "LOCAL_COPY_UNAVAILABLE" {
-		return nil, ErrorEntityNotFound
+		return nil, fmt.Errorf("vApp template %s is not synchronized", extractUuid(vAppTemplateHref))
 	}
 	return vmRecord, nil
 }
