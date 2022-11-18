@@ -1435,7 +1435,7 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 		check.Log("Using `CatalogItemWithMultiVms` for test")
 	}
 
-	vmInTemplateRecord, err := vcd.vdc.QueryVappVmTemplate(vcd.config.VCD.Catalog.Name, itemName, vcd.config.VCD.Catalog.VmNameInMultiVmItem)
+	vmInTemplateRecord, err := vcd.vdc.QueryVappSynchronizedVmTemplate(vcd.config.VCD.Catalog.Name, itemName, vcd.config.VCD.Catalog.VmNameInMultiVmItem)
 	check.Assert(err, IsNil)
 
 	// Get VAppTemplate

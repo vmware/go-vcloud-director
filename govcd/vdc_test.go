@@ -589,7 +589,7 @@ func (vcd *TestVCD) TestVAppTemplateRetrieval(check *C) {
 		check.Assert(strings.Contains(vAppTemplate.VAppTemplate.Description, vcd.config.VCD.Catalog.CatalogItemDescription), Equals, true)
 	}
 
-	vAppTemplate, err = vdc.GetVAppTemplateById(vAppTemplate.VAppTemplate.ID)
+	vAppTemplate, err = vcd.client.GetVAppTemplateById(vAppTemplate.VAppTemplate.ID)
 	check.Assert(err, IsNil)
 	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.NsxtCatalogItem)
 	if vcd.config.VCD.Catalog.CatalogItemDescription != "" {
@@ -610,8 +610,55 @@ func (vcd *TestVCD) TestVAppTemplateRetrieval(check *C) {
 		check.Assert(strings.Contains(vAppTemplate.VAppTemplate.Description, vcd.config.VCD.Catalog.CatalogItemDescription), Equals, true)
 	}
 
+	vAppTemplateRecord, err := vcd.client.QuerySynchronizedVAppTemplateById(vAppTemplate.VAppTemplate.ID)
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplateRecord.Name, Equals, vAppTemplate.VAppTemplate.Name)
+	check.Assert(vAppTemplateRecord.HREF, Equals, vAppTemplate.VAppTemplate.HREF)
+
+	vmTemplateRecord, err := vcd.client.QuerySynchronizedVmInVAppTemplateByHref(vAppTemplate.VAppTemplate.HREF, "**")
+	check.Assert(err, IsNil)
+	check.Assert(vmTemplateRecord, NotNil)
+
 	// Test non-existent vApp Template
-	vAppTemplate, err = vdc.GetVAppTemplateByName("INVALID")
+	_, err = vdc.GetVAppTemplateByName("INVALID")
 	check.Assert(err, NotNil)
-	check.Assert(vAppTemplate, IsNil)
+
+	_, err = vcd.client.QuerySynchronizedVmInVAppTemplateByHref(vAppTemplate.VAppTemplate.HREF, "INVALID")
+	check.Assert(err, Equals, ErrorEntityNotFound)
+}
+
+// TestMediaRetrieval tests that VDC receiver objects can search Media items successfully.
+func (vcd *TestVCD) TestMediaRetrieval(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	if vcd.config.Media.NsxtMedia == "" {
+		check.Skip(fmt.Sprintf("%s: NSX-T Media item not given. Test can't proceed", check.TestName()))
+	}
+
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	mediaFromCatalog, err := catalog.GetMediaByName(vcd.config.Media.NsxtMedia, false)
+	check.Assert(err, IsNil)
+	check.Assert(mediaFromCatalog, NotNil)
+
+	// Test cases
+	mediaFromVdc, err := vcd.client.QueryMediaById(mediaFromCatalog.Media.ID)
+	check.Assert(err, IsNil)
+	check.Assert(mediaFromCatalog.Media.HREF, Equals, mediaFromVdc.MediaRecord.HREF)
+	check.Assert(mediaFromCatalog.Media.Name, Equals, mediaFromVdc.MediaRecord.Name)
+
+	// Test non-existent Media item
+	mediaFromVdc, err = vcd.client.QueryMediaById("INVALID")
+	check.Assert(err, NotNil)
+	check.Assert(mediaFromVdc, IsNil)
 }

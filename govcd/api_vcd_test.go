@@ -216,6 +216,7 @@ type TestConfig struct {
 	Media struct {
 		MediaPath        string `yaml:"mediaPath,omitempty"`
 		Media            string `yaml:"mediaName,omitempty"`
+		NsxtMedia        string `yaml:"nsxtBackedMediaName,omitempty"`
 		PhotonOsOvaPath  string `yaml:"photonOsOvaPath,omitempty"`
 		MediaUdfTypePath string `yaml:"mediaUdfTypePath,omitempty"`
 	} `yaml:"media"`

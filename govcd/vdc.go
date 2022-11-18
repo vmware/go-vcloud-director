@@ -909,7 +909,9 @@ func (vdc *Vdc) QueryMediaList() ([]*types.MediaRecordType, error) {
 	return getExistingMedia(vdc)
 }
 
-// QueryVappVmTemplate Finds VM template using catalog name, vApp template name, VN name in template. Returns types.QueryResultVMRecordType
+// QueryVappVmTemplate Finds VM template using catalog name, vApp template name, VN name in template.
+// Returns types.QueryResultVMRecordType if it finds the VM. Returns ErrorEntityNotFound
+// if it's not found. Returns other error if it finds more than one or the search fails.
 func (vdc *Vdc) QueryVappVmTemplate(catalogName, vappTemplateName, vmNameInTemplate string) (*types.QueryResultVMRecordType, error) {
 
 	queryType := "vm"
@@ -944,6 +946,20 @@ func (vdc *Vdc) QueryVappVmTemplate(catalogName, vappTemplateName, vmNameInTempl
 	return vmResults[0], nil
 }
 
+// QueryVappSynchronizedVmTemplate Finds a catalog-synchronized VM inside a vApp Template using catalog name, vApp template name, VN name in template.
+// Returns types.QueryResultVMRecordType if it finds the VM and it's synchronized in the catalog. Returns ErrorEntityNotFound
+// if it's not found. Returns other error if it finds more than one or the search fails.
+func (vdc *Vdc) QueryVappSynchronizedVmTemplate(catalogName, vappTemplateName, vmNameInTemplate string) (*types.QueryResultVMRecordType, error) {
+	vmRecord, err := vdc.QueryVappVmTemplate(catalogName, vappTemplateName, vmNameInTemplate)
+	if err != nil {
+		return nil, err
+	}
+	if vmRecord.Status == "LOCAL_COPY_UNAVAILABLE" {
+		return nil, ErrorEntityNotFound
+	}
+	return vmRecord, nil
+}
+
 // GetVAppTemplateByName finds a VAppTemplate by Name
 // On success, returns a pointer to the VAppTemplate structure and a nil error
 // On failure, returns a nil pointer and an error
@@ -952,21 +968,7 @@ func (vdc *Vdc) GetVAppTemplateByName(vAppTemplateName string) (*VAppTemplate, e
 	if err != nil {
 		return nil, err
 	}
-	return vdc.GetVAppTemplateByHref(vAppTemplateQueryResult.HREF)
-}
-
-// GetVAppTemplateByHref finds a vApp template by HREF
-// On success, returns a pointer to the vApp template structure and a nil error
-// On failure, returns a nil pointer and an error
-func (vdc *Vdc) GetVAppTemplateByHref(href string) (*VAppTemplate, error) {
-	return getVAppTemplateByHref(vdc.client, href)
-}
-
-// GetVAppTemplateById finds a vApp Template by ID.
-// On success, returns a pointer to the VAppTemplate structure and a nil error.
-// On failure, returns a nil pointer and an error.
-func (vdc *Vdc) GetVAppTemplateById(vAppTemplateId string) (*VAppTemplate, error) {
-	return getVAppTemplateById(vdc.client, vAppTemplateId)
+	return getVAppTemplateByHref(vdc.client, vAppTemplateQueryResult.HREF)
 }
 
 // GetVAppTemplateByNameOrId finds a vApp Template by Name or ID.
@@ -974,7 +976,7 @@ func (vdc *Vdc) GetVAppTemplateById(vAppTemplateId string) (*VAppTemplate, error
 // On failure, returns a nil pointer and an error
 func (vdc *Vdc) GetVAppTemplateByNameOrId(identifier string, refresh bool) (*VAppTemplate, error) {
 	getByName := func(name string, refresh bool) (interface{}, error) { return vdc.GetVAppTemplateByName(name) }
-	getById := func(id string, refresh bool) (interface{}, error) { return vdc.GetVAppTemplateById(id) }
+	getById := func(id string, refresh bool) (interface{}, error) { return getVAppTemplateById(vdc.client, id) }
 	entity, err := getEntityByNameOrIdSkipNonId(getByName, getById, identifier, refresh)
 	if entity == nil {
 		return nil, err

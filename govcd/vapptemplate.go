@@ -180,3 +180,100 @@ func (vAppTemplate *VAppTemplate) Delete() error {
 	}
 	return nil
 }
+
+// GetVAppTemplateByHref finds a vApp template by HREF
+// On success, returns a pointer to the vApp template structure and a nil error
+// On failure, returns a nil pointer and an error
+func (vcdClient *VCDClient) GetVAppTemplateByHref(href string) (*VAppTemplate, error) {
+	return getVAppTemplateByHref(&vcdClient.Client, href)
+}
+
+// GetVAppTemplateById finds a vApp Template by ID.
+// On success, returns a pointer to the VAppTemplate structure and a nil error.
+// On failure, returns a nil pointer and an error.
+func (vcdClient *VCDClient) GetVAppTemplateById(vAppTemplateId string) (*VAppTemplate, error) {
+	return getVAppTemplateById(&vcdClient.Client, vAppTemplateId)
+}
+
+// QuerySynchronizedVAppTemplateById Finds a vApp Template by its URN that is synchronized in the catalog.
+// Returns types.QueryResultVMRecordType if it is found, returns ErrorEntityNotFound if not found, or an error if many are
+// found.
+func (vcdClient *VCDClient) QuerySynchronizedVAppTemplateById(vAppTemplateId string) (*types.QueryResultVappTemplateType, error) {
+	queryType := types.QtVappTemplate
+	if vcdClient.Client.IsSysAdmin {
+		queryType = types.QtAdminVappTemplate
+	}
+
+	// this allows to query deployed and not deployed templates
+	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
+		"type": queryType,
+		"filter": "id==" + url.QueryEscape(extractUuid(vAppTemplateId)) +
+			";status!=FAILED_CREATION;status!=UNKNOWN;status!=UNRECOGNIZED;status!=UNRESOLVED;status!=LOCAL_COPY_UNAVAILABLE&links=true",
+		"filterEncoded": "true"})
+	if err != nil {
+		return nil, fmt.Errorf("[QueryVAppTemplateById] error quering vApp templates with ID %s: %s", vAppTemplateId, err)
+	}
+
+	vAppTemplateRecords := results.Results.VappTemplateRecord
+	if vcdClient.Client.IsSysAdmin {
+		vAppTemplateRecords = results.Results.AdminVappTemplateRecord
+	}
+	if len(vAppTemplateRecords) == 0 {
+		return nil, ErrorEntityNotFound
+	}
+
+	if len(vAppTemplateRecords) > 1 {
+		return nil, fmt.Errorf("[QueryVmInVAppTemplateByHref] found %d results with with ID: %s", len(vAppTemplateRecords), vAppTemplateId)
+	}
+
+	return vAppTemplateRecords[0], nil
+}
+
+// QueryVmInVAppTemplateByHref Finds a VM inside a vApp Template using the latter HREF.
+// Returns types.QueryResultVMRecordType if it is found, returns ErrorEntityNotFound if not found, or an error if many are
+// found.
+func (vcdClient *VCDClient) QueryVmInVAppTemplateByHref(vAppTemplateHref, vmNameInTemplate string) (*types.QueryResultVMRecordType, error) {
+	queryType := types.QtVm
+	if vcdClient.Client.IsSysAdmin {
+		queryType = types.QtAdminVm
+	}
+
+	// this allows to query deployed and not deployed templates
+	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
+		"type": queryType,
+		"filter": "container==" + url.QueryEscape(vAppTemplateHref) + ";name==" + url.QueryEscape(vmNameInTemplate) +
+			";isVAppTemplate==true;status!=FAILED_CREATION;status!=UNKNOWN;status!=UNRECOGNIZED;status!=UNRESOLVED&links=true;",
+		"filterEncoded": "true"})
+	if err != nil {
+		return nil, fmt.Errorf("[QueryVmInVAppTemplateByHref] error quering vApp templates with HREF %s:, VM name: %s: Error: %s", vAppTemplateHref, vmNameInTemplate, err)
+	}
+
+	vmResults := results.Results.VMRecord
+	if vcdClient.Client.IsSysAdmin {
+		vmResults = results.Results.AdminVMRecord
+	}
+
+	if len(vmResults) == 0 {
+		return nil, ErrorEntityNotFound
+	}
+
+	if len(vmResults) > 1 {
+		return nil, fmt.Errorf("[QueryVmInVAppTemplateByHref] found %d results with with HREF: %s, VM name: %s", len(vmResults), vAppTemplateHref, vmNameInTemplate)
+	}
+
+	return vmResults[0], nil
+}
+
+// QuerySynchronizedVmInVAppTemplateByHref Finds a catalog-synchronized VM inside a vApp Template using the latter HREF.
+// Returns types.QueryResultVMRecordType if it is found and it's synchronized in the catalog.
+// Returns ErrorEntityNotFound if not found, or an error if many are found.
+func (vcdClient *VCDClient) QuerySynchronizedVmInVAppTemplateByHref(vAppTemplateHref, vmNameInTemplate string) (*types.QueryResultVMRecordType, error) {
+	vmRecord, err := vcdClient.QueryVmInVAppTemplateByHref(vAppTemplateHref, vmNameInTemplate)
+	if err != nil {
+		return nil, err
+	}
+	if vmRecord.Status == "LOCAL_COPY_UNAVAILABLE" {
+		return nil, fmt.Errorf("vApp template %s is not synchronized", extractUuid(vAppTemplateHref))
+	}
+	return vmRecord, nil
+}
