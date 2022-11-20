@@ -44,6 +44,8 @@ GET https://example.eng.vmware.com/network/firewall/globalroot-0/config?vdc=616d
 
 ### Response when enabled
 
+200 - ok
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <firewallConfiguration timestamp="0">
@@ -95,6 +97,8 @@ GET https://example.eng.vmware.com/network/firewall/globalroot-0/config?vdc=616d
 
 ## Enable distributed firewall
 
+This operation requires System administrator privileges
+
 ```
 POST https://example.eng.vmware.com/network/firewall/vdc/616d7175-e538-431a-a659-f28a30e21540
 ```
@@ -102,6 +106,8 @@ POST https://example.eng.vmware.com/network/firewall/vdc/616d7175-e538-431a-a659
 Response: 201 - created
 
 ## Disable distributed firewall
+
+This operation requires System administrator privileges
 
 ```
 DELETE https://example.eng.vmware.com/network/firewall/vdc/616d7175-e538-431a-a659-f28a30e21540
