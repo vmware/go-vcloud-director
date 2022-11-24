@@ -114,3 +114,364 @@ DELETE https://example.eng.vmware.com/network/firewall/vdc/616d7175-e538-431a-a6
 ```
 
 Response: 204 - no content
+
+## Add a new rule
+
+```
+PUT https://example.com.eng.vmware.com/network/firewall/globalroot-0/config/layer3sections/616d7175-e538-431a-a659-f28a30e21540
+```
+
+Payload 1 rule
+
+```xml
+
+<section id="1043" name="616d7175-e538-431a-a659-f28a30e21540" generationNumber="1669055079107">
+  <rule logged="false">
+    <name>aaaa</name>
+    <action>allow</action>
+    <appliedToList/>
+    <sources excluded="false">
+      <source>
+        <name>net-datacloud-r</name>
+        <value>urn:vcloud:network:895c70bc-c19e-4401-9c9f-42c6bc0f1342</value>
+        <type>Network</type>
+      </source>
+    </sources>
+    <services/>
+    <direction>in</direction>
+    <packetType>any</packetType>
+  </rule>
+  <rule id="1047" disabled="false" logged="false">
+    <name>Default Allow Rule</name>
+    <action>deny</action>
+    <appliedToList>
+      <appliedTo>
+        <name>vdc-datacloud</name>
+        <value>616d7175-e538-431a-a659-f28a30e21540</value>
+        <type>VDC</type>
+        <isValid>true</isValid>
+      </appliedTo>
+    </appliedToList>
+    <sectionId>1043</sectionId>
+    <direction>inout</direction>
+    <packetType>any</packetType>
+  </rule>
+</section>
+```
+
+Payload 3 rules
+
+```xml
+
+<section id="1049" name="616d7175-e538-431a-a659-f28a30e21540" generationNumber="1669270562214">
+  <rule id="1055" disabled="false" logged="false">
+    <name>abcd</name>
+    <action>allow</action>
+    <appliedToList>
+      <appliedTo>
+        <name>gw-datacloud</name>
+        <value>urn:vcloud:gateway:01e3934a-a02f-4607-8ce2-a6d3e4e2c45e</value>
+        <type>Edge</type>
+        <isValid>true</isValid>
+      </appliedTo>
+      <appliedTo>
+        <name>vdc-datacloud</name>
+        <value>616d7175-e538-431a-a659-f28a30e21540</value>
+        <type>VDC</type>
+        <isValid>true</isValid>
+      </appliedTo>
+    </appliedToList>
+    <sectionId>1049</sectionId>
+    <sources excluded="false">
+      <source>
+        <name>net-datacloud-r</name>
+        <value>urn:vcloud:network:895c70bc-c19e-4401-9c9f-42c6bc0f1342</value>
+        <type>Network</type>
+        <isValid>true</isValid>
+      </source>
+      <source>
+        <name>sys-gen-empty-ipset-edge-fw</name>
+        <value>616d7175-e538-431a-a659-f28a30e21540:ipset-1</value>
+        <type>IPSet</type>
+        <isValid>true</isValid>
+      </source>
+      <source>
+        <name>TestVm</name>
+        <value>urn:vcloud:vm:1aaf7c5f-cc54-413b-a4f5-96999f664a29</value>
+        <type>VirtualMachine</type>
+        <isValid>true</isValid>
+      </source>
+    </sources>
+    <destinations excluded="false">
+      <destination>
+        <name>net-datacloud-r</name>
+        <value>urn:vcloud:network:895c70bc-c19e-4401-9c9f-42c6bc0f1342</value>
+        <type>Network</type>
+        <isValid>true</isValid>
+      </destination>
+    </destinations>
+    <services>
+      <service>
+        <sourcePort>500</sourcePort>
+        <destinationPort>800</destinationPort>
+        <protocol>6</protocol>
+        <protocolName>TCP</protocolName>
+        <isValid>true</isValid>
+      </service>
+      <service>
+        <sourcePort>5000</sourcePort>
+        <destinationPort>8000</destinationPort>
+        <protocol>6</protocol>
+        <protocolName>TCP</protocolName>
+        <isValid>true</isValid>
+      </service>
+      <service>
+        <name>PostgreSQL</name>
+        <value>application-259</value>
+        <type>Application</type>
+        <isValid>true</isValid>
+      </service>
+    </services>
+    <direction>inout</direction>
+    <packetType>any</packetType>
+  </rule>
+  <rule id="1056" disabled="false" logged="false">
+    <name>xyz</name>
+    <action>allow</action>
+    <appliedToList>
+      <appliedTo>
+        <name>vdc-datacloud</name>
+        <value>616d7175-e538-431a-a659-f28a30e21540</value>
+        <type>VDC</type>
+        <isValid>true</isValid>
+      </appliedTo>
+    </appliedToList>
+    <sectionId>1049</sectionId>
+    <sources excluded="false">
+      <source>
+        <value>10.10.10.10</value>
+        <type>Ipv4Address</type>
+        <isValid>true</isValid>
+      </source>
+    </sources>
+    <direction>in</direction>
+    <packetType>ipv6</packetType>
+  </rule>
+  <rule id="1054" disabled="false" logged="false">
+    <name>Default Allow Rule</name>
+    <action>allow</action>
+    <appliedToList>
+      <appliedTo>
+        <name>vdc-datacloud</name>
+        <value>616d7175-e538-431a-a659-f28a30e21540</value>
+        <type>VDC</type>
+        <isValid>true</isValid>
+      </appliedTo>
+    </appliedToList>
+    <sectionId>1049</sectionId>
+    <direction>inout</direction>
+    <packetType>any</packetType>
+  </rule>
+</section>
+```
+
+Response: 200 - ok
+
+1 rule
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<section id="1043" name="616d7175-e538-431a-a659-f28a30e21540" generationNumber="1669055519826"
+         timestamp="1669055519826" tcpStrict="false" stateless="false" useSid="false" type="LAYER3">
+  <rule id="1048" disabled="false" logged="false">
+    <name>aaaa</name>
+    <action>allow</action>
+    <appliedToList>
+      <appliedTo>
+        <name>vdc-datacloud</name>
+        <value>616d7175-e538-431a-a659-f28a30e21540</value>
+        <type>VDC</type>
+        <isValid>true</isValid>
+      </appliedTo>
+    </appliedToList>
+    <sectionId>1043</sectionId>
+    <sources excluded="false">
+      <source>
+        <name>net-datacloud-1</name>
+        <value>urn:vcloud:network:deadbeef-c19e-4401-9c9f-42c6bc0f1342</value>
+        <type>Network</type>
+        <isValid>true</isValid>
+      </source>
+      <source>
+        <name>net-datacloud-r</name>
+        <value>urn:vcloud:network:895c70bc-c19e-4401-9c9f-42c6bc0f1342</value>
+        <type>Network</type>
+        <isValid>true</isValid>
+      </source>
+    </sources>
+    <direction>in</direction>
+    <packetType>any</packetType>
+    <tag>616d7175-e538-431a-a659-f28a30</tag>
+  </rule>
+  <rule id="1047" disabled="false" logged="false">
+    <name>Default Allow Rule</name>
+    <action>deny</action>
+    <appliedToList>
+      <appliedTo>
+        <name>vdc-datacloud</name>
+        <value>616d7175-e538-431a-a659-f28a30e21540</value>
+        <type>VDC</type>
+        <isValid>true</isValid>
+      </appliedTo>
+      <appliedTo>
+        <name>vdc-datacloud1</name>
+        <value>deadbeef-e538-431a-a659-f28a30e21540</value>
+        <type>VDC</type>
+        <isValid>true</isValid>
+      </appliedTo>
+    </appliedToList>
+    <sectionId>1043</sectionId>
+    <direction>inout</direction>
+    <packetType>any</packetType>
+    <tag>616d7175-e538-431a-a659-f28a30</tag>
+  </rule>
+</section>
+```
+
+3 rules
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<firewallConfiguration timestamp="0">
+  <contextId>globalroot-0</contextId>
+  <layer3Sections>
+    <section id="1049" name="616d7175-e538-431a-a659-f28a30e21540" generationNumber="1669270562214"
+             timestamp="1669270562214" tcpStrict="false" stateless="false" useSid="false" type="LAYER3">
+      <rule id="1055" disabled="false" logged="false">
+        <name>abcd</name>
+        <action>allow</action>
+        <appliedToList>
+          <appliedTo>
+            <name>gw-datacloud</name>
+            <value>urn:vcloud:gateway:01e3934a-a02f-4607-8ce2-a6d3e4e2c45e</value>
+            <type>Edge</type>
+            <isValid>true</isValid>
+          </appliedTo>
+          <appliedTo>
+            <name>vdc-datacloud</name>
+            <value>616d7175-e538-431a-a659-f28a30e21540</value>
+            <type>VDC</type>
+            <isValid>true</isValid>
+          </appliedTo>
+        </appliedToList>
+        <sectionId>1049</sectionId>
+        <sources excluded="false">
+          <source>
+            <name>net-datacloud-r</name>
+            <value>urn:vcloud:network:895c70bc-c19e-4401-9c9f-42c6bc0f1342</value>
+            <type>Network</type>
+            <isValid>true</isValid>
+          </source>
+          <source>
+            <name>sys-gen-empty-ipset-edge-fw</name>
+            <value>616d7175-e538-431a-a659-f28a30e21540:ipset-1</value>
+            <type>IPSet</type>
+            <isValid>true</isValid>
+          </source>
+          <source>
+            <name>TestVm</name>
+            <value>urn:vcloud:vm:1aaf7c5f-cc54-413b-a4f5-96999f664a29</value>
+            <type>VirtualMachine</type>
+            <isValid>true</isValid>
+          </source>
+        </sources>
+        <destinations excluded="false">
+          <destination>
+            <name>net-datacloud-r</name>
+            <value>urn:vcloud:network:895c70bc-c19e-4401-9c9f-42c6bc0f1342</value>
+            <type>Network</type>
+            <isValid>true</isValid>
+          </destination>
+        </destinations>
+        <services>
+          <service>
+            <isValid>true</isValid>
+            <sourcePort>500</sourcePort>
+            <destinationPort>800</destinationPort>
+            <protocol>6</protocol>
+            <protocolName>TCP</protocolName>
+          </service>
+          <service>
+            <isValid>true</isValid>
+            <sourcePort>5000</sourcePort>
+            <destinationPort>8000</destinationPort>
+            <protocol>6</protocol>
+            <protocolName>TCP</protocolName>
+          </service>
+          <service>
+            <name>PostgreSQL</name>
+            <value>application-259</value>
+            <type>Application</type>
+            <isValid>true</isValid>
+          </service>
+        </services>
+        <direction>inout</direction>
+        <packetType>any</packetType>
+      </rule>
+      <rule id="1056" disabled="false" logged="false">
+        <name>xyz</name>
+        <action>allow</action>
+        <appliedToList>
+          <appliedTo>
+            <name>vdc-datacloud</name>
+            <value>616d7175-e538-431a-a659-f28a30e21540</value>
+            <type>VDC</type>
+            <isValid>true</isValid>
+          </appliedTo>
+        </appliedToList>
+        <sectionId>1049</sectionId>
+        <direction>in</direction>
+        <packetType>ipv6</packetType>
+        <tag>616d7175-e538-431a-a659-f28a30</tag>
+      </rule>
+      <rule id="1054" disabled="false" logged="false">
+        <name>Default Allow Rule</name>
+        <action>allow</action>
+        <appliedToList>
+          <appliedTo>
+            <name>vdc-datacloud</name>
+            <value>616d7175-e538-431a-a659-f28a30e21540</value>
+            <type>VDC</type>
+            <isValid>true</isValid>
+          </appliedTo>
+        </appliedToList>
+        <sectionId>1049</sectionId>
+        <direction>inout</direction>
+        <packetType>any</packetType>
+        <tag>616d7175-e538-431a-a659-f28a30</tag>
+      </rule>
+    </section>
+  </layer3Sections>
+  <layer2Sections>
+    <section id="1048" name="616d7175-e538-431a-a659-f28a30e21540" generationNumber="1669268780141"
+             timestamp="1669268780141" tcpStrict="false" stateless="true" useSid="false" type="LAYER2">
+      <rule id="1053" disabled="false" logged="false">
+        <name>Default Allow Rule</name>
+        <action>allow</action>
+        <appliedToList>
+          <appliedTo>
+            <name>vdc-datacloud</name>
+            <value>616d7175-e538-431a-a659-f28a30e21540</value>
+            <type>VDC</type>
+            <isValid>true</isValid>
+          </appliedTo>
+        </appliedToList>
+        <sectionId>1048</sectionId>
+        <direction>inout</direction>
+        <packetType>any</packetType>
+        <tag>616d7175-e538-431a-a659-f28a30</tag>
+      </rule>
+    </section>
+  </layer2Sections>
+</firewallConfiguration>
+```

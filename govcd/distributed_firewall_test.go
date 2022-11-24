@@ -53,6 +53,13 @@ func (vcd *TestVCD) Test_DistributedFirewall(check *C) {
 
 	err = vdc.DisableDistributedFirewall()
 	check.Assert(err, IsNil)
+	enabled, err = vdc.IsDistributedFirewallEnabled()
+	check.Assert(err, IsNil)
+	check.Assert(enabled, Equals, false)
+
+	// Also DisableDistributedFirewall is idempotent
+	err = vdc.DisableDistributedFirewall()
+	check.Assert(err, IsNil)
 
 	enabled, err = vdc.IsDistributedFirewallEnabled()
 	check.Assert(err, IsNil)

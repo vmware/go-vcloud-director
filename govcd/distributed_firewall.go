@@ -95,6 +95,8 @@ func (adminVdc *AdminVdc) EnableDistributedFirewall() error {
 }
 
 // DisableDistributedFirewall removes the distributed firewall functionality from a VDC
+// It is an idempotent operation. It can be repeated on an already disabled VDC without errors.
+// WARNING: it will remove all existing rules.
 // This function fails with non-NSX-V VDCs
 func (adminVdc *AdminVdc) DisableDistributedFirewall() error {
 	initialUrl, err := buildUrl(adminVdc.client, "network", "firewall", "vdc", extractUuid(adminVdc.AdminVdc.ID))
