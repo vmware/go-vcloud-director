@@ -9,6 +9,7 @@ package govcd
 
 import (
 	"fmt"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -136,6 +137,17 @@ func (vcd *TestVCD) TestMediaRecordMetadata(check *C) {
 	check.Assert(mediaRecord.MediaRecord.Name, Equals, check.TestName())
 
 	testMetadataCRUDActions(mediaRecord, check, nil)
+
+	// cleanup uploaded media so that other tests don't fail
+	media, err := catalog.GetMediaByName(check.TestName(), true)
+	check.Assert(err, IsNil)
+	check.Assert(media, NotNil)
+
+	deleteTask, err := media.Delete()
+	check.Assert(err, IsNil)
+	check.Assert(deleteTask, NotNil)
+	err = deleteTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) TestMediaMetadata(check *C) {
