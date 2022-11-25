@@ -120,12 +120,10 @@
   counterparts ([#510](https://github.com/vmware/go-vcloud-director/pull/510))
 
 ## NOTES
+* Switched `go.mod` to use Go 1.19 ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
 * Ran `make fmt` using Go 1.19 release (`fmt` automatically changes doc comment structure). This
   will prevent `make static` errors when running tests in pipeline using Go 1.19 ([#497](https://github.com/vmware/go-vcloud-director/pull/497))
 * Updated branding `vCloud Director` -> `VMware Cloud Director` ([#497](https://github.com/vmware/go-vcloud-director/pull/497))
-* Go officially supports 2 last releases. With Go 1.19 being released it means that Go 1.18 is the
-  minimum officially supported Go version and this set our hands free to use generics in this SDK
-  (if there is a need for it). `go.mod` is updated to reflect Go minimum version 1.18 ([#497](https://github.com/vmware/go-vcloud-director/pull/497))
 * package `io/ioutil` is deprecated as of Go 1.16. `staticcheck` started complaining about usage of
   deprecated packages. As a result packages `io` or `os` are used (still the same
   functions are used) ([#497](https://github.com/vmware/go-vcloud-director/pull/497))

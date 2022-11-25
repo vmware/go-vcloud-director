@@ -1,3 +1,4 @@
+* Switched `go.mod` to use Go 1.19 ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
 * Added `AdminOrg` methods `CreateCatalogFromSubscriptionAsync` and `CreateCatalogFromSubscription` to create a
   subscribed catalog [GH-511]
 * Added method `AdminCatalog.FullSubscriptionUrl` to return the subscription URL of a published catalog [GH-511]
