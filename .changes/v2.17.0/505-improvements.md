@@ -1,1 +1,1 @@
-* Simplify `Test_LDAP` by using a pre-configured LDAP server [GH-505]
+* Simplified `Test_LDAP` by using a pre-configured LDAP server [GH-505]

@@ -1,1 +1,1 @@
-* Improve documentation for `types.OpenApiOrgVdcNetworkDhcp` [GH-517]
+* Improved documentation for `types.OpenApiOrgVdcNetworkDhcp` [GH-517]

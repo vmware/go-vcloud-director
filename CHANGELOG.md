@@ -6,10 +6,10 @@
 * Added new functions to query vApp Templates by name `Catalog.QueryVappTemplateWithName`, `Vdc.QueryVappTemplateWithName`, `AdminVdc.QueryVappTemplateWithName` ([#495](https://github.com/vmware/go-vcloud-director/pull/495))
 * Added new functions to delete vApp Templates `VAppTemplate.DeleteAsync` and `VAppTemplate.Delete` ([#495](https://github.com/vmware/go-vcloud-director/pull/495))
 * Added new functions to extract information from vApp Templates `VAppTemplate.GetCatalogName` and `VAppTemplate.GetVdcName` ([#495](https://github.com/vmware/go-vcloud-director/pull/495))
-* Add `Client.TestConnection` method to check remote VCD endpoints ([#447](https://github.com/vmware/go-vcloud-director/pull/447)], [[#501](https://github.com/vmware/go-vcloud-director/pull/501))
-* Add `Client.TestConnectionWithDefaults` method that uses `Client.TestConnection` with some default
+* Added `Client.TestConnection` method to check remote VCD endpoints ([#447](https://github.com/vmware/go-vcloud-director/pull/447)], [[#501](https://github.com/vmware/go-vcloud-director/pull/501))
+* Added `Client.TestConnectionWithDefaults` method that uses `Client.TestConnection` with some default
   values  ([#447](https://github.com/vmware/go-vcloud-director/pull/447)], [[#501](https://github.com/vmware/go-vcloud-director/pull/501))
-* Change behavior of `Client.OpenApiPostItem` and `Client.OpenApiPostItemSync` so they accept
+* Changed behavior of `Client.OpenApiPostItem` and `Client.OpenApiPostItemSync` so they accept
   response code 200 OK as valid. The reason is `TestConnection` endpoint requires a POST request and
   returns a 200OK when successful  ([#447](https://github.com/vmware/go-vcloud-director/pull/447)], [[#501](https://github.com/vmware/go-vcloud-director/pull/501))
 * Added new methods `VCDClient.GetProviderVdcByHref`, `VCDClient.GetProviderVdcById`, `VCDClient.GetProviderVdcByName` and `ProviderVdc.Refresh` to retrieve Provider VDCs ([#502](https://github.com/vmware/go-vcloud-director/pull/502))
@@ -38,30 +38,30 @@
 * Added the functions `DeleteMetadataEntryWithDomainAsync` and `DeleteMetadataEntryWithDomain` to the following entities:
   `VM`, `AdminVdc`, `ProviderVdc`, `VApp`, `VAppTemplate`, `MediaRecord`, `Media`, `AdminCatalog`, `AdminOrg`, `Disk`,
   `OrgVDCNetwork`, `CatalogItem`, `OpenApiOrgVdcNetwork` to delete metadata with the domain, that allows deleting metadata present in SYSTEM ([#510](https://github.com/vmware/go-vcloud-director/pull/510))
-* Add `AdminOrg` methods `CreateCatalogFromSubscriptionAsync` and `CreateCatalogFromSubscription` to create a
+* Added `AdminOrg` methods `CreateCatalogFromSubscriptionAsync` and `CreateCatalogFromSubscription` to create a
   subscribed catalog ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
-* Add method `AdminCatalog.FullSubscriptionUrl` to return the subscription URL of a published catalog ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
-* Add method `AdminCatalog.WaitForTasks` to wait for catalog tasks to complete ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
-* Add method `AdminCatalog.UpdateSubscriptionParams` to modify the terms of an existing subscription ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
-* Add methods `Catalog.QueryTaskList` and `AdminCatalog.QueryTaskList` to retrieve the tasks associated with a catalog ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
-* Add function `IsValidUrl` to determine if a URL is valid ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
-* Add `AdminCatalog` methods `Sync` and `LaunchSync` to synchronise a subscribed catalog ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
-* Add method `AdminCatalog.GetCatalogHref` to retrieve the HREF of a regular catalog [GN-511]
-* Add `AdminCatalog` methods `QueryCatalogItemList`, `QueryVappTemplateList`, and `QueryMediaList` to retrieve lists of
+* Added method `AdminCatalog.FullSubscriptionUrl` to return the subscription URL of a published catalog ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
+* Added method `AdminCatalog.WaitForTasks` to wait for catalog tasks to complete ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
+* Added method `AdminCatalog.UpdateSubscriptionParams` to modify the terms of an existing subscription ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
+* Added methods `Catalog.QueryTaskList` and `AdminCatalog.QueryTaskList` to retrieve the tasks associated with a catalog ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
+* Added function `IsValidUrl` to determine if a URL is valid ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
+* Added `AdminCatalog` methods `Sync` and `LaunchSync` to synchronise a subscribed catalog ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
+* Added method `AdminCatalog.GetCatalogHref` to retrieve the HREF of a regular catalog [GN-511]
+* Added `AdminCatalog` methods `QueryCatalogItemList`, `QueryVappTemplateList`, and `QueryMediaList` to retrieve lists of
   dependent items ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
-* Add  `AdminCatalog` methods `LaunchSynchronisationVappTemplates`, `LaunchSynchronisationAllVappTemplates`,
+* Added `AdminCatalog` methods `LaunchSynchronisationVappTemplates`, `LaunchSynchronisationAllVappTemplates`,
   `LaunchSynchronisationMediaItems`, and `LaunchSynchronisationAllMediaItems` to start synchronisation of dependent
   items ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
-* Add `AdminCatalog` methods `GetCatalogItemByHref` and `QueryCatalogItem` to retrieve a single Catalog Item ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
-* Add method `CatalogItem.LaunchSync` to start synchronisation of a catalog item ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
-* Add method `CatalogItem.Refresh` to get fresh contents for a catalog item ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
-* Add function `WaitResource` to wait for tasks associated to a gioven resource ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
-* Add function `MinimalShowTask` to display task progress with minimal info ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
-* Add functions `ResourceInProgress` and `ResourceComplete` to check on task activity for a given entity ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
-* Add functions `SkimTasksList`, `SkimTasksListMonitor`, `WaitTaskListCompletion`, `WaitTaskListCompletionMonitor` to
+* Added `AdminCatalog` methods `GetCatalogItemByHref` and `QueryCatalogItem` to retrieve a single Catalog Item ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
+* Added method `CatalogItem.LaunchSync` to start synchronisation of a catalog item ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
+* Added method `CatalogItem.Refresh` to get fresh contents for a catalog item ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
+* Added function `WaitResource` to wait for tasks associated to a gioven resource ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
+* Added function `MinimalShowTask` to display task progress with minimal info ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
+* Added functions `ResourceInProgress` and `ResourceComplete` to check on task activity for a given entity ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
+* Added functions `SkimTasksList`, `SkimTasksListMonitor`, `WaitTaskListCompletion`, `WaitTaskListCompletionMonitor` to
   process lists of tasks and lists of task IDs ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
-* Add `Client` methods `GetTaskByHREF` and `GetTaskById` to retrieve individual tasks ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
-* Implement `QueryItem` for `Task` and `AdminTask` (`GetHref`, `GetName`, `GetType`, `GetParentId`, `GetParentName`, `GetMetadataValue`, `GetDate`) ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
+* Added `Client` methods `GetTaskByHREF` and `GetTaskById` to retrieve individual tasks ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
+* Implemented `QueryItem` for `Task` and `AdminTask` (`GetHref`, `GetName`, `GetType`, `GetParentId`, `GetParentName`, `GetMetadataValue`, `GetDate`) ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
 * Added `VCDClient.QueryMediaById` to query a media record using a media ID ([#520](https://github.com/vmware/go-vcloud-director/pull/520))
 * Added `Vdc.QueryVappSynchronizedVmTemplate` to query a VM inside a vApp Template that must be synchronized in the catalog [[#520](https://github.com/vmware/go-vcloud-director/pull/520)] 
 * Added `VCDClient.QueryVmInVAppTemplateByHref` and `VCDClient.QuerySynchronizedVmInVAppTemplateByHref` to query a VM
@@ -71,8 +71,8 @@
 ## IMPROVEMENTS
 * Added method `VM.Shutdown` to shut down guest OS ([#413](https://github.com/vmware/go-vcloud-director/pull/413)], [[#496](https://github.com/vmware/go-vcloud-director/pull/496))
 * Add support for MoRef ID on VM record type. Using the MoRef ID, we can then correlate that back to vCenter Server and find the VM with matching MoRef ID  ([#491](https://github.com/vmware/go-vcloud-director/pull/491))
-Fix type `types.AdminVdc.ResourcePoolRefs` to make unmarshaling work (read-only) ([#494](https://github.com/vmware/go-vcloud-director/pull/494))
-* Fix Test_NsxtSecurityGroupGetAssociatedVms which had name clash ([#498](https://github.com/vmware/go-vcloud-director/pull/498))
+* Fixed type `types.AdminVdc.ResourcePoolRefs` to make unmarshaling work (read-only) ([#494](https://github.com/vmware/go-vcloud-director/pull/494))
+* Fixed Test_NsxtSecurityGroupGetAssociatedVms which had name clash ([#498](https://github.com/vmware/go-vcloud-director/pull/498))
 * Added support for querying VdcStorageProfile:  
   - functions `QueryAdminOrgVdcStorageProfileByID` and `QueryOrgVdcStorageProfileByID`  
   - query types `QtOrgVdcStorageProfile` and `QtAdminOrgVdcStorageProfile`  
@@ -82,19 +82,19 @@ Fix type `types.AdminVdc.ResourcePoolRefs` to make unmarshaling work (read-only)
   `VCDClient.GetVdcComputePolicyV2ById`, `VCDClient.GetAllVdcComputePoliciesV2`, `VCDClient.CreateVdcComputePolicyV2`,
   `VdcComputePolicyV2.Update`, `VdcComputePolicyV2.Delete` and `AdminVdc.GetAllAssignedVdcComputePoliciesV2`.
   This version supports more filtering options like `isVgpuPolicy` ([#502](https://github.com/vmware/go-vcloud-director/pull/502)], [[#504](https://github.com/vmware/go-vcloud-director/pull/504)], [[#507](https://github.com/vmware/go-vcloud-director/pull/507))
-* Simplify `Test_LDAP` by using a pre-configured LDAP server ([#505](https://github.com/vmware/go-vcloud-director/pull/505))
+* Simplified `Test_LDAP` by using a pre-configured LDAP server ([#505](https://github.com/vmware/go-vcloud-director/pull/505))
 * Added VCDClient.GetAllNsxtEdgeClusters for lookup of NSX-T Edge Clusters in wider scopes -
   Provider VDC, VDC Group or VDC ([#512](https://github.com/vmware/go-vcloud-director/pull/512))
-* Switch VDC.GetAllNsxtEdgeClusters to use 'orgVdcId' filter instead of '_context' (now deprecated)
+* Switched VDC.GetAllNsxtEdgeClusters to use 'orgVdcId' filter instead of '_context' (now deprecated)
   ([#512](https://github.com/vmware/go-vcloud-director/pull/512))
 * Created `VM.UpdateComputePolicyV2` and `VM.UpdateComputePolicyV2Async` that uses v2.0.0 of VDC Compute Policy endpoint
   of OpenAPI and allows updating VM Sizing Policies and also VM Placement Policies for a given VM ([#513](https://github.com/vmware/go-vcloud-director/pull/513))
-* Add `[]tenant` structure to simplify org user testing ([#515](https://github.com/vmware/go-vcloud-director/pull/515))
+* Added `[]tenant` structure to simplify org user testing ([#515](https://github.com/vmware/go-vcloud-director/pull/515))
 * Improved `Vdc.QueryVappVmTemplate` to avoid querying VMs in vApp Templates that are not synchronized in the catalog ([#520](https://github.com/vmware/go-vcloud-director/pull/520))
 
 ## BUG FIXES
 * Changed `VdcComputePolicy.Description` to a non-omitempty pointer, to be able to send null values to VCD to set empty descriptions. ([#504](https://github.com/vmware/go-vcloud-director/pull/504))
-* Fix issue 514 "ignoring pagination in network queries" ([#518](https://github.com/vmware/go-vcloud-director/pull/518))
+* Fixed issue 514 "ignoring pagination in network queries" ([#518](https://github.com/vmware/go-vcloud-director/pull/518))
 
 ## DEPRECATIONS
 * Deprecated OpenAPI v1.0.0 VDC Compute Policies CRUD methods in favor of v2.0.0 ones:
@@ -131,7 +131,7 @@ Fix type `types.AdminVdc.ResourcePoolRefs` to make unmarshaling work (read-only)
   functions are used) ([#497](https://github.com/vmware/go-vcloud-director/pull/497))
 * `staticcheck` switched version naming from `2021.1.2` to `v0.3.3` in download section. This PR
   also updates code to fetch correct one ([#497](https://github.com/vmware/go-vcloud-director/pull/497)]* Added a new GitHub Action to run `gosec` on every push and pull request [[#516](https://github.com/vmware/go-vcloud-director/pull/516))
-* Improve documentation for `types.OpenApiOrgVdcNetworkDhcp` ([#517](https://github.com/vmware/go-vcloud-director/pull/517))
+* Improved documentation for `types.OpenApiOrgVdcNetworkDhcp` ([#517](https://github.com/vmware/go-vcloud-director/pull/517))
 
 
 
