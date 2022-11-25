@@ -71,8 +71,6 @@
 ## IMPROVEMENTS
 * Added method `VM.Shutdown` to shut down guest OS ([#413](https://github.com/vmware/go-vcloud-director/pull/413), [#496](https://github.com/vmware/go-vcloud-director/pull/496))
 * Add support for MoRef ID on VM record type. Using the MoRef ID, we can then correlate that back to vCenter Server and find the VM with matching MoRef ID  ([#491](https://github.com/vmware/go-vcloud-director/pull/491))
-* Fixed type `types.AdminVdc.ResourcePoolRefs` to make unmarshaling work (read-only) ([#494](https://github.com/vmware/go-vcloud-director/pull/494))
-* Fixed Test_NsxtSecurityGroupGetAssociatedVms which had name clash ([#498](https://github.com/vmware/go-vcloud-director/pull/498))
 * Added support for querying VdcStorageProfile:  
   - functions `QueryAdminOrgVdcStorageProfileByID` and `QueryOrgVdcStorageProfileByID`  
   - query types `QtOrgVdcStorageProfile` and `QtAdminOrgVdcStorageProfile`  
@@ -95,6 +93,8 @@
 ## BUG FIXES
 * Changed `VdcComputePolicy.Description` to a non-omitempty pointer, to be able to send null values to VCD to set empty descriptions. ([#504](https://github.com/vmware/go-vcloud-director/pull/504))
 * Fixed issue #514 "ignoring pagination in network queries" ([#518](https://github.com/vmware/go-vcloud-director/pull/518))
+* Fixed type `types.AdminVdc.ResourcePoolRefs` to make unmarshaling work (read-only) ([#494](https://github.com/vmware/go-vcloud-director/pull/494))
+* Fixed Test_NsxtSecurityGroupGetAssociatedVms which had name clash ([#498](https://github.com/vmware/go-vcloud-director/pull/498))
 
 ## DEPRECATIONS
 * Deprecated OpenAPI v1.0.0 VDC Compute Policies CRUD methods in favor of v2.0.0 ones:
@@ -129,7 +129,7 @@
 * package `io/ioutil` is deprecated as of Go 1.16. `staticcheck` started complaining about usage of
   deprecated packages. As a result packages `io` or `os` are used (still the same
   functions are used) ([#497](https://github.com/vmware/go-vcloud-director/pull/497))
-* `staticcheck` switched version naming from `2021.1.2` to `v0.3.3` in download section ([#497](https://github.com/vmware/go-vcloud-director/pull/497)]
+* Adjusted `staticcheck` version naming to new format (from `2021.1.2` to `v0.3.3`) ([#497](https://github.com/vmware/go-vcloud-director/pull/497)]
 * Added a new GitHub Action to run `gosec` on every push and pull request [[#516](https://github.com/vmware/go-vcloud-director/pull/516))
 * Improved documentation for `types.OpenApiOrgVdcNetworkDhcp` ([#517](https://github.com/vmware/go-vcloud-director/pull/517))
 
