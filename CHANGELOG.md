@@ -92,7 +92,7 @@
 
 ### BUG FIXES
 * Changed `VdcComputePolicy.Description` to a non-omitempty pointer, to be able to send null values to VCD to set empty descriptions. ([#504](https://github.com/vmware/go-vcloud-director/pull/504))
-* Fixed issue #514 "ignoring pagination in network queries" ([#518](https://github.com/vmware/go-vcloud-director/pull/518))
+* Fixed issue [#514](https://github.com/vmware/go-vcloud-director/issues/514) "ignoring pagination in network queries" ([#518](https://github.com/vmware/go-vcloud-director/pull/518))
 * Fixed type `types.AdminVdc.ResourcePoolRefs` to make unmarshaling work (read-only) ([#494](https://github.com/vmware/go-vcloud-director/pull/494))
 * Fixed Test_NsxtSecurityGroupGetAssociatedVms which had name clash ([#498](https://github.com/vmware/go-vcloud-director/pull/498))
 
