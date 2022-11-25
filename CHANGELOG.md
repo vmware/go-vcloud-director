@@ -2,16 +2,16 @@
 
 ## FEATURES
 * Added new functions to get vApp Templates `Catalog.GetVAppTemplateByName`, `Catalog.GetVAppTemplateById`, `Catalog.GetVAppTemplateByNameOrId`,
-  `Vdc.GetVAppTemplateByName`, `VCDClient.GetVAppTemplateByHref` and `VCDClient.GetVAppTemplateById` ([#495](https://github.com/vmware/go-vcloud-director/pull/495)], [[#520](https://github.com/vmware/go-vcloud-director/pull/520))
+  `Vdc.GetVAppTemplateByName`, `VCDClient.GetVAppTemplateByHref` and `VCDClient.GetVAppTemplateById` ([#495](https://github.com/vmware/go-vcloud-director/pull/495), [#520](https://github.com/vmware/go-vcloud-director/pull/520))
 * Added new functions to query vApp Templates by name `Catalog.QueryVappTemplateWithName`, `Vdc.QueryVappTemplateWithName`, `AdminVdc.QueryVappTemplateWithName` ([#495](https://github.com/vmware/go-vcloud-director/pull/495))
 * Added new functions to delete vApp Templates `VAppTemplate.DeleteAsync` and `VAppTemplate.Delete` ([#495](https://github.com/vmware/go-vcloud-director/pull/495))
 * Added new functions to extract information from vApp Templates `VAppTemplate.GetCatalogName` and `VAppTemplate.GetVdcName` ([#495](https://github.com/vmware/go-vcloud-director/pull/495))
-* Added `Client.TestConnection` method to check remote VCD endpoints ([#447](https://github.com/vmware/go-vcloud-director/pull/447)], [[#501](https://github.com/vmware/go-vcloud-director/pull/501))
+* Added `Client.TestConnection` method to check remote VCD endpoints ([#447](https://github.com/vmware/go-vcloud-director/pull/447), [#501](https://github.com/vmware/go-vcloud-director/pull/501))
 * Added `Client.TestConnectionWithDefaults` method that uses `Client.TestConnection` with some default
-  values  ([#447](https://github.com/vmware/go-vcloud-director/pull/447)], [[#501](https://github.com/vmware/go-vcloud-director/pull/501))
+  values  ([#447](https://github.com/vmware/go-vcloud-director/pull/447), [#501](https://github.com/vmware/go-vcloud-director/pull/501))
 * Changed behavior of `Client.OpenApiPostItem` and `Client.OpenApiPostItemSync` so they accept
   response code 200 OK as valid. The reason is `TestConnection` endpoint requires a POST request and
-  returns a 200OK when successful  ([#447](https://github.com/vmware/go-vcloud-director/pull/447)], [[#501](https://github.com/vmware/go-vcloud-director/pull/501))
+  returns a 200OK when successful  ([#447](https://github.com/vmware/go-vcloud-director/pull/447), [#501](https://github.com/vmware/go-vcloud-director/pull/501))
 * Added new methods `VCDClient.GetProviderVdcByHref`, `VCDClient.GetProviderVdcById`, `VCDClient.GetProviderVdcByName` and `ProviderVdc.Refresh` to retrieve Provider VDCs ([#502](https://github.com/vmware/go-vcloud-director/pull/502))
 * Added new methods `VCDClient.GetProviderVdcExtendedByHref`, `VCDClient.GetProviderVdcExtendedById`, `VCDClient.GetProviderVdcExtendedByName` and `ProviderVdcExtended.Refresh` to retrieve the extended flavor of Provider VDCs ([#502](https://github.com/vmware/go-vcloud-director/pull/502))
 * Added new methods `ProviderVdcExtended.ToProviderVdc`, to convert from an extended Provider VDC to a regular one ([#502](https://github.com/vmware/go-vcloud-director/pull/502))
@@ -46,7 +46,7 @@
 * Added methods `Catalog.QueryTaskList` and `AdminCatalog.QueryTaskList` to retrieve the tasks associated with a catalog ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
 * Added function `IsValidUrl` to determine if a URL is valid ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
 * Added `AdminCatalog` methods `Sync` and `LaunchSync` to synchronise a subscribed catalog ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
-* Added method `AdminCatalog.GetCatalogHref` to retrieve the HREF of a regular catalog [GN-511]
+* Added method `AdminCatalog.GetCatalogHref` to retrieve the HREF of a regular catalog ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
 * Added `AdminCatalog` methods `QueryCatalogItemList`, `QueryVappTemplateList`, and `QueryMediaList` to retrieve lists of
   dependent items ([#511](https://github.com/vmware/go-vcloud-director/pull/511))
 * Added `AdminCatalog` methods `LaunchSynchronisationVappTemplates`, `LaunchSynchronisationAllVappTemplates`,
@@ -69,7 +69,7 @@
 * Added `VCDClient.QuerySynchronizedVAppTemplateById` to get a synchronized vApp Template query record from a vApp Template ID ([#520](https://github.com/vmware/go-vcloud-director/pull/520))
 
 ## IMPROVEMENTS
-* Added method `VM.Shutdown` to shut down guest OS ([#413](https://github.com/vmware/go-vcloud-director/pull/413)], [[#496](https://github.com/vmware/go-vcloud-director/pull/496))
+* Added method `VM.Shutdown` to shut down guest OS ([#413](https://github.com/vmware/go-vcloud-director/pull/413), [#496](https://github.com/vmware/go-vcloud-director/pull/496))
 * Add support for MoRef ID on VM record type. Using the MoRef ID, we can then correlate that back to vCenter Server and find the VM with matching MoRef ID  ([#491](https://github.com/vmware/go-vcloud-director/pull/491))
 * Fixed type `types.AdminVdc.ResourcePoolRefs` to make unmarshaling work (read-only) ([#494](https://github.com/vmware/go-vcloud-director/pull/494))
 * Fixed Test_NsxtSecurityGroupGetAssociatedVms which had name clash ([#498](https://github.com/vmware/go-vcloud-director/pull/498))
@@ -81,7 +81,7 @@
 * Created new VDC Compute Policies CRUD methods using OpenAPI v2.0.0:
   `VCDClient.GetVdcComputePolicyV2ById`, `VCDClient.GetAllVdcComputePoliciesV2`, `VCDClient.CreateVdcComputePolicyV2`,
   `VdcComputePolicyV2.Update`, `VdcComputePolicyV2.Delete` and `AdminVdc.GetAllAssignedVdcComputePoliciesV2`.
-  This version supports more filtering options like `isVgpuPolicy` ([#502](https://github.com/vmware/go-vcloud-director/pull/502)], [[#504](https://github.com/vmware/go-vcloud-director/pull/504)], [[#507](https://github.com/vmware/go-vcloud-director/pull/507))
+  This version supports more filtering options like `isVgpuPolicy` ([#502](https://github.com/vmware/go-vcloud-director/pull/502), [#504](https://github.com/vmware/go-vcloud-director/pull/504), [#507](https://github.com/vmware/go-vcloud-director/pull/507))
 * Simplified `Test_LDAP` by using a pre-configured LDAP server ([#505](https://github.com/vmware/go-vcloud-director/pull/505))
 * Added VCDClient.GetAllNsxtEdgeClusters for lookup of NSX-T Edge Clusters in wider scopes -
   Provider VDC, VDC Group or VDC ([#512](https://github.com/vmware/go-vcloud-director/pull/512))

@@ -6,7 +6,7 @@
 * Added methods `Catalog.QueryTaskList` and `AdminCatalog.QueryTaskList` to retrieve the tasks associated with a catalog [GH-511]
 * Added function `IsValidUrl` to determine if a URL is valid [GH-511]
 * Added `AdminCatalog` methods `Sync` and `LaunchSync` to synchronise a subscribed catalog [GH-511]
-* Added method `AdminCatalog.GetCatalogHref` to retrieve the HREF of a regular catalog [GN-511]
+* Added method `AdminCatalog.GetCatalogHref` to retrieve the HREF of a regular catalog [GH-511]
 * Added `AdminCatalog` methods `QueryCatalogItemList`, `QueryVappTemplateList`, and `QueryMediaList` to retrieve lists of
   dependent items [GH-511]
 * Added  `AdminCatalog` methods `LaunchSynchronisationVappTemplates`, `LaunchSynchronisationAllVappTemplates`,
