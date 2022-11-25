@@ -94,7 +94,7 @@
 
 ## BUG FIXES
 * Changed `VdcComputePolicy.Description` to a non-omitempty pointer, to be able to send null values to VCD to set empty descriptions. ([#504](https://github.com/vmware/go-vcloud-director/pull/504))
-* Fixed issue 514 "ignoring pagination in network queries" ([#518](https://github.com/vmware/go-vcloud-director/pull/518))
+* Fixed issue #514 "ignoring pagination in network queries" ([#518](https://github.com/vmware/go-vcloud-director/pull/518))
 
 ## DEPRECATIONS
 * Deprecated OpenAPI v1.0.0 VDC Compute Policies CRUD methods in favor of v2.0.0 ones:
@@ -127,10 +127,10 @@
   minimum officially supported Go version and this set our hands free to use generics in this SDK
   (if there is a need for it). `go.mod` is updated to reflect Go minimum version 1.18 ([#497](https://github.com/vmware/go-vcloud-director/pull/497))
 * package `io/ioutil` is deprecated as of Go 1.16. `staticcheck` started complaining about usage of
-  deprecated packages. As a result this PR switches packages to either `io` or `os` (still the same
+  deprecated packages. As a result packages `io` or `os` are used (still the same
   functions are used) ([#497](https://github.com/vmware/go-vcloud-director/pull/497))
-* `staticcheck` switched version naming from `2021.1.2` to `v0.3.3` in download section. This PR
-  also updates code to fetch correct one ([#497](https://github.com/vmware/go-vcloud-director/pull/497)]* Added a new GitHub Action to run `gosec` on every push and pull request [[#516](https://github.com/vmware/go-vcloud-director/pull/516))
+* `staticcheck` switched version naming from `2021.1.2` to `v0.3.3` in download section ([#497](https://github.com/vmware/go-vcloud-director/pull/497)]
+* Added a new GitHub Action to run `gosec` on every push and pull request [[#516](https://github.com/vmware/go-vcloud-director/pull/516))
 * Improved documentation for `types.OpenApiOrgVdcNetworkDhcp` ([#517](https://github.com/vmware/go-vcloud-director/pull/517))
 
 
