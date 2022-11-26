@@ -475,3 +475,9 @@ Response: 200 - ok
   </layer2Sections>
 </firewallConfiguration>
 ```
+
+## Retrieve list of services
+
+```
+GET https://example.eng.vmware.com/network/services/application/scope/616d7175-e538-431a-a659-f28a30e21540
+```

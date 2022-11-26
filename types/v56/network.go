@@ -1,187 +1,143 @@
 package types
 
+// -----------------------------------
+// type FirewallConfiguration
+// -----------------------------------
+
 type FirewallConfiguration struct {
-	ContextID      string `xml:"contextId"`
-	Layer2Sections struct {
-		Section struct {
-			GenerationNumber int    `xml:"generationNumber,attr"`
-			ID               int    `xml:"id,attr"`
-			Name             string `xml:"name,attr"`
-			Stateless        bool   `xml:"stateless,attr"`
-			TcpStrict        bool   `xml:"tcpStrict,attr"`
-			Timestamp        int    `xml:"timestamp,attr"`
-			Type             string `xml:"type,attr"`
-			UseSid           bool   `xml:"useSid,attr"`
-			Rule             struct {
-				Disabled      bool   `xml:"disabled,attr"`
-				ID            int    `xml:"id,attr"`
-				Logged        bool   `xml:"logged,attr"`
-				Action        string `xml:"action"`
-				AppliedToList struct {
-					AppliedTo struct {
-						IsValid bool   `xml:"isValid"`
-						Name    string `xml:"name"`
-						Type    string `xml:"type"`
-						Value   string `xml:"value"`
-					} `xml:"appliedTo"`
-				} `xml:"appliedToList"`
-				Direction  string `xml:"direction"`
-				Name       string `xml:"name"`
-				PacketType string `xml:"packetType"`
-				SectionID  int    `xml:"sectionId"`
-				Tag        string `xml:"tag"`
-			} `xml:"rule"`
-		} `xml:"section"`
-	} `xml:"layer2Sections"`
-	Layer3Sections struct {
-		Section struct {
-			GenerationNumber int    `xml:"generationNumber,attr"`
-			ID               int    `xml:"id,attr"`
-			Name             string `xml:"name,attr"`
-			Stateless        bool   `xml:"stateless,attr"`
-			TcpStrict        bool   `xml:"tcpStrict,attr"`
-			Timestamp        int    `xml:"timestamp,attr"`
-			Type             string `xml:"type,attr"`
-			UseSid           bool   `xml:"useSid,attr"`
-			Rule             []struct {
-				Disabled      bool   `xml:"disabled,attr"`
-				ID            int    `xml:"id,attr"`
-				Logged        bool   `xml:"logged,attr"`
-				Action        string `xml:"action"`
-				AppliedToList struct {
-					AppliedTo []struct {
-						IsValid bool   `xml:"isValid"`
-						Name    string `xml:"name"`
-						Type    string `xml:"type"`
-						Value   string `xml:"value"`
-					} `xml:"appliedTo"`
-				} `xml:"appliedToList"`
-				Destinations *struct {
-					Excluded    bool `xml:"excluded,attr"`
-					Destination struct {
-						IsValid bool   `xml:"isValid"`
-						Name    string `xml:"name"`
-						Type    string `xml:"type"`
-						Value   string `xml:"value"`
-					} `xml:"destination"`
-				} `xml:"destinations"`
-				Direction  string `xml:"direction"`
-				Name       string `xml:"name"`
-				PacketType string `xml:"packetType"`
-				SectionID  int    `xml:"sectionId"`
-				Services   *struct {
-					Service []struct {
-						DestinationPort *int    `xml:"destinationPort"`
-						IsValid         bool    `xml:"isValid"`
-						Name            string  `xml:"name"`
-						Protocol        *int    `xml:"protocol"`
-						ProtocolName    *string `xml:"protocolName"`
-						SourcePort      *int    `xml:"sourcePort"`
-						Type            string  `xml:"type"`
-						Value           string  `xml:"value"`
-					} `xml:"service"`
-				} `xml:"services"`
-				Sources *struct {
-					Excluded bool `xml:"excluded,attr"`
-					Source   []struct {
-						IsValid bool   `xml:"isValid"`
-						Name    string `xml:"name"`
-						Type    string `xml:"type"`
-						Value   string `xml:"value"`
-					} `xml:"source"`
-				} `xml:"sources"`
-				Tag string `xml:"tag"`
-			} `xml:"rule"`
-		} `xml:"section"`
-	} `xml:"layer3Sections"`
+	ContextID      string         `xml:"contextId"`
+	Layer3Sections Layer3Sections `xml:"layer3Sections"`
+	Layer2Sections Layer2Sections `xml:"layer2Sections"`
 }
 
-/*
-type DWAppliedTo struct {
+type Layer3Sections struct {
+	Section FirewallSection `xml:"section"`
+}
+
+type FirewallSection struct {
+	GenerationNumber int    `xml:"generationNumber,attr"`
+	ID               int    `xml:"id,attr"`
+	Name             string `xml:"name,attr"`
+	Stateless        bool   `xml:"stateless,attr"`
+	TcpStrict        bool   `xml:"tcpStrict,attr"`
+	Timestamp        int    `xml:"timestamp,attr"`
+	Type             string `xml:"type,attr"`
+	UseSid           bool   `xml:"useSid,attr"`
+	Rule             []Rule `xml:"rule"`
+}
+
+type Rule struct {
+	Disabled      bool          `xml:"disabled,attr"`
+	ID            int           `xml:"id,attr"`
+	Logged        bool          `xml:"logged,attr"`
+	Name          string        `xml:"name"`
+	Action        string        `xml:"action"`
+	AppliedToList AppliedToList `xml:"appliedToList"`
+	SectionID     int           `xml:"sectionId"`
+	Sources       *Sources      `xml:"sources"`
+	Destinations  *Destinations `xml:"destinations"`
+	Services      *Services     `xml:"services"`
+	Direction     string        `xml:"direction"`
+	PacketType    string        `xml:"packetType"`
+	Tag           string        `xml:"tag"`
+}
+
+type AppliedToList struct {
+	AppliedTo []AppliedTo `xml:"appliedTo"`
+}
+
+type AppliedTo struct {
 	Name    string `xml:"name"`
 	Value   string `xml:"value"`
 	Type    string `xml:"type"`
-	IsValid string `xml:"isValid"`
+	IsValid bool   `xml:"isValid"`
 }
 
-type DWAppliedToList struct {
-	AppliedTo []DWAppliedTo `xml:"appliedTo"`
+type Sources struct {
+	Excluded bool     `xml:"excluded,attr"`
+	Source   []Source `xml:"source"`
 }
 
-type DWSource struct {
+type Source struct {
 	Name    string `xml:"name"`
 	Value   string `xml:"value"`
 	Type    string `xml:"type"`
-	IsValid string `xml:"isValid"`
+	IsValid bool   `xml:"isValid"`
 }
 
-type DWService struct {
-}
-type DWSources struct {
-	Source []DWSource `xml:"source"`
-}
-
-type DWServices struct {
-	Source []DWService `xml:"service"`
-}
-type DWRule struct {
-	ID            string           `xml:"id,attr"`       // The rule identifier - it is usually a bare number, presented as a string
-	Name          string           `xml:"name"`          // The name of the rule, as provided by the user
-	Disabled      bool             `xml:"disabled,attr"` // If true, the rule is preserved, but not used
-	Logged        bool             `xml:"logged,attr"`   // If true, the rule usage is logged
-	Action        string           `xml:"action"`        // allow or deny
-	AppliedToList *DWAppliedToList `xml:"appliedToList"` // To which objects the rule applies
-	SectionId     string           `xml:"sectionId"`     // To which section the rule belongs
-	Sources       *DWSources       `xml:"sources"`       // List of the sources for this rule
-	Services      *DWServices      `xml:"services"`      // List of the services for this rule
-	Direction     string           `xml:"direction"`     // in, out, or inout
-	PacketType    string           `xml:"packetType"`    // any, IPV4, IPV6
-	Tag           string           `xml:"tag"`
+type Destinations struct {
+	Excluded    bool        `xml:"excluded,attr"`
+	Destination Destination `xml:"destination"`
 }
 
-type DWSection struct {
-	XMLName          xml.Name `xml:"section"`
-	ID               string   `xml:"id,attr"`               // The section identifier
-	Name             string   `xml:"name,attr"`             // The name of the section - It is the UUID of the VDC ID
-	GenerationNumber string   `xml:"generationNumber,attr"` // read-only : it's the Etag of the latest operation
-	Timestamp        string   `xml:"timestamp,attr"`        // read-only - the Unix timestamp of the rule
-	Type             string   `xml:"type,attr"`             // either LAYER2 or LAYER3
-	TcpStrict        bool     `xml:"tcpStrict,attr"`
-	Stateless        bool     `xml:"stateless,attr"`
-	UseSid           bool     `xml:"useSid,attr"`
-	Rule             []DWRule `xml:"rule"`
+type Destination struct {
+	Name    string `xml:"name"`
+	Value   string `xml:"value"`
+	Type    string `xml:"type"`
+	IsValid bool   `xml:"isValid"`
 }
 
-type Section struct {
-	Rule []struct {
-		Disabled      bool   `xml:"disabled,attr"`
-		ID            int    `xml:"id,attr"`
-		Logged        bool   `xml:"logged,attr"`
-		Action        string `xml:"action"`
-		AppliedToList struct {
-			AppliedTo []struct {
-				IsValid bool   `xml:"isValid"`
-				Name    string `xml:"name"`
-				Type    string `xml:"type"`
-				Value   string `xml:"value"`
-			} `xml:"appliedTo"`
-		} `xml:"appliedToList"`
-		Direction  string `xml:"direction"`
-		Name       string `xml:"name"`
-		PacketType string `xml:"packetType"`
-		SectionID  int    `xml:"sectionId"`
-		Sources    *struct {
-			Excluded bool `xml:"excluded,attr"`
-			Source   []struct {
-				IsValid bool   `xml:"isValid"`
-				Name    string `xml:"name"`
-				Type    string `xml:"type"`
-				Value   string `xml:"value"`
-			} `xml:"source"`
-		} `xml:"sources"`
-		Tag string `xml:"tag"`
-	} `xml:"rule"`
+// -----------------------------------
+// type Service
+// -----------------------------------
+
+type ApplicationList struct {
+	Application []Application `xml:"application"`
 }
 
+type Services struct {
+	Service []Service `xml:"service"`
+}
 
-*/
+type Service struct {
+	IsValid         bool    `xml:"isValid"`
+	SourcePort      *int    `xml:"sourcePort"`
+	DestinationPort *int    `xml:"destinationPort"`
+	Protocol        *int    `xml:"protocol"`
+	ProtocolName    *string `xml:"protocolName"`
+	Name            string  `xml:"name"`
+	Value           string  `xml:"value"`
+	Type            string  `xml:"type"`
+}
+
+type Layer2Sections struct {
+	Section FirewallSection `xml:"section"`
+}
+
+type Application struct {
+	ObjectID           string          `xml:"objectId"`
+	ObjectTypeName     string          `xml:"objectTypeName"`
+	VsmUuid            string          `xml:"vsmUuid"`
+	NodeID             string          `xml:"nodeId"`
+	Revision           bool            `xml:"revision"`
+	Type               ApplicationType `xml:"type"`
+	Name               string          `xml:"name"`
+	Scope              Scope           `xml:"scope"`
+	ClientHandle       struct{}        `xml:"clientHandle"`
+	ExtendedAttributes struct{}        `xml:"extendedAttributes"`
+	IsUniversal        bool            `xml:"isUniversal"`
+	UniversalRevision  bool            `xml:"universalRevision"`
+	IsTemporal         bool            `xml:"isTemporal"`
+	InheritanceAllowed bool            `xml:"inheritanceAllowed"`
+	Element            Element         `xml:"element"`
+	Layer              string          `xml:"layer"`
+	IsReadOnly         bool            `xml:"isReadOnly"`
+	Description        *string         `xml:"description"`
+}
+
+type ApplicationType struct {
+	TypeName string `xml:"typeName"`
+}
+
+type Scope struct {
+	ID             string `xml:"id"`
+	ObjectTypeName string `xml:"objectTypeName"`
+	Name           string `xml:"name"`
+}
+
+type Element struct {
+	ApplicationProtocol *string `xml:"applicationProtocol"`
+	Value               *string `xml:"value"`
+	SourcePort          *int    `xml:"sourcePort"`
+	AppGuidName         *string `xml:"appGuidName"`
+}
