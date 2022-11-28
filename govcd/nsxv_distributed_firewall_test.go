@@ -13,7 +13,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_DistributedFirewall(check *C) {
+func (vcd *TestVCD) Test_NsxvDistributedFirewall(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
@@ -75,6 +75,40 @@ func (vcd *TestVCD) Test_DistributedFirewall(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(enabled, Equals, true)
 
+	err = dfw.Disable()
+	check.Assert(err, IsNil)
+	enabled, err = dfw.IsEnabled()
+	check.Assert(err, IsNil)
+	check.Assert(enabled, Equals, false)
+
+	// Also dfw.Disable is idempotent
+	err = dfw.Disable()
+	check.Assert(err, IsNil)
+
+	enabled, err = dfw.IsEnabled()
+	check.Assert(err, IsNil)
+	check.Assert(enabled, Equals, false)
+}
+
+// ----------------------------------------------------------------------------------------------
+// methods from here till the end of the file will be removed if we decide we don't need services
+// ----------------------------------------------------------------------------------------------
+
+func (vcd *TestVCD) Test_NsxvServices(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	// Retrieve a NSX-V VDC
+	vdc, err := org.GetAdminVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	dfw := NewNsxvDistributedFirewall(vdc.client, vdc.AdminVdc.ID)
+	check.Assert(dfw, NotNil)
+
 	services, err := dfw.GetServices(false)
 	check.Assert(err, IsNil)
 	check.Assert(services, NotNil)
@@ -111,17 +145,34 @@ func (vcd *TestVCD) Test_DistributedFirewall(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(servicesByRegex), Equals, 0)
 
-	err = dfw.Disable()
+	serviceGroups, err := dfw.GetServiceGroups(false)
 	check.Assert(err, IsNil)
-	enabled, err = dfw.IsEnabled()
-	check.Assert(err, IsNil)
-	check.Assert(enabled, Equals, false)
+	check.Assert(serviceGroups, NotNil)
+	check.Assert(len(serviceGroups) > 0, Equals, true)
 
-	// Also dfw.Disable is idempotent
-	err = dfw.Disable()
+	serviceGroupName := "Orchestrator"
+	serviceGroupByName, err := dfw.GetServiceGroupByName(serviceGroupName)
 	check.Assert(err, IsNil)
+	check.Assert(serviceGroupByName, NotNil)
+	check.Assert(serviceGroupByName.Name, Equals, serviceGroupName)
 
-	enabled, err = dfw.IsEnabled()
+	serviceGroupById, err := dfw.GetServiceGroupById(serviceGroupByName.ObjectID)
 	check.Assert(err, IsNil)
-	check.Assert(enabled, Equals, false)
+	check.Assert(serviceGroupById, NotNil)
+	check.Assert(serviceGroupById.Name, Equals, serviceGroupName)
+
+	searchRegex = "Oracle"
+	serviceGroupsByRegex, err := dfw.GetServiceGroupsByRegex(searchRegex)
+	check.Assert(err, IsNil)
+	check.Assert(len(serviceGroupsByRegex) > 1, Equals, true)
+
+	searchRegex = "."
+	serviceGroupsByRegex, err = dfw.GetServiceGroupsByRegex(searchRegex)
+	check.Assert(err, IsNil)
+	check.Assert(len(serviceGroupsByRegex), Equals, len(serviceGroups))
+
+	searchRegex = "^####--no-such-service-group--####$"
+	serviceGroupsByRegex, err = dfw.GetServiceGroupsByRegex(searchRegex)
+	check.Assert(err, IsNil)
+	check.Assert(len(serviceGroupsByRegex), Equals, 0)
 }

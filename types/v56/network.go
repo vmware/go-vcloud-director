@@ -1,5 +1,8 @@
 package types
 
+// NOTE: The types in this file were created using goxmlstruct
+// (https://github.com/twpayne/go-xmlstruct)
+
 // -----------------------------------
 // type FirewallConfiguration
 // -----------------------------------
@@ -10,34 +13,38 @@ type FirewallConfiguration struct {
 	Layer2Sections Layer2Sections `xml:"layer2Sections"`
 }
 
+type Layer2Sections struct {
+	Section FirewallSection `xml:"section"`
+}
+
 type Layer3Sections struct {
 	Section FirewallSection `xml:"section"`
 }
 
 type FirewallSection struct {
-	GenerationNumber int    `xml:"generationNumber,attr"`
-	ID               int    `xml:"id,attr"`
-	Name             string `xml:"name,attr"`
-	Stateless        bool   `xml:"stateless,attr"`
-	TcpStrict        bool   `xml:"tcpStrict,attr"`
-	Timestamp        int    `xml:"timestamp,attr"`
-	Type             string `xml:"type,attr"`
-	UseSid           bool   `xml:"useSid,attr"`
-	Rule             []Rule `xml:"rule"`
+	GenerationNumber string                        `xml:"generationNumber,attr"`
+	ID               int                           `xml:"id,attr"`
+	Name             string                        `xml:"name,attr"`
+	Stateless        bool                          `xml:"stateless,attr"`
+	TcpStrict        bool                          `xml:"tcpStrict,attr"`
+	Timestamp        int                           `xml:"timestamp,attr"`
+	Type             string                        `xml:"type,attr"`
+	UseSid           bool                          `xml:"useSid,attr"`
+	Rule             []NsxvDistributedFirewallRule `xml:"rule"`
 }
 
-type Rule struct {
+type NsxvDistributedFirewallRule struct {
 	Disabled      bool          `xml:"disabled,attr"`
 	ID            int           `xml:"id,attr"`
 	Logged        bool          `xml:"logged,attr"`
 	Name          string        `xml:"name"`
-	Action        string        `xml:"action"`
+	Action        string        `xml:"action"` // allow, deny
 	AppliedToList AppliedToList `xml:"appliedToList"`
 	SectionID     int           `xml:"sectionId"`
 	Sources       *Sources      `xml:"sources"`
 	Destinations  *Destinations `xml:"destinations"`
 	Services      *Services     `xml:"services"`
-	Direction     string        `xml:"direction"`
+	Direction     string        `xml:"direction"` // in, out, inout
 	PacketType    string        `xml:"packetType"`
 	Tag           string        `xml:"tag"`
 }
@@ -77,14 +84,6 @@ type Destination struct {
 	IsValid bool   `xml:"isValid"`
 }
 
-// -----------------------------------
-// type Service
-// -----------------------------------
-
-type ApplicationList struct {
-	Application []Application `xml:"application"`
-}
-
 type Services struct {
 	Service []Service `xml:"service"`
 }
@@ -95,13 +94,20 @@ type Service struct {
 	DestinationPort *int    `xml:"destinationPort"`
 	Protocol        *int    `xml:"protocol"`
 	ProtocolName    *string `xml:"protocolName"`
-	Name            string  `xml:"name"`
-	Value           string  `xml:"value"`
-	Type            string  `xml:"type"`
+	Name            string  `xml:"name,omitempty"`
+	Value           string  `xml:"value,omitempty"`
+	Type            string  `xml:"type,omitempty"`
 }
 
-type Layer2Sections struct {
-	Section FirewallSection `xml:"section"`
+// --------------------------------------------------------------------------------------------
+// Types from here till the end of the file will be removed if we decide we don't need services
+// --------------------------------------------------------------------------------------------
+// -----------------------------------
+// type Service
+// -----------------------------------
+
+type ApplicationList struct {
+	Application []Application `xml:"application"`
 }
 
 type Application struct {
@@ -140,4 +146,47 @@ type Element struct {
 	Value               *string `xml:"value"`
 	SourcePort          *int    `xml:"sourcePort"`
 	AppGuidName         *string `xml:"appGuidName"`
+}
+
+// -----------------------------------
+// type ServiceGroup
+// -----------------------------------
+
+type ApplicationGroupList struct {
+	ApplicationGroup []ApplicationGroup `xml:"applicationGroup"`
+}
+
+type ApplicationGroup struct {
+	ObjectID           string          `xml:"objectId"`
+	ObjectTypeName     string          `xml:"objectTypeName"`
+	VsmUuid            string          `xml:"vsmUuid"`
+	NodeID             string          `xml:"nodeId"`
+	Revision           string          `xml:"revision"`
+	Type               ApplicationType `xml:"type"`
+	Name               string          `xml:"name"`
+	Scope              Scope           `xml:"scope"`
+	ClientHandle       struct{}        `xml:"clientHandle"`
+	ExtendedAttributes struct{}        `xml:"extendedAttributes"`
+	IsUniversal        bool            `xml:"isUniversal"`
+	UniversalRevision  bool            `xml:"universalRevision"`
+	IsTemporal         bool            `xml:"isTemporal"`
+	InheritanceAllowed bool            `xml:"inheritanceAllowed"`
+	IsReadOnly         bool            `xml:"isReadOnly"`
+	Member             []Member        `xml:"member"`
+}
+
+type Member struct {
+	ObjectID           string          `xml:"objectId"`
+	ObjectTypeName     string          `xml:"objectTypeName"`
+	VsmUuid            string          `xml:"vsmUuid"`
+	NodeID             string          `xml:"nodeId"`
+	Revision           string          `xml:"revision"`
+	Type               ApplicationType `xml:"type"`
+	Name               string          `xml:"name"`
+	Scope              Scope           `xml:"scope"`
+	ClientHandle       struct{}        `xml:"clientHandle"`
+	ExtendedAttributes struct{}        `xml:"extendedAttributes"`
+	IsUniversal        bool            `xml:"isUniversal"`
+	UniversalRevision  bool            `xml:"universalRevision"`
+	IsTemporal         bool            `xml:"isTemporal"`
 }
