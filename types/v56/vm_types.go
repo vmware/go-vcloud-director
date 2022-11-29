@@ -51,8 +51,7 @@ type Vm struct {
 
 	Snapshots *SnapshotSection `xml:"SnapshotSection,omitempty"`
 
-	// TODO: OVF Sections to be implemented
-	// Environment OVF_Environment `xml:"Environment,omitempty"
+	Environment *OVF_Environment `xml:"Environment,omitempty"`
 
 	VmSpecSection *VmSpecSection `xml:"VmSpecSection,omitempty"`
 
@@ -160,4 +159,47 @@ type SourcedVmTemplateParams struct {
 	VmGeneralParams               *VMGeneralParams     `xml:"VmGeneralParams,omitempty"`               // Specify name, description, and other properties of a VM during instantiation.
 	VmTemplateInstantiationParams *InstantiationParams `xml:"VmTemplateInstantiationParams,omitempty"` // Same as InstantiationParams used for VMs within a vApp
 	StorageProfile                *Reference           `xml:"StorageProfile,omitempty"`                // A reference to a storage profile to be used for the VM. The specified storage profile must exist in the organization vDC that contains the composed vApp. If not specified, the default storage profile for the vDC is used.
+}
+
+type OVF_Environment struct {
+	XMLName                xml.Name                `xml:"Environment"`
+	Ve                     string                  `xml:"ve,attr,omitempty"`
+	Id                     string                  `xml:"id,attr,omitempty"`
+	VCenterId              string                  `xml:"vCenterId,attr,omitempty"`
+	PlatformSection        *PlatformSection        `xml:"PlatformSection,omitempty"`
+	PropertySection        *PropertySection        `xml:"PropertySection,omitempty"`
+	EthernetAdapterSection *EthernetAdapterSection `xml:"EthernetAdapterSection,omitempty"`
+}
+
+type PlatformSection struct {
+	XMLName xml.Name `xml:"PlatformSection"`
+	Kind    string   `xml:"Kind,omitempty"`
+	Version string   `xml:"Version,omitempty"`
+	Vendor  string   `xml:"Vendor,omitempty"`
+	Locale  string   `xml:"Locale,omitempty"`
+}
+
+type PropertySection struct {
+	XMLName      xml.Name     `xml:"PropertySection"`
+	PropertyList PropertyList `xml:"Property,omitempty"`
+}
+
+type PropertyList []*OVF_Property
+
+type OVF_Property struct {
+	Key   string `xml:"key,attr"`
+	Value string `xml:"value,attr"`
+}
+
+type EthernetAdapterSection struct {
+	XMLName     xml.Name    `xml:"EthernetAdapterSection"`
+	AdapterList AdapterList `xml:"Adapter,omitempty"`
+}
+
+type AdapterList []*Adapter
+
+type Adapter struct {
+	Mac        string `xml:"mac,attr"`
+	Network    string `xml:"network,attr"`
+	UnitNumber string `xml:"unitNumber,attr"`
 }

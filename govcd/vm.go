@@ -832,6 +832,21 @@ func (vm *VM) GetProductSectionList() (*types.ProductSectionList, error) {
 	return getProductSectionList(vm.client, vm.VM.HREF)
 }
 
+// GetEnvironment returns the OVF Environment. It's only available for poweredOn VM
+func (vm *VM) GetEnvironment() (*types.OVF_Environment, error) {
+	v := &types.Vm{}
+
+	if vm.VM.HREF == "" {
+		return nil, fmt.Errorf("cannot refresh, invalid reference url")
+	}
+
+	_, err := vm.client.ExecuteRequest(vm.VM.HREF, http.MethodGet,
+		types.MimeVM, "error retrieving ovf environment: %s", nil, v)
+
+	// The request was successful
+	return v.Environment, err
+}
+
 // GetGuestCustomizationSection retrieves guest customization section for a VM. It allows to read VM guest customization properties.
 func (vm *VM) GetGuestCustomizationSection() (*types.GuestCustomizationSection, error) {
 	if vm == nil || vm.VM.HREF == "" {
