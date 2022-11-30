@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"reflect"
 	"regexp"
 	"strings"
 
@@ -28,9 +29,17 @@ type NsxvDistributedFirewall struct {
 }
 
 const (
-	ProtocolTcp  = "TCP"
-	ProtocolUdp  = "UDP"
-	ProtocolIcmp = "ICMP"
+	ProtocolTcp    = "TCP"
+	ProtocolUdp    = "UDP"
+	ProtocolIcmp   = "ICMP"
+	ActionAllow    = "allow"
+	ActionDeny     = "deny"
+	DirectionIn    = "in"
+	DirectionOut   = "out"
+	DirectionInout = "inout"
+	PacketAny      = "any"
+	PacketIpv4     = "ipv4"
+	PacketIpv6     = "ipv6"
 )
 
 var NsxvProtocolCodes = map[string]int{
@@ -182,7 +191,7 @@ func (dfw *NsxvDistributedFirewall) Disable() error {
 	return nil
 }
 
-func (dfw *NsxvDistributedFirewall) UpdateConfiguration(rules []types.NsxvDistributedFirewallRule) (*types.FirewallConfiguration, error) {
+func (dfw *NsxvDistributedFirewall) UpdateConfiguration(rules []types.NsxvDistributedFirewallRule, addDefaultRule bool, defaultRuleAction string) (*types.FirewallConfiguration, error) {
 
 	if dfw.Etag == "" {
 		_, err := dfw.GetConfiguration()
@@ -228,6 +237,51 @@ func (dfw *NsxvDistributedFirewall) UpdateConfiguration(rules []types.NsxvDistri
 	}
 	//return dfw.GetConfiguration()
 	return nil, fmt.Errorf("not fully implemented yet")
+}
+
+type ruleEquality int
+
+const (
+	rulesEqual ruleEquality = iota
+	rulesDifferent
+	rulesEqualDifferentIds
+	rulesDifferentSameId
+)
+
+func compareRule(original, inserted types.NsxvDistributedFirewallRule) ruleEquality {
+	idsDiffer := original.ID != inserted.ID && (original.ID+inserted.ID) > 0
+
+	areEqual := original.Disabled == inserted.Disabled &&
+		original.Name == inserted.Name &&
+		original.Action == inserted.Action &&
+		original.Direction == inserted.Direction &&
+		original.PacketType == inserted.PacketType &&
+		reflect.DeepEqual(original.AppliedToList, inserted.AppliedToList) &&
+		reflect.DeepEqual(original.Sources, inserted.Sources) &&
+		reflect.DeepEqual(original.Destinations, inserted.Destinations) &&
+		reflect.DeepEqual(original.Services, inserted.Services)
+
+	switch {
+	case areEqual && idsDiffer:
+		return rulesEqualDifferentIds
+	case areEqual && !idsDiffer:
+		return rulesEqual
+	case !areEqual && !idsDiffer:
+		return rulesDifferentSameId
+	default:
+		// !areEqual && idsDiffer
+		return rulesDifferent
+	}
+}
+
+func isDefaultRule(rule types.NsxvDistributedFirewallRule) bool {
+	return !rule.Disabled &&
+		rule.Direction == DirectionInout &&
+		rule.PacketType == "any" &&
+		rule.Sources == nil &&
+		rule.Destinations == nil &&
+		rule.Services == nil &&
+		strings.Contains(rule.Name, "Default")
 }
 
 // ----------------------------------------------------------------------------------------------
