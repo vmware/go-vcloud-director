@@ -3142,6 +3142,7 @@ type CatalogRecord struct {
 	Description             string    `xml:"description,attr,omitempty"`
 	IsPublished             bool      `xml:"isPublished,attr,omitempty"`
 	IsShared                bool      `xml:"isShared,attr,omitempty"`
+	IsLocal                 bool      `xml:"isLocal,attr,omitempty"`
 	CreationDate            string    `xml:"creationDate,attr,omitempty"`
 	OrgName                 string    `xml:"orgName,attr,omitempty"`
 	OwnerName               string    `xml:"ownerName,attr,omitempty"`
