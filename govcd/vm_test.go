@@ -2281,3 +2281,55 @@ func createNsxtVAppAndVm(vcd *TestVCD, check *C) (*VApp, *VM) {
 
 	return vapp, vm
 }
+
+func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+	vapp := vcd.findFirstVapp()
+	existingVm, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
+	check.Assert(err, IsNil)
+
+	vmStatus, err := vm.GetStatus()
+	check.Assert(err, IsNil)
+	if vmStatus != "POWERED_ON" {
+		task, err := vm.PowerOn()
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+		check.Assert(task.Task.Status, Equals, "success")
+	}
+
+	// Read ovfenv when VM is started
+	ovfenv, err := vm.GetEnvironment()
+	check.Assert(err, IsNil)
+	check.Assert(strings.Contains(ovfenv.VCenterId, "vm-"), Equals, true)
+	check.Assert(ovfenv, NotNil)
+	check.Assert(ovfenv.PlatformSection, NotNil)
+	check.Assert(ovfenv.PlatformSection.Kind, Equals, "VMware ESXi")
+	check.Assert(ovfenv.PropertySection, NotNil)
+	for _, p := range ovfenv.PropertySection.PropertyList {
+		if p.Key == "vCloud_computerName" {
+			check.Assert(p.Value, Not(Equals), "")
+		}
+	}
+	check.Assert(ovfenv.EthernetAdapterSection, NotNil)
+	for _, p := range ovfenv.EthernetAdapterSection.AdapterList {
+		check.Assert(p.Mac, Not(Equals), "")
+	}
+
+	// PowerOff
+	task, err := vm.PowerOff()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	ovfenv, err = vm.GetEnvironment()
+	check.Assert(err, IsNil)
+	check.Assert(ovfenv, IsNil)
+}
