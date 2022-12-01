@@ -51,6 +51,7 @@ type Vm struct {
 
 	Snapshots *SnapshotSection `xml:"SnapshotSection,omitempty"`
 
+	// The OVF environment defines how the guest software and the virtualization platform interact.
 	Environment *OVF_Environment `xml:"Environment,omitempty"`
 
 	VmSpecSection *VmSpecSection `xml:"VmSpecSection,omitempty"`
@@ -161,24 +162,31 @@ type SourcedVmTemplateParams struct {
 	StorageProfile                *Reference           `xml:"StorageProfile,omitempty"`                // A reference to a storage profile to be used for the VM. The specified storage profile must exist in the organization vDC that contains the composed vApp. If not specified, the default storage profile for the vDC is used.
 }
 
+// The OVF environment enables the guest software to access information about the virtualization platform, such as
+// the user-specified values for the properties defined in the OVF descriptor.
 type OVF_Environment struct {
 	XMLName                xml.Name                `xml:"Environment"`
-	Ve                     string                  `xml:"ve,attr,omitempty"`
-	Id                     string                  `xml:"id,attr,omitempty"`
-	VCenterId              string                  `xml:"vCenterId,attr,omitempty"`
-	PlatformSection        *PlatformSection        `xml:"PlatformSection,omitempty"`
-	PropertySection        *PropertySection        `xml:"PropertySection,omitempty"`
-	EthernetAdapterSection *EthernetAdapterSection `xml:"EthernetAdapterSection,omitempty"`
+	Ve                     string                  `xml:"ve,attr,omitempty"`				// Xml namespace
+	Id                     string                  `xml:"id,attr,omitempty"`                // Identification of VM from OVF Descriptor. Describes this virtual system.
+	VCenterId              string                  `xml:"vCenterId,attr,omitempty"`         // VM moref in the vCenter
+	PlatformSection        *PlatformSection        `xml:"PlatformSection,omitempty"`        // Describes the virtualization platform
+	PropertySection        *PropertySection        `xml:"PropertySection,omitempty"`        // Property elements with key/value pairs
+	EthernetAdapterSection *EthernetAdapterSection `xml:"EthernetAdapterSection,omitempty"` // Contains adapters info and virtual networks attached
 }
 
+// Provides information from the virtualization platform
 type PlatformSection struct {
 	XMLName xml.Name `xml:"PlatformSection"`
-	Kind    string   `xml:"Kind,omitempty"`
-	Version string   `xml:"Version,omitempty"`
-	Vendor  string   `xml:"Vendor,omitempty"`
-	Locale  string   `xml:"Locale,omitempty"`
+	Kind    string   `xml:"Kind,omitempty"`    // Hypervisor kind is typically VMware ESXi
+	Version string   `xml:"Version,omitempty"` // Hypervisor version
+	Vendor  string   `xml:"Vendor,omitempty"`  // VMware, Inc.
+	Locale  string   `xml:"Locale,omitempty"`  // Hypervisor locale
 }
 
+// Contains a list of key/value pairs corresponding to properties defined in the OVF descriptor
+// Operating system level configuration, such as host names, IP address, subnets, gateways, etc.
+// Application-level configuration such as DNS name of active directory server, databases and
+// other external services.
 type PropertySection struct {
 	XMLName      xml.Name     `xml:"PropertySection"`
 	PropertyList PropertyList `xml:"Property,omitempty"`
@@ -191,6 +199,7 @@ type OVF_Property struct {
 	Value string `xml:"value,attr"`
 }
 
+// Contains adapters info and virtual networks attached
 type EthernetAdapterSection struct {
 	XMLName     xml.Name    `xml:"EthernetAdapterSection"`
 	AdapterList AdapterList `xml:"Adapter,omitempty"`
