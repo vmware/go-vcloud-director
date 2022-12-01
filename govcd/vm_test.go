@@ -2307,10 +2307,15 @@ func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
 	// Read ovfenv when VM is started
 	ovfenv, err := vm.GetEnvironment()
 	check.Assert(err, IsNil)
+
+	// Provides information from the virtualization platform like VM moref
 	check.Assert(strings.Contains(ovfenv.VCenterId, "vm-"), Equals, true)
-	check.Assert(ovfenv, NotNil)
+
+	// Check virtualization platform Vendor
 	check.Assert(ovfenv.PlatformSection, NotNil)
-	check.Assert(ovfenv.PlatformSection.Kind, Equals, "VMware ESXi")
+	check.Assert(ovfenv.PlatformSection.Vendor, Equals, "VMware, Inc.")
+
+	// Check guest operating system level configuration for hostname
 	check.Assert(ovfenv.PropertySection, NotNil)
 	for _, p := range ovfenv.PropertySection.PropertyList {
 		if p.Key == "vCloud_computerName" {
@@ -2330,6 +2335,15 @@ func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 
 	ovfenv, err = vm.GetEnvironment()
-	check.Assert(err, IsNil)
+	check.Assert(strings.Contains(err.Error(), "ovf environment is only available when VM is poweredOn"), Equals, true)
 	check.Assert(ovfenv, IsNil)
+
+	// Leave things as they were
+	if vmStatus != "POWERED_OFF" {
+		task, err := vm.PowerOn()
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+		check.Assert(task.Task.Status, Equals, "success")
+	}
 }
