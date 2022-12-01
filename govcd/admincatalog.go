@@ -647,7 +647,7 @@ func (client *Client) GetCatalogByHref(catalogHref string) (*AdminCatalog, error
 // QueryCatalogRecords given a catalog name, retrieves the catalogRecords that match its name
 // Returns a list of catalog records for such name, empty list if none was found
 func (client *Client) QueryCatalogRecords(name string) ([]*types.CatalogRecord, error) {
-	util.Logger.Printf("[DEBUG] QueryCatalogList")
+	util.Logger.Printf("[DEBUG] QueryCatalogRecords")
 
 	var filter string
 	if name != "" {
@@ -669,10 +669,10 @@ func (client *Client) QueryCatalogRecords(name string) ([]*types.CatalogRecord, 
 	}
 
 	catalogs := results.Results.CatalogRecord
-	if catalogs == nil {
-		return nil, ErrorEntityNotFound
+	if client.IsSysAdmin {
+		catalogs = results.Results.AdminCatalogRecord
 	}
 
-	util.Logger.Printf("[DEBUG] QueryCatalogList returned with : %#v and error: %s", catalogs, err)
+	util.Logger.Printf("[DEBUG] QueryCatalogRecords returned with : %#v and error: %s", catalogs, err)
 	return catalogs, nil
 }
