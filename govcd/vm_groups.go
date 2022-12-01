@@ -26,29 +26,49 @@ const vmGroupUrnPrefix = "urn:vcloud:namedVmGroup"
 // On success, returns a pointer to the VmGroup structure and a nil error
 // On failure, returns a nil pointer and an error
 func (vcdClient *VCDClient) GetVmGroupById(id string) (*VmGroup, error) {
-	return getVmGroupWithFilter(vcdClient, map[string]string{"vmGroupId": extractUuid(id)})
+	return getVmGroupWithFilter(vcdClient, "vmGroupId=="+url.QueryEscape(extractUuid(id)))
 }
 
 // GetVmGroupByNamedVmGroupIdAndProviderVdcUrn finds a VM Group by its Named VM Group ID and Provider VDC URN.
 // On success, returns a pointer to the VmGroup structure and a nil error
 // On failure, returns a nil pointer and an error
 func (vcdClient *VCDClient) GetVmGroupByNamedVmGroupIdAndProviderVdcUrn(namedVmGroupId, pvdcUrn string) (*VmGroup, error) {
-	resourcePool, err := getResourcePool(vcdClient, pvdcUrn)
-	if err != nil {
-		return nil, fmt.Errorf("could not get VM Group: %s", err)
-	}
-	return getVmGroupWithFilter(vcdClient, map[string]string{"namedVmGroupId": extractUuid(namedVmGroupId), "clusterMoref": resourcePool.ClusterMoref, "vcId": extractUuid(resourcePool.VcenterHREF)})
+	return getVmGroup(vcdClient, pvdcUrn, "namedVmGroupId", namedVmGroupId)
 }
 
 // GetVmGroupByNameAndProviderVdcUrn finds a VM Group by its name and associated Provider VDC URN.
 // On success, returns a pointer to the VmGroup structure and a nil error
 // On failure, returns a nil pointer and an error
 func (vcdClient *VCDClient) GetVmGroupByNameAndProviderVdcUrn(name, pvdcUrn string) (*VmGroup, error) {
-	resourcePool, err := getResourcePool(vcdClient, pvdcUrn)
+	return getVmGroup(vcdClient, pvdcUrn, "vmGroupName", name)
+}
+
+// getVmGroup finds a VM Group by its ID key and value and associated Provider VDC URN.
+// On success, returns a pointer to the VmGroup structure and a nil error
+// On failure, returns a nil pointer and an error
+func getVmGroup(vcdClient *VCDClient, pvdcUrn, idKey, idValue string) (*VmGroup, error) {
+	resourcePools, err := getResourcePools(vcdClient, pvdcUrn)
 	if err != nil {
-		return nil, fmt.Errorf("could not get VM Group: %s", err)
+		return nil, fmt.Errorf("could not get VM Group with %s=%s: %s", idKey, idValue, err)
 	}
-	return getVmGroupWithFilter(vcdClient, map[string]string{"vmGroupName": name, "clusterMoref": resourcePool.ClusterMoref, "vcId": extractUuid(resourcePool.VcenterHREF)})
+	clusterMorefs := ""
+	vCenters := ""
+	for _, resourcePool := range resourcePools {
+		if resourcePool.ClusterMoref != "" {
+			clusterMorefs += fmt.Sprintf("clusterMoref==%s,", url.QueryEscape(resourcePool.ClusterMoref))
+		}
+		if resourcePool.VcenterHREF != "" {
+			vCenters += fmt.Sprintf("vcId==%s,", url.QueryEscape(extractUuid(resourcePool.VcenterHREF)))
+		}
+	}
+	// Removes trailing ","
+	if len(clusterMorefs) == 0 || len(vCenters) == 0 {
+		return nil, fmt.Errorf("could not retrieve Resource pools information to retrieve VM Group with %s=%s", idKey, idValue)
+	}
+	clusterMorefs = clusterMorefs[:len(clusterMorefs)-1]
+	vCenters = vCenters[:len(vCenters)-1] // Removes trailing ","
+
+	return getVmGroupWithFilter(vcdClient, fmt.Sprintf("(%s==%s;(%s);(%s))", url.QueryEscape(idKey), url.QueryEscape(idValue), clusterMorefs, vCenters))
 }
 
 // GetLogicalVmGroupById finds a Logical VM Group by its URN.
@@ -139,14 +159,10 @@ func (logicalVmGroup *LogicalVmGroup) Delete() error {
 // getVmGroupWithFilter finds a VM Group by specifying a filter=(filterKey==filterValue).
 // On success, returns a pointer to the VmGroup structure and a nil error
 // On failure, returns a nil pointer and an error
-func getVmGroupWithFilter(vcdClient *VCDClient, filter map[string]string) (*VmGroup, error) {
-	filterEncoded := ""
-	for k, v := range filter {
-		filterEncoded += fmt.Sprintf("%s==%s;", url.QueryEscape(k), url.QueryEscape(v))
-	}
+func getVmGroupWithFilter(vcdClient *VCDClient, filter string) (*VmGroup, error) {
 	foundVmGroups, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":          "vmGroups",
-		"filter":        filterEncoded[:len(filterEncoded)-1], // Removes the trailing ';'
+		"filter":        filter,
 		"filterEncoded": "true",
 	})
 	if err != nil {
@@ -165,8 +181,8 @@ func getVmGroupWithFilter(vcdClient *VCDClient, filter map[string]string) (*VmGr
 	return vmGroup, nil
 }
 
-// getResourcePool returns the Resource Pool that can unequivocally identify a VM Group
-func getResourcePool(vcdClient *VCDClient, pvdcUrn string) (*types.QueryResultResourcePoolRecordType, error) {
+// getResourcePools returns the Resource Pool that can unequivocally identify a VM Group
+func getResourcePools(vcdClient *VCDClient, pvdcUrn string) ([]*types.QueryResultResourcePoolRecordType, error) {
 	foundResourcePools, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":          "resourcePool",
 		"filter":        fmt.Sprintf("providerVdc==%s", url.QueryEscape(pvdcUrn)),
@@ -178,8 +194,5 @@ func getResourcePool(vcdClient *VCDClient, pvdcUrn string) (*types.QueryResultRe
 	if len(foundResourcePools.Results.ResourcePoolRecord) == 0 {
 		return nil, ErrorEntityNotFound
 	}
-	if len(foundResourcePools.Results.ResourcePoolRecord) > 1 {
-		return nil, fmt.Errorf("more than one Resource Pool found for the pVDC: %s", pvdcUrn)
-	}
-	return foundResourcePools.Results.ResourcePoolRecord[0], nil
+	return foundResourcePools.Results.ResourcePoolRecord, nil
 }
