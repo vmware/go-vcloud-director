@@ -33,7 +33,7 @@ func (vcdClient *VCDClient) GetVmGroupById(id string) (*VmGroup, error) {
 // On success, returns a pointer to the VmGroup structure and a nil error
 // On failure, returns a nil pointer and an error
 func (vcdClient *VCDClient) GetVmGroupByNamedVmGroupIdAndProviderVdcUrn(namedVmGroupId, pvdcUrn string) (*VmGroup, error) {
-	return getVmGroup(vcdClient, pvdcUrn, "namedVmGroupId", namedVmGroupId)
+	return getVmGroup(vcdClient, pvdcUrn, "namedVmGroupId", extractUuid(namedVmGroupId))
 }
 
 // GetVmGroupByNameAndProviderVdcUrn finds a VM Group by its name and associated Provider VDC URN.
