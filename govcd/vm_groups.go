@@ -61,12 +61,13 @@ func getVmGroup(vcdClient *VCDClient, pvdcUrn, idKey, idValue string) (*VmGroup,
 			vCenters += fmt.Sprintf("vcId==%s,", url.QueryEscape(extractUuid(resourcePool.VcenterHREF)))
 		}
 	}
-	// Removes trailing ","
+
 	if len(clusterMorefs) == 0 || len(vCenters) == 0 {
 		return nil, fmt.Errorf("could not retrieve Resource pools information to retrieve VM Group with %s=%s", idKey, idValue)
 	}
+	// Removes trailing ","
 	clusterMorefs = clusterMorefs[:len(clusterMorefs)-1]
-	vCenters = vCenters[:len(vCenters)-1] // Removes trailing ","
+	vCenters = vCenters[:len(vCenters)-1]
 
 	return getVmGroupWithFilter(vcdClient, fmt.Sprintf("(%s==%s;(%s);(%s))", url.QueryEscape(idKey), url.QueryEscape(idValue), clusterMorefs, vCenters))
 }
