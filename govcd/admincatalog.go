@@ -646,7 +646,7 @@ func (client *Client) GetCatalogByHref(catalogHref string) (*AdminCatalog, error
 
 // QueryCatalogRecords given a catalog name, retrieves the catalogRecords that match its name
 // Returns a list of catalog records for such name, empty list if none was found
-func (client *Client) QueryCatalogRecords(name string) ([]*types.CatalogRecord, error) {
+func (client *Client) QueryCatalogRecords(name string, ctx TenantContext) ([]*types.CatalogRecord, error) {
 	util.Logger.Printf("[DEBUG] QueryCatalogRecords")
 
 	var filter string
@@ -654,25 +654,29 @@ func (client *Client) QueryCatalogRecords(name string) ([]*types.CatalogRecord, 
 		filter = fmt.Sprintf("name==%s", url.QueryEscape(name))
 	}
 
-	queryType := types.QtCatalog
-	if client.IsSysAdmin {
-		queryType = types.QtAdminCatalog
+	var tenantHeaders map[string]string
+
+	if client.IsSysAdmin && ctx.OrgId != "" && ctx.OrgName != "" {
+		// Set tenant context headers just for the query
+		tenantHeaders = map[string]string{
+			types.HeaderAuthContext:   ctx.OrgName,
+			types.HeaderTenantContext: ctx.OrgId,
+		}
 	}
+
+	queryType := types.QtCatalog
 
 	results, err := client.cumulativeQueryWithHeaders(queryType, nil, map[string]string{
 		"type":          queryType,
 		"filter":        filter,
 		"filterEncoded": "true",
-	}, nil)
+	}, tenantHeaders)
 	if err != nil {
 		return nil, err
 	}
 
 	catalogs := results.Results.CatalogRecord
-	if client.IsSysAdmin {
-		catalogs = results.Results.AdminCatalogRecord
-	}
 
-	util.Logger.Printf("[DEBUG] QueryCatalogRecords returned with : %#v and error: %s", catalogs, err)
+	util.Logger.Printf("[DEBUG] QueryCatalogRecords returned with : %#v (%d) and error: %v", catalogs, len(catalogs), err)
 	return catalogs, nil
 }
