@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/url"
+	"strings"
 )
 
 // LogicalVmGroup is used to create VM Placement Policies.
@@ -33,23 +34,38 @@ func (vcdClient *VCDClient) GetVmGroupById(id string) (*VmGroup, error) {
 // On success, returns a pointer to the VmGroup structure and a nil error
 // On failure, returns a nil pointer and an error
 func (vcdClient *VCDClient) GetVmGroupByNamedVmGroupIdAndProviderVdcUrn(namedVmGroupId, pvdcUrn string) (*VmGroup, error) {
-	return getVmGroup(vcdClient, pvdcUrn, "namedVmGroupId", extractUuid(namedVmGroupId))
+	id := extractUuid(namedVmGroupId)
+	resourcePools, err := getResourcePools(vcdClient, pvdcUrn)
+	if err != nil {
+		return nil, fmt.Errorf("could not get VM Group with namedVmGroupId=%s: %s", id, err)
+	}
+	filter, err := buildFilterForVmGroups(resourcePools, "namedVmGroupId", id)
+	if err != nil {
+		return nil, fmt.Errorf("could not get VM Group with namedVmGroupId=%s: %s", id, err)
+	}
+	return getVmGroupWithFilter(vcdClient, filter)
 }
 
 // GetVmGroupByNameAndProviderVdcUrn finds a VM Group by its name and associated Provider VDC URN.
 // On success, returns a pointer to the VmGroup structure and a nil error
 // On failure, returns a nil pointer and an error
 func (vcdClient *VCDClient) GetVmGroupByNameAndProviderVdcUrn(name, pvdcUrn string) (*VmGroup, error) {
-	return getVmGroup(vcdClient, pvdcUrn, "vmGroupName", name)
-}
-
-// getVmGroup finds a VM Group by its ID key and value and associated Provider VDC URN.
-// On success, returns a pointer to the VmGroup structure and a nil error
-// On failure, returns a nil pointer and an error
-func getVmGroup(vcdClient *VCDClient, pvdcUrn, idKey, idValue string) (*VmGroup, error) {
 	resourcePools, err := getResourcePools(vcdClient, pvdcUrn)
 	if err != nil {
-		return nil, fmt.Errorf("could not get VM Group with %s=%s: %s", idKey, idValue, err)
+		return nil, fmt.Errorf("could not get VM Group with vmGroupName=%s: %s", name, err)
+	}
+	filter, err := buildFilterForVmGroups(resourcePools, "vmGroupName", name)
+	if err != nil {
+		return nil, fmt.Errorf("could not get VM Group with vmGroupName=%s: %s", name, err)
+	}
+	return getVmGroupWithFilter(vcdClient, filter)
+}
+
+// buildFilterForVmGroups builds a filter to search for VM Groups based on the given resource pools and the desired
+// identifier key and value.
+func buildFilterForVmGroups(resourcePools []*types.QueryResultResourcePoolRecordType, idKey, idValue string) (string, error) {
+	if strings.TrimSpace(idKey) == "" || strings.TrimSpace(idValue) == "" {
+		return "", fmt.Errorf("identifier must have a key and value to be able to search")
 	}
 	clusterMorefs := ""
 	vCenters := ""
@@ -63,13 +79,13 @@ func getVmGroup(vcdClient *VCDClient, pvdcUrn, idKey, idValue string) (*VmGroup,
 	}
 
 	if len(clusterMorefs) == 0 || len(vCenters) == 0 {
-		return nil, fmt.Errorf("could not retrieve Resource pools information to retrieve VM Group with %s=%s", idKey, idValue)
+		return "", fmt.Errorf("could not retrieve Resource pools information to retrieve VM Group with %s=%s", idKey, idValue)
 	}
 	// Removes trailing ","
 	clusterMorefs = clusterMorefs[:len(clusterMorefs)-1]
 	vCenters = vCenters[:len(vCenters)-1]
 
-	return getVmGroupWithFilter(vcdClient, fmt.Sprintf("(%s==%s;(%s);(%s))", url.QueryEscape(idKey), url.QueryEscape(idValue), clusterMorefs, vCenters))
+	return fmt.Sprintf("(%s==%s;(%s);(%s))", url.QueryEscape(idKey), url.QueryEscape(idValue), clusterMorefs, vCenters), nil
 }
 
 // GetLogicalVmGroupById finds a Logical VM Group by its URN.
