@@ -13,8 +13,11 @@ import (
 	"testing"
 )
 
+// TestVmGroupFilterWithResourcePools tests that the filter for VM Groups works correctly, as it depends
+// heavily on Resource Pool data type handling.
 func TestVmGroupFilterWithResourcePools(t *testing.T) {
 
+	// This function generates a few dummy Resource Pools
 	getDummyResourcePools := func(howMany int, generateErrors bool) []*types.QueryResultResourcePoolRecordType {
 		var resourcePools []*types.QueryResultResourcePoolRecordType
 		clusterMoref := ""
