@@ -351,6 +351,12 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 		}
 		err = testAccessControl(catalogName+" catalog two org", catalog, twoOrgsSettings, twoOrgsSettings, true, catalogTenantContext, check)
 		check.Assert(err, IsNil)
+		catalogs, err := vcd.client.Client.QueryCatalogRecords(catalogName, TenantContext{newOrg.AdminOrg.ID, newOrg.AdminOrg.Name})
+		check.Assert(err, IsNil)
+		check.Assert(len(catalogs), Equals, 1)
+		foundCatalog, err := vcd.client.Client.GetCatalogByHref(catalogs[0].HREF)
+		check.Assert(err, IsNil)
+		check.Assert(foundCatalog.AdminCatalog.ID, Equals, catalog.GetId())
 	}
 
 	// Set empty settings explicitly
