@@ -191,7 +191,7 @@ func (vcdClient *VCDClient) GetAllAssignedVdcComputePoliciesV2(vdcId string, que
 	return getAllAssignedVdcComputePoliciesV2(&vcdClient.Client, vdcId, queryParameters)
 }
 
-// GetAllAssignedVdcComputePoliciesV2 retrieves all VDC assigned Compute Policies (V2) using OpenAPI endpoint. Query parameters can be supplied to perform additional
+// getAllAssignedVdcComputePoliciesV2 retrieves all VDC assigned Compute Policies (V2) using OpenAPI endpoint. Query parameters can be supplied to perform additional
 // filtering
 func getAllAssignedVdcComputePoliciesV2(client *Client, vdcId string, queryParameters url.Values) ([]*VdcComputePolicyV2, error) {
 	endpoint := types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies
