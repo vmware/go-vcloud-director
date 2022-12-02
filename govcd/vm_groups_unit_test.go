@@ -86,7 +86,7 @@ func TestVmGroupFilterWithResourcePools(t *testing.T) {
 			expectedError:  "identifier must have a key and value to be able to search",
 		},
 		{
-			resourcePools:  getDummyResourcePools(0, true),
+			resourcePools:  getDummyResourcePools(0, false),
 			idKey:          "someKey",
 			idValue:        "someValue",
 			expectedFilter: "",
@@ -107,5 +107,4 @@ func TestVmGroupFilterWithResourcePools(t *testing.T) {
 			}
 		}
 	}
-
 }
