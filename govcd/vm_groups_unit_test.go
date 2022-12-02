@@ -36,6 +36,7 @@ func TestVmGroupFilterWithResourcePools(t *testing.T) {
 	}
 
 	type testData struct {
+		name           string
 		resourcePools  []*types.QueryResultResourcePoolRecordType
 		idKey          string
 		idValue        string
@@ -44,6 +45,7 @@ func TestVmGroupFilterWithResourcePools(t *testing.T) {
 	}
 	var testItems = []testData{
 		{
+			name:           "create_filter_with_many_resource_pools_and_vm_group_id",
 			resourcePools:  getDummyResourcePools(2, false),
 			idKey:          "namedVmGroupId",
 			idValue:        "12345678-9012-3456-7890-123456789012",
@@ -51,6 +53,7 @@ func TestVmGroupFilterWithResourcePools(t *testing.T) {
 			expectedError:  "",
 		},
 		{
+			name:           "create_filter_with_one_resource_pool_and_vm_group_id",
 			resourcePools:  getDummyResourcePools(1, false),
 			idKey:          "namedVmGroupId",
 			idValue:        "12345678-9012-3456-7890-123456789012",
@@ -58,6 +61,7 @@ func TestVmGroupFilterWithResourcePools(t *testing.T) {
 			expectedError:  "",
 		},
 		{
+			name:           "create_filter_with_many_resource_pools_and_vm_group_name",
 			resourcePools:  getDummyResourcePools(2, false),
 			idKey:          "vmGroupName",
 			idValue:        "testVmGroup",
@@ -65,6 +69,7 @@ func TestVmGroupFilterWithResourcePools(t *testing.T) {
 			expectedError:  "",
 		},
 		{
+			name:           "create_filter_with_one_resource_pool_and_vm_group_name",
 			resourcePools:  getDummyResourcePools(1, false),
 			idKey:          "vmGroupName",
 			idValue:        "testVmGroup",
@@ -72,6 +77,7 @@ func TestVmGroupFilterWithResourcePools(t *testing.T) {
 			expectedError:  "",
 		},
 		{
+			name:           "create_filter_with_one_wrong_resource_pool_should_fail",
 			resourcePools:  getDummyResourcePools(1, true),
 			idKey:          "someKey",
 			idValue:        "someValue",
@@ -79,6 +85,7 @@ func TestVmGroupFilterWithResourcePools(t *testing.T) {
 			expectedError:  "could not retrieve Resource pools information to retrieve VM Group with someKey=someValue",
 		},
 		{
+			name:           "create_filter_with_no_identifier_nor_value_should_fail",
 			resourcePools:  getDummyResourcePools(1, true),
 			idKey:          "",
 			idValue:        "",
@@ -86,6 +93,7 @@ func TestVmGroupFilterWithResourcePools(t *testing.T) {
 			expectedError:  "identifier must have a key and value to be able to search",
 		},
 		{
+			name:           "create_filter_with_no_resource_pools_should_fail",
 			resourcePools:  getDummyResourcePools(0, false),
 			idKey:          "someKey",
 			idValue:        "someValue",
@@ -94,17 +102,19 @@ func TestVmGroupFilterWithResourcePools(t *testing.T) {
 		},
 	}
 	for _, test := range testItems {
-		filter, err := buildFilterForVmGroups(test.resourcePools, test.idKey, test.idValue)
-		if test.expectedError == "" {
-			// Successful path
-			if filter != test.expectedFilter {
-				t.Errorf("Expected this filter: '%s' for %s=%s but got: %s", test.expectedFilter, test.idKey, test.idValue, filter)
+		t.Run(test.name, func(t *testing.T) {
+			filter, err := buildFilterForVmGroups(test.resourcePools, test.idKey, test.idValue)
+			if test.expectedError == "" {
+				// Successful path
+				if filter != test.expectedFilter {
+					t.Errorf("Expected this filter: '%s' for %s=%s but got: %s", test.expectedFilter, test.idKey, test.idValue, filter)
+				}
+			} else {
+				// Error path
+				if err == nil || err.Error() != test.expectedError {
+					t.Errorf("Expected error for %s=%s but got: %s", test.idKey, test.idValue, err)
+				}
 			}
-		} else {
-			// Error path
-			if err == nil || err.Error() != test.expectedError {
-				t.Errorf("Expected error for %s=%s but got: %s", test.idKey, test.idValue, err)
-			}
-		}
+		})
 	}
 }
