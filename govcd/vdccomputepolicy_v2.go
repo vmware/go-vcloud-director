@@ -185,15 +185,19 @@ func (vdc *AdminVdc) GetAllAssignedVdcComputePoliciesV2(queryParameters url.Valu
 	return getAllAssignedVdcComputePoliciesV2(vdc.client, vdc.AdminVdc.ID, queryParameters)
 }
 
-// GetAllAssignedVdcComputePoliciesV2 retrieves all VDC assigned Compute Policies (V2) using OpenAPI endpoint. Query parameters can be supplied to perform additional
-// filtering
+// GetAllAssignedVdcComputePoliciesV2 retrieves all VDC assigned Compute Policies (V2) using OpenAPI endpoint and the mandatory VDC identifier.
+// Query parameters can be supplied to perform additional filtering
 func (vcdClient *VCDClient) GetAllAssignedVdcComputePoliciesV2(vdcId string, queryParameters url.Values) ([]*VdcComputePolicyV2, error) {
 	return getAllAssignedVdcComputePoliciesV2(&vcdClient.Client, vdcId, queryParameters)
 }
 
-// getAllAssignedVdcComputePoliciesV2 retrieves all VDC assigned Compute Policies (V2) using OpenAPI endpoint. Query parameters can be supplied to perform additional
-// filtering
+// getAllAssignedVdcComputePoliciesV2 retrieves all VDC assigned Compute Policies (V2) using OpenAPI endpoint and the mandatory VDC identifier.
+// Query parameters can be supplied to perform additional filtering
 func getAllAssignedVdcComputePoliciesV2(client *Client, vdcId string, queryParameters url.Values) ([]*VdcComputePolicyV2, error) {
+	if strings.TrimSpace(vdcId) == "" {
+		return nil, fmt.Errorf("VDC ID is mandatory to retrieve its assigned VDC Compute Policies")
+	}
+
 	endpoint := types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies
 	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
