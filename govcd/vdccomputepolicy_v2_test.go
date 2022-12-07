@@ -138,9 +138,8 @@ func (vcd *TestVCD) Test_SetAssignedComputePoliciesV2(check *C) {
 	check.Assert(org, NotNil)
 
 	adminVdc, err := org.GetAdminVDCByName(vcd.vdc.Vdc.Name, false)
-	if adminVdc == nil || err != nil {
-		vcd.infoCleanup(notFoundMsg, "vdc", vcd.vdc.Vdc.Name)
-	}
+	check.Assert(err, IsNil)
+	check.Assert(adminVdc, NotNil)
 
 	// Create a new VDC compute policies
 	newComputePolicy := &VdcComputePolicyV2{
@@ -181,6 +180,13 @@ func (vcd *TestVCD) Test_SetAssignedComputePoliciesV2(check *C) {
 	allAssignedComputePolicies, err := adminVdc.GetAllAssignedVdcComputePoliciesV2(nil)
 	check.Assert(err, IsNil)
 	var defaultPolicyId string
+	for _, assignedPolicy := range allAssignedComputePolicies {
+		if assignedPolicy.VdcComputePolicyV2.ID == vcd.vdc.Vdc.DefaultComputePolicy.ID {
+			defaultPolicyId = assignedPolicy.VdcComputePolicyV2.ID
+		}
+	}
+	allAssignedComputePolicies, err = vcd.client.GetAllAssignedVdcComputePoliciesV2(adminVdc.AdminVdc.ID, nil)
+	check.Assert(err, IsNil)
 	for _, assignedPolicy := range allAssignedComputePolicies {
 		if assignedPolicy.VdcComputePolicyV2.ID == vcd.vdc.Vdc.DefaultComputePolicy.ID {
 			defaultPolicyId = assignedPolicy.VdcComputePolicyV2.ID
