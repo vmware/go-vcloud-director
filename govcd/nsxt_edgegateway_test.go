@@ -237,12 +237,6 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayUsedAndUnusedIPs(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(nsxtVdc, NotNil)
 
-	// nsxtExternalNetwork, err := GetExternalNetworkV2ByName(vcd.client, vcd.config.VCD.Nsxt.ExternalNetwork)
-	// check.Assert(err, IsNil)
-	// check.Assert(nsxtExternalNetwork, NotNil)
-
-	//////
-
 	// NSX-T details
 	man, err := vcd.client.QueryNsxtManagerByName(vcd.config.VCD.Nsxt.Manager)
 	check.Assert(err, IsNil)

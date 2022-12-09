@@ -177,6 +177,20 @@ func (adminOrg *AdminOrg) CreateNsxtEdgeGateway(edgeGatewayConfig *types.OpenAPI
 	return returnEgw, nil
 }
 
+// Refresh reloads NSX-T Edge Gateway contents
+func (egw *NsxtEdgeGateway) Refresh() error {
+	if egw.EdgeGateway == nil || egw.client == nil || egw.EdgeGateway.ID == "" {
+		return fmt.Errorf("cannot refresh Edge Gateway without ID")
+	}
+
+	refreshedEdge, err := getNsxtEdgeGatewayById(egw.client, egw.EdgeGateway.ID, nil)
+	if err != nil {
+		return fmt.Errorf("error refreshing NSX-T Edge Gateway: %s", err)
+	}
+	egw.EdgeGateway = refreshedEdge.EdgeGateway
+	return nil
+}
+
 // Update allows updating NSX-T edge gateway for Org admins
 func (egw *NsxtEdgeGateway) Update(edgeGatewayConfig *types.OpenAPIEdgeGateway) (*NsxtEdgeGateway, error) {
 	if !egw.client.IsSysAdmin {
@@ -388,9 +402,11 @@ func (egw *NsxtEdgeGateway) GetUsedIpAddresses(queryParameters url.Values) ([]*t
 	return typeResponse, nil
 }
 
-// GetUnallocatedExternalIPAddresses will retrieve a single unallocated IP address for Edge Gateway
+// GetUnallocatedExternalIPAddresses will retrieve a requiredIpCount of unallocated IP addresses for
+// Edge Gateway
 // If `optionalSubnet` is specified (CIDR notation, e.g. 192.168.1.0/24) - it will look for an IP in
 // this subnet only.
+// It will fail and return an error if IP all IPs specified in 'requiredIpCount' cannot be found.
 //
 // Input and return arguments are using Go's native 'netip' package for IP addressing. This ensures
 // correct support for IPv4 and IPv6 IPs.
@@ -398,11 +414,12 @@ func (egw *NsxtEdgeGateway) GetUsedIpAddresses(queryParameters url.Values) ([]*t
 // from/to strings
 //
 // This function performs below listed steps:
-// 1. Retrieves a complete list of IPs in Edge Gateway uplinks
+// 1. Retrieves a complete list of IPs in Edge Gateway uplinks (returns error if none are found)
 // 2. if 'optionalSubnet' was specified - filter IP addresses to only fall into that subnet
 // 3. Retrieves all used IP addresses in Edge Gateway
 // 4. Subtracts used IP addresses from available list of IPs in uplink (optionally filtered by optionalSubnet in step 2)
-// 5. Returns a single IP address or an error if none are available
+// 5. Checks if 'requiredIpCount' criteria is met, returns error otherwise
+// 6. Returns required amount of unallocated IPs (as defined in 'requiredIpCount')
 //
 // Notes:
 // * This function uses Go's builtin `netip` package to avoid any string processing of IPs and
@@ -420,12 +437,13 @@ func (egw *NsxtEdgeGateway) GetUnallocatedExternalIPAddresses(requiredIpCount in
 	return getUnallocatedExternalIPAddress(egw.EdgeGateway.EdgeGatewayUplinks, usedIpAddresses, requiredIpCount, optionalSubnet)
 }
 
-// getUnallocatedExternalIPAddress could be in the body of public function GetUnusedExternalIPAddress. It
-// is kept separate to decouple data lookup and processing to permit unit testing. It performs
-// actions which are documented in public function.
+// getUnallocatedExternalIPAddress kept separate from data lookup in
+// GetUnallocatedExternalIPAddresses to aid testing. It performs actions which are documented in
+// public function.
 func getUnallocatedExternalIPAddress(uplinks []types.EdgeGatewayUplinks, usedIpAddresses []*types.GatewayUsedIpAddress, requiredIpCount int, optionalSubnet netip.Prefix) ([]netip.Addr, error) {
-	// 1. Flatten all IP ranges in gateway and use Go native netip.Addr IP container instead of
-	// plain strings because it is more robust (supports IPv4 and IPv6 and also comparison operator)
+	// 1. Flatten all IP ranges in Edge Gateway using Go's native 'netip.Addr' IP container instead
+	// of plain strings because it is more robust (supports IPv4 and IPv6 and also comparison
+	// operator)
 	assignedIpSlice, err := flattenEdgeGatewayUplinkToIpSlice(uplinks)
 	if err != nil {
 		return nil, fmt.Errorf("error listing all IPs in Edge Gateway: %s", err)
@@ -443,21 +461,22 @@ func getUnallocatedExternalIPAddress(uplinks []types.EdgeGatewayUplinks, usedIpA
 		}
 	}
 
-	// 3. Get Used IP addresses in Edge Gateway using dedicated endpoint
+	// 3. Get Used IP addresses in Edge Gateway in the same slice
 	usedIpSlice, err := flattenGatewayUsedIpAddressesToIpSlice(usedIpAddresses)
 	if err != nil {
 		return nil, fmt.Errorf("could not flatten Edge Gateway used IP addresses: %s", err)
 	}
 
-	// 4. Search for an unalocated IP
-	// (allIPs - allUsedIPs) = allFreeIPs
+	// 4. Get all unallocated IPs
+	// (allIPs - allUsedIPs) = allUnallocatedIPs
 	unallocatedIps := ipSliceDifference(assignedIpSlice, usedIpSlice)
 
-	// 5. Return the first unassigned IP or an error if none are available
+	// 5. Check if 'requiredIpCount' criteria is met
 	if len(unallocatedIps) < requiredIpCount {
 		return nil, fmt.Errorf("not enough unallocated IPs found. Expected %d, got %d", requiredIpCount, len(unallocatedIps))
 	}
 
+	// 6. Return required amount of unallocated IPs
 	return unallocatedIps[:requiredIpCount], nil
 }
 
