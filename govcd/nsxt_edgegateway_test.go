@@ -8,7 +8,6 @@ import (
 	"net/netip"
 	"net/url"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -115,12 +114,16 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	usedIPs, err := updatedEdge.GetUsedIpAddresses(nil)
 	check.Assert(err, IsNil)
 	check.Assert(usedIPs, NotNil)
-	spew.Dump(usedIPs)
 
 	ipAddr, err := updatedEdge.GetUnallocatedExternalIPAddresses(1, netip.Prefix{})
 	// Expect an error as no ranges were assigned
 	check.Assert(err, NotNil)
-	check.Assert(ipAddr, Equals, netip.Addr{})
+	check.Assert(ipAddr, DeepEquals, []netip.Addr(nil))
+
+	// Try a refresh operation
+	err = updatedEdge.Refresh()
+	check.Assert(err, IsNil)
+	check.Assert(updatedEdge.EdgeGateway.ID, Equals, e1.EdgeGateway.ID)
 
 	// Cleanup
 	err = updatedEdge.Delete()
