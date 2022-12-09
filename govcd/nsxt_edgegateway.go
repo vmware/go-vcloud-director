@@ -404,9 +404,13 @@ func (egw *NsxtEdgeGateway) GetUsedIpAddresses(queryParameters url.Values) ([]*t
 
 // GetUnallocatedExternalIPAddresses will retrieve a requiredIpCount of unallocated IP addresses for
 // Edge Gateway
-// If `optionalSubnet` is specified (CIDR notation, e.g. 192.168.1.0/24) - it will look for an IP in
+// Arguments:
+// * `requiredIpCount` (how many unallocated IPs should be returned). It will fail and return an
+// error if IP all IPs specified in 'requiredIpCount' cannot be found.
+// * `optionalSubnet` is specified (CIDR notation, e.g. 192.168.1.0/24) - it will look for an IP in
 // this subnet only.
-// It will fail and return an error if IP all IPs specified in 'requiredIpCount' cannot be found.
+// * `refresh` defines if Edge Gateway structure should be retrieved with latest data before
+// performing IP lookup operation
 //
 // Input and return arguments are using Go's native 'netip' package for IP addressing. This ensures
 // correct support for IPv4 and IPv6 IPs.
@@ -428,7 +432,13 @@ func (egw *NsxtEdgeGateway) GetUsedIpAddresses(queryParameters url.Values) ([]*t
 // library semantics) and an error
 // * It will return an error if any of uplink IP ranges End IP address is lower than Start IP
 // address
-func (egw *NsxtEdgeGateway) GetUnallocatedExternalIPAddresses(requiredIpCount int, optionalSubnet netip.Prefix) ([]netip.Addr, error) {
+func (egw *NsxtEdgeGateway) GetUnallocatedExternalIPAddresses(requiredIpCount int, optionalSubnet netip.Prefix, refresh bool) ([]netip.Addr, error) {
+	if refresh {
+		err := egw.Refresh()
+		if err != nil {
+			return nil, fmt.Errorf("error refreshing Edge Gateway: %s", err)
+		}
+	}
 	usedIpAddresses, err := egw.GetUsedIpAddresses(nil)
 	if err != nil {
 		return nil, fmt.Errorf("error getting used IP addresses for Edge Gateway: %s", err)

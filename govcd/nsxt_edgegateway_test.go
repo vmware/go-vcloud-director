@@ -115,7 +115,7 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(usedIPs, NotNil)
 
-	ipAddr, err := updatedEdge.GetUnallocatedExternalIPAddresses(1, netip.Prefix{})
+	ipAddr, err := updatedEdge.GetUnallocatedExternalIPAddresses(1, netip.Prefix{}, false)
 	// Expect an error as no ranges were assigned
 	check.Assert(err, NotNil)
 	check.Assert(ipAddr, DeepEquals, []netip.Addr(nil))
@@ -278,11 +278,8 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayUsedAndUnusedIPs(check *C) {
 	createdNet, err := CreateExternalNetworkV2(vcd.client, netNsxt)
 	check.Assert(err, IsNil)
 
-	// Use generic "OpenApiEntity" resource cleanup type
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks + createdNet.ExternalNetwork.ID
 	AddToCleanupListOpenApi(createdNet.ExternalNetwork.Name, check.TestName(), openApiEndpoint)
-
-	//////
 
 	egwDefinition := &types.OpenAPIEdgeGateway{
 		Name: check.TestName(),
@@ -325,13 +322,13 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayUsedAndUnusedIPs(check *C) {
 	check.Assert(usedIPs[0].Category, Equals, "PRIMARY_IP")
 
 	// Attempt to get 1 unallocated IP
-	ipAddr, err := createdEdge.GetUnallocatedExternalIPAddresses(1, netip.Prefix{})
+	ipAddr, err := createdEdge.GetUnallocatedExternalIPAddresses(1, netip.Prefix{}, false)
 	check.Assert(err, IsNil)
 	ipsCompared := compareEachIpElementAndOrder(ipAddr, []netip.Addr{netip.MustParseAddr("1.1.1.4")})
 	check.Assert(ipsCompared, Equals, true)
 
 	// Attempt to get 10 unallocated IPs
-	ipAddr, err = createdEdge.GetUnallocatedExternalIPAddresses(10, netip.Prefix{})
+	ipAddr, err = createdEdge.GetUnallocatedExternalIPAddresses(10, netip.Prefix{}, true)
 	check.Assert(err, IsNil)
 	ipsCompared = compareEachIpElementAndOrder(ipAddr, []netip.Addr{
 		netip.MustParseAddr("1.1.1.4"),
@@ -348,7 +345,7 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayUsedAndUnusedIPs(check *C) {
 	check.Assert(ipsCompared, Equals, true)
 
 	// Attempt to get IP but filter it off by prefix
-	ipAddr, err = createdEdge.GetUnallocatedExternalIPAddresses(1, netip.MustParsePrefix("192.168.1.1/24"))
+	ipAddr, err = createdEdge.GetUnallocatedExternalIPAddresses(1, netip.MustParsePrefix("192.168.1.1/24"), false)
 	// Expect an error because Edge Gateway does not have IPs from required subnet 192.168.1.1/24
 	check.Assert(err, NotNil)
 	check.Assert(ipAddr, IsNil)
