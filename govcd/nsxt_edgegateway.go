@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"fmt"
+	"net/netip"
 	"net/url"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -358,4 +359,241 @@ func filterOnlyNsxtEdges(allEdges []*NsxtEdgeGateway) []*NsxtEdgeGateway {
 	}
 
 	return filteredEdges
+}
+
+// GetUsedIpAddresses uses dedicated endpoint to retrieve Used IP addresses in an Edge Gateway
+func (egw *NsxtEdgeGateway) GetUsedIpAddresses(queryParameters url.Values) ([]*types.GatewayUsedIpAddress, error) {
+	if egw.EdgeGateway == nil || egw.EdgeGateway.ID == "" {
+		return nil, fmt.Errorf("edge gateway ID must be set to retrieve used IP addresses")
+	}
+	client := egw.client
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayUsedIpAddresses
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	typeResponse := make([]*types.GatewayUsedIpAddress, 0)
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponse, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return typeResponse, nil
+}
+
+// GetUnallocatedExternalIPAddresses will retrieve a single unallocated IP address for Edge Gateway
+// If `optionalSubnet` is specified (CIDR notation, e.g. 192.168.1.0/24) - it will look for an IP in
+// this subnet only.
+//
+// Input and return arguments are using Go's native 'netip' package for IP addressing. This ensures
+// correct support for IPv4 and IPv6 IPs.
+// `netip.ParseAddr`, `netip.ParsePrefix`, `netip.Addr.String` functions can be used for conversion
+// from/to strings
+//
+// This function performs below listed steps:
+// 1. Retrieves a complete list of IPs in Edge Gateway uplinks
+// 2. if 'optionalSubnet' was specified - filter IP addresses to only fall into that subnet
+// 3. Retrieves all used IP addresses in Edge Gateway
+// 4. Subtracts used IP addresses from available list of IPs in uplink (optionally filtered by optionalSubnet in step 2)
+// 5. Returns a single IP address or an error if none are available
+//
+// Notes:
+// * This function uses Go's builtin `netip` package to avoid any string processing of IPs and
+// supports IPv4 and IPv6 addressing.
+// * If an unused IP is not found it will return 'netip.Addr{}' (not using *netip.Addr{} to match
+// library semantics) and an error
+// * It will return an error if any of uplink IP ranges End IP address is lower than Start IP
+// address
+func (egw *NsxtEdgeGateway) GetUnallocatedExternalIPAddresses(requiredIpCount int, optionalSubnet netip.Prefix) ([]netip.Addr, error) {
+	usedIpAddresses, err := egw.GetUsedIpAddresses(nil)
+	if err != nil {
+		return nil, fmt.Errorf("error getting used IP addresses for Edge Gateway: %s", err)
+	}
+
+	return getUnallocatedExternalIPAddress(egw.EdgeGateway.EdgeGatewayUplinks, usedIpAddresses, requiredIpCount, optionalSubnet)
+}
+
+// getUnallocatedExternalIPAddress could be in the body of public function GetUnusedExternalIPAddress. It
+// is kept separate to decouple data lookup and processing to permit unit testing. It performs
+// actions which are documented in public function.
+func getUnallocatedExternalIPAddress(uplinks []types.EdgeGatewayUplinks, usedIpAddresses []*types.GatewayUsedIpAddress, requiredIpCount int, optionalSubnet netip.Prefix) ([]netip.Addr, error) {
+	// 1. Flatten all IP ranges in gateway and use Go native netip.Addr IP container instead of
+	// plain strings because it is more robust (supports IPv4 and IPv6 and also comparison operator)
+	assignedIpSlice, err := flattenEdgeGatewayUplinkToIpSlice(uplinks)
+	if err != nil {
+		return nil, fmt.Errorf("error listing all IPs in Edge Gateway: %s", err)
+	}
+
+	if len(assignedIpSlice) == 0 {
+		return nil, fmt.Errorf("no IPs found in Edge Gateway configuration")
+	}
+
+	// 2. Optionally filter given IP ranges by optionalSubnet value (if specified)
+	if optionalSubnet != (netip.Prefix{}) {
+		assignedIpSlice, err = filterIpSlicesBySubnet(assignedIpSlice, optionalSubnet)
+		if err != nil {
+			return nil, fmt.Errorf("error filtering ranges for given subnet '%s': %s", optionalSubnet, err)
+		}
+	}
+
+	// 3. Get Used IP addresses in Edge Gateway using dedicated endpoint
+	usedIpSlice, err := flattenGatewayUsedIpAddressesToIpSlice(usedIpAddresses)
+	if err != nil {
+		return nil, fmt.Errorf("could not flatten Edge Gateway used IP addresses: %s", err)
+	}
+
+	// 4. Search for an unalocated IP
+	// (allIPs - allUsedIPs) = allFreeIPs
+	unallocatedIps := ipSliceDifference(assignedIpSlice, usedIpSlice)
+
+	// 5. Return the first unassigned IP or an error if none are available
+	if len(unallocatedIps) < requiredIpCount {
+		return nil, fmt.Errorf("not enough unallocated IPs found. Expected %d, got %d", requiredIpCount, len(unallocatedIps))
+	}
+
+	return unallocatedIps[:requiredIpCount], nil
+}
+
+// flattenEdgeGatewayUplinkToIpSlice processes Edge Gateway Uplink structure and creates a slice of all
+// available IPs
+func flattenEdgeGatewayUplinkToIpSlice(uplinks []types.EdgeGatewayUplinks) ([]netip.Addr, error) {
+	assignedIpSlice := make([]netip.Addr, 0)
+
+	for _, edgeGatewayUplink := range uplinks {
+		for _, edgedgeGatewayUplinkSubnet := range edgeGatewayUplink.Subnets.Values {
+			// flatIpRanges = append(flatIpRanges, edgedgeGatewayUplinkSubnet.IPRanges.Values...)
+			for _, r := range edgedgeGatewayUplinkSubnet.IPRanges.Values {
+				// Convert IPs to netip.Addr
+				startIp, err := netip.ParseAddr(r.StartAddress)
+				if err != nil {
+					return nil, fmt.Errorf("error parsing start IP address in range '%s': %s", r.StartAddress, err)
+				}
+
+				// if we have end address specified - a range of IPs must be expanded into the slice
+				if r.EndAddress != "" {
+					endIp, err := netip.ParseAddr(r.EndAddress)
+					if err != nil {
+						return nil, fmt.Errorf("error parsing end IP address in range '%s': %s", r.EndAddress, err)
+					}
+
+					// Check if EndAddress is lower than StartAddress ant report an error if so
+					if endIp.Less(startIp) {
+						return nil, fmt.Errorf("end IP is lower that start IP (%s < %s)", r.EndAddress, r.StartAddress)
+					}
+
+					// loop over IPs in range
+					// Expression 'ip.Compare(endIp) == 1'  means that 'ip > endIp' and the loop should stop
+					for ip := startIp; ip.Compare(endIp) != 1; ip = ip.Next() {
+						assignedIpSlice = append(assignedIpSlice, ip)
+					}
+				} else { // if there is no end address in the range, then it is only a single IP - startIp
+					assignedIpSlice = append(assignedIpSlice, startIp)
+				}
+			}
+		}
+	}
+
+	return assignedIpSlice, nil
+}
+
+// ipSliceDifference performs mathematical subtraction for two slices of IPs
+// The formula is (minuend − subtrahend = difference)
+//
+// Special behavior:
+// * Passing nil minuend results in nil
+// * Passing nil subtrahend will return minuendSlice
+func ipSliceDifference(minuendSlice, subtrahendSlice []netip.Addr) []netip.Addr {
+	if minuendSlice == nil {
+		return nil
+	}
+
+	if subtrahendSlice == nil {
+		return minuendSlice
+	}
+
+	// Removal of elements from an empty slice results in an empty slice
+	if len(minuendSlice) == 0 {
+		return []netip.Addr{}
+	}
+	// Having an empty subtrahendSlice results in minuendSlice (persisting )
+	if len(subtrahendSlice) == 0 {
+		return minuendSlice
+	}
+
+	var difference []netip.Addr
+
+	// Loop over minuend IPs
+	for _, minuendIp := range minuendSlice {
+
+		// Check if subtrahend has minuend element listed
+		var foundSubtrahend bool
+
+		for _, subtrahendIp := range subtrahendSlice {
+			if subtrahendIp == minuendIp {
+				// IP found in subtrahend, therefore breaking inner loop early
+				foundSubtrahend = true
+				break
+			}
+
+		}
+
+		// Store the IP in difference when subtrahend does not contain IP of minuend
+		if !foundSubtrahend {
+			// Add IP to the resulting difference slice
+			difference = append(difference, minuendIp)
+		}
+	}
+
+	return difference
+}
+
+// filterIpSlicesBySubnet accepts 'ipRange' and returns a slice of IPs only that fall into given
+// 'subnet' leaving everything out
+//
+// Special behavior:
+// * Passing empty 'subnet' will return `nil` and an error
+// * Pasing empty 'ipRange' will return 'nil' and an error
+//
+// Note. This function does not enforce uniqueness of IPs in 'ipRange' and if there are duplicate
+// IPs matching 'subnet' they will be in the resulting slice
+func filterIpSlicesBySubnet(ipRange []netip.Addr, subnet netip.Prefix) ([]netip.Addr, error) {
+	if subnet == (netip.Prefix{}) {
+		return nil, fmt.Errorf("empty subnet specified")
+	}
+
+	if len(ipRange) == 0 {
+		return nil, fmt.Errorf("empty IP Range specified")
+	}
+
+	filteredRange := make([]netip.Addr, 0)
+
+	for _, ip := range ipRange {
+		if subnet.Contains(ip) {
+			filteredRange = append(filteredRange, ip)
+		}
+	}
+
+	return filteredRange, nil
+}
+
+// flattenGatewayUsedIpAddressesToIpSlice accepts a slice of `GatewayUsedIpAddress` comming directly
+// from the API and converts it to slice of Go's native '[]netip.Addr' which supports IPv4 and IPv6
+func flattenGatewayUsedIpAddressesToIpSlice(usedIpAddresses []*types.GatewayUsedIpAddress) ([]netip.Addr, error) {
+	usedIpSlice := make([]netip.Addr, len(usedIpAddresses))
+	for usedIpIndex := range usedIpAddresses {
+		ip, err := netip.ParseAddr(usedIpAddresses[usedIpIndex].IPAddress)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing IP '%s' in Edge Gateway used IP address list: %s", usedIpAddresses[usedIpIndex].IPAddress, err)
+		}
+		usedIpSlice[usedIpIndex] = ip
+	}
+
+	return usedIpSlice, nil
 }

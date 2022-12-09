@@ -5,8 +5,10 @@ package govcd
 
 import (
 	"fmt"
+	"net/netip"
 	"net/url"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -43,7 +45,7 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 		OrgVdc: &types.OpenApiReference{
 			ID: nsxtVdc.Vdc.ID,
 		},
-		EdgeGatewayUplinks: []types.EdgeGatewayUplinks{types.EdgeGatewayUplinks{
+		EdgeGatewayUplinks: []types.EdgeGatewayUplinks{{
 			UplinkID: nsxtExternalNetwork.ExternalNetwork.ID,
 			Subnets: types.OpenAPIEdgeGatewaySubnets{Values: []types.OpenAPIEdgeGatewaySubnetValue{{
 				Gateway:      "1.1.1.1",
@@ -56,9 +58,10 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	}
 
 	createdEdge, err := adminOrg.CreateNsxtEdgeGateway(egwDefinition)
-
 	check.Assert(err, IsNil)
 	check.Assert(createdEdge.EdgeGateway.Name, Equals, egwDefinition.Name)
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways + createdEdge.EdgeGateway.ID
+	AddToCleanupListOpenApi(createdEdge.EdgeGateway.Name, check.TestName(), openApiEndpoint)
 
 	createdEdge.EdgeGateway.Name = "renamed-edge"
 	updatedEdge, err := createdEdge.Update(createdEdge.EdgeGateway)
@@ -108,6 +111,18 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	check.Assert(e1.EdgeGateway.ID, Equals, e5.EdgeGateway.ID)
 	check.Assert(e1.EdgeGateway.ID, Equals, e6.EdgeGateway.ID)
 
+	// Try out GetUsedIpAddresses function
+	usedIPs, err := updatedEdge.GetUsedIpAddresses(nil)
+	check.Assert(err, IsNil)
+	check.Assert(usedIPs, NotNil)
+	spew.Dump(usedIPs)
+
+	ipAddr, err := updatedEdge.GetUnallocatedExternalIPAddresses(1, netip.Prefix{})
+	// Expect an error as no ranges were assigned
+	check.Assert(err, NotNil)
+	check.Assert(ipAddr, Equals, netip.Addr{})
+
+	// Cleanup
 	err = updatedEdge.Delete()
 	check.Assert(err, IsNil)
 }
@@ -198,4 +213,169 @@ func (vcd *TestVCD) Test_NsxtEdgeVdcGroup(check *C) {
 	// Remove Edge Gateway
 	err = movedBackToVdcEdge.Delete()
 	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_NsxtEdgeGatewayUsedAndUnusedIPs(check *C) {
+	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGateways)
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	nsxvVdc, err := adminOrg.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(nsxvVdc, NotNil)
+	nsxtVdc, err := adminOrg.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+	if ContainsNotFound(err) {
+		check.Skip(fmt.Sprintf("No NSX-T VDC (%s) found - skipping test", vcd.config.VCD.Nsxt.Vdc))
+	}
+	check.Assert(err, IsNil)
+	check.Assert(nsxtVdc, NotNil)
+
+	// nsxtExternalNetwork, err := GetExternalNetworkV2ByName(vcd.client, vcd.config.VCD.Nsxt.ExternalNetwork)
+	// check.Assert(err, IsNil)
+	// check.Assert(nsxtExternalNetwork, NotNil)
+
+	//////
+
+	// NSX-T details
+	man, err := vcd.client.QueryNsxtManagerByName(vcd.config.VCD.Nsxt.Manager)
+	check.Assert(err, IsNil)
+	nsxtManagerId, err := BuildUrnWithUuid("urn:vcloud:nsxtmanager:", extractUuid(man[0].HREF))
+	check.Assert(err, IsNil)
+
+	tier0RouterVrf, err := vcd.client.GetImportableNsxtTier0RouterByName(vcd.config.VCD.Nsxt.Tier0router, nsxtManagerId)
+	check.Assert(err, IsNil)
+	backingId := tier0RouterVrf.NsxtTier0Router.ID
+
+	netNsxt := &types.ExternalNetworkV2{
+		Name: check.TestName(),
+		Subnets: types.ExternalNetworkV2Subnets{Values: []types.ExternalNetworkV2Subnet{
+			{
+				Gateway:      "1.1.1.1",
+				PrefixLength: 24,
+				IPRanges: types.ExternalNetworkV2IPRanges{Values: []types.ExternalNetworkV2IPRange{
+					{
+						StartAddress: "1.1.1.3",
+						EndAddress:   "1.1.1.50",
+					},
+				}},
+				Enabled: true,
+			},
+		}},
+		NetworkBackings: types.ExternalNetworkV2Backings{Values: []types.ExternalNetworkV2Backing{
+			{
+				BackingID: backingId,
+				NetworkProvider: types.NetworkProvider{
+					ID: nsxtManagerId,
+				},
+				BackingTypeValue: types.ExternalNetworkBackingTypeNsxtTier0Router,
+			},
+		}},
+	}
+	createdNet, err := CreateExternalNetworkV2(vcd.client, netNsxt)
+	check.Assert(err, IsNil)
+
+	// Use generic "OpenApiEntity" resource cleanup type
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks + createdNet.ExternalNetwork.ID
+	AddToCleanupListOpenApi(createdNet.ExternalNetwork.Name, check.TestName(), openApiEndpoint)
+
+	//////
+
+	egwDefinition := &types.OpenAPIEdgeGateway{
+		Name: check.TestName(),
+		OrgVdc: &types.OpenApiReference{
+			ID: nsxtVdc.Vdc.ID,
+		},
+		EdgeGatewayUplinks: []types.EdgeGatewayUplinks{{
+			UplinkID: createdNet.ExternalNetwork.ID,
+			Subnets: types.OpenAPIEdgeGatewaySubnets{Values: []types.OpenAPIEdgeGatewaySubnetValue{{
+				Gateway:      createdNet.ExternalNetwork.Subnets.Values[0].Gateway,
+				PrefixLength: createdNet.ExternalNetwork.Subnets.Values[0].PrefixLength,
+				Enabled:      true,
+				IPRanges: &types.OpenApiIPRanges{
+					Values: []types.OpenApiIPRangeValues{
+						{
+							StartAddress: createdNet.ExternalNetwork.Subnets.Values[0].IPRanges.Values[0].StartAddress,
+							EndAddress:   createdNet.ExternalNetwork.Subnets.Values[0].IPRanges.Values[0].EndAddress,
+						},
+					},
+				},
+			}}},
+			Connected: true,
+			Dedicated: false,
+		}},
+	}
+
+	createdEdge, err := adminOrg.CreateNsxtEdgeGateway(egwDefinition)
+	check.Assert(err, IsNil)
+	check.Assert(createdEdge.EdgeGateway.Name, Equals, egwDefinition.Name)
+	openApiEndpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways + createdEdge.EdgeGateway.ID
+	PrependToCleanupListOpenApi(createdEdge.EdgeGateway.Name, check.TestName(), openApiEndpoint)
+
+	// Try out GetUsedIpAddresses function
+	usedIPs, err := createdEdge.GetUsedIpAddresses(nil)
+	check.Assert(err, IsNil)
+	check.Assert(usedIPs, NotNil)
+
+	// Edge Gateway always allocates 1 IP as its primary
+	check.Assert(usedIPs[0].IPAddress, Equals, "1.1.1.3")
+	check.Assert(usedIPs[0].Category, Equals, "PRIMARY_IP")
+
+	// Attempt to get 1 unallocated IP
+	ipAddr, err := createdEdge.GetUnallocatedExternalIPAddresses(1, netip.Prefix{})
+	check.Assert(err, IsNil)
+	ipsCompared := compareEachIpElementAndOrder(ipAddr, []netip.Addr{netip.MustParseAddr("1.1.1.4")})
+	check.Assert(ipsCompared, Equals, true)
+
+	// Attempt to get 10 unallocated IPs
+	ipAddr, err = createdEdge.GetUnallocatedExternalIPAddresses(10, netip.Prefix{})
+	check.Assert(err, IsNil)
+	ipsCompared = compareEachIpElementAndOrder(ipAddr, []netip.Addr{
+		netip.MustParseAddr("1.1.1.4"),
+		netip.MustParseAddr("1.1.1.5"),
+		netip.MustParseAddr("1.1.1.6"),
+		netip.MustParseAddr("1.1.1.7"),
+		netip.MustParseAddr("1.1.1.8"),
+		netip.MustParseAddr("1.1.1.9"),
+		netip.MustParseAddr("1.1.1.10"),
+		netip.MustParseAddr("1.1.1.11"),
+		netip.MustParseAddr("1.1.1.12"),
+		netip.MustParseAddr("1.1.1.13"),
+	})
+	check.Assert(ipsCompared, Equals, true)
+
+	// Attempt to get IP but filter it off by prefix
+	ipAddr, err = createdEdge.GetUnallocatedExternalIPAddresses(1, netip.MustParsePrefix("192.168.1.1/24"))
+	// Expect an error because Edge Gateway does not have IPs from required subnet 192.168.1.1/24
+	check.Assert(err, NotNil)
+	check.Assert(ipAddr, IsNil)
+
+	// Cleanup
+	err = createdEdge.Delete()
+	check.Assert(err, IsNil)
+
+	err = createdNet.Delete()
+	check.Assert(err, IsNil)
+}
+
+// compareEachIpElementAndOrder performs comparison of IPs in a slice as default check.Assert
+// functions is not able to perform this comparison
+func compareEachIpElementAndOrder(ipSlice1, ipSlice2 []netip.Addr) bool {
+	if len(ipSlice1) != len(ipSlice2) {
+		return false
+	}
+
+	for index := range ipSlice1 {
+		if ipSlice1[index] != ipSlice2[index] {
+			return false
+		}
+	}
+
+	return true
 }

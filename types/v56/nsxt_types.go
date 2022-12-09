@@ -6,24 +6,32 @@ type OpenAPIEdgeGateway struct {
 	Status string `json:"status,omitempty"`
 	ID     string `json:"id,omitempty"`
 	// Name of edge gateway
+
 	Name string `json:"name"`
+
 	// Description of edge gateway
 	Description string `json:"description"`
+
 	// OwnerRef defines Org VDC or VDC Group that this network belongs to. If the ownerRef is set to a VDC Group, this
 	// network will be available across all the VDCs in the vDC Group. If the VDC Group is backed by a NSX-V network
 	// provider, the Org VDC network is automatically connected to the distributed router associated with the VDC Group
 	// and the "connection" field does not need to be set. For API version 35.0 and above, this field should be set for
 	// network creation.
 	OwnerRef *OpenApiReference `json:"ownerRef,omitempty"`
+
 	// OrgVdc holds the organization vDC or vDC Group that this edge gateway belongs to. If the ownerRef is set to a VDC
 	// Group, this gateway will be available across all the participating Organization vDCs in the VDC Group.
 	OrgVdc *OpenApiReference `json:"orgVdc,omitempty"`
+
 	// Org holds the organization to which the gateway belongs.
 	Org *OpenApiReference `json:"orgRef,omitempty"`
+
 	// EdgeGatewayUplink defines uplink connections for the edge gateway.
 	EdgeGatewayUplinks []EdgeGatewayUplinks `json:"edgeGatewayUplinks"`
+
 	// DistributedRoutingEnabled is a flag indicating whether distributed routing is enabled or not. The default is false.
 	DistributedRoutingEnabled *bool `json:"distributedRoutingEnabled,omitempty"`
+
 	// EdgeClusterConfig holds Edge Cluster Configuration for the Edge Gateway. Can be specified if a gateway needs to be
 	// placed on a specific set of Edge Clusters. For NSX-T Edges, user should specify the ID of the NSX-T edge cluster as
 	// the value of primaryEdgeCluster's backingId. The gateway defaults to the Edge Cluster of the connected External
@@ -32,8 +40,10 @@ type OpenAPIEdgeGateway struct {
 	// Note. The value of secondaryEdgeCluster will be set to NULL for NSX-T edge gateways. For NSX-V Edges, this is
 	// read-only and the legacy API must be used for edge specific placement.
 	EdgeClusterConfig *OpenAPIEdgeGatewayEdgeClusterConfig `json:"edgeClusterConfig,omitempty"`
+
 	// OrgVdcNetworkCount holds the number of Org VDC networks connected to the gateway.
 	OrgVdcNetworkCount *int `json:"orgVdcNetworkCount,omitempty"`
+
 	// GatewayBacking must contain backing details of the edge gateway only if importing an NSX-T router.
 	GatewayBacking *OpenAPIEdgeGatewayBacking `json:"gatewayBacking,omitempty"`
 
@@ -42,6 +52,15 @@ type OpenAPIEdgeGateway struct {
 	// supported for VMC. If nothing is set, the default is 192.168.255.225/27. The DHCP listener IP network is on
 	// 192.168.255.225/30. The DNS listener IP network is on 192.168.255.228/32. This field cannot be updated.
 	ServiceNetworkDefinition string `json:"serviceNetworkDefinition,omitempty"`
+
+	// TotalIpCount is a read only value to display total IP count
+	TotalIpCount *int `json:"totalIpCount,omitempty"`
+
+	// UsedIpCount is a read only value to display allocated IP count
+	UsedIpCount *int `json:"usedIpCount,omitempty"`
+
+	// UsingIpSpace is a boolean flag to
+	UsingIpSpace *bool `json:"usingIpSpace,omitempty"`
 }
 
 // EdgeGatewayUplink defines uplink connections for the edge gateway.
@@ -60,11 +79,11 @@ type EdgeGatewayUplinks struct {
 	Dedicated bool `json:"dedicated,omitempty"`
 }
 
-// OpenApiIPRanges is a type alias to reuse the same definitions with appropriate names
-type OpenApiIPRanges = ExternalNetworkV2IPRanges
+// ExternalNetworkV2IPRanges is a type alias to reuse the same definitions with appropriate names
+type ExternalNetworkV2IPRanges = OpenApiIPRanges
 
-// OpenApiIPRangeValues is a type alias to reuse the same definitions with appropriate names
-type OpenApiIPRangeValues = ExternalNetworkV2IPRange
+// ExternalNetworkV2IPRange is a type alias to reuse the same definitions with appropriate names
+type ExternalNetworkV2IPRange = OpenApiIPRangeValues
 
 // OpenAPIEdgeGatewaySubnets lists slice of OpenAPIEdgeGatewaySubnetValue values
 type OpenAPIEdgeGatewaySubnets struct {
@@ -86,11 +105,14 @@ type OpenAPIEdgeGatewaySubnetValue struct {
 	// IPRanges contain IP allocations
 	IPRanges *OpenApiIPRanges `json:"ipRanges,omitempty"`
 	// Enabled toggles if the subnet is enabled
-	Enabled              bool   `json:"enabled"`
-	TotalIPCount         int    `json:"totalIpCount,omitempty"`
-	UsedIPCount          int    `json:"usedIpCount,omitempty"`
-	PrimaryIP            string `json:"primaryIp,omitempty"`
-	AutoAllocateIPRanges bool   `json:"autoAllocateIpRanges,omitempty"`
+	Enabled bool `json:"enabled"`
+	// TotalIPCount specified total allocated IP count
+	TotalIPCount int    `json:"totalIpCount,omitempty"`
+	UsedIPCount  int    `json:"usedIpCount,omitempty"`
+	PrimaryIP    string `json:"primaryIp,omitempty"`
+
+	// AutoAllocateIPRanges provides a way to automatically allocate
+	AutoAllocateIPRanges bool `json:"autoAllocateIpRanges,omitempty"`
 }
 
 // OpenAPIEdgeGatewayBacking specifies edge gateway backing details
@@ -109,6 +131,12 @@ type OpenAPIEdgeGatewayEdgeCluster struct {
 type OpenAPIEdgeGatewayEdgeClusterConfig struct {
 	PrimaryEdgeCluster   OpenAPIEdgeGatewayEdgeCluster `json:"primaryEdgeCluster,omitempty"`
 	SecondaryEdgeCluster OpenAPIEdgeGatewayEdgeCluster `json:"secondaryEdgeCluster,omitempty"`
+}
+
+type GatewayUsedIpAddress struct {
+	Category   string           `json:"category"`
+	IPAddress  string           `json:"ipAddress"`
+	NetworkRef OpenApiReference `json:"networkRef"`
 }
 
 // OpenApiOrgVdcNetwork allows users to manage Org Vdc networks
@@ -1264,7 +1292,7 @@ type SecurityTag struct {
 
 // SecurityTaggedEntity is an entity that has a tag.
 type SecurityTaggedEntity struct {
-	// EntityType is the type of entity. Currently, only “vm” is supported.
+	// EntityType is the type of entity. Currently, only 'vm' is supported.
 	EntityType string `json:"entityType"`
 	// ID is the unique identifier of the entity in URN format.
 	ID string `json:"id"`
