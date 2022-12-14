@@ -627,3 +627,56 @@ func (catalog *AdminCatalog) QueryTaskList(filter map[string]string) ([]*types.Q
 	filter["object"] = catalogHref
 	return catalog.client.QueryTaskList(filter)
 }
+
+// GetCatalogByHref allows retrieving a catalog from HREF, without its parent
+func (client *Client) GetCatalogByHref(catalogHref string) (*AdminCatalog, error) {
+	catalogHref = strings.Replace(catalogHref, "/api/catalog", "/api/admin/catalog", 1)
+
+	cat := NewAdminCatalog(client)
+
+	_, err := client.ExecuteRequest(catalogHref, http.MethodGet,
+		"", "error retrieving catalog: %s", nil, cat.AdminCatalog)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return cat, nil
+}
+
+// QueryCatalogRecords given a catalog name, retrieves the catalogRecords that match its name
+// Returns a list of catalog records for such name, empty list if none was found
+func (client *Client) QueryCatalogRecords(name string, ctx TenantContext) ([]*types.CatalogRecord, error) {
+	util.Logger.Printf("[DEBUG] QueryCatalogRecords")
+
+	var filter string
+	if name != "" {
+		filter = fmt.Sprintf("name==%s", url.QueryEscape(name))
+	}
+
+	var tenantHeaders map[string]string
+
+	if client.IsSysAdmin && ctx.OrgId != "" && ctx.OrgName != "" {
+		// Set tenant context headers just for the query
+		tenantHeaders = map[string]string{
+			types.HeaderAuthContext:   ctx.OrgName,
+			types.HeaderTenantContext: ctx.OrgId,
+		}
+	}
+
+	queryType := types.QtCatalog
+
+	results, err := client.cumulativeQueryWithHeaders(queryType, nil, map[string]string{
+		"type":          queryType,
+		"filter":        filter,
+		"filterEncoded": "true",
+	}, tenantHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	catalogs := results.Results.CatalogRecord
+
+	util.Logger.Printf("[DEBUG] QueryCatalogRecords returned with : %#v (%d) and error: %v", catalogs, len(catalogs), err)
+	return catalogs, nil
+}

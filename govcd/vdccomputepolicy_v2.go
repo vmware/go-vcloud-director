@@ -182,20 +182,36 @@ func (vdcComputePolicy *VdcComputePolicyV2) Delete() error {
 // GetAllAssignedVdcComputePoliciesV2 retrieves all VDC assigned Compute Policies (V2) using OpenAPI endpoint. Query parameters can be supplied to perform additional
 // filtering
 func (vdc *AdminVdc) GetAllAssignedVdcComputePoliciesV2(queryParameters url.Values) ([]*VdcComputePolicyV2, error) {
+	return getAllAssignedVdcComputePoliciesV2(vdc.client, vdc.AdminVdc.ID, queryParameters)
+}
+
+// GetAllAssignedVdcComputePoliciesV2 retrieves all VDC assigned Compute Policies (V2) using OpenAPI endpoint and the mandatory VDC identifier.
+// Query parameters can be supplied to perform additional filtering
+func (vcdClient *VCDClient) GetAllAssignedVdcComputePoliciesV2(vdcId string, queryParameters url.Values) ([]*VdcComputePolicyV2, error) {
+	return getAllAssignedVdcComputePoliciesV2(&vcdClient.Client, vdcId, queryParameters)
+}
+
+// getAllAssignedVdcComputePoliciesV2 retrieves all VDC assigned Compute Policies (V2) using OpenAPI endpoint and the mandatory VDC identifier.
+// Query parameters can be supplied to perform additional filtering
+func getAllAssignedVdcComputePoliciesV2(client *Client, vdcId string, queryParameters url.Values) ([]*VdcComputePolicyV2, error) {
+	if strings.TrimSpace(vdcId) == "" {
+		return nil, fmt.Errorf("VDC ID is mandatory to retrieve its assigned VDC Compute Policies")
+	}
+
 	endpoint := types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies
-	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := vdc.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vdc.AdminVdc.ID))
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vdcId))
 	if err != nil {
 		return nil, err
 	}
 
 	responses := []*types.VdcComputePolicyV2{{}}
 
-	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &responses, nil)
+	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &responses, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +219,7 @@ func (vdc *AdminVdc) GetAllAssignedVdcComputePoliciesV2(queryParameters url.Valu
 	var wrappedVdcComputePolicies []*VdcComputePolicyV2
 	for _, response := range responses {
 		wrappedVdcComputePolicy := &VdcComputePolicyV2{
-			client:             vdc.client,
+			client:             client,
 			VdcComputePolicyV2: response,
 		}
 		wrappedVdcComputePolicies = append(wrappedVdcComputePolicies, wrappedVdcComputePolicy)

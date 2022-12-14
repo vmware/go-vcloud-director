@@ -1,3 +1,13 @@
+## 2.18.0 (December 14, 2022)
+
+### FEATURES
+* Added `VCDClient.GetAllAssignedVdcComputePoliciesV2` to retrieve Compute Policies without the need of an `AdminVdc` receiver ([#530](https://github.com/vmware/go-vcloud-director/pull/530))
+* Added `client` methods `QueryCatalogRecords` and `GetCatalogByHref` ([#531](https://github.com/vmware/go-vcloud-director/pull/531))
+
+### BUG FIXES
+* Fixed issue that caused VM Group retrieval to fail if the Provider VDC had more than one Resource Pool ([#530](https://github.com/vmware/go-vcloud-director/pull/530))
+* Fixed issue that prevented Org update because of wrong field position in LDAP settings ([#533](https://github.com/vmware/go-vcloud-director/pull/533))
+
 ## 2.17.0 (November 25, 2022)
 
 ### FEATURES
