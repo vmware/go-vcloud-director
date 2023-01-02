@@ -1139,3 +1139,50 @@ func (catalog *Catalog) QueryTaskList(filter map[string]string) ([]*types.QueryR
 	}
 	return catalog.client.QueryTaskList(newFilter)
 }
+
+// GetCatalogByHref allows retrieving a catalog from HREF, without its parent
+func (client *Client) GetCatalogByHref(catalogHref string) (*Catalog, error) {
+	catalogHref = strings.Replace(catalogHref, "/api/admin/catalog", "/api/catalog", 1)
+
+	cat := NewCatalog(client)
+
+	_, err := client.ExecuteRequest(catalogHref, http.MethodGet,
+		"", "error retrieving catalog: %s", nil, cat.Catalog)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return cat, nil
+}
+
+// GetCatalogById allows retrieving a catalog from ID, without its parent
+func (client *Client) GetCatalogById(catalogId string) (*Catalog, error) {
+	href, err := url.JoinPath(client.VCDHREF.String(), "catalog", extractUuid(catalogId))
+	if err != nil {
+		return nil, err
+	}
+	return client.GetCatalogByHref(href)
+}
+
+// GetCatalogByName allows retrieving a catalog from name, without its parent
+func (client *Client) GetCatalogByName(parentOrg, catalogName string) (*Catalog, error) {
+	catalogs, err := queryCatalogList(client, nil)
+	if err != nil {
+		return nil, err
+	}
+	var parentOrgs []string
+	for _, cat := range catalogs {
+		if cat.Name == catalogName && cat.OrgName == parentOrg {
+			return client.GetCatalogByHref(cat.HREF)
+		}
+		if cat.Name == catalogName {
+			parentOrgs = append(parentOrgs, cat.OrgName)
+		}
+	}
+	parents := ""
+	if len(parentOrgs) > 0 {
+		parents = fmt.Sprintf(" - Found catalog %s in orgs %v", catalogName, parentOrgs)
+	}
+	return nil, fmt.Errorf("no catalog '%s' found in org %s%s", catalogName, parentOrg, parents)
+}
