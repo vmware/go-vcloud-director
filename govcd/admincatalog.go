@@ -175,26 +175,9 @@ func (org *AdminOrg) CreateCatalogFromSubscriptionAsync(subscription types.Exter
 		},
 	}
 
-	uuid := extractUuid(subscription.Location)
-	if uuid == "" {
-		return nil, fmt.Errorf("subscription URL %s does not contain a valid UUID", subscription.Location)
-	}
-	subscription.Location = strings.TrimSpace(subscription.Location)
-	if !strings.HasSuffix(subscription.Location, "/") {
-		return nil, fmt.Errorf("subscription URL '%s' should end with a '/'", subscription.Location)
-	}
-
-	// The subscription URL returned by the API is in abbreviated form
-	// such as "/vcsp/lib/65637586-c703-48ae-a7e2-82605d18db57/"
-	// If the passed URL is so abbreviated, we need to add the host
-	subscriptionUrl, err := buildFullUrl(subscription.Location, org.AdminOrg.HREF)
-	if err != nil {
-		return nil, fmt.Errorf("error composing subscription URL: %s", err)
-	}
-	adminCatalog.AdminCatalog.ExternalCatalogSubscription.Location = subscriptionUrl
 	adminCatalog.AdminCatalog.ExternalCatalogSubscription.Password = password
 	adminCatalog.AdminCatalog.ExternalCatalogSubscription.LocalCopy = localCopy
-	_, err = org.client.ExecuteRequest(href, http.MethodPost, types.MimeAdminCatalog,
+	_, err := org.client.ExecuteRequest(href, http.MethodPost, types.MimeAdminCatalog,
 		"error subscribing to catalog: %s", adminCatalog.AdminCatalog, adminCatalog.AdminCatalog)
 	if err != nil {
 		return nil, err
