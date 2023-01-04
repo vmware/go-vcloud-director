@@ -1140,7 +1140,7 @@ func (catalog *Catalog) QueryTaskList(filter map[string]string) ([]*types.QueryR
 	return catalog.client.QueryTaskList(newFilter)
 }
 
-// GetCatalogByHref allows retrieving a catalog from HREF, without a fully qualified org object
+// GetCatalogByHref allows retrieving a catalog from HREF, without a fully qualified Org object
 func (client *Client) GetCatalogByHref(catalogHref string) (*Catalog, error) {
 	catalogHref = strings.Replace(catalogHref, "/api/admin/catalog", "/api/catalog", 1)
 
@@ -1156,7 +1156,7 @@ func (client *Client) GetCatalogByHref(catalogHref string) (*Catalog, error) {
 	return cat, nil
 }
 
-// GetCatalogById allows retrieving a catalog from ID, without a fully qualified org object
+// GetCatalogById allows retrieving a catalog from ID, without a fully qualified Org object
 func (client *Client) GetCatalogById(catalogId string) (*Catalog, error) {
 	href, err := url.JoinPath(client.VCDHREF.String(), "catalog", extractUuid(catalogId))
 	if err != nil {
@@ -1165,7 +1165,7 @@ func (client *Client) GetCatalogById(catalogId string) (*Catalog, error) {
 	return client.GetCatalogByHref(href)
 }
 
-// GetCatalogByName allows retrieving a catalog from name, without a fully qualified org object
+// GetCatalogByName allows retrieving a catalog from name, without a fully qualified Org object
 func (client *Client) GetCatalogByName(parentOrg, catalogName string) (*Catalog, error) {
 	catalogs, err := queryCatalogList(client, nil)
 	if err != nil {
@@ -1182,7 +1182,7 @@ func (client *Client) GetCatalogByName(parentOrg, catalogName string) (*Catalog,
 	}
 	parents := ""
 	if len(parentOrgs) > 0 {
-		parents = fmt.Sprintf(" - Found catalog %s in orgs %v", catalogName, parentOrgs)
+		parents = fmt.Sprintf(" - Found catalog %s in Orgs %v", catalogName, parentOrgs)
 	}
-	return nil, fmt.Errorf("no catalog '%s' found in org %s%s", catalogName, parentOrg, parents)
+	return nil, fmt.Errorf("no catalog '%s' found in Org %s%s", catalogName, parentOrg, parents)
 }

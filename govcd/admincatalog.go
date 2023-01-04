@@ -611,7 +611,7 @@ func (catalog *AdminCatalog) QueryTaskList(filter map[string]string) ([]*types.Q
 	return catalog.client.QueryTaskList(filter)
 }
 
-// GetAdminCatalogByHref allows retrieving a catalog from HREF, without a fully qualified org object
+// GetAdminCatalogByHref allows retrieving a catalog from HREF, without a fully qualified AdminOrg object
 func (client *Client) GetAdminCatalogByHref(catalogHref string) (*AdminCatalog, error) {
 	catalogHref = strings.Replace(catalogHref, "/api/catalog", "/api/admin/catalog", 1)
 
@@ -664,7 +664,7 @@ func (client *Client) QueryCatalogRecords(name string, ctx TenantContext) ([]*ty
 	return catalogs, nil
 }
 
-// GetAdminCatalogById allows retrieving a catalog from ID, without a fully qualified org object
+// GetAdminCatalogById allows retrieving a catalog from ID, without a fully qualified AdminOrg object
 func (client *Client) GetAdminCatalogById(catalogId string) (*AdminCatalog, error) {
 	href, err := url.JoinPath(client.VCDHREF.String(), "admin", "catalog", extractUuid(catalogId))
 	if err != nil {
@@ -673,7 +673,7 @@ func (client *Client) GetAdminCatalogById(catalogId string) (*AdminCatalog, erro
 	return client.GetAdminCatalogByHref(href)
 }
 
-// GetAdminCatalogByName allows retrieving a catalog from name, without a fully qualified org object
+// GetAdminCatalogByName allows retrieving a catalog from name, without a fully qualified AdminOrg object
 func (client *Client) GetAdminCatalogByName(parentOrg, catalogName string) (*AdminCatalog, error) {
 	catalogs, err := queryCatalogList(client, nil)
 	if err != nil {
@@ -690,7 +690,7 @@ func (client *Client) GetAdminCatalogByName(parentOrg, catalogName string) (*Adm
 	}
 	parents := ""
 	if len(parentOrgs) > 0 {
-		parents = fmt.Sprintf(" - Found catalog %s in orgs %v", catalogName, parentOrgs)
+		parents = fmt.Sprintf(" - Found catalog %s in Orgs %v", catalogName, parentOrgs)
 	}
-	return nil, fmt.Errorf("no catalog '%s' found in org %s%s", catalogName, parentOrg, parents)
+	return nil, fmt.Errorf("no catalog '%s' found in Org %s%s", catalogName, parentOrg, parents)
 }
