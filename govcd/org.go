@@ -154,6 +154,7 @@ func (org *Org) CreateCatalogWithStorageProfile(name, description string, storag
 		return nil, err
 	}
 	catalog.Catalog = &adminCatalog.AdminCatalog.Catalog
+	catalog.parent = org
 	return catalog, nil
 }
 
