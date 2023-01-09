@@ -175,26 +175,9 @@ func (org *AdminOrg) CreateCatalogFromSubscriptionAsync(subscription types.Exter
 		},
 	}
 
-	uuid := extractUuid(subscription.Location)
-	if uuid == "" {
-		return nil, fmt.Errorf("subscription URL %s does not contain a valid UUID", subscription.Location)
-	}
-	subscription.Location = strings.TrimSpace(subscription.Location)
-	if !strings.HasSuffix(subscription.Location, "/") {
-		return nil, fmt.Errorf("subscription URL '%s' should end with a '/'", subscription.Location)
-	}
-
-	// The subscription URL returned by the API is in abbreviated form
-	// such as "/vcsp/lib/65637586-c703-48ae-a7e2-82605d18db57/"
-	// If the passed URL is so abbreviated, we need to add the host
-	subscriptionUrl, err := buildFullUrl(subscription.Location, org.AdminOrg.HREF)
-	if err != nil {
-		return nil, fmt.Errorf("error composing subscription URL: %s", err)
-	}
-	adminCatalog.AdminCatalog.ExternalCatalogSubscription.Location = subscriptionUrl
 	adminCatalog.AdminCatalog.ExternalCatalogSubscription.Password = password
 	adminCatalog.AdminCatalog.ExternalCatalogSubscription.LocalCopy = localCopy
-	_, err = org.client.ExecuteRequest(href, http.MethodPost, types.MimeAdminCatalog,
+	_, err := org.client.ExecuteRequest(href, http.MethodPost, types.MimeAdminCatalog,
 		"error subscribing to catalog: %s", adminCatalog.AdminCatalog, adminCatalog.AdminCatalog)
 	if err != nil {
 		return nil, err
@@ -628,8 +611,8 @@ func (catalog *AdminCatalog) QueryTaskList(filter map[string]string) ([]*types.Q
 	return catalog.client.QueryTaskList(filter)
 }
 
-// GetCatalogByHref allows retrieving a catalog from HREF, without its parent
-func (client *Client) GetCatalogByHref(catalogHref string) (*AdminCatalog, error) {
+// GetAdminCatalogByHref allows retrieving a catalog from HREF, without a fully qualified AdminOrg object
+func (client *Client) GetAdminCatalogByHref(catalogHref string) (*AdminCatalog, error) {
 	catalogHref = strings.Replace(catalogHref, "/api/catalog", "/api/admin/catalog", 1)
 
 	cat := NewAdminCatalog(client)
@@ -679,4 +662,35 @@ func (client *Client) QueryCatalogRecords(name string, ctx TenantContext) ([]*ty
 
 	util.Logger.Printf("[DEBUG] QueryCatalogRecords returned with : %#v (%d) and error: %v", catalogs, len(catalogs), err)
 	return catalogs, nil
+}
+
+// GetAdminCatalogById allows retrieving a catalog from ID, without a fully qualified AdminOrg object
+func (client *Client) GetAdminCatalogById(catalogId string) (*AdminCatalog, error) {
+	href, err := url.JoinPath(client.VCDHREF.String(), "admin", "catalog", extractUuid(catalogId))
+	if err != nil {
+		return nil, err
+	}
+	return client.GetAdminCatalogByHref(href)
+}
+
+// GetAdminCatalogByName allows retrieving a catalog from name, without a fully qualified AdminOrg object
+func (client *Client) GetAdminCatalogByName(parentOrg, catalogName string) (*AdminCatalog, error) {
+	catalogs, err := queryCatalogList(client, nil)
+	if err != nil {
+		return nil, err
+	}
+	var parentOrgs []string
+	for _, cat := range catalogs {
+		if cat.Name == catalogName && cat.OrgName == parentOrg {
+			return client.GetAdminCatalogByHref(cat.HREF)
+		}
+		if cat.Name == catalogName {
+			parentOrgs = append(parentOrgs, cat.OrgName)
+		}
+	}
+	parents := ""
+	if len(parentOrgs) > 0 {
+		parents = fmt.Sprintf(" - Found catalog %s in Orgs %v", catalogName, parentOrgs)
+	}
+	return nil, fmt.Errorf("no catalog '%s' found in Org %s%s", catalogName, parentOrg, parents)
 }
