@@ -62,7 +62,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 			Xmlns:           types.XMLNamespaceVCloud,
 			AllocationModel: allocationModel,
 			ComputeCapacity: []*types.ComputeCapacity{
-				&types.ComputeCapacity{
+				{
 					CPU: &types.CapacityWithUsage{
 						Units:     "MHz",
 						Allocated: 1024,
@@ -74,7 +74,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 					},
 				},
 			},
-			VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
+			VdcStorageProfile: []*types.VdcStorageProfileConfiguration{{
 				Enabled: takeBoolPointer(true),
 				Units:   "MB",
 				Limit:   1024,
@@ -139,15 +139,28 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 		check.Assert(vdc.Vdc.Name, Equals, vdcConfiguration.Name)
 		check.Assert(vdc.Vdc.IsEnabled, Equals, vdcConfiguration.IsEnabled)
 		check.Assert(vdc.Vdc.AllocationModel, Equals, vdcConfiguration.AllocationModel)
-		if secondStorageProfileHref != "" {
-			check.Assert(vdc.Vdc.VdcStorageProfiles, NotNil)
-			check.Assert(vdc.Vdc.VdcStorageProfiles.VdcStorageProfile, NotNil)
-			check.Assert(vdc.Vdc.VdcStorageProfiles.VdcStorageProfile[1], NotNil)
+		check.Assert(vdc.Vdc.VdcStorageProfiles, NotNil)
+		check.Assert(vdc.Vdc.VdcStorageProfiles.VdcStorageProfile, NotNil)
+		if secondStorageProfileHref == "" {
+			check.Assert(len(vdc.Vdc.VdcStorageProfiles.VdcStorageProfile), Equals, 1)
+		} else {
+			check.Assert(len(vdc.Vdc.VdcStorageProfiles.VdcStorageProfile), Equals, 2)
 		}
 
-		vdcStorageProfileDetails, err := adminOrg.client.GetStorageProfileByHref(vdc.Vdc.VdcStorageProfiles.VdcStorageProfile[1].HREF)
-		check.Assert(err, IsNil)
-		check.Assert(*vdcStorageProfileDetails.Enabled, Equals, false)
+		// As storage profiles may come unordered, we check them in a generic way with a loop
+		for _, spReference := range vdc.Vdc.VdcStorageProfiles.VdcStorageProfile {
+			check.Assert(spReference, NotNil)
+			vdcStorageProfileDetails, err := adminOrg.client.GetStorageProfileByHref(spReference.HREF)
+			check.Assert(err, IsNil)
+			switch spReference.Name {
+			case vcd.config.VCD.StorageProfile.SP1:
+				check.Assert(*vdcStorageProfileDetails.Enabled, Equals, true)
+			case vcd.config.VCD.StorageProfile.SP2:
+				check.Assert(*vdcStorageProfileDetails.Enabled, Equals, false)
+			default:
+				check.Errorf("didn't expect a storage profile with ID '%s' and name '%s'", spReference.ID, spReference.Name)
+			}
+		}
 
 		err = vdc.DeleteWait(true, true)
 		check.Assert(err, IsNil)

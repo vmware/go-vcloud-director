@@ -678,7 +678,8 @@ func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
 	// Ensure VM is not powered on
 	vmStatus, err := vm.GetStatus()
 	check.Assert(err, IsNil)
-	if vmStatus != "POWERED_OFF" {
+	if vmStatus != "POWERED_OFF" && vmStatus != "PARTIALLY_POWERED_OFF" {
+		fmt.Printf("VM status: %s, powering off", vmStatus)
 		task, err := vm.PowerOff()
 		check.Assert(err, IsNil)
 		err = task.WaitTaskCompletion()
