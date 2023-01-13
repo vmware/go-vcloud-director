@@ -1058,3 +1058,183 @@ func (vcd *TestVCD) Test_CatalogUploadMediaImageWihUdfTypeIso(check *C) {
 	// Delete testing catalog item
 	deleteCatalogItem(check, catalog, mediaName)
 }
+
+func (vcd *TestVCD) Test_GetAdminCatalogById(check *C) {
+	if vcd.config.VCD.Org == "" || vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("no Org or Catalog found in configuration")
+	}
+
+	// 1. Get a catalog from an organization
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	adminCatalog, err := org.GetAdminCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+
+	// 2. retrieve that same catalog from the client alone using HREF
+	adminCatalogByHref, err := vcd.client.Client.GetAdminCatalogByHref(adminCatalog.AdminCatalog.HREF)
+	check.Assert(err, IsNil)
+	check.Assert(adminCatalogByHref.AdminCatalog.HREF, Equals, adminCatalog.AdminCatalog.HREF)
+
+	// 3. retrieve the same catalog again, using ID
+	adminCatalogById, err := vcd.client.Client.GetAdminCatalogById(adminCatalog.AdminCatalog.ID)
+	check.Assert(err, IsNil)
+	check.Assert(adminCatalogById.AdminCatalog.HREF, Equals, adminCatalog.AdminCatalog.HREF)
+}
+
+func (vcd *TestVCD) Test_CatalogAccessAsOrgUsers(check *C) {
+	if vcd.config.Tenants == nil || len(vcd.config.Tenants) < 2 {
+		check.Skip("no tenants found in configuration")
+	}
+
+	if vcd.config.OVA.OvaPath == "" || vcd.config.Media.MediaPath == "" {
+		check.Skip("no OVA or Media path found in configuration")
+	}
+
+	org1Name := vcd.config.Tenants[0].SysOrg
+	user1Name := vcd.config.Tenants[0].User
+	password1 := vcd.config.Tenants[0].Password
+	org2Name := vcd.config.Tenants[1].SysOrg
+	user2Name := vcd.config.Tenants[1].User
+	password2 := vcd.config.Tenants[1].Password
+
+	org1AsSystem, err := vcd.client.GetAdminOrgByName(org1Name)
+	check.Assert(err, IsNil)
+	check.Assert(org1AsSystem, NotNil)
+
+	org2AsSystem, err := vcd.client.GetAdminOrgByName(org2Name)
+	if err != nil {
+		if ContainsNotFound(err) {
+			check.Skip(fmt.Sprintf("organization %s not found", org2Name))
+		}
+	}
+	check.Assert(err, IsNil)
+	check.Assert(org2AsSystem, NotNil)
+	vcdClient1 := NewVCDClient(vcd.client.Client.VCDHREF, true)
+	err = vcdClient1.Authenticate(user1Name, password1, org1Name)
+	check.Assert(err, IsNil)
+
+	vcdClient2 := NewVCDClient(vcd.client.Client.VCDHREF, true)
+	err = vcdClient2.Authenticate(user2Name, password2, org2Name)
+	check.Assert(err, IsNil)
+
+	org1, err := vcdClient1.GetOrgByName(org1Name)
+	check.Assert(err, IsNil)
+	org2, err := vcdClient2.GetOrgByName(org2Name)
+	check.Assert(err, IsNil)
+	check.Assert(org2, NotNil)
+	catalogName := check.TestName() + "-cat"
+	fmt.Printf("creating catalog %s in org %s\n", catalogName, org1Name)
+	adminCatalog1AsSystem, err := org1AsSystem.CreateCatalog(catalogName, fmt.Sprintf("catalog %s created in %s", catalogName, org1Name))
+	check.Assert(err, IsNil)
+	AddToCleanupList(catalogName, "catalog", org1Name, check.TestName())
+	catalog1AsSystem, err := org1AsSystem.GetCatalogByName(catalogName, true)
+	check.Assert(err, IsNil)
+	fmt.Printf("sharing catalog %s from org %s\n", catalogName, org1Name)
+	err = adminCatalog1AsSystem.SetAccessControl(&types.ControlAccessParams{
+		IsSharedToEveryone: false,
+		AccessSettings: &types.AccessSettingList{
+			[]*types.AccessSetting{
+				{
+					Subject: &types.LocalSubject{
+						HREF: org2.Org.HREF,
+						Name: org2Name,
+						Type: types.MimeOrg,
+					},
+					AccessLevel: types.ControlAccessReadOnly,
+				},
+			},
+		},
+	}, true)
+	check.Assert(err, IsNil)
+
+	// populate the catalog
+
+	vappTemplateName := check.TestName() + "-template"
+	mediaName := check.TestName() + "-media"
+	fmt.Printf("uploading vApp template into catalog %s\n", catalogName)
+	task, err := catalog1AsSystem.UploadOvf(vcd.config.OVA.OvaPath, vappTemplateName, vappTemplateName, 1024)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	fmt.Printf("uploading media image into catalog %s\n", catalogName)
+	uploadTask, err := catalog1AsSystem.UploadMediaImage(mediaName, "upload from test", vcd.config.Media.MediaPath, 1024)
+	check.Assert(err, IsNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	vAppTemplateAsSystem, err := catalog1AsSystem.GetVAppTemplateByName(vappTemplateName)
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplateAsSystem, NotNil)
+	mediaRecordAsSystem, err := catalog1AsSystem.GetMediaByName(mediaName, true)
+	check.Assert(err, IsNil)
+	check.Assert(mediaRecordAsSystem, NotNil)
+
+	// Retrieve catalog by ID in its own Org
+	adminCatalog1, err := vcdClient1.Client.GetAdminCatalogById(adminCatalog1AsSystem.AdminCatalog.ID)
+	check.Assert(err, IsNil)
+	check.Assert(adminCatalog1.AdminCatalog.HREF, Equals, adminCatalog1AsSystem.AdminCatalog.HREF)
+
+	catalog1, err := vcdClient1.Client.GetCatalogById(adminCatalog1AsSystem.AdminCatalog.ID)
+	check.Assert(err, IsNil)
+	check.Assert(catalog1.Catalog.HREF, Equals, catalog1AsSystem.Catalog.HREF)
+
+	startTime := time.Now()
+	timeout := 100 * time.Second
+	// Start retrieving catalog in the other org
+	fmt.Printf("retrieving catalog %s in org %s\n", catalogName, org2Name)
+	for time.Since(startTime) < timeout {
+		_, err = vcdClient2.Client.GetAdminCatalogById(adminCatalog1AsSystem.AdminCatalog.ID)
+		if err == nil {
+			fmt.Printf("shared catalog available in %s\n", time.Since(startTime))
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	// Retrieve the shared catalog in the other organization
+	adminCatalog2, err := vcdClient2.Client.GetAdminCatalogById(adminCatalog1AsSystem.AdminCatalog.ID)
+	check.Assert(err, IsNil)
+	check.Assert(adminCatalog2, NotNil)
+
+	// Retrieve the catalog from both tenants, using functions that don't rely on organization internals
+	catalog1FromOrg, err := vcdClient1.Client.GetCatalogByName(org1.Org.Name, catalogName)
+	check.Assert(err, IsNil)
+	adminCatalog1FromOrg, err := vcdClient1.Client.GetAdminCatalogByName(org1.Org.Name, catalogName)
+	check.Assert(err, IsNil)
+	catalog2FromOrg, err := vcdClient2.Client.GetCatalogByName(org1.Org.Name, catalogName)
+	check.Assert(err, IsNil)
+	adminCatalog2FromOrg, err := vcdClient2.Client.GetAdminCatalogByName(org1.Org.Name, catalogName)
+	check.Assert(err, IsNil)
+
+	// Also retrieve the catalog items from both tenants
+	vAppTemplate1, err := catalog1FromOrg.GetVAppTemplateByName(vappTemplateName)
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplate1.VAppTemplate.HREF, Equals, vAppTemplateAsSystem.VAppTemplate.HREF)
+	mediaRecord1, err := catalog1FromOrg.GetMediaByName(mediaName, false)
+	check.Assert(err, IsNil)
+	check.Assert(mediaRecord1.Media.HREF, Equals, mediaRecordAsSystem.Media.HREF)
+
+	vAppTemplate2, err := catalog2FromOrg.GetVAppTemplateByName(vappTemplateName)
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplate2.VAppTemplate.HREF, Equals, vAppTemplateAsSystem.VAppTemplate.HREF)
+	mediaRecord2, err := catalog2FromOrg.GetMediaByName(mediaName, false)
+	check.Assert(err, IsNil)
+	check.Assert(mediaRecord2.Media.HREF, Equals, mediaRecordAsSystem.Media.HREF)
+
+	check.Assert(catalog1FromOrg.Catalog.HREF, Equals, catalog1AsSystem.Catalog.HREF)
+	check.Assert(adminCatalog1FromOrg.AdminCatalog.HREF, Equals, adminCatalog1AsSystem.AdminCatalog.HREF)
+	check.Assert(adminCatalog2FromOrg.AdminCatalog.HREF, Equals, adminCatalog1AsSystem.AdminCatalog.HREF)
+	check.Assert(catalog2FromOrg.Catalog.HREF, Equals, catalog1AsSystem.Catalog.HREF)
+	timeout = 30 * time.Second
+	startTime = time.Now()
+	for time.Since(startTime) < timeout {
+		err = adminCatalog1AsSystem.Delete(true, true)
+		if err == nil {
+			fmt.Printf("shared catalog deleted in %s\n", time.Since(startTime))
+			break
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+	check.Assert(err, IsNil)
+}
