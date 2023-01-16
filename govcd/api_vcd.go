@@ -93,8 +93,8 @@ func (vcdClient *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.
 
 	defer resp.Body.Close()
 
-	// Catch HTTP 401 (Status Unauthorized) to return an error as otherwise this library will return
-	// odd errors while doing lookup of resources and confused user.
+	// Catch HTTP 401 (Status Unauthorized) to return an error as otherwise this library would return
+	// odd errors while doing lookup of resources and confuse user.
 	if resp.StatusCode == http.StatusUnauthorized {
 		return nil, fmt.Errorf("received response HTTP %d (Unauthorized). Please check if your credentials are valid",
 			resp.StatusCode)
