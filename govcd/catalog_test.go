@@ -1226,6 +1226,15 @@ func (vcd *TestVCD) Test_CatalogAccessAsOrgUsers(check *C) {
 	check.Assert(adminCatalog1FromOrg.AdminCatalog.HREF, Equals, adminCatalog1AsSystem.AdminCatalog.HREF)
 	check.Assert(adminCatalog2FromOrg.AdminCatalog.HREF, Equals, adminCatalog1AsSystem.AdminCatalog.HREF)
 	check.Assert(catalog2FromOrg.Catalog.HREF, Equals, catalog1AsSystem.Catalog.HREF)
-	err = adminCatalog1AsSystem.Delete(true, true)
+	timeout = 30 * time.Second
+	startTime = time.Now()
+	for time.Since(startTime) < timeout {
+		err = adminCatalog1AsSystem.Delete(true, true)
+		if err == nil {
+			fmt.Printf("shared catalog deleted in %s\n", time.Since(startTime))
+			break
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
 	check.Assert(err, IsNil)
 }

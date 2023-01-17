@@ -1,6 +1,17 @@
-## 2.19.0 (TBC)
+## 2.19.0 (January 12, 2023)
 
-Changes in progress for v2.19.0 are available at [.changes/v2.19.0](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v2.19.0) until the release.
+### FEATURES
+* Added client methods `GetCatalogByHref`, `GetCatalogById`, `GetCatalogByName` to retrieve Catalogs without an Org object ([#537](https://github.com/vmware/go-vcloud-director/pull/537))
+* Added client methods `GetAdminCatalogByHref`, `GetAdminCatalogById`, `GetAdminCatalogByName` to retrieve AdminCatalogs without an AdminOrg object ([#537](https://github.com/vmware/go-vcloud-director/pull/537))
+* Added method `VAppTemplate.GetVappTemplateRecord` to retrieve a VAppTemplate query record ([#537](https://github.com/vmware/go-vcloud-director/pull/537))
+
+### BUG FIXES
+* Removed URL checks from `CreateCatalogFromSubscriptionAsync` to allow catalog creation from non-VCD entities, such as vSphere shared library ([#537](https://github.com/vmware/go-vcloud-director/pull/537))
+* Fixed flaky test `Test_CatalogAccessAsOrgUsers` that failed randomly for timing issues ([#540](https://github.com/vmware/go-vcloud-director/pull/540))
+
+### NOTES
+* Amended a quirky test `Test_CreateOrgVdcWithFlex` that failed randomly due to recovered VDC Storage Profiles being unordered ([#538](https://github.com/vmware/go-vcloud-director/pull/538))
+* Amended a quirky test `Test_VMPowerOnPowerOff` that failed due to the testing VM not being powered off fast enough ([#538](https://github.com/vmware/go-vcloud-director/pull/538))
 
 ## 2.18.0 (December 14, 2022)
 
