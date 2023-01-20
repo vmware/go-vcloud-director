@@ -1,6 +1,31 @@
-## 2.18.0 (TBC)
+## 2.20.0 (TBC)
 
-Changes in progress for v2.18.0 are available at [.changes/v2.18.0](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v2.18.0) until the release.
+Changes in progress for v2.20.0 are available at [.changes/v2.20.0](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v2.20.0) until the release.
+
+## 2.19.0 (January 12, 2023)
+
+### FEATURES
+* Added client methods `GetCatalogByHref`, `GetCatalogById`, `GetCatalogByName` to retrieve Catalogs without an Org object ([#537](https://github.com/vmware/go-vcloud-director/pull/537))
+* Added client methods `GetAdminCatalogByHref`, `GetAdminCatalogById`, `GetAdminCatalogByName` to retrieve AdminCatalogs without an AdminOrg object ([#537](https://github.com/vmware/go-vcloud-director/pull/537))
+* Added method `VAppTemplate.GetVappTemplateRecord` to retrieve a VAppTemplate query record ([#537](https://github.com/vmware/go-vcloud-director/pull/537))
+
+### BUG FIXES
+* Removed URL checks from `CreateCatalogFromSubscriptionAsync` to allow catalog creation from non-VCD entities, such as vSphere shared library ([#537](https://github.com/vmware/go-vcloud-director/pull/537))
+* Fixed flaky test `Test_CatalogAccessAsOrgUsers` that failed randomly for timing issues ([#540](https://github.com/vmware/go-vcloud-director/pull/540))
+
+### NOTES
+* Amended a quirky test `Test_CreateOrgVdcWithFlex` that failed randomly due to recovered VDC Storage Profiles being unordered ([#538](https://github.com/vmware/go-vcloud-director/pull/538))
+* Amended a quirky test `Test_VMPowerOnPowerOff` that failed due to the testing VM not being powered off fast enough ([#538](https://github.com/vmware/go-vcloud-director/pull/538))
+
+## 2.18.0 (December 14, 2022)
+
+### FEATURES
+* Added `VCDClient.GetAllAssignedVdcComputePoliciesV2` to retrieve Compute Policies without the need of an `AdminVdc` receiver ([#530](https://github.com/vmware/go-vcloud-director/pull/530))
+* Added `client` methods `QueryCatalogRecords` and `GetCatalogByHref` ([#531](https://github.com/vmware/go-vcloud-director/pull/531))
+
+### BUG FIXES
+* Fixed issue that caused VM Group retrieval to fail if the Provider VDC had more than one Resource Pool ([#530](https://github.com/vmware/go-vcloud-director/pull/530))
+* Fixed issue that prevented Org update because of wrong field position in LDAP settings ([#533](https://github.com/vmware/go-vcloud-director/pull/533))
 
 ## 2.17.0 (November 25, 2022)
 

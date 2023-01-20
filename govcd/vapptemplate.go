@@ -98,6 +98,20 @@ func (vAppTemplate *VAppTemplate) GetVdcName() (string, error) {
 	return queriedVappTemplates[0].VdcName, nil
 }
 
+// GetVappTemplateRecord gets the corresponding vApp template record
+func (vAppTemplate *VAppTemplate) GetVappTemplateRecord() (*types.QueryResultVappTemplateType, error) {
+	queriedVappTemplates, err := queryVappTemplateListWithFilter(vAppTemplate.client, map[string]string{
+		"id": vAppTemplate.VAppTemplate.ID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(queriedVappTemplates) != 1 {
+		return nil, fmt.Errorf("found %d vApp Templates with ID %s", len(queriedVappTemplates), vAppTemplate.VAppTemplate.ID)
+	}
+	return queriedVappTemplates[0], nil
+}
+
 // Update updates the vApp template item information.
 // VCD also updates the associated Catalog Item, in order to be in sync with the receiver vApp Template entity.
 // For example, updating a vApp Template name "A" to "B" will make VCD to also update the Catalog Item to be renamed to "B".

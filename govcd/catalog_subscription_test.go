@@ -9,6 +9,7 @@ package govcd
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -200,14 +201,18 @@ func testSubscribedCatalog(testData subscriptionTestData, check *C) {
 	err = fromCatalog.Refresh()
 	check.Assert(err, IsNil)
 
+	subscriptionUrl, err := fromCatalog.FullSubscriptionUrl()
+	check.Assert(err, IsNil)
+
 	subscriptionParams := types.ExternalCatalogSubscription{
 		SubscribeToExternalFeeds: true,
-		Location:                 fromCatalog.AdminCatalog.PublishExternalCatalogParams.CatalogPublishedUrl,
+		Location:                 subscriptionUrl,
 		Password:                 subscriptionPassword,
 		LocalCopy:                testData.localCopy,
 	}
 
 	var toCatalog *AdminCatalog
+	testSubscribedCatalogWithInvalidParameters(toOrg, subscriptionParams, subscribingCatalogName, subscriptionPassword, testData.localCopy, check)
 	if testData.asynchronousSubscription {
 		drawHeader("-", "creating subscribed catalog asynchronously")
 		// With asynchronous subscription the catalog starts the subscription but does not report its state, which is
@@ -345,4 +350,30 @@ func testMonitor(task *types.Task) {
 		}
 		fmt.Print(marker)
 	}
+}
+
+func testSubscribedCatalogWithInvalidParameters(org *AdminOrg, subscription types.ExternalCatalogSubscription,
+	name, password string, localCopy bool, check *C) {
+
+	uuid := extractUuid(subscription.Location)
+	params := subscription
+	params.Location = strings.Replace(params.Location, uuid, "deadbeef-d72f-4a21-a4d2-4dc9e0b36555", 1)
+	// Use a valid host with invalid UUID
+	_, err := org.CreateCatalogFromSubscriptionAsync(params, nil, name, password, localCopy)
+	check.Assert(err, ErrorMatches, ".*RESOURCE_NOT_FOUND.*")
+
+	newUrl, err := url.Parse(subscription.Location)
+	check.Assert(err, IsNil)
+
+	params = subscription
+	params.Location = strings.Replace(params.Location, newUrl.Host, "fake.example.com", 1)
+	// use an invalid host
+	_, err = org.CreateCatalogFromSubscriptionAsync(params, nil, name, password, localCopy)
+	check.Assert(err, ErrorMatches, ".*INVALID_URL_OR_PASSWORD.*")
+
+	params = subscription
+	params.Location = "not-an-URL"
+	// use an invalid URL
+	_, err = org.CreateCatalogFromSubscriptionAsync(params, nil, name, password, localCopy)
+	check.Assert(err, ErrorMatches, ".*UNKNOWN_ERROR.*")
 }
