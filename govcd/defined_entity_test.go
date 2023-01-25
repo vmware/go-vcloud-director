@@ -24,7 +24,13 @@ func (vcd *TestVCD) Test_Rde(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEntityTypes)
+	for _, endpoint := range []string{
+		types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityTypes,
+		types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntitiesResolve,
+		types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntities,
+	} {
+		skipOpenApiEndpointTest(vcd, check, endpoint)
+	}
 
 	unmarshaledRdeTypeSchema, err := loadRdeTypeSchemaFromTestResources()
 	check.Assert(err, IsNil)
@@ -77,12 +83,81 @@ func (vcd *TestVCD) Test_Rde(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(obtainedRdeType.DefinedEntityType.Description, Equals, rdeTypeToCreate.Description+"Updated")
 
+	testRdeCrud(check, obtainedRdeType)
+
 	deletedId := createdRdeType.DefinedEntityType.ID
 	err = createdRdeType.Delete()
 	check.Assert(err, IsNil)
 	check.Assert(*createdRdeType.DefinedEntityType, DeepEquals, types.DefinedEntityType{})
 
 	_, err = vcd.client.GetRdeTypeById(deletedId)
+	check.Assert(err, NotNil)
+	check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
+}
+
+// testRdeCrud is a sub-section of Test_Rde that is focused on testing all RDE instances casuistics.
+func testRdeCrud(check *C, rdeType *DefinedEntityType) {
+
+	// We are missing the mandatory field "foo" on purpose
+	rdeEntityJson := []byte(`
+	{
+		"bar": "stringValue1",
+		"prop2": {
+			"subprop1": "stringValue2",
+			"subprop2": [
+				"stringValue3",
+				"stringValue4"
+			]
+		}
+	}`)
+
+	var unmarshaledRdeEntityJson map[string]interface{}
+	err := json.Unmarshal(rdeEntityJson, &unmarshaledRdeEntityJson)
+	check.Assert(err, IsNil)
+
+	rde, err := rdeType.CreateRde(types.DefinedEntity{
+		Name:       check.TestName(),
+		ExternalId: "123",
+		Entity:     unmarshaledRdeEntityJson,
+	})
+	check.Assert(err, IsNil)
+	check.Assert(rde.DefinedEntity.Name, Equals, check.TestName())
+	check.Assert(*rde.DefinedEntity.State, Equals, "PRE_CREATED")
+
+	// If we don't resolve the RDE, we cannot delete it
+	err = rde.Delete()
+	check.Assert(err, NotNil)
+	check.Assert(true, Equals, strings.Contains(err.Error(), "RDE_ENTITY_NOT_RESOLVED"))
+
+	// Resolution should fail as we missed to add a mandatory field
+	err = rde.Resolve()
+	check.Assert(err, IsNil)
+	check.Assert(*rde.DefinedEntity.State, Equals, "RESOLUTION_ERROR")
+
+	// We amend it
+	unmarshaledRdeEntityJson["foo"] = map[string]interface{}{"key": "stringValue5"}
+	err = rde.Update(types.DefinedEntity{
+		Entity: unmarshaledRdeEntityJson,
+	})
+	check.Assert(err, IsNil)
+	check.Assert(*rde.DefinedEntity.State, Equals, "RESOLUTION_ERROR")
+
+	// This time it should resolve
+	err = rde.Resolve()
+	check.Assert(err, IsNil)
+	check.Assert(*rde.DefinedEntity.State, Equals, "RESOLVED")
+
+	// The RDE can't be deleted until rde.Resolve() is called
+	AddToCleanupListOpenApi(rde.DefinedEntity.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEntities+rde.DefinedEntity.ID)
+
+	// Delete the RDE instance now that it's resolved
+	deletedId := rde.DefinedEntity.ID
+	err = rde.Delete()
+	check.Assert(err, IsNil)
+	check.Assert(*rde.DefinedEntity, DeepEquals, types.DefinedEntity{})
+
+	// RDE should not exist anymore
+	_, err = rdeType.GetRdeById(deletedId)
 	check.Assert(err, NotNil)
 	check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
 }

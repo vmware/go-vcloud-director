@@ -427,6 +427,28 @@ type LogicalVmGroup struct {
 	PvdcID                 string            `json:"pvdcId,omitempty"`                 // URN for Provider VDC
 }
 
+// OpenApiMetadataEntry represents a metadata entry in VCD.
+type OpenApiMetadataEntry struct {
+	ID           string                  `json:"id,omitempty"`         // UUID for OpenApiMetadataEntry. This is immutable
+	IsPersistent bool                    `json:"persistent,omitempty"` // Persistent entries can be copied over on some entity operation, for example: | Creating a copy of an Org VDC | Capturing a vApp to a template | Instantiating a catalog item as a VM
+	IsReadOnly   bool                    `json:"readOnly,omitempty"`   // The kind of level of access organizations of the entry’s domain have
+	KeyValue     OpenApiMetadataKeyValue `json:"keyValue,omitempty"`   // Contains core metadata entry data
+}
+
+// OpenApiMetadataKeyValue contains core metadata entry data.
+type OpenApiMetadataKeyValue struct {
+	Domain    string                    `json:"domain,omitempty"`    // Only meaningful for providers. Allows them to share entries with their tenants. Currently, accepted values are: `TENANT`, `PROVIDER`, where that is the ascending sort order of the enumeration.
+	Key       string                    `json:"key,omitempty"`       // Key of the metadata entry
+	Value     OpenApiMetadataTypedValue `json:"value,omitempty"`     // Value of the metadata entry
+	Namespace string                    `json:"namespace,omitempty"` // Namespace of the metadata entry
+}
+
+// OpenApiMetadataTypedValue asd
+type OpenApiMetadataTypedValue struct {
+	Value interface{} `json:"value,omitempty"` // The type is any because it depends on the Type field.
+	Type  string      `json:"type,omitempty"`
+}
+
 // DefinedInterface defines a interface for a defined entity. The combination of nss+version+vendor should be unique
 type DefinedInterface struct {
 	ID         string `json:"id,omitempty"`       // The id of the defined interface type in URN format
@@ -451,4 +473,16 @@ type DefinedEntityType struct {
 	IsReadOnly       bool                   `json:"readonly,omitempty"`         // `true` if the entity type cannot be modified
 	Schema           map[string]interface{} `json:"schema,omitempty"`           // The JSON-Schema valid definition of the defined entity type. If no JSON Schema version is specified, version 4 will be assumed
 	Vendor           string                 `json:"vendor,omitempty"`           // The vendor name
+}
+
+// DefinedEntity describes an instance of a defined entity type.
+type DefinedEntity struct {
+	ID         string                 `json:"id,omitempty"`         // The id of the defined entity in URN format
+	EntityType string                 `json:"entityType,omitempty"` // The URN ID of the defined entity type that the entity is an instance of. This is a read-only field
+	Name       string                 `json:"name,omitempty"`       // The name of the defined entity
+	ExternalId string                 `json:"externalId,omitempty"` // An external entity's id that this entity may have a relation to.
+	Entity     map[string]interface{} `json:"entity,omitempty"`     // A JSON value representation. The JSON will be validated against the schema of the DefinedEntityType that the entity is an instance of
+	State      *string                `json:"state,omitempty"`      // Every entity is created in the "PRE_CREATED" state. Once an entity is ready to be validated against its schema, it will transition in another state - RESOLVED, if the entity is valid according to the schema, or RESOLUTION_ERROR otherwise. If an entity in an "RESOLUTION_ERROR" state is updated, it will transition to the inital "PRE_CREATED" state without performing any validation. If its in the "RESOLVED" state, then it will be validated against the entity type schema and throw an exception if its invalid
+	Owner      *OpenApiReference      `json:"owner,omitempty"`      // The owner of the defined entity
+	Org        *OpenApiReference      `json:"org,omitempty"`        // The organization of the defined entity.
 }

@@ -391,6 +391,9 @@ const (
 	OpenApiEndpointEdgeBgpConfig                      = "edgeGateways/%s/routing/bgp"              // '%s' is NSX-T Edge Gateway ID
 	OpenApiEndpointInterfaces                         = "interfaces/"
 	OpenApiEndpointEntityTypes                        = "entityTypes/"
+	OpenApiEndpointEntities                           = "entities/"
+	OpenApiEndpointEntitiesResolve                    = "entities/%s/resolve"
+	OpenApiEndpointEntitiesTypes                      = "entities/types/"
 
 	// NSX-T ALB related endpoints
 
@@ -519,6 +522,10 @@ const (
 	MetadataNumberValue   string = "MetadataNumberValue"
 	MetadataDateTimeValue string = "MetadataDateTimeValue"
 	MetadataBooleanValue  string = "MetadataBooleanValue"
+
+	OpenApiMetadataStringEntry  string = "StringEntry"
+	OpenApiMetadataNumberEntry  string = "NumberEntry"
+	OpenApiMetadataBooleanEntry string = "BoolEntry"
 
 	MetadataReadOnlyVisibility  string = "READONLY"
 	MetadataHiddenVisibility    string = "PRIVATE"
