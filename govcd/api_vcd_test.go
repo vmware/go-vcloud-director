@@ -1666,6 +1666,38 @@ func TestVCDClient_Authenticate(t *testing.T) {
 	}
 }
 
+func TestVCDClient_AuthenticateInvalidPassword(t *testing.T) {
+	config, err := GetConfigStruct()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	client, err := GetTestVCDFromYaml(config)
+	if err != nil {
+		t.Fatalf("error getting client structure: %s", err)
+	}
+
+	err = client.Authenticate(config.Provider.User, "INVALID-PASSWORD", config.Provider.SysOrg)
+	if err == nil || !strings.Contains(err.Error(), "401") {
+		t.Fatalf("expected error for invalid credentials")
+	}
+}
+
+func TestVCDClient_AuthenticateInvalidToken(t *testing.T) {
+	config, err := GetConfigStruct()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	client, err := GetTestVCDFromYaml(config)
+	if err != nil {
+		t.Fatalf("error getting client structure: %s", err)
+	}
+
+	err = client.SetToken(config.Provider.SysOrg, AuthorizationHeader, "invalid-token")
+	if err == nil || !strings.Contains(err.Error(), "401") {
+		t.Fatalf("expected error for invalid credentials")
+	}
+}
+
 func Test_splitParent(t *testing.T) {
 	type args struct {
 		parent    string
