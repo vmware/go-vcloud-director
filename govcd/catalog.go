@@ -503,6 +503,10 @@ func queryVappTemplateAndVerifyTask(client *Client, vappTemplateUrl *url.URL, ne
 		return nil, err
 	}
 
+	if vappTemplateParsed.Tasks == nil {
+		return vappTemplateParsed, fmt.Errorf("the vApp Template %s does not contain tasks, an error happened during upload", vappTemplateUrl)
+	}
+
 	for _, task := range vappTemplateParsed.Tasks.Task {
 		if task.Status == "error" && newItemName == task.Owner.Name {
 			util.Logger.Printf("[Error] %#v", task.Error)
@@ -787,7 +791,7 @@ func removeCatalogItemOnError(client *Client, vappTemplateLink *url.URL, itemNam
 			if err != nil {
 				util.Logger.Printf("[Error] Error deleting Catalog item %s: %s", vappTemplateLink, err)
 			}
-			if len(vAppTemplate.Tasks.Task) > 0 {
+			if vAppTemplate.Tasks != nil && len(vAppTemplate.Tasks.Task) > 0 {
 				util.Logger.Printf("[TRACE] Task found. Will try to cancel.\n")
 				break
 			}
