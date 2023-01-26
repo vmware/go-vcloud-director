@@ -18,7 +18,7 @@ import (
 	"strings"
 )
 
-// Test_Rde tests the complete journey of RDE type and RDE instance with creation, reads, updates and finally deletion.
+// Test_Rde tests the CRUD operations for the RDE Type with both System administrator and a tenant user.
 func (vcd *TestVCD) Test_Rde(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))

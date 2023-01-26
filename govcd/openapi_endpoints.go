@@ -128,6 +128,10 @@ var endpointElevatedApiVersions = map[string][]string{
 		//"36.0", // Introduced support
 		"36.2", // 2 additional fields vappNetworkSegmentProfileTemplateRef and vdcNetworkSegmentProfileTemplateRef added
 	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityTypes: {
+		//"35.0", // Introduced support
+		"37.1", // Added MaxImplicitRight property in DefinedEntityType
+	},
 }
 
 // checkOpenApiEndpointCompatibility checks if VCD version (to which the client is connected) is sufficient to work with

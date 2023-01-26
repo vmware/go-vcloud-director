@@ -10,19 +10,16 @@ import (
 	"net/url"
 )
 
-// DefinedEntityType is a type for handling Runtime Defined Entity (RDE) type definitions
+// DefinedEntityType is a type for handling Runtime Defined Entity (RDE) Type definitions
 type DefinedEntityType struct {
 	DefinedEntityType *types.DefinedEntityType
 	client            *Client
 }
 
-// CreateRdeType creates a Runtime Defined Entity type.
-// Only System administrator can create RDE types.
+// CreateRdeType creates a Runtime Defined Entity Type.
+// Only System administrator can create RDE Types.
 func (vcdClient *VCDClient) CreateRdeType(rde *types.DefinedEntityType) (*DefinedEntityType, error) {
 	client := vcdClient.Client
-	if !client.IsSysAdmin {
-		return nil, fmt.Errorf("creating Runtime Defined Entity types requires System user")
-	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityTypes
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
@@ -48,12 +45,11 @@ func (vcdClient *VCDClient) CreateRdeType(rde *types.DefinedEntityType) (*Define
 	return result, nil
 }
 
-// GetAllRdeTypes retrieves all Runtime Defined Entity types. Query parameters can be supplied to perform additional filtering.
-// Only System administrator can retrieve RDE types.
+// GetAllRdeTypes retrieves all Runtime Defined Entity Types. Query parameters can be supplied to perform additional filtering.
 func (vcdClient *VCDClient) GetAllRdeTypes(queryParameters url.Values) ([]*DefinedEntityType, error) {
 	client := vcdClient.Client
 	if !client.IsSysAdmin {
-		return nil, fmt.Errorf("getting Runtime Defined Entity types requires System user")
+		return nil, fmt.Errorf("getting Runtime Defined Entity Types requires System user")
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityTypes
@@ -85,12 +81,11 @@ func (vcdClient *VCDClient) GetAllRdeTypes(queryParameters url.Values) ([]*Defin
 	return returnRDEs, nil
 }
 
-// GetRdeType gets a Runtime Defined Entity type by its unique combination of vendor, namespace and version.
-// Only System administrator can retrieve RDE types.
+// GetRdeType gets a Runtime Defined Entity Type by its unique combination of vendor, namespace and version.
 func (vcdClient *VCDClient) GetRdeType(vendor, namespace, version string) (*DefinedEntityType, error) {
 	client := vcdClient.Client
 	if !client.IsSysAdmin {
-		return nil, fmt.Errorf("getting Runtime Defined Entity types requires System user")
+		return nil, fmt.Errorf("getting Runtime Defined Entity Types requires System user")
 	}
 
 	queryParameters := url.Values{}
@@ -101,22 +96,21 @@ func (vcdClient *VCDClient) GetRdeType(vendor, namespace, version string) (*Defi
 	}
 
 	if len(rdeTypes) == 0 {
-		return nil, fmt.Errorf("%s could not find the Runtime Defined Entity type with vendor %s, namespace %s and version %s", ErrorEntityNotFound, vendor, namespace, version)
+		return nil, fmt.Errorf("%s could not find the Runtime Defined Entity Type with vendor %s, namespace %s and version %s", ErrorEntityNotFound, vendor, namespace, version)
 	}
 
 	if len(rdeTypes) > 1 {
-		return nil, fmt.Errorf("found more than 1 Runtime Defined Entity type with vendor %s, namespace %s and version %s", vendor, namespace, version)
+		return nil, fmt.Errorf("found more than 1 Runtime Defined Entity Type with vendor %s, namespace %s and version %s", vendor, namespace, version)
 	}
 
 	return rdeTypes[0], nil
 }
 
-// GetRdeTypeById gets a Runtime Defined Entity type by its ID
-// Only System administrator can retrieve RDE types.
+// GetRdeTypeById gets a Runtime Defined Entity Type by its ID
 func (vcdClient *VCDClient) GetRdeTypeById(id string) (*DefinedEntityType, error) {
 	client := vcdClient.Client
 	if !client.IsSysAdmin {
-		return nil, fmt.Errorf("getting Runtime Defined Entity types requires System user")
+		return nil, fmt.Errorf("getting Runtime Defined Entity Types requires System user")
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityTypes
@@ -143,16 +137,16 @@ func (vcdClient *VCDClient) GetRdeTypeById(id string) (*DefinedEntityType, error
 	return result, nil
 }
 
-// Update updates the receiver Runtime Defined Entity type with the values given by the input.
-// Only System administrator can update RDE types.
+// Update updates the receiver Runtime Defined Entity Type with the values given by the input.
+// Only System administrator can update RDE Types.
 func (rdeType *DefinedEntityType) Update(rdeTypeToUpdate types.DefinedEntityType) error {
 	client := rdeType.client
 	if !client.IsSysAdmin {
-		return fmt.Errorf("updating Runtime Defined Entity types requires System user")
+		return fmt.Errorf("updating Runtime Defined Entity Types requires System user")
 	}
 
 	if rdeType.DefinedEntityType.ID == "" {
-		return fmt.Errorf("ID of the receiver Runtime Defined Entity type is empty")
+		return fmt.Errorf("ID of the receiver Runtime Defined Entity Type is empty")
 	}
 
 	if rdeTypeToUpdate.ID != "" && rdeTypeToUpdate.ID != rdeType.DefinedEntityType.ID {
@@ -187,16 +181,16 @@ func (rdeType *DefinedEntityType) Update(rdeTypeToUpdate types.DefinedEntityType
 	return nil
 }
 
-// Delete deletes the receiver Runtime Defined Entity type.
-// Only System administrator can delete RDE types.
+// Delete deletes the receiver Runtime Defined Entity Type.
+// Only System administrator can delete RDE Types.
 func (rdeType *DefinedEntityType) Delete() error {
 	client := rdeType.client
 	if !client.IsSysAdmin {
-		return fmt.Errorf("deleting Runtime Defined Entity types requires System user")
+		return fmt.Errorf("deleting Runtime Defined Entity Types requires System user")
 	}
 
 	if rdeType.DefinedEntityType.ID == "" {
-		return fmt.Errorf("ID of the receiver Runtime Defined Entity type is empty")
+		return fmt.Errorf("ID of the receiver Runtime Defined Entity Type is empty")
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityTypes
