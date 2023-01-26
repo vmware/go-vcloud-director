@@ -20,10 +20,6 @@ type DefinedInterface struct {
 // Only System administrator can create Defined Interfaces.
 func (vcdClient *VCDClient) CreateDefinedInterface(definedInterface *types.DefinedInterface) (*DefinedInterface, error) {
 	client := vcdClient.Client
-	if !client.IsSysAdmin {
-		return nil, fmt.Errorf("creating Defined Interfaces requires System user")
-	}
-
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointInterfaces
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
@@ -52,10 +48,6 @@ func (vcdClient *VCDClient) CreateDefinedInterface(definedInterface *types.Defin
 // Only System administrator can retrieve Defined Interfaces.
 func (vcdClient *VCDClient) GetAllDefinedInterfaces(queryParameters url.Values) ([]*DefinedInterface, error) {
 	client := vcdClient.Client
-	if !client.IsSysAdmin {
-		return nil, fmt.Errorf("getting Defined Interfaces requires System user")
-	}
-
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointInterfaces
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
@@ -88,11 +80,6 @@ func (vcdClient *VCDClient) GetAllDefinedInterfaces(queryParameters url.Values) 
 // GetDefinedInterface retrieves a single Defined Interface defined by its unique combination of vendor, namespace and version.
 // Only System administrator can retrieve Defined Interfaces.
 func (vcdClient *VCDClient) GetDefinedInterface(vendor, namespace, version string) (*DefinedInterface, error) {
-	client := vcdClient.Client
-	if !client.IsSysAdmin {
-		return nil, fmt.Errorf("getting Defined Interfaces requires System user")
-	}
-
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", fmt.Sprintf("vendor==%s;nss==%s;version==%s", vendor, namespace, version))
 	interfaces, err := vcdClient.GetAllDefinedInterfaces(queryParameters)
@@ -115,9 +102,6 @@ func (vcdClient *VCDClient) GetDefinedInterface(vendor, namespace, version strin
 // Only System administrator can retrieve Defined Interfaces.
 func (vcdClient *VCDClient) GetDefinedInterfaceById(id string) (*DefinedInterface, error) {
 	client := vcdClient.Client
-	if !client.IsSysAdmin {
-		return nil, fmt.Errorf("getting Defined Interfaces requires System user")
-	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointInterfaces
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
@@ -147,9 +131,6 @@ func (vcdClient *VCDClient) GetDefinedInterfaceById(id string) (*DefinedInterfac
 // Only System administrator can update Defined Interfaces.
 func (di *DefinedInterface) Update(definedInterface types.DefinedInterface) error {
 	client := di.client
-	if !client.IsSysAdmin {
-		return fmt.Errorf("updating Defined Interfaces requires System user")
-	}
 
 	if di.DefinedInterface.ID == "" {
 		return fmt.Errorf("ID of the receiver Defined Interface is empty")
@@ -182,9 +163,6 @@ func (di *DefinedInterface) Update(definedInterface types.DefinedInterface) erro
 // Only System administrator can delete Defined Interfaces.
 func (di *DefinedInterface) Delete() error {
 	client := di.client
-	if !client.IsSysAdmin {
-		return fmt.Errorf("deleting Defined Interfaces requires System user")
-	}
 
 	if di.DefinedInterface.ID == "" {
 		return fmt.Errorf("ID of the receiver Defined Interface is empty")
