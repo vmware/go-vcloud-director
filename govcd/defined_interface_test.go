@@ -121,11 +121,5 @@ func (vcd *TestVCD) Test_DefinedInterface(check *C) {
 
 	_, err = systemAdministratorClient.GetDefinedInterfaceById(deletedId)
 	check.Assert(err, NotNil)
-
-	// API <= 36.0 returns a 400 BAD REQUEST instead of the usual 403 FORBIDDEN
-	if vcd.client.Client.APIClientVersionIs("<= 36.0") {
-		check.Assert(strings.Contains(err.Error(), "BAD_REQUEST"), Equals, true)
-	} else {
-		check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
-	}
+	check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
 }
