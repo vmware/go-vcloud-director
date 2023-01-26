@@ -40,10 +40,11 @@ func (vcd *TestVCD) Test_DefinedInterface(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(allDefinedInterfacesByTenant), Equals, len(allDefinedInterfacesBySysAdmin))
 
-	// Then we create a new Defined Interface with System administrator
+	// Then we create a new Defined Interface with System administrator. We replace the dots in both
+	// namespace and name as API is quirky at versions of VCD < 37.0
 	dummyRde := &types.DefinedInterface{
-		Name:      strings.ReplaceAll(check.TestName()+"name3", ".", ""),
-		Namespace: strings.ReplaceAll(check.TestName()+"nss3", ".", ""),
+		Name:      strings.ReplaceAll(check.TestName()+"name", ".", ""),
+		Namespace: strings.ReplaceAll(check.TestName()+"nss", ".", ""),
 		Version:   "1.2.3",
 		Vendor:    "vmware",
 	}
@@ -57,10 +58,11 @@ func (vcd *TestVCD) Test_DefinedInterface(check *C) {
 	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.IsReadOnly, Equals, dummyRde.IsReadOnly)
 	AddToCleanupListOpenApi(newDefinedInterfaceFromSysAdmin.DefinedInterface.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointInterfaces+newDefinedInterfaceFromSysAdmin.DefinedInterface.ID)
 
-	// Tenants can't create Defined Interfaces
+	// Tenants can't create Defined Interfaces. We replace the dots in both
+	// namespace and name as API is quirky at versions of VCD < 37.0
 	nilDefinedInterface, err := tenantUserClient.CreateDefinedInterface(&types.DefinedInterface{
-		Name:      strings.ReplaceAll(check.TestName()+"4", ".", ""),
-		Namespace: strings.ReplaceAll(check.TestName()+"4", ".", ""),
+		Name:      strings.ReplaceAll(check.TestName()+"2", ".", ""),
+		Namespace: strings.ReplaceAll(check.TestName()+"2", ".", ""),
 		Version:   "4.5.6",
 		Vendor:    "vmware",
 	})
@@ -96,14 +98,14 @@ func (vcd *TestVCD) Test_DefinedInterface(check *C) {
 
 	// Update the Defined Interface as System administrator
 	err = newDefinedInterfaceFromSysAdmin.Update(types.DefinedInterface{
-		Name: dummyRde.Name + "2", // Only name can be updated
+		Name: dummyRde.Name + "3", // Only name can be updated
 	})
 	check.Assert(err, IsNil)
 	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.Name, Equals, dummyRde.Name+"2")
 
 	// This one was obtained by the tenant, so it shouldn't be updatable
 	err = obtainedDefinedInterface2.Update(types.DefinedInterface{
-		Name: dummyRde.Name + "3",
+		Name: dummyRde.Name + "4",
 	})
 	check.Assert(err, NotNil)
 	check.Assert(strings.Contains(err.Error(), "ACCESS_TO_RESOURCE_IS_FORBIDDEN"), Equals, true)
