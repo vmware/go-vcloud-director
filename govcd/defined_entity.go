@@ -226,21 +226,26 @@ func (rdeType *DefinedEntityType) Delete() error {
 	return nil
 }
 
-// GetAllRdes gets all the RDE instances of the receiver type.
-// Only System administrator can retrieve RDEs.
-func (rdeType *DefinedEntityType) GetAllRdes(queryParameters url.Values) ([]*DefinedEntity, error) {
-	client := rdeType.client
-	if !client.IsSysAdmin {
-		return nil, fmt.Errorf("getting all Runtime Defined Entities requires System user")
-	}
+// GetAllRdes gets all the RDE instances of the given vendor, namespace and version.
+func (vcdClient *VCDClient) GetAllRdes(vendor, namespace, version string, queryParameters url.Values) ([]*DefinedEntity, error) {
+	return getAllRdes(&vcdClient.Client, vendor, namespace, version, queryParameters)
+}
 
+// GetAllRdes gets all the RDE instances of the receiver type.
+func (rdeType *DefinedEntityType) GetAllRdes(queryParameters url.Values) ([]*DefinedEntity, error) {
+	return getAllRdes(rdeType.client, rdeType.DefinedEntityType.Vendor, rdeType.DefinedEntityType.Namespace, rdeType.DefinedEntityType.Version, queryParameters)
+}
+
+// getAllRdes gets all the RDE instances of the given vendor, namespace and version.
+// Supports filtering with the given queryParameters.
+func getAllRdes(client *Client, vendor, namespace, version string, queryParameters url.Values) ([]*DefinedEntity, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntitiesTypes
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, fmt.Sprintf("%s/%s/%s", rdeType.DefinedEntityType.Vendor, rdeType.DefinedEntityType.Namespace, rdeType.DefinedEntityType.Version))
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, fmt.Sprintf("%s/%s/%s", vendor, namespace, version))
 	if err != nil {
 		return nil, err
 	}
@@ -265,16 +270,22 @@ func (rdeType *DefinedEntityType) GetAllRdes(queryParameters url.Values) ([]*Def
 
 // GetRdesByName gets RDE instances with the given name that belongs to the receiver type.
 // VCD allows to have many RDEs with the same name, hence this function returns a slice.
-// Only System administrator can retrieve RDEs.
 func (rdeType *DefinedEntityType) GetRdesByName(name string) ([]*DefinedEntity, error) {
-	client := rdeType.client
-	if !client.IsSysAdmin {
-		return nil, fmt.Errorf("getting a Runtime Defined Entity by name requires System user")
-	}
+	return getRdesByName(rdeType.client, rdeType.DefinedEntityType.Vendor, rdeType.DefinedEntityType.Namespace, rdeType.DefinedEntityType.Version, name)
+}
 
+// GetRdesByName gets RDE instances with the given name and the given vendor, namespace and version.
+// VCD allows to have many RDEs with the same name, hence this function returns a slice.
+func (vcdClient *VCDClient) GetRdesByName(vendor, namespace, version, name string) ([]*DefinedEntity, error) {
+	return getRdesByName(&vcdClient.Client, vendor, namespace, version, name)
+}
+
+// getRdesByName gets RDE instances with the given name and the given vendor, namespace and version.
+// VCD allows to have many RDEs with the same name, hence this function returns a slice.
+func getRdesByName(client *Client, vendor, namespace, version, name string) ([]*DefinedEntity, error) {
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", fmt.Sprintf("name==%s", name))
-	rdeTypes, err := rdeType.GetAllRdes(queryParameters)
+	rdeTypes, err := getAllRdes(client, vendor, namespace, version, queryParameters)
 	if err != nil {
 		return nil, err
 	}
@@ -287,13 +298,17 @@ func (rdeType *DefinedEntityType) GetRdesByName(name string) ([]*DefinedEntity, 
 }
 
 // GetRdeById gets a Runtime Defined Entity by its ID
-// Only System administrator can retrieve RDEs.
 func (rdeType *DefinedEntityType) GetRdeById(id string) (*DefinedEntity, error) {
-	client := rdeType.client
-	if !client.IsSysAdmin {
-		return nil, fmt.Errorf("getting a Runtime Defined Entity requires System user")
-	}
+	return getRdeById(rdeType.client, id)
+}
 
+// GetRdeById gets a Runtime Defined Entity by its ID
+func (vcdClient *VCDClient) GetRdeById(id string) (*DefinedEntity, error) {
+	return getRdeById(&vcdClient.Client, id)
+}
+
+// getRdeById gets a Runtime Defined Entity by its ID
+func getRdeById(client *Client, id string) (*DefinedEntity, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntities
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
@@ -321,50 +336,76 @@ func (rdeType *DefinedEntityType) GetRdeById(id string) (*DefinedEntity, error) 
 // CreateRde creates an entity of the type of the receiver Runtime Defined Entity (RDE) type.
 // The input doesn't need to specify the type ID, as it gets it from the receiver RDE type. If it is specified anyway,
 // it must match the type ID of the receiver RDE type.
-// NOTE: After RDE creation, one must call rde.Resolve(), otherwise the RDE can't be used as the state is "PRE_CREATED"
-// and the generated task will remain at 1% until resolved.
-// Only System administrator can create defined entities.
+// NOTE: After RDE creation, some actor should Resolve it, otherwise the RDE state will be "PRE_CREATED"
+// and the generated VCD task will remain at 1% until resolved.
 func (rdeType *DefinedEntityType) CreateRde(entity types.DefinedEntity) (*DefinedEntity, error) {
-	client := rdeType.client
-	if !client.IsSysAdmin {
-		return nil, fmt.Errorf("creating Runtime Defined Entities requires System user")
+	err := createRde(rdeType.client, rdeType.DefinedEntityType.ID, entity)
+	if err != nil {
+		return nil, err
+	}
+	return pollPreCreatedRde(rdeType.client, rdeType.DefinedEntityType.Vendor, rdeType.DefinedEntityType.Namespace, rdeType.DefinedEntityType.ID, entity.Name, 5)
+}
+
+// CreateRde creates an entity of the type of the given vendor, namespace and version.
+// NOTE: After RDE creation, some actor should Resolve it, otherwise the RDE state will be "PRE_CREATED"
+// and the generated VCD task will remain at 1% until resolved.
+func (vcdClient *VCDClient) CreateRde(vendor, namespace, version string, entity types.DefinedEntity) (*DefinedEntity, error) {
+	rdeTypeId := fmt.Sprintf("urn:vcloud:type:%s:%s:%s", vendor, namespace, version)
+	err := createRde(&vcdClient.Client, rdeTypeId, entity)
+	if err != nil {
+		return nil, err
+	}
+	return pollPreCreatedRde(&vcdClient.Client, vendor, namespace, version, entity.Name, 5)
+}
+
+// CreateRde creates an entity of the type of the receiver Runtime Defined Entity (RDE) type.
+// The input doesn't need to specify the type ID, as it gets it from the receiver RDE type. If it is specified anyway,
+// it must match the type ID of the receiver RDE type.
+// NOTE: After RDE creation, some actor should Resolve it, otherwise the RDE state will be "PRE_CREATED"
+// and the generated VCD task will remain at 1% until resolved.
+func createRde(client *Client, rdeTypeId string, entity types.DefinedEntity) error {
+	if rdeTypeId == "" {
+		return fmt.Errorf("ID of the Runtime Defined Entity type is empty")
 	}
 
-	if rdeType.DefinedEntityType.ID == "" {
-		return nil, fmt.Errorf("ID of the receiver Runtime Defined Entity type is empty")
-	}
-
-	if entity.EntityType != "" && entity.EntityType != rdeType.DefinedEntityType.ID {
-		return nil, fmt.Errorf("ID of the Runtime Defined Entity type '%s' doesn't match with the one to create '%s'", rdeType.DefinedEntityType.ID, entity.EntityType)
+	if entity.EntityType != "" && entity.EntityType != rdeTypeId {
+		return fmt.Errorf("ID of the Runtime Defined Entity type '%s' doesn't match with the one to create '%s'", rdeTypeId, entity.EntityType)
 	}
 
 	if entity.Entity == nil || len(entity.Entity) == 0 {
-		return nil, fmt.Errorf("the entity JSON is empty")
+		return fmt.Errorf("the entity JSON is empty")
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityTypes
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, rdeType.DefinedEntityType.ID)
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, rdeTypeId)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	_, err = client.OpenApiPostItemAsync(apiVersion, urlRef, nil, entity)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	return nil
+}
 
-	maxTries := 3
+// pollPreCreatedRde polls VCD for a given amount of tries, to search for the RDE in state PRE_CREATED
+// that corresponds to the given vendor, namespace, version and name.
+// This function can be useful on RDE creation, as VCD just returns a task that remains at 1% until the RDE is resolved,
+// hence one needs to re-fetch the recently created RDE manually.
+func pollPreCreatedRde(client *Client, vendor, namespace, version, name string, tries int) (*DefinedEntity, error) {
 	var rdes []*DefinedEntity
-	for i := 0; i < maxTries; i++ {
-		rdes, err = rdeType.GetRdesByName(entity.Name)
+	var err error
+	for i := 0; i < tries; i++ {
+		rdes, err = getRdesByName(client, vendor, namespace, version, name)
 		if err == nil {
 			for _, rde := range rdes {
-				// This doesn't really guarantee that the chosen RDE is the one we just created, but there's no other way of
+				// This doesn't really guarantee that the chosen RDE is the one we want, but there's no other way of
 				// fine-graining
 				if rde.DefinedEntity.State != nil && *rde.DefinedEntity.State == "PRE_CREATED" {
 					return rde, nil
@@ -405,9 +446,6 @@ func (rde *DefinedEntity) Resolve() error {
 // Only System administrator can update RDEs.
 func (rde *DefinedEntity) Update(rdeToUpdate types.DefinedEntity) error {
 	client := rde.client
-	if !client.IsSysAdmin {
-		return fmt.Errorf("updating Runtime Defined Entities requires System user")
-	}
 
 	if rde.DefinedEntity.ID == "" {
 		return fmt.Errorf("ID of the receiver Runtime Defined Entity is empty")
@@ -442,9 +480,6 @@ func (rde *DefinedEntity) Update(rdeToUpdate types.DefinedEntity) error {
 // Only System administrator can delete RDEs.
 func (rde *DefinedEntity) Delete() error {
 	client := rde.client
-	if !client.IsSysAdmin {
-		return fmt.Errorf("deleting Runtime Defined Entity requires System user")
-	}
 
 	if rde.DefinedEntity.ID == "" {
 		return fmt.Errorf("ID of the receiver Runtime Defined Entity is empty")

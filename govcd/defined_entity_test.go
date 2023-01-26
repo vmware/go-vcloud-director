@@ -38,7 +38,7 @@ func (vcd *TestVCD) Test_Rde(check *C) {
 
 	rdeTypeToCreate := &types.DefinedEntityType{
 		Name:        check.TestName(),
-		Namespace:   "namespace14", // Can't put check.TestName() due to a bug that causes RDEs to fail on GET once created with special characters like "."
+		Namespace:   "namespace", // Can't put check.TestName() due to a bug that causes RDEs to fail on GET once created with special characters like "."
 		Version:     "1.2.3",
 		Description: "Description of " + check.TestName(),
 		Schema:      unmarshaledRdeTypeSchema,
@@ -83,7 +83,8 @@ func (vcd *TestVCD) Test_Rde(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(obtainedRdeType.DefinedEntityType.Description, Equals, rdeTypeToCreate.Description+"Updated")
 
-	testRdeCrud(check, obtainedRdeType)
+	testRdeCrudWithGivenType(check, obtainedRdeType)
+	testRdeCrud(check, obtainedRdeType.DefinedEntityType.Vendor, obtainedRdeType.DefinedEntityType.Namespace, obtainedRdeType.DefinedEntityType.Version, vcd.client)
 
 	deletedId := createdRdeType.DefinedEntityType.ID
 	err = createdRdeType.Delete()
@@ -95,8 +96,9 @@ func (vcd *TestVCD) Test_Rde(check *C) {
 	check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
 }
 
-// testRdeCrud is a sub-section of Test_Rde that is focused on testing all RDE instances casuistics.
-func testRdeCrud(check *C, rdeType *DefinedEntityType) {
+// testRdeCrudWithGivenType is a sub-section of Test_Rde that is focused on testing all RDE instances casuistics.
+// This would be the viewpoint of a System admin as they can retrieve and manipulate RDE types.
+func testRdeCrudWithGivenType(check *C, rdeType *DefinedEntityType) {
 
 	// We are missing the mandatory field "foo" on purpose
 	rdeEntityJson := []byte(`
@@ -158,6 +160,76 @@ func testRdeCrud(check *C, rdeType *DefinedEntityType) {
 
 	// RDE should not exist anymore
 	_, err = rdeType.GetRdeById(deletedId)
+	check.Assert(err, NotNil)
+	check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
+}
+
+// testRdeCrud is a sub-section of Test_Rde that is focused on testing all RDE instances casuistics without specifying the
+// RDE type. This would be the viewpoint of a tenant as they can't get RDE types.
+func testRdeCrud(check *C, vendor string, namespace string, version string, vcdClient *VCDClient) {
+
+	// FIXME: We should test as a tenant really
+
+	// We are missing the mandatory field "foo" on purpose
+	rdeEntityJson := []byte(`
+	{
+		"bar": "stringValue1",
+		"prop2": {
+			"subprop1": "stringValue2",
+			"subprop2": [
+				"stringValue3",
+				"stringValue4"
+			]
+		}
+	}`)
+
+	var unmarshaledRdeEntityJson map[string]interface{}
+	err := json.Unmarshal(rdeEntityJson, &unmarshaledRdeEntityJson)
+	check.Assert(err, IsNil)
+
+	rde, err := vcdClient.CreateRde(vendor, namespace, version, types.DefinedEntity{
+		Name:       check.TestName(),
+		ExternalId: "123",
+		Entity:     unmarshaledRdeEntityJson,
+	})
+	check.Assert(err, IsNil)
+	check.Assert(rde.DefinedEntity.Name, Equals, check.TestName())
+	check.Assert(*rde.DefinedEntity.State, Equals, "PRE_CREATED")
+
+	// If we don't resolve the RDE, we cannot delete it
+	err = rde.Delete()
+	check.Assert(err, NotNil)
+	check.Assert(true, Equals, strings.Contains(err.Error(), "RDE_ENTITY_NOT_RESOLVED"))
+
+	// Resolution should fail as we missed to add a mandatory field
+	err = rde.Resolve()
+	check.Assert(err, IsNil)
+	check.Assert(*rde.DefinedEntity.State, Equals, "RESOLUTION_ERROR")
+
+	// We amend it
+	unmarshaledRdeEntityJson["foo"] = map[string]interface{}{"key": "stringValue5"}
+	err = rde.Update(types.DefinedEntity{
+		Entity: unmarshaledRdeEntityJson,
+	})
+	check.Assert(err, IsNil)
+	check.Assert(*rde.DefinedEntity.State, Equals, "RESOLUTION_ERROR")
+
+	// This time it should resolve
+	err = rde.Resolve()
+	check.Assert(err, IsNil)
+	check.Assert(*rde.DefinedEntity.State, Equals, "RESOLVED")
+
+	// The RDE can't be deleted until rde.Resolve() is called
+	AddToCleanupListOpenApi(rde.DefinedEntity.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEntities+rde.DefinedEntity.ID)
+
+	// Delete the RDE instance now that it's resolved
+	deletedId := rde.DefinedEntity.ID
+	err = rde.Delete()
+	check.Assert(err, IsNil)
+	check.Assert(*rde.DefinedEntity, DeepEquals, types.DefinedEntity{})
+
+	// RDE should not exist anymore
+	_, err = vcdClient.GetRdeById(deletedId)
 	check.Assert(err, NotNil)
 	check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
 }
