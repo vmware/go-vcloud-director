@@ -61,8 +61,8 @@ func (vcd *TestVCD) Test_DefinedInterface(check *C) {
 	// Tenants can't create Defined Interfaces. We replace the dots in both
 	// namespace and name as API is quirky at versions of VCD < 37.0
 	nilDefinedInterface, err := tenantUserClient.CreateDefinedInterface(&types.DefinedInterface{
-		Name:      strings.ReplaceAll(check.TestName()+"2", ".", ""),
-		Namespace: strings.ReplaceAll(check.TestName()+"2", ".", ""),
+		Name:      strings.ReplaceAll(check.TestName()+"name2", ".", ""),
+		Namespace: strings.ReplaceAll(check.TestName()+"name2", ".", ""),
 		Version:   "4.5.6",
 		Vendor:    "vmware",
 	})
@@ -92,7 +92,7 @@ func (vcd *TestVCD) Test_DefinedInterface(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(*obtainedDefinedInterface2.DefinedInterface, DeepEquals, *obtainedDefinedInterface.DefinedInterface)
 
-	obtainedDefinedInterface2, err = tenantUserClient.GetDefinedInterfaceById(newDefinedInterfaceFromSysAdmin.DefinedInterface.ID)
+	obtainedDefinedInterface2, err = tenantUserClient.GetDefinedInterface(obtainedDefinedInterface.DefinedInterface.Vendor, obtainedDefinedInterface.DefinedInterface.Namespace, obtainedDefinedInterface.DefinedInterface.Version)
 	check.Assert(err, IsNil)
 	check.Assert(*obtainedDefinedInterface2.DefinedInterface, DeepEquals, *obtainedDefinedInterface.DefinedInterface)
 
@@ -101,7 +101,7 @@ func (vcd *TestVCD) Test_DefinedInterface(check *C) {
 		Name: dummyRde.Name + "3", // Only name can be updated
 	})
 	check.Assert(err, IsNil)
-	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.Name, Equals, dummyRde.Name+"2")
+	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.Name, Equals, dummyRde.Name+"3")
 
 	// This one was obtained by the tenant, so it shouldn't be updatable
 	err = obtainedDefinedInterface2.Update(types.DefinedInterface{
