@@ -19,7 +19,7 @@ import (
 )
 
 // Test_Rde tests the CRUD operations for the RDE Type with both System administrator and a tenant user.
-func (vcd *TestVCD) Test_Rde(check *C) {
+func (vcd *TestVCD) Test_RdeType(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
@@ -44,12 +44,14 @@ func (vcd *TestVCD) Test_Rde(check *C) {
 	check.Assert(err, IsNil)
 	alreadyPresentRdes := len(allRdeTypesBySystemAdmin)
 
+	// For the tenant, it should return 0 RDE Types, but no error. This is because our tenant user doesn't have
+	// the required rights to see the RDE Types.
 	allRdeTypesByTenant, err := tenantUserClient.GetAllRdeTypes(nil)
 	check.Assert(err, IsNil)
-	check.Assert(len(allRdeTypesByTenant), Equals, len(allRdeTypesBySystemAdmin))
+	check.Assert(len(allRdeTypesByTenant), Equals, 0)
 
 	// Then we create a new RDE Type with System administrator.
-	// Can't put check.TestName() in namespace due to a bug that causes RDEs to fail on GET once created with special characters like "."
+	// Can't put check.TestName() in namespace due to a bug in VCD 10.4.1 that causes RDEs to fail on GET once created with special characters like "."
 	rdeTypeToCreate := &types.DefinedEntityType{
 		Name:        check.TestName(),
 		Namespace:   strings.ReplaceAll(check.TestName()+"name", ".", ""),
@@ -89,33 +91,36 @@ func (vcd *TestVCD) Test_Rde(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(allRdeTypesBySystemAdmin), Equals, alreadyPresentRdes+1)
 
+	// Count should be still 0
 	allRdeTypesByTenant, err = tenantUserClient.GetAllRdeTypes(nil)
 	check.Assert(err, IsNil)
-	check.Assert(len(allRdeTypesByTenant), Equals, len(allRdeTypesBySystemAdmin))
+	check.Assert(len(allRdeTypesByTenant), Equals, 0)
 
 	// Test the multiple ways of getting a Defined Interface in both users.
 	obtainedRdeType, err := systemAdministratorClient.GetRdeTypeById(createdRdeType.DefinedEntityType.ID)
 	check.Assert(err, IsNil)
 	check.Assert(*obtainedRdeType.DefinedEntityType, DeepEquals, *createdRdeType.DefinedEntityType)
 
-	obtainedRdeType, err = tenantUserClient.GetRdeTypeById(createdRdeType.DefinedEntityType.ID)
-	check.Assert(err, IsNil)
-	check.Assert(*obtainedRdeType.DefinedEntityType, DeepEquals, *createdRdeType.DefinedEntityType)
+	// The RDE Type is unreachable as user doesn't have permissions
+	_, err = tenantUserClient.GetRdeTypeById(createdRdeType.DefinedEntityType.ID)
+	check.Assert(err, NotNil)
+	check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
 
 	obtainedRdeType2, err := systemAdministratorClient.GetRdeType(obtainedRdeType.DefinedEntityType.Vendor, obtainedRdeType.DefinedEntityType.Namespace, obtainedRdeType.DefinedEntityType.Version)
 	check.Assert(err, IsNil)
 	check.Assert(*obtainedRdeType2.DefinedEntityType, DeepEquals, *obtainedRdeType.DefinedEntityType)
 
-	obtainedRdeType2, err = tenantUserClient.GetRdeType(obtainedRdeType.DefinedEntityType.Vendor, obtainedRdeType.DefinedEntityType.Namespace, obtainedRdeType.DefinedEntityType.Version)
-	check.Assert(err, IsNil)
-	check.Assert(*obtainedRdeType2.DefinedEntityType, DeepEquals, *obtainedRdeType.DefinedEntityType)
+	// The RDE Type is unreachable as user doesn't have permissions
+	_, err = tenantUserClient.GetRdeType(obtainedRdeType.DefinedEntityType.Vendor, obtainedRdeType.DefinedEntityType.Namespace, obtainedRdeType.DefinedEntityType.Version)
+	check.Assert(err, NotNil)
+	check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
 
 	// We don't want to update the name nor the schema. It should populate them from the receiver object automatically
-	err = obtainedRdeType.Update(types.DefinedEntityType{
-		Description: obtainedRdeType.DefinedEntityType.Description + "Updated",
+	err = createdRdeType.Update(types.DefinedEntityType{
+		Description: rdeTypeToCreate.Description + "Updated",
 	})
 	check.Assert(err, IsNil)
-	check.Assert(obtainedRdeType.DefinedEntityType.Description, Equals, rdeTypeToCreate.Description+"Updated")
+	check.Assert(createdRdeType.DefinedEntityType.Description, Equals, rdeTypeToCreate.Description+"Updated")
 
 	deletedId := createdRdeType.DefinedEntityType.ID
 	err = createdRdeType.Delete()
