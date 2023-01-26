@@ -153,7 +153,7 @@ func (rdeType *DefinedEntityType) Update(rdeTypeToUpdate types.DefinedEntityType
 		return fmt.Errorf("ID of the receiver Runtime Defined Entity and the input ID don't match")
 	}
 
-	// Name and schema are mandatory, despite we don't want to update them, so we populate them in this situation to avoid errors
+	// Name and schema are mandatory, even when we don't want to update them, so we populate them in this situation to avoid errors
 	// and make this method more user friendly.
 	if rdeTypeToUpdate.Name == "" {
 		rdeTypeToUpdate.Name = rdeType.DefinedEntityType.Name

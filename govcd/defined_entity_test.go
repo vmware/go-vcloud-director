@@ -25,26 +25,41 @@ func (vcd *TestVCD) Test_Rde(check *C) {
 	}
 
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEntityTypes)
+	if len(vcd.config.Tenants) == 0 {
+		check.Skip("skipping as there is no configured tenant users")
+	}
+
+	// Creates the clients for the System admin and the Tenant user
+	systemAdministratorClient := vcd.client
+	tenantUserClient := NewVCDClient(vcd.client.Client.VCDHREF, true)
+	err := tenantUserClient.Authenticate(vcd.config.Tenants[0].User, vcd.config.Tenants[0].Password, vcd.config.Tenants[0].SysOrg)
+	check.Assert(err, IsNil)
 
 	unmarshaledRdeTypeSchema, err := loadRdeTypeSchemaFromTestResources()
 	check.Assert(err, IsNil)
 	check.Assert(true, Equals, len(unmarshaledRdeTypeSchema) > 0)
 
+	// First, it checks how many exist already, as VCD contains some pre-defined ones.
+	allRdeTypesBySystemAdmin, err := systemAdministratorClient.GetAllRdeTypes(nil)
+	check.Assert(err, IsNil)
+	alreadyPresentRdes := len(allRdeTypesBySystemAdmin)
+
+	allRdeTypesByTenant, err := tenantUserClient.GetAllRdeTypes(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(allRdeTypesByTenant), Equals, len(allRdeTypesBySystemAdmin))
+
+	// Then we create a new RDE Type with System administrator.
+	// Can't put check.TestName() in namespace due to a bug that causes RDEs to fail on GET once created with special characters like "."
 	rdeTypeToCreate := &types.DefinedEntityType{
 		Name:        check.TestName(),
-		Namespace:   "namespace14", // Can't put check.TestName() due to a bug that causes RDEs to fail on GET once created with special characters like "."
+		Namespace:   strings.ReplaceAll(check.TestName()+"name", ".", ""),
 		Version:     "1.2.3",
 		Description: "Description of " + check.TestName(),
 		Schema:      unmarshaledRdeTypeSchema,
 		Vendor:      "vmware",
 		Interfaces:  []string{"urn:vcloud:interface:vmware:k8s:1.0.0"},
 	}
-
-	allRdeTypes, err := vcd.client.GetAllRdeTypes(nil)
-	check.Assert(err, IsNil)
-	alreadyPresentRdes := len(allRdeTypes)
-
-	createdRdeType, err := vcd.client.CreateRdeType(rdeTypeToCreate)
+	createdRdeType, err := systemAdministratorClient.CreateRdeType(rdeTypeToCreate)
 	check.Assert(err, IsNil)
 	check.Assert(createdRdeType, NotNil)
 	check.Assert(createdRdeType.DefinedEntityType.Name, Equals, rdeTypeToCreate.Name)
@@ -55,18 +70,43 @@ func (vcd *TestVCD) Test_Rde(check *C) {
 	check.Assert(createdRdeType.DefinedEntityType.Schema["definitions"], NotNil)
 	check.Assert(createdRdeType.DefinedEntityType.Schema["required"], NotNil)
 	check.Assert(createdRdeType.DefinedEntityType.Schema["properties"], NotNil)
-
 	AddToCleanupListOpenApi(createdRdeType.DefinedEntityType.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEntityTypes+createdRdeType.DefinedEntityType.ID)
 
-	allRdeTypes, err = vcd.client.GetAllRdeTypes(nil)
-	check.Assert(err, IsNil)
-	check.Assert(len(allRdeTypes), Equals, alreadyPresentRdes+1)
+	// Tenants can't create RDE Types
+	nilRdeType, err := tenantUserClient.CreateRdeType(&types.DefinedEntityType{
+		Name:      check.TestName(),
+		Namespace: "notworking",
+		Version:   "4.5.6",
+		Schema:    unmarshaledRdeTypeSchema,
+		Vendor:    "willfail",
+	})
+	check.Assert(err, NotNil)
+	check.Assert(nilRdeType, IsNil)
+	check.Assert(strings.Contains(err.Error(), "ACCESS_TO_RESOURCE_IS_FORBIDDEN"), Equals, true)
 
-	obtainedRdeType, err := vcd.client.GetRdeTypeById(createdRdeType.DefinedEntityType.ID)
+	// As we created a new one, we check the new count is correct in both System admin and Tenant user
+	allRdeTypesBySystemAdmin, err = systemAdministratorClient.GetAllRdeTypes(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(allRdeTypesBySystemAdmin), Equals, alreadyPresentRdes+1)
+
+	allRdeTypesByTenant, err = tenantUserClient.GetAllRdeTypes(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(allRdeTypesByTenant), Equals, len(allRdeTypesBySystemAdmin))
+
+	// Test the multiple ways of getting a Defined Interface in both users.
+	obtainedRdeType, err := systemAdministratorClient.GetRdeTypeById(createdRdeType.DefinedEntityType.ID)
 	check.Assert(err, IsNil)
 	check.Assert(*obtainedRdeType.DefinedEntityType, DeepEquals, *createdRdeType.DefinedEntityType)
 
-	obtainedRdeType2, err := vcd.client.GetRdeType(obtainedRdeType.DefinedEntityType.Vendor, obtainedRdeType.DefinedEntityType.Namespace, obtainedRdeType.DefinedEntityType.Version)
+	obtainedRdeType, err = tenantUserClient.GetRdeTypeById(createdRdeType.DefinedEntityType.ID)
+	check.Assert(err, IsNil)
+	check.Assert(*obtainedRdeType.DefinedEntityType, DeepEquals, *createdRdeType.DefinedEntityType)
+
+	obtainedRdeType2, err := systemAdministratorClient.GetRdeType(obtainedRdeType.DefinedEntityType.Vendor, obtainedRdeType.DefinedEntityType.Namespace, obtainedRdeType.DefinedEntityType.Version)
+	check.Assert(err, IsNil)
+	check.Assert(*obtainedRdeType2.DefinedEntityType, DeepEquals, *obtainedRdeType.DefinedEntityType)
+
+	obtainedRdeType2, err = tenantUserClient.GetRdeType(obtainedRdeType.DefinedEntityType.Vendor, obtainedRdeType.DefinedEntityType.Namespace, obtainedRdeType.DefinedEntityType.Version)
 	check.Assert(err, IsNil)
 	check.Assert(*obtainedRdeType2.DefinedEntityType, DeepEquals, *obtainedRdeType.DefinedEntityType)
 
@@ -82,7 +122,7 @@ func (vcd *TestVCD) Test_Rde(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(*createdRdeType.DefinedEntityType, DeepEquals, types.DefinedEntityType{})
 
-	_, err = vcd.client.GetRdeTypeById(deletedId)
+	_, err = systemAdministratorClient.GetRdeTypeById(deletedId)
 	check.Assert(err, NotNil)
 	check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
 }
