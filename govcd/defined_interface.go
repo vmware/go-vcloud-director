@@ -45,7 +45,6 @@ func (vcdClient *VCDClient) CreateDefinedInterface(definedInterface *types.Defin
 }
 
 // GetAllDefinedInterfaces retrieves all Defined Interfaces. Query parameters can be supplied to perform additional filtering.
-// Only System administrator can retrieve Defined Interfaces.
 func (vcdClient *VCDClient) GetAllDefinedInterfaces(queryParameters url.Values) ([]*DefinedInterface, error) {
 	client := vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointInterfaces
@@ -78,7 +77,6 @@ func (vcdClient *VCDClient) GetAllDefinedInterfaces(queryParameters url.Values) 
 }
 
 // GetDefinedInterface retrieves a single Defined Interface defined by its unique combination of vendor, namespace and version.
-// Only System administrator can retrieve Defined Interfaces.
 func (vcdClient *VCDClient) GetDefinedInterface(vendor, namespace, version string) (*DefinedInterface, error) {
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", fmt.Sprintf("vendor==%s;nss==%s;version==%s", vendor, namespace, version))
@@ -99,7 +97,6 @@ func (vcdClient *VCDClient) GetDefinedInterface(vendor, namespace, version strin
 }
 
 // GetDefinedInterfaceById gets a Defined Interface identified by its unique URN.
-// Only System administrator can retrieve Defined Interfaces.
 func (vcdClient *VCDClient) GetDefinedInterfaceById(id string) (*DefinedInterface, error) {
 	client := vcdClient.Client
 
