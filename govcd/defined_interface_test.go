@@ -14,62 +14,112 @@ import (
 	"strings"
 )
 
-// Test_DefinedInterface tests the CRUD behavior of Defined Interfaces. First, it checks how many exist already,
-// as VCD contains some pre-defined ones. Then we create a new one, so the number of existing ones should be increased by 1.
-// We try to get this new created interface with the available getter methods and then perform an update.
-// As a final step, we delete it and check that the deletion is correct (the receiver object is empty and doesn't exist in VCD).
+// Test_DefinedInterface tests the CRUD behavior of Defined Interfaces as a System administrator and tenant user.
+// This test can be run with GOVCD_SKIP_VAPP_CREATION option enabled.
 func (vcd *TestVCD) Test_DefinedInterface(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointInterfaces
-	skipOpenApiEndpointTest(vcd, check, endpoint)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointInterfaces)
+	if len(vcd.config.Tenants) == 0 {
+		check.Skip("skipping as there is no configured tenant users")
+	}
 
-	allDefinedInterfaces, err := vcd.client.GetAllDefinedInterfaces(nil)
+	// Creates the clients for the System admin and the Tenant user
+	systemAdministratorClient := vcd.client
+	tenantUserClient := NewVCDClient(vcd.client.Client.VCDHREF, true)
+	err := tenantUserClient.Authenticate(vcd.config.Tenants[0].User, vcd.config.Tenants[0].Password, vcd.config.Tenants[0].SysOrg)
 	check.Assert(err, IsNil)
-	alreadyPresentRDEs := len(allDefinedInterfaces)
 
+	// First, it checks how many exist already, as VCD contains some pre-defined ones.
+	allDefinedInterfacesBySysAdmin, err := systemAdministratorClient.GetAllDefinedInterfaces(nil)
+	check.Assert(err, IsNil)
+	alreadyPresentRDEs := len(allDefinedInterfacesBySysAdmin)
+
+	allDefinedInterfacesByTenant, err := tenantUserClient.GetAllDefinedInterfaces(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(allDefinedInterfacesByTenant), Equals, len(allDefinedInterfacesBySysAdmin))
+
+	// Then we create a new Defined Interface with System administrator
 	dummyRde := &types.DefinedInterface{
-		Name:      check.TestName() + "_name",
-		Namespace: check.TestName() + "_nss",
+		Name:      strings.ReplaceAll(check.TestName()+"name3", ".", ""),
+		Namespace: strings.ReplaceAll(check.TestName()+"nss3", ".", ""),
 		Version:   "1.2.3",
 		Vendor:    "vmware",
 	}
-	newDefinedInterface, err := vcd.client.CreateDefinedInterface(dummyRde)
+	newDefinedInterfaceFromSysAdmin, err := systemAdministratorClient.CreateDefinedInterface(dummyRde)
 	check.Assert(err, IsNil)
-	check.Assert(newDefinedInterface, NotNil)
-	check.Assert(newDefinedInterface.DefinedInterface.Name, Equals, dummyRde.Name)
-	check.Assert(newDefinedInterface.DefinedInterface.Namespace, Equals, dummyRde.Namespace)
-	check.Assert(newDefinedInterface.DefinedInterface.Version, Equals, dummyRde.Version)
-	check.Assert(newDefinedInterface.DefinedInterface.Vendor, Equals, dummyRde.Vendor)
-	check.Assert(newDefinedInterface.DefinedInterface.IsReadOnly, Equals, dummyRde.IsReadOnly)
+	check.Assert(newDefinedInterfaceFromSysAdmin, NotNil)
+	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.Name, Equals, dummyRde.Name)
+	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.Namespace, Equals, dummyRde.Namespace)
+	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.Version, Equals, dummyRde.Version)
+	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.Vendor, Equals, dummyRde.Vendor)
+	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.IsReadOnly, Equals, dummyRde.IsReadOnly)
+	AddToCleanupListOpenApi(newDefinedInterfaceFromSysAdmin.DefinedInterface.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointInterfaces+newDefinedInterfaceFromSysAdmin.DefinedInterface.ID)
 
-	AddToCleanupListOpenApi(newDefinedInterface.DefinedInterface.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointInterfaces+newDefinedInterface.DefinedInterface.ID)
+	// Tenants can't create Defined Interfaces
+	nilDefinedInterface, err := tenantUserClient.CreateDefinedInterface(&types.DefinedInterface{
+		Name:      strings.ReplaceAll(check.TestName()+"4", ".", ""),
+		Namespace: strings.ReplaceAll(check.TestName()+"4", ".", ""),
+		Version:   "4.5.6",
+		Vendor:    "vmware",
+	})
+	check.Assert(err, NotNil)
+	check.Assert(nilDefinedInterface, IsNil)
+	check.Assert(strings.Contains(err.Error(), "ACCESS_TO_RESOURCE_IS_FORBIDDEN"), Equals, true)
 
-	allDefinedInterfaces, err = vcd.client.GetAllDefinedInterfaces(nil)
+	// As we created a new one, we check the new count is correct in both System admin and Tenant user
+	allDefinedInterfacesBySysAdmin, err = systemAdministratorClient.GetAllDefinedInterfaces(nil)
 	check.Assert(err, IsNil)
-	check.Assert(len(allDefinedInterfaces), Equals, alreadyPresentRDEs+1)
+	check.Assert(len(allDefinedInterfacesBySysAdmin), Equals, alreadyPresentRDEs+1)
 
-	obtainedDefinedInterface, err := vcd.client.GetDefinedInterfaceById(newDefinedInterface.DefinedInterface.ID)
+	allDefinedInterfacesByTenant, err = tenantUserClient.GetAllDefinedInterfaces(nil)
 	check.Assert(err, IsNil)
-	check.Assert(*obtainedDefinedInterface.DefinedInterface, DeepEquals, *newDefinedInterface.DefinedInterface)
+	check.Assert(len(allDefinedInterfacesByTenant), Equals, len(allDefinedInterfacesBySysAdmin))
 
-	obtainedDefinedInterface2, err := vcd.client.GetDefinedInterface(obtainedDefinedInterface.DefinedInterface.Vendor, obtainedDefinedInterface.DefinedInterface.Namespace, obtainedDefinedInterface.DefinedInterface.Version)
+	// Test the multiple ways of getting a Defined Interface in both users.
+	obtainedDefinedInterface, err := systemAdministratorClient.GetDefinedInterfaceById(newDefinedInterfaceFromSysAdmin.DefinedInterface.ID)
+	check.Assert(err, IsNil)
+	check.Assert(*obtainedDefinedInterface.DefinedInterface, DeepEquals, *newDefinedInterfaceFromSysAdmin.DefinedInterface)
+
+	obtainedDefinedInterface, err = tenantUserClient.GetDefinedInterfaceById(newDefinedInterfaceFromSysAdmin.DefinedInterface.ID)
+	check.Assert(err, IsNil)
+	check.Assert(*obtainedDefinedInterface.DefinedInterface, DeepEquals, *newDefinedInterfaceFromSysAdmin.DefinedInterface)
+
+	obtainedDefinedInterface2, err := systemAdministratorClient.GetDefinedInterface(obtainedDefinedInterface.DefinedInterface.Vendor, obtainedDefinedInterface.DefinedInterface.Namespace, obtainedDefinedInterface.DefinedInterface.Version)
 	check.Assert(err, IsNil)
 	check.Assert(*obtainedDefinedInterface2.DefinedInterface, DeepEquals, *obtainedDefinedInterface.DefinedInterface)
 
-	err = newDefinedInterface.Update(types.DefinedInterface{
+	obtainedDefinedInterface2, err = tenantUserClient.GetDefinedInterfaceById(newDefinedInterfaceFromSysAdmin.DefinedInterface.ID)
+	check.Assert(err, IsNil)
+	check.Assert(*obtainedDefinedInterface2.DefinedInterface, DeepEquals, *obtainedDefinedInterface.DefinedInterface)
+
+	// Update the Defined Interface as System administrator
+	err = newDefinedInterfaceFromSysAdmin.Update(types.DefinedInterface{
 		Name: dummyRde.Name + "2", // Only name can be updated
 	})
 	check.Assert(err, IsNil)
-	check.Assert(newDefinedInterface.DefinedInterface.Name, Equals, dummyRde.Name+"2")
+	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.Name, Equals, dummyRde.Name+"2")
 
-	deletedId := newDefinedInterface.DefinedInterface.ID
-	err = newDefinedInterface.Delete()
+	// This one was obtained by the tenant, so it shouldn't be updatable
+	err = obtainedDefinedInterface2.Update(types.DefinedInterface{
+		Name: dummyRde.Name + "3",
+	})
+	check.Assert(err, NotNil)
+	check.Assert(strings.Contains(err.Error(), "ACCESS_TO_RESOURCE_IS_FORBIDDEN"), Equals, true)
+
+	// This one was obtained by the tenant, so it shouldn't be deletable
+	err = obtainedDefinedInterface2.Delete()
+	check.Assert(err, NotNil)
+	check.Assert(strings.Contains(err.Error(), "ACCESS_TO_RESOURCE_IS_FORBIDDEN"), Equals, true)
+
+	// We perform the actual removal with the System administrator
+	deletedId := newDefinedInterfaceFromSysAdmin.DefinedInterface.ID
+	err = newDefinedInterfaceFromSysAdmin.Delete()
 	check.Assert(err, IsNil)
-	check.Assert(*newDefinedInterface.DefinedInterface, DeepEquals, types.DefinedInterface{})
+	check.Assert(*newDefinedInterfaceFromSysAdmin.DefinedInterface, DeepEquals, types.DefinedInterface{})
 
-	_, err = vcd.client.GetDefinedInterfaceById(deletedId)
+	_, err = systemAdministratorClient.GetDefinedInterfaceById(deletedId)
 	check.Assert(err, NotNil)
 	check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
 }
