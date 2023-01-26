@@ -98,14 +98,14 @@ func (vcd *TestVCD) Test_DefinedInterface(check *C) {
 
 	// Update the Defined Interface as System administrator
 	err = newDefinedInterfaceFromSysAdmin.Update(types.DefinedInterface{
-		Name: dummyRde.Name + "2", // Only name can be updated
+		Name: dummyRde.Name + "3", // Only name can be updated
 	})
 	check.Assert(err, IsNil)
 	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.Name, Equals, dummyRde.Name+"2")
 
 	// This one was obtained by the tenant, so it shouldn't be updatable
 	err = obtainedDefinedInterface2.Update(types.DefinedInterface{
-		Name: dummyRde.Name + "3",
+		Name: dummyRde.Name + "4",
 	})
 	check.Assert(err, NotNil)
 	check.Assert(strings.Contains(err.Error(), "ACCESS_TO_RESOURCE_IS_FORBIDDEN"), Equals, true)
