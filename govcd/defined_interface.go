@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-// DefinedInterface is a type for handling Defined Interfaces in VCD that allow to define new RDEs (DefinedEntityType).
+// DefinedInterface is a type for handling Defined Interfaces, from the Runtime Defined Entities framework, in VCD.
 type DefinedInterface struct {
 	DefinedInterface *types.DefinedInterface
 	client           *Client
