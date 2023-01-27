@@ -44,8 +44,7 @@ func (vcd *TestVCD) Test_RdeType(check *C) {
 	check.Assert(err, IsNil)
 	alreadyPresentRdes := len(allRdeTypesBySystemAdmin)
 
-	// For the tenant, it should return 0 RDE Types, but no error. This is because our tenant user doesn't have
-	// the required rights to see the RDE Types.
+	// For the tenant, it returns 0 RDE Types, but no error.
 	allRdeTypesByTenant, err := tenantUserClient.GetAllRdeTypes(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(allRdeTypesByTenant), Equals, 0)
@@ -99,12 +98,12 @@ func (vcd *TestVCD) Test_RdeType(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(allRdeTypesByTenant), Equals, 0)
 
-	// Test the multiple ways of getting a Defined Interface in both users.
+	// Test the multiple ways of getting a RDE Types in both users.
 	obtainedRdeType, err := systemAdministratorClient.GetRdeTypeById(createdRdeType.DefinedEntityType.ID)
 	check.Assert(err, IsNil)
 	check.Assert(*obtainedRdeType.DefinedEntityType, DeepEquals, *createdRdeType.DefinedEntityType)
 
-	// The RDE Type is unreachable as user doesn't have permissions
+	// The RDE Type is unreachable as tenant
 	_, err = tenantUserClient.GetRdeTypeById(createdRdeType.DefinedEntityType.ID)
 	check.Assert(err, NotNil)
 	check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
@@ -113,7 +112,7 @@ func (vcd *TestVCD) Test_RdeType(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(*obtainedRdeType2.DefinedEntityType, DeepEquals, *obtainedRdeType.DefinedEntityType)
 
-	// The RDE Type is unreachable as user doesn't have permissions
+	// The RDE Type is unreachable as tenant
 	_, err = tenantUserClient.GetRdeType(obtainedRdeType.DefinedEntityType.Vendor, obtainedRdeType.DefinedEntityType.Namespace, obtainedRdeType.DefinedEntityType.Version)
 	check.Assert(err, NotNil)
 	check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
