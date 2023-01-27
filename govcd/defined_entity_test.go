@@ -52,13 +52,16 @@ func (vcd *TestVCD) Test_RdeType(check *C) {
 
 	// Then we create a new RDE Type with System administrator.
 	// Can't put check.TestName() in namespace due to a bug in VCD 10.4.1 that causes RDEs to fail on GET once created with special characters like "."
+	vendor := "vmware"
+	nss := strings.ReplaceAll(check.TestName()+"name", ".", "")
+	version := "1.2.3"
 	rdeTypeToCreate := &types.DefinedEntityType{
 		Name:        check.TestName(),
-		Namespace:   strings.ReplaceAll(check.TestName()+"name", ".", ""),
-		Version:     "1.2.3",
+		Namespace:   nss,
+		Version:     version,
 		Description: "Description of " + check.TestName(),
 		Schema:      unmarshaledRdeTypeSchema,
-		Vendor:      "vmware",
+		Vendor:      vendor,
 		Interfaces:  []string{"urn:vcloud:interface:vmware:k8s:1.0.0"},
 	}
 	createdRdeType, err := systemAdministratorClient.CreateRdeType(rdeTypeToCreate)
@@ -122,6 +125,7 @@ func (vcd *TestVCD) Test_RdeType(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(createdRdeType.DefinedEntityType.Description, Equals, rdeTypeToCreate.Description+"Updated")
 
+	// We delete it with Sysadmin
 	deletedId := createdRdeType.DefinedEntityType.ID
 	err = createdRdeType.Delete()
 	check.Assert(err, IsNil)

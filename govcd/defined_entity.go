@@ -17,7 +17,7 @@ type DefinedEntityType struct {
 }
 
 // CreateRdeType creates a Runtime Defined Entity Type.
-// Only System administrator can create RDE Types.
+// Only a System administrator can create RDE Types.
 func (vcdClient *VCDClient) CreateRdeType(rde *types.DefinedEntityType) (*DefinedEntityType, error) {
 	client := vcdClient.Client
 
@@ -45,7 +45,8 @@ func (vcdClient *VCDClient) CreateRdeType(rde *types.DefinedEntityType) (*Define
 	return result, nil
 }
 
-// GetAllRdeTypes retrieves all Runtime Defined Entity Types. Query parameters can be supplied to perform additional filtering.
+// GetAllRdeTypes retrieves all Runtime Defined Entity Types. The number of items in the returned slice will depend on the rights
+// that the user has. Query parameters can be supplied to perform additional filtering.
 func (vcdClient *VCDClient) GetAllRdeTypes(queryParameters url.Values) ([]*DefinedEntityType, error) {
 	client := vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityTypes
@@ -78,6 +79,7 @@ func (vcdClient *VCDClient) GetAllRdeTypes(queryParameters url.Values) ([]*Defin
 }
 
 // GetRdeType gets a Runtime Defined Entity Type by its unique combination of vendor, namespace and version.
+// Only a user with enough rights can get RDE Types.
 func (vcdClient *VCDClient) GetRdeType(vendor, namespace, version string) (*DefinedEntityType, error) {
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", fmt.Sprintf("vendor==%s;nss==%s;version==%s", vendor, namespace, version))
@@ -97,7 +99,8 @@ func (vcdClient *VCDClient) GetRdeType(vendor, namespace, version string) (*Defi
 	return rdeTypes[0], nil
 }
 
-// GetRdeTypeById gets a Runtime Defined Entity Type by its ID
+// GetRdeTypeById gets a Runtime Defined Entity Type by its ID.
+// Only a user with enough rights can get RDE Types.
 func (vcdClient *VCDClient) GetRdeTypeById(id string) (*DefinedEntityType, error) {
 	client := vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityTypes
@@ -125,7 +128,7 @@ func (vcdClient *VCDClient) GetRdeTypeById(id string) (*DefinedEntityType, error
 }
 
 // Update updates the receiver Runtime Defined Entity Type with the values given by the input.
-// Only System administrator can update RDE Types.
+// Only a user with enough rights can delete RDE Types.
 func (rdeType *DefinedEntityType) Update(rdeTypeToUpdate types.DefinedEntityType) error {
 	client := rdeType.client
 	if rdeType.DefinedEntityType.ID == "" {
@@ -165,7 +168,7 @@ func (rdeType *DefinedEntityType) Update(rdeTypeToUpdate types.DefinedEntityType
 }
 
 // Delete deletes the receiver Runtime Defined Entity Type.
-// Only System administrator can delete RDE Types.
+// Only a user with enough rights can delete RDE Types.
 func (rdeType *DefinedEntityType) Delete() error {
 	client := rdeType.client
 	if rdeType.DefinedEntityType.ID == "" {
