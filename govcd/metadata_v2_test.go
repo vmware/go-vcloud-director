@@ -288,7 +288,7 @@ func (vcd *TestVCD) TestRdeMetadata(check *C) {
 	rde, err := rdeType.CreateRde(types.DefinedEntity{
 		Name:   check.TestName(),
 		Entity: map[string]interface{}{"foo": "bar"}, // We don't care about schema correctness here
-	})
+	}, nil)
 	check.Assert(err, IsNil)
 	check.Assert(rde, NotNil)
 

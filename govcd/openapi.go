@@ -212,6 +212,16 @@ func (client *Client) OpenApiPostItemSync(apiVersion string, urlRef *url.URL, pa
 // Note. Even though it may return error if the item does not support asynchronous request - the object may still be
 // created. OpenApiPostItem would handle both cases and always return created item.
 func (client *Client) OpenApiPostItemAsync(apiVersion string, urlRef *url.URL, params url.Values, payload interface{}) (Task, error) {
+	return client.OpenApiPostItemAsyncWithHeaders(apiVersion, urlRef, params, payload, nil)
+}
+
+// OpenApiPostItemAsyncWithHeaders is a low level OpenAPI client function to perform POST request for items that support
+// asynchronous requests. The urlRef must point to POST endpoint (e.g. '/1.0.0/edgeGateways') that supports asynchronous
+// requests. It will return an error if item does not support asynchronous request (does not respond with HTTP 202).
+//
+// Note. Even though it may return error if the item does not support asynchronous request - the object may still be
+// created. OpenApiPostItem would handle both cases and always return created item.
+func (client *Client) OpenApiPostItemAsyncWithHeaders(apiVersion string, urlRef *url.URL, params url.Values, payload interface{}, additionalHeader map[string]string) (Task, error) {
 	// copy passed in URL ref so that it is not mutated
 	urlRefCopy := copyUrlRef(urlRef)
 
@@ -222,7 +232,7 @@ func (client *Client) OpenApiPostItemAsync(apiVersion string, urlRef *url.URL, p
 		return Task{}, fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
-	resp, err := client.openApiPerformPostPut(http.MethodPost, apiVersion, urlRefCopy, params, payload, nil)
+	resp, err := client.openApiPerformPostPut(http.MethodPost, apiVersion, urlRefCopy, params, payload, additionalHeader)
 	if err != nil {
 		return Task{}, err
 	}

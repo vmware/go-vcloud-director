@@ -121,7 +121,7 @@ func testRdeCrudWithGivenType(check *C, rdeType *DefinedEntityType) {
 		Name:       check.TestName(),
 		ExternalId: "123",
 		Entity:     unmarshaledRdeEntityJson,
-	})
+	}, nil)
 	check.Assert(err, IsNil)
 	check.Assert(rde.DefinedEntity.Name, Equals, check.TestName())
 	check.Assert(*rde.DefinedEntity.State, Equals, "PRE_CREATED")
@@ -191,7 +191,7 @@ func testRdeCrud(check *C, vendor string, namespace string, version string, vcdC
 		Name:       check.TestName(),
 		ExternalId: "123",
 		Entity:     unmarshaledRdeEntityJson,
-	})
+	}, nil)
 	check.Assert(err, IsNil)
 	check.Assert(rde.DefinedEntity.Name, Equals, check.TestName())
 	check.Assert(*rde.DefinedEntity.State, Equals, "PRE_CREATED")

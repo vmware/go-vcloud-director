@@ -334,12 +334,13 @@ func getRdeById(client *Client, id string) (*DefinedEntity, error) {
 }
 
 // CreateRde creates an entity of the type of the receiver Runtime Defined Entity (RDE) type.
-// The input doesn't need to specify the type ID, as it gets it from the receiver RDE type. If it is specified anyway,
-// it must match the type ID of the receiver RDE type.
+// The input doesn't need to specify the type ID, as it gets it from the receiver RDE type.
+// The input tenant context allows to create the RDE in a given org if the creator is a System admin.
 // NOTE: After RDE creation, some actor should Resolve it, otherwise the RDE state will be "PRE_CREATED"
 // and the generated VCD task will remain at 1% until resolved.
-func (rdeType *DefinedEntityType) CreateRde(entity types.DefinedEntity) (*DefinedEntity, error) {
-	err := createRde(rdeType.client, rdeType.DefinedEntityType.ID, entity)
+func (rdeType *DefinedEntityType) CreateRde(entity types.DefinedEntity, tenantContext *TenantContext) (*DefinedEntity, error) {
+	entity.EntityType = rdeType.DefinedEntityType.ID
+	err := createRde(rdeType.client, entity, tenantContext)
 	if err != nil {
 		return nil, err
 	}
@@ -349,9 +350,9 @@ func (rdeType *DefinedEntityType) CreateRde(entity types.DefinedEntity) (*Define
 // CreateRde creates an entity of the type of the given vendor, namespace and version.
 // NOTE: After RDE creation, some actor should Resolve it, otherwise the RDE state will be "PRE_CREATED"
 // and the generated VCD task will remain at 1% until resolved.
-func (vcdClient *VCDClient) CreateRde(vendor, namespace, version string, entity types.DefinedEntity) (*DefinedEntity, error) {
-	rdeTypeId := fmt.Sprintf("urn:vcloud:type:%s:%s:%s", vendor, namespace, version)
-	err := createRde(&vcdClient.Client, rdeTypeId, entity)
+func (vcdClient *VCDClient) CreateRde(vendor, namespace, version string, entity types.DefinedEntity, tenantContext *TenantContext) (*DefinedEntity, error) {
+	entity.EntityType = fmt.Sprintf("urn:vcloud:type:%s:%s:%s", vendor, namespace, version)
+	err := createRde(&vcdClient.Client, entity, tenantContext)
 	if err != nil {
 		return nil, err
 	}
@@ -363,13 +364,9 @@ func (vcdClient *VCDClient) CreateRde(vendor, namespace, version string, entity 
 // it must match the type ID of the receiver RDE type.
 // NOTE: After RDE creation, some actor should Resolve it, otherwise the RDE state will be "PRE_CREATED"
 // and the generated VCD task will remain at 1% until resolved.
-func createRde(client *Client, rdeTypeId string, entity types.DefinedEntity) error {
-	if rdeTypeId == "" {
+func createRde(client *Client, entity types.DefinedEntity, tenantContext *TenantContext) error {
+	if entity.EntityType == "" {
 		return fmt.Errorf("ID of the Runtime Defined Entity type is empty")
-	}
-
-	if entity.EntityType != "" && entity.EntityType != rdeTypeId {
-		return fmt.Errorf("ID of the Runtime Defined Entity type '%s' doesn't match with the one to create '%s'", rdeTypeId, entity.EntityType)
 	}
 
 	if entity.Entity == nil || len(entity.Entity) == 0 {
@@ -382,12 +379,12 @@ func createRde(client *Client, rdeTypeId string, entity types.DefinedEntity) err
 		return err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, rdeTypeId)
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, entity.EntityType)
 	if err != nil {
 		return err
 	}
 
-	_, err = client.OpenApiPostItemAsync(apiVersion, urlRef, nil, entity)
+	_, err = client.OpenApiPostItemAsyncWithHeaders(apiVersion, urlRef, nil, entity, getTenantContextHeader(tenantContext))
 	if err != nil {
 		return err
 	}
