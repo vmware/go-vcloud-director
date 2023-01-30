@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"reflect"
-	"regexp"
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -91,7 +89,9 @@ func (dfw *NsxvDistributedFirewall) GetConfiguration() (*types.FirewallConfigura
 		return nil, err
 	}
 	var config types.FirewallConfiguration
-	err = decodeBody(types.BodyTypeXML, resp, &config.Layer3Sections)
+
+	var firewallSection types.FirewallSection
+	err = decodeBody(types.BodyTypeXML, resp, &firewallSection)
 	if err != nil {
 		return nil, err
 	}
@@ -100,10 +100,12 @@ func (dfw *NsxvDistributedFirewall) GetConfiguration() (*types.FirewallConfigura
 	// header "If-Match" with the contents of the ETag from a previous read.
 	// The same data can be found in the "GenerationNumber" within the section to update.
 	// The value of the ETag changes at every GET
-	if dfw.Etag == "" && config.Layer3Sections.Section.GenerationNumber != "" {
-		dfw.Etag = config.Layer3Sections.Section.GenerationNumber
+	if dfw.Etag == "" && firewallSection.GenerationNumber != "" {
+		dfw.Etag = firewallSection.GenerationNumber
 	}
+	config.Layer3Sections = &types.Layer3Sections{Section: &firewallSection}
 	dfw.Configuration = &config
+	dfw.Configuration.Layer3Sections = config.Layer3Sections
 	dfw.enabled = true
 	return &config, nil
 }
@@ -217,9 +219,6 @@ func (dfw *NsxvDistributedFirewall) UpdateConfiguration(rules []types.NsxvDistri
 	}
 
 	ruleSet := dfw.Configuration.Layer3Sections.Section
-	// Check that there is a general rule with deny-all
-	// If it is missing, add one.
-	// If there is a general rule with accept-all, change it to deny-all
 
 	//for _, newRule := range rules {
 	// 1. Check that the rule is not already in the current set. If it is (complete equality, except the ID), skip (i.e., the current rule will continue to exist)
@@ -239,6 +238,7 @@ func (dfw *NsxvDistributedFirewall) UpdateConfiguration(rules []types.NsxvDistri
 	return nil, fmt.Errorf("not fully implemented yet")
 }
 
+/*
 type ruleEquality int
 
 const (
@@ -248,10 +248,16 @@ const (
 	rulesDifferentSameId
 )
 
-func compareRule(original, inserted types.NsxvDistributedFirewallRule) ruleEquality {
-	idsDiffer := original.ID != inserted.ID && (original.ID+inserted.ID) > 0
+// compareRule returns three comparison parameters:
+// the first one says whether the body of the rules differ, i.e. the rule data without the ID
+// the second one tells whether the IDs differ
+// the third one says whether any of the IDs was set
+// Use as:
+//
+//	bodyEqual, idEqual, idSet := compareRule(original, inserted)
+func compareRule(original, inserted types.NsxvDistributedFirewallRule) (bool, bool, bool) {
 
-	areEqual := original.Disabled == inserted.Disabled &&
+	bodyEqual := original.Disabled == inserted.Disabled &&
 		original.Name == inserted.Name &&
 		original.Action == inserted.Action &&
 		original.Direction == inserted.Direction &&
@@ -261,17 +267,7 @@ func compareRule(original, inserted types.NsxvDistributedFirewallRule) ruleEqual
 		reflect.DeepEqual(original.Destinations, inserted.Destinations) &&
 		reflect.DeepEqual(original.Services, inserted.Services)
 
-	switch {
-	case areEqual && idsDiffer:
-		return rulesEqualDifferentIds
-	case areEqual && !idsDiffer:
-		return rulesEqual
-	case !areEqual && !idsDiffer:
-		return rulesDifferentSameId
-	default:
-		// !areEqual && idsDiffer
-		return rulesDifferent
-	}
+	return bodyEqual, original.ID == inserted.ID, (original.ID + inserted.ID) > 0
 }
 
 func isDefaultRule(rule types.NsxvDistributedFirewallRule) bool {
@@ -495,3 +491,6 @@ func (dfw *NsxvDistributedFirewall) GetServiceGroupsByRegex(expression string) (
 	}
 	return found, nil
 }
+
+
+*/

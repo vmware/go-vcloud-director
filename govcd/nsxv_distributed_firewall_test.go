@@ -20,28 +20,33 @@ func (vcd *TestVCD) Test_NsxvDistributedFirewall(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	// Retrieve a NSX-T VDC
-	nsxtVdc, err := org.GetAdminVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
-	check.Assert(err, IsNil)
+	if vcd.config.VCD.Nsxt.Vdc != "" {
+		if testVerbose {
+			fmt.Println("Testing attempted access to NSX-T VDC")
+		}
+		// Retrieve a NSX-T VDC
+		nsxtVdc, err := org.GetAdminVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+		check.Assert(err, IsNil)
 
-	notWorkingDfw := NewNsxvDistributedFirewall(nsxtVdc.client, nsxtVdc.AdminVdc.ID)
-	check.Assert(notWorkingDfw, NotNil)
+		notWorkingDfw := NewNsxvDistributedFirewall(nsxtVdc.client, nsxtVdc.AdminVdc.ID)
+		check.Assert(notWorkingDfw, NotNil)
 
-	isEnabled, err := notWorkingDfw.IsEnabled()
-	check.Assert(err, IsNil)
-	check.Assert(isEnabled, Equals, false)
+		isEnabled, err := notWorkingDfw.IsEnabled()
+		check.Assert(err, IsNil)
+		check.Assert(isEnabled, Equals, false)
 
-	err = notWorkingDfw.Enable()
-	// NSX-T VDCs don't support NSX-V distributed firewalls. We expect an error here.
-	check.Assert(err, NotNil)
-	check.Assert(strings.Contains(err.Error(), "Forbidden"), Equals, true)
-	if testVerbose {
-		fmt.Printf("notWorkingDfw: %s\n", err)
+		err = notWorkingDfw.Enable()
+		// NSX-T VDCs don't support NSX-V distributed firewalls. We expect an error here.
+		check.Assert(err, NotNil)
+		check.Assert(strings.Contains(err.Error(), "Forbidden"), Equals, true)
+		if testVerbose {
+			fmt.Printf("notWorkingDfw: %s\n", err)
+		}
+		config, err := notWorkingDfw.GetConfiguration()
+		// Also this operation should fail
+		check.Assert(err, NotNil)
+		check.Assert(config, IsNil)
 	}
-	config, err := notWorkingDfw.GetConfiguration()
-	// Also this operation should fail
-	check.Assert(err, NotNil)
-	check.Assert(config, IsNil)
 
 	// Retrieve a NSX-V VDC
 	vdc, err := org.GetAdminVDCByName(vcd.config.VCD.Vdc, false)
@@ -60,7 +65,7 @@ func (vcd *TestVCD) Test_NsxvDistributedFirewall(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(enabled, Equals, true)
 
-	config, err = dfw.GetConfiguration()
+	config, err := dfw.GetConfiguration()
 	check.Assert(err, IsNil)
 	check.Assert(config, NotNil)
 	if testVerbose {
@@ -90,6 +95,7 @@ func (vcd *TestVCD) Test_NsxvDistributedFirewall(check *C) {
 	check.Assert(enabled, Equals, false)
 }
 
+/*
 // ----------------------------------------------------------------------------------------------
 // methods from here till the end of the file will be removed if we decide we don't need services
 // ----------------------------------------------------------------------------------------------
@@ -176,3 +182,6 @@ func (vcd *TestVCD) Test_NsxvServices(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(serviceGroupsByRegex), Equals, 0)
 }
+
+
+*/

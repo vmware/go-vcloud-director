@@ -8,17 +8,17 @@ package types
 // -----------------------------------
 
 type FirewallConfiguration struct {
-	ContextID      string         `xml:"contextId"`
-	Layer3Sections Layer3Sections `xml:"layer3Sections"`
-	Layer2Sections Layer2Sections `xml:"layer2Sections"`
+	ContextID      string          `xml:"contextId"`
+	Layer3Sections *Layer3Sections `xml:"layer3Sections"`
+	Layer2Sections *Layer2Sections `xml:"layer2Sections"`
 }
 
 type Layer2Sections struct {
-	Section FirewallSection `xml:"section"`
+	Section *FirewallSection `xml:"section"`
 }
 
 type Layer3Sections struct {
-	Section FirewallSection `xml:"section"`
+	Section *FirewallSection `xml:"section"`
 }
 
 type FirewallSection struct {
