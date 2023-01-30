@@ -207,7 +207,7 @@ func doesCatalogExist(check *C, org *AdminOrg) {
 	check.Assert(err, NotNil)
 }
 
-// Creates a Catalog, adds items to it, renames it, then checks if no data has been lost in the process
+// Creates a Catalog, uploads a vApp template to it, renames it, then checks if the vAPp is retrievable
 func (vcd *TestVCD) Test_RenameCatalog(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
@@ -219,21 +219,34 @@ func (vcd *TestVCD) Test_RenameCatalog(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminCatalog, NotNil)
 
-	AddToCleanupList(TestRenameCatalog, "catalog", vcd.config.VCD.Org, check.TestName())
-
-	task, err := adminCatalog.UploadOvf(vcd.config.OVA.OvaPath, TestRenameCatalog, TestRenameCatalog, 1024)
+	task, err := adminCatalog.UploadOvf(vcd.config.OVA.OvaPath, TestUploadOvf, TestUploadOvf, 1024)
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	catalog, err := vcd.client.Client.GetAdminCatalogById(adminCatalog.AdminCatalog.ID)
-	adminCatalog.Update()
-	check.Assert(adminCatalog.AdminCatalog.CatalogItems[0].CatalogItem[0].ID, Equals, catalog.AdminCatalog.CatalogItems[0].CatalogItem[0].ID)
+	catalog, err := vcd.client.Client.GetCatalogByName(vcd.config.VCD.Org, TestRenameCatalog)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
 
-	catalog.AdminCatalog.Name = TestRenameCatalog + "_updated"
-	catalog.Update()
-	adminCatalog.Update()
-	check.Assert(adminCatalog.AdminCatalog.CatalogItems[0].CatalogItem[0].ID, Equals, catalog.AdminCatalog.CatalogItems[0].CatalogItem[0].ID)
+	vAppTemplate1, err := catalog.GetVAppTemplateByName(TestUploadOvf)
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplate1, NotNil)
+
+	adminCatalog.AdminCatalog.Name = TestRenameCatalog + "_updated"
+	err = adminCatalog.Update()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(TestRenameCatalog+"_updated", "catalog", vcd.config.VCD.Org, check.TestName())
+
+	updatedCatalog, err := vcd.client.Client.GetCatalogByName(vcd.config.VCD.Org, TestRenameCatalog+"_updated")
+	check.Assert(err, IsNil)
+	check.Assert(updatedCatalog, NotNil)
+
+	vAppTemplate2, err := updatedCatalog.GetVAppTemplateByName(TestUploadOvf)
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplate2, NotNil)
+
+	check.Assert(vAppTemplate1.VAppTemplate.HREF, Equals, vAppTemplate2.VAppTemplate.HREF)
 
 }
 
