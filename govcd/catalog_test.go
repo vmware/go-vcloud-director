@@ -215,11 +215,26 @@ func (vcd *TestVCD) Test_RenameCatalog(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
-	catalog, err := org.CreateCatalog(TestCreateCatalog, TestCreateCatalogDesc)
+	adminCatalog, err := org.CreateCatalog(TestRenameCatalog, TestRenameCatalog)
 	check.Assert(err, IsNil)
-	check.Assert(catalog, NotNil)
+	check.Assert(adminCatalog, NotNil)
 
-	AddToCleanupList(TestCreateCatalog, "catalog", vcd.config.VCD.Org, check.TestName())
+	AddToCleanupList(TestRenameCatalog, "catalog", vcd.config.VCD.Org, check.TestName())
+
+	task, err := adminCatalog.UploadOvf(vcd.config.OVA.OvaPath, TestRenameCatalog, TestRenameCatalog, 1024)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	catalog, err := vcd.client.Client.GetAdminCatalogById(adminCatalog.AdminCatalog.ID)
+	adminCatalog.Update()
+	check.Assert(adminCatalog.AdminCatalog.CatalogItems[0].CatalogItem[0].ID, Equals, catalog.AdminCatalog.CatalogItems[0].CatalogItem[0].ID)
+
+	catalog.AdminCatalog.Name = TestRenameCatalog + "_updated"
+	catalog.Update()
+	adminCatalog.Update()
+	check.Assert(adminCatalog.AdminCatalog.CatalogItems[0].CatalogItem[0].ID, Equals, catalog.AdminCatalog.CatalogItems[0].CatalogItem[0].ID)
+
 }
 
 // Tests System function UploadOvf by creating catalog and
