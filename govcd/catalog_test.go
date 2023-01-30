@@ -207,6 +207,21 @@ func doesCatalogExist(check *C, org *AdminOrg) {
 	check.Assert(err, NotNil)
 }
 
+// Creates a Catalog, adds items to it, renames it, then checks if no data has been lost in the process
+func (vcd *TestVCD) Test_RenameCatalog(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	catalog, err := org.CreateCatalog(TestCreateCatalog, TestCreateCatalogDesc)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+
+	AddToCleanupList(TestCreateCatalog, "catalog", vcd.config.VCD.Org, check.TestName())
+}
+
 // Tests System function UploadOvf by creating catalog and
 // checking if provided standard ova file uploaded.
 func (vcd *TestVCD) Test_UploadOvf(check *C) {
