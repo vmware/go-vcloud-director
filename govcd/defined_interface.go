@@ -12,6 +12,7 @@ import (
 )
 
 // DefinedInterface is a type for handling Defined Interfaces, from the Runtime Defined Entities framework, in VCD.
+// This is often referred as Runtime Defined Entity Interface or RDE Interface in documentation.
 type DefinedInterface struct {
 	DefinedInterface *types.DefinedInterface
 	client           *Client
