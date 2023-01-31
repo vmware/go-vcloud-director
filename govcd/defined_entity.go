@@ -21,7 +21,7 @@ type DefinedEntityType struct {
 func (vcdClient *VCDClient) CreateRdeType(rde *types.DefinedEntityType) (*DefinedEntityType, error) {
 	client := vcdClient.Client
 
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityTypes
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (vcdClient *VCDClient) CreateRdeType(rde *types.DefinedEntityType) (*Define
 // GetAllRdeTypes retrieves all Runtime Defined Entity Types. Query parameters can be supplied to perform additional filtering.
 func (vcdClient *VCDClient) GetAllRdeTypes(queryParameters url.Values) ([]*DefinedEntityType, error) {
 	client := vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityTypes
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (vcdClient *VCDClient) GetRdeType(vendor, namespace, version string) (*Defi
 // GetRdeTypeById gets a Runtime Defined Entity Type by its ID.
 func (vcdClient *VCDClient) GetRdeTypeById(id string) (*DefinedEntityType, error) {
 	client := vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityTypes
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
@@ -144,7 +144,7 @@ func (rdeType *DefinedEntityType) Update(rdeTypeToUpdate types.DefinedEntityType
 		rdeTypeToUpdate.Schema = rdeType.DefinedEntityType.Schema
 	}
 
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityTypes
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
@@ -171,7 +171,7 @@ func (rdeType *DefinedEntityType) Delete() error {
 		return fmt.Errorf("ID of the receiver Runtime Defined Entity Type is empty")
 	}
 
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntityTypes
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err

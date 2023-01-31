@@ -24,7 +24,7 @@ func (vcd *TestVCD) Test_RdeType(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEntityTypes)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRdeEntityTypes)
 	if len(vcd.config.Tenants) == 0 {
 		check.Skip("skipping as there is no configured tenant users")
 	}
@@ -74,7 +74,7 @@ func (vcd *TestVCD) Test_RdeType(check *C) {
 	check.Assert(createdRdeType.DefinedEntityType.Schema["definitions"], NotNil)
 	check.Assert(createdRdeType.DefinedEntityType.Schema["required"], NotNil)
 	check.Assert(createdRdeType.DefinedEntityType.Schema["properties"], NotNil)
-	AddToCleanupListOpenApi(createdRdeType.DefinedEntityType.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEntityTypes+createdRdeType.DefinedEntityType.ID)
+	AddToCleanupListOpenApi(createdRdeType.DefinedEntityType.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRdeEntityTypes+createdRdeType.DefinedEntityType.ID)
 
 	// Tenants can't create RDE Types
 	nilRdeType, err := tenantUserClient.CreateRdeType(&types.DefinedEntityType{
