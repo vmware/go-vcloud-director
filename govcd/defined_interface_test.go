@@ -2,7 +2,7 @@
 // +build functional openapi rde ALL
 
 /*
- * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -20,7 +20,7 @@ func (vcd *TestVCD) Test_DefinedInterface(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
-	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointInterfaces)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRdeInterfaces)
 	if len(vcd.config.Tenants) == 0 {
 		check.Skip("skipping as there is no configured tenant users")
 	}
@@ -56,7 +56,7 @@ func (vcd *TestVCD) Test_DefinedInterface(check *C) {
 	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.Version, Equals, dummyRde.Version)
 	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.Vendor, Equals, dummyRde.Vendor)
 	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.IsReadOnly, Equals, dummyRde.IsReadOnly)
-	AddToCleanupListOpenApi(newDefinedInterfaceFromSysAdmin.DefinedInterface.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointInterfaces+newDefinedInterfaceFromSysAdmin.DefinedInterface.ID)
+	AddToCleanupListOpenApi(newDefinedInterfaceFromSysAdmin.DefinedInterface.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRdeInterfaces+newDefinedInterfaceFromSysAdmin.DefinedInterface.ID)
 
 	// Tenants can't create Defined Interfaces. We replace the dots in both
 	// namespace and name as API is quirky at versions of VCD < 37.0
