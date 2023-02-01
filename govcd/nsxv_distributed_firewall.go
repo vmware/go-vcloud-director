@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -116,7 +116,7 @@ func (dfw *NsxvDistributedFirewall) IsEnabled() (bool, error) {
 		return false, fmt.Errorf("no VDC set for this NsxvDistributedFirewall")
 	}
 
-	if dfw.Configuration != nil {
+	if dfw.Configuration != nil && dfw.Configuration.Layer3Sections != nil && dfw.Configuration.Layer3Sections.Section != nil {
 		return dfw.enabled, nil
 	}
 	_, err := dfw.GetConfiguration()
