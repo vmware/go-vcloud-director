@@ -90,8 +90,8 @@ type Services struct {
 
 type Service struct {
 	IsValid         bool    `xml:"isValid"`
-	SourcePort      *int    `xml:"sourcePort"`
-	DestinationPort *int    `xml:"destinationPort"`
+	SourcePort      *string `xml:"sourcePort"`
+	DestinationPort *string `xml:"destinationPort"`
 	Protocol        *int    `xml:"protocol"`
 	ProtocolName    *string `xml:"protocolName"`
 	Name            string  `xml:"name,omitempty"`
@@ -144,7 +144,7 @@ type Scope struct {
 type Element struct {
 	ApplicationProtocol *string `xml:"applicationProtocol"`
 	Value               *string `xml:"value"`
-	SourcePort          *int    `xml:"sourcePort"`
+	SourcePort          *string `xml:"sourcePort"`
 	AppGuidName         *string `xml:"appGuidName"`
 }
 
