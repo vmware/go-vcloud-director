@@ -1614,6 +1614,9 @@ func (vcd *TestVCD) TearDownSuite(check *C) {
 // Tests getloginurl with the endpoint given
 // in the config file.
 func TestClient_getloginurl(t *testing.T) {
+	if os.Getenv("GOVCD_API_VERSION") != "" {
+		t.Skip("custom API version is being used")
+	}
 	config, err := GetConfigStruct()
 	if err != nil {
 		t.Fatalf("err: %s", err)
