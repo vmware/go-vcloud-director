@@ -117,7 +117,7 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) GetMetadataByKey(key string, i
 
 // GetMetadataByKey returns DefinedEntity metadata corresponding to the given key and domain.
 func (rde *DefinedEntity) GetMetadataByKey(key string) (*types.OpenApiMetadataEntry, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntities
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
 	return getOpenApiMetadataByKey(rde.client, endpoint, rde.DefinedEntity.ID, key)
 }
 
@@ -215,7 +215,7 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) GetMetadata() (*types.Metadata
 }
 
 func (rde *DefinedEntity) GetMetadata() ([]*types.OpenApiMetadataEntry, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntities
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
 	return getAllOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, nil)
 }
 
@@ -393,7 +393,7 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) AddMetadataEntryWithVisibility
 
 // AddMetadata adds metadata to the receiver DefinedEntity.
 func (rde *DefinedEntity) AddMetadata(metadataEntry types.OpenApiMetadataEntry) (*types.OpenApiMetadataEntry, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntities
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
 	return addOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, metadataEntry)
 }
 
@@ -587,7 +587,7 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) MergeMetadataWithMetadataValue
 
 // UpdateMetadata updates the DefinedEntity metadata corresponding to the given key with the given value.
 func (rde *DefinedEntity) UpdateMetadata(key string, value interface{}) (*types.OpenApiMetadataEntry, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntities
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
 	return updateOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, key, value)
 }
 
@@ -754,7 +754,7 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntryWithDomain(
 
 // DeleteMetadata deletes metadata from the receiver DefinedEntity with the given key.
 func (rde *DefinedEntity) DeleteMetadata(key string) error {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntities
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
 	return deleteOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, key)
 }
 

@@ -296,7 +296,7 @@ func (vcd *TestVCD) TestRdeMetadata(check *C) {
 	check.Assert(err, IsNil)
 
 	// The RDE can't be deleted until rde.Resolve() is called
-	AddToCleanupListOpenApi(rde.DefinedEntity.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEntities+rde.DefinedEntity.ID)
+	AddToCleanupListOpenApi(rde.DefinedEntity.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRdeEntities+rde.DefinedEntity.ID)
 
 	testOpenApiMetadataCRUDActions(rde, check)
 
