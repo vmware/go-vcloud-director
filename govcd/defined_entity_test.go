@@ -84,7 +84,7 @@ func (vcd *TestVCD) Test_Rde(check *C) {
 	check.Assert(obtainedRdeType.DefinedEntityType.Description, Equals, rdeTypeToCreate.Description+"Updated")
 
 	testRdeCrudWithGivenType(check, obtainedRdeType)
-	testRdeCrud(check, obtainedRdeType.DefinedEntityType.Vendor, obtainedRdeType.DefinedEntityType.Namespace, obtainedRdeType.DefinedEntityType.Version, vcd.client)
+	testRdeCrudAsTenant(check, obtainedRdeType.DefinedEntityType.Vendor, obtainedRdeType.DefinedEntityType.Namespace, obtainedRdeType.DefinedEntityType.Version, vcd.client)
 
 	deletedId := createdRdeType.DefinedEntityType.ID
 	err = createdRdeType.Delete()
@@ -133,8 +133,10 @@ func testRdeCrudWithGivenType(check *C, rdeType *DefinedEntityType) {
 
 	// Resolution should fail as we missed to add a mandatory field
 	err = rde.Resolve()
+	eTag := rde.Etag
 	check.Assert(err, IsNil)
 	check.Assert(*rde.DefinedEntity.State, Equals, "RESOLUTION_ERROR")
+	check.Assert(eTag, Not(Equals), "")
 
 	// We amend it
 	unmarshaledRdeEntityJson["foo"] = map[string]interface{}{"key": "stringValue5"}
@@ -143,11 +145,16 @@ func testRdeCrudWithGivenType(check *C, rdeType *DefinedEntityType) {
 	})
 	check.Assert(err, IsNil)
 	check.Assert(*rde.DefinedEntity.State, Equals, "RESOLUTION_ERROR")
+	check.Assert(rde.Etag, Not(Equals), "")
+	check.Assert(rde.Etag, Not(Equals), eTag)
+	eTag = rde.Etag
 
 	// This time it should resolve
 	err = rde.Resolve()
 	check.Assert(err, IsNil)
 	check.Assert(*rde.DefinedEntity.State, Equals, "RESOLVED")
+	check.Assert(rde.Etag, Not(Equals), "")
+	check.Assert(rde.Etag, Not(Equals), eTag)
 
 	// The RDE can't be deleted until rde.Resolve() is called
 	AddToCleanupListOpenApi(rde.DefinedEntity.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEntities+rde.DefinedEntity.ID)
@@ -164,12 +171,9 @@ func testRdeCrudWithGivenType(check *C, rdeType *DefinedEntityType) {
 	check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
 }
 
-// testRdeCrud is a sub-section of Test_Rde that is focused on testing all RDE instances casuistics without specifying the
+// testRdeCrudAsTenant is a sub-section of Test_Rde that is focused on testing all RDE instances casuistics without specifying the
 // RDE type. This would be the viewpoint of a tenant as they can't get RDE types.
-func testRdeCrud(check *C, vendor string, namespace string, version string, vcdClient *VCDClient) {
-
-	// FIXME: We should test as a tenant really
-
+func testRdeCrudAsTenant(check *C, vendor string, namespace string, version string, vcdClient *VCDClient) {
 	// We are missing the mandatory field "foo" on purpose
 	rdeEntityJson := []byte(`
 	{
@@ -203,8 +207,10 @@ func testRdeCrud(check *C, vendor string, namespace string, version string, vcdC
 
 	// Resolution should fail as we missed to add a mandatory field
 	err = rde.Resolve()
+	eTag := rde.Etag
 	check.Assert(err, IsNil)
 	check.Assert(*rde.DefinedEntity.State, Equals, "RESOLUTION_ERROR")
+	check.Assert(eTag, Not(Equals), "")
 
 	// We amend it
 	unmarshaledRdeEntityJson["foo"] = map[string]interface{}{"key": "stringValue5"}
@@ -213,11 +219,16 @@ func testRdeCrud(check *C, vendor string, namespace string, version string, vcdC
 	})
 	check.Assert(err, IsNil)
 	check.Assert(*rde.DefinedEntity.State, Equals, "RESOLUTION_ERROR")
+	check.Assert(rde.Etag, Not(Equals), "")
+	check.Assert(rde.Etag, Not(Equals), eTag)
+	eTag = rde.Etag
 
 	// This time it should resolve
 	err = rde.Resolve()
 	check.Assert(err, IsNil)
 	check.Assert(*rde.DefinedEntity.State, Equals, "RESOLVED")
+	check.Assert(rde.Etag, Not(Equals), "")
+	check.Assert(rde.Etag, Not(Equals), eTag)
 
 	// The RDE can't be deleted until rde.Resolve() is called
 	AddToCleanupListOpenApi(rde.DefinedEntity.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEntities+rde.DefinedEntity.ID)
@@ -227,6 +238,7 @@ func testRdeCrud(check *C, vendor string, namespace string, version string, vcdC
 	err = rde.Delete()
 	check.Assert(err, IsNil)
 	check.Assert(*rde.DefinedEntity, DeepEquals, types.DefinedEntity{})
+	check.Assert(rde.Etag, Equals, "")
 
 	// RDE should not exist anymore
 	_, err = vcdClient.GetRdeById(deletedId)

@@ -20,6 +20,7 @@ type DefinedEntityType struct {
 // DefinedEntity represents an instance of a Runtime Defined Entity (RDE)
 type DefinedEntity struct {
 	DefinedEntity *types.DefinedEntity
+	Etag          string // Populated by VCDClient.GetRdeById, DefinedEntityType.GetRdeById, DefinedEntity.Update
 	client        *Client
 }
 
@@ -297,17 +298,20 @@ func getRdesByName(client *Client, vendor, namespace, version, name string) ([]*
 	return rdeTypes, nil
 }
 
-// GetRdeById gets a Runtime Defined Entity by its ID
+// GetRdeById gets a Runtime Defined Entity by its ID.
+// Getting a RDE by ID populates the ETag field in the returned object.
 func (rdeType *DefinedEntityType) GetRdeById(id string) (*DefinedEntity, error) {
 	return getRdeById(rdeType.client, id)
 }
 
-// GetRdeById gets a Runtime Defined Entity by its ID
+// GetRdeById gets a Runtime Defined Entity by its ID.
+// Getting a RDE by ID populates the ETag field in the returned object.
 func (vcdClient *VCDClient) GetRdeById(id string) (*DefinedEntity, error) {
 	return getRdeById(&vcdClient.Client, id)
 }
 
-// getRdeById gets a Runtime Defined Entity by its ID
+// getRdeById gets a Runtime Defined Entity by its ID.
+// Getting a RDE by ID populates the ETag field in the returned object.
 func getRdeById(client *Client, id string) (*DefinedEntity, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntities
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
@@ -325,10 +329,11 @@ func getRdeById(client *Client, id string) (*DefinedEntity, error) {
 		client:        client,
 	}
 
-	err = client.OpenApiGetItem(apiVersion, urlRef, nil, result.DefinedEntity, nil)
+	eTagValue, err := client.OpenApiGetItemAndHeader(apiVersion, urlRef, nil, result.DefinedEntity, nil, "ETag")
 	if err != nil {
 		return nil, err
 	}
+	result.Etag = eTagValue
 
 	return result, nil
 }
@@ -417,6 +422,7 @@ func pollPreCreatedRde(client *Client, vendor, namespace, version, name string, 
 // Resolve needs to be called after an RDE is successfully created. It makes the receiver RDE usable if the JSON entity
 // is valid, reaching a state of RESOLVED. If it fails, the state will be RESOLUTION_ERROR,
 // and it will need to Update the JSON entity.
+// Resolving a RDE populates the ETag field in the receiver object.
 func (rde *DefinedEntity) Resolve() error {
 	client := rde.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEntitiesResolve
@@ -430,17 +436,18 @@ func (rde *DefinedEntity) Resolve() error {
 		return err
 	}
 
-	err = client.OpenApiPostItem(apiVersion, urlRef, nil, nil, rde.DefinedEntity, nil)
+	eTag, err := client.OpenApiPostItemAndGetHeader(apiVersion, urlRef, nil, nil, rde.DefinedEntity, nil, "ETag")
 	if err != nil {
 		return err
 	}
+	rde.Etag = eTag
 
 	return nil
 }
 
 // Update updates the receiver Runtime Defined Entity with the values given by the input. This method is useful
 // if rde.Resolve() failed and a JSON entity change is needed.
-// Only System administrator can update RDEs.
+// Updating a RDE populates the ETag field in the receiver object.
 func (rde *DefinedEntity) Update(rdeToUpdate types.DefinedEntity) error {
 	client := rde.client
 
@@ -465,16 +472,16 @@ func (rde *DefinedEntity) Update(rdeToUpdate types.DefinedEntity) error {
 		return err
 	}
 
-	err = client.OpenApiPutItem(apiVersion, urlRef, nil, rdeToUpdate, rde.DefinedEntity, nil)
+	eTag, err := client.OpenApiPutItemAndGetHeader(apiVersion, urlRef, nil, rdeToUpdate, rde.DefinedEntity, nil, "ETag")
 	if err != nil {
 		return err
 	}
+	rde.Etag = eTag
 
 	return nil
 }
 
 // Delete deletes the receiver Runtime Defined Entity.
-// Only System administrator can delete RDEs.
 func (rde *DefinedEntity) Delete() error {
 	client := rde.client
 
@@ -499,5 +506,6 @@ func (rde *DefinedEntity) Delete() error {
 	}
 
 	rde.DefinedEntity = &types.DefinedEntity{}
+	rde.Etag = ""
 	return nil
 }
