@@ -269,6 +269,9 @@ func (vcd *TestVCD) Test_RenameCatalog(check *C) {
 	// catalog and updatedCatalog
 	check.Assert(vAppTemplate1.VAppTemplate.HREF, Equals, vAppTemplate2.VAppTemplate.HREF)
 	check.Assert(mediaImage1.Media.HREF, Equals, mediaImage2.Media.HREF)
+
+	err = updatedCatalog.Delete(true, true)
+	check.Assert(err, IsNil)
 }
 
 // Tests System function UploadOvf by creating catalog and
