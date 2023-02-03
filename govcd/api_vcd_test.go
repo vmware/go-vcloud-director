@@ -56,7 +56,6 @@ const (
 	TestRefreshOrgFullName        = "TestRefreshOrgFullName"
 	TestUpdateCatalog             = "TestUpdateCatalog"
 	TestDeleteCatalog             = "TestDeleteCatalog"
-	TestRenameCatalog             = "TestRenameCatalog"
 	TestRefreshOrg                = "TestRefreshOrg"
 	TestComposeVapp               = "TestComposeVapp"
 	TestComposeVappDesc           = "vApp created by tests"
