@@ -224,7 +224,7 @@ func (vcd *TestVCD) Test_RenameCatalog(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminCatalog, NotNil)
 	AddToCleanupList(testRenameCatalog, "catalog", vcd.config.VCD.Org, check.TestName())
-	
+
 	catalog, err := vcd.client.Client.GetCatalogByName(vcd.config.VCD.Org, testRenameCatalog)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
