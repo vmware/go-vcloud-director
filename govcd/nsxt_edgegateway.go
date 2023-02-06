@@ -402,7 +402,7 @@ func (egw *NsxtEdgeGateway) GetUsedIpAddresses(queryParameters url.Values) ([]*t
 	return typeResponse, nil
 }
 
-// GetUnallocatedExternalIPAddresses will retrieve a requiredIpCount of unallocated IP addresses for
+// GetUnassignedExternalIPAddresses will retrieve a requiredIpCount of unassigned IP addresses for
 // Edge Gateway
 // Arguments:
 // * `requiredIpCount` (how many unallocated IPs should be returned). It will fail and return an
@@ -432,7 +432,7 @@ func (egw *NsxtEdgeGateway) GetUsedIpAddresses(queryParameters url.Values) ([]*t
 // library semantics) and an error
 // * It will return an error if any of uplink IP ranges End IP address is lower than Start IP
 // address
-func (egw *NsxtEdgeGateway) GetUnallocatedExternalIPAddresses(requiredIpCount int, optionalSubnet netip.Prefix, refresh bool) ([]netip.Addr, error) {
+func (egw *NsxtEdgeGateway) GetUnassignedExternalIPAddresses(requiredIpCount int, optionalSubnet netip.Prefix, refresh bool) ([]netip.Addr, error) {
 	if refresh {
 		err := egw.Refresh()
 		if err != nil {
@@ -496,9 +496,9 @@ func flattenEdgeGatewayUplinkToIpSlice(uplinks []types.EdgeGatewayUplinks) ([]ne
 	assignedIpSlice := make([]netip.Addr, 0)
 
 	for _, edgeGatewayUplink := range uplinks {
-		for _, edgedgeGatewayUplinkSubnet := range edgeGatewayUplink.Subnets.Values {
+		for _, edgeGatewayUplinkSubnet := range edgeGatewayUplink.Subnets.Values {
 			// flatIpRanges = append(flatIpRanges, edgedgeGatewayUplinkSubnet.IPRanges.Values...)
-			for _, r := range edgedgeGatewayUplinkSubnet.IPRanges.Values {
+			for _, r := range edgeGatewayUplinkSubnet.IPRanges.Values {
 				// Convert IPs to netip.Addr
 				startIp, err := netip.ParseAddr(r.StartAddress)
 				if err != nil {
