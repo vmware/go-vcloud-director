@@ -444,13 +444,30 @@ func (egw *NsxtEdgeGateway) GetUnassignedExternalIPAddresses(requiredIpCount int
 		return nil, fmt.Errorf("error getting used IP addresses for Edge Gateway: %s", err)
 	}
 
-	return getUnallocatedExternalIPAddress(egw.EdgeGateway.EdgeGatewayUplinks, usedIpAddresses, requiredIpCount, optionalSubnet)
+	return getNusedExternalIPAddress(egw.EdgeGateway.EdgeGatewayUplinks, usedIpAddresses, requiredIpCount, optionalSubnet)
 }
 
-// getUnallocatedExternalIPAddress kept separate from data lookup in
-// GetUnallocatedExternalIPAddresses to aid testing. It performs actions which are documented in
+// GetUsedIpAddressSlice retrieves a list of used IP addresses in an Edge Gateway and returns it
+// using native Go type '[]netip.Addr'
+func (egw *NsxtEdgeGateway) GetUsedIpAddressSlice(refresh bool) ([]netip.Addr, error) {
+	if refresh {
+		err := egw.Refresh()
+		if err != nil {
+			return nil, fmt.Errorf("error refreshing Edge Gateway: %s", err)
+		}
+	}
+	usedIpAddresses, err := egw.GetUsedIpAddresses(nil)
+	if err != nil {
+		return nil, fmt.Errorf("error getting used IP addresses for Edge Gateway: %s", err)
+	}
+
+	return flattenGatewayUsedIpAddressesToIpSlice(usedIpAddresses)
+}
+
+// getNusedExternalIPAddress kept separate from data lookup in
+// GetUnusedExternalIPAddresses to aid testing. It performs actions which are documented in
 // public function.
-func getUnallocatedExternalIPAddress(uplinks []types.EdgeGatewayUplinks, usedIpAddresses []*types.GatewayUsedIpAddress, requiredIpCount int, optionalSubnet netip.Prefix) ([]netip.Addr, error) {
+func getNusedExternalIPAddress(uplinks []types.EdgeGatewayUplinks, usedIpAddresses []*types.GatewayUsedIpAddress, requiredIpCount int, optionalSubnet netip.Prefix) ([]netip.Addr, error) {
 	// 1. Flatten all IP ranges in Edge Gateway using Go's native 'netip.Addr' IP container instead
 	// of plain strings because it is more robust (supports IPv4 and IPv6 and also comparison
 	// operator)
@@ -497,7 +514,6 @@ func flattenEdgeGatewayUplinkToIpSlice(uplinks []types.EdgeGatewayUplinks) ([]ne
 
 	for _, edgeGatewayUplink := range uplinks {
 		for _, edgeGatewayUplinkSubnet := range edgeGatewayUplink.Subnets.Values {
-			// flatIpRanges = append(flatIpRanges, edgedgeGatewayUplinkSubnet.IPRanges.Values...)
 			for _, r := range edgeGatewayUplinkSubnet.IPRanges.Values {
 				// Convert IPs to netip.Addr
 				startIp, err := netip.ParseAddr(r.StartAddress)
