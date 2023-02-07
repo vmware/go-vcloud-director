@@ -43,7 +43,10 @@ func (vcdClient *VCDClient) GetBearerTokenFromApiToken(org, token string) (*type
 		return nil, fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", vcdClient.Client.APIVersion)
 	}
 	var userDef string
-	urlStr := strings.Replace(vcdClient.Client.VCDHREF.String(), "/api", "", 1)
+	newUrl := new(url.URL)
+	newUrl.Scheme = vcdClient.Client.VCDHREF.Scheme
+	newUrl.Host = vcdClient.Client.VCDHREF.Host
+	urlStr := newUrl.String()
 	if strings.EqualFold(org, "system") {
 		userDef = "provider"
 	} else {
