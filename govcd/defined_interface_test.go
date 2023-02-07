@@ -41,30 +41,30 @@ func (vcd *TestVCD) Test_DefinedInterface(check *C) {
 	check.Assert(len(allDefinedInterfacesByTenant), Equals, len(allDefinedInterfacesBySysAdmin))
 
 	// Then we create a new Defined Interface with System administrator. We replace the dots in both
-	// namespace and name as API is quirky at versions of VCD < 37.0
+	// nss and name as API is quirky at versions of VCD < 37.0
 	dummyRde := &types.DefinedInterface{
-		Name:      strings.ReplaceAll(check.TestName()+"name", ".", ""),
-		Namespace: strings.ReplaceAll(check.TestName()+"nss", ".", ""),
-		Version:   "1.2.3",
-		Vendor:    "vmware",
+		Name:    strings.ReplaceAll(check.TestName()+"name", ".", ""),
+		Nss:     strings.ReplaceAll(check.TestName()+"nss", ".", ""),
+		Version: "1.2.3",
+		Vendor:  "vmware",
 	}
 	newDefinedInterfaceFromSysAdmin, err := systemAdministratorClient.CreateDefinedInterface(dummyRde)
 	check.Assert(err, IsNil)
 	check.Assert(newDefinedInterfaceFromSysAdmin, NotNil)
 	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.Name, Equals, dummyRde.Name)
-	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.Namespace, Equals, dummyRde.Namespace)
+	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.Nss, Equals, dummyRde.Nss)
 	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.Version, Equals, dummyRde.Version)
 	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.Vendor, Equals, dummyRde.Vendor)
 	check.Assert(newDefinedInterfaceFromSysAdmin.DefinedInterface.IsReadOnly, Equals, dummyRde.IsReadOnly)
 	AddToCleanupListOpenApi(newDefinedInterfaceFromSysAdmin.DefinedInterface.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRdeInterfaces+newDefinedInterfaceFromSysAdmin.DefinedInterface.ID)
 
 	// Tenants can't create Defined Interfaces. We replace the dots in both
-	// namespace and name as API is quirky at versions of VCD < 37.0
+	// nss and name as API is quirky at versions of VCD < 37.0
 	nilDefinedInterface, err := tenantUserClient.CreateDefinedInterface(&types.DefinedInterface{
-		Name:      strings.ReplaceAll(check.TestName()+"name2", ".", ""),
-		Namespace: strings.ReplaceAll(check.TestName()+"name2", ".", ""),
-		Version:   "4.5.6",
-		Vendor:    "vmware",
+		Name:    strings.ReplaceAll(check.TestName()+"name2", ".", ""),
+		Nss:     strings.ReplaceAll(check.TestName()+"name2", ".", ""),
+		Version: "4.5.6",
+		Vendor:  "vmware",
 	})
 	check.Assert(err, NotNil)
 	check.Assert(nilDefinedInterface, IsNil)
@@ -88,11 +88,11 @@ func (vcd *TestVCD) Test_DefinedInterface(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(*obtainedDefinedInterface.DefinedInterface, DeepEquals, *newDefinedInterfaceFromSysAdmin.DefinedInterface)
 
-	obtainedDefinedInterface2, err := systemAdministratorClient.GetDefinedInterface(obtainedDefinedInterface.DefinedInterface.Vendor, obtainedDefinedInterface.DefinedInterface.Namespace, obtainedDefinedInterface.DefinedInterface.Version)
+	obtainedDefinedInterface2, err := systemAdministratorClient.GetDefinedInterface(obtainedDefinedInterface.DefinedInterface.Vendor, obtainedDefinedInterface.DefinedInterface.Nss, obtainedDefinedInterface.DefinedInterface.Version)
 	check.Assert(err, IsNil)
 	check.Assert(*obtainedDefinedInterface2.DefinedInterface, DeepEquals, *obtainedDefinedInterface.DefinedInterface)
 
-	obtainedDefinedInterface2, err = tenantUserClient.GetDefinedInterface(obtainedDefinedInterface.DefinedInterface.Vendor, obtainedDefinedInterface.DefinedInterface.Namespace, obtainedDefinedInterface.DefinedInterface.Version)
+	obtainedDefinedInterface2, err = tenantUserClient.GetDefinedInterface(obtainedDefinedInterface.DefinedInterface.Vendor, obtainedDefinedInterface.DefinedInterface.Nss, obtainedDefinedInterface.DefinedInterface.Version)
 	check.Assert(err, IsNil)
 	check.Assert(*obtainedDefinedInterface2.DefinedInterface, DeepEquals, *obtainedDefinedInterface.DefinedInterface)
 
