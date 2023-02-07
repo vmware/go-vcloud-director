@@ -78,21 +78,21 @@ func (vcdClient *VCDClient) GetAllDefinedInterfaces(queryParameters url.Values) 
 	return returnRDEs, nil
 }
 
-// GetDefinedInterface retrieves a single Defined Interface defined by its unique combination of vendor, namespace and version.
-func (vcdClient *VCDClient) GetDefinedInterface(vendor, namespace, version string) (*DefinedInterface, error) {
+// GetDefinedInterface retrieves a single Defined Interface defined by its unique combination of vendor, nss and version.
+func (vcdClient *VCDClient) GetDefinedInterface(vendor, nss, version string) (*DefinedInterface, error) {
 	queryParameters := url.Values{}
-	queryParameters.Add("filter", fmt.Sprintf("vendor==%s;nss==%s;version==%s", vendor, namespace, version))
+	queryParameters.Add("filter", fmt.Sprintf("vendor==%s;nss==%s;version==%s", vendor, nss, version))
 	interfaces, err := vcdClient.GetAllDefinedInterfaces(queryParameters)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(interfaces) == 0 {
-		return nil, fmt.Errorf("%s could not find the Defined Interface with vendor %s, namespace %s and version %s", ErrorEntityNotFound, vendor, namespace, version)
+		return nil, fmt.Errorf("%s could not find the Defined Interface with vendor %s, nss %s and version %s", ErrorEntityNotFound, vendor, nss, version)
 	}
 
 	if len(interfaces) > 1 {
-		return nil, fmt.Errorf("found more than 1 Defined Interface with vendor %s, namespace %s and version %s", vendor, namespace, version)
+		return nil, fmt.Errorf("found more than 1 Defined Interface with vendor %s, nss %s and version %s", vendor, nss, version)
 	}
 
 	return interfaces[0], nil

@@ -85,21 +85,21 @@ func (vcdClient *VCDClient) GetAllRdeTypes(queryParameters url.Values) ([]*Defin
 	return returnRDEs, nil
 }
 
-// GetRdeType gets a Runtime Defined Entity Type by its unique combination of vendor, namespace and version.
-func (vcdClient *VCDClient) GetRdeType(vendor, namespace, version string) (*DefinedEntityType, error) {
+// GetRdeType gets a Runtime Defined Entity Type by its unique combination of vendor, nss and version.
+func (vcdClient *VCDClient) GetRdeType(vendor, nss, version string) (*DefinedEntityType, error) {
 	queryParameters := url.Values{}
-	queryParameters.Add("filter", fmt.Sprintf("vendor==%s;nss==%s;version==%s", vendor, namespace, version))
+	queryParameters.Add("filter", fmt.Sprintf("vendor==%s;nss==%s;version==%s", vendor, nss, version))
 	rdeTypes, err := vcdClient.GetAllRdeTypes(queryParameters)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(rdeTypes) == 0 {
-		return nil, fmt.Errorf("%s could not find the Runtime Defined Entity Type with vendor %s, namespace %s and version %s", ErrorEntityNotFound, vendor, namespace, version)
+		return nil, fmt.Errorf("%s could not find the Runtime Defined Entity Type with vendor %s, nss %s and version %s", ErrorEntityNotFound, vendor, nss, version)
 	}
 
 	if len(rdeTypes) > 1 {
-		return nil, fmt.Errorf("found more than 1 Runtime Defined Entity Type with vendor %s, namespace %s and version %s", vendor, namespace, version)
+		return nil, fmt.Errorf("found more than 1 Runtime Defined Entity Type with vendor %s, nss %s and version %s", vendor, nss, version)
 	}
 
 	return rdeTypes[0], nil
@@ -199,26 +199,26 @@ func (rdeType *DefinedEntityType) Delete() error {
 	return nil
 }
 
-// GetAllRdes gets all the RDE instances of the given vendor, namespace and version.
-func (vcdClient *VCDClient) GetAllRdes(vendor, namespace, version string, queryParameters url.Values) ([]*DefinedEntity, error) {
-	return getAllRdes(&vcdClient.Client, vendor, namespace, version, queryParameters)
+// GetAllRdes gets all the RDE instances of the given vendor, nss and version.
+func (vcdClient *VCDClient) GetAllRdes(vendor, nss, version string, queryParameters url.Values) ([]*DefinedEntity, error) {
+	return getAllRdes(&vcdClient.Client, vendor, nss, version, queryParameters)
 }
 
 // GetAllRdes gets all the RDE instances of the receiver type.
 func (rdeType *DefinedEntityType) GetAllRdes(queryParameters url.Values) ([]*DefinedEntity, error) {
-	return getAllRdes(rdeType.client, rdeType.DefinedEntityType.Vendor, rdeType.DefinedEntityType.Namespace, rdeType.DefinedEntityType.Version, queryParameters)
+	return getAllRdes(rdeType.client, rdeType.DefinedEntityType.Vendor, rdeType.DefinedEntityType.Nss, rdeType.DefinedEntityType.Version, queryParameters)
 }
 
-// getAllRdes gets all the RDE instances of the given vendor, namespace and version.
+// getAllRdes gets all the RDE instances of the given vendor, nss and version.
 // Supports filtering with the given queryParameters.
-func getAllRdes(client *Client, vendor, namespace, version string, queryParameters url.Values) ([]*DefinedEntity, error) {
+func getAllRdes(client *Client, vendor, nss, version string, queryParameters url.Values) ([]*DefinedEntity, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, fmt.Sprintf("%s/%s/%s", vendor, namespace, version))
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, fmt.Sprintf("%s/%s/%s", vendor, nss, version))
 	if err != nil {
 		return nil, err
 	}
@@ -244,21 +244,21 @@ func getAllRdes(client *Client, vendor, namespace, version string, queryParamete
 // GetRdesByName gets RDE instances with the given name that belongs to the receiver type.
 // VCD allows to have many RDEs with the same name, hence this function returns a slice.
 func (rdeType *DefinedEntityType) GetRdesByName(name string) ([]*DefinedEntity, error) {
-	return getRdesByName(rdeType.client, rdeType.DefinedEntityType.Vendor, rdeType.DefinedEntityType.Namespace, rdeType.DefinedEntityType.Version, name)
+	return getRdesByName(rdeType.client, rdeType.DefinedEntityType.Vendor, rdeType.DefinedEntityType.Nss, rdeType.DefinedEntityType.Version, name)
 }
 
-// GetRdesByName gets RDE instances with the given name and the given vendor, namespace and version.
+// GetRdesByName gets RDE instances with the given name and the given vendor, nss and version.
 // VCD allows to have many RDEs with the same name, hence this function returns a slice.
-func (vcdClient *VCDClient) GetRdesByName(vendor, namespace, version, name string) ([]*DefinedEntity, error) {
-	return getRdesByName(&vcdClient.Client, vendor, namespace, version, name)
+func (vcdClient *VCDClient) GetRdesByName(vendor, nss, version, name string) ([]*DefinedEntity, error) {
+	return getRdesByName(&vcdClient.Client, vendor, nss, version, name)
 }
 
-// getRdesByName gets RDE instances with the given name and the given vendor, namespace and version.
+// getRdesByName gets RDE instances with the given name and the given vendor, nss and version.
 // VCD allows to have many RDEs with the same name, hence this function returns a slice.
-func getRdesByName(client *Client, vendor, namespace, version, name string) ([]*DefinedEntity, error) {
+func getRdesByName(client *Client, vendor, nss, version, name string) ([]*DefinedEntity, error) {
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", fmt.Sprintf("name==%s", name))
-	rdeTypes, err := getAllRdes(client, vendor, namespace, version, queryParameters)
+	rdeTypes, err := getAllRdes(client, vendor, nss, version, queryParameters)
 	if err != nil {
 		return nil, err
 	}
@@ -321,19 +321,19 @@ func (rdeType *DefinedEntityType) CreateRde(entity types.DefinedEntity, tenantCo
 	if err != nil {
 		return nil, err
 	}
-	return pollPreCreatedRde(rdeType.client, rdeType.DefinedEntityType.Vendor, rdeType.DefinedEntityType.Namespace, rdeType.DefinedEntityType.ID, entity.Name, 5)
+	return pollPreCreatedRde(rdeType.client, rdeType.DefinedEntityType.Vendor, rdeType.DefinedEntityType.Nss, rdeType.DefinedEntityType.ID, entity.Name, 5)
 }
 
-// CreateRde creates an entity of the type of the given vendor, namespace and version.
+// CreateRde creates an entity of the type of the given vendor, nss and version.
 // NOTE: After RDE creation, some actor should Resolve it, otherwise the RDE state will be "PRE_CREATED"
 // and the generated VCD task will remain at 1% until resolved.
-func (vcdClient *VCDClient) CreateRde(vendor, namespace, version string, entity types.DefinedEntity, tenantContext *TenantContext) (*DefinedEntity, error) {
-	entity.EntityType = fmt.Sprintf("urn:vcloud:type:%s:%s:%s", vendor, namespace, version)
+func (vcdClient *VCDClient) CreateRde(vendor, nss, version string, entity types.DefinedEntity, tenantContext *TenantContext) (*DefinedEntity, error) {
+	entity.EntityType = fmt.Sprintf("urn:vcloud:type:%s:%s:%s", vendor, nss, version)
 	err := createRde(&vcdClient.Client, entity, tenantContext)
 	if err != nil {
 		return nil, err
 	}
-	return pollPreCreatedRde(&vcdClient.Client, vendor, namespace, version, entity.Name, 5)
+	return pollPreCreatedRde(&vcdClient.Client, vendor, nss, version, entity.Name, 5)
 }
 
 // CreateRde creates an entity of the type of the receiver Runtime Defined Entity (RDE) type.
@@ -369,14 +369,14 @@ func createRde(client *Client, entity types.DefinedEntity, tenantContext *Tenant
 }
 
 // pollPreCreatedRde polls VCD for a given amount of tries, to search for the RDE in state PRE_CREATED
-// that corresponds to the given vendor, namespace, version and name.
+// that corresponds to the given vendor, nss, version and name.
 // This function can be useful on RDE creation, as VCD just returns a task that remains at 1% until the RDE is resolved,
 // hence one needs to re-fetch the recently created RDE manually.
-func pollPreCreatedRde(client *Client, vendor, namespace, version, name string, tries int) (*DefinedEntity, error) {
+func pollPreCreatedRde(client *Client, vendor, nss, version, name string, tries int) (*DefinedEntity, error) {
 	var rdes []*DefinedEntity
 	var err error
 	for i := 0; i < tries; i++ {
-		rdes, err = getRdesByName(client, vendor, namespace, version, name)
+		rdes, err = getRdesByName(client, vendor, nss, version, name)
 		if err == nil {
 			for _, rde := range rdes {
 				// This doesn't really guarantee that the chosen RDE is the one we want, but there's no other way of
