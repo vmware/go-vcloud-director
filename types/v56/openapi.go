@@ -441,7 +441,7 @@ type DefinedInterface struct {
 type DefinedEntityType struct {
 	ID               string                 `json:"id,omitempty"`               // The id of the defined entity type in URN format
 	Name             string                 `json:"name,omitempty"`             // The name of the defined entity type
-	Namespace        string                 `json:"nss,omitempty"`              // A unique namespace specific string. The combination of nss and version must be unique
+	Nss              string                 `json:"nss,omitempty"`              // A unique namespace specific string. The combination of nss and version must be unique
 	Version          string                 `json:"version,omitempty"`          // The version of the defined entity. The combination of nss and version must be unique. The version string must follow semantic versioning rules
 	Description      string                 `json:"description,omitempty"`      // Description of the defined entity
 	ExternalId       string                 `json:"externalId,omitempty"`       // An external entity’s id that this definition may apply to

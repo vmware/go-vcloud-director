@@ -77,21 +77,21 @@ func (vcdClient *VCDClient) GetAllRdeTypes(queryParameters url.Values) ([]*Defin
 	return returnRDEs, nil
 }
 
-// GetRdeType gets a Runtime Defined Entity Type by its unique combination of vendor, namespace and version.
-func (vcdClient *VCDClient) GetRdeType(vendor, namespace, version string) (*DefinedEntityType, error) {
+// GetRdeType gets a Runtime Defined Entity Type by its unique combination of vendor, nss and version.
+func (vcdClient *VCDClient) GetRdeType(vendor, nss, version string) (*DefinedEntityType, error) {
 	queryParameters := url.Values{}
-	queryParameters.Add("filter", fmt.Sprintf("vendor==%s;nss==%s;version==%s", vendor, namespace, version))
+	queryParameters.Add("filter", fmt.Sprintf("vendor==%s;nss==%s;version==%s", vendor, nss, version))
 	rdeTypes, err := vcdClient.GetAllRdeTypes(queryParameters)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(rdeTypes) == 0 {
-		return nil, fmt.Errorf("%s could not find the Runtime Defined Entity Type with vendor %s, namespace %s and version %s", ErrorEntityNotFound, vendor, namespace, version)
+		return nil, fmt.Errorf("%s could not find the Runtime Defined Entity Type with vendor %s, nss %s and version %s", ErrorEntityNotFound, vendor, nss, version)
 	}
 
 	if len(rdeTypes) > 1 {
-		return nil, fmt.Errorf("found more than 1 Runtime Defined Entity Type with vendor %s, namespace %s and version %s", vendor, namespace, version)
+		return nil, fmt.Errorf("found more than 1 Runtime Defined Entity Type with vendor %s, nss %s and version %s", vendor, nss, version)
 	}
 
 	return rdeTypes[0], nil

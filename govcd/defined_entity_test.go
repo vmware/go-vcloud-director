@@ -50,13 +50,13 @@ func (vcd *TestVCD) Test_RdeType(check *C) {
 	check.Assert(len(allRdeTypesByTenant), Equals, 0)
 
 	// Then we create a new RDE Type with System administrator.
-	// Can't put check.TestName() in namespace due to a bug in VCD 10.4.1 that causes RDEs to fail on GET once created with special characters like "."
+	// Can't put check.TestName() in nss due to a bug in VCD 10.4.1 that causes RDEs to fail on GET once created with special characters like "."
 	vendor := "vmware"
 	nss := strings.ReplaceAll(check.TestName()+"name", ".", "")
 	version := "1.2.3"
 	rdeTypeToCreate := &types.DefinedEntityType{
 		Name:        check.TestName(),
-		Namespace:   nss,
+		Nss:         nss,
 		Version:     version,
 		Description: "Description of " + check.TestName(),
 		Schema:      unmarshaledRdeTypeSchema,
@@ -67,7 +67,7 @@ func (vcd *TestVCD) Test_RdeType(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(createdRdeType, NotNil)
 	check.Assert(createdRdeType.DefinedEntityType.Name, Equals, rdeTypeToCreate.Name)
-	check.Assert(createdRdeType.DefinedEntityType.Namespace, Equals, rdeTypeToCreate.Namespace)
+	check.Assert(createdRdeType.DefinedEntityType.Nss, Equals, rdeTypeToCreate.Nss)
 	check.Assert(createdRdeType.DefinedEntityType.Version, Equals, rdeTypeToCreate.Version)
 	check.Assert(createdRdeType.DefinedEntityType.Schema, NotNil)
 	check.Assert(createdRdeType.DefinedEntityType.Schema["type"], Equals, "object")
@@ -78,11 +78,11 @@ func (vcd *TestVCD) Test_RdeType(check *C) {
 
 	// Tenants can't create RDE Types
 	nilRdeType, err := tenantUserClient.CreateRdeType(&types.DefinedEntityType{
-		Name:      check.TestName(),
-		Namespace: "notworking",
-		Version:   "4.5.6",
-		Schema:    unmarshaledRdeTypeSchema,
-		Vendor:    "willfail",
+		Name:    check.TestName(),
+		Nss:     "notworking",
+		Version: "4.5.6",
+		Schema:  unmarshaledRdeTypeSchema,
+		Vendor:  "willfail",
 	})
 	check.Assert(err, NotNil)
 	check.Assert(nilRdeType, IsNil)
@@ -108,12 +108,12 @@ func (vcd *TestVCD) Test_RdeType(check *C) {
 	check.Assert(err, NotNil)
 	check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
 
-	obtainedRdeType2, err := systemAdministratorClient.GetRdeType(obtainedRdeType.DefinedEntityType.Vendor, obtainedRdeType.DefinedEntityType.Namespace, obtainedRdeType.DefinedEntityType.Version)
+	obtainedRdeType2, err := systemAdministratorClient.GetRdeType(obtainedRdeType.DefinedEntityType.Vendor, obtainedRdeType.DefinedEntityType.Nss, obtainedRdeType.DefinedEntityType.Version)
 	check.Assert(err, IsNil)
 	check.Assert(*obtainedRdeType2.DefinedEntityType, DeepEquals, *obtainedRdeType.DefinedEntityType)
 
 	// The RDE Type is unreachable as tenant
-	_, err = tenantUserClient.GetRdeType(obtainedRdeType.DefinedEntityType.Vendor, obtainedRdeType.DefinedEntityType.Namespace, obtainedRdeType.DefinedEntityType.Version)
+	_, err = tenantUserClient.GetRdeType(obtainedRdeType.DefinedEntityType.Vendor, obtainedRdeType.DefinedEntityType.Nss, obtainedRdeType.DefinedEntityType.Version)
 	check.Assert(err, NotNil)
 	check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
 
