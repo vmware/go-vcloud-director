@@ -107,9 +107,13 @@ type OpenAPIEdgeGatewaySubnetValue struct {
 	// Enabled toggles if the subnet is enabled
 	Enabled bool `json:"enabled"`
 	// TotalIPCount specified total allocated IP count
-	TotalIPCount int    `json:"totalIpCount,omitempty"`
-	UsedIPCount  int    `json:"usedIpCount,omitempty"`
-	PrimaryIP    string `json:"primaryIp,omitempty"`
+	TotalIPCount int `json:"totalIpCount,omitempty"`
+
+	// UsedIPCount specifies used IP count
+	UsedIPCount int `json:"usedIpCount,omitempty"`
+
+	// PrimaryIP of the Edge Gateway. Can only be one per Edge (from all subnets)
+	PrimaryIP string `json:"primaryIp,omitempty"`
 
 	// AutoAllocateIPRanges provides a way to automatically allocate
 	AutoAllocateIPRanges bool `json:"autoAllocateIpRanges,omitempty"`
@@ -133,6 +137,7 @@ type OpenAPIEdgeGatewayEdgeClusterConfig struct {
 	SecondaryEdgeCluster OpenAPIEdgeGatewayEdgeCluster `json:"secondaryEdgeCluster,omitempty"`
 }
 
+// GatewayUsedIpAddress defines used IP address on edge gateway
 type GatewayUsedIpAddress struct {
 	Category   string           `json:"category"`
 	IPAddress  string           `json:"ipAddress"`

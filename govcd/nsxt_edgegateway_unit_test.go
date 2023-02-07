@@ -2,7 +2,7 @@
 // +build unit ALL
 
 /*
-* Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+* Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -570,7 +570,7 @@ func Test_flattenEdgeGatewayUplinkToIpSlice(t *testing.T) {
 	}
 }
 
-func Test_getUnallocatedExternalIPAddress(t *testing.T) {
+func Test_getUnusedExternalIPAddress(t *testing.T) {
 	type args struct {
 		uplinks         []types.EdgeGatewayUplinks
 		usedIpAddresses []*types.GatewayUsedIpAddress
