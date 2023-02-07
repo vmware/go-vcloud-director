@@ -115,7 +115,7 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(usedIPs, NotNil)
 
-	ipAddr, err := updatedEdge.GetUnassignedExternalIPAddresses(1, netip.Prefix{}, false)
+	ipAddr, err := updatedEdge.GetUnusedExternalIPAddresses(1, netip.Prefix{}, false)
 	// Expect an error as no ranges were assigned
 	check.Assert(err, NotNil)
 	check.Assert(ipAddr, DeepEquals, []netip.Addr(nil))
@@ -259,7 +259,7 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayUsedAndUnusedIPs(check *C) {
 				IPRanges: types.ExternalNetworkV2IPRanges{Values: []types.ExternalNetworkV2IPRange{
 					{
 						StartAddress: "1.1.1.3",
-						EndAddress:   "1.1.1.50",
+						EndAddress:   "1.1.1.25",
 					},
 				}},
 				Enabled: true,
@@ -322,13 +322,13 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayUsedAndUnusedIPs(check *C) {
 	check.Assert(usedIPs[0].Category, Equals, "PRIMARY_IP")
 
 	// Attempt to get 1 unallocated IP
-	ipAddr, err := createdEdge.GetUnassignedExternalIPAddresses(1, netip.Prefix{}, false)
+	ipAddr, err := createdEdge.GetUnusedExternalIPAddresses(1, netip.Prefix{}, false)
 	check.Assert(err, IsNil)
 	ipsCompared := compareEachIpElementAndOrder(ipAddr, []netip.Addr{netip.MustParseAddr("1.1.1.4")})
 	check.Assert(ipsCompared, Equals, true)
 
 	// Attempt to get 10 unallocated IPs
-	ipAddr, err = createdEdge.GetUnassignedExternalIPAddresses(10, netip.Prefix{}, true)
+	ipAddr, err = createdEdge.GetUnusedExternalIPAddresses(10, netip.Prefix{}, true)
 	check.Assert(err, IsNil)
 	ipsCompared = compareEachIpElementAndOrder(ipAddr, []netip.Addr{
 		netip.MustParseAddr("1.1.1.4"),
@@ -345,10 +345,40 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayUsedAndUnusedIPs(check *C) {
 	check.Assert(ipsCompared, Equals, true)
 
 	// Attempt to get IP but filter it off by prefix
-	ipAddr, err = createdEdge.GetUnassignedExternalIPAddresses(1, netip.MustParsePrefix("192.168.1.1/24"), false)
+	ipAddr, err = createdEdge.GetUnusedExternalIPAddresses(1, netip.MustParsePrefix("192.168.1.1/24"), false)
 	// Expect an error because Edge Gateway does not have IPs from required subnet 192.168.1.1/24
 	check.Assert(err, NotNil)
 	check.Assert(ipAddr, IsNil)
+
+	// Attempt to get all unused IPs
+	allIps, err := createdEdge.GetAllUnusedExternalIPAddresses(true)
+	check.Assert(err, IsNil)
+	ipsCompared = compareEachIpElementAndOrder(allIps, []netip.Addr{
+		netip.MustParseAddr("1.1.1.4"),
+		netip.MustParseAddr("1.1.1.5"),
+		netip.MustParseAddr("1.1.1.6"),
+		netip.MustParseAddr("1.1.1.7"),
+		netip.MustParseAddr("1.1.1.8"),
+		netip.MustParseAddr("1.1.1.9"),
+		netip.MustParseAddr("1.1.1.10"),
+		netip.MustParseAddr("1.1.1.11"),
+		netip.MustParseAddr("1.1.1.12"),
+		netip.MustParseAddr("1.1.1.13"),
+		netip.MustParseAddr("1.1.1.14"),
+		netip.MustParseAddr("1.1.1.15"),
+		netip.MustParseAddr("1.1.1.16"),
+		netip.MustParseAddr("1.1.1.17"),
+		netip.MustParseAddr("1.1.1.18"),
+		netip.MustParseAddr("1.1.1.19"),
+		netip.MustParseAddr("1.1.1.20"),
+		netip.MustParseAddr("1.1.1.21"),
+		netip.MustParseAddr("1.1.1.22"),
+		netip.MustParseAddr("1.1.1.23"),
+		netip.MustParseAddr("1.1.1.24"),
+		netip.MustParseAddr("1.1.1.25"),
+	})
+	check.Assert(ipsCompared, Equals, true)
+	check.Assert(len(allIps), Equals, 22)
 
 	// Cleanup
 	err = createdEdge.Delete()

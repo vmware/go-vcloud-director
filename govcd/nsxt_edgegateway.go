@@ -402,10 +402,10 @@ func (egw *NsxtEdgeGateway) GetUsedIpAddresses(queryParameters url.Values) ([]*t
 	return typeResponse, nil
 }
 
-// GetUnassignedExternalIPAddresses will retrieve a requiredIpCount of unassigned IP addresses for
-// Edge Gateway
+// GetUnusedExternalIPAddresses will retrieve a requiredIpCount of unused IP addresses for Edge
+// Gateway
 // Arguments:
-// * `requiredIpCount` (how many unallocated IPs should be returned). It will fail and return an
+// * `requiredIpCount` (how many unuseds IPs should be returned). It will fail and return an
 // error if IP all IPs specified in 'requiredIpCount' cannot be found.
 // * `optionalSubnet` is specified (CIDR notation, e.g. 192.168.1.0/24) - it will look for an IP in
 // this subnet only.
@@ -420,10 +420,10 @@ func (egw *NsxtEdgeGateway) GetUsedIpAddresses(queryParameters url.Values) ([]*t
 // This function performs below listed steps:
 // 1. Retrieves a complete list of IPs in Edge Gateway uplinks (returns error if none are found)
 // 2. if 'optionalSubnet' was specified - filter IP addresses to only fall into that subnet
-// 3. Retrieves all used IP addresses in Edge Gateway
+// 3. Retrieves all used IP addresses in Edge Gateway using dedicated API endpoint
 // 4. Subtracts used IP addresses from available list of IPs in uplink (optionally filtered by optionalSubnet in step 2)
 // 5. Checks if 'requiredIpCount' criteria is met, returns error otherwise
-// 6. Returns required amount of unallocated IPs (as defined in 'requiredIpCount')
+// 6. Returns required amount of unused IPs (as defined in 'requiredIpCount')
 //
 // Notes:
 // * This function uses Go's builtin `netip` package to avoid any string processing of IPs and
@@ -432,7 +432,7 @@ func (egw *NsxtEdgeGateway) GetUsedIpAddresses(queryParameters url.Values) ([]*t
 // library semantics) and an error
 // * It will return an error if any of uplink IP ranges End IP address is lower than Start IP
 // address
-func (egw *NsxtEdgeGateway) GetUnassignedExternalIPAddresses(requiredIpCount int, optionalSubnet netip.Prefix, refresh bool) ([]netip.Addr, error) {
+func (egw *NsxtEdgeGateway) GetUnusedExternalIPAddresses(requiredIpCount int, optionalSubnet netip.Prefix, refresh bool) ([]netip.Addr, error) {
 	if refresh {
 		err := egw.Refresh()
 		if err != nil {
@@ -444,7 +444,24 @@ func (egw *NsxtEdgeGateway) GetUnassignedExternalIPAddresses(requiredIpCount int
 		return nil, fmt.Errorf("error getting used IP addresses for Edge Gateway: %s", err)
 	}
 
-	return getNusedExternalIPAddress(egw.EdgeGateway.EdgeGatewayUplinks, usedIpAddresses, requiredIpCount, optionalSubnet)
+	return getUnusedExternalIPAddress(egw.EdgeGateway.EdgeGatewayUplinks, usedIpAddresses, requiredIpCount, optionalSubnet)
+}
+
+// GetAllUnusedExternalIPAddresses will retrieve all unassigned IP addresses for Edge Gateway It is
+// similar to GetUnusedExternalIPAddresses but returns all unused IPs instead of a specific amount
+func (egw *NsxtEdgeGateway) GetAllUnusedExternalIPAddresses(refresh bool) ([]netip.Addr, error) {
+	if refresh {
+		err := egw.Refresh()
+		if err != nil {
+			return nil, fmt.Errorf("error refreshing Edge Gateway: %s", err)
+		}
+	}
+	usedIpAddresses, err := egw.GetUsedIpAddresses(nil)
+	if err != nil {
+		return nil, fmt.Errorf("error getting used IP addresses for Edge Gateway: %s", err)
+	}
+
+	return getAllUnusedExternalIPAddresses(egw.EdgeGateway.EdgeGatewayUplinks, usedIpAddresses, netip.Prefix{})
 }
 
 // GetUsedIpAddressSlice retrieves a list of used IP addresses in an Edge Gateway and returns it
@@ -464,10 +481,7 @@ func (egw *NsxtEdgeGateway) GetUsedIpAddressSlice(refresh bool) ([]netip.Addr, e
 	return flattenGatewayUsedIpAddressesToIpSlice(usedIpAddresses)
 }
 
-// getNusedExternalIPAddress kept separate from data lookup in
-// GetUnusedExternalIPAddresses to aid testing. It performs actions which are documented in
-// public function.
-func getNusedExternalIPAddress(uplinks []types.EdgeGatewayUplinks, usedIpAddresses []*types.GatewayUsedIpAddress, requiredIpCount int, optionalSubnet netip.Prefix) ([]netip.Addr, error) {
+func getAllUnusedExternalIPAddresses(uplinks []types.EdgeGatewayUplinks, usedIpAddresses []*types.GatewayUsedIpAddress, optionalSubnet netip.Prefix) ([]netip.Addr, error) {
 	// 1. Flatten all IP ranges in Edge Gateway using Go's native 'netip.Addr' IP container instead
 	// of plain strings because it is more robust (supports IPv4 and IPv6 and also comparison
 	// operator)
@@ -494,17 +508,29 @@ func getNusedExternalIPAddress(uplinks []types.EdgeGatewayUplinks, usedIpAddress
 		return nil, fmt.Errorf("could not flatten Edge Gateway used IP addresses: %s", err)
 	}
 
-	// 4. Get all unallocated IPs
-	// (allIPs - allUsedIPs) = allUnallocatedIPs
+	// 4. Get all unused IPs
+	// (allIPs - allUsedIPs) = allUnusedIPs
 	unallocatedIps := ipSliceDifference(assignedIpSlice, usedIpSlice)
 
+	return unallocatedIps, nil
+}
+
+// getUnusedExternalIPAddress kept separate from data lookup in
+// GetUnusedExternalIPAddresses to aid testing. It performs actions which are documented in
+// public function.
+func getUnusedExternalIPAddress(uplinks []types.EdgeGatewayUplinks, usedIpAddresses []*types.GatewayUsedIpAddress, requiredIpCount int, optionalSubnet netip.Prefix) ([]netip.Addr, error) {
+	unusedIps, err := getAllUnusedExternalIPAddresses(uplinks, usedIpAddresses, optionalSubnet)
+	if err != nil {
+		return nil, fmt.Errorf("error getting all unused IPs: %s", err)
+	}
+
 	// 5. Check if 'requiredIpCount' criteria is met
-	if len(unallocatedIps) < requiredIpCount {
-		return nil, fmt.Errorf("not enough unallocated IPs found. Expected %d, got %d", requiredIpCount, len(unallocatedIps))
+	if len(unusedIps) < requiredIpCount {
+		return nil, fmt.Errorf("not enough unallocated IPs found. Expected %d, got %d", requiredIpCount, len(unusedIps))
 	}
 
 	// 6. Return required amount of unallocated IPs
-	return unallocatedIps[:requiredIpCount], nil
+	return unusedIps[:requiredIpCount], nil
 }
 
 // flattenEdgeGatewayUplinkToIpSlice processes Edge Gateway Uplink structure and creates a slice of all
