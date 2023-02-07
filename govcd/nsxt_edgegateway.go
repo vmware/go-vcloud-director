@@ -502,7 +502,7 @@ func getAllUnusedExternalIPAddresses(uplinks []types.EdgeGatewayUplinks, usedIpA
 		}
 	}
 
-	// 3. Get Used IP addresses in Edge Gateway in the same slice
+	// 3. Get Used IP addresses in Edge Gateway in the same slice format
 	usedIpSlice, err := flattenGatewayUsedIpAddressesToIpSlice(usedIpAddresses)
 	if err != nil {
 		return nil, fmt.Errorf("could not flatten Edge Gateway used IP addresses: %s", err)
@@ -510,14 +510,11 @@ func getAllUnusedExternalIPAddresses(uplinks []types.EdgeGatewayUplinks, usedIpA
 
 	// 4. Get all unused IPs
 	// (allIPs - allUsedIPs) = allUnusedIPs
-	unallocatedIps := ipSliceDifference(assignedIpSlice, usedIpSlice)
+	unusedIps := ipSliceDifference(assignedIpSlice, usedIpSlice)
 
-	return unallocatedIps, nil
+	return unusedIps, nil
 }
 
-// getUnusedExternalIPAddress kept separate from data lookup in
-// GetUnusedExternalIPAddresses to aid testing. It performs actions which are documented in
-// public function.
 func getUnusedExternalIPAddress(uplinks []types.EdgeGatewayUplinks, usedIpAddresses []*types.GatewayUsedIpAddress, requiredIpCount int, optionalSubnet netip.Prefix) ([]netip.Addr, error) {
 	unusedIps, err := getAllUnusedExternalIPAddresses(uplinks, usedIpAddresses, optionalSubnet)
 	if err != nil {
@@ -526,15 +523,15 @@ func getUnusedExternalIPAddress(uplinks []types.EdgeGatewayUplinks, usedIpAddres
 
 	// 5. Check if 'requiredIpCount' criteria is met
 	if len(unusedIps) < requiredIpCount {
-		return nil, fmt.Errorf("not enough unallocated IPs found. Expected %d, got %d", requiredIpCount, len(unusedIps))
+		return nil, fmt.Errorf("not enough unused IPs found. Expected %d, got %d", requiredIpCount, len(unusedIps))
 	}
 
-	// 6. Return required amount of unallocated IPs
+	// 6. Return required amount of unused IPs
 	return unusedIps[:requiredIpCount], nil
 }
 
-// flattenEdgeGatewayUplinkToIpSlice processes Edge Gateway Uplink structure and creates a slice of all
-// available IPs
+// flattenEdgeGatewayUplinkToIpSlice processes Edge Gateway Uplink structure and creates a slice of
+// all available IPs
 func flattenEdgeGatewayUplinkToIpSlice(uplinks []types.EdgeGatewayUplinks) ([]netip.Addr, error) {
 	assignedIpSlice := make([]netip.Addr, 0)
 
@@ -547,7 +544,8 @@ func flattenEdgeGatewayUplinkToIpSlice(uplinks []types.EdgeGatewayUplinks) ([]ne
 					return nil, fmt.Errorf("error parsing start IP address in range '%s': %s", r.StartAddress, err)
 				}
 
-				// if we have end address specified - a range of IPs must be expanded into the slice
+				// if we have end address specified - a range of IPs must be expanded into slice
+				// with all IPs in that range
 				if r.EndAddress != "" {
 					endIp, err := netip.ParseAddr(r.EndAddress)
 					if err != nil {
@@ -559,7 +557,7 @@ func flattenEdgeGatewayUplinkToIpSlice(uplinks []types.EdgeGatewayUplinks) ([]ne
 						return nil, fmt.Errorf("end IP is lower that start IP (%s < %s)", r.EndAddress, r.StartAddress)
 					}
 
-					// loop over IPs in range
+					// loop over IPs in range from startIp to endIp and add them to the slice one by one
 					// Expression 'ip.Compare(endIp) == 1'  means that 'ip > endIp' and the loop should stop
 					for ip := startIp; ip.Compare(endIp) != 1; ip = ip.Next() {
 						assignedIpSlice = append(assignedIpSlice, ip)
@@ -630,7 +628,7 @@ func ipSliceDifference(minuendSlice, subtrahendSlice []netip.Addr) []netip.Addr 
 //
 // Special behavior:
 // * Passing empty 'subnet' will return `nil` and an error
-// * Pasing empty 'ipRange' will return 'nil' and an error
+// * Passing empty 'ipRange' will return 'nil' and an error
 //
 // Note. This function does not enforce uniqueness of IPs in 'ipRange' and if there are duplicate
 // IPs matching 'subnet' they will be in the resulting slice
