@@ -301,7 +301,7 @@ func getRdeById(client *Client, id string) (*DefinedEntity, error) {
 		client:        client,
 	}
 
-	eTagValue, err := client.OpenApiGetItemAndHeader(apiVersion, urlRef, nil, result.DefinedEntity, nil, "ETag")
+	eTagValue, err := client.OpenApiGetItemAndHeader(apiVersion, urlRef, nil, result.DefinedEntity, nil, "etag")
 	if err != nil {
 		return nil, err
 	}
@@ -408,11 +408,11 @@ func (rde *DefinedEntity) Resolve() error {
 		return err
 	}
 
-	eTag, err := client.OpenApiPostItemAndGetHeader(apiVersion, urlRef, nil, nil, rde.DefinedEntity, nil, "ETag")
+	etag, err := client.OpenApiPostItemAndGetHeader(apiVersion, urlRef, nil, nil, rde.DefinedEntity, nil, "etag")
 	if err != nil {
 		return err
 	}
-	rde.Etag = eTag
+	rde.Etag = etag
 
 	return nil
 }
@@ -433,6 +433,18 @@ func (rde *DefinedEntity) Update(rdeToUpdate types.DefinedEntity) error {
 		rdeToUpdate.Name = rde.DefinedEntity.Name
 	}
 
+	if rde.Etag == "" {
+		// We need to get an Etag to perform the update
+		retrievedRde, err := getRdeById(rde.client, rde.DefinedEntity.ID)
+		if err != nil {
+			return err
+		}
+		if retrievedRde.Etag == "" {
+			return fmt.Errorf("could not retrieve a valid Etag to perform an update to RDE %s", retrievedRde.DefinedEntity.ID)
+		}
+		rde.Etag = retrievedRde.Etag
+	}
+
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
@@ -444,11 +456,11 @@ func (rde *DefinedEntity) Update(rdeToUpdate types.DefinedEntity) error {
 		return err
 	}
 
-	eTag, err := client.OpenApiPutItemAndGetHeader(apiVersion, urlRef, nil, rdeToUpdate, rde.DefinedEntity, nil, "ETag")
+	etag, err := client.OpenApiPutItemAndGetHeader(apiVersion, urlRef, nil, rdeToUpdate, rde.DefinedEntity, map[string]string{"If-Match": rde.Etag}, "etag")
 	if err != nil {
 		return err
 	}
-	rde.Etag = eTag
+	rde.Etag = etag
 
 	return nil
 }
