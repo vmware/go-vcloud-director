@@ -53,12 +53,6 @@ type OpenAPIEdgeGateway struct {
 	// 192.168.255.225/30. The DNS listener IP network is on 192.168.255.228/32. This field cannot be updated.
 	ServiceNetworkDefinition string `json:"serviceNetworkDefinition,omitempty"`
 
-	// TotalIpCount is a read only value to display total IP count
-	TotalIpCount *int `json:"totalIpCount,omitempty"`
-
-	// UsedIpCount is a read only value to display allocated IP count
-	UsedIpCount *int `json:"usedIpCount,omitempty"`
-
 	// UsingIpSpace is a boolean flag to
 	UsingIpSpace *bool `json:"usingIpSpace,omitempty"`
 }
