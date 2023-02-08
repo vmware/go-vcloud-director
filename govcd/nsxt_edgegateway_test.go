@@ -380,6 +380,13 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayUsedAndUnusedIPs(check *C) {
 	check.Assert(ipsCompared, Equals, true)
 	check.Assert(len(allIps), Equals, 22)
 
+	// Verify that GetAllocatedIpCount returns correct number of allocated IPs
+	//GetAllocatedIpCount
+	totalAllocationIpCount, err := createdEdge.GetAllocatedIpCount(true)
+	check.Assert(err, IsNil)
+	check.Assert(totalAllocationIpCount, NotNil)
+	check.Assert(*totalAllocationIpCount, Equals, 23) // 22 unused IPs + 1 primary
+
 	// Cleanup
 	err = createdEdge.Delete()
 	check.Assert(err, IsNil)
