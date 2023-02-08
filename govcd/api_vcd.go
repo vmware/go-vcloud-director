@@ -7,6 +7,7 @@ package govcd
 import (
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -91,7 +92,12 @@ func (vcdClient *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.
 		return nil, err
 	}
 
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			util.Logger.Printf("error closing response Body [vcdCloudApiAuthorize]: %s", err)
+		}
+	}(resp.Body)
 
 	// Catch HTTP 401 (Status Unauthorized) to return an error as otherwise this library would return
 	// odd errors while doing lookup of resources and confuse user.

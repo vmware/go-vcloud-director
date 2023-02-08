@@ -29,7 +29,7 @@ func (vcd *TestVCD) Test_NsxtDynamicSecurityGroup(check *C) {
 		OwnerRef:    &types.OpenApiReference{ID: vdcGroup.VdcGroup.Id},
 		VmCriteria: []types.NsxtFirewallGroupVmCriteria{
 			{
-				[]types.NsxtFirewallGroupVmCriteriaRule{
+				VmCriteriaRule: []types.NsxtFirewallGroupVmCriteriaRule{
 					{
 						AttributeType:  "VM_TAG",
 						Operator:       "EQUALS",
@@ -53,7 +53,7 @@ func (vcd *TestVCD) Test_NsxtDynamicSecurityGroup(check *C) {
 				},
 			}, // Boolean OR
 			{
-				[]types.NsxtFirewallGroupVmCriteriaRule{
+				VmCriteriaRule: []types.NsxtFirewallGroupVmCriteriaRule{
 					{
 						AttributeType:  "VM_NAME",
 						Operator:       "CONTAINS",

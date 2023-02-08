@@ -10,6 +10,7 @@ package govcd
 import (
 	"errors"
 	"fmt"
+	"github.com/vmware/go-vcloud-director/v2/util"
 	"io"
 	"net/http"
 	"net/url"
@@ -171,7 +172,12 @@ func testGetEdgeEndpointXML(endpoint string, edge EdgeGateway, check *C) string 
 		fmt.Sprintf("unable to get XML from endpoint %s: %%s", endpoint), nil, &types.NSXError{})
 	check.Assert(err, IsNil)
 
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			util.Logger.Printf("error closing response Body [testGetEdgeEndpointXML]: %s", err)
+		}
+	}(resp.Body)
 
 	body, err := io.ReadAll(resp.Body)
 	check.Assert(err, IsNil)
