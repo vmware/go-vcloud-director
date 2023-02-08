@@ -303,7 +303,7 @@ func getRdeById(client *Client, id string) (*DefinedEntity, error) {
 
 	eTagValue, err := client.OpenApiGetItemAndHeader(apiVersion, urlRef, nil, result.DefinedEntity, nil, "etag")
 	if err != nil {
-		return nil, err
+		return nil, amendRdeApiError(client, err)
 	}
 	result.Etag = eTagValue
 
@@ -410,7 +410,7 @@ func (rde *DefinedEntity) Resolve() error {
 
 	etag, err := client.OpenApiPostItemAndGetHeader(apiVersion, urlRef, nil, nil, rde.DefinedEntity, nil, "etag")
 	if err != nil {
-		return err
+		return amendRdeApiError(client, err)
 	}
 	rde.Etag = etag
 
@@ -453,7 +453,7 @@ func (rde *DefinedEntity) Update(rdeToUpdate types.DefinedEntity) error {
 
 	urlRef, err := client.OpenApiBuildEndpoint(endpoint, rde.DefinedEntity.ID)
 	if err != nil {
-		return err
+		return amendRdeApiError(client, err)
 	}
 
 	etag, err := client.OpenApiPutItemAndGetHeader(apiVersion, urlRef, nil, rdeToUpdate, rde.DefinedEntity, map[string]string{"If-Match": rde.Etag}, "etag")
@@ -486,7 +486,7 @@ func (rde *DefinedEntity) Delete() error {
 
 	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
 	if err != nil {
-		return err
+		return amendRdeApiError(client, err)
 	}
 
 	rde.DefinedEntity = &types.DefinedEntity{}
