@@ -56,7 +56,7 @@ testnsxv:
 # any common errors.
 vet:
 	@echo "==> Running Go Vet"
-	@go vet ./... ; if [ $$? -ne 0 ] ; then echo "vet error!" ; exit 1 ; fi
+	@go vet -tags ALL ./... ; if [ $$? -ne 0 ] ; then echo "vet error!" ; exit 1 ; fi
 
 # static runs the source code static analysis tool `staticcheck`
 static: fmtcheck
