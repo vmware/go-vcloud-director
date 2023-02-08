@@ -1134,7 +1134,7 @@ func (vcd *TestVCD) Test_CatalogAccessAsOrgUsers(check *C) {
 	err = adminCatalog1AsSystem.SetAccessControl(&types.ControlAccessParams{
 		IsSharedToEveryone: false,
 		AccessSettings: &types.AccessSettingList{
-			[]*types.AccessSetting{
+			AccessSetting: []*types.AccessSetting{
 				{
 					Subject: &types.LocalSubject{
 						HREF: org2.Org.HREF,

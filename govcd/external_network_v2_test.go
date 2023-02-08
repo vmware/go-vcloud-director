@@ -152,14 +152,14 @@ func testExternalNetworkV2(vcd *TestVCD, name, backingType, backingId, NetworkPr
 		ID:          "",
 		Name:        name,
 		Description: "",
-		Subnets: types.ExternalNetworkV2Subnets{[]types.ExternalNetworkV2Subnet{
+		Subnets: types.ExternalNetworkV2Subnets{Values: []types.ExternalNetworkV2Subnet{
 			{
 				Gateway:      "1.1.1.1",
 				PrefixLength: 24,
 				DNSSuffix:    "",
 				DNSServer1:   "",
 				DNSServer2:   "",
-				IPRanges: types.ExternalNetworkV2IPRanges{[]types.ExternalNetworkV2IPRange{
+				IPRanges: types.ExternalNetworkV2IPRanges{Values: []types.ExternalNetworkV2IPRange{
 					{
 						StartAddress: "1.1.1.3",
 						EndAddress:   "1.1.1.50",
@@ -170,7 +170,7 @@ func testExternalNetworkV2(vcd *TestVCD, name, backingType, backingId, NetworkPr
 				TotalIPCount: 0,
 			},
 		}},
-		NetworkBackings: types.ExternalNetworkV2Backings{[]types.ExternalNetworkV2Backing{
+		NetworkBackings: types.ExternalNetworkV2Backings{Values: []types.ExternalNetworkV2Backing{
 			{
 				BackingID: backingId,
 				NetworkProvider: types.NetworkProvider{

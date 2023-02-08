@@ -167,8 +167,8 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 		IsSharedToEveryone:  false,
 		EveryoneAccessLevel: nil,
 		AccessSettings: &types.AccessSettingList{
-			[]*types.AccessSetting{
-				&types.AccessSetting{
+			AccessSetting: []*types.AccessSetting{
+				{
 					Subject: &types.LocalSubject{
 						HREF: users[0].user.User.Href,
 						Name: users[0].user.User.Name,
@@ -199,8 +199,8 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 		IsSharedToEveryone:  false,
 		EveryoneAccessLevel: nil,
 		AccessSettings: &types.AccessSettingList{
-			[]*types.AccessSetting{
-				&types.AccessSetting{
+			AccessSetting: []*types.AccessSetting{
+				{
 					Subject: &types.LocalSubject{
 						HREF: users[0].user.User.Href,
 						//Name: users[0].user.User.Name, // Pass info without name for one of the subjects
@@ -209,7 +209,7 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 					ExternalSubject: nil,
 					AccessLevel:     types.ControlAccessReadOnly,
 				},
-				&types.AccessSetting{
+				{
 					Subject: &types.LocalSubject{
 						HREF: users[1].user.User.Href,
 						Name: users[1].user.User.Name,
@@ -234,8 +234,8 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 		IsSharedToEveryone:  false,
 		EveryoneAccessLevel: nil,
 		AccessSettings: &types.AccessSettingList{
-			[]*types.AccessSetting{
-				&types.AccessSetting{
+			AccessSetting: []*types.AccessSetting{
+				{
 					Subject: &types.LocalSubject{
 						HREF: users[0].user.User.Href,
 						Name: users[0].user.User.Name,
@@ -244,7 +244,7 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 					ExternalSubject: nil,
 					AccessLevel:     types.ControlAccessReadOnly,
 				},
-				&types.AccessSetting{
+				{
 					Subject: &types.LocalSubject{
 						HREF: users[1].user.User.Href,
 						//Name: users[1].user.User.Name,// Pass info without name for one of the subjects
@@ -253,7 +253,7 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 					ExternalSubject: nil,
 					AccessLevel:     types.ControlAccessFullControl,
 				},
-				&types.AccessSetting{
+				{
 					Subject: &types.LocalSubject{
 						HREF: users[2].user.User.Href,
 						Name: users[2].user.User.Name,
@@ -275,8 +275,8 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 			IsSharedToEveryone:  false,
 			EveryoneAccessLevel: nil,
 			AccessSettings: &types.AccessSettingList{
-				[]*types.AccessSetting{
-					&types.AccessSetting{
+				AccessSetting: []*types.AccessSetting{
+					{
 						Subject: &types.LocalSubject{
 							HREF: users[0].user.User.Href,
 							Name: users[0].user.User.Name,
@@ -285,7 +285,7 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 						ExternalSubject: nil,
 						AccessLevel:     types.ControlAccessReadOnly,
 					},
-					&types.AccessSetting{
+					{
 						Subject: &types.LocalSubject{
 							HREF: users[1].user.User.Href,
 							//Name: users[1].user.User.Name,// Pass info without name for one of the subjects
@@ -294,7 +294,7 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 						ExternalSubject: nil,
 						AccessLevel:     types.ControlAccessFullControl,
 					},
-					&types.AccessSetting{
+					{
 						Subject: &types.LocalSubject{
 							HREF: users[2].user.User.Href,
 							Name: users[2].user.User.Name,
@@ -303,7 +303,7 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 						ExternalSubject: nil,
 						AccessLevel:     types.ControlAccessReadWrite,
 					},
-					&types.AccessSetting{
+					{
 						Subject: &types.LocalSubject{
 							HREF: newOrg.AdminOrg.HREF,
 							Name: newOrg.AdminOrg.Name,
@@ -327,8 +327,8 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 			IsSharedToEveryone:  false,
 			EveryoneAccessLevel: nil,
 			AccessSettings: &types.AccessSettingList{
-				[]*types.AccessSetting{
-					&types.AccessSetting{
+				AccessSetting: []*types.AccessSetting{
+					{
 						Subject: &types.LocalSubject{
 							HREF: adminOrg.AdminOrg.HREF,
 							Name: adminOrg.AdminOrg.Name,
@@ -337,7 +337,7 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 						ExternalSubject: nil,
 						AccessLevel:     types.ControlAccessFullControl,
 					},
-					&types.AccessSetting{
+					{
 						Subject: &types.LocalSubject{
 							HREF: newOrg.AdminOrg.HREF,
 							Name: newOrg.AdminOrg.Name,
