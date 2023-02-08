@@ -19,7 +19,7 @@ import (
 )
 
 // Test_Rde tests the CRUD operations for the RDE Type with both System administrator and a tenant user.
-func (vcd *TestVCD) Test_RdeType(check *C) {
+func (vcd *TestVCD) Test_Rde(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
@@ -184,6 +184,9 @@ func testRdeCrudWithGivenType(check *C, rdeType *DefinedEntityType) {
 	err = rde.Resolve()
 	eTag := rde.Etag
 	check.Assert(err, IsNil)
+	// The RDE can be automatically deleted now as rde.Resolve() was called successfully
+	AddToCleanupListOpenApi(rde.DefinedEntity.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRdeEntities+rde.DefinedEntity.ID)
+
 	check.Assert(*rde.DefinedEntity.State, Equals, "RESOLUTION_ERROR")
 	check.Assert(eTag, Not(Equals), "")
 
@@ -204,9 +207,6 @@ func testRdeCrudWithGivenType(check *C, rdeType *DefinedEntityType) {
 	check.Assert(*rde.DefinedEntity.State, Equals, "RESOLVED")
 	check.Assert(rde.Etag, Not(Equals), "")
 	check.Assert(rde.Etag, Not(Equals), eTag)
-
-	// The RDE can't be deleted until rde.Resolve() is called
-	AddToCleanupListOpenApi(rde.DefinedEntity.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRdeEntities+rde.DefinedEntity.ID)
 
 	// Delete the RDE instance now that it's resolved
 	deletedId := rde.DefinedEntity.ID

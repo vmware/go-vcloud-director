@@ -392,6 +392,7 @@ const (
 	OpenApiEndpointRdeInterfaces                      = "interfaces/"
 	OpenApiEndpointRdeEntityTypes                     = "entityTypes/"
 	OpenApiEndpointRdeEntities                        = "entities/"
+	OpenApiEndpointRdeEntitiesTypes                   = "entities/types/"
 	OpenApiEndpointRdeEntitiesResolve                 = "entities/%s/resolve"
 
 	// NSX-T ALB related endpoints

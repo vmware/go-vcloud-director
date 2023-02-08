@@ -212,7 +212,7 @@ func (rdeType *DefinedEntityType) GetAllRdes(queryParameters url.Values) ([]*Def
 // getAllRdes gets all the RDE instances of the given vendor, nss and version.
 // Supports filtering with the given queryParameters.
 func getAllRdes(client *Client, vendor, nss, version string, queryParameters url.Values) ([]*DefinedEntity, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesTypes
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
@@ -321,7 +321,7 @@ func (rdeType *DefinedEntityType) CreateRde(entity types.DefinedEntity, tenantCo
 	if err != nil {
 		return nil, err
 	}
-	return pollPreCreatedRde(rdeType.client, rdeType.DefinedEntityType.Vendor, rdeType.DefinedEntityType.Nss, rdeType.DefinedEntityType.ID, entity.Name, 5)
+	return pollPreCreatedRde(rdeType.client, rdeType.DefinedEntityType.Vendor, rdeType.DefinedEntityType.Nss, rdeType.DefinedEntityType.Version, entity.Name, 5)
 }
 
 // CreateRde creates an entity of the type of the given vendor, nss and version.
