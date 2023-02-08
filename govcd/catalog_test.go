@@ -207,6 +207,73 @@ func doesCatalogExist(check *C, org *AdminOrg) {
 	check.Assert(err, NotNil)
 }
 
+// Creates a Catalog, uploads a vApp template to it, renames it, retrieves it
+// using the updated name and checks if it has the same vApp template.
+// If it doesn't the assertion fails.
+func (vcd *TestVCD) Test_RenameCatalog(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	testRenameCatalog := check.TestName()
+	testUploadOvf := check.TestName() + "_ovf"
+	testUploadMedia := check.TestName() + "_media"
+
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	adminCatalog, err := org.CreateCatalog(testRenameCatalog, testRenameCatalog)
+	check.Assert(err, IsNil)
+	check.Assert(adminCatalog, NotNil)
+	AddToCleanupList(testRenameCatalog, "catalog", vcd.config.VCD.Org, check.TestName())
+
+	catalog, err := vcd.client.Client.GetCatalogByName(vcd.config.VCD.Org, testRenameCatalog)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+
+	uploadTask, err := adminCatalog.UploadOvf(vcd.config.OVA.OvaPath, testUploadOvf, testUploadOvf, 1024)
+	check.Assert(err, IsNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	uploadTask, err = catalog.UploadMediaImage(testUploadMedia, testUploadMedia, vcd.config.Media.MediaPath, 1024)
+	check.Assert(err, IsNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	vAppTemplate1, err := catalog.GetVAppTemplateByName(testUploadOvf)
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplate1, NotNil)
+
+	mediaImage1, err := catalog.GetMediaByName(testUploadMedia, true)
+	check.Assert(err, IsNil)
+	check.Assert(mediaImage1, NotNil)
+
+	adminCatalog.AdminCatalog.Name = testRenameCatalog + "_updated"
+	err = adminCatalog.Update()
+	check.Assert(err, IsNil)
+	AddToCleanupList(testRenameCatalog+"_updated", "catalog", vcd.config.VCD.Org, check.TestName())
+
+	// Get a Catalog using the previously updated name
+	updatedCatalog, err := vcd.client.Client.GetCatalogByName(vcd.config.VCD.Org, testRenameCatalog+"_updated")
+	check.Assert(err, IsNil)
+	check.Assert(updatedCatalog, NotNil)
+
+	vAppTemplate2, err := updatedCatalog.GetVAppTemplateByName(testUploadOvf)
+	check.Assert(err, IsNil)
+	check.Assert(vAppTemplate2, NotNil)
+
+	mediaImage2, err := updatedCatalog.GetMediaByName(testUploadMedia, false)
+	check.Assert(err, IsNil)
+	check.Assert(mediaImage2, NotNil)
+
+	// Check the HREFs of the vApp templates and media images that were retrieved from
+	// catalog and updatedCatalog
+	check.Assert(vAppTemplate1.VAppTemplate.HREF, Equals, vAppTemplate2.VAppTemplate.HREF)
+	check.Assert(mediaImage1.Media.HREF, Equals, mediaImage2.Media.HREF)
+
+	err = updatedCatalog.Delete(true, true)
+	check.Assert(err, IsNil)
+}
+
 // Tests System function UploadOvf by creating catalog and
 // checking if provided standard ova file uploaded.
 func (vcd *TestVCD) Test_UploadOvf(check *C) {
