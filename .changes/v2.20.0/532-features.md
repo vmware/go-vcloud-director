@@ -7,4 +7,5 @@
   IP address in an Edge Gateway by given constraints [GH-532]
 * Added `NsxtEdgeGateway.GetAllUnusedExternalIPAddresses` function that can return all unused IP
   addresses in an Edge Gateway [GH-532]
-
+* Added `NsxtEdgeGateway.GetAllocatedIpCount` function that sums up `TotalIPCount` fields in all
+  subnets [GH-532]
