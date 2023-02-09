@@ -301,7 +301,7 @@ func getRdeById(client *Client, id string) (*DefinedEntity, error) {
 		client:        client,
 	}
 
-	eTagValue, err := client.OpenApiGetItemAndHeader(apiVersion, urlRef, nil, result.DefinedEntity, nil, "etag")
+	eTagValue, err := client.OpenApiGetItemAndHeader(apiVersion, urlRef, nil, result.DefinedEntity, nil, "Etag")
 	if err != nil {
 		return nil, amendRdeApiError(client, err)
 	}
@@ -408,7 +408,7 @@ func (rde *DefinedEntity) Resolve() error {
 		return err
 	}
 
-	etag, err := client.OpenApiPostItemAndGetHeader(apiVersion, urlRef, nil, nil, rde.DefinedEntity, nil, "etag")
+	etag, err := client.OpenApiPostItemAndGetHeader(apiVersion, urlRef, nil, nil, rde.DefinedEntity, nil, "Etag")
 	if err != nil {
 		return amendRdeApiError(client, err)
 	}
@@ -456,7 +456,8 @@ func (rde *DefinedEntity) Update(rdeToUpdate types.DefinedEntity) error {
 		return amendRdeApiError(client, err)
 	}
 
-	etag, err := client.OpenApiPutItemAndGetHeader(apiVersion, urlRef, nil, rdeToUpdate, rde.DefinedEntity, map[string]string{"If-Match": rde.Etag}, "etag")
+	etag, err := client.OpenApiPutItemAndGetHeader(apiVersion, urlRef, nil, rdeToUpdate, rde.DefinedEntity,
+		map[string]string{"If-Match": rde.Etag}, "Etag")
 	if err != nil {
 		return err
 	}
