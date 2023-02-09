@@ -624,7 +624,12 @@ func createItemForUpload(client *Client, createHREF *url.URL, catalogItemName st
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			util.Logger.Printf("error closing response Body [createItemForUpload]: %s", err)
+		}
+	}(response.Body)
 
 	catalogItemParsed := &types.CatalogItem{}
 	if err = decodeBody(types.BodyTypeXML, response, catalogItemParsed); err != nil {
@@ -655,7 +660,12 @@ func createItemWithLink(client *Client, createHREF *url.URL, catalogItemName, it
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			util.Logger.Printf("error closing response Body [createItemWithLink]: %s", err)
+		}
+	}(response.Body)
 
 	catalogItemParsed := &types.CatalogItem{}
 	if err = decodeBody(types.BodyTypeXML, response, catalogItemParsed); err != nil {
