@@ -1564,3 +1564,217 @@ func Test_flattenGatewayUsedIpAddressesToIpSlice(t *testing.T) {
 		})
 	}
 }
+
+// TestOpenAPIEdgeGateway_DeallocateIpCount tests that the function
+// OpenAPIEdgeGateway.DeallocateIpCount is correctly processing the Edge Gateway uplink structure
+func TestOpenAPIEdgeGateway_DeallocateIpCount(t *testing.T) {
+	type fields struct {
+		EdgeGatewayUplinks []types.EdgeGatewayUplinks
+	}
+	type args struct {
+		deallocateIpCount int
+		expectedCount     int
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "SingleStartAndEndAddresses",
+			fields: fields{
+				EdgeGatewayUplinks: []types.EdgeGatewayUplinks{
+					types.EdgeGatewayUplinks{
+						Subnets: types.OpenAPIEdgeGatewaySubnets{
+							Values: []types.OpenAPIEdgeGatewaySubnetValue{
+								types.OpenAPIEdgeGatewaySubnetValue{
+									IPRanges: &types.OpenApiIPRanges{
+										Values: []types.OpenApiIPRangeValues{
+											types.OpenApiIPRangeValues{
+												StartAddress: "10.10.10.1",
+												EndAddress:   "10.10.10.2",
+											},
+										},
+									},
+									TotalIPCount: takeIntAddress(2),
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				deallocateIpCount: 1,
+				expectedCount:     1,
+			},
+		},
+		{
+			// TODO TODO TODO - take into account primary_ip
+			name: "SingleStartAndEndAddressesInsufficient",
+			fields: fields{
+				EdgeGatewayUplinks: []types.EdgeGatewayUplinks{
+					types.EdgeGatewayUplinks{
+						Subnets: types.OpenAPIEdgeGatewaySubnets{
+							Values: []types.OpenAPIEdgeGatewaySubnetValue{
+								types.OpenAPIEdgeGatewaySubnetValue{
+									IPRanges: &types.OpenApiIPRanges{
+										Values: []types.OpenApiIPRangeValues{
+											types.OpenApiIPRangeValues{
+												StartAddress: "10.10.10.1",
+												EndAddress:   "10.10.10.1",
+											},
+										},
+									},
+									TotalIPCount: takeIntAddress(1),
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				deallocateIpCount: 1,
+				expectedCount:     0,
+			},
+			// wantErr: true,
+		},
+		{
+			name: "NegativeAllocationImpossible",
+			fields: fields{
+				EdgeGatewayUplinks: []types.EdgeGatewayUplinks{
+					types.EdgeGatewayUplinks{
+						Subnets: types.OpenAPIEdgeGatewaySubnets{
+							Values: []types.OpenAPIEdgeGatewaySubnetValue{
+								types.OpenAPIEdgeGatewaySubnetValue{
+									IPRanges: &types.OpenApiIPRanges{
+										Values: []types.OpenApiIPRangeValues{
+											types.OpenApiIPRangeValues{
+												StartAddress: "10.10.10.1",
+												EndAddress:   "10.10.10.2",
+											},
+										},
+									},
+									TotalIPCount: takeIntAddress(2),
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				deallocateIpCount: -1,
+			},
+			wantErr: true,
+		},
+		{
+			name: "MultipleSubnets",
+			fields: fields{
+				EdgeGatewayUplinks: []types.EdgeGatewayUplinks{
+					types.EdgeGatewayUplinks{
+						Subnets: types.OpenAPIEdgeGatewaySubnets{
+							Values: []types.OpenAPIEdgeGatewaySubnetValue{
+								types.OpenAPIEdgeGatewaySubnetValue{
+									IPRanges: &types.OpenApiIPRanges{
+										Values: []types.OpenApiIPRangeValues{
+											types.OpenApiIPRangeValues{
+												StartAddress: "10.10.10.1",
+												EndAddress:   "10.10.10.2",
+											},
+										},
+									},
+									TotalIPCount: takeIntAddress(2),
+								},
+								types.OpenAPIEdgeGatewaySubnetValue{
+									IPRanges: &types.OpenApiIPRanges{
+										Values: []types.OpenApiIPRangeValues{
+											types.OpenApiIPRangeValues{
+												StartAddress: "10.20.10.1",
+												EndAddress:   "10.20.10.2",
+											},
+										},
+									},
+									TotalIPCount: takeIntAddress(2),
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				deallocateIpCount: 3,
+				expectedCount:     1,
+			},
+		},
+		{
+			name: "RemoveMoreThanAvailable",
+			fields: fields{
+				EdgeGatewayUplinks: []types.EdgeGatewayUplinks{
+					types.EdgeGatewayUplinks{
+						Subnets: types.OpenAPIEdgeGatewaySubnets{
+							Values: []types.OpenAPIEdgeGatewaySubnetValue{
+								types.OpenAPIEdgeGatewaySubnetValue{
+									IPRanges: &types.OpenApiIPRanges{
+										Values: []types.OpenApiIPRangeValues{
+											types.OpenApiIPRangeValues{
+												StartAddress: "10.10.10.1",
+												EndAddress:   "10.10.10.2",
+											},
+										},
+									},
+									TotalIPCount: takeIntAddress(2),
+								},
+								types.OpenAPIEdgeGatewaySubnetValue{
+									IPRanges: &types.OpenApiIPRanges{
+										Values: []types.OpenApiIPRangeValues{
+											types.OpenApiIPRangeValues{
+												StartAddress: "10.20.10.1",
+												EndAddress:   "10.20.10.2",
+											},
+										},
+									},
+									TotalIPCount: takeIntAddress(2),
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				deallocateIpCount: 5, // only 4 IPs are available
+				expectedCount:     1,
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			egw := &types.OpenAPIEdgeGateway{
+				EdgeGatewayUplinks: tt.fields.EdgeGatewayUplinks,
+			}
+			var err error
+			if err = egw.DeallocateIpCount(tt.args.deallocateIpCount); (err != nil) != tt.wantErr {
+				t.Errorf("OpenAPIEdgeGateway.DeallocateIpCount() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			// Skip other validations if an error was expected
+			if err != nil && tt.wantErr {
+				return
+			}
+
+			e := NsxtEdgeGateway{
+				EdgeGateway: egw,
+			}
+
+			allocatedIpCount, err := e.GetAllocatedIpCount(false)
+			if err != nil {
+				t.Errorf("NsxtEdgeGateway.GetAllocatedIpCount() error = %v", err)
+			}
+
+			if *allocatedIpCount != tt.args.expectedCount {
+				t.Errorf("Allocated IP count %d != desired IP count %d", *allocatedIpCount, tt.args.expectedCount)
+			}
+
+		})
+	}
+}

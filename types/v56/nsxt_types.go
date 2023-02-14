@@ -1,5 +1,11 @@
 package types
 
+import (
+	"fmt"
+
+	"github.com/vmware/go-vcloud-director/v2/util"
+)
+
 // OpenAPIEdgeGateway structure supports marshalling both - NSX-V and NSX-T edge gateways as returned by OpenAPI
 // endpoint (cloudapi/1.0.0edgeGateways/), but the endpoint only allows users to create NSX-T edge gateways.
 type OpenAPIEdgeGateway struct {
@@ -57,6 +63,64 @@ type OpenAPIEdgeGateway struct {
 	UsingIpSpace *bool `json:"usingIpSpace,omitempty"`
 }
 
+// DeallocateIpCount modifies the structure to deallocate IP addresses from the Edge Gateway
+// uplinks.
+//
+// Note. Use QuickAddAllocatedIPCount field in the uplink structure to leverage VCD API directly
+// for allocating IP addresses.
+func (egw *OpenAPIEdgeGateway) DeallocateIpCount(deallocateIpCount int) error {
+	if deallocateIpCount < 0 {
+		return fmt.Errorf("deallocateIpCount must be greater than 0")
+	}
+
+	if egw == nil {
+		return fmt.Errorf("edge gateway structure cannot be nil")
+	}
+
+	for uplinkIndex, uplink := range egw.EdgeGatewayUplinks {
+		for subnetIndex, subnet := range uplink.Subnets.Values {
+
+			// TotalIPCount is an address of a variable so it needs to be dereferenced for easier arithmetic
+			// operations. In the end of processing the value is set back to the original location.
+			singleSubnetTotalIpCount := *egw.EdgeGatewayUplinks[uplinkIndex].Subnets.Values[subnetIndex].TotalIPCount
+
+			if singleSubnetTotalIpCount > 0 {
+				util.Logger.Printf("[DEBUG] Edge Gateway deallocating IPs from subnet '%s', TotalIPCount '%d', deallocate IP count '%d'",
+					subnet.Gateway, subnet.TotalIPCount, deallocateIpCount)
+
+				// If a subnet contains more allocated IPs than we need to deallocate - deallocate only what we need
+				if singleSubnetTotalIpCount >= deallocateIpCount {
+					singleSubnetTotalIpCount -= deallocateIpCount
+
+					// To make deallocation work one must set this to true
+					egw.EdgeGatewayUplinks[uplinkIndex].Subnets.Values[subnetIndex].AutoAllocateIPRanges = true
+
+					deallocateIpCount = 0
+				} else { // If we have less IPs allocated than we need to deallocate - deallocate all of them
+					deallocateIpCount -= singleSubnetTotalIpCount
+					singleSubnetTotalIpCount = 0
+					egw.EdgeGatewayUplinks[uplinkIndex].Subnets.Values[subnetIndex].AutoAllocateIPRanges = true // To make deallocation work one must set this to true
+					util.Logger.Printf("[DEBUG] Edge Gateway IP count after partial deallocation %d", egw.EdgeGatewayUplinks[uplinkIndex].Subnets.Values[subnetIndex].TotalIPCount)
+				}
+			}
+
+			// Setting value back to original location after all operations
+			egw.EdgeGatewayUplinks[uplinkIndex].Subnets.Values[subnetIndex].TotalIPCount = &singleSubnetTotalIpCount
+			util.Logger.Printf("[DEBUG] Edge Gateway IP count after complete deallocation %d", egw.EdgeGatewayUplinks[uplinkIndex].Subnets.Values[subnetIndex].TotalIPCount)
+
+			if deallocateIpCount == 0 {
+				break
+			}
+		}
+	}
+
+	if deallocateIpCount > 0 {
+		return fmt.Errorf("not enough IPs allocated to deallocate requested '%d' IPs", deallocateIpCount)
+	}
+
+	return nil
+}
+
 // EdgeGatewayUplink defines uplink connections for the edge gateway.
 type EdgeGatewayUplinks struct {
 	// UplinkID contains ID of external network
@@ -101,7 +165,7 @@ type OpenAPIEdgeGatewaySubnetValue struct {
 	// Enabled toggles if the subnet is enabled
 	Enabled bool `json:"enabled"`
 	// TotalIPCount specified total allocated IP count
-	TotalIPCount int `json:"totalIpCount,omitempty"`
+	TotalIPCount *int `json:"totalIpCount,omitempty"`
 
 	// UsedIPCount specifies used IP count
 	UsedIPCount int `json:"usedIpCount,omitempty"`

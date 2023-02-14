@@ -478,7 +478,9 @@ func (egw *NsxtEdgeGateway) GetAllocatedIpCount(refresh bool) (*int, error) {
 
 	for _, uplink := range egw.EdgeGateway.EdgeGatewayUplinks {
 		for _, subnet := range uplink.Subnets.Values {
-			allocatedIpCount += subnet.TotalIPCount
+			if subnet.TotalIPCount != nil {
+				allocatedIpCount += *subnet.TotalIPCount
+			}
 		}
 	}
 
@@ -500,6 +502,29 @@ func (egw *NsxtEdgeGateway) GetUsedIpAddressSlice(refresh bool) ([]netip.Addr, e
 	}
 
 	return flattenGatewayUsedIpAddressesToIpSlice(usedIpAddresses)
+}
+
+// QuickDeallocateIpCount refreshes Edge Gateway structure and deallocates specified ipCount from it
+// by modifying Uplink structure and calling Update() on it.
+//
+// Note. This is a reverse operation to QuickAllocateIpCount and is provided for convenience as the
+// API does not support negative values for QuickAddAllocatedIPCount field
+func (egw *NsxtEdgeGateway) QuickDeallocateIpCount(ipCount int) (*NsxtEdgeGateway, error) {
+	if egw.EdgeGateway == nil {
+		return nil, fmt.Errorf("edge gateway is not initialized")
+	}
+
+	err := egw.Refresh()
+	if err != nil {
+		return nil, fmt.Errorf("error refreshing Edge Gateway: %s", err)
+	}
+
+	err = egw.EdgeGateway.DeallocateIpCount(ipCount)
+	if err != nil {
+		return nil, fmt.Errorf("error deallocating IP count: %s", err)
+	}
+
+	return egw.Update(egw.EdgeGateway)
 }
 
 func getAllUnusedExternalIPAddresses(uplinks []types.EdgeGatewayUplinks, usedIpAddresses []*types.GatewayUsedIpAddress, optionalSubnet netip.Prefix) ([]netip.Addr, error) {
