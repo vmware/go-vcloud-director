@@ -379,13 +379,13 @@ func Test_flattenEdgeGatewayUplinkToIpSlice(t *testing.T) {
 			name: "SingleStartAndEndAddresses",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 												EndAddress:   "10.10.10.2",
 											},
@@ -407,13 +407,13 @@ func Test_flattenEdgeGatewayUplinkToIpSlice(t *testing.T) {
 			name: "ReverseStartAndEnd",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.2",
 												EndAddress:   "10.10.10.1",
 											},
@@ -432,13 +432,13 @@ func Test_flattenEdgeGatewayUplinkToIpSlice(t *testing.T) {
 			name: "SameStartAndEndAddresses",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 												EndAddress:   "10.10.10.1",
 											},
@@ -459,13 +459,13 @@ func Test_flattenEdgeGatewayUplinkToIpSlice(t *testing.T) {
 			name: "StartAddressOnly",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 											},
 										},
@@ -485,7 +485,7 @@ func Test_flattenEdgeGatewayUplinkToIpSlice(t *testing.T) {
 			name: "EmptyUplink",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{},
+					{},
 				},
 			},
 			want:    make([]netip.Addr, 0),
@@ -495,7 +495,7 @@ func Test_flattenEdgeGatewayUplinkToIpSlice(t *testing.T) {
 			name: "EmptySubnets",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{},
 					},
 				},
@@ -507,7 +507,7 @@ func Test_flattenEdgeGatewayUplinkToIpSlice(t *testing.T) {
 			name: "EmptySubnetValues",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{},
 						},
@@ -521,10 +521,10 @@ func Test_flattenEdgeGatewayUplinkToIpSlice(t *testing.T) {
 			name: "EmptySubnetValueIpRanges",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{},
 								},
 							},
@@ -539,10 +539,10 @@ func Test_flattenEdgeGatewayUplinkToIpSlice(t *testing.T) {
 			name: "EmptySubnetValueIpRangeValues",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{},
 									},
@@ -598,13 +598,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "SingleIpAvailable",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 												EndAddress:   "10.10.10.1",
 											},
@@ -628,13 +628,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "AvailableIPsFilteredOff",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 												EndAddress:   "10.10.10.10",
 											},
@@ -656,13 +656,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "AvailableIPsFilteredOffAndUsed",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 												EndAddress:   "10.10.10.10",
 											},
@@ -673,7 +673,7 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 						},
 					},
 				},
-				usedIpAddresses: []*types.GatewayUsedIpAddress{&types.GatewayUsedIpAddress{IPAddress: "10.10.10.1"}},
+				usedIpAddresses: []*types.GatewayUsedIpAddress{{IPAddress: "10.10.10.1"}},
 				requiredCount:   1,
 				optionalSubnet:  netip.MustParsePrefix("20.10.10.0/24"),
 			},
@@ -684,13 +684,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "SingleIpFromMany",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.15",
 												EndAddress:   "10.10.10.200",
 											},
@@ -714,13 +714,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "CrossBoundary",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.255",
 												EndAddress:   "10.10.11.1",
 											},
@@ -746,13 +746,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "CrossBoundaryPrefix",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.255",
 												EndAddress:   "10.10.11.1",
 											},
@@ -777,13 +777,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "CrossBoundaryPrefixAndUsed",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.255",
 												EndAddress:   "10.10.11.1",
 											},
@@ -794,7 +794,7 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 						},
 					},
 				},
-				usedIpAddresses: []*types.GatewayUsedIpAddress{&types.GatewayUsedIpAddress{IPAddress: "10.10.11.0"}},
+				usedIpAddresses: []*types.GatewayUsedIpAddress{{IPAddress: "10.10.11.0"}},
 				requiredCount:   1,
 				optionalSubnet:  netip.MustParsePrefix("10.10.11.0/24"),
 			},
@@ -807,13 +807,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "IPv6SingleIpAvailable",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "4001:0DB8:0000:000b:0000:0000:0000:0001",
 												EndAddress:   "4001:0DB8:0000:000b:0000:0000:0000:0001",
 											},
@@ -837,13 +837,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "SingleIpAvailableStartOnly",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 											},
 										},
@@ -866,13 +866,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "IPv6SingleIpAvailableStartOnly",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "4001:0DB8:0000:000b:0000:0000:0000:0001",
 											},
 										},
@@ -895,13 +895,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "InvalidIpRange",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												// Start Address is higher than end IP address
 												StartAddress: "10.10.10.200",
 												EndAddress:   "10.10.10.1",
@@ -924,13 +924,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "InsufficientIPs",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 												EndAddress:   "10.10.10.6",
 											},
@@ -952,13 +952,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "InsufficientIPsWithUsed",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 												EndAddress:   "10.10.10.6",
 											},
@@ -970,7 +970,7 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 					},
 				},
 				usedIpAddresses: []*types.GatewayUsedIpAddress{
-					&types.GatewayUsedIpAddress{IPAddress: "10.10.10.1"},
+					{IPAddress: "10.10.10.1"},
 				},
 				requiredCount:  6,
 				optionalSubnet: netip.Prefix{},
@@ -982,13 +982,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "MultipleUplinks",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 												EndAddress:   "10.10.10.6",
 											},
@@ -998,13 +998,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 							},
 						},
 					},
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "20.10.10.1",
 												EndAddress:   "20.10.10.6",
 											},
@@ -1014,13 +1014,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 							},
 						},
 					},
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "30.10.10.1",
 												EndAddress:   "30.10.10.6",
 											},
@@ -1061,13 +1061,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "MultipleUplinksWithUsedIPsInsufficient",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 												EndAddress:   "10.10.10.6",
 											},
@@ -1077,13 +1077,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 							},
 						},
 					},
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "20.10.10.1",
 												EndAddress:   "20.10.10.6",
 											},
@@ -1093,13 +1093,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 							},
 						},
 					},
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "30.10.10.1",
 												EndAddress:   "30.10.10.6",
 											},
@@ -1111,7 +1111,7 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 					},
 				},
 				usedIpAddresses: []*types.GatewayUsedIpAddress{
-					&types.GatewayUsedIpAddress{IPAddress: "10.10.10.1"},
+					{IPAddress: "10.10.10.1"},
 				},
 				requiredCount:  18,
 				optionalSubnet: netip.Prefix{},
@@ -1123,17 +1123,17 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "MultipleUplinksAndRanges",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 												EndAddress:   "10.10.10.2",
 											},
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.10",
 												EndAddress:   "10.10.10.12",
 											},
@@ -1143,25 +1143,25 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 							},
 						},
 					},
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "20.10.10.1",
 												EndAddress:   "20.10.10.6",
 											},
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "20.10.10.200",
 												EndAddress:   "20.10.10.201",
 											},
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "20.10.10.251",
 												EndAddress:   "20.10.10.252",
 											},
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "20.10.10.255",
 											},
 										},
@@ -1170,13 +1170,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 							},
 						},
 					},
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "30.10.10.1",
 												EndAddress:   "30.10.10.2",
 											},
@@ -1217,17 +1217,17 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "MultipleUplinksAndRangesInsufficientIPs",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 												EndAddress:   "10.10.10.2",
 											},
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.10",
 												EndAddress:   "10.10.10.12",
 											},
@@ -1237,25 +1237,25 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 							},
 						},
 					},
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "20.10.10.1",
 												EndAddress:   "20.10.10.6",
 											},
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "20.10.10.200",
 												EndAddress:   "20.10.10.201",
 											},
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "20.10.10.251",
 												EndAddress:   "20.10.10.252",
 											},
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "20.10.10.255",
 											},
 										},
@@ -1264,13 +1264,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 							},
 						},
 					},
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "30.10.10.1",
 												EndAddress:   "30.10.10.2",
 											},
@@ -1292,17 +1292,17 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "MultipleUplinksAndRangesInSubnet24",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 												EndAddress:   "10.10.10.2",
 											},
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.10",
 												EndAddress:   "10.10.10.12",
 											},
@@ -1312,25 +1312,25 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 							},
 						},
 					},
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "20.10.10.1",
 												EndAddress:   "20.10.10.6",
 											},
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "20.10.10.200",
 												EndAddress:   "20.10.10.201",
 											},
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "20.10.10.251",
 												EndAddress:   "20.10.10.252",
 											},
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "20.10.10.255",
 											},
 										},
@@ -1339,13 +1339,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 							},
 						},
 					},
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "30.10.10.1",
 												EndAddress:   "30.10.10.2",
 											},
@@ -1370,17 +1370,17 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 			name: "MultipleUplinksAndRangesInSubnet28",
 			args: args{
 				uplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 												EndAddress:   "10.10.10.2",
 											},
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.10",
 												EndAddress:   "10.10.10.12",
 											},
@@ -1390,25 +1390,25 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 							},
 						},
 					},
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "20.10.10.1",
 												EndAddress:   "20.10.10.6",
 											},
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "20.10.10.200",
 												EndAddress:   "20.10.10.201",
 											},
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "20.10.10.251",
 												EndAddress:   "20.10.10.252",
 											},
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "20.10.10.255",
 											},
 										},
@@ -1417,13 +1417,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 							},
 						},
 					},
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "30.10.10.1",
 												EndAddress:   "30.10.10.2",
 											},
@@ -1476,7 +1476,7 @@ func Test_flattenGatewayUsedIpAddressesToIpSlice(t *testing.T) {
 	}{
 		{
 			name:    "SingleIP",
-			args:    args{usedIpAddresses: []*types.GatewayUsedIpAddress{&types.GatewayUsedIpAddress{IPAddress: "10.0.0.1"}}},
+			args:    args{usedIpAddresses: []*types.GatewayUsedIpAddress{{IPAddress: "10.0.0.1"}}},
 			want:    []netip.Addr{netip.MustParseAddr("10.0.0.1")},
 			wantErr: false,
 		},
@@ -1484,8 +1484,8 @@ func Test_flattenGatewayUsedIpAddressesToIpSlice(t *testing.T) {
 			name: "DuplicateIPs",
 			args: args{
 				usedIpAddresses: []*types.GatewayUsedIpAddress{
-					&types.GatewayUsedIpAddress{IPAddress: "10.0.0.1"},
-					&types.GatewayUsedIpAddress{IPAddress: "10.0.0.1"},
+					{IPAddress: "10.0.0.1"},
+					{IPAddress: "10.0.0.1"},
 				},
 			},
 			want: []netip.Addr{
@@ -1502,7 +1502,7 @@ func Test_flattenGatewayUsedIpAddressesToIpSlice(t *testing.T) {
 		},
 		{
 			name:    "InvalidIp",
-			args:    args{usedIpAddresses: []*types.GatewayUsedIpAddress{&types.GatewayUsedIpAddress{IPAddress: "ASD"}}},
+			args:    args{usedIpAddresses: []*types.GatewayUsedIpAddress{{IPAddress: "ASD"}}},
 			want:    nil,
 			wantErr: true,
 		},
@@ -1510,10 +1510,10 @@ func Test_flattenGatewayUsedIpAddressesToIpSlice(t *testing.T) {
 			name: "ManyIPs",
 			args: args{
 				usedIpAddresses: []*types.GatewayUsedIpAddress{
-					&types.GatewayUsedIpAddress{IPAddress: "10.0.0.1"},
-					&types.GatewayUsedIpAddress{IPAddress: "10.0.0.2"},
-					&types.GatewayUsedIpAddress{IPAddress: "10.0.0.3"},
-					&types.GatewayUsedIpAddress{IPAddress: "10.0.0.4"},
+					{IPAddress: "10.0.0.1"},
+					{IPAddress: "10.0.0.2"},
+					{IPAddress: "10.0.0.3"},
+					{IPAddress: "10.0.0.4"},
 				},
 			},
 			want: []netip.Addr{
@@ -1526,7 +1526,7 @@ func Test_flattenGatewayUsedIpAddressesToIpSlice(t *testing.T) {
 		},
 		{
 			name:    "IPv6SingleIP",
-			args:    args{usedIpAddresses: []*types.GatewayUsedIpAddress{&types.GatewayUsedIpAddress{IPAddress: "684D:1111:222:3333:4444:5555:6:77"}}},
+			args:    args{usedIpAddresses: []*types.GatewayUsedIpAddress{{IPAddress: "684D:1111:222:3333:4444:5555:6:77"}}},
 			want:    []netip.Addr{netip.MustParseAddr("684D:1111:222:3333:4444:5555:6:77")},
 			wantErr: false,
 		},
@@ -1534,11 +1534,11 @@ func Test_flattenGatewayUsedIpAddressesToIpSlice(t *testing.T) {
 			name: "IPv6ManyIPs",
 			args: args{
 				usedIpAddresses: []*types.GatewayUsedIpAddress{
-					&types.GatewayUsedIpAddress{IPAddress: "2001:db8:3333:4444:5555:6666:7777:8888"},
-					&types.GatewayUsedIpAddress{IPAddress: "2002:db8:3333:4444:5555:6666:7777:8888"},
-					&types.GatewayUsedIpAddress{IPAddress: "2003:db8:3333:4444:5555:6666:7777:8888"},
-					&types.GatewayUsedIpAddress{IPAddress: "2004:db8:3333:4444:5555:6666:7777:8888"},
-					&types.GatewayUsedIpAddress{IPAddress: "2001:db8::68"},
+					{IPAddress: "2001:db8:3333:4444:5555:6666:7777:8888"},
+					{IPAddress: "2002:db8:3333:4444:5555:6666:7777:8888"},
+					{IPAddress: "2003:db8:3333:4444:5555:6666:7777:8888"},
+					{IPAddress: "2004:db8:3333:4444:5555:6666:7777:8888"},
+					{IPAddress: "2001:db8::68"},
 				},
 			},
 			want: []netip.Addr{
@@ -1585,13 +1585,13 @@ func TestOpenAPIEdgeGateway_DeallocateIpCount(t *testing.T) {
 			name: "SingleStartAndEndAddresses",
 			fields: fields{
 				EdgeGatewayUplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 												EndAddress:   "10.10.10.2",
 											},
@@ -1614,13 +1614,13 @@ func TestOpenAPIEdgeGateway_DeallocateIpCount(t *testing.T) {
 			name: "SingleStartAndEndAddressesInsufficient",
 			fields: fields{
 				EdgeGatewayUplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 												EndAddress:   "10.10.10.1",
 											},
@@ -1643,13 +1643,13 @@ func TestOpenAPIEdgeGateway_DeallocateIpCount(t *testing.T) {
 			name: "NegativeAllocationImpossible",
 			fields: fields{
 				EdgeGatewayUplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 												EndAddress:   "10.10.10.2",
 											},
@@ -1671,13 +1671,13 @@ func TestOpenAPIEdgeGateway_DeallocateIpCount(t *testing.T) {
 			name: "MultipleSubnets",
 			fields: fields{
 				EdgeGatewayUplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 												EndAddress:   "10.10.10.2",
 											},
@@ -1685,10 +1685,10 @@ func TestOpenAPIEdgeGateway_DeallocateIpCount(t *testing.T) {
 									},
 									TotalIPCount: takeIntAddress(2),
 								},
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.20.10.1",
 												EndAddress:   "10.20.10.2",
 											},
@@ -1710,13 +1710,13 @@ func TestOpenAPIEdgeGateway_DeallocateIpCount(t *testing.T) {
 			name: "RemoveMoreThanAvailable",
 			fields: fields{
 				EdgeGatewayUplinks: []types.EdgeGatewayUplinks{
-					types.EdgeGatewayUplinks{
+					{
 						Subnets: types.OpenAPIEdgeGatewaySubnets{
 							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.10.10.1",
 												EndAddress:   "10.10.10.2",
 											},
@@ -1724,10 +1724,10 @@ func TestOpenAPIEdgeGateway_DeallocateIpCount(t *testing.T) {
 									},
 									TotalIPCount: takeIntAddress(2),
 								},
-								types.OpenAPIEdgeGatewaySubnetValue{
+								{
 									IPRanges: &types.OpenApiIPRanges{
 										Values: []types.OpenApiIPRangeValues{
-											types.OpenApiIPRangeValues{
+											{
 												StartAddress: "10.20.10.1",
 												EndAddress:   "10.20.10.2",
 											},
