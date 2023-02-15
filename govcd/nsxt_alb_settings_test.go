@@ -69,9 +69,31 @@ func (vcd *TestVCD) Test_UpdateAlbSettings(check *C) {
 	check.Assert(enabledSettingsCustomServiceDefinition.Enabled, Equals, true)
 	check.Assert(enabledSettingsCustomServiceDefinition.ServiceNetworkDefinition, Equals, "93.93.11.1/25")
 
-	// Disable ALB on Edge Gateway again and ensure it was disabled
+	// Disable ALB on Edge Gateway
 	err = edge.DisableAlb()
 	check.Assert(err, IsNil)
+
+	// Enable IPv6 service network definition (VCD 10.4.0+)
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.0") {
+		printVerbose("Enabling IPv6 service network definition for VCD 10.4.0+\n")
+		albSettingsConfig.Ipv6ServiceNetworkDefinition = "2001:0db8:85a3:0000:0000:8a2e:0370:7334/120"
+		enabledSettingsIpv6ServiceDefinition, err := edge.UpdateAlbSettings(albSettingsConfig)
+		check.Assert(err, IsNil)
+		check.Assert(enabledSettingsIpv6ServiceDefinition.Ipv6ServiceNetworkDefinition, Equals, "2001:0db8:85a3:0000:0000:8a2e:0370:7334/120")
+		err = edge.DisableAlb()
+		check.Assert(err, IsNil)
+	}
+
+	// Enable Transparent mode (VCD 10.4.1+)
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.1") {
+		printVerbose("Enabling Transparent mode for VCD 10.4.1+\n")
+		albSettingsConfig.TransparentModeEnabled = takeBoolPointer(true)
+		enabledSettingsTransparentMode, err := edge.UpdateAlbSettings(albSettingsConfig)
+		check.Assert(err, IsNil)
+		check.Assert(*enabledSettingsTransparentMode.TransparentModeEnabled, Equals, true)
+		err = edge.DisableAlb()
+		check.Assert(err, IsNil)
+	}
 
 	albSettings, err := edge.GetAlbSettings()
 	check.Assert(err, IsNil)
