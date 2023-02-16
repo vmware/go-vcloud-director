@@ -88,41 +88,75 @@ func (vcd *TestVCD) Test_RdeType(check *C) {
 	check.Assert(nilRdeType, IsNil)
 	check.Assert(strings.Contains(err.Error(), "ACCESS_TO_RESOURCE_IS_FORBIDDEN"), Equals, true)
 
-	// As we created a new one, we check the new count is correct in both System admin and Tenant user
+	// Assign rights to the tenant user, so it can perform following operations.
+	// We don't need to clean the rights afterwards as deleting the RDE Type deletes the associated bundle
+	// with its rights.
+	role, err := systemAdministratorClient.Client.GetGlobalRoleByName("Organization Administrator")
+	check.Assert(err, IsNil)
+	check.Assert(role, NotNil)
+
+	rightsBundleName := fmt.Sprintf("%s:%s Entitlement", vendor, nss)
+	rightsBundle, err := systemAdministratorClient.Client.GetRightsBundleByName(rightsBundleName)
+	check.Assert(err, IsNil)
+	check.Assert(rightsBundle, NotNil)
+
+	err = rightsBundle.PublishAllTenants()
+	check.Assert(err, IsNil)
+
+	rights, err := rightsBundle.GetRights(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(rights), Not(Equals), 0)
+
+	var rightsToAdd []types.OpenApiReference
+	for _, right := range rights {
+		if strings.Contains(right.Name, fmt.Sprintf("%s:%s", vendor, nss)) {
+			rightsToAdd = append(rightsToAdd, types.OpenApiReference{
+				Name: right.Name,
+				ID:   right.ID,
+			})
+		}
+	}
+	check.Assert(rightsToAdd, NotNil)
+	check.Assert(len(rightsToAdd), Not(Equals), 0)
+
+	err = role.AddRights(rightsToAdd)
+	check.Assert(err, IsNil)
+
+	// As we created a new RDE Type, we check the new count is correct in both System admin and Tenant user
 	allRdeTypesBySystemAdmin, err = systemAdministratorClient.GetAllRdeTypes(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(allRdeTypesBySystemAdmin), Equals, alreadyPresentRdes+1)
 
-	// Count should be still 0
+	// Count is 1 for tenant user as it can only retrieve the created type as per the assigned rights above.
 	allRdeTypesByTenant, err = tenantUserClient.GetAllRdeTypes(nil)
 	check.Assert(err, IsNil)
-	check.Assert(len(allRdeTypesByTenant), Equals, 0)
+	check.Assert(len(allRdeTypesByTenant), Equals, 1)
 
 	// Test the multiple ways of getting a RDE Types in both users.
 	obtainedRdeType, err := systemAdministratorClient.GetRdeTypeById(createdRdeType.DefinedEntityType.ID)
 	check.Assert(err, IsNil)
 	check.Assert(*obtainedRdeType.DefinedEntityType, DeepEquals, *createdRdeType.DefinedEntityType)
 
-	// The RDE Type is unreachable as tenant
-	_, err = tenantUserClient.GetRdeTypeById(createdRdeType.DefinedEntityType.ID)
-	check.Assert(err, NotNil)
-	check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
-
-	obtainedRdeType2, err := systemAdministratorClient.GetRdeType(obtainedRdeType.DefinedEntityType.Vendor, obtainedRdeType.DefinedEntityType.Nss, obtainedRdeType.DefinedEntityType.Version)
+	// The RDE Type retrieved by the tenant should be the same as the retrieved by Sysadmin
+	obtainedRdeTypeByTenant, err := tenantUserClient.GetRdeTypeById(createdRdeType.DefinedEntityType.ID)
 	check.Assert(err, IsNil)
-	check.Assert(*obtainedRdeType2.DefinedEntityType, DeepEquals, *obtainedRdeType.DefinedEntityType)
+	check.Assert(*obtainedRdeTypeByTenant.DefinedEntityType, DeepEquals, *obtainedRdeType.DefinedEntityType)
 
-	// The RDE Type is unreachable as tenant
-	_, err = tenantUserClient.GetRdeType(obtainedRdeType.DefinedEntityType.Vendor, obtainedRdeType.DefinedEntityType.Nss, obtainedRdeType.DefinedEntityType.Version)
-	check.Assert(err, NotNil)
-	check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
+	obtainedRdeType, err = systemAdministratorClient.GetRdeType(createdRdeType.DefinedEntityType.Vendor, createdRdeType.DefinedEntityType.Nss, createdRdeType.DefinedEntityType.Version)
+	check.Assert(err, IsNil)
+	check.Assert(*obtainedRdeType.DefinedEntityType, DeepEquals, *obtainedRdeType.DefinedEntityType)
+
+	// The RDE Type retrieved by the tenant should be the same as the retrieved by Sysadmin
+	obtainedRdeTypeByTenant, err = tenantUserClient.GetRdeType(createdRdeType.DefinedEntityType.Vendor, createdRdeType.DefinedEntityType.Nss, createdRdeType.DefinedEntityType.Version)
+	check.Assert(err, IsNil)
+	check.Assert(*obtainedRdeTypeByTenant.DefinedEntityType, DeepEquals, *obtainedRdeType.DefinedEntityType)
 
 	// We don't want to update the name nor the schema. It should populate them from the receiver object automatically
-	err = createdRdeType.Update(types.DefinedEntityType{
-		Description: rdeTypeToCreate.Description + "Updated",
+	err = obtainedRdeType.Update(types.DefinedEntityType{
+		Description: rdeTypeToCreate.Description + "UpdatedByAdmin",
 	})
 	check.Assert(err, IsNil)
-	check.Assert(createdRdeType.DefinedEntityType.Description, Equals, rdeTypeToCreate.Description+"Updated")
+	check.Assert(obtainedRdeType.DefinedEntityType.Description, Equals, rdeTypeToCreate.Description+"UpdatedByAdmin")
 
 	// We delete it with Sysadmin
 	deletedId := createdRdeType.DefinedEntityType.ID
