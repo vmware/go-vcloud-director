@@ -133,6 +133,7 @@ func (vcdClient *VCDClient) GetRdeTypeById(id string) (*DefinedEntityType, error
 }
 
 // Update updates the receiver Runtime Defined Entity Type with the values given by the input.
+// Only a System administrator can create RDE Types.
 func (rdeType *DefinedEntityType) Update(rdeTypeToUpdate types.DefinedEntityType) error {
 	client := rdeType.client
 	if rdeType.DefinedEntityType.ID == "" {

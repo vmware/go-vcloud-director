@@ -35,11 +35,19 @@ function get_gosec {
             echo "'curl' executable not found - Skipping gosec"
             exit 0
         fi
-        $curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh
+        $curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh > gosec_install.sh
+        exit_code=$?
+        if [ "$exit_code" != "0" ]
+        then
+          echo "Error downloading gosec installer"
+          exit $exit_code
+        fi
+        sh -x gosec_install.sh > gosec_install.log 2>&1
         exit_code=$?
         if [ "$exit_code" != "0" ]
         then
           echo "Error installing gosec"
+          cat gosec_install.log
           exit $exit_code
         fi
         gosec=$PWD/bin/gosec
