@@ -184,7 +184,12 @@ func createMedia(client *Client, link, mediaName, mediaDescription string, fileS
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			util.Logger.Printf("error closing response Body [createMedia]: %s", err)
+		}
+	}(response.Body)
 
 	mediaForUpload := &types.Media{}
 	if err = decodeBody(types.BodyTypeXML, response, mediaForUpload); err != nil {

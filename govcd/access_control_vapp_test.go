@@ -119,8 +119,8 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 		IsSharedToEveryone:  false,
 		EveryoneAccessLevel: nil,
 		AccessSettings: &types.AccessSettingList{
-			[]*types.AccessSetting{
-				&types.AccessSetting{
+			AccessSetting: []*types.AccessSetting{
+				{
 					Subject: &types.LocalSubject{
 						HREF: users[0].user.User.Href,
 						Name: users[0].user.User.Name,
@@ -151,8 +151,8 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 		IsSharedToEveryone:  false,
 		EveryoneAccessLevel: nil,
 		AccessSettings: &types.AccessSettingList{
-			[]*types.AccessSetting{
-				&types.AccessSetting{
+			AccessSetting: []*types.AccessSetting{
+				{
 					Subject: &types.LocalSubject{
 						HREF: users[0].user.User.Href,
 						//Name: users[0].user.User.Name, // Pass info without name for one of the subjects
@@ -161,7 +161,7 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 					ExternalSubject: nil,
 					AccessLevel:     types.ControlAccessReadOnly,
 				},
-				&types.AccessSetting{
+				{
 					Subject: &types.LocalSubject{
 						HREF: users[1].user.User.Href,
 						Name: users[1].user.User.Name,
@@ -186,8 +186,8 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 		IsSharedToEveryone:  false,
 		EveryoneAccessLevel: nil,
 		AccessSettings: &types.AccessSettingList{
-			[]*types.AccessSetting{
-				&types.AccessSetting{
+			AccessSetting: []*types.AccessSetting{
+				{
 					Subject: &types.LocalSubject{
 						HREF: users[0].user.User.Href,
 						Name: users[0].user.User.Name,
@@ -196,7 +196,7 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 					ExternalSubject: nil,
 					AccessLevel:     types.ControlAccessReadOnly,
 				},
-				&types.AccessSetting{
+				{
 					Subject: &types.LocalSubject{
 						HREF: users[1].user.User.Href,
 						//Name: users[1].user.User.Name,// Pass info without name for one of the subjects
@@ -205,7 +205,7 @@ func (vcd *TestVCD) Test_VappAccessControl(check *C) {
 					ExternalSubject: nil,
 					AccessLevel:     types.ControlAccessFullControl,
 				},
-				&types.AccessSetting{
+				{
 					Subject: &types.LocalSubject{
 						HREF: users[2].user.User.Href,
 						Name: users[2].user.User.Name,
