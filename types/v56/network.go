@@ -1,5 +1,7 @@
 package types
 
+import "encoding/xml"
+
 // NOTE: The types in this file were created using goxmlstruct
 // (https://github.com/twpayne/go-xmlstruct)
 
@@ -22,8 +24,9 @@ type Layer3Sections struct {
 }
 
 type FirewallSection struct {
+	XMLName          xml.Name                      `xml:"section"`
 	GenerationNumber string                        `xml:"generationNumber,attr"`
-	ID               int                           `xml:"id,attr"`
+	ID               *int                          `xml:"id,attr"`
 	Name             string                        `xml:"name,attr"`
 	Stateless        bool                          `xml:"stateless,attr"`
 	TcpStrict        bool                          `xml:"tcpStrict,attr"`
@@ -35,12 +38,12 @@ type FirewallSection struct {
 
 type NsxvDistributedFirewallRule struct {
 	Disabled      bool          `xml:"disabled,attr"`
-	ID            int           `xml:"id,attr"`
+	ID            *int          `xml:"id,attr"`
 	Logged        bool          `xml:"logged,attr"`
 	Name          string        `xml:"name"`
 	Action        string        `xml:"action"` // allow, deny
 	AppliedToList AppliedToList `xml:"appliedToList"`
-	SectionID     int           `xml:"sectionId"`
+	SectionID     *int          `xml:"sectionId"`
 	Sources       *Sources      `xml:"sources"`
 	Destinations  *Destinations `xml:"destinations"`
 	Services      *Services     `xml:"services"`
@@ -99,9 +102,6 @@ type Service struct {
 	Type            string  `xml:"type,omitempty"`
 }
 
-// --------------------------------------------------------------------------------------------
-// Types from here till the end of the file will be removed if we decide we don't need services
-// --------------------------------------------------------------------------------------------
 // -----------------------------------
 // type Service
 // -----------------------------------

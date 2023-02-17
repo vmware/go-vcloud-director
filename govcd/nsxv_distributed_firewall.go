@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -26,24 +27,53 @@ type NsxvDistributedFirewall struct {
 	ServiceGroups []types.ApplicationGroup // The list of service groups for this VDC
 }
 
+// Protocols
 const (
-	ProtocolTcp    = "TCP"
-	ProtocolUdp    = "UDP"
-	ProtocolIcmp   = "ICMP"
-	ActionAllow    = "allow"
-	ActionDeny     = "deny"
-	DirectionIn    = "in"
-	DirectionOut   = "out"
-	DirectionInout = "inout"
-	PacketAny      = "any"
-	PacketIpv4     = "ipv4"
-	PacketIpv6     = "ipv6"
+	DFWProtocolTcp  = "TCP"
+	DFWProtocolUdp  = "UDP"
+	DFWProtocolIcmp = "ICMP"
+)
+
+// Action types
+const (
+	DFWActionAllow = "allow"
+	DFWActionDeny  = "deny"
+)
+
+// Directions
+const (
+	DFWDirectionIn    = "in"
+	DFWDirectionOut   = "out"
+	DFWDirectionInout = "inout"
+)
+
+// Types of packet
+const (
+	DFWPacketAny  = "any"
+	DFWPacketIpv4 = "ipv4"
+	DFWPacketIpv6 = "ipv6"
+)
+
+// Elements of Source, Destination, and Applies-To
+const (
+	DFWElementVirtualMachine = "VirtualMachine"
+	DFWElementNetwork        = "Network"
+	DFWElementEdge           = "Edge"
+	DFWElementIpSet          = "IpSet"
+	DFWElementIpv4           = "Ipv4Address"
+	DFWElementIpv6           = "Ipv6Address"
+)
+
+// Types of service
+const (
+	DFWServiceTypeApplication      = "Application"
+	DFWServiceTypeApplicationGroup = "ApplicationGroup"
 )
 
 var NsxvProtocolCodes = map[string]int{
-	ProtocolTcp:  6,
-	ProtocolUdp:  17,
-	ProtocolIcmp: 1,
+	DFWProtocolTcp:  6,
+	DFWProtocolUdp:  17,
+	DFWProtocolIcmp: 1,
 }
 
 // NewNsxvDistributedFirewall creates a new NsxvDistributedFirewall
@@ -193,16 +223,16 @@ func (dfw *NsxvDistributedFirewall) Disable() error {
 	return nil
 }
 
-func (dfw *NsxvDistributedFirewall) UpdateConfiguration(rules []types.NsxvDistributedFirewallRule, addDefaultRule bool, defaultRuleAction string) (*types.FirewallConfiguration, error) {
+// UpdateConfiguration will either create a new set of rules or update existing ones.
+// If the firewall already contains rules, they are overwritten by the ones passed as parameters
+func (dfw *NsxvDistributedFirewall) UpdateConfiguration(rules []types.NsxvDistributedFirewallRule) (*types.FirewallConfiguration, error) {
 
+	oldConf, err := dfw.GetConfiguration()
+	if err != nil {
+		return nil, err
+	}
 	if dfw.Etag == "" {
-		_, err := dfw.GetConfiguration()
-		if err != nil {
-			return nil, err
-		}
-		if dfw.Etag == "" {
-			return nil, fmt.Errorf("error getting ETag from distributed firewall")
-		}
+		return nil, fmt.Errorf("error getting ETag from distributed firewall")
 	}
 	initialUrl, err := dfw.client.buildUrl("network", "firewall", "globalroot-0", "config", "layer3sections", dfw.VdcId)
 	if err != nil {
@@ -214,31 +244,54 @@ func (dfw *NsxvDistributedFirewall) UpdateConfiguration(rules []types.NsxvDistri
 		return nil, err
 	}
 
-	params := map[string]string{
-		"If-Match": strings.Trim(dfw.Etag, `"`),
+	var errorList []string
+	for i := 0; i < len(rules); i++ {
+		rules[i].SectionID = oldConf.Layer3Sections.Section.ID
+		if rules[i].Direction == "" {
+			errorList = append(errorList, fmt.Sprintf("missing Direction in rule n. %d ", i+1))
+		}
+		if rules[i].PacketType == "" {
+			errorList = append(errorList, fmt.Sprintf("missing Packet Type in rule n. %d ", i+1))
+		}
+		if rules[i].Action == "" {
+			errorList = append(errorList, fmt.Sprintf("missing Action in rule n. %d ", i+1))
+		}
+	}
+	if len(errorList) > 0 {
+		return nil, fmt.Errorf("missing required elements from rules: %s", strings.Join(errorList, "; "))
 	}
 
-	ruleSet := dfw.Configuration.Layer3Sections.Section
+	ruleSet := types.FirewallSection{
+		ID:               oldConf.Layer3Sections.Section.ID,
+		GenerationNumber: strings.Trim(dfw.Etag, `"`),
+		Name:             dfw.VdcId,
+		Rule:             rules,
+	}
 
-	//for _, newRule := range rules {
-	// 1. Check that the rule is not already in the current set. If it is (complete equality, except the ID), skip (i.e., the current rule will continue to exist)
-	// 2. If the rule is different, but with the same ID, the rule from the input replaces the internal one
-	// 3. add the rule
-	//}
+	var newRuleset types.FirewallSection
+
+	dfw.client.SetCustomHeader(map[string]string{
+		"If-Match": strings.Trim(oldConf.Layer3Sections.Section.GenerationNumber, `"`),
+	})
 
 	contentType := fmt.Sprintf("application/*+xml;version=%s", dfw.client.APIVersion)
-	resp, err := dfw.client.ExecuteParamRequestWithCustomError(requestUrl.String(), params, http.MethodPut, contentType, "error updating NSX-V distributed firewall: %s", ruleSet, err)
+
+	resp, err := dfw.client.ExecuteRequest(requestUrl.String(), http.MethodPut, contentType,
+		"error updating NSX-V distributed firewall: %s", ruleSet, &newRuleset)
+
+	//resp, err := dfw.client.ExecuteParamRequestWithCustomError(requestUrl.String(), params, http.MethodPut, contentType,
+	//	"error updating NSX-V distributed firewall: %s", ruleSet, &types.Error{})
 	if err != nil {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("[update DistributedFirewall] expected status code %d - received %d", http.StatusOK, resp.StatusCode)
 	}
-	//return dfw.GetConfiguration()
-	return nil, fmt.Errorf("not fully implemented yet")
+	return dfw.GetConfiguration()
 }
 
 /*
+// code block that might be removed soon
 type ruleEquality int
 
 const (
@@ -272,7 +325,7 @@ func compareRule(original, inserted types.NsxvDistributedFirewallRule) (bool, bo
 
 func isDefaultRule(rule types.NsxvDistributedFirewallRule) bool {
 	return !rule.Disabled &&
-		rule.Direction == DirectionInout &&
+		rule.Direction == DFWDirectionInout &&
 		rule.PacketType == "any" &&
 		rule.Sources == nil &&
 		rule.Destinations == nil &&
@@ -280,9 +333,7 @@ func isDefaultRule(rule types.NsxvDistributedFirewallRule) bool {
 		strings.Contains(rule.Name, "Default")
 }
 
-// ----------------------------------------------------------------------------------------------
-// methods from here till the end of the file will be removed if we decide we don't need services
-// ----------------------------------------------------------------------------------------------
+*/
 
 // GetServices retrieves the list of services for the current VCD
 // If `refresh` = false and the services were already retrieved in a previous operation,
@@ -491,6 +542,3 @@ func (dfw *NsxvDistributedFirewall) GetServiceGroupsByRegex(expression string) (
 	}
 	return found, nil
 }
-
-
-*/
