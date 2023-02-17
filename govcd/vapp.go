@@ -40,6 +40,7 @@ type VappNetworkSettings struct {
 	Description        string
 	Gateway            string
 	NetMask            string
+	PrefixLength       string
 	DNS1               string
 	DNS2               string
 	DNSSuffix          string
@@ -920,14 +921,22 @@ func (vapp *VApp) CreateVappNetworkAsync(newNetworkSettings *VappNetworkSettings
 			FenceMode:        types.FenceModeIsolated,
 			GuestVlanAllowed: newNetworkSettings.GuestVLANAllowed,
 			Features:         networkFeatures,
-			IPScopes: &types.IPScopes{IPScope: []*types.IPScope{&types.IPScope{IsInherited: false, Gateway: newNetworkSettings.Gateway,
-				Netmask: newNetworkSettings.NetMask, DNS1: newNetworkSettings.DNS1,
-				DNS2: newNetworkSettings.DNS2, DNSSuffix: newNetworkSettings.DNSSuffix, IsEnabled: true,
-				IPRanges: &types.IPRanges{IPRange: newNetworkSettings.StaticIPRanges}}}},
+			IPScopes: &types.IPScopes{
+				IPScope: []*types.IPScope{{
+					IsInherited:  false,
+					Gateway:      newNetworkSettings.Gateway,
+					PrefixLength: newNetworkSettings.PrefixLength,
+					Netmask:      newNetworkSettings.NetMask,
+					DNS1:         newNetworkSettings.DNS1,
+					DNS2:         newNetworkSettings.DNS2,
+					DNSSuffix:    newNetworkSettings.DNSSuffix,
+					IsEnabled:    true,
+					IPRanges:     &types.IPRanges{IPRange: newNetworkSettings.StaticIPRanges}}}},
 			RetainNetInfoAcrossDeployments: newNetworkSettings.RetainIpMacEnabled,
 		},
 		IsDeployed: false,
 	}
+
 	if orgNetwork != nil {
 		vappConfiguration.Configuration.ParentNetwork = &types.Reference{
 			HREF: orgNetwork.HREF,
@@ -1174,12 +1183,8 @@ func validateNetworkConfigSettings(networkSettings *VappNetworkSettings) error {
 		return errors.New("network gateway IP is missing")
 	}
 
-	if networkSettings.NetMask == "" {
-		return errors.New("network mask config is missing")
-	}
-
-	if networkSettings.NetMask == "" {
-		return errors.New("network mask config is missing")
+	if networkSettings.NetMask == "" && networkSettings.PrefixLength == "" {
+		return errors.New("network mask and subnet prefix length config is missing")
 	}
 
 	if networkSettings.DhcpSettings != nil && networkSettings.DhcpSettings.IPRange == nil {
