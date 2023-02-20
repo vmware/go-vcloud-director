@@ -97,24 +97,24 @@ func (vcd *TestVCD) prepareVappWithVappNetwork(check *C, vappName, orgVdcNetwork
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork, NotNil)
 
-	vappNetworkSettings_v4 := &VappNetworkSettings{
+	vappNetworkSettings := &VappNetworkSettings{
 		Name:               vappNetworkName,
-		Gateway:            "fe80::aaaa",
-		PrefixLength:       "100",
-		DNS1:               "d231:d231:d231:d231:d231:d231:d231:d231",
-		DNS2:               "d231:d231:d231:d231:d231:d231:d231:d231",
+		Gateway:            "192.168.0.1",
+		NetMask:            "255.255.255.0",
+		DNS1:               "8.8.8.8",
+		DNS2:               "1.1.1.1",
 		DNSSuffix:          "biz.biz",
-		StaticIPRanges:     []*types.IPRange{{StartAddress: "fe80::aaab", EndAddress: "fe80::aaac"}},
-		DhcpSettings:       &DhcpSettings{IsEnabled: true, MaxLeaseTime: 3500, DefaultLeaseTime: 2400, IPRange: &types.IPRange{StartAddress: "fe80::aaad", EndAddress: "fe80::aaae"}},
+		StaticIPRanges:     []*types.IPRange{{StartAddress: "192.168.0.10", EndAddress: "192.168.0.20"}},
+		DhcpSettings:       &DhcpSettings{IsEnabled: true, MaxLeaseTime: 3500, DefaultLeaseTime: 2400, IPRange: &types.IPRange{StartAddress: "192.168.0.30", EndAddress: "192.168.0.40"}},
 		GuestVLANAllowed:   &guestVlanAllowed,
 		Description:        description,
 		RetainIpMacEnabled: &retainIpMacEnabled,
 	}
 
-	vappNetworkConfigv4, err := vapp.CreateVappNetwork(vappNetworkSettings_v4, orgVdcNetwork.OrgVDCNetwork)
+	vappNetworkConfig, err := vapp.CreateVappNetwork(vappNetworkSettings, orgVdcNetwork.OrgVDCNetwork)
 	check.Assert(err, IsNil)
-	check.Assert(vappNetworkConfigv4, NotNil)
-	return vapp, vappNetworkName, vappNetworkConfigv4, err
+	check.Assert(vappNetworkConfig, NotNil)
+	return vapp, vappNetworkName, vappNetworkConfig, err
 }
 
 func (vcd *TestVCD) Test_GetVappNetworkByNameOrId(check *C) {

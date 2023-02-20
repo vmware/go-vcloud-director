@@ -1187,6 +1187,10 @@ func validateNetworkConfigSettings(networkSettings *VappNetworkSettings) error {
 		return errors.New("network mask and subnet prefix length config is missing")
 	}
 
+	if networkSettings.NetMask != "" && networkSettings.PrefixLength != "" {
+		return errors.New("only one of netmask and prefix length can be supplied")
+	}
+
 	if networkSettings.DhcpSettings != nil && networkSettings.DhcpSettings.IPRange == nil {
 		return errors.New("network DHCP ip range config is missing")
 	}
