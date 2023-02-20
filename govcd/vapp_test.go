@@ -853,6 +853,8 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedVappNetwork(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
+// Test_AddAndRemoveIsolatedVappNetworkIpv6 is identical to Test_AddAndRemoveIsolatedVappNetwork,
+// but it uses ipv6 values for network specification.
 func (vcd *TestVCD) Test_AddAndRemoveIsolatedVappNetworkIpv6(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
@@ -865,6 +867,8 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedVappNetworkIpv6(check *C) {
 	description := "Created in test"
 	const gateway = "fe80:0:0:0:0:0:0:aaaa"
 	const prefixlength = "100"
+	// VCD API returns ipv6 addresses in expanded format, so this is
+	// needed to compare values properly.
 	const dns1 = "2001:4860:4860:0:0:0:0:8844"
 	const dns2 = "2001:4860:4860:0:0:0:0:8844"
 	const dnsSuffix = "biz.biz"

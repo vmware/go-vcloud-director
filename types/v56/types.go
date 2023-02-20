@@ -171,10 +171,10 @@ type IPRanges struct {
 // Description: Specify network settings like gateway, network mask, DNS servers, IP ranges, etc.
 // Since: 0.9
 type IPScope struct {
-	IsInherited          bool            `xml:"IsInherited"`       // True if the IP scope is inherit from parent network.
-	Gateway              string          `xml:"Gateway,omitempty"` // Gateway of the network.
-	Netmask              string          `xml:"Netmask,omitempty"` // Network mask.
-	PrefixLength         string          `xml:"SubnetPrefixLength,omitempty"`
+	IsInherited          bool            `xml:"IsInherited"`                    // True if the IP scope is inherit from parent network.
+	Gateway              string          `xml:"Gateway,omitempty"`              // Gateway of the network.
+	Netmask              string          `xml:"Netmask,omitempty"`              // Network mask.
+	PrefixLength         string          `xml:"SubnetPrefixLength,omitempty"`   // Prefix length.
 	DNS1                 string          `xml:"Dns1,omitempty"`                 // Primary DNS server.
 	DNS2                 string          `xml:"Dns2,omitempty"`                 // Secondary DNS server.
 	DNSSuffix            string          `xml:"DnsSuffix,omitempty"`            // DNS suffix.
