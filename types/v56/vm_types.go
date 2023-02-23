@@ -188,11 +188,9 @@ type PlatformSection struct {
 // Application-level configuration such as DNS name of active directory server, databases and
 // other external services.
 type PropertySection struct {
-	XMLName      xml.Name     `xml:"PropertySection"`
-	PropertyList PropertyList `xml:"Property,omitempty"`
+	XMLName    xml.Name        `xml:"PropertySection"`
+	Properties []*OVF_Property `xml:"Property,omitempty"`
 }
-
-type PropertyList []*OVF_Property
 
 type OVF_Property struct {
 	Key   string `xml:"key,attr"`
@@ -201,11 +199,9 @@ type OVF_Property struct {
 
 // Contains adapters info and virtual networks attached
 type EthernetAdapterSection struct {
-	XMLName     xml.Name    `xml:"EthernetAdapterSection"`
-	AdapterList AdapterList `xml:"Adapter,omitempty"`
+	XMLName  xml.Name   `xml:"EthernetAdapterSection"`
+	Adapters []*Adapter `xml:"Adapter,omitempty"`
 }
-
-type AdapterList []*Adapter
 
 type Adapter struct {
 	Mac        string `xml:"mac,attr"`

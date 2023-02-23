@@ -2318,13 +2318,13 @@ func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
 
 	// Check guest operating system level configuration for hostname
 	check.Assert(ovfenv.PropertySection, NotNil)
-	for _, p := range ovfenv.PropertySection.PropertyList {
+	for _, p := range ovfenv.PropertySection.Properties {
 		if p.Key == "vCloud_computerName" {
 			check.Assert(p.Value, Not(Equals), "")
 		}
 	}
 	check.Assert(ovfenv.EthernetAdapterSection, NotNil)
-	for _, p := range ovfenv.EthernetAdapterSection.AdapterList {
+	for _, p := range ovfenv.EthernetAdapterSection.Adapters {
 		check.Assert(p.Mac, Not(Equals), "")
 	}
 
