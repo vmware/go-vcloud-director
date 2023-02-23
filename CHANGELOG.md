@@ -98,6 +98,7 @@ Changes in progress for v2.20.0 are available at [.changes/v2.20.0](https://gith
 * Added `VCDClient.QuerySynchronizedVAppTemplateById` to get a synchronized vApp Template query record from a vApp Template ID ([#520](https://github.com/vmware/go-vcloud-director/pull/520))
 
 ### IMPROVEMENTS
+* Bumped Default API Version to V36.0 (VCD 10.3+) [#500](https://github.com/vmware/go-vcloud-director/pull/500)
 * Added method `VM.Shutdown` to shut down guest OS ([#413](https://github.com/vmware/go-vcloud-director/pull/413), [#496](https://github.com/vmware/go-vcloud-director/pull/496))
 * Add support for MoRef ID on VM record type. Using the MoRef ID, we can then correlate that back to vCenter Server and find the VM with matching MoRef ID  ([#491](https://github.com/vmware/go-vcloud-director/pull/491))
 * Added support for querying VdcStorageProfile:  

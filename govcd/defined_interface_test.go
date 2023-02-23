@@ -41,7 +41,7 @@ func (vcd *TestVCD) Test_DefinedInterface(check *C) {
 	check.Assert(len(allDefinedInterfacesByTenant), Equals, len(allDefinedInterfacesBySysAdmin))
 
 	// Then we create a new Defined Interface with System administrator. We replace the dots in both
-	// nss and name as API is quirky at versions of VCD < 37.0
+	// nss and name as API is quirky at versions of VCD <= 10.3.0
 	dummyRde := &types.DefinedInterface{
 		Name:    strings.ReplaceAll(check.TestName()+"name", ".", ""),
 		Nss:     strings.ReplaceAll(check.TestName()+"nss", ".", ""),
@@ -59,7 +59,7 @@ func (vcd *TestVCD) Test_DefinedInterface(check *C) {
 	AddToCleanupListOpenApi(newDefinedInterfaceFromSysAdmin.DefinedInterface.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRdeInterfaces+newDefinedInterfaceFromSysAdmin.DefinedInterface.ID)
 
 	// Tenants can't create Defined Interfaces. We replace the dots in both
-	// nss and name as API is quirky at versions of VCD < 37.0
+	// nss and name as API is quirky at versions of VCD <= 10.3.0
 	nilDefinedInterface, err := tenantUserClient.CreateDefinedInterface(&types.DefinedInterface{
 		Name:    strings.ReplaceAll(check.TestName()+"name2", ".", ""),
 		Nss:     strings.ReplaceAll(check.TestName()+"name2", ".", ""),
