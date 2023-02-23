@@ -166,7 +166,7 @@ type SourcedVmTemplateParams struct {
 // the user-specified values for the properties defined in the OVF descriptor.
 type OVF_Environment struct {
 	XMLName                xml.Name                `xml:"Environment"`
-	Ve                     string                  `xml:"ve,attr,omitempty"`				// Xml namespace
+	Ve                     string                  `xml:"ve,attr,omitempty"`                // Xml namespace
 	Id                     string                  `xml:"id,attr,omitempty"`                // Identification of VM from OVF Descriptor. Describes this virtual system.
 	VCenterId              string                  `xml:"vCenterId,attr,omitempty"`         // VM moref in the vCenter
 	PlatformSection        *PlatformSection        `xml:"PlatformSection,omitempty"`        // Describes the virtualization platform
