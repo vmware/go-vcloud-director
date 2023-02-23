@@ -2307,6 +2307,7 @@ func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
 	// Read ovfenv when VM is started
 	ovfenv, err := vm.GetEnvironment()
 	check.Assert(err, IsNil)
+	check.Assert(ovfenv, NotNil)
 
 	// Provides information from the virtualization platform like VM moref
 	check.Assert(strings.Contains(ovfenv.VCenterId, "vm-"), Equals, true)
