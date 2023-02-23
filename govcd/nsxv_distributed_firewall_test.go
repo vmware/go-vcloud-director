@@ -123,11 +123,13 @@ func (vcd *TestVCD) Test_NsxvDistributedFirewallUpdate(check *C) {
 
 	sampleDestination := &types.Destinations{}
 	if len(vms) > 0 {
-		sampleDestination.Destination = types.Destination{
-			Name:    vms[0].Name,
-			Value:   extractUuid(vms[0].HREF),
-			Type:    DFWElementVirtualMachine,
-			IsValid: true,
+		sampleDestination.Destination = []types.Destination{
+			{
+				Name:    vms[0].Name,
+				Value:   extractUuid(vms[0].HREF),
+				Type:    DFWElementVirtualMachine,
+				IsValid: true,
+			},
 		}
 	}
 	err = dfw.Enable()
@@ -145,7 +147,7 @@ func (vcd *TestVCD) Test_NsxvDistributedFirewallUpdate(check *C) {
 		{
 			Name:   "first",
 			Action: DFWActionDeny,
-			AppliedToList: types.AppliedToList{
+			AppliedToList: &types.AppliedToList{
 				AppliedTo: []types.AppliedTo{
 					{
 						Name:    adminVdc.AdminVdc.Name,
@@ -160,7 +162,7 @@ func (vcd *TestVCD) Test_NsxvDistributedFirewallUpdate(check *C) {
 		},
 		{
 			Name:          "second",
-			AppliedToList: types.AppliedToList{},
+			AppliedToList: &types.AppliedToList{},
 			SectionID:     nil,
 			Sources:       nil,
 			Destinations:  nil,
@@ -172,7 +174,7 @@ func (vcd *TestVCD) Test_NsxvDistributedFirewallUpdate(check *C) {
 		{
 			Name:          "third",
 			Action:        DFWActionAllow,
-			AppliedToList: types.AppliedToList{},
+			AppliedToList: &types.AppliedToList{},
 			Sources: &types.Sources{
 				Source: []types.Source{
 					// Anonymous source

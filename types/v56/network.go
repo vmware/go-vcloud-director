@@ -37,19 +37,19 @@ type FirewallSection struct {
 }
 
 type NsxvDistributedFirewallRule struct {
-	Disabled      bool          `xml:"disabled,attr"`
-	ID            *int          `xml:"id,attr"`
-	Logged        bool          `xml:"logged,attr"`
-	Name          string        `xml:"name"`
-	Action        string        `xml:"action"` // allow, deny
-	AppliedToList AppliedToList `xml:"appliedToList"`
-	SectionID     *int          `xml:"sectionId"`
-	Sources       *Sources      `xml:"sources"`
-	Destinations  *Destinations `xml:"destinations"`
-	Services      *Services     `xml:"services"`
-	Direction     string        `xml:"direction"` // in, out, inout
-	PacketType    string        `xml:"packetType"`
-	Tag           string        `xml:"tag"`
+	Disabled      bool           `xml:"disabled,attr"`
+	ID            *int           `xml:"id,attr"`
+	Logged        bool           `xml:"logged,attr"`
+	Name          string         `xml:"name"`
+	Action        string         `xml:"action"` // allow, deny
+	AppliedToList *AppliedToList `xml:"appliedToList"`
+	SectionID     *int           `xml:"sectionId"`
+	Sources       *Sources       `xml:"sources"`
+	Destinations  *Destinations  `xml:"destinations"`
+	Services      *Services      `xml:"services"`
+	Direction     string         `xml:"direction"` // in, out, inout
+	PacketType    string         `xml:"packetType"`
+	Tag           string         `xml:"tag"`
 }
 
 type AppliedToList struct {
@@ -76,8 +76,8 @@ type Source struct {
 }
 
 type Destinations struct {
-	Excluded    bool        `xml:"excluded,attr"`
-	Destination Destination `xml:"destination"`
+	Excluded    bool          `xml:"excluded,attr"`
+	Destination []Destination `xml:"destination"`
 }
 
 type Destination struct {
