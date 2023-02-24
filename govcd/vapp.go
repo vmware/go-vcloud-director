@@ -925,8 +925,8 @@ func (vapp *VApp) CreateVappNetworkAsync(newNetworkSettings *VappNetworkSettings
 				IPScope: []*types.IPScope{{
 					IsInherited:  false,
 					Gateway:      newNetworkSettings.Gateway,
-					PrefixLength: newNetworkSettings.PrefixLength,
 					Netmask:      newNetworkSettings.NetMask,
+					PrefixLength: newNetworkSettings.PrefixLength,
 					DNS1:         newNetworkSettings.DNS1,
 					DNS2:         newNetworkSettings.DNS2,
 					DNSSuffix:    newNetworkSettings.DNSSuffix,
@@ -1184,7 +1184,7 @@ func validateNetworkConfigSettings(networkSettings *VappNetworkSettings) error {
 	}
 
 	if networkSettings.NetMask == "" && networkSettings.PrefixLength == "" {
-		return errors.New("network mask and subnet prefix length config is missing")
+		return errors.New("network mask or subnet prefix length config is missing")
 	}
 
 	if networkSettings.NetMask != "" && networkSettings.PrefixLength != "" {
