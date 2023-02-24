@@ -426,3 +426,13 @@ type LogicalVmGroup struct {
 	NamedVmGroupReferences OpenApiReferences `json:"namedVmGroupReferences,omitempty"` // List of named VM Groups associated with LogicalVmGroup.
 	PvdcID                 string            `json:"pvdcId,omitempty"`                 // URN for Provider VDC
 }
+
+// DefinedInterface defines a interface for a defined entity. The combination of nss+version+vendor should be unique
+type DefinedInterface struct {
+	ID         string `json:"id,omitempty"`       // The id of the defined interface type in URN format
+	Name       string `json:"name,omitempty"`     // The name of the defined interface
+	Nss        string `json:"nss,omitempty"`      // A unique namespace associated with the interface
+	Version    string `json:"version,omitempty"`  // The interface's version. The version should follow semantic versioning rules
+	Vendor     string `json:"vendor,omitempty"`   // The vendor name
+	IsReadOnly bool   `json:"readonly,omitempty"` // True if the entity type cannot be modified
+}
