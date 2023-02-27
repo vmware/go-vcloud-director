@@ -146,12 +146,12 @@ func (dfw *NsxvDistributedFirewall) IsEnabled() (bool, error) {
 		return false, fmt.Errorf("no VDC set for this NsxvDistributedFirewall")
 	}
 
-	if dfw.Configuration != nil && dfw.Configuration.Layer3Sections != nil && dfw.Configuration.Layer3Sections.Section != nil {
-		return dfw.enabled, nil
-	}
-	_, err := dfw.GetConfiguration()
+	conf, err := dfw.GetConfiguration()
 	if err != nil {
 		return false, nil
+	}
+	if dfw.client.APIVersion == "36.0" {
+		return conf != nil, nil
 	}
 	return true, nil
 }
@@ -211,7 +211,15 @@ func (dfw *NsxvDistributedFirewall) Disable() error {
 
 	resp, err := checkResp(dfw.client.Http.Do(req))
 	if err != nil {
-		return err
+		// VCD 10.3.x sometimes returns an error even though the removal succeeds
+		if dfw.client.APIVersion == "36.0" {
+			conf, _ := dfw.GetConfiguration()
+			if conf == nil {
+				return nil
+			}
+		}
+		return fmt.Errorf("error deleting Distributed firewall: %s", err)
+
 	}
 	if resp != nil && resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("[disable DistributedFirewall] expected status code %d - received %d", http.StatusNoContent, resp.StatusCode)
