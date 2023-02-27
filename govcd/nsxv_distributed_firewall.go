@@ -56,12 +56,12 @@ const (
 
 // Elements of Source, Destination, and Applies-To
 const (
+	DFWElementVdc            = "VDC"
 	DFWElementVirtualMachine = "VirtualMachine"
 	DFWElementNetwork        = "Network"
 	DFWElementEdge           = "Edge"
-	DFWElementIpSet          = "IpSet"
+	DFWElementIpSet          = "IPSet"
 	DFWElementIpv4           = "Ipv4Address"
-	DFWElementIpv6           = "Ipv6Address"
 )
 
 // Types of service
