@@ -1183,11 +1183,11 @@ func validateNetworkConfigSettings(networkSettings *VappNetworkSettings) error {
 		return errors.New("network gateway IP is missing")
 	}
 
-	if networkSettings.NetMask == "" && networkSettings.PrefixLength == "" {
+	if networkSettings.NetMask == "" && networkSettings.SubnetPrefixLength == "" {
 		return errors.New("network mask and subnet prefix length config is missing, exactly one is required")
 	}
 
-	if networkSettings.NetMask != "" && networkSettings.PrefixLength != "" {
+	if networkSettings.NetMask != "" && networkSettings.SubnetPrefixLength != "" {
 		return errors.New("exactly one of netmask and prefix length can be supplied")
 	}
 
