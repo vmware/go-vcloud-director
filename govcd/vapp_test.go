@@ -881,16 +881,16 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedVappNetworkIpv6(check *C) {
 	var guestVlanAllowed = true
 
 	vappNetworkSettings := &VappNetworkSettings{
-		Name:             networkName,
-		Gateway:          gateway,
-		PrefixLength:     prefixlength,
-		DNS1:             dns1,
-		DNS2:             dns2,
-		DNSSuffix:        dnsSuffix,
-		StaticIPRanges:   []*types.IPRange{{StartAddress: startAddress, EndAddress: endAddress}},
-		DhcpSettings:     &DhcpSettings{IsEnabled: true, MaxLeaseTime: maxLeaseTime, DefaultLeaseTime: defaultLeaseTime, IPRange: &types.IPRange{StartAddress: dhcpStartAddress, EndAddress: dhcpEndAddress}},
-		GuestVLANAllowed: &guestVlanAllowed,
-		Description:      description,
+		Name:               networkName,
+		Gateway:            gateway,
+		SubnetPrefixLength: prefixlength,
+		DNS1:               dns1,
+		DNS2:               dns2,
+		DNSSuffix:          dnsSuffix,
+		StaticIPRanges:     []*types.IPRange{{StartAddress: startAddress, EndAddress: endAddress}},
+		DhcpSettings:       &DhcpSettings{IsEnabled: true, MaxLeaseTime: maxLeaseTime, DefaultLeaseTime: defaultLeaseTime, IPRange: &types.IPRange{StartAddress: dhcpStartAddress, EndAddress: dhcpEndAddress}},
+		GuestVLANAllowed:   &guestVlanAllowed,
+		Description:        description,
 	}
 
 	vappNetworkConfig, err := vapp.CreateVappNetwork(vappNetworkSettings, nil)
@@ -906,7 +906,7 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedVappNetworkIpv6(check *C) {
 
 	check.Assert(networkFound.Description, Equals, description)
 	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].Gateway, Equals, gateway)
-	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].PrefixLength, Equals, prefixlength)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].SubnetPrefixLength, Equals, prefixlength)
 	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNS1, Equals, dns1)
 	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNS2, Equals, dns2)
 	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNSSuffix, Equals, dnsSuffix)

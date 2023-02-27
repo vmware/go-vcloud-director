@@ -40,7 +40,7 @@ type VappNetworkSettings struct {
 	Description        string
 	Gateway            string
 	NetMask            string
-	PrefixLength       string
+	SubnetPrefixLength string
 	DNS1               string
 	DNS2               string
 	DNSSuffix          string
@@ -923,15 +923,15 @@ func (vapp *VApp) CreateVappNetworkAsync(newNetworkSettings *VappNetworkSettings
 			Features:         networkFeatures,
 			IPScopes: &types.IPScopes{
 				IPScope: []*types.IPScope{{
-					IsInherited:  false,
-					Gateway:      newNetworkSettings.Gateway,
-					Netmask:      newNetworkSettings.NetMask,
-					PrefixLength: newNetworkSettings.PrefixLength,
-					DNS1:         newNetworkSettings.DNS1,
-					DNS2:         newNetworkSettings.DNS2,
-					DNSSuffix:    newNetworkSettings.DNSSuffix,
-					IsEnabled:    true,
-					IPRanges:     &types.IPRanges{IPRange: newNetworkSettings.StaticIPRanges}}}},
+					IsInherited:        false,
+					Gateway:            newNetworkSettings.Gateway,
+					Netmask:            newNetworkSettings.NetMask,
+					SubnetPrefixLength: newNetworkSettings.SubnetPrefixLength,
+					DNS1:               newNetworkSettings.DNS1,
+					DNS2:               newNetworkSettings.DNS2,
+					DNSSuffix:          newNetworkSettings.DNSSuffix,
+					IsEnabled:          true,
+					IPRanges:           &types.IPRanges{IPRange: newNetworkSettings.StaticIPRanges}}}},
 			RetainNetInfoAcrossDeployments: newNetworkSettings.RetainIpMacEnabled,
 		},
 		IsDeployed: false,
@@ -1184,11 +1184,11 @@ func validateNetworkConfigSettings(networkSettings *VappNetworkSettings) error {
 	}
 
 	if networkSettings.NetMask == "" && networkSettings.PrefixLength == "" {
-		return errors.New("network mask or subnet prefix length config is missing")
+		return errors.New("network mask and subnet prefix length config is missing, exactly one is required")
 	}
 
 	if networkSettings.NetMask != "" && networkSettings.PrefixLength != "" {
-		return errors.New("only one of netmask and prefix length can be supplied")
+		return errors.New("exactly one of netmask and prefix length can be supplied")
 	}
 
 	if networkSettings.DhcpSettings != nil && networkSettings.DhcpSettings.IPRange == nil {
