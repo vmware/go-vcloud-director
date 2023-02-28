@@ -281,14 +281,13 @@ func (dfw *NsxvDistributedFirewall) UpdateConfiguration(rules []types.NsxvDistri
 	dfw.client.SetCustomHeader(map[string]string{
 		"If-Match": strings.Trim(oldConf.Layer3Sections.Section.GenerationNumber, `"`),
 	})
+	defer dfw.client.RemoveCustomHeader()
 
 	contentType := fmt.Sprintf("application/*+xml;version=%s", dfw.client.APIVersion)
 
 	resp, err := dfw.client.ExecuteRequest(requestUrl.String(), http.MethodPut, contentType,
 		"error updating NSX-V distributed firewall: %s", ruleSet, &newRuleset)
 
-	//resp, err := dfw.client.ExecuteParamRequestWithCustomError(requestUrl.String(), params, http.MethodPut, contentType,
-	//	"error updating NSX-V distributed firewall: %s", ruleSet, &types.Error{})
 	if err != nil {
 		return nil, err
 	}
@@ -297,51 +296,6 @@ func (dfw *NsxvDistributedFirewall) UpdateConfiguration(rules []types.NsxvDistri
 	}
 	return dfw.GetConfiguration()
 }
-
-/*
-// code block that might be removed soon
-type ruleEquality int
-
-const (
-	rulesEqual ruleEquality = iota
-	rulesDifferent
-	rulesEqualDifferentIds
-	rulesDifferentSameId
-)
-
-// compareRule returns three comparison parameters:
-// the first one says whether the body of the rules differ, i.e. the rule data without the ID
-// the second one tells whether the IDs differ
-// the third one says whether any of the IDs was set
-// Use as:
-//
-//	bodyEqual, idEqual, idSet := compareRule(original, inserted)
-func compareRule(original, inserted types.NsxvDistributedFirewallRule) (bool, bool, bool) {
-
-	bodyEqual := original.Disabled == inserted.Disabled &&
-		original.Name == inserted.Name &&
-		original.Action == inserted.Action &&
-		original.Direction == inserted.Direction &&
-		original.PacketType == inserted.PacketType &&
-		reflect.DeepEqual(original.AppliedToList, inserted.AppliedToList) &&
-		reflect.DeepEqual(original.Sources, inserted.Sources) &&
-		reflect.DeepEqual(original.Destinations, inserted.Destinations) &&
-		reflect.DeepEqual(original.Services, inserted.Services)
-
-	return bodyEqual, original.ID == inserted.ID, (original.ID + inserted.ID) > 0
-}
-
-func isDefaultRule(rule types.NsxvDistributedFirewallRule) bool {
-	return !rule.Disabled &&
-		rule.Direction == DFWDirectionInout &&
-		rule.PacketType == "any" &&
-		rule.Sources == nil &&
-		rule.Destinations == nil &&
-		rule.Services == nil &&
-		strings.Contains(rule.Name, "Default")
-}
-
-*/
 
 // GetServices retrieves the list of services for the current VCD
 // If `refresh` = false and the services were already retrieved in a previous operation,
