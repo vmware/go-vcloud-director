@@ -897,6 +897,11 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedVappNetworkIpv6(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vappNetworkConfig, NotNil)
 
+	vappNetworkSettings.NetMask = "255.255.255.0"
+	vappNetworkConfig2, err := vapp.CreateVappNetwork(vappNetworkSettings, nil)
+	check.Assert(err, NotNil)
+	check.Assert(vappNetworkConfig2, IsNil)
+
 	networkFound := types.VAppNetworkConfiguration{}
 	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
 		if networkConfig.NetworkName == networkName {
