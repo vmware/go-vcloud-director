@@ -836,11 +836,11 @@ func (vm *VM) GetProductSectionList() (*types.ProductSectionList, error) {
 func (vm *VM) GetEnvironment() (*types.OVF_Environment, error) {
 	vmStatus, err := vm.GetStatus()
 	if err != nil {
-		return nil, fmt.Errorf("unable to get ovf environment: %s", err)
+		return nil, fmt.Errorf("unable to get OVF environment: %s", err)
 	}
 
 	if vmStatus != "POWERED_ON" {
-		return nil, fmt.Errorf("ovf environment is only available when VM is poweredOn")
+		return nil, fmt.Errorf("OVF environment is only available when VM is powered on")
 	}
 
 	return vm.VM.Environment, nil

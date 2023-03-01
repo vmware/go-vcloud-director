@@ -2336,7 +2336,7 @@ func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 
 	ovfenv, err = vm.GetEnvironment()
-	check.Assert(strings.Contains(err.Error(), "ovf environment is only available when VM is poweredOn"), Equals, true)
+	check.Assert(strings.Contains(err.Error(), "OVF environment is only available when VM is powered on"), Equals, true)
 	check.Assert(ovfenv, IsNil)
 
 	// Leave things as they were
