@@ -1081,6 +1081,10 @@ func (vapp *VApp) UpdateNetworkAsync(networkSettingsToUpdate *VappNetworkSetting
 		networkSettingsToUpdate.DhcpSettings.IPRange.EndAddress = networkSettingsToUpdate.DhcpSettings.IPRange.StartAddress
 	}
 
+	if networkToUpdate.Configuration.Features == nil {
+		networkToUpdate.Configuration.Features = &types.NetworkFeatures{}
+	}
+
 	// remove DHCP config
 	if networkSettingsToUpdate.DhcpSettings == nil {
 		networkToUpdate.Configuration.Features.DhcpService = nil
