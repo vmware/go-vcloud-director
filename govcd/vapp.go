@@ -1042,6 +1042,9 @@ func (vapp *VApp) UpdateNetworkAsync(networkSettingsToUpdate *VappNetworkSetting
 	if networkToUpdate.Configuration == nil {
 		networkToUpdate.Configuration = &types.NetworkConfiguration{}
 	}
+	if networkToUpdate.Configuration.Features == nil {
+		networkToUpdate.Configuration.Features = &types.NetworkFeatures{}
+	}
 	networkToUpdate.Configuration.RetainNetInfoAcrossDeployments = networkSettingsToUpdate.RetainIpMacEnabled
 	// new network to connect
 	if networkToUpdate.Configuration.ParentNetwork == nil && orgNetwork != nil {
