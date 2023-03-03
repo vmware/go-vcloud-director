@@ -19,7 +19,7 @@ import (
 )
 
 // Test_Rde tests the CRUD operations for the RDE Type with both System administrator and a tenant user.
-func (vcd *TestVCD) Test_Rde(check *C) {
+func (vcd *TestVCD) Test_RdeAndRdeType(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
@@ -140,33 +140,33 @@ func (vcd *TestVCD) Test_Rde(check *C) {
 	check.Assert(len(allRdeTypesByTenant), Equals, 1)
 
 	// Test the multiple ways of getting a RDE Types in both users.
-	obtainedRdeType, err := systemAdministratorClient.GetRdeTypeById(createdRdeType.DefinedEntityType.ID)
+	obtainedRdeTypeBySysAdmin, err := systemAdministratorClient.GetRdeTypeById(createdRdeType.DefinedEntityType.ID)
 	check.Assert(err, IsNil)
-	check.Assert(*obtainedRdeType.DefinedEntityType, DeepEquals, *createdRdeType.DefinedEntityType)
+	check.Assert(*obtainedRdeTypeBySysAdmin.DefinedEntityType, DeepEquals, *createdRdeType.DefinedEntityType)
 
 	// The RDE Type retrieved by the tenant should be the same as the retrieved by Sysadmin
 	obtainedRdeTypeByTenant, err := tenantUserClient.GetRdeTypeById(createdRdeType.DefinedEntityType.ID)
 	check.Assert(err, IsNil)
-	check.Assert(*obtainedRdeTypeByTenant.DefinedEntityType, DeepEquals, *obtainedRdeType.DefinedEntityType)
+	check.Assert(*obtainedRdeTypeByTenant.DefinedEntityType, DeepEquals, *obtainedRdeTypeBySysAdmin.DefinedEntityType)
 
-	obtainedRdeType, err = systemAdministratorClient.GetRdeType(createdRdeType.DefinedEntityType.Vendor, createdRdeType.DefinedEntityType.Nss, createdRdeType.DefinedEntityType.Version)
+	obtainedRdeTypeBySysAdmin, err = systemAdministratorClient.GetRdeType(createdRdeType.DefinedEntityType.Vendor, createdRdeType.DefinedEntityType.Nss, createdRdeType.DefinedEntityType.Version)
 	check.Assert(err, IsNil)
-	check.Assert(*obtainedRdeType.DefinedEntityType, DeepEquals, *obtainedRdeType.DefinedEntityType)
+	check.Assert(*obtainedRdeTypeBySysAdmin.DefinedEntityType, DeepEquals, *obtainedRdeTypeBySysAdmin.DefinedEntityType)
 
 	// The RDE Type retrieved by the tenant should be the same as the retrieved by Sysadmin
 	obtainedRdeTypeByTenant, err = tenantUserClient.GetRdeType(createdRdeType.DefinedEntityType.Vendor, createdRdeType.DefinedEntityType.Nss, createdRdeType.DefinedEntityType.Version)
 	check.Assert(err, IsNil)
-	check.Assert(*obtainedRdeTypeByTenant.DefinedEntityType, DeepEquals, *obtainedRdeType.DefinedEntityType)
+	check.Assert(*obtainedRdeTypeByTenant.DefinedEntityType, DeepEquals, *obtainedRdeTypeBySysAdmin.DefinedEntityType)
 
 	// We don't want to update the name nor the schema. It should populate them from the receiver object automatically
-	err = obtainedRdeType.Update(types.DefinedEntityType{
+	err = obtainedRdeTypeBySysAdmin.Update(types.DefinedEntityType{
 		Description: rdeTypeToCreate.Description + "UpdatedByAdmin",
 	})
 	check.Assert(err, IsNil)
-	check.Assert(obtainedRdeType.DefinedEntityType.Description, Equals, rdeTypeToCreate.Description+"UpdatedByAdmin")
+	check.Assert(obtainedRdeTypeBySysAdmin.DefinedEntityType.Description, Equals, rdeTypeToCreate.Description+"UpdatedByAdmin")
 
-	testRdeCrudWithGivenType(check, obtainedRdeType)
-	testRdeCrudAsTenant(check, obtainedRdeType.DefinedEntityType.Vendor, obtainedRdeType.DefinedEntityType.Nss, obtainedRdeType.DefinedEntityType.Version, vcd.client)
+	testRdeCrudWithGivenType(check, obtainedRdeTypeBySysAdmin)
+	testRdeCrudAsTenant(check, obtainedRdeTypeByTenant.DefinedEntityType.Vendor, obtainedRdeTypeByTenant.DefinedEntityType.Nss, obtainedRdeTypeByTenant.DefinedEntityType.Version, vcd.client)
 
 	// We delete it with Sysadmin
 	deletedId := createdRdeType.DefinedEntityType.ID

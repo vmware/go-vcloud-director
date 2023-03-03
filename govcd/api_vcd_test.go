@@ -795,6 +795,14 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 
 		// Validate if the resource still exists
 		err = vcd.client.Client.OpenApiGetItem(apiVersion, urlRef, nil, nil, nil)
+
+		// RDE Framework has a bug in VCD 10.3.0 that causes "not found" errors to return as "400 bad request",
+		// so we need to amend them
+		isBuggyRdeError := strings.Contains(entity.OpenApiEndpoint, types.OpenApiEndpointRdeInterfaces)
+		if isBuggyRdeError {
+			err = amendRdeApiError(&vcd.client.Client, err)
+		}
+
 		if ContainsNotFound(err) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return

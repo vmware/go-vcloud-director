@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -11,7 +11,8 @@ import (
 	"time"
 )
 
-// DefinedEntityType is a type for handling Runtime Defined Entity (RDE) Type definitions
+// DefinedEntityType is a type for handling Runtime Defined Entity (RDE) Type definitions.
+// Note. Running a few of these operations in parallel may corrupt database in VCD (at least <= 10.4.2)
 type DefinedEntityType struct {
 	DefinedEntityType *types.DefinedEntityType
 	client            *Client
