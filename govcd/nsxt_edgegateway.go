@@ -637,7 +637,7 @@ func ipSliceDifference(minuendSlice, subtrahendSlice []netip.Addr) []netip.Addr 
 	if len(minuendSlice) == 0 {
 		return []netip.Addr{}
 	}
-	// Having an empty subtrahendSlice results in minuendSlice (persisting )
+	// Having an empty subtrahendSlice results in minuendSlice
 	if len(subtrahendSlice) == 0 {
 		return minuendSlice
 	}

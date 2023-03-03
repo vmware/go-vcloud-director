@@ -59,7 +59,7 @@ type OpenAPIEdgeGateway struct {
 	// 192.168.255.225/30. The DNS listener IP network is on 192.168.255.228/32. This field cannot be updated.
 	ServiceNetworkDefinition string `json:"serviceNetworkDefinition,omitempty"`
 
-	// UsingIpSpace is a boolean flag to
+	// UsingIpSpace is a boolean flag to indicate whether the edge gateway is using IP space or not.
 	UsingIpSpace *bool `json:"usingIpSpace,omitempty"`
 }
 
