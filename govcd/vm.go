@@ -833,7 +833,7 @@ func (vm *VM) GetProductSectionList() (*types.ProductSectionList, error) {
 }
 
 // GetEnvironment returns the OVF Environment. It's only available for poweredOn VM
-func (vm *VM) GetEnvironment() (*types.OVF_Environment, error) {
+func (vm *VM) GetEnvironment() (*types.OvfEnvironment, error) {
 	vmStatus, err := vm.GetStatus()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get OVF environment: %s", err)

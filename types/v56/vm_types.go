@@ -52,7 +52,7 @@ type Vm struct {
 	Snapshots *SnapshotSection `xml:"SnapshotSection,omitempty"`
 
 	// The OVF environment defines how the guest software and the virtualization platform interact.
-	Environment *OVF_Environment `xml:"Environment,omitempty"`
+	Environment *OvfEnvironment `xml:"Environment,omitempty"`
 
 	VmSpecSection *VmSpecSection `xml:"VmSpecSection,omitempty"`
 
@@ -164,7 +164,7 @@ type SourcedVmTemplateParams struct {
 
 // The OVF environment enables the guest software to access information about the virtualization platform, such as
 // the user-specified values for the properties defined in the OVF descriptor.
-type OVF_Environment struct {
+type OvfEnvironment struct {
 	XMLName                xml.Name                `xml:"Environment"`
 	Ve                     string                  `xml:"ve,attr,omitempty"`                // Xml namespace
 	Id                     string                  `xml:"id,attr,omitempty"`                // Identification of VM from OVF Descriptor. Describes this virtual system.
@@ -189,10 +189,10 @@ type PlatformSection struct {
 // other external services.
 type PropertySection struct {
 	XMLName    xml.Name        `xml:"PropertySection"`
-	Properties []*OVF_Property `xml:"Property,omitempty"`
+	Properties []*OvfProperty `xml:"Property,omitempty"`
 }
 
-type OVF_Property struct {
+type OvfProperty struct {
 	Key   string `xml:"key,attr"`
 	Value string `xml:"value,attr"`
 }
