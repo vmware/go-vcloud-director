@@ -1,7 +1,7 @@
 //go:build functional || network || ALL
 
 /*
- * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 package govcd
 
@@ -16,6 +16,9 @@ import (
 func (vcd *TestVCD) Test_NsxvDistributedFirewall(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
+	if !vcd.client.Client.IsSysAdmin {
+		check.Skip(fmt.Sprintf("test %s requires system administrator privileges", check.TestName()))
+	}
 	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
@@ -98,6 +101,9 @@ func (vcd *TestVCD) Test_NsxvDistributedFirewall(check *C) {
 func (vcd *TestVCD) Test_NsxvDistributedFirewallUpdate(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
+	if !vcd.client.Client.IsSysAdmin {
+		check.Skip(fmt.Sprintf("test %s requires system administrator privileges", check.TestName()))
+	}
 	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
