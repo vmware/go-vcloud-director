@@ -157,12 +157,8 @@ func (dfw *NsxvDistributedFirewall) IsEnabled() (bool, error) {
 }
 
 // Enable makes the distributed firewall available
-// It requires system administrator privileges
 // It fails with a non-NSX-V VDC
 func (dfw *NsxvDistributedFirewall) Enable() error {
-	if !dfw.client.IsSysAdmin {
-		return fmt.Errorf("method 'Enable' requires system administrator privileges")
-	}
 	dfw.enabled = false
 	if dfw.VdcId == "" {
 		return fmt.Errorf("no AdminVdc set for this NsxvDistributedFirewall")
@@ -191,7 +187,6 @@ func (dfw *NsxvDistributedFirewall) Enable() error {
 }
 
 // Disable removes the availability of a distributed firewall
-// It requires system administrator privileges
 // WARNING: it also removes all rules
 func (dfw *NsxvDistributedFirewall) Disable() error {
 	if dfw.VdcId == "" {
