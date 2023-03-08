@@ -528,3 +528,54 @@ const (
 	// DistributedFirewallPolicyDefault is a constant for "default" Distributed Firewall Policy
 	DistributedFirewallPolicyDefault = "default"
 )
+
+// NSX-V distributed firewall
+
+// Protocols
+const (
+	DFWProtocolTcp  = "TCP"
+	DFWProtocolUdp  = "UDP"
+	DFWProtocolIcmp = "ICMP"
+)
+
+// Action types
+const (
+	DFWActionAllow = "allow"
+	DFWActionDeny  = "deny"
+)
+
+// Directions
+const (
+	DFWDirectionIn    = "in"
+	DFWDirectionOut   = "out"
+	DFWDirectionInout = "inout"
+)
+
+// Types of packet
+const (
+	DFWPacketAny  = "any"
+	DFWPacketIpv4 = "ipv4"
+	DFWPacketIpv6 = "ipv6"
+)
+
+// Elements of Source, Destination, and Applies-To
+const (
+	DFWElementVdc            = "VDC"
+	DFWElementVirtualMachine = "VirtualMachine"
+	DFWElementNetwork        = "Network"
+	DFWElementEdge           = "Edge"
+	DFWElementIpSet          = "IPSet"
+	DFWElementIpv4           = "Ipv4Address"
+)
+
+// Types of service
+const (
+	DFWServiceTypeApplication      = "Application"
+	DFWServiceTypeApplicationGroup = "ApplicationGroup"
+)
+
+var NsxvProtocolCodes = map[string]int{
+	DFWProtocolTcp:  6,
+	DFWProtocolUdp:  17,
+	DFWProtocolIcmp: 1,
+}

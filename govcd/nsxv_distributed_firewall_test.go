@@ -127,7 +127,7 @@ func (vcd *TestVCD) Test_NsxvDistributedFirewallUpdate(check *C) {
 			{
 				Name:    vms[0].Name,
 				Value:   extractUuid(vms[0].HREF),
-				Type:    DFWElementVirtualMachine,
+				Type:    types.DFWElementVirtualMachine,
 				IsValid: true,
 			},
 		}
@@ -146,7 +146,7 @@ func (vcd *TestVCD) Test_NsxvDistributedFirewallUpdate(check *C) {
 	rules := []types.NsxvDistributedFirewallRule{
 		{
 			Name:   "first",
-			Action: DFWActionDeny,
+			Action: types.DFWActionDeny,
 			AppliedToList: &types.AppliedToList{
 				AppliedTo: []types.AppliedTo{
 					{
@@ -157,8 +157,8 @@ func (vcd *TestVCD) Test_NsxvDistributedFirewallUpdate(check *C) {
 					},
 				},
 			},
-			Direction:  DFWDirectionInout,
-			PacketType: DFWPacketAny,
+			Direction:  types.DFWDirectionInout,
+			PacketType: types.DFWPacketAny,
 		},
 		{
 			Name:          "second",
@@ -167,13 +167,13 @@ func (vcd *TestVCD) Test_NsxvDistributedFirewallUpdate(check *C) {
 			Sources:       nil,
 			Destinations:  nil,
 			Services:      nil,
-			Direction:     DFWDirectionIn,
-			PacketType:    DFWPacketAny,
-			Action:        DFWActionAllow,
+			Direction:     types.DFWDirectionIn,
+			PacketType:    types.DFWPacketAny,
+			Action:        types.DFWActionAllow,
 		},
 		{
 			Name:          "third",
-			Action:        DFWActionAllow,
+			Action:        types.DFWActionAllow,
 			AppliedToList: &types.AppliedToList{},
 			Sources: &types.Sources{
 				Source: []types.Source{
@@ -181,13 +181,13 @@ func (vcd *TestVCD) Test_NsxvDistributedFirewallUpdate(check *C) {
 					{
 						Name:  "10.10.10.1",
 						Value: "10.10.10.1",
-						Type:  DFWElementIpv4,
+						Type:  types.DFWElementIpv4,
 					},
 					// Named source
 					{
 						Name:    network.OrgVDCNetwork.Name,
 						Value:   extractUuid(network.OrgVDCNetwork.ID),
-						Type:    DFWElementNetwork,
+						Type:    types.DFWElementNetwork,
 						IsValid: true,
 					},
 				},
@@ -200,27 +200,27 @@ func (vcd *TestVCD) Test_NsxvDistributedFirewallUpdate(check *C) {
 						IsValid:         true,
 						SourcePort:      takeStringPointer("1000"),
 						DestinationPort: takeStringPointer("1200"),
-						Protocol:        takeIntAddress(NsxvProtocolCodes[DFWProtocolTcp]),
-						ProtocolName:    takeStringPointer(DFWProtocolTcp),
+						Protocol:        takeIntAddress(types.NsxvProtocolCodes[types.DFWProtocolTcp]),
+						ProtocolName:    takeStringPointer(types.DFWProtocolTcp),
 					},
 					// Named service
 					{
 						IsValid: true,
 						Name:    dnsService.Name,
 						Value:   dnsService.ObjectID,
-						Type:    DFWServiceTypeApplication,
+						Type:    types.DFWServiceTypeApplication,
 					},
 					// Named service group
 					{
 						IsValid: true,
 						Name:    integrationServiceGroup.Name,
 						Value:   integrationServiceGroup.ObjectID,
-						Type:    DFWServiceTypeApplicationGroup,
+						Type:    types.DFWServiceTypeApplicationGroup,
 					},
 				},
 			},
-			Direction:  DFWDirectionIn,
-			PacketType: DFWPacketIpv4,
+			Direction:  types.DFWDirectionIn,
+			PacketType: types.DFWPacketIpv4,
 		},
 	}
 
