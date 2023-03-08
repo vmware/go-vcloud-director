@@ -188,7 +188,7 @@ type PlatformSection struct {
 // Application-level configuration such as DNS name of active directory server, databases and
 // other external services.
 type PropertySection struct {
-	XMLName    xml.Name        `xml:"PropertySection"`
+	XMLName    xml.Name       `xml:"PropertySection"`
 	Properties []*OvfProperty `xml:"Property,omitempty"`
 }
 
