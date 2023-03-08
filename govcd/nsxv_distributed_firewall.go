@@ -22,58 +22,8 @@ type NsxvDistributedFirewall struct {
 	enabled       bool    // internal flag that signifies whether the firewall is enabled
 	client        *Client // internal usage client
 
-	// Attributes below to be removed if we decide that we don't need services
 	Services      []types.Application      // The list of services for this VDC
 	ServiceGroups []types.ApplicationGroup // The list of service groups for this VDC
-}
-
-// Protocols
-const (
-	DFWProtocolTcp  = "TCP"
-	DFWProtocolUdp  = "UDP"
-	DFWProtocolIcmp = "ICMP"
-)
-
-// Action types
-const (
-	DFWActionAllow = "allow"
-	DFWActionDeny  = "deny"
-)
-
-// Directions
-const (
-	DFWDirectionIn    = "in"
-	DFWDirectionOut   = "out"
-	DFWDirectionInout = "inout"
-)
-
-// Types of packet
-const (
-	DFWPacketAny  = "any"
-	DFWPacketIpv4 = "ipv4"
-	DFWPacketIpv6 = "ipv6"
-)
-
-// Elements of Source, Destination, and Applies-To
-const (
-	DFWElementVdc            = "VDC"
-	DFWElementVirtualMachine = "VirtualMachine"
-	DFWElementNetwork        = "Network"
-	DFWElementEdge           = "Edge"
-	DFWElementIpSet          = "IPSet"
-	DFWElementIpv4           = "Ipv4Address"
-)
-
-// Types of service
-const (
-	DFWServiceTypeApplication      = "Application"
-	DFWServiceTypeApplicationGroup = "ApplicationGroup"
-)
-
-var NsxvProtocolCodes = map[string]int{
-	DFWProtocolTcp:  6,
-	DFWProtocolUdp:  17,
-	DFWProtocolIcmp: 1,
 }
 
 // NewNsxvDistributedFirewall creates a new NsxvDistributedFirewall
@@ -419,7 +369,10 @@ func (dfw *NsxvDistributedFirewall) GetServicesByRegex(expression string) ([]typ
 	if err != nil {
 		return nil, err
 	}
-	searchRegex := regexp.MustCompile(expression)
+	searchRegex, err := regexp.Compile(expression)
+	if err != nil {
+		return nil, fmt.Errorf("[GetServicesByRegex] error validating regular expression '%s': %s", expression, err)
+	}
 	var found []types.Application
 	for _, app := range services {
 		if searchRegex.MatchString(app.Name) {
@@ -475,7 +428,10 @@ func (dfw *NsxvDistributedFirewall) GetServiceGroupsByRegex(expression string) (
 	if err != nil {
 		return nil, err
 	}
-	searchRegex := regexp.MustCompile(expression)
+	searchRegex, err := regexp.Compile(expression)
+	if err != nil {
+		return nil, fmt.Errorf("[GetServiceGroupsByRegex] error validating regular expression '%s': %s", expression, err)
+	}
 	var found []types.ApplicationGroup
 	for _, appGroup := range serviceGroups {
 		if searchRegex.MatchString(appGroup.Name) {
