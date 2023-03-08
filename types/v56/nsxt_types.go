@@ -970,6 +970,20 @@ type NsxtAlbConfig struct {
 	// must be 25. If nothing is set, the default is 192.168.255.1/25. Default CIDR can be configured. This field cannot
 	// be updated.
 	ServiceNetworkDefinition string `json:"serviceNetworkDefinition,omitempty"`
+
+	// The IPv6 network definition in Gateway CIDR format which will be used by Load Balancer
+	// service on Edge. All the load balancer service engines associated with the Service Engine
+	// Group will be attached to this network.
+	// Once set, this field cannot be updated. The default
+	// IPv4 service network will be used if both the serviceNetworkDefinition and
+	// ipv6ServiceNetworkDefinition properties are unset. If both are set, it will still be one
+	// service network with a dual IPv4 and IPv6 stack.
+	// This field is only available for VCD 10.4.0+ (v37.0+)
+	Ipv6ServiceNetworkDefinition string `json:"ipv6ServiceNetworkDefinition,omitempty"`
+
+	// TransparentModeEnabled allows to configure Preserve Client IP on a Virtual Service
+	// This field is only available for VCD 10.4.1+ (v37.1+)
+	TransparentModeEnabled *bool `json:"transparentModeEnabled,omitempty"`
 }
 
 // NsxtAlbServiceEngineGroupAssignment configures Service Engine Group assignments to Edge Gateway. The only mandatory

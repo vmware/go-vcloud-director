@@ -1,5 +1,5 @@
-//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || ALL
-// +build api openapi functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user search nsxv nsxt auth affinity role alb certificate vdcGroup metadata providervdc ALL
+//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || rde || ALL
+// +build api openapi functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user search nsxv nsxt auth affinity role alb certificate vdcGroup metadata providervdc rde ALL
 
 /*
  * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -795,6 +795,14 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 
 		// Validate if the resource still exists
 		err = vcd.client.Client.OpenApiGetItem(apiVersion, urlRef, nil, nil, nil)
+
+		// RDE Framework has a bug in VCD 10.3.0 that causes "not found" errors to return as "400 bad request",
+		// so we need to amend them
+		isBuggyRdeError := strings.Contains(entity.OpenApiEndpoint, types.OpenApiEndpointRdeInterfaces)
+		if isBuggyRdeError {
+			err = amendDefinedInterfaceError(&vcd.client.Client, err)
+		}
+
 		if ContainsNotFound(err) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
