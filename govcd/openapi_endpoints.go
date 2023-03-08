@@ -86,10 +86,6 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile:          "36.0", // VCD 10.3+
 }
 
-// elevateNsxtNatRuleApiVersion helps to elevate API version to consume newer NSX-T NAT Rule features
-// API V35.2+ supports new fields FirewallMatch and Priority
-// API V36.0+ supports new RuleType - REFLEXIVE
-
 // endpointElevatedApiVersions endpoint elevated API versions
 var endpointElevatedApiVersions = map[string][]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtNatRules: {
@@ -125,7 +121,8 @@ var endpointElevatedApiVersions = map[string][]string{
 	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbEdgeGateway: {
 		//"35.0", // Basic minimum required version
-		"37.0", // Deprecates LicenseType in favor of SupportedFeatureSet
+		"37.0", // Deprecates LicenseType in favor of SupportedFeatureSet. Adds IPv6 service network definition support
+		"37.1", // Adds support for Transparent Mode
 	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile: {
 		//"36.0", // Introduced support
