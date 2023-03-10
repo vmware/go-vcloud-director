@@ -853,6 +853,98 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedVappNetwork(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
+// Test_AddAndRemoveIsolatedVappNetworkIpv6 is identical to Test_AddAndRemoveIsolatedVappNetwork,
+// but it uses ipv6 values for network specification.
+func (vcd *TestVCD) Test_AddAndRemoveIsolatedVappNetworkIpv6(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	vapp, err := deployVappForTest(vcd, "Test_AddAndRemoveIsolatedVappNetwork")
+	check.Assert(err, IsNil)
+	check.Assert(vapp, NotNil)
+
+	// Add Metadata
+	networkName := check.TestName()
+	description := "Created in test"
+	const gateway = "fe80:0:0:0:0:0:0:aaaa"
+	const prefixlength = "100"
+	// VCD API returns ipv6 addresses in expanded format, so this is
+	// needed to compare values properly.
+	const dns1 = "2001:4860:4860:0:0:0:0:8844"
+	const dns2 = "2001:4860:4860:0:0:0:0:8844"
+	const dnsSuffix = "biz.biz"
+	const startAddress = "fe80:0:0:0:0:0:0:aaab"
+	const endAddress = "fe80:0:0:0:0:0:0:bbbb"
+	const dhcpStartAddress = "fe80:0:0:0:0:0:0:cccc"
+	const dhcpEndAddress = "fe80:0:0:0:0:0:0:dddd"
+	const maxLeaseTime = 3500
+	const defaultLeaseTime = 2400
+	var guestVlanAllowed = true
+
+	vappNetworkSettings := &VappNetworkSettings{
+		Name:               networkName,
+		Gateway:            gateway,
+		SubnetPrefixLength: prefixlength,
+		DNS1:               dns1,
+		DNS2:               dns2,
+		DNSSuffix:          dnsSuffix,
+		StaticIPRanges:     []*types.IPRange{{StartAddress: startAddress, EndAddress: endAddress}},
+		DhcpSettings:       &DhcpSettings{IsEnabled: true, MaxLeaseTime: maxLeaseTime, DefaultLeaseTime: defaultLeaseTime, IPRange: &types.IPRange{StartAddress: dhcpStartAddress, EndAddress: dhcpEndAddress}},
+		GuestVLANAllowed:   &guestVlanAllowed,
+		Description:        description,
+	}
+
+	vappNetworkConfig, err := vapp.CreateVappNetwork(vappNetworkSettings, nil)
+	check.Assert(err, IsNil)
+	check.Assert(vappNetworkConfig, NotNil)
+
+	vappNetworkSettings.NetMask = "255.255.255.0"
+	vappNetworkConfig2, err := vapp.CreateVappNetwork(vappNetworkSettings, nil)
+	check.Assert(err, NotNil)
+	check.Assert(vappNetworkConfig2, IsNil)
+
+	networkFound := types.VAppNetworkConfiguration{}
+	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
+		if networkConfig.NetworkName == networkName {
+			networkFound = networkConfig
+		}
+	}
+
+	check.Assert(networkFound.Description, Equals, description)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].Gateway, Equals, gateway)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].SubnetPrefixLength, Equals, prefixlength)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNS1, Equals, dns1)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNS2, Equals, dns2)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNSSuffix, Equals, dnsSuffix)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].StartAddress, Equals, startAddress)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress, Equals, endAddress)
+
+	check.Assert(networkFound.Configuration.Features.DhcpService.IsEnabled, Equals, true)
+	check.Assert(networkFound.Configuration.Features.DhcpService.MaxLeaseTime, Equals, maxLeaseTime)
+	check.Assert(networkFound.Configuration.Features.DhcpService.DefaultLeaseTime, Equals, defaultLeaseTime)
+	check.Assert(networkFound.Configuration.Features.DhcpService.IPRange.StartAddress, Equals, dhcpStartAddress)
+	check.Assert(networkFound.Configuration.Features.DhcpService.IPRange.EndAddress, Equals, dhcpEndAddress)
+
+	err = vapp.Refresh()
+	check.Assert(err, IsNil)
+	vappNetworkConfig, err = vapp.RemoveNetwork(networkName)
+	check.Assert(err, IsNil)
+	check.Assert(vappNetworkConfig, NotNil)
+
+	isExist := false
+	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
+		if networkConfig.NetworkName == networkName {
+			isExist = true
+		}
+	}
+	check.Assert(isExist, Equals, false)
+
+	task, err := vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+}
+
 func (vcd *TestVCD) Test_AddAndRemoveNatVappNetwork(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
