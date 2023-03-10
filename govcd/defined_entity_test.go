@@ -2,7 +2,7 @@
 // +build functional openapi rde ALL
 
 /*
- * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -18,7 +18,7 @@ import (
 	"strings"
 )
 
-// Test_Rde tests the CRUD operations for the RDE Type with both System administrator and a tenant user.
+// Test_RdeAndRdeType tests the CRUD operations for the RDE Type with both System administrator and a tenant user.
 func (vcd *TestVCD) Test_RdeAndRdeType(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
