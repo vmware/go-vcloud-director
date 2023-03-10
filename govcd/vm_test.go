@@ -2282,3 +2282,70 @@ func createNsxtVAppAndVm(vcd *TestVCD, check *C) (*VApp, *VM) {
 
 	return vapp, vm
 }
+
+func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+	vapp := vcd.findFirstVapp()
+	existingVm, vmName := vcd.findFirstVm(vapp)
+	if vmName == "" {
+		check.Skip("skipping test because no VM is found")
+	}
+	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
+	check.Assert(err, IsNil)
+
+	vmStatus, err := vm.GetStatus()
+	check.Assert(err, IsNil)
+	if vmStatus != "POWERED_ON" {
+		task, err := vm.PowerOn()
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+		check.Assert(task.Task.Status, Equals, "success")
+	}
+
+	// Read ovfenv when VM is started
+	ovfenv, err := vm.GetEnvironment()
+	check.Assert(err, IsNil)
+	check.Assert(ovfenv, NotNil)
+
+	// Provides information from the virtualization platform like VM moref
+	check.Assert(strings.Contains(ovfenv.VCenterId, "vm-"), Equals, true)
+
+	// Check virtualization platform Vendor
+	check.Assert(ovfenv.PlatformSection, NotNil)
+	check.Assert(ovfenv.PlatformSection.Vendor, Equals, "VMware, Inc.")
+
+	// Check guest operating system level configuration for hostname
+	check.Assert(ovfenv.PropertySection, NotNil)
+	for _, p := range ovfenv.PropertySection.Properties {
+		if p.Key == "vCloud_computerName" {
+			check.Assert(p.Value, Not(Equals), "")
+		}
+	}
+	check.Assert(ovfenv.EthernetAdapterSection, NotNil)
+	for _, p := range ovfenv.EthernetAdapterSection.Adapters {
+		check.Assert(p.Mac, Not(Equals), "")
+	}
+
+	// PowerOff
+	task, err := vm.PowerOff()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+
+	ovfenv, err = vm.GetEnvironment()
+	check.Assert(strings.Contains(err.Error(), "OVF environment is only available when VM is powered on"), Equals, true)
+	check.Assert(ovfenv, IsNil)
+
+	// Leave things as they were
+	if vmStatus != "POWERED_OFF" {
+		task, err := vm.PowerOn()
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+		check.Assert(task.Task.Status, Equals, "success")
+	}
+}
