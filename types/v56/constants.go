@@ -390,6 +390,7 @@ const (
 	OpenApiEndpointEdgeBgpConfigPrefixLists           = "edgeGateways/%s/routing/bgp/prefixLists/" // '%s' is NSX-T Edge Gateway ID
 	OpenApiEndpointEdgeBgpConfig                      = "edgeGateways/%s/routing/bgp"              // '%s' is NSX-T Edge Gateway ID
 	OpenApiEndpointRdeInterfaces                      = "interfaces/"
+	OpenApiEndpointRdeEntityTypes                     = "entityTypes/"
 
 	// NSX-T ALB related endpoints
 
