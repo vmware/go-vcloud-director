@@ -115,14 +115,14 @@ type Application struct {
 	ObjectTypeName     string          `xml:"objectTypeName"`
 	VsmUuid            string          `xml:"vsmUuid"`
 	NodeID             string          `xml:"nodeId"`
-	Revision           bool            `xml:"revision"`
+	Revision           string          `xml:"revision"`
 	Type               ApplicationType `xml:"type"`
 	Name               string          `xml:"name"`
 	Scope              Scope           `xml:"scope"`
 	ClientHandle       struct{}        `xml:"clientHandle"`
 	ExtendedAttributes struct{}        `xml:"extendedAttributes"`
 	IsUniversal        bool            `xml:"isUniversal"`
-	UniversalRevision  bool            `xml:"universalRevision"`
+	UniversalRevision  string          `xml:"universalRevision"`
 	IsTemporal         bool            `xml:"isTemporal"`
 	InheritanceAllowed bool            `xml:"inheritanceAllowed"`
 	Element            Element         `xml:"element"`
@@ -168,7 +168,7 @@ type ApplicationGroup struct {
 	ClientHandle       struct{}        `xml:"clientHandle"`
 	ExtendedAttributes struct{}        `xml:"extendedAttributes"`
 	IsUniversal        bool            `xml:"isUniversal"`
-	UniversalRevision  bool            `xml:"universalRevision"`
+	UniversalRevision  string          `xml:"universalRevision"`
 	IsTemporal         bool            `xml:"isTemporal"`
 	InheritanceAllowed bool            `xml:"inheritanceAllowed"`
 	IsReadOnly         bool            `xml:"isReadOnly"`
