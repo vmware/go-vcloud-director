@@ -54,6 +54,8 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSecurityTags:                       "36.0", // VCD 10.3+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtRouteAdvertisement:             "34.0", // VCD 10.1+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointLogicalVmGroups:                    "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces:                      "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes:                     "35.0", // VCD 10.2+
 
 	// NSX-T ALB (Advanced/AVI Load Balancer) support was introduced in 10.2
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController:                    "35.0", // VCD 10.2+
@@ -80,10 +82,6 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcComputePolicies:         "35.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile:          "36.0", // VCD 10.3+
 }
-
-// elevateNsxtNatRuleApiVersion helps to elevate API version to consume newer NSX-T NAT Rule features
-// API V35.2+ supports new fields FirewallMatch and Priority
-// API V36.0+ supports new RuleType - REFLEXIVE
 
 // endpointElevatedApiVersions endpoint elevated API versions
 var endpointElevatedApiVersions = map[string][]string{
@@ -120,11 +118,16 @@ var endpointElevatedApiVersions = map[string][]string{
 	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbEdgeGateway: {
 		//"35.0", // Basic minimum required version
-		"37.0", // Deprecates LicenseType in favor of SupportedFeatureSet
+		"37.0", // Deprecates LicenseType in favor of SupportedFeatureSet. Adds IPv6 service network definition support
+		"37.1", // Adds support for Transparent Mode
 	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile: {
 		//"36.0", // Introduced support
 		"36.2", // 2 additional fields vappNetworkSegmentProfileTemplateRef and vdcNetworkSegmentProfileTemplateRef added
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes: {
+		//"35.0", // Introduced support
+		"37.1", // Added MaxImplicitRight property in DefinedEntityType
 	},
 }
 

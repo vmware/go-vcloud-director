@@ -1,0 +1,1 @@
+* Fixed accessing uninitialized `Features` field while updating a vApp network [GH-550]
