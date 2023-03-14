@@ -1,0 +1,5 @@
+* Added method `AdminVdc.IsNsxv` to detect whether an Admin VDC is NSX-V [GH-521]
+* Added function `NewNsxvDistributedFirewall` to create a new NSX-V distributed firewall [GH-521]
+* Added `NsxvDistributedFirewall` methods `GetConfiguration`, `IsEnabled`, `Enable`, `Disable`, `UpdateConfiguration`, `Refresh` to handle CRUD operations with NSX-V distributed firewalls [GH-521]
+* Added `NsxvDistributedFirewall` methods `GetServices`, `GetServiceGroups`, `GetServiceById`, `GetServiceByName`, `GetServiceGroupById`, `GetServiceGroupByName` to retrieve specific services or service groups [GH-521]
+* Added `NsxvDistributedFirewall` methods `GetServicesByRegex` and `GetServiceGroupsByRegex` to search services or service groups by regular expression [GH-521]
