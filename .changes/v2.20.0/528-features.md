@@ -1,0 +1,1 @@
+* Added method `VM.GetEnvironment` to retrieve OVF Environment [GH-528]

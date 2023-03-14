@@ -1157,6 +1157,38 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
 		return
+	case "nsxv_dfw":
+		if entity.Parent == "" {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] No ORG provided for VDC '%s'\n", entity.Name)
+			return
+		}
+		org, err := vcd.client.GetAdminOrgByName(entity.Parent)
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, "org", entity.Parent)
+			return
+		}
+		vdc, err := org.GetVDCByName(entity.Name, false)
+		if vdc == nil || err != nil {
+			vcd.infoCleanup(notFoundMsg, "vdc", entity.Name)
+			return
+		}
+		dfw := NewNsxvDistributedFirewall(vdc.client, vdc.Vdc.ID)
+		enabled, err := dfw.IsEnabled()
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] checking distributed firewall from VCD '%s': %s", entity.Name, err)
+			return
+		}
+		if !enabled {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		err = dfw.Disable()
+		if err == nil {
+			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		} else {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] removing distributed firewall from VCD '%s': %s", entity.Name, err)
+			return
+		}
 	case "standaloneVm":
 		vm, err := vcd.org.QueryVmById(entity.Name) // The VM ID must be passed as Name
 		if IsNotFound(err) {
@@ -1622,6 +1654,9 @@ func (vcd *TestVCD) TearDownSuite(check *C) {
 // Tests getloginurl with the endpoint given
 // in the config file.
 func TestClient_getloginurl(t *testing.T) {
+	if os.Getenv("GOVCD_API_VERSION") != "" {
+		t.Skip("custom API version is being used")
+	}
 	config, err := GetConfigStruct()
 	if err != nil {
 		t.Fatalf("err: %s", err)

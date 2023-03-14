@@ -871,6 +871,21 @@ func (client *Client) TestConnectionWithDefaults(subscriptionURL string) (bool, 
 	return true, nil
 }
 
+// buildUrl uses the Client base URL to create a customised URL
+func (client *Client) buildUrl(elements ...string) (string, error) {
+	baseUrl := client.VCDHREF.String()
+	if !IsValidUrl(baseUrl) {
+		return "", fmt.Errorf("incorrect URL %s", client.VCDHREF.String())
+	}
+	if strings.HasSuffix(baseUrl, "/") {
+		baseUrl = strings.TrimRight(baseUrl, "/")
+	}
+	if strings.HasSuffix(baseUrl, "/api") {
+		baseUrl = strings.TrimRight(baseUrl, "/api")
+	}
+	return url.JoinPath(baseUrl, elements...)
+}
+
 // ---------------------------------------------------------------------
 // The following functions are needed to avoid strict Coverity warnings
 // ---------------------------------------------------------------------
