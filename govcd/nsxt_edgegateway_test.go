@@ -216,6 +216,14 @@ func (vcd *TestVCD) Test_NsxtEdgeVdcGroup(check *C) {
 	// Remove Edge Gateway
 	err = movedBackToVdcEdge.Delete()
 	check.Assert(err, IsNil)
+
+	// Remove VDC Group
+	err = vdcGroup.Delete()
+	check.Assert(err, IsNil)
+
+	// Remove VDC
+	err = vdc.DeleteWait(true, true)
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_NsxtEdgeGatewayUsedAndUnusedIPs(check *C) {
