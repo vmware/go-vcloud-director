@@ -467,10 +467,26 @@ func (vcd *TestVCD) TestGetVdcCapabilities(check *C) {
 func (vcd *TestVCD) TestVdcIsNsxt(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
 	check.Assert(vcd.nsxtVdc.IsNsxt(), Equals, true)
+	if vcd.vdc != nil {
+		check.Assert(vcd.vdc.IsNsxt(), Equals, false)
+	}
 }
 
 func (vcd *TestVCD) TestVdcIsNsxv(check *C) {
 	check.Assert(vcd.vdc.IsNsxv(), Equals, true)
+	// retrieve the same VDC as AdminVdc, to test the corresponding function
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	adminVdc, err := adminOrg.GetVDCByName(vcd.vdc.Vdc.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(adminVdc.IsNsxv(), Equals, true)
+	// if NSX-T is configured, we also check a NSX-T VDC
+	if vcd.nsxtVdc != nil {
+		check.Assert(vcd.nsxtVdc.IsNsxv(), Equals, false)
+		nsxtAdminVdc, err := adminOrg.GetAdminVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+		check.Assert(err, IsNil)
+		check.Assert(nsxtAdminVdc.IsNsxv(), Equals, false)
+	}
 }
 
 func (vcd *TestVCD) TestCreateRawVapp(check *C) {

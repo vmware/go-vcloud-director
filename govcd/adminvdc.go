@@ -596,3 +596,11 @@ func (adminVdc *AdminVdc) GetDefaultStorageProfileReference() (*types.Reference,
 	}
 	return nil, fmt.Errorf("no default storage profile found for VDC %s", adminVdc.AdminVdc.Name)
 }
+
+// IsNsxv is a convenience function to check if the Admin VDC is backed by NSX-V Provider VDC
+func (adminVdc *AdminVdc) IsNsxv() bool {
+	vdc := NewVdc(adminVdc.client)
+	vdc.Vdc = &adminVdc.AdminVdc.Vdc
+	vdc.parent = adminVdc.parent
+	return vdc.IsNsxv()
+}
