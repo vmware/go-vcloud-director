@@ -523,10 +523,6 @@ const (
 	MetadataDateTimeValue string = "MetadataDateTimeValue"
 	MetadataBooleanValue  string = "MetadataBooleanValue"
 
-	OpenApiMetadataStringEntry  string = "StringEntry"
-	OpenApiMetadataNumberEntry  string = "NumberEntry"
-	OpenApiMetadataBooleanEntry string = "BoolEntry"
-
 	MetadataReadOnlyVisibility  string = "READONLY"
 	MetadataHiddenVisibility    string = "PRIVATE"
 	MetadataReadWriteVisibility string = "READWRITE"
