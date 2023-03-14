@@ -1610,8 +1610,10 @@ func TestOpenAPIEdgeGateway_DeallocateIpCount(t *testing.T) {
 			},
 		},
 		{
-			// TODO TODO TODO - take into account primary_ip
-			name: "SingleStartAndEndAddressesInsufficient",
+			// Here we check that the function is able to deallocate exactly one IP address (the
+			// last). The API will return an error during such operation because Edge Gateway must
+			// have at least one IP address allocated.
+			name: "ExactlyOnIp",
 			fields: fields{
 				EdgeGatewayUplinks: []types.EdgeGatewayUplinks{
 					{
@@ -1637,7 +1639,6 @@ func TestOpenAPIEdgeGateway_DeallocateIpCount(t *testing.T) {
 				deallocateIpCount: 1,
 				expectedCount:     0,
 			},
-			// wantErr: true,
 		},
 		{
 			name: "NegativeAllocationImpossible",
