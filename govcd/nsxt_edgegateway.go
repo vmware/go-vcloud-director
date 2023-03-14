@@ -466,11 +466,11 @@ func (egw *NsxtEdgeGateway) GetAllUnusedExternalIPAddresses(refresh bool) ([]net
 
 // GetAllocatedIpCount traverses all subnets in Edge Gateway and returns a sum of allocated ip count
 // for each subnet in each uplink
-func (egw *NsxtEdgeGateway) GetAllocatedIpCount(refresh bool) (*int, error) {
+func (egw *NsxtEdgeGateway) GetAllocatedIpCount(refresh bool) (int, error) {
 	if refresh {
 		err := egw.Refresh()
 		if err != nil {
-			return nil, fmt.Errorf("error refreshing Edge Gateway: %s", err)
+			return 0, fmt.Errorf("error refreshing Edge Gateway: %s", err)
 		}
 	}
 
@@ -484,7 +484,7 @@ func (egw *NsxtEdgeGateway) GetAllocatedIpCount(refresh bool) (*int, error) {
 		}
 	}
 
-	return &allocatedIpCount, nil
+	return allocatedIpCount, nil
 }
 
 // GetUsedIpAddressSlice retrieves a list of used IP addresses in an Edge Gateway and returns it

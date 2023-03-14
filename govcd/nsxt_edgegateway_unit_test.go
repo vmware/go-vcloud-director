@@ -1772,8 +1772,8 @@ func TestOpenAPIEdgeGateway_DeallocateIpCount(t *testing.T) {
 				t.Errorf("NsxtEdgeGateway.GetAllocatedIpCount() error = %v", err)
 			}
 
-			if *allocatedIpCount != tt.args.expectedCount {
-				t.Errorf("Allocated IP count %d != desired IP count %d", *allocatedIpCount, tt.args.expectedCount)
+			if allocatedIpCount != tt.args.expectedCount {
+				t.Errorf("Allocated IP count %d != desired IP count %d", allocatedIpCount, tt.args.expectedCount)
 			}
 
 		})
