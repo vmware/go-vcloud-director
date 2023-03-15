@@ -529,3 +529,8 @@ const (
 	// DistributedFirewallPolicyDefault is a constant for "default" Distributed Firewall Policy
 	DistributedFirewallPolicyDefault = "default"
 )
+
+const (
+	NsxtIpSecVpnAuthenticationModePSK         = "PSK"
+	NsxtIpSecVpnAuthenticationModeCertificate = "CERTIFICATE"
+)
