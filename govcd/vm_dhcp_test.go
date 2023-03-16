@@ -1,5 +1,4 @@
 //go:build nsxv || vm || functional || ALL
-// +build nsxv vm functional ALL
 
 /*
  * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.

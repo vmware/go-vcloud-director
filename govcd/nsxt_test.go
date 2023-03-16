@@ -1,5 +1,4 @@
 //go:build ALL || openapi || functional || nsxt
-// +build ALL openapi functional nsxt
 
 /*
  * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
