@@ -962,7 +962,17 @@ type NsxtAlbPool struct {
 
 	// Members field defines list of destination servers which are used by the Load Balancer Pool to direct load balanced
 	// traffic.
+	//
+	// Note. Only one of Members or MemberGroupRef can be specified
 	Members []NsxtAlbPoolMember `json:"members,omitempty"`
+
+	// MemberGroupRef contains reference to the Edge Firewall Group (`types.NsxtFirewallGroup`)
+	// representing destination servers which are used by the Load Balancer Pool to direct load
+	// balanced traffic.
+	//
+	// This field is only available in VCD 10.4.1+ (v37.1+)
+	// Note. Only one of Members or MemberGroupRef can be specified
+	MemberGroupRef *OpenApiReference `json:"memberGroupRef,omitempty"`
 
 	// CaCertificateRefs point to root certificates to use when validating certificates presented by the pool members.
 	CaCertificateRefs []OpenApiReference `json:"caCertificateRefs,omitempty"`
