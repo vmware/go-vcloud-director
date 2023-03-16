@@ -687,6 +687,11 @@ func combinedTaskErrorMessage(task *types.Task, err error) string {
 	return extendedError
 }
 
+// addrOf is a generic function to return the address of a variable
+func addrOf[T any](variable T) *T {
+	return &variable
+}
+
 func takeBoolPointer(value bool) *bool {
 	return &value
 }

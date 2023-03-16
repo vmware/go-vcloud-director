@@ -1105,6 +1105,12 @@ type NsxtAlbVirtualService struct {
 	// VirtualIpAddress to be used for exposing this virtual service
 	VirtualIpAddress string `json:"virtualIpAddress"`
 
+	// TransparentModeEnabled allows to configure Preserve Client IP on a Virtual Service
+	// This field is only available for VCD 10.4.1+ (v37.1+)
+	// Note. `types.NsxtAlbConfig.TransparentModeEnabled` must be set to `true` for this field to be
+	// available.
+	TransparentModeEnabled *bool `json:"transparentModeEnabled,omitempty"`
+
 	// HealthStatus contains status of the Load Balancer Cloud. Possible values are:
 	// UP - The cloud is healthy and ready to enable Load Balancer for an Edge Gateway.
 	// DOWN - The cloud is in a failure state. Enabling Load balancer on an Edge Gateway may not be possible.
