@@ -303,11 +303,11 @@ func getRdeById(client *Client, id string) (*DefinedEntity, error) {
 		client:        client,
 	}
 
-	eTagValue, err := client.OpenApiGetItemAndHeader(apiVersion, urlRef, nil, result.DefinedEntity, nil, "Etag")
+	headers, err := client.OpenApiGetItemAndHeaders(apiVersion, urlRef, nil, result.DefinedEntity, nil)
 	if err != nil {
 		return nil, amendRdeApiError(client, err)
 	}
-	result.Etag = eTagValue
+	result.Etag = headers.Get("Etag")
 
 	return result, nil
 }
@@ -410,11 +410,11 @@ func (rde *DefinedEntity) Resolve() error {
 		return err
 	}
 
-	etag, err := client.OpenApiPostItemAndGetHeader(apiVersion, urlRef, nil, nil, rde.DefinedEntity, nil, "Etag")
+	headers, err := client.OpenApiPostItemAndGetHeaders(apiVersion, urlRef, nil, nil, rde.DefinedEntity, nil)
 	if err != nil {
 		return amendRdeApiError(client, err)
 	}
-	rde.Etag = etag
+	rde.Etag = headers.Get("Etag")
 
 	return nil
 }

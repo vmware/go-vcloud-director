@@ -118,18 +118,18 @@ func (client *Client) OpenApiGetAllItems(apiVersion string, urlRef *url.URL, que
 // The urlRef must point to ID of exact item (e.g. '/1.0.0/edgeGateways/{EDGE_ID}')
 // It responds with HTTP 403: Forbidden - If the user is not authorized or the entity does not exist. When HTTP 403 is
 // returned this function returns "ErrorEntityNotFound: API_ERROR" so that one can use ContainsNotFound(err) to
-// differentiate when an objects was not found from any other error.
+// differentiate when an object was not found from any other error.
 func (client *Client) OpenApiGetItem(apiVersion string, urlRef *url.URL, params url.Values, outType interface{}, additionalHeader map[string]string) error {
-	_, err := client.OpenApiGetItemAndHeader(apiVersion, urlRef, params, outType, additionalHeader, "")
+	_, err := client.OpenApiGetItemAndHeaders(apiVersion, urlRef, params, outType, additionalHeader)
 	return err
 }
 
-// OpenApiGetItemAndHeader is a low level OpenAPI client function to perform GET request for any item and return a given header.
+// OpenApiGetItemAndHeaders is a low level OpenAPI client function to perform GET request for any item and return all the headers.
 // The urlRef must point to ID of exact item (e.g. '/1.0.0/edgeGateways/{EDGE_ID}')
 // It responds with HTTP 403: Forbidden - If the user is not authorized or the entity does not exist. When HTTP 403 is
 // returned this function returns "ErrorEntityNotFound: API_ERROR" so that one can use ContainsNotFound(err) to
-// differentiate when an objects was not found from any other error.
-func (client *Client) OpenApiGetItemAndHeader(apiVersion string, urlRef *url.URL, params url.Values, outType interface{}, additionalHeader map[string]string, headerToGet string) (string, error) {
+// differentiate when an object was not found from any other error.
+func (client *Client) OpenApiGetItemAndHeaders(apiVersion string, urlRef *url.URL, params url.Values, outType interface{}, additionalHeader map[string]string) (http.Header, error) {
 	// copy passed in URL ref so that it is not mutated
 	urlRefCopy := copyUrlRef(urlRef)
 
@@ -137,13 +137,13 @@ func (client *Client) OpenApiGetItemAndHeader(apiVersion string, urlRef *url.URL
 		urlRefCopy.String(), reflect.TypeOf(outType))
 
 	if !client.OpenApiIsSupported() {
-		return "", fmt.Errorf("OpenAPI is not supported on this VCD version")
+		return nil, fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
 	req := client.newOpenApiRequest(apiVersion, params, http.MethodGet, urlRefCopy, nil, additionalHeader)
 	resp, err := client.Http.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("error performing GET request to %s: %s", urlRefCopy.String(), err)
+		return nil, fmt.Errorf("error performing GET request to %s: %s", urlRefCopy.String(), err)
 	}
 
 	// Bypassing the regular path using function checkRespWithErrType and returning parsed error directly
@@ -151,7 +151,7 @@ func (client *Client) OpenApiGetItemAndHeader(apiVersion string, urlRef *url.URL
 	if resp.StatusCode == http.StatusForbidden {
 		err := ParseErr(types.BodyTypeJSON, resp, &types.OpenApiError{})
 		closeErr := resp.Body.Close()
-		return "", fmt.Errorf("%s: %s [body close error: %s]", ErrorEntityNotFound, err, closeErr)
+		return nil, fmt.Errorf("%s: %s [body close error: %s]", ErrorEntityNotFound, err, closeErr)
 	}
 
 	// resp is ignored below because it is the same as above
@@ -159,19 +159,19 @@ func (client *Client) OpenApiGetItemAndHeader(apiVersion string, urlRef *url.URL
 
 	// Any other error occurred
 	if err != nil {
-		return "", fmt.Errorf("error in HTTP GET request: %s", err)
+		return nil, fmt.Errorf("error in HTTP GET request: %s", err)
 	}
 
 	if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
-		return "", fmt.Errorf("error decoding JSON response after GET: %s", err)
+		return nil, fmt.Errorf("error decoding JSON response after GET: %s", err)
 	}
 
 	err = resp.Body.Close()
 	if err != nil {
-		return "", fmt.Errorf("error closing response body: %s", err)
+		return nil, fmt.Errorf("error closing response body: %s", err)
 	}
 
-	return resp.Header.Get(headerToGet), nil
+	return resp.Header, nil
 }
 
 // OpenApiPostItemSync is a low level OpenAPI client function to perform POST request for items that support synchronous
@@ -271,14 +271,14 @@ func (client *Client) OpenApiPostItemAsyncWithHeaders(apiVersion string, urlRef 
 // asynchronous requests. The urlRef must point to POST endpoint (e.g. '/1.0.0/edgeGateways'). When a task is
 // synchronous - it will track task until it is finished and pick reference to marshal outType.
 func (client *Client) OpenApiPostItem(apiVersion string, urlRef *url.URL, params url.Values, payload, outType interface{}, additionalHeader map[string]string) error {
-	_, err := client.OpenApiPostItemAndGetHeader(apiVersion, urlRef, params, payload, outType, additionalHeader, "")
+	_, err := client.OpenApiPostItemAndGetHeaders(apiVersion, urlRef, params, payload, outType, additionalHeader)
 	return err
 }
 
-// OpenApiPostItemAndGetHeader is a low level OpenAPI client function to perform POST request for item supporting synchronous or
-// asynchronous requests, that returns also the given header value. The urlRef must point to POST endpoint (e.g. '/1.0.0/edgeGateways'). When a task is
+// OpenApiPostItemAndGetHeaders is a low level OpenAPI client function to perform POST request for item supporting synchronous or
+// asynchronous requests, that returns also the response headers. The urlRef must point to POST endpoint (e.g. '/1.0.0/edgeGateways'). When a task is
 // synchronous - it will track task until it is finished and pick reference to marshal outType.
-func (client *Client) OpenApiPostItemAndGetHeader(apiVersion string, urlRef *url.URL, params url.Values, payload, outType interface{}, additionalHeader map[string]string, headerToRetrieve string) (string, error) {
+func (client *Client) OpenApiPostItemAndGetHeaders(apiVersion string, urlRef *url.URL, params url.Values, payload, outType interface{}, additionalHeader map[string]string) (http.Header, error) {
 	// copy passed in URL ref so that it is not mutated
 	urlRefCopy := copyUrlRef(urlRef)
 
@@ -286,12 +286,12 @@ func (client *Client) OpenApiPostItemAndGetHeader(apiVersion string, urlRef *url
 		reflect.TypeOf(payload), urlRefCopy.String(), reflect.TypeOf(outType))
 
 	if !client.OpenApiIsSupported() {
-		return "", fmt.Errorf("OpenAPI is not supported on this VCD version")
+		return nil, fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
 	resp, err := client.openApiPerformPostPut(http.MethodPost, apiVersion, urlRefCopy, params, payload, additionalHeader)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Handle two cases of API behaviour - synchronous (response status code is 200 or 201) and asynchronous (response status
@@ -305,7 +305,7 @@ func (client *Client) OpenApiPostItemAndGetHeader(apiVersion string, urlRef *url
 		task.Task.HREF = taskUrl
 		err = task.WaitTaskCompletion()
 		if err != nil {
-			return "", fmt.Errorf("error waiting completion of task (%s): %s", taskUrl, err)
+			return nil, fmt.Errorf("error waiting completion of task (%s): %s", taskUrl, err)
 		}
 
 		// Here we have to find the resource once more to return it populated.
@@ -315,23 +315,23 @@ func (client *Client) OpenApiPostItemAndGetHeader(apiVersion string, urlRef *url
 		newObjectUrl := urlParseRequestURI(urlRefCopy.String() + task.Task.Owner.ID)
 		err = client.OpenApiGetItem(apiVersion, newObjectUrl, nil, outType, additionalHeader)
 		if err != nil {
-			return "", fmt.Errorf("error retrieving item after creation: %s", err)
+			return nil, fmt.Errorf("error retrieving item after creation: %s", err)
 		}
 
 		// Synchronous task - new item body is returned in response of HTTP POST request
 	case http.StatusCreated, http.StatusOK:
 		util.Logger.Printf("[TRACE] Synchronous task detected (HTTP Status %d), marshalling outType '%s'", resp.StatusCode, reflect.TypeOf(outType))
 		if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
-			return "", fmt.Errorf("error decoding JSON response after POST: %s", err)
+			return nil, fmt.Errorf("error decoding JSON response after POST: %s", err)
 		}
 	}
 
 	err = resp.Body.Close()
 	if err != nil {
-		return "", fmt.Errorf("error closing response body: %s", err)
+		return nil, fmt.Errorf("error closing response body: %s", err)
 	}
 
-	return resp.Header.Get(headerToRetrieve), nil
+	return resp.Header, nil
 }
 
 // OpenApiPutItemSync is a low level OpenAPI client function to perform PUT request for items that support synchronous
