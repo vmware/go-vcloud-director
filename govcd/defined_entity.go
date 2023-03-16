@@ -458,12 +458,11 @@ func (rde *DefinedEntity) Update(rdeToUpdate types.DefinedEntity) error {
 		return amendRdeApiError(client, err)
 	}
 
-	etag, err := client.OpenApiPutItemAndGetHeader(apiVersion, urlRef, nil, rdeToUpdate, rde.DefinedEntity,
-		map[string]string{"If-Match": rde.Etag}, "Etag")
+	headers, err := client.OpenApiPutItemAndGetHeaders(apiVersion, urlRef, nil, rdeToUpdate, rde.DefinedEntity, map[string]string{"If-Match": rde.Etag})
 	if err != nil {
 		return err
 	}
-	rde.Etag = etag
+	rde.Etag = headers.Get("Etag")
 
 	return nil
 }

@@ -419,14 +419,14 @@ func (client *Client) OpenApiPutItemAsync(apiVersion string, urlRef *url.URL, pa
 // The urlRef must point to ID of exact item (e.g. '/1.0.0/edgeGateways/{EDGE_ID}')
 // It handles synchronous and asynchronous tasks. When a task is synchronous - it will block until it is finished.
 func (client *Client) OpenApiPutItem(apiVersion string, urlRef *url.URL, params url.Values, payload, outType interface{}, additionalHeader map[string]string) error {
-	_, err := client.OpenApiPutItemAndGetHeader(apiVersion, urlRef, params, payload, outType, additionalHeader, "")
+	_, err := client.OpenApiPutItemAndGetHeaders(apiVersion, urlRef, params, payload, outType, additionalHeader)
 	return err
 }
 
-// OpenApiPutItemAndGetHeader is a low level OpenAPI client function to perform PUT request for any item and return a specific header.
+// OpenApiPutItemAndGetHeaders is a low level OpenAPI client function to perform PUT request for any item and return the response headers.
 // The urlRef must point to ID of exact item (e.g. '/1.0.0/edgeGateways/{EDGE_ID}')
 // It handles synchronous and asynchronous tasks. When a task is synchronous - it will block until it is finished.
-func (client *Client) OpenApiPutItemAndGetHeader(apiVersion string, urlRef *url.URL, params url.Values, payload, outType interface{}, additionalHeader map[string]string, headerToRetrieve string) (string, error) {
+func (client *Client) OpenApiPutItemAndGetHeaders(apiVersion string, urlRef *url.URL, params url.Values, payload, outType interface{}, additionalHeader map[string]string) (http.Header, error) {
 	// copy passed in URL ref so that it is not mutated
 	urlRefCopy := copyUrlRef(urlRef)
 
@@ -434,12 +434,12 @@ func (client *Client) OpenApiPutItemAndGetHeader(apiVersion string, urlRef *url.
 		reflect.TypeOf(payload), urlRefCopy.String(), reflect.TypeOf(outType))
 
 	if !client.OpenApiIsSupported() {
-		return "", fmt.Errorf("OpenAPI is not supported on this VCD version")
+		return nil, fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 	resp, err := client.openApiPerformPostPut(http.MethodPut, apiVersion, urlRefCopy, params, payload, additionalHeader)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Handle two cases of API behaviour - synchronous (response status code is 201) and asynchronous (response status
@@ -453,29 +453,29 @@ func (client *Client) OpenApiPutItemAndGetHeader(apiVersion string, urlRef *url.
 		task.Task.HREF = taskUrl
 		err = task.WaitTaskCompletion()
 		if err != nil {
-			return "", fmt.Errorf("error waiting completion of task (%s): %s", taskUrl, err)
+			return nil, fmt.Errorf("error waiting completion of task (%s): %s", taskUrl, err)
 		}
 
 		// Here we have to find the resource once more to return it populated. Provided params ir ignored for retrieval.
 		err = client.OpenApiGetItem(apiVersion, urlRefCopy, nil, outType, additionalHeader)
 		if err != nil {
-			return "", fmt.Errorf("error retrieving item after updating: %s", err)
+			return nil, fmt.Errorf("error retrieving item after updating: %s", err)
 		}
 
 		// Synchronous task - new item body is returned in response of HTTP PUT request
 	case http.StatusOK:
 		util.Logger.Printf("[TRACE] Synchronous task detected, marshalling outType '%s'", reflect.TypeOf(outType))
 		if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
-			return "", fmt.Errorf("error decoding JSON response after PUT: %s", err)
+			return nil, fmt.Errorf("error decoding JSON response after PUT: %s", err)
 		}
 	}
 
 	err = resp.Body.Close()
 	if err != nil {
-		return "", fmt.Errorf("error closing HTTP PUT response body: %s", err)
+		return nil, fmt.Errorf("error closing HTTP PUT response body: %s", err)
 	}
 
-	return resp.Header.Get(headerToRetrieve), nil
+	return resp.Header, nil
 }
 
 // OpenApiDeleteItem is a low level OpenAPI client function to perform DELETE request for any item.
