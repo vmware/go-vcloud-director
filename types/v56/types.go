@@ -1134,6 +1134,14 @@ type PublishExternalCatalogParams struct {
 	PreserveIdentityInfoFlag *bool  `xml:"PreserveIdentityInfoFlag,omitempty"` // True includes BIOS UUIDs and MAC addresses in the downloaded OVF package. If false, those information will be excluded.
 }
 
+// PublishCatalogParams represents the configuration parameters of a catalog published to other orgs
+// It is used in conjunction with the "IsPublished" state of the catalog itself
+type PublishCatalogParams struct {
+	XMLName     xml.Name `xml:"PublishCatalogParams"`
+	Xmlns       string   `xml:"xmlns,attr,omitempty"`
+	IsPublished *bool    `xml:"IsPublished,omitempty"` // True enables  publication (read-only access)
+}
+
 // ExternalCatalogSubscription represents the configuration parameters for a catalog that has an external subscription
 // Type: ExternalCatalogSubscriptionParamsType
 // Namespace: http://www.vmware.com/vcloud/v1.5
