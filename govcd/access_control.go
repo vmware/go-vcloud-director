@@ -456,3 +456,144 @@ func checkSanityVdcControlAccess(vdc *Vdc) error {
 	}
 	return nil
 }
+
+func publishCatalog(client *Client, catalogUrl string, tenantContext *TenantContext, publishCatalog types.PublishCatalogParams) error {
+	catalogUrl = catalogUrl + "/action/publish"
+
+	publishCatalog.Xmlns = types.XMLNamespaceVCloud
+
+	if tenantContext != nil {
+		client.SetCustomHeader(getTenantContextHeader(tenantContext))
+	}
+
+	err := client.ExecuteRequestWithoutResponse(catalogUrl, http.MethodPost,
+		types.PublishCatalog, "error publishing catalog: %s", publishCatalog)
+
+	if tenantContext != nil {
+		client.RemoveProvidedCustomHeaders(getTenantContextHeader(tenantContext))
+	}
+
+	return err
+}
+
+// publish publishes a catalog read-only access control to all organizations
+// This operation is usually the second step for a read-only sharing to all Orgs
+func (cat *Catalog) publish(isPublished bool) error {
+	if cat.Catalog == nil {
+		return fmt.Errorf("cannot publish catalog, Object is empty")
+	}
+
+	catalogUrl := cat.Catalog.HREF
+	if catalogUrl == "nil" || catalogUrl == "" {
+		return fmt.Errorf("cannot publish catalog, HREF is empty")
+	}
+
+	tenantContext, err := cat.getTenantContext()
+	if err != nil {
+		return fmt.Errorf("cannot publish catalog, tenant context error: %s", err)
+	}
+
+	publishParameters := types.PublishCatalogParams{
+		IsPublished: takeBoolPointer(isPublished),
+	}
+	err = publishCatalog(cat.client, catalogUrl, tenantContext, publishParameters)
+	if err != nil {
+		return err
+	}
+
+	return cat.Refresh()
+}
+
+// SetReadOnlyAccessControl will create or rescind the read-only catalog sharing to all organizations
+func (cat *Catalog) SetReadOnlyAccessControl(isPublished bool) error {
+	if cat.Catalog == nil {
+		return fmt.Errorf("cannot set access control, Object is empty")
+	}
+	err := cat.SetAccessControl(&types.ControlAccessParams{
+		IsSharedToEveryone:  false,
+		EveryoneAccessLevel: takeStringPointer(types.ControlAccessReadOnly),
+	}, true)
+	if err != nil {
+		return err
+	}
+	return cat.publish(isPublished)
+}
+
+// IsSharedReadOnly returns the state of the catalog read-only sharing to all organizations
+func (cat *Catalog) IsSharedReadOnly() (bool, error) {
+	accessControl, err := cat.GetAccessControl(true)
+	if err != nil {
+		return false, err
+	}
+	if accessControl.AccessSettings != nil || accessControl.IsSharedToEveryone {
+		return false, nil
+	}
+	err = cat.Refresh()
+	if err != nil {
+		return false, err
+	}
+	return cat.Catalog.IsPublished, nil
+}
+
+// IsSharedReadOnly returns the state of the catalog read-only sharing to all organizations
+func (cat *AdminCatalog) IsSharedReadOnly() (bool, error) {
+	accessControl, err := cat.GetAccessControl(true)
+	if err != nil {
+		return false, err
+	}
+	if accessControl.AccessSettings != nil || accessControl.IsSharedToEveryone {
+		return false, nil
+	}
+	err = cat.Refresh()
+	if err != nil {
+		return false, err
+	}
+	return cat.AdminCatalog.IsPublished, nil
+}
+
+// publish publishes a catalog read-only access control to all organizations
+// This operation is usually the second step for a read-only sharing to all Orgs
+func (cat *AdminCatalog) publish(isPublished bool) error {
+	if cat.AdminCatalog == nil {
+		return fmt.Errorf("cannot publish catalog, Object is empty")
+	}
+
+	catalogUrl := cat.AdminCatalog.HREF
+	if catalogUrl == "nil" || catalogUrl == "" {
+		return fmt.Errorf("cannot publish catalog, HREF is empty")
+	}
+
+	tenantContext, err := cat.getTenantContext()
+	if err != nil {
+		return fmt.Errorf("cannot publish catalog, tenant context error: %s", err)
+	}
+
+	publishParameters := types.PublishCatalogParams{
+		IsPublished: takeBoolPointer(isPublished),
+	}
+	err = publishCatalog(cat.client, catalogUrl, tenantContext, publishParameters)
+	if err != nil {
+		return err
+	}
+
+	err = cat.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
+func (cat *AdminCatalog) SetReadOnlyAccessControl(isPublished bool) error {
+	if cat.AdminCatalog == nil {
+		return fmt.Errorf("cannot set access control, Object is empty")
+	}
+	err := cat.SetAccessControl(&types.ControlAccessParams{
+		IsSharedToEveryone:  false,
+		EveryoneAccessLevel: takeStringPointer(types.ControlAccessReadOnly),
+	}, true)
+	if err != nil {
+		return err
+	}
+	return cat.publish(isPublished)
+}
