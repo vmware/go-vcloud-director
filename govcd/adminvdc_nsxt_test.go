@@ -1,5 +1,4 @@
 //go:build org || functional || nsxt || ALL
-// +build org functional nsxt ALL
 
 /*
  * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.

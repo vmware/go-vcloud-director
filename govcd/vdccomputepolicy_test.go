@@ -1,5 +1,4 @@
 //go:build vdc || functional || openapi || ALL
-// +build vdc functional openapi ALL
 
 /*
  * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
