@@ -1,5 +1,4 @@
 //go:build functional || openapi || vdcGroup || nsxt || ALL
-// +build functional openapi vdcGroup nsxt ALL
 
 /*
  * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.

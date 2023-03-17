@@ -1,6 +1,4 @@
 //go:build (lb || functional || integration || ALL) && !skipLong
-// +build lb functional integration ALL
-// +build !skipLong
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.

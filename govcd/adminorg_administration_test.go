@@ -1,5 +1,4 @@
 //go:build org || functional || ALL
-// +build org functional ALL
 
 /*
  * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
