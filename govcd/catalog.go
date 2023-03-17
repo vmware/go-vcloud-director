@@ -1079,12 +1079,12 @@ func (cat *Catalog) PublishToExternalOrganizations(publishExternalCatalog types.
 		return fmt.Errorf("cannot publish to external organization, Object is empty")
 	}
 
-	url := cat.Catalog.HREF
-	if url == "nil" || url == "" {
+	catalogUrl := cat.Catalog.HREF
+	if catalogUrl == "nil" || catalogUrl == "" {
 		return fmt.Errorf("cannot publish to external organization, HREF is empty")
 	}
 
-	err := publishToExternalOrganizations(cat.client, url, nil, publishExternalCatalog)
+	err := publishToExternalOrganizations(cat.client, catalogUrl, nil, publishExternalCatalog)
 	if err != nil {
 		return err
 	}
@@ -1171,7 +1171,19 @@ func (client *Client) GetCatalogByHref(catalogHref string) (*Catalog, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	// Setting the catalog parent, necessary to handle the tenant context
+	org := NewOrg(client)
+	for _, link := range cat.Catalog.Link {
+		if link.Rel == "up" && link.Type == types.MimeOrg {
+			_, err = client.ExecuteRequest(link.HREF, http.MethodGet,
+				"", "error retrieving parent Org: %s", nil, org.Org)
+			if err != nil {
+				return nil, fmt.Errorf("error retrieving catalog parent: %s", err)
+			}
+			break
+		}
+	}
+	cat.parent = org
 	return cat, nil
 }
 
