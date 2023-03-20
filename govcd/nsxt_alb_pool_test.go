@@ -256,6 +256,12 @@ func setupAlbPoolPrerequisites(check *C, vcd *TestVCD) (*NsxtAlbController, *Nsx
 		albSettingsConfig.SupportedFeatureSet = "PREMIUM"
 	}
 
+	// Enable Transparent mode on VCD >= 10.4.1
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.1") {
+		printVerbose("# Enabling Transparent mode on Edge Gateway (VCD 10.4.1+)\n")
+		albSettingsConfig.TransparentModeEnabled = addrOf(true)
+	}
+
 	enabledSettings, err := edge.UpdateAlbSettings(albSettingsConfig)
 	if err != nil {
 		fmt.Printf("# error occured while enabling ALB on Edge Gateway. Cleaning up Service Engine Group, ALB Cloud and ALB Controller: %s", err)

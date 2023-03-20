@@ -194,6 +194,7 @@ type TestConfig struct {
 			NsxtAlbControllerUser     string `yaml:"nsxtAlbControllerUser"`
 			NsxtAlbControllerPassword string `yaml:"nsxtAlbControllerPassword"`
 			NsxtAlbImportableCloud    string `yaml:"nsxtAlbImportableCloud"`
+			NsxtAlbServiceEngineGroup string `yaml:"nsxtAlbServiceEngineGroup"`
 		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
 	Logging struct {
