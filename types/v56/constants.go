@@ -393,6 +393,9 @@ const (
 	OpenApiEndpointEdgeBgpConfig                      = "edgeGateways/%s/routing/bgp"              // '%s' is NSX-T Edge Gateway ID
 	OpenApiEndpointRdeInterfaces                      = "interfaces/"
 	OpenApiEndpointRdeEntityTypes                     = "entityTypes/"
+	OpenApiEndpointRdeEntities                        = "entities/"
+	OpenApiEndpointRdeEntitiesTypes                   = "entities/types/"
+	OpenApiEndpointRdeEntitiesResolve                 = "entities/%s/resolve"
 
 	// NSX-T ALB related endpoints
 

@@ -1,5 +1,4 @@
 //go:build vapp || vm || functional || ALL
-// +build vapp vm functional ALL
 
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.

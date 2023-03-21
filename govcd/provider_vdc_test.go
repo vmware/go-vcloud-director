@@ -1,5 +1,4 @@
 //go:build providervdc || functional || ALL
-// +build providervdc functional ALL
 
 package govcd
 

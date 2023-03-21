@@ -56,6 +56,9 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointLogicalVmGroups:                    "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces:                      "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes:                     "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities:                        "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesTypes:                   "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesResolve:                 "35.0", // VCD 10.2+
 
 	// NSX-T ALB (Advanced/AVI Load Balancer) support was introduced in 10.2
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController:                    "35.0", // VCD 10.2+
@@ -128,6 +131,10 @@ var endpointElevatedApiVersions = map[string][]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes: {
 		//"35.0", // Introduced support
 		"37.1", // Added MaxImplicitRight property in DefinedEntityType
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities: {
+		//"35.0", // Introduced support
+		"37.0", // Added metadata support
 	},
 }
 

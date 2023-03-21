@@ -7,10 +7,11 @@ package govcd
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/kr/pretty"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
-	"strings"
 )
 
 func (vcd *TestVCD) Test_NsxvDistributedFirewall(check *C) {

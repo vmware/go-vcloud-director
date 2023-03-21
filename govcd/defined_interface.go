@@ -63,7 +63,7 @@ func (vcdClient *VCDClient) GetAllDefinedInterfaces(queryParameters url.Values) 
 	typeResponses := []*types.DefinedInterface{{}}
 	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
 	if err != nil {
-		return nil, amendDefinedInterfaceError(&client, err)
+		return nil, amendRdeApiError(&client, err)
 	}
 
 	// Wrap all typeResponses into DefinedEntityType types with client
@@ -120,7 +120,7 @@ func (vcdClient *VCDClient) GetDefinedInterfaceById(id string) (*DefinedInterfac
 
 	err = client.OpenApiGetItem(apiVersion, urlRef, nil, result.DefinedInterface, nil)
 	if err != nil {
-		return nil, amendDefinedInterfaceError(&client, err)
+		return nil, amendRdeApiError(&client, err)
 	}
 
 	return result, nil
@@ -152,7 +152,7 @@ func (di *DefinedInterface) Update(definedInterface types.DefinedInterface) erro
 
 	err = client.OpenApiPutItem(apiVersion, urlRef, nil, definedInterface, di.DefinedInterface, nil)
 	if err != nil {
-		return amendDefinedInterfaceError(client, err)
+		return amendRdeApiError(client, err)
 	}
 
 	return nil
@@ -180,16 +180,16 @@ func (di *DefinedInterface) Delete() error {
 
 	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
 	if err != nil {
-		return amendDefinedInterfaceError(client, err)
+		return amendRdeApiError(client, err)
 	}
 
 	di.DefinedInterface = &types.DefinedInterface{}
 	return nil
 }
 
-// amendDefinedInterfaceError fixes a wrong type of error returned by VCD API <= v36.0 on GET operations
+// amendRdeApiError fixes a wrong type of error returned by VCD API <= v36.0 on GET operations
 // when the defined interface does not exist.
-func amendDefinedInterfaceError(client *Client, err error) error {
+func amendRdeApiError(client *Client, err error) error {
 	if client.APIClientVersionIs("<= 36.0") && err != nil && strings.Contains(err.Error(), "does not exist") {
 		return fmt.Errorf("%s: %s", ErrorEntityNotFound.Error(), err)
 	}

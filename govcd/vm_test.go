@@ -1,5 +1,4 @@
 //go:build vm || functional || ALL
-// +build vm functional ALL
 
 /*
 * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
