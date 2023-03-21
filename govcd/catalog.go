@@ -59,7 +59,7 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 		// A catalog cannot be removed if it has active tasks, or if any of its items have active tasks
 		err = catalog.consumeTasks()
 		if err != nil {
-			return err
+			return fmt.Errorf("error while consuming tasks from catalog %s: %s", catalog.Catalog.Name, err)
 		}
 	}
 
@@ -94,7 +94,7 @@ func (catalog *Catalog) consumeTasks() error {
 		"status": "running,preRunning,queued",
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("error getting task list from catalog %s: %s", catalog.Catalog.Name, err)
 	}
 	var taskList []string
 	addTask := func(status, href string) {
@@ -119,7 +119,7 @@ func (catalog *Catalog) consumeTasks() error {
 	}
 	catalogItemRefs, err := catalog.QueryCatalogItemList()
 	if err != nil {
-		return err
+		return fmt.Errorf("error getting catalog %s items list: %s", catalog.Catalog.Name, err)
 	}
 	for _, task := range allTasks {
 		for _, ref := range catalogItemRefs {
@@ -131,7 +131,10 @@ func (catalog *Catalog) consumeTasks() error {
 		}
 	}
 	_, err = catalog.client.WaitTaskListCompletion(taskList, true)
-	return err
+	if err != nil {
+		return fmt.Errorf("error while waiting for task list completion for catalog %s: %s", catalog.Catalog.Name, err)
+	}
+	return nil
 }
 
 // Envelope is a ovf description root element. File contains information for vmdk files.

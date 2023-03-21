@@ -514,7 +514,7 @@ func (cat *Catalog) SetReadOnlyAccessControl(isPublished bool) error {
 		EveryoneAccessLevel: takeStringPointer(types.ControlAccessReadOnly),
 	}, true)
 	if err != nil {
-		return err
+		return fmt.Errorf("error resetting access control record for catalog %s: %s", cat.Catalog.Name, err)
 	}
 	return cat.publish(isPublished)
 }
