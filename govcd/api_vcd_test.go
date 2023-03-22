@@ -1,5 +1,4 @@
 //go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || rde || ALL
-// +build api openapi functional catalog vapp gateway network org query extnetwork task vm vdc system disk lb lbAppRule lbAppProfile lbServerPool lbServiceMonitor lbVirtualServer user search nsxv nsxt auth affinity role alb certificate vdcGroup metadata providervdc rde ALL
 
 /*
  * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -801,7 +800,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		// so we need to amend them
 		isBuggyRdeError := strings.Contains(entity.OpenApiEndpoint, types.OpenApiEndpointRdeInterfaces)
 		if isBuggyRdeError {
-			err = amendDefinedInterfaceError(&vcd.client.Client, err)
+			err = amendRdeApiError(&vcd.client.Client, err)
 		}
 
 		if ContainsNotFound(err) {
