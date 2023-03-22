@@ -799,7 +799,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		// so we need to amend them
 		isBuggyRdeError := strings.Contains(entity.OpenApiEndpoint, types.OpenApiEndpointRdeInterfaces)
 		if isBuggyRdeError {
-			err = amendDefinedInterfaceError(&vcd.client.Client, err)
+			err = amendRdeApiError(&vcd.client.Client, err)
 		}
 
 		if ContainsNotFound(err) {
