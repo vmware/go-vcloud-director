@@ -1,5 +1,4 @@
 //go:build unit || ALL
-// +build unit ALL
 
 /*
 * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -1750,8 +1749,10 @@ func TestOpenAPIEdgeGateway_DeallocateIpCount(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			egw := &types.OpenAPIEdgeGateway{
-				EdgeGatewayUplinks: tt.fields.EdgeGatewayUplinks,
+			egw := &NsxtEdgeGateway{
+				EdgeGateway: &types.OpenAPIEdgeGateway{
+					EdgeGatewayUplinks: tt.fields.EdgeGatewayUplinks,
+				},
 			}
 			var err error
 			if err = egw.DeallocateIpCount(tt.args.deallocateIpCount); (err != nil) != tt.wantErr {
@@ -1763,11 +1764,7 @@ func TestOpenAPIEdgeGateway_DeallocateIpCount(t *testing.T) {
 				return
 			}
 
-			e := NsxtEdgeGateway{
-				EdgeGateway: egw,
-			}
-
-			allocatedIpCount, err := e.GetAllocatedIpCount(false)
+			allocatedIpCount, err := egw.GetAllocatedIpCount(false)
 			if err != nil {
 				t.Errorf("NsxtEdgeGateway.GetAllocatedIpCount() error = %v", err)
 			}

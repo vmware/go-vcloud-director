@@ -9,5 +9,5 @@
   addresses in an Edge Gateway [GH-532]
 * Added `NsxtEdgeGateway.GetAllocatedIpCount` method that sums up `TotalIPCount` fields in all
   subnets [GH-532]
-* Added `NsxtEdgeGateway.QuickDeallocateIpCount` and `OpenAPIEdgeGateway.DeallocateIpCount`
+* Added `NsxtEdgeGateway.QuickDeallocateIpCount` and `NsxtEdgeGateway.DeallocateIpCount`
   methods to manually alter Edge Gateway body for IP deallocation [GH-532]

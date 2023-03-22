@@ -10,6 +10,7 @@ import (
 	"net/url"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 // NsxtEdgeGateway uses OpenAPI endpoint to operate NSX-T Edge Gateways
@@ -507,8 +508,11 @@ func (egw *NsxtEdgeGateway) GetUsedIpAddressSlice(refresh bool) ([]netip.Addr, e
 // QuickDeallocateIpCount refreshes Edge Gateway structure and deallocates specified ipCount from it
 // by modifying Uplink structure and calling Update() on it.
 //
-// Note. This is a reverse operation to QuickAllocateIpCount and is provided for convenience as the
-// API does not support negative values for QuickAddAllocatedIPCount field
+// Notes:
+// * This is a reverse operation to QuickAllocateIpCount and is provided for convenience as the API
+// does not support negative values for QuickAddAllocatedIPCount field
+// * This function modifies Edge Gateway structure and calls update. To only modify structure,
+// please use `NsxtEdgeGateway.DeallocateIpCount` function
 func (egw *NsxtEdgeGateway) QuickDeallocateIpCount(ipCount int) (*NsxtEdgeGateway, error) {
 	if egw.EdgeGateway == nil {
 		return nil, fmt.Errorf("edge gateway is not initialized")
@@ -519,12 +523,76 @@ func (egw *NsxtEdgeGateway) QuickDeallocateIpCount(ipCount int) (*NsxtEdgeGatewa
 		return nil, fmt.Errorf("error refreshing Edge Gateway: %s", err)
 	}
 
-	err = egw.EdgeGateway.DeallocateIpCount(ipCount)
+	err = egw.DeallocateIpCount(ipCount)
 	if err != nil {
 		return nil, fmt.Errorf("error deallocating IP count: %s", err)
 	}
 
 	return egw.Update(egw.EdgeGateway)
+}
+
+// DeallocateIpCount modifies the structure to deallocate IP addresses from the Edge Gateway
+// uplinks.
+//
+// Notes:
+// * This function does not call Update() on the Edge Gateway and it is up to the caller to perform
+// this operation (or use NsxtEdgeGateway.QuickDeallocateIpCount which wraps this function and
+// performs API call)
+// * Use `QuickAddAllocatedIPCount` field in the uplink structure to leverage VCD API directly for
+// allocating IP addresses.
+func (egw *NsxtEdgeGateway) DeallocateIpCount(deallocateIpCount int) error {
+	if deallocateIpCount < 0 {
+		return fmt.Errorf("deallocateIpCount must be greater than 0")
+	}
+
+	if egw == nil || egw.EdgeGateway == nil {
+		return fmt.Errorf("edge gateway structure cannot be nil")
+	}
+
+	edgeGatewayType := egw.EdgeGateway
+
+	for uplinkIndex, uplink := range edgeGatewayType.EdgeGatewayUplinks {
+		for subnetIndex, subnet := range uplink.Subnets.Values {
+
+			// TotalIPCount is an address of a variable so it needs to be dereferenced for easier arithmetic
+			// operations. In the end of processing the value is set back to the original location.
+			singleSubnetTotalIpCount := *edgeGatewayType.EdgeGatewayUplinks[uplinkIndex].Subnets.Values[subnetIndex].TotalIPCount
+
+			if singleSubnetTotalIpCount > 0 {
+				util.Logger.Printf("[DEBUG] Edge Gateway deallocating IPs from subnet '%s', TotalIPCount '%d', deallocate IP count '%d'",
+					subnet.Gateway, subnet.TotalIPCount, deallocateIpCount)
+
+				// If a subnet contains more allocated IPs than we need to deallocate - deallocate only what we need
+				if singleSubnetTotalIpCount >= deallocateIpCount {
+					singleSubnetTotalIpCount -= deallocateIpCount
+
+					// To make deallocation work one must set this to true
+					edgeGatewayType.EdgeGatewayUplinks[uplinkIndex].Subnets.Values[subnetIndex].AutoAllocateIPRanges = true
+
+					deallocateIpCount = 0
+				} else { // If we have less IPs allocated than we need to deallocate - deallocate all of them
+					deallocateIpCount -= singleSubnetTotalIpCount
+					singleSubnetTotalIpCount = 0
+					edgeGatewayType.EdgeGatewayUplinks[uplinkIndex].Subnets.Values[subnetIndex].AutoAllocateIPRanges = true // To make deallocation work one must set this to true
+					util.Logger.Printf("[DEBUG] Edge Gateway IP count after partial deallocation %d", edgeGatewayType.EdgeGatewayUplinks[uplinkIndex].Subnets.Values[subnetIndex].TotalIPCount)
+				}
+			}
+
+			// Setting value back to original location after all operations
+			edgeGatewayType.EdgeGatewayUplinks[uplinkIndex].Subnets.Values[subnetIndex].TotalIPCount = &singleSubnetTotalIpCount
+			util.Logger.Printf("[DEBUG] Edge Gateway IP count after complete deallocation %d", edgeGatewayType.EdgeGatewayUplinks[uplinkIndex].Subnets.Values[subnetIndex].TotalIPCount)
+
+			if deallocateIpCount == 0 {
+				break
+			}
+		}
+	}
+
+	if deallocateIpCount > 0 {
+		return fmt.Errorf("not enough IPs allocated to deallocate requested '%d' IPs", deallocateIpCount)
+	}
+
+	return nil
 }
 
 func getAllUnusedExternalIPAddresses(uplinks []types.EdgeGatewayUplinks, usedIpAddresses []*types.GatewayUsedIpAddress, optionalSubnet netip.Prefix) ([]netip.Addr, error) {

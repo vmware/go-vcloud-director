@@ -398,6 +398,12 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayUsedAndUnusedIPs(check *C) {
 	check.Assert(err, NotNil)
 	check.Assert(failedDeallocationIpCount, IsNil)
 
+	// Check that failed deallocation did not change the number of allocated IPs
+	allocatedIpCountAfterFailedDeallocation, err := createdEdge.GetAllocatedIpCount(true)
+	check.Assert(err, IsNil)
+	check.Assert(allocatedIpCountAfterFailedDeallocation, NotNil)
+	check.Assert(allocatedIpCountAfterFailedDeallocation, Equals, 23) // 22 unused IPs + 1 primary
+
 	// Try to deallocate all IPs including primary. Expect a failure as an Edge Gateway must always
 	// have a primary IP
 	failedDeallocationIpCount, err = createdEdge.QuickDeallocateIpCount(23)
