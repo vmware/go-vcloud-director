@@ -569,6 +569,26 @@ func Test_flattenEdgeGatewayUplinkToIpSlice(t *testing.T) {
 	}
 }
 
+// buildSimpleUplinkStructure helps to avoid deep indentation in Test_getUnusedExternalIPAddress
+// where the structure itself is simple enough that has only one subnet and one IP range. Other
+// tests in this table test still contain the full structure as it would be less readable if it was
+// wrapped into multiple function calls.
+func buildSimpleUplinkStructure(ipRangeValues []types.OpenApiIPRangeValues) []types.EdgeGatewayUplinks {
+	return []types.EdgeGatewayUplinks{
+		{
+			Subnets: types.OpenAPIEdgeGatewaySubnets{
+				Values: []types.OpenAPIEdgeGatewaySubnetValue{
+					{
+						IPRanges: &types.OpenApiIPRanges{
+							Values: ipRangeValues,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func Test_getUnusedExternalIPAddress(t *testing.T) {
 	type args struct {
 		uplinks         []types.EdgeGatewayUplinks
@@ -596,24 +616,12 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 		{
 			name: "SingleIpAvailable",
 			args: args{
-				uplinks: []types.EdgeGatewayUplinks{
+				uplinks: buildSimpleUplinkStructure([]types.OpenApiIPRangeValues{
 					{
-						Subnets: types.OpenAPIEdgeGatewaySubnets{
-							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								{
-									IPRanges: &types.OpenApiIPRanges{
-										Values: []types.OpenApiIPRangeValues{
-											{
-												StartAddress: "10.10.10.1",
-												EndAddress:   "10.10.10.1",
-											},
-										},
-									},
-								},
-							},
-						},
+						StartAddress: "10.10.10.1",
+						EndAddress:   "10.10.10.1",
 					},
-				},
+				}),
 				usedIpAddresses: []*types.GatewayUsedIpAddress{},
 				requiredCount:   1,
 				optionalSubnet:  netip.Prefix{},
@@ -626,24 +634,12 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 		{
 			name: "AvailableIPsFilteredOff",
 			args: args{
-				uplinks: []types.EdgeGatewayUplinks{
+				uplinks: buildSimpleUplinkStructure([]types.OpenApiIPRangeValues{
 					{
-						Subnets: types.OpenAPIEdgeGatewaySubnets{
-							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								{
-									IPRanges: &types.OpenApiIPRanges{
-										Values: []types.OpenApiIPRangeValues{
-											{
-												StartAddress: "10.10.10.1",
-												EndAddress:   "10.10.10.10",
-											},
-										},
-									},
-								},
-							},
-						},
+						StartAddress: "10.10.10.1",
+						EndAddress:   "10.10.10.10",
 					},
-				},
+				}),
 				usedIpAddresses: []*types.GatewayUsedIpAddress{},
 				requiredCount:   1,
 				optionalSubnet:  netip.MustParsePrefix("20.10.10.0/24"),
@@ -654,24 +650,12 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 		{
 			name: "AvailableIPsFilteredOffAndUsed",
 			args: args{
-				uplinks: []types.EdgeGatewayUplinks{
+				uplinks: buildSimpleUplinkStructure([]types.OpenApiIPRangeValues{
 					{
-						Subnets: types.OpenAPIEdgeGatewaySubnets{
-							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								{
-									IPRanges: &types.OpenApiIPRanges{
-										Values: []types.OpenApiIPRangeValues{
-											{
-												StartAddress: "10.10.10.1",
-												EndAddress:   "10.10.10.10",
-											},
-										},
-									},
-								},
-							},
-						},
+						StartAddress: "10.10.10.1",
+						EndAddress:   "10.10.10.10",
 					},
-				},
+				}),
 				usedIpAddresses: []*types.GatewayUsedIpAddress{{IPAddress: "10.10.10.1"}},
 				requiredCount:   1,
 				optionalSubnet:  netip.MustParsePrefix("20.10.10.0/24"),
@@ -682,24 +666,12 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 		{
 			name: "SingleIpFromMany",
 			args: args{
-				uplinks: []types.EdgeGatewayUplinks{
+				uplinks: buildSimpleUplinkStructure([]types.OpenApiIPRangeValues{
 					{
-						Subnets: types.OpenAPIEdgeGatewaySubnets{
-							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								{
-									IPRanges: &types.OpenApiIPRanges{
-										Values: []types.OpenApiIPRangeValues{
-											{
-												StartAddress: "10.10.10.15",
-												EndAddress:   "10.10.10.200",
-											},
-										},
-									},
-								},
-							},
-						},
+						StartAddress: "10.10.10.15",
+						EndAddress:   "10.10.10.200",
 					},
-				},
+				}),
 				usedIpAddresses: []*types.GatewayUsedIpAddress{},
 				requiredCount:   1,
 				optionalSubnet:  netip.Prefix{},
@@ -712,24 +684,12 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 		{
 			name: "CrossBoundary",
 			args: args{
-				uplinks: []types.EdgeGatewayUplinks{
+				uplinks: buildSimpleUplinkStructure([]types.OpenApiIPRangeValues{
 					{
-						Subnets: types.OpenAPIEdgeGatewaySubnets{
-							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								{
-									IPRanges: &types.OpenApiIPRanges{
-										Values: []types.OpenApiIPRangeValues{
-											{
-												StartAddress: "10.10.10.255",
-												EndAddress:   "10.10.11.1",
-											},
-										},
-									},
-								},
-							},
-						},
+						StartAddress: "10.10.10.255",
+						EndAddress:   "10.10.11.1",
 					},
-				},
+				}),
 				usedIpAddresses: []*types.GatewayUsedIpAddress{},
 				requiredCount:   3,
 				optionalSubnet:  netip.Prefix{},
@@ -744,24 +704,12 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 		{
 			name: "CrossBoundaryPrefix",
 			args: args{
-				uplinks: []types.EdgeGatewayUplinks{
+				uplinks: buildSimpleUplinkStructure([]types.OpenApiIPRangeValues{
 					{
-						Subnets: types.OpenAPIEdgeGatewaySubnets{
-							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								{
-									IPRanges: &types.OpenApiIPRanges{
-										Values: []types.OpenApiIPRangeValues{
-											{
-												StartAddress: "10.10.10.255",
-												EndAddress:   "10.10.11.1",
-											},
-										},
-									},
-								},
-							},
-						},
+						StartAddress: "10.10.10.255",
+						EndAddress:   "10.10.11.1",
 					},
-				},
+				}),
 				usedIpAddresses: []*types.GatewayUsedIpAddress{},
 				requiredCount:   2,
 				optionalSubnet:  netip.MustParsePrefix("10.10.11.0/24"),
@@ -775,24 +723,12 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 		{
 			name: "CrossBoundaryPrefixAndUsed",
 			args: args{
-				uplinks: []types.EdgeGatewayUplinks{
+				uplinks: buildSimpleUplinkStructure([]types.OpenApiIPRangeValues{
 					{
-						Subnets: types.OpenAPIEdgeGatewaySubnets{
-							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								{
-									IPRanges: &types.OpenApiIPRanges{
-										Values: []types.OpenApiIPRangeValues{
-											{
-												StartAddress: "10.10.10.255",
-												EndAddress:   "10.10.11.1",
-											},
-										},
-									},
-								},
-							},
-						},
+						StartAddress: "10.10.10.255",
+						EndAddress:   "10.10.11.1",
 					},
-				},
+				}),
 				usedIpAddresses: []*types.GatewayUsedIpAddress{{IPAddress: "10.10.11.0"}},
 				requiredCount:   1,
 				optionalSubnet:  netip.MustParsePrefix("10.10.11.0/24"),
@@ -805,24 +741,12 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 		{
 			name: "IPv6SingleIpAvailable",
 			args: args{
-				uplinks: []types.EdgeGatewayUplinks{
+				uplinks: buildSimpleUplinkStructure([]types.OpenApiIPRangeValues{
 					{
-						Subnets: types.OpenAPIEdgeGatewaySubnets{
-							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								{
-									IPRanges: &types.OpenApiIPRanges{
-										Values: []types.OpenApiIPRangeValues{
-											{
-												StartAddress: "4001:0DB8:0000:000b:0000:0000:0000:0001",
-												EndAddress:   "4001:0DB8:0000:000b:0000:0000:0000:0001",
-											},
-										},
-									},
-								},
-							},
-						},
+						StartAddress: "4001:0DB8:0000:000b:0000:0000:0000:0001",
+						EndAddress:   "4001:0DB8:0000:000b:0000:0000:0000:0001",
 					},
-				},
+				}),
 				usedIpAddresses: []*types.GatewayUsedIpAddress{},
 				requiredCount:   1,
 				optionalSubnet:  netip.Prefix{},
@@ -835,23 +759,11 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 		{
 			name: "SingleIpAvailableStartOnly",
 			args: args{
-				uplinks: []types.EdgeGatewayUplinks{
+				uplinks: buildSimpleUplinkStructure([]types.OpenApiIPRangeValues{
 					{
-						Subnets: types.OpenAPIEdgeGatewaySubnets{
-							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								{
-									IPRanges: &types.OpenApiIPRanges{
-										Values: []types.OpenApiIPRangeValues{
-											{
-												StartAddress: "10.10.10.1",
-											},
-										},
-									},
-								},
-							},
-						},
+						StartAddress: "10.10.10.1",
 					},
-				},
+				}),
 				usedIpAddresses: []*types.GatewayUsedIpAddress{},
 				requiredCount:   1,
 				optionalSubnet:  netip.Prefix{},
@@ -864,23 +776,11 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 		{
 			name: "IPv6SingleIpAvailableStartOnly",
 			args: args{
-				uplinks: []types.EdgeGatewayUplinks{
+				uplinks: buildSimpleUplinkStructure([]types.OpenApiIPRangeValues{
 					{
-						Subnets: types.OpenAPIEdgeGatewaySubnets{
-							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								{
-									IPRanges: &types.OpenApiIPRanges{
-										Values: []types.OpenApiIPRangeValues{
-											{
-												StartAddress: "4001:0DB8:0000:000b:0000:0000:0000:0001",
-											},
-										},
-									},
-								},
-							},
-						},
+						StartAddress: "4001:0DB8:0000:000b:0000:0000:0000:0001",
 					},
-				},
+				}),
 				usedIpAddresses: []*types.GatewayUsedIpAddress{},
 				requiredCount:   1,
 				optionalSubnet:  netip.Prefix{},
@@ -893,25 +793,13 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 		{
 			name: "InvalidIpRange",
 			args: args{
-				uplinks: []types.EdgeGatewayUplinks{
+				uplinks: buildSimpleUplinkStructure([]types.OpenApiIPRangeValues{
 					{
-						Subnets: types.OpenAPIEdgeGatewaySubnets{
-							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								{
-									IPRanges: &types.OpenApiIPRanges{
-										Values: []types.OpenApiIPRangeValues{
-											{
-												// Start Address is higher than end IP address
-												StartAddress: "10.10.10.200",
-												EndAddress:   "10.10.10.1",
-											},
-										},
-									},
-								},
-							},
-						},
+						// Start Address is higher than end IP address
+						StartAddress: "10.10.10.200",
+						EndAddress:   "10.10.10.1",
 					},
-				},
+				}),
 				usedIpAddresses: []*types.GatewayUsedIpAddress{},
 				requiredCount:   1,
 				optionalSubnet:  netip.Prefix{},
@@ -922,24 +810,12 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 		{
 			name: "InsufficientIPs",
 			args: args{
-				uplinks: []types.EdgeGatewayUplinks{
+				uplinks: buildSimpleUplinkStructure([]types.OpenApiIPRangeValues{
 					{
-						Subnets: types.OpenAPIEdgeGatewaySubnets{
-							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								{
-									IPRanges: &types.OpenApiIPRanges{
-										Values: []types.OpenApiIPRangeValues{
-											{
-												StartAddress: "10.10.10.1",
-												EndAddress:   "10.10.10.6",
-											},
-										},
-									},
-								},
-							},
-						},
+						StartAddress: "10.10.10.1",
+						EndAddress:   "10.10.10.6",
 					},
-				},
+				}),
 				usedIpAddresses: []*types.GatewayUsedIpAddress{},
 				requiredCount:   7,
 				optionalSubnet:  netip.Prefix{},
@@ -950,24 +826,12 @@ func Test_getUnusedExternalIPAddress(t *testing.T) {
 		{
 			name: "InsufficientIPsWithUsed",
 			args: args{
-				uplinks: []types.EdgeGatewayUplinks{
+				uplinks: buildSimpleUplinkStructure([]types.OpenApiIPRangeValues{
 					{
-						Subnets: types.OpenAPIEdgeGatewaySubnets{
-							Values: []types.OpenAPIEdgeGatewaySubnetValue{
-								{
-									IPRanges: &types.OpenApiIPRanges{
-										Values: []types.OpenApiIPRangeValues{
-											{
-												StartAddress: "10.10.10.1",
-												EndAddress:   "10.10.10.6",
-											},
-										},
-									},
-								},
-							},
-						},
+						StartAddress: "10.10.10.1",
+						EndAddress:   "10.10.10.6",
 					},
-				},
+				}),
 				usedIpAddresses: []*types.GatewayUsedIpAddress{
 					{IPAddress: "10.10.10.1"},
 				},
