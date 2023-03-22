@@ -41,8 +41,7 @@ func (vcd *TestVCD) Test_AlbVirtualService(check *C) {
 	testMinimalVirtualServiceConfigL4(check, edge, albPool, seGroup, vcd, orgUserVcdClient)
 	testMinimalVirtualServiceConfigL4TLS(check, edge, albPool, seGroup, vcd, orgUserVcdClient)
 
-	// Test 10.4.1 Transparent mode
-	// Enable Transparent mode on VCD >= 10.4.1
+	// Test 10.4.1 Transparent mode on VCD >= 10.4.1
 	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.1") {
 		printVerbose("# Running 10.4.1+ tests as Sysadmin user\n")
 

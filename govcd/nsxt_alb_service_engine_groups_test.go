@@ -104,9 +104,8 @@ func spawnAlbControllerCloudServiceEngineGroup(vcd *TestVCD, check *C, seGroupRe
 	albController, createdAlbCloud := spawnAlbControllerAndCloud(vcd, check)
 
 	importableSeGroup, err := vcd.client.GetAlbImportableServiceEngineGroupByName(createdAlbCloud.NsxtAlbCloud.ID, vcd.config.VCD.Nsxt.NsxtAlbServiceEngineGroup)
-
 	check.Assert(err, IsNil)
-	// check.Assert(len(importableSeGroups) > 0, Equals, true)
+
 	albSeGroup := &types.NsxtAlbServiceEngineGroup{
 		Name:            check.TestName() + "SE-group",
 		Description:     "Service Engine Group created by " + check.TestName(),
