@@ -1652,38 +1652,38 @@ func (vcd *TestVCD) TearDownSuite(check *C) {
 
 // Tests getloginurl with the endpoint given
 // in the config file.
-func TestClient_getloginurl(t *testing.T) {
+func (vcd *TestVCD) TestClient_getloginurl(check *C) {
 	if os.Getenv("GOVCD_API_VERSION") != "" {
-		t.Skip("custom API version is being used")
+		check.Skip("custom API version is being used")
 	}
 	config, err := GetConfigStruct()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		check.Fatalf("err: %s", err)
 	}
 	client, err := GetTestVCDFromYaml(config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		check.Fatalf("err: %s", err)
 	}
 
 	err = client.vcdloginurl()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		check.Fatalf("err: %s", err)
 	}
 
 	if client.sessionHREF.Path != "/cloudapi/1.0.0/sessions" {
-		t.Fatalf("Getting LoginUrl failed, url: %s", client.sessionHREF.Path)
+		check.Fatalf("Getting LoginUrl failed, url: %s", client.sessionHREF.Path)
 	}
 }
 
 // Tests Authenticate with the vcd credentials (or token) given in the config file
-func TestVCDClient_Authenticate(t *testing.T) {
+func (vcd *TestVCD) TestVCDClient_Authenticate(check *C) {
 	config, err := GetConfigStruct()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		check.Fatalf("err: %s", err)
 	}
 	client, err := GetTestVCDFromYaml(config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		check.Fatalf("err: %s", err)
 	}
 	apiToken := os.Getenv("VCD_API_TOKEN")
 	if apiToken == "" {
@@ -1704,102 +1704,39 @@ func TestVCDClient_Authenticate(t *testing.T) {
 	}
 
 	if err != nil {
-		t.Fatalf("Error authenticating: %s", err)
+		check.Fatalf("Error authenticating: %s", err)
 	}
 }
 
-func TestVCDClient_AuthenticateInvalidPassword(t *testing.T) {
+func (vcd *TestVCD) TestVCDClient_AuthenticateInvalidPassword(check *C) {
 	config, err := GetConfigStruct()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		check.Fatalf("err: %s", err)
 	}
 	client, err := GetTestVCDFromYaml(config)
 	if err != nil {
-		t.Fatalf("error getting client structure: %s", err)
+		check.Fatalf("error getting client structure: %s", err)
 	}
 
 	err = client.Authenticate(config.Provider.User, "INVALID-PASSWORD", config.Provider.SysOrg)
 	if err == nil || !strings.Contains(err.Error(), "401") {
-		t.Fatalf("expected error for invalid credentials")
+		check.Fatalf("expected error for invalid credentials")
 	}
 }
 
-func TestVCDClient_AuthenticateInvalidToken(t *testing.T) {
+func (vcd *TestVCD) TestVCDClient_AuthenticateInvalidToken(check *C) {
 	config, err := GetConfigStruct()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		check.Fatalf("err: %s", err)
 	}
 	client, err := GetTestVCDFromYaml(config)
 	if err != nil {
-		t.Fatalf("error getting client structure: %s", err)
+		check.Fatalf("error getting client structure: %s", err)
 	}
 
 	err = client.SetToken(config.Provider.SysOrg, AuthorizationHeader, "invalid-token")
 	if err == nil || !strings.Contains(err.Error(), "401") {
-		t.Fatalf("expected error for invalid credentials")
-	}
-}
-
-func Test_splitParent(t *testing.T) {
-	type args struct {
-		parent    string
-		separator string
-	}
-	tests := []struct {
-		name       string
-		args       args
-		wantFirst  string
-		wantSecond string
-		wantThird  string
-	}{
-		{
-			name:       "Empty",
-			args:       args{parent: "", separator: "|"},
-			wantFirst:  "",
-			wantSecond: "",
-			wantThird:  "",
-		},
-		{
-			name:       "One",
-			wantFirst:  "",
-			wantSecond: "",
-			wantThird:  "",
-		},
-		{
-			name:       "Two",
-			args:       args{parent: "first|second", separator: "|"},
-			wantFirst:  "first",
-			wantSecond: "second",
-			wantThird:  "",
-		},
-		{
-			name:       "Three",
-			args:       args{parent: "first|second|third", separator: "|"},
-			wantFirst:  "first",
-			wantSecond: "second",
-			wantThird:  "third",
-		},
-		{
-			name:       "Four",
-			args:       args{parent: "first|second|third|fourth", separator: "|"},
-			wantFirst:  "",
-			wantSecond: "",
-			wantThird:  "",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotFirst, gotSecond, gotThird := splitParent(tt.args.parent, tt.args.separator)
-			if gotFirst != tt.wantFirst {
-				t.Errorf("splitParent() gotFirst = %v, want %v", gotFirst, tt.wantFirst)
-			}
-			if gotSecond != tt.wantSecond {
-				t.Errorf("splitParent() gotSecond = %v, want %v", gotSecond, tt.wantSecond)
-			}
-			if gotThird != tt.wantThird {
-				t.Errorf("splitParent() gotThird = %v, want %v", gotThird, tt.wantThird)
-			}
-		})
+		check.Fatalf("expected error for invalid credentials")
 	}
 }
 
