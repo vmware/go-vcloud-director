@@ -375,7 +375,7 @@ func filterOnlyNsxtEdges(allEdges []*NsxtEdgeGateway) []*NsxtEdgeGateway {
 	return filteredEdges
 }
 
-// GetUsedIpAddresses uses dedicated endpoint to retrieve Used IP addresses in an Edge Gateway
+// GetUsedIpAddresses uses dedicated endpoint to retrieve used IP addresses in an Edge Gateway
 func (egw *NsxtEdgeGateway) GetUsedIpAddresses(queryParameters url.Values) ([]*types.GatewayUsedIpAddress, error) {
 	if egw.EdgeGateway == nil || egw.EdgeGateway.ID == "" {
 		return nil, fmt.Errorf("edge gateway ID must be set to retrieve used IP addresses")
@@ -406,8 +406,8 @@ func (egw *NsxtEdgeGateway) GetUsedIpAddresses(queryParameters url.Values) ([]*t
 // Gateway
 // Arguments:
 // * `requiredIpCount` (how many unuseds IPs should be returned). It will fail and return an
-// error if IP all IPs specified in 'requiredIpCount' cannot be found.
-// * `optionalSubnet` is specified (CIDR notation, e.g. 192.168.1.0/24) - it will look for an IP in
+// error if all IPs specified in 'requiredIpCount' cannot be found.
+// * `optionalSubnet` is specified (CIDR notation, e.g. 192.168.1.0/24), it will look for an IP in
 // this subnet only.
 // * `refresh` defines if Edge Gateway structure should be retrieved with latest data before
 // performing IP lookup operation
@@ -464,8 +464,8 @@ func (egw *NsxtEdgeGateway) GetAllUnusedExternalIPAddresses(refresh bool) ([]net
 	return getAllUnusedExternalIPAddresses(egw.EdgeGateway.EdgeGatewayUplinks, usedIpAddresses, netip.Prefix{})
 }
 
-// GetAllocatedIpCount traverses all subnets in Edge Gateway and returns a sum of allocated ip count
-// for each subnet in each uplink
+// GetAllocatedIpCount traverses all subnets in Edge Gateway and returns a count of allocated IP
+// count for each subnet in each uplink
 func (egw *NsxtEdgeGateway) GetAllocatedIpCount(refresh bool) (int, error) {
 	if refresh {
 		err := egw.Refresh()
@@ -698,7 +698,7 @@ func filterIpSlicesBySubnet(ipRange []netip.Addr, subnet netip.Prefix) ([]netip.
 	return filteredRange, nil
 }
 
-// flattenGatewayUsedIpAddressesToIpSlice accepts a slice of `GatewayUsedIpAddress` comming directly
+// flattenGatewayUsedIpAddressesToIpSlice accepts a slice of `GatewayUsedIpAddress` coming directly
 // from the API and converts it to slice of Go's native '[]netip.Addr' which supports IPv4 and IPv6
 func flattenGatewayUsedIpAddressesToIpSlice(usedIpAddresses []*types.GatewayUsedIpAddress) ([]netip.Addr, error) {
 	usedIpSlice := make([]netip.Addr, len(usedIpAddresses))
