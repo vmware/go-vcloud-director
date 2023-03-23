@@ -88,8 +88,8 @@ type ExternalNetworkV2 struct {
 	NetworkBackings ExternalNetworkV2Backings `json:"networkBackings"`
 }
 
-// ExternalNetworkV2IPRange defines allocated IP pools for a subnet in external network
-type ExternalNetworkV2IPRange struct {
+// OpenApiIPRangeValues defines allocated IP pools for a subnet in external network
+type OpenApiIPRangeValues struct {
 	// StartAddress holds starting IP address in the range
 	StartAddress string `json:"startAddress"`
 	// EndAddress holds ending IP address in the range
@@ -97,8 +97,8 @@ type ExternalNetworkV2IPRange struct {
 }
 
 // ExternalNetworkV2IPRanges contains slice of ExternalNetworkV2IPRange
-type ExternalNetworkV2IPRanges struct {
-	Values []ExternalNetworkV2IPRange `json:"values"`
+type OpenApiIPRanges struct {
+	Values []OpenApiIPRangeValues `json:"values"`
 }
 
 // ExternalNetworkV2Subnets contains slice of ExternalNetworkV2Subnet

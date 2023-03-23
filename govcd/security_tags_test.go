@@ -10,6 +10,10 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+func init() {
+	testingTags["vm"] = "security_tags_test.go"
+}
+
 func (vcd *TestVCD) Test_SecurityTags(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointSecurityTags)
