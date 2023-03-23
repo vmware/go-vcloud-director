@@ -131,7 +131,7 @@ func testMinimalVirtualServiceConfigHTTPTransparent(check *C, edge *NsxtEdgeGate
 	virtualServiceConfig := &types.NsxtAlbVirtualService{
 		Name:                   check.TestName(),
 		Enabled:                addrOf(true),
-		TransparentModeEnabled: addrOf(createTransparentMode),
+		TransparentModeEnabled: &createTransparentMode,
 		ApplicationProfile: types.NsxtAlbVirtualServiceApplicationProfile{
 			SystemDefined: true,
 			Type:          "HTTP",
@@ -151,7 +151,7 @@ func testMinimalVirtualServiceConfigHTTPTransparent(check *C, edge *NsxtEdgeGate
 		Name:                   check.TestName(),
 		Description:            "Updated",
 		Enabled:                addrOf(true),
-		TransparentModeEnabled: addrOf(updateTransparentMode),
+		TransparentModeEnabled: &updateTransparentMode,
 		ApplicationProfile: types.NsxtAlbVirtualServiceApplicationProfile{
 			SystemDefined: true,
 			Type:          "HTTP",
