@@ -88,8 +88,8 @@ type ExternalNetworkV2 struct {
 	NetworkBackings ExternalNetworkV2Backings `json:"networkBackings"`
 }
 
-// ExternalNetworkV2IPRange defines allocated IP pools for a subnet in external network
-type ExternalNetworkV2IPRange struct {
+// OpenApiIPRangeValues defines allocated IP pools for a subnet in external network
+type OpenApiIPRangeValues struct {
 	// StartAddress holds starting IP address in the range
 	StartAddress string `json:"startAddress"`
 	// EndAddress holds ending IP address in the range
@@ -97,8 +97,8 @@ type ExternalNetworkV2IPRange struct {
 }
 
 // ExternalNetworkV2IPRanges contains slice of ExternalNetworkV2IPRange
-type ExternalNetworkV2IPRanges struct {
-	Values []ExternalNetworkV2IPRange `json:"values"`
+type OpenApiIPRanges struct {
+	Values []OpenApiIPRangeValues `json:"values"`
 }
 
 // ExternalNetworkV2Subnets contains slice of ExternalNetworkV2Subnet
@@ -452,4 +452,16 @@ type DefinedEntityType struct {
 	IsReadOnly       bool                   `json:"readonly,omitempty"`         // `true` if the entity type cannot be modified
 	Schema           map[string]interface{} `json:"schema,omitempty"`           // The JSON-Schema valid definition of the defined entity type. If no JSON Schema version is specified, version 4 will be assumed
 	Vendor           string                 `json:"vendor,omitempty"`           // The vendor name
+}
+
+// DefinedEntity describes an instance of a defined entity type.
+type DefinedEntity struct {
+	ID         string                 `json:"id,omitempty"`         // The id of the defined entity in URN format
+	EntityType string                 `json:"entityType,omitempty"` // The URN ID of the defined entity type that the entity is an instance of. This is a read-only field
+	Name       string                 `json:"name,omitempty"`       // The name of the defined entity
+	ExternalId string                 `json:"externalId,omitempty"` // An external entity's id that this entity may have a relation to.
+	Entity     map[string]interface{} `json:"entity,omitempty"`     // A JSON value representation. The JSON will be validated against the schema of the DefinedEntityType that the entity is an instance of
+	State      *string                `json:"state,omitempty"`      // Every entity is created in the "PRE_CREATED" state. Once an entity is ready to be validated against its schema, it will transition in another state - RESOLVED, if the entity is valid according to the schema, or RESOLUTION_ERROR otherwise. If an entity in an "RESOLUTION_ERROR" state is updated, it will transition to the inital "PRE_CREATED" state without performing any validation. If its in the "RESOLVED" state, then it will be validated against the entity type schema and throw an exception if its invalid
+	Owner      *OpenApiReference      `json:"owner,omitempty"`      // The owner of the defined entity
+	Org        *OpenApiReference      `json:"org,omitempty"`        // The organization of the defined entity.
 }

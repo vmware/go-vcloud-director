@@ -364,6 +364,7 @@ const (
 	OpenApiEndpointVdcCapabilities                    = "vdcs/%s/capabilities"
 	OpenApiEndpointVdcNetworkProfile                  = "vdcs/%s/networkProfile"
 	OpenApiEndpointEdgeGateways                       = "edgeGateways/"
+	OpenApiEndpointEdgeGatewayUsedIpAddresses         = "edgeGateways/%s/usedIpAddresses"
 	OpenApiEndpointNsxtFirewallRules                  = "edgeGateways/%s/firewall/rules"
 	OpenApiEndpointFirewallGroups                     = "firewallGroups/"
 	OpenApiEndpointOrgVdcNetworks                     = "orgVdcNetworks/"
@@ -391,6 +392,9 @@ const (
 	OpenApiEndpointEdgeBgpConfig                      = "edgeGateways/%s/routing/bgp"              // '%s' is NSX-T Edge Gateway ID
 	OpenApiEndpointRdeInterfaces                      = "interfaces/"
 	OpenApiEndpointRdeEntityTypes                     = "entityTypes/"
+	OpenApiEndpointRdeEntities                        = "entities/"
+	OpenApiEndpointRdeEntitiesTypes                   = "entities/types/"
+	OpenApiEndpointRdeEntitiesResolve                 = "entities/%s/resolve"
 
 	// NSX-T ALB related endpoints
 

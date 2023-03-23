@@ -4,10 +4,15 @@ package govcd
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
-	"strings"
 )
+
+func init() {
+	testingTags["vm"] = "security_tags_test.go"
+}
 
 func (vcd *TestVCD) Test_SecurityTags(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
