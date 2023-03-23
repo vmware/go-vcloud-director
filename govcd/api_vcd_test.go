@@ -1940,7 +1940,7 @@ func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, i
 		return nil, nil, fmt.Errorf("[newOrgUserConnection] unable to authenticate: %s", err)
 	}
 
-	// return newUser delete function
+	// return newUser
 	newUser, err := adminOrg.GetUserByName(userName, false)
 	if err != nil {
 		return nil, nil, fmt.Errorf("[newOrgUserConnection] unable to retrieve newly created user: %s", err)
