@@ -4,9 +4,10 @@ package govcd
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
-	"strings"
 )
 
 func (vcd *TestVCD) Test_SecurityTags(check *C) {
@@ -90,7 +91,7 @@ func (vcd *TestVCD) Test_SecurityTags(check *C) {
 
 	userName := strings.ToLower(check.TestName())
 	fmt.Printf("# Running Get Security Tag Values test as Org Admin user '%s'\n", userName)
-	orgUserVcdClient, err := newOrgUserConnection(adminOrg, userName, "CHANGE-ME", vcd.config.Provider.Url, true)
+	orgUserVcdClient, _, err := newOrgUserConnection(adminOrg, userName, "CHANGE-ME", vcd.config.Provider.Url, true)
 	check.Assert(err, IsNil)
 	check.Assert(orgUserVcdClient, NotNil)
 

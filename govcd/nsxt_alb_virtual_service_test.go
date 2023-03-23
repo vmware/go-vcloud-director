@@ -23,7 +23,7 @@ func (vcd *TestVCD) Test_AlbVirtualService(check *C) {
 	// Setup Org user and connection
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
-	orgUserVcdClient, err := newOrgUserConnection(adminOrg, "alb-virtual-service-testing", "CHANGE-ME", vcd.config.Provider.Url, true)
+	orgUserVcdClient, orgUser, err := newOrgUserConnection(adminOrg, "alb-virtual-service-testing", "CHANGE-ME", vcd.config.Provider.Url, true)
 	check.Assert(err, IsNil)
 
 	printVerbose("# Running tests as Sysadmin user\n")
@@ -66,6 +66,10 @@ func (vcd *TestVCD) Test_AlbVirtualService(check *C) {
 
 	// teardown prerequisites
 	tearDownAlbVirtualServicePrerequisites(check, albPool, seGroupAssignment, edge, seGroup, cloud, controller)
+
+	// cleanup Org user
+	err = orgUser.Delete(true)
+	check.Assert(err, IsNil)
 }
 
 func testMinimalVirtualServiceConfigHTTP(check *C, edge *NsxtEdgeGateway, pool *NsxtAlbPool, seGroup *NsxtAlbServiceEngineGroup, vcd *TestVCD, client *VCDClient) {

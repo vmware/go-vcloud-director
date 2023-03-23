@@ -23,7 +23,7 @@ func (vcd *TestVCD) Test_AlbPool(check *C) {
 	// Setup Org user and connection
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
-	orgUserVcdClient, err := newOrgUserConnection(adminOrg, "alb-pool-testing", "CHANGE-ME", vcd.config.Provider.Url, true)
+	orgUserVcdClient, orgUser, err := newOrgUserConnection(adminOrg, "alb-pool-testing", "CHANGE-ME", vcd.config.Provider.Url, true)
 	check.Assert(err, IsNil)
 
 	// defer prerequisite teardown
@@ -40,6 +40,10 @@ func (vcd *TestVCD) Test_AlbPool(check *C) {
 	testAdvancedPoolConfig(check, edge, vcd, orgUserVcdClient)
 	testPoolWithCertNoPrivateKey(check, vcd, edge.EdgeGateway.ID, orgUserVcdClient)
 	testPoolWithCertAndPrivateKey(check, vcd, edge.EdgeGateway.ID, orgUserVcdClient)
+
+	// Cleanup Org user
+	err = orgUser.Delete(true)
+	check.Assert(err, IsNil)
 }
 
 func testMinimalPoolConfig(check *C, edge *NsxtEdgeGateway, vcd *TestVCD, client *VCDClient) {

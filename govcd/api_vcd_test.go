@@ -1963,6 +1963,9 @@ func skipNoNsxtAlbConfiguration(vcd *TestVCD, check *C) {
 	if vcd.config.VCD.Nsxt.NsxtAlbImportableCloud == "" {
 		check.Skip(generalMessage + "No NSX-T ALB Controller Importable Cloud Name")
 	}
+	if vcd.config.VCD.Nsxt.NsxtAlbServiceEngineGroup == "" {
+		check.Skip(generalMessage + "No NSX-T ALB Service Engine Group name specified in configuration")
+	}
 }
 
 // skipOpenApiEndpointTest is a helper to skip tests for particular unsupported OpenAPI endpoints
@@ -1984,16 +1987,16 @@ func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint string) {
 // newOrgUserConnection creates a new Org User and returns a connection to it.
 // Attention: Set the user to use only lowercase letters. If you put upper case letters the function fails on waiting
 // because VCD creates the user with lowercase letters.
-func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, insecure bool) (*VCDClient, error) {
+func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, insecure bool) (*VCDClient, *OrgUser, error) {
 	u, err := url.ParseRequestURI(href)
 	if err != nil {
-		return nil, fmt.Errorf("[newOrgUserConnection] unable to pass url: %s", err)
+		return nil, nil, fmt.Errorf("[newOrgUserConnection] unable to pass url: %s", err)
 	}
 
 	_, err = adminOrg.GetUserByName(userName, false)
 	if err == nil {
 		// user exists
-		return nil, fmt.Errorf("user %s already exists", userName)
+		return nil, nil, fmt.Errorf("user %s already exists", userName)
 	}
 	_, err = adminOrg.CreateUserSimple(OrgUserConfiguration{
 		Name:            userName,
@@ -2007,14 +2010,23 @@ func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, i
 		Description:     "Test user created by newOrgUserConnection",
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+
 	AddToCleanupList(userName, "user", adminOrg.AdminOrg.Name, "newOrgUserConnection")
+
 	_ = adminOrg.Refresh()
 	vcdClient := NewVCDClient(*u, insecure)
 	err = vcdClient.Authenticate(userName, password, adminOrg.AdminOrg.Name)
 	if err != nil {
-		return nil, fmt.Errorf("[newOrgUserConnection] unable to authenticate: %s", err)
+		return nil, nil, fmt.Errorf("[newOrgUserConnection] unable to authenticate: %s", err)
 	}
-	return vcdClient, nil
+
+	// return newUser delete function
+	newUser, err := adminOrg.GetUserByName(userName, false)
+	if err != nil {
+		return nil, nil, fmt.Errorf("[newOrgUserConnection] unable to retrieve newly created user: %s", err)
+	}
+
+	return vcdClient, newUser, nil
 }

@@ -609,7 +609,7 @@ func (vcd *TestVCD) Test_QueryOrgVdcStorageProfileByID(check *C) {
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 
-	orgUserVcdClient, err := newOrgUserConnection(adminOrg, "query-org-vdc-storage-profile-by-id", "CHANGE-ME", vcd.config.Provider.Url, true)
+	orgUserVcdClient, _, err := newOrgUserConnection(adminOrg, "query-org-vdc-storage-profile-by-id", "CHANGE-ME", vcd.config.Provider.Url, true)
 	check.Assert(err, IsNil)
 
 	ref, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
