@@ -212,7 +212,7 @@ func (vcd *TestVCD) Test_NsxtVdcGroupWithOrgAdmin(check *C) {
 	check.Assert(adminOrg, NotNil)
 
 	skipIfNeededRightsMissing(check, adminOrg)
-	orgAdminClient, err := newOrgUserConnection(adminOrg, "test-user2", "CHANGE-ME", vcd.config.Provider.Url, true)
+	orgAdminClient, _, err := newOrgUserConnection(adminOrg, "test-user2", "CHANGE-ME", vcd.config.Provider.Url, true)
 	check.Assert(err, IsNil)
 	check.Assert(orgAdminClient, NotNil)
 
