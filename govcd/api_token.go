@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -29,6 +30,44 @@ func (vcdClient *VCDClient) SetApiToken(org, apiToken string) (*types.ApiTokenRe
 		return nil, err
 	}
 	return tokenRefresh, nil
+}
+
+func (vcdClient *VCDClient) SetServiceAccountApiToken(org, apiTokenFile string) error {
+	saApiToken := &types.ApiTokenRefresh{}
+	data, err := os.ReadFile(apiTokenFile)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(data, &saApiToken)
+	if err != nil {
+		return err
+	}
+	if saApiToken.RefreshToken != "" {
+		saApiToken, err = vcdClient.SetApiToken(org, saApiToken.RefreshToken)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = vcdClient.SetToken(org, BearerTokenHeader, saApiToken.AccessToken)
+	if err != nil {
+		return err
+	}
+
+	data, err = json.Marshal(&types.ApiTokenRefresh{
+		RefreshToken: saApiToken.RefreshToken,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(apiTokenFile, data, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GetBearerTokenFromApiToken uses an API token to retrieve a bearer token
