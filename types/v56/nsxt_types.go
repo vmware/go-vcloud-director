@@ -261,6 +261,79 @@ type OpenApiOrgVdcNetworkDhcp struct {
 	DnsServers []string `json:"dnsServers,omitempty"`
 }
 
+type OpenApiOrgVdcNetworkDhcpBinding struct {
+	// ID of DHCP binding
+	ID string `json:"id,omitempty"`
+
+	// Name contains display name for the DHCP binding
+	Name string `json:"name"`
+
+	// Description of the DHCP binding
+	Description string `json:"description,omitempty"`
+
+	// BindingType holds the type of DHCP binding:
+	// * IPV4 - an IPv4 DHCP binding
+	// * IPV6 - an IPv6 DHCP binding
+	BindingType string `json:"bindingType"`
+
+	// MacAddress for the host
+	MacAddress string `json:"macAddress"`
+
+	// DhcpV4BindingConfig contains additional configuration for IPv4 DHCP binding.
+	// Note. This is ignored for IPV6 binding.
+	DhcpV4BindingConfig *DhcpV4BindingConfig `json:"dhcpV4BindingConfig,omitempty"`
+
+	// DhcpV6BindingConfig contains additional configuration for IPv6 DHCP binding.
+	// Note. This is ignored for IPV4 binding.
+	DhcpV6BindingConfig *DhcpV6BindingConfig `json:"dhcpV6BindingConfig,omitempty"`
+
+	// DnsServers to be set on the host. Maximum 2 DNS, order is important.
+	DnsServers []string `json:"dnsServers"`
+
+	// IpAddress assigned to host. This address must belong to the subnet of Org VDC network. For
+	// IPv4, this is required. For IPv6, when not specified, Stateless Address Autoconfiguration
+	// (SLAAC) is used to auto-assign an IPv6 address to the DHCPv6 clients.
+	IpAddress string `json:"ipAddress"`
+
+	// Lease time in seconds defines how long a DHCP IP will be leased out for. The minimum is 60s
+	// while the maximum is 4,294,967,295s, which is roughly 49,710 days. Default is 24 hours.
+	LeaseTime *int `json:"leaseTime,omitempty"`
+
+	// Version describes the current version of the entity. To prevent clients from overwriting each
+	// other's changes, update operations must include the version which can be obtained by issuing
+	// a GET operation. If the version number on an update call is missing, the operation will be
+	// rejected. This is only needed on update calls.
+	Version OpenApiOrgVdcNetworkDhcpBindingVersion `json:"version"`
+}
+
+// DhcpV4BindingConfig describes additional configuration for IPv6 DHCP Binding of an Org VDC
+// Network.
+type DhcpV4BindingConfig struct {
+	// GatewayIPAddress contains optional Gateway IP Address. When not specified, Gateway IP of Org
+	// vDC network will be used.
+	GatewayIPAddress string `json:"gatewayIpAddress"`
+	// HostName to assign to the host.
+	HostName string `json:"hostName"`
+}
+
+// DhcpV6BindingConfig describes additional configuration for IPv6 DHCP Binding of an Org VDC
+// Network.
+type DhcpV6BindingConfig struct {
+	// DomainNames to be assigned to client host.
+	DomainNames []string `json:"domainNames"`
+
+	// SntpServers contains IP addresses of SNTP servers
+	SntpServers []string `json:"sntpServers"`
+}
+
+// OpenApiOrgVdcNetworkDhcpBindingVersion describes the current version of the entity. To prevent
+// clients from overwriting each other's changes, update operations must include the version which
+// can be obtained by issuing a GET operation. If the version number on an update call is missing,
+// the operation will be rejected. This is only needed on update calls.
+type OpenApiOrgVdcNetworkDhcpBindingVersion struct {
+	Version int `json:"version"`
+}
+
 // OpenApiOrgVdcNetworkDhcpIpRange is a type alias to fit naming
 type OpenApiOrgVdcNetworkDhcpIpRange = ExternalNetworkV2IPRange
 
