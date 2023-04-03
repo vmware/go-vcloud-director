@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -33,6 +34,7 @@ func (vcdClient *VCDClient) SetApiToken(org, apiToken string) (*types.ApiTokenRe
 }
 
 func (vcdClient *VCDClient) SetServiceAccountApiToken(org, apiTokenFile string) error {
+	apiTokenFile = filepath.Clean(apiTokenFile)
 	data, err := os.ReadFile(apiTokenFile)
 	if err != nil {
 		return err
@@ -56,7 +58,7 @@ func (vcdClient *VCDClient) SetServiceAccountApiToken(org, apiTokenFile string) 
 		return err
 	}
 
-	err = os.WriteFile(apiTokenFile, data, 0644)
+	err = os.WriteFile(apiTokenFile, data, 0600)
 	if err != nil {
 		return err
 	}
