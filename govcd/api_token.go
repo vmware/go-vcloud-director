@@ -33,12 +33,12 @@ func (vcdClient *VCDClient) SetApiToken(org, apiToken string) (*types.ApiTokenRe
 }
 
 func (vcdClient *VCDClient) SetServiceAccountApiToken(org, apiTokenFile string) error {
-	saApiToken := &types.ApiTokenRefresh{}
 	data, err := os.ReadFile(apiTokenFile)
 	if err != nil {
 		return err
 	}
 
+	saApiToken := &types.ApiTokenRefresh{}
 	err = json.Unmarshal(data, &saApiToken)
 	if err != nil {
 		return err
@@ -48,11 +48,6 @@ func (vcdClient *VCDClient) SetServiceAccountApiToken(org, apiTokenFile string) 
 		if err != nil {
 			return err
 		}
-	}
-
-	err = vcdClient.SetToken(org, BearerTokenHeader, saApiToken.AccessToken)
-	if err != nil {
-		return err
 	}
 
 	data, err = json.Marshal(&types.ApiTokenRefresh{
