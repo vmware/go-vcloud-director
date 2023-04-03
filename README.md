@@ -114,7 +114,7 @@ func main() {
 
 ## Authentication
 
-You can authenticate to the vCD in four ways:
+You can authenticate to the vCD in five ways:
 
 * With a System Administration user and password (`administrator@system`)
 * With an Organization user and password (`tenant-admin@org-name`)
@@ -132,6 +132,11 @@ For the above two methods, you use:
 ```
 The file `scripts/get_token.sh` provides a handy method of extracting the token
 (`x-vcloud-authorization` value) for future use.
+
+* With a service account token
+```go
+	err := vcdClient.SetServiceAccountApiToken(Org, "tokenfile.json")
+```
 
 * SAML user and password (works with ADFS as IdP using WS-TRUST endpoint
   "/adfs/services/trust/13/usernamemixed"). One must pass `govcd.WithSamlAdfs(true,customAdfsRptId)`
