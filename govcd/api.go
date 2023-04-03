@@ -25,15 +25,14 @@ import (
 
 // Client provides a client to VMware Cloud Director, values can be populated automatically using the Authenticate method.
 type Client struct {
-	APIVersion          string      // The API version required
-	VCDToken            string      // Access Token (authorization header)
-	VCDAuthHeader       string      // Authorization header
-	VCDHREF             url.URL     // VCD API ENDPOINT
-	Http                http.Client // HttpClient is the client to use. Default will be used if not provided.
-	IsSysAdmin          bool        // flag if client is connected as system administrator
-	UsingBearerToken    bool        // flag if client is using a bearer token
-	UsingAccessToken    bool        // flag if client is using an API token
-	UsingServiceAccount bool        // flag if client is using a service account
+	APIVersion       string      // The API version required
+	VCDToken         string      // Access Token (authorization header)
+	VCDAuthHeader    string      // Authorization header
+	VCDHREF          url.URL     // VCD API ENDPOINT
+	Http             http.Client // HttpClient is the client to use. Default will be used if not provided.
+	IsSysAdmin       bool        // flag if client is connected as system administrator
+	UsingBearerToken bool        // flag if client is using a bearer token
+	UsingAccessToken bool        // flag if client is using an API token
 
 	// MaxRetryTimeout specifies a time limit (in seconds) for retrying requests made by the SDK
 	// where VMware Cloud Director may take time to respond and retry mechanism is needed.
