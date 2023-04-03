@@ -34,6 +34,15 @@ func (vcdClient *VCDClient) SetApiToken(org, apiToken string) (*types.ApiTokenRe
 }
 
 func (vcdClient *VCDClient) SetServiceAccountApiToken(org, apiTokenFile string) error {
+	if vcdClient.Client.APIVCDMaxVersionIs("< 37.0") {
+		version, err := vcdClient.Client.GetVcdFullVersion()
+		if err == nil {
+			return fmt.Errorf("minimum version for Service Account authentication is 10.4 - Version detected: %s", version.Version)
+		}
+		// If we can't get the VCD version, we return API version info
+		return fmt.Errorf("minimum API version for Service Account authentication is 37.0 - Version detected: %s", vcdClient.Client.APIVersion)
+	}
+
 	apiTokenFile = filepath.Clean(apiTokenFile)
 	data, err := os.ReadFile(apiTokenFile)
 	if err != nil {
