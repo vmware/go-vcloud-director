@@ -48,6 +48,8 @@ func (vcdClient *VCDClient) SetServiceAccountApiToken(org, apiTokenFile string) 
 		if err != nil {
 			return err
 		}
+	} else {
+		return fmt.Errorf("failed to read token file")
 	}
 
 	data, err = json.Marshal(&types.ApiTokenRefresh{
