@@ -311,9 +311,9 @@ type OpenApiOrgVdcNetworkDhcpBinding struct {
 type DhcpV4BindingConfig struct {
 	// GatewayIPAddress contains optional Gateway IP Address. When not specified, Gateway IP of Org
 	// vDC network will be used.
-	GatewayIPAddress string `json:"gatewayIpAddress"`
+	GatewayIPAddress string `json:"gatewayIpAddress,omitempty"`
 	// HostName to assign to the host.
-	HostName string `json:"hostName"`
+	HostName string `json:"hostName,omitempty"`
 }
 
 // DhcpV6BindingConfig describes additional configuration for IPv6 DHCP Binding of an Org VDC
