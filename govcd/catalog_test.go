@@ -855,7 +855,7 @@ func (vcd *TestVCD) Test_GetCatalogByXSharedCatalogOrgUser(check *C) {
 	// Create an Org Admin user and test that it can find catalog as well
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
-	orgAdminClient, err := newOrgUserConnection(adminOrg, "test-user", "CHANGE-ME", vcd.config.Provider.Url, true)
+	orgAdminClient, _, err := newOrgUserConnection(adminOrg, "test-user", "CHANGE-ME", vcd.config.Provider.Url, true)
 	check.Assert(err, IsNil)
 	orgAsOrgUser, err := orgAdminClient.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)

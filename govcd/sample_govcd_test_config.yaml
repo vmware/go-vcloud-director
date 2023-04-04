@@ -94,6 +94,16 @@ vcd:
       nsxtImportSegment: vcd-org-vdc-imported-network-backing
       # Existing NSX-T Edge Cluster name
       nsxtEdgeCluster: existing-nsxt-edge-cluster
+      # AVI Controller URL 
+      nsxtAlbControllerUrl: https://unknown-hostname.com
+      # AVI Controller username
+      nsxtAlbControllerUser: admin
+      # AVI Controller password
+      nsxtAlbControllerPassword: CHANGE-ME
+      # AVI Controller importable Cloud name 
+      nsxtAlbImportableCloud: NSXT AVI Cloud
+      # Service Engine Group name within (Should be configured in Active Standby mode)
+      nsxtAlbServiceEngineGroup: active-standby-service-engine-group
     # An Org catalog, possibly containing at least one item
     catalog:
         name: mycat

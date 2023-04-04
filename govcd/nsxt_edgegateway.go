@@ -126,6 +126,14 @@ func (vdcGroup *VdcGroup) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGatewa
 	return returnSingleNsxtEdgeGateway(name, allEdges)
 }
 
+// GetAllNsxtEdgeGateways allows to retrieve all NSX-T Edge Gateways
+func (vcdClient *VCDClient) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
+	if vcdClient == nil {
+		return nil, fmt.Errorf("vcdClient is empty")
+	}
+	return getAllNsxtEdgeGateways(&vcdClient.Client, queryParameters)
+}
+
 // GetAllNsxtEdgeGateways allows to retrieve all NSX-T edge gateways for Org Admins
 func (adminOrg *AdminOrg) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
 	return getAllNsxtEdgeGateways(adminOrg.client, queryParameters)

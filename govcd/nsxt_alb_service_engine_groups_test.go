@@ -102,15 +102,15 @@ func spawnAlbControllerCloudServiceEngineGroup(vcd *TestVCD, check *C, seGroupRe
 
 	albController, createdAlbCloud := spawnAlbControllerAndCloud(vcd, check)
 
-	importableSeGroups, err := vcd.client.GetAllAlbImportableServiceEngineGroups(createdAlbCloud.NsxtAlbCloud.ID, nil)
+	importableSeGroup, err := vcd.client.GetAlbImportableServiceEngineGroupByName(createdAlbCloud.NsxtAlbCloud.ID, vcd.config.VCD.Nsxt.NsxtAlbServiceEngineGroup)
 	check.Assert(err, IsNil)
-	check.Assert(len(importableSeGroups) > 0, Equals, true)
+
 	albSeGroup := &types.NsxtAlbServiceEngineGroup{
 		Name:            check.TestName() + "SE-group",
 		Description:     "Service Engine Group created by " + check.TestName(),
 		ReservationType: seGroupReservationType,
 		ServiceEngineGroupBacking: types.ServiceEngineGroupBacking{
-			BackingId: importableSeGroups[0].NsxtAlbImportableServiceEngineGroups.ID,
+			BackingId: importableSeGroup.NsxtAlbImportableServiceEngineGroups.ID,
 			LoadBalancerCloudRef: &types.OpenApiReference{
 				ID: createdAlbCloud.NsxtAlbCloud.ID,
 			},
