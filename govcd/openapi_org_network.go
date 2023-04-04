@@ -221,6 +221,20 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) IsDirect() bool {
 	return orgVdcNet.GetType() == types.OrgVdcNetworkTypeDirect
 }
 
+// IsDhcpEnabled returns true if DHCP is enabled for Org VDC network
+func (orgVdcNet *OpenApiOrgVdcNetwork) IsDhcpEnabled() bool {
+	dhcpConfig, err := orgVdcNet.GetOpenApiOrgVdcNetworkDhcp()
+	if err != nil {
+		return false
+	}
+
+	if dhcpConfig == nil || dhcpConfig.OpenApiOrgVdcNetworkDhcp == nil || dhcpConfig.OpenApiOrgVdcNetworkDhcp.Enabled == nil || !*dhcpConfig.OpenApiOrgVdcNetworkDhcp.Enabled {
+		return false
+	}
+
+	return true
+}
+
 // getOpenApiOrgVdcNetworkById is a private parent for wrapped functions:
 // func (org *Org) GetOpenApiOrgVdcNetworkById(id string) (*OpenApiOrgVdcNetwork, error)
 // func (vdc *Vdc) GetOpenApiOrgVdcNetworkById(id string) (*OpenApiOrgVdcNetwork, error)

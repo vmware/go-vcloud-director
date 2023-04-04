@@ -288,7 +288,7 @@ type OpenApiOrgVdcNetworkDhcpBinding struct {
 	DhcpV6BindingConfig *DhcpV6BindingConfig `json:"dhcpV6BindingConfig,omitempty"`
 
 	// DnsServers to be set on the host. Maximum 2 DNS, order is important.
-	DnsServers []string `json:"dnsServers"`
+	DnsServers []string `json:"dnsServers,omitempty"`
 
 	// IpAddress assigned to host. This address must belong to the subnet of Org VDC network. For
 	// IPv4, this is required. For IPv6, when not specified, Stateless Address Autoconfiguration
