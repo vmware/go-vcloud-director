@@ -585,3 +585,9 @@ var NsxvProtocolCodes = map[string]int{
 	DFWProtocolUdp:  17,
 	DFWProtocolIcmp: 1,
 }
+
+// NSX-T DHCP Binding Type
+const (
+	NsxtDhcpBindingTypeIpv4 = "IPV4"
+	NsxtDhcpBindingTypeIpv6 = "IPV6"
+)

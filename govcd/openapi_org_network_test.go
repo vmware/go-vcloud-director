@@ -530,86 +530,6 @@ func nsxtDhcpConfigNetworkMode(check *C, vcd *TestVCD, vdc *Vdc, orgNetId string
 	check.Assert(orgVdcNetwork.IsDhcpEnabled(), Equals, false)
 }
 
-func testNsxtDhcpBinding(check *C, vcd *TestVCD, orgNet *OpenApiOrgVdcNetwork) {
-	// define DHCP binding configuration
-	dhcpBindingConfig := &types.OpenApiOrgVdcNetworkDhcpBinding{
-		Name:        check.TestName() + "-dhcp-binding",
-		Description: "dhcp binding description",
-		IpAddress:   "2.1.1.231",
-		MacAddress:  "00:11:22:33:44:55",
-		BindingType: "IPV4",
-		DhcpV4BindingConfig: &types.DhcpV4BindingConfig{
-			HostName:         "dhcp-binding-hostname",
-			GatewayIPAddress: "2.1.1.244",
-		},
-	}
-
-	// create DHCP binding
-	createdDhcpBinding, err := orgNet.CreateOpenApiOrgVdcNetworkDhcpBinding(dhcpBindingConfig)
-	check.Assert(err, IsNil)
-	check.Assert(createdDhcpBinding, NotNil)
-
-	// Add binding to cleanup list
-	openApiEndpoint := fmt.Sprintf(types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworksDhcpBindings+"%s",
-		orgNet.OpenApiOrgVdcNetwork.ID, createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.ID)
-	PrependToCleanupListOpenApi(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.Name, check.TestName(), openApiEndpoint)
-
-	// Validate DHCP binding fields
-	check.Assert(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.Name, Equals, dhcpBindingConfig.Name)
-	check.Assert(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.Description, Equals, dhcpBindingConfig.Description)
-	check.Assert(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.IpAddress, Equals, dhcpBindingConfig.IpAddress)
-	check.Assert(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.MacAddress, Equals, dhcpBindingConfig.MacAddress)
-	check.Assert(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.BindingType, Equals, dhcpBindingConfig.BindingType)
-
-	// Get DHCP binding by ID
-	getDhcpBinding, err := orgNet.GetOpenApiOrgVdcNetworkDhcpBindingById(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.ID)
-	check.Assert(err, IsNil)
-	check.Assert(getDhcpBinding, NotNil)
-	check.Assert(getDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.Name, Equals, dhcpBindingConfig.Name)
-
-	// Get DHCP binding by Name
-	getDhcpBindingByName, err := orgNet.GetOpenApiOrgVdcNetworkDhcpBindingByName(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.Name)
-	check.Assert(err, IsNil)
-	check.Assert(getDhcpBindingByName, NotNil)
-	check.Assert(getDhcpBindingByName.OpenApiOrgVdcNetworkDhcpBinding.ID, Equals, createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.ID)
-
-	// Get all DHCP bindings
-	allDhcpBindings, err := orgNet.GetAllOpenApiOrgVdcNetworkDhcpBindings(nil)
-	check.Assert(err, IsNil)
-	check.Assert(allDhcpBindings, NotNil)
-	check.Assert(len(allDhcpBindings), Equals, 1)
-	check.Assert(allDhcpBindings[0].OpenApiOrgVdcNetworkDhcpBinding.ID, Equals, createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.ID)
-
-	// Update DHCP binding
-	dhcpBindingConfig.Description = "updated description"
-	dhcpBindingConfig.IpAddress = "2.1.1.232"
-	dhcpBindingConfig.MacAddress = "00:11:22:33:33:33"
-	dhcpBindingConfig.ID = createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.ID
-
-	updatedDhcpBinding, err := createdDhcpBinding.Update(dhcpBindingConfig)
-	check.Assert(err, IsNil)
-	check.Assert(updatedDhcpBinding, NotNil)
-	check.Assert(updatedDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.Description, Equals, dhcpBindingConfig.Description)
-	check.Assert(updatedDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.IpAddress, Equals, dhcpBindingConfig.IpAddress)
-	check.Assert(updatedDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.MacAddress, Equals, dhcpBindingConfig.MacAddress)
-
-	// Attempt to refresh originally created binding and see if it got these new updates values as well
-	err = createdDhcpBinding.Refresh()
-	check.Assert(err, IsNil)
-	check.Assert(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.Description, Equals, dhcpBindingConfig.Description)
-	check.Assert(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.IpAddress, Equals, dhcpBindingConfig.IpAddress)
-	check.Assert(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.MacAddress, Equals, dhcpBindingConfig.MacAddress)
-
-	// Delete DHCP binding
-	err = createdDhcpBinding.Delete()
-	check.Assert(err, IsNil)
-
-	// Ensure the binding is removed
-	bindingShouldBeNil, err := orgNet.GetOpenApiOrgVdcNetworkDhcpBindingById(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.ID)
-	check.Assert(err, NotNil)
-	check.Assert(bindingShouldBeNil, IsNil)
-}
-
 func runOpenApiOrgVdcNetworkWithVdcGroupTest(check *C, vcd *TestVCD, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, expectNetworkType string, dhcpFunc []dhcpConfigFunc) {
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
@@ -714,4 +634,84 @@ func runOpenApiOrgVdcNetworkWithVdcGroupTest(check *C, vcd *TestVCD, orgVdcNetwo
 	//cleanup
 	err = movedGateway.Delete()
 	check.Assert(err, IsNil)
+}
+
+func testNsxtDhcpBinding(check *C, vcd *TestVCD, orgNet *OpenApiOrgVdcNetwork) {
+	// define DHCP binding configuration
+	dhcpBindingConfig := &types.OpenApiOrgVdcNetworkDhcpBinding{
+		Name:        check.TestName() + "-dhcp-binding",
+		Description: "dhcp binding description",
+		IpAddress:   "2.1.1.231",
+		MacAddress:  "00:11:22:33:44:55",
+		BindingType: types.NsxtDhcpBindingTypeIpv4,
+		DhcpV4BindingConfig: &types.DhcpV4BindingConfig{
+			HostName:         "dhcp-binding-hostname",
+			GatewayIPAddress: "2.1.1.244",
+		},
+	}
+
+	// create DHCP binding
+	createdDhcpBinding, err := orgNet.CreateOpenApiOrgVdcNetworkDhcpBinding(dhcpBindingConfig)
+	check.Assert(err, IsNil)
+	check.Assert(createdDhcpBinding, NotNil)
+
+	// Add binding to cleanup list
+	openApiEndpoint := fmt.Sprintf(types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworksDhcpBindings+"%s",
+		orgNet.OpenApiOrgVdcNetwork.ID, createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.ID)
+	PrependToCleanupListOpenApi(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.Name, check.TestName(), openApiEndpoint)
+
+	// Validate DHCP binding fields
+	check.Assert(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.Name, Equals, dhcpBindingConfig.Name)
+	check.Assert(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.Description, Equals, dhcpBindingConfig.Description)
+	check.Assert(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.IpAddress, Equals, dhcpBindingConfig.IpAddress)
+	check.Assert(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.MacAddress, Equals, dhcpBindingConfig.MacAddress)
+	check.Assert(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.BindingType, Equals, dhcpBindingConfig.BindingType)
+
+	// Get DHCP binding by ID
+	getDhcpBinding, err := orgNet.GetOpenApiOrgVdcNetworkDhcpBindingById(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.ID)
+	check.Assert(err, IsNil)
+	check.Assert(getDhcpBinding, NotNil)
+	check.Assert(getDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.Name, Equals, dhcpBindingConfig.Name)
+
+	// Get DHCP binding by Name
+	getDhcpBindingByName, err := orgNet.GetOpenApiOrgVdcNetworkDhcpBindingByName(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.Name)
+	check.Assert(err, IsNil)
+	check.Assert(getDhcpBindingByName, NotNil)
+	check.Assert(getDhcpBindingByName.OpenApiOrgVdcNetworkDhcpBinding.ID, Equals, createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.ID)
+
+	// Get all DHCP bindings
+	allDhcpBindings, err := orgNet.GetAllOpenApiOrgVdcNetworkDhcpBindings(nil)
+	check.Assert(err, IsNil)
+	check.Assert(allDhcpBindings, NotNil)
+	check.Assert(len(allDhcpBindings), Equals, 1)
+	check.Assert(allDhcpBindings[0].OpenApiOrgVdcNetworkDhcpBinding.ID, Equals, createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.ID)
+
+	// Update DHCP binding
+	dhcpBindingConfig.Description = "updated description"
+	dhcpBindingConfig.IpAddress = "2.1.1.232"
+	dhcpBindingConfig.MacAddress = "00:11:22:33:33:33"
+	dhcpBindingConfig.ID = createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.ID
+
+	updatedDhcpBinding, err := createdDhcpBinding.Update(dhcpBindingConfig)
+	check.Assert(err, IsNil)
+	check.Assert(updatedDhcpBinding, NotNil)
+	check.Assert(updatedDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.Description, Equals, dhcpBindingConfig.Description)
+	check.Assert(updatedDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.IpAddress, Equals, dhcpBindingConfig.IpAddress)
+	check.Assert(updatedDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.MacAddress, Equals, dhcpBindingConfig.MacAddress)
+
+	// Attempt to refresh originally created binding and see if it got these new updates values as well
+	err = createdDhcpBinding.Refresh()
+	check.Assert(err, IsNil)
+	check.Assert(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.Description, Equals, dhcpBindingConfig.Description)
+	check.Assert(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.IpAddress, Equals, dhcpBindingConfig.IpAddress)
+	check.Assert(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.MacAddress, Equals, dhcpBindingConfig.MacAddress)
+
+	// Delete DHCP binding
+	err = createdDhcpBinding.Delete()
+	check.Assert(err, IsNil)
+
+	// Ensure the binding is removed
+	bindingShouldBeNil, err := orgNet.GetOpenApiOrgVdcNetworkDhcpBindingById(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.ID)
+	check.Assert(err, NotNil)
+	check.Assert(bindingShouldBeNil, IsNil)
 }

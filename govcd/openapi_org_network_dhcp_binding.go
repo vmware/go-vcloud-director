@@ -232,7 +232,6 @@ func (dhcpBinding *OpenApiOrgVdcNetworkDhcpBinding) Refresh() error {
 	}
 
 	client := dhcpBinding.client
-
 	orgVdcNet, err := getOpenApiOrgVdcNetworkById(client, dhcpBinding.ParentOrgVdcNetworkId, nil)
 	if err != nil {
 		return fmt.Errorf("error refreshing Org VDC network DHCP binding configuration with ID '%s': %s", dhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.ID, err)
