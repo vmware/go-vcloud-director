@@ -221,7 +221,7 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) IsDirect() bool {
 	return orgVdcNet.GetType() == types.OrgVdcNetworkTypeDirect
 }
 
-// IsDhcpEnabled returns true if DHCP is enabled for Org VDC network
+// IsDhcpEnabled returns true if DHCP is enabled for Org VDC network, false otherwise
 func (orgVdcNet *OpenApiOrgVdcNetwork) IsDhcpEnabled() bool {
 	dhcpConfig, err := orgVdcNet.GetOpenApiOrgVdcNetworkDhcp()
 	if err != nil {

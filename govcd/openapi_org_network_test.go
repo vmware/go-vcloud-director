@@ -403,17 +403,23 @@ func nsxtRoutedDhcpConfigEdgeMode(check *C, vcd *TestVCD, vdc *Vdc, orgNetId str
 		dhcpDefinition.DnsServers = nil
 	}
 
+	orgVdcNetwork, err := vcd.org.GetOpenApiOrgVdcNetworkById(orgNetId)
+	check.Assert(err, IsNil)
+	check.Assert(orgVdcNetwork, NotNil)
+
+	// Check that DHCP is not enabled
+	check.Assert(orgVdcNetwork.IsDhcpEnabled(), Equals, false)
+
 	updatedDhcp, err := vdc.UpdateOpenApiOrgVdcNetworkDhcp(orgNetId, dhcpDefinition)
 	check.Assert(err, IsNil)
+
+	// Check that DHCP is enabled
+	check.Assert(orgVdcNetwork.IsDhcpEnabled(), Equals, true)
 
 	check.Assert(dhcpDefinition, DeepEquals, updatedDhcp.OpenApiOrgVdcNetworkDhcp)
 
 	err = vdc.DeleteOpenApiOrgVdcNetworkDhcp(orgNetId)
 	check.Assert(err, IsNil)
-
-	orgVdcNetwork, err := vcd.org.GetOpenApiOrgVdcNetworkById(orgNetId)
-	check.Assert(err, IsNil)
-	check.Assert(orgVdcNetwork, NotNil)
 
 	updatedDhcp2, err := orgVdcNetwork.UpdateDhcp(dhcpDefinition)
 	check.Assert(err, IsNil)
@@ -428,6 +434,9 @@ func nsxtRoutedDhcpConfigEdgeMode(check *C, vcd *TestVCD, vdc *Vdc, orgNetId str
 	check.Assert(err, IsNil)
 	check.Assert(len(deletedDhcp.OpenApiOrgVdcNetworkDhcp.DhcpPools), Equals, 0)
 	check.Assert(len(deletedDhcp.OpenApiOrgVdcNetworkDhcp.DnsServers), Equals, 0)
+
+	// Check that DHCP is not enabled
+	check.Assert(orgVdcNetwork.IsDhcpEnabled(), Equals, false)
 }
 
 // nsxtDhcpConfigNetworkMode checks DHCP functionality in NETWORK mode.
@@ -475,17 +484,23 @@ func nsxtDhcpConfigNetworkMode(check *C, vcd *TestVCD, vdc *Vdc, orgNetId string
 		},
 	}
 
+	orgVdcNetwork, err := vcd.org.GetOpenApiOrgVdcNetworkById(orgNetId)
+	check.Assert(err, IsNil)
+	check.Assert(orgVdcNetwork, NotNil)
+
+	// Check that DHCP is not enabled
+	check.Assert(orgVdcNetwork.IsDhcpEnabled(), Equals, false)
+
 	updatedDhcp, err := vdc.UpdateOpenApiOrgVdcNetworkDhcp(orgNetId, dhcpDefinition)
 	check.Assert(err, IsNil)
+
+	// Check that DHCP is enabled
+	check.Assert(orgVdcNetwork.IsDhcpEnabled(), Equals, true)
 
 	check.Assert(dhcpDefinition, DeepEquals, updatedDhcp.OpenApiOrgVdcNetworkDhcp)
 
 	err = vdc.DeleteOpenApiOrgVdcNetworkDhcp(orgNetId)
 	check.Assert(err, IsNil)
-
-	orgVdcNetwork, err := vcd.org.GetOpenApiOrgVdcNetworkById(orgNetId)
-	check.Assert(err, IsNil)
-	check.Assert(orgVdcNetwork, NotNil)
 
 	updatedDhcp2, err := orgVdcNetwork.UpdateDhcp(dhcpDefinition)
 	check.Assert(err, IsNil)
@@ -500,6 +515,9 @@ func nsxtDhcpConfigNetworkMode(check *C, vcd *TestVCD, vdc *Vdc, orgNetId string
 	check.Assert(err, IsNil)
 	check.Assert(len(deletedDhcp.OpenApiOrgVdcNetworkDhcp.DhcpPools), Equals, 0)
 	check.Assert(len(deletedDhcp.OpenApiOrgVdcNetworkDhcp.DnsServers), Equals, 0)
+
+	// Check that DHCP is not enabled
+	check.Assert(orgVdcNetwork.IsDhcpEnabled(), Equals, false)
 }
 
 func runOpenApiOrgVdcNetworkWithVdcGroupTest(check *C, vcd *TestVCD, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, expectNetworkType string, dhcpFunc []dhcpConfigFunc) {
