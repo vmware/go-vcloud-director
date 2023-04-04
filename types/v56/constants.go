@@ -584,3 +584,9 @@ var NsxvProtocolCodes = map[string]int{
 	DFWProtocolUdp:  17,
 	DFWProtocolIcmp: 1,
 }
+
+// NSX-T IPSec VPN authentication modes
+const (
+	NsxtIpSecVpnAuthenticationModePSK         = "PSK"
+	NsxtIpSecVpnAuthenticationModeCertificate = "CERTIFICATE"
+)
