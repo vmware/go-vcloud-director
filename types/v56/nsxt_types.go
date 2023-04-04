@@ -159,6 +159,7 @@ type OpenApiOrgVdcNetwork struct {
 	NetworkType string `json:"networkType"`
 
 	// OrgVdcIsNsxTBacked is a read only flag that indicates whether the Org VDC is backed by NSX-T or not
+	// Note. It returns `false` if Org VDC network is withing an NSX-T VDC Group
 	OrgVdcIsNsxTBacked bool `json:"orgVdcIsNsxTBacked,omitempty"`
 
 	// Connection specifies the edge gateway this network is connected to.

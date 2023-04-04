@@ -591,3 +591,8 @@ const (
 	NsxtDhcpBindingTypeIpv4 = "IPV4"
 	NsxtDhcpBindingTypeIpv6 = "IPV6"
 )
+
+const (
+	OpenApiOrgVdcNetworkBackingTypeNsxv = "VIRTUAL_WIRE"
+	OpenApiOrgVdcNetworkBackingTypeNsxt = "NSXT_FLEXIBLE_SEGMENT"
+)

@@ -221,9 +221,19 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) IsDirect() bool {
 	return orgVdcNet.GetType() == types.OrgVdcNetworkTypeDirect
 }
 
+// IsNsxt returns true if the network is backed by NSX-T
+func (orgVdcNet *OpenApiOrgVdcNetwork) IsNsxt() bool {
+
+	// orgVdcNet.OpenApiOrgVdcNetwork.OrgVdcIsNsxTBacked returns `true` only if network is a member
+	// of VDC (not VDC Group) therefore an additional check for `BackingNetworkType` is required
+
+	return orgVdcNet.OpenApiOrgVdcNetwork.OrgVdcIsNsxTBacked ||
+		orgVdcNet.OpenApiOrgVdcNetwork.BackingNetworkType == types.OpenApiOrgVdcNetworkBackingTypeNsxt
+}
+
 // IsDhcpEnabled returns true if DHCP is enabled for NSX-T Org VDC network, false otherwise
 func (orgVdcNet *OpenApiOrgVdcNetwork) IsDhcpEnabled() bool {
-	if !orgVdcNet.OpenApiOrgVdcNetwork.OrgVdcIsNsxTBacked {
+	if !orgVdcNet.IsNsxt() {
 		return false
 	}
 
