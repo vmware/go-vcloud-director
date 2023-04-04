@@ -358,6 +358,7 @@ const (
 	OpenApiEndpointImportableTier0Routers             = "nsxTResources/importableTier0Routers"
 	OpenApiEndpointImportableSwitches                 = "/network/orgvdcnetworks/importableswitches"
 	OpenApiEndpointEdgeClusters                       = "nsxTResources/edgeClusters"
+	OpenApiEndpointEdgeGatewayQosProfiles             = "nsxTResources/gatewayQoSProfiles"
 	OpenApiEndpointExternalNetworks                   = "externalNetworks/"
 	OpenApiEndpointVdcComputePolicies                 = "vdcComputePolicies/"
 	OpenApiEndpointVdcAssignedComputePolicies         = "vdcs/%s/computePolicies"

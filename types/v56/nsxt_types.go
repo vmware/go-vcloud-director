@@ -1570,3 +1570,26 @@ type VdcNetworkProfileServicesEdgeCluster struct {
 	BackingID      string            `json:"backingId"`
 	EdgeClusterRef *OpenApiReference `json:"edgeClusterRef,omitempty"`
 }
+
+// NsxtEdgeGatewayQosProfiles defines a Gateway QoS Profile Object (structure comes from NSX-T)
+// This is a read-only entity in VCD
+type NsxtEdgeGatewayQosProfile struct {
+	// ID of the gateway QoS profile.
+	ID string `json:"id"`
+
+	DisplayName string `json:"displayName"`
+	Description string `json:"description"`
+
+	//BurstSize defines burst size in bytes.
+	BurstSize int `json:"burstSize"`
+
+	// CommittedBandwidth defines committed bandwidth in both directions specificd in Mb/s.
+	// Bandwidth is limited to line rate when the value configured is greater than line rate.
+	CommittedBandwidth int `json:"committedBandwidth"`
+
+	// ExcessAction defines action on traffic exceeding bandwidth.
+	ExcessAction string `json:"excessAction"`
+
+	// NsxTManagerRef contains reference to the originating NSX-T manager
+	NsxTManagerRef *OpenApiReference `json:"nsxTManagerRef"`
+}
