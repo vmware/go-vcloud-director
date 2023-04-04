@@ -663,6 +663,15 @@ type NsxtIpSecVpnTunnel struct {
 	// Note. Up to version 10.3 VCD only supports INITIATOR
 	ConnectorInitiationMode string `json:"connectorInitiationMode,omitempty"`
 
+	// CertificateRef points server certificate which will be used to secure the tunnel's local
+	// endpoint. The certificate must be the end-entity certificate (leaf) for the local endpoint.
+	CertificateRef *OpenApiReference `json:"certificateRef,omitempty"`
+
+	// CaCertificateRef points to certificate authority used to verify the remote endpoint's
+	// certificate. The selected CA must be a root or intermediate CA. The selected CA should be
+	// able to directly verify the remote endpoint's certificate.
+	CaCertificateRef *OpenApiReference `json:"caCertificateRef,omitempty"`
+
 	// Version of IPsec VPN Tunnel configuration. Must not be set when creating, but required for updates
 	Version *struct {
 		// Version is incremented after each update
@@ -685,10 +694,16 @@ type NsxtIpSecVpnTunnelLocalEndpoint struct {
 
 // NsxtIpSecVpnTunnelRemoteEndpoint corresponds to the device on the remote site terminating the VPN tunnel
 type NsxtIpSecVpnTunnelRemoteEndpoint struct {
-	// RemoteId is needed to uniquely identify the peer site. If this tunnel is using PSK authentication,
-	// the Remote ID is the public IP Address of the remote device terminating the VPN Tunnel. When NAT is configured on
-	// the Remote ID, enter the private IP Address of the Remote Site. If the remote ID is not set, VCD will set the
-	// remote ID to the remote address.
+	// This Remote ID is needed to uniquely identify the peer site. If the remote ID is not set, it
+	// will default to the remote IP address. The requirement for remote id depends on the
+	// authentication mode for the tunnel:
+	// * PSK - The Remote ID is the public IP Address of the remote device terminating the VPN
+	// Tunnel. When NAT is configured on the Remote ID, enter the private IP Address of the Remote
+	// Site.
+	// * CERTIFICATE - The remote ID needs to match the certificate SAN (Subject Alternative Name)
+	// if available. If the remote certificate does not contain a SAN, the remote ID must match the
+	// the distinguished name of the certificate used to secure the remote endpoint (for example,
+	// C=US,ST=Massachusetts,O=VMware,OU=VCD,CN=Edge1).
 	RemoteId string `json:"remoteId,omitempty"`
 	// RemoteAddress is IPv4 Address of the remote endpoint on the remote site. This is the Public IPv4 Address of the
 	// remote device terminating the IPsec VPN Tunnel connection. This is required

@@ -592,6 +592,13 @@ const (
 	NsxtDhcpBindingTypeIpv6 = "IPV6"
 )
 
+// NSX-T IPSec VPN authentication modes
+const (
+	NsxtIpSecVpnAuthenticationModePSK         = "PSK"
+	NsxtIpSecVpnAuthenticationModeCertificate = "CERTIFICATE"
+)
+
+// Org VDC network backing types
 const (
 	OpenApiOrgVdcNetworkBackingTypeNsxv = "VIRTUAL_WIRE"
 	OpenApiOrgVdcNetworkBackingTypeNsxt = "NSXT_FLEXIBLE_SEGMENT"
