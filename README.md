@@ -133,7 +133,7 @@ For the above two methods, you use:
 The file `scripts/get_token.sh` provides a handy method of extracting the token
 (`x-vcloud-authorization` value) for future use.
 
-* With a service account token
+* With a service account token (the file needs to have `r+w` rights)
 ```go
 	err := vcdClient.SetServiceAccountApiToken(Org, "tokenfile.json")
 ```

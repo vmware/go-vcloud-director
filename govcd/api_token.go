@@ -33,6 +33,9 @@ func (vcdClient *VCDClient) SetApiToken(org, apiToken string) (*types.ApiTokenRe
 	return tokenRefresh, nil
 }
 
+// SetServiceAccountApiToken reads the current Service Account API token,
+// sets the client's bearer token and fetches a new API token for next
+// authentication request using SetApiToken and overwrites the old file.
 func (vcdClient *VCDClient) SetServiceAccountApiToken(org, apiTokenFile string) error {
 	if vcdClient.Client.APIVCDMaxVersionIs("< 37.0") {
 		version, err := vcdClient.Client.GetVcdFullVersion()
@@ -46,13 +49,13 @@ func (vcdClient *VCDClient) SetServiceAccountApiToken(org, apiTokenFile string) 
 	apiTokenFile = filepath.Clean(apiTokenFile)
 	data, err := os.ReadFile(apiTokenFile)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read tokenfile: %s", err)
 	}
 
 	saApiToken := &types.ApiTokenRefresh{}
 	err = json.Unmarshal(data, &saApiToken)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to unmarshal tokenfile, check if your JSON file is valid: %s", err)
 	}
 
 	saApiToken, err = vcdClient.SetApiToken(org, saApiToken.RefreshToken)
