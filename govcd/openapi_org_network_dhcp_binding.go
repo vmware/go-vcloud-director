@@ -25,7 +25,6 @@ type OpenApiOrgVdcNetworkDhcpBinding struct {
 // CreateOpenApiOrgVdcNetworkDhcpBinding allows to create DHCP binding for specific Org VDC network
 func (orgVdcNet *OpenApiOrgVdcNetwork) CreateOpenApiOrgVdcNetworkDhcpBinding(dhcpBindingConfig *types.OpenApiOrgVdcNetworkDhcpBinding) (*OpenApiOrgVdcNetworkDhcpBinding, error) {
 	client := orgVdcNet.client
-
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworksDhcpBindings
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
@@ -71,7 +70,7 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) GetAllOpenApiOrgVdcNetworkDhcpBindings(qu
 		return nil, fmt.Errorf("error - Org VDC network and client cannot be nil")
 	}
 
-	if orgVdcNet.OpenApiOrgVdcNetwork.ID == "" {
+	if orgVdcNet.OpenApiOrgVdcNetwork == nil || orgVdcNet.OpenApiOrgVdcNetwork.ID == "" {
 		return nil, fmt.Errorf("empty Org VDC network ID")
 	}
 
@@ -116,7 +115,7 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) GetOpenApiOrgVdcNetworkDhcpBindingById(id
 		return nil, fmt.Errorf("empty DHCP binding ID")
 	}
 
-	if orgVdcNet.OpenApiOrgVdcNetwork.ID == "" {
+	if orgVdcNet.OpenApiOrgVdcNetwork == nil || orgVdcNet.OpenApiOrgVdcNetwork.ID == "" {
 		return nil, fmt.Errorf("empty Org VDC network ID")
 	}
 
@@ -132,18 +131,18 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) GetOpenApiOrgVdcNetworkDhcpBindingById(id
 		return nil, err
 	}
 
-	orgNetDhcp := &OpenApiOrgVdcNetworkDhcpBinding{
+	orgVdcNetDhcpBinding := &OpenApiOrgVdcNetworkDhcpBinding{
 		OpenApiOrgVdcNetworkDhcpBinding: &types.OpenApiOrgVdcNetworkDhcpBinding{},
 		client:                          client,
 		ParentOrgVdcNetworkId:           orgVdcNet.OpenApiOrgVdcNetwork.ID,
 	}
 
-	err = client.OpenApiGetItem(apiVersion, urlRef, nil, orgNetDhcp.OpenApiOrgVdcNetworkDhcpBinding, nil)
+	err = client.OpenApiGetItem(apiVersion, urlRef, nil, orgVdcNetDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return orgNetDhcp, nil
+	return orgVdcNetDhcpBinding, nil
 }
 
 // GetOpenApiOrgVdcNetworkDhcpBindingByName allows to retrieve DHCP binding configuration by name
@@ -156,14 +155,14 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) GetOpenApiOrgVdcNetworkDhcpBindingByName(
 
 	// allBindings, err := orgVdcNet.GetAllOpenApiOrgVdcNetworkDhcpBindings(queryParameters)
 
-	allBindings, err := orgVdcNet.GetAllOpenApiOrgVdcNetworkDhcpBindings(nil)
+	allDhcpBindings, err := orgVdcNet.GetAllOpenApiOrgVdcNetworkDhcpBindings(nil)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve Org VDC network by name '%s': %s", name, err)
 	}
 
 	// Bindings do not support name filtering, so we need to filter them manually
 	var foundBinding *OpenApiOrgVdcNetworkDhcpBinding
-	for _, binding := range allBindings {
+	for _, binding := range allDhcpBindings {
 		if binding.OpenApiOrgVdcNetworkDhcpBinding.Name == name {
 			foundBinding = binding
 			break
@@ -179,7 +178,7 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) GetOpenApiOrgVdcNetworkDhcpBindingByName(
 
 // Update allows to update DHCP configuration
 //
-// Note. This API requires Version field to be sent in the request and this function does it
+// Note. This API requires `Version` field to be sent in the request and this function does it
 // automatically
 func (dhcpBinding *OpenApiOrgVdcNetworkDhcpBinding) Update(orgVdcNetworkDhcpConfig *types.OpenApiOrgVdcNetworkDhcpBinding) (*OpenApiOrgVdcNetworkDhcpBinding, error) {
 	client := dhcpBinding.client
@@ -209,7 +208,6 @@ func (dhcpBinding *OpenApiOrgVdcNetworkDhcpBinding) Update(orgVdcNetworkDhcpConf
 	if err != nil {
 		return nil, fmt.Errorf("error refreshing Org VDC network DHCP binding configuration with ID '%s': %s", orgVdcNetworkDhcpConfig.ID, err)
 	}
-
 	orgVdcNetworkDhcpConfig.Version = result.OpenApiOrgVdcNetworkDhcpBinding.Version
 
 	err = client.OpenApiPutItem(apiVersion, urlRef, nil, orgVdcNetworkDhcpConfig, result.OpenApiOrgVdcNetworkDhcpBinding, nil)
@@ -237,18 +235,18 @@ func (dhcpBinding *OpenApiOrgVdcNetworkDhcpBinding) Refresh() error {
 		return fmt.Errorf("error refreshing Org VDC network DHCP binding configuration with ID '%s': %s", dhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.ID, err)
 	}
 
-	dhcpBnd, err := orgVdcNet.GetOpenApiOrgVdcNetworkDhcpBindingById(dhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.ID)
+	newDhcpBinding, err := orgVdcNet.GetOpenApiOrgVdcNetworkDhcpBindingById(dhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.ID)
 	if err != nil {
 		return fmt.Errorf("error refreshing Org VDC network DHCP binding configuration with ID '%s': %s", dhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.ID, err)
 	}
 
-	// Explictly reassign the body
-	dhcpBinding.OpenApiOrgVdcNetworkDhcpBinding = dhcpBnd.OpenApiOrgVdcNetworkDhcpBinding
+	// Explicitly reassign the body
+	dhcpBinding.OpenApiOrgVdcNetworkDhcpBinding = newDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding
 
 	return nil
 }
 
-// Delete allows to perform HTTP DELETE request on DHCP binding
+// Delete removes DHCP binding by performing HTTP DELETE request on DHCP binding
 func (dhcpBinding *OpenApiOrgVdcNetworkDhcpBinding) Delete() error {
 	if dhcpBinding.ParentOrgVdcNetworkId == "" {
 		return fmt.Errorf("empty parent Org VDC network ID")

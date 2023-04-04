@@ -158,6 +158,9 @@ type OpenApiOrgVdcNetwork struct {
 	// NetworkType describes type of Org Vdc network. ('NAT_ROUTED', 'ISOLATED')
 	NetworkType string `json:"networkType"`
 
+	// OrgVdcIsNsxTBacked is a read only flag that indicates whether the Org VDC is backed by NSX-T or not
+	OrgVdcIsNsxTBacked bool `json:"orgVdcIsNsxTBacked,omitempty"`
+
 	// Connection specifies the edge gateway this network is connected to.
 	//
 	// Note. When NetworkType == ISOLATED, there is no uplink connection.
@@ -261,6 +264,7 @@ type OpenApiOrgVdcNetworkDhcp struct {
 	DnsServers []string `json:"dnsServers,omitempty"`
 }
 
+// OpenApiOrgVdcNetworkDhcpBinding defines configuration of NSX-T DHCP binding in Org VDC network
 type OpenApiOrgVdcNetworkDhcpBinding struct {
 	// ID of DHCP binding
 	ID string `json:"id,omitempty"`
@@ -272,8 +276,8 @@ type OpenApiOrgVdcNetworkDhcpBinding struct {
 	Description string `json:"description,omitempty"`
 
 	// BindingType holds the type of DHCP binding:
-	// * IPV4 - an IPv4 DHCP binding
-	// * IPV6 - an IPv6 DHCP binding
+	// * IPV4 - an IPv4 DHCP binding (`types.NsxtDhcpBindingTypeIpv4`)
+	// * IPV6 - an IPv6 DHCP binding (`types.NsxtDhcpBindingTypeIpv6`)
 	BindingType string `json:"bindingType"`
 
 	// MacAddress for the host
@@ -320,10 +324,10 @@ type DhcpV4BindingConfig struct {
 // Network.
 type DhcpV6BindingConfig struct {
 	// DomainNames to be assigned to client host.
-	DomainNames []string `json:"domainNames"`
+	DomainNames []string `json:"domainNames,omitempty"`
 
 	// SntpServers contains IP addresses of SNTP servers
-	SntpServers []string `json:"sntpServers"`
+	SntpServers []string `json:"sntpServers,omitempty"`
 }
 
 // OpenApiOrgVdcNetworkDhcpBindingVersion describes the current version of the entity. To prevent
