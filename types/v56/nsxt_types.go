@@ -1593,3 +1593,13 @@ type NsxtEdgeGatewayQosProfile struct {
 	// NsxTManagerRef contains reference to the originating NSX-T manager
 	NsxTManagerRef *OpenApiReference `json:"nsxTManagerRef"`
 }
+
+// NsxtEdgeGatewayQos provides Rate Limiting (QoS) configuration on an Edge Gateway by defining QoS
+// profiles in ingress and egress directions.
+//
+// Note. Sending `null` for either ingressProfile or egressProfile will reset the value to default
+// (unlimited)
+type NsxtEdgeGatewayQos struct {
+	EgressProfile  *OpenApiReference `json:"egressProfile"`
+	IngressProfile *OpenApiReference `json:"ingressProfile"`
+}

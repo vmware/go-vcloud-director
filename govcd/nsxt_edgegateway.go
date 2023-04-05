@@ -603,6 +603,61 @@ func (egw *NsxtEdgeGateway) DeallocateIpCount(deallocateIpCount int) error {
 	return nil
 }
 
+// GetQoS retrieves QoS (rate limiting) configuration for an NSX-T Edge Gateway
+func (egw *NsxtEdgeGateway) GetQoS() (*types.NsxtEdgeGatewayQos, error) {
+	if egw.EdgeGateway == nil || egw.client == nil || egw.EdgeGateway.ID == "" {
+		return nil, fmt.Errorf("cannot get QoS for NSX-T Edge Gateway without ID")
+	}
+
+	client := egw.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayQos
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	qos := &types.NsxtEdgeGatewayQos{}
+	err = client.OpenApiGetItem(apiVersion, urlRef, nil, qos, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return qos, nil
+}
+
+// UpdateQoS updates QoS (rate limiting) configuration for an NSX-T Edge Gateway
+func (egw *NsxtEdgeGateway) UpdateQoS(qosConfig *types.NsxtEdgeGatewayQos) (*types.NsxtEdgeGatewayQos, error) {
+	if egw.EdgeGateway == nil || egw.client == nil || egw.EdgeGateway.ID == "" {
+		return nil, fmt.Errorf("cannot update QoS for NSX-T Edge Gateway without ID")
+	}
+
+	client := egw.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayQos
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	// update QoS with given qosConfig
+	updatedQos := &types.NsxtEdgeGatewayQos{}
+	err = client.OpenApiPutItem(apiVersion, urlRef, nil, qosConfig, updatedQos, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedQos, nil
+}
+
 func getAllUnusedExternalIPAddresses(uplinks []types.EdgeGatewayUplinks, usedIpAddresses []*types.GatewayUsedIpAddress, optionalSubnet netip.Prefix) ([]netip.Addr, error) {
 	// 1. Flatten all IP ranges in Edge Gateway using Go's native 'netip.Addr' IP container instead
 	// of plain strings because it is more robust (supports IPv4 and IPv6 and also comparison

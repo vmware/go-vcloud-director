@@ -20,7 +20,7 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayQosProfiles(check *C) {
 
 	// skip for API versions less than 36.2
 	if vcd.client.Client.APIVCDMaxVersionIs("< 36.2") {
-		check.Skip("Test_GetAllNsxtEdgeGatewayQosProfiles requires at least API v36.2 (vCD 10.2+)")
+		check.Skip("Test_GetAllNsxtEdgeGatewayQosProfiles requires at least API v36.2 (vCD 10.3.2+)")
 	}
 
 	nsxtManagers, err := vcd.client.QueryNsxtManagerByName(vcd.config.VCD.Nsxt.Manager)
@@ -35,11 +35,13 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayQosProfiles(check *C) {
 	// Fetch all profiles
 	allQosProfiles, err := vcd.client.GetAllNsxtEdgeGatewayQosProfiles(urn, nil)
 	check.Assert(err, IsNil)
-	check.Assert(len(allQosProfiles) > 0, Equals, true)
+	if len(allQosProfiles) == 0 {
+		check.Skip("No QoS profiles found")
+	}
 
 	// Fetch one by one based on DisplayName
 	for _, profile := range allQosProfiles {
-		fmt.Println(profile.NsxtEdgeGatewayQosProfile.DisplayName)
+		printVerbose("# Fetching QoS profile '%s' by Name\n", profile.NsxtEdgeGatewayQosProfile.DisplayName)
 		qosProfile, err := vcd.client.GetNsxtEdgeGatewayQosProfileByDisplayName(urn, profile.NsxtEdgeGatewayQosProfile.DisplayName)
 		check.Assert(err, IsNil)
 		check.Assert(qosProfile, NotNil)

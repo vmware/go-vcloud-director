@@ -18,6 +18,7 @@ type NsxtEdgeGatewayQosProfile struct {
 	client                    *Client
 }
 
+// GetAllNsxtEdgeGatewayQosProfiles retrieves all NSX-T Edge Gateway QoS Profiles defined in NSX-T Manager
 func (vcdClient *VCDClient) GetAllNsxtEdgeGatewayQosProfiles(nsxtManagerId string, queryParameters url.Values) ([]*NsxtEdgeGatewayQosProfile, error) {
 	if nsxtManagerId == "" {
 		return nil, fmt.Errorf("empty NSX-T manager ID")
@@ -28,7 +29,7 @@ func (vcdClient *VCDClient) GetAllNsxtEdgeGatewayQosProfiles(nsxtManagerId strin
 	}
 
 	client := vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayQosProfiles
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointQosProfiles
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
@@ -59,6 +60,7 @@ func (vcdClient *VCDClient) GetAllNsxtEdgeGatewayQosProfiles(nsxtManagerId strin
 	return returnObjects, nil
 }
 
+// GetNsxtEdgeGatewayQosProfileById retrieves NSX-T Edge Gateway QoS Profile by Display Name
 func (vcdClient *VCDClient) GetNsxtEdgeGatewayQosProfileByDisplayName(nsxtManagerId, displayName string) (*NsxtEdgeGatewayQosProfile, error) {
 	if displayName == "" {
 		return nil, fmt.Errorf("empty QoS profile Display Name")
@@ -72,7 +74,7 @@ func (vcdClient *VCDClient) GetNsxtEdgeGatewayQosProfileByDisplayName(nsxtManage
 	*/
 	nsxtEdgeClusters, err := vcdClient.GetAllNsxtEdgeGatewayQosProfiles(nsxtManagerId, nil)
 	if err != nil {
-		return nil, fmt.Errorf("could not find NSX-T Edge Cluster with name '%s' for NSX-T Manager with ID '%s': %s",
+		return nil, fmt.Errorf("could not find QoS profile with DisplayName '%s' for NSX-T Manager with ID '%s': %s",
 			displayName, nsxtManagerId, err)
 	}
 
