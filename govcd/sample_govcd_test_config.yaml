@@ -88,6 +88,8 @@ vcd:
       externalNetwork: tier0-backed-external-network
       # Existing NSX-T based VDC
       vdc: nsxt-vdc-name
+      # Distributed Virtual Port Group in vSphere that is available for NSX-T cluster
+      dvpg: test-nsxt-dvpg-no-uplink
       # Existing NSX-T edge gateway
       edgeGateway: nsxt-gw-name
       # Existing NSX-T segment to test NSX-T Imported Org Vdc network

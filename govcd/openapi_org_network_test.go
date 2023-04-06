@@ -112,7 +112,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
 	runOpenApiOrgVdcNetworkWithVdcGroupTest(check, vcd, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted, []dhcpConfigFunc{nsxtRoutedDhcpConfigEdgeMode, nsxtDhcpConfigNetworkMode})
 }
 
-func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
+func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImportedNsxtLogicalSwitch(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
@@ -163,6 +163,59 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 
 	runOpenApiOrgVdcNetworkTest(check, vcd, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque, nil)
 	runOpenApiOrgVdcNetworkWithVdcGroupTest(check, vcd, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque, nil)
+}
+
+func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImportedDistributedVirtualPortGroup(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
+	skipNoNsxtConfiguration(vcd, check)
+
+	if vcd.config.VCD.Nsxt.Dvpg == "" {
+		check.Skip("Distributed Virtual Port Group was not provided")
+	}
+
+	dvpg, err := vcd.client.GetVcenterImportableDvpgByName(vcd.config.VCD.Nsxt.Dvpg, "")
+	check.Assert(err, IsNil)
+
+	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
+		Name:        check.TestName(),
+		Description: check.TestName() + "-description",
+
+		OwnerRef: &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
+
+		NetworkType: types.OrgVdcNetworkTypeOpaque,
+		// BackingNetworkId contains Distributed Virtual Port Group ID for Imported networks
+		BackingNetworkId:   dvpg.VcenterImportableDvpg.BackingRef.ID,
+		BackingNetworkType: types.OrgVdcNetworkBackingTypeDvPortgroup,
+
+		Subnets: types.OrgVdcNetworkSubnets{
+			Values: []types.OrgVdcNetworkSubnetValues{
+				{
+					Gateway:      "2.1.1.1",
+					PrefixLength: 24,
+					DNSServer1:   "8.8.8.8",
+					DNSServer2:   "8.8.4.4",
+					DNSSuffix:    "foo.bar",
+					IPRanges: types.OrgVdcNetworkSubnetIPRanges{
+						Values: []types.OrgVdcNetworkSubnetIPRangeValues{
+							{
+								StartAddress: "2.1.1.20",
+								EndAddress:   "2.1.1.30",
+							},
+							{
+								StartAddress: "2.1.1.40",
+								EndAddress:   "2.1.1.50",
+							},
+						}},
+				},
+			},
+		},
+	}
+
+	// Org VDC network backed by Distributed Virtual Port Group can only be created in VDC (not VDC Group)
+	runOpenApiOrgVdcNetworkTest(check, vcd, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque, nil)
 }
 
 func (vcd *TestVCD) Test_NsxvOrgVdcNetworkIsolated(check *C) {

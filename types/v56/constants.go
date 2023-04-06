@@ -357,6 +357,7 @@ const (
 	OpenApiEndpointAuditTrail                         = "auditTrail/"
 	OpenApiEndpointImportableTier0Routers             = "nsxTResources/importableTier0Routers"
 	OpenApiEndpointImportableSwitches                 = "/network/orgvdcnetworks/importableswitches"
+	OpenApiEndpointImportableDvpgs                    = "virtualCenters/resources/importableDvpgs"
 	OpenApiEndpointEdgeClusters                       = "nsxTResources/edgeClusters"
 	OpenApiEndpointExternalNetworks                   = "externalNetworks/"
 	OpenApiEndpointVdcComputePolicies                 = "vdcComputePolicies/"
@@ -441,10 +442,19 @@ const (
 	OrgVdcNetworkTypeRouted = "NAT_ROUTED"
 	// OrgVdcNetworkTypeIsolated can be used to create NSX-T or NSX-V isolated Org Vdc network
 	OrgVdcNetworkTypeIsolated = "ISOLATED"
-	// OrgVdcNetworkTypeOpaque type is used to create NSX-T imported Org Vdc network
-	OrgVdcNetworkTypeOpaque = "OPAQUE"
 	// OrgVdcNetworkTypeDirect can be used to create NSX-V direct Org Vdc network
 	OrgVdcNetworkTypeDirect = "DIRECT"
+	// OrgVdcNetworkTypeOpaque type is used to create NSX-T imported Org Vdc network
+	OrgVdcNetworkTypeOpaque = "OPAQUE"
+)
+
+const (
+	// OrgVdcNetworkBackingTypeVirtualWire matches Org VDC network backing type for NSX-V
+	OrgVdcNetworkBackingTypeVirtualWire = "VIRTUAL_WIRE"
+	// OrgVdcNetworkBackingTypeNsxtFlexibleSegment matches Org VDC network backing type for NSX-T networks
+	OrgVdcNetworkBackingTypeNsxtFlexibleSegment = "NSXT_FLEXIBLE_SEGMENT"
+	// OrgVdcNetworkBackingTypeDvPortgroup matches Org VDC network backing type for NSX-T Imported network backed by DV Portgroup
+	OrgVdcNetworkBackingTypeDvPortgroup = "DV_PORTGROUP"
 )
 
 const (
