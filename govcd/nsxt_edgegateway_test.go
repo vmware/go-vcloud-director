@@ -443,17 +443,15 @@ func compareEachIpElementAndOrder(ipSlice1, ipSlice2 []netip.Addr) bool {
 	return true
 }
 
-// Test_NsxtEdgeQoS tests QoS policy (NSX-T Edge Gateway Rate Limiting) retrieval and update
+// Test_NsxtEdgeQoS tests QoS config (NSX-T Edge Gateway Rate Limiting) retrieval and update
 func (vcd *TestVCD) Test_NsxtEdgeQoS(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 	skipNoNsxtConfiguration(vcd, check)
-	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeBgpConfigPrefixLists)
-
-	// skip for API versions less than 36.2
-	if vcd.client.Client.APIVCDMaxVersionIs("< 36.2") {
-		check.Skip("Test_NsxtEdgeQoS requires at least API v36.2 (vCD 10.3.2+)")
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointQosProfiles)
+	if vcd.config.VCD.Nsxt.GatewayQosProfile == "" {
+		check.Skip("No NSX-T Edge Gateway QoS Profile configured")
 	}
 
 	// Get QoS profile to use
@@ -466,11 +464,9 @@ func (vcd *TestVCD) Test_NsxtEdgeQoS(check *C) {
 	urn, err := BuildUrnWithUuid("urn:vcloud:nsxtmanager:", uuid)
 	check.Assert(err, IsNil)
 
-	allQosProfiles, err := vcd.client.GetAllNsxtEdgeGatewayQosProfiles(urn, nil)
+	qosProfile, err := vcd.client.GetNsxtEdgeGatewayQosProfileByDisplayName(urn, vcd.config.VCD.Nsxt.GatewayQosProfile)
 	check.Assert(err, IsNil)
-	if len(allQosProfiles) == 0 {
-		check.Skip("No QoS profiles found")
-	}
+	check.Assert(qosProfile, NotNil)
 
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
@@ -479,31 +475,30 @@ func (vcd *TestVCD) Test_NsxtEdgeQoS(check *C) {
 	edge, err := nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
 	check.Assert(err, IsNil)
 
-	// Fetch current QoS policy
-	qosPolicy, err := edge.GetQoS()
+	// Fetch current QoS config
+	qosConfig, err := edge.GetQoS()
 	check.Assert(err, IsNil)
-	check.Assert(qosPolicy, NotNil)
-	check.Assert(qosPolicy.EgressProfile, IsNil)
-	check.Assert(qosPolicy.IngressProfile, IsNil)
+	check.Assert(qosConfig, NotNil)
+	check.Assert(qosConfig.EgressProfile, IsNil)
+	check.Assert(qosConfig.IngressProfile, IsNil)
 
-	// Create new QoS policy
+	// Create new QoS config
 	newQosConfig := &types.NsxtEdgeGatewayQos{
-		IngressProfile: &types.OpenApiReference{ID: allQosProfiles[0].NsxtEdgeGatewayQosProfile.ID},
-		EgressProfile:  &types.OpenApiReference{ID: allQosProfiles[0].NsxtEdgeGatewayQosProfile.ID},
+		IngressProfile: &types.OpenApiReference{ID: qosProfile.NsxtEdgeGatewayQosProfile.ID},
+		EgressProfile:  &types.OpenApiReference{ID: qosProfile.NsxtEdgeGatewayQosProfile.ID},
 	}
 
-	// Update QoS policy
-	updatedEdgeQosPolicy, err := edge.UpdateQoS(newQosConfig)
+	// Update QoS config
+	updatedEdgeQosConfig, err := edge.UpdateQoS(newQosConfig)
 	check.Assert(err, IsNil)
-	check.Assert(updatedEdgeQosPolicy, NotNil)
+	check.Assert(updatedEdgeQosConfig, NotNil)
 
 	// Check that updates were applied
-	check.Assert(updatedEdgeQosPolicy.EgressProfile.ID, Equals, newQosConfig.EgressProfile.ID)
-	check.Assert(updatedEdgeQosPolicy.IngressProfile.ID, Equals, newQosConfig.IngressProfile.ID)
+	check.Assert(updatedEdgeQosConfig.EgressProfile.ID, Equals, newQosConfig.EgressProfile.ID)
+	check.Assert(updatedEdgeQosConfig.IngressProfile.ID, Equals, newQosConfig.IngressProfile.ID)
 
-	// Remove QoS policy
-	updatedEdgeQosPolicy, err = edge.UpdateQoS(&types.NsxtEdgeGatewayQos{})
+	// Remove QoS config
+	updatedEdgeQosConfig, err = edge.UpdateQoS(&types.NsxtEdgeGatewayQos{})
 	check.Assert(err, IsNil)
-	check.Assert(updatedEdgeQosPolicy, NotNil)
-
+	check.Assert(updatedEdgeQosConfig, NotNil)
 }

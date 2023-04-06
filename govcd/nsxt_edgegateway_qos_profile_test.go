@@ -9,6 +9,7 @@ package govcd
 import (
 	"fmt"
 
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
 
@@ -16,11 +17,11 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayQosProfiles(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
-	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointQosProfiles)
 
-	// skip for API versions less than 36.2
-	if vcd.client.Client.APIVCDMaxVersionIs("< 36.2") {
-		check.Skip("Test_GetAllNsxtEdgeGatewayQosProfiles requires at least API v36.2 (vCD 10.3.2+)")
+	skipNoNsxtConfiguration(vcd, check)
+	if vcd.config.VCD.Nsxt.GatewayQosProfile == "" {
+		check.Skip("No NSX-T Edge Gateway QoS Profile configured")
 	}
 
 	nsxtManagers, err := vcd.client.QueryNsxtManagerByName(vcd.config.VCD.Nsxt.Manager)
@@ -35,9 +36,7 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayQosProfiles(check *C) {
 	// Fetch all profiles
 	allQosProfiles, err := vcd.client.GetAllNsxtEdgeGatewayQosProfiles(urn, nil)
 	check.Assert(err, IsNil)
-	if len(allQosProfiles) == 0 {
-		check.Skip("No QoS profiles found")
-	}
+	check.Assert(len(allQosProfiles) > 0, Equals, true)
 
 	// Fetch one by one based on DisplayName
 	for _, profile := range allQosProfiles {
