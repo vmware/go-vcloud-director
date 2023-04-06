@@ -92,7 +92,7 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) GetAllOpenApiOrgVdcNetworkDhcpBindings(qu
 		return nil, err
 	}
 
-	// Wrap all typeResponses into OpenApiOrgVdcNetwork types with client
+	// Wrap all typeResponses into OpenApiOrgVdcNetworkDhcpBinding types with client
 	wrappedResponses := make([]*OpenApiOrgVdcNetworkDhcpBinding, len(typeResponses))
 	for sliceIndex := range typeResponses {
 		wrappedResponses[sliceIndex] = &OpenApiOrgVdcNetworkDhcpBinding{
