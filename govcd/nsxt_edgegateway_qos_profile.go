@@ -12,7 +12,7 @@ import (
 )
 
 // NsxtEdgeGatewayQosProfiles uses OpenAPI endpoint to fetch NSX-T Edge Gateway QoS Profiles defined
-// in NSX-T Manager
+// in NSX-T Manager. They can be used to configure QoS on NSX-T Edge Gateway.
 type NsxtEdgeGatewayQosProfile struct {
 	NsxtEdgeGatewayQosProfile *types.NsxtEdgeGatewayQosProfile
 	client                    *Client
