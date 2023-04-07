@@ -13,6 +13,8 @@ import (
 
 // VcenterImportableDvpg is a read only structure that allows to get information about a Distributed
 // Virtual Port Group (DVPG) network backing that is available for import.
+//
+// Note. API returns only unused DVPGs. If the DVPG is already consumed - it will not be returned.
 type VcenterImportableDvpg struct {
 	VcenterImportableDvpg *types.VcenterImportableDvpg
 	client                *Client
@@ -86,10 +88,11 @@ func getAllVcenterImportableDvpgs(client *Client, optionalVcenterId string, quer
 
 	queryParams := copyOrNewUrlValues(queryParameters)
 
-	// Inject vCenter ID if specified
-	if optionalVcenterId != "" {
-		queryParams = queryParameterFilterAnd("_context=="+optionalVcenterId, queryParams)
-	}
+	// VCD BUG does not filter properly
+	// if optionalVcenterId != "" {
+	// 	queryParams = queryParameterFilterAnd(fmt.Sprintf("_context==%s", optionalVcenterId), queryParams)
+	// }
+	// End of VCD BUG does not filter properly
 
 	typeResponses := []*types.VcenterImportableDvpg{{}}
 	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParams, &typeResponses, nil)
@@ -103,6 +106,19 @@ func getAllVcenterImportableDvpgs(client *Client, optionalVcenterId string, quer
 			VcenterImportableDvpg: typeResponses[sliceIndex],
 			client:                client,
 		}
+	}
+
+	// Filter manually by optionalVcenterId because VCD has a bug for `_context=` filter (see above
+	// commented block)
+	if optionalVcenterId != "" {
+		filteredVcImportableDvpgs := make([]*VcenterImportableDvpg, 0)
+		for index, VcImportableDvpg := range returnObjects {
+			if returnObjects[index].VcenterImportableDvpg.VirtualCenter.ID == optionalVcenterId {
+				filteredVcImportableDvpgs = append(filteredVcImportableDvpgs, VcImportableDvpg)
+			}
+		}
+
+		return filteredVcImportableDvpgs, nil
 	}
 
 	return returnObjects, nil
