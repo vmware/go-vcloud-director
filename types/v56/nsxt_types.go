@@ -1575,6 +1575,8 @@ type VdcNetworkProfileServicesEdgeCluster struct {
 
 // VcenterImportableDvpg defines a Distributed Port Group that can be imported into VCD
 // from a vCenter Server.
+//
+// Note. This is a read-only structure.
 type VcenterImportableDvpg struct {
 	BackingRef *OpenApiReference `json:"backingRef"`
 	DvSwitch   struct {
