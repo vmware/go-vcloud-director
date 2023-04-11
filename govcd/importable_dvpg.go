@@ -21,6 +21,8 @@ type VcenterImportableDvpg struct {
 }
 
 // GetVcenterImportableDvpgByName retrieves a DVPG by name
+//
+// Note. API returns only unused DVPGs. If the DVPG is already consumed - it will not be returned.
 func (vcdClient *VCDClient) GetVcenterImportableDvpgByName(name string) (*VcenterImportableDvpg, error) {
 	if name == "" {
 		return nil, fmt.Errorf("empty importable Distributed Virtual Port Group Name specified")
@@ -38,9 +40,8 @@ func (vcdClient *VCDClient) GetVcenterImportableDvpgByName(name string) (*Vcente
 }
 
 // GetAllVcenterImportableDvpgs retrieves all DVPGs that are available for import.
-// They can be filtered by vCenter ID and/or Org vDC ID.
-// it can be filtered by Org VDC - 'orgVdcId==[vdcUrn]' can be set as a filter to show importable
-// DVPGs for an Org VDC.
+//
+// Note. API returns only unused DVPGs. If the DVPG is already consumed - it will not be returned.
 func (vcdClient *VCDClient) GetAllVcenterImportableDvpgs(queryParameters url.Values) ([]*VcenterImportableDvpg, error) {
 	return getAllVcenterImportableDvpgs(&vcdClient.Client, queryParameters)
 }
@@ -62,6 +63,8 @@ func (vdc *Vdc) GetVcenterImportableDvpgByName(name string) (*VcenterImportableD
 }
 
 // GetAllVcenterImportableDvpgs retrieves all DVPGs that are available for import within the Org VDC.
+//
+// Note. API returns only unused DVPGs. If the DVPG is already consumed - it will not be returned.
 func (vdc *Vdc) GetAllVcenterImportableDvpgs(queryParameters url.Values) ([]*VcenterImportableDvpg, error) {
 	if vdc == nil || vdc.Vdc == nil || vdc.Vdc.ID == "" {
 		return nil, fmt.Errorf("cannot get Importable DVPGs without VDC ID")
