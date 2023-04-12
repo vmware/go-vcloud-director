@@ -44,6 +44,7 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtFirewallRules:                  "34.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks:                     "32.0", // VCD 9.7+ for NSX-V, 10.1+ for NSX-T
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworksDhcp:                 "32.0", // VCD 9.7+ for NSX-V, 10.1+ for NSX-T
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworksDhcpBindings:         "36.1", // VCD 10.3.1+ (NSX-T only)
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcCapabilities:                    "32.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAppPortProfiles:                    "34.0", // VCD 10.1+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSecVpnTunnel:                     "34.0", // VCD 10.1+
