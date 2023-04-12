@@ -20,7 +20,7 @@ type OpenApiOrgVdcNetworkDhcp struct {
 // GetOpenApiOrgVdcNetworkDhcp allows to retrieve DHCP configuration for specific Org VDC network
 func (orgVdcNet *OpenApiOrgVdcNetwork) GetOpenApiOrgVdcNetworkDhcp() (*OpenApiOrgVdcNetworkDhcp, error) {
 	if orgVdcNet == nil || orgVdcNet.client == nil {
-		return nil, fmt.Errorf("error ")
+		return nil, fmt.Errorf("error - Org VDC network and client cannot be nil")
 	}
 
 	client := orgVdcNet.client

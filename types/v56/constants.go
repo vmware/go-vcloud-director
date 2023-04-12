@@ -369,6 +369,7 @@ const (
 	OpenApiEndpointFirewallGroups                     = "firewallGroups/"
 	OpenApiEndpointOrgVdcNetworks                     = "orgVdcNetworks/"
 	OpenApiEndpointOrgVdcNetworksDhcp                 = "orgVdcNetworks/%s/dhcp"
+	OpenApiEndpointOrgVdcNetworksDhcpBindings         = "orgVdcNetworks/%s/dhcp/bindings/"
 	OpenApiEndpointNsxtNatRules                       = "edgeGateways/%s/nat/rules/"
 	OpenApiEndpointAppPortProfiles                    = "applicationPortProfiles/"
 	OpenApiEndpointIpSecVpnTunnel                     = "edgeGateways/%s/ipsec/tunnels/"
@@ -585,8 +586,20 @@ var NsxvProtocolCodes = map[string]int{
 	DFWProtocolIcmp: 1,
 }
 
+// NSX-T DHCP Binding Type
+const (
+	NsxtDhcpBindingTypeIpv4 = "IPV4"
+	NsxtDhcpBindingTypeIpv6 = "IPV6"
+)
+
 // NSX-T IPSec VPN authentication modes
 const (
 	NsxtIpSecVpnAuthenticationModePSK         = "PSK"
 	NsxtIpSecVpnAuthenticationModeCertificate = "CERTIFICATE"
+)
+
+// Org VDC network backing types
+const (
+	OpenApiOrgVdcNetworkBackingTypeNsxv = "VIRTUAL_WIRE"
+	OpenApiOrgVdcNetworkBackingTypeNsxt = "NSXT_FLEXIBLE_SEGMENT"
 )
