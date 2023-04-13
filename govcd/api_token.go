@@ -11,8 +11,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -46,31 +44,24 @@ func (vcdClient *VCDClient) SetServiceAccountApiToken(org, apiTokenFile string) 
 		return fmt.Errorf("minimum API version for Service Account authentication is 37.0 - Version detected: %s", vcdClient.Client.APIVersion)
 	}
 
-	apiTokenFile = filepath.Clean(apiTokenFile)
-	data, err := os.ReadFile(apiTokenFile)
-	if err != nil {
-		return fmt.Errorf("failed to read tokenfile: %s", err)
-	}
-
 	saApiToken := &types.ApiTokenRefresh{}
-	err = json.Unmarshal(data, &saApiToken)
+	// Read file contents and unmarshal them to saApiToken
+	err := readFileAndUnmarshalJSON(apiTokenFile, saApiToken)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal tokenfile, check if your JSON file is valid: %s", err)
+		return err
 	}
 
+	// Get bearer token and update the refresh token for the next authentication request
 	saApiToken, err = vcdClient.SetApiToken(org, saApiToken.RefreshToken)
 	if err != nil {
 		return err
 	}
 
-	data, err = json.Marshal(&types.ApiTokenRefresh{
+	// leave only the refresh token to not leave any sensitive information
+	saApiToken = &types.ApiTokenRefresh{
 		RefreshToken: saApiToken.RefreshToken,
-	})
-	if err != nil {
-		return err
 	}
-
-	err = os.WriteFile(apiTokenFile, data, 0600)
+	err = marshalJSONAndWriteToFile(apiTokenFile, saApiToken, 0600)
 	if err != nil {
 		return err
 	}
