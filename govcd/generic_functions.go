@@ -45,8 +45,7 @@ func oneOrError[T any](key, name string, entitySlice []*T) (*T, error) {
 
 // readFileAndUnmarshalJSON reads a file and unmarshals it to the given variable
 func readFileAndUnmarshalJSON[T any](filename string, object T) error {
-	filename = path.Clean(filename)
-	data, err := os.ReadFile(filename)
+	data, err := os.ReadFile(path.Clean(filename))
 	if err != nil {
 		return fmt.Errorf("failed to read from file: %s", err)
 	}
