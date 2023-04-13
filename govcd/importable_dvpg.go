@@ -112,8 +112,8 @@ func getAllVcenterImportableDvpgs(client *Client, queryParameters url.Values) ([
 // FIQL filter (because it does not support it).
 func filterVcImportableDvpgsByName(name string, allNVcImportableDvpgs []*VcenterImportableDvpg) []*VcenterImportableDvpg {
 	filteredVcImportableDvpgs := make([]*VcenterImportableDvpg, 0)
-	for index, VcImportableDvpg := range allNVcImportableDvpgs {
-		if allNVcImportableDvpgs[index].VcenterImportableDvpg.BackingRef.Name == name {
+	for _, VcImportableDvpg := range allNVcImportableDvpgs {
+		if VcImportableDvpg.VcenterImportableDvpg.BackingRef.Name == name {
 			filteredVcImportableDvpgs = append(filteredVcImportableDvpgs, VcImportableDvpg)
 		}
 	}
