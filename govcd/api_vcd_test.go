@@ -1949,3 +1949,64 @@ func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, i
 
 	return vcdClient, newUser, nil
 }
+
+// Tests
+func (vcd *TestVCD) Test_isSystemAdministrator(check *C) {
+	// Normal tenant user
+	orgAdminClient := NewVCDClient(vcd.client.Client.VCDHREF, true)
+	err := orgAdminClient.Authenticate(vcd.config.Tenants[0].User, vcd.config.Tenants[0].Password, vcd.config.Tenants[0].SysOrg)
+	check.Assert(err, IsNil)
+	check.Assert(orgAdminClient.Client.IsSysAdmin, Equals, false)
+
+	// System administrator
+	systemAdminClient := NewVCDClient(vcd.client.Client.VCDHREF, true)
+	err = systemAdminClient.Authenticate(vcd.config.Provider.User, vcd.config.Provider.Password, vcd.config.Provider.SysOrg)
+	check.Assert(err, IsNil)
+	check.Assert(systemAdminClient.Client.IsSysAdmin, Equals, true)
+
+	// Normal user in system
+	systemOrg, err := vcd.client.GetAdminOrgByName(vcd.config.Provider.SysOrg)
+	check.Assert(err, IsNil)
+
+	systemRightsBundle, err := vcd.client.Client.GetRightsBundleByName("System Rights Bundle")
+	check.Assert(err, IsNil)
+
+	dummyRole, err := systemOrg.CreateRole(&types.Role{
+		Name:        check.TestName(),
+		Description: check.TestName(),
+		BundleKey:   systemRightsBundle.RightsBundle.BundleKey,
+		ReadOnly:    false,
+	})
+	check.Assert(err, IsNil)
+	AddToCleanupListOpenApi(dummyRole.Role.Name, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRoles+dummyRole.Role.ID)
+
+	randomRight, err := systemOrg.GetRightByName("API Tokens: Manage")
+	check.Assert(err, IsNil)
+
+	err = dummyRole.AddRights([]types.OpenApiReference{
+		{
+			Name: randomRight.Name,
+			ID:   randomRight.ID,
+		},
+	})
+	check.Assert(err, IsNil)
+
+	nonSystemAdminUser, err := systemOrg.CreateUserSimple(OrgUserConfiguration{
+		Name:     check.TestName(),
+		RoleName: dummyRole.Role.Name,
+		Password: check.TestName(),
+	})
+	check.Assert(err, IsNil)
+	AddToCleanupList(nonSystemAdminUser.User.Name, "user", nonSystemAdminUser.AdminOrg.AdminOrg.Name, check.TestName())
+
+	nonSystemAdminClient := NewVCDClient(vcd.client.Client.VCDHREF, true)
+	err = nonSystemAdminClient.Authenticate(check.TestName(), check.TestName(), systemOrg.AdminOrg.Name)
+	check.Assert(err, IsNil)
+	check.Assert(nonSystemAdminClient.Client.IsSysAdmin, Equals, false)
+
+	// Cleanup
+	err = nonSystemAdminUser.Delete(false)
+	check.Assert(err, IsNil)
+	err = dummyRole.Delete()
+	check.Assert(err, IsNil)
+}

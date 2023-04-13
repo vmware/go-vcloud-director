@@ -391,7 +391,7 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraReadSte
 			Type:                  types.MetadataStringValue,
 			Visibility:            types.MetadataReadWriteVisibility,
 			IsSystem:              true,
-			ExpectErrorOnFirstAdd: true, // types.MetadataReadWriteVisibility can't have isSystem=true
+			ExpectErrorOnFirstAdd: true, // types.MetadataReadWriteVisibility can't have isSystemAdministrator=true
 		},
 	}
 

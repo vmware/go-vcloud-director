@@ -258,7 +258,7 @@ func (client *Client) cumulativeQueryWithHeaders(queryType string, params, notEn
 // * queryType is the type of the query. Only the ones listed within queryFieldsOnDemand are supported
 // * params and notEncodedParams are the same ones passed to QueryWithNotEncodedParams
 // * metadataFields is the list of fields to be included in the query results
-// * if isSystem is true, metadata fields are requested as 'metadata@SYSTEM:fieldName'
+// * if isSystemAdministrator is true, metadata fields are requested as 'metadata@SYSTEM:fieldName'
 func (client *Client) queryWithMetadataFields(queryType string, params, notEncodedParams map[string]string,
 	metadataFields []string, isSystem bool) (Results, error) {
 	if notEncodedParams == nil {
@@ -302,7 +302,7 @@ func (client *Client) queryWithMetadataFields(queryType string, params, notEncod
 //
 // * params and notEncodedParams are the same ones passed to QueryWithNotEncodedParams
 // * metadataFilter is is a map of conditions to use for filtering
-// * if isSystem is true, metadata fields are requested as 'metadata@SYSTEM:fieldName'
+// * if isSystemAdministrator is true, metadata fields are requested as 'metadata@SYSTEM:fieldName'
 func (client *Client) queryByMetadataFilter(queryType string, params, notEncodedParams map[string]string,
 	metadataFilters map[string]MetadataFilter, isSystem bool) (Results, error) {
 

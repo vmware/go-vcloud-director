@@ -109,11 +109,55 @@ func (vcdClient *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.
 	// Store the authorization header
 	vcdClient.Client.VCDToken = resp.Header.Get(BearerTokenHeader)
 	vcdClient.Client.VCDAuthHeader = BearerTokenHeader
-	vcdClient.Client.IsSysAdmin = strings.EqualFold(org, "system")
+	vcdClient.Client.IsSysAdmin = isSystemAdministrator(vcdClient)
 	// Get query href
 	vcdClient.QueryHREF = vcdClient.Client.VCDHREF
 	vcdClient.QueryHREF.Path += "/query"
 	return resp, nil
+}
+
+// isSystemAdministrator determines whether the logged user of VCD is a System administrator (returns true)
+// or not (returns false), based on the Organization where it is and the role.
+func isSystemAdministrator(vcdClient *VCDClient) bool {
+	sessionInfo, err := vcdClient.Client.GetSessionInfo()
+	if err != nil {
+		return false
+	}
+
+	// Being in System org is a requisite, but not enough
+	if !strings.EqualFold(sessionInfo.Org.Name, "system") {
+		return false
+	}
+	// We need to check now whether the user in System organization has the same rights as
+	// System Administrator role
+	adminOrg, err := vcdClient.GetAdminOrgByName(sessionInfo.Org.Name)
+	if err != nil {
+		return false
+	}
+	user, err := adminOrg.GetUserByName(sessionInfo.User.Name, false)
+	if err != nil {
+		return false
+	}
+	if user.User.Role == nil {
+		return false
+	}
+	userRole, err := adminOrg.GetRoleByName(user.GetRoleName())
+	if err != nil {
+		return false
+	}
+	userRights, err := userRole.GetRights(nil)
+	if err != nil {
+		return false
+	}
+	sysAdminRole, err := adminOrg.GetRoleByName("System Administrator")
+	if err != nil {
+		return false
+	}
+	systemAdminRights, err := sysAdminRole.GetRights(nil)
+	if err != nil {
+		return false
+	}
+	return len(userRights) == len(systemAdminRights)
 }
 
 // NewVCDClient initializes VMware VMware Cloud Director client with reasonable defaults.
@@ -231,7 +275,7 @@ func (vcdClient *VCDClient) SetToken(org, authHeader, token string) error {
 		return fmt.Errorf("error finding LoginUrl: %s", err)
 	}
 
-	vcdClient.Client.IsSysAdmin = strings.EqualFold(org, "system")
+	vcdClient.Client.IsSysAdmin = isSystemAdministrator(vcdClient)
 	// Get query href
 	vcdClient.QueryHREF = vcdClient.Client.VCDHREF
 	vcdClient.QueryHREF.Path += "/query"
