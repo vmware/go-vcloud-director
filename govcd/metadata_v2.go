@@ -754,9 +754,9 @@ func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
 }
 
 // addMetadata adds metadata to an entity.
-// If the metadata entry is of the SYSTEM domain (isSystemAdministrator=true), one can set different types of Visibility:
+// If the metadata entry is of the SYSTEM domain (isSystem=true), one can set different types of Visibility:
 // types.MetadataReadOnlyVisibility, types.MetadataHiddenVisibility but NOT types.MetadataReadWriteVisibility.
-// If the metadata entry is of the GENERAL domain (isSystemAdministrator=false), visibility is always types.MetadataReadWriteVisibility.
+// If the metadata entry is of the GENERAL domain (isSystem=false), visibility is always types.MetadataReadWriteVisibility.
 // In terms of typedValues, that must be one of:
 // types.MetadataStringValue, types.MetadataNumberValue, types.MetadataDateTimeValue and types.MetadataBooleanValue.
 func addMetadata(client *Client, requestUri, key, value, typedValue, visibility string, isSystem bool) (Task, error) {
