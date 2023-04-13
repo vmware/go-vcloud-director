@@ -169,8 +169,10 @@ type OpenApiOrgVdcNetwork struct {
 
 	// backingNetworkId contains the NSX ID of the backing network.
 	BackingNetworkId string `json:"backingNetworkId,omitempty"`
-	// backingNetworkType contains object type of the backing network. ('VIRTUAL_WIRE' for NSX-V, 'NSXT_FLEXIBLE_SEGMENT'
-	// for NSX-T)
+	// backingNetworkType contains object type of the backing network.
+	// * 'VIRTUAL_WIRE' for NSX-V'
+	// * 'NSXT_FLEXIBLE_SEGMENT' for NSX-T networks
+	// * 'DV_PORTGROUP' for NSX-T Imported network backed by DV Portgroup
 	BackingNetworkType string `json:"backingNetworkType,omitempty"`
 
 	// ParentNetwork should have external network ID specified when creating NSX-V direct network
@@ -1680,4 +1682,18 @@ type NsxtEdgeGatewayQosProfile struct {
 type NsxtEdgeGatewayQos struct {
 	EgressProfile  *OpenApiReference `json:"egressProfile"`
 	IngressProfile *OpenApiReference `json:"ingressProfile"`
+}
+
+// VcenterImportableDvpg defines a Distributed Port Group that can be imported into VCD
+// from a vCenter Server.
+//
+// Note. This is a read-only structure.
+type VcenterImportableDvpg struct {
+	BackingRef *OpenApiReference `json:"backingRef"`
+	DvSwitch   struct {
+		BackingRef    *OpenApiReference `json:"backingRef"`
+		VirtualCenter *OpenApiReference `json:"virtualCenter"`
+	} `json:"dvSwitch"`
+	VirtualCenter *OpenApiReference `json:"virtualCenter"`
+	Vlan          string            `json:"vlan"`
 }
