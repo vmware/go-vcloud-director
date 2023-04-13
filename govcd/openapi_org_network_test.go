@@ -172,11 +172,11 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImportedDistributedVirtualPortGroup(ch
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
 	skipNoNsxtConfiguration(vcd, check)
 
-	if vcd.config.VCD.Nsxt.Dvpg == "" {
+	if vcd.config.VCD.Nsxt.NsxtDvpg == "" {
 		check.Skip("Distributed Virtual Port Group was not provided")
 	}
 
-	dvpg, err := vcd.nsxtVdc.GetVcenterImportableDvpgByName(vcd.config.VCD.Nsxt.Dvpg)
+	dvpg, err := vcd.nsxtVdc.GetVcenterImportableDvpgByName(vcd.config.VCD.Nsxt.NsxtDvpg)
 	check.Assert(err, IsNil)
 
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{

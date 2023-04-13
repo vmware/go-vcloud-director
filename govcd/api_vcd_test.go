@@ -181,7 +181,7 @@ type TestConfig struct {
 			Manager             string `yaml:"manager"`
 			Tier0router         string `yaml:"tier0router"`
 			Tier0routerVrf      string `yaml:"tier0routerVrf"`
-			Dvpg                string `yaml:"dvpg"`
+			NsxtDvpg            string `yaml:"nsxtDvpg"`
 			GatewayQosProfile   string `yaml:"gatewayQosProfile"`
 			Vdc                 string `yaml:"vdc"`
 			ExternalNetwork     string `yaml:"externalNetwork"`

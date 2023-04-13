@@ -18,7 +18,7 @@ func (vcd *TestVCD) Test_VcenterImportableDvpg(check *C) {
 	}
 	skipNoNsxtConfiguration(vcd, check)
 
-	if vcd.config.VCD.Nsxt.Dvpg == "" {
+	if vcd.config.VCD.Nsxt.NsxtDvpg == "" {
 		check.Skip("No NSX-T Dvpg provided")
 	}
 
@@ -28,10 +28,10 @@ func (vcd *TestVCD) Test_VcenterImportableDvpg(check *C) {
 	check.Assert(len(dvpgs) > 0, Equals, true)
 
 	// Get DVPG by name
-	dvpgByName, err := vcd.client.GetVcenterImportableDvpgByName(vcd.config.VCD.Nsxt.Dvpg)
+	dvpgByName, err := vcd.client.GetVcenterImportableDvpgByName(vcd.config.VCD.Nsxt.NsxtDvpg)
 	check.Assert(err, IsNil)
 	check.Assert(dvpgByName, NotNil)
-	check.Assert(dvpgByName.VcenterImportableDvpg.BackingRef.Name, Equals, vcd.config.VCD.Nsxt.Dvpg)
+	check.Assert(dvpgByName.VcenterImportableDvpg.BackingRef.Name, Equals, vcd.config.VCD.Nsxt.NsxtDvpg)
 
 	// Get all DVPGs withing NSX-T VDC
 	nsxtVdc, err := vcd.org.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
@@ -43,8 +43,8 @@ func (vcd *TestVCD) Test_VcenterImportableDvpg(check *C) {
 	check.Assert(len(allDvpgsWithingVdc) > 0, Equals, true)
 
 	// Get DVPG by name within NSX-T VDC
-	dvpgByNameWithinVdc, err := nsxtVdc.GetVcenterImportableDvpgByName(vcd.config.VCD.Nsxt.Dvpg)
+	dvpgByNameWithinVdc, err := nsxtVdc.GetVcenterImportableDvpgByName(vcd.config.VCD.Nsxt.NsxtDvpg)
 	check.Assert(err, IsNil)
 	check.Assert(dvpgByNameWithinVdc, NotNil)
-	check.Assert(dvpgByNameWithinVdc.VcenterImportableDvpg.BackingRef.Name, Equals, vcd.config.VCD.Nsxt.Dvpg)
+	check.Assert(dvpgByNameWithinVdc.VcenterImportableDvpg.BackingRef.Name, Equals, vcd.config.VCD.Nsxt.NsxtDvpg)
 }
