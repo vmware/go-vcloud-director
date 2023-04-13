@@ -116,7 +116,7 @@ func Test_readFileAndUnmarshalJSON(t *testing.T) {
 		{
 			name: "simpleCase",
 			args: args{
-				filename: "testdata/test.json",
+				filename: "test-resources/test.json",
 				object:   &testEntity{},
 			},
 			want:    &testEntity{Name: "test"},
@@ -125,7 +125,7 @@ func Test_readFileAndUnmarshalJSON(t *testing.T) {
 		{
 			name: "emptyFile",
 			args: args{
-				filename: "testdata/test_empty.json",
+				filename: "test-resources/test_empty.json",
 				object:   &testEntity{},
 			},
 			want:    &testEntity{},
@@ -134,7 +134,7 @@ func Test_readFileAndUnmarshalJSON(t *testing.T) {
 		{
 			name: "emptyJSON",
 			args: args{
-				filename: "testdata/test_emptyjson.json",
+				filename: "test-resources/test_emptyjson.json",
 				object:   &testEntity{},
 			},
 			want:    &testEntity{},
