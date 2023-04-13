@@ -4,11 +4,12 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/util"
 	"os"
 	"strconv"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/vmware/go-vcloud-director/v2/util"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
@@ -41,7 +42,7 @@ func (vcd *TestVCD) Test_NsxtDistributedFirewallRules(check *C) {
 	// Prep Org admin user and run firewall tests
 	userName := strings.ToLower(check.TestName())
 	fmt.Printf("# Running Distributed Firewall tests as Org Admin user '%s'\n", userName)
-	orgUserVcdClient, err := newOrgUserConnection(adminOrg, userName, "CHANGE-ME", vcd.config.Provider.Url, true)
+	orgUserVcdClient, _, err := newOrgUserConnection(adminOrg, userName, "CHANGE-ME", vcd.config.Provider.Url, true)
 	check.Assert(err, IsNil)
 	orgUserOrgAdmin, err := orgUserVcdClient.GetAdminOrgById(adminOrg.AdminOrg.ID)
 	check.Assert(err, IsNil)

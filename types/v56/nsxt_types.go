@@ -158,6 +158,10 @@ type OpenApiOrgVdcNetwork struct {
 	// NetworkType describes type of Org Vdc network. ('NAT_ROUTED', 'ISOLATED')
 	NetworkType string `json:"networkType"`
 
+	// OrgVdcIsNsxTBacked is a read only flag that indicates whether the Org VDC is backed by NSX-T or not
+	// Note. It returns `false` if Org VDC network is withing an NSX-T VDC Group
+	OrgVdcIsNsxTBacked bool `json:"orgVdcIsNsxTBacked,omitempty"`
+
 	// Connection specifies the edge gateway this network is connected to.
 	//
 	// Note. When NetworkType == ISOLATED, there is no uplink connection.
@@ -165,8 +169,10 @@ type OpenApiOrgVdcNetwork struct {
 
 	// backingNetworkId contains the NSX ID of the backing network.
 	BackingNetworkId string `json:"backingNetworkId,omitempty"`
-	// backingNetworkType contains object type of the backing network. ('VIRTUAL_WIRE' for NSX-V, 'NSXT_FLEXIBLE_SEGMENT'
-	// for NSX-T)
+	// backingNetworkType contains object type of the backing network.
+	// * 'VIRTUAL_WIRE' for NSX-V'
+	// * 'NSXT_FLEXIBLE_SEGMENT' for NSX-T networks
+	// * 'DV_PORTGROUP' for NSX-T Imported network backed by DV Portgroup
 	BackingNetworkType string `json:"backingNetworkType,omitempty"`
 
 	// ParentNetwork should have external network ID specified when creating NSX-V direct network
@@ -259,6 +265,80 @@ type OpenApiOrgVdcNetworkDhcp struct {
 	// DnsServers are the IPs to be assigned by this DHCP service. The IP type must match the IP
 	// type of the subnet on which the DHCP config is being created.
 	DnsServers []string `json:"dnsServers,omitempty"`
+}
+
+// OpenApiOrgVdcNetworkDhcpBinding defines configuration of NSX-T DHCP binding in Org VDC network
+type OpenApiOrgVdcNetworkDhcpBinding struct {
+	// ID of DHCP binding
+	ID string `json:"id,omitempty"`
+
+	// Name contains display name for the DHCP binding
+	Name string `json:"name"`
+
+	// Description of the DHCP binding
+	Description string `json:"description,omitempty"`
+
+	// BindingType holds the type of DHCP binding:
+	// * IPV4 - an IPv4 DHCP binding (`types.NsxtDhcpBindingTypeIpv4`)
+	// * IPV6 - an IPv6 DHCP binding (`types.NsxtDhcpBindingTypeIpv6`)
+	BindingType string `json:"bindingType"`
+
+	// MacAddress for the host
+	MacAddress string `json:"macAddress"`
+
+	// DhcpV4BindingConfig contains additional configuration for IPv4 DHCP binding.
+	// Note. This is ignored for IPV6 binding.
+	DhcpV4BindingConfig *DhcpV4BindingConfig `json:"dhcpV4BindingConfig,omitempty"`
+
+	// DhcpV6BindingConfig contains additional configuration for IPv6 DHCP binding.
+	// Note. This is ignored for IPV4 binding.
+	DhcpV6BindingConfig *DhcpV6BindingConfig `json:"dhcpV6BindingConfig,omitempty"`
+
+	// DnsServers to be set on the host. Maximum 2 DNS, order is important.
+	DnsServers []string `json:"dnsServers,omitempty"`
+
+	// IpAddress assigned to host. This address must belong to the subnet of Org VDC network. For
+	// IPv4, this is required. For IPv6, when not specified, Stateless Address Autoconfiguration
+	// (SLAAC) is used to auto-assign an IPv6 address to the DHCPv6 clients.
+	IpAddress string `json:"ipAddress"`
+
+	// Lease time in seconds defines how long a DHCP IP will be leased out for. The minimum is 60s
+	// while the maximum is 4,294,967,295s, which is roughly 49,710 days. Default is 24 hours.
+	LeaseTime *int `json:"leaseTime,omitempty"`
+
+	// Version describes the current version of the entity. To prevent clients from overwriting each
+	// other's changes, update operations must include the version which can be obtained by issuing
+	// a GET operation. If the version number on an update call is missing, the operation will be
+	// rejected. This is only needed on update calls.
+	Version OpenApiOrgVdcNetworkDhcpBindingVersion `json:"version"`
+}
+
+// DhcpV4BindingConfig describes additional configuration for IPv6 DHCP Binding of an Org VDC
+// Network.
+type DhcpV4BindingConfig struct {
+	// GatewayIPAddress contains optional Gateway IP Address. When not specified, Gateway IP of Org
+	// vDC network will be used.
+	GatewayIPAddress string `json:"gatewayIpAddress,omitempty"`
+	// HostName to assign to the host.
+	HostName string `json:"hostName,omitempty"`
+}
+
+// DhcpV6BindingConfig describes additional configuration for IPv6 DHCP Binding of an Org VDC
+// Network.
+type DhcpV6BindingConfig struct {
+	// DomainNames to be assigned to client host.
+	DomainNames []string `json:"domainNames,omitempty"`
+
+	// SntpServers contains IP addresses of SNTP servers
+	SntpServers []string `json:"sntpServers,omitempty"`
+}
+
+// OpenApiOrgVdcNetworkDhcpBindingVersion describes the current version of the entity. To prevent
+// clients from overwriting each other's changes, update operations must include the version which
+// can be obtained by issuing a GET operation. If the version number on an update call is missing,
+// the operation will be rejected. This is only needed on update calls.
+type OpenApiOrgVdcNetworkDhcpBindingVersion struct {
+	Version int `json:"version"`
 }
 
 // OpenApiOrgVdcNetworkDhcpIpRange is a type alias to fit naming
@@ -585,6 +665,15 @@ type NsxtIpSecVpnTunnel struct {
 	// Note. Up to version 10.3 VCD only supports INITIATOR
 	ConnectorInitiationMode string `json:"connectorInitiationMode,omitempty"`
 
+	// CertificateRef points server certificate which will be used to secure the tunnel's local
+	// endpoint. The certificate must be the end-entity certificate (leaf) for the local endpoint.
+	CertificateRef *OpenApiReference `json:"certificateRef,omitempty"`
+
+	// CaCertificateRef points to certificate authority used to verify the remote endpoint's
+	// certificate. The selected CA must be a root or intermediate CA. The selected CA should be
+	// able to directly verify the remote endpoint's certificate.
+	CaCertificateRef *OpenApiReference `json:"caCertificateRef,omitempty"`
+
 	// Version of IPsec VPN Tunnel configuration. Must not be set when creating, but required for updates
 	Version *struct {
 		// Version is incremented after each update
@@ -607,10 +696,16 @@ type NsxtIpSecVpnTunnelLocalEndpoint struct {
 
 // NsxtIpSecVpnTunnelRemoteEndpoint corresponds to the device on the remote site terminating the VPN tunnel
 type NsxtIpSecVpnTunnelRemoteEndpoint struct {
-	// RemoteId is needed to uniquely identify the peer site. If this tunnel is using PSK authentication,
-	// the Remote ID is the public IP Address of the remote device terminating the VPN Tunnel. When NAT is configured on
-	// the Remote ID, enter the private IP Address of the Remote Site. If the remote ID is not set, VCD will set the
-	// remote ID to the remote address.
+	// This Remote ID is needed to uniquely identify the peer site. If the remote ID is not set, it
+	// will default to the remote IP address. The requirement for remote id depends on the
+	// authentication mode for the tunnel:
+	// * PSK - The Remote ID is the public IP Address of the remote device terminating the VPN
+	// Tunnel. When NAT is configured on the Remote ID, enter the private IP Address of the Remote
+	// Site.
+	// * CERTIFICATE - The remote ID needs to match the certificate SAN (Subject Alternative Name)
+	// if available. If the remote certificate does not contain a SAN, the remote ID must match the
+	// the distinguished name of the certificate used to secure the remote endpoint (for example,
+	// C=US,ST=Massachusetts,O=VMware,OU=VCD,CN=Edge1).
 	RemoteId string `json:"remoteId,omitempty"`
 	// RemoteAddress is IPv4 Address of the remote endpoint on the remote site. This is the Public IPv4 Address of the
 	// remote device terminating the IPsec VPN Tunnel connection. This is required
@@ -989,7 +1084,17 @@ type NsxtAlbPool struct {
 
 	// Members field defines list of destination servers which are used by the Load Balancer Pool to direct load balanced
 	// traffic.
+	//
+	// Note. Only one of Members or MemberGroupRef can be specified
 	Members []NsxtAlbPoolMember `json:"members,omitempty"`
+
+	// MemberGroupRef contains reference to the Edge Firewall Group (`types.NsxtFirewallGroup`)
+	// representing destination servers which are used by the Load Balancer Pool to direct load
+	// balanced traffic.
+	//
+	// This field is only available in VCD 10.4.1+ (v37.1+)
+	// Note. Only one of Members or MemberGroupRef can be specified
+	MemberGroupRef *OpenApiReference `json:"memberGroupRef,omitempty"`
 
 	// CaCertificateRefs point to root certificates to use when validating certificates presented by the pool members.
 	CaCertificateRefs []OpenApiReference `json:"caCertificateRefs,omitempty"`
@@ -1131,6 +1236,12 @@ type NsxtAlbVirtualService struct {
 
 	// VirtualIpAddress to be used for exposing this virtual service
 	VirtualIpAddress string `json:"virtualIpAddress"`
+
+	// TransparentModeEnabled allows to configure Preserve Client IP on a Virtual Service
+	// This field is only available for VCD 10.4.1+ (v37.1+)
+	// Note. `types.NsxtAlbConfig.TransparentModeEnabled` must be set to `true` for this field to be
+	// available.
+	TransparentModeEnabled *bool `json:"transparentModeEnabled,omitempty"`
 
 	// HealthStatus contains status of the Load Balancer Cloud. Possible values are:
 	// UP - The cloud is healthy and ready to enable Load Balancer for an Edge Gateway.
@@ -1538,4 +1649,51 @@ type VdcNetworkProfile struct {
 type VdcNetworkProfileServicesEdgeCluster struct {
 	BackingID      string            `json:"backingId"`
 	EdgeClusterRef *OpenApiReference `json:"edgeClusterRef,omitempty"`
+}
+
+// NsxtEdgeGatewayQosProfiles defines a Gateway QoS Profile Object (structure comes from NSX-T)
+// This is a read-only entity in VCD
+type NsxtEdgeGatewayQosProfile struct {
+	// ID of the gateway QoS profile.
+	ID string `json:"id"`
+
+	DisplayName string `json:"displayName"`
+	Description string `json:"description"`
+
+	//BurstSize defines burst size in bytes.
+	BurstSize int `json:"burstSize"`
+
+	// CommittedBandwidth defines committed bandwidth in both directions specificd in Mb/s.
+	// Bandwidth is limited to line rate when the value configured is greater than line rate.
+	CommittedBandwidth int `json:"committedBandwidth"`
+
+	// ExcessAction defines action on traffic exceeding bandwidth.
+	ExcessAction string `json:"excessAction"`
+
+	// NsxTManagerRef contains reference to the originating NSX-T manager
+	NsxTManagerRef *OpenApiReference `json:"nsxTManagerRef"`
+}
+
+// NsxtEdgeGatewayQos provides Rate Limiting (QoS) configuration on an Edge Gateway by defining QoS
+// profiles in ingress and egress directions.
+//
+// Note. Sending `null` for either ingressProfile or egressProfile will reset the value to default
+// (unlimited)
+type NsxtEdgeGatewayQos struct {
+	EgressProfile  *OpenApiReference `json:"egressProfile"`
+	IngressProfile *OpenApiReference `json:"ingressProfile"`
+}
+
+// VcenterImportableDvpg defines a Distributed Port Group that can be imported into VCD
+// from a vCenter Server.
+//
+// Note. This is a read-only structure.
+type VcenterImportableDvpg struct {
+	BackingRef *OpenApiReference `json:"backingRef"`
+	DvSwitch   struct {
+		BackingRef    *OpenApiReference `json:"backingRef"`
+		VirtualCenter *OpenApiReference `json:"virtualCenter"`
+	} `json:"dvSwitch"`
+	VirtualCenter *OpenApiReference `json:"virtualCenter"`
+	Vlan          string            `json:"vlan"`
 }

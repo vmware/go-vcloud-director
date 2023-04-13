@@ -221,6 +221,34 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) IsDirect() bool {
 	return orgVdcNet.GetType() == types.OrgVdcNetworkTypeDirect
 }
 
+// IsNsxt returns true if the network is backed by NSX-T
+func (orgVdcNet *OpenApiOrgVdcNetwork) IsNsxt() bool {
+
+	// orgVdcNet.OpenApiOrgVdcNetwork.OrgVdcIsNsxTBacked returns `true` only if network is a member
+	// of VDC (not VDC Group) therefore an additional check for `BackingNetworkType` is required
+
+	return orgVdcNet.OpenApiOrgVdcNetwork.OrgVdcIsNsxTBacked ||
+		orgVdcNet.OpenApiOrgVdcNetwork.BackingNetworkType == types.OpenApiOrgVdcNetworkBackingTypeNsxt
+}
+
+// IsDhcpEnabled returns true if DHCP is enabled for NSX-T Org VDC network, false otherwise
+func (orgVdcNet *OpenApiOrgVdcNetwork) IsDhcpEnabled() bool {
+	if !orgVdcNet.IsNsxt() {
+		return false
+	}
+
+	dhcpConfig, err := orgVdcNet.GetOpenApiOrgVdcNetworkDhcp()
+	if err != nil {
+		return false
+	}
+
+	if dhcpConfig == nil || dhcpConfig.OpenApiOrgVdcNetworkDhcp == nil || dhcpConfig.OpenApiOrgVdcNetworkDhcp.Enabled == nil || !*dhcpConfig.OpenApiOrgVdcNetworkDhcp.Enabled {
+		return false
+	}
+
+	return true
+}
+
 // getOpenApiOrgVdcNetworkById is a private parent for wrapped functions:
 // func (org *Org) GetOpenApiOrgVdcNetworkById(id string) (*OpenApiOrgVdcNetwork, error)
 // func (vdc *Vdc) GetOpenApiOrgVdcNetworkById(id string) (*OpenApiOrgVdcNetwork, error)

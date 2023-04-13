@@ -357,18 +357,22 @@ const (
 	OpenApiEndpointAuditTrail                         = "auditTrail/"
 	OpenApiEndpointImportableTier0Routers             = "nsxTResources/importableTier0Routers"
 	OpenApiEndpointImportableSwitches                 = "/network/orgvdcnetworks/importableswitches"
+	OpenApiEndpointImportableDvpgs                    = "virtualCenters/resources/importableDvpgs"
 	OpenApiEndpointEdgeClusters                       = "nsxTResources/edgeClusters"
+	OpenApiEndpointQosProfiles                        = "nsxTResources/gatewayQoSProfiles"
 	OpenApiEndpointExternalNetworks                   = "externalNetworks/"
 	OpenApiEndpointVdcComputePolicies                 = "vdcComputePolicies/"
 	OpenApiEndpointVdcAssignedComputePolicies         = "vdcs/%s/computePolicies"
 	OpenApiEndpointVdcCapabilities                    = "vdcs/%s/capabilities"
 	OpenApiEndpointVdcNetworkProfile                  = "vdcs/%s/networkProfile"
 	OpenApiEndpointEdgeGateways                       = "edgeGateways/"
+	OpenApiEndpointEdgeGatewayQos                     = "edgeGateways/%s/qos"
 	OpenApiEndpointEdgeGatewayUsedIpAddresses         = "edgeGateways/%s/usedIpAddresses"
 	OpenApiEndpointNsxtFirewallRules                  = "edgeGateways/%s/firewall/rules"
 	OpenApiEndpointFirewallGroups                     = "firewallGroups/"
 	OpenApiEndpointOrgVdcNetworks                     = "orgVdcNetworks/"
 	OpenApiEndpointOrgVdcNetworksDhcp                 = "orgVdcNetworks/%s/dhcp"
+	OpenApiEndpointOrgVdcNetworksDhcpBindings         = "orgVdcNetworks/%s/dhcp/bindings/"
 	OpenApiEndpointNsxtNatRules                       = "edgeGateways/%s/nat/rules/"
 	OpenApiEndpointAppPortProfiles                    = "applicationPortProfiles/"
 	OpenApiEndpointIpSecVpnTunnel                     = "edgeGateways/%s/ipsec/tunnels/"
@@ -441,10 +445,19 @@ const (
 	OrgVdcNetworkTypeRouted = "NAT_ROUTED"
 	// OrgVdcNetworkTypeIsolated can be used to create NSX-T or NSX-V isolated Org Vdc network
 	OrgVdcNetworkTypeIsolated = "ISOLATED"
-	// OrgVdcNetworkTypeOpaque type is used to create NSX-T imported Org Vdc network
-	OrgVdcNetworkTypeOpaque = "OPAQUE"
 	// OrgVdcNetworkTypeDirect can be used to create NSX-V direct Org Vdc network
 	OrgVdcNetworkTypeDirect = "DIRECT"
+	// OrgVdcNetworkTypeOpaque type is used to create NSX-T imported Org Vdc network
+	OrgVdcNetworkTypeOpaque = "OPAQUE"
+)
+
+const (
+	// OrgVdcNetworkBackingTypeVirtualWire matches Org VDC network backing type for NSX-V
+	OrgVdcNetworkBackingTypeVirtualWire = "VIRTUAL_WIRE"
+	// OrgVdcNetworkBackingTypeNsxtFlexibleSegment matches Org VDC network backing type for NSX-T networks
+	OrgVdcNetworkBackingTypeNsxtFlexibleSegment = "NSXT_FLEXIBLE_SEGMENT"
+	// OrgVdcNetworkBackingTypeDvPortgroup matches Org VDC network backing type for NSX-T Imported network backed by DV Portgroup
+	OrgVdcNetworkBackingTypeDvPortgroup = "DV_PORTGROUP"
 )
 
 const (
@@ -584,3 +597,21 @@ var NsxvProtocolCodes = map[string]int{
 	DFWProtocolUdp:  17,
 	DFWProtocolIcmp: 1,
 }
+
+// NSX-T DHCP Binding Type
+const (
+	NsxtDhcpBindingTypeIpv4 = "IPV4"
+	NsxtDhcpBindingTypeIpv6 = "IPV6"
+)
+
+// NSX-T IPSec VPN authentication modes
+const (
+	NsxtIpSecVpnAuthenticationModePSK         = "PSK"
+	NsxtIpSecVpnAuthenticationModeCertificate = "CERTIFICATE"
+)
+
+// Org VDC network backing types
+const (
+	OpenApiOrgVdcNetworkBackingTypeNsxv = "VIRTUAL_WIRE"
+	OpenApiOrgVdcNetworkBackingTypeNsxt = "NSXT_FLEXIBLE_SEGMENT"
+)
