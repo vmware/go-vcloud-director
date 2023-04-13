@@ -118,7 +118,3 @@ func searchRight(client *Client, name, id string, check *C) {
 		check.Assert(fullRightById.Category, Equals, category.Id)
 	}
 }
-
-func (vcd *TestVCD) Test_Rights2(check *C) {
-
-}

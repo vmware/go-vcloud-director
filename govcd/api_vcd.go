@@ -117,8 +117,10 @@ func (vcdClient *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.
 }
 
 // isSystemAdministrator determines whether the logged user of VCD is a System administrator (returns true)
-// or not (returns false), based on the Organization where it is and the role.
+// or not (returns false), based on the Organization where it is and whether it has all the rights of "System Administrator".
 func isSystemAdministrator(vcdClient *VCDClient) bool {
+	const sysAdminRoleName = "System Administrator"
+
 	sessionInfo, err := vcdClient.Client.GetSessionInfo()
 	if err != nil {
 		return false
@@ -145,11 +147,15 @@ func isSystemAdministrator(vcdClient *VCDClient) bool {
 	if err != nil {
 		return false
 	}
+	// Early return, if it's directly the System Administrator, we don't need more checks
+	if sysAdminRoleName == userRole.Role.Name {
+		return true
+	}
 	userRights, err := userRole.GetRights(nil)
 	if err != nil {
 		return false
 	}
-	sysAdminRole, err := adminOrg.GetRoleByName("System Administrator")
+	sysAdminRole, err := adminOrg.GetRoleByName(sysAdminRoleName)
 	if err != nil {
 		return false
 	}

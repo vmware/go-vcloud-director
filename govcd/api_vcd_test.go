@@ -1950,21 +1950,29 @@ func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, i
 	return vcdClient, newUser, nil
 }
 
-// Tests
+// Tests the calculation if the `Client.IsSysAdmin` flag in every case:
+// - Tenant org: The flag is false
+// - System administrator: The flag is true
+// - User in System org that doesn't have System administrator rights: false
+// - User in System org that has all System Administrator rights: true
 func (vcd *TestVCD) Test_isSystemAdministrator(check *C) {
-	// Normal tenant user
+	// Normal tenant user. This should give that is NOT a SysAdmin (IsSysAdmin=false), because
+	// the organization is not System.
 	orgAdminClient := NewVCDClient(vcd.client.Client.VCDHREF, true)
 	err := orgAdminClient.Authenticate(vcd.config.Tenants[0].User, vcd.config.Tenants[0].Password, vcd.config.Tenants[0].SysOrg)
 	check.Assert(err, IsNil)
 	check.Assert(orgAdminClient.Client.IsSysAdmin, Equals, false)
 
-	// System administrator
+	// System Administrator. This should give that IT IS a SysAdmin (IsSysAdmin=true), because
+	// the organization is System and has all the rights of "System Administrator".
 	systemAdminClient := NewVCDClient(vcd.client.Client.VCDHREF, true)
 	err = systemAdminClient.Authenticate(vcd.config.Provider.User, vcd.config.Provider.Password, vcd.config.Provider.SysOrg)
 	check.Assert(err, IsNil)
 	check.Assert(systemAdminClient.Client.IsSysAdmin, Equals, true)
 
-	// Normal user in system
+	// Third case, here we create a new Role in System organization with a single right.
+	// When login with a new user with this role, this should give that it is NOT a SysAdmin (IsSysAdmin=false), because
+	// despite the organization is System it doesn't have enough rights.
 	systemOrg, err := vcd.client.GetAdminOrgByName(vcd.config.Provider.SysOrg)
 	check.Assert(err, IsNil)
 
@@ -1992,21 +2000,68 @@ func (vcd *TestVCD) Test_isSystemAdministrator(check *C) {
 	check.Assert(err, IsNil)
 
 	nonSystemAdminUser, err := systemOrg.CreateUserSimple(OrgUserConfiguration{
-		Name:     check.TestName(),
+		Name:     "test-is-sysadmin",
 		RoleName: dummyRole.Role.Name,
 		Password: check.TestName(),
 	})
 	check.Assert(err, IsNil)
 	AddToCleanupList(nonSystemAdminUser.User.Name, "user", nonSystemAdminUser.AdminOrg.AdminOrg.Name, check.TestName())
+	err = nonSystemAdminUser.Enable()
+	check.Assert(err, IsNil)
 
 	nonSystemAdminClient := NewVCDClient(vcd.client.Client.VCDHREF, true)
-	err = nonSystemAdminClient.Authenticate(check.TestName(), check.TestName(), systemOrg.AdminOrg.Name)
+	err = nonSystemAdminClient.Authenticate(nonSystemAdminUser.User.Name, check.TestName(), systemOrg.AdminOrg.Name)
 	check.Assert(err, IsNil)
 	check.Assert(nonSystemAdminClient.Client.IsSysAdmin, Equals, false)
 
-	// Cleanup
 	err = nonSystemAdminUser.Delete(false)
 	check.Assert(err, IsNil)
 	err = dummyRole.Delete()
+	check.Assert(err, IsNil)
+
+	// Fourth case, here we clone the "System Administrator" with a different name.
+	// When login with a new user with this role, this should give that IT IS a SysAdmin (IsSysAdmin=true), because
+	// the organization is System and it has all the SysAdmin rights.
+	dummyRole2, err := systemOrg.CreateRole(&types.Role{
+		Name:        check.TestName() + "2",
+		Description: check.TestName() + "2",
+		BundleKey:   systemRightsBundle.RightsBundle.BundleKey,
+		ReadOnly:    false,
+	})
+	check.Assert(err, IsNil)
+	AddToCleanupListOpenApi(dummyRole2.Role.Name, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRoles+dummyRole2.Role.ID)
+
+	sysAdminRole, err := systemOrg.GetRoleByName("System Administrator")
+	check.Assert(err, IsNil)
+	allRights, err := sysAdminRole.GetRights(nil)
+	check.Assert(err, IsNil)
+	allRightsRefs := make([]types.OpenApiReference, len(allRights))
+	for i, right := range allRights {
+		allRightsRefs[i] = types.OpenApiReference{
+			Name: right.Name,
+			ID:   right.ID,
+		}
+	}
+	err = dummyRole2.AddRights(allRightsRefs)
+	check.Assert(err, IsNil)
+
+	newSystemAdminUser, err := systemOrg.CreateUserSimple(OrgUserConfiguration{
+		Name:     "test-is-sysadmin2",
+		RoleName: dummyRole2.Role.Name,
+		Password: check.TestName(),
+	})
+	check.Assert(err, IsNil)
+	AddToCleanupList(newSystemAdminUser.User.Name, "user", newSystemAdminUser.AdminOrg.AdminOrg.Name, check.TestName())
+	err = newSystemAdminUser.Enable()
+	check.Assert(err, IsNil)
+
+	newSystemAdminClient := NewVCDClient(vcd.client.Client.VCDHREF, true)
+	err = newSystemAdminClient.Authenticate(newSystemAdminUser.User.Name, check.TestName(), systemOrg.AdminOrg.Name)
+	check.Assert(err, IsNil)
+	check.Assert(newSystemAdminClient.Client.IsSysAdmin, Equals, true)
+
+	err = newSystemAdminUser.Delete(false)
+	check.Assert(err, IsNil)
+	err = dummyRole2.Delete()
 	check.Assert(err, IsNil)
 }
