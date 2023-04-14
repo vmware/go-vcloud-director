@@ -101,7 +101,6 @@ type testEntity struct {
 	Name string `json:"name"`
 }
 
-// TODO Write tests for marshalJSONAndWriteFile
 func Test_readFileAndUnmarshalJSON(t *testing.T) {
 	type args struct {
 		filename string
