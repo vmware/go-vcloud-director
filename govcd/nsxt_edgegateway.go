@@ -793,8 +793,7 @@ func ipSliceDifference(minuendSlice, subtrahendSlice []netip.Addr) []netip.Addr 
 
 		// Store the IP in `minuendSlice` at `resultIpCount` index and increment the index itself
 		if !foundSubtrahend {
-			// Add IP to the resulting difference slice
-			// difference = append(difference, minuendIp)
+			// Add IP to the 'resultIpCount' index position
 			minuendSlice[resultIpCount] = minuendIp
 			resultIpCount++
 		}
