@@ -749,57 +749,6 @@ func flattenEdgeGatewayUplinkToIpSlice(uplinks []types.EdgeGatewayUplinks) ([]ne
 	return assignedIpSlice, nil
 }
 
-// ipSliceDifferenceOld performs mathematical subtraction for two slices of IPs
-// The formula is (minuend − subtrahend = difference)
-//
-// Special behavior:
-// * Passing nil minuend results in nil
-// * Passing nil subtrahend will return minuendSlice
-func ipSliceDifferenceOld(minuendSlice, subtrahendSlice []netip.Addr) []netip.Addr {
-	if minuendSlice == nil {
-		return nil
-	}
-
-	if subtrahendSlice == nil {
-		return minuendSlice
-	}
-
-	// Removal of elements from an empty slice results in an empty slice
-	if len(minuendSlice) == 0 {
-		return []netip.Addr{}
-	}
-	// Having an empty subtrahendSlice results in minuendSlice
-	if len(subtrahendSlice) == 0 {
-		return minuendSlice
-	}
-
-	var difference []netip.Addr
-
-	// Loop over minuend IPs
-	for _, minuendIp := range minuendSlice {
-
-		// Check if subtrahend has minuend element listed
-		var foundSubtrahend bool
-
-		for _, subtrahendIp := range subtrahendSlice {
-			if subtrahendIp == minuendIp {
-				// IP found in subtrahend, therefore breaking inner loop early
-				foundSubtrahend = true
-				break
-			}
-
-		}
-
-		// Store the IP in difference when subtrahend does not contain IP of minuend
-		if !foundSubtrahend {
-			// Add IP to the resulting difference slice
-			difference = append(difference, minuendIp)
-		}
-	}
-
-	return difference
-}
-
 // ipSliceDifference performs mathematical subtraction for two slices of IPs
 // The formula is (minuend − subtrahend = difference)
 //
