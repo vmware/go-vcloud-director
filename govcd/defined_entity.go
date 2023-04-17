@@ -153,6 +153,9 @@ func (rdeType *DefinedEntityType) Update(rdeTypeToUpdate types.DefinedEntityType
 	if rdeTypeToUpdate.Schema == nil || len(rdeTypeToUpdate.Schema) == 0 {
 		rdeTypeToUpdate.Schema = rdeType.DefinedEntityType.Schema
 	}
+	rdeTypeToUpdate.Version = rdeType.DefinedEntityType.Version
+	rdeTypeToUpdate.Nss = rdeType.DefinedEntityType.Nss
+	rdeTypeToUpdate.Vendor = rdeType.DefinedEntityType.Vendor
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
