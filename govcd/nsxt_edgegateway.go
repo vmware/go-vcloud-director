@@ -749,13 +749,13 @@ func flattenEdgeGatewayUplinkToIpSlice(uplinks []types.EdgeGatewayUplinks) ([]ne
 	return assignedIpSlice, nil
 }
 
-// ipSliceDifference performs mathematical subtraction for two slices of IPs
+// ipSliceDifferenceOld performs mathematical subtraction for two slices of IPs
 // The formula is (minuend − subtrahend = difference)
 //
 // Special behavior:
 // * Passing nil minuend results in nil
 // * Passing nil subtrahend will return minuendSlice
-func ipSliceDifference(minuendSlice, subtrahendSlice []netip.Addr) []netip.Addr {
+func ipSliceDifferenceOld(minuendSlice, subtrahendSlice []netip.Addr) []netip.Addr {
 	if minuendSlice == nil {
 		return nil
 	}
@@ -798,6 +798,68 @@ func ipSliceDifference(minuendSlice, subtrahendSlice []netip.Addr) []netip.Addr 
 	}
 
 	return difference
+}
+
+// ipSliceDifference performs mathematical subtraction for two slices of IPs
+// The formula is (minuend − subtrahend = difference)
+//
+// Special behavior:
+// * Passing nil minuend results in nil
+// * Passing nil subtrahend will return minuendSlice
+//
+// NOTE. This function will mutate minuendSlice to save memory and avoid having a copy of all values
+// which can become expensive if there are a lot of items
+func ipSliceDifference(minuendSlice, subtrahendSlice []netip.Addr) []netip.Addr {
+	if minuendSlice == nil {
+		return nil
+	}
+
+	if subtrahendSlice == nil {
+		return minuendSlice
+	}
+
+	// Removal of elements from an empty slice results in an empty slice
+	if len(minuendSlice) == 0 {
+		return []netip.Addr{}
+	}
+	// Having an empty subtrahendSlice results in minuendSlice
+	if len(subtrahendSlice) == 0 {
+		return minuendSlice
+	}
+
+	resultIpCount := 0 // count of IPs after removing items from subtrahendSlice
+
+	// Loop over minuend IPs
+	for _, minuendIp := range minuendSlice {
+
+		// Check if subtrahend has minuend element listed
+		var foundSubtrahend bool
+		for _, subtrahendIp := range subtrahendSlice {
+			if subtrahendIp == minuendIp {
+				// IP found in subtrahend, therefore breaking inner loop early
+				foundSubtrahend = true
+				break
+			}
+		}
+
+		// Store the IP in `minuendSlice` at `resultIpCount` index and increment the index itself
+		if !foundSubtrahend {
+			// Add IP to the resulting difference slice
+			// difference = append(difference, minuendIp)
+			minuendSlice[resultIpCount] = minuendIp
+			resultIpCount++
+		}
+	}
+
+	// if all elements are removed - return nil
+	if resultIpCount == 0 {
+		return nil
+	}
+
+	// cut off all values, greater than `resultIpCount`
+	minuendSlice = minuendSlice[:resultIpCount]
+
+	return minuendSlice
 }
 
 // filterIpSlicesBySubnet accepts 'ipRange' and returns a slice of IPs only that fall into given
