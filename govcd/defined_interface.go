@@ -139,6 +139,11 @@ func (di *DefinedInterface) Update(definedInterface types.DefinedInterface) erro
 		return fmt.Errorf("ID of the receiver Defined Interface and the input ID don't match")
 	}
 
+	// We override these as they need to be always sent on updates
+	definedInterface.Version = di.DefinedInterface.Version
+	definedInterface.Nss = di.DefinedInterface.Nss
+	definedInterface.Vendor = di.DefinedInterface.Vendor
+
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
