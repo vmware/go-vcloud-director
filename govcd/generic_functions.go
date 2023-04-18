@@ -1,11 +1,7 @@
 package govcd
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/fs"
-	"os"
-	"path"
 )
 
 // oneOrError is used to cover up a common pattern in this codebase which is usually used in
@@ -41,35 +37,4 @@ func oneOrError[T any](key, name string, entitySlice []*T) (*T, error) {
 	}
 
 	return entitySlice[0], nil
-}
-
-// readFileAndUnmarshalJSON reads a file and unmarshals it to the given variable
-func readFileAndUnmarshalJSON[T any](filename string, object T) error {
-	data, err := os.ReadFile(path.Clean(filename))
-	if err != nil {
-		return fmt.Errorf("failed to read from file: %s", err)
-	}
-
-	err = json.Unmarshal(data, object)
-	if err != nil {
-		return fmt.Errorf("failed to unmarshal file contents to the object: %s", err)
-	}
-
-	return nil
-}
-
-// marshalJSONAndWriteToFile marshalls the given object into JSON and writes
-// to a file with the given permissions in octal format (e.g 0600)
-func marshalJSONAndWriteToFile[T any](filename string, object *T, permissions int) error {
-	data, err := json.MarshalIndent(object, " ", " ")
-	if err != nil {
-		return fmt.Errorf("error marshalling object to JSON: %s", err)
-	}
-
-	err = os.WriteFile(filename, data, fs.FileMode(permissions))
-	if err != nil {
-		return fmt.Errorf("error writing to the file: %s", err)
-	}
-
-	return nil
 }

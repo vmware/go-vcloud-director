@@ -9,8 +9,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/url"
+	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -153,4 +156,35 @@ func (vcdClient *VCDClient) GetBearerTokenFromApiToken(org, token string) (*type
 		return nil, fmt.Errorf("access token retrieved from API token was empty - %s %s", resp.Status, string(body))
 	}
 	return &tokenDef, nil
+}
+
+// readFileAndUnmarshalJSON reads a file and unmarshals it to the given variable
+func readFileAndUnmarshalJSON(filename string, object any) error {
+	data, err := os.ReadFile(path.Clean(filename))
+	if err != nil {
+		return fmt.Errorf("failed to read from file: %s", err)
+	}
+
+	err = json.Unmarshal(data, object)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal file contents to the object: %s", err)
+	}
+
+	return nil
+}
+
+// marshalJSONAndWriteToFile marshalls the given object into JSON and writes
+// to a file with the given permissions in octal format (e.g 0600)
+func marshalJSONAndWriteToFile(filename string, object any, permissions int) error {
+	data, err := json.MarshalIndent(object, " ", " ")
+	if err != nil {
+		return fmt.Errorf("error marshalling object to JSON: %s", err)
+	}
+
+	err = os.WriteFile(filename, data, fs.FileMode(permissions))
+	if err != nil {
+		return fmt.Errorf("error writing to the file: %s", err)
+	}
+
+	return nil
 }
