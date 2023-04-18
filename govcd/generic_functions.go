@@ -61,7 +61,7 @@ func readFileAndUnmarshalJSON[T any](filename string, object T) error {
 // marshalJSONAndWriteToFile marshalls the given object into JSON and writes
 // to a file with the given permissions in octal format (e.g 0600)
 func marshalJSONAndWriteToFile[T any](filename string, object *T, permissions int) error {
-	data, err := json.Marshal(object)
+	data, err := json.MarshalIndent(object, " ", " ")
 	if err != nil {
 		return fmt.Errorf("error marshalling object to JSON: %s", err)
 	}

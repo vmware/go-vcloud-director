@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
@@ -60,6 +61,9 @@ func (vcdClient *VCDClient) SetServiceAccountApiToken(org, apiTokenFile string) 
 	// leave only the refresh token to not leave any sensitive information
 	saApiToken = &types.ApiTokenRefresh{
 		RefreshToken: saApiToken.RefreshToken,
+		TokenType:    "Service Account",
+		UpdatedBy:    vcdClient.Client.UserAgent,
+		UpdatedOn:    time.Now().Format(time.RFC3339),
 	}
 	err = marshalJSONAndWriteToFile(apiTokenFile, saApiToken, 0600)
 	if err != nil {
