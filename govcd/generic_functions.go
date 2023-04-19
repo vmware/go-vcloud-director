@@ -1,6 +1,8 @@
 package govcd
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // oneOrError is used to cover up a common pattern in this codebase which is usually used in
 // GetXByName functions.

@@ -9,9 +9,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/url"
+	"os"
+	"path"
 	"strings"
+	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
@@ -29,6 +33,47 @@ func (vcdClient *VCDClient) SetApiToken(org, apiToken string) (*types.ApiTokenRe
 		return nil, err
 	}
 	return tokenRefresh, nil
+}
+
+// SetServiceAccountApiToken reads the current Service Account API token,
+// sets the client's bearer token and fetches a new API token for next
+// authentication request using SetApiToken and overwrites the old file.
+func (vcdClient *VCDClient) SetServiceAccountApiToken(org, apiTokenFile string) error {
+	if vcdClient.Client.APIVCDMaxVersionIs("< 37.0") {
+		version, err := vcdClient.Client.GetVcdFullVersion()
+		if err == nil {
+			return fmt.Errorf("minimum version for Service Account authentication is 10.4 - Version detected: %s", version.Version)
+		}
+		// If we can't get the VCD version, we return API version info
+		return fmt.Errorf("minimum API version for Service Account authentication is 37.0 - Version detected: %s", vcdClient.Client.APIVersion)
+	}
+
+	saApiToken := &types.ApiTokenRefresh{}
+	// Read file contents and unmarshal them to saApiToken
+	err := readFileAndUnmarshalJSON(apiTokenFile, saApiToken)
+	if err != nil {
+		return err
+	}
+
+	// Get bearer token and update the refresh token for the next authentication request
+	saApiToken, err = vcdClient.SetApiToken(org, saApiToken.RefreshToken)
+	if err != nil {
+		return err
+	}
+
+	// leave only the refresh token to not leave any sensitive information
+	saApiToken = &types.ApiTokenRefresh{
+		RefreshToken: saApiToken.RefreshToken,
+		TokenType:    "Service Account",
+		UpdatedBy:    vcdClient.Client.UserAgent,
+		UpdatedOn:    time.Now().Format(time.RFC3339),
+	}
+	err = marshalJSONAndWriteToFile(apiTokenFile, saApiToken, 0600)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GetBearerTokenFromApiToken uses an API token to retrieve a bearer token
@@ -111,4 +156,35 @@ func (vcdClient *VCDClient) GetBearerTokenFromApiToken(org, token string) (*type
 		return nil, fmt.Errorf("access token retrieved from API token was empty - %s %s", resp.Status, string(body))
 	}
 	return &tokenDef, nil
+}
+
+// readFileAndUnmarshalJSON reads a file and unmarshals it to the given variable
+func readFileAndUnmarshalJSON(filename string, object any) error {
+	data, err := os.ReadFile(path.Clean(filename))
+	if err != nil {
+		return fmt.Errorf("failed to read from file: %s", err)
+	}
+
+	err = json.Unmarshal(data, object)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal file contents to the object: %s", err)
+	}
+
+	return nil
+}
+
+// marshalJSONAndWriteToFile marshalls the given object into JSON and writes
+// to a file with the given permissions in octal format (e.g 0600)
+func marshalJSONAndWriteToFile(filename string, object any, permissions int) error {
+	data, err := json.MarshalIndent(object, " ", " ")
+	if err != nil {
+		return fmt.Errorf("error marshalling object to JSON: %s", err)
+	}
+
+	err = os.WriteFile(filename, data, fs.FileMode(permissions))
+	if err != nil {
+		return fmt.Errorf("error writing to the file: %s", err)
+	}
+
+	return nil
 }

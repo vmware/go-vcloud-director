@@ -3257,10 +3257,12 @@ type UpdateVdcStorageProfiles struct {
 
 // ApiTokenRefresh contains the access token resulting from a refresh_token operation
 type ApiTokenRefresh struct {
-	AccessToken  string      `json:"access_token"`
-	TokenType    string      `json:"token_type"`
-	ExpiresIn    int         `json:"expires_in"`
-	RefreshToken interface{} `json:"refresh_token"`
+	AccessToken  string `json:"access_token,omitempty"`
+	TokenType    string `json:"token_type,omitempty"`
+	ExpiresIn    int    `json:"expires_in,omitempty"`
+	RefreshToken string `json:"refresh_token,omitempty"`
+	UpdatedBy    string `json:"updated_by,omitempty"`
+	UpdatedOn    string `json:"updated_on,omitempty"`
 }
 
 /**/

@@ -3,7 +3,6 @@
 /*
 * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
-
 package govcd
 
 import (
@@ -29,9 +28,9 @@ func Test_oneOrError(t *testing.T) {
 			args: args{
 				key:         "name",
 				name:        "test",
-				entitySlice: []*testEntity{{name: "test"}},
+				entitySlice: []*testEntity{{Name: "test"}},
 			},
-			want:    &testEntity{name: "test"},
+			want:    &testEntity{Name: "test"},
 			wantErr: false,
 		},
 		{
@@ -50,7 +49,7 @@ func Test_oneOrError(t *testing.T) {
 			args: args{
 				key:         "name",
 				name:        "test",
-				entitySlice: []*testEntity{{name: "test"}, {name: "best"}},
+				entitySlice: []*testEntity{{Name: "test"}, {Name: "best"}},
 			},
 			want:    nil,
 			wantErr: true,
@@ -60,7 +59,7 @@ func Test_oneOrError(t *testing.T) {
 			args: args{
 				key:         "name",
 				name:        "test",
-				entitySlice: []*testEntity{{name: "test"}, {name: "best"}, {name: "rest"}},
+				entitySlice: []*testEntity{{Name: "test"}, {Name: "best"}, {Name: "rest"}},
 			},
 			want:    nil,
 			wantErr: true,
@@ -98,5 +97,5 @@ func Test_oneOrError(t *testing.T) {
 }
 
 type testEntity struct {
-	name string
+	Name string `json:"name"`
 }
