@@ -694,20 +694,6 @@ func addrOf[T any](variable T) *T {
 	return &variable
 }
 
-// func addrOf(value bool) *bool {
-// 	return &value
-// }
-
-// // addrOf is a helper that returns the address of an `int`
-// func addrOf(x int) *int {
-// 	return &x
-// }
-
-// // addrOf is a helper that returns the address of a `string`
-// func addrOf(x string) *string {
-// 	return &x
-// }
-
 // IsUuid returns true if the identifier is a bare UUID
 func IsUuid(identifier string) bool {
 	reUuid := regexp.MustCompile(`^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$`)
