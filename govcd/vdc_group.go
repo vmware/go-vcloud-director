@@ -522,7 +522,7 @@ func (vdcGroup *VdcGroup) EnableDefaultPolicy() (*VdcGroup, error) {
 	if dfwPolicies.DefaultPolicy == nil {
 		return nil, fmt.Errorf("DFW has to be enabled before changing  Default policy")
 	}
-	dfwPolicies.DefaultPolicy.Enabled = takeBoolPointer(true)
+	dfwPolicies.DefaultPolicy.Enabled = addrOf(true)
 	return vdcGroup.UpdateDefaultDfwPolicies(*dfwPolicies.DefaultPolicy)
 }
 
@@ -536,7 +536,7 @@ func (vdcGroup *VdcGroup) DisableDefaultPolicy() (*VdcGroup, error) {
 	if dfwPolicies.DefaultPolicy == nil {
 		return nil, fmt.Errorf("DFW has to be enabled before changing Default policy")
 	}
-	dfwPolicies.DefaultPolicy.Enabled = takeBoolPointer(false)
+	dfwPolicies.DefaultPolicy.Enabled = addrOf(false)
 	return vdcGroup.UpdateDefaultDfwPolicies(*dfwPolicies.DefaultPolicy)
 }
 

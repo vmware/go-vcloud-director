@@ -240,10 +240,10 @@ func Test_getVnicIndexFromNetworkNameType(t *testing.T) {
 		hasError          bool
 		expectedError     error
 	}{
-		{"ExtNetwork", "my-ext-network", types.EdgeGatewayVnicTypeUplink, takeIntAddress(0), false, nil},
-		{"OrgNetwork", "my-vdc-int-net", types.EdgeGatewayVnicTypeInternal, takeIntAddress(1), false, nil},
-		{"WithSubinterfaces", "subinterfaced-net", types.EdgeGatewayVnicTypeSubinterface, takeIntAddress(10), false, nil},
-		{"WithSubinterfaces2", "subinterface2", types.EdgeGatewayVnicTypeSubinterface, takeIntAddress(11), false, nil},
+		{"ExtNetwork", "my-ext-network", types.EdgeGatewayVnicTypeUplink, addrOf(0), false, nil},
+		{"OrgNetwork", "my-vdc-int-net", types.EdgeGatewayVnicTypeInternal, addrOf(1), false, nil},
+		{"WithSubinterfaces", "subinterfaced-net", types.EdgeGatewayVnicTypeSubinterface, addrOf(10), false, nil},
+		{"WithSubinterfaces2", "subinterface2", types.EdgeGatewayVnicTypeSubinterface, addrOf(11), false, nil},
 		{"NonExistingUplink", "invalid-network-name", types.EdgeGatewayVnicTypeUplink, nil, true, ErrorEntityNotFound},
 		{"NonExistingInternal", "invalid-network-name", types.EdgeGatewayVnicTypeInternal, nil, true, ErrorEntityNotFound},
 		{"NonExistingSubinterface", "invalid-network-name", types.EdgeGatewayVnicTypeSubinterface, nil, true, ErrorEntityNotFound},

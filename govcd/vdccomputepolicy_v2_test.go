@@ -26,7 +26,7 @@ func (vcd *TestVCD) Test_VdcComputePoliciesV2(check *C) {
 		VdcComputePolicyV2: &types.VdcComputePolicyV2{
 			VdcComputePolicy: types.VdcComputePolicy{
 				Name:        check.TestName() + "_empty",
-				Description: takeStringPointer("Empty policy created by test"),
+				Description: addrOf("Empty policy created by test"),
 			},
 			PolicyType: "VdcVmPolicy",
 		},
@@ -45,17 +45,17 @@ func (vcd *TestVCD) Test_VdcComputePoliciesV2(check *C) {
 		VdcComputePolicyV2: &types.VdcComputePolicyV2{
 			VdcComputePolicy: types.VdcComputePolicy{
 				Name:                       check.TestName(),
-				Description:                takeStringPointer("Not Empty policy created by test"),
-				CPUSpeed:                   takeIntAddress(100),
-				CPUCount:                   takeIntAddress(2),
-				CoresPerSocket:             takeIntAddress(1),
+				Description:                addrOf("Not Empty policy created by test"),
+				CPUSpeed:                   addrOf(100),
+				CPUCount:                   addrOf(2),
+				CoresPerSocket:             addrOf(1),
 				CPUReservationGuarantee:    takeFloatAddress(0.26),
-				CPULimit:                   takeIntAddress(200),
-				CPUShares:                  takeIntAddress(5),
-				Memory:                     takeIntAddress(1600),
+				CPULimit:                   addrOf(200),
+				CPUShares:                  addrOf(5),
+				Memory:                     addrOf(1600),
 				MemoryReservationGuarantee: takeFloatAddress(0.5),
-				MemoryLimit:                takeIntAddress(1200),
-				MemoryShares:               takeIntAddress(500),
+				MemoryLimit:                addrOf(1200),
+				MemoryShares:               addrOf(500),
 			},
 			PolicyType: "VdcVmPolicy",
 		},
@@ -79,7 +79,7 @@ func (vcd *TestVCD) Test_VdcComputePoliciesV2(check *C) {
 	check.Assert(*createdPolicy2.VdcComputePolicyV2.MemoryShares, Equals, 500)
 
 	// Step 2 - Update
-	createdPolicy2.VdcComputePolicyV2.Description = takeStringPointer("Updated description")
+	createdPolicy2.VdcComputePolicyV2.Description = addrOf("Updated description")
 	updatedPolicy, err := createdPolicy2.Update()
 	check.Assert(err, IsNil)
 	check.Assert(updatedPolicy.VdcComputePolicyV2, DeepEquals, createdPolicy2.VdcComputePolicyV2)
@@ -146,10 +146,10 @@ func (vcd *TestVCD) Test_SetAssignedComputePoliciesV2(check *C) {
 		VdcComputePolicyV2: &types.VdcComputePolicyV2{
 			VdcComputePolicy: types.VdcComputePolicy{
 				Name:                    check.TestName() + "1",
-				Description:             takeStringPointer("Policy created by Test_SetAssignedComputePolicies"),
-				CoresPerSocket:          takeIntAddress(1),
+				Description:             addrOf("Policy created by Test_SetAssignedComputePolicies"),
+				CoresPerSocket:          addrOf(1),
 				CPUReservationGuarantee: takeFloatAddress(0.26),
-				CPULimit:                takeIntAddress(200),
+				CPULimit:                addrOf(200),
 			},
 			PolicyType: "VdcVmPolicy",
 		},
@@ -163,10 +163,10 @@ func (vcd *TestVCD) Test_SetAssignedComputePoliciesV2(check *C) {
 		VdcComputePolicyV2: &types.VdcComputePolicyV2{
 			VdcComputePolicy: types.VdcComputePolicy{
 				Name:                    check.TestName() + "2",
-				Description:             takeStringPointer("Policy created by Test_SetAssignedComputePolicies"),
-				CoresPerSocket:          takeIntAddress(2),
+				Description:             addrOf("Policy created by Test_SetAssignedComputePolicies"),
+				CoresPerSocket:          addrOf(2),
 				CPUReservationGuarantee: takeFloatAddress(0.52),
-				CPULimit:                takeIntAddress(400),
+				CPULimit:                addrOf(400),
 			},
 			PolicyType: "VdcVmPolicy",
 		},
@@ -259,7 +259,7 @@ func (vcd *TestVCD) Test_VdcVmPlacementPoliciesV2(check *C) {
 		VdcComputePolicyV2: &types.VdcComputePolicyV2{
 			VdcComputePolicy: types.VdcComputePolicy{
 				Name:        check.TestName() + "_empty",
-				Description: takeStringPointer("VM Placement Policy created by " + check.TestName()),
+				Description: addrOf("VM Placement Policy created by " + check.TestName()),
 			},
 			PolicyType: "VdcVmPolicy",
 			PvdcNamedVmGroupsMap: []types.PvdcNamedVmGroupsMap{
@@ -306,7 +306,7 @@ func (vcd *TestVCD) Test_VdcVmPlacementPoliciesV2(check *C) {
 	check.Assert(createdPolicy.VdcComputePolicyV2.PvdcNamedVmGroupsMap, DeepEquals, newComputePolicy.VdcComputePolicyV2.PvdcNamedVmGroupsMap)
 
 	// Update the VM Placement Policy
-	createdPolicy.VdcComputePolicyV2.Description = takeStringPointer("Updated description")
+	createdPolicy.VdcComputePolicyV2.Description = addrOf("Updated description")
 	updatedPolicy, err := createdPolicy.Update()
 	check.Assert(err, IsNil)
 	check.Assert(updatedPolicy.VdcComputePolicyV2, DeepEquals, createdPolicy.VdcComputePolicyV2)
@@ -350,7 +350,7 @@ func (vcd *TestVCD) Test_VdcDuplicatedVmPlacementPolicyGetsACleanError(check *C)
 		VdcComputePolicyV2: &types.VdcComputePolicyV2{
 			VdcComputePolicy: types.VdcComputePolicy{
 				Name:        check.TestName(),
-				Description: takeStringPointer("VM Placement Policy created by " + check.TestName()),
+				Description: addrOf("VM Placement Policy created by " + check.TestName()),
 			},
 			PolicyType: "VdcVmPolicy",
 			PvdcNamedVmGroupsMap: []types.PvdcNamedVmGroupsMap{

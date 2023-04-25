@@ -694,19 +694,19 @@ func addrOf[T any](variable T) *T {
 	return &variable
 }
 
-func takeBoolPointer(value bool) *bool {
-	return &value
-}
+// func addrOf(value bool) *bool {
+// 	return &value
+// }
 
-// takeIntAddress is a helper that returns the address of an `int`
-func takeIntAddress(x int) *int {
-	return &x
-}
+// // addrOf is a helper that returns the address of an `int`
+// func addrOf(x int) *int {
+// 	return &x
+// }
 
-// takeStringPointer is a helper that returns the address of a `string`
-func takeStringPointer(x string) *string {
-	return &x
-}
+// // addrOf is a helper that returns the address of a `string`
+// func addrOf(x string) *string {
+// 	return &x
+// }
 
 // IsUuid returns true if the identifier is a bare UUID
 func IsUuid(identifier string) bool {
@@ -858,8 +858,8 @@ func (client *Client) TestConnectionWithDefaults(subscriptionURL string) (bool, 
 	testConnectionConfig := types.TestConnection{
 		Host:    url.Hostname(),
 		Port:    port,
-		Secure:  takeBoolPointer(true), // Default value used by VCD UI
-		Timeout: 30,                    // Default value used by VCD UI
+		Secure:  addrOf(true), // Default value used by VCD UI
+		Timeout: 30,           // Default value used by VCD UI
 	}
 
 	testConnectionResult, err := client.TestConnection(testConnectionConfig)

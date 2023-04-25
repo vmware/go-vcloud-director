@@ -462,10 +462,10 @@ func (vapp *VApp) Customize(computername, script string, changeSid bool) (Task, 
 		HREF:                vapp.VApp.Children.VM[0].HREF,
 		Type:                types.MimeGuestCustomizationSection,
 		Info:                "Specifies Guest OS Customization Settings",
-		Enabled:             takeBoolPointer(true),
+		Enabled:             addrOf(true),
 		ComputerName:        computername,
 		CustomizationScript: script,
-		ChangeSid:           takeBoolPointer(changeSid),
+		ChangeSid:           addrOf(changeSid),
 	}
 
 	apiEndpoint := urlParseRequestURI(vapp.VApp.Children.VM[0].HREF)
@@ -1530,8 +1530,8 @@ func (vapp *VApp) RenewLease(deploymentLeaseInSeconds, storageLeaseInSeconds int
 		Xmlns:                    types.XMLNamespaceVCloud,
 		OVFInfo:                  "Lease section settings",
 		Type:                     types.MimeLeaseSettingSection,
-		DeploymentLeaseInSeconds: takeIntAddress(deploymentLeaseInSeconds),
-		StorageLeaseInSeconds:    takeIntAddress(storageLeaseInSeconds),
+		DeploymentLeaseInSeconds: addrOf(deploymentLeaseInSeconds),
+		StorageLeaseInSeconds:    addrOf(storageLeaseInSeconds),
 	}
 
 	task, err := vapp.client.ExecuteTaskRequest(href, http.MethodPut,

@@ -124,7 +124,7 @@ func (vcd *TestVCD) Test_NsxtNatDnatFirewallMatchPriority(check *C) {
 		SnatDestinationAddresses: "",
 		Logging:                  true,
 		FirewallMatch:            types.NsxtNatRuleFirewallMatchExternalAddress,
-		Priority:                 takeIntAddress(248),
+		Priority:                 addrOf(248),
 	}
 
 	nsxtNatRuleChecks(natRuleDefinition, edge, check, vcd)
@@ -252,7 +252,7 @@ func (vcd *TestVCD) Test_NsxtNatPriorityAndFirewallMatch(check *C) {
 		SnatDestinationAddresses: "",
 		Logging:                  true,
 		DnatExternalPort:         "",
-		Priority:                 takeIntAddress(100),
+		Priority:                 addrOf(100),
 		FirewallMatch:            types.NsxtNatRuleFirewallMatchExternalAddress,
 	}
 
@@ -287,7 +287,7 @@ func (vcd *TestVCD) Test_NsxtNatReflexive(check *C) {
 		Type:              types.NsxtNatRuleTypeReflexive,
 		ExternalAddresses: edgeGatewayPrimaryIp,
 		InternalAddresses: "11.11.11.2",
-		Priority:          takeIntAddress(100),
+		Priority:          addrOf(100),
 		FirewallMatch:     types.NsxtNatRuleFirewallMatchExternalAddress,
 	}
 

@@ -75,7 +75,7 @@ func (vcd *TestVCD) Test_AlbVirtualService(check *C) {
 func testMinimalVirtualServiceConfigHTTP(check *C, edge *NsxtEdgeGateway, pool *NsxtAlbPool, seGroup *NsxtAlbServiceEngineGroup, vcd *TestVCD, client *VCDClient) {
 	virtualServiceConfig := &types.NsxtAlbVirtualService{
 		Name:    check.TestName(),
-		Enabled: takeBoolPointer(true),
+		Enabled: addrOf(true),
 		ApplicationProfile: types.NsxtAlbVirtualServiceApplicationProfile{
 			SystemDefined: true,
 			Type:          "HTTP",
@@ -85,7 +85,7 @@ func testMinimalVirtualServiceConfigHTTP(check *C, edge *NsxtEdgeGateway, pool *
 		ServiceEngineGroupRef: types.OpenApiReference{ID: seGroup.NsxtAlbServiceEngineGroup.ID},
 		ServicePorts: []types.NsxtAlbVirtualServicePort{
 			{
-				PortStart: takeIntAddress(80),
+				PortStart: addrOf(80),
 			},
 		},
 		VirtualIpAddress: edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
@@ -94,7 +94,7 @@ func testMinimalVirtualServiceConfigHTTP(check *C, edge *NsxtEdgeGateway, pool *
 	virtualServiceConfigUpdated := &types.NsxtAlbVirtualService{
 		Name:        check.TestName(),
 		Description: "Updated",
-		Enabled:     takeBoolPointer(true),
+		Enabled:     addrOf(true),
 		ApplicationProfile: types.NsxtAlbVirtualServiceApplicationProfile{
 			SystemDefined: true,
 			Type:          "HTTP",
@@ -104,14 +104,14 @@ func testMinimalVirtualServiceConfigHTTP(check *C, edge *NsxtEdgeGateway, pool *
 		ServiceEngineGroupRef: types.OpenApiReference{ID: seGroup.NsxtAlbServiceEngineGroup.ID},
 		ServicePorts: []types.NsxtAlbVirtualServicePort{
 			{
-				PortStart:  takeIntAddress(443),
-				PortEnd:    takeIntAddress(449),
-				SslEnabled: takeBoolPointer(false),
+				PortStart:  addrOf(443),
+				PortEnd:    addrOf(449),
+				SslEnabled: addrOf(false),
 			},
 			{
-				PortStart:  takeIntAddress(2000),
-				PortEnd:    takeIntAddress(2010),
-				SslEnabled: takeBoolPointer(false),
+				PortStart:  addrOf(2000),
+				PortEnd:    addrOf(2010),
+				SslEnabled: addrOf(false),
 			},
 		},
 		// Use Primary IP of Edge Gateway as virtual service IP
@@ -184,7 +184,7 @@ func testMinimalVirtualServiceConfigHTTPTransparent(check *C, edge *NsxtEdgeGate
 func testMinimalVirtualServiceConfigL4(check *C, edge *NsxtEdgeGateway, pool *NsxtAlbPool, seGroup *NsxtAlbServiceEngineGroup, vcd *TestVCD, client *VCDClient) {
 	virtualServiceConfig := &types.NsxtAlbVirtualService{
 		Name:    check.TestName(),
-		Enabled: takeBoolPointer(true),
+		Enabled: addrOf(true),
 		ApplicationProfile: types.NsxtAlbVirtualServiceApplicationProfile{
 			SystemDefined: true,
 			Type:          "L4",
@@ -194,7 +194,7 @@ func testMinimalVirtualServiceConfigL4(check *C, edge *NsxtEdgeGateway, pool *Ns
 		ServiceEngineGroupRef: types.OpenApiReference{ID: seGroup.NsxtAlbServiceEngineGroup.ID},
 		ServicePorts: []types.NsxtAlbVirtualServicePort{
 			{
-				PortStart: takeIntAddress(80),
+				PortStart: addrOf(80),
 			},
 		},
 		VirtualIpAddress: edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
@@ -203,7 +203,7 @@ func testMinimalVirtualServiceConfigL4(check *C, edge *NsxtEdgeGateway, pool *Ns
 	virtualServiceConfigUpdated := &types.NsxtAlbVirtualService{
 		Name:        check.TestName(),
 		Description: "Updated",
-		Enabled:     takeBoolPointer(true),
+		Enabled:     addrOf(true),
 		ApplicationProfile: types.NsxtAlbVirtualServiceApplicationProfile{
 			SystemDefined: true,
 			Type:          "L4",
@@ -213,29 +213,29 @@ func testMinimalVirtualServiceConfigL4(check *C, edge *NsxtEdgeGateway, pool *Ns
 		ServiceEngineGroupRef: types.OpenApiReference{ID: seGroup.NsxtAlbServiceEngineGroup.ID},
 		ServicePorts: []types.NsxtAlbVirtualServicePort{
 			{
-				PortStart: takeIntAddress(443),
+				PortStart: addrOf(443),
 				TcpUdpProfile: &types.NsxtAlbVirtualServicePortTcpUdpProfile{
 					SystemDefined: true,
 					Type:          "TCP_PROXY",
 				},
 			},
 			{
-				PortStart: takeIntAddress(8443),
-				PortEnd:   takeIntAddress(8445),
+				PortStart: addrOf(8443),
+				PortEnd:   addrOf(8445),
 				TcpUdpProfile: &types.NsxtAlbVirtualServicePortTcpUdpProfile{
 					SystemDefined: true,
 					Type:          "TCP_FAST_PATH",
 				},
 			},
 			{
-				PortStart: takeIntAddress(9000),
+				PortStart: addrOf(9000),
 				TcpUdpProfile: &types.NsxtAlbVirtualServicePortTcpUdpProfile{
 					SystemDefined: true,
 					Type:          "UDP_FAST_PATH",
 				},
 			},
 			{
-				PortStart: takeIntAddress(10000),
+				PortStart: addrOf(10000),
 			},
 		},
 		// Use Primary IP of Edge Gateway as virtual service IP
@@ -264,7 +264,7 @@ func testMinimalVirtualServiceConfigL4TLS(check *C, edge *NsxtEdgeGateway, pool 
 
 	virtualServiceConfig := &types.NsxtAlbVirtualService{
 		Name:    check.TestName(),
-		Enabled: takeBoolPointer(true),
+		Enabled: addrOf(true),
 		ApplicationProfile: types.NsxtAlbVirtualServiceApplicationProfile{
 			SystemDefined: true,
 			Type:          "L4_TLS",
@@ -275,8 +275,8 @@ func testMinimalVirtualServiceConfigL4TLS(check *C, edge *NsxtEdgeGateway, pool 
 		CertificateRef:        &types.OpenApiReference{ID: createdCertificate.CertificateLibrary.Id},
 		ServicePorts: []types.NsxtAlbVirtualServicePort{
 			{
-				PortStart:  takeIntAddress(80),
-				SslEnabled: takeBoolPointer(true),
+				PortStart:  addrOf(80),
+				SslEnabled: addrOf(true),
 			},
 		},
 		VirtualIpAddress: edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
@@ -285,7 +285,7 @@ func testMinimalVirtualServiceConfigL4TLS(check *C, edge *NsxtEdgeGateway, pool 
 	virtualServiceConfigUpdated := &types.NsxtAlbVirtualService{
 		Name:        check.TestName(),
 		Description: "Updated",
-		Enabled:     takeBoolPointer(true),
+		Enabled:     addrOf(true),
 		ApplicationProfile: types.NsxtAlbVirtualServiceApplicationProfile{
 			SystemDefined: true,
 			Type:          "L4_TLS",
@@ -296,8 +296,8 @@ func testMinimalVirtualServiceConfigL4TLS(check *C, edge *NsxtEdgeGateway, pool 
 		CertificateRef:        &types.OpenApiReference{ID: createdCertificate.CertificateLibrary.Id},
 		ServicePorts: []types.NsxtAlbVirtualServicePort{
 			{
-				PortStart:  takeIntAddress(443),
-				SslEnabled: takeBoolPointer(true),
+				PortStart:  addrOf(443),
+				SslEnabled: addrOf(true),
 				TcpUdpProfile: &types.NsxtAlbVirtualServicePortTcpUdpProfile{
 					SystemDefined: true,
 					Type:          "TCP_PROXY", // The only possible type with L4_TLS
@@ -334,7 +334,7 @@ func testVirtualServiceConfigWithCertHTTPS(check *C, edge *NsxtEdgeGateway, pool
 
 	virtualServiceConfig := &types.NsxtAlbVirtualService{
 		Name:    check.TestName(),
-		Enabled: takeBoolPointer(true),
+		Enabled: addrOf(true),
 		ApplicationProfile: types.NsxtAlbVirtualServiceApplicationProfile{
 			SystemDefined: true,
 			Type:          "HTTPS",
@@ -343,14 +343,14 @@ func testVirtualServiceConfigWithCertHTTPS(check *C, edge *NsxtEdgeGateway, pool
 		LoadBalancerPoolRef:   types.OpenApiReference{ID: pool.NsxtAlbPool.ID},
 		ServiceEngineGroupRef: types.OpenApiReference{ID: seGroup.NsxtAlbServiceEngineGroup.ID},
 		CertificateRef:        &types.OpenApiReference{ID: createdCertificate.CertificateLibrary.Id},
-		ServicePorts:          []types.NsxtAlbVirtualServicePort{{PortStart: takeIntAddress(80), SslEnabled: takeBoolPointer(true)}},
+		ServicePorts:          []types.NsxtAlbVirtualServicePort{{PortStart: addrOf(80), SslEnabled: addrOf(true)}},
 		VirtualIpAddress:      edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
 	}
 
 	virtualServiceConfigUpdated := &types.NsxtAlbVirtualService{
 		Name:        check.TestName(),
 		Description: "Updated",
-		Enabled:     takeBoolPointer(true),
+		Enabled:     addrOf(true),
 		ApplicationProfile: types.NsxtAlbVirtualServiceApplicationProfile{
 			SystemDefined: true,
 			Type:          "HTTPS",
@@ -361,11 +361,11 @@ func testVirtualServiceConfigWithCertHTTPS(check *C, edge *NsxtEdgeGateway, pool
 		CertificateRef:        &types.OpenApiReference{ID: createdCertificate.CertificateLibrary.Id},
 		ServicePorts: []types.NsxtAlbVirtualServicePort{
 			{
-				PortStart: takeIntAddress(80),
+				PortStart: addrOf(80),
 			},
 			{
-				PortStart:  takeIntAddress(443),
-				SslEnabled: takeBoolPointer(true),
+				PortStart:  addrOf(443),
+				SslEnabled: addrOf(true),
 			},
 		},
 		// Use Primary IP of Edge Gateway as virtual service IP
@@ -437,7 +437,7 @@ func setupAlbVirtualServicePrerequisites(check *C, vcd *TestVCD) (*NsxtAlbContro
 
 	poolConfig := &types.NsxtAlbPool{
 		Name:       check.TestName(),
-		Enabled:    takeBoolPointer(true),
+		Enabled:    addrOf(true),
 		GatewayRef: types.OpenApiReference{ID: edge.EdgeGateway.ID},
 	}
 
@@ -469,7 +469,7 @@ func setupAlbPoolFirewallGroupMembers(check *C, vcd *TestVCD, edge *NsxtEdgeGate
 
 	poolConfig := &types.NsxtAlbPool{
 		Name:       check.TestName() + "-member-group",
-		Enabled:    takeBoolPointer(true),
+		Enabled:    addrOf(true),
 		GatewayRef: types.OpenApiReference{ID: edge.EdgeGateway.ID},
 		MemberGroupRef: &types.OpenApiReference{
 			ID: ipSet.NsxtFirewallGroup.ID,
