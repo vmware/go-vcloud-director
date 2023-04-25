@@ -1,6 +1,79 @@
-## 2.20.0 (TBC)
+## 2.20.0 (April 25, 2023)
 
-Changes in progress for v2.20.0 are available at [.changes/v2.20.0](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v2.20.0) until the release.
+### FEATURES
+* Added method `AdminVdc.IsNsxv` to detect whether an Admin VDC is NSX-V ([#521](https://github.com/vmware/go-vcloud-director/pull/521))
+* Added function `NewNsxvDistributedFirewall` to create a new NSX-V distributed firewall ([#521](https://github.com/vmware/go-vcloud-director/pull/521))
+* Added `NsxvDistributedFirewall` methods `GetConfiguration`, `IsEnabled`, `Enable`, `Disable`, `UpdateConfiguration`, `Refresh` to handle CRUD operations with NSX-V distributed firewalls ([#521](https://github.com/vmware/go-vcloud-director/pull/521))
+* Added `NsxvDistributedFirewall` methods `GetServices`, `GetServiceGroups`, `GetServiceById`, `GetServiceByName`, `GetServiceGroupById`, `GetServiceGroupByName` to retrieve specific services or service groups ([#521](https://github.com/vmware/go-vcloud-director/pull/521))
+* Added `NsxvDistributedFirewall` methods `GetServicesByRegex` and `GetServiceGroupsByRegex` to search services or service groups by regular expression ([#521](https://github.com/vmware/go-vcloud-director/pull/521))
+* Added support for Runtime Defined Entity Interfaces with client methods `VCDClient.CreateDefinedInterface`, `VCDClient.GetAllDefinedInterfaces`,
+  `VCDClient.GetDefinedInterface`, `VCDClient.GetDefinedInterfaceById` and methods to manipulate them `DefinedInterface.Update`,
+  `DefinedInterface.Delete` ([#527](https://github.com/vmware/go-vcloud-director/pull/527), [#566](https://github.com/vmware/go-vcloud-director/pull/566))
+* Added method `VM.GetEnvironment` to retrieve OVF Environment ([#528](https://github.com/vmware/go-vcloud-director/pull/528))
+* Added `NsxtEdgeGateway.Refresh` method to reload NSX-T Edge Gateway structure ([#532](https://github.com/vmware/go-vcloud-director/pull/532))
+* Added `NsxtEdgeGateway.GetUsedIpAddresses` method to fetch used IP addresses in NSX-T Edge
+  Gateway ([#532](https://github.com/vmware/go-vcloud-director/pull/532))
+* Added `NsxtEdgeGateway.GetUsedIpAddressSlice` method to fetch used IP addresses in a slice
+  ([#532](https://github.com/vmware/go-vcloud-director/pull/532))
+* Added `NsxtEdgeGateway.GetUnusedExternalIPAddresses` method that can help to find an unused
+  IP address in an Edge Gateway by given constraints ([#532](https://github.com/vmware/go-vcloud-director/pull/532),[#567](https://github.com/vmware/go-vcloud-director/pull/567))
+* Added `NsxtEdgeGateway.GetAllUnusedExternalIPAddresses` method that can return all unused IP
+  addresses in an Edge Gateway ([#532](https://github.com/vmware/go-vcloud-director/pull/532),[#567](https://github.com/vmware/go-vcloud-director/pull/567))
+* Added `NsxtEdgeGateway.GetAllocatedIpCount` method that sums up `TotalIPCount` fields in all
+  subnets ([#532](https://github.com/vmware/go-vcloud-director/pull/532))
+* Added `NsxtEdgeGateway.QuickDeallocateIpCount` and `NsxtEdgeGateway.DeallocateIpCount`
+  methods to manually alter Edge Gateway body for IP deallocation ([#532](https://github.com/vmware/go-vcloud-director/pull/532))
+* Added support for Runtime Defined Entity instances with methods `DefinedEntityType.GetAllRdes`, `DefinedEntityType.GetRdeByName`,
+  `DefinedEntityType.GetRdeById`, `DefinedEntityType.CreateRde` and methods to manipulate them `DefinedEntity.Resolve`,
+  `DefinedEntity.Update`, `DefinedEntity.Delete` ([#544](https://github.com/vmware/go-vcloud-director/pull/544))
+* Add generic `Client` methods `OpenApiPostItemAndGetHeaders` and `OpenApiGetItemAndHeaders` to be able to retrieve the
+  response headers when performing a POST or GET operation to an OpenAPI endpoint ([#544](https://github.com/vmware/go-vcloud-director/pull/544))
+* Added support for Runtime Defined Entity Types with client methods `VCDClient.CreateRdeType`, `VCDClient.GetAllRdeTypes`,
+  `VCDClient.GetRdeType`, `VCDClient.GetRdeTypeById` and methods to manipulate them `DefinedEntityType.Update`,
+  `DefinedEntityType.Delete` ([#545](https://github.com/vmware/go-vcloud-director/pull/545), [#566](https://github.com/vmware/go-vcloud-director/pull/566))
+* Add support for NSX-T DHCP Bindings via `OpenApiOrgVdcNetworkDhcpBinding`,
+  `types.OpenApiOrgVdcNetworkDhcpBinding` and functions
+  `OpenApiOrgVdcNetwork.CreateOpenApiOrgVdcNetworkDhcpBinding`,
+  `OpenApiOrgVdcNetwork.GetAllOpenApiOrgVdcNetworkDhcpBindings`,
+  `OpenApiOrgVdcNetwork.GetOpenApiOrgVdcNetworkDhcpBindingById`,
+  `OpenApiOrgVdcNetwork.GetOpenApiOrgVdcNetworkDhcpBindingByName`,
+  `OpenApiOrgVdcNetworkDhcpBinding.Update`, `OpenApiOrgVdcNetworkDhcpBinding.Refresh`,
+  `OpenApiOrgVdcNetworkDhcpBinding.Delete` ([#561](https://github.com/vmware/go-vcloud-director/pull/561))
+* Added QoS Profile lookup functions `GetAllNsxtEdgeGatewayQosProfiles` and
+  `GetNsxtEdgeGatewayQosProfileByDisplayName` ([#563](https://github.com/vmware/go-vcloud-director/pull/563))
+* Added NSX-T Edge Gateway QoS (Rate Limiting) configuration support `NsxtEdgeGateway.GetQoS` and
+  `NsxtEdgeGateway.UpdateQoS` ([#563](https://github.com/vmware/go-vcloud-director/pull/563))
+* Add support for importable Distributed Virtual Port Group (DVPG) read via types
+  `VcenterImportableDvpg` and `types.VcenterImportableDvpg` and methods
+  `VCDClient.GetVcenterImportableDvpgByName`, `VCDClient.GetAllVcenterImportableDvpgs`,
+  `Vdc.GetVcenterImportableDvpgByName`, `Vdc.GetAllVcenterImportableDvpgs` ([#564](https://github.com/vmware/go-vcloud-director/pull/564))
+
+### IMPROVEMENTS
+* NSX-T ALB settings for Edge Gateway gain support for IPv6 service network definition (VCD 10.4.0+)
+  and Transparent mode (VCD 10.4.1+) by adding new fields to `types.NsxtAlbConfig` and automatically
+  elevating API up to 37.1 ([#549](https://github.com/vmware/go-vcloud-director/pull/549))
+* Added support for using subnet prefix length while creating vApp networks ([#550](https://github.com/vmware/go-vcloud-director/pull/550))
+* Improve NSX-T IPSec VPN type `types.NsxtIpSecVpnTunnel` to support 'Certificate' Authentication
+  mode ([#553](https://github.com/vmware/go-vcloud-director/pull/553))
+* Add new field `TransparentModeEnabled` to `types.NsxtAlbVirtualService` which allows to preserve
+  client IP for NSX-T ALB Virtual Service (VCD 10.4.1+) ([#560](https://github.com/vmware/go-vcloud-director/pull/560))
+* Add new field `MemberGroupRef` to `types.NsxtAlbPool` which allows to define NSX-T ALB Pool
+  membership by using Edge Firewall Group (`NsxtFirewallGroup`) instead of plain IPs (VCD 10.4.1+)
+  ([#560](https://github.com/vmware/go-vcloud-director/pull/560))
+* `types.OpenApiOrgVdcNetwork` gets a new read only field `OrgVdcIsNsxTBacked` (available since API
+  36.0) which indicates if an Org Network is backed by NSX-T and a function
+  `OpenApiOrgVdcNetwork.IsNsxt()` ([#561](https://github.com/vmware/go-vcloud-director/pull/561))
+* Add `SetServiceAccountApiToken` method of `VCDClient` that allows
+  authenticating using a service account token file and handles the refresh token rotation ([#562](https://github.com/vmware/go-vcloud-director/pull/562))
+
+### BUG FIXES
+* Fix a bug that prevented returning a specific error while authenticating client with invalid
+  password ([#536](https://github.com/vmware/go-vcloud-director/pull/536))
+* Fixed accessing uninitialized `Features` field while updating a vApp network ([#550](https://github.com/vmware/go-vcloud-director/pull/550))
+
+### NOTES
+* Created `Test_RenameCatalog` for making sure the contents of the Catalog don't change after rename ([#546](https://github.com/vmware/go-vcloud-director/pull/546))
+
 
 ## 2.19.0 (January 12, 2023)
 
