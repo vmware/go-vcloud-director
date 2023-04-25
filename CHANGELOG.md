@@ -1,6 +1,79 @@
-## 2.20.0 (TBC)
+## 2.20.0 (April 25, 2023)
 
-Changes in progress for v2.20.0 are available at [.changes/v2.20.0](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v2.20.0) until the release.
+### FEATURES
+* Added method `AdminVdc.IsNsxv` to detect whether an Admin VDC is NSX-V [GH-521]
+* Added function `NewNsxvDistributedFirewall` to create a new NSX-V distributed firewall [GH-521]
+* Added `NsxvDistributedFirewall` methods `GetConfiguration`, `IsEnabled`, `Enable`, `Disable`, `UpdateConfiguration`, `Refresh` to handle CRUD operations with NSX-V distributed firewalls [GH-521]
+* Added `NsxvDistributedFirewall` methods `GetServices`, `GetServiceGroups`, `GetServiceById`, `GetServiceByName`, `GetServiceGroupById`, `GetServiceGroupByName` to retrieve specific services or service groups [GH-521]
+* Added `NsxvDistributedFirewall` methods `GetServicesByRegex` and `GetServiceGroupsByRegex` to search services or service groups by regular expression [GH-521]
+* Added support for Runtime Defined Entity Interfaces with client methods `VCDClient.CreateDefinedInterface`, `VCDClient.GetAllDefinedInterfaces`,
+  `VCDClient.GetDefinedInterface`, `VCDClient.GetDefinedInterfaceById` and methods to manipulate them `DefinedInterface.Update`,
+  `DefinedInterface.Delete` [GH-527, GH-566]
+* Added method `VM.GetEnvironment` to retrieve OVF Environment [GH-528]
+* Added `NsxtEdgeGateway.Refresh` method to reload NSX-T Edge Gateway structure [GH-532]
+* Added `NsxtEdgeGateway.GetUsedIpAddresses` method to fetch used IP addresses in NSX-T Edge
+  Gateway [GH-532]
+* Added `NsxtEdgeGateway.GetUsedIpAddressSlice` method to fetch used IP addresses in a slice
+  [GH-532]
+* Added `NsxtEdgeGateway.GetUnusedExternalIPAddresses` method that can help to find an unused
+  IP address in an Edge Gateway by given constraints [GH-532,GH-567]
+* Added `NsxtEdgeGateway.GetAllUnusedExternalIPAddresses` method that can return all unused IP
+  addresses in an Edge Gateway [GH-532,GH-567]
+* Added `NsxtEdgeGateway.GetAllocatedIpCount` method that sums up `TotalIPCount` fields in all
+  subnets [GH-532]
+* Added `NsxtEdgeGateway.QuickDeallocateIpCount` and `NsxtEdgeGateway.DeallocateIpCount`
+  methods to manually alter Edge Gateway body for IP deallocation [GH-532]
+* Added support for Runtime Defined Entity instances with methods `DefinedEntityType.GetAllRdes`, `DefinedEntityType.GetRdeByName`,
+  `DefinedEntityType.GetRdeById`, `DefinedEntityType.CreateRde` and methods to manipulate them `DefinedEntity.Resolve`,
+  `DefinedEntity.Update`, `DefinedEntity.Delete` [GH-544]
+* Add generic `Client` methods `OpenApiPostItemAndGetHeaders` and `OpenApiGetItemAndHeaders` to be able to retrieve the
+  response headers when performing a POST or GET operation to an OpenAPI endpoint [GH-544]
+* Added support for Runtime Defined Entity Types with client methods `VCDClient.CreateRdeType`, `VCDClient.GetAllRdeTypes`,
+  `VCDClient.GetRdeType`, `VCDClient.GetRdeTypeById` and methods to manipulate them `DefinedEntityType.Update`,
+  `DefinedEntityType.Delete` [GH-545, GH-566]
+* Add support for NSX-T DHCP Bindings via `OpenApiOrgVdcNetworkDhcpBinding`,
+  `types.OpenApiOrgVdcNetworkDhcpBinding` and functions
+  `OpenApiOrgVdcNetwork.CreateOpenApiOrgVdcNetworkDhcpBinding`,
+  `OpenApiOrgVdcNetwork.GetAllOpenApiOrgVdcNetworkDhcpBindings`,
+  `OpenApiOrgVdcNetwork.GetOpenApiOrgVdcNetworkDhcpBindingById`,
+  `OpenApiOrgVdcNetwork.GetOpenApiOrgVdcNetworkDhcpBindingByName`,
+  `OpenApiOrgVdcNetworkDhcpBinding.Update`, `OpenApiOrgVdcNetworkDhcpBinding.Refresh`,
+  `OpenApiOrgVdcNetworkDhcpBinding.Delete` [GH-561]
+* Added QoS Profile lookup functions `GetAllNsxtEdgeGatewayQosProfiles` and
+  `GetNsxtEdgeGatewayQosProfileByDisplayName` [GH-563]
+* Added NSX-T Edge Gateway QoS (Rate Limiting) configuration support `NsxtEdgeGateway.GetQoS` and
+  `NsxtEdgeGateway.UpdateQoS` [GH-563]
+* Add support for importable Distributed Virtual Port Group (DVPG) read via types
+  `VcenterImportableDvpg` and `types.VcenterImportableDvpg` and methods
+  `VCDClient.GetVcenterImportableDvpgByName`, `VCDClient.GetAllVcenterImportableDvpgs`,
+  `Vdc.GetVcenterImportableDvpgByName`, `Vdc.GetAllVcenterImportableDvpgs` [GH-564]
+
+### IMPROVEMENTS
+* NSX-T ALB settings for Edge Gateway gain support for IPv6 service network definition (VCD 10.4.0+)
+  and Transparent mode (VCD 10.4.1+) by adding new fields to `types.NsxtAlbConfig` and automatically
+  elevating API up to 37.1 [GH-549]
+* Added support for using subnet prefix length while creating vApp networks [GH-550]
+* Improve NSX-T IPSec VPN type `types.NsxtIpSecVpnTunnel` to support 'Certificate' Authentication
+  mode [GH-553]
+* Add new field `TransparentModeEnabled` to `types.NsxtAlbVirtualService` which allows to preserve
+  client IP for NSX-T ALB Virtual Service (VCD 10.4.1+) [GH-560]
+* Add new field `MemberGroupRef` to `types.NsxtAlbPool` which allows to define NSX-T ALB Pool
+  membership by using Edge Firewall Group (`NsxtFirewallGroup`) instead of plain IPs (VCD 10.4.1+)
+  [GH-560]
+* `types.OpenApiOrgVdcNetwork` gets a new read only field `OrgVdcIsNsxTBacked` (available since API
+  36.0) which indicates if an Org Network is backed by NSX-T and a function
+  `OpenApiOrgVdcNetwork.IsNsxt()` [GH-561]
+* Add `SetServiceAccountApiToken` method of `VCDClient` that allows
+  authenticating using a service account token file and handles the refresh token rotation [GH-562]
+
+### BUG FIXES
+* Fix a bug that prevented returning a specific error while authenticating client with invalid
+  password [GH-536]
+* Fixed accessing uninitialized `Features` field while updating a vApp network [GH-550]
+
+### NOTES
+* Created `Test_RenameCatalog` for making sure the contents of the Catalog don't change after rename [GH-546]
+
 
 ## 2.19.0 (January 12, 2023)
 
