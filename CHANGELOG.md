@@ -1,4 +1,4 @@
-## 2.20.0 (April XX, 2023)
+## 2.20.0 (April 27, 2023)
 
 ### FEATURES
 * Added method `AdminVdc.IsNsxv` to detect whether an Admin VDC is NSX-V ([#521](https://github.com/vmware/go-vcloud-director/pull/521))
