@@ -43,7 +43,7 @@ func Test_readFileAndUnmarshalJSON(t *testing.T) {
 		{
 			name: "emptyJSON",
 			args: args{
-				filename: "test-resources/test_emptyjson.json",
+				filename: "test-resources/test_emptyJSON.json",
 				object:   &testEntity{},
 			},
 			want:    &testEntity{},
