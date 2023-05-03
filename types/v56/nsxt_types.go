@@ -1684,6 +1684,13 @@ type NsxtEdgeGatewayQos struct {
 	IngressProfile *OpenApiReference `json:"ingressProfile"`
 }
 
+// NsxtEdgeGatewayDhcpForwarder provides DHCP forwarding configuration on an Edge Gateway by defining
+// DHCP servers
+type NsxtEdgeGatewayDhcpForwarder struct {
+	Enabled     bool     `json:"enabled"`
+	DhcpServers []string `json:"dhcpServers"`
+}
+
 // VcenterImportableDvpg defines a Distributed Port Group that can be imported into VCD
 // from a vCenter Server.
 //
