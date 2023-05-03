@@ -121,7 +121,11 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 	}
 
 	for _, uo := range updateOrgs {
-
+		if vcd.client.Client.APIVCDMaxVersionIs("= 37.2") && !uo.enabled {
+			// TODO revisit once bug is fixed in VCD
+			fmt.Println("[INFO] VCD 10.4.2 has a bug that prevents creating a disabled Org - Changing 'enabled' parameter to 'true'")
+			uo.enabled = true
+		}
 		fmt.Printf("Org %s - enabled %v - catalogs %v\n", uo.orgName, uo.enabled, uo.canPublishCatalogs)
 		task, err := CreateOrg(vcd.client, uo.orgName, uo.orgName, uo.orgName, &types.OrgSettings{
 			OrgGeneralSettings: &types.OrgGeneralSettings{
