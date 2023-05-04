@@ -465,7 +465,7 @@ func (vm *VM) Customize(computerName, script string, changeSid bool) (Task, erro
 		Enabled:             addrOf(true),
 		ComputerName:        computerName,
 		CustomizationScript: script,
-		ChangeSid:           addrOf(changeSid),
+		ChangeSid:           &changeSid,
 	}
 
 	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
@@ -1963,9 +1963,9 @@ func (vm *VM) ChangeCPU(cpus, cpuCores int) error {
 	// update treats same values as changes and fails, with no values provided - no changes are made for that section
 	vmSpecSection.DiskSection = nil
 
-	vmSpecSection.NumCpus = addrOf(cpus)
+	vmSpecSection.NumCpus = &cpus
 	// has to come together
-	vmSpecSection.NumCoresPerSocket = addrOf(cpuCores)
+	vmSpecSection.NumCoresPerSocket = &cpuCores
 
 	_, err := vm.UpdateVmSpecSection(vmSpecSection, description)
 	if err != nil {
