@@ -502,3 +502,52 @@ func (vcd *TestVCD) Test_NsxtEdgeQoS(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(updatedEdgeQosConfig, NotNil)
 }
+
+func (vcd *TestVCD) Test_NsxtEdgeDhcpForwarder(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGatewayDhcpForwarder)
+
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	nsxtVdc, err := org.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+	check.Assert(err, IsNil)
+	edge, err := nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
+	check.Assert(err, IsNil)
+	AddToCleanupList(vcd.config.VCD.Nsxt.EdgeGateway, "nsxtDhcpForwarder", vcd.config.VCD.Org, check.TestName())
+
+	// Fetch current DHCP forwarder config
+	dhcpForwarderConfig, err := edge.GetDhcpForwarder()
+	check.Assert(err, IsNil)
+	check.Assert(dhcpForwarderConfig.Enabled, Equals, false)
+	check.Assert(dhcpForwarderConfig.DhcpServers, DeepEquals, []string(nil))
+
+	// Defer removal of the DHCP forwarder config, so that it gets removed no matter the outcome of the test
+	defer func() {
+		_, err = edge.UpdateDhcpForwarder(&types.NsxtEdgeGatewayDhcpForwarder{})
+		check.Assert(err, IsNil)
+	}()
+
+	// Create new DHCP Forwarder config
+	testDhcpServers := []string{
+		"1.1.1.1",
+		"192.168.2.254",
+		"fe80::abcd",
+	}
+
+	newDhcpForwarderConfig := &types.NsxtEdgeGatewayDhcpForwarder{
+		Enabled:     true,
+		DhcpServers: testDhcpServers,
+	}
+
+	// Update DHCP forwarder config
+	updatedEdgeDhcpForwarderConfig, err := edge.UpdateDhcpForwarder(newDhcpForwarderConfig)
+	check.Assert(err, IsNil)
+	check.Assert(updatedEdgeDhcpForwarderConfig, NotNil)
+
+	// Check that updates were applied
+	check.Assert(updatedEdgeDhcpForwarderConfig.Enabled, Equals, true)
+	check.Assert(updatedEdgeDhcpForwarderConfig.DhcpServers, DeepEquals, testDhcpServers)
+}
