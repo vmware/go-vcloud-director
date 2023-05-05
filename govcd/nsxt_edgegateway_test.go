@@ -550,4 +550,18 @@ func (vcd *TestVCD) Test_NsxtEdgeDhcpForwarder(check *C) {
 	// Check that updates were applied
 	check.Assert(updatedEdgeDhcpForwarderConfig.Enabled, Equals, true)
 	check.Assert(updatedEdgeDhcpForwarderConfig.DhcpServers, DeepEquals, testDhcpServers)
+
+	disabledDhcpForwarderConfig := &types.NsxtEdgeGatewayDhcpForwarder{
+		Enabled:     false,
+		DhcpServers: testDhcpServers,
+	}
+
+	// Update DHCP forwarder config
+	updatedEdgeDhcpForwarderConfig, err = edge.UpdateDhcpForwarder(disabledDhcpForwarderConfig)
+	check.Assert(err, IsNil)
+	check.Assert(updatedEdgeDhcpForwarderConfig, NotNil)
+
+	// Check that updates were applied
+	check.Assert(updatedEdgeDhcpForwarderConfig.Enabled, Equals, false)
+	check.Assert(updatedEdgeDhcpForwarderConfig.DhcpServers, DeepEquals, testDhcpServers)
 }
