@@ -1255,7 +1255,7 @@ func (vcd *TestVCD) TestQueryOrgVdcList(check *C) {
 	validateQueryOrgVdcResults(vcd, check, "Should have 0 VDCs", newOrgName2, addrOf(0), nil)
 	// Main Org 'vcd.config.VCD.Org' is expected to have at least (expectedVdcCountInSystem). Might be more if there are
 	// more VDCs created manually
-	validateQueryOrgVdcResults(vcd, check, fmt.Sprintf("Should have %d VDCs or more", expectedVdcCountInSystem), vcd.config.VCD.Org, nil, addrOf(expectedVdcCountInSystem))
+	validateQueryOrgVdcResults(vcd, check, fmt.Sprintf("Should have %d VDCs or more", expectedVdcCountInSystem), vcd.config.VCD.Org, nil, &expectedVdcCountInSystem)
 }
 
 func validateQueryOrgVdcResults(vcd *TestVCD, check *C, name, orgName string, expectedVdcCount, expectedVdcCountOrMore *int) {
