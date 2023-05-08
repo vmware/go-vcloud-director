@@ -327,6 +327,9 @@ func (vcd *TestVCD) Test_VdcVmPlacementPoliciesV2(check *C) {
 // of the SDK get a nicely formatted error.
 // This test should not be needed once function `getFriendlyErrorIfVmPlacementPolicyAlreadyExists` is removed.
 func (vcd *TestVCD) Test_VdcDuplicatedVmPlacementPolicyGetsACleanError(check *C) {
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.2") {
+		check.Skip("The bug that this test checks for is fixed in 10.4.2")
+	}
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
