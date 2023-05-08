@@ -703,7 +703,7 @@ func (egw *NsxtEdgeGateway) UpdateDhcpForwarder(dhcpForwarderConfig *types.NsxtE
 		return nil, err
 	}
 
-	// update DHCP forwarder with given qosConfig
+	// update DHCP forwarder with given dhcpForwarderConfig
 	updatedDhcpForwarder := &types.NsxtEdgeGatewayDhcpForwarder{}
 	err = client.OpenApiPutItem(apiVersion, urlRef, nil, dhcpForwarderConfig, updatedDhcpForwarder, nil)
 	if err != nil {
