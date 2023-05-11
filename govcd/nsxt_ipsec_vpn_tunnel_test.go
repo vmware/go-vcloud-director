@@ -89,7 +89,7 @@ func (vcd *TestVCD) Test_NsxtIpSecVpnCustomSecurityProfile(check *C) {
 			EncryptionAlgorithms: []string{"AES_128"},
 			DigestAlgorithms:     []string{"SHA2_256"},
 			DhGroups:             []string{"GROUP14"},
-			SaLifeTime:           takeIntAddress(86400),
+			SaLifeTime:           addrOf(86400),
 		},
 		TunnelConfiguration: types.NsxtIpSecVpnTunnelProfileTunnelConfiguration{
 			PerfectForwardSecrecyEnabled: true,
@@ -97,7 +97,7 @@ func (vcd *TestVCD) Test_NsxtIpSecVpnCustomSecurityProfile(check *C) {
 			EncryptionAlgorithms:         []string{"AES_256"},
 			DigestAlgorithms:             []string{"SHA2_256"},
 			DhGroups:                     []string{"GROUP14"},
-			SaLifeTime:                   takeIntAddress(3600),
+			SaLifeTime:                   addrOf(3600),
 		},
 		DpdConfiguration: types.NsxtIpSecVpnTunnelProfileDpdConfiguration{ProbeInterval: 3},
 	}

@@ -68,8 +68,8 @@ func (vcd *TestVCD) Test_GetAllEdgeAlbServiceEngineGroupAssignmentsDedicated(che
 	}
 	check.Assert(foundAssignment, Equals, true)
 
-	assignment.NsxtAlbServiceEngineGroupAssignment.MaxVirtualServices = takeIntAddress(50)
-	assignment.NsxtAlbServiceEngineGroupAssignment.MinVirtualServices = takeIntAddress(30)
+	assignment.NsxtAlbServiceEngineGroupAssignment.MaxVirtualServices = addrOf(50)
+	assignment.NsxtAlbServiceEngineGroupAssignment.MinVirtualServices = addrOf(30)
 	// Expect an error because "DEDICATED" service engine group does not support specifying virtual services
 	updatedAssignment, err := assignment.Update(assignment.NsxtAlbServiceEngineGroupAssignment)
 	check.Assert(err, NotNil)
@@ -111,8 +111,8 @@ func (vcd *TestVCD) Test_GetAllEdgeAlbServiceEngineGroupAssignmentsShared(check 
 	serviceEngineGroupAssignmentConfig := &types.NsxtAlbServiceEngineGroupAssignment{
 		GatewayRef:            &types.OpenApiReference{ID: edge.EdgeGateway.ID},
 		ServiceEngineGroupRef: &types.OpenApiReference{ID: seGroup.NsxtAlbServiceEngineGroup.ID},
-		MaxVirtualServices:    takeIntAddress(89),
-		MinVirtualServices:    takeIntAddress(20),
+		MaxVirtualServices:    addrOf(89),
+		MinVirtualServices:    addrOf(20),
 	}
 	assignment, err := vcd.client.CreateAlbServiceEngineGroupAssignment(serviceEngineGroupAssignmentConfig)
 	check.Assert(err, IsNil)
@@ -148,8 +148,8 @@ func (vcd *TestVCD) Test_GetAllEdgeAlbServiceEngineGroupAssignmentsShared(check 
 	}
 	check.Assert(foundAssignment, Equals, true)
 
-	assignment.NsxtAlbServiceEngineGroupAssignment.MaxVirtualServices = takeIntAddress(50)
-	assignment.NsxtAlbServiceEngineGroupAssignment.MinVirtualServices = takeIntAddress(30)
+	assignment.NsxtAlbServiceEngineGroupAssignment.MaxVirtualServices = addrOf(50)
+	assignment.NsxtAlbServiceEngineGroupAssignment.MinVirtualServices = addrOf(30)
 
 	updatedAssignment, err := assignment.Update(assignment.NsxtAlbServiceEngineGroupAssignment)
 	check.Assert(err, IsNil)

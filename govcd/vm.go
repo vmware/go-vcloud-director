@@ -462,10 +462,10 @@ func (vm *VM) Customize(computerName, script string, changeSid bool) (Task, erro
 		HREF:                vm.VM.HREF,
 		Type:                types.MimeGuestCustomizationSection,
 		Info:                "Specifies Guest OS Customization Settings",
-		Enabled:             takeBoolPointer(true),
+		Enabled:             addrOf(true),
 		ComputerName:        computerName,
 		CustomizationScript: script,
-		ChangeSid:           takeBoolPointer(changeSid),
+		ChangeSid:           &changeSid,
 	}
 
 	apiEndpoint := urlParseRequestURI(vm.VM.HREF)
@@ -1963,9 +1963,9 @@ func (vm *VM) ChangeCPU(cpus, cpuCores int) error {
 	// update treats same values as changes and fails, with no values provided - no changes are made for that section
 	vmSpecSection.DiskSection = nil
 
-	vmSpecSection.NumCpus = takeIntAddress(cpus)
+	vmSpecSection.NumCpus = &cpus
 	// has to come together
-	vmSpecSection.NumCoresPerSocket = takeIntAddress(cpuCores)
+	vmSpecSection.NumCoresPerSocket = &cpuCores
 
 	_, err := vm.UpdateVmSpecSection(vmSpecSection, description)
 	if err != nil {

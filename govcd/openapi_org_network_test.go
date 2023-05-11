@@ -436,10 +436,10 @@ type dhcpConfigFunc func(check *C, vcd *TestVCD, vdc *Vdc, orgNetId string)
 func nsxtRoutedDhcpConfigEdgeMode(check *C, vcd *TestVCD, vdc *Vdc, orgNetId string) {
 	printVerbose("## Testing DHCP in EDGE mode\n")
 	dhcpDefinition := &types.OpenApiOrgVdcNetworkDhcp{
-		Enabled: takeBoolPointer(true),
+		Enabled: addrOf(true),
 		DhcpPools: []types.OpenApiOrgVdcNetworkDhcpPools{
 			{
-				Enabled: takeBoolPointer(true),
+				Enabled: addrOf(true),
 				IPRange: types.OpenApiOrgVdcNetworkDhcpIpRange{
 					StartAddress: "2.1.1.200",
 					EndAddress:   "2.1.1.201",
@@ -525,12 +525,12 @@ func nsxtDhcpConfigNetworkMode(check *C, vcd *TestVCD, vdc *Vdc, orgNetId string
 	}()
 
 	dhcpDefinition := &types.OpenApiOrgVdcNetworkDhcp{
-		Enabled:   takeBoolPointer(true),
+		Enabled:   addrOf(true),
 		Mode:      "NETWORK",
 		IPAddress: "2.1.1.252",
 		DhcpPools: []types.OpenApiOrgVdcNetworkDhcpPools{
 			{
-				Enabled: takeBoolPointer(true),
+				Enabled: addrOf(true),
 				IPRange: types.OpenApiOrgVdcNetworkDhcpIpRange{
 					StartAddress: "2.1.1.200",
 					EndAddress:   "2.1.1.201",

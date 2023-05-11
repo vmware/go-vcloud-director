@@ -390,7 +390,7 @@ func (vmar *VmAffinityRule) SetEnabled(value bool) error {
 			return nil
 		}
 	}
-	vmar.VmAffinityRule.IsEnabled = takeBoolPointer(value)
+	vmar.VmAffinityRule.IsEnabled = &value
 	return vmar.Update()
 }
 
@@ -402,6 +402,6 @@ func (vmar *VmAffinityRule) SetMandatory(value bool) error {
 			return nil
 		}
 	}
-	vmar.VmAffinityRule.IsMandatory = takeBoolPointer(value)
+	vmar.VmAffinityRule.IsMandatory = &value
 	return vmar.Update()
 }

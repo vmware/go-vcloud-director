@@ -300,7 +300,7 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 				},
 			},
 			VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
-				Enabled: takeBoolPointer(true),
+				Enabled: addrOf(true),
 				Units:   "MB",
 				Limit:   1024,
 				Default: true,
@@ -669,7 +669,7 @@ func setupVdc(vcd *TestVCD, check *C, allocationModel string) (AdminOrg, *types.
 			},
 		},
 		VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
-			Enabled: takeBoolPointer(true),
+			Enabled: addrOf(true),
 			Units:   "MB",
 			Limit:   1024,
 			Default: true,
@@ -840,7 +840,7 @@ func (vcd *TestVCD) Test_AddRemoveVdcStorageProfiles(check *C) {
 
 	// Add another storage profile
 	err = adminVdc.AddStorageProfileWait(&types.VdcStorageProfileConfiguration{
-		Enabled: takeBoolPointer(true),
+		Enabled: addrOf(true),
 		Units:   "MB",
 		Limit:   1024,
 		Default: false,
@@ -864,7 +864,7 @@ func (vcd *TestVCD) Test_AddRemoveVdcStorageProfiles(check *C) {
 
 	// Add the second storage profile again
 	err = adminVdc.AddStorageProfileWait(&types.VdcStorageProfileConfiguration{
-		Enabled: takeBoolPointer(true),
+		Enabled: addrOf(true),
 		Units:   "MB",
 		Limit:   1024,
 		Default: false,
@@ -1254,12 +1254,12 @@ func (vcd *TestVCD) TestQueryOrgVdcList(check *C) {
 	}
 
 	// System Org does not directly report any child VDCs
-	validateQueryOrgVdcResults(vcd, check, "Org should have no VDCs", "System", takeIntAddress(0), nil)
-	validateQueryOrgVdcResults(vcd, check, fmt.Sprintf("Should have 1 VDC %s", vdc.Vdc.Name), newOrgName1, takeIntAddress(1), nil)
-	validateQueryOrgVdcResults(vcd, check, "Should have 0 VDCs", newOrgName2, takeIntAddress(0), nil)
+	validateQueryOrgVdcResults(vcd, check, "Org should have no VDCs", "System", addrOf(0), nil)
+	validateQueryOrgVdcResults(vcd, check, fmt.Sprintf("Should have 1 VDC %s", vdc.Vdc.Name), newOrgName1, addrOf(1), nil)
+	validateQueryOrgVdcResults(vcd, check, "Should have 0 VDCs", newOrgName2, addrOf(0), nil)
 	// Main Org 'vcd.config.VCD.Org' is expected to have at least (expectedVdcCountInSystem). Might be more if there are
 	// more VDCs created manually
-	validateQueryOrgVdcResults(vcd, check, fmt.Sprintf("Should have %d VDCs or more", expectedVdcCountInSystem), vcd.config.VCD.Org, nil, takeIntAddress(expectedVdcCountInSystem))
+	validateQueryOrgVdcResults(vcd, check, fmt.Sprintf("Should have %d VDCs or more", expectedVdcCountInSystem), vcd.config.VCD.Org, nil, &expectedVdcCountInSystem)
 }
 
 func validateQueryOrgVdcResults(vcd *TestVCD, check *C, name, orgName string, expectedVdcCount, expectedVdcCountOrMore *int) {
