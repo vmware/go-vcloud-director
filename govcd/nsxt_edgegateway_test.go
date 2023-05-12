@@ -551,17 +551,42 @@ func (vcd *TestVCD) Test_NsxtEdgeDhcpForwarder(check *C) {
 	check.Assert(updatedEdgeDhcpForwarderConfig.Enabled, Equals, true)
 	check.Assert(updatedEdgeDhcpForwarderConfig.DhcpServers, DeepEquals, testDhcpServers)
 
-	disabledDhcpForwarderConfig := &types.NsxtEdgeGatewayDhcpForwarder{
-		Enabled:     false,
-		DhcpServers: testDhcpServers,
-	}
+	// remove the last dhcp server from the list
+	testDhcpServers = testDhcpServers[0:2]
+	newDhcpForwarderConfig.DhcpServers = testDhcpServers
+
+	updatedEdgeDhcpForwarderConfig, err = edge.UpdateDhcpForwarder(newDhcpForwarderConfig)
+	check.Assert(err, IsNil)
+	check.Assert(updatedEdgeDhcpForwarderConfig, NotNil)
+
+	// Check that updates were applied
+	check.Assert(updatedEdgeDhcpForwarderConfig.Enabled, Equals, true)
+	check.Assert(updatedEdgeDhcpForwarderConfig.DhcpServers, DeepEquals, testDhcpServers)
+
+	// Add servers to the list
+	testDhcpServers = append(testDhcpServers, "192.254.0.2")
+	newDhcpForwarderConfig.DhcpServers = testDhcpServers
+
+	updatedEdgeDhcpForwarderConfig, err = edge.UpdateDhcpForwarder(newDhcpForwarderConfig)
+	check.Assert(err, IsNil)
+	check.Assert(updatedEdgeDhcpForwarderConfig, NotNil)
+
+	// Check that updates were applied
+	check.Assert(updatedEdgeDhcpForwarderConfig.Enabled, Equals, true)
+	check.Assert(updatedEdgeDhcpForwarderConfig.DhcpServers, DeepEquals, testDhcpServers)
+
+	// Disable DHCP forwarder config
+	newDhcpForwarderConfig.Enabled = false
 
 	// Update DHCP forwarder config
-	updatedEdgeDhcpForwarderConfig, err = edge.UpdateDhcpForwarder(disabledDhcpForwarderConfig)
+	updatedEdgeDhcpForwarderConfig, err = edge.UpdateDhcpForwarder(newDhcpForwarderConfig)
 	check.Assert(err, IsNil)
 	check.Assert(updatedEdgeDhcpForwarderConfig, NotNil)
 
 	// Check that updates were applied
 	check.Assert(updatedEdgeDhcpForwarderConfig.Enabled, Equals, false)
 	check.Assert(updatedEdgeDhcpForwarderConfig.DhcpServers, DeepEquals, testDhcpServers)
+
+	updatedEdgeDhcpForwarderConfig.Enabled = true
+
 }

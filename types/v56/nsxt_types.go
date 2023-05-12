@@ -1687,8 +1687,9 @@ type NsxtEdgeGatewayQos struct {
 // NsxtEdgeGatewayDhcpForwarder provides DHCP forwarding configuration on an Edge Gateway by defining
 // DHCP servers
 type NsxtEdgeGatewayDhcpForwarder struct {
-	Enabled     bool     `json:"enabled"`
-	DhcpServers []string `json:"dhcpServers"`
+	Enabled     bool         `json:"enabled"`
+	DhcpServers []string     `json:"dhcpServers"`
+	Version     VersionField `json:"version,omitempty"`
 }
 
 // VcenterImportableDvpg defines a Distributed Port Group that can be imported into VCD

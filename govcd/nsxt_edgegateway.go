@@ -704,7 +704,12 @@ func (egw *NsxtEdgeGateway) UpdateDhcpForwarder(dhcpForwarderConfig *types.NsxtE
 	}
 
 	// update DHCP forwarder with given dhcpForwarderConfig
-	updatedDhcpForwarder := &types.NsxtEdgeGatewayDhcpForwarder{}
+	updatedDhcpForwarder, err := egw.GetDhcpForwarder()
+	if err != nil {
+		return nil, err
+	}
+	dhcpForwarderConfig.Version = updatedDhcpForwarder.Version
+
 	err = client.OpenApiPutItem(apiVersion, urlRef, nil, dhcpForwarderConfig, updatedDhcpForwarder, nil)
 	if err != nil {
 		return nil, err
