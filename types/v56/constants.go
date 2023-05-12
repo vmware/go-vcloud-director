@@ -400,6 +400,9 @@ const (
 	OpenApiEndpointRdeEntitiesTypes                   = "entities/types/"
 	OpenApiEndpointRdeEntitiesResolve                 = "entities/%s/resolve"
 
+	OpenApiEndpointIpSpaces         = "ipSpaces/"
+	OpenApiEndpointIpSpaceSummaries = "ipSpaces/summaries"
+
 	// NSX-T ALB related endpoints
 
 	OpenApiEndpointAlbController = "loadBalancer/controllers/"
@@ -614,4 +617,10 @@ const (
 const (
 	OpenApiOrgVdcNetworkBackingTypeNsxv = "VIRTUAL_WIRE"
 	OpenApiOrgVdcNetworkBackingTypeNsxt = "NSXT_FLEXIBLE_SEGMENT"
+)
+
+const (
+	IpSpaceShared  = "SHARED_SERVICES"
+	IpSpacePublic  = "PUBLIC"
+	IpSpacePrivate = "PRIVATE"
 )
