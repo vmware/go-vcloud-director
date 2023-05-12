@@ -688,7 +688,7 @@ func (egw *NsxtEdgeGateway) GetDhcpForwarder() (*types.NsxtEdgeGatewayDhcpForwar
 // UpdateDhcpForwarder updates DHCP forwarder configuration for an NSX-T Edge Gateway
 func (egw *NsxtEdgeGateway) UpdateDhcpForwarder(dhcpForwarderConfig *types.NsxtEdgeGatewayDhcpForwarder) (*types.NsxtEdgeGatewayDhcpForwarder, error) {
 	if egw.EdgeGateway == nil || egw.client == nil || egw.EdgeGateway.ID == "" {
-		return nil, fmt.Errorf("cannot get DHCP forwarder for NSX-T Edge Gateway without ID")
+		return nil, fmt.Errorf("cannot update DHCP forwarder for NSX-T Edge Gateway without ID")
 	}
 
 	client := egw.client
