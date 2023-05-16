@@ -493,7 +493,7 @@ func (vdc *AdminVdc) RemoveStorageProfile(storageProfileName string) (Task, erro
 			Units:   vdcStorageProfileDetails.Units,
 			Limit:   vdcStorageProfileDetails.Limit,
 			Default: false,
-			Enabled: takeBoolPointer(false),
+			Enabled: addrOf(false),
 			ProviderVdcStorageProfile: &types.Reference{
 				HREF: vdcStorageProfileDetails.ProviderVdcStorageProfile.HREF,
 			},
@@ -561,7 +561,7 @@ func (vdc *AdminVdc) SetDefaultStorageProfile(storageProfileName string) error {
 		Units:   vdcStorageProfileDetails.Units,
 		Limit:   vdcStorageProfileDetails.Limit,
 		Default: true,
-		Enabled: takeBoolPointer(true),
+		Enabled: addrOf(true),
 		ProviderVdcStorageProfile: &types.Reference{
 			HREF: vdcStorageProfileDetails.ProviderVdcStorageProfile.HREF,
 		},

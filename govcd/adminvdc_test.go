@@ -74,7 +74,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 				},
 			},
 			VdcStorageProfile: []*types.VdcStorageProfileConfiguration{{
-				Enabled: takeBoolPointer(true),
+				Enabled: addrOf(true),
 				Units:   "MB",
 				Limit:   1024,
 				Default: true,
@@ -101,7 +101,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 
 		if secondStorageProfileHref != "" {
 			vdcConfiguration.VdcStorageProfile = append(vdcConfiguration.VdcStorageProfile, &types.VdcStorageProfileConfiguration{
-				Enabled: takeBoolPointer(false),
+				Enabled: addrOf(false),
 				Units:   "MB",
 				Limit:   1024,
 				Default: false,
@@ -195,7 +195,7 @@ func (vcd *TestVCD) Test_UpdateVdcFlex(check *C) {
 	check.Assert(err, IsNil)
 
 	err = adminVdc.AddStorageProfileWait(&types.VdcStorageProfileConfiguration{
-		Enabled:                   takeBoolPointer(true),
+		Enabled:                   addrOf(true),
 		Default:                   false,
 		Units:                     "MB",
 		ProviderVdcStorageProfile: &types.Reference{HREF: pvdcStorageProfile.HREF},
@@ -301,7 +301,7 @@ func (vcd *TestVCD) Test_VdcUpdateStorageProfile(check *C) {
 		Name:                      foundStorageProfile.Name,
 		Default:                   true,
 		Limit:                     9081,
-		Enabled:                   takeBoolPointer(true),
+		Enabled:                   addrOf(true),
 		Units:                     "MB",
 		IopsSettings:              nil,
 		ProviderVdcStorageProfile: &types.Reference{HREF: foundStorageProfile.ProviderVdcStorageProfile.HREF},

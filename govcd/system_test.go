@@ -264,18 +264,18 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 		Name:        edgeName,
 		Description: edgeName,
 		Configuration: &types.GatewayConfiguration{
-			HaEnabled:            takeBoolPointer(false),
+			HaEnabled:            addrOf(false),
 			GatewayBackingConfig: "compact",
 			GatewayInterfaces: &types.GatewayInterfaces{
 				GatewayInterface: []*types.GatewayInterface{},
 			},
-			AdvancedNetworkingEnabled:  takeBoolPointer(true),
-			DistributedRoutingEnabled:  takeBoolPointer(false),
-			UseDefaultRouteForDNSRelay: takeBoolPointer(true),
+			AdvancedNetworkingEnabled:  addrOf(true),
+			DistributedRoutingEnabled:  addrOf(false),
+			UseDefaultRouteForDNSRelay: addrOf(true),
 		},
 	}
 
-	edgeGatewayConfig.Configuration.FipsModeEnabled = takeBoolPointer(false)
+	edgeGatewayConfig.Configuration.FipsModeEnabled = addrOf(false)
 
 	// Create subnet participation structure
 	subnetParticipation := make([]*types.SubnetParticipation, len(externalNetwork.Configuration.IPScopes.IPScope))

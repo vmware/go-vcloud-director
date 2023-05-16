@@ -1355,7 +1355,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
 		SizeMb:            int64(16384),
 		BusNumber:         0,
 		UnitNumber:        0,
-		ThinProvisioned:   takeBoolPointer(true),
+		ThinProvisioned:   addrOf(true),
 		OverrideVmDefault: true}
 
 	requestDetails := &types.RecomposeVAppParamsForEmptyVm{
@@ -1365,11 +1365,11 @@ func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
 			Description:               "created by Test_AddNewEmptyVMMultiNIC",
 			GuestCustomizationSection: nil,
 			VmSpecSection: &types.VmSpecSection{
-				Modified:          takeBoolPointer(true),
+				Modified:          addrOf(true),
 				Info:              "Virtual Machine specification",
 				OsType:            "debian10Guest",
-				NumCpus:           takeIntAddress(2),
-				NumCoresPerSocket: takeIntAddress(1),
+				NumCpus:           addrOf(2),
+				NumCoresPerSocket: addrOf(1),
 				CpuResourceMhz:    &types.CpuResourceMhz{Configured: 1},
 				MemoryResourceMb:  &types.MemoryResourceMb{Configured: 1024},
 				DiskSection:       &types.DiskSection{DiskSettings: []*types.DiskSettings{&newDisk}},
@@ -1436,8 +1436,8 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	vmSpecSection := vm.VM.VmSpecSection
 	osType := "sles10_64Guest"
 	vmSpecSection.OsType = osType
-	vmSpecSection.NumCpus = takeIntAddress(4)
-	vmSpecSection.NumCoresPerSocket = takeIntAddress(2)
+	vmSpecSection.NumCpus = addrOf(4)
+	vmSpecSection.NumCoresPerSocket = addrOf(2)
 	vmSpecSection.MemoryResourceMb = &types.MemoryResourceMb{Configured: 768}
 
 	updatedVm, err := vm.UpdateVmSpecSection(vmSpecSection, "updateDescription")
@@ -1542,7 +1542,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
 		client: vcd.org.client,
 		VdcComputePolicy: &types.VdcComputePolicy{
 			Name:        check.TestName() + "_empty",
-			Description: takeStringPointer("Empty policy created by test"),
+			Description: addrOf("Empty policy created by test"),
 		},
 	}
 
@@ -1550,8 +1550,8 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
 		client: vcd.org.client,
 		VdcComputePolicy: &types.VdcComputePolicy{
 			Name:        check.TestName() + "_memory",
-			Description: takeStringPointer("Empty policy created by test 2"),
-			Memory:      takeIntAddress(2048),
+			Description: addrOf("Empty policy created by test 2"),
+			Memory:      addrOf(2048),
 		},
 	}
 
@@ -1605,7 +1605,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
 		SizeMb:            int64(16384),
 		BusNumber:         0,
 		UnitNumber:        0,
-		ThinProvisioned:   takeBoolPointer(true),
+		ThinProvisioned:   addrOf(true),
 		OverrideVmDefault: true}
 
 	requestDetails := &types.RecomposeVAppParamsForEmptyVm{
@@ -1614,11 +1614,11 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
 			Description:               "created by Test_AddNewEmptyVMWithVmComputePolicy",
 			GuestCustomizationSection: nil,
 			VmSpecSection: &types.VmSpecSection{
-				Modified:          takeBoolPointer(true),
+				Modified:          addrOf(true),
 				Info:              "Virtual Machine specification",
 				OsType:            "debian10Guest",
-				NumCpus:           takeIntAddress(2),
-				NumCoresPerSocket: takeIntAddress(1),
+				NumCpus:           addrOf(2),
+				NumCoresPerSocket: addrOf(1),
 				CpuResourceMhz:    &types.CpuResourceMhz{Configured: 1},
 				MemoryResourceMb:  &types.MemoryResourceMb{Configured: 1024},
 				MediaSection:      nil,
@@ -1755,7 +1755,7 @@ func (vcd *TestVCD) Test_VMUpdateComputePolicies(check *C) {
 			VdcComputePolicyV2: &types.VdcComputePolicyV2{
 				VdcComputePolicy: types.VdcComputePolicy{
 					Name:         sizingPolicyName,
-					Description:  takeStringPointer("Empty sizing policy created by test"),
+					Description:  addrOf("Empty sizing policy created by test"),
 					IsSizingOnly: true,
 				},
 				PolicyType: "VdcVmPolicy",
@@ -1766,7 +1766,7 @@ func (vcd *TestVCD) Test_VMUpdateComputePolicies(check *C) {
 			VdcComputePolicyV2: &types.VdcComputePolicyV2{
 				VdcComputePolicy: types.VdcComputePolicy{
 					Name:         placementPolicyName,
-					Description:  takeStringPointer("Empty placement policy created by test"),
+					Description:  addrOf("Empty placement policy created by test"),
 					IsSizingOnly: false,
 				},
 				PolicyType: "VdcVmPolicy",
@@ -1921,11 +1921,11 @@ func (vcd *TestVCD) Test_CreateStandaloneVM(check *C) {
 			VirtualHardwareSection:   nil,
 			NetworkConnectionSection: vcd.getNetworkConnection(),
 			VmSpecSection: &types.VmSpecSection{
-				Modified:          takeBoolPointer(true),
+				Modified:          addrOf(true),
 				Info:              "Virtual Machine specification",
 				OsType:            "debian10Guest",
-				NumCpus:           takeIntAddress(1),
-				NumCoresPerSocket: takeIntAddress(1),
+				NumCpus:           addrOf(1),
+				NumCoresPerSocket: addrOf(1),
 				CpuResourceMhz: &types.CpuResourceMhz{
 					Configured: 0,
 				},
@@ -1939,7 +1939,7 @@ func (vcd *TestVCD) Test_CreateStandaloneVM(check *C) {
 							UnitNumber:        0,
 							BusNumber:         0,
 							AdapterType:       "5",
-							ThinProvisioned:   takeBoolPointer(true),
+							ThinProvisioned:   addrOf(true),
 							OverrideVmDefault: false,
 						},
 					},

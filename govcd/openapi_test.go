@@ -246,7 +246,7 @@ func (vcd *TestVCD) Test_OpenApiInlineStructCRUDRoles(check *C) {
 	testConnectionPayload := types.TestConnection{
 		Host:    vcd.client.Client.VCDHREF.Host,
 		Port:    443,
-		Secure:  takeBoolPointer(true),
+		Secure:  addrOf(true),
 		Timeout: 10,
 	}
 

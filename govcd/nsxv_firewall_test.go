@@ -98,13 +98,13 @@ func (vcd *TestVCD) Test_NsxvFirewallRuleIpSets(check *C) {
 	ipSetConfig1 := &types.EdgeIpSet{
 		Name:               "test-ipset-1",
 		IPAddresses:        "10.10.10.1",
-		InheritanceAllowed: takeBoolPointer(true), // Must be true to allow using it in firewall rule
+		InheritanceAllowed: addrOf(true), // Must be true to allow using it in firewall rule
 	}
 
 	ipSetConfig2 := &types.EdgeIpSet{
 		Name:               "test-ipset-2",
 		IPAddresses:        "192.168.1.1-192.168.1.200",
-		InheritanceAllowed: takeBoolPointer(true), // Must be true to allow using it in firewall rule
+		InheritanceAllowed: addrOf(true), // Must be true to allow using it in firewall rule
 	}
 
 	// Set parent entity and create two IP sets for usage in firewall rule

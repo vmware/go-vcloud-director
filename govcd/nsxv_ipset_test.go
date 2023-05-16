@@ -46,7 +46,7 @@ func (vcd *TestVCD) Test_NsxvIpSet(check *C) {
 		// returned, next time it shuffles it again so one can not rely on order of list returned.
 		// IPAddresses: "192.168.200.1-192.168.200.24,192.168.200.1,192.168.200.1/24",
 		IPAddresses:        "192.168.200.1/24",
-		InheritanceAllowed: takeBoolPointer(false),
+		InheritanceAllowed: addrOf(false),
 	}
 
 	createdIpSet, err := vdc.CreateNsxvIpSet(ipSetConfig)
@@ -86,7 +86,7 @@ func (vcd *TestVCD) Test_NsxvIpSet(check *C) {
 	check.Assert(ipSetByName, DeepEquals, ipSetById2)
 
 	// 5. Update IP set field
-	createdIpSet.InheritanceAllowed = takeBoolPointer(true)
+	createdIpSet.InheritanceAllowed = addrOf(true)
 	updatedIpSet, err := vcd.vdc.UpdateNsxvIpSet(createdIpSet)
 	check.Assert(err, IsNil)
 
@@ -122,7 +122,7 @@ func testCreateIpSet(name string, vdc *Vdc) (*types.EdgeIpSet, error) {
 		Name:               name,
 		Description:        "test-ipset-description",
 		IPAddresses:        "192.168.200.1/24",
-		InheritanceAllowed: takeBoolPointer(true),
+		InheritanceAllowed: addrOf(true),
 	}
 
 	return vdc.CreateNsxvIpSet(ipSetConfig)
