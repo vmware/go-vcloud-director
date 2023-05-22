@@ -1,8 +1,13 @@
 package govcd
 
 import (
+	"archive/zip"
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,15 +15,88 @@ import (
 	"strings"
 )
 
-type UIPluginMetadata struct {
+type UIPlugin struct {
 	UIPluginMetadata *types.UIPluginMetadata
 	client           *Client
 }
 
-// CreateUIPlugin creates a new UI extension and sets the provided plugin metadata for it.
+func (vcdClient *VCDClient) AddUIPlugin(pluginPath string) (*UIPlugin, error) {
+	if strings.TrimSpace(pluginPath) == "" {
+		return nil, fmt.Errorf("plugin path must not be empty")
+	}
+	uiPluginMetadataPayload, err := getPluginMetadata(pluginPath)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving the metadata for the given plugin %s: %s", pluginPath, err)
+	}
+	uiPluginMetadata, err := createUIPlugin(&vcdClient.Client, uiPluginMetadataPayload)
+	if err != nil {
+		return nil, fmt.Errorf("error creating the UI plugin: %s", err)
+	}
+	err = uiPluginMetadata.upload(pluginPath)
+	if err != nil {
+		return nil, fmt.Errorf("error uploading the UI plugin: %s", err)
+	}
+
+	return uiPluginMetadata, nil
+}
+
+// getPluginMetadata retrieves the UI Plugin Metadata information stored inside the given .zip file.
+func getPluginMetadata(pluginPath string) (*types.UIPluginMetadata, error) {
+	archive, err := zip.OpenReader(filepath.Clean(pluginPath))
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := archive.Close(); err != nil {
+			util.Logger.Printf("Error closing ZIP file: %s\n", err)
+		}
+	}()
+
+	var manifest *zip.File
+	for _, f := range archive.File {
+		if f.Name == "manifest.json" {
+			manifest = f
+			break
+		}
+	}
+	if manifest == nil {
+		return nil, fmt.Errorf("")
+	}
+
+	manifestContents, err := manifest.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := manifestContents.Close(); err != nil {
+			util.Logger.Printf("Error closing manifest file: %s\n", err)
+		}
+	}()
+
+	manifestBytes, err := io.ReadAll(manifestContents)
+	if err != nil {
+		return nil, err
+	}
+
+	var unmarshaledJson map[string]interface{}
+	err = json.Unmarshal(manifestBytes, &unmarshaledJson)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.UIPluginMetadata{
+		Vendor:      unmarshaledJson["vendor"].(string),
+		License:     unmarshaledJson["license"].(string),
+		Link:        unmarshaledJson["link"].(string),
+		PluginName:  unmarshaledJson["name"].(string),
+		Version:     unmarshaledJson["version"].(string),
+		Description: unmarshaledJson["description"].(string),
+	}, nil
+}
+
+// createUIPlugin creates a new UI extension and sets the provided plugin metadata for it.
 // Only System administrator can create a UI extension.
-func (vcdClient *VCDClient) CreateUIPlugin(uiPluginMetadata *types.UIPluginMetadata) (*UIPluginMetadata, error) {
-	client := vcdClient.Client
+func createUIPlugin(client *Client, uiPluginMetadata *types.UIPluginMetadata) (*UIPlugin, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExtensionsUi
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
@@ -30,9 +108,9 @@ func (vcdClient *VCDClient) CreateUIPlugin(uiPluginMetadata *types.UIPluginMetad
 		return nil, err
 	}
 
-	result := &UIPluginMetadata{
+	result := &UIPlugin{
 		UIPluginMetadata: &types.UIPluginMetadata{},
-		client:           &vcdClient.Client,
+		client:           client,
 	}
 
 	err = client.OpenApiPostItem(apiVersion, urlRef, nil, uiPluginMetadata, result.UIPluginMetadata, nil)
@@ -43,19 +121,11 @@ func (vcdClient *VCDClient) CreateUIPlugin(uiPluginMetadata *types.UIPluginMetad
 	return result, nil
 }
 
-// Upload uploads the given UI Plugin to VCD. Only the file name in the input types.UploadSpec is required.
-// The size is calculated automatically if not provided.
-func (ui *UIPluginMetadata) Upload(uploadSpec *types.UploadSpec) error {
-	if strings.TrimSpace(uploadSpec.FileName) == "" {
-		return fmt.Errorf("file name to upload must not be empty")
-	}
-	fileContents, err := os.ReadFile(filepath.Clean(uploadSpec.FileName))
+// This function uploads the given UI Plugin to VCD. Only the plugin path is required.
+func (ui *UIPlugin) upload(pluginPath string) error {
+	fileContents, err := os.ReadFile(filepath.Clean(pluginPath))
 	if err != nil {
 		return err
-	}
-
-	if uploadSpec.Size <= 0 {
-		uploadSpec.Size = len(fileContents)
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExtensionsUiPlugin
@@ -67,6 +137,13 @@ func (ui *UIPluginMetadata) Upload(uploadSpec *types.UploadSpec) error {
 	urlRef, err := ui.client.OpenApiBuildEndpoint(endpoint)
 	if err != nil {
 		return err
+	}
+
+	uploadSpec := types.UploadSpec{
+		FileName:     filepath.Base(pluginPath),
+		ChecksumAlgo: "sha256",
+		Checksum:     fmt.Sprintf("%x", sha256.Sum256(fileContents)),
+		Size:         len(fileContents),
 	}
 
 	headers, err := ui.client.OpenApiPostItemAndGetHeaders(apiVersion, urlRef, nil, uploadSpec, nil, nil)
@@ -107,22 +184,22 @@ func getTransferIdFromHeader(headers http.Header) (string, error) {
 	return matches[1], nil
 }
 
-func (*UIPluginMetadata) Publish(orgs types.OpenApiReferences) (types.OpenApiReferences, error) {
+func (*UIPlugin) Publish(orgs types.OpenApiReferences) (types.OpenApiReferences, error) {
 	return nil, nil
 }
 
-func (*UIPluginMetadata) PublishAll() {
+func (*UIPlugin) PublishAll() {
 
 }
 
-func (*UIPluginMetadata) Unpublish(orgs types.OpenApiReferences) (types.OpenApiReferences, error) {
+func (*UIPlugin) Unpublish(orgs types.OpenApiReferences) (types.OpenApiReferences, error) {
 	return nil, nil
 }
 
-func (*UIPluginMetadata) UnpublishAll() {
+func (*UIPlugin) UnpublishAll() {
 
 }
 
-func (*UIPluginMetadata) Delete() {
+func (*UIPlugin) Delete() {
 
 }

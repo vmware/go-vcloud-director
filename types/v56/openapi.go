@@ -468,21 +468,21 @@ type DefinedEntity struct {
 
 // UIPluginMetadata gives meta information about a UI Plugin
 type UIPluginMetadata struct {
-	Vendor         string  `json:"vendor,omitempty"`
-	License        string  `json:"license,omitempty"`
-	Link           string  `json:"link,omitempty"`
-	PluginName     string  `json:"pluginName,omitempty"`
-	Version        string  `json:"version,omitempty"`
-	Description    *string `json:"description,omitempty"`
-	ProviderScoped *bool   `json:"provider_scoped,omitempty"`
-	TenantScoped   *bool   `json:"tenant_scoped,omitempty"`
-	Enabled        *bool   `json:"enabled,omitempty"`
+	Vendor         string `json:"vendor,omitempty"`
+	License        string `json:"license,omitempty"`
+	Link           string `json:"link,omitempty"`
+	PluginName     string `json:"pluginName,omitempty"`
+	Version        string `json:"version,omitempty"`
+	Description    string `json:"description,omitempty"`
+	ProviderScoped *bool  `json:"provider_scoped,omitempty"`
+	TenantScoped   *bool  `json:"tenant_scoped,omitempty"`
+	Enabled        *bool  `json:"enabled,omitempty"`
 }
 
 // UploadSpec gives information about an upload
 type UploadSpec struct {
-	FileName     string  `json:"fileName,omitempty"`
-	Size         int     `json:"size,omitempty"`
-	Checksum     *string `json:"checksum,omitempty"`
-	ChecksumAlgo *string `json:"checksumAlgo,omitempty"`
+	FileName     string `json:"fileName,omitempty"`
+	Size         int    `json:"size,omitempty"`
+	Checksum     string `json:"checksum,omitempty"`
+	ChecksumAlgo string `json:"checksumAlgo,omitempty"`
 }
