@@ -468,6 +468,7 @@ type DefinedEntity struct {
 
 // UIPluginMetadata gives meta information about a UI Plugin
 type UIPluginMetadata struct {
+	ID             string `json:"id,omitempty"`
 	Vendor         string `json:"vendor,omitempty"`
 	License        string `json:"license,omitempty"`
 	Link           string `json:"link,omitempty"`
@@ -482,7 +483,7 @@ type UIPluginMetadata struct {
 // UploadSpec gives information about an upload
 type UploadSpec struct {
 	FileName     string `json:"fileName,omitempty"`
-	Size         int    `json:"size,omitempty"`
+	Size         int64  `json:"size,omitempty"`
 	Checksum     string `json:"checksum,omitempty"`
 	ChecksumAlgo string `json:"checksumAlgo,omitempty"`
 }

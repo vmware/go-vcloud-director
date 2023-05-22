@@ -17,7 +17,10 @@ func init() {
 }
 
 func (vcd *TestVCD) Test_UIPlugin(check *C) {
-	_, err := vcd.client.AddUIPlugin("")
+	uiPlugin, err := vcd.client.AddUIPlugin("../test-resources/ui_plugin.zip")
+	check.Assert(err, IsNil)
+
+	err = uiPlugin.Delete()
 	check.Assert(err, IsNil)
 }
 

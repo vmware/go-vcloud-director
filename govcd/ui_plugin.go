@@ -40,6 +40,25 @@ func (vcdClient *VCDClient) AddUIPlugin(pluginPath string) (*UIPlugin, error) {
 	return uiPluginMetadata, nil
 }
 
+func (uiPlugin *UIPlugin) Delete() error {
+	if strings.TrimSpace(uiPlugin.UIPluginMetadata.ID) == "" {
+		return fmt.Errorf("plugin ID must not be empty")
+	}
+
+	endpoint := types.OpenApiEndpointExtensionsUi // This one is not versioned, hence not using types.OpenApiPathVersion1_0_0 or alike
+	apiVersion, err := uiPlugin.client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return err
+	}
+
+	urlRef, err := uiPlugin.client.OpenApiBuildEndpoint(endpoint, uiPlugin.UIPluginMetadata.ID)
+	if err != nil {
+		return err
+	}
+
+	return uiPlugin.client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
+}
+
 // getPluginMetadata retrieves the UI Plugin Metadata information stored inside the given .zip file.
 func getPluginMetadata(pluginPath string) (*types.UIPluginMetadata, error) {
 	archive, err := zip.OpenReader(filepath.Clean(pluginPath))
@@ -97,7 +116,7 @@ func getPluginMetadata(pluginPath string) (*types.UIPluginMetadata, error) {
 // createUIPlugin creates a new UI extension and sets the provided plugin metadata for it.
 // Only System administrator can create a UI extension.
 func createUIPlugin(client *Client, uiPluginMetadata *types.UIPluginMetadata) (*UIPlugin, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExtensionsUi
+	endpoint := types.OpenApiEndpointExtensionsUi // This one is not versioned, hence not using types.OpenApiPathVersion1_0_0 or alike
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
@@ -128,13 +147,13 @@ func (ui *UIPlugin) upload(pluginPath string) error {
 		return err
 	}
 
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExtensionsUiPlugin
+	endpoint := types.OpenApiEndpointExtensionsUiPlugin // This one is not versioned, hence not using types.OpenApiPathVersion1_0_0 or alike
 	apiVersion, err := ui.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
 	}
 
-	urlRef, err := ui.client.OpenApiBuildEndpoint(endpoint)
+	urlRef, err := ui.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, ui.UIPluginMetadata.ID))
 	if err != nil {
 		return err
 	}
@@ -143,7 +162,7 @@ func (ui *UIPlugin) upload(pluginPath string) error {
 		FileName:     filepath.Base(pluginPath),
 		ChecksumAlgo: "sha256",
 		Checksum:     fmt.Sprintf("%x", sha256.Sum256(fileContents)),
-		Size:         len(fileContents),
+		Size:         int64(len(fileContents)),
 	}
 
 	headers, err := ui.client.OpenApiPostItemAndGetHeaders(apiVersion, urlRef, nil, uploadSpec, nil, nil)
@@ -156,18 +175,17 @@ func (ui *UIPlugin) upload(pluginPath string) error {
 		return err
 	}
 
-	endpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTransfer
-	apiVersion, err = ui.client.getOpenApiHighestElevatedVersion(endpoint)
+	transferEndpoint := fmt.Sprintf("%s://%s/transfer/%s", ui.client.VCDHREF.Scheme, ui.client.VCDHREF.Host, transferId)
+	request, err := newFileUploadRequest(ui.client, transferEndpoint, fileContents, 0, uploadSpec.Size, uploadSpec.Size)
 	if err != nil {
 		return err
 	}
 
-	urlRef, err = ui.client.OpenApiBuildEndpoint(endpoint, transferId)
+	response, err := ui.client.Http.Do(request)
 	if err != nil {
 		return err
 	}
-
-	return ui.client.OpenApiPutItem(apiVersion, urlRef, nil, fileContents, nil, nil)
+	return response.Body.Close()
 }
 
 // getTransferIdFromHeader retrieves a valid transfer ID from any given HTTP headers
@@ -197,9 +215,5 @@ func (*UIPlugin) Unpublish(orgs types.OpenApiReferences) (types.OpenApiReference
 }
 
 func (*UIPlugin) UnpublishAll() {
-
-}
-
-func (*UIPlugin) Delete() {
 
 }
