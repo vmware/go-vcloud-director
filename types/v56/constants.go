@@ -399,6 +399,13 @@ const (
 	OpenApiEndpointRdeEntities                        = "entities/"
 	OpenApiEndpointRdeEntitiesTypes                   = "entities/types/"
 	OpenApiEndpointRdeEntitiesResolve                 = "entities/%s/resolve"
+	OpenApiEndpointExtensionsUi                       = "extensions/ui"
+	OpenApiEndpointExtensionsUiPlugin                 = "extensions/ui/%s/plugin"
+	OpenApiEndpointExtensionsUiPublishAll             = "extensions/ui/%s/tenants/publishAll"
+	OpenApiEndpointExtensionsUiPublish                = "extensions/ui/%s/tenants/publish"
+	OpenApiEndpointExtensionsUiUnpublishAll           = "extensions/ui/%s/tenants/unpublishAll"
+	OpenApiEndpointExtensionsUiUnpublish              = "extensions/ui/%s/tenants/unpublish"
+	OpenApiEndpointTransfer                           = "transfer/"
 
 	// NSX-T ALB related endpoints
 
