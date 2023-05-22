@@ -38,7 +38,7 @@ func Test_getPluginMetadata(t *testing.T) {
 			pluginPath: "../test-resources/ui_plugin.zip",
 			want: &types.UIPluginMetadata{
 				Vendor:      "VMware",
-				License:     "Copyright (C) VMware 2023.  All rights reserved.",
+				License:     "BSD-2-Clause",
 				Link:        "http://www.vmware.com/support",
 				PluginName:  "Test Plugin",
 				Version:     "1.2.3",
