@@ -38,11 +38,11 @@ func Test_getPluginMetadata(t *testing.T) {
 			pluginPath: "../test-resources/ui_plugin.zip",
 			want: &types.UIPluginMetadata{
 				Vendor:      "VMware",
-				License:     "Copyright (C) VMware 2022.  All rights reserved.",
+				License:     "Copyright (C) VMware 2023.  All rights reserved.",
 				Link:        "http://www.vmware.com/support",
-				PluginName:  "Kubernetes Container Clusters",
-				Version:     "4.0.0",
-				Description: "Kubernetes Container Clusters UI Plugin for CSE",
+				PluginName:  "Test Plugin",
+				Version:     "1.2.3",
+				Description: "Test Plugin description",
 			},
 		},
 		{
