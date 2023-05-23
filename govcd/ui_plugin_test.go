@@ -122,14 +122,18 @@ func (vcd *TestVCD) Test_UIPlugin(check *C) {
 	}
 
 	// Check that the plugin can be disabled
-	err = newUIPlugin.Disable()
+	err = newUIPlugin.Update(false, false, false)
 	check.Assert(err, IsNil)
 	check.Assert(newUIPlugin.UIPluginMetadata.Enabled, Equals, false)
+	check.Assert(newUIPlugin.UIPluginMetadata.ProviderScoped, Equals, false)
+	check.Assert(newUIPlugin.UIPluginMetadata.TenantScoped, Equals, false)
 
 	// Check that the plugin can be enabled again
-	err = newUIPlugin.Enable()
+	err = newUIPlugin.Update(true, true, true)
 	check.Assert(err, IsNil)
 	check.Assert(newUIPlugin.UIPluginMetadata.Enabled, Equals, true)
+	check.Assert(newUIPlugin.UIPluginMetadata.ProviderScoped, Equals, true)
+	check.Assert(newUIPlugin.UIPluginMetadata.TenantScoped, Equals, true)
 
 	// Delete the created plugin
 	err = newUIPlugin.Delete()
