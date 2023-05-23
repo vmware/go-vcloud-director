@@ -20,7 +20,7 @@ type UIPlugin struct {
 	client           *Client
 }
 
-// AddUIPlugin reads the plugin located in the input path, obtains the inner ZIP metadata, sends this metadata to
+// AddUIPlugin reads the plugin ZIP file located in the input path, obtains the inner metadata, sends it to
 // VCD and performs the plugin upload.
 func (vcdClient *VCDClient) AddUIPlugin(pluginPath string, enabled bool) (*UIPlugin, error) {
 	if strings.TrimSpace(pluginPath) == "" {
@@ -43,7 +43,7 @@ func (vcdClient *VCDClient) AddUIPlugin(pluginPath string, enabled bool) (*UIPlu
 	return uiPluginMetadata, nil
 }
 
-// GetAllUIPlugins obtains all the available UI plugins.
+// GetAllUIPlugins retrieves a slice with all the available UIPlugin objects present in VCD.
 func (vcdClient *VCDClient) GetAllUIPlugins() ([]*UIPlugin, error) {
 	endpoint := types.OpenApiEndpointExtensionsUi // This one is not versioned, hence not using types.OpenApiPathVersion1_0_0 or alike
 	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
@@ -73,7 +73,7 @@ func (vcdClient *VCDClient) GetAllUIPlugins() ([]*UIPlugin, error) {
 	return uiPlugins, nil
 }
 
-// GetUIPluginById obtains a unique UI plugin identified by its URN.
+// GetUIPluginById obtains a unique UIPlugin identified by its URN.
 func (vcdClient *VCDClient) GetUIPluginById(id string) (*UIPlugin, error) {
 	endpoint := types.OpenApiEndpointExtensionsUi // This one is not versioned, hence not using types.OpenApiPathVersion1_0_0 or alike
 	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
@@ -103,7 +103,7 @@ func (vcdClient *VCDClient) GetUIPluginById(id string) (*UIPlugin, error) {
 	return result, nil
 }
 
-// GetUIPlugin obtains a unique UI plugin identified by the combination of its vendor, plugin name and version.
+// GetUIPlugin obtains a unique UIPlugin identified by the combination of its vendor, plugin name and version.
 func (vcdClient *VCDClient) GetUIPlugin(vendor, pluginName, version string) (*UIPlugin, error) {
 	allUIPlugins, err := vcdClient.GetAllUIPlugins()
 	if err != nil {
@@ -122,6 +122,7 @@ func (vcdClient *VCDClient) GetUIPlugin(vendor, pluginName, version string) (*UI
 	return nil, fmt.Errorf("could not find any UI plugin with vendor '%s', pluginName '%s' and version '%s': %s", vendor, pluginName, version, ErrorEntityNotFound)
 }
 
+// GetPublishedTenants gets all the Organization references where the receiver UIPlugin is published.
 func (uiPlugin *UIPlugin) GetPublishedTenants() (types.OpenApiReferences, error) {
 	if strings.TrimSpace(uiPlugin.UIPluginMetadata.ID) == "" {
 		return nil, fmt.Errorf("plugin ID is required but it is empty")
@@ -146,7 +147,7 @@ func (uiPlugin *UIPlugin) GetPublishedTenants() (types.OpenApiReferences, error)
 	return orgRefs, nil
 }
 
-// Publish publishes the receiver UIPlugin to the given organizations.
+// Publish publishes the receiver UIPlugin to the given Organizations.
 // Does not modify the receiver UIPlugin.
 func (uiPlugin *UIPlugin) Publish(orgs types.OpenApiReferences) error {
 	if len(orgs) == 0 {
@@ -155,7 +156,7 @@ func (uiPlugin *UIPlugin) Publish(orgs types.OpenApiReferences) error {
 	return publishOrUnpublishFromOrgs(uiPlugin.client, uiPlugin.UIPluginMetadata.ID, orgs, types.OpenApiEndpointExtensionsUiTenantsPublish)
 }
 
-// Unpublish unpublishes the receiver UIPlugin from the given organizations.
+// Unpublish unpublishes the receiver UIPlugin from the given Organizations.
 // Does not modify the receiver UIPlugin.
 func (uiPlugin *UIPlugin) Unpublish(orgs types.OpenApiReferences) error {
 	if len(orgs) == 0 {
@@ -164,13 +165,13 @@ func (uiPlugin *UIPlugin) Unpublish(orgs types.OpenApiReferences) error {
 	return publishOrUnpublishFromOrgs(uiPlugin.client, uiPlugin.UIPluginMetadata.ID, orgs, types.OpenApiEndpointExtensionsUiTenantsUnpublish)
 }
 
-// PublishAll publishes the receiver UIPlugin to all available organizations.
+// PublishAll publishes the receiver UIPlugin to all available Organizations.
 // Does not modify the receiver UIPlugin.
 func (uiPlugin *UIPlugin) PublishAll() error {
 	return publishOrUnpublishFromOrgs(uiPlugin.client, uiPlugin.UIPluginMetadata.ID, nil, types.OpenApiEndpointExtensionsUiTenantsPublishAll)
 }
 
-// UnpublishAll unpublishes the receiver UIPlugin from all available organizations.
+// UnpublishAll unpublishes the receiver UIPlugin from all available Organizations.
 // Does not modify the receiver UIPlugin.
 func (uiPlugin *UIPlugin) UnpublishAll() error {
 	return publishOrUnpublishFromOrgs(uiPlugin.client, uiPlugin.UIPluginMetadata.ID, nil, types.OpenApiEndpointExtensionsUiTenantsUnpublishAll)
@@ -221,7 +222,7 @@ func (uiPlugin *UIPlugin) Update(enable, providerScoped, tenantScoped bool) erro
 	return nil
 }
 
-// Delete deletes the receiver UIPlugin.
+// Delete deletes the receiver UIPlugin from VCD.
 func (uiPlugin *UIPlugin) Delete() error {
 	if strings.TrimSpace(uiPlugin.UIPluginMetadata.ID) == "" {
 		return fmt.Errorf("plugin ID must not be empty")
@@ -246,7 +247,8 @@ func (uiPlugin *UIPlugin) Delete() error {
 	return nil
 }
 
-// getPluginMetadata retrieves the UI Plugin Metadata information stored inside the given plugin file.
+// getPluginMetadata retrieves the types.UIPluginMetadata information stored inside the given plugin file, that should
+// be a ZIP file.
 func getPluginMetadata(pluginPath string) (*types.UIPluginMetadata, error) {
 	archive, err := zip.OpenReader(filepath.Clean(pluginPath))
 	if err != nil {
@@ -310,7 +312,7 @@ func getPluginMetadata(pluginPath string) (*types.UIPluginMetadata, error) {
 	return result, nil
 }
 
-// createUIPlugin creates a new empty UI plugin and sets the provided plugin metadata for it.
+// createUIPlugin creates a new empty UIPlugin in VCD and sets the provided plugin metadata.
 // The UI plugin contents should be uploaded afterwards.
 func createUIPlugin(client *Client, uiPluginMetadata *types.UIPluginMetadata) (*UIPlugin, error) {
 	endpoint := types.OpenApiEndpointExtensionsUi // This one is not versioned, hence not using types.OpenApiPathVersion1_0_0 or alike
