@@ -3,6 +3,7 @@
 package govcd
 
 import (
+	"fmt"
 	"net/http"
 	"net/textproto"
 	"reflect"
@@ -17,17 +18,45 @@ func init() {
 	testingTags["plugin"] = "ui_plugin_test.go"
 }
 
+// This object is equivalent to the manifest.json that is inside the ../test-resources/ui_plugin.zip file
+var testUiPluginMetadata = &types.UIPluginMetadata{
+	Vendor:         "VMware",
+	License:        "BSD-2-Clause",
+	Link:           "http://www.vmware.com",
+	PluginName:     "Test Plugin",
+	Version:        "1.2.3",
+	Description:    "Test Plugin description",
+	ProviderScoped: true,
+	TenantScoped:   true,
+}
+
 func (vcd *TestVCD) Test_UIPlugin(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	// Add a plugin present on disk
 	uiPlugin, err := vcd.client.AddUIPlugin("../test-resources/ui_plugin.zip")
 	check.Assert(err, IsNil)
-
 	AddToCleanupListOpenApi(uiPlugin.UIPluginMetadata.ID, check.TestName(), types.OpenApiEndpointExtensionsUi+uiPlugin.UIPluginMetadata.ID)
+
+	// Assert that the metadata is correctly read from the uploaded ZIP
+	check.Assert(uiPlugin.UIPluginMetadata.ID, Not(Equals), "")
+	check.Assert(uiPlugin.UIPluginMetadata.Vendor, Equals, testUiPluginMetadata.Vendor)
+	check.Assert(uiPlugin.UIPluginMetadata.License, Equals, testUiPluginMetadata.License)
+	check.Assert(uiPlugin.UIPluginMetadata.Link, Equals, testUiPluginMetadata.Link)
+	check.Assert(uiPlugin.UIPluginMetadata.PluginName, Equals, testUiPluginMetadata.PluginName)
+	check.Assert(uiPlugin.UIPluginMetadata.Version, Equals, testUiPluginMetadata.Version)
+	check.Assert(uiPlugin.UIPluginMetadata.Description, Equals, testUiPluginMetadata.Description)
+	check.Assert(uiPlugin.UIPluginMetadata.ProviderScoped, Equals, testUiPluginMetadata.ProviderScoped)
+	check.Assert(uiPlugin.UIPluginMetadata.TenantScoped, Equals, testUiPluginMetadata.TenantScoped)
 
 	// Try to add the same plugin twice, it should fail
 	_, err = vcd.client.AddUIPlugin("../test-resources/ui_plugin.zip")
 	check.Assert(err, NotNil)
 	check.Assert(true, Equals, strings.Contains(err.Error(), "same pluginName-version-vendor"))
 
+	// Retrieve the created plugin using different getters
 	allUIplugins, err := vcd.client.GetAllUIPlugins()
 	check.Assert(err, IsNil)
 	for _, plugin := range allUIplugins {
@@ -35,23 +64,75 @@ func (vcd *TestVCD) Test_UIPlugin(check *C) {
 			check.Assert(plugin.UIPluginMetadata, DeepEquals, uiPlugin.UIPluginMetadata)
 		}
 	}
-
 	anotherUiPlugin, err := vcd.client.GetUIPlugin(uiPlugin.UIPluginMetadata.Vendor, uiPlugin.UIPluginMetadata.PluginName, uiPlugin.UIPluginMetadata.Version)
 	check.Assert(err, IsNil)
 	check.Assert(anotherUiPlugin.UIPluginMetadata, DeepEquals, uiPlugin.UIPluginMetadata)
-
 	anotherUiPlugin, err = vcd.client.GetUIPluginById(uiPlugin.UIPluginMetadata.ID)
 	check.Assert(err, IsNil)
 	check.Assert(anotherUiPlugin.UIPluginMetadata, DeepEquals, uiPlugin.UIPluginMetadata)
 
+	// Publishing to all tenants
+	err = uiPlugin.PublishAll()
+	check.Assert(err, IsNil)
+
+	// Retrieving the published tenants, it should equal to the tenants provided in the test configuration + 1 (the System one)
+	orgRefs, err := uiPlugin.GetPublishedTenants()
+	check.Assert(err, IsNil)
+	check.Assert(orgRefs, NotNil)
+	check.Assert(len(orgRefs), Equals, len(vcd.config.Tenants)+1)
+
+	// Unpublishing from all the tenants
+	err = uiPlugin.UnpublishAll()
+	check.Assert(err, IsNil)
+
+	// Retrieving the published tenants, it should equal to 0 as we just unpublished all
+	orgRefs, err = uiPlugin.GetPublishedTenants()
+	check.Assert(err, IsNil)
+	check.Assert(orgRefs, NotNil)
+	check.Assert(len(orgRefs), Equals, 0)
+
+	// Publishing to a specific tenant
+	if len(vcd.config.Tenants) > 0 {
+		existingOrg, err := vcd.client.GetOrgByName(vcd.config.Tenants[0].SysOrg)
+		check.Assert(err, IsNil)
+
+		existingOrgRefs := types.OpenApiReferences{
+			{
+				Name: existingOrg.Org.Name,
+				ID:   existingOrg.Org.ID,
+			},
+		}
+
+		err = uiPlugin.Publish(existingOrgRefs)
+		check.Assert(err, IsNil)
+
+		// Retrieving the published tenants, it should equal to the tenant above
+		orgRefs, err = uiPlugin.GetPublishedTenants()
+		check.Assert(err, IsNil)
+		check.Assert(orgRefs, NotNil)
+		check.Assert(len(orgRefs), Equals, 1)
+		check.Assert(orgRefs[0].Name, Equals, existingOrg.Org.Name)
+
+		// Unpublishing from all the tenants
+		err = uiPlugin.Unpublish(existingOrgRefs)
+		check.Assert(err, IsNil)
+
+		// Retrieving the published tenants, it should equal to 0 as we just unpublished it
+		orgRefs, err = uiPlugin.GetPublishedTenants()
+		check.Assert(err, IsNil)
+		check.Assert(orgRefs, NotNil)
+		check.Assert(len(orgRefs), Equals, 0)
+	}
+
+	// Delete the created plugin
 	err = uiPlugin.Delete()
 	check.Assert(err, IsNil)
 	check.Assert(*uiPlugin.UIPluginMetadata, DeepEquals, types.UIPluginMetadata{})
 
+	// Check that the plugin was correctly deleted
 	_, err = vcd.client.GetUIPlugin(anotherUiPlugin.UIPluginMetadata.Vendor, anotherUiPlugin.UIPluginMetadata.PluginName, anotherUiPlugin.UIPluginMetadata.Version)
 	check.Assert(err, NotNil)
 	check.Assert(true, Equals, strings.Contains(err.Error(), ErrorEntityNotFound.Error()))
-
 	_, err = vcd.client.GetUIPluginById(anotherUiPlugin.UIPluginMetadata.ID)
 	check.Assert(err, NotNil)
 	check.Assert(true, Equals, strings.Contains(err.Error(), ErrorEntityNotFound.Error()))
@@ -69,14 +150,7 @@ func Test_getPluginMetadata(t *testing.T) {
 		{
 			name:       "get ui plugin metadata",
 			pluginPath: "../test-resources/ui_plugin.zip",
-			want: &types.UIPluginMetadata{
-				Vendor:      "VMware",
-				License:     "BSD-2-Clause",
-				Link:        "http://www.vmware.com",
-				PluginName:  "Test Plugin",
-				Version:     "1.2.3",
-				Description: "Test Plugin description",
-			},
+			want:       testUiPluginMetadata,
 		},
 		{
 			name:       "invalid plugin",

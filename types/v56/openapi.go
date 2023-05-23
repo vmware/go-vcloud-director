@@ -475,9 +475,9 @@ type UIPluginMetadata struct {
 	PluginName     string `json:"pluginName,omitempty"`
 	Version        string `json:"version,omitempty"`
 	Description    string `json:"description,omitempty"`
-	ProviderScoped *bool  `json:"provider_scoped,omitempty"`
-	TenantScoped   *bool  `json:"tenant_scoped,omitempty"`
-	Enabled        *bool  `json:"enabled,omitempty"`
+	ProviderScoped bool   `json:"provider_scoped,omitempty"`
+	TenantScoped   bool   `json:"tenant_scoped,omitempty"`
+	Enabled        bool   `json:"enabled,omitempty"`
 }
 
 // UploadSpec gives information about an upload

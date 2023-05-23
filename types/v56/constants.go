@@ -401,10 +401,11 @@ const (
 	OpenApiEndpointRdeEntitiesResolve                 = "entities/%s/resolve"
 	OpenApiEndpointExtensionsUi                       = "extensions/ui/"
 	OpenApiEndpointExtensionsUiPlugin                 = "extensions/ui/%s/plugin"
-	OpenApiEndpointExtensionsUiPublishAll             = "extensions/ui/%s/tenants/publishAll"
-	OpenApiEndpointExtensionsUiPublish                = "extensions/ui/%s/tenants/publish"
-	OpenApiEndpointExtensionsUiUnpublishAll           = "extensions/ui/%s/tenants/unpublishAll"
-	OpenApiEndpointExtensionsUiUnpublish              = "extensions/ui/%s/tenants/unpublish"
+	OpenApiEndpointExtensionsUiTenants                = "extensions/ui/%s/tenants"
+	OpenApiEndpointExtensionsUiTenantsPublishAll      = "extensions/ui/%s/tenants/publishAll"
+	OpenApiEndpointExtensionsUiTenantsPublish         = "extensions/ui/%s/tenants/publish"
+	OpenApiEndpointExtensionsUiTenantsUnpublishAll    = "extensions/ui/%s/tenants/unpublishAll"
+	OpenApiEndpointExtensionsUiTenantsUnpublish       = "extensions/ui/%s/tenants/unpublish"
 
 	// NSX-T ALB related endpoints
 
