@@ -35,7 +35,7 @@ func (adminOrg *AdminOrg) GetFederationSettings() (*types.OrgFederationSettings,
 		return nil, err
 	}
 
-	resp, err = checkResp(resp, err)
+	_, err = checkResp(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (adminOrg *AdminOrg) SetFederationSettings(settings *types.OrgFederationSet
 		return nil, err
 	}
 
-	resp, err = checkResp(resp, err)
+	_, err = checkResp(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (adminOrg *AdminOrg) GetSamlMetadata() (*types.VcdSamlMetadata, error) {
 		return nil, err
 	}
 
-	resp, err = checkResp(resp, err)
+	_, err = checkResp(resp, err)
 	if err != nil {
 		return nil, err
 	}
