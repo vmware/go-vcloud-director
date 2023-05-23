@@ -22,7 +22,7 @@ type UIPlugin struct {
 
 // AddUIPlugin reads the plugin located in the input path, obtains the inner ZIP metadata, sends this metadata to
 // VCD and performs the plugin upload.
-func (vcdClient *VCDClient) AddUIPlugin(pluginPath string) (*UIPlugin, error) {
+func (vcdClient *VCDClient) AddUIPlugin(pluginPath string, enabled bool) (*UIPlugin, error) {
 	if strings.TrimSpace(pluginPath) == "" {
 		return nil, fmt.Errorf("plugin path must not be empty")
 	}
@@ -30,6 +30,7 @@ func (vcdClient *VCDClient) AddUIPlugin(pluginPath string) (*UIPlugin, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving the metadata for the given plugin %s: %s", pluginPath, err)
 	}
+	uiPluginMetadataPayload.Enabled = enabled
 	uiPluginMetadata, err := createUIPlugin(&vcdClient.Client, uiPluginMetadataPayload)
 	if err != nil {
 		return nil, fmt.Errorf("error creating the UI plugin: %s", err)
@@ -121,9 +122,19 @@ func (vcdClient *VCDClient) GetUIPlugin(vendor, pluginName, version string) (*UI
 	return nil, fmt.Errorf("could not find any UI plugin with vendor '%s', pluginName '%s' and version '%s': %s", vendor, pluginName, version, ErrorEntityNotFound)
 }
 
+// Enable enables the receiver UI plugin.
+func (uiPlugin *UIPlugin) Enable() error {
+	return uiPlugin.enableOrDisable(true)
+}
+
+// Disable disables the receiver UI plugin.
+func (uiPlugin *UIPlugin) Disable() error {
+	return uiPlugin.enableOrDisable(false)
+}
+
 func (uiPlugin *UIPlugin) GetPublishedTenants() (types.OpenApiReferences, error) {
 	if strings.TrimSpace(uiPlugin.UIPluginMetadata.ID) == "" {
-		return nil, fmt.Errorf("plugin ID is required but it was empty")
+		return nil, fmt.Errorf("plugin ID is required but it is empty")
 	}
 
 	endpoint := types.OpenApiEndpointExtensionsUiTenants // This one is not versioned, hence not using types.OpenApiPathVersion1_0_0 or alike
@@ -368,7 +379,7 @@ func getTransferIdFromHeader(headers http.Header) (string, error) {
 // organizations.
 func publishOrUnpublishFromOrgs(client *Client, pluginId string, orgs types.OpenApiReferences, endpoint string) error {
 	if strings.TrimSpace(pluginId) == "" {
-		return fmt.Errorf("plugin ID is required but it was empty")
+		return fmt.Errorf("plugin ID is required but it is empty")
 	}
 
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
@@ -382,4 +393,39 @@ func publishOrUnpublishFromOrgs(client *Client, pluginId string, orgs types.Open
 	}
 
 	return client.OpenApiPostItem(apiVersion, urlRef, nil, orgs, nil, nil)
+}
+
+// enableOrDisable enables or disables the receiver UI plugin, depending on the input.
+func (uiPlugin *UIPlugin) enableOrDisable(enable bool) error {
+	if strings.TrimSpace(uiPlugin.UIPluginMetadata.ID) == "" {
+		return fmt.Errorf("plugin ID is required but it is empty")
+	}
+
+	endpoint := types.OpenApiEndpointExtensionsUi // This one is not versioned, hence not using types.OpenApiPathVersion1_0_0 or alike
+	apiVersion, err := uiPlugin.client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return err
+	}
+
+	urlRef, err := uiPlugin.client.OpenApiBuildEndpoint(endpoint, uiPlugin.UIPluginMetadata.ID)
+	if err != nil {
+		return err
+	}
+
+	payload := &types.UIPluginMetadata{
+		Vendor:         uiPlugin.UIPluginMetadata.Vendor,
+		License:        uiPlugin.UIPluginMetadata.License,
+		Link:           uiPlugin.UIPluginMetadata.Link,
+		PluginName:     uiPlugin.UIPluginMetadata.PluginName,
+		Version:        uiPlugin.UIPluginMetadata.Version,
+		Description:    uiPlugin.UIPluginMetadata.Description,
+		ProviderScoped: uiPlugin.UIPluginMetadata.ProviderScoped,
+		TenantScoped:   uiPlugin.UIPluginMetadata.TenantScoped,
+		Enabled:        enable,
+	}
+	err = uiPlugin.client.OpenApiPutItem(apiVersion, urlRef, nil, payload, uiPlugin.UIPluginMetadata, nil)
+	if err != nil {
+		return err
+	}
+	return nil
 }
