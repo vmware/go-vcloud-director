@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/textproto"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -20,8 +21,40 @@ func (vcd *TestVCD) Test_UIPlugin(check *C) {
 	uiPlugin, err := vcd.client.AddUIPlugin("../test-resources/ui_plugin.zip")
 	check.Assert(err, IsNil)
 
+	AddToCleanupListOpenApi(uiPlugin.UIPluginMetadata.ID, check.TestName(), types.OpenApiEndpointExtensionsUi+uiPlugin.UIPluginMetadata.ID)
+
+	// Try to add the same plugin twice, it should fail
+	_, err = vcd.client.AddUIPlugin("../test-resources/ui_plugin.zip")
+	check.Assert(err, NotNil)
+	check.Assert(true, Equals, strings.Contains(err.Error(), "same pluginName-version-vendor"))
+
+	allUIplugins, err := vcd.client.GetAllUIPlugins()
+	check.Assert(err, IsNil)
+	for _, plugin := range allUIplugins {
+		if plugin.IsTheSameAs(uiPlugin) {
+			check.Assert(plugin.UIPluginMetadata, DeepEquals, uiPlugin.UIPluginMetadata)
+		}
+	}
+
+	anotherUiPlugin, err := vcd.client.GetUIPlugin(uiPlugin.UIPluginMetadata.Vendor, uiPlugin.UIPluginMetadata.PluginName, uiPlugin.UIPluginMetadata.Version)
+	check.Assert(err, IsNil)
+	check.Assert(anotherUiPlugin.UIPluginMetadata, DeepEquals, uiPlugin.UIPluginMetadata)
+
+	anotherUiPlugin, err = vcd.client.GetUIPluginById(uiPlugin.UIPluginMetadata.ID)
+	check.Assert(err, IsNil)
+	check.Assert(anotherUiPlugin.UIPluginMetadata, DeepEquals, uiPlugin.UIPluginMetadata)
+
 	err = uiPlugin.Delete()
 	check.Assert(err, IsNil)
+	check.Assert(*uiPlugin.UIPluginMetadata, DeepEquals, types.UIPluginMetadata{})
+
+	_, err = vcd.client.GetUIPlugin(anotherUiPlugin.UIPluginMetadata.Vendor, anotherUiPlugin.UIPluginMetadata.PluginName, anotherUiPlugin.UIPluginMetadata.Version)
+	check.Assert(err, NotNil)
+	check.Assert(true, Equals, strings.Contains(err.Error(), ErrorEntityNotFound.Error()))
+
+	_, err = vcd.client.GetUIPluginById(anotherUiPlugin.UIPluginMetadata.ID)
+	check.Assert(err, NotNil)
+	check.Assert(true, Equals, strings.Contains(err.Error(), ErrorEntityNotFound.Error()))
 }
 
 // Test_getPluginMetadata tests that getPluginMetadata can retrieve correctly the UI plugin metadata information
@@ -39,7 +72,7 @@ func Test_getPluginMetadata(t *testing.T) {
 			want: &types.UIPluginMetadata{
 				Vendor:      "VMware",
 				License:     "BSD-2-Clause",
-				Link:        "http://www.vmware.com/support",
+				Link:        "http://www.vmware.com",
 				PluginName:  "Test Plugin",
 				Version:     "1.2.3",
 				Description: "Test Plugin description",
