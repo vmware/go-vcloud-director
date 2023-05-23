@@ -36,14 +36,17 @@ func (vcd *TestVCD) Test_OrgSamlSettingsCRUD(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(settings, NotNil)
 
-	fmt.Printf("# 1 %# v\n", pretty.Formatter(settings))
+	if testVerbose {
+		fmt.Printf("# 1 %# v\n", pretty.Formatter(settings))
+	}
 
 	metadata, err := adminOrg.GetSamlMetadata()
 	check.Assert(err, IsNil)
 	check.Assert(metadata, NotNil)
-	fmt.Printf("# 2 %# v\n", pretty.Formatter(metadata))
+	if testVerbose {
+		fmt.Printf("# 2 %# v\n", pretty.Formatter(metadata))
+	}
 
-	/**/
 	metadataText, err := xml.Marshal(metadata)
 	check.Assert(err, IsNil)
 	settings.SAMLMetadata = string(metadataText)
@@ -51,7 +54,6 @@ func (vcd *TestVCD) Test_OrgSamlSettingsCRUD(check *C) {
 	newSetting, err := adminOrg.SetFederationSettings(settings)
 	check.Assert(err, IsNil)
 	check.Assert(newSetting, NotNil)
-	/**/
 	err = adminOrg.Disable()
 	check.Assert(err, IsNil)
 	err = adminOrg.Delete(true, true)

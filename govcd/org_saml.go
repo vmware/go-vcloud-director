@@ -65,9 +65,6 @@ func (adminOrg *AdminOrg) SetFederationSettings(settings *types.OrgFederationSet
 		return nil, fmt.Errorf("error normalising SAML metadata: %s", err)
 	}
 
-	fmt.Println(strings.Repeat("=", 80))
-	fmt.Printf("%s\n", settings.SAMLMetadata)
-	fmt.Println(strings.Repeat("=", 80))
 	text := bytes.Buffer{}
 	encoder := json.NewEncoder(&text)
 	encoder.SetEscapeHTML(false)
@@ -75,9 +72,6 @@ func (adminOrg *AdminOrg) SetFederationSettings(settings *types.OrgFederationSet
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(strings.Repeat("+", 80))
-	fmt.Printf("%s\n", text.String())
-	fmt.Println(strings.Repeat("+", 80))
 	body := strings.NewReader(text.String())
 	apiVersion := adminOrg.client.APIVersion
 	headAccept := http.Header{}
