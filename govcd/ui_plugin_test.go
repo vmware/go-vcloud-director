@@ -135,6 +135,9 @@ func (vcd *TestVCD) Test_UIPlugin(check *C) {
 	check.Assert(newUIPlugin.UIPluginMetadata.ProviderScoped, Equals, true)
 	check.Assert(newUIPlugin.UIPluginMetadata.TenantScoped, Equals, true)
 
+	check.Assert(newUIPlugin.IsTheSameAs(retrievedUIPlugin), Equals, true)
+	check.Assert(newUIPlugin.IsTheSameAs(&UIPlugin{UIPluginMetadata: &types.UIPluginMetadata{Vendor: "foo", Version: "1.2.3", PluginName: "bar"}}), Equals, false)
+
 	// Delete the created plugin
 	err = newUIPlugin.Delete()
 	check.Assert(err, IsNil)
