@@ -300,11 +300,12 @@ func getPluginMetadata(pluginPath string) (*types.UIPluginMetadata, error) {
 		Version:     unmarshaledJson["version"].(string),
 		Description: unmarshaledJson["description"].(string),
 	}
+	providerScopeRegex := regexp.MustCompile(`provider`)
+	tenantScopeRegex := regexp.MustCompile(`tenant`)
 	for _, scope := range unmarshaledJson["scope"].([]interface{}) {
-		switch scope.(string) {
-		case "service-provider":
+		if providerScopeRegex.MatchString(scope.(string)) {
 			result.ProviderScoped = true
-		case "tenants":
+		} else if tenantScopeRegex.MatchString(scope.(string)) {
 			result.TenantScoped = true
 		}
 	}

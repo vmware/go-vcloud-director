@@ -121,14 +121,14 @@ func (vcd *TestVCD) Test_UIPlugin(check *C) {
 		check.Assert(len(orgRefs), Equals, 0)
 	}
 
-	// Check that the plugin can be disabled
+	// Check that the plugin can be disabled and its scope changed
 	err = newUIPlugin.Update(false, false, false)
 	check.Assert(err, IsNil)
 	check.Assert(newUIPlugin.UIPluginMetadata.Enabled, Equals, false)
 	check.Assert(newUIPlugin.UIPluginMetadata.ProviderScoped, Equals, false)
 	check.Assert(newUIPlugin.UIPluginMetadata.TenantScoped, Equals, false)
 
-	// Check that the plugin can be enabled again
+	// Check that the plugin can be enabled again and its scope changed
 	err = newUIPlugin.Update(true, true, true)
 	check.Assert(err, IsNil)
 	check.Assert(newUIPlugin.UIPluginMetadata.Enabled, Equals, true)
