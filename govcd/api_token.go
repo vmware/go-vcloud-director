@@ -138,6 +138,9 @@ func (vcdClient *VCDClient) registerToken(org, apiVersion string, token *types.A
 
 	newToken := &types.ApiTokenParams{}
 	err = json.Unmarshal(body, newToken)
+	if err != nil {
+		return nil, err
+	}
 
 	return newToken, nil
 }

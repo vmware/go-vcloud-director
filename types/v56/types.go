@@ -3265,15 +3265,16 @@ type ApiTokenRefresh struct {
 	UpdatedOn    string `json:"updated_on,omitempty"`
 }
 
-type ApiTokenRegister struct {
-	ClientName              string   `json:"client_name,omitempty"`
-	ClientID                string   `json:"client_id,omitempty"`
+// ApiTokenParams contains the parameters required and returned by oauth/register operation
+type ApiTokenParams struct {
+	ClientName              string   `json:"client_name"`
+	ClientID                string   `json:"client_id"`
 	GrantTypes              []string `json:"grant_types,omitempty"`
 	TokenEndpointAuthMethod string   `json:"token_endpoint_auth_method,omitempty"`
 	ClientURI               string   `json:"client_uri,omitempty"`
-	SoftwareID              string   `json:"software_id,omitempty"`
-	SoftwareVersion         string   `json:"software_version,omitempty"`
-	Scope                   string   `json:"scope,omitempty"`
+	SoftwareID              string   `json:"software_id"`
+	SoftwareVersion         string   `json:"software_version"`
+	Scope                   string   `json:"scope"`
 }
 
 /**/
