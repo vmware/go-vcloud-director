@@ -35,9 +35,23 @@ func (vcdClient *VCDClient) SetApiToken(org, apiToken string) (*types.ApiTokenRe
 	return tokenRefresh, nil
 }
 
-// SetServiceAccountApiToken reads the current Service Account API token,
-// sets the client's bearer token and fetches a new API token for next
-// authentication request using SetApiToken and overwrites the old file.
+// SetApiTokenFile reads the API token file, sets the client's bearer
+// token and fetches a new API token for next authentication request
+// using SetApiToken
+func (vcdClient *VCDClient) SetApiTokenFromFile(org, apiTokenFile string) (*types.ApiTokenRefresh, error) {
+	apiToken := &types.ApiTokenRefresh{}
+	// Read file contents and unmarshal them to apiToken
+	err := readFileAndUnmarshalJSON(apiTokenFile, apiToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return vcdClient.SetApiToken(org, apiToken.RefreshToken)
+}
+
+// SetServiceAccountApiToken gets the refresh token from a provided file, fetches
+// the bearer token and updates the provided file with the new refresh token for
+// next usage as service account API tokens are one-time use
 func (vcdClient *VCDClient) SetServiceAccountApiToken(org, apiTokenFile string) error {
 	if vcdClient.Client.APIVCDMaxVersionIs("< 37.0") {
 		version, err := vcdClient.Client.GetVcdFullVersion()
@@ -48,32 +62,105 @@ func (vcdClient *VCDClient) SetServiceAccountApiToken(org, apiTokenFile string) 
 		return fmt.Errorf("minimum API version for Service Account authentication is 37.0 - Version detected: %s", vcdClient.Client.APIVersion)
 	}
 
-	saApiToken := &types.ApiTokenRefresh{}
-	// Read file contents and unmarshal them to saApiToken
-	err := readFileAndUnmarshalJSON(apiTokenFile, saApiToken)
-	if err != nil {
-		return err
-	}
-
-	// Get bearer token and update the refresh token for the next authentication request
-	saApiToken, err = vcdClient.SetApiToken(org, saApiToken.RefreshToken)
+	apiToken, err := vcdClient.SetApiTokenFromFile(org, apiTokenFile)
 	if err != nil {
 		return err
 	}
 
 	// leave only the refresh token to not leave any sensitive information
-	saApiToken = &types.ApiTokenRefresh{
-		RefreshToken: saApiToken.RefreshToken,
+	apiToken = &types.ApiTokenRefresh{
+		RefreshToken: apiToken.RefreshToken,
 		TokenType:    "Service Account",
 		UpdatedBy:    vcdClient.Client.UserAgent,
 		UpdatedOn:    time.Now().Format(time.RFC3339),
 	}
-	err = marshalJSONAndWriteToFile(apiTokenFile, saApiToken, 0600)
+	err = marshalJSONAndWriteToFile(apiTokenFile, apiToken, 0600)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (vcdClient *VCDClient) RegisterServiceAccount(org, name, scope, softwareId, softwareVersion string) (any, error) {
+	if vcdClient.Client.APIVCDMaxVersionIs("< 37.1") {
+		version, err := vcdClient.Client.GetVcdFullVersion()
+		if err == nil {
+			return nil, fmt.Errorf("minimum version for Service Accounts is 10.4.0 - Version detected: %s", version.Version)
+		}
+		// If we can't get the VCD version, we return API version info
+		return nil, fmt.Errorf("minimum API version for Service Accounts is 37.0 - Version detected: %s", vcdClient.Client.APIVersion)
+	}
+
+	serviceAccountParams := &types.ApiTokenParams{
+		ClientName:      name,
+		Scope:           scope,
+		SoftwareID:      softwareId,
+		SoftwareVersion: softwareVersion,
+	}
+
+	return vcdClient.registerToken(org, "37.0", serviceAccountParams)
+}
+
+// RegisterApiToken is used for creating API and Service Account tokens
+func (vcdClient *VCDClient) RegisterApiToken(org, tokenName string) (any, error) {
+	if vcdClient.Client.APIVCDMaxVersionIs("< 36.1") {
+		version, err := vcdClient.Client.GetVcdFullVersion()
+		if err == nil {
+			return nil, fmt.Errorf("minimum version for API token is 10.3.1 - Version detected: %s", version.Version)
+		}
+		// If we can't get the VCD version, we return API version info
+		return nil, fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", vcdClient.Client.APIVersion)
+	}
+
+	apiTokenParams := &types.ApiTokenParams{
+		ClientName: tokenName,
+	}
+
+	return vcdClient.registerToken(org, "36.1", apiTokenParams)
+}
+
+func (vcdClient *VCDClient) registerToken(org, apiVersion string, token *types.ApiTokenParams) (*types.ApiTokenParams, error) {
+	data, err := json.Marshal(token)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := vcdClient.doTokenRequest(org, "register", apiVersion, bytes.NewBuffer(data))
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	newToken := &types.ApiTokenParams{}
+	err = json.Unmarshal(body, newToken)
+
+	return newToken, nil
+}
+
+func (vcdClient *VCDClient) doTokenRequest(org, endpoint, apiVersion string, data io.Reader) (*http.Response, error) {
+	newUrl := url.URL{
+		Scheme: vcdClient.Client.VCDHREF.Scheme,
+		Host:   vcdClient.Client.VCDHREF.Host,
+	}
+
+	userDef := "tenant/" + org
+	if strings.EqualFold(org, "system") {
+		userDef = "provider"
+	}
+
+	reqHref, err := url.ParseRequestURI(fmt.Sprintf("%s/oauth/%s/%s", newUrl.String(), userDef, endpoint))
+	if err != nil {
+		return nil, fmt.Errorf("error getting request URL from %s : %s", reqHref.String(), err)
+	}
+	req := vcdClient.Client.NewRequest(nil, http.MethodPost, *reqHref, data)
+	req.Header.Add("Accept", fmt.Sprintf("application/*;version=%s", apiVersion))
+
+	return vcdClient.Client.Http.Do(req)
 }
 
 // GetBearerTokenFromApiToken uses an API token to retrieve a bearer token
@@ -87,20 +174,19 @@ func (vcdClient *VCDClient) GetBearerTokenFromApiToken(org, token string) (*type
 		// If we can't get the VCD version, we return API version info
 		return nil, fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", vcdClient.Client.APIVersion)
 	}
-	var userDef string
-	newUrl := new(url.URL)
-	newUrl.Scheme = vcdClient.Client.VCDHREF.Scheme
-	newUrl.Host = vcdClient.Client.VCDHREF.Host
-	urlStr := newUrl.String()
+	newUrl := url.URL{
+		Scheme: vcdClient.Client.VCDHREF.Scheme,
+		Host:   vcdClient.Client.VCDHREF.Host,
+	}
+
+	userDef := "tenant/" + org
 	if strings.EqualFold(org, "system") {
 		userDef = "provider"
-	} else {
-		userDef = fmt.Sprintf("tenant/%s", org)
 	}
-	reqUrl := fmt.Sprintf("%s/oauth/%s/token", urlStr, userDef)
-	reqHref, err := url.ParseRequestURI(reqUrl)
+
+	reqHref, err := url.ParseRequestURI(fmt.Sprintf("%s/oauth/%s/token", newUrl.String(), userDef))
 	if err != nil {
-		return nil, fmt.Errorf("error getting request URL from %s : %s", reqUrl, err)
+		return nil, fmt.Errorf("error getting request URL from %s : %s", reqHref.String(), err)
 	}
 
 	data := bytes.NewBufferString(fmt.Sprintf("grant_type=refresh_token&refresh_token=%s", token))
