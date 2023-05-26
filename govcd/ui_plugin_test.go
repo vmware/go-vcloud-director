@@ -58,6 +58,11 @@ func (vcd *TestVCD) Test_UIPlugin(check *C) {
 	check.Assert(err, NotNil)
 	check.Assert(true, Equals, strings.Contains(err.Error(), "same pluginName-version-vendor"))
 
+	// We refresh it to have the latest status
+	newUIPlugin, err = vcd.client.GetUIPluginById(newUIPlugin.UIPluginMetadata.ID)
+	check.Assert(err, IsNil)
+	check.Assert(newUIPlugin.UIPluginMetadata.PluginStatus, Equals, "ready")
+
 	// Retrieve the created plugin using different getters
 	allUIPlugins, err := vcd.client.GetAllUIPlugins()
 	check.Assert(err, IsNil)
@@ -67,9 +72,6 @@ func (vcd *TestVCD) Test_UIPlugin(check *C) {
 		}
 	}
 	retrievedUIPlugin, err := vcd.client.GetUIPlugin(newUIPlugin.UIPluginMetadata.Vendor, newUIPlugin.UIPluginMetadata.PluginName, newUIPlugin.UIPluginMetadata.Version)
-	check.Assert(err, IsNil)
-	check.Assert(retrievedUIPlugin.UIPluginMetadata, DeepEquals, newUIPlugin.UIPluginMetadata)
-	retrievedUIPlugin, err = vcd.client.GetUIPluginById(newUIPlugin.UIPluginMetadata.ID)
 	check.Assert(err, IsNil)
 	check.Assert(retrievedUIPlugin.UIPluginMetadata, DeepEquals, newUIPlugin.UIPluginMetadata)
 
