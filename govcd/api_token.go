@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -82,7 +82,51 @@ func (vcdClient *VCDClient) SetServiceAccountApiToken(org, apiTokenFile string) 
 	return nil
 }
 
-func (vcdClient *VCDClient) RegisterServiceAccount(org, name, scope, softwareId, softwareVersion string) (any, error) {
+// CreateServiceAccount goes through the process of activating a Service Account
+// Service account activation takes 4 steps, which are done here:
+// Created -> Requested -> Granted -> Active
+// 1. Create a service account
+// 2. Authorize it
+// 3. Grant the created service account access
+// 4. Fetch the initial API token as it requires different payload compared to normal API token fetch
+//
+// Example usage:
+// saToken, err := vcdClient.CreateServiceAccount("org1", "account1", "urn:vcloud:vapp:administrator", "123e4567-e89b-12d3-a456-426614174000", "1.0.0", "http://client.example.com")
+//
+// softwareVersion and clientUri are optional
+func (vcdClient *VCDClient) CreateServiceAccount(org, name, scope, softwareId, softwareVersion, clientUri string) (*types.ApiTokenRefresh, error) {
+	saParams, err := vcdClient.RegisterServiceAccount(org, name, scope, softwareId, softwareVersion, clientUri)
+	if err != nil {
+		return nil, fmt.Errorf("failed to register service account: %s", err)
+	}
+
+	saAuthParams, err := vcdClient.AuthorizeServiceAccount(org, saParams.ClientID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to authorize service account: %s", err)
+	}
+
+	err = vcdClient.GrantServiceAccount(org, saAuthParams.UserCode)
+	if err != nil {
+		return nil, fmt.Errorf("failed to grant service account: %s", err)
+	}
+
+	data := bytes.NewBufferString(
+		fmt.Sprintf("grant_type=%s&client_id=%s&device_code=%s",
+			"urn:ietf:params:oauth:grant-type:device_code",
+			saParams.ClientID,
+			saAuthParams.DeviceCode,
+		))
+
+	token, err := vcdClient.getToken(org, "37.0", "CreateServiceAccount", data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get initial service account token: %s", err)
+	}
+
+	return token, nil
+}
+
+// RegisterServiceAccount registers(creates) a Service Account and sets it in `Created` status
+func (vcdClient *VCDClient) RegisterServiceAccount(org, name, scope, softwareId, softwareVersion, clientUri string) (*types.ApiTokenParams, error) {
 	if vcdClient.Client.APIVCDMaxVersionIs("< 37.1") {
 		version, err := vcdClient.Client.GetVcdFullVersion()
 		if err == nil {
@@ -97,9 +141,98 @@ func (vcdClient *VCDClient) RegisterServiceAccount(org, name, scope, softwareId,
 		Scope:           scope,
 		SoftwareID:      softwareId,
 		SoftwareVersion: softwareVersion,
+		ClientURI:       clientUri,
 	}
 
 	return vcdClient.registerToken(org, "37.0", serviceAccountParams)
+}
+
+// AuthorizeServiceAccount authorizes a service account and returns a DeviceID and UserCode which will be used while granting
+// the request, and sets the Service Account in `Requested` status
+func (vcdClient *VCDClient) AuthorizeServiceAccount(org, clientID string) (*types.ServiceAccountAuthParams, error) {
+	if vcdClient.Client.APIVCDMaxVersionIs("< 37.1") {
+		version, err := vcdClient.Client.GetVcdFullVersion()
+		if err == nil {
+			return nil, fmt.Errorf("minimum version for Service Accounts is 10.4.0 - Version detected: %s", version.Version)
+		}
+		// If we can't get the VCD version, we return API version info
+		return nil, fmt.Errorf("minimum API version for Service Accounts is 37.0 - Version detected: %s", vcdClient.Client.APIVersion)
+	}
+
+	serviceAccountParams := &types.ApiTokenParams{
+		ClientID: clientID,
+	}
+
+	data := bytes.NewBufferString(
+		fmt.Sprintf("client_id=%s",
+			serviceAccountParams.ClientID,
+		))
+
+	resp, err := vcdClient.doTokenRequest(org, "device_authorization", "37.0", "application/x-www-form-urlencoded", data)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	saAuthParams := &types.ServiceAccountAuthParams{}
+	err = json.Unmarshal(body, saAuthParams)
+	if err != nil {
+		return nil, err
+	}
+
+	return saAuthParams, nil
+}
+
+// GrantServiceAccount Grants access to the Service Account and sets it in `Granted` status
+func (vcdClient *VCDClient) GrantServiceAccount(org, userCode string) error {
+	if vcdClient.Client.APIVCDMaxVersionIs("< 37.1") {
+		version, err := vcdClient.Client.GetVcdFullVersion()
+		if err == nil {
+			return fmt.Errorf("minimum version for Service Accounts is 10.4.0 - Version detected: %s", version.Version)
+		}
+		// If we can't get the VCD version, we return API version info
+		return fmt.Errorf("minimum API version for Service Accounts is 37.0 - Version detected: %s", vcdClient.Client.APIVersion)
+	}
+
+	// This is the only place that this field is used, so a local struct is created
+	type serviceAccountGrant struct {
+		UserCode string `json:"userCode"`
+	}
+
+	serviceAccount := &serviceAccountGrant{
+		UserCode: userCode,
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccountGrant
+	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return err
+	}
+
+	err = vcdClient.Client.OpenApiPostItem("37.0", urlRef, nil, serviceAccount, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
+// GetServiceAccountToken gets the initial API token for the Service Account and sets it in `Active` status
+func (vcdClient *VCDClient) GetServiceAccountToken(org string, saAuth *types.ServiceAccountAuthParams) error {
+	if vcdClient.Client.APIVCDMaxVersionIs("< 37.1") {
+		version, err := vcdClient.Client.GetVcdFullVersion()
+		if err == nil {
+			return fmt.Errorf("minimum version for Service Accounts is 10.4.0 - Version detected: %s", version.Version)
+		}
+		// If we can't get the VCD version, we return API version info
+		return fmt.Errorf("minimum API version for Service Accounts is 37.0 - Version detected: %s", vcdClient.Client.APIVersion)
+	}
+
+	return nil
 }
 
 // CreateApiToken is used for creating API tokens and works in two steps:
@@ -137,6 +270,27 @@ func (vcdClient *VCDClient) CreateApiToken(org, tokenName string) (*types.ApiTok
 	}
 
 	return token, nil
+}
+
+// GetBearerTokenFromApiToken uses an API token to retrieve a bearer token
+// using the refresh token operation.
+func (vcdClient *VCDClient) GetBearerTokenFromApiToken(org, token string) (*types.ApiTokenRefresh, error) {
+	if vcdClient.Client.APIVCDMaxVersionIs("< 36.1") {
+		version, err := vcdClient.Client.GetVcdFullVersion()
+		if err == nil {
+			return nil, fmt.Errorf("minimum version for API token is 10.3.1 - Version detected: %s", version.Version)
+		}
+		// If we can't get the VCD version, we return API version info
+		return nil, fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", vcdClient.Client.APIVersion)
+	}
+
+	data := bytes.NewBufferString(fmt.Sprintf("grant_type=refresh_token&refresh_token=%s", token))
+	tokenDef, err := vcdClient.getToken(org, "36.1", "GetBearerTokenFromApiToken", data)
+	if err != nil {
+		return nil, fmt.Errorf("error getting bearer token: %s", err)
+	}
+
+	return tokenDef, nil
 }
 
 func (vcdClient *VCDClient) registerToken(org, apiVersion string, token *types.ApiTokenParams) (*types.ApiTokenParams, error) {
@@ -231,27 +385,6 @@ func (vcdClient *VCDClient) doTokenRequest(org, endpoint, apiVersion, contentTyp
 	req.Header.Add("Content-Type", contentType)
 
 	return vcdClient.Client.Http.Do(req)
-}
-
-// GetBearerTokenFromApiToken uses an API token to retrieve a bearer token
-// using the refresh token operation.
-func (vcdClient *VCDClient) GetBearerTokenFromApiToken(org, token string) (*types.ApiTokenRefresh, error) {
-	if vcdClient.Client.APIVCDMaxVersionIs("< 36.1") {
-		version, err := vcdClient.Client.GetVcdFullVersion()
-		if err == nil {
-			return nil, fmt.Errorf("minimum version for API token is 10.3.1 - Version detected: %s", version.Version)
-		}
-		// If we can't get the VCD version, we return API version info
-		return nil, fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", vcdClient.Client.APIVersion)
-	}
-
-	data := bytes.NewBufferString(fmt.Sprintf("grant_type=refresh_token&refresh_token=%s", token))
-	tokenDef, err := vcdClient.getToken(org, "36.1", "GetBearerTokenFromApiToken", data)
-	if err != nil {
-		return nil, fmt.Errorf("error getting bearer token: %s", err)
-	}
-
-	return tokenDef, nil
 }
 
 // readFileAndUnmarshalJSON reads a file and unmarshals it to the given variable

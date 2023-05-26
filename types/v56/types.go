@@ -3277,6 +3277,14 @@ type ApiTokenParams struct {
 	Scope                   string   `json:"scope,omitempty"`
 }
 
+type ServiceAccountAuthParams struct {
+	DeviceCode      string `json:"device_code,omitempty"`
+	UserCode        string `json:"user_code"`
+	VerificationURI string `json:"verification_uri,omitempty"`
+	ExpiresIn       int    `json:"expires_in,omitempty"`
+	Interval        int    `json:"interval,omitempty"`
+}
+
 /**/
 type QueryResultTaskRecordType struct {
 	HREF             string    `xml:"href,attr,omitempty"`             // Contains the URI to the resource.
