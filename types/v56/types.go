@@ -3268,13 +3268,13 @@ type ApiTokenRefresh struct {
 // ApiTokenParams contains the parameters required and returned by oauth/register operation
 type ApiTokenParams struct {
 	ClientName              string   `json:"client_name"`
-	ClientID                string   `json:"client_id"`
+	ClientID                string   `json:"client_id,omitempty"`
 	GrantTypes              []string `json:"grant_types,omitempty"`
 	TokenEndpointAuthMethod string   `json:"token_endpoint_auth_method,omitempty"`
 	ClientURI               string   `json:"client_uri,omitempty"`
-	SoftwareID              string   `json:"software_id"`
-	SoftwareVersion         string   `json:"software_version"`
-	Scope                   string   `json:"scope"`
+	SoftwareID              string   `json:"software_id,omitempty"`
+	SoftwareVersion         string   `json:"software_version,omitempty"`
+	Scope                   string   `json:"scope,omitempty"`
 }
 
 /**/
