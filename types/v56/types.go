@@ -3255,6 +3255,14 @@ type UpdateVdcStorageProfiles struct {
 	RemoveStorageProfile *Reference                      `xml:"RemoveStorageProfile,omitempty"`
 }
 
+type Token struct {
+	Id    string `json:"id,omitempty"`
+	Name  string `json:"name,omitempty"`
+	Owner Owner  `json:"owner,omitempty"`
+	Org   Org    `json:"org,omitempty"`
+	Type  string `json:"type,omitempty"`
+}
+
 // ApiTokenRefresh contains the access token resulting from a refresh_token operation
 type ApiTokenRefresh struct {
 	AccessToken  string `json:"access_token,omitempty"`

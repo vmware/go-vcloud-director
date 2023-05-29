@@ -89,6 +89,8 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies: "35.0",
 	types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcComputePolicies:         "35.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile:          "36.0", // VCD 10.3+
+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTokens: "36.1", // VCD 10.3.1+
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions
@@ -140,8 +142,7 @@ var endpointElevatedApiVersions = map[string][]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities: {
 		//"35.0", // Introduced support
 		"37.0", // Added metadata support
-	},
-}
+	}}
 
 // checkOpenApiEndpointCompatibility checks if VCD version (to which the client is connected) is sufficient to work with
 // specified OpenAPI endpoint and returns either an error or the Api version to use for calling that endpoint. This Api
