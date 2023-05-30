@@ -619,6 +619,7 @@ const (
 	OpenApiOrgVdcNetworkBackingTypeNsxt = "NSXT_FLEXIBLE_SEGMENT"
 )
 
+// IP Space types
 const (
 	IpSpaceShared  = "SHARED_SERVICES"
 	IpSpacePublic  = "PUBLIC"

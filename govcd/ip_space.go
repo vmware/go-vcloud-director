@@ -11,6 +11,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+re
 type IpSpace struct {
 	IpSpace   *types.IpSpace
 	vcdClient *VCDClient

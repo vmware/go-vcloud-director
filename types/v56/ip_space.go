@@ -4,11 +4,19 @@
 
 package types
 
+// IpSpace provides structured approach to allocating public and private IP addresses by preventing
+// the use of overlapping IP addresses across organizations and organization VDCs.
+//
+// An IP space consists of a set of defined non-overlapping IP ranges and small CIDR blocks that are
+// reserved and used during the consumption aspect of the IP space life cycle. An IP space can be
+// either IPv4 or IPv6, but not both.
+//
+// Every IP space has an internal scope and an external scope. The internal scope of an IP space is
+// a list of CIDR notations that defines the exact span of IP addresses in which all ranges and
+// blocks must be contained in. The external scope defines the total span of IP addresses to which
+// the IP space has access, for example the internet or a WAN.
 type IpSpace struct {
-	ID string `json:"id,omitempty"`
-
-	// Status is one of `PENDING`,   `CONFIGURING`,   `REALIZED`,   `REALIZATION_FAILED`,   `UNKNOWN`
-	Status      string `json:"status,omitempty"`
+	ID          string `json:"id,omitempty"`
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
 
@@ -22,16 +30,19 @@ type IpSpace struct {
 	// this IP space can be consumed by multiple organizations but those IP addresses and IP
 	// Prefixes will not be not visible to the individual users within the organization. These are
 	// created by System Administrators only, typically for a service or for management networks.
-
-	// Only SHARED_SERVICES type can be changed to PUBLIC type. No oher type changes are allowed.
+	//
+	// Note. This project contains convenience constants for defining IP Space
+	// types`types.IpSpaceShared`, `types.IpSpacePublic`, `types.IpSpacePrivate`
+	//
+	// Only SHARED_SERVICES type can be changed to PUBLIC type. No other type changes are allowed.
 	Type string `json:"type"`
 
-	// The organization this IP Space belongs to. This property is only applicable for IP Spaces
-	// with type PRIVATE. This property is required for IP Spaces with type PRIVATE.
+	// The organization this IP Space belongs to. This property is only applicable and is required
+	// for IP Spaces with type PRIVATE.
 	OrgRef *OpenApiReference `json:"orgRef,omitempty"`
 
 	// Utilization summary for this IP space.
-	Utilization Utilization `json:"utilization,omitempty"`
+	Utilization IpSpaceUtilization `json:"utilization,omitempty"`
 
 	// List of IP Prefixes.
 	IPSpacePrefixes []IPSpacePrefixes `json:"ipSpacePrefixes"`
@@ -41,8 +52,7 @@ type IpSpace struct {
 
 	// This defines the exact span of IP addresses in a CIDR format within which all IP Ranges and
 	// IP Prefixes of this IP Space must be contained. This typically defines the span of IP
-	// addresses used within this Data Center. This is used by the system for creation of NAT rules
-	// and BGP prefixes.
+	// addresses used within this Data Center.
 	IPSpaceInternalScope []string `json:"ipSpaceInternalScope"`
 
 	// This defines the total span of IP addresses in a CIDR format within which all IP Ranges and
@@ -58,36 +68,77 @@ type IpSpace struct {
 	// network for it to be advertised. Networks from the PRIVATE IP Spaces will only be advertised
 	// if the associated Provider Gateway is owned by the Organization.
 	RouteAdvertisementEnabled bool `json:"routeAdvertisementEnabled"`
+
+	// Status is one of `PENDING`,   `CONFIGURING`,   `REALIZED`,   `REALIZATION_FAILED`,   `UNKNOWN`
+	Status string `json:"status,omitempty"`
 }
 
 type FloatingIPs struct {
-	TotalCount          string  `json:"totalCount"`
-	AllocatedCount      string  `json:"allocatedCount"`
-	UsedCount           string  `json:"usedCount"`
-	UnusedCount         string  `json:"unusedCount"`
+	// TotalCount holds the number of IP addresses or IP Prefixes defined by the IP Space. If user
+	// does not own this IP Space, this is the quota that the user's organization is granted. A '-1'
+	// value means that the user's organization has no cap on the quota (for this case,
+	// allocatedPercentage is unset)
+	TotalCount string `json:"totalCount"`
+	// AllocatedCount holds the number of allocated IP addresses or IP Prefixes.
+	AllocatedCount string `json:"allocatedCount"`
+	// UsedCount holds the number of used IP addresses or IP Prefixes. An allocated IP address or IP
+	// Prefix is considered used if it is being used in network services such as NAT rule or in Org
+	// VDC network definition.
+	UsedCount string `json:"usedCount"`
+	// UnusedCount holds the number of unused IP addresses or IP Prefixes. An IP address or an IP
+	// Prefix is considered unused if it is allocated but not being used by any network service or
+	// any Org vDC network definition.
+	UnusedCount string `json:"unusedCount"`
+	// AllocatedPercentage specifies the percentage of allocated IP addresses or IP Prefixes out of
+	// all defined IP addresses or IP Prefixes.
 	AllocatedPercentage float32 `json:"allocatedPercentage"`
-	UsedPercentage      float32 `json:"usedPercentage"`
+	// UsedPercentage specifies the percentage of used IP addresses or IP Prefixes out of total
+	// allocated IP addresses or IP Prefixes.
+	UsedPercentage float32 `json:"usedPercentage"`
 }
 
 type PrefixLengthUtilizations struct {
-	PrefixLength   int `json:"prefixLength"`
-	TotalCount     int `json:"totalCount"`
+	PrefixLength int `json:"prefixLength"`
+	// TotalCount contains total number of IP Prefixes. If user does not own this IP Space, this is
+	// the quota that the user's organization is granted. A '-1' value means that the user's
+	// organization has no cap on the quota.
+	TotalCount int `json:"totalCount"`
+	// AllocatedCount contains the number of allocated IP prefixes.
 	AllocatedCount int `json:"allocatedCount"`
 }
 
 type IPPrefixes struct {
-	TotalCount               string                     `json:"totalCount"`
-	AllocatedCount           string                     `json:"allocatedCount"`
-	UsedCount                string                     `json:"usedCount"`
-	UnusedCount              string                     `json:"unusedCount"`
-	AllocatedPercentage      float32                    `json:"allocatedPercentage"`
-	UsedPercentage           float32                    `json:"usedPercentage"`
+	// TotalCount holds the number of IP addresses or IP Prefixes defined by the IP Space. If user
+	// does not own this IP Space, this is the quota that the user's organization is granted. A '-1'
+	// value means that the user's organization has no cap on the quota; for this case,
+	// allocatedPercentage is unset.
+	TotalCount string `json:"totalCount"`
+	// TAllocatedCount holds the number of allocated IP addresses or IP Prefixes.
+	AllocatedCount string `json:"allocatedCount"`
+	// UsedCount holds the number of used IP addresses or IP Prefixes. An allocated IP address or IP
+	// Prefix is considered used if it is being used in network services such as NAT rule or in Org
+	// VDC network definition.
+	UsedCount string `json:"usedCount"`
+	// UnusedCount holds the number of unused IP addresses or IP Prefixes. An IP address or an IP
+	// Prefix is considered unused if it is allocated but not being used by any network service or
+	// any Org vDC network definition.
+	UnusedCount string `json:"unusedCount"`
+	// AllocatedPercentage specifies the percentage of allocated IP addresses or IP Prefixes out of
+	// all defined IP addresses or IP Prefixes.
+	AllocatedPercentage float32 `json:"allocatedPercentage"`
+	// UsedPercentage specifies the percentage of used IP addresses or IP Prefixes out of total
+	// allocated IP addresses or IP Prefixes.
+	UsedPercentage float32 `json:"usedPercentage"`
+	// PrefixLengthUtilizations contains utilization summary grouped by IP Prefix's prefix length.
+	// This information will only be returned for an individual IP Prefix.
 	PrefixLengthUtilizations []PrefixLengthUtilizations `json:"prefixLengthUtilizations"`
 }
 
-type Utilization struct {
+type IpSpaceUtilization struct {
+	// FloatingIPs holds utilization summary for floating IPs within the IP space.
 	FloatingIPs FloatingIPs `json:"floatingIPs"`
-	IPPrefixes  IPPrefixes  `json:"ipPrefixes"`
+	// IPPrefixes holds Utilization summary for IP prefixes within the IP space.
+	IPPrefixes IPPrefixes `json:"ipPrefixes"`
 }
 
 type IPSpaceRanges struct {
