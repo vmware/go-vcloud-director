@@ -226,7 +226,7 @@ func (vcd *TestVCD) Test_UpdateNetworkNatRules(check *C) {
 		&types.NatRule{OneToOneVMRule: &types.NatOneToOneVMRule{
 			MappingMode: "manual", VMNicID: 0,
 			VAppScopedVMID:    vm2.VM.VAppScopedLocalID,
-			ExternalIPAddress: takeStringPointer("192.168.100.1")}}},
+			ExternalIPAddress: addrOf("192.168.100.1")}}},
 		false, "ipTranslation", "allowTrafficIn")
 	check.Assert(err, IsNil)
 	check.Assert(result, NotNil)

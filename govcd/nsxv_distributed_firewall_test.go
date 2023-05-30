@@ -199,10 +199,10 @@ func (vcd *TestVCD) Test_NsxvDistributedFirewallUpdate(check *C) {
 					// Anonymous service
 					{
 						IsValid:         true,
-						SourcePort:      takeStringPointer("1000"),
-						DestinationPort: takeStringPointer("1200"),
-						Protocol:        takeIntAddress(types.NsxvProtocolCodes[types.DFWProtocolTcp]),
-						ProtocolName:    takeStringPointer(types.DFWProtocolTcp),
+						SourcePort:      addrOf("1000"),
+						DestinationPort: addrOf("1200"),
+						Protocol:        addrOf(types.NsxvProtocolCodes[types.DFWProtocolTcp]),
+						ProtocolName:    addrOf(types.DFWProtocolTcp),
 					},
 					// Named service
 					{

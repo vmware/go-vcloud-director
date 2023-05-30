@@ -99,8 +99,8 @@ func (vcd *TestVCD) testCRUDVmAffinityRule(orgName string, vdc *Vdc, data affini
 	}
 	affinityRuleDef := &types.VmAffinityRule{
 		Name:        data.name,
-		IsEnabled:   takeBoolPointer(true),
-		IsMandatory: takeBoolPointer(true),
+		IsEnabled:   addrOf(true),
+		IsMandatory: addrOf(true),
 		Polarity:    data.polarity,
 		VmReferences: []*types.VMs{
 			&types.VMs{

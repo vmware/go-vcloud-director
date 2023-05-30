@@ -169,10 +169,10 @@ func testSubscribedCatalog(testData subscriptionTestData, check *C) {
 
 	subscriptionPassword := "superUnknown"
 	err = fromCatalog.PublishToExternalOrganizations(types.PublishExternalCatalogParams{
-		IsPublishedExternally:    takeBoolPointer(true),
+		IsPublishedExternally:    addrOf(true),
 		Password:                 subscriptionPassword,
-		IsCachedEnabled:          takeBoolPointer(true),
-		PreserveIdentityInfoFlag: takeBoolPointer(true),
+		IsCachedEnabled:          addrOf(true),
+		PreserveIdentityInfoFlag: addrOf(true),
 	})
 	check.Assert(err, IsNil)
 

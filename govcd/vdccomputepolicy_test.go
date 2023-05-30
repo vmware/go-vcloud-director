@@ -26,7 +26,7 @@ func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
 		client: client,
 		VdcComputePolicy: &types.VdcComputePolicy{
 			Name:        check.TestName() + "_empty",
-			Description: takeStringPointer("Empty policy created by test"),
+			Description: addrOf("Empty policy created by test"),
 		},
 	}
 
@@ -42,17 +42,17 @@ func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
 		client: client,
 		VdcComputePolicy: &types.VdcComputePolicy{
 			Name:                       check.TestName(),
-			Description:                takeStringPointer("Not Empty policy created by test"),
-			CPUSpeed:                   takeIntAddress(100),
-			CPUCount:                   takeIntAddress(2),
-			CoresPerSocket:             takeIntAddress(1),
+			Description:                addrOf("Not Empty policy created by test"),
+			CPUSpeed:                   addrOf(100),
+			CPUCount:                   addrOf(2),
+			CoresPerSocket:             addrOf(1),
 			CPUReservationGuarantee:    takeFloatAddress(0.26),
-			CPULimit:                   takeIntAddress(200),
-			CPUShares:                  takeIntAddress(5),
-			Memory:                     takeIntAddress(1600),
+			CPULimit:                   addrOf(200),
+			CPUShares:                  addrOf(5),
+			Memory:                     addrOf(1600),
 			MemoryReservationGuarantee: takeFloatAddress(0.5),
-			MemoryLimit:                takeIntAddress(1200),
-			MemoryShares:               takeIntAddress(500),
+			MemoryLimit:                addrOf(1200),
+			MemoryShares:               addrOf(500),
 		},
 	}
 
@@ -74,7 +74,7 @@ func (vcd *TestVCD) Test_VdcComputePolicies(check *C) {
 	check.Assert(*createdPolicy2.VdcComputePolicy.MemoryShares, Equals, 500)
 
 	// Step 2 - update
-	createdPolicy2.VdcComputePolicy.Description = takeStringPointer("Updated description")
+	createdPolicy2.VdcComputePolicy.Description = addrOf("Updated description")
 	updatedPolicy, err := createdPolicy2.Update()
 	check.Assert(err, IsNil)
 	check.Assert(updatedPolicy.VdcComputePolicy, DeepEquals, createdPolicy2.VdcComputePolicy)
@@ -142,10 +142,10 @@ func (vcd *TestVCD) Test_SetAssignedComputePolicies(check *C) {
 		client: org.client,
 		VdcComputePolicy: &types.VdcComputePolicy{
 			Name:                    check.TestName() + "1",
-			Description:             takeStringPointer("Policy created by Test_SetAssignedComputePolicies"),
-			CoresPerSocket:          takeIntAddress(1),
+			Description:             addrOf("Policy created by Test_SetAssignedComputePolicies"),
+			CoresPerSocket:          addrOf(1),
 			CPUReservationGuarantee: takeFloatAddress(0.26),
-			CPULimit:                takeIntAddress(200),
+			CPULimit:                addrOf(200),
 		},
 	}
 	createdPolicy, err := client.CreateVdcComputePolicy(newComputePolicy.VdcComputePolicy)
@@ -156,10 +156,10 @@ func (vcd *TestVCD) Test_SetAssignedComputePolicies(check *C) {
 		client: org.client,
 		VdcComputePolicy: &types.VdcComputePolicy{
 			Name:                    check.TestName() + "2",
-			Description:             takeStringPointer("Policy created by Test_SetAssignedComputePolicies"),
-			CoresPerSocket:          takeIntAddress(2),
+			Description:             addrOf("Policy created by Test_SetAssignedComputePolicies"),
+			CoresPerSocket:          addrOf(2),
 			CPUReservationGuarantee: takeFloatAddress(0.52),
-			CPULimit:                takeIntAddress(400),
+			CPULimit:                addrOf(400),
 		},
 	}
 	createdPolicy2, err := client.CreateVdcComputePolicy(newComputePolicy2.VdcComputePolicy)

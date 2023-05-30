@@ -170,7 +170,7 @@ func updateOrgNetworkDhcp(client *Client, orgNetworkId string, orgVdcNetworkDhcp
 	// LeaseTime to 86400 seconds and Mode to EDGE if these values were not supplied. These two conditional
 	// address the situation.
 	if orgVdcNetworkDhcpConfig.LeaseTime == nil {
-		orgVdcNetworkDhcpConfig.LeaseTime = takeIntAddress(86400)
+		orgVdcNetworkDhcpConfig.LeaseTime = addrOf(86400)
 	}
 
 	if len(orgVdcNetworkDhcpConfig.Mode) == 0 {

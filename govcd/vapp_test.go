@@ -1598,7 +1598,7 @@ func (vcd *TestVCD) Test_AddNewVMWithComputeCapacity(check *C) {
 		client: vcd.org.client,
 		VdcComputePolicy: &types.VdcComputePolicy{
 			Name:        check.TestName() + "_empty",
-			Description: takeStringPointer("Empty policy created by test"),
+			Description: addrOf("Empty policy created by test"),
 		},
 	}
 
