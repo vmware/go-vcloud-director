@@ -11,7 +11,17 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-re
+// IpSpace provides structured approach to allocating public and private IP addresses by preventing
+// the use of overlapping IP addresses across organizations and organization VDCs.
+//
+// An IP space consists of a set of defined non-overlapping IP ranges and small CIDR blocks that are
+// reserved and used during the consumption aspect of the IP space life cycle. An IP space can be
+// either IPv4 or IPv6, but not both.
+//
+// Every IP space has an internal scope and an external scope. The internal scope of an IP space is
+// a list of CIDR notations that defines the exact span of IP addresses in which all ranges and
+// blocks must be contained in. The external scope defines the total span of IP addresses to which
+// the IP space has access, for example the internet or a WAN.
 type IpSpace struct {
 	IpSpace   *types.IpSpace
 	vcdClient *VCDClient
@@ -122,7 +132,7 @@ func (vcdClient *VCDClient) GetIpSpaceByName(name string) (*IpSpace, error) {
 
 	filteredIpSpaces, err := vcdClient.GetAllIpSpaceSummaries(queryParameters)
 	if err != nil {
-		return nil, fmt.Errorf("error getting IP spaces: %s", err)
+		return nil, fmt.Errorf("error getting IP Spaces: %s", err)
 	}
 
 	singleIpSpace, err := oneOrError("name", name, filteredIpSpaces)
