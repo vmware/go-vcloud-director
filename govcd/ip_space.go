@@ -141,7 +141,30 @@ func (vcdClient *VCDClient) GetIpSpaceByName(name string) (*IpSpace, error) {
 	}
 
 	return vcdClient.GetIpSpaceById(singleIpSpace.IpSpace.ID)
+}
 
+// GetIpSpaceByNameAndOrgId retrieves IP Space with a given name in a particular Org
+// Note. Only PRIVATE IP spaces belong to Orgs
+func (vcdClient *VCDClient) GetIpSpaceByNameAndOrgId(name, orgId string) (*IpSpace, error) {
+	if name == "" {
+		return nil, fmt.Errorf("IP Space lookup requires name")
+	}
+
+	queryParameters := url.Values{}
+	queryParameters.Add("filter", "name=="+name)
+	queryParameters = queryParameterFilterAnd("orgRef.id=="+orgId, queryParameters)
+
+	filteredIpSpaces, err := vcdClient.GetAllIpSpaceSummaries(queryParameters)
+	if err != nil {
+		return nil, fmt.Errorf("error getting IP Spaces: %s", err)
+	}
+
+	singleIpSpace, err := oneOrError("name", name, filteredIpSpaces)
+	if err != nil {
+		return nil, fmt.Errorf("error ")
+	}
+
+	return vcdClient.GetIpSpaceById(singleIpSpace.IpSpace.ID)
 }
 
 // Update updates IP Space with new config

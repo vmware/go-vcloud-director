@@ -199,6 +199,15 @@ func ipSpaceChecks(vcd *TestVCD, check *C, ipSpaceConfig *types.IpSpace) {
 	}
 	check.Assert(found, Equals, true)
 
+	// If an Org is assigned - attempt to lookup by name and Org ID
+	if byId.IpSpace.OrgRef != nil && byId.IpSpace.OrgRef.ID != "" {
+		byNameAndOrgId, err := vcd.client.GetIpSpaceByNameAndOrgId(byId.IpSpace.Name, byId.IpSpace.OrgRef.ID)
+		check.Assert(err, IsNil)
+		check.Assert(byNameAndOrgId, NotNil)
+		check.Assert(byNameAndOrgId.IpSpace, DeepEquals, createdIpSpace.IpSpace)
+
+	}
+
 	// Check an update
 	ipSpaceConfig.RouteAdvertisementEnabled = true
 	ipSpaceConfig.IPSpaceInternalScope = append(ipSpaceConfig.IPSpaceInternalScope, "32.0.0.0/24")
