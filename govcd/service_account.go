@@ -198,8 +198,8 @@ func (sa *serviceAccount) Revoke() error {
 	return nil
 }
 
-// GetServiceAccountToken gets the initial API token for the Service Account and sets it in `Active` status
-func (sa *serviceAccount) GetApiToken() (*types.ApiTokenRefresh, error) {
+// GetInitialApiToken gets the initial API token for the Service Account and sets it in `Active` status
+func (sa *serviceAccount) GetInitialApiToken() (*types.ApiTokenRefresh, error) {
 	client := sa.vcdClient.Client
 	uuid := extractUuid(sa.ID)
 	data := bytes.NewBufferString(
