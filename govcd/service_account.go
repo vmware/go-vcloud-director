@@ -18,45 +18,42 @@ type serviceAccount struct {
 	vcdClient  *VCDClient
 }
 
-// CreateServiceAccount goes through the process of activating a Service Account
-// Service account activation takes 4 steps, which are done here:
-// Created -> Requested -> Granted -> Active
-// 1. Create a service account
-// 2. Authorize it
-// 3. Grant the created service account access
-// 4. Fetch the initial API token as it requires different payload compared to normal API token fetch
-//
-// Example usage:
-// saToken, err := vcdClient.CreateServiceAccount("org1", "account1", "urn:vcloud:vapp:administrator", "123e4567-e89b-12d3-a456-426614174000", "1.0.0", "http://client.example.com")
-//
-// softwareVersion and clientUri are optional
-func (vcdClient *VCDClient) CreateServiceAccount(org, name, scope, softwareId, softwareVersion, clientUri string) (*types.ApiTokenRefresh, error) {
-	saParams, err := vcdClient.RegisterServiceAccount(org, name, scope, softwareId, softwareVersion, clientUri)
-	if err != nil {
-		return nil, fmt.Errorf("failed to register service account: %s", err)
+func (vcdClient *VCDClient) GetServiceAccountById(serviceAccountId string) (*serviceAccount, error) {
+	if vcdClient.Client.APIVCDMaxVersionIs("< 36.1") {
+		version, err := vcdClient.Client.GetVcdFullVersion()
+		if err == nil {
+			return nil, fmt.Errorf("minimum version for API token is 10.3.1 - Version detected: %s", version.Version)
+		}
+		// If we can't get the VCD version, we return API version info
+		return nil, fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", vcdClient.Client.APIVersion)
 	}
 
-	serviceAccount, err := vcdClient.GetServiceAccountById(saParams.ClientID)
+	tokenUrn, err := BuildUrnWithUuid("urn:vcloud:serviceAccount:", serviceAccountId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get created service account: %s", err)
+		return nil, err
 	}
 
-	err = serviceAccount.Authorize()
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccounts
+	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("failed to authorize service account: %s", err)
+		return nil, err
 	}
 
-	err = serviceAccount.Grant()
+	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint, tokenUrn)
 	if err != nil {
-		return nil, fmt.Errorf("failed to grant service account: %s", err)
+		return nil, err
 	}
 
-	token, err := serviceAccount.GetApiToken()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get initial service account token: %s", err)
+	result := &serviceAccount{
+		vcdClient: vcdClient,
 	}
 
-	return token, nil
+	err = vcdClient.Client.OpenApiGetItem(apiVersion, urlRef, nil, result, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // DeleteServiceAccountByID deletes a Service Account
@@ -109,44 +106,6 @@ func (vcdClient *VCDClient) RegisterServiceAccount(org, name, scope, softwareId,
 	}
 
 	return saParams, nil
-}
-
-func (vcdClient *VCDClient) GetServiceAccountById(serviceAccountId string) (*serviceAccount, error) {
-	if vcdClient.Client.APIVCDMaxVersionIs("< 36.1") {
-		version, err := vcdClient.Client.GetVcdFullVersion()
-		if err == nil {
-			return nil, fmt.Errorf("minimum version for API token is 10.3.1 - Version detected: %s", version.Version)
-		}
-		// If we can't get the VCD version, we return API version info
-		return nil, fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", vcdClient.Client.APIVersion)
-	}
-
-	tokenUrn, err := BuildUrnWithUuid("urn:vcloud:serviceAccount:", serviceAccountId)
-	if err != nil {
-		return nil, err
-	}
-
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccounts
-	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint, tokenUrn)
-	if err != nil {
-		return nil, err
-	}
-
-	result := &serviceAccount{
-		vcdClient: vcdClient,
-	}
-
-	err = vcdClient.Client.OpenApiGetItem(apiVersion, urlRef, nil, result, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
 }
 
 // AuthorizeServiceAccount authorizes a service account and returns a DeviceID and UserCode which will be used while granting
