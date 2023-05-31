@@ -11,6 +11,7 @@ import (
 	"os"
 
 	"github.com/kr/pretty"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
 
@@ -50,4 +51,31 @@ func (vcd *TestVCD) TestVCDClient_GetBearerTokenFromApiToken(check *C) {
 	}
 	check.Assert(tokenInfo.ExpiresIn, Not(Equals), 0)
 	check.Assert(tokenInfo.TokenType, Equals, "Bearer")
+}
+
+func (vcd *TestVCD) Test_ApiToken(check *C) {
+	isApiTokenEnabled, err := vcd.client.Client.VersionEqualOrGreater("10.3.1", 3)
+	check.Assert(err, IsNil)
+	if !isApiTokenEnabled {
+		check.Skip("This test requires VCD 10.3.1 or greater")
+	}
+
+	token, err := vcd.client.CreateToken(vcd.config.Provider.SysOrg, check.TestName())
+	check.Assert(err, IsNil)
+	check.Assert(token, NotNil)
+	check.Assert(isUrn(token.ID), Equals, true)
+	check.Assert(token.Type, Equals, "REFRESH")
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTokens + token.ID
+	AddToCleanupListOpenApi(token.Name, check.TestName(), endpoint)
+
+	tokenInfo, err := token.GetInitialApiToken()
+	check.Assert(err, IsNil)
+	check.Assert(tokenInfo.AccessToken, Not(Equals), "")
+	check.Assert(tokenInfo.TokenType, Equals, "Bearer")
+
+	err = vcd.client.DeleteTokenByID(token.ID)
+	check.Assert(err, IsNil)
+
+	_, err = vcd.client.GetTokenById(token.ID)
+	check.Assert(err, NotNil)
 }

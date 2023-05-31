@@ -420,7 +420,8 @@ const (
 
 	// OpenApiEndpointServiceAccountGrant is needed for granting a Service Account
 	OpenApiEndpointServiceAccountGrant = "deviceLookup/grant"
-	OpenApiEndpointTokens              = "tokens"
+	OpenApiEndpointTokens              = "tokens/"
+	OpenApiEndpointServiceAccounts     = "serviceAccounts/"
 )
 
 // Header keys to run operations in tenant context

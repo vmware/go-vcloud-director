@@ -21,10 +21,18 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
-// CreateApiToken is used for creating API tokens and works in two steps:
+// TODO Have distinct names for API and Refresh tokens
+// Token is a struct that handles two methods: Delete() and GetInitialRefreshToken()
+type token struct {
+	*types.Token
+	client *Client
+}
+
+// CreateToken is used for creating API tokens and works in two steps:
 // 1. Register the token through the `register` endpoint
-// 2. Fetch it using `token` endpoint
-func (vcdClient *VCDClient) CreateApiToken(org, tokenName string) (*types.ApiTokenParams, error) {
+// 2. Fetch it using GetTokenById(tokenID)
+// The user then can use *Token.GetInitialRefreshToken to get the API token
+func (vcdClient *VCDClient) CreateToken(org, tokenName string) (*token, error) {
 	if vcdClient.Client.APIVCDMaxVersionIs("< 36.1") {
 		version, err := vcdClient.Client.GetVcdFullVersion()
 		if err == nil {
@@ -38,10 +46,21 @@ func (vcdClient *VCDClient) CreateApiToken(org, tokenName string) (*types.ApiTok
 		ClientName: tokenName,
 	}
 
-	return vcdClient.registerToken(org, "36.1", apiTokenParams)
+	apiTokenParams, err := vcdClient.RegisterToken(org, "36.1", apiTokenParams)
+	if err != nil {
+		return nil, fmt.Errorf("failed to register token: %s", err)
+	}
+
+	token, err := vcdClient.GetTokenById(apiTokenParams.ClientID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get token: %s", err)
+	}
+
+	return token, nil
 }
 
-func (vcdClient *VCDClient) GetTokenById(tokenId string) (*types.Token, error) {
+// GetTokenById retrieves a Token by ID
+func (vcdClient *VCDClient) GetTokenById(tokenId string) (*token, error) {
 	if vcdClient.Client.APIVCDMaxVersionIs("< 36.1") {
 		version, err := vcdClient.Client.GetVcdFullVersion()
 		if err == nil {
@@ -53,7 +72,7 @@ func (vcdClient *VCDClient) GetTokenById(tokenId string) (*types.Token, error) {
 
 	tokenUrn, err := BuildUrnWithUuid("urn:vcloud:token:", tokenId)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to build URN %s", err)
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTokens
@@ -67,16 +86,20 @@ func (vcdClient *VCDClient) GetTokenById(tokenId string) (*types.Token, error) {
 		return nil, err
 	}
 
-	token := &types.Token{}
-	err = vcdClient.Client.OpenApiGetItem(apiVersion, urlRef, nil, token, nil)
-	if err != nil {
-		return nil, err
+	result := &token{
+		client: &vcdClient.Client,
 	}
 
-	return token, nil
+	err = vcdClient.Client.OpenApiGetItem(apiVersion, urlRef, nil, result, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get token: %s", err)
+	}
+
+	return result, nil
 }
 
-func (vcdClient *VCDClient) DeleteToken(tokenId string) error {
+// DeleteTokenByID deletes an existing token by its' URN ID
+func (vcdClient *VCDClient) DeleteTokenByID(tokenId string) error {
 	if vcdClient.Client.APIVCDMaxVersionIs("< 36.1") {
 		version, err := vcdClient.Client.GetVcdFullVersion()
 		if err == nil {
@@ -86,18 +109,13 @@ func (vcdClient *VCDClient) DeleteToken(tokenId string) error {
 		return fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", vcdClient.Client.APIVersion)
 	}
 
-	tokenUrn, err := BuildUrnWithUuid("urn:vcloud:token:", tokenId)
-	if err != nil {
-		return err
-	}
-
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTokens
 	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
 	}
 
-	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint, tokenUrn)
+	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint, tokenId)
 	if err != nil {
 		return err
 	}
@@ -108,23 +126,6 @@ func (vcdClient *VCDClient) DeleteToken(tokenId string) error {
 	}
 
 	return nil
-}
-
-// GetInitialApiToken gets the newly created API token, usable only once per token.
-func (vcdClient *VCDClient) GetInitialApiToken(org, apiToken, clientId string) (*types.ApiTokenRefresh, error) {
-	data := bytes.NewBufferString(
-		fmt.Sprintf("grant_type=%s&client_id=%s&assertion=%s",
-			"urn:ietf:params:oauth:grant-type:jwt-bearer",
-			clientId,
-			vcdClient.Client.VCDToken,
-		))
-
-	token, err := vcdClient.getToken(org, "36.1", "CreateApiToken", data)
-	if err != nil {
-		return nil, fmt.Errorf("error getting token: %s", err)
-	}
-
-	return token, nil
 }
 
 // SetApiToken behaves similarly to SetToken, with the difference that it will
@@ -154,7 +155,7 @@ func (vcdClient *VCDClient) GetBearerTokenFromApiToken(org, token string) (*type
 	}
 
 	data := bytes.NewBufferString(fmt.Sprintf("grant_type=refresh_token&refresh_token=%s", token))
-	tokenDef, err := vcdClient.getToken(org, "36.1", "GetBearerTokenFromApiToken", data)
+	tokenDef, err := vcdClient.Client.GetApiToken(org, "36.1", "GetBearerTokenFromApiToken", data)
 	if err != nil {
 		return nil, fmt.Errorf("error getting bearer token: %s", err)
 	}
@@ -162,13 +163,14 @@ func (vcdClient *VCDClient) GetBearerTokenFromApiToken(org, token string) (*type
 	return tokenDef, nil
 }
 
-func (vcdClient *VCDClient) registerToken(org, apiVersion string, token *types.ApiTokenParams) (*types.ApiTokenParams, error) {
-	data, err := json.Marshal(token)
+// RegisterToken creates(registers) a token with given parameters
+func (vcdClient *VCDClient) RegisterToken(org, apiVersion string, tokenParams *types.ApiTokenParams) (*types.ApiTokenParams, error) {
+	data, err := json.Marshal(tokenParams)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := vcdClient.doTokenRequest(org, "register", apiVersion, "application/json", bytes.NewBuffer(data))
+	resp, err := vcdClient.Client.doTokenRequest(org, "register", apiVersion, "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return nil, err
 	}
@@ -178,17 +180,30 @@ func (vcdClient *VCDClient) registerToken(org, apiVersion string, token *types.A
 		return nil, err
 	}
 
-	newToken := &types.ApiTokenParams{}
-	err = json.Unmarshal(body, newToken)
+	newTokenParams := &types.ApiTokenParams{}
+	err = json.Unmarshal(body, newTokenParams)
 	if err != nil {
 		return nil, err
 	}
 
-	return newToken, nil
+	return newTokenParams, nil
 }
 
-func (vcdClient *VCDClient) getToken(org, apiVersion string, funcName string, data *bytes.Buffer) (*types.ApiTokenRefresh, error) {
-	resp, err := vcdClient.doTokenRequest(org, "token", apiVersion, "application/x-www-form-urlencoded", data)
+// SetApiTokenFile reads the API token file, sets the client's bearer
+// token and fetches a new API token for next authentication request
+// using SetApiToken
+func (vcdClient *VCDClient) SetApiTokenFromFile(org, apiTokenFile string) (*types.ApiTokenRefresh, error) {
+	apiToken, err := getApiTokenFromFile(org, apiTokenFile)
+	if err != nil {
+		return nil, err
+	}
+
+	return vcdClient.SetApiToken(org, apiToken.RefreshToken)
+}
+
+// GetApiToken gets an API token
+func (client *Client) GetApiToken(org, apiVersion string, funcName string, data *bytes.Buffer) (*types.ApiTokenRefresh, error) {
+	resp, err := client.doTokenRequest(org, "token", apiVersion, "application/x-www-form-urlencoded", data)
 	if err != nil {
 		return nil, err
 	}
@@ -234,11 +249,10 @@ func (vcdClient *VCDClient) getToken(org, apiVersion string, funcName string, da
 	return newToken, nil
 }
 
-func (vcdClient *VCDClient) doTokenRequest(org, endpoint, apiVersion, contentType string, data io.Reader) (*http.Response, error) {
-
+func (client *Client) doTokenRequest(org, endpoint, apiVersion, contentType string, data io.Reader) (*http.Response, error) {
 	newUrl := url.URL{
-		Scheme: vcdClient.Client.VCDHREF.Scheme,
-		Host:   vcdClient.Client.VCDHREF.Host,
+		Scheme: client.VCDHREF.Scheme,
+		Host:   client.VCDHREF.Host,
 	}
 
 	userDef := "tenant/" + org
@@ -250,25 +264,38 @@ func (vcdClient *VCDClient) doTokenRequest(org, endpoint, apiVersion, contentTyp
 	if err != nil {
 		return nil, fmt.Errorf("error getting request URL from %s : %s", reqHref.String(), err)
 	}
-	req := vcdClient.Client.NewRequest(nil, http.MethodPost, *reqHref, data)
+	req := client.NewRequest(nil, http.MethodPost, *reqHref, data)
 	req.Header.Add("Accept", fmt.Sprintf("application/*;version=%s", apiVersion))
 	req.Header.Add("Content-Type", contentType)
 
-	return vcdClient.Client.Http.Do(req)
-}
-
-// SetApiTokenFile reads the API token file, sets the client's bearer
-// token and fetches a new API token for next authentication request
-// using SetApiToken
-func (vcdClient *VCDClient) SetApiTokenFromFile(org, apiTokenFile string) (*types.ApiTokenRefresh, error) {
-	apiToken, err := getApiTokenFromFile(org, apiTokenFile)
+	resp, err := client.Http.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting request URL from %s : %s", reqHref.String(), err)
 	}
 
-	return vcdClient.SetApiToken(org, apiToken.RefreshToken)
+	return checkRespWithErrType(types.BodyTypeJSON, resp, err, &types.OpenApiError{})
 }
 
+// GetInitialApiToken gets the initial API token, usable only once per token.
+func (token *token) GetInitialApiToken() (*types.ApiTokenRefresh, error) {
+	client := token.client
+	uuid := extractUuid(token.ID)
+	data := bytes.NewBufferString(
+		fmt.Sprintf("grant_type=%s&assertion=%s&client_id=%s",
+			"urn:ietf:params:oauth:grant-type:jwt-bearer",
+			client.VCDToken,
+			uuid,
+		))
+
+	refreshToken, err := client.GetApiToken(token.Org.Name, "36.1", "CreateApiToken", data)
+	if err != nil {
+		return nil, fmt.Errorf("error getting token: %s", err)
+	}
+
+	return refreshToken, nil
+}
+
+// getApiTokenFromFile reads an API token from a given file
 func getApiTokenFromFile(org, apiTokenFile string) (*types.ApiTokenRefresh, error) {
 	apiToken := &types.ApiTokenRefresh{}
 	// Read file contents and unmarshal them to apiToken
@@ -280,9 +307,9 @@ func getApiTokenFromFile(org, apiTokenFile string) (*types.ApiTokenRefresh, erro
 	return apiToken, nil
 }
 
-//func saveApiTokenToFile(filename, userAgent string, apiToken *types.ApiTokenRefresh) error {
-//	return saveTokenToFile(filename, "API Token", userAgent, apiToken)
-//}
+func SaveApiTokenToFile(filename, userAgent string, apiToken *types.ApiTokenRefresh) error {
+	return saveTokenToFile(filename, "API Token", userAgent, apiToken)
+}
 
 func saveTokenToFile(filename, tokenType, userAgent string, token *types.ApiTokenRefresh) error {
 	token = &types.ApiTokenRefresh{
