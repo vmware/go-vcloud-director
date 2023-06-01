@@ -52,7 +52,7 @@ func (vcd *TestVCD) Test_ServiceAccount(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(serviceAccount.Status, Equals, "GRANTED")
 
-	_, err = serviceAccount.GetApiToken()
+	_, err = serviceAccount.GetInitialApiToken()
 	check.Assert(err, IsNil)
 
 	err = serviceAccount.Refresh()
