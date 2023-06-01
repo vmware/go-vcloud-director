@@ -200,3 +200,18 @@ type IPPrefixSequence struct {
 	// Specifies the percentage of allocated IP prefix blocks out of total specified IP prefix blocks.
 	AllocatedPrefixPercentage float32 `json:"allocatedPrefixPercentage,omitempty"`
 }
+
+// IpSpaceUplink sSpecifies the IP Space Uplink configuration for Provider Gateway (External network
+// with T0 or T0 VRF backing)
+type IpSpaceUplink struct {
+	ID          string `json:"id,omitempty"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	// ExternalNetworkRef contains information
+	ExternalNetworkRef *OpenApiReference `json:"externalNetworkRef"`
+	IPSpaceRef         *OpenApiReference `json:"ipSpaceRef"`
+	// The type of the IP Space associated with this uplink. Possible values are: PUBLIC, PRIVATE,
+	// SHARED_SERVICES. This property is read-only.
+	IPSpaceType string `json:"ipSpaceType,omitempty"`
+	Status      string `json:"status,omitempty"`
+}

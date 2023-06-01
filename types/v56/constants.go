@@ -402,6 +402,7 @@ const (
 
 	OpenApiEndpointIpSpaces         = "ipSpaces/"
 	OpenApiEndpointIpSpaceSummaries = "ipSpaces/summaries"
+	OpenApiEndpointIpSpaceUplinks   = "ipSpaceUplinks/"
 
 	// NSX-T ALB related endpoints
 

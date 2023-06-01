@@ -68,6 +68,7 @@ var endpointMinApiVersions = map[string]string{
 	// IP Spaces
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces:         "37.1", // VCD 10.4.1+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceSummaries: "37.1", // VCD 10.4.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks:   "37.1", // VCD 10.4.1+
 
 	// NSX-T ALB (Advanced/AVI Load Balancer) support was introduced in 10.2
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController:                    "35.0", // VCD 10.2+
