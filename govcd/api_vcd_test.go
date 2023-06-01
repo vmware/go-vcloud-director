@@ -1621,10 +1621,16 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
 		}
 
-		if IsNotFound(err) {
-			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+		dhcpForwarder, err := edge.GetDhcpForwarder()
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		if dhcpForwarder.Enabled == false && len(dhcpForwarder.DhcpServers) == 0 {
+			vcd.infoCleanup(notFoundMsg, "dhcpForwarder", entity.Name)
 			return
 		}
+
 		_, err = edge.UpdateDhcpForwarder(&types.NsxtEdgeGatewayDhcpForwarder{})
 		if err != nil {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)

@@ -524,12 +524,6 @@ func (vcd *TestVCD) Test_NsxtEdgeDhcpForwarder(check *C) {
 	check.Assert(dhcpForwarderConfig.Enabled, Equals, false)
 	check.Assert(dhcpForwarderConfig.DhcpServers, DeepEquals, []string(nil))
 
-	// Defer removal of the DHCP forwarder config, so that it gets removed no matter the outcome of the test
-	defer func() {
-		_, err = edge.UpdateDhcpForwarder(&types.NsxtEdgeGatewayDhcpForwarder{})
-		check.Assert(err, IsNil)
-	}()
-
 	// Create new DHCP Forwarder config
 	testDhcpServers := []string{
 		"1.1.1.1",
@@ -587,6 +581,6 @@ func (vcd *TestVCD) Test_NsxtEdgeDhcpForwarder(check *C) {
 	check.Assert(updatedEdgeDhcpForwarderConfig.Enabled, Equals, false)
 	check.Assert(updatedEdgeDhcpForwarderConfig.DhcpServers, DeepEquals, testDhcpServers)
 
-	updatedEdgeDhcpForwarderConfig.Enabled = true
-
+	_, err = edge.UpdateDhcpForwarder(&types.NsxtEdgeGatewayDhcpForwarder{})
+	check.Assert(err, IsNil)
 }
