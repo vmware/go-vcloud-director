@@ -147,6 +147,10 @@ var endpointElevatedApiVersions = map[string][]string{
 		//"35.0", // Introduced support
 		"37.0", // Added metadata support
 	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways: {
+		//"35.0", // Introduced support
+		"37.1", // Exposes computed field `UsingIpSpace` in `types.EdgeGatewayUplinks`
+	},
 }
 
 // checkOpenApiEndpointCompatibility checks if VCD version (to which the client is connected) is sufficient to work with
