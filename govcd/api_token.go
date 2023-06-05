@@ -87,10 +87,11 @@ func (vcdClient *VCDClient) GetTokenById(tokenId string) (*Token, error) {
 	}
 
 	apiToken := &Token{
+		Token:  &types.Token{},
 		client: &vcdClient.Client,
 	}
 
-	err = vcdClient.Client.OpenApiGetItem(apiVersion, urlRef, nil, apiToken, nil)
+	err = vcdClient.Client.OpenApiGetItem(apiVersion, urlRef, nil, apiToken.Token, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token: %s", err)
 	}

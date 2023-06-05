@@ -76,7 +76,8 @@ func (vcd *TestVCD) Test_ApiToken(check *C) {
 	err = token.Delete()
 	check.Assert(err, IsNil)
 
-	notFound, err := vcd.client.GetTokenById(token.Token.ID)
+	uuid := extractUuid(token.Token.ID)
+	notFound, err := vcd.client.GetTokenById(uuid)
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(notFound, IsNil)
 }

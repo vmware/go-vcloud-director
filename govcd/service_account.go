@@ -19,7 +19,7 @@ type ServiceAccount struct {
 }
 
 func (vcdClient *VCDClient) GetServiceAccountById(serviceAccountId string) (*ServiceAccount, error) {
-	if vcdClient.Client.APIVCDMaxVersionIs("< 36.1") {
+	if vcdClient.Client.APIVCDMaxVersionIs("< 37.0") {
 		version, err := vcdClient.Client.GetVcdFullVersion()
 		if err == nil {
 			return nil, fmt.Errorf("minimum version for Service Accounts is 10.4.0 - Version detected: %s", version.Version)
@@ -45,7 +45,8 @@ func (vcdClient *VCDClient) GetServiceAccountById(serviceAccountId string) (*Ser
 	}
 
 	newServiceAccount := &ServiceAccount{
-		vcdClient: vcdClient,
+		ServiceAccount: &types.ServiceAccount{},
+		vcdClient:      vcdClient,
 	}
 
 	err = vcdClient.Client.OpenApiGetItem(apiVersion, urlRef, nil, newServiceAccount.ServiceAccount, nil)
@@ -89,12 +90,13 @@ func (sa *ServiceAccount) Authorize() error {
 	client := sa.vcdClient.Client
 
 	uuid := extractUuid(sa.ServiceAccount.ID)
+	fmt.Println(uuid)
 	data := bytes.NewBufferString(
 		fmt.Sprintf("client_id=%s",
 			uuid,
 		))
 
-	resp, err := client.doTokenRequest(sa.ServiceAccount.Name, "device_authorization", "37.0", "application/x-www-form-urlencoded", data)
+	resp, err := client.doTokenRequest(sa.ServiceAccount.Org.Name, "device_authorization", "37.0", "application/x-www-form-urlencoded", data)
 	if err != nil {
 		return err
 	}

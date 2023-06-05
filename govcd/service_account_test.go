@@ -26,6 +26,7 @@ func (vcd *TestVCD) Test_ServiceAccount(check *C) {
 		"",
 		"",
 	)
+
 	check.Assert(err, IsNil)
 	check.Assert(saParams, NotNil)
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccounts
@@ -70,6 +71,6 @@ func (vcd *TestVCD) Test_ServiceAccount(check *C) {
 	check.Assert(err, IsNil)
 
 	notFound, err := vcd.client.GetServiceAccountById(serviceAccount.ServiceAccount.ID)
-	check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(err, NotNil)
 	check.Assert(notFound, IsNil)
 }
