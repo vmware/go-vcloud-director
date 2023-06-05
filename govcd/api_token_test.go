@@ -63,19 +63,20 @@ func (vcd *TestVCD) Test_ApiToken(check *C) {
 	token, err := vcd.client.CreateToken(vcd.config.Provider.SysOrg, check.TestName())
 	check.Assert(err, IsNil)
 	check.Assert(token, NotNil)
-	check.Assert(isUrn(token.ID), Equals, true)
-	check.Assert(token.Type, Equals, "REFRESH")
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTokens + token.ID
-	AddToCleanupListOpenApi(token.Name, check.TestName(), endpoint)
+	check.Assert(isUrn(token.Token.ID), Equals, true)
+	check.Assert(token.Token.Type, Equals, "REFRESH")
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTokens + token.Token.ID
+	AddToCleanupListOpenApi(token.Token.Name, check.TestName(), endpoint)
 
-	tokenInfo, err := token.GetInitialApiToken()
+	tokenInfo, err := token.getInitialApiToken()
 	check.Assert(err, IsNil)
 	check.Assert(tokenInfo.AccessToken, Not(Equals), "")
 	check.Assert(tokenInfo.TokenType, Equals, "Bearer")
 
-	err = vcd.client.DeleteTokenByID(token.ID)
+	err = token.Delete()
 	check.Assert(err, IsNil)
 
-	_, err = vcd.client.GetTokenById(token.ID)
-	check.Assert(err, NotNil)
+	notFound, err := vcd.client.GetTokenById(token.Token.ID)
+	check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(notFound, IsNil)
 }

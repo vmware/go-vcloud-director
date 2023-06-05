@@ -23,8 +23,8 @@ import (
 
 // TODO Have distinct names for API and Refresh tokens
 // Token is a struct that handles two methods: Delete() and GetInitialRefreshToken()
-type token struct {
-	*types.Token
+type Token struct {
+	Token  *types.Token
 	client *Client
 }
 
@@ -32,7 +32,7 @@ type token struct {
 // 1. Register the token through the `register` endpoint
 // 2. Fetch it using GetTokenById(tokenID)
 // The user then can use *Token.GetInitialRefreshToken to get the API token
-func (vcdClient *VCDClient) CreateToken(org, tokenName string) (*token, error) {
+func (vcdClient *VCDClient) CreateToken(org, tokenName string) (*Token, error) {
 	if vcdClient.Client.APIVCDMaxVersionIs("< 36.1") {
 		version, err := vcdClient.Client.GetVcdFullVersion()
 		if err == nil {
@@ -60,7 +60,7 @@ func (vcdClient *VCDClient) CreateToken(org, tokenName string) (*token, error) {
 }
 
 // GetTokenById retrieves a Token by ID
-func (vcdClient *VCDClient) GetTokenById(tokenId string) (*token, error) {
+func (vcdClient *VCDClient) GetTokenById(tokenId string) (*Token, error) {
 	if vcdClient.Client.APIVCDMaxVersionIs("< 36.1") {
 		version, err := vcdClient.Client.GetVcdFullVersion()
 		if err == nil {
@@ -86,46 +86,16 @@ func (vcdClient *VCDClient) GetTokenById(tokenId string) (*token, error) {
 		return nil, err
 	}
 
-	result := &token{
+	apiToken := &Token{
 		client: &vcdClient.Client,
 	}
 
-	err = vcdClient.Client.OpenApiGetItem(apiVersion, urlRef, nil, result, nil)
+	err = vcdClient.Client.OpenApiGetItem(apiVersion, urlRef, nil, apiToken, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token: %s", err)
 	}
 
-	return result, nil
-}
-
-// DeleteTokenByID deletes an existing token by its' URN ID
-func (vcdClient *VCDClient) DeleteTokenByID(tokenId string) error {
-	if vcdClient.Client.APIVCDMaxVersionIs("< 36.1") {
-		version, err := vcdClient.Client.GetVcdFullVersion()
-		if err == nil {
-			return fmt.Errorf("minimum version for API token is 10.3.1 - Version detected: %s", version.Version)
-		}
-		// If we can't get the VCD version, we return API version info
-		return fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", vcdClient.Client.APIVersion)
-	}
-
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTokens
-	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return err
-	}
-
-	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint, tokenId)
-	if err != nil {
-		return err
-	}
-
-	err = vcdClient.Client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return apiToken, nil
 }
 
 // SetApiToken behaves similarly to SetToken, with the difference that it will
@@ -277,9 +247,9 @@ func (client *Client) doTokenRequest(org, endpoint, apiVersion, contentType stri
 }
 
 // GetInitialApiToken gets the initial API token, usable only once per token.
-func (token *token) GetInitialApiToken() (*types.ApiTokenRefresh, error) {
+func (token *Token) getInitialApiToken() (*types.ApiTokenRefresh, error) {
 	client := token.client
-	uuid := extractUuid(token.ID)
+	uuid := extractUuid(token.Token.ID)
 	data := bytes.NewBufferString(
 		fmt.Sprintf("grant_type=%s&assertion=%s&client_id=%s",
 			"urn:ietf:params:oauth:grant-type:jwt-bearer",
@@ -287,12 +257,43 @@ func (token *token) GetInitialApiToken() (*types.ApiTokenRefresh, error) {
 			uuid,
 		))
 
-	refreshToken, err := client.GetApiToken(token.Org.Name, "36.1", "CreateApiToken", data)
+	refreshToken, err := client.GetApiToken(token.Token.Org.Name, "36.1", "CreateApiToken", data)
 	if err != nil {
 		return nil, fmt.Errorf("error getting token: %s", err)
 	}
 
 	return refreshToken, nil
+}
+
+// DeleteTokenByID deletes an existing token by its' URN ID
+func (token *Token) Delete() error {
+	client := token.client
+	if client.APIVCDMaxVersionIs("< 36.1") {
+		version, err := client.GetVcdFullVersion()
+		if err == nil {
+			return fmt.Errorf("minimum version for API token is 10.3.1 - Version detected: %s", version.Version)
+		}
+		// If we can't get the VCD version, we return API version info
+		return fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", client.APIVersion)
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTokens
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, token.Token.ID)
+	if err != nil {
+		return err
+	}
+
+	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // getApiTokenFromFile reads an API token from a given file

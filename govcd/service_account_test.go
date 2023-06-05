@@ -36,36 +36,40 @@ func (vcd *TestVCD) Test_ServiceAccount(check *C) {
 
 	serviceAccount, err := vcd.client.GetServiceAccountById(saParams.ClientID)
 	check.Assert(err, IsNil)
-	check.Assert(serviceAccount.Status, Equals, "CREATED")
+	check.Assert(serviceAccount.ServiceAccount.Status, Equals, "CREATED")
 
 	err = serviceAccount.Authorize()
 	check.Assert(err, IsNil)
 
 	err = serviceAccount.Refresh()
 	check.Assert(err, IsNil)
-	check.Assert(serviceAccount.Status, Equals, "REQUESTED")
+	check.Assert(serviceAccount.ServiceAccount.Status, Equals, "REQUESTED")
 
 	err = serviceAccount.Grant()
 	check.Assert(err, IsNil)
 
 	err = serviceAccount.Refresh()
 	check.Assert(err, IsNil)
-	check.Assert(serviceAccount.Status, Equals, "GRANTED")
+	check.Assert(serviceAccount.ServiceAccount.Status, Equals, "GRANTED")
 
 	_, err = serviceAccount.GetInitialApiToken()
 	check.Assert(err, IsNil)
 
 	err = serviceAccount.Refresh()
 	check.Assert(err, IsNil)
-	check.Assert(serviceAccount.Status, Equals, "ACTIVE")
+	check.Assert(serviceAccount.ServiceAccount.Status, Equals, "ACTIVE")
 
 	err = serviceAccount.Revoke()
 	check.Assert(err, IsNil)
 
 	err = serviceAccount.Refresh()
 	check.Assert(err, IsNil)
-	check.Assert(serviceAccount.Status, Equals, "CREATED")
+	check.Assert(serviceAccount.ServiceAccount.Status, Equals, "CREATED")
 
-	err = vcd.client.DeleteServiceAccountByID(serviceAccount.ID)
+	err = serviceAccount.Delete()
 	check.Assert(err, IsNil)
+
+	notFound, err := vcd.client.GetServiceAccountById(serviceAccount.ServiceAccount.ID)
+	check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(notFound, IsNil)
 }
