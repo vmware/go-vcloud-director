@@ -68,7 +68,7 @@ func (vcd *TestVCD) Test_ApiToken(check *C) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTokens + token.Token.ID
 	AddToCleanupListOpenApi(token.Token.Name, check.TestName(), endpoint)
 
-	tokenInfo, err := token.getInitialApiToken()
+	tokenInfo, err := token.GetInitialApiToken()
 	check.Assert(err, IsNil)
 	check.Assert(tokenInfo.AccessToken, Not(Equals), "")
 	check.Assert(tokenInfo.TokenType, Equals, "Bearer")

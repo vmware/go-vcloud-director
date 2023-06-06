@@ -248,7 +248,7 @@ func (client *Client) doTokenRequest(org, endpoint, apiVersion, contentType stri
 }
 
 // GetInitialApiToken gets the initial API token, usable only once per token.
-func (token *Token) getInitialApiToken() (*types.ApiTokenRefresh, error) {
+func (token *Token) GetInitialApiToken() (*types.ApiTokenRefresh, error) {
 	client := token.client
 	uuid := extractUuid(token.Token.ID)
 	data := bytes.NewBufferString(
