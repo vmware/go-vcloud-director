@@ -64,6 +64,7 @@ func (vcd *TestVCD) Test_OrgSamlSettingsCRUD(check *C) {
 
 	// Add namespace definitions to the metadata, and this time it will pass
 	newMetadataText, err := normalizeServiceProviderSamlMetadata(string(metadataText))
+	check.Assert(err, IsNil)
 	settings.SAMLMetadata = newMetadataText
 	newSetting, err = adminOrg.SetFederationSettings(settings)
 	check.Assert(err, IsNil)
