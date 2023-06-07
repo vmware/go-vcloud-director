@@ -23,6 +23,12 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
+type IgnoredMetadata struct {
+	KeyRegex   regexp.Regexp
+	ValueRegex regexp.Regexp
+	TypeRegex  regexp.Regexp
+}
+
 // Client provides a client to VMware Cloud Director, values can be populated automatically using the Authenticate method.
 type Client struct {
 	APIVersion       string      // The API version required
@@ -52,6 +58,9 @@ type Client struct {
 	// UserAgent to send for API queries. Standard format is described as:
 	// "User-Agent: <product> / <product-version> <comment>"
 	UserAgent string
+
+	// IgnoredMetadata allows to ignore metadata entries when using the methods defined in metadata_v2.go
+	IgnoredMetadata []IgnoredMetadata
 
 	supportedVersions SupportedVersions // Versions from /api/versions endpoint
 	customHeader      http.Header

@@ -338,3 +338,12 @@ func WithHttpHeader(options map[string]string) VCDClientOption {
 		return nil
 	}
 }
+
+// WithIgnoredMetadata allows specifying metadata entries to be ignored when using metadata_v2 methods.
+// It can be unset by supplying empty value.
+func WithIgnoredMetadata(ignoredMetadata []IgnoredMetadata) VCDClientOption {
+	return func(vcdClient *VCDClient) error {
+		vcdClient.Client.IgnoredMetadata = ignoredMetadata
+		return nil
+	}
+}

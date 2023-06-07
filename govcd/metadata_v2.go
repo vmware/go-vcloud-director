@@ -742,7 +742,10 @@ func getMetadataByKey(client *Client, requestUri, key string, isSystem bool) (*t
 	}
 
 	_, err := client.ExecuteRequest(href+key, http.MethodGet, types.MimeMetaData, "error retrieving metadata by key "+key+": %s", nil, metadata)
-	return metadata, err
+	if err != nil {
+		return nil, err
+	}
+	return filterSingleMetadataEntry(key, metadata, client.IgnoredMetadata)
 }
 
 // getMetadata is a generic function to retrieve metadata from VCD
@@ -750,7 +753,10 @@ func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
 	metadata := &types.Metadata{}
 
 	_, err := client.ExecuteRequest(requestUri+"/metadata/", http.MethodGet, types.MimeMetaData, "error retrieving metadata: %s", nil, metadata)
-	return metadata, err
+	if err != nil {
+		return nil, err
+	}
+	return filterMetadata(metadata, client.IgnoredMetadata), nil
 }
 
 // addMetadata adds metadata to an entity.
@@ -782,6 +788,11 @@ func addMetadata(client *Client, requestUri, key, value, typedValue, visibility 
 		if visibility != types.MetadataReadWriteVisibility {
 			newMetadata.Domain.Visibility = types.MetadataReadWriteVisibility
 		}
+	}
+
+	_, err := filterSingleMetadataEntry(key, newMetadata, client.IgnoredMetadata)
+	if err != nil {
+		return Task{}, err
 	}
 
 	domain := newMetadata.Domain.Visibility
@@ -831,7 +842,7 @@ func mergeAllMetadata(client *Client, requestUri string, metadata map[string]typ
 	apiEndpoint := urlParseRequestURI(requestUri)
 	apiEndpoint.Path += "/metadata"
 
-	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost, types.MimeMetaData, "error adding metadata: %s", newMetadata)
+	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost, types.MimeMetaData, "error merging metadata: %s", filterMetadata(newMetadata, client.IgnoredMetadata))
 }
 
 // mergeAllMetadata updates the metadata values that are already present in VCD and creates the ones not present.
@@ -856,6 +867,12 @@ func deleteMetadata(client *Client, requestUri string, key string, isSystem bool
 		apiEndpoint.Path += "/metadata/" + key
 	}
 
+	for _, ignoredEntry := range client.IgnoredMetadata {
+		if ignoredEntry.KeyRegex.MatchString(key) {
+			return Task{}, fmt.Errorf("can't delete metadata entry %s as it is ignored", key)
+		}
+	}
+
 	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodDelete, "", "error deleting metadata: %s", nil)
 }
 
@@ -867,4 +884,38 @@ func deleteMetadataAndWait(client *Client, requestUri string, key string, isSyst
 	}
 
 	return task.WaitTaskCompletion()
+}
+
+// TODO
+func filterMetadata(allMetadata *types.Metadata, metadataToIgnore []IgnoredMetadata) *types.Metadata {
+	filteredMetadata := &types.Metadata{
+		XMLName:       allMetadata.XMLName,
+		Xmlns:         allMetadata.Xmlns,
+		HREF:          allMetadata.HREF,
+		Type:          allMetadata.Type,
+		Xsi:           allMetadata.Xsi,
+		Link:          allMetadata.Link,
+		MetadataEntry: []*types.MetadataEntry{},
+	}
+	for _, originalEntry := range allMetadata.MetadataEntry {
+		for _, entryToIgnore := range metadataToIgnore {
+			if !entryToIgnore.KeyRegex.MatchString(originalEntry.Key) &&
+				!entryToIgnore.ValueRegex.MatchString(originalEntry.TypedValue.Value) &&
+				!entryToIgnore.TypeRegex.MatchString(originalEntry.TypedValue.XsiType) {
+
+				filteredMetadata.MetadataEntry = append(filteredMetadata.MetadataEntry, originalEntry)
+			}
+		}
+	}
+	return filteredMetadata
+}
+
+// TODO
+func filterSingleMetadataEntry(key string, metadataEntry *types.MetadataValue, metadataToIgnore []IgnoredMetadata) (*types.MetadataValue, error) {
+	for _, entryToIgnore := range metadataToIgnore {
+		if entryToIgnore.KeyRegex.MatchString(key) {
+			return nil, fmt.Errorf("not found")
+		}
+	}
+	return metadataEntry, nil
 }
