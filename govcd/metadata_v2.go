@@ -901,7 +901,7 @@ func filterMetadata(allMetadata *types.Metadata, metadataToIgnore []IgnoredMetad
 		for _, entryToIgnore := range metadataToIgnore {
 			if !entryToIgnore.KeyRegex.MatchString(originalEntry.Key) &&
 				!entryToIgnore.ValueRegex.MatchString(originalEntry.TypedValue.Value) &&
-				!entryToIgnore.TypeRegex.MatchString(originalEntry.TypedValue.XsiType) {
+				!(entryToIgnore.Type != nil && *entryToIgnore.Type == originalEntry.TypedValue.XsiType) {
 
 				filteredMetadata.MetadataEntry = append(filteredMetadata.MetadataEntry, originalEntry)
 			}

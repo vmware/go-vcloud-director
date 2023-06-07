@@ -24,9 +24,11 @@ import (
 )
 
 type IgnoredMetadata struct {
-	KeyRegex   regexp.Regexp
-	ValueRegex regexp.Regexp
-	TypeRegex  regexp.Regexp
+	KeyRegex   *regexp.Regexp
+	ValueRegex *regexp.Regexp
+	Type       *string
+	UserAccess *string
+	IsSystem   *bool
 }
 
 // Client provides a client to VMware Cloud Director, values can be populated automatically using the Authenticate method.
