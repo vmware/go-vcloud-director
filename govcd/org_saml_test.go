@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	_ "embed"
 	"encoding/xml"
 	"fmt"
 	"github.com/kr/pretty"
@@ -14,11 +15,15 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+//go:embed test-resources/saml-test-idp.xml
+var externalMetadata string
+
 func (vcd *TestVCD) Test_OrgSamlSettingsCRUD(check *C) {
 
 	if !vcd.client.Client.IsSysAdmin {
 		check.Skip("test requires system administrator privileges")
 	}
+
 	orgName := check.TestName()
 
 	task, err := CreateOrg(vcd.client, orgName, orgName, orgName, &types.OrgSettings{}, true)
@@ -40,7 +45,7 @@ func (vcd *TestVCD) Test_OrgSamlSettingsCRUD(check *C) {
 		fmt.Printf("# 1 %# v\n", pretty.Formatter(settings))
 	}
 
-	metadata, err := adminOrg.GetSamlMetadata()
+	metadata, err := adminOrg.GetServiceProviderSamlMetadata()
 	check.Assert(err, IsNil)
 	check.Assert(metadata, NotNil)
 	if testVerbose {
@@ -51,11 +56,49 @@ func (vcd *TestVCD) Test_OrgSamlSettingsCRUD(check *C) {
 	check.Assert(err, IsNil)
 	settings.SAMLMetadata = string(metadataText)
 	settings.Enabled = true
+	// Use a service provider metadata, without proper namespace settings: expecting an error
 	newSetting, err := adminOrg.SetFederationSettings(settings)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error(), Matches, "(?i).*bad request.*is not a valid SAML 2.0 metadata document.*")
+	check.Assert(newSetting, IsNil)
+
+	// Add namespace definitions to the metadata, and this time it will pass
+	newMetadataText, err := normalizeServiceProviderSamlMetadata(string(metadataText))
+	settings.SAMLMetadata = newMetadataText
+	newSetting, err = adminOrg.SetFederationSettings(settings)
 	check.Assert(err, IsNil)
 	check.Assert(newSetting, NotNil)
+
+	check.Assert(err, IsNil)
+	settings.SAMLMetadata = externalMetadata
+	newSetting, err = adminOrg.SetFederationSettings(settings)
+	check.Assert(err, IsNil)
+	check.Assert(newSetting, NotNil)
+
+	err = adminOrg.UnsetFederationSettings()
+	check.Assert(err, IsNil)
+	err = adminOrg.Refresh()
+	check.Assert(err, IsNil)
+	newSettings, err := adminOrg.GetFederationSettings()
+	check.Assert(err, IsNil)
+	check.Assert(newSettings.SamlSPEntityID, Equals, "")
+	check.Assert(newSettings.Enabled, Equals, false)
+
 	err = adminOrg.Disable()
 	check.Assert(err, IsNil)
 	err = adminOrg.Delete(true, true)
 	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) TestClient_RetrieveSamlMetadata(check *C) {
+	// samltest.id is a well known test site for SAML services
+	metadataUrl := "https://samltest.id/saml/idp"
+	metadata, err := vcd.client.Client.RetrieveRemoteDocument(metadataUrl)
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	errors := ValidateSamlServiceProviderMetadata(string(metadata))
+	if errors != nil {
+		fmt.Printf("%s\n", GetErrorMessageFromErrorSlice(errors))
+	}
+	check.Assert(errors, IsNil)
 }
