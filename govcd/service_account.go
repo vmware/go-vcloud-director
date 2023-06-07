@@ -15,17 +15,18 @@ import (
 type ServiceAccount struct {
 	ServiceAccount *types.ServiceAccount
 	authParams     *types.ServiceAccountAuthParams
-	vcdClient      *VCDClient
+	org            *Org
 }
 
-func (vcdClient *VCDClient) GetServiceAccountById(serviceAccountId string) (*ServiceAccount, error) {
-	if vcdClient.Client.APIVCDMaxVersionIs("< 37.0") {
-		version, err := vcdClient.Client.GetVcdFullVersion()
+func (org *Org) GetServiceAccountById(serviceAccountId string) (*ServiceAccount, error) {
+	client := org.client
+	if client.APIVCDMaxVersionIs("< 37.0") {
+		version, err := client.GetVcdFullVersion()
 		if err == nil {
 			return nil, fmt.Errorf("minimum version for Service Accounts is 10.4.0 - Version detected: %s", version.Version)
 		}
 		// If we can't get the VCD version, we return API version info
-		return nil, fmt.Errorf("minimum API version for Service Accounts is 37.0 - Version detected: %s", vcdClient.Client.APIVersion)
+		return nil, fmt.Errorf("minimum API version for Service Accounts is 37.0 - Version detected: %s", client.APIVersion)
 	}
 
 	tokenUrn, err := BuildUrnWithUuid("urn:vcloud:serviceAccount:", serviceAccountId)
@@ -34,22 +35,22 @@ func (vcdClient *VCDClient) GetServiceAccountById(serviceAccountId string) (*Ser
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccounts
-	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint, tokenUrn)
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, tokenUrn)
 	if err != nil {
 		return nil, err
 	}
 
 	newServiceAccount := &ServiceAccount{
 		ServiceAccount: &types.ServiceAccount{},
-		vcdClient:      vcdClient,
+		org:            org,
 	}
 
-	err = vcdClient.Client.OpenApiGetItem(apiVersion, urlRef, nil, newServiceAccount.ServiceAccount, nil)
+	err = client.OpenApiGetItem(apiVersion, urlRef, nil, newServiceAccount.ServiceAccount, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -57,15 +58,16 @@ func (vcdClient *VCDClient) GetServiceAccountById(serviceAccountId string) (*Ser
 	return newServiceAccount, nil
 }
 
-// RegisterServiceAccount registers(creates) a Service Account and sets it in `Created` status
-func (vcdClient *VCDClient) RegisterServiceAccount(org, name, scope, softwareId, softwareVersion, clientUri string) (*types.ApiTokenParams, error) {
-	if vcdClient.Client.APIVCDMaxVersionIs("< 37.1") {
-		version, err := vcdClient.Client.GetVcdFullVersion()
+// RegisterServiceAccount creates a Service Account and sets it in `Created` status
+func (org *Org) CreateServiceAccount(name, scope, softwareId, softwareVersion, clientUri string) (*ServiceAccount, error) {
+	client := org.client
+	if client.APIVCDMaxVersionIs("< 37.1") {
+		version, err := client.GetVcdFullVersion()
 		if err == nil {
 			return nil, fmt.Errorf("minimum version for Service Accounts is 10.4.0 - Version detected: %s", version.Version)
 		}
 		// If we can't get the VCD version, we return API version info
-		return nil, fmt.Errorf("minimum API version for Service Accounts is 37.0 - Version detected: %s", vcdClient.Client.APIVersion)
+		return nil, fmt.Errorf("minimum API version for Service Accounts is 37.0 - Version detected: %s", client.APIVersion)
 	}
 
 	saParams := &types.ApiTokenParams{
@@ -76,21 +78,25 @@ func (vcdClient *VCDClient) RegisterServiceAccount(org, name, scope, softwareId,
 		ClientURI:       clientUri,
 	}
 
-	saParams, err := vcdClient.RegisterToken(org, "37.0", saParams)
+	newSaParams, err := org.RegisterToken("37.0", saParams)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to register Service account: %s", err)
 	}
 
-	return saParams, nil
+	serviceAccount, err := org.GetServiceAccountById(newSaParams.ClientID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Service account by ID: %s", err)
+	}
+
+	return serviceAccount, nil
 }
 
 // AuthorizeServiceAccount authorizes a service account and returns a DeviceID and UserCode which will be used while granting
 // the request, and sets the Service Account in `Requested` status
 func (sa *ServiceAccount) Authorize() error {
-	client := sa.vcdClient.Client
+	client := sa.org.client
 
 	uuid := extractUuid(sa.ServiceAccount.ID)
-	fmt.Println(uuid)
 	data := bytes.NewBufferString(
 		fmt.Sprintf("client_id=%s",
 			uuid,
@@ -116,7 +122,7 @@ func (sa *ServiceAccount) Authorize() error {
 
 // GrantServiceAccount Grants access to the Service Account and sets it in `Granted` status
 func (sa *ServiceAccount) Grant() error {
-	client := sa.vcdClient.Client
+	client := sa.org.client
 	// This is the only place where this field is used, so a local struct is created
 	type serviceAccountGrant struct {
 		UserCode string `json:"userCode"`
@@ -140,10 +146,31 @@ func (sa *ServiceAccount) Grant() error {
 	return err
 }
 
+// GetInitialApiToken gets the initial API token for the Service Account and sets it in `Active` status
+func (sa *ServiceAccount) GetInitialApiToken() (*types.ApiTokenRefresh, error) {
+	client := sa.org.client
+	uuid := extractUuid(sa.ServiceAccount.ID)
+	data := bytes.NewBufferString(
+		fmt.Sprintf("grant_type=%s&client_id=%s&device_code=%s",
+			"urn:ietf:params:oauth:grant-type:device_code",
+			uuid,
+			sa.authParams.DeviceCode,
+		))
+
+	token, err := client.GetApiToken(sa.ServiceAccount.Org.Name, "37.0", "CreateServiceAccount", data)
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
+}
+
 // Refresh updates the Service Account object
 func (sa *ServiceAccount) Refresh() error {
+	if sa.ServiceAccount == nil || sa.org.client == nil || sa.ServiceAccount.ID == "" {
+		return fmt.Errorf("cannot refresh Edge Gateway without ID")
+	}
 	uuid := extractUuid(sa.ServiceAccount.ID)
-	updatedServiceAccount, err := sa.vcdClient.GetServiceAccountById(uuid)
+	updatedServiceAccount, err := sa.org.GetServiceAccountById(uuid)
 	if err != nil {
 		return err
 	}
@@ -154,7 +181,7 @@ func (sa *ServiceAccount) Refresh() error {
 
 // Revoke revokes the service account and its' API token and puts it back in 'Created' stage
 func (sa *ServiceAccount) Revoke() error {
-	client := sa.vcdClient.Client
+	client := sa.org.client
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccounts
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
@@ -177,7 +204,7 @@ func (sa *ServiceAccount) Revoke() error {
 
 // DeleteServiceAccountByID deletes a Service Account
 func (sa *ServiceAccount) Delete() error {
-	client := sa.vcdClient.Client
+	client := sa.org.client
 	if client.APIVCDMaxVersionIs("< 37.0") {
 		version, err := client.GetVcdFullVersion()
 		if err == nil {
@@ -198,25 +225,7 @@ func (sa *ServiceAccount) Delete() error {
 		return err
 	}
 
-	return err
-}
-
-// GetInitialApiToken gets the initial API token for the Service Account and sets it in `Active` status
-func (sa *ServiceAccount) GetInitialApiToken() (*types.ApiTokenRefresh, error) {
-	client := sa.vcdClient.Client
-	uuid := extractUuid(sa.ServiceAccount.ID)
-	data := bytes.NewBufferString(
-		fmt.Sprintf("grant_type=%s&client_id=%s&device_code=%s",
-			"urn:ietf:params:oauth:grant-type:device_code",
-			uuid,
-			sa.authParams.DeviceCode,
-		))
-
-	token, err := client.GetApiToken(sa.ServiceAccount.Org.Name, "37.0", "CreateServiceAccount", data)
-	if err != nil {
-		return nil, err
-	}
-	return token, nil
+	return nil
 }
 
 // SetServiceAccountApiToken gets the refresh token from a provided file, fetches
@@ -244,6 +253,7 @@ func (vcdClient *VCDClient) SetServiceAccountApiToken(org, apiTokenFile string) 
 	return nil
 }
 
+// SaveServiceAccountToFile saves the API token of the Service Account to a file
 func (vcdClient *VCDClient) SaveServiceAccountToFile(filename, tokentype string, saToken *types.ApiTokenRefresh) error {
 	return saveTokenToFile(filename, "Service Account", vcdClient.Client.UserAgent, saToken)
 }

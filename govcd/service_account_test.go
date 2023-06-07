@@ -18,26 +18,25 @@ func (vcd *TestVCD) Test_ServiceAccount(check *C) {
 		check.Skip("This test requires VCD 10.4.0 or greater")
 	}
 
-	saParams, err := vcd.client.RegisterServiceAccount(
-		vcd.config.Provider.SysOrg,
+	org, err := vcd.client.GetOrgByName(vcd.config.Provider.SysOrg)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	serviceAccount, err := org.CreateServiceAccount(
 		check.TestName(),
 		"urn:vcloud:role:System%20Administrator",
 		"12345678-1234-1234-1234-1234567890ab",
 		"",
 		"",
 	)
-
 	check.Assert(err, IsNil)
-	check.Assert(saParams, NotNil)
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccounts
-	urn, err := BuildUrnWithUuid("urn:vcloud:serviceAccount:", saParams.ClientID)
-	check.Assert(err, IsNil)
-
-	AddToCleanupListOpenApi(check.TestName(), check.TestName(), endpoint+urn)
-
-	serviceAccount, err := vcd.client.GetServiceAccountById(saParams.ClientID)
-	check.Assert(err, IsNil)
+	check.Assert(serviceAccount, NotNil)
 	check.Assert(serviceAccount.ServiceAccount.Status, Equals, "CREATED")
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccounts
+	check.Assert(err, IsNil)
+
+	AddToCleanupListOpenApi(check.TestName(), check.TestName(), endpoint+serviceAccount.ServiceAccount.ID)
 
 	err = serviceAccount.Authorize()
 	check.Assert(err, IsNil)
@@ -70,7 +69,7 @@ func (vcd *TestVCD) Test_ServiceAccount(check *C) {
 	err = serviceAccount.Delete()
 	check.Assert(err, IsNil)
 
-	notFound, err := vcd.client.GetServiceAccountById(serviceAccount.ServiceAccount.ID)
+	notFound, err := org.GetServiceAccountById(serviceAccount.ServiceAccount.ID)
 	check.Assert(err, NotNil)
 	check.Assert(notFound, IsNil)
 }

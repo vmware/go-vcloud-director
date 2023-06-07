@@ -32,26 +32,27 @@ type Token struct {
 // 1. Register the token through the `register` endpoint
 // 2. Fetch it using GetTokenById(tokenID)
 // The user then can use *Token.GetInitialRefreshToken to get the API token
-func (vcdClient *VCDClient) CreateToken(org, tokenName string) (*Token, error) {
-	if vcdClient.Client.APIVCDMaxVersionIs("< 36.1") {
-		version, err := vcdClient.Client.GetVcdFullVersion()
+func (org *Org) CreateToken(tokenName string) (*Token, error) {
+	client := org.client
+	if client.APIVCDMaxVersionIs("< 36.1") {
+		version, err := client.GetVcdFullVersion()
 		if err == nil {
 			return nil, fmt.Errorf("minimum version for API token is 10.3.1 - Version detected: %s", version.Version)
 		}
 		// If we can't get the VCD version, we return API version info
-		return nil, fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", vcdClient.Client.APIVersion)
+		return nil, fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", client.APIVersion)
 	}
 
 	apiTokenParams := &types.ApiTokenParams{
 		ClientName: tokenName,
 	}
 
-	apiTokenParams, err := vcdClient.RegisterToken(org, "36.1", apiTokenParams)
+	newTokenParams, err := org.RegisterToken("36.1", apiTokenParams)
 	if err != nil {
-		return nil, fmt.Errorf("failed to register token: %s", err)
+		return nil, fmt.Errorf("failed to register API token: %s", err)
 	}
 
-	token, err := vcdClient.GetTokenById(apiTokenParams.ClientID)
+	token, err := org.GetTokenById(newTokenParams.ClientID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token: %s", err)
 	}
@@ -60,14 +61,15 @@ func (vcdClient *VCDClient) CreateToken(org, tokenName string) (*Token, error) {
 }
 
 // GetTokenById retrieves a Token by ID
-func (vcdClient *VCDClient) GetTokenById(tokenId string) (*Token, error) {
-	if vcdClient.Client.APIVCDMaxVersionIs("< 36.1") {
-		version, err := vcdClient.Client.GetVcdFullVersion()
+func (org *Org) GetTokenById(tokenId string) (*Token, error) {
+	client := org.client
+	if client.APIVCDMaxVersionIs("< 36.1") {
+		version, err := client.GetVcdFullVersion()
 		if err == nil {
 			return nil, fmt.Errorf("minimum version for API token is 10.3.1 - Version detected: %s", version.Version)
 		}
 		// If we can't get the VCD version, we return API version info
-		return nil, fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", vcdClient.Client.APIVersion)
+		return nil, fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", client.APIVersion)
 	}
 
 	tokenUrn, err := BuildUrnWithUuid("urn:vcloud:token:", tokenId)
@@ -76,22 +78,22 @@ func (vcdClient *VCDClient) GetTokenById(tokenId string) (*Token, error) {
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTokens
-	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint, tokenUrn)
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, tokenUrn)
 	if err != nil {
 		return nil, err
 	}
 
 	apiToken := &Token{
 		Token:  &types.Token{},
-		client: &vcdClient.Client,
+		client: client,
 	}
 
-	err = vcdClient.Client.OpenApiGetItem(apiVersion, urlRef, nil, apiToken.Token, nil)
+	err = client.OpenApiGetItem(apiVersion, urlRef, nil, apiToken.Token, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token: %s", err)
 	}
@@ -99,49 +101,84 @@ func (vcdClient *VCDClient) GetTokenById(tokenId string) (*Token, error) {
 	return apiToken, nil
 }
 
-// SetApiToken behaves similarly to SetToken, with the difference that it will
-// return full information about the bearer token, so that the caller can make decisions about token expiration
-func (vcdClient *VCDClient) SetApiToken(org, apiToken string) (*types.ApiTokenRefresh, error) {
-	tokenRefresh, err := vcdClient.GetBearerTokenFromApiToken(org, apiToken)
-	if err != nil {
-		return nil, err
-	}
-	err = vcdClient.SetToken(org, BearerTokenHeader, tokenRefresh.AccessToken)
-	if err != nil {
-		return nil, err
-	}
-	return tokenRefresh, nil
-}
-
-// GetBearerTokenFromApiToken uses an API token to retrieve a bearer token
-// using the refresh token operation.
-func (vcdClient *VCDClient) GetBearerTokenFromApiToken(org, token string) (*types.ApiTokenRefresh, error) {
-	if vcdClient.Client.APIVCDMaxVersionIs("< 36.1") {
-		version, err := vcdClient.Client.GetVcdFullVersion()
+func (org *Org) GetAllTokens(queryParameters url.Values) ([]*Token, error) {
+	client := org.client
+	if client.APIVCDMaxVersionIs("< 36.1") {
+		version, err := client.GetVcdFullVersion()
 		if err == nil {
 			return nil, fmt.Errorf("minimum version for API token is 10.3.1 - Version detected: %s", version.Version)
 		}
 		// If we can't get the VCD version, we return API version info
-		return nil, fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", vcdClient.Client.APIVersion)
+		return nil, fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", client.APIVersion)
 	}
 
-	data := bytes.NewBufferString(fmt.Sprintf("grant_type=refresh_token&refresh_token=%s", token))
-	tokenDef, err := vcdClient.Client.GetApiToken(org, "36.1", "GetBearerTokenFromApiToken", data)
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTokens
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error getting bearer token: %s", err)
+		return nil, err
 	}
 
-	return tokenDef, nil
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	typeResponses := []*types.Token{{}}
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, nil, typeResponses, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get token: %s", err)
+	}
+
+	results := make([]*Token, len(typeResponses))
+	for sliceIndex := range typeResponses {
+		results[sliceIndex] = &Token{
+			Token:  typeResponses[sliceIndex],
+			client: client,
+		}
+	}
+
+	return results, nil
 }
 
-// RegisterToken creates(registers) a token with given parameters
-func (vcdClient *VCDClient) RegisterToken(org, apiVersion string, tokenParams *types.ApiTokenParams) (*types.ApiTokenParams, error) {
+// GetTokenByNameForCurrentUser retrieves a Token by name for the current user
+func (org *Org) GetTokenByNameForCurrentUser(tokenName string) (*Token, error) {
+	client := org.client
+	if client.APIVCDMaxVersionIs("< 36.1") {
+		version, err := client.GetVcdFullVersion()
+		if err == nil {
+			return nil, fmt.Errorf("minimum version for API token is 10.3.1 - Version detected: %s", version.Version)
+		}
+		// If we can't get the VCD version, we return API version info
+		return nil, fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", client.APIVersion)
+	}
+
+	queryParameters := url.Values{}
+	org.client.RemoveCustomHeader()
+
+	username := client.VCDHREF.User.Username()
+	queryParameters.Add("filter", fmt.Sprintf("name==%s;owner.name==%s;(typer==PROXY,type==REFRESH)", tokenName, username))
+
+	tokens, err := org.GetAllTokens(queryParameters)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get token by name and owner: %s", err)
+	}
+
+	token, err := oneOrError("name", tokenName, tokens)
+	if err != nil {
+		return nil, fmt.Errorf("more than one token found by name %s for owner %s: %s", tokenName, username, err)
+	}
+
+	return token, nil
+}
+
+func (org *Org) RegisterToken(apiVersion string, tokenParams *types.ApiTokenParams) (*types.ApiTokenParams, error) {
+	client := org.client
 	data, err := json.Marshal(tokenParams)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := vcdClient.Client.doTokenRequest(org, "register", apiVersion, "application/json", bytes.NewBuffer(data))
+	resp, err := client.doTokenRequest(org.orgName(), "register", apiVersion, "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return nil, err
 	}
@@ -160,20 +197,8 @@ func (vcdClient *VCDClient) RegisterToken(org, apiVersion string, tokenParams *t
 	return newTokenParams, nil
 }
 
-// SetApiTokenFile reads the API token file, sets the client's bearer
-// token and fetches a new API token for next authentication request
-// using SetApiToken
-func (vcdClient *VCDClient) SetApiTokenFromFile(org, apiTokenFile string) (*types.ApiTokenRefresh, error) {
-	apiToken, err := getApiTokenFromFile(org, apiTokenFile)
-	if err != nil {
-		return nil, err
-	}
-
-	return vcdClient.SetApiToken(org, apiToken.RefreshToken)
-}
-
 // GetApiToken gets an API token
-func (client *Client) GetApiToken(org, apiVersion string, funcName string, data *bytes.Buffer) (*types.ApiTokenRefresh, error) {
+func (client *Client) GetApiToken(org, apiVersion, funcName string, data *bytes.Buffer) (*types.ApiTokenRefresh, error) {
 	resp, err := client.doTokenRequest(org, "token", apiVersion, "application/x-www-form-urlencoded", data)
 	if err != nil {
 		return nil, err
@@ -297,20 +322,67 @@ func (token *Token) Delete() error {
 	return nil
 }
 
-// getApiTokenFromFile reads an API token from a given file
-func getApiTokenFromFile(org, apiTokenFile string) (*types.ApiTokenRefresh, error) {
+// SetApiToken behaves similarly to SetToken, with the difference that it will
+// return full information about the bearer token, so that the caller can make decisions about token expiration
+func (vcdClient *VCDClient) SetApiToken(org, apiToken string) (*types.ApiTokenRefresh, error) {
+	tokenRefresh, err := vcdClient.GetBearerTokenFromApiToken(org, apiToken)
+	if err != nil {
+		return nil, err
+	}
+	err = vcdClient.SetToken(org, BearerTokenHeader, tokenRefresh.AccessToken)
+	if err != nil {
+		return nil, err
+	}
+	return tokenRefresh, nil
+}
+
+// GetBearerTokenFromApiToken uses an API token to retrieve a bearer token
+// using the refresh token operation.
+func (vcdClient *VCDClient) GetBearerTokenFromApiToken(org, token string) (*types.ApiTokenRefresh, error) {
+	if vcdClient.Client.APIVCDMaxVersionIs("< 36.1") {
+		version, err := vcdClient.Client.GetVcdFullVersion()
+		if err == nil {
+			return nil, fmt.Errorf("minimum version for API token is 10.3.1 - Version detected: %s", version.Version)
+		}
+		// If we can't get the VCD version, we return API version info
+		return nil, fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", vcdClient.Client.APIVersion)
+	}
+
+	data := bytes.NewBufferString(fmt.Sprintf("grant_type=refresh_token&refresh_token=%s", token))
+	tokenDef, err := vcdClient.Client.GetApiToken(org, "36.1", "GetBearerTokenFromApiToken", data)
+	if err != nil {
+		return nil, fmt.Errorf("error getting bearer token: %s", err)
+	}
+
+	return tokenDef, nil
+}
+
+// SetApiTokenFile reads the API token file, sets the client's bearer
+// token and fetches a new API token for next authentication request
+// using SetApiToken
+func (vcdClient *VCDClient) SetApiTokenFromFile(org, apiTokenFile string) (*types.ApiTokenRefresh, error) {
+	apiToken, err := GetTokenFromFile(apiTokenFile)
+	if err != nil {
+		return nil, err
+	}
+
+	return vcdClient.SetApiToken(org, apiToken.RefreshToken)
+}
+
+func SaveApiTokenToFile(filename, userAgent string, apiToken *types.ApiTokenRefresh) error {
+	return saveTokenToFile(filename, "API Token", userAgent, apiToken)
+}
+
+// GetTokenFromFile reads an API token from a given file
+func GetTokenFromFile(tokenFilename string) (*types.ApiTokenRefresh, error) {
 	apiToken := &types.ApiTokenRefresh{}
 	// Read file contents and unmarshal them to apiToken
-	err := readFileAndUnmarshalJSON(apiTokenFile, apiToken)
+	err := readFileAndUnmarshalJSON(tokenFilename, apiToken)
 	if err != nil {
 		return nil, err
 	}
 
 	return apiToken, nil
-}
-
-func SaveApiTokenToFile(filename, userAgent string, apiToken *types.ApiTokenRefresh) error {
-	return saveTokenToFile(filename, "API Token", userAgent, apiToken)
 }
 
 func saveTokenToFile(filename, tokenType, userAgent string, token *types.ApiTokenRefresh) error {

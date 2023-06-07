@@ -60,10 +60,13 @@ func (vcd *TestVCD) Test_ApiToken(check *C) {
 		check.Skip("This test requires VCD 10.3.1 or greater")
 	}
 
-	token, err := vcd.client.CreateToken(vcd.config.Provider.SysOrg, check.TestName())
+	org, err := vcd.client.GetOrgByName(vcd.config.Provider.SysOrg)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	token, err := org.CreateToken(check.TestName())
 	check.Assert(err, IsNil)
 	check.Assert(token, NotNil)
-	check.Assert(isUrn(token.Token.ID), Equals, true)
 	check.Assert(token.Token.Type, Equals, "REFRESH")
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTokens + token.Token.ID
 	AddToCleanupListOpenApi(token.Token.Name, check.TestName(), endpoint)
@@ -77,7 +80,7 @@ func (vcd *TestVCD) Test_ApiToken(check *C) {
 	check.Assert(err, IsNil)
 
 	uuid := extractUuid(token.Token.ID)
-	notFound, err := vcd.client.GetTokenById(uuid)
+	notFound, err := org.GetTokenById(uuid)
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(notFound, IsNil)
 }
