@@ -1,4 +1,4 @@
-//go:build functional || openapi || plugin || ALL
+//go:build functional || openapi || uiPlugin || ALL
 
 package govcd
 
@@ -15,7 +15,7 @@ import (
 )
 
 func init() {
-	testingTags["plugin"] = "ui_plugin_test.go"
+	testingTags["uiPlugin"] = "ui_plugin_test.go"
 }
 
 // This object is equivalent to the manifest.json that is inside the ../test-resources/ui_plugin.zip file
