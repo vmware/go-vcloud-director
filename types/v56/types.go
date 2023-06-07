@@ -3256,11 +3256,11 @@ type UpdateVdcStorageProfiles struct {
 }
 
 type Token struct {
-	ID    string `json:"id,omitempty"`
-	Name  string `json:"name,omitempty"`
-	Owner Owner  `json:"owner,omitempty"`
-	Org   Org    `json:"org,omitempty"`
-	Type  string `json:"type,omitempty"`
+	ID    string            `json:"id,omitempty"`
+	Name  string            `json:"name,omitempty"`
+	Owner *OpenApiReference `json:"owner,omitempty"`
+	Org   *OpenApiReference `json:"org,omitempty"`
+	Type  string            `json:"type,omitempty"`
 }
 
 type ServiceAccount struct {

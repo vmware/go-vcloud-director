@@ -59,8 +59,8 @@ func (org *Org) GetServiceAccountById(serviceAccountId string) (*ServiceAccount,
 }
 
 // RegisterServiceAccount creates a Service Account and sets it in `Created` status
-func (org *Org) CreateServiceAccount(name, scope, softwareId, softwareVersion, clientUri string) (*ServiceAccount, error) {
-	client := org.client
+func (vcdClient *VCDClient) CreateServiceAccount(orgName, name, scope, softwareId, softwareVersion, clientUri string) (*ServiceAccount, error) {
+	client := vcdClient.Client
 	if client.APIVCDMaxVersionIs("< 37.1") {
 		version, err := client.GetVcdFullVersion()
 		if err == nil {
@@ -78,9 +78,14 @@ func (org *Org) CreateServiceAccount(name, scope, softwareId, softwareVersion, c
 		ClientURI:       clientUri,
 	}
 
-	newSaParams, err := org.RegisterToken("37.0", saParams)
+	newSaParams, err := vcdClient.RegisterToken(orgName, "37.0", saParams)
 	if err != nil {
 		return nil, fmt.Errorf("failed to register Service account: %s", err)
+	}
+
+	org, err := vcdClient.GetOrgByName(orgName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Org by name: %s", err)
 	}
 
 	serviceAccount, err := org.GetServiceAccountById(newSaParams.ClientID)
@@ -138,7 +143,15 @@ func (sa *ServiceAccount) Grant() error {
 		return err
 	}
 
-	err = client.OpenApiPostItem("37.0", urlRef, nil, userCode, nil, nil)
+	var tenantHeaders map[string]string
+	if client.IsSysAdmin {
+		tenantHeaders = map[string]string{
+			types.HeaderAuthContext:   sa.org.TenantContext.OrgName,
+			types.HeaderTenantContext: sa.org.TenantContext.OrgId,
+		}
+	}
+
+	err = client.OpenApiPostItem("37.0", urlRef, nil, userCode, nil, tenantHeaders)
 	if err != nil {
 		return err
 	}

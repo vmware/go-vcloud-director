@@ -32,8 +32,8 @@ type Token struct {
 // 1. Register the token through the `register` endpoint
 // 2. Fetch it using GetTokenById(tokenID)
 // The user then can use *Token.GetInitialRefreshToken to get the API token
-func (org *Org) CreateToken(tokenName string) (*Token, error) {
-	client := org.client
+func (vcdClient *VCDClient) CreateToken(org, tokenName string) (*Token, error) {
+	client := vcdClient.Client
 	if client.APIVCDMaxVersionIs("< 36.1") {
 		version, err := client.GetVcdFullVersion()
 		if err == nil {
@@ -47,12 +47,12 @@ func (org *Org) CreateToken(tokenName string) (*Token, error) {
 		ClientName: tokenName,
 	}
 
-	newTokenParams, err := org.RegisterToken("36.1", apiTokenParams)
+	newTokenParams, err := vcdClient.RegisterToken(org, "36.1", apiTokenParams)
 	if err != nil {
 		return nil, fmt.Errorf("failed to register API token: %s", err)
 	}
 
-	token, err := org.GetTokenById(newTokenParams.ClientID)
+	token, err := vcdClient.GetTokenById(newTokenParams.ClientID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token: %s", err)
 	}
@@ -61,8 +61,8 @@ func (org *Org) CreateToken(tokenName string) (*Token, error) {
 }
 
 // GetTokenById retrieves a Token by ID
-func (org *Org) GetTokenById(tokenId string) (*Token, error) {
-	client := org.client
+func (vcdClient *VCDClient) GetTokenById(tokenId string) (*Token, error) {
+	client := vcdClient.Client
 	if client.APIVCDMaxVersionIs("< 36.1") {
 		version, err := client.GetVcdFullVersion()
 		if err == nil {
@@ -90,7 +90,7 @@ func (org *Org) GetTokenById(tokenId string) (*Token, error) {
 
 	apiToken := &Token{
 		Token:  &types.Token{},
-		client: client,
+		client: &client,
 	}
 
 	err = client.OpenApiGetItem(apiVersion, urlRef, nil, apiToken.Token, nil)
@@ -101,8 +101,8 @@ func (org *Org) GetTokenById(tokenId string) (*Token, error) {
 	return apiToken, nil
 }
 
-func (org *Org) GetAllTokens(queryParameters url.Values) ([]*Token, error) {
-	client := org.client
+func (vcdClient *VCDClient) GetAllTokens(queryParameters url.Values) ([]*Token, error) {
+	client := vcdClient.Client
 	if client.APIVCDMaxVersionIs("< 36.1") {
 		version, err := client.GetVcdFullVersion()
 		if err == nil {
@@ -124,25 +124,25 @@ func (org *Org) GetAllTokens(queryParameters url.Values) ([]*Token, error) {
 	}
 
 	typeResponses := []*types.Token{{}}
-	err = client.OpenApiGetAllItems(apiVersion, urlRef, nil, typeResponses, nil)
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get token: %s", err)
+		return nil, fmt.Errorf("failed to get tokens: %s", err)
 	}
 
 	results := make([]*Token, len(typeResponses))
 	for sliceIndex := range typeResponses {
 		results[sliceIndex] = &Token{
 			Token:  typeResponses[sliceIndex],
-			client: client,
+			client: &client,
 		}
 	}
 
 	return results, nil
 }
 
-// GetTokenByNameForCurrentUser retrieves a Token by name for the current user
-func (org *Org) GetTokenByNameForCurrentUser(tokenName string) (*Token, error) {
-	client := org.client
+// GetTokenByNameForCurrentUser retrieves a Token by name and username
+func (vcdClient *VCDClient) GetTokenByNameAndUsername(tokenName, userName string) (*Token, error) {
+	client := vcdClient.Client
 	if client.APIVCDMaxVersionIs("< 36.1") {
 		version, err := client.GetVcdFullVersion()
 		if err == nil {
@@ -153,32 +153,29 @@ func (org *Org) GetTokenByNameForCurrentUser(tokenName string) (*Token, error) {
 	}
 
 	queryParameters := url.Values{}
-	org.client.RemoveCustomHeader()
+	queryParameters.Add("filter", fmt.Sprintf("(name==%s;owner.name==%s;(type==PROXY,type==REFRESH))", tokenName, userName))
 
-	username := client.VCDHREF.User.Username()
-	queryParameters.Add("filter", fmt.Sprintf("name==%s;owner.name==%s;(typer==PROXY,type==REFRESH)", tokenName, username))
-
-	tokens, err := org.GetAllTokens(queryParameters)
+	tokens, err := vcdClient.GetAllTokens(queryParameters)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token by name and owner: %s", err)
 	}
 
 	token, err := oneOrError("name", tokenName, tokens)
 	if err != nil {
-		return nil, fmt.Errorf("more than one token found by name %s for owner %s: %s", tokenName, username, err)
+		return nil, err
 	}
 
 	return token, nil
 }
 
-func (org *Org) RegisterToken(apiVersion string, tokenParams *types.ApiTokenParams) (*types.ApiTokenParams, error) {
-	client := org.client
+func (vcdClient *VCDClient) RegisterToken(org, apiVersion string, tokenParams *types.ApiTokenParams) (*types.ApiTokenParams, error) {
+	client := vcdClient.Client
 	data, err := json.Marshal(tokenParams)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := client.doTokenRequest(org.orgName(), "register", apiVersion, "application/json", bytes.NewBuffer(data))
+	resp, err := client.doTokenRequest(org, "register", apiVersion, "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return nil, err
 	}
