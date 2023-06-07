@@ -901,7 +901,9 @@ func filterMetadata(allMetadata *types.Metadata, metadataToIgnore []IgnoredMetad
 		for _, entryToIgnore := range metadataToIgnore {
 			if !entryToIgnore.KeyRegex.MatchString(originalEntry.Key) &&
 				!entryToIgnore.ValueRegex.MatchString(originalEntry.TypedValue.Value) &&
-				!(entryToIgnore.Type != nil && *entryToIgnore.Type == originalEntry.TypedValue.XsiType) {
+				!(entryToIgnore.Type != nil && *entryToIgnore.Type == originalEntry.TypedValue.XsiType) &&
+				!(entryToIgnore.UserAccess != nil && originalEntry.Domain != nil && *entryToIgnore.UserAccess == originalEntry.Domain.Visibility) &&
+				!(entryToIgnore.IsSystem != nil && originalEntry.Domain != nil && *entryToIgnore.IsSystem == (originalEntry.Domain.Domain == "SYSTEM")) {
 
 				filteredMetadata.MetadataEntry = append(filteredMetadata.MetadataEntry, originalEntry)
 			}
