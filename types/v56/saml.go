@@ -123,8 +123,8 @@ type OrgFederationSettings struct {
 	EncryptionCertificateExpiration string   `xml:"EncryptionCertificateExpiration" json:"encryptionCertificateExpiration"`
 	SamlSPEntityID                  string   `xml:"SamlSPEntityId" json:"samlSPEntityId"`
 	SamlAttributeMapping            struct {
-		Href                   string   `xml:"href,attr" json:"href"`
-		Type                   string   `xml:"type,attr" json:"type"`
+		Href                   string   `xml:"href,attr,omitempty" json:"href,omitempty"`
+		Type                   string   `xml:"type,attr,omitempty" json:"type,omitempty"`
 		Link                   LinkList `xml:"Link,omitempty" json:"link,omitempty"`
 		EmailAttributeName     string   `xml:"EmailAttributeName,omitempty" json:"emailAttributeName,omitempty"`
 		UserNameAttributeName  string   `xml:"UserNameAttributeName,omitempty" json:"userNameAttributeName,omitempty"`

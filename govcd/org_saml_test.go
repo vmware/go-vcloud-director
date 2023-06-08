@@ -57,6 +57,13 @@ func (vcd *TestVCD) Test_OrgSamlSettingsCRUD(check *C) {
 	settings.SAMLMetadata = string(metadataText)
 	settings.SamlSPEntityID = "dummyId"
 	settings.Enabled = true
+	settings.SamlAttributeMapping.EmailAttributeName = "abcd.xyz.example.com"
+	settings.SamlAttributeMapping.UserNameAttributeName = "abcd"
+	settings.SamlAttributeMapping.FirstNameAttributeName = "abcd"
+	settings.SamlAttributeMapping.SurnameAttributeName = "xyz"
+	settings.SamlAttributeMapping.FullNameAttributeName = "abcd xyz"
+	settings.SamlAttributeMapping.RoleAttributeName = "somerole"
+	settings.SamlAttributeMapping.GroupAttributeName = "somegroup"
 	// Use a service provider metadata, without proper namespace settings: expecting an error
 	newSetting, err := adminOrg.SetFederationSettings(settings)
 	check.Assert(err, NotNil)
