@@ -130,7 +130,7 @@ type OrgFederationSettings struct {
 		UserNameAttributeName  string   `xml:"UserNameAttributeName,omitempty" json:"userNameAttributeName,omitempty"`
 		FirstNameAttributeName string   `xml:"FirstNameAttributeName,omitempty" json:"firstNameAttributeName,omitempty"`
 		SurnameAttributeName   string   `xml:"SurnameAttributeName,omitempty" json:"surnameAttributeName,omitempty"`
-		FullNameAttributeName  string   `xml:"FullNameAttributeName,omitempty" json:"FullNameAttributeName,omitempty"`
+		FullNameAttributeName  string   `xml:"FullNameAttributeName,omitempty" json:"fullNameAttributeName,omitempty"`
 		GroupAttributeName     string   `xml:"GroupAttributeName,omitempty" json:"groupAttributeName,omitempty"`
 		RoleAttributeName      string   `xml:"RoleAttributeName,omitempty" json:"roleAttributeName,omitempty"`
 	} `xml:"SamlAttributeMapping,omitempty" json:"samlAttributeMapping,omitempty"`

@@ -55,7 +55,6 @@ func (adminOrg *AdminOrg) SetFederationSettings(settings *types.OrgFederationSet
 	if fsUrl == "" {
 		return nil, fmt.Errorf("no URL found for federation settings (SAML) in Org %s", adminOrg.AdminOrg.Name)
 	}
-	var newSettings types.OrgFederationSettings
 
 	setUrl, err := url.Parse(fsUrl)
 	if err != nil {
@@ -104,7 +103,7 @@ func (adminOrg *AdminOrg) SetFederationSettings(settings *types.OrgFederationSet
 		return nil, err
 	}
 
-	return &newSettings, nil
+	return adminOrg.GetFederationSettings()
 }
 
 // UnsetFederationSettings removes federation (SAML) settings for a given organization
