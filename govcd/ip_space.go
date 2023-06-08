@@ -220,7 +220,7 @@ func (ipSpace *IpSpace) Delete() error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("error deleting IP space: %s", err)
+		return fmt.Errorf("error deleting IP Space: %s", err)
 	}
 
 	return nil

@@ -188,6 +188,16 @@ func (vdcGroup *VdcGroup) getTenantContext() (*TenantContext, error) {
 	return org.tenantContext()
 }
 
+// getTenantContext retrieves the tenant context for a VdcGroup
+func (ipSpaceAllocation *IpSpaceIpAllocation) getTenantContext() (*TenantContext, error) {
+	org := ipSpaceAllocation.parent
+
+	if org == nil {
+		return nil, fmt.Errorf("IP Space IP Allocation %s has no parent", ipSpaceAllocation.IpSpaceIpAllocation.Description)
+	}
+	return org.tenantContext()
+}
+
 func (egw *NsxtEdgeGateway) getTenantContext() (*TenantContext, error) {
 	if egw != nil && egw.EdgeGateway.Org != nil {
 		if egw.EdgeGateway.Org.Name == "" || egw.EdgeGateway.Org.ID == "" {
