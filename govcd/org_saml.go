@@ -116,7 +116,6 @@ func (adminOrg *AdminOrg) UnsetFederationSettings() error {
 
 	settings.SAMLMetadata = ""
 	settings.Enabled = false
-	settings.SamlSPEntityID = ""
 	_, err = adminOrg.SetFederationSettings(settings)
 	return err
 }

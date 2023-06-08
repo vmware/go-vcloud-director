@@ -55,6 +55,7 @@ func (vcd *TestVCD) Test_OrgSamlSettingsCRUD(check *C) {
 	metadataText, err := xml.Marshal(metadata)
 	check.Assert(err, IsNil)
 	settings.SAMLMetadata = string(metadataText)
+	settings.SamlSPEntityID = "dummyId"
 	settings.Enabled = true
 	// Use a service provider metadata, without proper namespace settings: expecting an error
 	newSetting, err := adminOrg.SetFederationSettings(settings)
@@ -82,7 +83,7 @@ func (vcd *TestVCD) Test_OrgSamlSettingsCRUD(check *C) {
 	check.Assert(err, IsNil)
 	newSettings, err := adminOrg.GetFederationSettings()
 	check.Assert(err, IsNil)
-	check.Assert(newSettings.SamlSPEntityID, Equals, "")
+	check.Assert(newSettings.SamlSPEntityID, Equals, "dummyId")
 	check.Assert(newSettings.Enabled, Equals, false)
 
 	err = adminOrg.Disable()
