@@ -122,7 +122,7 @@ type OrgFederationSettings struct {
 	SigningCertificateExpiration    string   `xml:"SigningCertificateExpiration" json:"signingCertificateExpiration"`
 	EncryptionCertificateExpiration string   `xml:"EncryptionCertificateExpiration" json:"encryptionCertificateExpiration"`
 	SamlSPEntityID                  string   `xml:"SamlSPEntityId" json:"samlSPEntityId"`
-	SamlAttributeMapping            struct {
+	SamlAttributeMapping            struct { // The names of SAML attributes used to populate user profiles.
 		Href                   string   `xml:"href,attr,omitempty" json:"href,omitempty"`
 		Type                   string   `xml:"type,attr,omitempty" json:"type,omitempty"`
 		Link                   LinkList `xml:"Link,omitempty" json:"link,omitempty"`
