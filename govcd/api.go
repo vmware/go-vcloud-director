@@ -23,7 +23,9 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
+// TODO
 type IgnoredMetadata struct {
+	ObjectName *string
 	KeyRegex   *regexp.Regexp
 	ValueRegex *regexp.Regexp
 	Type       *string
@@ -777,6 +779,19 @@ func (client *Client) RemoveProvidedCustomHeaders(values map[string]string) {
 			client.customHeader.Del(k)
 		}
 	}
+}
+
+// getObjectType returns the type of the object referenced by the input, which can be a URN or a HREF.
+// For example, "urn:vcloud:org:51a13c50-4a40-4c15-8184-da8ebf4f71a1" will return "org", and
+// "https://my-vcd.com/cloudapi/1.0.0/orgs/urn:vcloud:org:11582a00-16bb-4916-a42f-2d5e453ccf36" will return also
+// "org"
+func getObjectType(input string) (string, error) {
+	regex := regexp.MustCompile(`urn:vcloud:(\S+):[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}`)
+	results := regex.FindStringSubmatch(input)
+	if len(results) < 2 {
+		return "", fmt.Errorf("could not find any object type in the provided input '%s'", input)
+	}
+	return results[1], nil
 }
 
 // Retrieves the administrator URL of a given HREF

@@ -745,7 +745,7 @@ func getMetadataByKey(client *Client, requestUri, key string, isSystem bool) (*t
 	if err != nil {
 		return nil, err
 	}
-	return filterSingleMetadataEntry(key, metadata, client.IgnoredMetadata)
+	return filterSingleMetadataEntry(key, requestUri, metadata, client.IgnoredMetadata)
 }
 
 // getMetadata is a generic function to retrieve metadata from VCD
@@ -756,7 +756,7 @@ func getMetadata(client *Client, requestUri string) (*types.Metadata, error) {
 	if err != nil {
 		return nil, err
 	}
-	return filterMetadata(metadata, client.IgnoredMetadata), nil
+	return filterMetadata(metadata, requestUri, client.IgnoredMetadata)
 }
 
 // addMetadata adds metadata to an entity.
@@ -790,7 +790,7 @@ func addMetadata(client *Client, requestUri, key, value, typedValue, visibility 
 		}
 	}
 
-	_, err := filterSingleMetadataEntry(key, newMetadata, client.IgnoredMetadata)
+	_, err := filterSingleMetadataEntry(key, requestUri, newMetadata, client.IgnoredMetadata)
 	if err != nil {
 		return Task{}, err
 	}
@@ -842,7 +842,12 @@ func mergeAllMetadata(client *Client, requestUri string, metadata map[string]typ
 	apiEndpoint := urlParseRequestURI(requestUri)
 	apiEndpoint.Path += "/metadata"
 
-	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost, types.MimeMetaData, "error merging metadata: %s", filterMetadata(newMetadata, client.IgnoredMetadata))
+	filteredMetadata, err := filterMetadata(newMetadata, requestUri, client.IgnoredMetadata)
+	if err != nil {
+		return Task{}, err
+	}
+
+	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost, types.MimeMetaData, "error merging metadata: %s", filteredMetadata)
 }
 
 // mergeAllMetadata updates the metadata values that are already present in VCD and creates the ones not present.
@@ -867,10 +872,9 @@ func deleteMetadata(client *Client, requestUri string, key string, isSystem bool
 		apiEndpoint.Path += "/metadata/" + key
 	}
 
-	for _, ignoredEntry := range client.IgnoredMetadata {
-		if ignoredEntry.KeyRegex.MatchString(key) {
-			return Task{}, fmt.Errorf("can't delete metadata entry %s as it is ignored", key)
-		}
+	err := filterMetadataToDelete(key, requestUri, client.IgnoredMetadata)
+	if err != nil {
+		return Task{}, err
 	}
 
 	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodDelete, "", "error deleting metadata: %s", nil)
@@ -887,7 +891,12 @@ func deleteMetadataAndWait(client *Client, requestUri string, key string, isSyst
 }
 
 // TODO
-func filterMetadata(allMetadata *types.Metadata, metadataToIgnore []IgnoredMetadata) *types.Metadata {
+func filterMetadata(allMetadata *types.Metadata, href string, metadataToIgnore []IgnoredMetadata) (*types.Metadata, error) {
+	objectType, err := getObjectType(href)
+	if err != nil {
+		return nil, err
+	}
+
 	filteredMetadata := &types.Metadata{
 		XMLName:       allMetadata.XMLName,
 		Xmlns:         allMetadata.Xmlns,
@@ -899,8 +908,9 @@ func filterMetadata(allMetadata *types.Metadata, metadataToIgnore []IgnoredMetad
 	}
 	for _, originalEntry := range allMetadata.MetadataEntry {
 		for _, entryToIgnore := range metadataToIgnore {
-			if !entryToIgnore.KeyRegex.MatchString(originalEntry.Key) &&
-				!entryToIgnore.ValueRegex.MatchString(originalEntry.TypedValue.Value) &&
+			if !(entryToIgnore.ObjectName != nil && *entryToIgnore.ObjectName == objectType) &&
+				!(entryToIgnore.KeyRegex != nil && entryToIgnore.KeyRegex.MatchString(originalEntry.Key)) &&
+				!(entryToIgnore.ValueRegex != nil && entryToIgnore.ValueRegex.MatchString(originalEntry.TypedValue.Value)) &&
 				!(entryToIgnore.Type != nil && *entryToIgnore.Type == originalEntry.TypedValue.XsiType) &&
 				!(entryToIgnore.UserAccess != nil && originalEntry.Domain != nil && *entryToIgnore.UserAccess == originalEntry.Domain.Visibility) &&
 				!(entryToIgnore.IsSystem != nil && originalEntry.Domain != nil && *entryToIgnore.IsSystem == (originalEntry.Domain.Domain == "SYSTEM")) {
@@ -909,15 +919,40 @@ func filterMetadata(allMetadata *types.Metadata, metadataToIgnore []IgnoredMetad
 			}
 		}
 	}
-	return filteredMetadata
+	return filteredMetadata, nil
 }
 
 // TODO
-func filterSingleMetadataEntry(key string, metadataEntry *types.MetadataValue, metadataToIgnore []IgnoredMetadata) (*types.MetadataValue, error) {
+func filterSingleMetadataEntry(key, href string, metadataEntry *types.MetadataValue, metadataToIgnore []IgnoredMetadata) (*types.MetadataValue, error) {
+	objectType, err := getObjectType(href)
+	if err != nil {
+		return nil, err
+	}
 	for _, entryToIgnore := range metadataToIgnore {
-		if entryToIgnore.KeyRegex.MatchString(key) {
-			return nil, fmt.Errorf("not found")
+		if !(entryToIgnore.ObjectName != nil && *entryToIgnore.ObjectName == objectType) &&
+			!(entryToIgnore.KeyRegex != nil && entryToIgnore.KeyRegex.MatchString(key)) &&
+			!(entryToIgnore.ValueRegex != nil && entryToIgnore.ValueRegex.MatchString(metadataEntry.TypedValue.Value)) &&
+			!(entryToIgnore.Type != nil && *entryToIgnore.Type == metadataEntry.TypedValue.XsiType) &&
+			!(entryToIgnore.UserAccess != nil && metadataEntry.Domain != nil && *entryToIgnore.UserAccess == metadataEntry.Domain.Visibility) &&
+			!(entryToIgnore.IsSystem != nil && metadataEntry.Domain != nil && *entryToIgnore.IsSystem == (metadataEntry.Domain.Domain == "SYSTEM")) {
+			return nil, fmt.Errorf("the entry with key '%s' and value '%v' is being ignored", key, *metadataEntry)
 		}
 	}
 	return metadataEntry, nil
+}
+
+// TODO
+func filterMetadataToDelete(key, href string, metadataToIgnore []IgnoredMetadata) error {
+	objectType, err := getObjectType(href)
+	if err != nil {
+		return err
+	}
+	for _, entryToIgnore := range metadataToIgnore {
+		if (entryToIgnore.KeyRegex != nil && entryToIgnore.KeyRegex.MatchString(key)) &&
+			(entryToIgnore.ObjectName != nil && *entryToIgnore.ObjectName == objectType) {
+			return fmt.Errorf("can't delete metadata entry %s as it is ignored", key)
+		}
+	}
+	return nil
+
 }

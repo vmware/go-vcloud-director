@@ -8,6 +8,7 @@ package govcd
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
@@ -274,6 +275,41 @@ func (vcd *TestVCD) TestCatalogItemMetadata(check *C) {
 	}
 
 	testMetadataCRUDActions(catalogItem, check, nil)
+}
+
+func (vcd *TestVCD) TestIgnoreMetadata(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	err = adminOrg.AddMetadataEntryWithVisibility("foo", "bar", types.MetadataStringValue, types.MetadataReadWriteVisibility, false)
+	check.Assert(err, IsNil)
+
+	vcd.client.Client.IgnoredMetadata = []IgnoredMetadata{
+		{
+			ObjectName: nil,
+			KeyRegex:   regexp.MustCompile(`^fo[a-z]$`),
+			ValueRegex: regexp.MustCompile(`^b[a-z]r$`),
+			Type:       nil,
+			UserAccess: nil,
+			IsSystem:   nil,
+		},
+	}
+
+	singleMetadata, err := adminOrg.GetMetadataByKey("foo", false)
+	check.Assert(err, NotNil)
+	check.Assert(singleMetadata, IsNil)
+	check.Assert(err, NotNil)
+
+	vcd.client.Client.IgnoredMetadata = nil
+	err = adminOrg.DeleteMetadataEntryWithDomain("foo", false)
+	check.Assert(err, IsNil)
+	metadata, err := adminOrg.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	check.Assert(len(metadata.MetadataEntry), Equals, 0)
 }
 
 // metadataCompatible allows centralizing and generalizing the tests for metadata compatible resources.
