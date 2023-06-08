@@ -77,7 +77,7 @@ func (vcdClient *VCDClient) GetAllIpSpaceSummaries(queryParameters url.Values) (
 		return nil, err
 	}
 
-	// Wrap all typeResponses into DefinedEntityType types with client
+	// Wrap all typeResponses into IpSpace types with client
 	results := make([]*IpSpace, len(typeResponses))
 	for sliceIndex := range typeResponses {
 		results[sliceIndex] = &IpSpace{
