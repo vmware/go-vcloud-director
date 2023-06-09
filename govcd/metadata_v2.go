@@ -970,7 +970,7 @@ func filterMetadataToDelete(key, href string, metadataToIgnore []IgnoredMetadata
 
 // getMetadataObjectTypeFromHref returns the type of the object referenced by the input HREF.
 // For example, "https://atl1-vcd-static-130-117.eng.vmware.com/api/admin/org/11582a00-16bb-4916-a42f-2d5e453ccf36"
-// will return also "org".
+// will return "org".
 func getMetadataObjectTypeFromHref(href string) (string, error) {
 	splitHref := strings.Split(href, "/")
 	if len(splitHref) < 2 {
