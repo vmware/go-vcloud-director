@@ -109,15 +109,25 @@ func (vcd *TestVCD) Test_OrgSamlSettingsCRUD(check *C) {
 	check.Assert(err, IsNil)
 }
 
-func (vcd *TestVCD) TestClient_RetrieveSamlMetadata(check *C) {
+func (vcd *TestVCD) TestClient_RetrieveRemoteDoc(check *C) {
 	// samltest.id is a well known test site for SAML services
 	metadataUrl := "https://samltest.id/saml/idp"
 	metadata, err := vcd.client.Client.RetrieveRemoteDocument(metadataUrl)
 	check.Assert(err, IsNil)
 	check.Assert(metadata, NotNil)
 	errors := ValidateSamlServiceProviderMetadata(string(metadata))
-	if errors != nil {
-		fmt.Printf("%s\n", GetErrorMessageFromErrorSlice(errors))
+	check.Assert(errors, IsNil)
+}
+
+func (vcd *TestVCD) TestClient_RetrieveRemoteSamlMetadata(check *C) {
+	if vcd.config.VCD.Org == "" {
+		check.Skip("No organization found")
 	}
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+	metadataText, err := adminOrg.RetrieveServiceProviderSamlMetadata()
+	check.Assert(err, IsNil)
+	errors := ValidateSamlServiceProviderMetadata(metadataText)
 	check.Assert(errors, IsNil)
 }

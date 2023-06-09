@@ -111,8 +111,6 @@ type AdfsAuthResponseEnvelope struct {
 
 // OrgFederationSettings is the structure used to set SAML identity service for an organization
 type OrgFederationSettings struct {
-	//XMLName                         xml.Name `xml:"OrgFederationSettings"`
-	//Xmlns                           string   `xml:"xmlns,attr" json:"xmlns"`
 	Href                            string   `xml:"href,attr,omitempty" json:"href,omitempty"`
 	Type                            string   `xml:"type,attr,omitempty" json:"type,omitempty"`
 	Link                            LinkList `xml:"Link,omitempty" json:"link,omitempty"`

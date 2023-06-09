@@ -165,6 +165,8 @@ func getUrlFromLink(linkList types.LinkList, wantRel, wantType string) string {
 }
 
 var (
+	// samlMetadataItems contains name space identifiers and corresponding tags
+	// that should be found in VCD SAML service provider metadata
 	samlMetadataItems = map[string][]string{
 		"ds": {
 			"KeyInfo",
