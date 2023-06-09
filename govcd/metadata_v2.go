@@ -892,9 +892,8 @@ func deleteMetadataAndWait(client *Client, requestUri string, key string, isSyst
 
 // TODO
 func filterMetadata(allMetadata *types.Metadata, href string, metadataToIgnore []IgnoredMetadata) (*types.Metadata, error) {
-	objectType, err := getObjectType(href)
-	if err != nil {
-		return nil, err
+	if len(metadataToIgnore) == 0 {
+		return allMetadata, nil
 	}
 
 	filteredMetadata := &types.Metadata{
@@ -907,16 +906,9 @@ func filterMetadata(allMetadata *types.Metadata, href string, metadataToIgnore [
 		MetadataEntry: []*types.MetadataEntry{},
 	}
 	for _, originalEntry := range allMetadata.MetadataEntry {
-		for _, entryToIgnore := range metadataToIgnore {
-			if !(entryToIgnore.ObjectName != nil && *entryToIgnore.ObjectName == objectType) &&
-				!(entryToIgnore.KeyRegex != nil && entryToIgnore.KeyRegex.MatchString(originalEntry.Key)) &&
-				!(entryToIgnore.ValueRegex != nil && entryToIgnore.ValueRegex.MatchString(originalEntry.TypedValue.Value)) &&
-				!(entryToIgnore.Type != nil && *entryToIgnore.Type == originalEntry.TypedValue.XsiType) &&
-				!(entryToIgnore.UserAccess != nil && originalEntry.Domain != nil && *entryToIgnore.UserAccess == originalEntry.Domain.Visibility) &&
-				!(entryToIgnore.IsSystem != nil && originalEntry.Domain != nil && *entryToIgnore.IsSystem == (originalEntry.Domain.Domain == "SYSTEM")) {
-
-				filteredMetadata.MetadataEntry = append(filteredMetadata.MetadataEntry, originalEntry)
-			}
+		_, err := filterSingleMetadataEntry(originalEntry.Key, href, &types.MetadataValue{Domain: originalEntry.Domain, TypedValue: originalEntry.TypedValue}, metadataToIgnore)
+		if err == nil {
+			filteredMetadata.MetadataEntry = append(filteredMetadata.MetadataEntry, originalEntry)
 		}
 	}
 	return filteredMetadata, nil
@@ -924,17 +916,27 @@ func filterMetadata(allMetadata *types.Metadata, href string, metadataToIgnore [
 
 // TODO
 func filterSingleMetadataEntry(key, href string, metadataEntry *types.MetadataValue, metadataToIgnore []IgnoredMetadata) (*types.MetadataValue, error) {
-	objectType, err := getObjectType(href)
+	if len(metadataToIgnore) == 0 {
+		return metadataEntry, nil
+	}
+
+	objectType, err := getMetadataObjectTypeFromHref(href)
 	if err != nil {
 		return nil, err
 	}
 	for _, entryToIgnore := range metadataToIgnore {
-		if !(entryToIgnore.ObjectName != nil && *entryToIgnore.ObjectName == objectType) &&
-			!(entryToIgnore.KeyRegex != nil && entryToIgnore.KeyRegex.MatchString(key)) &&
-			!(entryToIgnore.ValueRegex != nil && entryToIgnore.ValueRegex.MatchString(metadataEntry.TypedValue.Value)) &&
-			!(entryToIgnore.Type != nil && *entryToIgnore.Type == metadataEntry.TypedValue.XsiType) &&
-			!(entryToIgnore.UserAccess != nil && metadataEntry.Domain != nil && *entryToIgnore.UserAccess == metadataEntry.Domain.Visibility) &&
-			!(entryToIgnore.IsSystem != nil && metadataEntry.Domain != nil && *entryToIgnore.IsSystem == (metadataEntry.Domain.Domain == "SYSTEM")) {
+		if entryToIgnore.ObjectName == nil && entryToIgnore.KeyRegex == nil && entryToIgnore.ValueRegex == nil &&
+			entryToIgnore.Type == nil && entryToIgnore.UserAccess == nil && entryToIgnore.IsSystem == nil {
+			continue
+		}
+
+		if entryToIgnore.ObjectName == nil || *entryToIgnore.ObjectName == objectType &&
+			entryToIgnore.KeyRegex == nil || entryToIgnore.KeyRegex.MatchString(key) &&
+			entryToIgnore.ValueRegex == nil || entryToIgnore.ValueRegex.MatchString(metadataEntry.TypedValue.Value) &&
+			entryToIgnore.Type == nil || *entryToIgnore.Type == metadataEntry.TypedValue.XsiType &&
+			entryToIgnore.UserAccess == nil || *entryToIgnore.UserAccess == metadataEntry.Domain.Visibility &&
+			entryToIgnore.IsSystem == nil || (metadataEntry.Domain != nil && *entryToIgnore.IsSystem == (metadataEntry.Domain.Domain == "SYSTEM")) {
+
 			return nil, fmt.Errorf("the entry with key '%s' and value '%v' is being ignored", key, *metadataEntry)
 		}
 	}
@@ -943,16 +945,36 @@ func filterSingleMetadataEntry(key, href string, metadataEntry *types.MetadataVa
 
 // TODO
 func filterMetadataToDelete(key, href string, metadataToIgnore []IgnoredMetadata) error {
-	objectType, err := getObjectType(href)
+	if len(metadataToIgnore) == 0 {
+		return nil
+	}
+
+	objectType, err := getMetadataObjectTypeFromHref(href)
 	if err != nil {
 		return err
 	}
 	for _, entryToIgnore := range metadataToIgnore {
-		if (entryToIgnore.KeyRegex != nil && entryToIgnore.KeyRegex.MatchString(key)) &&
-			(entryToIgnore.ObjectName != nil && *entryToIgnore.ObjectName == objectType) {
+		if entryToIgnore.ObjectName == nil && entryToIgnore.KeyRegex == nil {
+			continue
+		}
+
+		if entryToIgnore.ObjectName == nil || *entryToIgnore.ObjectName == objectType &&
+			entryToIgnore.KeyRegex == nil || entryToIgnore.KeyRegex.MatchString(key) {
+
 			return fmt.Errorf("can't delete metadata entry %s as it is ignored", key)
 		}
 	}
 	return nil
 
+}
+
+// getMetadataObjectTypeFromHref returns the type of the object referenced by the input HREF.
+// For example, "https://atl1-vcd-static-130-117.eng.vmware.com/api/admin/org/11582a00-16bb-4916-a42f-2d5e453ccf36"
+// will return also "org".
+func getMetadataObjectTypeFromHref(href string) (string, error) {
+	splitHref := strings.Split(href, "/")
+	if len(splitHref) < 2 {
+		return "", fmt.Errorf("could not find any object type in the provided HREF '%s'", href)
+	}
+	return splitHref[len(splitHref)-2], nil
 }
