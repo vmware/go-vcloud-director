@@ -628,3 +628,10 @@ const (
 	IpSpacePublic  = "PUBLIC"
 	IpSpacePrivate = "PRIVATE"
 )
+
+// IP Space IP Allocation Types
+const (
+	IpSpaceIpAllocationUsedManual = "USED_MANUAL"
+	IpSpaceIpAllocationUsed       = "USED"
+	IpSpaceIpAllocationUnused     = "UNUSED"
+)

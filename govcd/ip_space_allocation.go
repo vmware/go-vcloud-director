@@ -63,22 +63,6 @@ func (org *Org) GetAllIpSpaceAllocations(ipSpaceId string, queryParameters url.V
 	return results, nil
 }
 
-// func (org *Org) GetIpSpaceAllocationByTypeAndName(ipSpaceId string, ipSpaceType string, queryParameters url.Values) (*IpSpaceIpAllocation, error) {
-// 	queryParams := queryParameterFilterAnd(fmt.Sprintf("type==%s", ipSpaceType), queryParameters)
-
-// 	results, err := org.GetAllIpSpaceAllocations(ipSpaceId, queryParams)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error retrieving IP allocations: %s", err)
-// 	}
-
-// 	singleResult, err := oneOrError("type", ipSpaceType, results)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return singleResult, nil
-// }
-
 func (org *Org) GetIpSpaceAllocationByTypeAndValue(ipSpaceId string, allocationType, value string, queryParameters url.Values) (*IpSpaceIpAllocation, error) {
 	queryParams := queryParameterFilterAnd(fmt.Sprintf("value==%s;type==%s", value, allocationType), queryParameters)
 
