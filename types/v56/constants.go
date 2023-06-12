@@ -629,9 +629,15 @@ const (
 	IpSpacePrivate = "PRIVATE"
 )
 
-// IP Space IP Allocation Types
+// IP Space IP Allocation Reservation Types
 const (
 	IpSpaceIpAllocationUsedManual = "USED_MANUAL"
 	IpSpaceIpAllocationUsed       = "USED"
 	IpSpaceIpAllocationUnused     = "UNUSED"
+)
+
+// IP Space IP Allocation Types
+const (
+	IpSpaceIpAllocationTypeFloatingIp = "FLOATING_IP"
+	IpSpaceIpAllocationTypeIpPrefix   = "IP_PREFIX"
 )
