@@ -291,6 +291,7 @@ func (vcd *TestVCD) TestIgnoreMetadata(check *C) {
 	cleanup := func() {
 		vcd.client.Client.IgnoredMetadata = nil
 		metadata, err := adminOrg.GetMetadata()
+		check.Assert(err, IsNil)
 		for _, entry := range metadata.MetadataEntry {
 			err = adminOrg.DeleteMetadataEntryWithDomain(entry.Key, entry.Domain != nil && entry.Domain.Domain == "SYSTEM")
 			check.Assert(err, IsNil)
