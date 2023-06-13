@@ -301,7 +301,6 @@ func (vcd *TestVCD) TestIgnoreMetadata(check *C) {
 		check.Assert(metadata, NotNil)
 		check.Assert(len(metadata.MetadataEntry), Equals, 0)
 	}
-
 	defer cleanup()
 
 	vcd.client.Client.IgnoredMetadata = []IgnoredMetadata{{KeyRegex: regexp.MustCompile(`^fo[a-z]$`), ValueRegex: regexp.MustCompile(`^b[a-z]r$`)}}
@@ -360,6 +359,20 @@ func (vcd *TestVCD) TestIgnoreMetadata(check *C) {
 	err = adminOrg.DeleteMetadataEntryWithDomain("foo", false)
 	check.Assert(err, NotNil)
 	check.Assert(true, Equals, strings.Contains(err.Error(), "ignored"))
+
+	err = adminOrg.MergeMetadataWithMetadataValues(map[string]types.MetadataValue{
+		"foo": {
+			Domain: &types.MetadataDomainTag{
+				Visibility: types.MetadataReadWriteVisibility,
+			},
+			TypedValue: &types.MetadataTypedValue{
+				XsiType: types.MetadataStringValue,
+				Value:   "bar3",
+			},
+		},
+	})
+	check.Assert(err, NotNil)
+	check.Assert(true, Equals, strings.Contains(err.Error(), "there is no metadata to merge in the input"))
 }
 
 // metadataCompatible allows centralizing and generalizing the tests for metadata compatible resources.

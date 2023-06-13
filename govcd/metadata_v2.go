@@ -846,6 +846,9 @@ func mergeAllMetadata(client *Client, requestUri string, metadata map[string]typ
 	if err != nil {
 		return Task{}, err
 	}
+	if len(filteredMetadata.MetadataEntry) == 0 {
+		return Task{}, fmt.Errorf("there is no metadata to merge in the input")
+	}
 
 	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost, types.MimeMetaData, "error merging metadata: %s", filteredMetadata)
 }
@@ -896,22 +899,25 @@ func filterMetadata(allMetadata *types.Metadata, href string, metadataToIgnore [
 		return allMetadata, nil
 	}
 
-	filteredMetadata := &types.Metadata{
+	result := &types.Metadata{
 		XMLName:       allMetadata.XMLName,
 		Xmlns:         allMetadata.Xmlns,
 		HREF:          allMetadata.HREF,
 		Type:          allMetadata.Type,
 		Xsi:           allMetadata.Xsi,
 		Link:          allMetadata.Link,
-		MetadataEntry: []*types.MetadataEntry{},
+		MetadataEntry: nil,
 	}
+
+	var filteredMetadata []*types.MetadataEntry
 	for _, originalEntry := range allMetadata.MetadataEntry {
 		_, err := filterSingleMetadataEntry(originalEntry.Key, href, &types.MetadataValue{Domain: originalEntry.Domain, TypedValue: originalEntry.TypedValue}, metadataToIgnore)
-		if err == nil {
-			filteredMetadata.MetadataEntry = append(filteredMetadata.MetadataEntry, originalEntry)
+		if err == nil || !strings.Contains(err.Error(), "ignored") {
+			filteredMetadata = append(filteredMetadata, originalEntry)
 		}
 	}
-	return filteredMetadata, nil
+	result.MetadataEntry = filteredMetadata
+	return result, nil
 }
 
 // TODO
