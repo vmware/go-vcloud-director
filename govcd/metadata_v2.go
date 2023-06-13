@@ -931,18 +931,13 @@ func filterSingleMetadataEntry(key, href string, metadataEntry *types.MetadataVa
 		return nil, err
 	}
 	for _, entryToIgnore := range metadataToIgnore {
-		if entryToIgnore.ObjectName == nil && entryToIgnore.KeyRegex == nil && entryToIgnore.ValueRegex == nil &&
-			entryToIgnore.Type == nil && entryToIgnore.UserAccess == nil && entryToIgnore.IsSystem == nil {
+		if entryToIgnore.ObjectName == nil && entryToIgnore.KeyRegex == nil && entryToIgnore.ValueRegex == nil {
 			continue
 		}
 
 		if (entryToIgnore.ObjectName == nil || *entryToIgnore.ObjectName == objectType) &&
 			(entryToIgnore.KeyRegex == nil || entryToIgnore.KeyRegex.MatchString(key)) &&
-			(entryToIgnore.ValueRegex == nil || entryToIgnore.ValueRegex.MatchString(metadataEntry.TypedValue.Value)) &&
-			(entryToIgnore.Type == nil || *entryToIgnore.Type == metadataEntry.TypedValue.XsiType) &&
-			(entryToIgnore.UserAccess == nil || (metadataEntry.Domain == nil || *entryToIgnore.UserAccess == metadataEntry.Domain.Visibility)) &&
-			(entryToIgnore.IsSystem == nil || (metadataEntry.Domain == nil || *entryToIgnore.IsSystem == (metadataEntry.Domain.Domain == "SYSTEM"))) {
-
+			(entryToIgnore.ValueRegex == nil || entryToIgnore.ValueRegex.MatchString(metadataEntry.TypedValue.Value)) {
 			return nil, fmt.Errorf("the entry with key '%s' and value '%v' is being ignored", key, metadataEntry.TypedValue.Value)
 		}
 	}

@@ -28,9 +28,6 @@ type IgnoredMetadata struct {
 	ObjectName *string
 	KeyRegex   *regexp.Regexp
 	ValueRegex *regexp.Regexp
-	Type       *string
-	UserAccess *string
-	IsSystem   *bool
 }
 
 // Client provides a client to VMware Cloud Director, values can be populated automatically using the Authenticate method.

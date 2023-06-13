@@ -303,6 +303,7 @@ func (vcd *TestVCD) TestIgnoreMetadata(check *C) {
 	}
 	defer cleanup()
 
+	// Filter by key and value
 	vcd.client.Client.IgnoredMetadata = []IgnoredMetadata{{KeyRegex: regexp.MustCompile(`^fo[a-z]$`), ValueRegex: regexp.MustCompile(`^b[a-z]r$`)}}
 	singleMetadata, err := adminOrg.GetMetadataByKey("foo", false)
 	check.Assert(err, NotNil)
@@ -321,32 +322,12 @@ func (vcd *TestVCD) TestIgnoreMetadata(check *C) {
 	singleMetadata, err = adminOrg.GetMetadataByKey("foo", false)
 	check.Assert(err, IsNil)
 	check.Assert(singleMetadata, NotNil)
-
-	// Filters all metadata of type MetadataStringValue
-	vcd.client.Client.IgnoredMetadata = []IgnoredMetadata{{Type: addrOf(types.MetadataStringValue)}}
-	singleMetadata, err = adminOrg.GetMetadataByKey("foo", false)
-	check.Assert(err, NotNil)
-	check.Assert(singleMetadata, IsNil)
-	check.Assert(true, Equals, strings.Contains(err.Error(), "ignored"))
-
-	// Filters all metadata of visibility READWRITE
-	vcd.client.Client.IgnoredMetadata = []IgnoredMetadata{{UserAccess: addrOf(types.MetadataReadWriteVisibility)}}
-	singleMetadata, err = adminOrg.GetMetadataByKey("foo", false)
-	check.Assert(err, NotNil)
-	check.Assert(singleMetadata, IsNil)
-	check.Assert(true, Equals, strings.Contains(err.Error(), "ignored"))
-
-	// Filters all metadata from SYSTEM
-	vcd.client.Client.IgnoredMetadata = []IgnoredMetadata{{IsSystem: addrOf(true)}}
-	singleMetadata, err = adminOrg.GetMetadataByKey("foo", false)
-	check.Assert(err, NotNil)
-	check.Assert(singleMetadata, IsNil)
-	check.Assert(true, Equals, strings.Contains(err.Error(), "ignored"))
+	check.Assert(singleMetadata.TypedValue.Value, Equals, "bar")
 
 	// We add another entry and retrieve all metadata, then it should return the one that is not filtered out
 	err = adminOrg.AddMetadataEntryWithVisibility("test", "bar2", types.MetadataStringValue, types.MetadataReadWriteVisibility, false)
 	check.Assert(err, IsNil)
-	defer cleanup()
+
 	vcd.client.Client.IgnoredMetadata = []IgnoredMetadata{{KeyRegex: regexp.MustCompile(`^fo[a-z]$`)}}
 	allMetadata, err := adminOrg.GetMetadata()
 	check.Assert(err, IsNil)
@@ -360,11 +341,9 @@ func (vcd *TestVCD) TestIgnoreMetadata(check *C) {
 	check.Assert(err, NotNil)
 	check.Assert(true, Equals, strings.Contains(err.Error(), "ignored"))
 
+	// Tries to merge metadata that is filtered out, hence it should fail
 	err = adminOrg.MergeMetadataWithMetadataValues(map[string]types.MetadataValue{
 		"foo": {
-			Domain: &types.MetadataDomainTag{
-				Visibility: types.MetadataReadWriteVisibility,
-			},
 			TypedValue: &types.MetadataTypedValue{
 				XsiType: types.MetadataStringValue,
 				Value:   "bar3",
@@ -373,6 +352,23 @@ func (vcd *TestVCD) TestIgnoreMetadata(check *C) {
 	})
 	check.Assert(err, NotNil)
 	check.Assert(true, Equals, strings.Contains(err.Error(), "there is no metadata to merge in the input"))
+
+	// Tries to merge metadata, one entry is filtered out, another is not
+	err = adminOrg.MergeMetadataWithMetadataValues(map[string]types.MetadataValue{
+		"foo": {
+			TypedValue: &types.MetadataTypedValue{
+				XsiType: types.MetadataStringValue,
+				Value:   "bar3",
+			},
+		},
+		"test": {
+			TypedValue: &types.MetadataTypedValue{
+				XsiType: types.MetadataStringValue,
+				Value:   "bar",
+			},
+		},
+	})
+	check.Assert(err, IsNil)
 }
 
 // metadataCompatible allows centralizing and generalizing the tests for metadata compatible resources.
