@@ -311,14 +311,14 @@ func (vcd *TestVCD) TestIgnoreMetadata(check *C) {
 	check.Assert(true, Equals, strings.Contains(err.Error(), "ignored"))
 
 	// Will filter out the 'foo' metadata key as it belongs to an Org
-	vcd.client.Client.IgnoredMetadata = []IgnoredMetadata{{ObjectName: addrOf("org"), KeyRegex: regexp.MustCompile(`^fo[a-z]$`)}}
+	vcd.client.Client.IgnoredMetadata = []IgnoredMetadata{{ObjectType: addrOf("org"), KeyRegex: regexp.MustCompile(`^fo[a-z]$`)}}
 	singleMetadata, err = adminOrg.GetMetadataByKey("foo", false)
 	check.Assert(err, NotNil)
 	check.Assert(singleMetadata, IsNil)
 	check.Assert(true, Equals, strings.Contains(err.Error(), "ignored"))
 
 	// Will not filter anything as the object doesn't exist, despite the key filter is correct
-	vcd.client.Client.IgnoredMetadata = []IgnoredMetadata{{ObjectName: addrOf("notExist"), KeyRegex: regexp.MustCompile(`^fo[a-z]$`)}}
+	vcd.client.Client.IgnoredMetadata = []IgnoredMetadata{{ObjectType: addrOf("notExist"), KeyRegex: regexp.MustCompile(`^fo[a-z]$`)}}
 	singleMetadata, err = adminOrg.GetMetadataByKey("foo", false)
 	check.Assert(err, IsNil)
 	check.Assert(singleMetadata, NotNil)

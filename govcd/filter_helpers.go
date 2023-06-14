@@ -517,7 +517,7 @@ func (client *Client) metadataToFilter(href string, filter *FilterDef) (*FilterD
 	if filter == nil {
 		filter = &FilterDef{}
 	}
-	metadata, err := getMetadata(client, href)
+	metadata, err := getMetadata(client, href, "")
 	if err == nil && metadata != nil && len(metadata.MetadataEntry) > 0 {
 		for _, md := range metadata.MetadataEntry {
 			isSystem := false
