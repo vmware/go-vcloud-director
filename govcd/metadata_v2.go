@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/http"
+	"regexp"
 	"strings"
 )
 
@@ -893,7 +894,16 @@ func deleteMetadataAndWait(client *Client, requestUri string, key string, isSyst
 	return task.WaitTaskCompletion()
 }
 
-// TODO
+// IgnoredMetadata is a structure that defines the metadata entries that should be ignored by the VCD Client.
+// Note: This struct is only used by metadata_v2.go methods.
+type IgnoredMetadata struct {
+	ObjectName *string
+	KeyRegex   *regexp.Regexp
+	ValueRegex *regexp.Regexp
+}
+
+// filterMetadata filters all metadata entries, given a slice of metadata that needs to be ignored. It doesn't
+// alter the input metadata, but returns a copy of the filtered metadata.
 func filterMetadata(allMetadata *types.Metadata, href string, metadataToIgnore []IgnoredMetadata) (*types.Metadata, error) {
 	if len(metadataToIgnore) == 0 {
 		return allMetadata, nil
@@ -920,7 +930,8 @@ func filterMetadata(allMetadata *types.Metadata, href string, metadataToIgnore [
 	return result, nil
 }
 
-// TODO
+// filterSingleMetadataEntry filters a single metadata entry given a slice of metadata that needs to be ignored. It doesn't
+// alter the input metadata, but returns a copy of the filtered metadata.
 func filterSingleMetadataEntry(key, href string, metadataEntry *types.MetadataValue, metadataToIgnore []IgnoredMetadata) (*types.MetadataValue, error) {
 	if len(metadataToIgnore) == 0 {
 		return metadataEntry, nil
@@ -935,7 +946,7 @@ func filterSingleMetadataEntry(key, href string, metadataEntry *types.MetadataVa
 			continue
 		}
 
-		if (entryToIgnore.ObjectName == nil || *entryToIgnore.ObjectName == objectType) &&
+		if (entryToIgnore.ObjectName == nil || strings.TrimSpace(*entryToIgnore.ObjectName) == "" || *entryToIgnore.ObjectName == objectType) &&
 			(entryToIgnore.KeyRegex == nil || entryToIgnore.KeyRegex.MatchString(key)) &&
 			(entryToIgnore.ValueRegex == nil || entryToIgnore.ValueRegex.MatchString(metadataEntry.TypedValue.Value)) {
 			return nil, fmt.Errorf("the entry with key '%s' and value '%v' is being ignored", key, metadataEntry.TypedValue.Value)
@@ -944,7 +955,7 @@ func filterSingleMetadataEntry(key, href string, metadataEntry *types.MetadataVa
 	return metadataEntry, nil
 }
 
-// TODO
+// filterMetadataToDelete filters a metadata entry that is going to be deleted, given a slice of metadata that needs to be ignored.
 func filterMetadataToDelete(key, href string, metadataToIgnore []IgnoredMetadata) error {
 	if len(metadataToIgnore) == 0 {
 		return nil
@@ -959,7 +970,7 @@ func filterMetadataToDelete(key, href string, metadataToIgnore []IgnoredMetadata
 			continue
 		}
 
-		if entryToIgnore.ObjectName == nil || *entryToIgnore.ObjectName == objectType &&
+		if entryToIgnore.ObjectName == nil || strings.TrimSpace(*entryToIgnore.ObjectName) == "" || *entryToIgnore.ObjectName == objectType &&
 			entryToIgnore.KeyRegex == nil || entryToIgnore.KeyRegex.MatchString(key) {
 
 			return fmt.Errorf("can't delete metadata entry %s as it is ignored", key)

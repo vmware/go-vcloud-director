@@ -23,13 +23,6 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
-// TODO
-type IgnoredMetadata struct {
-	ObjectName *string
-	KeyRegex   *regexp.Regexp
-	ValueRegex *regexp.Regexp
-}
-
 // Client provides a client to VMware Cloud Director, values can be populated automatically using the Authenticate method.
 type Client struct {
 	APIVersion       string      // The API version required
