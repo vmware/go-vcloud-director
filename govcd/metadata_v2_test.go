@@ -351,7 +351,7 @@ func (vcd *TestVCD) TestIgnoreMetadata(check *C) {
 		},
 	})
 	check.Assert(err, NotNil)
-	check.Assert(true, Equals, strings.Contains(err.Error(), "there is no metadata to merge in the input"))
+	check.Assert(true, Equals, strings.Contains(err.Error(), "after filtering metadata, there is no metadata to merge"))
 
 	// Tries to merge metadata, one entry is filtered out, another is not
 	err = adminOrg.MergeMetadataWithMetadataValues(map[string]types.MetadataValue{

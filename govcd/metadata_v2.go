@@ -848,7 +848,7 @@ func mergeAllMetadata(client *Client, requestUri string, metadata map[string]typ
 		return Task{}, err
 	}
 	if len(filteredMetadata.MetadataEntry) == 0 {
-		return Task{}, fmt.Errorf("there is no metadata to merge in the input")
+		return Task{}, fmt.Errorf("after filtering metadata, there is no metadata to merge")
 	}
 
 	return client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost, types.MimeMetaData, "error merging metadata: %s", filteredMetadata)
