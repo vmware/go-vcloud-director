@@ -900,6 +900,7 @@ func deleteMetadataAndWait(client *Client, requestUri, name, key string, isSyste
 // For example, ignoredMetadata.ObjectType = "org", ignoredMetadata.ObjectName = "foo" will ignore all metadata from
 // Organizations whose name is "foo", with any key and any value.
 // Note: This struct is only used by metadata_v2.go methods.
+// Note 2: Filtering by ObjectName is not possible in the "ByHref" methods from VCDClient.
 type IgnoredMetadata struct {
 	ObjectType *string        // Type of the object that has the metadata as defined in the API documentation https://developer.vmware.com/apis/1601/vmware-cloud-director, for example "catalog", "disk", "org"...
 	ObjectName *string        // Name of the object
@@ -947,7 +948,7 @@ func filterSingleMetadataEntry(key, href, name string, metadataEntry *types.Meta
 		return nil, err
 	}
 	for _, entryToIgnore := range metadataToIgnore {
-		if entryToIgnore.ObjectType == nil && entryToIgnore.KeyRegex == nil && entryToIgnore.ValueRegex == nil {
+		if entryToIgnore.ObjectType == nil && entryToIgnore.ObjectName == nil && entryToIgnore.KeyRegex == nil && entryToIgnore.ValueRegex == nil {
 			continue
 		}
 
@@ -972,7 +973,7 @@ func filterMetadataToDelete(key, href, name string, metadataToIgnore []IgnoredMe
 		return err
 	}
 	for _, entryToIgnore := range metadataToIgnore {
-		if entryToIgnore.ObjectType == nil && entryToIgnore.KeyRegex == nil {
+		if entryToIgnore.ObjectType == nil && entryToIgnore.ObjectName == nil && entryToIgnore.KeyRegex == nil {
 			continue
 		}
 
