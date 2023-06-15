@@ -977,9 +977,9 @@ func filterMetadataToDelete(client *Client, key, href, name string, isSystem boo
 			continue
 		}
 
-		if entryToIgnore.ObjectType == nil || strings.TrimSpace(*entryToIgnore.ObjectType) == "" || *entryToIgnore.ObjectType == objectType &&
+		if (entryToIgnore.ObjectType == nil || strings.TrimSpace(*entryToIgnore.ObjectType) == "" || *entryToIgnore.ObjectType == objectType) &&
 			(entryToIgnore.ObjectName == nil || strings.TrimSpace(*entryToIgnore.ObjectName) == "" || strings.TrimSpace(name) == "" || *entryToIgnore.ObjectName == name) &&
-			entryToIgnore.KeyRegex == nil || entryToIgnore.KeyRegex.MatchString(key) {
+			(entryToIgnore.KeyRegex == nil || entryToIgnore.KeyRegex.MatchString(key)) {
 
 			// Entering here means that it is a good candidate to be ignored, but we need to know the metadata value
 			// as we may be filtering by value
