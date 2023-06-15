@@ -973,7 +973,7 @@ func filterMetadataToDelete(client *Client, key, href, name string, isSystem boo
 		return err
 	}
 	for _, entryToIgnore := range metadataToIgnore {
-		if entryToIgnore.ObjectType == nil && entryToIgnore.ObjectName == nil && entryToIgnore.KeyRegex == nil {
+		if entryToIgnore.ObjectType == nil && entryToIgnore.ObjectName == nil && entryToIgnore.KeyRegex == nil && entryToIgnore.ValueRegex == nil {
 			continue
 		}
 
