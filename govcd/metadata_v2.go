@@ -876,7 +876,7 @@ func deleteMetadata(client *Client, requestUri, name, key string, isSystem bool)
 		apiEndpoint.Path += "/metadata/" + key
 	}
 
-	err := filterMetadataToDelete(key, requestUri, name, client.IgnoredMetadata)
+	err := filterMetadataToDelete(client, key, requestUri, name, isSystem, client.IgnoredMetadata)
 	if err != nil {
 		return Task{}, err
 	}
@@ -963,7 +963,7 @@ func filterSingleMetadataEntry(key, href, name string, metadataEntry *types.Meta
 }
 
 // filterMetadataToDelete filters a metadata entry that is going to be deleted, given a slice of metadata that needs to be ignored.
-func filterMetadataToDelete(key, href, name string, metadataToIgnore []IgnoredMetadata) error {
+func filterMetadataToDelete(client *Client, key, href, name string, isSystem bool, metadataToIgnore []IgnoredMetadata) error {
 	if len(metadataToIgnore) == 0 {
 		return nil
 	}
@@ -981,7 +981,23 @@ func filterMetadataToDelete(key, href, name string, metadataToIgnore []IgnoredMe
 			(entryToIgnore.ObjectName == nil || strings.TrimSpace(*entryToIgnore.ObjectName) == "" || strings.TrimSpace(name) == "" || *entryToIgnore.ObjectName == name) &&
 			entryToIgnore.KeyRegex == nil || entryToIgnore.KeyRegex.MatchString(key) {
 
-			return fmt.Errorf("can't delete metadata entry %s as it is ignored", key)
+			// Entering here means that it is a good candidate to be ignored, but we need to know the metadata value
+			// as we may be filtering by value
+			ignore := true
+			if entryToIgnore.ValueRegex != nil {
+				metadataEntry, err := getMetadataByKey(client, href, name, key, isSystem)
+				if err != nil {
+					return err
+				}
+				if !entryToIgnore.ValueRegex.MatchString(metadataEntry.TypedValue.Value) {
+					ignore = false
+				}
+			}
+
+			if ignore {
+				return fmt.Errorf("can't delete metadata entry %s as it is ignored", key)
+			}
+			return nil
 		}
 	}
 	return nil
