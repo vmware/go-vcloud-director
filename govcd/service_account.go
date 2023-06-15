@@ -54,7 +54,7 @@ func (org *Org) GetServiceAccountById(serviceAccountId string) (*ServiceAccount,
 	return newServiceAccount, nil
 }
 
-func (org *Org) GetServiceAccountByName(name string) (*ServiceAccount, error) {
+func (org *Org) GetAllServiceAccounts(queryParams url.Values) ([]*ServiceAccount, error) {
 	client := org.client
 	if client.APIVCDMaxVersionIs("< 37.0") {
 		version, err := client.GetVcdFullVersion()
@@ -76,20 +76,41 @@ func (org *Org) GetServiceAccountByName(name string) (*ServiceAccount, error) {
 		return nil, err
 	}
 
-	newServiceAccount := &ServiceAccount{
-		ServiceAccount: &types.ServiceAccount{},
-		org:            org,
+	// VCD has a pageSize limit on this specifi endpoint
+	queryParams.Add("pageSize", "32")
+	typeResponses := []*types.ServiceAccount{{}}
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParams, &typeResponses, nil)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get service accounts: %s", err)
 	}
 
+	results := make([]*ServiceAccount, len(typeResponses))
+	for sliceIndex := range typeResponses {
+		results[sliceIndex] = &ServiceAccount{
+			ServiceAccount: typeResponses[sliceIndex],
+			org:            org,
+		}
+	}
+
+	return results, nil
+}
+
+func (org *Org) GetServiceAccountByName(name string) (*ServiceAccount, error) {
 	queryParams := url.Values{}
 	queryParams.Add("filter", fmt.Sprintf("name==%s", name))
 
-	err = client.OpenApiGetItem(apiVersion, urlRef, queryParams, newServiceAccount.ServiceAccount, nil)
+	serviceAccounts, err := org.GetAllServiceAccounts(queryParams)
+	if err != nil {
+		return nil, fmt.Errorf("error getting service account by name: %s", err)
+	}
+
+	serviceAccount, err := oneOrError("name", name, serviceAccounts)
 	if err != nil {
 		return nil, err
 	}
 
-	return newServiceAccount, nil
+	return serviceAccount, nil
 }
 
 // RegisterServiceAccount creates a Service Account and sets it in `Created` status

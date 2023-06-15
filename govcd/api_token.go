@@ -52,7 +52,10 @@ func (vcdClient *VCDClient) CreateToken(org, tokenName string) (*Token, error) {
 		return nil, fmt.Errorf("failed to register API token: %s", err)
 	}
 
-	tokenUrn := "urn:vcloud:token:" + newTokenParams.ClientID
+	tokenUrn, err := BuildUrnWithUuid("urn:vcloud:token:", newTokenParams.ClientID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build URN: %s", err)
+	}
 
 	token, err := vcdClient.GetTokenById(tokenUrn)
 	if err != nil {
