@@ -52,7 +52,9 @@ func (vcdClient *VCDClient) CreateToken(org, tokenName string) (*Token, error) {
 		return nil, fmt.Errorf("failed to register API token: %s", err)
 	}
 
-	token, err := vcdClient.GetTokenById(newTokenParams.ClientID)
+	tokenUrn := "urn:vcloud:token:" + newTokenParams.ClientID
+
+	token, err := vcdClient.GetTokenById(tokenUrn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token: %s", err)
 	}
@@ -72,18 +74,13 @@ func (vcdClient *VCDClient) GetTokenById(tokenId string) (*Token, error) {
 		return nil, fmt.Errorf("minimum API version for API token is 36.1 - Version detected: %s", client.APIVersion)
 	}
 
-	tokenUrn, err := BuildUrnWithUuid("urn:vcloud:token:", tokenId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to build URN %s", err)
-	}
-
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTokens
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, tokenUrn)
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, tokenId)
 	if err != nil {
 		return nil, err
 	}

@@ -30,18 +30,13 @@ func (org *Org) GetServiceAccountById(serviceAccountId string) (*ServiceAccount,
 		return nil, fmt.Errorf("minimum API version for Service Accounts is 37.0 - Version detected: %s", client.APIVersion)
 	}
 
-	tokenUrn, err := BuildUrnWithUuid("urn:vcloud:serviceAccount:", serviceAccountId)
-	if err != nil {
-		return nil, err
-	}
-
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccounts
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, tokenUrn)
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, serviceAccountId)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +122,8 @@ func (vcdClient *VCDClient) CreateServiceAccount(orgName, name, scope, softwareI
 		return nil, fmt.Errorf("failed to get Org by name: %s", err)
 	}
 
-	serviceAccount, err := org.GetServiceAccountById(newSaParams.ClientID)
+	serviceAccountID := "urn:vcloud:serviceAccount:" + newSaParams.ClientID
+	serviceAccount, err := org.GetServiceAccountById(serviceAccountID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Service account by ID: %s", err)
 	}
@@ -250,8 +246,8 @@ func (sa *ServiceAccount) Refresh() error {
 	if sa.ServiceAccount == nil || sa.org.client == nil || sa.ServiceAccount.ID == "" {
 		return fmt.Errorf("cannot refresh Edge Gateway without ID")
 	}
-	uuid := extractUuid(sa.ServiceAccount.ID)
-	updatedServiceAccount, err := sa.org.GetServiceAccountById(uuid)
+
+	updatedServiceAccount, err := sa.org.GetServiceAccountById(sa.ServiceAccount.ID)
 	if err != nil {
 		return err
 	}
@@ -327,7 +323,7 @@ func (vcdClient *VCDClient) SetServiceAccountApiToken(org, apiTokenFile string) 
 		return err
 	}
 
-	err = vcdClient.SaveServiceAccountToFile(apiTokenFile, "Service Account", apiToken)
+	err = SaveServiceAccountToFile(apiTokenFile, vcdClient.Client.UserAgent, apiToken)
 	if err != nil {
 		return fmt.Errorf("failed to save service account token to %s: %s", apiTokenFile, err)
 	}
@@ -335,6 +331,6 @@ func (vcdClient *VCDClient) SetServiceAccountApiToken(org, apiTokenFile string) 
 }
 
 // SaveServiceAccountToFile saves the API token of the Service Account to a file
-func (vcdClient *VCDClient) SaveServiceAccountToFile(filename, tokentype string, saToken *types.ApiTokenRefresh) error {
-	return saveTokenToFile(filename, "Service Account", vcdClient.Client.UserAgent, saToken)
+func SaveServiceAccountToFile(filename, useragent string, saToken *types.ApiTokenRefresh) error {
+	return saveTokenToFile(filename, "Service Account", useragent, saToken)
 }
