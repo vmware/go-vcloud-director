@@ -137,7 +137,7 @@ func (vcdClient *VCDClient) GetIpSpaceByName(name string) (*IpSpace, error) {
 
 	singleIpSpace, err := oneOrError("name", name, filteredIpSpaces)
 	if err != nil {
-		return nil, fmt.Errorf("error ")
+		return nil, err
 	}
 
 	return vcdClient.GetIpSpaceById(singleIpSpace.IpSpace.ID)
