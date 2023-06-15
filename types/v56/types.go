@@ -3264,14 +3264,14 @@ type Token struct {
 }
 
 type ServiceAccount struct {
-	ID              string `json:"id,omitempty"`
-	Name            string `json:"name,omitempty"`
-	SoftwareID      string `json:"softwareId,omitempty"`
-	SoftwareVersion string `json:"softwareVersion,omitempty"`
-	Role            Role   `json:"role,omitempty"`
-	URI             string `json:"uri,omitempty"`
-	Org             Org    `json:"org,omitempty"`
-	Status          string `json:"status,omitempty"`
+	ID              string            `json:"id,omitempty"`
+	Name            string            `json:"name,omitempty"`
+	SoftwareID      string            `json:"softwareId,omitempty"`
+	SoftwareVersion string            `json:"softwareVersion,omitempty"`
+	Role            *OpenApiReference `json:"role,omitempty"`
+	URI             string            `json:"uri,omitempty"`
+	Org             *OpenApiReference `json:"org,omitempty"`
+	Status          string            `json:"status,omitempty"`
 }
 
 // ApiTokenRefresh contains the access token resulting from a refresh_token operation

@@ -45,10 +45,10 @@ func (openApiError OpenApiError) ErrorWithStack() string {
 // Role defines access roles in VCD
 type Role struct {
 	ID          string `json:"id,omitempty"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	BundleKey   string `json:"bundleKey"`
-	ReadOnly    bool   `json:"readOnly"`
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+	BundleKey   string `json:"bundleKey,omitempty"`
+	ReadOnly    bool   `json:"readOnly,omitempty"`
 }
 
 // NsxtTier0Router defines NSX-T Tier 0 router

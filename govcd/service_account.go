@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/url"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
@@ -58,10 +59,48 @@ func (org *Org) GetServiceAccountById(serviceAccountId string) (*ServiceAccount,
 	return newServiceAccount, nil
 }
 
+func (org *Org) GetServiceAccountByName(name string) (*ServiceAccount, error) {
+	client := org.client
+	if client.APIVCDMaxVersionIs("< 37.0") {
+		version, err := client.GetVcdFullVersion()
+		if err == nil {
+			return nil, fmt.Errorf("minimum version for Service Accounts is 10.4.0 - Version detected: %s", version.Version)
+		}
+		// If we can't get the VCD version, we return API version info
+		return nil, fmt.Errorf("minimum API version for Service Accounts is 37.0 - Version detected: %s", client.APIVersion)
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccounts
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	newServiceAccount := &ServiceAccount{
+		ServiceAccount: &types.ServiceAccount{},
+		org:            org,
+	}
+
+	queryParams := url.Values{}
+	queryParams.Add("filter", fmt.Sprintf("name==%s", name))
+
+	err = client.OpenApiGetItem(apiVersion, urlRef, queryParams, newServiceAccount.ServiceAccount, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return newServiceAccount, nil
+}
+
 // RegisterServiceAccount creates a Service Account and sets it in `Created` status
 func (vcdClient *VCDClient) CreateServiceAccount(orgName, name, scope, softwareId, softwareVersion, clientUri string) (*ServiceAccount, error) {
 	client := vcdClient.Client
-	if client.APIVCDMaxVersionIs("< 37.1") {
+	if client.APIVCDMaxVersionIs("< 37.0") {
 		version, err := client.GetVcdFullVersion()
 		if err == nil {
 			return nil, fmt.Errorf("minimum version for Service Accounts is 10.4.0 - Version detected: %s", version.Version)
@@ -94,6 +133,35 @@ func (vcdClient *VCDClient) CreateServiceAccount(orgName, name, scope, softwareI
 	}
 
 	return serviceAccount, nil
+}
+
+func (sa *ServiceAccount) Update(saConfig *types.ServiceAccount) (*ServiceAccount, error) {
+	client := sa.org.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccounts
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	saConfig.ID = sa.ServiceAccount.ID
+	saConfig.Name = sa.ServiceAccount.Name
+	saConfig.Status = sa.ServiceAccount.Status
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, saConfig.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	returnServiceAccount := &ServiceAccount{
+		ServiceAccount: &types.ServiceAccount{},
+		org:            sa.org,
+	}
+
+	err = client.OpenApiPutItem(apiVersion, urlRef, nil, saConfig, returnServiceAccount.ServiceAccount, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error updating Service Account: %s", err)
+	}
+
+	return returnServiceAccount, nil
 }
 
 // AuthorizeServiceAccount authorizes a service account and returns a DeviceID and UserCode which will be used while granting
