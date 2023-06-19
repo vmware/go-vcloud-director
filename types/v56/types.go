@@ -481,16 +481,15 @@ type ProviderVdc struct {
 	Name         string `xml:"name,attr"`
 	Status       int    `xml:"status,attr,omitempty"` // -1 (creation failed), 0 (not ready), 1 (ready), 2 (unknown), 3 (unrecognized)
 
-	AvailableNetworks     *AvailableNetworks     `xml:"AvailableNetworks,omitempty"`     // Read-only list of available networks.
-	Capabilities          *Capabilities          `xml:"Capabilities,omitempty"`          // Read-only list of virtual hardware versions supported by this Provider VDC.
-	ComputeCapacity       *RootComputeCapacity   `xml:"ComputeCapacity,omitempty"`       // Read-only indicator of CPU and memory capacity.
-	Description           string                 `xml:"Description,omitempty"`           // Optional description.
-	IsEnabled             *bool                  `xml:"IsEnabled,omitempty"`             // True if this Provider VDC is enabled and can provide resources to organization VDCs. A Provider VDC is always enabled on creation.
-	Link                  *Link                  `xml:"Link,omitempty"`                  // A reference to an entity or operation associated with this object.
-	NetworkPoolReferences *NetworkPoolReferences `xml:"NetworkPoolReferences,omitempty"` // Read-only list of network pools used by this Provider VDC.
-	//StorageProfile        []string                 `xml:"StorageProfile,omitempty"`        // Storage profiles assigned at creation
-	StorageProfiles *ProviderStorageProfiles `xml:"StorageProfiles,omitempty"` // Container for references to vSphere storage profiles available to this Provider VDC.
-	Tasks           *TasksInProgress         `xml:"Tasks,omitempty"`           // A list of queued, running, or recently completed tasks associated with this entity.
+	AvailableNetworks     *AvailableNetworks       `xml:"AvailableNetworks,omitempty"`     // Read-only list of available networks.
+	Capabilities          *Capabilities            `xml:"Capabilities,omitempty"`          // Read-only list of virtual hardware versions supported by this Provider VDC.
+	ComputeCapacity       *RootComputeCapacity     `xml:"ComputeCapacity,omitempty"`       // Read-only indicator of CPU and memory capacity.
+	Description           string                   `xml:"Description,omitempty"`           // Optional description.
+	IsEnabled             *bool                    `xml:"IsEnabled,omitempty"`             // True if this Provider VDC is enabled and can provide resources to organization VDCs. A Provider VDC is always enabled on creation.
+	Link                  *Link                    `xml:"Link,omitempty"`                  // A reference to an entity or operation associated with this object.
+	NetworkPoolReferences *NetworkPoolReferences   `xml:"NetworkPoolReferences,omitempty"` // Read-only list of network pools used by this Provider VDC.
+	StorageProfiles       *ProviderStorageProfiles `xml:"StorageProfiles,omitempty"`       // Container for references to vSphere storage profiles available to this Provider VDC.
+	Tasks                 *TasksInProgress         `xml:"Tasks,omitempty"`                 // A list of queued, running, or recently completed tasks associated with this entity.
 }
 
 // VMWProviderVdc represents an extension of ProviderVdc.
