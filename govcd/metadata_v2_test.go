@@ -85,7 +85,7 @@ func (vcd *TestVCD) TestProviderVdcMetadata(check *C) {
 		return
 	}
 	testMetadataCRUDActions(providerVdc, check, nil)
-	vcd.testMetadataIgnore(providerVdc, "providerVdc", providerVdc.ProviderVdc.Name, check)
+	vcd.testMetadataIgnore(providerVdc, "providervdc", providerVdc.ProviderVdc.Name, check)
 }
 
 func (vcd *TestVCD) TestVAppMetadata(check *C) {
