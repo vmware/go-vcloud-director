@@ -4,6 +4,7 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 	"strings"
 )
@@ -156,4 +157,132 @@ func (vcd *TestVCD) Test_GetProviderVdcConvertFromExtendedToNormal(check *C) {
 	check.Assert(len(providerVdc.ProviderVdc.NetworkPoolReferences.NetworkPoolReference), Equals, 1)
 	check.Assert(providerVdc.ProviderVdc.NetworkPoolReferences.NetworkPoolReference[0].Name, Equals, vcd.config.VCD.NsxtProviderVdc.NetworkPool)
 	check.Assert(providerVdc.ProviderVdc.Link, NotNil)
+}
+
+func (vcd *TestVCD) Test_CreateProviderVdc(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+	providerVdcName := check.TestName()
+	providerVdcDescription := check.TestName()
+	storageProfileList, err := vcd.client.Client.QueryAllProviderVdcStorageProfiles()
+	check.Assert(err, IsNil)
+	check.Assert(len(storageProfileList) > 0, Equals, true)
+	var storageProfile types.QueryResultProviderVdcStorageProfileRecordType
+	for _, sp := range storageProfileList {
+		if sp.Name == vcd.config.VCD.NsxtProviderVdc.StorageProfile {
+			storageProfile = *sp
+		}
+	}
+	check.Assert(storageProfile.HREF, Not(Equals), "")
+	networkPools, err := QueryNetworkPoolByName(vcd.client, vcd.config.VCD.NsxtProviderVdc.NetworkPool)
+	check.Assert(err, IsNil)
+	check.Assert(len(networkPools) > 0, Equals, true)
+
+	vcenter, err := vcd.client.GetVcenterByName(vcd.config.VCD.VimServer)
+	check.Assert(err, IsNil)
+	check.Assert(vcenter, NotNil)
+
+	resourcePools, err := vcenter.GetAllAvailableResourcePools()
+	check.Assert(err, IsNil)
+	if len(resourcePools) == 0 {
+		check.Skip("no available resource pools found for this deployment")
+	}
+
+	resourcePool := resourcePools[0]
+	check.Assert(resourcePool, NotNil)
+
+	nsxtManagers, err := vcd.client.QueryNsxtManagerByName(vcd.config.VCD.Nsxt.Manager)
+	check.Assert(err, IsNil)
+	check.Assert(len(nsxtManagers), Equals, 1)
+
+	/**/
+	params := types.ProviderVdcCreationXml{
+		Xmlns:       types.XMLNamespaceVCloud,
+		Name:        providerVdcName,
+		Description: providerVdcDescription,
+		IsEnabled:   addrOf(true),
+		NetworkPoolReferences: &types.NetworkPoolReferences{[]*types.Reference{
+			{
+				Name: networkPools[0].Name,
+				HREF: networkPools[0].HREF,
+				Type: "GENEVE",
+			},
+		}},
+		StorageProfile:                  []string{storageProfile.Name},
+		HighestSupportedHardwareVersion: "vmx-19",
+		NsxTManagerReference: &types.Reference{
+			HREF: nsxtManagers[0].HREF,
+			ID:   extractUuid(nsxtManagers[0].HREF),
+			Name: nsxtManagers[0].Name,
+		},
+		ResourcePoolRefs: &types.VimObjectRefs{[]*types.VimObjectRef{
+			{
+				VimServerRef: &types.Reference{
+					HREF: vcenter.VSphereVcenter.Url,
+					ID:   extractUuid(vcenter.VSphereVcenter.VcId),
+					Name: vcenter.VSphereVcenter.Name,
+				},
+				MoRef:         resourcePool.ResourcePool.Moref,
+				VimObjectType: "RESOURCE_POOL",
+			},
+		},
+		},
+		VimServer: &types.Reference{
+			HREF: vcenter.VSphereVcenter.Url,
+			ID:   extractUuid(vcenter.VSphereVcenter.VcId),
+			Name: vcenter.VSphereVcenter.Name,
+		},
+	}
+
+	providerVdc, err := vcd.client.CreateProviderVdc(&params)
+	//check.Assert(err, IsNil)
+	//check.Assert(providerVdc, NotNil)
+
+	if err != nil {
+		fmt.Printf("XML creation err %s\n", err)
+		fmt.Printf("XML creation pvdc %v\n", providerVdc)
+	}
+
+	jsonparams := types.ProviderVdcCreation{
+		Name:                            providerVdcName,
+		Description:                     providerVdcDescription,
+		HighestSupportedHardwareVersion: "vmx-19",
+		IsEnabled:                       true,
+		VimServer: []*types.Reference{
+			{
+				HREF: vcenter.VSphereVcenter.Url,
+				ID:   extractUuid(vcenter.VSphereVcenter.VcId),
+				Name: vcenter.VSphereVcenter.Name,
+			},
+		},
+		ResourcePoolRefs: &types.VimObjectRefs{
+			VimObjectRef: []*types.VimObjectRef{
+				{
+					VimServerRef: &types.Reference{
+						HREF: vcenter.VSphereVcenter.Url,
+						ID:   extractUuid(vcenter.VSphereVcenter.VcId),
+						Name: vcenter.VSphereVcenter.Name,
+					},
+					MoRef:         resourcePool.ResourcePool.Moref,
+					VimObjectType: "RESOURCE_POOL",
+				},
+			},
+		},
+		StorageProfile: []string{storageProfile.Name},
+		NsxTManagerReference: types.Reference{
+			HREF: nsxtManagers[0].HREF,
+			ID:   extractUuid(nsxtManagers[0].HREF),
+			Name: nsxtManagers[0].Name,
+		},
+		NetworkPool: types.Reference{
+			Name: networkPools[0].Name,
+			HREF: networkPools[0].HREF,
+			Type: "GENEVE",
+		},
+		AutoCreateNetworkPool: false,
+	}
+	providerVdcJson, err := vcd.client.CreateProviderVdcJson(&jsonparams)
+	check.Assert(err, IsNil)
+	check.Assert(providerVdcJson, NotNil)
 }
