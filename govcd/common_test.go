@@ -1,4 +1,4 @@
-//go:build api || auth || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || role || nsxv || nsxt || openapi || affinity || search || alb || certificate || vdcGroup || metadata || providervdc || rde || ALL
+//go:build api || auth || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || role || nsxv || nsxt || openapi || affinity || search || alb || certificate || vdcGroup || metadata || providervdc || rde || vsphere || ALL
 
 /*
  * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
