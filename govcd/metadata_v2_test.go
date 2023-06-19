@@ -8,11 +8,10 @@ package govcd
 
 import (
 	"fmt"
-	"regexp"
-	"strings"
-
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
+	"regexp"
+	"strings"
 )
 
 func init() {
@@ -40,6 +39,7 @@ func (vcd *TestVCD) TestVmMetadata(check *C) {
 	vm.VM = &vmType
 
 	testMetadataCRUDActions(vm, check, nil)
+	vcd.testMetadataIgnore(vm, "vApp", vm.VM.Name, check)
 }
 
 func (vcd *TestVCD) TestAdminVdcMetadata(check *C) {
@@ -59,6 +59,7 @@ func (vcd *TestVCD) TestAdminVdcMetadata(check *C) {
 	testMetadataCRUDActions(adminVdc, check, func(testCase metadataTest) {
 		testVdcMetadata(vcd, check, testCase)
 	})
+	vcd.testMetadataIgnore(adminVdc, "vdc", adminVdc.AdminVdc.Name, check)
 }
 
 func testVdcMetadata(vcd *TestVCD, check *C, testCase metadataTest) {
@@ -84,6 +85,7 @@ func (vcd *TestVCD) TestProviderVdcMetadata(check *C) {
 		return
 	}
 	testMetadataCRUDActions(providerVdc, check, nil)
+	vcd.testMetadataIgnore(providerVdc, "providerVdc", providerVdc.ProviderVdc.Name, check)
 }
 
 func (vcd *TestVCD) TestVAppMetadata(check *C) {
@@ -92,6 +94,7 @@ func (vcd *TestVCD) TestVAppMetadata(check *C) {
 		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 	testMetadataCRUDActions(vcd.vapp, check, nil)
+	vcd.testMetadataIgnore(vcd.vapp, "vApp", vcd.vapp.VApp.Name, check)
 }
 
 func (vcd *TestVCD) TestVAppTemplateMetadata(check *C) {
@@ -105,6 +108,7 @@ func (vcd *TestVCD) TestVAppTemplateMetadata(check *C) {
 	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.NsxtCatalogItem)
 
 	testMetadataCRUDActions(vAppTemplate, check, nil)
+	vcd.testMetadataIgnore(vAppTemplate, "vAppTemplate", vAppTemplate.VAppTemplate.Name, check)
 }
 
 func (vcd *TestVCD) TestMediaRecordMetadata(check *C) {
@@ -126,6 +130,18 @@ func (vcd *TestVCD) TestMediaRecordMetadata(check *C) {
 	check.Assert(uploadTask, NotNil)
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
+	// cleanup uploaded media so that other tests don't fail
+	defer func() {
+		media, err := catalog.GetMediaByName(check.TestName(), true)
+		check.Assert(err, IsNil)
+		check.Assert(media, NotNil)
+
+		deleteTask, err := media.Delete()
+		check.Assert(err, IsNil)
+		check.Assert(deleteTask, NotNil)
+		err = deleteTask.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+	}()
 
 	AddToCleanupList(check.TestName(), "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_AddMetadataOnMediaRecord")
 
@@ -138,17 +154,7 @@ func (vcd *TestVCD) TestMediaRecordMetadata(check *C) {
 	check.Assert(mediaRecord.MediaRecord.Name, Equals, check.TestName())
 
 	testMetadataCRUDActions(mediaRecord, check, nil)
-
-	// cleanup uploaded media so that other tests don't fail
-	media, err := catalog.GetMediaByName(check.TestName(), true)
-	check.Assert(err, IsNil)
-	check.Assert(media, NotNil)
-
-	deleteTask, err := media.Delete()
-	check.Assert(err, IsNil)
-	check.Assert(deleteTask, NotNil)
-	err = deleteTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
+	vcd.testMetadataIgnore(mediaRecord, "media", mediaRecord.MediaRecord.Name, check)
 }
 
 func (vcd *TestVCD) TestMediaMetadata(check *C) {
@@ -169,6 +175,7 @@ func (vcd *TestVCD) TestMediaMetadata(check *C) {
 	check.Assert(err, IsNil)
 
 	testMetadataCRUDActions(media, check, nil)
+	vcd.testMetadataIgnore(media, "media", media.Media.Name, check)
 }
 
 func (vcd *TestVCD) TestAdminCatalogMetadata(check *C) {
@@ -186,6 +193,7 @@ func (vcd *TestVCD) TestAdminCatalogMetadata(check *C) {
 	testMetadataCRUDActions(adminCatalog, check, func(testCase metadataTest) {
 		testCatalogMetadata(vcd, check, testCase)
 	})
+	vcd.testMetadataIgnore(adminCatalog, "catalog", adminCatalog.AdminCatalog.Name, check)
 }
 
 func testCatalogMetadata(vcd *TestVCD, check *C, testCase metadataTest) {
@@ -213,6 +221,7 @@ func (vcd *TestVCD) TestAdminOrgMetadata(check *C) {
 	testMetadataCRUDActions(adminOrg, check, func(testCase metadataTest) {
 		testOrgMetadata(vcd, check, testCase)
 	})
+	vcd.testMetadataIgnore(adminOrg, "org", adminOrg.AdminOrg.Name, check)
 }
 
 func testOrgMetadata(vcd *TestVCD, check *C, testCase metadataTest) {
@@ -249,6 +258,7 @@ func (vcd *TestVCD) TestDiskMetadata(check *C) {
 	check.Assert(err, IsNil)
 
 	testMetadataCRUDActions(disk, check, nil)
+	vcd.testMetadataIgnore(disk, "disk", disk.Disk.Name, check)
 }
 
 func (vcd *TestVCD) TestOrgVDCNetworkMetadata(check *C) {
@@ -259,6 +269,7 @@ func (vcd *TestVCD) TestOrgVDCNetworkMetadata(check *C) {
 		return
 	}
 	testMetadataCRUDActions(net, check, nil)
+	vcd.testMetadataIgnore(net, "network", net.OrgVDCNetwork.Name, check)
 }
 
 func (vcd *TestVCD) TestCatalogItemMetadata(check *C) {
@@ -276,60 +287,89 @@ func (vcd *TestVCD) TestCatalogItemMetadata(check *C) {
 	}
 
 	testMetadataCRUDActions(catalogItem, check, nil)
+	vcd.testMetadataIgnore(catalogItem, "catalogItem", catalogItem.CatalogItem.Name, check)
 }
 
-func (vcd *TestVCD) TestIgnoreMetadata(check *C) {
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
-	check.Assert(err, IsNil)
-	check.Assert(adminOrg, NotNil)
-
-	err = adminOrg.AddMetadataEntryWithVisibility("foo", "bar", types.MetadataStringValue, types.MetadataReadWriteVisibility, false)
+func (vcd *TestVCD) testMetadataIgnore(resource metadataCompatible, objectType, objectName string, check *C) {
+	err := resource.AddMetadataEntryWithVisibility("foo", "bar", types.MetadataStringValue, types.MetadataReadWriteVisibility, false)
 	check.Assert(err, IsNil)
 
 	cleanup := func() {
 		vcd.client.Client.IgnoredMetadata = nil
-		metadata, err := adminOrg.GetMetadata()
+		metadata, err := resource.GetMetadata()
 		check.Assert(err, IsNil)
 		for _, entry := range metadata.MetadataEntry {
-			err = adminOrg.DeleteMetadataEntryWithDomain(entry.Key, entry.Domain != nil && entry.Domain.Domain == "SYSTEM")
+			err = resource.DeleteMetadataEntryWithDomain(entry.Key, entry.Domain != nil && entry.Domain.Domain == "SYSTEM")
 			check.Assert(err, IsNil)
 		}
-		metadata, err = adminOrg.GetMetadata()
+		metadata, err = resource.GetMetadata()
 		check.Assert(err, IsNil)
 		check.Assert(metadata, NotNil)
 		check.Assert(len(metadata.MetadataEntry), Equals, 0)
 	}
 	defer cleanup()
 
-	// Filter by key and value
-	vcd.client.Client.IgnoredMetadata = []IgnoredMetadata{{KeyRegex: regexp.MustCompile(`^fo[a-z]$`), ValueRegex: regexp.MustCompile(`^b[a-z]r$`)}}
-	singleMetadata, err := adminOrg.GetMetadataByKey("foo", false)
-	check.Assert(err, NotNil)
-	check.Assert(singleMetadata, IsNil)
-	check.Assert(true, Equals, strings.Contains(err.Error(), "ignored"))
+	tests := []struct {
+		ignoredMetadata   []IgnoredMetadata
+		metadataIsIgnored bool
+	}{
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectType: &objectType, KeyRegex: regexp.MustCompile(`^foo$`)}},
+			metadataIsIgnored: true,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectType: &objectType, ValueRegex: regexp.MustCompile(`^bar$`)}},
+			metadataIsIgnored: true,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectType: &objectType, KeyRegex: regexp.MustCompile(`^fizz$`)}},
+			metadataIsIgnored: false,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectType: &objectType, ValueRegex: regexp.MustCompile(`^buzz$`)}},
+			metadataIsIgnored: false,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectName: &objectName, KeyRegex: regexp.MustCompile(`^foo$`)}},
+			metadataIsIgnored: true,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectName: &objectName, ValueRegex: regexp.MustCompile(`^bar$`)}},
+			metadataIsIgnored: true,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectName: &objectName, KeyRegex: regexp.MustCompile(`^fizz$`)}},
+			metadataIsIgnored: false,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectName: &objectName, ValueRegex: regexp.MustCompile(`^buzz$`)}},
+			metadataIsIgnored: false,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectType: &objectType, ObjectName: &objectName, KeyRegex: regexp.MustCompile(`foo`), ValueRegex: regexp.MustCompile(`bar`)}},
+			metadataIsIgnored: true,
+		},
+	}
 
-	// Will filter out the 'foo' metadata key as it belongs to an Org
-	vcd.client.Client.IgnoredMetadata = []IgnoredMetadata{{ObjectType: addrOf("org"), KeyRegex: regexp.MustCompile(`^fo[a-z]$`)}}
-	singleMetadata, err = adminOrg.GetMetadataByKey("foo", false)
-	check.Assert(err, NotNil)
-	check.Assert(singleMetadata, IsNil)
-	check.Assert(true, Equals, strings.Contains(err.Error(), "ignored"))
-
-	// Will not filter anything as the object doesn't exist, despite the key filter is correct
-	vcd.client.Client.IgnoredMetadata = []IgnoredMetadata{{ObjectType: addrOf("notExist"), KeyRegex: regexp.MustCompile(`^fo[a-z]$`)}}
-	singleMetadata, err = adminOrg.GetMetadataByKey("foo", false)
-	check.Assert(err, IsNil)
-	check.Assert(singleMetadata, NotNil)
-	check.Assert(singleMetadata.TypedValue.Value, Equals, "bar")
+	for _, tt := range tests {
+		vcd.client.Client.IgnoredMetadata = tt.ignoredMetadata
+		singleMetadata, err := resource.GetMetadataByKey("foo", false)
+		if tt.metadataIsIgnored {
+			check.Assert(err, NotNil)
+			check.Assert(true, Equals, strings.Contains(err.Error(), "ignored"))
+		} else {
+			check.Assert(err, IsNil)
+			check.Assert(singleMetadata, NotNil)
+			check.Assert(singleMetadata.TypedValue.Value, Equals, "bar")
+		}
+	}
 
 	// We add another entry and retrieve all metadata, then it should return the one that is not filtered out
-	err = adminOrg.AddMetadataEntryWithVisibility("test", "bar2", types.MetadataStringValue, types.MetadataReadWriteVisibility, false)
+	err = resource.AddMetadataEntryWithVisibility("test", "bar2", types.MetadataStringValue, types.MetadataReadWriteVisibility, false)
 	check.Assert(err, IsNil)
 
 	vcd.client.Client.IgnoredMetadata = []IgnoredMetadata{{KeyRegex: regexp.MustCompile(`^fo[a-z]$`)}}
-	allMetadata, err := adminOrg.GetMetadata()
+	allMetadata, err := resource.GetMetadata()
 	check.Assert(err, IsNil)
 	check.Assert(allMetadata, NotNil)
 	check.Assert(len(allMetadata.MetadataEntry), Equals, 1) // There are 2 entries, but one should be filtered out
@@ -337,12 +377,12 @@ func (vcd *TestVCD) TestIgnoreMetadata(check *C) {
 	check.Assert(allMetadata.MetadataEntry[0].Key, Equals, "test")
 
 	// Tries to delete a metadata entry that is ignored, it should hence fail
-	err = adminOrg.DeleteMetadataEntryWithDomain("foo", false)
+	err = resource.DeleteMetadataEntryWithDomain("foo", false)
 	check.Assert(err, NotNil)
 	check.Assert(true, Equals, strings.Contains(err.Error(), "ignored"))
 
 	// Tries to merge metadata that is filtered out, hence it should fail
-	err = adminOrg.MergeMetadataWithMetadataValues(map[string]types.MetadataValue{
+	err = resource.MergeMetadataWithMetadataValues(map[string]types.MetadataValue{
 		"foo": {
 			TypedValue: &types.MetadataTypedValue{
 				XsiType: types.MetadataStringValue,
@@ -354,7 +394,7 @@ func (vcd *TestVCD) TestIgnoreMetadata(check *C) {
 	check.Assert(true, Equals, strings.Contains(err.Error(), "after filtering metadata, there is no metadata to merge"))
 
 	// Tries to merge metadata, one entry is filtered out, another is not
-	err = adminOrg.MergeMetadataWithMetadataValues(map[string]types.MetadataValue{
+	err = resource.MergeMetadataWithMetadataValues(map[string]types.MetadataValue{
 		"foo": {
 			TypedValue: &types.MetadataTypedValue{
 				XsiType: types.MetadataStringValue,
