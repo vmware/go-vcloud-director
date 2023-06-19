@@ -90,6 +90,9 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies: "35.0",
 	types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcComputePolicies:         "35.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile:          "36.0", // VCD 10.3+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters:             "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePools:              "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePoolHardware:       "36.0",
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions

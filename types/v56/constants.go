@@ -141,6 +141,8 @@ const (
 	MimeSubscribeToExternalCatalog = "application/vnd.vmware.admin.externalCatalogSubscriptionParams+json"
 	// Mime to identify a media item
 	MimeMediaItem = "application/vnd.vmware.vcloud.media+xml"
+	// Mime to identify a provider VDC
+	MimeProviderVdc = "application/vnd.vmware.admin.vmwprovidervdc+xml"
 )
 
 const (
@@ -266,6 +268,9 @@ const (
 	QtAdminOrgVdcStorageProfile = "adminOrgVdcStorageProfile" // StorageProfile of VDC as admin
 	QtTask                      = "task"                      // Task
 	QtAdminTask                 = "adminTask"                 // Task as admin
+	QtResourcePool              = "resourcePool"              // Resource Pool
+	QtNetworkPool               = "networkPool"               // Network Pool
+	QtProviderVdcStorageProfile = "providerVdcStorageProfile" // StorageProfile of Provider VDC
 )
 
 // AdminQueryTypes returns the corresponding "admin" query type for each regular type
@@ -400,6 +405,9 @@ const (
 	OpenApiEndpointRdeEntities                        = "entities/"
 	OpenApiEndpointRdeEntitiesTypes                   = "entities/types/"
 	OpenApiEndpointRdeEntitiesResolve                 = "entities/%s/resolve"
+	OpenApiEndpointVirtualCenters                     = "virtualCenters"
+	OpenApiEndpointResourcePools                      = "virtualCenters/%s/resourcePools/browse" // '%s' is vCenter ID
+	OpenApiEndpointResourcePoolHardware               = "virtualCenters/%s/resourcePools/%s/hwv" // first '%s' is vCenter ID. Second one is Resource Pool MoRef
 
 	// NSX-T ALB related endpoints
 
