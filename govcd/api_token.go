@@ -194,8 +194,8 @@ func (vcdClient *VCDClient) RegisterToken(org, apiVersion string, tokenParams *t
 	return newTokenParams, nil
 }
 
-// GetApiToken gets an API token
-func (client *Client) GetApiToken(org, apiVersion, funcName string, data *bytes.Buffer) (*types.ApiTokenRefresh, error) {
+// GetAccessToken gets the access token structure containing the bearer token
+func (client *Client) GetAccessToken(org, apiVersion, funcName string, data *bytes.Buffer) (*types.ApiTokenRefresh, error) {
 	resp, err := client.doTokenRequest(org, "token", apiVersion, "application/x-www-form-urlencoded", data)
 	if err != nil {
 		return nil, err
@@ -280,7 +280,7 @@ func (token *Token) GetInitialApiToken() (*types.ApiTokenRefresh, error) {
 			uuid,
 		))
 
-	refreshToken, err := client.GetApiToken(token.Token.Org.Name, "36.1", "CreateApiToken", data)
+	refreshToken, err := client.GetAccessToken(token.Token.Org.Name, "36.1", "CreateApiToken", data)
 	if err != nil {
 		return nil, fmt.Errorf("error getting token: %s", err)
 	}
@@ -346,7 +346,7 @@ func (vcdClient *VCDClient) GetBearerTokenFromApiToken(org, token string) (*type
 	}
 
 	data := bytes.NewBufferString(fmt.Sprintf("grant_type=refresh_token&refresh_token=%s", token))
-	tokenDef, err := vcdClient.Client.GetApiToken(org, "36.1", "GetBearerTokenFromApiToken", data)
+	tokenDef, err := vcdClient.Client.GetAccessToken(org, "36.1", "GetBearerTokenFromApiToken", data)
 	if err != nil {
 		return nil, fmt.Errorf("error getting bearer token: %s", err)
 	}

@@ -257,7 +257,7 @@ func (sa *ServiceAccount) GetInitialApiToken() (*types.ApiTokenRefresh, error) {
 			sa.authParams.DeviceCode,
 		))
 
-	token, err := client.GetApiToken(sa.ServiceAccount.Org.Name, "37.0", "CreateServiceAccount", data)
+	token, err := client.GetAccessToken(sa.ServiceAccount.Org.Name, "37.0", "CreateServiceAccount", data)
 	if err != nil {
 		return nil, err
 	}
