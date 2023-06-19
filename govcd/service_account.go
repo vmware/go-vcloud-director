@@ -76,10 +76,15 @@ func (org *Org) GetAllServiceAccounts(queryParams url.Values) ([]*ServiceAccount
 		return nil, err
 	}
 
+	tenantContext, err := org.getTenantContext()
+	if err != nil {
+		return nil, err
+	}
+
 	// VCD has a pageSize limit on this specifi endpoint
 	queryParams.Add("pageSize", "32")
 	typeResponses := []*types.ServiceAccount{{}}
-	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParams, &typeResponses, nil)
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParams, &typeResponses, getTenantContextHeader(tenantContext))
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get service accounts: %s", err)
@@ -228,15 +233,12 @@ func (sa *ServiceAccount) Grant() error {
 		return err
 	}
 
-	var tenantHeaders map[string]string
-	if client.IsSysAdmin {
-		tenantHeaders = map[string]string{
-			types.HeaderAuthContext:   sa.org.TenantContext.OrgName,
-			types.HeaderTenantContext: sa.org.TenantContext.OrgId,
-		}
+	tenantContext, err := sa.org.getTenantContext()
+	if err != nil {
+		return err
 	}
 
-	err = client.OpenApiPostItem("37.0", urlRef, nil, userCode, nil, tenantHeaders)
+	err = client.OpenApiPostItem("37.0", urlRef, nil, userCode, nil, getTenantContextHeader(tenantContext))
 	if err != nil {
 		return err
 	}
