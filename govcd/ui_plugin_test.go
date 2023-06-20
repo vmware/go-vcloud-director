@@ -68,11 +68,13 @@ func (vcd *TestVCD) Test_UIPlugin(check *C) {
 	check.Assert(err, IsNil)
 	for _, plugin := range allUIPlugins {
 		if plugin.IsTheSameAs(newUIPlugin) {
+			plugin.UIPluginMetadata.PluginStatus = newUIPlugin.UIPluginMetadata.PluginStatus // We ignore status as it can be quite arbitrary
 			check.Assert(plugin.UIPluginMetadata, DeepEquals, newUIPlugin.UIPluginMetadata)
 		}
 	}
 	retrievedUIPlugin, err := vcd.client.GetUIPlugin(newUIPlugin.UIPluginMetadata.Vendor, newUIPlugin.UIPluginMetadata.PluginName, newUIPlugin.UIPluginMetadata.Version)
 	check.Assert(err, IsNil)
+	retrievedUIPlugin.UIPluginMetadata.PluginStatus = newUIPlugin.UIPluginMetadata.PluginStatus // We ignore status as it can be quite arbitrary
 	check.Assert(retrievedUIPlugin.UIPluginMetadata, DeepEquals, newUIPlugin.UIPluginMetadata)
 
 	// Publishing the plugin to all tenants

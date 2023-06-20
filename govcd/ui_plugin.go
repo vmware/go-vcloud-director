@@ -101,7 +101,7 @@ func (vcdClient *VCDClient) GetUIPluginById(id string) (*UIPlugin, error) {
 // amendUIPluginGetByIdError is a workaround for a bug in VCD that causes the GET endpoint to return an ugly error 500 with a NullPointerException
 // when the UI Plugin with given ID is not found
 func amendUIPluginGetByIdError(id string, err error) error {
-	if strings.Contains(err.Error(), "NullPointerException") {
+	if err != nil && strings.Contains(err.Error(), "NullPointerException") {
 		return fmt.Errorf("could not find any UI plugin with ID '%s': %s", id, ErrorEntityNotFound)
 	}
 	return err
