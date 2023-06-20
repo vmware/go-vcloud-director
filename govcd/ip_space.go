@@ -77,7 +77,7 @@ func (vcdClient *VCDClient) GetAllIpSpaceSummaries(queryParameters url.Values) (
 		return nil, err
 	}
 
-	// Wrap all typeResponses into DefinedEntityType types with client
+	// Wrap all typeResponses into IpSpace types with client
 	results := make([]*IpSpace, len(typeResponses))
 	for sliceIndex := range typeResponses {
 		results[sliceIndex] = &IpSpace{
@@ -137,7 +137,7 @@ func (vcdClient *VCDClient) GetIpSpaceByName(name string) (*IpSpace, error) {
 
 	singleIpSpace, err := oneOrError("name", name, filteredIpSpaces)
 	if err != nil {
-		return nil, fmt.Errorf("error ")
+		return nil, err
 	}
 
 	return vcdClient.GetIpSpaceById(singleIpSpace.IpSpace.ID)
@@ -146,8 +146,8 @@ func (vcdClient *VCDClient) GetIpSpaceByName(name string) (*IpSpace, error) {
 // GetIpSpaceByNameAndOrgId retrieves IP Space with a given name in a particular Org
 // Note. Only PRIVATE IP spaces belong to Orgs
 func (vcdClient *VCDClient) GetIpSpaceByNameAndOrgId(name, orgId string) (*IpSpace, error) {
-	if name == "" {
-		return nil, fmt.Errorf("IP Space lookup requires name")
+	if name == "" || orgId == "" {
+		return nil, fmt.Errorf("IP Space lookup requires name and Org ID")
 	}
 
 	queryParameters := url.Values{}
@@ -220,7 +220,7 @@ func (ipSpace *IpSpace) Delete() error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("error deleting IP Space: %s", err)
+		return fmt.Errorf("error deleting IP space: %s", err)
 	}
 
 	return nil

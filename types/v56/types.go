@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 // Package types/v56 provider all types which are used by govcd package in order to perform API
@@ -929,14 +929,6 @@ type VAppLeaseSettings struct {
 	DeploymentLeaseSeconds           *int  `xml:"DeploymentLeaseSeconds,omitempty"`
 	StorageLeaseSeconds              *int  `xml:"StorageLeaseSeconds,omitempty"`
 	PowerOffOnRuntimeLeaseExpiration *bool `xml:"PowerOffOnRuntimeLeaseExpiration,omitempty"`
-}
-
-type OrgFederationSettings struct {
-	HREF string   `xml:"href,attr,omitempty"` // The URI of the entity.
-	Type string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
-	Link LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
-
-	Enabled bool `xml:"Enabled,omitempty"`
 }
 
 // OrgLdapSettingsType represents the ldap settings for a VMware Cloud Director organization.
