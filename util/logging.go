@@ -8,7 +8,9 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"io"
 	"log"
 	"net/http"
@@ -216,6 +218,17 @@ func isBinary(data string, req *http.Request) bool {
 			}
 		}
 	}
+	// Special case for UI Plugins
+	if strings.Contains("plugin", data) {
+		// A good candidate to be a UI plugin
+		var uiPlugin types.UIPluginMetadata
+		err := json.Unmarshal([]byte(data), &uiPlugin)
+		if err == nil && uiPlugin.PluginName != "" {
+			// There's no error, it is a UI Plugin then.
+			return true
+		}
+	}
+
 	return false
 }
 
