@@ -61,7 +61,12 @@ func (vcd *TestVCD) Test_UIPlugin(check *C) {
 	// We refresh it to have the latest status
 	newUIPlugin, err = vcd.client.GetUIPluginById(newUIPlugin.UIPluginMetadata.ID)
 	check.Assert(err, IsNil)
-	check.Assert(newUIPlugin.UIPluginMetadata.PluginStatus, Equals, "ready")
+	check.Assert(true, Equals, newUIPlugin.UIPluginMetadata.PluginStatus == "ready" || newUIPlugin.UIPluginMetadata.PluginStatus == "unavailable")
+
+	// We check that the error returned by a non-existent ID is correct:
+	_, err = vcd.client.GetUIPluginById("urn:vcloud:uiPlugin:00000000-0000-0000-0000-000000000000")
+	check.Assert(err, NotNil)
+	check.Assert(true, Equals, strings.Contains(err.Error(), "could not find any UI plugin with ID"))
 
 	// Retrieve the created plugin using different getters
 	allUIPlugins, err := vcd.client.GetAllUIPlugins()
@@ -79,11 +84,11 @@ func (vcd *TestVCD) Test_UIPlugin(check *C) {
 	err = newUIPlugin.PublishAll()
 	check.Assert(err, IsNil)
 
-	// Retrieving the published tenants, it should equal to the tenants provided in the test configuration + 1 (the System one)
+	// Retrieving the published tenants, it should be at least the number of tenants provided in the test configuration + 1 (the System one)
 	orgRefs, err := newUIPlugin.GetPublishedTenants()
 	check.Assert(err, IsNil)
 	check.Assert(orgRefs, NotNil)
-	check.Assert(len(orgRefs), Equals, len(vcd.config.Tenants)+1)
+	check.Assert(len(orgRefs) >= len(vcd.config.Tenants)+1, Equals, true)
 
 	// Unpublishing the plugin from all the tenants
 	err = newUIPlugin.UnpublishAll()

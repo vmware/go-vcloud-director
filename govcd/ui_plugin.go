@@ -92,15 +92,19 @@ func (vcdClient *VCDClient) GetUIPluginById(id string) (*UIPlugin, error) {
 	}
 	err = vcdClient.Client.OpenApiGetItem(apiVersion, urlRef, nil, result.UIPluginMetadata, nil)
 	if err != nil {
-		// Workaround for a bug in VCD that causes the GET endpoint to return an ugly error 500 with a NullPointerException
-		// when the UI Plugin with given ID is not found
-		if strings.Contains(err.Error(), "NullPointerException") {
-			return nil, fmt.Errorf("could not find any UI plugin with ID '%s': %s", id, ErrorEntityNotFound)
-		}
-		return nil, err
+		return nil, amendUIPluginGetByIdError(id, err)
 	}
 
 	return result, nil
+}
+
+// amendUIPluginGetByIdError is a workaround for a bug in VCD that causes the GET endpoint to return an ugly error 500 with a NullPointerException
+// when the UI Plugin with given ID is not found
+func amendUIPluginGetByIdError(id string, err error) error {
+	if strings.Contains(err.Error(), "NullPointerException") {
+		return fmt.Errorf("could not find any UI plugin with ID '%s': %s", id, ErrorEntityNotFound)
+	}
+	return err
 }
 
 // GetUIPlugin obtains a unique UIPlugin identified by the combination of its vendor, plugin name and version.
