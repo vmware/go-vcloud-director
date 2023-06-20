@@ -146,8 +146,8 @@ func (vcdClient *VCDClient) GetIpSpaceByName(name string) (*IpSpace, error) {
 // GetIpSpaceByNameAndOrgId retrieves IP Space with a given name in a particular Org
 // Note. Only PRIVATE IP spaces belong to Orgs
 func (vcdClient *VCDClient) GetIpSpaceByNameAndOrgId(name, orgId string) (*IpSpace, error) {
-	if name == "" {
-		return nil, fmt.Errorf("IP Space lookup requires name")
+	if name == "" || orgId == "" {
+		return nil, fmt.Errorf("IP Space lookup requires name and Org ID")
 	}
 
 	queryParameters := url.Values{}
