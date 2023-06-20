@@ -219,7 +219,7 @@ func isBinary(data string, req *http.Request) bool {
 		}
 	}
 	// Special case for UI Plugins
-	if strings.Contains(data, "plugin") {
+	if data != "" && strings.Contains(data, "plugin") {
 		// A good candidate to be a UI plugin
 		var uiPlugin types.UIPluginMetadata
 		err := json.Unmarshal([]byte(data), &uiPlugin)
