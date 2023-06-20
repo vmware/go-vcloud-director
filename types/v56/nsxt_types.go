@@ -200,6 +200,10 @@ type OpenApiOrgVdcNetwork struct {
 
 	// Shared shares network with other VDCs in the organization
 	Shared *bool `json:"shared,omitempty"`
+
+	// EnableDualSubnetNetwork defines whether or not this network will support two subnets (IPv4
+	// and IPv6)
+	EnableDualSubnetNetwork *bool `json:"enableDualSubnetNetwork,omitempty"`
 }
 
 // OrgVdcNetworkSubnetIPRanges is a type alias to reuse the same definitions with appropriate names
@@ -1704,4 +1708,15 @@ type VcenterImportableDvpg struct {
 	} `json:"dvSwitch"`
 	VirtualCenter *OpenApiReference `json:"virtualCenter"`
 	Vlan          string            `json:"vlan"`
+}
+
+type NsxtEdgeGatewaySlaacProfile struct {
+	DNSConfig NsxtEdgeGatewaySlaacProfileDNSConfig `json:"dnsConfig,omitempty"`
+	Enabled   bool                                 `json:"enabled"`
+	Mode      string                               `json:"mode"`
+}
+
+type NsxtEdgeGatewaySlaacProfileDNSConfig struct {
+	DNSServerIpv6Addresses []string `json:"dnsServerIpv6Addresses,omitempty"`
+	DomainNames            []string `json:"domainNames,omitempty"`
 }

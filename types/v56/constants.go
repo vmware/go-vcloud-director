@@ -368,6 +368,7 @@ const (
 	OpenApiEndpointEdgeGateways                       = "edgeGateways/"
 	OpenApiEndpointEdgeGatewayQos                     = "edgeGateways/%s/qos"
 	OpenApiEndpointEdgeGatewayDhcpForwarder           = "edgeGateways/%s/dhcpForwarder"
+	OpenApiEndpointEdgeGatewaySlaacProfile            = "edgeGateways/%s/slaacProfile"
 	OpenApiEndpointEdgeGatewayUsedIpAddresses         = "edgeGateways/%s/usedIpAddresses"
 	OpenApiEndpointNsxtFirewallRules                  = "edgeGateways/%s/firewall/rules"
 	OpenApiEndpointFirewallGroups                     = "firewallGroups/"
