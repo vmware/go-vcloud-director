@@ -141,6 +141,11 @@ const (
 	MimeSubscribeToExternalCatalog = "application/vnd.vmware.admin.externalCatalogSubscriptionParams+json"
 	// Mime to identify a media item
 	MimeMediaItem = "application/vnd.vmware.vcloud.media+xml"
+	// Mime to identify SAML metadata
+	MimeSamlMetadata = "application/samlmetadata+xml"
+	// Mime to identify organization federation settings (SAML) XML and JSON
+	MimeFederationSettingsXml  = "application/vnd.vmware.admin.organizationFederationSettings+xml"
+	MimeFederationSettingsJson = "application/vnd.vmware.admin.organizationFederationSettings+json"
 )
 
 const (
@@ -625,4 +630,11 @@ const (
 	IpSpaceShared  = "SHARED_SERVICES"
 	IpSpacePublic  = "PUBLIC"
 	IpSpacePrivate = "PRIVATE"
+)
+
+// Values used for SAML metadata normalization and validation
+const (
+	SamlNamespaceMd     = "urn:oasis:names:tc:SAML:2.0:metadata"
+	SamlNamespaceDs     = "http://www.w3.org/2000/09/xmldsig#"
+	SamlNamespaceHoksso = "urn:oasis:names:tc:SAML:2.0:profiles:holder-of-key:SSO:browser"
 )

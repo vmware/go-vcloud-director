@@ -898,3 +898,12 @@ func safeClose(file *os.File) {
 		util.Logger.Printf("Error closing file: %s\n", err)
 	}
 }
+
+// isSuccessStatus returns true if the given status code is between 200 and 300
+func isSuccessStatus(statusCode int) bool {
+	if statusCode >= http.StatusOK && // 200
+		statusCode < http.StatusMultipleChoices { // 300
+		return true
+	}
+	return false
+}
