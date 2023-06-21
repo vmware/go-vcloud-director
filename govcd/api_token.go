@@ -176,6 +176,10 @@ func (vcdClient *VCDClient) RegisterToken(org, apiVersion string, tokenParams *t
 	}
 
 	resp, err := client.doTokenRequest(org, "register", apiVersion, "application/json", bytes.NewBuffer(data))
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -197,6 +201,10 @@ func (vcdClient *VCDClient) RegisterToken(org, apiVersion string, tokenParams *t
 // GetAccessToken gets the access token structure containing the bearer token
 func (client *Client) GetAccessToken(org, apiVersion, funcName string, data *bytes.Buffer) (*types.ApiTokenRefresh, error) {
 	resp, err := client.doTokenRequest(org, "token", apiVersion, "application/x-www-form-urlencoded", data)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+
 	if err != nil {
 		return nil, err
 	}

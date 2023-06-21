@@ -53,7 +53,7 @@ func (vcd *TestVCD) TestVCDClient_GetBearerTokenFromApiToken(check *C) {
 	check.Assert(tokenInfo.TokenType, Equals, "Bearer")
 }
 
-func (vcd *TestVCD) Test_ApiToken(check *C) {
+func (vcd *TestVCD) Test_ApiTokenCreation(check *C) {
 	isApiTokenEnabled, err := vcd.client.Client.VersionEqualOrGreater("10.3.1", 3)
 	check.Assert(err, IsNil)
 	if !isApiTokenEnabled {
@@ -85,13 +85,16 @@ func (vcd *TestVCD) Test_ApiToken(check *C) {
 	check.Assert(notFound, IsNil)
 }
 
-func (vcd *TestVCD) Test_GetFilteredTokens(check *C) {
+func (vcd *TestVCD) Test_GetFilteredTokensSysOrg(check *C) {
 	isApiTokenEnabled, err := vcd.client.Client.VersionEqualOrGreater("10.3.1", 3)
 	check.Assert(err, IsNil)
 	if !isApiTokenEnabled {
 		check.Skip("This test requires VCD 10.3.1 or greater")
 	}
 	client := vcd.client
+	if !client.Client.IsSysAdmin {
+		check.Skip("This test requires to be run by a SysAdmin")
+	}
 
 	token, err := client.CreateToken(vcd.config.Provider.SysOrg, check.TestName())
 	check.Assert(err, IsNil)
@@ -118,6 +121,49 @@ func (vcd *TestVCD) Test_GetFilteredTokens(check *C) {
 	check.Assert(err, IsNil)
 
 	newToken, err = client.GetTokenByNameAndUsername(check.TestName(), "administrator")
+	check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(newToken, IsNil)
+}
+
+func (vcd *TestVCD) Test_GetFilteredTokensOrg(check *C) {
+	isApiTokenEnabled, err := vcd.client.Client.VersionEqualOrGreater("10.3.1", 3)
+	check.Assert(err, IsNil)
+	if !isApiTokenEnabled {
+		check.Skip("This test requires VCD 10.3.1 or greater")
+	}
+	orgName := vcd.config.Tenants[0].SysOrg
+	userName := vcd.config.Tenants[0].User
+	password := vcd.config.Tenants[0].Password
+
+	vcdClient1 := NewVCDClient(vcd.client.Client.VCDHREF, true)
+	err = vcdClient1.Authenticate(userName, password, orgName)
+	check.Assert(err, IsNil)
+
+	token, err := vcdClient1.CreateToken(vcd.config.Tenants[0].SysOrg, check.TestName())
+	check.Assert(err, IsNil)
+	check.Assert(token, NotNil)
+	check.Assert(token.Token.Type, Equals, "REFRESH")
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTokens
+	AddToCleanupListOpenApi(token.Token.Name, check.TestName(), endpoint+token.Token.ID)
+
+	queryParameters := &url.Values{}
+	queryParameters.Add("filter", fmt.Sprintf("(name==%s;owner.name==%s;(type==PROXY,type==REFRESH))", check.TestName(), userName))
+
+	tokens, err := vcdClient1.GetAllTokens(*queryParameters)
+	check.Assert(err, IsNil)
+	check.Assert(len(tokens), Equals, 1)
+	check.Assert(tokens[0].Token.Name, Equals, check.TestName())
+	check.Assert(tokens[0].Token.Owner.Name, Equals, userName)
+
+	newToken, err := vcdClient1.GetTokenByNameAndUsername(check.TestName(), userName)
+	check.Assert(err, IsNil)
+	check.Assert(newToken.Token.Name, Equals, check.TestName())
+	check.Assert(newToken.Token.Owner.Name, Equals, userName)
+
+	err = newToken.Delete()
+	check.Assert(err, IsNil)
+
+	newToken, err = vcdClient1.GetTokenByNameAndUsername(check.TestName(), userName)
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(newToken, IsNil)
 }

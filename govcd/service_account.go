@@ -118,7 +118,7 @@ func (org *Org) GetServiceAccountByName(name string) (*ServiceAccount, error) {
 	return serviceAccount, nil
 }
 
-// RegisterServiceAccount creates a Service Account and sets it in `Created` status
+// CreateServiceAccount creates a Service Account and sets it in `Created` status
 func (vcdClient *VCDClient) CreateServiceAccount(orgName, name, scope, softwareId, softwareVersion, clientUri string) (*ServiceAccount, error) {
 	client := vcdClient.Client
 	if client.APIVCDMaxVersionIs("< 37.0") {
@@ -157,6 +157,7 @@ func (vcdClient *VCDClient) CreateServiceAccount(orgName, name, scope, softwareI
 	return serviceAccount, nil
 }
 
+// Update updates the modifiable fields of a Service ACcount
 func (sa *ServiceAccount) Update(saConfig *types.ServiceAccount) (*ServiceAccount, error) {
 	client := sa.org.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccounts
@@ -186,7 +187,7 @@ func (sa *ServiceAccount) Update(saConfig *types.ServiceAccount) (*ServiceAccoun
 	return returnServiceAccount, nil
 }
 
-// AuthorizeServiceAccount authorizes a service account and returns a DeviceID and UserCode which will be used while granting
+// Authorize authorizes a service account and returns a DeviceID and UserCode which will be used while granting
 // the request, and sets the Service Account in `Requested` status
 func (sa *ServiceAccount) Authorize() error {
 	client := sa.org.client
@@ -198,6 +199,10 @@ func (sa *ServiceAccount) Authorize() error {
 		))
 
 	resp, err := client.doTokenRequest(sa.ServiceAccount.Org.Name, "device_authorization", "37.0", "application/x-www-form-urlencoded", data)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+
 	if err != nil {
 		return err
 	}
@@ -215,8 +220,12 @@ func (sa *ServiceAccount) Authorize() error {
 	return nil
 }
 
-// GrantServiceAccount Grants access to the Service Account and sets it in `Granted` status
+// Grant Grants access to the Service Account and sets it in `Granted` status
 func (sa *ServiceAccount) Grant() error {
+	if sa.authParams == nil {
+		return fmt.Errorf("error: userCode is unset, service account needs to be authorized")
+	}
+
 	client := sa.org.client
 	// This is the only place where this field is used, so a local struct is created
 	type serviceAccountGrant struct {
@@ -248,6 +257,9 @@ func (sa *ServiceAccount) Grant() error {
 
 // GetInitialApiToken gets the initial API token for the Service Account and sets it in `Active` status
 func (sa *ServiceAccount) GetInitialApiToken() (*types.ApiTokenRefresh, error) {
+	if sa.authParams == nil {
+		return nil, fmt.Errorf("error: service account must be authorized and granted")
+	}
 	client := sa.org.client
 	uuid := extractUuid(sa.ServiceAccount.ID)
 	data := bytes.NewBufferString(
@@ -302,7 +314,7 @@ func (sa *ServiceAccount) Revoke() error {
 	return nil
 }
 
-// DeleteServiceAccountByID deletes a Service Account
+// Delete deletes a Service Account
 func (sa *ServiceAccount) Delete() error {
 	client := sa.org.client
 	if client.APIVCDMaxVersionIs("< 37.0") {
