@@ -513,11 +513,12 @@ func guessMetadataType(value string) string {
 // metadataToFilter adds metadata elements to an existing filter
 // href is the address of the entity for which we want to retrieve metadata
 // filter is an existing filter to which we want to add metadata elements
-func (client *Client) metadataToFilter(href, name string, filter *FilterDef) (*FilterDef, error) {
+// objectName is the name of the entity for which we want to retrieve metadata
+func (client *Client) metadataToFilter(href, objectName string, filter *FilterDef) (*FilterDef, error) {
 	if filter == nil {
 		filter = &FilterDef{}
 	}
-	metadata, err := getMetadata(client, href, name)
+	metadata, err := getMetadata(client, href, objectName)
 	if err == nil && metadata != nil && len(metadata.MetadataEntry) > 0 {
 		for _, md := range metadata.MetadataEntry {
 			isSystem := false
