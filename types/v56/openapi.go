@@ -514,3 +514,54 @@ type OpenApiSupportedHardwareVersions struct {
 		Name      string `json:"name"`
 	} `json:"supportedVersions"`
 }
+
+// NetworkPoolSummary retrieves a list of network pool summaries
+type NetworkPoolSummary struct {
+	Associations []struct {
+		EntityId      string `json:"entityId"`
+		AssociationId string `json:"associationId"`
+	} `json:"associations"`
+	Values []struct {
+		Status             string           `json:"status"`
+		Id                 string           `json:"id"`
+		Name               string           `json:"name"`
+		Description        string           `json:"description"`
+		PoolType           string           `json:"poolType"`
+		PromiscuousMode    bool             `json:"promiscuousMode"`
+		TotalBackingsCount int              `json:"totalBackingsCount"`
+		UsedBackingsCount  int              `json:"usedBackingsCount"`
+		ManagingOwnerRef   OpenApiReference `json:"managingOwnerRef"`
+	} `json:"values"`
+}
+
+// NetworkPool is the full data retrieved for a provider network pool
+type NetworkPool struct {
+	Status             string             `json:"status"`
+	Id                 string             `json:"id"`
+	Name               string             `json:"name"`
+	Description        string             `json:"description"`
+	PoolType           string             `json:"poolType"`
+	PromiscuousMode    bool               `json:"promiscuousMode"`
+	TotalBackingsCount int                `json:"totalBackingsCount"`
+	UsedBackingsCount  int                `json:"usedBackingsCount"`
+	ManagingOwnerRef   OpenApiReference   `json:"managingOwnerRef"`
+	Backing            NetworkPoolBacking `json:"backing"`
+}
+
+// NetworkPoolBacking is the definition of the objects supporting the network pool
+type NetworkPoolBacking struct {
+	VlanIdRanges     VlanIdRanges       `json:"vlanIdRanges"`
+	VdsRefs          []OpenApiReference `json:"vdsRefs"`
+	PortGroupRefs    []OpenApiReference `json:"portGroupRefs"`
+	TransportZoneRef OpenApiReference   `json:"transportZoneRef"`
+	ProviderRef      OpenApiReference   `json:"providerRef"`
+}
+
+type VlanIdRanges struct {
+	Values []VlanIdRange `json:"values"`
+}
+
+type VlanIdRange struct {
+	StartId int `json:"startId"`
+	EndId   int `json:"endId"`
+}
