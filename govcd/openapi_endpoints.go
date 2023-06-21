@@ -93,6 +93,8 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters:             "36.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePools:              "36.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePoolHardware:       "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPools:               "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPoolSummaries:       "36.0",
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions
