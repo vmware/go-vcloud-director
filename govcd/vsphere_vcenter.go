@@ -7,6 +7,7 @@ package govcd
 import (
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"net/url"
 )
 
 type VCenter struct {
@@ -21,7 +22,7 @@ func NewVcenter(client *VCDClient) *VCenter {
 	}
 }
 
-func (vcdClient VCDClient) GetAllVcenters() ([]*VCenter, error) {
+func (vcdClient VCDClient) GetAllVcenters(queryParams url.Values) ([]*VCenter, error) {
 	client := vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters
 	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
@@ -36,7 +37,7 @@ func (vcdClient VCDClient) GetAllVcenters() ([]*VCenter, error) {
 
 	var retrieved []*types.VSphereVirtualCenter
 
-	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, nil, &retrieved, nil)
+	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParams, &retrieved, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error getting vCenters list: %s", err)
 	}
@@ -56,7 +57,7 @@ func (vcdClient VCDClient) GetAllVcenters() ([]*VCenter, error) {
 }
 
 func (vcdClient VCDClient) GetVcenterByName(name string) (*VCenter, error) {
-	vcenters, err := vcdClient.GetAllVcenters()
+	vcenters, err := vcdClient.GetAllVcenters(nil)
 	if err != nil {
 		return nil, err
 	}
@@ -92,4 +93,8 @@ func (vcdClient VCDClient) GetVcenterById(id string) (*VCenter, error) {
 	}
 
 	return returnObject, nil
+}
+
+func (vcenter VCenter) GetVimServerUrl() (string, error) {
+	return url.JoinPath(vcenter.client.Client.VCDHREF.String(), "admin", "extension", "vimServer", extractUuid(vcenter.VSphereVcenter.VcId))
 }

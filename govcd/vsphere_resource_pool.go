@@ -7,6 +7,7 @@ package govcd
 import (
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"net/url"
 )
 
 type ResourcePool struct {
@@ -23,9 +24,7 @@ func NewResourcePool(client *VCDClient, vcenter *VCenter) *ResourcePool {
 	}
 }
 
-func (vcenter VCenter) GetAllAvailableResourcePools() ([]*ResourcePool, error) {
-	//https://atl1-vcd-static-129-178.eng.vmware.com/cloudapi/1.0.0/virtualCenters/urn:vcloud:vimserver:b6696104-d163-449f-bda9-c12ceeee3857/resourcePools/browse
-	//cloudapi/1.0.0/virtualCenters/{vcenterID}/resourcePools/browse
+func (vcenter VCenter) GetAllAvailableResourcePools(queryParams url.Values) ([]*ResourcePool, error) {
 	client := vcenter.client.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePools
 	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
@@ -40,7 +39,7 @@ func (vcenter VCenter) GetAllAvailableResourcePools() ([]*ResourcePool, error) {
 
 	var retrieved []*types.ResourcePool
 
-	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, nil, &retrieved, nil)
+	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParams, &retrieved, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error getting resource pool list: %s", err)
 	}
@@ -69,7 +68,7 @@ func (vcenter VCenter) GetAllAvailableResourcePools() ([]*ResourcePool, error) {
 
 func (vcenter VCenter) GetAvailableResourcePoolByName(name string) (*ResourcePool, error) {
 
-	resourcePools, err := vcenter.GetAllAvailableResourcePools()
+	resourcePools, err := vcenter.GetAllAvailableResourcePools(nil)
 	if err != nil {
 		return nil, err
 	}
@@ -133,4 +132,19 @@ func (rp ResourcePool) GetAvailableHardwareVersions() (*types.OpenApiSupportedHa
 	}
 
 	return &retrieved, nil
+}
+
+func (rp ResourcePool) GetDefaultHardwareVersion() (string, error) {
+
+	versions, err := rp.GetAvailableHardwareVersions()
+	if err != nil {
+		return "", err
+	}
+
+	for _, v := range versions.SupportedVersions {
+		if v.IsDefault {
+			return v.Name, nil
+		}
+	}
+	return "", fmt.Errorf("no default hardware version found for resource pool %s", rp.ResourcePool.Name)
 }

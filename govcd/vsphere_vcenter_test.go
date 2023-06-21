@@ -8,7 +8,7 @@ import (
 
 func (vcd *TestVCD) Test_GetVcenters(check *C) {
 
-	vcenters, err := vcd.client.GetAllVcenters()
+	vcenters, err := vcd.client.GetAllVcenters(nil)
 	check.Assert(err, IsNil)
 
 	check.Assert(len(vcenters) > 0, Equals, true)
