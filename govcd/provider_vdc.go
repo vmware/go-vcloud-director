@@ -187,57 +187,7 @@ func getProviderVdcByName(vcdClient *VCDClient, providerVdcName string, extended
 	return vcdClient.GetProviderVdcByHref(foundProviderVdcs.Results.VMWProviderVdcRecord[0].HREF)
 }
 
-func (vcdClient *VCDClient) CreateProviderVdcAsync(params *types.ProviderVdcCreationXml) (Task, error) {
-
-	if params.Name == "" {
-		return Task{}, fmt.Errorf("a non-empty name is needed to create a provider VDC")
-	}
-	if params.ResourcePoolRefs == nil {
-		return Task{}, fmt.Errorf("resource pool is needed to create a provider VDC")
-	}
-	if len(params.StorageProfile) == 0 {
-		return Task{}, fmt.Errorf("storage profile is needed to create a provider VDC")
-	}
-	if params.VimServer == nil {
-		return Task{}, fmt.Errorf("vim server is needed to create a provider VDC")
-	}
-	pvdcCreateHREF := vcdClient.Client.VCDHREF
-	pvdcCreateHREF.Path += "/admin/extension/providervdcsparams"
-
-	//params.Xmlns = types.XMLNamespaceVCloud
-	params.Xmlns = types.XMLNamespaceExtension
-	//params.XmlnsVcloud = "http://www.vmware.com/vcloud/v1.5"
-	//params.VCloudExtension = &types.VCloudExtension{Required: false}
-
-	// Return the task
-	return vcdClient.Client.ExecuteTaskRequest(pvdcCreateHREF.String(), http.MethodPost,
-		"application/vnd.vmware.admin.createProviderVdcParams+xml", "error instantiating a new provider VDC: %s", params)
-}
-
-func (vcdClient *VCDClient) CreateProviderVdc(params *types.ProviderVdcCreationXml) (*ProviderVdcExtended, error) {
-	task, err := vcdClient.CreateProviderVdcAsync(params)
-	if err != nil {
-		return nil, err
-	}
-	if task.Task == nil {
-		return nil, fmt.Errorf("no task reported from provider VDC creation")
-	}
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return nil, err
-	}
-	if task.Task.Owner == nil {
-		return nil, fmt.Errorf("no owner found for provider VDC creation task")
-	}
-	providerVdc, err := vcdClient.GetProviderVdcExtendedByHref(task.Task.Owner.HREF)
-	if err != nil {
-		return nil, err
-	}
-
-	return providerVdc, nil
-}
-
-func (vcdClient *VCDClient) CreateProviderVdcJson(params *types.ProviderVdcCreation) (*ProviderVdcExtended, error) {
+func (vcdClient *VCDClient) CreateProviderVdc(params *types.ProviderVdcCreation) (*ProviderVdcExtended, error) {
 
 	if params.Name == "" {
 		return nil, fmt.Errorf("a non-empty name is needed to create a provider VDC")
@@ -264,11 +214,9 @@ func (vcdClient *VCDClient) CreateProviderVdcJson(params *types.ProviderVdcCreat
 	body := strings.NewReader(text.String())
 	apiVersion := vcdClient.Client.APIVersion
 	headAccept := http.Header{}
-	headAccept.Set("Accept", types.JSONMime)
+	headAccept.Set("Accept", fmt.Sprintf("application/*+json;version=%s", apiVersion))
 	headAccept.Set("Content-Type", "application/*+json")
 	request := vcdClient.Client.newRequest(nil, nil, http.MethodPost, pvdcCreateHREF, body, apiVersion, headAccept)
-	request.Header.Set("Accept", fmt.Sprintf("application/*+json;version=%s", apiVersion))
-	request.Header.Set("Content-Type", "application/*+json")
 	resp, err := vcdClient.Client.Http.Do(request)
 	if err != nil {
 		return nil, err
@@ -298,40 +246,4 @@ func (vcdClient *VCDClient) CreateProviderVdcJson(params *types.ProviderVdcCreat
 	}
 
 	return pvdc, nil
-
-	/*
-		// NOTE: given that the UI uses JSON based API to run SAML settings, it seemed the safest way to
-		// imitate it and use JSON payload and results for this operation
-		headAccept.Set("Accept", types.JSONMime)
-		headAccept.Set("Content-Type", types.MimeFederationSettingsJson)
-		request := adminOrg.client.newRequest(nil, nil, http.MethodPut, *setUrl, body, apiVersion, headAccept)
-		request.Header.Set("Accept", fmt.Sprintf("application/*+json;version=%s", apiVersion))
-		request.Header.Set("Content-Type", types.MimeFederationSettingsJson)
-
-		resp, err := adminOrg.client.Http.Do(request)
-		if err != nil {
-			return nil, err
-		}
-
-		if !isSuccessStatus(resp.StatusCode) {
-			body, _ := io.ReadAll(resp.Body)
-			var jsonError types.OpenApiError
-			err = json.Unmarshal(body, &jsonError)
-			// By default, we return the whole response body as error message. This may also contain the stack trace
-			message := string(body)
-			// if the body contains a valid JSON representation of the error, we return a more agile message, using the
-			// exposed fields, and hiding the stack trace from view
-			if err == nil {
-				message = fmt.Sprintf("%s - %s", jsonError.MinorErrorCode, jsonError.Message)
-			}
-			return nil, fmt.Errorf("error setting SAML for org %s: %s (%d) - %s", adminOrg.AdminOrg.Name, resp.Status, resp.StatusCode, message)
-		}
-
-		_, err = checkResp(resp, err)
-		if err != nil {
-			return nil, err
-		}
-
-	*/
-
 }

@@ -175,15 +175,12 @@ func (vcd *TestVCD) Test_CreateProviderVdc(check *C) {
 		}
 	}
 	check.Assert(storageProfile.HREF, Not(Equals), "")
-	networkPools, err := QueryNetworkPoolByName(vcd.client, vcd.config.VCD.NsxtProviderVdc.NetworkPool)
-	check.Assert(err, IsNil)
-	check.Assert(len(networkPools) > 0, Equals, true)
 
 	vcenter, err := vcd.client.GetVcenterByName(vcd.config.VCD.VimServer)
 	check.Assert(err, IsNil)
 	check.Assert(vcenter, NotNil)
 
-	resourcePools, err := vcenter.GetAllAvailableResourcePools()
+	resourcePools, err := vcenter.GetAllAvailableResourcePools(nil)
 	check.Assert(err, IsNil)
 	if len(resourcePools) == 0 {
 		check.Skip("no available resource pools found for this deployment")
@@ -196,62 +193,26 @@ func (vcd *TestVCD) Test_CreateProviderVdc(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(nsxtManagers), Equals, 1)
 
-	/**/
-	params := types.ProviderVdcCreationXml{
-		Xmlns:       types.XMLNamespaceVCloud,
-		Name:        providerVdcName,
-		Description: providerVdcDescription,
-		IsEnabled:   addrOf(true),
-		NetworkPoolReferences: &types.NetworkPoolReferences{[]*types.Reference{
-			{
-				Name: networkPools[0].Name,
-				HREF: networkPools[0].HREF,
-				Type: "GENEVE",
-			},
-		}},
-		StorageProfile:                  []string{storageProfile.Name},
-		HighestSupportedHardwareVersion: "vmx-19",
-		NsxTManagerReference: &types.Reference{
-			HREF: nsxtManagers[0].HREF,
-			ID:   extractUuid(nsxtManagers[0].HREF),
-			Name: nsxtManagers[0].Name,
-		},
-		ResourcePoolRefs: &types.VimObjectRefs{[]*types.VimObjectRef{
-			{
-				VimServerRef: &types.Reference{
-					HREF: vcenter.VSphereVcenter.Url,
-					ID:   extractUuid(vcenter.VSphereVcenter.VcId),
-					Name: vcenter.VSphereVcenter.Name,
-				},
-				MoRef:         resourcePool.ResourcePool.Moref,
-				VimObjectType: "RESOURCE_POOL",
-			},
-		},
-		},
-		VimServer: &types.Reference{
-			HREF: vcenter.VSphereVcenter.Url,
-			ID:   extractUuid(vcenter.VSphereVcenter.VcId),
-			Name: vcenter.VSphereVcenter.Name,
-		},
-	}
+	hwVersion, err := resourcePool.GetDefaultHardwareVersion()
+	check.Assert(err, IsNil)
 
-	providerVdc, err := vcd.client.CreateProviderVdc(&params)
-	//check.Assert(err, IsNil)
-	//check.Assert(providerVdc, NotNil)
+	vcenterUrl, err := vcenter.GetVimServerUrl()
+	check.Assert(err, IsNil)
 
-	if err != nil {
-		fmt.Printf("XML creation err %s\n", err)
-		fmt.Printf("XML creation pvdc %v\n", providerVdc)
-	}
+	networkPool, err := vcd.client.GetNetworkPoolByName(vcd.config.VCD.NsxtProviderVdc.NetworkPool)
+	check.Assert(err, IsNil)
+	networkPoolHref, err := networkPool.GetOpenApiUrl()
+	check.Assert(err, IsNil)
+	//fmt.Printf("%# v \n(%s)\n", pretty.Formatter(networkPool.NetworkPool), networkPoolHref)
 
 	jsonparams := types.ProviderVdcCreation{
 		Name:                            providerVdcName,
 		Description:                     providerVdcDescription,
-		HighestSupportedHardwareVersion: "vmx-19",
+		HighestSupportedHardwareVersion: hwVersion,
 		IsEnabled:                       true,
 		VimServer: []*types.Reference{
 			{
-				HREF: vcenter.VSphereVcenter.Url,
+				HREF: vcenterUrl,
 				ID:   extractUuid(vcenter.VSphereVcenter.VcId),
 				Name: vcenter.VSphereVcenter.Name,
 			},
@@ -260,7 +221,7 @@ func (vcd *TestVCD) Test_CreateProviderVdc(check *C) {
 			VimObjectRef: []*types.VimObjectRef{
 				{
 					VimServerRef: &types.Reference{
-						HREF: vcenter.VSphereVcenter.Url,
+						HREF: vcenterUrl,
 						ID:   extractUuid(vcenter.VSphereVcenter.VcId),
 						Name: vcenter.VSphereVcenter.Name,
 					},
@@ -276,13 +237,14 @@ func (vcd *TestVCD) Test_CreateProviderVdc(check *C) {
 			Name: nsxtManagers[0].Name,
 		},
 		NetworkPool: types.Reference{
-			Name: networkPools[0].Name,
-			HREF: networkPools[0].HREF,
-			Type: "GENEVE",
+			HREF: networkPoolHref,
+			Name: networkPool.NetworkPool.Name,
+			ID:   extractUuid(networkPool.NetworkPool.Id),
+			Type: networkPool.NetworkPool.PoolType,
 		},
 		AutoCreateNetworkPool: false,
 	}
-	providerVdcJson, err := vcd.client.CreateProviderVdcJson(&jsonparams)
+	providerVdcJson, err := vcd.client.CreateProviderVdc(&jsonparams)
 	check.Assert(err, IsNil)
 	check.Assert(providerVdcJson, NotNil)
 }
