@@ -239,20 +239,20 @@ func (sa *ServiceAccount) Grant() error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccountGrant
 	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
 	if err != nil {
-		return err
+		return fmt.Errorf("error granting service account: %s", err)
 	}
 
 	tenantContext, err := sa.org.getTenantContext()
 	if err != nil {
-		return err
+		return fmt.Errorf("error granting service account: %s", err)
 	}
 
 	err = client.OpenApiPostItem("37.0", urlRef, nil, userCode, nil, getTenantContextHeader(tenantContext))
 	if err != nil {
-		return err
+		return fmt.Errorf("error granting service account: %s", err)
 	}
 
-	return err
+	return nil
 }
 
 // GetInitialApiToken gets the initial API token for the Service Account and sets it in `Active` status
