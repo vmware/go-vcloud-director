@@ -910,7 +910,7 @@ type IgnoredMetadata struct {
 
 // filterMetadata filters all metadata entries, given a slice of metadata that needs to be ignored. It doesn't
 // alter the input metadata, but returns a copy of the filtered metadata.
-func filterMetadata(allMetadata *types.Metadata, href, name string, metadataToIgnore []IgnoredMetadata) (*types.Metadata, error) {
+func filterMetadata(allMetadata *types.Metadata, href, objectName string, metadataToIgnore []IgnoredMetadata) (*types.Metadata, error) {
 	if len(metadataToIgnore) == 0 {
 		return allMetadata, nil
 	}
@@ -927,7 +927,7 @@ func filterMetadata(allMetadata *types.Metadata, href, name string, metadataToIg
 
 	var filteredMetadata []*types.MetadataEntry
 	for _, originalEntry := range allMetadata.MetadataEntry {
-		_, err := filterSingleMetadataEntry(originalEntry.Key, href, name, &types.MetadataValue{Domain: originalEntry.Domain, TypedValue: originalEntry.TypedValue}, metadataToIgnore)
+		_, err := filterSingleMetadataEntry(originalEntry.Key, href, objectName, &types.MetadataValue{Domain: originalEntry.Domain, TypedValue: originalEntry.TypedValue}, metadataToIgnore)
 		if err == nil || !strings.Contains(err.Error(), "ignored") {
 			filteredMetadata = append(filteredMetadata, originalEntry)
 		}
@@ -938,7 +938,7 @@ func filterMetadata(allMetadata *types.Metadata, href, name string, metadataToIg
 
 // filterSingleMetadataEntry filters a single metadata entry given a slice of metadata that needs to be ignored. It doesn't
 // alter the input metadata, but returns a copy of the filtered metadata.
-func filterSingleMetadataEntry(key, href, name string, metadataEntry *types.MetadataValue, metadataToIgnore []IgnoredMetadata) (*types.MetadataValue, error) {
+func filterSingleMetadataEntry(key, href, objectName string, metadataEntry *types.MetadataValue, metadataToIgnore []IgnoredMetadata) (*types.MetadataValue, error) {
 	if len(metadataToIgnore) == 0 {
 		return metadataEntry, nil
 	}
@@ -953,7 +953,7 @@ func filterSingleMetadataEntry(key, href, name string, metadataEntry *types.Meta
 		}
 
 		if (entryToIgnore.ObjectType == nil || strings.TrimSpace(*entryToIgnore.ObjectType) == "" || *entryToIgnore.ObjectType == objectType) &&
-			(entryToIgnore.ObjectName == nil || strings.TrimSpace(*entryToIgnore.ObjectName) == "" || strings.TrimSpace(name) == "" || *entryToIgnore.ObjectName == name) &&
+			(entryToIgnore.ObjectName == nil || strings.TrimSpace(*entryToIgnore.ObjectName) == "" || strings.TrimSpace(objectName) == "" || *entryToIgnore.ObjectName == objectName) &&
 			(entryToIgnore.KeyRegex == nil || entryToIgnore.KeyRegex.MatchString(key)) &&
 			(entryToIgnore.ValueRegex == nil || entryToIgnore.ValueRegex.MatchString(metadataEntry.TypedValue.Value)) {
 			return nil, fmt.Errorf("the entry with key '%s' and value '%v' is being ignored", key, metadataEntry.TypedValue.Value)
@@ -963,7 +963,7 @@ func filterSingleMetadataEntry(key, href, name string, metadataEntry *types.Meta
 }
 
 // filterMetadataToDelete filters a metadata entry that is going to be deleted, given a slice of metadata that needs to be ignored.
-func filterMetadataToDelete(client *Client, key, href, name string, isSystem bool, metadataToIgnore []IgnoredMetadata) error {
+func filterMetadataToDelete(client *Client, key, href, objectName string, isSystem bool, metadataToIgnore []IgnoredMetadata) error {
 	if len(metadataToIgnore) == 0 {
 		return nil
 	}
@@ -978,14 +978,14 @@ func filterMetadataToDelete(client *Client, key, href, name string, isSystem boo
 		}
 
 		if (entryToIgnore.ObjectType == nil || strings.TrimSpace(*entryToIgnore.ObjectType) == "" || *entryToIgnore.ObjectType == objectType) &&
-			(entryToIgnore.ObjectName == nil || strings.TrimSpace(*entryToIgnore.ObjectName) == "" || strings.TrimSpace(name) == "" || *entryToIgnore.ObjectName == name) &&
+			(entryToIgnore.ObjectName == nil || strings.TrimSpace(*entryToIgnore.ObjectName) == "" || strings.TrimSpace(objectName) == "" || *entryToIgnore.ObjectName == objectName) &&
 			(entryToIgnore.KeyRegex == nil || entryToIgnore.KeyRegex.MatchString(key)) {
 
 			// Entering here means that it is a good candidate to be ignored, but we need to know the metadata value
 			// as we may be filtering by value
 			ignore := true
 			if entryToIgnore.ValueRegex != nil {
-				metadataEntry, err := getMetadataByKey(client, href, name, key, isSystem)
+				metadataEntry, err := getMetadataByKey(client, href, objectName, key, isSystem)
 				if err != nil {
 					return err
 				}
