@@ -141,7 +141,7 @@ func (vm *VM) DeleteMetadataEntry(key string) error {
 // and returns the task.
 // Deprecated: Use VM.DeleteMetadataEntryWithDomainAsync instead
 func (vm *VM) DeleteMetadataEntryAsync(key string) (Task, error) {
-	return deleteMetadata(vm.client, vm.VM.HREF, "", key, false)
+	return deleteMetadata(vm.client, vm.VM.HREF, vm.VM.Name, key, false)
 }
 
 // AddMetadataEntry adds VDC metadata typedValue and key/value pair provided as input
