@@ -82,6 +82,10 @@ func (vcd *TestVCD) Test_ServiceAccount_SysOrg(check *C) {
 		check.Skip("This test requires VCD 10.4.0 or greater")
 	}
 
+	if !vcd.org.client.IsSysAdmin {
+		check.Skip("This test requires System Administrator role")
+	}
+
 	serviceAccountSysOrg, err := vcd.client.CreateServiceAccount(
 		vcd.config.Provider.SysOrg,
 		check.TestName(),
