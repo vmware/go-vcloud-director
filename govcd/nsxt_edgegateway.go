@@ -207,7 +207,7 @@ func (egw *NsxtEdgeGateway) Update(edgeGatewayConfig *types.OpenAPIEdgeGateway) 
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
-	minimumApiVersion, err := egw.client.getOpenApiHighestElevatedVersion(endpoint)
+	apiVersion, err := egw.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +226,7 @@ func (egw *NsxtEdgeGateway) Update(edgeGatewayConfig *types.OpenAPIEdgeGateway) 
 		client:      egw.client,
 	}
 
-	err = egw.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, edgeGatewayConfig, returnEgw.EdgeGateway, nil)
+	err = egw.client.OpenApiPutItem(apiVersion, urlRef, nil, edgeGatewayConfig, returnEgw.EdgeGateway, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error updating Edge Gateway: %s", err)
 	}
@@ -241,7 +241,7 @@ func (egw *NsxtEdgeGateway) Delete() error {
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
-	minimumApiVersion, err := egw.client.getOpenApiHighestElevatedVersion(endpoint)
+	apiVersion, err := egw.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
 	}
@@ -255,7 +255,7 @@ func (egw *NsxtEdgeGateway) Delete() error {
 		return err
 	}
 
-	err = egw.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil, nil)
+	err = egw.client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting Edge Gateway: %s", err)
