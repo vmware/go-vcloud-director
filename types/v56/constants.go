@@ -412,6 +412,7 @@ const (
 	OpenApiEndpointIpSpaceUplinks            = "ipSpaceUplinks/"
 	OpenApiEndpointIpSpaceUplinksAllocate    = "ipSpaces/%s/allocate"     // '%s' is IP Space ID
 	OpenApiEndpointIpSpaceUplinksAllocations = "ipSpaces/%s/allocations/" // '%s' is IP Space ID
+	OpenApiEndpointIpSpaceOrgAssignments     = "ipSpaces/orgAssignments/" // '%s' is IP Space ID
 
 	// NSX-T ALB related endpoints
 

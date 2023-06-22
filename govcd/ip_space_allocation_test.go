@@ -20,7 +20,7 @@ func (vcd *TestVCD) Test_IpSpaceIpAllocation(check *C) {
 	ipSpace := createIpSpace(vcd, check)
 	extNet := createExternalNetwork(vcd, check)
 
-	// IP Space uplink (not directly needed anywhere)
+	// IP Space uplink (not directly referenced anywhere, but is required to make IP allocations)
 	_ = createIpSpaceUplink(vcd, check, extNet.ExternalNetwork.ID, ipSpace.IpSpace.ID)
 
 	// Create NSX-T Edge Gateway

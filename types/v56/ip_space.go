@@ -280,3 +280,33 @@ type IpSpaceIpAllocation struct {
 	// Date when the IP address or IP prefix is allocated. This property is read-only.
 	AllocationDate string `json:"allocationDate"`
 }
+
+type IpSpaceOrgAssignment struct {
+	ID string `json:"id,omitempty"`
+	// IPSpaceRef is mandatory
+	IPSpaceRef *OpenApiReference `json:"ipSpaceRef"`
+	// OrgRef is mandatory
+	OrgRef        *OpenApiReference           `json:"orgRef"`
+	IPSpaceType   string                      `json:"ipSpaceType,omitempty"`
+	DefaultQuotas *IpSpaceOrgAssignmentQuotas `json:"defaultQuotas,omitempty"`
+	CustomQuotas  *IpSpaceOrgAssignmentQuotas `json:"customQuotas"`
+}
+
+// type IpSpaceOrgAssignmentDefaultQuotas struct {
+// 	FloatingIPQuota int                                  `json:"floatingIpQuota"`
+// 	IPPrefixQuotas  []IpSpaceOrgAssignmentIPPrefixQuotas `json:"ipPrefixQuotas"`
+// }
+// type IpSpaceOrgAssignmentCustomQuotas struct {
+// 	FloatingIPQuota int                                  `json:"floatingIpQuota"`
+// 	IPPrefixQuotas  []IpSpaceOrgAssignmentIPPrefixQuotas `json:"ipPrefixQuotas"`
+// }
+
+type IpSpaceOrgAssignmentQuotas struct {
+	FloatingIPQuota *int                                 `json:"floatingIpQuota"`
+	IPPrefixQuotas  []IpSpaceOrgAssignmentIPPrefixQuotas `json:"ipPrefixQuotas"`
+}
+
+type IpSpaceOrgAssignmentIPPrefixQuotas struct {
+	PrefixLength *int `json:"prefixLength"`
+	Quota        *int `json:"quota"`
+}
