@@ -3247,6 +3247,7 @@ type UpdateVdcStorageProfiles struct {
 	RemoveStorageProfile *Reference                      `xml:"RemoveStorageProfile,omitempty"`
 }
 
+// Token is used for managing VCD API Tokens for a User in an Org
 type Token struct {
 	ID    string            `json:"id,omitempty"`
 	Name  string            `json:"name,omitempty"`
@@ -3255,6 +3256,7 @@ type Token struct {
 	Type  string            `json:"type,omitempty"`
 }
 
+// ServiceAccount is used for managing a Service Account that belongs to a specific Org
 type ServiceAccount struct {
 	ID              string            `json:"id,omitempty"`
 	Name            string            `json:"name,omitempty"`
@@ -3288,6 +3290,8 @@ type ApiTokenParams struct {
 	Scope                   string   `json:"scope,omitempty"`
 }
 
+// ServiceAccountAuthParams is used to store the generated user code and device code that
+// are needed for granting and activating a Service Account
 type ServiceAccountAuthParams struct {
 	DeviceCode      string `json:"device_code,omitempty"`
 	UserCode        string `json:"user_code"`
