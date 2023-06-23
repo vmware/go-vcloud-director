@@ -7,6 +7,7 @@ package govcd
 import (
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 	"net/http"
 	"regexp"
 	"strings"
@@ -908,6 +909,10 @@ type IgnoredMetadata struct {
 	ValueRegex *regexp.Regexp // A regular expression to filter out metadata values
 }
 
+func (im IgnoredMetadata) String() string {
+	return fmt.Sprintf("IgnoredMetadata(ObjectType=%v, ObjectName=%v, KeyRegex=%v, ValueRegex=%v)", im.ObjectType, im.ObjectName, im.KeyRegex, im.ValueRegex)
+}
+
 // filterMetadata filters all metadata entries, given a slice of metadata that needs to be ignored. It doesn't
 // alter the input metadata, but returns a copy of the filtered metadata.
 func filterMetadata(allMetadata *types.Metadata, href, objectName string, metadataToIgnore []IgnoredMetadata) (*types.Metadata, error) {
@@ -951,7 +956,7 @@ func filterSingleMetadataEntry(key, href, objectName string, metadataEntry *type
 		if entryToIgnore.ObjectType == nil && entryToIgnore.ObjectName == nil && entryToIgnore.KeyRegex == nil && entryToIgnore.ValueRegex == nil {
 			continue
 		}
-
+		util.Logger.Printf("[DEBUG] Comparing metadata with key '%s' with ignored metadata filter '%s'", key, entryToIgnore)
 		if (entryToIgnore.ObjectType == nil || strings.TrimSpace(*entryToIgnore.ObjectType) == "" || *entryToIgnore.ObjectType == objectType) &&
 			(entryToIgnore.ObjectName == nil || strings.TrimSpace(*entryToIgnore.ObjectName) == "" || strings.TrimSpace(objectName) == "" || *entryToIgnore.ObjectName == objectName) &&
 			(entryToIgnore.KeyRegex == nil || entryToIgnore.KeyRegex.MatchString(key)) &&
