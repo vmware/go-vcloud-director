@@ -2,7 +2,7 @@
   `VCDClient.CreateIpSpaceUplink`, `VCDClient.GetAllIpSpaceUplinks`,
   `VCDClient.GetIpSpaceUplinkById`, `VCDClient.GetIpSpaceUplinkByName`, `IpSpaceUplink.Update`,
   `IpSpaceUplink.Delete` [GH-579]
-* Added IP Space Allocation CRUD suport via `IpSpaceIpAllocation`, `types.IpSpaceIpAllocation`,
+* Added IP Space Allocation CRUD support via `IpSpaceIpAllocation`, `types.IpSpaceIpAllocation`,
   `types.IpSpaceIpAllocationRequest`, `types.IpSpaceIpAllocationRequestResult`. Methods
   `IpSpace.AllocateIp`, `Org.IpSpaceAllocateIp`, `Org.GetIpSpaceAllocationByTypeAndValue`,
   `IpSpace.GetAllIpSpaceAllocations`, `Org.GetIpSpaceAllocationById`, `IpSpaceIpAllocation.Update`,

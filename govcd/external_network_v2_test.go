@@ -1,4 +1,4 @@
-//go:build extnetwork || network || functional || openapi || ALL
+//go:build extnetwork || network || nsxt || functional || openapi || ALL
 
 /*
  * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
