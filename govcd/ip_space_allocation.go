@@ -36,7 +36,6 @@ func (org *Org) IpSpaceAllocateIp(ipSpaceId string, ipAllocationConfig *types.Ip
 // allocationType can be 'FLOATING_IP' (types.IpSpaceIpAllocationTypeFloatingIp) or 'IP_PREFIX'
 // (types.IpSpaceIpAllocationTypeIpPrefix)
 func (org *Org) GetIpSpaceAllocationByTypeAndValue(ipSpaceId string, allocationType, value string, queryParameters url.Values) (*IpSpaceIpAllocation, error) {
-	///// TODO FILTER BY ORG
 	queryParams := queryParameterFilterAnd(fmt.Sprintf("value==%s;type==%s", value, allocationType), queryParameters)
 	results, err := getAllIpSpaceAllocations(org.client, ipSpaceId, org, queryParams)
 	if err != nil {
@@ -258,8 +257,13 @@ func getAllIpSpaceAllocations(client *Client, ipSpaceId string, org *Org, queryP
 		return nil, err
 	}
 
+	tenantContext, err := org.getTenantContext()
+	if err != nil {
+		return nil, fmt.Errorf("error getting tenant context: %s", err)
+	}
+
 	typeResponses := []*types.IpSpaceIpAllocation{{}}
-	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, getTenantContextHeader(tenantContext))
 	if err != nil {
 		return nil, err
 	}
