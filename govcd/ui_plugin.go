@@ -272,7 +272,7 @@ func getPluginMetadata(pluginPath string) (*types.UIPluginMetadata, error) {
 		}
 	}
 	if manifest == nil {
-		return nil, fmt.Errorf("")
+		return nil, fmt.Errorf("could not find manifest.json inside the file %s", pluginPath)
 	}
 
 	manifestContents, err := manifest.Open()
