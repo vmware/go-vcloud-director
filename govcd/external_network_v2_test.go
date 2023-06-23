@@ -231,16 +231,3 @@ func getVcenterHref(vcdClient *VCDClient, name string) (string, error) {
 	}
 	return virtualCenters[0].HREF, nil
 }
-
-// func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxtIpSpaces(check *C) {
-// 	// Create External Network backed by IP Spaces
-
-// 	if vcd.client.Client.APIVCDMaxVersionIs("< 37.1") {
-// 		check.Skip("IP Spaces are supported in VCD 10.4.1+")
-// 	}
-
-// 	// endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
-// 	// skipOpenApiEndpointTest(vcd, check, endpoint)
-// 	// skipNoNsxtConfiguration(vcd, check)
-
-// }

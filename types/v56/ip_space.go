@@ -292,15 +292,6 @@ type IpSpaceOrgAssignment struct {
 	CustomQuotas  *IpSpaceOrgAssignmentQuotas `json:"customQuotas"`
 }
 
-// type IpSpaceOrgAssignmentDefaultQuotas struct {
-// 	FloatingIPQuota int                                  `json:"floatingIpQuota"`
-// 	IPPrefixQuotas  []IpSpaceOrgAssignmentIPPrefixQuotas `json:"ipPrefixQuotas"`
-// }
-// type IpSpaceOrgAssignmentCustomQuotas struct {
-// 	FloatingIPQuota int                                  `json:"floatingIpQuota"`
-// 	IPPrefixQuotas  []IpSpaceOrgAssignmentIPPrefixQuotas `json:"ipPrefixQuotas"`
-// }
-
 type IpSpaceOrgAssignmentQuotas struct {
 	FloatingIPQuota *int                                 `json:"floatingIpQuota"`
 	IPPrefixQuotas  []IpSpaceOrgAssignmentIPPrefixQuotas `json:"ipPrefixQuotas"`

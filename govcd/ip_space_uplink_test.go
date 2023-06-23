@@ -142,7 +142,6 @@ func createExternalNetwork(vcd *TestVCD, check *C) *ExternalNetworkV2 {
 	backingId := getBackingIdByNameAndType(check, vcd.config.VCD.Nsxt.Tier0router, types.ExternalNetworkBackingTypeNsxtTier0Router, vcd, nsxtManagerId)
 
 	net := &types.ExternalNetworkV2{
-		ID:          "",
 		Name:        check.TestName(),
 		Description: "",
 		NetworkBackings: types.ExternalNetworkV2Backings{Values: []types.ExternalNetworkV2Backing{

@@ -15,16 +15,16 @@ func (vcd *TestVCD) Test_IpSpaceIpAllocation(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 	skipNoNsxtConfiguration(vcd, check)
-	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointIpSpaces)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointIpSpaceIpAllocations)
 
 	ipSpace := createIpSpace(vcd, check)
 	extNet := createExternalNetwork(vcd, check)
 
 	// IP Space uplink (not directly referenced anywhere, but is required to make IP allocations)
-	_ = createIpSpaceUplink(vcd, check, extNet.ExternalNetwork.ID, ipSpace.IpSpace.ID)
+	ipSpaceUplink := createIpSpaceUplink(vcd, check, extNet.ExternalNetwork.ID, ipSpace.IpSpace.ID)
 
 	// Create NSX-T Edge Gateway
-	_ = createNsxtEdgeGateway(vcd, check, extNet.ExternalNetwork.ID)
+	edgeGw := createNsxtEdgeGateway(vcd, check, extNet.ExternalNetwork.ID)
 
 	// Floating IP Allocation request
 	floatingIpAllocationRequest := &types.IpSpaceIpAllocationRequest{
@@ -35,11 +35,24 @@ func (vcd *TestVCD) Test_IpSpaceIpAllocation(check *C) {
 
 	// Prefix allocation request
 	prefixAllocationRequest := &types.IpSpaceIpAllocationRequest{
-		Type:         "FLOATING_IP",
+		Type:         "IP_PREFIX",
 		Quantity:     addrOf(1),
 		PrefixLength: addrOf(31),
 	}
 	performIpAllocationChecks(vcd, check, ipSpace.IpSpace.ID, prefixAllocationRequest)
+
+	// Cleanup
+	err := edgeGw.Delete()
+	check.Assert(err, IsNil)
+
+	err = ipSpaceUplink.Delete()
+	check.Assert(err, IsNil)
+
+	err = extNet.Delete()
+	check.Assert(err, IsNil)
+
+	err = ipSpace.Delete()
+	check.Assert(err, IsNil)
 }
 
 func performIpAllocationChecks(vcd *TestVCD, check *C, ipSpaceId string, ipSpaceAllocationRequest *types.IpSpaceIpAllocationRequest) {
@@ -48,7 +61,7 @@ func performIpAllocationChecks(vcd *TestVCD, check *C, ipSpaceId string, ipSpace
 	check.Assert(err, IsNil)
 	check.Assert(len(ipAllocationResult), Equals, 1)
 
-	openApiEndpoint := types.OpenApiPathVersion1_0_0 + fmt.Sprintf(types.OpenApiEndpointIpSpaceUplinksAllocations, ipSpaceId) + ipAllocationResult[0].ID
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + fmt.Sprintf(types.OpenApiEndpointIpSpaceIpAllocations, ipSpaceId) + ipAllocationResult[0].ID
 	PrependToCleanupListOpenApi("NSX-T IP Space IP Allocation", check.TestName(), openApiEndpoint)
 
 	// Get IP Allocation
@@ -56,6 +69,12 @@ func performIpAllocationChecks(vcd *TestVCD, check *C, ipSpaceId string, ipSpace
 	check.Assert(err, IsNil)
 	check.Assert(ipAllocation, NotNil)
 	check.Assert(ipAllocation.IpSpaceIpAllocation.UsageState, Equals, types.IpSpaceIpAllocationUnused)
+
+	// Get IP Allocation by ID
+	ipAllocationById, err := vcd.org.GetIpSpaceAllocationById(ipSpaceId, ipAllocation.IpSpaceIpAllocation.ID)
+	check.Assert(err, IsNil)
+	check.Assert(ipAllocationById, NotNil)
+	check.Assert(ipAllocationById.IpSpaceIpAllocation, DeepEquals, ipAllocation.IpSpaceIpAllocation)
 
 	// Set the IP for manual usage
 	ipAllocation.IpSpaceIpAllocation.UsageState = types.IpSpaceIpAllocationUsedManual
@@ -75,6 +94,29 @@ func performIpAllocationChecks(vcd *TestVCD, check *C, ipSpaceId string, ipSpace
 
 	err = updatedIpAllocationManual.Delete()
 	check.Assert(err, IsNil)
+
+	// Get IP Space by ID
+	ipSpace, err := vcd.client.GetIpSpaceById(ipSpaceId)
+	check.Assert(err, IsNil)
+
+	// Attempt to search for allocations when none exist
+	allAllocations, err := ipSpace.GetAllIpSpaceAllocations(ipSpaceAllocationRequest.Type, nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(allAllocations), Equals, 0)
+
+	// allocate IP
+	allocationByIpSpaceResult, err := ipSpace.AllocateIp(vcd.org.Org.ID, vcd.org.Org.Name, ipSpaceAllocationRequest)
+	check.Assert(err, IsNil)
+	check.Assert(len(allocationByIpSpaceResult), Equals, 1)
+
+	// Remove
+	ipAllocationByIpSpaceResult, err := vcd.org.GetIpSpaceAllocationByTypeAndValue(ipSpaceId, ipSpaceAllocationRequest.Type, allocationByIpSpaceResult[0].Value, nil)
+	check.Assert(err, IsNil)
+	check.Assert(ipAllocation, NotNil)
+
+	err = ipAllocationByIpSpaceResult.Delete()
+	check.Assert(err, IsNil)
+
 }
 
 func createIpSpaceUplink(vcd *TestVCD, check *C, extNetId, ipSpaceId string) *IpSpaceUplink {
