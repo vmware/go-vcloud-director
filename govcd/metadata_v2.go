@@ -957,6 +957,9 @@ func filterSingleMetadataEntry(key, href, objectName string, metadataEntry *type
 			continue
 		}
 		util.Logger.Printf("[DEBUG] Comparing metadata with key '%s' with ignored metadata filter '%s'", key, entryToIgnore)
+		// We apply an optimistic approach here to simplify the conditions, so the metadata entry will always ignored unless the filters
+		// tell otherwise, that is, if they are nil (not all of them as per the condition above), if they're empty or if they don't match.
+		// All the filtering options (type, name, keyRegex and valueRegex) must compute to true for the metadata to be ignored.
 		if (entryToIgnore.ObjectType == nil || strings.TrimSpace(*entryToIgnore.ObjectType) == "" || *entryToIgnore.ObjectType == objectType) &&
 			(entryToIgnore.ObjectName == nil || strings.TrimSpace(*entryToIgnore.ObjectName) == "" || strings.TrimSpace(objectName) == "" || *entryToIgnore.ObjectName == objectName) &&
 			(entryToIgnore.KeyRegex == nil || entryToIgnore.KeyRegex.MatchString(key)) &&
