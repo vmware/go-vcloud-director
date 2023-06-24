@@ -77,6 +77,11 @@ func (vcd *TestVCD) Test_IpSpaceUplink(check *C) {
 	_, err = vcd.client.GetIpSpaceUplinkById(updatedUplinkConfig.IpSpaceUplink.ID)
 	check.Assert(ContainsNotFound(err), Equals, true)
 
+	err = extNet.Delete()
+	check.Assert(err, IsNil)
+
+	err = ipSpace.Delete()
+	check.Assert(err, IsNil)
 }
 
 func createIpSpace(vcd *TestVCD, check *C) *IpSpace {
