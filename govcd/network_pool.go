@@ -98,6 +98,10 @@ func (vcdClient VCDClient) GetNetworkPoolByName(name string) (*NetworkPool, erro
 		return nil, fmt.Errorf("error getting network pools: %s", err)
 	}
 
+	if len(filteredNetworkPools.Values) == 0 {
+		return nil, fmt.Errorf("no network pool found with name '%s'", name)
+	}
+
 	if len(filteredNetworkPools.Values) > 1 {
 		return nil, fmt.Errorf("more than one network pool found with name '%s'", name)
 	}
