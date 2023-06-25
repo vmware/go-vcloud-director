@@ -940,6 +940,20 @@ func (vcdClient *VCDClient) QueryNsxtManagerByName(name string) ([]*types.QueryR
 	return results.Results.NsxtManagerRecord, nil
 }
 
+// QueryNsxtManagerByHref searches for NSX-T managers available in VCD
+func (vcdClient *VCDClient) QueryNsxtManagerByHref(href string) ([]*types.QueryResultNsxtManagerRecordType, error) {
+	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":          "nsxTManager",
+		"filter":        fmt.Sprintf("href==%s", url.QueryEscape(href)),
+		"filterEncoded": "true",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return results.Results.NsxtManagerRecord, nil
+}
+
 // GetOrgByName finds an Organization by name
 // On success, returns a pointer to the Org structure and a nil error
 // On failure, returns a nil pointer and an error
