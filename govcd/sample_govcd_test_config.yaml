@@ -174,6 +174,10 @@ vcd:
     # IP of a pre-configured LDAP server
     # using Docker image https://github.com/rroemhild/docker-test-openldap
     ldap_server: 10.10.10.99
+vsphere:
+  # resource pools needed to create new provider VDCs
+  resourcePoolForVcd1: resource-pool-for-vcd-01
+  resourcePoolForVcd2: resource-pool-for-vcd-02
 logging:
     # All items in this section are optional
     # Logging is disabled by default.

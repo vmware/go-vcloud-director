@@ -198,6 +198,10 @@ type TestConfig struct {
 			NsxtAlbServiceEngineGroup string `yaml:"nsxtAlbServiceEngineGroup"`
 		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
+	Vsphere struct {
+		resourcePoolForVcd1 string `yaml:"resourcePoolForVcd1,omitempty"`
+		resourcePoolForVcd2 string `yaml:"resourcePoolForVcd2,omitempty"`
+	} `yaml:"vsphere,omitempty"`
 	Logging struct {
 		Enabled          bool   `yaml:"enabled,omitempty"`
 		LogFileName      string `yaml:"logFileName,omitempty"`
@@ -921,6 +925,29 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			return
 		}
 		err = org.Delete(true, true)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+	case "provider_vdc":
+		pvdc, err := vcd.client.GetProviderVdcExtendedByName(entity.Name)
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		err = pvdc.Disable()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+		task, err := pvdc.Delete()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+		err = task.WaitTaskCompletion()
 		if err != nil {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 			return
