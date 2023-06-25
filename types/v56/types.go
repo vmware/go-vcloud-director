@@ -486,7 +486,7 @@ type ProviderVdc struct {
 	ComputeCapacity       *RootComputeCapacity     `xml:"ComputeCapacity,omitempty"`       // Read-only indicator of CPU and memory capacity.
 	Description           string                   `xml:"Description,omitempty"`           // Optional description.
 	IsEnabled             *bool                    `xml:"IsEnabled,omitempty"`             // True if this Provider VDC is enabled and can provide resources to organization VDCs. A Provider VDC is always enabled on creation.
-	Link                  *Link                    `xml:"Link,omitempty"`                  // A reference to an entity or operation associated with this object.
+	Link                  *LinkList                `xml:"Link,omitempty"`                  // A reference to an entity or operation associated with this object.
 	NetworkPoolReferences *NetworkPoolReferences   `xml:"NetworkPoolReferences,omitempty"` // Read-only list of network pools used by this Provider VDC.
 	StorageProfiles       *ProviderStorageProfiles `xml:"StorageProfiles,omitempty"`       // Container for references to vSphere storage profiles available to this Provider VDC.
 	Tasks                 *TasksInProgress         `xml:"Tasks,omitempty"`                 // A list of queued, running, or recently completed tasks associated with this entity.
@@ -498,6 +498,7 @@ type ProviderVdc struct {
 // Description: Represents an extension of ProviderVdc.
 // Since: 1.0
 type VMWProviderVdc struct {
+	Xmlns string `xml:"xmlns,attr"`
 	ProviderVdc
 
 	AvailableUniversalNetworkPool   *Reference         `xml:"AvailableUniversalNetworkPool,omitempty"`   // Selectable universal network reference.
@@ -516,8 +517,8 @@ type VMWProviderVdc struct {
 // Description: Represents a list of available hosts.
 // Since: 1.0
 type VMWHostReferences struct {
-	HostReference []*Reference `xml:"HostReference,omitempty"`
-	Link          *Link        `xml:"Link,omitempty"`
+	HostReference []*Reference `xml:"HostReference,omitempty" json:"hostReference,omitempty"`
+	Link          *Link        `xml:"Link,omitempty" json:"link,omitempty"`
 }
 
 // RootComputeCapacity represents compute capacity with units.
@@ -538,7 +539,7 @@ type RootComputeCapacity struct {
 // Description: Container for references to network pools in this vDC.
 // Since: 0.9
 type NetworkPoolReferences struct {
-	NetworkPoolReference []*Reference `xml:"NetworkPoolReference"`
+	NetworkPoolReference []*Reference `xml:"NetworkPoolReference" json:"networkPoolReference"`
 }
 
 // ProviderStorageProfiles is a container for references to storage profiles associated with a Provider vDC.
@@ -3292,4 +3293,19 @@ type ProviderVdcCreation struct {
 	NsxTManagerReference            Reference      `json:"nsxTManagerReference"`
 	NetworkPool                     Reference      `json:"networkPool"`
 	AutoCreateNetworkPool           bool           `json:"autoCreateNetworkPool"`
+}
+
+type ProviderVdcUpdate struct {
+	Href                            string                 `json:"href"`
+	Type                            string                 `json:"type"`
+	Id                              string                 `json:"id"`
+	Description                     string                 `json:"description"`
+	Name                            string                 `json:"name"`
+	IsEnabled                       bool                   `json:"isEnabled"`
+	NetworkPoolReferences           *NetworkPoolReferences `json:"networkPoolReferences"`
+	VimServer                       []*Reference           `json:"vimServer"`
+	NsxTManagerReference            *Reference             `json:"nsxTManagerReference"`
+	HostReferences                  *VMWHostReferences     `json:"hostReferences"`
+	HighestSupportedHardwareVersion string                 `json:"highestSupportedHardwareVersion"`
+	ComputeProviderScope            string                 `json:"computeProviderScope"`
 }
