@@ -24,5 +24,5 @@ jobs:
     - name: static
       run: make static
 
-    - name: verify
-      run: make tagverify
+    - name: test
+      run: make test

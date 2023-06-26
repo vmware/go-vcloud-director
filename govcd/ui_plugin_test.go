@@ -13,26 +13,18 @@ func init() {
 	testingTags["uiPlugin"] = "ui_plugin_test.go"
 }
 
-// This object is equivalent to the manifest.json that is inside the ../test-resources/ui_plugin.zip file
-var testUIPluginMetadata = &types.UIPluginMetadata{
-	Vendor:         "VMware",
-	License:        "BSD-2-Clause",
-	Link:           "http://www.vmware.com",
-	PluginName:     "Test Plugin",
-	Version:        "1.2.3",
-	Description:    "Test Plugin description",
-	ProviderScoped: true,
-	TenantScoped:   true,
-}
-
 // Test_UIPlugin tests all the possible operations that can be done with a UIPlugin object in VCD.
 func (vcd *TestVCD) Test_UIPlugin(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
+	const uiPluginPath = "../test-resources/ui_plugin.zip"
+	testUIPluginMetadata, err := getPluginMetadata(uiPluginPath)
+	check.Assert(err, IsNil)
+
 	// Add a plugin present on disk
-	newUIPlugin, err := vcd.client.AddUIPlugin("../test-resources/ui_plugin.zip", true)
+	newUIPlugin, err := vcd.client.AddUIPlugin(uiPluginPath, true)
 	check.Assert(err, IsNil)
 	AddToCleanupListOpenApi(newUIPlugin.UIPluginMetadata.ID, check.TestName(), types.OpenApiEndpointExtensionsUi+newUIPlugin.UIPluginMetadata.ID)
 
@@ -49,7 +41,7 @@ func (vcd *TestVCD) Test_UIPlugin(check *C) {
 	check.Assert(newUIPlugin.UIPluginMetadata.Enabled, Equals, true)
 
 	// Try to add the same plugin twice, it should fail
-	_, err = vcd.client.AddUIPlugin("../test-resources/ui_plugin.zip", true)
+	_, err = vcd.client.AddUIPlugin(uiPluginPath, true)
 	check.Assert(err, NotNil)
 	check.Assert(true, Equals, strings.Contains(err.Error(), "same pluginName-version-vendor"))
 
