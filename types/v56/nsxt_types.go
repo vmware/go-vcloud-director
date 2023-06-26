@@ -1710,12 +1710,17 @@ type VcenterImportableDvpg struct {
 	Vlan          string            `json:"vlan"`
 }
 
+// NsxtEdgeGatewaySlaacProfile provides configuration for NSX-T Edge Gateway IPv6 configuration
 type NsxtEdgeGatewaySlaacProfile struct {
+	Enabled bool `json:"enabled"`
+	// Mode is 'SLAAC' or 'DHCPv6'
+	Mode string `json:"mode"`
+	// DNSConfig provides additional configuration when Mode is set to 'SLAAC'
 	DNSConfig NsxtEdgeGatewaySlaacProfileDNSConfig `json:"dnsConfig,omitempty"`
-	Enabled   bool                                 `json:"enabled"`
-	Mode      string                               `json:"mode"`
 }
 
+// NsxtEdgeGatewaySlaacProfileDNSConfig contains additional NSX-T Edge Gateway IPv6 configuration
+// when it is configured for 'SLAAC' mode
 type NsxtEdgeGatewaySlaacProfileDNSConfig struct {
 	DNSServerIpv6Addresses []string `json:"dnsServerIpv6Addresses,omitempty"`
 	DomainNames            []string `json:"domainNames,omitempty"`

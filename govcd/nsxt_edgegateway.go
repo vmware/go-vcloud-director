@@ -767,7 +767,6 @@ func (egw *NsxtEdgeGateway) UpdateSlaacProfile(slaacProfileConfig *types.NsxtEdg
 		return nil, err
 	}
 
-	// update QoS with given qosConfig
 	updatedSlaacProfile := &types.NsxtEdgeGatewaySlaacProfile{}
 	err = client.OpenApiPutItem(apiVersion, urlRef, nil, slaacProfileConfig, updatedSlaacProfile, nil)
 	if err != nil {
