@@ -135,10 +135,12 @@ var endpointElevatedApiVersions = map[string][]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServices: {
 		//"35.0", // Basic minimum required version
 		"37.0", // Adds IPv6 Virtual Service Support
+		"37.1", // Adds support for Transparent Mode
 	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceSummaries: {
 		//"35.0", // Basic minimum required version
 		"37.0", // Adds IPv6 Virtual Service Support
+		"37.1", // Adds support for Transparent Mode
 	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile: {
 		//"36.0", // Introduced support

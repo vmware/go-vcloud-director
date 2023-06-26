@@ -25,7 +25,7 @@ func (vcdClient *VCDClient) GetAllAlbVirtualServiceSummaries(edgeGatewayId strin
 	client := vcdClient.Client
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceSummaries
-	apiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (vcdClient *VCDClient) GetAlbVirtualServiceById(id string) (*NsxtAlbVirtual
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServices
-	apiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (vcdClient *VCDClient) CreateNsxtAlbVirtualService(albVirtualServiceConfig 
 	client := vcdClient.Client
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServices
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +160,7 @@ func (vcdClient *VCDClient) CreateNsxtAlbVirtualService(albVirtualServiceConfig 
 func (nsxtAlbVirtualService *NsxtAlbVirtualService) Update(albVirtualServiceConfig *types.NsxtAlbVirtualService) (*NsxtAlbVirtualService, error) {
 	client := nsxtAlbVirtualService.vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServices
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +191,7 @@ func (nsxtAlbVirtualService *NsxtAlbVirtualService) Update(albVirtualServiceConf
 func (nsxtAlbVirtualService *NsxtAlbVirtualService) Delete() error {
 	client := nsxtAlbVirtualService.vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServices
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
 	}
