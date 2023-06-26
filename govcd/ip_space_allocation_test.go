@@ -4,6 +4,7 @@ package govcd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
@@ -134,6 +135,10 @@ func createIpSpaceUplink(vcd *TestVCD, check *C, extNetId, ipSpaceId string) *Ip
 
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks + createdIpSpaceUplink.IpSpaceUplink.ID
 	AddToCleanupListOpenApi(createdIpSpaceUplink.IpSpaceUplink.Name, check.TestName(), openApiEndpoint)
+
+	time.Sleep(3 * time.Second)
+	err = vcd.client.Client.WaitForRunningTasksByName("ipSpaceUplinkRouteAdvertisementSync")
+	check.Assert(err, IsNil)
 
 	return createdIpSpaceUplink
 }

@@ -4,6 +4,7 @@ package govcd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
@@ -37,6 +38,14 @@ func (vcd *TestVCD) Test_IpSpaceUplink(check *C) {
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks + createdIpSpaceUplink.IpSpaceUplink.ID
 	AddToCleanupListOpenApi(createdIpSpaceUplink.IpSpaceUplink.Name, check.TestName(), openApiEndpoint)
 
+	// Operations on IP Space related entities trigger a separate task
+	// 'ipSpaceUplinkRouteAdvertisementSync' which is better to finish before any other operations
+	// as it might cause an error: busy completing an operation IP_SPACE_UPLINK_ROUTE_ADVERTISEMENT_SYNC
+	// Sleeping a few seconds because the task is not immediately seen sometimes.
+	time.Sleep(3 * time.Second)
+	err = vcd.client.Client.WaitForRunningTasksByName("ipSpaceUplinkRouteAdvertisementSync")
+	check.Assert(err, IsNil)
+
 	// Get all IP Space Uplinks
 	allIpSpaceUplinks, err := vcd.client.GetAllIpSpaceUplinks(extNet.ExternalNetwork.ID, nil)
 	check.Assert(err, IsNil)
@@ -69,6 +78,10 @@ func (vcd *TestVCD) Test_IpSpaceUplink(check *C) {
 	// Read-only variables
 	check.Assert(updatedUplinkConfig.IpSpaceUplink.IPSpaceType, Equals, types.IpSpacePublic)
 	check.Assert(updatedUplinkConfig.IpSpaceUplink.Status, Equals, "REALIZED")
+
+	time.Sleep(3 * time.Second)
+	err = vcd.client.Client.WaitForRunningTasksByName("ipSpaceUplinkRouteAdvertisementSync")
+	check.Assert(err, IsNil)
 
 	err = createdIpSpaceUplink.Delete()
 	check.Assert(err, IsNil)
