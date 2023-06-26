@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"
+                     ID="https___sample.vmware.com_cloud_saml_metadata_alias_vcd"
+                     entityID="https://sample.vmware.com/cloud/saml/metadata/alias/vcd">
+  <md:SPSSODescriptor AuthnRequestsSigned="true" WantAssertionsSigned="true"
+                      protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+    <md:KeyDescriptor use="signing">
+      <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+        <ds:X509Data>
+          <ds:X509Certificate>MIIDJTCCAg2gAwIBAgIIS30ETjKyfIIwDQYJKoZIhvcNAQELBQAwOTE3MDUGA1UEAwwuVk13YXJl
+            IENsb3VkIERpcmVjdG9yIG9yZ2FuaXphdGlvbiBDZXJ0aWZpY2F0ZTAeFw0yMzA1MTUwOTM1MTZa
+            Fw0yNDA1MTQwOTM1MTZaMDkxNzA1BgNVBAMMLlZNd2FyZSBDbG91ZCBEaXJlY3RvciBvcmdhbml6
+            YXRpb24gQ2VydGlmaWNhdGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCL04KFXtIb
+            gJZyqJB75Z358iQ/XlPheHWMnTTOqJqjpOn+M8kLGufRMrjbNtLkbaVaIb9Rm/mrw9rBYHbSY6sw
+            LtjKtbvHpl4HegZmhXZvkNIbSXa6h+VO20ZXQvvNgDrdmQ9fWTZQDjzYTZrQxkidcsVaL7LdIMnx
+            SVFkUaUnU+fV41Q+hDuUr1F/dT1JzAPQR6JWViaASGmbZe/h3T5u2qZqDOl8uxED+GU/La51ESED
+            ZfyNxhhhgQGWlTlu9Jb+Pyl+ikk0Sc8mi4pBcrqEfEDRLLR4LvFb1BJoZlGv7UHup80OzuZ/LV6t
+            Ft9UHV3vHxUu3lp1BOrgv/X2bjyZAgMBAAGjMTAvMB0GA1UdDgQWBBRE8cLNFQtgw8sqnqhdKGoI
+            gGsuczAOBgNVHQ8BAf8EBAMCBPAwDQYJKoZIhvcNAQELBQADggEBAHf/fL4f+QpJQ69n1uU7nLeJ
+            7gUVzLZDRpEzJ073h4dJsWxxjPUXS/0qkExVairsXd5KzNhk/lHovDYT4q5ijZFl78rnID2ha6d8
+            /ejTvL0a3Fn46z9bjcSnr0Iyn4Gw3oT4YQ5rckML4JUEPncaBdBny+5bjXgENbgnsEwcQt7Uoebg
+            i3SWr7Dl/D5yb02VURtkXhef1MJTv+UHpjdCxDiVt3DpZ+JZcwtMqqN3qxJkGr774R8CwstUCOsp
+            PlDQeVqaE4RbJMWdHhNgSfKnsf/jZabSLq0dxgCX69AvOklZDpi8kRubDUWA4khVhTIbScVu4fXc
+            9FjRf/AoIuzReJs=
+          </ds:X509Certificate>
+        </ds:X509Data>
+      </ds:KeyInfo>
+    </md:KeyDescriptor>
+    <md:KeyDescriptor use="encryption">
+      <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+        <ds:X509Data>
+          <ds:X509Certificate>MIIDJTCCAg2gAwIBAgIITNq8LW1qHXYwDQYJKoZIhvcNAQELBQAwOTE3MDUGA1UEAwwuVk13YXJl
+            IENsb3VkIERpcmVjdG9yIG9yZ2FuaXphdGlvbiBDZXJ0aWZpY2F0ZTAeFw0yMzA1MTUwOTM1MTda
+            Fw0yNDA1MTQwOTM1MTdaMDkxNzA1BgNVBAMMLlZNd2FyZSBDbG91ZCBEaXJlY3RvciBvcmdhbml6
+            YXRpb24gQ2VydGlmaWNhdGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCgXzxYni+y
+            d1cyT1v73yRqi88Us9sxinuMTs5AFCHVfhu2Nc+zuy4Qep15bl/ygnw90SmCLs1cKR1Q+kBxYFiP
+            N/ar6Zz7VpeA3iJpYdLH2zlUAxvDm5sOWa2E31wa12K7ursxygOKuSnXdL6d9vIDv/4S6u5qntRn
+            fw5tPHCgMBAtgYBhCDcUR7g7nmg+niAeJ5hrdWNZ8ILYFFF7Rsh14NdjwFHTpMWp/F+rI9tpCZDo
+            KdEAwulMdqMg06pUw56EwYHuxlfHyZYtNi/6qo2CQLc4IAKYc0O9b4K4c1PNFcz41x8EwTp6Qo+S
+            Jope3t4b6kbksXdgBXsrpTy+z3ptAgMBAAGjMTAvMB0GA1UdDgQWBBQ49IQcbwdh3OFVCSMUfz//
+            dC3pgDAOBgNVHQ8BAf8EBAMCBPAwDQYJKoZIhvcNAQELBQADggEBAG/lFYg8C6roBNiUFQEf9GRo
+            nak06njZC39mfw05NPh6qewOs3KhWP4Y7GRh+rvDbPWHLux23MCuh4ir9TB9Gdo1sUoe90IHfsNw
+            brCN3+0sfOBDLyGtpd/0jEW0zHdQitWThwzTWefVMgLGSlNZNy0VZZHROqQy2XRE45A9vg+Q63hg
+            nfsCBPIn1Y4z9LcSJKWLhbtqDo+JMiqHiF2V5Z8L2MoTe1eQaQQSiiF9a3Yh9MA5zJhSgOVazuAW
+            k+XThUd0aNwuuLGOIa73DjnYiY4BiFAUAZBgfbiQljXoCnZvBWXNBcfy8WdczlqwuJuImnG9MR8L
+            wshfq04S3w8z9rs=
+          </ds:X509Certificate>
+        </ds:X509Data>
+      </ds:KeyInfo>
+    </md:KeyDescriptor>
+    <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+                            Location="https://sample.vmware.com/login/org/system/saml/SingleLogout/alias/vcd"/>
+    <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+                            Location="https://sample.vmware.com/login/org/system/saml/SingleLogout/alias/vcd"/>
+    <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat>
+    <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</md:NameIDFormat>
+    <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</md:NameIDFormat>
+    <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified</md:NameIDFormat>
+    <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName</md:NameIDFormat>
+    <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+                                 Location="https://sample.vmware.com/login/org/system/saml/SSO/alias/vcd"
+                                 index="0" isDefault="true"/>
+    <md:AssertionConsumerService xmlns:hoksso="urn:oasis:names:tc:SAML:2.0:profiles:holder-of-key:SSO:browser"
+                                 Binding="urn:oasis:names:tc:SAML:2.0:profiles:holder-of-key:SSO:browser"
+                                 Location="https://sample.vmware.com/login/org/system/saml/HoKSSO/alias/vcd"
+                                 hoksso:ProtocolBinding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+                                 index="1"/>
+  </md:SPSSODescriptor>
+</md:EntityDescriptor>

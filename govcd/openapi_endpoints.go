@@ -67,6 +67,10 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesTypes:                   "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesResolve:                 "35.0", // VCD 10.2+
 
+	// IP Spaces
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces:         "37.1", // VCD 10.4.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceSummaries: "37.1", // VCD 10.4.1+
+
 	// NSX-T ALB (Advanced/AVI Load Balancer) support was introduced in 10.2
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController:                    "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbImportableClouds:              "35.0", // VCD 10.2+
@@ -91,6 +95,15 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies: "35.0",
 	types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcComputePolicies:         "35.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile:          "36.0", // VCD 10.3+
+
+	// Extensions API endpoints. These are not versioned
+	types.OpenApiEndpointExtensionsUi:                    "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiPlugin:              "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenants:             "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenantsPublishAll:   "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenantsPublish:      "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenantsUnpublishAll: "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenantsUnpublish:    "35.0", // VCD 10.2+
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions
