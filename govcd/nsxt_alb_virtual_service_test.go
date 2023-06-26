@@ -32,6 +32,10 @@ func (vcd *TestVCD) Test_AlbVirtualService(check *C) {
 	testVirtualServiceConfigWithCertHTTPS(check, edge, albPool, seGroup, vcd, vcd.client)
 	testMinimalVirtualServiceConfigL4(check, edge, albPool, seGroup, vcd, vcd.client)
 	testMinimalVirtualServiceConfigL4TLS(check, edge, albPool, seGroup, vcd, vcd.client)
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.0") {
+		printVerbose("# Running 10.4.0+ IPv6 Virtual Service test as Sysadmin user\n")
+		testVirtualServiceConfigHTTPIPv6(check, edge, albPool, seGroup, vcd, vcd.client)
+	}
 
 	printVerbose("# Running tests as Org user\n")
 	// Run tests with Org admin user
@@ -39,6 +43,10 @@ func (vcd *TestVCD) Test_AlbVirtualService(check *C) {
 	testVirtualServiceConfigWithCertHTTPS(check, edge, albPool, seGroup, vcd, orgUserVcdClient)
 	testMinimalVirtualServiceConfigL4(check, edge, albPool, seGroup, vcd, orgUserVcdClient)
 	testMinimalVirtualServiceConfigL4TLS(check, edge, albPool, seGroup, vcd, orgUserVcdClient)
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.0") {
+		printVerbose("# Running 10.4.0+ IPv6 Virtual Service test as Org user\n")
+		testVirtualServiceConfigHTTPIPv6(check, edge, albPool, seGroup, vcd, orgUserVcdClient)
+	}
 
 	// Test 10.4.1 Transparent mode on VCD >= 10.4.1
 	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.1") {
@@ -122,6 +130,60 @@ func testMinimalVirtualServiceConfigHTTP(check *C, edge *NsxtEdgeGateway, pool *
 	}
 
 	testAlbVirtualServiceConfig(check, vcd, "MinimalHTTP", virtualServiceConfig, virtualServiceConfigUpdated, client)
+}
+
+func testVirtualServiceConfigHTTPIPv6(check *C, edge *NsxtEdgeGateway, pool *NsxtAlbPool, seGroup *NsxtAlbServiceEngineGroup, vcd *TestVCD, client *VCDClient) {
+	virtualServiceConfig := &types.NsxtAlbVirtualService{
+		Name:    check.TestName(),
+		Enabled: addrOf(true),
+		ApplicationProfile: types.NsxtAlbVirtualServiceApplicationProfile{
+			SystemDefined: true,
+			Type:          "HTTP",
+		},
+		GatewayRef:            types.OpenApiReference{ID: edge.EdgeGateway.ID},
+		LoadBalancerPoolRef:   types.OpenApiReference{ID: pool.NsxtAlbPool.ID},
+		ServiceEngineGroupRef: types.OpenApiReference{ID: seGroup.NsxtAlbServiceEngineGroup.ID},
+		ServicePorts: []types.NsxtAlbVirtualServicePort{
+			{
+				PortStart: addrOf(80),
+			},
+		},
+		VirtualIpAddress:     edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
+		IPv6VirtualIpAddress: "2002:0:0:1234:abcd:ffff:c0a8:103",
+	}
+
+	virtualServiceConfigUpdated := &types.NsxtAlbVirtualService{
+		Name:        check.TestName(),
+		Description: "Updated",
+		Enabled:     addrOf(true),
+		ApplicationProfile: types.NsxtAlbVirtualServiceApplicationProfile{
+			SystemDefined: true,
+			Type:          "HTTP",
+		},
+		GatewayRef:            types.OpenApiReference{ID: edge.EdgeGateway.ID},
+		LoadBalancerPoolRef:   types.OpenApiReference{ID: pool.NsxtAlbPool.ID},
+		ServiceEngineGroupRef: types.OpenApiReference{ID: seGroup.NsxtAlbServiceEngineGroup.ID},
+		ServicePorts: []types.NsxtAlbVirtualServicePort{
+			{
+				PortStart:  addrOf(443),
+				PortEnd:    addrOf(449),
+				SslEnabled: addrOf(false),
+			},
+			{
+				PortStart:  addrOf(2000),
+				PortEnd:    addrOf(2010),
+				SslEnabled: addrOf(false),
+			},
+		},
+		// Use Primary IP of Edge Gateway as virtual service IP
+		VirtualIpAddress:     edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
+		IPv6VirtualIpAddress: "2002:0:0:1234:abcd:ffff:c0a8:103",
+		//HealthStatus:          "",
+		//HealthMessage:         "",
+		//DetailedHealthMessage: "",
+	}
+
+	testAlbVirtualServiceConfig(check, vcd, "IPv6", virtualServiceConfig, virtualServiceConfigUpdated, client)
 }
 
 func testMinimalVirtualServiceConfigHTTPTransparent(check *C, edge *NsxtEdgeGateway, poolWithMemberGroup *NsxtAlbPool, seGroup *NsxtAlbServiceEngineGroup, vcd *TestVCD, client *VCDClient, trueOnCreate bool) {

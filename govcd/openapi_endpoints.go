@@ -131,6 +131,15 @@ var endpointElevatedApiVersions = map[string][]string{
 		"37.0", // Deprecates LicenseType in favor of SupportedFeatureSet. Adds IPv6 service network definition support
 		"37.1", // Adds support for Transparent Mode
 	},
+	//
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServices: {
+		//"35.0", // Basic minimum required version
+		"37.0", // Adds IPv6 Virtual Service Support
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceSummaries: {
+		//"35.0", // Basic minimum required version
+		"37.0", // Adds IPv6 Virtual Service Support
+	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile: {
 		//"36.0", // Introduced support
 		"36.2", // 2 additional fields vappNetworkSegmentProfileTemplateRef and vdcNetworkSegmentProfileTemplateRef added

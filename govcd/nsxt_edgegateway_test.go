@@ -595,6 +595,7 @@ func (vcd *TestVCD) Test_NsxtEdgeSlaacProfile(check *C) {
 
 	edge, err := vcd.nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
 	check.Assert(err, IsNil)
+	AddToCleanupList(vcd.config.VCD.Nsxt.EdgeGateway, "slaacProfile", vcd.config.VCD.Org, check.TestName())
 
 	// Fetch current SLAAC Profile
 	slaacProfile, err := edge.GetSlaacProfile()
@@ -622,6 +623,10 @@ func (vcd *TestVCD) Test_NsxtEdgeSlaacProfile(check *C) {
 	newSlaacProfileDhcpv6 := &types.NsxtEdgeGatewaySlaacProfile{
 		Enabled: true,
 		Mode:    "DHCPv6",
+		DNSConfig: types.NsxtEdgeGatewaySlaacProfileDNSConfig{
+			DNSServerIpv6Addresses: []string{},
+			DomainNames:            []string{},
+		},
 	}
 
 	// Update SLAAC profile
@@ -630,8 +635,8 @@ func (vcd *TestVCD) Test_NsxtEdgeSlaacProfile(check *C) {
 	check.Assert(updatedSlaacProfileDhcpv6, NotNil)
 	check.Assert(updatedSlaacProfileDhcpv6, DeepEquals, newSlaacProfileDhcpv6)
 
-	// Remove SLAAC profile
-	updatedSlaacProfile, err = edge.UpdateSlaacProfile(&types.NsxtEdgeGatewaySlaacProfile{})
+	// Cleanup
+	updatedSlaacProfile, err = edge.UpdateSlaacProfile(&types.NsxtEdgeGatewaySlaacProfile{Enabled: false, Mode: "SLAAC"})
 	check.Assert(err, IsNil)
 	check.Assert(updatedSlaacProfile, NotNil)
 }
