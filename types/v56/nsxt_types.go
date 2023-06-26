@@ -1241,6 +1241,10 @@ type NsxtAlbVirtualService struct {
 	// VirtualIpAddress to be used for exposing this virtual service
 	VirtualIpAddress string `json:"virtualIpAddress"`
 
+	// IPv6VirtualIpAddress defined IPv6 address to be used for this virtual service
+	// This field is only available in VCD 10.4.0 (v37.0+)
+	IPv6VirtualIpAddress string `json:"ipv6VirtualIpAddress,omitempty"`
+
 	// TransparentModeEnabled allows to configure Preserve Client IP on a Virtual Service
 	// This field is only available for VCD 10.4.1+ (v37.1+)
 	// Note. `types.NsxtAlbConfig.TransparentModeEnabled` must be set to `true` for this field to be
