@@ -138,7 +138,7 @@ func (vcdClient *VCDClient) CreateServiceAccount(orgName, name, scope, softwareI
 		ClientURI:       clientUri,
 	}
 
-	newSaParams, err := vcdClient.RegisterToken(orgName, "37.0", saParams)
+	newSaParams, err := vcdClient.RegisterToken(orgName, saParams)
 	if err != nil {
 		return nil, fmt.Errorf("failed to register Service account: %s", err)
 	}
@@ -269,7 +269,7 @@ func (sa *ServiceAccount) GetInitialApiToken() (*types.ApiTokenRefresh, error) {
 			sa.authParams.DeviceCode,
 		))
 
-	token, err := client.GetAccessToken(sa.ServiceAccount.Org.Name, "37.0", "CreateServiceAccount", data)
+	token, err := client.GetAccessToken(sa.ServiceAccount.Org.Name, "CreateServiceAccount", data)
 	if err != nil {
 		return nil, err
 	}
