@@ -12,7 +12,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// IpSpaceIpAllocation handle IP Space IP allocation requests
+// IpSpaceIpAllocation handles IP Space IP allocation requests
 type IpSpaceIpAllocation struct {
 	IpSpaceIpAllocation *types.IpSpaceIpAllocation
 	IpSpaceId           string
@@ -234,6 +234,9 @@ func allocateIpSpaceIp(client *Client, orgId, orgName, ipSpaceId string, ipAlloc
 	}
 
 	// Result of the task should contain a JSON with allocated IP details
+	if task.Task == nil || task.Task.Result == nil || task.Task.Result.ResultContent.Text == "" {
+		return nil, fmt.Errorf("error finding allocated IP result in task")
+	}
 	result := task.Task.Result.ResultContent.Text
 
 	unmarshalStorage := []types.IpSpaceIpAllocationRequestResult{}

@@ -9,7 +9,6 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// Test_IpSpaceIpAllocation tests out IP Space integration with other components
 func (vcd *TestVCD) Test_IpSpaceOrgAssignment(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))

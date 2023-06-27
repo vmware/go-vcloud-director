@@ -241,12 +241,17 @@ type IpSpaceIpAllocationRequest struct {
 	Value string `json:"value,omitempty"`
 }
 
+// IpSpaceIpAllocationRequestResult is the result that gets returned in a
+// task.Task.Result.ResultContent.Text field after submitting an IpSpaceIpAllocationRequest
 type IpSpaceIpAllocationRequestResult struct {
 	ID             string `json:"id"`
 	Value          string `json:"value"`
 	SuggestedValue string `json:"suggestedValue"`
 }
 
+// IpSpaceIpAllocation is a structure that is used for managing IP Space IP Allocation after
+// submitting a request using `IpSpaceIpAllocationRequest` and processing the response in
+// IpSpaceIpAllocationRequestResult
 type IpSpaceIpAllocation struct {
 	ID string `json:"id,omitempty"`
 
@@ -262,8 +267,6 @@ type IpSpaceIpAllocation struct {
 	// The list of service categories where the IP address is being used. Typically this can be one
 	// of: SNAT, DNAT, LOAD_BALANCER, IPSEC_VPN, SSL_VPN or L2_VPN. This property is read-only.
 	UsageCategories []string `json:"usageCategories,omitempty"`
-
-	//  Optional
 
 	// Specifies current usage state of an allocated IP. Possible values are:
 	// * UNUSED - the allocated IP is current not being used in the system.
@@ -281,22 +284,34 @@ type IpSpaceIpAllocation struct {
 	AllocationDate string `json:"allocationDate"`
 }
 
+// IpSpaceOrgAssignment is used to override default quotas for specific Orgs
 type IpSpaceOrgAssignment struct {
 	ID string `json:"id,omitempty"`
 	// IPSpaceRef is mandatory
 	IPSpaceRef *OpenApiReference `json:"ipSpaceRef"`
 	// OrgRef is mandatory
-	OrgRef        *OpenApiReference           `json:"orgRef"`
-	IPSpaceType   string                      `json:"ipSpaceType,omitempty"`
+	OrgRef      *OpenApiReference `json:"orgRef"`
+	IPSpaceType string            `json:"ipSpaceType,omitempty"`
+	// DefaultQuotas contains read-only default quotas which are controlled in IP Space itself
 	DefaultQuotas *IpSpaceOrgAssignmentQuotas `json:"defaultQuotas,omitempty"`
-	CustomQuotas  *IpSpaceOrgAssignmentQuotas `json:"customQuotas"`
+	// CustomQuotas are the quotas that can be overriden for that particular Organization
+	CustomQuotas *IpSpaceOrgAssignmentQuotas `json:"customQuotas"`
 }
 
 type IpSpaceOrgAssignmentQuotas struct {
-	FloatingIPQuota *int                                 `json:"floatingIpQuota"`
-	IPPrefixQuotas  []IpSpaceOrgAssignmentIPPrefixQuotas `json:"ipPrefixQuotas"`
+	// FloatingIPQuota specifies the default number of IPs from the specified ranges which can be
+	// consumed by each organization using this IP Space. This is typically set for IP Spaces with
+	// type PUBLIC or SHARED_SERVICES. A Quota of -1 means there is no cap to the number of IP
+	// addresses that can be allocated. A Quota of 0 means that the IP addresses cannot be
+	// allocated. If not specified, all PUBLIC or SHARED_SERVICES IP Spaces have a default quota of
+	// 1 for Floating IP addresses and all PRIVATE IP Spaces have a default quota of -1 for Floating
+	// IP addresses.
+	FloatingIPQuota *int `json:"floatingIpQuota"`
+	// IPPrefixQuotas contains a slice of elements that define IP Prefix Quotas
+	IPPrefixQuotas []IpSpaceOrgAssignmentIPPrefixQuotas `json:"ipPrefixQuotas"`
 }
 
+// IpSpaceOrgAssignmentIPPrefixQuotas defines a single IP Prefix quota
 type IpSpaceOrgAssignmentIPPrefixQuotas struct {
 	PrefixLength *int `json:"prefixLength"`
 	Quota        *int `json:"quota"`

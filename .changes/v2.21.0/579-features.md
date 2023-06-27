@@ -7,7 +7,7 @@
   `IpSpace.AllocateIp`, `Org.IpSpaceAllocateIp`, `Org.GetIpSpaceAllocationByTypeAndValue`,
   `IpSpace.GetAllIpSpaceAllocations`, `Org.GetIpSpaceAllocationById`, `IpSpaceIpAllocation.Update`,
   `IpSpaceIpAllocation.Delete` [GH-579]
-* Added IP Space Org allocation to support Custom Quotas via `IpSpaceOrgAssignment`,
+* Added IP Space Org assignment to support Custom Quotas via `IpSpaceOrgAssignment`,
   `types.IpSpaceOrgAssignment`, `IpSpace.GetAllOrgAssignments`, `IpSpace.GetOrgAssignmentById`,
   `IpSpace.GetOrgAssignmentByOrgName`,  `IpSpace.GetOrgAssignmentByOrgId`,
   `IpSpaceOrgAssignment.Update` [GH-579]

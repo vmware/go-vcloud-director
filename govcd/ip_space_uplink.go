@@ -127,6 +127,7 @@ func (vcdClient *VCDClient) GetIpSpaceUplinkById(id string) (*IpSpaceUplink, err
 	return response, nil
 }
 
+// Update updates IP Space Uplink
 func (ipSpaceUplink *IpSpaceUplink) Update(ipSpaceUplinkConfig *types.IpSpaceUplink) (*IpSpaceUplink, error) {
 	client := ipSpaceUplink.vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks
