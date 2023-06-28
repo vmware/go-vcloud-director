@@ -4,11 +4,9 @@
 package govcd
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/url"
+	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
@@ -167,25 +165,24 @@ func (sa *ServiceAccount) Authorize() error {
 	client := sa.org.client
 
 	uuid := extractUuid(sa.ServiceAccount.ID)
-	data := bytes.NewBufferString(
-		fmt.Sprintf("client_id=%s",
-			uuid,
-		))
-
-	resp, err := client.doTokenRequest(sa.ServiceAccount.Org.Name, "device_authorization", "37.0", "application/x-www-form-urlencoded", data)
-	if err != nil {
-		return err
+	data := map[string]string{
+		"client_id": uuid,
 	}
 
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
+	userDef := "tenant/" + sa.org.orgName()
+	if strings.EqualFold(sa.org.orgName(), "system") {
+		userDef = "provider"
 	}
 
-	err = json.Unmarshal(body, &sa.authParams)
+	endpoint := fmt.Sprintf("%s://%s/oauth/%s/device_authorization", client.VCDHREF.Scheme, client.VCDHREF.Host, userDef)
+	urlRef, err := url.ParseRequestURI(endpoint)
 	if err != nil {
-		return err
+		return fmt.Errorf("error getting request url from %s: %s", urlRef.String(), err)
+	}
+
+	err = client.OpenApiPostUrlEncoded(urlRef, nil, data, &sa.authParams, nil)
+	if err != nil {
+		return fmt.Errorf("error authorizing service account: %s", err)
 	}
 
 	return nil
@@ -233,16 +230,14 @@ func (sa *ServiceAccount) GetInitialApiToken() (*types.ApiTokenRefresh, error) {
 	}
 	client := sa.org.client
 	uuid := extractUuid(sa.ServiceAccount.ID)
-	data := bytes.NewBufferString(
-		fmt.Sprintf("grant_type=%s&client_id=%s&device_code=%s",
-			"urn:ietf:params:oauth:grant-type:device_code",
-			uuid,
-			sa.authParams.DeviceCode,
-		))
-
+	data := map[string]string{
+		"grant_type":  "urn:ietf:params:oauth:grant-type:device_code",
+		"client_id":   uuid,
+		"device_code": sa.authParams.DeviceCode,
+	}
 	token, err := client.GetAccessToken(sa.ServiceAccount.Org.Name, "CreateServiceAccount", data)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting initial api token: %s", err)
 	}
 	return token, nil
 }
@@ -250,7 +245,7 @@ func (sa *ServiceAccount) GetInitialApiToken() (*types.ApiTokenRefresh, error) {
 // Refresh updates the Service Account object
 func (sa *ServiceAccount) Refresh() error {
 	if sa.ServiceAccount == nil || sa.org.client == nil || sa.ServiceAccount.ID == "" {
-		return fmt.Errorf("cannot refresh Edge Gateway without ID")
+		return fmt.Errorf("cannot refresh Service Account without ID")
 	}
 
 	updatedServiceAccount, err := sa.org.GetServiceAccountById(sa.ServiceAccount.ID)

@@ -5,12 +5,9 @@
 package govcd
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/fs"
-	"net/http"
 	"net/url"
 	"os"
 	"path"
@@ -18,7 +15,6 @@ import (
 	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 // TODO Have distinct names for API and Refresh tokens
@@ -170,87 +166,36 @@ func (vcdClient *VCDClient) RegisterToken(org string, tokenParams *types.ApiToke
 }
 
 // GetAccessToken gets the access token structure containing the bearer token
-func (client *Client) GetAccessToken(org, funcName string, data *bytes.Buffer) (*types.ApiTokenRefresh, error) {
-	resp, err := client.doTokenRequest(org, "token", "36.1", "application/x-www-form-urlencoded", data)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	responseData := string(body)
-	util.ProcessResponseOutput(funcName, resp, responseData)
-
-	newToken := &types.ApiTokenRefresh{}
-	err = json.Unmarshal(body, newToken)
-	if err != nil {
-		return nil, err
-	}
-
-	if newToken.AccessToken == "" {
-		// If the access token is empty, the body should contain a composite error message.
-		// Attempting to decode it and return as much information as possible
-		var errorBody map[string]string
-		err2 := json.Unmarshal(body, &errorBody)
-		if err2 == nil {
-			errorMessage := ""
-			for k, v := range errorBody {
-				if v == "null" || v == "" {
-					continue
-				}
-				errorMessage += fmt.Sprintf("%s: %s -  ", k, v)
-			}
-			return nil, fmt.Errorf("%s: %s", errorMessage, resp.Status)
-		}
-
-		// If decoding the error fails, we return the raw body (possibly an unencoded internal server error)
-		return nil, fmt.Errorf("access token retrieved from API token was empty - %s %s", resp.Status, string(body))
-	}
-
-	return newToken, nil
-}
-
-func (client *Client) doTokenRequest(org, endpoint, apiVersion, contentType string, data io.Reader) (*http.Response, error) {
-	newUrl := url.URL{
-		Scheme: client.VCDHREF.Scheme,
-		Host:   client.VCDHREF.Host,
-	}
-
+func (client *Client) GetAccessToken(org, funcName string, payloadMap map[string]string) (*types.ApiTokenRefresh, error) {
 	userDef := "tenant/" + org
 	if strings.EqualFold(org, "system") {
 		userDef = "provider"
 	}
 
-	reqHref, err := url.ParseRequestURI(fmt.Sprintf("%s/oauth/%s/%s", newUrl.String(), userDef, endpoint))
+	endpoint := fmt.Sprintf("%s://%s/oauth/%s/token", client.VCDHREF.Scheme, client.VCDHREF.Host, userDef)
+	urlRef, err := url.ParseRequestURI(endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error getting request URL from %s : %s", reqHref.String(), err)
+		return nil, fmt.Errorf("error getting request url from %s: %s", urlRef.String(), err)
 	}
 
-	req := client.NewRequest(nil, http.MethodPost, *reqHref, data)
-	req.Header.Add("Accept", fmt.Sprintf("application/*;version=%s", apiVersion))
-	req.Header.Add("Content-Type", contentType)
-
-	resp, err := client.Http.Do(req)
+	newToken := &types.ApiTokenRefresh{}
+	err = client.OpenApiPostUrlEncoded(urlRef, nil, payloadMap, &newToken, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error getting request URL from %s : %s", reqHref.String(), err)
+		return nil, fmt.Errorf("error authorizing service account: %s", err)
 	}
 
-	return checkRespWithErrType(types.BodyTypeJSON, resp, err, &types.OpenApiError{})
+	return newToken, nil
 }
 
 // GetInitialApiToken gets the initial API token, usable only once per token.
 func (token *Token) GetInitialApiToken() (*types.ApiTokenRefresh, error) {
 	client := token.client
 	uuid := extractUuid(token.Token.ID)
-	data := bytes.NewBufferString(
-		fmt.Sprintf("grant_type=%s&assertion=%s&client_id=%s",
-			"urn:ietf:params:oauth:grant-type:jwt-bearer",
-			client.VCDToken,
-			uuid,
-		))
+	data := map[string]string{
+		"grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+		"assertion":  client.VCDToken,
+		"client_id":  uuid,
+	}
 
 	refreshToken, err := client.GetAccessToken(token.Token.Org.Name, "CreateApiToken", data)
 	if err != nil {
@@ -300,7 +245,10 @@ func (vcdClient *VCDClient) SetApiToken(org, apiToken string) (*types.ApiTokenRe
 // GetBearerTokenFromApiToken uses an API token to retrieve a bearer token
 // using the refresh token operation.
 func (vcdClient *VCDClient) GetBearerTokenFromApiToken(org, token string) (*types.ApiTokenRefresh, error) {
-	data := bytes.NewBufferString(fmt.Sprintf("grant_type=refresh_token&refresh_token=%s", token))
+	data := map[string]string{
+		"grant_type":    "refresh_token",
+		"refresh_token": token,
+	}
 	tokenDef, err := vcdClient.Client.GetAccessToken(org, "GetBearerTokenFromApiToken", data)
 	if err != nil {
 		return nil, fmt.Errorf("error getting bearer token: %s", err)
