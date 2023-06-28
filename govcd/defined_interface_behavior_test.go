@@ -77,6 +77,28 @@ func (vcd *TestVCD) Test_DefinedInterfaceBehavior(check *C) {
 	check.Assert(retrievedBehavior, NotNil)
 	check.Assert(retrievedBehavior, DeepEquals, retrievedBehavior2)
 
+	updatePayload := types.Behavior{
+		Description: "Updated description",
+		Execution: map[string]interface{}{
+			"id":   "TestActivityUpdated",
+			"type": "Activity",
+		},
+		Ref:  "notGoingToUpdate1",
+		Name: "notGoingToUpdate2",
+	}
+	_, err = di.UpdateBehavior(updatePayload)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error(), Equals, "ID of the Behavior to update is empty")
+
+	updatePayload.ID = retrievedBehavior.ID
+	updatedBehavior, err := di.UpdateBehavior(updatePayload)
+	check.Assert(err, IsNil)
+	check.Assert(updatedBehavior.ID, Equals, retrievedBehavior.ID)
+	check.Assert(updatedBehavior.Ref, Equals, retrievedBehavior.Ref)   // This cannot be updated
+	check.Assert(updatedBehavior.Name, Equals, retrievedBehavior.Name) // This cannot be updated
+	check.Assert(updatedBehavior.Execution, DeepEquals, updatePayload.Execution)
+	check.Assert(updatedBehavior.Description, Equals, updatePayload.Description)
+
 	err = di.DeleteBehavior(behavior.ID)
 	check.Assert(err, IsNil)
 }

@@ -113,6 +113,34 @@ func (di *DefinedInterface) GetBehaviorByName(name string) (*types.Behavior, err
 	return nil, fmt.Errorf("could not find any Behavior with name '%s' in Defined Interface with ID '%s': %s", name, di.DefinedInterface.ID, ErrorEntityNotFound)
 }
 
+// UpdateBehavior updates a Behavior specified by the input.
+func (di *DefinedInterface) UpdateBehavior(behavior types.Behavior) (*types.Behavior, error) {
+	if di.DefinedInterface.ID == "" {
+		return nil, fmt.Errorf("ID of the receiver Defined Interface is empty")
+	}
+	if behavior.ID == "" {
+		return nil, fmt.Errorf("ID of the Behavior to update is empty")
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaceBehaviors
+	apiVersion, err := di.client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := di.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, di.DefinedInterface.ID), behavior.ID)
+	if err != nil {
+		return nil, err
+	}
+	response := types.Behavior{}
+	err = di.client.OpenApiPutItem(apiVersion, urlRef, nil, behavior, &response, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &response, nil
+}
+
 // DeleteBehavior removes a Behavior specified by its ID from the receiver Defined Interface.
 func (di *DefinedInterface) DeleteBehavior(behaviorId string) error {
 	if di.DefinedInterface.ID == "" {
