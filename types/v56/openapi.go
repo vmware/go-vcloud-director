@@ -446,6 +446,12 @@ type Behavior struct {
 	Name        string                 `json:"name,omitempty"`
 }
 
+// BehaviorAccess defines the access control configuration of a Behavior.
+type BehaviorAccess struct {
+	AccessLevelId string `json:"accessLevelId,omitempty"` // The ID of an AccessLevel
+	BehaviorId    string `json:"behaviorId,omitempty"`    // The ID of the Behavior. It can be both a behavior-interface or an overridden behavior-type ID
+}
+
 // DefinedEntityType describes what a Defined Entity Type should look like.
 type DefinedEntityType struct {
 	ID               string                 `json:"id,omitempty"`               // The id of the defined entity type in URN format
