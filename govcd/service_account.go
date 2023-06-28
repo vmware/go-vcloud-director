@@ -21,14 +21,6 @@ type ServiceAccount struct {
 
 func (org *Org) GetServiceAccountById(serviceAccountId string) (*ServiceAccount, error) {
 	client := org.client
-	if client.APIVCDMaxVersionIs("< 37.0") {
-		version, err := client.GetVcdFullVersion()
-		if err == nil {
-			return nil, fmt.Errorf("minimum version for Service Accounts is 10.4.0 - Version detected: %s", version.Version)
-		}
-		// If we can't get the VCD version, we return API version info
-		return nil, fmt.Errorf("minimum API version for Service Accounts is 37.0 - Version detected: %s", client.APIVersion)
-	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccounts
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
@@ -56,14 +48,6 @@ func (org *Org) GetServiceAccountById(serviceAccountId string) (*ServiceAccount,
 
 func (org *Org) GetAllServiceAccounts(queryParams url.Values) ([]*ServiceAccount, error) {
 	client := org.client
-	if client.APIVCDMaxVersionIs("< 37.0") {
-		version, err := client.GetVcdFullVersion()
-		if err == nil {
-			return nil, fmt.Errorf("minimum version for Service Accounts is 10.4.0 - Version detected: %s", version.Version)
-		}
-		// If we can't get the VCD version, we return API version info
-		return nil, fmt.Errorf("minimum API version for Service Accounts is 37.0 - Version detected: %s", client.APIVersion)
-	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccounts
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
@@ -120,16 +104,6 @@ func (org *Org) GetServiceAccountByName(name string) (*ServiceAccount, error) {
 
 // CreateServiceAccount creates a Service Account and sets it in `Created` status
 func (vcdClient *VCDClient) CreateServiceAccount(orgName, name, scope, softwareId, softwareVersion, clientUri string) (*ServiceAccount, error) {
-	client := vcdClient.Client
-	if client.APIVCDMaxVersionIs("< 37.0") {
-		version, err := client.GetVcdFullVersion()
-		if err == nil {
-			return nil, fmt.Errorf("minimum version for Service Accounts is 10.4.0 - Version detected: %s", version.Version)
-		}
-		// If we can't get the VCD version, we return API version info
-		return nil, fmt.Errorf("minimum API version for Service Accounts is 37.0 - Version detected: %s", client.APIVersion)
-	}
-
 	saParams := &types.ApiTokenParams{
 		ClientName:      name,
 		Scope:           scope,
@@ -199,14 +173,11 @@ func (sa *ServiceAccount) Authorize() error {
 		))
 
 	resp, err := client.doTokenRequest(sa.ServiceAccount.Org.Name, "device_authorization", "37.0", "application/x-www-form-urlencoded", data)
-	if resp != nil {
-		defer resp.Body.Close()
-	}
-
 	if err != nil {
 		return err
 	}
 
+	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
@@ -317,22 +288,19 @@ func (sa *ServiceAccount) Revoke() error {
 // Delete deletes a Service Account
 func (sa *ServiceAccount) Delete() error {
 	client := sa.org.client
-	if client.APIVCDMaxVersionIs("< 37.0") {
-		version, err := client.GetVcdFullVersion()
-		if err == nil {
-			return fmt.Errorf("minimum version for Service Accounts is 10.4.0 - Version detected: %s", version.Version)
-		}
-		// If we can't get the VCD version, we return API version info
-		return fmt.Errorf("minimum API version for Service Accounts is 37.0 - Version detected: %s", client.APIVersion)
-	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccounts
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return err
+	}
+
 	urlRef, err := client.OpenApiBuildEndpoint(endpoint, sa.ServiceAccount.ID)
 	if err != nil {
 		return err
 	}
 
-	err = client.OpenApiDeleteItem("37.0", urlRef, nil, nil)
+	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
 	if err != nil {
 		return err
 	}
