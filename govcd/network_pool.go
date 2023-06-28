@@ -30,7 +30,7 @@ func (np NetworkPool) GetOpenApiUrl() (string, error) {
 	return response, nil
 }
 
-func (vcdClient VCDClient) GetNetworkPoolSummaries(queryParameters url.Values) (*types.NetworkPoolSummary, error) {
+func (vcdClient VCDClient) GetNetworkPoolSummaries(queryParameters url.Values) ([]*types.NetworkPool, error) {
 	client := vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPoolSummaries
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
@@ -42,14 +42,13 @@ func (vcdClient VCDClient) GetNetworkPoolSummaries(queryParameters url.Values) (
 	if err != nil {
 		return nil, err
 	}
-
-	typeResponse := types.NetworkPoolSummary{}
-	err = client.OpenApiGetItem(apiVersion, urlRef, queryParameters, &typeResponse, nil)
+	typeResponse := []*types.NetworkPool{{}}
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponse, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return &typeResponse, nil
+	return typeResponse, nil
 }
 
 // GetNetworkPoolById retrieves IP Space with a given ID
@@ -98,13 +97,13 @@ func (vcdClient VCDClient) GetNetworkPoolByName(name string) (*NetworkPool, erro
 		return nil, fmt.Errorf("error getting network pools: %s", err)
 	}
 
-	if len(filteredNetworkPools.Values) == 0 {
+	if len(filteredNetworkPools) == 0 {
 		return nil, fmt.Errorf("no network pool found with name '%s'", name)
 	}
 
-	if len(filteredNetworkPools.Values) > 1 {
+	if len(filteredNetworkPools) > 1 {
 		return nil, fmt.Errorf("more than one network pool found with name '%s'", name)
 	}
 
-	return vcdClient.GetNetworkPoolById(filteredNetworkPools.Values[0].Id)
+	return vcdClient.GetNetworkPoolById(filteredNetworkPools[0].Id)
 }

@@ -13,7 +13,7 @@ func (vcd *TestVCD) Test_GetNetworkPools(check *C) {
 	knownNetworkPoolName := vcd.config.VCD.NsxtProviderVdc.NetworkPool
 	networkPools, err := vcd.client.GetNetworkPoolSummaries(nil)
 	check.Assert(err, IsNil)
-	check.Assert(len(networkPools.Values) > 0, Equals, true)
+	check.Assert(len(networkPools) > 0, Equals, true)
 
 	checkNetworkPoolName := false
 	foundNetworkPool := false
@@ -21,7 +21,7 @@ func (vcd *TestVCD) Test_GetNetworkPools(check *C) {
 		checkNetworkPoolName = true
 	}
 
-	for i, nps := range networkPools.Values {
+	for i, nps := range networkPools {
 		if nps.Name == knownNetworkPoolName {
 			foundNetworkPool = true
 		}
