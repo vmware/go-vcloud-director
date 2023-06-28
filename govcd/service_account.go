@@ -235,7 +235,7 @@ func (sa *ServiceAccount) GetInitialApiToken() (*types.ApiTokenRefresh, error) {
 		"client_id":   uuid,
 		"device_code": sa.authParams.DeviceCode,
 	}
-	token, err := client.GetAccessToken(sa.ServiceAccount.Org.Name, "CreateServiceAccount", data)
+	token, err := client.getAccessToken(sa.ServiceAccount.Org.Name, "CreateServiceAccount", data)
 	if err != nil {
 		return nil, fmt.Errorf("error getting initial api token: %s", err)
 	}

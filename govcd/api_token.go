@@ -165,8 +165,8 @@ func (vcdClient *VCDClient) RegisterToken(org string, tokenParams *types.ApiToke
 	return newTokenParams, nil
 }
 
-// GetAccessToken gets the access token structure containing the bearer token
-func (client *Client) GetAccessToken(org, funcName string, payloadMap map[string]string) (*types.ApiTokenRefresh, error) {
+// getAccessToken gets the access token structure containing the bearer token
+func (client *Client) getAccessToken(org, funcName string, payloadMap map[string]string) (*types.ApiTokenRefresh, error) {
 	userDef := "tenant/" + org
 	if strings.EqualFold(org, "system") {
 		userDef = "provider"
@@ -197,7 +197,7 @@ func (token *Token) GetInitialApiToken() (*types.ApiTokenRefresh, error) {
 		"client_id":  uuid,
 	}
 
-	refreshToken, err := client.GetAccessToken(token.Token.Org.Name, "CreateApiToken", data)
+	refreshToken, err := client.getAccessToken(token.Token.Org.Name, "CreateApiToken", data)
 	if err != nil {
 		return nil, fmt.Errorf("error getting token: %s", err)
 	}
@@ -249,7 +249,7 @@ func (vcdClient *VCDClient) GetBearerTokenFromApiToken(org, token string) (*type
 		"grant_type":    "refresh_token",
 		"refresh_token": token,
 	}
-	tokenDef, err := vcdClient.Client.GetAccessToken(org, "GetBearerTokenFromApiToken", data)
+	tokenDef, err := vcdClient.Client.getAccessToken(org, "GetBearerTokenFromApiToken", data)
 	if err != nil {
 		return nil, fmt.Errorf("error getting bearer token: %s", err)
 	}
