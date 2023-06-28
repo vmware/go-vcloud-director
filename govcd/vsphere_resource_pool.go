@@ -16,17 +16,9 @@ type ResourcePool struct {
 	client       *VCDClient
 }
 
-func NewResourcePool(client *VCDClient, vcenter *VCenter) *ResourcePool {
-	return &ResourcePool{
-		ResourcePool: new(types.ResourcePool),
-		vcenter:      vcenter,
-		client:       client,
-	}
-}
-
-func (vcenter VCenter) GetAllAvailableResourcePools(queryParams url.Values) ([]*ResourcePool, error) {
+func (vcenter VCenter) GetAllResourcePools(queryParams url.Values) ([]*ResourcePool, error) {
 	client := vcenter.client.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePools
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePoolsBrowseAll
 	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
@@ -37,7 +29,7 @@ func (vcenter VCenter) GetAllAvailableResourcePools(queryParams url.Values) ([]*
 		return nil, err
 	}
 
-	var retrieved []*types.ResourcePool
+	retrieved := []*types.ResourcePool{{}}
 
 	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParams, &retrieved, nil)
 	if err != nil {
@@ -50,65 +42,14 @@ func (vcenter VCenter) GetAllAvailableResourcePools(queryParams url.Values) ([]*
 	var returnList []*ResourcePool
 
 	for _, r := range retrieved {
-		if !r.Eligible {
-			newRp, err := vcenter.GetAvailableResourcePoolById(r.Moref)
-			if err != nil {
-				return nil, fmt.Errorf("error while retrieving child resource pool for %s: %s", r.Name, err)
-			}
-			r = newRp.ResourcePool
-		}
+		newRp := r
 		returnList = append(returnList, &ResourcePool{
-			ResourcePool: r,
+			ResourcePool: newRp,
 			vcenter:      &vcenter,
 			client:       vcenter.client,
 		})
 	}
 	return returnList, nil
-}
-
-func (vcenter VCenter) GetAvailableResourcePoolByName(name string) (*ResourcePool, error) {
-
-	resourcePools, err := vcenter.GetAllAvailableResourcePools(nil)
-	if err != nil {
-		return nil, err
-	}
-	for _, rp := range resourcePools {
-		if rp.ResourcePool.Name == name {
-			return rp, nil
-		}
-	}
-	return nil, fmt.Errorf("resource pool '%s' not found: %s", name, ErrorEntityNotFound)
-}
-
-func (vcenter VCenter) GetAvailableResourcePoolById(id string) (*ResourcePool, error) {
-
-	client := vcenter.client.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePools
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vcenter.VSphereVcenter.VcId) + "/" + id)
-	if err != nil {
-		return nil, err
-	}
-
-	retrieved := []*types.ResourcePool{}
-	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, nil, &retrieved, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error getting resource pool: %s", err)
-	}
-
-	if len(retrieved) == 0 {
-		return nil, fmt.Errorf("resource pool %s not found: %s", id, ErrorEntityNotFound)
-	}
-
-	return &ResourcePool{
-		ResourcePool: retrieved[0],
-		vcenter:      &vcenter,
-		client:       vcenter.client,
-	}, nil
 }
 
 func (rp ResourcePool) GetAvailableHardwareVersions() (*types.OpenApiSupportedHardwareVersions, error) {
@@ -147,4 +88,50 @@ func (rp ResourcePool) GetDefaultHardwareVersion() (string, error) {
 		}
 	}
 	return "", fmt.Errorf("no default hardware version found for resource pool %s", rp.ResourcePool.Name)
+}
+
+func (vcenter VCenter) GetResourcePoolById(id string) (*ResourcePool, error) {
+	resourcePools, err := vcenter.GetAllResourcePools(nil)
+	if err != nil {
+		return nil, err
+	}
+	for _, rp := range resourcePools {
+		if rp.ResourcePool.Moref == id {
+			return rp, nil
+		}
+	}
+	return nil, fmt.Errorf("no resource pool found with ID '%s' :%s", id, ErrorEntityNotFound)
+}
+
+func getClusterNameFromId(id string, rpList []*ResourcePool) (string, error) {
+	for _, rp := range rpList {
+		if rp.ResourcePool.Moref == id {
+			return rp.ResourcePool.Name, nil
+		}
+	}
+	return "", fmt.Errorf("no Cluster found with ID '%s'", id)
+}
+
+func (vcenter VCenter) GetResourcePoolByName(name string) (*ResourcePool, error) {
+	resourcePools, err := vcenter.GetAllResourcePools(nil)
+	if err != nil {
+		return nil, err
+	}
+	var found []*ResourcePool
+	for _, rp := range resourcePools {
+		if rp.ResourcePool.Name == name {
+			found = append(found, rp)
+		}
+	}
+	if len(found) == 0 {
+		return nil, fmt.Errorf("no resource pool found with name '%s' :%s", name, ErrorEntityNotFound)
+	}
+	if len(found) > 1 {
+		var idList []string
+		for _, f := range found {
+			idList = append(idList, f.ResourcePool.Moref)
+		}
+		return nil, fmt.Errorf("more than one resource pool was found with name %s - use resource pool ID instead - %v", name, idList)
+	}
+	return found[0], nil
 }
